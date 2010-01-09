@@ -1,20 +1,12 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC] [PATCH 2/2] cgroups: blkio subsystem as module
-Date: Fri, 8 Jan 2010 11:33:52 -0500
-Message-ID: <20100108163352.GB22219@redhat.com>
-References: <20091231051050.GA714@andrew.cmu.edu>
-	<20100106160414.bd555474.akpm@linux-foundation.org>
-	<20100107012606.GA25577@andrew.cmu.edu>
-	<20100107120732.97d502bd.kamezawa.hiroyu@jp.fujitsu.com>
-	<4B45824B.9030108@cn.fujitsu.com>
-	<20100108052734.GA13168@andrew.cmu.edu>
-	<20100108053021.GC13168@andrew.cmu.edu>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [PATCH][cr-tests] pthread2: Test additional pthread attributes
+Date: Fri, 8 Jan 2010 17:29:24 -0800
+Message-ID: <20100109012924.GA21607@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20100108053021.GC13168-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,295 +16,577 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org, KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, menage
+To: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, Jan 08, 2010 at 12:30:21AM -0500, Ben Blum wrote:
-> Convert blk-cgroup to be buildable as a module
-> 
-> From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
-> 
-> This patch modifies the Block I/O cgroup subsystem to be able to be built as a
-> module. As the CFQ disk scheduler optionally depends on blk-cgroup, config
-> options in block/Kconfig, block/Kconfig.iosched, and block/blk-cgroup.h are
-> enhanced to support the new module dependency.
-> 
-> Signed-off-by: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
+This test case currently fails with following errors in dmesg:
+Looks like the VM_NORESERVE flag on some maps triggers the error
+(CKPT_VMA_NOT_SUPPORTED includes the VM_NORESERVE flag)
 
-Two quick observations with testing.
+	[4999:4999:c/r:checkpoint_vmas:625] vma 0xb7200000-0xb7221000 flags
+	0x200073
+	[err -38][pos 102940][E @ checkpoint_vmas:629][pid 4976 tsk pthread2]
+	vma: bad flags (0x200073)
+	[4999:4999:c/r:checkpoint_task_objs:264] mm: objref -38
+	[4999:4999:c/r:ckpt_write_obj_type:66] type 9999 len 8
+	[4999:4999:c/r:ckpt_write_obj_type:66] type 5 len 93
+	[err -38][pos 102940][E @ checkpoint_task_objs:266][pid 4976 tsk
+	pthread2]mm_struct
+	[4999:4999:c/r:checkpoint_task:450] objs -38
+	[4999:4999:c/r:pgarr_release_pages:101] total pages 0
+---
 
-You need to EXPORT cgroup_path.
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Date: Sat, 26 Dec 2009 13:08:32 +0530
+Subject: [PATCH 1/3] pthread2: Test additional pthread attributes
 
-Second, after loading the module, I mounted the blkio controller. But creating
-a cgroup directory crashed.
+Extend the test case to test all (most) pthread attributes in a single
+test.
 
-Vivek
+Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+---
+ process-tree/pthread2.c      |  400 +++++++++++++++++++++++++++++++++++++-----
+ process-tree/run-pthread2.sh |    5 +-
+ 2 files changed, 355 insertions(+), 50 deletions(-)
 
-BUG: unable to handle kernel NULL pointer dereference at 0000000000000020
-IP: [<ffffffff8106bcb4>] cgroup_mkdir+0x17e/0x350
-PGD 1a7fe0067 PUD 1a0f19067 PMD 0 
-Oops: 0000 [#1] SMP 
-last sysfs file: /sys/devices/system/cpu/cpu3/cache/index2/shared_cpu_map
-CPU 3 
-Pid: 3984, comm: mkdir Not tainted 2.6.33-rc3-cgroup-module #2 /ProLiant DL380 G5
-RIP: 0010:[<ffffffff8106bcb4>]  [<ffffffff8106bcb4>] cgroup_mkdir+0x17e/0x350
-RSP: 0018:ffff8801a0f17e38  EFLAGS: 00010203
-RAX: ffff8801a8cbde00 RBX: ffffffffa02cc8e0 RCX: ffff8801a8cbde00
-RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000000
-RBP: ffff8801a770c000 R08: 0000000000000040 R09: ffff8801a0f17d48
-R10: ffff8801a0f17ec8 R11: ffffffff8113efb4 R12: 0000000000000001
-R13: ffff8801a0f22000 R14: ffff8801948aa980 R15: ffff8801a0f22030
-FS:  00007ff9ecf5a710(0000) GS:ffff8800282c0000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 0000000000000020 CR3: 00000001a257e000 CR4: 00000000000406e0
-DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-Process mkdir (pid: 3984, threadinfo ffff8801a0f16000, task ffff8801a8e2c040)
-Stack:
- 0000000000000003 000001ed948a8db0 ffff8801a0e1e800 0000000000000000
-<0> ffff8801a7745940 ffff8801948a8db0 ffff8801948aa980 0000000000000000
-<0> 00000000000001ed 00007fff661cb6eb 0000000000000000 ffffffff810d837e
-Call Trace:
- [<ffffffff810d837e>] ? vfs_mkdir+0xd5/0x164
- [<ffffffff810da743>] ? sys_mkdirat+0x85/0xd1
- [<ffffffff810773be>] ? audit_syscall_entry+0x1b9/0x1e4
- [<ffffffff8100286b>] ? system_call_fastpath+0x16/0x1b
-Code: 4c 24 18 e8 82 f3 ff ff 31 f6 48 3d 00 f0 ff ff 48 89 c1 76 20 85 c0 74 35 45 31 e4 e9 5a 01 00 00 48 8b 7c 24 18 48 63 d6 ff c6 <66> 8b 44 57 20 66 89 44 51 20 44 39 e6 7c e7 8b 51 08 49 63 c4 
-RIP  [<ffffffff8106bcb4>] cgroup_mkdir+0x17e/0x350
- RSP <ffff8801a0f17e38>
-CR2: 0000000000000020
----[ end trace 09377bc5e5c2b563 ]---
-
-> ---
->  block/Kconfig             |    2 +-
->  block/Kconfig.iosched     |    2 +-
->  block/blk-cgroup.c        |   53 +++++++++++++++++++++++++++++++++++----------
->  block/blk-cgroup.h        |   10 +++++++-
->  include/linux/iocontext.h |    2 +-
->  kernel/cgroup.c           |    8 +++++++
->  6 files changed, 60 insertions(+), 17 deletions(-)
-> 
-> diff --git a/block/Kconfig b/block/Kconfig
-> index e20fbde..62a5921 100644
-> --- a/block/Kconfig
-> +++ b/block/Kconfig
-> @@ -78,7 +78,7 @@ config BLK_DEV_INTEGRITY
->  	Protection.  If in doubt, say N.
->  
->  config BLK_CGROUP
-> -	bool
-> +	tristate
->  	depends on CGROUPS
->  	default n
->  	---help---
-> diff --git a/block/Kconfig.iosched b/block/Kconfig.iosched
-> index b71abfb..fc71cf0 100644
-> --- a/block/Kconfig.iosched
-> +++ b/block/Kconfig.iosched
-> @@ -23,6 +23,7 @@ config IOSCHED_DEADLINE
->  
->  config IOSCHED_CFQ
->  	tristate "CFQ I/O scheduler"
-> +	select BLK_CGROUP if CFQ_GROUP_IOSCHED
->  	default y
->  	---help---
->  	  The CFQ I/O scheduler tries to distribute bandwidth equally
-> @@ -35,7 +36,6 @@ config IOSCHED_CFQ
->  config CFQ_GROUP_IOSCHED
->  	bool "CFQ Group Scheduling support"
->  	depends on IOSCHED_CFQ && CGROUPS
-> -	select BLK_CGROUP
->  	default n
->  	---help---
->  	  Enable group IO scheduling in CFQ.
-> diff --git a/block/blk-cgroup.c b/block/blk-cgroup.c
-> index 1fa2654..6c73380 100644
-> --- a/block/blk-cgroup.c
-> +++ b/block/blk-cgroup.c
-> @@ -23,6 +23,31 @@ static LIST_HEAD(blkio_list);
->  struct blkio_cgroup blkio_root_cgroup = { .weight = 2*BLKIO_WEIGHT_DEFAULT };
->  EXPORT_SYMBOL_GPL(blkio_root_cgroup);
->  
-> +static struct cgroup_subsys_state *blkiocg_create(struct cgroup_subsys *,
-> +						  struct cgroup *);
-> +static int blkiocg_can_attach(struct cgroup_subsys *, struct cgroup *,
-> +			      struct task_struct *, bool);
-> +static void blkiocg_attach(struct cgroup_subsys *, struct cgroup *,
-> +			   struct cgroup *, struct task_struct *, bool);
-> +static void blkiocg_destroy(struct cgroup_subsys *, struct cgroup *);
-> +static int blkiocg_populate(struct cgroup_subsys *, struct cgroup *);
-> +
-> +struct cgroup_subsys blkio_subsys = {
-> +	.name = "blkio",
-> +	.create = blkiocg_create,
-> +	.can_attach = blkiocg_can_attach,
-> +	.attach = blkiocg_attach,
-> +	.destroy = blkiocg_destroy,
-> +	.populate = blkiocg_populate,
-> +#ifdef CONFIG_BLK_CGROUP
-> +	/* note: blkio_subsys_id is otherwise defined in blk-cgroup.h */
-> +	.subsys_id = blkio_subsys_id,
-> +#endif
-> +	.use_id = 1,
-> +	.module = THIS_MODULE,
-> +};
-> +EXPORT_SYMBOL_GPL(blkio_subsys);
-> +
->  bool blkiocg_css_tryget(struct blkio_cgroup *blkcg)
->  {
->  	if (!css_tryget(&blkcg->css))
-> @@ -267,7 +292,8 @@ remove_entry:
->  done:
->  	free_css_id(&blkio_subsys, &blkcg->css);
->  	rcu_read_unlock();
-> -	kfree(blkcg);
-> +	if (blkcg != &blkio_root_cgroup)
-> +		kfree(blkcg);
->  }
->  
->  static struct cgroup_subsys_state *
-> @@ -333,17 +359,6 @@ static void blkiocg_attach(struct cgroup_subsys *subsys, struct cgroup *cgroup,
->  	task_unlock(tsk);
->  }
->  
-> -struct cgroup_subsys blkio_subsys = {
-> -	.name = "blkio",
-> -	.create = blkiocg_create,
-> -	.can_attach = blkiocg_can_attach,
-> -	.attach = blkiocg_attach,
-> -	.destroy = blkiocg_destroy,
-> -	.populate = blkiocg_populate,
-> -	.subsys_id = blkio_subsys_id,
-> -	.use_id = 1,
-> -};
-> -
->  void blkio_policy_register(struct blkio_policy_type *blkiop)
->  {
->  	spin_lock(&blkio_list_lock);
-> @@ -359,3 +374,17 @@ void blkio_policy_unregister(struct blkio_policy_type *blkiop)
->  	spin_unlock(&blkio_list_lock);
->  }
->  EXPORT_SYMBOL_GPL(blkio_policy_unregister);
-> +
-> +static int __init init_cgroup_blkio(void)
-> +{
-> +	return cgroup_load_subsys(&blkio_subsys);
-> +}
-> +
-> +static void __exit exit_cgroup_blkio(void)
-> +{
-> +	cgroup_unload_subsys(&blkio_subsys);
-> +}
-> +
-> +module_init(init_cgroup_blkio);
-> +module_exit(exit_cgroup_blkio);
-> +MODULE_LICENSE("GPL");
-> diff --git a/block/blk-cgroup.h b/block/blk-cgroup.h
-> index 4d316df..57648c6 100644
-> --- a/block/blk-cgroup.h
-> +++ b/block/blk-cgroup.h
-> @@ -15,7 +15,13 @@
->  
->  #include <linux/cgroup.h>
->  
-> -#ifdef CONFIG_BLK_CGROUP
-> +#if defined(CONFIG_BLK_CGROUP) || defined(CONFIG_BLK_CGROUP_MODULE)
-> +
-> +#ifndef CONFIG_BLK_CGROUP
-> +/* When blk-cgroup is a module, its subsys_id isn't a compile-time constant */
-> +extern struct cgroup_subsys blkio_subsys;
-> +#define blkio_subsys_id blkio_subsys.subsys_id
-> +#endif
->  
->  struct blkio_cgroup {
->  	struct cgroup_subsys_state css;
-> @@ -94,7 +100,7 @@ static inline void blkiocg_update_blkio_group_dequeue_stats(
->  			struct blkio_group *blkg, unsigned long dequeue) {}
->  #endif
->  
-> -#ifdef CONFIG_BLK_CGROUP
-> +#if defined(CONFIG_BLK_CGROUP) || defined(CONFIG_BLK_CGROUP_MODULE)
->  extern struct blkio_cgroup blkio_root_cgroup;
->  extern struct blkio_cgroup *cgroup_to_blkio_cgroup(struct cgroup *cgroup);
->  extern void blkiocg_add_blkio_group(struct blkio_cgroup *blkcg,
-> diff --git a/include/linux/iocontext.h b/include/linux/iocontext.h
-> index a632359..b9f109d 100644
-> --- a/include/linux/iocontext.h
-> +++ b/include/linux/iocontext.h
-> @@ -68,7 +68,7 @@ struct io_context {
->  	unsigned short ioprio;
->  	unsigned short ioprio_changed;
->  
-> -#ifdef CONFIG_BLK_CGROUP
-> +#if defined(CONFIG_BLK_CGROUP) || defined(CONFIG_BLK_CGROUP_MODULE)
->  	unsigned short cgroup_changed;
->  #endif
->  
-> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-> index 5af59eb..391ff41 100644
-> --- a/kernel/cgroup.c
-> +++ b/kernel/cgroup.c
-> @@ -690,6 +690,7 @@ void cgroup_lock(void)
->  {
->  	mutex_lock(&cgroup_mutex);
->  }
-> +EXPORT_SYMBOL_GPL(cgroup_lock);
->  
->  /**
->   * cgroup_unlock - release lock on cgroup changes
-> @@ -700,6 +701,7 @@ void cgroup_unlock(void)
->  {
->  	mutex_unlock(&cgroup_mutex);
->  }
-> +EXPORT_SYMBOL_GPL(cgroup_unlock);
->  
->  /*
->   * A couple of forward declarations required, due to cyclic reference loop:
-> @@ -1762,6 +1764,7 @@ bool cgroup_lock_live_group(struct cgroup *cgrp)
->  	}
->  	return true;
->  }
-> +EXPORT_SYMBOL_GPL(cgroup_lock_live_group);
->  
->  static int cgroup_release_agent_write(struct cgroup *cgrp, struct cftype *cft,
->  				      const char *buffer)
-> @@ -4034,6 +4037,7 @@ void __css_put(struct cgroup_subsys_state *css)
->  	rcu_read_unlock();
->  	WARN_ON_ONCE(val < 1);
->  }
-> +EXPORT_SYMBOL_GPL(__css_put);
->  
->  /*
->   * Notify userspace when a cgroup is released, by running the
-> @@ -4149,6 +4153,7 @@ unsigned short css_id(struct cgroup_subsys_state *css)
->  		return cssid->id;
->  	return 0;
->  }
-> +EXPORT_SYMBOL_GPL(css_id);
->  
->  unsigned short css_depth(struct cgroup_subsys_state *css)
->  {
-> @@ -4158,6 +4163,7 @@ unsigned short css_depth(struct cgroup_subsys_state *css)
->  		return cssid->depth;
->  	return 0;
->  }
-> +EXPORT_SYMBOL_GPL(css_depth);
->  
->  bool css_is_ancestor(struct cgroup_subsys_state *child,
->  		    const struct cgroup_subsys_state *root)
-> @@ -4194,6 +4200,7 @@ void free_css_id(struct cgroup_subsys *ss, struct cgroup_subsys_state *css)
->  	spin_unlock(&ss->id_lock);
->  	call_rcu(&id->rcu_head, __free_css_id_cb);
->  }
-> +EXPORT_SYMBOL_GPL(free_css_id);
->  
->  /*
->   * This is called by init or create(). Then, calls to this function are
-> @@ -4310,6 +4317,7 @@ struct cgroup_subsys_state *css_lookup(struct cgroup_subsys *ss, int id)
->  
->  	return rcu_dereference(cssid->css);
->  }
-> +EXPORT_SYMBOL_GPL(css_lookup);
->  
->  /**
->   * css_get_next - lookup next cgroup under specified hierarchy.
+diff --git a/process-tree/pthread2.c b/process-tree/pthread2.c
+index 6ac1e52..a773245 100644
+--- a/process-tree/pthread2.c
++++ b/process-tree/pthread2.c
+@@ -12,11 +12,10 @@
+ #define LOG_PREFIX	"logs.d/pthread2"
+ 
+ FILE *logfp;
+-
+ int num_threads = 8;
+-void **exp_addrs;
+-size_t  *exp_sizes;
+ int *tstatus;
++pthread_barrier_t barrier;
++pthread_mutex_t dump_lock;
+ 
+ static void usage(char *argv[])
+ {
+@@ -25,19 +24,10 @@ static void usage(char *argv[])
+ 	do_exit(1);
+ }
+ 
+-pthread_attr_t *get_thread_attr(int tnum)
++pthread_attr_t *alloc_thread_attr()
+ {
+-	int rc, size;
++	int rc;
+ 	pthread_attr_t *attr;
+-	void *stack;
+-
+-	size = MIN_STACK_SIZE + (tnum * getpagesize());
+-
+-	stack = malloc(size);
+-	if (!stack) {
+-		fprintf(logfp, "malloc(stack): error %s\n", strerror(errno));
+-		do_exit(1);
+-	}
+ 
+ 	attr = malloc(sizeof(pthread_attr_t));
+ 	if (!attr) {
+@@ -52,29 +42,211 @@ pthread_attr_t *get_thread_attr(int tnum)
+ 		do_exit(1);
+ 	}
+ 
+-	rc = pthread_attr_setstack(attr, stack, size);
++	return attr;
++}
++
++#ifndef debug
++dump_attr(char *msg, pthread_attr_t *attr)
++{
++}
++#endif
++
++get_affinity(int tnum, pthread_attr_t *attr, cpu_set_t *cpu_set)
++{
++	int rc;
++
++	fprintf(logfp, "sizeof(cpu_set_t) %d\n", sizeof(cpu_set_t));
++
++	rc = pthread_attr_getaffinity_np(attr, sizeof(cpu_set_t), cpu_set);
+ 	if (rc < 0) {
+-		fprintf(logfp, "pthread_attr_setstack(): rc %d error %s\n",
+-				rc, strerror(errno));
++		fprintf(logfp, "pthread_attr_getaffin() failed, rc %d, "
++				"error %s\n", rc, strerror(errno));
+ 		do_exit(1);
+ 	}
+ 
+-	return attr;
+ }
+ 
+-int get_stack_info(pthread_t tid, void **addrp, size_t *sizep)
++compare_affinity(int tnum, pthread_attr_t *exp_attr, pthread_attr_t *act_attr)
++{
++	cpu_set_t exp_cpus, act_cpus;
++
++	get_affinity(tnum, exp_attr, &exp_cpus);
++	get_affinity(tnum, act_attr, &act_cpus);
++
++	if (memcmp(&exp_cpus, &act_cpus, sizeof(cpu_set_t))) {
++		fprintf(logfp, "cpu set mismatch\n");
++		do_exit(1);
++	}
++}
++
++get_detachstate(int tnum, pthread_attr_t *attr, int *state)
+ {
+ 	int rc;
+-	pthread_attr_t attr;
+ 
+-	rc = pthread_getattr_np(tid, &attr);
++	rc = pthread_attr_getdetachstate(attr, state);
+ 	if (rc < 0) {
+-		fprintf(logfp, "pthread_getattr_np failed, rc %d, %s\n", rc,
+-				strerror(errno));
+-		pthread_exit(ERROR_EXIT);
++		fprintf(logfp, "pthread_attr_getdetachstate() failed, rc %d, "
++				"error %s\n", rc, strerror(errno));
++		do_exit(1);
++	}
++}
++
++compare_detachstate(int tnum, pthread_attr_t *exp_attr,
++		pthread_attr_t *act_attr)
++{
++
++	int exp_state, act_state;
++
++	get_detachstate(tnum, exp_attr, &exp_state);
++	get_detachstate(tnum, act_attr, &act_state);
++
++	if (exp_state != act_state) {
++		fprintf(logfp, "%d: Thread detach state mismatch: expected %d, "
++				"actual %d\n", tnum, exp_state, act_state);
++		do_exit(1);
++	}
++}
++
++get_guardsize(int tnum, pthread_attr_t *attr, int *gsize)
++{
++	int rc;
++
++	rc = pthread_attr_getguardsize(attr, gsize);
++	if (rc < 0) {
++		fprintf(logfp, "pthread_attr_getguardsize() failed, rc %d, "
++				"error %s\n", rc, strerror(errno));
++		do_exit(1);
++	}
++}
++
++void compare_guardsize(int tnum, pthread_attr_t *exp_attr,
++		pthread_attr_t *act_attr)
++{
++	size_t exp_size, act_size;
++
++	get_guardsize(tnum, exp_attr, &exp_size);
++	get_guardsize(tnum, act_attr, &act_size);
++
++	if (exp_size != act_size) {
++		fprintf(logfp, "%d: Thread guard size mismatch, expected %d "
++				"actual %d\n", tnum, exp_size, act_size);
++		do_exit(1);
++	}
++}
++
++get_inheritsched(int tnum, pthread_attr_t *attr, int *isched)
++{
++	int rc;
++
++	rc = pthread_attr_getinheritsched(attr, isched);
++	if (rc < 0) {
++		fprintf(logfp, "pthread_attr_inheritsched() failed, rc %d, "
++				"error %s\n", rc, strerror(errno));
++		do_exit(1);
++	}
++}
++
++void compare_inheritsched(int tnum, pthread_attr_t *exp_attr,
++		pthread_attr_t *act_attr)
++{
++	int exp_isched, act_isched;
++
++	get_inheritsched(tnum, exp_attr, &exp_isched);
++	get_inheritsched(tnum, act_attr, &act_isched);
++
++	if (exp_isched != act_isched) {
++		fprintf(logfp, "%d: Thread inherit-sched mismatch, expected %d "
++				"actual %d\n", tnum, exp_isched, act_isched);
++		do_exit(1);
+ 	}
++}
+ 
+-	rc = pthread_attr_getstack(&attr, (void **)addrp, sizep);
++get_schedparam(int tnum, pthread_attr_t *attr, int *prio)
++{
++	int rc;
++	struct sched_param param;
++
++	rc = pthread_attr_getschedparam(attr, &param);
++	if (rc < 0) {
++		fprintf(logfp, "pthread_attr_getschedparam() failed, rc %d, "
++				"error %s\n", rc, strerror(errno));
++		do_exit(1);
++	}
++	*prio = param.__sched_priority;
++}
++
++compare_schedparam(int tnum, pthread_attr_t *exp_attr, pthread_attr_t *act_attr)
++{
++	int exp_prio, act_prio;
++
++	get_schedparam(tnum, exp_attr, &exp_prio);
++	get_schedparam(tnum, act_attr, &act_prio);
++
++	if (exp_prio != act_prio) {
++		fprintf(logfp, "%d: Thread sched-param mismatch, expected %d "
++				"actual %d\n", tnum, exp_prio, act_prio);
++		do_exit(1);
++	}
++}
++
++get_schedpolicy(int tnum, pthread_attr_t *attr, int *policy)
++{
++	int rc;
++
++	rc = pthread_attr_getschedpolicy(attr, policy);
++	if (rc < 0) {
++		fprintf(logfp, "pthread_attr_getschedpolicy() failed, rc %d, "
++				"error %s\n", rc, strerror(errno));
++		do_exit(1);
++	}
++}
++
++compare_schedpolicy(int tnum, pthread_attr_t *exp_attr,
++			pthread_attr_t *act_attr)
++{
++	int exp_policy, act_policy;
++
++	get_schedpolicy(tnum, exp_attr, &exp_policy);
++	get_schedpolicy(tnum, act_attr, &act_policy);
++
++	if (exp_policy != act_policy) {
++		fprintf(logfp, "%d: Thread sched-policy mismatch, expected %d "
++				"actual %d\n", tnum, exp_policy, act_policy);
++		do_exit(1);
++	}
++}
++
++get_scope(int tnum, pthread_attr_t *attr, int *scope)
++{
++	int rc;
++
++	rc = pthread_attr_getscope(attr, scope);
++	if (rc < 0) {
++		fprintf(logfp, "pthread_attr_getscope() failed, rc %d, "
++				"error %s\n", rc, strerror(errno));
++		do_exit(1);
++	}
++}
++
++compare_scope(int tnum, pthread_attr_t *exp_attr, pthread_attr_t *act_attr)
++{
++	int exp_scope, act_scope;
++
++	get_scope(tnum, exp_attr, &exp_scope);
++	get_scope(tnum, act_attr, &act_scope);
++
++	if (exp_scope != act_scope) {
++		fprintf(logfp, "%d: Thread scope mismatch, expected %d "
++				"actual %d\n", tnum, exp_scope, act_scope);
++		do_exit(1);
++	}
++}
++
++int get_stack(pthread_attr_t *attr, void **addrp, int *sizep)
++{
++	int rc;
++
++	rc = pthread_attr_getstack(attr, (void **)addrp, sizep);
+ 	if (rc < 0) {
+ 		fprintf(logfp, "pthread_attr_getstackaddr failed, rc %d, %s\n",
+ 					rc, strerror(errno));
+@@ -84,40 +256,145 @@ int get_stack_info(pthread_t tid, void **addrp, size_t *sizep)
+ 	return 0;
+ }
+ 
++void compare_stack(int tnum, pthread_attr_t *exp_attr,
++		pthread_attr_t *act_attr)
++{
++	int exp_size, act_size;
++	void *exp_addr, *act_addr;
++
++	get_stack(exp_attr, &exp_addr, &exp_size);
++	get_stack(act_attr, &act_addr, &act_size);
++
++	if (act_addr != exp_addr || act_size != exp_size) {
++		fprintf(logfp, "%d: Expected: (%p, %d), actual (%p, %d)\n",
++				tnum, exp_addr, exp_size, act_addr, act_size);
++		fflush(logfp);
++		do_exit(1);
++	}
++}
++
++compare_attr(int tnum, pthread_attr_t *exp_attr, pthread_attr_t *act_attr)
++{
++
++	dump_attr("Expected attr", exp_attr);
++	dump_attr("Actual attr", act_attr);
++
++	/*
++	 * We cannot simply memcmp() the exp_attr and act_attr since the
++	 * 'struct pthread_attr' contains a pointer to cpuset. This address
++	 * will be different even if the cpusets are the same
++	 */
++	compare_affinity(tnum, exp_attr, act_attr);
++
++	compare_detachstate(tnum, exp_attr, act_attr);
++
++	compare_guardsize(tnum, exp_attr, act_attr);
++
++	compare_inheritsched(tnum, exp_attr, act_attr);
++
++	compare_schedparam(tnum, exp_attr, act_attr);
++
++	compare_schedpolicy(tnum, exp_attr, act_attr);
++
++	compare_scope(tnum, exp_attr, act_attr);
++
++	compare_stack(tnum, exp_attr, act_attr);
++}
++
+ void *do_work(void *arg)
+ {
+ 	long tnum = (long)arg;
+ 	int rc;
+-	void *act_addr;
+-	size_t act_size;
++	pthread_attr_t exp_attr, act_attr;
+ 
+ 	fprintf(logfp, "%ld: Thread %lu: waiting for checkpoint\n", tnum,
+ 			pthread_self());
+ 	fflush(logfp);
+ 
++	memset(&exp_attr, 0, sizeof(pthread_attr_t));
++	memset(&act_attr, 0, sizeof(pthread_attr_t));
++
++	/*
++	 * Collect attributes before checkpoint/restart.
++	 */
++	rc = pthread_getattr_np(pthread_self(), &exp_attr);
++	if (rc < 0) {
++		fprintf(logfp, "pthread_getattr_np failed, rc %d, %s\n", rc,
++				strerror(errno));
++		pthread_exit(ERROR_EXIT);
++	}
++
++	/*
++	 * Inform main-thread we are ready for checkpoint.
++	 */
++	rc = pthread_barrier_wait(&barrier);
++	if (rc != PTHREAD_BARRIER_SERIAL_THREAD && rc != 0) {
++		fprintf(logfp, "%d: pthread_barrier_wait() failed, rc %d, "
++				"error %s\n", tnum, rc, strerror(errno));
++		do_exit(1);
++	}
++
++	/*
++	 * Wait for checkpoint/restart.
++	 */
+ 	while(!test_done())
+ 		sleep(1);
+ 
+-	rc = get_stack_info(pthread_self(), &act_addr, &act_size);
+-	if (rc < 0)
++	/*
++	 * Collect attributes after checkpoint/restart.
++	 */
++	rc = pthread_getattr_np(pthread_self(), &act_attr);
++	if (rc < 0) {
++		fprintf(logfp, "pthread_getattr_np failed, rc %d, %s\n", rc,
++				strerror(errno));
+ 		pthread_exit(ERROR_EXIT);
+-
+-	if (act_addr != exp_addrs[tnum] || act_size != exp_sizes[tnum]) {
+-		fprintf(logfp, "%d: Expected: (%p, %d), actual (%p, %d)\n",
+-				tnum, exp_addrs[tnum], exp_sizes[tnum],
+-				act_addr, act_size);
+-		fflush(logfp);
+-		rc = 1;
+ 	}
+ 
+-	fprintf(logfp, "%d: Thread %lu: exiting, rc %d\n", tnum,
+-			pthread_self(), rc);
++	/*
++	 * Compare attributes before and after C/R.
++	 */
++	compare_attr(tnum, &exp_attr, &act_attr);
++
++	fprintf(logfp, "%d: Thread %lu: exiting, rc 0\n", tnum,
++			pthread_self());
+ 	fflush(logfp);
+ 
+-	tstatus[tnum] = rc;
++	tstatus[tnum] = 0;
+ 	pthread_exit((void *)&tstatus[tnum]);
+ }
+ 
++void set_stack(pthread_attr_t *attr, int tnum)
++{
++	int rc, size;
++	void *stack;
++
++	size = MIN_STACK_SIZE + (tnum * getpagesize());
++
++	stack = malloc(size);
++	if (!stack) {
++		fprintf(logfp, "malloc(stack): error %s\n", strerror(errno));
++		do_exit(1);
++	}
++
++	rc = pthread_attr_setstack(attr, stack, size);
++	if (rc < 0) {
++		fprintf(logfp, "pthread_attr_setstack(): rc %d error %s\n",
++				rc, strerror(errno));
++		do_exit(1);
++	}
++}
++
++/*
++ * Modify any attributes for this thread for testing.
++ * For now, we only modify the thread-stack.
++ */
++void set_thread_attrs(pthread_attr_t *attr, int tnum)
++{
++	set_stack(attr, tnum);
++
++	return;
++}
++
+ pthread_t *create_threads(int n)
+ {
+ 	long i;
+@@ -127,21 +404,21 @@ pthread_t *create_threads(int n)
+ 	pthread_attr_t *attr;
+ 
+ 	tid_list = (pthread_t *)malloc(n * sizeof(pthread_t));
+-	exp_addrs = malloc(sizeof(void *) * n);
+-	exp_sizes = malloc(sizeof(size_t) * n);
+ 	tstatus = malloc(sizeof(int) * n);
+ 
+-	if (!tid_list || !exp_addrs || !exp_sizes || !tstatus) {
++	if (!tid_list || !tstatus) {
+ 		fprintf(logfp, "malloc() failed, n %d, error %s\n",
+ 				n, strerror(errno));
+ 		do_exit(1);
+ 	}
+ 
+ 	for (i = 0; i < n; i++) {
+-		attr = get_thread_attr(i);
++		attr = alloc_thread_attr();
+ 		if (!attr)
+ 			do_exit(1);
+ 
++		set_thread_attrs(attr, i);
++
+ 		rc = pthread_create(&tid, attr, do_work, (void *)i);
+ 		if (rc < 0) {
+ 			fprintf(logfp, "pthread_create(): i %d, rc %d, "
+@@ -149,10 +426,6 @@ pthread_t *create_threads(int n)
+ 			do_exit(1);
+ 		}
+ 
+-		rc = get_stack_info(tid, &exp_addrs[i], &exp_sizes[i]);
+-		if (rc < 0)
+-			do_exit(1);
+-
+ 		tid_list[i] = tid;
+ 	}
+ 
+@@ -224,15 +497,46 @@ main(int argc, char *argv[])
+ 		do_exit(1);
+ 	}
+ 
++	fprintf(stderr, "Redirecting output to %s\n", log_file);
++	fflush(stderr);
++
+ 	for (i=0; i<100; i++)  {
+ 		if (fileno(logfp) != i)
+ 			close(i);
+ 	}
+ 
+ 
++	/*
++	 * Create a barrier which the main-thread can use to determine
++	 * when all threads are ready for checkpoint.
++	 */
++	rc = pthread_barrier_init(&barrier, NULL, num_threads+1);
++	if (rc < 0) {
++		fprintf(logfp, "pthread_barrier_init() failed, rc %d, "
++				"error %s\n", rc, strerror(errno));
++		do_exit(1);
++	}
++
++	rc = pthread_mutex_init(&dump_lock, NULL);
++	if (rc) {
++		fprintf(logfp, "pthread_mutex_init() failed, rc %d, error %s\n",
++				rc, strerror(errno));
++		do_exit(1);
++	}
++
+ 	tid_list = create_threads(num_threads);
+ 
+ 	/*
++	 * Wait for everyone to be ready for checkpoint
++	 */
++	pthread_barrier_wait(&barrier);
++	if (rc != PTHREAD_BARRIER_SERIAL_THREAD && rc != 0) {
++		fprintf(logfp, "main: pthread_barrier_wait() failed, rc %d, "
++				"error %s\n", rc, strerror(errno));
++		do_exit(1);
++	}
++
++	/*
+ 	 * Now that we closed the special files and created the threads,
+ 	 * tell any wrapper scripts, we are ready for checkpoint
+ 	 */
+@@ -240,5 +544,7 @@ main(int argc, char *argv[])
+ 
+ 	rc = wait_for_threads(tid_list, num_threads);
+ 
++	fprintf(logfp, "Exiting with status %d\n", rc);
++
+ 	do_exit(rc);
+ }
+diff --git a/process-tree/run-pthread2.sh b/process-tree/run-pthread2.sh
+index 0686cbd..ff7f0ac 100755
+--- a/process-tree/run-pthread2.sh
++++ b/process-tree/run-pthread2.sh
+@@ -2,8 +2,7 @@
+ 
+ source ../common.sh
+ 
+-#dir=`mktemp -p . -d -t cr_pthread2_XXXXXXX` || (echo "mktemp failed"; exit 1)
+-dir=cr_pthread2
++dir=`mktemp -p . -d -t cr_pthread2_XXXXXXX` || (echo "mktemp failed"; exit 1)
+ mkdir $dir
+ echo "Using output dir $dir"
+ cd $dir
+@@ -17,7 +16,7 @@ RESTART=`which restart`
+ ECHO="/bin/echo -e"
+ 
+ TEST_CMD="../pthread2"
+-TEST_ARGS="-n 128"			# -n: number of threads
++TEST_ARGS="-n 4"			# -n: number of threads
+ SCRIPT_LOG="log-run-pthread2"
+ TEST_PID_FILE="pid.pthread2";
+ 
+-- 
+1.6.0.4
