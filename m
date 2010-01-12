@@ -1,11 +1,19 @@
-From: Jean-Marc Pigeon <jmp-4qkeo2rQ0gg@public.gmane.org>
-Subject: container sharing /proc/kmsg???
-Date: Tue, 12 Jan 2010 17:09:55 -0500
-Message-ID: <1263334195.4745.250.camel@Mercier.safe.ca>
+From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
+Subject: Re: [RFC] [PATCH 2/2] cgroups: blkio subsystem as module
+Date: Tue, 12 Jan 2010 18:34:53 -0500
+Message-ID: <20100112233453.GB5098@unix37.andrew.cmu.edu>
+References: <20091231051050.GA714@andrew.cmu.edu>
+	<20100106160414.bd555474.akpm@linux-foundation.org>
+	<20100107012606.GA25577@andrew.cmu.edu>
+	<20100107120732.97d502bd.kamezawa.hiroyu@jp.fujitsu.com>
+	<4B45824B.9030108@cn.fujitsu.com>
+	<20100108163352.GB22219@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20100108163352.GB22219-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,33 +23,44 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-SGVsbG8sCgoKCUkgaGF2ZSBkb25lIGEgc21hbGwgdXRpbGl0eSB0byBidWlsZCBjb250YWluZXJz
-Cgl1c2luZyBrZXJuZWwgQVBJICdjbG9uZScgYXZhaWxhYmxlIHdpdGgga2VybmVsLTIuNi4zMS4K
-CVNvIGZhciBJIGFtIGFibGUgdG8gcnVuIG1vcmUgdGhhbiAzMCBkaWZmZXJlbnQKCWRpc3RyaWJ1
-dGlvbiAoZnJvbSByaDcuMyAtPiBmYzEyKSBvbiB0aGUgc2FtZQoJaG9zdC4KCShmdHA6Ly9mdHAu
-c2FmZS5jYS9wdWIvbGludXgvdnpnb3QgdG8ga25vdyBtb3JlLikKCglFdmVyeXRoaW5nIGlzIHdv
-cmtpbmcgZmluZS4uLgoKCUV4Y2VwdCBzZWVtcyBIT1NUIGFuZCBhbGwgY29udGFpbmVycyBzaGFy
-ZSB0aGUKCVNBTUUgL3Byb2Mva21zZywgbWVhbmluZyBrZXJuZWwgc3lzbG9nIGluZm9ybWF0aW9u
-CglhcmUgc2NyYW1ibGVkICh1c2VsZXNzKS4KCglOYW1lbHksIEkgaGF2ZSBpbiBpcHRhYmxlcywg
-cmVqZWN0IHBhY2tldCBsb2dnaW5nCglvbiB0aGUgSE9TVCwgYXMgc29vbiByc3lzbG9nIGlzIHN0
-YXJ0ZWQgb24gb25lCgljb250YWluZXIsIEkgY2FuJ3Qgc2VlIG15IHJlamVjdCBwYWNrZXQgbG9n
-IGFueW1vcmUuIAoKCUFsc28sIGNvbnRhaW5lciBoYXZlIHRoZWlyIG93biBpcHRhYmxlcyB3aXRo
-IHJlamVjdAoJcGFja2V0IGxvZ2dpbmcgd2hpY2ggYXJlIG5vdCBkaXNwbGF5ZWQgdG9vLgoKCUFt
-IEkgd3JvbmcvZm9yZ2V0dGluZyBzb21ldGhpbmcgYWJvdXQgdGhlIC9wcm9jL2ttc2cKCXNoYXJp
-bmc/CgoJSWYgSSBhbSByaWdodCwgc2hvdWxkIEFMTCAvcHJvYy9rbXNnIGJlIGlzb2xhdGVkIGZy
-b20KCWVhY2ggb3RoZXI/Pz8KCQoJSG93IGNvdWxkIGl0IGJlIGRvbmU/PwoKLS0gCkEgYmllbnTD
-tHQKPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT0KSmVhbi1NYXJjIFBpZ2VvbiAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgSW50ZXJuZXQ6IGptcEBzYWZlLmNhClNBRkUgSW5jLiAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFBob25lOiAoNTE0KSA0OTMtNDI4MAogICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBGYXg6ICAgKDUx
-NCkgNDkzLTE5NDYKICAgICAgICBDbGVtZW50LCAnYSBraXNzIHNvbHV0aW9uJyB0byBnZXQgcmlk
-IG9mIFNQQU0gKGF0IGxhc3QpCiAgICAgICAgICAgQ2xlbWVudCcgSG9tZSBiYXNlIDwiaHR0cDov
-L3d3dy5jbGVtZW50LnNhZmUuY2EiPgo9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQoKX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QK
-Q29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4
-LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+On Fri, Jan 08, 2010 at 11:33:52AM -0500, Vivek Goyal wrote:
+> On Fri, Jan 08, 2010 at 12:30:21AM -0500, Ben Blum wrote:
+> > Convert blk-cgroup to be buildable as a module
+> > 
+> > From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
+> > 
+> > This patch modifies the Block I/O cgroup subsystem to be able to be built as a
+> > module. As the CFQ disk scheduler optionally depends on blk-cgroup, config
+> > options in block/Kconfig, block/Kconfig.iosched, and block/blk-cgroup.h are
+> > enhanced to support the new module dependency.
+> > 
+> > Signed-off-by: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
+> 
+> Two quick observations with testing.
+> 
+> You need to EXPORT cgroup_path.
+> 
+> Second, after loading the module, I mounted the blkio controller. But creating
+> a cgroup directory crashed.
+> 
+> Vivek
+
+argh, good catches on both of them. didn't test with DEBUG_CFQ_IOSCHED
+(for cgroup_path) or with making a sub-cgroup (for the crash); shame on
+me. turns out it crashed because I had init_idr before init_css_set, and
+init_css_set sets css->id = NULL explicitly. fixed patches forthcoming.
+
+-- bblum
+
+---
+ block/Kconfig             |    2 -
+ block/Kconfig.iosched     |    2 -
+ block/blk-cgroup.c        |   53 +++++++++++++++++++++++++++++++++++-----------
+ block/blk-cgroup.h        |   10 ++++++--
+ include/linux/iocontext.h |    2 -
+ kernel/cgroup.c           |   34 ++++++++++++++++++++++++-----
+ 6 files changed, 80 insertions(+), 23 deletions(-)
