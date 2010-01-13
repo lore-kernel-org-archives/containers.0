@@ -1,18 +1,12 @@
-From: "Michael H. Warfield" <mhw-BetbSzk+GohWk0Htik3J/w@public.gmane.org>
-Subject: Re: [Devel] Re: LXC container, unmounting unneeded mount points
-	(from the 	container namespace)
-Date: Wed, 13 Jan 2010 09:15:34 -0500
-Message-ID: <1263392134.14592.137.camel@localhost>
-References: <8e04b5821001080608w47b0529dhcd6f8a26e38f24e0@mail.gmail.com>
-	<4B473E89.1040200@free.fr>
-	<8e04b5821001080625j22517f1i22ec3495d8d1e53b@mail.gmail.com>
-	<4B4742A8.1000708@free.fr> <1263268449.14592.53.camel@localhost>
-	<4B4DD076.3090007@free.fr>
-Reply-To: mhw-BetbSzk+GohWk0Htik3J/w@public.gmane.org
+From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH v2 1/2] nfnetlink: netns support
+Date: Wed, 13 Jan 2010 16:40:25 +0200
+Message-ID: <20100113144024.GA4534__15945.7898502753$1263393677$gmane$org@x200>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============0836813159703544108=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4B4DD076.3090007-GANU6spQydw@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,230 +14,253 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Cc: Michael Holzt <lxc-y7YfGAZ8UuFAfugRpC6u6w@public.gmane.org>, mhw-BetbSzk+GohWk0Htik3J/w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Ciprian Dorin,
-	Craciun" <ciprian.craciun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+To: kaber-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Make nfnl socket per-petns.
 
---===============0836813159703544108==
-Content-Type: multipart/signed; micalg="pgp-sha1"; protocol="application/pgp-signature"; boundary="=-vtB0iQ1tjWlEELNPWHbE"
+Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+---
 
+ include/linux/netfilter/nfnetlink.h  |    8 ++--
+ include/net/net_namespace.h          |    2 +
+ net/netfilter/nf_conntrack_netlink.c |   13 +++----
+ net/netfilter/nfnetlink.c            |   65 ++++++++++++++++++++++-------------
+ net/netfilter/nfnetlink_log.c        |    3 +
+ net/netfilter/nfnetlink_queue.c      |    2 -
+ 6 files changed, 58 insertions(+), 35 deletions(-)
 
---=-vtB0iQ1tjWlEELNPWHbE
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-
-On Wed, 2010-01-13 at 14:53 +0100, Daniel Lezcano wrote:=20
-> Michael H. Warfield wrote:
-> > Added lxc-devel to the cc list since this seems to be more appropriate
-> > over there (maybe) and I've just joined that one as well.
-> >
-> > On Fri, 2010-01-08 at 15:35 +0100, Daniel Lezcano wrote:=20
-> >  =20
-> >> Ciprian Dorin, Craciun wrote:
-> >>    =20
-> >>> On Fri, Jan 8, 2010 at 4:17 PM, Daniel Lezcano <daniel.lezcano@free.f=
-r> wrote:
-> >>>  =20
-> >>>      =20
-> >>>> Ciprian Dorin, Craciun wrote:
-> >>>>    =20
-> >>>>        =20
-> >>>>>    Hy all!
-> >>>>>
-> >>>>>    Today I've started to play with the LXC containers, and I've got=
- a
-> >>>>> question: when starting a container (with it's own mount point
-> >>>>> namespace), and I do a `cat /proc/mounts` I also see the mount poin=
-ts
-> >>>>> from my host system.
-> >>>>>
-> >>>>>    So the question is: how can I force `lxc-create` to remove any
-> >>>>> uneeded mount points (maybe all)?
-> >>>>>
-> >>>>>      =20
-> >>>>>          =20
-> >>>> Committed today :)
-> >>>>
-> >>>> http://git.lab.toulouse-stg.fr.ibm.com/?p=3Dlxc.git;a=3Dcommit;h=3De=
-d83715df7666879116d1657b1dd54a8fc6513f6
-> >>>>    =20
-> >>>>        =20
-> >
-> >  =20
-> >> Oops, this one:
-> >>    =20
-> >
-> >  =20
-> >> http://lxc.git.sourceforge.net/git/gitweb.cgi?p=3Dlxc/lxc;a=3Dcommit;h=
-=3Dbf601689a9e0cea1ceaf17e4f7f853f5392c2827
-> >>    =20
-> >
-> > Nice.  This is EXACTLY what I've been looking for as well.  Only proble=
-m
-> > is...  It didn't work.  It complains about:
-> >
-> > lxc-start: could not umount 1 mounts"
-> >
-> > Then terminates saying it can't start the container.
-> >
-> > When I throw in some debugging prints, I find out that it's complaining
-> > that it can't umount {pivotdir}/dev.  Commented out the return -1's in
-> > that routine so it starts the container anyways and jump into the
-> > running container and I discover that {pivotdir}/dev/shm is still
-> > mounted even though it thinks it umounted it.  I can see from the
-> > debugging prints that it seems to have successfully umount it (the
-> > debugging message indicates that it umounted it - so it saw it had it
-> > and tried and got a good return from the attempt) but it's apparently
-> > still mount.  If I umount that {pivotdir}/dev/shm inside the container,
-> > I can then umount {pivotdir}/dev and {pivotdir}.=20
-> >
-> > Tried it both by defining lxc.pivotdir and by letting it choose a
-> > temporary one.  Tried two different containers.  Same result.
-> >
-> > This is what I get with the "return -1"'s commented out in the function
-> > and laced with my own debugging prints to print each step of the umount
-> > loop (this is with lxc.pivotdir =3D /rootfs):
-> >
-> > =3D=3D=3D
-> > [root@Berserker-Base ~]# lxc-start -n 1009
-> > still mounted '/rootfs/dev'
-> > umounted '/rootfs/dev/pts'
-> > umounted '/rootfs/dev/shm'
-> > still mounted '/rootfs/proc'
-> > umounted '/rootfs/proc/bus/usb'
-> > umounted '/rootfs/proc/sys/fs/binfmt_misc'
-> > umounted '/rootfs/sys'
-> > umounted '/rootfs/home'
-> > still mounted '/rootfs/var'
-> > umounted '/rootfs/var/lib/cgroup'
-> > umounted '/rootfs/var/lib/nfs/rpc_pipefs'
-> > umounted '/rootfs/usr'
-> > umounted '/rootfs/boot'
-> > still mounted '/rootfs/srv'
-> > umounted '/rootfs/misc'
-> > umounted '/rootfs/net'
-> > still mounted '/rootfs/srv/lxc/root/1009'
-> > umounted '/rootfs/srv/lxc/root/1009/export'
-> > umounted '/rootfs/srv/lxc/root/1009/srv/shared'
-> > umounted '/rootfs/srv/lxc/root/1009/dev/pts'
-> > umounted '/rootfs/srv/lxc/root/1009/proc'
-> > umounted '/rootfs/srv/lxc/root/1009/sys'
-> > umounted '/rootfs/srv/lxc/root/1009/dev/shm'
-> > umounted '/rootfs/srv/lxc/root/1009/dev/console'
-> > umounted '/rootfs/srv/lxc/root/1009/dev/tty1'
-> > umounted '/rootfs/srv/lxc/root/1009/dev/tty2'
-> > umounted '/rootfs/srv/lxc/root/1009/dev/tty3'
-> > umounted '/rootfs/srv/lxc/root/1009/dev/tty4'
-> > umounted '/rootfs/srv/lxc/root/1009/dev/tty5'
-> > umounted '/rootfs/srv/lxc/root/1009/dev/tty6'
-> > still mounted '/rootfs/dev'
-> > umounted '/rootfs/proc'
-> > umounted '/rootfs/var'
-> > still mounted '/rootfs/srv'
-> > umounted '/rootfs/srv/lxc/root/1009'
-> > still mounted '/rootfs/dev'
-> > umounted '/rootfs/srv'
-> > still mounted '/rootfs/dev'
-> > lxc-start: could not umount 1 mounts
-> > lxc-start: Device or resource busy - could not unmount old rootfs
-> > INIT: version 2.86 booting
-> > =3D=3D=3D
-> >
-> > Container now continues to boot, since I commented out the error
-> > returns.  Jumping into that container:
-> >
-> > =3D=3D=3D=20
-> > [root@Berserker ~]# df
-> > Filesystem           1K-blocks      Used Available Use% Mounted on
-> > rootfs               288433504 240305660  33476248  88% /
-> > /dev/sda6              2063504    662116   1296568  34% /rootfs
-> > udev                   1031280       200   1031080   1% /rootfs/dev
-> > /dev/shm               1031280         0   1031280   0% /rootfs/dev/shm
-> > /dev/mapper/VolGroup00-LogVol00
-> >                      288433504 240305660  33476248  88% /
-> > /dev/sda6              2063504    662116   1296568  34% /export
-> > /dev/sda7            693727244 554704408 103783460  85% /srv/shared
-> > none                   1031280         0   1031280   0% /dev/shm
-> > [root@Berserker ~]# umount /rootfs/dev/shm
-> > [root@Berserker ~]# umount /rootfs/dev   =20
-> > [root@Berserker ~]# umount /rootfs   =20
-> > [root@Berserker ~]# df
-> > Filesystem           1K-blocks      Used Available Use% Mounted on
-> > rootfs               288433504 240305672  33476236  88% /
-> > /dev/mapper/VolGroup00-LogVol00
-> >                      288433504 240305672  33476236  88% /
-> > /dev/sda6              2063504    662116   1296568  34% /export
-> > /dev/sda7            693727244 554704408 103783460  85% /srv/shared
-> > none                   1031280         0   1031280   0% /dev/shm
-> > =3D=3D=3D
-> >
-> > Of course we also have the strange "rootfs" entry there as well.
-> >
-> > Host system is Fedora 12.
-> > Host kernel is: 2.6.31.9-174.fc12.i686
-> > Guest system in each case is CentOS 5.4
-> >  =20
-
-> I added in the Cc Michael Holzt.
-
-> Thanks for reporting this.
-
-I should now mention that I've been digging into it further and found
-that I can not reproduce this on a second, similar, system I'm testing
-on at this point.  It may be a peculiarity of the original system and
-I'm just getting ready to test on a third as soon as I finish getting it
-updated.
-
-IAC, there should be some way to force the container to start, for
-diagnostic purposes, in a case like this, without modifying the sources.
-Having the old root directory still there isn't fatal to run the
-container, particularly in a test system, even though highly undesirable
-in a production VM.
-
-> -- Daniel
-
-Regards,
-Mike
---=20
-Michael H. Warfield (AI4NB) | (770) 985-6132 |  mhw-BetbSzk+GohWk0Htik3J/w@public.gmane.org
-   /\/\|=3Dmhw=3D|\/\/          | (678) 463-0932 |  http://www.wittsend.com=
-/mhw/
-   NIC whois: MHW9          | An optimist believes we live in the best of a=
-ll
- PGP Key: 0x674627FF        | possible worlds.  A pessimist is sure of it!
-
---=-vtB0iQ1tjWlEELNPWHbE
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iQEVAwUAS03VhcDrlnVnRif/AQJEaggA0JmOY/utqHzhyHI2HExPPHX0ScAJFe3H
-tnxCgFmhCHaynzOO81jbClNsIK+hoVkc8nR1gtkEzH8y73yMdoXiViEmjUXmvFLT
-XWBYCWaRTH4yMJuePeyobcsCVS5qghaplEg2rk4/lhvMJ+dcS21ytq4zKemaMP47
-udaqIydiitDT5yNnTJQNCF+xPY56C+A1DnlO3eMfMMH9pIyub64dUDuM+9kqLVP9
-qjJzij3uEHbCmX1Qq4+MVMJqd700QOV6HOxFjmf6jWBR80N8TJy60fJQExBBZAF8
-4RC7Ni9Tjzpi+U5sRCIxwU8sjo9dCnhEgGkXSrnGVV+RVwJM4emv1A==
-=SLol
------END PGP SIGNATURE-----
-
---=-vtB0iQ1tjWlEELNPWHbE--
-
-
---===============0836813159703544108==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============0836813159703544108==--
+--- a/include/linux/netfilter/nfnetlink.h
++++ b/include/linux/netfilter/nfnetlink.h
+@@ -73,11 +73,11 @@ struct nfnetlink_subsystem {
+ extern int nfnetlink_subsys_register(const struct nfnetlink_subsystem *n);
+ extern int nfnetlink_subsys_unregister(const struct nfnetlink_subsystem *n);
+ 
+-extern int nfnetlink_has_listeners(unsigned int group);
+-extern int nfnetlink_send(struct sk_buff *skb, u32 pid, unsigned group, 
++extern int nfnetlink_has_listeners(struct net *net, unsigned int group);
++extern int nfnetlink_send(struct sk_buff *skb, struct net *net, u32 pid, unsigned group,
+ 			  int echo, gfp_t flags);
+-extern void nfnetlink_set_err(u32 pid, u32 group, int error);
+-extern int nfnetlink_unicast(struct sk_buff *skb, u_int32_t pid, int flags);
++extern void nfnetlink_set_err(struct net *net, u32 pid, u32 group, int error);
++extern int nfnetlink_unicast(struct sk_buff *skb, struct net *net, u_int32_t pid, int flags);
+ 
+ extern void nfnl_lock(void);
+ extern void nfnl_unlock(void);
+--- a/include/net/net_namespace.h
++++ b/include/net/net_namespace.h
+@@ -81,6 +81,8 @@ struct net {
+ #if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
+ 	struct netns_ct		ct;
+ #endif
++	struct sock		*nfnl;
++	struct sock		*nfnl_stash;
+ #endif
+ #ifdef CONFIG_XFRM
+ 	struct netns_xfrm	xfrm;
+--- a/net/netfilter/nf_conntrack_netlink.c
++++ b/net/netfilter/nf_conntrack_netlink.c
+@@ -482,7 +482,7 @@ ctnetlink_conntrack_event(unsigned int events, struct nf_ct_event *item)
+ 	} else
+ 		return 0;
+ 
+-	if (!item->report && !nfnetlink_has_listeners(group))
++	if (!item->report && !nfnetlink_has_listeners(&init_net, group))
+ 		return 0;
+ 
+ 	skb = nlmsg_new(ctnetlink_nlmsg_size(ct), GFP_ATOMIC);
+@@ -559,7 +559,8 @@ ctnetlink_conntrack_event(unsigned int events, struct nf_ct_event *item)
+ 	rcu_read_unlock();
+ 
+ 	nlmsg_end(skb, nlh);
+-	err = nfnetlink_send(skb, item->pid, group, item->report, GFP_ATOMIC);
++	err = nfnetlink_send(skb, &init_net, item->pid, group, item->report,
++			     GFP_ATOMIC);
+ 	if (err == -ENOBUFS || err == -EAGAIN)
+ 		return -ENOBUFS;
+ 
+@@ -571,7 +572,7 @@ nla_put_failure:
+ nlmsg_failure:
+ 	kfree_skb(skb);
+ errout:
+-	nfnetlink_set_err(0, group, -ENOBUFS);
++	nfnetlink_set_err(&init_net, 0, group, -ENOBUFS);
+ 	return 0;
+ }
+ #endif /* CONFIG_NF_CONNTRACK_EVENTS */
+@@ -1539,7 +1540,7 @@ ctnetlink_expect_event(unsigned int events, struct nf_exp_event *item)
+ 		return 0;
+ 
+ 	if (!item->report &&
+-	    !nfnetlink_has_listeners(NFNLGRP_CONNTRACK_EXP_NEW))
++	    !nfnetlink_has_listeners(&init_net, NFNLGRP_CONNTRACK_EXP_NEW))
+ 		return 0;
+ 
+ 	skb = nlmsg_new(NLMSG_DEFAULT_SIZE, GFP_ATOMIC);
+@@ -1562,7 +1563,7 @@ ctnetlink_expect_event(unsigned int events, struct nf_exp_event *item)
+ 	rcu_read_unlock();
+ 
+ 	nlmsg_end(skb, nlh);
+-	nfnetlink_send(skb, item->pid, NFNLGRP_CONNTRACK_EXP_NEW,
++	nfnetlink_send(skb, &init_net, item->pid, NFNLGRP_CONNTRACK_EXP_NEW,
+ 		       item->report, GFP_ATOMIC);
+ 	return 0;
+ 
+@@ -1572,7 +1573,7 @@ nla_put_failure:
+ nlmsg_failure:
+ 	kfree_skb(skb);
+ errout:
+-	nfnetlink_set_err(0, 0, -ENOBUFS);
++	nfnetlink_set_err(&init_net, 0, 0, -ENOBUFS);
+ 	return 0;
+ }
+ #endif
+--- a/net/netfilter/nfnetlink.c
++++ b/net/netfilter/nfnetlink.c
+@@ -40,7 +40,6 @@ MODULE_ALIAS_NET_PF_PROTO(PF_NETLINK, NETLINK_NETFILTER);
+ 
+ static char __initdata nfversion[] = "0.30";
+ 
+-static struct sock *nfnl = NULL;
+ static const struct nfnetlink_subsystem *subsys_table[NFNL_SUBSYS_COUNT];
+ static DEFINE_MUTEX(nfnl_mutex);
+ 
+@@ -101,34 +100,35 @@ nfnetlink_find_client(u_int16_t type, const struct nfnetlink_subsystem *ss)
+ 	return &ss->cb[cb_id];
+ }
+ 
+-int nfnetlink_has_listeners(unsigned int group)
++int nfnetlink_has_listeners(struct net *net, unsigned int group)
+ {
+-	return netlink_has_listeners(nfnl, group);
++	return netlink_has_listeners(net->nfnl, group);
+ }
+ EXPORT_SYMBOL_GPL(nfnetlink_has_listeners);
+ 
+-int nfnetlink_send(struct sk_buff *skb, u32 pid,
++int nfnetlink_send(struct sk_buff *skb, struct net *net, u32 pid,
+ 		   unsigned group, int echo, gfp_t flags)
+ {
+-	return nlmsg_notify(nfnl, skb, pid, group, echo, flags);
++	return nlmsg_notify(net->nfnl, skb, pid, group, echo, flags);
+ }
+ EXPORT_SYMBOL_GPL(nfnetlink_send);
+ 
+-void nfnetlink_set_err(u32 pid, u32 group, int error)
++void nfnetlink_set_err(struct net *net, u32 pid, u32 group, int error)
+ {
+-	netlink_set_err(nfnl, pid, group, error);
++	netlink_set_err(net->nfnl, pid, group, error);
+ }
+ EXPORT_SYMBOL_GPL(nfnetlink_set_err);
+ 
+-int nfnetlink_unicast(struct sk_buff *skb, u_int32_t pid, int flags)
++int nfnetlink_unicast(struct sk_buff *skb, struct net *net, u_int32_t pid, int flags)
+ {
+-	return netlink_unicast(nfnl, skb, pid, flags);
++	return netlink_unicast(net->nfnl, skb, pid, flags);
+ }
+ EXPORT_SYMBOL_GPL(nfnetlink_unicast);
+ 
+ /* Process one complete nfnetlink message. */
+ static int nfnetlink_rcv_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+ {
++	struct net *net = sock_net(skb->sk);
+ 	const struct nfnl_callback *nc;
+ 	const struct nfnetlink_subsystem *ss;
+ 	int type, err;
+@@ -170,7 +170,7 @@ replay:
+ 		if (err < 0)
+ 			return err;
+ 
+-		err = nc->call(nfnl, skb, nlh, (const struct nlattr **)cda);
++		err = nc->call(net->nfnl, skb, nlh, (const struct nlattr **)cda);
+ 		if (err == -EAGAIN)
+ 			goto replay;
+ 		return err;
+@@ -184,26 +184,45 @@ static void nfnetlink_rcv(struct sk_buff *skb)
+ 	nfnl_unlock();
+ }
+ 
+-static void __exit nfnetlink_exit(void)
++static int __net_init nfnetlink_net_init(struct net *net)
+ {
+-	printk("Removing netfilter NETLINK layer.\n");
+-	netlink_kernel_release(nfnl);
+-	return;
++	struct sock *nfnl;
++
++	nfnl = netlink_kernel_create(net, NETLINK_NETFILTER, NFNLGRP_MAX,
++				     nfnetlink_rcv, NULL, THIS_MODULE);
++	if (!nfnl)
++		return -ENOMEM;
++	net->nfnl_stash = nfnl;
++	rcu_assign_pointer(net->nfnl, nfnl);
++	return 0;
+ }
+ 
+-static int __init nfnetlink_init(void)
++static void __net_exit nfnetlink_net_exit_batch(struct list_head *net_exit_list)
+ {
+-	printk("Netfilter messages via NETLINK v%s.\n", nfversion);
++	struct net *net;
+ 
+-	nfnl = netlink_kernel_create(&init_net, NETLINK_NETFILTER, NFNLGRP_MAX,
+-				     nfnetlink_rcv, NULL, THIS_MODULE);
+-	if (!nfnl) {
+-		printk(KERN_ERR "cannot initialize nfnetlink!\n");
+-		return -ENOMEM;
+-	}
++	list_for_each_entry(net, net_exit_list, exit_list)
++		rcu_assign_pointer(net->nfnl, NULL);
++	synchronize_net();
++	list_for_each_entry(net, net_exit_list, exit_list)
++		netlink_kernel_release(net->nfnl_stash);
++}
+ 
+-	return 0;
++static struct pernet_operations nfnetlink_net_ops = {
++	.init		= nfnetlink_net_init,
++	.exit_batch	= nfnetlink_net_exit_batch,
++};
++
++static int __init nfnetlink_init(void)
++{
++	printk("Netfilter messages via NETLINK v%s.\n", nfversion);
++	return register_pernet_subsys(&nfnetlink_net_ops);
+ }
+ 
++static void __exit nfnetlink_exit(void)
++{
++	printk("Removing netfilter NETLINK layer.\n");
++	unregister_pernet_subsys(&nfnetlink_net_ops);
++}
+ module_init(nfnetlink_init);
+ module_exit(nfnetlink_exit);
+--- a/net/netfilter/nfnetlink_log.c
++++ b/net/netfilter/nfnetlink_log.c
+@@ -323,7 +323,8 @@ __nfulnl_send(struct nfulnl_instance *inst)
+ 			  NLMSG_DONE,
+ 			  sizeof(struct nfgenmsg));
+ 
+-	status = nfnetlink_unicast(inst->skb, inst->peer_pid, MSG_DONTWAIT);
++	status = nfnetlink_unicast(inst->skb, &init_net, inst->peer_pid,
++				   MSG_DONTWAIT);
+ 
+ 	inst->qlen = 0;
+ 	inst->skb = NULL;
+--- a/net/netfilter/nfnetlink_queue.c
++++ b/net/netfilter/nfnetlink_queue.c
+@@ -420,7 +420,7 @@ nfqnl_enqueue_packet(struct nf_queue_entry *entry, unsigned int queuenum)
+ 	}
+ 
+ 	/* nfnetlink_unicast will either free the nskb or add it to a socket */
+-	err = nfnetlink_unicast(nskb, queue->peer_pid, MSG_DONTWAIT);
++	err = nfnetlink_unicast(nskb, &init_net, queue->peer_pid, MSG_DONTWAIT);
+ 	if (err < 0) {
+ 		queue->queue_user_dropped++;
+ 		goto err_out_unlock;
