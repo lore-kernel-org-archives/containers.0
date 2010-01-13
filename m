@@ -1,10 +1,12 @@
-From: Knighter <coarsely-s54fWT4oOvDQT0dZR+AlfA@public.gmane.org>
-Subject: mblance of a beast, but Kat
-Date: Wed, 13 Jan 2010 07:55:26 +0100
-Message-ID: <4B4D6C53.8070202@ctbank.com>
+From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH 1/2] nfnetlink: add netns support
+Date: Wed, 13 Jan 2010 14:24:20 +0200
+Message-ID: <20100113122420.GA5790__39811.6670585752$1263385516$gmane$org@x200>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------080908030906030808070107"
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -14,315 +16,251 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: kaber-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format.
---------------080908030906030808070107
-Content-Type: text/plain; charset=ISO-8859-14; format=flowed
-Content-Transfer-Encoding: 7bit
+Make nfnetlink socket per-netns.
 
-It will take too long.... Afterwards I understood that that would never
-come to pass, that men won't change and that nobody can alter it and
-that it's not worth wasting effort over it. Yes, that's so. That's the
-law of their nature, Sonia,... that's so!... And I know now, Sonia, that
-whoever is strong in mind and spirit will have power over them. Anyone
-who is greatly daring is right in their eyes. He who despises most
-things will be a lawgiver among them and he who dares most of all will
-be most in the right! So it has been till now and so it will always be.
-A man must be blind not to see it!" Though Raskolnikov looked at Sonia
-as he said this, he no longer cared whether she understood or not. The
-fever had complete hold of him; he was in a sort of gloomy ecstasy (he
-certainly had been too long without talking to anyone). Sonia felt that
-his gloomy creed had become his faith and code. "I divined then, Sonia,"
-he went on eagerly, "that power is only vouchsafed to the man who dares
-to stoop and pick it up. There is only one thing, one thing needful: one
-has only to dare! Then for the first time in my life an idea took shape
-in my mind which no one had ever thought of before me, no one! I saw
-clear as daylight how strange it is that not a single person living in
-this mad world has had the daring to go straight for it all and send it
-flying to the devil! I... I wanted _to have the daring_... and I killed
-her. I only wanted to have the daring, Sonia! That was the whole cause
-of it!" "Oh hush, hush," cried Sonia, clasping her hands. "You turned
-away from God and God has smitten you, has given you over to the devil!"
-"Then Sonia, when I used to lie there in the dark and all this became
-clear to me, was it a temptation of the devil, eh?" "Hush, don't laugh,
-bla
+Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+---
 
---------------080908030906030808070107
-Content-Type: image/jpeg;
- name="abundances.jpg"
-Content-Transfer-Encoding: base64
-Content-Disposition: inline;
- filename="abundances.jpg"
+ include/linux/netfilter/nfnetlink.h  |    8 ++--
+ include/net/net_namespace.h          |    2 +
+ net/netfilter/nf_conntrack_netlink.c |   13 +++----
+ net/netfilter/nfnetlink.c            |   65 +++++++++++++++++++++++------------
+ net/netfilter/nfnetlink_log.c        |    2 -
+ net/netfilter/nfnetlink_queue.c      |    2 -
+ 6 files changed, 58 insertions(+), 34 deletions(-)
 
-/9j/4AAQSkZJRgABAQEBLAEsAAD/2wBDABQODxIPDRQSERIXFhQYHzMhHxwcHz8tLyUzSkFO
-TUlBSEZSXHZkUldvWEZIZoxob3p9hIWET2ORm4+AmnaBhH//2wBDARYXFx8bHzwhITx/VEhU
-f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3//wAAR
-CAEXASYDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAA
-AgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkK
-FhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWG
-h4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl
-5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREA
-AgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYk
-NOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOE
-hYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk
-5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDrKRulLSN0/GgtC0UUUALSUvSkoEgpkf3f
-xpx6GkT7opldB1FFFIkKKKKBhRRSE/nQAH0pcDGO1AGKKBCcr7ilpQMnFN2lckdO9AC0U0yI
-OrqKPMjPRxU80e4WY6ilwCAVOfpQODzTQCUUp68UlMAooooAKKKKACiiigYUUUUCCiiigYUU
-UUAFFc941keLSYmjdkPngZU4/haigVzoaQ9Pxpc0EZFMAoo3D6UUg1CkJxTsE0mOe350CuNY
-/KeD0pFYBBmnsDtPFRniMUFX0JKKKKCQooooGFIPfrQOefypaAAdaVsAEk4UdzSO6xxlm+gH
-rVN2MjbnxnsB0FZzqKOnUpRuTNcH/lmMD+8w5/KoWyxy5LH3NJmkzXLKbe5olYdnHTijzD61
-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
-voaKKBHO+Of+QPD/ANfC/wDoLUUUUCZ//9k=
---------------080908030906030808070107
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---------------080908030906030808070107--
+--- a/include/linux/netfilter/nfnetlink.h
++++ b/include/linux/netfilter/nfnetlink.h
+@@ -73,11 +73,11 @@ struct nfnetlink_subsystem {
+ extern int nfnetlink_subsys_register(const struct nfnetlink_subsystem *n);
+ extern int nfnetlink_subsys_unregister(const struct nfnetlink_subsystem *n);
+ 
+-extern int nfnetlink_has_listeners(unsigned int group);
+-extern int nfnetlink_send(struct sk_buff *skb, u32 pid, unsigned group, 
++extern int nfnetlink_has_listeners(struct net *net, unsigned int group);
++extern int nfnetlink_send(struct sk_buff *skb, struct net *net, u32 pid, unsigned group,
+ 			  int echo, gfp_t flags);
+-extern void nfnetlink_set_err(u32 pid, u32 group, int error);
+-extern int nfnetlink_unicast(struct sk_buff *skb, u_int32_t pid, int flags);
++extern void nfnetlink_set_err(struct net *net, u32 pid, u32 group, int error);
++extern int nfnetlink_unicast(struct sk_buff *skb, struct net *net, u_int32_t pid, int flags);
+ 
+ extern void nfnl_lock(void);
+ extern void nfnl_unlock(void);
+--- a/include/net/net_namespace.h
++++ b/include/net/net_namespace.h
+@@ -81,6 +81,8 @@ struct net {
+ #if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
+ 	struct netns_ct		ct;
+ #endif
++	struct sock		*nfnl;
++	struct sock		*nfnl_stash;
+ #endif
+ #ifdef CONFIG_XFRM
+ 	struct netns_xfrm	xfrm;
+--- a/net/netfilter/nf_conntrack_netlink.c
++++ b/net/netfilter/nf_conntrack_netlink.c
+@@ -482,7 +482,7 @@ ctnetlink_conntrack_event(unsigned int events, struct nf_ct_event *item)
+ 	} else
+ 		return 0;
+ 
+-	if (!item->report && !nfnetlink_has_listeners(group))
++	if (!item->report && !nfnetlink_has_listeners(&init_net, group))
+ 		return 0;
+ 
+ 	skb = nlmsg_new(ctnetlink_nlmsg_size(ct), GFP_ATOMIC);
+@@ -559,7 +559,8 @@ ctnetlink_conntrack_event(unsigned int events, struct nf_ct_event *item)
+ 	rcu_read_unlock();
+ 
+ 	nlmsg_end(skb, nlh);
+-	err = nfnetlink_send(skb, item->pid, group, item->report, GFP_ATOMIC);
++	err = nfnetlink_send(skb, &init_net, item->pid, group, item->report,
++			     GFP_ATOMIC);
+ 	if (err == -ENOBUFS || err == -EAGAIN)
+ 		return -ENOBUFS;
+ 
+@@ -571,7 +572,7 @@ nla_put_failure:
+ nlmsg_failure:
+ 	kfree_skb(skb);
+ errout:
+-	nfnetlink_set_err(0, group, -ENOBUFS);
++	nfnetlink_set_err(&init_net, 0, group, -ENOBUFS);
+ 	return 0;
+ }
+ #endif /* CONFIG_NF_CONNTRACK_EVENTS */
+@@ -1539,7 +1540,7 @@ ctnetlink_expect_event(unsigned int events, struct nf_exp_event *item)
+ 		return 0;
+ 
+ 	if (!item->report &&
+-	    !nfnetlink_has_listeners(NFNLGRP_CONNTRACK_EXP_NEW))
++	    !nfnetlink_has_listeners(&init_net, NFNLGRP_CONNTRACK_EXP_NEW))
+ 		return 0;
+ 
+ 	skb = nlmsg_new(NLMSG_DEFAULT_SIZE, GFP_ATOMIC);
+@@ -1562,7 +1563,7 @@ ctnetlink_expect_event(unsigned int events, struct nf_exp_event *item)
+ 	rcu_read_unlock();
+ 
+ 	nlmsg_end(skb, nlh);
+-	nfnetlink_send(skb, item->pid, NFNLGRP_CONNTRACK_EXP_NEW,
++	nfnetlink_send(skb, &init_net, item->pid, NFNLGRP_CONNTRACK_EXP_NEW,
+ 		       item->report, GFP_ATOMIC);
+ 	return 0;
+ 
+@@ -1572,7 +1573,7 @@ nla_put_failure:
+ nlmsg_failure:
+ 	kfree_skb(skb);
+ errout:
+-	nfnetlink_set_err(0, 0, -ENOBUFS);
++	nfnetlink_set_err(&init_net, 0, 0, -ENOBUFS);
+ 	return 0;
+ }
+ #endif
+--- a/net/netfilter/nfnetlink.c
++++ b/net/netfilter/nfnetlink.c
+@@ -40,7 +40,6 @@ MODULE_ALIAS_NET_PF_PROTO(PF_NETLINK, NETLINK_NETFILTER);
+ 
+ static char __initdata nfversion[] = "0.30";
+ 
+-static struct sock *nfnl = NULL;
+ static const struct nfnetlink_subsystem *subsys_table[NFNL_SUBSYS_COUNT];
+ static DEFINE_MUTEX(nfnl_mutex);
+ 
+@@ -101,34 +100,35 @@ nfnetlink_find_client(u_int16_t type, const struct nfnetlink_subsystem *ss)
+ 	return &ss->cb[cb_id];
+ }
+ 
+-int nfnetlink_has_listeners(unsigned int group)
++int nfnetlink_has_listeners(struct net *net, unsigned int group)
+ {
+-	return netlink_has_listeners(nfnl, group);
++	return netlink_has_listeners(net->nfnl, group);
+ }
+ EXPORT_SYMBOL_GPL(nfnetlink_has_listeners);
+ 
+-int nfnetlink_send(struct sk_buff *skb, u32 pid,
++int nfnetlink_send(struct sk_buff *skb, struct net *net, u32 pid,
+ 		   unsigned group, int echo, gfp_t flags)
+ {
+-	return nlmsg_notify(nfnl, skb, pid, group, echo, flags);
++	return nlmsg_notify(net->nfnl, skb, pid, group, echo, flags);
+ }
+ EXPORT_SYMBOL_GPL(nfnetlink_send);
+ 
+-void nfnetlink_set_err(u32 pid, u32 group, int error)
++void nfnetlink_set_err(struct net *net, u32 pid, u32 group, int error)
+ {
+-	netlink_set_err(nfnl, pid, group, error);
++	netlink_set_err(net->nfnl, pid, group, error);
+ }
+ EXPORT_SYMBOL_GPL(nfnetlink_set_err);
+ 
+-int nfnetlink_unicast(struct sk_buff *skb, u_int32_t pid, int flags)
++int nfnetlink_unicast(struct sk_buff *skb, struct net *net, u_int32_t pid, int flags)
+ {
+-	return netlink_unicast(nfnl, skb, pid, flags);
++	return netlink_unicast(net->nfnl, skb, pid, flags);
+ }
+ EXPORT_SYMBOL_GPL(nfnetlink_unicast);
+ 
+ /* Process one complete nfnetlink message. */
+ static int nfnetlink_rcv_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+ {
++	struct net *net = sock_net(skb->sk);
+ 	const struct nfnl_callback *nc;
+ 	const struct nfnetlink_subsystem *ss;
+ 	int type, err;
+@@ -170,7 +170,7 @@ replay:
+ 		if (err < 0)
+ 			return err;
+ 
+-		err = nc->call(nfnl, skb, nlh, (const struct nlattr **)cda);
++		err = nc->call(net->nfnl, skb, nlh, (const struct nlattr **)cda);
+ 		if (err == -EAGAIN)
+ 			goto replay;
+ 		return err;
+@@ -184,26 +184,47 @@ static void nfnetlink_rcv(struct sk_buff *skb)
+ 	nfnl_unlock();
+ }
+ 
+-static void __exit nfnetlink_exit(void)
++static int __net_init nfnetlink_net_init(struct net *net)
+ {
+-	printk("Removing netfilter NETLINK layer.\n");
+-	netlink_kernel_release(nfnl);
+-	return;
++	struct sock *nfnl;
++
++	nfnl = netlink_kernel_create(net, NETLINK_NETFILTER, NFNLGRP_MAX,
++				     nfnetlink_rcv, NULL, THIS_MODULE);
++	if (!nfnl)
++		return -ENOMEM;
++	net->nfnl_stash = nfnl;
++	rcu_assign_pointer(net->nfnl, nfnl);
++	return 0;
+ }
+ 
+-static int __init nfnetlink_init(void)
++static void __net_exit nfnetlink_net_exit_batch(struct list_head *net_exit_list)
+ {
+-	printk("Netfilter messages via NETLINK v%s.\n", nfversion);
++	struct net *net;
+ 
+-	nfnl = netlink_kernel_create(&init_net, NETLINK_NETFILTER, NFNLGRP_MAX,
+-				     nfnetlink_rcv, NULL, THIS_MODULE);
+-	if (!nfnl) {
+-		printk(KERN_ERR "cannot initialize nfnetlink!\n");
+-		return -ENOMEM;
++	list_for_each_entry(net, net_exit_list, exit_list) {
++		rcu_assign_pointer(net->nfnl, NULL);
++	}
++	synchronize_net();
++	list_for_each_entry(net, net_exit_list, exit_list) {
++		netlink_kernel_release(net->nfnl_stash);
+ 	}
++}
+ 
+-	return 0;
++static struct pernet_operations nfnetlink_net_ops = {
++	.init		= nfnetlink_net_init,
++	.exit_batch	= nfnetlink_net_exit_batch,
++};
++
++static int __init nfnetlink_init(void)
++{
++	printk("Netfilter messages via NETLINK v%s.\n", nfversion);
++	return register_pernet_subsys(&nfnetlink_net_ops);
+ }
+ 
++static void __exit nfnetlink_exit(void)
++{
++	printk("Removing netfilter NETLINK layer.\n");
++	unregister_pernet_subsys(&nfnetlink_net_ops);
++}
+ module_init(nfnetlink_init);
+ module_exit(nfnetlink_exit);
+--- a/net/netfilter/nfnetlink_log.c
++++ b/net/netfilter/nfnetlink_log.c
+@@ -323,7 +323,7 @@ __nfulnl_send(struct nfulnl_instance *inst)
+ 			  NLMSG_DONE,
+ 			  sizeof(struct nfgenmsg));
+ 
+-	status = nfnetlink_unicast(inst->skb, inst->peer_pid, MSG_DONTWAIT);
++	status = nfnetlink_unicast(inst->skb, &init_net, inst->peer_pid, MSG_DONTWAIT);
+ 
+ 	inst->qlen = 0;
+ 	inst->skb = NULL;
+--- a/net/netfilter/nfnetlink_queue.c
++++ b/net/netfilter/nfnetlink_queue.c
+@@ -420,7 +420,7 @@ nfqnl_enqueue_packet(struct nf_queue_entry *entry, unsigned int queuenum)
+ 	}
+ 
+ 	/* nfnetlink_unicast will either free the nskb or add it to a socket */
+-	err = nfnetlink_unicast(nskb, queue->peer_pid, MSG_DONTWAIT);
++	err = nfnetlink_unicast(nskb, &init_net, queue->peer_pid, MSG_DONTWAIT);
+ 	if (err < 0) {
+ 		queue->queue_user_dropped++;
+ 		goto err_out_unlock;
