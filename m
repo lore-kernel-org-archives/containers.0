@@ -1,15 +1,11 @@
-From: jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org>
-Subject: Re: RFC: netfilter: nf_conntrack: add support for "conntrack zones"
-Date: Thu, 14 Jan 2010 12:33:23 -0500
-Message-ID: <1263490403.23480.109.camel__36129.7407457188$1263490457$gmane$org@bigi>
-References: <4B4F24AC.70105@trash.net> <1263481549.23480.24.camel@bigi>
-	<4B4F3A50.1050400@trash.net>
-Reply-To: hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org
+From: Durward <brightnesses-u2wsbG1yNXJCCzmm7wA0Mw@public.gmane.org>
+Subject: In such a night Medea gather'd the enchanted herbs That did renew old
+	Jason."
+Date: Thu, 14 Jan 2010 19:06:44 -0300
+Message-ID: <4B4F5AD2.9090603@lunchbreak.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="------------050809030605040602020101"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4B4F3A50.1050400-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,108 +15,252 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Patrick McHardy <kaber-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org>
-Cc: Linux Netdev List <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Netfilter Development Mailinglist <netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ben Greear <greearb-my8/4N5VtI7c+919tysfdA@public.gmane.org>
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, 2010-01-14 at 16:37 +0100, Patrick McHardy wrote:
-> jamal wrote:
+This is a multi-part message in MIME format.
+--------------050809030605040602020101
+Content-Type: text/plain; charset=ISO-8859-13; format=flowed
+Content-Transfer-Encoding: 7bit
 
-> > Agreed that this would be a main driver of such a feature.
-> > Which means that you need zones (or whatever noun other people use) to
-> > work on not just netfilter, but also routing, ipsec etc.
-> 
-> Routing already works fine. I believe IPsec should also work already,
-> but I haven't tried it.
+R to be retrieved. And why? Because they had no gentry to lead, to
+rally, or to counsel them. The populace in both countries, though
+miserably deteriorated by the long defect of an aristocracy whom they
+could respect, were still sound at the heart; they felt the whole sorrow
+of their own degradation; and that they would have fought, was soon
+proved in the case of the Portuguese, when we lent them officers and
+training; as it was proved also thirty years afterwards in the case of
+the Spaniards, when Don Carlos, in a time of general peace, obtained
+good officers from every part of Europe. Each country was forced into
+redeeming itself by the overflowing upon it of a foreign gentry. And
+yet, even at the moment of profoundest degradation, such was the
+maniacal vanity still prevailing amongst the Spaniards, that at one time
+the Supreme Junta forwarded the following proposal to the British
+Government:--Men they had; their own independence of foreign aid, in
+that sense, they had always asserted; money it was, and not armies,
+which they needed; and they now proposed an arrangement, by which the
+Spanish armies, as so notoriously the heroes of Europe, should be
+rendered universally disposable for the task of facing the French in the
+field, whilst the British (as confessedly unequal to duties so stern)
+should be entrusted with the garrison duty of the fortresses. "_Illa se
+jactet in aula Anglia_;" and, since the h
 
-maybe further discussion  would clarify this point..
+--------------050809030605040602020101
+Content-Type: image/jpeg;
+ name="wackos.jpg"
+Content-Transfer-Encoding: base64
+Content-Disposition: inline;
+ filename="wackos.jpg"
 
-> The zone is set based on some other criteria (in this case the
-> incoming device).
+/9j/4AAQSkZJRgABAQEBLAEsAAD/2wBDACAWGBwYFCAcGhwkIiAmMFA0MCwsMGJGSjpQdGZ6
+eHJmcG6AkLicgIiuim5woNqirr7EztDOfJri8uDI8LjKzsb/2wBDASIkJDAqMF40NF7GhHCE
+xsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsb/wAAR
+CAEoAVEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAA
+AgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkK
+FhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWG
+h4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl
+5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREA
+AgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYk
+NOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOE
+hYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk
+5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDc4ozRRQAfjR9aKKYgooooGFFFFDAKKKKA
+CkFB6UtAgooopdBhRRRTAKaOpFO700feNSA6iiimAUUlLTEgooopNjCiiimAUUUUnuAUUd6K
+YBRRRQAUUUUAFFFFABRRRQAUUUUAFFFFAHB0UUUgO8ooooAKKKKYBRRQetABRRRSYBRRRQgG
+n71Opp+8KdQAUUUUdACiigjnimAU0dTmkaRQePmI9KYZHJ67fpWbmkNRZNRUGT3Yn8aUOR3b
+86XtB8hNjikxzx3pglPqD9acrhuOh9DVKaYuVoceKKQ5B5pat7CCiiijqAUlLRSe4Cd6Wk70
+tMAooooAKKKKACiiigAooooAKKKKACiiihAcHRRRSA7yiiikAUUUHA69fSmAUGkyfp9KM0xX
+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
+--------------050809030605040602020101
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-If you are using a netdev as a reference point, then I take it 
-if you add vlans should be possible to do multiple zones on a single
-physical netdev? Or is there some other way to satisfy that?
-
->  The packets make one pass through the stack
-> to a veth device and are SNATed in POSTROUTING to non-clashing
-> addresses. 
-
-Ok - makes sense. 
-i.e NAT would work; and policy routing as well as arp would be fine.
-Also it looks to be sufficiently useful to fit a specific use case you
-are interested in.
-But back to my question on routing, ipsec etc (and you may not be
-interested in solving this problem, but it is what i was getting to
-earlier). Lets take for example: 
-a) network tables like SAD/SPD tables: how you would separate those on a
-per-zone basis? i.e 10.0.0.1/zone1 could use different
-policy/association than 10.0.0.1/zone2
-b) dynamic protocols (routing, IKE etc): how do you do that without 
-making both sides understand what is going on?
-
-> > This is a valid concern against the namespace approach. Existing tools
-> > of course could be taught to know about namespaces - and one could
-> > argue that if you can resolve the overlap IP address issue, then you
-> > _have to_ modify user space anyways.
-> 
-> I don't think thats true. 
-
-Refer to my statements above for an example.
-
-> In any case its completely impractical
-> to modify every userspace tool that does something with networking
-> and potentially make complex configuration changes to have all
-> those namespaces interact nicely. 
-
-Agreed. But the major ones like iproute2 etc could be taught. We have
-namespaces in the kernel already, over a period of time I think changing
-the user space tools would a sensible evolution.
-
-> Currently they are simply not
-> very well suited for virtualizing selected parts of networking.
-
-My contention is that it is a lot less headache to just virtualize 
-all the network stack and then use what you want than it is to go and
-selectively changing the network objects.
-Note: if i wanted today i could run racoon on every namespace 
-unchanged and it would work or i could modify racoon to understand
-namespaces...
-
-> I'm not sure whether there is a typical user for overlapping
-> networks :) I know of setups with ~150 overlapping networks.
-> 
-> The number of conntracks per zone doesn't matter since the
-> table is shared between all zones. network namespaces would
-> allocate 150 tables, each of the same size, which might be
-> quite large.
-
-Thats what i was looking for ..
-So the difference, to pick the 150 zones example so as to put a number
-around it, is namespaces will consume 150.X bytes (where X is the
-overhead of a conntrack table) and you approach will be (X + 152) bytes,
-correct?
-What is the typical sizeof X?
-
-> > You may also wanna look as a metric at code complexity/maintainability
-> > of this scheme vs namespace (which adds zero changes to the kernel).
-> 
-> There's not a lot of complexity, its basically passing a numeric
-> identifier around in a few spots and comparing it. Something like
-> TOS handling in the routing code.
-
-I think the challenge is whether zones will have to encroach on other
-net stack objects or not. You are already touching structure netdev...
-A digression: TOS is different really - it has network level semantic. This 
-would be more like mark or in some cases ifindex (i.e local semantics)
- 
-> > BTW, why not use skb->mark instead of creating a new semantic construct?
-> 
-> Because people are already using it for different purposes.
-
-tru dat - it only gives you one semantical axis and you need an
-additional dimension in your case (namespace have that resolved via
-struct net).
-
-cheers,
-jamal
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--------------050809030605040602020101--
