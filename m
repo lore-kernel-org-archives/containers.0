@@ -1,13 +1,15 @@
-From: Patrick McHardy <kaber-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org>
+From: jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org>
 Subject: Re: RFC: netfilter: nf_conntrack: add support for "conntrack zones"
-Date: Thu, 14 Jan 2010 16:37:52 +0100
-Message-ID: <4B4F3A50.1050400__47873.7239064232$1263483605$gmane$org@trash.net>
+Date: Thu, 14 Jan 2010 12:33:23 -0500
+Message-ID: <1263490403.23480.109.camel__36129.7407457188$1263490457$gmane$org@bigi>
 References: <4B4F24AC.70105@trash.net> <1263481549.23480.24.camel@bigi>
+	<4B4F3A50.1050400@trash.net>
+Reply-To: hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1263481549.23480.24.camel@bigi>
+In-Reply-To: <4B4F3A50.1050400-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,151 +19,108 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org
+To: Patrick McHardy <kaber-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org>
 Cc: Linux Netdev List <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Netfilter Development Mailinglist <netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ben Greear <greearb-my8/4N5VtI7c+919tysfdA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-jamal wrote:
-> Ive had an equivalent discussion with B Greear (CCed) at one point on
-> something similar, curious if you solve things differently - couldnt
-> tell from the patch if you address it.
+On Thu, 2010-01-14 at 16:37 +0100, Patrick McHardy wrote:
+> jamal wrote:
 
-Its basically the same, except that this patch uses ct_extend
-and mark values.
-
-> Comments inline:
+> > Agreed that this would be a main driver of such a feature.
+> > Which means that you need zones (or whatever noun other people use) to
+> > work on not just netfilter, but also routing, ipsec etc.
 > 
-> On Thu, 2010-01-14 at 15:05 +0100, Patrick McHardy wrote:
->> The attached largish patch adds support for "conntrack zones",
->> which are virtual conntrack tables that can be used to seperate
->> connections from different zones, allowing to handle multiple
->> connections with equal identities in conntrack and NAT.
->>
->> A zone is simply a numerical identifier associated with a network
->> device that is incorporated into the various hashes and used to
->> distinguish entries in addition to the connection tuples. Additionally
->> it is used to seperate conntrack defragmentation queues. An iptables
->> target for the raw table could be used alternatively to the network
->> device for assigning conntrack entries to zones.
->>
->>
->> This is mainly useful when connecting multiple private networks using
->> the same addresses (which unfortunately happens occasionally) 
+> Routing already works fine. I believe IPsec should also work already,
+> but I haven't tried it.
+
+maybe further discussion  would clarify this point..
+
+> The zone is set based on some other criteria (in this case the
+> incoming device).
+
+If you are using a netdev as a reference point, then I take it 
+if you add vlans should be possible to do multiple zones on a single
+physical netdev? Or is there some other way to satisfy that?
+
+>  The packets make one pass through the stack
+> to a veth device and are SNATed in POSTROUTING to non-clashing
+> addresses. 
+
+Ok - makes sense. 
+i.e NAT would work; and policy routing as well as arp would be fine.
+Also it looks to be sufficiently useful to fit a specific use case you
+are interested in.
+But back to my question on routing, ipsec etc (and you may not be
+interested in solving this problem, but it is what i was getting to
+earlier). Lets take for example: 
+a) network tables like SAD/SPD tables: how you would separate those on a
+per-zone basis? i.e 10.0.0.1/zone1 could use different
+policy/association than 10.0.0.1/zone2
+b) dynamic protocols (routing, IKE etc): how do you do that without 
+making both sides understand what is going on?
+
+> > This is a valid concern against the namespace approach. Existing tools
+> > of course could be taught to know about namespaces - and one could
+> > argue that if you can resolve the overlap IP address issue, then you
+> > _have to_ modify user space anyways.
 > 
-> Agreed that this would be a main driver of such a feature.
-> Which means that you need zones (or whatever noun other people use) to
-> work on not just netfilter, but also routing, ipsec etc.
+> I don't think thats true. 
 
-Routing already works fine. I believe IPsec should also work already,
-but I haven't tried it.
+Refer to my statements above for an example.
 
-> As a digression: this is trivial to solve with network namespaces. 
+> In any case its completely impractical
+> to modify every userspace tool that does something with networking
+> and potentially make complex configuration changes to have all
+> those namespaces interact nicely. 
+
+Agreed. But the major ones like iproute2 etc could be taught. We have
+namespaces in the kernel already, over a period of time I think changing
+the user space tools would a sensible evolution.
+
+> Currently they are simply not
+> very well suited for virtualizing selected parts of networking.
+
+My contention is that it is a lot less headache to just virtualize 
+all the network stack and then use what you want than it is to go and
+selectively changing the network objects.
+Note: if i wanted today i could run racoon on every namespace 
+unchanged and it would work or i could modify racoon to understand
+namespaces...
+
+> I'm not sure whether there is a typical user for overlapping
+> networks :) I know of setups with ~150 overlapping networks.
 > 
->> to pass
->> the packets through a set of veth devices and SNAT each network to a
->> unique address, after which they can pass through the "main" zone and
->> be handled like regular non-clashing packets and/or have NAT applied a
->> second time based f.i. on the outgoing interface.
->>
+> The number of conntracks per zone doesn't matter since the
+> table is shared between all zones. network namespaces would
+> allocate 150 tables, each of the same size, which might be
+> quite large.
+
+Thats what i was looking for ..
+So the difference, to pick the 150 zones example so as to put a number
+around it, is namespaces will consume 150.X bytes (where X is the
+overhead of a conntrack table) and you approach will be (X + 152) bytes,
+correct?
+What is the typical sizeof X?
+
+> > You may also wanna look as a metric at code complexity/maintainability
+> > of this scheme vs namespace (which adds zero changes to the kernel).
 > 
-> The fundamental question i have is:
-> how you deal with overlapping addresses?
-> i.e zone1 uses 10.0.0.1 and zone2 uses 10.0.0.1 but they are for
-> different NAT users/endpoints.
+> There's not a lot of complexity, its basically passing a numeric
+> identifier around in a few spots and comparing it. Something like
+> TOS handling in the routing code.
 
-The zone is set based on some other criteria (in this case the
-incoming device). The packets make one pass through the stack
-to a veth device and are SNATed in POSTROUTING to non-clashing
-addresses. When they come out of the other side of the veth
-device, they make a second pass through the network stack and
-can be handled like any other packet.
-
-So the setup would be (with 10.0.0.0/24 on if0 and if1):
-
-ip rule add from if0 lookup t0
-ip route add default veth0 table t0
-iptables -t nat -A POSTROUTING -o veth0 -j NETMAP --to 10.1.0.0/24
-echo 1 >/sys/class/net/if0/nf_ct_zone
-echo 1 >/sys/class/net/veth0/nf_ct_zone
-
-ip rule add from if1 lookup t1
-ip route add default veth2 table t0
-iptables -t nat -A POSTROUTING -o veth2 -j NETMARK --to 10.1.1.0/24
-etho 2 >/sys/class/net/if1/nf_ct_zone
-echo 2 >/sys/class/net/veth2/nf_ct_zone
-
-The mapped packets are received on veth1 and veth3 with non-clashing
-addresses.
-
->> As probably everyone has noticed, this is quite similar to what you
->> can do using network namespaces. The main reason for not using
->> network namespaces is that its an all-or-nothing approach, you can't
->> virtualize just connection tracking. 
+I think the challenge is whether zones will have to encroach on other
+net stack objects or not. You are already touching structure netdev...
+A digression: TOS is different really - it has network level semantic. This 
+would be more like mark or in some cases ifindex (i.e local semantics)
+ 
+> > BTW, why not use skb->mark instead of creating a new semantic construct?
 > 
-> Unless there is a clever approach for overlapping IP addresses (my
-> question above), i dont see a way around essentially virtualizing the
-> whole stack which clone(CLONE_NEWNET) provides..
+> Because people are already using it for different purposes.
 
-I don't understand the problem.
+tru dat - it only gives you one semantical axis and you need an
+additional dimension in your case (namespace have that resolved via
+struct net).
 
->> Beside the difficulties in
->> managing different namespaces from f.i. an IKE or PPP daemon running
->> in the initial namespace, 
-> 
-> This is a valid concern against the namespace approach. Existing tools
-> of course could be taught to know about namespaces - and one could
-> argue that if you can resolve the overlap IP address issue, then you
-> _have to_ modify user space anyways.
-
-I don't think thats true. In any case its completely impractical
-to modify every userspace tool that does something with networking
-and potentially make complex configuration changes to have all
-those namespaces interact nicely. Currently they are simply not
-very well suited for virtualizing selected parts of networking.
-
->> network namespaces have a quite large
->> overhead, especially when used with a large conntrack table.
-> 
-> Elaboration needed.
-> You said the size in 64 bit increases to 152B per conntrack i think?
-
-I said code size increases by 152b.
-
-> Do you have a hand-wave figure we can use as a metric to elaborate this
-> point? What would a typical user of this feature have in number of
-> "zones" and how many contracks per zone? Actually we could also look
-> at extremes (huge number vs low numbers)...
-
-I'm not sure whether there is a typical user for overlapping
-networks :) I know of setups with ~150 overlapping networks.
-
-The number of conntracks per zone doesn't matter since the
-table is shared between all zones. network namespaces would
-allocate 150 tables, each of the same size, which might be
-quite large.
-
-> You may also wanna look as a metric at code complexity/maintainability
-> of this scheme vs namespace (which adds zero changes to the kernel).
-
-There's not a lot of complexity, its basically passing a numeric
-identifier around in a few spots and comparing it. Something like
-TOS handling in the routing code.
-
-> I am pretty sure you will soon be "zoning" on other pieces of the net
-> stack ;->
-
-I've thought about that and I don't think that's necessary for this
-use case. Its enough to resolve overlapping address ranges, everything
-else can be done in the second path through the stack.
-
->> I'm not too fond of this partial feature duplication myself, but I
->> couldn't think of a better way to do this without the downsides of
->> using namespaces. Having partially shared network namespaces would
->> be great, but it doesn't seem to fit in the design very well.
->> I'm open for any better suggestion :)
-> 
-> My opinions above.
-> 
-> BTW, why not use skb->mark instead of creating a new semantic construct?
-
-Because people are already using it for different purposes.
+cheers,
+jamal
