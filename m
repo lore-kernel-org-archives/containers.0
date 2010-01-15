@@ -1,15 +1,16 @@
-From: Andreas Gruenbacher <agruen-l3A5Bk7waGM@public.gmane.org>
-Subject: Re: [PATCH 2/4] fanotify: Add pids to events
-Date: Fri, 15 Jan 2010 16:12:09 +0100
-Message-ID: <201001151612.10032.agruen@suse.de>
-References: <20091202141452.12819.93536.stgit@paris.rdu.redhat.com>
-	<20091202141458.12819.96170.stgit@paris.rdu.redhat.com>
-	<6a12d2f31001142041j7f917b07l1e1a728790175321@mail.gmail.com>
+From: jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org>
+Subject: Re: RFC: netfilter: nf_conntrack: add support for "conntrack zones"
+Date: Fri, 15 Jan 2010 10:19:14 -0500
+Message-ID: <1263568754.23480.142.camel__15443.6741875999$1263568929$gmane$org@bigi>
+References: <4B4F24AC.70105@trash.net> <1263481549.23480.24.camel@bigi>
+	<4B4F3A50.1050400@trash.net> <1263490403.23480.109.camel@bigi>
+	<4B50403A.6010507@trash.net>
+Reply-To: hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6a12d2f31001142041j7f917b07l1e1a728790175321-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <4B50403A.6010507-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,43 +20,85 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matthew Helsley <matt.helsley-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Patrick McHardy <kaber-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org>
+Cc: Linux Netdev List <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Netfilter Development Mailinglist <netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ben Greear <greearb-my8/4N5VtI7c+919tysfdA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Friday 15 January 2010 05:41:10 Matthew Helsley wrote:
-> Eric, you never replied to my point about pid namespaces
-> (http://lkml.org/lkml/2009/7/1/2). I'm still concerned that it's a
-> problem for this patch. I've cc'd some pid namespace folks, listed the
-> problems, and some alternative solutions (where I could think of any)
-> below:
+On Fri, 2010-01-15 at 11:15 +0100, Patrick McHardy wrote:
+> jamal wrote:
+
+> > b) dynamic protocols (routing, IKE etc): how do you do that without 
+> > making both sides understand what is going on?
 > 
-> 1. Since fanotify doesn't hold a reference to the struct pid then the
-> pid can become stale before the event is acted upon.
->     solution a: Just ignoring this problem, like other interfaces
-> often do, is probably ok.
->     ... ?
->     solution z: Seems to require taking a reference to the pid and
-> giving userspace a way to drop the reference after it's done using
-> this value to refer to the process (yuck).
+> In case of IPsec the outer addresses are different, its only the
+> selectors which will have similar addresses. A keying deamon should
+> have no trouble with this. The ifindex would be needed in the
+> selectors though to make sure each policy is used for the correct
+> traffic.
 
-struct fsnotify_event->tgid does hold a reference to the appropriate struct 
-pid.  The reference is released when that struct fsnotify_event is freed.
+you need to have user space knowledgeable of the mapping between an
+ifindex and a zone. It may work with perhaps that info explicitly in
+config with tunnel mode/ESP.
 
-> 2. If the event recipient does a clone and enters a new pidns the pid
-> number will be incorrect without any indication.
+> A routing daemon is unrealistic to be used in this scenario, at
+> least a single one for all the overlapping networks.
 
-No, if a process has a pid within the listener's namespace the listener will 
-see this pid; otherwise, the resulting pid value is 0.
+I think in general, it would be hard to deal with anything that requires
+dynamic control where one or more peers have to discover each other once
+you have IP overlap. You will have to change those user space apps.
 
-> 3. If the listening process is not in the same or an ancestor pid
-> namespace of the triggering process then there is no correct pid
-> corresponding to the event.
+In any case, for what you seem to intend this for, i think it works.
 
-Indeed, if the listener is not in the same or an ancestor pid namespace, the 
-pid in the event will end up as 0.  The event still indicates that something 
-has happened to a file the listener is interested in though, it's just unclear 
-who triggered the event.  I don't see a problem with that though -- do you?
+> > Agreed. But the major ones like iproute2 etc could be taught. We have
+> > namespaces in the kernel already, over a period of time I think changing
+> > the user space tools would a sensible evolution.
+> 
+> Yes, that might be useful in any case. But I don't think it would
+> even work for iproute or other standalone programs, a process can't
+> associate to an existing namespace except through clone(). So it
+> needs to run as child of a process already associated with the
+> namespace.
 
-Thanks,
-Andreas
+The mechanics are not there, yet. But if i had sufficient permission,
+and was able to find the namespaces when i ask and/or get events when it
+is created it should be an issue of sending it a message.
+The current approach to say migrate a veth via iproute2 requires we 
+know the pid of the target namespace. Thats a usability issue.
+I tried to muck with namespaces and if you use a library like lxc
+you can do it - but it is a hack as it stands today (and merging
+iproute2 with lxc is questionable).
+
+
+>  (X + 152) bytes,
+> > correct?
+> > What is the typical sizeof X?
+> 
+> No, to give some correct number. Assuming a conntrack table of
+> 10MB (large, but reasonable depending on the number of connections)
+> we get an overhead of:
+> 
+> namespaces: 150 * 10MB memory use
+> "zones": 152 bytes increased code size
+
+That is substantial if you are doing an embedded device.
+But otherwise, RAM is so cheap that i would take usability
+any day for an extra $5.
+
+BTW, I think the zones approach will still use more than 10MB
+in this case given it encompasses all "zones" whereas namespace only
+does it for a single mapped "zone".
+
+> Both approaches additionally need one extra connection tracking
+> entry of ~300 bytes per connection that is actually handled twice.
+
+Ok, so computation is not a differentiator.
+
+> That will go away once I add a target for classification. 
+
+Makes sense 
+On a side note: I wouldnt mind seeing some field in struct
+netdev for some general purpose grouping/IDing which could be
+set from user space. 
+
+cheers,
+jamal
