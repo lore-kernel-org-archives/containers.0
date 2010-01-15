@@ -1,12 +1,14 @@
-From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Subject: [PATCH] Fixes for
-	cgroup-implement-eventfd-based-generic-api-for-notifications.patch
-Date: Fri, 15 Jan 2010 07:33:34 +0200
-Message-ID: <1263533614-23612-1-git-send-email-kirill@shutemov.name>
+From: Patrick McHardy <kaber-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org>
+Subject: Re: RFC: netfilter: nf_conntrack: add support for "conntrack zones"
+Date: Fri, 15 Jan 2010 11:15:22 +0100
+Message-ID: <4B50403A.6010507__3350.06951722807$1263550579$gmane$org@trash.net>
+References: <4B4F24AC.70105@trash.net> <1263481549.23480.24.camel@bigi>	
+	<4B4F3A50.1050400@trash.net> <1263490403.23480.109.camel@bigi>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1263490403.23480.109.camel@bigi>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,109 +18,135 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org
+Cc: Linux Netdev List <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Netfilter Development Mailinglist <netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ben Greear <greearb-my8/4N5VtI7c+919tysfdA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Several random fixes.
+jamal wrote:
+> On Thu, 2010-01-14 at 16:37 +0100, Patrick McHardy wrote:
+>> jamal wrote:
+> 
+>>> Agreed that this would be a main driver of such a feature.
+>>> Which means that you need zones (or whatever noun other people use) to
+>>> work on not just netfilter, but also routing, ipsec etc.
+>> Routing already works fine. I believe IPsec should also work already,
+>> but I haven't tried it.
+> 
+> maybe further discussion  would clarify this point..
+> 
+>> The zone is set based on some other criteria (in this case the
+>> incoming device).
+> 
+> If you are using a netdev as a reference point, then I take it 
+> if you add vlans should be possible to do multiple zones on a single
+> physical netdev? Or is there some other way to satisfy that?
 
-Andrew, please fold it in cgroup-implement-eventfd-based-generic-api-for-notifications.patch
+Yes, you can assign a zone to each netdev. macvlan will also work.
 
-Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
----
- Documentation/cgroups/cgroups.txt |    1 +
- kernel/cgroup.c                   |   26 +++++++++++++++++++++++---
- 2 files changed, 24 insertions(+), 3 deletions(-)
+Using a netfilter target for the raw table might be a better choice
+on second thought though, it provides more flexibility and avoids
+the netfilter-specific device setting. I'll probably change that.
 
-diff --git a/Documentation/cgroups/cgroups.txt b/Documentation/cgroups/cgroups.txt
-index 5a052ff..47d5100 100644
---- a/Documentation/cgroups/cgroups.txt
-+++ b/Documentation/cgroups/cgroups.txt
-@@ -23,6 +23,7 @@ CONTENTS:
-   2.1 Basic Usage
-   2.2 Attaching processes
-   2.3 Mounting hierarchies by name
-+  2.4 Notification API
- 3. Kernel API
-   3.1 Overview
-   3.2 Synchronization
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 44028a9..23315e5 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -2875,13 +2875,18 @@ static int cgroup_write_notify_on_release(struct cgroup *cgrp,
- 	return 0;
- }
- 
-+/*
-+ * Unregister event and free resources.
-+ *
-+ * Gets called from workqueue.
-+ */
- static void cgroup_event_remove(struct work_struct *work)
- {
- 	struct cgroup_event *event = container_of(work, struct cgroup_event,
- 			remove);
- 	struct cgroup *cgrp = event->cgrp;
- 
--	/* TODO: check return code*/
-+	/* TODO: check return code */
- 	event->cft->unregister_event(cgrp, event->cft, event->eventfd);
- 
- 	eventfd_ctx_put(event->eventfd);
-@@ -2889,6 +2894,11 @@ static void cgroup_event_remove(struct work_struct *work)
- 	kfree(event);
- }
- 
-+/*
-+ * Gets called on POLLHUP on eventfd when user closes it.
-+ *
-+ * Called with wqh->lock held and interrupts disabled.
-+ */
- static int cgroup_event_wake(wait_queue_t *wait, unsigned mode,
- 		int sync, void *key)
- {
-@@ -2901,6 +2911,10 @@ static int cgroup_event_wake(wait_queue_t *wait, unsigned mode,
- 		spin_lock(&cgrp->event_list_lock);
- 		list_del(&event->list);
- 		spin_unlock(&cgrp->event_list_lock);
-+		/*
-+		 * We are in atomic context, but cgroup_event_remove() may
-+		 * sleep, so we have to call it in workqueue.
-+		 */
- 		schedule_work(&event->remove);
- 	}
- 
-@@ -2917,6 +2931,12 @@ static void cgroup_event_ptable_queue_proc(struct file *file,
- 	add_wait_queue(wqh, &event->wait);
- }
- 
-+/*
-+ * Parse input and register new cgroup event handler.
-+ *
-+ * Input must be in format '<event_fd> <control_fd> <args>'.
-+ * Interpretation of args is defined by control file implementation.
-+ */
- static int cgroup_write_event_control(struct cgroup *cgrp, struct cftype *cft,
- 				      const char *buffer)
- {
-@@ -3001,13 +3021,13 @@ static int cgroup_write_event_control(struct cgroup *cgrp, struct cftype *cft,
- 	return 0;
- 
- fail:
--	if (!IS_ERR(cfile))
-+	if (!cfile)
- 		fput(cfile);
- 
- 	if (event && event->eventfd && !IS_ERR(event->eventfd))
- 		eventfd_ctx_put(event->eventfd);
- 
--	if (!IS_ERR(efile))
-+	if (!IS_ERR_OR_NULL(efile))
- 		fput(efile);
- 
- 	kfree(event);
--- 
-1.6.5.7
+>>  The packets make one pass through the stack
+>> to a veth device and are SNATed in POSTROUTING to non-clashing
+>> addresses. 
+> 
+> Ok - makes sense. 
+> i.e NAT would work; and policy routing as well as arp would be fine.
+> Also it looks to be sufficiently useful to fit a specific use case you
+> are interested in.
+> But back to my question on routing, ipsec etc (and you may not be
+> interested in solving this problem, but it is what i was getting to
+> earlier). Lets take for example: 
+> a) network tables like SAD/SPD tables: how you would separate those on a
+> per-zone basis? i.e 10.0.0.1/zone1 could use different
+> policy/association than 10.0.0.1/zone2
+
+The selectors include an ifindex, which could be used to
+distinguish both based on the interface.
+
+> b) dynamic protocols (routing, IKE etc): how do you do that without 
+> making both sides understand what is going on?
+
+In case of IPsec the outer addresses are different, its only the
+selectors which will have similar addresses. A keying deamon should
+have no trouble with this. The ifindex would be needed in the
+selectors though to make sure each policy is used for the correct
+traffic.
+
+A routing daemon is unrealistic to be used in this scenario, at
+least a single one for all the overlapping networks.
+
+>>> This is a valid concern against the namespace approach. Existing tools
+>>> of course could be taught to know about namespaces - and one could
+>>> argue that if you can resolve the overlap IP address issue, then you
+>>> _have to_ modify user space anyways.
+>> I don't think thats true. 
+> 
+> Refer to my statements above for an example.
+> 
+>> In any case its completely impractical
+>> to modify every userspace tool that does something with networking
+>> and potentially make complex configuration changes to have all
+>> those namespaces interact nicely. 
+> 
+> Agreed. But the major ones like iproute2 etc could be taught. We have
+> namespaces in the kernel already, over a period of time I think changing
+> the user space tools would a sensible evolution.
+
+Yes, that might be useful in any case. But I don't think it would
+even work for iproute or other standalone programs, a process can't
+associate to an existing namespace except through clone(). So it
+needs to run as child of a process already associated with the
+namespace.
+
+>> Currently they are simply not
+>> very well suited for virtualizing selected parts of networking.
+> 
+> My contention is that it is a lot less headache to just virtualize 
+> all the network stack and then use what you want than it is to go and
+> selectively changing the network objects.
+> Note: if i wanted today i could run racoon on every namespace 
+> unchanged and it would work or i could modify racoon to understand
+> namespaces...
+
+See above.
+
+>> I'm not sure whether there is a typical user for overlapping
+>> networks :) I know of setups with ~150 overlapping networks.
+>>
+>> The number of conntracks per zone doesn't matter since the
+>> table is shared between all zones. network namespaces would
+>> allocate 150 tables, each of the same size, which might be
+>> quite large.
+> 
+> Thats what i was looking for ..
+> So the difference, to pick the 150 zones example so as to put a number
+> around it, is namespaces will consume 150.X bytes (where X is the
+> overhead of a conntrack table) and you approach will be (X + 152) bytes,
+> correct?
+> What is the typical sizeof X?
+
+No, to give some correct number. Assuming a conntrack table of
+10MB (large, but reasonable depending on the number of connections)
+we get an overhead of:
+
+namespaces: 150 * 10MB memory use
+"zones": 152 bytes increased code size
+
+Both approaches additionally need one extra connection tracking
+entry of ~300 bytes per connection that is actually handled twice.
+
+>>> You may also wanna look as a metric at code complexity/maintainability
+>>> of this scheme vs namespace (which adds zero changes to the kernel).
+>> There's not a lot of complexity, its basically passing a numeric
+>> identifier around in a few spots and comparing it. Something like
+>> TOS handling in the routing code.
+> 
+> I think the challenge is whether zones will have to encroach on other
+> net stack objects or not. You are already touching structure netdev...
+
+That will go away once I add a target for classification. I completely
+agree that its undesirable to add this in more spots, but this is meant
+purely for being able to pass traffic through conntrack/NAT more than
+once.
