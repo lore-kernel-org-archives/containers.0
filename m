@@ -1,11 +1,12 @@
-From: Jean-Marc Pigeon <jmp-4qkeo2rQ0gg@public.gmane.org>
-Subject: 2.6.33-rc4 i686 clone function looping (?)
-Date: Mon, 18 Jan 2010 17:04:03 -0500
-Message-ID: <1263852243.4745.363.camel@Mercier.safe.ca>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 1/1] add 32-bit checkpoint wrapper
+Date: Mon, 18 Jan 2010 17:22:45 -0600
+Message-ID: <20100118232245.GA31116@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,40 +16,60 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-SGVsbG8sCgoJU2FtZSBwaHlzaWNhbCBzeXN0ZW0gYW5kIGNvbmZpZ3VyYXRpb24KCShzbWFsbCBz
-eXN0ZW0gaW4gMzIgQml0cyBpNjg2IG1vZGUpLgoJMi42LjMyLjM6IAl3b3JraW5nIEFfb25lLgoJ
-Mi42LjMzLXJjNDoJY2xvbmUgY2FsbCwgbG9vcGluZyBhbmQKCQkgICAgCXRha2luZyBBTEwgQ1BV
-IGN5Y2xlLgoKSGVyZSBpcyBjb2RlIHVzZWQuCjs9PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PQpjbG9uZWZsZz1TSUdDSExEfF9fV0NMT05FOwpjbG9uZWZsZ3w9Q0xPTkVfTkVX
-TkVUfENMT05FX05FV0lQQ3xDTE9ORV9ORVdOU3xDTE9ORV9ORVdQSUR8CkNMT05FX05FV1VUUzsK
-Y2xvbmVzdGs9KGNoYXIgKiltYWxsb2MoU1RLU0laRSkKLi4uLi4uCgo7LS0tLS0tLS0tLS0tLS0t
-LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0KICBpZiAoYXJndlswXSE9KGNoYXIgKikwKSB7IC8qYWx3
-YXlzICAgICAgICAqLwogICAgICAgIHN0YXRpYyBBUkdUWVAgYXJnczsKCiAgICAgICAgYXJncy5t
-c3BpZD1nZXRwaWQoKTsKICAgICAgICBhcmdzLmFyY2g9Y250YXJjaDsKICAgICAgICBhcmdzLmFy
-Z2M9YXJnYzsKICAgICAgICBhcmdzLmFyZ3Y9YXJndjsKICAgICAgICBpZiAoKGNwaWQ9Y2xvbmUo
-JmRvYm9vdCwodm9pZCAqKShjbG9uZXN0aworU1RLU0laRSksY2xvbmVmbGcsKHZvaWQgKikmYXJn
-cykpPDApIHsKICAgICAgICAgICh2b2lkKSBhcGxfYWxlcnQoMCwiJXMsIFVuYWJsZSB0byBjbG9u
-ZSAlcyBjb250YWluZXIgcHJvY2VzcwooZXJyb3I9PCVzPikiLAogICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICBhcHBuYW1lLGFyZ3ZbMF0sc3RyZXJyb3IoZXJybm8pKTsKOz09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09CgpUaGVyZSBpcyBzb21lIGRpZmZlcmVuY2Ugd2l0
-aGluIC5jb25maWcgZmlsZSBiZXR3ZWVuCmJvdGgga2VybmVsIEkgcmVnZW5lcmF0ZWQsIGJ1dCBJ
-IGRvIG5vdCBiZWxpZXZlIHRoZXkKYXJlIG1lYW5pbmdmdWwgZm9yIHRoZSBjbG9uZS9jZ3JvdXAv
-dmV0aC9icmlkZ2UgZnVuY3Rpb25zLgpJIGNhbiBwcm92aWRlIGNvbmZpZyBkaWZmIGlmIG5lZWRl
-ZC4KCkRvIHdlIGhhdmUgYSByZWFsIHByb2JsZW0gd2l0aCAyLjYuMzMtcmM0Pz8gb3IgZGlkIEkg
-bWlzc2VkCnNvbWV0aGluZz8gY291bGQgc29tZW9uZSBjb25maXJtIHRyb3VibGUgd2l0aCBjbG9u
-ZSBjYWxsPwoKVGhhbmtzLgotLSAKQSBiaWVudMO0dAo9PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQpKZWFuLU1h
-cmMgUGlnZW9uICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBJbnRlcm5ldDogam1w
-QHNhZmUuY2EKU0FGRSBJbmMuICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgUGhvbmU6ICg1MTQpIDQ5My00MjgwCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgIEZheDogICAoNTE0KSA0OTMtMTk0NgogICAgICAgIENsZW1lbnQs
-ICdhIGtpc3Mgc29sdXRpb24nIHRvIGdldCByaWQgb2YgU1BBTSAoYXQgbGFzdCkKICAgICAgICAg
-ICBDbGVtZW50JyBIb21lIGJhc2UgPCJodHRwOi8vd3d3LmNsZW1lbnQuc2FmZS5jYSI+Cj09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09CgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5k
-YXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0
-aW5mby9jb250YWluZXJz
+and get logfd from the right register (di is 5th arg)
+
+With this patch on top of Oren's dec 6 patches, and my own patch from
+earlier today, cr_tests pass on x86-32.
+
+I will probably push these to cr-next tomorrow along with the needed
+accompanying s390 and powerpc (from Nathan) changes.
+
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ arch/x86/kernel/checkpoint_32.c |   20 +++++++++++++++++++-
+ 1 files changed, 19 insertions(+), 1 deletions(-)
+
+diff --git a/arch/x86/kernel/checkpoint_32.c b/arch/x86/kernel/checkpoint_32.c
+index d5ea6a0..3ce9a81 100644
+--- a/arch/x86/kernel/checkpoint_32.c
++++ b/arch/x86/kernel/checkpoint_32.c
+@@ -19,6 +19,24 @@
+ #include <linux/checkpoint_hdr.h>
+ 
+ /*
++ * sys_checkpoint needs to be a ptregscall if sys_restart is
++ * one so self-checkpoint images can be restarted.
++ */
++long sys_checkpoint(struct pt_regs *regs)
++{
++	unsigned long flags;
++	int fd, logfd;
++	pid_t pid;
++
++	pid = regs->bx;
++	fd = regs->cx;
++	flags = regs->dx;
++	logfd = regs->si;
++
++	return do_sys_checkpoint(pid, fd, flags, logfd);
++}
++
++/*
+  * sys_restart needs to access and modify the pt_regs structure to
+  * restore the original state from the time of the checkpoint.
+  */
+@@ -31,7 +49,7 @@ long sys_restart(struct pt_regs *regs)
+ 	pid = regs->bx;
+ 	fd = regs->cx;
+ 	flags = regs->dx;
+-	logfd = regs->di;
++	logfd = regs->si;
+ 
+ 	return do_sys_restart(pid, fd, flags, logfd);
+ }
+-- 
+1.6.0.4
