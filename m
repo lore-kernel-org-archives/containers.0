@@ -1,7 +1,7 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: 2.6.33-rc4 i686 clone function looping (seems real!)
-Date: Tue, 19 Jan 2010 16:10:47 -0600
-Message-ID: <20100119221047.GA12806@us.ibm.com>
+Date: Tue, 19 Jan 2010 16:15:35 -0600
+Message-ID: <20100119221535.GA13141@us.ibm.com>
 References: <1263852243.4745.363.camel@Mercier.safe.ca>
 	<20100119150931.GA7708@us.ibm.com>
 	<1263916851.4745.386.camel@Mercier.safe.ca>
@@ -59,21 +59,8 @@ Quoting Jean-Marc Pigeon (jmp-4qkeo2rQ0gg@public.gmane.org):
 > 	(could someone check tstclone.c under 
 > 	 i386 arch and confirm trouble?)
 
-I just tried it on a x86-32 kvm image with no hang (cut-n-paste
-from your copy of testclone.c).
-
-Could you:
-
-	1. use cpusets and memory limiter to limit the
-	   shell fromwhich you run testclone to 1 cpu and
-	   1/3 of your ram,
-	2. fire up testclone
-	3. gdb -se testclone -p `pidof testclone` in another
-	   shell and see whether anything is hung in userspace?
-
-If you need more specific hints pls let me know.
-
-Also, you might try with selinux disabled ('setenforce 0'), though
-I don't see how it can be responsible.
+Also might echo 1 > /proc/sys/kernel/sysrq before running the test, then
+hit alt-sysrq-d to show all locks being held, alt-sysrq-l to show
+stacks, alt-sysrq-p to dump registers, and alt-sysrq-t to dump tasks.
 
 -serge
