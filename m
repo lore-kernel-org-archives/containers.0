@@ -1,13 +1,13 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH] Restore task fs_root and pwd (v2)
-Date: Wed, 20 Jan 2010 15:28:13 -0500
-Message-ID: <4B57675D.8080609@cs.columbia.edu>
-References: <20091228183948.GA19788@us.ibm.com>
+Subject: Re: [PATCH] make checkpoint a ptregs syscall as well
+Date: Wed, 20 Jan 2010 15:34:33 -0500
+Message-ID: <4B5768D9.9030105@cs.columbia.edu>
+References: <20100118203318.GA22903@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091228183948.GA19788-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20100118203318.GA22903-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,332 +22,177 @@ Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
-Very necessary !
-See comments inline.
-
-Serge E. Hallyn wrote:
-> Checkpoint and restore task->fs.  Tasks sharing task->fs will
-> share them again after restart.
-> 
-> Changelog:
-> 	Dec 28: Addressed comments by Oren (and Dave)
-> 		1. define and use {get,put}_fs_struct helpers
-> 		2. fix locking comment
-> 		3. define ckpt_read_fname() and use in checkpoint/files.c
-> 
-> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  checkpoint/files.c             |  197 +++++++++++++++++++++++++++++++++++++++-
->  checkpoint/objhash.c           |    9 ++
->  checkpoint/process.c           |   13 +++
->  fs/fs_struct.c                 |   21 ++++
->  fs/open.c                      |   53 ++++++-----
->  include/linux/checkpoint.h     |   10 ++-
->  include/linux/checkpoint_hdr.h |   10 ++
->  include/linux/fs.h             |    4 +
->  include/linux/fs_struct.h      |    2 +
->  9 files changed, 293 insertions(+), 26 deletions(-)
-> 
-> diff --git a/checkpoint/files.c b/checkpoint/files.c
-> index b622588..d6cf945 100644
-> --- a/checkpoint/files.c
-> +++ b/checkpoint/files.c
-> @@ -24,6 +24,9 @@
->  #include <linux/checkpoint_hdr.h>
->  #include <linux/eventpoll.h>
->  #include <linux/eventfd.h>
-> +#include <linux/fs.h>
-> +#include <linux/fs_struct.h>
-> +#include <linux/namei.h>
->  #include <net/sock.h>
->  
->  
-> @@ -449,10 +452,81 @@ int ckpt_collect_file_table(struct ckpt_ctx *ctx, struct task_struct *t)
->  	return ret;
->  }
->  
-> +int checkpoint_get_task_fs(struct ckpt_ctx *ctx, struct task_struct *t)
-
-Renaming these to {checkpoint/restore}_obj_filesystem() will be
-consistent with existing naming convention there.
-
-> +{
-> +	struct fs_struct *fs;
-> +	int fs_objref;
-> +
-> +	task_lock(current);
-> +	fs = t->fs;
-> +	get_fs_struct(fs);
-> +	task_unlock(current);
-> +
-> +	fs_objref = checkpoint_obj(ctx, fs, CKPT_OBJ_TASK_FS);
-> +	put_fs_struct(fs);
-> +
-> +	return fs_objref;
-> +}
-> +
-> +/*
-> + * called with fs refcount bumped so it won't disappear
-> + */
-> +int checkpoint_obj_task_fs(struct ckpt_ctx *ctx, struct fs_struct *fs)
-> +{
-> +	struct ckpt_hdr_task_fs *h;
-> +	int ret;
-> +	struct fs_struct *fscopy;
-> +
-> +	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_TASK_FS);
-> +	if (!h)
-> +		return -ENOMEM;
-> +	ret = ckpt_write_obj(ctx, &h->h);
-> +	ckpt_hdr_put(ctx, h);
-> +	if (ret)
-> +		return ret;
-> +
-> +	fscopy = copy_fs_struct(fs);
-> +	if (!fs)
-> +		return -ENOMEM;
-> +
-
-Reverse the order below: cwd first then root - this will allow
-the cwd to be outside of the current chroot, in the case that
-the task escaped the chroot.
-
-> +	ret = checkpoint_fname(ctx, &fscopy->root, &ctx->fs_mnt);
-> +	if (ret < 0) {
-> +		ckpt_err(ctx, ret, "%(T)writing name of fs root");
-> +		goto out;
-> +	}
-> +	ret = checkpoint_fname(ctx, &fscopy->pwd, &ctx->fs_mnt);
-> +	if (ret < 0) {
-> +		ckpt_err(ctx, ret, "%(T)writing name of pwd");
-> +		goto out;
-> +	}
-> +	ret = 0;
-
-[...]
-
-> +/* this is the fn called by objhash when it runs into a
-> + * CKPT_OBJ_TASK_FS entry.  Creates an fs_struct and
-> + * places it in the hash. */
-> +static struct fs_struct *restore_obj_task_fs(struct ckpt_ctx *ctx)
-> +{
-> +	struct ckpt_hdr_task_fs *h;
-> +	struct fs_struct *fs;
-> +	int ret = 0;
-> +	char *root, *cwd;
-> +
-> +	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_TASK_FS);
-> +	if (IS_ERR(h))
-> +		return ERR_PTR(PTR_ERR(h));
-> +	ckpt_hdr_put(ctx, h);
-> +
-> +	fs = copy_fs_struct(current->fs);
-> +	if (!fs)
-> +		return ERR_PTR(-ENOMEM);
-> +
-
-Please reverse the order below: restore cwd before chroot.
-
-> +	ret = ckpt_read_fname(ctx, &root);
-> +	if (ret < 0)
-> +		goto out;
-> +	ret = restore_chroot(ctx, fs, root);
-> +	kfree(root);
-> +	if (ret)
-> +		goto out;
-> +
-> +	ret = ckpt_read_fname(ctx, &cwd);
-> +	if (ret < 0)
-> +		goto out;
-> +	ret = restore_cwd(ctx, fs, cwd);
-> +	kfree(cwd);
-> +
-> +out:
-> +	if (ret) {
-> +		free_fs_struct(fs);
-> +		return ERR_PTR(ret);
-> +	}
-> +	return fs;
-> +}
-> +
-> +void *restore_task_fs(struct ckpt_ctx *ctx)
-> +{
-> +	return (void *) restore_obj_task_fs(ctx);
-> +}
-> +
-> +/*
-> + * Called by task restore code to set the restarted task's
-> + * current->fs to an entry on the hash
-> + */
-> +int restore_set_task_fs(struct ckpt_ctx *ctx, int fs_objref)
-
-(Please rename this one, too)
-
-> +{
-> +	struct fs_struct *newfs, *oldfs;
-> +
-> +	newfs = ckpt_obj_fetch(ctx, fs_objref, CKPT_OBJ_TASK_FS);
-> +	if (IS_ERR(newfs))
-> +		return PTR_ERR(newfs);
-> +
-> +	task_lock(current);
-> +	get_fs_struct(newfs);
-> +	oldfs = current->fs;
-> +	current->fs = newfs;
-> +	task_unlock(current);
-> +	put_fs_struct(oldfs);
-> +
-> +	return 0;
-> +}
-> diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
-> index 782661d..20fd3e9 100644
-> --- a/checkpoint/objhash.c
-> +++ b/checkpoint/objhash.c
-> @@ -417,6 +417,15 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
->  		.checkpoint = checkpoint_userns,
->  		.restore = restore_userns,
->  	},
-> +	/* struct fs_struct */
-> +	{
-> +		.obj_name = "TASK_FS",
-> +		.obj_type = CKPT_OBJ_TASK_FS,
-> +		.ref_drop = obj_task_fs_drop,
-> +		.ref_grab = obj_task_fs_grab,
-> +		.checkpoint = checkpoint_task_fs,
-> +		.restore = restore_task_fs,
-
-I think we also need a .collect method to prevent leaks ?
-
-> +	},
->  	/* struct cred */
->  	{
->  		.obj_name = "CRED",
-> diff --git a/checkpoint/process.c b/checkpoint/process.c
-> index 9c0463d..603bbf4 100644
-> --- a/checkpoint/process.c
-> +++ b/checkpoint/process.c
-> @@ -234,6 +234,7 @@ static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
->  	int mm_objref;
->  	int sighand_objref;
->  	int signal_objref;
-> +	int fs_objref;
->  	int first, ret;
->  
->  	/*
-> @@ -253,6 +254,12 @@ static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
->  	if (ret < 0)
->  		return ret;
->  
-> +	fs_objref = checkpoint_get_task_fs(ctx, t);
-> +	if (fs_objref < 0) {
-> +		ckpt_err(ctx, fs_objref, "%(T)process fs\n");
-> +		return fs_objref;
-> +	}
-> +
->  	files_objref = checkpoint_obj_file_table(ctx, t);
-
-The fs should be saved and restored after the file-table, or otherwise
-I'd expect files that were open before a task changed called chroot()
-to be unreachable.
-
->  	ckpt_debug("files: objref %d\n", files_objref);
->  	if (files_objref < 0) {
-> @@ -294,6 +301,7 @@ static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
->  	h->mm_objref = mm_objref;
->  	h->sighand_objref = sighand_objref;
->  	h->signal_objref = signal_objref;
-> +	h->fs_objref = fs_objref;
->  	ret = ckpt_write_obj(ctx, &h->h);
->  	ckpt_hdr_put(ctx, h);
->  	if (ret < 0)
-> @@ -628,6 +636,11 @@ static int restore_task_objs(struct ckpt_ctx *ctx)
->  		return PTR_ERR(h);
->  	}
->  
-> +	ret = restore_set_task_fs(ctx, h->fs_objref);
-> +	ckpt_debug("restore_task_fs returned %d\n", ret);
-> +	if (ret < 0)
-> +		return ret;
-> +
->  	ret = restore_obj_file_table(ctx, h->files_objref);
->  	ckpt_debug("file_table: ret %d (%p)\n", ret, current->files);
->  	if (ret < 0)
-
-Here too.
-
-> diff --git a/fs/fs_struct.c b/fs/fs_struct.c
-> index eee0590..2a4c6f5 100644
-> --- a/fs/fs_struct.c
-> +++ b/fs/fs_struct.c
-> @@ -6,6 +6,27 @@
->  #include <linux/fs_struct.h>
->  
->  /*
-> + * call with owning task locked
-> + */
-> +void get_fs_struct(struct fs_struct *fs)
-> +{
-> +	write_lock(&fs->lock);
-> +	fs->users++;
-> +	write_unlock(&fs->lock);
-> +}
-> +
-> +void put_fs_struct(struct fs_struct *fs)
-> +{
-> +	int kill;
-> +
-> +	write_lock(&fs->lock);
-> +	kill = !--fs->users;
-> +	write_unlock(&fs->lock);
-> +	if (kill)
-> +		free_fs_struct(fs);
-> +}
-
-I didn't look everywhere, however - could there be other users of
-these two elsewhere in the kernel ?
-
-> +
-> +/*
->   * Replace the fs->{rootmnt,root} with {mnt,dentry}. Put the old values.
->   * It can block.
->   */
-
-[...]
-
-> diff --git a/include/linux/fs.h b/include/linux/fs.h
-> index 5ae34fc..0efa62a 100644
-> --- a/include/linux/fs.h
-> +++ b/include/linux/fs.h
-> @@ -1819,9 +1819,13 @@ extern struct vfsmount *collect_mounts(struct path *);
->  extern void drop_collected_mounts(struct vfsmount *);
->  
->  extern int vfs_statfs(struct dentry *, struct kstatfs *);
-> +struct fs_struct;
-> +extern int do_chdir(struct fs_struct *fs, struct path *path);
-> +extern int do_chroot(struct fs_struct *fs, struct path *path);
->  
->  extern int current_umask(void);
->  
-> +
-
-:(
-
->  /* /sys/fs */
->  extern struct kobject *fs_kobj;
->  
-> diff --git a/include/linux/fs_struct.h b/include/linux/fs_struct.h
-> index 78a05bf..a73cbcb 100644
-> --- a/include/linux/fs_struct.h
-> +++ b/include/linux/fs_struct.h
-> @@ -20,5 +20,7 @@ extern struct fs_struct *copy_fs_struct(struct fs_struct *);
->  extern void free_fs_struct(struct fs_struct *);
->  extern void daemonize_fs_struct(void);
->  extern int unshare_fs_struct(void);
-> +extern void get_fs_struct(struct fs_struct *);
-> +extern void put_fs_struct(struct fs_struct *);
->  
->  #endif /* _LINUX_FS_STRUCT_H */
-
-Thanks,
+... silly me -- I should have seen that when I fixed it for restart !
+Added, thanks.
 
 Oren.
+
+Serge E. Hallyn wrote:
+> This is on top of the 64-bit patches which Oren posted on Dec 6, so
+> it does not work with my cr-next branch or Oren's ckpt-v19-rc2, and
+> s390 and powerpc will need corresponding patches.
+> 
+> Without this, restart of self-checkpoint fails (understandably) on the
+> amd64 test system I'm borrowing.
+> 
+> I have not yet tested restart of checkpointed 32-bit program on 64-bit
+> machine.  Or for that matter a 32bit kernel.
+> 
+> Thanks, Nathan, for finding the problem!  I should have guessed, based
+> on my symptoms.
+> 
+> Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  arch/x86/include/asm/syscalls.h    |    3 +++
+>  arch/x86/include/asm/unistd_64.h   |    2 +-
+>  arch/x86/kernel/checkpoint_64.c    |   10 ++++++++++
+>  arch/x86/kernel/entry_32.S         |    1 +
+>  arch/x86/kernel/entry_64.S         |    2 ++
+>  arch/x86/kernel/syscall_table_32.S |    2 +-
+>  checkpoint/sys.c                   |    5 ++---
+>  include/linux/checkpoint.h         |    2 ++
+>  include/linux/syscalls.h           |    2 --
+>  9 files changed, 22 insertions(+), 7 deletions(-)
+> 
+> diff --git a/arch/x86/include/asm/syscalls.h b/arch/x86/include/asm/syscalls.h
+> index 063cdd0..35b2060 100644
+> --- a/arch/x86/include/asm/syscalls.h
+> +++ b/arch/x86/include/asm/syscalls.h
+> @@ -45,6 +45,7 @@ int sys_execve(struct pt_regs *);
+>  
+>  /* kernel/checkpoint_32.c */
+>  #ifdef CONFIG_CHECKPOINT
+> +long sys_checkpoint(struct pt_regs *);
+>  long sys_restart(struct pt_regs *);
+>  #endif
+>  
+> @@ -90,6 +91,8 @@ long sys_arch_prctl(int, unsigned long);
+>  
+>  /* kernel/checkpoint_64.c */
+>  #ifdef CONFIG_CHECKPOINT
+> +asmlinkage long sys_checkpoint(pid_t pid, int fd, unsigned long flags,
+> +				int logfd, struct pt_regs *regs);
+>  asmlinkage long sys_restart(pid_t pid, int fd, unsigned long flags, int logfd,
+>  			    struct pt_regs *regs);
+>  #endif
+> diff --git a/arch/x86/include/asm/unistd_64.h b/arch/x86/include/asm/unistd_64.h
+> index c360707..e443304 100644
+> --- a/arch/x86/include/asm/unistd_64.h
+> +++ b/arch/x86/include/asm/unistd_64.h
+> @@ -664,7 +664,7 @@ __SYSCALL(__NR_perf_event_open, sys_perf_event_open)
+>  #define __NR_eclone                   		299
+>  __SYSCALL(__NR_eclone, stub_eclone)
+>  #define __NR_checkpoint                   	300
+> -__SYSCALL(__NR_checkpoint, sys_checkpoint)
+> +__SYSCALL(__NR_checkpoint, stub_checkpoint)
+>  #define __NR_restart                   		301
+>  __SYSCALL(__NR_restart, stub_restart)
+>  
+> diff --git a/arch/x86/kernel/checkpoint_64.c b/arch/x86/kernel/checkpoint_64.c
+> index 87c1606..a63e88d 100644
+> --- a/arch/x86/kernel/checkpoint_64.c
+> +++ b/arch/x86/kernel/checkpoint_64.c
+> @@ -22,6 +22,16 @@
+>   * sys_restart needs to access and modify the pt_regs structure to
+>   * restore the original state from the time of the checkpoint.
+>   */
+> +asmlinkage long sys_checkpoint(pid_t pid, int fd, unsigned long flags, int logfd,
+> +			    struct pt_regs *regs)
+> +{
+> +	return do_sys_checkpoint(pid, fd, flags, logfd);
+> +}
+> +
+> +/*
+> + * sys_restart needs to access and modify the pt_regs structure to
+> + * restore the original state from the time of the checkpoint.
+> + */
+>  asmlinkage long sys_restart(pid_t pid, int fd, unsigned long flags, int logfd,
+>  			    struct pt_regs *regs)
+>  {
+> diff --git a/arch/x86/kernel/entry_32.S b/arch/x86/kernel/entry_32.S
+> index ecefd09..76ec9c4 100644
+> --- a/arch/x86/kernel/entry_32.S
+> +++ b/arch/x86/kernel/entry_32.S
+> @@ -727,6 +727,7 @@ PTREGSCALL(rt_sigreturn)
+>  PTREGSCALL(vm86)
+>  PTREGSCALL(vm86old)
+>  #ifdef CONFIG_CHECKPOINT
+> +PTREGSCALL(checkpoint)
+>  PTREGSCALL(restart)
+>  #endif
+>  
+> diff --git a/arch/x86/kernel/entry_64.S b/arch/x86/kernel/entry_64.S
+> index e692193..ec6f43f 100644
+> --- a/arch/x86/kernel/entry_64.S
+> +++ b/arch/x86/kernel/entry_64.S
+> @@ -700,8 +700,10 @@ END(\label)
+>  	PTREGSCALL stub_iopl, sys_iopl, %rsi
+>  	PTREGSCALL stub_eclone, sys_eclone, %r8
+>  #ifdef CONFIG_CHECKPOINT
+> +	PTREGSCALL stub_checkpoint, sys_checkpoint, %r8
+>  	PTREGSCALL stub_restart, sys_restart, %r8
+>  #else
+> +	PTREGSCALL stub_checkpoint, sys_ni_syscall, %r8
+>  	PTREGSCALL stub_restart, sys_ni_syscall, %r8
+>  #endif
+>  
+> diff --git a/arch/x86/kernel/syscall_table_32.S b/arch/x86/kernel/syscall_table_32.S
+> index 1ca053e..28fd000 100644
+> --- a/arch/x86/kernel/syscall_table_32.S
+> +++ b/arch/x86/kernel/syscall_table_32.S
+> @@ -337,5 +337,5 @@ ENTRY(sys_call_table)
+>  	.long sys_rt_tgsigqueueinfo	/* 335 */
+>  	.long sys_perf_event_open
+>  	.long ptregs_eclone
+> -	.long sys_checkpoint
+> +	.long ptregs_checkpoint
+>  	.long ptregs_restart
+> diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+> index 303e16f..c26682c 100644
+> --- a/checkpoint/sys.c
+> +++ b/checkpoint/sys.c
+> @@ -605,7 +605,7 @@ int walk_task_subtree(struct task_struct *root,
+>  /* checkpoint/restart syscalls */
+>  
+>  /**
+> - * sys_checkpoint - checkpoint a container
+> + * do_sys_checkpoint - checkpoint a container
+>   * @pid: pid of the container init(1) process
+>   * @fd: file to which dump the checkpoint image
+>   * @flags: checkpoint operation flags
+> @@ -614,8 +614,7 @@ int walk_task_subtree(struct task_struct *root,
+>   * Returns positive identifier on success, 0 when returning from restart
+>   * or negative value on error
+>   */
+> -SYSCALL_DEFINE4(checkpoint, pid_t, pid, int, fd,
+> -		unsigned long, flags, int, logfd)
+> +long do_sys_checkpoint(pid_t pid, int fd, unsigned long flags, int logfd)
+>  {
+>  	struct ckpt_ctx *ctx;
+>  	long ret;
+> diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+> index fb0f5e8..f569fb0 100644
+> --- a/include/linux/checkpoint.h
+> +++ b/include/linux/checkpoint.h
+> @@ -60,6 +60,8 @@
+>  #define CKPT_LSM_INFO_LEN 200
+>  #define CKPT_LSM_STRING_MAX 1024
+>  
+> +extern long do_sys_checkpoint(pid_t pid, int fd, unsigned long flags,
+> +				int logfd);
+>  extern long do_sys_restart(pid_t pid, int fd, unsigned long flags, int logfd);
+>  
+>  extern int walk_task_subtree(struct task_struct *task,
+> diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
+> index 264a02e..a990ace 100644
+> --- a/include/linux/syscalls.h
+> +++ b/include/linux/syscalls.h
+> @@ -872,8 +872,6 @@ asmlinkage long sys_pselect6(int, fd_set __user *, fd_set __user *,
+>  asmlinkage long sys_ppoll(struct pollfd __user *, unsigned int,
+>  			  struct timespec __user *, const sigset_t __user *,
+>  			  size_t);
+> -asmlinkage long sys_checkpoint(pid_t pid, int fd, unsigned long flags,
+> -			       int logfd);
+>  
+>  int kernel_execve(const char *filename, char *const argv[], char *const envp[]);
+>  
