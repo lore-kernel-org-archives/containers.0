@@ -1,13 +1,13 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH] checkpoint: rename fs_mnt to root_fs_path
-Date: Wed, 20 Jan 2010 11:56:01 -0500
-Message-ID: <4B5735A1.9030001@cs.columbia.edu>
-References: <20091229211509.GA19720@us.ibm.com>
+Subject: Re: [PATCH] checkpoint: don't checkpoint a task with aio requests
+Date: Wed, 20 Jan 2010 11:59:38 -0500
+Message-ID: <4B57367A.7090200@cs.columbia.edu>
+References: <20091230203722.GA25170@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091229211509.GA19720-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20091230203722.GA25170-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,114 +22,102 @@ Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
+Seems sufficient for now - until we get to address AIO.
 Added, thanks.
 
+Oren.
+
 Serge E. Hallyn wrote:
-> the fs_mnt is neither an fs nor an mnt, but rather the struct path* root
-> of the root task in the checkpointed container.  So call it root_fs_path.
+> Not sure this is the best way, or entirely foolproof, but at
+> least make an attempt to not checkpoint a task which is using
+> aio.
+> 
+> A checkpoint-aware application using aio can have the checkpointer
+> signal all tasks to complete aio and wait for the checkpoint to
+> complete.
+> 
+> (Note I still have a queue of the patches at
+> http://git.kernel.org/gitweb.cgi?p=linux/kernel/git/sergeh/linux-cr.git;a=shortlog;h=refs/heads/cr-next
+> so you should be able to
+> 
+> git fetch git://git.kernel.org/pub/scm/linux/kernel/git/sergeh/linux-cr.git cr-next:serge
+> 
+> and cherrypick patches from that branch instead
+> of wrangling all the patches from mbox...)
 > 
 > Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 > ---
->  checkpoint/checkpoint.c          |    4 ++--
->  checkpoint/files.c               |    6 +++---
->  checkpoint/sys.c                 |    2 +-
->  fs/pipe.c                        |    2 +-
->  include/linux/checkpoint_types.h |    2 +-
->  net/unix/checkpoint.c            |    2 +-
->  6 files changed, 9 insertions(+), 9 deletions(-)
+>  checkpoint/memory.c |    6 ++++++
+>  fs/aio.c            |   17 +++++++++++++++++
+>  include/linux/aio.h |    2 ++
+>  3 files changed, 25 insertions(+), 0 deletions(-)
 > 
-> diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-> index c345773..1eda48b 100644
-> --- a/checkpoint/checkpoint.c
-> +++ b/checkpoint/checkpoint.c
-> @@ -572,8 +572,8 @@ static int init_checkpoint_ctx(struct ckpt_ctx *ctx, pid_t pid)
->  	task_lock(ctx->root_task);
->  	fs = ctx->root_task->fs;
->  	read_lock(&fs->lock);
-> -	ctx->fs_mnt = fs->root;
-> -	path_get(&ctx->fs_mnt);
-> +	ctx->root_fs_path = fs->root;
-> +	path_get(&ctx->root_fs_path);
->  	read_unlock(&fs->lock);
->  	task_unlock(ctx->root_task);
+> diff --git a/checkpoint/memory.c b/checkpoint/memory.c
+> index 0108dbe..49e16c5 100644
+> --- a/checkpoint/memory.c
+> +++ b/checkpoint/memory.c
+> @@ -25,6 +25,7 @@
+>  #include <linux/swap.h>
+>  #include <linux/checkpoint.h>
+>  #include <linux/checkpoint_hdr.h>
+> +#include <linux/aio.h>
 >  
-> diff --git a/checkpoint/files.c b/checkpoint/files.c
-> index d6cf945..03fcd1d 100644
-> --- a/checkpoint/files.c
-> +++ b/checkpoint/files.c
-> @@ -213,7 +213,7 @@ int generic_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
->  	ret = ckpt_write_obj(ctx, &h->common.h);
->  	if (ret < 0)
->  		goto out;
-> -	ret = checkpoint_fname(ctx, &file->f_path, &ctx->fs_mnt);
-> +	ret = checkpoint_fname(ctx, &file->f_path, &ctx->root_fs_path);
->   out:
->  	ckpt_hdr_put(ctx, h);
->  	return ret;
-> @@ -489,12 +489,12 @@ int checkpoint_obj_task_fs(struct ckpt_ctx *ctx, struct fs_struct *fs)
->  	if (!fs)
+>  /*
+>   * page-array chains: each ckpt_pgarr describes a set of <struct page *,vaddr>
+> @@ -666,6 +667,11 @@ static int do_checkpoint_mm(struct ckpt_ctx *ctx, struct mm_struct *mm)
+>  	struct file *exe_file = NULL;
+>  	int ret;
+>  
+> +	ret = check_for_outstanding_aio(mm);
+> +	if (ret < 0) {
+> +		ckpt_err(ctx, ret, "(%T)Outstanding aio\n");
+> +		return ret;
+> +	}
+>  	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_MM);
+>  	if (!h)
 >  		return -ENOMEM;
+> diff --git a/fs/aio.c b/fs/aio.c
+> index 02a2c93..7eb764c 100644
+> --- a/fs/aio.c
+> +++ b/fs/aio.c
+> @@ -1784,3 +1784,20 @@ SYSCALL_DEFINE5(io_getevents, aio_context_t, ctx_id,
+>  	asmlinkage_protect(5, ret, ctx_id, min_nr, nr, events, timeout);
+>  	return ret;
+>  }
+> +
+> +int check_for_outstanding_aio(struct mm_struct *mm)
+> +{
+> +	int ret = -EBUSY;
+> +	struct kioctx *ctx;
+> +	struct hlist_node *n;
+> +
+> +	rcu_read_lock();
+> +	hlist_for_each_entry_rcu(ctx, n, &mm->ioctx_list, list)
+> +		if (!ctx->dead)
+> +			goto found;
+> +	ret = 0;
+> +found:
+> +	rcu_read_unlock();
+> +
+> +	return ret;
+> +}
+> diff --git a/include/linux/aio.h b/include/linux/aio.h
+> index aea219d..462f22e 100644
+> --- a/include/linux/aio.h
+> +++ b/include/linux/aio.h
+> @@ -214,6 +214,7 @@ extern void kick_iocb(struct kiocb *iocb);
+>  extern int aio_complete(struct kiocb *iocb, long res, long res2);
+>  struct mm_struct;
+>  extern void exit_aio(struct mm_struct *mm);
+> +extern int check_for_outstanding_aio(struct mm_struct *mm);
+>  #else
+>  static inline ssize_t wait_on_sync_kiocb(struct kiocb *iocb) { return 0; }
+>  static inline int aio_put_req(struct kiocb *iocb) { return 0; }
+> @@ -221,6 +222,7 @@ static inline void kick_iocb(struct kiocb *iocb) { }
+>  static inline int aio_complete(struct kiocb *iocb, long res, long res2) { return 0; }
+>  struct mm_struct;
+>  static inline void exit_aio(struct mm_struct *mm) { }
+> +static inline int check_for_outstanding_aio(struct mm_struct *mm) { return 0; }
+>  #endif /* CONFIG_AIO */
 >  
-> -	ret = checkpoint_fname(ctx, &fscopy->root, &ctx->fs_mnt);
-> +	ret = checkpoint_fname(ctx, &fscopy->root, &ctx->root_fs_path);
->  	if (ret < 0) {
->  		ckpt_err(ctx, ret, "%(T)writing name of fs root");
->  		goto out;
->  	}
-> -	ret = checkpoint_fname(ctx, &fscopy->pwd, &ctx->fs_mnt);
-> +	ret = checkpoint_fname(ctx, &fscopy->pwd, &ctx->root_fs_path);
->  	if (ret < 0) {
->  		ckpt_err(ctx, ret, "%(T)writing name of pwd");
->  		goto out;
-> diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-> index 749e2fd..e332827 100644
-> --- a/checkpoint/sys.c
-> +++ b/checkpoint/sys.c
-> @@ -229,7 +229,7 @@ static void ckpt_ctx_free(struct ckpt_ctx *ctx)
->  		fput(ctx->logfile);
->  
->  	ckpt_obj_hash_free(ctx);
-> -	path_put(&ctx->fs_mnt);
-> +	path_put(&ctx->root_fs_path);
->  	ckpt_pgarr_free(ctx);
->  
->  	if (ctx->tasks_arr)
-> diff --git a/fs/pipe.c b/fs/pipe.c
-> index b5d0aea..51eb174 100644
-> --- a/fs/pipe.c
-> +++ b/fs/pipe.c
-> @@ -895,7 +895,7 @@ static int pipe_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
->  
->  	/* FIFO also needs a file name */
->  	if (h->common.f_type == CKPT_FILE_FIFO) {
-> -		ret = checkpoint_fname(ctx, &file->f_path, &ctx->fs_mnt);
-> +		ret = checkpoint_fname(ctx, &file->f_path, &ctx->root_fs_path);
->  		if (ret < 0)
->  			goto out;
->  	}
-> diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
-> index f95c3ff..be728be 100644
-> --- a/include/linux/checkpoint_types.h
-> +++ b/include/linux/checkpoint_types.h
-> @@ -59,7 +59,7 @@ struct ckpt_ctx {
->  	struct deferqueue_head *deferqueue;	/* deferred c/r work */
->  	struct deferqueue_head *files_deferq;	/* deferred file-table work */
->  
-> -	struct path fs_mnt;     /* container root (FIXME) */
-> +	struct path root_fs_path;     /* container root (FIXME) */
->  
->  	struct task_struct *tsk;/* checkpoint: current target task */
->  	char err_string[256];	/* checkpoint: error string */
-> diff --git a/net/unix/checkpoint.c b/net/unix/checkpoint.c
-> index b6f6af3..90415b0 100644
-> --- a/net/unix/checkpoint.c
-> +++ b/net/unix/checkpoint.c
-> @@ -96,7 +96,7 @@ static int unix_write_cwd(struct ckpt_ctx *ctx,
->  	path.dentry = unix_sk(sk)->dentry;
->  	path.mnt = unix_sk(sk)->mnt;
->  
-> -	fqpath = ckpt_fill_fname(&path, &ctx->fs_mnt, buf, &len);
-> +	fqpath = ckpt_fill_fname(&path, &ctx->root_fs_path, buf, &len);
->  	if (IS_ERR(fqpath)) {
->  		ret = PTR_ERR(fqpath);
->  		goto out;
+>  #define io_wait_to_kiocb(wait) container_of(wait, struct kiocb, ki_wait)
