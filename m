@@ -1,14 +1,14 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH] Restore task fs_root and pwd (v2)
-Date: Wed, 20 Jan 2010 15:55:21 -0500
-Message-ID: <4B576DB9.9000502@cs.columbia.edu>
-References: <20091228183948.GA19788@us.ibm.com>	<4B57675D.8080609@cs.columbia.edu>
-	<4B576BF3.9030506@cs.columbia.edu>
+Subject: Re: [PATCH 3/3] C/R: Basic support for network namespaces and devices
+Date: Wed, 20 Jan 2010 16:26:50 -0500
+Message-ID: <4B57751A.5080506@cs.columbia.edu>
+References: <1263999673-11279-1-git-send-email-danms@us.ibm.com>
+	<1263999673-11279-4-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4B576BF3.9030506-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1263999673-11279-4-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,215 +18,198 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
+Cool - looks good !
 
-Oren Laadan wrote:
-> 
-> Oren Laadan wrote:
->> Very necessary !
->> See comments inline.
->>
->> Serge E. Hallyn wrote:
->>> Checkpoint and restore task->fs.  Tasks sharing task->fs will
->>> share them again after restart.
->>>
->>> Changelog:
->>> 	Dec 28: Addressed comments by Oren (and Dave)
->>> 		1. define and use {get,put}_fs_struct helpers
->>> 		2. fix locking comment
->>> 		3. define ckpt_read_fname() and use in checkpoint/files.c
->>>
->>> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
->>> ---
->>>  checkpoint/files.c             |  197 +++++++++++++++++++++++++++++++++++++++-
->>>  checkpoint/objhash.c           |    9 ++
->>>  checkpoint/process.c           |   13 +++
->>>  fs/fs_struct.c                 |   21 ++++
->>>  fs/open.c                      |   53 ++++++-----
->>>  include/linux/checkpoint.h     |   10 ++-
->>>  include/linux/checkpoint_hdr.h |   10 ++
->>>  include/linux/fs.h             |    4 +
->>>  include/linux/fs_struct.h      |    2 +
->>>  9 files changed, 293 insertions(+), 26 deletions(-)
->>>
->>> diff --git a/checkpoint/files.c b/checkpoint/files.c
->>> index b622588..d6cf945 100644
->>> --- a/checkpoint/files.c
->>> +++ b/checkpoint/files.c
->>> @@ -24,6 +24,9 @@
->>>  #include <linux/checkpoint_hdr.h>
->>>  #include <linux/eventpoll.h>
->>>  #include <linux/eventfd.h>
->>> +#include <linux/fs.h>
->>> +#include <linux/fs_struct.h>
->>> +#include <linux/namei.h>
->>>  #include <net/sock.h>
->>>  
->>>  
->>> @@ -449,10 +452,81 @@ int ckpt_collect_file_table(struct ckpt_ctx *ctx, struct task_struct *t)
->>>  	return ret;
->>>  }
->>>  
->>> +int checkpoint_get_task_fs(struct ckpt_ctx *ctx, struct task_struct *t)
->> Renaming these to {checkpoint/restore}_obj_filesystem() will be
->> consistent with existing naming convention there.
->>
->>> +{
->>> +	struct fs_struct *fs;
->>> +	int fs_objref;
->>> +
->>> +	task_lock(current);
->>> +	fs = t->fs;
->>> +	get_fs_struct(fs);
->>> +	task_unlock(current);
->>> +
->>> +	fs_objref = checkpoint_obj(ctx, fs, CKPT_OBJ_TASK_FS);
->>> +	put_fs_struct(fs);
->>> +
->>> +	return fs_objref;
->>> +}
->>> +
->>> +/*
->>> + * called with fs refcount bumped so it won't disappear
->>> + */
->>> +int checkpoint_obj_task_fs(struct ckpt_ctx *ctx, struct fs_struct *fs)
->>> +{
->>> +	struct ckpt_hdr_task_fs *h;
->>> +	int ret;
->>> +	struct fs_struct *fscopy;
->>> +
->>> +	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_TASK_FS);
->>> +	if (!h)
->>> +		return -ENOMEM;
->>> +	ret = ckpt_write_obj(ctx, &h->h);
->>> +	ckpt_hdr_put(ctx, h);
->>> +	if (ret)
->>> +		return ret;
->>> +
->>> +	fscopy = copy_fs_struct(fs);
->>> +	if (!fs)
->>> +		return -ENOMEM;
->>> +
->> Reverse the order below: cwd first then root - this will allow
->> the cwd to be outside of the current chroot, in the case that
->> the task escaped the chroot.
->>
->>> +	ret = checkpoint_fname(ctx, &fscopy->root, &ctx->fs_mnt);
->>> +	if (ret < 0) {
->>> +		ckpt_err(ctx, ret, "%(T)writing name of fs root");
->>> +		goto out;
->>> +	}
->>> +	ret = checkpoint_fname(ctx, &fscopy->pwd, &ctx->fs_mnt);
->>> +	if (ret < 0) {
->>> +		ckpt_err(ctx, ret, "%(T)writing name of pwd");
->>> +		goto out;
->>> +	}
->>> +	ret = 0;
->> [...]
->>
->>> +/* this is the fn called by objhash when it runs into a
->>> + * CKPT_OBJ_TASK_FS entry.  Creates an fs_struct and
->>> + * places it in the hash. */
->>> +static struct fs_struct *restore_obj_task_fs(struct ckpt_ctx *ctx)
->>> +{
->>> +	struct ckpt_hdr_task_fs *h;
->>> +	struct fs_struct *fs;
->>> +	int ret = 0;
->>> +	char *root, *cwd;
->>> +
->>> +	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_TASK_FS);
->>> +	if (IS_ERR(h))
->>> +		return ERR_PTR(PTR_ERR(h));
->>> +	ckpt_hdr_put(ctx, h);
->>> +
->>> +	fs = copy_fs_struct(current->fs);
->>> +	if (!fs)
->>> +		return ERR_PTR(-ENOMEM);
->>> +
->> Please reverse the order below: restore cwd before chroot.
->>
->>> +	ret = ckpt_read_fname(ctx, &root);
->>> +	if (ret < 0)
->>> +		goto out;
->>> +	ret = restore_chroot(ctx, fs, root);
->>> +	kfree(root);
->>> +	if (ret)
->>> +		goto out;
->>> +
->>> +	ret = ckpt_read_fname(ctx, &cwd);
->>> +	if (ret < 0)
->>> +		goto out;
->>> +	ret = restore_cwd(ctx, fs, cwd);
->>> +	kfree(cwd);
->>> +
->>> +out:
->>> +	if (ret) {
->>> +		free_fs_struct(fs);
->>> +		return ERR_PTR(ret);
->>> +	}
->>> +	return fs;
->>> +}
->>> +
->>> +void *restore_task_fs(struct ckpt_ctx *ctx)
->>> +{
->>> +	return (void *) restore_obj_task_fs(ctx);
->>> +}
->>> +
->>> +/*
->>> + * Called by task restore code to set the restarted task's
->>> + * current->fs to an entry on the hash
->>> + */
->>> +int restore_set_task_fs(struct ckpt_ctx *ctx, int fs_objref)
->> (Please rename this one, too)
->>
->>> +{
->>> +	struct fs_struct *newfs, *oldfs;
->>> +
->>> +	newfs = ckpt_obj_fetch(ctx, fs_objref, CKPT_OBJ_TASK_FS);
->>> +	if (IS_ERR(newfs))
->>> +		return PTR_ERR(newfs);
->>> +
->>> +	task_lock(current);
->>> +	get_fs_struct(newfs);
->>> +	oldfs = current->fs;
->>> +	current->fs = newfs;
->>> +	task_unlock(current);
->>> +	put_fs_struct(oldfs);
->>> +
->>> +	return 0;
->>> +}
->>> diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
->>> index 782661d..20fd3e9 100644
->>> --- a/checkpoint/objhash.c
->>> +++ b/checkpoint/objhash.c
->>> @@ -417,6 +417,15 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
->>>  		.checkpoint = checkpoint_userns,
->>>  		.restore = restore_userns,
->>>  	},
->>> +	/* struct fs_struct */
->>> +	{
->>> +		.obj_name = "TASK_FS",
->>> +		.obj_type = CKPT_OBJ_TASK_FS,
->>> +		.ref_drop = obj_task_fs_drop,
->>> +		.ref_grab = obj_task_fs_grab,
->>> +		.checkpoint = checkpoint_task_fs,
->>> +		.restore = restore_task_fs,
->> I think we also need a .collect method to prevent leaks ?
-> 
-> Scratch that.
-> 
-> I meant to ask if we needed more work on collect because the fs
-> itself points to underlying objects (the path).
-> 
-> But no, because we didn't yet "objectize" the path.
-> 
-> Oren.
+Would this compile without CONFIG_NET ?  without CONFIG_NET_NS ?
 
-... and also add a call from ckpt_collect_task() to also do the
-leak detection with a new checkpoint_collect_fs() function.
+How can a user ask to not checkpoint the network-ns ?  (e.g. in
+a subtree checkpoint)
+
+And a few minor comments inline...
+
+
+Dan Smith wrote:
+> When checkpointing a task tree with network namespaces, we hook into
+> do_checkpoint_ns() along with the others.  Any devices in a given namespace
+> are checkpointed (including their peer, in the case of veth) sequentially.
+> Each network device stores a list of protocol addresses, as well as other
+> information, such as hardware address.
+> 
+> This patch supports veth pairs, as well as the loopback adapter.  The
+> loopback support is there to make sure that any additional addresses and
+> state (such as up/down) is copied to the loopback adapter that we are
+> given in the new network namespace.
+> 
+> On restart, we instantiate new network namespaces and veth pairs as
+> necessary.  Any device we encounter that isn't in a network namespace
+> that was checkpointed as part of a task is left in the namespace of the
+> restarting process.  This will be the case for a veth half that exists
+> in the init netns to provide network access to a container.
+> 
+> Still to do are:
+> 
+>   1. Routes
+>   2. Netfilter rules
+>   3. IPv6 addresses
+>   4. Other virtual device types (e.g. bridges)
+> 
+> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
+[...]
+
+> +/*
+> + * Determine if an interface should be checkpointed, skipped, or
+> + * if it makes us uncheckpointable.  This needs to be improved
+> + * dramatically, but works for the moment.
+
+Maybe be a bit more verbose about what's missing ?
+
+> + *
+> + * Return 1 for yes, 0 for skip, -ERRNO for error
+> + */
+
+[...]
+
+> +static int count_inet4_addrs(struct in_device *indev)
+> +{
+> +	int count = 0;
+> +	struct in_ifaddr *addr;
+> +
+> +	for (addr = indev->ifa_list; addr; addr = addr->ifa_next)
+> +		count++;
+> +
+> +	return count;
+> +}
+> +
+> +static int checkpoint_in_addrs(struct ckpt_ctx *ctx, struct in_device *indev)
+> +{
+> +	struct ckpt_hdr_netdev_addr *h;
+> +	struct in_ifaddr *addr = indev->ifa_list;
+> +	int ret;
+> +	int count = 0;
+> +
+
+Is there a reason not to collect all addresses into one buffer (can
+there be more than a page worth of them ?) and write in one go ?
+
+> +	while (addr) {
+> +		h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_NETDEV_ADDR);
+> +		if (!h)
+> +			return -ENOMEM;
+> +
+> +		h->type = CKPT_NETDEV_ADDR_IPV4; /* Only IPv4 right now */
+> +
+> +		h->inet4_local = addr->ifa_local;
+> +		h->inet4_address = addr->ifa_address;
+> +		h->inet4_mask = addr->ifa_mask;
+> +		h->inet4_broadcast = addr->ifa_broadcast;
+> +
+> +		ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
+> +		ckpt_hdr_put(ctx, h);
+> +		if (ret < 0)
+> +			break;
+> +
+> +		addr = addr->ifa_next;
+> +
+> +		count++;
+> +	}
+> +
+> +	return ret < 0 ? ret : count;
+> +}
+
+[...]
+
+> +
+> +int checkpoint_netdev(struct ckpt_ctx *ctx, void *ptr)
+> +{
+> +	struct ckpt_hdr_netdev *h;
+> +	struct net_device *dev = ptr;
+> +	struct net_device *peer = NULL;
+> +	struct net *net = dev->nd_net;
+> +	int ret = 0;
+> +	struct ifreq req;
+> +
+> +	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_NETDEV);
+> +	if (!h)
+> +		return -ENOMEM;
+> +
+> +	if (strcmp(dev->name, "lo") == 0)
+> +		h->type = CKPT_NETDEV_LO;
+> +	else {
+
+While this is correct, perhaps be more verbose and change to:
+	else if (strncmp(dev->name, "veth", 4) == 0)
+
+> +		h->type = CKPT_NETDEV_VETH;
+> +		peer = veth_get_peer(dev);
+> +	}
+
+and then
+	} else {
+		/* error */
+	}
+
+> +
+> +	memcpy(req.ifr_name, dev->name, IFNAMSIZ);
+> +	ret = __kern_dev_ioctl(net, SIOCGIFFLAGS, &req);
+> +	h->flags = req.ifr_flags;
+> +	if (ret < 0)
+> +		goto out;
+> +
+
+[...]
+
+> +
+> +int checkpoint_netns(struct ckpt_ctx *ctx, void *ptr)
+> +{
+> +	struct net *net = ptr;
+> +	struct net_device *dev;
+> +	struct ckpt_hdr_netns *h;
+> +	int ret;
+> +
+> +	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_NET_NS);
+> +	if (!h)
+> +		return -ENOMEM;
+> +
+> +	h->this_ref = ckpt_obj_lookup(ctx, net, CKPT_OBJ_NET_NS);
+> +	if (h->this_ref == 0) {
+> +		/* This shouldn't happen because we're called from
+> +		 * checkpoint_obj() which should have already put
+> +		 * us in the hash
+> +		 */
+
+If this can only happen due to a bug, then BUG_ON(). Otherwise,
+maybe use ckpt_err() ?
+
+> +		ret = -EINVAL;
+> +		goto out;
+> +	}
+> +
+> +	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
+> +	if (ret < 0)
+> +		goto out;
+> +
+> +	for_each_netdev(net, dev) {
+> +		ret = should_checkpoint_netdev(dev);
+> +		if (ret > 0)
+> +			ret = checkpoint_obj(ctx, dev, CKPT_OBJ_NETDEV);
+> +		if (ret < 0)
+> +			break;
+> +	}
+> + out:
+> +	ckpt_hdr_put(ctx, h);
+> +
+> +	return ret;
+> +}
+> +
+
+[...]
+
+Thanks,
 
 Oren.
