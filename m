@@ -1,13 +1,15 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH 1/2] m_type is long, not int
-Date: Wed, 20 Jan 2010 12:01:20 -0500
-Message-ID: <4B5736E0.8050801@cs.columbia.edu>
-References: <1263355761-17112-1-git-send-email-serue@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 3/3] C/R: Basic support for network namespaces and devices
+Date: Wed, 20 Jan 2010 11:36:39 -0600
+Message-ID: <20100120173639.GD8463@us.ibm.com>
+References: <1263999673-11279-1-git-send-email-danms@us.ibm.com>
+	<1263999673-11279-4-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1263355761-17112-1-git-send-email-serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1263999673-11279-4-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,33 +19,40 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> When checkpointing a task tree with network namespaces, we hook into
+> do_checkpoint_ns() along with the others.  Any devices in a given namespace
+> are checkpointed (including their peer, in the case of veth) sequentially.
+> Each network device stores a list of protocol addresses, as well as other
+> information, such as hardware address.
+> 
+> This patch supports veth pairs, as well as the loopback adapter.  The
+> loopback support is there to make sure that any additional addresses and
+> state (such as up/down) is copied to the loopback adapter that we are
+> given in the new network namespace.
+> 
+> On restart, we instantiate new network namespaces and veth pairs as
+> necessary.  Any device we encounter that isn't in a network namespace
+> that was checkpointed as part of a task is left in the namespace of the
+> restarting process.  This will be the case for a veth half that exists
+> in the init netns to provide network access to a container.
+> 
+> Still to do are:
+> 
+>   1. Routes
+>   2. Netfilter rules
+>   3. IPv6 addresses
+>   4. Other virtual device types (e.g. bridges)
+> 
+> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Ack for this and the next one... added.
+Cool - I don't see any issues in the patchset.
 
-serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-> From: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> 
-> So make sure we store a field big enough on 64-bit arch.
-> 
-> Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  include/linux/checkpoint_hdr.h |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
-> 
-> diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-> index 314d967..a80dcdc 100644
-> --- a/include/linux/checkpoint_hdr.h
-> +++ b/include/linux/checkpoint_hdr.h
-> @@ -977,7 +977,7 @@ struct ckpt_hdr_ipc_msg {
->  
->  struct ckpt_hdr_ipc_msg_msg {
->  	struct ckpt_hdr h;
-> -	__s32 m_type;
-> +	__s64 m_type;
->  	__u32 m_ts;
->  	__s32 sec_ref;
->  } __attribute__((aligned(8)));
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
+thanks,
+-serge
