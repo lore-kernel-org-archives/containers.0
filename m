@@ -1,14 +1,15 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 3/3] C/R: Basic support for network namespaces and devices
-Date: Thu, 21 Jan 2010 07:38:29 -0800
-Message-ID: <878wbrpix6.fsf@caffeine.danplanet.com>
-References: <1263999673-11279-1-git-send-email-danms@us.ibm.com>
-	<1263999673-11279-4-git-send-email-danms@us.ibm.com>
-	<4B57751A.5080506@cs.columbia.edu>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/1] s390: actually restart syscalls after sys_restart
+Date: Thu, 21 Jan 2010 09:43:32 -0600
+Message-ID: <20100121154332.GE6878@us.ibm.com>
+References: <20100121062802.GA2770@us.ibm.com>
+	<Pine.LNX.4.64.1001210904210.6064@takamine.ncl.cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <Pine.LNX.4.64.1001210904210.6064-CXF6herHY6ykSYb+qCZC/1i27PF6R63G9nwVQlTi/Pw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,31 +20,78 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-OL> Would this compile without CONFIG_NET ?  without CONFIG_NET_NS ?
+Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+> Hi,
+> 
+> I'm not sure thix fix is totally correct. 
+> 
+> First, a reminder of how -ERESTART... errors behave:
+> 
+> 1) If a (user) signal handler was *not* called then:
+>   -ERESTARTSYS:    re-execute syscall
+>   -ERESTARTNOHAND:    re-execute syscall   
+>   -ERESTARTNOINTR:    re-execute syscall
+>   -ERESTART_RESTARTBLOCK:   arrange to call sys_restart_syscall
+> 
+> 2) If a (user) signal handler *was* called then:
+>   -ERESTARTSYS:    re-execute syscall iff SA_RESTART (else EINTR)
+>   -ERESTARTNOHAND:    return -EINTR
+>   -ERESTARTNOINTR:    re-execute syscall
+>   -ERESTART_RESTARTBLOCK:   return -EINTR
+> 
+> The difference between x86 and s390 is _when_ (and how) the task state is
+> altered (to arrange for re-execution), in case of task freezing:
+> 
+> * In x86, changes occur _after_ the task is frozen, and the work is split 
+> between handle_signal() and do_signal().
+> 
+> * In s390, some changes occur _before_ the task is frozen, and possibly 
+> undone after the freeze if a signal handler was called. All work is done 
+> is do_signal(). Because of that, our checkpoint only sees a partial view 
+> of the task's state.
+> 
+> Now back to the proposed fix: it isn't sufficient because:
+> 
+> (a) If the process has a signal pending when checkpointed, then the state 
+> already reflects some changes by do_signal(). If the signal leads to a 
+> (user) signal handler after restart, then do_signal() (after restart) will 
+> _not_ undo the changes originally done before the checkpoint.
+> 
+> This issue holds for ERESTARTSYS, ERESTARTNOHAND and ERESTART_RESTARTBLOCK.
+> 
+> Note that do_signal() after restart will not do the changes again either
+> in case of -ERESTART.... value, because the regs->svcnr was set to 0 and
+> recorded that way.
+> 
+> (b) Same, but also if the process didn't have a signal at checkpoint 
+> time, but will have one during/after restart but before resuming.
+> 
+> (c) Because do_restart() selects its return value from gprs[2] (upon 
+> successful completion), then when it tries to resume userspace and 
+> enters do_signal() it will have -EINTR (which isn't the original return 
+> value!), and therefore not set your new TIF_RESTARTBLOCK bit. If the task 
+> is now checkpointed again, that state will be lost.
 
-Nope, but it does depend on CONFIG_CHECKPOINT, of course.  I'll add
-some Kconfig magic to try to straighten that out.
+Sorry if I'm misunderstanding what you're saying, but the return value
+after exiting sys_restart() won't be -EINTR now, bc my patch sets it to
+__NR_restart_syscall.
 
-OL> How can a user ask to not checkpoint the network-ns ?  (e.g. in
-OL> a subtree checkpoint)
+> As a side note: I noticed that on x86 there are {checkpoint,restore}_thread() 
+> that save the thread flags and restore the necessary flags. They also 
+> check the flags - at checkpoint to ensure the task is checkpointable, and 
+> at restore for sanity.  Is there not a need for something similar for s390?
+> 
+> That would be an appropriate place to svae and restore a TIF_RESTARTBLOCK
+> thread flag and fix (c) above, should you stick to that method.
 
-Do we really want to start adding fine-grained control over everything
-that we checkpoint?  Can you ask it to not checkpoint the ipc_ns,
-uts_ns, etc?  The previous example of this was connected sockets,
-which I think is different, given the potential for a long delay
-before restart ensuring the sockets will be dead anyway.
+We actually want that flag cleared - the flag is only there so that
+checkpoint can tell that it needs to set the 'should_restart' flag in
+the thread info in the checkpoint image.  sys_estart does not then reset
+that flag, it instead does the steps which are done in the last block
+of do_signal(): set gprs[2] to NR_syscall_restart and add the TIF_RESTART_SVC
+thread flag.
 
-OL> Is there a reason not to collect all addresses into one buffer
-OL> (can there be more than a page worth of them ?) and write in one
-OL> go ?
-
-I don't really see anywhere that the list is bounded.  I'd say that in
-most cases each interface will only have one address anyway.
-
--- 
-Dan Smith
-IBM Linux Technology Center
-email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+-serge
