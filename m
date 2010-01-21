@@ -1,16 +1,15 @@
-From: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
-Subject: [RFC][PATCH] sched: Fix fork vs hotplug vs cpuset namespaces
-Date: Thu, 21 Jan 2010 21:36:30 +0100
-Message-ID: <1264106190.4283.1314.camel__34485.7868193232$1264106325$gmane$org@laptop>
-References: <1263852243.4745.363.camel@Mercier.safe.ca>
-	<20100119150931.GA7708@us.ibm.com>
-	<1263916851.4745.386.camel@Mercier.safe.ca>
-	<20100121171338.GA16904@us.ibm.com> <1264095325.4283.1198.camel@laptop>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH][cr-test]: filelock1: Test restore of adivsory locks
+	during restart
+Date: Thu, 21 Jan 2010 15:37:09 -0600
+Message-ID: <20100121213709.GA9276@us.ibm.com>
+References: <20100120230621.GA30288@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1264095325.4283.1198.camel@laptop>
+Content-Disposition: inline
+In-Reply-To: <20100120230621.GA30288-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,264 +19,671 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, 2010-01-21 at 18:35 +0100, Peter Zijlstra wrote:
-> On Thu, 2010-01-21 at 11:13 -0600, Serge E. Hallyn wrote:
-> > The culprit is e2912009fb7b715728311b0d8fe327a1432b3f79
-> >     sched: Ensure set_task_cpu() is never called on blocked tasks
-> > 
-> > If you mount both the ns and cpuset cgroups with this patch applied,
-> > then doing clone with CLONE_NEWPID, CLONE_NEWNET, etc, you get the
-> > hang.  The hang is actually hard enough that alt-sysrq isn't helpful :)
-> > Still trying to figure out what is going on - Peter, any ideas offhand?
+thanks, both applied.  seems to do fine on s390 on v19-5.
 
-> Hmm, I have an idea.. does it really need the ns cgroup stuff?
-
-It appears so, what is happening is that:
-
-copy_process()
-
-  sched_fork()
-    child->state = TASK_WAKING; /* waiting for wake_up_new_task() */
-
-  if (current->nsproxy != p->nsproxy)
-     ns_cgroup_clone()
-       cgroup_clone()
-         mutex_lock(inode->i_mutex)
-         mutex_lock(cgroup_mutex)
-         cgroup_attach_task()
-	   ss->can_attach()
-           ss->attach() [ -> cpuset_attach() ]
-             cpuset_attach_task()
-               set_cpus_allowed_ptr();
-                 while (child->state == TASK_WAKING)
-                   cpu_relax();
-
-
-which will pretty much mess up your system. However sysrq not working
-shouldn't be amongst that and s390 working is also unexplained.
-
-While that spin on TASK_WAKING is new, the behaviour was dubious because
-when we stick the new child into the tasklist we copy the
-parent->cpus_allowed back into the child:
-
-
-  	/* Need tasklist lock for parent etc handling! */
-	write_lock_irq(&tasklist_lock);
-
-	/*
-	 * The task hasn't been attached yet, so its cpus_allowed mask will
-	 * not be changed, nor will its assigned CPU.
-	 *
-	 * The cpus_allowed mask of the parent may have changed after it was
-	 * copied first time - so re-copy it here, then check the child's CPU
-	 * to ensure it is on a valid CPU (and if not, just force it back to
-	 * parent's CPU). This avoids alot of nasty races.
-	 */
-	p->cpus_allowed = current->cpus_allowed;
-	p->rt.nr_cpus_allowed = current->rt.nr_cpus_allowed;
-	if (unlikely(!cpu_isset(task_cpu(p), p->cpus_allowed) ||
-			!cpu_online(task_cpu(p))))
-		set_task_cpu(p, smp_processor_id());
-
-
-which mostly stems from 2005.
-
-Now, I'm not quite sure how to fix this to be honest.. calling
-->can_attach and ->attach on half finished tasks seems somewhat ill
-defined.
-
-So while pondering this I think I might have found another bug which
-needs to get closed, hotplug vs fork might end up removing the target
-cpu between this second ->cpus_allowed copy in copy_process() and
-wake_up_new_task(), so we need to move the fork migration step anyway.
-
-So I think the below ought to cure at least the immediate problem,
-leaving the question if cgroups really want to call ->attach that early.
-
-Utterly untested.... never even seen a compiler but here goes:
-
----
-Subject: sched: Fix fork vs hotplug vs cpuset namespaces
-From: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
-Date: Thu Jan 21 21:04:57 CET 2010
-
-There are a number of issues:
-
-1) TASK_WAKING vs cgroup_clone (cpusets)
-
-copy_process():
-
-  sched_fork()
-    child->state = TASK_WAKING; /* waiting for wake_up_new_task() */
-
-  if (current->nsproxy != p->nsproxy)
-     ns_cgroup_clone()
-       cgroup_clone()
-         mutex_lock(inode->i_mutex)
-         mutex_lock(cgroup_mutex)
-         cgroup_attach_task()
-	   ss->can_attach()
-           ss->attach() [ -> cpuset_attach() ]
-             cpuset_attach_task()
-               set_cpus_allowed_ptr();
-                 while (child->state == TASK_WAKING)
-                   cpu_relax();
-
-will deadlock the system.
-
-
-2) cgroup_clone (cpusets) vs copy_process
-
-So even if the above would work we still have:
-
-copy_process():
-
-  if (current->nsproxy != p->nsproxy)
-     ns_cgroup_clone()
-       cgroup_clone()
-         mutex_lock(inode->i_mutex)
-         mutex_lock(cgroup_mutex)
-         cgroup_attach_task()
-	   ss->can_attach()
-           ss->attach() [ -> cpuset_attach() ]
-             cpuset_attach_task()
-               set_cpus_allowed_ptr();
-  
-  ...
-
-  p->cpus_allowed = current->cpus_allowed
-
-over-writing the modified cpus_allowed.
-
-
-3) fork() vs hotplug
-
-  if we unplug the child's cpu after the sanity check when the child
-  gets attached to the task_list but before wake_up_new_task() shit
-  will meet with fan.
-
-Solve all these issues by moving fork cpu selection into
-wake_up_new_task().
-
-Reported-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Almost-Signed-off-by: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
----
- kernel/fork.c  |   15 ---------------
- kernel/sched.c |   39 +++++++++++++++++++++++++++------------
- 2 files changed, 27 insertions(+), 27 deletions(-)
-
-Index: linux-2.6/kernel/fork.c
-===================================================================
---- linux-2.6.orig/kernel/fork.c
-+++ linux-2.6/kernel/fork.c
-@@ -1241,21 +1241,6 @@ static struct task_struct *copy_process(
- 	/* Need tasklist lock for parent etc handling! */
- 	write_lock_irq(&tasklist_lock);
- 
--	/*
--	 * The task hasn't been attached yet, so its cpus_allowed mask will
--	 * not be changed, nor will its assigned CPU.
--	 *
--	 * The cpus_allowed mask of the parent may have changed after it was
--	 * copied first time - so re-copy it here, then check the child's CPU
--	 * to ensure it is on a valid CPU (and if not, just force it back to
--	 * parent's CPU). This avoids alot of nasty races.
--	 */
--	p->cpus_allowed = current->cpus_allowed;
--	p->rt.nr_cpus_allowed = current->rt.nr_cpus_allowed;
--	if (unlikely(!cpu_isset(task_cpu(p), p->cpus_allowed) ||
--			!cpu_online(task_cpu(p))))
--		set_task_cpu(p, smp_processor_id());
--
- 	/* CLONE_PARENT re-uses the old parent */
- 	if (clone_flags & (CLONE_PARENT|CLONE_THREAD)) {
- 		p->real_parent = current->real_parent;
-Index: linux-2.6/kernel/sched.c
-===================================================================
---- linux-2.6.orig/kernel/sched.c
-+++ linux-2.6/kernel/sched.c
-@@ -2300,14 +2300,12 @@ static int select_fallback_rq(int cpu, s
- }
- 
- /*
-- * Called from:
-+ * Gets called from 3 sites (exec, fork, wakeup), since it is called without
-+ * holding rq->lock we need to ensure ->cpus_allowed is stable, this is done
-+ * by:
-  *
-- *  - fork, @p is stable because it isn't on the tasklist yet
-- *
-- *  - exec, @p is unstable, retry loop
-- *
-- *  - wake-up, we serialize ->cpus_allowed against TASK_WAKING so
-- *             we should be good.
-+ *  exec:           is unstable, retry loop
-+ *  fork & wake-up: serialize ->cpus_allowed against TASK_WAKING
-  */
- static inline
- int select_task_rq(struct task_struct *p, int sd_flags, int wake_flags)
-@@ -2600,9 +2598,6 @@ void sched_fork(struct task_struct *p, i
- 	if (p->sched_class->task_fork)
- 		p->sched_class->task_fork(p);
- 
--#ifdef CONFIG_SMP
--	cpu = select_task_rq(p, SD_BALANCE_FORK, 0);
--#endif
- 	set_task_cpu(p, cpu);
- 
- #if defined(CONFIG_SCHEDSTATS) || defined(CONFIG_TASK_DELAY_ACCT)
-@@ -2632,6 +2627,21 @@ void wake_up_new_task(struct task_struct
- {
- 	unsigned long flags;
- 	struct rq *rq;
-+	int cpu = get_cpu;
-+
-+#ifdef CONFIG_SMP
-+	/*
-+	 * Fork balancing, do it here and not earlier because:
-+	 *  - cpus_allowed can change in the fork path
-+	 *  - any previously selected cpu might disappear through hotplug
-+	 *
-+	 * We still have TASK_WAKING but PF_STARTING is gone now, meaning
-+	 * ->cpus_allowed is stable, we have preemption disabled, meaning
-+	 * cpu_online_mask is stable.
-+	 */
-+	cpu = select_task_rq(p, SD_BALANCE_FORK, 0);
-+	set_task_cpu(p, cpu);
-+#endif
- 
- 	rq = task_rq_lock(p, &flags);
- 	BUG_ON(p->state != TASK_WAKING);
-@@ -2645,6 +2655,7 @@ void wake_up_new_task(struct task_struct
- 		p->sched_class->task_woken(rq, p);
- #endif
- 	task_rq_unlock(rq, &flags);
-+	put_cpu();
- }
- 
- #ifdef CONFIG_PREEMPT_NOTIFIERS
-@@ -5316,14 +5327,18 @@ int set_cpus_allowed_ptr(struct task_str
- 	 * the ->cpus_allowed mask from under waking tasks, which would be
- 	 * possible when we change rq->lock in ttwu(), so synchronize against
- 	 * TASK_WAKING to avoid that.
-+	 *
-+	 * Make an exception for freshly cloned tasks, since cpuset namespaces
-+	 * might move the task about, we have to validate the target in
-+	 * wake_up_new_task() anyway since the cpu might have gone away.
- 	 */
- again:
--	while (p->state == TASK_WAKING)
-+	while (p->state == TASK_WAKING && !(p->flags & PF_STARTING))
- 		cpu_relax();
- 
- 	rq = task_rq_lock(p, &flags);
- 
--	if (p->state == TASK_WAKING) {
-+	if (p->state == TASK_WAKING && !(p->flags & PF_STARTING)) {
- 		task_rq_unlock(rq, &flags);
- 		goto again;
- 	}
+Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+> 
+> This test currently fails during restart on ckpt-v19-rc2.
+> 
+> On Serge's cr-next it fails cleanly during checkpoint due to:
+> 
+> 	commit 5d1f1227384876dd13a66cad1f286d98f9b1891b
+> 	Author: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> 	Date:   Thu Dec 17 09:35:13 2009 -0800
+> 
+> 	    ckpt-files: error out on file locks and leases
+> 
+> ---
+> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> Date: Fri, 15 Jan 2010 15:33:55 -0800
+> Subject: [PATCH] filelock1: Test restore of adivsory locks during restart
+> 
+> Test that any byte-range locks held by a process at the time of
+> checkpoint are restored correctly after restart.
+> 
+> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> ---
+>  fileio/Makefile         |    9 +-
+>  fileio/filelock1.c      |  383 +++++++++++++++++++++++++++++++++++++++++++++++
+>  fileio/run-filelock1.sh |  218 +++++++++++++++++++++++++++
+>  3 files changed, 608 insertions(+), 2 deletions(-)
+>  create mode 100644 fileio/filelock1.c
+>  create mode 100755 fileio/run-filelock1.sh
+> 
+> diff --git a/fileio/Makefile b/fileio/Makefile
+> index 071a9eb..40d19da 100644
+> --- a/fileio/Makefile
+> +++ b/fileio/Makefile
+> @@ -1,6 +1,11 @@
+> -targets = fileio1
+> +targets = fileio1 filelock1
+> 
+> -all: $(targets)
+> +INCLUDE   = ../libcrtest
+> +LIBCRTEST = ../libcrtest/common.o
+> +CFLAGS    = -I $(INCLUDE)
+> +LDFLAGS   = $(LIBCRTEST)
+> +
+> +all: $(LIBCRTEST) $(targets)
+> 
+>  clean:
+>  	rm -f $(targets)
+> diff --git a/fileio/filelock1.c b/fileio/filelock1.c
+> new file mode 100644
+> index 0000000..305cbeb
+> --- /dev/null
+> +++ b/fileio/filelock1.c
+> @@ -0,0 +1,383 @@
+> +#include <stdio.h>
+> +#include <unistd.h>
+> +#include <fcntl.h>
+> +#include <string.h>
+> +#include <signal.h>
+> +#include <errno.h>
+> +#include "libcrtest.h"
+> +
+> +#define TEST_FILE	"data.d/data.filelock1"
+> +#define LOG_FILE	"logs.d/log.filelock1"
+> +
+> +typedef unsigned long long u64;
+> +
+> +extern FILE *logfp;
+> +int test_fd;
+> +int event_fd1;
+> +int event_fd2;
+> +
+> +/*
+> + * Description:
+> + * 	Ensure that F_RDLCK and F_WRLCK byte-range locks held by a process at
+> + * 	the time of checkpoint are properly restored when the process is
+> + * 	restarted from the checkpoint.
+> + *
+> + * Implementation:
+> + * 	Two processes, P0 and P1 acquire the set of locks described by
+> + * 	locks_list[] below. Then, they notify the parent that they are ready for
+> + * 	checkpoint and wait for checkpoint to be done.  When they are restarted
+> + * 	(i.e when test_done() is TRUE), each process verifies that it has the
+> + * 	locks it had at the time of checkpoint and that it cannot grab a lock
+> + * 	held by the other process.
+> + */
+> +
+> +setup_notification()
+> +{
+> +	int efd;
+> +
+> +	efd = eventfd(0, 0);
+> +	if (efd < 0) {
+> +		fprintf(logfp, "ERROR: eventfd(): %s\n", strerror(errno));
+> +		do_exit(1);
+> +	}
+> +	return efd;
+> +}
+> +
+> +wait_for_events(int efd, u64 total)
+> +{
+> +	int n;
+> +	u64 events;
+> +	u64 count = (u64)0;
+> +
+> +	do {
+> +		fprintf(logfp, "%d: wait_for_events: fd %d, reading for %llu\n",
+> +				getpid(), efd, total);
+> +		fflush(logfp);
+> +
+> +		n = read(efd, &events, sizeof(events));
+> +		if (n != sizeof(events)) {
+> +			fprintf(logfp, "ERROR: read(event_fd) %s\n",
+> +						strerror(errno));
+> +			do_exit(1);
+> +		}
+> +		fprintf(logfp, "%d: wait_for_events: fd %d read %llu\n",
+> +				getpid(), efd, events);
+> +
+> +		count += events;
+> +	} while (count < total);
+> +}
+> +
+> +notify_one_event(int efd)
+> +{
+> +	int n;
+> +	u64 event = (u64)1;
+> +
+> +	fprintf(logfp, "%d: Notifying one event on fd %d\n", getpid(), efd);
+> +	fflush(logfp);
+> +
+> +	n = write(efd, &event, sizeof(event));
+> +	if (n != sizeof(event)) {
+> +		fprintf(logfp, "ERROR: write(event_fd) %s\n", strerror(errno));
+> +		do_exit(1);
+> +	}
+> +}
+> +
+> +struct test_arg {
+> +	int child_idx;
+> +	int type;
+> +	int start;
+> +	int len;
+> +};
+> +
+> +struct test_arg locks_list[] = {
+> +	{ 0, F_WRLCK, 0, 17 },
+> +	{ 1, F_WRLCK, 18, 16 },
+> +	{ 0, F_WRLCK, 35, 27 },
+> +	{ 1, F_WRLCK, 63, 17 },
+> +	{ 0, F_RDLCK, 81, 25 },
+> +	{ 1, F_RDLCK, 81, 25 },
+> +};
+> +
+> +void set_lock(int fd, struct test_arg *tlock)
+> +{
+> +	int rc;
+> +	struct flock lock;
+> +
+> +	lock.l_type = tlock->type;
+> +	lock.l_whence = SEEK_SET;
+> +	lock.l_start = (off_t)tlock->start;
+> +	lock.l_len = (off_t)tlock->len;
+> +
+> +	rc = fcntl(fd, F_SETLK, &lock);
+> +	if (rc < 0 && errno != EAGAIN) {
+> +		fprintf(logfp, "%d: set_lock(): ERROR [%d, %llu, %llu]: %s\n",
+> +				getpid(), tlock->type, (u64)tlock->start,
+> +				(u64)tlock->len, strerror(errno));
+> +		fflush(logfp);
+> +		kill(getppid(), SIGUSR1);
+> +		do_exit(1);
+> +	}
+> +
+> +	fprintf(logfp, "%d: set_lock(): [%d, %llu, %llu] %s\n", getpid(),
+> +			tlock->type, (u64)tlock->start, (u64)tlock->len,
+> +			rc < 0 ? strerror(errno) : "done");
+> +}
+> +/*
+> + * If @set is TRUE, ensure that the given lock is set.
+> + * If @set is FALSE, ensure that the given lock is NOT set.
+> + */
+> +void test_lock(int fd, int locked_by_me, struct test_arg *tlock)
+> +{
+> +	int rc;
+> +	int conflict;
+> +	struct flock lock;
+> +	char lock_info[512];
+> +
+> +	lock.l_type = tlock->type;
+> +	lock.l_whence = SEEK_SET;
+> +	lock.l_start = (off_t)tlock->start;
+> +	lock.l_len = (off_t)tlock->len;
+> +	lock.l_pid = 0;
+> +
+> +	sprintf(lock_info, "lock [%d, %llu, %llu] ", tlock->type,
+> +			(u64)tlock->start, (u64)tlock->len);
+> +
+> +	conflict = 0;
+> +	rc = fcntl(fd, F_SETLK, &lock);
+> +	if (rc < 0 && (errno == EAGAIN || errno == EACCES)) {
+> +		rc = fcntl(fd, F_GETLK, &lock);
+> +		if (rc < 0) {
+> +			fprintf(logfp, "ERROR: fcntl(F_GETLK): %s, error %s\n",
+> +					lock_info, strerror(errno));
+> +			goto error;
+> +		}
+> +
+> +		if (lock.l_type == F_UNLCK || lock.l_pid == 0) {
+> +			fprintf(logfp, "%d: ERROR: %s F_SETLK / F_GETLK "
+> +					"mismatch !!!\n", getpid(), lock_info);
+> +			goto error;
+> +		}
+> +		conflict = 1;
+> +	} else if (rc < 0) {
+> +		fprintf(logfp, "ERROR: fcntl(F_SETLK): %s, error %s\n",
+> +				lock_info, strerror(errno));
+> +		goto error;
+> +	}
+> +
+> +	fprintf(logfp, "%d: %s, locked_by_me: %d, conflict %d\n", getpid(),
+> +			lock_info, locked_by_me, conflict);
+> +
+> +	if (locked_by_me && conflict) {
+> +		fprintf(logfp, "%d: FAIL: %s is NOT set by me !!!\n", getpid(),
+> +				lock_info);
+> +		goto error;
+> +	} else if (!locked_by_me && !conflict) {
+> +		fprintf(logfp, "%d: FAIL: %s is NOT set by peer !!!\n",
+> +				getpid(), lock_info);
+> +		goto error;
+> +	} else {
+> +		fprintf(logfp, "%d: PASS: %s is %sset by me\n",
+> +				getpid(), lock_info, conflict ? "not " : "");
+> +		return;
+> +	}
+> +
+> +error:
+> +	fflush(logfp);
+> +	kill(getppid(), SIGUSR1);
+> +	do_exit(1);
+> +}
+> +
+> +void handler(int sig)
+> +{
+> +	/*
+> +	 * We completed the test and siblings have completed their test.
+> +	 * So, safe to drop our locks and exit.
+> +	 */
+> +	fprintf(logfp, "%d: Ok to exit...\n", getpid());
+> +	fflush(logfp);
+> +	do_exit(0);
+> +}
+> +
+> +int do_child1(int idx)
+> +{
+> +	int rc;
+> +	int locked_by_me;
+> +	int i;
+> +	int num_locks;
+> +	int failed;
+> +	
+> +	signal(SIGINT, handler);
+> +
+> +	num_locks = sizeof(locks_list) / sizeof(struct test_arg);
+> +
+> +	for (i = 0; i < num_locks; i++) {
+> +		if (idx != locks_list[i].child_idx)
+> +			continue;
+> +
+> +		set_lock(test_fd, &locks_list[i]);
+> +	}
+> +
+> +	/*
+> +	 * Tell parent we are ready for checkpoint...
+> +	 */
+> +	notify_one_event(event_fd1);
+> +
+> +	/*
+> +	 * Wait for checkpoint/restart
+> +	 */
+> +	fprintf(logfp, "%d: waiting for test-done\n", idx);
+> +	fflush(logfp);
+> +	while(!test_done()) {
+> +		sleep(1);
+> +	}
+> +	fprintf(logfp, "%d: Found test-done\n", idx);
+> +	fflush(logfp);
+> +
+> +	for (i = 0; i < num_locks; i++) {
+> +		/*
+> +		 * If we had (not) set the lock earlier, ensure we still have
+> +		 * it (not) set.
+> +		 */
+> +		locked_by_me = 0;
+> +		if (idx == locks_list[i].child_idx ||
+> +					locks_list[i].type == F_RDLCK)
+> +			locked_by_me = 1;
+> +
+> +		test_lock(test_fd, locked_by_me, &locks_list[i]);
+> +	}
+> +
+> +	/*
+> +	 * Notify parent that we are done testing the locks.
+> +	 */
+> +	notify_one_event(event_fd2);
+> +
+> +	/*
+> +	 * Hold onto our locks and wait for siblings to complete their
+> +	 * test on our locks. Parent will SIGINT us when it is safe to
+> +	 * exit.
+> +	 */
+> +	pause();
+> +
+> +	do_exit(0);
+> +}
+> +
+> +/*
+> + * Populate the test file so the children can lock some portions of
+> + * the file
+> + */
+> +void setup_test_file()
+> +{
+> +	char buf[256];
+> +
+> +	test_fd = open(TEST_FILE, O_RDWR|O_CREAT|O_TRUNC, 0666);
+> +	if (test_fd < 0) {
+> +		fprintf(logfp, "ERROR: open(%s): %s\n", TEST_FILE,
+> +				strerror(errno));
+> +		do_exit(1);
+> +	}
+> +
+> +	memset(buf, 0, sizeof(buf));
+> +	write(test_fd, buf, sizeof(buf));
+> +}
+> +
+> +int pid1, pid2;
+> +void child_handler(int sig)
+> +{
+> +	/*
+> +	 * Wait for the child that exited prematurely
+> +	 */
+> +	fprintf(logfp, "%d: Got signal %d\n", getpid(), sig);
+> +	fflush(logfp);
+> +
+> +	if (sig == SIGCHLD)
+> +		do_wait(1);
+> +	fprintf(logfp, "%d: Test case FAILED\n", getpid());
+> +	fflush(logfp);
+> +	/*
+> +	 * Kill (remaining) children and exit.
+> +	 */
+> +	kill(pid1, SIGKILL);
+> +	kill(pid2, SIGKILL);
+> +
+> +	do_exit(-1);
+> +}
+> +
+> +main(int argc, char *argv[])
+> +{
+> +	int i, status, rc;
+> +
+> +	if (test_done()) {
+> +		printf("Remove %s before running test\n", TEST_DONE);
+> +		do_exit(1);
+> +	}
+> +
+> +	logfp = fopen(LOG_FILE, "w");
+> +	if (!logfp) {
+> +		perror("open() logfile");
+> +		do_exit(1);
+> +	}
+> +
+> +	printf("%s: Closing stdio fds and writing messages to %s\n",
+> +			argv[0], LOG_FILE);
+> +
+> +	for (i=0; i<100; i++)  {
+> +		if (fileno(logfp) != i)
+> +			close(i);
+> +	}
+> +
+> +	setup_test_file();
+> +	event_fd1 = setup_notification();
+> +	event_fd2 = setup_notification();
+> +
+> +	/*
+> +	 * Before waiting for events below, ensure we will be notified
+> +	 * if a child encounters an error and/or exits prematurely.
+> +	 */
+> +	signal(SIGUSR1, child_handler);
+> +	signal(SIGCHLD, child_handler);
+> +
+> +	/*
+> +	 * Create the first child and wait for it take its record locks
+> +	 */
+> +	pid1 = fork();
+> +	if (pid1 == 0)
+> +		do_child1(0);
+> +	wait_for_events(event_fd1, 1);
+> +
+> +	/*
+> +	 * Create the second child and wait for it take its locks.
+> +	 */
+> +	pid2 = fork();
+> +	if (pid2 == 0)
+> +		do_child1(1);
+> +	wait_for_events(event_fd1, 1);
+> +
+> +	/*
+> +	 * Now that the test processes are ready, tell any wrapper scripts,
+> +	 * we are ready for checkpoint
+> +	 */
+> +	set_checkpoint_ready();
+> +
+> +	fprintf(logfp, "***** %d: Ready for checkpoint\n", getpid());
+> +	fflush(logfp);
+> +
+> +	/*
+> +	 * Wait for all children to test the locks. Since a processes locks
+> +	 * are dropped on exit, if process P1 exits before process P2 has
+> +	 * completed testing a conflicting lock, P2 may acquire the lock
+> +	 * supposed to be held by P1 and wrongly assume that test failed.
+> +	 */
+> +	wait_for_events(event_fd2, 2);
+> +
+> +	signal(SIGCHLD, SIG_IGN);
+> +
+> +	/*
+> +	 * Tell children it is safe to exit
+> +	 */
+> +	kill(pid1, SIGINT);
+> +	kill(pid2, SIGINT);
+> +
+> +	do_wait(2);
+> +
+> +	do_exit(0);
+> +}
+> diff --git a/fileio/run-filelock1.sh b/fileio/run-filelock1.sh
+> new file mode 100755
+> index 0000000..0ba2d18
+> --- /dev/null
+> +++ b/fileio/run-filelock1.sh
+> @@ -0,0 +1,218 @@
+> +#!/bin/bash
+> +
+> +source ../common.sh
+> +
+> +dir=`mktemp -p . -d -t cr_filelock1_XXXXXXX` || (echo "mktemp failed"; exit 1)
+> +
+> +# NOTE: As of ckpt-v15-dev, the --container option to 'ckpt' causes this
+> +#	test to fail with "container not isolated" message due to the
+> +#	log-file being shared between the application threads.
+> +#
+> +CHECKPOINT="`which checkpoint` --container"
+> +RESTART=`which restart`
+> +ECHO="/bin/echo -e"
+> +
+> +TEST_CMD="../filelock1"
+> +TEST_ARGS=""
+> +TEST_LOG="logs.d/log.filelock1"
+> +SCRIPT_LOG="logs.d/log.run-filelock1"
+> +TEST_PID_FILE="pid.filelock1";
+> +
+> +SNAPSHOT_DIR="snap1.d"
+> +
+> +TEST_DONE="test-done"
+> +CHECKPOINT_FILE="checkpoint-filelock1";
+> +CHECKPOINT_READY="checkpoint-ready"
+> +CHECKPOINT_DONE="checkpoint-done"
+> +
+> +LOGS_DIR="logs.d"
+> +DATA_DIR="data.d"
+> +
+> +NS_EXEC="../../ns_exec"
+> +NS_EXEC_ARGS="-cgpuimP $TEST_PID_FILE"
+> +
+> +checkpoint()
+> +{
+> +	local pid=$1
+> +
+> +	$ECHO "\t- Checkpoint: $CHECKPOINT $pid \> $CHECKPOINT_FILE"
+> +	$CHECKPOINT $pid > $CHECKPOINT_FILE
+> +	ret=$?
+> +	if [ $ret -ne 0 ]; then
+> +		$ECHO "***** FAIL: Checkpoint of $pid failed"
+> +		ps -efL |grep $TEST_CMD >> $SCRIPT_LOG
+> +		exit 1;
+> +	fi
+> +}
+> +
+> +function wait_for_checkpoint_ready()
+> +{
+> +	# Wait for test to finish setup
+> +	while [ ! -f $CHECKPOINT_READY ]; do
+> +		$ECHO "\t- Waiting for $CHECKPOINT_READY"
+> +		sleep 1;
+> +	done;
+> +}
+> +
+> +function create_container()
+> +{
+> +	local pid;
+> +
+> +	cmdline="$NS_EXEC $NS_EXEC_ARGS -- $TEST_CMD $TEST_ARGS"
+> +
+> +	$ECHO "\t- Creating container:"
+> +	$ECHO "\t- $cmdline"
+> +
+> +	$cmdline &
+> +
+> +	wait_for_checkpoint_ready;
+> +
+> +	# Find global pid of container-init
+> +	pid=`cat $TEST_PID_FILE`;
+> +	if [  "x$pid" == "x" ]; then
+> +		$ECHO "***** FAIL: Invalid container-init pid $pid"
+> +		ps -efL |grep $TEST_CMD >> $SCRIPT_LOG
+> +		exit 1
+> +	fi
+> +	$ECHO "Created container with pid $pid" >> $SCRIPT_LOG
+> +}
+> +
+> +function restart_container
+> +{
+> +	local ret;
+> +
+> +	cmdline="$RESTART --pids --pidns --wait"
+> +	$ECHO "\t- $cmdline"
+> +
+> +	sleep 1
+> +
+> +	$cmdline < $CHECKPOINT_FILE >> $SCRIPT_LOG 2>&1 &
+> +	ret=$?
+> +
+> +	if [ $ret -ne 0 ]; then
+> +		$ECHO "***** FAIL: Restart of $pid failed"
+> +		ps -efL |grep $TEST_CMD >> $SCRIPT_LOG
+> +		exit 1;
+> +	fi
+> +
+> +}
+> +
+> +function create_fs_snapshot()
+> +{
+> +	# Prepare for snapshot
+> +	if [ -d $SNAPSHOT_DIR ]; then
+> +		rm -rf ${SNAPSHOT_DIR}.prev
+> +		mv $SNAPSHOT_DIR ${SNAPSHOT_DIR}.prev
+> +		mkdir $SNAPSHOT_DIR
+> +	fi
+> +
+> +	# Snapshot the log files
+> +	cp ${LOGS_DIR}/* $SNAPSHOT_DIR
+> +}
+> +
+> +function restore_fs_snapshot()
+> +{
+> +	# Restore the snapshot after the main process has been killed
+> +	/bin/cp ${SNAPSHOT_DIR}/* $LOGS_DIR
+> +}
+> +
+> +cd $dir
+> +echo "Current directory: `pwd`"
+> +
+> +if [ ! -d $LOGS_DIR ]; then
+> +	mkdir $LOGS_DIR
+> +fi
+> +
+> +if [ ! -d $DATA_DIR ]; then
+> +	mkdir $DATA_DIR
+> +fi
+> +
+> +if [ ! -d $SNAPSHOT_DIR ]; then
+> +	mkdir $SNAPSHOT_DIR
+> +fi
+> +
+> +if [ ! -f $INPUT_DATA ]; then
+> +	$FILEIO -C $INPUT_DATA
+> +fi
+> +
+> +# Make sure no stray filelock1 process from another run is still going
+> +killall $TEST_CMD > $SCRIPT_LOG 2>&1
+> +
+> +> $SCRIPT_LOG;
+> +cnt=1
+> +while [ $cnt -lt 20 ]; do
+> +	$ECHO "===== Iteration $cnt"
+> +
+> +	# Remove any 'state' files, start the app and let it tell us
+> +	# when it is ready
+> +	rm -f $CHECKPOINT_READY $TEST_DONE $TEST_PID_FILE
+> +
+> +	create_container
+> +	wait_for_checkpoint_ready
+> +
+> +	pid=`cat $TEST_PID_FILE`
+> +
+> +	$ECHO "\t- Done creating container, cinit-pid $pid"
+> +
+> +	ps -efL |grep $TEST_CMD >> $SCRIPT_LOG
+> +
+> +	# override default freezerdir
+> +	if [ -d $freezerdir ]; then
+> +		rmdir $freezerdir
+> +	fi
+> +	freezerdir=$freezermountpoint/$pid
+> +	freeze_pid $pid
+> +
+> +	num_pids1=`ps -efL |grep $TEST_CMD | wc -l`
+> +
+> +	create_fs_snapshot
+> +
+> +	checkpoint $pid
+> +
+> +	touch $CHECKPOINT_DONE
+> +
+> +	killall -9 `basename $TEST_CMD`
+> +
+> +	thaw
+> +
+> +	sleep 3
+> +
+> +	restore_fs_snapshot
+> +
+> +	restart_container
+> +
+> +	sleep 3;
+> +
+> +	num_pids2=`ps -efL |grep $TEST_CMD | wc -l`
+> +	ps -efL |grep $TEST_CMD >> $SCRIPT_LOG
+> +	$ECHO "\t- num_pids1 $num_pids1, num_pids2 $num_pids2";
+> +
+> +	# ns_exec pid is parent-pid of restarted-container-init
+> +	nspid=`pidof restart`
+> +
+> +	if [ "x$nspid" == "x" ]; then
+> +		$ECHO "***** FAIL: Can't find pid of $RESTART"
+> +		exit 1;
+> +	fi
+> +
+> +	# End test gracefully
+> +	touch $TEST_DONE
+> +
+> +	$ECHO "\t- Waiting for restarted container to exit (gloabl-pid $nspid)"
+> +	wait $nspid;
+> +	ret=$?
+> +
+> +	grep --binary-files=text FAIL $PWD/$TEST_LOG > /dev/null 2>&1
+> +	if [ $? -eq 0 ]; then
+> +		$ECHO "\t***** Application FAILED after restart" >> $SCRIPT_LOG
+> +		$ECHO "\t***** See $TEST_LOG for details" >> $SCRIPT_LOG
+> +
+> +		$ECHO "\t***** Application FAILED after restart"
+> +		$ECHO "\tSee $PWD/$TEST_LOG for details"
+> +		exit 1;
+> +	fi
+> +
+> +	$ECHO "\t- Container exited, status $ret"
+> +
+> +	cnt=$((cnt+1))
+> +done
+> -- 
+> 1.6.0.4
