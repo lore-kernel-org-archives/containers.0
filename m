@@ -1,7 +1,7 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH linux-cr] x86-32 and ia32 eclone, checkpoint, restart fixes
-Date: Fri, 22 Jan 2010 18:34:47 -0600
-Message-ID: <20100123003447.GA5285@us.ibm.com>
+Subject: [PATCH user-cr] clone_x86_32: use correct 4th syscall arg
+Date: Fri, 22 Jan 2010 18:35:32 -0600
+Message-ID: <20100123003532.GB5285@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -20,65 +20,28 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Eclone on x86-32 should use esi for 4th arg (upids), not
-edi, which is 5th arg.  This will require a corresponding fix
-to user-cr, but (a) it's correct and (b) it's required so that
-IA32_ARG_FIXUP can put upids in the right register for
-process_64.c:sys_eclone().  IA32_ARG_FIXUP will (of course) put
-edi into r8, the 5th arg.
+The 4th arg to syscall is esi, not edi.  Wasn't too big a deal since
+we yanked it out of regs->edi at process_32.c:sys_eclone(), but
+it gets totally b0rked when ia32 regs fixup happens to use the
+32-bit abi in x86-64.
 
-Add the ptregs_syscall stubs for eclone, checkpoint, and restart
-for 32-bit api on x86-64.
-
-With this patch (and proper user-cr), checkpoint and eclone work
-on x86-32, x86-64, and in 32-bit mode on x86-64.  (restart has not
-yet been tested)
-
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Serge Hallyn <serge-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- arch/x86/ia32/ia32entry.S    |   11 +++++++++++
- arch/x86/kernel/process_32.c |    2 +-
- 2 files changed, 12 insertions(+), 1 deletions(-)
+ clone_x86_32.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/arch/x86/ia32/ia32entry.S b/arch/x86/ia32/ia32entry.S
-index 581b056..67bf4dc 100644
---- a/arch/x86/ia32/ia32entry.S
-+++ b/arch/x86/ia32/ia32entry.S
-@@ -477,6 +477,14 @@ quiet_ni_syscall:
- 	PTREGSCALL stub32_clone, sys32_clone, %rdx
- 	PTREGSCALL stub32_vfork, sys_vfork, %rdi
- 	PTREGSCALL stub32_iopl, sys_iopl, %rsi
-+	PTREGSCALL stub32_eclone, sys_eclone, %r8
-+#ifdef CONFIG_CHECKPOINT
-+	PTREGSCALL stub32_checkpoint, sys_checkpoint, %r8
-+	PTREGSCALL stub32_restart, sys_restart, %r8
-+#else
-+	PTREGSCALL stub32_checkpoint, sys_ni_syscall, %r8
-+	PTREGSCALL stub32_restart, sys_ni_syscall, %r8
-+#endif
+diff --git a/clone_x86_32.c b/clone_x86_32.c
+index 2d26385..54960e0 100644
+--- a/clone_x86_32.c
++++ b/clone_x86_32.c
+@@ -66,7 +66,7 @@ int eclone(int (*fn)(void *), void *fn_arg, int clone_flags_low,
+ 		 "b" (clone_flags_low),	/* flags -> 1st (ebx) */
+ 		 "c" (&my_args),	/* clone_args -> 2nd (ecx) */
+ 		 "d" (sizeof(my_args)),	/* args_size -> 3rd (edx) */
+-		 "D" (pids)		/* pids -> 4th (edi) */
++		 "S" (pids)		/* pids -> 4th (esi) */
+ 		);
  
- ENTRY(ia32_ptregs_common)
- 	popq %r11
-@@ -841,4 +849,7 @@ ia32_sys_call_table:
- 	.quad compat_sys_pwritev
- 	.quad compat_sys_rt_tgsigqueueinfo	/* 335 */
- 	.quad sys_perf_event_open
-+	.quad stub32_eclone
-+	.quad stub32_checkpoint
-+	.quad stub32_restart
- ia32_syscall_end:
-diff --git a/arch/x86/kernel/process_32.c b/arch/x86/kernel/process_32.c
-index ed8b53c..2416b62 100644
---- a/arch/x86/kernel/process_32.c
-+++ b/arch/x86/kernel/process_32.c
-@@ -455,7 +455,7 @@ int sys_eclone(struct pt_regs *regs)
- 	flags_low = regs->bx;
- 	uca = (struct clone_args __user *)regs->cx;
- 	args_size = regs->dx;
--	pids = (pid_t __user *)regs->di;
-+	pids = (pid_t __user *)regs->si;
- 
- 	return do_eclone_common(regs, flags_low, uca, args_size, pids);
- }
+ 	if (retval < 0) {
 -- 
-1.6.0.6
+1.6.3.3
