@@ -1,42 +1,54 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC] c/r: 32-bit support on x86-64
-Date: Tue, 26 Jan 2010 15:25:14 -0500
-Message-ID: <4B5F4FAA.4040905@cs.columbia.edu>
-References: <1264470494-14049-1-git-send-email-serue@us.ibm.com>
+From: Paul Menage <menage@google.com>
+Subject: Re: [PATCH 1/2] cgroups: Fix to return errno in a failure path
+Date: Tue, 26 Jan 2010 15:01:26 -0800
+Message-ID: <6599ad831001261501q2e6e54bckebb3d2d225ecc126@mail.gmail.com>
+References: <4B5EA4EC.8020700@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1264470494-14049-1-git-send-email-serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: QUOTED-PRINTABLE
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1752649Ab0AZXBd@vger.kernel.org>
+In-Reply-To: <4B5EA4EC.8020700@cn.fujitsu.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Li Zefan <lizf@cn.fujitsu.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, LKML <linux-kernel@vger.kernel.org>, "containers@lists.osdl.org" <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
+On Tue, Jan 26, 2010 at 12:16 AM, Li Zefan <lizf@cn.fujitsu.com> wrote:
+>
+> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
 
-Applied, thanks.
+Acked-by: Paul Menage <menage@google.com>
 
-serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-> The first patch is a resend from friday, and should be applied to
-> v19.  The second patch I think should be applied to v19 as well,
-> as it will prevent accidental attempts to restart a 64-bit image
-> with a 32-bit restart, and vice versa.
-> 
-> The third patch I think does things which need to be done, but
-> it doesn't yet get 32-bit restart on x86-64 fully working.  In
-> particular, I always get a segfault in VDSO in __kernel_vsyscall().
-> What is odd is that the registers seem right, the segfault is at
-> the right address, and gdb shows that the right instructions are
-> at the faulting address - so the reason for the segfault is still a
-> complete mystery to me.
-> 
-> 
-> 
+> ---
+> =A0cgroup.c | =A0 =A07 +++++--
+> =A01 file changed, 5 insertions(+), 2 deletions(-)
+>
+> --- a/kernel/cgroup.c.orig =A0 =A0 =A02010-01-19 16:37:37.000000000 +=
+0800
+> +++ a/kernel/cgroup.c =A0 2010-01-19 16:39:07.000000000 +0800
+> @@ -3279,14 +3279,17 @@ static long cgroup_create(struct cgroup
+>
+> =A0 =A0 =A0 =A0for_each_subsys(root, ss) {
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0struct cgroup_subsys_state *css =3D ss=
+->create(ss, cgrp);
+> +
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0if (IS_ERR(css)) {
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0err =3D PTR_ERR(css);
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0goto err_destroy;
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0}
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0init_cgroup_css(css, ss, cgrp);
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (ss->use_id)
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (alloc_css_id(ss, pa=
+rent, cgrp))
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (ss->use_id) {
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 err =3D alloc_css_id(ss=
+, parent, cgrp);
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (err)
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0goto e=
+rr_destroy;
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 }
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0/* At error, ->destroy() callback has =
+to free assigned ID. */
+> =A0 =A0 =A0 =A0}
+>
+>
