@@ -1,58 +1,65 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH 2/2] cgroups: Clean up cgroup_pidlist_find() a bit
-Date: Tue, 26 Jan 2010 16:17:04 +0800
-Message-ID: <4B5EA500.5040802@cn.fujitsu.com>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [PATCH 1/2] cgroups: Fix to return errno in a failure path
+Date: Tue, 26 Jan 2010 08:50:22 -0600
+Message-ID: <20100126145022.GA6224@us.ibm.com>
 References: <4B5EA4EC.8020700@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1752053Ab0AZIQx@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754126Ab0AZOu3@vger.kernel.org>
+Content-Disposition: inline
 In-Reply-To: <4B5EA4EC.8020700@cn.fujitsu.com>
 Sender: linux-kernel-owner@vger.kernel.org
 To: Li Zefan <lizf@cn.fujitsu.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Paul Menage <menage@google.com>, Ben Blum <bblum@andrew.cmu.edu>, LKML <linux-kernel@vger.kernel.org>, "containers@lists.osdl.org" <containers@lists.osdl.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>, "containers@lists.osdl.org" <containers@lists.osdl.org>, Paul Menage <menage@google.com>, LKML <linux-kernel@vger.kernel.org>
 List-Id: containers.vger.kernel.org
 
-Don't Call get_pid_ns() before we locate/alloc the ns.
+Quoting Li Zefan (lizf@cn.fujitsu.com):
+> In cgroup_create(), if alloc_css_id() returns failure, the errno
+> is not propagated to userspace, so mkdir will fail silently.
+> 
+> To trigger this bug, we mount blkio (or memory subsystem), and
+> create more then 65534 cgroups. (The number of cgroups is limited
+> to 65535 if a subsystem has use_id == 1)
+> 
+>  # mount -t cgroup -o blkio xxx /mnt
+>  # for ((i = 0; i < 65534; i++)); do mkdir /mnt/$i; done
+>  # mkdir /mnt/65534
+>  (should return ENOSPC)
+>  #
+> 
+> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
 
-Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
----
- cgroup.c |    8 +++-----
- 1 file changed, 3 insertions(+), 5 deletions(-)
+Yup.
 
---- a/kernel/cgroup.c.orig	2010-01-26 14:24:29.000000000 +0800
-+++ a/kernel/cgroup.c	2010-01-26 14:24:44.000000000 +0800
-@@ -2643,7 +2643,8 @@ static struct cgroup_pidlist *cgroup_pid
- {
- 	struct cgroup_pidlist *l;
- 	/* don't need task_nsproxy() if we're looking at ourself */
--	struct pid_namespace *ns = get_pid_ns(current->nsproxy->pid_ns);
-+	struct pid_namespace *ns = current->nsproxy->pid_ns;
-+
- 	/*
- 	 * We can't drop the pidlist_mutex before taking the l->mutex in case
- 	 * the last ref-holder is trying to remove l from the list at the same
-@@ -2653,8 +2654,6 @@ static struct cgroup_pidlist *cgroup_pid
- 	mutex_lock(&cgrp->pidlist_mutex);
- 	list_for_each_entry(l, &cgrp->pidlists, links) {
- 		if (l->key.type == type && l->key.ns == ns) {
--			/* found a matching list - drop the extra refcount */
--			put_pid_ns(ns);
- 			/* make sure l doesn't vanish out from under us */
- 			down_write(&l->mutex);
- 			mutex_unlock(&cgrp->pidlist_mutex);
-@@ -2665,13 +2664,12 @@ static struct cgroup_pidlist *cgroup_pid
- 	l = kmalloc(sizeof(struct cgroup_pidlist), GFP_KERNEL);
- 	if (!l) {
- 		mutex_unlock(&cgrp->pidlist_mutex);
--		put_pid_ns(ns);
- 		return l;
- 	}
- 	init_rwsem(&l->mutex);
- 	down_write(&l->mutex);
- 	l->key.type = type;
--	l->key.ns = ns;
-+	l->key.ns = get_pid_ns(ns);
- 	l->use_count = 0; /* don't increment here */
- 	l->list = NULL;
- 	l->owner = cgrp;
+Acked-by: Serge Hallyn <serue@us.ibm.com>
+
+> ---
+>  cgroup.c |    7 +++++--
+>  1 file changed, 5 insertions(+), 2 deletions(-)
+> 
+> --- a/kernel/cgroup.c.orig	2010-01-19 16:37:37.000000000 +0800
+> +++ a/kernel/cgroup.c	2010-01-19 16:39:07.000000000 +0800
+> @@ -3279,14 +3279,17 @@ static long cgroup_create(struct cgroup 
+> 
+>  	for_each_subsys(root, ss) {
+>  		struct cgroup_subsys_state *css = ss->create(ss, cgrp);
+> +
+>  		if (IS_ERR(css)) {
+>  			err = PTR_ERR(css);
+>  			goto err_destroy;
+>  		}
+>  		init_cgroup_css(css, ss, cgrp);
+> -		if (ss->use_id)
+> -			if (alloc_css_id(ss, parent, cgrp))
+> +		if (ss->use_id) {
+> +			err = alloc_css_id(ss, parent, cgrp);
+> +			if (err)
+>  				goto err_destroy;
+> +		}
+>  		/* At error, ->destroy() callback has to free assigned ID. */
+>  	}
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers@lists.linux-foundation.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
