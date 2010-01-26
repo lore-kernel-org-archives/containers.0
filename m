@@ -1,13 +1,11 @@
-From: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 3/4] x86_64: make some changes to fs/gs register handling
-Date: Mon, 25 Jan 2010 19:48:14 -0600
-Message-ID: <1264470494-14049-4-git-send-email-serue@us.ibm.com>
-References: <1264470494-14049-1-git-send-email-serue@us.ibm.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: [PATCH] Preliminary and minimal c/r of mounts namespace
+Date: Mon, 25 Jan 2010 23:37:27 -0500
+Message-ID: <1264480647-30375-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1264470494-14049-1-git-send-email-serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,107 +15,161 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+We only allow c/r when all processes shared a single mounts ns.
 
-1. always save/restore fs/gs
+We do intend to implement c/r of mounts and mounts namespaces in the
+kernel.  It shouldn't be ugly or complicate locking to do so.  Just
+haven't gotten around to it. A more complete solution is more than we
+want to take on now for v19.
 
-	not just if CONFIG_COMPAT and the task is 64-bit.  Pretty
-	sure that block wasn't doing what it wanted to do anyway :)
+But we'd like as much as possible for everything which we don't
+support, to not be checkpointable, since not doing so has in the past
+invited slanderous accusations of being a toy implementation :)
 
-2. use rdmsrl for fs/gs for self-checkpoint
+Meanwhile, we get the following:
+1) Checkpoint bails if not all tasks share the same mnt-ns
+2) Leak detection works for full container checkpoint
 
-	<shrug>  other code seems to do it.  It doesn't seem to make
-	a difference one way or the other.
+On restart, all tasks inherit the same mnt-ns of the coordinator, by
+default. A follow-up patch to user-cr will add a new switch to the
+'restart' to request a CLONE_NEWMNT flag when creating the root-task
+of the restart.
 
-3. null out fs/gs if index is set
-
-	like __switch_to() does
-
-4. fs and gs are not encoded segments, so don't run them through
-check_segment().
-
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- arch/x86/kernel/checkpoint_64.c |   32 ++++++++++++++++----------------
- 1 files changed, 16 insertions(+), 16 deletions(-)
+ checkpoint/objhash.c           |   25 +++++++++++++++++++++++++
+ include/linux/checkpoint.h     |    2 +-
+ include/linux/checkpoint_hdr.h |    4 ++++
+ kernel/nsproxy.c               |   19 +++++++++++++++----
+ 4 files changed, 45 insertions(+), 5 deletions(-)
 
-diff --git a/arch/x86/kernel/checkpoint_64.c b/arch/x86/kernel/checkpoint_64.c
-index ee01e17..46f2256 100644
---- a/arch/x86/kernel/checkpoint_64.c
-+++ b/arch/x86/kernel/checkpoint_64.c
-@@ -162,21 +162,26 @@ void save_cpu_regs(struct ckpt_hdr_cpu *h, struct task_struct *t)
- 		savesegment(es, _es);
- 		savesegment(fs, _fs);
- 		savesegment(gs, _gs);
-+		rdmsrl(MSR_FS_BASE, h->fs);
-+		rdmsrl(MSR_KERNEL_GS_BASE, h->gs);
- 	} else {
- 		_ds = t->thread.ds;
- 		_es = t->thread.es;
- 		_fs = t->thread.fsindex;
- 		_gs = t->thread.gsindex;
-+		h->fs = t->thread.fs;
-+		h->gs = t->thread.gs;
- 	}
- 	h->ds = encode_segment(_ds);
- 	h->es = encode_segment(_es);
- 	h->fsindex = encode_segment(_fs);
- 	h->gsindex = encode_segment(_gs);
+diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+index 295d02d..d689d66 100644
+--- a/checkpoint/objhash.c
++++ b/checkpoint/objhash.c
+@@ -20,6 +20,7 @@
+ #include <linux/kref.h>
+ #include <linux/ipc_namespace.h>
+ #include <linux/user_namespace.h>
++#include <linux/mnt_namespace.h>
+ #include <linux/checkpoint.h>
+ #include <linux/checkpoint_hdr.h>
+ #include <net/sock.h>
+@@ -221,6 +222,22 @@ static int obj_cred_grab(void *ptr)
+ 	return 0;
+ }
  
--	if (!test_tsk_thread_flag(t, TIF_IA32)) {
--		h->fs = t->thread.fs;
--		h->gs = t->thread.gs;
--	}
-+	/* see comment in __switch_to() */
-+	if (_fs)
-+		h->fs = 0;
-+	if (_gs)
-+		h->gs = 0;
++static int obj_mnt_ns_grab(void *ptr)
++{
++	get_mnt_ns((struct mnt_namespace *) ptr);
++	return 0;
++}
++
++static void obj_mnt_ns_drop(void *ptr, int lastref)
++{
++	put_mnt_ns((struct mnt_namespace *) ptr);
++}
++
++static int obj_mnt_ns_users(void *ptr)
++{
++	return atomic_read(&((struct mnt_namespace *) ptr)->count);
++}
++
+ static void obj_cred_drop(void *ptr, int lastref)
+ {
+ 	put_cred((struct cred *) ptr);
+@@ -442,6 +459,14 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
+ 		.checkpoint = checkpoint_ipc_ns,
+ 		.restore = restore_ipc_ns,
+ 	},
++	/* mnt_ns object */
++	{
++		.obj_name = "MOUNTS NS",
++		.obj_type = CKPT_OBJ_MNT_NS,
++		.ref_grab = obj_mnt_ns_grab,
++		.ref_drop = obj_mnt_ns_drop,
++		.ref_users = obj_mnt_ns_users,
++	},
+ 	/* user_ns object */
+ 	{
+ 		.obj_name = "USER_NS",
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index b2cbd30..616795c 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -10,7 +10,7 @@
+  *  distribution for more details.
+  */
  
- 	/*
- 	 * for checkpoint in process context (from within a container),
-@@ -203,12 +208,6 @@ int load_cpu_regs(struct ckpt_hdr_cpu *h, struct task_struct *t)
- 	    !check_segment(h->fsindex) || !check_segment(h->gsindex))
- 		return -EINVAL;
+-#define CHECKPOINT_VERSION  5
++#define CHECKPOINT_VERSION  6
  
--#ifdef CONFIG_COMPAT
--	if (test_tsk_thread_flag(t, TIF_IA32) &&
--	    (!check_segment(h->fs) || !check_segment(h->gs)))
--		return -EINVAL;
--#endif
+ /* checkpoint user flags */
+ #define CHECKPOINT_SUBTREE	0x1
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 53ae8bf..343f737 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -103,6 +103,8 @@ enum {
+ #define CKPT_HDR_UTS_NS CKPT_HDR_UTS_NS
+ 	CKPT_HDR_IPC_NS,
+ #define CKPT_HDR_IPC_NS CKPT_HDR_IPC_NS
++	CKPT_HDR_MNT_NS,
++#define CKPT_HDR_MNT_NS CKPT_HDR_MNT_NS
+ 	CKPT_HDR_CAPABILITIES,
+ #define CKPT_HDR_CAPABILITIES CKPT_HDR_CAPABILITIES
+ 	CKPT_HDR_USER_NS,
+@@ -233,6 +235,8 @@ enum obj_type {
+ #define CKPT_OBJ_UTS_NS CKPT_OBJ_UTS_NS
+ 	CKPT_OBJ_IPC_NS,
+ #define CKPT_OBJ_IPC_NS CKPT_OBJ_IPC_NS
++	CKPT_OBJ_MNT_NS,
++#define CKPT_OBJ_MNT_NS CKPT_OBJ_MNT_NS
+ 	CKPT_OBJ_USER_NS,
+ #define CKPT_OBJ_USER_NS CKPT_OBJ_USER_NS
+ 	CKPT_OBJ_CRED,
+diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+index 7a513a6..35089cb 100644
+--- a/kernel/nsproxy.c
++++ b/kernel/nsproxy.c
+@@ -255,10 +255,17 @@ int ckpt_collect_ns(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	 * ipc_ns (shm) may keep references to files: if this is the
+ 	 * first time we see this ipc_ns (ret > 0), proceed inside.
+ 	 */
+-	if (ret)
++	if (ret) {
+ 		ret = ckpt_collect_ipc_ns(ctx, nsproxy->ipc_ns);
++		if (ret < 0)
++			goto out;
++	}
+ 
+-	/* TODO: collect other namespaces here */
++	ret = ckpt_obj_collect(ctx, nsproxy->mnt_ns, CKPT_OBJ_MNT_NS);
++	if (ret < 0)
++		goto out;
++
++	ret = 0;
+  out:
+ 	put_nsproxy(nsproxy);
+ 	return ret;
+@@ -282,8 +289,12 @@ static int do_checkpoint_ns(struct ckpt_ctx *ctx, struct nsproxy *nsproxy)
+ 		goto out;
+ 	h->ipc_objref = ret;
+ 
+-	/* TODO: Write other namespaces here */
 -
- 	regs->r15 = h->r15;
- 	regs->r14 = h->r14;
- 	regs->r13 = h->r13;
-@@ -240,18 +239,19 @@ int load_cpu_regs(struct ckpt_hdr_cpu *h, struct task_struct *t)
- 	thread->fsindex = decode_segment(h->fsindex);
- 	thread->gsindex = decode_segment(h->gsindex);
- 
--#ifdef CONFIG_COMPAT
--	if (!test_tsk_thread_flag(t, TIF_IA32)) {
--		thread->fs = h->fs;
--		thread->gs = h->gs;
--	}
--#endif
-+	thread->fs = h->fs;
-+	thread->gs = h->gs;
- 
- 	/* XXX - unsure is this really needed ... */
- 	loadsegment(fs, thread->fsindex);
-         if (thread->fs)
- 		wrmsrl(MSR_FS_BASE, thread->fs);
- 	load_gs_index(thread->gsindex);
-+	/*
-+	 * when we switch to user-space, the MSR_KERNEL_GS_BASE
-+	 * will be moved back to MSR_GS_BASE.
-+	 * http://lists.openwall.net/linux-kernel/2008/11/18/340
-+	 */
-         if (thread->gs)
- 		wrmsrl(MSR_KERNEL_GS_BASE, thread->gs);
- 
++	/* We do not support >1 private mntns */
++	ret = -EINVAL;
++	if (nsproxy->mnt_ns != ctx->root_nsproxy->mnt_ns) {
++		ckpt_err(ctx, ret, "%(T)Nested mnt_ns unsupported\n");
++		goto out;
++	}
+ 	/* We do not support >1 private netns */
+ 	ret = -EINVAL;
+ 	if (nsproxy->net_ns != ctx->root_nsproxy->net_ns) {
 -- 
-1.6.0.6
+1.6.3.3
