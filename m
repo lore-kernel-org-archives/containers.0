@@ -1,65 +1,42 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [PATCH 1/2] cgroups: Fix to return errno in a failure path
-Date: Tue, 26 Jan 2010 08:50:22 -0600
-Message-ID: <20100126145022.GA6224@us.ibm.com>
-References: <4B5EA4EC.8020700@cn.fujitsu.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [RFC] c/r: 32-bit support on x86-64
+Date: Tue, 26 Jan 2010 15:25:14 -0500
+Message-ID: <4B5F4FAA.4040905@cs.columbia.edu>
+References: <1264470494-14049-1-git-send-email-serue@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754126Ab0AZOu3@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <4B5EA4EC.8020700@cn.fujitsu.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Li Zefan <lizf@cn.fujitsu.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, "containers@lists.osdl.org" <containers@lists.osdl.org>, Paul Menage <menage@google.com>, LKML <linux-kernel@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1264470494-14049-1-git-send-email-serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Li Zefan (lizf@cn.fujitsu.com):
-> In cgroup_create(), if alloc_css_id() returns failure, the errno
-> is not propagated to userspace, so mkdir will fail silently.
-> 
-> To trigger this bug, we mount blkio (or memory subsystem), and
-> create more then 65534 cgroups. (The number of cgroups is limited
-> to 65535 if a subsystem has use_id == 1)
-> 
->  # mount -t cgroup -o blkio xxx /mnt
->  # for ((i = 0; i < 65534; i++)); do mkdir /mnt/$i; done
->  # mkdir /mnt/65534
->  (should return ENOSPC)
->  #
-> 
-> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
 
-Yup.
+Applied, thanks.
 
-Acked-by: Serge Hallyn <serue@us.ibm.com>
-
-> ---
->  cgroup.c |    7 +++++--
->  1 file changed, 5 insertions(+), 2 deletions(-)
+serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+> The first patch is a resend from friday, and should be applied to
+> v19.  The second patch I think should be applied to v19 as well,
+> as it will prevent accidental attempts to restart a 64-bit image
+> with a 32-bit restart, and vice versa.
 > 
-> --- a/kernel/cgroup.c.orig	2010-01-19 16:37:37.000000000 +0800
-> +++ a/kernel/cgroup.c	2010-01-19 16:39:07.000000000 +0800
-> @@ -3279,14 +3279,17 @@ static long cgroup_create(struct cgroup 
+> The third patch I think does things which need to be done, but
+> it doesn't yet get 32-bit restart on x86-64 fully working.  In
+> particular, I always get a segfault in VDSO in __kernel_vsyscall().
+> What is odd is that the registers seem right, the segfault is at
+> the right address, and gdb shows that the right instructions are
+> at the faulting address - so the reason for the segfault is still a
+> complete mystery to me.
 > 
->  	for_each_subsys(root, ss) {
->  		struct cgroup_subsys_state *css = ss->create(ss, cgrp);
-> +
->  		if (IS_ERR(css)) {
->  			err = PTR_ERR(css);
->  			goto err_destroy;
->  		}
->  		init_cgroup_css(css, ss, cgrp);
-> -		if (ss->use_id)
-> -			if (alloc_css_id(ss, parent, cgrp))
-> +		if (ss->use_id) {
-> +			err = alloc_css_id(ss, parent, cgrp);
-> +			if (err)
->  				goto err_destroy;
-> +		}
->  		/* At error, ->destroy() callback has to free assigned ID. */
->  	}
 > 
-> _______________________________________________
-> Containers mailing list
-> Containers@lists.linux-foundation.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+> 
