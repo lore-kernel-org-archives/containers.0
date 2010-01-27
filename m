@@ -1,12 +1,16 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/1] switch s390 sys_checkpoint as well
-Date: Wed, 27 Jan 2010 14:01:11 -0600
-Message-ID: <20100127200111.GA24277@us.ibm.com>
+Subject: Re: [PATCH 1/1] fill vdso with syscall32_setup_pages if TIF_IA32
+	on x86_64
+Date: Wed, 27 Jan 2010 14:10:37 -0600
+Message-ID: <20100127201037.GA23119@us.ibm.com>
+References: <20100127071636.GA16624@us.ibm.com>
+	<Pine.LNX.4.64.1001270954120.8974@takamine.ncl.cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <Pine.LNX.4.64.1001270954120.8974-CXF6herHY6ykSYb+qCZC/1i27PF6R63G9nwVQlTi/Pw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,35 +24,37 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-I thought I had sent this before and was surprised to not see it
-in ckpt-v19-rc2.6, but actually it's not in my Sent folder so I
-think I was remiss...
+Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+> 
+> Cool !
+> 
+> So what do we have working now for 64 bit kernel (for 32 bit kernel
+> we know it works...):
+> 
+> 	'restart'	checkpointed
+> 	 program	  program
+> 	----------------------------------------
+> 	  64bit		  64bit		-> works
+> 	  32bit		  32bit		-> works
+> 
+> 	  64bit		  32bit		-> ?????
 
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- arch/s390/kernel/process.c |    9 +++++++++
- 1 files changed, 9 insertions(+), 0 deletions(-)
+Actually the other way around works - /bin/restart_32 < 64bit.out
+works just fine.  /bin/restart_64 < 32bit.out does not.  The reason
+is that destroy_mm() ends up calling do_munmap on a 64-bit mapping
+after the switch to 32-bit had been made, and it refuses bc
+vma->vm_start > TASK_SIZE.
 
-diff --git a/arch/s390/kernel/process.c b/arch/s390/kernel/process.c
-index 087f52c..ef66fa3 100644
---- a/arch/s390/kernel/process.c
-+++ b/arch/s390/kernel/process.c
-@@ -242,7 +242,16 @@ SYSCALL_DEFINE4(clone, unsigned long, newsp, unsigned long, clone_flags,
- }
- 
- #ifdef CONFIG_CHECKPOINT
-+extern long do_sys_checkpoint(pid_t pid, int fd, unsigned long flags,
-+				int logfd);
- extern long do_sys_restart(pid_t pid, int fd, unsigned long flags, int logfd);
-+
-+SYSCALL_DEFINE4(checkpoint, pid_t, pid, int, fd, unsigned long, flags,
-+		int, logfd)
-+{
-+	return do_sys_checkpoint(pid, fd, flags, logfd);
-+}
-+
- SYSCALL_DEFINE4(restart, pid_t, pid, int, fd, unsigned long, flags,
- 		int, logfd)
- {
--- 
-1.6.1
+Perhaps getting it to work will be as simple as temporarily switching
+back to 64-bit during destroy_mm().
+
+> Does it make sense to allow the opposite transition: 'restart' starts
+> as a 32bit and becomes a 64bit after it restores the state from the
+> image ?
+> 
+> And what about if you checkpoint on a 32 bit kernel and try to 
+> restart on a 64 bit kernel, and vice versa ?  (in both cases, the
+> program of course is 32bit, and we can assume same physical host
+> for now). 
+
+I have no hw right now where I could test such a thing.  Do you?
