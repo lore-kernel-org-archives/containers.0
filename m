@@ -1,14 +1,12 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH 1/1] fill vdso with syscall32_setup_pages if TIF_IA32 on
-	x86_64
-Date: Wed, 27 Jan 2010 09:59:42 -0500 (EST)
-Message-ID: <Pine.LNX.4.64.1001270954120.8974@takamine.ncl.cs.columbia.edu>
-References: <20100127071636.GA16624@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] s390: set TIF_RESTARTBLOCK after sys_restart()
+Date: Wed, 27 Jan 2010 10:59:54 -0600
+Message-ID: <20100127165954.GA14950@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100127071636.GA16624-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,63 +16,81 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+(this is on top of the patch
+	's390: actually restart syscalls after sys_restart'
+which I sent last Thursday)
 
-Cool !
+We use TIF_RESTARTBLOCK in do_signal() to tell sys_checkpoint()
+to mark the thread as needing a sysc_do_restart to restart an
+interrupted syscall after sys_restart().
 
-So what do we have working now for 64 bit kernel (for 32 bit kernel
-we know it works...):
+However, as Oren pointed out, if the task receives a signal
+after sys_restart() but before returning to userspace, and
+enters do_signal, then conditions will not be met to set
+TIF_RESTARTBLOCK.  So if the restarted task freezes here and is
+checkpointed, then the resulting checkpoint image will not restart
+the interrupted syscall.
 
-	'restart'	checkpointed
-	 program	  program
-	----------------------------------------
-	  64bit		  64bit		-> works
-	  32bit		  32bit		-> works
+So, set TIF_RESTARTBLOCK in sys_restart() if TIF_RESTARTBLOCK was set
+at checkpoint.  Clear TIF_RESTARTBLOCK in ssyc_do_restart, so that
+if we do not go to do_signal right after sys_restart() we don't
+mistakenly keep running with that flag.
 
-	  64bit		  32bit		-> ?????
+To test this, add a dummy handler for SIGUSR1 to cr_tests/sleep/sleeptest.c,
+open two terminals, and do:
 
-Does it make sense to allow the opposite transition: 'restart' starts
-as a 32bit and becomes a 64bit after it restores the state from the
-image ?
+Terminal 1:                             Terminal :
+mount -t cgroup -o freezer freezer /cgroup
+mkdir /cgroup/1 /cgroup/2
+echo $$ > /cgroup/1/tasks
+./sleeptest
 
-And what about if you checkpoint on a 32 bit kernel and try to 
-restart on a 64 bit kernel, and vice versa ?  (in both cases, the
-program of course is 32bit, and we can assume same physical host
-for now). 
+                                        echo FROZEN > /cgroup/1/freezer.state
+                                        checkpoint `pidof sleeptest` > /tmp/out
+                                        thaw
 
-Oren.
+restart -F /cgroup/2 < /tmp/out
 
+                                        kill -USR1 `pidof sleeptest`;
+                                        echo THAWED > /cgroup/2/freezer.state ;
+                                        sleep 0.3;
+                                        echo FROZEN > /cgroup/2/freezer.state;
+                                        checkpoint `pidof sleeptest` > /tmp/out2;
+                                        echo THAWED > /cgroup/2/freezer.state
 
+restart < /tmp/out2
 
-On Wed, 27 Jan 2010, Serge E. Hallyn wrote:
+Without this patch, the final restart will immediately exit.  With
+this patch, it will restart the sleep.
 
-> arch_setup_additional_pages() on x86_64 fills in a 64-bit
-> vdso page.
-> 
-> With this patch, restart of 32-bit tasks (both self- and external
-> checkpoints) on x86-64 succeeds.
-> 
-> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  mm/mmap.c |    4 ++++
->  1 files changed, 4 insertions(+), 0 deletions(-)
-> 
-> diff --git a/mm/mmap.c b/mm/mmap.c
-> index 1759a7f..e3d4178 100644
-> --- a/mm/mmap.c
-> +++ b/mm/mmap.c
-> @@ -2324,6 +2324,10 @@ int special_mapping_restore(struct ckpt_ctx *ctx,
->  	 * Even that, is very basic - call arch_setup_additional_pages
->  	 * requiring the same mapping (start address) as before.
->  	 */
-> +#ifdef CONFIG_X86_64 && CONFIG_COMPAT
-> +	if (test_thread_flag(TIF_IA32))
-> +		return syscall32_setup_pages(NULL, h->vm_start, 0);
-> +#endif
->  	return arch_setup_additional_pages(NULL, h->vm_start, 0);
->  }
->  #else /* !CONFIG_CHECKPOINT */
-> 
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ arch/s390/kernel/entry64.S |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/arch/s390/kernel/entry64.S b/arch/s390/kernel/entry64.S
+index 9aff1d4..798ea9c 100644
+--- a/arch/s390/kernel/entry64.S
++++ b/arch/s390/kernel/entry64.S
+@@ -58,6 +58,7 @@ _TIF_WORK_INT = (_TIF_SIGPENDING | _TIF_NOTIFY_RESUME | _TIF_NEED_RESCHED | \
+ 		 _TIF_MCCK_PENDING)
+ _TIF_SYSCALL = (_TIF_SYSCALL_TRACE>>8 | _TIF_SYSCALL_AUDIT>>8 | \
+ 		_TIF_SECCOMP>>8 | _TIF_SYSCALL_TRACEPOINT>>8)
++CLR_TIF_RESTARTBLOCK = (255 - (_TIF_RESTARTBLOCK>>16))
+ 
+ #define BASED(name) name-system_call(%r13)
+ 
+@@ -338,6 +339,7 @@ sysc_mcck_pending:
+ #
+ sysc_sigpending:
+ 	ni	__TI_flags+7(%r9),255-_TIF_SINGLE_STEP # clear TIF_SINGLE_STEP
++	ni	__TI_flags+6(%r9),CLR_TIF_RESTARTBLOCK # clear TIF_RESTARTBLOCK
+ 	la	%r2,SP_PTREGS(%r15)	# load pt_regs
+ 	brasl	%r14,do_signal		# call do_signal
+ 	tm	__TI_flags+7(%r9),_TIF_RESTART_SVC
+-- 
+1.6.1
