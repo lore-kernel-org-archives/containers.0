@@ -1,13 +1,12 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH 1/1] fix typo in nsproxy.c in ckpt-v19-rc2.9
-Date: Thu, 28 Jan 2010 13:40:58 -0500
-Message-ID: <4B61DA3A.3010009@cs.columbia.edu>
-References: <20100128032108.GA13006@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 1/1] fix ifdef to shut up gcc in mm/mmap.c
+Date: Thu, 28 Jan 2010 14:53:33 -0600
+Message-ID: <20100128205333.GA5026@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100128032108.GA13006-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,29 +16,37 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+1. For some reason there were two lines worth of spaces at the end
+of each line
+2. #ifdef a && b doesn't please gcc.  use #if defined() && defined()
 
-ugh .. no idea who it slipped in :(
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ mm/mmap.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
 
-Serge E. Hallyn wrote:
-> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  kernel/nsproxy.c |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
-> 
-> diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
-> index f2cf1a2..b0e71f2 100644
-> --- a/kernel/nsproxy.c
-> +++ b/kernel/nsproxy.c
-> @@ -291,7 +291,7 @@ static int do_checkpoint_ns(struct ckpt_ctx *ctx, struct nsproxy *nsproxy)
->  
->  	/* FIXME: for now, only marked visited to pacify leaks */
->  	ret = ckpt_obj_visit(ctx, nsproxy->mnt_ns, CKPT_OBJ_MNT_NS);
-> -	if (et < 0)
-> +	if (ret < 0)
->  		goto out;
->  
->  	ret = ckpt_write_obj(ctx, &h->h);
+diff --git a/mm/mmap.c b/mm/mmap.c
+index 0b2319f..c2451e3 100644
+--- a/mm/mmap.c
++++ b/mm/mmap.c
+@@ -2324,10 +2324,10 @@ int special_mapping_restore(struct ckpt_ctx *ctx,
+ 	 * Even that, is very basic - call arch_setup_additional_pages
+ 	 * requiring the same mapping (start address) as before.
+ 	 */
+-#ifdef CONFIG_X86_64 && CONFIG_COMPAT                                                                                                                                                                            
+-	if (test_thread_flag(TIF_IA32))                                                                                                                                                                           
+-		return syscall32_setup_pages(NULL, h->vm_start, 0);                                                                                                                                               
+-#endif                                                                                                                                                                                                           
++#if defined(CONFIG_X86_64) && defined(CONFIG_COMPAT)
++	if (test_thread_flag(TIF_IA32))
++		return syscall32_setup_pages(NULL, h->vm_start, 0);
++#endif
+ 	return arch_setup_additional_pages(NULL, h->vm_start, 0);
+ }
+ #else /* !CONFIG_CHECKPOINT */
+-- 
+1.6.1
