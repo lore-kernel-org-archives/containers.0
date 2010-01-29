@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 08/11] filelock1: Extend for mandatory locks
-Date: Fri, 29 Jan 2010 12:43:19 -0800
-Message-ID: <20100129204319.GG26721@us.ibm.com>
+Subject: [PATCH 11/11] filelease2: Test C/R during lease-break-interval
+Date: Fri, 29 Jan 2010 12:44:21 -0800
+Message-ID: <20100129204421.GJ26721@us.ibm.com>
 References: <20100129202842.GA25490@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,195 +24,466 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Tue, 26 Jan 2010 19:38:28 -0800
-Subject: [PATCH 08/11] filelock1: Extend for mandatory locks
+Date: Thu, 28 Jan 2010 23:18:50 -0800
+Subject: [PATCH 11/11] filelease2: Test C/R during lease-break-interval
 
-Extend filelock1 to test for mandatory locks, when filelock1 is run
-with the -m option.
+When a process, P1 (lease-owner of a file) is notified of an impending
+lease-break (due to a conflicting open of the file by process P2 (lease-
+breaker), have P1 "flush" some data to the file. Checkpoint processes
+P1 and P2 before the kernel forcibly revokes the lease (i.e checkpoint
+within the lease-break-interval).
+
+Upon restart, verify that the P2's open() of the file completes properly
+and that the data flushed by P1 is visible to P2.
+
+NOTE:
+	This test passes even with out support for checkpoint of file-locks.
+	The reason for this is that the kernel terminates the lease of P1
+	before notifying P1 about the lease-break. Since we checkpoint while
+	P1 is in signal handler, neither P1 nor P2 have a lease and so the
+	C/R passes. Hopefully the data-comparison checks will catch some
+	errors during development. If not, we may need to redesign the test
+	or drop it later.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- fileio/filelock1.c       |   67 +++++++++++++++++++++++++++++++++++++++------
- fileio/run-fcntltests.sh |    5 ++-
- fileio/run-filelock1.sh  |    2 +
- 3 files changed, 63 insertions(+), 11 deletions(-)
+ fileio/Makefile          |    4 +-
+ fileio/filelease2.c      |  400 ++++++++++++++++++++++++++++++++++++++++++++++
+ fileio/run-filelease2.sh |    3 +
+ 3 files changed, 405 insertions(+), 2 deletions(-)
+ create mode 100644 fileio/filelease2.c
+ create mode 100755 fileio/run-filelease2.sh
 
-diff --git a/fileio/filelock1.c b/fileio/filelock1.c
-index 19f7e3b..34e9ad2 100644
---- a/fileio/filelock1.c
-+++ b/fileio/filelock1.c
-@@ -4,6 +4,7 @@
- #include <string.h>
- #include <signal.h>
- #include <errno.h>
-+#include <sys/stat.h>
- #include "libcrtest.h"
+diff --git a/fileio/Makefile b/fileio/Makefile
+index bd28561..4cf401b 100644
+--- a/fileio/Makefile
++++ b/fileio/Makefile
+@@ -1,4 +1,4 @@
+-targets = fileio1 filelock1 filelease1 fsetown1
++targets = fileio1 filelock1 fsetown1 filelease1 filelease2
  
- #define TEST_FILE	"data.d/data.filelock1"
-@@ -13,6 +14,7 @@ extern FILE *logfp;
- int test_fd;
- int event_fd1;
- int event_fd2;
-+int mandatory_locks = 1;
+ INCLUDE   = ../libcrtest
+ LIBCRTEST = ../libcrtest/common.o
+@@ -9,4 +9,4 @@ all: $(LIBCRTEST) $(targets)
  
- /*
-  * Description:
-@@ -60,6 +62,9 @@ void set_lock(int fd, struct test_arg *tlock)
- 		fprintf(logfp, "%d: set_lock(): ERROR [%d, %llu, %llu]: %s\n",
- 				getpid(), tlock->type, (u64)tlock->start,
- 				(u64)tlock->len, strerror(errno));
-+		if (mandatory_locks)
-+			fprintf(logfp, "\n\t***** Is the FS mounted with "
-+					"'-o mand' option ?\n\n");
- 		fflush(logfp);
- 		kill(getppid(), SIGUSR1);
- 		do_exit(1);
-@@ -108,6 +113,9 @@ void test_lock(int fd, int locked_by_me, struct test_arg *tlock)
- 	} else if (rc < 0) {
- 		fprintf(logfp, "ERROR: fcntl(F_SETLK): %s, error %s\n",
- 				lock_info, strerror(errno));
-+		if (mandatory_locks)
-+			fprintf(logfp, "\n\t***** Is the FS mounted with "
-+					"'-o mand' option ?\n\n");
- 		goto error;
- 	}
- 
-@@ -215,8 +223,12 @@ int do_child1(int idx)
- void setup_test_file()
- {
- 	char buf[256];
-+	int mode;
+ clean:
+ 	rm -f $(targets)
+-	rm -rf cr_fileio* cr_filelock1* cr_filelease1* cr_fsetown1*
++	rm -rf cr_fileio* cr_filelock1* cr_filelease[12]* cr_fsetown1*
+diff --git a/fileio/filelease2.c b/fileio/filelease2.c
+new file mode 100644
+index 0000000..1a53617
+--- /dev/null
++++ b/fileio/filelease2.c
+@@ -0,0 +1,400 @@
++#include <stdio.h>
++#include <unistd.h>
++#define __USE_GNU
++#include <fcntl.h>
++#include <string.h>
++#include <signal.h>
++#include <errno.h>
++#include <wait.h>
++#include "libcrtest.h"
++
++#define TEST_FILE1	"data.d/data.filelease2"
++#define LOG_FILE	"logs.d/log.filelease2"
++
++int event_fd1;
++
++static int test_fd;
++static int got_sigio;
++static int num_children; 
++static int pid1, pid2;
++char test_data[256];
++
++/*
++ * Description:
++ * 	Ensure that processes checkpointed when they are in the middle
++ * 	of a lease-break, are restored correctly.
++ *
++ * Implementation:
++ * 	Process P1 takes F_WRLCK lease on a file.
++ * 	Process P2 attempts to set F_WRLCK lease on the file
++ * 	Process P1 gets a SIGIO signal about the pending lease-break.
++ * 	Initiate a checkpoint before the downgrade is complete.
++ * 	After checkpoint/restart, ensure Process P1 still has the lease
++ * 	and that it can be downgraded.
++ * 	Ensure Process P2 gets the F_RDLCK lease.
++ */
++
++char *get_lease_desc(int type)
++{
++	switch(type) {
++		case F_RDLCK: return "F_RDLCK";
++		case F_WRLCK: return "F_WRLCK";
++		case F_UNLCK: return "F_UNLCK";
++		default:	return "Unknown !";
++	}
++}
++
++void set_lease(int fd, int type)
++{
 +	int rc;
 +
-+	mode = S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH; /* 0666 */
- 
--	test_fd = open(TEST_FILE, O_RDWR|O_CREAT|O_TRUNC, 0666);
-+	test_fd = open(TEST_FILE, O_RDWR|O_CREAT|O_TRUNC, mode);
- 	if (test_fd < 0) {
- 		fprintf(logfp, "ERROR: open(%s): %s\n", TEST_FILE,
- 				strerror(errno));
-@@ -225,6 +237,23 @@ void setup_test_file()
- 
- 	memset(buf, 0, sizeof(buf));
- 	write(test_fd, buf, sizeof(buf));
++	fprintf(logfp, "%d: set_lease() called for fd %d, type %s\n",
++			getpid(), fd, get_lease_desc(type));
 +
-+	if (!mandatory_locks)
-+		return;
-+
-+	/* Enable mandatory file locks (setgid, clear group execute) */
-+	mode |= S_ISGID;
-+	mode &= ~S_IXGRP;
-+
-+	rc = fchmod(test_fd, mode);
++	rc = fcntl(fd, F_SETLEASE, type);
 +	if (rc < 0) {
-+		fprintf(logfp, "ERROR: fchmod(%s): rc %d, error %s\n",
-+				TEST_FILE, rc, strerror(errno));
-+		fprintf(logfp, "Maybe '-o mand' mount option is not set ?\n");
++		fprintf(logfp, "%d: set_lease(type %d):, ERROR %s\n",
++				getpid(), type, strerror(errno));
++		if (errno == EINVAL)
++			fprintf(logfp, "%d: Maybe the fs does not support "
++					"F_SETLEASE (eg: NFS)\n", getpid());
++		fflush(logfp);
++		kill(getppid(), SIGUSR1);
 +		do_exit(1);
 +	}
-+	fprintf(logfp, "Mandatory locking set on %s, mode 0%o\n", TEST_FILE,
-+			mode);
- }
- 
- int pid1, pid2;
-@@ -238,25 +267,32 @@ void child_handler(int sig)
- 
- 	if (sig == SIGCHLD)
- 		do_wait(1);
++}
 +
- 	fprintf(logfp, "%d: Test case FAILED\n", getpid());
- 	fflush(logfp);
- 	/*
- 	 * Kill (remaining) children and exit.
- 	 */
--	kill(pid1, SIGKILL);
--	kill(pid2, SIGKILL);
++void test_lease(int fd, int exp_type)
++{
++	int rc;
++
++	rc = fcntl(fd, F_GETLEASE, 0);
++	if (rc < 0 || rc > 2) {
++		fprintf(logfp, "ERROR: fcntl(F_GETLEASE): expected %s, rc %d, "
++				"error %s\n", get_lease_desc(exp_type), rc,
++				strerror(errno));
++		do_exit(1);
++	}
++
++	if (rc != exp_type) {
++		fprintf(logfp, "%d: FAIL: Expected %s, actual %s\n", getpid(),
++				get_lease_desc(exp_type), get_lease_desc(rc));
++		do_exit(1);
++	}
++
++	fprintf(logfp, "%d: PASS: Expected %s, actual %s\n", getpid(),
++			get_lease_desc(exp_type), get_lease_desc(rc));
++	return;
++}
++
++set_signal_action(int sig, void(*action)(int, siginfo_t *, void *))
++{
++	int rc;
++	struct sigaction act;
++
++	act.sa_sigaction = action;
++	sigemptyset(&act.sa_mask);
++	act.sa_flags = SA_SIGINFO;
++
++	rc = sigaction(sig, &act, NULL);
++	if (rc < 0) {
++		fprintf(logfp, "%d: sigaction() sig %d failed, error %s\n",
++				getpid(), sig, strerror(errno));
++		do_exit(1);
++	}
++}
++
++static void iohandler(int sig, siginfo_t *info, void *arg)
++{
++	int rc;
++
++	got_sigio++;
++	fprintf(logfp, "%d: Got signal %d\n", getpid(), sig);
++	fflush(logfp);
++	
++	/*
++	 * Before giving up the lease, write some data to the file
++	 */
++	rc = write(test_fd, test_data, sizeof(test_data));
++	if (rc != sizeof(test_data)) {
++		fprintf(logfp, "%d: write() failed, n %d, error %s\n", getpid(),
++				rc, strerror(errno));
++		do_exit(1);
++	}
++
++	set_checkpoint_ready();
++	fprintf(logfp, "***** %d: Ready for checkpoint\n", getpid());
++	fflush(logfp);
++
++	/*
++	 * Wait for checkpoint/restart
++	 */
++	while(!test_done())
++		sleep(1);
++
++	fprintf(logfp, "%d: Test-done\n", getpid());
++	fflush(logfp);
++
++	/*
++	 * Checkpoint/restart is done, ensure we still have the lease
++	 * and then terminate the lease.
++	 *
++	 * TODO: Looks like the lease is revoked even before the handler
++	 * 	 returns and hence the following test_lease() fails. This
++	 * 	 behavior is not obvious from the description of F_SETLEASE
++	 * 	 in the man page. Disable the test-lease() test for now
++	 * 	 (it does not affect C/R).
++	 */
++	/* test_lease(test_fd, F_WRLCK); */
++
++	set_lease(test_fd, F_UNLCK);
++
++	return;
++}
++
++/* Lease holder */
++int do_child1(int idx)
++{
++	int type = F_WRLCK;
++
++	fprintf(logfp, "%d: Setting lease to type %s\n", getpid(),
++			get_lease_desc(type));
++	fflush(logfp);
++
++	set_signal_action(SIGIO, iohandler);
++
++	test_fd = open(TEST_FILE1, O_RDWR);
++	if (test_fd < 0) {
++		fprintf(logfp, "%d: open(%s) failed, error %s\n", getpid(),
++				TEST_FILE1, strerror(errno));
++		do_exit(1);
++	}
++
++	set_lease(test_fd, type);
++
++	/*
++	 * Tell parent we are ready for checkpoint.
++	 */
++	notify_one_event(event_fd1);
++
++	while(!got_sigio)
++		sleep(1);
++
++	do_exit(0);
++}
++
++/* Lease breaker */
++int do_child2(int idx)
++{
++	int rc;
++	int fd;
++	int type = F_WRLCK;
++	char buf[256];
++
++	fprintf(logfp, "%d: Setting lease to type %s\n", getpid(),
++			get_lease_desc(type));
++	fflush(logfp);
++
++	/*
++	 * Tell parent we are (almost) ready for checkpoint.
++	 */
++	notify_one_event(event_fd1);
++
++	/*
++	 * To break the lease, open the file for write. This should block
++	 * until sibling drops the lease (after Checkpoint/restart is done).
++	 */
++	fd = open(TEST_FILE1, O_RDWR);
++	if (fd < 0) {
++		fprintf(logfp, "%d: open(%s) failed, error %s\n", getpid(),
++				TEST_FILE1, strerror(errno));
++		do_exit(1);
++	}
++
++	/*
++	 * If checkpoint is not done yet, then maybe the lease-break-interval
++	 * was not long enough for the wrapper scripts to complete checkpoint.
++	 * So fail the test.
++	 */
++	if (!test_checkpoint_done()) {
++		fprintf(logfp, "%d: Checkpoint not done yet ?\n", getpid());
++		do_exit(1);
++	}
++
++	rc = read(fd, buf, sizeof(test_data));
++	if (rc != sizeof(test_data)) {
++		fprintf(logfp, "%d: read() failed, rc %d, error %s\n",
++				getpid(), rc, strerror(errno));
++		do_exit(1);
++	}
++
++	if (memcmp(test_data, buf, sizeof(test_data))) {
++		fprintf(logfp, "%d: FAILED: Data miscompare !!!\n", getpid());
++		do_exit(1);
++	}
++
++	do_exit(0);
++}
++
++void setup_test_data()
++{
++	int rc;
++	int fd;
++	char buf[256];
++
++	rc = unlink(TEST_FILE1);
++	if (rc < 0 && errno != ENOENT) {
++		fprintf(logfp, "ERROR: unlink(%s): %s\n", TEST_FILE1,
++				strerror(errno));
++		do_exit(1);
++	}
++
++	fd = open(TEST_FILE1, O_RDWR|O_CREAT|O_TRUNC, 0666);
++	if (fd < 0) {
++		fprintf(logfp, "ERROR: open(%s): %s\n", TEST_FILE1,
++				strerror(errno));
++		do_exit(1);
++	}
++
++	memset(buf, 0, sizeof(buf));
++	write(fd, buf, sizeof(buf));
++
++	memset(test_data, 1, sizeof(test_data));
++	close(fd);
++
++	return;
++}
++
++kill_children(int sig)
++{
 +	if (pid1)
-+		kill(pid1, SIGKILL);
++		kill(pid1, sig);
 +	if (pid2)
-+		kill(pid2, SIGKILL);
- 
- 	do_exit(-1);
- }
- 
--main(int argc, char *argv[])
-+usage(char *argv[])
- {
--	int i, status, rc;
-+	fprintf(logfp, "Usage: %s [-m]\n", argv[0]);
-+	fprintf(logfp, "\tTest POSIX (advisory) file locks (without -m)\n");
-+	fprintf(logfp, "\t-m: Test mandatory file locks\n");
++		kill(pid2, sig);
++	do_wait(2);
++}
++
++int create_child(int idx, int (*child_func)(int))
++{
++	int rc;
++
++	rc = fork();
++	if (rc == 0)
++		(*child_func)(idx);
++
++	if (rc < 0) {
++		fprintf(logfp, "%d: fork() failed, error %s\n", getpid(), 
++				strerror(errno));
++		kill_children(SIGKILL);
++	}
++
++	fprintf(logfp, "%d: Created child %d, pid %d\n", getpid(), idx, rc);
++	fflush(logfp);
++
++	num_children++;
++	wait_for_events(event_fd1, 1);
++
++	return rc;
++}
++
++void child_handler(int sig, siginfo_t *info, void *arg)
++{
++	int i;
++	int rc;
++	int status;
++
++	fprintf(logfp, "%d: Got signal %d\n", getpid(), sig);
++	fflush(logfp);
++
++	if (sig == SIGUSR1)
++		goto failed;
++
++	while(num_children) {
++		rc = waitpid(-1, &status, WNOHANG);
++		if (rc < 0) {
++			fprintf(logfp, "%d: waitpid(): failed, rc %d, "
++					"error %s\n", getpid(), rc,
++					strerror(errno));
++			goto failed;
++		}
++
++		if (!rc)
++			break;
++
++		if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
++			num_children--;
++		else {
++			print_exit_status(info->si_pid, status);
++			goto failed;
++		}
++	}
++
++	if (!num_children) {
++		fprintf(logfp, "Both children exited cleanly, test passed\n");
++		do_exit(0);
++	}
++	return;
++
++failed:
++	kill_children(SIGKILL);
 +	fprintf(logfp, "Test FAILED\n");
 +	do_exit(1);
 +}
- 
--	if (test_done()) {
--		printf("Remove %s before running test\n", TEST_DONE);
--		do_exit(1);
--	}
++
 +main(int argc, char *argv[])
 +{
-+	int i, c, status, rc;
- 
- 	logfp = fopen(LOG_FILE, "w");
- 	if (!logfp) {
-@@ -264,6 +300,19 @@ main(int argc, char *argv[])
- 		do_exit(1);
- 	}
- 
-+	mandatory_locks = 0;
-+	while((c = getopt(argc, argv, "m")) != EOF) {
-+		switch (c) {
-+			case 'm': mandatory_locks = 1; break;
-+			default: usage(argv);
-+		}
-+	}
++	int i, status, rc;
++	int pid;
 +
 +	if (test_done()) {
 +		printf("Remove %s before running test\n", TEST_DONE);
 +		do_exit(1);
 +	}
 +
- 	printf("%s: Closing stdio fds and writing messages to %s\n",
- 			argv[0], LOG_FILE);
- 
-diff --git a/fileio/run-fcntltests.sh b/fileio/run-fcntltests.sh
-index 0b168e9..f76c942 100755
---- a/fileio/run-fcntltests.sh
-+++ b/fileio/run-fcntltests.sh
-@@ -2,12 +2,13 @@
- 
- source ../common.sh
- 
--if [ $# -ne 1 ]; then
-+if [ $# -lt 1 ]; then
- 	echo "Usage: $0 <test-case>";
- 	exit 1;
- fi
- 
- test_case=$1;
-+shift
- 
- if [ ! -x $test_case ]; then
- 	echo "$0: Test case \'$test_case\' does not exist / not executable ?"
-@@ -25,7 +26,7 @@ RESTART=`which restart`
- ECHO="/bin/echo -e"
- 
- TEST_CMD="../$test_case"
--TEST_ARGS=""
-+TEST_ARGS=$*
- TEST_LOG="logs.d/log.${test_case}"
- SCRIPT_LOG="logs.d/log.run-${test_case}"
- TEST_PID_FILE="pid.${test_case}";
-diff --git a/fileio/run-filelock1.sh b/fileio/run-filelock1.sh
-index 554c24a..b7d5cd6 100755
---- a/fileio/run-filelock1.sh
-+++ b/fileio/run-filelock1.sh
-@@ -1,3 +1,5 @@
- #!/bin/bash
- 
- ./run-fcntltests.sh filelock1
++	logfp = fopen(LOG_FILE, "w");
++	if (!logfp) {
++		perror("open() logfile");
++		do_exit(1);
++	}
 +
-+./run-fcntltests.sh filelock1 -m
++	printf("%s: Closing stdio fds and writing messages to %s\n",
++			argv[0], LOG_FILE);
++
++	for (i=0; i<100; i++)  {
++		if (fileno(logfp) != i)
++			close(i);
++	}
++
++	setup_test_data();
++	event_fd1 = setup_notification();
++
++	/*
++	 * Before waiting for events below, ensure we will be notified
++	 * if a child encounters an error and/or exits prematurely.
++	 */
++	set_signal_action(SIGUSR1, child_handler);
++	set_signal_action(SIGCHLD, child_handler);
++
++	pid1 = create_child(0, do_child1);
++
++	pid2 = create_child(1, do_child2);
++
++	/*
++	 * NOTE: We have some guessing to do here. The notification from
++	 * 	 the second child (in create_child()) just tells us that
++	 * 	 the child is _about_ to attempt the lease. Give it extra
++	 * 	 time to actually block before enabling checkpoint.
++	 *
++	 * 	 And this extra time must be less than the lease-break-window
++	 * 	 (set by the test wrapper-script.
++	 */
++	sleep(10);
++
++	/*
++	 * Just wait for children to exit and exit from SIGCHLD handler.
++	 */
++	while(num_children)
++		pause();
++
++	do_exit(9); /* should not get here */
++}
+diff --git a/fileio/run-filelease2.sh b/fileio/run-filelease2.sh
+new file mode 100755
+index 0000000..67de611
+--- /dev/null
++++ b/fileio/run-filelease2.sh
+@@ -0,0 +1,3 @@
++#!/bin/bash
++
++./run-fcntltests.sh filelease2
 -- 
 1.6.0.4
