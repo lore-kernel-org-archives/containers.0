@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 05/11] Move event-notifications to libcrtest/common.c
-Date: Fri, 29 Jan 2010 12:42:28 -0800
-Message-ID: <20100129204228.GD26721@us.ibm.com>
+Subject: [PATCH 09/11] pthread1: Don't close stderr() before opening log
+Date: Fri, 29 Jan 2010 12:43:32 -0800
+Message-ID: <20100129204332.GH26721@us.ibm.com>
 References: <20100129202842.GA25490@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,181 +24,54 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Tue, 26 Jan 2010 16:46:09 -0800
-Subject: [PATCH 05/11] Move event-notifications to libcrtest/common.c
+Date: Tue, 26 Jan 2010 22:47:24 -0800
+Subject: [PATCH 09/11] pthread1: Don't close stderr() before opening log
 
-The event notification functions using eventfd can be used by other
-fcntl tests (and possibly other tests). Move them out of filelock1.c
-and into libcrtest/common.c
+If we encounter an error while opening the log file, we write to stderr.
+In which case, we need the 'stderr' to remain open at least till the log
+file is open.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- fileio/filelock1.c    |   53 -------------------------------------------
- libcrtest/common.c    |   60 +++++++++++++++++++++++++++++++++++++++++++++++++
- libcrtest/libcrtest.h |    7 +++++
- 3 files changed, 67 insertions(+), 53 deletions(-)
+ process-tree/pthread1.c |   12 +++++++++++-
+ 1 files changed, 11 insertions(+), 1 deletions(-)
 
-diff --git a/fileio/filelock1.c b/fileio/filelock1.c
-index 305cbeb..19f7e3b 100644
---- a/fileio/filelock1.c
-+++ b/fileio/filelock1.c
-@@ -9,8 +9,6 @@
- #define TEST_FILE	"data.d/data.filelock1"
- #define LOG_FILE	"logs.d/log.filelock1"
+diff --git a/process-tree/pthread1.c b/process-tree/pthread1.c
+index fa45127..d1743de 100644
+--- a/process-tree/pthread1.c
++++ b/process-tree/pthread1.c
+@@ -9,6 +9,10 @@
  
--typedef unsigned long long u64;
--
- extern FILE *logfp;
- int test_fd;
- int event_fd1;
-@@ -31,57 +29,6 @@ int event_fd2;
-  * 	held by the other process.
-  */
- 
--setup_notification()
--{
--	int efd;
--
--	efd = eventfd(0, 0);
--	if (efd < 0) {
--		fprintf(logfp, "ERROR: eventfd(): %s\n", strerror(errno));
--		do_exit(1);
--	}
--	return efd;
--}
--
--wait_for_events(int efd, u64 total)
--{
--	int n;
--	u64 events;
--	u64 count = (u64)0;
--
--	do {
--		fprintf(logfp, "%d: wait_for_events: fd %d, reading for %llu\n",
--				getpid(), efd, total);
--		fflush(logfp);
--
--		n = read(efd, &events, sizeof(events));
--		if (n != sizeof(events)) {
--			fprintf(logfp, "ERROR: read(event_fd) %s\n",
--						strerror(errno));
--			do_exit(1);
--		}
--		fprintf(logfp, "%d: wait_for_events: fd %d read %llu\n",
--				getpid(), efd, events);
--
--		count += events;
--	} while (count < total);
--}
--
--notify_one_event(int efd)
--{
--	int n;
--	u64 event = (u64)1;
--
--	fprintf(logfp, "%d: Notifying one event on fd %d\n", getpid(), efd);
--	fflush(logfp);
--
--	n = write(efd, &event, sizeof(event));
--	if (n != sizeof(event)) {
--		fprintf(logfp, "ERROR: write(event_fd) %s\n", strerror(errno));
--		do_exit(1);
--	}
--}
--
- struct test_arg {
- 	int child_idx;
- 	int type;
-diff --git a/libcrtest/common.c b/libcrtest/common.c
-index ca3d2d8..b29042a 100644
---- a/libcrtest/common.c
-+++ b/libcrtest/common.c
-@@ -335,3 +335,63 @@ int move_to_cgroup(char *subsys, char *grp, int pid)
- 	fclose(fout);
- 	return 1;
- }
-+
+ int num_threads = 5;
+ FILE *logfp;
 +/*
-+ * Set up an eventfd for communication between parent/child processes
++ * Use LOG_PREFIX with thread index as suffix, if each thread needs a
++ * separate log file. For now, we use a single log
 + */
-+int setup_notification(void)
-+{
-+	int efd;
+ #define LOG_PREFIX		"logs.d/pthread1"
+ 
+ static void usage(char *argv[])
+@@ -137,7 +141,6 @@ main(int argc, char *argv[])
+ 	pthread_t *tid_list;
+ 	char log_file[256];
+ 
+-	for (i=0; i<100; i++) close(i);
+ 	sprintf(log_file, "%s.log", LOG_PREFIX);
+ 
+ 	logfp = fopen(log_file, "w");
+@@ -148,6 +151,13 @@ main(int argc, char *argv[])
+ 		do_exit(1);
+ 	}
+ 
++	fprintf(stderr, "Redirecting output to logfile %s\n", log_file);
 +
-+	efd = eventfd(0, 0);
-+	if (efd < 0) {
-+		fprintf(logfp, "ERROR: eventfd(): %s\n", strerror(errno));
-+		do_exit(1);
++	for (i=0; i<100; i++) {
++		if (i != fileno(logfp))
++			close(i);
 +	}
-+	return efd;
-+}
 +
-+/*
-+ * Wait on eventfd @efd till the total number of events equals @total.
-+ */
-+void wait_for_events(int efd, u64 total)
-+{
-+	int n;
-+	u64 events;
-+	u64 count = (u64)0;
-+
-+	do {
-+		fprintf(logfp, "%d: wait_for_events: fd %d, reading for %llu\n",
-+				getpid(), efd, total);
-+		fflush(logfp);
-+
-+		n = read(efd, &events, sizeof(events));
-+		if (n != sizeof(events)) {
-+			fprintf(logfp, "ERROR: read(event_fd) %s\n",
-+						strerror(errno));
-+			do_exit(1);
-+		}
-+		fprintf(logfp, "%d: wait_for_events: fd %d read %llu\n",
-+				getpid(), efd, events);
-+
-+		count += events;
-+	} while (count < total);
-+}
-+
-+/*
-+ * Notify one event on the eventfd @efd.
-+ */
-+void notify_one_event(int efd)
-+{
-+	int n;
-+	u64 event = (u64)1;
-+
-+	fprintf(logfp, "%d: Notifying one event on fd %d\n", getpid(), efd);
-+	fflush(logfp);
-+
-+	n = write(efd, &event, sizeof(event));
-+	if (n != sizeof(event)) {
-+		fprintf(logfp, "ERROR: write(event_fd) %s\n", strerror(errno));
-+		do_exit(1);
-+	}
-+}
-diff --git a/libcrtest/libcrtest.h b/libcrtest/libcrtest.h
-index a42c178..9a0a13e 100644
---- a/libcrtest/libcrtest.h
-+++ b/libcrtest/libcrtest.h
-@@ -12,6 +12,10 @@ struct record {
- 	char data[256];
- };
- 
-+#ifdef __i386__
-+typedef unsigned long long u64;
-+#endif
-+
- extern void do_exit(int status);
- extern int test_done(void);
- extern int test_checkpoint_done();
-@@ -23,4 +27,7 @@ extern char *freezer_mountpoint(void);
- /* right now, subsys must always be "freezer" */
- extern int move_to_cgroup(char *subsys, char *grp, int pid);
- 
-+extern void notify_one_event(int efd);
-+extern void wait_for_events(int efd, u64 total);
-+extern int setup_notification();
- #endif /* LIBCRTEST_H */
+ 	if (test_done()) {
+ 		printf("Remove %s before running test\n", TEST_DONE);
+ 		do_exit(1);
 -- 
 1.6.0.4
