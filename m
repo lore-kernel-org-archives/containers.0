@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 09/11] pthread1: Don't close stderr() before opening log
-Date: Fri, 29 Jan 2010 12:43:32 -0800
-Message-ID: <20100129204332.GH26721@us.ibm.com>
+Subject: [PATCH 08/11] filelock1: Extend for mandatory locks
+Date: Fri, 29 Jan 2010 12:43:19 -0800
+Message-ID: <20100129204319.GG26721@us.ibm.com>
 References: <20100129202842.GA25490@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,54 +24,195 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Tue, 26 Jan 2010 22:47:24 -0800
-Subject: [PATCH 09/11] pthread1: Don't close stderr() before opening log
+Date: Tue, 26 Jan 2010 19:38:28 -0800
+Subject: [PATCH 08/11] filelock1: Extend for mandatory locks
 
-If we encounter an error while opening the log file, we write to stderr.
-In which case, we need the 'stderr' to remain open at least till the log
-file is open.
+Extend filelock1 to test for mandatory locks, when filelock1 is run
+with the -m option.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- process-tree/pthread1.c |   12 +++++++++++-
- 1 files changed, 11 insertions(+), 1 deletions(-)
+ fileio/filelock1.c       |   67 +++++++++++++++++++++++++++++++++++++++------
+ fileio/run-fcntltests.sh |    5 ++-
+ fileio/run-filelock1.sh  |    2 +
+ 3 files changed, 63 insertions(+), 11 deletions(-)
 
-diff --git a/process-tree/pthread1.c b/process-tree/pthread1.c
-index fa45127..d1743de 100644
---- a/process-tree/pthread1.c
-+++ b/process-tree/pthread1.c
-@@ -9,6 +9,10 @@
+diff --git a/fileio/filelock1.c b/fileio/filelock1.c
+index 19f7e3b..34e9ad2 100644
+--- a/fileio/filelock1.c
++++ b/fileio/filelock1.c
+@@ -4,6 +4,7 @@
+ #include <string.h>
+ #include <signal.h>
+ #include <errno.h>
++#include <sys/stat.h>
+ #include "libcrtest.h"
  
- int num_threads = 5;
- FILE *logfp;
-+/*
-+ * Use LOG_PREFIX with thread index as suffix, if each thread needs a
-+ * separate log file. For now, we use a single log
-+ */
- #define LOG_PREFIX		"logs.d/pthread1"
+ #define TEST_FILE	"data.d/data.filelock1"
+@@ -13,6 +14,7 @@ extern FILE *logfp;
+ int test_fd;
+ int event_fd1;
+ int event_fd2;
++int mandatory_locks = 1;
  
- static void usage(char *argv[])
-@@ -137,7 +141,6 @@ main(int argc, char *argv[])
- 	pthread_t *tid_list;
- 	char log_file[256];
+ /*
+  * Description:
+@@ -60,6 +62,9 @@ void set_lock(int fd, struct test_arg *tlock)
+ 		fprintf(logfp, "%d: set_lock(): ERROR [%d, %llu, %llu]: %s\n",
+ 				getpid(), tlock->type, (u64)tlock->start,
+ 				(u64)tlock->len, strerror(errno));
++		if (mandatory_locks)
++			fprintf(logfp, "\n\t***** Is the FS mounted with "
++					"'-o mand' option ?\n\n");
+ 		fflush(logfp);
+ 		kill(getppid(), SIGUSR1);
+ 		do_exit(1);
+@@ -108,6 +113,9 @@ void test_lock(int fd, int locked_by_me, struct test_arg *tlock)
+ 	} else if (rc < 0) {
+ 		fprintf(logfp, "ERROR: fcntl(F_SETLK): %s, error %s\n",
+ 				lock_info, strerror(errno));
++		if (mandatory_locks)
++			fprintf(logfp, "\n\t***** Is the FS mounted with "
++					"'-o mand' option ?\n\n");
+ 		goto error;
+ 	}
  
--	for (i=0; i<100; i++) close(i);
- 	sprintf(log_file, "%s.log", LOG_PREFIX);
+@@ -215,8 +223,12 @@ int do_child1(int idx)
+ void setup_test_file()
+ {
+ 	char buf[256];
++	int mode;
++	int rc;
++
++	mode = S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH; /* 0666 */
  
- 	logfp = fopen(log_file, "w");
-@@ -148,6 +151,13 @@ main(int argc, char *argv[])
+-	test_fd = open(TEST_FILE, O_RDWR|O_CREAT|O_TRUNC, 0666);
++	test_fd = open(TEST_FILE, O_RDWR|O_CREAT|O_TRUNC, mode);
+ 	if (test_fd < 0) {
+ 		fprintf(logfp, "ERROR: open(%s): %s\n", TEST_FILE,
+ 				strerror(errno));
+@@ -225,6 +237,23 @@ void setup_test_file()
+ 
+ 	memset(buf, 0, sizeof(buf));
+ 	write(test_fd, buf, sizeof(buf));
++
++	if (!mandatory_locks)
++		return;
++
++	/* Enable mandatory file locks (setgid, clear group execute) */
++	mode |= S_ISGID;
++	mode &= ~S_IXGRP;
++
++	rc = fchmod(test_fd, mode);
++	if (rc < 0) {
++		fprintf(logfp, "ERROR: fchmod(%s): rc %d, error %s\n",
++				TEST_FILE, rc, strerror(errno));
++		fprintf(logfp, "Maybe '-o mand' mount option is not set ?\n");
++		do_exit(1);
++	}
++	fprintf(logfp, "Mandatory locking set on %s, mode 0%o\n", TEST_FILE,
++			mode);
+ }
+ 
+ int pid1, pid2;
+@@ -238,25 +267,32 @@ void child_handler(int sig)
+ 
+ 	if (sig == SIGCHLD)
+ 		do_wait(1);
++
+ 	fprintf(logfp, "%d: Test case FAILED\n", getpid());
+ 	fflush(logfp);
+ 	/*
+ 	 * Kill (remaining) children and exit.
+ 	 */
+-	kill(pid1, SIGKILL);
+-	kill(pid2, SIGKILL);
++	if (pid1)
++		kill(pid1, SIGKILL);
++	if (pid2)
++		kill(pid2, SIGKILL);
+ 
+ 	do_exit(-1);
+ }
+ 
+-main(int argc, char *argv[])
++usage(char *argv[])
+ {
+-	int i, status, rc;
++	fprintf(logfp, "Usage: %s [-m]\n", argv[0]);
++	fprintf(logfp, "\tTest POSIX (advisory) file locks (without -m)\n");
++	fprintf(logfp, "\t-m: Test mandatory file locks\n");
++	fprintf(logfp, "Test FAILED\n");
++	do_exit(1);
++}
+ 
+-	if (test_done()) {
+-		printf("Remove %s before running test\n", TEST_DONE);
+-		do_exit(1);
+-	}
++main(int argc, char *argv[])
++{
++	int i, c, status, rc;
+ 
+ 	logfp = fopen(LOG_FILE, "w");
+ 	if (!logfp) {
+@@ -264,6 +300,19 @@ main(int argc, char *argv[])
  		do_exit(1);
  	}
  
-+	fprintf(stderr, "Redirecting output to logfile %s\n", log_file);
-+
-+	for (i=0; i<100; i++) {
-+		if (i != fileno(logfp))
-+			close(i);
++	mandatory_locks = 0;
++	while((c = getopt(argc, argv, "m")) != EOF) {
++		switch (c) {
++			case 'm': mandatory_locks = 1; break;
++			default: usage(argv);
++		}
 +	}
 +
- 	if (test_done()) {
- 		printf("Remove %s before running test\n", TEST_DONE);
- 		do_exit(1);
++	if (test_done()) {
++		printf("Remove %s before running test\n", TEST_DONE);
++		do_exit(1);
++	}
++
+ 	printf("%s: Closing stdio fds and writing messages to %s\n",
+ 			argv[0], LOG_FILE);
+ 
+diff --git a/fileio/run-fcntltests.sh b/fileio/run-fcntltests.sh
+index 0b168e9..f76c942 100755
+--- a/fileio/run-fcntltests.sh
++++ b/fileio/run-fcntltests.sh
+@@ -2,12 +2,13 @@
+ 
+ source ../common.sh
+ 
+-if [ $# -ne 1 ]; then
++if [ $# -lt 1 ]; then
+ 	echo "Usage: $0 <test-case>";
+ 	exit 1;
+ fi
+ 
+ test_case=$1;
++shift
+ 
+ if [ ! -x $test_case ]; then
+ 	echo "$0: Test case \'$test_case\' does not exist / not executable ?"
+@@ -25,7 +26,7 @@ RESTART=`which restart`
+ ECHO="/bin/echo -e"
+ 
+ TEST_CMD="../$test_case"
+-TEST_ARGS=""
++TEST_ARGS=$*
+ TEST_LOG="logs.d/log.${test_case}"
+ SCRIPT_LOG="logs.d/log.run-${test_case}"
+ TEST_PID_FILE="pid.${test_case}";
+diff --git a/fileio/run-filelock1.sh b/fileio/run-filelock1.sh
+index 554c24a..b7d5cd6 100755
+--- a/fileio/run-filelock1.sh
++++ b/fileio/run-filelock1.sh
+@@ -1,3 +1,5 @@
+ #!/bin/bash
+ 
+ ./run-fcntltests.sh filelock1
++
++./run-fcntltests.sh filelock1 -m
 -- 
 1.6.0.4
