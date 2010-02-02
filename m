@@ -1,17 +1,16 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: Jean-Marc Pigeon <jmp-4qkeo2rQ0gg@public.gmane.org>
 Subject: Re: Kernel 2.6.33-rc6, 3 bugs container specific.
-Date: Tue, 2 Feb 2010 12:18:01 -0600
-Message-ID: <20100202181801.GA28412@us.ibm.com>
+Date: Tue, 02 Feb 2010 13:43:35 -0500
+Message-ID: <1265136215.6260.261.camel@Mercier.safe.ca>
 References: <1265074676.6260.212.camel@Mercier.safe.ca>
 	<20100202031647.GA14318@fqdn.org>
-	<1265121846.6260.231.camel@Mercier.safe.ca>
-	<4B68649D.2000503@free.fr>
+	<1265121846.6260.231.camel@Mercier.safe.ca> <4B68649D.2000503@free.fr>
+	<20100202181801.GA28412@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <lxc-users-bounces-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4B68649D.2000503-GANU6spQydw@public.gmane.org>
+In-Reply-To: <20100202181801.GA28412-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.sourceforge.net/lists/listinfo/lxc-users>,
 	<mailto:lxc-users-request-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://sourceforge.net/mailarchive/forum.php?forum_name=lxc-users>
@@ -20,55 +19,45 @@ List-Help: <mailto:lxc-users-request-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gma
 List-Subscribe: <https://lists.sourceforge.net/lists/listinfo/lxc-users>,
 	<mailto:lxc-users-request-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org?subject=subscribe>
 Errors-To: lxc-users-bounces-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, lxc-users-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
-> Jean-Marc Pigeon wrote:
-> > Hello,
-> >
-> > On Tue, 2010-02-02 at 04:16 +0100, Michael Holzt wrote:
-> >   
-> >>> 	Tried 2.6.33-rc6 to check container, 3 bugs show up.
-> >>> 	(test done on x86_64, Pentium(R) Dual-Core CPU E5400)
-> >>>       
-> >> I guess this should better go on the containers mailing list,
-> >> as this are kernel related problems?
-> >>     
-> >
-> > 	Yes, you are right....I'll do it.
-> >
-> > 	Problem with /proc/kmsg (bug #3) is a very real
-> > 	concern, Daniel Lezcano proposed a solution
-> > 	(using fuse), but I think this solution is
-> > 	just a patch (container sys-admin can override 
-> > 	it, putting the whole system in total jeopardy).
-> >
-> > 	Seems kernel team is very reluctant to make 
-> > 	the K ring buffer virtual but I see no other
-> > 	solution (used already in openVZ).
-> >   
-> 
-> Maybe I missed something, but AFAIR Serge Hallyn was willing to do this, 
-> no ?
-> Or there was a nack from someone ?
-
-I was wondering out loud about the best design to solve his problem.
-
-If we try to redirect kernel-generated messages to containers, we have
-several problems, including whether we need to duplicate the messages
-to the host container.  So in one sense it seems more flexible to
-	1. send everything to host syslog
-	2. clamp down on syslog use by processes not in the init_user_ns
-	3. let the userspace on the host copy messages into a socket or
-	   file so child container can pretend it has real syslog.
-
--serge
-
-------------------------------------------------------------------------------
-The Planet: dedicated and managed hosting, cloud storage, colocation
-Stay online with enterprise data centers and the best network in the business
-Choose flexible plans and management services without long-term contracts
-Personal 24x7 support from experience hosting pros just a phone call away.
-http://p.sf.net/sfu/theplanet-com
+SGVsbG8sCgoKPiAKPiBJIHdhcyB3b25kZXJpbmcgb3V0IGxvdWQgYWJvdXQgdGhlIGJlc3QgZGVz
+aWduIHRvIHNvbHZlIGhpcyBwcm9ibGVtLgo+IAo+IElmIHdlIHRyeSB0byByZWRpcmVjdCBrZXJu
+ZWwtZ2VuZXJhdGVkIG1lc3NhZ2VzIHRvIGNvbnRhaW5lcnMsIHdlIGhhdmUKPiBzZXZlcmFsIHBy
+b2JsZW1zLCBpbmNsdWRpbmcgd2hldGhlciB3ZSBuZWVkIHRvIGR1cGxpY2F0ZSB0aGUgbWVzc2Fn
+ZXMKPiB0byB0aGUgaG9zdCBjb250YWluZXIuICBTbyBpbiBvbmUgc2Vuc2UgaXQgc2VlbXMgbW9y
+ZSBmbGV4aWJsZSB0bwo+IAkxLiBzZW5kIGV2ZXJ5dGhpbmcgdG8gaG9zdCBzeXNsb2cKCQlObywg
+aWYgd2UgZG8gdGhhdCBhbGwgQ09OVHMgbWVzc2FnZSB3aWxsIHJlYWNoCgkJdGhlIHNhbWUgYnVj
+a2V0IGFuZCBpdCB3aWxsIGJlIGRpZmZpY3VsdCB0byBzb3J0CgkJdGhlbSBvdXQuLgoJCUNPTlQg
+c3lzX2FkbWluIGFuZCBIT1NUIHN5c19hZG1pbiBjb3VsZCBiZSBkaWZmZXJlbnQKCQkiZW50aXR5
+Iiwgc28geW91IGRlYnVnIENPTlQgY29uZmlnIGFuZCBjcml0aWNhbAoJCW5lZWRlZCBpbmZvcm1h
+dGlvbiByZWFjaCBIT1NUICh3aGljaCB5b3UgZG8gbm90IAoJCWhhdmUgYWNjZXNzIHRvKS4KPiAJ
+Mi4gY2xhbXAgZG93biBvbiBzeXNsb2cgdXNlIGJ5IHByb2Nlc3NlcyBub3QgaW4gdGhlIGluaXRf
+dXNlcl9ucwoJCUNvdWxkIGdpdmUgbWUgbW9yZSBkZXRhaWw/Py4uLgo+IAkzLiBsZXQgdGhlIHVz
+ZXJzcGFjZSBvbiB0aGUgaG9zdCBjb3B5IG1lc3NhZ2VzIGludG8gYSBzb2NrZXQgb3IKPiAJICAg
+ZmlsZSBzbyBjaGlsZCBjb250YWluZXIgY2FuIHByZXRlbmQgaXQgaGFzIHJlYWwgc3lzbG9nLgoK
+CQlTbyB5b3UgdHJhcCBwcmludGsgbWVzc2FnZSBmcm9tIENPTlQgb24gdGhlIEhPU1QgYW5kIAoJ
+CXJlZGlyZWN0IHRoZW0gb24gQ09OVCBidXQgb24gYSBzdGFuZGFyZCBzeXNsb2cgY2hhbm5lbC4K
+CQlTZWVtIE9LIHRvIG1lLCBhcyBsb25nIC9wcm9jL2ttc2cgaXMgbm90IGV4aXN0aW5nCgkJKC9k
+ZXYvbnVsbCkgaW4gdGhlIENPTlQgZmlsZSB0cmVlLgoJCQotLSAKQSBiaWVudMO0dAo9PT09PT09
+PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
+PT09PT09PT09PQpKZWFuLU1hcmMgUGlnZW9uICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICBJbnRlcm5ldDogam1wQHNhZmUuY2EKU0FGRSBJbmMuICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgUGhvbmU6ICg1MTQpIDQ5My00MjgwCiAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIEZheDogICAoNTE0KSA0OTMtMTk0
+NgogICAgICAgIENsZW1lbnQsICdhIGtpc3Mgc29sdXRpb24nIHRvIGdldCByaWQgb2YgU1BBTSAo
+YXQgbGFzdCkKICAgICAgICAgICBDbGVtZW50JyBIb21lIGJhc2UgPCJodHRwOi8vd3d3LmNsZW1l
+bnQuc2FmZS5jYSI+Cj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
+PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09CgoKLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tClRo
+ZSBQbGFuZXQ6IGRlZGljYXRlZCBhbmQgbWFuYWdlZCBob3N0aW5nLCBjbG91ZCBzdG9yYWdlLCBj
+b2xvY2F0aW9uClN0YXkgb25saW5lIHdpdGggZW50ZXJwcmlzZSBkYXRhIGNlbnRlcnMgYW5kIHRo
+ZSBiZXN0IG5ldHdvcmsgaW4gdGhlIGJ1c2luZXNzCkNob29zZSBmbGV4aWJsZSBwbGFucyBhbmQg
+bWFuYWdlbWVudCBzZXJ2aWNlcyB3aXRob3V0IGxvbmctdGVybSBjb250cmFjdHMKUGVyc29uYWwg
+MjR4NyBzdXBwb3J0IGZyb20gZXhwZXJpZW5jZSBob3N0aW5nIHByb3MganVzdCBhIHBob25lIGNh
+bGwgYXdheS4KaHR0cDovL3Auc2YubmV0L3NmdS90aGVwbGFuZXQtY29tCl9fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkx4Yy11c2VycyBtYWlsaW5nIGxpc3QK
+THhjLXVzZXJzQGxpc3RzLnNvdXJjZWZvcmdlLm5ldApodHRwczovL2xpc3RzLnNvdXJjZWZvcmdl
+Lm5ldC9saXN0cy9saXN0aW5mby9seGMtdXNlcnMK
