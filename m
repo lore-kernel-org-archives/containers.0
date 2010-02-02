@@ -1,150 +1,74 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH RFC] checkpoint: handle saved_sigmask
-Date: Tue, 2 Feb 2010 12:07:18 -0600
-Message-ID: <20100202180718.GA28249@us.ibm.com>
+Subject: Re: Kernel 2.6.33-rc6, 3 bugs container specific.
+Date: Tue, 2 Feb 2010 12:18:01 -0600
+Message-ID: <20100202181801.GA28412@us.ibm.com>
+References: <1265074676.6260.212.camel@Mercier.safe.ca>
+	<20100202031647.GA14318@fqdn.org>
+	<1265121846.6260.231.camel@Mercier.safe.ca>
+	<4B68649D.2000503@free.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Return-path: <lxc-users-bounces-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
 Content-Disposition: inline
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+In-Reply-To: <4B68649D.2000503-GANU6spQydw@public.gmane.org>
+List-Unsubscribe: <https://lists.sourceforge.net/lists/listinfo/lxc-users>,
+	<mailto:lxc-users-request-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://sourceforge.net/mailarchive/forum.php?forum_name=lxc-users>
+List-Post: <mailto:lxc-users-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
+List-Help: <mailto:lxc-users-request-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.sourceforge.net/lists/listinfo/lxc-users>,
+	<mailto:lxc-users-request-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org?subject=subscribe>
+Errors-To: lxc-users-bounces-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, lxc-users-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Each arch seems to have its own way of specifying that
-current->saved_sigmask should contains the valid blocked
-sigmask.  So provide an arch-specific hook for that test,
-and, if true, then store saved_sigmask in place of blocked
-in the checkpoint image.  None of the architectures currently
-save these flags, so we don't need to do anything special
-to unset them after restart.
+Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
+> Jean-Marc Pigeon wrote:
+> > Hello,
+> >
+> > On Tue, 2010-02-02 at 04:16 +0100, Michael Holzt wrote:
+> >   
+> >>> 	Tried 2.6.33-rc6 to check container, 3 bugs show up.
+> >>> 	(test done on x86_64, Pentium(R) Dual-Core CPU E5400)
+> >>>       
+> >> I guess this should better go on the containers mailing list,
+> >> as this are kernel related problems?
+> >>     
+> >
+> > 	Yes, you are right....I'll do it.
+> >
+> > 	Problem with /proc/kmsg (bug #3) is a very real
+> > 	concern, Daniel Lezcano proposed a solution
+> > 	(using fuse), but I think this solution is
+> > 	just a patch (container sys-admin can override 
+> > 	it, putting the whole system in total jeopardy).
+> >
+> > 	Seems kernel team is very reluctant to make 
+> > 	the K ring buffer virtual but I see no other
+> > 	solution (used already in openVZ).
+> >   
+> 
+> Maybe I missed something, but AFAIR Serge Hallyn was willing to do this, 
+> no ?
+> Or there was a nack from someone ?
 
-If right after sys_restart the a signal needs to be handled
-(which was sent during restart) then it will just do the right
-thing (save blocked back to saved_sigmask and set
-TIF_RESTORE_SIGMASK or whatever).
+I was wondering out loud about the best design to solve his problem.
 
-Thoughts?
+If we try to redirect kernel-generated messages to containers, we have
+several problems, including whether we need to duplicate the messages
+to the host container.  So in one sense it seems more flexible to
+	1. send everything to host syslog
+	2. clamp down on syslog use by processes not in the init_user_ns
+	3. let the userspace on the host copy messages into a socket or
+	   file so child container can pretend it has real syslog.
 
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- arch/powerpc/kernel/signal.c  |    9 +++++++++
- arch/s390/kernel/checkpoint.c |    2 --
- arch/s390/kernel/signal.c     |    7 +++++++
- arch/x86/kernel/signal.c      |    6 ++++++
- checkpoint/signal.c           |    5 ++++-
- include/linux/signal.h        |    6 ++++++
- 6 files changed, 32 insertions(+), 3 deletions(-)
+-serge
 
-diff --git a/arch/powerpc/kernel/signal.c b/arch/powerpc/kernel/signal.c
-index 00b5078..4aa0128 100644
---- a/arch/powerpc/kernel/signal.c
-+++ b/arch/powerpc/kernel/signal.c
-@@ -188,6 +188,15 @@ static int do_signal_pending(sigset_t *oldset, struct pt_regs *regs)
- 	return ret;
- }
- 
-+int task_restore_sigmask(struct task_struct *task)
-+{
-+	struct thread_info *ti = task_thread_info(task);
-+	if (ti->local_flags & _TLF_RESTORE_SIGMASK)
-+		return 1;
-+	return 0;
-+}
-+
-+
- void do_signal(struct pt_regs *regs, unsigned long thread_info_flags)
- {
- 	if (thread_info_flags & _TIF_SIGPENDING)
-diff --git a/arch/s390/kernel/checkpoint.c b/arch/s390/kernel/checkpoint.c
-index 092fd87..048e820 100644
---- a/arch/s390/kernel/checkpoint.c
-+++ b/arch/s390/kernel/checkpoint.c
-@@ -200,8 +200,6 @@ int restore_thread(struct ckpt_ctx *ctx)
- 		set_thread_flag(TIF_RESTARTBLOCK);
- 	}
- 
--	/* need to do something with TIF_RESTORE_SIGMASK ? */
--
- 	ckpt_hdr_put(ctx, h);
- 	return 0;
- }
-diff --git a/arch/s390/kernel/signal.c b/arch/s390/kernel/signal.c
-index 503fd09..0654f12 100644
---- a/arch/s390/kernel/signal.c
-+++ b/arch/s390/kernel/signal.c
-@@ -538,6 +538,13 @@ void do_signal(struct pt_regs *regs)
- 	}
- }
- 
-+int task_restore_sigmask(struct task_struct *task)
-+{
-+	if (test_tsk_thread_flag(task, TIF_RESTORE_SIGMASK))
-+		return 1;
-+	return 0;
-+}
-+
- void do_notify_resume(struct pt_regs *regs)
- {
- 	clear_thread_flag(TIF_NOTIFY_RESUME);
-diff --git a/arch/x86/kernel/signal.c b/arch/x86/kernel/signal.c
-index 6a44a76..a6e8035 100644
---- a/arch/x86/kernel/signal.c
-+++ b/arch/x86/kernel/signal.c
-@@ -849,6 +849,12 @@ static void do_signal(struct pt_regs *regs)
- 	}
- }
- 
-+int task_restore_sigmask(struct task_struct *task) {
-+	if (task_thread_info(t)->status & TS_RESTORE_SIGMASK)
-+		return 1;
-+	return 0;
-+}
-+
- /*
-  * notification of userspace execution resumption
-  * - triggered by the TIF_WORK_MASK flags
-diff --git a/checkpoint/signal.c b/checkpoint/signal.c
-index 609e924..ad95e0c 100644
---- a/checkpoint/signal.c
-+++ b/checkpoint/signal.c
-@@ -682,7 +682,10 @@ int checkpoint_task_signal(struct ckpt_ctx *ctx, struct task_struct *t)
- 	if (!h)
- 		return -ENOMEM;
- 
--	fill_sigset(&h->blocked, &t->blocked);
-+	if (task_restore_sigmask(t))
-+		fill_sigset(&h->blocked, &t->saved_sigmask);
-+	else
-+		fill_sigset(&h->blocked, &t->blocked);
- 
- 	ret = ckpt_write_obj(ctx, &h->h);
- 	ckpt_hdr_put(ctx, h);
-diff --git a/include/linux/signal.h b/include/linux/signal.h
-index ab9272c..aa18432 100644
---- a/include/linux/signal.h
-+++ b/include/linux/signal.h
-@@ -376,6 +376,12 @@ int unhandled_signal(struct task_struct *tsk, int sig);
- 
- void signals_init(void);
- 
-+/*
-+ * arch-specific query, used at checkpoint: should saved_sigmask be used
-+ * in place of blocked
-+ */
-+int task_restore_sigmask(struct task_struct *task);
-+
- #endif /* __KERNEL__ */
- 
- #endif /* _LINUX_SIGNAL_H */
--- 
-1.6.1
+------------------------------------------------------------------------------
+The Planet: dedicated and managed hosting, cloud storage, colocation
+Stay online with enterprise data centers and the best network in the business
+Choose flexible plans and management services without long-term contracts
+Personal 24x7 support from experience hosting pros just a phone call away.
+http://p.sf.net/sfu/theplanet-com
