@@ -1,11 +1,12 @@
-From: Jean-Marc Pigeon <jmp-4qkeo2rQ0gg@public.gmane.org>
-Subject: Kernel 2.6.33-rc6, 3 bugs container specific.
-Date: Tue, 02 Feb 2010 09:46:26 -0500
-Message-ID: <1265121986.6260.234.camel@Mercier.safe.ca>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH RFC] checkpoint: handle saved_sigmask
+Date: Tue, 2 Feb 2010 12:07:18 -0600
+Message-ID: <20100202180718.GA28249@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,67 +16,135 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-SGVsbG8sCgogICAgICAgIFRyaWVkIDIuNi4zMy1yYzYgdG8gY2hlY2sgY29udGFpbmVyLCAzIGJ1
-Z3Mgc2hvdyB1cC4KICAgICAgICAodGVzdCBkb25lIG9uIHg4Nl82NCwgUGVudGl1bShSKSBEdWFs
-LUNvcmUgQ1BVIEU1NDAwKQoKICAgICAgICAjMTogQ3JpdGljYWwgLyBmaXhlZD86CiAgICAgICAg
-QWxyZWFkeSByZXBvcnRlZDogc3lzdGVtIGhhbmcgdmVyeSBiYWRseSBpZiB5b3Ugc3RhcnQKICAg
-ICAgICBhIGNvbnRhaW5lciAoY2xvbmUpIHdoaWxlIGNsb25lZmxhZyBpcyBzZXQgd2l0aCBhdCBs
-ZWFzdCAKICAgICAgICBvbmUgb2YgdGhlIHNldDoKICAgICAgICBDTE9ORV9ORVdORVR8Q0xPTkVf
-TkVXSVBDfENMT05FX05FV05TfENMT05FX05FV1BJRHxDTE9ORV9ORVdVVFMuCiAgICAgICAgCiAg
-ICAgICAgQnVnIGlzIHNhaWQgZml4ZWQ6IAogICAgICAgIChjb21taXQgIGZhYmYzMThlNWU0YmRh
-MGFjYTJiMGQ2MTdiMTkxODg0ZmRhNjI3MDMpLAogICAgICAgIGFuZCBpcyBzb21ld2hlcmUgaW4g
-cXVldWUsIGhvcGVmdWxseSB3aWxsIGJlIHBhcnQgb2YgcmM3LgoKCiAgICAgICAgIzI6IFRyb3Vi
-bGUgIC8gY2FuIGJlIG92ZXJyaWRlIGJ5IHN5c19hZG1pbgogICAgICAgICBhcnBpbmcgbm90IHdv
-cmtpbmcgaWYgSE9TVCBpbnRlcmZhY2Ugbm90IG5hbWVkCiAgICAgICAgIHRoZSBzYW1lIGFzIGlu
-IENPTlQuIAoKICAgICAgICAgICAgTGV0cyBzYXkgeW91IHNldCB0aGUgSE9TVCAiZXRoMCIgaW50
-ZXJmYWNlIHRvIGJlCiAgICAgICAgICAgICJmYXN0IiB0byBtZXQgd2hhdGV2ZXIgeW91ciBzdGFu
-ZGFyZCBhcmUgYW5kCiAgICAgICAgICAgIHJlbmFtZSBDT05UIHZldGggdG8gYmUgZXRoMCB1c2lu
-ZyBjb21tYW5kOgogICAgICAgICAgICBpcCBsaW5rIHNldCB2dGhfbmFtZSBuYW1lIGV0aDAKICAg
-ICAgICAgICAgKHdpdGhpbiBDT05UKSB0byBhbGxvdyB2ZXJ5IHN0YW5kYXJkIENPTlQgdGVtcGxh
-dGUuCgogICAgICAgICAgIGRpcmVjdG9yeSBIT1NUOi9zeXMvY2xhc3MvbmV0IHdpbGwgcmVwb3J0
-CiAgICAgICAgICAgYnIwICBmYXN0IGxvICBzaXQwICd0by12dGgnCgogICAgICAgICAgIGRpcmVj
-dG9yeSBDT05UOi9zeXMvY2xhc3MvbmV0IHdpbGwgcmVwb3J0CiAgICAgICAgICAgZXhhY3RseSB0
-aGUgc2FtZQoKICAgICAgICAgICBQcm9ibGVtOiBmaWxlCiAgICAgICAgICAgL2V0Yy9zeXNjb25m
-aWcvbmV0d29yay1zY3JpcHRzL2lmdXAtZXRoCiAgICAgICAgICAgaXMgZG9pbmcgImlwIGxpbmsg
-c2V0IGRldiBldGgwIHVwIiBhcwogICAgICAgICAgIGV0aDAgaXMgdGhlIG5hbWUgd2Ugd2FudCB0
-byBoYXZlIGluIENPTlQuCiAgICAgICAgICAgU28gZmFyIHNvIGdvb2QsIGp1c3QgYWZ0ZXIgYXJw
-aW5nIGlzCiAgICAgICAgICAgdHJ5aW5nIHRvIG1ha2Ugc3VyZSBubyBvbmUgaXMgdXNpbmcgdGhl
-CiAgICAgICAgICAgSVAgdG8gYmUgc2V0LgogICAgICAgICAgIGFuZCBhcnBpbmcgaXMgYWNjZXNz
-aW5nIGZpbGUKICAgICAgICAgICAvc3lzL2NsYXNzL25ldC9ldGgwL2Jyb2FkY2FzdAogICAgICAg
-ICAgIHdoaWNoIGRvZXNuJ3QgZXhpc3QgLS0+IE5ldHdvcmsgc2V0dGluZyBoYW5nIS4KCiAgICAg
-ICAgICAgRml4OiB3aGVuICJpcCBsaW5rIHNldCB2dGhfbmFtZSBuYW1lIG90aGVybmFtZSIKICAg
-ICAgICAgICBpcyBhcHBsaWVkLCAvc3lzL2NsYXNzL25ldC8gc2hvdWxkIGJlIHVwZGF0ZWQKICAg
-ICAgICAgICBieSBrZXJuZWwgdG9vLgoKCiAgICAgICAgIzM6IFZlcnkgY3JpdGljYWwgLyBDT05U
-IGNhbid0IGJlIHByb2R1Y3Rpb24gZ3JhZGUuCiAgICAgICAgICAgIEhPU1QgYW5kIENPTlQgc2hh
-cmUgdGhlIHNhbWUga21zZyByaW5nIGJ1ZmZlci4KCiAgICAgICAgICAgIFNvbWUgcGFydCBvZiB0
-aGUga2VybmVsIHJ1bm5pbmcgYXMgQ09OVAogICAgICAgICAgICBjb3VsZCBwcmludGsgQ09OVCBz
-cGVjaWZpYyBtZXNzYWdlIChpcHRhYmxlCiAgICAgICAgICAgIHBhY2tldCB0cmFjaW5nIGlzIGEg
-Z29vZCBleGFtcGxlKSBldmVuIHdvcnNlCiAgICAgICAgICAgIENPTlQ6cnN5c2xvZyBpcyByZWFk
-aW5nIGttc2cgdG9vLCBtZWFuaW5nCiAgICAgICAgICAgIGl0IGlzIGNvbXBldGluZyB3aXRoIEhP
-U1Q6cnN5c2xvZyB0byBnZXQKICAgICAgICAgICAgY3JpdGljYWwgaW5mb3JtYXRpb24uIFNvIHRo
-ZSB3aG9sZSByaW5nIGJ1ZmZlcgogICAgICAgICAgICBpcyBnYXJibGVkIChub3QgZ29vZCBhdCBh
-bGwpLgoKICAgICAgICAgICAgTXkgYWR2aWNlIGlzIHRvIGdpdmUgYSBzcGVjaWZpYyAicmluZyBi
-dWZmZXIiCiAgICAgICAgICAgIHRvIGVhY2ggc3RhcnRlZCBjb250YWluZXIuIFRoaXMgaXMgdGhl
-IHdheSBpdAogICAgICAgICAgICB3YXMgaW1wbGVtZW50ZWQgYnkgdGhlIG9wZW52eiBndXlzIChz
-ZWVtcyB0bwogICAgICAgICAgICBtZSBhIHZlcnkgZ29vZCBzb2x1dGlvbiksIG90aGVyIHNvbHV0
-aW9uIHdvdWxkCiAgICAgICAgICAgIGJlIHRvIHNheSBDT05UOi9wcm9jL2ttc2cgdG8gYmUgYSBr
-aW5kIG9mCiAgICAgICAgICAgIGRldmljZSBudWxsLCBidXQgdGhlbiBob3cga2VybmVsIHdpbGwg
-Z2l2ZSB0bwogICAgICAgICAgICBjb250YWluZXIgY29udGV4dCwgaW5mb3JtYXRpb25zIG9uIGl0
-IHNwZWNpZmljIAogICAgICAgICAgICBDT05UIHByb2JsZW0/Pz8KCgogICAgICAgIE15IDMgY2Vu
-dHMuCiAgICAgICAgU2VlbXMgdG8gbWUgd2UgYXJlIHZlcnkgY2xvc2UgdG8gaGF2ZSBhICJwcm9k
-dWN0aW9uIgogICAgICAgIGNvbnRhaW5lciwgdGhhbmtzIHRvIGFsbCBjb250cmlidXRvci4uLgot
-LSAKQSBiaWVudMO0dAo9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQpKZWFuLU1hcmMgUGlnZW9uICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICBJbnRlcm5ldDogam1wQHNhZmUuY2EKU0FGRSBJbmMu
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgUGhvbmU6ICg1MTQpIDQ5
-My00MjgwCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-IEZheDogICAoNTE0KSA0OTMtMTk0NgogICAgICAgIENsZW1lbnQsICdhIGtpc3Mgc29sdXRpb24n
-IHRvIGdldCByaWQgb2YgU1BBTSAoYXQgbGFzdCkKICAgICAgICAgICBDbGVtZW50JyBIb21lIGJh
-c2UgPCJodHRwOi8vd3d3LmNsZW1lbnQuc2FmZS5jYSI+Cj09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09CgpfX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1h
-aWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8v
-bGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+Each arch seems to have its own way of specifying that
+current->saved_sigmask should contains the valid blocked
+sigmask.  So provide an arch-specific hook for that test,
+and, if true, then store saved_sigmask in place of blocked
+in the checkpoint image.  None of the architectures currently
+save these flags, so we don't need to do anything special
+to unset them after restart.
+
+If right after sys_restart the a signal needs to be handled
+(which was sent during restart) then it will just do the right
+thing (save blocked back to saved_sigmask and set
+TIF_RESTORE_SIGMASK or whatever).
+
+Thoughts?
+
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ arch/powerpc/kernel/signal.c  |    9 +++++++++
+ arch/s390/kernel/checkpoint.c |    2 --
+ arch/s390/kernel/signal.c     |    7 +++++++
+ arch/x86/kernel/signal.c      |    6 ++++++
+ checkpoint/signal.c           |    5 ++++-
+ include/linux/signal.h        |    6 ++++++
+ 6 files changed, 32 insertions(+), 3 deletions(-)
+
+diff --git a/arch/powerpc/kernel/signal.c b/arch/powerpc/kernel/signal.c
+index 00b5078..4aa0128 100644
+--- a/arch/powerpc/kernel/signal.c
++++ b/arch/powerpc/kernel/signal.c
+@@ -188,6 +188,15 @@ static int do_signal_pending(sigset_t *oldset, struct pt_regs *regs)
+ 	return ret;
+ }
+ 
++int task_restore_sigmask(struct task_struct *task)
++{
++	struct thread_info *ti = task_thread_info(task);
++	if (ti->local_flags & _TLF_RESTORE_SIGMASK)
++		return 1;
++	return 0;
++}
++
++
+ void do_signal(struct pt_regs *regs, unsigned long thread_info_flags)
+ {
+ 	if (thread_info_flags & _TIF_SIGPENDING)
+diff --git a/arch/s390/kernel/checkpoint.c b/arch/s390/kernel/checkpoint.c
+index 092fd87..048e820 100644
+--- a/arch/s390/kernel/checkpoint.c
++++ b/arch/s390/kernel/checkpoint.c
+@@ -200,8 +200,6 @@ int restore_thread(struct ckpt_ctx *ctx)
+ 		set_thread_flag(TIF_RESTARTBLOCK);
+ 	}
+ 
+-	/* need to do something with TIF_RESTORE_SIGMASK ? */
+-
+ 	ckpt_hdr_put(ctx, h);
+ 	return 0;
+ }
+diff --git a/arch/s390/kernel/signal.c b/arch/s390/kernel/signal.c
+index 503fd09..0654f12 100644
+--- a/arch/s390/kernel/signal.c
++++ b/arch/s390/kernel/signal.c
+@@ -538,6 +538,13 @@ void do_signal(struct pt_regs *regs)
+ 	}
+ }
+ 
++int task_restore_sigmask(struct task_struct *task)
++{
++	if (test_tsk_thread_flag(task, TIF_RESTORE_SIGMASK))
++		return 1;
++	return 0;
++}
++
+ void do_notify_resume(struct pt_regs *regs)
+ {
+ 	clear_thread_flag(TIF_NOTIFY_RESUME);
+diff --git a/arch/x86/kernel/signal.c b/arch/x86/kernel/signal.c
+index 6a44a76..a6e8035 100644
+--- a/arch/x86/kernel/signal.c
++++ b/arch/x86/kernel/signal.c
+@@ -849,6 +849,12 @@ static void do_signal(struct pt_regs *regs)
+ 	}
+ }
+ 
++int task_restore_sigmask(struct task_struct *task) {
++	if (task_thread_info(t)->status & TS_RESTORE_SIGMASK)
++		return 1;
++	return 0;
++}
++
+ /*
+  * notification of userspace execution resumption
+  * - triggered by the TIF_WORK_MASK flags
+diff --git a/checkpoint/signal.c b/checkpoint/signal.c
+index 609e924..ad95e0c 100644
+--- a/checkpoint/signal.c
++++ b/checkpoint/signal.c
+@@ -682,7 +682,10 @@ int checkpoint_task_signal(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	if (!h)
+ 		return -ENOMEM;
+ 
+-	fill_sigset(&h->blocked, &t->blocked);
++	if (task_restore_sigmask(t))
++		fill_sigset(&h->blocked, &t->saved_sigmask);
++	else
++		fill_sigset(&h->blocked, &t->blocked);
+ 
+ 	ret = ckpt_write_obj(ctx, &h->h);
+ 	ckpt_hdr_put(ctx, h);
+diff --git a/include/linux/signal.h b/include/linux/signal.h
+index ab9272c..aa18432 100644
+--- a/include/linux/signal.h
++++ b/include/linux/signal.h
+@@ -376,6 +376,12 @@ int unhandled_signal(struct task_struct *tsk, int sig);
+ 
+ void signals_init(void);
+ 
++/*
++ * arch-specific query, used at checkpoint: should saved_sigmask be used
++ * in place of blocked
++ */
++int task_restore_sigmask(struct task_struct *task);
++
+ #endif /* __KERNEL__ */
+ 
+ #endif /* _LINUX_SIGNAL_H */
+-- 
+1.6.1
