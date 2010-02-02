@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 3/6][cr-tests]: eclone-3: Fail if reserved fields are not 0
-Date: Tue, 2 Feb 2010 11:38:22 -0800
-Message-ID: <20100202193822.GB8793@us.ibm.com>
+Subject: [PATCH 4/6][cr-tests]: eclone-4: Fail if clone_flags_high is non-zero
+Date: Tue, 2 Feb 2010 11:39:31 -0800
+Message-ID: <20100202193931.GC8793@us.ibm.com>
 References: <20100202193508.GA8542@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,38 +24,38 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Sat, 30 Jan 2010 12:53:04 -0800
-Subject: [PATCH 3/6][cr-tests]: eclone-3: Fail if reserved fields are not 0.
+Date: Mon, 1 Feb 2010 18:10:32 -0800
+Subject: [PATCH 4/6][cr-tests]: eclone-4: Fail if clone_flags_high is non-zero
 
-To ensure future extendability, we want the unused fields to be 0.
-Ensure eclone() fails if ->reserved0 field is non-0.
+To ensure future extendability, we want the unused fields to be 0. Ensure
+eclone() fails if ->clone_flags_high field is non-0.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
  eclone/Makefile   |    2 +-
- eclone/eclone-3.c |  117 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 118 insertions(+), 1 deletions(-)
- create mode 100644 eclone/eclone-3.c
+ eclone/eclone-4.c |  116 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 117 insertions(+), 1 deletions(-)
+ create mode 100644 eclone/eclone-4.c
 
 diff --git a/eclone/Makefile b/eclone/Makefile
-index 95633d1..ebe508d 100644
+index ebe508d..86ca859 100644
 --- a/eclone/Makefile
 +++ b/eclone/Makefile
 @@ -3,7 +3,7 @@ CFLAGS = -Wall
  
  LDFLAGS = 
  
--PROGS = eclone-1 eclone-2
-+PROGS = eclone-1 eclone-2 eclone-3
+-PROGS = eclone-1 eclone-2 eclone-3
++PROGS = eclone-1 eclone-2 eclone-3 eclone-4
  
  all: $(PROGS)
  
-diff --git a/eclone/eclone-3.c b/eclone/eclone-3.c
+diff --git a/eclone/eclone-4.c b/eclone/eclone-4.c
 new file mode 100644
-index 0000000..5a972ce
+index 0000000..33a28ef
 --- /dev/null
-+++ b/eclone/eclone-3.c
-@@ -0,0 +1,117 @@
++++ b/eclone/eclone-4.c
+@@ -0,0 +1,116 @@
 +#include <stdio.h>
 +#include <stdlib.h>
 +#include <errno.h>
@@ -68,7 +68,7 @@ index 0000000..5a972ce
 +#include "clone_args.h"
 +
 +/*
-+ * Verify that eclone() fails if ->reserved0 field is non-zero.
++ * Verify that eclone() fails if ->clone_flags_high is not 0.
 + */
 +int verbose = 0;
 +int child_tid, parent_tid;
@@ -82,7 +82,7 @@ index 0000000..5a972ce
 +int do_child(void *arg)
 +{
 +	printf("FAIL: Child created with [%d, %d]. We expected eclone() to "
-+			"fail with EINVAL since ->reserved0 is non-zero\n",
++			"fail with EINVAL since clone_flags_high is not 0\n",
 +			 gettid(), getpid());
 +	exit(2);
 +}
@@ -103,11 +103,11 @@ index 0000000..5a972ce
 +	}
 +
 +	memset(&ca, 0, sizeof(ca));
++	ca.clone_flags_high = (u64)1 << 33;
 +	ca.child_stack_base = (u64)(int)stack;
 +	ca.child_stack_size = (u64)0;
 +	ca.parent_tid_ptr = (u64)((int)&parent_tid);
 +	ca.child_tid_ptr = (u64)((int)&child_tid);
-+	ca.reserved0 = 0xdeadbeef;
 +	ca.nr_pids = nr_pids;
 +
 +	if (verbose) {
@@ -127,7 +127,7 @@ index 0000000..5a972ce
 +	}
 +
 +	if (rc < 0 && errno == EINVAL) {
-+		printf("PASS: eclone() failed (->reserved0 is not 0)\n");
++		printf("PASS: eclone() failed (clone_flags_high not 0)\n");
 +		exit(0);
 +	} else {
 +		printf("FAIL: Expected eclone() to fail with EINVAL");
@@ -170,7 +170,6 @@ index 0000000..5a972ce
 +			} 
 +		}
 +	}
-+
 +	return 0;
 +}
 -- 
