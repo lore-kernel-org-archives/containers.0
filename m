@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 2/6][cr-tests]: eclone-2: Fail if selected pid is in use
-Date: Tue, 2 Feb 2010 11:37:20 -0800
-Message-ID: <20100202193720.GA8793@us.ibm.com>
+Subject: [PATCH 3/6][cr-tests]: eclone-3: Fail if reserved fields are not 0
+Date: Tue, 2 Feb 2010 11:38:22 -0800
+Message-ID: <20100202193822.GB8793@us.ibm.com>
 References: <20100202193508.GA8542@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,37 +24,37 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Sat, 30 Jan 2010 12:51:23 -0800
-Subject: [PATCH 2/6]: eclone-2: Fail if selected pid is in use
+Date: Sat, 30 Jan 2010 12:53:04 -0800
+Subject: [PATCH 3/6][cr-tests]: eclone-3: Fail if reserved fields are not 0.
 
-Ensure that eclone() system call fails with -EBUSY if selected pid is
-in use.
+To ensure future extendability, we want the unused fields to be 0.
+Ensure eclone() fails if ->reserved0 field is non-0.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
  eclone/Makefile   |    2 +-
- eclone/eclone-2.c |  117 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ eclone/eclone-3.c |  117 +++++++++++++++++++++++++++++++++++++++++++++++++++++
  2 files changed, 118 insertions(+), 1 deletions(-)
- create mode 100644 eclone/eclone-2.c
+ create mode 100644 eclone/eclone-3.c
 
 diff --git a/eclone/Makefile b/eclone/Makefile
-index 43cef65..95633d1 100644
+index 95633d1..ebe508d 100644
 --- a/eclone/Makefile
 +++ b/eclone/Makefile
 @@ -3,7 +3,7 @@ CFLAGS = -Wall
  
  LDFLAGS = 
  
--PROGS = eclone-1
-+PROGS = eclone-1 eclone-2
+-PROGS = eclone-1 eclone-2
++PROGS = eclone-1 eclone-2 eclone-3
  
  all: $(PROGS)
  
-diff --git a/eclone/eclone-2.c b/eclone/eclone-2.c
+diff --git a/eclone/eclone-3.c b/eclone/eclone-3.c
 new file mode 100644
-index 0000000..a52bb5e
+index 0000000..5a972ce
 --- /dev/null
-+++ b/eclone/eclone-2.c
++++ b/eclone/eclone-3.c
 @@ -0,0 +1,117 @@
 +#include <stdio.h>
 +#include <stdlib.h>
@@ -68,20 +68,22 @@ index 0000000..a52bb5e
 +#include "clone_args.h"
 +
 +/*
-+ * Verify that eclone() fails if the selected pid is in use.
-+ * We try to assign parent's pid which should already be in use.
++ * Verify that eclone() fails if ->reserved0 field is non-zero.
 + */
 +int verbose = 0;
 +int child_tid, parent_tid;
++
++#define CHILD_TID1	377
++#define	CHILD_TID2	399
 +#define	CHILD_ARG	(void *)0x979797
 +
-+pid_t pids_list[2];
++pid_t pids_list[] = { CHILD_TID1, CHILD_TID2 };
 +
 +int do_child(void *arg)
 +{
-+	printf("FAIL: Child created with [%d, %d], but we expected child "
-+			"creation to fail since pid is in use\n", gettid(),
-+ 			getpid());
++	printf("FAIL: Child created with [%d, %d]. We expected eclone() to "
++			"fail with EINVAL since ->reserved0 is non-zero\n",
++			 gettid(), getpid());
 +	exit(2);
 +}
 +
@@ -105,6 +107,7 @@ index 0000000..a52bb5e
 +	ca.child_stack_size = (u64)0;
 +	ca.parent_tid_ptr = (u64)((int)&parent_tid);
 +	ca.child_tid_ptr = (u64)((int)&child_tid);
++	ca.reserved0 = 0xdeadbeef;
 +	ca.nr_pids = nr_pids;
 +
 +	if (verbose) {
@@ -123,14 +126,15 @@ index 0000000..a52bb5e
 +		fflush(stdout);
 +	}
 +
-+	if (rc < 0 && errno == EAGAIN) {
-+		printf("PASS: Unable to create a process with a pid that is "
-+			"in use\n");
++	if (rc < 0 && errno == EINVAL) {
++		printf("PASS: eclone() failed (->reserved0 is not 0)\n");
 +		exit(0);
 +	} else {
-+		printf("ERROR: ");
-+		return rc;
++		printf("FAIL: Expected eclone() to fail with EINVAL");
++		exit(1);
 +	}
++
++	return rc;
 +}
 +
 +int main()
@@ -141,11 +145,6 @@ index 0000000..a52bb5e
 +
 +	flags = SIGCHLD|CLONE_PARENT_SETTID|CLONE_CHILD_SETTID;
 +	flags = SIGCHLD;
-+
-+	/*
-+	 * Try to create a process with same pid as parent !
-+	 */
-+	pids_list[0] = pids_list[1] = getpid();
 +
 +	pid = myclone(do_child, (void *)CHILD_ARG, flags, nr_pids, pids_list);
 +
@@ -171,6 +170,7 @@ index 0000000..a52bb5e
 +			} 
 +		}
 +	}
++
 +	return 0;
 +}
 -- 
