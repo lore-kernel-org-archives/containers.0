@@ -1,19 +1,19 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: Jean-Marc Pigeon <jmp-4qkeo2rQ0gg@public.gmane.org>
 Subject: Re: Kernel 2.6.33-rc6, 3 bugs container specific.
-Date: Wed, 3 Feb 2010 09:03:50 -0600
-Message-ID: <20100203150350.GA7146@us.ibm.com>
+Date: Wed, 03 Feb 2010 10:48:10 -0500
+Message-ID: <1265212090.6260.284.camel@Mercier.safe.ca>
 References: <1265074676.6260.212.camel@Mercier.safe.ca>
 	<20100202031647.GA14318@fqdn.org>
-	<1265121846.6260.231.camel@Mercier.safe.ca>
-	<4B68649D.2000503@free.fr> <20100202181801.GA28412@us.ibm.com>
+	<1265121846.6260.231.camel@Mercier.safe.ca> <4B68649D.2000503@free.fr>
+	<20100202181801.GA28412@us.ibm.com>
 	<1265136215.6260.261.camel@Mercier.safe.ca>
 	<20100202213254.GH32305@us.ibm.com> <4B695535.7020301@free.fr>
+	<20100203150350.GA7146@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <lxc-users-bounces-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4B695535.7020301-GANU6spQydw@public.gmane.org>
+In-Reply-To: <20100203150350.GA7146-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.sourceforge.net/lists/listinfo/lxc-users>,
 	<mailto:lxc-users-request-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://sourceforge.net/mailarchive/forum.php?forum_name=lxc-users>
@@ -22,111 +22,50 @@ List-Help: <mailto:lxc-users-request-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gma
 List-Subscribe: <https://lists.sourceforge.net/lists/listinfo/lxc-users>,
 	<mailto:lxc-users-request-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org?subject=subscribe>
 Errors-To: lxc-users-bounces-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, lxc-users-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
-> Serge E. Hallyn wrote:
-> >Quoting Jean-Marc Pigeon (jmp-4qkeo2rQ0gg@public.gmane.org):
-> >>Hello,
-> >>
-> >>
-> >>>I was wondering out loud about the best design to solve his problem.
-> >>>
-> >>>If we try to redirect kernel-generated messages to containers, we have
-> >>>several problems, including whether we need to duplicate the messages
-> >>>to the host container.  So in one sense it seems more flexible to
-> >>>	1. send everything to host syslog
-> >>		No, if we do that all CONTs message will reach
-> >>		the same bucket and it will be difficult to sort
-> >>		them out..
-> >>		CONT sys_admin and HOST sys_admin could be different
-> >>		"entity", so you debug CONT config and critical
-> >>		needed information reach HOST (which you do not 		have access
-> >>to).
-> >
-> >Yes, so a privileged task on HOST must pass that information back to
-> >you on CONT.  That is not a valid complaint imo.  But how to sort the
-> >msgs out is a valid question.
-> >
-> >We need some sort of identifier, unique system-wide, attached to.. something.
-> >Is ifindex unique system-wide right now?  Oh, IIRC it is, but we wnat it to
-> >be containerized, so that would be a bad choice :)
-> >
-> >>>	2. clamp down on syslog use by processes not in the init_user_ns
-> >>		Could give me more detail??...
-> >
-> >Simplest choices would be to just refuse sys_syslog() and open(/proc/kmsg)
-> >altogether from a container, or to only allow reading/writing messages
-> >to own syslog.  (I had hoped to find time to try out the second option but
-> >simply haven't had the time, and it doesn't look like I will very soon.
-> >So if anyone else wants to, pls jump at it...)
-> >
-> >Then /proc/kmsg can provide what I described above through a FUSE file,
-> >and if, as you mentioned, the container unmounts the FUSE fs and gets
-> >to real procfs, they just get nothing.
-> >
-> >>>	3. let the userspace on the host copy messages into a socket or
-> >>>	   file so child container can pretend it has real syslog.
-> >>		So you trap printk message from CONT on the HOST and
-> >>		redirect them on CONT but on a standard syslog channel.
-> >>		Seem OK to me, as long /proc/kmsg is not existing
-> >>		(/dev/null) in the CONT file tree.
-> 
-> 
-> We have:
->        * Commands to sys_syslog:
->        *
->        *      0 -- Close the log.  Currently a NOP.
->        *      1 -- Open the log. Currently a NOP.
->        *      2 -- Read from the log.
->        *      3 -- Read all messages remaining in the ring buffer.
->        *      4 -- Read and clear all messages remaining in the ring buffer
->        *      5 -- Clear ring buffer.
->        *      6 -- Disable printk to console
->        *      7 -- Enable printk to console
->        *      8 -- Set level of messages printed to console
->        *      9 -- Return number of unread characters in the log buffer
->        *     10 -- Return size of the log buffer
-> 
-> And add:
->       *     11 -- create a new ring buffer for the current process
-> and its childs
-> 
-> 
-> We have, let's say a global ring buffer keep untouched, used by
-> syslog(2) and printk. When we create a new ring buffer, we allocate
-> it and assign to the nsproxy (global ring buffer is the default in
-> the nsproxy).
-> 
-> The prink keeps writing in the global ring buffer and the syslog(2)
-> writes to the "namespaced" ring buffer.
-> 
-> Does it makes sense ?
-
-Yeah, it's a nice alternative.  Though (1) there is something to be said for
-forcing a new ring buffer upon clone(CLONE_NEWUSER), and (2) assuming the
-new ring buffer is pointed to from nsproxy, it might be frowned upon to do
-an unshare/clone action in yet another way.
-
-I still think our first concern should be safety, and that we should consider
-just adding 'struct syslog_struct' to nsproxy, and making that NULL on a
-clone(CLONE_NEWUSER).  any sys_syslog() or /proc/kmsg access returns -EINVAL
-after that.  Then we can discuss whether and how to target printks to
-namespaces, and whether duplicates should be sent to parent namespaces.
-
-After we start getting flexible with syslog, the next request will be for
-audit flexibility.  I don't even know how our netlink support suffices for
-that right now.
-
-(So, this all does turn into a big deal...)
-
--serge
-
-------------------------------------------------------------------------------
-The Planet: dedicated and managed hosting, cloud storage, colocation
-Stay online with enterprise data centers and the best network in the business
-Choose flexible plans and management services without long-term contracts
-Personal 24x7 support from experience hosting pros just a phone call away.
-http://p.sf.net/sfu/theplanet-com
+SGVsbG8sCgpbLi4uXQo+ID4gCj4gPiBUaGUgcHJpbmsga2VlcHMgd3JpdGluZyBpbiB0aGUgZ2xv
+YmFsIHJpbmcgYnVmZmVyIGFuZCB0aGUgc3lzbG9nKDIpCj4gPiB3cml0ZXMgdG8gdGhlICJuYW1l
+c3BhY2VkIiByaW5nIGJ1ZmZlci4KPiA+IAo+ID4gRG9lcyBpdCBtYWtlcyBzZW5zZSA/Cj4gCj4g
+WWVhaCwgaXQncyBhIG5pY2UgYWx0ZXJuYXRpdmUuICBUaG91Z2ggKDEpIHRoZXJlIGlzIHNvbWV0
+aGluZyB0byBiZSBzYWlkIGZvcgo+IGZvcmNpbmcgYSBuZXcgcmluZyBidWZmZXIgdXBvbiBjbG9u
+ZShDTE9ORV9ORVdVU0VSKSwgYW5kICgyKSBhc3N1bWluZyB0aGUKPiBuZXcgcmluZyBidWZmZXIg
+aXMgcG9pbnRlZCB0byBmcm9tIG5zcHJveHksIGl0IG1pZ2h0IGJlIGZyb3duZWQgdXBvbiB0byBk
+bwo+IGFuIHVuc2hhcmUvY2xvbmUgYWN0aW9uIGluIHlldCBhbm90aGVyIHdheS4KPiAKPiBJIHN0
+aWxsIHRoaW5rIG91ciBmaXJzdCBjb25jZXJuIHNob3VsZCBiZSBzYWZldHksIGFuZCB0aGF0IHdl
+IHNob3VsZCBjb25zaWRlcgo+IGp1c3QgYWRkaW5nICdzdHJ1Y3Qgc3lzbG9nX3N0cnVjdCcgdG8g
+bnNwcm94eSwgYW5kIG1ha2luZyB0aGF0IE5VTEwgb24gYQo+IGNsb25lKENMT05FX05FV1VTRVIp
+LiAgYW55IHN5c19zeXNsb2coKSBvciAvcHJvYy9rbXNnIGFjY2VzcyByZXR1cm5zIC1FSU5WQUwK
+PiBhZnRlciB0aGF0LiAgVGhlbiB3ZSBjYW4gZGlzY3VzcyB3aGV0aGVyIGFuZCBob3cgdG8gdGFy
+Z2V0IHByaW50a3MgdG8KPiBuYW1lc3BhY2VzLCBhbmQgd2hldGhlciBkdXBsaWNhdGVzIHNob3Vs
+ZCBiZSBzZW50IHRvIHBhcmVudCBuYW1lc3BhY2VzLgoJL3Byb2Mva21zZz0tRUlOVkFMICB3aWxs
+IHJlc29sdmUgdGhlIG93biBIT1NUOiByaW5nIGJ1ZmZlciBjb3JydXB0aW9uCglub3Qgc3VyZSB3
+aGF0IHN5c19zeXNsb2coKT0tRUlOVkFMIG1lYW4/Pz8sIHJzeXNsb2cgTVVTVCBiZSBhYmxlIHRv
+CglydW4gd2l0aGluIENPTlQ6IHJpZ2h0PwoKCXByaW50ayBuYW1lc3BhY2VzIGR1cGxpY2F0ZSBh
+bmQgc2VudCB0byBwYXJlbnQgbmFtZXNwYWNlCglpcyBub3QgYSBnb29kIGlkZWEgKGR1cGxpY2F0
+aW5nJmZvcndhcmRpbmcgaXMgZG9uZSBieSB0b29scyBhcyByc3lzbG9nZCkuCj4gCj4gQWZ0ZXIg
+d2Ugc3RhcnQgZ2V0dGluZyBmbGV4aWJsZSB3aXRoIHN5c2xvZywgdGhlIG5leHQgcmVxdWVzdCB3
+aWxsIGJlIGZvcgo+IGF1ZGl0IGZsZXhpYmlsaXR5LiAgSSBkb24ndCBldmVuIGtub3cgaG93IG91
+ciBuZXRsaW5rIHN1cHBvcnQgc3VmZmljZXMgZm9yCj4gdGhhdCByaWdodCBub3cuCj4gCj4gKFNv
+LCB0aGlzIGFsbCBkb2VzIHR1cm4gaW50byBhIGJpZyBkZWFsLi4uKQo+IAo+IC1zZXJnZQotLSAK
+QSBiaWVudMO0dAo9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
+PT09PT09PT09PT09PT09PT09PT09PT09PT09PQpKZWFuLU1hcmMgUGlnZW9uICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICBJbnRlcm5ldDogam1wQHNhZmUuY2EKU0FGRSBJbmMuICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgUGhvbmU6ICg1MTQpIDQ5My00
+MjgwCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIEZh
+eDogICAoNTE0KSA0OTMtMTk0NgogICAgICAgIENsZW1lbnQsICdhIGtpc3Mgc29sdXRpb24nIHRv
+IGdldCByaWQgb2YgU1BBTSAoYXQgbGFzdCkKICAgICAgICAgICBDbGVtZW50JyBIb21lIGJhc2Ug
+PCJodHRwOi8vd3d3LmNsZW1lbnQuc2FmZS5jYSI+Cj09PT09PT09PT09PT09PT09PT09PT09PT09
+PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09CgoKLS0tLS0t
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+LS0tLS0tLS0tLS0tLS0tClRoZSBQbGFuZXQ6IGRlZGljYXRlZCBhbmQgbWFuYWdlZCBob3N0aW5n
+LCBjbG91ZCBzdG9yYWdlLCBjb2xvY2F0aW9uClN0YXkgb25saW5lIHdpdGggZW50ZXJwcmlzZSBk
+YXRhIGNlbnRlcnMgYW5kIHRoZSBiZXN0IG5ldHdvcmsgaW4gdGhlIGJ1c2luZXNzCkNob29zZSBm
+bGV4aWJsZSBwbGFucyBhbmQgbWFuYWdlbWVudCBzZXJ2aWNlcyB3aXRob3V0IGxvbmctdGVybSBj
+b250cmFjdHMKUGVyc29uYWwgMjR4NyBzdXBwb3J0IGZyb20gZXhwZXJpZW5jZSBob3N0aW5nIHBy
+b3MganVzdCBhIHBob25lIGNhbGwgYXdheS4KaHR0cDovL3Auc2YubmV0L3NmdS90aGVwbGFuZXQt
+Y29tCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkx4Yy11
+c2VycyBtYWlsaW5nIGxpc3QKTHhjLXVzZXJzQGxpc3RzLnNvdXJjZWZvcmdlLm5ldApodHRwczov
+L2xpc3RzLnNvdXJjZWZvcmdlLm5ldC9saXN0cy9saXN0aW5mby9seGMtdXNlcnMK
