@@ -1,19 +1,21 @@
-From: Jean-Marc Pigeon <jmp-4qkeo2rQ0gg@public.gmane.org>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: Kernel 2.6.33-rc6, 3 bugs container specific.
-Date: Wed, 03 Feb 2010 10:48:10 -0500
-Message-ID: <1265212090.6260.284.camel@Mercier.safe.ca>
+Date: Wed, 3 Feb 2010 10:21:48 -0600
+Message-ID: <20100203162148.GA11738@us.ibm.com>
 References: <1265074676.6260.212.camel@Mercier.safe.ca>
 	<20100202031647.GA14318@fqdn.org>
-	<1265121846.6260.231.camel@Mercier.safe.ca> <4B68649D.2000503@free.fr>
-	<20100202181801.GA28412@us.ibm.com>
+	<1265121846.6260.231.camel@Mercier.safe.ca>
+	<4B68649D.2000503@free.fr> <20100202181801.GA28412@us.ibm.com>
 	<1265136215.6260.261.camel@Mercier.safe.ca>
 	<20100202213254.GH32305@us.ibm.com> <4B695535.7020301@free.fr>
 	<20100203150350.GA7146@us.ibm.com>
+	<1265212090.6260.284.camel@Mercier.safe.ca>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <lxc-users-bounces-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
-In-Reply-To: <20100203150350.GA7146-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1265212090.6260.284.camel-4BUXZ/Ty1v7iqR6jatDSCA@public.gmane.org>
 List-Unsubscribe: <https://lists.sourceforge.net/lists/listinfo/lxc-users>,
 	<mailto:lxc-users-request-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://sourceforge.net/mailarchive/forum.php?forum_name=lxc-users>
@@ -22,50 +24,88 @@ List-Help: <mailto:lxc-users-request-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gma
 List-Subscribe: <https://lists.sourceforge.net/lists/listinfo/lxc-users>,
 	<mailto:lxc-users-request-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org?subject=subscribe>
 Errors-To: lxc-users-bounces-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Jean-Marc Pigeon <jmp-4qkeo2rQ0gg@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, lxc-users-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-SGVsbG8sCgpbLi4uXQo+ID4gCj4gPiBUaGUgcHJpbmsga2VlcHMgd3JpdGluZyBpbiB0aGUgZ2xv
-YmFsIHJpbmcgYnVmZmVyIGFuZCB0aGUgc3lzbG9nKDIpCj4gPiB3cml0ZXMgdG8gdGhlICJuYW1l
-c3BhY2VkIiByaW5nIGJ1ZmZlci4KPiA+IAo+ID4gRG9lcyBpdCBtYWtlcyBzZW5zZSA/Cj4gCj4g
-WWVhaCwgaXQncyBhIG5pY2UgYWx0ZXJuYXRpdmUuICBUaG91Z2ggKDEpIHRoZXJlIGlzIHNvbWV0
-aGluZyB0byBiZSBzYWlkIGZvcgo+IGZvcmNpbmcgYSBuZXcgcmluZyBidWZmZXIgdXBvbiBjbG9u
-ZShDTE9ORV9ORVdVU0VSKSwgYW5kICgyKSBhc3N1bWluZyB0aGUKPiBuZXcgcmluZyBidWZmZXIg
-aXMgcG9pbnRlZCB0byBmcm9tIG5zcHJveHksIGl0IG1pZ2h0IGJlIGZyb3duZWQgdXBvbiB0byBk
-bwo+IGFuIHVuc2hhcmUvY2xvbmUgYWN0aW9uIGluIHlldCBhbm90aGVyIHdheS4KPiAKPiBJIHN0
-aWxsIHRoaW5rIG91ciBmaXJzdCBjb25jZXJuIHNob3VsZCBiZSBzYWZldHksIGFuZCB0aGF0IHdl
-IHNob3VsZCBjb25zaWRlcgo+IGp1c3QgYWRkaW5nICdzdHJ1Y3Qgc3lzbG9nX3N0cnVjdCcgdG8g
-bnNwcm94eSwgYW5kIG1ha2luZyB0aGF0IE5VTEwgb24gYQo+IGNsb25lKENMT05FX05FV1VTRVIp
-LiAgYW55IHN5c19zeXNsb2coKSBvciAvcHJvYy9rbXNnIGFjY2VzcyByZXR1cm5zIC1FSU5WQUwK
-PiBhZnRlciB0aGF0LiAgVGhlbiB3ZSBjYW4gZGlzY3VzcyB3aGV0aGVyIGFuZCBob3cgdG8gdGFy
-Z2V0IHByaW50a3MgdG8KPiBuYW1lc3BhY2VzLCBhbmQgd2hldGhlciBkdXBsaWNhdGVzIHNob3Vs
-ZCBiZSBzZW50IHRvIHBhcmVudCBuYW1lc3BhY2VzLgoJL3Byb2Mva21zZz0tRUlOVkFMICB3aWxs
-IHJlc29sdmUgdGhlIG93biBIT1NUOiByaW5nIGJ1ZmZlciBjb3JydXB0aW9uCglub3Qgc3VyZSB3
-aGF0IHN5c19zeXNsb2coKT0tRUlOVkFMIG1lYW4/Pz8sIHJzeXNsb2cgTVVTVCBiZSBhYmxlIHRv
-CglydW4gd2l0aGluIENPTlQ6IHJpZ2h0PwoKCXByaW50ayBuYW1lc3BhY2VzIGR1cGxpY2F0ZSBh
-bmQgc2VudCB0byBwYXJlbnQgbmFtZXNwYWNlCglpcyBub3QgYSBnb29kIGlkZWEgKGR1cGxpY2F0
-aW5nJmZvcndhcmRpbmcgaXMgZG9uZSBieSB0b29scyBhcyByc3lzbG9nZCkuCj4gCj4gQWZ0ZXIg
-d2Ugc3RhcnQgZ2V0dGluZyBmbGV4aWJsZSB3aXRoIHN5c2xvZywgdGhlIG5leHQgcmVxdWVzdCB3
-aWxsIGJlIGZvcgo+IGF1ZGl0IGZsZXhpYmlsaXR5LiAgSSBkb24ndCBldmVuIGtub3cgaG93IG91
-ciBuZXRsaW5rIHN1cHBvcnQgc3VmZmljZXMgZm9yCj4gdGhhdCByaWdodCBub3cuCj4gCj4gKFNv
-LCB0aGlzIGFsbCBkb2VzIHR1cm4gaW50byBhIGJpZyBkZWFsLi4uKQo+IAo+IC1zZXJnZQotLSAK
-QSBiaWVudMO0dAo9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PQpKZWFuLU1hcmMgUGlnZW9uICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICBJbnRlcm5ldDogam1wQHNhZmUuY2EKU0FGRSBJbmMuICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgUGhvbmU6ICg1MTQpIDQ5My00
-MjgwCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIEZh
-eDogICAoNTE0KSA0OTMtMTk0NgogICAgICAgIENsZW1lbnQsICdhIGtpc3Mgc29sdXRpb24nIHRv
-IGdldCByaWQgb2YgU1BBTSAoYXQgbGFzdCkKICAgICAgICAgICBDbGVtZW50JyBIb21lIGJhc2Ug
-PCJodHRwOi8vd3d3LmNsZW1lbnQuc2FmZS5jYSI+Cj09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09CgoKLS0tLS0t
-LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
-LS0tLS0tLS0tLS0tLS0tClRoZSBQbGFuZXQ6IGRlZGljYXRlZCBhbmQgbWFuYWdlZCBob3N0aW5n
-LCBjbG91ZCBzdG9yYWdlLCBjb2xvY2F0aW9uClN0YXkgb25saW5lIHdpdGggZW50ZXJwcmlzZSBk
-YXRhIGNlbnRlcnMgYW5kIHRoZSBiZXN0IG5ldHdvcmsgaW4gdGhlIGJ1c2luZXNzCkNob29zZSBm
-bGV4aWJsZSBwbGFucyBhbmQgbWFuYWdlbWVudCBzZXJ2aWNlcyB3aXRob3V0IGxvbmctdGVybSBj
-b250cmFjdHMKUGVyc29uYWwgMjR4NyBzdXBwb3J0IGZyb20gZXhwZXJpZW5jZSBob3N0aW5nIHBy
-b3MganVzdCBhIHBob25lIGNhbGwgYXdheS4KaHR0cDovL3Auc2YubmV0L3NmdS90aGVwbGFuZXQt
-Y29tCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkx4Yy11
-c2VycyBtYWlsaW5nIGxpc3QKTHhjLXVzZXJzQGxpc3RzLnNvdXJjZWZvcmdlLm5ldApodHRwczov
-L2xpc3RzLnNvdXJjZWZvcmdlLm5ldC9saXN0cy9saXN0aW5mby9seGMtdXNlcnMK
+Quoting Jean-Marc Pigeon (jmp-4qkeo2rQ0gg@public.gmane.org):
+> Hello,
+> =
+
+> [...]
+> > > =
+
+> > > The prink keeps writing in the global ring buffer and the syslog(2)
+> > > writes to the "namespaced" ring buffer.
+> > > =
+
+> > > Does it makes sense ?
+> > =
+
+> > Yeah, it's a nice alternative.  Though (1) there is something to be sai=
+d for
+> > forcing a new ring buffer upon clone(CLONE_NEWUSER), and (2) assuming t=
+he
+> > new ring buffer is pointed to from nsproxy, it might be frowned upon to=
+ do
+> > an unshare/clone action in yet another way.
+> > =
+
+> > I still think our first concern should be safety, and that we should co=
+nsider
+> > just adding 'struct syslog_struct' to nsproxy, and making that NULL on a
+> > clone(CLONE_NEWUSER).  any sys_syslog() or /proc/kmsg access returns -E=
+INVAL
+> > after that.  Then we can discuss whether and how to target printks to
+> > namespaces, and whether duplicates should be sent to parent namespaces.
+> 	/proc/kmsg=3D-EINVAL  will resolve the own HOST: ring buffer corruption
+> 	not sure what sys_syslog()=3D-EINVAL mean???, rsyslog MUST be able to
+> 	run within CONT: right?
+> =
+
+> 	printk namespaces duplicate and sent to parent namespace
+> 	is not a good idea (duplicating&forwarding is done by tools as rsyslogd).
+
+Heh, agreed, I just disagree that we should trust CONT to fwd stuff to
+HOST, rather we should have HOST fwd stuff to CONT.
+
+It comes down to whether HOST might need the info to determine what CONT
+or someone attacking CONT is up to.  To the extend that HOST will never be
+fully safe from CONT (and if you think it is, even using kvm/vmware, then
+you you're deluding yourself) I think it's misguided to keep information
+from HOST.
+
+> > After we start getting flexible with syslog, the next request will be f=
+or
+> > audit flexibility.  I don't even know how our netlink support suffices =
+for
+> > that right now.
+> > =
+
+> > (So, this all does turn into a big deal...)
+> > =
+
+> > -serge
+> -- =
+
+> A bient=F4t
+> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+> Jean-Marc Pigeon                                   Internet: jmp-4qkeo2rQ0gg@public.gmane.org
+> SAFE Inc.                                          Phone: (514) 493-4280
+>                                                    Fax:   (514) 493-1946
+>         Clement, 'a kiss solution' to get rid of SPAM (at last)
+>            Clement' Home base <"http://www.clement.safe.ca">
+> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+
+---------------------------------------------------------------------------=
+---
+The Planet: dedicated and managed hosting, cloud storage, colocation
+Stay online with enterprise data centers and the best network in the busine=
+ss
+Choose flexible plans and management services without long-term contracts
+Personal 24x7 support from experience hosting pros just a phone call away.
+http://p.sf.net/sfu/theplanet-com
