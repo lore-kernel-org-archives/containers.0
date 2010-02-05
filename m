@@ -1,7 +1,7 @@
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH] checkpoint/powerpc: fix up checkpoint syscall, tidy restart
-Date: Fri,  5 Feb 2010 14:58:30 -0600
-Message-ID: <1265403510-977-1-git-send-email-ntl@pobox.com>
+Subject: [PATCH 1/2] user-cr: make powerpc eclone stack setup more robust
+Date: Fri,  5 Feb 2010 15:00:01 -0600
+Message-ID: <1265403602-1083-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,51 +18,64 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Fix up fallout from changing checkpoint to ptregscall; use named
-parameters in sys_restart() instead of redundantly loading the syscall
-arguments from ptregs.
+For ppc64, it's not sufficient to merely align the stack pointer
+(clone_args->child_stack); we must also set up a stack frame (48
+bytes).  Encapsulate the stack setup details in a helper function
+(stack_setup_frame) which makes appropriate adjustments.
+
+Although the genstack implementation provides zeroed stack pages, it's
+best not to rely on that implementation detail, so explicitly zero the
+back chain pointer in stack_setup_frame as well.
 
 Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 ---
- arch/powerpc/kernel/process.c |   23 +++++++++++------------
- 1 files changed, 11 insertions(+), 12 deletions(-)
+ clone_ppc.c |   26 ++++++++++++++++++--------
+ 1 files changed, 18 insertions(+), 8 deletions(-)
 
-diff --git a/arch/powerpc/kernel/process.c b/arch/powerpc/kernel/process.c
-index f9da9eb..4b9019b 100644
---- a/arch/powerpc/kernel/process.c
-+++ b/arch/powerpc/kernel/process.c
-@@ -991,21 +991,20 @@ out:
- 	return error;
- }
+diff --git a/clone_ppc.c b/clone_ppc.c
+index f047a9e..2d8b0f8 100644
+--- a/clone_ppc.c
++++ b/clone_ppc.c
+@@ -31,6 +31,22 @@ extern int __eclone(int (*fn)(void *arg),
+ 		    size_t args_size,
+ 		    pid_t *pids);
  
--int sys_restart(unsigned long a0, unsigned long a1, unsigned long a2,
--	       unsigned long a3, unsigned long a4, unsigned long a5,
--	       struct pt_regs *regs)
-+int sys_checkpoint(unsigned long pid, unsigned long fd, unsigned long flags,
-+		   unsigned long logfd, unsigned long p5, unsigned long p6,
-+		   struct pt_regs *regs)
- {
--	unsigned long flags;
--	pid_t pid;
--	int logfd;
--	int fd;
--
- 	CHECK_FULL_REGS(regs);
- 
--	pid = a0;
--	fd = a1;
--	flags = a2;
--	logfd = a3;
-+	return do_sys_checkpoint(pid, fd, flags, logfd);
++#ifdef __powerpc64__
++#define MIN_STACK_FRAME 48
++#else
++#define MIN_STACK_FRAME 16
++#endif
++
++static unsigned long stack_setup_frame(unsigned long base, unsigned long size)
++{
++	unsigned long *sp;
++
++	sp =  (unsigned long *)(((base + size - 1) & ~0xf) - MIN_STACK_FRAME);
++	*sp = 0;
++
++	return (unsigned long)sp;
 +}
 +
-+int sys_restart(unsigned long pid, unsigned long fd, unsigned long flags,
-+		unsigned long logfd, unsigned long p5, unsigned long p6,
-+		struct pt_regs *regs)
-+{
-+	CHECK_FULL_REGS(regs);
+ int eclone(int (*fn)(void *), void *fn_arg, int clone_flags_low,
+ 	   struct clone_args *clone_args, pid_t *pids)
+ {
+@@ -38,15 +54,9 @@ int eclone(int (*fn)(void *), void *fn_arg, int clone_flags_low,
+ 	unsigned long child_sp;
+ 	int newpid;
  
- 	return do_sys_restart(pid, fd, flags, logfd);
- }
+-	/* The stack pointer for the child is communicated to the
+-	 * kernel via clone_args.child_stack, and to the __eclone
+-	 * assembly wrapper via the child_sp argument [r4].  So we
+-	 * need to align child_sp here and ensure that the wrapper and
+-	 * the kernel receive the same value.
+-	 */
+ 	if (clone_args->child_stack)
+-		child_sp = (clone_args->child_stack +
+-			    clone_args->child_stack_size - 1) & ~0xf;
++		child_sp = stack_setup_frame(clone_args->child_stack,
++					     clone_args->child_stack_size);
+ 	else
+ 		child_sp = 0;
+ 
 -- 
 1.6.0.6
