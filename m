@@ -1,13 +1,14 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH] use simpler test_task_thread to test current ti flags
-Date: Thu, 04 Feb 2010 22:31:07 -0500
-Message-ID: <4B6B90FB.5070502@cs.columbia.edu>
-References: <20100128233311.GA9890@us.ibm.com>
+Subject: Re: [PATCH RFC] s390: let tasks know to restart syscalls
+	after	sys_restart()
+Date: Thu, 04 Feb 2010 22:29:19 -0500
+Message-ID: <4B6B908F.10709@cs.columbia.edu>
+References: <20100128233528.GA10140@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100128233311.GA9890-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20100128233528.GA10140-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,34 +19,60 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
-Got it.
 
 Serge E. Hallyn wrote:
-> This ought to be folded into the 
-> 	'fix 31-bit s390 checkpoint/restart wrappers'
-> patch which I sent earlier today.  Not a bug without it, just
-> not as nice.
+> (This is a patch against the checkpoint/restart kernel tree at
+> http://git.ncl.cs.columbia.edu/?p=linux-cr.git;a=shortlog;h=refs/heads/ckpt-v19-rc2.9)
 > 
-> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  arch/s390/kernel/checkpoint.c |    3 ++-
->  1 files changed, 2 insertions(+), 1 deletions(-)
+> On x86, do_signal() leaves -516 in eax while it freezes, which
+> sys_restart() can use to detect that it should restart the
+> syscall which was interrupted by a signal (or the freezer).
 > 
-> diff --git a/arch/s390/kernel/checkpoint.c b/arch/s390/kernel/checkpoint.c
-> index 8ec12c6..60ba04d 100644
-> --- a/arch/s390/kernel/checkpoint.c
-> +++ b/arch/s390/kernel/checkpoint.c
-> @@ -148,7 +148,8 @@ int checkpoint_mm_context(struct ckpt_ctx *ctx, struct mm_struct *mm)
->  
->  int restore_thread(struct ckpt_ctx *ctx)
->  {
-> -	if (test_tsk_thread_flag(current, TIF_31BIT)) {
-> +	/* a 31-bit task cannot call sys_restart right now */
-> +	if (test_thread_flag(TIF_31BIT)) {
->  		ckpt_err(ctx, -EINVAL, "restart from 31-bit task\n");
->  		return -EINVAL;
->  	}
+> On s390, gprs[2] gets tweaked to -EINTR (-4) instead, leaving
+> us no reliable way to tell whether should be restarted.  If the
+> task is checkpointed here and then restarted, then the last part
+> of do_signal() won't be done, and the interrupted syscall won't
+> be restarted.
+> 
+> This patch defines TIF_RESTARTBLOCK as a thread flag showing that
+> the thread expects to be frozen while kicked out of a restartable
+> syscall by a signal.
+> 
+> The TIF_RESTARTBLOCK flag is only set for the duration of the
+> get get_signal_to_deliver() which is where the task may get
+> frozen.  We also set it in sys_restart() if the checkpointed task
+> had had TIF_RESTARTBLOCK set.  It will get cleared if upon exiting
+> sys_restart() we jump to sysc_sigpending.  If instead we jump back
+> to do_signal(), then TIF_RESTARTBLOCK will stay set again until
+> after get_signal_to_deliver() so that if it immediately freezes and
+> is re-checkpointed, the resulting second checkpoint image again
+> will have TIF_RESTARTBLOCK set.
+
+Two comments:
+
+1) This note will be lost once we fold this patch into a clean
+patchset. Can you please make it part of the code ?
+
+2) Maybe I'm missing something, but I'm not convinced. Can you
+elaborate on why this is correct in different cases ?  Also, in
+particular with respect to the post-signal-sent snippet in the
+signal handling code:
+
+        if (retval == -ERESTART_RESTARTBLOCK
+            && regs->psw.addr == continue_addr) {
+
+                regs->gprs[2] = __NR_restart_syscall;
+
+                set_thread_flag(TIF_RESTART_SVC);
+
+        }
+
+
+Would it do what you expect after a restart ?  (restart modifies
+the psw.addr)
+
+Oren.
