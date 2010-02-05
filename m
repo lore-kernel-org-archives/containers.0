@@ -1,13 +1,14 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH 1/1] fix 31-bit s390 checkpoint/restart wrappers
-Date: Thu, 04 Feb 2010 22:31:28 -0500
-Message-ID: <4B6B9110.4000404@cs.columbia.edu>
-References: <20100128181138.GA18197@us.ibm.com>
+Subject: Re: c/r rebase to 2.6.33-rc5
+Date: Fri, 05 Feb 2010 09:45:14 -0500
+Message-ID: <4B6C2EFA.3050703@cs.columbia.edu>
+References: <4B6B04E7.9080704@cs.columbia.edu>
+	<20100205014009.GA5474@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100128181138.GA18197-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20100205014009.GA5474-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,106 +19,42 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
-Got it
 
 Serge E. Hallyn wrote:
-> This patch makes it possible to compile with CONFIG_COMPAT=y.  It
-> also refuses checkpoint of a 31-bit task, or restart from a 31-bit
-> task.  That's just a temporary restriction as there won't be time
-> to get 31-bit support for v19.
+> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+>> I rebased the most recent patchset to 2.6.33, and pushed to
+>> ckpt-v19-rc2.10. only x86-32 is (lightly) tested.
+>>
+>> it does not include patches from 1/27 and on. working on it
+>> now.
+>>
+>> please review:
+>>
+>> * arch-specific parts that I didn't screw up anything.
+>> btw, I moved checkpoint code from mm/ to kernel/
+>>
+>> * [dan] network: net/checkpoint.c now uses sock_alloc_file();
+>> there may or may not be a leak of sock_hold().
+>>
+>> * [serge] selinux now auto-generates some include files, see
+>> the changes to classmap.h
+>>
+>> Oren.
 > 
-> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  arch/s390/kernel/checkpoint.c     |    9 +++++++++
->  arch/s390/kernel/compat_wrapper.S |   12 +++++++-----
->  arch/s390/kernel/process.c        |   12 ++++++++++++
->  arch/s390/kernel/syscalls.S       |    2 +-
->  4 files changed, 29 insertions(+), 6 deletions(-)
+> For x86-64, I needed the following patch.  With this patch, only
+> the fileio and futex tests failed.  Suka is looking into the fileio
+> failure - Matt you might check the futex tests on whatever arch
+> you have available...
 > 
-> diff --git a/arch/s390/kernel/checkpoint.c b/arch/s390/kernel/checkpoint.c
-> index 40dd417..8ec12c6 100644
-> --- a/arch/s390/kernel/checkpoint.c
-> +++ b/arch/s390/kernel/checkpoint.c
-> @@ -83,6 +83,11 @@ static void s390_mm(int op, struct ckpt_hdr_mm_context *h,
->  
->  int checkpoint_thread(struct ckpt_ctx *ctx, struct task_struct *t)
->  {
-> +	/* we will eventually support this, as we do on x86-64 */
-> +	if (test_tsk_thread_flag(t, TIF_31BIT)) {
-> +		ckpt_err(ctx, -EINVAL, "checkpoint of 31-bit task\n");
-> +		return -EINVAL;
-> +	}
->  	return 0;
->  }
->  
-> @@ -143,6 +148,10 @@ int checkpoint_mm_context(struct ckpt_ctx *ctx, struct mm_struct *mm)
->  
->  int restore_thread(struct ckpt_ctx *ctx)
->  {
-> +	if (test_tsk_thread_flag(current, TIF_31BIT)) {
-> +		ckpt_err(ctx, -EINVAL, "restart from 31-bit task\n");
-> +		return -EINVAL;
-> +	}
->  	return 0;
->  }
->  
-> diff --git a/arch/s390/kernel/compat_wrapper.S b/arch/s390/kernel/compat_wrapper.S
-> index 8d0ba6a..bb38630 100644
-> --- a/arch/s390/kernel/compat_wrapper.S
-> +++ b/arch/s390/kernel/compat_wrapper.S
-> @@ -1869,11 +1869,13 @@ sys_checkpoint_wrapper:
->  	lgfr	%r2,%r2			# pid_t
->  	lgfr	%r3,%r3			# int
->  	llgfr	%r4,%r4			# unsigned long
-> -	jg	compat_sys_checkpoint
-> +	lgfr	%r5,%r5			# int
-> +	jg	sys_checkpoint
->  
-> -	.globl sys_restore_wrapper
-> -sys_restore_wrapper:
-> -	lgfr	%r2,%r2			# int
-> +	.globl sys_restart_wrapper
-> +sys_restart_wrapper:
-> +	lgfr	%r2,%r2			# pid_t
->  	lgfr	%r3,%r3			# int
->  	llgfr	%r4,%r4			# unsigned long
-> -	jg	compat_sys_restore
-> +	lgfr	%r5,%r5			# int
-> +	jg	sys_restart
-> diff --git a/arch/s390/kernel/process.c b/arch/s390/kernel/process.c
-> index a7cb6bc..61b469f 100644
-> --- a/arch/s390/kernel/process.c
-> +++ b/arch/s390/kernel/process.c
-> @@ -258,6 +258,18 @@ SYSCALL_DEFINE4(restart, pid_t, pid, int, fd, unsigned long, flags,
->  {
->  	return do_sys_restart(pid, fd, flags, logfd);
->  }
-> +#else
-> +SYSCALL_DEFINE4(checkpoint, pid_t, pid, int, fd, unsigned long, flags,
-> +		int, logfd)
-> +{
-> +	return -ENOSYS;
-> +}
-> +
-> +SYSCALL_DEFINE4(restart, pid_t, pid, int, fd, unsigned long, flags,
-> +		int, logfd)
-> +{
-> +	return -ENOSYS;
-> +}
->  #endif
->  
->  SYSCALL_DEFINE4(eclone, unsigned int, flags_low, struct clone_args __user *,
-> diff --git a/arch/s390/kernel/syscalls.S b/arch/s390/kernel/syscalls.S
-> index ff222e1..a29f9e1 100644
-> --- a/arch/s390/kernel/syscalls.S
-> +++ b/arch/s390/kernel/syscalls.S
-> @@ -342,4 +342,4 @@ SYSCALL(sys_rt_tgsigqueueinfo,sys_rt_tgsigqueueinfo,compat_sys_rt_tgsigqueueinfo
->  SYSCALL(sys_perf_event_open,sys_perf_event_open,sys_perf_event_open_wrapper)
->  SYSCALL(sys_eclone,sys_eclone,sys_eclone_wrapper)
->  SYSCALL(sys_checkpoint,sys_checkpoint,sys_checkpoint_wrapper)
-> -SYSCALL(sys_restart,sys_restart,sys_restore_wrapper)
-> +SYSCALL(sys_restart,sys_restart,sys_restart_wrapper)
+> For s390, I of course still need
+> "fix 31-bit s390 checkpoint/restart wrappers" for compile with
+> CONFIG_COMPAT to succeed.
+
+Ok, fixed, and pushed to ckpt-v19-rc2.10.
+If this is more or less ok, I'll change it to ckpt-v19-rc3 :)
+
+Oren.
