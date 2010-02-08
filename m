@@ -1,7 +1,8 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH][user-cr][v2] Create libeclone.a
-Date: Mon, 8 Feb 2010 09:58:08 -0800
-Message-ID: <20100208175808.GA29695@us.ibm.com>
+From: "Garrison" <liminghara2nne-LWAfsSFWpa4@public.gmane.org>
+Subject: =?GB2312?B?aVBob25lIEFwcGxpY2F0aW9uIERldmVsb3BtZW50?=
+Date: Tue, 9 Feb 2010 02:22:53 +0800
+Message-ID: <SRV01JkpOAfh3p8FvvW0001d61a@autopartners.fr>
+Reply-To: dandevelop-Mj/0Miq2reM@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -16,105 +17,52 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: containers <containers-8MiXsm1LNw7vu62uXDUzXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Here is an updated patch which includes genstack.o in libeclone and
-adds Serge's ack.
+iPhone Application Development
 
----
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Sat, 6 Feb 2010 10:45:10 -0800
-Subject: [PATCH 1/1] Create libeclone.a
+We are China based company explicitly active for iPhone software programming solutions and Mobile Application Development services as well as wireless application (WAP) development. We are organized to deliver premium quality services to our clients ranging from large organizations to smaller groups and individuals from all over the sphere. We implement creative ideas with latest technologies and constantly eager to meet all needs of our clients with supreme level customer care with a view to maintain long-term business relations.
 
-The user-api to the eclone() system call is architecture dependent.
+Our team is perfect blend of experience and talented Mobile Application Developers, who are successfully providing appropriate & quality solutions to our global iPhone clients according to their respective needs like Android Mobile Application Development & Mobile Website Development. We believe our enthusiastic approach towards latest mobile technologies directly increase our mobile application development proficiency in form of iPhone Application Development, iPhone 3G Games/Mac Games Development and iPhone Calendar Application Development.
 
-Besides checkpoint/restart code, this api could be used by eclone() test
-cases (see cr-tests.git tree) and possibly other users of eclone().
+We undertake offshore iPhone enhancement projects as well as provide all type mobile application development solution to our clients as well as they can Hire iPhone Application Developers for their specific demands . iPhone is the symbol of creativity which demands customize application development and iPhone application development India provides customized services to our iPhone lover clients such as Custom iPhone Icons/Themes Design .
 
-To avoid duplication of the arch dependent code, move the api into
-libeclone.a (as suggested by Serge Hallyn).
+Achieving highest level of customer satisfaction in mobile application solutions is our studio motto.
 
-Changelog[v2]:
-	- Include genstack.o in libeclone.a
+Services offered:
+iPhone Application Development
+Hire iPhone Programmers
+iPhone Game Development
+iPhone Theme & Icon Design
+iPhone Calendar Application Development
+Mobile Application Development
+Android Mobile Application Development
+Mobile Website Development
+Wireless (WAP) Mobile Applications Development
+Windows Mobile Application Development
+J2ME based Mobile Application Development
 
-Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- Makefile |   24 +++++++++++++++---------
- 1 files changed, 15 insertions(+), 9 deletions(-)
+Thanks,
+Garrison
+ITKAVOIA iPhone Application Development
+Contact: iphoneibtech-Mj/0Miq2reM@public.gmane.org
 
-diff --git a/Makefile b/Makefile
-index 35188f9..b7af994 100644
---- a/Makefile
-+++ b/Makefile
-@@ -5,7 +5,7 @@ CKPT_HEADERS = include/linux/checkpoint.h \
- 		include/linux/checkpoint_hdr.h \
- 		include/asm/checkpoint_hdr.h
- 
--# detect architecture (for clone_with_pids)
-+# detect architecture (for eclone)
- SUBARCH = $(patsubst i%86,x86_32,$(shell uname -m))
- 
- # compile with debug ?
-@@ -19,8 +19,11 @@ CFLAGS += -g $(WARNS) $(CKPT_INCLUDE) $(DEBUG)
- 
- # install dir
- INSTALL_DIR = /bin
-+LIB_INSTALL_DIR = /lib
- 
--PROGS =	checkpoint restart ckptinfo nsexeccwp
-+ECLONE_PROGS = restart nsexeccwp
-+PROGS = checkpoint ckptinfo $(ECLONE_PROGS) 
-+LIB_ECLONE = libeclone.a
- 
- # other cleanup
- OTHER = ckptinfo_types.c
-@@ -32,21 +35,22 @@ LDLIBS = -lm
- all: $(PROGS)
- 	@make -C test
- 
-+$(LIB_ECLONE):
-+	ar ruv $(LIB_ECLONE) $^
-+
- # restart needs to be thread-safe
- restart: CFLAGS += -D__REENTRANT -pthread
- 
- # eclone() is architecture specific
- ifneq ($(SUBARCH),)
--restart: clone_$(SUBARCH).o genstack.o
--restart: CFLAGS += -DARCH_HAS_ECLONE
--nsexeccwp: clone_$(SUBARCH).o genstack.o
--nsexeccwp: CFLAGS += -DARCH_HAS_ECLONE
-+$(ECLONE_PROGS): $(LIB_ECLONE) 
-+$(ECLONE_PROGS): CFLAGS += -DARCH_HAS_ECLONE
-+$(LIB_ECLONE): clone_$(SUBARCH).o genstack.o
- endif
- 
- # on powerpc, need also assembly file
- ifeq ($(SUBARCH),ppc)
--restart: clone_$(SUBARCH)_.o
--nsexeccwp: clone_$(SUBARCH)_.o
-+$(LIB_ECLONE): clone_$(SUBARCH)_.o
- endif
- 
- # ckptinfo dependencies
-@@ -56,6 +60,8 @@ ckptinfo_types.c: $(CKPT_HEADERS) ckptinfo.py
- 	cat $(CKPT_HEADERS) | ./ckptinfo.py > ckptinfo_types.c
- 
- install:
-+	@echo /usr/bin/install -m 755 $(LIB_ECLONE) $(LIB_INSTALL_DIR)
-+	@/usr/bin/install -m 755 $(LIB_ECLONE) $(LIB_INSTALL_DIR)
- 	@echo /usr/bin/install -m 755 checkpoint restart ckptinfo $(INSTALL_DIR)
- 	@/usr/bin/install -m 755 checkpoint restart ckptinfo $(INSTALL_DIR)
- 
-@@ -68,5 +74,5 @@ distclean: clean
- 	@rm -f $(CKPT_HEADERS)
- 
- clean:
--	@rm -f $(PROGS) $(OTHER) *~ *.o headers.h
-+	@rm -f $(PROGS) $(OTHER) $(LIB_ECLONE) *~ *.o headers.h
- 	@make -C test clean
--- 
-1.6.0.4
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Pls send address to iphoneappremove-Xb2Y1Dfb9CI@public.gmane.org for remove
