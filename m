@@ -1,8 +1,7 @@
-From: "Garrison" <liminghara2nne-LWAfsSFWpa4@public.gmane.org>
-Subject: =?GB2312?B?aVBob25lIEFwcGxpY2F0aW9uIERldmVsb3BtZW50?=
-Date: Tue, 9 Feb 2010 02:22:53 +0800
-Message-ID: <SRV01JkpOAfh3p8FvvW0001d61a@autopartners.fr>
-Reply-To: dandevelop-Mj/0Miq2reM@public.gmane.org
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 1/1] x86_64: keep __u32s in even groups
+Date: Mon, 8 Feb 2010 12:54:52 -0600
+Message-ID: <20100208185452.GA22690@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -17,52 +16,41 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers <containers-8MiXsm1LNw7vu62uXDUzXA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-iPhone Application Development
 
-We are China based company explicitly active for iPhone software programming solutions and Mobile Application Development services as well as wireless application (WAP) development. We are organized to deliver premium quality services to our clients ranging from large organizations to smaller groups and individuals from all over the sphere. We implement creative ideas with latest technologies and constantly eager to meet all needs of our clients with supreme level customer care with a view to maintain long-term business relations.
+Otherwise the struct will be different size on x86-32 and x86-64.
 
-Our team is perfect blend of experience and talented Mobile Application Developers, who are successfully providing appropriate & quality solutions to our global iPhone clients according to their respective needs like Android Mobile Application Development & Mobile Website Development. We believe our enthusiastic approach towards latest mobile technologies directly increase our mobile application development proficiency in form of iPhone Application Development, iPhone 3G Games/Mac Games Development and iPhone Calendar Application Development.
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ include/linux/checkpoint_hdr.h |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
 
-We undertake offshore iPhone enhancement projects as well as provide all type mobile application development solution to our clients as well as they can Hire iPhone Application Developers for their specific demands . iPhone is the symbol of creativity which demands customize application development and iPhone application development India provides customized services to our iPhone lover clients such as Custom iPhone Icons/Themes Design .
-
-Achieving highest level of customer satisfaction in mobile application solutions is our studio motto.
-
-Services offered:
-iPhone Application Development
-Hire iPhone Programmers
-iPhone Game Development
-iPhone Theme & Icon Design
-iPhone Calendar Application Development
-Mobile Application Development
-Android Mobile Application Development
-Mobile Website Development
-Wireless (WAP) Mobile Applications Development
-Windows Mobile Application Development
-J2ME based Mobile Application Development
-
-Thanks,
-Garrison
-ITKAVOIA iPhone Application Development
-Contact: iphoneibtech-Mj/0Miq2reM@public.gmane.org
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Pls send address to iphoneappremove-Xb2Y1Dfb9CI@public.gmane.org for remove
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index e591fd1..5a68178 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -345,6 +345,9 @@ struct ckpt_hdr_task {
+ 	__u32 exit_code;
+ 	__u32 exit_signal;
+ 	__u32 pdeath_signal;
++	__u32 compat_robust_futex_head_len;
++	__u32 compat_robust_futex_list; /* a compat __user ptr */
++	__u32 robust_futex_head_len;
+ 
+ #ifdef CONFIG_AUDITSYSCALL
+ 	/* would audit want to track the checkpointed ids,
+@@ -354,9 +357,6 @@ struct ckpt_hdr_task {
+ 	__u64 set_child_tid;
+ 	__u64 clear_child_tid;
+ 
+-	__u32 compat_robust_futex_head_len;
+-	__u32 compat_robust_futex_list; /* a compat __user ptr */
+-	__u32 robust_futex_head_len;
+ 	__u64 robust_futex_list; /* a __user ptr */
+ } __attribute__((aligned(8)));
+ 
+-- 
+1.6.0.4
