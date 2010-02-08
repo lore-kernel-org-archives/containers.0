@@ -1,22 +1,12 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH 1/1] fill vdso with syscall32_setup_pages if TIF_IA32
-	on x86_64
-Date: Mon, 08 Feb 2010 12:40:31 -0500
-Message-ID: <4B704C8F.5050403@cs.columbia.edu>
-References: <20100127071636.GA16624@us.ibm.com>
-	<Pine.LNX.4.64.1001270954120.8974@takamine.ncl.cs.columbia.edu>
-	<20100127201037.GA23119@us.ibm.com>
-	<4B60A763.4030806@cs.columbia.edu>
-	<20100127211052.GA27579@us.ibm.com>
-	<4B60AC7E.2010908@cs.columbia.edu>
-	<20100205233800.GA17057@us.ibm.com>
-	<4B6CC00C.2090509@cs.columbia.edu>
-	<20100206062650.GG3714@count0.beaverton.ibm.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [PATCH][user-cr][v2] Create libeclone.a
+Date: Mon, 8 Feb 2010 09:58:08 -0800
+Message-ID: <20100208175808.GA29695@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100206062650.GG3714-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,52 +16,105 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Here is an updated patch which includes genstack.o in libeclone and
+adds Serge's ack.
 
-[snip]
+---
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Date: Sat, 6 Feb 2010 10:45:10 -0800
+Subject: [PATCH 1/1] Create libeclone.a
 
->> original	original	restart		target
->> program		kernel		program		kernel
->> --------	---------	--------	--------
->> 64 bit		64 bit		64 bit		64 bit	  [0] works
->>
->> 32 bit		32 bit		32 bit		32 bit	  [0] works
->> 32 bit		64 bit		32 bit		64 bit	  [0] works
->>
->> 32 bit		32 bit		32 bit		64 bit	  [1]
->> 32 bit		64 bit		32 bit		32 bit	  [1]
->>
->> 32 bit		any		64 bit		64 bit	  [2]
->> 64 bit		64 bit		32 bit		64 bit	  [2]
->>
->> [0] The first 3 cases are "homogeneous", with conditions equal at
->> checkpoint and restart. AFAIK, they work.
->>
->> [1] The next two cases consider 32 bit program, and vary only the
->> environment - the kernel may change from 32 to 64 or back. We want
->> them to work.
->>
->> IIUC, your comment above means that they don't work because the
->> CKPT_ARCH_ID is a mismatch. The fix should be trivial - either
->> make 'restart' modify it, or make the kernel tolerate it.
->>
->> [2] The last two cases consider the case when the restart program
->> itself has different bit-ness than the checkpointed program (and
->> transition may occur in either direction). While lower priority,
->> we would like this to work, too.
-> 
-> Great table. Is it posted in the ckpt wiki too?
-> 
+The user-api to the eclone() system call is architecture dependent.
 
-I updated the wiki:
-     http://ckpt.wiki.kernel.org/index.php/Architecture
+Besides checkpoint/restart code, this api could be used by eclone() test
+cases (see cr-tests.git tree) and possibly other users of eclone().
 
-For powerpc I just assumed it's like x86 ... :)
-Can you please approve or modify for archs other than x86-{32,64} ?
+To avoid duplication of the arch dependent code, move the api into
+libeclone.a (as suggested by Serge Hallyn).
 
-Thanks,
+Changelog[v2]:
+	- Include genstack.o in libeclone.a
 
-Oren.
+Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ Makefile |   24 +++++++++++++++---------
+ 1 files changed, 15 insertions(+), 9 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 35188f9..b7af994 100644
+--- a/Makefile
++++ b/Makefile
+@@ -5,7 +5,7 @@ CKPT_HEADERS = include/linux/checkpoint.h \
+ 		include/linux/checkpoint_hdr.h \
+ 		include/asm/checkpoint_hdr.h
+ 
+-# detect architecture (for clone_with_pids)
++# detect architecture (for eclone)
+ SUBARCH = $(patsubst i%86,x86_32,$(shell uname -m))
+ 
+ # compile with debug ?
+@@ -19,8 +19,11 @@ CFLAGS += -g $(WARNS) $(CKPT_INCLUDE) $(DEBUG)
+ 
+ # install dir
+ INSTALL_DIR = /bin
++LIB_INSTALL_DIR = /lib
+ 
+-PROGS =	checkpoint restart ckptinfo nsexeccwp
++ECLONE_PROGS = restart nsexeccwp
++PROGS = checkpoint ckptinfo $(ECLONE_PROGS) 
++LIB_ECLONE = libeclone.a
+ 
+ # other cleanup
+ OTHER = ckptinfo_types.c
+@@ -32,21 +35,22 @@ LDLIBS = -lm
+ all: $(PROGS)
+ 	@make -C test
+ 
++$(LIB_ECLONE):
++	ar ruv $(LIB_ECLONE) $^
++
+ # restart needs to be thread-safe
+ restart: CFLAGS += -D__REENTRANT -pthread
+ 
+ # eclone() is architecture specific
+ ifneq ($(SUBARCH),)
+-restart: clone_$(SUBARCH).o genstack.o
+-restart: CFLAGS += -DARCH_HAS_ECLONE
+-nsexeccwp: clone_$(SUBARCH).o genstack.o
+-nsexeccwp: CFLAGS += -DARCH_HAS_ECLONE
++$(ECLONE_PROGS): $(LIB_ECLONE) 
++$(ECLONE_PROGS): CFLAGS += -DARCH_HAS_ECLONE
++$(LIB_ECLONE): clone_$(SUBARCH).o genstack.o
+ endif
+ 
+ # on powerpc, need also assembly file
+ ifeq ($(SUBARCH),ppc)
+-restart: clone_$(SUBARCH)_.o
+-nsexeccwp: clone_$(SUBARCH)_.o
++$(LIB_ECLONE): clone_$(SUBARCH)_.o
+ endif
+ 
+ # ckptinfo dependencies
+@@ -56,6 +60,8 @@ ckptinfo_types.c: $(CKPT_HEADERS) ckptinfo.py
+ 	cat $(CKPT_HEADERS) | ./ckptinfo.py > ckptinfo_types.c
+ 
+ install:
++	@echo /usr/bin/install -m 755 $(LIB_ECLONE) $(LIB_INSTALL_DIR)
++	@/usr/bin/install -m 755 $(LIB_ECLONE) $(LIB_INSTALL_DIR)
+ 	@echo /usr/bin/install -m 755 checkpoint restart ckptinfo $(INSTALL_DIR)
+ 	@/usr/bin/install -m 755 checkpoint restart ckptinfo $(INSTALL_DIR)
+ 
+@@ -68,5 +74,5 @@ distclean: clean
+ 	@rm -f $(CKPT_HEADERS)
+ 
+ clean:
+-	@rm -f $(PROGS) $(OTHER) *~ *.o headers.h
++	@rm -f $(PROGS) $(OTHER) $(LIB_ECLONE) *~ *.o headers.h
+ 	@make -C test clean
+-- 
+1.6.0.4
