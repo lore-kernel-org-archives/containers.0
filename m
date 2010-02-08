@@ -1,13 +1,12 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH][user-cr] Create libeclone.a
-Date: Mon, 08 Feb 2010 11:20:28 -0500
-Message-ID: <4B7039CC.9020302@cs.columbia.edu>
-References: <20100206200751.GA28083@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 1/1] restart only same bit-ness
+Date: Mon, 8 Feb 2010 11:05:55 -0600
+Message-ID: <20100208170555.GA16943@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100206200751.GA28083-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,122 +16,48 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+v19-rc3 actually tries to reset the TIF_IA32 flag according to
+how it was set at checkpoint.  It should not, at least for now.
 
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ arch/x86/kernel/checkpoint.c |   21 +++++++++++++++------
+ 1 files changed, 15 insertions(+), 6 deletions(-)
 
-Sukadev Bhattiprolu wrote:
-> Tested the changes on x86_32 with a stub to simulate the special case for
-> powerpc below. Appreciate if it could be tested on other architectures 
-> specially powerpc.
-
-Look good, I'll add it.
-
-> 
-> Also, can we push genstack.o into libeclone.a to simplify the Makefile ?
-
-That too.
-
-Oren.
-
-> 
-> thanks,
-> 
-> Sukadev
-> 
-> ---
-> 
-> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Date: Sat, 6 Feb 2010 10:45:10 -0800
-> Subject: [PATCH][user-cr] Create libeclone.a
-> 
-> The user-api to the eclone() system call is architecture dependent.
-> 
-> Besides checkpoint/restart code, this api could be used by eclone() test
-> cases (see cr-tests.git tree) and possibly other users of eclone().
-> 
-> To avoid duplication of the arch dependent code, move the api into
-> libeclone.a (as suggested by Serge Hallyn).
-> 
-> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> ---
->  Makefile |   28 +++++++++++++++++++---------
->  1 files changed, 19 insertions(+), 9 deletions(-)
-> 
-> diff --git a/Makefile b/Makefile
-> index 35188f9..eb39b1f 100644
-> --- a/Makefile
-> +++ b/Makefile
-> @@ -5,7 +5,7 @@ CKPT_HEADERS = include/linux/checkpoint.h \
->  		include/linux/checkpoint_hdr.h \
->  		include/asm/checkpoint_hdr.h
->  
-> -# detect architecture (for clone_with_pids)
-> +# detect architecture (for eclone)
->  SUBARCH = $(patsubst i%86,x86_32,$(shell uname -m))
->  
->  # compile with debug ?
-> @@ -19,8 +19,11 @@ CFLAGS += -g $(WARNS) $(CKPT_INCLUDE) $(DEBUG)
->  
->  # install dir
->  INSTALL_DIR = /bin
-> +LIB_INSTALL_DIR = /lib
->  
-> -PROGS =	checkpoint restart ckptinfo nsexeccwp
-> +ECLONE_PROGS = restart nsexeccwp
-> +PROGS =	checkpoint ckptinfo $(ECLONE_PROGS) 
-> +LIB_ECLONE =	libeclone.a
->  
->  # other cleanup
->  OTHER = ckptinfo_types.c
-> @@ -32,21 +35,26 @@ LDLIBS = -lm
->  all: $(PROGS)
->  	@make -C test
->  
-> +$(LIB_ECLONE):
-> +	ar ruv $(LIB_ECLONE) $^
-> +
->  # restart needs to be thread-safe
->  restart: CFLAGS += -D__REENTRANT -pthread
->  
->  # eclone() is architecture specific
-> +#
-> +# TODO: We could push genstack.o also into $(LIB_ECLONE), but it would make
-> +# 	the 'genstack()' symbol public and not sure if it will cause problems
-> +# 	for other applications.
->  ifneq ($(SUBARCH),)
-> -restart: clone_$(SUBARCH).o genstack.o
-> -restart: CFLAGS += -DARCH_HAS_ECLONE
-> -nsexeccwp: clone_$(SUBARCH).o genstack.o
-> -nsexeccwp: CFLAGS += -DARCH_HAS_ECLONE
-> +$(ECLONE_PROGS): $(LIB_ECLONE) genstack.o
-> +$(ECLONE_PROGS): CFLAGS += -DARCH_HAS_ECLONE
-> +$(LIB_ECLONE): clone_$(SUBARCH).o
->  endif
->  
->  # on powerpc, need also assembly file
->  ifeq ($(SUBARCH),ppc)
-> -restart: clone_$(SUBARCH)_.o
-> -nsexeccwp: clone_$(SUBARCH)_.o
-> +$(LIB_ECLONE): clone_$(SUBARCH)_.o
->  endif
->  
->  # ckptinfo dependencies
-> @@ -56,6 +64,8 @@ ckptinfo_types.c: $(CKPT_HEADERS) ckptinfo.py
->  	cat $(CKPT_HEADERS) | ./ckptinfo.py > ckptinfo_types.c
->  
->  install:
-> +	@echo /usr/bin/install -m 755 $(LIB_ECLONE) $(LIB_INSTALL_DIR)
-> +	@/usr/bin/install -m 755 $(LIB_ECLONE) $(LIB_INSTALL_DIR)
->  	@echo /usr/bin/install -m 755 checkpoint restart ckptinfo $(INSTALL_DIR)
->  	@/usr/bin/install -m 755 checkpoint restart ckptinfo $(INSTALL_DIR)
->  
-> @@ -68,5 +78,5 @@ distclean: clean
->  	@rm -f $(CKPT_HEADERS)
->  
->  clean:
-> -	@rm -f $(PROGS) $(OTHER) *~ *.o headers.h
-> +	@rm -f $(PROGS) $(OTHER) $(LIB_ECLONE) *~ *.o headers.h
->  	@make -C test clean
+diff --git a/arch/x86/kernel/checkpoint.c b/arch/x86/kernel/checkpoint.c
+index 5952e27..b01a2fc 100644
+--- a/arch/x86/kernel/checkpoint.c
++++ b/arch/x86/kernel/checkpoint.c
+@@ -283,12 +283,21 @@ int restore_thread(struct ckpt_ctx *ctx)
+ 	load_TLS(thread, cpu);
+ 	put_cpu();
+ 
+-#if defined(CONFIG_X86_64) && defined(CONFIG_COMPAT)
+-	if (h->thread_info_flags & _TIF_IA32)
+-		set_thread_flag(TIF_IA32);
+-	else
+-		clear_thread_flag(TIF_IA32);
+-#endif
++	{
++		int pre, post;
++		/*
++		 * Eventually we'd like to support mixed-bit restart, but for
++		 * now don't pretend to.
++		 */
++		pre = test_thread_flag(TIF_IA32);
++		post = h->thread_info_flags & _TIF_IA32;
++		if ((pre && !post) || (post && !pre)) {
++			ret = -EINVAL;
++			ckpt_err(ctx, ret, "%d-bit restarting %d-bit\n",
++				pre ? 32 : 64, post ? 32 : 64);
++			goto out;
++		}
++	}
+ 
+ 	/* TODO: restore TIF flags as necessary (e.g. TIF_NOTSC) */
+ 
+-- 
+1.6.0.4
