@@ -1,12 +1,22 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/1] restart only same bit-ness
-Date: Mon, 8 Feb 2010 11:05:55 -0600
-Message-ID: <20100208170555.GA16943@us.ibm.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [PATCH 1/1] fill vdso with syscall32_setup_pages if TIF_IA32
+	on x86_64
+Date: Mon, 08 Feb 2010 12:40:31 -0500
+Message-ID: <4B704C8F.5050403@cs.columbia.edu>
+References: <20100127071636.GA16624@us.ibm.com>
+	<Pine.LNX.4.64.1001270954120.8974@takamine.ncl.cs.columbia.edu>
+	<20100127201037.GA23119@us.ibm.com>
+	<4B60A763.4030806@cs.columbia.edu>
+	<20100127211052.GA27579@us.ibm.com>
+	<4B60AC7E.2010908@cs.columbia.edu>
+	<20100205233800.GA17057@us.ibm.com>
+	<4B6CC00C.2090509@cs.columbia.edu>
+	<20100206062650.GG3714@count0.beaverton.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <20100206062650.GG3714-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,48 +26,52 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-v19-rc3 actually tries to reset the TIF_IA32 flag according to
-how it was set at checkpoint.  It should not, at least for now.
 
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- arch/x86/kernel/checkpoint.c |   21 +++++++++++++++------
- 1 files changed, 15 insertions(+), 6 deletions(-)
+[snip]
 
-diff --git a/arch/x86/kernel/checkpoint.c b/arch/x86/kernel/checkpoint.c
-index 5952e27..b01a2fc 100644
---- a/arch/x86/kernel/checkpoint.c
-+++ b/arch/x86/kernel/checkpoint.c
-@@ -283,12 +283,21 @@ int restore_thread(struct ckpt_ctx *ctx)
- 	load_TLS(thread, cpu);
- 	put_cpu();
- 
--#if defined(CONFIG_X86_64) && defined(CONFIG_COMPAT)
--	if (h->thread_info_flags & _TIF_IA32)
--		set_thread_flag(TIF_IA32);
--	else
--		clear_thread_flag(TIF_IA32);
--#endif
-+	{
-+		int pre, post;
-+		/*
-+		 * Eventually we'd like to support mixed-bit restart, but for
-+		 * now don't pretend to.
-+		 */
-+		pre = test_thread_flag(TIF_IA32);
-+		post = h->thread_info_flags & _TIF_IA32;
-+		if ((pre && !post) || (post && !pre)) {
-+			ret = -EINVAL;
-+			ckpt_err(ctx, ret, "%d-bit restarting %d-bit\n",
-+				pre ? 32 : 64, post ? 32 : 64);
-+			goto out;
-+		}
-+	}
- 
- 	/* TODO: restore TIF flags as necessary (e.g. TIF_NOTSC) */
- 
--- 
-1.6.0.4
+>> original	original	restart		target
+>> program		kernel		program		kernel
+>> --------	---------	--------	--------
+>> 64 bit		64 bit		64 bit		64 bit	  [0] works
+>>
+>> 32 bit		32 bit		32 bit		32 bit	  [0] works
+>> 32 bit		64 bit		32 bit		64 bit	  [0] works
+>>
+>> 32 bit		32 bit		32 bit		64 bit	  [1]
+>> 32 bit		64 bit		32 bit		32 bit	  [1]
+>>
+>> 32 bit		any		64 bit		64 bit	  [2]
+>> 64 bit		64 bit		32 bit		64 bit	  [2]
+>>
+>> [0] The first 3 cases are "homogeneous", with conditions equal at
+>> checkpoint and restart. AFAIK, they work.
+>>
+>> [1] The next two cases consider 32 bit program, and vary only the
+>> environment - the kernel may change from 32 to 64 or back. We want
+>> them to work.
+>>
+>> IIUC, your comment above means that they don't work because the
+>> CKPT_ARCH_ID is a mismatch. The fix should be trivial - either
+>> make 'restart' modify it, or make the kernel tolerate it.
+>>
+>> [2] The last two cases consider the case when the restart program
+>> itself has different bit-ness than the checkpointed program (and
+>> transition may occur in either direction). While lower priority,
+>> we would like this to work, too.
+> 
+> Great table. Is it posted in the ckpt wiki too?
+> 
+
+I updated the wiki:
+     http://ckpt.wiki.kernel.org/index.php/Architecture
+
+For powerpc I just assumed it's like x86 ... :)
+Can you please approve or modify for archs other than x86-{32,64} ?
+
+Thanks,
+
+Oren.
