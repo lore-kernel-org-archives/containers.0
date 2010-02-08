@@ -1,15 +1,16 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/6] [RFC] user-cr: restart: Replace children pointer with
+Subject: [PATCH 3/6] [RFC] user-cr: restart: Replace next_sib pointer with an
 	index
-Date: Mon,  8 Feb 2010 13:57:19 -0800
-Message-ID: <b5d1f44254f8d30988ef96d849e40353e255801b.1265665676.git.matthltc@us.ibm.com>
+Date: Mon,  8 Feb 2010 13:57:20 -0800
+Message-ID: <b2b2ddd05d451916901fbc6776951a8bf64c6dbd.1265665676.git.matthltc@us.ibm.com>
 References: <1265666243-29046-1-git-send-email-matthltc@us.ibm.com>
 	<ef85446244a744fd9c91cf06515f796ce833f01c.1265665676.git.matthltc@us.ibm.com>
+	<b5d1f44254f8d30988ef96d849e40353e255801b.1265665676.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <ef85446244a744fd9c91cf06515f796ce833f01c.1265665676.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <b5d1f44254f8d30988ef96d849e40353e255801b.1265665676.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 In-Reply-To: <ef85446244a744fd9c91cf06515f796ce833f01c.1265665676.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 References: <ef85446244a744fd9c91cf06515f796ce833f01c.1265665676.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
@@ -25,141 +26,117 @@ To: Oren Laadan <orenl-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add an index field for each struct task. Replace children pointer with
-an index in the ctx.tasks_arr[].
+The more complicated portions of this patch will go away once all of the
+task pointers in the ctx.tasks_arr[] are replaced with indices.
 
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- restart.c |   32 ++++++++++++++++++--------------
- 1 files changed, 18 insertions(+), 14 deletions(-)
+ restart.c |   28 ++++++++++++++--------------
+ 1 files changed, 14 insertions(+), 14 deletions(-)
 
 diff --git a/restart.c b/restart.c
-index d51a08f..411c513 100644
+index 411c513..d1c2292 100644
 --- a/restart.c
 +++ b/restart.c
-@@ -202,9 +202,10 @@ struct hashent {
- struct task;
- 
- struct task {
-+	int index;
+@@ -206,7 +206,7 @@ struct task {
  	int flags;		/* state and (later) actions */
  
--	struct task *children;	/* pointers to first child, next and prev */
-+	int children;	/* pointers to first child, next and prev */
- 	struct task *next_sib;	/*   sibling, and the creator of a process */
+ 	int children;	/* pointers to first child, next and prev */
+-	struct task *next_sib;	/*   sibling, and the creator of a process */
++	int next_sib;	/*   sibling, and the creator of a process */
  	struct task *prev_sib;
  	struct task *creator;
-@@ -1237,6 +1238,7 @@ static int ckpt_setup_task(pid_t pid, pid_t ppid)
- 		return 0;
  
- 	task = &ctx.tasks_arr[ctx.tasks_nr++];
-+	/* assert(task->index == (ctx.tasks_nr - 1)); */
- 
- 	task->flags = TASK_GHOST;
- 
-@@ -1245,7 +1247,7 @@ static int ckpt_setup_task(pid_t pid, pid_t ppid)
- 	task->tgid = pid;
+@@ -1206,8 +1206,8 @@ static int ckpt_build_tree(void)
+ 		ckpt_dbg("\t[%d] pid %d ppid %d sid %d creator %d",
+ 			 i, task->pid, task->ppid, task->sid,
+ 			 task->creator->pid);
+-		if (task->next_sib)
+-			ckpt_dbg_cont(" next %d", task->next_sib->pid);
++		if (task->next_sib > -1)
++			ckpt_dbg_cont(" next %d", ctx.tasks_arr[task->next_sib].pid);
+ 		if (task->prev_sib)
+ 			ckpt_dbg_cont(" prev %d", task->prev_sib->pid);
+ 		if (task->phantom)
+@@ -1248,7 +1248,7 @@ static int ckpt_setup_task(pid_t pid, pid_t ppid)
  	task->sid = ppid;
  
--	task->children = NULL;
-+	task->children = -1;
- 	task->next_sib = NULL;
+ 	task->children = -1;
+-	task->next_sib = NULL;
++	task->next_sib = -1;
  	task->prev_sib = NULL;
  	task->creator = NULL;
-@@ -1359,6 +1361,7 @@ static int ckpt_init_tree(void)
- 	/* populate with known tasks */
- 	for (i = 0; i < pids_nr; i++) {
- 		task = &ctx.tasks_arr[i];
-+		task->index = i;
- 
- 		task->flags = 0;
- 
-@@ -1381,7 +1384,7 @@ static int ckpt_init_tree(void)
- 		task->tgid = pids_arr[i].vtgid;
+ 	task->phantom = NULL;
+@@ -1385,7 +1385,7 @@ static int ckpt_init_tree(void)
  		task->sid = pids_arr[i].vsid;
  
--		task->children = NULL;
-+		task->children = -1;
- 		task->next_sib = NULL;
+ 		task->children = -1;
+-		task->next_sib = NULL;
++		task->next_sib = -1;
  		task->prev_sib = NULL;
  		task->creator = NULL;
-@@ -1613,8 +1616,8 @@ static int ckpt_set_creator(struct task *task)
- 		}
+ 		task->phantom = NULL;
+@@ -1619,7 +1619,7 @@ static int ckpt_set_creator(struct task *task)
+ 	if (creator->children > -1) {
+ 		struct task *next = &ctx.tasks_arr[creator->children];
+ 
+-		task->next_sib = next;
++		task->next_sib = next->index;
+ 		next->prev_sib = task;
  	}
  
--	if (creator->children) {
--		struct task *next = creator->children;
-+	if (creator->children > -1) {
-+		struct task *next = &ctx.tasks_arr[creator->children];
- 
- 		task->next_sib = next;
- 		next->prev_sib = task;
-@@ -1622,7 +1625,7 @@ static int ckpt_set_creator(struct task *task)
- 
- 	ckpt_dbg("pid %d: creator set to %d\n", task->pid, creator->pid);
- 	task->creator = creator;
--	creator->children = task;
-+	creator->children = task->index;
- 
- 	if (task->flags & TASK_SESSION)
- 		if (ckpt_propagate_session(task) < 0)
-@@ -1647,6 +1650,7 @@ static int ckpt_placeholder_task(struct task *task)
- 	if (pid < 0)
- 		return -1;
- 
-+	/* assert(holder->index == (ctx.tasks_nr - 1)); */
- 	holder->flags = TASK_DEAD;
- 
- 	holder->pid = pid;
-@@ -1654,7 +1658,7 @@ static int ckpt_placeholder_task(struct task *task)
- 	holder->tgid = pid;
+@@ -1659,7 +1659,7 @@ static int ckpt_placeholder_task(struct task *task)
  	holder->sid = task->sid;
  
--	holder->children = NULL;
-+	holder->children = -1;
- 	holder->next_sib = NULL;
+ 	holder->children = -1;
+-	holder->next_sib = NULL;
++	holder->next_sib = -1;
  	holder->prev_sib = NULL;
  	holder->creator = NULL;
-@@ -1663,11 +1667,11 @@ static int ckpt_placeholder_task(struct task *task)
- 	holder->rpid = -1;
+ 	holder->phantom = NULL;
+@@ -1668,22 +1668,22 @@ static int ckpt_placeholder_task(struct task *task)
  
  	holder->creator = session;
--	if (session->children) {
--		holder->next_sib = session->children;
--		session->children->prev_sib = holder;
-+	if (session->children > -1) {
-+		holder->next_sib = &ctx.tasks_arr[session->children];
-+		ctx.tasks_arr[session->children].prev_sib = holder;
+ 	if (session->children > -1) {
+-		holder->next_sib = &ctx.tasks_arr[session->children];
++		holder->next_sib = session->children;
+ 		ctx.tasks_arr[session->children].prev_sib = holder;
  	}
--	session->children = holder;
-+	session->children = holder->index;/* = ctx.tasks_nr ?? */
+ 	session->children = holder->index;/* = ctx.tasks_nr ?? */
  	session->phantom = holder;
  
  	/* reparent entry if necssary */
-@@ -1676,7 +1680,7 @@ static int ckpt_placeholder_task(struct task *task)
+-	if (task->next_sib)
+-		task->next_sib->prev_sib = task->prev_sib;
++	if (task->next_sib > -1)
++		ctx.tasks_arr[task->next_sib].prev_sib = task->prev_sib;
  	if (task->prev_sib)
  		task->prev_sib->next_sib = task->next_sib;
  	if (task->creator)
--		task->creator->children = task->next_sib;
-+		task->creator->children = task->next_sib->index;
+-		task->creator->children = task->next_sib->index;
++		task->creator->children = task->next_sib;
  
  	task->creator = holder;
- 	task->next_sib = NULL;
-@@ -1758,7 +1762,7 @@ static int ckpt_make_tree(struct task *task)
+-	task->next_sib = NULL;
++	task->next_sib = -1;
+ 	task->prev_sib = NULL;
+ 
+ 	return 0;
+@@ -1762,7 +1762,7 @@ static int ckpt_make_tree(struct task *task)
  	       task->pid, _gettid(), getsid(0), getppid());
  
  	/* 1st pass: fork children that inherit our old session-id */
--	for (child = task->children; child; child = child->next_sib) {
-+	for (child = &ctx.tasks_arr[task->children]; child; child = child->next_sib) {
+-	for (child = &ctx.tasks_arr[task->children]; child; child = child->next_sib) {
++	for (child = &ctx.tasks_arr[task->children]; child && ((child >= &ctx.tasks_arr[0]) && (child <= &ctx.tasks_arr[ctx.tasks_nr - 1])); child = &ctx.tasks_arr[child->next_sib]) {
  		if (child->flags & TASK_SESSION) {
  			ckpt_dbg("pid %d: fork child %d with session\n",
  			       task->pid, child->pid);
-@@ -1779,7 +1783,7 @@ static int ckpt_make_tree(struct task *task)
+@@ -1783,7 +1783,7 @@ static int ckpt_make_tree(struct task *task)
  	}
  
  	/* 2st pass: fork children that inherit our new session-id */
--	for (child = task->children; child; child = child->next_sib) {
-+	for (child = &ctx.tasks_arr[task->children]; child; child = child->next_sib) {
+-	for (child = &ctx.tasks_arr[task->children]; child; child = child->next_sib) {
++	for (child = &ctx.tasks_arr[task->children]; child && ((child >= &ctx.tasks_arr[0]) && (child <= &ctx.tasks_arr[ctx.tasks_nr - 1])); child = &ctx.tasks_arr[child->next_sib]) {
  		if (!(child->flags & TASK_SESSION)) {
  			ckpt_dbg("pid %d: fork child %d without session\n",
  			       task->pid, child->pid);
