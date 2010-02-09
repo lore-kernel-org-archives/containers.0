@@ -1,16 +1,14 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 5/6][cr-test][v2]: eclone-5: nr_pids must not exceed
-	nesting level
-Date: Tue, 9 Feb 2010 15:17:05 -0600
-Message-ID: <20100209211705.GA32631@us.ibm.com>
-References: <20100209193331.GB30005@us.ibm.com>
-	<20100209193619.GD32274@us.ibm.com>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 2/2] Move ckpt_objhash_free() to before we destroy the
+	deferqueues
+Date: Tue,  9 Feb 2010 13:11:10 -0800
+Message-ID: <1265749870-13989-3-git-send-email-danms@us.ibm.com>
+References: <1265749870-13989-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20100209193619.GD32274-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1265749870-13989-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,25 +18,39 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> 
-> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Date: Mon, 1 Feb 2010 18:13:51 -0800
-> Subject: [PATCH 5/6] eclone-5: nr_pids must not exceed nesting level
-> 
-> Verify that eclone() fails if nr_pids exceeds the current nesting level
-> of pid namespaces. Also verify that eclone() succeeds in choosing a pid
-> for a process in a descendant pid namespace.
+This makes the deferqueue cleanup function run after all the objects
+have been purged from the hash and thus gives us an opportunity to cleanup
+things that *must* happen after the last reference is dropped (such as
+unregister_netdev()).
 
-This is a bit of a shame - it failed for me at first because I was
-running it inside a container.  But there is no way for a task to
-know it's own nsdepth right?
+Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ checkpoint/sys.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-So I went ahead and pushed these tests (plus a few changes).
-
-thanks,
--serge
+diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+index f04b8b0..f739932 100644
+--- a/checkpoint/sys.c
++++ b/checkpoint/sys.c
+@@ -223,6 +223,8 @@ static void ckpt_ctx_free(struct ckpt_ctx *ctx)
+ 	if (ctx->kflags & CKPT_CTX_RESTART)
+ 		restore_debug_free(ctx);
+ 
++	ckpt_obj_hash_free(ctx);
++
+ 	if (ctx->deferqueue)
+ 		deferqueue_destroy(ctx->deferqueue);
+ 
+@@ -234,7 +236,6 @@ static void ckpt_ctx_free(struct ckpt_ctx *ctx)
+ 	if (ctx->logfile)
+ 		fput(ctx->logfile);
+ 
+-	ckpt_obj_hash_free(ctx);
+ 	path_put(&ctx->root_fs_path);
+ 	ckpt_pgarr_free(ctx);
+ 
+-- 
+1.6.2.5
