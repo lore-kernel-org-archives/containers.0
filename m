@@ -1,7 +1,7 @@
 From: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 9/9] mm/mmap.c:do_munmap(): remove unused local vars
-Date: Mon,  8 Feb 2010 20:00:06 -0600
-Message-ID: <1265680806-13295-10-git-send-email-serue@us.ibm.com>
+Subject: [PATCH 8/9] fix potential use-before-set ret in arch/x86/vdso/vma.c
+Date: Mon,  8 Feb 2010 20:00:05 -0600
+Message-ID: <1265680806-13295-9-git-send-email-serue@us.ibm.com>
 References: <1265680806-13295-1-git-send-email-serue@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,24 +23,27 @@ List-Id: containers.vger.kernel.org
 
 From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
+(should be folded into
+	"c/r: extend arch_setup_additional_pages()"
+)
+
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- mm/mmap.c |    3 ---
- 1 files changed, 0 insertions(+), 3 deletions(-)
+ arch/x86/vdso/vma.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/mm/mmap.c b/mm/mmap.c
-index 89c3d9c..75f5de3 100644
---- a/mm/mmap.c
-+++ b/mm/mmap.c
-@@ -2014,9 +2014,6 @@ int do_munmap_nocheck(struct mm_struct *mm, unsigned long start, size_t len)
- 
- int do_munmap(struct mm_struct *mm, unsigned long start, size_t len)
+diff --git a/arch/x86/vdso/vma.c b/arch/x86/vdso/vma.c
+index 393b22a..b10ed32 100644
+--- a/arch/x86/vdso/vma.c
++++ b/arch/x86/vdso/vma.c
+@@ -104,7 +104,7 @@ int arch_setup_additional_pages(struct linux_binprm *bprm,
  {
--	unsigned long end;
--	struct vm_area_struct *vma, *prev, *last;
--
- 	if ((start & ~PAGE_MASK) || start > TASK_SIZE || len > TASK_SIZE-start)
- 		return -EINVAL;
+ 	struct mm_struct *mm = current->mm;
+ 	unsigned long addr;
+-	int ret;
++	int ret = -EINVAL;
  
+ 	if (!vdso_enabled)
+ 		return 0;
 -- 
 1.6.0.4
