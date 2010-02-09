@@ -1,14 +1,13 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Subject: Re: [PATCH 1/9] Use CKPT_ARCH_X86_32 for all x86 CKPT_ARCH_IDs
-Date: Mon, 8 Feb 2010 20:04:37 -0600
-Message-ID: <20100209020437.GA13571@us.ibm.com>
+Date: Mon, 08 Feb 2010 22:40:51 -0500
+Message-ID: <4B70D943.7030900@cs.columbia.edu>
 References: <1265680806-13295-1-git-send-email-serue@us.ibm.com>
 	<1265680806-13295-2-git-send-email-serue@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 In-Reply-To: <1265680806-13295-2-git-send-email-serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,20 +18,17 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
+To: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org (serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+
+
+serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
 > From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 > 
 > Sure we can rename it eventually, but I'm still just experimenting...
-
-Let me elaborate on that before someone calls me on it:
-
-I think the rest of the patches in this set should be applied.  This one should
-not be applied until we get x86_32 -> x86_64 32-bit task c/r working.
-
+> 
 > Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 > ---
 >  arch/x86/include/asm/checkpoint_hdr.h |    6 ------
@@ -45,7 +41,7 @@ not be applied until we get x86_32 -> x86_64 32-bit task c/r working.
 > @@ -36,13 +36,7 @@
 >  #include <asm/processor.h>
 >  #endif
-> 
+>  
 > -#ifdef CONFIG_X86_64
 > -#define CKPT_ARCH_ID	CKPT_ARCH_X86_64
 > -#endif
@@ -53,8 +49,7 @@ not be applied until we get x86_32 -> x86_64 32-bit task c/r working.
 > -#ifdef CONFIG_X86_32
 >  #define CKPT_ARCH_ID	CKPT_ARCH_X86_32
 > -#endif
-> 
->  /* arch dependent header types */
->  enum {
-> -- 
-> 1.6.0.4
+
+In the final version you probably want to get rid of "_32" too...
+
+Oren.
