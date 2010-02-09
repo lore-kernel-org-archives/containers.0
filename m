@@ -1,8 +1,8 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 3/6][cr-test][v2]: Verify eclone() fails if reserved fields
-	are not 0.
-Date: Tue, 9 Feb 2010 11:35:16 -0800
-Message-ID: <20100209193516.GB32274@us.ibm.com>
+Subject: [PATCH 4/6][cr-test][v2]: Verify eclone() fails if
+	clone_flags_high is non-zero
+Date: Tue, 9 Feb 2010 11:35:52 -0800
+Message-ID: <20100209193552.GC32274@us.ibm.com>
 References: <20100209193331.GB30005@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -25,11 +25,11 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Sat, 30 Jan 2010 12:53:04 -0800
-Subject: [PATCH 3/6] eclone-3: Verify eclone() fails if reserved fields are not 0.
+Date: Mon, 1 Feb 2010 18:10:32 -0800
+Subject: [PATCH 4/6] eclone-4: Verify eclone() fails if clone_flags_high is non-zero
 
-To ensure future extendability, we want the unused fields to be 0.
-Ensure eclone() fails if ->reserved0 field is non-0.
+To ensure future extendability, we want the unused fields to be 0. Ensure
+eclone() fails if ->clone_flags_high field is non-0.
 
 Changelog[v2]:
 	- Use libeclone.a from user-cr git tree so tests are portable across
@@ -39,29 +39,29 @@ Changelog[v2]:
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
  eclone/Makefile   |    2 +-
- eclone/eclone-3.c |  116 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 117 insertions(+), 1 deletions(-)
- create mode 100644 eclone/eclone-3.c
+ eclone/eclone-4.c |  115 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 116 insertions(+), 1 deletions(-)
+ create mode 100644 eclone/eclone-4.c
 
 diff --git a/eclone/Makefile b/eclone/Makefile
-index 91aaffc..ee0471f 100644
+index ee0471f..ba3d6ac 100644
 --- a/eclone/Makefile
 +++ b/eclone/Makefile
 @@ -10,7 +10,7 @@ LDFLAGS =
  
  LIB_ECLONE = $(USER_CR_DIR)/libeclone.a
  
--PROGS = eclone-1 eclone-2
-+PROGS = eclone-1 eclone-2 eclone-3
+-PROGS = eclone-1 eclone-2 eclone-3
++PROGS = eclone-1 eclone-2 eclone-3 eclone-4
  
  all: $(PROGS)
  
-diff --git a/eclone/eclone-3.c b/eclone/eclone-3.c
+diff --git a/eclone/eclone-4.c b/eclone/eclone-4.c
 new file mode 100644
-index 0000000..38ddd7b
+index 0000000..1b6cf86
 --- /dev/null
-+++ b/eclone/eclone-3.c
-@@ -0,0 +1,116 @@
++++ b/eclone/eclone-4.c
+@@ -0,0 +1,115 @@
 +#include <stdio.h>
 +#include <stdlib.h>
 +#include <errno.h>
@@ -75,7 +75,7 @@ index 0000000..38ddd7b
 +#include "genstack.h"
 +
 +/*
-+ * Verify that eclone() fails if ->reserved0 field is non-zero.
++ * Verify that eclone() fails if ->clone_flags_high is not 0.
 + */
 +int verbose = 0;
 +int child_tid, parent_tid;
@@ -88,7 +88,7 @@ index 0000000..38ddd7b
 +int do_child(void *arg)
 +{
 +	printf("FAIL: Child created with [%d, %d]. We expected eclone() to "
-+			"fail with EINVAL since ->reserved0 is non-zero\n",
++			"fail with EINVAL since clone_flags_high is not 0\n",
 +			 gettid(), getpid());
 +	exit(2);
 +}
@@ -103,17 +103,17 @@ index 0000000..38ddd7b
 +
 +	stack = genstack_alloc(STACKSIZE);
 +	if (!stack) {
-+		printf("ERROR: genstack_alloc() returns NULL for size %d\n",
++		printf("ERROR: setup_stack returns NULL for size %d\n",
 +				STACKSIZE);
 +		exit(1);
 +	}
 +
 +	memset(&clone_args, 0, sizeof(clone_args));
++	clone_args.clone_flags_high = (u64)1 << 33;
 +	clone_args.child_stack = (u64)(int)genstack_sp(stack);
 +	clone_args.child_stack_size = (u64)0;
 +	clone_args.parent_tid_ptr = (u64)((int)&parent_tid);
 +	clone_args.child_tid_ptr = (u64)((int)&child_tid);
-+	clone_args.reserved0 = 0xdeadbeef;
 +	clone_args.nr_pids = nr_pids;
 +
 +	if (verbose) {
@@ -133,7 +133,7 @@ index 0000000..38ddd7b
 +	}
 +
 +	if (rc < 0 && errno == EINVAL) {
-+		printf("PASS: eclone() failed (->reserved0 is not 0)\n");
++		printf("PASS: eclone() failed (clone_flags_high not 0)\n");
 +		exit(0);
 +	} else {
 +		printf("FAIL: Expected eclone() to fail with EINVAL");
@@ -175,7 +175,6 @@ index 0000000..38ddd7b
 +			}
 +		}
 +	}
-+
 +	return 0;
 +}
 -- 
