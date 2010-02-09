@@ -1,8 +1,8 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 4/6][cr-test][v2]: Verify eclone() fails if
-	clone_flags_high is non-zero
-Date: Tue, 9 Feb 2010 11:35:52 -0800
-Message-ID: <20100209193552.GC32274@us.ibm.com>
+Subject: [PATCH 5/6][cr-test][v2]: eclone-5: nr_pids must not exceed
+	nesting level
+Date: Tue, 9 Feb 2010 11:36:19 -0800
+Message-ID: <20100209193619.GD32274@us.ibm.com>
 References: <20100209193331.GB30005@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -25,43 +25,44 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Mon, 1 Feb 2010 18:10:32 -0800
-Subject: [PATCH 4/6] eclone-4: Verify eclone() fails if clone_flags_high is non-zero
+Date: Mon, 1 Feb 2010 18:13:51 -0800
+Subject: [PATCH 5/6] eclone-5: nr_pids must not exceed nesting level
 
-To ensure future extendability, we want the unused fields to be 0. Ensure
-eclone() fails if ->clone_flags_high field is non-0.
+Verify that eclone() fails if nr_pids exceeds the current nesting level
+of pid namespaces. Also verify that eclone() succeeds in choosing a pid
+for a process in a descendant pid namespace.
 
 Changelog[v2]:
 	- Use libeclone.a from user-cr git tree so tests are portable across
-	  architectures.
+  	  architectures.
 	- Fix some nits identified by Serge Hallyn
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
  eclone/Makefile   |    2 +-
- eclone/eclone-4.c |  115 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 116 insertions(+), 1 deletions(-)
- create mode 100644 eclone/eclone-4.c
+ eclone/eclone-5.c |  175 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 176 insertions(+), 1 deletions(-)
+ create mode 100644 eclone/eclone-5.c
 
 diff --git a/eclone/Makefile b/eclone/Makefile
-index ee0471f..ba3d6ac 100644
+index ba3d6ac..7bd5585 100644
 --- a/eclone/Makefile
 +++ b/eclone/Makefile
 @@ -10,7 +10,7 @@ LDFLAGS =
  
  LIB_ECLONE = $(USER_CR_DIR)/libeclone.a
  
--PROGS = eclone-1 eclone-2 eclone-3
-+PROGS = eclone-1 eclone-2 eclone-3 eclone-4
+-PROGS = eclone-1 eclone-2 eclone-3 eclone-4
++PROGS = eclone-1 eclone-2 eclone-3 eclone-4 eclone-5
  
  all: $(PROGS)
  
-diff --git a/eclone/eclone-4.c b/eclone/eclone-4.c
+diff --git a/eclone/eclone-5.c b/eclone/eclone-5.c
 new file mode 100644
-index 0000000..1b6cf86
+index 0000000..2d36898
 --- /dev/null
-+++ b/eclone/eclone-4.c
-@@ -0,0 +1,115 @@
++++ b/eclone/eclone-5.c
+@@ -0,0 +1,175 @@
 +#include <stdio.h>
 +#include <stdlib.h>
 +#include <errno.h>
@@ -71,26 +72,32 @@ index 0000000..1b6cf86
 +#include <sys/types.h>
 +#include <sys/wait.h>
 +#include <sys/syscall.h>
++#define _GNU_SOURCE
++#include <sched.h>
 +#include "eclone-tests.h"
 +#include "genstack.h"
 +
 +/*
-+ * Verify that eclone() fails if ->clone_flags_high is not 0.
++ * Verify that eclone() fails if nr_pids exceeds the current nesting level
++ * of pid namespaces
 + */
 +int verbose = 0;
-+int child_tid, parent_tid;
 +
 +#define CHILD_TID1	377
++#define	CHILD_TID2	399
 +#define	CHILD_ARG	(void *)0x979797
 +
-+pid_t pids[] = { CHILD_TID1 };
++pid_t pids[] = { CHILD_TID1, CHILD_TID2 };
++int parent_tid;
++int child_tid;
 +
 +int do_child(void *arg)
 +{
-+	printf("FAIL: Child created with [%d, %d]. We expected eclone() to "
-+			"fail with EINVAL since clone_flags_high is not 0\n",
-+			 gettid(), getpid());
-+	exit(2);
++	if (verbose)
++		printf("Child created with [%d, %d]\n", gettid(), getpid());
++
++	sleep(2);
++	exit(0);
 +}
 +
 +static int do_eclone(int (*child_fn)(void *), void *child_arg,
@@ -109,7 +116,6 @@ index 0000000..1b6cf86
 +	}
 +
 +	memset(&clone_args, 0, sizeof(clone_args));
-+	clone_args.clone_flags_high = (u64)1 << 33;
 +	clone_args.child_stack = (u64)(int)genstack_sp(stack);
 +	clone_args.child_stack_size = (u64)0;
 +	clone_args.parent_tid_ptr = (u64)((int)&parent_tid);
@@ -123,6 +129,7 @@ index 0000000..1b6cf86
 +				clone_args.child_tid_ptr, pids);
 +	}
 +
++	errno = 0;
 +	args_size = sizeof(struct clone_args);
 +	rc = eclone(child_fn, child_arg, flags_low, &clone_args, pids);
 +
@@ -132,48 +139,102 @@ index 0000000..1b6cf86
 +		fflush(stdout);
 +	}
 +
-+	if (rc < 0 && errno == EINVAL) {
-+		printf("PASS: eclone() failed (clone_flags_high not 0)\n");
-+		exit(0);
-+	} else {
-+		printf("FAIL: Expected eclone() to fail with EINVAL");
-+		exit(1);
++	return rc;
++}
++
++int do_test(void *arg)
++{
++	int rc, pid, status;
++	unsigned long flags;
++	int nested_ns;
++	int nr_pids;
++	int error;
++
++	nested_ns = *(int *)arg;
++	nr_pids = 2;
++
++	flags = SIGCHLD|CLONE_PARENT_SETTID|CLONE_CHILD_SETTID;
++
++	pid = do_eclone(do_child, CHILD_ARG, flags, nr_pids, pids);
++
++	error = 0;
++	if (pid < 0)
++		error = errno;
++
++	/* If we did create a child, wait for it to exit */
++	if (pid > 0) {
++		rc = waitpid(pid, &status, __WALL);
++		if (rc < 0) {
++			printf("%d: ERROR: waitpid() rc %d, error %d\n",
++					getpid(), rc, errno);
++			verbose = 1;
++		}
 +	}
 +
++	if (verbose) {
++		printf("%d: nested_ns %d, pid %d, error %d\n", getpid(),
++				nested_ns, pid, error);
++	}
++
++	/*
++	 * We set nr_pids to 2 above. If we cloned from current pid ns,
++	 * eclone() must fail with EINVAL. If we eclone() from a nested pid
++	 * ns, eclone() must succeed. In all other cases, test has failed.
++	 */
++	rc = 0;
++	if (!nested_ns && (pid < 0) && (error == EINVAL)) {
++		printf("%d: PASSED: Got EINVAL when nr_pids > nesting-depth\n",
++				getpid());
++	} else if (nested_ns && (pid > 0)) {
++		printf("%d: PASSED: eclone() succeeded in nested pid-ns, "
++				"pid %d\n", getpid(), pid);
++	} else {
++		printf("%d: FAILED: nested_ns %d, pid %d, error %d\n", getpid(),
++				nested_ns, pid, error);
++		rc = 1;
++	}
++
++	fflush(stdout);
 +	return rc;
 +}
 +
 +int main()
 +{
 +	int rc, pid, status;
-+	unsigned long flags;
-+	int nr_pids = 1;
++	int nested_ns;
++	unsigned long flags; 
++	void *stack;
 +
-+	flags = SIGCHLD;
++	/* First test in current pid namespace */
++	nested_ns = 0;
++	rc = do_test(&nested_ns);
++	if (rc)
++		exit(rc);
 +
-+	pid = do_eclone(do_child, CHILD_ARG, flags, nr_pids, pids);
++	/* Then test in a nested pid-namespace - use normal clone() */
++	stack = malloc(STACKSIZE);
++	if (!stack) {
++		printf("ERROR: setup_stack returns NULL for size %d\n",
++				STACKSIZE);
++		exit(1);
++	}
++	stack += (STACKSIZE - 1);
 +
-+	if (verbose) {
-+		printf("[%d, %d]: Parent waiting for %d\n", getpid(),
-+					gettid(), pid);
++	nested_ns = 1;
++	flags = SIGCHLD|CLONE_NEWPID|CLONE_NEWNS;
++	pid = clone(do_test, stack, flags, (void *)&nested_ns, NULL, NULL, NULL);
++	if (pid < 0) {
++		printf("ERROR: clone() failed, pid %d, error %s\n", pid,
++				strerror(errno));
++		exit(1);
 +	}
 +
 +	rc = waitpid(pid, &status, __WALL);
 +	if (rc < 0) {
-+		printf("ERROR: ");
-+		verbose = 1;
-+	}
-+
-+	if (verbose) {
-+		printf("\twaitpid(): child %d, rc %d, error %d, status 0x%x\n",
-+				getpid(), rc, errno, status);
-+		if (rc >=0) {
-+			if (WIFEXITED(status)) {
-+				printf("\t EXITED, %d\n", WEXITSTATUS(status));
-+			} else if (WIFSIGNALED(status)) {
-+				printf("\t SIGNALED, %d\n", WTERMSIG(status));
-+			}
-+		}
++		printf("ERROR: waitpid() failed, rc %d, error %s\n", rc,
++				strerror(errno));
++		fflush(stdout);
++		exit(1);
 +	}
 +	return 0;
 +}
