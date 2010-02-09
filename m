@@ -1,14 +1,14 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH 7/9] cr: checkpoint saved_auxv as u64s
-Date: Tue, 09 Feb 2010 12:20:14 -0500
-Message-ID: <4B71994E.10105@cs.columbia.edu>
-References: <1265680806-13295-1-git-send-email-serue@us.ibm.com>
-	<1265680806-13295-8-git-send-email-serue@us.ibm.com>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 2/2] Move ckpt_objhash_free() to before we destroy the
+	deferqueues
+Date: Tue,  9 Feb 2010 09:30:04 -0800
+Message-ID: <1265736604-24194-3-git-send-email-danms@us.ibm.com>
+References: <1265736604-24194-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1265680806-13295-8-git-send-email-serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1265736604-24194-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,65 +18,39 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+This makes the deferqueue cleanup function run after all the objects
+have been purged from the hash and thus gives us an opportunity to cleanup
+things that *must* happen after the last reference is dropped (such as
+unregister_netdev()).
 
+Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ checkpoint/sys.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-> From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> 
-> unsigned longs are not a good value to checkpoint between
-> x86-32 and x86-64 32-bit tasks :)
-> 
-> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  checkpoint/checkpoint.c        |    5 +--
->  checkpoint/memory.c            |   53 +++++++++++++++++++++++++++++++++++++--
->  checkpoint/restart.c           |    6 ++--
->  include/linux/checkpoint_hdr.h |    2 +-
->  4 files changed, 56 insertions(+), 10 deletions(-)
-
-[...]
-
-Sketch for a sanity check:
-
-> +static int ckpt_read_auxv(struct ckpt_ctx *ctx, struct mm_struct *mm)
-> +{
-> +	int i, ret;
-> +	u64 *buf = kmalloc(CKPT_AT_SZ, GFP_KERNEL);
-> +
-> +	if (!buf)
-> +		return -ENOMEM;
-> +	ret = _ckpt_read_buffer(ctx, buf, CKPT_AT_SZ);
-> +	if (ret < 0) {
-> +		kfree(buf);
-> +		return ret;
-> +	}
-> +
-
-	ret = -E2BIG;
-> +	for (i=0; i<AT_VECTOR_SIZE; i++)
-> +		if (buf[i] > (u64) ULONG_MAX)
-			goto out;
-
-	ret = -EINVAL;
-	for (i=0; i<AT_VECTOR_SIZE; i++)
-		if (mm->saved_auxv[i] == AT_NULL)
-			ret = 0;
-	if (ret < 0)
-		goto out;
-
-> +
-> +	for (i=0; i<AT_VECTOR_SIZE; i++)
-> +		mm->saved_auxv[i] = buf[i];
-> +
- out:
-> +	kfree(buf);
-> +	return 0;
-	       ret;
-
-[...]
-
-Oren.
+diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+index f04b8b0..f739932 100644
+--- a/checkpoint/sys.c
++++ b/checkpoint/sys.c
+@@ -223,6 +223,8 @@ static void ckpt_ctx_free(struct ckpt_ctx *ctx)
+ 	if (ctx->kflags & CKPT_CTX_RESTART)
+ 		restore_debug_free(ctx);
+ 
++	ckpt_obj_hash_free(ctx);
++
+ 	if (ctx->deferqueue)
+ 		deferqueue_destroy(ctx->deferqueue);
+ 
+@@ -234,7 +236,6 @@ static void ckpt_ctx_free(struct ckpt_ctx *ctx)
+ 	if (ctx->logfile)
+ 		fput(ctx->logfile);
+ 
+-	ckpt_obj_hash_free(ctx);
+ 	path_put(&ctx->root_fs_path);
+ 	ckpt_pgarr_free(ctx);
+ 
+-- 
+1.6.2.5
