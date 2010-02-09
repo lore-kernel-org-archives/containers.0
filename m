@@ -1,15 +1,16 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH][cr-test]: run-fcntltests.sh: Thaw and cleanup
-	processes on error
-Date: Tue, 9 Feb 2010 14:32:51 -0600
-Message-ID: <20100209203251.GA30691@us.ibm.com>
-References: <20100209193155.GA30005@us.ibm.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [PATCH 7/9] cr: checkpoint saved_auxv as u64s
+Date: Tue, 09 Feb 2010 15:43:18 -0500
+Message-ID: <4B71C8E6.2010009@cs.columbia.edu>
+References: <1265680806-13295-1-git-send-email-serue@us.ibm.com>
+	<1265680806-13295-8-git-send-email-serue@us.ibm.com>
+	<4B71994E.10105@cs.columbia.edu>
+	<20100209202035.GC29094@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20100209193155.GA30005-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20100209202035.GC29094-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,40 +20,78 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Date: Tue, 9 Feb 2010 11:08:22 -0800
-> Subject: [PATCH][cr-test]: run-fcntltests.sh: Thaw and cleanup processes on error
-> 
-> If the fcntl tests (filelock[12], filelease1 and fsetown1) fail during
-> checkpoint, the processes end up frozen and appear hung.  Thaw the
-> processes and terminate them before exiting the script.
-> 
-> Bug reported by Serge Hallyn.
 
-Thanks, will push this and the eclone tests.
 
-> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> ---
->  fileio/run-fcntltests.sh |    2 ++
->  1 files changed, 2 insertions(+), 0 deletions(-)
+Serge E. Hallyn wrote:
+> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+>>
+>> serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+>>> From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+>>>
+>>> unsigned longs are not a good value to checkpoint between
+>>> x86-32 and x86-64 32-bit tasks :)
+>>>
+>>> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+>>> ---
+>>>  checkpoint/checkpoint.c        |    5 +--
+>>>  checkpoint/memory.c            |   53 +++++++++++++++++++++++++++++++++++++--
+>>>  checkpoint/restart.c           |    6 ++--
+>>>  include/linux/checkpoint_hdr.h |    2 +-
+>>>  4 files changed, 56 insertions(+), 10 deletions(-)
+>> [...]
+>>
+>> Sketch for a sanity check:
+>>
+>>> +static int ckpt_read_auxv(struct ckpt_ctx *ctx, struct mm_struct *mm)
+>>> +{
+>>> +	int i, ret;
+>>> +	u64 *buf = kmalloc(CKPT_AT_SZ, GFP_KERNEL);
+>>> +
+>>> +	if (!buf)
+>>> +		return -ENOMEM;
+>>> +	ret = _ckpt_read_buffer(ctx, buf, CKPT_AT_SZ);
+>>> +	if (ret < 0) {
+>>> +		kfree(buf);
+>>> +		return ret;
+>>> +	}
+>>> +
+>> 	ret = -E2BIG;
+>>> +	for (i=0; i<AT_VECTOR_SIZE; i++)
+>>> +		if (buf[i] > (u64) ULONG_MAX)
+>> 			goto out;
+>>
+>> 	ret = -EINVAL;
+>> 	for (i=0; i<AT_VECTOR_SIZE; i++)
+>> 		if (mm->saved_auxv[i] == AT_NULL)
+>> 			ret = 0;
+>> 	if (ret < 0)
+>> 		goto out;
 > 
-> diff --git a/fileio/run-fcntltests.sh b/fileio/run-fcntltests.sh
-> index f76c942..35be131 100755
-> --- a/fileio/run-fcntltests.sh
-> +++ b/fileio/run-fcntltests.sh
-> @@ -54,6 +54,8 @@ checkpoint()
->  	if [ $ret -ne 0 ]; then
->  		$ECHO "***** FAIL: Checkpoint of $pid failed"
->  		ps -efL |grep $TEST_CMD >> $SCRIPT_LOG
-> +		killall -9 `basename $TEST_CMD`
-> +		thaw
->  		exit 1;
->  	fi
->  }
-> -- 
-> 1.6.6.1
+> Yup, that would work.
+> 
+> Alternatively, do you think it would be safe to just
+> always set the last entry to AT_NULL?
+
+A bit hacky, but should work.
+... so I'll do just that :)
+
+Oren.
+
+> 
+>>> +
+>>> +	for (i=0; i<AT_VECTOR_SIZE; i++)
+>>> +		mm->saved_auxv[i] = buf[i];
+>>> +
+>>  out:
+>>> +	kfree(buf);
+>>> +	return 0;
+>> 	       ret;
+>>
+>> [...]
+>>
+>> Oren.
+> 
