@@ -1,8 +1,8 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 2/6][cr-test][v2]: eclone-2: Ensure eclone() fails if
-	selected pid is in use
-Date: Tue, 9 Feb 2010 11:34:46 -0800
-Message-ID: <20100209193446.GA32274@us.ibm.com>
+Subject: [PATCH 3/6][cr-test][v2]: Verify eclone() fails if reserved fields
+	are not 0.
+Date: Tue, 9 Feb 2010 11:35:16 -0800
+Message-ID: <20100209193516.GB32274@us.ibm.com>
 References: <20100209193331.GB30005@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -25,41 +25,42 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Sat, 30 Jan 2010 12:51:23 -0800
-Subject: [PATCH 2/6] eclone-2: Ensure eclone() fails if selected pid is in use
+Date: Sat, 30 Jan 2010 12:53:04 -0800
+Subject: [PATCH 3/6] eclone-3: Verify eclone() fails if reserved fields are not 0.
 
-Ensure that eclone() system call fails with -EBUSY if selected pid is in use.
+To ensure future extendability, we want the unused fields to be 0.
+Ensure eclone() fails if ->reserved0 field is non-0.
 
 Changelog[v2]:
 	- Use libeclone.a from user-cr git tree so tests are portable across
 	  architectures.
-	- Fix a few nits identified by Serge Hallyn
+	- Fix some nits identified by Serge Hallyn
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
  eclone/Makefile   |    2 +-
- eclone/eclone-2.c |  116 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ eclone/eclone-3.c |  116 +++++++++++++++++++++++++++++++++++++++++++++++++++++
  2 files changed, 117 insertions(+), 1 deletions(-)
- create mode 100644 eclone/eclone-2.c
+ create mode 100644 eclone/eclone-3.c
 
 diff --git a/eclone/Makefile b/eclone/Makefile
-index 10b63d3..91aaffc 100644
+index 91aaffc..ee0471f 100644
 --- a/eclone/Makefile
 +++ b/eclone/Makefile
 @@ -10,7 +10,7 @@ LDFLAGS =
  
  LIB_ECLONE = $(USER_CR_DIR)/libeclone.a
  
--PROGS = eclone-1
-+PROGS = eclone-1 eclone-2
+-PROGS = eclone-1 eclone-2
++PROGS = eclone-1 eclone-2 eclone-3
  
  all: $(PROGS)
  
-diff --git a/eclone/eclone-2.c b/eclone/eclone-2.c
+diff --git a/eclone/eclone-3.c b/eclone/eclone-3.c
 new file mode 100644
-index 0000000..5641247
+index 0000000..38ddd7b
 --- /dev/null
-+++ b/eclone/eclone-2.c
++++ b/eclone/eclone-3.c
 @@ -0,0 +1,116 @@
 +#include <stdio.h>
 +#include <stdlib.h>
@@ -74,20 +75,21 @@ index 0000000..5641247
 +#include "genstack.h"
 +
 +/*
-+ * Verify that eclone() fails if the selected pid is in use.
-+ * We try to assign parent's pid which should already be in use.
++ * Verify that eclone() fails if ->reserved0 field is non-zero.
 + */
 +int verbose = 0;
 +int child_tid, parent_tid;
++
++#define CHILD_TID1	377
 +#define	CHILD_ARG	(void *)0x979797
 +
-+pid_t pids[2];
++pid_t pids[] = { CHILD_TID1 };
 +
 +int do_child(void *arg)
 +{
-+	printf("FAIL: Child created with [%d, %d], but we expected child "
-+			"creation to fail since pid is in use\n", gettid(),
-+ 			getpid());
++	printf("FAIL: Child created with [%d, %d]. We expected eclone() to "
++			"fail with EINVAL since ->reserved0 is non-zero\n",
++			 gettid(), getpid());
 +	exit(2);
 +}
 +
@@ -97,6 +99,7 @@ index 0000000..5641247
 +	int rc;
 +	void *stack;
 +	struct clone_args clone_args;
++	int args_size;
 +
 +	stack = genstack_alloc(STACKSIZE);
 +	if (!stack) {
@@ -110,6 +113,7 @@ index 0000000..5641247
 +	clone_args.child_stack_size = (u64)0;
 +	clone_args.parent_tid_ptr = (u64)((int)&parent_tid);
 +	clone_args.child_tid_ptr = (u64)((int)&child_tid);
++	clone_args.reserved0 = 0xdeadbeef;
 +	clone_args.nr_pids = nr_pids;
 +
 +	if (verbose) {
@@ -119,6 +123,7 @@ index 0000000..5641247
 +				clone_args.child_tid_ptr, pids);
 +	}
 +
++	args_size = sizeof(struct clone_args);
 +	rc = eclone(child_fn, child_arg, flags_low, &clone_args, pids);
 +
 +	if (verbose) {
@@ -127,29 +132,24 @@ index 0000000..5641247
 +		fflush(stdout);
 +	}
 +
-+	if (rc < 0 && errno == EAGAIN) {
-+		printf("PASS: Unable to create a process with a pid that is "
-+			"in use\n");
++	if (rc < 0 && errno == EINVAL) {
++		printf("PASS: eclone() failed (->reserved0 is not 0)\n");
 +		exit(0);
 +	} else {
-+		printf("ERROR: eclone(): rc %d, errno %d\n", rc, errno);
-+		return rc;
++		printf("FAIL: Expected eclone() to fail with EINVAL");
++		exit(1);
 +	}
++
++	return rc;
 +}
 +
 +int main()
 +{
 +	int rc, pid, status;
 +	unsigned long flags;
-+	int nr_pids;
++	int nr_pids = 1;
 +
 +	flags = SIGCHLD;
-+
-+	/*
-+	 * Try to create a process with same pid as parent !
-+	 */
-+	pids[0] = getpid();
-+	nr_pids = 1;
 +
 +	pid = do_eclone(do_child, CHILD_ARG, flags, nr_pids, pids);
 +
@@ -175,6 +175,7 @@ index 0000000..5641247
 +			}
 +		}
 +	}
++
 +	return 0;
 +}
 -- 
