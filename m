@@ -1,14 +1,11 @@
 From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/2] Make restore_obj() tolerate a preexisting object in the
-	hash
-Date: Tue,  9 Feb 2010 09:30:03 -0800
-Message-ID: <1265736604-24194-2-git-send-email-danms@us.ibm.com>
-References: <1265736604-24194-1-git-send-email-danms@us.ibm.com>
+Subject: Supporting patches for netns/netdev
+Date: Tue,  9 Feb 2010 09:30:02 -0800
+Message-ID: <1265736604-24194-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1265736604-24194-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,51 +18,11 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-... as long as the pointer is the same as that returned from the restore
-function.  Also move the compulsory ref_drop() so that it only gets
-done if we created the new object.
+These two patches make a couple of small (yet potentially controversial)
+changes to the cleanup of the objhash and the restore_obj() function.
+The way network devices have to get torn down (in the case of a failed
+restore) and the way I need to create veth pairs are why I need this
+sort of functionality.
 
-The existing object tolerance is important for netdev restore because it
-means that I can refer to a peer by its objref instead of needing the
-(previously-rejected) veth_peer() function.  If this is not acceptable,
-then I'll need to keep a separate list of pairs.
-
-Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- checkpoint/objhash.c |   19 +++++++++++--------
- 1 files changed, 11 insertions(+), 8 deletions(-)
-
-diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
-index 0b06b06..6051c8d 100644
---- a/checkpoint/objhash.c
-+++ b/checkpoint/objhash.c
-@@ -1059,16 +1059,19 @@ int restore_obj(struct ckpt_ctx *ctx, struct ckpt_hdr_objref *h)
- 	if (IS_ERR(ptr))
- 		return PTR_ERR(ptr);
- 
--	if (obj_find_by_objref(ctx, h->objref))
-+	obj = obj_find_by_objref(ctx, h->objref);
-+	if (obj && (obj->ptr != ptr))
- 		obj = ERR_PTR(-EINVAL);
--	else
-+	else {
- 		obj = obj_new(ctx, ptr, h->objref, h->objtype);
--	/*
--	 * Drop an extra reference to the object returned by ops->restore:
--	 * On success, this clears the extra reference taken by obj_new(),
--	 * and on failure, this cleans up the object itself.
--	 */
--	ops->ref_drop(ptr, 0);
-+		/*
-+		 * Drop an extra reference to the object returned by
-+		 * ops->restore: On success, this clears the extra
-+		 * reference taken by obj_new(), and on failure, this
-+		 * cleans up the object itself.
-+		 */
-+		ops->ref_drop(ptr, 0);
-+	}
- 	if (IS_ERR(obj)) {
- 		ops->ref_drop(ptr, 1);
- 		return PTR_ERR(obj);
--- 
-1.6.2.5
+Each could be done a number of different ways, but I'm hoping these
+quick changes are acceptable.
