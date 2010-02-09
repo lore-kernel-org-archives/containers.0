@@ -1,36 +1,83 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/2] Make restore_obj() tolerate a preexisting object in
-	the hash
-Date: Tue, 09 Feb 2010 13:24:38 -0800
-Message-ID: <87bpfyhzl5.fsf@caffeine.danplanet.com>
-References: <1265736604-24194-1-git-send-email-danms@us.ibm.com>
-	<1265736604-24194-2-git-send-email-danms@us.ibm.com>
-	<20100209212154.GA32513@us.ibm.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100209212154.GA32513-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
-	"Tue\, 9 Feb 2010 15\:21\:54 -0600")
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+From: Dan Smith <danms@us.ibm.com>
+Subject: [PATCH 4/4] Add loopback checkpoint support
+Date: Tue,  9 Feb 2010 13:25:13 -0800
+Message-ID: <1265750713-15749-5-git-send-email-danms@us.ibm.com>
+References: <1265750713-15749-1-git-send-email-danms@us.ibm.com>
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <1265750713-15749-1-git-send-email-danms@us.ibm.com>
+Sender: netdev-owner@vger.kernel.org
+To: containers@lists.osdl.org
+Cc: netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-SH> Sorry, I *must* not be thinking straight, but...
-SH> don't you want to do the obj_new only if obj==NULL here?  So
+Adds a small ndo_checkpoint() handler for loopback devices to write the
+name and addresses like other interfaces.
 
-Er, um, yes :)
+Signed-off-by: Dan Smith <danms@us.ibm.com>
+---
+ drivers/net/loopback.c |   41 ++++++++++++++++++++++++++++++++++++++---
+ 1 files changed, 38 insertions(+), 3 deletions(-)
 
+diff --git a/drivers/net/loopback.c b/drivers/net/loopback.c
+index b9fcc98..816a527 100644
+--- a/drivers/net/loopback.c
++++ b/drivers/net/loopback.c
+@@ -57,6 +57,8 @@
+ #include <linux/ip.h>
+ #include <linux/tcp.h>
+ #include <linux/percpu.h>
++#include <linux/checkpoint.h>
++#include <linux/checkpoint_hdr.h>
+ #include <net/net_namespace.h>
+ 
+ struct pcpu_lstats {
+@@ -153,10 +155,43 @@ static void loopback_dev_free(struct net_device *dev)
+ 	free_netdev(dev);
+ }
+ 
++static int loopback_checkpoint(struct ckpt_ctx *ctx, struct net_device *dev)
++{
++	struct ckpt_hdr_netdev *h;
++	struct ckpt_netdev_addr *addrs;
++	int ret;
++
++	h = ckpt_netdev_base(ctx, dev, &addrs);
++	if (IS_ERR(h))
++		return PTR_ERR(h);
++
++	h->type = CKPT_NETDEV_LO;
++
++	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *)h);
++	if (ret < 0)
++		goto out;
++
++	ret = ckpt_write_buffer(ctx, dev->name, IFNAMSIZ);
++	if (ret < 0)
++		goto out;
++
++	if (h->inet_addrs > 0) {
++		int len = (sizeof(struct ckpt_netdev_addr) * h->inet_addrs);
++		ret = ckpt_write_buffer(ctx, addrs, len);
++	}
++
++ out:
++	ckpt_hdr_put(ctx, h);
++	kfree(addrs);
++
++	return ret;
++}
++
+ static const struct net_device_ops loopback_ops = {
+-	.ndo_init      = loopback_dev_init,
+-	.ndo_start_xmit= loopback_xmit,
+-	.ndo_get_stats = loopback_get_stats,
++	.ndo_init       = loopback_dev_init,
++	.ndo_start_xmit = loopback_xmit,
++	.ndo_get_stats  = loopback_get_stats,
++	.ndo_checkpoint = loopback_checkpoint,
+ };
+ 
+ /*
 -- 
-Dan Smith
-IBM Linux Technology Center
-email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+1.6.2.5
+
