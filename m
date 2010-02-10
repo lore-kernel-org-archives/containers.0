@@ -1,137 +1,89 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [PATCH 3/4] Add checkpoint support for veth devices
-Date: Wed, 10 Feb 2010 11:57:51 -0600
-Message-ID: <20100210175751.GC12251@us.ibm.com>
-References: <1265750713-15749-1-git-send-email-danms@us.ibm.com>
- <1265750713-15749-4-git-send-email-danms@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] c/r: fix broken compilation for architectures that
+	don't support c/r
+Date: Wed, 10 Feb 2010 12:02:56 -0600
+Message-ID: <20100210180256.GD12251@us.ibm.com>
+References: <1265759643-23495-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1265750713-15749-4-git-send-email-danms@us.ibm.com>
-Sender: netdev-owner@vger.kernel.org
-To: Dan Smith <danms@us.ibm.com>
-Cc: containers@lists.osdl.org, netdev@vger.kernel.org
+In-Reply-To: <1265759643-23495-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Dan Smith (danms@us.ibm.com):
-> Adds an ndo_checkpoint() handler for veth devices to checkpoint themselves.
-> Writes out the pairing information, addresses, and initiates a checkpoint
-> on the peer if the peer won't be reached from another netns.  Throws an
-> error of our peer's netns isn't already in the hash (i.e., a tree leak).
+Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+> The include file <linux/checkpoint_hdr.h> itself includes the header
+> <asm/checkpoint_hdr.h>, which exists only for supported architectures.
 > 
-> Signed-off-by: Dan Smith <danms@us.ibm.com>
-
-What is here looks good to me, both patches 3 and 4  (but of course i
-can't ack as is :)
-
+> Therefore, non c/r specific code must not include it unconditionally,
+> but only when CONFIG_CHECKPOINT is defined.
+> 
+> Instead, either use include <linux/checkpoint.h>, which take the
+> necessary precautions (preferred), or explicit test CONFIG_CHECKPOINT.
+> 
+> This patch fixes this in eventfd.c and eventpoll.c, to allow a kernel
+> with the c/r patches to compile on other architectures.
+> 
+> (Reported by: Christoffer Dall)
+> 
+> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 > ---
->  drivers/net/veth.c |   74 ++++++++++++++++++++++++++++++++++++++++++++++++++++
->  1 files changed, 74 insertions(+), 0 deletions(-)
+>  fs/eventfd.c   |    1 -
+>  fs/eventpoll.c |    5 -----
+>  2 files changed, 0 insertions(+), 6 deletions(-)
 > 
-> diff --git a/drivers/net/veth.c b/drivers/net/veth.c
-> index 3a15de5..ad0f561 100644
-> --- a/drivers/net/veth.c
-> +++ b/drivers/net/veth.c
-> @@ -16,6 +16,9 @@
->  #include <net/xfrm.h>
->  #include <linux/veth.h>
+> diff --git a/fs/eventfd.c b/fs/eventfd.c
+> index 5259d6e..3277534 100644
+> --- a/fs/eventfd.c
+> +++ b/fs/eventfd.c
+> @@ -19,7 +19,6 @@
+>  #include <linux/kref.h>
+>  #include <linux/eventfd.h>
+>  #include <linux/checkpoint.h>
+> -#include <linux/checkpoint_hdr.h>
 > 
-> +#include <linux/checkpoint.h>
-> +#include <linux/checkpoint_hdr.h>
-> +
->  #define DRV_NAME	"veth"
->  #define DRV_VERSION	"1.0"
+>  struct eventfd_ctx {
+>  	struct kref kref;
+> diff --git a/fs/eventpoll.c b/fs/eventpoll.c
+> index cb286c7..aedaf87 100644
+> --- a/fs/eventpoll.c
+> +++ b/fs/eventpoll.c
+> @@ -38,12 +38,7 @@
+>  #include <asm/io.h>
+>  #include <asm/mman.h>
+>  #include <asm/atomic.h>
+> -
+> -#ifdef CONFIG_CHECKPOINT
+>  #include <linux/checkpoint.h>
+> -#include <linux/checkpoint_hdr.h>
+> -#include <linux/deferqueue.h>
+
+Where does deferqueue.h get included from, though?
+
+Kind of looks like checkpoint_types.h should include that anyway,
+then we can remove the explicit include from
+checkpoint{checkpoint,files,restart,sys}.c
+
+> -#endif
 > 
-> @@ -284,6 +287,74 @@ static void veth_dev_free(struct net_device *dev)
->  	free_netdev(dev);
->  }
-> 
-> +#ifdef CONFIG_CHECKPOINT
-> +static int veth_checkpoint(struct ckpt_ctx *ctx, struct net_device *dev)
-> +{
-> +	struct ckpt_hdr_netdev *h;
-> +	struct veth_priv *priv = netdev_priv(dev);
-> +	struct net_device *peer = priv->peer;
-> +	struct ckpt_netdev_addr *addrs;
-> +	int ret;
-> +	int n;
-> +
-> +	if (!peer) {
-> +		ckpt_err(ctx, -EINVAL, "veth device has no peer!\n");
-> +		return -EINVAL;
-> +	}
-> +
-> +	h = ckpt_netdev_base(ctx, dev, &addrs);
-> +	if (IS_ERR(h))
-> +		return PTR_ERR(h);
-> +
-> +	h->type = CKPT_NETDEV_VETH;
-> +
-> +	ret = h->this_ref = ckpt_obj_lookup_add(ctx, dev, CKPT_OBJ_NETDEV, &n);
-> +	if (ret < 0)
-> +		goto out;
-> +
-> +	ret = h->peer_ref = ckpt_obj_lookup_add(ctx, peer, CKPT_OBJ_NETDEV, &n);
-> +	if (ret < 0)
-> +		goto out;
-> +
-> +	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *)h);
-> +	if (ret < 0)
-> +		goto out;
-> +
-> +	ret = ckpt_write_buffer(ctx, dev->name, IFNAMSIZ);
-> +	if (ret < 0)
-> +		goto out;
-> +
-> +	ret = ckpt_write_buffer(ctx, peer->name, IFNAMSIZ);
-> +	if (ret < 0)
-> +		goto out;
-> +
-> +	if (h->inet_addrs > 0) {
-> +		int len = (sizeof(struct ckpt_netdev_addr) * h->inet_addrs);
-> +		ret = ckpt_write_buffer(ctx, addrs, len);
-> +		if (ret)
-> +			goto out;
-> +	}
-> +
-> +	/* Only checkpoint peer if we're not going to arrive at it
-> +	 * via another task's netns.  Fail if the pipe exits
-> +	 * our container to a netns not already in the hash
-> +	 */
-> +	if (ckpt_netdev_in_init_netns(ctx, peer))
-> +		ret = checkpoint_obj(ctx, peer, CKPT_OBJ_NETDEV);
-> +	else if (!ckpt_obj_lookup(ctx, peer->nd_net, CKPT_OBJ_NET_NS)) {
-> +		ret = -EINVAL;
-> +		ckpt_err(ctx, ret,
-> +			 "Peer %s of %s not in checkpointed namespaces\n",
-> +			 peer->name, dev->name);
-> +	}
-> + out:
-> +	ckpt_hdr_put(ctx, h);
-> +	kfree(addrs);
-> +
-> +	return ret;
-> +}
-> +#endif
-> +
->  static const struct net_device_ops veth_netdev_ops = {
->  	.ndo_init            = veth_dev_init,
->  	.ndo_open            = veth_open,
-> @@ -292,6 +363,9 @@ static const struct net_device_ops veth_netdev_ops = {
->  	.ndo_change_mtu      = veth_change_mtu,
->  	.ndo_get_stats       = veth_get_stats,
->  	.ndo_set_mac_address = eth_mac_addr,
-> +#ifdef CONFIG_CHECKPOINT
-> +	.ndo_checkpoint      = veth_checkpoint,
-> +#endif
->  };
-> 
->  static void veth_setup(struct net_device *dev)
+>  /*
+>   * LOCKING:
 > -- 
-> 1.6.2.5
+> 1.6.3.3
 > 
 > _______________________________________________
 > Containers mailing list
-> Containers@lists.linux-foundation.org
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 > https://lists.linux-foundation.org/mailman/listinfo/containers
