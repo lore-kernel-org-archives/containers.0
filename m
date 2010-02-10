@@ -1,89 +1,287 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] c/r: fix broken compilation for architectures that
-	don't support c/r
-Date: Wed, 10 Feb 2010 12:02:56 -0600
-Message-ID: <20100210180256.GD12251@us.ibm.com>
-References: <1265759643-23495-1-git-send-email-orenl@cs.columbia.edu>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [PATCH 2/4] C/R: Basic support for network namespaces and
+ devices (v3)
+Date: Wed, 10 Feb 2010 13:20:19 -0600
+Message-ID: <20100210192019.GA18879@us.ibm.com>
+References: <1265750713-15749-1-git-send-email-danms@us.ibm.com>
+ <1265750713-15749-3-git-send-email-danms@us.ibm.com>
+ <87ljf1gemh.fsf@caffeine.danplanet.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <1265759643-23495-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+In-Reply-To: <87ljf1gemh.fsf@caffeine.danplanet.com>
+Sender: netdev-owner@vger.kernel.org
+To: Dan Smith <danms@us.ibm.com>
+Cc: containers@lists.osdl.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> The include file <linux/checkpoint_hdr.h> itself includes the header
-> <asm/checkpoint_hdr.h>, which exists only for supported architectures.
-> 
-> Therefore, non c/r specific code must not include it unconditionally,
-> but only when CONFIG_CHECKPOINT is defined.
-> 
-> Instead, either use include <linux/checkpoint.h>, which take the
-> necessary precautions (preferred), or explicit test CONFIG_CHECKPOINT.
-> 
-> This patch fixes this in eventfd.c and eventpoll.c, to allow a kernel
-> with the c/r patches to compile on other architectures.
-> 
-> (Reported by: Christoffer Dall)
-> 
-> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-> ---
->  fs/eventfd.c   |    1 -
->  fs/eventpoll.c |    5 -----
->  2 files changed, 0 insertions(+), 6 deletions(-)
-> 
-> diff --git a/fs/eventfd.c b/fs/eventfd.c
-> index 5259d6e..3277534 100644
-> --- a/fs/eventfd.c
-> +++ b/fs/eventfd.c
-> @@ -19,7 +19,6 @@
->  #include <linux/kref.h>
->  #include <linux/eventfd.h>
->  #include <linux/checkpoint.h>
-> -#include <linux/checkpoint_hdr.h>
-> 
->  struct eventfd_ctx {
->  	struct kref kref;
-> diff --git a/fs/eventpoll.c b/fs/eventpoll.c
-> index cb286c7..aedaf87 100644
-> --- a/fs/eventpoll.c
-> +++ b/fs/eventpoll.c
-> @@ -38,12 +38,7 @@
->  #include <asm/io.h>
->  #include <asm/mman.h>
->  #include <asm/atomic.h>
-> -
-> -#ifdef CONFIG_CHECKPOINT
->  #include <linux/checkpoint.h>
-> -#include <linux/checkpoint_hdr.h>
-> -#include <linux/deferqueue.h>
+Quoting Dan Smith (danms@us.ibm.com):
+> Guilt dropped the new checkpoint_dev.c file when I switched to the
+> newer branch.  Sorry about that.  Updated patch included below.
 
-Where does deferqueue.h get included from, though?
+(Just a few comments on a cursory look.  Will take a closer look
+later)
 
-Kind of looks like checkpoint_types.h should include that anyway,
-then we can remove the explicit include from
-checkpoint{checkpoint,files,restart,sys}.c
+> +int ckpt_netdev_inet_addrs(struct in_device *indev,
+> +			   struct ckpt_netdev_addr *_abuf[])
+> +{
+> +	struct ckpt_netdev_addr *abuf = NULL;
+> +	struct in_ifaddr *addr = indev->ifa_list;
+> +	int pages = 0;
+> +	int addrs = 0;
+> +	int max;
+> +
+> +	read_lock(&dev_base_lock);
+> + retry:
+> +	if (++pages > 4) {
+> +		addrs = -ENOMEM;
+> +		goto out;
+> +	}
+> +
+> +	*_abuf = krealloc(abuf, PAGE_SIZE * pages, GFP_KERNEL);
 
-> -#endif
-> 
->  /*
->   * LOCKING:
-> -- 
-> 1.6.3.3
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+rw_lockt is effectively a spinlock, so I don't think you can sleep
+here.
+
+> +	if (*_abuf == NULL) {
+> +		addrs = -ENOMEM;
+> +		goto out;
+> +	}
+> +	abuf = *_abuf;
+> +
+> +	max = (pages * PAGE_SIZE) / sizeof(*abuf);
+> +	while (addr) {
+> +		abuf[addrs].type = CKPT_NETDEV_ADDR_IPV4; /* Only IPv4 now */
+> +		abuf[addrs].inet4_local = addr->ifa_local;
+> +		abuf[addrs].inet4_address = addr->ifa_address;
+> +		abuf[addrs].inet4_mask = addr->ifa_mask;
+> +		abuf[addrs].inet4_broadcast = addr->ifa_broadcast;
+> +
+> +		addr = addr->ifa_next;
+> +		if (++addrs >= max)
+> +			goto retry;
+> +	}
+> +
+> + out:
+> +	read_unlock(&dev_base_lock);
+> +
+> +	if (addrs < 0) {
+> +		kfree(abuf);
+> +		*_abuf = NULL;
+> +	}
+> +
+> +	return addrs;
+> +}
+> +
+> +struct ckpt_hdr_netdev *ckpt_netdev_base(struct ckpt_ctx *ctx,
+> +					 struct net_device *dev,
+> +					 struct ckpt_netdev_addr *addrs[])
+> +{
+> +	struct ckpt_hdr_netdev *h;
+> +	int ret;
+> +
+> +	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_NETDEV);
+> +	if (!h)
+> +		return ERR_PTR(-ENOMEM);
+> +
+> +	ret = ckpt_netdev_hwaddr(dev, h);
+> +	if (ret < 0)
+> +		goto out;
+> +
+> +	*addrs = NULL;
+> +	ret = h->inet_addrs = ckpt_netdev_inet_addrs(dev->ip_ptr, addrs);
+> +	if (ret < 0)
+> +		goto out;
+> +
+> +	ret = h->netns_ref = checkpoint_obj(ctx, dev->nd_net, CKPT_OBJ_NET_NS);
+> + out:
+> +	if (ret < 0) {
+> +		ckpt_hdr_put(ctx, h);
+> +		h = ERR_PTR(ret);
+> +		if (*addrs)
+> +			kfree(*addrs);
+> +	}
+> +
+> +	return h;
+> +}
+> +
+> +int checkpoint_netdev(struct ckpt_ctx *ctx, void *ptr)
+> +{
+> +	struct net_device *dev = (struct net_device *)ptr;
+> +
+> +	if (!dev->netdev_ops->ndo_checkpoint)
+> +		return -EINVAL;
+> +
+> +	ckpt_debug("checkpointing netdev %s\n", dev->name);
+> +
+> +	return dev->netdev_ops->ndo_checkpoint(ctx, dev);
+> +}
+> +
+> +int checkpoint_netns(struct ckpt_ctx *ctx, void *ptr)
+> +{
+> +	struct net *net = ptr;
+> +	struct net_device *dev;
+> +	struct ckpt_hdr_netns *h;
+> +	int ret;
+> +
+> +	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_NET_NS);
+> +	if (!h)
+> +		return -ENOMEM;
+> +
+> +	h->this_ref = ckpt_obj_lookup(ctx, net, CKPT_OBJ_NET_NS);
+> +	BUG_ON(h->this_ref == 0);
+> +
+> +	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
+> +	if (ret < 0)
+> +		goto out;
+> +
+> +	for_each_netdev(net, dev) {
+> +		if (!dev->netdev_ops->ndo_checkpoint)
+> +			continue;
+
+Won't the checkpoint_obj() call checkpoint_netdev(), which will return
+-EINVAL if ndo_checkpoint is not defined?  But here you skip the
+checkpoint_obj() call (which seems wrong to me).  Which do you want to
+have happen?
+
+> +		ret = checkpoint_obj(ctx, dev, CKPT_OBJ_NETDEV);
+> +		if (ret < 0)
+> +			break;
+> +	}
+> + out:
+> +	ckpt_hdr_put(ctx, h);
+> +
+> +	return ret;
+> +}
+> +
+> +static int restore_in_addrs(struct ckpt_ctx *ctx,
+> +			    __u32 naddrs,
+> +			    struct net *net,
+> +			    struct net_device *dev)
+> +{
+> +	__u32 i;
+> +	int ret = 0;
+> +	int len = naddrs * sizeof(struct ckpt_netdev_addr);
+> +	struct ckpt_netdev_addr *addrs = NULL;
+> +
+> +	addrs = kmalloc(len, GFP_KERNEL);
+> +	if (!addrs)
+> +		return -ENOMEM;
+> +
+> +	ret = _ckpt_read_buffer(ctx, addrs, len);
+> +	if (ret < 0)
+> +		goto out;
+> +
+> +	for (i = 0; i < naddrs; i++) {
+> +		struct ckpt_netdev_addr *addr = &addrs[i];
+> +		struct ifreq req;
+> +		struct sockaddr_in *inaddr;
+> +
+> +		if (addr->type != CKPT_NETDEV_ADDR_IPV4) {
+> +			ret = -EINVAL;
+> +			ckpt_err(ctx, ret, "Unsupported netdev addr type %i\n",
+> +				 addr->type);
+> +			break;
+> +		}
+> +
+> +		ckpt_debug("restoring %s: %x/%x/%x\n", dev->name,
+> +			   addr->inet4_address,
+> +			   addr->inet4_mask,
+> +			   addr->inet4_broadcast);
+> +
+> +		memcpy(req.ifr_name, dev->name, IFNAMSIZ);
+> +
+> +		inaddr = (struct sockaddr_in *)&req.ifr_addr;
+> +		inaddr->sin_addr.s_addr = addr->inet4_address;
+> +		inaddr->sin_family = AF_INET;
+> +		ret = __kern_devinet_ioctl(net, SIOCSIFADDR, &req);
+> +		if (ret < 0) {
+> +			ckpt_err(ctx, ret, "Failed to set address\n");
+> +			break;
+> +		}
+> +
+> +		inaddr = (struct sockaddr_in *)&req.ifr_addr;
+> +		inaddr->sin_addr.s_addr = addr->inet4_mask;
+> +		inaddr->sin_family = AF_INET;
+> +		ret = __kern_devinet_ioctl(net, SIOCSIFNETMASK, &req);
+> +		if (ret < 0) {
+> +			ckpt_err(ctx, ret, "Failed to set netmask\n");
+> +			break;
+> +		}
+> +
+> +		inaddr = (struct sockaddr_in *)&req.ifr_addr;
+> +		inaddr->sin_addr.s_addr = addr->inet4_broadcast;
+> +		inaddr->sin_family = AF_INET;
+> +		ret = __kern_devinet_ioctl(net, SIOCSIFBRDADDR, &req);
+> +		if (ret < 0) {
+> +			ckpt_err(ctx, ret, "Failed to set broadcast\n");
+> +			break;
+> +		}
+> +	}
+> +
+> + out:
+> +	kfree(addrs);
+> +
+> +	return ret;
+> +}
+> +
+> +static int veth_peer_data(struct sk_buff *skb, char *peer_name)
+> +{
+> +	struct nlattr *linkdata;
+> +	struct ifinfomsg ifm;
+> +
+> +	linkdata = nla_nest_start(skb, IFLA_INFO_DATA);
+> +	if (!linkdata)
+> +		return -ENOMEM;
+> +
+> +	nla_put(skb, VETH_INFO_PEER, sizeof(ifm), &ifm);
+> +	nla_put_string(skb, IFLA_IFNAME, peer_name);
+> +
+> +	nla_nest_end(skb, linkdata);
+> +
+> +	return 0;
+> +}
+> +
+> +static struct sk_buff *new_link_message(char *this_name, char *peer_name)
+> +{
+> +	int ret = -ENOMEM;
+> +	int flags = NLM_F_REQUEST | NLM_F_CREATE | NLM_F_ACK;
+> +	struct nlmsghdr *nlh;
+> +	struct sk_buff *skb;
+> +	struct ifinfomsg *ifm;
+> +	struct nlattr *linkinfo;
+> +
+> +	skb = nlmsg_new(NLMSG_DEFAULT_SIZE, GFP_KERNEL);
+> +	if (!skb)
+> +		goto out;
+> +
+> +	nlh = nlmsg_put(skb, 0, 0, RTM_NEWLINK, sizeof(*ifm), flags);
+> +	if (!nlh)
+> +		goto out;
+> +
+> +	ifm = nlmsg_data(nlh);
+> +	memset(ifm, 0, sizeof(*ifm));
+> +
+> +	ret = nla_put_string(skb, IFLA_IFNAME, this_name);
+> +	if (ret)
+> +		goto out;
+> +
+> +	ret = -ENOMEM;
+> +
+> +	linkinfo = nla_nest_start(skb, IFLA_LINKINFO);
+> +	if (!linkinfo)
+> +		goto out;
+> +
+> +	if (nla_put_string(skb, IFLA_INFO_KIND, "veth") < 0)
+> +		goto out;
+> +
+> +	ret = veth_peer_data(skb, peer_name);
+
+By hard-coding veth stuff into generic-sounding functions in
+net/checkpoint_dev.c you seem to be assuming that only veth will
+ever be supported for checkpoint/restart?  what about macvlan?
+(Not to mention that eventually we intend to support moving
+physical nics into containers)
+
+-serge
