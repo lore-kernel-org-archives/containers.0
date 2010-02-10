@@ -1,70 +1,90 @@
-From: Dan Smith <danms@us.ibm.com>
-Subject: Re: [PATCH 2/4] C/R: Basic support for network namespaces and devices (v3)
-Date: Wed, 10 Feb 2010 11:30:54 -0800
-Message-ID: <87hbpohor5.fsf@caffeine.danplanet.com>
-References: <1265750713-15749-1-git-send-email-danms@us.ibm.com>
-	<1265750713-15749-3-git-send-email-danms@us.ibm.com>
-	<87ljf1gemh.fsf@caffeine.danplanet.com>
-	<20100210192019.GA18879@us.ibm.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [PATCH] c/r: fix broken compilation for architectures that don't
+	support c/r
+Date: Wed, 10 Feb 2010 14:59:41 -0500
+Message-ID: <4B73102D.1020104@cs.columbia.edu>
+References: <1265759643-23495-1-git-send-email-orenl@cs.columbia.edu>
+	<20100210180256.GD12251@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <20100210192019.GA18879@us.ibm.com> (Serge E. Hallyn's message of "Wed\, 10 Feb 2010 13\:20\:19 -0600")
-Sender: netdev-owner@vger.kernel.org
-To: "Serge E. Hallyn" <serue@us.ibm.com>
-Cc: containers@lists.osdl.org, netdev@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20100210180256.GD12251-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-SH> rw_lockt is effectively a spinlock, so I don't think you can sleep
-SH> here.
 
-Yep, thanks.
 
->> +	for_each_netdev(net, dev) {
->> +		if (!dev->netdev_ops->ndo_checkpoint)
->> +			continue;
+Serge E. Hallyn wrote:
+> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+>> The include file <linux/checkpoint_hdr.h> itself includes the header
+>> <asm/checkpoint_hdr.h>, which exists only for supported architectures.
+>>
+>> Therefore, non c/r specific code must not include it unconditionally,
+>> but only when CONFIG_CHECKPOINT is defined.
+>>
+>> Instead, either use include <linux/checkpoint.h>, which take the
+>> necessary precautions (preferred), or explicit test CONFIG_CHECKPOINT.
+>>
+>> This patch fixes this in eventfd.c and eventpoll.c, to allow a kernel
+>> with the c/r patches to compile on other architectures.
+>>
+>> (Reported by: Christoffer Dall)
+>>
+>> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+>> ---
+>>  fs/eventfd.c   |    1 -
+>>  fs/eventpoll.c |    5 -----
+>>  2 files changed, 0 insertions(+), 6 deletions(-)
+>>
+>> diff --git a/fs/eventfd.c b/fs/eventfd.c
+>> index 5259d6e..3277534 100644
+>> --- a/fs/eventfd.c
+>> +++ b/fs/eventfd.c
+>> @@ -19,7 +19,6 @@
+>>  #include <linux/kref.h>
+>>  #include <linux/eventfd.h>
+>>  #include <linux/checkpoint.h>
+>> -#include <linux/checkpoint_hdr.h>
+>>
+>>  struct eventfd_ctx {
+>>  	struct kref kref;
+>> diff --git a/fs/eventpoll.c b/fs/eventpoll.c
+>> index cb286c7..aedaf87 100644
+>> --- a/fs/eventpoll.c
+>> +++ b/fs/eventpoll.c
+>> @@ -38,12 +38,7 @@
+>>  #include <asm/io.h>
+>>  #include <asm/mman.h>
+>>  #include <asm/atomic.h>
+>> -
+>> -#ifdef CONFIG_CHECKPOINT
+>>  #include <linux/checkpoint.h>
+>> -#include <linux/checkpoint_hdr.h>
+>> -#include <linux/deferqueue.h>
+> 
+> Where does deferqueue.h get included from, though?
 
-SH> Won't the checkpoint_obj() call checkpoint_netdev(), which will return
-SH> -EINVAL if ndo_checkpoint is not defined? 
+Oops... will add.
 
-Yes, but this isn't the only place that checkpoint_netdev() could be
-called (dev->peer in the veth example) so I figured that it would be
-best to test it there too before I blindly call a NULL function
-pointer.  It should never happen, but seemed prudent.
+Otherwise ok ?
 
-SH> But here you skip the checkpoint_obj() call (which seems wrong to
-SH> me).  Which do you want to have happen?
+> 
+> Kind of looks like checkpoint_types.h should include that anyway,
+> then we can remove the explicit include from
+> checkpoint{checkpoint,files,restart,sys}.c
 
-What the code is doing is "skipping any interfaces in a netns that
-don't have a checkpoint operation" but would fail if you called
-checkpoint_obj() on a veth peer that happened to be missing that
-operation for some reason.
+It isn't necessary in checkpoint.h because there is only
+a pointer reference to this deferqueue structure.
 
-I suppose you could argue that we should fail in the netns case
-instead, which will make this a bit messier for things we get for
-"free" in a new netns, like sit0.  If preferable, I can just add an
-ndo_checkpoint() to sit0 as well and simply checkpoint the presence of
-it until later when we decide if we care about it.
-
-SH> By hard-coding veth stuff into generic-sounding functions in
-SH> net/checkpoint_dev.c you seem to be assuming that only veth will
-SH> ever be supported for checkpoint/restart?  what about macvlan?
-SH> (Not to mention that eventually we intend to support moving
-SH> physical nics into containers)
-
-No, that's not what I'm assuming.  The only interface type I need to
-control with RTNL is veth right now.  So, if you'd prefer a
-single-case of:
-
-  if (type == veth)
-    do_veth_message();
-  else
-    fail();
-
-to record the goal of having more types later I'll happily add that
-unreachable code to the patch :)
-
--- 
-Dan Smith
-IBM Linux Technology Center
-email: danms@us.ibm.com
+Oren.
