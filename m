@@ -1,17 +1,12 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] c/r: fix broken compilation for architectures that
-	don't support c/r
-Date: Wed, 10 Feb 2010 14:32:59 -0600
-Message-ID: <20100210203259.GC23301@us.ibm.com>
-References: <1265759643-23495-1-git-send-email-orenl@cs.columbia.edu>
-	<20100210180256.GD12251@us.ibm.com>
-	<4B73102D.1020104@cs.columbia.edu>
+Subject: [PATCH] RFC: s390: Move get_signal_to_deliver() up in do_signal
+Date: Wed, 10 Feb 2010 14:40:19 -0600
+Message-ID: <20100210204019.GA24269@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4B73102D.1020104-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,77 +16,57 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: s390 <linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: Martin Schwidefsky <schwidefsky-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> 
-> 
-> Serge E. Hallyn wrote:
-> >Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> >>The include file <linux/checkpoint_hdr.h> itself includes the header
-> >><asm/checkpoint_hdr.h>, which exists only for supported architectures.
-> >>
-> >>Therefore, non c/r specific code must not include it unconditionally,
-> >>but only when CONFIG_CHECKPOINT is defined.
-> >>
-> >>Instead, either use include <linux/checkpoint.h>, which take the
-> >>necessary precautions (preferred), or explicit test CONFIG_CHECKPOINT.
-> >>
-> >>This patch fixes this in eventfd.c and eventpoll.c, to allow a kernel
-> >>with the c/r patches to compile on other architectures.
-> >>
-> >>(Reported by: Christoffer Dall)
-> >>
-> >>Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-> >>---
-> >> fs/eventfd.c   |    1 -
-> >> fs/eventpoll.c |    5 -----
-> >> 2 files changed, 0 insertions(+), 6 deletions(-)
-> >>
-> >>diff --git a/fs/eventfd.c b/fs/eventfd.c
-> >>index 5259d6e..3277534 100644
-> >>--- a/fs/eventfd.c
-> >>+++ b/fs/eventfd.c
-> >>@@ -19,7 +19,6 @@
-> >> #include <linux/kref.h>
-> >> #include <linux/eventfd.h>
-> >> #include <linux/checkpoint.h>
-> >>-#include <linux/checkpoint_hdr.h>
-> >>
-> >> struct eventfd_ctx {
-> >> 	struct kref kref;
-> >>diff --git a/fs/eventpoll.c b/fs/eventpoll.c
-> >>index cb286c7..aedaf87 100644
-> >>--- a/fs/eventpoll.c
-> >>+++ b/fs/eventpoll.c
-> >>@@ -38,12 +38,7 @@
-> >> #include <asm/io.h>
-> >> #include <asm/mman.h>
-> >> #include <asm/atomic.h>
-> >>-
-> >>-#ifdef CONFIG_CHECKPOINT
-> >> #include <linux/checkpoint.h>
-> >>-#include <linux/checkpoint_hdr.h>
-> >>-#include <linux/deferqueue.h>
-> >
-> >Where does deferqueue.h get included from, though?
-> 
-> Oops... will add.
-> 
-> Otherwise ok ?
+The current placement of get_signal_to_deliver() means that
+try_to_freeze() in get_signal_to_deliver() will happen after
+regs->psw.addr, regs->svcnr, and regs->gprs[2] may have been
+mangled.  Since the app may get checkpointed while frozen and
+then restarted, this means we have to attempt a complicated
+and subtle re-calculation of the initial conditions.
 
-Yup - suppose Matt would know best, but I'm glad to see !CHECKPOINT
-is being checked :)
+If we just move the get_signal_to_deliver() above the
+immediately preceding block, we enourmously simplify the
+arch-specific checkpoint/restart code.
 
-> >Kind of looks like checkpoint_types.h should include that anyway,
-> >then we can remove the explicit include from
-> >checkpoint{checkpoint,files,restart,sys}.c
-> 
-> It isn't necessary in checkpoint.h because there is only
-> a pointer reference to this deferqueue structure.
+A full ltp run seems to show no regressions do to this move,
+though I'm not familiar enough with the entry_64.S code in
+particular to be absolutely confident.
 
-Oh, yeah, makes sense.
+Is this a bad idea?
 
--serge
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ arch/s390/kernel/signal.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/arch/s390/kernel/signal.c b/arch/s390/kernel/signal.c
+index 1675c48..7dbd618 100644
+--- a/arch/s390/kernel/signal.c
++++ b/arch/s390/kernel/signal.c
+@@ -442,6 +442,10 @@ void do_signal(struct pt_regs *regs)
+ 	else
+ 		oldset = &current->blocked;
+ 
++	/* Get signal to deliver.  When running under ptrace, at this point
++	   the debugger may change all our registers ... */
++	signr = get_signal_to_deliver(&info, &ka, regs, NULL);
++
+ 	/* Are we from a system call? */
+ 	if (regs->svcnr) {
+ 		continue_addr = regs->psw.addr;
+@@ -463,10 +467,6 @@ void do_signal(struct pt_regs *regs)
+ 		regs->svcnr = 0;	/* Don't deal with this again. */
+ 	}
+ 
+-	/* Get signal to deliver.  When running under ptrace, at this point
+-	   the debugger may change all our registers ... */
+-	signr = get_signal_to_deliver(&info, &ka, regs, NULL);
+-
+ 	/* Depending on the signal settings we may need to revert the
+ 	   decision to restart the system call. */
+ 	if (signr > 0 && regs->psw.addr == restart_addr) {
+-- 
+1.6.1
