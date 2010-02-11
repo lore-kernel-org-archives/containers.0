@@ -1,15 +1,11 @@
-From: "Rick" <yisyiaemasa27dnas-uAjRD0nVeow@public.gmane.org>
-Subject: =?GB2312?B?UGhvdG8gRWRpdGluZyBTZXJ2aWNlcyAtIA==?=
-	=?GB2312?B?UGhvdG8gQ3V0b3V0IFNlcnZpY2UgUHJvZg==?=
-	=?GB2312?B?ZXNzaW9uYWw=?=
-Date: Thu, 11 Feb 2010 20:38:59 +0800
-Message-ID: <TASSPjfNLnlyg35sQtg0000063a@TASSP.tasgroup.com.tw>
-Reply-To: imagingservice-Mj/0Miq2reM@public.gmane.org
+From: Jean-Marc Pigeon <jmp-4qkeo2rQ0gg@public.gmane.org>
+Subject: iptables in container, wrong log destination, need pointer
+Date: Thu, 11 Feb 2010 09:32:26 -0500
+Message-ID: <1265898746.19130.119.camel@Mercier.safe.ca>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,52 +15,28 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Digital Photo Editing Services:
-
-We are a China based Imaging Professionals. We offer basic and advanced digital photo Editing services and solutions like photo Cutout, morphological photo Editing, photoshop photo Editing, satellite photo Editing, color photo Editing and vector photo Editing using latest techniques. 
-
-Our strength in providing Editing solutions for digital images like photo masking, photo re-touching, back ground cleaning & cloning, sharpening & restoration of color, all this derive from our vast experience. Our dedicated team of highly skilled and experienced professionals serves the photo Editing requirements of our clients. An in house quality checking mechanism assures value addition and delivers perfect job. Our team can deliver your job overnight or in time bounded fashion irrespective of job size. 
-
-Our mainly services are: 
-
-1. Photo Cutout
-2. Photo Enhancement
-3. Photo Retouching
-4. Vector Conversion
-5. Pop Art
-6. Images Masking
-7. Clipping Path
-8. Photo Restoration 
-9. Web Design
-
-Photo Editing Services:
-
-Our Photo Editing services includes advanced photo cutouts/clippings, balancing brightness / contrast in an image, repair of minor scratches, creases, minor dust, and spot removal to removal of major scratches, cracks, creases, and stains in all areas. We also repair seriously faded/damaged photographs and make it print ready.
-
-Best regards,
-Rick
-Rsutacsy Imaging Professionals
-Contact: wallacecontact-Mj/0Miq2reM@public.gmane.org
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Pls send address to kingremoves-uAjRD0nVeow@public.gmane.org for remove
+SGVsbG8sCgoKCUkgaGF2ZSBjb250YWluZXJpemVkIHN5c2xvZywgc3VjaCBlYWNoIGNvbnRhaW5l
+ciBoYXMgaXRzCglvd24gc3lzbG9nLgoKCUNvbnRhaW5lciBjYW4gaGF2ZSB0aGVpciBvd24gc2V0
+IG9mIGlwdGFibGVzIHJ1bGVzLgoJCglJIHdhcyBleHBlY3RpbmcgQ09OVDogaXB0YWJsZXMgbG9n
+IHJlcG9ydCB0byBiZQoJc2VuZCB0byB0aGUgQ09OVDogc3lzbG9nLCB3aGljaCBpcyBub3QgdGhl
+IGNhc2UsCgl0aGV5IGFyZSByYXRoZXIgc2VudCB0byBIT1NUOiBzeXNsb2cuCgoJVGhpcyBtZWFu
+cyB0byBtZSwgaXB0YWJsZXMgcnVsZXMgYXJlIGNvbnRhaW5lcml6ZWQsCglidXQgdGhlIGV4ZWN1
+dGlvbiBpcyBOT1QgKENPTlQ6IHJ1bGVzIGFyZSBjaGVja2VkCgl3aXRoaW4gdGhlIEhPU1Q6IGNv
+bnRleHQsIG5vdCB0aGUgQ09OVDogY29udGV4dCkuCgoJQ291bGQgc29tZWJvZHkgZ2l2ZSBtZSBo
+aW50IHdoZXJlIEkgc2hvdWxkIGxvb2sKCWluIHRoZSBjb2RlLCB0byBoYXZlIGEgYmV0dGVyIHVu
+ZGVyc3RhbmRpbmcgYWJvdXQKCXdoYXQgaXMgaGFwcGVuaW5nPwoKLS0gCkEgYmllbnTDtHQKPT09
+PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
+PT09PT09PT09PT09PT0KSmVhbi1NYXJjIFBpZ2VvbiAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgSW50ZXJuZXQ6IGptcEBzYWZlLmNhClNBRkUgSW5jLiAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgIFBob25lOiAoNTE0KSA0OTMtNDI4MAogICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBGYXg6ICAgKDUxNCkgNDkz
+LTE5NDYKICAgICAgICBDbGVtZW50LCAnYSBraXNzIHNvbHV0aW9uJyB0byBnZXQgcmlkIG9mIFNQ
+QU0gKGF0IGxhc3QpCiAgICAgICAgICAgQ2xlbWVudCcgSG9tZSBiYXNlIDwiaHR0cDovL3d3dy5j
+bGVtZW50LnNhZmUuY2EiPgo9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
+PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQoKX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFp
+bmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5k
+YXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
