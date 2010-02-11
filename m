@@ -1,17 +1,11 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] RFC: s390: Move get_signal_to_deliver() up in do_signal
-Date: Thu, 11 Feb 2010 12:39:03 -0600
-Message-ID: <20100211183903.GA17753@us.ibm.com>
-References: <20100210204019.GA24269@us.ibm.com>
-	<20100211094838.4550edd9@mschwide.boeblingen.de.ibm.com>
-	<20100211172917.GD6884@us.ibm.com>
-	<4B7442EC.5080903@cs.columbia.edu>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: [PATCH] c/r: restart to handle checkpoint images lacking {uts, ipc}-ns
+Date: Thu, 11 Feb 2010 13:42:40 -0500
+Message-ID: <1265913760-26854-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4B7442EC.5080903-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,102 +15,119 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Martin Schwidefsky <schwidefsky-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>, s390 <linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Dan Smith <damns-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> 
-> 
-> Serge E. Hallyn wrote:
-> >Quoting Martin Schwidefsky (schwidefsky-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org):
-> >>On Wed, 10 Feb 2010 14:40:19 -0600
-> >>"Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
-> >>
-> >>>The current placement of get_signal_to_deliver() means that
-> >>>try_to_freeze() in get_signal_to_deliver() will happen after
-> >>>regs->psw.addr, regs->svcnr, and regs->gprs[2] may have been
-> >>>mangled.  Since the app may get checkpointed while frozen and
-> >>>then restarted, this means we have to attempt a complicated
-> >>>and subtle re-calculation of the initial conditions.
-> >>>
-> >>>If we just move the get_signal_to_deliver() above the
-> >>>immediately preceding block, we enourmously simplify the
-> >>>arch-specific checkpoint/restart code.
-> >>>
-> >>>A full ltp run seems to show no regressions do to this move,
-> >>>though I'm not familiar enough with the entry_64.S code in
-> >>>particular to be absolutely confident.
-> >>>
-> >>>Is this a bad idea?
-> >>I think it is a bad idea. The comment of get_signal_to_deliver tells
-> >>you that the debugger is invoked and may want to change the registers.
-> >>If the get_signal_to_deliver calls is moved then the debugger sees
-> >>the unmodified registers which is imho wrong. A comparison of the
-> >>gdb testsuite with and without the patch will tell us more.
-> >
-> >Right, but I guess what's confounding me is exactly why the values
-> >being set for the debugger make more sense to the debugger than the
-> >initial ones.  Note that they're not actually the same as they will
-> >be upon exit, for instance in the -ERESTARTNOHAND case if certain
-> >signals are delivered we'll change psw.addr back after all and set
-> >-EINTR.
-> >
-> >So yeah, with this patch, if I send a signal to a program being
-> >debugged and then do 'i r' I see -516 instead of the -4 which I
-> >otherwise see, and a different $pswa.  Results for 'sleep' (which
-> >is ERESTART_RESTARTBLOCK) and 'getchar' (which is not) being
-> >interupted is below.  Frankly I think the info you see with the
-> >patch is more informative, not less, and the debugger certainly
-> >functions as well as it did before.
-> >
-> >Of course there is probably fancier userspace tracing/debugging
-> >code out there which depends on the current behavior?  And the
-> >most convincing argument might be that it's all so magical that
-> >changing it is begging for trouble.
-> 
-> I suppose it also changes the behavior/ output of strace/ltrace ?
-> 
-> >But it sure would simplify checkpoint.
-> 
-> If this doesn't get through, then an alternative would be to
-> save the original state -- namely, svcnr, pswa, and gprs[2] --
-> on somewhere that is accessible to the checkpoint code ?
+A checkpoint taken on a kernel without CONFIG_{IPC,UTS}_NS will leave
+the corresponding objref field in the nsproxy header untouched, and
+therefore it will remain zero.
 
-Well, perhaps I've been making this more complicated than it
-needs to be.
+This patch ensures that do_restore_ns() gracefully handles this by
+borrowing from the nsproxy of the root-task.
 
-If we get frozen+checkpointed, then no matter whether we were
-frozen with a real pending signal or not, we won't handle the
-signal during restart, so we can treat it as though signr==0.
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+---
+ kernel/nsproxy.c |   71 +++++++++++++++++++++++++++++------------------------
+ 1 files changed, 39 insertions(+), 32 deletions(-)
 
-So, in that case, the only thing we need to change at end of
-sys_restart is to handle the case:
-
-	/* Restart a different system call. */
-	if (retval == -ERESTART_RESTARTBLOCK
-			&& regs->psw.addr == continue_addr) {
-		regs->gprs[2] = __NR_restart_syscall;
-		set_thread_flag(TIF_RESTART_SVC);
-	}
-
-Now that's of course a problem bc we don't know continue_addr
-when we're in sys_restart().  So before we go into get_signal_to_deliver(),
-we should set a new TIF flag which represents the fact that we are
-inside do_signal with those conditions.
-
-Then at end of restore_thread(), if that flag is set, we do the
-
-	regs->gprs[2] = __NR_restart_syscall;
-	set_thread_flag(TIF_RESTART_SVC);
-
-(which presumably goes into a helper)
-
-If there was a pending signal which we were intending to handle
-when checkpointed, then that will simply be delivered after we
-exit sys_restart.  That is no different from the case where we
-got another signal delivered while a slow sighandler was executing.
-
-I'll try implementing that idea.
-
--serge
+diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+index b0e71f2..cfef7bc 100644
+--- a/kernel/nsproxy.c
++++ b/kernel/nsproxy.c
+@@ -312,54 +312,61 @@ static struct nsproxy *do_restore_ns(struct ckpt_ctx *ctx)
+ 	struct nsproxy *nsproxy = NULL;
+ 	struct uts_namespace *uts_ns;
+ 	struct ipc_namespace *ipc_ns;
++	struct mnt_namespace *mnt_ns;
++	struct net *net_ns;
+ 	int ret;
+ 
+ 	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_NS);
+ 	if (IS_ERR(h))
+ 		return (struct nsproxy *) h;
+ 
+-	ret = -EINVAL;
+-	if (h->uts_objref <= 0 ||
+-	    h->ipc_objref <= 0)
+-		goto out;
+-
+-	uts_ns = ckpt_obj_fetch(ctx, h->uts_objref, CKPT_OBJ_UTS_NS);
++	if (h->uts_objref == 0)
++		uts_ns = ctx->root_nsproxy->uts_ns;
++	else
++		uts_ns = ckpt_obj_fetch(ctx, h->uts_objref, CKPT_OBJ_UTS_NS);
+ 	if (IS_ERR(uts_ns)) {
+ 		ret = PTR_ERR(uts_ns);
+ 		goto out;
+ 	}
+-	ipc_ns = ckpt_obj_fetch(ctx, h->ipc_objref, CKPT_OBJ_IPC_NS);
++
++	if (h->ipc_objref == 0)
++		ipc_ns = ctx->root_nsproxy->ipc_ns;
++	else
++		ipc_ns = ckpt_obj_fetch(ctx, h->ipc_objref, CKPT_OBJ_IPC_NS);
+ 	if (IS_ERR(ipc_ns)) {
+ 		ret = PTR_ERR(ipc_ns);
+ 		goto out;
+ 	}
+ 
+-#if defined(COFNIG_UTS_NS) || defined(CONFIG_IPC_NS)
+-	ret = -ENOMEM;
+-	nsproxy = create_nsproxy();
+-	if (!nsproxy)
+-		goto out;
++	mnt_ns = ctx->root_nsproxy->mnt_ns;
++	net_ns = ctx->root_nsproxy->net_ns;
++
++	if (uts_ns == current->nsproxy->uts_ns &&
++	    ipc_ns == current->nsproxy->ipc_ns &&
++	    mnt_ns == current->nsproxy->mnt_ns &&
++	    net_ns == current->nsproxy->net_ns) {
++		/* all xxx-ns are identical: reuse nsproxy */
++		nsproxy = current->nsproxy;
++		get_nsproxy(nsproxy);
++	} else {
++		ret = -ENOMEM;
++		nsproxy = create_nsproxy();
++		if (!nsproxy)
++			goto out;
++
++		get_uts_ns(uts_ns);
++		nsproxy->uts_ns = uts_ns;
++		get_ipc_ns(ipc_ns);
++		nsproxy->ipc_ns = ipc_ns;
++		get_mnt_ns(mnt_ns);
++		nsproxy->mnt_ns = mnt_ns;
++		get_net(net_ns);
++		nsproxy->net_ns = net_ns;
++
++		get_pid_ns(current->nsproxy->pid_ns);
++		nsproxy->pid_ns = current->nsproxy->pid_ns;
++	}
+ 
+-	get_uts_ns(uts_ns);
+-	nsproxy->uts_ns = uts_ns;
+-	get_ipc_ns(ipc_ns);
+-	nsproxy->ipc_ns = ipc_ns;
+-
+-	get_pid_ns(current->nsproxy->pid_ns);
+-	nsproxy->pid_ns = current->nsproxy->pid_ns;
+-	get_mnt_ns(current->nsproxy->mnt_ns);
+-	nsproxy->mnt_ns = current->nsproxy->mnt_ns;
+-	get_net(current->nsproxy->net_ns);
+-	nsproxy->net_ns = current->nsproxy->net_ns;
+-#else
+-	nsproxy = current->nsproxy;
+-	get_nsproxy(nsproxy);
+-
+-	BUG_ON(nsproxy->uts_ns != uts_ns);
+-	BUG_ON(nsproxy->ipc_ns != ipc_ns);
+-#endif
+-
+-	/* TODO: add more namespaces here */
+ 	ret = 0;
+  out:
+ 	if (ret < 0)
+-- 
+1.6.3.3
