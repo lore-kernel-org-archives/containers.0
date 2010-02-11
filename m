@@ -1,13 +1,13 @@
-From: Martin Schwidefsky <schwidefsky-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] RFC: s390: Move get_signal_to_deliver() up in do_signal
-Date: Thu, 11 Feb 2010 09:48:38 +0100
-Message-ID: <20100211094838.4550edd9@mschwide.boeblingen.de.ibm.com>
-References: <20100210204019.GA24269@us.ibm.com>
+From: Michel Normand <normand-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/1] lxc-ps: Nit - Avoid blank CONTAINER column
+Date: Thu, 11 Feb 2010 11:08:20 +0100
+Message-ID: <1265882900.2591.65.camel@pagloppaglop>
+References: <20100211042531.GA8835@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100210204019.GA24269-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20100211042531.GA8835-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,38 +17,52 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, s390 <linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, DLEZCANO-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, 10 Feb 2010 14:40:19 -0600
-"Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
-
-> The current placement of get_signal_to_deliver() means that
-> try_to_freeze() in get_signal_to_deliver() will happen after
-> regs->psw.addr, regs->svcnr, and regs->gprs[2] may have been
-> mangled.  Since the app may get checkpointed while frozen and
-> then restarted, this means we have to attempt a complicated
-> and subtle re-calculation of the initial conditions.
-> 
-> If we just move the get_signal_to_deliver() above the
-> immediately preceding block, we enourmously simplify the
-> arch-specific checkpoint/restart code.
-> 
-> A full ltp run seems to show no regressions do to this move,
-> though I'm not familiar enough with the entry_64.S code in
-> particular to be absolutely confident.
-> 
-> Is this a bad idea?
-
-I think it is a bad idea. The comment of get_signal_to_deliver tells
-you that the debugger is invoked and may want to change the registers.
-If the get_signal_to_deliver calls is moved then the debugger sees
-the unmodified registers which is imho wrong. A comparison of the
-gdb testsuite with and without the patch will tell us more.
-
--- 
-blue skies,
-   Martin.
-
-"Reality continues to ruin my life." - Calvin.
+TGUgbWVyY3JlZGkgMTAgZsOpdnJpZXIgMjAxMCDDoCAyMDoyNSAtMDgwMCwgU3VrYWRldiBCaGF0
+dGlwcm9sdSBhIMOpY3JpdCA6Cj4gRnJvbTogU3VrYWRldiBCaGF0dGlwcm9sdSA8c3VrYWRldkBs
+aW51eC52bmV0LmlibS5jb20+Cj4gRGF0ZTogV2VkLCAxMCBGZWIgMjAxMCAyMDowOToxNyAtMDgw
+MAo+IFN1YmplY3Q6IFtQQVRDSCAxLzFdIGx4Yy1wczogTml0IC0gQXZvaWQgYmxhbmsgQ09OVEFJ
+TkVSIGNvbHVtbgo+IAo+IFRoZSBjb250aWFuZXIgbmFtZSBpcyBub3QgcHJpbnRlZCBpbiB0aGUg
+bHhjLXBzIG91dHB1dCB1bmxlc3MgdGhlIC0tbHhjCj4gb3B0aW9uIGlzIHNwZWNpZmllZC4gIEJ1
+dCB0aGUgQ09OVEFJTkVSIGNvbHVtbiBpcyBwcmludGVkIChhbmQgbGVmdAo+IGJsYW5rKSBldmVu
+IGlmIHRoZSAtLWx4YyBvcHRpb24gaXMgbm90IHNwZWNpZmllZC4KPiAKPiAJJCAvdXNyL2xvY2Fs
+L2Jpbi9seGMtcHMgLW4gZm9vCj4gCUNPTlRBSU5FUiAgICBQSUQgVFRZICAgICAgICAgIFRJTUUg
+Q01ECj4gCQkgICAxOTUyNSBwdHMvMiAgICAwMDowMDowMSBiYXNoCj4gCQkgICAyMDMxMSBwdHMv
+MiAgICAwMDowMDowMCBseGMtcHMKPiAJCSAgIDIwMzEyIHB0cy8yICAgIDAwOjAwOjAwIHBzCgpG
+b3IgbWUgdGhlIGVycm9yIGluIHRoZSBzY3JpcHQgaXMgCnRvIHJlcG9ydCBkZWZhdWx0IHBpZCBv
+ZiBwcyBjb21tYW5kLApyYXRoZXIgdGhhbiB0byByZXBvcnQgdGhlIHBpZHMgb2Ygc3BlY2lmaWVk
+ICdmb28nIApjb250YWluZXIgaW4gdGhpcyBjYXNlLgoKU28gYSBwYXRjaCBzaG91bGQgYWRkcmVz
+cyB0aGlzIHBvaW50LApyYXRoZXIgdG8gcmVtb3ZlIHRoZSBjb250YWluZXIgY29sdW1uLgoKLS0t
+Ck1pY2hlbAoKPiAKPiBMaWtlIG5vcm1hbCBwcywgaXQgd291bGQgYmUgbGVzcyBjb25mdXNpbmcg
+KElNSE8pIGlmIHRoZSBDT05UQUlORVIKPiBjb2x1bW4gaXMgc2tpcHBlZCB1bmxlc3MgdGhlIC0t
+bHhjIG9wdGlvbiBpcyBzcGVjaWZpZWQuCj4gCj4gCSQgLi9seGMtcHMgLW4gZm9vCj4gCSAgUElE
+IFRUWSAgICAgICAgICBUSU1FIENNRAo+IAkxOTUyNSBwdHMvMiAgICAwMDowMDowMSBiYXNoCj4g
+CTIwMzM5IHB0cy8yICAgIDAwOjAwOjAwIGx4Yy1wcwo+IAkyMDM0MCBwdHMvMiAgICAwMDowMDow
+MCBwcwo+IAo+IAkkIC4vbHhjLXBzIC0tbHhjIC1uIGZvbwo+IAlDT05UQUlORVIgICAgUElEIFRU
+WSAgICAgICAgICBUSU1FIENNRAo+IAlmb28gICAgICAgIDE5NjQ2IHB0cy8xICAgIDAwOjAwOjAw
+IGx4Yy1pbml0Cj4gCWZvbyAgICAgICAgMTk2NDcgcHRzLzEgICAgMDA6MDA6MDAgYmFzaAo+IAo+
+IFNpZ25lZC1vZmYtYnk6IFN1a2FkZXYgQmhhdHRpcHJvbHUgPHN1a2FkZXZAbGludXgudm5ldC5p
+Ym0uY29tPgo+IC0tLQo+ICBzcmMvbHhjL2x4Yy1wcy5pbiB8ICAgMTIgKysrKysrKysrKy0tCj4g
+IDEgZmlsZXMgY2hhbmdlZCwgMTAgaW5zZXJ0aW9ucygrKSwgMiBkZWxldGlvbnMoLSkKPiAKPiBk
+aWZmIC0tZ2l0IGEvc3JjL2x4Yy9seGMtcHMuaW4gYi9zcmMvbHhjL2x4Yy1wcy5pbgo+IGluZGV4
+IDI0OWIxMDQuLmUxYWE2NTUgMTAwNzU1Cj4gLS0tIGEvc3JjL2x4Yy9seGMtcHMuaW4KPiArKysg
+Yi9zcmMvbHhjL2x4Yy1wcy5pbgo+IEBAIC0xMjQsNyArMTI0LDExIEBAIHN1YiBnZXRfY29udGFp
+bmVyIHsKPiAgfQo+ICAKPiAgc3ViIGRpc3BsYXlfaGVhZGVycyB7Cj4gLSAgICBwcmludGYgIiUt
+MTBzICVzIiwgIkNPTlRBSU5FUiIsICRQU19IRUFERVJTOwo+ICsgICAgaWYgKCRMWENfRElTUExB
+WSkgewo+ICsgICAgICAgIHByaW50ZiAiJS0xMHMgJXMiLCAiQ09OVEFJTkVSIiwgJFBTX0hFQURF
+UlM7Cj4gKyAgICB9IGVsc2Ugewo+ICsgICAgICAgIHByaW50ZiAiJXMiLCAkUFNfSEVBREVSUzsK
+PiArICAgIH0KPiAgfQo+ICAKPiAgc3ViIGRpc3BsYXlfdXNhZ2Ugewo+IEBAIC0xOTUsNyArMTk5
+LDExIEBAIGZvciAoQFBTX0xJTkVTKSB7Cj4gICAgICBteSAkY29udGFpbmVyID0gZ2V0X2NvbnRh
+aW5lciAkYVskUFNfUElEX0lOREVYXTsKPiAgICAgIGlmICgkTFhDX0RJU1BMQVkgPT0gMiBhbmQg
+bm90ICRMWENfTkFNRVN7JGNvbnRhaW5lcn0pIHtuZXh0O30KPiAgICAgIGlmICgkTFhDX0RJU1BM
+QVkgPT0gMSBhbmQgJGNvbnRhaW5lciBlcSAnJykge25leHQ7fQo+IC0gICAgcHJpbnRmICIlLTEw
+cyAlcyIsICRjb250YWluZXIsICRfOwo+ICsgICAgaWYgKCRMWENfRElTUExBWSkgewo+ICsgICAg
+ICAgIHByaW50ZiAiJS0xMHMgJXMiLCAkY29udGFpbmVyLCAkXzsKPiArICAgIH0gZWxzZSB7Cj4g
+KyAgICAgICAgcHJpbnRmICIlcyIsICRfOwo+ICsgICAgfQo+ICB9Cj4gIAo+ICBleGl0IDA7CgoK
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVy
+cyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRw
+czovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVy
+cw==
