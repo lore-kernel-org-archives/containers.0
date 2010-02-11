@@ -1,14 +1,14 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/1] Syslog are now containerized
-Date: Thu, 11 Feb 2010 11:48:43 -0600
-Message-ID: <20100211174843.GF6884@us.ibm.com>
-References: <201002110552.o1B5qwbL024561@kernel.safe.ca>
+Subject: Re: iptables in container, wrong log destination, need pointer
+Date: Thu, 11 Feb 2010 11:51:10 -0600
+Message-ID: <20100211175110.GG6884@us.ibm.com>
+References: <1265898746.19130.119.camel@Mercier.safe.ca>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <201002110552.o1B5qwbL024561-X4ZF2iejbABnc3BsFfMrZw@public.gmane.org>
+In-Reply-To: <1265898746.19130.119.camel-4BUXZ/Ty1v7iqR6jatDSCA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,68 +23,39 @@ Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 Quoting Jean-Marc Pigeon (jmp-4qkeo2rQ0gg@public.gmane.org):
-> 	Added syslog.c such container /proc/kmsg and host /proc/kmsg
-> 	do not leak in each other.
-> 	Running rsyslog daemon within a container won't destroy
-> 	host kernel messages.
+> Hello,
+> 
+> 
+> 	I have containerized syslog, such each container has its
+> 	own syslog.
+> 
+> 	Container can have their own set of iptables rules.
+> 	
+> 	I was expecting CONT: iptables log report to be
+> 	send to the CONT: syslog, which is not the case,
+> 	they are rather sent to HOST: syslog.
+> 
+> 	This means to me, iptables rules are containerized,
+> 	but the execution is NOT (CONT: rules are checked
+> 	within the HOST: context, not the CONT: context).
+> 
+> 	Could somebody give me hint where I should look
+> 	in the code, to have a better understanding about
+> 	what is happening?
 
-Thanks Jean-Marc.  But this really isn't doing most of what I'd
-recommended in my last emails (both public and private.  In
-particular:
+Again, printk can be called from any context, so you can't
+rely on 'current'.  But you are relying on current in
+emit_log_char() to get the syslog_ns.  That is why you're
+getting that.
 
-> index cc4f453..3d0c73e 100644
-> --- a/include/linux/user_namespace.h
-> +++ b/include/linux/user_namespace.h
-> @@ -14,6 +14,7 @@ struct user_namespace {
->  	struct hlist_head	uidhash_table[UIDHASH_SZ];
->  	struct user_struct	*creator;
->  	struct work_struct	destroyer;
-> +	struct syslog_ns        *syslog;
+You're going to have to keep a separate container_printk
+(nsprintk) which is called with a syslog_ns.  Then in
+functions where you know you can determine the syslog_ns,
+you can call that fn instead of printk and pass the ns.
 
-syslog_ns should be moved into nsproxy and unshared with a
-separate clone(CLONE_SYSLOG);
+Note that since iptables printks are happening out of
+context, this means yet another problem: you'll need to
+have a way to get the syslog_ns from the netns, which
+I suspect is the only thing can track at that point.
 
-> -static void emit_log_char(char c)
-> +static void emit_log_char(struct syslog_ns *syslog_ns, char c)
->  {
-> -	LOG_BUF(log_end) = c;
-> -	log_end++;
-> -	if (log_end - log_start > log_buf_len)
-> -		log_start = log_end - log_buf_len;
-> -	if (log_end - con_start > log_buf_len)
-> -		con_start = log_end - log_buf_len;
-> -	if (logged_chars < log_buf_len)
-> -		logged_chars++;
-> +	LOG_BUF(syslog_ns, sys_log_end) = c;
-
-Taking syslog_ns from current in emit_log_char is not right.
-Emit_log_char() is called from printk which (the comment above
-printk warns us) can be called from any context.
-
-That was why I suggested:
-
->! I think my patch is fundamentally wrong anyway:  we should not
->! use current's context at vprintk like i did.  We should use an
->! optional passed-in context from those callsites where we want to,
->! and default to init otherwise.  That means
->! 
->! 1. put the core of vprintk() into vnsprintk() which takes a syslog
->! namespace as argument
->! 
->! 2. make vprintk() a wrapper around vnsprintk() which passes in
->! init_syslog_ns to vnsprintk().  printk can remain unchanged.
->! 
->! 4. make nsprintk() a wrapper around vnsprintk() which takes a syslog
->! ns argument and pass it to vnsprintk()
->! 
->! 3. do_syslog() can obviously be containerized the same way it
->! is now.
->! 
->! 4. take a printk call like the iptables ones you want and turn
->! int into nsprintk syscall.
->! 
->! The very comment above printk explains why I was an idiot to write
->! let alone send that patch.
-
-thanks,
 -serge
