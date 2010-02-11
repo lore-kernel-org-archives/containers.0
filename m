@@ -1,13 +1,12 @@
-From: "Michael B. Trausch" <mike-cRPrJ27hGUicqzYg7KEe8g@public.gmane.org>
-Subject: Re: LXC bridged networking issues
-Date: Wed, 10 Feb 2010 17:42:47 -0500
-Message-ID: <4B733667.80309@trausch.us>
-References: <4B732911.7070209@trausch.us>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: [PATCH] c/r: fix false negative of test for unlinked files at
+	checkpoint
+Date: Wed, 10 Feb 2010 20:39:43 -0500
+Message-ID: <1265852383-17486-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4B732911.7070209-cRPrJ27hGUicqzYg7KEe8g@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,26 +16,67 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 02/10/2010 04:45 PM, Michael B. Trausch wrote:
-> Insofar as other data, I don't know what else to provide. I am
-> completely confused and I haven't the slightest clue how to debug this
-> setup. Am I doing something wrong with LXC that OpenVZ or full
-> virtualization handles for me? Have I stumbled upon some bug in the
-> stack somewhere?
+Checkpoint will abort when it detects non-checkpoint-able state. This
+patch fixes a false positive of testing for unlinked files.
 
-Ahh, nevermind.
+The test for an unlinked file (or directory) is not file system
+agnostic. Commit a3a065e3f13da8a3470ed09c7f38aad256083726 made it
+visible when it changed the behavior of dentry for pipe, sockets and
+anon_inodes (eventfd, timerfd, epoll, signalfd and perf...) to set
+their DCACHE_UNHASHED.
 
-It would seem that in this case, the answer is that yours truly here is 
-a moron.  I done did screwed up: two of the interfaces had the same MAC 
-address.
+This is fixed by moving the actual test whether the file is unlinked
+or not to the per filesystem .checkpoint() method, (including the
+default generic_file_checkpoint).
 
-My apologies for the noise.
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+---
+ checkpoint/files.c |   19 ++++++++++---------
+ 1 files changed, 10 insertions(+), 9 deletions(-)
 
-	--- Mike
-
+diff --git a/checkpoint/files.c b/checkpoint/files.c
+index d1242f2..267d361 100644
+--- a/checkpoint/files.c
++++ b/checkpoint/files.c
+@@ -197,14 +197,20 @@ int generic_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
+ 	struct ckpt_hdr_file_generic *h;
+ 	int ret;
+ 
+-	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE);
+-	if (!h)
+-		return -ENOMEM;
+-
+ 	/*
+ 	 * FIXME: when we'll add support for unlinked files/dirs, we'll
+ 	 * need to distinguish between unlinked filed and unlinked dirs.
+ 	 */
++	if (d_unlinked(file->f_dentry)) {
++		ckpt_err(ctx, -EBADF, "%(T)%(P)Unlinked files unsupported\n",
++			 file);
++		return -EBADF;
++	}
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE);
++	if (!h)
++		return -ENOMEM;
++
+ 	h->common.f_type = CKPT_FILE_GENERIC;
+ 
+ 	ret = checkpoint_file_common(ctx, file, &h->common);
+@@ -231,11 +237,6 @@ int checkpoint_file(struct ckpt_ctx *ctx, void *ptr)
+ 			       file, file->f_op);
+ 		return -EBADF;
+ 	}
+-	if (d_unlinked(file->f_dentry)) {
+-		ckpt_err(ctx, -EBADF, "%(T)%(P)Unlinked files unsupported\n",
+-			 file);
+-		return -EBADF;
+-	}
+ 
+ 	ret = file->f_op->checkpoint(ctx, file);
+ 	if (ret < 0)
 -- 
-Michael B. Trausch                    Blog: http://mike.trausch.us/blog/
-Tel: (404) 592-5746 x1                            Email: mike-cRPrJ27hGUicqzYg7KEe8g@public.gmane.org
+1.6.3.3
