@@ -1,11 +1,17 @@
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [cr_tests] warning fixes and build system changes
-Date: Thu, 11 Feb 2010 17:17:07 -0600
-Message-ID: <1265930227.17626.3313.camel@localhost.localdomain>
+From: Michel Normand <normand-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [lxc-devel] [PATCH 1/1] lxc-ps: Nit - Avoid blank CONTAINER column
+Date: Fri, 12 Feb 2010 08:48:20 +0100
+Message-ID: <1265960900.2591.106.camel__40605.3334394985$1265960965$gmane$org@pagloppaglop>
+References: <20100211042531.GA8835@us.ibm.com>
+	<1265882900.2591.65.camel@pagloppaglop>
+	<1265883662.2591.68.camel@pagloppaglop>
+	<20100211155446.GC6884@us.ibm.com>
+	<20100211181902.GA3742@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20100211181902.GA3742-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,91 +21,46 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, dlezcano-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi all,
-
-Serge has kindly pulled a pile of -Wall fixes and Makefile changes into
-the "ntl" branch at git://git.sr71.net/~hallyn/cr_tests.git.  The
-motivation behind this is that building the testsuite with a non-default
-word size (e.g. 64-bit on most powerpc distributions) is basically
-impossible with the current set of Makefiles, some of which use CFLAGS
-improperly or hard-code "gcc".  With the changes in this branch, "make
-CFLAGS=-m64" does the right thing, and the test suite builds cleanly
-with -Wall and both 32- and 64-bit output.
-
-Patch summaries and overall diffstat below.  Please follow up here with
-any concerns, thanks!
-
-Nathan Lynch (29):
-  cr_tests/eclone: add USER_CR_DIR to linker search path
-  cr_tests/libcrtest: add declaration for print_exit_status
-  cr_tests/libcrtest: make u64 unsigned long long
-  cr_tests/libfutex: include local header with quotes, not brackets
-  cr_tests/nsexec: fix -Wall warnings
-  cr_tests/libcrtest: fix -Wall warnings etc
-  cr_tests/eclone: fix -Wall warnings
-  cr_tests/fileio1: fix -Wall warnings
-  cr_tests/filelock1: fix -Wall warnings
-  cr_tests/filelock2: fix -Wall warnings
-  cr_tests/fsetown1: fix -Wall warnings
-  cr_tests/filelease1: fix -Wall warnings
-  cr_tests/filelease2: fix -Wall warnings
-  cr_tests/ptree1: fix -Wall warnings etc
-  cr_tests/pthread1: fix -Wall warnings
-  cr_tests/pthread2: fix -Wall warnings
-  cr_tests/pthread3: fix -Wall warnings
-  cr_tests/pthread4: fix -Wall warnings
-  cr_tests/create-sem: fix -Wall warnings
-  cr_tests/check-mq: include libcrtest.h
-  cr_tests/chrootsleep: fix -Wall warnings
-  cr_tests/userns_ckptme: fix -Wall warnings
-  cr_tests/usertask: fix -Wall warnings
-  cr_tests/userns_deep: fix -Wall warnings
-  cr_tests/simple_deep: fix -Wall warnings
-  cr_tests/epoll: strlen returns size_t
-  cr_tests/pthread: use correct size_t printf conversion
-  cr_tests: rework build system
-  cr_tests: remove old Makefiles
-
- Makefile                  |   50 +++++++++++++++++++++++++++++++----------
- bashckpt/module.mk        |    3 ++
- counterloop/Makefile      |    7 -----
- counterloop/module.mk     |    5 ++++
- eclone/Makefile           |   21 -----------------
- eclone/eclone-1.c         |    8 +++---
- eclone/eclone-2.c         |    8 +++---
- eclone/eclone-3.c         |    8 +++---
- eclone/eclone-4.c         |    8 +++---
- eclone/eclone-5.c         |    8 +++---
- eclone/module.mk          |    9 +++++++
- epoll/Makefile            |   29 ------------------------
- epoll/cycle.c             |    4 +-
- epoll/module.mk           |   11 +++++++++
- epoll/pipe.c              |    4 +-
- epoll/scm.c               |    4 +-
- epoll/sk10k.c             |    4 +-
- fileio/Makefile           |   12 ----------
- fileio/fileio1.c          |    3 ++
- fileio/filelease1.c       |    9 +++++--
- fileio/filelease2.c       |   19 ++++++++++-----
- fileio/filelock1.c        |   16 ++++++++-----
- fileio/filelock2.c        |   29 +++++++++---------------
- fileio/fsetown1.c         |   16 ++++++------
- fileio/module.mk          |   12 ++++++++++
- futex/Makefile            |   44 ------------------------------------
- futex/libfutex/Makefile   |   16 -------------
- futex/libfutex/libfutex.h |    2 +-
- futex/libfutex/module.mk  |   11 +++++++++
- futex/module.mk           |   15 ++++++++++++
- ipc/Makefile              |   18 ---------------
- ipc/check-mq.c            |    2 +
- ipc/create-sem.c          |    5 +++-
- ipc/module.mk             |   10 ++++++++
- libcrtest/Makefile        |   11 ---------
- libcrtest/common.c        |   16 ++++++++++---
- libcrtest/libcrtest.h     |    4 +-
- libcrtest/module.mk       |   11 +++++++++
- ns_exec.c                 |    6 ++--
+TGUgamV1ZGkgMTEgZsOpdnJpZXIgMjAxMCDDoCAxMDoxOSAtMDgwMCwgU3VrYWRldiBCaGF0dGlw
+cm9sdSBhIMOpY3JpdCA6Cj4gU2VyZ2UgRS4gSGFsbHluIFtzZXJ1ZUB1cy5pYm0uY29tXSB3cm90
+ZToKPiB8IFF1b3RpbmcgTWljaGVsIE5vcm1hbmQgKG5vcm1hbmRAZnIuaWJtLmNvbSk6Cj4gfCA+
+IExlIGpldWRpIDExIGbDqXZyaWVyIDIwMTAgw6AgMTE6MDggKzAxMDAsIE1pY2hlbCBOb3JtYW5k
+IGEgw6ljcml0IDoKPiB8ID4gPiBMZSBtZXJjcmVkaSAxMCBmw6l2cmllciAyMDEwIMOgIDIwOjI1
+IC0wODAwLCBTdWthZGV2IEJoYXR0aXByb2x1IGEgw6ljcml0IDoKPiB8ID4gPiA+IEZyb206IFN1
+a2FkZXYgQmhhdHRpcHJvbHUgPHN1a2FkZXZAbGludXgudm5ldC5pYm0uY29tPgo+IHwgPiA+ID4g
+RGF0ZTogV2VkLCAxMCBGZWIgMjAxMCAyMDowOToxNyAtMDgwMAo+IHwgPiA+ID4gU3ViamVjdDog
+W1BBVENIIDEvMV0gbHhjLXBzOiBOaXQgLSBBdm9pZCBibGFuayBDT05UQUlORVIgY29sdW1uCj4g
+fCA+ID4gPiAKPiB8ID4gPiA+IFRoZSBjb250aWFuZXIgbmFtZSBpcyBub3QgcHJpbnRlZCBpbiB0
+aGUgbHhjLXBzIG91dHB1dCB1bmxlc3MgdGhlIC0tbHhjCj4gfCA+ID4gPiBvcHRpb24gaXMgc3Bl
+Y2lmaWVkLiAgQnV0IHRoZSBDT05UQUlORVIgY29sdW1uIGlzIHByaW50ZWQgKGFuZCBsZWZ0Cj4g
+fCA+ID4gPiBibGFuaykgZXZlbiBpZiB0aGUgLS1seGMgb3B0aW9uIGlzIG5vdCBzcGVjaWZpZWQu
+Cj4gfCA+ID4gPiAKPiB8ID4gPiA+IAkkIC91c3IvbG9jYWwvYmluL2x4Yy1wcyAtbiBmb28KPiB8
+ID4gPiA+IAlDT05UQUlORVIgICAgUElEIFRUWSAgICAgICAgICBUSU1FIENNRAo+IHwgPiA+ID4g
+CQkgICAxOTUyNSBwdHMvMiAgICAwMDowMDowMSBiYXNoCj4gfCA+ID4gPiAJCSAgIDIwMzExIHB0
+cy8yICAgIDAwOjAwOjAwIGx4Yy1wcwo+IHwgPiA+ID4gCQkgICAyMDMxMiBwdHMvMiAgICAwMDow
+MDowMCBwcwo+IHwgPiA+IAo+IHwgPiA+IEZvciBtZSB0aGUgZXJyb3IgaW4gdGhlIHNjcmlwdCBp
+cyAKPiB8ID4gPiB0byByZXBvcnQgZGVmYXVsdCBwaWQgb2YgcHMgY29tbWFuZCwKPiB8ID4gPiBy
+YXRoZXIgdGhhbiB0byByZXBvcnQgdGhlIHBpZHMgb2Ygc3BlY2lmaWVkICdmb28nIAo+IHwgPiA+
+IGNvbnRhaW5lciBpbiB0aGlzIGNhc2UuCj4gfCA+ID4gCj4gfCA+ID4gU28gYSBwYXRjaCBzaG91
+bGQgYWRkcmVzcyB0aGlzIHBvaW50LAo+IHwgPiA+IHJhdGhlciB0byByZW1vdmUgdGhlIGNvbnRh
+aW5lciBjb2x1bW4uCj4gfCA+IAo+IHwgPiBJbiBmYWN0IHRoZXJlIGlzIG5vIGVycm9yIGluIHRo
+ZSBzY3JpcHQgOikKPiB8ID4gVGhlIC1uIG9wdGlvbiBmb3IgbHhjLXBzIGlzIGEgcHMgb3B0aW9u
+ICEgCj4gCj4gQWgsIGdvb2QgcG9pbnQuIExpa2UgU2VyZ2UgcG9pbnRlZCwgSSBnb3QgdGhlIC1u
+IG1peGVkIHVwIHdpdGggb3RoZXIKPiBseGMtIGNvbW1hbmRzLgo+IAo+IEV2ZW4gc28sIEkgc3Rp
+bGwgdGhpbmsgdGhlIGJsYW5rIENPTlRBSU5FUiBjb2x1bW4gaXMgbWlzbGVhZGluZy4KPiBEb2Vz
+IGl0IG1lYW4gdGhhdCB0aGUgbGlzdGVkIHByb2Nlc3NlcyBhcmUgbm90IHBhcnQgb2YgYW55IGNv
+bnRhaW5lciA/Cj4gTGlrZSAvYmluL3BzIHdoaWNoIHByaW50cywgc2F5IHRoZSBQR0lEIGNvbHVt
+biwgb25seSB3dWl1aWhlbiBzZWxlY3RlZCwKPiB3b3VsZG4ndCBpdCBtYWtlIHNlbnNlIHRvIHBy
+aW50IHRoZSBDT05UQUlORVIgY29sdW1uIG9ubHkgd2hlbiBuZWNlc3NhcnkgPwo+IAoKVGhlIHB1
+cnBvc2Ugb2YgdGhlIENPTlRBSU5FUiBjb2x1bW4gcHJpbnRlZCBpbiBhbnkgY2FzZSwKaXMgdG8g
+YmUgYWJsZSB0byBoYXZlIHRoZSByZWxhdGlvbnMgb2YgcHJvY2Vzc2VzIGluIGNvbnRhaW5lcnMK
+dmVyc3VzIHRoZWlyIHBhcmVudHMgb3V0c2lkZSBvZiBjb250YWluZXJzLgp3aGVuIHlvdSBkbyBh
+IHJlcXVlc3QgbGlrZSBseGMtcHMgYXhmCgotLS0KTWljaGVsCgo+IFRoYW5rcywKPiAKPiBTdWth
+ZGV2CgoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29u
+dGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9y
+ZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29u
+dGFpbmVycw==
