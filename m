@@ -1,13 +1,14 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH user-cr] add -t option to mount new devpts
-Date: Fri, 12 Feb 2010 11:33:17 -0500
-Message-ID: <4B7582CD.9070900@cs.columbia.edu>
-References: <20091204014347.GA17304@us.ibm.com>
+From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [lxc-devel] [PATCH 1/1] lxc-ps: Nit - Avoid blank CONTAINER column
+Date: Fri, 12 Feb 2010 17:54:36 +0100
+Message-ID: <4B7587CC.6070706__41497.5797328681$1265993813$gmane$org@fr.ibm.com>
+References: <20100211042531.GA8835@us.ibm.com>	<1265882900.2591.65.camel@pagloppaglop>	<1265883662.2591.68.camel@pagloppaglop>
+	<20100211155446.GC6884@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20091204014347.GA17304-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20100211155446.GC6884-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,136 +19,23 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, dlezcano-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+>> In fact there is no error in the script :)
+>> The -n option for lxc-ps is a ps option !
+>
+> heh, good catch - given -n is pretty ubiquitous in lxc
+> commands it should probably be used here :)
+>
+> And a '--' should be allowed to separate lxc-ps options from
+> /bin/ps ones.
 
-Sorry for the late response ...
+lxc-ps is just an enhanced ps and, ultimately, lxc-ps should disappear and
+be replaced by a new ps option, like the -z on solaris. this is similar to
+the -Z for listing the security context of a file the with ls
 
-Serge E. Hallyn wrote:
-> Trivial patch, and I'm not sure whether we want this or want to
-> do it this way.  But it saves me having to do it during my restart.sh
-> wrapper shell-script.
+I agree with suka that -n shouldn't be used as a short option for --name.
+because the result is confusing.
 
-This looks useful.
-
-I wonder if it makes sense to generalize that to allow the user
-to request any mount (and multiple mounts), e.g.
-	restart --mount="......" --mount="......." ...
-
-With this switch, 'restart' will create a new mntns and do the
-mounts in it.
-
-We can then add shortcuts, like --mount-ptys.
-
-However, I'm concerned about the security implications: ideally
-'restart' will be setuid executable, so it must be prudent in
-accepting such generic requests as 'mount'.
-
-This last argument is also valid if we stay with this patch,
-because it is racy (time of check to time of use).
-
-> 
-> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  restart.c |   35 ++++++++++++++++++++++++++++++++++-
->  1 files changed, 34 insertions(+), 1 deletions(-)
-> 
-> diff --git a/restart.c b/restart.c
-> index 063e973..03c1850 100644
-> --- a/restart.c
-> +++ b/restart.c
-> @@ -30,6 +30,7 @@
->  #include <asm/unistd.h>
->  #include <sys/syscall.h>
->  #include <sys/prctl.h>
-> +#include <sys/mount.h>
->  
->  #include <linux/sched.h>
->  #include <linux/checkpoint.h>
-> @@ -79,6 +80,7 @@ static char usage_str[] =
->  "  -l,--logfile=FILE     write error and debug data to FILE (default=none)\n"
->  "     --logfile-fd=FD    write error and debug data to file desctiptor FD\n"
->  "     --inspect          inspect image on-the-fly for error records\n"
-> +"  -t,--pty		 start in a new devpts namespace to support ptys\n"
->  "  -v,--verbose          verbose output\n"
->  "  -d,--debug            debugging output\n"
->  "     --warn-COND        warn on condition COND, but proceed anyways\n"
-> @@ -365,6 +367,7 @@ struct args {
->  	long warn;
->  	long fail;
->  	int keep_lsm;
-> +	int pty;
->  };
->  
->  #define CKPT_COND_PIDZERO  0x1
-> @@ -444,9 +447,10 @@ static void parse_args(struct args *args, int argc, char *argv[])
->  		{ "debug",	no_argument,		NULL, 'd' },
->  		{ "warn-pidzero",	no_argument,	NULL, 9 },
->  		{ "fail-pidzero",	no_argument,	NULL, 10 },
-> +		{ "pty", no_argument,			NULL, 't'},
->  		{ NULL,		0,			NULL, 0 }
->  	};
-> -	static char optc[] = "hdvkpPwWF:r:i:l:";
-> +	static char optc[] = "hdvkpPwWF:r:i:l:t";
->  
->  	int optind;
->  	int sig;
-> @@ -456,6 +460,7 @@ static void parse_args(struct args *args, int argc, char *argv[])
->  	args->wait = 1;
->  	args->infd = -1;
->  	args->logfd = -1;
-> +	args->pty = 0;
->  
->  	while (1) {
->  		int c = getopt_long(argc, argv, optc, opts, &optind);
-> @@ -469,6 +474,9 @@ static void parse_args(struct args *args, int argc, char *argv[])
->  		case 'v':
->  			global_verbose = 1;
->  			break;
-> +		case 't':
-> +			args->pty = 1;
-> +			break;
->  		case 5:  /* --inspect */
->  			args->inspect = 1;
->  			break;
-> @@ -786,6 +794,31 @@ int main(int argc, char *argv[])
->  		exit(1);
->  	}
->  
-> +	/* private devpts namespace? */
-> +	if (args.pty) {
-> +		struct stat ptystat;
-> +		/* make sure /dev/ptmx is a link else we'll just break */
-> +		ret = lstat("/dev/ptmx", &ptystat);
-> +		if (ret) {
-> +			perror("stat /dev/ptmx");
-> +			exit(1);
-> +		}
-> +		if ((ptystat.st_mode & S_IFMT) != S_IFLNK) {
-> +			printf("Error: /dev/ptmx must be a link to /dev/pts/ptmx\n");
-> +			exit(1);
-> +		}
-
-Do we really need these two tests ?  Wouldn't the mount below
-fail anyway in these cases ?
-
-> +		ret = unshare(CLONE_NEWNS);
-> +		if (ret) {
-> +			perror("unshare mounts ns (for -pty)");
-> +			exit(1);
-> +		}
-> +		ret = mount("pts", "/dev/pts", "devpts", 0, "newinstance");
-> +		if (ret) {
-> +			perror("mount -t devpts -o newinstance");
-> +			exit(1);
-> +		}
-> +	}
-> +
->  	/* self-restart ends here: */
->  	if (args.self) {
->  		restart(getpid(), STDIN_FILENO, RESTART_TASKSELF, args.logfd);
-
-Thanks,
-
-Oren.
+C.  
