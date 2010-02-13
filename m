@@ -1,17 +1,19 @@
-From: Jean-Marc Pigeon <jmp-4qkeo2rQ0gg@public.gmane.org>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 1/1] Syslog are now containerized
-Date: Sat, 13 Feb 2010 16:56:16 -0500
-Message-ID: <1266098176.19130.320.camel@Mercier.safe.ca>
+Date: Sat, 13 Feb 2010 14:33:06 -0800
+Message-ID: <20100213223306.GB3714@count0.beaverton.ibm.com>
 References: <201002110552.o1B5qwbL024561@kernel.safe.ca>
 	<20100211174843.GF6884@us.ibm.com>
 	<20100213181158.GY3714@count0.beaverton.ibm.com>
 	<1266088499.19130.295.camel@Mercier.safe.ca>
 	<20100213203610.GA3714@count0.beaverton.ibm.com>
+	<1266098176.19130.320.camel@Mercier.safe.ca>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100213203610.GA3714-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1266098176.19130.320.camel-4BUXZ/Ty1v7iqR6jatDSCA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,51 +23,65 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Jean-Marc Pigeon <jmp-4qkeo2rQ0gg@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-SGVsbG8sCgpbLi4uXQo+IFRyYWNraW5nIGFsbCBvZiB0aGVzZSBhY2Nlc3NlcyBkb3duIGFuZCBl
-bnN1cmluZyB0aGV5IGFyZSBvbmx5IGRvbmUKPiBmcm9tICJpdHMgY29udGFpbmVyIGNvbnRleHQi
-IGlzIGRpZmZpY3VsdCBvciBpbXBvc3NpYmxlLiBJdCdzIG5vdCBhcwo+IGVhc3kgYXMgeW91IHNl
-ZW0gdG8gdGhpbmsuIEluIHNvbWUgY2FzZXMgdGhlIHNhbWUgcmVzb3VyY2UgY291bGQgYmUKPiBz
-aGFyZWQgYmV0d2VlbiBjb250YWluZXJzLiBXaGljaCBzaG91bGQgd2UgYWNjZXNzIGl0IGZyb20g
-dGhlbj8KCglIb3cgY29tZT8hIHJlc3NvdXJjZXMgKGEgZGV2aWNlLCBJcHRhYmxlIHJ1bGVzLC4u
-LikKCWNvbnRhaW5lcml6ZWQgd2l0aGluIG9uZSBjb250YWluZXIgY291bGQgYmUgc2hhcmVkIGJ5
-IAoJYW5vdGhlciB1bnJlbGF0ZWQgY29udGFpbmVyPy4KCglEb2VzIHRoaXMgbWVhbnMgKHNpbXBs
-ZSBleGFtcGxlKSBzb21lb25lIGNoYW5nZQoJaXB0YWJsZSBydWxlcyBmb3Igb25lIGNvbnRhaW5l
-ciB0aGF0IGNvdWxkIGNoYW5nZSAKCWFub3RoZXIgdW5yZWxhdGVkIGNvbnRhaW5lciBiZWhhdmlv
-ciA/IS4uLm5vIHdheS4uLgoJVGhpcyBvbmx5IGNhc2UgaXMgYSBzdWItY29udGFpbmVyIChhIGNv
-bnRhaW5lcgoJd2l0aGluIGEgY29udGFpbmVyKSwgYnV0IGluIHN1Y2ggY2FzZSB3ZSBhcmUgCglh
-cmUgaW4gdGhlIEhPU1Q6IHZlcnN1cyBDT05UOiBzaXR1YXRpb24uIERldmljZQoJd2lsbCBiZSBj
-b250cm9sbGVkIGJ5IENPTlQ6IGV2ZW4gaXMgdXNlZCBieSBTVUJDT05UOgoJQWxsIGRlcGVuZHMg
-d2hlcmUgdGhlIGRldmljZSBpcyBkZWZpbmVkICh3aGVyZQoJaXMgdGhlIGRlZmluaXRpb24gcmVz
-cG9uc2FiaWxpdHk/LCB0aGF0IHRoZSBxdWVzdGlvbgoJdG8gYXNzaWduIHN5c2xvZy4uLiwgdXNh
-Z2UgaXMgYW5vdGhlciBzdG9yeSkuCgo+IAo+ID4gCUtlZXAgaW4gbWluZCwgQSBmdWxseSBjb250
-YWluZXJpemVkIHN5c3RlbSBjYW4gYmUgbWFuYWdlZAo+ID4gCWJ5IHNvbWVvbmUgd2l0aCBmdWxs
-IHByaXZpbGVnZSBCVVQgTk9UIGluIGNoYXJnZSBvZiAKPiA+IAl0aGUgaG9zdCBpdHNlbGYgKElF
-OiB3aXRob3V0IGhvc3QgYWNjZXNzKS4KPiAKPiBTdXJlLiAoV2UncmUgbm90IHRoZXJlIHlldCBi
-dXQgSSB0aGluayB3ZSdkIGxpa2UgdG8gZ2V0Cj4gdGhlcmUgZXZlbnR1YWxseS4pCj4gCj4gPiAJ
-TXkgcHJvcG9zYWwgaXMgYSBjbGVhciBjdXQsIGlmIGEgcmVzc291cmNlIGlzIGNvbnRhaW5lcml6
-ZWQgCj4gPiAJcmVwb3J0IHRvIENPTlQ6IChjb250YWluZXJpemVkKSBzeXNsb2cuLi4gbm8gcXVl
-c3Rpb24gYXNrLgo+IAo+IFRoYXQgcGFydCBvZiB0aGUgcHJvcG9zYWwgaXMgc2ltcGxlIGFuZCBt
-YWtlcyBhbG90IG9mIHNlbnNlLiBUaGUKPiByYW1pZmNhdGlvbnMgb2YgaXQgb24ga2VybmVsIGNv
-ZGUgYXJlIG5vdCBzaW1wbGUgYW5kIG9mdGVuIHRoZXJlJ3MKPiBubyBjbGVhbiB3YXkgdG8gZG8g
-aXQuCglXZWxsLCB0aGlzIHRyb3VibGUgbWUgc29tZXdoYXQuLi4uCgkyLjYuMTgtMTI4LjIuMS5l
-bDUuMDI4c3RhYjA2NC43IChqdXN0IGFuIGV4YW1wbGUsIEkgYW0gdXNpbmcKCWRheSB0byBkYXkp
-LCBpcyBjb250YWluZXJpc2luZyBpcHRhYmxlcyBhbiBvdGhlciBzeXNsb2dzIAoJbmljZSB3YXku
-Li4uLAoJV2UgYXJlIG5vdyAyLjYuMzMgeW91IGFyZSB0ZWxsaW5nIG1lIHdoYXQgd2FzIGV4cGVy
-aW1lbnRlZCwKCWxlYXJuZWQsIG1vbnRoc3NzcyBhZ28gY2FuJ3Qgc3RpbGwgYmUgaW1wbGVtZW50
-ZWQgCglpbiBjdXJyZW50IGtlcm5lbCBtYWluIHN0cmVhbT8uLi4uIAoKCi0tIApBIGJpZW50w7R0
-Cj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09CkplYW4tTWFyYyBQaWdlb24gICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgIEludGVybmV0OiBqbXBAc2FmZS5jYQpTQUZFIEluYy4gICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICBQaG9uZTogKDUxNCkgNDkzLTQyODAKICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgRmF4OiAgICg1MTQp
-IDQ5My0xOTQ2CiAgICAgICAgQ2xlbWVudCwgJ2Ega2lzcyBzb2x1dGlvbicgdG8gZ2V0IHJpZCBv
-ZiBTUEFNIChhdCBsYXN0KQogICAgICAgICAgIENsZW1lbnQnIEhvbWUgYmFzZSA8Imh0dHA6Ly93
-d3cuY2xlbWVudC5zYWZlLmNhIj4KPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0KCl9fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNv
-bnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1m
-b3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+On Sat, Feb 13, 2010 at 04:56:16PM -0500, Jean-Marc Pigeon wrote:
+> Hello,
+> 
+> [...]
+> > Tracking all of these accesses down and ensuring they are only done
+> > from "its container context" is difficult or impossible. It's not as
+> > easy as you seem to think. In some cases the same resource could be
+> > shared between containers. Which should we access it from then?
+> 
+> 	How come?! ressources (a device, Iptable rules,...)
+
+Because it's kernel code. Kernel code implements interrupt handlers,
+schedules processes, and even does work inside kernel threads. We
+can't guarantee that some of the work initiated by a process is
+always done with current == <the process>. Hence ensuring that
+these accesses are only done from "its container context" is not
+reasonable. The best we can do is ensure that accesses from the
+processes in the container are contained.
+
+> 	containerized within one container could be shared by 
+> 	another unrelated container?.
+
+Yes. namespace boundaries only coincide if userspace chooses to
+make them coincide. For example, the tasks in a network namespace
+do not necessarily all share the same mount namespace.
+
+> 	Does this means (simple example) someone change
+> 	iptable rules for one container that could change 
+> 	another unrelated container behavior ?!...no way...
+
+Two "unrelated containers" would share the same iptables rules
+so long as they share a network namespace.
+
+<snip>
+
+> > > 	My proposal is a clear cut, if a ressource is containerized 
+> > > 	report to CONT: (containerized) syslog... no question ask.
+> > 
+> > That part of the proposal is simple and makes alot of sense. The
+> > ramifcations of it on kernel code are not simple and often there's
+> > no clean way to do it.
+> 	Well, this trouble me somewhat....
+> 	2.6.18-128.2.1.el5.028stab064.7 (just an example, I am using
+> 	day to day), is containerising iptables an other syslogs 
+> 	nice way....,
+
+Er.. you have a 2.6.18 kernel "containerising iptables an other syslogs"?
+I didn't think iptables supported network namespaces until somewhat
+recently. Is this an openvz-patched kernel you're talking about?
+
+> 	We are now 2.6.33 you are telling me what was experimented,
+> 	learned, monthssss ago can't still be implemented 
+> 	in current kernel main stream?.... 
+
+Careful. "no clean way to do it" does not mean "can't be done".
+
+Cheers,
+	-Matt Helsley
