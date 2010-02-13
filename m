@@ -1,7 +1,7 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Subject: Re: containerized syslog
-Date: Sat, 13 Feb 2010 08:03:20 -0800
-Message-ID: <20100213160320.GV3714@count0.beaverton.ibm.com>
+Date: Sat, 13 Feb 2010 10:05:15 -0600
+Message-ID: <20100213160515.GA2255@hallyn.com>
 References: <1265915683.19130.166.camel@Mercier.safe.ca>
 	<20100211192952.GA20191@us.ibm.com>
 	<20100213155813.GU3714@count0.beaverton.ibm.com>
@@ -24,10 +24,56 @@ To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Sat, Feb 13, 2010 at 07:58:13AM -0800, Matt Helsley wrote:
-
-<snip>
-
+Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> On Thu, Feb 11, 2010 at 01:29:52PM -0600, Serge E. Hallyn wrote:
+> > Quoting Jean-Marc Pigeon (jmp-4qkeo2rQ0gg@public.gmane.org):
+> > > Hello,
+> > > 
+> > > 
+> > > > 
+> > > > Thanks Jean-Marc.  But this really isn't doing most of what I'd
+> > > > recommended in my last emails (both public and private.  In
+> > > > particular:
+> > > [....]	
+> > > > 
+> > > > syslog_ns should be moved into nsproxy and unshared with a
+> > > > separate clone(CLONE_SYSLOG);
+> > > 	This this not a problem.
+> > > 	My understanding a new clone flag was not an option
+> > > 	as we are short in CLONE flag.
+> > > 	No design nor arch problem if we set  CLONE_SYSLOG
+> > > 	to be 0x100000000  ?????
+> > > 
+> > > 	If moved in nsproxy what is the hook to
+> > > 	get the "current context". (used current_user_ns()
+> > > 	as it was in user_namespace).
+> > > 
+> > > 
+> > > [...]	
+> > > 
+> > > > That was why I suggested:
+> > > [...]
+> > > > >! 4. take a printk call like the iptables ones you want and turn
+> > > > >! int into nsprintk syscall.
+> > > > >! 
+> > > 
+> > > 	If my understanding is right you propose to use a
+> > > 	special nsprintk to be used by iptable such
+> > > 	we can send "packet log" in "container context"
+> > > 	Right?
+> > > 
+> > > 	Logic is weak.
+> > 
+> > No logic is irrefutable :)  Because:
+> > 
+> > > 	1)
+> > > 	The way I changed printk, so far, make of it a "de facto"
+> > > 	nsprintk. So when called from netfilter, nsprintk
+> > > 	is still stay in HOST: context. My understanding,
+> > 
+> > No, it could be called from the context of a task in any
+> > random container.
+> 
 > Your comments seem good. However, I do have an issue with the
 > idea of finding a single syslog corresponding to the netns for
 > a hypothetical printk in iptables.
@@ -43,10 +89,14 @@ On Sat, Feb 13, 2010 at 07:58:13AM -0800, Matt Helsley wrote:
 > only go to one, correct? If so, my feeling is that nsprintk
 > shouldn't take a syslog_ns directly. It should take some other
 > form of namespace and then write to the syslog of all the
+> nsproxies which share that namespace (a netns in this case).
 
-Sorry, I don't think I worded this clearly. "some other form" means a
-non-syslog_ns which is "relevant" to the printk e.g. a netns for
-iptables code.
+Could do that - but I think it'd be fair to just keep track of
+a single netns->syslog_ns, namely the one which corresponded
+to the netns when netns was created.
 
-Cheers,
-	-Matt Helsley
+Don't allow unshare of syslog_ns, only clone.  That ensures that
+the init task in a container will always be tied to the same
+net, pid, and syslog namespaces, giving us a point of sanity.
+
+-serge
