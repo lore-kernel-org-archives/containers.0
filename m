@@ -1,15 +1,14 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH user-cr] add -t option to mount new devpts
-Date: Fri, 12 Feb 2010 11:05:28 -0600
-Message-ID: <20100212170528.GB15333@us.ibm.com>
-References: <20091204014347.GA17304@us.ibm.com>
-	<4B7582CD.9070900@cs.columbia.edu>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/1] Syslog are now containerized
+Date: Sat, 13 Feb 2010 07:50:50 -0800
+Message-ID: <20100213155050.GT3714@count0.beaverton.ibm.com>
+References: <201002110552.o1B5qwbL024561@kernel.safe.ca>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4B7582CD.9070900-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <201002110552.o1B5qwbL024561-X4ZF2iejbABnc3BsFfMrZw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,52 +18,54 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Jean-Marc Pigeon <jmp-4qkeo2rQ0gg@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serue-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> 
-> Sorry for the late response ...
-> 
-> Serge E. Hallyn wrote:
-> >Trivial patch, and I'm not sure whether we want this or want to
-> >do it this way.  But it saves me having to do it during my restart.sh
-> >wrapper shell-script.
-> 
-> This looks useful.
-> 
-> I wonder if it makes sense to generalize that to allow the user
-> to request any mount (and multiple mounts), e.g.
-> 	restart --mount="......" --mount="......." ...
+Thanks for working on this. Some minor style issues below:
 
-Or just a --fstab=some_file option?
+On Thu, Feb 11, 2010 at 01:00:20AM -0500, Jean-Marc Pigeon wrote:
+> 	Added syslog.c such container /proc/kmsg and host /proc/kmsg
+> 	do not leak in each other.
+> 	Running rsyslog daemon within a container won't destroy
+> 	host kernel messages.
+> ---
 
-> With this switch, 'restart' will create a new mntns and do the
-> mounts in it.
-> 
-> We can then add shortcuts, like --mount-ptys.
-> 
-> However, I'm concerned about the security implications: ideally
-> 'restart' will be setuid executable, so it must be prudent in
-> accepting such generic requests as 'mount'.
+<snip>
 
-Hmm, we could use our own mount binary, which is willing to
-mount things like devpts and proc as root (since that's completely
-private) but otherwise runs the mounts as the original user?  Eventually
-do that on top of Miklos' unprivileged-mounts patchset, which will allow
-bind mounts on top of dirs/files to which the user has write access.  In
-the meantime other mounts would only be allowed if the user was
-originally root.
+> diff --git a/kernel/syslog.c b/kernel/syslog.c
+> new file mode 100644
+> index 0000000..69d30a9
+> --- /dev/null
+> +++ b/kernel/syslog.c
+> @@ -0,0 +1,157 @@
 
-So basically our mount binary would be run with euid=0 and
-ruid=suid=N where N is the original userid.
+<snip>
 
-> This last argument is also valid if we stay with this patch,
-> because it is racy (time of check to time of use).
+> +		(void) kfree(old_buf);
+> +		}
+> +	(void) printk(KERN_NOTICE "log_buf_len: %u\n", syslog_ns->buf_len);
 
-Yeah I'm not sure we can solve this right now.  We might be best
-off saying that only ruid=0 can do the mounts, and mention something
-about setuid-root restart.c can trust TPM-signed checkpoint images.
+I don't understand why you chose to put in all of the "(void)" casts.
+They do nothing -- they don't change how the code works nor do they
+improve the readability of the code.
 
--serge
+> +	return syslog_ns;
+> +}
+> +/*
+> + * Procedure to free all ressources tied to syslog
+> + *
+> + */
+> +struct syslog_ns *syslog_free(struct syslog_ns *syslog)
+> +
+> +{
+> +	if (syslog != (struct syslog_ns *)0) {
+
+Why aren't you using NULL? Better yet, in these cases it's common to use:
+
+if (syslog) {
+
+Once this gets out of the RFC steps perhaps run these through checkpatch..
+
+Cheers,
+	-Matt Helsley
