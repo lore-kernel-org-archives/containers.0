@@ -1,16 +1,15 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: containerized syslog
-Date: Sat, 13 Feb 2010 10:05:15 -0600
-Message-ID: <20100213160515.GA2255@hallyn.com>
-References: <1265915683.19130.166.camel@Mercier.safe.ca>
-	<20100211192952.GA20191@us.ibm.com>
-	<20100213155813.GU3714@count0.beaverton.ibm.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/1] Syslog are now containerized
+Date: Sat, 13 Feb 2010 10:11:58 -0800
+Message-ID: <20100213181158.GY3714@count0.beaverton.ibm.com>
+References: <201002110552.o1B5qwbL024561@kernel.safe.ca>
+	<20100211174843.GF6884@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20100213155813.GU3714-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
+In-Reply-To: <20100211174843.GF6884-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,83 +19,85 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> On Thu, Feb 11, 2010 at 01:29:52PM -0600, Serge E. Hallyn wrote:
-> > Quoting Jean-Marc Pigeon (jmp-4qkeo2rQ0gg@public.gmane.org):
-> > > Hello,
-> > > 
-> > > 
-> > > > 
-> > > > Thanks Jean-Marc.  But this really isn't doing most of what I'd
-> > > > recommended in my last emails (both public and private.  In
-> > > > particular:
-> > > [....]	
-> > > > 
-> > > > syslog_ns should be moved into nsproxy and unshared with a
-> > > > separate clone(CLONE_SYSLOG);
-> > > 	This this not a problem.
-> > > 	My understanding a new clone flag was not an option
-> > > 	as we are short in CLONE flag.
-> > > 	No design nor arch problem if we set  CLONE_SYSLOG
-> > > 	to be 0x100000000  ?????
-> > > 
-> > > 	If moved in nsproxy what is the hook to
-> > > 	get the "current context". (used current_user_ns()
-> > > 	as it was in user_namespace).
-> > > 
-> > > 
-> > > [...]	
-> > > 
-> > > > That was why I suggested:
-> > > [...]
-> > > > >! 4. take a printk call like the iptables ones you want and turn
-> > > > >! int into nsprintk syscall.
-> > > > >! 
-> > > 
-> > > 	If my understanding is right you propose to use a
-> > > 	special nsprintk to be used by iptable such
-> > > 	we can send "packet log" in "container context"
-> > > 	Right?
-> > > 
-> > > 	Logic is weak.
-> > 
-> > No logic is irrefutable :)  Because:
-> > 
-> > > 	1)
-> > > 	The way I changed printk, so far, make of it a "de facto"
-> > > 	nsprintk. So when called from netfilter, nsprintk
-> > > 	is still stay in HOST: context. My understanding,
-> > 
-> > No, it could be called from the context of a task in any
-> > random container.
+On Thu, Feb 11, 2010 at 11:48:43AM -0600, Serge E. Hallyn wrote:
+> Quoting Jean-Marc Pigeon (jmp-4qkeo2rQ0gg@public.gmane.org):
+> > 	Added syslog.c such container /proc/kmsg and host /proc/kmsg
+> > 	do not leak in each other.
+> > 	Running rsyslog daemon within a container won't destroy
+> > 	host kernel messages.
 > 
-> Your comments seem good. However, I do have an issue with the
-> idea of finding a single syslog corresponding to the netns for
-> a hypothetical printk in iptables.
+> Thanks Jean-Marc.  But this really isn't doing most of what I'd
+> recommended in my last emails (both public and private.  In
+> particular:
 > 
-> What happens with:
+> > index cc4f453..3d0c73e 100644
+> > --- a/include/linux/user_namespace.h
+> > +++ b/include/linux/user_namespace.h
+> > @@ -14,6 +14,7 @@ struct user_namespace {
+> >  	struct hlist_head	uidhash_table[UIDHASH_SZ];
+> >  	struct user_struct	*creator;
+> >  	struct work_struct	destroyer;
+> > +	struct syslog_ns        *syslog;
 > 
-> /* in init_syslog_ns */
-> clone(CLONE_SYSLOG) /* syslog_ns 1 */
-> clone(CLONE_SYSLOG) /* syslog_ns 2 */
-> <do something with iptables in the netns which triggers a printk>
-> 
-> Even though that same printk is relevant to three "syslogs", it'll
-> only go to one, correct? If so, my feeling is that nsprintk
-> shouldn't take a syslog_ns directly. It should take some other
-> form of namespace and then write to the syslog of all the
-> nsproxies which share that namespace (a netns in this case).
+> syslog_ns should be moved into nsproxy and unshared with a
+> separate clone(CLONE_SYSLOG);
 
-Could do that - but I think it'd be fair to just keep track of
-a single netns->syslog_ns, namely the one which corresponded
-to the netns when netns was created.
+I agree. Keeping it in the user_namespace is strange. It should
+be in the nsproxy along with all of the other namespace pointers.
 
-Don't allow unshare of syslog_ns, only clone.  That ensures that
-the init task in a container will always be tied to the same
-net, pid, and syslog namespaces, giving us a point of sanity.
+> 
+> > -static void emit_log_char(char c)
+> > +static void emit_log_char(struct syslog_ns *syslog_ns, char c)
+> >  {
+> > -	LOG_BUF(log_end) = c;
+> > -	log_end++;
+> > -	if (log_end - log_start > log_buf_len)
+> > -		log_start = log_end - log_buf_len;
+> > -	if (log_end - con_start > log_buf_len)
+> > -		con_start = log_end - log_buf_len;
+> > -	if (logged_chars < log_buf_len)
+> > -		logged_chars++;
+> > +	LOG_BUF(syslog_ns, sys_log_end) = c;
+> 
+> Taking syslog_ns from current in emit_log_char is not right.
+> Emit_log_char() is called from printk which (the comment above
+> printk warns us) can be called from any context.
+> 
+> That was why I suggested:
+> 
+> >! I think my patch is fundamentally wrong anyway:  we should not
+> >! use current's context at vprintk like i did.  We should use an
+> >! optional passed-in context from those callsites where we want to,
+> >! and default to init otherwise.  That means
+> >! 
+> >! 1. put the core of vprintk() into vnsprintk() which takes a syslog
+> >! namespace as argument
+> >! 
+> >! 2. make vprintk() a wrapper around vnsprintk() which passes in
+> >! init_syslog_ns to vnsprintk().  printk can remain unchanged.
+> >! 
+> >! 4. make nsprintk() a wrapper around vnsprintk() which takes a syslog
+> >! ns argument and pass it to vnsprintk()
+> >! 
+> >! 3. do_syslog() can obviously be containerized the same way it
+> >! is now.
+> >! 
+> >! 4. take a printk call like the iptables ones you want and turn
+> >! int into nsprintk syscall.
 
--serge
+Definitely. Actually, I think we can go one step further and say that
+passing syslog_ns directly to nsprintk() is wrong too. It's wrong
+because we only know the namespace that's relevant to the printk
+contents -- and that won't usually be a syslog_ns.
+
+Better to have the "find corresponding syslog_ns" logic inside
+nsprintk(). The great thing about doing it this way is if we
+ever decide to duplicate printk output to multiple containers it
+can be done inside nsprintk rather than doing a flag-day patch.
+
+Cheers,
+	-Matt Helsley
