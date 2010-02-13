@@ -1,17 +1,17 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: Jean-Marc Pigeon <jmp-4qkeo2rQ0gg@public.gmane.org>
 Subject: Re: [PATCH 1/1] Syslog are now containerized
-Date: Sat, 13 Feb 2010 12:36:10 -0800
-Message-ID: <20100213203610.GA3714@count0.beaverton.ibm.com>
+Date: Sat, 13 Feb 2010 16:56:16 -0500
+Message-ID: <1266098176.19130.320.camel@Mercier.safe.ca>
 References: <201002110552.o1B5qwbL024561@kernel.safe.ca>
 	<20100211174843.GF6884@us.ibm.com>
 	<20100213181158.GY3714@count0.beaverton.ibm.com>
 	<1266088499.19130.295.camel@Mercier.safe.ca>
+	<20100213203610.GA3714@count0.beaverton.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1266088499.19130.295.camel-4BUXZ/Ty1v7iqR6jatDSCA@public.gmane.org>
+In-Reply-To: <20100213203610.GA3714-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,156 +21,51 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jean-Marc Pigeon <jmp-4qkeo2rQ0gg@public.gmane.org>
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Sat, Feb 13, 2010 at 02:14:59PM -0500, Jean-Marc Pigeon wrote:
-> Hello,
-> 
-> On Sat, 2010-02-13 at 10:11 -0800, Matt Helsley wrote:
-> > On Thu, Feb 11, 2010 at 11:48:43AM -0600, Serge E. Hallyn wrote:
-> > > Quoting Jean-Marc Pigeon (jmp-4qkeo2rQ0gg@public.gmane.org):
-> > > > 	Added syslog.c such container /proc/kmsg and host /proc/kmsg
-> > > > 	do not leak in each other.
-> > > > 	Running rsyslog daemon within a container won't destroy
-> > > > 	host kernel messages.
-> > > 
-> > > Thanks Jean-Marc.  But this really isn't doing most of what I'd
-> > > recommended in my last emails (both public and private.  In
-> > > particular:
-> > > 
-> > > > index cc4f453..3d0c73e 100644
-> > > > --- a/include/linux/user_namespace.h
-> > > > +++ b/include/linux/user_namespace.h
-> > > > @@ -14,6 +14,7 @@ struct user_namespace {
-> > > >  	struct hlist_head	uidhash_table[UIDHASH_SZ];
-> > > >  	struct user_struct	*creator;
-> > > >  	struct work_struct	destroyer;
-> > > > +	struct syslog_ns        *syslog;
-> > > 
-> > > syslog_ns should be moved into nsproxy and unshared with a
-> > > separate clone(CLONE_SYSLOG);
-> > 
-> > I agree. Keeping it in the user_namespace is strange. It should
-> > be in the nsproxy along with all of the other namespace pointers.
-> 	I won't argue on this, I put it in user_namespace as
-> 	serge proposed it at first and code implementation
-> 	was a test/trial to me.
-> 	Setting syslog in nsproxy is fine to me (seems
-> 	every body agree.. right?)
-
-Good, thanks!
-
-> [...]
-> > 
-> > Definitely. Actually, I think we can go one step further and say that
-> > passing syslog_ns directly to nsprintk() is wrong too. It's wrong
-> > because we only know the namespace that's relevant to the printk
-> > contents -- and that won't usually be a syslog_ns.
-> > 
-> > Better to have the "find corresponding syslog_ns" logic inside
-> > nsprintk(). The great thing about doing it this way is if we
-> > ever decide to duplicate printk output to multiple containers it
-> > can be done inside nsprintk rather than doing a flag-day patch.
-> 
-> 	I tend to agree with you Matt.
-> 
-> 	I strongly disagree about what I understand 
-> 	about Serge proposal to add a "new printk".
-> 
-> 	What is the purpose of printk?
-> 	- Report a system data to the acting authority.
-> 
-> 	Syslog cant be sent to:
-> 	HOST: syslog
-> 	CONT: syslog
-> 	CONT: + HOST:  syslog (duplication)
-> 	Decision to duplicate syslog can be a printk
-> 	privilege, lets says "according message level".
-> 
-> 	Decision to send  to HOST: or CONT: syslog
-> 	is depending execution context, which
-> 	can be found back within the printk function
-> 	itself (so no need to have ns_printk).
-> 
-> 	What is proposing Serge is to HARD CODE WITHIN kernel
-> 	if we call the genuine printk or ns_printk, which
-> 	is now a door wide open to coder interpretation ("is
-> 	printk message containerised or not", my coding decision
-> 	is as good as yours, and nobody will be satisfied).
-
-I think it will be pretty clear from the code which is preferred,
-printk or nsprintk. For example, output from the the various module
-__init functions obviously does not belong in an nsprintk().
-
-> 
-> 	My proposal is to say, if a ressource is containerized
-> 	it must be used in containerized context, this means
-> 	all printk are called within the context anyway.
-
-But that simply does not happen in all kernel code. Please see my
-kernel thread point. Not all work happens in a "containerized
-context". Same thing with the __init example above. It doesn't
-matter which container caused the module to be loaded -- only
-that the kernel has loaded it. So nsprintk() doesn't make sense
-there, even though there is the initial namespace to use.
-
-> 	What does that mean in real life?. lets call again the iptable
-> 	example.
-> 
-> 	We already have a HOST: iptables set AND a CONT: iptables
-> 	set. I have for my say, to keep consistency we MUST
-> 	execute CONT: iptables rules checking within the CONT: context
-> 	(which is not the case now... IMHO).
-
-Enforcing this using "current" would require duplicating kernel
-threads on a per-container basis. That's simply not going to fly
-with the kernel community (and for good reason).
-
-> 
-> 	This approach is coherent, if a ressource (iptable,
-> 	network device, file system,...) is defined AND managed within
-
-It sounds reasonable except you're hand-waving alot of the complexity
-away first.
-
-> 	CONT: report must be done TO CONT: (period). Means
-> 	coding level need to take care ONLY about 'ressource'
-> 	ownership, if it is "own" by CONT:  then access it in its  
-> 	CONT: context.
-
-Tracking all of these accesses down and ensuring they are only done
-from "its container context" is difficult or impossible. It's not as
-easy as you seem to think. In some cases the same resource could be
-shared between containers. Which should we access it from then?
-
-> 	Keep in mind, A fully containerized system can be managed
-> 	by someone with full privilege BUT NOT in charge of 
-> 	the host itself (IE: without host access).
-
-Sure. (We're not there yet but I think we'd like to get
-there eventually.)
-
-> 	My proposal is a clear cut, if a ressource is containerized 
-> 	report to CONT: (containerized) syslog... no question ask.
-
-That part of the proposal is simple and makes alot of sense. The
-ramifcations of it on kernel code are not simple and often there's
-no clean way to do it.
-
-Have a look at the iptables code. I've been looking at it and the
-way to make the various printks namespace-clean is far from obvious
-without drastically changing the core data structures of iptables.
-It's also not obvious that making them namespace clean is
-really useful (as Eric seemed to imply). ipt_LOG.c and ipt_ULOG.c are
-perhaps the best arguments for nsprintk() in iptables.
-
-> 	(sure enough printk could duplicate message to HOST:
-> 	 my guess it won't be really needed in practical life,
-> 	 but I could be wrong....)
-
-Yup.
-
-Cheers,
-	-Matt Helsley
+SGVsbG8sCgpbLi4uXQo+IFRyYWNraW5nIGFsbCBvZiB0aGVzZSBhY2Nlc3NlcyBkb3duIGFuZCBl
+bnN1cmluZyB0aGV5IGFyZSBvbmx5IGRvbmUKPiBmcm9tICJpdHMgY29udGFpbmVyIGNvbnRleHQi
+IGlzIGRpZmZpY3VsdCBvciBpbXBvc3NpYmxlLiBJdCdzIG5vdCBhcwo+IGVhc3kgYXMgeW91IHNl
+ZW0gdG8gdGhpbmsuIEluIHNvbWUgY2FzZXMgdGhlIHNhbWUgcmVzb3VyY2UgY291bGQgYmUKPiBz
+aGFyZWQgYmV0d2VlbiBjb250YWluZXJzLiBXaGljaCBzaG91bGQgd2UgYWNjZXNzIGl0IGZyb20g
+dGhlbj8KCglIb3cgY29tZT8hIHJlc3NvdXJjZXMgKGEgZGV2aWNlLCBJcHRhYmxlIHJ1bGVzLC4u
+LikKCWNvbnRhaW5lcml6ZWQgd2l0aGluIG9uZSBjb250YWluZXIgY291bGQgYmUgc2hhcmVkIGJ5
+IAoJYW5vdGhlciB1bnJlbGF0ZWQgY29udGFpbmVyPy4KCglEb2VzIHRoaXMgbWVhbnMgKHNpbXBs
+ZSBleGFtcGxlKSBzb21lb25lIGNoYW5nZQoJaXB0YWJsZSBydWxlcyBmb3Igb25lIGNvbnRhaW5l
+ciB0aGF0IGNvdWxkIGNoYW5nZSAKCWFub3RoZXIgdW5yZWxhdGVkIGNvbnRhaW5lciBiZWhhdmlv
+ciA/IS4uLm5vIHdheS4uLgoJVGhpcyBvbmx5IGNhc2UgaXMgYSBzdWItY29udGFpbmVyIChhIGNv
+bnRhaW5lcgoJd2l0aGluIGEgY29udGFpbmVyKSwgYnV0IGluIHN1Y2ggY2FzZSB3ZSBhcmUgCglh
+cmUgaW4gdGhlIEhPU1Q6IHZlcnN1cyBDT05UOiBzaXR1YXRpb24uIERldmljZQoJd2lsbCBiZSBj
+b250cm9sbGVkIGJ5IENPTlQ6IGV2ZW4gaXMgdXNlZCBieSBTVUJDT05UOgoJQWxsIGRlcGVuZHMg
+d2hlcmUgdGhlIGRldmljZSBpcyBkZWZpbmVkICh3aGVyZQoJaXMgdGhlIGRlZmluaXRpb24gcmVz
+cG9uc2FiaWxpdHk/LCB0aGF0IHRoZSBxdWVzdGlvbgoJdG8gYXNzaWduIHN5c2xvZy4uLiwgdXNh
+Z2UgaXMgYW5vdGhlciBzdG9yeSkuCgo+IAo+ID4gCUtlZXAgaW4gbWluZCwgQSBmdWxseSBjb250
+YWluZXJpemVkIHN5c3RlbSBjYW4gYmUgbWFuYWdlZAo+ID4gCWJ5IHNvbWVvbmUgd2l0aCBmdWxs
+IHByaXZpbGVnZSBCVVQgTk9UIGluIGNoYXJnZSBvZiAKPiA+IAl0aGUgaG9zdCBpdHNlbGYgKElF
+OiB3aXRob3V0IGhvc3QgYWNjZXNzKS4KPiAKPiBTdXJlLiAoV2UncmUgbm90IHRoZXJlIHlldCBi
+dXQgSSB0aGluayB3ZSdkIGxpa2UgdG8gZ2V0Cj4gdGhlcmUgZXZlbnR1YWxseS4pCj4gCj4gPiAJ
+TXkgcHJvcG9zYWwgaXMgYSBjbGVhciBjdXQsIGlmIGEgcmVzc291cmNlIGlzIGNvbnRhaW5lcml6
+ZWQgCj4gPiAJcmVwb3J0IHRvIENPTlQ6IChjb250YWluZXJpemVkKSBzeXNsb2cuLi4gbm8gcXVl
+c3Rpb24gYXNrLgo+IAo+IFRoYXQgcGFydCBvZiB0aGUgcHJvcG9zYWwgaXMgc2ltcGxlIGFuZCBt
+YWtlcyBhbG90IG9mIHNlbnNlLiBUaGUKPiByYW1pZmNhdGlvbnMgb2YgaXQgb24ga2VybmVsIGNv
+ZGUgYXJlIG5vdCBzaW1wbGUgYW5kIG9mdGVuIHRoZXJlJ3MKPiBubyBjbGVhbiB3YXkgdG8gZG8g
+aXQuCglXZWxsLCB0aGlzIHRyb3VibGUgbWUgc29tZXdoYXQuLi4uCgkyLjYuMTgtMTI4LjIuMS5l
+bDUuMDI4c3RhYjA2NC43IChqdXN0IGFuIGV4YW1wbGUsIEkgYW0gdXNpbmcKCWRheSB0byBkYXkp
+LCBpcyBjb250YWluZXJpc2luZyBpcHRhYmxlcyBhbiBvdGhlciBzeXNsb2dzIAoJbmljZSB3YXku
+Li4uLAoJV2UgYXJlIG5vdyAyLjYuMzMgeW91IGFyZSB0ZWxsaW5nIG1lIHdoYXQgd2FzIGV4cGVy
+aW1lbnRlZCwKCWxlYXJuZWQsIG1vbnRoc3NzcyBhZ28gY2FuJ3Qgc3RpbGwgYmUgaW1wbGVtZW50
+ZWQgCglpbiBjdXJyZW50IGtlcm5lbCBtYWluIHN0cmVhbT8uLi4uIAoKCi0tIApBIGJpZW50w7R0
+Cj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
+PT09PT09PT09PT09PT09PT09CkplYW4tTWFyYyBQaWdlb24gICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgIEludGVybmV0OiBqbXBAc2FmZS5jYQpTQUZFIEluYy4gICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICBQaG9uZTogKDUxNCkgNDkzLTQyODAKICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgRmF4OiAgICg1MTQp
+IDQ5My0xOTQ2CiAgICAgICAgQ2xlbWVudCwgJ2Ega2lzcyBzb2x1dGlvbicgdG8gZ2V0IHJpZCBv
+ZiBTUEFNIChhdCBsYXN0KQogICAgICAgICAgIENsZW1lbnQnIEhvbWUgYmFzZSA8Imh0dHA6Ly93
+d3cuY2xlbWVudC5zYWZlLmNhIj4KPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
+PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0KCl9fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNv
+bnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1m
+b3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
