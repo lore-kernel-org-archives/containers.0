@@ -1,19 +1,19 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: Jean-Marc Pigeon <jmp-4qkeo2rQ0gg@public.gmane.org>
 Subject: Re: [PATCH 1/1] Syslog are now containerized
-Date: Sat, 13 Feb 2010 14:33:06 -0800
-Message-ID: <20100213223306.GB3714@count0.beaverton.ibm.com>
+Date: Sat, 13 Feb 2010 19:51:44 -0500
+Message-ID: <1266108704.19130.346.camel@Mercier.safe.ca>
 References: <201002110552.o1B5qwbL024561@kernel.safe.ca>
 	<20100211174843.GF6884@us.ibm.com>
 	<20100213181158.GY3714@count0.beaverton.ibm.com>
 	<1266088499.19130.295.camel@Mercier.safe.ca>
 	<20100213203610.GA3714@count0.beaverton.ibm.com>
 	<1266098176.19130.320.camel@Mercier.safe.ca>
+	<20100213223306.GB3714@count0.beaverton.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1266098176.19130.320.camel-4BUXZ/Ty1v7iqR6jatDSCA@public.gmane.org>
+In-Reply-To: <20100213223306.GB3714-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,65 +23,61 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jean-Marc Pigeon <jmp-4qkeo2rQ0gg@public.gmane.org>
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Sat, Feb 13, 2010 at 04:56:16PM -0500, Jean-Marc Pigeon wrote:
-> Hello,
-> 
-> [...]
-> > Tracking all of these accesses down and ensuring they are only done
-> > from "its container context" is difficult or impossible. It's not as
-> > easy as you seem to think. In some cases the same resource could be
-> > shared between containers. Which should we access it from then?
-> 
-> 	How come?! ressources (a device, Iptable rules,...)
-
-Because it's kernel code. Kernel code implements interrupt handlers,
-schedules processes, and even does work inside kernel threads. We
-can't guarantee that some of the work initiated by a process is
-always done with current == <the process>. Hence ensuring that
-these accesses are only done from "its container context" is not
-reasonable. The best we can do is ensure that accesses from the
-processes in the container are contained.
-
-> 	containerized within one container could be shared by 
-> 	another unrelated container?.
-
-Yes. namespace boundaries only coincide if userspace chooses to
-make them coincide. For example, the tasks in a network namespace
-do not necessarily all share the same mount namespace.
-
-> 	Does this means (simple example) someone change
-> 	iptable rules for one container that could change 
-> 	another unrelated container behavior ?!...no way...
-
-Two "unrelated containers" would share the same iptables rules
-so long as they share a network namespace.
-
-<snip>
-
-> > > 	My proposal is a clear cut, if a ressource is containerized 
-> > > 	report to CONT: (containerized) syslog... no question ask.
-> > 
-> > That part of the proposal is simple and makes alot of sense. The
-> > ramifcations of it on kernel code are not simple and often there's
-> > no clean way to do it.
-> 	Well, this trouble me somewhat....
-> 	2.6.18-128.2.1.el5.028stab064.7 (just an example, I am using
-> 	day to day), is containerising iptables an other syslogs 
-> 	nice way....,
-
-Er.. you have a 2.6.18 kernel "containerising iptables an other syslogs"?
-I didn't think iptables supported network namespaces until somewhat
-recently. Is this an openvz-patched kernel you're talking about?
-
-> 	We are now 2.6.33 you are telling me what was experimented,
-> 	learned, monthssss ago can't still be implemented 
-> 	in current kernel main stream?.... 
-
-Careful. "no clean way to do it" does not mean "can't be done".
-
-Cheers,
-	-Matt Helsley
+SGVsbG8sCgpPbiBTYXQsIDIwMTAtMDItMTMgYXQgMTQ6MzMgLTA4MDAsIE1hdHQgSGVsc2xleSB3
+cm90ZToKPiBPbiBTYXQsIEZlYiAxMywgMjAxMCBhdCAwNDo1NjoxNlBNIC0wNTAwLCBKZWFuLU1h
+cmMgUGlnZW9uIHdyb3RlOgo+ID4gSGVsbG8sCj4gPiAKPiA+IFsuLi5dCgo+IAo+IFllcy4gbmFt
+ZXNwYWNlIGJvdW5kYXJpZXMgb25seSBjb2luY2lkZSBpZiB1c2Vyc3BhY2UgY2hvb3NlcyB0bwo+
+IG1ha2UgdGhlbSBjb2luY2lkZS4gRm9yIGV4YW1wbGUsIHRoZSB0YXNrcyBpbiBhIG5ldHdvcmsg
+bmFtZXNwYWNlCj4gZG8gbm90IG5lY2Vzc2FyaWx5IGFsbCBzaGFyZSB0aGUgc2FtZSBtb3VudCBu
+YW1lc3BhY2UuCj4gCj4gPiAJRG9lcyB0aGlzIG1lYW5zIChzaW1wbGUgZXhhbXBsZSkgc29tZW9u
+ZSBjaGFuZ2UKPiA+IAlpcHRhYmxlIHJ1bGVzIGZvciBvbmUgY29udGFpbmVyIHRoYXQgY291bGQg
+Y2hhbmdlIAo+ID4gCWFub3RoZXIgdW5yZWxhdGVkIGNvbnRhaW5lciBiZWhhdmlvciA/IS4uLm5v
+IHdheS4uLgo+IAo+IFR3byAidW5yZWxhdGVkIGNvbnRhaW5lcnMiIHdvdWxkIHNoYXJlIHRoZSBz
+YW1lIGlwdGFibGVzIHJ1bGVzCj4gc28gbG9uZyBhcyB0aGV5IHNoYXJlIGEgbmV0d29yayBuYW1l
+c3BhY2UuCglTbyAuLi4gbG9naWMgbWVhbnMuLi4uIHRob3NlIHR3byB1bnJlbGF0ZWQgY29udGFp
+bmVyCglkbyBub3QgIm93biIgdGhlIGlwdGFibGUgcnVsZXMuCglCdXQgbGV0cyBzYXksIGZvciBm
+dW4sIHByb2Nlc3Mgd2l0aGluIGNvbnRhaW5lciAxCgljaGFuZ2UgcnVsZXMgKGxvY2tpbmcgb3V0
+IHNzaCBhY2Nlc3MpLCBkb2VzIGl0IG1lYW4KCW5vdyBzc2ggY29ubmV4aW9uIG9uIGNvbnRhaW5l
+ciAyIGxvY2tlZCBvdXQgdG9vLi4uCglJZiB5b3Ugc2F5ICJjb250YWluZXIgMCIgd2hpY2ggY29u
+dGFpbmVyIDEgYW5kIDIKCWFyZSBpbmNsdWRlIGluLCBkZWNpZGVkIHRvIGxvY2sgc3NoIGFjY2Vz
+cywgdGhlbgoJaXRzIE9LLgoJQ29udGFpbmVyIDEgYW5kIDIgYXJlIHN0aWxsIHVucmVsYXRlZCwg
+cmlnaHQsIGJ1dCBib3RoIAoJYXJlIHJlbGF0ZWQgIHRvIGNvbnRhaW5lciAwLCBhbmQgc3lzbG9n
+IHJlcG9ydCBtdXN0IAoJZ28gdG8gY29udGFpbmVyIDAuCgkob25jZSBhZ2FpbiBpdCBpcyBjbGVh
+biBjdXQuKQoJClsuLi5dCgkKCj4gPiA+IFRoYXQgcGFydCBvZiB0aGUgcHJvcG9zYWwgaXMgc2lt
+cGxlIGFuZCBtYWtlcyBhbG90IG9mIHNlbnNlLiBUaGUKPiA+ID4gcmFtaWZjYXRpb25zIG9mIGl0
+IG9uIGtlcm5lbCBjb2RlIGFyZSBub3Qgc2ltcGxlIGFuZCBvZnRlbiB0aGVyZSdzCj4gPiA+IG5v
+IGNsZWFuIHdheSB0byBkbyBpdC4KPiA+IAlXZWxsLCB0aGlzIHRyb3VibGUgbWUgc29tZXdoYXQu
+Li4uCj4gPiAJMi42LjE4LTEyOC4yLjEuZWw1LjAyOHN0YWIwNjQuNyAoanVzdCBhbiBleGFtcGxl
+LCBJIGFtIHVzaW5nCj4gPiAJZGF5IHRvIGRheSksIGlzIGNvbnRhaW5lcmlzaW5nIGlwdGFibGVz
+IGFuIG90aGVyIHN5c2xvZ3MgCj4gPiAJbmljZSB3YXkuLi4uLAo+IAo+IEVyLi4geW91IGhhdmUg
+YSAyLjYuMTgga2VybmVsICJjb250YWluZXJpc2luZyBpcHRhYmxlcyBhbiBvdGhlciBzeXNsb2dz
+Ij8KPiBJIGRpZG4ndCB0aGluayBpcHRhYmxlcyBzdXBwb3J0ZWQgbmV0d29yayBuYW1lc3BhY2Vz
+IHVudGlsIHNvbWV3aGF0Cj4gcmVjZW50bHkuIElzIHRoaXMgYW4gb3BlbnZ6LXBhdGNoZWQga2Vy
+bmVsIHlvdSdyZSB0YWxraW5nIGFib3V0PwoKCVllcCEgcmVsZWFzZSBkYXRlIDA3LU5vdi0yMDA5
+LCBhbmQgSSBhbSBwcmV0dHkgc3VyZQoJMi42LjE4LTUzLjEuMTkuZWw1LjAyOHN0YWIwNTMuMTQg
+cmVsZWFzZSBkYXRlIDIxLU1heS0yMDA4IAoJd2FzIGRvaW5nIGl0IHRvby4uLgoKCUlwdGFibGUg
+bG9ncyBhcmUgcmVwb3J0ZWQgdG8gVlogKEkgaGF2ZSBhbiBleGFtcGxlCglyaWdodCBpbiBmcm9u
+dCBvZiBtZSkKCkZlYiAxMyAxNDo0MjoxMyBob3N0MSBrZXJuZWw6IFJKQ1QgSU49dmVuZXQwIE9V
+VD0gTUFDPSBTUkM9WC5YLlguWApEU1Q9WC5YLlguWCBMRU49NjAgVE9TPTB4MDAgUFJFQz0weDAw
+IFRUTD02NCBJRD01ODMyNSBERiBQUk9UTz1UQ1AKU1BUPTM3MjQ4IERQVD0yMiBXSU5ET1c9NTg0
+MCBSRVM9MHgwMCBTWU4gVVJHUD0wCgoJV2hlbiBJIHNhaWQgbW9udGhzc3NzLCBJIHJlYWxseSBt
+ZWFuIGl0LgoKPiBDYXJlZnVsLiAibm8gY2xlYW4gd2F5IHRvIGRvIGl0IiBkb2VzIG5vdCBtZWFu
+ICJjYW4ndCBiZSBkb25lIi4KCUFncmVlZC4uLi5jb250YWluZXIgbmV0d29yaywgc2VlbXMgdG8g
+bWUsIGltcGxlbWVudGVkCglpbiBmYXIgYmV0dGVyIHdheSB0aGFuIG9uIFZaLCBzbyBpdCBpcyBw
+b3NzaWJsZSB0byBpbXBsZW1lbnQgCglnb29kIGlkZWEgaW4gY2xlYW4gd2F5LgoJCgotLSAKQSBi
+aWVudMO0dAo9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
+PT09PT09PT09PT09PT09PT09PT09PT09PQpKZWFuLU1hcmMgUGlnZW9uICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICBJbnRlcm5ldDogam1wQHNhZmUuY2EKU0FGRSBJbmMuICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgUGhvbmU6ICg1MTQpIDQ5My00Mjgw
+CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIEZheDog
+ICAoNTE0KSA0OTMtMTk0NgogICAgICAgIENsZW1lbnQsICdhIGtpc3Mgc29sdXRpb24nIHRvIGdl
+dCByaWQgb2YgU1BBTSAoYXQgbGFzdCkKICAgICAgICAgICBDbGVtZW50JyBIb21lIGJhc2UgPCJo
+dHRwOi8vd3d3LmNsZW1lbnQuc2FmZS5jYSI+Cj09PT09PT09PT09PT09PT09PT09PT09PT09PT09
+PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09CgpfX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcg
+bGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMu
+bGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
