@@ -1,18 +1,12 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 1/1] RFC: taking a crack at targeted capabilities
-Date: Mon, 15 Feb 2010 08:48:14 -0800
-Message-ID: <m1r5oma1ip.fsf@fess.ebiederm.org>
-References: <20100106062809.GA17064@us.ibm.com>
-	<m17hrv18ad.fsf@fess.ebiederm.org> <20100106201725.GA24242@us.ibm.com>
-	<20100215142746.GD3714@count0.beaverton.ibm.com>
-	<m13a12bhjq.fsf@fess.ebiederm.org>
-	<20100215163708.GG3714@count0.beaverton.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH cr-tests] file locks: don't report failed checkpoint as failure
+Date: Mon, 15 Feb 2010 10:52:54 -0600
+Message-ID: <20100215165254.GA5482@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100215163708.GG3714-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org> (Matt Helsley's
-	message of "Mon\, 15 Feb 2010 08\:37\:08 -0800")
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,27 +16,61 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+And report failure if checkpoint succeeds, bc it should not.
 
->> > The other example of that idea was keeping a syslog_ns reference in
->> > the netns for the iptables printks in ipt_LOG.c. What happens when
->> > one of the CONFIG_*NS options isn't selected? Suddenly we're littering
->> > the struct definitions with #ifdefs and making the code alot more
->> > complicated to test (I suspect). Perhaps it's time to merge all
->> > the CONFIG_*NS options into CONFIG_NAMESPACES?
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ fileio/run-fcntltests.sh |   10 +++++++++-
+ fileio/runtests.sh       |    3 +++
+ 2 files changed, 12 insertions(+), 1 deletions(-)
 
-In general the plan has been to support disabling the creation of namespaces
-but that is about it.  The disables are there to prevent sysadmins from
-dealing with under-construction code, as in general we can not remove the code
-without having lots of weird paths.
-
-Distro's will enable these, and the incremental cost of having the enabled
-is small, at least if they are built properly.  If the incremental cost
-of enabling a namespace is not small we probably need to go back to the
-drawing board because maintainability will be affected.
-
-Eric
+diff --git a/fileio/run-fcntltests.sh b/fileio/run-fcntltests.sh
+index 35be131..2a5f628 100755
+--- a/fileio/run-fcntltests.sh
++++ b/fileio/run-fcntltests.sh
+@@ -51,8 +51,16 @@ checkpoint()
+ 	$ECHO "\t- Checkpoint: $CHECKPOINT $pid \> $CHECKPOINT_FILE"
+ 	$CHECKPOINT $pid > $CHECKPOINT_FILE
+ 	ret=$?
++	# At the moment we expect failure because checkpoint
++	# of file locks is not supported
+ 	if [ $ret -ne 0 ]; then
+-		$ECHO "***** FAIL: Checkpoint of $pid failed"
++		$ECHO "***** PASS: Checkpoint of $pid failed"
++		ps -efL |grep $TEST_CMD >> $SCRIPT_LOG
++		killall -9 `basename $TEST_CMD`
++		thaw
++		exit 0;
++	else
++		$ECHO "***** FAIL: Checkpoint of $pid did not fail"
+ 		ps -efL |grep $TEST_CMD >> $SCRIPT_LOG
+ 		killall -9 `basename $TEST_CMD`
+ 		thaw
+diff --git a/fileio/runtests.sh b/fileio/runtests.sh
+index b808927..cb633fb 100755
+--- a/fileio/runtests.sh
++++ b/fileio/runtests.sh
+@@ -7,15 +7,18 @@ echo
+ 
+ echo
+ echo "****** $0: Running test: filelock1"
++echo "****** (expect FAIL)"
+ echo
+ ./run-fcntltests.sh filelock1
+ 
+ echo
+ echo "****** $0: Running test: filelease1"
++echo "****** (expect FAIL)"
+ echo
+ ./run-fcntltests.sh filelease1
+ 
+ echo
+ echo "****** $0: Running test: fsetown1"
++echo "****** (expect FAIL)"
+ echo
+ ./run-fcntltests.sh fsetown1
+-- 
+1.6.3.3
