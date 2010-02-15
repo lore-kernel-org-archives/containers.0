@@ -1,19 +1,15 @@
-From: Jean-Marc Pigeon <jmp-4qkeo2rQ0gg@public.gmane.org>
-Subject: Re: [PATCH 1/1] Syslog are now containerized
-Date: Sat, 13 Feb 2010 19:51:44 -0500
-Message-ID: <1266108704.19130.346.camel@Mercier.safe.ca>
-References: <201002110552.o1B5qwbL024561@kernel.safe.ca>
-	<20100211174843.GF6884@us.ibm.com>
-	<20100213181158.GY3714@count0.beaverton.ibm.com>
-	<1266088499.19130.295.camel@Mercier.safe.ca>
-	<20100213203610.GA3714@count0.beaverton.ibm.com>
-	<1266098176.19130.320.camel@Mercier.safe.ca>
-	<20100213223306.GB3714@count0.beaverton.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/1] RFC: taking a crack at targeted capabilities
+Date: Sun, 14 Feb 2010 22:05:29 -0600
+Message-ID: <20100215040529.GA20519@us.ibm.com>
+References: <20100106062809.GA17064@us.ibm.com>
+	<m17hrv18ad.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100213223306.GB3714-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <m17hrv18ad.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,61 +19,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-SGVsbG8sCgpPbiBTYXQsIDIwMTAtMDItMTMgYXQgMTQ6MzMgLTA4MDAsIE1hdHQgSGVsc2xleSB3
-cm90ZToKPiBPbiBTYXQsIEZlYiAxMywgMjAxMCBhdCAwNDo1NjoxNlBNIC0wNTAwLCBKZWFuLU1h
-cmMgUGlnZW9uIHdyb3RlOgo+ID4gSGVsbG8sCj4gPiAKPiA+IFsuLi5dCgo+IAo+IFllcy4gbmFt
-ZXNwYWNlIGJvdW5kYXJpZXMgb25seSBjb2luY2lkZSBpZiB1c2Vyc3BhY2UgY2hvb3NlcyB0bwo+
-IG1ha2UgdGhlbSBjb2luY2lkZS4gRm9yIGV4YW1wbGUsIHRoZSB0YXNrcyBpbiBhIG5ldHdvcmsg
-bmFtZXNwYWNlCj4gZG8gbm90IG5lY2Vzc2FyaWx5IGFsbCBzaGFyZSB0aGUgc2FtZSBtb3VudCBu
-YW1lc3BhY2UuCj4gCj4gPiAJRG9lcyB0aGlzIG1lYW5zIChzaW1wbGUgZXhhbXBsZSkgc29tZW9u
-ZSBjaGFuZ2UKPiA+IAlpcHRhYmxlIHJ1bGVzIGZvciBvbmUgY29udGFpbmVyIHRoYXQgY291bGQg
-Y2hhbmdlIAo+ID4gCWFub3RoZXIgdW5yZWxhdGVkIGNvbnRhaW5lciBiZWhhdmlvciA/IS4uLm5v
-IHdheS4uLgo+IAo+IFR3byAidW5yZWxhdGVkIGNvbnRhaW5lcnMiIHdvdWxkIHNoYXJlIHRoZSBz
-YW1lIGlwdGFibGVzIHJ1bGVzCj4gc28gbG9uZyBhcyB0aGV5IHNoYXJlIGEgbmV0d29yayBuYW1l
-c3BhY2UuCglTbyAuLi4gbG9naWMgbWVhbnMuLi4uIHRob3NlIHR3byB1bnJlbGF0ZWQgY29udGFp
-bmVyCglkbyBub3QgIm93biIgdGhlIGlwdGFibGUgcnVsZXMuCglCdXQgbGV0cyBzYXksIGZvciBm
-dW4sIHByb2Nlc3Mgd2l0aGluIGNvbnRhaW5lciAxCgljaGFuZ2UgcnVsZXMgKGxvY2tpbmcgb3V0
-IHNzaCBhY2Nlc3MpLCBkb2VzIGl0IG1lYW4KCW5vdyBzc2ggY29ubmV4aW9uIG9uIGNvbnRhaW5l
-ciAyIGxvY2tlZCBvdXQgdG9vLi4uCglJZiB5b3Ugc2F5ICJjb250YWluZXIgMCIgd2hpY2ggY29u
-dGFpbmVyIDEgYW5kIDIKCWFyZSBpbmNsdWRlIGluLCBkZWNpZGVkIHRvIGxvY2sgc3NoIGFjY2Vz
-cywgdGhlbgoJaXRzIE9LLgoJQ29udGFpbmVyIDEgYW5kIDIgYXJlIHN0aWxsIHVucmVsYXRlZCwg
-cmlnaHQsIGJ1dCBib3RoIAoJYXJlIHJlbGF0ZWQgIHRvIGNvbnRhaW5lciAwLCBhbmQgc3lzbG9n
-IHJlcG9ydCBtdXN0IAoJZ28gdG8gY29udGFpbmVyIDAuCgkob25jZSBhZ2FpbiBpdCBpcyBjbGVh
-biBjdXQuKQoJClsuLi5dCgkKCj4gPiA+IFRoYXQgcGFydCBvZiB0aGUgcHJvcG9zYWwgaXMgc2lt
-cGxlIGFuZCBtYWtlcyBhbG90IG9mIHNlbnNlLiBUaGUKPiA+ID4gcmFtaWZjYXRpb25zIG9mIGl0
-IG9uIGtlcm5lbCBjb2RlIGFyZSBub3Qgc2ltcGxlIGFuZCBvZnRlbiB0aGVyZSdzCj4gPiA+IG5v
-IGNsZWFuIHdheSB0byBkbyBpdC4KPiA+IAlXZWxsLCB0aGlzIHRyb3VibGUgbWUgc29tZXdoYXQu
-Li4uCj4gPiAJMi42LjE4LTEyOC4yLjEuZWw1LjAyOHN0YWIwNjQuNyAoanVzdCBhbiBleGFtcGxl
-LCBJIGFtIHVzaW5nCj4gPiAJZGF5IHRvIGRheSksIGlzIGNvbnRhaW5lcmlzaW5nIGlwdGFibGVz
-IGFuIG90aGVyIHN5c2xvZ3MgCj4gPiAJbmljZSB3YXkuLi4uLAo+IAo+IEVyLi4geW91IGhhdmUg
-YSAyLjYuMTgga2VybmVsICJjb250YWluZXJpc2luZyBpcHRhYmxlcyBhbiBvdGhlciBzeXNsb2dz
-Ij8KPiBJIGRpZG4ndCB0aGluayBpcHRhYmxlcyBzdXBwb3J0ZWQgbmV0d29yayBuYW1lc3BhY2Vz
-IHVudGlsIHNvbWV3aGF0Cj4gcmVjZW50bHkuIElzIHRoaXMgYW4gb3BlbnZ6LXBhdGNoZWQga2Vy
-bmVsIHlvdSdyZSB0YWxraW5nIGFib3V0PwoKCVllcCEgcmVsZWFzZSBkYXRlIDA3LU5vdi0yMDA5
-LCBhbmQgSSBhbSBwcmV0dHkgc3VyZQoJMi42LjE4LTUzLjEuMTkuZWw1LjAyOHN0YWIwNTMuMTQg
-cmVsZWFzZSBkYXRlIDIxLU1heS0yMDA4IAoJd2FzIGRvaW5nIGl0IHRvby4uLgoKCUlwdGFibGUg
-bG9ncyBhcmUgcmVwb3J0ZWQgdG8gVlogKEkgaGF2ZSBhbiBleGFtcGxlCglyaWdodCBpbiBmcm9u
-dCBvZiBtZSkKCkZlYiAxMyAxNDo0MjoxMyBob3N0MSBrZXJuZWw6IFJKQ1QgSU49dmVuZXQwIE9V
-VD0gTUFDPSBTUkM9WC5YLlguWApEU1Q9WC5YLlguWCBMRU49NjAgVE9TPTB4MDAgUFJFQz0weDAw
-IFRUTD02NCBJRD01ODMyNSBERiBQUk9UTz1UQ1AKU1BUPTM3MjQ4IERQVD0yMiBXSU5ET1c9NTg0
-MCBSRVM9MHgwMCBTWU4gVVJHUD0wCgoJV2hlbiBJIHNhaWQgbW9udGhzc3NzLCBJIHJlYWxseSBt
-ZWFuIGl0LgoKPiBDYXJlZnVsLiAibm8gY2xlYW4gd2F5IHRvIGRvIGl0IiBkb2VzIG5vdCBtZWFu
-ICJjYW4ndCBiZSBkb25lIi4KCUFncmVlZC4uLi5jb250YWluZXIgbmV0d29yaywgc2VlbXMgdG8g
-bWUsIGltcGxlbWVudGVkCglpbiBmYXIgYmV0dGVyIHdheSB0aGFuIG9uIFZaLCBzbyBpdCBpcyBw
-b3NzaWJsZSB0byBpbXBsZW1lbnQgCglnb29kIGlkZWEgaW4gY2xlYW4gd2F5LgoJCgotLSAKQSBi
-aWVudMO0dAo9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PQpKZWFuLU1hcmMgUGlnZW9uICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICBJbnRlcm5ldDogam1wQHNhZmUuY2EKU0FGRSBJbmMuICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgUGhvbmU6ICg1MTQpIDQ5My00Mjgw
-CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIEZheDog
-ICAoNTE0KSA0OTMtMTk0NgogICAgICAgIENsZW1lbnQsICdhIGtpc3Mgc29sdXRpb24nIHRvIGdl
-dCByaWQgb2YgU1BBTSAoYXQgbGFzdCkKICAgICAgICAgICBDbGVtZW50JyBIb21lIGJhc2UgPCJo
-dHRwOi8vd3d3LmNsZW1lbnQuc2FmZS5jYSI+Cj09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09CgpfX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcg
-bGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMu
-bGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+> 
+> > So i was thinking about how to safely but incrementally introduce
+> > targeted capabilities - which we decided was a prereq to making VFS
+> > handle user namespaces - and the following seemed doable.  My main
+> > motivations were (in order):
+> >
+> >         1. don't make any unconverted capable() checks unsafe
+> >         2. minimize performance impact on non-container case
+> >         3. minimize performance impact on containers
+> 
+> My motivation is a bit different.  I would like to get to the
+> unprivileged creation of new namespaces.  It looks like this gets us
+> 90% of the way there, with only potential uid confusion issues left.
+
+Just a pair of instances of uid comparison are now addressed in
+
+	http://git.kernel.org/gitweb.cgi?p=linux/kernel/git/sergeh/linux-cr.git;a=shortlog;h=refs/heads/feb13.userns.uid_equivs
+
+which has your patch "taking a crack at targeted capabilities" at its
+core.  Talk about your baby steps...  But I need to go back and re-read
+what we'd discussed over the last few years about how we wanted to
+tag superblocks/mounts->inodes before I go on.
+
+Anyway now uid equivalence checks are ns-aware for basic vfs_permission
+and task kill at least.  It's a start.
+
+-serge
