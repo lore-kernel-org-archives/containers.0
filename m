@@ -1,16 +1,15 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/1] RFC: taking a crack at targeted capabilities
-Date: Mon, 15 Feb 2010 06:27:46 -0800
-Message-ID: <20100215142746.GD3714@count0.beaverton.ibm.com>
-References: <20100106062809.GA17064@us.ibm.com>
-	<m17hrv18ad.fsf@fess.ebiederm.org>
-	<20100106201725.GA24242@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [user-cr][PATCH 1/2] restart: remount /proc for new tasks
+	created with CLONE_NEWPID
+Date: Mon, 15 Feb 2010 08:31:30 -0600
+Message-ID: <20100215143130.GB28038@us.ibm.com>
+References: <1266224833-10902-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20100106201725.GA24242-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1266224833-10902-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,44 +19,106 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Jan 06, 2010 at 02:17:25PM -0600, Serge E. Hallyn wrote:
-> Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> > "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
-
-<snip>
-
-> > >From db104af741b5f0a2f128688905498cae68fbbde2 Mon Sep 17 00:00:00 2001
-> > From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> > Date: Wed, 6 Jan 2010 08:26:21 -0800
-> > Subject: [PATCH] security:  Make capabilities relative to the user namespace.
-> > 
-> > - Introduce ns_capable to test for a capability in a non-default
-> >   user namespace.
-> > - Teach cap_capable to handle capabilities in a non-default
-> >   user namespace.
+Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+> Not doing this can be a pain for restarted software which relies
+> on /proc...
 > 
-> So yeah, I didn't address the whole has_capability junk.  Feh.
+> This builds on a patch by Serge Hallyn, but also aims to address the
+> future cases of hierarchical pid-ns:
 > 
-> So do you intend to tag all namespaces with the userns which
-> created it?  So sys_hostname() can check utsname->uts_ns->creator,
-> and net ioctl SIOCSIFNAME checks struct net->creator?
+> 1) Before mounting the new /proc, first umount the old one, which
+> isn't necessary anymore.
+> 
+> 2) Perform the unshare() together with the remount of /proc, so it
+> will occur for every new pid-ns and not only for the first one.
+> 
+> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+> ---
+>  restart.c |   32 ++++++++++++++++++++++++++++++++
+>  1 files changed, 32 insertions(+), 0 deletions(-)
+> 
+> diff --git a/restart.c b/restart.c
+> index f3d33de..f42b456 100644
+> --- a/restart.c
+> +++ b/restart.c
+> @@ -30,6 +30,7 @@
+>  #include <asm/unistd.h>
+>  #include <sys/syscall.h>
+>  #include <sys/prctl.h>
+> +#include <sys/mount.h>
+> 
+>  #include <linux/sched.h>
+>  #include <linux/checkpoint.h>
+> @@ -273,6 +274,8 @@ int global_child_collected;
+>  int global_send_sigint = -1;
+>  int global_sent_sigint;
+> 
+> +static int ckpt_remount_proc(void);
+> +
+>  static int ckpt_build_tree(struct ckpt_ctx *ctx);
+>  static int ckpt_init_tree(struct ckpt_ctx *ctx);
+>  static int ckpt_set_creator(struct ckpt_ctx *ctx, struct task *task);
+> @@ -981,11 +984,36 @@ static int ckpt_probe_child(pid_t pid, char *str)
+>  	return 0;
+>  }
+> 
+> +/*
+> + * Remount the /proc with a new instance: tasks that start a new
+> + * pid-ns need a fresh mount of /proc to reflect their pid-ns.
+> + */
+> +static int ckpt_remount_proc(void)
+> +{
+> +	if (unshare(CLONE_NEWNS | CLONE_FS) < 0) {
+> +		perror("unshare");
+> +		return -1;
+> +	}
+> +	if (umount2("/proc", MNT_DETACH) < 0) {
+> +		perror("umount -l /proc");
+> +		return -1;
+> +	}
 
-That makes sense but I'm getting a worried about the way those extra
-namespace references are popping up in other namespace structs. Seems
-like it would be easy to write code that could create reference
-cycles and thus leak memory. Perhaps it will require splitting the
-references sort of like struct mm_struct?
+I don't expect this to ever happen in practice, but *if*
+somehow /proc were already unmounted, you'd fail restart
+for no good reason.  I don't know that we care about a
+failure to umount here.
 
-The other example of that idea was keeping a syslog_ns reference in
-the netns for the iptables printks in ipt_LOG.c. What happens when
-one of the CONFIG_*NS options isn't selected? Suddenly we're littering
-the struct definitions with #ifdefs and making the code alot more
-complicated to test (I suspect). Perhaps it's time to merge all
-the CONFIG_*NS options into CONFIG_NAMESPACES?
+In fact I suppose in a 'restart -r /opt/container1' /proc
+might not yet be mounted after chroot?  So it's not all
+that unlikely.
 
-Cheers,
-	-Matt Helsley
+> +	if (mount("proc", "/proc", "proc", 0, NULL) < 0) {
+> +		perror("mount -t proc");
+> +		return -1;
+> +	}
+> +
+> +	return 0;
+> +}
+> +
+>  #ifdef CLONE_NEWPID
+>  static int __ckpt_coordinator(void *arg)
+>  {
+>  	struct ckpt_ctx *ctx = (struct ckpt_ctx *) arg;
+> 
+> +	if (ckpt_remount_proc() < 0)
+> +		return -1;
+> +
+>  	if (!ctx->args->wait)
+>  		close(ctx->pipe_coord[0]);
+> 
+> @@ -1850,6 +1878,10 @@ int ckpt_fork_stub(void *data)
+>  	struct task *task = (struct task *) data;
+>  	struct ckpt_ctx *ctx = task->ctx;
+> 
+> +	/* tasks with new pid-ns need new /proc mount */
+> +	if ((task->flags & TASK_NEWPID) && ckpt_remount_proc() < 0)
+> +		return -1;
+> +
+>  	/*
+>  	 * In restart into a new pid namespace (--pidns), coordinator
+>  	 * is the container init, hence if it terminated permatutely
+> -- 
+> 1.6.3.3
