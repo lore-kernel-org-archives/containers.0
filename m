@@ -1,101 +1,27 @@
-From: Dan Smith <danms@us.ibm.com>
-Subject: Re: [PATCH 4/5] Add loopback checkpoint support
-Date: Tue, 16 Feb 2010 08:13:56 -0800
-Message-ID: <87d40588fv.fsf@caffeine.danplanet.com>
-References: <1266336187-19105-1-git-send-email-danms@us.ibm.com>
-	<1266336187-19105-5-git-send-email-danms@us.ibm.com>
-	<1266336555.3045.57.camel@edumazet-laptop>
+From: "Singer . Bettye" <hd7coolman-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: I have a list of 5 million New businesses in the USA
+Date: Wed, 17 Feb 2010 00:08:28 +0800 (CST)
+Message-ID: <20100216160831.61CF01A1B42@ms.hpps.ptc.edu.tw>
+Reply-To: smithjones46728-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <1266336555.3045.57.camel@edumazet-laptop> (Eric Dumazet's message of "Tue\, 16 Feb 2010 17\:09\:15 +0100")
-Sender: netdev-owner@vger.kernel.org
-To: Eric Dumazet <eric.dumazet@gmail.com>
-Cc: containers@lists.osdl.org, netdev@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: ik4t-4Ng6DfrEGID2fBVCVOL8/A@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, jiri.lusik-unDuD2xQE4TYHMALxLqH7Q@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-ED> Dont you have a #ifdef CONFIG_CHECKPOINT or something to avoid
-ED> this for small machines ?
-
-Yes, and the veth patch used it appropriately.  It should look like
-this:
-
-Add loopback checkpoint support (v2)
-
-Adds a small ndo_checkpoint() handler for loopback devices to write the
-name and addresses like other interfaces.
-
-Changes in v2:
- - Add CONFIG_CHECKPOINT around the handler
-
-Signed-off-by: Dan Smith <danms@us.ibm.com>
-
-diff --git a/drivers/net/loopback.c b/drivers/net/loopback.c
-index b9fcc98..77023a7 100644
---- a/drivers/net/loopback.c
-+++ b/drivers/net/loopback.c
-@@ -57,6 +57,8 @@
- #include <linux/ip.h>
- #include <linux/tcp.h>
- #include <linux/percpu.h>
-+#include <linux/checkpoint.h>
-+#include <linux/checkpoint_hdr.h>
- #include <net/net_namespace.h>
- 
- struct pcpu_lstats {
-@@ -153,10 +155,46 @@ static void loopback_dev_free(struct net_device *dev)
- 	free_netdev(dev);
- }
- 
-+#ifdef CONFIG_CHECKPOINT
-+static int loopback_checkpoint(struct ckpt_ctx *ctx, struct net_device *dev)
-+{
-+	struct ckpt_hdr_netdev *h;
-+	struct ckpt_netdev_addr *addrs;
-+	int ret;
-+
-+	h = ckpt_netdev_base(ctx, dev, &addrs);
-+	if (IS_ERR(h))
-+		return PTR_ERR(h);
-+
-+	h->type = CKPT_NETDEV_LO;
-+
-+	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *)h);
-+	if (ret < 0)
-+		goto out;
-+
-+	ret = ckpt_write_buffer(ctx, dev->name, IFNAMSIZ);
-+	if (ret < 0)
-+		goto out;
-+
-+	if (h->inet_addrs > 0) {
-+		int len = (sizeof(struct ckpt_netdev_addr) * h->inet_addrs);
-+		ret = ckpt_write_buffer(ctx, addrs, len);
-+	}
-+
-+ out:
-+	ckpt_hdr_put(ctx, h);
-+	kfree(addrs);
-+
-+	return ret;
-+}
-+#endif
- static const struct net_device_ops loopback_ops = {
--	.ndo_init      = loopback_dev_init,
--	.ndo_start_xmit= loopback_xmit,
--	.ndo_get_stats = loopback_get_stats,
-+	.ndo_init       = loopback_dev_init,
-+	.ndo_start_xmit = loopback_xmit,
-+	.ndo_get_stats  = loopback_get_stats,
-+#ifdef CONFIG_CHECKPOINT
-+	.ndo_checkpoint = loopback_checkpoint,
-+#endif
- };
- 
- /*
+I have many good quality lists at decent prices. Drop me a line here:  Ronald.Donnelly-zv0fbVGlH0LLQOJUojkYNSU6qK9Th3Hf@public.gmane.org
+I'll get you all the details and samples. 
+  
 
 
--- 
-Dan Smith
-IBM Linux Technology Center
-email: danms@us.ibm.com
+By emailing disappear-zv0fbVGlH0LLQOJUojkYNSU6qK9Th3Hf@public.gmane.org you will have your email taken off
