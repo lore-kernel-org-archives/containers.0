@@ -1,14 +1,16 @@
-From: Jun OKAJIMA <okajima-og82NyAXoxRpnGNL948N7c8NsWr+9BEh@public.gmane.org>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Subject: Re: Container for Amazon EC2?
-Date: Thu, 18 Feb 2010 00:31:56 +0900
-Message-ID: <2c2629fa1002170731l4f58f5c7p64caccb8e662d6e5@mail.gmail.com>
+Date: Wed, 17 Feb 2010 09:36:19 -0600
+Message-ID: <20100217153619.GA23760@hallyn.com>
 References: <2c2629fa1002150243n4c91d93ctee4509912228f3ea@mail.gmail.com>
-	<20100215143905.GD28038@us.ibm.com> <20100217151943.GA9159@us.ibm.com>
+	<20100215143905.GD28038@us.ibm.com>
+	<20100217151943.GA9159@us.ibm.com>
 	<2c2629fa1002170723o43aed18as7745b2ce4217474b@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 In-Reply-To: <2c2629fa1002170723o43aed18as7745b2ce4217474b-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,66 +21,38 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Jun OKAJIMA <okajima-og82NyAXoxRpnGNL948N7c8NsWr+9BEh@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-TXkgQU1JL0tlcm5lbCBpcyB0aGlzLgoKQU1JIElEOiBhbWktN2Q0M2FlMTQKS2VybmVsIElEOiBh
-a2ktZmQxNWY2OTQKCiAgICAgICAgICAtLS0gT2thamltYSwgSnVuLiBUb2t5bywgSmFwYW4uCgoK
-CgoyMDEwLzIvMTggSnVuIE9LQUpJTUEgPG9rYWppbWFAZGlnaXRhbGluZnJhLmNvLmpwPjoKPiBU
-aGlzIGlzIG15IHJlc3VsdC4KPiBJIGRvbnQga25vdyB2ZXJ5IHdlbGwgYWJvdXQgbHhjLAo+IGJ1
-dCB0aGlzIGlzIHVzYWJsZT8KPgo+IO++guqAgCDvvoLqgIAg776C6oCAIC0tLSBPa2FqaW1hLCBK
-dW4uIFRva3lvLCBKYXBhbi4KPgo+Cj4gdWJ1bnR1QGRvbVUtMTItMzEtMzktMDYtMjgtQjI6fiQg
-bHhjLWNoZWNrY29uZmlnCj4gS2VybmVsIGNvbmZpZyAvcHJvYy9jb25maWcuZ3ogbm90IGZvdW5k
-LCBsb29raW5nIGluIG90aGVyIHBsYWNlcy4uLgo+IEZvdW5kIGtlcm5lbCBjb25maWcgZmlsZSAv
-Ym9vdC9jb25maWctMi42LjMxLTMwMi1lYzIKPiAtLS0gTmFtZXNwYWNlcyAtLS0KPiBOYW1lc3Bh
-Y2VzOiBlbmFibGVkCj4gVXRzbmFtZSBuYW1lc3BhY2U6IGVuYWJsZWQKPiBJcGMgbmFtZXNwYWNl
-OiBlbmFibGVkCj4gUGlkIG5hbWVzcGFjZTogZGlzYWJsZWQKPiBVc2VyIG5hbWVzcGFjZTogZGlz
-YWJsZWQKPiBOZXR3b3JrIG5hbWVzcGFjZTogZGlzYWJsZWQKPiBNdWx0aXBsZSAvZGV2L3B0cyBp
-bnN0YW5jZXM6IGRpc2FibGVkCj4KPiAtLS0gQ29udHJvbCBncm91cHMgLS0tCj4gQ2dyb3VwOiBl
-bmFibGVkCj4gQ2dyb3VwIG5hbWVzcGFjZTogZW5hYmxlZAo+IENncm91cCBkZXZpY2U6IGRpc2Fi
-bGVkCj4gQ2dyb3VwIHNjaGVkOiBlbmFibGVkCj4gQ2dyb3VwIGNwdSBhY2NvdW50OiBlbmFibGVk
-Cj4gQ2dyb3VwIG1lbW9yeSBjb250cm9sbGVyOiBlbmFibGVkCj4gQ2dyb3VwIGNwdXNldDogZW5h
-YmxlZAo+Cj4KPgo+IC0tLSBNaXNjIC0tLQo+IFZldGggcGFpciBkZXZpY2U6IGVuYWJsZWQKPiBN
-YWN2bGFuOiBlbmFibGVkCj4gRmlsZSBjYXBhYmlsaXRpZXM6IGVuYWJsZWQKPiB1YnVudHVAZG9t
-VS0xMi0zMS0zOS0wNi0yOC1CMjp+JCB1bmFtZSAtYQo+IExpbnV4IGRvbVUtMTItMzEtMzktMDYt
-MjgtQjIgMi42LjMxLTMwMi1lYzIgIzctVWJ1bnR1IFNNUCBUdWUgT2N0IDEzCj4gMTk6NTU6MjIg
-VVRDIDIwMDkgeDg2XzY0IEdOVS9MaW51eAo+IHVidW50dUBkb21VLTEyLTMxLTM5LTA2LTI4LUIy
-On4kCj4KPiAyMDEwLzIvMTggU2VyZ2UgRS4gSGFsbHluIDxzZXJ1ZUB1cy5pYm0uY29tPjoKPj4g
-U28gSSB0cmllZCBydW5uaW5nIG9uZSBvZiB0aGUgcHVibGljIHVidW50dSBrYXJtaWMgaW1hZ2Vz
-IGluCj4+IGVjMiAoYW1pLWJiNzA5ZGQyKS4g776C6oCASSBjb3VsZCBzdWRvIGFwdC1nZXQgaW5z
-dGFsbCBseGMuIO++guqAgFRoZQo+PiBkZWZhdWx0IGtlcm5lbCAoYWtpLTVmMTVmNjM2KSBkaWRu
-J3Qgc3VwcG9ydCBuYW1lc3BhY2VzLiDvvoLqgIBOb3cKPj4geW91IGNhbiBzcGVjaWZ5IGtlcm5l
-bHMgYXQgYm9vdCwgYnV0IEknbSBub3Qgc3VyZSBpZiB0aGVyZSBpcwo+PiBhbiBlYXN5IHdheSB0
-byBmaW5kIGtlcm5lbHMgd2l0aCBzcGVjaWZpYyBDT05GSUdfIG9wdGlvbnMuCj4+IEknbGwgbGV0
-IHlvdSBrbm93IGlmIEkgZmluZCBvbmUgd2l0aCBhbGwgbmFtZXNwYWNlcyBhbmQKPj4gdmV0aCti
-cmlkZ2UrbWFjdmxhbiBlbmFibGVkLCBiYyB0aGF0IHdvdWxkIHRoZW4gZ2l2ZSB5b3UKPj4gZXZl
-cnl0aGluZyB5b3UnZCBuZWVkLgo+Pgo+PiAtc2VyZ2UKPj4KPj4gUXVvdGluZyBTZXJnZSBFLiBI
-YWxseW4gKHNlcnVlQHVzLmlibS5jb20pOgo+Pj4gSXQncyBiZWVuIGEgbGl0dGxlIHdoaWxlIChw
-cm9iYWJseSBhIHllYXIpIHNpbmNlIEkgcGxheWVkIHdpdGgKPj4+IEVDMiwgYnV0IGdlbmVyYWxs
-eSB0aGUgcHJvYmxlbSBpcyB0aGF0IHlvdSBkb24ndCBoYXZlIG11Y2ggb2YKPj4+IGEgY2hvaWNl
-IGZvciB1bmRlcmx5aW5nIGtlcm5lbHMuIO++guqAgFNvIHlvdSBjYW4ndCBwaWNrIHZzZXJ2ZXIv
-b3BlbnZ6Cj4+PiBrZXJuZWxzLCBhbmQgdGhlIGF2YWlsYWJsZSBrZXJuZWxzIGFyZSB0b28gb2xk
-IHRvIGhhdmUgY29udGFpbmVycwo+Pj4gZmVhdHVyZXMuIO++guqAgEFzIGtlcm5lbHMgZ2V0IHVw
-ZGF0ZWQsIHdoZXRoZXIgeW91IGNhbiB1c2UgbHhjIG9yIG5vdAo+Pj4gd2lsbCBvbmx5IGRlcGVu
-ZCBvbiB3aGV0aGVyIENPTkZJR197Y29udGFpbmVyc30gZmVhdHVyZXMgYXJlIGNvbXBpbGVkCj4+
-PiBpbi4KPj4+Cj4+PiBJdCBjb3VsZG4ndCBodXJ0IHRvIHdyaXRlIHRoZSBhbWF6b24gZm9sa3Mg
-YW5kIGFzayBhYm91dCBpdC4uLgo+Pj4KPj4+IC1zZXJnZQo+Pj4KPj4+IFF1b3RpbmcgSnVuIE9L
-QUpJTUEgKG9rYWppbWFAZGlnaXRhbGluZnJhLmNvLmpwKToKPj4+ID4gU29tZWJvZHkga25vdyBh
-bnkgQW1hem9uIEVDMiBJbWFnZSB3aGljaAo+Pj4gPiBzdXBwb3J0cyBhbnkgY29udGFpbmVyIHRl
-Y2hub2xvZ3k/Cj4+PiA+IFZzZXJ2ZXIvTFhDL09wZW5WWi4uLiBBbnkgdGVjaG5vbG9neSBpcyBP
-a2F5LAo+Pj4gPiBJIHdhbnQgdG8gdXNlIHByZS1jcmVhdGVkIGltYWdlIGZvciBFQzIuCj4+PiA+
-Cj4+PiA+IEkgZm91bmQgbWFueSBpbWFnZXMgZm9yIFVidW50dSA5LjEwLAo+Pj4gPiBidXQgaXQg
-bGFja3Mgc29tZSBzdXBwb3J0IGZvciBMWEMuCj4+PiA+IEZlZG9yYTEyIHN1cHBvcnRzIGFsbCBm
-dW5jdGlvbnMgb2YgTFhDLAo+Pj4gPiBidXQgZGlkIG5vdCBmaW5kIGFueSBpbWFnZS4KPj4+ID4K
-Pj4+ID4g776C6oCAIO++guqAgCDvvoLqgIAgLS0tIE9rYWppbWEsIEp1bi4gVG9reW8sIEphcGFu
-Lgo+Pj4gPiBfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwo+
-Pj4gPiBDb250YWluZXJzIG1haWxpbmcgbGlzdAo+Pj4gPiBDb250YWluZXJzQGxpc3RzLmxpbnV4
-LWZvdW5kYXRpb24ub3JnCj4+PiA+IGh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcv
-bWFpbG1hbi9saXN0aW5mby9jb250YWluZXJzCj4+PiBfX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fXwo+Pj4gQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKPj4+IENv
-bnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKPj4+IGh0dHBzOi8vbGlzdHMubGlu
-dXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJzCj4+Cj4KX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWls
-aW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xp
-c3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+Quoting Jun OKAJIMA (okajima-og82NyAXoxRpnGNL948N7c8NsWr+9BEh@public.gmane.org):
+> This is my result.
+> I dont know very well about lxc,
+> but this is usable?
+
+I'm not sure which you mean as usable:  lxc is very usable, and
+lets you run multiple application and system containers of various
+distros.  The lxc-users-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org mailing list was
+recently started to accomodate its growing user base.
+
+The kernel on the ec2 instance, however, is not :)
+
+It might be worth jumping onto #ubuntu-virt and asking whether
+they have, or can publish, a kernel with, at the least:
+
+CONFIG_CGROUP_DEVICE=y
+CONFIG_CGROUP_FREEZER=y
+CONFIG_NAMESPACES=y
+CONFIG_UTS_NS=y
+CONFIG_IPC_NS=y
+CONFIG_USER_NS=y
+CONFIG_PID_NS=y
+CONFIG_NET_NS=y
+CONFIG_VETH=y
+CONFIG_MACVLAN=y
+CONFIG_BRIDGE=y
+CONFIG_DEVPTS_MULTIPLE_INSTANCES=y
+
+Those should be sufficient to start using lxc very nicely
+
+-serge
