@@ -1,14 +1,15 @@
-From: Jean-Marc Pigeon <jmp-4qkeo2rQ0gg@public.gmane.org>
-Subject: Re: [PATCH 1/1] Syslog are now containerized
-Date: Wed, 17 Feb 2010 10:01:39 -0500
-Message-ID: <1266418899.19130.561.camel@Mercier.safe.ca>
-References: <201002110552.o1B5qwbL024561@kernel.safe.ca>
-	<m1pr49ne3y.fsf@fess.ebiederm.org>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Container for Amazon EC2?
+Date: Wed, 17 Feb 2010 09:19:44 -0600
+Message-ID: <20100217151943.GA9159@us.ibm.com>
+References: <2c2629fa1002150243n4c91d93ctee4509912228f3ea@mail.gmail.com>
+	<20100215143905.GD28038@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m1pr49ne3y.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20100215143905.GD28038-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,52 +19,51 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Jun OKAJIMA <okajima-og82NyAXoxRpnGNL948N7c8NsWr+9BEh@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-SGVsbG8sCgoJSnVzdCBnb3QgeW91ciBFbWFpbC4uLiAoU2ljIDotfSkKCk9uIFNhdCwgMjAxMC0w
-Mi0xMyBhdCAxMToxMyAtMDgwMCwgRXJpYyBXLiBCaWVkZXJtYW4gd3JvdGU6Cj4gSmVhbi1NYXJj
-IFBpZ2VvbiA8am1wQHNhZmUuY2E+IHdyaXRlczoKPiAKPiA+IAlBZGRlZCBzeXNsb2cuYyBzdWNo
-IGNvbnRhaW5lciAvcHJvYy9rbXNnIGFuZCBob3N0IC9wcm9jL2ttc2cKPiA+IAlkbyBub3QgbGVh
-ayBpbiBlYWNoIG90aGVyLgo+ID4gCVJ1bm5pbmcgcnN5c2xvZyBkYWVtb24gd2l0aGluIGEgY29u
-dGFpbmVyIHdvbid0IGRlc3Ryb3kKPiA+IAlob3N0IGtlcm5lbCBtZXNzYWdlcy4KPiAKPiBJZiB0
-aGUgZ29hbCBpcyB0byBub3QgZGVzdHJveSB0aGUgaG9zdCBrZXJuZWwgbWVzc2FnZXMgdGhlIG11
-Y2gKPiBzaW1wbGVyIHNvbHV0aW9uIHdvdWxkIGJlIHRvIHNpbXBseSBkaXNhYmxlIC9wcm9jL2tt
-c2cgaW4gdGhlIGNvbnRhaW5lci4KPiBJIGV4cGVjdCB3ZSBjYW4gZ2V0IHRoYXQgZm9yIGZyZWUg
-d2l0aCBhIHNvbWUgYnVnIGZpeGVzIHRvIHRoZSB1c2VyCj4gbmFtZXNwYWNlIChha2EgaWYgeW91
-IGFyZSBub3QgaW4gdGhlIGdsb2JhbCBuYW1lc3BhY2UgeW91IGNhbid0Cj4gdG91Y2ggL3Byb2Mv
-a21zZykuCj4gCj4gQWRkaXRpb25hbGx5IGV4Y2VwdCBmb3IgdGhlIHBvc3NpYmxlIGV4Y2VwdGlv
-biBvZiBsb2dnaW5nIGZpcmV3YWxsIHJ1bGVzCj4gSSBjYW4ndCB0aGluayBvZiBhIGNhc2Ugd2hl
-cmUgSSB3b3VsZCB3YW50IGtlcm5lbCBwcmludGsncyBpbiBhbnl0aGluZwo+IG90aGVyIHRoYW4g
-dGhlIGdsb2JhbCBrZXJuZWwgcmluZyBidWZmZXIuCgoJQmVzaWRlIG5vdCB0byBoYXZlIEhPU1Q6
-IHN5c2xvZyBjb3JydXB0ZWQsIG15IHZlcnkgb3JpZ2luYWwgbWFpbgoJY29uY2VybiB3YXMgaW5k
-ZWVkIHRvIGZlZWQgY29udGFpbmVyIHdpdGggaXRzIG93biBmaXJld2FsbAoJcnVsZXMuCgoJVGhp
-bmtpbmcgYWJvdXQgYWxsIHRoaXMsIEkgYmVsaWV2ZSB3ZSBhcmUgbm90IGJvbGQgZW5vdWdoLgoJ
-V2Ugc2hvdWxkIGJlIHJlcG9ydGluZyBhbGwga2VybmVsIG1lc3NhZ2UgYWJvdXQgZGV2aWNlcy91
-bml0cwoJb3duL2RlZmluZWQgd2l0aGluIHRoZSBjb250YWluZXIgdG8gdGhlIG93biBjb250YWlu
-ZXIgc3lzbG9nLgoKCUxldCBtZSB0cnkgZXhwbGFpbiBiZXR0ZXIgYnkgYW4gZXhhbXBsZS4gVG8g
-bWFrZSBjb250YWluZXIKCW5ldHdvcmtpbmcgeW91IGNhbiB1c2UgdmV0aCBwYWlyLgoJT25lIG9m
-IHRoZSB2ZXRoIHBhaXIgaXMgZ2l2ZW4gdG8gY29udGFpbmVyIGFuZCByZWxhdGVkCgl0byBjb250
-YWluZXIgb3duIG5ldHdvcmsgZGVmaW5pdGlvbiAoZXRoMCkuCgoJdGhpcyBUQUNBTU8gb3JkZXIg
-ImlwIGxpbmsgc2V0ICdmcm9tX2NvbnRfdmV0aCcgbmV0bnMuLi4iCgltYWtlIG5vdyB0aGUgY29u
-dGFpbmVyICJUYWtlIENoQXJnZSBhbmQgTW92ZSBPdXQiIGFuZAoJYWxsIGtlcm5lbCB0cm91Ymxl
-IHRvIGhhdmUgdGhlIGludGVyZmFjZSBmdWxseSB3b3JraW5nCgl3aXRoaW4gdGhlIGNvbnRhaW5l
-ciBzaG91bGQgYmUgcmVwb3J0ZWQgdG8gY29udGFpbmVyCglzeXNsb2cuCgoJS2VlcCBpbiBtaW5k
-LCBDT05UOiBzeXMtYWRtaW4gY291bGQgYmUgYSBkaWZmZXJlbnQKCXBlcnNvbiB0aGFuIEhPU1Q6
-IHN5cy1hZG1pbi4gQXMgbG9uZyB2ZXRoIHBhaXIKCWlzIHNldCBwcm9wZXJseSwgQ09OVDogc3lz
-LWFkbWluIHByb2JsZW0gc2V0dGluZwoJd2l0aCBldGgwIGlzIG5vdCBhIEhPU1Q6IHN5cy1hZG1p
-biBjb25jZXJuLgoKCUEgZnVsbHkgd29ya2luZyBjb250YWluZXIgc3lzbG9nIHdpbGwgYWRkcmVz
-cy9yZXNvbHZlIHRoaXMKCWtpbmQgb2Ygc2l0dWF0aW9uLgoKCgkKCgkKLS0gCkEgYmllbnTDtHQK
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT0KSmVhbi1NYXJjIFBpZ2VvbiAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgSW50ZXJuZXQ6IGptcEBzYWZlLmNhClNBRkUgSW5jLiAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgIFBob25lOiAoNTE0KSA0OTMtNDI4MAogICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBGYXg6ICAgKDUxNCkg
-NDkzLTE5NDYKICAgICAgICBDbGVtZW50LCAnYSBraXNzIHNvbHV0aW9uJyB0byBnZXQgcmlkIG9m
-IFNQQU0gKGF0IGxhc3QpCiAgICAgICAgICAgQ2xlbWVudCcgSG9tZSBiYXNlIDwiaHR0cDovL3d3
-dy5jbGVtZW50LnNhZmUuY2EiPgo9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQoKX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29u
-dGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZv
-dW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+So I tried running one of the public ubuntu karmic images in
+ec2 (ami-bb709dd2).  I could sudo apt-get install lxc.  The
+default kernel (aki-5f15f636) didn't support namespaces.  Now
+you can specify kernels at boot, but I'm not sure if there is
+an easy way to find kernels with specific CONFIG_ options.
+I'll let you know if I find one with all namespaces and
+veth+bridge+macvlan enabled, bc that would then give you
+everything you'd need.
+
+-serge
+
+Quoting Serge E. Hallyn (serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> It's been a little while (probably a year) since I played with
+> EC2, but generally the problem is that you don't have much of
+> a choice for underlying kernels.  So you can't pick vserver/openvz
+> kernels, and the available kernels are too old to have containers
+> features.  As kernels get updated, whether you can use lxc or not
+> will only depend on whether CONFIG_{containers} features are compiled
+> in.
+> 
+> It couldn't hurt to write the amazon folks and ask about it...
+> 
+> -serge
+> 
+> Quoting Jun OKAJIMA (okajima-og82NyAXoxRpnGNL948N7c8NsWr+9BEh@public.gmane.org):
+> > Somebody know any Amazon EC2 Image which
+> > supports any container technology?
+> > Vserver/LXC/OpenVZ... Any technology is Okay,
+> > I want to use pre-created image for EC2.
+> > 
+> > I found many images for Ubuntu 9.10,
+> > but it lacks some support for LXC.
+> > Fedora12 supports all functions of LXC,
+> > but did not find any image.
+> > 
+> >       --- Okajima, Jun. Tokyo, Japan.
+> > _______________________________________________
+> > Containers mailing list
+> > Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> > https://lists.linux-foundation.org/mailman/listinfo/containers
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
