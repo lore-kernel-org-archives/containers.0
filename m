@@ -1,14 +1,15 @@
 From: Jun OKAJIMA <okajima-og82NyAXoxRpnGNL948N7c8NsWr+9BEh@public.gmane.org>
 Subject: Re: Container for Amazon EC2?
-Date: Thu, 18 Feb 2010 00:23:29 +0900
-Message-ID: <2c2629fa1002170723o43aed18as7745b2ce4217474b@mail.gmail.com>
+Date: Thu, 18 Feb 2010 00:31:56 +0900
+Message-ID: <2c2629fa1002170731l4f58f5c7p64caccb8e662d6e5@mail.gmail.com>
 References: <2c2629fa1002150243n4c91d93ctee4509912228f3ea@mail.gmail.com>
 	<20100215143905.GD28038@us.ibm.com> <20100217151943.GA9159@us.ibm.com>
+	<2c2629fa1002170723o43aed18as7745b2ce4217474b@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100217151943.GA9159-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <2c2629fa1002170723o43aed18as7745b2ce4217474b-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,88 +23,62 @@ To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is my result.
-I dont know very well about lxc,
-but this is usable?
-
-       --- Okajima, Jun. Tokyo, Japan.
-
-
-ubuntu@domU-12-31-39-06-28-B2:~$ lxc-checkconfig
-Kernel config /proc/config.gz not found, looking in other places...
-Found kernel config file /boot/config-2.6.31-302-ec2
---- Namespaces ---
-Namespaces: enabled
-Utsname namespace: enabled
-Ipc namespace: enabled
-Pid namespace: disabled
-User namespace: disabled
-Network namespace: disabled
-Multiple /dev/pts instances: disabled
-
---- Control groups ---
-Cgroup: enabled
-Cgroup namespace: enabled
-Cgroup device: disabled
-Cgroup sched: enabled
-Cgroup cpu account: enabled
-Cgroup memory controller: enabled
-Cgroup cpuset: enabled
-
-
-
---- Misc ---
-Veth pair device: enabled
-Macvlan: enabled
-File capabilities: enabled
-ubuntu@domU-12-31-39-06-28-B2:~$ uname -a
-Linux domU-12-31-39-06-28-B2 2.6.31-302-ec2 #7-Ubuntu SMP Tue Oct 13
-19:55:22 UTC 2009 x86_64 GNU/Linux
-ubuntu@domU-12-31-39-06-28-B2:~$
-
-2010/2/18 Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>:
-> So I tried running one of the public ubuntu karmic images in
-> ec2 (ami-bb709dd2). =A0I could sudo apt-get install lxc. =A0The
-> default kernel (aki-5f15f636) didn't support namespaces. =A0Now
-> you can specify kernels at boot, but I'm not sure if there is
-> an easy way to find kernels with specific CONFIG_ options.
-> I'll let you know if I find one with all namespaces and
-> veth+bridge+macvlan enabled, bc that would then give you
-> everything you'd need.
->
-> -serge
->
-> Quoting Serge E. Hallyn (serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
->> It's been a little while (probably a year) since I played with
->> EC2, but generally the problem is that you don't have much of
->> a choice for underlying kernels. =A0So you can't pick vserver/openvz
->> kernels, and the available kernels are too old to have containers
->> features. =A0As kernels get updated, whether you can use lxc or not
->> will only depend on whether CONFIG_{containers} features are compiled
->> in.
->>
->> It couldn't hurt to write the amazon folks and ask about it...
->>
->> -serge
->>
->> Quoting Jun OKAJIMA (okajima-og82NyAXoxRpnGNL948N7c8NsWr+9BEh@public.gmane.org):
->> > Somebody know any Amazon EC2 Image which
->> > supports any container technology?
->> > Vserver/LXC/OpenVZ... Any technology is Okay,
->> > I want to use pre-created image for EC2.
->> >
->> > I found many images for Ubuntu 9.10,
->> > but it lacks some support for LXC.
->> > Fedora12 supports all functions of LXC,
->> > but did not find any image.
->> >
->> > =A0 =A0 =A0 --- Okajima, Jun. Tokyo, Japan.
->> > _______________________________________________
->> > Containers mailing list
->> > Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
->> > https://lists.linux-foundation.org/mailman/listinfo/containers
->> _______________________________________________
->> Containers mailing list
->> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
->> https://lists.linux-foundation.org/mailman/listinfo/containers
->
+TXkgQU1JL0tlcm5lbCBpcyB0aGlzLgoKQU1JIElEOiBhbWktN2Q0M2FlMTQKS2VybmVsIElEOiBh
+a2ktZmQxNWY2OTQKCiAgICAgICAgICAtLS0gT2thamltYSwgSnVuLiBUb2t5bywgSmFwYW4uCgoK
+CgoyMDEwLzIvMTggSnVuIE9LQUpJTUEgPG9rYWppbWFAZGlnaXRhbGluZnJhLmNvLmpwPjoKPiBU
+aGlzIGlzIG15IHJlc3VsdC4KPiBJIGRvbnQga25vdyB2ZXJ5IHdlbGwgYWJvdXQgbHhjLAo+IGJ1
+dCB0aGlzIGlzIHVzYWJsZT8KPgo+IO++guqAgCDvvoLqgIAg776C6oCAIC0tLSBPa2FqaW1hLCBK
+dW4uIFRva3lvLCBKYXBhbi4KPgo+Cj4gdWJ1bnR1QGRvbVUtMTItMzEtMzktMDYtMjgtQjI6fiQg
+bHhjLWNoZWNrY29uZmlnCj4gS2VybmVsIGNvbmZpZyAvcHJvYy9jb25maWcuZ3ogbm90IGZvdW5k
+LCBsb29raW5nIGluIG90aGVyIHBsYWNlcy4uLgo+IEZvdW5kIGtlcm5lbCBjb25maWcgZmlsZSAv
+Ym9vdC9jb25maWctMi42LjMxLTMwMi1lYzIKPiAtLS0gTmFtZXNwYWNlcyAtLS0KPiBOYW1lc3Bh
+Y2VzOiBlbmFibGVkCj4gVXRzbmFtZSBuYW1lc3BhY2U6IGVuYWJsZWQKPiBJcGMgbmFtZXNwYWNl
+OiBlbmFibGVkCj4gUGlkIG5hbWVzcGFjZTogZGlzYWJsZWQKPiBVc2VyIG5hbWVzcGFjZTogZGlz
+YWJsZWQKPiBOZXR3b3JrIG5hbWVzcGFjZTogZGlzYWJsZWQKPiBNdWx0aXBsZSAvZGV2L3B0cyBp
+bnN0YW5jZXM6IGRpc2FibGVkCj4KPiAtLS0gQ29udHJvbCBncm91cHMgLS0tCj4gQ2dyb3VwOiBl
+bmFibGVkCj4gQ2dyb3VwIG5hbWVzcGFjZTogZW5hYmxlZAo+IENncm91cCBkZXZpY2U6IGRpc2Fi
+bGVkCj4gQ2dyb3VwIHNjaGVkOiBlbmFibGVkCj4gQ2dyb3VwIGNwdSBhY2NvdW50OiBlbmFibGVk
+Cj4gQ2dyb3VwIG1lbW9yeSBjb250cm9sbGVyOiBlbmFibGVkCj4gQ2dyb3VwIGNwdXNldDogZW5h
+YmxlZAo+Cj4KPgo+IC0tLSBNaXNjIC0tLQo+IFZldGggcGFpciBkZXZpY2U6IGVuYWJsZWQKPiBN
+YWN2bGFuOiBlbmFibGVkCj4gRmlsZSBjYXBhYmlsaXRpZXM6IGVuYWJsZWQKPiB1YnVudHVAZG9t
+VS0xMi0zMS0zOS0wNi0yOC1CMjp+JCB1bmFtZSAtYQo+IExpbnV4IGRvbVUtMTItMzEtMzktMDYt
+MjgtQjIgMi42LjMxLTMwMi1lYzIgIzctVWJ1bnR1IFNNUCBUdWUgT2N0IDEzCj4gMTk6NTU6MjIg
+VVRDIDIwMDkgeDg2XzY0IEdOVS9MaW51eAo+IHVidW50dUBkb21VLTEyLTMxLTM5LTA2LTI4LUIy
+On4kCj4KPiAyMDEwLzIvMTggU2VyZ2UgRS4gSGFsbHluIDxzZXJ1ZUB1cy5pYm0uY29tPjoKPj4g
+U28gSSB0cmllZCBydW5uaW5nIG9uZSBvZiB0aGUgcHVibGljIHVidW50dSBrYXJtaWMgaW1hZ2Vz
+IGluCj4+IGVjMiAoYW1pLWJiNzA5ZGQyKS4g776C6oCASSBjb3VsZCBzdWRvIGFwdC1nZXQgaW5z
+dGFsbCBseGMuIO++guqAgFRoZQo+PiBkZWZhdWx0IGtlcm5lbCAoYWtpLTVmMTVmNjM2KSBkaWRu
+J3Qgc3VwcG9ydCBuYW1lc3BhY2VzLiDvvoLqgIBOb3cKPj4geW91IGNhbiBzcGVjaWZ5IGtlcm5l
+bHMgYXQgYm9vdCwgYnV0IEknbSBub3Qgc3VyZSBpZiB0aGVyZSBpcwo+PiBhbiBlYXN5IHdheSB0
+byBmaW5kIGtlcm5lbHMgd2l0aCBzcGVjaWZpYyBDT05GSUdfIG9wdGlvbnMuCj4+IEknbGwgbGV0
+IHlvdSBrbm93IGlmIEkgZmluZCBvbmUgd2l0aCBhbGwgbmFtZXNwYWNlcyBhbmQKPj4gdmV0aCti
+cmlkZ2UrbWFjdmxhbiBlbmFibGVkLCBiYyB0aGF0IHdvdWxkIHRoZW4gZ2l2ZSB5b3UKPj4gZXZl
+cnl0aGluZyB5b3UnZCBuZWVkLgo+Pgo+PiAtc2VyZ2UKPj4KPj4gUXVvdGluZyBTZXJnZSBFLiBI
+YWxseW4gKHNlcnVlQHVzLmlibS5jb20pOgo+Pj4gSXQncyBiZWVuIGEgbGl0dGxlIHdoaWxlIChw
+cm9iYWJseSBhIHllYXIpIHNpbmNlIEkgcGxheWVkIHdpdGgKPj4+IEVDMiwgYnV0IGdlbmVyYWxs
+eSB0aGUgcHJvYmxlbSBpcyB0aGF0IHlvdSBkb24ndCBoYXZlIG11Y2ggb2YKPj4+IGEgY2hvaWNl
+IGZvciB1bmRlcmx5aW5nIGtlcm5lbHMuIO++guqAgFNvIHlvdSBjYW4ndCBwaWNrIHZzZXJ2ZXIv
+b3BlbnZ6Cj4+PiBrZXJuZWxzLCBhbmQgdGhlIGF2YWlsYWJsZSBrZXJuZWxzIGFyZSB0b28gb2xk
+IHRvIGhhdmUgY29udGFpbmVycwo+Pj4gZmVhdHVyZXMuIO++guqAgEFzIGtlcm5lbHMgZ2V0IHVw
+ZGF0ZWQsIHdoZXRoZXIgeW91IGNhbiB1c2UgbHhjIG9yIG5vdAo+Pj4gd2lsbCBvbmx5IGRlcGVu
+ZCBvbiB3aGV0aGVyIENPTkZJR197Y29udGFpbmVyc30gZmVhdHVyZXMgYXJlIGNvbXBpbGVkCj4+
+PiBpbi4KPj4+Cj4+PiBJdCBjb3VsZG4ndCBodXJ0IHRvIHdyaXRlIHRoZSBhbWF6b24gZm9sa3Mg
+YW5kIGFzayBhYm91dCBpdC4uLgo+Pj4KPj4+IC1zZXJnZQo+Pj4KPj4+IFF1b3RpbmcgSnVuIE9L
+QUpJTUEgKG9rYWppbWFAZGlnaXRhbGluZnJhLmNvLmpwKToKPj4+ID4gU29tZWJvZHkga25vdyBh
+bnkgQW1hem9uIEVDMiBJbWFnZSB3aGljaAo+Pj4gPiBzdXBwb3J0cyBhbnkgY29udGFpbmVyIHRl
+Y2hub2xvZ3k/Cj4+PiA+IFZzZXJ2ZXIvTFhDL09wZW5WWi4uLiBBbnkgdGVjaG5vbG9neSBpcyBP
+a2F5LAo+Pj4gPiBJIHdhbnQgdG8gdXNlIHByZS1jcmVhdGVkIGltYWdlIGZvciBFQzIuCj4+PiA+
+Cj4+PiA+IEkgZm91bmQgbWFueSBpbWFnZXMgZm9yIFVidW50dSA5LjEwLAo+Pj4gPiBidXQgaXQg
+bGFja3Mgc29tZSBzdXBwb3J0IGZvciBMWEMuCj4+PiA+IEZlZG9yYTEyIHN1cHBvcnRzIGFsbCBm
+dW5jdGlvbnMgb2YgTFhDLAo+Pj4gPiBidXQgZGlkIG5vdCBmaW5kIGFueSBpbWFnZS4KPj4+ID4K
+Pj4+ID4g776C6oCAIO++guqAgCDvvoLqgIAgLS0tIE9rYWppbWEsIEp1bi4gVG9reW8sIEphcGFu
+Lgo+Pj4gPiBfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwo+
+Pj4gPiBDb250YWluZXJzIG1haWxpbmcgbGlzdAo+Pj4gPiBDb250YWluZXJzQGxpc3RzLmxpbnV4
+LWZvdW5kYXRpb24ub3JnCj4+PiA+IGh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcv
+bWFpbG1hbi9saXN0aW5mby9jb250YWluZXJzCj4+PiBfX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fXwo+Pj4gQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKPj4+IENv
+bnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKPj4+IGh0dHBzOi8vbGlzdHMubGlu
+dXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJzCj4+Cj4KX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWls
+aW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xp
+c3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
