@@ -1,15 +1,13 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH][RFC] checkpoint: refuse to checkpoint if monitoring
-	directories with dnotify
-Date: Wed, 17 Feb 2010 16:24:22 -0800
-Message-ID: <20100218002422.GG3604@count0.beaverton.ibm.com>
-References: <06e8a57fc278e96c909ff3c0f1a167cee7a48dd5.1266444614.git.matthltc@us.ibm.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [PATCH user-cr] use syscall(NR_getpid) to avoid cached pid
+Date: Wed, 17 Feb 2010 19:57:50 -0500
+Message-ID: <4B7C908E.3090606@cs.columbia.edu>
+References: <20100217002409.GA3267@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <06e8a57fc278e96c909ff3c0f1a167cee7a48dd5.1266444614.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20100217002409.GA3267-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,55 +17,41 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
-Reviewing my own patch...
+Got it, thanks.
 
-On Wed, Feb 17, 2010 at 02:10:58PM -0800, Matt Helsley wrote:
-
-<snip>
-
-> diff --git a/fs/notify/dnotify/dnotify.c b/fs/notify/dnotify/dnotify.c
-> index 7e54e52..9ce85f5 100644
-> --- a/fs/notify/dnotify/dnotify.c
-> +++ b/fs/notify/dnotify/dnotify.c
-> @@ -289,6 +289,28 @@ static int attach_dn(struct dnotify_struct *dn, struct dnotify_mark_entry *dnent
->  	return 0;
->  }
+Serge E. Hallyn wrote:
+> otherwise glibc caches getpid() result and we put the parent
+> process in the new cgroup, in the case of 'nsexec -cg /bin/sleep 10'
 > 
-> +int is_dnotify_attached(struct file *filp)
-> +{
-> +	struct fsnotify_mark_entry *entry;
-> +	struct dnotify_mark_entry *dnentry;
-> +	struct dnotify_struct *dn;
-> +	struct dnotify_struct **prev;
-
-Ugh, most of these variables aren't needed.
-
-> +	struct inode *inode;
-> +
-> +	inode = filp->f_path.dentry->d_inode;
-> +	if (!S_ISDIR(inode->i_mode))
-> +		return 0;
-> +
-> +	spin_lock(&inode->i_lock);
-> +	entry = fsnotify_find_mark_entry(dnotify_group, inode);
-> +	spin_unlock(&inode->i_lock);
-> +	if (entry) {
-> +		fsnotify_put_mark(new_entry);
-> +		return 1;
-> +	}
-
-I flipped the test to look more like normal kernel code and fixed the
-parameter to fsnotify_put_mark():
-
-	if (!entry)
-		return 0;
-	fsnotify_put_mark(entry);
-	return 1;
-
-Cheers,
-	-Matt Helsley
+> Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  nsexec.c |    4 ++--
+>  1 files changed, 2 insertions(+), 2 deletions(-)
+> 
+> diff --git a/nsexec.c b/nsexec.c
+> index 3a825f1..79fcc70 100644
+> --- a/nsexec.c
+> +++ b/nsexec.c
+> @@ -154,7 +154,7 @@ int move_to_new_cgroup(int newcgroup)
+>  	fout = fopen(tasksfname, "w");
+>  	if (!fout)
+>  		return 0;
+> -	fprintf(fout, "%d\n", getpid());
+> +	fprintf(fout, "%d\n", syscall(__NR_getpid));
+>  	fclose(fout);
+>  	return 1;
+>  }
+> @@ -193,7 +193,7 @@ int do_child(void *vargv)
+>  
+>  	/* if pid == 1 then remount /proc */
+>  	/* But if the container has no /proc don't fret */
+> -	if (getpid() == 1) {
+> +	if (syscall(__NR_getpid) == 1) {
+>  		umount2("/proc", MNT_DETACH);
+>  		mount("proc", "/proc", "proc", 0, NULL);
+>  	}
