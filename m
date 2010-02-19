@@ -1,18 +1,20 @@
 From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Subject: [PATCH -mmotm 3/4] cgroups: Add simple listener of cgroup events to
-	documentation
-Date: Sat, 20 Feb 2010 00:28:18 +0200
-Message-ID: <6afbe14e8bb2480d88377c14cb15d96edd2d18f6.1266618391.git.kirill__37836.0942625024$1266618882$gmane$org@shutemov.name>
+Subject: [PATCH -mmotm 4/4] memcg: Update memcg_test.txt to describe memory
+	thresholds
+Date: Sat, 20 Feb 2010 00:28:19 +0200
+Message-ID: <fe8b000f9eb2cd469f21d92dcd87a6b3feb5efd7.1266618391.git.kirill__32272.3256228075$1266619117$gmane$org@shutemov.name>
 References: <05f582d6cdc85fbb96bfadc344572924c0776730.1266618391.git.kirill@shutemov.name>
 	<a2717b1f5e0b49db7b6ecd1a5a41e65c1dc6b50a.1266618391.git.kirill@shutemov.name>
+	<6afbe14e8bb2480d88377c14cb15d96edd2d18f6.1266618391.git.kirill@shutemov.name>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <a2717b1f5e0b49db7b6ecd1a5a41e65c1dc6b50a.1266618391.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-In-Reply-To: <a2717b1f5e0b49db7b6ecd1a5a41e65c1dc6b50a.1266618391.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+In-Reply-To: <6afbe14e8bb2480d88377c14cb15d96edd2d18f6.1266618391.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+In-Reply-To: <6afbe14e8bb2480d88377c14cb15d96edd2d18f6.1266618391.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 References: <05f582d6cdc85fbb96bfadc344572924c0776730.1266618391.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 	<a2717b1f5e0b49db7b6ecd1a5a41e65c1dc6b50a.1266618391.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+	<6afbe14e8bb2480d88377c14cb15d96edd2d18f6.1266618391.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -28,117 +30,37 @@ List-Id: containers.vger.kernel.org
 
 Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 ---
- Documentation/cgroups/cgroup_event_listener.c |  102 +++++++++++++++++++++++++
- 1 files changed, 102 insertions(+), 0 deletions(-)
- create mode 100644 Documentation/cgroups/cgroup_event_listener.c
+ Documentation/cgroups/memcg_test.txt |   21 +++++++++++++++++++++
+ 1 files changed, 21 insertions(+), 0 deletions(-)
 
-diff --git a/Documentation/cgroups/cgroup_event_listener.c b/Documentation/cgroups/cgroup_event_listener.c
-new file mode 100644
-index 0000000..a8277b2
---- /dev/null
-+++ b/Documentation/cgroups/cgroup_event_listener.c
-@@ -0,0 +1,102 @@
-+/*
-+ * cgroup_event_listener.c - Simple listener of cgroup events
-+ *
-+ * Copyright (C) Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-+ */
+diff --git a/Documentation/cgroups/memcg_test.txt b/Documentation/cgroups/memcg_test.txt
+index e011488..4d32e0e 100644
+--- a/Documentation/cgroups/memcg_test.txt
++++ b/Documentation/cgroups/memcg_test.txt
+@@ -396,3 +396,24 @@ Under below explanation, we assume CONFIG_MEM_RES_CTRL_SWAP=y.
+ 	memory.stat of both A and B.
+ 	See 8.2 of Documentation/cgroups/memory.txt to see what value should be
+ 	written to move_charge_at_immigrate.
 +
-+#include <assert.h>
-+#include <errno.h>
-+#include <fcntl.h>
-+#include <libgen.h>
-+#include <limits.h>
-+#include <stdio.h>
-+#include <string.h>
-+#include <unistd.h>
++ 9.10 Memory thresholds
++	Memory controler implements memory thresholds using cgroups notification
++	API. You can use Documentation/cgroups/cgroup_event_listener.c to test
++	it.
 +
-+#include <sys/eventfd.h>
++	(Shell-A) Create cgroup and run event listener
++	# mkdir /cgroup/A
++	# ./cgroup_event_listener /cgroup/A/memory.usage_in_bytes 5M
 +
-+#define USAGE_STR "Usage: cgroup_event_listener <path-to-control-file> <args>\n"
++	(Shell-B) Add task to cgroup and try to allocate and free memory
++	# echo $$ >/cgroup/A/tasks
++	# a="$(dd if=/dev/zero bs=1M count=10)"
++	# a=
 +
-+int main(int argc, char **argv)
-+{
-+	int efd = -1;
-+	int cfd = -1;
-+	int event_control = -1;
-+	char event_control_path[PATH_MAX];
-+	int ret;
++	You will see message from cgroup_event_listener every time you cross
++	the thresholds.
 +
-+	if (argc != 3) {
-+		fputs(USAGE_STR, stderr);
-+		return 1;
-+	}
++	Use /cgroup/A/memory.memsw.usage_in_bytes to test memsw thresholds.
 +
-+	cfd = open(argv[1], O_RDONLY);
-+	if (cfd == -1) {
-+		fprintf(stderr, "Cannot open %s: %s\n", argv[1],
-+				strerror(errno));
-+		goto out;
-+	}
-+
-+	ret = snprintf(event_control_path, PATH_MAX, "%s/cgroup.event_control",
-+			dirname(argv[1]));
-+	if (ret > PATH_MAX) {
-+		fputs("Path to cgroup.event_control is too long\n", stderr);
-+		goto out;
-+	}
-+
-+	event_control = open(event_control_path, O_WRONLY);
-+	if (event_control == -1) {
-+		fprintf(stderr, "Cannot open %s: %s\n", event_control_path,
-+				strerror(errno));
-+		goto out;
-+	}
-+
-+	efd = eventfd(0, 0);
-+	if (efd == -1) {
-+		perror("eventfd() failed");
-+		goto out;
-+	}
-+
-+	ret = dprintf(event_control, "%d %d %s", efd, cfd, argv[2]);
-+	if (ret == -1) {
-+		perror("Cannot write to cgroup.event_control");
-+		goto out;
-+	}
-+
-+	while (1) {
-+		uint64_t result;
-+
-+		ret = read(efd, &result, sizeof(result));
-+		if (ret == -1) {
-+			if (errno == EINTR)
-+				continue;
-+			perror("Cannot read from eventfd");
-+			break;
-+		}
-+		assert (ret == sizeof(result));
-+
-+		ret = access(event_control_path, W_OK);
-+		if ((ret == -1) && (errno == ENOENT)) {
-+				puts("The cgroup seems to have removed.");
-+				ret = 0;
-+				break;
-+		}
-+
-+		if (ret == -1) {
-+			perror("cgroup.event_control is not accessable any more");
-+			break;
-+		}
-+
-+		printf("%s %s: crossed\n", argv[1], argv[2]);
-+	}
-+
-+out:
-+	if (efd >= 0)
-+		close(efd);
-+	if (event_control >= 0)
-+		close(event_control);
-+	if (cfd >= 0)
-+		close(cfd);
-+
-+	return (ret != 0);
-+}
++	It's good idea to test root cgroup as well.
 -- 
 1.6.6.2
