@@ -1,7 +1,7 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] c/r: Fix x86-32 build without CONFIG_CHECKPOINT
-Date: Fri, 19 Feb 2010 16:31:17 -0800
-Message-ID: <fca30ee3fcd63dc97a9c7a9a4a7b878ab256d7e7.1266625869.git.matthltc@us.ibm.com>
+Subject: [PATCH 0/9] cr_tests: Filesystem tests
+Date: Fri, 19 Feb 2010 18:18:48 -0800
+Message-ID: <1266632337-13792-1-git-send-email-matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,40 +15,20 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-When building for x86-32 the ptregs_checkpoint and ptregs_restart
-definitions are missing because they're surrounded by
+These filesystem-related tests for unlinked file support and
+dnotify are expected to fail so long as those features are
+unsupported by c/r.
 
-	arch/x86/built-in.o: In function `sys_call_table':
-	(.rodata+0x58c): undefined reference to `ptregs_checkpoint'
-	arch/x86/built-in.o: In function `sys_call_table':
-	(.rodata+0x590): undefined reference to `ptregs_restart'
-
-The solution is to map these to sys_checkpoint from kernel/sys_ni.c
-when CONFIG_CHECKPOINT is not defined.
-
-Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- arch/x86/kernel/entry_32.S |    4 ++++
- 1 files changed, 4 insertions(+), 0 deletions(-)
-
-diff --git a/arch/x86/kernel/entry_32.S b/arch/x86/kernel/entry_32.S
-index af8c81b..07f1d2d 100644
---- a/arch/x86/kernel/entry_32.S
-+++ b/arch/x86/kernel/entry_32.S
-@@ -784,6 +784,10 @@ PTREGSCALL4(eclone)
- #ifdef CONFIG_CHECKPOINT
- PTREGSCALL4(checkpoint)
- PTREGSCALL4(restart)
-+#else
-+/* Use the weak defs in kernel/sys_ni.c */
-+#define ptregs_checkpoint sys_checkpoint
-+#define ptregs_restart sys_restart
- #endif
- 
- /* Clone is an oddball.  The 4th arg is in %edi */
--- 
-1.6.3.3
+PATCH 1/9 Add tests for checkpoint/restart of unlinked files.
+PATCH 2/9 Add a do_ckpt utility (for python scripts)
+PATCH 3/9 A tool to create a random tree of dirs and files
+PATCH 4/9 A tool to re-fill a tree of dirs and files
+PATCH 5/9 A tool to check a tree of files and dirs
+PATCH 6/9 Add script to hold an unlinked tree
+PATCH 7/9 Add random tree test
+PATCH 8/9 Add unlinked fifo test
+PATCH 9/9 Add fsnotify test for dnotify
