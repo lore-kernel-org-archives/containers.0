@@ -1,17 +1,16 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH -mmotm 4/4] memcg: Update memcg_test.txt to describe
-	memory thresholds
-Date: Sat, 20 Feb 2010 13:26:04 +0900
-Message-ID: <20100220132604.0609db47.kamezawa.hiroyu__19715.0156986483$1266640214$gmane$org@jp.fujitsu.com>
+From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+Subject: Re: [PATCH -mmotm 2/4] cgroups: remove events before destroying
+	subsystem state objects
+Date: Sat, 20 Feb 2010 13:56:45 +0200
+Message-ID: <cc557aab1002200356j17ef419ex104cbc28125258b2__33311.9448660456$1266667072$gmane$org@mail.gmail.com>
 References: <05f582d6cdc85fbb96bfadc344572924c0776730.1266618391.git.kirill@shutemov.name>
 	<a2717b1f5e0b49db7b6ecd1a5a41e65c1dc6b50a.1266618391.git.kirill@shutemov.name>
-	<6afbe14e8bb2480d88377c14cb15d96edd2d18f6.1266618391.git.kirill@shutemov.name>
-	<fe8b000f9eb2cd469f21d92dcd87a6b3feb5efd7.1266618391.git.kirill@shutemov.name>
+	<20100220132217.17dc7dd3.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <fe8b000f9eb2cd469f21d92dcd87a6b3feb5efd7.1266618391.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+In-Reply-To: <20100220132217.17dc7dd3.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,53 +20,76 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Cc: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Dan Malek <dan-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Sat, 20 Feb 2010 00:28:19 +0200
-"Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org> wrote:
-
-> Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-
-Thank you.
-Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-
-
-> ---
->  Documentation/cgroups/memcg_test.txt |   21 +++++++++++++++++++++
->  1 files changed, 21 insertions(+), 0 deletions(-)
-> 
-> diff --git a/Documentation/cgroups/memcg_test.txt b/Documentation/cgroups/memcg_test.txt
-> index e011488..4d32e0e 100644
-> --- a/Documentation/cgroups/memcg_test.txt
-> +++ b/Documentation/cgroups/memcg_test.txt
-> @@ -396,3 +396,24 @@ Under below explanation, we assume CONFIG_MEM_RES_CTRL_SWAP=y.
->  	memory.stat of both A and B.
->  	See 8.2 of Documentation/cgroups/memory.txt to see what value should be
->  	written to move_charge_at_immigrate.
-> +
-> + 9.10 Memory thresholds
-> +	Memory controler implements memory thresholds using cgroups notification
-> +	API. You can use Documentation/cgroups/cgroup_event_listener.c to test
-> +	it.
-> +
-> +	(Shell-A) Create cgroup and run event listener
-> +	# mkdir /cgroup/A
-> +	# ./cgroup_event_listener /cgroup/A/memory.usage_in_bytes 5M
-> +
-> +	(Shell-B) Add task to cgroup and try to allocate and free memory
-> +	# echo $$ >/cgroup/A/tasks
-> +	# a="$(dd if=/dev/zero bs=1M count=10)"
-> +	# a=
-> +
-> +	You will see message from cgroup_event_listener every time you cross
-> +	the thresholds.
-> +
-> +	Use /cgroup/A/memory.memsw.usage_in_bytes to test memsw thresholds.
-> +
-> +	It's good idea to test root cgroup as well.
-> -- 
-> 1.6.6.2
-> 
-> 
+T24gU2F0LCBGZWIgMjAsIDIwMTAgYXQgNjoyMiBBTSwgS0FNRVpBV0EgSGlyb3l1a2kKPGthbWV6
+YXdhLmhpcm95dUBqcC5mdWppdHN1LmNvbT4gd3JvdGU6Cj4gT24gU2F0LCAyMCBGZWIgMjAxMCAw
+MDoyODoxNyArMDIwMAo+ICJLaXJpbGwgQS4gU2h1dGVtb3YiIDxraXJpbGxAc2h1dGVtb3YubmFt
+ZT4gd3JvdGU6Cj4KPj4gRXZlbnRzIHNob3VsZCBiZSByZW1vdmVkIGFmdGVyIHJtZGlyIG9mIGNn
+cm91cCBkaXJlY3RvcnksIGJ1dCBiZWZvcmUKPj4gZGVzdHJveWluZyBzdWJzeXN0ZW0gc3RhdGUg
+b2JqZWN0cy4gTGV0J3MgdGFrZSByZWZlcmVuY2UgdG8gY2dyb3VwCj4+IGRpcmVjdG9yeSBkZW50
+cnkgdG8gZG8gdGhhdC4KPj4KPj4gU2lnbmVkLW9mZi1ieTogS2lyaWxsIEEuIFNodXRlbW92IDxr
+aXJpbGxAc2h1dGVtb3YubmFtZT4KPgo+IE9rYXksIEkgd2VsY29tZSB0aGlzLgo+Cj4gQWNrZWQt
+Ynk6IEtBTUVaQVdBIEhpcm95dWtpIDxrYW1lemF3YS5oaW9yeXVAanAuZnVqaXRzdS5jb20+Cj4K
+PiBKdXN0IGEgcXVlc2lvbi4uLkFmdGVyIHRoaXMgY2hhbmdlLCBpZiBjZ3JvdXAgaGFzIHJlbWFp
+bmluZyBldmVudCwKPiBjZ3JvdXAgaXMgcmVtb3ZlZCBieSB3b3JrcXVldWUgb2YgZXZlbnQtPnJl
+bW92ZSgpIC0+IGRfcHV0KCksIGZpbmFsbHkuIFJpZ2h0ID8KClllcwoKPiBEbyB5b3UgaGF2ZSBh
+IHRlc3Qgc2V0IGZvciBjaGVja2luZyB0aGlzIGJlaGF2aW9yID8KClJ1biAuL2Nncm91cF9ldmVu
+dF9saXN0ZW5lciB0byBsaXN0ZW4gYW55IGV2ZW50IGluIHRoZSBjZ3JvdXAuIFJlbW92ZSBkaXJl
+Y3RvcnkKb2YgdGhlIGNncm91cCAoY2dyb3VwX2V2ZW50X2xpc3RlbmVyIHdpbGwgZGV0ZWN0IGl0
+KS4gQW5kIGNoZWNrICdudW1fY2dyb3VwcycKY29sdW1uIGluIC9wcm9jL2Nncm91cHMuCgo+Cj4g
+VGhhbmtzLAo+IC1LYW1lCj4KPgo+Cj4+IC0tLQo+PiDCoGluY2x1ZGUvbGludXgvY2dyb3VwLmgg
+fCDCoCDCoDMgLS0tCj4+IMKga2VybmVsL2Nncm91cC5jIMKgIMKgIMKgIMKgfCDCoCDCoDggKysr
+KysrKysKPj4gwqBtbS9tZW1jb250cm9sLmMgwqAgwqAgwqAgwqB8IMKgIMKgOSAtLS0tLS0tLS0K
+Pj4gwqAzIGZpbGVzIGNoYW5nZWQsIDggaW5zZXJ0aW9ucygrKSwgMTIgZGVsZXRpb25zKC0pCj4+
+Cj4+IGRpZmYgLS1naXQgYS9pbmNsdWRlL2xpbnV4L2Nncm91cC5oIGIvaW5jbHVkZS9saW51eC9j
+Z3JvdXAuaAo+PiBpbmRleCA2NGNlYmZlLi4xNzE5Yzc1IDEwMDY0NAo+PiAtLS0gYS9pbmNsdWRl
+L2xpbnV4L2Nncm91cC5oCj4+ICsrKyBiL2luY2x1ZGUvbGludXgvY2dyb3VwLmgKPj4gQEAgLTM5
+NSw5ICszOTUsNiBAQCBzdHJ1Y3QgY2Z0eXBlIHsKPj4gwqAgwqAgwqAgwqAqIGNsb3NlcyB0aGUg
+ZXZlbnRmZCBvciBvbiBjZ3JvdXAgcmVtb3ZpbmcuCj4+IMKgIMKgIMKgIMKgKiBUaGlzIGNhbGxi
+YWNrIG11c3QgYmUgaW1wbGVtZW50ZWQsIGlmIHlvdSB3YW50IHByb3ZpZGUKPj4gwqAgwqAgwqAg
+wqAqIG5vdGlmaWNhdGlvbiBmdW5jdGlvbmFsaXR5Lgo+PiAtIMKgIMKgIMKgKgo+PiAtIMKgIMKg
+IMKgKiBCZSBjYXJlZnVsLiBJdCBjYW4gYmUgY2FsbGVkIGFmdGVyIGRlc3Ryb3koKSwgc28geW91
+IGhhdmUKPj4gLSDCoCDCoCDCoCogdG8ga2VlcCBhbGwgbmVzZXNzYXJ5IGRhdGEsIHVudGlsIGFs
+bCBldmVudHMgYXJlIHJlbW92ZWQuCj4+IMKgIMKgIMKgIMKgKi8KPj4gwqAgwqAgwqAgaW50ICgq
+dW5yZWdpc3Rlcl9ldmVudCkoc3RydWN0IGNncm91cCAqY2dycCwgc3RydWN0IGNmdHlwZSAqY2Z0
+LAo+PiDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCBzdHJ1Y3QgZXZlbnRmZF9jdHgg
+KmV2ZW50ZmQpOwo+PiBkaWZmIC0tZ2l0IGEva2VybmVsL2Nncm91cC5jIGIva2VybmVsL2Nncm91
+cC5jCj4+IGluZGV4IDQ2OTAzY2IuLmQxNDI1MjQgMTAwNjQ0Cj4+IC0tLSBhL2tlcm5lbC9jZ3Jv
+dXAuYwo+PiArKysgYi9rZXJuZWwvY2dyb3VwLmMKPj4gQEAgLTI5NzksNiArMjk3OSw3IEBAIHN0
+YXRpYyB2b2lkIGNncm91cF9ldmVudF9yZW1vdmUoc3RydWN0IHdvcmtfc3RydWN0ICp3b3JrKQo+
+Pgo+PiDCoCDCoCDCoCBldmVudGZkX2N0eF9wdXQoZXZlbnQtPmV2ZW50ZmQpOwo+PiDCoCDCoCDC
+oCBrZnJlZShldmVudCk7Cj4+ICsgwqAgwqAgZHB1dChjZ3JwLT5kZW50cnkpOwo+PiDCoH0KPj4K
+Pj4gwqAvKgo+PiBAQCAtMzA5OSw2ICszMTAwLDEzIEBAIHN0YXRpYyBpbnQgY2dyb3VwX3dyaXRl
+X2V2ZW50X2NvbnRyb2woc3RydWN0IGNncm91cCAqY2dycCwgc3RydWN0IGNmdHlwZSAqY2Z0LAo+
+PiDCoCDCoCDCoCDCoCDCoCDCoCDCoCBnb3RvIGZhaWw7Cj4+IMKgIMKgIMKgIH0KPj4KPj4gKyDC
+oCDCoCAvKgo+PiArIMKgIMKgIMKgKiBFdmVudHMgc2hvdWxkIGJlIHJlbW92ZWQgYWZ0ZXIgcm1k
+aXIgb2YgY2dyb3VwIGRpcmVjdG9yeSwgYnV0IGJlZm9yZQo+PiArIMKgIMKgIMKgKiBkZXN0cm95
+aW5nIHN1YnN5c3RlbSBzdGF0ZSBvYmplY3RzLiBMZXQncyB0YWtlIHJlZmVyZW5jZSB0byBjZ3Jv
+dXAKPj4gKyDCoCDCoCDCoCogZGlyZWN0b3J5IGRlbnRyeSB0byBkbyB0aGF0Lgo+PiArIMKgIMKg
+IMKgKi8KPj4gKyDCoCDCoCBkZ2V0KGNncnAtPmRlbnRyeSk7Cj4+ICsKPj4gwqAgwqAgwqAgc3Bp
+bl9sb2NrKCZjZ3JwLT5ldmVudF9saXN0X2xvY2spOwo+PiDCoCDCoCDCoCBsaXN0X2FkZCgmZXZl
+bnQtPmxpc3QsICZjZ3JwLT5ldmVudF9saXN0KTsKPj4gwqAgwqAgwqAgc3Bpbl91bmxvY2soJmNn
+cnAtPmV2ZW50X2xpc3RfbG9jayk7Cj4+IGRpZmYgLS1naXQgYS9tbS9tZW1jb250cm9sLmMgYi9t
+bS9tZW1jb250cm9sLmMKPj4gaW5kZXggYTQ0M2MzMC4uOGZlNmU3ZiAxMDA2NDQKPj4gLS0tIGEv
+bW0vbWVtY29udHJvbC5jCj4+ICsrKyBiL21tL21lbWNvbnRyb2wuYwo+PiBAQCAtMzM1OCwxMiAr
+MzM1OCw2IEBAIHN0YXRpYyBpbnQgbWVtX2Nncm91cF9yZWdpc3Rlcl9ldmVudChzdHJ1Y3QgY2dy
+b3VwICpjZ3JwLCBzdHJ1Y3QgY2Z0eXBlICpjZnQsCj4+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIH0K
+Pj4gwqAgwqAgwqAgfQo+Pgo+PiAtIMKgIMKgIC8qCj4+IC0gwqAgwqAgwqAqIFdlIG5lZWQgdG8g
+aW5jcmVtZW50IHJlZmNudCB0byBiZSBzdXJlIHRoYXQgYWxsIHRocmVzaG9sZHMKPj4gLSDCoCDC
+oCDCoCogd2lsbCBiZSB1bnJlZ2lzdGVyZWQgYmVmb3JlIGNhbGxpbmcgX19tZW1fY2dyb3VwX2Zy
+ZWUoKQo+PiAtIMKgIMKgIMKgKi8KPj4gLSDCoCDCoCBtZW1fY2dyb3VwX2dldChtZW1jZyk7Cj4+
+IC0KPj4gwqAgwqAgwqAgaWYgKHR5cGUgPT0gX01FTSkKPj4gwqAgwqAgwqAgwqAgwqAgwqAgwqAg
+cmN1X2Fzc2lnbl9wb2ludGVyKG1lbWNnLT50aHJlc2hvbGRzLCB0aHJlc2hvbGRzX25ldyk7Cj4+
+IMKgIMKgIMKgIGVsc2UKPj4gQEAgLTM0NTcsOSArMzQ1MSw2IEBAIGFzc2lnbjoKPj4gwqAgwqAg
+wqAgLyogVG8gYmUgc3VyZSB0aGF0IG5vYm9keSB1c2VzIHRocmVzaG9sZHMgYmVmb3JlIGZyZWVp
+bmcgaXQgKi8KPj4gwqAgwqAgwqAgc3luY2hyb25pemVfcmN1KCk7Cj4+Cj4+IC0gwqAgwqAgZm9y
+IChpID0gMDsgaSA8IHRocmVzaG9sZHMtPnNpemUgLSBzaXplOyBpKyspCj4+IC0gwqAgwqAgwqAg
+wqAgwqAgwqAgbWVtX2Nncm91cF9wdXQobWVtY2cpOwo+PiAtCj4+IMKgIMKgIMKgIGtmcmVlKHRo
+cmVzaG9sZHMpOwo+PiDCoHVubG9jazoKPj4gwqAgwqAgwqAgbXV0ZXhfdW5sb2NrKCZtZW1jZy0+
+dGhyZXNob2xkc19sb2NrKTsKPj4gLS0KPj4gMS42LjYuMgo+Pgo+Pgo+Cj4KX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxp
+c3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxp
+bnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
