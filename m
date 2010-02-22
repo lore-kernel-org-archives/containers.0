@@ -1,17 +1,17 @@
-From: David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/2] memcg: dirty pages accounting and limiting
-	infrastructure
-Date: Mon, 22 Feb 2010 13:21:53 -0800 (PST)
-Message-ID: <alpine.DEB.2.00.1002221319170.14426__42934.2981464744$1266873752$gmane$org@chino.kir.corp.google.com>
-References: <1266765525-30890-1-git-send-email-arighi@develer.com>
-	<1266765525-30890-2-git-send-email-arighi@develer.com>
-	<20100222092242.98df82e4.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100222180013.GB4052@linux>
+From: jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org>
+Subject: Re: RFC: netfilter: nf_conntrack: add support for "conntrack zones"
+Date: Mon, 22 Feb 2010 16:55:29 -0500
+Message-ID: <1266875729.3673.12.camel__9377.3630484522$1266875934$gmane$org@bigi>
+References: <4B4F24AC.70105@trash.net> <1263481549.23480.24.camel@bigi>
+	<4B4F3A50.1050400@trash.net> <1263490403.23480.109.camel@bigi>
+	<4B50403A.6010507@trash.net> <1263568754.23480.142.camel@bigi>
+	<m13a0tf17t.fsf@fess.ebiederm.org>
+Reply-To: hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100222180013.GB4052@linux>
+In-Reply-To: <m13a0tf17t.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,18 +21,45 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Ben Greear <greearb-my8/4N5VtI7c+919tysfdA@public.gmane.org>, Linux Netdev List <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Netfilter Development Mailinglist <netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, 22 Feb 2010, Andrea Righi wrote:
+On Mon, 2010-02-22 at 12:46 -0800, Eric W. Biederman wrote:
+> jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org> writes:
 
-> > Hmm...do we need spinlock ? You use "unsigned long", then, read-write
-> > is always atomic if not read-modify-write.
 > 
-> I think I simply copy&paste the memcg->swappiness case. But I agree,
-> read-write should be atomic.
+> This is one of the long standing issues that we have always known
+> we needed to solve, but have not taken the time to do it.  Now that
+> the need is more real it looks about time to solve this one.
+> 
+> There are currently two problems.
+> 1) A process is needed to hold a reference to the network namespace.
+> 2) We use pids which are an awkward way of talking about network
+>    namespaces.
+> 
+> The solution I have been playing with involves.
+> - Using a file descriptor to refer to a network namespace.
+> - Using a trivial virtual filesystem to persistently hold onto
+>   a namespace without the need of a process.
+> - Have a convention of mounting the fs at something like
+>   /var/run/netns/<name>
 > 
 
-We don't need memcg->reclaim_param_lock in get_swappiness() or
-mem_cgroup_get_reclaim_priority().
+I didnt quiet follow how i could use the above to do:
+"ip ns <name/id> route add blah" from namespace0.
+
+I tend to think in packets and wires instead of files;
+How about just allowing a "control" channel from which
+i could discover the namespace?
+Example, assuming i have the right permissions:
+1) listen to async events example on a multicast bus when
+a namespace is created or destroyed. Provide me a little more info on
+the created namespace such as its pid, name(?), types of namespace, etc
+2) send a query to dump existing namespace or query by name, id etc.
+I get the same details as above.
+
+using genetlink should provide you with sufficient ability to do this.
+
+cheers,
+jamal
