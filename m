@@ -1,14 +1,18 @@
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH user-cr] define MNT_DETACH in older userspace
-Date: Mon, 22 Feb 2010 12:07:29 -0600
-Message-ID: <1266862049.12720.1.camel@localhost.localdomain>
-References: <20100222174755.GA8329@us.ibm.com>
-	<1266861478.3760.2.camel@localhost.localdomain>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/2] memcg: dirty pages accounting and limiting
+	infrastructure
+Date: Mon, 22 Feb 2010 13:07:32 -0500
+Message-ID: <20100222180732.GC3096__12651.8909041353$1266862113$gmane$org@redhat.com>
+References: <1266765525-30890-1-git-send-email-arighi@develer.com>
+	<1266765525-30890-2-git-send-email-arighi@develer.com>
+	<alpine.DEB.2.00.1002211321010.22858@chino.kir.corp.google.com>
+	<20100221221700.GA5233@linux>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1266861478.3760.2.camel-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20100221221700.GA5233@linux>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,71 +22,147 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, 2010-02-22 at 11:58 -0600, Nathan Lynch wrote:
-> Thanks, I had already put together a local fix which adds a compat
-> header -- please use this instead of duplicating the work across files?
+On Sun, Feb 21, 2010 at 11:17:01PM +0100, Andrea Righi wrote:
+> On Sun, Feb 21, 2010 at 01:28:35PM -0800, David Rientjes wrote:
+> 
+> [snip]
+> 
+> > > +static struct mem_cgroup *get_mem_cgroup_from_page(struct page *page)
+> > > +{
+> > > +	struct page_cgroup *pc;
+> > > +	struct mem_cgroup *mem = NULL;
+> > > +
+> > > +	pc = lookup_page_cgroup(page);
+> > > +	if (unlikely(!pc))
+> > > +		return NULL;
+> > > +	lock_page_cgroup(pc);
+> > > +	if (PageCgroupUsed(pc)) {
+> > > +		mem = pc->mem_cgroup;
+> > > +		if (mem)
+> > > +			css_get(&mem->css);
+> > > +	}
+> > > +	unlock_page_cgroup(pc);
+> > > +	return mem;
+> > > +}
+> > 
+> > Is it possible to merge this with try_get_mem_cgroup_from_page()?
+> 
+> Agreed.
+> 
+> > 
+> > > +
+> > > +void mem_cgroup_charge_dirty(struct page *page,
+> > > +			enum zone_stat_item idx, int charge)
+> > > +{
+> > > +	struct mem_cgroup *mem;
+> > > +	struct mem_cgroup_stat_cpu *cpustat;
+> > > +	unsigned long flags;
+> > > +	int cpu;
+> > > +
+> > > +	if (mem_cgroup_disabled())
+> > > +		return;
+> > > +	/* Translate the zone_stat_item into a mem_cgroup_stat_index */
+> > > +	switch (idx) {
+> > > +	case NR_FILE_DIRTY:
+> > > +		idx = MEM_CGROUP_STAT_FILE_DIRTY;
+> > > +		break;
+> > > +	case NR_WRITEBACK:
+> > > +		idx = MEM_CGROUP_STAT_WRITEBACK;
+> > > +		break;
+> > > +	case NR_WRITEBACK_TEMP:
+> > > +		idx = MEM_CGROUP_STAT_WRITEBACK_TEMP;
+> > > +		break;
+> > > +	case NR_UNSTABLE_NFS:
+> > > +		idx = MEM_CGROUP_STAT_UNSTABLE_NFS;
+> > > +		break;
+> > > +	default:
+> > > +		return;
+> > 
+> > WARN()?  We don't want to silently leak counters.
+> 
+> Agreed.
+> 
+> > 
+> > > +	}
+> > > +	/* Charge the memory cgroup statistics */
+> > > +	mem = get_mem_cgroup_from_page(page);
+> > > +	if (!mem) {
+> > > +		mem = root_mem_cgroup;
+> > > +		css_get(&mem->css);
+> > > +	}
+> > 
+> > get_mem_cgroup_from_page() should probably handle the root_mem_cgroup case 
+> > and return a reference from it.
+> 
+> Right. But I'd prefer to use try_get_mem_cgroup_from_page() without
+> changing the behaviour of this function.
+> 
+> > 
+> > > +
+> > > +	local_irq_save(flags);
+> > > +	cpu = get_cpu();
+> > > +	cpustat = &mem->stat.cpustat[cpu];
+> > > +	__mem_cgroup_stat_add_safe(cpustat, idx, charge);
+> > 
+> > get_cpu()?  Preemption is already disabled, just use smp_processor_id().
+> 
+> mmmh... actually, we can just copy the code from
+> mem_cgroup_charge_statistics(), so local_irq_save/restore are not
+> necessarily needed and we can just use get_cpu()/put_cpu().
+> 
+> > > +	put_cpu();
+> > > +	local_irq_restore(flags);
+> > > +	css_put(&mem->css);
+> > > +}
+> > > +
+> > >  static unsigned long mem_cgroup_get_local_zonestat(struct mem_cgroup *mem,
+> > >  					enum lru_list idx)
+> > >  {
+> > > @@ -992,6 +1061,97 @@ static unsigned int get_swappiness(struct mem_cgroup *memcg)
+> > >  	return swappiness;
+> > >  }
+> > >  
+> > > +static unsigned long get_dirty_bytes(struct mem_cgroup *memcg)
+> > > +{
+> > > +	struct cgroup *cgrp = memcg->css.cgroup;
+> > > +	unsigned long dirty_bytes;
+> > > +
+> > > +	/* root ? */
+> > > +	if (cgrp->parent == NULL)
+> > > +		return vm_dirty_bytes;
+> > > +
+> > > +	spin_lock(&memcg->reclaim_param_lock);
+> > > +	dirty_bytes = memcg->dirty_bytes;
+> > > +	spin_unlock(&memcg->reclaim_param_lock);
+> > > +
+> > > +	return dirty_bytes;
+> > > +}
+> > > +
+> > > +unsigned long mem_cgroup_dirty_bytes(void)
+> > > +{
+> > > +	struct mem_cgroup *memcg;
+> > > +	unsigned long dirty_bytes;
+> > > +
+> > > +	if (mem_cgroup_disabled())
+> > > +		return vm_dirty_bytes;
+> > > +
+> > > +	rcu_read_lock();
+> > > +	memcg = mem_cgroup_from_task(current);
+> > > +	if (memcg == NULL)
+> > > +		dirty_bytes = vm_dirty_bytes;
+> > > +	else
+> > > +		dirty_bytes = get_dirty_bytes(memcg);
+> > > +	rcu_read_unlock();
+> > 
+> > The rcu_read_lock() isn't protecting anything here.
+> 
+> Right!
 
-Sorry, please use this one instead - fixed include guard in compat.h
+Are we not protecting "memcg" pointer using rcu here?
 
-From c0869556338592a92bad3b587d394add82267f99 Mon Sep 17 00:00:00 2001
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Date: Mon, 22 Feb 2010 11:50:46 -0600
-Subject: [PATCH 1/1] user-cr: add compat.h; define MNT_DETACH
-
-"nsexec: remount proc and devpts" introduced usage of the MNT_DETACH
-umount2 flag, which is not defined even in some relatively recent
-glibc headers (e.g. Fedora 10/glibc 2.9-3).  Add a compat.h header
-where we can add fixups like this for older build environments.
-
-Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
----
- include/compat.h |    8 ++++++++
- nsexec.c         |    1 +
- restart.c        |    1 +
- 3 files changed, 10 insertions(+), 0 deletions(-)
- create mode 100644 include/compat.h
-
-diff --git a/include/compat.h b/include/compat.h
-new file mode 100644
-index 0000000..bcdd149
---- /dev/null
-+++ b/include/compat.h
-@@ -0,0 +1,8 @@
-+#ifndef USER_CR_COMPAT_H
-+#define USER_CR_COMPAT_H
-+
-+#ifndef MNT_DETACH
-+#define MNT_DETACH 2
-+#endif
-+
-+#endif /* USER_CR_COMPAT_H */
-diff --git a/nsexec.c b/nsexec.c
-index 7a0294c..1cf9c97 100644
---- a/nsexec.c
-+++ b/nsexec.c
-@@ -20,6 +20,7 @@
- #include "clone.h"
- #include "eclone.h"
- #include "genstack.h"
-+#include "compat.h"
- 
- extern pid_t getpgid(pid_t pid);
- extern pid_t getsid(pid_t pid);
-diff --git a/restart.c b/restart.c
-index 166a499..f5d23bb 100644
---- a/restart.c
-+++ b/restart.c
-@@ -38,6 +38,7 @@
- 
- #include "eclone.h"
- #include "genstack.h"
-+#include "compat.h"
- 
- static char usage_str[] =
- "usage: restart [opts]\n"
--- 
-1.6.0.6
+Thanks
+Vivek
