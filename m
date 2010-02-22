@@ -1,11 +1,17 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Linux Checkpoint-Restart - v19
-Date: Mon, 22 Feb 2010 18:17:00 -0500
-Message-ID: <4B83106C.7040203@cs.columbia.edu>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: RFC: netfilter: nf_conntrack: add support for "conntrack zones"
+Date: Mon, 22 Feb 2010 15:17:58 -0800
+Message-ID: <m1wry46es9.fsf__23707.574272021$1266880765$gmane$org@fess.ebiederm.org>
+References: <4B4F24AC.70105@trash.net> <1263481549.23480.24.camel@bigi>
+	<4B4F3A50.1050400@trash.net> <1263490403.23480.109.camel@bigi>
+	<4B50403A.6010507@trash.net> <1263568754.23480.142.camel@bigi>
+	<m13a0tf17t.fsf@fess.ebiederm.org> <1266875729.3673.12.camel@bigi>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1266875729.3673.12.camel@bigi> (jamal's message of "Mon\,
+	22 Feb 2010 16\:55\:29 -0500")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,49 +21,70 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Linux-Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org
+Cc: Ben Greear <greearb-my8/4N5VtI7c+919tysfdA@public.gmane.org>, Linux Netdev List <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Netfilter Development Mailinglist <netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi Andrew,
+jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org> writes:
 
-We've put a stake in the ground for our next set of checkpoint/restart
-patches, v19. It has some great new stuff, and we put extra effort to
-address your concerns. We would like to have the code included in -mm
-for wider feedback and testing.
+> On Mon, 2010-02-22 at 12:46 -0800, Eric W. Biederman wrote:
+>> jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org> writes:
+>
+>> 
+>> This is one of the long standing issues that we have always known
+>> we needed to solve, but have not taken the time to do it.  Now that
+>> the need is more real it looks about time to solve this one.
+>> 
+>> There are currently two problems.
+>> 1) A process is needed to hold a reference to the network namespace.
+>> 2) We use pids which are an awkward way of talking about network
+>>    namespaces.
+>> 
+>> The solution I have been playing with involves.
+>> - Using a file descriptor to refer to a network namespace.
+>> - Using a trivial virtual filesystem to persistently hold onto
+>>   a namespace without the need of a process.
+>> - Have a convention of mounting the fs at something like
+>>   /var/run/netns/<name>
+>> 
+>
+> I didnt quiet follow how i could use the above to do:
+> "ip ns <name/id> route add blah" from namespace0.
+>
+> I tend to think in packets and wires instead of files;
+> How about just allowing a "control" channel from which
+> i could discover the namespace?
+> Example, assuming i have the right permissions:
+> 1) listen to async events example on a multicast bus when
+> a namespace is created or destroyed. Provide me a little more info on
+> the created namespace such as its pid, name(?), types of namespace, etc
+> 2) send a query to dump existing namespace or query by name, id etc.
+> I get the same details as above.
+>
+> using genetlink should provide you with sufficient ability to do this.
 
-This one is able to checkpoint/restart screen and vnc sessions, and
-live-migrate network servers between hosts. It also adds support for
-x86-64 (in addition to x86-32, s390x and powerpc). It is rebased to
-kernel 2.6.33-rc8.
+What I am thinking is:
 
-Since one of your main concerns was about what is not yet implemented
-and how complicated or ugly it will be to support that, we've put up
-a wiki page to address that. In it there is a simple table that lists
-what is not implemented and the anticipated solution impact, and for
-some entries a link to more details.
+"ip ns <name> route add blah" is:
+fd = open("/var/run/netns/<name>");
+sys_setns(fd);  /* Like unshare but takes an existing namespace */
+/* Then the rest of the existing ip command */
 
-The page is here:   http://ckpt.wiki.kernel.org/index.php/Checklist
+"ip ns list" is:
+dfd = open("/var/run/netns", O_DIRECTORY);
+getdents(dfd, buf, count);
 
-We want to stress that the patchset is already very useful as-is. We
-will keep working to implement more features cleanly. Some features we
-are working on include network namespaces and device configurations,
-mounts and mounts namespaces, and file locks. Should a complicated
-feature prove hard to implement, users have alternatives systems like
-kvm, until we manage to come up with a clean solution.
+"ip ns new <name>" is:
+unshare(CLONE_NEWNS);
+fd = nsfd(NETNS);
+mkdir("/var/run/netns/<name>");
+mount("none", "/var/run/netns/<name>", "ns", 0, fd);
 
-We believe that maintenance is best addressed through testing. We now
-have a comprehensive test-suite to automatically find regressions.
-In addition, we ran LTP and the results are the same with CHECKPOINT=n
-and =y.
+Using unix domain names means that which namespaces you see is under
+control of userspace.  Which allows for nested containers (something I
+use today), and ultimately container migration.
 
-If desired we'll send the whole patchset to lkml, but the git trees
-can be seen at:
+Using genetlink userspace doesn't result in a nestable implementation
+unless I introduce yet another namespace, ugh.
 
-   kernel:       http://www.linux-cr.org/git/?p=linux-cr.git;a=summary
-   user tools:   http://www.linux-cr.org/git/?p=user-cr.git;a=summary
-   tests suite:  http://www.linux-cr.org/git/?p=tests-cr.git;a=summary
-
-Thanks,
-
-Application checkpoint/restart team
+Eric
