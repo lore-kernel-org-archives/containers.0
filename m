@@ -1,16 +1,13 @@
-From: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 2/2] memcg: dirty pages instrumentation
-Date: Mon, 22 Feb 2010 18:57:29 +0100
-Message-ID: <20100222175728.GA4052__296.628385740583$1266861582$gmane$org@linux>
-References: <1266765525-30890-1-git-send-email-arighi@develer.com>
-	<1266765525-30890-3-git-send-email-arighi@develer.com>
-	<20100222093221.eaaff1b4.kamezawa.hiroyu@jp.fujitsu.com>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH user-cr] define MNT_DETACH in older userspace
+Date: Mon, 22 Feb 2010 11:57:57 -0600
+Message-ID: <1266861478.3760.2.camel@localhost.localdomain>
+References: <20100222174755.GA8329@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20100222093221.eaaff1b4.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20100222174755.GA8329-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,29 +17,67 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Feb 22, 2010 at 09:32:21AM +0900, KAMEZAWA Hiroyuki wrote:
-> > -	if (vm_dirty_bytes)
-> > -		dirty = DIV_ROUND_UP(vm_dirty_bytes, PAGE_SIZE);
-> > +	dirty_bytes = mem_cgroup_dirty_bytes();
-> > +	if (dirty_bytes)
-> > +		dirty = DIV_ROUND_UP(dirty_bytes, PAGE_SIZE);
-> >  	else {
-> >  		int dirty_ratio;
-> 
-> you use local value. But, if hierarchila accounting used, memcg->dirty_bytes
-> should be got from root-of-hierarchy memcg.
-> 
-> I have no objection if you add a pointer as
-> 	memcg->subhierarchy_root
-> to get root of hierarchical accounting. But please check problem of hierarchy, again.
+Thanks, I had already put together a local fix which adds a compat
+header -- please use this instead of duplicating the work across files?
 
-Right, it won't work with hierarchy. I'll fix also considering the
-hierarchy case.
+From 9d8b8774d4c471f04203b589f49ffe59e1d0cf39 Mon Sep 17 00:00:00 2001
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Date: Mon, 22 Feb 2010 11:50:46 -0600
+Subject: [PATCH 1/1] user-cr: add compat.h; define MNT_DETACH
 
-Thanks for your review.
+"nsexec: remount proc and devpts" introduced usage of the MNT_DETACH
+umount2 flag, which is not defined even in some relatively recent
+glibc headers (e.g. Fedora 10/glibc 2.9-3).  Add a compat.h header
+where we can add fixups like this for older build environments.
 
--Andrea
+Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+---
+ include/compat.h |    7 +++++++
+ nsexec.c         |    1 +
+ restart.c        |    1 +
+ 3 files changed, 9 insertions(+), 0 deletions(-)
+ create mode 100644 include/compat.h
+
+diff --git a/include/compat.h b/include/compat.h
+new file mode 100644
+index 0000000..0d5ade4
+--- /dev/null
++++ b/include/compat.h
+@@ -0,0 +1,7 @@
++#ifndef USER_CR_COMPAT_H
++
++#ifndef MNT_DETACH
++#define MNT_DETACH 2
++#endif
++
++#endif /* USER_CR_COMPAT_H */
+diff --git a/nsexec.c b/nsexec.c
+index 7a0294c..1cf9c97 100644
+--- a/nsexec.c
++++ b/nsexec.c
+@@ -20,6 +20,7 @@
+ #include "clone.h"
+ #include "eclone.h"
+ #include "genstack.h"
++#include "compat.h"
+ 
+ extern pid_t getpgid(pid_t pid);
+ extern pid_t getsid(pid_t pid);
+diff --git a/restart.c b/restart.c
+index 166a499..f5d23bb 100644
+--- a/restart.c
++++ b/restart.c
+@@ -38,6 +38,7 @@
+ 
+ #include "eclone.h"
+ #include "genstack.h"
++#include "compat.h"
+ 
+ static char usage_str[] =
+ "usage: restart [opts]\n"
+-- 
+1.6.0.6
