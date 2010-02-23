@@ -1,17 +1,16 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: RFC: netfilter: nf_conntrack: add support for "conntrack zones"
-Date: Mon, 22 Feb 2010 15:17:58 -0800
-Message-ID: <m1wry46es9.fsf__23707.574272021$1266880765$gmane$org@fess.ebiederm.org>
-References: <4B4F24AC.70105@trash.net> <1263481549.23480.24.camel@bigi>
-	<4B4F3A50.1050400@trash.net> <1263490403.23480.109.camel@bigi>
-	<4B50403A.6010507@trash.net> <1263568754.23480.142.camel@bigi>
-	<m13a0tf17t.fsf@fess.ebiederm.org> <1266875729.3673.12.camel@bigi>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [RFC] [PATCH 0/2] memcg: per cgroup dirty limit
+Date: Tue, 23 Feb 2010 09:07:04 +0900
+Message-ID: <20100223090704.839d8bef.kamezawa.hiroyu__6090.67342379621$1266883884$gmane$org@jp.fujitsu.com>
+References: <1266765525-30890-1-git-send-email-arighi@develer.com>
+	<20100222142744.GB13823@redhat.com>
+	<20100222173640.GG3063@balbir.in.ibm.com>
+	<20100222175833.GB3096@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1266875729.3673.12.camel@bigi> (jamal's message of "Mon\,
-	22 Feb 2010 16\:55\:29 -0500")
+In-Reply-To: <20100222175833.GB3096-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,70 +20,70 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org
-Cc: Ben Greear <greearb-my8/4N5VtI7c+919tysfdA@public.gmane.org>, Linux Netdev List <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Netfilter Development Mailinglist <netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org> writes:
+On Mon, 22 Feb 2010 12:58:33 -0500
+Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
 
-> On Mon, 2010-02-22 at 12:46 -0800, Eric W. Biederman wrote:
->> jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org> writes:
->
->> 
->> This is one of the long standing issues that we have always known
->> we needed to solve, but have not taken the time to do it.  Now that
->> the need is more real it looks about time to solve this one.
->> 
->> There are currently two problems.
->> 1) A process is needed to hold a reference to the network namespace.
->> 2) We use pids which are an awkward way of talking about network
->>    namespaces.
->> 
->> The solution I have been playing with involves.
->> - Using a file descriptor to refer to a network namespace.
->> - Using a trivial virtual filesystem to persistently hold onto
->>   a namespace without the need of a process.
->> - Have a convention of mounting the fs at something like
->>   /var/run/netns/<name>
->> 
->
-> I didnt quiet follow how i could use the above to do:
-> "ip ns <name/id> route add blah" from namespace0.
->
-> I tend to think in packets and wires instead of files;
-> How about just allowing a "control" channel from which
-> i could discover the namespace?
-> Example, assuming i have the right permissions:
-> 1) listen to async events example on a multicast bus when
-> a namespace is created or destroyed. Provide me a little more info on
-> the created namespace such as its pid, name(?), types of namespace, etc
-> 2) send a query to dump existing namespace or query by name, id etc.
-> I get the same details as above.
->
-> using genetlink should provide you with sufficient ability to do this.
+> On Mon, Feb 22, 2010 at 11:06:40PM +0530, Balbir Singh wrote:
+> > * Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> [2010-02-22 09:27:45]:
+> > 
+> > 
+> > > 
+> > >   May be we can modify writeback_inodes_wbc() to check first dirty page
+> > >   of the inode. And if it does not belong to same memcg as the task who
+> > >   is performing balance_dirty_pages(), then skip that inode.
+> > 
+> > Do you expect all pages of an inode to be paged in by the same cgroup?
+> 
+> I guess at least in simple cases. Not sure whether it will cover majority
+> of usage or not and up to what extent that matters.
+> 
+> If we start doing background writeout, on per page (like memory reclaim),
+> the it probably will be slower and hence flusing out pages sequentially
+> from inode makes sense. 
+> 
+> At one point I was thinking, like pages, can we have an inode list per
+> memory cgroup so that writeback logic can traverse that inode list to
+> determine which inodes need to be cleaned. But associating inodes to
+> memory cgroup is not very intutive at the same time, we again have the
+> issue of shared file pages from two differnent cgroups. 
+> 
+> But I guess, a simpler scheme would be to just check first dirty page from
+> inode and if it does not belong to memory cgroup of task being throttled,
+> skip it.
+> 
+> It will not cover the case of shared file pages across memory cgroups, but
+> at least something relatively simple to begin with. Do you have more ideas
+> on how it can be handeled better.
+> 
 
-What I am thinking is:
+If pagesa are "shared", it's hard to find _current_ owner. Then, what I'm
+thinking as memcg's update is a memcg-for-page-cache and pagecache
+migration between memcg.
 
-"ip ns <name> route add blah" is:
-fd = open("/var/run/netns/<name>");
-sys_setns(fd);  /* Like unshare but takes an existing namespace */
-/* Then the rest of the existing ip command */
+The idea is
+  - At first, treat page cache as what we do now.
+  - When a process touches page cache, check process's memcg and page cache's
+    memcg. If process-memcg != pagecache-memcg, we migrate it to a special
+    container as memcg-for-page-cache.
 
-"ip ns list" is:
-dfd = open("/var/run/netns", O_DIRECTORY);
-getdents(dfd, buf, count);
+Then,
+  - read-once page caches are handled by local memcg.
+  - shared page caches are handled in specail memcg for "shared".
 
-"ip ns new <name>" is:
-unshare(CLONE_NEWNS);
-fd = nsfd(NETNS);
-mkdir("/var/run/netns/<name>");
-mount("none", "/var/run/netns/<name>", "ns", 0, fd);
+But this will add significant overhead in native implementation.
+(We may have to use page flags rather than page_cgroup's....)
 
-Using unix domain names means that which namespaces you see is under
-control of userspace.  Which allows for nested containers (something I
-use today), and ultimately container migration.
+I'm now wondering about
+  - set "shared flag" to a page_cgroup if cached pages are accessed.
+  - sweep them to special memcg in other (kernel) daemon when we hit thresh
+    or some.
 
-Using genetlink userspace doesn't result in a nestable implementation
-unless I introduce yet another namespace, ugh.
+But hmm, I'm not sure that memcg-for-shared-page-cache is accepptable
+for anyone.
 
-Eric
+Thanks,
+-Kame
