@@ -1,57 +1,72 @@
-From: Dan Smith <danms@us.ibm.com>
-Subject: Re: [PATCH 2/5] C/R: Basic support for network namespaces and devices (v4)
-Date: Tue, 23 Feb 2010 08:35:57 -0800
-Message-ID: <87k4u37vv6.fsf@caffeine.danplanet.com>
+From: "Serge E. Hallyn" <serge@hallyn.com>
+Subject: Re: [PATCH 2/5] C/R: Basic support for network namespaces and
+ devices (v4)
+Date: Tue, 23 Feb 2010 10:47:55 -0600
+Message-ID: <20100223164755.GA31671@hallyn.com>
 References: <1266336187-19105-1-git-send-email-danms@us.ibm.com>
-	<1266336187-19105-3-git-send-email-danms@us.ibm.com>
-	<20100222194523.GA13135@us.ibm.com>
+ <1266336187-19105-3-git-send-email-danms@us.ibm.com>
+ <20100222194523.GA13135@us.ibm.com>
+ <87k4u37vv6.fsf@caffeine.danplanet.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <20100222194523.GA13135@us.ibm.com> (Serge E. Hallyn's message of "Mon\, 22 Feb 2010 13\:45\:23 -0600")
+Content-Disposition: inline
+In-Reply-To: <87k4u37vv6.fsf@caffeine.danplanet.com>
 Sender: netdev-owner@vger.kernel.org
-To: "Serge E. Hallyn" <serue@us.ibm.com>
-Cc: containers@lists.osdl.org, netdev@vger.kernel.org
+To: Dan Smith <danms@us.ibm.com>
+Cc: "Serge E. Hallyn" <serue@us.ibm.com>, containers@lists.osdl.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-SH> the above two hunks change the flow in checkpoint_container(), but
-SH> they don't seem to actually add anything.  And I don't see (with a
-SH> quick browse) any later patch in this series changing this either.
-SH> Is this just noise?
+Quoting Dan Smith (danms@us.ibm.com):
+> SH> the above two hunks change the flow in checkpoint_container(), but
+> SH> they don't seem to actually add anything.  And I don't see (with a
+> SH> quick browse) any later patch in this series changing this either.
+> SH> Is this just noise?
+> 
+> Ah, yeah, I think that's left over from a previous version where I had
+> to insert something there.  Sorry about that :)
+> 
+> >> +int ckpt_netdev_in_init_netns(struct ckpt_ctx *ctx, struct net_device *dev)
+> >> +{
+> >> +	return dev->nd_net == current->nsproxy->net_ns;
+> >> +}
+> 
+> SH> You are comparing it to the net_ns of the checkpointing task.  I'm
+> SH> not sure that makes sense - but I'm also not sure what if anything
+> SH> makes more sense.
+> 
+> SH> What exactly do you mean by the 'init' netns here?  Do you mean
+> SH> the init_net_ns for the container, or that it is the net_ns of
+> SH> whatever task created the container?
+> 
+> In this case, 'current' is the task doing the checkpoint, right?  So,
+> we're treating the netns that it is in as the "top level" and will
+> restore the tree, as visible from that task, relative to the netns of
+> the restart process.  We had an IRC conversation about this, I believe :)
 
-Ah, yeah, I think that's left over from a previous version where I had
-to insert something there.  Sorry about that :)
+But there is no guarantee that the checkpointer is in the netns which
+we would call the 'top level' netns.  Which means that, at restart, whether
+or not the devices which are in what we call the top level netns are in
+fact inherited or not, will depend on conditions of the checkpointer.  Do
+we care?  (I thought we did, but maybe we don't... it's unlikely to happen
+anyway)
 
->> +int ckpt_netdev_in_init_netns(struct ckpt_ctx *ctx, struct net_device *dev)
->> +{
->> +	return dev->nd_net == current->nsproxy->net_ns;
->> +}
-
-SH> You are comparing it to the net_ns of the checkpointing task.  I'm
-SH> not sure that makes sense - but I'm also not sure what if anything
-SH> makes more sense.
-
-SH> What exactly do you mean by the 'init' netns here?  Do you mean
-SH> the init_net_ns for the container, or that it is the net_ns of
-SH> whatever task created the container?
-
-In this case, 'current' is the task doing the checkpoint, right?  So,
-we're treating the netns that it is in as the "top level" and will
-restore the tree, as visible from that task, relative to the netns of
-the restart process.  We had an IRC conversation about this, I believe :)
-
-SH> How about a
-SH> 			ckpt_err(ctx, -ENOSYS,
-SH> 				Device %s does not support checkpoint\n",
-dev-> name);
-
-SH> here to put a meaningful msg in the user's log?
-
-Yep, definitely.
-
-Thanks!
-
--- 
-Dan Smith
-IBM Linux Technology Center
-email: danms@us.ibm.com
+> SH> How about a
+> SH> 			ckpt_err(ctx, -ENOSYS,
+> SH> 				Device %s does not support checkpoint\n",
+> dev-> name);
+> 
+> SH> here to put a meaningful msg in the user's log?
+> 
+> Yep, definitely.
+> 
+> Thanks!
+> 
+> -- 
+> Dan Smith
+> IBM Linux Technology Center
+> email: danms@us.ibm.com
+> _______________________________________________
+> Containers mailing list
+> Containers@lists.linux-foundation.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
