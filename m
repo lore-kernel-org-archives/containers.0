@@ -1,123 +1,57 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC] [PATCH 0/2] memcg: per cgroup dirty limit
-Date: Tue, 23 Feb 2010 10:12:01 -0500
-Message-ID: <20100223151201.GB11930__40764.180935412$1266938153$gmane$org@redhat.com>
-References: <1266765525-30890-1-git-send-email-arighi@develer.com>
-	<20100222142744.GB13823@redhat.com>
-	<20100222173640.GG3063@balbir.in.ibm.com>
-	<20100222175833.GB3096@redhat.com>
-	<20100223090704.839d8bef.kamezawa.hiroyu@jp.fujitsu.com>
+From: Dan Smith <danms@us.ibm.com>
+Subject: Re: [PATCH 2/5] C/R: Basic support for network namespaces and devices (v4)
+Date: Tue, 23 Feb 2010 08:35:57 -0800
+Message-ID: <87k4u37vv6.fsf@caffeine.danplanet.com>
+References: <1266336187-19105-1-git-send-email-danms@us.ibm.com>
+	<1266336187-19105-3-git-send-email-danms@us.ibm.com>
+	<20100222194523.GA13135@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20100223090704.839d8bef.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <20100222194523.GA13135@us.ibm.com> (Serge E. Hallyn's message of "Mon\, 22 Feb 2010 13\:45\:23 -0600")
+Sender: netdev-owner@vger.kernel.org
+To: "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: containers@lists.osdl.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Feb 23, 2010 at 09:07:04AM +0900, KAMEZAWA Hiroyuki wrote:
-> On Mon, 22 Feb 2010 12:58:33 -0500
-> Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> 
-> > On Mon, Feb 22, 2010 at 11:06:40PM +0530, Balbir Singh wrote:
-> > > * Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> [2010-02-22 09:27:45]:
-> > > 
-> > > 
-> > > > 
-> > > >   May be we can modify writeback_inodes_wbc() to check first dirty page
-> > > >   of the inode. And if it does not belong to same memcg as the task who
-> > > >   is performing balance_dirty_pages(), then skip that inode.
-> > > 
-> > > Do you expect all pages of an inode to be paged in by the same cgroup?
-> > 
-> > I guess at least in simple cases. Not sure whether it will cover majority
-> > of usage or not and up to what extent that matters.
-> > 
-> > If we start doing background writeout, on per page (like memory reclaim),
-> > the it probably will be slower and hence flusing out pages sequentially
-> > from inode makes sense. 
-> > 
-> > At one point I was thinking, like pages, can we have an inode list per
-> > memory cgroup so that writeback logic can traverse that inode list to
-> > determine which inodes need to be cleaned. But associating inodes to
-> > memory cgroup is not very intutive at the same time, we again have the
-> > issue of shared file pages from two differnent cgroups. 
-> > 
-> > But I guess, a simpler scheme would be to just check first dirty page from
-> > inode and if it does not belong to memory cgroup of task being throttled,
-> > skip it.
-> > 
-> > It will not cover the case of shared file pages across memory cgroups, but
-> > at least something relatively simple to begin with. Do you have more ideas
-> > on how it can be handeled better.
-> > 
-> 
-> If pagesa are "shared", it's hard to find _current_ owner.
+SH> the above two hunks change the flow in checkpoint_container(), but
+SH> they don't seem to actually add anything.  And I don't see (with a
+SH> quick browse) any later patch in this series changing this either.
+SH> Is this just noise?
 
-Is it not the case that the task who touched the page first is owner of
-the page and task memcg is charged for that page. Subsequent shared users
-of the page get a free ride?
+Ah, yeah, I think that's left over from a previous version where I had
+to insert something there.  Sorry about that :)
 
-If yes, why it is hard to find _current_ owner. Will it not be the memory
-cgroup which brought the page into existence?
- 
-> Then, what I'm
-> thinking as memcg's update is a memcg-for-page-cache and pagecache
-> migration between memcg.
-> 
-> The idea is
->   - At first, treat page cache as what we do now.
->   - When a process touches page cache, check process's memcg and page cache's
->     memcg. If process-memcg != pagecache-memcg, we migrate it to a special
->     container as memcg-for-page-cache.
-> 
-> Then,
->   - read-once page caches are handled by local memcg.
->   - shared page caches are handled in specail memcg for "shared".
-> 
-> But this will add significant overhead in native implementation.
-> (We may have to use page flags rather than page_cgroup's....)
-> 
-> I'm now wondering about
->   - set "shared flag" to a page_cgroup if cached pages are accessed.
->   - sweep them to special memcg in other (kernel) daemon when we hit thresh
->     or some.
-> 
-> But hmm, I'm not sure that memcg-for-shared-page-cache is accepptable
-> for anyone.
+>> +int ckpt_netdev_in_init_netns(struct ckpt_ctx *ctx, struct net_device *dev)
+>> +{
+>> +	return dev->nd_net == current->nsproxy->net_ns;
+>> +}
 
-I have not understood the idea well hence few queries/thoughts.
+SH> You are comparing it to the net_ns of the checkpointing task.  I'm
+SH> not sure that makes sense - but I'm also not sure what if anything
+SH> makes more sense.
 
-- You seem to be suggesting that shared page caches can be accounted
-  separately with-in memcg. But one page still need to be associated
-  with one specific memcg and one can only do migration across memcg
-  based on some policy who used how much. But we probably are trying
-  to be too accurate there and it might not be needed.
+SH> What exactly do you mean by the 'init' netns here?  Do you mean
+SH> the init_net_ns for the container, or that it is the net_ns of
+SH> whatever task created the container?
 
-  Can you elaborate a little more on what you meant by migrating pages
-  to special container memcg-for-page-cache? Is it a shared container
-  across memory cgroups which are sharing a page?
+In this case, 'current' is the task doing the checkpoint, right?  So,
+we're treating the netns that it is in as the "top level" and will
+restore the tree, as visible from that task, relative to the netns of
+the restart process.  We had an IRC conversation about this, I believe :)
 
-- Current writeback mechanism is flushing per inode basis. I think
-  biggest advantage is faster writeout speed as contiguous pages
-  are dispatched to disk (irrespective to the memory cgroup differnt
-  pages can belong to), resulting in better merging and less seeks.
+SH> How about a
+SH> 			ckpt_err(ctx, -ENOSYS,
+SH> 				Device %s does not support checkpoint\n",
+dev-> name);
 
-  Even if we can account shared pages well across memory cgroups, flushing
-  these pages to disk will probably become complicated/slow if we start going
-  through the pages of a memory cgroup and start flushing these out upon
-  hitting the dirty_background/dirty_ratio/dirty_bytes limits.
+SH> here to put a meaningful msg in the user's log?
 
-Thanks
-Vivek
+Yep, definitely.
+
+Thanks!
+
+-- 
+Dan Smith
+IBM Linux Technology Center
+email: danms@us.ibm.com
