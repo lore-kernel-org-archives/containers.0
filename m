@@ -1,18 +1,13 @@
-From: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 1/2] memcg: dirty pages accounting and limiting
-	infrastructure
-Date: Tue, 23 Feb 2010 12:58:46 +0100
-Message-ID: <20100223115846.GI1882@linux>
-References: <1266765525-30890-1-git-send-email-arighi@develer.com>
-	<1266765525-30890-2-git-send-email-arighi@develer.com>
-	<alpine.DEB.2.00.1002211321010.22858@chino.kir.corp.google.com>
-	<20100221221700.GA5233@linux> <20100222180732.GC3096@redhat.com>
+From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Subject: Re: Progress of containers at 2.6.32/33?
+Date: Tue, 23 Feb 2010 13:32:15 +0100
+Message-ID: <4B83CACF.5010701@free.fr>
+References: <m1r5oepjye.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20100222180732.GC3096-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <m1r5oepjye.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,38 +17,27 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Feb 22, 2010 at 01:07:32PM -0500, Vivek Goyal wrote:
-> > > > +unsigned long mem_cgroup_dirty_bytes(void)
-> > > > +{
-> > > > +	struct mem_cgroup *memcg;
-> > > > +	unsigned long dirty_bytes;
-> > > > +
-> > > > +	if (mem_cgroup_disabled())
-> > > > +		return vm_dirty_bytes;
-> > > > +
-> > > > +	rcu_read_lock();
-> > > > +	memcg = mem_cgroup_from_task(current);
-> > > > +	if (memcg == NULL)
-> > > > +		dirty_bytes = vm_dirty_bytes;
-> > > > +	else
-> > > > +		dirty_bytes = get_dirty_bytes(memcg);
-> > > > +	rcu_read_unlock();
-> > > 
-> > > The rcu_read_lock() isn't protecting anything here.
-> > 
-> > Right!
-> 
-> Are we not protecting "memcg" pointer using rcu here?
+Eric W. Biederman wrote:
+> 2.6.32 is likely to be used widely so I expect everyone's out of tree
+> patches to be updated.  As a metric to figuring out which things have
+> worked and which things have not I would like ask all of those who are
+> maintaining out of tree container patches to give some feedback on
+> what code they have been able to remove from their patchsets when
+> using the latest kernel, and which patches persist.
+>
+> I have been in some conversations lately that indicate that we have
+> some tremendous short comings in the work that has gone on in the
+> public tree.  So I am asking now so we can guage where we are at
+> as a community.
+>   
+Do you consider the checkpoint / restart is part of the container progress ?
 
-Vivek, you are right:
-
- mem_cgroup_from_task() -> task_subsys_state() -> rcu_dereference()
-
-So, this *must* be RCU protected.
-
-Thanks!
--Andrea
+I am asking that because there are some cases where the container should 
+be more virtualized if the CR is to be take into account.
+For example, the network devices index is not virtualized in a 
+container, this is not a problem without the CR. But with it, we won't 
+support any application binding to a device or using a device index.
