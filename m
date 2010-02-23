@@ -1,15 +1,16 @@
 From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH v2 -mmotm 2/4] cgroups: remove events before destroying
-	subsystem state objects
-Date: Tue, 23 Feb 2010 11:18:14 +0800
-Message-ID: <4B8348F6.6030709__12958.8194111877$1266895125$gmane$org@cn.fujitsu.com>
+Subject: Re: [PATCH v2 -mmotm 3/4] cgroups: Add simple listener of cgroup
+	events to documentation
+Date: Tue, 23 Feb 2010 11:19:56 +0800
+Message-ID: <4B83495C.6010509__10143.5724217028$1266895314$gmane$org@cn.fujitsu.com>
 References: <1f8bd63acb6485c88f8539e009459a28fb6ad55b.1266853233.git.kirill@shutemov.name>
 	<690745ebd257c74a1c47d552fec7fbb0b5efb7d0.1266853233.git.kirill@shutemov.name>
+	<458c3169608cb333f390b2cb732565fec9fec67e.1266853234.git.kirill@shutemov.name>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <690745ebd257c74a1c47d552fec7fbb0b5efb7d0.1266853233.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+In-Reply-To: <458c3169608cb333f390b2cb732565fec9fec67e.1266853234.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,13 +25,9 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dai
 List-Id: containers.vger.kernel.org
 
 Kirill A. Shutemov wrote:
-> Events should be removed after rmdir of cgroup directory, but before
-> destroying subsystem state objects. Let's take reference to cgroup
-> directory dentry to do that.
+> An example of cgroup notification API usage.
 > 
 > Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-> Acked-by: KAMEZAWA Hiroyuki <kamezawa.hioryu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-
-Looks good.
+> Reviewed-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 
 Acked-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
