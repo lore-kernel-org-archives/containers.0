@@ -1,19 +1,18 @@
-From: jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org>
-Subject: Re: RFC: netfilter: nf_conntrack: add support for "conntrack zones"
-Date: Tue, 23 Feb 2010 09:20:17 -0500
-Message-ID: <1266934817.3973.654.camel__45765.4349193492$1266935047$gmane$org@bigi>
-References: <4B4F24AC.70105@trash.net> <1263481549.23480.24.camel@bigi>
-	<4B4F3A50.1050400@trash.net> <1263490403.23480.109.camel@bigi>
-	<4B50403A.6010507@trash.net> <1263568754.23480.142.camel@bigi>
-	<m13a0tf17t.fsf@fess.ebiederm.org> <1266875729.3673.12.camel@bigi>
-	<m1wry46es9.fsf@fess.ebiederm.org> <1266931623.3973.643.camel@bigi>
-	<m1iq9ocafv.fsf@fess.ebiederm.org>
-Reply-To: hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC] [PATCH 0/2] memcg: per cgroup dirty limit
+Date: Tue, 23 Feb 2010 10:12:01 -0500
+Message-ID: <20100223151201.GB11930__40764.180935412$1266938153$gmane$org@redhat.com>
+References: <1266765525-30890-1-git-send-email-arighi@develer.com>
+	<20100222142744.GB13823@redhat.com>
+	<20100222173640.GG3063@balbir.in.ibm.com>
+	<20100222175833.GB3096@redhat.com>
+	<20100223090704.839d8bef.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m1iq9ocafv.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20100223090704.839d8bef.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,54 +22,102 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux Netdev List <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Netfilter Development Mailinglist <netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ben Greear <greearb-my8/4N5VtI7c+919tysfdA@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Added Daniel to the discussion..
-
-On Tue, 2010-02-23 at 06:07 -0800, Eric W. Biederman wrote:
-> jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org> writes:
-
-> > Does the point after sys_setns(fd) allow me to do io inside
-> > ns <name>? Can i do open() and get a fd from ns <name>?
+On Tue, Feb 23, 2010 at 09:07:04AM +0900, KAMEZAWA Hiroyuki wrote:
+> On Mon, 22 Feb 2010 12:58:33 -0500
+> Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
 > 
-> Yes.  My intention is that current->nsproxy->net_ns be changed.
-> We can already change it in unshare so this is feasible.
-
-I like it if it makes it as easy as it sounds;-> With lxc,
-i essentially have to create a proxy process inside the
-namespace that i use unix domain to open fds inside the ns.
-Do i still need that?
-
-> > The only problem that i see is events are not as nice. I take it i am 
-> > going to get something like an inotify when a new namespace is created?
+> > On Mon, Feb 22, 2010 at 11:06:40PM +0530, Balbir Singh wrote:
+> > > * Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> [2010-02-22 09:27:45]:
+> > > 
+> > > 
+> > > > 
+> > > >   May be we can modify writeback_inodes_wbc() to check first dirty page
+> > > >   of the inode. And if it does not belong to same memcg as the task who
+> > > >   is performing balance_dirty_pages(), then skip that inode.
+> > > 
+> > > Do you expect all pages of an inode to be paged in by the same cgroup?
+> > 
+> > I guess at least in simple cases. Not sure whether it will cover majority
+> > of usage or not and up to what extent that matters.
+> > 
+> > If we start doing background writeout, on per page (like memory reclaim),
+> > the it probably will be slower and hence flusing out pages sequentially
+> > from inode makes sense. 
+> > 
+> > At one point I was thinking, like pages, can we have an inode list per
+> > memory cgroup so that writeback logic can traverse that inode list to
+> > determine which inodes need to be cleaned. But associating inodes to
+> > memory cgroup is not very intutive at the same time, we again have the
+> > issue of shared file pages from two differnent cgroups. 
+> > 
+> > But I guess, a simpler scheme would be to just check first dirty page from
+> > inode and if it does not belong to memory cgroup of task being throttled,
+> > skip it.
+> > 
+> > It will not cover the case of shared file pages across memory cgroups, but
+> > at least something relatively simple to begin with. Do you have more ideas
+> > on how it can be handeled better.
+> > 
 > 
-> Yes.  Inotify would at the very least see that mkdir.  You could also
-> use poll on /proc/mounts to see the set of mounts change.
+> If pagesa are "shared", it's hard to find _current_ owner.
 
-It is not as nice but livable. I suppose attributes of the specific
-namespace are retrieved somewhere there as well..
+Is it not the case that the task who touched the page first is owner of
+the page and task memcg is charged for that page. Subsequent shared users
+of the page get a free ride?
 
-> > Is it not just a naming convention that you are dealing with?
-> > Example in your scheme above a nested namespace shows up as:
-> > /var/run/netns/<name>/<nestedname>, no?
+If yes, why it is hard to find _current_ owner. Will it not be the memory
+cgroup which brought the page into existence?
+ 
+> Then, what I'm
+> thinking as memcg's update is a memcg-for-page-cache and pagecache
+> migration between memcg.
 > 
-> No.  More like:
+> The idea is
+>   - At first, treat page cache as what we do now.
+>   - When a process touches page cache, check process's memcg and page cache's
+>     memcg. If process-memcg != pagecache-memcg, we migrate it to a special
+>     container as memcg-for-page-cache.
 > 
-> For the outer namespace:
-> /var/run/netns/<name>
+> Then,
+>   - read-once page caches are handled by local memcg.
+>   - shared page caches are handled in specail memcg for "shared".
 > 
-> For the inner namespace:
-> /some/random/fs/path/to/a/chroot/var/run/netns/<name>
+> But this will add significant overhead in native implementation.
+> (We may have to use page flags rather than page_cgroup's....)
 > 
-> For a doubly nested scenario:
-> /some/random/fs/path/to/a/chroot/some/other/random/fs/path/to/another/chroot/var/run/netns/<name>
+> I'm now wondering about
+>   - set "shared flag" to a page_cgroup if cached pages are accessed.
+>   - sweep them to special memcg in other (kernel) daemon when we hit thresh
+>     or some.
 > 
-> Since I would be using mount namespaces instead of chroot it is not
-> strictly required that the fs paths nest at all.
+> But hmm, I'm not sure that memcg-for-shared-page-cache is accepptable
+> for anyone.
 
-Ok.
+I have not understood the idea well hence few queries/thoughts.
 
-cheers,
-jamal
+- You seem to be suggesting that shared page caches can be accounted
+  separately with-in memcg. But one page still need to be associated
+  with one specific memcg and one can only do migration across memcg
+  based on some policy who used how much. But we probably are trying
+  to be too accurate there and it might not be needed.
+
+  Can you elaborate a little more on what you meant by migrating pages
+  to special container memcg-for-page-cache? Is it a shared container
+  across memory cgroups which are sharing a page?
+
+- Current writeback mechanism is flushing per inode basis. I think
+  biggest advantage is faster writeout speed as contiguous pages
+  are dispatched to disk (irrespective to the memory cgroup differnt
+  pages can belong to), resulting in better merging and less seeks.
+
+  Even if we can account shared pages well across memory cgroups, flushing
+  these pages to disk will probably become complicated/slow if we start going
+  through the pages of a memory cgroup and start flushing these out upon
+  hitting the dirty_background/dirty_ratio/dirty_bytes limits.
+
+Thanks
+Vivek
