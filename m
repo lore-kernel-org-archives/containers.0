@@ -1,57 +1,69 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [PATCH 2/5] C/R: Basic support for network namespaces and
- devices (v4)
-Date: Tue, 23 Feb 2010 12:49:21 -0600
-Message-ID: <20100223184921.GA1101@us.ibm.com>
-References: <1266336187-19105-1-git-send-email-danms@us.ibm.com>
- <1266336187-19105-3-git-send-email-danms@us.ibm.com>
- <20100222194523.GA13135@us.ibm.com>
- <87k4u37vv6.fsf@caffeine.danplanet.com>
- <20100223164755.GA31671@hallyn.com>
- <87fx4r7tgv.fsf@caffeine.danplanet.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: RFC: netfilter: nf_conntrack: add support for "conntrack zones"
+Date: Tue, 23 Feb 2010 12:00:55 -0800
+Message-ID: <m1r5obbu2w.fsf__35069.7615337141$1266955463$gmane$org@fess.ebiederm.org>
+References: <4B4F24AC.70105@trash.net> <1263481549.23480.24.camel@bigi>
+	<4B4F3A50.1050400@trash.net> <1263490403.23480.109.camel@bigi>
+	<4B50403A.6010507@trash.net> <1263568754.23480.142.camel@bigi>
+	<m13a0tf17t.fsf@fess.ebiederm.org> <1266875729.3673.12.camel@bigi>
+	<m1wry46es9.fsf@fess.ebiederm.org> <1266931623.3973.643.camel@bigi>
+	<m1iq9ocafv.fsf@fess.ebiederm.org> <1266934817.3973.654.camel@bigi>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <87fx4r7tgv.fsf@caffeine.danplanet.com>
-Sender: netdev-owner@vger.kernel.org
-To: Dan Smith <danms@us.ibm.com>
-Cc: containers@lists.osdl.org, netdev@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1266934817.3973.654.camel@bigi> (jamal's message of "Tue\,
+	23 Feb 2010 09\:20\:17 -0500")
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org
+Cc: Linux Netdev List <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Netfilter Development Mailinglist <netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ben Greear <greearb-my8/4N5VtI7c+919tysfdA@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Dan Smith (danms@us.ibm.com):
-> SH> But there is no guarantee that the checkpointer is in the netns
-> SH> which we would call the 'top level' netns.  Which means that, at
-> SH> restart, whether or not the devices which are in what we call the
-> SH> top level netns are in fact inherited or not, will depend on
-> SH> conditions of the checkpointer.  Do we care?  (I thought we did,
-> SH> but maybe we don't... it's unlikely to happen anyway)
-> 
-> Well, when we discussed this on IRC with Oren, I think we came to the
-> conclusion that since network namespaces aren't hierarchical, that we
-> would restore things from the "viewpoint" of the process that
-> checkpointed them.  It gives us a sane way to ensure that the peer
-> devices residing in the init netns can be put back there, even though we
-> don't checkpoint everything in the init netns (like eth0).
-> 
-> If you checkpoint a veth from within the container and you have a peer
-> device that is outside the container (but not in a netns that is
-> checkpointed as part of a task), it's going to fail and tell you that
-> one of your peers leaked to the outside.  I think that's sane and
-> preferred behavior, no?
+jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org> writes:
 
-Well I don't think it is, but it's a fine starting point, so let's
-worry about it later.
+> Added Daniel to the discussion..
+>
+> On Tue, 2010-02-23 at 06:07 -0800, Eric W. Biederman wrote:
+>> jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org> writes:
+>
+>> > Does the point after sys_setns(fd) allow me to do io inside
+>> > ns <name>? Can i do open() and get a fd from ns <name>?
+>> 
+>> Yes.  My intention is that current->nsproxy->net_ns be changed.
+>> We can already change it in unshare so this is feasible.
+>
+> I like it if it makes it as easy as it sounds;-> With lxc,
+> i essentially have to create a proxy process inside the
+> namespace that i use unix domain to open fds inside the ns.
+> Do i still need that?
 
-thanks,
--serge
+That point of the mount to hold a persistent reference to the
+namespace without using a process.
 
-> If you're using macvlan and you checkpoint
-> from within the container, I think you should be okay, as long as
-> there is a appropriately named device to base the restored devices on
-> in whatever netns your restore process is in.
-> 
-> -- 
-> Dan Smith
-> IBM Linux Technology Center
-> email: danms@us.ibm.com
+The point of the of the to be written set_ns call is to change
+the default network namespace of the process such that all future
+open/bind/socket calls happen in the referenced network namespace.
+
+The are a few stray places like sysfs where it is the mount point
+not current->nsproxy->net_ns that will determine what we see.
+
+>> > The only problem that i see is events are not as nice. I take it i am 
+>> > going to get something like an inotify when a new namespace is created?
+>> 
+>> Yes.  Inotify would at the very least see that mkdir.  You could also
+>> use poll on /proc/mounts to see the set of mounts change.
+>
+> It is not as nice but livable. I suppose attributes of the specific
+> namespace are retrieved somewhere there as well..
+
+Attributes of the specific namespace?
+
+Eric
