@@ -1,19 +1,17 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: RFC: netfilter: nf_conntrack: add support for "conntrack zones"
-Date: Tue, 23 Feb 2010 15:49:42 -0800
-Message-ID: <20100223234942.GO3604__22909.6384406605$1266969123$gmane$org@count0.beaverton.ibm.com>
-References: <1263490403.23480.109.camel@bigi> <4B50403A.6010507@trash.net>
-	<1263568754.23480.142.camel@bigi>
-	<m13a0tf17t.fsf@fess.ebiederm.org> <1266875729.3673.12.camel@bigi>
-	<m1wry46es9.fsf@fess.ebiederm.org> <1266931623.3973.643.camel@bigi>
-	<m1iq9ocafv.fsf@fess.ebiederm.org> <1266934817.3973.654.camel@bigi>
-	<m1r5obbu2w.fsf@fess.ebiederm.org>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 1/2] memcg: dirty pages accounting and limiting
+	infrastructure
+Date: Wed, 24 Feb 2010 09:09:58 +0900
+Message-ID: <20100224090958.ddca8ff1.kamezawa.hiroyu__47703.031768515$1266970471$gmane$org@jp.fujitsu.com>
+References: <1266765525-30890-1-git-send-email-arighi@develer.com>
+	<1266765525-30890-2-git-send-email-arighi@develer.com>
+	<20100222161442.GE3063@balbir.in.ibm.com>
+	<20100223092853.GB1882@linux>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <m1r5obbu2w.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
+In-Reply-To: <20100223092853.GB1882@linux>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,47 +21,61 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux Netdev List <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Netfilter Development Mailinglist <netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ben Greear <greearb-my8/4N5VtI7c+919tysfdA@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+To: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Feb 23, 2010 at 12:00:55PM -0800, Eric W. Biederman wrote:
-> jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org> writes:
+On Tue, 23 Feb 2010 10:28:53 +0100
+Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org> wrote:
+
+> On Mon, Feb 22, 2010 at 09:44:42PM +0530, Balbir Singh wrote:
+> [snip]
+> > > +void mem_cgroup_charge_dirty(struct page *page,
+> > > +			enum zone_stat_item idx, int charge)
+> > > +{
+> > > +	struct mem_cgroup *mem;
+> > > +	struct mem_cgroup_stat_cpu *cpustat;
+> > > +	unsigned long flags;
+> > > +	int cpu;
+> > > +
+> > > +	if (mem_cgroup_disabled())
+> > > +		return;
+> > > +	/* Translate the zone_stat_item into a mem_cgroup_stat_index */
+> > > +	switch (idx) {
+> > > +	case NR_FILE_DIRTY:
+> > > +		idx = MEM_CGROUP_STAT_FILE_DIRTY;
+> > > +		break;
+> > > +	case NR_WRITEBACK:
+> > > +		idx = MEM_CGROUP_STAT_WRITEBACK;
+> > > +		break;
+> > > +	case NR_WRITEBACK_TEMP:
+> > > +		idx = MEM_CGROUP_STAT_WRITEBACK_TEMP;
+> > > +		break;
+> > > +	case NR_UNSTABLE_NFS:
+> > > +		idx = MEM_CGROUP_STAT_UNSTABLE_NFS;
+> > > +		break;
+> > > +	default:
+> > > +		return;
+> > > +	}
+> > > +	/* Charge the memory cgroup statistics */
+> > > +	mem = get_mem_cgroup_from_page(page);
+> > > +	if (!mem) {
+> > > +		mem = root_mem_cgroup;
+> > > +		css_get(&mem->css);
+> > > +	}
+> > > +
+> > > +	local_irq_save(flags);
+> > > +	cpu = get_cpu();
+> > 
+> > Kamezawa is in the process of changing these, so you might want to
+> > look at and integrate with those patches when they are ready.
 > 
-> > Added Daniel to the discussion..
-> >
-> > On Tue, 2010-02-23 at 06:07 -0800, Eric W. Biederman wrote:
-> >> jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org> writes:
-> >
-> >> > Does the point after sys_setns(fd) allow me to do io inside
-> >> > ns <name>? Can i do open() and get a fd from ns <name>?
-> >> 
-> >> Yes.  My intention is that current->nsproxy->net_ns be changed.
-> >> We can already change it in unshare so this is feasible.
-> >
-> > I like it if it makes it as easy as it sounds;-> With lxc,
-> > i essentially have to create a proxy process inside the
-> > namespace that i use unix domain to open fds inside the ns.
-> > Do i still need that?
+> OK, I'll rebase the patch to -mm. Are those changes already included in
+> mmotm?
 > 
-> That point of the mount to hold a persistent reference to the
-> namespace without using a process.
+yes.
 
-I think technicaly it's still held using processes, only now it's
-much more indirect:
+-Kame
 
-netns <- mount <- mount namespace(s) <- process(es)
-
-The big difference is we'd be waiting for all the processes
-sharing that mount (or dups of it in multiple mount namespaces) to
-exit too -- not just those sharing the netns.
-
-Using a mount requires keeping names for the namespaces themselves
-in the kernel which is a problem we've largely avoided so far.
-The nscgroup is an example of the messes that creates, I think. And it
-further complicates c/r -- we'd need to checkpoint and recreate the
-names of the namespaces too. So we'll need a namespace for the names of
-the namespaces to make restart reliable won't we? Makes my head spin...
-
-Cheers,
-	-Matt Helsley
+> Thanks,
+> -Andrea
