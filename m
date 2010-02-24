@@ -1,54 +1,36 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH v2 -mmotm 2/4] cgroups: remove events before destroying
-	subsystem state objects
-Date: Wed, 24 Feb 2010 17:47:11 +0530
-Message-ID: <20100224121711.GD2310__22334.8990352408$1267013877$gmane$org@balbir.in.ibm.com>
-References: <1f8bd63acb6485c88f8539e009459a28fb6ad55b.1266853233.git.kirill@shutemov.name>
-	<690745ebd257c74a1c47d552fec7fbb0b5efb7d0.1266853233.git.kirill@shutemov.name>
-	<20100224084005.GC2310@balbir.in.ibm.com>
-	<cc557aab1002240342u1b0223a4td8269d727b004621@mail.gmail.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: "Kirill A. Shutemov" <kirill@shutemov.name>
+Subject: Re: [PATCH -mm] cgroups: fix failure path in cgroup_write_event_control()
+Date: Wed, 24 Feb 2010 15:28:31 +0200
+Message-ID: <cc557aab1002240528t28eae36dj976525be2fcf7246@mail.gmail.com>
+References: <4B849B73.1040106@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <cc557aab1002240342u1b0223a4td8269d727b004621-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Cc: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Dan Malek <dan-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: QUOTED-PRINTABLE
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <4B849B73.1040106@cn.fujitsu.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Li Zefan <lizf@cn.fujitsu.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Paul Menage <menage@google.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, LKML <linux-kernel@vger.kernel.org>, "containers@lists.osdl.org" <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-* Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org> [2010-02-24 13:42:15]:
-
-> On Wed, Feb 24, 2010 at 10:40 AM, Balbir Singh
-> <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
-> > * Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org> [2010-02-22 17:43:40]:
-> >
-> >> Events should be removed after rmdir of cgroup directory, but before
-> >> destroying subsystem state objects. Let's take reference to cgroup
-> >> directory dentry to do that.
-> >>
-> >> Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-> >> Acked-by: KAMEZAWA Hiroyuki <kamezawa.hioryu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-> >
-> > Looks good, but remember the mem_cgroup data structure will can
-> > disappear after the rmdir
-> 
-> IIUC, struct mem_cgroup can be freed only after ->destroy(), which can
-> be called only if there is no references to cgroup directory dentry.
+On Wed, Feb 24, 2010 at 5:22 AM, Li Zefan <lizf@cn.fujitsu.com> wrote:
+> How to reproduce:
 >
+> =C2=A0# mount -t cgroup -o memory xxx /cgroup
+> =C2=A0# mkdir /cgroup/tmp
+> =C2=A0# ./cgroup_event_listener /cgroup/tmp/cgroup.event_control abc
+> =C2=A0^C
+> =C2=A0# rmdir /cgroup/tmp
+> =C2=A0# cat /proc/cgroups | grep memory
+> =C2=A0memory =C2=A02 =C2=A0 =C2=A0 =C2=A0 2 =C2=A0 =C2=A0 =C2=A0 1 =C2=
+=A0 =C2=A0 =C2=A0 =C2=A0 (should be "2 1 1")
+> =C2=A0# umount /cgroup
+> =C2=A0(failed!)
+>
+> Using a single goto label to cleanup multi failure paths can
+> get things wrong quite easily, while multi labels makes the
+> code cleaner.
 
-No.. You've got it right, it disappears after the last dput(). 
-
--- 
-	Three Cheers,
-	Balbir
+I disagree.
+It's easer to make mistake on changing code with multi failure
+paths, if you want to move a code within function.
