@@ -1,63 +1,131 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: RFC: netfilter: nf_conntrack: add support for "conntrack zones"
-Date: Tue, 23 Feb 2010 17:43:10 -0800
-Message-ID: <m1ocjf1k9d.fsf__23271.8205465519$1266975940$gmane$org@fess.ebiederm.org>
-References: <4B4F24AC.70105@trash.net> <1263481549.23480.24.camel@bigi>
-	<4B4F3A50.1050400@trash.net> <1263490403.23480.109.camel@bigi>
-	<4B50403A.6010507@trash.net> <1263568754.23480.142.camel@bigi>
-	<m13a0tf17t.fsf@fess.ebiederm.org> <1266875729.3673.12.camel@bigi>
-	<m1wry46es9.fsf@fess.ebiederm.org> <1266931623.3973.643.camel@bigi>
-	<m1iq9ocafv.fsf@fess.ebiederm.org> <1266934817.3973.654.camel@bigi>
-	<m1r5obbu2w.fsf@fess.ebiederm.org> <1266966581.3973.675.camel@bigi>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: [PATCH -mm] cgroups: fix failure path in cgroup_write_event_control()
+Date: Wed, 24 Feb 2010 11:22:27 +0800
+Message-ID: <4B849B73.1040106@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1266966581.3973.675.camel@bigi> (jamal's message of "Tue\,
-	23 Feb 2010 18\:09\:41 -0500")
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org
-Cc: Linux Netdev List <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Netfilter Development Mailinglist <netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ben Greear <greearb-my8/4N5VtI7c+919tysfdA@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Paul Menage <menage@google.com>, "Kirill A. Shutemov" <kirill@shutemov.name>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, LKML <linux-kernel@vger.kernel.org>, "containers@lists.osdl.org" <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org> writes:
+How to reproduce:
 
-> On Tue, 2010-02-23 at 12:00 -0800, Eric W. Biederman wrote:
->
->> That point of the mount to hold a persistent reference to the
->> namespace without using a process.
->> 
->> The point of the of the to be written set_ns call is to change
->> the default network namespace of the process such that all future
->> open/bind/socket calls happen in the referenced network namespace.
->
-> Ok, i like it ;-> Patches RSN? Let me if you want someone to test..
+  # mount -t cgroup -o memory xxx /cgroup
+  # mkdir /cgroup/tmp
+  # ./cgroup_event_listener /cgroup/tmp/cgroup.event_control abc
+  ^C
+  # rmdir /cgroup/tmp
+  # cat /proc/cgroups | grep memory
+  memory  2       2       1         (should be "2 1 1")
+  # umount /cgroup
+  (failed!)
 
-My target will be 2.6.35.   There is an old prototype implementation
-that hit the containers list and I think netdev a year or so ago.
+Using a single goto label to cleanup multi failure paths can
+get things wrong quite easily, while multi labels makes the
+code cleaner.
 
->> The are a few stray places like sysfs where it is the mount point
->> not current->nsproxy->net_ns that will determine what we see.
->
-> Is sysfs considered "usable enough" for namespaces?
+Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+---
+ cgroup.c |   39 ++++++++++++++++++---------------------
+ 1 file changed, 18 insertions(+), 21 deletions(-)
 
-Mine is ;) I had a bad cold and didn't get through all of the patches
-this development cycle, just all the prereqs.  I plan on getting that
-final conversation started for as soon as 2.6.34-rc1 hits.
-
->> Attributes of the specific namespace?
->
-> Well, example what is being un/shared etc. 
-
-Got it.  Implementation wise I'm going to stash a pointer
-to the namespace in a inode or super block, simple.
-
-Eric
+diff --git a/kernel/cgroup.c.orig b/kernel/cgroup.c
+index d142524..6ff40f6 100644
+--- a/kernel/cgroup.c.orig
++++ b/kernel/cgroup.c
+@@ -3029,10 +3029,10 @@ static void cgroup_event_ptable_queue_proc(struct file *file,
+ static int cgroup_write_event_control(struct cgroup *cgrp, struct cftype *cft,
+ 				      const char *buffer)
+ {
+-	struct cgroup_event *event = NULL;
++	struct cgroup_event *event;
+ 	unsigned int efd, cfd;
+-	struct file *efile = NULL;
+-	struct file *cfile = NULL;
++	struct file *efile;
++	struct file *cfile;
+ 	char *endp;
+ 	int ret;
+ 
+@@ -3058,46 +3058,46 @@ static int cgroup_write_event_control(struct cgroup *cgrp, struct cftype *cft,
+ 	efile = eventfd_fget(efd);
+ 	if (IS_ERR(efile)) {
+ 		ret = PTR_ERR(efile);
+-		goto fail;
++		goto out_free_event;
+ 	}
+ 
+ 	event->eventfd = eventfd_ctx_fileget(efile);
+ 	if (IS_ERR(event->eventfd)) {
+ 		ret = PTR_ERR(event->eventfd);
+-		goto fail;
++		goto out_put_efile;
+ 	}
+ 
+ 	cfile = fget(cfd);
+ 	if (!cfile) {
+ 		ret = -EBADF;
+-		goto fail;
++		goto out_put_eventfd;
+ 	}
+ 
+ 	/* the process need read permission on control file */
+ 	ret = file_permission(cfile, MAY_READ);
+ 	if (ret < 0)
+-		goto fail;
++		goto out;
+ 
+ 	event->cft = __file_cft(cfile);
+ 	if (IS_ERR(event->cft)) {
+ 		ret = PTR_ERR(event->cft);
+-		goto fail;
++		goto out;
+ 	}
+ 
+ 	if (!event->cft->register_event || !event->cft->unregister_event) {
+ 		ret = -EINVAL;
+-		goto fail;
++		goto out;
+ 	}
+ 
+ 	ret = event->cft->register_event(cgrp, event->cft,
+ 			event->eventfd, buffer);
+ 	if (ret)
+-		goto fail;
++		goto out;
+ 
+ 	if (efile->f_op->poll(efile, &event->pt) & POLLHUP) {
+ 		event->cft->unregister_event(cgrp, event->cft, event->eventfd);
+ 		ret = 0;
+-		goto fail;
++		goto out;
+ 	}
+ 
+ 	/*
+@@ -3116,16 +3116,13 @@ static int cgroup_write_event_control(struct cgroup *cgrp, struct cftype *cft,
+ 
+ 	return 0;
+ 
+-fail:
+-	if (!cfile)
+-		fput(cfile);
+-
+-	if (event && event->eventfd && !IS_ERR(event->eventfd))
+-		eventfd_ctx_put(event->eventfd);
+-
+-	if (!IS_ERR_OR_NULL(efile))
+-		fput(efile);
+-
++out:
++	fput(cfile);
++out_put_eventfd:
++	eventfd_ctx_put(event->eventfd);
++out_put_efile:
++	fput(efile);
++out_free_event:
+ 	kfree(event);
+ 
+ 	return ret;
