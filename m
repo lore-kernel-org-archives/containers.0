@@ -1,13 +1,17 @@
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/2][LXC] Rename --directory option to --statefile
-Date: Wed, 24 Feb 2010 09:54:38 +0100
-Message-ID: <4B84E94E.3000406@fr.ibm.com>
-References: <20100224084108.GG18758@us.ibm.com> <4B84E80A.7060208@fr.ibm.com>
+From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+Subject: Re: [PATCH v2 -mmotm 3/4] cgroups: Add simple listener of cgroup
+	events to documentation
+Date: Wed, 24 Feb 2010 13:36:30 +0200
+Message-ID: <cc557aab1002240336q2a8cab6evaae228a95ab9f672__43265.0485811338$1267011534$gmane$org@mail.gmail.com>
+References: <1f8bd63acb6485c88f8539e009459a28fb6ad55b.1266853233.git.kirill@shutemov.name>
+	<690745ebd257c74a1c47d552fec7fbb0b5efb7d0.1266853233.git.kirill@shutemov.name>
+	<458c3169608cb333f390b2cb732565fec9fec67e.1266853234.git.kirill@shutemov.name>
+	<4B849D4C.2090800@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4B84E80A.7060208-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4B849D4C.2090800-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,31 +21,29 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Dan Malek <dan-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Cedric Le Goater wrote:
-> On 02/24/2010 09:41 AM, Sukadev Bhattiprolu wrote:
->> [See following mail for an intro to this patch set
->>
->> https://lists.linux-foundation.org/pipermail/containers/2010-February/023048.html] 
->>
->>
->> The --directory is misleading since the option seems to expect
->> an checkpoint image file.
->  
-> sigh.
-> 
-> This has some major impact on our side as it is a 9 year old API ...
-> We'll look into it to see how painful it is to change.
-
-We can keep --directory and add --statefile.
-For --statefile option we can use a switch for IS_DIR, IS_REG.
-
---directory becomes deprecated and we switch to the statefile option 
-step by step.
-
-Does it make sense ?
-
-   -- Daniel
+T24gV2VkLCBGZWIgMjQsIDIwMTAgYXQgNTozMCBBTSwgTGkgWmVmYW4gPGxpemZAY24uZnVqaXRz
+dS5jb20+IHdyb3RlOgo+PiArIMKgIMKgIHJldCA9IGRwcmludGYoZXZlbnRfY29udHJvbCwgIiVk
+ICVkICVzIiwgZWZkLCBjZmQsIGFyZ3ZbMl0pOwo+Cj4gSSBmb3VuZCBpdCB3b24ndCByZXR1cm4g
+bmVnYXRpdmUgdmFsdWUgZm9yIGludmFsaWQgaW5wdXQsIHRob3VnaAo+IGVycm5vIGlzIHNldCBw
+cm9wZXJseS4KCkl0IGxvb2tzIGxpa2UgYSBnbGliYyBidWcuIEkndmUgZmlsZSBidWcgdG8gZ2xp
+YmMgYnVnemlsbGE6CgpodHRwOi8vc291cmNld2FyZS5vcmcvYnVnemlsbGEvc2hvd19idWcuY2dp
+P2lkPTExMzE5CgpJJ2xsIGZpeCBjZ3JvdXBfZXZlbnRfbGlzdGVuZXIuYy4gVGhhbmtzIQoKPiB0
+cnk6Cj4gIyAuL2Nncm91cF9ldmVudF9saXN0bmVyIC9jZ3JvdXAvY2dyb3VwLnByb2NzIGFiYwo+
+Cj4gd2hpbGUgc3RyYWNlIHNob3dzIHdyaXRlKCkgZG9lcyByZXR1cm4gLTE6Cj4KPiAjIHN0cmFj
+ZSAuL2Nncm91cF9ldmVudF9saXN0bmVyIC9jZ3JvdXAvY2dyb3VwLnByb2NzIGFiYwo+IC4uLgo+
+IHdyaXRlKDYsICI3IDUgYWJjIi4uLiwgNykgwqAgwqAgwqAgwqAgwqAgwqAgwqAgPSAtMSBFSU5W
+QUwgKEludmFsaWQgYXJndW1lbnQpCj4KPj4gKyDCoCDCoCBpZiAocmV0ID09IC0xKSB7Cj4+ICsg
+wqAgwqAgwqAgwqAgwqAgwqAgcGVycm9yKCJDYW5ub3Qgd3JpdGUgdG8gY2dyb3VwLmV2ZW50X2Nv
+bnRyb2wiKTsKPj4gKyDCoCDCoCDCoCDCoCDCoCDCoCBnb3RvIG91dDsKPj4gKyDCoCDCoCB9Cj4K
+PiAtLQo+IFRvIHVuc3Vic2NyaWJlLCBzZW5kIGEgbWVzc2FnZSB3aXRoICd1bnN1YnNjcmliZSBs
+aW51eC1tbScgaW4KPiB0aGUgYm9keSB0byBtYWpvcmRvbW9Aa3ZhY2sub3JnLiDCoEZvciBtb3Jl
+IGluZm8gb24gTGludXggTU0sCj4gc2VlOiBodHRwOi8vd3d3LmxpbnV4LW1tLm9yZy8gLgo+IERv
+bid0IGVtYWlsOiA8YSBocmVmPW1haWx0bzoiZG9udEBrdmFjay5vcmciPiBlbWFpbEBrdmFjay5v
+cmcgPC9hPgo+Cl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+CkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlv
+bi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZv
+L2NvbnRhaW5lcnM=
