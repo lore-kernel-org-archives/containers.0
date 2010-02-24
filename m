@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 1/4][user-cr] Move common definitions to restart.h
-Date: Wed, 24 Feb 2010 00:35:34 -0800
-Message-ID: <20100224083534.GC18758@us.ibm.com>
+Subject: [PATCH 2/4][user-cr] Rename struct args to struct restart_args
+Date: Wed, 24 Feb 2010 00:36:23 -0800
+Message-ID: <20100224083623.GD18758@us.ibm.com>
 References: <20100224083452.GB18758@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,152 +23,214 @@ Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gm
 List-Id: containers.vger.kernel.org
 
 
+From 8a6fad2170fbbeb7a5e44c32239f9703c0b7d2f9 Mon Sep 17 00:00:00 2001
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Tue, 23 Feb 2010 15:25:31 -0800
-Subject: [PATCH 1/4][user-cr] Move common definitions to restart.h
+Date: Tue, 23 Feb 2010 15:33:04 -0800
+Subject: [PATCH 2/4][user-cr] Rename struct args to struct restart_args
 
-To make restart() a library interface, the main() and related code in
-restart.c should be moved to a separate file. To prepare for the move,
-move some common definitions to a new file, 'restart.h'
+Rename struct args to struct restart_args and move to a new header file,
+usercr.h. usercr.h will become part of the external API for application
+checkpoint restart code.
+
+Also move the bulk of the restart code into a separate function,
+app_restart() and have main() call the function.
+
+TODO:
+	Cleanup 'struct restart_args' for a more consistent external API.
 ---
- restart.c |   44 ++------------------------------------------
- restart.h |   45 +++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 47 insertions(+), 42 deletions(-)
- create mode 100644 restart.h
+ restart.c |   77 ++++++++++++++++++++++++------------------------------------
+ usercr.h  |   24 +++++++++++++++++++
+ 2 files changed, 55 insertions(+), 46 deletions(-)
+ create mode 100644 usercr.h
 
 diff --git a/restart.c b/restart.c
-index f5d23bb..7140786 100644
+index 7140786..b2281fb 100644
 --- a/restart.c
 +++ b/restart.c
-@@ -39,6 +39,7 @@
- #include "eclone.h"
+@@ -40,6 +40,7 @@
  #include "genstack.h"
  #include "compat.h"
-+#include "restart.h"
+ #include "restart.h"
++#include "usercr.h"
  
  static char usage_str[] =
  "usage: restart [opts]\n"
-@@ -128,12 +129,7 @@ static char usage_str[] =
- 			printf(__VA_ARGS__);	\
- 	} while(0)
+@@ -237,7 +238,7 @@ struct ckpt_ctx {
+ 	char container[BUFSIZE];
+ 	char tree[BUFSIZE];
+ 	char buf[BUFSIZE];
+-	struct args *args;
++	struct restart_args *args;
  
--#define SIGNAL_ENTRY(signal)  { SIG ## signal, #signal }
--
--struct {
--	int signum;
--	char *sigstr;
--} signal_array[] = {
-+struct signal_array signal_array[] = {
- 	{ 0, "NONE" },
- 	SIGNAL_ENTRY(ALRM),
- 	SIGNAL_ENTRY(HUP),
-@@ -196,7 +192,6 @@ inline static int restart(pid_t pid, int fd, unsigned long flags, int logfd)
- 	return syscall(__NR_restart, pid, fd, flags, logfd);
- }
- 
--#define BUFSIZE  (4 * 4096)
- 
- struct hashent {
- 	long key;
-@@ -205,29 +200,6 @@ struct hashent {
+ 	char *freezer;
+ };
+@@ -310,28 +311,6 @@ struct pid_swap {
+ 	pid_t new;
  };
  
- struct task;
--struct ckpt_ctx;
--
--struct task {
--	int flags;		/* state and (later) actions */
--
--	struct task *children;	/* pointers to first child, next and prev */
--	struct task *next_sib;	/*   sibling, and the creator of a process */
--	struct task *prev_sib;
--	struct task *creator;
--
--	struct task *phantom;	/* pointer to place-holdler task (if any) */
--
--	pid_t pid;		/* process IDs, our bread-&-butter */
--	pid_t ppid;
--	pid_t tgid;
--	pid_t sid;
--	
--	pid_t rpid;		/* [restart without vpids] actual (real) pid */
--
--	struct ckpt_ctx *ctx;	/* points back to the c/r context */
--
--	pid_t real_parent;	/* pid of task's real parent */
+-struct args {
+-	int self;
+-	int pids;
+-	int pidns;
+-	int no_pidns;
+-	int inspect;
+-	char *root;
+-	int wait;
+-	int mntns;
+-	int mnt_pty;
+-	int show_status;
+-	int copy_status;
+-	char *freezer;
+-	char *input;
+-	int infd;
+-	char *logfile;
+-	int logfd;
+-	long warn;
+-	long fail;
+-	int keep_lsm;
 -};
- 
- /* zero_task represents creator of root_task (all pids 0) */
- struct task zero_task;
-@@ -360,18 +332,6 @@ struct args {
- 	int keep_lsm;
- };
- 
--#define CKPT_COND_PIDZERO  0x1
--#define CKPT_COND_MNTPROC  0x2
--#define CKPT_COND_MNTPTY   0x4
--
--#define CKPT_COND_NONE     0
--#define CKPT_COND_ANY      ULONG_MAX
--
--/* default for skip/warn/fail */
--#define CKPT_COND_WARN     (CKPT_COND_MNTPROC | \
--			    CKPT_COND_MNTPTY)
--#define CKPT_COND_FAIL     (CKPT_COND_NONE)
 -
  static void usage(char *str)
  {
  	fprintf(stderr, "%s", str);
-diff --git a/restart.h b/restart.h
+@@ -382,7 +361,7 @@ static inline int ckpt_cond_fail(struct ckpt_ctx *ctx, long mask)
+ 	return (ctx->args->fail & mask);
+ }
+ 
+-static void parse_args(struct args *args, int argc, char *argv[])
++static void parse_args(struct restart_args *args, int argc, char *argv[])
+ {
+ 	static struct option opts[] = {
+ 		{ "help",	no_argument,		NULL, 'h' },
+@@ -712,71 +691,77 @@ static int freezer_register(struct ckpt_ctx *ctx, pid_t pid)
+ 
+ int main(int argc, char *argv[])
+ {
++	struct restart_args args;
++
++	parse_args(&args, argc, argv);
++
++	return app_restart(&args);
++}
++
++int app_restart(struct restart_args *args)
++{
+ 	struct ckpt_ctx ctx;
+-	struct args args;
+ 	int ret;
+ 
+ 	memset(&ctx, 0, sizeof(ctx));
+-
+-	parse_args(&args, argc, argv);
+-	ctx.args = &args;
++	ctx.args = args;
+ 
+ 	/* input file ? */
+-	if (args.input) {
+-		args.infd = open(args.input, O_RDONLY, 0);
+-		if (args.infd < 0) {
++	if (args->input) {
++		args->infd = open(args->input, O_RDONLY, 0);
++		if (args->infd < 0) {
+ 			perror("open input file");
+ 			exit(1);
+ 		}
+ 	}
+ 
+ 	/* input file descriptor (default: stdin) */
+-	if (args.infd >= 0) {
+-		if (dup2(args.infd, STDIN_FILENO) < 0) {
++	if (args->infd >= 0) {
++		if (dup2(args->infd, STDIN_FILENO) < 0) {
+ 			perror("dup2 input file");
+ 			exit(1);
+ 		}
+-		if (args.infd != STDIN_FILENO)
+-			close(args.infd);
++		if (args->infd != STDIN_FILENO)
++			close(args->infd);
+ 	}
+ 
+ 	/* (optional) log file */
+-	if (args.logfile) {
+-		args.logfd = open(args.logfile,
++	if (args->logfile) {
++		args->logfd = open(args->logfile,
+ 				  O_RDWR | O_CREAT | O_EXCL, 0644);
+-		if (args.logfd < 0) {
++		if (args->logfd < 0) {
+ 			perror("open log file");
+ 			exit(1);
+ 		}
+ 	}
+ 
+ 	/* output file descriptor (default: none) */
+-	if (args.logfd < 0)
+-		args.logfd = CHECKPOINT_FD_NONE;
++	if (args->logfd < 0)
++		args->logfd = CHECKPOINT_FD_NONE;
+ 
+ 	/* freezer preparation */
+-	if (args.freezer && freezer_prepare(&ctx) < 0)
++	if (args->freezer && freezer_prepare(&ctx) < 0)
+ 		exit(1);
+ 
+ 	/* private mounts namespace ? */
+-	if (args.mntns && unshare(CLONE_NEWNS | CLONE_FS) < 0) {
++	if (args->mntns && unshare(CLONE_NEWNS | CLONE_FS) < 0) {
+ 		perror("unshare");
+ 		exit(1);
+ 	}
+ 
+ 	/* chroot ? */
+-	if (args.root && chroot(args.root) < 0) {
++	if (args->root && chroot(args->root) < 0) {
+ 		perror("chroot");
+ 		exit(1);
+ 	}
+ 
+ 	/* remount /dev/pts ? */
+-	if (args.mnt_pty && ckpt_remount_devpts(&ctx) < 0)
++	if (args->mnt_pty && ckpt_remount_devpts(&ctx) < 0)
+ 		exit(1);
+ 
+ 	/* self-restart ends here: */
+-	if (args.self) {
+-		restart(getpid(), STDIN_FILENO, RESTART_TASKSELF, args.logfd);
++	if (args->self) {
++		restart(getpid(), STDIN_FILENO, RESTART_TASKSELF, args->logfd);
+ 		/* reach here if restart(2) failed ! */
+ 		perror("restart");
+ 		exit(1);
+diff --git a/usercr.h b/usercr.h
 new file mode 100644
-index 0000000..6782399
+index 0000000..71a36e6
 --- /dev/null
-+++ b/restart.h
-@@ -0,0 +1,45 @@
-+struct ckpt_ctx;
++++ b/usercr.h
+@@ -0,0 +1,24 @@
 +
-+struct task {
-+	int flags;		/* state and (later) actions */
-+
-+	struct task *children;	/* pointers to first child, next and prev */
-+	struct task *next_sib;	/*   sibling, and the creator of a process */
-+	struct task *prev_sib;
-+	struct task *creator;
-+
-+	struct task *phantom;	/* pointer to place-holdler task (if any) */
-+
-+	pid_t pid;		/* process IDs, our bread-&-butter */
-+	pid_t ppid;
-+	pid_t tgid;
-+	pid_t sid;
-+	
-+	pid_t rpid;		/* [restart without vpids] actual (real) pid */
-+
-+	struct ckpt_ctx *ctx;	/* points back to the c/r context */
-+
-+	pid_t real_parent;	/* pid of task's real parent */
++struct restart_args {
++	int self;
++	int pids;
++	int pidns;
++	int no_pidns;
++	int inspect;
++	char *root;
++	int wait;
++	int mntns;
++	int mnt_pty;
++	int show_status;
++	int copy_status;
++	char *freezer;
++	char *input;
++	int infd;
++	char *logfile;
++	int logfd;
++	long warn;
++	long fail;
++	int keep_lsm;
 +};
 +
-+#define BUFSIZE  (4 * 4096)
-+
-+#define CKPT_COND_PIDZERO  0x1
-+#define CKPT_COND_MNTPROC  0x2
-+#define CKPT_COND_MNTPTY   0x4
-+
-+#define CKPT_COND_NONE     0
-+#define CKPT_COND_ANY      ULONG_MAX
-+
-+/* default for skip/warn/fail */
-+#define CKPT_COND_WARN     (CKPT_COND_MNTPROC | \
-+			    CKPT_COND_MNTPTY)
-+#define CKPT_COND_FAIL     (CKPT_COND_NONE)
-+
-+#define SIGNAL_ENTRY(signal)  { SIG ## signal, #signal }
-+
-+struct signal_array {
-+	int signum;
-+	char *sigstr;
-+};
-+
++extern int app_restart(struct restart_args *args);
 -- 
 1.6.6.1
