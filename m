@@ -1,15 +1,15 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH 0/4][user-cr]: First try at integrating LXC and
-	USER-CR
-Date: Wed, 24 Feb 2010 09:15:24 -0600
-Message-ID: <20100224151524.GA6425@us.ibm.com>
+Subject: Re: [PATCH 4/4][user-cr] Rename libeclone.a to libcheckpoint.a
+Date: Wed, 24 Feb 2010 09:19:19 -0600
+Message-ID: <20100224151919.GB6425@us.ibm.com>
 References: <20100224083452.GB18758@us.ibm.com>
+	<20100224083726.GF18758@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20100224083452.GB18758-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20100224083726.GF18758-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,43 +25,138 @@ List-Id: containers.vger.kernel.org
 
 Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
 > 
-> Following two sets of patches is an early attempt to integrate LXC and
-> USER-CR. 
+> >From c4063a8976fd8eca9b8d62a12b95c3125c8471c7 Mon Sep 17 00:00:00 2001
+> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> Date: Tue, 23 Feb 2010 16:25:36 -0800
+> Subject: [PATCH 4/4][user-cr] Rename libeclone.a to libcheckpoint.a
 > 
-> Overview:
+> Export app_restart() and usercr.h to user in a new library libcheckpoint.a.
+> Until eclone() makes it into glibc, include eclone() also in this new library
+> and remove the libeclone.a.
 > 
-> Have USER-CR export the core checkpoint and restart functionality into a
-> library (/lib/libcheckpoint.a and <usercr.h>) and have LXC link with this
-> library.
+> TODO:
+> 	- cr-tests should be modified to look for libcheckpoint.a instead
+> 	  of libeclone.a
 > 
-> TODO: 
+> 	- libcheckpoint.a should eventually include the app_checkpoint()
+> 	  interface.  I am guessing extracting the app_checkpoint() from
+> 	  checkpoint.c would be similar to (or somewhat easier than) the
+> 	  way we extracted app_restart() from restart.c
 > 
-> 	1. For now, libcheckpoint.a implements only the restart functionality
-> 	   and so only lxc_restart command is implemented. Implementing the
-> 	   checkpoint functionality and lxc_checkpoint command can be done
-> 	   similarly and is hopefully easier than the restart functionality.
+> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> ---
+>  Makefile  |   33 ++++++++++++++++++++-------------
+>  restart.c |    6 ++++++
+>  2 files changed, 26 insertions(+), 13 deletions(-)
 > 
-> 	2. The restart() functionality in user-cr makes extensive use of global
-> 	   variables and debug code. The API must be extended to properly
-> 	   include these variables/debug code in the API.
+> diff --git a/Makefile b/Makefile
+> index 4449081..090914a 100644
+> --- a/Makefile
+> +++ b/Makefile
+> @@ -18,14 +18,14 @@ WARNS := -Wall -Wstrict-prototypes -Wno-trigraphs
+>  CFLAGS += -g $(WARNS) $(CKPT_INCLUDE) $(DEBUG)
 > 
-> 	   Similarly, the 'struct restart_args' may need to be sanitized for
-> 	   use in a formal API.
+>  # install dir
+> +INC_INSTALL_DIR = /usr/include
+>  BIN_INSTALL_DIR = /bin
+>  LIB_INSTALL_DIR = /lib
 > 
-> 	3. lxc_restart command  restarts entire containers only (specifically
-> 	   it simulates the --pidns --pids --mount-pty arguments to
-> 	   /bin/restart).
+> -restart: restart.o restart-main.o
+> -
+>  ECLONE_PROGS = restart nsexec
+>  PROGS =	checkpoint ckptinfo $(ECLONE_PROGS)
+> -LIB_ECLONE = libeclone.a
+> +LIB_CHECKPOINT = libcheckpoint.a
+> +INC_CHECKPOINT = usercr.h
 > 
-> 	4. Link lxc_restart and lxc_checkpoint with the shared library
-> 	   liblxc.so (currently links statically)
+>  # other cleanup
+>  OTHER = ckptinfo_types.c
+> @@ -34,32 +34,37 @@ LDLIBS = -lm
 > 
-> 	5. ...
+>  .PHONY: all distclean clean headers install
 > 
+> -all: $(PROGS)
+> +all: $(PROGS) $(LIB_CHECKPOINT)
+>  	@make -C test
 > 
-> STATUS:
-> 	I was able to checkpoint/restart a simple '/bin/sleep 1000' LXC
-> 	container, except for a cgroup naming issue after restart (see below).
+> -$(LIB_ECLONE):
+> -	ar ruv $(LIB_ECLONE) $^
+> +restart: restart-main.o
+> +
+> +$(PROGS): $(LIB_CHECKPOINT) 
+> +
+> +$(LIB_CHECKPOINT):
+> +	ar ruv $(LIB_CHECKPOINT) $^
+> 
+>  # restart needs to be thread-safe
+>  restart: CFLAGS += -D__REENTRANT -pthread
+> 
+> +$(LIB_CHECKPOINT): restart.o
+> +
+>  # eclone() is architecture specific
+>  ifneq ($(SUBARCH),)
+> -$(ECLONE_PROGS): $(LIB_ECLONE) 
+>  $(ECLONE_PROGS): CFLAGS += -DARCH_HAS_ECLONE
+> -$(LIB_ECLONE): clone_$(SUBARCH).o genstack.o
+> +$(LIB_CHECKPOINT): clone_$(SUBARCH).o genstack.o
+>  endif
+> 
+>  # on powerpc, need also assembly file
+>  ifeq ($(SUBARCH),ppc)
+>  CFLAGS += -m32
+>  ASFLAGS += -m32
+> -$(LIB_ECLONE): clone_$(SUBARCH)_.o
+> +$(LIB_CHECKPOINT): clone_$(SUBARCH)_.o
+>  endif
+>  ifeq ($(SUBARCH),ppc64)
+>  CFLAGS += -m64
+>  ASFLAGS += -m64
+> -$(LIB_ECLONE): clone_$(SUBARCH)_.o
+> +$(LIB_CHECKPOINT): clone_$(SUBARCH)_.o
+>  endif
+> 
+>  # ckptinfo dependencies
+> @@ -71,8 +76,10 @@ ckptinfo_types.c: $(CKPT_HEADERS) ckptinfo.py
+>  install:
+>  	@echo /usr/bin/install -m 755 checkpoint restart nsexec ckptinfo $(BIN_INSTALL_DIR)
+>  	@/usr/bin/install -m 755 checkpoint restart ckptinfo nsexec $(BIN_INSTALL_DIR)
+> -	@echo /usr/bin/install -m 755 $(LIB_ECLONE) $(LIB_INSTALL_DIR)
+> -	@/usr/bin/install -m 755 $(LIB_ECLONE) $(LIB_INSTALL_DIR)
+> +	@echo /usr/bin/install -m 755 $(INC_CHECKPOINT) $(INC_INSTALL_DIR)
+> +	@/usr/bin/install -m 755 $(INC_CHECKPOINT) $(INC_INSTALL_DIR)
+> +	@echo /usr/bin/install -m 755 $(LIB_CHECKPOINT) $(LIB_INSTALL_DIR)
+> +	@/usr/bin/install -m 755 $(LIB_CHECKPOINT) $(LIB_INSTALL_DIR)
+> 
+>  $(CKPT_HEADERS): %:
+>  	./scripts/extract-headers.sh -s $(KERNELSRC) -o ./include
+> @@ -83,5 +90,5 @@ distclean: clean
+>  	@rm -f $(CKPT_HEADERS)
+> 
+>  clean:
+> -	@rm -f $(PROGS) $(LIB_ECLONE) $(OTHER) *~ *.o headers.h
+> +	@rm -f $(PROGS) $(LIB_CHECKPOINT) $(OTHER) *~ *.o headers.h
+>  	@make -C test clean
+> diff --git a/restart.c b/restart.c
+> index b1518f2..a163862 100644
+> --- a/restart.c
+> +++ b/restart.c
+> @@ -530,6 +530,12 @@ int app_restart(struct restart_args *args)
+>  		ret = ckpt_coordinator(&ctx);
+>  	}
+> 
+> +	/*
+> +	 * Hack for LXC - which currently only uses pidns == 1, pid0 == 1;
+> +	 */
+> +	if (ret >= 0)
+> +		ret = global_child_pid;
+> +
 
-Very nice, Suka.
+Hmm?  Maybe I'm looking at the wrong context, but isn't this specifically
+the existing pidns case?  Should the second block ("new pidns with init")
+be the one to execute if your comment is correct?
 
--serge
+>  	return ret;
+>  }
+> 
+> -- 
+> 1.6.6.1
