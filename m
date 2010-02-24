@@ -1,131 +1,44 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH -mm] cgroups: fix failure path in cgroup_write_event_control()
-Date: Wed, 24 Feb 2010 11:22:27 +0800
-Message-ID: <4B849B73.1040106@cn.fujitsu.com>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH v2 -mmotm 3/4] cgroups: Add simple listener of cgroup
+	events to documentation
+Date: Wed, 24 Feb 2010 11:30:20 +0800
+Message-ID: <4B849D4C.2090800__7037.45240248299$1266982369$gmane$org@cn.fujitsu.com>
+References: <1f8bd63acb6485c88f8539e009459a28fb6ad55b.1266853233.git.kirill@shutemov.name>
+	<690745ebd257c74a1c47d552fec7fbb0b5efb7d0.1266853233.git.kirill@shutemov.name>
+	<458c3169608cb333f390b2cb732565fec9fec67e.1266853234.git.kirill@shutemov.name>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner@vger.kernel.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Paul Menage <menage@google.com>, "Kirill A. Shutemov" <kirill@shutemov.name>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, LKML <linux-kernel@vger.kernel.org>, "containers@lists.osdl.org" <containers@lists.osdl.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <458c3169608cb333f390b2cb732565fec9fec67e.1266853234.git.kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Dan Malek <dan-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-How to reproduce:
+> +	ret = dprintf(event_control, "%d %d %s", efd, cfd, argv[2]);
 
-  # mount -t cgroup -o memory xxx /cgroup
-  # mkdir /cgroup/tmp
-  # ./cgroup_event_listener /cgroup/tmp/cgroup.event_control abc
-  ^C
-  # rmdir /cgroup/tmp
-  # cat /proc/cgroups | grep memory
-  memory  2       2       1         (should be "2 1 1")
-  # umount /cgroup
-  (failed!)
+I found it won't return negative value for invalid input, though
+errno is set properly.
 
-Using a single goto label to cleanup multi failure paths can
-get things wrong quite easily, while multi labels makes the
-code cleaner.
+try:
+# ./cgroup_event_listner /cgroup/cgroup.procs abc
 
-Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
----
- cgroup.c |   39 ++++++++++++++++++---------------------
- 1 file changed, 18 insertions(+), 21 deletions(-)
+while strace shows write() does return -1:
 
-diff --git a/kernel/cgroup.c.orig b/kernel/cgroup.c
-index d142524..6ff40f6 100644
---- a/kernel/cgroup.c.orig
-+++ b/kernel/cgroup.c
-@@ -3029,10 +3029,10 @@ static void cgroup_event_ptable_queue_proc(struct file *file,
- static int cgroup_write_event_control(struct cgroup *cgrp, struct cftype *cft,
- 				      const char *buffer)
- {
--	struct cgroup_event *event = NULL;
-+	struct cgroup_event *event;
- 	unsigned int efd, cfd;
--	struct file *efile = NULL;
--	struct file *cfile = NULL;
-+	struct file *efile;
-+	struct file *cfile;
- 	char *endp;
- 	int ret;
- 
-@@ -3058,46 +3058,46 @@ static int cgroup_write_event_control(struct cgroup *cgrp, struct cftype *cft,
- 	efile = eventfd_fget(efd);
- 	if (IS_ERR(efile)) {
- 		ret = PTR_ERR(efile);
--		goto fail;
-+		goto out_free_event;
- 	}
- 
- 	event->eventfd = eventfd_ctx_fileget(efile);
- 	if (IS_ERR(event->eventfd)) {
- 		ret = PTR_ERR(event->eventfd);
--		goto fail;
-+		goto out_put_efile;
- 	}
- 
- 	cfile = fget(cfd);
- 	if (!cfile) {
- 		ret = -EBADF;
--		goto fail;
-+		goto out_put_eventfd;
- 	}
- 
- 	/* the process need read permission on control file */
- 	ret = file_permission(cfile, MAY_READ);
- 	if (ret < 0)
--		goto fail;
-+		goto out;
- 
- 	event->cft = __file_cft(cfile);
- 	if (IS_ERR(event->cft)) {
- 		ret = PTR_ERR(event->cft);
--		goto fail;
-+		goto out;
- 	}
- 
- 	if (!event->cft->register_event || !event->cft->unregister_event) {
- 		ret = -EINVAL;
--		goto fail;
-+		goto out;
- 	}
- 
- 	ret = event->cft->register_event(cgrp, event->cft,
- 			event->eventfd, buffer);
- 	if (ret)
--		goto fail;
-+		goto out;
- 
- 	if (efile->f_op->poll(efile, &event->pt) & POLLHUP) {
- 		event->cft->unregister_event(cgrp, event->cft, event->eventfd);
- 		ret = 0;
--		goto fail;
-+		goto out;
- 	}
- 
- 	/*
-@@ -3116,16 +3116,13 @@ static int cgroup_write_event_control(struct cgroup *cgrp, struct cftype *cft,
- 
- 	return 0;
- 
--fail:
--	if (!cfile)
--		fput(cfile);
--
--	if (event && event->eventfd && !IS_ERR(event->eventfd))
--		eventfd_ctx_put(event->eventfd);
--
--	if (!IS_ERR_OR_NULL(efile))
--		fput(efile);
--
-+out:
-+	fput(cfile);
-+out_put_eventfd:
-+	eventfd_ctx_put(event->eventfd);
-+out_put_efile:
-+	fput(efile);
-+out_free_event:
- 	kfree(event);
- 
- 	return ret;
+# strace ./cgroup_event_listner /cgroup/cgroup.procs abc
+...
+write(6, "7 5 abc"..., 7)               = -1 EINVAL (Invalid argument)
+
+> +	if (ret == -1) {
+> +		perror("Cannot write to cgroup.event_control");
+> +		goto out;
+> +	}
