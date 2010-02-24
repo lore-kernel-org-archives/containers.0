@@ -1,17 +1,16 @@
 From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Subject: Re: [PATCH v2 -mmotm 3/4] cgroups: Add simple listener of cgroup
-	events to documentation
-Date: Wed, 24 Feb 2010 13:36:30 +0200
-Message-ID: <cc557aab1002240336q2a8cab6evaae228a95ab9f672__43265.0485811338$1267011534$gmane$org@mail.gmail.com>
+Subject: Re: [PATCH v2 -mmotm 2/4] cgroups: remove events before destroying
+	subsystem state objects
+Date: Wed, 24 Feb 2010 13:42:15 +0200
+Message-ID: <cc557aab1002240342u1b0223a4td8269d727b004621__89.5479498014495$1267011781$gmane$org@mail.gmail.com>
 References: <1f8bd63acb6485c88f8539e009459a28fb6ad55b.1266853233.git.kirill@shutemov.name>
 	<690745ebd257c74a1c47d552fec7fbb0b5efb7d0.1266853233.git.kirill@shutemov.name>
-	<458c3169608cb333f390b2cb732565fec9fec67e.1266853234.git.kirill@shutemov.name>
-	<4B849D4C.2090800@cn.fujitsu.com>
+	<20100224084005.GC2310@balbir.in.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4B849D4C.2090800-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20100224084005.GC2310-SINUvgVNF2CyUtPGxGje5AC/G2K4zDHf@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,29 +20,25 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Dan Malek <dan-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Dan Malek <dan-L1vi/lXTdtvkgf6YlCu6wwC/G2K4zDHf@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gV2VkLCBGZWIgMjQsIDIwMTAgYXQgNTozMCBBTSwgTGkgWmVmYW4gPGxpemZAY24uZnVqaXRz
-dS5jb20+IHdyb3RlOgo+PiArIMKgIMKgIHJldCA9IGRwcmludGYoZXZlbnRfY29udHJvbCwgIiVk
-ICVkICVzIiwgZWZkLCBjZmQsIGFyZ3ZbMl0pOwo+Cj4gSSBmb3VuZCBpdCB3b24ndCByZXR1cm4g
-bmVnYXRpdmUgdmFsdWUgZm9yIGludmFsaWQgaW5wdXQsIHRob3VnaAo+IGVycm5vIGlzIHNldCBw
-cm9wZXJseS4KCkl0IGxvb2tzIGxpa2UgYSBnbGliYyBidWcuIEkndmUgZmlsZSBidWcgdG8gZ2xp
-YmMgYnVnemlsbGE6CgpodHRwOi8vc291cmNld2FyZS5vcmcvYnVnemlsbGEvc2hvd19idWcuY2dp
-P2lkPTExMzE5CgpJJ2xsIGZpeCBjZ3JvdXBfZXZlbnRfbGlzdGVuZXIuYy4gVGhhbmtzIQoKPiB0
-cnk6Cj4gIyAuL2Nncm91cF9ldmVudF9saXN0bmVyIC9jZ3JvdXAvY2dyb3VwLnByb2NzIGFiYwo+
-Cj4gd2hpbGUgc3RyYWNlIHNob3dzIHdyaXRlKCkgZG9lcyByZXR1cm4gLTE6Cj4KPiAjIHN0cmFj
-ZSAuL2Nncm91cF9ldmVudF9saXN0bmVyIC9jZ3JvdXAvY2dyb3VwLnByb2NzIGFiYwo+IC4uLgo+
-IHdyaXRlKDYsICI3IDUgYWJjIi4uLiwgNykgwqAgwqAgwqAgwqAgwqAgwqAgwqAgPSAtMSBFSU5W
-QUwgKEludmFsaWQgYXJndW1lbnQpCj4KPj4gKyDCoCDCoCBpZiAocmV0ID09IC0xKSB7Cj4+ICsg
-wqAgwqAgwqAgwqAgwqAgwqAgcGVycm9yKCJDYW5ub3Qgd3JpdGUgdG8gY2dyb3VwLmV2ZW50X2Nv
-bnRyb2wiKTsKPj4gKyDCoCDCoCDCoCDCoCDCoCDCoCBnb3RvIG91dDsKPj4gKyDCoCDCoCB9Cj4K
-PiAtLQo+IFRvIHVuc3Vic2NyaWJlLCBzZW5kIGEgbWVzc2FnZSB3aXRoICd1bnN1YnNjcmliZSBs
-aW51eC1tbScgaW4KPiB0aGUgYm9keSB0byBtYWpvcmRvbW9Aa3ZhY2sub3JnLiDCoEZvciBtb3Jl
-IGluZm8gb24gTGludXggTU0sCj4gc2VlOiBodHRwOi8vd3d3LmxpbnV4LW1tLm9yZy8gLgo+IERv
-bid0IGVtYWlsOiA8YSBocmVmPW1haWx0bzoiZG9udEBrdmFjay5vcmciPiBlbWFpbEBrdmFjay5v
-cmcgPC9hPgo+Cl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-CkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlv
-bi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZv
-L2NvbnRhaW5lcnM=
+On Wed, Feb 24, 2010 at 10:40 AM, Balbir Singh
+<balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+> * Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org> [2010-02-22 17:43:40]:
+>
+>> Events should be removed after rmdir of cgroup directory, but before
+>> destroying subsystem state objects. Let's take reference to cgroup
+>> directory dentry to do that.
+>>
+>> Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+>> Acked-by: KAMEZAWA Hiroyuki <kamezawa.hioryu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+>
+> Looks good, but remember the mem_cgroup data structure will can
+> disappear after the rmdir
+
+IIUC, struct mem_cgroup can be freed only after ->destroy(), which can
+be called only if there is no references to cgroup directory dentry.
+
+Have I missed something?
