@@ -1,18 +1,16 @@
 From: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
 Subject: Re: [PATCH 2/2] memcg: dirty pages instrumentation
-Date: Thu, 25 Feb 2010 15:34:44 +0100
-Message-ID: <20100225143444.GB3964__29180.810848675$1267108758$gmane$org@linux>
+Date: Thu, 25 Feb 2010 16:12:11 +0100
+Message-ID: <20100225151211.GC3964__37784.2127382339$1267110807$gmane$org@linux>
 References: <1266765525-30890-1-git-send-email-arighi@develer.com>
 	<1266765525-30890-3-git-send-email-arighi@develer.com>
-	<20100222165215.GA3096@redhat.com> <20100223094040.GC1882@linux>
-	<20100223195606.GD11930@redhat.com>
-	<alpine.DEB.2.00.1002231419450.8693@chino.kir.corp.google.com>
+	<20100223212943.GF11930@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <alpine.DEB.2.00.1002231419450.8693-X6Q0R45D7oAcqpCFd4KODRPsWskHk0ljAL8bYrjMMd8@public.gmane.org>
+In-Reply-To: <20100223212943.GF11930-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,36 +20,58 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Feb 23, 2010 at 02:22:12PM -0800, David Rientjes wrote:
-> On Tue, 23 Feb 2010, Vivek Goyal wrote:
+On Tue, Feb 23, 2010 at 04:29:43PM -0500, Vivek Goyal wrote:
+> On Sun, Feb 21, 2010 at 04:18:45PM +0100, Andrea Righi wrote:
 > 
-> > > > Because you have modified dirtyable_memory() and made it per cgroup, I
-> > > > think it automatically takes care of the cases of per cgroup dirty ratio,
-> > > > I mentioned in my previous mail. So we will use system wide dirty ratio
-> > > > to calculate the allowed dirty pages in this cgroup (dirty_ratio *
-> > > > available_memory()) and if this cgroup wrote too many pages start
-> > > > writeout? 
-> > > 
-> > > OK, if I've understood well, you're proposing to use per-cgroup
-> > > dirty_ratio interface and do something like:
-> > 
-> > I think we can use system wide dirty_ratio for per cgroup (instead of
-> > providing configurable dirty_ratio for each cgroup where each memory
-> > cgroup can have different dirty ratio. Can't think of a use case
-> > immediately).
+> [..]
+> > diff --git a/mm/page-writeback.c b/mm/page-writeback.c
+> > index 0b19943..c9ff1cd 100644
+> > --- a/mm/page-writeback.c
+> > +++ b/mm/page-writeback.c
+> > @@ -137,10 +137,11 @@ static struct prop_descriptor vm_dirties;
+> >   */
+> >  static int calc_period_shift(void)
+> >  {
+> > -	unsigned long dirty_total;
+> > +	unsigned long dirty_total, dirty_bytes;
+> >  
+> > -	if (vm_dirty_bytes)
+> > -		dirty_total = vm_dirty_bytes / PAGE_SIZE;
+> > +	dirty_bytes = mem_cgroup_dirty_bytes();
+> > +	if (dirty_bytes)
+> > +		dirty_total = dirty_bytes / PAGE_SIZE;
+> >  	else
+> >  		dirty_total = (vm_dirty_ratio * determine_dirtyable_memory()) /
+> >  				100;
 > 
-> I think each memcg should have both dirty_bytes and dirty_ratio, 
-> dirty_bytes defaults to 0 (disabled) while dirty_ratio is inherited from 
-> the global vm_dirty_ratio.  Changing vm_dirty_ratio would not change 
-> memcgs already using their own dirty_ratio, but new memcgs would get the 
-> new value by default.  The ratio would act over the amount of available 
-> memory to the cgroup as though it were its own "virtual system" operating 
-> with a subset of the system's RAM and the same global ratio.
+> Ok, I don't understand this so I better ask. Can you explain a bit how memory
+> cgroup dirty ratio is going to play with per BDI dirty proportion thing.
+> 
+> Currently we seem to be calculating per BDI proportion (based on recently
+> completed events), of system wide dirty ratio and decide whether a process
+> should be throttled or not.
+> 
+> Because throttling decision is also based on BDI and its proportion, how
+> are we going to fit it with mem cgroup? Is it going to be BDI proportion
+> of dirty memory with-in memory cgroup (and not system wide)?
 
-Agreed.
+IMHO we need to calculate the BDI dirty threshold as a function of the
+cgroup's dirty memory, and keep BDI statistics system wide.
+
+So, if a task is generating some writes, the threshold to start itself
+the writeback will be calculated as a function of the cgroup's dirty
+memory. If the BDI dirty memory is greater than this threshold, the task
+must start to writeback dirty pages until it reaches the expected dirty
+limit.
+
+OK, in this way a cgroup with a small dirty limit may be forced to
+writeback a lot of pages dirtied by other cgroups on the same device.
+But this is always related to the fact that tasks are forced to
+writeback dirty inodes randomly, and not the inodes they've actually
+dirtied.
 
 -Andrea
