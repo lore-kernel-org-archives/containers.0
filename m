@@ -1,12 +1,12 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH linux-cr] nsproxy: record ambient namespaces
-Date: Thu, 25 Feb 2010 16:56:41 -0600
-Message-ID: <20100225225641.GA9386@us.ibm.com>
+From: "any" <fh37rh3-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Listing of medical geneticists and much more
+Date: Fri, 26 Feb 2010 06:45:36 +0700 (ICT)
+Message-ID: <20100225234536.D70DF9A96EB@mailservices.navigosgroup.com>
+Reply-To: po473j-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,62 +16,13 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: containerdist-YDxpq3io04c@public.gmane.org, containergardening.guide-P+sZE/a5Pg0AvxtiuMwx3w@public.gmane.org, containerliving-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org, containers-L+imD1xhJ+wdAKw5zcrNjA@public.gmane.org, containers-OqJvkv5is1h3K8eIWKoEHQ@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-The nsproxy restore path recognizes that an objref of 0 for
-ipc or uts ns means don't unshare it.  But the checkpoint side
-forgot to write down 0 when the ipc or uts ns isn't unshared!
+I have alot of good quality American Databases at decent prices. Contact me here:  Deandre.Jarrett-kC+FesantHuAFepJR2wicw@public.gmane.org for a complete catalog of what we have.
 
-Fix that.
-
-To test, run a program with a private pidns but shared utsns
-which does
-
-	sleep(5);
-	sethostname("serge", 6);
-
-checkpoint it, reset your hostname (if you let the program
-complete), then restart the program: without this patch, it
-will not reset your hostname.  It should, and with this patch
-it will.
-
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- kernel/nsproxy.c |   19 +++++++++++++------
- 1 files changed, 13 insertions(+), 6 deletions(-)
-
-diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
-index 0da0d83..dcb502c 100644
---- a/kernel/nsproxy.c
-+++ b/kernel/nsproxy.c
-@@ -280,13 +280,20 @@ static int do_checkpoint_ns(struct ckpt_ctx *ctx, struct nsproxy *nsproxy)
- 	if (!h)
- 		return -ENOMEM;
  
--	ret = checkpoint_obj(ctx, nsproxy->uts_ns, CKPT_OBJ_UTS_NS);
--	if (ret <= 0)
--		goto out;
-+	ret = 0;
-+	if (nsproxy->uts_ns != ctx->root_nsproxy->uts_ns) {
-+		ret = checkpoint_obj(ctx, nsproxy->uts_ns, CKPT_OBJ_UTS_NS);
-+		if (ret <= 0)
-+			goto out;
-+	}
- 	h->uts_objref = ret;
--	ret = checkpoint_obj(ctx, nsproxy->ipc_ns, CKPT_OBJ_IPC_NS);
--	if (ret < 0)
--		goto out;
-+
-+	ret = 0;
-+	if (nsproxy->ipc_ns != ctx->root_nsproxy->ipc_ns) {
-+		ret = checkpoint_obj(ctx, nsproxy->ipc_ns, CKPT_OBJ_IPC_NS);
-+		if (ret < 0)
-+			goto out;
-+	}
- 	h->ipc_objref = ret;
- 
- 	/* FIXME: for now, only marked visited to pacify leaks */
--- 
-1.6.1
+  
+
+
+Send email to rembox-kC+FesantHuAFepJR2wicw@public.gmane.org for deleted status
