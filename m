@@ -1,11 +1,18 @@
-From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Subject: [PATCH] cgroup: do not use dprintf in cgroup_event_listener
-Date: Thu, 25 Feb 2010 12:24:07 +0200
-Message-ID: <1267093447-2607-1-git-send-email-kirill__13227.0950744443$1267093549$gmane$org@shutemov.name>
+From: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [PATCH 2/2] memcg: dirty pages instrumentation
+Date: Thu, 25 Feb 2010 15:34:44 +0100
+Message-ID: <20100225143444.GB3964__29180.810848675$1267108758$gmane$org@linux>
+References: <1266765525-30890-1-git-send-email-arighi@develer.com>
+	<1266765525-30890-3-git-send-email-arighi@develer.com>
+	<20100222165215.GA3096@redhat.com> <20100223094040.GC1882@linux>
+	<20100223195606.GD11930@redhat.com>
+	<alpine.DEB.2.00.1002231419450.8693@chino.kir.corp.google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <alpine.DEB.2.00.1002231419450.8693-X6Q0R45D7oAcqpCFd4KODRPsWskHk0ljAL8bYrjMMd8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,55 +22,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-glibc's dprintf(3) is buggy:
-http://sourceware.org/bugzilla/show_bug.cgi?id=11319
+On Tue, Feb 23, 2010 at 02:22:12PM -0800, David Rientjes wrote:
+> On Tue, 23 Feb 2010, Vivek Goyal wrote:
+> 
+> > > > Because you have modified dirtyable_memory() and made it per cgroup, I
+> > > > think it automatically takes care of the cases of per cgroup dirty ratio,
+> > > > I mentioned in my previous mail. So we will use system wide dirty ratio
+> > > > to calculate the allowed dirty pages in this cgroup (dirty_ratio *
+> > > > available_memory()) and if this cgroup wrote too many pages start
+> > > > writeout? 
+> > > 
+> > > OK, if I've understood well, you're proposing to use per-cgroup
+> > > dirty_ratio interface and do something like:
+> > 
+> > I think we can use system wide dirty_ratio for per cgroup (instead of
+> > providing configurable dirty_ratio for each cgroup where each memory
+> > cgroup can have different dirty ratio. Can't think of a use case
+> > immediately).
+> 
+> I think each memcg should have both dirty_bytes and dirty_ratio, 
+> dirty_bytes defaults to 0 (disabled) while dirty_ratio is inherited from 
+> the global vm_dirty_ratio.  Changing vm_dirty_ratio would not change 
+> memcgs already using their own dirty_ratio, but new memcgs would get the 
+> new value by default.  The ratio would act over the amount of available 
+> memory to the cgroup as though it were its own "virtual system" operating 
+> with a subset of the system's RAM and the same global ratio.
 
-Let's not to use it in the example.
+Agreed.
 
-Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
----
- Documentation/cgroups/cgroup_event_listener.c |   11 +++++++++--
- 1 files changed, 9 insertions(+), 2 deletions(-)
-
-diff --git a/Documentation/cgroups/cgroup_event_listener.c b/Documentation/cgroups/cgroup_event_listener.c
-index 8c2d7aa..8c2bfc4 100644
---- a/Documentation/cgroups/cgroup_event_listener.c
-+++ b/Documentation/cgroups/cgroup_event_listener.c
-@@ -23,6 +23,7 @@ int main(int argc, char **argv)
- 	int cfd = -1;
- 	int event_control = -1;
- 	char event_control_path[PATH_MAX];
-+	char line[LINE_MAX];
- 	int ret;
- 
- 	if (argc != 3) {
-@@ -39,7 +40,7 @@ int main(int argc, char **argv)
- 
- 	ret = snprintf(event_control_path, PATH_MAX, "%s/cgroup.event_control",
- 			dirname(argv[1]));
--	if (ret > PATH_MAX) {
-+	if (ret >= PATH_MAX) {
- 		fputs("Path to cgroup.event_control is too long\n", stderr);
- 		goto out;
- 	}
-@@ -57,7 +58,13 @@ int main(int argc, char **argv)
- 		goto out;
- 	}
- 
--	ret = dprintf(event_control, "%d %d %s", efd, cfd, argv[2]);
-+	ret = snprintf(line, LINE_MAX, "%d %d %s", efd, cfd, argv[2]);
-+	if (ret >= LINE_MAX) {
-+		fputs("Arguments string is too long\n", stderr);
-+		goto out;
-+	}
-+
-+	ret = write(event_control, line, strlen(line) + 1);
- 	if (ret == -1) {
- 		perror("Cannot write to cgroup.event_control");
- 		goto out;
--- 
-1.6.6.2
+-Andrea
