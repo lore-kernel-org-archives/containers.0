@@ -1,22 +1,12 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [RFC][PATCH] ns: Syscalls for better namespace sharing control.
-Date: Thu, 25 Feb 2010 14:31:11 -0800
-Message-ID: <m1mxyxymkw.fsf__12902.0037049942$1267137187$gmane$org@fess.ebiederm.org>
-References: <4B4F24AC.70105@trash.net> <1263481549.23480.24.camel@bigi>
-	<4B4F3A50.1050400@trash.net> <1263490403.23480.109.camel@bigi>
-	<4B50403A.6010507@trash.net> <1263568754.23480.142.camel@bigi>
-	<m13a0tf17t.fsf@fess.ebiederm.org> <1266875729.3673.12.camel@bigi>
-	<m1wry46es9.fsf@fess.ebiederm.org> <1266931623.3973.643.camel@bigi>
-	<m1iq9ocafv.fsf@fess.ebiederm.org> <1266934817.3973.654.camel@bigi>
-	<m1r5obbu2w.fsf@fess.ebiederm.org> <1266966581.3973.675.camel@bigi>
-	<m1pr3t2fvl.fsf_-_@fess.ebiederm.org> <4B86EC45.3060005@free.fr>
-	<m1mxyx0yv7.fsf@fess.ebiederm.org> <4B86F5EC.60902@free.fr>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH linux-cr] nsproxy: record ambient namespaces
+Date: Thu, 25 Feb 2010 16:56:41 -0600
+Message-ID: <20100225225641.GA9386@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4B86F5EC.60902-GANU6spQydw@public.gmane.org> (Daniel Lezcano's message of "Thu\,
-	25 Feb 2010 23\:13\:00 +0100")
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,36 +16,62 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Cc: Linux Netdev List <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Netfilter Development Mailinglist <netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ben Greear <greearb-my8/4N5VtI7c+919tysfdA@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org> writes:
+The nsproxy restore path recognizes that an objref of 0 for
+ipc or uts ns means don't unshare it.  But the checkpoint side
+forgot to write down 0 when the ipc or uts ns isn't unshared!
 
->> No, the plan is only one namespace at a time.
->>
->> It would not be much of a change to support multiple namespaces,
->> but I don't think I want to go there.  Bitmaps filling up are
->> ugly and I don't see what would be gained.
->>   
-> The idea I had in mind when I asked this question was if we can "move" a process
-> inside a container, aka a set of namespaces :)
+Fix that.
 
-Yes.
+To test, run a program with a private pidns but shared utsns
+which does
 
->> I does make sense to support all of the namespaces we can support
->> with unshare, but with nstype as an enumeration not as a bitmap.
->>   
-> I suppose when you say "to support all of the namespaces we can support with
-> *unshare*", you exclude the pid namespace which is created only with clone,
-> right ? Do you think we can extend the concept to all the namespaces including
-> the pid_namespace ?
+	sleep(5);
+	sethostname("serge", 6);
 
-Yes, and I think also the credential/uid namespace.
+checkpoint it, reset your hostname (if you let the program
+complete), then restart the program: without this patch, it
+will not reset your hostname.  It should, and with this patch
+it will.
 
-It is possible that this could be the basis for a general purpose
-enter, but that is not the primary motivation.  I am after the
-easy cases simple cases.  So I can modify /sbin/ip to take advantage
-of it.
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ kernel/nsproxy.c |   19 +++++++++++++------
+ 1 files changed, 13 insertions(+), 6 deletions(-)
 
-Eric
+diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+index 0da0d83..dcb502c 100644
+--- a/kernel/nsproxy.c
++++ b/kernel/nsproxy.c
+@@ -280,13 +280,20 @@ static int do_checkpoint_ns(struct ckpt_ctx *ctx, struct nsproxy *nsproxy)
+ 	if (!h)
+ 		return -ENOMEM;
+ 
+-	ret = checkpoint_obj(ctx, nsproxy->uts_ns, CKPT_OBJ_UTS_NS);
+-	if (ret <= 0)
+-		goto out;
++	ret = 0;
++	if (nsproxy->uts_ns != ctx->root_nsproxy->uts_ns) {
++		ret = checkpoint_obj(ctx, nsproxy->uts_ns, CKPT_OBJ_UTS_NS);
++		if (ret <= 0)
++			goto out;
++	}
+ 	h->uts_objref = ret;
+-	ret = checkpoint_obj(ctx, nsproxy->ipc_ns, CKPT_OBJ_IPC_NS);
+-	if (ret < 0)
+-		goto out;
++
++	ret = 0;
++	if (nsproxy->ipc_ns != ctx->root_nsproxy->ipc_ns) {
++		ret = checkpoint_obj(ctx, nsproxy->ipc_ns, CKPT_OBJ_IPC_NS);
++		if (ret < 0)
++			goto out;
++	}
+ 	h->ipc_objref = ret;
+ 
+ 	/* FIXME: for now, only marked visited to pacify leaks */
+-- 
+1.6.1
