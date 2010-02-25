@@ -1,7 +1,7 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: global_send_sigint
-Date: Wed, 24 Feb 2010 19:47:46 -0800
-Message-ID: <20100225034746.GA18829@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH linux-cr RFC] change sysctl and default for unprivileged use
+Date: Wed, 24 Feb 2010 23:14:41 -0600
+Message-ID: <20100225051441.GA27100@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -17,28 +17,66 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
-global_send_sigint is -1 by default. 
+ckpt_unpriv_allowed now can be 0 meaning privilege required
+for both checkpoint and restart, 1 meaning privilege required
+only for restart, or 2 meaning both can be done unprivileged.
+Make 1 the default.
 
-If it is -1, we either send SIGKILL or SIGINIT depending on whether
-we started "new pidns with init" or "new pidns without init".
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ checkpoint/sys.c |   14 ++++++++------
+ kernel/sysctl.c  |    2 +-
+ 2 files changed, 9 insertions(+), 7 deletions(-)
 
-If global_send_sigint is explicitly set to 0 by user (--signal is set).
-no signal is sent.
-
-Given that we are making restart() available in libcheckpoint.a, would
-it make sense to switch the behaviors of 0 and -1 ?
-
-i.e if global_send_sigint is 0, send the default signal (SIGINT or SIGKILL).
-If it is -1, then don't send any signal.
-
-That way, applications of restart() (i.e LXC) can simply
-
-	memset(&args, 0, sizeof(args))
-
-and get the default behavior. Now they have to explicitly set to -1.
-
-Sukadev
+diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+index d34ff98..b605784 100644
+--- a/checkpoint/sys.c
++++ b/checkpoint/sys.c
+@@ -24,12 +24,14 @@
+ #include <linux/deferqueue.h>
+ 
+ /*
+- * ckpt_unpriv_allowed - sysctl controlled, do not allow checkpoints or
+- * restarts unless caller has CAP_SYS_ADMIN, if 0 (prevent unprivileged
+- * useres from expoitling any privilege escalation bugs). If it is 1,
+- * then regular permissions checks are intended to do the job.
++ * ckpt_unpriv_allowed - sysctl controlled.
++ *   If 0, then caller of sys_checkpoint() or sys_restart() must have
++ *	CAP_SYS_ADMIN
++ *   If 1, then only sys_restart() requires CAP_SYS_ADMIN.
++ *   If 2, then both can be called without privilege - regular permissions
++ *	checks are intended to do the job.
+  */
+-int ckpt_unpriv_allowed = 1;	/* default: allow */
++int ckpt_unpriv_allowed = 1;	/* default: unpriv checkpoint not restart */
+ 
+ /*
+  * Helpers to write(read) from(to) kernel space to(from) the checkpoint
+@@ -681,7 +683,7 @@ long do_sys_restart(pid_t pid, int fd, unsigned long flags, int logfd)
+ 	if (flags & ~RESTART_USER_FLAGS)
+ 		return -EINVAL;
+ 
+-	if (!ckpt_unpriv_allowed && !capable(CAP_SYS_ADMIN))
++	if (ckpt_unpriv_allowed < 2 && !capable(CAP_SYS_ADMIN))
+ 		return -EPERM;
+ 
+ 	if (pid)
+diff --git a/kernel/sysctl.c b/kernel/sysctl.c
+index e476ba0..8443bb0 100644
+--- a/kernel/sysctl.c
++++ b/kernel/sysctl.c
+@@ -948,7 +948,7 @@ static struct ctl_table kern_table[] = {
+ 		.mode		= 0644,
+ 		.proc_handler	= proc_dointvec_minmax,
+ 		.extra1		= &zero,
+-		.extra2		= &one,
++		.extra2		= &two,
+ 	},
+ #endif
+ 
+-- 
+1.6.1
