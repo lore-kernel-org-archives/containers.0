@@ -1,49 +1,40 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH linux-cr] s390: save_access_regs for self-checkpoint
-Date: Thu, 25 Feb 2010 11:05:54 -0600
-Message-ID: <20100225170554.GA16683@us.ibm.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+From: Dan Smith <danms@us.ibm.com>
+Subject: [PATCH 1/6] C/R: Add checkpoint and collect hooks to net_device_ops
+Date: Thu, 25 Feb 2010 12:43:10 -0800
+Message-ID: <1267130595-23637-2-git-send-email-danms@us.ibm.com>
+References: <1267130595-23637-1-git-send-email-danms@us.ibm.com>
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <1267130595-23637-1-git-send-email-danms@us.ibm.com>
+Sender: netdev-owner@vger.kernel.org
+To: containers@lists.osdl.org
+Cc: benjamin.thery@bull.net, den@openvz.org, ebiederm@xmission.com, davem@davemloft.net, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-When doing a self-checkpoint, we have to get the access registers
-from hw.
+These will be implemented per-driver by those that support such
+operations.
 
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Dan Smith <danms@us.ibm.com>
 ---
- arch/s390/kernel/checkpoint.c |    6 +++++-
- 1 files changed, 5 insertions(+), 1 deletions(-)
+ include/linux/netdevice.h |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
 
-diff --git a/arch/s390/kernel/checkpoint.c b/arch/s390/kernel/checkpoint.c
-index 03307e2..894bca3 100644
---- a/arch/s390/kernel/checkpoint.c
-+++ b/arch/s390/kernel/checkpoint.c
-@@ -79,7 +79,11 @@ static void s390_copy_regs(int op, struct ckpt_hdr_cpu *h,
- 	}
+diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
+index a3fccc8..415a791 100644
+--- a/include/linux/netdevice.h
++++ b/include/linux/netdevice.h
+@@ -673,6 +673,12 @@ struct net_device_ops {
+ 	int			(*ndo_fcoe_get_wwn)(struct net_device *dev,
+ 						    u64 *wwn, int type);
+ #endif
++#ifdef CONFIG_CHECKPOINT
++	int			(*ndo_collect)(struct ckpt_ctx *ctx,
++					       struct net_device *dev);
++	int			(*ndo_checkpoint)(struct ckpt_ctx *ctx,
++						  struct net_device *dev);
++#endif
+ };
  
- 	CKPT_COPY_ARRAY(op, h->fprs, thr->fp_regs.fprs, NUM_FPRS);
--	CKPT_COPY_ARRAY(op, h->acrs, thr->acrs, NUM_ACRS);
-+	if (op == CKPT_CPT && t == current) {
-+		save_access_regs(h->acrs);
-+	} else {
-+		CKPT_COPY_ARRAY(op, h->acrs, thr->acrs, NUM_ACRS);
-+	}
- 	CKPT_COPY_ARRAY(op, h->per_control_regs,
- 		      thr->per_info.control_regs.words.cr, NUM_CR_WORDS);
- }
+ /*
 -- 
-1.6.1
+1.6.2.5
+
