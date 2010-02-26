@@ -1,7 +1,7 @@
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 3/4] cr_tests/ptree1: wait for background tasks to exit
-Date: Fri, 26 Feb 2010 13:51:53 -0600
-Message-ID: <1267213914-32219-3-git-send-email-ntl@pobox.com>
+Subject: [PATCH 4/4] cr_tests/ptree1: remove gratuitous sleeps
+Date: Fri, 26 Feb 2010 13:51:54 -0600
+Message-ID: <1267213914-32219-4-git-send-email-ntl@pobox.com>
 References: <1267213914-32219-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,27 +21,34 @@ To: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-It is more reliable and usually faster to wait for the shell's
-notification that background tasks have exited than it is to assume
-they have exited after three seconds have passed.
+These 1-second sleeps don't accomplish anything.
 
 Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 ---
- process-tree/run-ptree1.sh |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ process-tree/run-ptree1.sh |    4 ----
+ 1 files changed, 0 insertions(+), 4 deletions(-)
 
 diff --git a/process-tree/run-ptree1.sh b/process-tree/run-ptree1.sh
-index d0cefff..ed7ce9e 100755
+index ed7ce9e..592d2d8 100755
 --- a/process-tree/run-ptree1.sh
 +++ b/process-tree/run-ptree1.sh
-@@ -188,7 +188,7 @@ while [ $cnt -lt 15 ]; do
+@@ -87,8 +87,6 @@ function restart_container
+ 	cmdline="$RESTART --pids --pidns --wait"
+ 	$ECHO "\t- $cmdline"
  
- 	thaw
+-	sleep 1
+-
+ 	$cmdline < $CHECKPOINT_FILE >> $SCRIPT_LOG 2>&1 &
+ }
  
--	sleep 3
-+	wait
+@@ -178,8 +176,6 @@ while [ $cnt -lt 15 ]; do
  
- 	restore_fs_snapshot
+ 	create_fs_snapshot
  
+-	sleep 1;
+-
+ 	checkpoint $pid
+ 
+ 	touch $CHECKPOINT_DONE
 -- 
 1.6.0.6
