@@ -1,22 +1,16 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [RFC][PATCH] ns: Syscalls for better namespace sharing control.
-Date: Fri, 26 Feb 2010 13:49:08 -0800
-Message-ID: <m1k4tzvfaj.fsf__21542.3640715473$1267221058$gmane$org@fess.ebiederm.org>
-References: <4B4F24AC.70105@trash.net> <1263481549.23480.24.camel@bigi>
-	<4B4F3A50.1050400@trash.net> <1263490403.23480.109.camel@bigi>
-	<4B50403A.6010507@trash.net> <1263568754.23480.142.camel@bigi>
-	<m13a0tf17t.fsf@fess.ebiederm.org> <1266875729.3673.12.camel@bigi>
-	<m1wry46es9.fsf@fess.ebiederm.org> <1266931623.3973.643.camel@bigi>
-	<m1iq9ocafv.fsf@fess.ebiederm.org> <1266934817.3973.654.camel@bigi>
-	<m1r5obbu2w.fsf@fess.ebiederm.org> <1266966581.3973.675.camel@bigi>
-	<m1pr3t2fvl.fsf_-_@fess.ebiederm.org> <4B883987.6090408@parallels.com>
-	<m1bpfbwuze.fsf@fess.ebiederm.org> <4B883EAF.5020607@parallels.com>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 2/2] memcg: dirty pages instrumentation
+Date: Fri, 26 Feb 2010 16:48:11 -0500
+Message-ID: <20100226214811.GB7498__38242.552887141$1267221108$gmane$org@redhat.com>
+References: <1266765525-30890-1-git-send-email-arighi@develer.com>
+	<1266765525-30890-3-git-send-email-arighi@develer.com>
+	<20100223212943.GF11930@redhat.com> <20100225151211.GC3964@linux>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4B883EAF.5020607-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org> (Pavel Emelyanov's message of
-	"Sat\, 27 Feb 2010 00\:35\:43 +0300")
+Content-Disposition: inline
+In-Reply-To: <20100225151211.GC3964@linux>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,48 +20,100 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: Ben Greear <greearb-my8/4N5VtI7c+919tysfdA@public.gmane.org>, Linux Netdev List <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Netfilter Development Mailinglist <netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+To: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org> writes:
+On Thu, Feb 25, 2010 at 04:12:11PM +0100, Andrea Righi wrote:
+> On Tue, Feb 23, 2010 at 04:29:43PM -0500, Vivek Goyal wrote:
+> > On Sun, Feb 21, 2010 at 04:18:45PM +0100, Andrea Righi wrote:
+> > 
+> > [..]
+> > > diff --git a/mm/page-writeback.c b/mm/page-writeback.c
+> > > index 0b19943..c9ff1cd 100644
+> > > --- a/mm/page-writeback.c
+> > > +++ b/mm/page-writeback.c
+> > > @@ -137,10 +137,11 @@ static struct prop_descriptor vm_dirties;
+> > >   */
+> > >  static int calc_period_shift(void)
+> > >  {
+> > > -	unsigned long dirty_total;
+> > > +	unsigned long dirty_total, dirty_bytes;
+> > >  
+> > > -	if (vm_dirty_bytes)
+> > > -		dirty_total = vm_dirty_bytes / PAGE_SIZE;
+> > > +	dirty_bytes = mem_cgroup_dirty_bytes();
+> > > +	if (dirty_bytes)
+> > > +		dirty_total = dirty_bytes / PAGE_SIZE;
+> > >  	else
+> > >  		dirty_total = (vm_dirty_ratio * determine_dirtyable_memory()) /
+> > >  				100;
+> > 
+> > Ok, I don't understand this so I better ask. Can you explain a bit how memory
+> > cgroup dirty ratio is going to play with per BDI dirty proportion thing.
+> > 
+> > Currently we seem to be calculating per BDI proportion (based on recently
+> > completed events), of system wide dirty ratio and decide whether a process
+> > should be throttled or not.
+> > 
+> > Because throttling decision is also based on BDI and its proportion, how
+> > are we going to fit it with mem cgroup? Is it going to be BDI proportion
+> > of dirty memory with-in memory cgroup (and not system wide)?
+> 
+> IMHO we need to calculate the BDI dirty threshold as a function of the
+> cgroup's dirty memory, and keep BDI statistics system wide.
+> 
+> So, if a task is generating some writes, the threshold to start itself
+> the writeback will be calculated as a function of the cgroup's dirty
+> memory. If the BDI dirty memory is greater than this threshold, the task
+> must start to writeback dirty pages until it reaches the expected dirty
+> limit.
+> 
 
-> Eric W. Biederman wrote:
->> Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org> writes:
->> 
->>>> +static struct inode *nsfd_mkinode(void)
->>>> +{
->>>> +	struct inode *inode;
->>>> +	inode = new_inode(nsfd_mnt->mnt_sb);
->>>> +	if (!inode)
->>>> +		return ERR_PTR(-ENOMEM);
->>>> +
->>>> +	inode->i_fop = &nsfd_file_operations;
->>>> +
->>>> +	/*
->>>> +	 * Mark the inode dirty from the very beginning,
->>>> +	 * that way it will never be moved to the dirty
->>>> +	 * list because mark_inode_dirty() will think that
->>>> +	 * it already _is_ on the dirty list.
->>>> +	 */
->>>> +	inode->i_state = I_DIRTY;
->>>> +	inode->i_mode = S_IRUSR | S_IWUSR;
->>>> +	inode->i_uid = current_fsuid();
->>>> +	inode->i_gid = current_fsgid();
->>>> +	inode->i_atime = inode->i_mtime = inode->i_ctime = CURRENT_TIME;
->>>> +	return inode;
->>>> +}
->>> Why not use anon inodes?
->> 
->> Because you can't mount them anywhere.
->
-> Worth changing them that way?
+Ok, so calculate dirty per cgroup and calculate BDI's proportion from
+cgroup dirty? So will you be keeping track of vm_completion events per
+cgroup or will rely on existing system wide and per BDI completion events
+to calculate BDI proportion?
 
-I don't think so.  They keep all of their state in struct file.  To be
-usefully bind mounted you need to keep your state in the dentry or the
-inode.
+BDI proportion are more of an indication of device speed and faster device
+gets higher share of dirty, so may be we don't have to keep track of
+completion events per cgroup and can rely on system wide completion events
+for calculating the proportion of a BDI.
 
-Ultimately what I have done is fix rootfs so it supports bind mounts and
-used rootfs inodes.
+> OK, in this way a cgroup with a small dirty limit may be forced to
+> writeback a lot of pages dirtied by other cgroups on the same device.
+> But this is always related to the fact that tasks are forced to
+> writeback dirty inodes randomly, and not the inodes they've actually
+> dirtied.
 
-Eric
+So we are left with following two issues.
+
+- Should we rely on global BDI stats for BDI_RECLAIMABLE and BDI_WRITEBACK
+  or we need to make these per cgroup to determine actually how many pages
+  have been dirtied by a cgroup and force writeouts accordingly?
+
+- Once we decide to throttle a cgroup, it should write its inodes and
+  should not be serialized behind other cgroup's inodes.  
+
+If we don't tackle above two issues, I am not sure what probelm will be solved
+by the patch set. The only thing I can see is that we will be doing write-outs
+much more aggressively when we have got some memory cgroups created. (Smaller
+dirty per cgroup will lead to smaller per BDI dirty and when compared with
+overall BDI stat, it should lead to more writeouts).
+
+	if (bdi_nr_reclaimable + bdi_nr_writeback <= bdi_thresh)
+			break;
+
+Because bdi_thres calculation will be based on per cgroup dirty and
+bdi_nr_reclaimable and bdi_nr_writeback will be system wide, we will be
+doing much more aggressive writeouts.
+
+But we will not achieve parallel writeback paths so probably will not help IO
+controller a lot.
+
+Kame-san, is it a problem, with current memory cgroups where writeback is
+not happening that actively, and you run into situation where there are too
+many dirty pages in a cgroup and reclaim can take long time?
+
+Thanks
+Vivek
