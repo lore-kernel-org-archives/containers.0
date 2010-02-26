@@ -1,8 +1,8 @@
-From: Minchan Kim <minchan.kim-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Subject: Re: [PATCH 1/2] memcg: dirty pages accounting and limiting
 	infrastructure
-Date: Fri, 26 Feb 2010 13:50:04 +0900
-Message-ID: <28c262361002252050r29f54ea2u6c6e87f1f702d195__22016.2765392617$1267159956$gmane$org@mail.gmail.com>
+Date: Fri, 26 Feb 2010 14:01:35 +0900
+Message-ID: <20100226140135.23c32a8d.kamezawa.hiroyu__39896.891572471$1267160751$gmane$org@jp.fujitsu.com>
 References: <1266765525-30890-1-git-send-email-arighi@develer.com>
 	<1266765525-30890-2-git-send-email-arighi@develer.com>
 	<alpine.DEB.2.00.1002211321010.22858@chino.kir.corp.google.com>
@@ -10,11 +10,12 @@ References: <1266765525-30890-1-git-send-email-arighi@develer.com>
 	<20100223115846.GI1882@linux>
 	<28c262361002250736k57543379j8291e0dfb8df194e@mail.gmail.com>
 	<20100226092339.1f639cbf.kamezawa.hiroyu@jp.fujitsu.com>
+	<28c262361002252050r29f54ea2u6c6e87f1f702d195@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100226092339.1f639cbf.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <28c262361002252050r29f54ea2u6c6e87f1f702d195-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,45 +25,67 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Minchan Kim <minchan.kim-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrew-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-SGksIEthbWUuCgpPbiBGcmksIEZlYiAyNiwgMjAxMCBhdCA5OjIzIEFNLCBLQU1FWkFXQSBIaXJv
-eXVraQo8a2FtZXphd2EuaGlyb3l1QGpwLmZ1aml0c3UuY29tPiB3cm90ZToKPiBPbiBGcmksIDI2
-IEZlYiAyMDEwIDAwOjM2OjE1ICswOTAwCj4gTWluY2hhbiBLaW0gPG1pbmNoYW4ua2ltQGdtYWls
-LmNvbT4gd3JvdGU6Cj4KPj4gSGkKPj4KPj4gT24gVHVlLCBGZWIgMjMsIDIwMTAgYXQgODo1OCBQ
-TSwgQW5kcmVhIFJpZ2hpIDxhcmlnaGlAZGV2ZWxlci5jb20+IHdyb3RlOgo+PiA+IE9uIE1vbiwg
-RmViIDIyLCAyMDEwIGF0IDAxOjA3OjMyUE0gLTA1MDAsIFZpdmVrIEdveWFsIHdyb3RlOgo+PiA+
-PiA+ID4gPiArdW5zaWduZWQgbG9uZyBtZW1fY2dyb3VwX2RpcnR5X2J5dGVzKHZvaWQpCj4+ID4+
-ID4gPiA+ICt7Cj4+ID4+ID4gPiA+ICsgwqAgwqAgwqAgc3RydWN0IG1lbV9jZ3JvdXAgKm1lbWNn
-Owo+PiA+PiA+ID4gPiArIMKgIMKgIMKgIHVuc2lnbmVkIGxvbmcgZGlydHlfYnl0ZXM7Cj4+ID4+
-ID4gPiA+ICsKPj4gPj4gPiA+ID4gKyDCoCDCoCDCoCBpZiAobWVtX2Nncm91cF9kaXNhYmxlZCgp
-KQo+PiA+PiA+ID4gPiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIHJldHVybiB2bV9kaXJ0eV9ieXRl
-czsKPj4gPj4gPiA+ID4gKwo+PiA+PiA+ID4gPiArIMKgIMKgIMKgIHJjdV9yZWFkX2xvY2soKTsK
-Pj4gPj4gPiA+ID4gKyDCoCDCoCDCoCBtZW1jZyA9IG1lbV9jZ3JvdXBfZnJvbV90YXNrKGN1cnJl
-bnQpOwo+PiA+PiA+ID4gPiArIMKgIMKgIMKgIGlmIChtZW1jZyA9PSBOVUxMKQo+PiA+PiA+ID4g
-PiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIGRpcnR5X2J5dGVzID0gdm1fZGlydHlfYnl0ZXM7Cj4+
-ID4+ID4gPiA+ICsgwqAgwqAgwqAgZWxzZQo+PiA+PiA+ID4gPiArIMKgIMKgIMKgIMKgIMKgIMKg
-IMKgIGRpcnR5X2J5dGVzID0gZ2V0X2RpcnR5X2J5dGVzKG1lbWNnKTsKPj4gPj4gPiA+ID4gKyDC
-oCDCoCDCoCByY3VfcmVhZF91bmxvY2soKTsKPj4gPj4gPiA+Cj4+ID4+ID4gPiBUaGUgcmN1X3Jl
-YWRfbG9jaygpIGlzbid0IHByb3RlY3RpbmcgYW55dGhpbmcgaGVyZS4KPj4gPj4gPgo+PiA+PiA+
-IFJpZ2h0IQo+PiA+Pgo+PiA+PiBBcmUgd2Ugbm90IHByb3RlY3RpbmcgIm1lbWNnIiBwb2ludGVy
-IHVzaW5nIHJjdSBoZXJlPwo+PiA+Cj4+ID4gVml2ZWssIHlvdSBhcmUgcmlnaHQ6Cj4+ID4KPj4g
-PiDCoG1lbV9jZ3JvdXBfZnJvbV90YXNrKCkgLT4gdGFza19zdWJzeXNfc3RhdGUoKSAtPiByY3Vf
-ZGVyZWZlcmVuY2UoKQo+PiA+Cj4+ID4gU28sIHRoaXMgKm11c3QqIGJlIFJDVSBwcm90ZWN0ZWQu
-Cj4+Cj4+IFNvLCBEb2Vzbid0IG1lbV9jZ3JvdXBfZnJvbV90YXNrIGluIG1lbV9jZ3JvdXBfY2Fu
-X2F0dGFjaCBuZWVkIFJDVSwgdG9vPwo+Pgo+IEhtID8gSSBkb24ndCByZWFkIHRoZSB3aG9sZSB0
-aHJlYWQgYnV0IGNhbl9hdHRhY2goKSBpcyBjYWxsZWQgdW5kZXIKPiBjZ3JvdXBfbXV0ZXgoKS4g
-U28sIGl0IGRvZXNuJ3QgbmVlZCB0byB1c2UgUkNVLgoKVml2ZWsgbWVudGlvbmVkIG1lbWNnIGlz
-IHByb3RlY3RlZCBieSBSQ1UgaWYgSSB1bmRlcnN0YW5kIGhpcyBpbnRlbnRpb24gcmlnaHQuClNv
-IEkgY29tbWVudGVkIHRoYXQgd2l0aG91dCBlbm91Z2gga25vd2xlZGdlIG9mIG1lbWNnLgpBZnRl
-ciB5b3VyIGNvbW1lbnQsIEkgZGl2ZSBpbnRvIHRoZSBjb2RlLgoKSnVzdCBvdXQgb2YgY3VyaW9z
-aXR5LgoKUmVhbGx5LCBtZW1jZyBpcyBwcm90ZWN0ZWQgYnkgUkNVPwpJIHRoaW5rIG1vc3Qgb2Yg
-UkNVIGFyb3VuZCBtZW1jZyBpcyBmb3IgcHJvdGVjdGluZyB0YXNrX3N0cnVjdCBhbmQKY2dyb3Vw
-X3N1YnN5c19zdGF0ZS4KVGhlIG1lbWNnIGlzIHByb3RlY3RlZCBieSBjZ3JvdXBfbXV0ZXggYXMg
-eW91IG1lbnRpb25lZC4KQW0gSSBtaXNzaW5nIHNvbWV0aGluZz8KCj4gVGhhbmtzLAo+IC1LYW1l
-Cj4KPgo+CgoKCi0tIApLaW5kIHJlZ2FyZHMsCk1pbmNoYW4gS2ltCl9fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNv
-bnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1m
-b3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+Hi,
+
+On Fri, 26 Feb 2010 13:50:04 +0900
+Minchan Kim <minchan.kim-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+
+> > Hm ? I don't read the whole thread but can_attach() is called under
+> > cgroup_mutex(). So, it doesn't need to use RCU.
+> 
+> Vivek mentioned memcg is protected by RCU if I understand his intention right.
+> So I commented that without enough knowledge of memcg.
+> After your comment, I dive into the code.
+> 
+> Just out of curiosity.
+> 
+> Really, memcg is protected by RCU?
+yes. All cgroup subsystem is protected by RCU.
+
+> I think most of RCU around memcg is for protecting task_struct and
+> cgroup_subsys_state.
+> The memcg is protected by cgroup_mutex as you mentioned.
+> Am I missing something?
+
+There are several levels of protections.
+
+cgroup subsystem's ->destroy() call back is finally called by
+
+As this.
+
+ 768                 synchronize_rcu();
+ 769 
+ 770                 mutex_lock(&cgroup_mutex);
+ 771                 /*
+ 772                  * Release the subsystem state objects.
+ 773                  */
+ 774                 for_each_subsys(cgrp->root, ss)
+ 775                         ss->destroy(ss, cgrp);
+ 776 
+ 777                 cgrp->root->number_of_cgroups--;
+ 778                 mutex_unlock(&cgroup_mutex);
+
+Before here, 
+	- there are no tasks under this cgroup (cgroup's refcnt is 0)
+          && cgroup is marked as REMOVED.
+
+Then, this access
+	rcu_read_lock();
+	mem = mem_cgroup_from_task(task);
+	if (css_tryget(mem->css))   <===============checks cgroup refcnt
+		....
+	rcu_read_unlock()
+is O.K.
+
+And, it's graranteed that we don't have to do complicated fine-grain check
+if cgroup_mutex() is held.
+
+Because cgroup_mutex() is system-wide heavy lock, this refcnt+RCU trick is
+used and works quite well.
+
+Thanks,
+-Kame
