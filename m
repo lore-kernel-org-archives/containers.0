@@ -1,15 +1,15 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 3/4] cr_tests/ptree1: wait for background tasks to exit
-Date: Fri, 26 Feb 2010 12:56:59 -0800
-Message-ID: <20100226205659.GE20106@count0.beaverton.ibm.com>
+Subject: Re: [PATCH 2/4] cr_tests/ptree1: count tasks accurately
+Date: Fri, 26 Feb 2010 12:57:26 -0800
+Message-ID: <20100226205726.GF20106@count0.beaverton.ibm.com>
 References: <1267213914-32219-1-git-send-email-ntl@pobox.com>
-	<1267213914-32219-3-git-send-email-ntl@pobox.com>
+	<1267213914-32219-2-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1267213914-32219-3-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1267213914-32219-2-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,39 +23,39 @@ To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Feb 26, 2010 at 01:51:53PM -0600, Nathan Lynch wrote:
-> It is more reliable and usually faster to wait for the shell's
-> notification that background tasks have exited than it is to assume
-> they have exited after three seconds have passed.
-
-Yes, a wait should normally do the trick here.
-
-What happens if thaw fails and the task to wait for is still frozen?
-We'd need a "wait or timeout" here to gracefully handle that. However,
-I suppose it's arguable whether thaw failing is worth worrying about
-here...
-
-Cheers,
-	-Matt Helsley
-
+On Fri, Feb 26, 2010 at 01:51:52PM -0600, Nathan Lynch wrote:
+> "ps aux |grep $TEST_CMD | wc -l" tends to also count the grep process.
+> The test script already assumes pidof is available, so just use that.
 > 
 > Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+
+Acked-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
 > ---
->  process-tree/run-ptree1.sh |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
+>  process-tree/run-ptree1.sh |    4 ++--
+>  1 files changed, 2 insertions(+), 2 deletions(-)
 > 
 > diff --git a/process-tree/run-ptree1.sh b/process-tree/run-ptree1.sh
-> index d0cefff..ed7ce9e 100755
+> index 6d56a66..d0cefff 100755
 > --- a/process-tree/run-ptree1.sh
 > +++ b/process-tree/run-ptree1.sh
-> @@ -188,7 +188,7 @@ while [ $cnt -lt 15 ]; do
+> @@ -174,7 +174,7 @@ while [ $cnt -lt 15 ]; do
+>  	freezerdir=$freezermountpoint/$pid
+>  	freeze_pid $pid
 > 
->  	thaw
+> -	num_pids1=`ps aux |grep $TEST_CMD | wc -l`
+> +	num_pids1=`pidof $TEST_CMD | wc -w`
 > 
-> -	sleep 3
-> +	wait
+>  	create_fs_snapshot
 > 
->  	restore_fs_snapshot
+> @@ -196,7 +196,7 @@ while [ $cnt -lt 15 ]; do
+> 
+>  	sleep 3;
+> 
+> -	num_pids2=`ps aux |grep $TEST_CMD | wc -l`
+> +	num_pids2=`pidof $TEST_CMD | wc -w`
+>  	ps aux |grep $TEST_CMD >> $SCRIPT_LOG
+>  	$ECHO "\t- num_pids1 $num_pids1, num_pids2 $num_pids2";
 > 
 > -- 
 > 1.6.0.6
