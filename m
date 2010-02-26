@@ -1,8 +1,8 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+From: Minchan Kim <minchan.kim-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: [PATCH 1/2] memcg: dirty pages accounting and limiting
 	infrastructure
-Date: Fri, 26 Feb 2010 14:01:35 +0900
-Message-ID: <20100226140135.23c32a8d.kamezawa.hiroyu__39896.891572471$1267160751$gmane$org@jp.fujitsu.com>
+Date: Fri, 26 Feb 2010 14:53:39 +0900
+Message-ID: <28c262361002252153s587b70ecxf89eda9a642e527c__1230.72256469658$1267163761$gmane$org@mail.gmail.com>
 References: <1266765525-30890-1-git-send-email-arighi@develer.com>
 	<1266765525-30890-2-git-send-email-arighi@develer.com>
 	<alpine.DEB.2.00.1002211321010.22858@chino.kir.corp.google.com>
@@ -11,11 +11,12 @@ References: <1266765525-30890-1-git-send-email-arighi@develer.com>
 	<28c262361002250736k57543379j8291e0dfb8df194e@mail.gmail.com>
 	<20100226092339.1f639cbf.kamezawa.hiroyu@jp.fujitsu.com>
 	<28c262361002252050r29f54ea2u6c6e87f1f702d195@mail.gmail.com>
+	<20100226140135.23c32a8d.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <28c262361002252050r29f54ea2u6c6e87f1f702d195-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20100226140135.23c32a8d.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,67 +26,51 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Minchan Kim <minchan.kim-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrew-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi,
-
-On Fri, 26 Feb 2010 13:50:04 +0900
-Minchan Kim <minchan.kim-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
-
-> > Hm ? I don't read the whole thread but can_attach() is called under
-> > cgroup_mutex(). So, it doesn't need to use RCU.
-> 
-> Vivek mentioned memcg is protected by RCU if I understand his intention right.
-> So I commented that without enough knowledge of memcg.
-> After your comment, I dive into the code.
-> 
-> Just out of curiosity.
-> 
-> Really, memcg is protected by RCU?
-yes. All cgroup subsystem is protected by RCU.
-
-> I think most of RCU around memcg is for protecting task_struct and
-> cgroup_subsys_state.
-> The memcg is protected by cgroup_mutex as you mentioned.
-> Am I missing something?
-
-There are several levels of protections.
-
-cgroup subsystem's ->destroy() call back is finally called by
-
-As this.
-
- 768                 synchronize_rcu();
- 769 
- 770                 mutex_lock(&cgroup_mutex);
- 771                 /*
- 772                  * Release the subsystem state objects.
- 773                  */
- 774                 for_each_subsys(cgrp->root, ss)
- 775                         ss->destroy(ss, cgrp);
- 776 
- 777                 cgrp->root->number_of_cgroups--;
- 778                 mutex_unlock(&cgroup_mutex);
-
-Before here, 
-	- there are no tasks under this cgroup (cgroup's refcnt is 0)
-          && cgroup is marked as REMOVED.
-
-Then, this access
-	rcu_read_lock();
-	mem = mem_cgroup_from_task(task);
-	if (css_tryget(mem->css))   <===============checks cgroup refcnt
-		....
-	rcu_read_unlock()
-is O.K.
-
-And, it's graranteed that we don't have to do complicated fine-grain check
-if cgroup_mutex() is held.
-
-Because cgroup_mutex() is system-wide heavy lock, this refcnt+RCU trick is
-used and works quite well.
-
-Thanks,
--Kame
+T24gRnJpLCBGZWIgMjYsIDIwMTAgYXQgMjowMSBQTSwgS0FNRVpBV0EgSGlyb3l1a2kKPGthbWV6
+YXdhLmhpcm95dUBqcC5mdWppdHN1LmNvbT4gd3JvdGU6Cj4gSGksCj4KPiBPbiBGcmksIDI2IEZl
+YiAyMDEwIDEzOjUwOjA0ICswOTAwCj4gTWluY2hhbiBLaW0gPG1pbmNoYW4ua2ltQGdtYWlsLmNv
+bT4gd3JvdGU6Cj4KPj4gPiBIbSA/IEkgZG9uJ3QgcmVhZCB0aGUgd2hvbGUgdGhyZWFkIGJ1dCBj
+YW5fYXR0YWNoKCkgaXMgY2FsbGVkIHVuZGVyCj4+ID4gY2dyb3VwX211dGV4KCkuIFNvLCBpdCBk
+b2Vzbid0IG5lZWQgdG8gdXNlIFJDVS4KPj4KPj4gVml2ZWsgbWVudGlvbmVkIG1lbWNnIGlzIHBy
+b3RlY3RlZCBieSBSQ1UgaWYgSSB1bmRlcnN0YW5kIGhpcyBpbnRlbnRpb24gcmlnaHQuCj4+IFNv
+IEkgY29tbWVudGVkIHRoYXQgd2l0aG91dCBlbm91Z2gga25vd2xlZGdlIG9mIG1lbWNnLgo+PiBB
+ZnRlciB5b3VyIGNvbW1lbnQsIEkgZGl2ZSBpbnRvIHRoZSBjb2RlLgo+Pgo+PiBKdXN0IG91dCBv
+ZiBjdXJpb3NpdHkuCj4+Cj4+IFJlYWxseSwgbWVtY2cgaXMgcHJvdGVjdGVkIGJ5IFJDVT8KPiB5
+ZXMuIEFsbCBjZ3JvdXAgc3Vic3lzdGVtIGlzIHByb3RlY3RlZCBieSBSQ1UuCj4KPj4gSSB0aGlu
+ayBtb3N0IG9mIFJDVSBhcm91bmQgbWVtY2cgaXMgZm9yIHByb3RlY3RpbmcgdGFza19zdHJ1Y3Qg
+YW5kCj4+IGNncm91cF9zdWJzeXNfc3RhdGUuCj4+IFRoZSBtZW1jZyBpcyBwcm90ZWN0ZWQgYnkg
+Y2dyb3VwX211dGV4IGFzIHlvdSBtZW50aW9uZWQuCj4+IEFtIEkgbWlzc2luZyBzb21ldGhpbmc/
+Cj4KPiBUaGVyZSBhcmUgc2V2ZXJhbCBsZXZlbHMgb2YgcHJvdGVjdGlvbnMuCj4KPiBjZ3JvdXAg
+c3Vic3lzdGVtJ3MgLT5kZXN0cm95KCkgY2FsbCBiYWNrIGlzIGZpbmFsbHkgY2FsbGVkIGJ5Cj4K
+PiBBcyB0aGlzLgo+Cj4gwqA3NjggwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgc3luY2hyb25pemVf
+cmN1KCk7Cj4gwqA3NjkKPiDCoDc3MCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCBtdXRleF9sb2Nr
+KCZjZ3JvdXBfbXV0ZXgpOwo+IMKgNzcxIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIC8qCj4gwqA3
+NzIgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAqIFJlbGVhc2UgdGhlIHN1YnN5c3RlbSBzdGF0
+ZSBvYmplY3RzLgo+IMKgNzczIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgKi8KPiDCoDc3NCDC
+oCDCoCDCoCDCoCDCoCDCoCDCoCDCoCBmb3JfZWFjaF9zdWJzeXMoY2dycC0+cm9vdCwgc3MpCj4g
+wqA3NzUgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgc3MtPmRlc3Ryb3koc3Ms
+IGNncnApOwo+IMKgNzc2Cj4gwqA3NzcgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgY2dycC0+cm9v
+dC0+bnVtYmVyX29mX2Nncm91cHMtLTsKPiDCoDc3OCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCBt
+dXRleF91bmxvY2soJmNncm91cF9tdXRleCk7Cj4KPiBCZWZvcmUgaGVyZSwKPiDCoCDCoCDCoCDC
+oC0gdGhlcmUgYXJlIG5vIHRhc2tzIHVuZGVyIHRoaXMgY2dyb3VwIChjZ3JvdXAncyByZWZjbnQg
+aXMgMCkKPiDCoCDCoCDCoCDCoCDCoCYmIGNncm91cCBpcyBtYXJrZWQgYXMgUkVNT1ZFRC4KPgo+
+IFRoZW4sIHRoaXMgYWNjZXNzCj4gwqAgwqAgwqAgwqByY3VfcmVhZF9sb2NrKCk7Cj4gwqAgwqAg
+wqAgwqBtZW0gPSBtZW1fY2dyb3VwX2Zyb21fdGFzayh0YXNrKTsKPiDCoCDCoCDCoCDCoGlmIChj
+c3NfdHJ5Z2V0KG1lbS0+Y3NzKSkgwqAgPD09PT09PT09PT09PT09PWNoZWNrcyBjZ3JvdXAgcmVm
+Y250CgpJZiBpdCBpdCwgZG8gd2UgYWx3YXlzIG5lZWQgY3NzX3RyeWdldCBhZnRlciBtZW1fY2dy
+b3VwX2Zyb21fdGFzawp3aXRob3V0IGNncm91cF9tdXRleCB0byBtYWtlIHN1cmUgY3NzIGlzIHZh
+aWxkPwoKQnV0IEkgZm91bmQgc2V2ZXJhbCBjYXNlcyB0aGF0IGRvbid0IGNhbGwgY3NzX3RyeWdl
+dAoKMS4gbW1fbWF0Y2hfY2dyb3VwCkl0J3MgdXNlZCBieSBwYWdlX3JlZmVyZW5jZWRfeHh4LiBz
+byB3ZSBJIHRoaW5rIHdlIGRvbid0IGdyYWIKY2dyb3VwX211dGV4IGF0IHRoYXQgdGltZS4KCjIu
+IG1lbV9jZ3JvdXBfb29tX2NhbGxlZApJIHRoaW5rIGluIGhlcmUgd2UgZG9uJ3QgZ3JhYiBjZ3Jv
+dXBfbXV0ZXgsIHRvby4KCkkgZ3Vlc3Mgc29tZSBkZXNpZ24gd291bGQgY292ZXIgdGhhdCBwcm9i
+bGVtcy4KQ291bGQgeW91IHRlbGwgbWUgaWYgeW91IGRvbid0IG1pbmQ/ClNvcnJ5IGZvciBib3Ro
+ZXJpbmcgeW91LgoKVGhhbmtzLCBLYW1lLgoKCgotLSAKS2luZCByZWdhcmRzLApNaW5jaGFuIEtp
+bQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWlu
+ZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0
+dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWlu
+ZXJz
