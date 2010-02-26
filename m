@@ -1,15 +1,19 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 4/4] user-cr: Remove pointless echo lines and @-prefixed lines
-Date: Fri, 26 Feb 2010 10:56:42 -0800
-Message-ID: <ac29ecfa1c93bb7fd7ae65794d65c4526e435e76.1267210517.git.matthltc@us.ibm.com>
-References: <1267210602-11444-1-git-send-email-matthltc@us.ibm.com>
+Subject: Re: [PATCH 03/12] Replace obj_no_grab and obj_no_drop ckpt ops
+	with NULL
+Date: Fri, 26 Feb 2010 11:04:33 -0800
+Message-ID: <20100226190433.GC20106@count0.beaverton.ibm.com>
+References: <1267173913-28084-1-git-send-email-matthltc@us.ibm.com>
+	<3badfe4be5db05524ac303b54186a8e43970c06c.1267173752.git.matthltc@us.ibm.com>
+	<5d3d0d1f5d294ccd13453a19c15828faa789bb0f.1267173752.git.matthltc@us.ibm.com>
+	<06ebd7532cbaeb5d2b13fc7b02db194840098b6d.1267173752.git.matthltc@us.ibm.com>
+	<1267210084.15300.107.camel@localhost.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1267210602-11444-1-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-In-Reply-To: <eef3af1ee39b3146facf08eac6230be041e6263d.1267210517.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-References: <eef3af1ee39b3146facf08eac6230be041e6263d.1267210517.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1267210084.15300.107.camel-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,35 +23,77 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux-Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-In Make, actions prefixed with @ do not produce output showing what
-Make is executing. It seems rather silly to manually echo the precise
-output Make would produce automatically without the @ prefix.
+On Fri, Feb 26, 2010 at 12:48:04PM -0600, Nathan Lynch wrote:
+> On Fri, 2010-02-26 at 00:45 -0800, Matt Helsley wrote:
+> > Distributing the ckpt_obj_ops would require sharing these functions when
+> > we can get by with simple NULL pointers in the grab/drop operations.
+> > 
+> > Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> > ---
+> >  checkpoint/objhash.c |   36 ++++++++++++++++--------------------
+> >  1 files changed, 16 insertions(+), 20 deletions(-)
+> > 
+> > diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+> > index 832520d..999d731 100644
+> > --- a/checkpoint/objhash.c
+> > +++ b/checkpoint/objhash.c
+> > @@ -47,16 +47,6 @@ struct ckpt_obj_hash {
+> >  
+> >  /* helper grab/drop/users functions */
+> >  
+> > -static void obj_no_drop(void *ptr, int lastref)
+> > -{
+> > -	return;
+> > -}
+> > -
+> > -static int obj_no_grab(void *ptr)
+> > -{
+> > -	return 0;
+> > -}
+> > -
+> >  static int obj_inode_grab(void *ptr)
+> >  {
+> >  	return igrab((struct inode *) ptr) ? 0 : -EBADF;
+> > @@ -346,8 +336,8 @@ static void *restore_lsm_string_wrap(struct ckpt_ctx *ctx)
+> >  static const struct ckpt_obj_ops ckpt_obj_ignored_ops = {
+> >  	.obj_name = "IGNORED",
+> >  	.obj_type = CKPT_OBJ_IGNORE,
+> > -	.ref_drop = obj_no_drop,
+> > -	.ref_grab = obj_no_grab,
+> > +	.ref_drop = NULL,
+> > +	.ref_grab = NULL,
+> >  };
+> >  
+> >  /* inode object */
+> > @@ -412,8 +402,8 @@ static const struct ckpt_obj_ops ckpt_obj_sighand_ops = {
+> >  static const struct ckpt_obj_ops ckpt_obj_signal_ops = {
+> >  	.obj_name = "SIGNAL",
+> >  	.obj_type = CKPT_OBJ_SIGNAL,
+> > -	.ref_drop = obj_no_drop,
+> > -	.ref_grab = obj_no_grab,
+> > +	.ref_drop = NULL,
+> > +	.ref_grab = NULL,
+> >  };
+> >  /* ns object */
+> >  static const struct ckpt_obj_ops ckpt_obj_nsproxy_ops = {
+> > @@ -519,8 +509,8 @@ static const struct ckpt_obj_ops ckpt_obj_tty_ops = {
+> >  static const struct ckpt_obj_ops ckpt_obj_security_ptr_ops = {
+> >  	.obj_name = "SECURITY PTR",
+> >  	.obj_type = CKPT_OBJ_SECURITY_PTR,
+> > -	.ref_drop = obj_no_drop,
+> > -	.ref_grab = obj_no_grab,
+> > +	.ref_drop = NULL,
+> > +	.ref_grab = NULL,
+> >  };
+> 
+> ref_drop/grab will be NULL if you just remove the initializers -- do you
+> think it is preferable to be explicit?
 
-Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- Makefile |    6 ++----
- 1 files changed, 2 insertions(+), 4 deletions(-)
+Doh! Yes, I should fix that. Thanks!
 
-diff --git a/Makefile b/Makefile
-index f8b113a..a4a1a8a 100644
---- a/Makefile
-+++ b/Makefile
-@@ -69,10 +69,8 @@ ckptinfo_types.c: $(CKPT_HEADERS) ckptinfo.py
- 
- install: $(PROGS)
- 	/usr/bin/install -d -D $(BIN_INSTALL_DIR) $(LIB_INSTALL_DIR)
--	@echo /usr/bin/install -m 755 checkpoint restart nsexec ckptinfo $(BIN_INSTALL_DIR)
--	@/usr/bin/install -m 755 checkpoint restart ckptinfo nsexec $(BIN_INSTALL_DIR)
--	@echo /usr/bin/install -m 755 $(LIB_ECLONE) $(LIB_INSTALL_DIR)
--	@/usr/bin/install -m 755 $(LIB_ECLONE) $(LIB_INSTALL_DIR)
-+	/usr/bin/install -m 755 checkpoint restart ckptinfo nsexec $(BIN_INSTALL_DIR)
-+	/usr/bin/install -m 755 $(LIB_ECLONE) $(LIB_INSTALL_DIR)
- 
- $(CKPT_HEADERS): %:
- 	./scripts/extract-headers.sh -s $(KERNELSRC) -o ./include
--- 
-1.6.3.3
+Cheers,
+	-Matt Helsley
