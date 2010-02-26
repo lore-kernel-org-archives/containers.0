@@ -1,14 +1,17 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 02/12] Add ability to register checkpoint obj ops
-Date: Fri, 26 Feb 2010 00:45:03 -0800
-Message-ID: <5d3d0d1f5d294ccd13453a19c15828faa789bb0f.1267173752.git.matthltc@us.ibm.com>
+Subject: [PATCH 05/12] Move mm checkpoint ops to mm/mmap.c
+Date: Fri, 26 Feb 2010 00:45:06 -0800
+Message-ID: <4f4de129024a206dad6ef5484d3eed3b8426d16d.1267173752.git.matthltc@us.ibm.com>
 References: <1267173913-28084-1-git-send-email-matthltc@us.ibm.com>
 	<3badfe4be5db05524ac303b54186a8e43970c06c.1267173752.git.matthltc@us.ibm.com>
+	<5d3d0d1f5d294ccd13453a19c15828faa789bb0f.1267173752.git.matthltc@us.ibm.com>
+	<06ebd7532cbaeb5d2b13fc7b02db194840098b6d.1267173752.git.matthltc@us.ibm.com>
+	<e3af5631e13c748bb0cc16fb9281b582f4d8d079.1267173752.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <3badfe4be5db05524ac303b54186a8e43970c06c.1267173752.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <e3af5631e13c748bb0cc16fb9281b582f4d8d079.1267173752.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 In-Reply-To: <3badfe4be5db05524ac303b54186a8e43970c06c.1267173752.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 References: <3badfe4be5db05524ac303b54186a8e43970c06c.1267173752.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
@@ -23,93 +26,119 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-The array indices are allocated staticly by the CKPT_OBJ_* enums in
-include/linux/checkpoint_hdr.h. There's no sanity checking here but
-if it's desirable we can do checks like:
-
-	BUG_ON(ops->obj_type >= CKPT_OBJ_MAX);       /* bounds check */
-	BUG_ON(ckpt_obj_ops[ops->obj_type] != NULL); /* Something has
-				already registered or (also bad) re-registration				is occurring. */
-
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/objhash.c             |   16 +++++-----------
- include/linux/checkpoint.h       |    6 ++++++
- include/linux/checkpoint_types.h |   11 +++++++++++
- 3 files changed, 22 insertions(+), 11 deletions(-)
+ checkpoint/objhash.c |   27 ---------------------------
+ mm/mmap.c            |   38 ++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 38 insertions(+), 27 deletions(-)
 
 diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
-index 1ca7f47..832520d 100644
+index e2c2ce3..ce89066 100644
 --- a/checkpoint/objhash.c
 +++ b/checkpoint/objhash.c
-@@ -25,17 +25,6 @@
- #include <linux/checkpoint_hdr.h>
- #include <net/sock.h>
+@@ -89,22 +89,6 @@ static int obj_file_users(void *ptr)
+ 	return atomic_long_read(&((struct file *) ptr)->f_count);
+ }
  
--/* object operations */
--struct ckpt_obj_ops {
--	char *obj_name;
--	enum obj_type obj_type;
--	void (*ref_drop)(void *ptr, int lastref);
--	int (*ref_grab)(void *ptr);
--	int (*ref_users)(void *ptr);
--	int (*checkpoint)(struct ckpt_ctx *ctx, void *ptr);
--	void *(*restore)(struct ckpt_ctx *ctx);
--};
+-static int obj_mm_grab(void *ptr)
+-{
+-	atomic_inc(&((struct mm_struct *) ptr)->mm_users);
+-	return 0;
+-}
 -
- struct ckpt_obj {
- 	int users;
- 	int objref;
-@@ -571,6 +560,11 @@ static const struct ckpt_obj_ops *ckpt_obj_ops[] = {
- 	[CKPT_OBJ_SECURITY] = &ckpt_obj_security_strings_ops,
+-static void obj_mm_drop(void *ptr, int lastref)
+-{
+-	mmput((struct mm_struct *) ptr);
+-}
+-
+-static int obj_mm_users(void *ptr)
+-{
+-	return atomic_read(&((struct mm_struct *) ptr)->mm_users);
+-}
+-
+ static int obj_fs_grab(void *ptr)
+ {
+ 	get_fs_struct((struct fs_struct *) ptr);
+@@ -352,16 +336,6 @@ static const struct ckpt_obj_ops ckpt_obj_file_ops = {
+ 	.checkpoint = checkpoint_file,
+ 	.restore = restore_file,
  };
+-/* mm object */
+-static const struct ckpt_obj_ops ckpt_obj_mm_ops = {
+-	.obj_name = "MM",
+-	.obj_type = CKPT_OBJ_MM,
+-	.ref_drop = obj_mm_drop,
+-	.ref_grab = obj_mm_grab,
+-	.ref_users = obj_mm_users,
+-	.checkpoint = checkpoint_mm,
+-	.restore = restore_mm,
+-};
+ /* fs object */
+ static const struct ckpt_obj_ops ckpt_obj_fs_ops = {
+ 	.obj_name = "FS",
+@@ -506,7 +480,6 @@ static const struct ckpt_obj_ops *ckpt_obj_ops[] = {
+ 	[CKPT_OBJ_INODE] = &ckpt_obj_inode_ops,
+ 	[CKPT_OBJ_FILE_TABLE] = &ckpt_obj_files_struct_ops,
+ 	[CKPT_OBJ_FILE] = &ckpt_obj_file_ops,
+-	[CKPT_OBJ_MM] = &ckpt_obj_mm_ops,
+ 	[CKPT_OBJ_FS] = &ckpt_obj_fs_ops,
+ 	[CKPT_OBJ_SIGHAND] = &ckpt_obj_sighand_ops,
+ 	[CKPT_OBJ_SIGNAL] = &ckpt_obj_signal_ops,
+diff --git a/mm/mmap.c b/mm/mmap.c
+index 6aa606a..b19a754 100644
+--- a/mm/mmap.c
++++ b/mm/mmap.c
+@@ -2623,6 +2623,43 @@ void mm_drop_all_locks(struct mm_struct *mm)
+ 	mutex_unlock(&mm_all_locks_mutex);
+ }
  
-+void register_checkpoint_obj(const struct ckpt_obj_ops *ops)
++#ifdef CONFIG_CHECKPOINT
++static int obj_mm_grab(void *ptr)
 +{
-+	ckpt_obj_ops[ops->obj_type] = ops;
++	atomic_inc(&((struct mm_struct *) ptr)->mm_users);
++	return 0;
 +}
 +
- 
- #define CKPT_OBJ_HASH_NBITS  10
- #define CKPT_OBJ_HASH_TOTAL  (1UL << CKPT_OBJ_HASH_NBITS)
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 7101d6f..e4d668a 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -485,6 +485,12 @@ extern void _ckpt_msg_complete(struct ckpt_ctx *ctx);
- 	_do_ckpt_msg(ctx, err, "[E @ %s:%d]" fmt, __func__, __LINE__, ##args); \
- } while (0)
- 
-+struct ckpt_obj_ops;
-+extern void register_checkpoint_obj(const struct ckpt_obj_ops *ops);
-+#else
-+struct ckpt_obj_ops;
-+static inline void register_checkpoint_obj(const struct ckpt_obj_ops *ops)
-+{}
- #endif /* CONFIG_CHECKPOINT */
- #endif /* __KERNEL__ */
- 
-diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
-index 5d5e00d..94e6e37 100644
---- a/include/linux/checkpoint_types.h
-+++ b/include/linux/checkpoint_types.h
-@@ -23,6 +23,17 @@
- #include <linux/wait.h>
- #include <linux/security.h>
- 
-+/* object operations */
-+struct ckpt_obj_ops {
-+	char *obj_name;
-+	int obj_type;
-+	void (*ref_drop)(void *ptr, int lastref);
-+	int (*ref_grab)(void *ptr);
-+	int (*ref_users)(void *ptr);
-+	int (*checkpoint)(struct ckpt_ctx *ctx, void *ptr);
-+	void *(*restore)(struct ckpt_ctx *ctx);
++static void obj_mm_drop(void *ptr, int lastref)
++{
++	mmput((struct mm_struct *) ptr);
++}
++
++static int obj_mm_users(void *ptr)
++{
++	return atomic_read(&((struct mm_struct *) ptr)->mm_users);
++}
++
++/* mm object */
++static const struct ckpt_obj_ops ckpt_obj_mm_ops = {
++	.obj_name = "MM",
++	.obj_type = CKPT_OBJ_MM,
++	.ref_drop = obj_mm_drop,
++	.ref_grab = obj_mm_grab,
++	.ref_users = obj_mm_users,
++	.checkpoint = checkpoint_mm,
++	.restore = restore_mm,
 +};
 +
- struct ckpt_stats {
- 	int uts_ns;
- 	int ipc_ns;
++static inline void register_mmap_checkpoint(void)
++{
++	register_checkpoint_obj(&ckpt_obj_mm_ops);
++}
++#else
++static inline void register_mmap_checkpoint(void)
++{}
++#endif
++
+ /*
+  * initialise the VMA slab
+  */
+@@ -2630,6 +2667,7 @@ void __init mmap_init(void)
+ {
+ 	int ret;
+ 
++	register_mmap_checkpoint();
+ 	ret = percpu_counter_init(&vm_committed_as, 0);
+ 	VM_BUG_ON(ret);
+ }
 -- 
 1.6.3.3
