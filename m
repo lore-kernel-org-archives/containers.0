@@ -1,22 +1,11 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [RFC][PATCH] ns: Syscalls for better namespace sharing control.
-Date: Fri, 26 Feb 2010 12:35:56 -0800
-Message-ID: <m1k4tzwx8z.fsf__48804.6543593102$1267216608$gmane$org@fess.ebiederm.org>
-References: <4B4F24AC.70105@trash.net> <1263481549.23480.24.camel@bigi>
-	<4B4F3A50.1050400@trash.net> <1263490403.23480.109.camel@bigi>
-	<4B50403A.6010507@trash.net> <1263568754.23480.142.camel@bigi>
-	<m13a0tf17t.fsf@fess.ebiederm.org> <1266875729.3673.12.camel@bigi>
-	<m1wry46es9.fsf@fess.ebiederm.org> <1266931623.3973.643.camel@bigi>
-	<m1iq9ocafv.fsf@fess.ebiederm.org> <1266934817.3973.654.camel@bigi>
-	<m1r5obbu2w.fsf@fess.ebiederm.org> <1266966581.3973.675.camel@bigi>
-	<m1pr3t2fvl.fsf_-_@fess.ebiederm.org> <4B86EC45.3060005@free.fr>
-	<m1mxyx0yv7.fsf@fess.ebiederm.org>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] [RFC] user-cr: Eliminate SUBARCH from Makefile
+Date: Fri, 26 Feb 2010 12:37:49 -0800
+Message-ID: <0c6c11c99f939c74b86893d5eac268ce5c612fe7.1267216666.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m1mxyx0yv7.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org> (Eric W. Biederman's message
-	of "Thu\, 25 Feb 2010 13\:49\:48 -0800")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,31 +15,105 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Cc: Linux Netdev List <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Netfilter Development Mailinglist <netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ben Greear <greearb-my8/4N5VtI7c+919tysfdA@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Linux-Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+[ Depends on recent series of non-RFC Makefile patches ]
 
-> No, the plan is only one namespace at a time.
+SUBARCH is gross. We shouldn't need to detect the arch to compile to
+using uname. It's bad practice because we could be using a cross compiler,
+or someone may (gag) autoconfiscate this tree. If we must select a true
+subarch, we should just let builders set -mXX in CFLAGS.
 
-Looking at this a bit more I am frustrated and relieved.
+This patch tries to build all of the clone_*.[cSs] files. Any builds
+that fail are quietly ignored and don't get used. One that succeeds
+gets hardlinked to clone.a and subsequently linked into libeclone.a
 
-I was looking at what it would take to join an arbitrary mount
-namespace and I realized it is completely non-obvious what fs->root
-and fs->pwd should be set to.
+This makes SUBARCH unnecessary.
 
-If I leave them untouched the new mount namespace is useless,
-as all path lookups will give results in a different mount namespace,
-so not even mount or umount can be used.
+Only tested on x86-32 so far. This also doesn't properly add clone.a
+to libclone.a for some reason.
 
-I can not change fs->root to mnt_ns->root as that is rootfs and there
-is always something mounted on top so I can not use that.
+Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ Makefile |   55 ++++++++++++++++++++++++++++++++++++-------------------
+ 1 files changed, 36 insertions(+), 19 deletions(-)
 
-In comparison an unshare of the mount namespace doesn't have to move
-fs->root or fs->pwd at all and only has to update their mounts to
-the corresponding mounts in the new mount namespace.
-
-I might be able to find the topmost root filesystem and put at least
-root there, but I'm not particularly fond of that option.
-
-Eric
+diff --git a/Makefile b/Makefile
+index 60ddccd..03acea7 100644
+--- a/Makefile
++++ b/Makefile
+@@ -5,9 +5,6 @@ CKPT_HEADERS = include/linux/checkpoint.h \
+ 		include/linux/checkpoint_hdr.h \
+ 		include/asm/checkpoint_hdr.h
+ 
+-# detect architecture (for eclone)
+-SUBARCH = $(patsubst i%86,x86_32,$(shell uname -m))
+-
+ # compile with debug ?
+ DEBUG = -DCHECKPOINT_DEBUG
+ 
+@@ -42,24 +39,44 @@ $(LIB_ECLONE):
+ # restart needs to be thread-safe
+ restart: CFLAGS += -D__REENTRANT -pthread
+ 
++# Set CFLAGS to -m32 or -m64 to select a non-default subarch.
++# Hence we don't need the commented out CFLAGS-setting rules
++# immediately below.
++
++# clone_ppc.o: CFLAGS += -m32
++clone_ppc_.o: ASFLAGS += -m32
++# clone_ppc64.o: CFLAGS += -m64
++clone_ppc64_.o: ASFLAGS += -m64
++
++# powerpc clone.a requires two object files
++clone_ppc.a: clone_ppc_.o clone_ppc.o
++	$(AR) ruv $@ $^
++
++clone_ppc64.a: clone_ppc64_.o clone_ppc64.o
++	$(AR) ruv $@ $^
++
++# The remaining arch's clone.a all share the following rule
++%.a: %.o
++	$(AR) ruv $@ $^
++
++# Unlike normal rule dependencies, we want to link libeclone with the
++# object files that build successfully and ignore the rest. Normally
++# we do this by testing which will build and then setting a variable
++# for the dependency to use. Here we just depend on all the real source
++# files and hardlink the result of a successful build.
++clone.a: $(shell echo clone_*.[cSs])
++	@$(MAKE) -s clone_x86_32.a && ln clone_x86_32.a clone.a || /bin/true
++	@$(MAKE) -s clone_x86_64.a && ln clone_x86_64.a clone.a || /bin/true
++	@$(MAKE) -s clone_ppc.a && ln clone_ppc.a clone.a || /bin/true
++	@$(MAKE) -s clone_ppc64.a && ln clone_ppc64.o clone.a || /bin/true
++	@$(MAKE) -s clone_s390x.a && ln clone_s390x.o clone.a || /bin/true
++
+ # eclone() is architecture specific
+-ifneq ($(SUBARCH),)
+-$(ECLONE_PROGS): $(LIB_ECLONE) 
++# TODO why doesn't clone.a link properly into libeclone.a??
++$(ECLONE_PROGS): $(LIB_ECLONE) clone.a
+ $(ECLONE_PROGS): CFLAGS += -DARCH_HAS_ECLONE
+-$(LIB_ECLONE): clone_$(SUBARCH).o genstack.o
+-endif
+-
+-# on powerpc, need also assembly file
+-ifeq ($(SUBARCH),ppc)
+-CFLAGS += -m32
+-ASFLAGS += -m32
+-$(LIB_ECLONE): clone_$(SUBARCH)_.o
+-endif
+-ifeq ($(SUBARCH),ppc64)
+-CFLAGS += -m64
+-ASFLAGS += -m64
+-$(LIB_ECLONE): clone_$(SUBARCH)_.o
+-endif
++$(LIB_ECLONE): clone.a genstack.o
++
+ 
+ # ckptinfo dependencies
+ ckptinfo: ckptinfo_types.o
+-- 
+1.6.3.3
