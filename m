@@ -1,15 +1,21 @@
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 3/4] cr_tests/ptree1: wait for background tasks to exit
-Date: Fri, 26 Feb 2010 15:03:00 -0600
-Message-ID: <1267218180.15300.120.camel@localhost.localdomain>
-References: <1267213914-32219-1-git-send-email-ntl@pobox.com>
-	<1267213914-32219-3-git-send-email-ntl@pobox.com>
-	<20100226205659.GE20106@count0.beaverton.ibm.com>
+From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: Re: [RFC][PATCH] ns: Syscalls for better namespace sharing control.
+Date: Sat, 27 Feb 2010 00:13:43 +0300
+Message-ID: <4B883987.6090408@parallels.com>
+References: <4B4F24AC.70105@trash.net>
+	<1263481549.23480.24.camel@bigi>	<4B4F3A50.1050400@trash.net>
+	<1263490403.23480.109.camel@bigi>	<4B50403A.6010507@trash.net>
+	<1263568754.23480.142.camel@bigi>	<m13a0tf17t.fsf@fess.ebiederm.org>
+	<1266875729.3673.12.camel@bigi>	<m1wry46es9.fsf@fess.ebiederm.org>
+	<1266931623.3973.643.camel@bigi>	<m1iq9ocafv.fsf@fess.ebiederm.org>
+	<1266934817.3973.654.camel@bigi>	<m1r5obbu2w.fsf@fess.ebiederm.org>
+	<1266966581.3973.675.camel@bigi>
+	<m1pr3t2fvl.fsf_-_@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100226205659.GE20106-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
+In-Reply-To: <m1pr3t2fvl.fsf_-_-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,22 +25,48 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Ben Greear <greearb-my8/4N5VtI7c+919tysfdA@public.gmane.org>, Linux Netdev List <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Netfilter Development Mailinglist <netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, 2010-02-26 at 12:56 -0800, Matt Helsley wrote:
-> On Fri, Feb 26, 2010 at 01:51:53PM -0600, Nathan Lynch wrote:
-> > It is more reliable and usually faster to wait for the shell's
-> > notification that background tasks have exited than it is to assume
-> > they have exited after three seconds have passed.
-> 
-> Yes, a wait should normally do the trick here.
-> 
-> What happens if thaw fails and the task to wait for is still frozen?
-> We'd need a "wait or timeout" here to gracefully handle that. However,
-> I suppose it's arguable whether thaw failing is worth worrying about
-> here...
+> +static struct inode *nsfd_mkinode(void)
+> +{
+> +	struct inode *inode;
+> +	inode = new_inode(nsfd_mnt->mnt_sb);
+> +	if (!inode)
+> +		return ERR_PTR(-ENOMEM);
+> +
+> +	inode->i_fop = &nsfd_file_operations;
+> +
+> +	/*
+> +	 * Mark the inode dirty from the very beginning,
+> +	 * that way it will never be moved to the dirty
+> +	 * list because mark_inode_dirty() will think that
+> +	 * it already _is_ on the dirty list.
+> +	 */
+> +	inode->i_state = I_DIRTY;
+> +	inode->i_mode = S_IRUSR | S_IWUSR;
+> +	inode->i_uid = current_fsuid();
+> +	inode->i_gid = current_fsgid();
+> +	inode->i_atime = inode->i_mtime = inode->i_ctime = CURRENT_TIME;
+> +	return inode;
+> +}
 
-I think it's not, unless this scenario could occur in the absence of
-kernel or testcase bugs?
+Why not use anon inodes?
+
+> diff --git a/include/linux/nstype.h b/include/linux/nstype.h
+> new file mode 100644
+> index 0000000..3bdf856
+> --- /dev/null
+> +++ b/include/linux/nstype.h
+> @@ -0,0 +1,6 @@
+> +#ifndef _LINUX_NSTYPE_H
+> +#define _LINUX_NSTYPE_H
+> +
+> +#define NSTYPE_NET 0
+> +
+> +#endif /* _LINUX_NSTYPE_H */
+
+Yet another set of per-namespace IDs along with CLONE_NEWXXX ones?
+I currently have a way to create all namespaces we have with one
+syscall. Why don't we have an ability to enter them all with one syscall?
