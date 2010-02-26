@@ -1,13 +1,11 @@
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 4/4] cr_tests/ptree1: remove gratuitous sleeps
-Date: Fri, 26 Feb 2010 13:51:54 -0600
-Message-ID: <1267213914-32219-4-git-send-email-ntl@pobox.com>
-References: <1267213914-32219-1-git-send-email-ntl@pobox.com>
+Subject: [PATCH] ckpt/powerpc: handle syscall restart
+Date: Fri, 26 Feb 2010 13:54:33 -0600
+Message-ID: <1267214073-32348-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1267213914-32219-1-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,38 +15,54 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-These 1-second sleeps don't accomplish anything.
+If a task is checkpointed while servicing a restartable system call
+like nanosleep, we need to ensure that the syscall is restarted
+appropriately after a checkpoint/restart cycle.  This gets
+cr_tests/sleeptest passing on powerpc.
 
 Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 ---
- process-tree/run-ptree1.sh |    4 ----
- 1 files changed, 0 insertions(+), 4 deletions(-)
+ arch/powerpc/kernel/checkpoint.c |   25 +++++++++++++++++++++++++
+ 1 files changed, 25 insertions(+), 0 deletions(-)
 
-diff --git a/process-tree/run-ptree1.sh b/process-tree/run-ptree1.sh
-index ed7ce9e..592d2d8 100755
---- a/process-tree/run-ptree1.sh
-+++ b/process-tree/run-ptree1.sh
-@@ -87,8 +87,6 @@ function restart_container
- 	cmdline="$RESTART --pids --pidns --wait"
- 	$ECHO "\t- $cmdline"
+diff --git a/arch/powerpc/kernel/checkpoint.c b/arch/powerpc/kernel/checkpoint.c
+index 2634011..cd384df 100644
+--- a/arch/powerpc/kernel/checkpoint.c
++++ b/arch/powerpc/kernel/checkpoint.c
+@@ -307,6 +307,31 @@ static int restore_gprs(const struct ckpt_hdr_cpu *cpu_hdr,
+ 	regs->orig_gpr3 = cpu_hdr->orig_gpr3;
  
--	sleep 1
--
- 	$cmdline < $CHECKPOINT_FILE >> $SCRIPT_LOG 2>&1 &
+ 	regs->msr = sanitize_msr(regs->msr);
++
++	/* The normal servicing of the freezer's fake signal is
++	 * short-circuited by checkpoint/restart.  See
++	 * arch/powerpc/kernel/signal.c::do_signal_pending().
++	 */
++	if (TRAP(regs) != 0x0C00)
++		goto out;
++	if (!(regs->ccr & 0x10000000))
++		goto out;
++
++	switch (regs->gpr[3]) {
++	case ERESTARTNOHAND:
++	case ERESTARTSYS:
++	case ERESTARTNOINTR:
++		regs->gpr[3] = regs->orig_gpr3;
++		break;
++	case ERESTART_RESTARTBLOCK:
++		regs->gpr[0] = __NR_restart_syscall;
++		break;
++	default:
++		goto out;
++	}
++
++	regs->nip -= 4;
++	regs->result = 0;
+ out:
+ 	return rc;
  }
- 
-@@ -178,8 +176,6 @@ while [ $cnt -lt 15 ]; do
- 
- 	create_fs_snapshot
- 
--	sleep 1;
--
- 	checkpoint $pid
- 
- 	touch $CHECKPOINT_DONE
 -- 
 1.6.0.6
