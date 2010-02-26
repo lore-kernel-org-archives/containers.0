@@ -1,22 +1,16 @@
-From: Minchan Kim <minchan.kim-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 1/2] memcg: dirty pages accounting and limiting
-	infrastructure
-Date: Fri, 26 Feb 2010 15:35:11 +0900
-Message-ID: <28c262361002252235s4c2a29d0yb46a6d7a7a7a1fdf__4624.28429532355$1267166150$gmane$org@mail.gmail.com>
-References: <1266765525-30890-1-git-send-email-arighi@develer.com>
-	<20100221221700.GA5233@linux> <20100222180732.GC3096@redhat.com>
-	<20100223115846.GI1882@linux>
-	<28c262361002250736k57543379j8291e0dfb8df194e@mail.gmail.com>
-	<20100226092339.1f639cbf.kamezawa.hiroyu@jp.fujitsu.com>
-	<28c262361002252050r29f54ea2u6c6e87f1f702d195@mail.gmail.com>
-	<20100226140135.23c32a8d.kamezawa.hiroyu@jp.fujitsu.com>
-	<28c262361002252153s587b70ecxf89eda9a642e527c@mail.gmail.com>
-	<20100226151506.c78b4312.kamezawa.hiroyu@jp.fujitsu.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 02/12] Add ability to register checkpoint obj ops
+Date: Fri, 26 Feb 2010 00:45:03 -0800
+Message-ID: <5d3d0d1f5d294ccd13453a19c15828faa789bb0f.1267173752.git.matthltc@us.ibm.com>
+References: <1267173913-28084-1-git-send-email-matthltc@us.ibm.com>
+	<3badfe4be5db05524ac303b54186a8e43970c06c.1267173752.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100226151506.c78b4312.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <3badfe4be5db05524ac303b54186a8e43970c06c.1267173752.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <3badfe4be5db05524ac303b54186a8e43970c06c.1267173752.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+References: <3badfe4be5db05524ac303b54186a8e43970c06c.1267173752.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,85 +20,96 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gRnJpLCBGZWIgMjYsIDIwMTAgYXQgMzoxNSBQTSwgS0FNRVpBV0EgSGlyb3l1a2kKPGthbWV6
-YXdhLmhpcm95dUBqcC5mdWppdHN1LmNvbT4gd3JvdGU6Cj4gT24gRnJpLCAyNiBGZWIgMjAxMCAx
-NDo1MzozOSArMDkwMAo+IE1pbmNoYW4gS2ltIDxtaW5jaGFuLmtpbUBnbWFpbC5jb20+IHdyb3Rl
-Ogo+Cj4+IE9uIEZyaSwgRmViIDI2LCAyMDEwIGF0IDI6MDEgUE0sIEtBTUVaQVdBIEhpcm95dWtp
-Cj4+IDxrYW1lemF3YS5oaXJveXVAanAuZnVqaXRzdS5jb20+IHdyb3RlOgo+PiA+IEhpLAo+PiA+
-Cj4+ID4gT24gRnJpLCAyNiBGZWIgMjAxMCAxMzo1MDowNCArMDkwMAo+PiA+IE1pbmNoYW4gS2lt
-IDxtaW5jaGFuLmtpbUBnbWFpbC5jb20+IHdyb3RlOgo+PiA+Cj4+ID4+ID4gSG0gPyBJIGRvbid0
-IHJlYWQgdGhlIHdob2xlIHRocmVhZCBidXQgY2FuX2F0dGFjaCgpIGlzIGNhbGxlZCB1bmRlcgo+
-PiA+PiA+IGNncm91cF9tdXRleCgpLiBTbywgaXQgZG9lc24ndCBuZWVkIHRvIHVzZSBSQ1UuCj4+
-ID4+Cj4+ID4+IFZpdmVrIG1lbnRpb25lZCBtZW1jZyBpcyBwcm90ZWN0ZWQgYnkgUkNVIGlmIEkg
-dW5kZXJzdGFuZCBoaXMgaW50ZW50aW9uIHJpZ2h0Lgo+PiA+PiBTbyBJIGNvbW1lbnRlZCB0aGF0
-IHdpdGhvdXQgZW5vdWdoIGtub3dsZWRnZSBvZiBtZW1jZy4KPj4gPj4gQWZ0ZXIgeW91ciBjb21t
-ZW50LCBJIGRpdmUgaW50byB0aGUgY29kZS4KPj4gPj4KPj4gPj4gSnVzdCBvdXQgb2YgY3VyaW9z
-aXR5Lgo+PiA+Pgo+PiA+PiBSZWFsbHksIG1lbWNnIGlzIHByb3RlY3RlZCBieSBSQ1U/Cj4+ID4g
-eWVzLiBBbGwgY2dyb3VwIHN1YnN5c3RlbSBpcyBwcm90ZWN0ZWQgYnkgUkNVLgo+PiA+Cj4+ID4+
-IEkgdGhpbmsgbW9zdCBvZiBSQ1UgYXJvdW5kIG1lbWNnIGlzIGZvciBwcm90ZWN0aW5nIHRhc2tf
-c3RydWN0IGFuZAo+PiA+PiBjZ3JvdXBfc3Vic3lzX3N0YXRlLgo+PiA+PiBUaGUgbWVtY2cgaXMg
-cHJvdGVjdGVkIGJ5IGNncm91cF9tdXRleCBhcyB5b3UgbWVudGlvbmVkLgo+PiA+PiBBbSBJIG1p
-c3Npbmcgc29tZXRoaW5nPwo+PiA+Cj4+ID4gVGhlcmUgYXJlIHNldmVyYWwgbGV2ZWxzIG9mIHBy
-b3RlY3Rpb25zLgo+PiA+Cj4+ID4gY2dyb3VwIHN1YnN5c3RlbSdzIC0+ZGVzdHJveSgpIGNhbGwg
-YmFjayBpcyBmaW5hbGx5IGNhbGxlZCBieQo+PiA+Cj4+ID4gQXMgdGhpcy4KPj4gPgo+PiA+IMKg
-NzY4IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIHN5bmNocm9uaXplX3JjdSgpOwo+PiA+IMKgNzY5
-Cj4+ID4gwqA3NzAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgbXV0ZXhfbG9jaygmY2dyb3VwX211
-dGV4KTsKPj4gPiDCoDc3MSDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCAvKgo+PiA+IMKgNzcyIMKg
-IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgKiBSZWxlYXNlIHRoZSBzdWJzeXN0ZW0gc3RhdGUgb2Jq
-ZWN0cy4KPj4gPiDCoDc3MyDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCovCj4+ID4gwqA3NzQg
-wqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgZm9yX2VhY2hfc3Vic3lzKGNncnAtPnJvb3QsIHNzKQo+
-PiA+IMKgNzc1IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIHNzLT5kZXN0cm95
-KHNzLCBjZ3JwKTsKPj4gPiDCoDc3Ngo+PiA+IMKgNzc3IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKg
-IGNncnAtPnJvb3QtPm51bWJlcl9vZl9jZ3JvdXBzLS07Cj4+ID4gwqA3NzggwqAgwqAgwqAgwqAg
-wqAgwqAgwqAgwqAgbXV0ZXhfdW5sb2NrKCZjZ3JvdXBfbXV0ZXgpOwo+PiA+Cj4+ID4gQmVmb3Jl
-IGhlcmUsCj4+ID4gwqAgwqAgwqAgwqAtIHRoZXJlIGFyZSBubyB0YXNrcyB1bmRlciB0aGlzIGNn
-cm91cCAoY2dyb3VwJ3MgcmVmY250IGlzIDApCj4+ID4gwqAgwqAgwqAgwqAgwqAmJiBjZ3JvdXAg
-aXMgbWFya2VkIGFzIFJFTU9WRUQuCj4+ID4KPj4gPiBUaGVuLCB0aGlzIGFjY2Vzcwo+PiA+IMKg
-IMKgIMKgIMKgcmN1X3JlYWRfbG9jaygpOwo+PiA+IMKgIMKgIMKgIMKgbWVtID0gbWVtX2Nncm91
-cF9mcm9tX3Rhc2sodGFzayk7Cj4+ID4gwqAgwqAgwqAgwqBpZiAoY3NzX3RyeWdldChtZW0tPmNz
-cykpIMKgIDw9PT09PT09PT09PT09PT1jaGVja3MgY2dyb3VwIHJlZmNudAo+Pgo+PiBJZiBpdCBp
-dCwgZG8gd2UgYWx3YXlzIG5lZWQgY3NzX3RyeWdldCBhZnRlciBtZW1fY2dyb3VwX2Zyb21fdGFz
-awo+PiB3aXRob3V0IGNncm91cF9tdXRleCB0byBtYWtlIHN1cmUgY3NzIGlzIHZhaWxkPwo+Pgo+
-IE9uIGEgY2FzZSBieSBjYXNlcy4KPgo+PiBCdXQgSSBmb3VuZCBzZXZlcmFsIGNhc2VzIHRoYXQg
-ZG9uJ3QgY2FsbCBjc3NfdHJ5Z2V0Cj4+Cj4+IDEuIG1tX21hdGNoX2Nncm91cAo+PiBJdCdzIHVz
-ZWQgYnkgcGFnZV9yZWZlcmVuY2VkX3h4eC4gc28gd2UgSSB0aGluayB3ZSBkb24ndCBncmFiCj4+
-IGNncm91cF9tdXRleCBhdCB0aGF0IHRpbWUuCj4+Cj4geWVzLiBidXQgYWxsIGNoZWNrIGFyZSBk
-b25lIHVuZGVyIFJDVS4gQW5kIHRoaXMgZnVuY3Rpb24gbmV2ZXIKPiBhY2Nlc3MgY29udGVudHMg
-b2YgbWVtb3J5IHdoaWNoIHBvaW50ZXIgaG9sZHMuCj4gQW5kLCBwbGVhc2UgY29uaWRlciB0aGUg
-d2hvbGUgY29udGV4dC4KPgo+IMKgIMKgIMKgIMKgbWVtX2Nncm91cF90cnlfY2hhcmdlKCkKPiDC
-oCDCoCDCoCDCoCDCoCDCoCDCoCDCoG1lbV9jb3V0ID0uLi4uLiAocmVmY250ICsxKQo+IMKgIMKg
-IMKgIMKgIMKgIMKgIMKgIMKgLi4uLgo+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgdHJ5X3RvX2Zy
-ZWVfbWVtX2Nncm91cF9wYWdlcyhtZW1fY29udCkKPiDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoC4u
-Li4KPiDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoHNocmlua194eHhfbGlzdCgpCj4gwqAgwqAgwqAg
-wqAgwqAgwqAgwqAgwqAuLi4uCj4gwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqBw
-YWdlX3JlZmVyZW5jZWRfYW5vbihwYWdlLCBtZW1fY29udCkKPiDCoCDCoCDCoCDCoCDCoCDCoCDC
-oCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoG1tX21hdGNoX2Nncm91cChtbSwgbWVtX2NvbnQp
-Cj4KPiBUaGVuLCB0aGlzIG1lbV9jb250ICgybmQgYXJndW1lbnQgdG8gbW1fbWF0Y2hfY2dyb3Vw
-KSBpcyBhbHdheXMgdmFsaWQuCj4gwqAgwqAgwqAgwqByY3VfcmVhZF9sb2NrKCk7Cj4gwqAgwqAg
-wqAgwqBtZW1jZyA9IG1lbV9jZ3JvdXBfZnJvbV90YXNrKHJjdV9kZXJlZmVyZW5jZShtbS0+b3du
-ZGVyKSk7Cj4gwqAgwqAgwqAgwqByY3VfcmVhZF91bmxvY2soKTsKPiDCoCDCoCDCoCDCoHJldHVy
-biBtZW1jZyAhPSBtZW1fY29udDsKPgo+IEhlcmUsCj4gwqAgwqAgwqAgwqAxLiBtZW1fY29udCBp
-cyBuZXZlciByZXVzZWQuIChiZWNhdXNlIHJlZmNudCsxKQo+IMKgIMKgIMKgIMKgMi4gd2UgZG9u
-J3QgYWNjZXNzIG1lbWNnJ3MgY29udGVudHMuCj4KPiBJIHRoaW5rIGV2ZW4gcmN1X3JlYWRfbG9j
-aygpL3VubG9jaygpIGlzIHVubmVjZXNzYXJ5Lgo+Cj4KPgo+PiAyLiBtZW1fY2dyb3VwX29vbV9j
-YWxsZWQKPj4gSSB0aGluayBpbiBoZXJlIHdlIGRvbid0IGdyYWIgY2dyb3VwX211dGV4LCB0b28u
-Cj4+Cj4gSW4gT09NLWtpbGxlciBjb250ZXh0LCBtZW1jZyB3aGljaCBjYXVzZXMgT09NIGhhcyBy
-ZWZjbnQgKzEuCj4gVGhlbiwgbm90IG5lY2Vzc2FyeS4KPgo+Cj4+IEkgZ3Vlc3Mgc29tZSBkZXNp
-Z24gd291bGQgY292ZXIgdGhhdCBwcm9ibGVtcy4KPiBNYXliZS4KPgo+PiBDb3VsZCB5b3UgdGVs
-bCBtZSBpZiB5b3UgZG9uJ3QgbWluZD8KPj4gU29ycnkgZm9yIGJvdGhlcmluZyB5b3UuCj4+Cj4K
-PiBJbiBteSBwb2ludCBvZiB2aWV3LCB0aGUgbW9zdCB0ZXJyaWJsZSBwb3JibGVtIGlzIGhlYXZ5
-IGNvc3Qgb2YKPiBjc3NfdHJ5Z2V0KCkgd2hlbiB5b3UgcnVuIG11bHRpLXRocmVhZCBoZWF2eSBw
-cm9ncmFtLgo+IFNvLCBJIHdhbnQgdG8gc2VlIHNvbWUgaW5vdmF0aW9uLCBidXQgaGF2ZW4ndCBm
-aW5kIHlldC4KPgo+IEkgYWRtaXQgdGhpcyBSQ1UrcmVmY250IGlzIHRlbmQgdG8gYmUgaGFyZCB0
-byByZXZpZXcuIEJ1dCBpdCdzIGNvc3RseQo+IG9wZXJhdGlvbiB0byB0YWtlIHJlZmNudCBhbmQg
-aXQncyB3b3J0aCB0byBiZSBoYW5kbGVkIGluIHRoZSBiZXN0Cj4gdXNhZ2Ugb2YgZWFjaCBsb2dp
-Y3MsIG9uIGEgY2FzZSBieSBjYXNlcyBmb3Igbm93Lgo+CgpUaGFua3MgZm9yIGFsd2F5cyBraW5k
-IGV4cGxhbmF0aW9uLCBLYW1lLgoKPiBUaGFua3MsCj4gLUthbWUKPgo+Cj4KCgoKLS0gCktpbmQg
-cmVnYXJkcywKTWluY2hhbiBLaW0KX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51
-eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxt
-YW4vbGlzdGluZm8vY29udGFpbmVycw==
+The array indices are allocated staticly by the CKPT_OBJ_* enums in
+include/linux/checkpoint_hdr.h. There's no sanity checking here but
+if it's desirable we can do checks like:
+
+	BUG_ON(ops->obj_type >= CKPT_OBJ_MAX);       /* bounds check */
+	BUG_ON(ckpt_obj_ops[ops->obj_type] != NULL); /* Something has
+				already registered or (also bad) re-registration				is occurring. */
+
+Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ checkpoint/objhash.c             |   16 +++++-----------
+ include/linux/checkpoint.h       |    6 ++++++
+ include/linux/checkpoint_types.h |   11 +++++++++++
+ 3 files changed, 22 insertions(+), 11 deletions(-)
+
+diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+index 1ca7f47..832520d 100644
+--- a/checkpoint/objhash.c
++++ b/checkpoint/objhash.c
+@@ -25,17 +25,6 @@
+ #include <linux/checkpoint_hdr.h>
+ #include <net/sock.h>
+ 
+-/* object operations */
+-struct ckpt_obj_ops {
+-	char *obj_name;
+-	enum obj_type obj_type;
+-	void (*ref_drop)(void *ptr, int lastref);
+-	int (*ref_grab)(void *ptr);
+-	int (*ref_users)(void *ptr);
+-	int (*checkpoint)(struct ckpt_ctx *ctx, void *ptr);
+-	void *(*restore)(struct ckpt_ctx *ctx);
+-};
+-
+ struct ckpt_obj {
+ 	int users;
+ 	int objref;
+@@ -571,6 +560,11 @@ static const struct ckpt_obj_ops *ckpt_obj_ops[] = {
+ 	[CKPT_OBJ_SECURITY] = &ckpt_obj_security_strings_ops,
+ };
+ 
++void register_checkpoint_obj(const struct ckpt_obj_ops *ops)
++{
++	ckpt_obj_ops[ops->obj_type] = ops;
++}
++
+ 
+ #define CKPT_OBJ_HASH_NBITS  10
+ #define CKPT_OBJ_HASH_TOTAL  (1UL << CKPT_OBJ_HASH_NBITS)
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 7101d6f..e4d668a 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -485,6 +485,12 @@ extern void _ckpt_msg_complete(struct ckpt_ctx *ctx);
+ 	_do_ckpt_msg(ctx, err, "[E @ %s:%d]" fmt, __func__, __LINE__, ##args); \
+ } while (0)
+ 
++struct ckpt_obj_ops;
++extern void register_checkpoint_obj(const struct ckpt_obj_ops *ops);
++#else
++struct ckpt_obj_ops;
++static inline void register_checkpoint_obj(const struct ckpt_obj_ops *ops)
++{}
+ #endif /* CONFIG_CHECKPOINT */
+ #endif /* __KERNEL__ */
+ 
+diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
+index 5d5e00d..94e6e37 100644
+--- a/include/linux/checkpoint_types.h
++++ b/include/linux/checkpoint_types.h
+@@ -23,6 +23,17 @@
+ #include <linux/wait.h>
+ #include <linux/security.h>
+ 
++/* object operations */
++struct ckpt_obj_ops {
++	char *obj_name;
++	int obj_type;
++	void (*ref_drop)(void *ptr, int lastref);
++	int (*ref_grab)(void *ptr);
++	int (*ref_users)(void *ptr);
++	int (*checkpoint)(struct ckpt_ctx *ctx, void *ptr);
++	void *(*restore)(struct ckpt_ctx *ctx);
++};
++
+ struct ckpt_stats {
+ 	int uts_ns;
+ 	int ipc_ns;
+-- 
+1.6.3.3
