@@ -1,16 +1,14 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/2] memcg: dirty pages instrumentation
-Date: Fri, 26 Feb 2010 16:48:11 -0500
-Message-ID: <20100226214811.GB7498__38242.552887141$1267221108$gmane$org@redhat.com>
-References: <1266765525-30890-1-git-send-email-arighi@develer.com>
-	<1266765525-30890-3-git-send-email-arighi@develer.com>
-	<20100223212943.GF11930@redhat.com> <20100225151211.GC3964@linux>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [RFC][PATCH 0/4][user-cr]: First try at integrating LXC and
+	USER-CR
+Date: Fri, 26 Feb 2010 16:52:27 -0500
+Message-ID: <4B88429B.4000701@cs.columbia.edu>
+References: <20100224083452.GB18758@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20100225151211.GC3964@linux>
+In-Reply-To: <20100224083452.GB18758-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,100 +18,160 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Feb 25, 2010 at 04:12:11PM +0100, Andrea Righi wrote:
-> On Tue, Feb 23, 2010 at 04:29:43PM -0500, Vivek Goyal wrote:
-> > On Sun, Feb 21, 2010 at 04:18:45PM +0100, Andrea Righi wrote:
-> > 
-> > [..]
-> > > diff --git a/mm/page-writeback.c b/mm/page-writeback.c
-> > > index 0b19943..c9ff1cd 100644
-> > > --- a/mm/page-writeback.c
-> > > +++ b/mm/page-writeback.c
-> > > @@ -137,10 +137,11 @@ static struct prop_descriptor vm_dirties;
-> > >   */
-> > >  static int calc_period_shift(void)
-> > >  {
-> > > -	unsigned long dirty_total;
-> > > +	unsigned long dirty_total, dirty_bytes;
-> > >  
-> > > -	if (vm_dirty_bytes)
-> > > -		dirty_total = vm_dirty_bytes / PAGE_SIZE;
-> > > +	dirty_bytes = mem_cgroup_dirty_bytes();
-> > > +	if (dirty_bytes)
-> > > +		dirty_total = dirty_bytes / PAGE_SIZE;
-> > >  	else
-> > >  		dirty_total = (vm_dirty_ratio * determine_dirtyable_memory()) /
-> > >  				100;
-> > 
-> > Ok, I don't understand this so I better ask. Can you explain a bit how memory
-> > cgroup dirty ratio is going to play with per BDI dirty proportion thing.
-> > 
-> > Currently we seem to be calculating per BDI proportion (based on recently
-> > completed events), of system wide dirty ratio and decide whether a process
-> > should be throttled or not.
-> > 
-> > Because throttling decision is also based on BDI and its proportion, how
-> > are we going to fit it with mem cgroup? Is it going to be BDI proportion
-> > of dirty memory with-in memory cgroup (and not system wide)?
+Suka,
+
+This is good stuff: convert restart to a library and intergate
+with LXC is excellent target.
+
+We need to give a thought to the API design and the sort of
+functionality that the library will offer. I'd prefer to get
+a better view of the whole plan before committing to any
+incremental step.
+
+For example:
+
+* what prefix will the library calls have ?  e.g. cr_checkpoint(),
+cr_restart() etc.  Could also be checkpoint_... or ckpt_... In
+any case, must be consistent and unique, and also agree with the
+library name: libcheckpoint.a and usercr.h doesn't make sense to
+me.
+
+* what arguments are really necessary in struct restart_args ? for
+example, a ->logfd is necessary, but ->logfile (pathname) is not
+(the caller should already open the file)
+
+* the library should provide an api to initialize the default args
+(e.g. the logfd should be -1 by default), e.g. cr_init_restart_args()
+
+* similarly, only constants and macros relevant to a caller
+should be exposed, not internal data structures or macros.
+
+* verbosity, debugging, warn and fail: currently that can be
+configurable to some extent; but we should never impose on the
+caller a perror() - instead the caller should pass FILE * for
+stdout and stderr (if NULL - the library will keep silent).
+
+* probably makes sense to add interface to freeze a process tree
+identified by its root pid, and thaw a process tree (or a cgroup).
+
+* does the mnt-ns manipulation belong to cr_restart() ?  perhaps
+make it a separate api in the library ?
+
+* we need to change the way restart detects errors and cleans up
+from relying on signals to, e.g. on pipes. I've been wanting to
+do this for the longest time, and it will eliminate most (if not
+all) of the global variables.
+
+Oren.
+
+
+Sukadev Bhattiprolu wrote:
+> Following two sets of patches is an early attempt to integrate LXC and
+> USER-CR. 
 > 
-> IMHO we need to calculate the BDI dirty threshold as a function of the
-> cgroup's dirty memory, and keep BDI statistics system wide.
+> Overview:
 > 
-> So, if a task is generating some writes, the threshold to start itself
-> the writeback will be calculated as a function of the cgroup's dirty
-> memory. If the BDI dirty memory is greater than this threshold, the task
-> must start to writeback dirty pages until it reaches the expected dirty
-> limit.
+> Have USER-CR export the core checkpoint and restart functionality into a
+> library (/lib/libcheckpoint.a and <usercr.h>) and have LXC link with this
+> library.
 > 
-
-Ok, so calculate dirty per cgroup and calculate BDI's proportion from
-cgroup dirty? So will you be keeping track of vm_completion events per
-cgroup or will rely on existing system wide and per BDI completion events
-to calculate BDI proportion?
-
-BDI proportion are more of an indication of device speed and faster device
-gets higher share of dirty, so may be we don't have to keep track of
-completion events per cgroup and can rely on system wide completion events
-for calculating the proportion of a BDI.
-
-> OK, in this way a cgroup with a small dirty limit may be forced to
-> writeback a lot of pages dirtied by other cgroups on the same device.
-> But this is always related to the fact that tasks are forced to
-> writeback dirty inodes randomly, and not the inodes they've actually
-> dirtied.
-
-So we are left with following two issues.
-
-- Should we rely on global BDI stats for BDI_RECLAIMABLE and BDI_WRITEBACK
-  or we need to make these per cgroup to determine actually how many pages
-  have been dirtied by a cgroup and force writeouts accordingly?
-
-- Once we decide to throttle a cgroup, it should write its inodes and
-  should not be serialized behind other cgroup's inodes.  
-
-If we don't tackle above two issues, I am not sure what probelm will be solved
-by the patch set. The only thing I can see is that we will be doing write-outs
-much more aggressively when we have got some memory cgroups created. (Smaller
-dirty per cgroup will lead to smaller per BDI dirty and when compared with
-overall BDI stat, it should lead to more writeouts).
-
-	if (bdi_nr_reclaimable + bdi_nr_writeback <= bdi_thresh)
-			break;
-
-Because bdi_thres calculation will be based on per cgroup dirty and
-bdi_nr_reclaimable and bdi_nr_writeback will be system wide, we will be
-doing much more aggressive writeouts.
-
-But we will not achieve parallel writeback paths so probably will not help IO
-controller a lot.
-
-Kame-san, is it a problem, with current memory cgroups where writeback is
-not happening that actively, and you run into situation where there are too
-many dirty pages in a cgroup and reclaim can take long time?
-
-Thanks
-Vivek
+> TODO: 
+> 
+> 	1. For now, libcheckpoint.a implements only the restart functionality
+> 	   and so only lxc_restart command is implemented. Implementing the
+> 	   checkpoint functionality and lxc_checkpoint command can be done
+> 	   similarly and is hopefully easier than the restart functionality.
+> 
+> 	2. The restart() functionality in user-cr makes extensive use of global
+> 	   variables and debug code. The API must be extended to properly
+> 	   include these variables/debug code in the API.
+> 
+> 	   Similarly, the 'struct restart_args' may need to be sanitized for
+> 	   use in a formal API.
+> 
+> 	3. lxc_restart command  restarts entire containers only (specifically
+> 	   it simulates the --pidns --pids --mount-pty arguments to
+> 	   /bin/restart).
+> 
+> 	4. Link lxc_restart and lxc_checkpoint with the shared library
+> 	   liblxc.so (currently links statically)
+> 
+> 	5. ...
+> 
+> 
+> STATUS:
+> 	I was able to checkpoint/restart a simple '/bin/sleep 1000' LXC
+> 	container, except for a cgroup naming issue after restart (see below).
+> 
+> STEPS:
+> 
+> 1. [USER-CR] Build/install /lib/libcheckpoint.a, /usr/include/usercr.h
+>    
+>    1.1 Apply the attached [user-cr] patches to the user-cr git tree
+>        (I tested with following commit as base)
+> 
+> 	commit 67cfee9329670ab28eb1a52e94745252b614718f
+> 	Author: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+> 	Date:   Mon Feb 22 18:00:06 2010 -0500
+> 
+>    1.2 Build/install user-cr binaries/libraries/includes
+> 
+>    	$ make all
+> 
+> 	$ make install
+> 
+> 	This should install /lib/libcheckpoint.a and /usr/include/usercr.h
+> 
+> 2. [LXC] Build lxc_restart using USER-CR API (usercr.h, libcheckpoint.a)
+> 
+>    2.1 Apply attached [lxc] patches to Daniel Lezcano's lxc.git tree (0.6.5)
+> 
+>    2.2 Build lxc_restart (this uses static linking for now)
+> 
+>    	$ make -f Makefile2 lxc_restart
+> 
+> 3. Create and checkpoint a simple LXC container
+> 
+> 	$ lxc-execute --name foo --rcfile lxc-macvlan.conf -- /bin/sleep 1000
+> 
+> 	$ lxc-freeze --name foo
+> 
+> 	TODO: 
+> 		lxc_checkpoint --name foo should checkpoint the container,
+> 		For now, use "lxc-ps --name foo" to find pid of lxc-init and
+> 		checkpoint using:
+> 
+> 		$ /bin/checkpoint --output=/tmp/sleep.ckpt <pid-of-lxc-init>
+> 
+> 	$ lxc-unfreeze --name foo
+> 
+> 	$ lxc-stop --name foo
+> 
+> 4. Restart a checkpointed LXC container
+> 
+> 	$ ./lxc_restart --statefile /tmp/sleep.ckpt --name bar
+> 
+>    	# Test some common lxc commands after restart
+> 
+> 	$ lxc-ps --name "bar/1"
+> 	CONTAINER    PID TTY          TIME CMD
+> 	bar/1       8511 ?        00:00:00 lxc-init
+> 	bar/1       8512 ?        00:00:00 sleep
+> 
+> 	$ lxc-freeze --name "bar/1"
+> 
+> 	$ grep State /proc/8511/status 
+> 	State:	D (disk sleep)
+> 
+> 	$ grep State /proc/8512/status 
+> 	State:	D (disk sleep)
+> 
+> 	NOTE: 	For some reason, the container name after restart is "bar/1"
+> 		instead of "bar".  Due to this, when the lxc_restart is
+> 		exiting, I get a "-EBUSY - failed to remove "/cgroup/bar"
+> 		error.  I need to fix this still.
+> 
