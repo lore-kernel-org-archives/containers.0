@@ -1,24 +1,11 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC][PATCH] ns: Syscalls for better namespace sharing control.
-Date: Fri, 26 Feb 2010 17:52:03 -0500
-Message-ID: <4B885093.4070807__14611.3010393039$1267224749$gmane$org@cs.columbia.edu>
-References: <4B4F24AC.70105@trash.net>
-	<1263481549.23480.24.camel@bigi>	<4B4F3A50.1050400@trash.net>
-	<1263490403.23480.109.camel@bigi>	<4B50403A.6010507@trash.net>
-	<1263568754.23480.142.camel@bigi>	<m13a0tf17t.fsf@fess.ebiederm.org>
-	<1266875729.3673.12.camel@bigi>	<m1wry46es9.fsf@fess.ebiederm.org>
-	<1266931623.3973.643.camel@bigi>	<m1iq9ocafv.fsf@fess.ebiederm.org>
-	<1266934817.3973.654.camel@bigi>	<m1r5obbu2w.fsf@fess.ebiederm.org>
-	<1266966581.3973.675.camel@bigi>	<m1pr3t2fvl.fsf_-_@fess.ebiederm.org>
-	<4B883987.6090408@parallels.com>	<m1bpfbwuze.fsf@fess.ebiederm.org>
-	<4B883E6F.1060907@parallels.com>	<m13a0nwu6p.fsf@fess.ebiederm.org>
-	<4B8843FE.4000404@cs.columbia.edu>
-	<m1zl2vtzg4.fsf@fess.ebiederm.org>
+From: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+Subject: [PATCH -mmotm 0/2] memcg: per cgroup dirty limit (v2)
+Date: Fri, 26 Feb 2010 23:52:29 +0100
+Message-ID: <1267224751-6382-1-git-send-email-arighi__39586.2070298337$1267224898$gmane$org@develer.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m1zl2vtzg4.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -28,51 +15,40 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Linux Netdev List <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Netfilter Development Mailinglist <netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ben Greear <greearb-my8/4N5VtI7c+919tysfdA@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+To: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Control the maximum amount of dirty pages a cgroup can have at any given time.
 
+Per cgroup dirty limit is like fixing the max amount of dirty (hard to reclaim)
+page cache used by any cgroup. So, in case of multiple cgroup writers, they
+will not be able to consume more than their designated share of dirty pages and
+will be forced to perform write-out if they cross that limit.
 
-Eric W. Biederman wrote:
-> Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> writes:
-> 
->> Eric W. Biederman wrote:
->>> Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org> writes:
->>>
->>>>>> Yet another set of per-namespace IDs along with CLONE_NEWXXX ones?
->>>>>> I currently have a way to create all namespaces we have with one
->>>>>> syscall. Why don't we have an ability to enter them all with one syscall?
->>>>> The CLONE_NEWXXX series of bits has been an royal pain to work with,
->>>>> and it appears to be unnecessary complications for no gain.
->>>> That's the answer for the "Yet another set..." question.
->>>> How about the "Why don't we have..." one?
->>> I am not certain which question you are asking:
->>>
->>> Why don't we have an ability to enter all namespaces with one syscall
->>> invocation?
->> That's how I understood the question, and I, too, wonder why not ?
->>
->> By the way, an alternative to using bitmap is to change the prototype
->> of setns() to accept an array of FD's:
->>
->> 	int setns(int *fds, int nfds);
->>
->> So the process will atomically enter all the namespaces as specified
->> by the FDs.
-> 
-> We could.  Mostly I implemented things in the simplest way possible.
-> 
-> Semantically I know of no reason why need to enter more than one namespace
-> at once, and I don't expect entering a namespace to be on anyone's fast
-> path so every last drop of performance was not crucial.
-> 
-> The only justification I can think of for more than one namespace at a
-> time is that because we have a synchronize_rcu() in the kernel we can
-> loop in the kernel much more quickly than we can loop in userspace.
+The overall design is the following:
 
-Can't think of a specific scenario, but I wonder if there would
-be a problem (security or otherwise) with a process that only
-partly belongs to a container, even if for a short time ?
+ - account dirty pages per cgroup
+ - limit the number of dirty pages via memory.dirty_ratio / memory.dirty_bytes
+   and memory.dirty_background_ratio / memory.dirty_background_bytes in
+   cgroupfs
+ - start to write-out (background or actively) when the cgroup limits are
+   exceeded
 
-Oren.
+This feature is supposed to be strictly connected to any underlying IO
+controller implementation, so we can stop increasing dirty pages in VM layer
+and enforce a write-out before any cgroup will consume the global amount of
+dirty pages.
+
+Changelog (v1 -> v2)
+~~~~~~~~~~~~~~~~~~~~~~
+ * rebased to -mmotm
+ * properly handle hierarchical accounting
+ * added the same system-wide interfaces to set dirty limits
+   (memory.dirty_ratio / memory.dirty_bytes, memory.dirty_background_ratio, memory.dirty_background_bytes)
+ * other minor fixes and improvements based on the received feedbacks
+
+TODO:
+ - handle the migration of tasks across different cgroups (maybe adding
+   DIRTY/WRITEBACK/UNSTABLE flag to struct page_cgroup)
+ - provide an appropriate documentation (in Documentation/cgroups/memory.txt)
