@@ -1,15 +1,12 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH -mmotm 1/2] memcg: dirty pages accounting and limiting
-	infrastructure
-Date: Mon, 1 Mar 2010 10:09:10 +0900
-Message-ID: <20100301100910.1d8bd486.kamezawa.hiroyu__10904.0797375657$1267406015$gmane$org@jp.fujitsu.com>
-References: <1267224751-6382-1-git-send-email-arighi@develer.com>
-	<1267224751-6382-2-git-send-email-arighi@develer.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: [PATCH] c/r: enclose arch_setup_additional_pages() call between
+	#ifdefs
+Date: Mon,  1 Mar 2010 01:28:09 -0500
+Message-ID: <1267424889-31388-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1267224751-6382-2-git-send-email-arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,616 +16,55 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, 26 Feb 2010 23:52:30 +0100
-Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org> wrote:
+Invocation of arch_setup_additional_pages() should occur only for
+those architectures that provide it:
 
-> Infrastructure to account dirty pages per cgroup and add dirty limit
-> interfaces in the cgroupfs:
-> 
->  - Active write-out: memory.dirty_ratio, memory.dirty_bytes
->  - Background write-out: memory.dirty_background_ratio, memory.dirty_background_bytes
-> 
-> Signed-off-by: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+#ifdef ARCH_HAS_SETUP_ADDITIONAL_PAGES
+...
+#endif
 
-I think nice. but have some nitpicks..
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+---
+ mm/mmap.c |   15 +++++++++++++--
+ 1 files changed, 13 insertions(+), 2 deletions(-)
 
-
-> ---
->  include/linux/memcontrol.h |   74 +++++++++-
->  mm/memcontrol.c            |  354 ++++++++++++++++++++++++++++++++++++++++----
->  2 files changed, 399 insertions(+), 29 deletions(-)
-> 
-> diff --git a/include/linux/memcontrol.h b/include/linux/memcontrol.h
-> index 1f9b119..e6af95c 100644
-> --- a/include/linux/memcontrol.h
-> +++ b/include/linux/memcontrol.h
-> @@ -25,6 +25,41 @@ struct page_cgroup;
->  struct page;
->  struct mm_struct;
->  
-> +/* Cgroup memory statistics items exported to the kernel */
-> +enum mem_cgroup_page_stat_item {
-> +	MEMCG_NR_DIRTYABLE_PAGES,
-> +	MEMCG_NR_RECLAIM_PAGES,
-> +	MEMCG_NR_WRITEBACK,
-> +	MEMCG_NR_DIRTY_WRITEBACK_PAGES,
-> +};
-> +
-> +/*
-> + * Statistics for memory cgroup.
-> + */
-> +enum mem_cgroup_stat_index {
-> +	/*
-> +	 * For MEM_CONTAINER_TYPE_ALL, usage = pagecache + rss.
-> +	 */
-> +	MEM_CGROUP_STAT_CACHE,	   /* # of pages charged as cache */
-> +	MEM_CGROUP_STAT_RSS,	   /* # of pages charged as anon rss */
-> +	MEM_CGROUP_STAT_FILE_MAPPED,  /* # of pages charged as file rss */
-> +	MEM_CGROUP_STAT_PGPGIN_COUNT,	/* # of pages paged in */
-> +	MEM_CGROUP_STAT_PGPGOUT_COUNT,	/* # of pages paged out */
-> +	MEM_CGROUP_STAT_EVENTS,	/* sum of pagein + pageout for internal use */
-> +	MEM_CGROUP_STAT_SWAPOUT, /* # of pages, swapped out */
-> +	MEM_CGROUP_STAT_SOFTLIMIT, /* decrements on each page in/out.
-> +					used by soft limit implementation */
-> +	MEM_CGROUP_STAT_THRESHOLDS, /* decrements on each page in/out.
-> +					used by threshold implementation */
-> +	MEM_CGROUP_STAT_FILE_DIRTY,   /* # of dirty pages in page cache */
-> +	MEM_CGROUP_STAT_WRITEBACK,   /* # of pages under writeback */
-> +	MEM_CGROUP_STAT_WRITEBACK_TEMP,   /* # of pages under writeback using
-> +						temporary buffers */
-> +	MEM_CGROUP_STAT_UNSTABLE_NFS,   /* # of NFS unstable pages */
-> +
-> +	MEM_CGROUP_STAT_NSTATS,
-> +};
-> +
->  #ifdef CONFIG_CGROUP_MEM_RES_CTLR
->  /*
->   * All "charge" functions with gfp_mask should use GFP_KERNEL or
-> @@ -117,6 +152,13 @@ extern void mem_cgroup_print_oom_info(struct mem_cgroup *memcg,
->  extern int do_swap_account;
->  #endif
->  
-> +extern long mem_cgroup_dirty_ratio(void);
-> +extern unsigned long mem_cgroup_dirty_bytes(void);
-> +extern long mem_cgroup_dirty_background_ratio(void);
-> +extern unsigned long mem_cgroup_dirty_background_bytes(void);
-> +
-> +extern s64 mem_cgroup_page_stat(enum mem_cgroup_page_stat_item item);
-> +
->  static inline bool mem_cgroup_disabled(void)
->  {
->  	if (mem_cgroup_subsys.disabled)
-> @@ -125,7 +167,8 @@ static inline bool mem_cgroup_disabled(void)
->  }
->  
->  extern bool mem_cgroup_oom_called(struct task_struct *task);
-> -void mem_cgroup_update_file_mapped(struct page *page, int val);
-> +void mem_cgroup_update_stat(struct page *page,
-> +			enum mem_cgroup_stat_index idx, int val);
->  unsigned long mem_cgroup_soft_limit_reclaim(struct zone *zone, int order,
->  						gfp_t gfp_mask, int nid,
->  						int zid);
-> @@ -300,8 +343,8 @@ mem_cgroup_print_oom_info(struct mem_cgroup *memcg, struct task_struct *p)
->  {
->  }
->  
-> -static inline void mem_cgroup_update_file_mapped(struct page *page,
-> -							int val)
-> +static inline void mem_cgroup_update_stat(struct page *page,
-> +			enum mem_cgroup_stat_index idx, int val)
->  {
->  }
->  
-> @@ -312,6 +355,31 @@ unsigned long mem_cgroup_soft_limit_reclaim(struct zone *zone, int order,
->  	return 0;
->  }
->  
-> +static inline long mem_cgroup_dirty_ratio(void)
-> +{
-> +	return vm_dirty_ratio;
-> +}
-> +
-> +static inline unsigned long mem_cgroup_dirty_bytes(void)
-> +{
-> +	return vm_dirty_bytes;
-> +}
-> +
-> +static inline long mem_cgroup_dirty_background_ratio(void)
-> +{
-> +	return dirty_background_ratio;
-> +}
-> +
-> +static inline unsigned long mem_cgroup_dirty_background_bytes(void)
-> +{
-> +	return dirty_background_bytes;
-> +}
-> +
-> +static inline s64 mem_cgroup_page_stat(enum mem_cgroup_page_stat_item item)
-> +{
-> +	return -ENOMEM;
-> +}
-> +
->  #endif /* CONFIG_CGROUP_MEM_CONT */
->  
->  #endif /* _LINUX_MEMCONTROL_H */
-> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-> index a443c30..56f3204 100644
-> --- a/mm/memcontrol.c
-> +++ b/mm/memcontrol.c
-> @@ -66,31 +66,16 @@ static int really_do_swap_account __initdata = 1; /* for remember boot option*/
->  #define SOFTLIMIT_EVENTS_THRESH (1000)
->  #define THRESHOLDS_EVENTS_THRESH (100)
->  
-> -/*
-> - * Statistics for memory cgroup.
-> - */
-> -enum mem_cgroup_stat_index {
-> -	/*
-> -	 * For MEM_CONTAINER_TYPE_ALL, usage = pagecache + rss.
-> -	 */
-> -	MEM_CGROUP_STAT_CACHE, 	   /* # of pages charged as cache */
-> -	MEM_CGROUP_STAT_RSS,	   /* # of pages charged as anon rss */
-> -	MEM_CGROUP_STAT_FILE_MAPPED,  /* # of pages charged as file rss */
-> -	MEM_CGROUP_STAT_PGPGIN_COUNT,	/* # of pages paged in */
-> -	MEM_CGROUP_STAT_PGPGOUT_COUNT,	/* # of pages paged out */
-> -	MEM_CGROUP_STAT_SWAPOUT, /* # of pages, swapped out */
-> -	MEM_CGROUP_STAT_SOFTLIMIT, /* decrements on each page in/out.
-> -					used by soft limit implementation */
-> -	MEM_CGROUP_STAT_THRESHOLDS, /* decrements on each page in/out.
-> -					used by threshold implementation */
-> -
-> -	MEM_CGROUP_STAT_NSTATS,
-> -};
-> -
->  struct mem_cgroup_stat_cpu {
->  	s64 count[MEM_CGROUP_STAT_NSTATS];
->  };
->  
-> +/* Per cgroup page statistics */
-> +struct mem_cgroup_page_stat {
-> +	enum mem_cgroup_page_stat_item item;
-> +	s64 value;
-> +};
-> +
->  /*
->   * per-zone information in memory controller.
->   */
-> @@ -205,6 +190,14 @@ struct mem_cgroup {
->  
->  	unsigned int	swappiness;
->  
-> +	/* control memory cgroup dirty pages */
-> +	long dirty_ratio;
-> +	unsigned long dirty_bytes;
-> +
-> +	/* control background writeback (via writeback threads) */
-> +	long dirty_background_ratio;
-> +	unsigned long dirty_background_bytes;
-> +
->  	/* set when res.limit == memsw.limit */
->  	bool		memsw_is_minimum;
->  
-> @@ -1021,6 +1014,169 @@ static unsigned int get_swappiness(struct mem_cgroup *memcg)
->  	return swappiness;
->  }
->  
-> +enum mem_cgroup_dirty_param {
-> +	MEM_CGROUP_DIRTY_RATIO,
-> +	MEM_CGROUP_DIRTY_BYTES,
-> +	MEM_CGROUP_DIRTY_BACKGROUND_RATIO,
-> +	MEM_CGROUP_DIRTY_BACKGROUND_BYTES,
-> +};
-> +
-> +static unsigned long get_dirty_param(struct mem_cgroup *memcg,
-> +			enum mem_cgroup_dirty_param idx)
-> +{
-> +	unsigned long ret;
-> +
-> +	spin_lock(&memcg->reclaim_param_lock);
-
-do we need lock ?
-
-
-> +	switch (idx) {
-> +	case MEM_CGROUP_DIRTY_RATIO:
-> +		ret = memcg->dirty_ratio;
-> +		break;
-> +	case MEM_CGROUP_DIRTY_BYTES:
-> +		ret = memcg->dirty_bytes;
-> +		break;
-> +	case MEM_CGROUP_DIRTY_BACKGROUND_RATIO:
-> +		ret = memcg->dirty_background_ratio;
-> +		break;
-> +	case MEM_CGROUP_DIRTY_BACKGROUND_BYTES:
-> +		ret = memcg->dirty_background_bytes;
-> +		break;
-> +	default:
-> +		VM_BUG_ON(1);
-> +	}
-> +	spin_unlock(&memcg->reclaim_param_lock);
-> +
-> +	return ret;
-> +}
-> +
-> +long mem_cgroup_dirty_ratio(void)
-> +{
-> +	struct mem_cgroup *memcg;
-> +	long ret = vm_dirty_ratio;
-> +
-> +	if (mem_cgroup_disabled())
-> +		goto out;
-> +	rcu_read_lock();
-> +	memcg = mem_cgroup_from_task(current);
-
-please add some excuse comment here. As...
-
-/*
- * It's possible that "current" may be moved to other cgroup while
- * we access cgroup. But precise check is meaningless because the task
- * can be moved after our access and writeback tends to take long time.
- * At least, "memcg" will not be freed under rcu_read_lock().
- */
-
-
-> +	if (likely(memcg))
-> +		ret = get_dirty_param(memcg, MEM_CGROUP_DIRTY_RATIO);
-> +	rcu_read_unlock();
-> +out:
-> +	return ret;
-> +}
-> +
-> +unsigned long mem_cgroup_dirty_bytes(void)
-> +{
-> +	struct mem_cgroup *memcg;
-> +	unsigned long ret = vm_dirty_bytes;
-> +
-> +	if (mem_cgroup_disabled())
-> +		goto out;
-> +	rcu_read_lock();
-> +	memcg = mem_cgroup_from_task(current);
-> +	if (likely(memcg))
-> +		ret = get_dirty_param(memcg, MEM_CGROUP_DIRTY_BYTES);
-> +	rcu_read_unlock();
-> +out:
-> +	return ret;
-> +}
-> +
-> +long mem_cgroup_dirty_background_ratio(void)
-> +{
-> +	struct mem_cgroup *memcg;
-> +	long ret = dirty_background_ratio;
-> +
-> +	if (mem_cgroup_disabled())
-> +		goto out;
-> +	rcu_read_lock();
-> +	memcg = mem_cgroup_from_task(current);
-> +	if (likely(memcg))
-> +		ret = get_dirty_param(memcg, MEM_CGROUP_DIRTY_BACKGROUND_RATIO);
-> +	rcu_read_unlock();
-> +out:
-> +	return ret;
-> +}
-> +
-> +unsigned long mem_cgroup_dirty_background_bytes(void)
-> +{
-> +	struct mem_cgroup *memcg;
-> +	unsigned long ret = dirty_background_bytes;
-> +
-> +	if (mem_cgroup_disabled())
-> +		goto out;
-> +	rcu_read_lock();
-> +	memcg = mem_cgroup_from_task(current);
-> +	if (likely(memcg))
-> +		ret = get_dirty_param(memcg, MEM_CGROUP_DIRTY_BACKGROUND_BYTES);
-> +	rcu_read_unlock();
-> +out:
-> +	return ret;
-> +}
-> +
-Hmm, how about
-
-	memcg->dirty_params[XXXX]
-and access by memcg->dirt_params[MEM_CGROUP_DIRTY_BACKGROUND_BYTES]] ?
-
-Then, we don't need to have 4 functsion in the same implementation.
-
-
-> +static s64 mem_cgroup_get_local_page_stat(struct mem_cgroup *memcg,
-> +				enum mem_cgroup_page_stat_item item)
-> +{
-> +	s64 ret;
-> +
-> +	switch (item) {
-> +	case MEMCG_NR_DIRTYABLE_PAGES:
-> +		ret = res_counter_read_u64(&memcg->res, RES_LIMIT) -
-> +			res_counter_read_u64(&memcg->res, RES_USAGE);
-> +		/* Translate free memory in pages */
-> +		ret >>= PAGE_SHIFT;
-> +		ret += mem_cgroup_read_stat(memcg, LRU_ACTIVE_ANON) +
-> +			mem_cgroup_read_stat(memcg, LRU_ACTIVE_FILE) +
-> +			mem_cgroup_read_stat(memcg, LRU_INACTIVE_ANON) +
-> +			mem_cgroup_read_stat(memcg, LRU_INACTIVE_FILE);
-> +		break;
-Hmm, is this correct in swapless case ?
-
-
-> +	case MEMCG_NR_RECLAIM_PAGES:
-> +		ret = mem_cgroup_read_stat(memcg, MEM_CGROUP_STAT_FILE_DIRTY) +
-> +			mem_cgroup_read_stat(memcg,
-> +					MEM_CGROUP_STAT_UNSTABLE_NFS);
-> +		break;
-> +	case MEMCG_NR_WRITEBACK:
-> +		ret = mem_cgroup_read_stat(memcg, MEM_CGROUP_STAT_WRITEBACK);
-> +		break;
-> +	case MEMCG_NR_DIRTY_WRITEBACK_PAGES:
-> +		ret = mem_cgroup_read_stat(memcg, MEM_CGROUP_STAT_WRITEBACK) +
-> +			mem_cgroup_read_stat(memcg,
-> +				MEM_CGROUP_STAT_UNSTABLE_NFS);
-> +		break;
-> +	default:
-> +		ret = 0;
-> +		WARN_ON_ONCE(1);
-> +	}
-> +	return ret;
-> +}
-> +
-> +static int mem_cgroup_page_stat_cb(struct mem_cgroup *mem, void *data)
-> +{
-> +	struct mem_cgroup_page_stat *stat = (struct mem_cgroup_page_stat *)data;
-> +
-> +	stat->value += mem_cgroup_get_local_page_stat(mem, stat->item);
-> +	return 0;
-> +}
-> +
-> +s64 mem_cgroup_page_stat(enum mem_cgroup_page_stat_item item)
-> +{
-> +	struct mem_cgroup_page_stat stat = {};
-> +	struct mem_cgroup *memcg;
-> +
-> +	rcu_read_lock();
-> +	memcg = mem_cgroup_from_task(current);
-> +	if (memcg) {
-> +		/*
-> +		 * Recursively evaulate page statistics against all cgroup
-> +		 * under hierarchy tree
-> +		 */
-> +		stat.item = item;
-> +		mem_cgroup_walk_tree(memcg, &stat, mem_cgroup_page_stat_cb);
-> +	} else
-> +		stat.value = -ENOMEM;
-> +	rcu_read_unlock();
-> +
-> +	return stat.value;
-> +}
-> +
->  static int mem_cgroup_count_children_cb(struct mem_cgroup *mem, void *data)
->  {
->  	int *val = data;
-> @@ -1263,10 +1419,10 @@ static void record_last_oom(struct mem_cgroup *mem)
->  }
->  
->  /*
-> - * Currently used to update mapped file statistics, but the routine can be
-> - * generalized to update other statistics as well.
-> + * Generalized routine to update memory cgroup statistics.
->   */
-> -void mem_cgroup_update_file_mapped(struct page *page, int val)
-> +void mem_cgroup_update_stat(struct page *page,
-> +			enum mem_cgroup_stat_index idx, int val)
->  {
->  	struct mem_cgroup *mem;
->  	struct page_cgroup *pc;
-> @@ -1286,7 +1442,8 @@ void mem_cgroup_update_file_mapped(struct page *page, int val)
->  	/*
->  	 * Preemption is already disabled. We can use __this_cpu_xxx
->  	 */
-> -	__this_cpu_add(mem->stat->count[MEM_CGROUP_STAT_FILE_MAPPED], val);
-> +	VM_BUG_ON(idx >= MEM_CGROUP_STAT_NSTATS);
-> +	__this_cpu_add(mem->stat->count[idx], val);
->  
->  done:
->  	unlock_page_cgroup(pc);
-> @@ -3033,6 +3190,10 @@ enum {
->  	MCS_PGPGIN,
->  	MCS_PGPGOUT,
->  	MCS_SWAP,
-> +	MCS_FILE_DIRTY,
-> +	MCS_WRITEBACK,
-> +	MCS_WRITEBACK_TEMP,
-> +	MCS_UNSTABLE_NFS,
->  	MCS_INACTIVE_ANON,
->  	MCS_ACTIVE_ANON,
->  	MCS_INACTIVE_FILE,
-> @@ -3055,6 +3216,10 @@ struct {
->  	{"pgpgin", "total_pgpgin"},
->  	{"pgpgout", "total_pgpgout"},
->  	{"swap", "total_swap"},
-> +	{"filedirty", "dirty_pages"},
-> +	{"writeback", "writeback_pages"},
-> +	{"writeback_tmp", "writeback_temp_pages"},
-> +	{"nfs", "nfs_unstable"},
->  	{"inactive_anon", "total_inactive_anon"},
->  	{"active_anon", "total_active_anon"},
->  	{"inactive_file", "total_inactive_file"},
-> @@ -3083,6 +3248,14 @@ static int mem_cgroup_get_local_stat(struct mem_cgroup *mem, void *data)
->  		val = mem_cgroup_read_stat(mem, MEM_CGROUP_STAT_SWAPOUT);
->  		s->stat[MCS_SWAP] += val * PAGE_SIZE;
->  	}
-> +	val = mem_cgroup_read_stat(mem, MEM_CGROUP_STAT_FILE_DIRTY);
-> +	s->stat[MCS_FILE_DIRTY] += val;
-> +	val = mem_cgroup_read_stat(mem, MEM_CGROUP_STAT_WRITEBACK);
-> +	s->stat[MCS_WRITEBACK] += val;
-> +	val = mem_cgroup_read_stat(mem, MEM_CGROUP_STAT_WRITEBACK_TEMP);
-> +	s->stat[MCS_WRITEBACK_TEMP] += val;
-> +	val = mem_cgroup_read_stat(mem, MEM_CGROUP_STAT_UNSTABLE_NFS);
-> +	s->stat[MCS_UNSTABLE_NFS] += val;
->  
->  	/* per zone stat */
->  	val = mem_cgroup_get_local_zonestat(mem, LRU_INACTIVE_ANON);
-> @@ -3467,6 +3640,100 @@ unlock:
->  	return ret;
->  }
->  
-> +static u64 mem_cgroup_dirty_ratio_read(struct cgroup *cgrp, struct cftype *cft)
-> +{
-> +	struct mem_cgroup *memcg = mem_cgroup_from_cont(cgrp);
-> +
-> +	return get_dirty_param(memcg, MEM_CGROUP_DIRTY_RATIO);
-> +}
-> +
-> +static int
-> +mem_cgroup_dirty_ratio_write(struct cgroup *cgrp, struct cftype *cft, u64 val)
-> +{
-> +	struct mem_cgroup *memcg = mem_cgroup_from_cont(cgrp);
-> +
-> +	if ((cgrp->parent == NULL) || (val > 100))
-> +		return -EINVAL;
-> +
-> +	spin_lock(&memcg->reclaim_param_lock);
-> +	memcg->dirty_ratio = val;
-> +	memcg->dirty_bytes = 0;
-> +	spin_unlock(&memcg->reclaim_param_lock);
-> +
-> +	return 0;
-> +}
-> +
-> +static u64 mem_cgroup_dirty_bytes_read(struct cgroup *cgrp, struct cftype *cft)
-> +{
-> +	struct mem_cgroup *memcg = mem_cgroup_from_cont(cgrp);
-> +
-> +	return get_dirty_param(memcg, MEM_CGROUP_DIRTY_BYTES);
-> +}
-> +
-> +static int
-> +mem_cgroup_dirty_bytes_write(struct cgroup *cgrp, struct cftype *cft, u64 val)
-> +{
-> +	struct mem_cgroup *memcg = mem_cgroup_from_cont(cgrp);
-> +
-> +	if (cgrp->parent == NULL)
-> +		return -EINVAL;
-> +
-> +	spin_lock(&memcg->reclaim_param_lock);
-> +	memcg->dirty_ratio = 0;
-> +	memcg->dirty_bytes = val;
-> +	spin_unlock(&memcg->reclaim_param_lock);
-> +
-> +	return 0;
-> +}
-> +
-> +static u64
-> +mem_cgroup_dirty_background_ratio_read(struct cgroup *cgrp, struct cftype *cft)
-> +{
-> +	struct mem_cgroup *memcg = mem_cgroup_from_cont(cgrp);
-> +
-> +	return get_dirty_param(memcg, MEM_CGROUP_DIRTY_BACKGROUND_RATIO);
-> +}
-> +
-> +static int mem_cgroup_dirty_background_ratio_write(struct cgroup *cgrp,
-> +				struct cftype *cft, u64 val)
-> +{
-> +	struct mem_cgroup *memcg = mem_cgroup_from_cont(cgrp);
-> +
-> +	if ((cgrp->parent == NULL) || (val > 100))
-> +		return -EINVAL;
-> +
-> +	spin_lock(&memcg->reclaim_param_lock);
-> +	memcg->dirty_background_ratio = val;
-> +	memcg->dirty_background_bytes = 0;
-> +	spin_unlock(&memcg->reclaim_param_lock);
-> +
-> +	return 0;
-> +}
-> +
-> +static u64
-> +mem_cgroup_dirty_background_bytes_read(struct cgroup *cgrp, struct cftype *cft)
-> +{
-> +	struct mem_cgroup *memcg = mem_cgroup_from_cont(cgrp);
-> +
-> +	return get_dirty_param(memcg, MEM_CGROUP_DIRTY_BACKGROUND_BYTES);
-> +}
-> +
-> +static int mem_cgroup_dirty_background_bytes_write(struct cgroup *cgrp,
-> +				struct cftype *cft, u64 val)
-> +{
-> +	struct mem_cgroup *memcg = mem_cgroup_from_cont(cgrp);
-> +
-> +	if (cgrp->parent == NULL)
-> +		return -EINVAL;
-> +
-> +	spin_lock(&memcg->reclaim_param_lock);
-> +	memcg->dirty_background_ratio = 0;
-> +	memcg->dirty_background_bytes = val;
-> +	spin_unlock(&memcg->reclaim_param_lock);
-> +
-> +	return 0;
-> +}
-> +
->  static struct cftype mem_cgroup_files[] = {
->  	{
->  		.name = "usage_in_bytes",
-> @@ -3518,6 +3785,26 @@ static struct cftype mem_cgroup_files[] = {
->  		.write_u64 = mem_cgroup_swappiness_write,
->  	},
->  	{
-> +		.name = "dirty_ratio",
-> +		.read_u64 = mem_cgroup_dirty_ratio_read,
-> +		.write_u64 = mem_cgroup_dirty_ratio_write,
-> +	},
-> +	{
-> +		.name = "dirty_bytes",
-> +		.read_u64 = mem_cgroup_dirty_bytes_read,
-> +		.write_u64 = mem_cgroup_dirty_bytes_write,
-> +	},
-> +	{
-> +		.name = "dirty_background_ratio",
-> +		.read_u64 = mem_cgroup_dirty_background_ratio_read,
-> +		.write_u64 = mem_cgroup_dirty_background_ratio_write,
-> +	},
-> +	{
-> +		.name = "dirty_background_bytes",
-> +		.read_u64 = mem_cgroup_dirty_background_bytes_read,
-> +		.write_u64 = mem_cgroup_dirty_background_bytes_write,
-> +	},
-> +	{
->  		.name = "move_charge_at_immigrate",
->  		.read_u64 = mem_cgroup_move_charge_read,
->  		.write_u64 = mem_cgroup_move_charge_write,
-> @@ -3776,8 +4063,23 @@ mem_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cont)
->  	mem->last_scanned_child = 0;
->  	spin_lock_init(&mem->reclaim_param_lock);
->  
-> -	if (parent)
-> +	if (parent) {
->  		mem->swappiness = get_swappiness(parent);
-> +
-> +		mem->dirty_ratio = get_dirty_param(parent,
-> +					MEM_CGROUP_DIRTY_RATIO);
-> +		mem->dirty_bytes = get_dirty_param(parent,
-> +					MEM_CGROUP_DIRTY_BYTES);
-> +		mem->dirty_background_ratio = get_dirty_param(parent,
-> +					MEM_CGROUP_DIRTY_BACKGROUND_RATIO);
-> +		mem->dirty_background_bytes = get_dirty_param(parent,
-> +					MEM_CGROUP_DIRTY_BACKGROUND_BYTES);
-> +	} else {
-> +		mem->dirty_ratio = vm_dirty_ratio;
-> +		mem->dirty_bytes = vm_dirty_bytes;
-> +		mem->dirty_background_ratio = vm_dirty_ratio;
-> +		mem->dirty_background_bytes = vm_dirty_bytes;
-
-background_dirty_ratio ?
-
-Thanks,
--Kame
-
-> +	}
->  	atomic_set(&mem->refcnt, 1);
->  	mem->move_charge_at_immigrate = 0;
->  	mutex_init(&mem->thresholds_lock);
-> -- 
-> 1.6.3.3
-> 
-> 
+diff --git a/mm/mmap.c b/mm/mmap.c
+index 6aa606a..6aadf2e 100644
+--- a/mm/mmap.c
++++ b/mm/mmap.c
+@@ -2394,17 +2394,28 @@ int special_mapping_restore(struct ckpt_ctx *ctx,
+ 			    struct mm_struct *mm,
+ 			    struct ckpt_hdr_vma *h)
+ {
++	int ret = 0;
++
+ 	/*
+ 	 * FIX:
+ 	 * Currently, we only handle VDSO/vsyscall special handling.
+ 	 * Even that, is very basic - call arch_setup_additional_pages
+ 	 * requiring the same mapping (start address) as before.
+ 	 */
++
++	if (h->vma_type != CKPT_VMA_VDSO)
++		return -EINVAL;
++
++#ifdef ARCH_HAS_SETUP_ADDITIONAL_PAGES
+ #if defined(CONFIG_X86_64) && defined(CONFIG_COMPAT)
+ 	if (test_thread_flag(TIF_IA32))
+-		return syscall32_setup_pages(NULL, h->vm_start, 0);
++		ret = syscall32_setup_pages(NULL, h->vm_start, 0);
++	else
++#endif
++	ret = arch_setup_additional_pages(NULL, h->vm_start, 0);
+ #endif
+-	return arch_setup_additional_pages(NULL, h->vm_start, 0);
++
++	return ret;
+ }
+ #else /* !CONFIG_CHECKPOINT */
+ #define special_mapping_checkpoint NULL
+-- 
+1.6.3.3
