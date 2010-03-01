@@ -1,15 +1,14 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH] c/r: enclose arch_setup_additional_pages() call between
-	#ifdefs
-Date: Mon, 01 Mar 2010 14:09:33 -0500
-Message-ID: <4B8C10ED.7070900@cs.columbia.edu>
-References: <1267424889-31388-1-git-send-email-orenl@cs.columbia.edu>
-	<20100301145813.GB6714@us.ibm.com>
+Subject: Re: [PATCH linux-cr RFC] change sysctl and default for unprivileged
+	use
+Date: Mon, 01 Mar 2010 14:10:59 -0500
+Message-ID: <4B8C1143.5020404@cs.columbia.edu>
+References: <20100225051441.GA27100@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100301145813.GB6714-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20100225051441.GA27100-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,85 +19,72 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
+Ack.
+
+And since there was no objection, I'll pull into a new development
+branch, ckpt-v19-dev.
+
+Oren
 
 Serge E. Hallyn wrote:
-> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
->> Invocation of arch_setup_additional_pages() should occur only for
->> those architectures that provide it:
->>
->> #ifdef ARCH_HAS_SETUP_ADDITIONAL_PAGES
->> ...
->> #endif
->>
->> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+> ckpt_unpriv_allowed now can be 0 meaning privilege required
+> for both checkpoint and restart, 1 meaning privilege required
+> only for restart, or 2 meaning both can be done unprivileged.
+> Make 1 the default.
 > 
-> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  checkpoint/sys.c |   14 ++++++++------
+>  kernel/sysctl.c  |    2 +-
+>  2 files changed, 9 insertions(+), 7 deletions(-)
 > 
-> (one query below)
-> 
->> ---
->>  mm/mmap.c |   15 +++++++++++++--
->>  1 files changed, 13 insertions(+), 2 deletions(-)
->>
->> diff --git a/mm/mmap.c b/mm/mmap.c
->> index 6aa606a..6aadf2e 100644
->> --- a/mm/mmap.c
->> +++ b/mm/mmap.c
->> @@ -2394,17 +2394,28 @@ int special_mapping_restore(struct ckpt_ctx *ctx,
->>  			    struct mm_struct *mm,
->>  			    struct ckpt_hdr_vma *h)
->>  {
->> +	int ret = 0;
->> +
->>  	/*
->>  	 * FIX:
->>  	 * Currently, we only handle VDSO/vsyscall special handling.
->>  	 * Even that, is very basic - call arch_setup_additional_pages
->>  	 * requiring the same mapping (start address) as before.
->>  	 */
->> +
->> +	if (h->vma_type != CKPT_VMA_VDSO)
->> +		return -EINVAL;
-> 
-> Well this really should just be a BUG_ON, right?  Since this only
-> gets called for the VDSO restore_vma_ops.
-
-Sure. Will fix and push.
-
-Thanks,
-
-Oren.
-
-> 
->> +#ifdef ARCH_HAS_SETUP_ADDITIONAL_PAGES
->>  #if defined(CONFIG_X86_64) && defined(CONFIG_COMPAT)
-> 
-> (aside: I would have liked to make this more generic, but for reasons
-> i never quite tracked down that didn't end up working, and x86 is the
-> only one which defines compat_arch_setup_additional_pages())
-> 
->>  	if (test_thread_flag(TIF_IA32))
->> -		return syscall32_setup_pages(NULL, h->vm_start, 0);
->> +		ret = syscall32_setup_pages(NULL, h->vm_start, 0);
->> +	else
->> +#endif
->> +	ret = arch_setup_additional_pages(NULL, h->vm_start, 0);
->>  #endif
->> -	return arch_setup_additional_pages(NULL, h->vm_start, 0);
->> +
->> +	return ret;
->>  }
->>  #else /* !CONFIG_CHECKPOINT */
->>  #define special_mapping_checkpoint NULL
->> -- 
->> 1.6.3.3
->>
->> _______________________________________________
->> Containers mailing list
->> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
->> https://lists.linux-foundation.org/mailman/listinfo/containers
-> 
+> diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+> index d34ff98..b605784 100644
+> --- a/checkpoint/sys.c
+> +++ b/checkpoint/sys.c
+> @@ -24,12 +24,14 @@
+>  #include <linux/deferqueue.h>
+>  
+>  /*
+> - * ckpt_unpriv_allowed - sysctl controlled, do not allow checkpoints or
+> - * restarts unless caller has CAP_SYS_ADMIN, if 0 (prevent unprivileged
+> - * useres from expoitling any privilege escalation bugs). If it is 1,
+> - * then regular permissions checks are intended to do the job.
+> + * ckpt_unpriv_allowed - sysctl controlled.
+> + *   If 0, then caller of sys_checkpoint() or sys_restart() must have
+> + *	CAP_SYS_ADMIN
+> + *   If 1, then only sys_restart() requires CAP_SYS_ADMIN.
+> + *   If 2, then both can be called without privilege - regular permissions
+> + *	checks are intended to do the job.
+>   */
+> -int ckpt_unpriv_allowed = 1;	/* default: allow */
+> +int ckpt_unpriv_allowed = 1;	/* default: unpriv checkpoint not restart */
+>  
+>  /*
+>   * Helpers to write(read) from(to) kernel space to(from) the checkpoint
+> @@ -681,7 +683,7 @@ long do_sys_restart(pid_t pid, int fd, unsigned long flags, int logfd)
+>  	if (flags & ~RESTART_USER_FLAGS)
+>  		return -EINVAL;
+>  
+> -	if (!ckpt_unpriv_allowed && !capable(CAP_SYS_ADMIN))
+> +	if (ckpt_unpriv_allowed < 2 && !capable(CAP_SYS_ADMIN))
+>  		return -EPERM;
+>  
+>  	if (pid)
+> diff --git a/kernel/sysctl.c b/kernel/sysctl.c
+> index e476ba0..8443bb0 100644
+> --- a/kernel/sysctl.c
+> +++ b/kernel/sysctl.c
+> @@ -948,7 +948,7 @@ static struct ctl_table kern_table[] = {
+>  		.mode		= 0644,
+>  		.proc_handler	= proc_dointvec_minmax,
+>  		.extra1		= &zero,
+> -		.extra2		= &one,
+> +		.extra2		= &two,
+>  	},
+>  #endif
+>  
