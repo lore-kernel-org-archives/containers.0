@@ -1,13 +1,24 @@
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Re: Linux Checkpoint-Restart - v19
-Date: Mon, 1 Mar 2010 13:36:23 -0800
-Message-ID: <20100301133623.9808986f.akpm__5240.10244193978$1267479517$gmane$org@linux-foundation.org>
-References: <4B83106C.7040203@cs.columbia.edu>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [RFC][PATCH] ns: Syscalls for better namespace sharing control.
+Date: Mon, 01 Mar 2010 13:42:10 -0800
+Message-ID: <m1ljebwwgd.fsf__12593.6752105646$1267479828$gmane$org@fess.ebiederm.org>
+References: <4B4F24AC.70105@trash.net> <m1wry46es9.fsf@fess.ebiederm.org>
+	<1266931623.3973.643.camel@bigi> <m1iq9ocafv.fsf@fess.ebiederm.org>
+	<1266934817.3973.654.camel@bigi> <m1r5obbu2w.fsf@fess.ebiederm.org>
+	<1266966581.3973.675.camel@bigi> <m1pr3t2fvl.fsf_-_@fess.ebiederm.org>
+	<4B883987.6090408@parallels.com> <m1bpfbwuze.fsf@fess.ebiederm.org>
+	<4B883E6F.1060907@parallels.com> <m13a0nwu6p.fsf@fess.ebiederm.org>
+	<4B88D80A.8010701@parallels.com> <m1mxyvrqvk.fsf@fess.ebiederm.org>
+	<4B88E431.6040609@parallels.com> <m1bpfbqajn.fsf@fess.ebiederm.org>
+	<4B894564.7080104@parallels.com> <m1iq9io5sc.fsf@fess.ebiederm.org>
+	<4B89727C.9040602@parallels.com> <m1ljeempk6.fsf@fess.ebiederm.org>
+	<4B8AE8C1.1030305@free.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4B83106C.7040203-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <4B8AE8C1.1030305-GANU6spQydw@public.gmane.org> (Daniel Lezcano's message of "Sun\,
+	28 Feb 2010 23\:05\:53 +0100")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,56 +28,37 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux-Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Linux Netdev List <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Netfilter Development Mailinglist <netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ben Greear <greearb-my8/4N5VtI7c+919tysfdA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, 22 Feb 2010 18:17:00 -0500
-Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> wrote:
+Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org> writes:
 
-> Hi Andrew,
-> 
-> We've put a stake in the ground for our next set of checkpoint/restart
-> patches, v19. It has some great new stuff, and we put extra effort to
-> address your concerns. We would like to have the code included in -mm
-> for wider feedback and testing.
-> 
-> This one is able to checkpoint/restart screen and vnc sessions, and
-> live-migrate network servers between hosts. It also adds support for
-> x86-64 (in addition to x86-32, s390x and powerpc). It is rebased to
-> kernel 2.6.33-rc8.
-> 
-> Since one of your main concerns was about what is not yet implemented
-> and how complicated or ugly it will be to support that, we've put up
-> a wiki page to address that. In it there is a simple table that lists
-> what is not implemented and the anticipated solution impact, and for
-> some entries a link to more details.
-> 
-> The page is here:   http://ckpt.wiki.kernel.org/index.php/Checklist
+> I agree with all the points you and Pavel you talked about but I don't feel
+> comfortable to have the current process to switch the pid namespace because of
+> the process tree hierarchy (what will be the parent of the process when you
+> enter the pid namespace for example). What is the difference with the sys_bindns
+> or the sys_hijack, proposed a couple of years ago ?
 
-Does "Refuses to Checkpoint" mean that an attempt to checkpoint will
-fail, return the failure to userspace and the system continues as
-before?
+I think what has changed is:
+- We have mostly completed most of the namespace work.
+- We have operational experience with the current namespaces.
+- We have people not in the core containers group feeling the pain
+  of not having some of these features.
 
-> We want to stress that the patchset is already very useful as-is. We
-> will keep working to implement more features cleanly. Some features we
-> are working on include network namespaces and device configurations,
-> mounts and mounts namespaces, and file locks. Should a complicated
-> feature prove hard to implement, users have alternatives systems like
-> kvm, until we manage to come up with a clean solution.
-> 
-> We believe that maintenance is best addressed through testing. We now
-> have a comprehensive test-suite to automatically find regressions.
-> In addition, we ran LTP and the results are the same with CHECKPOINT=n
-> and =y.
-> 
-> If desired we'll send the whole patchset to lkml, but the git trees
-> can be seen at:
-> 
->    kernel:       http://www.linux-cr.org/git/?p=linux-cr.git;a=summary
->    user tools:   http://www.linux-cr.org/git/?p=user-cr.git;a=summary
->    tests suite:  http://www.linux-cr.org/git/?p=tests-cr.git;a=summary
-> 
+So I think we are at point where we can perhaps talk about these
+things and finally solve some of these issues.
 
-I'd suggest waiting until very shortly after 2.6.34-rc1 then please
-send all the patches onto the list and let's get to work.
+Clearly how to enter a container is on your and Pavel's mind as big
+concerns.  I am aiming a little lower.
+
+I am of two mind about my patches.  Right now they are a brilliant
+proof of concept that we can name namespaces without needing a
+namespace for the names of namespaces, and start to be a practical
+solution to the join problem.   At the same time, I'm not certain
+I like a solution that requires yet more syscalls so I ask myself
+is there not yet a simpler way.
+
+Hopefully we can resolve something before the next merge window.
+
+Eric
