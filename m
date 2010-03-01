@@ -1,12 +1,15 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH] c/r: enclose arch_setup_additional_pages() call between
-	#ifdefs
-Date: Mon,  1 Mar 2010 01:28:09 -0500
-Message-ID: <1267424889-31388-1-git-send-email-orenl@cs.columbia.edu>
+From: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+Subject: Re: [PATCH -mmotm 1/2] memcg: dirty pages accounting and limiting
+	infrastructure
+Date: Mon, 1 Mar 2010 17:05:35 +0900
+Message-ID: <20100301170535.2f1db0ed.nishimura__10464.3074948855$1267431254$gmane$org@mxp.nes.nec.co.jp>
+References: <1267224751-6382-1-git-send-email-arighi@develer.com>
+	<1267224751-6382-2-git-send-email-arighi@develer.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1267224751-6382-2-git-send-email-arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,55 +19,81 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Invocation of arch_setup_additional_pages() should occur only for
-those architectures that provide it:
+On Fri, 26 Feb 2010 23:52:30 +0100, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org> wrote:
+> Infrastructure to account dirty pages per cgroup and add dirty limit
+> interfaces in the cgroupfs:
+> 
+>  - Active write-out: memory.dirty_ratio, memory.dirty_bytes
+>  - Background write-out: memory.dirty_background_ratio, memory.dirty_background_bytes
+> 
+It looks good for me in general.
 
-#ifdef ARCH_HAS_SETUP_ADDITIONAL_PAGES
-...
-#endif
+> Signed-off-by: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+> ---
+>  include/linux/memcontrol.h |   74 +++++++++-
+>  mm/memcontrol.c            |  354 ++++++++++++++++++++++++++++++++++++++++----
+>  2 files changed, 399 insertions(+), 29 deletions(-)
+> 
 
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
----
- mm/mmap.c |   15 +++++++++++++--
- 1 files changed, 13 insertions(+), 2 deletions(-)
+(snip)
 
-diff --git a/mm/mmap.c b/mm/mmap.c
-index 6aa606a..6aadf2e 100644
---- a/mm/mmap.c
-+++ b/mm/mmap.c
-@@ -2394,17 +2394,28 @@ int special_mapping_restore(struct ckpt_ctx *ctx,
- 			    struct mm_struct *mm,
- 			    struct ckpt_hdr_vma *h)
- {
-+	int ret = 0;
-+
- 	/*
- 	 * FIX:
- 	 * Currently, we only handle VDSO/vsyscall special handling.
- 	 * Even that, is very basic - call arch_setup_additional_pages
- 	 * requiring the same mapping (start address) as before.
- 	 */
-+
-+	if (h->vma_type != CKPT_VMA_VDSO)
-+		return -EINVAL;
-+
-+#ifdef ARCH_HAS_SETUP_ADDITIONAL_PAGES
- #if defined(CONFIG_X86_64) && defined(CONFIG_COMPAT)
- 	if (test_thread_flag(TIF_IA32))
--		return syscall32_setup_pages(NULL, h->vm_start, 0);
-+		ret = syscall32_setup_pages(NULL, h->vm_start, 0);
-+	else
-+#endif
-+	ret = arch_setup_additional_pages(NULL, h->vm_start, 0);
- #endif
--	return arch_setup_additional_pages(NULL, h->vm_start, 0);
-+
-+	return ret;
- }
- #else /* !CONFIG_CHECKPOINT */
- #define special_mapping_checkpoint NULL
--- 
-1.6.3.3
+> +s64 mem_cgroup_page_stat(enum mem_cgroup_page_stat_item item)
+> +{
+> +	struct mem_cgroup_page_stat stat = {};
+> +	struct mem_cgroup *memcg;
+> +
+I think it would be better to add "if (mem_cgroup_disabled())".
+
+> +	rcu_read_lock();
+> +	memcg = mem_cgroup_from_task(current);
+> +	if (memcg) {
+> +		/*
+> +		 * Recursively evaulate page statistics against all cgroup
+> +		 * under hierarchy tree
+> +		 */
+> +		stat.item = item;
+> +		mem_cgroup_walk_tree(memcg, &stat, mem_cgroup_page_stat_cb);
+> +	} else
+> +		stat.value = -ENOMEM;
+> +	rcu_read_unlock();
+> +
+> +	return stat.value;
+> +}
+> +
+>  static int mem_cgroup_count_children_cb(struct mem_cgroup *mem, void *data)
+>  {
+>  	int *val = data;
+> @@ -1263,10 +1419,10 @@ static void record_last_oom(struct mem_cgroup *mem)
+>  }
+>  
+>  /*
+> - * Currently used to update mapped file statistics, but the routine can be
+> - * generalized to update other statistics as well.
+> + * Generalized routine to update memory cgroup statistics.
+>   */
+> -void mem_cgroup_update_file_mapped(struct page *page, int val)
+> +void mem_cgroup_update_stat(struct page *page,
+> +			enum mem_cgroup_stat_index idx, int val)
+>  {
+>  	struct mem_cgroup *mem;
+>  	struct page_cgroup *pc;
+ditto.
+
+> @@ -1286,7 +1442,8 @@ void mem_cgroup_update_file_mapped(struct page *page, int val)
+>  	/*
+>  	 * Preemption is already disabled. We can use __this_cpu_xxx
+>  	 */
+> -	__this_cpu_add(mem->stat->count[MEM_CGROUP_STAT_FILE_MAPPED], val);
+> +	VM_BUG_ON(idx >= MEM_CGROUP_STAT_NSTATS);
+> +	__this_cpu_add(mem->stat->count[idx], val);
+>  
+>  done:
+>  	unlock_page_cgroup(pc);
+
+
+Thanks,
+Daisuke Nishimura.
