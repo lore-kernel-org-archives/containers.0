@@ -1,17 +1,15 @@
-From: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH -mmotm 1/2] memcg: dirty pages accounting and limiting
-	infrastructure
-Date: Mon, 1 Mar 2010 11:38:36 +0100
-Message-ID: <20100301103836.GC2087__25581.4410433688$1267439963$gmane$org@linux>
-References: <1267224751-6382-1-git-send-email-arighi@develer.com>
-	<1267224751-6382-2-git-send-email-arighi@develer.com>
-	<cc557aab1003010058i3a824f98l4cec173fac05911f@mail.gmail.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] c/r: enclose arch_setup_additional_pages() call
+	between #ifdefs
+Date: Mon, 1 Mar 2010 08:58:13 -0600
+Message-ID: <20100301145813.GB6714@us.ibm.com>
+References: <1267424889-31388-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <cc557aab1003010058i3a824f98l4cec173fac05911f-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <1267424889-31388-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,158 +19,75 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, Mar 01, 2010 at 10:58:35AM +0200, Kirill A. Shutemov wrote:
-[snip]
-> > +static u64 mem_cgroup_dirty_ratio_read(struct cgroup *cgrp, struct cft=
-ype *cft)
-> > +{
-> > + =A0 =A0 =A0 struct mem_cgroup *memcg =3D mem_cgroup_from_cont(cgrp);
-> > +
-> > + =A0 =A0 =A0 return get_dirty_param(memcg, MEM_CGROUP_DIRTY_RATIO);
-> > +}
-> > +
-> > +static int
-> > +mem_cgroup_dirty_ratio_write(struct cgroup *cgrp, struct cftype *cft, =
-u64 val)
-> > +{
-> > + =A0 =A0 =A0 struct mem_cgroup *memcg =3D mem_cgroup_from_cont(cgrp);
-> > +
-> > + =A0 =A0 =A0 if ((cgrp->parent =3D=3D NULL) || (val > 100))
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 return -EINVAL;
-> > +
-> > + =A0 =A0 =A0 spin_lock(&memcg->reclaim_param_lock);
-> > + =A0 =A0 =A0 memcg->dirty_ratio =3D val;
-> > + =A0 =A0 =A0 memcg->dirty_bytes =3D 0;
-> > + =A0 =A0 =A0 spin_unlock(&memcg->reclaim_param_lock);
-> > +
-> > + =A0 =A0 =A0 return 0;
-> > +}
-> > +
-> > +static u64 mem_cgroup_dirty_bytes_read(struct cgroup *cgrp, struct cft=
-ype *cft)
-> > +{
-> > + =A0 =A0 =A0 struct mem_cgroup *memcg =3D mem_cgroup_from_cont(cgrp);
-> > +
-> > + =A0 =A0 =A0 return get_dirty_param(memcg, MEM_CGROUP_DIRTY_BYTES);
-> > +}
-> > +
-> > +static int
-> > +mem_cgroup_dirty_bytes_write(struct cgroup *cgrp, struct cftype *cft, =
-u64 val)
-> > +{
-> > + =A0 =A0 =A0 struct mem_cgroup *memcg =3D mem_cgroup_from_cont(cgrp);
-> > +
-> > + =A0 =A0 =A0 if (cgrp->parent =3D=3D NULL)
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 return -EINVAL;
-> > +
-> > + =A0 =A0 =A0 spin_lock(&memcg->reclaim_param_lock);
-> > + =A0 =A0 =A0 memcg->dirty_ratio =3D 0;
-> > + =A0 =A0 =A0 memcg->dirty_bytes =3D val;
-> > + =A0 =A0 =A0 spin_unlock(&memcg->reclaim_param_lock);
-> > +
-> > + =A0 =A0 =A0 return 0;
-> > +}
-> > +
-> > +static u64
-> > +mem_cgroup_dirty_background_ratio_read(struct cgroup *cgrp, struct cft=
-ype *cft)
-> > +{
-> > + =A0 =A0 =A0 struct mem_cgroup *memcg =3D mem_cgroup_from_cont(cgrp);
-> > +
-> > + =A0 =A0 =A0 return get_dirty_param(memcg, MEM_CGROUP_DIRTY_BACKGROUND=
-_RATIO);
-> > +}
-> > +
-> > +static int mem_cgroup_dirty_background_ratio_write(struct cgroup *cgrp,
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 struct cf=
-type *cft, u64 val)
-> > +{
-> > + =A0 =A0 =A0 struct mem_cgroup *memcg =3D mem_cgroup_from_cont(cgrp);
-> > +
-> > + =A0 =A0 =A0 if ((cgrp->parent =3D=3D NULL) || (val > 100))
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 return -EINVAL;
-> > +
-> > + =A0 =A0 =A0 spin_lock(&memcg->reclaim_param_lock);
-> > + =A0 =A0 =A0 memcg->dirty_background_ratio =3D val;
-> > + =A0 =A0 =A0 memcg->dirty_background_bytes =3D 0;
-> > + =A0 =A0 =A0 spin_unlock(&memcg->reclaim_param_lock);
-> > +
-> > + =A0 =A0 =A0 return 0;
-> > +}
-> > +
-> > +static u64
-> > +mem_cgroup_dirty_background_bytes_read(struct cgroup *cgrp, struct cft=
-ype *cft)
-> > +{
-> > + =A0 =A0 =A0 struct mem_cgroup *memcg =3D mem_cgroup_from_cont(cgrp);
-> > +
-> > + =A0 =A0 =A0 return get_dirty_param(memcg, MEM_CGROUP_DIRTY_BACKGROUND=
-_BYTES);
-> > +}
-> > +
-> > +static int mem_cgroup_dirty_background_bytes_write(struct cgroup *cgrp,
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 struct cf=
-type *cft, u64 val)
-> > +{
-> > + =A0 =A0 =A0 struct mem_cgroup *memcg =3D mem_cgroup_from_cont(cgrp);
-> > +
-> > + =A0 =A0 =A0 if (cgrp->parent =3D=3D NULL)
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 return -EINVAL;
-> > +
-> > + =A0 =A0 =A0 spin_lock(&memcg->reclaim_param_lock);
-> > + =A0 =A0 =A0 memcg->dirty_background_ratio =3D 0;
-> > + =A0 =A0 =A0 memcg->dirty_background_bytes =3D val;
-> > + =A0 =A0 =A0 spin_unlock(&memcg->reclaim_param_lock);
-> > +
-> > + =A0 =A0 =A0 return 0;
-> > +}
-> > +
-> > =A0static struct cftype mem_cgroup_files[] =3D {
-> > =A0 =A0 =A0 =A0{
-> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0.name =3D "usage_in_bytes",
-> > @@ -3518,6 +3785,26 @@ static struct cftype mem_cgroup_files[] =3D {
-> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0.write_u64 =3D mem_cgroup_swappiness_wri=
-te,
-> > =A0 =A0 =A0 =A0},
-> > =A0 =A0 =A0 =A0{
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .name =3D "dirty_ratio",
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .read_u64 =3D mem_cgroup_dirty_ratio_read,
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .write_u64 =3D mem_cgroup_dirty_ratio_wri=
-te,
-> > + =A0 =A0 =A0 },
-> > + =A0 =A0 =A0 {
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .name =3D "dirty_bytes",
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .read_u64 =3D mem_cgroup_dirty_bytes_read,
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .write_u64 =3D mem_cgroup_dirty_bytes_wri=
-te,
-> > + =A0 =A0 =A0 },
-> > + =A0 =A0 =A0 {
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .name =3D "dirty_background_ratio",
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .read_u64 =3D mem_cgroup_dirty_background=
-_ratio_read,
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .write_u64 =3D mem_cgroup_dirty_backgroun=
-d_ratio_write,
-> > + =A0 =A0 =A0 },
-> > + =A0 =A0 =A0 {
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .name =3D "dirty_background_bytes",
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .read_u64 =3D mem_cgroup_dirty_background=
-_bytes_read,
-> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .write_u64 =3D mem_cgroup_dirty_backgroun=
-d_bytes_write,
-> > + =A0 =A0 =A0 },
-> > + =A0 =A0 =A0 {
-> =
+Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+> Invocation of arch_setup_additional_pages() should occur only for
+> those architectures that provide it:
+> 
+> #ifdef ARCH_HAS_SETUP_ADDITIONAL_PAGES
+> ...
+> #endif
+> 
+> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 
-> mem_cgroup_dirty_background_* functions are too similar to
-> mem_cgroup_dirty_bytes_*. I think they should be combined
-> like mem_cgroup_read() and mem_cgroup_write(). It will be
-> cleaner.
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Agreed.
+(one query below)
 
-Thanks,
--Andrea
+> ---
+>  mm/mmap.c |   15 +++++++++++++--
+>  1 files changed, 13 insertions(+), 2 deletions(-)
+> 
+> diff --git a/mm/mmap.c b/mm/mmap.c
+> index 6aa606a..6aadf2e 100644
+> --- a/mm/mmap.c
+> +++ b/mm/mmap.c
+> @@ -2394,17 +2394,28 @@ int special_mapping_restore(struct ckpt_ctx *ctx,
+>  			    struct mm_struct *mm,
+>  			    struct ckpt_hdr_vma *h)
+>  {
+> +	int ret = 0;
+> +
+>  	/*
+>  	 * FIX:
+>  	 * Currently, we only handle VDSO/vsyscall special handling.
+>  	 * Even that, is very basic - call arch_setup_additional_pages
+>  	 * requiring the same mapping (start address) as before.
+>  	 */
+> +
+> +	if (h->vma_type != CKPT_VMA_VDSO)
+> +		return -EINVAL;
+
+Well this really should just be a BUG_ON, right?  Since this only
+gets called for the VDSO restore_vma_ops.
+
+> +#ifdef ARCH_HAS_SETUP_ADDITIONAL_PAGES
+>  #if defined(CONFIG_X86_64) && defined(CONFIG_COMPAT)
+
+(aside: I would have liked to make this more generic, but for reasons
+i never quite tracked down that didn't end up working, and x86 is the
+only one which defines compat_arch_setup_additional_pages())
+
+>  	if (test_thread_flag(TIF_IA32))
+> -		return syscall32_setup_pages(NULL, h->vm_start, 0);
+> +		ret = syscall32_setup_pages(NULL, h->vm_start, 0);
+> +	else
+> +#endif
+> +	ret = arch_setup_additional_pages(NULL, h->vm_start, 0);
+>  #endif
+> -	return arch_setup_additional_pages(NULL, h->vm_start, 0);
+> +
+> +	return ret;
+>  }
+>  #else /* !CONFIG_CHECKPOINT */
+>  #define special_mapping_checkpoint NULL
+> -- 
+> 1.6.3.3
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
