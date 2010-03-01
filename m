@@ -1,13 +1,14 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH 0/4] user-cr: Makefile cleanups
-Date: Mon, 01 Mar 2010 13:24:58 -0500
-Message-ID: <4B8C067A.8020202@cs.columbia.edu>
+Subject: Re: [PATCH] user-cr: Makefile: Use standard variables
+Date: Mon, 01 Mar 2010 13:25:19 -0500
+Message-ID: <4B8C068F.80602@cs.columbia.edu>
 References: <1267210602-11444-1-git-send-email-matthltc@us.ibm.com>
+	<92a207e405307fe1dc528f59e08782985830d5e9.1267213393.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1267210602-11444-1-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <92a207e405307fe1dc528f59e08782985830d5e9.1267213393.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,13 +26,38 @@ List-Id: containers.vger.kernel.org
 Applied, thanks.
 
 Matt Helsley wrote:
-> Some minor fixes to the Makefile:
+> [Based on the previous series of Makefile patches]
 > 
-> [PATCH 1/4] user-cr: Add install prefix
-> [PATCH 2/4] user-cr: Make directories during install
-> [PATCH 3/4] user-cr: Fix install rule dependencies
-> [PATCH 4/4] user-cr: Remove pointless echo lines and @-prefixed lines
+> These are standard variables which many cross compiler systems will setup.
+> I believe they are also variables Make sets up with default values.
+> Make also sets $(MAKE) so you don't accidentally mix make binaries in the
+> same build -- let's use that too.
 > 
-> Cheers,
-> 	-Matt Helsley
+> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  Makefile |    6 +++---
+>  1 files changed, 3 insertions(+), 3 deletions(-)
 > 
+> diff --git a/Makefile b/Makefile
+> index a4a1a8a..60ddccd 100644
+> --- a/Makefile
+> +++ b/Makefile
+> @@ -34,10 +34,10 @@ LDLIBS = -lm
+>  .PHONY: all distclean clean headers install
+>  
+>  all: $(PROGS)
+> -	@make -C test
+> +	@$(MAKE) -C test
+>  
+>  $(LIB_ECLONE):
+> -	ar ruv $(LIB_ECLONE) $^
+> +	$(AR) ruv $(LIB_ECLONE) $^
+>  
+>  # restart needs to be thread-safe
+>  restart: CFLAGS += -D__REENTRANT -pthread
+> @@ -82,4 +82,4 @@ distclean: clean
+>  
+>  clean:
+>  	@rm -f $(PROGS) $(LIB_ECLONE) $(OTHER) *~ *.o headers.h
+> -	@make -C test clean
+> +	@$(MAKE) -C test clean
