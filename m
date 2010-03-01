@@ -1,14 +1,16 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: Linux Checkpoint-Restart - v19
-Date: Mon, 01 Mar 2010 17:56:38 -0500
-Message-ID: <4B8C4626.1040604__31169.5970282473$1267484217$gmane$org@cs.columbia.edu>
-References: <4B83106C.7040203@cs.columbia.edu>
-	<20100301133623.9808986f.akpm@linux-foundation.org>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] c/r: enclose arch_setup_additional_pages() call
+	between #ifdefs
+Date: Mon, 1 Mar 2010 15:46:35 -0800
+Message-ID: <20100301234635.GJ20106@count0.beaverton.ibm.com>
+References: <1267424889-31388-1-git-send-email-orenl@cs.columbia.edu>
+	<20100301145813.GB6714@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100301133623.9808986f.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20100301145813.GB6714-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,72 +20,56 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Linux-Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-
-
-Andrew Morton wrote:
-> On Mon, 22 Feb 2010 18:17:00 -0500
-> Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> wrote:
+On Mon, Mar 01, 2010 at 08:58:13AM -0600, Serge E. Hallyn wrote:
+> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+> > Invocation of arch_setup_additional_pages() should occur only for
+> > those architectures that provide it:
+> > 
+> > #ifdef ARCH_HAS_SETUP_ADDITIONAL_PAGES
+> > ...
+> > #endif
+> > 
+> > Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 > 
->> Hi Andrew,
->>
->> We've put a stake in the ground for our next set of checkpoint/restart
->> patches, v19. It has some great new stuff, and we put extra effort to
->> address your concerns. We would like to have the code included in -mm
->> for wider feedback and testing.
->>
->> This one is able to checkpoint/restart screen and vnc sessions, and
->> live-migrate network servers between hosts. It also adds support for
->> x86-64 (in addition to x86-32, s390x and powerpc). It is rebased to
->> kernel 2.6.33-rc8.
->>
->> Since one of your main concerns was about what is not yet implemented
->> and how complicated or ugly it will be to support that, we've put up
->> a wiki page to address that. In it there is a simple table that lists
->> what is not implemented and the anticipated solution impact, and for
->> some entries a link to more details.
->>
->> The page is here:   http://ckpt.wiki.kernel.org/index.php/Checklist
+> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 > 
-> Does "Refuses to Checkpoint" mean that an attempt to checkpoint will
-> fail, return the failure to userspace and the system continues as
-> before?
-
-Yes.
-
-Also, there is a mechanism in place to report the reason for the
-failure (e.g. the offending resource) to the user.
-
+> (one query below)
 > 
->> We want to stress that the patchset is already very useful as-is. We
->> will keep working to implement more features cleanly. Some features we
->> are working on include network namespaces and device configurations,
->> mounts and mounts namespaces, and file locks. Should a complicated
->> feature prove hard to implement, users have alternatives systems like
->> kvm, until we manage to come up with a clean solution.
->>
->> We believe that maintenance is best addressed through testing. We now
->> have a comprehensive test-suite to automatically find regressions.
->> In addition, we ran LTP and the results are the same with CHECKPOINT=n
->> and =y.
->>
->> If desired we'll send the whole patchset to lkml, but the git trees
->> can be seen at:
->>
->>    kernel:       http://www.linux-cr.org/git/?p=linux-cr.git;a=summary
->>    user tools:   http://www.linux-cr.org/git/?p=user-cr.git;a=summary
->>    tests suite:  http://www.linux-cr.org/git/?p=tests-cr.git;a=summary
->>
+> > ---
+> >  mm/mmap.c |   15 +++++++++++++--
+> >  1 files changed, 13 insertions(+), 2 deletions(-)
+> > 
+> > diff --git a/mm/mmap.c b/mm/mmap.c
+> > index 6aa606a..6aadf2e 100644
+> > --- a/mm/mmap.c
+> > +++ b/mm/mmap.c
+> > @@ -2394,17 +2394,28 @@ int special_mapping_restore(struct ckpt_ctx *ctx,
+> >  			    struct mm_struct *mm,
+> >  			    struct ckpt_hdr_vma *h)
+> >  {
+> > +	int ret = 0;
+> > +
+> >  	/*
+> >  	 * FIX:
+> >  	 * Currently, we only handle VDSO/vsyscall special handling.
+> >  	 * Even that, is very basic - call arch_setup_additional_pages
+> >  	 * requiring the same mapping (start address) as before.
+> >  	 */
+> > +
+> > +	if (h->vma_type != CKPT_VMA_VDSO)
+> > +		return -EINVAL;
 > 
-> I'd suggest waiting until very shortly after 2.6.34-rc1 then please
-> send all the patches onto the list and let's get to work.
-> 
+> Well this really should just be a BUG_ON, right?  Since this only
+> gets called for the VDSO restore_vma_ops.
 
-Sounds good -- will do.
+No, since it's coming directly from the image during restart. It'd be
+a BUG_ON() userspace could trigger as often as it likes. If it's
+guaranteed to be caught earlier then isn't the traditional refrain:
+"why recheck here"?
 
-Thanks,
-
-Oren.
+Cheers,
+	-Matt Helsley
