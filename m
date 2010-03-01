@@ -1,16 +1,14 @@
-From: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH -mmotm 3/3] memcg: dirty pages instrumentation
-Date: Mon, 1 Mar 2010 23:18:31 +0100
-Message-ID: <20100301221830.GA5460__9857.12932092628$1267482014$gmane$org@linux>
-References: <1267478620-5276-1-git-send-email-arighi@develer.com>
-	<1267478620-5276-4-git-send-email-arighi@develer.com>
-	<20100301220208.GH3109@redhat.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: Linux Checkpoint-Restart - v19
+Date: Mon, 01 Mar 2010 17:56:38 -0500
+Message-ID: <4B8C4626.1040604__31169.5970282473$1267484217$gmane$org@cs.columbia.edu>
+References: <4B83106C.7040203@cs.columbia.edu>
+	<20100301133623.9808986f.akpm@linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20100301220208.GH3109-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20100301133623.9808986f.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,53 +18,72 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Linux-Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Mar 01, 2010 at 05:02:08PM -0500, Vivek Goyal wrote:
-> > @@ -686,10 +699,14 @@ void throttle_vm_writeout(gfp_t gfp_mask)
-> >                   */
-> >                  dirty_thresh += dirty_thresh / 10;      /* wheeee... */
-> >  
-> > -                if (global_page_state(NR_UNSTABLE_NFS) +
-> > -			global_page_state(NR_WRITEBACK) <= dirty_thresh)
-> > -                        	break;
-> > -                congestion_wait(BLK_RW_ASYNC, HZ/10);
-> > +
-> > +		dirty = mem_cgroup_page_stat(MEMCG_NR_DIRTY_WRITEBACK_PAGES);
-> > +		if (dirty < 0)
-> > +			dirty = global_page_state(NR_UNSTABLE_NFS) +
-> > +				global_page_state(NR_WRITEBACK);
+
+
+Andrew Morton wrote:
+> On Mon, 22 Feb 2010 18:17:00 -0500
+> Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> wrote:
 > 
-> dirty is unsigned long. As mentioned last time, above will never be true?
-> In general these patches look ok to me. I will do some testing with these.
+>> Hi Andrew,
+>>
+>> We've put a stake in the ground for our next set of checkpoint/restart
+>> patches, v19. It has some great new stuff, and we put extra effort to
+>> address your concerns. We would like to have the code included in -mm
+>> for wider feedback and testing.
+>>
+>> This one is able to checkpoint/restart screen and vnc sessions, and
+>> live-migrate network servers between hosts. It also adds support for
+>> x86-64 (in addition to x86-32, s390x and powerpc). It is rebased to
+>> kernel 2.6.33-rc8.
+>>
+>> Since one of your main concerns was about what is not yet implemented
+>> and how complicated or ugly it will be to support that, we've put up
+>> a wiki page to address that. In it there is a simple table that lists
+>> what is not implemented and the anticipated solution impact, and for
+>> some entries a link to more details.
+>>
+>> The page is here:   http://ckpt.wiki.kernel.org/index.php/Checklist
+> 
+> Does "Refuses to Checkpoint" mean that an attempt to checkpoint will
+> fail, return the failure to userspace and the system continues as
+> before?
 
-Re-introduced the same bug. My bad. :(
+Yes.
 
-The value returned from mem_cgroup_page_stat() can be negative, i.e.
-when memory cgroup is disabled. We could simply use a long for dirty,
-the unit is in # of pages so s64 should be enough. Or cast dirty to long
-only for the check (see below).
+Also, there is a mechanism in place to report the reason for the
+failure (e.g. the offending resource) to the user.
 
-Thanks!
--Andrea
+> 
+>> We want to stress that the patchset is already very useful as-is. We
+>> will keep working to implement more features cleanly. Some features we
+>> are working on include network namespaces and device configurations,
+>> mounts and mounts namespaces, and file locks. Should a complicated
+>> feature prove hard to implement, users have alternatives systems like
+>> kvm, until we manage to come up with a clean solution.
+>>
+>> We believe that maintenance is best addressed through testing. We now
+>> have a comprehensive test-suite to automatically find regressions.
+>> In addition, we ran LTP and the results are the same with CHECKPOINT=n
+>> and =y.
+>>
+>> If desired we'll send the whole patchset to lkml, but the git trees
+>> can be seen at:
+>>
+>>    kernel:       http://www.linux-cr.org/git/?p=linux-cr.git;a=summary
+>>    user tools:   http://www.linux-cr.org/git/?p=user-cr.git;a=summary
+>>    tests suite:  http://www.linux-cr.org/git/?p=tests-cr.git;a=summary
+>>
+> 
+> I'd suggest waiting until very shortly after 2.6.34-rc1 then please
+> send all the patches onto the list and let's get to work.
+> 
 
-Signed-off-by: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
----
- mm/page-writeback.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+Sounds good -- will do.
 
-diff --git a/mm/page-writeback.c b/mm/page-writeback.c
-index d83f41c..dbee976 100644
---- a/mm/page-writeback.c
-+++ b/mm/page-writeback.c
-@@ -701,7 +701,7 @@ void throttle_vm_writeout(gfp_t gfp_mask)
- 
- 
- 		dirty = mem_cgroup_page_stat(MEMCG_NR_DIRTY_WRITEBACK_PAGES);
--		if (dirty < 0)
-+		if ((long)dirty < 0)
- 			dirty = global_page_state(NR_UNSTABLE_NFS) +
- 				global_page_state(NR_WRITEBACK);
- 		if (dirty <= dirty_thresh)
+Thanks,
+
+Oren.
