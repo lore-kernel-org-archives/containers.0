@@ -1,11 +1,25 @@
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: selinux prevents msgrcv on restore message queues?
-Date: Tue, 02 Mar 2010 15:36:14 -0600
-Message-ID: <1267565774.11828.15.camel@localhost.localdomain>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [RFC][PATCH] ns: Syscalls for better namespace sharing control.
+Date: Tue, 02 Mar 2010 13:45:16 -0800
+Message-ID: <m1aauqv1n7.fsf__13467.7226808437$1267566370$gmane$org@fess.ebiederm.org>
+References: <4B4F24AC.70105@trash.net> <m1iq9ocafv.fsf@fess.ebiederm.org>
+	<1266934817.3973.654.camel@bigi> <m1r5obbu2w.fsf@fess.ebiederm.org>
+	<1266966581.3973.675.camel@bigi> <m1pr3t2fvl.fsf_-_@fess.ebiederm.org>
+	<4B883987.6090408@parallels.com> <m1bpfbwuze.fsf@fess.ebiederm.org>
+	<4B883E6F.1060907@parallels.com> <m13a0nwu6p.fsf@fess.ebiederm.org>
+	<4B88D80A.8010701@parallels.com> <m1mxyvrqvk.fsf@fess.ebiederm.org>
+	<4B88E431.6040609@parallels.com> <m1bpfbqajn.fsf@fess.ebiederm.org>
+	<4B894564.7080104@parallels.com> <m1iq9io5sc.fsf@fess.ebiederm.org>
+	<4B89727C.9040602@parallels.com> <m1ljeempk6.fsf@fess.ebiederm.org>
+	<4B8AE8C1.1030305@free.fr> <4B8D28CF.8060304@parallels.com>
+	<alpine.LSU.2.01.1003021613570.17303@obet.zrqbmnf.qr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <alpine.LSU.2.01.1003021613570.17303-SHaQjdQMGhDmsUXKMKRlFA@public.gmane.org> (Jan
+	Engelhardt's message of "Tue\,
+	2 Mar 2010 16\:14\:23 +0100 \(CET\)")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,26 +29,27 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Jan Engelhardt <jengelh-nopoi9nDyk+ELgA04lAiVw@public.gmane.org>
+Cc: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Linux Netdev List <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Netfilter Development Mailinglist <netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ben Greear <greearb-my8/4N5VtI7c+919tysfdA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi,
+Jan Engelhardt <jengelh-nopoi9nDyk+ELgA04lAiVw@public.gmane.org> writes:
 
-With ckpt-v19-rc3 the test-mq.sh testcase in cr_tests fails when SELinux
-is enabled on my test system (64-bit powerpc kernel).  The testcase
-sleeps in do_msgrcv after restart and never wakes up.  When SELinux is
-disabled, the messages are received and the testcase passes.
+> On Tuesday 2010-03-02 16:03, Pavel Emelyanov wrote:
+>
+>>> I agree with all the points you and Pavel you talked about but I don't 
+>>> feel comfortable to have the current process to switch the pid namespace 
+>>> because of the process tree hierarchy (what will be the parent of the 
+>>> process when you enter the pid namespace for example).
+>>
+>>The answer is - the one, that used to be. I see no problems with it.
+>>Do you?
+>
+> But perhaps it could be named "namespacefd" instead of nsfd, to reduce 
+> potential clashes (because glibc will usually just use the same name 
+> when making the syscall available as a C function).
 
-I've established that the messages are being restored during restart --
-msgctl(IPC_STAT) shows one message in each queue before calling msgrcv.
-Adding the IPC_NOWAIT flag to the msgrcv calls gets ENOMSG, however.
+Maybe.  namespacefd seems like a real mouthful.  I agree nsfd might be
+a bit non-obvious for a rarish syscall.
 
-I managed to narrow this down to security_msg_queue_msgrcv ->
-selinux_msg_queue_msgrcv.  avc_has_perm(SECCLASS_MSG, MSG__RECEIVE) gets
--EACCESS, so I guess something is going awry in selinux restore hooks?
-
-Any ideas?
-
-
-Thanks,
-Nathan
+Eric
