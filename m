@@ -1,15 +1,16 @@
-From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Subject: Re: [PATCH -mmotm 3/3] memcg: dirty pages instrumentation
-Date: Tue, 2 Mar 2010 15:56:44 +0200
-Message-ID: <cc557aab1003020556kcb3f790yba5bceaeb75c5a4c__30037.9957109273$1267538246$gmane$org@mail.gmail.com>
-References: <1267478620-5276-1-git-send-email-arighi@develer.com>
-	<1267478620-5276-4-git-send-email-arighi@develer.com>
-	<20100302134736.GG3212@balbir.in.ibm.com>
+From: "Nikita V. Youshchenko" <yoush-/llMDZXAvAOHXe+LvDLADg@public.gmane.org>
+Subject: Re: [PATCH] c/r: fix "scheduling in atomic" while restoring ipc shm
+Date: Tue, 2 Mar 2010 17:50:46 +0300
+Message-ID: <201003021750.47123@zigzag.lvk.cs.msu.su>
+References: <201002241902.19623@zigzag.lvk.cs.msu.su>
+	<1267054267-2819-1-git-send-email-orenl@cs.columbia.edu>
+	<4B85E62B.90804@cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100302134736.GG3212-SINUvgVNF2CyUtPGxGje5AC/G2K4zDHf@public.gmane.org>
+In-Reply-To: <4B85E62B.90804-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,55 +20,79 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, leo-n4oKp6kCDthKyFCjRbgQbg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gVHVlLCBNYXIgMiwgMjAxMCBhdCAzOjQ3IFBNLCBCYWxiaXIgU2luZ2ggPGJhbGJpckBsaW51
-eC52bmV0LmlibS5jb20+IHdyb3RlOgo+ICogQW5kcmVhIFJpZ2hpIDxhcmlnaGlAZGV2ZWxlci5j
-b20+IFsyMDEwLTAzLTAxIDIyOjIzOjQwXToKPgo+PiBBcHBseSB0aGUgY2dyb3VwIGRpcnR5IHBh
-Z2VzIGFjY291bnRpbmcgYW5kIGxpbWl0aW5nIGluZnJhc3RydWN0dXJlIHRvCj4+IHRoZSBvcHBv
-cnR1bmUga2VybmVsIGZ1bmN0aW9ucy4KPj4KPj4gU2lnbmVkLW9mZi1ieTogQW5kcmVhIFJpZ2hp
-IDxhcmlnaGlAZGV2ZWxlci5jb20+Cj4+IC0tLQo+PiDCoGZzL2Z1c2UvZmlsZS5jIMKgIMKgIMKg
-fCDCoCDCoDUgKysrCj4+IMKgZnMvbmZzL3dyaXRlLmMgwqAgwqAgwqB8IMKgIMKgNCArKwo+PiDC
-oGZzL25pbGZzMi9zZWdtZW50LmMgfCDCoCAxMCArKysrKy0KPj4gwqBtbS9maWxlbWFwLmMgwqAg
-wqAgwqAgwqB8IMKgIMKgMSArCj4+IMKgbW0vcGFnZS13cml0ZWJhY2suYyB8IMKgIDg0ICsrKysr
-KysrKysrKysrKysrKysrKysrKysrKysrKysrLS0tLS0tLS0tLS0tLS0tLS0tCj4+IMKgbW0vcm1h
-cC5jIMKgIMKgIMKgIMKgIMKgIHwgwqAgwqA0ICstCj4+IMKgbW0vdHJ1bmNhdGUuYyDCoCDCoCDC
-oCB8IMKgIMKgMiArCj4+IMKgNyBmaWxlcyBjaGFuZ2VkLCA3NiBpbnNlcnRpb25zKCspLCAzNCBk
-ZWxldGlvbnMoLSkKPj4KPj4gZGlmZiAtLWdpdCBhL2ZzL2Z1c2UvZmlsZS5jIGIvZnMvZnVzZS9m
-aWxlLmMKPj4gaW5kZXggYTlmNWUxMy4uZGJiZGQ1MyAxMDA2NDQKPj4gLS0tIGEvZnMvZnVzZS9m
-aWxlLmMKPj4gKysrIGIvZnMvZnVzZS9maWxlLmMKPj4gQEAgLTExLDYgKzExLDcgQEAKPj4gwqAj
-aW5jbHVkZSA8bGludXgvcGFnZW1hcC5oPgo+PiDCoCNpbmNsdWRlIDxsaW51eC9zbGFiLmg+Cj4+
-IMKgI2luY2x1ZGUgPGxpbnV4L2tlcm5lbC5oPgo+PiArI2luY2x1ZGUgPGxpbnV4L21lbWNvbnRy
-b2wuaD4KPj4gwqAjaW5jbHVkZSA8bGludXgvc2NoZWQuaD4KPj4gwqAjaW5jbHVkZSA8bGludXgv
-bW9kdWxlLmg+Cj4+Cj4+IEBAIC0xMTI5LDYgKzExMzAsOCBAQCBzdGF0aWMgdm9pZCBmdXNlX3dy
-aXRlcGFnZV9maW5pc2goc3RydWN0IGZ1c2VfY29ubiAqZmMsIHN0cnVjdCBmdXNlX3JlcSAqcmVx
-KQo+Pgo+PiDCoCDCoCDCoCBsaXN0X2RlbCgmcmVxLT53cml0ZXBhZ2VzX2VudHJ5KTsKPj4gwqAg
-wqAgwqAgZGVjX2JkaV9zdGF0KGJkaSwgQkRJX1dSSVRFQkFDSyk7Cj4+ICsgwqAgwqAgbWVtX2Nn
-cm91cF91cGRhdGVfc3RhdChyZXEtPnBhZ2VzWzBdLAo+PiArIMKgIMKgIMKgIMKgIMKgIMKgIMKg
-IMKgIMKgIMKgIE1FTV9DR1JPVVBfU1RBVF9XUklURUJBQ0tfVEVNUCwgLTEpOwo+PiDCoCDCoCDC
-oCBkZWNfem9uZV9wYWdlX3N0YXRlKHJlcS0+cGFnZXNbMF0sIE5SX1dSSVRFQkFDS19URU1QKTsK
-Pj4gwqAgwqAgwqAgYmRpX3dyaXRlb3V0X2luYyhiZGkpOwo+PiDCoCDCoCDCoCB3YWtlX3VwKCZm
-aS0+cGFnZV93YWl0cSk7Cj4+IEBAIC0xMjQwLDYgKzEyNDMsOCBAQCBzdGF0aWMgaW50IGZ1c2Vf
-d3JpdGVwYWdlX2xvY2tlZChzdHJ1Y3QgcGFnZSAqcGFnZSkKPj4gwqAgwqAgwqAgcmVxLT5pbm9k
-ZSA9IGlub2RlOwo+Pgo+PiDCoCDCoCDCoCBpbmNfYmRpX3N0YXQobWFwcGluZy0+YmFja2luZ19k
-ZXZfaW5mbywgQkRJX1dSSVRFQkFDSyk7Cj4+ICsgwqAgwqAgbWVtX2Nncm91cF91cGRhdGVfc3Rh
-dCh0bXBfcGFnZSwKPj4gKyDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCBNRU1fQ0dST1VQ
-X1NUQVRfV1JJVEVCQUNLX1RFTVAsIDEpOwo+PiDCoCDCoCDCoCBpbmNfem9uZV9wYWdlX3N0YXRl
-KHRtcF9wYWdlLCBOUl9XUklURUJBQ0tfVEVNUCk7Cj4+IMKgIMKgIMKgIGVuZF9wYWdlX3dyaXRl
-YmFjayhwYWdlKTsKPj4KPj4gZGlmZiAtLWdpdCBhL2ZzL25mcy93cml0ZS5jIGIvZnMvbmZzL3dy
-aXRlLmMKPj4gaW5kZXggYjc1MzI0Mi4uNzMxNmY3YSAxMDA2NDQKPj4gLS0tIGEvZnMvbmZzL3dy
-aXRlLmMKPj4gKysrIGIvZnMvbmZzL3dyaXRlLmMKPgo+IERvbid0IG5lZWQgbWVtY29udHJvbC5o
-IHRvIGJlIGluY2x1ZGVkIGhlcmU/CgpJdCdzIGluY2x1ZGVkIGluIDxsaW51eC9zd2FwLmg+Cgo+
-IExvb2tzIE9LIHRvIG1lIG92ZXJhbGwsIGJ1dCB0aGVyZSBtaWdodCBiZSBvYmplY3Rpb24gdXNp
-bmcgdGhlCj4gbWVtX2Nncm91cF8qIG5hbWluZyBjb252ZW50aW9uLCBidXQgSSBkb24ndCBtaW5k
-IGl0IHZlcnkgbXVjaCA6KQo+Cj4gLS0KPiDCoCDCoCDCoCDCoFRocmVlIENoZWVycywKPiDCoCDC
-oCDCoCDCoEJhbGJpcgo+Cj4gLS0KPiBUbyB1bnN1YnNjcmliZSwgc2VuZCBhIG1lc3NhZ2Ugd2l0
-aCAndW5zdWJzY3JpYmUgbGludXgtbW0nIGluCj4gdGhlIGJvZHkgdG8gbWFqb3Jkb21vQGt2YWNr
-Lm9yZy4gwqBGb3IgbW9yZSBpbmZvIG9uIExpbnV4IE1NLAo+IHNlZTogaHR0cDovL3d3dy5saW51
-eC1tbS5vcmcvIC4KPiBEb24ndCBlbWFpbDogPGEgaHJlZj1tYWlsdG86ImRvbnRAa3ZhY2sub3Jn
-Ij4gZW1haWxAa3ZhY2sub3JnIDwvYT4KPgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3Rz
-LmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcv
-bWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+> Hi Nikita,
+>
+> Thanks for the report and the analysis. It actually helped to
+> pinpoint a couple of other minor issues in the code. This patch
+> should fix all of these.
+>
+> Oren.
+
+Hi Oren.
+
+With ckpt-v19 plus this patch applied, we still are getting a kernel
+crash, with BUG() fired at
++       ipc = idr_find(&msg_ids->ipcs_idr, h->perms.id);
++       BUG_ON(!ipc);
+added by the patch.
+
+By looking at the code, I can't understand how this idr_find() can at
+all succeed, if the namespace it is looking in was just created and
+is empty.
+
+What code adds object in question into this idr?
+
+Any hints?
+
+Nikita
+
+...
+[   60.321860] [430:430:c/r:ckpt_read_obj_dispatch:254] type 502 len 120
+[   60.322489] [430:430:c/r:ckpt_read_obj:383] type 502 len 120(120,120)
+[   60.323140] [430:430:c/r:restore_ipc_shm:226] shm: do_shmget size 790528 flag 0x7a4 id 32769
+[   60.324257] [430:430:c/r:restore_ipc_shm:228] shm: do_shmget ret 32769
+[   60.325573] ------------[ cut here ]------------
+[   60.326059] kernel BUG at ipc/checkpoint_shm.c:274!
+[   60.326564] invalid opcode: 0000 [#1] PREEMPT SMP
+[   60.327124] last sysfs file:
+[   60.327480] Modules linked in:
+[   60.327903]
+[   60.328104] Pid: 430, comm: bash Not tainted 2.6.33-rc8 #2 /
+[   60.328104] EIP: 0060:[<c10e0abe>] EFLAGS: 00000246 CPU: 0
+[   60.328104] EIP is at restore_ipc_shm+0x1a0/0x35a
+[   60.328104] EAX: 00000000 EBX: 00000000 ECX: 00000005 EDX: c789ba58
+[   60.328104] ESI: 00008001 EDI: c793d640 EBP: c79ac000 ESP: c7991dbc
+[   60.328104]  DS: 007b ES: 007b FS: 00d8 GS: 0033 SS: 0068
+[   60.328104] Process bash (pid: 430, ti=c7990000 task=c7855b70 task.ti=c7990000)
+[   60.328104] Stack:
+[   60.328104]  c129da9c c79ac000 000c1000 00000000 c129db00 000001ae 000001b4 000c1000
+[   60.328104] <0> 00000000 c124dde1 000001ae 00000001 00000000 c7940c00 c79ac000 c10e036d
+[   60.328104] <0> 00000002 c129da9c ffffffef c129da9c c799ac60 c79ac000 c10e048a 000001f6
+[   60.328104] Call Trace:
+[   60.328104]  [<c10e036d>] ? restore_ipc_any+0xa5/0x119
+[   60.328104]  [<c10e048a>] ? restore_ipc_ns+0xa9/0x112
+[   60.328104]  [<c10e091e>] ? restore_ipc_shm+0x0/0x35a
+[   60.328104]  [<c10feb48>] ? restore_obj+0x98/0x116
+[   60.328104]  [<c11007ed>] ? ckpt_read_obj_dispatch+0x220/0x246
+[   60.328104]  [<c1100829>] ? ckpt_read_obj+0x16/0xe8
+[   60.328104]  [<c107b866>] ? fsnotify_access+0x5a/0x61
+[   60.328104]  [<c110097d>] ? ckpt_read_obj_type+0x16/0x70
+[   60.328104]  [<c1039ab8>] ? restore_ns+0x18/0x12b
+[   60.328104]  [<c10feb48>] ? restore_obj+0x98/0x116
+[   60.328104]  [<c11007ed>] ? ckpt_read_obj_dispatch+0x220/0x246
+[   60.328104]  [<c1100829>] ? ckpt_read_obj+0x16/0xe8
+[   60.328104]  [<c110097d>] ? ckpt_read_obj_type+0x16/0x70
+[   60.328104]  [<c11033fb>] ? restore_task+0x512/0x9fc
+[   60.328104]  [<c1101b59>] ? do_restart+0xff4/0x12f3
+[   60.328104]  [<c10364f0>] ? autoremove_wake_function+0x0/0x2d
+[   60.328104]  [<c10fdb21>] ? do_sys_restart+0x66/0x77
+[   60.328104]  [<c10027d5>] ? ptregs_restart+0x15/0x1c
+[   60.328104]  [<c10026d0>] ? sysenter_do_call+0x12/0x26
+[   60.328104] Code: fe ff ff e9 c8 01 00 00 8b 04 24 83 c0 64 89 44 24 10 e8 dd 16 10 00 8b 57 10 8b 04 24 83 c0 
+74 e8 24 71 02 00 85 c0 89 c3 75 04 <0f> 0b eb fe 8b 68 2c 8d 45 18 3e ff 45 18 8b 44 24 04 8d 57 08
+[   60.328104] EIP: [<c10e0abe>] restore_ipc_shm+0x1a0/0x35a SS:ESP 0068:c7991dbc
+[   60.351332] ---[ end trace 9660dfa05be59307 ]---
