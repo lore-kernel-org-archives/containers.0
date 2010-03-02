@@ -1,16 +1,19 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH] c/r: fix "scheduling in atomic" while restoring ipc shm
-Date: Tue, 02 Mar 2010 17:09:01 -0500
-Message-ID: <4B8D8C7D.2050004@cs.columbia.edu>
-References: <201002241902.19623@zigzag.lvk.cs.msu.su>
-	<1267054267-2819-1-git-send-email-orenl@cs.columbia.edu>
-	<4B85E62B.90804@cs.columbia.edu>
-	<201003021750.47123@zigzag.lvk.cs.msu.su>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [RFC][PATCH] ns: Syscalls for better namespace sharing control.
+Date: Tue, 02 Mar 2010 14:13:37 -0800
+Message-ID: <m1y6iaqsmm.fsf__20180.5855650038$1267568207$gmane$org@fess.ebiederm.org>
+References: <4B88D80A.8010701@parallels.com>
+	<m1mxyvrqvk.fsf@fess.ebiederm.org> <4B88E431.6040609@parallels.com>
+	<m1bpfbqajn.fsf@fess.ebiederm.org> <4B894564.7080104@parallels.com>
+	<m1iq9io5sc.fsf@fess.ebiederm.org> <4B89727C.9040602@parallels.com>
+	<m1ljeempk6.fsf@fess.ebiederm.org> <4B8AE8C1.1030305@free.fr>
+	<4B8D28CF.8060304@parallels.com> <20100302211942.GA17816@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <201003021750.47123-G0jJXfdb3EhtNF42gJWJKsm+4N3/VObd@public.gmane.org>
+In-Reply-To: <20100302211942.GA17816-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Sukadev Bhattiprolu's
+	message of "Tue\, 2 Mar 2010 13\:19\:42 -0800")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,103 +23,75 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Nikita V. Youshchenko" <yoush-/llMDZXAvAOHXe+LvDLADg@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, leo-n4oKp6kCDthKyFCjRbgQbg@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Linux Netdev List <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Netfilter Development Mailinglist <netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ben Greear <greearb-my8/4N5VtI7c+919tysfdA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
+
+> Pavel Emelyanov [xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org] wrote:
+> | > I agree with all the points you and Pavel you talked about but I don't 
+> | > feel comfortable to have the current process to switch the pid namespace 
+> | > because of the process tree hierarchy (what will be the parent of the 
+> | > process when you enter the pid namespace for example).
+> | 
+> | The answer is - the one, that used to be. I see no problems with it.
+> | Do you?
+>
+> Just to be clear, when a process unshares its pid namespace, it takes
+> on additional pid nr (== 1) in the new namespace but retains its original
+> pid nr(s) in the parent (ancestor) namespaces right ?
+>
+> i.e the process becomes the container-init of the new namespace. When it
+> exits, all its children belonging to the new namespace are killed too,
+> but any children in the parent namespace (i.e children created before
+> unshare()) are not killed.
+>
+> After the unshare() the process will not be able to signal any children
+> it created before the unshare() (bc their active pid namespaces are
+> different)
+
+The only case that I see as being simple and unsurprising worked a bit
+differently:
+
+We currently have:
+
+ns_of_pid(task_pid(tsk))
+tsk->nsproxy->pid_ns
 
 
-Nikita V. Youshchenko wrote:
->> Hi Nikita,
->>
->> Thanks for the report and the analysis. It actually helped to
->> pinpoint a couple of other minor issues in the code. This patch
->> should fix all of these.
->>
->> Oren.
-> 
-> Hi Oren.
-> 
-> With ckpt-v19 plus this patch applied, we still are getting a kernel
-> crash, with BUG() fired at
-> +       ipc = idr_find(&msg_ids->ipcs_idr, h->perms.id);
-> +       BUG_ON(!ipc);
-> added by the patch.
-> 
-> By looking at the code, I can't understand how this idr_find() can at
-> all succeed, if the namespace it is looking in was just created and
-> is empty.
-> 
-> What code adds object in question into this idr?
+I would reduce the usage of tsk->nsproxy->pid_ns as much as possible,
+and use ns_of_pid(task_pid(tsk)) for all of the routine things that
+need to know the pid namespace of a process.  Possibly even to the point
+or reversing the order of the upid array so using it is more efficient.
 
-As Serge pointed out, the call to do_msgget(), if succeeded, should
-have created the object, and if it didn't succeed then we would have
-returned with an error message.
+I would leave tsk->nsproxy->pid_ns for use by fork/clone when allocating
+a childs pid number.
 
-You can see in your log, that we request id 32769 (h->prems.id) and
-that is what do_shmget() returned. So I'm quite confused...
-
-Can you post your test program so I can try to reproduce it here ?
-Also, can you add a debug output before and after the call to idr_find
-that prints the h->perms.id ?
-
-Thanks,
-
-Oren.
+The unsharing process would have to become the child reaper.  I think the first
+child would become pid 1 in that pid namespace.
 
 
-> 
-> Any hints?
-> 
+From an implementation point of view who gets pid 1 when the child_reaper is
+not visible inside the pid namespace doesn't make much difference but we would
+want to carefully look at the details so we minimize userspace confusion.
 
 
-> Nikita
-> 
-> ...
-> [   60.321860] [430:430:c/r:ckpt_read_obj_dispatch:254] type 502 len 120
-> [   60.322489] [430:430:c/r:ckpt_read_obj:383] type 502 len 120(120,120)
-> [   60.323140] [430:430:c/r:restore_ipc_shm:226] shm: do_shmget size 790528 flag 0x7a4 id 32769
-> [   60.324257] [430:430:c/r:restore_ipc_shm:228] shm: do_shmget ret 32769
-> [   60.325573] ------------[ cut here ]------------
-> [   60.326059] kernel BUG at ipc/checkpoint_shm.c:274!
-> [   60.326564] invalid opcode: 0000 [#1] PREEMPT SMP
-> [   60.327124] last sysfs file:
-> [   60.327480] Modules linked in:
-> [   60.327903]
-> [   60.328104] Pid: 430, comm: bash Not tainted 2.6.33-rc8 #2 /
-> [   60.328104] EIP: 0060:[<c10e0abe>] EFLAGS: 00000246 CPU: 0
-> [   60.328104] EIP is at restore_ipc_shm+0x1a0/0x35a
-> [   60.328104] EAX: 00000000 EBX: 00000000 ECX: 00000005 EDX: c789ba58
-> [   60.328104] ESI: 00008001 EDI: c793d640 EBP: c79ac000 ESP: c7991dbc
-> [   60.328104]  DS: 007b ES: 007b FS: 00d8 GS: 0033 SS: 0068
-> [   60.328104] Process bash (pid: 430, ti=c7990000 task=c7855b70 task.ti=c7990000)
-> [   60.328104] Stack:
-> [   60.328104]  c129da9c c79ac000 000c1000 00000000 c129db00 000001ae 000001b4 000c1000
-> [   60.328104] <0> 00000000 c124dde1 000001ae 00000001 00000000 c7940c00 c79ac000 c10e036d
-> [   60.328104] <0> 00000002 c129da9c ffffffef c129da9c c799ac60 c79ac000 c10e048a 000001f6
-> [   60.328104] Call Trace:
-> [   60.328104]  [<c10e036d>] ? restore_ipc_any+0xa5/0x119
-> [   60.328104]  [<c10e048a>] ? restore_ipc_ns+0xa9/0x112
-> [   60.328104]  [<c10e091e>] ? restore_ipc_shm+0x0/0x35a
-> [   60.328104]  [<c10feb48>] ? restore_obj+0x98/0x116
-> [   60.328104]  [<c11007ed>] ? ckpt_read_obj_dispatch+0x220/0x246
-> [   60.328104]  [<c1100829>] ? ckpt_read_obj+0x16/0xe8
-> [   60.328104]  [<c107b866>] ? fsnotify_access+0x5a/0x61
-> [   60.328104]  [<c110097d>] ? ckpt_read_obj_type+0x16/0x70
-> [   60.328104]  [<c1039ab8>] ? restore_ns+0x18/0x12b
-> [   60.328104]  [<c10feb48>] ? restore_obj+0x98/0x116
-> [   60.328104]  [<c11007ed>] ? ckpt_read_obj_dispatch+0x220/0x246
-> [   60.328104]  [<c1100829>] ? ckpt_read_obj+0x16/0xe8
-> [   60.328104]  [<c110097d>] ? ckpt_read_obj_type+0x16/0x70
-> [   60.328104]  [<c11033fb>] ? restore_task+0x512/0x9fc
-> [   60.328104]  [<c1101b59>] ? do_restart+0xff4/0x12f3
-> [   60.328104]  [<c10364f0>] ? autoremove_wake_function+0x0/0x2d
-> [   60.328104]  [<c10fdb21>] ? do_sys_restart+0x66/0x77
-> [   60.328104]  [<c10027d5>] ? ptregs_restart+0x15/0x1c
-> [   60.328104]  [<c10026d0>] ? sysenter_do_call+0x12/0x26
-> [   60.328104] Code: fe ff ff e9 c8 01 00 00 8b 04 24 83 c0 64 89 44 24 10 e8 dd 16 10 00 8b 57 10 8b 04 24 83 c0 
-> 74 e8 24 71 02 00 85 c0 89 c3 75 04 <0f> 0b eb fe 8b 68 2c 8d 45 18 3e ff 45 18 8b 44 24 04 8d 57 08
-> [   60.328104] EIP: [<c10e0abe>] restore_ipc_shm+0x1a0/0x35a SS:ESP 0068:c7991dbc
-> [   60.351332] ---[ end trace 9660dfa05be59307 ]---
-> 
-> 
+I don't think a process tree rooted at pid 0 is a show stopper.  It is
+somewhat confusing but we already have a forked process tree today,
+and user space certainly hasn't fallen over.  In the case of a join if you want
+to live in properly in the process tree you can daemonize and become a child
+of init.
+
+
+
+
+I think replacing a struct pid for another struct pid allocated in
+descendant pid_namespace (but has all of the same struct upid values
+as the first struct pid) is a disastrous idea.  It destroys the
+uniqueness of struct pid and we have a lot of places where we check
+that for equality of pid pointers, and that now would be broken.
+Otherthings like proc directories also used a cached struct pid and
+would start thinking the process was gone when it was not.
+
+Eric
