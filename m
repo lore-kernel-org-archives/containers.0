@@ -1,19 +1,19 @@
-From: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
-Subject: Re: [PATCH -mmotm 3/3] memcg: dirty pages instrumentation
-Date: Wed, 3 Mar 2010 08:21:07 +0900
-Message-ID: <20100303082107.a29562fa.nishimura__38057.0446643562$1267572359$gmane$org@mxp.nes.nec.co.jp>
-References: <1267478620-5276-1-git-send-email-arighi@develer.com>
-	<1267478620-5276-4-git-send-email-arighi@develer.com>
-	<20100302092309.bff454d7.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100302080056.GA1548@linux>
-	<20100302172316.b959b04c.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100302135026.GH3212@balbir.in.ibm.com>
-	<20100302221823.GC2369@linux>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] c/r: fix "scheduling in atomic" while restoring ipc shm
+Date: Tue, 2 Mar 2010 17:40:03 -0600
+Message-ID: <20100302234003.GA5674@us.ibm.com>
+References: <201002241902.19623@zigzag.lvk.cs.msu.su>
+	<1267054267-2819-1-git-send-email-orenl@cs.columbia.edu>
+	<4B85E62B.90804@cs.columbia.edu>
+	<201003021750.47123@zigzag.lvk.cs.msu.su>
+	<4B8D8C7D.2050004@cs.columbia.edu>
+	<20100302231716.GA4594@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100302221823.GC2369@linux>
+Content-Disposition: inline
+In-Reply-To: <20100302231716.GA4594-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,79 +23,112 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Nikita V. Youshchenko" <yoush-/llMDZXAvAOHXe+LvDLADg@public.gmane.org>, leo-n4oKp6kCDthKyFCjRbgQbg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, 2 Mar 2010 23:18:23 +0100, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org> wrote:
-> On Tue, Mar 02, 2010 at 07:20:26PM +0530, Balbir Singh wrote:
-> > * KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> [2010-03-02 17:23:16]:
+Quoting Serge E. Hallyn (serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
 > > 
-> > > On Tue, 2 Mar 2010 09:01:58 +0100
-> > > Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org> wrote:
-> > > 
-> > > > On Tue, Mar 02, 2010 at 09:23:09AM +0900, KAMEZAWA Hiroyuki wrote:
-> > > > > On Mon,  1 Mar 2010 22:23:40 +0100
-> > > > > Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org> wrote:
-> > > > > 
-> > > > > > Apply the cgroup dirty pages accounting and limiting infrastructure to
-> > > > > > the opportune kernel functions.
-> > > > > > 
-> > > > > > Signed-off-by: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
-> > > > > 
-> > > > > Seems nice.
-> > > > > 
-> > > > > Hmm. the last problem is moving account between memcg.
-> > > > > 
-> > > > > Right ?
-> > > > 
-> > > > Correct. This was actually the last item of the TODO list. Anyway, I'm
-> > > > still considering if it's correct to move dirty pages when a task is
-> > > > migrated from a cgroup to another. Currently, dirty pages just remain in
-> > > > the original cgroup and are flushed depending on the original cgroup
-> > > > settings. That is not totally wrong... at least moving the dirty pages
-> > > > between memcgs should be optional (move_charge_at_immigrate?).
-> > > > 
-> > > 
-> > > My concern is 
-> > >  - migration between memcg is already suppoted
-> > >     - at task move
-> > >     - at rmdir
-> > > 
-> > > Then, if you leave DIRTY_PAGE accounting to original cgroup,
-> > > the new cgroup (migration target)'s Dirty page accounting may
-> > > goes to be negative, or incorrect value. Please check FILE_MAPPED
-> > > implementation in __mem_cgroup_move_account()
-> > > 
-> > > As
-> > >        if (page_mapped(page) && !PageAnon(page)) {
-> > >                 /* Update mapped_file data for mem_cgroup */
-> > >                 preempt_disable();
-> > >                 __this_cpu_dec(from->stat->count[MEM_CGROUP_STAT_FILE_MAPPED]);
-> > >                 __this_cpu_inc(to->stat->count[MEM_CGROUP_STAT_FILE_MAPPED]);
-> > >                 preempt_enable();
-> > >         }
-> > > then, FILE_MAPPED never goes negative.
-> > >
 > > 
-> > Absolutely! I am not sure how complex dirty memory migration will be,
-> > but one way of working around it would be to disable migration of
-> > charges when the feature is enabled (dirty* is set in the memory
-> > cgroup). We might need additional logic to allow that to happen. 
+> > Nikita V. Youshchenko wrote:
+> > >> Hi Nikita,
+> > >>
+> > >> Thanks for the report and the analysis. It actually helped to
+> > >> pinpoint a couple of other minor issues in the code. This patch
+> > >> should fix all of these.
+> > >>
+> > >> Oren.
+> > > 
+> > > Hi Oren.
+> > > 
+> > > With ckpt-v19 plus this patch applied, we still are getting a kernel
+> > > crash, with BUG() fired at
+> > > +       ipc = idr_find(&msg_ids->ipcs_idr, h->perms.id);
+> > > +       BUG_ON(!ipc);
+> > > added by the patch.
+> > > 
+> > > By looking at the code, I can't understand how this idr_find() can at
+> > > all succeed, if the namespace it is looking in was just created and
+> > > is empty.
+> > > 
+> > > What code adds object in question into this idr?
+> > 
+> > As Serge pointed out, the call to do_msgget(), if succeeded, should
+> > have created the object, and if it didn't succeed then we would have
+> > returned with an error message.
 > 
-> I've started to look at dirty memory migration. First attempt is to add
-> DIRTY, WRITEBACK, etc. to page_cgroup flags and handle them in
-> __mem_cgroup_move_account(). Probably I'll have something ready for the
-> next version of the patch. I still need to figure if this can work as
-> expected...
+> Should have, but didn't :)  I get the same BUG_ON.
 > 
-I agree it's a right direction(in fact, I have been planning to post a patch
-in that direction), so I leave it to you.
-Can you add PCG_FILE_MAPPED flag too ? I think this flag can be handled in the
-same way as other flags you're trying to add, and we can change
-"if (page_mapped(page) && !PageAnon(page))" to "if (PageCgroupFileMapped(pc)"
-in __mem_cgroup_move_account(). It would be cleaner than current code, IMHO.
+> > You can see in your log, that we request id 32769 (h->prems.id) and
+> > that is what do_shmget() returned. So I'm quite confused...
+> > 
+> > Can you post your test program so I can try to reproduce it here ?
+> 
+> You can just
+> 
+> 	cd cr_tests/ipc; sh test-sem.sh
+> 
+> to reliably reproduce.
+> 
+> > Also, can you add a debug output before and after the call to idr_find
+> > that prints the h->perms.id ?
+
+[root@oracer4b linux-2.6]# git diff
+diff --git a/ipc/checkpoint.c b/ipc/checkpoint.c
+index f865471..1c53581 100644
+--- a/ipc/checkpoint.c
++++ b/ipc/checkpoint.c
+@@ -210,7 +210,11 @@ int restore_load_ipc_perms(struct ckpt_ctx *ctx,
+perm->cuid = h->cuid;
+perm->cgid = h->cgid;
+perm->mode = h->mode;
+-       perm->seq = h->seq;
++       if (perm->seq != h->seq) {
++               ckpt_err(ctx, -EINVAL, "bad kern_ipc_perm->seq (%d not %d)\n",
++                       perm->mode, h->mode);
++               return -EINVAL;
++       }
+
+return security_restore_obj(ctx, (void *)perm,
+CKPT_SECURITY_IPC,
+diff --git a/ipc/checkpoint_sem.c b/ipc/checkpoint_sem.c
+index 78c1932..c4012c9 100644
+--- a/ipc/checkpoint_sem.c
++++ b/ipc/checkpoint_sem.c
+@@ -216,7 +216,10 @@ int restore_ipc_sem(struct ckpt_ctx *ctx, struct ipc_namespace *ns)
+* ipc-ns, we will need to re-examine this.
+*/
+
++       printk(KERN_NOTICE "XXX h->perms.id before is %lx\n", h->perms.id);
+ipc = idr_find(&sem_ids->ipcs_idr, h->perms.id);
++       printk(KERN_NOTICE "XXX h->perms.id after is %lx\n", h->perms.id);
++       printk(KERN_NOTICE "XXX and i got back %lx\n", ipc);
+BUG_ON(!ipc);
+
+sem = container_of(ipc, struct sem_array, sem_perm);
+
+[root@oracer4b linux-2.6]# dmesg|grep XXX
+XXX h->perms.id before is 0
+XXX h->perms.id after is 0
+XXX and i got back ffff88007e51b0d0
+XXX h->perms.id before is 8001
+XXX h->perms.id after is 8001
+XXX and i got back 0
+
+[root@oracer4b linux-2.6]# dmesg|grep sem
+[2410:2410:c/r:checkpoint_ipc_any:76] ipc-sem count 2
+[2410:2410:c/r:fill_ipc_sem_hdr:50] sem: nsems 1
+[2410:2410:c/r:fill_ipc_sem_hdr:50] sem: nsems 1
+[2410:2410:c/r:checkpoint_ipc_any:84] ipc-sem ret 0
+[2410:2410:c/r:checkpoint_file_common:188] file create-sem credref 11 secref 0
+[2417:2406:c/r:restore_ipc_any:236] ipc-sem: count 2
+[2417:2406:c/r:restore_ipc_sem:196] sem: do_semget key 0 flag 0x780 id 0
+[2417:2406:c/r:restore_ipc_sem:198] sem: do_semget ret 0
+[2417:2406:c/r:load_ipc_sem_hdr:120] sem: nsems 1
+[2417:2406:c/r:restore_ipc_sem:196] sem: do_semget key 180146447 flag 0x780 id 32769
+[2417:2406:c/r:restore_ipc_sem:198] sem: do_semget ret 32769
+kernel BUG at ipc/checkpoint_sem.c:223!
 
 
-Thanks,
-Daisuke Nishimura.
+-serge
