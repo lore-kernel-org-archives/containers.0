@@ -1,16 +1,18 @@
-From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+From: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
 Subject: Re: [PATCH -mmotm 3/3] memcg: dirty pages instrumentation
-Date: Tue, 2 Mar 2010 13:09:24 +0200
-Message-ID: <cc557aab1003020309y37587110i685d0d968bfba9f4__48379.4214007959$1267528461$gmane$org@mail.gmail.com>
+Date: Tue, 2 Mar 2010 12:34:41 +0100
+Message-ID: <20100302113441.GD1921__32784.6481967301$1267529719$gmane$org@linux>
 References: <1267478620-5276-1-git-send-email-arighi@develer.com>
 	<1267478620-5276-4-git-send-email-arighi@develer.com>
 	<cc557aab1003020211h391947f0p3eae04a298127d32@mail.gmail.com>
 	<20100302110239.GB1921@linux>
+	<cc557aab1003020309y37587110i685d0d968bfba9f4@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100302110239.GB1921@linux>
+Content-Disposition: inline
+In-Reply-To: <cc557aab1003020309y37587110i685d0d968bfba9f4-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,95 +22,128 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+To: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gVHVlLCBNYXIgMiwgMjAxMCBhdCAxOjAyIFBNLCBBbmRyZWEgUmlnaGkgPGFyaWdoaUBkZXZl
-bGVyLmNvbT4gd3JvdGU6Cj4gT24gVHVlLCBNYXIgMDIsIDIwMTAgYXQgMTI6MTE6MTBQTSArMDIw
-MCwgS2lyaWxsIEEuIFNodXRlbW92IHdyb3RlOgo+PiBPbiBNb24sIE1hciAxLCAyMDEwIGF0IDEx
-OjIzIFBNLCBBbmRyZWEgUmlnaGkgPGFyaWdoaUBkZXZlbGVyLmNvbT4gd3JvdGU6Cj4+ID4gQXBw
-bHkgdGhlIGNncm91cCBkaXJ0eSBwYWdlcyBhY2NvdW50aW5nIGFuZCBsaW1pdGluZyBpbmZyYXN0
-cnVjdHVyZSB0bwo+PiA+IHRoZSBvcHBvcnR1bmUga2VybmVsIGZ1bmN0aW9ucy4KPj4gPgo+PiA+
-IFNpZ25lZC1vZmYtYnk6IEFuZHJlYSBSaWdoaSA8YXJpZ2hpQGRldmVsZXIuY29tPgo+PiA+IC0t
-LQo+PiA+IMKgZnMvZnVzZS9maWxlLmMgwqAgwqAgwqB8IMKgIMKgNSArKysKPj4gPiDCoGZzL25m
-cy93cml0ZS5jIMKgIMKgIMKgfCDCoCDCoDQgKysKPj4gPiDCoGZzL25pbGZzMi9zZWdtZW50LmMg
-fCDCoCAxMCArKysrKy0KPj4gPiDCoG1tL2ZpbGVtYXAuYyDCoCDCoCDCoCDCoHwgwqAgwqAxICsK
-Pj4gPiDCoG1tL3BhZ2Utd3JpdGViYWNrLmMgfCDCoCA4NCArKysrKysrKysrKysrKysrKysrKysr
-KysrKysrKysrKy0tLS0tLS0tLS0tLS0tLS0tLQo+PiA+IMKgbW0vcm1hcC5jIMKgIMKgIMKgIMKg
-IMKgIHwgwqAgwqA0ICstCj4+ID4gwqBtbS90cnVuY2F0ZS5jIMKgIMKgIMKgIHwgwqAgwqAyICsK
-Pj4gPiDCoDcgZmlsZXMgY2hhbmdlZCwgNzYgaW5zZXJ0aW9ucygrKSwgMzQgZGVsZXRpb25zKC0p
-Cj4+ID4KPj4gPiBkaWZmIC0tZ2l0IGEvZnMvZnVzZS9maWxlLmMgYi9mcy9mdXNlL2ZpbGUuYwo+
-PiA+IGluZGV4IGE5ZjVlMTMuLmRiYmRkNTMgMTAwNjQ0Cj4+ID4gLS0tIGEvZnMvZnVzZS9maWxl
-LmMKPj4gPiArKysgYi9mcy9mdXNlL2ZpbGUuYwo+PiA+IEBAIC0xMSw2ICsxMSw3IEBACj4+ID4g
-wqAjaW5jbHVkZSA8bGludXgvcGFnZW1hcC5oPgo+PiA+IMKgI2luY2x1ZGUgPGxpbnV4L3NsYWIu
-aD4KPj4gPiDCoCNpbmNsdWRlIDxsaW51eC9rZXJuZWwuaD4KPj4gPiArI2luY2x1ZGUgPGxpbnV4
-L21lbWNvbnRyb2wuaD4KPj4gPiDCoCNpbmNsdWRlIDxsaW51eC9zY2hlZC5oPgo+PiA+IMKgI2lu
-Y2x1ZGUgPGxpbnV4L21vZHVsZS5oPgo+PiA+Cj4+ID4gQEAgLTExMjksNiArMTEzMCw4IEBAIHN0
-YXRpYyB2b2lkIGZ1c2Vfd3JpdGVwYWdlX2ZpbmlzaChzdHJ1Y3QgZnVzZV9jb25uICpmYywgc3Ry
-dWN0IGZ1c2VfcmVxICpyZXEpCj4+ID4KPj4gPiDCoCDCoCDCoCDCoGxpc3RfZGVsKCZyZXEtPndy
-aXRlcGFnZXNfZW50cnkpOwo+PiA+IMKgIMKgIMKgIMKgZGVjX2JkaV9zdGF0KGJkaSwgQkRJX1dS
-SVRFQkFDSyk7Cj4+ID4gKyDCoCDCoCDCoCBtZW1fY2dyb3VwX3VwZGF0ZV9zdGF0KHJlcS0+cGFn
-ZXNbMF0sCj4+ID4gKyDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCBNRU1fQ0dST1VQ
-X1NUQVRfV1JJVEVCQUNLX1RFTVAsIC0xKTsKPj4gPiDCoCDCoCDCoCDCoGRlY196b25lX3BhZ2Vf
-c3RhdGUocmVxLT5wYWdlc1swXSwgTlJfV1JJVEVCQUNLX1RFTVApOwo+PiA+IMKgIMKgIMKgIMKg
-YmRpX3dyaXRlb3V0X2luYyhiZGkpOwo+PiA+IMKgIMKgIMKgIMKgd2FrZV91cCgmZmktPnBhZ2Vf
-d2FpdHEpOwo+PiA+IEBAIC0xMjQwLDYgKzEyNDMsOCBAQCBzdGF0aWMgaW50IGZ1c2Vfd3JpdGVw
-YWdlX2xvY2tlZChzdHJ1Y3QgcGFnZSAqcGFnZSkKPj4gPiDCoCDCoCDCoCDCoHJlcS0+aW5vZGUg
-PSBpbm9kZTsKPj4gPgo+PiA+IMKgIMKgIMKgIMKgaW5jX2JkaV9zdGF0KG1hcHBpbmctPmJhY2tp
-bmdfZGV2X2luZm8sIEJESV9XUklURUJBQ0spOwo+PiA+ICsgwqAgwqAgwqAgbWVtX2Nncm91cF91
-cGRhdGVfc3RhdCh0bXBfcGFnZSwKPj4gPiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKg
-IMKgIE1FTV9DR1JPVVBfU1RBVF9XUklURUJBQ0tfVEVNUCwgMSk7Cj4+ID4gwqAgwqAgwqAgwqBp
-bmNfem9uZV9wYWdlX3N0YXRlKHRtcF9wYWdlLCBOUl9XUklURUJBQ0tfVEVNUCk7Cj4+ID4gwqAg
-wqAgwqAgwqBlbmRfcGFnZV93cml0ZWJhY2socGFnZSk7Cj4+ID4KPj4gPiBkaWZmIC0tZ2l0IGEv
-ZnMvbmZzL3dyaXRlLmMgYi9mcy9uZnMvd3JpdGUuYwo+PiA+IGluZGV4IGI3NTMyNDIuLjczMTZm
-N2EgMTAwNjQ0Cj4+ID4gLS0tIGEvZnMvbmZzL3dyaXRlLmMKPj4gPiArKysgYi9mcy9uZnMvd3Jp
-dGUuYwo+PiA+IEBAIC00MzksNiArNDM5LDcgQEAgbmZzX21hcmtfcmVxdWVzdF9jb21taXQoc3Ry
-dWN0IG5mc19wYWdlICpyZXEpCj4+ID4gwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAg
-wqByZXEtPndiX2luZGV4LAo+PiA+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKg
-TkZTX1BBR0VfVEFHX0NPTU1JVCk7Cj4+ID4gwqAgwqAgwqAgwqBzcGluX3VubG9jaygmaW5vZGUt
-PmlfbG9jayk7Cj4+ID4gKyDCoCDCoCDCoCBtZW1fY2dyb3VwX3VwZGF0ZV9zdGF0KHJlcS0+d2Jf
-cGFnZSwgTUVNX0NHUk9VUF9TVEFUX1VOU1RBQkxFX05GUywgMSk7Cj4+ID4gwqAgwqAgwqAgwqBp
-bmNfem9uZV9wYWdlX3N0YXRlKHJlcS0+d2JfcGFnZSwgTlJfVU5TVEFCTEVfTkZTKTsKPj4gPiDC
-oCDCoCDCoCDCoGluY19iZGlfc3RhdChyZXEtPndiX3BhZ2UtPm1hcHBpbmctPmJhY2tpbmdfZGV2
-X2luZm8sIEJESV9VTlNUQUJMRSk7Cj4+ID4gwqAgwqAgwqAgwqBfX21hcmtfaW5vZGVfZGlydHko
-aW5vZGUsIElfRElSVFlfREFUQVNZTkMpOwo+PiA+IEBAIC00NTAsNiArNDUxLDcgQEAgbmZzX2Ns
-ZWFyX3JlcXVlc3RfY29tbWl0KHN0cnVjdCBuZnNfcGFnZSAqcmVxKQo+PiA+IMKgIMKgIMKgIMKg
-c3RydWN0IHBhZ2UgKnBhZ2UgPSByZXEtPndiX3BhZ2U7Cj4+ID4KPj4gPiDCoCDCoCDCoCDCoGlm
-ICh0ZXN0X2FuZF9jbGVhcl9iaXQoUEdfQ0xFQU4sICYocmVxKS0+d2JfZmxhZ3MpKSB7Cj4+ID4g
-KyDCoCDCoCDCoCDCoCDCoCDCoCDCoCBtZW1fY2dyb3VwX3VwZGF0ZV9zdGF0KHBhZ2UsIE1FTV9D
-R1JPVVBfU1RBVF9VTlNUQUJMRV9ORlMsIC0xKTsKPj4gPiDCoCDCoCDCoCDCoCDCoCDCoCDCoCDC
-oGRlY196b25lX3BhZ2Vfc3RhdGUocGFnZSwgTlJfVU5TVEFCTEVfTkZTKTsKPj4gPiDCoCDCoCDC
-oCDCoCDCoCDCoCDCoCDCoGRlY19iZGlfc3RhdChwYWdlLT5tYXBwaW5nLT5iYWNraW5nX2Rldl9p
-bmZvLCBCRElfVU5TVEFCTEUpOwo+PiA+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgcmV0dXJuIDE7
-Cj4+ID4gQEAgLTEyNzMsNiArMTI3NSw4IEBAIG5mc19jb21taXRfbGlzdChzdHJ1Y3QgaW5vZGUg
-Kmlub2RlLCBzdHJ1Y3QgbGlzdF9oZWFkICpoZWFkLCBpbnQgaG93KQo+PiA+IMKgIMKgIMKgIMKg
-IMKgIMKgIMKgIMKgcmVxID0gbmZzX2xpc3RfZW50cnkoaGVhZC0+bmV4dCk7Cj4+ID4gwqAgwqAg
-wqAgwqAgwqAgwqAgwqAgwqBuZnNfbGlzdF9yZW1vdmVfcmVxdWVzdChyZXEpOwo+PiA+IMKgIMKg
-IMKgIMKgIMKgIMKgIMKgIMKgbmZzX21hcmtfcmVxdWVzdF9jb21taXQocmVxKTsKPj4gPiArIMKg
-IMKgIMKgIMKgIMKgIMKgIMKgIG1lbV9jZ3JvdXBfdXBkYXRlX3N0YXQocmVxLT53Yl9wYWdlLAo+
-PiA+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgTUVNX0NH
-Uk9VUF9TVEFUX1VOU1RBQkxFX05GUywgLTEpOwo+PiA+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKg
-ZGVjX3pvbmVfcGFnZV9zdGF0ZShyZXEtPndiX3BhZ2UsIE5SX1VOU1RBQkxFX05GUyk7Cj4+ID4g
-wqAgwqAgwqAgwqAgwqAgwqAgwqAgwqBkZWNfYmRpX3N0YXQocmVxLT53Yl9wYWdlLT5tYXBwaW5n
-LT5iYWNraW5nX2Rldl9pbmZvLAo+PiA+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKg
-IMKgIMKgIMKgIMKgIMKgQkRJX1VOU1RBQkxFKTsKPj4gPiBkaWZmIC0tZ2l0IGEvZnMvbmlsZnMy
-L3NlZ21lbnQuYyBiL2ZzL25pbGZzMi9zZWdtZW50LmMKPj4gPiBpbmRleCBhZGEyZjFiLi5hZWY2
-ZDEzIDEwMDY0NAo+PiA+IC0tLSBhL2ZzL25pbGZzMi9zZWdtZW50LmMKPj4gPiArKysgYi9mcy9u
-aWxmczIvc2VnbWVudC5jCj4+ID4gQEAgLTE2NjAsOCArMTY2MCwxMSBAQCBuaWxmc19jb3B5X3Jl
-cGxhY2VfcGFnZV9idWZmZXJzKHN0cnVjdCBwYWdlICpwYWdlLCBzdHJ1Y3QgbGlzdF9oZWFkICpv
-dXQpCj4+ID4gwqAgwqAgwqAgwqB9IHdoaWxlIChiaCA9IGJoLT5iX3RoaXNfcGFnZSwgYmgyID0g
-YmgyLT5iX3RoaXNfcGFnZSwgYmggIT0gaGVhZCk7Cj4+ID4gwqAgwqAgwqAgwqBrdW5tYXBfYXRv
-bWljKGthZGRyLCBLTV9VU0VSMCk7Cj4+ID4KPj4gPiAtIMKgIMKgIMKgIGlmICghVGVzdFNldFBh
-Z2VXcml0ZWJhY2soY2xvbmVfcGFnZSkpCj4+ID4gKyDCoCDCoCDCoCBpZiAoIVRlc3RTZXRQYWdl
-V3JpdGViYWNrKGNsb25lX3BhZ2UpKSB7Cj4+ID4gKyDCoCDCoCDCoCDCoCDCoCDCoCDCoCBtZW1f
-Y2dyb3VwX3VwZGF0ZV9zdGF0KGNsb25lX3BhZ2UsCj4+Cj4+IHMvY2xvbmVfcGFnZS9wYWdlLwo+
-Cj4gbW1oLi4uIHNob3VsZG4ndCB3ZSB1c2UgdGhlIHNhbWUgcGFnZSB1c2VkIGJ5IFRlc3RTZXRQ
-YWdlV3JpdGViYWNrKCkgYW5kCj4gaW5jX3pvbmVfcGFnZV9zdGF0ZSgpPwoKU29ycnksIEkndmUg
-Y29tbWVudGVkIHdyb25nIGh1bmsuIEl0J3MgZm9yIHRoZSBuZXh0IG9uZS4KCj4+Cj4+IEFuZCAj
-aW5jbHVkZSA8bGludXgvbWVtY29udHJvbC5oPiBpcyBtaXNzZWQuCj4KPiBPSy4KPgo+IEknbGwg
-YXBwbHkgeW91ciBmaXhlcyBhbmQgcG9zdCBhIG5ldyB2ZXJzaW9uLgo+Cj4gVGhhbmtzIGZvciBy
-ZXZpZXdpbmcsCj4gLUFuZHJlYQo+Cl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGlu
-dXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWls
-bWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+On Tue, Mar 02, 2010 at 01:09:24PM +0200, Kirill A. Shutemov wrote:
+> On Tue, Mar 2, 2010 at 1:02 PM, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org> wrote:
+> > On Tue, Mar 02, 2010 at 12:11:10PM +0200, Kirill A. Shutemov wrote:
+> >> On Mon, Mar 1, 2010 at 11:23 PM, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org> wro=
+te:
+> >> > Apply the cgroup dirty pages accounting and limiting infrastructure =
+to
+> >> > the opportune kernel functions.
+> >> >
+> >> > Signed-off-by: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+> >> > ---
+> >> > =A0fs/fuse/file.c =A0 =A0 =A0| =A0 =A05 +++
+> >> > =A0fs/nfs/write.c =A0 =A0 =A0| =A0 =A04 ++
+> >> > =A0fs/nilfs2/segment.c | =A0 10 +++++-
+> >> > =A0mm/filemap.c =A0 =A0 =A0 =A0| =A0 =A01 +
+> >> > =A0mm/page-writeback.c | =A0 84 ++++++++++++++++++++++++++++++++----=
+--------------
+> >> > =A0mm/rmap.c =A0 =A0 =A0 =A0 =A0 | =A0 =A04 +-
+> >> > =A0mm/truncate.c =A0 =A0 =A0 | =A0 =A02 +
+> >> > =A07 files changed, 76 insertions(+), 34 deletions(-)
+> >> >
+> >> > diff --git a/fs/fuse/file.c b/fs/fuse/file.c
+> >> > index a9f5e13..dbbdd53 100644
+> >> > --- a/fs/fuse/file.c
+> >> > +++ b/fs/fuse/file.c
+> >> > @@ -11,6 +11,7 @@
+> >> > =A0#include <linux/pagemap.h>
+> >> > =A0#include <linux/slab.h>
+> >> > =A0#include <linux/kernel.h>
+> >> > +#include <linux/memcontrol.h>
+> >> > =A0#include <linux/sched.h>
+> >> > =A0#include <linux/module.h>
+> >> >
+> >> > @@ -1129,6 +1130,8 @@ static void fuse_writepage_finish(struct fuse_=
+conn *fc, struct fuse_req *req)
+> >> >
+> >> > =A0 =A0 =A0 =A0list_del(&req->writepages_entry);
+> >> > =A0 =A0 =A0 =A0dec_bdi_stat(bdi, BDI_WRITEBACK);
+> >> > + =A0 =A0 =A0 mem_cgroup_update_stat(req->pages[0],
+> >> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 MEM_CGROUP_STAT_WRITEB=
+ACK_TEMP, -1);
+> >> > =A0 =A0 =A0 =A0dec_zone_page_state(req->pages[0], NR_WRITEBACK_TEMP);
+> >> > =A0 =A0 =A0 =A0bdi_writeout_inc(bdi);
+> >> > =A0 =A0 =A0 =A0wake_up(&fi->page_waitq);
+> >> > @@ -1240,6 +1243,8 @@ static int fuse_writepage_locked(struct page *=
+page)
+> >> > =A0 =A0 =A0 =A0req->inode =3D inode;
+> >> >
+> >> > =A0 =A0 =A0 =A0inc_bdi_stat(mapping->backing_dev_info, BDI_WRITEBACK=
+);
+> >> > + =A0 =A0 =A0 mem_cgroup_update_stat(tmp_page,
+> >> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 MEM_CGROUP_STAT_WRITEB=
+ACK_TEMP, 1);
+> >> > =A0 =A0 =A0 =A0inc_zone_page_state(tmp_page, NR_WRITEBACK_TEMP);
+> >> > =A0 =A0 =A0 =A0end_page_writeback(page);
+> >> >
+> >> > diff --git a/fs/nfs/write.c b/fs/nfs/write.c
+> >> > index b753242..7316f7a 100644
+> >> > --- a/fs/nfs/write.c
+> >> > +++ b/fs/nfs/write.c
+> >> > @@ -439,6 +439,7 @@ nfs_mark_request_commit(struct nfs_page *req)
+> >> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0req->wb_index,
+> >> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0NFS_PAGE_TAG_COMMIT);
+> >> > =A0 =A0 =A0 =A0spin_unlock(&inode->i_lock);
+> >> > + =A0 =A0 =A0 mem_cgroup_update_stat(req->wb_page, MEM_CGROUP_STAT_U=
+NSTABLE_NFS, 1);
+> >> > =A0 =A0 =A0 =A0inc_zone_page_state(req->wb_page, NR_UNSTABLE_NFS);
+> >> > =A0 =A0 =A0 =A0inc_bdi_stat(req->wb_page->mapping->backing_dev_info,=
+ BDI_UNSTABLE);
+> >> > =A0 =A0 =A0 =A0__mark_inode_dirty(inode, I_DIRTY_DATASYNC);
+> >> > @@ -450,6 +451,7 @@ nfs_clear_request_commit(struct nfs_page *req)
+> >> > =A0 =A0 =A0 =A0struct page *page =3D req->wb_page;
+> >> >
+> >> > =A0 =A0 =A0 =A0if (test_and_clear_bit(PG_CLEAN, &(req)->wb_flags)) {
+> >> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 mem_cgroup_update_stat(page, MEM_CGROU=
+P_STAT_UNSTABLE_NFS, -1);
+> >> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0dec_zone_page_state(page, NR_UNSTABLE=
+_NFS);
+> >> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0dec_bdi_stat(page->mapping->backing_d=
+ev_info, BDI_UNSTABLE);
+> >> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0return 1;
+> >> > @@ -1273,6 +1275,8 @@ nfs_commit_list(struct inode *inode, struct li=
+st_head *head, int how)
+> >> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0req =3D nfs_list_entry(head->next);
+> >> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0nfs_list_remove_request(req);
+> >> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0nfs_mark_request_commit(req);
+> >> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 mem_cgroup_update_stat(req->wb_page,
+> >> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 MEM_CG=
+ROUP_STAT_UNSTABLE_NFS, -1);
+> >> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0dec_zone_page_state(req->wb_page, NR_=
+UNSTABLE_NFS);
+> >> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0dec_bdi_stat(req->wb_page->mapping->b=
+acking_dev_info,
+> >> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0BDI_U=
+NSTABLE);
+> >> > diff --git a/fs/nilfs2/segment.c b/fs/nilfs2/segment.c
+> >> > index ada2f1b..aef6d13 100644
+> >> > --- a/fs/nilfs2/segment.c
+> >> > +++ b/fs/nilfs2/segment.c
+> >> > @@ -1660,8 +1660,11 @@ nilfs_copy_replace_page_buffers(struct page *=
+page, struct list_head *out)
+> >> > =A0 =A0 =A0 =A0} while (bh =3D bh->b_this_page, bh2 =3D bh2->b_this_=
+page, bh !=3D head);
+> >> > =A0 =A0 =A0 =A0kunmap_atomic(kaddr, KM_USER0);
+> >> >
+> >> > - =A0 =A0 =A0 if (!TestSetPageWriteback(clone_page))
+> >> > + =A0 =A0 =A0 if (!TestSetPageWriteback(clone_page)) {
+> >> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 mem_cgroup_update_stat(clone_page,
+> >>
+> >> s/clone_page/page/
+> >
+> > mmh... shouldn't we use the same page used by TestSetPageWriteback() and
+> > inc_zone_page_state()?
+> =
+
+> Sorry, I've commented wrong hunk. It's for the next one.
+
+Yes. Good catch! Will fix in the next version.
+
+Thanks,
+-Andrea
