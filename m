@@ -1,14 +1,19 @@
-From: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Subject: Re: [PATCH -mmotm 3/3] memcg: dirty pages instrumentation
-Date: Tue, 02 Mar 2010 14:48:56 +0100
-Message-ID: <1267537736.25158.54.camel__14928.3774350353$1267537786$gmane$org@laptop>
+Date: Tue, 2 Mar 2010 19:20:26 +0530
+Message-ID: <20100302135026.GH3212__9741.5484641262$1267537871$gmane$org@balbir.in.ibm.com>
 References: <1267478620-5276-1-git-send-email-arighi@develer.com>
 	<1267478620-5276-4-git-send-email-arighi@develer.com>
+	<20100302092309.bff454d7.kamezawa.hiroyu@jp.fujitsu.com>
+	<20100302080056.GA1548@linux>
+	<20100302172316.b959b04c.kamezawa.hiroyu@jp.fujitsu.com>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1267478620-5276-4-git-send-email-arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20100302172316.b959b04c.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,204 +23,64 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, 2010-03-01 at 22:23 +0100, Andrea Righi wrote:
-> Apply the cgroup dirty pages accounting and limiting infrastructure to
-> the opportune kernel functions.
+* KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> [2010-03-02 17:23:16]:
+
+> On Tue, 2 Mar 2010 09:01:58 +0100
+> Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org> wrote:
 > 
-> Signed-off-by: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
-> ---
+> > On Tue, Mar 02, 2010 at 09:23:09AM +0900, KAMEZAWA Hiroyuki wrote:
+> > > On Mon,  1 Mar 2010 22:23:40 +0100
+> > > Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org> wrote:
+> > > 
+> > > > Apply the cgroup dirty pages accounting and limiting infrastructure to
+> > > > the opportune kernel functions.
+> > > > 
+> > > > Signed-off-by: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+> > > 
+> > > Seems nice.
+> > > 
+> > > Hmm. the last problem is moving account between memcg.
+> > > 
+> > > Right ?
+> > 
+> > Correct. This was actually the last item of the TODO list. Anyway, I'm
+> > still considering if it's correct to move dirty pages when a task is
+> > migrated from a cgroup to another. Currently, dirty pages just remain in
+> > the original cgroup and are flushed depending on the original cgroup
+> > settings. That is not totally wrong... at least moving the dirty pages
+> > between memcgs should be optional (move_charge_at_immigrate?).
+> > 
+> 
+> My concern is 
+>  - migration between memcg is already suppoted
+>     - at task move
+>     - at rmdir
+> 
+> Then, if you leave DIRTY_PAGE accounting to original cgroup,
+> the new cgroup (migration target)'s Dirty page accounting may
+> goes to be negative, or incorrect value. Please check FILE_MAPPED
+> implementation in __mem_cgroup_move_account()
+> 
+> As
+>        if (page_mapped(page) && !PageAnon(page)) {
+>                 /* Update mapped_file data for mem_cgroup */
+>                 preempt_disable();
+>                 __this_cpu_dec(from->stat->count[MEM_CGROUP_STAT_FILE_MAPPED]);
+>                 __this_cpu_inc(to->stat->count[MEM_CGROUP_STAT_FILE_MAPPED]);
+>                 preempt_enable();
+>         }
+> then, FILE_MAPPED never goes negative.
+>
 
-> diff --git a/mm/page-writeback.c b/mm/page-writeback.c
-> index 5a0f8f3..d83f41c 100644
-> --- a/mm/page-writeback.c
-> +++ b/mm/page-writeback.c
-> @@ -137,13 +137,14 @@ static struct prop_descriptor vm_dirties;
->   */
->  static int calc_period_shift(void)
->  {
-> -	unsigned long dirty_total;
-> +	unsigned long dirty_total, dirty_bytes;
->  
-> -	if (vm_dirty_bytes)
-> -		dirty_total = vm_dirty_bytes / PAGE_SIZE;
-> +	dirty_bytes = mem_cgroup_dirty_bytes();
-> +	if (dirty_bytes)
+Absolutely! I am not sure how complex dirty memory migration will be,
+but one way of working around it would be to disable migration of
+charges when the feature is enabled (dirty* is set in the memory
+cgroup). We might need additional logic to allow that to happen. 
 
-So you don't think 0 is a valid max dirty amount?
-
-> +		dirty_total = dirty_bytes / PAGE_SIZE;
->  	else
-> -		dirty_total = (vm_dirty_ratio * determine_dirtyable_memory()) /
-> -				100;
-> +		dirty_total = (mem_cgroup_dirty_ratio() *
-> +				determine_dirtyable_memory()) / 100;
->  	return 2 + ilog2(dirty_total - 1);
->  }
->  
-> @@ -408,14 +409,16 @@ static unsigned long highmem_dirtyable_memory(unsigned long total)
->   */
->  unsigned long determine_dirtyable_memory(void)
->  {
-> -	unsigned long x;
-> -
-> -	x = global_page_state(NR_FREE_PAGES) + global_reclaimable_pages();
-> +	unsigned long memory;
-> +	s64 memcg_memory;
->  
-> +	memory = global_page_state(NR_FREE_PAGES) + global_reclaimable_pages();
->  	if (!vm_highmem_is_dirtyable)
-> -		x -= highmem_dirtyable_memory(x);
-> -
-> -	return x + 1;	/* Ensure that we never return 0 */
-> +		memory -= highmem_dirtyable_memory(memory);
-> +	memcg_memory = mem_cgroup_page_stat(MEMCG_NR_DIRTYABLE_PAGES);
-> +	if (memcg_memory < 0)
-
-And here you somehow return negative?
-
-> +		return memory + 1;
-> +	return min((unsigned long)memcg_memory, memory + 1);
->  }
->  
->  void
-> @@ -423,26 +426,28 @@ get_dirty_limits(unsigned long *pbackground, unsigned long *pdirty,
->  		 unsigned long *pbdi_dirty, struct backing_dev_info *bdi)
->  {
->  	unsigned long background;
-> -	unsigned long dirty;
-> +	unsigned long dirty, dirty_bytes, dirty_background;
->  	unsigned long available_memory = determine_dirtyable_memory();
->  	struct task_struct *tsk;
->  
-> -	if (vm_dirty_bytes)
-> -		dirty = DIV_ROUND_UP(vm_dirty_bytes, PAGE_SIZE);
-> +	dirty_bytes = mem_cgroup_dirty_bytes();
-> +	if (dirty_bytes)
-
-zero not valid again
-
-> +		dirty = DIV_ROUND_UP(dirty_bytes, PAGE_SIZE);
->  	else {
->  		int dirty_ratio;
->  
-> -		dirty_ratio = vm_dirty_ratio;
-> +		dirty_ratio = mem_cgroup_dirty_ratio();
->  		if (dirty_ratio < 5)
->  			dirty_ratio = 5;
->  		dirty = (dirty_ratio * available_memory) / 100;
->  	}
->  
-> -	if (dirty_background_bytes)
-> -		background = DIV_ROUND_UP(dirty_background_bytes, PAGE_SIZE);
-> +	dirty_background = mem_cgroup_dirty_background_bytes();
-> +	if (dirty_background)
-
-idem
-
-> +		background = DIV_ROUND_UP(dirty_background, PAGE_SIZE);
->  	else
-> -		background = (dirty_background_ratio * available_memory) / 100;
-> -
-> +		background = (mem_cgroup_dirty_background_ratio() *
-> +					available_memory) / 100;
->  	if (background >= dirty)
->  		background = dirty / 2;
->  	tsk = current;
-> @@ -508,9 +513,13 @@ static void balance_dirty_pages(struct address_space *mapping,
->  		get_dirty_limits(&background_thresh, &dirty_thresh,
->  				&bdi_thresh, bdi);
->  
-> -		nr_reclaimable = global_page_state(NR_FILE_DIRTY) +
-> +		nr_reclaimable = mem_cgroup_page_stat(MEMCG_NR_RECLAIM_PAGES);
-> +		nr_writeback = mem_cgroup_page_stat(MEMCG_NR_WRITEBACK);
-> +		if ((nr_reclaimable < 0) || (nr_writeback < 0)) {
-> +			nr_reclaimable = global_page_state(NR_FILE_DIRTY) +
->  					global_page_state(NR_UNSTABLE_NFS);
-
-??? why would a page_state be negative.. I see you return -ENOMEM on !
-cgroup, but how can one specify no dirty limit with this compiled in?
-
-> -		nr_writeback = global_page_state(NR_WRITEBACK);
-> +			nr_writeback = global_page_state(NR_WRITEBACK);
-> +		}
->  
->  		bdi_nr_reclaimable = bdi_stat(bdi, BDI_DIRTY);
->  		if (bdi_cap_account_unstable(bdi)) {
-> @@ -611,10 +620,12 @@ static void balance_dirty_pages(struct address_space *mapping,
->  	 * In normal mode, we start background writeout at the lower
->  	 * background_thresh, to keep the amount of dirty memory low.
->  	 */
-> +	nr_reclaimable = mem_cgroup_page_stat(MEMCG_NR_RECLAIM_PAGES);
-> +	if (nr_reclaimable < 0)
-> +		nr_reclaimable = global_page_state(NR_FILE_DIRTY) +
-> +				global_page_state(NR_UNSTABLE_NFS);
-
-Again..
-
->  	if ((laptop_mode && pages_written) ||
-> -	    (!laptop_mode && ((global_page_state(NR_FILE_DIRTY)
-> -			       + global_page_state(NR_UNSTABLE_NFS))
-> -					  > background_thresh)))
-> +	    (!laptop_mode && (nr_reclaimable > background_thresh)))
->  		bdi_start_writeback(bdi, NULL, 0);
->  }
->  
-> @@ -678,6 +689,8 @@ void throttle_vm_writeout(gfp_t gfp_mask)
->  	unsigned long dirty_thresh;
->  
->          for ( ; ; ) {
-> +		unsigned long dirty;
-> +
->  		get_dirty_limits(&background_thresh, &dirty_thresh, NULL, NULL);
->  
->                  /*
-> @@ -686,10 +699,14 @@ void throttle_vm_writeout(gfp_t gfp_mask)
->                   */
->                  dirty_thresh += dirty_thresh / 10;      /* wheeee... */
->  
-> -                if (global_page_state(NR_UNSTABLE_NFS) +
-> -			global_page_state(NR_WRITEBACK) <= dirty_thresh)
-> -                        	break;
-> -                congestion_wait(BLK_RW_ASYNC, HZ/10);
-> +
-> +		dirty = mem_cgroup_page_stat(MEMCG_NR_DIRTY_WRITEBACK_PAGES);
-> +		if (dirty < 0)
-> +			dirty = global_page_state(NR_UNSTABLE_NFS) +
-> +				global_page_state(NR_WRITEBACK);
-
-and again..
-
-> +		if (dirty <= dirty_thresh)
-> +			break;
-> +		congestion_wait(BLK_RW_ASYNC, HZ/10);
->  
->  		/*
->  		 * The caller might hold locks which can prevent IO completion
-
-This is ugly and broken.. I thought you'd agreed to something like:
-
- if (mem_cgroup_has_dirty_limit(cgroup))
-   use mem_cgroup numbers
- else
-   use global numbers
-
-That allows for a 0 dirty limit (which should work and basically makes
-all io synchronous).
-
-Also, I'd put each of those in a separate function, like:
-
-unsigned long reclaimable_pages(cgroup)
-{
-  if (mem_cgroup_has_dirty_limit(cgroup))
-    return mem_cgroup_page_stat(MEMCG_NR_RECLAIM_PAGES);
-  
-  return global_page_state(NR_FILE_DIRTY) + global_page_state(NR_NFS_UNSTABLE);
-}
-
-Which raises another question, you should probably rebase on top of
-Trond's patches, which removes BDI_RECLAIMABLE, suggesting you also
-loose MEMCG_NR_RECLAIM_PAGES in favour of the DIRTY+UNSTABLE split.
+-- 
+	Three Cheers,
+	Balbir
