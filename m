@@ -1,19 +1,15 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 Subject: Re: [PATCH -mmotm 3/3] memcg: dirty pages instrumentation
-Date: Tue, 2 Mar 2010 19:20:26 +0530
-Message-ID: <20100302135026.GH3212__9741.5484641262$1267537871$gmane$org@balbir.in.ibm.com>
+Date: Tue, 2 Mar 2010 15:56:44 +0200
+Message-ID: <cc557aab1003020556kcb3f790yba5bceaeb75c5a4c__30037.9957109273$1267538246$gmane$org@mail.gmail.com>
 References: <1267478620-5276-1-git-send-email-arighi@develer.com>
 	<1267478620-5276-4-git-send-email-arighi@develer.com>
-	<20100302092309.bff454d7.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100302080056.GA1548@linux>
-	<20100302172316.b959b04c.kamezawa.hiroyu@jp.fujitsu.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+	<20100302134736.GG3212@balbir.in.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20100302172316.b959b04c.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20100302134736.GG3212-SINUvgVNF2CyUtPGxGje5AC/G2K4zDHf@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,64 +19,55 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Cc: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-* KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> [2010-03-02 17:23:16]:
-
-> On Tue, 2 Mar 2010 09:01:58 +0100
-> Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org> wrote:
-> 
-> > On Tue, Mar 02, 2010 at 09:23:09AM +0900, KAMEZAWA Hiroyuki wrote:
-> > > On Mon,  1 Mar 2010 22:23:40 +0100
-> > > Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org> wrote:
-> > > 
-> > > > Apply the cgroup dirty pages accounting and limiting infrastructure to
-> > > > the opportune kernel functions.
-> > > > 
-> > > > Signed-off-by: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
-> > > 
-> > > Seems nice.
-> > > 
-> > > Hmm. the last problem is moving account between memcg.
-> > > 
-> > > Right ?
-> > 
-> > Correct. This was actually the last item of the TODO list. Anyway, I'm
-> > still considering if it's correct to move dirty pages when a task is
-> > migrated from a cgroup to another. Currently, dirty pages just remain in
-> > the original cgroup and are flushed depending on the original cgroup
-> > settings. That is not totally wrong... at least moving the dirty pages
-> > between memcgs should be optional (move_charge_at_immigrate?).
-> > 
-> 
-> My concern is 
->  - migration between memcg is already suppoted
->     - at task move
->     - at rmdir
-> 
-> Then, if you leave DIRTY_PAGE accounting to original cgroup,
-> the new cgroup (migration target)'s Dirty page accounting may
-> goes to be negative, or incorrect value. Please check FILE_MAPPED
-> implementation in __mem_cgroup_move_account()
-> 
-> As
->        if (page_mapped(page) && !PageAnon(page)) {
->                 /* Update mapped_file data for mem_cgroup */
->                 preempt_disable();
->                 __this_cpu_dec(from->stat->count[MEM_CGROUP_STAT_FILE_MAPPED]);
->                 __this_cpu_inc(to->stat->count[MEM_CGROUP_STAT_FILE_MAPPED]);
->                 preempt_enable();
->         }
-> then, FILE_MAPPED never goes negative.
->
-
-Absolutely! I am not sure how complex dirty memory migration will be,
-but one way of working around it would be to disable migration of
-charges when the feature is enabled (dirty* is set in the memory
-cgroup). We might need additional logic to allow that to happen. 
-
--- 
-	Three Cheers,
-	Balbir
+T24gVHVlLCBNYXIgMiwgMjAxMCBhdCAzOjQ3IFBNLCBCYWxiaXIgU2luZ2ggPGJhbGJpckBsaW51
+eC52bmV0LmlibS5jb20+IHdyb3RlOgo+ICogQW5kcmVhIFJpZ2hpIDxhcmlnaGlAZGV2ZWxlci5j
+b20+IFsyMDEwLTAzLTAxIDIyOjIzOjQwXToKPgo+PiBBcHBseSB0aGUgY2dyb3VwIGRpcnR5IHBh
+Z2VzIGFjY291bnRpbmcgYW5kIGxpbWl0aW5nIGluZnJhc3RydWN0dXJlIHRvCj4+IHRoZSBvcHBv
+cnR1bmUga2VybmVsIGZ1bmN0aW9ucy4KPj4KPj4gU2lnbmVkLW9mZi1ieTogQW5kcmVhIFJpZ2hp
+IDxhcmlnaGlAZGV2ZWxlci5jb20+Cj4+IC0tLQo+PiDCoGZzL2Z1c2UvZmlsZS5jIMKgIMKgIMKg
+fCDCoCDCoDUgKysrCj4+IMKgZnMvbmZzL3dyaXRlLmMgwqAgwqAgwqB8IMKgIMKgNCArKwo+PiDC
+oGZzL25pbGZzMi9zZWdtZW50LmMgfCDCoCAxMCArKysrKy0KPj4gwqBtbS9maWxlbWFwLmMgwqAg
+wqAgwqAgwqB8IMKgIMKgMSArCj4+IMKgbW0vcGFnZS13cml0ZWJhY2suYyB8IMKgIDg0ICsrKysr
+KysrKysrKysrKysrKysrKysrKysrKysrKysrLS0tLS0tLS0tLS0tLS0tLS0tCj4+IMKgbW0vcm1h
+cC5jIMKgIMKgIMKgIMKgIMKgIHwgwqAgwqA0ICstCj4+IMKgbW0vdHJ1bmNhdGUuYyDCoCDCoCDC
+oCB8IMKgIMKgMiArCj4+IMKgNyBmaWxlcyBjaGFuZ2VkLCA3NiBpbnNlcnRpb25zKCspLCAzNCBk
+ZWxldGlvbnMoLSkKPj4KPj4gZGlmZiAtLWdpdCBhL2ZzL2Z1c2UvZmlsZS5jIGIvZnMvZnVzZS9m
+aWxlLmMKPj4gaW5kZXggYTlmNWUxMy4uZGJiZGQ1MyAxMDA2NDQKPj4gLS0tIGEvZnMvZnVzZS9m
+aWxlLmMKPj4gKysrIGIvZnMvZnVzZS9maWxlLmMKPj4gQEAgLTExLDYgKzExLDcgQEAKPj4gwqAj
+aW5jbHVkZSA8bGludXgvcGFnZW1hcC5oPgo+PiDCoCNpbmNsdWRlIDxsaW51eC9zbGFiLmg+Cj4+
+IMKgI2luY2x1ZGUgPGxpbnV4L2tlcm5lbC5oPgo+PiArI2luY2x1ZGUgPGxpbnV4L21lbWNvbnRy
+b2wuaD4KPj4gwqAjaW5jbHVkZSA8bGludXgvc2NoZWQuaD4KPj4gwqAjaW5jbHVkZSA8bGludXgv
+bW9kdWxlLmg+Cj4+Cj4+IEBAIC0xMTI5LDYgKzExMzAsOCBAQCBzdGF0aWMgdm9pZCBmdXNlX3dy
+aXRlcGFnZV9maW5pc2goc3RydWN0IGZ1c2VfY29ubiAqZmMsIHN0cnVjdCBmdXNlX3JlcSAqcmVx
+KQo+Pgo+PiDCoCDCoCDCoCBsaXN0X2RlbCgmcmVxLT53cml0ZXBhZ2VzX2VudHJ5KTsKPj4gwqAg
+wqAgwqAgZGVjX2JkaV9zdGF0KGJkaSwgQkRJX1dSSVRFQkFDSyk7Cj4+ICsgwqAgwqAgbWVtX2Nn
+cm91cF91cGRhdGVfc3RhdChyZXEtPnBhZ2VzWzBdLAo+PiArIMKgIMKgIMKgIMKgIMKgIMKgIMKg
+IMKgIMKgIMKgIE1FTV9DR1JPVVBfU1RBVF9XUklURUJBQ0tfVEVNUCwgLTEpOwo+PiDCoCDCoCDC
+oCBkZWNfem9uZV9wYWdlX3N0YXRlKHJlcS0+cGFnZXNbMF0sIE5SX1dSSVRFQkFDS19URU1QKTsK
+Pj4gwqAgwqAgwqAgYmRpX3dyaXRlb3V0X2luYyhiZGkpOwo+PiDCoCDCoCDCoCB3YWtlX3VwKCZm
+aS0+cGFnZV93YWl0cSk7Cj4+IEBAIC0xMjQwLDYgKzEyNDMsOCBAQCBzdGF0aWMgaW50IGZ1c2Vf
+d3JpdGVwYWdlX2xvY2tlZChzdHJ1Y3QgcGFnZSAqcGFnZSkKPj4gwqAgwqAgwqAgcmVxLT5pbm9k
+ZSA9IGlub2RlOwo+Pgo+PiDCoCDCoCDCoCBpbmNfYmRpX3N0YXQobWFwcGluZy0+YmFja2luZ19k
+ZXZfaW5mbywgQkRJX1dSSVRFQkFDSyk7Cj4+ICsgwqAgwqAgbWVtX2Nncm91cF91cGRhdGVfc3Rh
+dCh0bXBfcGFnZSwKPj4gKyDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCBNRU1fQ0dST1VQ
+X1NUQVRfV1JJVEVCQUNLX1RFTVAsIDEpOwo+PiDCoCDCoCDCoCBpbmNfem9uZV9wYWdlX3N0YXRl
+KHRtcF9wYWdlLCBOUl9XUklURUJBQ0tfVEVNUCk7Cj4+IMKgIMKgIMKgIGVuZF9wYWdlX3dyaXRl
+YmFjayhwYWdlKTsKPj4KPj4gZGlmZiAtLWdpdCBhL2ZzL25mcy93cml0ZS5jIGIvZnMvbmZzL3dy
+aXRlLmMKPj4gaW5kZXggYjc1MzI0Mi4uNzMxNmY3YSAxMDA2NDQKPj4gLS0tIGEvZnMvbmZzL3dy
+aXRlLmMKPj4gKysrIGIvZnMvbmZzL3dyaXRlLmMKPgo+IERvbid0IG5lZWQgbWVtY29udHJvbC5o
+IHRvIGJlIGluY2x1ZGVkIGhlcmU/CgpJdCdzIGluY2x1ZGVkIGluIDxsaW51eC9zd2FwLmg+Cgo+
+IExvb2tzIE9LIHRvIG1lIG92ZXJhbGwsIGJ1dCB0aGVyZSBtaWdodCBiZSBvYmplY3Rpb24gdXNp
+bmcgdGhlCj4gbWVtX2Nncm91cF8qIG5hbWluZyBjb252ZW50aW9uLCBidXQgSSBkb24ndCBtaW5k
+IGl0IHZlcnkgbXVjaCA6KQo+Cj4gLS0KPiDCoCDCoCDCoCDCoFRocmVlIENoZWVycywKPiDCoCDC
+oCDCoCDCoEJhbGJpcgo+Cj4gLS0KPiBUbyB1bnN1YnNjcmliZSwgc2VuZCBhIG1lc3NhZ2Ugd2l0
+aCAndW5zdWJzY3JpYmUgbGludXgtbW0nIGluCj4gdGhlIGJvZHkgdG8gbWFqb3Jkb21vQGt2YWNr
+Lm9yZy4gwqBGb3IgbW9yZSBpbmZvIG9uIExpbnV4IE1NLAo+IHNlZTogaHR0cDovL3d3dy5saW51
+eC1tbS5vcmcvIC4KPiBEb24ndCBlbWFpbDogPGEgaHJlZj1tYWlsdG86ImRvbnRAa3ZhY2sub3Jn
+Ij4gZW1haWxAa3ZhY2sub3JnIDwvYT4KPgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3Rz
+LmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcv
+bWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
