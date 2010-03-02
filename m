@@ -1,25 +1,17 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [RFC][PATCH] ns: Syscalls for better namespace sharing control.
-Date: Tue, 02 Mar 2010 13:45:16 -0800
-Message-ID: <m1aauqv1n7.fsf__13467.7226808437$1267566370$gmane$org@fess.ebiederm.org>
-References: <4B4F24AC.70105@trash.net> <m1iq9ocafv.fsf@fess.ebiederm.org>
-	<1266934817.3973.654.camel@bigi> <m1r5obbu2w.fsf@fess.ebiederm.org>
-	<1266966581.3973.675.camel@bigi> <m1pr3t2fvl.fsf_-_@fess.ebiederm.org>
-	<4B883987.6090408@parallels.com> <m1bpfbwuze.fsf@fess.ebiederm.org>
-	<4B883E6F.1060907@parallels.com> <m13a0nwu6p.fsf@fess.ebiederm.org>
-	<4B88D80A.8010701@parallels.com> <m1mxyvrqvk.fsf@fess.ebiederm.org>
-	<4B88E431.6040609@parallels.com> <m1bpfbqajn.fsf@fess.ebiederm.org>
-	<4B894564.7080104@parallels.com> <m1iq9io5sc.fsf@fess.ebiederm.org>
-	<4B89727C.9040602@parallels.com> <m1ljeempk6.fsf@fess.ebiederm.org>
-	<4B8AE8C1.1030305@free.fr> <4B8D28CF.8060304@parallels.com>
-	<alpine.LSU.2.01.1003021613570.17303@obet.zrqbmnf.qr>
+From: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [PATCH -mmotm 2/3] memcg: dirty pages accounting and limiting
+	infrastructure
+Date: Tue, 2 Mar 2010 22:50:16 +0100
+Message-ID: <20100302215016.GA2369__23674.2584304467$1267566662$gmane$org@linux>
+References: <1267478620-5276-1-git-send-email-arighi@develer.com>
+	<1267478620-5276-3-git-send-email-arighi@develer.com>
+	<20100302130223.GF3212@balbir.in.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <alpine.LSU.2.01.1003021613570.17303-SHaQjdQMGhDmsUXKMKRlFA@public.gmane.org> (Jan
-	Engelhardt's message of "Tue\,
-	2 Mar 2010 16\:14\:23 +0100 \(CET\)")
+Content-Disposition: inline
+In-Reply-To: <20100302130223.GF3212-SINUvgVNF2CyUtPGxGje5AC/G2K4zDHf@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -29,27 +21,156 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jan Engelhardt <jengelh-nopoi9nDyk+ELgA04lAiVw@public.gmane.org>
-Cc: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Linux Netdev List <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Netfilter Development Mailinglist <netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ben Greear <greearb-my8/4N5VtI7c+919tysfdA@public.gmane.org>
+To: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Jan Engelhardt <jengelh-nopoi9nDyk+ELgA04lAiVw@public.gmane.org> writes:
+On Tue, Mar 02, 2010 at 06:32:24PM +0530, Balbir Singh wrote:
 
-> On Tuesday 2010-03-02 16:03, Pavel Emelyanov wrote:
->
->>> I agree with all the points you and Pavel you talked about but I don't 
->>> feel comfortable to have the current process to switch the pid namespace 
->>> because of the process tree hierarchy (what will be the parent of the 
->>> process when you enter the pid namespace for example).
->>
->>The answer is - the one, that used to be. I see no problems with it.
->>Do you?
->
-> But perhaps it could be named "namespacefd" instead of nsfd, to reduce 
-> potential clashes (because glibc will usually just use the same name 
-> when making the syscall available as a C function).
+[snip]
 
-Maybe.  namespacefd seems like a real mouthful.  I agree nsfd might be
-a bit non-obvious for a rarish syscall.
+> > +extern long mem_cgroup_dirty_ratio(void);
+> > +extern unsigned long mem_cgroup_dirty_bytes(void);
+> > +extern long mem_cgroup_dirty_background_ratio(void);
+> > +extern unsigned long mem_cgroup_dirty_background_bytes(void);
+> > +
+> > +extern s64 mem_cgroup_page_stat(enum mem_cgroup_page_stat_item item);
+> > +
+> 
+> Docstyle comments for each function would be appreciated
 
-Eric
+OK.
+
+> >  /*
+> >   * The memory controller data structure. The memory controller controls both
+> >   * page cache and RSS per cgroup. We would eventually like to provide
+> > @@ -205,6 +199,9 @@ struct mem_cgroup {
+> > 
+> >  	unsigned int	swappiness;
+> > 
+> > +	/* control memory cgroup dirty pages */
+> > +	unsigned long dirty_param[MEM_CGROUP_DIRTY_NPARAMS];
+> > +
+> 
+> Could you mention what protects this field, is it the reclaim_lock?
+
+Yes, it is.
+
+Actually, we could avoid the lock completely for dirty_param[], using a
+validation routine to check for incoherencies after any read with
+get_dirty_param(), and retry if the validation fails. In practice, the
+same approach we're using to read global vm_dirty_ratio, vm_dirty_bytes,
+etc...
+
+Considering that those values are rarely written and read often we can
+protect them in a RCU way.
+
+
+> BTW, is unsigned long sufficient to represent dirty_param(s)?
+
+Yes, I think. It's the same type used for the equivalent global values.
+
+> 
+> >  	/* set when res.limit == memsw.limit */
+> >  	bool		memsw_is_minimum;
+> > 
+> > @@ -1021,6 +1018,164 @@ static unsigned int get_swappiness(struct mem_cgroup *memcg)
+> >  	return swappiness;
+> >  }
+> > 
+> > +static unsigned long get_dirty_param(struct mem_cgroup *memcg,
+> > +			enum mem_cgroup_dirty_param idx)
+> > +{
+> > +	unsigned long ret;
+> > +
+> > +	VM_BUG_ON(idx >= MEM_CGROUP_DIRTY_NPARAMS);
+> > +	spin_lock(&memcg->reclaim_param_lock);
+> > +	ret = memcg->dirty_param[idx];
+> > +	spin_unlock(&memcg->reclaim_param_lock);
+> 
+> Do we need a spinlock if we protect it using RCU? Is precise data very
+> important?
+
+See above.
+
+> > +unsigned long mem_cgroup_dirty_background_bytes(void)
+> > +{
+> > +	struct mem_cgroup *memcg;
+> > +	unsigned long ret = dirty_background_bytes;
+> > +
+> > +	if (mem_cgroup_disabled())
+> > +		return ret;
+> > +	rcu_read_lock();
+> > +	memcg = mem_cgroup_from_task(current);
+> > +	if (likely(memcg))
+> > +		ret = get_dirty_param(memcg, MEM_CGROUP_DIRTY_BACKGROUND_BYTES);
+> > +	rcu_read_unlock();
+> > +
+> > +	return ret;
+> > +}
+> > +
+> > +static inline bool mem_cgroup_can_swap(struct mem_cgroup *memcg)
+> > +{
+> > +	return do_swap_account ?
+> > +			res_counter_read_u64(&memcg->memsw, RES_LIMIT) :
+> 
+> Shouldn't you do a res_counter_read_u64(...) > 0 for readability?
+
+OK.
+
+> What happens if memcg->res, RES_LIMIT == memcg->memsw, RES_LIMIT?
+
+OK, we should also check memcg->memsw_is_minimum.
+
+> >  static struct cgroup_subsys_state * __ref
+> >  mem_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cont)
+> >  {
+> > @@ -3776,8 +4031,37 @@ mem_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cont)
+> >  	mem->last_scanned_child = 0;
+> >  	spin_lock_init(&mem->reclaim_param_lock);
+> > 
+> > -	if (parent)
+> > +	if (parent) {
+> >  		mem->swappiness = get_swappiness(parent);
+> > +
+> > +		spin_lock(&parent->reclaim_param_lock);
+> > +		copy_dirty_params(mem, parent);
+> > +		spin_unlock(&parent->reclaim_param_lock);
+> > +	} else {
+> > +		/*
+> > +		 * XXX: should we need a lock here? we could switch from
+> > +		 * vm_dirty_ratio to vm_dirty_bytes or vice versa but we're not
+> > +		 * reading them atomically. The same for dirty_background_ratio
+> > +		 * and dirty_background_bytes.
+> > +		 *
+> > +		 * For now, try to read them speculatively and retry if a
+> > +		 * "conflict" is detected.a
+> 
+> The do while loop is subtle, can we add a validate check,share it with
+> the write routine and retry if validation fails?
+
+Agreed.
+
+> 
+> > +		 */
+> > +		do {
+> > +			mem->dirty_param[MEM_CGROUP_DIRTY_RATIO] =
+> > +						vm_dirty_ratio;
+> > +			mem->dirty_param[MEM_CGROUP_DIRTY_BYTES] =
+> > +						vm_dirty_bytes;
+> > +		} while (mem->dirty_param[MEM_CGROUP_DIRTY_RATIO] &&
+> > +			 mem->dirty_param[MEM_CGROUP_DIRTY_BYTES]);
+> > +		do {
+> > +			mem->dirty_param[MEM_CGROUP_DIRTY_BACKGROUND_RATIO] =
+> > +						dirty_background_ratio;
+> > +			mem->dirty_param[MEM_CGROUP_DIRTY_BACKGROUND_BYTES] =
+> > +						dirty_background_bytes;
+> > +		} while (mem->dirty_param[MEM_CGROUP_DIRTY_BACKGROUND_RATIO] &&
+> > +			mem->dirty_param[MEM_CGROUP_DIRTY_BACKGROUND_BYTES]);
+> > +	}
+> >  	atomic_set(&mem->refcnt, 1);
+> >  	mem->move_charge_at_immigrate = 0;
+> >  	mutex_init(&mem->thresholds_lock);
+
+Many thanks for reviewing,
+-Andrea
