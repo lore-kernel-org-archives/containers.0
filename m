@@ -1,14 +1,13 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH] c/r: fix regression (in "fix scheduling in atomic while
-	restoring ipc shm")
-Date: Tue,  2 Mar 2010 19:04:09 -0500
-Message-ID: <1267574649-14269-1-git-send-email-orenl@cs.columbia.edu>
-References: <20100224083534.GC18758@us.ibm.com>
+From: "Gordon" <toasmdsas13dyoe-uAjRD0nVeow@public.gmane.org>
+Subject: =?GB2312?B?V2Vic2l0ZSBEZXZlbG9wbWVudCBTZXJ2aWNl?=
+Date: Wed, 3 Mar 2010 08:19:20 +0800
+Message-ID: <ASBUILT-WS01jpD3zCP0000fef8@asbuilt-ws01.ASBUILT.COM>
+Reply-To: ibalextech-Mj/0Miq2reM@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100224083534.GC18758-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,58 +17,56 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Nikita V. Youshchenko" <yoush-/llMDZXAvAOHXe+LvDLADg@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers <containers-M5VDzleVLSUAvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-So... here's a simple fix to a silly regression - this should bring
-an end to my little fiasco. 
+Website Design & Development:
 
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
----
- ipc/checkpoint_msg.c |    2 +-
- ipc/checkpoint_sem.c |    2 +-
- ipc/checkpoint_shm.c |    2 +-
- 3 files changed, 3 insertions(+), 3 deletions(-)
+We are a China based experienced web design studio. We're specialized in in website design and e-commerce development.  We've the proven experience and expertise in designing website that succeed by bringing in enquiries, which generate sales and are an asset to your business. Our website designing services covers strategic planning, business intelligence, creative, application development, product / service promotion & solution maintenance. Your website can offer you the best return for your investment, if done correctly. 
 
-diff --git a/ipc/checkpoint_msg.c b/ipc/checkpoint_msg.c
-index 073a893..0155c20 100644
---- a/ipc/checkpoint_msg.c
-+++ b/ipc/checkpoint_msg.c
-@@ -359,7 +359,7 @@ int restore_ipc_msg(struct ckpt_ctx *ctx, struct ipc_namespace *ns)
- 	 * ipc-ns, we will need to re-examine this.
- 	 */
- 
--	ipc = idr_find(&msg_ids->ipcs_idr, h->perms.id);
-+	ipc = idr_find(&msg_ids->ipcs_idr, ipcid_to_idx(h->perms.id));
- 	BUG_ON(!ipc);
- 
- 	msq = container_of(ipc, struct msg_queue, q_perm);
-diff --git a/ipc/checkpoint_sem.c b/ipc/checkpoint_sem.c
-index 78c1932..2abfb5a 100644
---- a/ipc/checkpoint_sem.c
-+++ b/ipc/checkpoint_sem.c
-@@ -216,7 +216,7 @@ int restore_ipc_sem(struct ckpt_ctx *ctx, struct ipc_namespace *ns)
- 	 * ipc-ns, we will need to re-examine this.
- 	 */
- 
--	ipc = idr_find(&sem_ids->ipcs_idr, h->perms.id);
-+	ipc = idr_find(&sem_ids->ipcs_idr, ipcid_to_idx(h->perms.id));
- 	BUG_ON(!ipc);
- 
- 	sem = container_of(ipc, struct sem_array, sem_perm);
-diff --git a/ipc/checkpoint_shm.c b/ipc/checkpoint_shm.c
-index 6329245..a07c051 100644
---- a/ipc/checkpoint_shm.c
-+++ b/ipc/checkpoint_shm.c
-@@ -270,7 +270,7 @@ int restore_ipc_shm(struct ckpt_ctx *ctx, struct ipc_namespace *ns)
- 	 * ipc-ns, we will need to re-examine this.
- 	 */
- 
--	ipc = idr_find(&shm_ids->ipcs_idr, h->perms.id);
-+	ipc = idr_find(&shm_ids->ipcs_idr, ipcid_to_idx(h->perms.id));
- 	BUG_ON(!ipc);
- 
- 	shp = container_of(ipc, struct shmid_kernel, shm_perm);
--- 
-1.6.3.3
+We have well experienced professionals in many Web platforms Such as Flash designs , Flash Action Scripts , DNN Skinning, PHP, ASP.Net, Flash , HTML , Photoshop, Web designs, Java scripts, Portal developments MY SQL, MS SQL etc.
+
+Core offerings
+
+Business website design 
+Business website redesign 
+Flash website design 
+Flash website redesign 
+Ecommerce website design 
+Ecommerce website redesign 
+Company website design
+Company catalog design
+Company logo design
+SEO service
+ERP Solutions
+
+We deliver neat, easy-to-use and business friendly website designing, a web site that drives customers into it. In the domain of website design we have served almost every segment of the in dustry. Our website designing experts ensures each quality parameter such as easy-navigation, overall consistency and content quality within the timeframe and budget. We always ensure that our clients are delighted with our web designing services and return to us time after time. 
+
+Pls check our website to see our portfolios. Contact us today for Website Design and Development, SEO and other services.
+
+Best regards,
+Gordon
+Gordoonm Information Technologies
+Website Team
+Contact: ibjonathan-Mj/0Miq2reM@public.gmane.org
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Send address to kindljohathan-uAjRD0nVeow@public.gmane.org for remove
