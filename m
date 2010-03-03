@@ -1,13 +1,16 @@
-From: headphone Marcum <treehugger848-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Many good quality lists such as Lawyers, Doctors, New Businesses,
-	Consumers and many more
-Date: Wed, 03 Mar 2010 17:32:24 -0400
-Message-ID: <c8b20403-52b1-463c-96f9-321fa06b3038@SBS.ry.local>
-Reply-To: john47556-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: Re: selinux prevents msgrcv on restore message queues?
+Date: Wed, 03 Mar 2010 15:56:26 -0600
+Message-ID: <1267653386.3559.9.camel@localhost.localdomain>
+References: <1267565774.11828.15.camel@localhost.localdomain>
+	<20100303004727.GA8272@us.ibm.com> <20100303011941.GA10429@us.ibm.com>
+	<1267639445.11828.19.camel@localhost.localdomain>
+	<20100303194910.GC12379@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20100303194910.GC12379-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,15 +20,47 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: vrjwxz-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, kundservice-Zhw+RA2NkhZgqU5guHLuXbNAH6kLmebB@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-For details, samples and counts on our US listings please
-email me at my other email address  Brice.Dutton-5jkIZRH6XoH+QaM4vrzVWiU6qK9Th3Hf@public.gmane.org
+On Wed, 2010-03-03 at 13:49 -0600, Serge E. Hallyn wrote:
+> Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
+> > On Tue, 2010-03-02 at 19:19 -0600, Serge E. Hallyn wrote:
+> > > Can you try the following patch?
+> > > 
+> > > Also, to actually restore the LSM labels you need to add -k to your
+> > > restart flags, but without the -k you should get a sane default
+> > > security label.
+> > 
+> > Thanks, the ipc/mq tests pass with this patch and restart -k.  Without
+> > -k the tests still fail in the same manner (msgrcv fails).  Is that the
+> > behavior you'd expect?
+> 
+> Not really - the test runs as unconfined_u right?
 
-  
+I added a ps -Z to test-mq.sh before thawing:
+
+# PATH=/root/cr/user-cr.git:$PATH bash test-mq.sh 
+Using output dir ./cr_mq_6T8KIG6
+XXX Test 1: simple restart with SYSVIPC msq
+check-mq: no process killed
+../common.sh: line 45:  5173 Killed                  ( sleep $1; kill -s USR1 $$ )
+LABEL                             PID TTY          TIME CMD
+unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 4358 pts/1 00:00:00 bash
+unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 5151 pts/1 00:00:00 bash
+unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 5172 pts/1 00:00:00 nsexec
+unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 5175 pts/1 00:00:00 sleep
+unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 5178 pts/1 00:00:00 check-
+unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 5183 pts/1 00:00:00 ps
+PASS
 
 
+>   I'd expect the
+> msg to get created with the same type both when you just run the
+> original program and when you restart it.  If you just run the
+> checkpointed program and let it complete, doe sit also get a
+> denial at msgrcv?
 
-
-to get off please email rembox-5jkIZRH6XoH+QaM4vrzVWiU6qK9Th3Hf@public.gmane.org
+No, the msgrcv calls succeed if I alter the testcase to resume the
+original process instead of killing and restarting it.
