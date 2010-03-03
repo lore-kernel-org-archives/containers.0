@@ -1,20 +1,19 @@
-From: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
-Subject: Re: [PATCH -mmotm 3/3] memcg: dirty pages instrumentation
-Date: Thu, 4 Mar 2010 08:25:14 +0900
-Message-ID: <20100304082514.e2af30b4.nishimura__22935.4500341744$1267658992$gmane$org@mxp.nes.nec.co.jp>
-References: <1267478620-5276-1-git-send-email-arighi@develer.com>
-	<1267478620-5276-4-git-send-email-arighi@develer.com>
-	<20100303111238.7133f8af.nishimura@mxp.nes.nec.co.jp>
-	<20100303122906.9c613ab2.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100303150137.f56d7084.nishimura@mxp.nes.nec.co.jp>
-	<20100303151549.5d3d686a.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100303172132.fc6d9387.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100303220319.GA2706@linux>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: selinux prevents msgrcv on restore message queues?
+Date: Wed, 3 Mar 2010 17:44:48 -0600
+Message-ID: <20100303234448.GA27869@us.ibm.com>
+References: <1267565774.11828.15.camel@localhost.localdomain>
+	<20100303004727.GA8272@us.ibm.com>
+	<20100303011941.GA10429@us.ibm.com>
+	<1267639445.11828.19.camel@localhost.localdomain>
+	<20100303194910.GC12379@us.ibm.com>
+	<1267653386.3559.9.camel@localhost.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100303220319.GA2706@linux>
+Content-Disposition: inline
+In-Reply-To: <1267653386.3559.9.camel-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,248 +23,80 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Greg-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, 3 Mar 2010 23:03:19 +0100, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org> wrote:
-> On Wed, Mar 03, 2010 at 05:21:32PM +0900, KAMEZAWA Hiroyuki wrote:
-> > On Wed, 3 Mar 2010 15:15:49 +0900
-> > KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
-> > 
-> > > Agreed.
-> > > Let's try how we can write a code in clean way. (we have time ;)
-> > > For now, to me, IRQ disabling while lock_page_cgroup() seems to be a little
-> > > over killing. What I really want is lockless code...but it seems impossible
-> > > under current implementation.
+Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
+> On Wed, 2010-03-03 at 13:49 -0600, Serge E. Hallyn wrote:
+> > Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
+> > > On Tue, 2010-03-02 at 19:19 -0600, Serge E. Hallyn wrote:
+> > > > Can you try the following patch?
+> > > > 
+> > > > Also, to actually restore the LSM labels you need to add -k to your
+> > > > restart flags, but without the -k you should get a sane default
+> > > > security label.
 > > > 
-> > > I wonder the fact "the page is never unchareged under us" can give us some chances
-> > > ...Hmm.
-> > > 
+> > > Thanks, the ipc/mq tests pass with this patch and restart -k.  Without
+> > > -k the tests still fail in the same manner (msgrcv fails).  Is that the
+> > > behavior you'd expect?
 > > 
-> > How about this ? Basically, I don't like duplicating information...so,
-> > # of new pcg_flags may be able to be reduced.
-> > 
-> > I'm glad this can be a hint for Andrea-san.
-> > 
-> > ==
-> > ---
-> >  include/linux/page_cgroup.h |   44 ++++++++++++++++++++-
-> >  mm/memcontrol.c             |   91 +++++++++++++++++++++++++++++++++++++++++++-
-> >  2 files changed, 132 insertions(+), 3 deletions(-)
-> > 
-> > Index: mmotm-2.6.33-Mar2/include/linux/page_cgroup.h
-> > ===================================================================
-> > --- mmotm-2.6.33-Mar2.orig/include/linux/page_cgroup.h
-> > +++ mmotm-2.6.33-Mar2/include/linux/page_cgroup.h
-> > @@ -39,6 +39,11 @@ enum {
-> >  	PCG_CACHE, /* charged as cache */
-> >  	PCG_USED, /* this object is in use. */
-> >  	PCG_ACCT_LRU, /* page has been accounted for */
-> > +	PCG_MIGRATE_LOCK, /* used for mutual execution of account migration */
-> > +	PCG_ACCT_DIRTY,
-> > +	PCG_ACCT_WB,
-> > +	PCG_ACCT_WB_TEMP,
-> > +	PCG_ACCT_UNSTABLE,
-> >  };
-> >  
-> >  #define TESTPCGFLAG(uname, lname)			\
-> > @@ -73,6 +78,23 @@ CLEARPCGFLAG(AcctLRU, ACCT_LRU)
-> >  TESTPCGFLAG(AcctLRU, ACCT_LRU)
-> >  TESTCLEARPCGFLAG(AcctLRU, ACCT_LRU)
-> >  
-> > +SETPCGFLAG(AcctDirty, ACCT_DIRTY);
-> > +CLEARPCGFLAG(AcctDirty, ACCT_DIRTY);
-> > +TESTPCGFLAG(AcctDirty, ACCT_DIRTY);
-> > +
-> > +SETPCGFLAG(AcctWB, ACCT_WB);
-> > +CLEARPCGFLAG(AcctWB, ACCT_WB);
-> > +TESTPCGFLAG(AcctWB, ACCT_WB);
-> > +
-> > +SETPCGFLAG(AcctWBTemp, ACCT_WB_TEMP);
-> > +CLEARPCGFLAG(AcctWBTemp, ACCT_WB_TEMP);
-> > +TESTPCGFLAG(AcctWBTemp, ACCT_WB_TEMP);
-> > +
-> > +SETPCGFLAG(AcctUnstableNFS, ACCT_UNSTABLE);
-> > +CLEARPCGFLAG(AcctUnstableNFS, ACCT_UNSTABLE);
-> > +TESTPCGFLAG(AcctUnstableNFS, ACCT_UNSTABLE);
-> > +
-> > +
-> >  static inline int page_cgroup_nid(struct page_cgroup *pc)
-> >  {
-> >  	return page_to_nid(pc->page);
-> > @@ -82,7 +104,9 @@ static inline enum zone_type page_cgroup
-> >  {
-> >  	return page_zonenum(pc->page);
-> >  }
-> > -
-> > +/*
-> > + * lock_page_cgroup() should not be held under mapping->tree_lock
-> > + */
-> >  static inline void lock_page_cgroup(struct page_cgroup *pc)
-> >  {
-> >  	bit_spin_lock(PCG_LOCK, &pc->flags);
-> > @@ -93,6 +117,24 @@ static inline void unlock_page_cgroup(st
-> >  	bit_spin_unlock(PCG_LOCK, &pc->flags);
-> >  }
-> >  
-> > +/*
-> > + * Lock order is
-> > + * 	lock_page_cgroup()
-> > + * 		lock_page_cgroup_migrate()
-> > + * This lock is not be lock for charge/uncharge but for account moving.
-> > + * i.e. overwrite pc->mem_cgroup. The lock owner should guarantee by itself
-> > + * the page is uncharged while we hold this.
-> > + */
-> > +static inline void lock_page_cgroup_migrate(struct page_cgroup *pc)
-> > +{
-> > +	bit_spin_lock(PCG_MIGRATE_LOCK, &pc->flags);
-> > +}
-> > +
-> > +static inline void unlock_page_cgroup_migrate(struct page_cgroup *pc)
-> > +{
-> > +	bit_spin_unlock(PCG_MIGRATE_LOCK, &pc->flags);
-> > +}
-> > +
-> >  #else /* CONFIG_CGROUP_MEM_RES_CTLR */
-> >  struct page_cgroup;
-> >  
-> > Index: mmotm-2.6.33-Mar2/mm/memcontrol.c
-> > ===================================================================
-> > --- mmotm-2.6.33-Mar2.orig/mm/memcontrol.c
-> > +++ mmotm-2.6.33-Mar2/mm/memcontrol.c
-> > @@ -87,6 +87,10 @@ enum mem_cgroup_stat_index {
-> >  	MEM_CGROUP_STAT_PGPGOUT_COUNT,	/* # of pages paged out */
-> >  	MEM_CGROUP_STAT_SWAPOUT, /* # of pages, swapped out */
-> >  	MEM_CGROUP_EVENTS,	/* incremented at every  pagein/pageout */
-> > +	MEM_CGROUP_STAT_DIRTY,
-> > +	MEM_CGROUP_STAT_WBACK,
-> > +	MEM_CGROUP_STAT_WBACK_TEMP,
-> > +	MEM_CGROUP_STAT_UNSTABLE_NFS,
-> >  
-> >  	MEM_CGROUP_STAT_NSTATS,
-> >  };
-> > @@ -1360,6 +1364,86 @@ done:
-> >  }
-> >  
-> >  /*
-> > + * Update file cache's status for memcg. Before calling this,
-> > + * mapping->tree_lock should be held and preemption is disabled.
-> > + * Then, it's guarnteed that the page is not uncharged while we
-> > + * access page_cgroup. We can make use of that.
-> > + */
-> > +void mem_cgroup_update_stat_locked(struct page *page, int idx, bool set)
-> > +{
-> > +	struct page_cgroup *pc;
-> > +	struct mem_cgroup *mem;
-> > +
-> > +	pc = lookup_page_cgroup(page);
-> > +	/* Not accounted ? */
-> > +	if (!PageCgroupUsed(pc))
-> > +		return;
-> > +	lock_page_cgroup_migrate(pc);
-> > +	/*
-> > +	 * It's guarnteed that this page is never uncharged.
-> > +	 * The only racy problem is moving account among memcgs.
-> > +	 */
-> > +	switch (idx) {
-> > +	case MEM_CGROUP_STAT_DIRTY:
-> > +		if (set)
-> > +			SetPageCgroupAcctDirty(pc);
-> > +		else
-> > +			ClearPageCgroupAcctDirty(pc);
-> > +		break;
-> > +	case MEM_CGROUP_STAT_WBACK:
-> > +		if (set)
-> > +			SetPageCgroupAcctWB(pc);
-> > +		else
-> > +			ClearPageCgroupAcctWB(pc);
-> > +		break;
-> > +	case MEM_CGROUP_STAT_WBACK_TEMP:
-> > +		if (set)
-> > +			SetPageCgroupAcctWBTemp(pc);
-> > +		else
-> > +			ClearPageCgroupAcctWBTemp(pc);
-> > +		break;
-> > +	case MEM_CGROUP_STAT_UNSTABLE_NFS:
-> > +		if (set)
-> > +			SetPageCgroupAcctUnstableNFS(pc);
-> > +		else
-> > +			ClearPageCgroupAcctUnstableNFS(pc);
-> > +		break;
-> > +	default:
-> > +		BUG();
-> > +		break;
-> > +	}
-> > +	mem = pc->mem_cgroup;
-> > +	if (set)
-> > +		__this_cpu_inc(mem->stat->count[idx]);
-> > +	else
-> > +		__this_cpu_dec(mem->stat->count[idx]);
-> > +	unlock_page_cgroup_migrate(pc);
-> > +}
-> > +
-> > +static void move_acct_information(struct mem_cgroup *from,
-> > +				struct mem_cgroup *to,
-> > +				struct page_cgroup *pc)
-> > +{
-> > +	/* preemption is disabled, migration_lock is held. */
-> > +	if (PageCgroupAcctDirty(pc)) {
-> > +		__this_cpu_dec(from->stat->count[MEM_CGROUP_STAT_DIRTY]);
-> > +		__this_cpu_inc(to->stat->count[MEM_CGROUP_STAT_DIRTY]);
-> > +	}
-> > +	if (PageCgroupAcctWB(pc)) {
-> > +		__this_cpu_dec(from->stat->count[MEM_CGROUP_STAT_WBACK]);
-> > +		__this_cpu_inc(to->stat->count[MEM_CGROUP_STAT_WBACK]);
-> > +	}
-> > +	if (PageCgroupAcctWBTemp(pc)) {
-> > +		__this_cpu_dec(from->stat->count[MEM_CGROUP_STAT_WBACK_TEMP]);
-> > +		__this_cpu_inc(to->stat->count[MEM_CGROUP_STAT_WBACK_TEMP]);
-> > +	}
-> > +	if (PageCgroupAcctUnstableNFS(pc)) {
-> > +		__this_cpu_dec(from->stat->count[MEM_CGROUP_STAT_UNSTABLE_NFS]);
-> > +		__this_cpu_inc(to->stat->count[MEM_CGROUP_STAT_UNSTABLE_NFS]);
-> > +	}
-> > +}
-> > +
-> > +/*
-> >   * size of first charge trial. "32" comes from vmscan.c's magic value.
-> >   * TODO: maybe necessary to use big numbers in big irons.
-> >   */
-> > @@ -1794,15 +1878,16 @@ static void __mem_cgroup_move_account(st
-> >  	VM_BUG_ON(!PageCgroupUsed(pc));
-> >  	VM_BUG_ON(pc->mem_cgroup != from);
-> >  
-> > +	preempt_disable();
-> > +	lock_page_cgroup_migrate(pc);
-> >  	page = pc->page;
-> >  	if (page_mapped(page) && !PageAnon(page)) {
-> >  		/* Update mapped_file data for mem_cgroup */
-> > -		preempt_disable();
-> >  		__this_cpu_dec(from->stat->count[MEM_CGROUP_STAT_FILE_MAPPED]);
-> >  		__this_cpu_inc(to->stat->count[MEM_CGROUP_STAT_FILE_MAPPED]);
-> > -		preempt_enable();
-> >  	}
-> >  	mem_cgroup_charge_statistics(from, pc, false);
-> > +	move_acct_information(from, to, pc);
+> > Not really - the test runs as unconfined_u right?
 > 
-> Kame-san, a question. According to is_target_pte_for_mc() it seems we
-> don't move file pages across cgroups for now. If !PageAnon(page) we just
-> return 0 and the page won't be selected for migration in
-> mem_cgroup_move_charge_pte_range().
+> I added a ps -Z to test-mq.sh before thawing:
 > 
-You're right. It's my TODO to move file pages at task migration.
+> # PATH=/root/cr/user-cr.git:$PATH bash test-mq.sh 
+> Using output dir ./cr_mq_6T8KIG6
+> XXX Test 1: simple restart with SYSVIPC msq
+> check-mq: no process killed
+> ../common.sh: line 45:  5173 Killed                  ( sleep $1; kill -s USR1 $$ )
+> LABEL                             PID TTY          TIME CMD
+> unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 4358 pts/1 00:00:00 bash
+> unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 5151 pts/1 00:00:00 bash
+> unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 5172 pts/1 00:00:00 nsexec
+> unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 5175 pts/1 00:00:00 sleep
+> unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 5178 pts/1 00:00:00 check-
+> unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 5183 pts/1 00:00:00 ps
+> PASS
 
-> So, if I've understood well the code is correct in perspective, but
-> right now it's unnecessary. File pages are not moved on task migration
-> across cgroups and, at the moment, there's no way for file page
-> accounted statistics to go negative.
-> 
-> Or am I missing something?
-> 
-__mem_cgroup_move_account() will be called not only at task migration
-but also at rmdir, so I think it would be better to handle file pages anyway.
+Can you try the following patch?
 
+(this is on top of the last one - I'd sent)
 
-Thanks,
-Daisuke Nishimura.
+The problem is that selinux does not assign a label to a msg_msg
+until you do msgsnd.  So it may be best to special-case the
+msg_msg object type and always have it restore the msgtype.  One
+reason *NOT* to do that woudl be that the restarter might not have
+msg_msg:restore permission...  But pls let me know if this patch
+fixes your problem.
+
+thanks,
+-serge
+
+From d20ab718b6ebe21a034801c461772e588b92432a Mon Sep 17 00:00:00 2001
+From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Date: Wed, 3 Mar 2010 11:31:33 -0600
+Subject: [PATCH 1/1] always restore msg_msg label
+
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ security/security.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/security/security.c b/security/security.c
+index 28db976..2b147cf 100644
+--- a/security/security.c
++++ b/security/security.c
+@@ -1524,7 +1524,9 @@ int security_restore_obj(struct ckpt_ctx *ctx, void *v, int sectype,
+ 
+ 	/* return if caller didn't want to restore checkpointed labels */
+ 	if (!(ctx->uflags & RESTART_KEEP_LSM))
+-		return 0;
++		/* though msg_msg label must always be restored */
++		if (sectype != CKPT_SECURITY_MSG_MSG)
++			return 0;
+ 
+ 	l = ckpt_obj_fetch(ctx, secref, CKPT_OBJ_SECURITY);
+ 	if (IS_ERR(l))
+-- 
+1.6.0.6
