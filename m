@@ -1,19 +1,17 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [RFC][PATCH] ns: Syscalls for better namespace sharing control.
-Date: Wed, 03 Mar 2010 11:47:12 -0800
-Message-ID: <m13a0hmblr.fsf__42642.4039098949$1267645808$gmane$org@fess.ebiederm.org>
-References: <4B894564.7080104@parallels.com>
-	<m1iq9io5sc.fsf@fess.ebiederm.org> <4B89727C.9040602@parallels.com>
-	<m1ljeempk6.fsf@fess.ebiederm.org> <4B8AE8C1.1030305@free.fr>
-	<4B8D28CF.8060304@parallels.com> <20100302211942.GA17816@us.ibm.com>
-	<m1y6iaqsmm.fsf@fess.ebiederm.org> <20100303000743.GA13744@us.ibm.com>
-	<m1ocj6qljj.fsf@fess.ebiederm.org> <20100303153800.GA937@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: selinux prevents msgrcv on restore message queues?
+Date: Wed, 3 Mar 2010 13:49:10 -0600
+Message-ID: <20100303194910.GC12379@us.ibm.com>
+References: <1267565774.11828.15.camel@localhost.localdomain>
+	<20100303004727.GA8272@us.ibm.com>
+	<20100303011941.GA10429@us.ibm.com>
+	<1267639445.11828.19.camel@localhost.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100303153800.GA937-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
-	"Wed\, 3 Mar 2010 09\:38\:00 -0600")
+Content-Disposition: inline
+In-Reply-To: <1267639445.11828.19.camel-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,52 +21,49 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Linux Netdev List <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Netfilter Development Mailinglist <netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ben Greear <greearb-my8/4N5VtI7c+919tysfdA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-"Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
+> On Tue, 2010-03-02 at 19:19 -0600, Serge E. Hallyn wrote:
+> > Quoting Serge E. Hallyn (serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> > > Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
+> > > > Hi,
+> > > > 
+> > > > With ckpt-v19-rc3 the test-mq.sh testcase in cr_tests fails when SELinux
+> > > > is enabled on my test system (64-bit powerpc kernel).  The testcase
+> > > > sleeps in do_msgrcv after restart and never wakes up.  When SELinux is
+> > > > disabled, the messages are received and the testcase passes.
+> > > > 
+> > > > I've established that the messages are being restored during restart --
+> > > > msgctl(IPC_STAT) shows one message in each queue before calling msgrcv.
+> > > > Adding the IPC_NOWAIT flag to the msgrcv calls gets ENOMSG, however.
+> > > > 
+> > > > I managed to narrow this down to security_msg_queue_msgrcv ->
+> > > > selinux_msg_queue_msgrcv.  avc_has_perm(SECCLASS_MSG, MSG__RECEIVE) gets
+> > > > -EACCESS, so I guess something is going awry in selinux restore hooks?
+> > > > 
+> > > > Any ideas?
+> > > 
+> > > Hmm, wait.  security_msg_msg_alloc() is being called after
+> > > security_msg_msg_restore.  That may not be what is causing
+> > > your troubles, but it's certainly not right.
+> > 
+> > Can you try the following patch?
+> > 
+> > Also, to actually restore the LSM labels you need to add -k to your
+> > restart flags, but without the -k you should get a sane default
+> > security label.
+> 
+> Thanks, the ipc/mq tests pass with this patch and restart -k.  Without
+> -k the tests still fail in the same manner (msgrcv fails).  Is that the
+> behavior you'd expect?
 
-> Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
->> Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
->> 
->> > Eric W. Biederman [ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org] wrote:
->> > | 
->> > | I think replacing a struct pid for another struct pid allocated in
->> > | descendant pid_namespace (but has all of the same struct upid values
->> > | as the first struct pid) is a disastrous idea.  It destroys the
->> >
->> > True. Sorry, I did not mean we would need a new 'struct pid' for an
->> > existing process. I think we talked earlier of finding a way of attaching
->> > additional pid numbers to the same struct pid.
->> 
->> I just played with this and if you make the semantics of unshare(CLONE_NEWPID)
->> to be that you become the idle task aka pid 0, and not the init task pid 1 the
->> implementation is trivial.
->
-> Heh, and then (browsing through your copy_process() patch hunks) the next
-> forked task becomes the child reaper for the new pidns?  <shrug>  why not
-> I guess.
->
-> Now if that child reaper then gets killed, will the idle task get killed too?
+Not really - the test runs as unconfined_u right?  I'd expect the
+msg to get created with the same type both when you just run the
+original program and when you restart it.  If you just run the
+checkpointed program and let it complete, doe sit also get a
+denial at msgrcv?
 
-No.
-
-> And if not, then idle task can just re-populating the new pidns with new
-> idle tasks...
-
-After zap_pid_namespace interesting...
-
-> If this brought us a step closer to entering an existing pidns that would
-> be one thing, but is there actually any advantage to being able to
-> unshare a new pidns?  Oh, I guess there is - PAM can then use it at
-> login, which might be neat.
-
-I have to say that the semantics of my patch are unworkable for
-unshare.  Unless I am mistaken for PAM to use it requires that the
-current process fully change and become what it needs to be.
-Requiring an extra fork to fully complete the process is a problem.
-
-Scratch one bright idea.
-
-Eric
+-serge
