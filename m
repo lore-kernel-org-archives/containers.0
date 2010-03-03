@@ -1,15 +1,20 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] c/r: fix ipc scheduling while atomic - take 3
-Date: Wed, 3 Mar 2010 17:06:44 -0600
-Message-ID: <20100303230644.GA25031@us.ibm.com>
-References: <1267054267-2819-1-git-send-email-orenl@cs.columbia.edu>
-	<1267648296-5517-1-git-send-email-orenl@cs.columbia.edu>
+From: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+Subject: Re: [PATCH -mmotm 3/3] memcg: dirty pages instrumentation
+Date: Thu, 4 Mar 2010 08:25:14 +0900
+Message-ID: <20100304082514.e2af30b4.nishimura__22935.4500341744$1267658992$gmane$org@mxp.nes.nec.co.jp>
+References: <1267478620-5276-1-git-send-email-arighi@develer.com>
+	<1267478620-5276-4-git-send-email-arighi@develer.com>
+	<20100303111238.7133f8af.nishimura@mxp.nes.nec.co.jp>
+	<20100303122906.9c613ab2.kamezawa.hiroyu@jp.fujitsu.com>
+	<20100303150137.f56d7084.nishimura@mxp.nes.nec.co.jp>
+	<20100303151549.5d3d686a.kamezawa.hiroyu@jp.fujitsu.com>
+	<20100303172132.fc6d9387.kamezawa.hiroyu@jp.fujitsu.com>
+	<20100303220319.GA2706@linux>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1267648296-5517-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <20100303220319.GA2706@linux>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,339 +24,248 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Nikita V. Youshchenko" <yoush-/llMDZXAvAOHXe+LvDLADg@public.gmane.org>
+To: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Greg-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> This patch applies to the current head of ckpt-v19-dev.
+On Wed, 3 Mar 2010 23:03:19 +0100, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org> wrote:
+> On Wed, Mar 03, 2010 at 05:21:32PM +0900, KAMEZAWA Hiroyuki wrote:
+> > On Wed, 3 Mar 2010 15:15:49 +0900
+> > KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
+> > 
+> > > Agreed.
+> > > Let's try how we can write a code in clean way. (we have time ;)
+> > > For now, to me, IRQ disabling while lock_page_cgroup() seems to be a little
+> > > over killing. What I really want is lockless code...but it seems impossible
+> > > under current implementation.
+> > > 
+> > > I wonder the fact "the page is never unchareged under us" can give us some chances
+> > > ...Hmm.
+> > > 
+> > 
+> > How about this ? Basically, I don't like duplicating information...so,
+> > # of new pcg_flags may be able to be reduced.
+> > 
+> > I'm glad this can be a hint for Andrea-san.
+> > 
+> > ==
+> > ---
+> >  include/linux/page_cgroup.h |   44 ++++++++++++++++++++-
+> >  mm/memcontrol.c             |   91 +++++++++++++++++++++++++++++++++++++++++++-
+> >  2 files changed, 132 insertions(+), 3 deletions(-)
+> > 
+> > Index: mmotm-2.6.33-Mar2/include/linux/page_cgroup.h
+> > ===================================================================
+> > --- mmotm-2.6.33-Mar2.orig/include/linux/page_cgroup.h
+> > +++ mmotm-2.6.33-Mar2/include/linux/page_cgroup.h
+> > @@ -39,6 +39,11 @@ enum {
+> >  	PCG_CACHE, /* charged as cache */
+> >  	PCG_USED, /* this object is in use. */
+> >  	PCG_ACCT_LRU, /* page has been accounted for */
+> > +	PCG_MIGRATE_LOCK, /* used for mutual execution of account migration */
+> > +	PCG_ACCT_DIRTY,
+> > +	PCG_ACCT_WB,
+> > +	PCG_ACCT_WB_TEMP,
+> > +	PCG_ACCT_UNSTABLE,
+> >  };
+> >  
+> >  #define TESTPCGFLAG(uname, lname)			\
+> > @@ -73,6 +78,23 @@ CLEARPCGFLAG(AcctLRU, ACCT_LRU)
+> >  TESTPCGFLAG(AcctLRU, ACCT_LRU)
+> >  TESTCLEARPCGFLAG(AcctLRU, ACCT_LRU)
+> >  
+> > +SETPCGFLAG(AcctDirty, ACCT_DIRTY);
+> > +CLEARPCGFLAG(AcctDirty, ACCT_DIRTY);
+> > +TESTPCGFLAG(AcctDirty, ACCT_DIRTY);
+> > +
+> > +SETPCGFLAG(AcctWB, ACCT_WB);
+> > +CLEARPCGFLAG(AcctWB, ACCT_WB);
+> > +TESTPCGFLAG(AcctWB, ACCT_WB);
+> > +
+> > +SETPCGFLAG(AcctWBTemp, ACCT_WB_TEMP);
+> > +CLEARPCGFLAG(AcctWBTemp, ACCT_WB_TEMP);
+> > +TESTPCGFLAG(AcctWBTemp, ACCT_WB_TEMP);
+> > +
+> > +SETPCGFLAG(AcctUnstableNFS, ACCT_UNSTABLE);
+> > +CLEARPCGFLAG(AcctUnstableNFS, ACCT_UNSTABLE);
+> > +TESTPCGFLAG(AcctUnstableNFS, ACCT_UNSTABLE);
+> > +
+> > +
+> >  static inline int page_cgroup_nid(struct page_cgroup *pc)
+> >  {
+> >  	return page_to_nid(pc->page);
+> > @@ -82,7 +104,9 @@ static inline enum zone_type page_cgroup
+> >  {
+> >  	return page_zonenum(pc->page);
+> >  }
+> > -
+> > +/*
+> > + * lock_page_cgroup() should not be held under mapping->tree_lock
+> > + */
+> >  static inline void lock_page_cgroup(struct page_cgroup *pc)
+> >  {
+> >  	bit_spin_lock(PCG_LOCK, &pc->flags);
+> > @@ -93,6 +117,24 @@ static inline void unlock_page_cgroup(st
+> >  	bit_spin_unlock(PCG_LOCK, &pc->flags);
+> >  }
+> >  
+> > +/*
+> > + * Lock order is
+> > + * 	lock_page_cgroup()
+> > + * 		lock_page_cgroup_migrate()
+> > + * This lock is not be lock for charge/uncharge but for account moving.
+> > + * i.e. overwrite pc->mem_cgroup. The lock owner should guarantee by itself
+> > + * the page is uncharged while we hold this.
+> > + */
+> > +static inline void lock_page_cgroup_migrate(struct page_cgroup *pc)
+> > +{
+> > +	bit_spin_lock(PCG_MIGRATE_LOCK, &pc->flags);
+> > +}
+> > +
+> > +static inline void unlock_page_cgroup_migrate(struct page_cgroup *pc)
+> > +{
+> > +	bit_spin_unlock(PCG_MIGRATE_LOCK, &pc->flags);
+> > +}
+> > +
+> >  #else /* CONFIG_CGROUP_MEM_RES_CTLR */
+> >  struct page_cgroup;
+> >  
+> > Index: mmotm-2.6.33-Mar2/mm/memcontrol.c
+> > ===================================================================
+> > --- mmotm-2.6.33-Mar2.orig/mm/memcontrol.c
+> > +++ mmotm-2.6.33-Mar2/mm/memcontrol.c
+> > @@ -87,6 +87,10 @@ enum mem_cgroup_stat_index {
+> >  	MEM_CGROUP_STAT_PGPGOUT_COUNT,	/* # of pages paged out */
+> >  	MEM_CGROUP_STAT_SWAPOUT, /* # of pages, swapped out */
+> >  	MEM_CGROUP_EVENTS,	/* incremented at every  pagein/pageout */
+> > +	MEM_CGROUP_STAT_DIRTY,
+> > +	MEM_CGROUP_STAT_WBACK,
+> > +	MEM_CGROUP_STAT_WBACK_TEMP,
+> > +	MEM_CGROUP_STAT_UNSTABLE_NFS,
+> >  
+> >  	MEM_CGROUP_STAT_NSTATS,
+> >  };
+> > @@ -1360,6 +1364,86 @@ done:
+> >  }
+> >  
+> >  /*
+> > + * Update file cache's status for memcg. Before calling this,
+> > + * mapping->tree_lock should be held and preemption is disabled.
+> > + * Then, it's guarnteed that the page is not uncharged while we
+> > + * access page_cgroup. We can make use of that.
+> > + */
+> > +void mem_cgroup_update_stat_locked(struct page *page, int idx, bool set)
+> > +{
+> > +	struct page_cgroup *pc;
+> > +	struct mem_cgroup *mem;
+> > +
+> > +	pc = lookup_page_cgroup(page);
+> > +	/* Not accounted ? */
+> > +	if (!PageCgroupUsed(pc))
+> > +		return;
+> > +	lock_page_cgroup_migrate(pc);
+> > +	/*
+> > +	 * It's guarnteed that this page is never uncharged.
+> > +	 * The only racy problem is moving account among memcgs.
+> > +	 */
+> > +	switch (idx) {
+> > +	case MEM_CGROUP_STAT_DIRTY:
+> > +		if (set)
+> > +			SetPageCgroupAcctDirty(pc);
+> > +		else
+> > +			ClearPageCgroupAcctDirty(pc);
+> > +		break;
+> > +	case MEM_CGROUP_STAT_WBACK:
+> > +		if (set)
+> > +			SetPageCgroupAcctWB(pc);
+> > +		else
+> > +			ClearPageCgroupAcctWB(pc);
+> > +		break;
+> > +	case MEM_CGROUP_STAT_WBACK_TEMP:
+> > +		if (set)
+> > +			SetPageCgroupAcctWBTemp(pc);
+> > +		else
+> > +			ClearPageCgroupAcctWBTemp(pc);
+> > +		break;
+> > +	case MEM_CGROUP_STAT_UNSTABLE_NFS:
+> > +		if (set)
+> > +			SetPageCgroupAcctUnstableNFS(pc);
+> > +		else
+> > +			ClearPageCgroupAcctUnstableNFS(pc);
+> > +		break;
+> > +	default:
+> > +		BUG();
+> > +		break;
+> > +	}
+> > +	mem = pc->mem_cgroup;
+> > +	if (set)
+> > +		__this_cpu_inc(mem->stat->count[idx]);
+> > +	else
+> > +		__this_cpu_dec(mem->stat->count[idx]);
+> > +	unlock_page_cgroup_migrate(pc);
+> > +}
+> > +
+> > +static void move_acct_information(struct mem_cgroup *from,
+> > +				struct mem_cgroup *to,
+> > +				struct page_cgroup *pc)
+> > +{
+> > +	/* preemption is disabled, migration_lock is held. */
+> > +	if (PageCgroupAcctDirty(pc)) {
+> > +		__this_cpu_dec(from->stat->count[MEM_CGROUP_STAT_DIRTY]);
+> > +		__this_cpu_inc(to->stat->count[MEM_CGROUP_STAT_DIRTY]);
+> > +	}
+> > +	if (PageCgroupAcctWB(pc)) {
+> > +		__this_cpu_dec(from->stat->count[MEM_CGROUP_STAT_WBACK]);
+> > +		__this_cpu_inc(to->stat->count[MEM_CGROUP_STAT_WBACK]);
+> > +	}
+> > +	if (PageCgroupAcctWBTemp(pc)) {
+> > +		__this_cpu_dec(from->stat->count[MEM_CGROUP_STAT_WBACK_TEMP]);
+> > +		__this_cpu_inc(to->stat->count[MEM_CGROUP_STAT_WBACK_TEMP]);
+> > +	}
+> > +	if (PageCgroupAcctUnstableNFS(pc)) {
+> > +		__this_cpu_dec(from->stat->count[MEM_CGROUP_STAT_UNSTABLE_NFS]);
+> > +		__this_cpu_inc(to->stat->count[MEM_CGROUP_STAT_UNSTABLE_NFS]);
+> > +	}
+> > +}
+> > +
+> > +/*
+> >   * size of first charge trial. "32" comes from vmscan.c's magic value.
+> >   * TODO: maybe necessary to use big numbers in big irons.
+> >   */
+> > @@ -1794,15 +1878,16 @@ static void __mem_cgroup_move_account(st
+> >  	VM_BUG_ON(!PageCgroupUsed(pc));
+> >  	VM_BUG_ON(pc->mem_cgroup != from);
+> >  
+> > +	preempt_disable();
+> > +	lock_page_cgroup_migrate(pc);
+> >  	page = pc->page;
+> >  	if (page_mapped(page) && !PageAnon(page)) {
+> >  		/* Update mapped_file data for mem_cgroup */
+> > -		preempt_disable();
+> >  		__this_cpu_dec(from->stat->count[MEM_CGROUP_STAT_FILE_MAPPED]);
+> >  		__this_cpu_inc(to->stat->count[MEM_CGROUP_STAT_FILE_MAPPED]);
+> > -		preempt_enable();
+> >  	}
+> >  	mem_cgroup_charge_statistics(from, pc, false);
+> > +	move_acct_information(from, to, pc);
 > 
-> While the previous fix was correct, it was incomplete in the sense that
-> a similar problem exists during checkpoint. So here is a better attempt
-> at fixing both.
+> Kame-san, a question. According to is_target_pte_for_mc() it seems we
+> don't move file pages across cgroups for now. If !PageAnon(page) we just
+> return 0 and the page won't be selected for migration in
+> mem_cgroup_move_charge_pte_range().
 > 
-> The main idea is that holding the {shm,msg,sem}ids->rw_mutex is enough
-> at checkpoint when calling checkpoint_fill_ipc_perms() because the data
-> accessed is either immutable or protected against change with the mutex.
-> For restart, the same argument as before works - we are the sole users
-> of a new ipc-ns, and no unaothorized accessed is possible (still, in
-> this version the code is a bit cleaner).
-> 
-> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+You're right. It's my TODO to move file pages at task migration.
 
-Tested-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> So, if I've understood well the code is correct in perspective, but
+> right now it's unnecessary. File pages are not moved on task migration
+> across cgroups and, at the moment, there's no way for file page
+> accounted statistics to go negative.
+> 
+> Or am I missing something?
+> 
+__mem_cgroup_move_account() will be called not only at task migration
+but also at rmdir, so I think it would be better to handle file pages anyway.
 
-On my fedora 10 x86-64 partition with selinux enabled, all tests
-(except futex - huh?) including the selinux tests pass.
 
-> 
-> 
-> ---
->  ipc/checkpoint.c     |   26 ++++++++++++++++++++++++++
->  ipc/checkpoint_msg.c |   29 +++++++++++++++--------------
->  ipc/checkpoint_sem.c |   18 ++++++++++--------
->  ipc/checkpoint_shm.c |   18 +++++++++++-------
->  4 files changed, 62 insertions(+), 29 deletions(-)
-> 
-> diff --git a/ipc/checkpoint.c b/ipc/checkpoint.c
-> index 06027c2..ca181ae 100644
-> --- a/ipc/checkpoint.c
-> +++ b/ipc/checkpoint.c
-> @@ -33,6 +33,19 @@ static char *ipc_ind_to_str[] = { "sem", "msg", "shm" };
->   * Checkpoint
->   */
-> 
-> +/*
-> + * Requires that ids->rw_mutex be held; this is sufficient because:
-> + *
-> + * (a) The data accessed either may not change at all (e.g. id, key,
-> + * sqe), or may only change by ipc_update_perm() (e.g. uid, cuid, gid,
-> + * cgid, mode), which is only called with the mutex write-held.
-> + *
-> + * (b) The function ipcperms() relies solely on the latter (uid, vuid,
-> + * gid, cgid, mode)
-> + *
-> + * (c) The security context perm->security also may only change when the
-> + * mutex is taken.
-> + */
->  int checkpoint_fill_ipc_perms(struct ckpt_ctx *ctx,
->  			      struct ckpt_hdr_ipc_perms *h,
->  			      struct kern_ipc_perm *perm)
-> @@ -48,12 +61,14 @@ int checkpoint_fill_ipc_perms(struct ckpt_ctx *ctx,
->  	h->cgid = perm->cgid;
->  	h->mode = perm->mode & S_IRWXUGO;
->  	h->seq = perm->seq;
-> +
->  	h->sec_ref = security_checkpoint_obj(ctx, perm->security,
->  					     CKPT_SECURITY_IPC);
->  	if (h->sec_ref < 0) {
->  		ckpt_err(ctx, h->sec_ref, "%(T)ipc_perm->security\n");
->  		return h->sec_ref;
->  	}
-> +
->  	return 0;
->  }
-> 
-> @@ -184,6 +199,17 @@ static int validate_created_perms(struct ckpt_hdr_ipc_perms *h)
->  	return 1;
->  }
-> 
-> +/*
-> + * Requires that ids->rw_mutex be held; this is sufficient because:
-> + *
-> + * (a) The data accessed either may only change by ipc_update_perm()
-> + * or by security hooks (perm->security), all of which are only called
-> + * with the mutex write-held.
-> + *
-> + * (b) During restart, we are guarantted to be using a brand new
-> + * ipc-ns, only accessible to us, so there will be no attempt for
-> + * access validation while we restore the state (by other tasks).
-> + */
->  int restore_load_ipc_perms(struct ckpt_ctx *ctx,
->  			   struct ckpt_hdr_ipc_perms *h,
->  			   struct kern_ipc_perm *perm)
-> diff --git a/ipc/checkpoint_msg.c b/ipc/checkpoint_msg.c
-> index 1933121..7b9a984 100644
-> --- a/ipc/checkpoint_msg.c
-> +++ b/ipc/checkpoint_msg.c
-> @@ -29,18 +29,18 @@
->   * ipc checkpoint
->   */
-> 
-> +/* called with the msgids->rw_mutex is read-held */
->  static int fill_ipc_msg_hdr(struct ckpt_ctx *ctx,
->  			    struct ckpt_hdr_ipc_msg *h,
->  			    struct msg_queue *msq)
->  {
-> -	int ret = 0;
-> -
-> -	ipc_lock_by_ptr(&msq->q_perm);
-> +	int ret;
-> 
->  	ret = checkpoint_fill_ipc_perms(ctx, &h->perms, &msq->q_perm);
->  	if (ret < 0)
-> -		goto unlock;
-> +		return ret;
-> 
-> +	ipc_lock_by_ptr(&msq->q_perm);
->  	h->q_stime = msq->q_stime;
->  	h->q_rtime = msq->q_rtime;
->  	h->q_ctime = msq->q_ctime;
-> @@ -49,13 +49,12 @@ static int fill_ipc_msg_hdr(struct ckpt_ctx *ctx,
->  	h->q_qbytes = msq->q_qbytes;
->  	h->q_lspid = msq->q_lspid;
->  	h->q_lrpid = msq->q_lrpid;
-> -
-> - unlock:
->  	ipc_unlock(&msq->q_perm);
-> +
->  	ckpt_debug("msg: lspid %d rspid %d qnum %lld qbytes %lld\n",
->  		 h->q_lspid, h->q_lrpid, h->q_qnum, h->q_qbytes);
-> 
-> -	return ret;
-> +	return 0;
->  }
-> 
->  static int checkpoint_msg_contents(struct ckpt_ctx *ctx, struct msg_msg *msg)
-> @@ -144,6 +143,7 @@ static int checkpoint_msg_queue(struct ckpt_ctx *ctx, struct msg_queue *msq)
->  	return ret;
->  }
-> 
-> +/* called with the msgids->rw_mutex is read-held */
->  int checkpoint_ipc_msg(int id, void *p, void *data)
->  {
->  	struct ckpt_hdr_ipc_msg *h;
-> @@ -178,6 +178,7 @@ int checkpoint_ipc_msg(int id, void *p, void *data)
->   * ipc restart
->   */
-> 
-> +/* called with the msgids->rw_mutex is write-held */
->  static int load_ipc_msg_hdr(struct ckpt_ctx *ctx,
->  			    struct ckpt_hdr_ipc_msg *h,
->  			    struct msg_queue *msq)
-> @@ -349,19 +350,16 @@ int restore_ipc_msg(struct ckpt_ctx *ctx, struct ipc_namespace *ns)
->  	 *
->  	 * 1) The msgid could not have been deleted between its creation
->  	 *   and taking the rw_mutex above.
-> -	 * 2) No unauthorized task will attempt to gain access to it,
-> -	 *   so it is safe to do away with ipc_lock(). This is useful
-> -	 *   because we can call functions that sleep.
-> -	 * 3) Likewise, we only restore the security bits further below,
-> -	 *   so it is safe to ignore this (theoretical only!) race.
-> +	 *
-> +	 * 2) No unauthorized task will have attempted to gain access
-> +	 *   to it either, not even until we restore the security bit
-> +	 *   further below, so the theoretical security race is void.
->  	 *
->  	 * If/when we allow to restore the ipc state within the parent's
->  	 * ipc-ns, we will need to re-examine this.
->  	 */
-> -
->  	ipc = ipc_lock(msg_ids, h->perms.id);
->  	BUG_ON(IS_ERR(ipc));
-> -	ipc_unlock(ipc);
-> 
->  	msq = container_of(ipc, struct msg_queue, q_perm);
->  	BUG_ON(!list_empty(&msq->q_messages));
-> @@ -376,6 +374,9 @@ int restore_ipc_msg(struct ckpt_ctx *ctx, struct ipc_namespace *ns)
->  	msq->q_qbytes = h->q_qbytes;
->  	msq->q_qnum = h->q_qnum;
-> 
-> +	/* this is safe because no unauthorized access is possible */
-> +	ipc_unlock(ipc);
-> +
->  	ret = load_ipc_msg_hdr(ctx, h, msq);
->  	if (ret < 0) {
->  		ckpt_debug("msq: need to remove (%d)\n", ret);
-> diff --git a/ipc/checkpoint_sem.c b/ipc/checkpoint_sem.c
-> index ac28592..890374d 100644
-> --- a/ipc/checkpoint_sem.c
-> +++ b/ipc/checkpoint_sem.c
-> @@ -29,27 +29,26 @@ struct msg_msg;
->   * ipc checkpoint
->   */
-> 
-> +/* called with the msgids->rw_mutex is read-held */
->  static int fill_ipc_sem_hdr(struct ckpt_ctx *ctx,
->  			       struct ckpt_hdr_ipc_sem *h,
->  			       struct sem_array *sem)
->  {
->  	int ret = 0;
-> 
-> -	ipc_lock_by_ptr(&sem->sem_perm);
-> -
->  	ret = checkpoint_fill_ipc_perms(ctx, &h->perms, &sem->sem_perm);
->  	if (ret < 0)
-> -		goto unlock;
-> +		return ret;
-> 
-> +	ipc_lock_by_ptr(&sem->sem_perm);
->  	h->sem_otime = sem->sem_otime;
->  	h->sem_ctime = sem->sem_ctime;
->  	h->sem_nsems = sem->sem_nsems;
-> -
-> - unlock:
->  	ipc_unlock(&sem->sem_perm);
-> +
->  	ckpt_debug("sem: nsems %u\n", h->sem_nsems);
-> 
-> -	return ret;
-> +	return 0;
->  }
-> 
->  /**
-> @@ -74,6 +73,7 @@ static int checkpoint_sem_array(struct ckpt_ctx *ctx, struct sem_array *sem)
->  			       sem->sem_nsems * sizeof(*sem->sem_base));
->  }
-> 
-> +/* called with the msgids->rw_mutex is read-held */
->  int checkpoint_ipc_sem(int id, void *p, void *data)
->  {
->  	struct ckpt_hdr_ipc_sem *h;
-> @@ -107,6 +107,7 @@ int checkpoint_ipc_sem(int id, void *p, void *data)
->   * ipc restart
->   */
-> 
-> +/* called with the msgids->rw_mutex is write-held */
->  static int load_ipc_sem_hdr(struct ckpt_ctx *ctx,
->  			       struct ckpt_hdr_ipc_sem *h,
->  			       struct sem_array *sem)
-> @@ -215,14 +216,15 @@ int restore_ipc_sem(struct ckpt_ctx *ctx, struct ipc_namespace *ns)
->  	 * If/when we allow to restore the ipc state within the parent's
->  	 * ipc-ns, we will need to re-examine this.
->  	 */
-> -
->  	ipc = ipc_lock(sem_ids, h->perms.id);
->  	BUG_ON(IS_ERR(ipc));
-> -	ipc_unlock(ipc);
-> 
->  	sem = container_of(ipc, struct sem_array, sem_perm);
->  	memcpy(sem->sem_base, sma, sem->sem_nsems * sizeof(*sma));
-> 
-> +	/* this is safe because no unauthorized access is possible */
-> +	ipc_unlock(ipc);
-> +
->  	ret = load_ipc_sem_hdr(ctx, h, sem);
->  	if (ret < 0) {
->  		ipc_lock_by_ptr(&sem->sem_perm);
-> diff --git a/ipc/checkpoint_shm.c b/ipc/checkpoint_shm.c
-> index 62eacaf..bfba5dc 100644
-> --- a/ipc/checkpoint_shm.c
-> +++ b/ipc/checkpoint_shm.c
-> @@ -33,17 +33,18 @@
->   * ipc checkpoint
->   */
-> 
-> +/* called with the msgids->rw_mutex is read-held */
->  static int fill_ipc_shm_hdr(struct ckpt_ctx *ctx,
->  			    struct ckpt_hdr_ipc_shm *h,
->  			    struct shmid_kernel *shp)
->  {
->  	int ret = 0;
-> 
-> -	ipc_lock_by_ptr(&shp->shm_perm);
-> -
->  	ret = checkpoint_fill_ipc_perms(ctx, &h->perms, &shp->shm_perm);
->  	if (ret < 0)
-> -		goto unlock;
-> +		return ret;
-> +
-> +	ipc_lock_by_ptr(&shp->shm_perm);
-> 
->  	h->shm_segsz = shp->shm_segsz;
->  	h->shm_atim = shp->shm_atim;
-> @@ -67,14 +68,15 @@ static int fill_ipc_shm_hdr(struct ckpt_ctx *ctx,
->  		ret = -ENOSYS;
->  	}
-> 
-> - unlock:
->  	ipc_unlock(&shp->shm_perm);
-> +
->  	ckpt_debug("shm: cprid %d lprid %d segsz %lld mlock %d\n",
->  		 h->shm_cprid, h->shm_lprid, h->shm_segsz, h->mlock_uid);
-> 
->  	return ret;
->  }
-> 
-> +/* called with the msgids->rw_mutex is read-held */
->  int checkpoint_ipc_shm(int id, void *p, void *data)
->  {
->  	struct ckpt_hdr_ipc_shm *h;
-> @@ -168,6 +170,7 @@ static int ipc_shm_delete(void *data)
->  	return ret;
->  }
-> 
-> +/* called with the msgids->rw_mutex is write-held */
->  static int load_ipc_shm_hdr(struct ckpt_ctx *ctx,
->  			    struct ckpt_hdr_ipc_shm *h,
->  			    struct shmid_kernel *shp)
-> @@ -242,7 +245,7 @@ int restore_ipc_shm(struct ckpt_ctx *ctx, struct ipc_namespace *ns)
-> 
->  		dq.id = h->perms.id;
->  		dq.ipcns = ns;
-> -		get_ipc_ns(dq.ipcns);
-> +		get_ipc_ns(ns);
-> 
->  		ret = deferqueue_add(ctx->deferqueue, &dq, sizeof(dq),
->  				     (deferqueue_func_t) ipc_shm_delete,
-> @@ -269,15 +272,16 @@ int restore_ipc_shm(struct ckpt_ctx *ctx, struct ipc_namespace *ns)
->  	 * If/when we allow to restore the ipc state within the parent's
->  	 * ipc-ns, we will need to re-examine this.
->  	 */
-> -
->  	ipc = ipc_lock(shm_ids, h->perms.id);
->  	BUG_ON(IS_ERR(ipc));
-> -	ipc_unlock(ipc);
-> 
->  	shp = container_of(ipc, struct shmid_kernel, shm_perm);
->  	file = shp->shm_file;
->  	get_file(file);
-> 
-> +	/* this is safe because no unauthorized access is possible */
-> +	ipc_unlock(ipc);
-> +
->  	ret = load_ipc_shm_hdr(ctx, h, shp);
->  	if (ret < 0)
->  		goto mutex;
-> -- 
-> 1.6.3.3
+Thanks,
+Daisuke Nishimura.
