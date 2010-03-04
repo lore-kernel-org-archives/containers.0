@@ -1,107 +1,81 @@
-From: "Serge E. Hallyn" <serge@hallyn.com>
-Subject: Re: selinux prevents msgrcv on restore message queues?
-Date: Thu, 4 Mar 2010 09:05:57 -0600
-Message-ID: <20100304150557.GA25017@hallyn.com>
-References: <1267565774.11828.15.camel@localhost.localdomain>
- <20100303004727.GA8272@us.ibm.com>
- <20100303011941.GA10429@us.ibm.com>
- <1267639445.11828.19.camel@localhost.localdomain>
- <20100303194910.GC12379@us.ibm.com>
- <1267653386.3559.9.camel@localhost.localdomain>
- <20100303234448.GA27869@us.ibm.com>
- <1267661777.3559.11.camel@localhost.localdomain>
- <20100304030525.GA8875@us.ibm.com>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH -mmotm 4/4] memcg: dirty pages instrumentation
+Date: Thu, 4 Mar 2010 11:18:28 -0500
+Message-ID: <20100304161828.GC18786__15238.742149859$1267719956$gmane$org@redhat.com>
+References: <1267699215-4101-1-git-send-email-arighi@develer.com>
+	<1267699215-4101-5-git-send-email-arighi@develer.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-security-module-owner@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20100304030525.GA8875@us.ibm.com>
-Sender: linux-security-module-owner@vger.kernel.org
-To: "Serge E. Hallyn" <serue@us.ibm.com>
-Cc: Nathan Lynch <ntl@pobox.com>, Linux Containers <containers@lists.osdl.org>, linux-security-module@vger.kernel.org, SELinux <selinux@tycho.nsa.gov>
+In-Reply-To: <1267699215-4101-5-git-send-email-arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+Cc: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-[
-cc:ing SELinux and LSM lists bc this somewhat changes the
-ipc msg_msg restore behavior - which was previously broken,
-and now is hopefully merely dubious.  The original email
-in this thread can be seen at
-https://lists.linux-foundation.org/pipermail/containers/2010-March/023266.html
-]
+On Thu, Mar 04, 2010 at 11:40:15AM +0100, Andrea Righi wrote:
 
-Quoting Serge E. Hallyn (serue@us.ibm.com):
-> Quoting Nathan Lynch (ntl@pobox.com):
-> > On Wed, 2010-03-03 at 17:44 -0600, Serge E. Hallyn wrote:
-> > > Quoting Nathan Lynch (ntl@pobox.com):
-> > > > On Wed, 2010-03-03 at 13:49 -0600, Serge E. Hallyn wrote:
-> > > > > Quoting Nathan Lynch (ntl@pobox.com):
-> > > > > > On Tue, 2010-03-02 at 19:19 -0600, Serge E. Hallyn wrote:
-> > > > > > > Can you try the following patch?
-> > > > > > > 
-> > > > > > > Also, to actually restore the LSM labels you need to add -k to your
-> > > > > > > restart flags, but without the -k you should get a sane default
-> > > > > > > security label.
-> > > > > > 
-> > > > > > Thanks, the ipc/mq tests pass with this patch and restart -k.  Without
-> > > > > > -k the tests still fail in the same manner (msgrcv fails).  Is that the
-> > > > > > behavior you'd expect?
-> > > > > 
-> > > > > Not really - the test runs as unconfined_u right?
-> > > > 
-> > > > I added a ps -Z to test-mq.sh before thawing:
-> > > > 
-> > > > # PATH=/root/cr/user-cr.git:$PATH bash test-mq.sh 
-> > > > Using output dir ./cr_mq_6T8KIG6
-> > > > XXX Test 1: simple restart with SYSVIPC msq
-> > > > check-mq: no process killed
-> > > > ../common.sh: line 45:  5173 Killed                  ( sleep $1; kill -s USR1 $$ )
-> > > > LABEL                             PID TTY          TIME CMD
-> > > > unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 4358 pts/1 00:00:00 bash
-> > > > unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 5151 pts/1 00:00:00 bash
-> > > > unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 5172 pts/1 00:00:00 nsexec
-> > > > unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 5175 pts/1 00:00:00 sleep
-> > > > unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 5178 pts/1 00:00:00 check-
-> > > > unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 5183 pts/1 00:00:00 ps
-> > > > PASS
-> > > 
-> > > Can you try the following patch?
-> > > 
-> > > (this is on top of the last one - I'd sent)
-> > > 
-> > > The problem is that selinux does not assign a label to a msg_msg
-> > > until you do msgsnd.  So it may be best to special-case the
-> > > msg_msg object type and always have it restore the msgtype.  One
-> > > reason *NOT* to do that woudl be that the restarter might not have
-> > > msg_msg:restore permission...  But pls let me know if this patch
-> > > fixes your problem.
-> > 
-> > Yes, with both patches applied to ckpt-v19-dev
-> > (261322990a4ed23c8475c232423845f998dd4f89) the tests pass with and
-> > without the -k flag.
-> 
-> Cool.  The main alternative would be to rip the core of
-> ipc/msg.c:do_msgsnd() out and re-use that in place of the bulk of
-> restore_msg_contents_one().
-> 
-> Since a user can't specify a security context on an msg_msg (but
-> can on msgq) I think the end-result would be fine.  It's a lot more
+[..]
+> diff --git a/mm/page-writeback.c b/mm/page-writeback.c
+> index 5a0f8f3..c5d14ea 100644
+> --- a/mm/page-writeback.c
+> +++ b/mm/page-writeback.c
+> @@ -137,13 +137,16 @@ static struct prop_descriptor vm_dirties;
+>   */
+>  static int calc_period_shift(void)
+>  {
+> +	struct dirty_param dirty_param;
+>  	unsigned long dirty_total;
+>  
+> -	if (vm_dirty_bytes)
+> -		dirty_total = vm_dirty_bytes / PAGE_SIZE;
+> +	get_dirty_param(&dirty_param);
+> +
+> +	if (dirty_param.dirty_bytes)
+> +		dirty_total = dirty_param.dirty_bytes / PAGE_SIZE;
+>  	else
+> -		dirty_total = (vm_dirty_ratio * determine_dirtyable_memory()) /
+> -				100;
+> +		dirty_total = (dirty_param.dirty_ratio *
+> +				determine_dirtyable_memory()) / 100;
+>  	return 2 + ilog2(dirty_total - 1);
+>  }
+>  
+> @@ -408,41 +411,46 @@ static unsigned long highmem_dirtyable_memory(unsigned long total)
+>   */
+>  unsigned long determine_dirtyable_memory(void)
+>  {
+> -	unsigned long x;
+> -
+> -	x = global_page_state(NR_FREE_PAGES) + global_reclaimable_pages();
+> +	unsigned long memory;
+> +	s64 memcg_memory;
+>  
+> +	memory = global_page_state(NR_FREE_PAGES) + global_reclaimable_pages();
+>  	if (!vm_highmem_is_dirtyable)
+> -		x -= highmem_dirtyable_memory(x);
+> -
+> -	return x + 1;	/* Ensure that we never return 0 */
+> +		memory -= highmem_dirtyable_memory(memory);
+> +	if (mem_cgroup_has_dirty_limit())
+> +		return memory + 1;
 
-Except it wouldn't be fine, because SELinux chooses a label for the
-new msg_msg based on both the task's and the queue's contexts.  And
-we have no idea whether the task's context has changed since the
-msg was sent.
+Should above be?
+	if (!mem_cgroup_has_dirty_limit())
+		return memory + 1;
 
-Now, it seems like letting restart choose the labels may promote
-bypassing of assured pipelines, but then you can't guarantee original
-security guarantees anyway unless you have an assured pipeline
-from checkpoint->restart, whether enforced through SELinux
-policy or through TPM.  And if you have that, then the msg_msg
-context can't be surruptitiously changed before restart.
+Vivek
 
-So there is no ideal solution for SELinux, but always doing label
-restore for msg_msg, with the requirement that the restarter be
-allowed msg_msg:restore permission to the restored msg_msg type,
-seems the best answer.
-
-thanks,
--serge
+> +	memcg_memory = mem_cgroup_page_stat(MEMCG_NR_DIRTYABLE_PAGES);
+> +	return min((unsigned long)memcg_memory, memory + 1);
+>  }
