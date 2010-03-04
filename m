@@ -1,15 +1,11 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH -mmotm 0/4] memcg: per cgroup dirty limit (v4)
-Date: Thu, 4 Mar 2010 22:41:43 +0530
-Message-ID: <20100304171143.GG3073__46450.2591676593$1267722798$gmane$org@balbir.in.ibm.com>
-References: <1267699215-4101-1-git-send-email-arighi@develer.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH] cr_tests/mq: wait for background tasks to exit
+Date: Thu,  4 Mar 2010 11:12:19 -0600
+Message-ID: <1267722739-9466-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1267699215-4101-1-git-send-email-arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,53 +15,29 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
-Cc: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-* Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org> [2010-03-04 11:40:11]:
+Ensure the background process that has been checkpointed has exited
+before proceeding with restart.
 
-> Control the maximum amount of dirty pages a cgroup can have at any given time.
-> 
-> Per cgroup dirty limit is like fixing the max amount of dirty (hard to reclaim)
-> page cache used by any cgroup. So, in case of multiple cgroup writers, they
-> will not be able to consume more than their designated share of dirty pages and
-> will be forced to perform write-out if they cross that limit.
-> 
-> The overall design is the following:
-> 
->  - account dirty pages per cgroup
->  - limit the number of dirty pages via memory.dirty_ratio / memory.dirty_bytes
->    and memory.dirty_background_ratio / memory.dirty_background_bytes in
->    cgroupfs
->  - start to write-out (background or actively) when the cgroup limits are
->    exceeded
-> 
-> This feature is supposed to be strictly connected to any underlying IO
-> controller implementation, so we can stop increasing dirty pages in VM layer
-> and enforce a write-out before any cgroup will consume the global amount of
-> dirty pages defined by the /proc/sys/vm/dirty_ratio|dirty_bytes and
-> /proc/sys/vm/dirty_background_ratio|dirty_background_bytes limits.
-> 
-> Changelog (v3 -> v4)
-> ~~~~~~~~~~~~~~~~~~~~~~
->  * handle the migration of tasks across different cgroups
->    NOTE: at the moment we don't move charges of file cache pages, so this
->    functionality is not immediately necessary. However, since the migration of
->    file cache pages is in plan, it is better to start handling file pages
->    anyway.
->  * properly account dirty pages in nilfs2
->    (thanks to Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>)
->  * lockless access to dirty memory parameters
->  * fix: page_cgroup lock must not be acquired under mapping->tree_lock
->    (thanks to Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org> and
->     KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>)
->  * code restyling
->
+Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+---
+ ipc/test-mq.sh |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-This seems to be converging, what sort of tests are you running on
-this patchset? 
-
+diff --git a/ipc/test-mq.sh b/ipc/test-mq.sh
+index fc5343e..aa5227c 100644
+--- a/ipc/test-mq.sh
++++ b/ipc/test-mq.sh
+@@ -29,6 +29,7 @@ do_checkpoint() {
+ 	${CHECKPOINT} $pid > ckpt.msq
+ 	thaw
+ 	killall check-mq
++	wait
+ }
+ 
+ echo "XXX Test 1: simple restart with SYSVIPC msq"
 -- 
-	Three Cheers,
-	Balbir
+1.6.0.6
