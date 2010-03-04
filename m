@@ -1,21 +1,20 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: selinux prevents msgrcv on restore message queues?
-Date: Wed, 3 Mar 2010 21:05:25 -0600
-Message-ID: <20100304030525.GA8875@us.ibm.com>
-References: <1267565774.11828.15.camel@localhost.localdomain>
-	<20100303004727.GA8272@us.ibm.com>
-	<20100303011941.GA10429@us.ibm.com>
-	<1267639445.11828.19.camel@localhost.localdomain>
-	<20100303194910.GC12379@us.ibm.com>
-	<1267653386.3559.9.camel@localhost.localdomain>
-	<20100303234448.GA27869@us.ibm.com>
-	<1267661777.3559.11.camel@localhost.localdomain>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH -mmotm 3/3] memcg: dirty pages instrumentation
+Date: Thu, 4 Mar 2010 12:45:05 +0900
+Message-ID: <20100304124505.394a058e.kamezawa.hiroyu__47152.3385997445$1267674569$gmane$org@jp.fujitsu.com>
+References: <1267478620-5276-1-git-send-email-arighi@develer.com>
+	<1267478620-5276-4-git-send-email-arighi@develer.com>
+	<20100303111238.7133f8af.nishimura@mxp.nes.nec.co.jp>
+	<20100303122906.9c613ab2.kamezawa.hiroyu@jp.fujitsu.com>
+	<20100303150137.f56d7084.nishimura@mxp.nes.nec.co.jp>
+	<20100303151549.5d3d686a.kamezawa.hiroyu@jp.fujitsu.com>
+	<20100303172132.fc6d9387.kamezawa.hiroyu@jp.fujitsu.com>
+	<20100303220319.GA2706@linux>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1267661777.3559.11.camel-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
+In-Reply-To: <20100303220319.GA2706@linux>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,67 +24,50 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+Cc: Balbir-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Greg-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
-> On Wed, 2010-03-03 at 17:44 -0600, Serge E. Hallyn wrote:
-> > Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
-> > > On Wed, 2010-03-03 at 13:49 -0600, Serge E. Hallyn wrote:
-> > > > Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
-> > > > > On Tue, 2010-03-02 at 19:19 -0600, Serge E. Hallyn wrote:
-> > > > > > Can you try the following patch?
-> > > > > > 
-> > > > > > Also, to actually restore the LSM labels you need to add -k to your
-> > > > > > restart flags, but without the -k you should get a sane default
-> > > > > > security label.
-> > > > > 
-> > > > > Thanks, the ipc/mq tests pass with this patch and restart -k.  Without
-> > > > > -k the tests still fail in the same manner (msgrcv fails).  Is that the
-> > > > > behavior you'd expect?
-> > > > 
-> > > > Not really - the test runs as unconfined_u right?
-> > > 
-> > > I added a ps -Z to test-mq.sh before thawing:
-> > > 
-> > > # PATH=/root/cr/user-cr.git:$PATH bash test-mq.sh 
-> > > Using output dir ./cr_mq_6T8KIG6
-> > > XXX Test 1: simple restart with SYSVIPC msq
-> > > check-mq: no process killed
-> > > ../common.sh: line 45:  5173 Killed                  ( sleep $1; kill -s USR1 $$ )
-> > > LABEL                             PID TTY          TIME CMD
-> > > unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 4358 pts/1 00:00:00 bash
-> > > unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 5151 pts/1 00:00:00 bash
-> > > unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 5172 pts/1 00:00:00 nsexec
-> > > unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 5175 pts/1 00:00:00 sleep
-> > > unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 5178 pts/1 00:00:00 check-
-> > > unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 5183 pts/1 00:00:00 ps
-> > > PASS
-> > 
-> > Can you try the following patch?
-> > 
-> > (this is on top of the last one - I'd sent)
-> > 
-> > The problem is that selinux does not assign a label to a msg_msg
-> > until you do msgsnd.  So it may be best to special-case the
-> > msg_msg object type and always have it restore the msgtype.  One
-> > reason *NOT* to do that woudl be that the restarter might not have
-> > msg_msg:restore permission...  But pls let me know if this patch
-> > fixes your problem.
+On Wed, 3 Mar 2010 23:03:19 +0100
+Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org> wrote:
+
+> On Wed, Mar 03, 2010 at 05:21:32PM +0900, KAMEZAWA Hiroyuki wrote:
+> > On Wed, 3 Mar 2010 15:15:49 +0900
+> > KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
+ 
+> > +	preempt_disable();
+> > +	lock_page_cgroup_migrate(pc);
+> >  	page = pc->page;
+> >  	if (page_mapped(page) && !PageAnon(page)) {
+> >  		/* Update mapped_file data for mem_cgroup */
+> > -		preempt_disable();
+> >  		__this_cpu_dec(from->stat->count[MEM_CGROUP_STAT_FILE_MAPPED]);
+> >  		__this_cpu_inc(to->stat->count[MEM_CGROUP_STAT_FILE_MAPPED]);
+> > -		preempt_enable();
+> >  	}
+> >  	mem_cgroup_charge_statistics(from, pc, false);
+> > +	move_acct_information(from, to, pc);
 > 
-> Yes, with both patches applied to ckpt-v19-dev
-> (261322990a4ed23c8475c232423845f998dd4f89) the tests pass with and
-> without the -k flag.
+> Kame-san, a question. According to is_target_pte_for_mc() it seems we
+> don't move file pages across cgroups for now. 
 
-Cool.  The main alternative would be to rip the core of
-ipc/msg.c:do_msgsnd() out and re-use that in place of the bulk of
-restore_msg_contents_one().
+yes. It's just in plan.
 
-Since a user can't specify a security context on an msg_msg (but
-can on msgq) I think the end-result would be fine.  It's a lot more
-work and may cause some other problems, but OTOH we'd be using one
-code path for msgsnd and its restore which would be a win.
+> If !PageAnon(page) we just return 0 and the page won't be selected for migration in
+> mem_cgroup_move_charge_pte_range().
+> 
+> So, if I've understood well the code is correct in perspective, but
+> right now it's unnecessary. File pages are not moved on task migration
+> across cgroups and, at the moment, there's no way for file page
+> accounted statistics to go negative.
+> 
+> Or am I missing something?
+> 
 
-thanks,
--serge
+At rmdir(), remainging file caches in a cgroup is moved to
+its parent. Then, all file caches are moved to its parent at rmdir().
+
+This behavior is for avoiding to lose too much file caches at removing cgroup.
+
+Thanks,
+-Kame
