@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 06/13][user-cr]: restart: Remove args->input
-Date: Wed, 3 Mar 2010 23:47:59 -0800
-Message-ID: <20100304074759.GG29320@us.ibm.com>
+Subject: [PATCH 07/13][user-cr]: Define app_restart()
+Date: Wed, 3 Mar 2010 23:48:15 -0800
+Message-ID: <20100304074815.GH29320@us.ibm.com>
 References: <20100304074354.GA29320@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,95 +24,125 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Mon, 1 Mar 2010 20:24:15 -0800
-Subject: [PATCH 06/13][user-cr]: restart: Remove args->input
+Date: Tue, 2 Mar 2010 09:29:55 -0800
+Subject: [PATCH 07/13][user-cr]: Define app_restart()
 
-Having both ->input and ->infd in 'struct args' is redundant.
-
-The args->input field is used to store the name of the input file
-(checkpoint-image).  If we move the code that opens this file from
-main() to parse_args() and use the existing args->infd field, we
-can remove the ->input field from struct args.
+Move the bulk of code that implements application restart into a
+separate function, and make main() a wrapper to that function.
+This would help export the core restart functionality as a library
+interface.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- restart.c |   25 +++++++++++++------------
- 1 files changed, 13 insertions(+), 12 deletions(-)
+ restart.c |   58 ++++++++++++++++++++++++++++++++--------------------------
+ 1 files changed, 32 insertions(+), 26 deletions(-)
 
 diff --git a/restart.c b/restart.c
-index eda864d..d028890 100644
+index d028890..369e9e6 100644
 --- a/restart.c
 +++ b/restart.c
-@@ -383,7 +383,6 @@ struct args {
- 	int show_status;
- 	int copy_status;
- 	char *freezer;
--	char *input;
- 	int infd;
- 	int klogfd;
- 	long warn;
-@@ -489,6 +488,7 @@ static void parse_args(struct args *args, int argc, char *argv[])
- 	int no_pidns;
+@@ -807,63 +807,51 @@ static int freezer_register(struct ckpt_ctx *ctx, pid_t pid)
+ 	return ret;
+ }
  
- 	char *klogfile;
-+	char *input;
+-int main(int argc, char *argv[])
++int app_restart(struct args *args)
+ {
+ 	struct ckpt_ctx ctx;
+-	struct args args;
+ 	int ret;
  
- 	/* defaults */
- 	memset(args, 0, sizeof(*args));
-@@ -500,6 +500,7 @@ static void parse_args(struct args *args, int argc, char *argv[])
- 	no_pidns = 0;
- 
- 	klogfile = NULL;
-+	input = NULL;
- 
- 	while (1) {
- 		int c = getopt_long(argc, argv, optc, opts, &optind);
-@@ -517,7 +518,7 @@ static void parse_args(struct args *args, int argc, char *argv[])
- 			args->inspect = 1;
- 			break;
- 		case 'i':
--			args->input = optarg;
-+			input = optarg;
- 			break;
- 		case 7:
- 			args->infd = str2num(optarg);
-@@ -641,11 +642,20 @@ static void parse_args(struct args *args, int argc, char *argv[])
- 		exit(1);
- 	}
- 
--	if (args->input && args->infd >= 0) {
-+	if (input && args->infd >= 0) {
- 		ckpt_err("Invalid use of both -i/--input and --input-fd\n");
- 		exit(1);
- 	}
- 
-+	/* input file ? */
-+	if (input) {
-+		args->infd = open(input, O_RDONLY, 0);
-+		if (args->infd < 0) {
-+			ckpt_perror("open input file");
-+			exit(1);
-+		}
-+	}
-+
- 	if (klogfile && args->klogfd >= 0) {
- 		ckpt_err("Invalid use of both -l/--logfile and --logfile-fd\n");
- 		exit(1);
-@@ -817,15 +827,6 @@ int main(int argc, char *argv[])
- 	parse_args(&args, argc, argv);
- 	ctx.args = &args;
- 
--	/* input file ? */
--	if (args.input) {
--		args.infd = open(args.input, O_RDONLY, 0);
--		if (args.infd < 0) {
--			ckpt_perror("open input file");
--			exit(1);
--		}
--	}
+-	/*
+-	 * Initialize the log/error fds early so even parse_args() errors
+-	 * are redirected here. Even if we later implement command line options
+-	 * that override these, any errors/messages that occur before those
+-	 * new options are parsed still go to stdout/stderr
+-	 */
+-	global_ulogfd = fileno(stdout);
+-	global_uerrfd = fileno(stderr);
 -
+ 	memset(&ctx, 0, sizeof(ctx));
+-
+-	parse_args(&args, argc, argv);
+-	ctx.args = &args;
++	ctx.args = args;
+ 
  	/* input file descriptor (default: stdin) */
- 	if (args.infd >= 0) {
- 		if (dup2(args.infd, STDIN_FILENO) < 0) {
+-	if (args.infd >= 0) {
+-		if (dup2(args.infd, STDIN_FILENO) < 0) {
++	if (args->infd >= 0) {
++		if (dup2(args->infd, STDIN_FILENO) < 0) {
+ 			ckpt_perror("dup2 input file");
+ 			exit(1);
+ 		}
+-		if (args.infd != STDIN_FILENO)
+-			close(args.infd);
++		if (args->infd != STDIN_FILENO)
++			close(args->infd);
+ 	}
+ 
+ 	/* output file descriptor (default: none) */
+-	if (args.klogfd < 0)
+-		args.klogfd = CHECKPOINT_FD_NONE;
++	if (args->klogfd < 0)
++		args->klogfd = CHECKPOINT_FD_NONE;
+ 
+ 	/* freezer preparation */
+-	if (args.freezer && freezer_prepare(&ctx) < 0)
++	if (args->freezer && freezer_prepare(&ctx) < 0)
+ 		exit(1);
+ 
+ 	/* private mounts namespace ? */
+-	if (args.mntns && unshare(CLONE_NEWNS | CLONE_FS) < 0) {
++	if (args->mntns && unshare(CLONE_NEWNS | CLONE_FS) < 0) {
+ 		ckpt_perror("unshare");
+ 		exit(1);
+ 	}
+ 
+ 	/* chroot ? */
+-	if (args.root && chroot(args.root) < 0) {
++	if (args->root && chroot(args->root) < 0) {
+ 		ckpt_perror("chroot");
+ 		exit(1);
+ 	}
+ 
+ 	/* remount /dev/pts ? */
+-	if (args.mnt_pty && ckpt_remount_devpts(&ctx) < 0)
++	if (args->mnt_pty && ckpt_remount_devpts(&ctx) < 0)
+ 		exit(1);
+ 
+ 	/* self-restart ends here: */
+-	if (args.self) {
+-		restart(getpid(), STDIN_FILENO, RESTART_TASKSELF, args.klogfd);
++	if (args->self) {
++		restart(getpid(), STDIN_FILENO, RESTART_TASKSELF, args->klogfd);
+ 		/* reach here if restart(2) failed ! */
+ 		ckpt_perror("restart");
+ 		exit(1);
+@@ -928,6 +916,24 @@ int main(int argc, char *argv[])
+ 	return ret;
+ }
+ 
++int main(int argc, char *argv[])
++{
++	struct args args;
++
++	/*
++	 * Initialize the log/error fds early so even parse_args() errors
++	 * are redirected here. Even if we later implement command line options
++	 * that override these, any errors/messages that occur before those
++	 * new options are parsed still go to stdout/stderr
++	 */
++	global_ulogfd = fileno(stdout);
++	global_uerrfd = fileno(stderr);
++
++	parse_args(&args, argc, argv);
++
++	return app_restart(&args);
++}
++
+ static int ckpt_parse_status(int status, int mimic, int verbose)
+ {
+ 	int sig = 0;
 -- 
 1.6.0.4
