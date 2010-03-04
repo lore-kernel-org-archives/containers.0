@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 08/13][user-cr]: restart: Rename struct args.
-Date: Wed, 3 Mar 2010 23:48:38 -0800
-Message-ID: <20100304074838.GI29320@us.ibm.com>
+Subject: [PATCH 09/13][user-cr]: checkpoint: Remove args->output
+Date: Wed, 3 Mar 2010 23:49:16 -0800
+Message-ID: <20100304074916.GJ29320@us.ibm.com>
 References: <20100304074354.GA29320@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,67 +24,92 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Mon, 1 Mar 2010 20:33:36 -0800
-Subject: [PATCH 08/13][user-cr]: restart: Rename struct args.
+Date: Wed, 3 Mar 2010 10:49:19 -0800
+Subject: [PATCH 09/13][user-cr]: checkpoint: Remove args->output
 
-Rename 'struct args' in restart.c to 'struct app_restart_args'. This
-would enable us to distinguish this struct from the 'struct args' in
-checkpoint.c when checkpoint/restart code is implemented as a library
-interface
+'struct args' has both an 'outfd' and an 'output' field. The ->output
+field is only needed to parse arguments and by moving the open of
+the output file into parse_args(), we can drop the ->output field
+and just use ->outfd.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- restart.c |   10 +++++-----
- 1 files changed, 5 insertions(+), 5 deletions(-)
+ checkpoint.c |   29 +++++++++++++++--------------
+ 1 files changed, 15 insertions(+), 14 deletions(-)
 
-diff --git a/restart.c b/restart.c
-index 369e9e6..6994298 100644
---- a/restart.c
-+++ b/restart.c
-@@ -292,7 +292,7 @@ struct ckpt_ctx {
- 	char container[BUFSIZE];
- 	char tree[BUFSIZE];
- 	char buf[BUFSIZE];
--	struct args *args;
-+	struct app_restart_args *args;
+diff --git a/checkpoint.c b/checkpoint.c
+index 464e359..df405cb 100644
+--- a/checkpoint.c
++++ b/checkpoint.c
+@@ -40,7 +40,6 @@ static char usage_str[] =
+ "";
  
- 	char *freezer;
- };
-@@ -371,7 +371,7 @@ struct pid_swap {
- 	pid_t new;
- };
+ struct args {
+-	char *output;
+ 	int outfd;
+ 	char *logfile;
+ 	int logfd;
+@@ -84,10 +83,12 @@ static void parse_args(struct args *args, int argc, char *argv[])
+ 		{ NULL,		0,			NULL, 0 }
+ 	};
+ 	static char optc[] = "hvco:l:";
++	char *output;
  
--struct args {
-+struct app_restart_args {
- 	int self;
- 	int pids;
- 	int pidns;
-@@ -452,7 +452,7 @@ static inline int ckpt_cond_fail(struct ckpt_ctx *ctx, long mask)
- 	return (ctx->args->fail & mask);
- }
+ 	/* defaults */
+ 	args->outfd = -1;
+ 	args->logfd = -1;
++	output = NULL;
  
--static void parse_args(struct args *args, int argc, char *argv[])
-+static void parse_args(struct app_restart_args *args, int argc, char *argv[])
- {
- 	static struct option opts[] = {
- 		{ "help",	no_argument,		NULL, 'h' },
-@@ -807,7 +807,7 @@ static int freezer_register(struct ckpt_ctx *ctx, pid_t pid)
- 	return ret;
- }
+ 	while (1) {
+ 		int c = getopt_long(argc, argv, optc, opts, NULL);
+@@ -99,7 +100,7 @@ static void parse_args(struct args *args, int argc, char *argv[])
+ 		case 'h':
+ 			usage(usage_str);
+ 		case 'o':
+-			args->output = optarg;
++			output = optarg;
+ 			break;
+ 		case 1:
+ 			args->outfd = str2num(optarg);
+@@ -129,10 +130,20 @@ static void parse_args(struct args *args, int argc, char *argv[])
+ 		}
+ 	}
  
--int app_restart(struct args *args)
-+int app_restart(struct app_restart_args *args)
- {
- 	struct ckpt_ctx ctx;
- 	int ret;
-@@ -918,7 +918,7 @@ int app_restart(struct args *args)
+-	if (args->output && args->outfd >= 0) {
+-		printf("Invalid used of both -o/--output and --output-fd\n");
++	if (output && args->outfd >= 0) {
++		printf("Invalid use of both -o/--output and --output-fd\n");
+ 		exit(1);
+ 	}
++
++	/* output file */
++	if (output) {
++		args->outfd = open(output, O_RDWR | O_CREAT | O_EXCL, 0644);
++		if (args->outfd < 0) {
++			perror("open output file");
++			exit(1);
++		}
++	}
++
+ 	if (args->logfile && args->logfd >= 0) {
+ 		printf("Invalid used of both -l/--logfile and --logfile-fd\n");
+ 		exit(1);
+@@ -162,16 +173,6 @@ int main(int argc, char *argv[])
+ 		exit(1);
+ 	}
  
- int main(int argc, char *argv[])
- {
--	struct args args;
-+	struct app_restart_args args;
- 
- 	/*
- 	 * Initialize the log/error fds early so even parse_args() errors
+-	/* output file */
+-	if (args.output) {
+-		args.outfd = open(args.output,
+-				     O_RDWR | O_CREAT | O_EXCL, 0644);
+-		if (args.outfd < 0) {
+-			perror("open output file");
+-			exit(1);
+-		}
+-	}
+-
+ 	/* output file descriptor (default: stdout) */
+ 	if (args.outfd < 0)
+ 		args.outfd = STDOUT_FILENO;
 -- 
 1.6.0.4
