@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 09/13][user-cr]: checkpoint: Remove args->output
-Date: Wed, 3 Mar 2010 23:49:16 -0800
-Message-ID: <20100304074916.GJ29320@us.ibm.com>
+Subject: [PATCH 10/13][user-cr]: checkpoint: Remove ->logfile
+Date: Wed, 3 Mar 2010 23:49:42 -0800
+Message-ID: <20100304074942.GK29320@us.ibm.com>
 References: <20100304074354.GA29320@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,92 +24,92 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Wed, 3 Mar 2010 10:49:19 -0800
-Subject: [PATCH 09/13][user-cr]: checkpoint: Remove args->output
+Date: Wed, 3 Mar 2010 11:03:52 -0800
+Subject: [PATCH 10/13][user-cr]: checkpoint: Remove ->logfile
 
-'struct args' has both an 'outfd' and an 'output' field. The ->output
+'struct args' has both an 'logfd' and a 'logfile' field. The ->logfile
 field is only needed to parse arguments and by moving the open of
-the output file into parse_args(), we can drop the ->output field
-and just use ->outfd.
+the logfile into parse_args(), we can drop the ->logfile field and just
+use ->logfd.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- checkpoint.c |   29 +++++++++++++++--------------
- 1 files changed, 15 insertions(+), 14 deletions(-)
+ checkpoint.c |   28 ++++++++++++++--------------
+ 1 files changed, 14 insertions(+), 14 deletions(-)
 
 diff --git a/checkpoint.c b/checkpoint.c
-index 464e359..df405cb 100644
+index df405cb..ca77d8b 100644
 --- a/checkpoint.c
 +++ b/checkpoint.c
-@@ -40,7 +40,6 @@ static char usage_str[] =
- "";
+@@ -41,7 +41,6 @@ static char usage_str[] =
  
  struct args {
--	char *output;
  	int outfd;
- 	char *logfile;
+-	char *logfile;
  	int logfd;
-@@ -84,10 +83,12 @@ static void parse_args(struct args *args, int argc, char *argv[])
- 		{ NULL,		0,			NULL, 0 }
+ 	int container;
+ 	int verbose;
+@@ -84,11 +83,13 @@ static void parse_args(struct args *args, int argc, char *argv[])
  	};
  	static char optc[] = "hvco:l:";
-+	char *output;
+ 	char *output;
++	char *logfile;
  
  	/* defaults */
  	args->outfd = -1;
  	args->logfd = -1;
-+	output = NULL;
+ 	output = NULL;
++	logfile = NULL;
  
  	while (1) {
  		int c = getopt_long(argc, argv, optc, opts, NULL);
-@@ -99,7 +100,7 @@ static void parse_args(struct args *args, int argc, char *argv[])
- 		case 'h':
- 			usage(usage_str);
- 		case 'o':
--			args->output = optarg;
-+			output = optarg;
+@@ -110,7 +111,7 @@ static void parse_args(struct args *args, int argc, char *argv[])
+ 			}
  			break;
- 		case 1:
- 			args->outfd = str2num(optarg);
-@@ -129,10 +130,20 @@ static void parse_args(struct args *args, int argc, char *argv[])
+ 		case 'l':
+-			args->logfile = optarg;
++			logfile = optarg;
+ 			break;
+ 		case 2:
+ 			args->logfd = str2num(optarg);
+@@ -144,10 +145,19 @@ static void parse_args(struct args *args, int argc, char *argv[])
  		}
  	}
  
--	if (args->output && args->outfd >= 0) {
--		printf("Invalid used of both -o/--output and --output-fd\n");
-+	if (output && args->outfd >= 0) {
-+		printf("Invalid use of both -o/--output and --output-fd\n");
+-	if (args->logfile && args->logfd >= 0) {
+-		printf("Invalid used of both -l/--logfile and --logfile-fd\n");
++	if (logfile && args->logfd >= 0) {
++		printf("Invalid use of both -l/--logfile and --logfile-fd\n");
  		exit(1);
  	}
 +
-+	/* output file */
-+	if (output) {
-+		args->outfd = open(output, O_RDWR | O_CREAT | O_EXCL, 0644);
-+		if (args->outfd < 0) {
-+			perror("open output file");
++	/* (optional) log file */
++	if (logfile) {
++		args->logfd = open(logfile, O_RDWR | O_CREAT | O_EXCL, 0644);
++		if (args->logfd < 0) {
++			perror("open log file");
 +			exit(1);
 +		}
 +	}
-+
- 	if (args->logfile && args->logfd >= 0) {
- 		printf("Invalid used of both -l/--logfile and --logfile-fd\n");
- 		exit(1);
-@@ -162,16 +173,6 @@ int main(int argc, char *argv[])
- 		exit(1);
- 	}
+ }
  
--	/* output file */
--	if (args.output) {
--		args.outfd = open(args.output,
--				     O_RDWR | O_CREAT | O_EXCL, 0644);
--		if (args.outfd < 0) {
--			perror("open output file");
+ int main(int argc, char *argv[])
+@@ -177,16 +187,6 @@ int main(int argc, char *argv[])
+ 	if (args.outfd < 0)
+ 		args.outfd = STDOUT_FILENO;
+ 
+-	/* (optional) log file */
+-	if (args.logfile) {
+-		args.logfd = open(args.logfile,
+-				  O_RDWR | O_CREAT | O_EXCL, 0644);
+-		if (args.logfd < 0) {
+-			perror("open log file");
 -			exit(1);
 -		}
 -	}
 -
- 	/* output file descriptor (default: stdout) */
- 	if (args.outfd < 0)
- 		args.outfd = STDOUT_FILENO;
+ 	/* output file descriptor (default: none) */
+ 	if (args.logfd < 0)
+ 		args.logfd = CHECKPOINT_FD_NONE;
 -- 
 1.6.0.4
