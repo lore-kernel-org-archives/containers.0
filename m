@@ -1,11 +1,19 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] cr_tests: Use toolchain prefixes and variables in Makefiles
-Date: Thu,  4 Mar 2010 22:41:34 -0800
-Message-ID: <8b495c1ce49380d01a34fc2e3ccf0e27802306f3.1267771287.git.matthltc@us.ibm.com>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH -mmotm 3/4] memcg: dirty pages accounting and limiting
+	infrastructure
+Date: Fri, 5 Mar 2010 12:31:33 +0530
+Message-ID: <20100305070133.GJ3073@balbir.in.ibm.com>
+References: <1267699215-4101-1-git-send-email-arighi@develer.com>
+	<1267699215-4101-4-git-send-email-arighi@develer.com>
+	<20100305101234.909001e8.nishimura@mxp.nes.nec.co.jp>
+	<20100305105855.9b53176c.kamezawa.hiroyu@jp.fujitsu.com>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20100305105855.9b53176c.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,92 +23,64 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- Makefile         |    7 +++++++
- eventfd/Makefile |    4 ++--
- futex/module.mk  |    2 +-
- pty/Makefile     |    2 +-
- selinux/Makefile |    2 +-
- 5 files changed, 12 insertions(+), 5 deletions(-)
+* KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> [2010-03-05 10:58:55]:
 
-diff --git a/Makefile b/Makefile
-index e8eb048..f17a9be 100644
---- a/Makefile
-+++ b/Makefile
-@@ -23,6 +23,13 @@ override CFLAGS += -Wall
+> On Fri, 5 Mar 2010 10:12:34 +0900
+> Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
+> 
+> > On Thu,  4 Mar 2010 11:40:14 +0100, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org> wrote:
+> > > Infrastructure to account dirty pages per cgroup and add dirty limit
+> > >  static int mem_cgroup_count_children_cb(struct mem_cgroup *mem, void *data)
+> > >  {
+> > >  	int *val = data;
+> > > @@ -1275,34 +1423,70 @@ static void record_last_oom(struct mem_cgroup *mem)
+> > >  }
+> > >  
+> > >  /*
+> > > - * Currently used to update mapped file statistics, but the routine can be
+> > > - * generalized to update other statistics as well.
+> > > + * Generalized routine to update file cache's status for memcg.
+> > > + *
+> > > + * Before calling this, mapping->tree_lock should be held and preemption is
+> > > + * disabled.  Then, it's guarnteed that the page is not uncharged while we
+> > > + * access page_cgroup. We can make use of that.
+> > >   */
+> > IIUC, mapping->tree_lock is held with irq disabled, so I think "mapping->tree_lock
+> > should be held with irq disabled" would be enouth.
+> > And, as far as I can see, callers of this function have not ensured this yet in [4/4].
+> > 
+> > how about:
+> > 
+> > 	void mem_cgroup_update_stat_locked(...)
+> > 	{
+> > 		...
+> > 	}
+> > 
+> > 	void mem_cgroup_update_stat_unlocked(mapping, ...)
+> > 	{
+> > 		spin_lock_irqsave(mapping->tree_lock, ...);
+> > 		mem_cgroup_update_stat_locked();
+> > 		spin_unlock_irqrestore(...);
+> > 	}
+> >
+> Rather than tree_lock, lock_page_cgroup() can be used if tree_lock is not held.
+> 
+> 		lock_page_cgroup();
+> 		mem_cgroup_update_stat_locked();
+> 		unlock_page_cgroup();
+> 
+> Andrea-san, FILE_MAPPED is updated without treelock, at least. You can't depend
+> on migration_lock about FILE_MAPPED.
+>
+
+FILE_MAPPED is updated under pte lock in the rmap context and
+page_cgroup lock within update_file_mapped.
  
- all:
- 
-+# Prefix CC, AS, LD, AR for cross compilation
-+CROSS_COMPILE ?=
-+CC ?= $(CROSS_COMPILE)gcc
-+LD ?= $(CROSS_COMPILE)ld
-+AS ?= $(CROSS_COMPILE)as
-+AR ?= $(CROSS_COMPILE)ar
-+
- include $(addsuffix /module.mk,$(modules))
- 
- progs += mysu
-diff --git a/eventfd/Makefile b/eventfd/Makefile
-index 82456e8..1bcd587 100644
---- a/eventfd/Makefile
-+++ b/eventfd/Makefile
-@@ -13,10 +13,10 @@ all: $(PROGS)
- 	$(MAKE) -C ../libcrtest libcrtest.a
- 
- libeptest.a: libeptest.o libeptest.h
--	ar cr libeptest.a libeptest.o
-+	$(AR) cr libeptest.a libeptest.o
- 
- $(PROGS): %: %.c $(LIBS)
--	gcc -Wall $(CFLAGS) -o $@ $< $(LIBS)
-+	$(CC) -Wall $(CFLAGS) -o $@ $< $(LIBS)
- 
- clean:
- 	rm -f *.o libeptest.a $(PROGS)
-diff --git a/futex/module.mk b/futex/module.mk
-index 6ab0449..412216b 100644
---- a/futex/module.mk
-+++ b/futex/module.mk
-@@ -1,7 +1,7 @@
- local_dir := futex
- local_progs := $(addprefix $(local_dir)/,plain robust pi)
- 
--MACHINE := $(shell gcc -dumpmachine)
-+MACHINE := $(shell $(CC) -dumpmachine)
- ifeq ($(MACHINE:i386-%=i386),i386)
- ARCHOPTS := -march=i486
- endif
-diff --git a/pty/Makefile b/pty/Makefile
-index fe93a00..438f9bc 100644
---- a/pty/Makefile
-+++ b/pty/Makefile
-@@ -6,7 +6,7 @@ SLIBS = ../libcrtest/libcrtest.a
- LIBCMD = -I../libcrtest -L../libcrtest $(SLIBS)
- 
- ptyloop: ptyloop.c ../clone.h $(SLIBS)
--	gcc -o ptyloop ptyloop.c $(LIBCMD)
-+	$(CC) -o ptyloop ptyloop.c $(LIBCMD)
- 
- clean:
- 	rm -f $(targets) out* ckpt-out read-ok read-bad
-diff --git a/selinux/Makefile b/selinux/Makefile
-index 2ae8d96..f96384d 100644
---- a/selinux/Makefile
-+++ b/selinux/Makefile
-@@ -3,7 +3,7 @@ targets = ckpt wrap
- all: $(targets)
- 
- ckpt: ckpt.c ../cr.h
--	gcc -o ckpt ckpt.c
-+	$(CC) -o ckpt ckpt.c
- 
- clean:
- 	rm -rf $(targets) out context cr-test.out cr-test-module restart wrap
+
 -- 
-1.6.3.3
+	Three Cheers,
+	Balbir
