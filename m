@@ -1,16 +1,15 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH -mmotm 4/4] memcg: dirty pages instrumentation
-Date: Fri, 5 Mar 2010 12:08:43 +0530
-Message-ID: <20100305063843.GI3073__519.226378719573$1267777962$gmane$org@balbir.in.ibm.com>
-References: <1267699215-4101-1-git-send-email-arighi@develer.com>
-	<1267699215-4101-5-git-send-email-arighi@develer.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] cr_tests: Use toolchain prefixes and variables in
+	Makefiles
+Date: Fri, 5 Mar 2010 12:08:43 -0600
+Message-ID: <20100305180843.GA23409@us.ibm.com>
+References: <8b495c1ce49380d01a34fc2e3ccf0e27802306f3.1267771287.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1267699215-4101-5-git-send-email-arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <8b495c1ce49380d01a34fc2e3ccf0e27802306f3.1267771287.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,382 +19,98 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
-Cc: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-* Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org> [2010-03-04 11:40:15]:
+Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-> Apply the cgroup dirty pages accounting and limiting infrastructure
-> to the opportune kernel functions.
-> 
-> Signed-off-by: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+Applied, thanks.
+
+-serge
+
 > ---
->  fs/fuse/file.c      |    5 +++
->  fs/nfs/write.c      |    4 ++
->  fs/nilfs2/segment.c |   11 +++++-
->  mm/filemap.c        |    1 +
->  mm/page-writeback.c |   91 ++++++++++++++++++++++++++++++++++-----------------
->  mm/rmap.c           |    4 +-
->  mm/truncate.c       |    2 +
->  7 files changed, 84 insertions(+), 34 deletions(-)
+>  Makefile         |    7 +++++++
+>  eventfd/Makefile |    4 ++--
+>  futex/module.mk  |    2 +-
+>  pty/Makefile     |    2 +-
+>  selinux/Makefile |    2 +-
+>  5 files changed, 12 insertions(+), 5 deletions(-)
 > 
-> diff --git a/fs/fuse/file.c b/fs/fuse/file.c
-> index a9f5e13..dbbdd53 100644
-> --- a/fs/fuse/file.c
-> +++ b/fs/fuse/file.c
-> @@ -11,6 +11,7 @@
->  #include <linux/pagemap.h>
->  #include <linux/slab.h>
->  #include <linux/kernel.h>
-> +#include <linux/memcontrol.h>
->  #include <linux/sched.h>
->  #include <linux/module.h>
+> diff --git a/Makefile b/Makefile
+> index e8eb048..f17a9be 100644
+> --- a/Makefile
+> +++ b/Makefile
+> @@ -23,6 +23,13 @@ override CFLAGS += -Wall
 > 
-> @@ -1129,6 +1130,8 @@ static void fuse_writepage_finish(struct fuse_conn *fc, struct fuse_req *req)
+>  all:
 > 
->  	list_del(&req->writepages_entry);
->  	dec_bdi_stat(bdi, BDI_WRITEBACK);
-> +	mem_cgroup_update_stat(req->pages[0],
-> +			MEM_CGROUP_STAT_WRITEBACK_TEMP, -1);
->  	dec_zone_page_state(req->pages[0], NR_WRITEBACK_TEMP);
->  	bdi_writeout_inc(bdi);
->  	wake_up(&fi->page_waitq);
-> @@ -1240,6 +1243,8 @@ static int fuse_writepage_locked(struct page *page)
->  	req->inode = inode;
-> 
->  	inc_bdi_stat(mapping->backing_dev_info, BDI_WRITEBACK);
-> +	mem_cgroup_update_stat(tmp_page,
-> +			MEM_CGROUP_STAT_WRITEBACK_TEMP, 1);
->  	inc_zone_page_state(tmp_page, NR_WRITEBACK_TEMP);
->  	end_page_writeback(page);
-> 
-> diff --git a/fs/nfs/write.c b/fs/nfs/write.c
-> index b753242..7316f7a 100644
-> --- a/fs/nfs/write.c
-> +++ b/fs/nfs/write.c
-> @@ -439,6 +439,7 @@ nfs_mark_request_commit(struct nfs_page *req)
->  			req->wb_index,
->  			NFS_PAGE_TAG_COMMIT);
->  	spin_unlock(&inode->i_lock);
-> +	mem_cgroup_update_stat(req->wb_page, MEM_CGROUP_STAT_UNSTABLE_NFS, 1);
->  	inc_zone_page_state(req->wb_page, NR_UNSTABLE_NFS);
->  	inc_bdi_stat(req->wb_page->mapping->backing_dev_info, BDI_UNSTABLE);
->  	__mark_inode_dirty(inode, I_DIRTY_DATASYNC);
-> @@ -450,6 +451,7 @@ nfs_clear_request_commit(struct nfs_page *req)
->  	struct page *page = req->wb_page;
-> 
->  	if (test_and_clear_bit(PG_CLEAN, &(req)->wb_flags)) {
-> +		mem_cgroup_update_stat(page, MEM_CGROUP_STAT_UNSTABLE_NFS, -1);
->  		dec_zone_page_state(page, NR_UNSTABLE_NFS);
->  		dec_bdi_stat(page->mapping->backing_dev_info, BDI_UNSTABLE);
->  		return 1;
-> @@ -1273,6 +1275,8 @@ nfs_commit_list(struct inode *inode, struct list_head *head, int how)
->  		req = nfs_list_entry(head->next);
->  		nfs_list_remove_request(req);
->  		nfs_mark_request_commit(req);
-> +		mem_cgroup_update_stat(req->wb_page,
-> +				MEM_CGROUP_STAT_UNSTABLE_NFS, -1);
->  		dec_zone_page_state(req->wb_page, NR_UNSTABLE_NFS);
->  		dec_bdi_stat(req->wb_page->mapping->backing_dev_info,
->  				BDI_UNSTABLE);
-> diff --git a/fs/nilfs2/segment.c b/fs/nilfs2/segment.c
-> index ada2f1b..27a01b1 100644
-> --- a/fs/nilfs2/segment.c
-> +++ b/fs/nilfs2/segment.c
-> @@ -24,6 +24,7 @@
->  #include <linux/pagemap.h>
->  #include <linux/buffer_head.h>
->  #include <linux/writeback.h>
-> +#include <linux/memcontrol.h>
->  #include <linux/bio.h>
->  #include <linux/completion.h>
->  #include <linux/blkdev.h>
-> @@ -1660,8 +1661,11 @@ nilfs_copy_replace_page_buffers(struct page *page, struct list_head *out)
->  	} while (bh = bh->b_this_page, bh2 = bh2->b_this_page, bh != head);
->  	kunmap_atomic(kaddr, KM_USER0);
-> 
-> -	if (!TestSetPageWriteback(clone_page))
-> +	if (!TestSetPageWriteback(clone_page)) {
-> +		mem_cgroup_update_stat(clone_page,
-> +				MEM_CGROUP_STAT_WRITEBACK, 1);
-
-I wonder if we should start implementing inc and dec to avoid passing
-the +1 and -1 parameters. It should make the code easier to read.
-
->  		inc_zone_page_state(clone_page, NR_WRITEBACK);
-> +	}
->  	unlock_page(clone_page);
-> 
->  	return 0;
-> @@ -1783,8 +1787,11 @@ static void __nilfs_end_page_io(struct page *page, int err)
->  	}
-> 
->  	if (buffer_nilfs_allocated(page_buffers(page))) {
-> -		if (TestClearPageWriteback(page))
-> +		if (TestClearPageWriteback(page)) {
-> +			mem_cgroup_update_stat(page,
-> +					MEM_CGROUP_STAT_WRITEBACK, -1);
->  			dec_zone_page_state(page, NR_WRITEBACK);
-> +		}
->  	} else
->  		end_page_writeback(page);
->  }
-> diff --git a/mm/filemap.c b/mm/filemap.c
-> index fe09e51..f85acae 100644
-> --- a/mm/filemap.c
-> +++ b/mm/filemap.c
-> @@ -135,6 +135,7 @@ void __remove_from_page_cache(struct page *page)
->  	 * having removed the page entirely.
->  	 */
->  	if (PageDirty(page) && mapping_cap_account_dirty(mapping)) {
-> +		mem_cgroup_update_stat(page, MEM_CGROUP_STAT_FILE_DIRTY, -1);
->  		dec_zone_page_state(page, NR_FILE_DIRTY);
->  		dec_bdi_stat(mapping->backing_dev_info, BDI_DIRTY);
->  	}
-> diff --git a/mm/page-writeback.c b/mm/page-writeback.c
-> index 5a0f8f3..c5d14ea 100644
-> --- a/mm/page-writeback.c
-> +++ b/mm/page-writeback.c
-> @@ -137,13 +137,16 @@ static struct prop_descriptor vm_dirties;
->   */
->  static int calc_period_shift(void)
->  {
-> +	struct dirty_param dirty_param;
-
-vm_dirty_param?
-
->  	unsigned long dirty_total;
-> 
-> -	if (vm_dirty_bytes)
-> -		dirty_total = vm_dirty_bytes / PAGE_SIZE;
-> +	get_dirty_param(&dirty_param);
-
-get_vm_dirty_param() is a nicer name.
-
+> +# Prefix CC, AS, LD, AR for cross compilation
+> +CROSS_COMPILE ?=
+> +CC ?= $(CROSS_COMPILE)gcc
+> +LD ?= $(CROSS_COMPILE)ld
+> +AS ?= $(CROSS_COMPILE)as
+> +AR ?= $(CROSS_COMPILE)ar
 > +
-> +	if (dirty_param.dirty_bytes)
-> +		dirty_total = dirty_param.dirty_bytes / PAGE_SIZE;
->  	else
-> -		dirty_total = (vm_dirty_ratio * determine_dirtyable_memory()) /
-> -				100;
-> +		dirty_total = (dirty_param.dirty_ratio *
-> +				determine_dirtyable_memory()) / 100;
->  	return 2 + ilog2(dirty_total - 1);
->  }
+>  include $(addsuffix /module.mk,$(modules))
 > 
-> @@ -408,41 +411,46 @@ static unsigned long highmem_dirtyable_memory(unsigned long total)
->   */
->  unsigned long determine_dirtyable_memory(void)
->  {
-> -	unsigned long x;
-> -
-> -	x = global_page_state(NR_FREE_PAGES) + global_reclaimable_pages();
-> +	unsigned long memory;
-> +	s64 memcg_memory;
+>  progs += mysu
+> diff --git a/eventfd/Makefile b/eventfd/Makefile
+> index 82456e8..1bcd587 100644
+> --- a/eventfd/Makefile
+> +++ b/eventfd/Makefile
+> @@ -13,10 +13,10 @@ all: $(PROGS)
+>  	$(MAKE) -C ../libcrtest libcrtest.a
 > 
-> +	memory = global_page_state(NR_FREE_PAGES) + global_reclaimable_pages();
->  	if (!vm_highmem_is_dirtyable)
-> -		x -= highmem_dirtyable_memory(x);
-> -
-> -	return x + 1;	/* Ensure that we never return 0 */
-> +		memory -= highmem_dirtyable_memory(memory);
-> +	if (mem_cgroup_has_dirty_limit())
-> +		return memory + 1;
-
-Vivek already pointed out this issue I suppose. Should be *not*
-
-> +	memcg_memory = mem_cgroup_page_stat(MEMCG_NR_DIRTYABLE_PAGES);
-
-Can memcg_memory be 0?
-
-> +	return min((unsigned long)memcg_memory, memory + 1);
->  }
+>  libeptest.a: libeptest.o libeptest.h
+> -	ar cr libeptest.a libeptest.o
+> +	$(AR) cr libeptest.a libeptest.o
 > 
->  void
->  get_dirty_limits(unsigned long *pbackground, unsigned long *pdirty,
->  		 unsigned long *pbdi_dirty, struct backing_dev_info *bdi)
->  {
-> -	unsigned long background;
-> -	unsigned long dirty;
-> +	unsigned long dirty, background;
->  	unsigned long available_memory = determine_dirtyable_memory();
->  	struct task_struct *tsk;
-> +	struct dirty_param dirty_param;
-> +
-> +	get_dirty_param(&dirty_param);
+>  $(PROGS): %: %.c $(LIBS)
+> -	gcc -Wall $(CFLAGS) -o $@ $< $(LIBS)
+> +	$(CC) -Wall $(CFLAGS) -o $@ $< $(LIBS)
 > 
-> -	if (vm_dirty_bytes)
-> -		dirty = DIV_ROUND_UP(vm_dirty_bytes, PAGE_SIZE);
-> +	if (dirty_param.dirty_bytes)
-> +		dirty = DIV_ROUND_UP(dirty_param.dirty_bytes, PAGE_SIZE);
->  	else {
->  		int dirty_ratio;
+>  clean:
+>  	rm -f *.o libeptest.a $(PROGS)
+> diff --git a/futex/module.mk b/futex/module.mk
+> index 6ab0449..412216b 100644
+> --- a/futex/module.mk
+> +++ b/futex/module.mk
+> @@ -1,7 +1,7 @@
+>  local_dir := futex
+>  local_progs := $(addprefix $(local_dir)/,plain robust pi)
 > 
-> -		dirty_ratio = vm_dirty_ratio;
-> +		dirty_ratio = dirty_param.dirty_ratio;
->  		if (dirty_ratio < 5)
->  			dirty_ratio = 5;
->  		dirty = (dirty_ratio * available_memory) / 100;
->  	}
+> -MACHINE := $(shell gcc -dumpmachine)
+> +MACHINE := $(shell $(CC) -dumpmachine)
+>  ifeq ($(MACHINE:i386-%=i386),i386)
+>  ARCHOPTS := -march=i486
+>  endif
+> diff --git a/pty/Makefile b/pty/Makefile
+> index fe93a00..438f9bc 100644
+> --- a/pty/Makefile
+> +++ b/pty/Makefile
+> @@ -6,7 +6,7 @@ SLIBS = ../libcrtest/libcrtest.a
+>  LIBCMD = -I../libcrtest -L../libcrtest $(SLIBS)
 > 
-> -	if (dirty_background_bytes)
-> -		background = DIV_ROUND_UP(dirty_background_bytes, PAGE_SIZE);
-> +	if (dirty_param.dirty_background_bytes)
-> +		background = DIV_ROUND_UP(dirty_param.dirty_background_bytes,
-> +						PAGE_SIZE);
->  	else
-> -		background = (dirty_background_ratio * available_memory) / 100;
-> -
-> +		background = (dirty_param.dirty_background_ratio *
-> +						available_memory) / 100;
->  	if (background >= dirty)
->  		background = dirty / 2;
->  	tsk = current;
-> @@ -508,9 +516,15 @@ static void balance_dirty_pages(struct address_space *mapping,
->  		get_dirty_limits(&background_thresh, &dirty_thresh,
->  				&bdi_thresh, bdi);
+>  ptyloop: ptyloop.c ../clone.h $(SLIBS)
+> -	gcc -o ptyloop ptyloop.c $(LIBCMD)
+> +	$(CC) -o ptyloop ptyloop.c $(LIBCMD)
 > 
-> -		nr_reclaimable = global_page_state(NR_FILE_DIRTY) +
-> +		if (mem_cgroup_has_dirty_limit()) {
-> +			nr_reclaimable =
-> +				mem_cgroup_page_stat(MEMCG_NR_RECLAIM_PAGES);
-> +			nr_writeback = mem_cgroup_page_stat(MEMCG_NR_WRITEBACK);
-> +		} else {
-> +			nr_reclaimable = global_page_state(NR_FILE_DIRTY) +
->  					global_page_state(NR_UNSTABLE_NFS);
-> -		nr_writeback = global_page_state(NR_WRITEBACK);
-> +			nr_writeback = global_page_state(NR_WRITEBACK);
-> +		}
+>  clean:
+>  	rm -f $(targets) out* ckpt-out read-ok read-bad
+> diff --git a/selinux/Makefile b/selinux/Makefile
+> index 2ae8d96..f96384d 100644
+> --- a/selinux/Makefile
+> +++ b/selinux/Makefile
+> @@ -3,7 +3,7 @@ targets = ckpt wrap
+>  all: $(targets)
 > 
->  		bdi_nr_reclaimable = bdi_stat(bdi, BDI_DIRTY);
->  		if (bdi_cap_account_unstable(bdi)) {
-> @@ -611,10 +625,13 @@ static void balance_dirty_pages(struct address_space *mapping,
->  	 * In normal mode, we start background writeout at the lower
->  	 * background_thresh, to keep the amount of dirty memory low.
->  	 */
-> +	if (mem_cgroup_has_dirty_limit())
-> +		nr_reclaimable = mem_cgroup_page_stat(MEMCG_NR_RECLAIM_PAGES);
-> +	else
-> +		nr_reclaimable = global_page_state(NR_FILE_DIRTY) +
-> +				global_page_state(NR_UNSTABLE_NFS);
->  	if ((laptop_mode && pages_written) ||
-> -	    (!laptop_mode && ((global_page_state(NR_FILE_DIRTY)
-> -			       + global_page_state(NR_UNSTABLE_NFS))
-> -					  > background_thresh)))
-> +	    (!laptop_mode && (nr_reclaimable > background_thresh)))
->  		bdi_start_writeback(bdi, NULL, 0);
->  }
+>  ckpt: ckpt.c ../cr.h
+> -	gcc -o ckpt ckpt.c
+> +	$(CC) -o ckpt ckpt.c
 > 
-> @@ -678,6 +695,8 @@ void throttle_vm_writeout(gfp_t gfp_mask)
->  	unsigned long dirty_thresh;
-> 
->          for ( ; ; ) {
-> +		unsigned long dirty;
-> +
->  		get_dirty_limits(&background_thresh, &dirty_thresh, NULL, NULL);
-> 
->                  /*
-> @@ -686,10 +705,15 @@ void throttle_vm_writeout(gfp_t gfp_mask)
->                   */
->                  dirty_thresh += dirty_thresh / 10;      /* wheeee... */
-> 
-> -                if (global_page_state(NR_UNSTABLE_NFS) +
-> -			global_page_state(NR_WRITEBACK) <= dirty_thresh)
-> -                        	break;
-> -                congestion_wait(BLK_RW_ASYNC, HZ/10);
-> +		if (mem_cgroup_has_dirty_limit())
-> +			dirty = mem_cgroup_page_stat(
-> +					MEMCG_NR_DIRTY_WRITEBACK_PAGES);
-> +		else
-> +			dirty = global_page_state(NR_UNSTABLE_NFS) +
-> +				global_page_state(NR_WRITEBACK);
-> +		if (dirty <= dirty_thresh)
-> +			break;
-> +		congestion_wait(BLK_RW_ASYNC, HZ/10);
-> 
->  		/*
->  		 * The caller might hold locks which can prevent IO completion
-> @@ -1096,6 +1120,7 @@ int __set_page_dirty_no_writeback(struct page *page)
->  void account_page_dirtied(struct page *page, struct address_space *mapping)
->  {
->  	if (mapping_cap_account_dirty(mapping)) {
-> +		mem_cgroup_update_stat(page, MEM_CGROUP_STAT_FILE_DIRTY, 1);
->  		__inc_zone_page_state(page, NR_FILE_DIRTY);
->  		__inc_bdi_stat(mapping->backing_dev_info, BDI_DIRTY);
->  		task_dirty_inc(current);
-> @@ -1297,6 +1322,8 @@ int clear_page_dirty_for_io(struct page *page)
->  		 * for more comments.
->  		 */
->  		if (TestClearPageDirty(page)) {
-> +			mem_cgroup_update_stat(page,
-> +					MEM_CGROUP_STAT_FILE_DIRTY, -1);
->  			dec_zone_page_state(page, NR_FILE_DIRTY);
->  			dec_bdi_stat(mapping->backing_dev_info,
->  					BDI_DIRTY);
-> @@ -1332,8 +1359,10 @@ int test_clear_page_writeback(struct page *page)
->  	} else {
->  		ret = TestClearPageWriteback(page);
->  	}
-> -	if (ret)
-> +	if (ret) {
-> +		mem_cgroup_update_stat(page, MEM_CGROUP_STAT_WRITEBACK, -1);
->  		dec_zone_page_state(page, NR_WRITEBACK);
-> +	}
->  	return ret;
->  }
-> 
-> @@ -1363,8 +1392,10 @@ int test_set_page_writeback(struct page *page)
->  	} else {
->  		ret = TestSetPageWriteback(page);
->  	}
-> -	if (!ret)
-> +	if (!ret) {
-> +		mem_cgroup_update_stat(page, MEM_CGROUP_STAT_WRITEBACK, 1);
->  		inc_zone_page_state(page, NR_WRITEBACK);
-> +	}
->  	return ret;
-> 
->  }
-> diff --git a/mm/rmap.c b/mm/rmap.c
-> index fcd593c..d47c257 100644
-> --- a/mm/rmap.c
-> +++ b/mm/rmap.c
-> @@ -829,7 +829,7 @@ void page_add_file_rmap(struct page *page)
->  {
->  	if (atomic_inc_and_test(&page->_mapcount)) {
->  		__inc_zone_page_state(page, NR_FILE_MAPPED);
-> -		mem_cgroup_update_file_mapped(page, 1);
-> +		mem_cgroup_update_stat(page, MEM_CGROUP_STAT_FILE_MAPPED, 1);
->  	}
->  }
-> 
-> @@ -861,7 +861,7 @@ void page_remove_rmap(struct page *page)
->  		__dec_zone_page_state(page, NR_ANON_PAGES);
->  	} else {
->  		__dec_zone_page_state(page, NR_FILE_MAPPED);
-> -		mem_cgroup_update_file_mapped(page, -1);
-> +		mem_cgroup_update_stat(page, MEM_CGROUP_STAT_FILE_MAPPED, -1);
->  	}
->  	/*
->  	 * It would be tidy to reset the PageAnon mapping here,
-> diff --git a/mm/truncate.c b/mm/truncate.c
-> index 2466e0c..5f437e7 100644
-> --- a/mm/truncate.c
-> +++ b/mm/truncate.c
-> @@ -73,6 +73,8 @@ void cancel_dirty_page(struct page *page, unsigned int account_size)
->  	if (TestClearPageDirty(page)) {
->  		struct address_space *mapping = page->mapping;
->  		if (mapping && mapping_cap_account_dirty(mapping)) {
-> +			mem_cgroup_update_stat(page,
-> +					MEM_CGROUP_STAT_FILE_DIRTY, -1);
->  			dec_zone_page_state(page, NR_FILE_DIRTY);
->  			dec_bdi_stat(mapping->backing_dev_info,
->  					BDI_DIRTY);
+>  clean:
+>  	rm -rf $(targets) out context cr-test.out cr-test-module restart wrap
 > -- 
 > 1.6.3.3
-> 
-
--- 
-	Three Cheers,
-	Balbir
