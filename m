@@ -1,15 +1,19 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] cr_tests: Use toolchain prefixes and variables in
-	Makefiles
-Date: Fri, 5 Mar 2010 12:08:43 -0600
-Message-ID: <20100305180843.GA23409@us.ibm.com>
-References: <8b495c1ce49380d01a34fc2e3ccf0e27802306f3.1267771287.git.matthltc@us.ibm.com>
+From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: Re: [RFC][PATCH] ns: Syscalls for better namespace sharing control.
+Date: Fri, 05 Mar 2010 22:18:13 +0300
+Message-ID: <4B9158F5.5040205__49757.9842959114$1267816910$gmane$org@parallels.com>
+References: <4B88E431.6040609@parallels.com>	<m1bpfbqajn.fsf@fess.ebiederm.org>
+	<4B894564.7080104@parallels.com>	<m1iq9io5sc.fsf@fess.ebiederm.org>
+	<4B89727C.9040602@parallels.com>	<m1ljeempk6.fsf@fess.ebiederm.org>
+	<4B8AE8C1.1030305@free.fr>	<4B8D28CF.8060304@parallels.com>
+	<20100302211942.GA17816@us.ibm.com>	<m1y6iaqsmm.fsf@fess.ebiederm.org>
+	<20100303000743.GA13744@us.ibm.com>	<m1ocj6qljj.fsf@fess.ebiederm.org>
+	<4B8E9370.3050300@parallels.com> <m17hptjh3m.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <8b495c1ce49380d01a34fc2e3ccf0e27802306f3.1267771287.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <m17hptjh3m.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,98 +23,63 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Linux Netdev List <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Netfilter Development Mailinglist <netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ben Greear <greearb-my8/4N5VtI7c+919tysfdA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> 2 parallel enters?  I meant you have pid 0 in the entered pid namespace.
+> You have pid 0 because your pid simply does not map.
 
-Applied, thanks.
+Oh, I see.
 
--serge
+> There is nothing that makes to parallel enters impossible in that.
+> Even today we have one thread per cpu that has task->pid == &init_struct_pid
+> which is pid 0.
 
-> ---
->  Makefile         |    7 +++++++
->  eventfd/Makefile |    4 ++--
->  futex/module.mk  |    2 +-
->  pty/Makefile     |    2 +-
->  selinux/Makefile |    2 +-
->  5 files changed, 12 insertions(+), 5 deletions(-)
+How about the forked processes then? Who will be their parent?
+
+> For the case of unshare where we are designed to be used with PAM I don't
+> think my proposed semantics work.  For a join needed an extra fork before
+> you are really in the pid namespace should be minor.
+
+Hm... One more proposal - can we adopt the planned new fork_with_pids system
+call to fork the process right into a new pid namespace?
+
+> That doesn't handle the case of cached struct pids.  A good example is
+> waitpid, where it waits for a specific struct pid.  Which means that
+> allocating a new struct pid and changing task->pid will cause
+> waitpid(pid) to wait forever...
+
+OK. Good example. Thanks.
+
+> To change struct pid would require the refcount on struct pid to show
+> no references from anywhere except the task_struct.
+
+I think this is OK to return -EBUSY for this. And fix the waitpid
+respectively not to block this common case. All the others I think
+can be stayed as is.
+
+> At the cost of a little memory we can solve that problem for unshare
+> if we have a an extra upid in struct pid, how we verify there is space
+> in struct pid I'm not certain.
 > 
-> diff --git a/Makefile b/Makefile
-> index e8eb048..f17a9be 100644
-> --- a/Makefile
-> +++ b/Makefile
-> @@ -23,6 +23,13 @@ override CFLAGS += -Wall
+> I do think that at least until someone calls exec the namespace pids are
+> reported to the process itself should not change.  That is kill and
+
+Wait a second - in that case the wait will be blocked too! No?
+
+> waitpid etc.  Which suggests an implementation the opposite of what
+> I proposed.  With ns_of_pid(task_pid(current)) being used as the
+> pid namespace of children, and current->nsproxy->pid_ns not changing
+> in the case of unshare.
 > 
->  all:
+> Shrug.
 > 
-> +# Prefix CC, AS, LD, AR for cross compilation
-> +CROSS_COMPILE ?=
-> +CC ?= $(CROSS_COMPILE)gcc
-> +LD ?= $(CROSS_COMPILE)ld
-> +AS ?= $(CROSS_COMPILE)as
-> +AR ?= $(CROSS_COMPILE)ar
-> +
->  include $(addsuffix /module.mk,$(modules))
+> Or perhaps this is a case where we use we can implement join with
+> an extra process but we can't implement unshare, because the effect
+> cannot be immediate.
+
+Well, I'm talking only about the join now.
+
+> Eric
 > 
->  progs += mysu
-> diff --git a/eventfd/Makefile b/eventfd/Makefile
-> index 82456e8..1bcd587 100644
-> --- a/eventfd/Makefile
-> +++ b/eventfd/Makefile
-> @@ -13,10 +13,10 @@ all: $(PROGS)
->  	$(MAKE) -C ../libcrtest libcrtest.a
-> 
->  libeptest.a: libeptest.o libeptest.h
-> -	ar cr libeptest.a libeptest.o
-> +	$(AR) cr libeptest.a libeptest.o
-> 
->  $(PROGS): %: %.c $(LIBS)
-> -	gcc -Wall $(CFLAGS) -o $@ $< $(LIBS)
-> +	$(CC) -Wall $(CFLAGS) -o $@ $< $(LIBS)
-> 
->  clean:
->  	rm -f *.o libeptest.a $(PROGS)
-> diff --git a/futex/module.mk b/futex/module.mk
-> index 6ab0449..412216b 100644
-> --- a/futex/module.mk
-> +++ b/futex/module.mk
-> @@ -1,7 +1,7 @@
->  local_dir := futex
->  local_progs := $(addprefix $(local_dir)/,plain robust pi)
-> 
-> -MACHINE := $(shell gcc -dumpmachine)
-> +MACHINE := $(shell $(CC) -dumpmachine)
->  ifeq ($(MACHINE:i386-%=i386),i386)
->  ARCHOPTS := -march=i486
->  endif
-> diff --git a/pty/Makefile b/pty/Makefile
-> index fe93a00..438f9bc 100644
-> --- a/pty/Makefile
-> +++ b/pty/Makefile
-> @@ -6,7 +6,7 @@ SLIBS = ../libcrtest/libcrtest.a
->  LIBCMD = -I../libcrtest -L../libcrtest $(SLIBS)
-> 
->  ptyloop: ptyloop.c ../clone.h $(SLIBS)
-> -	gcc -o ptyloop ptyloop.c $(LIBCMD)
-> +	$(CC) -o ptyloop ptyloop.c $(LIBCMD)
-> 
->  clean:
->  	rm -f $(targets) out* ckpt-out read-ok read-bad
-> diff --git a/selinux/Makefile b/selinux/Makefile
-> index 2ae8d96..f96384d 100644
-> --- a/selinux/Makefile
-> +++ b/selinux/Makefile
-> @@ -3,7 +3,7 @@ targets = ckpt wrap
->  all: $(targets)
-> 
->  ckpt: ckpt.c ../cr.h
-> -	gcc -o ckpt ckpt.c
-> +	$(CC) -o ckpt ckpt.c
-> 
->  clean:
->  	rm -rf $(targets) out context cr-test.out cr-test-module restart wrap
-> -- 
-> 1.6.3.3
