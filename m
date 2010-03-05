@@ -1,21 +1,11 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [RFC][PATCH] ns: Syscalls for better namespace sharing control.
-Date: Fri, 05 Mar 2010 12:26:30 -0800
-Message-ID: <m1vdda1pmx.fsf__37389.9613543928$1267820863$gmane$org@fess.ebiederm.org>
-References: <4B88E431.6040609@parallels.com>
-	<m1bpfbqajn.fsf@fess.ebiederm.org> <4B894564.7080104@parallels.com>
-	<m1iq9io5sc.fsf@fess.ebiederm.org> <4B89727C.9040602@parallels.com>
-	<m1ljeempk6.fsf@fess.ebiederm.org> <4B8AE8C1.1030305@free.fr>
-	<4B8D28CF.8060304@parallels.com> <20100302211942.GA17816@us.ibm.com>
-	<m1y6iaqsmm.fsf@fess.ebiederm.org> <20100303000743.GA13744@us.ibm.com>
-	<m1ocj6qljj.fsf@fess.ebiederm.org> <4B8E9370.3050300@parallels.com>
-	<m17hptjh3m.fsf@fess.ebiederm.org> <4B9158F5.5040205@parallels.com>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: locking imbalance in restart error path
+Date: Fri, 05 Mar 2010 14:29:04 -0600
+Message-ID: <1267820944.8485.19.camel@localhost.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4B9158F5.5040205-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org> (Pavel Emelyanov's message of
-	"Fri\, 05 Mar 2010 22\:18\:13 +0300")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,114 +15,60 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: Linux Netdev List <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Netfilter Development Mailinglist <netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ben Greear <greearb-my8/4N5VtI7c+919tysfdA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org> writes:
+Hi,
 
->> 2 parallel enters?  I meant you have pid 0 in the entered pid namespace.
->> You have pid 0 because your pid simply does not map.
->
-> Oh, I see.
->
->> There is nothing that makes to parallel enters impossible in that.
->> Even today we have one thread per cpu that has task->pid == &init_struct_pid
->> which is pid 0.
->
-> How about the forked processes then? Who will be their parent?
+With ckpt-v19-dev I see the following complaint from lockdep when an
+error is detected.  This is from what I believe to be a legitimately
+failed restart attempt.  I guess releasing ctx->errno_sem in a task
+context different from the one in which it was acquired is causing this?
 
-The normal rules of parentage apply.   So the child will see simply
-see it's parent as ppid == 0.  If that child daemonizes it will become
-a child of the pid namespaces init.
-
-This is a lot like something that gets started from call_usermodehelper.  It's
-parent process is not a descendant of init either.
+(I have a couple patches from the list applied and some debugging code
+of my own, but they shouldn't affect this code.)
 
 
-The implementation of the join is to simply change current->nsproxy->pid_ns.
-Then to use it you simply fork to get a child in the target pid namespace.
+[9145:9130:c/r:do_restore_tty:3073] sanity checks passed, link 0
+[err -16][pos 3297][E @ do_restore_tty:3083][pid -1 tsk NULL]Open ptmx
+=====================================
+[ BUG: bad unlock balance detected! ]
+-------------------------------------
+simple-wait/9145 is trying to release lock (&ctx->errno_sem) at:
+[<c000000000401bd0>] .ckpt_set_error+0x64/0x9c
+but there are no more locks to release!
 
->> For the case of unshare where we are designed to be used with PAM I don't
->> think my proposed semantics work.  For a join needed an extra fork before
->> you are really in the pid namespace should be minor.
->
-> Hm... One more proposal - can we adopt the planned new fork_with_pids system
-> call to fork the process right into a new pid namespace?
+other info that might help us debug this:
+no locks held by simple-wait/9145.
 
-In a lot of ways I like this idea of sys_hijack/sys_cloneat, and I
-don't think anything I am doing fundamentally undermines it.  The use
-case of doing things in fork is that there is automatic inheritance of
-everything.  All of the namespaces and all of the control groups, and
-possibly also the parent process.  It does have the high cost that the
-process we are copying from must be stopped because there are no locks
-that let us take everything.  I haven't looked at the recent proposals
-to see if anyone has solved that problem cleanly.
-
-
-
-If we can do a sys_hijack/sys_cloneat style of join, that means we can
-afford a fork.  At which point the my proposed pid namespace semantics
-should be fine.
-
-aka:
-setns(NSTYPE_PID);
-pid = fork();
-if (pid == 0) {
-	getpid() == 2; /* Or whatever the first free pid is joined pid namespace */
-        getppid() == 0;
-} else {
-	pid == 6400; /* Or whatever the first free pid is in the original pid namespace */
-	waitpid(pid);
-}
-
->> That doesn't handle the case of cached struct pids.  A good example is
->> waitpid, where it waits for a specific struct pid.  Which means that
->> allocating a new struct pid and changing task->pid will cause
->> waitpid(pid) to wait forever...
->
-> OK. Good example. Thanks.
->
->> To change struct pid would require the refcount on struct pid to show
->> no references from anywhere except the task_struct.
->
-> I think this is OK to return -EBUSY for this. And fix the waitpid
-> respectively not to block this common case. All the others I think
-> can be stayed as is.
-
-That would probably work.  setsid() and setpgrp() have similar sorts
-of restrictions.  That is both more challenging and more limiting than
-the semantics that come out of my unshare(CLONE_NEWPID) patch.  So I
-would prefer to keep this sort of thing as a last resort.
-
->> At the cost of a little memory we can solve that problem for unshare
->> if we have a an extra upid in struct pid, how we verify there is space
->> in struct pid I'm not certain.
->> 
->> I do think that at least until someone calls exec the namespace pids are
->> reported to the process itself should not change.  That is kill and
->
-> Wait a second - in that case the wait will be blocked too! No?
-
-If all we do is populate an unused struct upid in struct pid there
-isn't a chance of a problem.  
-
->> waitpid etc.  Which suggests an implementation the opposite of what
->> I proposed.  With ns_of_pid(task_pid(current)) being used as the
->> pid namespace of children, and current->nsproxy->pid_ns not changing
->> in the case of unshare.
->> 
->> Shrug.
->> 
->> Or perhaps this is a case where we use we can implement join with
->> an extra process but we can't implement unshare, because the effect
->> cannot be immediate.
->
-> Well, I'm talking only about the join now.
-
-Overall it sounds like the semantics I have proposed with
-unshare(CLONE_NEWPID) are workable, and simple to implement.  The
-extra fork is a bit surprising but it certainly does not
-look like a show stopper for implementing a pid namespace join.
-
-Eric
+stack backtrace:
+Call Trace:
+[c000000002b12b70] [c000000000015350] .show_stack+0xc0/0x200 (unreliable)
+[c000000002b12c40] [c0000000007dc6a8] .dump_stack+0x28/0x3c
+[c000000002b12cc0] [c0000000000f897c] .print_unlock_inbalance_bug+0x110/0x13c
+[c000000002b12de0] [c0000000000f8d84] .lock_release+0x12c/0x228
+[c000000002b12e90] [c0000000000e2598] .up_write+0x3c/0x90
+[c000000002b12f20] [c000000000401bd0] .ckpt_set_error+0x64/0x9c
+[c000000002b12fb0] [c000000000401ca4] .do_ckpt_msg+0x9c/0xbc
+[c000000002b13050] [c0000000004951d8] .restore_tty+0x1a4/0x530
+[c000000002b13100] [c000000000403e84] .restore_obj+0x11c/0x1fc
+[c000000002b131b0] [c000000000406fd8] .ckpt_read_obj_dispatch+0x2dc/0x330
+[c000000002b13250] [c000000000407078] .ckpt_read_obj+0x4c/0x18c
+[c000000002b13310] [c0000000004072b4] .ckpt_read_buf_type+0x54/0xa8
+[c000000002b133b0] [c00000000040c568] .restore_file+0x44/0x174
+[c000000002b13450] [c000000000403e84] .restore_obj+0x11c/0x1fc
+[c000000002b13500] [c000000000406fd8] .ckpt_read_obj_dispatch+0x2dc/0x330
+[c000000002b135a0] [c000000000407078] .ckpt_read_obj+0x4c/0x18c
+[c000000002b13660] [c000000000407364] .ckpt_read_obj_type+0x5c/0x104
+[c000000002b13700] [c00000000040c1ac] .restore_file_table+0x164/0x4dc
+[c000000002b137f0] [c000000000403e84] .restore_obj+0x11c/0x1fc
+[c000000002b138a0] [c000000000406fd8] .ckpt_read_obj_dispatch+0x2dc/0x330
+[c000000002b13940] [c000000000407078] .ckpt_read_obj+0x4c/0x18c
+[c000000002b13a00] [c000000000407364] .ckpt_read_obj_type+0x5c/0x104
+[c000000002b13aa0] [c00000000040b12c] .restore_task+0x81c/0xd44
+[c000000002b13b50] [c000000000408d6c] .do_restart+0x1580/0x1a4c
+[c000000002b13cd0] [c000000000401110] .do_sys_restart+0xc4/0x108
+[c000000002b13d80] [c0000000000155e0] .sys_restart+0x64/0x94
+[c000000002b13e30] [c000000000008850] .ppc_restart+0x8/0x54
+[9143:1:c/r:wait_all_tasks_finish:1137] final sync kflags 0xa (ret 0)
