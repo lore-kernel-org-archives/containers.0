@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 08/12][user-cr] Create common.h
-Date: Fri, 5 Mar 2010 14:39:07 -0800
-Message-ID: <20100305223907.GH15939@us.ibm.com>
+Subject: [PATCH 09/12][user-cr] Create app-checkpoint.h
+Date: Fri, 5 Mar 2010 14:39:26 -0800
+Message-ID: <20100305223926.GI15939@us.ibm.com>
 References: <20100305223439.GA15300@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,340 +24,144 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Thu, 4 Mar 2010 21:30:50 -0800
-Subject: [PATCH 08/12][user-cr] Create common.h
+Date: Thu, 4 Mar 2010 21:51:27 -0800
+Subject: [PATCH 09/12][user-cr] Create app-checkpoint.h
 
-Code in common.h can be shared by checkpoint.c and restart.c for now.
+Create a new header file, app-checkpoint.h that can be used to export
+the app_checkpoint() and app_restart() functionality to other users
+(such as LXC).
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- Makefile     |    4 ++
- checkpoint.c |   31 +---------------
- common.h     |  112 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- restart.c    |  110 +--------------------------------------------------------
- 4 files changed, 119 insertions(+), 138 deletions(-)
- create mode 100644 common.h
+ Makefile         |    2 +-
+ app-checkpoint.h |   37 +++++++++++++++++++++++++++++++++++++
+ checkpoint.c     |    9 +--------
+ restart.c        |   25 +------------------------
+ 4 files changed, 40 insertions(+), 33 deletions(-)
+ create mode 100644 app-checkpoint.h
 
 diff --git a/Makefile b/Makefile
-index b312358..acebdd5 100644
+index acebdd5..b037f93 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -5,6 +5,8 @@ CKPT_HEADERS = include/linux/checkpoint.h \
- 		include/linux/checkpoint_hdr.h \
- 		include/asm/checkpoint_hdr.h
- 
-+CR_OBJS = checkpoint.o restart.o
-+
- # detect architecture (for eclone)
- SUBARCH = $(patsubst i%86,x86_32,$(shell uname -m))
- 
-@@ -41,6 +43,8 @@ $(LIB_ECLONE):
+@@ -43,7 +43,7 @@ $(LIB_ECLONE):
  # restart needs to be thread-safe
  restart: CFLAGS += -D__REENTRANT -pthread
  
-+$(CR_OBJS): common.h
-+
+-$(CR_OBJS): common.h
++$(CR_OBJS): common.h app-checkpoint.h
+ 
  # eclone() is architecture specific
  ifneq ($(SUBARCH),)
- $(ECLONE_PROGS): $(LIB_ECLONE) 
+diff --git a/app-checkpoint.h b/app-checkpoint.h
+new file mode 100644
+index 0000000..75204b5
+--- /dev/null
++++ b/app-checkpoint.h
+@@ -0,0 +1,37 @@
++
++struct app_checkpoint_args {
++	int outfd;
++	int logfd;
++	int uerrfd;
++	int container;
++	int verbose;
++};
++
++struct app_restart_args {
++	int self;
++	int pids;
++	int pidns;
++	int inspect;
++	int send_sigint;
++	char *root;
++	int wait;
++	int mntns;
++	int mnt_pty;
++	int show_status;
++	int copy_status;
++	char *freezer;
++	int infd;
++	int klogfd;
++	int ulogfd;
++	int uerrfd;
++	long warn;
++	int debug;
++	int verbose;
++	long fail;
++	int keep_lsm;
++};
++
++extern int app_checkpoint(int pid, unsigned long flags,
++				struct app_checkpoint_args *args);
++
++extern int app_restart(struct app_restart_args *args);
 diff --git a/checkpoint.c b/checkpoint.c
-index ace17e2..6e91149 100644
+index 6e91149..291cb36 100644
 --- a/checkpoint.c
 +++ b/checkpoint.c
-@@ -21,6 +21,8 @@
+@@ -21,6 +21,7 @@
  
  #include <linux/checkpoint.h>
  
-+#include "common.h"
-+
- static char usage_str[] =
- "usage: ckpt [opts] PID\n"
- "  'checkpoint' takes a checkpoint of the task indicated by PID, and all\n"
-@@ -55,35 +57,6 @@ inline static int checkpoint(pid_t pid, int fd, unsigned long flags, int logfd)
- 	return syscall(__NR_checkpoint, pid, fd, flags, logfd);
- }
++#include "app-checkpoint.h"
+ #include "common.h"
  
--#define BUFSIZE  (4 * 4096)
--static inline void ckpt_msg(int fd, char *format, ...)
--{
--        va_list ap;
--        char *bufp;
--        if (fd < 0)
--                return;
+ static char usage_str[] =
+@@ -44,14 +45,6 @@ static char usage_str[] =
+ 
+ static int global_uerrfd = -1;
+ 
+-struct app_checkpoint_args {
+-	int outfd;
+-	int logfd;
+-	int uerrfd;
+-	int container;
+-	int verbose;
+-};
 -
--        va_start(ap, format);
--
--        bufp = malloc(BUFSIZE);
--        if(bufp) {
--                vsnprintf(bufp, BUFSIZE, format, ap);
--                write(fd, bufp, strlen(bufp));
--        }
--        free(bufp);
--
--        va_end(ap);
--}
--
--#define ckpt_err(...)  \
--	ckpt_msg(global_uerrfd, __VA_ARGS__)
--
--#define ckpt_perror(s)                                                  \
--        do {                                                            \
--                ckpt_msg(global_uerrfd, s);                             \
--                ckpt_msg(global_uerrfd, ": %s\n", strerror(errno));     \
--        } while (0)
--
- static void usage(char *str)
+ inline static int checkpoint(pid_t pid, int fd, unsigned long flags, int logfd)
  {
- 	ckpt_err("%s", str);
-diff --git a/common.h b/common.h
-new file mode 100644
-index 0000000..99b224d
---- /dev/null
-+++ b/common.h
-@@ -0,0 +1,112 @@
-+#include <stdio.h>
-+#include <signal.h>
-+
-+#define BUFSIZE  (4 * 4096)
-+
-+static inline void ckpt_msg(int fd, char *format, ...)
-+{
-+	va_list ap;
-+	char *bufp;
-+	if (fd < 0)
-+		return;
-+
-+	va_start(ap, format);
-+
-+	bufp = malloc(BUFSIZE);
-+	if(bufp) {
-+		vsnprintf(bufp, BUFSIZE, format, ap);
-+		write(fd, bufp, strlen(bufp));
-+	}
-+	free(bufp);
-+
-+	va_end(ap);
-+}
-+
-+#define ckpt_perror(s) 							\
-+	do {								\
-+		ckpt_msg(global_uerrfd, s);				\
-+		ckpt_msg(global_uerrfd, ": %s\n", strerror(errno));	\
-+	} while (0)
-+
-+#ifdef CHECKPOINT_DEBUG
-+#define ckpt_dbg(_format, _args...)					\
-+	do {								\
-+		if (global_debug)					\
-+			ckpt_msg(global_uerrfd, "<%d>" _format, 	\
-+					_gettid(), ##_args); 		\
-+	} while (0)
-+#define ckpt_dbg_cont(_format, _args...)				\
-+	do {								\
-+		if (global_debug)					\
-+			ckpt_msg(global_uerrfd, _format, ##_args);	\
-+	} while (0)
-+#else
-+#define ckpt_dbg(_format, _args...)  \
-+	do { } while (0)
-+#define ckpt_dbg_cont(_format, _args...)  \
-+	do { } while (0)
-+#endif
-+
-+#define ckpt_err(...)  \
-+	ckpt_msg(global_uerrfd, __VA_ARGS__)
-+
-+#define ckpt_verbose(...)					\
-+	do {							\
-+		if (global_verbose)				\
-+			ckpt_msg(global_ulogfd, __VA_ARGS__);	\
-+	} while(0)
-+
-+struct signal_array {
-+	int signum;
-+	char *sigstr;
-+};
-+
-+#define SIGNAL_ENTRY(signal)  { SIG ## signal, #signal }
-+
-+#define INIT_SIGNAL_ARRAY { 	\
-+	{ 0, "NONE" },		\
-+	SIGNAL_ENTRY(ALRM),	\
-+	SIGNAL_ENTRY(HUP),	\
-+	SIGNAL_ENTRY(INT),	\
-+	SIGNAL_ENTRY(KILL),	\
-+	SIGNAL_ENTRY(PIPE),	\
-+	SIGNAL_ENTRY(POLL),	\
-+	SIGNAL_ENTRY(PROF),	\
-+	SIGNAL_ENTRY(TERM),	\
-+	SIGNAL_ENTRY(USR1),	\
-+	SIGNAL_ENTRY(USR2),	\
-+	SIGNAL_ENTRY(VTALRM),	\
-+	SIGNAL_ENTRY(STKFLT),	\
-+	SIGNAL_ENTRY(PWR),	\
-+	SIGNAL_ENTRY(WINCH),	\
-+	SIGNAL_ENTRY(CHLD),	\
-+	SIGNAL_ENTRY(URG),	\
-+	SIGNAL_ENTRY(TTIN),	\
-+	SIGNAL_ENTRY(TTOU),	\
-+	SIGNAL_ENTRY(STOP),	\
-+	SIGNAL_ENTRY(CONT),	\
-+	SIGNAL_ENTRY(ABRT),	\
-+	SIGNAL_ENTRY(FPE),	\
-+	SIGNAL_ENTRY(ILL),	\
-+	SIGNAL_ENTRY(QUIT),	\
-+	SIGNAL_ENTRY(SEGV),	\
-+	SIGNAL_ENTRY(TRAP),	\
-+	SIGNAL_ENTRY(SYS),	\
-+	SIGNAL_ENTRY(BUS),	\
-+	SIGNAL_ENTRY(XCPU),	\
-+	SIGNAL_ENTRY(XFSZ),	\
-+	{ -1, "LAST" },		\
-+}
-+
-+#define CKPT_COND_PIDZERO  0x1
-+#define CKPT_COND_MNTPROC  0x2
-+#define CKPT_COND_MNTPTY   0x4
-+
-+#define CKPT_COND_NONE     0
-+#define CKPT_COND_ANY      ULONG_MAX
-+
-+/* default for skip/warn/fail */
-+#define CKPT_COND_WARN     (CKPT_COND_MNTPROC | \
-+			    CKPT_COND_MNTPTY)
-+#define CKPT_COND_FAIL     (CKPT_COND_NONE)
-+
+ 	return syscall(__NR_checkpoint, pid, fd, flags, logfd);
 diff --git a/restart.c b/restart.c
-index b37bf81..f65eafb 100644
+index f65eafb..a9b287d 100644
 --- a/restart.c
 +++ b/restart.c
 @@ -40,6 +40,7 @@
  #include "eclone.h"
  #include "genstack.h"
  #include "compat.h"
-+#include "common.h"
++#include "app-checkpoint.h"
+ #include "common.h"
  
  static char usage_str[] =
- "usage: restart [opts]\n"
-@@ -102,103 +103,6 @@ static char usage_str[] =
-  * of the checkpoint image stream.
-  */
- 
--#define BUFSIZE  (4 * 4096)
--
--static inline void ckpt_msg(int fd, char *format, ...)
--{
--	va_list ap;
--	char *bufp;
--	if (fd < 0)
--		return;
--
--	va_start(ap, format);
--
--	bufp = malloc(BUFSIZE);
--	if(bufp) {
--		vsnprintf(bufp, BUFSIZE, format, ap);
--		write(fd, bufp, strlen(bufp));
--	}
--	free(bufp);
--
--	va_end(ap);
--}
--
--#define ckpt_perror(s) 							\
--	do {								\
--		ckpt_msg(global_uerrfd, s);				\
--		ckpt_msg(global_uerrfd, ": %s\n", strerror(errno));	\
--	} while (0)
--
--#ifdef CHECKPOINT_DEBUG
--#define ckpt_dbg(_format, _args...)					\
--	do {								\
--		if (global_debug)					\
--			ckpt_msg(global_uerrfd, "<%d>" _format, 	\
--					_gettid(), ##_args); 		\
--	} while (0)
--#define ckpt_dbg_cont(_format, _args...)				\
--	do {								\
--		if (global_debug)					\
--			ckpt_msg(global_uerrfd, _format, ##_args);	\
--	} while (0)
--#else
--#define ckpt_dbg(_format, _args...)  \
--	do { } while (0)
--#define ckpt_dbg_cont(_format, _args...)  \
--	do { } while (0)
--#endif
--
--#define ckpt_err(...)  \
--	ckpt_msg(global_uerrfd, __VA_ARGS__)
--
--#define ckpt_verbose(...)					\
--	do {							\
--		if (global_verbose)				\
--			ckpt_msg(global_ulogfd, __VA_ARGS__);	\
--	} while(0)
--
--struct signal_array {
--	int signum;
--	char *sigstr;
--};
--
--#define SIGNAL_ENTRY(signal)  { SIG ## signal, #signal }
--
--#define INIT_SIGNAL_ARRAY { 	\
--	{ 0, "NONE" },		\
--	SIGNAL_ENTRY(ALRM),	\
--	SIGNAL_ENTRY(HUP),	\
--	SIGNAL_ENTRY(INT),	\
--	SIGNAL_ENTRY(KILL),	\
--	SIGNAL_ENTRY(PIPE),	\
--	SIGNAL_ENTRY(POLL),	\
--	SIGNAL_ENTRY(PROF),	\
--	SIGNAL_ENTRY(TERM),	\
--	SIGNAL_ENTRY(USR1),	\
--	SIGNAL_ENTRY(USR2),	\
--	SIGNAL_ENTRY(VTALRM),	\
--	SIGNAL_ENTRY(STKFLT),	\
--	SIGNAL_ENTRY(PWR),	\
--	SIGNAL_ENTRY(WINCH),	\
--	SIGNAL_ENTRY(CHLD),	\
--	SIGNAL_ENTRY(URG),	\
--	SIGNAL_ENTRY(TTIN),	\
--	SIGNAL_ENTRY(TTOU),	\
--	SIGNAL_ENTRY(STOP),	\
--	SIGNAL_ENTRY(CONT),	\
--	SIGNAL_ENTRY(ABRT),	\
--	SIGNAL_ENTRY(FPE),	\
--	SIGNAL_ENTRY(ILL),	\
--	SIGNAL_ENTRY(QUIT),	\
--	SIGNAL_ENTRY(SEGV),	\
--	SIGNAL_ENTRY(TRAP),	\
--	SIGNAL_ENTRY(SYS),	\
--	SIGNAL_ENTRY(BUS),	\
--	SIGNAL_ENTRY(XCPU),	\
--	SIGNAL_ENTRY(XFSZ),	\
--	{ -1, "LAST" },		\
--}
--
- static struct signal_array signal_array[] = INIT_SIGNAL_ARRAY;
- 
- static char *sig2str(int sig)
-@@ -399,18 +303,6 @@ struct app_restart_args {
- 	int keep_lsm;
+@@ -279,30 +280,6 @@ struct pid_swap {
+ 	pid_t new;
  };
  
--#define CKPT_COND_PIDZERO  0x1
--#define CKPT_COND_MNTPROC  0x2
--#define CKPT_COND_MNTPTY   0x4
--
--#define CKPT_COND_NONE     0
--#define CKPT_COND_ANY      ULONG_MAX
--
--/* default for skip/warn/fail */
--#define CKPT_COND_WARN     (CKPT_COND_MNTPROC | \
--			    CKPT_COND_MNTPTY)
--#define CKPT_COND_FAIL     (CKPT_COND_NONE)
+-struct app_restart_args {
+-	int self;
+-	int pids;
+-	int pidns;
+-	int inspect;
+-	int send_sigint;
+-	char *root;
+-	int wait;
+-	int mntns;
+-	int mnt_pty;
+-	int show_status;
+-	int copy_status;
+-	char *freezer;
+-	int infd;
+-	int klogfd;
+-	int ulogfd;
+-	int uerrfd;
+-	long warn;
+-	int debug;
+-	int verbose;
+-	long fail;
+-	int keep_lsm;
+-};
 -
  static void usage(char *str)
  {
