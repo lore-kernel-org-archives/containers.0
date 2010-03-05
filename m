@@ -1,74 +1,56 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: [PATCH RFC] Define CAP_SYSLOG
-Date: Fri, 5 Mar 2010 14:56:07 -0600
-Message-ID: <20100305205607.GA31791@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 00/13][user-cr]: Cleanups checkpoint.c, restart.c
+Date: Fri, 5 Mar 2010 15:51:25 -0600
+Message-ID: <20100305215125.GA538@us.ibm.com>
+References: <20100304074354.GA29320@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-security-module-owner@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-Sender: linux-security-module-owner@vger.kernel.org
-To: linux-security-module@vger.kernel.org
-Cc: Linux Containers <containers@lists.osdl.org>
+In-Reply-To: <20100304074354.GA29320-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Privileged syslog operations currently require CAP_SYS_ADMIN.  Split
-this off into a new CAP_SYSLOG privilege which we can sanely take away
-from a container through the capability bounding set.
+Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+> 
+> [PATCH 00/13][user-cr]: Cleanups checkpoint.c, restart.c
+> 
+> These patches perform some cleanups/reorg of the code in checkpoint.c and
+> restart.c files.  These changes remove redundant fields in data structures,
+> rename some fields/functions and avoid directly using stdout/stderr.
+> 
+> The changes will help us later export app_checkpoint() and app_restart()
+> to larger container implementations such as LXC.
+> 
+> 	[PATCH 01/13][user-cr]: restart: Remove args->no_pidns.
+> 	[PATCH 02/13][user-cr]: restart: Rename args->logfd
+> 	[PATCH 03/13][user-cr]: restart: Remove args->logfile 
+> 	[PATCH 04/13][user-cr]: restart: Use ckpt_msg() to log
+> 	[PATCH 05/13][user-cr]: restart: Use ckpt_perror()
+> 	[PATCH 06/13][user-cr]: restart: Remove args->input
+> 	[PATCH 07/13][user-cr]: Define app_restart()
+> 	[PATCH 08/13][user-cr]: restart: Rename struct args.
+> 	[PATCH 09/13][user-cr]: checkpoint: Remove args->output
+> 	[PATCH 10/13][user-cr]: checkpoint: Remove ->logfile
+> 	[PATCH 11/13][user-cr]: checkpoint: Rename struct args
+> 	[PATCH 12/13][user-cr]: Define app_checkpoint()
+> 	[PATCH 13/13] checkpoint: Use ckpt_perror()
+> 
+> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-With this patch, an lxc container can be prevented from messing with
-the host's syslog.
+Thanks, Suka, very nice.
 
-There is one downside to this patch:  If some site or distro currently
-has syslogd/whatever running as a non-root user with cap_sys_admin+pe,
-then it will need to be changed to run with cap_syslog+pe.  I don't
-know if there are such sites, or if that concern means we should take
-a different approach to introducing this change, or simply refuse this
-change.
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Signed-off-by: Serge E. Hallyn <serue@us.ibm.com>
----
- include/linux/capability.h |    7 +++++--
- security/commoncap.c       |    2 +-
- 2 files changed, 6 insertions(+), 3 deletions(-)
-
-diff --git a/include/linux/capability.h b/include/linux/capability.h
-index 39e5ff5..837a55c 100644
---- a/include/linux/capability.h
-+++ b/include/linux/capability.h
-@@ -249,7 +249,6 @@ struct cpu_vfs_cap_data {
- /* Allow configuration of the secure attention key */
- /* Allow administration of the random device */
- /* Allow examination and configuration of disk quotas */
--/* Allow configuring the kernel's syslog (printk behaviour) */
- /* Allow setting the domainname */
- /* Allow setting the hostname */
- /* Allow calling bdflush() */
-@@ -355,7 +354,11 @@ struct cpu_vfs_cap_data {
- 
- #define CAP_MAC_ADMIN        33
- 
--#define CAP_LAST_CAP         CAP_MAC_ADMIN
-+/* Allow configuring the kernel's syslog (printk behaviour) */
-+
-+#define CAP_SYSLOG           34
-+
-+#define CAP_LAST_CAP         CAP_SYSLOG
- 
- #define cap_valid(x) ((x) >= 0 && (x) <= CAP_LAST_CAP)
- 
-diff --git a/security/commoncap.c b/security/commoncap.c
-index 6166973..018985e 100644
---- a/security/commoncap.c
-+++ b/security/commoncap.c
-@@ -899,7 +899,7 @@ int cap_syslog(int type, bool from_file)
- 	if (type != SYSLOG_ACTION_OPEN && from_file)
- 		return 0;
- 	if ((type != SYSLOG_ACTION_READ_ALL &&
--	     type != SYSLOG_ACTION_SIZE_BUFFER) && !capable(CAP_SYS_ADMIN))
-+	     type != SYSLOG_ACTION_SIZE_BUFFER) && !capable(CAP_SYSLOG))
- 		return -EPERM;
- 	return 0;
- }
--- 
-1.6.1
-
+-serge
