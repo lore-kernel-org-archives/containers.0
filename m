@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 10/12][user-cr] restart: Move main() to restart-main.c
-Date: Fri, 5 Mar 2010 14:39:47 -0800
-Message-ID: <20100305223947.GJ15939@us.ibm.com>
+Subject: [PATCH 11/12][user-cr] checkpoint: Move main() to checkpoint-main.c
+Date: Fri, 5 Mar 2010 14:40:09 -0800
+Message-ID: <20100305224009.GK15939@us.ibm.com>
 References: <20100305223439.GA15300@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -19,103 +19,82 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Cc: sukadev-6JnAsaTVvkgX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Thu, 4 Mar 2010 21:46:14 -0800
-Subject: [PATCH 10/12][user-cr] restart: Move main() to restart-main.c
+Date: Thu, 4 Mar 2010 22:28:34 -0800
+Subject: [PATCH 11/12][user-cr] checkpoint: Move main() to checkpoint-main.c
 
-Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- Makefile       |    4 +-
- restart-main.c |  351 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- restart.c      |  332 -----------------------------------------------------
- 3 files changed, 354 insertions(+), 333 deletions(-)
- create mode 100644 restart-main.c
+ Makefile          |    4 +-
+ checkpoint-main.c |  171 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ checkpoint.c      |  157 ------------------------------------------------
+ 3 files changed, 174 insertions(+), 158 deletions(-)
+ create mode 100644 checkpoint-main.c
 
 diff --git a/Makefile b/Makefile
-index b037f93..8a91d10 100644
+index 8a91d10..e520425 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -5,7 +5,7 @@ CKPT_HEADERS = include/linux/checkpoint.h \
  		include/linux/checkpoint_hdr.h \
  		include/asm/checkpoint_hdr.h
  
--CR_OBJS = checkpoint.o restart.o
-+CR_OBJS = checkpoint.o restart.o restart-main.o
+-CR_OBJS = checkpoint.o restart.o restart-main.o
++CR_OBJS = checkpoint.o checkpoint-main.o restart.o restart-main.o
  
  # detect architecture (for eclone)
  SUBARCH = $(patsubst i%86,x86_32,$(shell uname -m))
-@@ -45,6 +45,8 @@ restart: CFLAGS += -D__REENTRANT -pthread
+@@ -47,6 +47,8 @@ $(CR_OBJS): common.h app-checkpoint.h
  
- $(CR_OBJS): common.h app-checkpoint.h
+ restart: restart.o restart-main.o
  
-+restart: restart.o restart-main.o
++checkpoint: checkpoint.o checkpoint-main.o
 +
  # eclone() is architecture specific
  ifneq ($(SUBARCH),)
  $(ECLONE_PROGS): $(LIB_ECLONE) 
-diff --git a/restart-main.c b/restart-main.c
+diff --git a/checkpoint-main.c b/checkpoint-main.c
 new file mode 100644
-index 0000000..96bca42
+index 0000000..f6faa32
 --- /dev/null
-+++ b/restart-main.c
-@@ -0,0 +1,351 @@
++++ b/checkpoint-main.c
+@@ -0,0 +1,171 @@
 +#include <stdio.h>
-+#include <stdlib.h>
 +#include <unistd.h>
-+#include <errno.h>
-+#include <string.h>
-+#include <fcntl.h>
 +#include <stdarg.h>
-+#include <limits.h>
++#include <stdlib.h>
++#include <string.h>
 +#include <getopt.h>
++#include <fcntl.h>
++#include <errno.h>
++
++#include <linux/checkpoint.h>
 +
 +#include "app-checkpoint.h"
 +#include "common.h"
 +
-+static int global_ulogfd;
-+static int global_uerrfd;
-+static int global_debug;
-+static int global_verbose;
-+static struct signal_array signal_array[] = INIT_SIGNAL_ARRAY;
++static int global_uerrfd = -1;
 +
 +static char usage_str[] =
-+"usage: restart [opts]\n"
-+"  restart restores from a checkpoint image by first creating in userspace\n"
-+"  the original tasks tree, and then calling sys_restart by each task.\n"
-+"Options:\n"
++"usage: ckpt [opts] PID\n"
++"  'checkpoint' takes a checkpoint of the task indicated by PID, and all\n"
++"  its descendents, and outputs the checkpoint image. If the task is the\n"
++"  init(1) process of a container, it checkpoints the entire container.\n"
++"  By default 'checkpoint' allows to checkpoint any subtree of tasks. The\n"
++"  user can override this feature and request that only whole containers\n"
++"  be considered.\n"
++"\n"
++"\tOptions:\n"
 +"  -h,--help             print this help message\n"
-+"  -p,--pidns            create a new pid namspace (default with --pids)\n"
-+"  -P,--no-pidns         do not create a new pid namespace (default)\n"
-+"     --pids             restore original pids (default with --pidns)\n"
-+"     --self             restart a single task, usually from self-checkpoint\n"
-+"  -r,--root=ROOT        restart under the directory ROOT instead of current\n"
-+"     --signal=SIG       send SIG to root task on SIGINT (default: SIGKILL\n"
-+"                        to container root, SIGINT otherwise)\n"
-+"     --mntns            restart under a private mounts namespace\n"
-+"     --mount-pty        start in a new devpts namespace to supprt ptys\n"
-+"  -w,--wait             wait for root task to termiate (default)\n"
-+"     --show-status      show exit status of root task (implies -w)\n"
-+"     --copy-status      imitate exit status of root task (implies -w)\n"
-+"  -W,--no-wait          do not wait for root task to terminate\n"
-+"  -k,--keeplsm          try to recreate original LSM labels on all objects\n"
-+"  -F,--freezer=CGROUP   freeze tasks in freezer group CGROUP on success\n"
-+"  -i,--input=FILE       read data from FILE instead of standard input\n"
-+"     --input-fd=FD      read data from file descriptor FD (instead of stdin)\n"
++"  -o,--output=FILE      write data to FILE instead of standard output\n"
++"     --output-fd=FD     write data to file descriptor FD instead of stdout\n"
 +"  -l,--logfile=FILE     write error and debug data to FILE (default=none)\n"
-+"     --logfile-fd=FD    write error and debug data to file desctiptor FD\n"
-+"     --inspect          inspect image on-the-fly for error records\n"
++"     --logile-fd=FD     write error and debug data to file descriptor FD\n"
++"  -c,--container        require the PID is a container-init\n"
 +"  -v,--verbose          verbose output\n"
-+"  -d,--debug            debugging output\n"
-+"     --skip-COND        skip condition COND, and proceed anyway\n"
-+"     --warn-COND        warn on condition COND, but proceed anyway\n"
-+"     --fail-COND        warn on condition COND, and abort operation\n"
-+"  	  COND=any:        any condition\n"
-+"  	  COND=pidzero:    task with sid/pgid zero in a --no-pidns restart\n"
-+"  	  COND=mntproc:    /proc isn't already mounted at restart (def: warn)\n"
 +"";
 +
 +static void usage(char *str)
@@ -136,95 +115,31 @@ index 0000000..96bca42
 +	return num;
 +}
 +
-+static long cond_to_mask(const char *cond)
-+{
-+	static struct {
-+		char *cond;
-+		long mask;
-+	} conditions[] = {
-+		{"pidzero", CKPT_COND_PIDZERO},
-+		{"mntproc", CKPT_COND_MNTPROC},
-+		{"any", CKPT_COND_ANY},
-+		{NULL, 0}
-+	};
-+
-+	int i;
-+
-+	for (i = 0; conditions[i].cond; i++)
-+		if (!strcmp(cond, conditions[i].cond))
-+			return conditions[i].mask;
-+
-+	ckpt_err("restart: invalid warn/fail condition '%s'\n", cond);
-+	exit(1);
-+}
-+
-+static int str2sig(char *str)
-+{
-+	int sig = 0;
-+
-+	do {
-+		if (!strcmp(signal_array[sig].sigstr, str))
-+			return signal_array[sig].signum;
-+	} while (signal_array[++sig].signum >= 0);
-+
-+	return -1;
-+}
-+
-+static void parse_args(struct app_restart_args *args, int argc, char *argv[])
++static void parse_args(struct app_checkpoint_args *args, int argc, char *argv[])
 +{
 +	static struct option opts[] = {
 +		{ "help",	no_argument,		NULL, 'h' },
-+		{ "pidns",	no_argument,		NULL, 'p' },
-+		{ "no-pidns",	no_argument,		NULL, 'P' },
-+		{ "pids",	no_argument,		NULL, 3 },
-+		{ "self",	no_argument,		NULL, 6},
-+		{ "signal",	required_argument,	NULL, 4 },
-+		{ "inspect",	no_argument,		NULL, 5 },
-+		{ "keeplsm",	no_argument,		NULL, 'k' },
-+		{ "input",	required_argument,	NULL, 'i' },
-+		{ "input-fd",	required_argument,	NULL, 7 },
++		{ "output",	required_argument,	NULL, 'o' },
++		{ "output-fd",	required_argument,	NULL, 1 },
 +		{ "logfile",	required_argument,	NULL, 'l' },
-+		{ "logfile-fd",	required_argument,	NULL, 8 },
-+		{ "root",	required_argument,	NULL, 'r' },
-+		{ "mntns",	no_argument,		NULL, 11 },
-+		{ "wait",	no_argument,		NULL, 'w' },
-+		{ "show-status",	no_argument,	NULL, 1 },
-+		{ "copy-status",	no_argument,	NULL, 2 },
-+		{ "no-wait",	no_argument,		NULL, 'W' },
-+		{ "freezer",	required_argument,	NULL, 'F' },
++		{ "logfile-fd",	required_argument,	NULL, 2 },
++		{ "container",	no_argument,		NULL, 'c' },
 +		{ "verbose",	no_argument,		NULL, 'v' },
-+		{ "debug",	no_argument,		NULL, 'd' },
-+		{ "warn-pidzero",	no_argument,	NULL, 9 },
-+		{ "fail-pidzero",	no_argument,	NULL, 10 },
-+		{ "mount-pty",	no_argument,		NULL, 12 },
 +		{ NULL,		0,			NULL, 0 }
 +	};
-+	static char optc[] = "hdvkpPwWF:r:i:l:";
-+
-+	int optind;
-+	int sig;
-+	int no_pidns;
-+
-+	char *klogfile;
-+	char *input;
++	static char optc[] = "hvco:l:";
++	char *output;
++	char *logfile;
 +
 +	/* defaults */
-+	memset(args, 0, sizeof(*args));
-+	args->wait = 1;
-+	args->infd = -1;
-+	args->klogfd = -1;
-+	args->ulogfd = fileno(stdout);
++	args->outfd = -1;
++	args->logfd = -1;
 +	args->uerrfd = fileno(stderr);
-+	args->warn = CKPT_COND_WARN;
-+	args->fail = CKPT_COND_FAIL;
-+	args->send_sigint = -1;
-+	no_pidns = 0;
-+
-+	klogfile = NULL;
-+	input = NULL;
++	output = NULL;
++	logfile = NULL;
 +
 +	while (1) {
-+		int c = getopt_long(argc, argv, optc, opts, &optind);
++		int c = getopt_long(argc, argv, optc, opts, NULL);
 +		if (c == -1)
 +			break;
 +		switch (c) {
@@ -232,257 +147,125 @@ index 0000000..96bca42
 +			exit(1);
 +		case 'h':
 +			usage(usage_str);
-+		case 'v':
-+			global_verbose = args->verbose = 1;
++		case 'o':
++			output = optarg;
 +			break;
-+		case 5:  /* --inspect */
-+			args->inspect = 1;
-+			break;
-+		case 'i':
-+			input = optarg;
-+			break;
-+		case 7:
-+			args->infd = str2num(optarg);
-+			if (args->infd < 0) {
-+				ckpt_err("restart: invalid file descriptor\n");
++		case 1:
++			args->outfd = str2num(optarg);
++			if (args->outfd < 0) {
++				ckpt_err("checkpoint: invalid file descriptor\n");
 +				exit(1);
 +			}
 +			break;
 +		case 'l':
-+			klogfile = optarg;
++			logfile = optarg;
 +			break;
-+		case 8:
-+			args->klogfd = str2num(optarg);
-+			if (args->klogfd < 0) {
-+				ckpt_err("restart: invalid file descriptor\n");
++		case 2:
++			args->logfd = str2num(optarg);
++			if (args->logfd < 0) {
++				ckpt_err("checkpoint: invalid file descriptor\n");
 +				exit(1);
 +			}
 +			break;
-+		case 'p':
-+			args->pidns = 1;
++		case 'c':
++			args->container = 1;
 +			break;
-+		case 'P':
-+			no_pidns = 1;
-+			break;
-+		case 6:  /* --self */
-+			args->self = 1;
-+			break;
-+		case 4:  /* --signal */
-+			sig = str2sig(optarg);
-+			if (sig < 0)
-+				sig = str2num(optarg);
-+			if (sig < 0 || sig >= NSIG) {
-+				ckpt_err("restart: invalid signal\n");
-+				exit(1);
-+			}
-+			args->send_sigint = sig;
-+			break;
-+		case 3:  /* --pids */
-+			args->pids = 1;
-+			args->pidns = 1;  /* implied */
-+			break;
-+		case 'r':
-+			args->root = optarg;
-+			break;
-+		case 'w':
-+			args->wait = 1;
-+			break;
-+		case 'W':
-+			args->wait = 0;
-+			break;
-+		case 'k':
-+			args->keep_lsm = 1;
-+			break;
-+		case 1:  /* --show-status */
-+			args->wait = 1;
-+			args->show_status = 1;
-+			break;
-+		case 2: /* --copy-status */
-+			args->wait = 1;
-+			args->copy_status = 1;
-+			break;
-+		case 'd':
-+			global_debug = args->debug = 1;
-+			break;
-+		case 'F':
-+			args->freezer = optarg;
-+			break;
-+		case 9:
-+			args->warn |= cond_to_mask(&opts[optind].name[5]);
-+			break;
-+		case 10:
-+			args->fail |= cond_to_mask(&opts[optind].name[5]);
-+			break;
-+		case 11:
-+			args->mntns = 1;
-+			break;
-+		case 12:
-+			args->mnt_pty = 1;
++		case 'v':
++			args->verbose = 1;
 +			break;
 +		default:
 +			usage(usage_str);
 +		}
 +	}
 +
-+	if (no_pidns)
-+		args->pidns = 0;
-+
-+#ifndef CLONE_NEWPID
-+	if (args->pidns) {
-+		ckpt_err("This version of restart was compiled without "
-+		       "support for --pidns.\n");
-+		exit(1);
-+	}
-+#endif
-+
-+#ifndef CHECKPOINT_DEBUG
-+	if (global_debug) {
-+		ckpt_err("This version of restart was compiled without "
-+		       "support for --debug.\n");
-+		exit(1);
-+	}
-+#endif
-+
-+	if (args->pidns)
-+		args->pids = 1;
-+
-+#if 0   /* Defered until __NR_eclone makes it to standard headers */
-+#ifndef __NR_eclone
-+	if (args->pids) {
-+		ckpt_err("This version of restart was compiled without "
-+		       "support for --pids.\n");
-+		exit(1);
-+	}
-+#endif
-+#endif
-+
-+	if (args->self &&
-+	    (args->pids || args->pidns || no_pidns ||
-+	     args->show_status || args->copy_status || args->freezer)) {
-+		ckpt_err("Invalid mix of --self with multiprocess options\n");
++	if (output && args->outfd >= 0) {
++		ckpt_err("Invalid use of both -o/--output and --output-fd\n");
 +		exit(1);
 +	}
 +
-+	if (input && args->infd >= 0) {
-+		ckpt_err("Invalid use of both -i/--input and --input-fd\n");
-+		exit(1);
-+	}
-+
-+	/* input file ? */
-+	if (input) {
-+		args->infd = open(input, O_RDONLY, 0);
-+		if (args->infd < 0) {
-+			ckpt_perror("open input file");
++	/* output file */
++	if (output) {
++		args->outfd = open(output, O_RDWR | O_CREAT | O_EXCL, 0644);
++		if (args->outfd < 0) {
++			ckpt_perror("open output file");
 +			exit(1);
 +		}
 +	}
 +
-+	if (klogfile && args->klogfd >= 0) {
++	if (logfile && args->logfd >= 0) {
 +		ckpt_err("Invalid use of both -l/--logfile and --logfile-fd\n");
 +		exit(1);
 +	}
 +
 +	/* (optional) log file */
-+	if (klogfile) {
-+		args->klogfd = open(klogfile, O_RDWR | O_CREAT | O_EXCL, 0644);
-+		if (args->klogfd < 0) {
++	if (logfile) {
++		args->logfd = open(logfile, O_RDWR | O_CREAT | O_EXCL, 0644);
++		if (args->logfd < 0) {
 +			ckpt_perror("open log file");
 +			exit(1);
 +		}
 +	}
-+
-+
-+	if (args->mnt_pty)
-+		args->mntns = 1;
 +}
 +
 +int main(int argc, char *argv[])
 +{
-+	struct app_restart_args args;
++	struct app_checkpoint_args args;
++	unsigned long flags = 0;
++	pid_t pid;
 +
-+	/*
-+	 * Initialize the log/error fds early so even parse_args() errors
-+	 * are redirected here. Even if we later implement command line options
-+	 * that override these, any errors/messages that occur before those
-+	 * new options are parsed still go to stdout/stderr
-+	 */
-+	global_ulogfd = fileno(stdout);
 +	global_uerrfd = fileno(stderr);
 +
++	memset(&args, 0, sizeof(args));
 +	parse_args(&args, argc, argv);
 +
-+	return app_restart(&args);
-+}
++	argc -= optind;
++	if (argc != 1)
++		usage(usage_str);
 +
-diff --git a/restart.c b/restart.c
-index a9b287d..6ac4647 100644
---- a/restart.c
-+++ b/restart.c
-@@ -43,42 +43,6 @@
++	pid = atoi(argv[optind]);
++	if (pid <= 0) {
++		ckpt_err("invalid pid\n");
++		exit(1);
++	}
++
++	if (!args.container)
++		flags |= CHECKPOINT_SUBTREE;
++
++	return app_checkpoint(pid, flags, &args);
++}
+diff --git a/checkpoint.c b/checkpoint.c
+index 291cb36..e3a1ce8 100644
+--- a/checkpoint.c
++++ b/checkpoint.c
+@@ -24,25 +24,6 @@
  #include "app-checkpoint.h"
  #include "common.h"
  
 -static char usage_str[] =
--"usage: restart [opts]\n"
--"  restart restores from a checkpoint image by first creating in userspace\n"
--"  the original tasks tree, and then calling sys_restart by each task.\n"
--"Options:\n"
+-"usage: ckpt [opts] PID\n"
+-"  'checkpoint' takes a checkpoint of the task indicated by PID, and all\n"
+-"  its descendents, and outputs the checkpoint image. If the task is the\n"
+-"  init(1) process of a container, it checkpoints the entire container.\n"
+-"  By default 'checkpoint' allows to checkpoint any subtree of tasks. The\n"
+-"  user can override this feature and request that only whole containers\n"
+-"  be considered.\n"
+-"\n"
+-"\tOptions:\n"
 -"  -h,--help             print this help message\n"
--"  -p,--pidns            create a new pid namspace (default with --pids)\n"
--"  -P,--no-pidns         do not create a new pid namespace (default)\n"
--"     --pids             restore original pids (default with --pidns)\n"
--"     --self             restart a single task, usually from self-checkpoint\n"
--"  -r,--root=ROOT        restart under the directory ROOT instead of current\n"
--"     --signal=SIG       send SIG to root task on SIGINT (default: SIGKILL\n"
--"                        to container root, SIGINT otherwise)\n"
--"     --mntns            restart under a private mounts namespace\n"
--"     --mount-pty        start in a new devpts namespace to supprt ptys\n"
--"  -w,--wait             wait for root task to termiate (default)\n"
--"     --show-status      show exit status of root task (implies -w)\n"
--"     --copy-status      imitate exit status of root task (implies -w)\n"
--"  -W,--no-wait          do not wait for root task to terminate\n"
--"  -k,--keeplsm          try to recreate original LSM labels on all objects\n"
--"  -F,--freezer=CGROUP   freeze tasks in freezer group CGROUP on success\n"
--"  -i,--input=FILE       read data from FILE instead of standard input\n"
--"     --input-fd=FD      read data from file descriptor FD (instead of stdin)\n"
+-"  -o,--output=FILE      write data to FILE instead of standard output\n"
+-"     --output-fd=FD     write data to file descriptor FD instead of stdout\n"
 -"  -l,--logfile=FILE     write error and debug data to FILE (default=none)\n"
--"     --logfile-fd=FD    write error and debug data to file desctiptor FD\n"
--"     --inspect          inspect image on-the-fly for error records\n"
+-"     --logile-fd=FD     write error and debug data to file descriptor FD\n"
+-"  -c,--container        require the PID is a container-init\n"
 -"  -v,--verbose          verbose output\n"
--"  -d,--debug            debugging output\n"
--"     --skip-COND        skip condition COND, and proceed anyway\n"
--"     --warn-COND        warn on condition COND, but proceed anyway\n"
--"     --fail-COND        warn on condition COND, and abort operation\n"
--"  	  COND=any:        any condition\n"
--"  	  COND=pidzero:    task with sid/pgid zero in a --no-pidns restart\n"
--"  	  COND=mntproc:    /proc isn't already mounted at restart (def: warn)\n"
 -"";
 -
- /*
-  * By default, 'restart' creates a new pid namespace in which the
-  * restart takes place, using the original pids from the time of the
-@@ -117,18 +81,6 @@ static char *sig2str(int sig)
- 	return "UNKNOWN SIGNAL";
- }
+ static int global_uerrfd = -1;
  
--static int str2sig(char *str)
--{
--	int sig = 0;
--
--	do {
--		if (!strcmp(signal_array[sig].sigstr, str))
--			return signal_array[sig].signum;
--	} while (signal_array[++sig].signum >= 0);
--
--	return -1;
--}
--
- inline static int restart(pid_t pid, int fd, unsigned long flags, int klogfd)
- {
- 	return syscall(__NR_restart, pid, fd, flags, klogfd);
-@@ -280,46 +232,6 @@ struct pid_swap {
- 	pid_t new;
- };
+ inline static int checkpoint(pid_t pid, int fd, unsigned long flags, int logfd)
+@@ -50,116 +31,6 @@ inline static int checkpoint(pid_t pid, int fd, unsigned long flags, int logfd)
+ 	return syscall(__NR_checkpoint, pid, fd, flags, logfd);
+ }
  
 -static void usage(char *str)
 -{
@@ -502,90 +285,31 @@ index a9b287d..6ac4647 100644
 -	return num;
 -}
 -
--static long cond_to_mask(const char *cond)
--{
--	static struct {
--		char *cond;
--		long mask;
--	} conditions[] = {
--		{"pidzero", CKPT_COND_PIDZERO},
--		{"mntproc", CKPT_COND_MNTPROC},
--		{"any", CKPT_COND_ANY},
--		{NULL, 0}
--	};
--
--	int i;
--
--	for (i = 0; conditions[i].cond; i++)
--		if (!strcmp(cond, conditions[i].cond))
--			return conditions[i].mask;
--
--	ckpt_err("restart: invalid warn/fail condition '%s'\n", cond);
--	exit(1);
--}
--
- static inline int ckpt_cond_warn(struct ckpt_ctx *ctx, long mask)
- {
- 	return (ctx->args->warn & mask);
-@@ -330,232 +242,6 @@ static inline int ckpt_cond_fail(struct ckpt_ctx *ctx, long mask)
- 	return (ctx->args->fail & mask);
- }
- 
--static void parse_args(struct app_restart_args *args, int argc, char *argv[])
+-static void parse_args(struct app_checkpoint_args *args, int argc, char *argv[])
 -{
 -	static struct option opts[] = {
 -		{ "help",	no_argument,		NULL, 'h' },
--		{ "pidns",	no_argument,		NULL, 'p' },
--		{ "no-pidns",	no_argument,		NULL, 'P' },
--		{ "pids",	no_argument,		NULL, 3 },
--		{ "self",	no_argument,		NULL, 6},
--		{ "signal",	required_argument,	NULL, 4 },
--		{ "inspect",	no_argument,		NULL, 5 },
--		{ "keeplsm",	no_argument,		NULL, 'k' },
--		{ "input",	required_argument,	NULL, 'i' },
--		{ "input-fd",	required_argument,	NULL, 7 },
+-		{ "output",	required_argument,	NULL, 'o' },
+-		{ "output-fd",	required_argument,	NULL, 1 },
 -		{ "logfile",	required_argument,	NULL, 'l' },
--		{ "logfile-fd",	required_argument,	NULL, 8 },
--		{ "root",	required_argument,	NULL, 'r' },
--		{ "mntns",	no_argument,		NULL, 11 },
--		{ "wait",	no_argument,		NULL, 'w' },
--		{ "show-status",	no_argument,	NULL, 1 },
--		{ "copy-status",	no_argument,	NULL, 2 },
--		{ "no-wait",	no_argument,		NULL, 'W' },
--		{ "freezer",	required_argument,	NULL, 'F' },
+-		{ "logfile-fd",	required_argument,	NULL, 2 },
+-		{ "container",	no_argument,		NULL, 'c' },
 -		{ "verbose",	no_argument,		NULL, 'v' },
--		{ "debug",	no_argument,		NULL, 'd' },
--		{ "warn-pidzero",	no_argument,	NULL, 9 },
--		{ "fail-pidzero",	no_argument,	NULL, 10 },
--		{ "mount-pty",	no_argument,		NULL, 12 },
 -		{ NULL,		0,			NULL, 0 }
 -	};
--	static char optc[] = "hdvkpPwWF:r:i:l:";
--
--	int optind;
--	int sig;
--	int no_pidns;
--
--	char *klogfile;
--	char *input;
+-	static char optc[] = "hvco:l:";
+-	char *output;
+-	char *logfile;
 -
 -	/* defaults */
--	memset(args, 0, sizeof(*args));
--	args->wait = 1;
--	args->infd = -1;
--	args->klogfd = -1;
--	args->ulogfd = fileno(stdout);
+-	args->outfd = -1;
+-	args->logfd = -1;
 -	args->uerrfd = fileno(stderr);
--	args->warn = CKPT_COND_WARN;
--	args->fail = CKPT_COND_FAIL;
--	args->send_sigint = -1;
--	no_pidns = 0;
--
--	klogfile = NULL;
--	input = NULL;
+-	output = NULL;
+-	logfile = NULL;
 -
 -	while (1) {
--		int c = getopt_long(argc, argv, optc, opts, &optind);
+-		int c = getopt_long(argc, argv, optc, opts, NULL);
 -		if (c == -1)
 -			break;
 -		switch (c) {
@@ -593,197 +317,100 @@ index a9b287d..6ac4647 100644
 -			exit(1);
 -		case 'h':
 -			usage(usage_str);
--		case 'v':
--			global_verbose = args->verbose = 1;
+-		case 'o':
+-			output = optarg;
 -			break;
--		case 5:  /* --inspect */
--			args->inspect = 1;
--			break;
--		case 'i':
--			input = optarg;
--			break;
--		case 7:
--			args->infd = str2num(optarg);
--			if (args->infd < 0) {
--				ckpt_err("restart: invalid file descriptor\n");
+-		case 1:
+-			args->outfd = str2num(optarg);
+-			if (args->outfd < 0) {
+-				ckpt_err("checkpoint: invalid file descriptor\n");
 -				exit(1);
 -			}
 -			break;
 -		case 'l':
--			klogfile = optarg;
+-			logfile = optarg;
 -			break;
--		case 8:
--			args->klogfd = str2num(optarg);
--			if (args->klogfd < 0) {
--				ckpt_err("restart: invalid file descriptor\n");
+-		case 2:
+-			args->logfd = str2num(optarg);
+-			if (args->logfd < 0) {
+-				ckpt_err("checkpoint: invalid file descriptor\n");
 -				exit(1);
 -			}
 -			break;
--		case 'p':
--			args->pidns = 1;
+-		case 'c':
+-			args->container = 1;
 -			break;
--		case 'P':
--			no_pidns = 1;
--			break;
--		case 6:  /* --self */
--			args->self = 1;
--			break;
--		case 4:  /* --signal */
--			sig = str2sig(optarg);
--			if (sig < 0)
--				sig = str2num(optarg);
--			if (sig < 0 || sig >= NSIG) {
--				ckpt_err("restart: invalid signal\n");
--				exit(1);
--			}
--			args->send_sigint = sig;
--			break;
--		case 3:  /* --pids */
--			args->pids = 1;
--			args->pidns = 1;  /* implied */
--			break;
--		case 'r':
--			args->root = optarg;
--			break;
--		case 'w':
--			args->wait = 1;
--			break;
--		case 'W':
--			args->wait = 0;
--			break;
--		case 'k':
--			args->keep_lsm = 1;
--			break;
--		case 1:  /* --show-status */
--			args->wait = 1;
--			args->show_status = 1;
--			break;
--		case 2: /* --copy-status */
--			args->wait = 1;
--			args->copy_status = 1;
--			break;
--		case 'd':
--			global_debug = args->debug = 1;
--			break;
--		case 'F':
--			args->freezer = optarg;
--			break;
--		case 9:
--			args->warn |= cond_to_mask(&opts[optind].name[5]);
--			break;
--		case 10:
--			args->fail |= cond_to_mask(&opts[optind].name[5]);
--			break;
--		case 11:
--			args->mntns = 1;
--			break;
--		case 12:
--			args->mnt_pty = 1;
+-		case 'v':
+-			args->verbose = 1;
 -			break;
 -		default:
 -			usage(usage_str);
 -		}
 -	}
 -
--	if (no_pidns)
--		args->pidns = 0;
--
--#ifndef CLONE_NEWPID
--	if (args->pidns) {
--		ckpt_err("This version of restart was compiled without "
--		       "support for --pidns.\n");
--		exit(1);
--	}
--#endif
--
--#ifndef CHECKPOINT_DEBUG
--	if (global_debug) {
--		ckpt_err("This version of restart was compiled without "
--		       "support for --debug.\n");
--		exit(1);
--	}
--#endif
--
--	if (args->pidns)
--		args->pids = 1;
--
--#if 0   /* Defered until __NR_eclone makes it to standard headers */
--#ifndef __NR_eclone
--	if (args->pids) {
--		ckpt_err("This version of restart was compiled without "
--		       "support for --pids.\n");
--		exit(1);
--	}
--#endif
--#endif
--
--	if (args->self &&
--	    (args->pids || args->pidns || no_pidns ||
--	     args->show_status || args->copy_status || args->freezer)) {
--		ckpt_err("Invalid mix of --self with multiprocess options\n");
+-	if (output && args->outfd >= 0) {
+-		ckpt_err("Invalid use of both -o/--output and --output-fd\n");
 -		exit(1);
 -	}
 -
--	if (input && args->infd >= 0) {
--		ckpt_err("Invalid use of both -i/--input and --input-fd\n");
--		exit(1);
--	}
--
--	/* input file ? */
--	if (input) {
--		args->infd = open(input, O_RDONLY, 0);
--		if (args->infd < 0) {
--			ckpt_perror("open input file");
+-	/* output file */
+-	if (output) {
+-		args->outfd = open(output, O_RDWR | O_CREAT | O_EXCL, 0644);
+-		if (args->outfd < 0) {
+-			ckpt_perror("open output file");
 -			exit(1);
 -		}
 -	}
 -
--	if (klogfile && args->klogfd >= 0) {
+-	if (logfile && args->logfd >= 0) {
 -		ckpt_err("Invalid use of both -l/--logfile and --logfile-fd\n");
 -		exit(1);
 -	}
 -
 -	/* (optional) log file */
--	if (klogfile) {
--		args->klogfd = open(klogfile, O_RDWR | O_CREAT | O_EXCL, 0644);
--		if (args->klogfd < 0) {
+-	if (logfile) {
+-		args->logfd = open(logfile, O_RDWR | O_CREAT | O_EXCL, 0644);
+-		if (args->logfd < 0) {
 -			ckpt_perror("open log file");
 -			exit(1);
 -		}
 -	}
--
--
--	if (args->mnt_pty)
--		args->mntns = 1;
 -}
 -
- static void report_exit_status(int status, char *str, int debug)
+ int app_checkpoint(int pid, unsigned long flags,
+ 				struct app_checkpoint_args *args)
  {
- 	char msg[64];
-@@ -803,24 +489,6 @@ int app_restart(struct app_restart_args *args)
- 	return ret;
- }
+@@ -186,31 +57,3 @@ int app_checkpoint(int pid, unsigned long flags,
  
+ 	return (ret > 0 ? 0 : 1);
+ }
+-
 -int main(int argc, char *argv[])
 -{
--	struct app_restart_args args;
+-	struct app_checkpoint_args args;
+-	unsigned long flags = 0;
+-	pid_t pid;
 -
--	/*
--	 * Initialize the log/error fds early so even parse_args() errors
--	 * are redirected here. Even if we later implement command line options
--	 * that override these, any errors/messages that occur before those
--	 * new options are parsed still go to stdout/stderr
--	 */
--	global_ulogfd = fileno(stdout);
 -	global_uerrfd = fileno(stderr);
 -
+-	memset(&args, 0, sizeof(args));
 -	parse_args(&args, argc, argv);
 -
--	return app_restart(&args);
+-	argc -= optind;
+-	if (argc != 1)
+-		usage(usage_str);
+-
+-	pid = atoi(argv[optind]);
+-	if (pid <= 0) {
+-		ckpt_err("invalid pid\n");
+-		exit(1);
+-	}
+-
+-	if (!args.container)
+-		flags |= CHECKPOINT_SUBTREE;
+-
+-	return app_checkpoint(pid, flags, &args);
 -}
 -
- static int ckpt_parse_status(int status, int mimic, int verbose)
- {
- 	int sig = 0;
 -- 
 1.6.0.4
