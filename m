@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 03/12][user-cr] Add app_restart_args->debug
-Date: Fri, 5 Mar 2010 14:37:23 -0800
-Message-ID: <20100305223723.GC15939@us.ibm.com>
+Subject: [PATCH 04/12][user-cr] Add app_restart_args->verbose
+Date: Fri, 5 Mar 2010 14:37:46 -0800
+Message-ID: <20100305223746.GD15939@us.ibm.com>
 References: <20100305223439.GA15300@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,11 +24,11 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Thu, 4 Mar 2010 17:46:31 -0800
-Subject: [PATCH 03/12][user-cr] Add app_restart_args->debug
+Date: Thu, 4 Mar 2010 17:53:27 -0800
+Subject: [PATCH 04/12][user-cr] Add app_restart_args->verbose
 
-Make 'debug' a field in struct app_restart_args so other callers of
-app_restart() can also control the debug output of app_restart().
+Make 'verbose' a field in struct app_restart_args so other callers of
+app_restart() can also control the verbose output of app_restart().
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
@@ -36,31 +36,31 @@ Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@pub
  1 files changed, 3 insertions(+), 1 deletions(-)
 
 diff --git a/restart.c b/restart.c
-index 314390c..87fff1e 100644
+index 87fff1e..8513042 100644
 --- a/restart.c
 +++ b/restart.c
-@@ -387,6 +387,7 @@ struct app_restart_args {
- 	int infd;
+@@ -388,6 +388,7 @@ struct app_restart_args {
  	int klogfd;
  	long warn;
-+	int debug;
+ 	int debug;
++	int verbose;
  	long fail;
  	int keep_lsm;
  };
-@@ -583,7 +584,7 @@ static void parse_args(struct app_restart_args *args, int argc, char *argv[])
- 			args->copy_status = 1;
+@@ -515,7 +516,7 @@ static void parse_args(struct app_restart_args *args, int argc, char *argv[])
+ 		case 'h':
+ 			usage(usage_str);
+ 		case 'v':
+-			global_verbose = 1;
++			global_verbose = args->verbose = 1;
  			break;
- 		case 'd':
--			global_debug = 1;
-+			global_debug = args->debug = 1;
- 			break;
- 		case 'F':
- 			args->freezer = optarg;
-@@ -818,6 +819,7 @@ int app_restart(struct app_restart_args *args)
- 	ctx.args = args;
+ 		case 5:  /* --inspect */
+ 			args->inspect = 1;
+@@ -820,6 +821,7 @@ int app_restart(struct app_restart_args *args)
  
  	global_send_sigint = args->send_sigint;
-+	global_debug = args->debug;
+ 	global_debug = args->debug;
++	global_verbose = args->verbose;
  
  	/* input file descriptor (default: stdin) */
  	if (args->infd >= 0) {
