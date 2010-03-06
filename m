@@ -1,21 +1,15 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: [RFC][PATCH] ns: Syscalls for better namespace sharing control.
-Date: Sat, 06 Mar 2010 22:26:30 +0100
-Message-ID: <4B92C886.9020507@free.fr>
-References: <4B88E431.6040609@parallels.com>	<m1bpfbqajn.fsf@fess.ebiederm.org>
-	<4B894564.7080104@parallels.com>	<m1iq9io5sc.fsf@fess.ebiederm.org>
-	<4B89727C.9040602@parallels.com>	<m1ljeempk6.fsf@fess.ebiederm.org>
-	<4B8AE8C1.1030305@free.fr>	<4B8D28CF.8060304@parallels.com>
-	<20100302211942.GA17816@us.ibm.com>	<m1y6iaqsmm.fsf@fess.ebiederm.org>
-	<20100303000743.GA13744@us.ibm.com>	<m1ocj6qljj.fsf@fess.ebiederm.org>
-	<4B8E9370.3050300@parallels.com>	<m17hptjh3m.fsf@fess.ebiederm.org>
-	<4B9158F5.5040205@parallels.com>	<m1vdda1pmx.fsf@fess.ebiederm.org>
-	<4B926B1B.5070207@free.fr> <m1aaulyy5c.fsf@fess.ebiederm.org>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [PATCH 2/6] C/R: Basic support for network namespaces and devices
+	(v5)
+Date: Sat, 06 Mar 2010 17:21:40 -0500
+Message-ID: <4B92D574.1090006@cs.columbia.edu>
+References: <1267130595-23637-1-git-send-email-danms@us.ibm.com>	<1267130595-23637-3-git-send-email-danms@us.ibm.com>	<4B91D1A3.9030404@cs.columbia.edu>
+	<87bpf1idic.fsf@caffeine.danplanet.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m1aaulyy5c.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
+In-Reply-To: <87bpf1idic.fsf-FLMGYpZoEPULwtHQx/6qkW3U47Q5hpJU@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,83 +19,143 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Linux Netdev List <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Netfilter Development Mailinglist <netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ben Greear <greearb-my8/4N5VtI7c+919tysfdA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org, benjamin.thery-6ktuUTfB/bM@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote:
-> Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org> writes:
->
->   
->> Eric W. Biederman wrote:
->>     
->
->   
->> If the normal rules of parentage apply, that means pid 0 has to wait it's child.
->> If we are in the scenario of pid 0, it's child pid 1234 and we kill the pid 1 of
->> the pid namespace, I suppose pid 1234 will be killed too.
->> The pid 0 will stay in the pid namespace and will able to fork again a new pid
->> 1.
->>
->> I think Serge already reported that...
->>
->> That sounds good :)
->>     
->
-> I expect zap_pid_ns_processes should also arrange so we cannot allocate any
-> more processes.  We certainly need to do something explicit or pid 1 won't
-> be allocated.  It might make sense to resurrect a pid namespace after it's
-> death but it is definitely weird.
->   
-Mmh, yes. But that was just an idea, maybe a bit out of the scope you 
-are aiming.
 
->>> In a lot of ways I like this idea of sys_hijack/sys_cloneat, and I
->>> don't think anything I am doing fundamentally undermines it.  The use
->>> case of doing things in fork is that there is automatic inheritance of
->>> everything.  All of the namespaces and all of the control groups, and
->>> possibly also the parent process.  
->>>       
->> And also the rootfs for executing the command inside the container
->> (eg. shutdown), the uid/gid (if there is a user namespace), the mount points,
->> ...
->> But I suppose we can do the same with setns for all the namespaces and chrooting
->> within the container rootfs.
->>
->> What I see is a problem with the tty. For example, we cloneat the init process
->> of the container which is usually /sbin/init but this one has its tty mapped to
->> /dev/console, so the output of the exec'ed command will go to the console.
->>     
->
-> My original thinking was that the fd's would come from the caller of sys_cloneat....
-Oh, ok :s
 
->>> Overall it sounds like the semantics I have proposed with
->>> unshare(CLONE_NEWPID) are workable, and simple to implement.  The
->>> extra fork is a bit surprising but it certainly does not
->>> look like a show stopper for implementing a pid namespace join.
->>>   
->>>       
->> I agree, it's some kind of "ghost" process.
->> IMO, with a bit of userspace code it would be possible to enter or exec a
->> command inside a container with nsfd, setns.
->>
->> +1 to test your patchset Eric :)
->>     
->
-> I will see about reposting sometime soon.
->   
-Great ! thanks.
+Dan Smith wrote:
+> OL> What about leak detection ?
+> OL> Aren't we missing {netns,netdev}_users()?
+> 
+> This is something I need to give more thought to, but it's not as easy
+> as it sounds.  Network devices aren't released at the last put() like
+> a lot of other things, and my initial attempts to reconcile the
+> refcount after a checkpoint operation have not been successful.
+> 
+> However, I'm not sure that it's as important here, because AFAIK, a
+> network device can only exist in one network namespace at a time.  If
+> we're checkpointing a netdev, it's because we are checkpointing the
+> namespace that it lives in.  Making sure the netns isn't leaked out of
+> the process tree would be much easier and just as effective, no?
 
->> Just a mindless suggestion, the "nsopen" / "nsattach" syscall names should be
->> more clear no ?
->>     
->
-> Not bad suggestions.
->
-> I am going to explore a bit more.  Given that nsfd is using the same
-> permission checks as a proc file, I think I can just make it a proc
-> file.  Something like "/proc/<pid>/ns/net".  With a little luck that
-> won't suck too badly.
->   
-Ah ! yes. Good idea.
+We should guarantee that neither netns nor netdev leaks outside
+the container; currently none is. If a netdev can only belong to
+a single netns, then it suffices to only care about netns.
+
+> 
+>>> +config CHECKPOINT_NETNS
+>>> +       bool
+>>> +       default y if NET && NET_NS && CHECKPOINT
+>>> +
+> 
+> OL> Did you mean this to be visible (settable) by the user ?
+> 
+> No, it was specifically supposed to enable itself when those other
+> items are enabled, but not be a user adjustable toggle.  I had a
+> discussion with Serge about it and we came to this as a solution,
+> although I don't remember what the problem we started with was.  I'll
+> dig through my IRC logs to see if I can figure it out.
+
+Duh.. my bad, I misinterpreted the code. That's fine.
+
+BTW, there is a similar SYSVIPC_CHECKPOINT - we should decide
+if we do X_CHECKPOINT or CHECKPOINT_X for a subsystem X, and
+stick to that convention. I prefer the latter - what you did...
+
+> 
+>>> + retry:
+>>> +	if (++pages > 4) {
+>>> +		addrs = -E2BIG;
+>>> +		goto out;
+>>> +	}
+> 
+> OL> Why 4 ?
+> 
+> It's just a sanity limit.
+
+Hmm... let me be more explicit:  why not keep trying until it
+realloc fails ?  or switch to vmalloc() at some point ?
+
+> 
+> OL> Do we really need this special case ?  I'd be happy with a ckpt_err()
+> OL> for any error - and the actual error number would be useful to tell
+> OL> which case it was.
+> 
+> Unless I'm missing something, you asked for this specifically:
+> 
+> https://lists.linux-foundation.org/pipermail/containers/2010-February/022844.html
+
+Lol .. that was me :o  But looking at the code it feels wrong,
+because the errno already reveals the type of the problem.
+
+I'm thinking - wouldn't it make sense to do error reporting
+in checkpoint_netdev() if the call to ->ndo_checkpoint() fails ?
+
+> 
+> OL> Isn't this check redundant ?  I expect it to fail promptly in
+> OL> checkpoint_netdev() above.
+> 
+> No, as I've said a couple of times previously, this isn't the only way
+> we can arrive at a netdev for checkpointing.  This case is the one
+> where we're marching through the netns and find a netdev that is not
+> supported.  The other is where we arrive at a device as a peer of
+> another device, so the other check may come into play at times where
+> this one doesn't and vice versa.
+
+I'm confused: in checkpoint_ns() inside the for_each_netdev()
+loop you first test for dev->netdev_ops->ndo_checkpoint and
+then call checkpoint_obj(... CKPT_OBJ_NETDEV) - which in turn
+will call checkpoint_netdev(), which will again test for
+dev->netdev_ops->ndo_checkpoint ...  am I reading it wrongly ?
+
+> 
+> OL> This may be a bit simpler if you move the first deferqueue_add()
+> OL> forward to just before the other one. Or better: change dq_netdev
+> OL> to have two pointers, dev and peer (if any is null, the cleanup
+> OL> function will skip).
+> 
+> The reason it is this messy is because of the way network devices are
+> deallocated.  Since they don't destroy themselves on the final put(),
+> we have to explicitly call unregister_netdev() on them when we know
+> they're no longer used (else we block).  Once we've added them to the
+> deferqueue, we can no longer destroy them here because a reference is
+> held and the deferqueue will run afterwards.
+> 
+> The ordering of this is a result of me injecting failures at each step
+> and working it out until I got it to not block on unregistering either
+> of the devices in all of the error paths.  That's not to say it's the
+> best way, but there is a reason it's ordered the way it is.
+> 
+
+How about this - to me it feels simpler:
+
+	dev = rtnl_newlink(veth_new_link_msg, &veth, this_name);
+	if (IS_ERR(dev))
+		return dev;
+
+	peer = dev_get_by_name(current->nsproxy->net_ns, peer_name);
+	if (!peer) {
+		ret = -EINVAL;
+		goto err_dev;
+	}
+	ret = ckpt_obj_insert(ctx, peer, h->veth.peer_ref,
+			      CKPT_OBJ_NETDEV);
+	if (ret < 0)
+		goto err_peer;
+
+	dev_put(peer);
+
+	dq.dev = dev;
+	dq.peer = peer;
+	ret = deferqueue_add(ctx->deferqueue, &dq, sizeof(dq),
+			     netdev_noop, netdev_cleanup);
+	if (ret)
+		goto err_peer;
+
+(yes, you need to adjust struct dq_netdev and netdev_cleanup).
+
+BTW, the variable "didreg" should disappear from restore_veth().
+
+Oren.
