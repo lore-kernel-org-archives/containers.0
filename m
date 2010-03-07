@@ -1,17 +1,11 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/6] C/R: Basic support for network namespaces and devices
-	(v5)
-Date: Sat, 06 Mar 2010 09:08:43 -0800
-Message-ID: <87bpf1idic.fsf@caffeine.danplanet.com>
-References: <1267130595-23637-1-git-send-email-danms@us.ibm.com>
-	<1267130595-23637-3-git-send-email-danms@us.ibm.com>
-	<4B91D1A3.9030404@cs.columbia.edu>
+From: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+Subject: [PATCH -mmotm 0/4] memcg: per cgroup dirty limit (v5)
+Date: Sun,  7 Mar 2010 21:57:50 +0100
+Message-ID: <1267995474-9117-1-git-send-email-arighi__38266.9067163535$1267995597$gmane$org@develer.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4B91D1A3.9030404-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> (Oren Laadan's message of
-	"Fri\, 05 Mar 2010 22\:53\:07 -0500")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,83 +15,41 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org, benjamin.thery-6ktuUTfB/bM@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-OL> What about leak detection ?
-OL> Aren't we missing {netns,netdev}_users()?
+Control the maximum amount of dirty pages a cgroup can have at any given time.
 
-This is something I need to give more thought to, but it's not as easy
-as it sounds.  Network devices aren't released at the last put() like
-a lot of other things, and my initial attempts to reconcile the
-refcount after a checkpoint operation have not been successful.
+Per cgroup dirty limit is like fixing the max amount of dirty (hard to reclaim)
+page cache used by any cgroup. So, in case of multiple cgroup writers, they
+will not be able to consume more than their designated share of dirty pages and
+will be forced to perform write-out if they cross that limit.
 
-However, I'm not sure that it's as important here, because AFAIK, a
-network device can only exist in one network namespace at a time.  If
-we're checkpointing a netdev, it's because we are checkpointing the
-namespace that it lives in.  Making sure the netns isn't leaked out of
-the process tree would be much easier and just as effective, no?
+The overall design is the following:
 
->> +config CHECKPOINT_NETNS
->> +       bool
->> +       default y if NET && NET_NS && CHECKPOINT
->> +
+ - account dirty pages per cgroup
+ - limit the number of dirty pages via memory.dirty_ratio / memory.dirty_bytes
+   and memory.dirty_background_ratio / memory.dirty_background_bytes in
+   cgroupfs
+ - start to write-out (directly or background) when the cgroup limits are
+   exceeded
 
-OL> Did you mean this to be visible (settable) by the user ?
+This feature is supposed to be strictly connected to any underlying IO
+controller implementation, so we can stop increasing dirty pages in VM layer
+and enforce a write-out before any cgroup will consume the global amount of
+dirty pages defined by /proc/sys/vm/dirty_ratio|dirty_bytes and
+/proc/sys/vm/dirty_background_ratio|dirty_background_bytes.
 
-No, it was specifically supposed to enable itself when those other
-items are enabled, but not be a user adjustable toggle.  I had a
-discussion with Serge about it and we came to this as a solution,
-although I don't remember what the problem we started with was.  I'll
-dig through my IRC logs to see if I can figure it out.
+Changelog (v4 -> v5)
+~~~~~~~~~~~~~~~~~~~~~~
+ * fixed a potential deadlock between lock_page_cgroup and mapping->tree_lock
+   (I'm not sure I did the right thing for this point, so review and tests are
+   very welcome)
+ * introduce inc/dec functions to update file cache accounting
+ * export only a restricted subset of mem_cgroup_stat_index flags
+ * fixed a bug in determine_dirtyable_memory() to correctly return the local
+   memcg dirtyable memory
+ * always use global dirty memory settings in calc_period_shift()
 
->> + retry:
->> +	if (++pages > 4) {
->> +		addrs = -E2BIG;
->> +		goto out;
->> +	}
-
-OL> Why 4 ?
-
-It's just a sanity limit.
-
-OL> Do we really need this special case ?  I'd be happy with a ckpt_err()
-OL> for any error - and the actual error number would be useful to tell
-OL> which case it was.
-
-Unless I'm missing something, you asked for this specifically:
-
-https://lists.linux-foundation.org/pipermail/containers/2010-February/022844.html
-
-OL> Isn't this check redundant ?  I expect it to fail promptly in
-OL> checkpoint_netdev() above.
-
-No, as I've said a couple of times previously, this isn't the only way
-we can arrive at a netdev for checkpointing.  This case is the one
-where we're marching through the netns and find a netdev that is not
-supported.  The other is where we arrive at a device as a peer of
-another device, so the other check may come into play at times where
-this one doesn't and vice versa.
-
-OL> This may be a bit simpler if you move the first deferqueue_add()
-OL> forward to just before the other one. Or better: change dq_netdev
-OL> to have two pointers, dev and peer (if any is null, the cleanup
-OL> function will skip).
-
-The reason it is this messy is because of the way network devices are
-deallocated.  Since they don't destroy themselves on the final put(),
-we have to explicitly call unregister_netdev() on them when we know
-they're no longer used (else we block).  Once we've added them to the
-deferqueue, we can no longer destroy them here because a reference is
-held and the deferqueue will run afterwards.
-
-The ordering of this is a result of me injecting failures at each step
-and working it out until I got it to not block on unregistering either
-of the devices in all of the error paths.  That's not to say it's the
-best way, but there is a reason it's ordered the way it is.
-
--- 
-Dan Smith
-IBM Linux Technology Center
-email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+-Andrea
