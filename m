@@ -1,20 +1,22 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH -mmotm 3/4] memcg: dirty pages accounting and limiting
-	infrastructure
-Date: Mon, 8 Mar 2010 17:31:00 +0900
-Message-ID: <20100308173100.b5997fd4.kamezawa.hiroyu__13796.456778846$1268037608$gmane$org@jp.fujitsu.com>
-References: <1267995474-9117-1-git-send-email-arighi@develer.com>
-	<1267995474-9117-4-git-send-email-arighi@develer.com>
-	<20100308104447.c124c1ff.nishimura@mxp.nes.nec.co.jp>
-	<20100308105641.e2e714f4.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100308111724.3e48aee3.nishimura@mxp.nes.nec.co.jp>
-	<20100308113711.d7a249da.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100308170711.4d8b02f0.nishimura@mxp.nes.nec.co.jp>
+From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Subject: Re: [RFC][PATCH] ns: Syscalls for better namespace sharing control.
+Date: Mon, 08 Mar 2010 17:54:22 +0100
+Message-ID: <4B952BBE.6070507__2557.73736066676$1268067334$gmane$org@free.fr>
+References: <4B88E431.6040609@parallels.com>	<m1bpfbqajn.fsf@fess.ebiederm.org>
+	<4B894564.7080104@parallels.com>	<m1iq9io5sc.fsf@fess.ebiederm.org>
+	<4B89727C.9040602@parallels.com>	<m1ljeempk6.fsf@fess.ebiederm.org>
+	<4B8AE8C1.1030305@free.fr>	<4B8D28CF.8060304@parallels.com>
+	<20100302211942.GA17816@us.ibm.com>	<m1y6iaqsmm.fsf@fess.ebiederm.org>
+	<20100303000743.GA13744@us.ibm.com>	<m1ocj6qljj.fsf@fess.ebiederm.org>
+	<4B8E9370.3050300@parallels.com>	<m17hptjh3m.fsf@fess.ebiederm.org>
+	<4B9158F5.5040205@parallels.com>	<m1vdda1pmx.fsf@fess.ebiederm.org>
+	<4B926B1B.5070207@free.fr>	<m1aaulyy5c.fsf@fess.ebiederm.org>
+	<4B92C886.9020507@free.fr> <m1fx4bxlfy.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100308170711.4d8b02f0.nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+In-Reply-To: <m1fx4bxlfy.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,223 +26,74 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
-Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Greg-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Peter-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Linux Netdev List <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Netfilter Development Mailinglist <netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ben Greear <greearb-my8/4N5VtI7c+919tysfdA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, 8 Mar 2010 17:07:11 +0900
-Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
+Eric W. Biederman wrote:
+> I have take an snapshot of my development tree and placed it at.
+>
+>
+> git://git.kernel.org/pub/scm/linux/people/ebiederm/linux-2.6.33-nsfd-v5.git
+>   
 
-> On Mon, 8 Mar 2010 11:37:11 +0900, KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
-> > On Mon, 8 Mar 2010 11:17:24 +0900
-> > Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
-> > 
-> > > > But IIRC, clear_writeback is done under treelock.... No ?
-> > > > 
-> > > The place where NR_WRITEBACK is updated is out of tree_lock.
-> > > 
-> > >    1311 int test_clear_page_writeback(struct page *page)
-> > >    1312 {
-> > >    1313         struct address_space *mapping = page_mapping(page);
-> > >    1314         int ret;
-> > >    1315
-> > >    1316         if (mapping) {
-> > >    1317                 struct backing_dev_info *bdi = mapping->backing_dev_info;
-> > >    1318                 unsigned long flags;
-> > >    1319
-> > >    1320                 spin_lock_irqsave(&mapping->tree_lock, flags);
-> > >    1321                 ret = TestClearPageWriteback(page);
-> > >    1322                 if (ret) {
-> > >    1323                         radix_tree_tag_clear(&mapping->page_tree,
-> > >    1324                                                 page_index(page),
-> > >    1325                                                 PAGECACHE_TAG_WRITEBACK);
-> > >    1326                         if (bdi_cap_account_writeback(bdi)) {
-> > >    1327                                 __dec_bdi_stat(bdi, BDI_WRITEBACK);
-> > >    1328                                 __bdi_writeout_inc(bdi);
-> > >    1329                         }
-> > >    1330                 }
-> > >    1331                 spin_unlock_irqrestore(&mapping->tree_lock, flags);
-> > >    1332         } else {
-> > >    1333                 ret = TestClearPageWriteback(page);
-> > >    1334         }
-> > >    1335         if (ret)
-> > >    1336                 dec_zone_page_state(page, NR_WRITEBACK);
-> > >    1337         return ret;
-> > >    1338 }
-> > 
-> > We can move this up to under tree_lock. Considering memcg, all our target has "mapping".
-> > 
-> > If we newly account bounce-buffers (for NILFS, FUSE, etc..), which has no ->mapping,
-> > we need much more complex new charge/uncharge theory.
-> > 
-> > But yes, adding new lock scheme seems complicated. (Sorry Andrea.)
-> > My concerns is performance. We may need somehing new re-implementation of
-> > locks/migrate/charge/uncharge.
-> > 
-> I agree. Performance is my concern too.
-> 
-> I made a patch below and measured the time(average of 10 times) of kernel build
-> on tmpfs(make -j8 on 8 CPU machine with 2.6.33 defconfig).
-> 
-> <before>
-> - root cgroup: 190.47 sec
-> - child cgroup: 192.81 sec
-> 
-> <after>
-> - root cgroup: 191.06 sec
-> - child cgroup: 193.06 sec
-> 
-> Hmm... about 0.3% slower for root, 0.1% slower for child.
-> 
+Hi Eric,
 
-Hmm...accepatable ? (sounds it's in error-range)
+thanks for the pointer.
 
-BTW, why local_irq_disable() ? 
-local_irq_save()/restore() isn't better ?
+I tried to boot the kernel under qemu and I got this oops:
 
-Thanks,
--Kame
+Loading /lib/kbd/keymaps/i386/azerty/fr.map
+Creating block device nodes.
+Creating character device nodes.
+Making device-mapper control node
+BUG: unable to handle kernel NULL pointer dereference at (null)
+IP: [<ffffffff812df7e7>] netlink_broadcast+0x1bd/0x384
+PGD 3cfd0067 PUD 3cfc1067 PMD 0
+Oops: 0002 [#1] DEBUG_PAGEALLOC
+last sysfs file: /sys/class/firmware/timeout
+CPU 0
+Pid: 841, comm: modprobe Not tainted 2.6.33 #1 /
+RIP: 0010:[<ffffffff812df7e7>]  [<ffffffff812df7e7>] 
+netlink_broadcast+0x1bd/0x384
+RSP: 0018:ffff88003cfc3ca8  EFLAGS: 00010246
+RAX: 0000000000000000 RBX: ffff88003ce947f0 RCX: ffff88003cf877f0
+RDX: ffff88003f939dd0 RSI: ffff88003f939ef0 RDI: ffff88003f939e00
+RBP: ffff88003cfc3d18 R08: ffff88003f939d98 R09: ffff88003f939e88
+R10: ffff88003cf87818 R11: 0000000000000286 R12: ffff88003f939d98
+R13: ffff88003f939e88 R14: ffff88003ce94818 R15: ffff88003ce94800
+FS:  00007f23a90a06f0(0000) GS:ffffffff8161b000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000000000000000 CR3: 000000003cfcd000 CR4: 00000000000006f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+Process modprobe (pid: 841, threadinfo ffff88003cfc2000, task 
+ffff88003d1db058)
+Stack:
+ 0000000000000270 00000000000000d0 ffff88003f9377f0 ffffffff8203d630
+<0> ffff88003f939f5c 0000000000000000 0000000000000001 0000000000000000
+<0> ffff88003cf03000 0000000000000020 0000000000000004 ffff88003f939e88
+Call Trace:
+ [<ffffffff8121c1bd>] kobject_uevent_env+0x414/0x59b
+ [<ffffffff81117432>] ? sysfs_create_file+0x25/0x27
+ [<ffffffff8105eb13>] ? module_add_modinfo_attrs+0xd6/0xfc
+ [<ffffffff8121c34f>] kobject_uevent+0xb/0xd
+ [<ffffffff8105eba4>] mod_sysfs_setup+0x6b/0x99
+ [<ffffffff810602aa>] load_module+0x12a2/0x16f1
+ [<ffffffff81060b34>] sys_init_module+0x60/0x230
+ [<ffffffff81002928>] system_call_fastpath+0x16/0x1b
+Code: 00 ff c8 74 2a 8b 75 98 4c 89 ef e8 22 f8 fd ff 48 85 c0 49 89 c4 
+74 3c 48 8d 50 38 48 8b 40 38 48 85 c0 74 0
+2 ff 00 48 8b 42 08 <ff> 00 eb 4f 48 8b 55 b0 ff 02 49 83 7d 10 00 74 08 
+4c 89 ef e8
+RIP  [<ffffffff812df7e7>] netlink_broadcast+0x1bd/0x384
+ RSP <ffff88003cfc3ca8>
+CR2: 0000000000000000
+---[ end trace 979d62b87f68fab3 ]---
+netlink_recvmsg: missing NETLINK_CB proto: 15 pid: 0 dsg_group: 1
+destructor = (null)
+nlmsghdr: len=1080321121 type=27951 flags=646f seq=795176053 pid=1769169779
 
-> ===
-> From: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
-> 
-> In current implementation, we don't have to disable irq at lock_page_cgroup()
-> because the lock is never acquired in interrupt context.
-> But we are going to do it in later patch, so this patch encloses all of
-> lock_page_cgroup()/unlock_page_cgroup() with irq_disabled()/irq_enabled().
-> 
-> Signed-off-by: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
-> ---
->  mm/memcontrol.c |   17 +++++++++++++++++
->  1 files changed, 17 insertions(+), 0 deletions(-)
-> 
-> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-> index 02ea959..e5ae1a1 100644
-> --- a/mm/memcontrol.c
-> +++ b/mm/memcontrol.c
-> @@ -1359,6 +1359,7 @@ void mem_cgroup_update_file_mapped(struct page *page, int val)
->  	if (unlikely(!pc))
->  		return;
->  
-> +	local_irq_disable();
->  	lock_page_cgroup(pc);
->  	mem = pc->mem_cgroup;
->  	if (!mem)
-> @@ -1374,6 +1375,7 @@ void mem_cgroup_update_file_mapped(struct page *page, int val)
->  
->  done:
->  	unlock_page_cgroup(pc);
-> +	local_irq_enable();
->  }
->  
->  /*
-> @@ -1711,6 +1713,7 @@ struct mem_cgroup *try_get_mem_cgroup_from_page(struct page *page)
->  	VM_BUG_ON(!PageLocked(page));
->  
->  	pc = lookup_page_cgroup(page);
-> +	local_irq_disable();
->  	lock_page_cgroup(pc);
->  	if (PageCgroupUsed(pc)) {
->  		mem = pc->mem_cgroup;
-> @@ -1726,6 +1729,7 @@ struct mem_cgroup *try_get_mem_cgroup_from_page(struct page *page)
->  		rcu_read_unlock();
->  	}
->  	unlock_page_cgroup(pc);
-> +	local_irq_enable();
->  	return mem;
->  }
->  
-> @@ -1742,9 +1746,11 @@ static void __mem_cgroup_commit_charge(struct mem_cgroup *mem,
->  	if (!mem)
->  		return;
->  
-> +	local_irq_disable();
->  	lock_page_cgroup(pc);
->  	if (unlikely(PageCgroupUsed(pc))) {
->  		unlock_page_cgroup(pc);
-> +		local_irq_enable();
->  		mem_cgroup_cancel_charge(mem);
->  		return;
->  	}
-> @@ -1775,6 +1781,7 @@ static void __mem_cgroup_commit_charge(struct mem_cgroup *mem,
->  	mem_cgroup_charge_statistics(mem, pc, true);
->  
->  	unlock_page_cgroup(pc);
-> +	local_irq_enable();
->  	/*
->  	 * "charge_statistics" updated event counter. Then, check it.
->  	 * Insert ancestor (and ancestor's ancestors), to softlimit RB-tree.
-> @@ -1844,12 +1851,14 @@ static int mem_cgroup_move_account(struct page_cgroup *pc,
->  		struct mem_cgroup *from, struct mem_cgroup *to, bool uncharge)
->  {
->  	int ret = -EINVAL;
-> +	local_irq_disable();
->  	lock_page_cgroup(pc);
->  	if (PageCgroupUsed(pc) && pc->mem_cgroup == from) {
->  		__mem_cgroup_move_account(pc, from, to, uncharge);
->  		ret = 0;
->  	}
->  	unlock_page_cgroup(pc);
-> +	local_irq_enable();
->  	/*
->  	 * check events
->  	 */
-> @@ -1981,12 +1990,15 @@ int mem_cgroup_cache_charge(struct page *page, struct mm_struct *mm,
->  		pc = lookup_page_cgroup(page);
->  		if (!pc)
->  			return 0;
-> +		local_irq_disable();
->  		lock_page_cgroup(pc);
->  		if (PageCgroupUsed(pc)) {
->  			unlock_page_cgroup(pc);
-> +			local_irq_enable();
->  			return 0;
->  		}
->  		unlock_page_cgroup(pc);
-> +		local_irq_enable();
->  	}
->  
->  	if (unlikely(!mm && !mem))
-> @@ -2182,6 +2194,7 @@ __mem_cgroup_uncharge_common(struct page *page, enum charge_type ctype)
->  	if (unlikely(!pc || !PageCgroupUsed(pc)))
->  		return NULL;
->  
-> +	local_irq_disable();
->  	lock_page_cgroup(pc);
->  
->  	mem = pc->mem_cgroup;
-> @@ -2222,6 +2235,7 @@ __mem_cgroup_uncharge_common(struct page *page, enum charge_type ctype)
->  
->  	mz = page_cgroup_zoneinfo(pc);
->  	unlock_page_cgroup(pc);
-> +	local_irq_enable();
->  
->  	memcg_check_events(mem, page);
->  	/* at swapout, this memcg will be accessed to record to swap */
-> @@ -2232,6 +2246,7 @@ __mem_cgroup_uncharge_common(struct page *page, enum charge_type ctype)
->  
->  unlock_out:
->  	unlock_page_cgroup(pc);
-> +	local_irq_enable();
->  	return NULL;
->  }
->  
-> @@ -2424,12 +2439,14 @@ int mem_cgroup_prepare_migration(struct page *page, struct mem_cgroup **ptr)
->  		return 0;
->  
->  	pc = lookup_page_cgroup(page);
-> +	local_irq_disable();
->  	lock_page_cgroup(pc);
->  	if (PageCgroupUsed(pc)) {
->  		mem = pc->mem_cgroup;
->  		css_get(&mem->css);
->  	}
->  	unlock_page_cgroup(pc);
-> +	local_irq_enable();
->  
->  	if (mem) {
->  		ret = __mem_cgroup_try_charge(NULL, GFP_KERNEL, &mem, false);
-> -- 
-> 1.6.4
-> 
-> 
+I will try to investigate further later - kid duty :)
+
+  -- Daniel
