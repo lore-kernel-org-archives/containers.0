@@ -1,15 +1,13 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH RFC linux-cr] add rpid to ckpt_pids struct
-Date: Tue, 9 Mar 2010 16:42:34 -0600
-Message-ID: <20100309224234.GA9820@us.ibm.com>
-References: <20100309210450.GA5789@us.ibm.com>
-	<20100309221143.GO20106@count0.beaverton.ibm.com>
+From: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+Subject: [PATCH -mmotm 1/5] memcg: disable irq at page cgroup lock
+Date: Wed, 10 Mar 2010 00:00:32 +0100
+Message-ID: <1268175636-4673-2-git-send-email-arighi__29523.8551604145$1268177975$gmane$org@develer.com>
+References: <1268175636-4673-1-git-send-email-arighi@develer.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20100309221143.GO20106-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
+In-Reply-To: <1268175636-4673-1-git-send-email-arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,100 +17,230 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> On Tue, Mar 09, 2010 at 03:04:51PM -0600, Serge E. Hallyn wrote:
-> > When we restart an application, we won't try to restore the original
-> > pid in the parent pid_ns, so we don't checkpoint that pid.
-> > 
-> > However, if we are going to dump mount info from userspace using
-> > /proc/pid/mountinfo, then it will be easiest for a restart wrapper
-> > to use the pids from the checkpoint image.  So add rpid to the
-> > pids info we dump.
-> > 
-> > The rpid is taken as the vpid in the checkpointer's pidnamespace.
-> > The container may not have valid pids in the checkpointer's
-> > pid namespace, in which case the rpid will be 0, and the checkpoint
-> > wrapper will not be able to access the mountinfo.
-> 
-> This seems like a good idea to me.
-> 
-> Acked-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> 
-> > 
-> > Note that eventually, in order to restore nested pid namespaces,
-> > we will need to change our approach again, so as to print out
-> > the pid in every ancestor pid_ns.
-> 
-> Perhaps we should think about what will be needed so we can avoid
-> extra checkpoint image format changes? Or perhaps there's something
-> we can do right now to ease any future transition at least?
-> 
-> > Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> > ---
-> >  checkpoint/checkpoint.c        |    6 ++++--
-> >  include/linux/checkpoint_hdr.h |    1 +
-> >  2 files changed, 5 insertions(+), 2 deletions(-)
-> > 
-> > diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-> > index b3c1c4f..c9b5966 100644
-> > --- a/checkpoint/checkpoint.c
-> > +++ b/checkpoint/checkpoint.c
-> > @@ -329,13 +329,15 @@ static int checkpoint_pids(struct ckpt_ctx *ctx)
-> >  		for (n = 0; n < min(nr_tasks, CKPT_HDR_PIDS_CHUNK); n++) {
-> >  			task = tasks_arr[pos];
-> > 
-> > +			h[n].rpid = task_pid_vnr(task);
-> >  			h[n].vpid = task_pid_nr_ns(task, ns);
-> >  			h[n].vtgid = task_tgid_nr_ns(task, ns);
-> >  			h[n].vpgid = task_pgrp_nr_ns(task, ns);
-> >  			h[n].vsid = task_session_nr_ns(task, ns);
-> >  			h[n].vppid = task_tgid_nr_ns(task->real_parent, ns);
-> > -			ckpt_debug("task[%d]: vpid %d vtgid %d parent %d\n",
-> > -				   pos, h[n].vpid, h[n].vtgid, h[n].vppid);
-> > +			ckpt_debug("task[%d]: rpid %d vpid %d vtgid %d "
-> > +				"parent %d\n", pos, h[n].rpid, h[n].vpid,
-> > +				h[n].vtgid, h[n].vppid);
-> >  			pos++;
-> >  		}
-> >  		rcu_read_unlock();
-> > diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-> > index 41412d1..d3fff0b 100644
-> > --- a/include/linux/checkpoint_hdr.h
-> > +++ b/include/linux/checkpoint_hdr.h
-> > @@ -327,6 +327,7 @@ struct ckpt_hdr_tree {
-> >  } __attribute__((aligned(8)));
-> > 
-> >  struct ckpt_pids {
-> > +	__s32 rpid; /* pid in checkpointer's pidns */
-> 
-> e.g. Perhaps stick it at the end of the previously-defined pids.
+From: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
 
-It turns ckpt_pids into a variable-length field, so one way to go
-about it is, after ckpt_hdr_tree, instead of one ckpt_hdr_buffer
-with all ckpt_hdr_tree->nr_pids ckpt_pids in it, we have
-ckpt_hdr_tree->nr_pids distinct ckpt_hdr_buffer's, each with one
-variable-length size ckpt_pids?  The cpit_pids could then contain:
+In current implementation, we don't have to disable irq at lock_page_cgroup()
+because the lock is never acquired in interrupt context.
+But we are going to call it in later patch in an interrupt context or with
+irq disabled, so this patch disables irq at lock_page_cgroup() and enables it
+at unlock_page_cgroup().
 
-	__s32 parent_objref; /* objref of ckpt_hdr_buffer for parent pid */
-	__s32 vtgid;
-	__s32 vpid;
-	/* from here on out we list the pids in ever-higher pid namespaces
-	 * up to ctx->root_nsproxy->pid_ns one */
-	__s32 vpid[];
-	/* And finally, the pid_nr which is valid in checkpointer's
-	 * pid_ns, or 0 if none exists */
-	__s32 rpid;
+Signed-off-by: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+---
+ include/linux/page_cgroup.h |   16 ++++++++++++++--
+ mm/memcontrol.c             |   43 +++++++++++++++++++++++++------------------
+ 2 files changed, 39 insertions(+), 20 deletions(-)
 
-Since we have the ckpt_hdr_buffer->ckpt_hdr->len we can deduce
-the number of entries.
-
-> >  	__s32 vpid;
-> >  	__s32 vppid;
-> >  	__s32 vtgid;
-> 
-> Cheers,
-> 	-Matt Helsley
+diff --git a/include/linux/page_cgroup.h b/include/linux/page_cgroup.h
+index 30b0813..0d2f92c 100644
+--- a/include/linux/page_cgroup.h
++++ b/include/linux/page_cgroup.h
+@@ -83,16 +83,28 @@ static inline enum zone_type page_cgroup_zid(struct page_cgroup *pc)
+ 	return page_zonenum(pc->page);
+ }
+ 
+-static inline void lock_page_cgroup(struct page_cgroup *pc)
++static inline void __lock_page_cgroup(struct page_cgroup *pc)
+ {
+ 	bit_spin_lock(PCG_LOCK, &pc->flags);
+ }
+ 
+-static inline void unlock_page_cgroup(struct page_cgroup *pc)
++static inline void __unlock_page_cgroup(struct page_cgroup *pc)
+ {
+ 	bit_spin_unlock(PCG_LOCK, &pc->flags);
+ }
+ 
++#define lock_page_cgroup(pc, flags)		\
++	do {					\
++		local_irq_save(flags);		\
++		__lock_page_cgroup(pc);		\
++	} while (0)
++
++#define unlock_page_cgroup(pc, flags)		\
++	do {					\
++		__unlock_page_cgroup(pc);	\
++		local_irq_restore(flags);	\
++	} while (0)
++
+ #else /* CONFIG_CGROUP_MEM_RES_CTLR */
+ struct page_cgroup;
+ 
+diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+index 7fab84e..a9fd736 100644
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -1352,12 +1352,13 @@ void mem_cgroup_update_file_mapped(struct page *page, int val)
+ {
+ 	struct mem_cgroup *mem;
+ 	struct page_cgroup *pc;
++	unsigned long flags;
+ 
+ 	pc = lookup_page_cgroup(page);
+ 	if (unlikely(!pc))
+ 		return;
+ 
+-	lock_page_cgroup(pc);
++	lock_page_cgroup(pc, flags);
+ 	mem = pc->mem_cgroup;
+ 	if (!mem)
+ 		goto done;
+@@ -1371,7 +1372,7 @@ void mem_cgroup_update_file_mapped(struct page *page, int val)
+ 	__this_cpu_add(mem->stat->count[MEM_CGROUP_STAT_FILE_MAPPED], val);
+ 
+ done:
+-	unlock_page_cgroup(pc);
++	unlock_page_cgroup(pc, flags);
+ }
+ 
+ /*
+@@ -1705,11 +1706,12 @@ struct mem_cgroup *try_get_mem_cgroup_from_page(struct page *page)
+ 	struct page_cgroup *pc;
+ 	unsigned short id;
+ 	swp_entry_t ent;
++	unsigned long flags;
+ 
+ 	VM_BUG_ON(!PageLocked(page));
+ 
+ 	pc = lookup_page_cgroup(page);
+-	lock_page_cgroup(pc);
++	lock_page_cgroup(pc, flags);
+ 	if (PageCgroupUsed(pc)) {
+ 		mem = pc->mem_cgroup;
+ 		if (mem && !css_tryget(&mem->css))
+@@ -1723,7 +1725,7 @@ struct mem_cgroup *try_get_mem_cgroup_from_page(struct page *page)
+ 			mem = NULL;
+ 		rcu_read_unlock();
+ 	}
+-	unlock_page_cgroup(pc);
++	unlock_page_cgroup(pc, flags);
+ 	return mem;
+ }
+ 
+@@ -1736,13 +1738,15 @@ static void __mem_cgroup_commit_charge(struct mem_cgroup *mem,
+ 				     struct page_cgroup *pc,
+ 				     enum charge_type ctype)
+ {
++	unsigned long flags;
++
+ 	/* try_charge() can return NULL to *memcg, taking care of it. */
+ 	if (!mem)
+ 		return;
+ 
+-	lock_page_cgroup(pc);
++	lock_page_cgroup(pc, flags);
+ 	if (unlikely(PageCgroupUsed(pc))) {
+-		unlock_page_cgroup(pc);
++		unlock_page_cgroup(pc, flags);
+ 		mem_cgroup_cancel_charge(mem);
+ 		return;
+ 	}
+@@ -1772,7 +1776,7 @@ static void __mem_cgroup_commit_charge(struct mem_cgroup *mem,
+ 
+ 	mem_cgroup_charge_statistics(mem, pc, true);
+ 
+-	unlock_page_cgroup(pc);
++	unlock_page_cgroup(pc, flags);
+ 	/*
+ 	 * "charge_statistics" updated event counter. Then, check it.
+ 	 * Insert ancestor (and ancestor's ancestors), to softlimit RB-tree.
+@@ -1842,12 +1846,13 @@ static int mem_cgroup_move_account(struct page_cgroup *pc,
+ 		struct mem_cgroup *from, struct mem_cgroup *to, bool uncharge)
+ {
+ 	int ret = -EINVAL;
+-	lock_page_cgroup(pc);
++	unsigned long flags;
++	lock_page_cgroup(pc, flags);
+ 	if (PageCgroupUsed(pc) && pc->mem_cgroup == from) {
+ 		__mem_cgroup_move_account(pc, from, to, uncharge);
+ 		ret = 0;
+ 	}
+-	unlock_page_cgroup(pc);
++	unlock_page_cgroup(pc, flags);
+ 	/*
+ 	 * check events
+ 	 */
+@@ -1974,17 +1979,17 @@ int mem_cgroup_cache_charge(struct page *page, struct mm_struct *mm,
+ 	 */
+ 	if (!(gfp_mask & __GFP_WAIT)) {
+ 		struct page_cgroup *pc;
+-
++		unsigned long flags;
+ 
+ 		pc = lookup_page_cgroup(page);
+ 		if (!pc)
+ 			return 0;
+-		lock_page_cgroup(pc);
++		lock_page_cgroup(pc, flags);
+ 		if (PageCgroupUsed(pc)) {
+-			unlock_page_cgroup(pc);
++			unlock_page_cgroup(pc, flags);
+ 			return 0;
+ 		}
+-		unlock_page_cgroup(pc);
++		unlock_page_cgroup(pc, flags);
+ 	}
+ 
+ 	if (unlikely(!mm && !mem))
+@@ -2166,6 +2171,7 @@ __mem_cgroup_uncharge_common(struct page *page, enum charge_type ctype)
+ 	struct page_cgroup *pc;
+ 	struct mem_cgroup *mem = NULL;
+ 	struct mem_cgroup_per_zone *mz;
++	unsigned long flags;
+ 
+ 	if (mem_cgroup_disabled())
+ 		return NULL;
+@@ -2180,7 +2186,7 @@ __mem_cgroup_uncharge_common(struct page *page, enum charge_type ctype)
+ 	if (unlikely(!pc || !PageCgroupUsed(pc)))
+ 		return NULL;
+ 
+-	lock_page_cgroup(pc);
++	lock_page_cgroup(pc, flags);
+ 
+ 	mem = pc->mem_cgroup;
+ 
+@@ -2219,7 +2225,7 @@ __mem_cgroup_uncharge_common(struct page *page, enum charge_type ctype)
+ 	 */
+ 
+ 	mz = page_cgroup_zoneinfo(pc);
+-	unlock_page_cgroup(pc);
++	unlock_page_cgroup(pc, flags);
+ 
+ 	memcg_check_events(mem, page);
+ 	/* at swapout, this memcg will be accessed to record to swap */
+@@ -2229,7 +2235,7 @@ __mem_cgroup_uncharge_common(struct page *page, enum charge_type ctype)
+ 	return mem;
+ 
+ unlock_out:
+-	unlock_page_cgroup(pc);
++	unlock_page_cgroup(pc, flags);
+ 	return NULL;
+ }
+ 
+@@ -2417,17 +2423,18 @@ int mem_cgroup_prepare_migration(struct page *page, struct mem_cgroup **ptr)
+ 	struct page_cgroup *pc;
+ 	struct mem_cgroup *mem = NULL;
+ 	int ret = 0;
++	unsigned long flags;
+ 
+ 	if (mem_cgroup_disabled())
+ 		return 0;
+ 
+ 	pc = lookup_page_cgroup(page);
+-	lock_page_cgroup(pc);
++	lock_page_cgroup(pc, flags);
+ 	if (PageCgroupUsed(pc)) {
+ 		mem = pc->mem_cgroup;
+ 		css_get(&mem->css);
+ 	}
+-	unlock_page_cgroup(pc);
++	unlock_page_cgroup(pc, flags);
+ 
+ 	if (mem) {
+ 		ret = __mem_cgroup_try_charge(NULL, GFP_KERNEL, &mem, false);
+-- 
+1.6.3.3
