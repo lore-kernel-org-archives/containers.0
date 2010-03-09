@@ -1,11 +1,13 @@
 From: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
-Subject: [PATCH -mmotm 0/5] memcg: per cgroup dirty limit (v6)
-Date: Wed, 10 Mar 2010 00:00:31 +0100
-Message-ID: <1268175636-4673-1-git-send-email-arighi__39590.0055220865$1268177983$gmane$org@develer.com>
+Subject: [PATCH -mmotm 3/5] page_cgroup: introduce file cache flags
+Date: Wed, 10 Mar 2010 00:00:34 +0100
+Message-ID: <1268175636-4673-4-git-send-email-arighi__48515.923767309$1268178000$gmane$org@develer.com>
+References: <1268175636-4673-1-git-send-email-arighi@develer.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1268175636-4673-1-git-send-email-arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,85 +18,60 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Control the maximum amount of dirty pages a cgroup can have at any given time.
+Introduce page_cgroup flags to keep track of file cache pages.
 
-Per cgroup dirty limit is like fixing the max amount of dirty (hard to reclaim)
-page cache used by any cgroup. So, in case of multiple cgroup writers, they
-will not be able to consume more than their designated share of dirty pages and
-will be forced to perform write-out if they cross that limit.
+Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Signed-off-by: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+---
+ include/linux/page_cgroup.h |   26 ++++++++++++++++++++++++++
+ 1 files changed, 26 insertions(+), 0 deletions(-)
 
-The overall design is the following:
-
- - account dirty pages per cgroup
- - limit the number of dirty pages via memory.dirty_ratio / memory.dirty_bytes
-   and memory.dirty_background_ratio / memory.dirty_background_bytes in
-   cgroupfs
- - start to write-out (background or actively) when the cgroup limits are
-   exceeded
-
-This feature is supposed to be strictly connected to any underlying IO
-controller implementation, so we can stop increasing dirty pages in VM layer
-and enforce a write-out before any cgroup will consume the global amount of
-dirty pages defined by the /proc/sys/vm/dirty_ratio|dirty_bytes and
-/proc/sys/vm/dirty_background_ratio|dirty_background_bytes limits.
-
-Changelog (v5 -> v6)
-~~~~~~~~~~~~~~~~~~~~~~
- * always disable/enable IRQs at lock/unlock_page_cgroup(): this allows to drop
-   the previous complicated locking scheme in favor of a simpler locking, even
-   if this obviously adds some overhead (see results below)
- * drop FUSE and NILFS2 dirty pages accounting for now (this depends on
-   charging bounce pages per cgroup)
-
-Results
-~~~~~~~
-I ran some tests using a kernel build (2.6.33 x86_64_defconfig) on a
-Intel Core 2 @ 1.2GHz as testcase using different kernels:
- - mmotm "vanilla"
- - mmotm with cgroup-dirty-memory using the previous "complex" locking scheme
-   (my previous patchset + the fixes reported by Kame-san and Daisuke-san)
- - mmotm with cgroup-dirty-memory using the simple locking scheme
-   (lock_page_cgroup() with IRQs disabled)
-
-Following the results:
-<before>
- - mmotm "vanilla", root  cgroup:			11m51.983s
- - mmotm "vanilla", child cgroup:			11m56.596s
-
-<after>
- - mmotm, "complex" locking scheme, root  cgroup:	11m53.037s
- - mmotm, "complex" locking scheme, child cgroup:	11m57.896s
-
- - mmotm, lock_page_cgroup+irq_disabled, root  cgroup:	12m5.499s
- - mmotm, lock_page_cgroup+irq_disabled, child cgroup:	12m9.920s
-
-With the "complex" locking solution, the overhead introduced by the
-cgroup dirty memory accounting is minimal (0.14%), compared with the overhead
-introduced by the lock_page_cgroup+irq_disabled solution (1.90%).
-
-The performance overhead is not so huge in both solutions, but the impact on
-performance is even more reduced using a complicated solution...
-
-Maybe we can go ahead with the simplest implementation for now and start to
-think to an alternative implementation of the page_cgroup locking and
-charge/uncharge of pages.
-
-If someone is interested or want to repeat the tests (maybe on a bigger
-machine) I can post also the other version of the patchset. Just let me know.
-
--Andrea
-
- Documentation/cgroups/memory.txt |   36 +++
- fs/nfs/write.c                   |    4 +
- include/linux/memcontrol.h       |   87 +++++++-
- include/linux/page_cgroup.h      |   42 ++++-
- include/linux/writeback.h        |    2 -
- mm/filemap.c                     |    1 +
- mm/memcontrol.c                  |  475 +++++++++++++++++++++++++++++++++-----
- mm/page-writeback.c              |  215 +++++++++++-------
- mm/rmap.c                        |    4 +-
- mm/truncate.c                    |    1 +
- 10 files changed, 722 insertions(+), 145 deletions(-)
+diff --git a/include/linux/page_cgroup.h b/include/linux/page_cgroup.h
+index 0d2f92c..4e09c8c 100644
+--- a/include/linux/page_cgroup.h
++++ b/include/linux/page_cgroup.h
+@@ -39,6 +39,11 @@ enum {
+ 	PCG_CACHE, /* charged as cache */
+ 	PCG_USED, /* this object is in use. */
+ 	PCG_ACCT_LRU, /* page has been accounted for */
++	PCG_ACCT_FILE_MAPPED, /* page is accounted as file rss*/
++	PCG_ACCT_DIRTY, /* page is dirty */
++	PCG_ACCT_WRITEBACK, /* page is being written back to disk */
++	PCG_ACCT_WRITEBACK_TEMP, /* page is used as temporary buffer for FUSE */
++	PCG_ACCT_UNSTABLE_NFS, /* NFS page not yet committed to the server */
+ };
+ 
+ #define TESTPCGFLAG(uname, lname)			\
+@@ -73,6 +78,27 @@ CLEARPCGFLAG(AcctLRU, ACCT_LRU)
+ TESTPCGFLAG(AcctLRU, ACCT_LRU)
+ TESTCLEARPCGFLAG(AcctLRU, ACCT_LRU)
+ 
++/* File cache and dirty memory flags */
++TESTPCGFLAG(FileMapped, ACCT_FILE_MAPPED)
++SETPCGFLAG(FileMapped, ACCT_FILE_MAPPED)
++CLEARPCGFLAG(FileMapped, ACCT_FILE_MAPPED)
++
++TESTPCGFLAG(Dirty, ACCT_DIRTY)
++SETPCGFLAG(Dirty, ACCT_DIRTY)
++CLEARPCGFLAG(Dirty, ACCT_DIRTY)
++
++TESTPCGFLAG(Writeback, ACCT_WRITEBACK)
++SETPCGFLAG(Writeback, ACCT_WRITEBACK)
++CLEARPCGFLAG(Writeback, ACCT_WRITEBACK)
++
++TESTPCGFLAG(WritebackTemp, ACCT_WRITEBACK_TEMP)
++SETPCGFLAG(WritebackTemp, ACCT_WRITEBACK_TEMP)
++CLEARPCGFLAG(WritebackTemp, ACCT_WRITEBACK_TEMP)
++
++TESTPCGFLAG(UnstableNFS, ACCT_UNSTABLE_NFS)
++SETPCGFLAG(UnstableNFS, ACCT_UNSTABLE_NFS)
++CLEARPCGFLAG(UnstableNFS, ACCT_UNSTABLE_NFS)
++
+ static inline int page_cgroup_nid(struct page_cgroup *pc)
+ {
+ 	return page_to_nid(pc->page);
+-- 
+1.6.3.3
