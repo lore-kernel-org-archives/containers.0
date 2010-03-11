@@ -1,57 +1,58 @@
-From: "Andrew G. Morgan" <morgan@kernel.org>
-Subject: Re: [PATCH RFC] Define CAP_SYSLOG
-Date: Wed, 10 Mar 2010 17:19:19 -0800
-Message-ID: <551280e51003101719t3c61da42ja5796b3d86b0126a@mail.gmail.com>
-References: <20100305205607.GA31791@us.ibm.com>
-	 <20100308185818.GN20744@outflux.net>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH -mmotm 0/5] memcg: per cgroup dirty limit (v6)
+Date: Thu, 11 Mar 2010 10:17:26 +0900
+Message-ID: <20100311101726.f58d24e9.kamezawa.hiroyu__17914.1260953203$1268270540$gmane$org@jp.fujitsu.com>
+References: <1268175636-4673-1-git-send-email-arighi@develer.com>
+	<20100311093913.07c9ca8a.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: QUOTED-PRINTABLE
-Return-path: <linux-security-module-owner@vger.kernel.org>
-In-Reply-To: <20100308185818.GN20744@outflux.net>
-Sender: linux-security-module-owner@vger.kernel.org
-To: Kees Cook <kees@ubuntu.com>
-Cc: "Serge E. Hallyn" <serue@us.ibm.com>, linux-security-module@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20100311093913.07c9ca8a.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Greg-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Peter-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Acked-by: Andrew G. Morgan <morgan@kernel.org>
+On Thu, 11 Mar 2010 09:39:13 +0900
+KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
+> > The performance overhead is not so huge in both solutions, but the impact on
+> > performance is even more reduced using a complicated solution...
+> > 
+> > Maybe we can go ahead with the simplest implementation for now and start to
+> > think to an alternative implementation of the page_cgroup locking and
+> > charge/uncharge of pages.
+> > 
+> 
+> maybe. But in this 2 years, one of our biggest concerns was the performance.
+> So, we do something complex in memcg. But complex-locking is , yes, complex.
+> Hmm..I don't want to bet we can fix locking scheme without something complex.
+> 
+But overall patch set seems good (to me.) And dirty_ratio and dirty_background_ratio
+will give us much benefit (of performance) than we lose by small overheads.
 
-I concur with Kees.
+IIUC, this series affects trgger for background-write-out.
 
-Cheers
+Could you show some score which dirty_ratio give us benefit in the cases of
 
-Andrew
+	- copying a file in a memcg which hits limit
+	  ex) copying a 100M file in 120MB limit.  etc..
 
-On Mon, Mar 8, 2010 at 10:58 AM, Kees Cook <kees@ubuntu.com> wrote:
-> Hi Serge,
->
-> On Fri, Mar 05, 2010 at 02:56:07PM -0600, Serge E. Hallyn wrote:
->> Privileged syslog operations currently require CAP_SYS_ADMIN. =A0Spl=
-it
->> this off into a new CAP_SYSLOG privilege which we can sanely take aw=
-ay
->> from a container through the capability bounding set.
->
-> Seems like a good idea, but it'll require code changes in libcap2,
-> libcap-ng, as well as manpages.
->
-> I support the idea -- more stuff needs to be extracted from CAP_SYS_A=
-DMIN,
-> but this is a nice distinct subsystem to do now.
->
-> Acked-By: Kees Cook <kees.cook@canonical.com>
->
-> --
-> Kees Cook
-> Ubuntu Security Team
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-secur=
-ity-module" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
->
---
-To unsubscribe from this list: send the line "unsubscribe linux-securit=
-y-module" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+	- kernel make performance in limited memcg.
+	  ex) making a kernel in 100MB limit (too large ?)
+    etc....(when an application does many write and hits memcg's limit.)
+
+But, please get enough ack for changes in generic codes of dirty_ratio.
+
+Thank you for your work.
+
+Regards,
+-Kame
