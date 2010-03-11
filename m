@@ -1,31 +1,13 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH mmotm 2.5/4] memcg: disable irq at page cgroup lock (Re:
-	[PATCH -mmotm 3/4] memcg: dirty pages accounting and limiting
-	infrastructure)
-Date: Thu, 11 Mar 2010 17:06:46 +0900
-Message-ID: <20100311170646.13cf8f05.kamezawa.hiroyu__19181.8918603987$1268295160$gmane$org@jp.fujitsu.com>
-References: <20100308105641.e2e714f4.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100308111724.3e48aee3.nishimura@mxp.nes.nec.co.jp>
-	<20100308113711.d7a249da.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100308170711.4d8b02f0.nishimura@mxp.nes.nec.co.jp>
-	<20100308173100.b5997fd4.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100309001252.GB13490@linux>
-	<20100309091914.4b5f6661.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100309102928.9f36d2bb.nishimura@mxp.nes.nec.co.jp>
-	<20100309045058.GX3073@balbir.in.ibm.com>
-	<20100310104309.c5f9c9a9.nishimura@mxp.nes.nec.co.jp>
-	<20100310035624.GP3073@balbir.in.ibm.com>
-	<20100311133123.ab10183c.nishimura@mxp.nes.nec.co.jp>
-	<20100311134908.48d8b0fc.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100311135847.990eee62.nishimura@mxp.nes.nec.co.jp>
-	<20100311141300.90b85391.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100311151511.579aa8d1.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100311165020.86ac904b.nishimura@mxp.nes.nec.co.jp>
+From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Subject: Re: tutorials?
+Date: Thu, 11 Mar 2010 09:30:09 +0100
+Message-ID: <4B98AA11.6010402@free.fr>
+References: <20100311094900.3de2e844@pbmiha.malagasy.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100311165020.86ac904b.nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+In-Reply-To: <20100311094900.3de2e844-t3Ojly/Dtagv5spuRYBjbEEOCMrvLtNR@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -35,159 +17,17 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
-Cc: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Mihamina Rakotomandimby <mihamina-NTEeVpikYLd60m5Y2ZoSiQ@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, 11 Mar 2010 16:50:20 +0900
-Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
-
-> On Thu, 11 Mar 2010 15:15:11 +0900, KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
-> > On Thu, 11 Mar 2010 14:13:00 +0900
-> > KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
-> > 
-> > > On Thu, 11 Mar 2010 13:58:47 +0900
-> > > Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
-> > > > > I'll consider yet another fix for race in account migration if I can.
-> > > > > 
-> > > > me too.
-> > > > 
-> > > 
-> > > How about this ? Assume that the race is very rare.
-> > > 
-> > > 	1. use trylock when updating statistics.
-> > > 	   If trylock fails, don't account it.
-> > > 
-> > > 	2. add PCG_FLAG for all status as
-> > > 
-> > > +	PCG_ACCT_FILE_MAPPED, /* page is accounted as file rss*/
-> > > +	PCG_ACCT_DIRTY, /* page is dirty */
-> > > +	PCG_ACCT_WRITEBACK, /* page is being written back to disk */
-> > > +	PCG_ACCT_WRITEBACK_TEMP, /* page is used as temporary buffer for FUSE */
-> > > +	PCG_ACCT_UNSTABLE_NFS, /* NFS page not yet committed to the server */
-> > > 
-> > > 	3. At reducing counter, check PCG_xxx flags by
-> > > 	TESTCLEARPCGFLAG()
-> > > 
-> > > This is similar to an _used_ method of LRU accounting. And We can think this
-> > > method's error-range never go too bad number. 
-> > > 
-> I agree with you. I've been thinking whether we can remove page cgroup lock
-> in update_stat as we do in lru handling codes.
-> 
-> > > I think this kind of fuzzy accounting is enough for writeback status.
-> > > Does anyone need strict accounting ?
-> > > 
-> > 
-> IMHO, we don't need strict accounting.
-> 
-> > How this looks ?
-> I agree to this direction. One concern is we re-introduce "trylock" again..
-> 
-Yes, it's my concern, too.
-
-
-> Some comments are inlined.
-
-> > +	switch (idx) {
-> > +	case MEMCG_NR_FILE_MAPPED:
-> > +		if (charge) {
-> > +			if (!PageCgroupFileMapped(pc))
-> > +				SetPageCgroupFileMapped(pc);
-> > +			else
-> > +				val = 0;
-> > +		} else {
-> > +			if (PageCgroupFileMapped(pc))
-> > +				ClearPageCgroupFileMapped(pc);
-> > +			else
-> > +				val = 0;
-> > +		}
-> Using !TestSetPageCgroupFileMapped(pc) or TestClearPageCgroupFileMapped(pc) is better ?
-> 
-
-I used this style because we're under lock. (IOW, to show we're guarded by lock.)
-
-
-> > +		idx = MEM_CGROUP_STAT_FILE_MAPPED;
-> > +		break;
-> > +	default:
-> > +		BUG();
-> > +		break;
-> > +	}
-> >  	/*
-> >  	 * Preemption is already disabled. We can use __this_cpu_xxx
-> >  	 */
-> > -	__this_cpu_add(mem->stat->count[MEM_CGROUP_STAT_FILE_MAPPED], val);
-> > +	__this_cpu_add(mem->stat->count[idx], val);
-> > +}
-> >  
-> > -done:
-> > -	unlock_page_cgroup(pc);
-> > +void mem_cgroup_update_stat(struct page *page, int idx, bool charge)
-> > +{
-> > +	struct page_cgroup *pc;
-> > +
-> > +	pc = lookup_page_cgroup(page);
-> > +	if (unlikely(!pc))
-> > +		return;
-> > +
-> > +	if (trylock_page_cgroup(pc)) {
-> > +		__mem_cgroup_update_stat(pc, idx, charge);
-> > +		unlock_page_cgroup(pc);
-> > +	}
-> > +	return;
-> > +}
-> > +
-> > +static void mem_cgroup_migrate_stat(struct page_cgroup *pc,
-> > +	struct mem_cgroup *from, struct mem_cgroup *to)
-> > +{
-> > +	preempt_disable();
-> > +	if (PageCgroupFileMapped(pc)) {
-> > +		__this_cpu_dec(from->stat->count[MEM_CGROUP_STAT_FILE_MAPPED]);
-> > +		__this_cpu_inc(to->stat->count[MEM_CGROUP_STAT_FILE_MAPPED]);
-> > +	}
-> > +	preempt_enable();
-> > +}
-> > +
-> I think preemption is already disabled here too(by lock_page_cgroup()).
-> 
-Ah, yes. 
-
-
-> > +static void
-> > +__mem_cgroup_stat_fixup(struct page_cgroup *pc, struct mem_cgroup *mem)
-> > +{
-> > +	/* We'are in uncharge() and lock_page_cgroup */
-> > +	if (PageCgroupFileMapped(pc)) {
-> > +		__this_cpu_dec(mem->stat->count[MEM_CGROUP_STAT_FILE_MAPPED]);
-> > +		ClearPageCgroupFileMapped(pc);
-> > +	}
-> >  }
-> >  
-> ditto.
-> 
-ok.
-
-> >  /*
-> > @@ -1810,13 +1859,7 @@ static void __mem_cgroup_move_account(st
-> >  	VM_BUG_ON(pc->mem_cgroup != from);
-> >  
-> >  	page = pc->page;
-> > -	if (page_mapped(page) && !PageAnon(page)) {
-> > -		/* Update mapped_file data for mem_cgroup */
-> > -		preempt_disable();
-> > -		__this_cpu_dec(from->stat->count[MEM_CGROUP_STAT_FILE_MAPPED]);
-> > -		__this_cpu_inc(to->stat->count[MEM_CGROUP_STAT_FILE_MAPPED]);
-> > -		preempt_enable();
-> > -	}
-> > +	mem_cgroup_migrate_stat(pc, from, to);
-> >  	mem_cgroup_charge_statistics(from, pc, false);
-> >  	if (uncharge)
-> >  		/* This is not "cancel", but cancel_charge does all we need. */
-> I welcome this fixup. IIUC, we have stat leak in current implementation.
-> 
-
-If necessary, I'd like to prepare fixed one as independent patch for mmotm.
-
-Thanks,
--Kame
+Mihamina Rakotomandimby wrote:
+> Manao ahoana, Hello, Bonjour,
+>
+> Has some one Debian/Ubuntu oriented tutorials on setting up containers?
+> The goal is to:
+> - use different ethernet MAC address per container
+> - each container DHCP requests and have its network configuration from
+>   the DHCP
+>   
+http://lxc.teegra.net/
