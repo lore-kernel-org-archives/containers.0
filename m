@@ -1,17 +1,25 @@
 From: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH -mmotm 4/5] memcg: dirty pages accounting and limiting
-	infrastructure
-Date: Thu, 11 Mar 2010 23:27:01 +0100
-Message-ID: <20100311222701.GC2427__32237.7068842345$1268346547$gmane$org@linux>
-References: <1268175636-4673-1-git-send-email-arighi@develer.com>
-	<1268175636-4673-5-git-send-email-arighi@develer.com>
-	<20100310222338.GB3009@redhat.com>
+Subject: Re: [PATCH mmotm 2.5/4] memcg: disable irq at page cgroup lock
+	(Re: [PATCH -mmotm 3/4] memcg: dirty pages accounting and limiting
+	infrastructure)
+Date: Thu, 11 Mar 2010 23:34:46 +0100
+Message-ID: <20100311223445.GD2427__39803.8197112784$1268347017$gmane$org@linux>
+References: <20100308173100.b5997fd4.kamezawa.hiroyu@jp.fujitsu.com>
+	<20100309001252.GB13490@linux>
+	<20100309091914.4b5f6661.kamezawa.hiroyu@jp.fujitsu.com>
+	<20100309102928.9f36d2bb.nishimura@mxp.nes.nec.co.jp>
+	<20100309045058.GX3073@balbir.in.ibm.com>
+	<20100310104309.c5f9c9a9.nishimura@mxp.nes.nec.co.jp>
+	<20100310035624.GP3073@balbir.in.ibm.com>
+	<20100311133123.ab10183c.nishimura@mxp.nes.nec.co.jp>
+	<20100311134908.48d8b0fc.kamezawa.hiroyu@jp.fujitsu.com>
+	<20100311165413.GD29246@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20100310222338.GB3009-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20100311165413.GD29246-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,46 +30,61 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gV2VkLCBNYXIgMTAsIDIwMTAgYXQgMDU6MjM6MzlQTSAtMDUwMCwgVml2ZWsgR295YWwgd3Jv
-dGU6Cj4gT24gV2VkLCBNYXIgMTAsIDIwMTAgYXQgMTI6MDA6MzVBTSArMDEwMCwgQW5kcmVhIFJp
-Z2hpIHdyb3RlOgo+IAo+IFsuLl0KPiAKPiA+IC0gKiBDdXJyZW50bHkgdXNlZCB0byB1cGRhdGUg
-bWFwcGVkIGZpbGUgc3RhdGlzdGljcywgYnV0IHRoZSByb3V0aW5lIGNhbiBiZQo+ID4gLSAqIGdl
-bmVyYWxpemVkIHRvIHVwZGF0ZSBvdGhlciBzdGF0aXN0aWNzIGFzIHdlbGwuCj4gPiArICogbWVt
-X2Nncm91cF91cGRhdGVfcGFnZV9zdGF0KCkgLSB1cGRhdGUgbWVtY2cgZmlsZSBjYWNoZSdzIGFj
-Y291bnRpbmcKPiA+ICsgKiBAcGFnZToJdGhlIHBhZ2UgaW52b2x2ZWQgaW4gYSBmaWxlIGNhY2hl
-IG9wZXJhdGlvbi4KPiA+ICsgKiBAaWR4Ogl0aGUgcGFydGljdWxhciBmaWxlIGNhY2hlIHN0YXRp
-c3RpYy4KPiA+ICsgKiBAY2hhcmdlOgl0cnVlIHRvIGluY3JlbWVudCwgZmFsc2UgdG8gZGVjcmVt
-ZW50IHRoZSBzdGF0aXN0aWMgc3BlY2lmaWVkCj4gPiArICoJCWJ5IEBpZHguCj4gPiArICoKPiA+
-ICsgKiBVcGRhdGUgbWVtb3J5IGNncm91cCBmaWxlIGNhY2hlJ3MgYWNjb3VudGluZy4KPiA+ICAg
-Ki8KPiA+IC12b2lkIG1lbV9jZ3JvdXBfdXBkYXRlX2ZpbGVfbWFwcGVkKHN0cnVjdCBwYWdlICpw
-YWdlLCBpbnQgdmFsKQo+ID4gK3ZvaWQgbWVtX2Nncm91cF91cGRhdGVfcGFnZV9zdGF0KHN0cnVj
-dCBwYWdlICpwYWdlLAo+ID4gKwkJCWVudW0gbWVtX2Nncm91cF93cml0ZV9wYWdlX3N0YXRfaXRl
-bSBpZHgsIGJvb2wgY2hhcmdlKQo+ID4gIHsKPiA+IC0Jc3RydWN0IG1lbV9jZ3JvdXAgKm1lbTsK
-PiA+ICAJc3RydWN0IHBhZ2VfY2dyb3VwICpwYzsKPiA+ICAJdW5zaWduZWQgbG9uZyBmbGFnczsK
-PiA+ICAKPiA+ICsJaWYgKG1lbV9jZ3JvdXBfZGlzYWJsZWQoKSkKPiA+ICsJCXJldHVybjsKPiA+
-ICAJcGMgPSBsb29rdXBfcGFnZV9jZ3JvdXAocGFnZSk7Cj4gPiAtCWlmICh1bmxpa2VseSghcGMp
-KQo+ID4gKwlpZiAodW5saWtlbHkoIXBjKSB8fCAhUGFnZUNncm91cFVzZWQocGMpKQo+ID4gIAkJ
-cmV0dXJuOwo+ID4gLQo+ID4gIAlsb2NrX3BhZ2VfY2dyb3VwKHBjLCBmbGFncyk7Cj4gPiAtCW1l
-bSA9IHBjLT5tZW1fY2dyb3VwOwo+ID4gLQlpZiAoIW1lbSkKPiA+IC0JCWdvdG8gZG9uZTsKPiA+
-IC0KPiA+IC0JaWYgKCFQYWdlQ2dyb3VwVXNlZChwYykpCj4gPiAtCQlnb3RvIGRvbmU7Cj4gPiAt
-Cj4gPiAtCS8qCj4gPiAtCSAqIFByZWVtcHRpb24gaXMgYWxyZWFkeSBkaXNhYmxlZC4gV2UgY2Fu
-IHVzZSBfX3RoaXNfY3B1X3h4eAo+ID4gLQkgKi8KPiA+IC0JX190aGlzX2NwdV9hZGQobWVtLT5z
-dGF0LT5jb3VudFtNRU1fQ0dST1VQX1NUQVRfRklMRV9NQVBQRURdLCB2YWwpOwo+ID4gLQo+ID4g
-LWRvbmU6Cj4gPiArCV9fbWVtX2Nncm91cF91cGRhdGVfcGFnZV9zdGF0KHBjLCBpZHgsIGNoYXJn
-ZSk7Cj4gPiAgCXVubG9ja19wYWdlX2Nncm91cChwYywgZmxhZ3MpOwo+ID4gIH0KPiA+ICtFWFBP
-UlRfU1lNQk9MX0dQTChtZW1fY2dyb3VwX3VwZGF0ZV9wYWdlX3N0YXRfdW5sb2NrZWQpOwo+IAo+
-ICAgQ0MgICAgICBtbS9tZW1jb250cm9sLm8KPiBtbS9tZW1jb250cm9sLmM6MTYwMDogZXJyb3I6
-IOKAmG1lbV9jZ3JvdXBfdXBkYXRlX3BhZ2Vfc3RhdF91bmxvY2tlZOKAmQo+IHVuZGVjbGFyZWQg
-aGVyZSAobm90IGluIGEgZnVuY3Rpb24pCj4gbW0vbWVtY29udHJvbC5jOjE2MDA6IHdhcm5pbmc6
-IHR5cGUgZGVmYXVsdHMgdG8g4oCYaW504oCZIGluIGRlY2xhcmF0aW9uIG9mCj4g4oCYbWVtX2Nn
-cm91cF91cGRhdGVfcGFnZV9zdGF0X3VubG9ja2Vk4oCZCj4gbWFrZVsxXTogKioqIFttbS9tZW1j
-b250cm9sLm9dIEVycm9yIDEKPiBtYWtlOiAqKiogW21tXSBFcnJvciAyCgpUaGFua3MhIFdpbGwg
-Zml4IGluIHRoZSBuZXh0IHZlcnNpb24uCgoobW1oLi4uIHdoeSBJIGRpZG4ndCBzZWUgdGhpcz8g
-cHJvYmFibHkgYmVjYXVzZSBJJ20gYnVpbGRpbmcgYSBzdGF0aWMga2VybmVsLi4uKQoKLUFuZHJl
-YQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWlu
-ZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0
-dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWlu
-ZXJz
+On Thu, Mar 11, 2010 at 11:54:13AM -0500, Vivek Goyal wrote:
+> On Thu, Mar 11, 2010 at 01:49:08PM +0900, KAMEZAWA Hiroyuki wrote:
+> > On Thu, 11 Mar 2010 13:31:23 +0900
+> > Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
+> > 
+> > > On Wed, 10 Mar 2010 09:26:24 +0530, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+> > > > * nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org> [2010-03-10 10:43:09]:
+> > 
+> > > I made a patch(attached) using both local_irq_disable/enable and local_irq_save/restore.
+> > > local_irq_save/restore is used only in mem_cgroup_update_file_mapped.
+> > > 
+> > > And I attached a histogram graph of 30 times kernel build in root cgroup for each.
+> > > 
+> > >   before_root: no irq operation(original)
+> > >   after_root: local_irq_disable/enable for all
+> > >   after2_root: local_irq_save/restore for all
+> > >   after3_root: mixed version(attached)
+> > > 
+> > > hmm, there seems to be a tendency that before < after < after3 < after2 ?
+> > > Should I replace save/restore version to mixed version ?
+> > > 
+> > 
+> > IMHO, starting from after2_root version is the easist.
+> > If there is a chance to call lock/unlock page_cgroup can be called in
+> > interrupt context, we _have to_ disable IRQ, anyway.
+> > And if we have to do this, I prefer migration_lock rather than this mixture.
+> > 
+> > BTW, how big your system is ? Balbir-san's concern is for bigger machines.
+> > But I'm not sure this change is affecte by the size of machines.
+> > I'm sorry I have no big machine, now.
+> 
+> FWIW, I took andrea's patches (local_irq_save/restore solution) and
+> compiled the kernel on 32 cores hyperthreaded (64 cpus) with make -j32
+> in /dev/shm/. On this system, I can't see much difference.
+> 
+> I compiled the kernel 10 times and took average.
+> 
+> Without andrea's patches: 28.698 (seconds)
+> With andrea's patches: 28.711 (seconds).
+> Diff is .04%
+> 
+> This is all should be in root cgroup. Note, I have not mounted memory cgroup
+> controller but it is compiled in. So I am assuming that root group
+> accounting will still be taking place. Also assuming that it is not
+> required to do actual IO to disk and /dev/shm is enough to see the results
+> of local_irq_save()/restore.
+
+cgroup disable is at boot time "cgroup_disable=...", so root cgroup
+accounting should be enabled.
+
+The same for the local_irq_save/restore() overhead, lock/unlock_page_cgroup()
+is called during each charge.
+
+Many thanks for testing!
+-Andrea
