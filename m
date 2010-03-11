@@ -1,25 +1,14 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH mmotm 2.5/4] memcg: disable irq at page cgroup lock
-	(Re: [PATCH -mmotm 3/4] memcg: dirty pages accounting and limiting
-	infrastructure)
-Date: Thu, 11 Mar 2010 11:54:13 -0500
-Message-ID: <20100311165413.GD29246__40448.2559687041$1268326537$gmane$org@redhat.com>
-References: <20100308170711.4d8b02f0.nishimura@mxp.nes.nec.co.jp>
-	<20100308173100.b5997fd4.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100309001252.GB13490@linux>
-	<20100309091914.4b5f6661.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100309102928.9f36d2bb.nishimura@mxp.nes.nec.co.jp>
-	<20100309045058.GX3073@balbir.in.ibm.com>
-	<20100310104309.c5f9c9a9.nishimura@mxp.nes.nec.co.jp>
-	<20100310035624.GP3073@balbir.in.ibm.com>
-	<20100311133123.ab10183c.nishimura@mxp.nes.nec.co.jp>
-	<20100311134908.48d8b0fc.kamezawa.hiroyu@jp.fujitsu.com>
+Subject: Re: [PATCH -mmotm 0/5] memcg: per cgroup dirty limit (v6)
+Date: Thu, 11 Mar 2010 13:07:53 -0500
+Message-ID: <20100311180753.GE29246__43047.8508388207$1268331052$gmane$org@redhat.com>
+References: <1268175636-4673-1-git-send-email-arighi@develer.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20100311134908.48d8b0fc.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <1268175636-4673-1-git-send-email-arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -29,55 +18,58 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+Cc: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Mar 11, 2010 at 01:49:08PM +0900, KAMEZAWA Hiroyuki wrote:
-> On Thu, 11 Mar 2010 13:31:23 +0900
-> Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
+On Wed, Mar 10, 2010 at 12:00:31AM +0100, Andrea Righi wrote:
+> Control the maximum amount of dirty pages a cgroup can have at any given time.
 > 
-> > On Wed, 10 Mar 2010 09:26:24 +0530, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
-> > > * nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org> [2010-03-10 10:43:09]:
+> Per cgroup dirty limit is like fixing the max amount of dirty (hard to reclaim)
+> page cache used by any cgroup. So, in case of multiple cgroup writers, they
+> will not be able to consume more than their designated share of dirty pages and
+> will be forced to perform write-out if they cross that limit.
 > 
-> > I made a patch(attached) using both local_irq_disable/enable and local_irq_save/restore.
-> > local_irq_save/restore is used only in mem_cgroup_update_file_mapped.
-> > 
-> > And I attached a histogram graph of 30 times kernel build in root cgroup for each.
-> > 
-> >   before_root: no irq operation(original)
-> >   after_root: local_irq_disable/enable for all
-> >   after2_root: local_irq_save/restore for all
-> >   after3_root: mixed version(attached)
-> > 
-> > hmm, there seems to be a tendency that before < after < after3 < after2 ?
-> > Should I replace save/restore version to mixed version ?
-> > 
+> The overall design is the following:
 > 
-> IMHO, starting from after2_root version is the easist.
-> If there is a chance to call lock/unlock page_cgroup can be called in
-> interrupt context, we _have to_ disable IRQ, anyway.
-> And if we have to do this, I prefer migration_lock rather than this mixture.
+>  - account dirty pages per cgroup
+>  - limit the number of dirty pages via memory.dirty_ratio / memory.dirty_bytes
+>    and memory.dirty_background_ratio / memory.dirty_background_bytes in
+>    cgroupfs
+>  - start to write-out (background or actively) when the cgroup limits are
+>    exceeded
 > 
-> BTW, how big your system is ? Balbir-san's concern is for bigger machines.
-> But I'm not sure this change is affecte by the size of machines.
-> I'm sorry I have no big machine, now.
+> This feature is supposed to be strictly connected to any underlying IO
+> controller implementation, so we can stop increasing dirty pages in VM layer
+> and enforce a write-out before any cgroup will consume the global amount of
+> dirty pages defined by the /proc/sys/vm/dirty_ratio|dirty_bytes and
+> /proc/sys/vm/dirty_background_ratio|dirty_background_bytes limits.
+> 
 
-FWIW, I took andrea's patches (local_irq_save/restore solution) and
-compiled the kernel on 32 cores hyperthreaded (64 cpus) with make -j32
-in /dev/shm/. On this system, I can't see much difference.
+Hi Andrea,
 
-I compiled the kernel 10 times and took average.
+I am doing a simple dd test of writting a 4G file. This machine has got
+64G of memory and I have created one cgroup with 100M as limit_in_bytes.
 
-Without andrea's patches: 28.698 (seconds)
-With andrea's patches: 28.711 (seconds).
-Diff is .04%
+I run following dd program both in root cgroup as well as test1/
+cgroup(100M limit) one after the other.
 
-This is all should be in root cgroup. Note, I have not mounted memory cgroup
-controller but it is compiled in. So I am assuming that root group
-accounting will still be taking place. Also assuming that it is not
-required to do actual IO to disk and /dev/shm is enough to see the results
-of local_irq_save()/restore.
+In root cgroup
+==============
+dd if=/dev/zero of=/root/zerofile bs=4K count=1000000
+1000000+0 records in
+1000000+0 records out
+4096000000 bytes (4.1 GB) copied, 59.5571 s, 68.8 MB/s
+
+In test1/ cgroup
+===============
+dd if=/dev/zero of=/root/zerofile bs=4K count=1000000
+1000000+0 records in
+1000000+0 records out
+4096000000 bytes (4.1 GB) copied, 20.6683 s, 198 MB/s
+
+It is strange that we are throttling process in root group much more than
+process in test1/ cgroup?
 
 Thanks
 Vivek
