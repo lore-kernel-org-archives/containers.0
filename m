@@ -1,17 +1,16 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: user-cr: Extra unshare() calls ?
-Date: Fri, 12 Mar 2010 08:44:11 -0600
-Message-ID: <20100312144411.GA9783@us.ibm.com>
-References: <20100308201338.GA16446@us.ibm.com>
-	<20100308205851.GB21490@us.ibm.com>
-	<20100308211135.GB14607@us.ibm.com>
-	<20100312015823.GB6444@us.ibm.com>
+Subject: Re: [PATCH RFC] Define CAP_SYSLOG
+Date: Fri, 12 Mar 2010 09:02:47 -0600
+Message-ID: <20100312150247.GB9783@us.ibm.com>
+References: <20100305205607.GA31791@us.ibm.com>
+	<20100308185818.GN20744@outflux.net>
+	<551280e51003101719t3c61da42ja5796b3d86b0126a@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20100312015823.GB6444-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <551280e51003101719t3c61da42ja5796b3d86b0126a-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,42 +20,52 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: "Andrew G. Morgan" <morgan-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Kees Cook <kees-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> Sukadev Bhattiprolu [sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org] wrote:
-> | Serge E. Hallyn [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
-> | | Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> | | > 
-> | | > Came across this while testing LXC.
-> | | > 
-> | | > 
-> | | > 1. Does ckpt_remount_proc() need to unshare() ? Or can we have the
-> | | >    clone() that calls __ckpt_coordinator() clone with CLONE_NEWNS|CLONE_FS
-> | | >    instead ?
-> | | > 
-> | | >    The problem with the unshare() in ckpt_remount_proc() is that it
-> | | >    creates an extra level in cgroup hierarchy (see below) after restart.
-> | | >    So applications expecting the cgroup hierarchy before chckpoint will
-> | | >    be surprised.
-> | | > 
-> | | > 2. When --mount-pty (or --mntns) is specified, do we need to unshare() 
-> | | >    in the parent process ? Considering only the full-container restart
-> | | >    for now (ignore self-restart and subtree restart), can we just
-> | | >    specify (CLONE_NEWNS|CLONE_FS) at the time of creating the first
-> | | >    restarted process ?
-> | | 
-> | | And then move remounting of devpts into ckpt_remount_proc() called
-> | | from __ckpt_coordinator() as well?
-> | 
-> | Yes, I missed that in the hack.
-> 
-> Here is a more involved fix, but not sure if there is a more efficient
-> way to solve.
-
-I don't know what you mean by more efficient - this looks good to me.
-(Apart from probably also pulling the self-restart stuff off into a helper)
+Thanks, guys - I also need to update the selinux classmap in both
+kernel and policy.  Hoping to get around to that this afternoon,
+but not sure.
 
 -serge
+
+Quoting Andrew G. Morgan (morgan-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org):
+> Acked-by: Andrew G. Morgan <morgan-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+> =
+
+> I concur with Kees.
+> =
+
+> Cheers
+> =
+
+> Andrew
+> =
+
+> On Mon, Mar 8, 2010 at 10:58 AM, Kees Cook <kees-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> wrote:
+> > Hi Serge,
+> >
+> > On Fri, Mar 05, 2010 at 02:56:07PM -0600, Serge E. Hallyn wrote:
+> >> Privileged syslog operations currently require CAP_SYS_ADMIN. =A0Split
+> >> this off into a new CAP_SYSLOG privilege which we can sanely take away
+> >> from a container through the capability bounding set.
+> >
+> > Seems like a good idea, but it'll require code changes in libcap2,
+> > libcap-ng, as well as manpages.
+> >
+> > I support the idea -- more stuff needs to be extracted from CAP_SYS_ADM=
+IN,
+> > but this is a nice distinct subsystem to do now.
+> >
+> > Acked-By: Kees Cook <kees.cook-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+> >
+> > --
+> > Kees Cook
+> > Ubuntu Security Team
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-securit=
+y-module" in
+> > the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> > More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
+> >
