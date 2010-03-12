@@ -1,18 +1,16 @@
-From: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
-Subject: Re: [PATCH -mmotm 0/5] memcg: per cgroup dirty limit (v6)
-Date: Fri, 12 Mar 2010 10:14:11 +0900
-Message-ID: <20100312101411.b2639128.nishimura__32556.4985782423$1268357201$gmane$org@mxp.nes.nec.co.jp>
-References: <1268175636-4673-1-git-send-email-arighi@develer.com>
-	<20100311093913.07c9ca8a.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100311101726.f58d24e9.kamezawa.hiroyu@jp.fujitsu.com>
-	<1268298865.5279.997.camel@twins>
-	<20100311182500.0f3ba994.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100311184244.6735076a.kamezawa.hiroyu@jp.fujitsu.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: user-cr: Extra unshare() calls ?
+Date: Thu, 11 Mar 2010 17:58:23 -0800
+Message-ID: <20100312015823.GB6444@us.ibm.com>
+References: <20100308201338.GA16446@us.ibm.com>
+	<20100308205851.GB21490@us.ibm.com>
+	<20100308211135.GB14607@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100311184244.6735076a.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20100308211135.GB14607-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,280 +20,233 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, 11 Mar 2010 18:42:44 +0900, KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
-> On Thu, 11 Mar 2010 18:25:00 +0900
-> KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
-> > Then, it's not problem that check pc->mem_cgroup is root cgroup or not
-> > without spinlock.
-> > ==
-> > void mem_cgroup_update_stat(struct page *page, int idx, bool charge)
-> > {
-> > 	pc = lookup_page_cgroup(page);
-> > 	if (unlikely(!pc) || mem_cgroup_is_root(pc->mem_cgroup))
-> > 		return;	
-> > 	...
-> > }
-> > ==
-> > This can be handle in the same logic of "lock failure" path.
-> > And we just do ignore accounting.
-> > 
-> > There are will be no spinlocks....to do more than this,
-> > I think we have to use "struct page" rather than "struct page_cgroup".
-> > 
-> Hmm..like this ? The bad point of this patch is that this will corrupt FILE_MAPPED
-> status in root cgroup. This kind of change is not very good.
-> So, one way is to use this kind of function only for new parameters. Hmm.
-IMHO, if we disable accounting file stats in root cgroup, it would be better
-not to show them in memory.stat to avoid confusing users.
-But, hmm, I think accounting them in root cgroup isn't so meaningless.
-Isn't making mem_cgroup_has_dirty_limit() return false in case of root cgroup enough?
+Sukadev Bhattiprolu [sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org] wrote:
+| Serge E. Hallyn [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
+| | Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+| | > 
+| | > Came across this while testing LXC.
+| | > 
+| | > 
+| | > 1. Does ckpt_remount_proc() need to unshare() ? Or can we have the
+| | >    clone() that calls __ckpt_coordinator() clone with CLONE_NEWNS|CLONE_FS
+| | >    instead ?
+| | > 
+| | >    The problem with the unshare() in ckpt_remount_proc() is that it
+| | >    creates an extra level in cgroup hierarchy (see below) after restart.
+| | >    So applications expecting the cgroup hierarchy before chckpoint will
+| | >    be surprised.
+| | > 
+| | > 2. When --mount-pty (or --mntns) is specified, do we need to unshare() 
+| | >    in the parent process ? Considering only the full-container restart
+| | >    for now (ignore self-restart and subtree restart), can we just
+| | >    specify (CLONE_NEWNS|CLONE_FS) at the time of creating the first
+| | >    restarted process ?
+| | 
+| | And then move remounting of devpts into ckpt_remount_proc() called
+| | from __ckpt_coordinator() as well?
+| 
+| Yes, I missed that in the hack.
 
-> ==
-> 
-> From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-> 
-> Now, file-mapped is maintaiend. But more generic update function
-> will be needed for dirty page accounting.
-> 
-> For accountig page status, we have to guarantee lock_page_cgroup()
-> will be never called under tree_lock held.
-> To guarantee that, we use trylock at updating status.
-> By this, we do fuzyy accounting, but in almost all case, it's correct.
-> 
-> Changelog:
->  - removed unnecessary preempt_disable()
->  - added root cgroup check. By this, we do no lock/account in root cgroup.
-> 
-> Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Looks good overall.
+Here is a more involved fix, but not sure if there is a more efficient
+way to solve.
 
+---
+From 6813961bc1f357516685145279f9f8ce883c31a4 Mon Sep 17 00:00:00 2001
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Date: Mon, 8 Mar 2010 12:03:46 -0800
+Subject: [PATCH 1/1] Minimize unshare() calls
 
-Thanks,
-Daisuke Nishimura.
+We currently have a few unshare() calls at different points in the
+code. While these don't affect the restart application itself, the
+excess calls create additional levels in the cgroup hierarchy, which
+can surprise the administrator (or other users of the hierarchy
+such as LXC.
 
-> ---
->  include/linux/memcontrol.h  |    7 ++-
->  include/linux/page_cgroup.h |   15 +++++++
->  mm/memcontrol.c             |   92 +++++++++++++++++++++++++++++++++-----------
->  mm/rmap.c                   |    4 -
->  4 files changed, 94 insertions(+), 24 deletions(-)
-> 
-> Index: mmotm-2.6.34-Mar9/mm/memcontrol.c
-> ===================================================================
-> --- mmotm-2.6.34-Mar9.orig/mm/memcontrol.c
-> +++ mmotm-2.6.34-Mar9/mm/memcontrol.c
-> @@ -1348,30 +1348,83 @@ bool mem_cgroup_handle_oom(struct mem_cg
->   * Currently used to update mapped file statistics, but the routine can be
->   * generalized to update other statistics as well.
->   */
-> -void mem_cgroup_update_file_mapped(struct page *page, int val)
-> +void __mem_cgroup_update_stat(struct page_cgroup *pc, int idx, bool charge)
->  {
->  	struct mem_cgroup *mem;
-> -	struct page_cgroup *pc;
-> -
-> -	pc = lookup_page_cgroup(page);
-> -	if (unlikely(!pc))
-> -		return;
-> +	int val;
->  
-> -	lock_page_cgroup(pc);
->  	mem = pc->mem_cgroup;
-> -	if (!mem)
-> -		goto done;
-> +	if (!mem || !PageCgroupUsed(pc))
-> +		return;
->  
-> -	if (!PageCgroupUsed(pc))
-> -		goto done;
-> +	if (charge)
-> +		val = 1;
-> +	else
-> +		val = -1;
->  
-> +	switch (idx) {
-> +	case MEMCG_NR_FILE_MAPPED:
-> +		if (charge) {
-> +			if (!PageCgroupFileMapped(pc))
-> +				SetPageCgroupFileMapped(pc);
-> +			else
-> +				val = 0;
-> +		} else {
-> +			if (PageCgroupFileMapped(pc))
-> +				ClearPageCgroupFileMapped(pc);
-> +			else
-> +				val = 0;
-> +		}
-> +		idx = MEM_CGROUP_STAT_FILE_MAPPED;
-> +		break;
-> +	default:
-> +		BUG();
-> +		break;
-> +	}
->  	/*
->  	 * Preemption is already disabled. We can use __this_cpu_xxx
->  	 */
-> -	__this_cpu_add(mem->stat->count[MEM_CGROUP_STAT_FILE_MAPPED], val);
-> +	__this_cpu_add(mem->stat->count[idx], val);
-> +}
->  
-> -done:
-> -	unlock_page_cgroup(pc);
-> +void mem_cgroup_update_stat(struct page *page, int idx, bool charge)
-> +{
-> +	struct page_cgroup *pc;
-> +
-> +	pc = lookup_page_cgroup(page);
-> +	if (!pc || mem_cgroup_is_root(pc->mem_cgroup))
-> +		return;
-> +
-> +	if (trylock_page_cgroup(pc)) {
-> +		__mem_cgroup_update_stat(pc, idx, charge);
-> +		unlock_page_cgroup(pc);
-> +	}
-> +	return;
-> +}
-> +
-> +static void mem_cgroup_migrate_stat(struct page_cgroup *pc,
-> +	struct mem_cgroup *from, struct mem_cgroup *to)
-> +{
-> +	if (PageCgroupFileMapped(pc)) {
-> +		__this_cpu_dec(from->stat->count[MEM_CGROUP_STAT_FILE_MAPPED]);
-> +		if (!mem_cgroup_is_root(to)) {
-> +			__this_cpu_inc(to->stat->count[MEM_CGROUP_STAT_FILE_MAPPED]);
-> +		} else {
-> +			ClearPageCgroupFileMapped(pc);
-> +		}
-> +	}
-> +}
-> +
-> +static void
-> +__mem_cgroup_stat_fixup(struct page_cgroup *pc, struct mem_cgroup *mem)
-> +{
-> +	if (mem_cgroup_is_root(mem))
-> +		return;
-> +	/* We'are in uncharge() and lock_page_cgroup */
-> +	if (PageCgroupFileMapped(pc)) {
-> +		__this_cpu_dec(mem->stat->count[MEM_CGROUP_STAT_FILE_MAPPED]);
-> +		ClearPageCgroupFileMapped(pc);
-> +	}
->  }
->  
->  /*
-> @@ -1810,13 +1863,7 @@ static void __mem_cgroup_move_account(st
->  	VM_BUG_ON(pc->mem_cgroup != from);
->  
->  	page = pc->page;
-> -	if (page_mapped(page) && !PageAnon(page)) {
-> -		/* Update mapped_file data for mem_cgroup */
-> -		preempt_disable();
-> -		__this_cpu_dec(from->stat->count[MEM_CGROUP_STAT_FILE_MAPPED]);
-> -		__this_cpu_inc(to->stat->count[MEM_CGROUP_STAT_FILE_MAPPED]);
-> -		preempt_enable();
-> -	}
-> +	mem_cgroup_migrate_stat(pc, from, to);
->  	mem_cgroup_charge_statistics(from, pc, false);
->  	if (uncharge)
->  		/* This is not "cancel", but cancel_charge does all we need. */
-> @@ -2208,6 +2255,9 @@ __mem_cgroup_uncharge_common(struct page
->  		__do_uncharge(mem, ctype);
->  	if (ctype == MEM_CGROUP_CHARGE_TYPE_SWAPOUT)
->  		mem_cgroup_swap_statistics(mem, true);
-> +	if (unlikely(PCG_PageStatMask & pc->flags))
-> +		__mem_cgroup_stat_fixup(pc, mem);
-> +
->  	mem_cgroup_charge_statistics(mem, pc, false);
->  
->  	ClearPageCgroupUsed(pc);
-> Index: mmotm-2.6.34-Mar9/include/linux/page_cgroup.h
-> ===================================================================
-> --- mmotm-2.6.34-Mar9.orig/include/linux/page_cgroup.h
-> +++ mmotm-2.6.34-Mar9/include/linux/page_cgroup.h
-> @@ -39,6 +39,8 @@ enum {
->  	PCG_CACHE, /* charged as cache */
->  	PCG_USED, /* this object is in use. */
->  	PCG_ACCT_LRU, /* page has been accounted for */
-> +	/* for cache-status accounting */
-> +	PCG_FILE_MAPPED,
->  };
->  
->  #define TESTPCGFLAG(uname, lname)			\
-> @@ -57,6 +59,10 @@ static inline void ClearPageCgroup##unam
->  static inline int TestClearPageCgroup##uname(struct page_cgroup *pc)	\
->  	{ return test_and_clear_bit(PCG_##lname, &pc->flags);  }
->  
-> +/* Page/File stat flag mask */
-> +#define PCG_PageStatMask	((1 << PCG_FILE_MAPPED))
-> +
-> +
->  TESTPCGFLAG(Locked, LOCK)
->  
->  /* Cache flag is set only once (at allocation) */
-> @@ -73,6 +79,10 @@ CLEARPCGFLAG(AcctLRU, ACCT_LRU)
->  TESTPCGFLAG(AcctLRU, ACCT_LRU)
->  TESTCLEARPCGFLAG(AcctLRU, ACCT_LRU)
->  
-> +TESTPCGFLAG(FileMapped, FILE_MAPPED)
-> +SETPCGFLAG(FileMapped, FILE_MAPPED)
-> +CLEARPCGFLAG(FileMapped, FILE_MAPPED)
-> +
->  static inline int page_cgroup_nid(struct page_cgroup *pc)
->  {
->  	return page_to_nid(pc->page);
-> @@ -93,6 +103,11 @@ static inline void unlock_page_cgroup(st
->  	bit_spin_unlock(PCG_LOCK, &pc->flags);
->  }
->  
-> +static inline int trylock_page_cgroup(struct page_cgroup *pc)
-> +{
-> +	return bit_spin_trylock(PCG_LOCK, &pc->flags);
-> +}
-> +
->  #else /* CONFIG_CGROUP_MEM_RES_CTLR */
->  struct page_cgroup;
->  
-> Index: mmotm-2.6.34-Mar9/include/linux/memcontrol.h
-> ===================================================================
-> --- mmotm-2.6.34-Mar9.orig/include/linux/memcontrol.h
-> +++ mmotm-2.6.34-Mar9/include/linux/memcontrol.h
-> @@ -124,7 +124,12 @@ static inline bool mem_cgroup_disabled(v
->  	return false;
->  }
->  
-> -void mem_cgroup_update_file_mapped(struct page *page, int val);
-> +enum mem_cgroup_page_stat_item {
-> +	MEMCG_NR_FILE_MAPPED,
-> +	MEMCG_NR_FILE_NSTAT,
-> +};
-> +
-> +void mem_cgroup_update_stat(struct page *page, int idx, bool charge);
->  unsigned long mem_cgroup_soft_limit_reclaim(struct zone *zone, int order,
->  						gfp_t gfp_mask, int nid,
->  						int zid);
-> Index: mmotm-2.6.34-Mar9/mm/rmap.c
-> ===================================================================
-> --- mmotm-2.6.34-Mar9.orig/mm/rmap.c
-> +++ mmotm-2.6.34-Mar9/mm/rmap.c
-> @@ -829,7 +829,7 @@ void page_add_file_rmap(struct page *pag
->  {
->  	if (atomic_inc_and_test(&page->_mapcount)) {
->  		__inc_zone_page_state(page, NR_FILE_MAPPED);
-> -		mem_cgroup_update_file_mapped(page, 1);
-> +		mem_cgroup_update_stat(page, MEMCG_NR_FILE_MAPPED, true);
->  	}
->  }
->  
-> @@ -861,7 +861,7 @@ void page_remove_rmap(struct page *page)
->  		__dec_zone_page_state(page, NR_ANON_PAGES);
->  	} else {
->  		__dec_zone_page_state(page, NR_FILE_MAPPED);
-> -		mem_cgroup_update_file_mapped(page, -1);
-> +		mem_cgroup_update_stat(page, MEMCG_NR_FILE_MAPPED, false);
->  	}
->  	/*
->  	 * It would be tidy to reset the PageAnon mapping here,
-> 
+Rather than several unshare() calls, can we instead specify the
+appropriate clone_flags while creating the coordinator/root process
+of the application tree ? When this root process is created it can
+remount /proc, remount devpts, chroot() etc if necessary.
+
+Note that for "new-container with init" and "subtree restart", the
+first process is also the root of the application process tree.
+
+In the case of "new-container without init", the coordinator process
+which acts as the container-init can do the setup.
+
+In case of self-restart, the main process itself can do the unshare.
+
+This patch has been very gently tested :-) but wanted to get more feedback
+on the direction and see if there is an easier way.
+---
+ restart.c |   78 ++++++++++++++++++++++++++++++++++++++++++++++++------------
+ 1 files changed, 62 insertions(+), 16 deletions(-)
+
+diff --git a/restart.c b/restart.c
+index 63e1881..87a30dc 100644
+--- a/restart.c
++++ b/restart.c
+@@ -127,6 +127,9 @@ struct task zero_task;
+ #define TASK_SESSION	0x10	/* inherits creator's original sid */
+ #define TASK_NEWPID	0x20	/* starts a new pid namespace */
+ #define TASK_DEAD	0x40	/* dead task (dummy) */
++#define TASK_NEWROOT	0x80	/* task must chroot() */
++#define TASK_NEWPTS	0x100	/* remount devpts */
++#define TASK_NEWNS	0x200	/* unshare namespace/file-system */
+ 
+ struct ckpt_ctx {
+ 	pid_t root_pid;
+@@ -458,24 +461,24 @@ int app_restart(struct app_restart_args *args)
+ 	if (args->freezer && freezer_prepare(&ctx) < 0)
+ 		exit(1);
+ 
+-	/* private mounts namespace ? */
+-	if (args->mntns && unshare(CLONE_NEWNS | CLONE_FS) < 0) {
+-		ckpt_perror("unshare");
+-		exit(1);
+-	}
++	/* self-restart ends here: */
++	if (args->self) {
++		/* private mounts namespace ? */
++		if (args->mntns && unshare(CLONE_NEWNS | CLONE_FS) < 0) {
++			ckpt_perror("unshare");
++			exit(1);
++		}
+ 
+-	/* chroot ? */
+-	if (args->root && chroot(args->root) < 0) {
+-		ckpt_perror("chroot");
+-		exit(1);
+-	}
++		/* chroot ? */
++		if (args->root && chroot(args->root) < 0) {
++			ckpt_perror("chroot");
++			exit(1);
++		}
+ 
+-	/* remount /dev/pts ? */
+-	if (args->mnt_pty && ckpt_remount_devpts(&ctx) < 0)
+-		exit(1);
++		/* remount /dev/pts ? */
++		if (args->mnt_pty && ckpt_remount_devpts(&ctx) < 0)
++			exit(1);
+ 
+-	/* self-restart ends here: */
+-	if (args->self) {
+ 		restart(getpid(), STDIN_FILENO, RESTART_TASKSELF, args->klogfd);
+ 		/* reach here if restart(2) failed ! */
+ 		ckpt_perror("restart");
+@@ -520,10 +523,30 @@ int app_restart(struct app_restart_args *args)
+ 	if (ret < 0)
+ 		exit(1);
+ 
++	/*
++	 * Have the first child in the restarted process tree
++	 * setup devpts, root-dir and /proc if necessary, ...
++	 */
++	if (ctx.args->mnt_pty)
++		ctx.tasks_arr[0].flags |= TASK_NEWPTS;
++
++	if (ctx.args->mntns)
++		ctx.tasks_arr[0].flags |= TASK_NEWNS;
++
++	if (ctx.args->root)
++		ctx.tasks_arr[0].flags |= TASK_NEWROOT;
++
+ 	if (ctx.args->pidns && ctx.tasks_arr[0].pid != 1) {
+ 		ckpt_dbg("new pidns without init\n");
+ 		if (global_send_sigint == -1)
+ 			global_send_sigint = SIGINT;
++		/*
++		 * ...unless we have an explicit coordinator, in which case
++		 * the coordinator should set up the filesystems and
++		 * not the first process in the application process tree.
++		 */
++		ctx.tasks_arr[0].flags &= ~(TASK_NEWPTS | TASK_NEWROOT | \
++				TASK_NEWNS);
+ 		ret = ckpt_coordinator_pidns(&ctx);
+ 	} else if (ctx.args->pidns) {
+ 		ckpt_dbg("new pidns with init\n");
+@@ -717,10 +740,12 @@ static int ckpt_probe_child(pid_t pid, char *str)
+  */
+ static int ckpt_remount_proc(struct ckpt_ctx *ctx)
+ {
++#if 0
+ 	if (unshare(CLONE_NEWNS | CLONE_FS) < 0) {
+ 		ckpt_perror("unshare");
+ 		return -1;
+ 	}
++#endif
+ 	/* this is unlikely, but we don't want to fail */
+ 	if (umount2("/proc", MNT_DETACH) < 0) {
+ 		if (ckpt_cond_fail(ctx, CKPT_COND_MNTPROC)) {
+@@ -743,9 +768,18 @@ static int __ckpt_coordinator(void *arg)
+ {
+ 	struct ckpt_ctx *ctx = (struct ckpt_ctx *) arg;
+ 
++	/* chroot ? */
++	if (ctx->args->root && chroot(ctx->args->root) < 0) {
++		ckpt_perror("chroot");
++		exit(1);
++	}
++
+ 	if (ckpt_remount_proc(ctx) < 0)
+ 		return -1;
+ 
++	if (ctx->args->mnt_pty && ckpt_remount_devpts(ctx) < 0)
++		return -1;
++
+ 	if (!ctx->args->wait)
+ 		close(ctx->pipe_coord[0]);
+ 
+@@ -778,6 +812,7 @@ static int ckpt_coordinator_pidns(struct ckpt_ctx *ctx)
+ 	int copy, ret;
+ 	genstack stk;
+ 	void *sp;
++	unsigned long flags = SIGCHLD;
+ 
+ 	ckpt_dbg("forking coordinator in new pidns\n");
+ 
+@@ -802,7 +837,9 @@ static int ckpt_coordinator_pidns(struct ckpt_ctx *ctx)
+ 	copy = ctx->args->copy_status;
+ 	ctx->args->copy_status = 1;
+ 
+-	coord_pid = clone(__ckpt_coordinator, sp, CLONE_NEWPID|SIGCHLD, ctx);
++	flags |= CLONE_NEWPID|CLONE_NEWNS;
++
++	coord_pid = clone(__ckpt_coordinator, sp, flags, ctx);
+ 	genstack_release(stk);
+ 	if (coord_pid < 0) {
+ 		ckpt_perror("clone coordinator");
+@@ -1610,10 +1647,16 @@ int ckpt_fork_stub(void *data)
+ 	struct task *task = (struct task *) data;
+ 	struct ckpt_ctx *ctx = task->ctx;
+ 
++	if ((task->flags & TASK_NEWROOT) && chroot(ctx->args->root) < 0)
++		return -1;
++
+ 	/* tasks with new pid-ns need new /proc mount */
+ 	if ((task->flags & TASK_NEWPID) && ckpt_remount_proc(ctx) < 0)
+ 		return -1;
+ 
++	if ((task->flags & TASK_NEWPTS) && ckpt_remount_devpts(ctx) < 0)
++		return -1;
++
+ 	/*
+ 	 * In restart into a new pid namespace (--pidns), coordinator
+ 	 * is the container init, hence if it terminated permatutely
+@@ -1691,6 +1734,9 @@ static pid_t ckpt_fork_child(struct ckpt_ctx *ctx, struct task *child)
+ 		pid = 0;
+ 	}
+ #endif
++	if (child->flags & TASK_NEWNS) {
++		flags |= CLONE_NEWNS;
++	}
+ 
+ 	if (child->flags & (TASK_SIBLING | TASK_THREAD))
+ 		child->real_parent = getppid();
+-- 
+1.6.6.1
