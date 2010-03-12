@@ -1,16 +1,13 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH RFC] Define CAP_SYSLOG
-Date: Fri, 12 Mar 2010 09:02:47 -0600
-Message-ID: <20100312150247.GB9783@us.ibm.com>
-References: <20100305205607.GA31791@us.ibm.com>
-	<20100308185818.GN20744@outflux.net>
-	<551280e51003101719t3c61da42ja5796b3d86b0126a@mail.gmail.com>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH] use correct ccr bit for syscall error status
+Date: Fri, 12 Mar 2010 12:26:32 -0600
+Message-ID: <1268418393-18325-2-git-send-email-ntl@pobox.com>
+References: <1268418393-18325-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <551280e51003101719t3c61da42ja5796b3d86b0126a-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <1268418393-18325-1-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,52 +17,45 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Andrew G. Morgan" <morgan-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Kees Cook <kees-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Thanks, guys - I also need to update the selinux classmap in both
-kernel and policy.  Hoping to get around to that this afternoon,
-but not sure.
+The powerpc implementations of syscall_get_error and
+syscall_set_return_value should use CCR0:S0 (0x10000000) for testing
+and setting syscall error status.  Fortunately these APIs don't seem
+to be used at the moment.
 
--serge
+Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+---
+ arch/powerpc/include/asm/syscall.h |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
 
-Quoting Andrew G. Morgan (morgan-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org):
-> Acked-by: Andrew G. Morgan <morgan-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> =
-
-> I concur with Kees.
-> =
-
-> Cheers
-> =
-
-> Andrew
-> =
-
-> On Mon, Mar 8, 2010 at 10:58 AM, Kees Cook <kees-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> wrote:
-> > Hi Serge,
-> >
-> > On Fri, Mar 05, 2010 at 02:56:07PM -0600, Serge E. Hallyn wrote:
-> >> Privileged syslog operations currently require CAP_SYS_ADMIN. =A0Split
-> >> this off into a new CAP_SYSLOG privilege which we can sanely take away
-> >> from a container through the capability bounding set.
-> >
-> > Seems like a good idea, but it'll require code changes in libcap2,
-> > libcap-ng, as well as manpages.
-> >
-> > I support the idea -- more stuff needs to be extracted from CAP_SYS_ADM=
-IN,
-> > but this is a nice distinct subsystem to do now.
-> >
-> > Acked-By: Kees Cook <kees.cook-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-> >
-> > --
-> > Kees Cook
-> > Ubuntu Security Team
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-securit=
-y-module" in
-> > the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> > More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
-> >
+diff --git a/arch/powerpc/include/asm/syscall.h b/arch/powerpc/include/asm/syscall.h
+index efa7f0b..23913e9 100644
+--- a/arch/powerpc/include/asm/syscall.h
++++ b/arch/powerpc/include/asm/syscall.h
+@@ -30,7 +30,7 @@ static inline void syscall_rollback(struct task_struct *task,
+ static inline long syscall_get_error(struct task_struct *task,
+ 				     struct pt_regs *regs)
+ {
+-	return (regs->ccr & 0x1000) ? -regs->gpr[3] : 0;
++	return (regs->ccr & 0x10000000) ? -regs->gpr[3] : 0;
+ }
+ 
+ static inline long syscall_get_return_value(struct task_struct *task,
+@@ -44,10 +44,10 @@ static inline void syscall_set_return_value(struct task_struct *task,
+ 					    int error, long val)
+ {
+ 	if (error) {
+-		regs->ccr |= 0x1000L;
++		regs->ccr |= 0x10000000L;
+ 		regs->gpr[3] = -error;
+ 	} else {
+-		regs->ccr &= ~0x1000L;
++		regs->ccr &= ~0x10000000L;
+ 		regs->gpr[3] = val;
+ 	}
+ }
+-- 
+1.6.0.6
