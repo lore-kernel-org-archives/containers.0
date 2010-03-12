@@ -1,11 +1,13 @@
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH] Revert "ckpt/powerpc: handle syscall restart"
-Date: Fri, 12 Mar 2010 12:26:31 -0600
-Message-ID: <1268418393-18325-1-git-send-email-ntl@pobox.com>
+Subject: [PATCH] checkpoint: use syscall_get_error
+Date: Fri, 12 Mar 2010 12:26:33 -0600
+Message-ID: <1268418393-18325-3-git-send-email-ntl@pobox.com>
+References: <1268418393-18325-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1268418393-18325-1-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,52 +21,49 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This reverts commit 64dab5da66f4fe212b43272ffa5e7a3403a64deb.
+restore_retval() uses the result of syscall_get_return_value() to
+determine whether a syscall is to return an error.  This isn't
+portable and doesn't work on powerpc.  Instead, use
+syscall_get_error(), which encapsulates the arch-specific logic for
+determining syscall error state.
 
-This way of handling syscall restart is incorrect -- it occurs too
-early in the restart process, and restore_retval is doing the wrong
-thing for powerpc anyway (fixed in a later patch).  While the reverted
-patch managed to address the case of system calls with restart blocks,
-other restartable system calls behave incorrectly after restart.
+Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 ---
- arch/powerpc/kernel/checkpoint.c |   25 -------------------------
- 1 files changed, 0 insertions(+), 25 deletions(-)
+ checkpoint/restart.c |   12 +++++++-----
+ 1 files changed, 7 insertions(+), 5 deletions(-)
 
-diff --git a/arch/powerpc/kernel/checkpoint.c b/arch/powerpc/kernel/checkpoint.c
-index cd384df..2634011 100644
---- a/arch/powerpc/kernel/checkpoint.c
-+++ b/arch/powerpc/kernel/checkpoint.c
-@@ -307,31 +307,6 @@ static int restore_gprs(const struct ckpt_hdr_cpu *cpu_hdr,
- 	regs->orig_gpr3 = cpu_hdr->orig_gpr3;
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index 0891952..696e4a2 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -1316,7 +1316,8 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
+ static long restore_retval(void)
+ {
+ 	struct pt_regs *regs = task_pt_regs(current);
+-	long ret;
++	long syscall_err;
++	long syscall_nr;
  
- 	regs->msr = sanitize_msr(regs->msr);
--
--	/* The normal servicing of the freezer's fake signal is
--	 * short-circuited by checkpoint/restart.  See
--	 * arch/powerpc/kernel/signal.c::do_signal_pending().
--	 */
--	if (TRAP(regs) != 0x0C00)
--		goto out;
--	if (!(regs->ccr & 0x10000000))
--		goto out;
--
--	switch (regs->gpr[3]) {
--	case ERESTARTNOHAND:
--	case ERESTARTSYS:
--	case ERESTARTNOINTR:
--		regs->gpr[3] = regs->orig_gpr3;
--		break;
--	case ERESTART_RESTARTBLOCK:
--		regs->gpr[0] = __NR_restart_syscall;
--		break;
--	default:
--		goto out;
--	}
--
--	regs->nip -= 4;
--	regs->result = 0;
- out:
- 	return rc;
+ 	/*
+ 	 * For the restart, we entered the kernel via sys_restart(),
+@@ -1352,13 +1353,14 @@ static long restore_retval(void)
+ 	 */
+ 
+ 	/* needed for all 3 cases: get old value/error/retval */
+-	ret = syscall_get_return_value(current, regs);
++	syscall_nr = syscall_get_nr(current, regs);
++	syscall_err = syscall_get_error(current, regs);
+ 
+-	/* if from a syscall and returning error, kick in signal handlig */
+-	if (syscall_get_nr(current, regs) >= 0 && ret < 0)
++	/* if from a syscall and returning error, kick in signal handling */
++	if (syscall_nr >= 0 && syscall_err != 0)
+ 		set_tsk_thread_flag(current, TIF_SIGPENDING);
+ 
+-	return ret;
++	return syscall_get_return_value(current, regs);
  }
+ 
+ long do_restart(struct ckpt_ctx *ctx, pid_t pid, unsigned long flags)
 -- 
 1.6.0.6
