@@ -1,13 +1,11 @@
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH] use correct ccr bit for syscall error status
-Date: Fri, 12 Mar 2010 12:26:32 -0600
-Message-ID: <1268418393-18325-2-git-send-email-ntl@pobox.com>
-References: <1268418393-18325-1-git-send-email-ntl@pobox.com>
+Subject: [PATCH] Revert "ckpt/powerpc: handle syscall restart"
+Date: Fri, 12 Mar 2010 12:26:31 -0600
+Message-ID: <1268418393-18325-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268418393-18325-1-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,41 +19,52 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-The powerpc implementations of syscall_get_error and
-syscall_set_return_value should use CCR0:S0 (0x10000000) for testing
-and setting syscall error status.  Fortunately these APIs don't seem
-to be used at the moment.
+This reverts commit 64dab5da66f4fe212b43272ffa5e7a3403a64deb.
 
-Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+This way of handling syscall restart is incorrect -- it occurs too
+early in the restart process, and restore_retval is doing the wrong
+thing for powerpc anyway (fixed in a later patch).  While the reverted
+patch managed to address the case of system calls with restart blocks,
+other restartable system calls behave incorrectly after restart.
 ---
- arch/powerpc/include/asm/syscall.h |    6 +++---
- 1 files changed, 3 insertions(+), 3 deletions(-)
+ arch/powerpc/kernel/checkpoint.c |   25 -------------------------
+ 1 files changed, 0 insertions(+), 25 deletions(-)
 
-diff --git a/arch/powerpc/include/asm/syscall.h b/arch/powerpc/include/asm/syscall.h
-index efa7f0b..23913e9 100644
---- a/arch/powerpc/include/asm/syscall.h
-+++ b/arch/powerpc/include/asm/syscall.h
-@@ -30,7 +30,7 @@ static inline void syscall_rollback(struct task_struct *task,
- static inline long syscall_get_error(struct task_struct *task,
- 				     struct pt_regs *regs)
- {
--	return (regs->ccr & 0x1000) ? -regs->gpr[3] : 0;
-+	return (regs->ccr & 0x10000000) ? -regs->gpr[3] : 0;
- }
+diff --git a/arch/powerpc/kernel/checkpoint.c b/arch/powerpc/kernel/checkpoint.c
+index cd384df..2634011 100644
+--- a/arch/powerpc/kernel/checkpoint.c
++++ b/arch/powerpc/kernel/checkpoint.c
+@@ -307,31 +307,6 @@ static int restore_gprs(const struct ckpt_hdr_cpu *cpu_hdr,
+ 	regs->orig_gpr3 = cpu_hdr->orig_gpr3;
  
- static inline long syscall_get_return_value(struct task_struct *task,
-@@ -44,10 +44,10 @@ static inline void syscall_set_return_value(struct task_struct *task,
- 					    int error, long val)
- {
- 	if (error) {
--		regs->ccr |= 0x1000L;
-+		regs->ccr |= 0x10000000L;
- 		regs->gpr[3] = -error;
- 	} else {
--		regs->ccr &= ~0x1000L;
-+		regs->ccr &= ~0x10000000L;
- 		regs->gpr[3] = val;
- 	}
+ 	regs->msr = sanitize_msr(regs->msr);
+-
+-	/* The normal servicing of the freezer's fake signal is
+-	 * short-circuited by checkpoint/restart.  See
+-	 * arch/powerpc/kernel/signal.c::do_signal_pending().
+-	 */
+-	if (TRAP(regs) != 0x0C00)
+-		goto out;
+-	if (!(regs->ccr & 0x10000000))
+-		goto out;
+-
+-	switch (regs->gpr[3]) {
+-	case ERESTARTNOHAND:
+-	case ERESTARTSYS:
+-	case ERESTARTNOINTR:
+-		regs->gpr[3] = regs->orig_gpr3;
+-		break;
+-	case ERESTART_RESTARTBLOCK:
+-		regs->gpr[0] = __NR_restart_syscall;
+-		break;
+-	default:
+-		goto out;
+-	}
+-
+-	regs->nip -= 4;
+-	regs->result = 0;
+ out:
+ 	return rc;
  }
 -- 
 1.6.0.6
