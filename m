@@ -1,16 +1,12 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] checkpoint: use syscall_get_error
-Date: Fri, 12 Mar 2010 13:35:05 -0600
-Message-ID: <20100312193505.GA27295@us.ibm.com>
-References: <1268418393-18325-1-git-send-email-ntl@pobox.com>
-	<1268418393-18325-3-git-send-email-ntl@pobox.com>
-	<1268420378.3763.38.camel@localhost.localdomain>
+Subject: [PATCH linux-cr urgent] lsm: fix unlabeled restore case.
+Date: Fri, 12 Mar 2010 14:47:06 -0600
+Message-ID: <20100312204706.GA408@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1268420378.3763.38.camel-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,27 +16,46 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
-> On Fri, 2010-03-12 at 12:26 -0600, Nathan Lynch wrote:
-> > restore_retval() uses the result of syscall_get_return_value() to
-> > determine whether a syscall is to return an error.  This isn't
-> > portable and doesn't work on powerpc.  Instead, use
-> > syscall_get_error(), which encapsulates the arch-specific logic for
-> > determining syscall error state.
-> 
-> This one seems likely to change behavior on s390; Serge are you able to
-> check?
-> 
+If an object is being restored which was checkpointed without an
+LSM label, then we should return 0 BEFORE we try to ckpt_obj_fetch
+a -1 objref (and obviously return error).
 
-Looks like it should do the right thing, and cr_tests are still passing,
-so
+This makes the msg cr_tests ipc testcase fail if, for instance,
+CONFIG_SECURITY=y but no LSM is active.
 
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Tested-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+IMO this definately should be in the tree that gets sent out...
 
-thanks,
--serge
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ security/security.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/security/security.c b/security/security.c
+index 2b147cf..4b3f932 100644
+--- a/security/security.c
++++ b/security/security.c
+@@ -1528,14 +1528,14 @@ int security_restore_obj(struct ckpt_ctx *ctx, void *v, int sectype,
+ 		if (sectype != CKPT_SECURITY_MSG_MSG)
+ 			return 0;
+ 
+-	l = ckpt_obj_fetch(ctx, secref, CKPT_OBJ_SECURITY);
+-	if (IS_ERR(l))
+-		return PTR_ERR(l);
+-
+ 	/* return if checkpointed label was "Not Applicable" */
+ 	if (secref == SECURITY_CTX_NONE)
+ 		return 0;
+ 
++	l = ckpt_obj_fetch(ctx, secref, CKPT_OBJ_SECURITY);
++	if (IS_ERR(l))
++		return PTR_ERR(l);
++
+ 	/* Ask the LSM to apply a void*security to the object
+ 	 * based on the checkpointed context string */
+ 	switch (sectype) {
+-- 
+1.6.1
