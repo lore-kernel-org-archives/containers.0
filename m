@@ -1,13 +1,11 @@
 From: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
-Subject: [PATCH -mmotm 3/5] page_cgroup: introduce file cache flags
-Date: Mon, 15 Mar 2010 00:26:40 +0100
-Message-ID: <1268609202-15581-4-git-send-email-arighi__42665.0312067524$1268609271$gmane$org@develer.com>
-References: <1268609202-15581-1-git-send-email-arighi@develer.com>
+Subject: [PATCH -mmotm 0/5] memcg: per cgroup dirty limit (v7)
+Date: Mon, 15 Mar 2010 00:26:37 +0100
+Message-ID: <1268609202-15581-1-git-send-email-arighi__13078.6287751564$1268609286$gmane$org@develer.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268609202-15581-1-git-send-email-arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,56 +16,77 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Introduce page_cgroup flags to keep track of file cache pages.
+Control the maximum amount of dirty pages a cgroup can have at any given time.
 
-Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Signed-off-by: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
----
- include/linux/page_cgroup.h |   22 +++++++++++++++++++++-
- 1 files changed, 21 insertions(+), 1 deletions(-)
+Per cgroup dirty limit is like fixing the max amount of dirty (hard to reclaim)
+page cache used by any cgroup. So, in case of multiple cgroup writers, they
+will not be able to consume more than their designated share of dirty pages and
+will be forced to perform write-out if they cross that limit.
 
-diff --git a/include/linux/page_cgroup.h b/include/linux/page_cgroup.h
-index bf9a913..65247e4 100644
---- a/include/linux/page_cgroup.h
-+++ b/include/linux/page_cgroup.h
-@@ -40,7 +40,11 @@ enum {
- 	PCG_USED, /* this object is in use. */
- 	PCG_ACCT_LRU, /* page has been accounted for */
- 	/* for cache-status accounting */
--	PCG_FILE_MAPPED,
-+	PCG_FILE_MAPPED, /* page is accounted as file rss*/
-+	PCG_FILE_DIRTY, /* page is dirty */
-+	PCG_FILE_WRITEBACK, /* page is being written back to disk */
-+	PCG_FILE_WRITEBACK_TEMP, /* page is used as temporary buffer for FUSE */
-+	PCG_FILE_UNSTABLE_NFS, /* NFS page not yet committed to the server */
- };
- 
- #define TESTPCGFLAG(uname, lname)			\
-@@ -83,6 +87,22 @@ TESTPCGFLAG(FileMapped, FILE_MAPPED)
- SETPCGFLAG(FileMapped, FILE_MAPPED)
- CLEARPCGFLAG(FileMapped, FILE_MAPPED)
- 
-+TESTPCGFLAG(FileDirty, FILE_DIRTY)
-+SETPCGFLAG(FileDirty, FILE_DIRTY)
-+CLEARPCGFLAG(FileDirty, FILE_DIRTY)
-+
-+TESTPCGFLAG(FileWriteback, FILE_WRITEBACK)
-+SETPCGFLAG(FileWriteback, FILE_WRITEBACK)
-+CLEARPCGFLAG(FileWriteback, FILE_WRITEBACK)
-+
-+TESTPCGFLAG(FileWritebackTemp, FILE_WRITEBACK_TEMP)
-+SETPCGFLAG(FileWritebackTemp, FILE_WRITEBACK_TEMP)
-+CLEARPCGFLAG(FileWritebackTemp, FILE_WRITEBACK_TEMP)
-+
-+TESTPCGFLAG(FileUnstableNFS, FILE_UNSTABLE_NFS)
-+SETPCGFLAG(FileUnstableNFS, FILE_UNSTABLE_NFS)
-+CLEARPCGFLAG(FileUnstableNFS, FILE_UNSTABLE_NFS)
-+
- static inline int page_cgroup_nid(struct page_cgroup *pc)
- {
- 	return page_to_nid(pc->page);
--- 
-1.6.3.3
+The overall design is the following:
+
+ - account dirty pages per cgroup
+ - limit the number of dirty pages via memory.dirty_ratio / memory.dirty_bytes
+   and memory.dirty_background_ratio / memory.dirty_background_bytes in
+   cgroupfs
+ - start to write-out (background or actively) when the cgroup limits are
+   exceeded
+
+This feature is supposed to be strictly connected to any underlying IO
+controller implementation, so we can stop increasing dirty pages in VM layer
+and enforce a write-out before any cgroup will consume the global amount of
+dirty pages defined by the /proc/sys/vm/dirty_ratio|dirty_bytes and
+/proc/sys/vm/dirty_background_ratio|dirty_background_bytes limits.
+
+Changelog (v6 -> v7)
+~~~~~~~~~~~~~~~~~~~~~~
+ * introduce trylock_page_cgroup() to guarantee that lock_page_cgroup()
+   is never called under tree_lock (no strict accounting, but better overall
+   performance)
+ * do not account file cache statistics for the root cgroup (zero
+   overhead for the root cgroup)
+ * fix: evaluate cgroup free pages as at the minimum free pages of all
+   its parents
+
+Results
+~~~~~~~
+The testcase is a kernel build (2.6.33 x86_64_defconfig) on a Intel Core 2 @
+1.2GHz:
+
+<before>
+ - root  cgroup:	11m51.983s
+ - child cgroup:	11m56.596s
+
+<after>
+ - root cgroup:		11m51.742s
+ - child cgroup:	12m5.016s
+
+In the previous version of this patchset, using the "complex" locking scheme
+with the _locked and _unlocked version of mem_cgroup_update_page_stat(), the
+child cgroup required 11m57.896s and 12m9.920s with lock_page_cgroup()+irq_disabled.
+
+With this version there's no overhead for the root cgroup (the small difference
+is in error range). I expected to see less overhead for the child cgroup, I'll
+do more testing and try to figure better what's happening.
+
+In the while, it would be great if someone could perform some tests on a larger
+system... unfortunately at the moment I don't have a big system available for
+this kind of tests...
+
+Thanks,
+-Andrea
+
+ Documentation/cgroups/memory.txt |   36 +++
+ fs/nfs/write.c                   |    4 +
+ include/linux/memcontrol.h       |   87 ++++++-
+ include/linux/page_cgroup.h      |   35 +++
+ include/linux/writeback.h        |    2 -
+ mm/filemap.c                     |    1 +
+ mm/memcontrol.c                  |  542 +++++++++++++++++++++++++++++++++++---
+ mm/page-writeback.c              |  215 ++++++++++------
+ mm/rmap.c                        |    4 +-
+ mm/truncate.c                    |    1 +
+ 10 files changed, 806 insertions(+), 121 deletions(-)
