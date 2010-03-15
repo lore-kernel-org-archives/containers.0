@@ -1,13 +1,12 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] cgroups: remove duplicate include
-Date: Mon, 15 Mar 2010 10:53:01 -0700
-Message-ID: <6599ad831003151053jd4c267ck1500725f228a3230@mail.gmail.com>
-References: <4B9DA6E4.4020501@cn.fujitsu.com> <4B9DA778.7080305@cn.fujitsu.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: success
+Date: Mon, 15 Mar 2010 14:13:21 -0500
+Message-ID: <20100315191321.GA23540@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4B9DA778.7080305-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,39 +16,24 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Sun, Mar 14, 2010 at 8:20 PM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
-> commit e6a1105b ("cgroups: subsystem module loading interface")
-> and commit c50cc752 ("sched, cgroups: Fix module export")
-> result in duplicate including of module.h
->
-> Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+The following tree:
 
-Acked-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+http://git.kernel.org/gitweb.cgi?p=linux/kernel/git/sergeh/linux-cr.git;a=shortlog;h=refs/heads/cr-mar15
 
-> ---
->
-> Fix changelog...
->
-> ---
-> =A0kernel/cgroup.c | =A0 =A01 -
-> =A01 files changed, 0 insertions(+), 1 deletions(-)
->
-> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-> index ef909a3..e2769e1 100644
-> --- a/kernel/cgroup.c
-> +++ b/kernel/cgroup.c
-> @@ -27,7 +27,6 @@
-> =A0*/
->
-> =A0#include <linux/cgroup.h>
-> -#include <linux/module.h>
-> =A0#include <linux/ctype.h>
-> =A0#include <linux/errno.h>
-> =A0#include <linux/fs.h>
-> --
-> 1.6.3
->
+is your ckpt-v20-rc1 with the netif patches popped off and your two new patches
+pushed on.  I've had 100% success with cr_tests with all combinations I could
+think of with lsm on/off, selinux, smack, checkpoint_debug on/off.  Have tested
+s390x and x86-64 (and an x86-32 with confused userspace).  Things like ipc off
+i didn't try and i'm sure we'll miss *something*, but I think I can give this
+whole thing a
+
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Tested-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
+and say "ship it"
+
+-serge
