@@ -1,13 +1,13 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: ckpt-v20-rc1
-Date: Sun, 14 Mar 2010 22:52:01 -0400
-Message-ID: <4B9DA0D1.3020901@cs.columbia.edu>
-References: <4B9DA00C.3000001@cs.columbia.edu>
+Subject: Re: [PATCH linux-cr] always restore msg_msg label
+Date: Sun, 14 Mar 2010 22:53:58 -0400
+Message-ID: <4B9DA146.7050207@cs.columbia.edu>
+References: <20100309061301.GA21905@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4B9DA00C.3000001-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <20100309061301.GA21905-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,39 +17,52 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Cc: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
-Oren Laadan wrote:
-> I pushed all the recent patches to ckpt-v19-dev (except for Matt's code
-> order series). It includes the recent post of netdev/netns.
+In v20-rc1.
 
-Also excludes Serge's nested-pid patch...
-
-Oren.
-
+Serge E. Hallyn wrote:
+> Hi Oren,
 > 
-> Feel free to yell if I left out your patch unjustifiably.
+> In comparing your ckpt-v19-dev-serge branch to my local one I
+> noticed this patch was missing, then realized I hadn't sent it
+> separately, but only inline with a response to Nathan.
 > 
-> Also pushed ckpt-v20-rc1 which is a clean patchset of the same and
-> also rebased to 2.6.33, lightly tested here.
+> Please do apply.
 > 
-> The goal is to get ckpt-v20 in 1-2 days and post the series on LKML
-> following up on Andrew's reply.
+> Without this patch, selinux labels will not be restored on msg_msg's in
+> message queues (because we didn't send the restored msg_msg through
+> msgsnd), and the restored task won't have the permission to receive the
+> messages.
 > 
-> Before that, I'd like to validate that there are no regressions, and
-> apply some netns/netdev cleanups (in particular, the kernel doesn't
-> compile when NETNS isn't configured)
+> As I mentioned in that thread, simply re-routing the restored
+> msg_msg through msgsnd doesn't really suffice because the msg_msg
+> label is calculated as a product of the msgq and sending task
+> labels, and the latter may have already changed.
 > 
-> Let's give it a quick test drive.
+> thanks,
+> -serge
 > 
-> Oren.	
+> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  security/security.c |    4 +++-
+>  1 files changed, 3 insertions(+), 1 deletions(-)
 > 
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
-> 
+> diff --git a/security/security.c b/security/security.c
+> index 28db976..2b147cf 100644
+> --- a/security/security.c
+> +++ b/security/security.c
+> @@ -1524,7 +1524,9 @@ int security_restore_obj(struct ckpt_ctx *ctx, void *v, int sectype,
+>  
+>  	/* return if caller didn't want to restore checkpointed labels */
+>  	if (!(ctx->uflags & RESTART_KEEP_LSM))
+> -		return 0;
+> +		/* though msg_msg label must always be restored */
+> +		if (sectype != CKPT_SECURITY_MSG_MSG)
+> +			return 0;
+>  
+>  	l = ckpt_obj_fetch(ctx, secref, CKPT_OBJ_SECURITY);
+>  	if (IS_ERR(l))
