@@ -1,14 +1,11 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH -mmotm 5/5] memcg: dirty pages instrumentation
-Date: Mon, 15 Mar 2010 11:31:04 +0900
-Message-ID: <20100315113104.b208571c.kamezawa.hiroyu__49013.0525817678$1268620533$gmane$org@jp.fujitsu.com>
-References: <1268609202-15581-1-git-send-email-arighi@develer.com>
-	<1268609202-15581-6-git-send-email-arighi@develer.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: [PATCH] c/r: replace error_sem with an event completion
+Date: Sun, 14 Mar 2010 22:37:30 -0400
+Message-ID: <1268620650-23068-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268609202-15581-6-git-send-email-arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,55 +15,99 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
-Cc: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Greg-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Peter-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, 15 Mar 2010 00:26:42 +0100
-Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org> wrote:
+(This patch applies on top of ckpt-v20-rc1)
 
-> Apply the cgroup dirty pages accounting and limiting infrastructure to
-> the opportune kernel functions.
-> 
-> [ NOTE: for now do not account WritebackTmp pages (FUSE) and NILFS2
-> bounce pages. This depends on charging also bounce pages per cgroup. ]
-> 
-> As a bonus, make determine_dirtyable_memory() static again: this
-> function isn't used anymore outside page writeback.
-> 
-> Signed-off-by: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+The value of ctx->errno is protected by a semaphore to ensure that
+processes do not pique at it prematurely (that is - after the error
+bit is set, but before the value is committed).
 
-Reviewed-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+But, lockdep sometimes complains when an error is detected from a
+legitimately failed restart attempt. This is because we release
+ctx->errno_sem in a task context different from the one in which it
+was acquired.
 
-A nitpick.
+Replace the semaphore with an event completion: this sort of
+synchronization is what completion constructs are all about.
 
-> @@ -660,6 +705,8 @@ void throttle_vm_writeout(gfp_t gfp_mask)
->  	unsigned long dirty_thresh;
->  
->          for ( ; ; ) {
-> +		unsigned long dirty;
-> +
->  		get_dirty_limits(&background_thresh, &dirty_thresh, NULL, NULL);
->  
->                  /*
-> @@ -668,10 +715,10 @@ void throttle_vm_writeout(gfp_t gfp_mask)
->                   */
->                  dirty_thresh += dirty_thresh / 10;      /* wheeee... */
->  
-> -                if (global_page_state(NR_UNSTABLE_NFS) +
-> -			global_page_state(NR_WRITEBACK) <= dirty_thresh)
-> -                        	break;
-> -                congestion_wait(BLK_RW_ASYNC, HZ/10);
-> +		dirty = get_dirty_writeback_pages();
-> +		if (dirty <= dirty_thresh)
-> +			break;
-> +		congestion_wait(BLK_RW_ASYNC, HZ/10);
->  
->  		/*
->  		 * The caller might hold locks which can prevent IO completion
+Originally reported by Nathan Lynch.
 
-"dirty" seems not to be necessary.
-	if (get_dirty_writeback_pages() < dirty_thresh) ?
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+---
+ checkpoint/sys.c                 |   13 ++++---------
+ include/linux/checkpoint.h       |    5 ++---
+ include/linux/checkpoint_types.h |    2 +-
+ 3 files changed, 7 insertions(+), 13 deletions(-)
 
-Thanks,
--Kame
+diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+index b605784..fe85ca7 100644
+--- a/checkpoint/sys.c
++++ b/checkpoint/sys.c
+@@ -280,8 +280,7 @@ static struct ckpt_ctx *ckpt_ctx_alloc(int fd, unsigned long uflags,
+ 	init_waitqueue_head(&ctx->ghostq);
+ 	init_completion(&ctx->complete);
+ 
+-	init_rwsem(&ctx->errno_sem);
+-	down_write(&ctx->errno_sem);
++	init_completion(&ctx->errno_sync);
+ 
+ #ifdef CONFIG_CHECKPOINT_DEBUG
+ 	INIT_LIST_HEAD(&ctx->task_status);
+@@ -343,11 +342,8 @@ void ckpt_set_error(struct ckpt_ctx *ctx, int err)
+ 	/* atomically set ctx->errno */
+ 	if (!ckpt_test_and_set_ctx_kflag(ctx, CKPT_CTX_ERROR)) {
+ 		ctx->errno = err;
+-		/*
+-		 * We initialized ctx->errno_sem write-held to prevent
+-		 * other tasks from reading ctx->errno prematurely.
+-		 */
+-		up_write(&ctx->errno_sem);
++		/* make ctx->errno visible to all other tasks */
++		complete_all(&ctx->errno_sync);
+ 		/* on restart, notify all tasks in restarting subtree */
+ 		if (ctx->kflags & CKPT_CTX_RESTART)
+ 			restore_notify_error(ctx);
+@@ -357,8 +353,7 @@ void ckpt_set_error(struct ckpt_ctx *ctx, int err)
+ void ckpt_set_success(struct ckpt_ctx *ctx)
+ {
+ 	ckpt_set_ctx_kflag(ctx, CKPT_CTX_SUCCESS);
+-	/* avoid warning "lock still held" when freeing (was write-held) */
+-	up_write(&ctx->errno_sem);
++	complete_all(&ctx->errno_sync);
+ }
+ 
+ /* helpers to handler log/dbg/err messages */
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index a25bac1..a8b9e21 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -160,10 +160,9 @@ static inline int ckpt_get_error(struct ckpt_ctx *ctx)
+ {
+ 	/*
+ 	 * We may notice CKPT_CTX_ERROR before ctx->errno is set, but
+-	 * ctx->errno_sem remains (write) held until after it's done.
++	 * ctx->errno_sync remains not-completed until after it's done.
+ 	 */
+-	if (!ctx->errno)
+-		down_read(&ctx->errno_sem);
++	wait_for_completion(&ctx->errno_sync);
+ 	return ctx->errno;
+ }
+ 
+diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
+index efc9357..e9cc1d8 100644
+--- a/include/linux/checkpoint_types.h
++++ b/include/linux/checkpoint_types.h
+@@ -61,7 +61,7 @@ struct ckpt_ctx {
+ 	char err_string[256];	/* checkpoint: error string */
+ 
+ 	int errno;		/* errno that caused failure */
+-	struct rw_semaphore errno_sem;	/* protect errno setting */
++	struct completion errno_sync;	/* protect errno setting */
+ 
+ 	struct list_head pgarr_list;	/* page array to dump VMA contents */
+ 	struct list_head pgarr_pool;	/* pool of empty page arrays chain */
+-- 
+1.6.3.3
