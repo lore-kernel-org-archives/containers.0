@@ -1,40 +1,50 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: ckpt-v20-rc1
-Date: Sun, 14 Mar 2010 22:48:44 -0400
-Message-ID: <4B9DA00C.3000001@cs.columbia.edu>
+From: Oren Laadan <orenl@cs.columbia.edu>
+Subject: Re: C/R: Checkpoint and restore network namespaces and devices
+Date: Sun, 14 Mar 2010 22:49:47 -0400
+Message-ID: <4B9DA04B.7030103@cs.columbia.edu>
+References: <1267130595-23637-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Cc: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: QUOTED-PRINTABLE
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <1267130595-23637-1-git-send-email-danms@us.ibm.com>
+Sender: netdev-owner@vger.kernel.org
+To: Dan Smith <danms@us.ibm.com>
+Cc: containers@lists.osdl.org, den@openvz.org, netdev@vger.kernel.org, davem@davemloft.net, ebiederm@xmission.com, benjamin.thery@bull.net
 List-Id: containers.vger.kernel.org
 
+Hi Dan,
 
-I pushed all the recent patches to ckpt-v19-dev (except for Matt's code
-order series). It includes the recent post of netdev/netns.
+With this series I get this error when NETNS isn't configured:
+(ckpt-v20-rc1)
 
-Feel free to yell if I left out your patch unjustifiably.
+drivers/net/loopback.c: In function =E2=80=98loopback_checkpoint=E2=80=99=
+:
+drivers/net/loopback.c:165: error: implicit declaration of function
+=E2=80=98ckpt_netdev_base=E2=80=99
+drivers/net/loopback.c:165: warning: assignment makes pointer from inte=
+ger
+without a cast
+make[2]: *** [drivers/net/loopback.o] Error 1
+make[1]: *** [drivers/net] Error 2
+make: *** [drivers] Error 2
 
-Also pushed ckpt-v20-rc1 which is a clean patchset of the same and
-also rebased to 2.6.33, lightly tested here.
+Oren.
 
-The goal is to get ckpt-v20 in 1-2 days and post the series on LKML
-following up on Andrew's reply.
+Dan Smith wrote:
+> This patch set adds checkpoint/restart support for network namespaces=
+,
+> as well as the network devices within.  Currently supports veth, macv=
+lan,
+> and loopback device types.
+>=20
+> Includes the latest feedback and the new macvlan bits.  Rebased on Or=
+en's
+> official v19.  Changes detailed per patch.
+>=20
+> _______________________________________________
+> Containers mailing list
+> Containers@lists.linux-foundation.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
+>=20
 
-Before that, I'd like to validate that there are no regressions, and
-apply some netns/netdev cleanups (in particular, the kernel doesn't
-compile when NETNS isn't configured)
-
-Let's give it a quick test drive.
-
-Oren.	
