@@ -1,11 +1,13 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH] c/r: replace error_sem with an event completion
-Date: Sun, 14 Mar 2010 22:37:30 -0400
-Message-ID: <1268620650-23068-1-git-send-email-orenl@cs.columbia.edu>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH -mmotm 0/5] memcg: per cgroup dirty limit (v7)
+Date: Mon, 15 Mar 2010 11:36:12 +0900
+Message-ID: <20100315113612.8411d92d.kamezawa.hiroyu__40480.2932440818$1268620840$gmane$org@jp.fujitsu.com>
+References: <1268609202-15581-1-git-send-email-arighi@develer.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1268609202-15581-1-git-send-email-arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,99 +17,74 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+Cc: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Greg-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Peter-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-(This patch applies on top of ckpt-v20-rc1)
+On Mon, 15 Mar 2010 00:26:37 +0100
+Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org> wrote:
 
-The value of ctx->errno is protected by a semaphore to ensure that
-processes do not pique at it prematurely (that is - after the error
-bit is set, but before the value is committed).
+> Control the maximum amount of dirty pages a cgroup can have at any given time.
+> 
+> Per cgroup dirty limit is like fixing the max amount of dirty (hard to reclaim)
+> page cache used by any cgroup. So, in case of multiple cgroup writers, they
+> will not be able to consume more than their designated share of dirty pages and
+> will be forced to perform write-out if they cross that limit.
+> 
+> The overall design is the following:
+> 
+>  - account dirty pages per cgroup
+>  - limit the number of dirty pages via memory.dirty_ratio / memory.dirty_bytes
+>    and memory.dirty_background_ratio / memory.dirty_background_bytes in
+>    cgroupfs
+>  - start to write-out (background or actively) when the cgroup limits are
+>    exceeded
+> 
+> This feature is supposed to be strictly connected to any underlying IO
+> controller implementation, so we can stop increasing dirty pages in VM layer
+> and enforce a write-out before any cgroup will consume the global amount of
+> dirty pages defined by the /proc/sys/vm/dirty_ratio|dirty_bytes and
+> /proc/sys/vm/dirty_background_ratio|dirty_background_bytes limits.
+> 
+> Changelog (v6 -> v7)
+> ~~~~~~~~~~~~~~~~~~~~~~
+>  * introduce trylock_page_cgroup() to guarantee that lock_page_cgroup()
+>    is never called under tree_lock (no strict accounting, but better overall
+>    performance)
+>  * do not account file cache statistics for the root cgroup (zero
+>    overhead for the root cgroup)
+>  * fix: evaluate cgroup free pages as at the minimum free pages of all
+>    its parents
+> 
+> Results
+> ~~~~~~~
+> The testcase is a kernel build (2.6.33 x86_64_defconfig) on a Intel Core 2 @
+> 1.2GHz:
+> 
+> <before>
+>  - root  cgroup:	11m51.983s
+>  - child cgroup:	11m56.596s
+> 
+> <after>
+>  - root cgroup:		11m51.742s
+>  - child cgroup:	12m5.016s
+> 
+> In the previous version of this patchset, using the "complex" locking scheme
+> with the _locked and _unlocked version of mem_cgroup_update_page_stat(), the
+> child cgroup required 11m57.896s and 12m9.920s with lock_page_cgroup()+irq_disabled.
+> 
+> With this version there's no overhead for the root cgroup (the small difference
+> is in error range). I expected to see less overhead for the child cgroup, I'll
+> do more testing and try to figure better what's happening.
+> 
+Okay, thanks. This seems good result. Optimization for children can be done under
+-mm tree, I think. (If no nack, this seems ready for test in -mm.)
 
-But, lockdep sometimes complains when an error is detected from a
-legitimately failed restart attempt. This is because we release
-ctx->errno_sem in a task context different from the one in which it
-was acquired.
+> In the while, it would be great if someone could perform some tests on a larger
+> system... unfortunately at the moment I don't have a big system available for
+> this kind of tests...
+> 
+I hope, too.
 
-Replace the semaphore with an event completion: this sort of
-synchronization is what completion constructs are all about.
-
-Originally reported by Nathan Lynch.
-
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
----
- checkpoint/sys.c                 |   13 ++++---------
- include/linux/checkpoint.h       |    5 ++---
- include/linux/checkpoint_types.h |    2 +-
- 3 files changed, 7 insertions(+), 13 deletions(-)
-
-diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-index b605784..fe85ca7 100644
---- a/checkpoint/sys.c
-+++ b/checkpoint/sys.c
-@@ -280,8 +280,7 @@ static struct ckpt_ctx *ckpt_ctx_alloc(int fd, unsigned long uflags,
- 	init_waitqueue_head(&ctx->ghostq);
- 	init_completion(&ctx->complete);
- 
--	init_rwsem(&ctx->errno_sem);
--	down_write(&ctx->errno_sem);
-+	init_completion(&ctx->errno_sync);
- 
- #ifdef CONFIG_CHECKPOINT_DEBUG
- 	INIT_LIST_HEAD(&ctx->task_status);
-@@ -343,11 +342,8 @@ void ckpt_set_error(struct ckpt_ctx *ctx, int err)
- 	/* atomically set ctx->errno */
- 	if (!ckpt_test_and_set_ctx_kflag(ctx, CKPT_CTX_ERROR)) {
- 		ctx->errno = err;
--		/*
--		 * We initialized ctx->errno_sem write-held to prevent
--		 * other tasks from reading ctx->errno prematurely.
--		 */
--		up_write(&ctx->errno_sem);
-+		/* make ctx->errno visible to all other tasks */
-+		complete_all(&ctx->errno_sync);
- 		/* on restart, notify all tasks in restarting subtree */
- 		if (ctx->kflags & CKPT_CTX_RESTART)
- 			restore_notify_error(ctx);
-@@ -357,8 +353,7 @@ void ckpt_set_error(struct ckpt_ctx *ctx, int err)
- void ckpt_set_success(struct ckpt_ctx *ctx)
- {
- 	ckpt_set_ctx_kflag(ctx, CKPT_CTX_SUCCESS);
--	/* avoid warning "lock still held" when freeing (was write-held) */
--	up_write(&ctx->errno_sem);
-+	complete_all(&ctx->errno_sync);
- }
- 
- /* helpers to handler log/dbg/err messages */
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index a25bac1..a8b9e21 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -160,10 +160,9 @@ static inline int ckpt_get_error(struct ckpt_ctx *ctx)
- {
- 	/*
- 	 * We may notice CKPT_CTX_ERROR before ctx->errno is set, but
--	 * ctx->errno_sem remains (write) held until after it's done.
-+	 * ctx->errno_sync remains not-completed until after it's done.
- 	 */
--	if (!ctx->errno)
--		down_read(&ctx->errno_sem);
-+	wait_for_completion(&ctx->errno_sync);
- 	return ctx->errno;
- }
- 
-diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
-index efc9357..e9cc1d8 100644
---- a/include/linux/checkpoint_types.h
-+++ b/include/linux/checkpoint_types.h
-@@ -61,7 +61,7 @@ struct ckpt_ctx {
- 	char err_string[256];	/* checkpoint: error string */
- 
- 	int errno;		/* errno that caused failure */
--	struct rw_semaphore errno_sem;	/* protect errno setting */
-+	struct completion errno_sync;	/* protect errno setting */
- 
- 	struct list_head pgarr_list;	/* page array to dump VMA contents */
- 	struct list_head pgarr_pool;	/* pool of empty page arrays chain */
--- 
-1.6.3.3
+Thanks,
+-Kame
