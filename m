@@ -1,42 +1,62 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH] cgroups: remove duplicate include
-Date: Mon, 15 Mar 2010 11:20:24 +0800
-Message-ID: <4B9DA778.7080305@cn.fujitsu.com>
-References: <4B9DA6E4.4020501@cn.fujitsu.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: ckpt-v20-rc1
+Date: Sun, 14 Mar 2010 22:23:47 -0500
+Message-ID: <20100315032347.GA4707@us.ibm.com>
+References: <4B9DA00C.3000001@cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <4B9DA6E4.4020501@cn.fujitsu.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Paul Menage <menage@google.com>, LKML <linux-kernel@vger.kernel.org>, "containers@lists.osdl.org" <containers@lists.osdl.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4B9DA00C.3000001-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-commit e6a1105b ("cgroups: subsystem module loading interface")
-and commit c50cc752 ("sched, cgroups: Fix module export")
-result in duplicate including of module.h
+Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+> 
+> I pushed all the recent patches to ckpt-v19-dev (except for Matt's code
+> order series). It includes the recent post of netdev/netns.
+> 
+> Feel free to yell if I left out your patch unjustifiably.
+> 
+> Also pushed ckpt-v20-rc1 which is a clean patchset of the same and
+> also rebased to 2.6.33, lightly tested here.
+> 
+> The goal is to get ckpt-v20 in 1-2 days and post the series on LKML
+> following up on Andrew's reply.
+> 
+> Before that, I'd like to validate that there are no regressions, and
+> apply some netns/netdev cleanups (in particular, the kernel doesn't
+> compile when NETNS isn't configured)
+> 
+> Let's give it a quick test drive.
+> 
+> Oren.	
+> 
 
-Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
----
+hmm, 
 
-Fix changelog...
-
----
- kernel/cgroup.c |    1 -
- 1 files changed, 0 insertions(+), 1 deletions(-)
-
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index ef909a3..e2769e1 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -27,7 +27,6 @@
-  */
- 
- #include <linux/cgroup.h>
--#include <linux/module.h>
- #include <linux/ctype.h>
- #include <linux/errno.h>
- #include <linux/fs.h>
--- 
-1.6.3
+ERROR: "ckpt_obj_lookup" [drivers/net/veth.ko] undefined!
+ERROR: "do_ckpt_msg" [drivers/net/veth.ko] undefined!
+ERROR: "ckpt_hdr_put" [drivers/net/veth.ko] undefined!
+ERROR: "checkpoint_obj" [drivers/net/veth.ko] undefined!
+ERROR: "ckpt_netdev_in_init_netns" [drivers/net/veth.ko] undefined!
+ERROR: "ckpt_write_buffer" [drivers/net/veth.ko] undefined!
+ERROR: "ckpt_write_obj" [drivers/net/veth.ko] undefined!
+ERROR: "ckpt_obj_lookup_add" [drivers/net/veth.ko] undefined!
+ERROR: "ckpt_netdev_base" [drivers/net/veth.ko] undefined!
+ERROR: "ckpt_hdr_put" [drivers/net/macvlan.ko] undefined!
+ERROR: "ckpt_write_buffer" [drivers/net/macvlan.ko] undefined!
+ERROR: "ckpt_write_obj" [drivers/net/macvlan.ko] undefined!
+ERROR: "ckpt_netdev_base" [drivers/net/macvlan.ko] undefined!
+ERROR: "ckpt_debug_level" [drivers/net/macvlan.ko] undefined!
