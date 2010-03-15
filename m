@@ -1,14 +1,14 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH 02/12][user-cr] restart: Add args->send_sigint
-Date: Sun, 14 Mar 2010 23:52:24 -0400
-Message-ID: <4B9DAEF8.50700@cs.columbia.edu>
-References: <20100305223439.GA15300@us.ibm.com>
-	<20100305223658.GB15939@us.ibm.com>
+From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
+Subject: Re: [PATCH] block: make CONFIG_BLK_CGROUP visible
+Date: Mon, 15 Mar 2010 00:31:43 -0400
+Message-ID: <20100315043143.GA7953@unix31.andrew.cmu.edu>
+References: <4B9DA6F5.3070606@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100305223658.GB15939-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4B9DA6F5.3070606-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,71 +18,48 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, Gui Jianfeng <GuiJianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-Nack - the library should not handle signals for callers.
-
-Instead, there should be an interface through which the caller
-can ask the library to destroy the tree that it just created.
-Thus it will be the caller who catches the signal and acts on
-it.
-
-Oren.
-
-Sukadev Bhattiprolu wrote:
-> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Date: Thu, 4 Mar 2010 17:37:39 -0800
-> Subject: [PATCH 02/12][user-cr] restart: Add args->send_sigint
+On Mon, Mar 15, 2010 at 11:18:13AM +0800, Li Zefan wrote:
+> Make the config visible, so we can choose from CONFIG_BLK_CGROUP=y
+> and CONFIG_BLK_CGROUP=m when CONFIG_IOSCHED_CFQ=m.
 > 
-> restart command supports a command line option, --send-sigint to let
-> user specify whether SIGINT signal should be processed/ignored during
-> restart. Make this a field in 'struct app_restart_args' so that other
-> callers of app_restart() in the future can also control the SIGINT
-> behavior.
-> 
-> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 > ---
->  restart.c |    6 +++++-
->  1 files changed, 5 insertions(+), 1 deletions(-)
+>  block/Kconfig |    5 +++--
+>  1 files changed, 3 insertions(+), 2 deletions(-)
 > 
-> diff --git a/restart.c b/restart.c
-> index 0c74bb6..314390c 100644
-> --- a/restart.c
-> +++ b/restart.c
-> @@ -376,6 +376,7 @@ struct app_restart_args {
->  	int pids;
->  	int pidns;
->  	int inspect;
-> +	int send_sigint;
->  	char *root;
->  	int wait;
->  	int mntns;
-> @@ -497,6 +498,7 @@ static void parse_args(struct app_restart_args *args, int argc, char *argv[])
->  	args->klogfd = -1;
->  	args->warn = CKPT_COND_WARN;
->  	args->fail = CKPT_COND_FAIL;
-> +	args->send_sigint = -1;
->  	no_pidns = 0;
+> diff --git a/block/Kconfig b/block/Kconfig
+> index 62a5921..906950c 100644
+> --- a/block/Kconfig
+> +++ b/block/Kconfig
+> @@ -78,8 +78,9 @@ config BLK_DEV_INTEGRITY
+>  	Protection.  If in doubt, say N.
 >  
->  	klogfile = NULL;
-> @@ -554,7 +556,7 @@ static void parse_args(struct app_restart_args *args, int argc, char *argv[])
->  				ckpt_err("restart: invalid signal\n");
->  				exit(1);
->  			}
-> -			global_send_sigint = sig;
-> +			args->send_sigint = sig;
->  			break;
->  		case 3:  /* --pids */
->  			args->pids = 1;
-> @@ -815,6 +817,8 @@ int app_restart(struct app_restart_args *args)
->  	memset(&ctx, 0, sizeof(ctx));
->  	ctx.args = args;
+>  config BLK_CGROUP
+> -	tristate
+> +	tristate "Block cgroup support"
+>  	depends on CGROUPS
+> +	depends on CFQ_GROUP_IOSCHED
+>  	default n
+>  	---help---
+>  	Generic block IO controller cgroup interface. This is the common
+> @@ -91,7 +92,7 @@ config BLK_CGROUP
+>  	to such task groups.
 >  
-> +	global_send_sigint = args->send_sigint;
-> +
->  	/* input file descriptor (default: stdin) */
->  	if (args->infd >= 0) {
->  		if (dup2(args->infd, STDIN_FILENO) < 0) {
+>  config DEBUG_BLK_CGROUP
+> -	bool
+> +	bool "Block cgroup debugging help"
+>  	depends on BLK_CGROUP
+>  	default n
+>  	---help---
+> -- 
+> 1.6.3
+> 
+> 
+
+LGTM.
+
+Acked-by: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
