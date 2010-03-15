@@ -1,13 +1,15 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH] fix sysvipc=n compile
-Date: Mon, 15 Mar 2010 17:51:54 -0400
-Message-ID: <4B9EABFA.4030307@cs.columbia.edu>
-References: <20100315194151.GA24909@us.ibm.com>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] make cr depend on all namespaces
+Date: Mon, 15 Mar 2010 16:52:44 -0500
+Message-ID: <20100315215244.GA5791@hallyn.com>
+References: <20100315200559.GA25911@us.ibm.com>
+	<4B9EAA5D.1080802@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100315194151.GA24909-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4B9EAA5D.1080802-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,36 +19,45 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-Pushed this and the recent patches (without net-ns) to ckpt-v20-rc2.
-Unless we hit new troubles with this one, I'll fold it and send out.
-
-Oren.
-
-Serge E. Hallyn wrote:
-> checkpoint_bad and restore_bad no longer exist, use NULL.
+Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
 > 
-> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  include/linux/checkpoint.h |    4 ++--
->  1 files changed, 2 insertions(+), 2 deletions(-)
 > 
-> diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-> index 8053ca4..792b523 100644
-> --- a/include/linux/checkpoint.h
-> +++ b/include/linux/checkpoint.h
-> @@ -215,8 +215,8 @@ extern void *restore_ipc_ns(struct ckpt_ctx *ctx);
->  extern int ckpt_collect_ipc_ns(struct ckpt_ctx *ctx,
->  			       struct ipc_namespace *ipc_ns);
->  #else
-> -#define checkpoint_ipc_ns  checkpoint_bad
-> -#define restore_ipc_ns  restore_bad
-> +#define checkpoint_ipc_ns  NULL
-> +#define restore_ipc_ns  NULL
->  static inline int ckpt_collect_ipc_ns(struct ckpt_ctx *ctx,
->  				      struct ipc_namespace *ipc_ns)
->  {
+> Serge E. Hallyn wrote:
+> > This should let us get rid of some ifdefed code and reduce
+> > chances for bad config combinations.  There's really no reason
+> > to support it.
+> 
+> I disagree.
+> 
+> You are right that this will reduce the changes of bad config
+> combinations.
+> 
+> However, it will also introduce some restrictions on the kernel
+> config which are unnecessary. Some people may not want to have
+> all namespaces configured.
+
+Why?  The only reason right now to disable namespaces is for
+kernel size.
+
+> Note that the namespaces are independent in the sense that we
+> don't need to test all combination of all namespaces - instead,
+> I consider turning on/off one at a time to be safe enough.
+
+And do you do that?  :)  It still gets more complicated bc
+you have things like sysvipc and posix mq which both can allow
+ipc_ns.
+
+> (FWIW, is it because you only wanted to show a point that you
+> only remove UTS_NS ifdefs ?)
+
+It was just right there in my face...
+
+Anyway if you don't take this patch then the UTS_NS code I
+removed should have 'name' put under ifdef to avoid a build
+warning.
+
+-serge
