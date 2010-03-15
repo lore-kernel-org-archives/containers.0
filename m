@@ -1,50 +1,66 @@
-From: Oren Laadan <orenl@cs.columbia.edu>
-Subject: Re: C/R: Checkpoint and restore network namespaces and devices
-Date: Sun, 14 Mar 2010 22:49:47 -0400
-Message-ID: <4B9DA04B.7030103@cs.columbia.edu>
-References: <1267130595-23637-1-git-send-email-danms@us.ibm.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [PATCH linux-cr urgent] lsm: fix unlabeled restore case.
+Date: Sun, 14 Mar 2010 22:50:37 -0400
+Message-ID: <4B9DA07D.8020402@cs.columbia.edu>
+References: <20100312204706.GA408@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: QUOTED-PRINTABLE
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <1267130595-23637-1-git-send-email-danms@us.ibm.com>
-Sender: netdev-owner@vger.kernel.org
-To: Dan Smith <danms@us.ibm.com>
-Cc: containers@lists.osdl.org, den@openvz.org, netdev@vger.kernel.org, davem@davemloft.net, ebiederm@xmission.com, benjamin.thery@bull.net
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20100312204706.GA408-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi Dan,
 
-With this series I get this error when NETNS isn't configured:
-(ckpt-v20-rc1)
+This is already in v20-rc1.
 
-drivers/net/loopback.c: In function =E2=80=98loopback_checkpoint=E2=80=99=
-:
-drivers/net/loopback.c:165: error: implicit declaration of function
-=E2=80=98ckpt_netdev_base=E2=80=99
-drivers/net/loopback.c:165: warning: assignment makes pointer from inte=
-ger
-without a cast
-make[2]: *** [drivers/net/loopback.o] Error 1
-make[1]: *** [drivers/net] Error 2
-make: *** [drivers] Error 2
+Oren
 
-Oren.
-
-Dan Smith wrote:
-> This patch set adds checkpoint/restart support for network namespaces=
-,
-> as well as the network devices within.  Currently supports veth, macv=
-lan,
-> and loopback device types.
->=20
-> Includes the latest feedback and the new macvlan bits.  Rebased on Or=
-en's
-> official v19.  Changes detailed per patch.
->=20
-> _______________________________________________
-> Containers mailing list
-> Containers@lists.linux-foundation.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
->=20
-
+Serge E. Hallyn wrote:
+> If an object is being restored which was checkpointed without an
+> LSM label, then we should return 0 BEFORE we try to ckpt_obj_fetch
+> a -1 objref (and obviously return error).
+> 
+> This makes the msg cr_tests ipc testcase fail if, for instance,
+> CONFIG_SECURITY=y but no LSM is active.
+> 
+> IMO this definately should be in the tree that gets sent out...
+> 
+> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  security/security.c |    8 ++++----
+>  1 files changed, 4 insertions(+), 4 deletions(-)
+> 
+> diff --git a/security/security.c b/security/security.c
+> index 2b147cf..4b3f932 100644
+> --- a/security/security.c
+> +++ b/security/security.c
+> @@ -1528,14 +1528,14 @@ int security_restore_obj(struct ckpt_ctx *ctx, void *v, int sectype,
+>  		if (sectype != CKPT_SECURITY_MSG_MSG)
+>  			return 0;
+>  
+> -	l = ckpt_obj_fetch(ctx, secref, CKPT_OBJ_SECURITY);
+> -	if (IS_ERR(l))
+> -		return PTR_ERR(l);
+> -
+>  	/* return if checkpointed label was "Not Applicable" */
+>  	if (secref == SECURITY_CTX_NONE)
+>  		return 0;
+>  
+> +	l = ckpt_obj_fetch(ctx, secref, CKPT_OBJ_SECURITY);
+> +	if (IS_ERR(l))
+> +		return PTR_ERR(l);
+> +
+>  	/* Ask the LSM to apply a void*security to the object
+>  	 * based on the checkpointed context string */
+>  	switch (sectype) {
