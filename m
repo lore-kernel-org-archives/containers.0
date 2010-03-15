@@ -1,47 +1,42 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH] block: make CONFIG_BLK_CGROUP visible
-Date: Mon, 15 Mar 2010 11:18:13 +0800
-Message-ID: <4B9DA6F5.3070606@cn.fujitsu.com>
+Subject: [PATCH] cgroups: remove duplicate include
+Date: Mon, 15 Mar 2010 11:20:24 +0800
+Message-ID: <4B9DA778.7080305@cn.fujitsu.com>
+References: <4B9DA6E4.4020501@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <4B9DA6E4.4020501@cn.fujitsu.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Jens Axboe <jens.axboe@oracle.com>
-Cc: Vivek Goyal <vgoyal@redhat.com>, Gui Jianfeng <GuiJianfeng@cn.fujitsu.com>, Ben Blum <bblum@andrew.cmu.edu>, LKML <linux-kernel@vger.kernel.org>, "containers@lists.osdl.org" <containers@lists.osdl.org>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Paul Menage <menage@google.com>, LKML <linux-kernel@vger.kernel.org>, "containers@lists.osdl.org" <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-Make the config visible, so we can choose from CONFIG_BLK_CGROUP=y
-and CONFIG_BLK_CGROUP=m when CONFIG_IOSCHED_CFQ=m.
+commit e6a1105b ("cgroups: subsystem module loading interface")
+and commit c50cc752 ("sched, cgroups: Fix module export")
+result in duplicate including of module.h
 
 Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
 ---
- block/Kconfig |    5 +++--
- 1 files changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/block/Kconfig b/block/Kconfig
-index 62a5921..906950c 100644
---- a/block/Kconfig
-+++ b/block/Kconfig
-@@ -78,8 +78,9 @@ config BLK_DEV_INTEGRITY
- 	Protection.  If in doubt, say N.
+Fix changelog...
+
+---
+ kernel/cgroup.c |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index ef909a3..e2769e1 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -27,7 +27,6 @@
+  */
  
- config BLK_CGROUP
--	tristate
-+	tristate "Block cgroup support"
- 	depends on CGROUPS
-+	depends on CFQ_GROUP_IOSCHED
- 	default n
- 	---help---
- 	Generic block IO controller cgroup interface. This is the common
-@@ -91,7 +92,7 @@ config BLK_CGROUP
- 	to such task groups.
- 
- config DEBUG_BLK_CGROUP
--	bool
-+	bool "Block cgroup debugging help"
- 	depends on BLK_CGROUP
- 	default n
- 	---help---
+ #include <linux/cgroup.h>
+-#include <linux/module.h>
+ #include <linux/ctype.h>
+ #include <linux/errno.h>
+ #include <linux/fs.h>
 -- 
 1.6.3
