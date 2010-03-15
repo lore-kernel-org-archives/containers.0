@@ -1,13 +1,13 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH linux-cr urgent] lsm: fix unlabeled restore case.
-Date: Sun, 14 Mar 2010 22:50:37 -0400
-Message-ID: <4B9DA07D.8020402@cs.columbia.edu>
-References: <20100312204706.GA408@us.ibm.com>
+Subject: Re: [PATCH] Revert "ckpt/powerpc: handle syscall restart"
+Date: Sun, 14 Mar 2010 22:51:03 -0400
+Message-ID: <4B9DA097.1020401@cs.columbia.edu>
+References: <1268418393-18325-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100312204706.GA408-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1268418393-18325-1-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,50 +17,60 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
-This is already in v20-rc1.
+All three applied, thanks !
 
-Oren
+Oren.
 
-Serge E. Hallyn wrote:
-> If an object is being restored which was checkpointed without an
-> LSM label, then we should return 0 BEFORE we try to ckpt_obj_fetch
-> a -1 objref (and obviously return error).
+Nathan Lynch wrote:
+> This reverts commit 64dab5da66f4fe212b43272ffa5e7a3403a64deb.
 > 
-> This makes the msg cr_tests ipc testcase fail if, for instance,
-> CONFIG_SECURITY=y but no LSM is active.
-> 
-> IMO this definately should be in the tree that gets sent out...
-> 
-> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> This way of handling syscall restart is incorrect -- it occurs too
+> early in the restart process, and restore_retval is doing the wrong
+> thing for powerpc anyway (fixed in a later patch).  While the reverted
+> patch managed to address the case of system calls with restart blocks,
+> other restartable system calls behave incorrectly after restart.
 > ---
->  security/security.c |    8 ++++----
->  1 files changed, 4 insertions(+), 4 deletions(-)
+>  arch/powerpc/kernel/checkpoint.c |   25 -------------------------
+>  1 files changed, 0 insertions(+), 25 deletions(-)
 > 
-> diff --git a/security/security.c b/security/security.c
-> index 2b147cf..4b3f932 100644
-> --- a/security/security.c
-> +++ b/security/security.c
-> @@ -1528,14 +1528,14 @@ int security_restore_obj(struct ckpt_ctx *ctx, void *v, int sectype,
->  		if (sectype != CKPT_SECURITY_MSG_MSG)
->  			return 0;
+> diff --git a/arch/powerpc/kernel/checkpoint.c b/arch/powerpc/kernel/checkpoint.c
+> index cd384df..2634011 100644
+> --- a/arch/powerpc/kernel/checkpoint.c
+> +++ b/arch/powerpc/kernel/checkpoint.c
+> @@ -307,31 +307,6 @@ static int restore_gprs(const struct ckpt_hdr_cpu *cpu_hdr,
+>  	regs->orig_gpr3 = cpu_hdr->orig_gpr3;
 >  
-> -	l = ckpt_obj_fetch(ctx, secref, CKPT_OBJ_SECURITY);
-> -	if (IS_ERR(l))
-> -		return PTR_ERR(l);
+>  	regs->msr = sanitize_msr(regs->msr);
 > -
->  	/* return if checkpointed label was "Not Applicable" */
->  	if (secref == SECURITY_CTX_NONE)
->  		return 0;
->  
-> +	l = ckpt_obj_fetch(ctx, secref, CKPT_OBJ_SECURITY);
-> +	if (IS_ERR(l))
-> +		return PTR_ERR(l);
-> +
->  	/* Ask the LSM to apply a void*security to the object
->  	 * based on the checkpointed context string */
->  	switch (sectype) {
+> -	/* The normal servicing of the freezer's fake signal is
+> -	 * short-circuited by checkpoint/restart.  See
+> -	 * arch/powerpc/kernel/signal.c::do_signal_pending().
+> -	 */
+> -	if (TRAP(regs) != 0x0C00)
+> -		goto out;
+> -	if (!(regs->ccr & 0x10000000))
+> -		goto out;
+> -
+> -	switch (regs->gpr[3]) {
+> -	case ERESTARTNOHAND:
+> -	case ERESTARTSYS:
+> -	case ERESTARTNOINTR:
+> -		regs->gpr[3] = regs->orig_gpr3;
+> -		break;
+> -	case ERESTART_RESTARTBLOCK:
+> -		regs->gpr[0] = __NR_restart_syscall;
+> -		break;
+> -	default:
+> -		goto out;
+> -	}
+> -
+> -	regs->nip -= 4;
+> -	regs->result = 0;
+>  out:
+>  	return rc;
+>  }
