@@ -1,21 +1,14 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH -mmotm 0/5] memcg: per cgroup dirty limit (v6)
-Date: Mon, 15 Mar 2010 10:48:03 -0400
-Message-ID: <20100315144803.GG21127__18294.1044251949$1268664683$gmane$org@redhat.com>
-References: <1268175636-4673-1-git-send-email-arighi@develer.com>
-	<20100311093913.07c9ca8a.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100311101726.f58d24e9.kamezawa.hiroyu@jp.fujitsu.com>
-	<1268298865.5279.997.camel@twins>
-	<20100311182500.0f3ba994.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100311184244.6735076a.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100312101411.b2639128.nishimura@mxp.nes.nec.co.jp>
-	<20100312112433.689c7294.kamezawa.hiroyu@jp.fujitsu.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] c/r: replace error_sem with an event completion
+Date: Mon, 15 Mar 2010 10:25:33 -0500
+Message-ID: <20100315152532.GA9135@us.ibm.com>
+References: <1268620650-23068-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20100312112433.689c7294.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <1268620650-23068-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,52 +18,109 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Mar 12, 2010 at 11:24:33AM +0900, KAMEZAWA Hiroyuki wrote:
-> On Fri, 12 Mar 2010 10:14:11 +0900
-> Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
+Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+> (This patch applies on top of ckpt-v20-rc1)
 > 
-> > On Thu, 11 Mar 2010 18:42:44 +0900, KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
-> > > On Thu, 11 Mar 2010 18:25:00 +0900
-> > > KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
-> > > > Then, it's not problem that check pc->mem_cgroup is root cgroup or not
-> > > > without spinlock.
-> > > > ==
-> > > > void mem_cgroup_update_stat(struct page *page, int idx, bool charge)
-> > > > {
-> > > > 	pc = lookup_page_cgroup(page);
-> > > > 	if (unlikely(!pc) || mem_cgroup_is_root(pc->mem_cgroup))
-> > > > 		return;	
-> > > > 	...
-> > > > }
-> > > > ==
-> > > > This can be handle in the same logic of "lock failure" path.
-> > > > And we just do ignore accounting.
-> > > > 
-> > > > There are will be no spinlocks....to do more than this,
-> > > > I think we have to use "struct page" rather than "struct page_cgroup".
-> > > > 
-> > > Hmm..like this ? The bad point of this patch is that this will corrupt FILE_MAPPED
-> > > status in root cgroup. This kind of change is not very good.
-> > > So, one way is to use this kind of function only for new parameters. Hmm.
-> > IMHO, if we disable accounting file stats in root cgroup, it would be better
-> > not to show them in memory.stat to avoid confusing users.
-> agreed.
+> The value of ctx->errno is protected by a semaphore to ensure that
+> processes do not pique at it prematurely (that is - after the error
+> bit is set, but before the value is committed).
 > 
-> > But, hmm, I think accounting them in root cgroup isn't so meaningless.
-> > Isn't making mem_cgroup_has_dirty_limit() return false in case of root cgroup enough?
-> > 
-> The problem is spinlock overhead.
+> But, lockdep sometimes complains when an error is detected from a
+> legitimately failed restart attempt. This is because we release
+> ctx->errno_sem in a task context different from the one in which it
+> was acquired.
 > 
-> IMHO, there are 2 excuse for "not accounting" in root cgroup
->  1. Low overhead is always appreciated.
->  2. Root's statistics can be obtained by "total - sum of children".
+> Replace the semaphore with an event completion: this sort of
+> synchronization is what completion constructs are all about.
 > 
+> Originally reported by Nathan Lynch.
+> 
+> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 
-IIUC, Total sum of children works only if user_hierarchy=1? At the same time
-it does not work if there tasks in root cgroup and not in children group.
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Vivek
+> ---
+>  checkpoint/sys.c                 |   13 ++++---------
+>  include/linux/checkpoint.h       |    5 ++---
+>  include/linux/checkpoint_types.h |    2 +-
+>  3 files changed, 7 insertions(+), 13 deletions(-)
+> 
+> diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+> index b605784..fe85ca7 100644
+> --- a/checkpoint/sys.c
+> +++ b/checkpoint/sys.c
+> @@ -280,8 +280,7 @@ static struct ckpt_ctx *ckpt_ctx_alloc(int fd, unsigned long uflags,
+>  	init_waitqueue_head(&ctx->ghostq);
+>  	init_completion(&ctx->complete);
+> 
+> -	init_rwsem(&ctx->errno_sem);
+> -	down_write(&ctx->errno_sem);
+> +	init_completion(&ctx->errno_sync);
+> 
+>  #ifdef CONFIG_CHECKPOINT_DEBUG
+>  	INIT_LIST_HEAD(&ctx->task_status);
+> @@ -343,11 +342,8 @@ void ckpt_set_error(struct ckpt_ctx *ctx, int err)
+>  	/* atomically set ctx->errno */
+>  	if (!ckpt_test_and_set_ctx_kflag(ctx, CKPT_CTX_ERROR)) {
+>  		ctx->errno = err;
+> -		/*
+> -		 * We initialized ctx->errno_sem write-held to prevent
+> -		 * other tasks from reading ctx->errno prematurely.
+> -		 */
+> -		up_write(&ctx->errno_sem);
+> +		/* make ctx->errno visible to all other tasks */
+> +		complete_all(&ctx->errno_sync);
+>  		/* on restart, notify all tasks in restarting subtree */
+>  		if (ctx->kflags & CKPT_CTX_RESTART)
+>  			restore_notify_error(ctx);
+> @@ -357,8 +353,7 @@ void ckpt_set_error(struct ckpt_ctx *ctx, int err)
+>  void ckpt_set_success(struct ckpt_ctx *ctx)
+>  {
+>  	ckpt_set_ctx_kflag(ctx, CKPT_CTX_SUCCESS);
+> -	/* avoid warning "lock still held" when freeing (was write-held) */
+> -	up_write(&ctx->errno_sem);
+> +	complete_all(&ctx->errno_sync);
+>  }
+> 
+>  /* helpers to handler log/dbg/err messages */
+> diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+> index a25bac1..a8b9e21 100644
+> --- a/include/linux/checkpoint.h
+> +++ b/include/linux/checkpoint.h
+> @@ -160,10 +160,9 @@ static inline int ckpt_get_error(struct ckpt_ctx *ctx)
+>  {
+>  	/*
+>  	 * We may notice CKPT_CTX_ERROR before ctx->errno is set, but
+> -	 * ctx->errno_sem remains (write) held until after it's done.
+> +	 * ctx->errno_sync remains not-completed until after it's done.
+>  	 */
+> -	if (!ctx->errno)
+> -		down_read(&ctx->errno_sem);
+> +	wait_for_completion(&ctx->errno_sync);
+>  	return ctx->errno;
+>  }
+> 
+> diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
+> index efc9357..e9cc1d8 100644
+> --- a/include/linux/checkpoint_types.h
+> +++ b/include/linux/checkpoint_types.h
+> @@ -61,7 +61,7 @@ struct ckpt_ctx {
+>  	char err_string[256];	/* checkpoint: error string */
+> 
+>  	int errno;		/* errno that caused failure */
+> -	struct rw_semaphore errno_sem;	/* protect errno setting */
+> +	struct completion errno_sync;	/* protect errno setting */
+> 
+>  	struct list_head pgarr_list;	/* page array to dump VMA contents */
+>  	struct list_head pgarr_pool;	/* pool of empty page arrays chain */
+> -- 
+> 1.6.3.3
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
