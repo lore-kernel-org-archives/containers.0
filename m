@@ -1,13 +1,13 @@
-From: Randy Dunlap <rdunlap-/UHa2rfvQTnk1uMJSBkQmQ@public.gmane.org>
-Subject: Re: [PATCH 0/4] Some typo fixing
-Date: Mon, 15 Mar 2010 14:09:40 -0700
-Message-ID: <4B9EA214.7010203@xenotime.net>
-References: <1268686558-28171-1-git-send-email-swirl@gmx.li>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [PATCH] make cr depend on all namespaces
+Date: Mon, 15 Mar 2010 17:45:01 -0400
+Message-ID: <4B9EAA5D.1080802@cs.columbia.edu>
+References: <20100315200559.GA25911@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268686558-28171-1-git-send-email-swirl-EOsNSARiLbg@public.gmane.org>
+In-Reply-To: <20100315200559.GA25911-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,62 +17,83 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Thomas Weber <swirl-EOsNSARiLbg@public.gmane.org>
-Cc: Karsten Keil <isdn-iHCpqvpFUx0uJkBD2foKsQ@public.gmane.org>, Lin Ming <ming.m.lin-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Takashi Iwai <tiwai-l3A5Bk7waGM@public.gmane.org>, Benjamin Herrenschmidt <benh-XVmvHMARGAS8U2dJNN8I7kB+6BGkLq7r@public.gmane.org>, Jaroslav Kysela <perex-/Fr2/VpizcU@public.gmane.org>, Pavel Machek <pavel-AlSwsSmVLrQ@public.gmane.org>, David Brownell <dbrownell-Rn4VEauK+AKRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, linux-acpi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, Bjorn Helgaas <bjorn.helgaas-VXdhtT5mjnY@public.gmane.org>, Rusty Russell <rusty-8n+1lVoiYb80n/F98K4Iww@public.gmane.org>, "John W. Linville" <linville-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>, Steve Conklin <sconklin-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Ralph Campbell <infinipath-h88ZbnxC6KDQT0dZR+AlfA@public.gmane.org>, Anton Vorontsov <avorontsov-hkdhdckH98+B+jHODAdFcQ@public.gmane.org>, cbe-oss-dev-mnsaURCQ41sdnm+yROfE0A@public.gmane.org, Liam Girdwood <lrg-kDsPt+C1G03kYMGBc/C6ZA@public.gmane.org>, Anthony Liguori <aliguori-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Jiri Kosina <jkosina-AlSwsSmVLrQ@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Joe Perches <joe-6d6DIl74uiOIwRZHo2/mJg@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 03/15/10 13:55, Thomas Weber wrote:
-> I have fixed some typos.
-
-Acked-by: Randy Dunlap <rdunlap-/UHa2rfvQTnk1uMJSBkQmQ@public.gmane.org>
-
-Jiri, can you merge these, please, unless someone objects (?).
 
 
-> Thomas Weber (4):
->   Fix typo: [Ss]ytem => [Ss]ystem
->   Fix typo: udpate => update
->   Fix typo: paramters => parameters
->   Fix typo: orginal => original
+Serge E. Hallyn wrote:
+> This should let us get rid of some ifdefed code and reduce
+> chances for bad config combinations.  There's really no reason
+> to support it.
+
+I disagree.
+
+You are right that this will reduce the changes of bad config
+combinations.
+
+However, it will also introduce some restrictions on the kernel
+config which are unnecessary. Some people may not want to have
+all namespaces configured.
+
+Note that the namespaces are independent in the sense that we
+don't need to test all combination of all namespaces - instead,
+I consider turning on/off one at a time to be safe enough.
+
+(FWIW, is it because you only wanted to show a point that you
+only remove UTS_NS ifdefs ?)
+
+Oren.
+
 > 
->  Documentation/cgroups/cgroups.txt               |    2 +-
->  Documentation/kbuild/kconfig.txt                |    2 +-
->  Documentation/sysfs-rules.txt                   |    2 +-
->  Documentation/trace/events.txt                  |    8 ++++----
->  drivers/acpi/osl.c                              |    4 ++--
->  drivers/ata/ata_piix.c                          |    2 +-
->  drivers/firewire/ohci.c                         |    2 +-
->  drivers/gpu/drm/drm_bufs.c                      |    2 +-
->  drivers/infiniband/hw/ipath/ipath_iba6110.c     |    2 +-
->  drivers/infiniband/hw/ipath/ipath_iba6120.c     |    4 ++--
->  drivers/infiniband/hw/ipath/ipath_iba7220.c     |    2 +-
->  drivers/isdn/hisax/hfc4s8s_l1.c                 |    2 +-
->  drivers/macintosh/windfarm_pm81.c               |    2 +-
->  drivers/media/dvb/dvb-usb/friio-fe.c            |    2 +-
->  drivers/net/smsc911x.c                          |    4 ++--
->  drivers/pci/hotplug/cpqphp_core.c               |    2 +-
->  drivers/pci/pci.c                               |    2 +-
->  drivers/ps3/ps3-sys-manager.c                   |    2 +-
->  drivers/regulator/core.c                        |    2 +-
->  drivers/s390/char/sclp_cpi_sys.c                |    2 +-
->  drivers/scsi/bfa/include/defs/bfa_defs_cee.h    |    2 +-
->  drivers/scsi/bfa/include/defs/bfa_defs_status.h |    4 ++--
->  drivers/spi/spi_mpc8xxx.c                       |    2 +-
->  drivers/staging/iio/Documentation/overview.txt  |    2 +-
->  drivers/staging/rt2860/rtmp.h                   |    2 +-
->  drivers/staging/rtl8187se/r8180_core.c          |    4 ++--
->  drivers/staging/rtl8187se/r8180_dm.c            |    2 +-
->  drivers/staging/rtl8187se/r8185b_init.c         |    2 +-
->  drivers/virtio/virtio_pci.c                     |    2 +-
->  fs/jfs/jfs_dmap.c                               |    2 +-
->  kernel/cgroup.c                                 |    2 +-
->  mm/page_alloc.c                                 |    2 +-
->  net/wimax/op-rfkill.c                           |    2 +-
->  sound/pci/emu10k1/emu10k1_main.c                |    2 +-
->  34 files changed, 42 insertions(+), 42 deletions(-)
+> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  checkpoint/Kconfig     |    5 +++++
+>  checkpoint/namespace.c |   10 ----------
+>  2 files changed, 5 insertions(+), 10 deletions(-)
 > 
-
-Thanks.
-
--- 
-~Randy
+> diff --git a/checkpoint/Kconfig b/checkpoint/Kconfig
+> index 4a2c845..549668e 100644
+> --- a/checkpoint/Kconfig
+> +++ b/checkpoint/Kconfig
+> @@ -9,6 +9,11 @@ config DEFERQUEUE
+>  config CHECKPOINT
+>  	bool "Checkpoint/restart (EXPERIMENTAL)"
+>  	depends on CHECKPOINT_SUPPORT && EXPERIMENTAL
+> +	depends on UTS_NS
+> +	depends on USER_NS
+> +	depends on PID_NS
+> +	depends on NET_NS
+> +	depends on DEVPTS_MULTIPLE_INSTANCES
+>  	depends on CGROUP_FREEZER
+>  	select DEFERQUEUE
+>  	help
+> diff --git a/checkpoint/namespace.c b/checkpoint/namespace.c
+> index 4b3ac5a..6389dbd 100644
+> --- a/checkpoint/namespace.c
+> +++ b/checkpoint/namespace.c
+> @@ -63,7 +63,6 @@ static struct uts_namespace *do_restore_uts_ns(struct ckpt_ctx *ctx)
+>  	if (IS_ERR(h))
+>  		return (struct uts_namespace *) h;
+>  
+> -#ifdef CONFIG_UTS_NS
+>  	uts_ns = create_uts_ns();
+>  	if (!uts_ns) {
+>  		uts_ns = ERR_PTR(-ENOMEM);
+> @@ -78,15 +77,6 @@ static struct uts_namespace *do_restore_uts_ns(struct ckpt_ctx *ctx)
+>  	memcpy(name->machine, h->machine, sizeof(name->machine));
+>  	memcpy(name->domainname, h->domainname, sizeof(name->domainname));
+>  	up_read(&uts_sem);
+> -#else
+> -	/* complain if image contains multiple namespaces */
+> -	if (ctx->stats.uts_ns) {
+> -		uts_ns = ERR_PTR(-EEXIST);
+> -		goto out;
+> -	}
+> -	uts_ns = current->nsproxy->uts_ns;
+> -	get_uts_ns(uts_ns);
+> -#endif
+>  
+>  	ctx->stats.uts_ns++;
+>   out:
