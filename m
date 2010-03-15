@@ -1,15 +1,13 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH -mmotm 0/5] memcg: per cgroup dirty limit (v7)
-Date: Mon, 15 Mar 2010 13:19:21 -0400
-Message-ID: <20100315171921.GJ21127__29301.9058685333$1268673651$gmane$org@redhat.com>
-References: <1268609202-15581-1-git-send-email-arighi@develer.com>
-	<20100315171209.GI21127@redhat.com>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] cgroups: remove duplicate include
+Date: Mon, 15 Mar 2010 10:53:01 -0700
+Message-ID: <6599ad831003151053jd4c267ck1500725f228a3230@mail.gmail.com>
+References: <4B9DA6E4.4020501@cn.fujitsu.com> <4B9DA778.7080305@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20100315171209.GI21127-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4B9DA778.7080305-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,122 +17,39 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
-Cc: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Mar 15, 2010 at 01:12:09PM -0400, Vivek Goyal wrote:
-> On Mon, Mar 15, 2010 at 12:26:37AM +0100, Andrea Righi wrote:
-> > Control the maximum amount of dirty pages a cgroup can have at any given time.
-> > 
-> > Per cgroup dirty limit is like fixing the max amount of dirty (hard to reclaim)
-> > page cache used by any cgroup. So, in case of multiple cgroup writers, they
-> > will not be able to consume more than their designated share of dirty pages and
-> > will be forced to perform write-out if they cross that limit.
-> > 
-> 
-> For me even with this version I see that group with 100M limit is getting
-> much more BW.
-> 
-> root cgroup
-> ==========
-> #time dd if=/dev/zero of=/root/zerofile bs=4K count=1M
-> 4294967296 bytes (4.3 GB) copied, 55.7979 s, 77.0 MB/s
-> 
-> real	0m56.209s
-> 
-> test1 cgroup with memory limit of 100M
-> ======================================
-> # time dd if=/dev/zero of=/root/zerofile1 bs=4K count=1M
-> 4294967296 bytes (4.3 GB) copied, 20.9252 s, 205 MB/s
-> 
-> real	0m21.096s
-> 
-> Note, these two jobs are not running in parallel. These are running one
-> after the other.
-> 
+On Sun, Mar 14, 2010 at 8:20 PM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+> commit e6a1105b ("cgroups: subsystem module loading interface")
+> and commit c50cc752 ("sched, cgroups: Fix module export")
+> result in duplicate including of module.h
+>
+> Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 
-Ok, here is the strange part. I am seeing similar behavior even without
-your patches applied.
+Acked-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 
-root cgroup
-==========
-#time dd if=/dev/zero of=/root/zerofile bs=4K count=1M
-4294967296 bytes (4.3 GB) copied, 56.098 s, 76.6 MB/s
-
-real	0m56.614s
-
-test1 cgroup with memory limit 100M
-===================================
-# time dd if=/dev/zero of=/root/zerofile1 bs=4K count=1M
-4294967296 bytes (4.3 GB) copied, 19.8097 s, 217 MB/s
-
-real	0m19.992s
-
-Vivek
-
-> 
-> > The overall design is the following:
-> > 
-> >  - account dirty pages per cgroup
-> >  - limit the number of dirty pages via memory.dirty_ratio / memory.dirty_bytes
-> >    and memory.dirty_background_ratio / memory.dirty_background_bytes in
-> >    cgroupfs
-> >  - start to write-out (background or actively) when the cgroup limits are
-> >    exceeded
-> > 
-> > This feature is supposed to be strictly connected to any underlying IO
-> > controller implementation, so we can stop increasing dirty pages in VM layer
-> > and enforce a write-out before any cgroup will consume the global amount of
-> > dirty pages defined by the /proc/sys/vm/dirty_ratio|dirty_bytes and
-> > /proc/sys/vm/dirty_background_ratio|dirty_background_bytes limits.
-> > 
-> > Changelog (v6 -> v7)
-> > ~~~~~~~~~~~~~~~~~~~~~~
-> >  * introduce trylock_page_cgroup() to guarantee that lock_page_cgroup()
-> >    is never called under tree_lock (no strict accounting, but better overall
-> >    performance)
-> >  * do not account file cache statistics for the root cgroup (zero
-> >    overhead for the root cgroup)
-> >  * fix: evaluate cgroup free pages as at the minimum free pages of all
-> >    its parents
-> > 
-> > Results
-> > ~~~~~~~
-> > The testcase is a kernel build (2.6.33 x86_64_defconfig) on a Intel Core 2 @
-> > 1.2GHz:
-> > 
-> > <before>
-> >  - root  cgroup:	11m51.983s
-> >  - child cgroup:	11m56.596s
-> > 
-> > <after>
-> >  - root cgroup:		11m51.742s
-> >  - child cgroup:	12m5.016s
-> > 
-> > In the previous version of this patchset, using the "complex" locking scheme
-> > with the _locked and _unlocked version of mem_cgroup_update_page_stat(), the
-> > child cgroup required 11m57.896s and 12m9.920s with lock_page_cgroup()+irq_disabled.
-> > 
-> > With this version there's no overhead for the root cgroup (the small difference
-> > is in error range). I expected to see less overhead for the child cgroup, I'll
-> > do more testing and try to figure better what's happening.
-> > 
-> > In the while, it would be great if someone could perform some tests on a larger
-> > system... unfortunately at the moment I don't have a big system available for
-> > this kind of tests...
-> > 
-> > Thanks,
-> > -Andrea
-> > 
-> >  Documentation/cgroups/memory.txt |   36 +++
-> >  fs/nfs/write.c                   |    4 +
-> >  include/linux/memcontrol.h       |   87 ++++++-
-> >  include/linux/page_cgroup.h      |   35 +++
-> >  include/linux/writeback.h        |    2 -
-> >  mm/filemap.c                     |    1 +
-> >  mm/memcontrol.c                  |  542 +++++++++++++++++++++++++++++++++++---
-> >  mm/page-writeback.c              |  215 ++++++++++------
-> >  mm/rmap.c                        |    4 +-
-> >  mm/truncate.c                    |    1 +
-> >  10 files changed, 806 insertions(+), 121 deletions(-)
+> ---
+>
+> Fix changelog...
+>
+> ---
+> =A0kernel/cgroup.c | =A0 =A01 -
+> =A01 files changed, 0 insertions(+), 1 deletions(-)
+>
+> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+> index ef909a3..e2769e1 100644
+> --- a/kernel/cgroup.c
+> +++ b/kernel/cgroup.c
+> @@ -27,7 +27,6 @@
+> =A0*/
+>
+> =A0#include <linux/cgroup.h>
+> -#include <linux/module.h>
+> =A0#include <linux/ctype.h>
+> =A0#include <linux/errno.h>
+> =A0#include <linux/fs.h>
+> --
+> 1.6.3
+>
