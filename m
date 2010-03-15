@@ -1,7 +1,7 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: success
-Date: Mon, 15 Mar 2010 14:13:21 -0500
-Message-ID: <20100315191321.GA23540@us.ibm.com>
+Subject: [PATCH] fix sysvipc=n compile
+Date: Mon, 15 Mar 2010 14:41:51 -0500
+Message-ID: <20100315194151.GA24909@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -20,20 +20,27 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-The following tree:
+checkpoint_bad and restore_bad no longer exist, use NULL.
 
-http://git.kernel.org/gitweb.cgi?p=linux/kernel/git/sergeh/linux-cr.git;a=shortlog;h=refs/heads/cr-mar15
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ include/linux/checkpoint.h |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-is your ckpt-v20-rc1 with the netif patches popped off and your two new patches
-pushed on.  I've had 100% success with cr_tests with all combinations I could
-think of with lsm on/off, selinux, smack, checkpoint_debug on/off.  Have tested
-s390x and x86-64 (and an x86-32 with confused userspace).  Things like ipc off
-i didn't try and i'm sure we'll miss *something*, but I think I can give this
-whole thing a
-
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Tested-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-and say "ship it"
-
--serge
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 8053ca4..792b523 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -215,8 +215,8 @@ extern void *restore_ipc_ns(struct ckpt_ctx *ctx);
+ extern int ckpt_collect_ipc_ns(struct ckpt_ctx *ctx,
+ 			       struct ipc_namespace *ipc_ns);
+ #else
+-#define checkpoint_ipc_ns  checkpoint_bad
+-#define restore_ipc_ns  restore_bad
++#define checkpoint_ipc_ns  NULL
++#define restore_ipc_ns  NULL
+ static inline int ckpt_collect_ipc_ns(struct ckpt_ctx *ctx,
+ 				      struct ipc_namespace *ipc_ns)
+ {
+-- 
+1.6.1
