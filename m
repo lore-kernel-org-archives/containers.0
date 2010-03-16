@@ -1,35 +1,27 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
 Subject: Re: [PATCH] block: make CONFIG_BLK_CGROUP visible
-Date: Tue, 16 Mar 2010 09:36:41 +0800
-Message-ID: <4B9EE0A9.5010901@cn.fujitsu.com>
-References: <4B9DA6F5.3070606@cn.fujitsu.com> <20100315132149.GA21127@redhat.com>
+Date: Tue, 16 Mar 2010 09:42:59 +0800
+Message-ID: <4B9EE223.7020302@cn.fujitsu.com>
+References: <4B9DA6F5.3070606@cn.fujitsu.com> <20100315115724.GK5768@kernel.dk>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20100315132149.GA21127@redhat.com>
+In-Reply-To: <20100315115724.GK5768@kernel.dk>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Vivek Goyal <vgoyal@redhat.com>
-Cc: Jens Axboe <jens.axboe@oracle.com>, Gui Jianfeng <GuiJianfeng@cn.fujitsu.com>, Ben Blum <bblum@andrew.cmu.edu>, LKML <linux-kernel@vger.kernel.org>, "containers@lists.osdl.org" <containers@lists.osdl.org>
+To: Jens Axboe <jens.axboe@oracle.com>
+Cc: Vivek Goyal <vgoyal@redhat.com>, Gui Jianfeng <GuiJianfeng@cn.fujitsu.com>, Ben Blum <bblum@andrew.cmu.edu>, LKML <linux-kernel@vger.kernel.org>, "containers@lists.osdl.org" <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
->>  	---help---
->>  	Generic block IO controller cgroup interface. This is the common
->> @@ -91,7 +92,7 @@ config BLK_CGROUP
->>  	to such task groups.
->>  
->>  config DEBUG_BLK_CGROUP
->> -	bool
->> +	bool "Block cgroup debugging help"
+Jens Axboe wrote:
+> On Mon, Mar 15 2010, Li Zefan wrote:
+>> Make the config visible, so we can choose from CONFIG_BLK_CGROUP=y
+>> and CONFIG_BLK_CGROUP=m when CONFIG_IOSCHED_CFQ=m.
+>>
+>> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
 > 
-> 
-> Why are you making DEBUG_BLK_CGROUP this as a user visible/configurable
-> option? This is already controlled by DEBUG_CFQ_IOSCHED. If you don't want
-> the DEBUG overhead, just set DEBUG_CFQ_IOSCHED=n and DEBUG_BLK_CGROUP will
-> not be selected? Making it user visible does not seem to be buying us
-> anything?
+> What kernel is this against?
 > 
 
-Sounds reasonable. A minor question, since DEBUG_BLK_CGROUP is not
-visible, the help message for this config is not visible too, so we
-still keep it?
+It's against linus' tree. I've just checked the block tree, and found
+it needs to be synced, otherwise this patch can't be applied on it.
