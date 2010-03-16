@@ -1,44 +1,80 @@
-From: Vivek Goyal <vgoyal@redhat.com>
-Subject: Re: [PATCH] block: make CONFIG_BLK_CGROUP visible
-Date: Tue, 16 Mar 2010 09:53:46 -0400
-Message-ID: <20100316135346.GB9144@redhat.com>
-References: <4B9DA6F5.3070606@cn.fujitsu.com> <20100315132149.GA21127@redhat.com> <4B9EE0A9.5010901@cn.fujitsu.com>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH -mmotm 4/5] memcg: dirty pages accounting and limiting
+	infrastructure
+Date: Tue, 16 Mar 2010 10:11:50 -0400
+Message-ID: <20100316141150.GC9144__29802.0227965482$1268748798$gmane$org@redhat.com>
+References: <1268609202-15581-1-git-send-email-arighi@develer.com>
+	<1268609202-15581-5-git-send-email-arighi@develer.com>
+	<20100316113238.f7d74848.nishimura@mxp.nes.nec.co.jp>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4B9EE0A9.5010901@cn.fujitsu.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Li Zefan <lizf@cn.fujitsu.com>
-Cc: Jens Axboe <jens.axboe@oracle.com>, Gui Jianfeng <GuiJianfeng@cn.fujitsu.com>, Ben Blum <bblum@andrew.cmu.edu>, LKML <linux-kernel@vger.kernel.org>, "containers@lists.osdl.org" <containers@lists.osdl.org>
+In-Reply-To: <20100316113238.f7d74848.nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Mar 16, 2010 at 09:36:41AM +0800, Li Zefan wrote:
-> >>  	---help---
-> >>  	Generic block IO controller cgroup interface. This is the common
-> >> @@ -91,7 +92,7 @@ config BLK_CGROUP
-> >>  	to such task groups.
-> >>  
-> >>  config DEBUG_BLK_CGROUP
-> >> -	bool
-> >> +	bool "Block cgroup debugging help"
-> > 
-> > 
-> > Why are you making DEBUG_BLK_CGROUP this as a user visible/configurable
-> > option? This is already controlled by DEBUG_CFQ_IOSCHED. If you don't want
-> > the DEBUG overhead, just set DEBUG_CFQ_IOSCHED=n and DEBUG_BLK_CGROUP will
-> > not be selected? Making it user visible does not seem to be buying us
-> > anything?
-> > 
+On Tue, Mar 16, 2010 at 11:32:38AM +0900, Daisuke Nishimura wrote:
+
+[..]
+> > + * mem_cgroup_page_stat() - get memory cgroup file cache statistics
+> > + * @item:	memory statistic item exported to the kernel
+> > + *
+> > + * Return the accounted statistic value, or a negative value in case of error.
+> > + */
+> > +s64 mem_cgroup_page_stat(enum mem_cgroup_read_page_stat_item item)
+> > +{
+> > +	struct mem_cgroup_page_stat stat = {};
+> > +	struct mem_cgroup *mem;
+> > +
+> > +	rcu_read_lock();
+> > +	mem = mem_cgroup_from_task(current);
+> > +	if (mem && !mem_cgroup_is_root(mem)) {
+> > +		/*
+> > +		 * If we're looking for dirtyable pages we need to evaluate
+> > +		 * free pages depending on the limit and usage of the parents
+> > +		 * first of all.
+> > +		 */
+> > +		if (item == MEMCG_NR_DIRTYABLE_PAGES)
+> > +			stat.value = memcg_get_hierarchical_free_pages(mem);
+> > +		/*
+> > +		 * Recursively evaluate page statistics against all cgroup
+> > +		 * under hierarchy tree
+> > +		 */
+> > +		stat.item = item;
+> > +		mem_cgroup_walk_tree(mem, &stat, mem_cgroup_page_stat_cb);
+> > +	} else
+> > +		stat.value = -EINVAL;
+> > +	rcu_read_unlock();
+> > +
+> > +	return stat.value;
+> > +}
+> > +
+> hmm, mem_cgroup_page_stat() can return negative value, but you place BUG_ON()
+> in [5/5] to check it returns negative value. What happens if the current is moved
+> to root between mem_cgroup_has_dirty_limit() and mem_cgroup_page_stat() ?
+> How about making mem_cgroup_has_dirty_limit() return the target mem_cgroup, and
+> passing the mem_cgroup to mem_cgroup_page_stat() ?
 > 
-> Sounds reasonable. A minor question, since DEBUG_BLK_CGROUP is not
-> visible, the help message for this config is not visible too, so we
-> still keep it?
 
-Right now the message is only for developer if somebody opens the Kconfig
-file. I think it does not harm if somebody wants to understand what this
-config option is doing. But if you think that it should not be there, I have
-no strong opinion about it.
+Hmm, if mem_cgroup_has_dirty_limit() retrun pointer to memcg, then one
+shall have to use rcu_read_lock() and that will look ugly.
 
-Thanks
+Why don't we simply look at the return value and if it is negative, we
+fall back to using global stats and get rid of BUG_ON()?
+
+Or, modify mem_cgroup_page_stat() to return global stats if it can't
+determine per cgroup stat for some reason. (mem=NULL or root cgroup etc).
+
 Vivek
