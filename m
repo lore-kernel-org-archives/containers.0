@@ -1,17 +1,14 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH -mmotm 4/5] memcg: dirty pages accounting and limiting
-	infrastructure
-Date: Tue, 16 Mar 2010 10:11:50 -0400
-Message-ID: <20100316141150.GC9144__29802.0227965482$1268748798$gmane$org@redhat.com>
-References: <1268609202-15581-1-git-send-email-arighi@develer.com>
-	<1268609202-15581-5-git-send-email-arighi@develer.com>
-	<20100316113238.f7d74848.nishimura@mxp.nes.nec.co.jp>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 01/10] cr_tests: Fix quote ordering typo in common.sh
+Date: Tue, 16 Mar 2010 09:13:06 -0500
+Message-ID: <20100316141306.GB29543@us.ibm.com>
+References: <69be886209c375c99b00b0745c1b0efdf334dcc3.1268694050.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20100316113238.f7d74848.nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+In-Reply-To: <69be886209c375c99b00b0745c1b0efdf334dcc3.1268694050.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,60 +18,11 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
-Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Mar 16, 2010 at 11:32:38AM +0900, Daisuke Nishimura wrote:
+Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-[..]
-> > + * mem_cgroup_page_stat() - get memory cgroup file cache statistics
-> > + * @item:	memory statistic item exported to the kernel
-> > + *
-> > + * Return the accounted statistic value, or a negative value in case of error.
-> > + */
-> > +s64 mem_cgroup_page_stat(enum mem_cgroup_read_page_stat_item item)
-> > +{
-> > +	struct mem_cgroup_page_stat stat = {};
-> > +	struct mem_cgroup *mem;
-> > +
-> > +	rcu_read_lock();
-> > +	mem = mem_cgroup_from_task(current);
-> > +	if (mem && !mem_cgroup_is_root(mem)) {
-> > +		/*
-> > +		 * If we're looking for dirtyable pages we need to evaluate
-> > +		 * free pages depending on the limit and usage of the parents
-> > +		 * first of all.
-> > +		 */
-> > +		if (item == MEMCG_NR_DIRTYABLE_PAGES)
-> > +			stat.value = memcg_get_hierarchical_free_pages(mem);
-> > +		/*
-> > +		 * Recursively evaluate page statistics against all cgroup
-> > +		 * under hierarchy tree
-> > +		 */
-> > +		stat.item = item;
-> > +		mem_cgroup_walk_tree(mem, &stat, mem_cgroup_page_stat_cb);
-> > +	} else
-> > +		stat.value = -EINVAL;
-> > +	rcu_read_unlock();
-> > +
-> > +	return stat.value;
-> > +}
-> > +
-> hmm, mem_cgroup_page_stat() can return negative value, but you place BUG_ON()
-> in [5/5] to check it returns negative value. What happens if the current is moved
-> to root between mem_cgroup_has_dirty_limit() and mem_cgroup_page_stat() ?
-> How about making mem_cgroup_has_dirty_limit() return the target mem_cgroup, and
-> passing the mem_cgroup to mem_cgroup_page_stat() ?
-> 
-
-Hmm, if mem_cgroup_has_dirty_limit() retrun pointer to memcg, then one
-shall have to use rcu_read_lock() and that will look ugly.
-
-Why don't we simply look at the return value and if it is negative, we
-fall back to using global stats and get rid of BUG_ON()?
-
-Or, modify mem_cgroup_page_stat() to return global stats if it can't
-determine per cgroup stat for some reason. (mem=NULL or root cgroup etc).
-
-Vivek
+all applied, thanks.
