@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 96/96] c/r: add an entry for checkpoint/restart in
-	MAINTAINERS
-Date: Wed, 17 Mar 2010 12:09:24 -0400
-Message-ID: <1268842164-5590-97-git-send-email-orenl__2286.81374942443$1268848932$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 50/96] splice: export pipe/file-to-pipe/file
+	functionality
+Date: Wed, 17 Mar 2010 12:08:38 -0400
+Message-ID: <1268842164-5590-51-git-send-email-orenl__45318.1081371897$1268849136$gmane$org@cs.columbia.edu>
 References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-2-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-3-git-send-email-orenl@cs.columbia.edu>
@@ -53,57 +53,11 @@ References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-48-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-49-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-50-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-51-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-52-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-53-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-54-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-55-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-56-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-57-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-58-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-59-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-60-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-61-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-62-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-63-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-64-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-65-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-66-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-67-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-68-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-69-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-70-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-71-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-72-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-73-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-74-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-75-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-76-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-77-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-78-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-79-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-80-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-81-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-82-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-83-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-84-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-85-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-86-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-87-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-88-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-89-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-90-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-91-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-92-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-93-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-94-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-95-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-96-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268842164-5590-96-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1268842164-5590-50-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -117,33 +71,156 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
----
- MAINTAINERS |   12 ++++++++++++
- 1 files changed, 12 insertions(+), 0 deletions(-)
+During pipes c/r pipes we need to save and restore pipe buffers. But
+do_splice() requires two file descriptors, therefore we can't use it,
+as we always have one file descriptor (checkpoint image) and one
+pipe_inode_info.
 
-diff --git a/MAINTAINERS b/MAINTAINERS
-index 2533fc4..65c8954 100644
---- a/MAINTAINERS
-+++ b/MAINTAINERS
-@@ -1435,6 +1435,18 @@ M:	Andy Whitcroft <apw-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
- S:	Supported
- F:	scripts/checkpatch.pl
+This patch exports interfaces that work at the pipe_inode_info level,
+namely link_pipe(), do_splice_to() and do_splice_from(). They are used
+in the following patch to to save and restore pipe buffers without
+unnecessary data copy.
+
+It slightly modifies both do_splice_to() and do_splice_from() to
+detect the case of pipe-to-pipe transfer, in which case they invoke
+splice_pipe_to_pipe() directly.
+
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ fs/splice.c            |   61 ++++++++++++++++++++++++++++++++---------------
+ include/linux/splice.h |    9 +++++++
+ 2 files changed, 50 insertions(+), 20 deletions(-)
+
+diff --git a/fs/splice.c b/fs/splice.c
+index 3920866..76acb55 100644
+--- a/fs/splice.c
++++ b/fs/splice.c
+@@ -1051,18 +1051,43 @@ ssize_t generic_splice_sendpage(struct pipe_inode_info *pipe, struct file *out,
+ EXPORT_SYMBOL(generic_splice_sendpage);
  
-+CHECKPOINT-RESTART
-+M:	Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-+M:	Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-+L:	containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-+W:	http://ckpt.wiki.kernel.org/index.php/Main_Page
-+S:	Maintained
-+F:	*checkpoint*
-+K:	checkpoint
-+K:	restore
-+K:	ckpt
-+K:	c/r
+ /*
++ * After the inode slimming patch, i_pipe/i_bdev/i_cdev share the same
++ * location, so checking ->i_pipe is not enough to verify that this is a
++ * pipe.
++ */
++static inline struct pipe_inode_info *pipe_info(struct inode *inode)
++{
++	if (S_ISFIFO(inode->i_mode))
++		return inode->i_pipe;
 +
- CISCO 10G ETHERNET DRIVER
- M:	Scott Feldman <scofeldm-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>
- M:	Joe Eykholt <jeykholt-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>
++	return NULL;
++}
++
++static int splice_pipe_to_pipe(struct pipe_inode_info *ipipe,
++			       struct pipe_inode_info *opipe,
++			       size_t len, unsigned int flags);
++
++/*
+  * Attempt to initiate a splice from pipe to file.
+  */
+-static long do_splice_from(struct pipe_inode_info *pipe, struct file *out,
+-			   loff_t *ppos, size_t len, unsigned int flags)
++long do_splice_from(struct pipe_inode_info *pipe, struct file *out,
++		    loff_t *ppos, size_t len, unsigned int flags)
+ {
+ 	ssize_t (*splice_write)(struct pipe_inode_info *, struct file *,
+ 				loff_t *, size_t, unsigned int);
++	struct pipe_inode_info *opipe;
+ 	int ret;
+ 
+ 	if (unlikely(!(out->f_mode & FMODE_WRITE)))
+ 		return -EBADF;
+ 
++	/* When called directly (e.g. from c/r) output may be a pipe */
++	opipe = pipe_info(out->f_path.dentry->d_inode);
++	if (opipe) {
++		BUG_ON(opipe == pipe);
++		return splice_pipe_to_pipe(pipe, opipe, len, flags);
++	}
++
+ 	if (unlikely(out->f_flags & O_APPEND))
+ 		return -EINVAL;
+ 
+@@ -1081,17 +1106,25 @@ static long do_splice_from(struct pipe_inode_info *pipe, struct file *out,
+ /*
+  * Attempt to initiate a splice from a file to a pipe.
+  */
+-static long do_splice_to(struct file *in, loff_t *ppos,
+-			 struct pipe_inode_info *pipe, size_t len,
+-			 unsigned int flags)
++long do_splice_to(struct file *in, loff_t *ppos,
++		  struct pipe_inode_info *pipe, size_t len,
++		  unsigned int flags)
+ {
+ 	ssize_t (*splice_read)(struct file *, loff_t *,
+ 			       struct pipe_inode_info *, size_t, unsigned int);
++	struct pipe_inode_info *ipipe;
+ 	int ret;
+ 
+ 	if (unlikely(!(in->f_mode & FMODE_READ)))
+ 		return -EBADF;
+ 
++	/* When called firectly (e.g. from c/r) input may be a pipe */
++	ipipe = pipe_info(in->f_path.dentry->d_inode);
++	if (ipipe) {
++		BUG_ON(ipipe == pipe);
++		return splice_pipe_to_pipe(ipipe, pipe, len, flags);
++	}
++
+ 	ret = rw_verify_area(READ, in, ppos, len);
+ 	if (unlikely(ret < 0))
+ 		return ret;
+@@ -1271,18 +1304,6 @@ long do_splice_direct(struct file *in, loff_t *ppos, struct file *out,
+ static int splice_pipe_to_pipe(struct pipe_inode_info *ipipe,
+ 			       struct pipe_inode_info *opipe,
+ 			       size_t len, unsigned int flags);
+-/*
+- * After the inode slimming patch, i_pipe/i_bdev/i_cdev share the same
+- * location, so checking ->i_pipe is not enough to verify that this is a
+- * pipe.
+- */
+-static inline struct pipe_inode_info *pipe_info(struct inode *inode)
+-{
+-	if (S_ISFIFO(inode->i_mode))
+-		return inode->i_pipe;
+-
+-	return NULL;
+-}
+ 
+ /*
+  * Determine where to splice to/from.
+@@ -1887,9 +1908,9 @@ retry:
+ /*
+  * Link contents of ipipe to opipe.
+  */
+-static int link_pipe(struct pipe_inode_info *ipipe,
+-		     struct pipe_inode_info *opipe,
+-		     size_t len, unsigned int flags)
++int link_pipe(struct pipe_inode_info *ipipe,
++	      struct pipe_inode_info *opipe,
++	      size_t len, unsigned int flags)
+ {
+ 	struct pipe_buffer *ibuf, *obuf;
+ 	int ret = 0, i = 0, nbuf;
+diff --git a/include/linux/splice.h b/include/linux/splice.h
+index 18e7c7c..431662c 100644
+--- a/include/linux/splice.h
++++ b/include/linux/splice.h
+@@ -82,4 +82,13 @@ extern ssize_t splice_to_pipe(struct pipe_inode_info *,
+ extern ssize_t splice_direct_to_actor(struct file *, struct splice_desc *,
+ 				      splice_direct_actor *);
+ 
++extern int link_pipe(struct pipe_inode_info *ipipe,
++		     struct pipe_inode_info *opipe,
++		     size_t len, unsigned int flags);
++extern long do_splice_to(struct file *in, loff_t *ppos,
++			 struct pipe_inode_info *pipe, size_t len,
++			 unsigned int flags);
++extern long do_splice_from(struct pipe_inode_info *pipe, struct file *out,
++			   loff_t *ppos, size_t len, unsigned int flags);
++
+ #endif
 -- 
 1.6.3.3
