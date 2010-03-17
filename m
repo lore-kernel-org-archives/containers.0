@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 62/96] c/r: add CKPT_COPY() macro
-Date: Wed, 17 Mar 2010 12:08:50 -0400
-Message-ID: <1268842164-5590-63-git-send-email-orenl__43780.9529401877$1268850535$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 44/96] c/r: add generic '->checkpoint' f_op to ext
+	fses
+Date: Wed, 17 Mar 2010 12:08:32 -0400
+Message-ID: <1268842164-5590-45-git-send-email-orenl__44039.3345932991$1268850545$gmane$org@cs.columbia.edu>
 References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-2-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-3-git-send-email-orenl@cs.columbia.edu>
@@ -46,29 +47,11 @@ References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-42-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-43-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-44-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-45-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-46-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-47-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-48-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-49-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-50-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-51-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-52-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-53-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-54-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-55-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-56-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-57-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-58-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-59-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-60-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-61-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-62-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268842164-5590-62-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1268842164-5590-44-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -79,77 +62,119 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-As suggested by Dave[1], this provides us a way to make the copy-in and
-copy-out processes symmetric.  CKPT_COPY_ARRAY() provides us a way to do
-the same thing but for arrays.  It's not critical, but it helps us unify
-the checkpoint and restart paths for some things.
+This marks ext[234] as being checkpointable.  There will be many
+more to do this to, but this is a start.
 
-Changelog:
-    Mar 04:
-            . Removed semicolons
-            . Added build-time check for __must_be_array in CKPT_COPY_ARRAY
-    Feb 27:
-            . Changed CKPT_COPY() to use assignment, eliminating the need
-              for the CKPT_COPY_BIT() macro
-            . Add CKPT_COPY_ARRAY() macro to help copying register arrays,
-              etc
-            . Move the macro definitions inside the CR #ifdef
-    Feb 25:
-            . Changed WARN_ON() to BUILD_BUG_ON()
+Changelog[ckpt-v19-rc3]:
+  - Rebase to kernel 2.6.33 (ext2)
+Changelog[v1]:
+  - [Serge Hallyn] Use filemap_checkpoint() in ext4_file_vm_ops
 
-Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-1: https://lists.linux-foundation.org/pipermail/containers/2009-February/015821.html (all the way at the bottom)
 ---
- include/linux/checkpoint.h |   28 ++++++++++++++++++++++++++++
- 1 files changed, 28 insertions(+), 0 deletions(-)
+ fs/ext2/dir.c  |    1 +
+ fs/ext2/file.c |    2 ++
+ fs/ext3/dir.c  |    1 +
+ fs/ext3/file.c |    1 +
+ fs/ext4/dir.c  |    1 +
+ fs/ext4/file.c |    4 ++++
+ 6 files changed, 10 insertions(+), 0 deletions(-)
 
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 81e2150..9eeb71c 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -260,6 +260,34 @@ static inline int ckpt_validate_errno(int errno)
- 	return (errno >= 0) && (errno < MAX_ERRNO);
- }
+diff --git a/fs/ext2/dir.c b/fs/ext2/dir.c
+index 7516957..84c17f9 100644
+--- a/fs/ext2/dir.c
++++ b/fs/ext2/dir.c
+@@ -722,4 +722,5 @@ const struct file_operations ext2_dir_operations = {
+ 	.compat_ioctl	= ext2_compat_ioctl,
+ #endif
+ 	.fsync		= ext2_fsync,
++	.checkpoint	= generic_file_checkpoint,
+ };
+diff --git a/fs/ext2/file.c b/fs/ext2/file.c
+index 586e358..b38d7b9 100644
+--- a/fs/ext2/file.c
++++ b/fs/ext2/file.c
+@@ -75,6 +75,7 @@ const struct file_operations ext2_file_operations = {
+ 	.fsync		= ext2_fsync,
+ 	.splice_read	= generic_file_splice_read,
+ 	.splice_write	= generic_file_splice_write,
++	.checkpoint	= generic_file_checkpoint,
+ };
  
-+/* useful macros to copy fields and buffers to/from ckpt_hdr_xxx structures */
-+#define CKPT_CPT 1
-+#define CKPT_RST 2
-+
-+#define CKPT_COPY(op, SAVE, LIVE)				        \
-+	do {							\
-+		if (op == CKPT_CPT)				\
-+			SAVE = LIVE;				\
-+		else						\
-+			LIVE = SAVE;				\
-+	} while (0)
-+
-+/*
-+ * Copy @count items from @LIVE to @SAVE if op is CKPT_CPT (otherwise,
-+ * copy in the reverse direction)
-+ */
-+#define CKPT_COPY_ARRAY(op, SAVE, LIVE, count)				\
-+	do {								\
-+		(void)__must_be_array(SAVE);				\
-+		(void)__must_be_array(LIVE);				\
-+		BUILD_BUG_ON(sizeof(*SAVE) != sizeof(*LIVE));		\
-+		if (op == CKPT_CPT)					\
-+			memcpy(SAVE, LIVE, count * sizeof(*SAVE));	\
-+		else							\
-+			memcpy(LIVE, SAVE, count * sizeof(*SAVE));	\
-+	} while (0)
-+
-+
- /* debugging flags */
- #define CKPT_DBASE	0x1		/* anything */
- #define CKPT_DSYS	0x2		/* generic (system) */
+ #ifdef CONFIG_EXT2_FS_XIP
+@@ -90,6 +91,7 @@ const struct file_operations ext2_xip_file_operations = {
+ 	.open		= generic_file_open,
+ 	.release	= ext2_release_file,
+ 	.fsync		= ext2_fsync,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ #endif
+ 
+diff --git a/fs/ext3/dir.c b/fs/ext3/dir.c
+index 373fa90..65f98af 100644
+--- a/fs/ext3/dir.c
++++ b/fs/ext3/dir.c
+@@ -48,6 +48,7 @@ const struct file_operations ext3_dir_operations = {
+ #endif
+ 	.fsync		= ext3_sync_file,	/* BKL held */
+ 	.release	= ext3_release_dir,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ 
+ 
+diff --git a/fs/ext3/file.c b/fs/ext3/file.c
+index 388bbdf..bcd9b88 100644
+--- a/fs/ext3/file.c
++++ b/fs/ext3/file.c
+@@ -67,6 +67,7 @@ const struct file_operations ext3_file_operations = {
+ 	.fsync		= ext3_sync_file,
+ 	.splice_read	= generic_file_splice_read,
+ 	.splice_write	= generic_file_splice_write,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ 
+ const struct inode_operations ext3_file_inode_operations = {
+diff --git a/fs/ext4/dir.c b/fs/ext4/dir.c
+index 9dc9316..f69404c 100644
+--- a/fs/ext4/dir.c
++++ b/fs/ext4/dir.c
+@@ -48,6 +48,7 @@ const struct file_operations ext4_dir_operations = {
+ #endif
+ 	.fsync		= ext4_sync_file,
+ 	.release	= ext4_release_dir,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ 
+ 
+diff --git a/fs/ext4/file.c b/fs/ext4/file.c
+index 9630583..93a129b 100644
+--- a/fs/ext4/file.c
++++ b/fs/ext4/file.c
+@@ -84,6 +84,9 @@ ext4_file_write(struct kiocb *iocb, const struct iovec *iov,
+ static const struct vm_operations_struct ext4_file_vm_ops = {
+ 	.fault		= filemap_fault,
+ 	.page_mkwrite   = ext4_page_mkwrite,
++#ifdef CONFIG_CHECKPOINT
++	.checkpoint	= filemap_checkpoint,
++#endif
+ };
+ 
+ static int ext4_file_mmap(struct file *file, struct vm_area_struct *vma)
+@@ -146,6 +149,7 @@ const struct file_operations ext4_file_operations = {
+ 	.fsync		= ext4_sync_file,
+ 	.splice_read	= generic_file_splice_read,
+ 	.splice_write	= generic_file_splice_write,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ 
+ const struct inode_operations ext4_file_inode_operations = {
 -- 
 1.6.3.3
