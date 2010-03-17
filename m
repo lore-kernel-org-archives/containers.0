@@ -1,8 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 87/96] powerpc: provide APIs for validating and
-	updating DABR
-Date: Wed, 17 Mar 2010 12:09:15 -0400
-Message-ID: <1268842164-5590-88-git-send-email-orenl__5019.96580646864$1268850589$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 32/96] c/r: support for zombie processes
+Date: Wed, 17 Mar 2010 12:08:20 -0400
+Message-ID: <1268842164-5590-33-git-send-email-orenl__33647.9763653644$1268850597$gmane$org@cs.columbia.edu>
 References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-2-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-3-git-send-email-orenl@cs.columbia.edu>
@@ -35,66 +34,11 @@ References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-30-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-31-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-32-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-33-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-34-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-35-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-36-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-37-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-38-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-39-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-40-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-41-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-42-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-43-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-44-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-45-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-46-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-47-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-48-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-49-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-50-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-51-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-52-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-53-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-54-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-55-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-56-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-57-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-58-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-59-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-60-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-61-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-62-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-63-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-64-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-65-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-66-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-67-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-68-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-69-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-70-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-71-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-72-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-73-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-74-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-75-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-76-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-77-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-78-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-79-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-80-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-81-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-82-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-83-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-84-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-85-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-86-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-87-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268842164-5590-87-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1268842164-5590-32-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -105,188 +49,276 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+During checkpoint, a zombie processes need only save p->comm,
+p->state, p->exit_state, and p->exit_code.
 
-A checkpointed task image may specify a value for the DABR (Data
-Access Breakpoint Register).  The restart code needs to validate this
-value before making any changes to the current task.
+During restart, zombie processes are created like all other
+processes. They validate the saved exit_code restore p->comm
+and p->exit_code. Then they call do_exit() instead of waking
+up the next task in line.
 
-ptrace_set_debugreg encapsulates the bounds checking and platform
-dependencies of programming the DABR.  Split this into "validate"
-(debugreg_valid) and "update" (debugreg_update) functions, and make
-them available for use outside of the ptrace code.
+But before, they place the @ctx in p->checkpoint_ctx, so that
+only at exit time they will wake up the next task in line,
+and drop the reference to the @ctx.
 
-Also ptrace_set_debugreg has extern linkage, but no users outside of
-ptrace.c.  Make it static.
+This provides the guarantee that when the coordinator's wait
+completes, all normal tasks completed their restart, and all
+zombie tasks are already zombified (as opposed to perhap only
+becoming a zombie).
 
-Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Changelog[v19-rc1]:
+  - Simplify logic of tracking restarting tasks
+Changelog[v18]:
+  - Fix leak of ckpt_ctx when restoring zombie tasks
+  - Add a few more ckpt_write_err()s
+Changelog[v17]:
+  - Validate t->exit_signal for both threads and leader
+  - Skip zombies in most of may_checkpoint_task()
+  - Save/restore t->pdeath_signal
+  - Validate ->exit_signal and ->pdeath_signal
+
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- arch/powerpc/include/asm/ptrace.h |    7 +++
- arch/powerpc/kernel/ptrace.c      |   88 +++++++++++++++++++++++++------------
- 2 files changed, 66 insertions(+), 29 deletions(-)
+ checkpoint/checkpoint.c        |   10 ++++--
+ checkpoint/process.c           |   69 +++++++++++++++++++++++++++++++++++-----
+ checkpoint/restart.c           |   22 +++++++++++--
+ include/linux/checkpoint.h     |    1 +
+ include/linux/checkpoint_hdr.h |    1 +
+ 5 files changed, 89 insertions(+), 14 deletions(-)
 
-diff --git a/arch/powerpc/include/asm/ptrace.h b/arch/powerpc/include/asm/ptrace.h
-index cbd759e..df5825b 100644
---- a/arch/powerpc/include/asm/ptrace.h
-+++ b/arch/powerpc/include/asm/ptrace.h
-@@ -81,6 +81,8 @@ struct pt_regs {
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index 1e38ae3..ea1494d 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -218,7 +218,7 @@ static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
  
- #ifndef __ASSEMBLY__
+ 	ckpt_debug("check %d\n", task_pid_nr_ns(t, ctx->root_nsproxy->pid_ns));
  
-+#include <linux/types.h>
-+
- #define instruction_pointer(regs) ((regs)->nip)
- #define user_stack_pointer(regs) ((regs)->gpr[1])
- #define regs_return_value(regs) ((regs)->gpr[3])
-@@ -142,6 +144,11 @@ extern void user_disable_single_step(struct task_struct *);
- 
- #define ARCH_HAS_USER_SINGLE_STEP_INFO
- 
-+/* for reprogramming DABR/DAC during restart of a checkpointed task */
-+extern bool debugreg_valid(unsigned long val, unsigned int index);
-+extern void debugreg_update(struct task_struct *task, unsigned long val,
-+			    unsigned int index);
-+
- #endif /* __ASSEMBLY__ */
- 
- #endif /* __KERNEL__ */
-diff --git a/arch/powerpc/kernel/ptrace.c b/arch/powerpc/kernel/ptrace.c
-index ef14988..913ec8f 100644
---- a/arch/powerpc/kernel/ptrace.c
-+++ b/arch/powerpc/kernel/ptrace.c
-@@ -755,22 +755,25 @@ void user_disable_single_step(struct task_struct *task)
- 	clear_tsk_thread_flag(task, TIF_SINGLESTEP);
- }
- 
--int ptrace_set_debugreg(struct task_struct *task, unsigned long addr,
--			       unsigned long data)
-+/**
-+ * debugreg_valid() - validate the value to be written to a debug register
-+ * @val:	The prospective contents of the register.
-+ * @index:	Must be zero.
-+ *
-+ * Returns true if @val is an acceptable value for the register indicated by
-+ * @index, false otherwise.
-+ */
-+bool debugreg_valid(unsigned long val, unsigned int index)
- {
--	/* For ppc64 we support one DABR and no IABR's at the moment (ppc64).
--	 *  For embedded processors we support one DAC and no IAC's at the
--	 *  moment.
--	 */
--	if (addr > 0)
--		return -EINVAL;
-+	/* We support only one debug register for now */
-+	if (index != 0)
-+		return false;
- 
- 	/* The bottom 3 bits in dabr are flags */
--	if ((data & ~0x7UL) >= TASK_SIZE)
--		return -EIO;
-+	if ((val & ~0x7UL) >= TASK_SIZE)
-+		return false;
- 
- #ifndef CONFIG_BOOKE
--
- 	/* For processors using DABR (i.e. 970), the bottom 3 bits are flags.
- 	 *  It was assumed, on previous implementations, that 3 bits were
- 	 *  passed together with the data address, fitting the design of the
-@@ -784,47 +787,74 @@ int ptrace_set_debugreg(struct task_struct *task, unsigned long addr,
- 	 */
- 
- 	/* Ensure breakpoint translation bit is set */
--	if (data && !(data & DABR_TRANSLATION))
--		return -EIO;
--
--	/* Move contents to the DABR register */
--	task->thread.dabr = data;
--
--#endif
--#if defined(CONFIG_BOOKE)
--
-+	if (val && !(val & DABR_TRANSLATION))
-+		return false;
-+#else
- 	/* As described above, it was assumed 3 bits were passed with the data
- 	 *  address, but we will assume only the mode bits will be passed
- 	 *  as to not cause alignment restrictions for DAC-based processors.
- 	 */
- 
-+	/* Read or Write bits must be set */
-+	if (!(val & 0x3UL))
-+		return -EINVAL;
-+#endif
-+	return true;
-+}
-+
-+/**
-+ * debugreg_update() - update a debug register associated with a task
-+ * @task:	The task whose register state is to be modified.
-+ * @val:	The value to be written to the debug register.
-+ * @index:	Specifies the debug register.  Currently unused.
-+ *
-+ * Set a task's DABR/DAC to @val, which should be validated with
-+ * debugreg_valid() beforehand.
-+ */
-+void debugreg_update(struct task_struct *task, unsigned long val,
-+		     unsigned int index)
-+{
-+#ifndef CONFIG_BOOKE
-+	task->thread.dabr = val;
-+#else
- 	/* DAC's hold the whole address without any mode flags */
--	task->thread.dabr = data & ~0x3UL;
-+	task->thread.dabr = val & ~0x3UL;
- 
- 	if (task->thread.dabr == 0) {
- 		task->thread.dbcr0 &= ~(DBSR_DAC1R | DBSR_DAC1W | DBCR0_IDM);
- 		task->thread.regs->msr &= ~MSR_DE;
--		return 0;
+-	if (t->state == TASK_DEAD) {
++	if (t->exit_state == EXIT_DEAD) {
+ 		_ckpt_err(ctx, -EBUSY, "%(T)Task state EXIT_DEAD\n");
+ 		return -EBUSY;
+ 	}
+@@ -228,6 +228,10 @@ static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
+ 		return -EPERM;
  	}
  
--	/* Read or Write bits must be set */
--
--	if (!(data & 0x3UL))
--		return -EINVAL;
--
- 	/* Set the Internal Debugging flag (IDM bit 1) for the DBCR0
- 	   register */
- 	task->thread.dbcr0 = DBCR0_IDM;
++	/* zombies are cool (and also don't have nsproxy, below...) */
++	if (t->exit_state)
++		return 0;
++
+ 	/* verify that all tasks belongs to same freezer cgroup */
+ 	if (t != current && !in_same_cgroup_freezer(t, ctx->root_freezer)) {
+ 		_ckpt_err(ctx, -EBUSY, "%(T)Not frozen or wrong cgroup\n");
+@@ -244,8 +248,8 @@ static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	 * FIX: for now, disallow siblings of container init created
+ 	 * via CLONE_PARENT (unclear if they will remain possible)
+ 	 */
+-	if (ctx->root_init && t != root && t->tgid != root->tgid &&
+-	    t->real_parent == root->real_parent) {
++	if (ctx->root_init && t != root &&
++	    t->real_parent == root->real_parent && t->tgid != root->tgid) {
+ 		_ckpt_err(ctx, -EINVAL, "%(T)Task is sibling of root\n");
+ 		return -EINVAL;
+ 	}
+diff --git a/checkpoint/process.c b/checkpoint/process.c
+index 9f2059c..c47dea1 100644
+--- a/checkpoint/process.c
++++ b/checkpoint/process.c
+@@ -35,12 +35,18 @@ static int checkpoint_task_struct(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	h->state = t->state;
+ 	h->exit_state = t->exit_state;
+ 	h->exit_code = t->exit_code;
+-	h->exit_signal = t->exit_signal;
  
- 	/* Check for write and read flags and set DBCR0
- 	   accordingly */
--	if (data & 0x1UL)
-+	if (val & 0x1UL)
- 		task->thread.dbcr0 |= DBSR_DAC1R;
--	if (data & 0x2UL)
-+	if (val & 0x2UL)
- 		task->thread.dbcr0 |= DBSR_DAC1W;
+-	h->set_child_tid = (unsigned long) t->set_child_tid;
+-	h->clear_child_tid = (unsigned long) t->clear_child_tid;
++	if (t->exit_state) {
++		/* zombie - skip remaining state */
++		BUG_ON(t->exit_state != EXIT_ZOMBIE);
++	} else {
++		/* FIXME: save remaining relevant task_struct fields */
++		h->exit_signal = t->exit_signal;
++		h->pdeath_signal = t->pdeath_signal;
  
- 	task->thread.regs->msr |= MSR_DE;
- #endif
+-	/* FIXME: save remaining relevant task_struct fields */
++		h->set_child_tid = (unsigned long) t->set_child_tid;
++		h->clear_child_tid = (unsigned long) t->clear_child_tid;
++	}
+ 
+ 	ret = ckpt_write_obj(ctx, &h->h);
+ 	ckpt_hdr_put(ctx, h);
+@@ -171,6 +177,11 @@ int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	ckpt_debug("task %d\n", ret);
+ 	if (ret < 0)
+ 		goto out;
++
++	/* zombie - we're done here */
++	if (t->exit_state)
++		return 0;
++
+ 	ret = checkpoint_thread(ctx, t);
+ 	ckpt_debug("thread %d\n", ret);
+ 	if (ret < 0)
+@@ -190,6 +201,19 @@ int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
+  * Restart
+  */
+ 
++static inline int valid_exit_code(int exit_code)
++{
++	if (exit_code >= 0x10000)
++		return 0;
++	if (exit_code & 0xff) {
++		if (exit_code & ~0xff)
++			return 0;
++		if (!valid_signal(exit_code & 0xff))
++			return 0;
++	}
++	return 1;
 +}
 +
-+static int ptrace_set_debugreg(struct task_struct *task, unsigned long addr,
-+			       unsigned long data)
-+{
-+	/* For ppc64 we support one DABR and no IABR's at the moment (ppc64).
-+	 * For embedded processors we support one DAC and no IAC's at the
-+	 * moment.
-+	 */
-+	if (addr > 0)
-+		return -EINVAL;
-+
-+	if (!debugreg_valid(data, 0))
-+		return -EIO;
-+
-+	debugreg_update(task, data, 0);
-+
- 	return 0;
- }
+ /* read the task_struct into the current task */
+ static int restore_task_struct(struct ckpt_ctx *ctx)
+ {
+@@ -201,15 +225,39 @@ static int restore_task_struct(struct ckpt_ctx *ctx)
+ 	if (IS_ERR(h))
+ 		return PTR_ERR(h);
  
++	ret = -EINVAL;
++	if (h->state == TASK_DEAD) {
++		if (h->exit_state != EXIT_ZOMBIE)
++			goto out;
++		if (!valid_exit_code(h->exit_code))
++			goto out;
++		t->exit_code = h->exit_code;
++	} else {
++		if (h->exit_code)
++			goto out;
++		if ((thread_group_leader(t) && !valid_signal(h->exit_signal)) ||
++		    (!thread_group_leader(t) && h->exit_signal != -1))
++			goto out;
++		if (!valid_signal(h->pdeath_signal))
++			goto out;
++
++		/* FIXME: restore remaining relevant task_struct fields */
++		t->exit_signal = h->exit_signal;
++		t->pdeath_signal = h->pdeath_signal;
++
++		t->set_child_tid =
++			(int __user *) (unsigned long) h->set_child_tid;
++		t->clear_child_tid =
++			(int __user *) (unsigned long) h->clear_child_tid;
++	}
++
+ 	memset(t->comm, 0, TASK_COMM_LEN);
+ 	ret = _ckpt_read_string(ctx, t->comm, TASK_COMM_LEN);
+ 	if (ret < 0)
+ 		goto out;
+ 
+-	t->set_child_tid = (int __user *) (unsigned long) h->set_child_tid;
+-	t->clear_child_tid = (int __user *) (unsigned long) h->clear_child_tid;
+-
+-	/* FIXME: restore remaining relevant task_struct fields */
++	/* return 1 for zombie, 0 otherwise */
++	ret = (h->state == TASK_DEAD ? 1 : 0);
+  out:
+ 	ckpt_hdr_put(ctx, h);
+ 	return ret;
+@@ -329,6 +377,11 @@ int restore_task(struct ckpt_ctx *ctx)
+ 	ckpt_debug("task %d\n", ret);
+ 	if (ret < 0)
+ 		goto out;
++
++	/* zombie - we're done here */
++	if (ret)
++		goto out;
++
+ 	ret = restore_thread(ctx);
+ 	ckpt_debug("thread %d\n", ret);
+ 	if (ret < 0)
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index 59c4bd8..e2ed358 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -852,7 +852,7 @@ static int wait_sync_threads(void)
+ static int do_restore_task(void)
+ {
+ 	struct ckpt_ctx *ctx;
+-	int ret;
++	int zombie, ret;
+ 
+ 	ctx = wait_checkpoint_ctx();
+ 	if (IS_ERR(ctx))
+@@ -862,6 +862,8 @@ static int do_restore_task(void)
+ 	if (ret < 0)
+ 		goto out;
+ 
++	current->flags |= PF_RESTARTING;
++
+ 	ret = wait_sync_threads();
+ 	if (ret < 0)
+ 		goto out;
+@@ -873,9 +875,22 @@ static int do_restore_task(void)
+ 
+ 	restore_debug_running(ctx);
+ 
+-	ret = restore_task(ctx);
+-	if (ret < 0)
++	zombie = restore_task(ctx);
++	if (zombie < 0) {
++		ret = zombie;
+ 		goto out;
++	}
++
++	/*
++	 * zombie: we're done here; do_exit() will notice the @ctx on
++	 * our current->checkpoint_ctx (and our PF_RESTARTING) - it
++	 * will call restore_activate_next() and release the @ctx.
++	 */
++	if (zombie) {
++		restore_debug_exit(ctx);
++		ckpt_ctx_put(ctx);
++		do_exit(current->exit_code);
++	}
+ 
+ 	restore_task_done(ctx);
+ 	ret = wait_task_sync(ctx);
+@@ -884,6 +899,7 @@ static int do_restore_task(void)
+ 	if (ret < 0)
+ 		ckpt_err(ctx, ret, "task restart failed\n");
+ 
++	current->flags &= ~PF_RESTARTING;
+ 	clear_task_ctx(current);
+ 	ckpt_ctx_put(ctx);
+ 	return ret;
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index d1eb722..61581f6 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -113,6 +113,7 @@ extern long do_checkpoint(struct ckpt_ctx *ctx, pid_t pid);
+ extern long do_restart(struct ckpt_ctx *ctx, pid_t pid);
+ 
+ /* task */
++extern int ckpt_activate_next(struct ckpt_ctx *ctx);
+ extern int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t);
+ extern int restore_task(struct ckpt_ctx *ctx);
+ 
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 083f5d3..f85b673 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -160,6 +160,7 @@ struct ckpt_hdr_task {
+ 	__u32 exit_state;
+ 	__u32 exit_code;
+ 	__u32 exit_signal;
++	__u32 pdeath_signal;
+ 
+ 	__u64 set_child_tid;
+ 	__u64 clear_child_tid;
 -- 
 1.6.3.3
