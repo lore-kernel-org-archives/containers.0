@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 47/96] c/r: export shmem_getpage() to support shared
-	memory
-Date: Wed, 17 Mar 2010 12:08:35 -0400
-Message-ID: <1268842164-5590-48-git-send-email-orenl__31211.0428153121$1268848589$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 37/96] c/r: introduce new 'file_operations':
+	->checkpoint, ->collect()
+Date: Wed, 17 Mar 2010 12:08:25 -0400
+Message-ID: <1268842164-5590-38-git-send-email-orenl__34166.9178255417$1268848703$gmane$org@cs.columbia.edu>
 References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-2-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-3-git-send-email-orenl@cs.columbia.edu>
@@ -40,21 +40,11 @@ References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-35-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-36-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-37-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-38-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-39-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-40-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-41-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-42-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-43-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-44-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-45-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-46-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-47-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268842164-5590-47-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1268842164-5590-37-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -68,82 +58,118 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Export functionality to retrieve specific pages from shared memory
-given an inode in shmem-fs; this will be used in the next two patches
-to provide support for c/r of shared memory.
+While we assume all normal files and directories can be checkpointed,
+there are, as usual in the VFS, specialized places that will always
+need an ability to override these defaults. Although we could do this
+completely in the checkpoint code, that would bitrot quickly.
 
-mm/shmem.c:
-- shmem_getpage() and 'enum sgp_type' moved to linux/mm.h
+This adds a new 'file_operations' function for checkpointing a file.
+It is assumed that there should be a dirt-simple way to make something
+(un)checkpointable that fits in with current code.
+
+As you can see in the ext[234] patches down the road, all that we have
+to do to make something simple be supported is add a single "generic"
+f_op entry.
+
+Also adds a new 'file_operations' function for 'collecting' a file for
+leak-detection during full-container checkpoint. This is useful for
+those files that hold references to other "collectable" objects. Two
+examples are pty files that point to corresponding tty objects, and
+eventpoll files that refer to the files they are monitoring.
+
+Finally, this patch introduces vfs_fcntl() so that it can be called
+from restart (see patch adding restart of files).
+
+Changelog[v17]
+  - Introduce 'collect' method
+Changelog[v17]
+  - Forward-declare 'ckpt_ctx' et-al, don't use checkpoint_types.h
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/mm.h |   11 +++++++++++
- mm/shmem.c         |   15 ++-------------
- 2 files changed, 13 insertions(+), 13 deletions(-)
+ fs/fcntl.c         |   21 +++++++++++++--------
+ include/linux/fs.h |    7 +++++++
+ 2 files changed, 20 insertions(+), 8 deletions(-)
 
-diff --git a/include/linux/mm.h b/include/linux/mm.h
-index bdeb0b5..b37a9f1 100644
---- a/include/linux/mm.h
-+++ b/include/linux/mm.h
-@@ -337,6 +337,17 @@ void put_pages_list(struct list_head *pages);
- 
- void split_page(struct page *page, unsigned int order);
- 
-+/* Flag allocation requirements to shmem_getpage and shmem_swp_alloc */
-+enum sgp_type {
-+	SGP_READ,	/* don't exceed i_size, don't allocate page */
-+	SGP_CACHE,	/* don't exceed i_size, may allocate page */
-+	SGP_DIRTY,	/* like SGP_CACHE, but set new page dirty */
-+	SGP_WRITE,	/* may exceed i_size, may allocate page */
-+};
-+
-+extern int shmem_getpage(struct inode *inode, unsigned long idx,
-+			 struct page **pagep, enum sgp_type sgp, int *type);
-+
- /*
-  * Compound pages have a destructor function.  Provide a
-  * prototype for that function and accessor functions.
-diff --git a/mm/shmem.c b/mm/shmem.c
-index eef4ebe..d93c394 100644
---- a/mm/shmem.c
-+++ b/mm/shmem.c
-@@ -98,14 +98,6 @@ static struct vfsmount *shm_mnt;
- /* Pretend that each entry is of this size in directory's i_size */
- #define BOGO_DIRENT_SIZE 20
- 
--/* Flag allocation requirements to shmem_getpage and shmem_swp_alloc */
--enum sgp_type {
--	SGP_READ,	/* don't exceed i_size, don't allocate page */
--	SGP_CACHE,	/* don't exceed i_size, may allocate page */
--	SGP_DIRTY,	/* like SGP_CACHE, but set new page dirty */
--	SGP_WRITE,	/* may exceed i_size, may allocate page */
--};
--
- #ifdef CONFIG_TMPFS
- static unsigned long shmem_default_max_blocks(void)
- {
-@@ -118,9 +110,6 @@ static unsigned long shmem_default_max_inodes(void)
+diff --git a/fs/fcntl.c b/fs/fcntl.c
+index 97e01dc..e1f02ca 100644
+--- a/fs/fcntl.c
++++ b/fs/fcntl.c
+@@ -418,6 +418,18 @@ static long do_fcntl(int fd, unsigned int cmd, unsigned long arg,
+ 	return err;
  }
- #endif
  
--static int shmem_getpage(struct inode *inode, unsigned long idx,
--			 struct page **pagep, enum sgp_type sgp, int *type);
++int vfs_fcntl(int fd, unsigned int cmd, unsigned long arg, struct file *filp)
++{
++	int err;
++
++	err = security_file_fcntl(filp, cmd, arg);
++	if (err)
++		goto out;
++	err = do_fcntl(fd, cmd, arg, filp);
++ out:
++	return err;
++}
++
+ SYSCALL_DEFINE3(fcntl, unsigned int, fd, unsigned int, cmd, unsigned long, arg)
+ {	
+ 	struct file *filp;
+@@ -427,14 +439,7 @@ SYSCALL_DEFINE3(fcntl, unsigned int, fd, unsigned int, cmd, unsigned long, arg)
+ 	if (!filp)
+ 		goto out;
+ 
+-	err = security_file_fcntl(filp, cmd, arg);
+-	if (err) {
+-		fput(filp);
+-		return err;
+-	}
 -
- static inline struct page *shmem_dir_alloc(gfp_t gfp_mask)
- {
- 	/*
-@@ -1213,8 +1202,8 @@ static inline struct mempolicy *shmem_get_sbmpol(struct shmem_sb_info *sbinfo)
-  * vm. If we swap it in we mark it dirty since we also free the swap
-  * entry since a page cannot live in both the swap and page cache
-  */
--static int shmem_getpage(struct inode *inode, unsigned long idx,
--			struct page **pagep, enum sgp_type sgp, int *type)
-+int shmem_getpage(struct inode *inode, unsigned long idx,
-+		  struct page **pagep, enum sgp_type sgp, int *type)
- {
- 	struct address_space *mapping = inode->i_mapping;
- 	struct shmem_inode_info *info = SHMEM_I(inode);
+-	err = do_fcntl(fd, cmd, arg, filp);
+-
++	err = vfs_fcntl(fd, cmd, arg, filp);
+  	fput(filp);
+ out:
+ 	return err;
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 6c08df2..65ebec5 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -394,6 +394,7 @@ struct kstatfs;
+ struct vm_area_struct;
+ struct vfsmount;
+ struct cred;
++struct ckpt_ctx;
+ 
+ extern void __init inode_init(void);
+ extern void __init inode_init_early(void);
+@@ -1093,6 +1094,8 @@ struct file_lock {
+ 
+ #include <linux/fcntl.h>
+ 
++extern int vfs_fcntl(int fd, unsigned cmd, unsigned long arg, struct file *fp);
++
+ extern void send_sigio(struct fown_struct *fown, int fd, int band);
+ 
+ #ifdef CONFIG_FILE_LOCKING
+@@ -1504,6 +1507,8 @@ struct file_operations {
+ 	ssize_t (*splice_write)(struct pipe_inode_info *, struct file *, loff_t *, size_t, unsigned int);
+ 	ssize_t (*splice_read)(struct file *, loff_t *, struct pipe_inode_info *, size_t, unsigned int);
+ 	int (*setlease)(struct file *, long, struct file_lock **);
++	int (*checkpoint)(struct ckpt_ctx *, struct file *);
++	int (*collect)(struct ckpt_ctx *, struct file *);
+ };
+ 
+ struct inode_operations {
+@@ -2313,6 +2318,8 @@ void inode_sub_bytes(struct inode *inode, loff_t bytes);
+ loff_t inode_get_bytes(struct inode *inode);
+ void inode_set_bytes(struct inode *inode, loff_t bytes);
+ 
++#define generic_file_checkpoint NULL
++
+ extern int vfs_readdir(struct file *, filldir_t, void *);
+ 
+ extern int vfs_stat(char __user *, struct kstat *);
 -- 
 1.6.3.3
