@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 07/96] eclone (7/11): Define do_fork_with_pids()
-Date: Wed, 17 Mar 2010 12:07:55 -0400
-Message-ID: <1268842164-5590-8-git-send-email-orenl__23823.6794983552$1268842703$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 12/96] c/r: extend arch_setup_additional_pages()
+Date: Wed, 17 Mar 2010 12:08:00 -0400
+Message-ID: <1268842164-5590-13-git-send-email-orenl__40935.2023656995$1268842962$gmane$org@cs.columbia.edu>
 References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-2-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-3-git-send-email-orenl@cs.columbia.edu>
@@ -9,11 +9,16 @@ References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-5-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-6-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-7-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-8-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-9-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-10-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-11-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-12-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268842164-5590-7-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1268842164-5590-12-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,100 +29,259 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-do_fork_with_pids() is same as do_fork(), except that it takes an
-additional, 'pid_set', parameter. This parameter, currently unused,
-specifies the set of target pids of the process in each of its pid
-namespaces.
+Add "start" argument, to request to map vDSO to a specific place,
+and fail the operation if not.
 
-Changelog[v7]:
-	- Drop 'struct pid_set' object and pass in 'pid_t *target_pids'
-	  instead of 'struct pid_set *'.
+This is useful for restart(2) to ensure that memory layout is restore
+exactly as needed.
 
-Changelog[v6]:
-	- (Nathan Lynch, Arnd Bergmann, H. Peter Anvin, Linus Torvalds)
-	  Change 'pid_set.pids' to a 'pid_t pids[]' so size of 'struct pid_set'
-	  is constant across architectures.
-	- (Nathan Lynch) Change 'pid_set.num_pids' to 'unsigned int'.
-
-Changelog[v4]:
-	- Rename 'struct target_pid_set' to 'struct pid_set' since it may
-	  be useful in other contexts.
-
-Changelog[v3]:
-	- Fix "long-line" warning from checkpatch.pl
-
+Changelog[v19]:
+  - [serge hallyn] Fix potential use-before-set ret
 Changelog[v2]:
-	- To facilitate moving architecture-inpdendent code to kernel/fork.c
-	  pass in 'struct target_pid_set __user *' to do_fork_with_pids()
-	  rather than 'pid_t *' (next patch moves the arch-independent
-	  code to kernel/fork.c)
+  - [ntl] powerpc: vdso build fix (ckpt-v17)
 
-Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Reviewed-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- include/linux/sched.h |    3 +++
- kernel/fork.c         |   17 +++++++++++++++--
- 2 files changed, 18 insertions(+), 2 deletions(-)
+ arch/powerpc/include/asm/elf.h     |    1 +
+ arch/powerpc/kernel/vdso.c         |   13 ++++++++++++-
+ arch/s390/include/asm/elf.h        |    2 +-
+ arch/s390/kernel/vdso.c            |   13 ++++++++++++-
+ arch/sh/include/asm/elf.h          |    1 +
+ arch/sh/kernel/vsyscall/vsyscall.c |    2 +-
+ arch/x86/include/asm/elf.h         |    3 ++-
+ arch/x86/vdso/vdso32-setup.c       |    9 +++++++--
+ arch/x86/vdso/vma.c                |   11 ++++++++---
+ fs/binfmt_elf.c                    |    2 +-
+ 10 files changed, 46 insertions(+), 11 deletions(-)
 
-diff --git a/include/linux/sched.h b/include/linux/sched.h
-index d57eab8..4f079f7 100644
---- a/include/linux/sched.h
-+++ b/include/linux/sched.h
-@@ -2189,6 +2189,9 @@ extern int disallow_signal(int);
+diff --git a/arch/powerpc/include/asm/elf.h b/arch/powerpc/include/asm/elf.h
+index c376eda..0b06255 100644
+--- a/arch/powerpc/include/asm/elf.h
++++ b/arch/powerpc/include/asm/elf.h
+@@ -266,6 +266,7 @@ extern int ucache_bsize;
+ #define ARCH_HAS_SETUP_ADDITIONAL_PAGES
+ struct linux_binprm;
+ extern int arch_setup_additional_pages(struct linux_binprm *bprm,
++				       unsigned long start,
+ 				       int uses_interp);
+ #define VDSO_AUX_ENT(a,b) NEW_AUX_ENT(a,b);
  
- extern int do_execve(char *, char __user * __user *, char __user * __user *, struct pt_regs *);
- extern long do_fork(unsigned long, unsigned long, struct pt_regs *, unsigned long, int __user *, int __user *);
-+extern long do_fork_with_pids(unsigned long, unsigned long, struct pt_regs *,
-+				unsigned long, int __user *, int __user *,
-+				unsigned int, pid_t __user *);
- struct task_struct *fork_idle(int);
- 
- extern void set_task_comm(struct task_struct *tsk, char *from);
-diff --git a/kernel/fork.c b/kernel/fork.c
-index f95cbd2..fb92128 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -1375,12 +1375,14 @@ struct task_struct * __cpuinit fork_idle(int cpu)
-  * It copies the process, and if successful kick-starts
-  * it and waits for it to finish using the VM if required.
+diff --git a/arch/powerpc/kernel/vdso.c b/arch/powerpc/kernel/vdso.c
+index d84d192..74210ab 100644
+--- a/arch/powerpc/kernel/vdso.c
++++ b/arch/powerpc/kernel/vdso.c
+@@ -188,7 +188,8 @@ static void dump_vdso_pages(struct vm_area_struct * vma)
+  * This is called from binfmt_elf, we create the special vma for the
+  * vDSO and insert it into the mm struct tree
   */
--long do_fork(unsigned long clone_flags,
-+long do_fork_with_pids(unsigned long clone_flags,
- 	      unsigned long stack_start,
- 	      struct pt_regs *regs,
- 	      unsigned long stack_size,
- 	      int __user *parent_tidptr,
--	      int __user *child_tidptr)
-+	      int __user *child_tidptr,
-+	      unsigned int num_pids,
-+	      pid_t __user *upids)
+-int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
++int arch_setup_additional_pages(struct linux_binprm *bprm,
++				unsigned long start, int uses_interp)
  {
- 	struct task_struct *p;
- 	int trace = 0;
-@@ -1483,6 +1485,17 @@ long do_fork(unsigned long clone_flags,
- 	return nr;
+ 	struct mm_struct *mm = current->mm;
+ 	struct page **vdso_pagelist;
+@@ -220,6 +221,10 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
+ 	vdso_base = VDSO32_MBASE;
+ #endif
+ 
++	/* in case restart(2) mandates a specific location */
++	if (start)
++		vdso_base = start;
++
+ 	current->mm->context.vdso_base = 0;
+ 
+ 	/* vDSO has a problem and was disabled, just don't "enable" it for the
+@@ -249,6 +254,12 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
+ 	/* Add required alignment. */
+ 	vdso_base = ALIGN(vdso_base, VDSO_ALIGNMENT);
+ 
++	/* for restart(2), double check that we got we asked for */
++	if (start && vdso_base != start) {
++		rc = -EBUSY;
++		goto fail_mmapsem;
++	}
++
+ 	/*
+ 	 * Put vDSO base into mm struct. We need to do this before calling
+ 	 * install_special_mapping or the perf counter mmap tracking code
+diff --git a/arch/s390/include/asm/elf.h b/arch/s390/include/asm/elf.h
+index 354d426..5081938 100644
+--- a/arch/s390/include/asm/elf.h
++++ b/arch/s390/include/asm/elf.h
+@@ -216,6 +216,6 @@ do {									    \
+ struct linux_binprm;
+ 
+ #define ARCH_HAS_SETUP_ADDITIONAL_PAGES 1
+-int arch_setup_additional_pages(struct linux_binprm *, int);
++int arch_setup_additional_pages(struct linux_binprm *, unsigned long, int);
+ 
+ #endif
+diff --git a/arch/s390/kernel/vdso.c b/arch/s390/kernel/vdso.c
+index 5f99e66..706c16a 100644
+--- a/arch/s390/kernel/vdso.c
++++ b/arch/s390/kernel/vdso.c
+@@ -194,7 +194,8 @@ static void vdso_init_cr5(void)
+  * This is called from binfmt_elf, we create the special vma for the
+  * vDSO and insert it into the mm struct tree
+  */
+-int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
++int arch_setup_additional_pages(struct linux_binprm *bprm,
++				unsigned long start, int uses_interp)
+ {
+ 	struct mm_struct *mm = current->mm;
+ 	struct page **vdso_pagelist;
+@@ -225,6 +226,10 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
+ 	vdso_pages = vdso32_pages;
+ #endif
+ 
++	/* in case restart(2) mandates a specific location */
++	if (start)
++		vdso_base = start;
++
+ 	/*
+ 	 * vDSO has a problem and was disabled, just don't "enable" it for
+ 	 * the process
+@@ -247,6 +252,12 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
+ 		goto out_up;
+ 	}
+ 
++	/* for restart(2), double check that we got we asked for */
++	if (start && vdso_base != start) {
++		rc = -EINVAL;
++		goto out_up;
++	}
++
+ 	/*
+ 	 * Put vDSO base into mm struct. We need to do this before calling
+ 	 * install_special_mapping or the perf counter mmap tracking code
+diff --git a/arch/sh/include/asm/elf.h b/arch/sh/include/asm/elf.h
+index ac04255..036ea4b 100644
+--- a/arch/sh/include/asm/elf.h
++++ b/arch/sh/include/asm/elf.h
+@@ -201,6 +201,7 @@ do {									\
+ #define ARCH_HAS_SETUP_ADDITIONAL_PAGES
+ struct linux_binprm;
+ extern int arch_setup_additional_pages(struct linux_binprm *bprm,
++				       unsigned long start,
+ 				       int uses_interp);
+ 
+ extern unsigned int vdso_enabled;
+diff --git a/arch/sh/kernel/vsyscall/vsyscall.c b/arch/sh/kernel/vsyscall/vsyscall.c
+index 3f7e415..64c70e5 100644
+--- a/arch/sh/kernel/vsyscall/vsyscall.c
++++ b/arch/sh/kernel/vsyscall/vsyscall.c
+@@ -59,7 +59,7 @@ int __init vsyscall_init(void)
  }
  
-+long do_fork(unsigned long clone_flags,
-+	      unsigned long stack_start,
-+	      struct pt_regs *regs,
-+	      unsigned long stack_size,
-+	      int __user *parent_tidptr,
-+	      int __user *child_tidptr)
-+{
-+	return do_fork_with_pids(clone_flags, stack_start, regs, stack_size,
-+			parent_tidptr, child_tidptr, 0, NULL);
-+}
+ /* Setup a VMA at program startup for the vsyscall page */
+-int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
++int arch_setup_additional_pages(struct linux_binprm *bprm, unsigned long start, int uses_interp)
+ {
+ 	struct mm_struct *mm = current->mm;
+ 	unsigned long addr;
+diff --git a/arch/x86/include/asm/elf.h b/arch/x86/include/asm/elf.h
+index f2ad216..3761be8 100644
+--- a/arch/x86/include/asm/elf.h
++++ b/arch/x86/include/asm/elf.h
+@@ -312,9 +312,10 @@ struct linux_binprm;
+ 
+ #define ARCH_HAS_SETUP_ADDITIONAL_PAGES 1
+ extern int arch_setup_additional_pages(struct linux_binprm *bprm,
++				       unsigned long start,
+ 				       int uses_interp);
+ 
+-extern int syscall32_setup_pages(struct linux_binprm *, int exstack);
++extern int syscall32_setup_pages(struct linux_binprm *, unsigned long start, int exstack);
+ #define compat_arch_setup_additional_pages	syscall32_setup_pages
+ 
+ extern unsigned long arch_randomize_brk(struct mm_struct *mm);
+diff --git a/arch/x86/vdso/vdso32-setup.c b/arch/x86/vdso/vdso32-setup.c
+index 02b442e..62043c1 100644
+--- a/arch/x86/vdso/vdso32-setup.c
++++ b/arch/x86/vdso/vdso32-setup.c
+@@ -310,7 +310,8 @@ int __init sysenter_setup(void)
+ }
+ 
+ /* Setup a VMA at program startup for the vsyscall page */
+-int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
++int arch_setup_additional_pages(struct linux_binprm *bprm,
++				unsigned long start, int uses_interp)
+ {
+ 	struct mm_struct *mm = current->mm;
+ 	unsigned long addr;
+@@ -331,13 +332,17 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
+ 	if (compat)
+ 		addr = VDSO_HIGH_BASE;
+ 	else {
+-		addr = get_unmapped_area(NULL, 0, PAGE_SIZE, 0, 0);
++		addr = get_unmapped_area(NULL, start, PAGE_SIZE, 0, 0);
+ 		if (IS_ERR_VALUE(addr)) {
+ 			ret = addr;
+ 			goto up_fail;
+ 		}
+ 	}
+ 
++	/* for restart(2), double check that we got we asked for */
++	if (start && addr != start)
++		goto up_fail;
 +
- #ifndef ARCH_MIN_MMSTRUCT_ALIGN
- #define ARCH_MIN_MMSTRUCT_ALIGN 0
- #endif
+ 	current->mm->context.vdso = (void *)addr;
+ 
+ 	if (compat_uses_vma || !compat) {
+diff --git a/arch/x86/vdso/vma.c b/arch/x86/vdso/vma.c
+index 21e1aeb..b10ed32 100644
+--- a/arch/x86/vdso/vma.c
++++ b/arch/x86/vdso/vma.c
+@@ -99,23 +99,28 @@ static unsigned long vdso_addr(unsigned long start, unsigned len)
+ 
+ /* Setup a VMA at program startup for the vsyscall page.
+    Not called for compat tasks */
+-int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
++int arch_setup_additional_pages(struct linux_binprm *bprm,
++				unsigned long start, int uses_interp)
+ {
+ 	struct mm_struct *mm = current->mm;
+ 	unsigned long addr;
+-	int ret;
++	int ret = -EINVAL;
+ 
+ 	if (!vdso_enabled)
+ 		return 0;
+ 
+ 	down_write(&mm->mmap_sem);
+-	addr = vdso_addr(mm->start_stack, vdso_size);
++	addr = start ? : vdso_addr(mm->start_stack, vdso_size);
+ 	addr = get_unmapped_area(NULL, addr, vdso_size, 0, 0);
+ 	if (IS_ERR_VALUE(addr)) {
+ 		ret = addr;
+ 		goto up_fail;
+ 	}
+ 
++	/* for restart(2), double check that we got we asked for */
++	if (start && addr != start)
++		goto up_fail;
++
+ 	current->mm->context.vdso = (void *)addr;
+ 
+ 	ret = install_special_mapping(mm, addr, vdso_size,
+diff --git a/fs/binfmt_elf.c b/fs/binfmt_elf.c
+index fd5b2ea..50e30ff 100644
+--- a/fs/binfmt_elf.c
++++ b/fs/binfmt_elf.c
+@@ -922,7 +922,7 @@ static int load_elf_binary(struct linux_binprm *bprm, struct pt_regs *regs)
+ 	set_binfmt(&elf_format);
+ 
+ #ifdef ARCH_HAS_SETUP_ADDITIONAL_PAGES
+-	retval = arch_setup_additional_pages(bprm, !!elf_interpreter);
++	retval = arch_setup_additional_pages(bprm, 0, !!elf_interpreter);
+ 	if (retval < 0) {
+ 		send_sig(SIGKILL, current, 0);
+ 		goto out;
 -- 
 1.6.3.3
