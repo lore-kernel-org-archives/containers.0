@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 12/96] c/r: extend arch_setup_additional_pages()
-Date: Wed, 17 Mar 2010 12:08:00 -0400
-Message-ID: <1268842164-5590-13-git-send-email-orenl__40935.2023656995$1268842962$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 55/96] c/r: support for UTS namespace
+Date: Wed, 17 Mar 2010 12:08:43 -0400
+Message-ID: <1268842164-5590-56-git-send-email-orenl__38698.7356971533$1268843093$gmane$org@cs.columbia.edu>
 References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-2-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-3-git-send-email-orenl@cs.columbia.edu>
@@ -14,11 +14,54 @@ References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-10-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-11-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-12-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-13-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-14-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-15-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-16-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-17-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-18-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-19-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-20-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-21-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-22-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-23-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-24-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-25-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-26-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-27-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-28-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-29-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-30-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-31-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-32-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-33-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-34-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-35-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-36-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-37-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-38-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-39-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-40-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-41-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-42-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-43-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-44-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-45-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-46-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-47-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-48-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-49-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-50-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-51-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-52-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-53-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-54-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-55-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268842164-5590-12-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1268842164-5590-55-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -29,259 +72,493 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Add "start" argument, to request to map vDSO to a specific place,
-and fail the operation if not.
+This patch adds a "phase" of checkpoint that saves out information about any
+namespaces the task(s) may have.  Do this by tracking the namespace objects
+of the tasks and making sure that tasks with the same namespace that follow
+get properly referenced in the checkpoint stream.
 
-This is useful for restart(2) to ensure that memory layout is restore
-exactly as needed.
+Changes[v20]:
+  - Make uts_ns=n compile
+Changes[v19]:
+  - Restart to handle checkpoint images lacking {uts,ipc}-ns
+Changes[v19-rc1]:
+  - [Matt Helsley] Add cpp definitions for enums
+Changes[v17]:
+  - Collect nsproxy->uts_ns
+  - Save uts string lengths once in ckpt_hdr_const
+  - Save and restore all fields of uts-ns
+  - Don't overwrite global uts-ns if !CONFIG_UTS_NS
+  - Replace sys_unshare() with create_uts_ns()
+  - Take uts_sem around access to uts data
+Changes:
+  - Remove the kernel restore path
+  - Punt on nested namespaces
+  - Use __NEW_UTS_LEN in nodename and domainname buffers
+  - Add a note to Documentation/checkpoint/internals.txt to indicate where
+    in the save/restore process the UTS information is kept
+  - Store (and track) the objref of the namespace itself instead of the
+    nsproxy (based on comments from Dave on IRC)
+  - Remove explicit check for non-root nsproxy
+  - Store the nodename and domainname lengths and use ckpt_write_string()
+    to store the actual name strings
+  - Catch failure of ckpt_obj_add_ptr() in ckpt_write_namespaces()
+  - Remove "types" bitfield and use the "is this new" flag to determine
+    whether or not we should write out a new ns descriptor
+  - Replace kernel restore path
+  - Move the namespace information to be directly after the task
+    information record
+  - Update Documentation to reflect new location of namespace info
+  - Support checkpoint and restart of nested UTS namespaces
 
-Changelog[v19]:
-  - [serge hallyn] Fix potential use-before-set ret
-Changelog[v2]:
-  - [ntl] powerpc: vdso build fix (ckpt-v17)
-
-Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- arch/powerpc/include/asm/elf.h     |    1 +
- arch/powerpc/kernel/vdso.c         |   13 ++++++++++++-
- arch/s390/include/asm/elf.h        |    2 +-
- arch/s390/kernel/vdso.c            |   13 ++++++++++++-
- arch/sh/include/asm/elf.h          |    1 +
- arch/sh/kernel/vsyscall/vsyscall.c |    2 +-
- arch/x86/include/asm/elf.h         |    3 ++-
- arch/x86/vdso/vdso32-setup.c       |    9 +++++++--
- arch/x86/vdso/vma.c                |   11 ++++++++---
- fs/binfmt_elf.c                    |    2 +-
- 10 files changed, 46 insertions(+), 11 deletions(-)
+ checkpoint/Makefile              |    1 +
+ checkpoint/checkpoint.c          |    5 +-
+ checkpoint/namespace.c           |  116 ++++++++++++++++++++++++++++++++++++++
+ checkpoint/objhash.c             |   26 +++++++++
+ checkpoint/process.c             |    2 +
+ checkpoint/restart.c             |    6 ++
+ include/linux/checkpoint.h       |    4 +
+ include/linux/checkpoint_hdr.h   |   29 +++++++++-
+ include/linux/checkpoint_types.h |    6 ++
+ include/linux/utsname.h          |    1 +
+ kernel/nsproxy.c                 |   19 ++++++-
+ kernel/utsname.c                 |    3 +-
+ 12 files changed, 212 insertions(+), 6 deletions(-)
+ create mode 100644 checkpoint/namespace.c
 
-diff --git a/arch/powerpc/include/asm/elf.h b/arch/powerpc/include/asm/elf.h
-index c376eda..0b06255 100644
---- a/arch/powerpc/include/asm/elf.h
-+++ b/arch/powerpc/include/asm/elf.h
-@@ -266,6 +266,7 @@ extern int ucache_bsize;
- #define ARCH_HAS_SETUP_ADDITIONAL_PAGES
- struct linux_binprm;
- extern int arch_setup_additional_pages(struct linux_binprm *bprm,
-+				       unsigned long start,
- 				       int uses_interp);
- #define VDSO_AUX_ENT(a,b) NEW_AUX_ENT(a,b);
- 
-diff --git a/arch/powerpc/kernel/vdso.c b/arch/powerpc/kernel/vdso.c
-index d84d192..74210ab 100644
---- a/arch/powerpc/kernel/vdso.c
-+++ b/arch/powerpc/kernel/vdso.c
-@@ -188,7 +188,8 @@ static void dump_vdso_pages(struct vm_area_struct * vma)
-  * This is called from binfmt_elf, we create the special vma for the
-  * vDSO and insert it into the mm struct tree
-  */
--int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
-+int arch_setup_additional_pages(struct linux_binprm *bprm,
-+				unsigned long start, int uses_interp)
- {
- 	struct mm_struct *mm = current->mm;
- 	struct page **vdso_pagelist;
-@@ -220,6 +221,10 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
- 	vdso_base = VDSO32_MBASE;
- #endif
- 
-+	/* in case restart(2) mandates a specific location */
-+	if (start)
-+		vdso_base = start;
-+
- 	current->mm->context.vdso_base = 0;
- 
- 	/* vDSO has a problem and was disabled, just don't "enable" it for the
-@@ -249,6 +254,12 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
- 	/* Add required alignment. */
- 	vdso_base = ALIGN(vdso_base, VDSO_ALIGNMENT);
- 
-+	/* for restart(2), double check that we got we asked for */
-+	if (start && vdso_base != start) {
-+		rc = -EBUSY;
-+		goto fail_mmapsem;
-+	}
-+
- 	/*
- 	 * Put vDSO base into mm struct. We need to do this before calling
- 	 * install_special_mapping or the perf counter mmap tracking code
-diff --git a/arch/s390/include/asm/elf.h b/arch/s390/include/asm/elf.h
-index 354d426..5081938 100644
---- a/arch/s390/include/asm/elf.h
-+++ b/arch/s390/include/asm/elf.h
-@@ -216,6 +216,6 @@ do {									    \
- struct linux_binprm;
- 
- #define ARCH_HAS_SETUP_ADDITIONAL_PAGES 1
--int arch_setup_additional_pages(struct linux_binprm *, int);
-+int arch_setup_additional_pages(struct linux_binprm *, unsigned long, int);
- 
- #endif
-diff --git a/arch/s390/kernel/vdso.c b/arch/s390/kernel/vdso.c
-index 5f99e66..706c16a 100644
---- a/arch/s390/kernel/vdso.c
-+++ b/arch/s390/kernel/vdso.c
-@@ -194,7 +194,8 @@ static void vdso_init_cr5(void)
-  * This is called from binfmt_elf, we create the special vma for the
-  * vDSO and insert it into the mm struct tree
-  */
--int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
-+int arch_setup_additional_pages(struct linux_binprm *bprm,
-+				unsigned long start, int uses_interp)
- {
- 	struct mm_struct *mm = current->mm;
- 	struct page **vdso_pagelist;
-@@ -225,6 +226,10 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
- 	vdso_pages = vdso32_pages;
- #endif
- 
-+	/* in case restart(2) mandates a specific location */
-+	if (start)
-+		vdso_base = start;
-+
- 	/*
- 	 * vDSO has a problem and was disabled, just don't "enable" it for
- 	 * the process
-@@ -247,6 +252,12 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
- 		goto out_up;
- 	}
- 
-+	/* for restart(2), double check that we got we asked for */
-+	if (start && vdso_base != start) {
-+		rc = -EINVAL;
-+		goto out_up;
-+	}
-+
- 	/*
- 	 * Put vDSO base into mm struct. We need to do this before calling
- 	 * install_special_mapping or the perf counter mmap tracking code
-diff --git a/arch/sh/include/asm/elf.h b/arch/sh/include/asm/elf.h
-index ac04255..036ea4b 100644
---- a/arch/sh/include/asm/elf.h
-+++ b/arch/sh/include/asm/elf.h
-@@ -201,6 +201,7 @@ do {									\
- #define ARCH_HAS_SETUP_ADDITIONAL_PAGES
- struct linux_binprm;
- extern int arch_setup_additional_pages(struct linux_binprm *bprm,
-+				       unsigned long start,
- 				       int uses_interp);
- 
- extern unsigned int vdso_enabled;
-diff --git a/arch/sh/kernel/vsyscall/vsyscall.c b/arch/sh/kernel/vsyscall/vsyscall.c
-index 3f7e415..64c70e5 100644
---- a/arch/sh/kernel/vsyscall/vsyscall.c
-+++ b/arch/sh/kernel/vsyscall/vsyscall.c
-@@ -59,7 +59,7 @@ int __init vsyscall_init(void)
+diff --git a/checkpoint/Makefile b/checkpoint/Makefile
+index f56a7d6..bb2c0ca 100644
+--- a/checkpoint/Makefile
++++ b/checkpoint/Makefile
+@@ -8,5 +8,6 @@ obj-$(CONFIG_CHECKPOINT) += \
+ 	checkpoint.o \
+ 	restart.o \
+ 	process.o \
++	namespace.o \
+ 	files.o \
+ 	memory.o
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index 9bafb13..2707978 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -113,9 +113,12 @@ static void fill_kernel_const(struct ckpt_const *h)
+ 	/* mm->saved_auxv size */
+ 	h->at_vector_size = AT_VECTOR_SIZE;
+ 	/* uts */
++	h->uts_sysname_len = sizeof(uts->sysname);
++	h->uts_nodename_len = sizeof(uts->nodename);
+ 	h->uts_release_len = sizeof(uts->release);
+ 	h->uts_version_len = sizeof(uts->version);
+ 	h->uts_machine_len = sizeof(uts->machine);
++	h->uts_domainname_len = sizeof(uts->domainname);
  }
  
- /* Setup a VMA at program startup for the vsyscall page */
--int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
-+int arch_setup_additional_pages(struct linux_binprm *bprm, unsigned long start, int uses_interp)
- {
- 	struct mm_struct *mm = current->mm;
- 	unsigned long addr;
-diff --git a/arch/x86/include/asm/elf.h b/arch/x86/include/asm/elf.h
-index f2ad216..3761be8 100644
---- a/arch/x86/include/asm/elf.h
-+++ b/arch/x86/include/asm/elf.h
-@@ -312,9 +312,10 @@ struct linux_binprm;
+ /* write the checkpoint header */
+@@ -261,8 +264,6 @@ static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
  
- #define ARCH_HAS_SETUP_ADDITIONAL_PAGES 1
- extern int arch_setup_additional_pages(struct linux_binprm *bprm,
-+				       unsigned long start,
- 				       int uses_interp);
- 
--extern int syscall32_setup_pages(struct linux_binprm *, int exstack);
-+extern int syscall32_setup_pages(struct linux_binprm *, unsigned long start, int exstack);
- #define compat_arch_setup_additional_pages	syscall32_setup_pages
- 
- extern unsigned long arch_randomize_brk(struct mm_struct *mm);
-diff --git a/arch/x86/vdso/vdso32-setup.c b/arch/x86/vdso/vdso32-setup.c
-index 02b442e..62043c1 100644
---- a/arch/x86/vdso/vdso32-setup.c
-+++ b/arch/x86/vdso/vdso32-setup.c
-@@ -310,7 +310,8 @@ int __init sysenter_setup(void)
+ 	rcu_read_lock();
+ 	nsproxy = task_nsproxy(t);
+-	if (nsproxy->uts_ns != ctx->root_nsproxy->uts_ns)
+-		ret = -EPERM;
+ 	if (nsproxy->ipc_ns != ctx->root_nsproxy->ipc_ns)
+ 		ret = -EPERM;
+ 	/* no support for >1 private mntns */
+diff --git a/checkpoint/namespace.c b/checkpoint/namespace.c
+new file mode 100644
+index 0000000..3703577
+--- /dev/null
++++ b/checkpoint/namespace.c
+@@ -0,0 +1,116 @@
++/*
++ *  Checkpoint namespaces
++ *
++ *  Copyright (C) 2009 Oren Laadan
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ */
++
++/* default debug level for output */
++#define CKPT_DFLAG  CKPT_DSYS
++
++#include <linux/nsproxy.h>
++#include <linux/user_namespace.h>
++
++#include <linux/checkpoint.h>
++#include <linux/checkpoint_hdr.h>
++
++/*
++ * uts_ns  -  this needs to compile even for !CONFIG_UTS_NS, so
++ *   the code may not reside in kernel/utsname.c (which wouldn't
++ *   compile then).
++ */
++static int do_checkpoint_uts_ns(struct ckpt_ctx *ctx,
++				struct uts_namespace *uts_ns)
++{
++	struct ckpt_hdr_utsns *h;
++	struct new_utsname *name;
++	int ret;
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_UTS_NS);
++	if (!h)
++		return -ENOMEM;
++
++	down_read(&uts_sem);
++	name = &uts_ns->name;
++	memcpy(h->sysname, name->sysname, sizeof(name->sysname));
++	memcpy(h->nodename, name->nodename, sizeof(name->nodename));
++	memcpy(h->release, name->release, sizeof(name->release));
++	memcpy(h->version, name->version, sizeof(name->version));
++	memcpy(h->machine, name->machine, sizeof(name->machine));
++	memcpy(h->domainname, name->domainname, sizeof(name->domainname));
++	up_read(&uts_sem);
++
++	ret = ckpt_write_obj(ctx, &h->h);
++	ckpt_hdr_put(ctx, h);
++	return ret;
++}
++
++int checkpoint_uts_ns(struct ckpt_ctx *ctx, void *ptr)
++{
++	return do_checkpoint_uts_ns(ctx, (struct uts_namespace *) ptr);
++}
++
++#ifdef CONFIG_UTS_NS
++static inline struct uts_namespace *ckpt_do_copy_uts_ns(struct ckpt_ctx *ctx,
++		struct ckpt_hdr_utsns *h)
++{
++	struct new_utsname *name = NULL;
++	struct uts_namespace *uts_ns;
++
++	uts_ns = create_uts_ns();
++	if (!uts_ns)
++		return ERR_PTR(-ENOMEM);
++
++	down_read(&uts_sem);
++	name = &uts_ns->name;
++	memcpy(name->sysname, h->sysname, sizeof(name->sysname));
++	memcpy(name->nodename, h->nodename, sizeof(name->nodename));
++	memcpy(name->release, h->release, sizeof(name->release));
++	memcpy(name->version, h->version, sizeof(name->version));
++	memcpy(name->machine, h->machine, sizeof(name->machine));
++	memcpy(name->domainname, h->domainname, sizeof(name->domainname));
++	up_read(&uts_sem);
++	return uts_ns;
++}
++#else
++static inline struct uts_namespace *ckpt_do_copy_uts_ns(struct ckpt_ctx *ctx,
++		struct ckpt_hdr_utsns *h)
++{
++	struct uts_namespace *uts_ns;
++
++	/* complain if image contains multiple namespaces */
++	if (ctx->stats.uts_ns)
++		return ERR_PTR(-EEXIST);
++
++	uts_ns = current->nsproxy->uts_ns;
++	get_uts_ns(uts_ns);
++	return uts_ns;
++}
++#endif
++
++static struct uts_namespace *do_restore_uts_ns(struct ckpt_ctx *ctx)
++{
++	struct ckpt_hdr_utsns *h;
++	struct uts_namespace *uts_ns;
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_UTS_NS);
++	if (IS_ERR(h))
++		return (struct uts_namespace *) h;
++
++	uts_ns = ckpt_do_copy_uts_ns(ctx, h);
++	if (IS_ERR(uts_ns))
++		goto out;
++
++	ctx->stats.uts_ns++;
++ out:
++	ckpt_hdr_put(ctx, h);
++	return uts_ns;
++}
++
++void *restore_uts_ns(struct ckpt_ctx *ctx)
++{
++	return (void *) do_restore_uts_ns(ctx);
++}
+diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+index 4368e7b..a2cf082 100644
+--- a/checkpoint/objhash.c
++++ b/checkpoint/objhash.c
+@@ -138,6 +138,22 @@ static int obj_ns_users(void *ptr)
+ 	return atomic_read(&((struct nsproxy *) ptr)->count);
  }
  
- /* Setup a VMA at program startup for the vsyscall page */
--int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
-+int arch_setup_additional_pages(struct linux_binprm *bprm,
-+				unsigned long start, int uses_interp)
- {
- 	struct mm_struct *mm = current->mm;
- 	unsigned long addr;
-@@ -331,13 +332,17 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
- 	if (compat)
- 		addr = VDSO_HIGH_BASE;
- 	else {
--		addr = get_unmapped_area(NULL, 0, PAGE_SIZE, 0, 0);
-+		addr = get_unmapped_area(NULL, start, PAGE_SIZE, 0, 0);
- 		if (IS_ERR_VALUE(addr)) {
- 			ret = addr;
- 			goto up_fail;
- 		}
- 	}
- 
-+	/* for restart(2), double check that we got we asked for */
-+	if (start && addr != start)
-+		goto up_fail;
++static int obj_uts_ns_grab(void *ptr)
++{
++	get_uts_ns((struct uts_namespace *) ptr);
++	return 0;
++}
 +
- 	current->mm->context.vdso = (void *)addr;
- 
- 	if (compat_uses_vma || !compat) {
-diff --git a/arch/x86/vdso/vma.c b/arch/x86/vdso/vma.c
-index 21e1aeb..b10ed32 100644
---- a/arch/x86/vdso/vma.c
-+++ b/arch/x86/vdso/vma.c
-@@ -99,23 +99,28 @@ static unsigned long vdso_addr(unsigned long start, unsigned len)
- 
- /* Setup a VMA at program startup for the vsyscall page.
-    Not called for compat tasks */
--int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
-+int arch_setup_additional_pages(struct linux_binprm *bprm,
-+				unsigned long start, int uses_interp)
- {
- 	struct mm_struct *mm = current->mm;
- 	unsigned long addr;
--	int ret;
-+	int ret = -EINVAL;
- 
- 	if (!vdso_enabled)
- 		return 0;
- 
- 	down_write(&mm->mmap_sem);
--	addr = vdso_addr(mm->start_stack, vdso_size);
-+	addr = start ? : vdso_addr(mm->start_stack, vdso_size);
- 	addr = get_unmapped_area(NULL, addr, vdso_size, 0, 0);
- 	if (IS_ERR_VALUE(addr)) {
- 		ret = addr;
- 		goto up_fail;
- 	}
- 
-+	/* for restart(2), double check that we got we asked for */
-+	if (start && addr != start)
-+		goto up_fail;
++static void obj_uts_ns_drop(void *ptr, int lastref)
++{
++	put_uts_ns((struct uts_namespace *) ptr);
++}
 +
- 	current->mm->context.vdso = (void *)addr;
++static int obj_uts_ns_users(void *ptr)
++{
++	return atomic_read(&((struct uts_namespace *) ptr)->kref.refcount);
++}
++
+ static struct ckpt_obj_ops ckpt_obj_ops[] = {
+ 	/* ignored object */
+ 	{
+@@ -193,6 +209,16 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
+ 		.checkpoint = checkpoint_ns,
+ 		.restore = restore_ns,
+ 	},
++	/* uts_ns object */
++	{
++		.obj_name = "UTS_NS",
++		.obj_type = CKPT_OBJ_UTS_NS,
++		.ref_drop = obj_uts_ns_drop,
++		.ref_grab = obj_uts_ns_grab,
++		.ref_users = obj_uts_ns_users,
++		.checkpoint = checkpoint_uts_ns,
++		.restore = restore_uts_ns,
++	},
+ };
  
- 	ret = install_special_mapping(mm, addr, vdso_size,
-diff --git a/fs/binfmt_elf.c b/fs/binfmt_elf.c
-index fd5b2ea..50e30ff 100644
---- a/fs/binfmt_elf.c
-+++ b/fs/binfmt_elf.c
-@@ -922,7 +922,7 @@ static int load_elf_binary(struct linux_binprm *bprm, struct pt_regs *regs)
- 	set_binfmt(&elf_format);
  
- #ifdef ARCH_HAS_SETUP_ADDITIONAL_PAGES
--	retval = arch_setup_additional_pages(bprm, !!elf_interpreter);
-+	retval = arch_setup_additional_pages(bprm, 0, !!elf_interpreter);
- 	if (retval < 0) {
- 		send_sig(SIGKILL, current, 0);
+diff --git a/checkpoint/process.c b/checkpoint/process.c
+index 961795f..0935cd6 100644
+--- a/checkpoint/process.c
++++ b/checkpoint/process.c
+@@ -17,8 +17,10 @@
+ #include <linux/futex.h>
+ #include <linux/compat.h>
+ #include <linux/poll.h>
++#include <linux/utsname.h>
+ #include <linux/checkpoint.h>
+ #include <linux/checkpoint_hdr.h>
++#include <linux/syscalls.h>
+ 
+ 
+ #ifdef CONFIG_FUTEX
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index 325d03a..e66575c 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -567,12 +567,18 @@ static int check_kernel_const(struct ckpt_const *h)
+ 	if (h->at_vector_size != AT_VECTOR_SIZE)
+ 		return -EINVAL;
+ 	/* uts */
++	if (h->uts_sysname_len != sizeof(uts->sysname))
++		return -EINVAL;
++	if (h->uts_nodename_len != sizeof(uts->nodename))
++		return -EINVAL;
+ 	if (h->uts_release_len != sizeof(uts->release))
+ 		return -EINVAL;
+ 	if (h->uts_version_len != sizeof(uts->version))
+ 		return -EINVAL;
+ 	if (h->uts_machine_len != sizeof(uts->machine))
+ 		return -EINVAL;
++	if (h->uts_domainname_len != sizeof(uts->domainname))
++		return -EINVAL;
+ 
+ 	return 0;
+ }
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 22cc8f6..9f2a7ba 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -169,6 +169,10 @@ extern int ckpt_collect_ns(struct ckpt_ctx *ctx, struct task_struct *t);
+ extern int checkpoint_ns(struct ckpt_ctx *ctx, void *ptr);
+ extern void *restore_ns(struct ckpt_ctx *ctx);
+ 
++/* uts-ns */
++extern int checkpoint_uts_ns(struct ckpt_ctx *ctx, void *ptr);
++extern void *restore_uts_ns(struct ckpt_ctx *ctx);
++
+ /* file table */
+ extern int ckpt_collect_file_table(struct ckpt_ctx *ctx, struct task_struct *t);
+ extern int checkpoint_obj_file_table(struct ckpt_ctx *ctx,
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 7c43266..dc2cadb 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -19,8 +19,6 @@
+ #include <linux/types.h>
+ #endif
+ 
+-#include <linux/utsname.h>
+-
+ /*
+  * To maintain compatibility between 32-bit and 64-bit architecture flavors,
+  * keep data 64-bit aligned: use padding for structure members, and use
+@@ -83,6 +81,8 @@ enum {
+ #define CKPT_HDR_CPU CKPT_HDR_CPU
+ 	CKPT_HDR_NS,
+ #define CKPT_HDR_NS CKPT_HDR_NS
++	CKPT_HDR_UTS_NS,
++#define CKPT_HDR_UTS_NS CKPT_HDR_UTS_NS
+ 
+ 	/* 201-299: reserved for arch-dependent */
+ 
+@@ -142,6 +142,8 @@ enum obj_type {
+ #define CKPT_OBJ_MM CKPT_OBJ_MM
+ 	CKPT_OBJ_NS,
+ #define CKPT_OBJ_NS CKPT_OBJ_NS
++	CKPT_OBJ_UTS_NS,
++#define CKPT_OBJ_UTS_NS CKPT_OBJ_UTS_NS
+ 	CKPT_OBJ_MAX
+ #define CKPT_OBJ_MAX CKPT_OBJ_MAX
+ };
+@@ -153,9 +155,12 @@ struct ckpt_const {
+ 	/* mm */
+ 	__u16 at_vector_size;
+ 	/* uts */
++	__u16 uts_sysname_len;
++	__u16 uts_nodename_len;
+ 	__u16 uts_release_len;
+ 	__u16 uts_version_len;
+ 	__u16 uts_machine_len;
++	__u16 uts_domainname_len;
+ } __attribute__((aligned(8)));
+ 
+ /* checkpoint image header */
+@@ -234,6 +239,26 @@ struct ckpt_hdr_task_ns {
+ 
+ struct ckpt_hdr_ns {
+ 	struct ckpt_hdr h;
++	__s32 uts_objref;
++} __attribute__((aligned(8)));
++
++/* cannot include <linux/tty.h> from userspace, so define: */
++#define CKPT_NEW_UTS_LEN  64
++#ifdef __KERNEL__
++#include <linux/utsname.h>
++#if CKPT_NEW_UTS_LEN != __NEW_UTS_LEN
++#error CKPT_NEW_UTS_LEN size is wrong per linux/utsname.h
++#endif
++#endif
++
++struct ckpt_hdr_utsns {
++	struct ckpt_hdr h;
++	char sysname[CKPT_NEW_UTS_LEN + 1];
++	char nodename[CKPT_NEW_UTS_LEN + 1];
++	char release[CKPT_NEW_UTS_LEN + 1];
++	char version[CKPT_NEW_UTS_LEN + 1];
++	char machine[CKPT_NEW_UTS_LEN + 1];
++	char domainname[CKPT_NEW_UTS_LEN + 1];
+ } __attribute__((aligned(8)));
+ 
+ /* task's shared resources */
+diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
+index 192dd86..ee35488 100644
+--- a/include/linux/checkpoint_types.h
++++ b/include/linux/checkpoint_types.h
+@@ -22,6 +22,10 @@
+ #include <linux/ktime.h>
+ #include <linux/wait.h>
+ 
++struct ckpt_stats {
++	int uts_ns;
++};
++
+ struct ckpt_ctx {
+ 	int crid;		/* unique checkpoint id */
+ 
+@@ -71,6 +75,8 @@ struct ckpt_ctx {
+ 	struct completion complete;	/* container root and other tasks on */
+ 	wait_queue_head_t waitq;	/* start, end, and restart ordering */
+ 
++	struct ckpt_stats stats;	/* statistics */
++
+ #define CKPT_MSG_LEN 1024
+ 	char fmt[CKPT_MSG_LEN];
+ 	char msg[CKPT_MSG_LEN];
+diff --git a/include/linux/utsname.h b/include/linux/utsname.h
+index 69f3997..774001d 100644
+--- a/include/linux/utsname.h
++++ b/include/linux/utsname.h
+@@ -49,6 +49,7 @@ static inline void get_uts_ns(struct uts_namespace *ns)
+ 	kref_get(&ns->kref);
+ }
+ 
++extern struct uts_namespace *create_uts_ns(void);
+ extern struct uts_namespace *copy_utsname(unsigned long flags,
+ 					struct uts_namespace *ns);
+ extern void free_uts_ns(struct kref *kref);
+diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+index ccb4fd3..90cba48 100644
+--- a/kernel/nsproxy.c
++++ b/kernel/nsproxy.c
+@@ -245,6 +245,10 @@ int ckpt_collect_ns(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	if (ret < 0 || exists)
  		goto out;
+ 
++	ret = ckpt_obj_collect(ctx, nsproxy->uts_ns, CKPT_OBJ_UTS_NS);
++	if (ret < 0)
++		goto out;
++
+ 	/* TODO: collect other namespaces here */
+  out:
+ 	put_nsproxy(nsproxy);
+@@ -260,9 +264,14 @@ static int do_checkpoint_ns(struct ckpt_ctx *ctx, struct nsproxy *nsproxy)
+ 	if (!h)
+ 		return -ENOMEM;
+ 
++	ret = checkpoint_obj(ctx, nsproxy->uts_ns, CKPT_OBJ_UTS_NS);
++	if (ret <= 0)
++		goto out;
++	h->uts_objref = ret;
+ 	/* TODO: Write other namespaces here */
+ 
+ 	ret = ckpt_write_obj(ctx, &h->h);
++ out:
+ 	ckpt_hdr_put(ctx, h);
+ 	return ret;
+ }
+@@ -287,7 +296,15 @@ static struct nsproxy *do_restore_ns(struct ckpt_ctx *ctx)
+ 	if (IS_ERR(h))
+ 		return (struct nsproxy *) h;
+ 
+-	uts_ns = ctx->root_nsproxy->uts_ns;
++	if (h->uts_objref == 0)
++		uts_ns = ctx->root_nsproxy->uts_ns;
++	else
++		uts_ns = ckpt_obj_fetch(ctx, h->uts_objref, CKPT_OBJ_UTS_NS);
++	if (IS_ERR(uts_ns)) {
++		ret = PTR_ERR(uts_ns);
++		goto out;
++	}
++
+ 	ipc_ns = ctx->root_nsproxy->ipc_ns;
+ 	mnt_ns = ctx->root_nsproxy->mnt_ns;
+ 	net_ns = ctx->root_nsproxy->net_ns;
+diff --git a/kernel/utsname.c b/kernel/utsname.c
+index 8a82b4b..c82ed83 100644
+--- a/kernel/utsname.c
++++ b/kernel/utsname.c
+@@ -14,8 +14,9 @@
+ #include <linux/utsname.h>
+ #include <linux/err.h>
+ #include <linux/slab.h>
++#include <linux/checkpoint.h>
+ 
+-static struct uts_namespace *create_uts_ns(void)
++struct uts_namespace *create_uts_ns(void)
+ {
+ 	struct uts_namespace *uts_ns;
+ 
 -- 
 1.6.3.3
