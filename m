@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 36/96] deferqueue: generic queue to defer work
-Date: Wed, 17 Mar 2010 12:08:24 -0400
-Message-ID: <1268842164-5590-37-git-send-email-orenl__30021.8392666013$1268849900$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 51/96] c/r: support for open pipes
+Date: Wed, 17 Mar 2010 12:08:39 -0400
+Message-ID: <1268842164-5590-52-git-send-email-orenl__25114.0076820322$1268849981$gmane$org@cs.columbia.edu>
 References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-2-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-3-git-send-email-orenl@cs.columbia.edu>
@@ -38,11 +38,26 @@ References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-34-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-35-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-36-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-37-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-38-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-39-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-40-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-41-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-42-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-43-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-44-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-45-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-46-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-47-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-48-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-49-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-50-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-51-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268842164-5590-36-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1268842164-5590-51-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -56,303 +71,327 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Add a interface to postpone an action until the end of the entire
-checkpoint or restart operation. This is useful when during the
-scan of tasks an operation cannot be performed in place, to avoid
-the need for a second scan.
+A pipe is a double-headed inode with a buffer attached to it. We
+checkpoint the pipe buffer only once, as soon as we hit one side of
+the pipe, regardless whether it is read- or write- end.
 
-One use case is when restoring an ipc shared memory region that has
-been deleted (but is still attached), during restart it needs to be
-create, attached and then deleted. However, creation and attachment
-are performed in distinct locations, so deletion can not be performed
-on the spot. Instead, this work (delete) is deferred until later.
-(This example is in one of the following patches).
+To checkpoint a file descriptor that refers to a pipe (either end), we
+first lookup the inode in the hash table: If not found, it is the
+first encounter of this pipe. Besides the file descriptor, we also (a)
+save the pipe data, and (b) register the pipe inode in the hash. If
+found, it is the second encounter of this pipe, namely, as we hit the
+other end of the same pipe. In both cases we write the pipe-objref of
+the inode.
 
-This interface allows chronic procrastination in the kernel:
+To restore, create a new pipe and thus have two file pointers (read-
+and write- ends). We only use one of them, depending on which side was
+checkpointed first. We register the file pointer of the other end in
+the hash table, with the pipe_objref given for this pipe from the
+checkpoint, to be used later when the other arrives. At this point we
+also restore the contents of the pipe buffers.
 
-deferqueue_create(void):
-    Allocates and returns a new deferqueue.
+To save the pipe buffer, given a source pipe, use do_tee() to clone
+its contents into a temporary 'struct pipe_inode_info', and then use
+do_splice_from() to transfer it directly to the checkpoint image file.
 
-deferqueue_run(deferqueue):
-    Executes all the pending works in the queue. Returns the number
-    of works executed, or an error upon the first error reported by
-    a deferred work.
+To restore the pipe buffer, with a fresh newly allocated target pipe,
+use do_splice_to() to splice the data directly between the checkpoint
+image file and the pipe.
 
-deferqueue_add(deferqueue, data, size, func, dtor):
-    Enqueue a deferred work. @function is the callback function to
-    do the work, which will be called with @data as an argument.
-    @size tells the size of data. @dtor is a destructor callback
-    that is invoked for deferred works remaining in the queue when
-    the queue is destroyed. NOTE: for a given deferred work, @dtor
-    is _not_ called if @func was already called (regardless of the
-    return value of the latter).
-
-deferqueue_destroy(deferqueue):
-    Free the deferqueue and any queued items while invoking the
-    @dtor callback for each queued item.
-
-Why aren't we using the existing kernel workqueue mechanism?  We need
-to defer to work until the end of the operation: not earlier, since we
-need other things to be in place; not later, to not block waiting for
-it. However, the workqueue schedules the work for 'some time later'.
-Also, the kernel workqueue may run in any task context, but we require
-many times that an operation be run in the context of some specific
-restarting task (e.g., restoring IPC state of a certain ipc_ns).
-
-Instead, this mechanism is a simple way for the c/r operation as a
-whole, and later a task in particular, to defer some action until
-later (but not arbitrarily later) _in the restore_ operation.
-
-Changelog[v19-rc1]
-  - [Matt Helsley] Check for valid destructor before calling it
-Changelog[v18]
-  - Interface to pass simple pointers as data with deferqueue
-Changelog[v17]
-  - Fix deferqueue_add() function
+Changelog[v19-rc1]:
+  - Switch to ckpt_obj_try_fetch()
+  - [Matt Helsley] Add cpp definitions for enums
+Changelog[v18]:
+  - Adjust format of pipe buffer to include the mandatory pre-header
+Changelog[v17]:
+  - Forward-declare 'ckpt_ctx' et-al, don't use checkpoint_types.h
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/Kconfig         |    5 ++
- include/linux/deferqueue.h |   78 +++++++++++++++++++++++++++++++
- kernel/Makefile            |    1 +
- kernel/deferqueue.c        |  110 ++++++++++++++++++++++++++++++++++++++++++++
- 4 files changed, 194 insertions(+), 0 deletions(-)
- create mode 100644 include/linux/deferqueue.h
- create mode 100644 kernel/deferqueue.c
+ checkpoint/files.c             |    7 ++
+ fs/pipe.c                      |  157 ++++++++++++++++++++++++++++++++++++++++
+ include/linux/checkpoint_hdr.h |    9 +++
+ include/linux/pipe_fs_i.h      |    8 ++
+ 4 files changed, 181 insertions(+), 0 deletions(-)
 
-diff --git a/checkpoint/Kconfig b/checkpoint/Kconfig
-index 21fc86b..4a2c845 100644
---- a/checkpoint/Kconfig
-+++ b/checkpoint/Kconfig
-@@ -2,10 +2,15 @@
- # implemented the hooks for processor state etc. needed by the
- # core checkpoint/restart code.
+diff --git a/checkpoint/files.c b/checkpoint/files.c
+index b404c8f..1c294fe 100644
+--- a/checkpoint/files.c
++++ b/checkpoint/files.c
+@@ -17,6 +17,7 @@
+ #include <linux/file.h>
+ #include <linux/fdtable.h>
+ #include <linux/fsnotify.h>
++#include <linux/pipe_fs_i.h>
+ #include <linux/syscalls.h>
+ #include <linux/deferqueue.h>
+ #include <linux/checkpoint.h>
+@@ -592,6 +593,12 @@ static struct restore_file_ops restore_file_ops[] = {
+ 		.file_type = CKPT_FILE_GENERIC,
+ 		.restore = generic_file_restore,
+ 	},
++	/* pipes */
++	{
++		.file_name = "PIPE",
++		.file_type = CKPT_FILE_PIPE,
++		.restore = pipe_file_restore,
++	},
+ };
  
-+config DEFERQUEUE
-+	bool
-+	default n
-+
- config CHECKPOINT
- 	bool "Checkpoint/restart (EXPERIMENTAL)"
- 	depends on CHECKPOINT_SUPPORT && EXPERIMENTAL
- 	depends on CGROUP_FREEZER
-+	select DEFERQUEUE
- 	help
- 	  Application checkpoint/restart is the ability to save the
- 	  state of a running application so that it can later resume
-diff --git a/include/linux/deferqueue.h b/include/linux/deferqueue.h
-new file mode 100644
-index 0000000..ea3b620
---- /dev/null
-+++ b/include/linux/deferqueue.h
-@@ -0,0 +1,78 @@
-+/*
-+ * deferqueue.h --- deferred work queue handling for Linux.
-+ */
-+
-+#ifndef _LINUX_DEFERQUEUE_H
-+#define _LINUX_DEFERQUEUE_H
-+
-+#include <linux/list.h>
-+#include <linux/slab.h>
-+#include <linux/spinlock.h>
-+
-+/*
-+ * This interface allows chronic procrastination in the kernel:
-+ *
-+ * deferqueue_create(void):
-+ *     Allocates and returns a new deferqueue.
-+ *
-+ * deferqueue_run(deferqueue):
-+ *     Executes all the pending works in the queue. Returns the number
-+ *     of works executed, or an error upon the first error reported by
-+ *     a deferred work.
-+ *
-+ * deferqueue_add(deferqueue, data, size, func, dtor):
-+ * 	Enqueue a deferred work. @function is the callback function to
-+ *      do the work, which will be called with @data as an argument.
-+ *      @size tells the size of data. @dtor is a destructor callback
-+ *      that is invoked for deferred works remaining in the queue when
-+ *      the queue is destroyed. NOTE: for a given deferred work, @dtor
-+ *      is _not_ called if @func was already called (regardless of the
-+ *      return value of the latter).
-+ *
-+ * deferqueue_destroy(deferqueue):
-+ *      Free the deferqueue and any queued items while invoking the
-+ *      @dtor callback for each queued item.
-+ *
-+ * The following helpers are useful when @data is a simple pointer:
-+ *
-+ * deferqueue_add_ptr(deferqueue, ptr, func, dtor):
-+ *	Enqueue a deferred work whos data is @ptr.
-+ *
-+ * deferqueue_data_ptr(data):
-+ *	Convert a deferqueue @data to a void * pointer.
-+ */
-+
-+
-+typedef int (*deferqueue_func_t)(void *);
-+
-+struct deferqueue_entry {
-+	deferqueue_func_t function;
-+	deferqueue_func_t destructor;
-+	struct list_head list;
-+	char data[0];
-+};
-+
-+struct deferqueue_head {
-+	spinlock_t lock;
-+	struct list_head list;
-+};
-+
-+struct deferqueue_head *deferqueue_create(void);
-+void deferqueue_destroy(struct deferqueue_head *head);
-+int deferqueue_add(struct deferqueue_head *head, void *data, int size,
-+		   deferqueue_func_t func, deferqueue_func_t dtor);
-+int deferqueue_run(struct deferqueue_head *head);
-+
-+static inline int deferqueue_add_ptr(struct deferqueue_head *head, void *ptr,
-+				     deferqueue_func_t func,
-+				     deferqueue_func_t dtor)
-+{
-+	return deferqueue_add(head, &ptr, sizeof(ptr), func, dtor);
-+}
-+
-+static inline void *deferqueue_data_ptr(void *data)
-+{
-+	return *((void **) data);
-+}
-+
-+#endif
-diff --git a/kernel/Makefile b/kernel/Makefile
-index 864ff75..3c2c303 100644
---- a/kernel/Makefile
-+++ b/kernel/Makefile
-@@ -24,6 +24,7 @@ CFLAGS_REMOVE_sched_clock.o = -pg
- CFLAGS_REMOVE_perf_event.o = -pg
- endif
+ static struct file *do_restore_file(struct ckpt_ctx *ctx)
+diff --git a/fs/pipe.c b/fs/pipe.c
+index 37ba29f..747b2d7 100644
+--- a/fs/pipe.c
++++ b/fs/pipe.c
+@@ -13,11 +13,13 @@
+ #include <linux/fs.h>
+ #include <linux/mount.h>
+ #include <linux/pipe_fs_i.h>
++#include <linux/splice.h>
+ #include <linux/uio.h>
+ #include <linux/highmem.h>
+ #include <linux/pagemap.h>
+ #include <linux/audit.h>
+ #include <linux/syscalls.h>
++#include <linux/checkpoint.h>
  
-+obj-$(CONFIG_DEFERQUEUE) += deferqueue.o
- obj-$(CONFIG_FREEZER) += freezer.o
- obj-$(CONFIG_PROFILING) += profile.o
- obj-$(CONFIG_SYSCTL_SYSCALL_CHECK) += sysctl_check.o
-diff --git a/kernel/deferqueue.c b/kernel/deferqueue.c
-new file mode 100644
-index 0000000..1204c8b
---- /dev/null
-+++ b/kernel/deferqueue.c
-@@ -0,0 +1,110 @@
-+/*
-+ *  Infrastructure to manage deferred work
-+ *
-+ *  This differs from a workqueue in that the work must be deferred
-+ *  until specifically run by the caller.
-+ *
-+ *  As the only user currently is checkpoint/restart, which has
-+ *  very simple usage, the locking is kept simple.  Adding rules
-+ *  is protected by the head->lock.  But deferqueue_run() is only
-+ *  called once, after all entries have been added.  So it is not
-+ *  protected.  Similarly, _destroy is only called once when the
-+ *  ckpt_ctx is releeased, so it is not locked or refcounted.  These
-+ *  can of course be added if needed by other users.
-+ *
-+ *  Why not use workqueue ?  We need to defer work until the end of an
-+ *  operation: not earlier, since we need other things to be in place;
-+ *  not later, to not block waiting for it. However, the workqueue
-+ *  schedules the work for 'some time later'. Also, workqueue may run
-+ *  in any task context, but we require many times that an operation
-+ *  be run in the context of some specific restarting task (e.g.,
-+ *  restoring IPC state of a certain ipc_ns).
-+ *
-+ *  Instead, this mechanism is a simple way for the c/r operation as a
-+ *  whole, and later a task in particular, to defer some action until
-+ *  later (but not arbitrarily later) _in the restore_ operation.
-+ *
-+ *  Copyright (C) 2009 Oren Laadan
-+ *
-+ *  This file is subject to the terms and conditions of the GNU General Public
-+ *  License.  See the file COPYING in the main directory of the Linux
-+ *  distribution for more details.
-+ *
-+ */
-+
-+#include <linux/module.h>
-+#include <linux/kernel.h>
-+#include <linux/deferqueue.h>
-+
-+struct deferqueue_head *deferqueue_create(void)
+ #include <asm/uaccess.h>
+ #include <asm/ioctls.h>
+@@ -828,6 +830,158 @@ pipe_rdwr_open(struct inode *inode, struct file *filp)
+ 	return ret;
+ }
+ 
++#ifdef CONFIG_CHECKPOINT
++static int checkpoint_pipe(struct ckpt_ctx *ctx, struct inode *inode)
 +{
-+	struct deferqueue_head *h = kmalloc(sizeof(*h), GFP_KERNEL);
-+	if (h) {
-+		spin_lock_init(&h->lock);
-+		INIT_LIST_HEAD(&h->list);
++	struct pipe_inode_info *pipe;
++	int len, ret = -ENOMEM;
++
++	pipe = alloc_pipe_info(NULL);
++	if (!pipe)
++		return ret;
++
++	pipe->readers = 1;	/* bluff link_pipe() below */
++	len = link_pipe(inode->i_pipe, pipe, INT_MAX, SPLICE_F_NONBLOCK);
++	if (len == -EAGAIN)
++		len = 0;
++	if (len < 0) {
++		ret = len;
++		goto out;
 +	}
-+	return h;
++
++	ret = ckpt_write_obj_type(ctx, NULL, len, CKPT_HDR_PIPE_BUF);
++	if (ret < 0)
++		goto out;
++
++	ret = do_splice_from(pipe, ctx->file, &ctx->file->f_pos, len, 0);
++	if (ret < 0)
++		goto out;
++	if (ret != len)
++		ret = -EPIPE;  /* can occur due to an error in target file */
++ out:
++	__free_pipe_info(pipe);
++	return ret;
 +}
 +
-+void deferqueue_destroy(struct deferqueue_head *h)
++static int pipe_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
 +{
-+	if (!list_empty(&h->list)) {
-+		struct deferqueue_entry *dq, *n;
++	struct ckpt_hdr_file_pipe *h;
++	struct inode *inode = file->f_dentry->d_inode;
++	int objref, first, ret;
 +
-+		pr_debug("%s: freeing non-empty queue\n", __func__);
-+		list_for_each_entry_safe(dq, n, &h->list, list) {
-+			if (dq->destructor)
-+				dq->destructor(dq->data);
-+			list_del(&dq->list);
-+			kfree(dq);
-+		}
-+	}
-+	kfree(h);
-+}
++	objref = ckpt_obj_lookup_add(ctx, inode, CKPT_OBJ_INODE, &first);
++	if (objref < 0)
++		return objref;
 +
-+int deferqueue_add(struct deferqueue_head *head, void *data, int size,
-+		   deferqueue_func_t func, deferqueue_func_t dtor)
-+{
-+	struct deferqueue_entry *dq;
-+
-+	dq = kmalloc(sizeof(*dq) + size, GFP_KERNEL);
-+	if (!dq)
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE);
++	if (!h)
 +		return -ENOMEM;
 +
-+	dq->function = func;
-+	dq->destructor = dtor;
-+	memcpy(dq->data, data, size);
++	h->common.f_type = CKPT_FILE_PIPE;
++	h->pipe_objref = objref;
 +
-+	pr_debug("%s: adding work %p func %p dtor %p\n",
-+		 __func__, dq, func, dtor);
-+	spin_lock(&head->lock);
-+	list_add_tail(&dq->list, &head->list);
-+	spin_unlock(&head->lock);
-+	return 0;
++	ret = checkpoint_file_common(ctx, file, &h->common);
++	if (ret < 0)
++		goto out;
++	ret = ckpt_write_obj(ctx, &h->common.h);
++	if (ret < 0)
++		goto out;
++
++	if (first)
++		ret = checkpoint_pipe(ctx, inode);
++ out:
++	ckpt_hdr_put(ctx, h);
++	return ret;
 +}
 +
-+/*
-+ * deferqueue_run - perform all work in the work queue
-+ * @head: deferqueue_head from which to run
-+ *
-+ * returns: number of works performed, or < 0 on error
-+ */
-+int deferqueue_run(struct deferqueue_head *head)
++static int restore_pipe(struct ckpt_ctx *ctx, struct file *file)
 +{
-+	struct deferqueue_entry *dq, *n;
-+	int nr = 0;
-+	int ret;
++	struct pipe_inode_info *pipe;
++	int len, ret;
 +
-+	list_for_each_entry_safe(dq, n, &head->list, list) {
-+		pr_debug("doing work %p function %p\n", dq, dq->function);
-+		/* don't call destructor - function callback should do it */
-+		ret = dq->function(dq->data);
++	len = _ckpt_read_obj_type(ctx, NULL, 0, CKPT_HDR_PIPE_BUF);
++	if (len < 0)
++		return len;
++
++	pipe = file->f_dentry->d_inode->i_pipe;
++	ret = do_splice_to(ctx->file, &ctx->file->f_pos, pipe, len, 0);
++
++	if (ret >= 0 && ret != len)
++		ret = -EPIPE;  /* can occur due to an error in source file */
++
++	return ret;
++}
++
++struct file *pipe_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr)
++{
++	struct ckpt_hdr_file_pipe *h = (struct ckpt_hdr_file_pipe *) ptr;
++	struct file *file;
++	int fds[2], which, ret;
++
++	if (ptr->h.type != CKPT_HDR_FILE  ||
++	    ptr->h.len != sizeof(*h) || ptr->f_type != CKPT_FILE_PIPE)
++		return ERR_PTR(-EINVAL);
++
++	if (h->pipe_objref <= 0)
++		return ERR_PTR(-EINVAL);
++
++	file = ckpt_obj_try_fetch(ctx, h->pipe_objref, CKPT_OBJ_FILE);
++	/*
++	 * If ckpt_obj_try_fetch() returned ERR_PTR(-EINVAL), then this is
++	 * the first time we see this pipe so need to restore the
++	 * contents.  Otherwise, use the file pointer skip forward.
++	 */
++	if (!IS_ERR(file)) {
++		get_file(file);
++	} else if (PTR_ERR(file) == -EINVAL) {
++		/* first encounter of this pipe: create it */
++		ret = do_pipe_flags(fds, 0);
 +		if (ret < 0)
-+			pr_debug("wq function failed %d\n", ret);
-+		list_del(&dq->list);
-+		kfree(dq);
-+		nr++;
++			return file;
++
++		which = (ptr->f_flags & O_WRONLY ? 1 : 0);
++		/*
++		 * Below we return the file corersponding to one side
++		 * of the pipe for our caller to use. Now insert the
++		 * other side of the pipe to the hash, to be picked up
++		 * when that side is restored.
++		 */
++		file = fget(fds[1-which]);	/* the 'other' side */
++		if (!file)	/* this should _never_ happen ! */
++			return ERR_PTR(-EBADF);
++		ret = ckpt_obj_insert(ctx, file, h->pipe_objref, CKPT_OBJ_FILE);
++		if (ret < 0)
++			goto out;
++
++		ret = restore_pipe(ctx, file);
++		fput(file);
++		if (ret < 0)
++			return ERR_PTR(ret);
++
++		file = fget(fds[which]);	/* 'this' side */
++		if (!file)	/* this should _never_ happen ! */
++			return ERR_PTR(-EBADF);
++
++		/* get rid of the file descriptors (caller sets that) */
++		sys_close(fds[which]);
++		sys_close(fds[1-which]);
++	} else {
++		return file;
 +	}
 +
-+	return nr;
++	ret = restore_file_common(ctx, file, ptr);
++ out:
++	if (ret < 0) {
++		fput(file);
++		file = ERR_PTR(ret);
++	}
++
++	return file;
 +}
++#else
++#define pipe_file_checkpoint  NULL
++#endif /* CONFIG_CHECKPOINT */
++
+ /*
+  * The file_operations structs are not static because they
+  * are also used in linux/fs/fifo.c to do operations on FIFOs.
+@@ -844,6 +998,7 @@ const struct file_operations read_pipefifo_fops = {
+ 	.open		= pipe_read_open,
+ 	.release	= pipe_read_release,
+ 	.fasync		= pipe_read_fasync,
++	.checkpoint	= pipe_file_checkpoint,
+ };
+ 
+ const struct file_operations write_pipefifo_fops = {
+@@ -856,6 +1011,7 @@ const struct file_operations write_pipefifo_fops = {
+ 	.open		= pipe_write_open,
+ 	.release	= pipe_write_release,
+ 	.fasync		= pipe_write_fasync,
++	.checkpoint	= pipe_file_checkpoint,
+ };
+ 
+ const struct file_operations rdwr_pipefifo_fops = {
+@@ -869,6 +1025,7 @@ const struct file_operations rdwr_pipefifo_fops = {
+ 	.open		= pipe_rdwr_open,
+ 	.release	= pipe_rdwr_release,
+ 	.fasync		= pipe_rdwr_fasync,
++	.checkpoint	= pipe_file_checkpoint,
+ };
+ 
+ struct pipe_inode_info * alloc_pipe_info(struct inode *inode)
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 6fae6ef..885d06b 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -90,6 +90,8 @@ enum {
+ #define CKPT_HDR_FILE_NAME CKPT_HDR_FILE_NAME
+ 	CKPT_HDR_FILE,
+ #define CKPT_HDR_FILE CKPT_HDR_FILE
++	CKPT_HDR_PIPE_BUF,
++#define CKPT_HDR_PIPE_BUF CKPT_HDR_PIPE_BUF
+ 
+ 	CKPT_HDR_MM = 401,
+ #define CKPT_HDR_MM CKPT_HDR_MM
+@@ -277,6 +279,8 @@ enum file_type {
+ #define CKPT_FILE_IGNORE CKPT_FILE_IGNORE
+ 	CKPT_FILE_GENERIC,
+ #define CKPT_FILE_GENERIC CKPT_FILE_GENERIC
++	CKPT_FILE_PIPE,
++#define CKPT_FILE_PIPE CKPT_FILE_PIPE
+ 	CKPT_FILE_MAX
+ #define CKPT_FILE_MAX CKPT_FILE_MAX
+ };
+@@ -296,6 +300,11 @@ struct ckpt_hdr_file_generic {
+ 	struct ckpt_hdr_file common;
+ } __attribute__((aligned(8)));
+ 
++struct ckpt_hdr_file_pipe {
++	struct ckpt_hdr_file common;
++	__s32 pipe_objref;
++} __attribute__((aligned(8)));
++
+ /* memory layout */
+ struct ckpt_hdr_mm {
+ 	struct ckpt_hdr h;
+diff --git a/include/linux/pipe_fs_i.h b/include/linux/pipe_fs_i.h
+index b43a9e0..e526a12 100644
+--- a/include/linux/pipe_fs_i.h
++++ b/include/linux/pipe_fs_i.h
+@@ -154,4 +154,12 @@ int generic_pipe_buf_confirm(struct pipe_inode_info *, struct pipe_buffer *);
+ int generic_pipe_buf_steal(struct pipe_inode_info *, struct pipe_buffer *);
+ void generic_pipe_buf_release(struct pipe_inode_info *, struct pipe_buffer *);
+ 
++/* checkpoint/restart */
++#ifdef CONFIG_CHECKPOINT
++struct ckpt_ctx;
++struct ckpt_hdr_file;
++extern struct file *pipe_file_restore(struct ckpt_ctx *ctx,
++				      struct ckpt_hdr_file *ptr);
++#endif
++
+ #endif
 -- 
 1.6.3.3
