@@ -1,8 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 08/96] eclone (8/11): Implement sys_eclone for x86
-	(32, 64)
-Date: Wed, 17 Mar 2010 12:07:56 -0400
-Message-ID: <1268842164-5590-9-git-send-email-orenl__33650.3391540193$1268847411$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 11/96] eclone (11/11): Document sys_eclone
+Date: Wed, 17 Mar 2010 12:07:59 -0400
+Message-ID: <1268842164-5590-12-git-send-email-orenl__252.144321757619$1268847414$gmane$org@cs.columbia.edu>
 References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-2-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-3-git-send-email-orenl@cs.columbia.edu>
@@ -11,11 +10,14 @@ References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-6-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-7-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-8-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-9-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-10-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-11-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268842164-5590-8-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1268842164-5590-11-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -31,340 +33,64 @@ List-Id: containers.vger.kernel.org
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-Container restart requires that a task have the same pid it had when it was
-checkpointed. When containers are nested the tasks within the containers
-exist in multiple pid namespaces and hence have multiple pids to specify
-during restart.
-
-eclone(), intended for use during restart, is the same as
-clone(), except that it takes a 'pids' paramter. This parameter lets
-caller choose specific pid numbers for the child process, in the
-process's active and ancestor pid namespaces. (Descendant pid namespaces
-in general don't matter since processes don't have pids in them anyway,
-but see comments in copy_target_pids() regarding CLONE_NEWPID).
-
-eclone() also attempts to address a second limitation of the
-clone() system call. clone() is restricted to 32 clone flags and all but
-one of these are in use. If more new clone flags are needed, we will be
-forced to define a new variant of the clone() system call. To address
-this, eclone() allows at least 64 clone flags with some room
-for more if necessary.
-
-To prevent unprivileged processes from misusing this interface,
-eclone() currently needs CAP_SYS_ADMIN, when the 'pids' parameter
-is non-NULL.
-
-See Documentation/eclone in next patch for more details and an
-example of its usage.
-
-NOTE:
-	- System calls are restricted to 6 parameters and the number and sizes
-	  of parameters needed for eclone() exceed 6 integers. The new
-	  prototype works around this restriction while providing some
-	  flexibility if eclone() needs to be further extended in the
-	  future.
-TODO:
-	- We should convert clone-flags to 64-bit value in all architectures.
-	  Its probably best to do that as a separate patchset since clone_flags
-	  touches several functions and that patchset seems independent of this
-	  new system call.
-
-Changelog[v14]:
-	- [Oren Laadan] Rebase to kernel 2.6.33
-	  * introduce PTREGSCALL4 for sys_eclone
-	  * consolidate syscall definitions for 32/64 bit
-	- [Oren Laadan] Merge x86_64 (trivial patch) with current
-        - [Serge Hallyn] Add eclone stub for ia32 eclone
+This gives a brief overview of the eclone() system call.  We should
+eventually describe more details in existing clone(2) man page or in
+a new man page.
 
 Changelog[v13]:
-	- [Dave Hansen]: Reorg to enable sharing code between x86 and x86-64.
-	- [Arnd Bergmann]: With args_size parameter, ->reserved1 is redundant
-	  and can be removed.
-	- [Nathan Lynch]: stop warnings about assigning u64 to a (32-bit) int*.
 	- [Nathan Lynch, Serge Hallyn] Rename ->child_stack_base to
 	  ->child_stack and ensure ->child_stack_size is 0 on architectures
-	  that don't need it (see comments in types.h for details).
-
+	  that don't need it.
+	- [Arnd Bergmann] Remove ->reserved1 field
+	- [Louis Rilling, Dave Hansen] Combine the two asm statements in the
+	  example into one and use memory constraint to avoid unncessary copies.
 Changelog[v12]:
-	- [Serge Hallyn] Ignore ->child_stack_size if ->child_stack_base
-	  is NULL.
-	- [Oren Laadan, Serge Hallyn] Rename clone_with_pids() to eclone()
+	- [Serge Hallyn] Fix/simplify stack-setup in the example code
+	- [Serge Hallyn, Oren Laadan] Rename syscall to eclone()
+
 Changelog[v11]:
-	- [Dave Hansen] Move clone_args validation checks to arch-indpeendent
+	- [Dave Hansen] Move clone_args validation checks to arch-indpendent
 	  code.
 	- [Oren Laadan] Make args_size a parameter to system call and remove
 	  it from 'struct clone_args'
+	- [Oren Laadan] Fix some typos and clarify the order of pids in the
+	  @pids parameter.
 
 Changelog[v10]:
-	- Rename clone3() to clone_with_pids()
-	- [Linus Torvalds] Use PTREGSCALL() rather than the generic syscall
-	  implementation
-
+	- Rename clone3() to clone_with_pids() and fix some typos.
+	- Modify example to show usage with the ptregs implementation.
 Changelog[v9]:
-	- [Roland McGrath, H. Peter Anvin] To avoid confusion on 64-bit
-	  architectures split the new clone-flags into 'low' and 'high'
-	  words and pass in the 'lower' flags as the first argument.
-	  This would maintain similarity of the clone3() with clone()/
-	  clone2(). Also has the side-effect of the name matching the
-	  number of parameters :-)
-	- [Roland McGrath] Rename structure to 'clone_args' and add a
-	  'child_stack_size' field
+	- [Pavel Machek]: Fix an inconsistency and rename new file to
+	  Documentation/clone3.
+	- [Roland McGrath, H. Peter Anvin] Updates to description and
+	  example to reflect new prototype of clone3() and the updated/
+	  renamed 'struct clone_args'.
 
-Changelog[v8]
-	- [Oren Laadan] parent_tid and child_tid fields in 'struct clone_arg'
-	  must be 64-bit.
-	- clone2() is in use in IA64. Rename system call to clone3().
-
+Changelog[v8]:
+	- clone2() is already in use in IA64. Rename syscall to clone3()
+	- Add notes to say that we return -EINVAL if invalid clone flags
+	  are specified or if the reserved fields are not 0.
 Changelog[v7]:
-	- [Peter Zijlstra, Arnd Bergmann] Rename system call to clone2()
-	  and group parameters into a new 'struct clone_struct' object.
-
-Changelog[v6]:
-	- (Nathan Lynch, Arnd Bergmann, H. Peter Anvin, Linus Torvalds)
-	  Change 'pid_set.pids' to a 'pid_t pids[]' so size of 'struct pid_set'
-	  is constant across architectures.
-	- (Nathan Lynch) Change pid_set.num_pids to unsigned and remove
-	  'unum_pids < 0' check.
-
-Changelog[v4]:
-	- (Oren Laadan) rename 'struct target_pid_set' to 'struct pid_set'
-
-Changelog[v3]:
-	- (Oren Laadan) Allow CLONE_NEWPID flag (by allocating an extra pid
-	  in the target_pids[] list and setting it 0. See copy_target_pids()).
-	- (Oren Laadan) Specified target pids should apply only to youngest
-	  pid-namespaces (see copy_target_pids())
-	- (Matt Helsley) Update patch description.
-
-Changelog[v2]:
-	- Remove unnecessary printk and add a note to callers of
-	  copy_target_pids() to free target_pids.
-	- (Serge Hallyn) Mention CAP_SYS_ADMIN restriction in patch description.
-	- (Oren Laadan) Add checks for 'num_pids < 0' (return -EINVAL) and
-	  'num_pids == 0' (fall back to normal clone()).
-	- Move arch-independent code (sanity checks and copy-in of target-pids)
-	  into kernel/fork.c and simplify sys_clone_with_pids()
-
-Changelog[v1]:
-	- Fixed some compile errors (had fixed these errors earlier in my
-	  git tree but had not refreshed patches before emailing them)
+	- Rename clone_with_pids() to clone2()
+	- Changes to reflect new prototype of clone2() (using clone_struct).
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Acked-by: Oren Laadan <orenl.cs.columbia.edu>
+Acked-by: Oren Laadan  <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- arch/x86/ia32/ia32entry.S          |    2 +
- arch/x86/include/asm/syscalls.h    |    2 +
- arch/x86/include/asm/unistd_32.h   |    3 +-
- arch/x86/include/asm/unistd_64.h   |    2 +
- arch/x86/kernel/entry_32.S         |   14 ++++
- arch/x86/kernel/entry_64.S         |    1 +
- arch/x86/kernel/process.c          |   40 +++++++++++-
- arch/x86/kernel/syscall_table_32.S |    1 +
- include/linux/sched.h              |    2 +
- include/linux/types.h              |   16 +++++
- kernel/fork.c                      |  124 +++++++++++++++++++++++++++++++++++-
- 11 files changed, 204 insertions(+), 3 deletions(-)
+ Documentation/eclone |  348 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 348 insertions(+), 0 deletions(-)
+ create mode 100644 Documentation/eclone
 
-diff --git a/arch/x86/ia32/ia32entry.S b/arch/x86/ia32/ia32entry.S
-index 53147ad..5eec1d9 100644
---- a/arch/x86/ia32/ia32entry.S
-+++ b/arch/x86/ia32/ia32entry.S
-@@ -477,6 +477,7 @@ quiet_ni_syscall:
- 	PTREGSCALL stub32_clone, sys32_clone, %rdx
- 	PTREGSCALL stub32_vfork, sys_vfork, %rdi
- 	PTREGSCALL stub32_iopl, sys_iopl, %rsi
-+	PTREGSCALL stub32_eclone, sys_eclone, %r8
- 
- ENTRY(ia32_ptregs_common)
- 	popq %r11
-@@ -842,4 +843,5 @@ ia32_sys_call_table:
- 	.quad compat_sys_rt_tgsigqueueinfo	/* 335 */
- 	.quad sys_perf_event_open
- 	.quad compat_sys_recvmmsg
-+	.quad stub32_eclone
- ia32_syscall_end:
-diff --git a/arch/x86/include/asm/syscalls.h b/arch/x86/include/asm/syscalls.h
-index 8868b94..972ab0e 100644
---- a/arch/x86/include/asm/syscalls.h
-+++ b/arch/x86/include/asm/syscalls.h
-@@ -27,6 +27,8 @@ long sys_execve(char __user *, char __user * __user *,
- 		char __user * __user *, struct pt_regs *);
- long sys_clone(unsigned long, unsigned long, void __user *,
- 	       void __user *, struct pt_regs *);
-+long sys_eclone(unsigned flags_low, struct clone_args __user *uca,
-+		int args_size, pid_t __user *pids, struct pt_regs *regs);
- 
- /* kernel/ldt.c */
- asmlinkage int sys_modify_ldt(int, void __user *, unsigned long);
-diff --git a/arch/x86/include/asm/unistd_32.h b/arch/x86/include/asm/unistd_32.h
-index 3baf379..cd7ca6a 100644
---- a/arch/x86/include/asm/unistd_32.h
-+++ b/arch/x86/include/asm/unistd_32.h
-@@ -343,10 +343,11 @@
- #define __NR_rt_tgsigqueueinfo	335
- #define __NR_perf_event_open	336
- #define __NR_recvmmsg		337
-+#define __NR_eclone		338
- 
- #ifdef __KERNEL__
- 
--#define NR_syscalls 338
-+#define NR_syscalls 339
- 
- #define __ARCH_WANT_IPC_PARSE_VERSION
- #define __ARCH_WANT_OLD_READDIR
-diff --git a/arch/x86/include/asm/unistd_64.h b/arch/x86/include/asm/unistd_64.h
-index 4843f7b..d87318d 100644
---- a/arch/x86/include/asm/unistd_64.h
-+++ b/arch/x86/include/asm/unistd_64.h
-@@ -663,6 +663,8 @@ __SYSCALL(__NR_rt_tgsigqueueinfo, sys_rt_tgsigqueueinfo)
- __SYSCALL(__NR_perf_event_open, sys_perf_event_open)
- #define __NR_recvmmsg				299
- __SYSCALL(__NR_recvmmsg, sys_recvmmsg)
-+#define __NR_eclone                   		300
-+__SYSCALL(__NR_eclone, stub_eclone)
- 
- #ifndef __NO_STUBS
- #define __ARCH_WANT_OLD_READDIR
-diff --git a/arch/x86/kernel/entry_32.S b/arch/x86/kernel/entry_32.S
-index 44a8e0d..65e1735 100644
---- a/arch/x86/kernel/entry_32.S
-+++ b/arch/x86/kernel/entry_32.S
-@@ -758,6 +758,19 @@ ptregs_##name: \
- 	addl $4,%esp; \
- 	ret
- 
-+#define PTREGSCALL4(name) \
-+	ALIGN; \
-+ptregs_##name: \
-+	leal 4(%esp),%eax; \
-+	pushl %eax; \
-+	pushl PT_ESI(%eax); \
-+	movl PT_EDX(%eax),%ecx; \
-+	movl PT_ECX(%eax),%edx; \
-+	movl PT_EBX(%eax),%eax; \
-+	call sys_##name; \
-+	addl $8,%esp; \
-+	ret
+diff --git a/Documentation/eclone b/Documentation/eclone
+new file mode 100644
+index 0000000..c2f1b4b
+--- /dev/null
++++ b/Documentation/eclone
+@@ -0,0 +1,348 @@
 +
- PTREGSCALL1(iopl)
- PTREGSCALL0(fork)
- PTREGSCALL0(vfork)
-@@ -767,6 +780,7 @@ PTREGSCALL0(sigreturn)
- PTREGSCALL0(rt_sigreturn)
- PTREGSCALL2(vm86)
- PTREGSCALL1(vm86old)
-+PTREGSCALL4(eclone)
- 
- /* Clone is an oddball.  The 4th arg is in %edi */
- 	ALIGN;
-diff --git a/arch/x86/kernel/entry_64.S b/arch/x86/kernel/entry_64.S
-index 0697ff1..216681e 100644
---- a/arch/x86/kernel/entry_64.S
-+++ b/arch/x86/kernel/entry_64.S
-@@ -698,6 +698,7 @@ END(\label)
- 	PTREGSCALL stub_vfork, sys_vfork, %rdi
- 	PTREGSCALL stub_sigaltstack, sys_sigaltstack, %rdx
- 	PTREGSCALL stub_iopl, sys_iopl, %rsi
-+	PTREGSCALL stub_eclone, sys_eclone, %r8
- 
- ENTRY(ptregscall_common)
- 	DEFAULT_FRAME 1 8	/* offset 8: return address */
-diff --git a/arch/x86/kernel/process.c b/arch/x86/kernel/process.c
-index c9b3522..b2352d9 100644
---- a/arch/x86/kernel/process.c
-+++ b/arch/x86/kernel/process.c
-@@ -252,6 +252,45 @@ sys_clone(unsigned long clone_flags, unsigned long newsp,
- 	return do_fork(clone_flags, newsp, regs, 0, parent_tid, child_tid);
- }
- 
-+long
-+sys_eclone(unsigned flags_low, struct clone_args __user *uca,
-+	   int args_size, pid_t __user *pids, struct pt_regs *regs)
-+{
-+	int rc;
-+	struct clone_args kca;
-+	unsigned long flags;
-+	int __user *parent_tidp;
-+	int __user *child_tidp;
-+	unsigned long __user stack;
-+	unsigned long stack_size;
-+
-+	rc = fetch_clone_args_from_user(uca, args_size, &kca);
-+	if (rc)
-+		return rc;
-+
-+	/*
-+	 * TODO: Convert 'clone-flags' to 64-bits on all architectures.
-+	 * TODO: When ->clone_flags_high is non-zero, copy it in to the
-+	 * 	 higher word(s) of 'flags':
-+	 *
-+	 * 		flags = (kca.clone_flags_high << 32) | flags_low;
-+	 */
-+	flags = flags_low;
-+	parent_tidp = (int *)(unsigned long)kca.parent_tid_ptr;
-+	child_tidp = (int *)(unsigned long)kca.child_tid_ptr;
-+
-+	stack_size = (unsigned long)kca.child_stack_size;
-+	if (stack_size)
-+		return -EINVAL;
-+
-+	stack = (unsigned long)kca.child_stack;
-+	if (!stack)
-+		stack = regs->sp;
-+
-+	return do_fork_with_pids(flags, stack, regs, stack_size, parent_tidp,
-+				child_tidp, kca.nr_pids, pids);
-+}
-+
- /*
-  * This gets run with %si containing the
-  * function to call, and %di containing
-@@ -677,4 +716,3 @@ unsigned long arch_randomize_brk(struct mm_struct *mm)
- 	unsigned long range_end = mm->brk + 0x02000000;
- 	return randomize_range(mm->brk, range_end, 0) ? : mm->brk;
- }
--
-diff --git a/arch/x86/kernel/syscall_table_32.S b/arch/x86/kernel/syscall_table_32.S
-index 15228b5..22ae7ef 100644
---- a/arch/x86/kernel/syscall_table_32.S
-+++ b/arch/x86/kernel/syscall_table_32.S
-@@ -337,3 +337,4 @@ ENTRY(sys_call_table)
- 	.long sys_rt_tgsigqueueinfo	/* 335 */
- 	.long sys_perf_event_open
- 	.long sys_recvmmsg
-+	.long ptregs_eclone
-diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 4f079f7..bcc44ad 100644
---- a/include/linux/sched.h
-+++ b/include/linux/sched.h
-@@ -2189,6 +2189,8 @@ extern int disallow_signal(int);
- 
- extern int do_execve(char *, char __user * __user *, char __user * __user *, struct pt_regs *);
- extern long do_fork(unsigned long, unsigned long, struct pt_regs *, unsigned long, int __user *, int __user *);
-+extern int fetch_clone_args_from_user(struct clone_args __user *, int,
-+				struct clone_args *);
- extern long do_fork_with_pids(unsigned long, unsigned long, struct pt_regs *,
- 				unsigned long, int __user *, int __user *,
- 				unsigned int, pid_t __user *);
-diff --git a/include/linux/types.h b/include/linux/types.h
-index c42724f..d8bfd6b 100644
---- a/include/linux/types.h
-+++ b/include/linux/types.h
-@@ -204,6 +204,22 @@ struct ustat {
- 	char			f_fpack[6];
- };
- 
 +struct clone_args {
 +	u64 clone_flags_high;
-+	/*
-+	 * Architectures can use child_stack for either the stack pointer or
-+	 * the base of of stack. If child_stack is used as the stack pointer,
-+	 * child_stack_size must be 0. Otherwise child_stack_size must be
-+	 * set to size of allocated stack.
-+	 */
 +	u64 child_stack;
 +	u64 child_stack_size;
 +	u64 parent_tid_ptr;
@@ -373,164 +99,342 @@ index c42724f..d8bfd6b 100644
 +	u32 reserved0;
 +};
 +
- #endif	/* __KERNEL__ */
- #endif /*  __ASSEMBLY__ */
- #endif /* _LINUX_TYPES_H */
-diff --git a/kernel/fork.c b/kernel/fork.c
-index fb92128..0f202ae 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -1370,6 +1370,114 @@ struct task_struct * __cpuinit fork_idle(int cpu)
- }
- 
- /*
-+ * If user specified any 'target-pids' in @upid_setp, copy them from
-+ * user and return a pointer to a local copy of the list of pids. The
-+ * caller must free the list, when they are done using it.
-+ *
-+ * If user did not specify any target pids, return NULL (caller should
-+ * treat this like normal clone).
-+ *
-+ * On any errors, return the error code
++
++sys_eclone(u32 flags_low, struct clone_args * __user cargs, int cargs_size,
++		pid_t * __user pids)
++
++	In addition to doing everything that clone() system call does, the
++	eclone() system call:
++
++		- allows additional clone flags (31 of 32 bits in the flags
++		  parameter to clone() are in use)
++
++		- allows user to specify a pid for the child process in its
++		  active and ancestor pid namespaces.
++
++	This system call is meant to be used when restarting an application
++	from a checkpoint. Such restart requires that the processes in the
++	application have the same pids they had when the application was
++	checkpointed. When containers are nested, the processes within the
++	containers exist in multiple pid namespaces and hence have multiple
++	pids to specify during restart.
++
++	The @flags_low parameter is identical to the 'clone_flags' parameter
++	in existing clone() system call.
++
++	The fields in 'struct clone_args' are meant to be used as follows:
++
++	u64 clone_flags_high:
++
++		When eclone() supports more than 32 flags, the additional bits
++		in the clone_flags should be specified in this field. This
++		field is currently unused and must be set to 0.
++
++	u64 child_stack;
++	u64 child_stack_size;
++
++		These two fields correspond to the 'child_stack' fields in
++		clone() and clone2() (on IA64) system calls. The usage of
++		these two fields depends on the processor architecture.
++
++		Most architectures use ->child_stack to pass-in a stack-pointer
++		itself and don't need the ->child_stack_size field. On these
++		architectures the ->child_stack_size field must be 0.
++
++		Some architectures, eg IA64, use ->child_stack to pass-in the
++		base of the region allocated for stack. These architectures
++		must pass in the size of the stack-region in ->child_stack_size.
++
++	u64 parent_tid_ptr;
++	u64 child_tid_ptr;
++
++		These two fields correspond to the 'parent_tid_ptr' and
++		'child_tid_ptr' fields in the clone() system call
++
++	u32 nr_pids;
++
++		nr_pids specifies the number of pids in the @pids array
++		parameter to eclone() (see below). nr_pids should not exceed
++		the current nesting level of the calling process (i.e if the
++		process is in init_pid_ns, nr_pids must be 1, if process is
++		in a pid namespace that is a child of init-pid-ns, nr_pids
++		cannot exceed 2, and so on).
++
++	u32 reserved0;
++	u64 reserved1;
++
++		These fields are intended to extend the functionality of the
++		eclone() in the future, while preserving backward compatibility.
++		They must be set to 0 for now.
++
++	The @cargs_size parameter specifes the sizeof(struct clone_args) and
++	is intended to enable extending this structure in the future, while
++	preserving backward compatibility.  For now, this field must be set
++	to the sizeof(struct clone_args) and this size must match the kernel's
++	view of the structure.
++
++	The @pids parameter defines the set of pids that should be assigned to
++	the child process in its active and ancestor pid namespaces. The
++	descendant pid namespaces do not matter since a process does not have a
++	pid in descendant namespaces, unless the process is in a new pid
++	namespace in which case the process is a container-init (and must have
++	the pid 1 in that namespace).
++
++	See CLONE_NEWPID section of clone(2) man page for details about pid
++	namespaces.
++
++	If a pid in the @pids list is 0, the kernel will assign the next
++	available pid in the pid namespace.
++
++	If a pid in the @pids list is non-zero, the kernel tries to assign
++	the specified pid in that namespace.  If that pid is already in use
++	by another process, the system call fails (see EBUSY below).
++
++	The order of pids in @pids is oldest in pids[0] to youngest pid
++	namespace in pids[nr_pids-1]. If the number of pids specified in the
++	@pids list is fewer than the nesting level of the process, the pids
++	are applied from youngest namespace. i.e if the process is nested in
++	a level-6 pid namespace and @pids only specifies 3 pids, the 3 pids
++	are applied to levels 6, 5 and 4. Levels 0 through 3 are assumed to
++	have a pid of '0' (the kernel will assign a pid in those namespaces).
++
++	On success, the system call returns the pid of the child process in
++	the parent's active pid namespace.
++
++	On failure, eclone() returns -1 and sets 'errno' to one of following
++	values (the child process is not created).
++
++	EPERM	Caller does not have the CAP_SYS_ADMIN privilege needed to
++		specify the pids in this call (if pids are not specifed
++		CAP_SYS_ADMIN is not required).
++
++	EINVAL	The number of pids specified in 'clone_args.nr_pids' exceeds
++		the current nesting level of parent process
++
++	EINVAL	Not all specified clone-flags are valid.
++
++	EINVAL	The reserved fields in the clone_args argument are not 0.
++
++	EINVAL	The child_stack_size field is not 0 (on architectures that
++		pass in a stack pointer in ->child_stack field)
++
++	EBUSY	A requested pid is in use by another process in that namespace.
++
++---
++/*
++ * Example eclone() usage - Create a child process with pid CHILD_TID1 in
++ * the current pid namespace. The child gets the usual "random" pid in any
++ * ancestor pid namespaces.
 + */
-+static pid_t *copy_target_pids(int unum_pids, pid_t __user *upids)
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <signal.h>
++#include <errno.h>
++#include <unistd.h>
++#include <wait.h>
++#include <sys/syscall.h>
++
++#define __NR_eclone		337
++#define CLONE_NEWPID            0x20000000
++#define CLONE_CHILD_SETTID      0x01000000
++#define CLONE_PARENT_SETTID     0x00100000
++#define CLONE_UNUSED		0x00001000
++
++#define STACKSIZE		8192
++
++typedef unsigned long long u64;
++typedef unsigned int u32;
++typedef int pid_t;
++struct clone_args {
++	u64 clone_flags_high;
++	u64 child_stack;
++	u64 child_stack_size;
++
++	u64 parent_tid_ptr;
++	u64 child_tid_ptr;
++
++	u32 nr_pids;
++
++	u32 reserved0;
++};
++
++#define exit		_exit
++
++/*
++ * Following eclone() is based on code posted by Oren Laadan at:
++ * https://lists.linux-foundation.org/pipermail/containers/2009-June/018463.html
++ */
++#if defined(__i386__) && defined(__NR_eclone)
++
++int eclone(u32 flags_low, struct clone_args *clone_args, int args_size,
++		int *pids)
 +{
-+	int j;
-+	int rc;
-+	int size;
-+	int knum_pids;		/* # of pids needed in kernel */
-+	pid_t *target_pids;
++	long retval;
 +
-+	if (!unum_pids)
-+		return NULL;
++	__asm__ __volatile__(
++		 "movl %3, %%ebx\n\t"	/* flags_low -> 1st (ebx) */
++		 "movl %4, %%ecx\n\t"	/* clone_args -> 2nd (ecx)*/
++		 "movl %5, %%edx\n\t"	/* args_size -> 3rd (edx) */
++		 "movl %6, %%edi\n\t"	/* pids -> 4th (edi)*/
 +
-+	knum_pids = task_pid(current)->level + 1;
-+	if (unum_pids > knum_pids)
-+		return ERR_PTR(-EINVAL);
++		 "pushl %%ebp\n\t"	/* save value of ebp */
++		 "int $0x80\n\t"	/* Linux/i386 system call */
++		 "testl %0,%0\n\t"	/* check return value */
++		 "jne 1f\n\t"		/* jump if parent */
 +
-+	/*
-+	 * To keep alloc_pid() simple, allocate an extra pid_t in target_pids[]
-+	 * and set it to 0. This last entry in target_pids[] corresponds to the
-+	 * (yet-to-be-created) descendant pid-namespace if CLONE_NEWPID was
-+	 * specified. If CLONE_NEWPID was not specified, this last entry will
-+	 * simply be ignored.
-+	 */
-+	target_pids = kzalloc((knum_pids + 1) * sizeof(pid_t), GFP_KERNEL);
-+	if (!target_pids)
-+		return ERR_PTR(-ENOMEM);
++		 "popl %%esi\n\t"	/* get subthread function */
++		 "call *%%esi\n\t"	/* start subthread function */
++		 "movl %2,%0\n\t"
++		 "int $0x80\n"		/* exit system call: exit subthread */
++		 "1:\n\t"
++		 "popl %%ebp\t"		/* restore parent's ebp */
 +
-+	/*
-+	 * A process running in a level 2 pid namespace has three pid namespaces
-+	 * and hence three pid numbers. If this process is checkpointed,
-+	 * information about these three namespaces are saved. We refer to these
-+	 * namespaces as 'known namespaces'.
-+	 *
-+	 * If this checkpointed process is however restarted in a level 3 pid
-+	 * namespace, the restarted process has an extra ancestor pid namespace
-+	 * (i.e 'unknown namespace') and 'knum_pids' exceeds 'unum_pids'.
-+	 *
-+	 * During restart, the process requests specific pids for its 'known
-+	 * namespaces' and lets kernel assign pids to its 'unknown namespaces'.
-+	 *
-+	 * Since the requested-pids correspond to 'known namespaces' and since
-+	 * 'known-namespaces' are younger than (i.e descendants of) 'unknown-
-+	 * namespaces', copy requested pids to the back-end of target_pids[]
-+	 * (i.e before the last entry for CLONE_NEWPID mentioned above).
-+	 * Any entries in target_pids[] not corresponding to a requested pid
-+	 * will be set to zero and kernel assigns a pid in those namespaces.
-+	 *
-+	 * NOTE: The order of pids in target_pids[] is oldest pid namespace to
-+	 * 	 youngest (target_pids[0] corresponds to init_pid_ns). i.e.
-+	 * 	 the order is:
-+	 *
-+	 * 		- pids for 'unknown-namespaces' (if any)
-+	 * 		- pids for 'known-namespaces' (requested pids)
-+	 * 		- 0 in the last entry (for CLONE_NEWPID).
-+	 */
-+	j = knum_pids - unum_pids;
-+	size = unum_pids * sizeof(pid_t);
++		:"=a" (retval)
 +
-+	rc = copy_from_user(&target_pids[j], upids, size);
-+	if (rc) {
-+		rc = -EFAULT;
-+		goto out_free;
++		:"0" (__NR_eclone),
++		 "i" (__NR_exit),
++		 "m" (flags_low),
++		 "m" (clone_args),
++		 "m" (args_size),
++		 "m" (pids)
++		);
++
++	if (retval < 0) {
++		errno = -retval;
++		retval = -1;
 +	}
-+
-+	return target_pids;
-+
-+out_free:
-+	kfree(target_pids);
-+	return ERR_PTR(rc);
-+}
-+
-+int
-+fetch_clone_args_from_user(struct clone_args __user *uca, int args_size,
-+			struct clone_args *kca)
-+{
-+	int rc;
-+
-+	/*
-+	 * TODO: If size of clone_args is not what the kernel expects, it
-+	 * 	 could be that kernel is newer and has an extended structure.
-+	 * 	 When that happens, this check needs to be smarter.  For now,
-+	 * 	 assume exact match.
-+	 */
-+	if (args_size != sizeof(struct clone_args))
-+		return -EINVAL;
-+
-+	rc = copy_from_user(kca, uca, args_size);
-+	if (rc)
-+		return -EFAULT;
-+
-+	/*
-+	 * To avoid future compatibility issues, ensure unused fields are 0.
-+	 */
-+	if (kca->reserved0 || kca->clone_flags_high)
-+		return -EINVAL;
-+
-+	return 0;
++	return retval;
 +}
 +
 +/*
-  *  Ok, this is the main fork-routine.
-  *
-  * It copies the process, and if successful kick-starts
-@@ -1387,7 +1495,7 @@ long do_fork_with_pids(unsigned long clone_flags,
- 	struct task_struct *p;
- 	int trace = 0;
- 	long nr;
--	pid_t *target_pids = NULL;
-+	pid_t *target_pids;
- 
- 	/*
- 	 * Do some preliminary argument and permissions checking before we
-@@ -1421,6 +1529,16 @@ long do_fork_with_pids(unsigned long clone_flags,
- 		}
- 	}
- 
-+	target_pids = copy_target_pids(num_pids, upids);
-+	if (target_pids) {
-+		if (IS_ERR(target_pids))
-+			return PTR_ERR(target_pids);
++ * Allocate a stack for the clone-child and arrange to have the child
++ * execute @child_fn with @child_arg as the argument.
++ */
++void *setup_stack(int (*child_fn)(void *), void *child_arg, int size)
++{
++	void *stack_base;
++	void **stack_top;
 +
-+		nr = -EPERM;
-+		if (!capable(CAP_SYS_ADMIN))
-+			goto out_free;
++	stack_base = malloc(size + size);
++	if (!stack_base) {
++		perror("malloc()");
++		exit(1);
 +	}
 +
- 	/*
- 	 * When called from kernel_thread, don't do user tracing stuff.
- 	 */
-@@ -1482,6 +1600,10 @@ long do_fork_with_pids(unsigned long clone_flags,
- 	} else {
- 		nr = PTR_ERR(p);
- 	}
++	stack_top = (void **)((char *)stack_base + (size - 4));
++	*--stack_top = child_arg;
++	*--stack_top = child_fn;
 +
-+out_free:
-+	kfree(target_pids);
++	return stack_top;
++}
++#endif
 +
- 	return nr;
- }
- 
++/* gettid() is a bit more useful than getpid() when messing with clone() */
++int gettid()
++{
++	int rc;
++
++	rc = syscall(__NR_gettid, 0, 0, 0);
++	if (rc < 0) {
++		printf("rc %d, errno %d\n", rc, errno);
++		exit(1);
++	}
++	return rc;
++}
++
++#define CHILD_TID1	377
++#define CHILD_TID2	1177
++#define CHILD_TID3	2799
++
++struct clone_args clone_args;
++void *child_arg = &clone_args;
++int child_tid;
++
++int do_child(void *arg)
++{
++	struct clone_args *cs = (struct clone_args *)arg;
++	int ctid;
++
++	/* Verify we pushed the arguments correctly on the stack... */
++	if (arg != child_arg)  {
++		printf("Child: Incorrect child arg pointer, expected %p,"
++				"actual %p\n", child_arg, arg);
++		exit(1);
++	}
++
++	/* ... and that we got the thread-id we expected */
++	ctid = *((int *)(unsigned long)cs->child_tid_ptr);
++	if (ctid != CHILD_TID1) {
++		printf("Child: Incorrect child tid, expected %d, actual %d\n",
++				CHILD_TID1, ctid);
++		exit(1);
++	} else {
++		printf("Child got the expected tid, %d\n", gettid());
++	}
++	sleep(2);
++
++	printf("[%d, %d]: Child exiting\n", getpid(), ctid);
++	exit(0);
++}
++
++static int do_clone(int (*child_fn)(void *), void *child_arg,
++		unsigned int flags_low, int nr_pids, pid_t *pids_list)
++{
++	int rc;
++	void *stack;
++	struct clone_args *ca = &clone_args;
++	int args_size;
++
++	stack = setup_stack(child_fn, child_arg, STACKSIZE);
++
++	memset(ca, 0, sizeof(*ca));
++
++	ca->child_stack		= (u64)(unsigned long)stack;
++	ca->child_stack_size	= (u64)0;
++	ca->child_tid_ptr	= (u64)(unsigned long)&child_tid;
++	ca->nr_pids		= nr_pids;
++
++	args_size = sizeof(struct clone_args);
++	rc = eclone(flags_low, ca, args_size, pids_list);
++
++	printf("[%d, %d]: eclone() returned %d, error %d\n", getpid(), gettid(),
++				rc, errno);
++	return rc;
++}
++
++/*
++ * Multiple pid_t pid_t values in pids_list[] here are just for illustration.
++ * The test case creates a child in the current pid namespace and uses only
++ * the first value, CHILD_TID1.
++ */
++pid_t pids_list[] = { CHILD_TID1, CHILD_TID2, CHILD_TID3 };
++int main()
++{
++	int rc, pid, status;
++	unsigned long flags;
++	int nr_pids = 1;
++
++	flags = SIGCHLD|CLONE_CHILD_SETTID;
++
++	pid = do_clone(do_child, &clone_args, flags, nr_pids, pids_list);
++
++	printf("[%d, %d]: Parent waiting for %d\n", getpid(), gettid(), pid);
++
++	rc = waitpid(pid, &status, __WALL);
++	if (rc < 0) {
++		printf("waitpid(): rc %d, error %d\n", rc, errno);
++	} else {
++		printf("[%d, %d]: child %d:\n\t wait-status 0x%x\n", getpid(),
++			 gettid(), rc, status);
++
++		if (WIFEXITED(status)) {
++			printf("\t EXITED, %d\n", WEXITSTATUS(status));
++		} else if (WIFSIGNALED(status)) {
++			printf("\t SIGNALED, %d\n", WTERMSIG(status));
++		}
++	}
++	return 0;
++}
 -- 
 1.6.3.3
