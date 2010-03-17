@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 72/96] Expose may_setuid() in user.h and add
-	may_setgid() (v2)
-Date: Wed, 17 Mar 2010 12:09:00 -0400
-Message-ID: <1268842164-5590-73-git-send-email-orenl__42715.7360747971$1268850577$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 53/96] c/r: refuse to checkpoint if monitoring
+	directories with dnotify
+Date: Wed, 17 Mar 2010 12:08:41 -0400
+Message-ID: <1268842164-5590-54-git-send-email-orenl__3578.40181463889$1268850582$gmane$org@cs.columbia.edu>
 References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-2-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-3-git-send-email-orenl@cs.columbia.edu>
@@ -56,30 +56,11 @@ References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-51-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-52-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-53-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-54-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-55-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-56-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-57-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-58-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-59-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-60-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-61-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-62-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-63-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-64-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-65-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-66-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-67-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-68-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-69-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-70-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-71-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-72-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268842164-5590-72-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1268842164-5590-53-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -90,70 +71,100 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Make these helpers available to others.
+We do not support restarting fsnotify watches. inotify and fanotify utilize
+anon_inodes for pseudofiles which lack the .checkpoint operation. So they
+already cleanly prevent checkpoint. dnotify on the other hand registers
+its watches using fcntl() which does not require the userspace task to
+hold an fd with an empty .checkpoint operation. This means userspace
+could use dnotify to set up fsnotify watches which won't be re-created during
+restart.
 
-Changes in v2:
- - Avoid checking the groupinfo in ctx->realcred against the current in
-   may_setgid()
+Check for fsnotify watches created with dnotify and reject checkpoint
+if there are any.
 
-Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Acked-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/user.h |    9 +++++++++
- kernel/user.c        |   13 ++++++++++++-
- 2 files changed, 21 insertions(+), 1 deletions(-)
+ checkpoint/files.c          |    5 +++++
+ fs/notify/dnotify/dnotify.c |   18 ++++++++++++++++++
+ include/linux/dnotify.h     |    6 ++++++
+ 3 files changed, 29 insertions(+), 0 deletions(-)
 
-diff --git a/include/linux/user.h b/include/linux/user.h
-index 68daf84..c231e9c 100644
---- a/include/linux/user.h
-+++ b/include/linux/user.h
-@@ -1 +1,10 @@
-+#ifndef _LINUX_USER_H
-+#define _LINUX_USER_H
-+
- #include <asm/user.h>
-+#include <linux/sched.h>
-+
-+extern int may_setuid(struct user_namespace *ns, uid_t uid);
-+extern int may_setgid(gid_t gid);
-+
-+#endif
-diff --git a/kernel/user.c b/kernel/user.c
-index 15f762c..8ddafea 100644
---- a/kernel/user.c
-+++ b/kernel/user.c
-@@ -604,7 +604,7 @@ int checkpoint_user(struct ckpt_ctx *ctx, void *ptr)
- 	return do_checkpoint_user(ctx, (struct user_struct *) ptr);
- }
+diff --git a/checkpoint/files.c b/checkpoint/files.c
+index c647bfd..62feadd 100644
+--- a/checkpoint/files.c
++++ b/checkpoint/files.c
+@@ -207,6 +207,11 @@ int checkpoint_file(struct ckpt_ctx *ctx, void *ptr)
+ 		return -EBADF;
+ 	}
  
--static int may_setuid(struct user_namespace *ns, uid_t uid)
-+int may_setuid(struct user_namespace *ns, uid_t uid)
- {
- 	/*
- 	 * this next check will one day become
-@@ -631,6 +631,17 @@ static int may_setuid(struct user_namespace *ns, uid_t uid)
++	if (is_dnotify_attached(file)) {
++		ckpt_err(ctx, -EBADF, "%(T)%(P)dnotify unsupported\n", file);
++		return -EBADF;
++	}
++
+ 	ret = file->f_op->checkpoint(ctx, file);
+ 	if (ret < 0)
+ 		ckpt_err(ctx, ret, "%(T)%(P)file checkpoint failed\n", file);
+diff --git a/fs/notify/dnotify/dnotify.c b/fs/notify/dnotify/dnotify.c
+index 7e54e52..0a63bf6 100644
+--- a/fs/notify/dnotify/dnotify.c
++++ b/fs/notify/dnotify/dnotify.c
+@@ -289,6 +289,24 @@ static int attach_dn(struct dnotify_struct *dn, struct dnotify_mark_entry *dnent
  	return 0;
  }
  
-+int may_setgid(gid_t gid)
++int is_dnotify_attached(struct file *filp)
 +{
-+	if (capable(CAP_SETGID))
-+		return 1;
++	struct fsnotify_mark_entry *entry;
++	struct inode *inode;
 +
-+	if (in_egroup_p(gid))
-+		return 1;
++	inode = filp->f_path.dentry->d_inode;
++	if (!S_ISDIR(inode->i_mode))
++		return 0;
 +
++	spin_lock(&inode->i_lock);
++	entry = fsnotify_find_mark_entry(dnotify_group, inode);
++	spin_unlock(&inode->i_lock);
++	if (!entry)
++		return 0;
++	fsnotify_put_mark(entry);
++	return 1;
++}
++
+ /*
+  * When a process calls fcntl to attach a dnotify watch to a directory it ends
+  * up here.  Allocate both a mark for fsnotify to add and a dnotify_struct to be
+diff --git a/include/linux/dnotify.h b/include/linux/dnotify.h
+index ecc0628..b9ce13c 100644
+--- a/include/linux/dnotify.h
++++ b/include/linux/dnotify.h
+@@ -29,6 +29,7 @@ struct dnotify_struct {
+ 			    FS_MOVED_FROM | FS_MOVED_TO)
+ 
+ extern void dnotify_flush(struct file *, fl_owner_t);
++extern int is_dnotify_attached(struct file *);
+ extern int fcntl_dirnotify(int, struct file *, unsigned long);
+ 
+ #else
+@@ -37,6 +38,11 @@ static inline void dnotify_flush(struct file *filp, fl_owner_t id)
+ {
+ }
+ 
++static inline int is_dnotify_attached(struct file *)
++{
 +	return 0;
 +}
 +
- static struct user_struct *do_restore_user(struct ckpt_ctx *ctx)
+ static inline int fcntl_dirnotify(int fd, struct file *filp, unsigned long arg)
  {
- 	struct user_struct *u;
+ 	return -EINVAL;
 -- 
 1.6.3.3
