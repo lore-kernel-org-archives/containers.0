@@ -1,17 +1,30 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Linux Checkpoint-Restart - v19
-Date: Wed, 17 Mar 2010 15:55:56 -0500
-Message-ID: <20100317205556.GA20750__37894.2884308801$1268859508$gmane$org@us.ibm.com>
-References: <4B83106C.7040203@cs.columbia.edu>
-	<a1c54a921003150155q4a0c7fc1vb02ba0464b07f452@mail.gmail.com>
-	<4B9EBAF2.1060304@cs.columbia.edu>
-	<0B4E8136-FFC6-490D-B04A-23A6E1A924FF@dependable-os.net>
+From: Andreas Dilger <adilger-xsfywfwIY+M@public.gmane.org>
+Subject: Re: [C/R v20][PATCH 46/96] c/r: add checkpoint operation for opened
+	files of generic filesystems
+Date: Wed, 17 Mar 2010 15:09:00 -0600
+Message-ID: <BA0C23DE-E2B5-42A9-8478-CE216D18A6C6__24983.7203803056$1268860277$gmane$org@sun.com>
+References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-2-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-3-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-4-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-5-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-6-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-7-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-8-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-9-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-10-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-11-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-12-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-13-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-14-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-15-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-16-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-17-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <0B4E8136-FFC6-490D-B04A-23A6E1A924FF-Xy3Dp9s2+bNGIRItUzBvX16hYfS7NtTn@public.gmane.org>
+In-reply-to: <1268842164-5590-47-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,99 +34,83 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jiro SEKIBA <jir-Xy3Dp9s2+bNGIRItUzBvX16hYfS7NtTn@public.gmane.org>
-Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Jiro SEKIBA (jir-Xy3Dp9s2+bNGIRItUzBvX16hYfS7NtTn@public.gmane.org):
-> Hi,
-> 
-> Thank you for prompt reply!
-> Sorry that I didn't post to containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cuFJUID1Z7QI@public.gmane.org
-> 
-> On 2010/03/16, at 7:55, Oren Laadan wrote:
-> 
-> > Hi,
-> > 
-> > Thanks for taking the time to evaluate c/r. You may want to also
-> > try the latest, which is (as of now) ckpt-v20-rc2.
-> 
-> Yeah, I'll eventually try to keep up with the latest,
-> but I just want to try the one  you think it's stable first anyway.
-> 
-> > In the future, please CC the containers mailing list for issues
-> > related to c/r, at "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org".
-> > 
-> > Jiro SEKIBA wrote:
-> >> Hi,
-> >> I'm trying to evaluate external checkpoint/restart with cr-v19 kernel.
-> >> However, when I restart, I got "Killed" message in stdout.
-> >> Do you have any tips or clue that are not in
-> >> Documentation/checkpoint/usage.txt ?
-> >> I'm using kernel pulled from
-> >> git://git.ncl.cs.columbia.edu/pub/git/linux-cr.git .
-> >> checkout tag named "ckpt-v19". Base distro is ubuntu 9.10.
-> >> I ran self checkpioint/restart sample program in Documentation/checkpint.
-> >> It works as written in usage.txt.
-> >> However, I can not make external checkpint/restart work properly.
-> >> I made a simple test program bellow and create checkpoint externally using
-> >> the program in Documentation/checkpoint/, it looks checkpoint file is
-> >> created properly.
-> >> However, when I ran self_restart < ckpt.image, I got "Killed" message.
-> > 
-> > If you take an external checkpoint, then you need to match it
-> > with an external restart, as opposed to self_restart.
-> > 
-> > Otherwise, restarting with self_restart from a checkpoint that is
-> > not a self-checkpoint can yield unexpected results.
-> > 
-> > Since you don't mention in your post, I don't know if you are using
-> > the tools from user-cr. If not, then you should use 'checkpoint' and
-> > 'restart' tools from there. It is available from:
-> > 	git://git.ncl.cs.columbia.edu/pub/git/user-cr.git
-> > (use the same branch as the one you used to linux-cr).
-> > 
-> > Once you have the tools compiled, and you checkpoint with the
-> > 'checkpoint' utility from there, you can restart with:
-> > 	restart -v < ckpt.image
-> > 
-> 
-> Thank you for the information.
-> Actually I was trying to create checkpoint in Document/checkpints.
-> 
-> Now, I tried with user-cr, compiled binary in the same tag (ckpt-v19).
-> Creating checkpoint  looks OK and restart -v shows it Success.  nice!
-> However, the contents in /tmp/test.out never get further,
-> it remains same as when created checkpoint.
-> 
-> I tried  "./restart -F /cgroup/0 -v --no-pidns < ckpt.image", got Success.
-> cat /cgroup/0/tasks tells that there is a process.
-> ps shows ./test.  So, it looks restarting.
-> 
-> # ps axuww |grep $(cat /cgroup/0/tasks )
-> root      7231  0.1  0.0   1588    64 pts/0    D    16:57   0:00 ./test
-> root      7238  0.0  0.1   2716   660 pts/1    R+   16:57   0:00 grep 7231
-> 
-> under the /proc, one file descriptor opened, and it is /tmp/test.out
-> 
-> #  ls -l /proc/$(cat /cgroup/0/tasks)/fd
-> total 0
-> lrwx------ 1 root root 64 Mar 16 16:58 0 -> /tmp/test.out
-> 
-> Nhh, it's close..
-> 
-> I found that when I mount cgroup with -o freezer, self_checkpoint won't work.
-> It worked even I didn't mount the cgroup.
-> Is it what you expect?
+On 2010-03-17, at 10:08, Oren Laadan wrote:
+> These patches extend the use of the generic file checkpoint  
+> operation to
+> non-extX filesystems which have lseek operations that ensure we can  
+> save
+> and restore the files for later use. Note that this does not include
+> things like FUSE, network filesystems, or pseudo-filesystem kernel
+> interfaces.
 
-No, it is not.  Can you tell us more about exactly how it fails?
+I didn't see any other patches posted to linux-fsdevel regarding what  
+this code is, or what it is supposed to be doing.  Could you please  
+repost the patches related to generic_file_checkpoint(), and the  
+overview email that explains what you mean by "checkpoint".  I'm  
+assuming this is related to HPC/process restart/migration, but better  
+to not guess.
 
-Maybe get the cr_tests (either from Oren's tree or from
-git clone git://git.sr71.net/~hallyn/cr_tests.git), cd cr_test,
-make, cd simple, run ./ckpt and send us the contents of
-/tmp/log, dmesg, and ckptinfo -ve /tmp/out ?
+> @@ -718,6 +718,7 @@ static const struct file_operations  
+> btrfs_ctl_fops = {
+> 	.unlocked_ioctl	 = btrfs_control_ioctl,
+> 	.compat_ioctl = btrfs_control_ioctl,
+> 	.owner	 = THIS_MODULE,
+> +	.checkpoint = generic_file_checkpoint,
+> };
+>
+> const struct file_operations exofs_file_operations = {
+> 	.llseek		= generic_file_llseek,
+> +	.checkpoint	= generic_file_checkpoint,
+> 	.read		= do_sync_read,
+> 	.write		= do_sync_write,
+> 	.aio_read	= generic_file_aio_read,
+>
+> static const struct file_operations hostfs_file_fops = {
+> 	.llseek		= generic_file_llseek,
+> +	.checkpoint	= generic_file_checkpoint,
+> 	.read		= do_sync_read,
+> 	.splice_read	= generic_file_splice_read,
+> 	.aio_read	= generic_file_aio_read,
+> @@ -430,6 +431,7 @@ static const struct file_operations  
+> hostfs_file_fops = {
+>
+> static const struct file_operations hostfs_dir_fops = {
+> 	.llseek		= generic_file_llseek,
+> +	.checkpoint	= generic_file_checkpoint,
+> 	.readdir	= hostfs_readdir,
+> 	.read		= generic_read_dir,
+> };
+>
+> const struct file_operations nilfs_file_operations = {
+> 	.llseek		= generic_file_llseek,
+> +	.checkpoint	= generic_file_checkpoint,
+> 	.read		= do_sync_read,
+> 	.write		= do_sync_write,
+> 	.aio_read	= generic_file_aio_read,
 
-> Thank you again for the help!
-> I'm feeling better to use the latest ..
 
--serge
+Minor nit - it would be good to add this method in the same place in  
+all of the *_file_operation structures for consistency.  Ideally these  
+would already be in the order that they are declared in the structure,  
+but at least new ones should be added consistently.
+
+> static const struct vm_operations_struct nfs_file_vm_ops = {
+> 	.fault = filemap_fault,
+> 	.page_mkwrite = nfs_vm_page_mkwrite,
+> +#ifdef CONFIG_CHECKPOINT
+> +	.checkpoint = filemap_checkpoint,
+> +#endif
+> };
+
+Why is this one conditional, but the others are not?
+
+
+Cheers, Andreas
+--
+Andreas Dilger
+Sr. Staff Engineer, Lustre Group
+Sun Microsystems of Canada, Inc.
