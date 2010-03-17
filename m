@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 09/96] eclone (9/11): Implement sys_eclone for s390
-Date: Wed, 17 Mar 2010 12:07:57 -0400
-Message-ID: <1268842164-5590-10-git-send-email-orenl__31472.0170492821$1268846145$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 14/96] c/r: split core function out of some set*{u,
+	g}id functions
+Date: Wed, 17 Mar 2010 12:08:02 -0400
+Message-ID: <1268842164-5590-15-git-send-email-orenl__45348.7268453047$1268846200$gmane$org@cs.columbia.edu>
 References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-2-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-3-git-send-email-orenl@cs.columbia.edu>
@@ -11,11 +12,16 @@ References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-7-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-8-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-9-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-10-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-11-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-12-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-13-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-14-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268842164-5590-9-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1268842164-5590-14-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -31,140 +37,390 @@ List-Id: containers.vger.kernel.org
 
 From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Implement the s390 hook for sys_eclone().
+When restarting tasks, we want to be able to change xuid and
+xgid in a struct cred, and do so with security checks.  Break
+the core functionality of set{fs,res}{u,g}id into cred_setX
+which performs the access checks based on current_cred(),
+but performs the requested change on a passed-in cred.
 
-Changelog:
-	Nov 24: Removed user-space code from commit log. See user-cr git tree.
-	Nov 17: remove redundant flags_high check
-	Nov 13: As suggested by Heiko, convert eclone to take its
-		parameters via registers.
+This will allow us to securely construct struct creds based
+on a checkpoint image, constrained by the caller's permissions,
+and apply them to the caller at the end of sys_restart().
 
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Acked-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- arch/s390/include/asm/unistd.h    |    3 ++-
- arch/s390/kernel/compat_linux.c   |   17 +++++++++++++++++
- arch/s390/kernel/compat_wrapper.S |    8 ++++++++
- arch/s390/kernel/process.c        |   37 +++++++++++++++++++++++++++++++++++++
- arch/s390/kernel/syscalls.S       |    1 +
- 5 files changed, 65 insertions(+), 1 deletions(-)
+ include/linux/cred.h |    8 +++
+ kernel/cred.c        |  114 ++++++++++++++++++++++++++++++++++++++++++
+ kernel/sys.c         |  134 ++++++++------------------------------------------
+ 3 files changed, 143 insertions(+), 113 deletions(-)
 
-diff --git a/arch/s390/include/asm/unistd.h b/arch/s390/include/asm/unistd.h
-index 6e9f049..2250950 100644
---- a/arch/s390/include/asm/unistd.h
-+++ b/arch/s390/include/asm/unistd.h
-@@ -269,7 +269,8 @@
- #define	__NR_pwritev		329
- #define __NR_rt_tgsigqueueinfo	330
- #define __NR_perf_event_open	331
--#define NR_syscalls 332
-+#define __NR_eclone		332
-+#define NR_syscalls 333
+diff --git a/include/linux/cred.h b/include/linux/cred.h
+index 4e3387a..e35631e 100644
+--- a/include/linux/cred.h
++++ b/include/linux/cred.h
+@@ -22,6 +22,9 @@ struct user_struct;
+ struct cred;
+ struct inode;
  
- /* 
-  * There are some system calls that are not present on 64 bit, some
-diff --git a/arch/s390/kernel/compat_linux.c b/arch/s390/kernel/compat_linux.c
-index 11c3aba..f9e8983 100644
---- a/arch/s390/kernel/compat_linux.c
-+++ b/arch/s390/kernel/compat_linux.c
-@@ -663,6 +663,23 @@ asmlinkage long sys32_write(unsigned int fd, char __user * buf, size_t count)
- 	return sys_write(fd, buf, count);
- }
- 
-+asmlinkage long sys32_clone(void)
-+{
-+	struct pt_regs *regs = task_pt_regs(current);
-+	unsigned long clone_flags;
-+	unsigned long newsp;
-+	int __user *parent_tidptr, *child_tidptr;
-+
-+	clone_flags = regs->gprs[3] & 0xffffffffUL;
-+	newsp = regs->orig_gpr2 & 0x7fffffffUL;
-+	parent_tidptr = compat_ptr(regs->gprs[4]);
-+	child_tidptr = compat_ptr(regs->gprs[5]);
-+	if (!newsp)
-+		newsp = regs->gprs[15];
-+	return do_fork(clone_flags, newsp, regs, 0,
-+		       parent_tidptr, child_tidptr);
-+}
++/* defined in sys.c, used in cred_setresuid */
++extern int set_user(struct cred *new);
 +
  /*
-  * 31 bit emulation wrapper functions for sys_fadvise64/fadvise64_64.
-  * These need to rewrite the advise values for POSIX_FADV_{DONTNEED,NOREUSE}
-diff --git a/arch/s390/kernel/compat_wrapper.S b/arch/s390/kernel/compat_wrapper.S
-index 30de2d0..cfa227e 100644
---- a/arch/s390/kernel/compat_wrapper.S
-+++ b/arch/s390/kernel/compat_wrapper.S
-@@ -1847,6 +1847,14 @@ sys_clone_wrapper:
- 	llgtr	%r5,%r5			# int *
- 	jg	sys_clone		# branch to system call
+  * COW Supplementary groups list
+  */
+@@ -396,4 +399,9 @@ do {						\
+ 	*(_fsgid) = __cred->fsgid;		\
+ } while(0)
  
-+	.globl	sys_eclone_wrapper
-+sys_eclone_wrapper:
-+	llgfr	%r2,%r2			# unsigned int
-+	llgtr	%r3,%r3			# struct clone_args *
-+	lgfr	%r4,%r4			# int
-+	llgtr	%r5,%r5			# pid_t *
-+	jg	sys_eclone		# branch to system call
++int cred_setresuid(struct cred *new, uid_t ruid, uid_t euid, uid_t suid);
++int cred_setresgid(struct cred *new, gid_t rgid, gid_t egid, gid_t sgid);
++int cred_setfsuid(struct cred *new, uid_t uid, uid_t *old_fsuid);
++int cred_setfsgid(struct cred *new, gid_t gid, gid_t *old_fsgid);
 +
- 	.globl	sys32_execve_wrapper
- sys32_execve_wrapper:
- 	llgtr	%r2,%r2			# char *
-diff --git a/arch/s390/kernel/process.c b/arch/s390/kernel/process.c
-index 00b6d1d..5b0729a 100644
---- a/arch/s390/kernel/process.c
-+++ b/arch/s390/kernel/process.c
-@@ -240,6 +240,43 @@ SYSCALL_DEFINE4(clone, unsigned long, newsp, unsigned long, clone_flags,
- 		       parent_tidptr, child_tidptr);
+ #endif /* _LINUX_CRED_H */
+diff --git a/kernel/cred.c b/kernel/cred.c
+index 1ed8ca1..1fefcb1 100644
+--- a/kernel/cred.c
++++ b/kernel/cred.c
+@@ -890,3 +890,117 @@ void validate_creds_for_do_exit(struct task_struct *tsk)
  }
  
-+SYSCALL_DEFINE4(eclone, unsigned int, flags_low, struct clone_args __user *,
-+		uca, int, args_size, pid_t __user *, pids)
+ #endif /* CONFIG_DEBUG_CREDENTIALS */
++
++int cred_setresuid(struct cred *new, uid_t ruid, uid_t euid, uid_t suid)
 +{
-+	int rc;
-+	struct pt_regs *regs = task_pt_regs(current);
-+	struct clone_args kca;
-+	int __user *parent_tid_ptr;
-+	int __user *child_tid_ptr;
-+	unsigned long flags;
-+	unsigned long __user child_stack;
-+	unsigned long stack_size;
++	int retval;
++	const struct cred *old;
 +
-+	rc = fetch_clone_args_from_user(uca, args_size, &kca);
-+	if (rc)
-+		return rc;
++	retval = security_task_setuid(ruid, euid, suid, LSM_SETID_RES);
++	if (retval)
++		return retval;
++	old = current_cred();
 +
-+	flags = flags_low;
-+	parent_tid_ptr = (int __user *) kca.parent_tid_ptr;
-+	child_tid_ptr =  (int __user *) kca.child_tid_ptr;
++	if (!capable(CAP_SETUID)) {
++		if (ruid != (uid_t) -1 && ruid != old->uid &&
++		    ruid != old->euid  && ruid != old->suid)
++			return -EPERM;
++		if (euid != (uid_t) -1 && euid != old->uid &&
++		    euid != old->euid  && euid != old->suid)
++			return -EPERM;
++		if (suid != (uid_t) -1 && suid != old->uid &&
++		    suid != old->euid  && suid != old->suid)
++			return -EPERM;
++	}
 +
-+	stack_size = (unsigned long) kca.child_stack_size;
-+	if (stack_size)
-+		return -EINVAL;
++	if (ruid != (uid_t) -1) {
++		new->uid = ruid;
++		if (ruid != old->uid) {
++			retval = set_user(new);
++			if (retval < 0)
++				return retval;
++		}
++	}
++	if (euid != (uid_t) -1)
++		new->euid = euid;
++	if (suid != (uid_t) -1)
++		new->suid = suid;
++	new->fsuid = new->euid;
 +
-+	child_stack = (unsigned long) kca.child_stack;
-+	if (!child_stack)
-+		child_stack = regs->gprs[15];
-+
-+	/*
-+	 * TODO: On 32-bit systems, clone_flags is passed in as 32-bit value
-+	 * 	 to several functions. Need to convert clone_flags to 64-bit.
-+	 */
-+	return do_fork_with_pids(flags, child_stack, regs, stack_size,
-+				parent_tid_ptr, child_tid_ptr, kca.nr_pids,
-+				pids);
++	return security_task_fix_setuid(new, old, LSM_SETID_RES);
 +}
 +
++int cred_setresgid(struct cred *new, gid_t rgid, gid_t egid,
++			gid_t sgid)
++{
++	const struct cred *old = current_cred();
++	int retval;
++
++	retval = security_task_setgid(rgid, egid, sgid, LSM_SETID_RES);
++	if (retval)
++		return retval;
++
++	if (!capable(CAP_SETGID)) {
++		if (rgid != (gid_t) -1 && rgid != old->gid &&
++		    rgid != old->egid  && rgid != old->sgid)
++			return -EPERM;
++		if (egid != (gid_t) -1 && egid != old->gid &&
++		    egid != old->egid  && egid != old->sgid)
++			return -EPERM;
++		if (sgid != (gid_t) -1 && sgid != old->gid &&
++		    sgid != old->egid  && sgid != old->sgid)
++			return -EPERM;
++	}
++
++	if (rgid != (gid_t) -1)
++		new->gid = rgid;
++	if (egid != (gid_t) -1)
++		new->egid = egid;
++	if (sgid != (gid_t) -1)
++		new->sgid = sgid;
++	new->fsgid = new->egid;
++	return 0;
++}
++
++int cred_setfsuid(struct cred *new, uid_t uid, uid_t *old_fsuid)
++{
++	const struct cred *old;
++
++	old = current_cred();
++	*old_fsuid = old->fsuid;
++
++	if (security_task_setuid(uid, (uid_t)-1, (uid_t)-1, LSM_SETID_FS) < 0)
++		return -EPERM;
++
++	if (uid == old->uid  || uid == old->euid  ||
++	    uid == old->suid || uid == old->fsuid ||
++	    capable(CAP_SETUID)) {
++		if (uid != *old_fsuid) {
++			new->fsuid = uid;
++			if (security_task_fix_setuid(new, old, LSM_SETID_FS) == 0)
++				return 0;
++		}
++	}
++	return -EPERM;
++}
++
++int cred_setfsgid(struct cred *new, gid_t gid, gid_t *old_fsgid)
++{
++	const struct cred *old;
++
++	old = current_cred();
++	*old_fsgid = old->fsgid;
++
++	if (security_task_setgid(gid, (gid_t)-1, (gid_t)-1, LSM_SETID_FS))
++		return -EPERM;
++
++	if (gid == old->gid  || gid == old->egid  ||
++	    gid == old->sgid || gid == old->fsgid ||
++	    capable(CAP_SETGID)) {
++		if (gid != *old_fsgid) {
++			new->fsgid = gid;
++			return 0;
++		}
++	}
++	return -EPERM;
++}
+diff --git a/kernel/sys.c b/kernel/sys.c
+index 18bde97..0df737a 100644
+--- a/kernel/sys.c
++++ b/kernel/sys.c
+@@ -563,11 +563,12 @@ error:
  /*
-  * This is trivial, and on the face of it looks like it
-  * could equally well be done in user mode.
-diff --git a/arch/s390/kernel/syscalls.S b/arch/s390/kernel/syscalls.S
-index 30eca07..fb8708d 100644
---- a/arch/s390/kernel/syscalls.S
-+++ b/arch/s390/kernel/syscalls.S
-@@ -340,3 +340,4 @@ SYSCALL(sys_preadv,sys_preadv,compat_sys_preadv_wrapper)
- SYSCALL(sys_pwritev,sys_pwritev,compat_sys_pwritev_wrapper)
- SYSCALL(sys_rt_tgsigqueueinfo,sys_rt_tgsigqueueinfo,compat_sys_rt_tgsigqueueinfo_wrapper) /* 330 */
- SYSCALL(sys_perf_event_open,sys_perf_event_open,sys_perf_event_open_wrapper)
-+SYSCALL(sys_eclone,sys_eclone,sys_eclone_wrapper)
+  * change the user struct in a credentials set to match the new UID
+  */
+-static int set_user(struct cred *new)
++int set_user(struct cred *new)
+ {
+ 	struct user_struct *new_user;
+ 
+-	new_user = alloc_uid(current_user_ns(), new->uid);
++	/* is this ok? */
++	new_user = alloc_uid(new->user->user_ns, new->uid);
+ 	if (!new_user)
+ 		return -EAGAIN;
+ 
+@@ -708,14 +709,12 @@ error:
+ 	return retval;
+ }
+ 
+-
+ /*
+  * This function implements a generic ability to update ruid, euid,
+  * and suid.  This allows you to implement the 4.4 compatible seteuid().
+  */
+ SYSCALL_DEFINE3(setresuid, uid_t, ruid, uid_t, euid, uid_t, suid)
+ {
+-	const struct cred *old;
+ 	struct cred *new;
+ 	int retval;
+ 
+@@ -723,45 +722,10 @@ SYSCALL_DEFINE3(setresuid, uid_t, ruid, uid_t, euid, uid_t, suid)
+ 	if (!new)
+ 		return -ENOMEM;
+ 
+-	retval = security_task_setuid(ruid, euid, suid, LSM_SETID_RES);
+-	if (retval)
+-		goto error;
+-	old = current_cred();
+-
+-	retval = -EPERM;
+-	if (!capable(CAP_SETUID)) {
+-		if (ruid != (uid_t) -1 && ruid != old->uid &&
+-		    ruid != old->euid  && ruid != old->suid)
+-			goto error;
+-		if (euid != (uid_t) -1 && euid != old->uid &&
+-		    euid != old->euid  && euid != old->suid)
+-			goto error;
+-		if (suid != (uid_t) -1 && suid != old->uid &&
+-		    suid != old->euid  && suid != old->suid)
+-			goto error;
+-	}
+-
+-	if (ruid != (uid_t) -1) {
+-		new->uid = ruid;
+-		if (ruid != old->uid) {
+-			retval = set_user(new);
+-			if (retval < 0)
+-				goto error;
+-		}
+-	}
+-	if (euid != (uid_t) -1)
+-		new->euid = euid;
+-	if (suid != (uid_t) -1)
+-		new->suid = suid;
+-	new->fsuid = new->euid;
+-
+-	retval = security_task_fix_setuid(new, old, LSM_SETID_RES);
+-	if (retval < 0)
+-		goto error;
+-
+-	return commit_creds(new);
++	retval = cred_setresuid(new, ruid, euid, suid);
++	if (retval == 0)
++		return commit_creds(new);
+ 
+-error:
+ 	abort_creds(new);
+ 	return retval;
+ }
+@@ -783,43 +747,17 @@ SYSCALL_DEFINE3(getresuid, uid_t __user *, ruid, uid_t __user *, euid, uid_t __u
+  */
+ SYSCALL_DEFINE3(setresgid, gid_t, rgid, gid_t, egid, gid_t, sgid)
+ {
+-	const struct cred *old;
+ 	struct cred *new;
+ 	int retval;
+ 
+ 	new = prepare_creds();
+ 	if (!new)
+ 		return -ENOMEM;
+-	old = current_cred();
+ 
+-	retval = security_task_setgid(rgid, egid, sgid, LSM_SETID_RES);
+-	if (retval)
+-		goto error;
++	retval = cred_setresgid(new, rgid, egid, sgid);
++	if (retval == 0)
++		return commit_creds(new);
+ 
+-	retval = -EPERM;
+-	if (!capable(CAP_SETGID)) {
+-		if (rgid != (gid_t) -1 && rgid != old->gid &&
+-		    rgid != old->egid  && rgid != old->sgid)
+-			goto error;
+-		if (egid != (gid_t) -1 && egid != old->gid &&
+-		    egid != old->egid  && egid != old->sgid)
+-			goto error;
+-		if (sgid != (gid_t) -1 && sgid != old->gid &&
+-		    sgid != old->egid  && sgid != old->sgid)
+-			goto error;
+-	}
+-
+-	if (rgid != (gid_t) -1)
+-		new->gid = rgid;
+-	if (egid != (gid_t) -1)
+-		new->egid = egid;
+-	if (sgid != (gid_t) -1)
+-		new->sgid = sgid;
+-	new->fsgid = new->egid;
+-
+-	return commit_creds(new);
+-
+-error:
+ 	abort_creds(new);
+ 	return retval;
+ }
+@@ -836,7 +774,6 @@ SYSCALL_DEFINE3(getresgid, gid_t __user *, rgid, gid_t __user *, egid, gid_t __u
+ 	return retval;
+ }
+ 
+-
+ /*
+  * "setfsuid()" sets the fsuid - the uid used for filesystem checks. This
+  * is used for "access()" and for the NFS daemon (letting nfsd stay at
+@@ -845,35 +782,20 @@ SYSCALL_DEFINE3(getresgid, gid_t __user *, rgid, gid_t __user *, egid, gid_t __u
+  */
+ SYSCALL_DEFINE1(setfsuid, uid_t, uid)
+ {
+-	const struct cred *old;
+ 	struct cred *new;
+ 	uid_t old_fsuid;
++	int retval;
+ 
+ 	new = prepare_creds();
+ 	if (!new)
+ 		return current_fsuid();
+-	old = current_cred();
+-	old_fsuid = old->fsuid;
+-
+-	if (security_task_setuid(uid, (uid_t)-1, (uid_t)-1, LSM_SETID_FS) < 0)
+-		goto error;
+-
+-	if (uid == old->uid  || uid == old->euid  ||
+-	    uid == old->suid || uid == old->fsuid ||
+-	    capable(CAP_SETUID)) {
+-		if (uid != old_fsuid) {
+-			new->fsuid = uid;
+-			if (security_task_fix_setuid(new, old, LSM_SETID_FS) == 0)
+-				goto change_okay;
+-		}
+-	}
+ 
+-error:
+-	abort_creds(new);
+-	return old_fsuid;
++	retval = cred_setfsuid(new, uid, &old_fsuid);
++	if (retval == 0)
++		commit_creds(new);
++	else
++		abort_creds(new);
+ 
+-change_okay:
+-	commit_creds(new);
+ 	return old_fsuid;
+ }
+ 
+@@ -882,34 +804,20 @@ change_okay:
+  */
+ SYSCALL_DEFINE1(setfsgid, gid_t, gid)
+ {
+-	const struct cred *old;
+ 	struct cred *new;
+ 	gid_t old_fsgid;
++	int retval;
+ 
+ 	new = prepare_creds();
+ 	if (!new)
+ 		return current_fsgid();
+-	old = current_cred();
+-	old_fsgid = old->fsgid;
+-
+-	if (security_task_setgid(gid, (gid_t)-1, (gid_t)-1, LSM_SETID_FS))
+-		goto error;
+-
+-	if (gid == old->gid  || gid == old->egid  ||
+-	    gid == old->sgid || gid == old->fsgid ||
+-	    capable(CAP_SETGID)) {
+-		if (gid != old_fsgid) {
+-			new->fsgid = gid;
+-			goto change_okay;
+-		}
+-	}
+ 
+-error:
+-	abort_creds(new);
+-	return old_fsgid;
++	retval = cred_setfsgid(new, gid, &old_fsgid);
++	if (retval == 0)
++		commit_creds(new);
++	else
++		abort_creds(new);
+ 
+-change_okay:
+-	commit_creds(new);
+ 	return old_fsgid;
+ }
+ 
 -- 
 1.6.3.3
