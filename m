@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 89/96] powerpc: checkpoint/restart implementation
-Date: Wed, 17 Mar 2010 12:09:17 -0400
-Message-ID: <1268842164-5590-90-git-send-email-orenl__35133.1200720326$1268850993$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 63/96] c/r: define s390-specific checkpoint-restart
+	code
+Date: Wed, 17 Mar 2010 12:08:51 -0400
+Message-ID: <1268842164-5590-64-git-send-email-orenl__32030.7116643109$1268851232$gmane$org@cs.columbia.edu>
 References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-2-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-3-git-send-email-orenl@cs.columbia.edu>
@@ -65,37 +66,11 @@ References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-61-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-62-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-63-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-64-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-65-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-66-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-67-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-68-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-69-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-70-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-71-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-72-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-73-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-74-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-75-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-76-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-77-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-78-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-79-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-80-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-81-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-82-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-83-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-84-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-85-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-86-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-87-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-88-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-89-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268842164-5590-89-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1268842164-5590-63-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -106,676 +81,707 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Support for checkpointing and restarting GPRs, FPU state, DABR, and
-Altivec state.
+Implement the s390 arch-specific checkpoint/restart helpers.  This
+is on top of Oren Laadan's c/r code.
 
-The portion of the checkpoint image manipulated by this code begins
-with a bitmask of features indicating the various contexts saved.
-Fields in image that can vary depending on kernel configuration
-(e.g. FP regs due to VSX) have their sizes explicitly recorded, except
-for GPRS, so migrating between ppc32 and ppc64 won't work yet.
+With these, I am able to checkpoint and restart simple programs as per
+Oren's patch intro.  While on x86 I never had to freeze a single task
+to checkpoint it, on s390 I do need to.  That is a prereq for consistent
+snapshots (esp with multiple processes) anyway so I don't see that as
+a problem.
 
-The restart code ensures that the task is not modified until the
-checkpoint image is validated against the current kernel configuration
-and hardware features (e.g. can't restart a task using Altivec on
-non-Altivec systems).
+Changelog [v20]:
+  - [Serge Hallyn] save_access_regs for self-checkpoint
+  - [Serge Hallyn] send uses_interp=1 to arch_setup_additional_pages
+Changelog [v19]:
+  - [Serge Hallyn] Move get_signal_to_deliver() up in do_signal
+Changelog [v19-rc3]:
+  - [Serge Hallyn] Ue simpler test_task_thread to test current ti flags
+  - [Serge Hallyn] Fix 31-bit s390 checkpoint/restart wrappers
+  - [Serge Hallyn] Update sys_checkpoint (do_sys_checkpoint on all archs)
+  - [Oren Laadan] Move checkpoint.c from arch/s390/mm->arch/s390/kernel
+Changelog [v19-rc1]:
+  - [Matt Helsley] Add cpp definitions for enums
+Changelog:
+    Jun 15:
+            . Fix checkpoint and restart compat wrappers
+    May 28:
+            . Export asm/checkpoint_hdr.h to userspace
+            . Define CKPT_ARCH_ID for S390
+    Apr 11:
+            . Introduce ckpt_arch_vdso()
+    Feb 27:
+            . Add checkpoint_s390.h
+            . Fixed up save and restore of PSW, with the non-address bits
+              properly masked out
+    Feb 25:
+            . Make checkpoint_hdr.h safe for inclusion in userspace
+            . Replace comment about vsdo code
+            . Add comment about restoring access registers
+            . Write and read an empty ckpt_hdr_head_arch record to appease
+              code (mktree) that expects it to be there
+            . Utilize NUM_CKPT_WORDS in checkpoint_hdr.h
+    Feb 24:
+            . Use CKPT_COPY() to unify the un/loading of cpu and mm state
+            . Fix fprs definition in ckpt_hdr_cpu
+            . Remove debug WARN_ON() from checkpoint.c
+    Feb 23:
+            . Macro-ize the un/packing of trace flags
+            . Fix the crash when externally-linked
+            . Break out the restart functions into restart.c
+            . Remove unneeded s390_enable_sie() call
+    Jan 30:
+            . Switched types in ckpt_hdr_cpu to __u64 etc.
+              (Per Oren suggestion)
+            . Replaced direct inclusion of structs in
+              ckpt_hdr_cpu with the struct members.
+              (Per Oren suggestion)
+            . Also ended up adding a bunch of new things
+              into restart (mm_segment, ksp, etc) in vain
+              attempt to get code using fpu to not segfault
+              after restart.
 
-What works:
-* self and external checkpoint of simple (single thread, one open
-  file) 32- and 64-bit processes on a ppc64 kernel
-
-What doesn't work:
-* restarting a 32-bit task from a 64-bit task and vice versa
-
-Untested:
-* ppc32 (but it builds)
-
-Changelog[v19]:
-  - [Serge Hallyn] Add hook task_has_saved_sigmask()
-Changelog[v19-rc3]:
-  - [Oren Laadan] Move checkpoint.c from arch/powerpc/{mm->kernel}
-  - [Nathan Lynch] Warn if full register state unavailable
-
-Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-[Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>] Add arch-specific tty support
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Acked-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- arch/powerpc/include/asm/Kbuild           |    1 +
- arch/powerpc/include/asm/checkpoint_hdr.h |   37 ++
- arch/powerpc/kernel/Makefile              |    1 +
- arch/powerpc/kernel/checkpoint.c          |  533 +++++++++++++++++++++++++++++
- arch/powerpc/kernel/signal.c              |    6 +
- 5 files changed, 578 insertions(+), 0 deletions(-)
- create mode 100644 arch/powerpc/include/asm/checkpoint_hdr.h
- create mode 100644 arch/powerpc/kernel/checkpoint.c
+ arch/s390/include/asm/Kbuild           |    1 +
+ arch/s390/include/asm/checkpoint_hdr.h |   98 ++++++++++++
+ arch/s390/include/asm/thread_info.h    |    2 +
+ arch/s390/include/asm/unistd.h         |    4 +-
+ arch/s390/kernel/Makefile              |    1 +
+ arch/s390/kernel/checkpoint.c          |  258 ++++++++++++++++++++++++++++++++
+ arch/s390/kernel/compat_wrapper.S      |   16 ++
+ arch/s390/kernel/process.c             |   20 +++-
+ arch/s390/kernel/signal.c              |   16 ++
+ arch/s390/kernel/syscalls.S            |    2 +
+ arch/s390/mm/Makefile                  |    1 +
+ arch/s390/mm/checkpoint_s390.h         |   23 +++
+ include/linux/checkpoint_hdr.h         |    3 +
+ mm/mmap.c                              |    9 +-
+ 14 files changed, 451 insertions(+), 3 deletions(-)
+ create mode 100644 arch/s390/include/asm/checkpoint_hdr.h
+ create mode 100644 arch/s390/kernel/checkpoint.c
+ create mode 100644 arch/s390/mm/checkpoint_s390.h
 
-diff --git a/arch/powerpc/include/asm/Kbuild b/arch/powerpc/include/asm/Kbuild
-index 5ab7d7f..20379f1 100644
---- a/arch/powerpc/include/asm/Kbuild
-+++ b/arch/powerpc/include/asm/Kbuild
-@@ -12,6 +12,7 @@ header-y += shmbuf.h
- header-y += socket.h
- header-y += termbits.h
- header-y += fcntl.h
+diff --git a/arch/s390/include/asm/Kbuild b/arch/s390/include/asm/Kbuild
+index 63a2341..3282a6e 100644
+--- a/arch/s390/include/asm/Kbuild
++++ b/arch/s390/include/asm/Kbuild
+@@ -8,6 +8,7 @@ header-y += ucontext.h
+ header-y += vtoc.h
+ header-y += zcrypt.h
+ header-y += chsc.h
 +header-y += checkpoint_hdr.h
- header-y += poll.h
- header-y += sockios.h
- header-y += ucontext.h
-diff --git a/arch/powerpc/include/asm/checkpoint_hdr.h b/arch/powerpc/include/asm/checkpoint_hdr.h
-new file mode 100644
-index 0000000..fbb1705
---- /dev/null
-+++ b/arch/powerpc/include/asm/checkpoint_hdr.h
-@@ -0,0 +1,37 @@
-+#ifndef __ASM_POWERPC_CKPT_HDR_H
-+#define __ASM_POWERPC_CKPT_HDR_H
-+
-+#include <linux/types.h>
-+
-+/* arch dependent constants */
-+#define CKPT_ARCH_NSIG 64
-+#define CKPT_TTY_NCC  10
-+
-+#ifdef __KERNEL__
-+
-+#include <asm/signal.h>
-+#if CKPT_ARCH_NSIG != _NSIG
-+#error CKPT_ARCH_NSIG size is wrong per asm/signal.h and asm/checkpoint_hdr.h
-+#endif
-+
-+#include <linux/tty.h>
-+#if CKPT_TTY_NCC != NCC
-+#error CKPT_TTY_NCC size is wrong per asm-generic/termios.h
-+#endif
-+
-+#endif /* __KERNEL__ */
-+
-+#ifdef __KERNEL__
-+#ifdef CONFIG_PPC64
-+#define CKPT_ARCH_ID CKPT_ARCH_PPC64
-+#else
-+#define CKPT_ARCH_ID CKPT_ARCH_PPC32
-+#endif
-+#endif
-+
-+struct ckpt_hdr_header_arch {
-+	struct ckpt_hdr h;
-+	__u32 what;
-+} __attribute__((aligned(8)));
-+
-+#endif /* __ASM_POWERPC_CKPT_HDR_H */
-diff --git a/arch/powerpc/kernel/Makefile b/arch/powerpc/kernel/Makefile
-index c002b04..b5bd090 100644
---- a/arch/powerpc/kernel/Makefile
-+++ b/arch/powerpc/kernel/Makefile
-@@ -63,6 +63,7 @@ obj64-$(CONFIG_HIBERNATION)	+= swsusp_asm64.o
- obj-$(CONFIG_MODULES)		+= module.o module_$(CONFIG_WORD_SIZE).o
- obj-$(CONFIG_44x)		+= cpu_setup_44x.o
- obj-$(CONFIG_FSL_BOOKE)		+= cpu_setup_fsl_booke.o dbell.o
-+obj-$(CONFIG_CHECKPOINT)	+= checkpoint.o
  
- extra-y				:= head_$(CONFIG_WORD_SIZE).o
- extra-$(CONFIG_PPC_BOOK3E_32)	:= head_new_booke.o
-diff --git a/arch/powerpc/kernel/checkpoint.c b/arch/powerpc/kernel/checkpoint.c
+ unifdef-y += cmb.h
+ unifdef-y += debug.h
+diff --git a/arch/s390/include/asm/checkpoint_hdr.h b/arch/s390/include/asm/checkpoint_hdr.h
 new file mode 100644
-index 0000000..2634011
+index 0000000..e3312c0
 --- /dev/null
-+++ b/arch/powerpc/kernel/checkpoint.c
-@@ -0,0 +1,533 @@
++++ b/arch/s390/include/asm/checkpoint_hdr.h
+@@ -0,0 +1,98 @@
++#ifndef __ASM_S390_CKPT_HDR_H
++#define __ASM_S390_CKPT_HDR_H
 +/*
-+ * PowerPC architecture support for checkpoint/restart.
-+ * Based on x86 implementation.
++ *  Checkpoint/restart - architecture specific headers s/390
 + *
-+ * Copyright (C) 2008 Oren Laadan
-+ * Copyright 2009 IBM Corp.
++ *  Copyright IBM Corp. 2009
 + *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License version
-+ * 2 as published by the Free Software Foundation.
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
 + */
 +
-+#if 0
-+#define DEBUG
++#ifndef _CHECKPOINT_CKPT_HDR_H_
++#error asm/checkpoint_hdr.h included directly
 +#endif
 +
-+#include <linux/checkpoint.h>
-+#include <linux/checkpoint_hdr.h>
-+#include <linux/kernel.h>
-+#include <asm/processor.h>
++#include <linux/types.h>
 +#include <asm/ptrace.h>
-+#include <asm/system.h>
 +
-+enum ckpt_cpu_feature {
-+	CKPT_USED_FP,
-+	CKPT_USED_DEBUG,
-+	CKPT_USED_ALTIVEC,
-+	CKPT_USED_SPE,
-+	CKPT_USED_VSX,
-+	CKPT_FTR_END = 31,
-+};
++#ifdef __KERNEL__
++#include <asm/processor.h>
++#endif
 +
-+#define x(ftr) (1UL << ftr)
++#ifdef CONFIG_64BIT
++#define CKPT_ARCH_ID	CKPT_ARCH_S390X
++/* else - if we ever support 32bit - CKPT_ARCH_S390 */
++#endif
 +
-+/* features this kernel can handle for restart */
-+enum {
-+	CKPT_FTRS_POSSIBLE =
-+#ifdef CONFIG_PPC_FPU
-+	x(CKPT_USED_FP) |
-+#endif
-+	x(CKPT_USED_DEBUG) |
-+#ifdef CONFIG_ALTIVEC
-+	x(CKPT_USED_ALTIVEC) |
-+#endif
-+#ifdef CONFIG_SPE
-+	x(CKPT_USED_SPE) |
-+#endif
-+#ifdef CONFIG_VSX
-+	x(CKPT_USED_VSX) |
-+#endif
-+	0,
-+};
++/*
++ * Notes
++ * NUM_GPRS defined in <asm/ptrace.h> to be 16
++ * NUM_FPRS defined in <asm/ptrace.h> to be 16
++ * NUM_APRS defined in <asm/ptrace.h> to be 16
++ * NUM_CR_WORDS defined in <asm/ptrace.h> to be 3
++ *              but is not yet in glibc headers.
++ */
 +
-+#undef x
++#ifndef NUM_CR_WORDS
++#define NUM_CR_WORDS 3
++#endif
 +
 +struct ckpt_hdr_cpu {
 +	struct ckpt_hdr h;
-+	u32 features_used;
-+	u32 pt_regs_size;
-+	u32 fpr_size;
-+	u64 orig_gpr3;
-+	struct pt_regs pt_regs;
-+	/* relevant fields from thread_struct */
-+	double fpr[32][TS_FPRWIDTH];
-+	u32 fpscr;
-+	s32 fpexc_mode;
-+	u64 dabr;
-+	/* Altivec/VMX state */
-+	vector128 vr[32];
-+	vector128 vscr;
-+	u64 vrsave;
-+	/* SPE state */
-+	u32 evr[32];
-+	u64 acc;
-+	u32 spefscr;
++	__u64 args[1];
++	__u64 gprs[NUM_GPRS];
++	__u64 orig_gpr2;
++	__u16 svcnr;
++	__u16 ilc;
++	__u32 acrs[NUM_ACRS];
++	__u64 ieee_instruction_pointer;
++
++	/* psw_t */
++	__u64 psw_t_mask;
++	__u64 psw_t_addr;
++
++	/* s390_fp_regs_t */
++	__u32 fpc;
++	union {
++		float f;
++		double d;
++		__u64 ui;
++		struct {
++			__u32 fp_hi;
++			__u32 fp_lo;
++		} fp;
++	} fprs[NUM_FPRS];
++
++	/* per_struct */
++	__u64 per_control_regs[NUM_CR_WORDS];
++	__u64 starting_addr;
++	__u64 ending_addr;
++	__u64 address;
++	__u16 perc_atmid;
++	__u8 access_id;
++	__u8 single_step;
++	__u8 instruction_fetch;
 +};
++
++struct ckpt_hdr_thread {
++	struct ckpt_hdr h;
++	__u64 thread_info_flags;
++};
++
++struct ckpt_hdr_mm_context {
++	struct ckpt_hdr h;
++	unsigned long vdso_base;
++	int noexec;
++	int has_pgste;
++	int alloc_pgste;
++	unsigned long asce_bits;
++	unsigned long asce_limit;
++};
++
++struct ckpt_hdr_header_arch {
++	struct ckpt_hdr h;
++};
++
++#endif /* __ASM_S390_CKPT_HDR__H */
+diff --git a/arch/s390/include/asm/thread_info.h b/arch/s390/include/asm/thread_info.h
+index 66069e7..61e84e5 100644
+--- a/arch/s390/include/asm/thread_info.h
++++ b/arch/s390/include/asm/thread_info.h
+@@ -99,6 +99,7 @@ static inline struct thread_info *current_thread_info(void)
+ #define TIF_MEMDIE		18
+ #define TIF_RESTORE_SIGMASK	19	/* restore signal mask in do_signal() */
+ #define TIF_FREEZE		20	/* thread is freezing for suspend */
++#define TIF_SIG_RESTARTBLOCK	23	/* restart must set TIF_RESTART_SVC */
+ 
+ #define _TIF_NOTIFY_RESUME	(1<<TIF_NOTIFY_RESUME)
+ #define _TIF_RESTORE_SIGMASK	(1<<TIF_RESTORE_SIGMASK)
+@@ -114,6 +115,7 @@ static inline struct thread_info *current_thread_info(void)
+ #define _TIF_POLLING_NRFLAG	(1<<TIF_POLLING_NRFLAG)
+ #define _TIF_31BIT		(1<<TIF_31BIT)
+ #define _TIF_FREEZE		(1<<TIF_FREEZE)
++#define _TIF_SIG_RESTARTBLOCK	(1<<TIF_SIG_RESTARTBLOCK)
+ 
+ #endif /* __KERNEL__ */
+ 
+diff --git a/arch/s390/include/asm/unistd.h b/arch/s390/include/asm/unistd.h
+index 2250950..7c3b55e 100644
+--- a/arch/s390/include/asm/unistd.h
++++ b/arch/s390/include/asm/unistd.h
+@@ -270,7 +270,9 @@
+ #define __NR_rt_tgsigqueueinfo	330
+ #define __NR_perf_event_open	331
+ #define __NR_eclone		332
+-#define NR_syscalls 333
++#define __NR_checkpoint		333
++#define __NR_restart		334
++#define NR_syscalls 335
+ 
+ /* 
+  * There are some system calls that are not present on 64 bit, some
+diff --git a/arch/s390/kernel/Makefile b/arch/s390/kernel/Makefile
+index 683f638..5fdde07 100644
+--- a/arch/s390/kernel/Makefile
++++ b/arch/s390/kernel/Makefile
+@@ -33,6 +33,7 @@ extra-y				+= head.o init_task.o vmlinux.lds
+ obj-$(CONFIG_MODULES)		+= s390_ksyms.o module.o
+ obj-$(CONFIG_SMP)		+= smp.o topology.o
+ obj-$(CONFIG_HIBERNATION)	+= suspend.o swsusp_asm64.o
++obj-$(CONFIG_CHECKPOINT)	+= checkpoint.o
+ obj-$(CONFIG_AUDIT)		+= audit.o
+ compat-obj-$(CONFIG_AUDIT)	+= compat_audit.o
+ obj-$(CONFIG_COMPAT)		+= compat_linux.o compat_signal.o \
+diff --git a/arch/s390/kernel/checkpoint.c b/arch/s390/kernel/checkpoint.c
+new file mode 100644
+index 0000000..79f0a2f
+--- /dev/null
++++ b/arch/s390/kernel/checkpoint.c
+@@ -0,0 +1,258 @@
++/*
++ *  Checkpoint/restart - architecture specific support for s390
++ *
++ *  Copyright IBM Corp. 2009
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ */
++
++#include <linux/kernel.h>
++#include <asm/system.h>
++#include <asm/pgtable.h>
++#include <asm/elf.h>
++#include <asm/unistd.h>
++
++#include <linux/checkpoint.h>
++#include <linux/checkpoint_hdr.h>
 +
 +/**************************************************************************
 + * Checkpoint
 + */
 +
-+static void ckpt_cpu_feature_set(struct ckpt_hdr_cpu *hdr,
-+				 enum ckpt_cpu_feature ftr)
++static void s390_copy_regs(int op, struct ckpt_hdr_cpu *h,
++			   struct task_struct *t)
 +{
-+	hdr->features_used |= 1ULL << ftr;
++	struct pt_regs *regs = task_pt_regs(t);
++	struct thread_struct *thr = &t->thread;
++
++	/* Save the whole PSW to facilitate forensic debugging, but only
++	 * restore the address portion to avoid letting userspace do
++	 * bad things by manipulating its value.
++	 */
++	if (op == CKPT_CPT) {
++		CKPT_COPY(op, h->psw_t_addr, regs->psw.addr);
++	} else {
++		regs->psw.addr &= ~PSW_ADDR_INSN;
++		regs->psw.addr |= h->psw_t_addr;
++	}
++
++	CKPT_COPY(op, h->args[0], regs->args[0]);
++	CKPT_COPY(op, h->orig_gpr2, regs->orig_gpr2);
++	CKPT_COPY(op, h->svcnr, regs->svcnr);
++	CKPT_COPY(op, h->ilc, regs->ilc);
++	CKPT_COPY(op, h->ieee_instruction_pointer,
++		thr->ieee_instruction_pointer);
++	CKPT_COPY(op, h->psw_t_mask, regs->psw.mask);
++	CKPT_COPY(op, h->fpc, thr->fp_regs.fpc);
++	CKPT_COPY(op, h->starting_addr, thr->per_info.starting_addr);
++	CKPT_COPY(op, h->ending_addr, thr->per_info.ending_addr);
++	CKPT_COPY(op, h->address, thr->per_info.lowcore.words.address);
++	CKPT_COPY(op, h->perc_atmid, thr->per_info.lowcore.words.perc_atmid);
++	CKPT_COPY(op, h->access_id, thr->per_info.lowcore.words.access_id);
++	CKPT_COPY(op, h->single_step, thr->per_info.single_step);
++	CKPT_COPY(op, h->instruction_fetch, thr->per_info.instruction_fetch);
++
++	CKPT_COPY_ARRAY(op, h->gprs, regs->gprs, NUM_GPRS);
++	/*
++	 * for checkpoint in process context (from within a container),
++	 * the actual syscall is taking place at this very moment; so
++	 * we (optimistically) subtitute the future return value (0) of
++	 * this syscall into the orig_eax, so that upon restart it will
++	 * succeed (or it will endlessly retry checkpoint...)
++	 */
++	if (op == CKPT_CPT && t == current) {
++		BUG_ON(h->gprs[2] < 0);
++		h->gprs[2] = 0;
++	}
++
++	/*
++	 * if a checkpoint was taken while interrupted from a restartable
++	 * syscall, then treat this as though signr==0 (since we did not
++	 * handle the signal) and finish the last part of do_signal
++	 */
++	if (op == CKPT_RST && test_thread_flag(TIF_SIG_RESTARTBLOCK)) {
++		regs->gprs[2] = __NR_restart_syscall;
++		set_thread_flag(TIF_RESTART_SVC);
++		clear_thread_flag(TIF_SIG_RESTARTBLOCK);
++	}
++
++	CKPT_COPY_ARRAY(op, h->fprs, thr->fp_regs.fprs, NUM_FPRS);
++	if (op == CKPT_CPT && t == current) {
++		save_access_regs(h->acrs);
++	} else {
++		CKPT_COPY_ARRAY(op, h->acrs, thr->acrs, NUM_ACRS);
++	}
++	CKPT_COPY_ARRAY(op, h->per_control_regs,
++		      thr->per_info.control_regs.words.cr, NUM_CR_WORDS);
 +}
 +
-+static bool ckpt_cpu_feature_isset(const struct ckpt_hdr_cpu *hdr,
-+				 enum ckpt_cpu_feature ftr)
++static void s390_mm(int op, struct ckpt_hdr_mm_context *h,
++		    struct mm_struct *mm)
 +{
-+	return hdr->features_used & (1ULL << ftr);
++	CKPT_COPY(op, h->noexec, mm->context.noexec);
++	CKPT_COPY(op, h->has_pgste, mm->context.has_pgste);
++	CKPT_COPY(op, h->alloc_pgste, mm->context.alloc_pgste);
++	CKPT_COPY(op, h->asce_bits, mm->context.asce_bits);
++	CKPT_COPY(op, h->asce_limit, mm->context.asce_limit);
 +}
 +
-+/* determine whether an image has feature bits set that this kernel
-+ * does not support */
-+static bool ckpt_cpu_features_unknown(const struct ckpt_hdr_cpu *hdr)
-+{
-+	return hdr->features_used & ~CKPT_FTRS_POSSIBLE;
-+}
-+
-+static void checkpoint_gprs(struct ckpt_hdr_cpu *cpu_hdr,
-+			    struct task_struct *task)
-+{
-+	struct pt_regs *pt_regs;
-+
-+	pr_debug("%s: saving GPRs\n", __func__);
-+
-+	cpu_hdr->pt_regs_size = sizeof(*pt_regs);
-+	pt_regs = task_pt_regs(task);
-+	WARN_ON(!FULL_REGS(pt_regs));
-+
-+	cpu_hdr->pt_regs = *pt_regs;
-+
-+	if (task == current)
-+		cpu_hdr->pt_regs.gpr[3] = 0;
-+
-+	cpu_hdr->orig_gpr3 = pt_regs->orig_gpr3;
-+}
-+
-+#ifdef CONFIG_PPC_FPU
-+static void checkpoint_fpu(struct ckpt_hdr_cpu *cpu_hdr,
-+			   struct task_struct *task)
-+{
-+	/* easiest to save FP state unconditionally */
-+
-+	pr_debug("%s: saving FPU state\n", __func__);
-+
-+	if (task == current)
-+		flush_fp_to_thread(task);
-+
-+	cpu_hdr->fpr_size = sizeof(cpu_hdr->fpr);
-+	cpu_hdr->fpscr = task->thread.fpscr.val;
-+	cpu_hdr->fpexc_mode = task->thread.fpexc_mode;
-+
-+	memcpy(cpu_hdr->fpr, task->thread.fpr, sizeof(cpu_hdr->fpr));
-+
-+	ckpt_cpu_feature_set(cpu_hdr, CKPT_USED_FP);
-+}
-+#else
-+static void checkpoint_fpu(struct ckpt_hdr_cpu *cpu_hdr,
-+			   struct task_struct *task)
-+{
-+	return;
-+}
-+#endif
-+
-+#ifdef CONFIG_ALTIVEC
-+static void checkpoint_altivec(struct ckpt_hdr_cpu *cpu_hdr,
-+			       struct task_struct *task)
-+{
-+	if (!cpu_has_feature(CPU_FTR_ALTIVEC))
-+		return;
-+
-+	if (!task->thread.used_vr)
-+		return;
-+
-+	pr_debug("%s: saving Altivec state\n", __func__);
-+
-+	if (task == current)
-+		flush_altivec_to_thread(task);
-+
-+	cpu_hdr->vrsave = task->thread.vrsave;
-+	memcpy(cpu_hdr->vr, task->thread.vr, sizeof(cpu_hdr->vr));
-+	ckpt_cpu_feature_set(cpu_hdr, CKPT_USED_ALTIVEC);
-+}
-+#else
-+static void checkpoint_altivec(struct ckpt_hdr_cpu *cpu_hdr,
-+			       struct task_struct *task)
-+{
-+	return;
-+}
-+#endif
-+
-+#ifdef CONFIG_SPE
-+static void checkpoint_spe(struct ckpt_hdr_cpu *cpu_hdr,
-+			   struct task_struct *task)
-+{
-+	if (!cpu_has_feature(CPU_FTR_SPE))
-+		return;
-+
-+	if (!task->thread.used_spe)
-+		return;
-+
-+	pr_debug("%s: saving SPE state\n", __func__);
-+
-+	if (task == current)
-+		flush_spe_to_thread(task);
-+
-+	cpu_hdr->acc = task->thread.acc;
-+	cpu_hdr->spefscr = task->thread.spefscr;
-+	memcpy(cpu_hdr->evr, task->thread.evr, sizeof(cpu_hdr->evr));
-+	ckpt_cpu_feature_set(cpu_hdr, CKPT_USED_SPE);
-+}
-+#else
-+static void checkpoint_spe(struct ckpt_hdr_cpu *cpu_hdr,
-+			   struct task_struct *task)
-+{
-+	return;
-+}
-+#endif
-+
-+static void checkpoint_dabr(struct ckpt_hdr_cpu *cpu_hdr,
-+			    const struct task_struct *task)
-+{
-+	if (!task->thread.dabr)
-+		return;
-+
-+	cpu_hdr->dabr = task->thread.dabr;
-+	ckpt_cpu_feature_set(cpu_hdr, CKPT_USED_DEBUG);
-+}
-+
-+/* dump the thread_struct of a given task */
 +int checkpoint_thread(struct ckpt_ctx *ctx, struct task_struct *t)
 +{
-+	return 0;
++	struct ckpt_hdr_thread *h;
++	int ret;
++
++	/* we will eventually support this, as we do on x86-64 */
++	if (test_tsk_thread_flag(t, TIF_31BIT)) {
++		ckpt_err(ctx, -EINVAL, "checkpoint of 31-bit task\n");
++		return -EINVAL;
++	}
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_THREAD);
++	if (!h)
++		return -ENOMEM;
++
++	h->thread_info_flags = task_thread_info(t)->flags;
++	ret = ckpt_write_obj(ctx, &h->h);
++	ckpt_hdr_put(ctx, h);
++
++	return ret;
 +}
 +
 +/* dump the cpu state and registers of a given task */
 +int checkpoint_cpu(struct ckpt_ctx *ctx, struct task_struct *t)
 +{
-+	struct ckpt_hdr_cpu *cpu_hdr;
-+	int rc;
-+
-+	rc = -ENOMEM;
-+	cpu_hdr = ckpt_hdr_get_type(ctx, sizeof(*cpu_hdr), CKPT_HDR_CPU);
-+	if (!cpu_hdr)
-+		goto err;
-+
-+	checkpoint_gprs(cpu_hdr, t);
-+	checkpoint_fpu(cpu_hdr, t);
-+	checkpoint_dabr(cpu_hdr, t);
-+	checkpoint_altivec(cpu_hdr, t);
-+	checkpoint_spe(cpu_hdr, t);
-+
-+	rc = ckpt_write_obj(ctx, (struct ckpt_hdr *) cpu_hdr);
-+err:
-+	ckpt_hdr_put(ctx, cpu_hdr);
-+	return rc;
-+}
-+
-+int checkpoint_write_header_arch(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_hdr_header_arch *arch_hdr;
++	struct ckpt_hdr_cpu *h;
 +	int ret;
 +
-+	arch_hdr = ckpt_hdr_get_type(ctx, sizeof(*arch_hdr),
-+				     CKPT_HDR_HEADER_ARCH);
-+	if (!arch_hdr)
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_CPU);
++	if (!h)
 +		return -ENOMEM;
 +
-+	arch_hdr->what = 0xdeadbeef;
++	s390_copy_regs(CKPT_CPT, h, t);
 +
-+	ret = ckpt_write_obj(ctx, &arch_hdr->h);
-+	ckpt_hdr_put(ctx, arch_hdr);
++	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
++	ckpt_hdr_put(ctx, h);
 +
 +	return ret;
 +}
 +
-+/* dump the mm->context state */
++/* Write an empty header since it is assumed to be there */
++int checkpoint_write_header_arch(struct ckpt_ctx *ctx)
++{
++	struct ckpt_hdr_header_arch *h;
++	int ret;
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_HEADER_ARCH);
++	if (!h)
++		return -ENOMEM;
++
++	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
++	ckpt_hdr_put(ctx, h);
++
++	return ret;
++}
++
 +int checkpoint_mm_context(struct ckpt_ctx *ctx, struct mm_struct *mm)
 +{
-+	return 0;
++	struct ckpt_hdr_mm_context *h;
++	int ret;
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_MM_CONTEXT);
++	if (!h)
++		return -ENOMEM;
++
++	s390_mm(CKPT_CPT, h, mm);
++
++	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
++	ckpt_hdr_put(ctx, h);
++
++	return ret;
 +}
 +
 +/**************************************************************************
 + * Restart
 + */
 +
-+/* read the thread_struct into the current task */
 +int restore_thread(struct ckpt_ctx *ctx)
 +{
-+	return 0;
-+}
++	struct ckpt_hdr_thread *h;
 +
-+/* Based on the MSR value from a checkpoint image, produce an MSR
-+ * value that is appropriate for the restored task.  Right now we only
-+ * check for MSR_SF (64-bit) for PPC64.
-+ */
-+static unsigned long sanitize_msr(unsigned long msr_ckpt)
-+{
-+#ifdef CONFIG_PPC32
-+	return MSR_USER;
-+#else
-+	if (msr_ckpt & MSR_SF)
-+		return MSR_USER64;
-+	return MSR_USER32;
-+#endif
-+}
-+
-+static int restore_gprs(const struct ckpt_hdr_cpu *cpu_hdr,
-+			struct task_struct *task, bool update)
-+{
-+	struct pt_regs *regs;
-+	int rc;
-+
-+	rc = -EINVAL;
-+	if (cpu_hdr->pt_regs_size != sizeof(*regs))
-+		goto out;
-+
-+	rc = 0;
-+	if (!update)
-+		goto out;
-+
-+	regs = task_pt_regs(task);
-+	*regs = cpu_hdr->pt_regs;
-+
-+	regs->orig_gpr3 = cpu_hdr->orig_gpr3;
-+
-+	regs->msr = sanitize_msr(regs->msr);
-+out:
-+	return rc;
-+}
-+
-+#ifdef CONFIG_PPC_FPU
-+static int restore_fpu(const struct ckpt_hdr_cpu *cpu_hdr,
-+		       struct task_struct *task, bool update)
-+{
-+	int rc;
-+
-+	rc = -EINVAL;
-+	if (cpu_hdr->fpr_size != sizeof(task->thread.fpr))
-+		goto out;
-+
-+	rc = 0;
-+	if (!update || !ckpt_cpu_feature_isset(cpu_hdr, CKPT_USED_FP))
-+		goto out;
-+
-+	task->thread.fpscr.val = cpu_hdr->fpscr;
-+	task->thread.fpexc_mode = cpu_hdr->fpexc_mode;
-+
-+	memcpy(task->thread.fpr, cpu_hdr->fpr, sizeof(task->thread.fpr));
-+out:
-+	return rc;
-+}
-+#else
-+static int restore_fpu(const struct ckpt_hdr_cpu *cpu_hdr,
-+		       struct task_struct *task, bool update)
-+{
-+	WARN_ON_ONCE(ckpt_cpu_feature_isset(cpu_hdr, CKPT_USED_FP));
-+	return 0;
-+}
-+#endif
-+
-+static int restore_dabr(const struct ckpt_hdr_cpu *cpu_hdr,
-+			struct task_struct *task, bool update)
-+{
-+	int rc;
-+
-+	rc = 0;
-+	if (!ckpt_cpu_feature_isset(cpu_hdr, CKPT_USED_DEBUG))
-+		goto out;
-+
-+	rc = -EINVAL;
-+	if (!debugreg_valid(cpu_hdr->dabr, 0))
-+		goto out;
-+
-+	rc = 0;
-+	if (!update)
-+		goto out;
-+
-+	debugreg_update(task, cpu_hdr->dabr, 0);
-+out:
-+	return rc;
-+}
-+
-+#ifdef CONFIG_ALTIVEC
-+static int restore_altivec(const struct ckpt_hdr_cpu *cpu_hdr,
-+			   struct task_struct *task, bool update)
-+{
-+	int rc;
-+
-+	rc = 0;
-+	if (!ckpt_cpu_feature_isset(cpu_hdr, CKPT_USED_ALTIVEC))
-+		goto out;
-+
-+	rc = -EINVAL;
-+	if (!cpu_has_feature(CPU_FTR_ALTIVEC))
-+		goto out;
-+
-+	rc = 0;
-+	if (!update)
-+		goto out;
-+
-+	task->thread.vrsave = cpu_hdr->vrsave;
-+	task->thread.used_vr = 1;
-+
-+	memcpy(task->thread.vr, cpu_hdr->vr, sizeof(cpu_hdr->vr));
-+out:
-+	return rc;
-+}
-+#else
-+static int restore_altivec(const struct ckpt_hdr_cpu *cpu_hdr,
-+			   struct task_struct *task, bool update)
-+{
-+	WARN_ON_ONCE(ckpt_cpu_feature_isset(CKPT_USED_ALTIVEC));
-+	return 0;
-+}
-+#endif
-+
-+#ifdef CONFIG_SPE
-+static int restore_spe(const struct ckpt_hdr_cpu *cpu_hdr,
-+		       struct task_struct *task, bool update)
-+{
-+	int rc;
-+
-+	rc = 0;
-+	if (!ckpt_cpu_feature_isset(cpu_hdr, CKPT_USED_SPE))
-+		goto out;
-+
-+	rc = -EINVAL;
-+	if (!cpu_has_feature(CPU_FTR_SPE))
-+		goto out;
-+
-+	rc = 0;
-+	if (!update)
-+		goto out;
-+
-+	task->thread.acc = cpu_hdr->acc;
-+	task->thread.spefscr = cpu_hdr->spefscr;
-+	task->thread.used_spe = 1;
-+
-+	memcpy(task->thread.evr, cpu_hdr->evr, sizeof(cpu_hdr->evr));
-+out:
-+	return rc;
-+}
-+#else
-+static int restore_spe(const struct ckpt_hdr_cpu *cpu_hdr,
-+		       struct task_struct *task, bool update)
-+{
-+	WARN_ON_ONCE(ckpt_cpu_feature_isset(cpu_hdr, CKPT_USED_SPE));
-+	return 0;
-+}
-+#endif
-+
-+struct restore_func_desc {
-+	int (*func)(const struct ckpt_hdr_cpu *, struct task_struct *, bool);
-+	const char *info;
-+};
-+
-+typedef int (*restore_func_t)(const struct ckpt_hdr_cpu *,
-+			      struct task_struct *, bool);
-+
-+static const restore_func_t restore_funcs[] = {
-+	restore_gprs,
-+	restore_fpu,
-+	restore_dabr,
-+	restore_altivec,
-+	restore_spe,
-+};
-+
-+static bool bitness_match(const struct ckpt_hdr_cpu *cpu_hdr,
-+			  const struct task_struct *task)
-+{
-+	/* 64-bit image */
-+	if (cpu_hdr->pt_regs.msr & MSR_SF) {
-+		if (task->thread.regs->msr & MSR_SF)
-+			return true;
-+		else
-+			return false;
++	/* a 31-bit task cannot call sys_restart right now */
++	if (test_thread_flag(TIF_31BIT)) {
++		ckpt_err(ctx, -EINVAL, "restart from 31-bit task\n");
++		return -EINVAL;
 +	}
 +
-+	/* 32-bit image */
-+	if (task->thread.regs->msr & MSR_SF)
-+		return false;
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_THREAD);
++	if (IS_ERR(h))
++		return PTR_ERR(h);
 +
-+	return true;
++	/*
++	 * If we were checkpointed while do_signal() interrupted a
++	 * syscall with restart blocks, then we have some cleanup to
++	 * do at end of restart, in order to finish our pretense of
++	 * having handled signr==0.  (See last part of do_signal).
++	 *
++	 * We can't set gprs[2] here bc we haven't copied registers
++	 * yet, that happens later in restore_cpu().  So re-set the
++	 * TIF_SIG_RESTARTBLOCK thread flag so we can detect it
++	 * at restore_cpu()->s390_copy_regs() and do the right thing.
++	 */
++	if (h->thread_info_flags & _TIF_SIG_RESTARTBLOCK)
++		set_thread_flag(TIF_SIG_RESTARTBLOCK);
++
++	/* will have to handle TIF_RESTORE_SIGMASK as well */
++
++	ckpt_hdr_put(ctx, h);
++
++	return 0;
 +}
 +
 +int restore_cpu(struct ckpt_ctx *ctx)
 +{
-+	struct ckpt_hdr_cpu *cpu_hdr;
-+	bool update;
-+	int rc;
-+	int i;
++	struct ckpt_hdr_cpu *h;
 +
-+	cpu_hdr = ckpt_read_obj_type(ctx, sizeof(*cpu_hdr), CKPT_HDR_CPU);
-+	if (IS_ERR(cpu_hdr))
-+		return PTR_ERR(cpu_hdr);
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_CPU);
++	if (IS_ERR(h))
++		return PTR_ERR(h);
 +
-+	rc = -EINVAL;
-+	if (ckpt_cpu_features_unknown(cpu_hdr))
-+		goto err;
++	s390_copy_regs(CKPT_RST, h, current);
 +
-+	/* temporary: restoring a 32-bit image from a 64-bit task and
-+	 * vice-versa is known not to work (probably not restoring
-+	 * thread_info correctly); detect this and fail gracefully.
++	/* s390 does not restore the access registers after a syscall,
++	 * but does on a task switch.  Since we're switching tasks (in
++	 * a way), we need to replicate that behavior here.
 +	 */
-+	if (!bitness_match(cpu_hdr, current))
-+		goto err;
++	restore_access_regs(h->acrs);
 +
-+	/* We want to determine whether there's anything wrong with
-+	 * the checkpoint image before changing the task at all.  Run
-+	 * a "check" phase (update = false) first.
-+	 */
-+	update = false;
-+commit:
-+	for (i = 0; i < ARRAY_SIZE(restore_funcs); i++) {
-+		rc = restore_funcs[i](cpu_hdr, current, update);
-+		if (rc == 0)
-+			continue;
-+		pr_debug("%s: restore_func[%i] failed\n", __func__, i);
-+		WARN_ON_ONCE(update);
-+		goto err;
-+	}
-+
-+	if (!update) {
-+		update = true;
-+		goto commit;
-+	}
-+
-+err:
-+	ckpt_hdr_put(ctx, cpu_hdr);
-+	return rc;
++	ckpt_hdr_put(ctx, h);
++	return 0;
 +}
 +
 +int restore_read_header_arch(struct ckpt_ctx *ctx)
 +{
-+	struct ckpt_hdr_header_arch *arch_hdr;
++	struct ckpt_hdr_header_arch *h;
 +
-+	arch_hdr = ckpt_read_obj_type(ctx, sizeof(*arch_hdr),
-+				      CKPT_HDR_HEADER_ARCH);
-+	if (IS_ERR(arch_hdr))
-+		return PTR_ERR(arch_hdr);
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_HEADER_ARCH);
++	if (IS_ERR(h))
++		return PTR_ERR(h);
 +
-+	ckpt_hdr_put(ctx, arch_hdr);
-+
++	ckpt_hdr_put(ctx, h);
 +	return 0;
 +}
++
 +
 +int restore_mm_context(struct ckpt_ctx *ctx, struct mm_struct *mm)
 +{
++	struct ckpt_hdr_mm_context *h;
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_MM_CONTEXT);
++	if (IS_ERR(h))
++		return PTR_ERR(h);
++
++	s390_mm(CKPT_RST, h, mm);
++
++	ckpt_hdr_put(ctx, h);
 +	return 0;
 +}
-diff --git a/arch/powerpc/kernel/signal.c b/arch/powerpc/kernel/signal.c
-index 00b5078..701a064 100644
---- a/arch/powerpc/kernel/signal.c
-+++ b/arch/powerpc/kernel/signal.c
-@@ -188,6 +188,12 @@ static int do_signal_pending(sigset_t *oldset, struct pt_regs *regs)
- 	return ret;
+diff --git a/arch/s390/kernel/compat_wrapper.S b/arch/s390/kernel/compat_wrapper.S
+index cfa227e..3a3e246 100644
+--- a/arch/s390/kernel/compat_wrapper.S
++++ b/arch/s390/kernel/compat_wrapper.S
+@@ -1861,3 +1861,19 @@ sys32_execve_wrapper:
+ 	llgtr	%r3,%r3			# compat_uptr_t *
+ 	llgtr	%r4,%r4			# compat_uptr_t *
+ 	jg	sys32_execve		# branch to system call
++
++	.globl sys_checkpoint_wrapper
++sys_checkpoint_wrapper:
++	lgfr	%r2,%r2			# pid_t
++	lgfr	%r3,%r3			# int
++	llgfr	%r4,%r4			# unsigned long
++	lgfr	%r5,%r5			# int
++	jg	sys_checkpoint
++
++	.globl sys_restart_wrapper
++sys_restart_wrapper:
++	lgfr	%r2,%r2			# pid_t
++	lgfr	%r3,%r3			# int
++	llgfr	%r4,%r4			# unsigned long
++	lgfr	%r5,%r5			# int
++	jg	sys_restart
+diff --git a/arch/s390/kernel/process.c b/arch/s390/kernel/process.c
+index eb834fd..855111c 100644
+--- a/arch/s390/kernel/process.c
++++ b/arch/s390/kernel/process.c
+@@ -32,6 +32,7 @@
+ #include <linux/kernel_stat.h>
+ #include <linux/syscalls.h>
+ #include <linux/compat.h>
++#include <linux/checkpoint.h>
+ #include <asm/compat.h>
+ #include <asm/uaccess.h>
+ #include <asm/pgtable.h>
+@@ -241,12 +242,29 @@ SYSCALL_DEFINE4(clone, unsigned long, newsp, unsigned long, clone_flags,
  }
  
-+int task_has_saved_sigmask(struct task_struct *task)
+ #ifdef CONFIG_CHECKPOINT
+-extern long do_sys_restart(pid_t pid, int fd, unsigned long flags, int logfd);
++SYSCALL_DEFINE4(checkpoint, pid_t, pid, int, fd, unsigned long, flags,
++		int, logfd)
 +{
-+	struct thread_info *ti = task_thread_info(task);
-+	return !!(ti->local_flags & _TLF_RESTORE_SIGMASK);
++	return do_sys_checkpoint(pid, fd, flags, logfd);
 +}
 +
- void do_signal(struct pt_regs *regs, unsigned long thread_info_flags)
+ SYSCALL_DEFINE4(restart, pid_t, pid, int, fd, unsigned long, flags,
+ 		int, logfd)
  {
- 	if (thread_info_flags & _TIF_SIGPENDING)
+ 	return do_sys_restart(pid, fd, flags, logfd);
+ }
++#else
++SYSCALL_DEFINE4(checkpoint, pid_t, pid, int, fd, unsigned long, flags,
++		int, logfd)
++{
++	return -ENOSYS;
++}
++
++SYSCALL_DEFINE4(restart, pid_t, pid, int, fd, unsigned long, flags,
++		int, logfd)
++{
++	return -ENOSYS;
++}
+ #endif
+ 
+ SYSCALL_DEFINE4(eclone, unsigned int, flags_low, struct clone_args __user *,
+diff --git a/arch/s390/kernel/signal.c b/arch/s390/kernel/signal.c
+index 6289945..83425b1 100644
+--- a/arch/s390/kernel/signal.c
++++ b/arch/s390/kernel/signal.c
+@@ -459,6 +459,16 @@ void do_signal(struct pt_regs *regs)
+ 			break;
+ 		case -ERESTART_RESTARTBLOCK:
+ 			regs->gprs[2] = -EINTR;
++			/*
++			 * This condition is the only one which requires
++			 * special care after handling a signr==0.  So if
++			 * we get frozen and checkpointed at the
++			 * get_signal_to_deliver() below, then we need
++			 * to convey this condition to sys_restart() so it
++			 * can set the restored thread up to run the restart
++			 * block.
++			 */
++			set_thread_flag(TIF_SIG_RESTARTBLOCK);
+ 		}
+ 		regs->svcnr = 0;	/* Don't deal with this again. */
+ 	}
+@@ -467,6 +477,12 @@ void do_signal(struct pt_regs *regs)
+ 	   the debugger may change all our registers ... */
+ 	signr = get_signal_to_deliver(&info, &ka, regs, NULL);
+ 
++	/*
++	 * we won't get frozen past this so clear the thread flag hinting
++	 * to sys_restart that TIF_RESTART_SVC must be set.
++	 */
++	clear_thread_flag(TIF_SIG_RESTARTBLOCK);
++
+ 	/* Depending on the signal settings we may need to revert the
+ 	   decision to restart the system call. */
+ 	if (signr > 0 && regs->psw.addr == restart_addr) {
+diff --git a/arch/s390/kernel/syscalls.S b/arch/s390/kernel/syscalls.S
+index fb8708d..a29f9e1 100644
+--- a/arch/s390/kernel/syscalls.S
++++ b/arch/s390/kernel/syscalls.S
+@@ -341,3 +341,5 @@ SYSCALL(sys_pwritev,sys_pwritev,compat_sys_pwritev_wrapper)
+ SYSCALL(sys_rt_tgsigqueueinfo,sys_rt_tgsigqueueinfo,compat_sys_rt_tgsigqueueinfo_wrapper) /* 330 */
+ SYSCALL(sys_perf_event_open,sys_perf_event_open,sys_perf_event_open_wrapper)
+ SYSCALL(sys_eclone,sys_eclone,sys_eclone_wrapper)
++SYSCALL(sys_checkpoint,sys_checkpoint,sys_checkpoint_wrapper)
++SYSCALL(sys_restart,sys_restart,sys_restart_wrapper)
+diff --git a/arch/s390/mm/Makefile b/arch/s390/mm/Makefile
+index eec0544..359a3bc 100644
+--- a/arch/s390/mm/Makefile
++++ b/arch/s390/mm/Makefile
+@@ -6,3 +6,4 @@ obj-y	 := init.o fault.o extmem.o mmap.o vmem.o pgtable.o maccess.o \
+ 	    page-states.o
+ obj-$(CONFIG_CMM) += cmm.o
+ obj-$(CONFIG_HUGETLB_PAGE) += hugetlbpage.o
++obj-$(CONFIG_PAGE_STATES) += page-states.o
+diff --git a/arch/s390/mm/checkpoint_s390.h b/arch/s390/mm/checkpoint_s390.h
+new file mode 100644
+index 0000000..c3bf24d
+--- /dev/null
++++ b/arch/s390/mm/checkpoint_s390.h
+@@ -0,0 +1,23 @@
++/*
++ *  Checkpoint/restart - architecture specific support for s390
++ *
++ *  Copyright IBM Corp. 2009
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ */
++
++#ifndef _S390_CHECKPOINT_H
++#define _S390_CHECKPOINT_H
++
++#include <linux/checkpoint_hdr.h>
++#include <linux/sched.h>
++#include <linux/mm_types.h>
++
++extern void checkpoint_s390_regs(int op, struct ckpt_hdr_cpu *h,
++				 struct task_struct *t);
++extern void checkpoint_s390_mm(int op, struct ckpt_hdr_mm_context *h,
++			       struct mm_struct *mm);
++
++#endif /* _S390_CHECKPOINT_H */
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 64c3f8f..825f4cc 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -128,10 +128,13 @@ enum {
+ 
+ /* architecture */
+ enum {
++	/* do not change order (will break ABI) */
+ 	CKPT_ARCH_X86_32 = 1,
+ #define CKPT_ARCH_X86_32 CKPT_ARCH_X86_32
+ 	CKPT_ARCH_X86_64,
+ #define CKPT_ARCH_X86_64 CKPT_ARCH_X86_64
++	CKPT_ARCH_S390X,
++#define CKPT_ARCH_S390X CKPT_ARCH_S390X
+ };
+ 
+ /* shared objrects (objref) */
+diff --git a/mm/mmap.c b/mm/mmap.c
+index 83ad953..0e8ef05 100644
+--- a/mm/mmap.c
++++ b/mm/mmap.c
+@@ -2411,7 +2411,14 @@ int special_mapping_restore(struct ckpt_ctx *ctx,
+ 		ret = syscall32_setup_pages(NULL, h->vm_start, 0);
+ 	else
+ #endif
+-	ret = arch_setup_additional_pages(NULL, h->vm_start, 0);
++	/*
++	 * Pass uses_interp=1 to arch_setup_additional_pages because
++	 * s390 won't set up vdso if it is 0. Here it's safe to assume
++	 * that there is a vdso in the checkpoint image, and therefore
++	 * the checkpointed program was dynamically linked. The other
++	 * architectures ignore uses_interp altogether.
++	 */
++	ret = arch_setup_additional_pages(NULL, h->vm_start, 1);
+ #endif
+ 
+ 	return ret;
 -- 
 1.6.3.3
