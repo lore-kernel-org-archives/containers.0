@@ -1,8 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 41/96] Introduce FOLL_DIRTY to follow_page() for
-	"dirty" pages
-Date: Wed, 17 Mar 2010 12:08:29 -0400
-Message-ID: <1268842164-5590-42-git-send-email-orenl__23290.7855454416$1268849595$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 69/96] c/r: [signal 2/4] checkpoint/restart of rlimit
+Date: Wed, 17 Mar 2010 12:08:57 -0400
+Message-ID: <1268842164-5590-70-git-send-email-orenl__47017.3904010609$1268849672$gmane$org@cs.columbia.edu>
 References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-2-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-3-git-send-email-orenl@cs.columbia.edu>
@@ -44,11 +43,39 @@ References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-39-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-40-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-41-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-42-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-43-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-44-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-45-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-46-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-47-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-48-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-49-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-50-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-51-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-52-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-53-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-54-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-55-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-56-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-57-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-58-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-59-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-60-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-61-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-62-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-63-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-64-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-65-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-66-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-67-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-68-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-69-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268842164-5590-41-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1268842164-5590-69-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -62,209 +89,247 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a preparatory patch necessary for checkpoint/restart (next
-two patches) of memory to work correctly.
+This patch adds checkpoint and restart of rlimit information
+that is part of shared signal_struct.
 
-The patch introduces a new FOLL_DIRTY flag which tells follow_page()
-to return -EFAULT also for not-present file-backed pages.
-
-In 2.6.32 follow_page() changes its behavior due to this commit:
-	mm: FOLL_DUMP replace FOLL_ANON
- 	8e4b9a60718970bbc02dfd3abd0b956ab65af231
-
-Also introduce __get_dirty_page() that returns a page only if it's
-"dirty", that is that has been modified before, and otherwise returns
-NULL. It uses FOLL_DUMP | FOLL_DIRTY and converts the error value
-EFAULT to NULL - telling the caller that the page in question is
-clean.
-
-(This also optimizes for checkpoint in the next patch: before, if a
-file-backed page was not-present we would first fault it in (read from
-disk) and then detect that it was virgin. Instead, now we detect that
-the page is clean earlier without needing to fault it in).
-
-To see why it's needed, consider these scenarios:
-
-1. Task maps a file beyond it's limit, never touches those
- extra page (if it did, it would get EFAULT/Bus error)
-
-2. Task maps a file and writes the last page, then the file gets
- truncated (by at least a page). A subsequent access to the page will
- cause bus error (VM_FAULT_SIGBUS).
-
-3. If the file size is extended back (using truncate) and the task
- accesses that page, then the task will get a fresh page (losing data
- it had written to that address before).
-
-[Before kernel 2.6.32, that page would become anonymous once it was
-dirtied, such that accesses in case #2 are valid, and in case #3 the
-task would see the old page regardless of the file contents.]
-
---CHECKPOINT: before we used FOLL_ANON flags to tell follow_page() to
-return the zero-page for case#1. For case#2, the actual page was
-returned. Without this patch, In kernel 2.3.32, FOLL_DUMP would make
-follow_page() return NULL and then fault handler would have returned
-VM_FAULT_SIGBUS in case#1 (and depending on arch, case#2 too), and
-checkpoint would fails.
-
---RESTART: case #1 works, because mmap() works as before, and those
-pages that were never touched will not be restored either, they will
-remain untouched. The same holds for case#2 (as of kernel 2.6.32),
-because at checkpoint it would decide that the page is clean and not
-save the contents, and therefore it will not try to restore the
-contents at restart. This is consistent with the expected behavior
-after restart: if the file remains as is, subsequent accesses will
-trigger a bus error, and if the file is extended, then the user will
-observe a fresh page.
+Changelog[v19-rc3]:
+  - Rebase to kernel 2.6.33
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Acked-by: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/mm.h |    2 +
- mm/memory.c        |   95 +++++++++++++++++++++++++++++++++++++++++++++++++++-
- 2 files changed, 96 insertions(+), 1 deletions(-)
+ checkpoint/checkpoint.c        |    2 ++
+ checkpoint/restart.c           |    3 +++
+ checkpoint/signal.c            |   27 +++++++++++++++++++++++----
+ include/linux/checkpoint_hdr.h |   17 +++++++++++++++++
+ include/linux/resource.h       |    1 +
+ kernel/sys.c                   |   36 +++++++++++++++++++++++-------------
+ 6 files changed, 69 insertions(+), 17 deletions(-)
 
-diff --git a/include/linux/mm.h b/include/linux/mm.h
-index 48d67ee..a93f4dc 100644
---- a/include/linux/mm.h
-+++ b/include/linux/mm.h
-@@ -843,6 +843,7 @@ int get_user_pages(struct task_struct *tsk, struct mm_struct *mm,
- int get_user_pages_fast(unsigned long start, int nr_pages, int write,
- 			struct page **pages);
- struct page *get_dump_page(unsigned long addr);
-+struct page *__get_dirty_page(struct vm_area_struct *vma, unsigned long addr);
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index 445fef7..71a4bec 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -122,6 +122,8 @@ static void fill_kernel_const(struct ckpt_const *h)
+ 	h->uts_version_len = sizeof(uts->version);
+ 	h->uts_machine_len = sizeof(uts->machine);
+ 	h->uts_domainname_len = sizeof(uts->domainname);
++	/* rlimit */
++	h->rlimit_nlimits = RLIM_NLIMITS;
+ }
  
- extern int try_to_release_page(struct page * page, gfp_t gfp_mask);
- extern void do_invalidatepage(struct page *page, unsigned long offset);
-@@ -1262,6 +1263,7 @@ struct page *follow_page(struct vm_area_struct *, unsigned long address,
- #define FOLL_GET	0x04	/* do get_page on page */
- #define FOLL_DUMP	0x08	/* give error on hole if it would be zero */
- #define FOLL_FORCE	0x10	/* get_user_pages read/write w/o permission */
-+#define FOLL_DIRTY	0x20	/* give error on non-present file mapped */
+ /* write the checkpoint header */
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index 026911e..863ee87 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -583,6 +583,9 @@ static int check_kernel_const(struct ckpt_const *h)
+ 		return -EINVAL;
+ 	if (h->uts_domainname_len != sizeof(uts->domainname))
+ 		return -EINVAL;
++	/* rlimit */
++	if (h->rlimit_nlimits != RLIM_NLIMITS)
++		return -EINVAL;
  
- typedef int (*pte_fn_t)(pte_t *pte, pgtable_t token, unsigned long addr,
- 			void *data);
-diff --git a/mm/memory.c b/mm/memory.c
-index 09e4b1b..005dd55 100644
---- a/mm/memory.c
-+++ b/mm/memory.c
-@@ -1226,8 +1226,17 @@ bad_page:
+ 	return 0;
+ }
+diff --git a/checkpoint/signal.c b/checkpoint/signal.c
+index fedb8f8..5884462 100644
+--- a/checkpoint/signal.c
++++ b/checkpoint/signal.c
+@@ -14,6 +14,7 @@
+ #include <linux/sched.h>
+ #include <linux/signal.h>
+ #include <linux/errno.h>
++#include <linux/resource.h>
+ #include <linux/checkpoint.h>
+ #include <linux/checkpoint_hdr.h>
  
- no_page:
- 	pte_unmap_unlock(ptep, ptl);
--	if (!pte_none(pte))
-+	if (!pte_none(pte)) {
-+		/*
-+		 * When checkpointing we only care about dirty pages.
-+		 * If a file-backed page is missing, then return an
-+		 * error to tell __get_dirty_page() that it's clean,
-+		 * so it won't try to demand page it into memory.
-+		 */
-+		if ((flags & FOLL_DIRTY) && pte_file(pte))
-+			page = ERR_PTR(-EFAULT);
- 		return page;
+@@ -169,13 +170,22 @@ int restore_obj_sighand(struct ckpt_ctx *ctx, int sighand_objref)
+ static int checkpoint_signal(struct ckpt_ctx *ctx, struct task_struct *t)
+ {
+ 	struct ckpt_hdr_signal *h;
++	struct signal_struct *signal;
++	struct rlimit *rlim;
+ 	int ret;
+ 
+ 	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_SIGNAL);
+ 	if (!h)
+ 		return -ENOMEM;
+ 
+-	/* fill in later */
++	signal = t->signal;
++	rlim = signal->rlim;
++
++	/* rlimit */
++	for (i = 0; i < RLIM_NLIMITS; i++) {
++		h->rlim[i].rlim_cur = rlim[i].rlim_cur;
++		h->rlim[i].rlim_max = rlim[i].rlim_max;
 +	}
  
- no_page_table:
- 	/*
-@@ -1241,6 +1250,16 @@ no_page_table:
- 	if ((flags & FOLL_DUMP) &&
- 	    (!vma->vm_ops || !vma->vm_ops->fault))
- 		return ERR_PTR(-EFAULT);
-+
-+	/*
-+	 * When checkpointing we only care about dirty pages. If there
-+	 * is no page table for a non-anonymous page, we return an
-+	 * error to tell __get_dirty_page() that the page is clean, so
-+	 * it won't allocate page tables and the page unnecessarily.
-+	 */
-+	if ((flags & FOLL_DIRTY) && vma->vm_ops)
-+		return ERR_PTR(-EFAULT);
-+
- 	return page;
- }
+ 	ret = ckpt_write_obj(ctx, &h->h);
+ 	ckpt_hdr_put(ctx, h);
+@@ -191,15 +201,24 @@ int checkpoint_obj_signal(struct ckpt_ctx *ctx, struct task_struct *t)
+ static int restore_signal(struct ckpt_ctx *ctx)
+ {
+ 	struct ckpt_hdr_signal *h;
++	struct rlimit rlim;
++	int i, ret;
  
-@@ -1498,6 +1517,80 @@ pte_t *get_locked_pte(struct mm_struct *mm, unsigned long addr,
- 	return NULL;
- }
+ 	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SIGNAL);
+ 	if (IS_ERR(h))
+ 		return PTR_ERR(h);
  
-+/**
-+ * __get_dirty_page - return page pointer for dirty user page
-+ * @vma - target vma
-+ * @addr - page address
-+ *
-+ * Looks up the page that correspond to the address in the vma, and
-+ * return the page if it was modified (and grabs a reference to it),
-+ * or otherwise returns NULL or error.
-+ *
-+ * Should only be called for private vma.
-+ * Must be called with mmap_sem held for read or write.
-+ */
-+struct page *__get_dirty_page(struct vm_area_struct *vma, unsigned long addr)
-+{
-+	struct page *page;
-+
-+	BUG_ON(vma->vm_flags & (VM_SHARED | VM_MAYSHARE));
-+
-+	/*
-+	 * FOLL_DUMP tells follow_page() to return -EFAULT for either
-+	 * non-present anonymous pages, or memory "holes".
-+	 * FOLL_DIRTY tells follow_page() to return -EFAULT also for
-+	 * non-present file-mapped pages.
-+	 * Otherwise, follow_page() returns the page, or NULL if the
-+	 * page is swapped out.
-+	 */
-+
-+	cond_resched();
-+	while (!(page = follow_page(vma, addr,
-+				    FOLL_GET | FOLL_DUMP | FOLL_DIRTY))) {
-+		int ret;
-+
-+		/* the page is swapped out - bring it in (optimize ?) */
-+		ret = handle_mm_fault(vma->vm_mm, vma, addr, 0);
-+		if (ret & VM_FAULT_ERROR) {
-+			if (ret & VM_FAULT_OOM)
-+				return ERR_PTR(-ENOMEM);
-+			else if (ret & VM_FAULT_SIGBUS)
-+				return ERR_PTR(-EFAULT);
-+			else
-+				BUG();
+-	/* fill in later */
+-
++	/* rlimit */
++	for (i = 0; i < RLIM_NLIMITS; i++) {
++		rlim.rlim_cur = h->rlim[i].rlim_cur;
++		rlim.rlim_max = h->rlim[i].rlim_max;
++		ret = do_setrlimit(i, &rlim);
++		if (ret < 0)
 +			break;
-+		}
-+		cond_resched();
 +	}
++ out:
+ 	ckpt_hdr_put(ctx, h);
+-	return 0;
++	return ret;
+ }
+ 
+ int restore_obj_signal(struct ckpt_ctx *ctx, int signal_objref)
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 535ea93..39302a6 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -212,6 +212,8 @@ struct ckpt_const {
+ 	__u16 uts_version_len;
+ 	__u16 uts_machine_len;
+ 	__u16 uts_domainname_len;
++	/* rlimit */
++	__u16 rlimit_nlimits;
+ } __attribute__((aligned(8)));
+ 
+ /* checkpoint image header */
+@@ -538,8 +540,23 @@ struct ckpt_hdr_sighand {
+ 	struct ckpt_sigaction action[0];
+ } __attribute__((aligned(8)));
+ 
++struct ckpt_rlimit {
++	__u64 rlim_cur;
++	__u64 rlim_max;
++} __attribute__((aligned(8)));
 +
-+	/* -EFAULT means that the page is clean (see above) */
-+	if (PTR_ERR(page) == -EFAULT)
-+		return NULL;
-+	else if (IS_ERR(page))
-+		return page;
++/* cannot include <linux/resource.h> from userspace, so define: */
++#define CKPT_RLIM_NLIMITS  16
++#ifdef __KERNEL__
++#include <linux/resource.h>
++#if CKPT_RLIM_NLIMITS != RLIM_NLIMITS
++#error CKPT_RLIM_NLIMIT size is wrong per asm-generic/resource.h
++#endif
++#endif
 +
-+	/*
-+	 * Only care about dirty pages: either anonymous non-zero pages,
-+	 * or file-backed COW (copy-on-write) pages that were modified.
-+	 * A clean COW page is not interesting because its contents are
-+	 * identical to the backing file; ignore such pages.
-+	 * A file-backed broken COW is identified by its page_mapping()
-+	 * being unset (NULL) because the page will no longer be mapped
-+	 * to the original file after having been modified.
-+	 */
-+	if (is_zero_pfn(page_to_pfn(page))) {
-+		/* this is the zero page: ignore */
-+		page_cache_release(page);
-+		page = NULL;
-+	} else if (vma->vm_file && (page_mapping(page) != NULL)) {
-+		/* file backed clean cow: ignore */
-+		page_cache_release(page);
-+		page = NULL;
-+	}
+ struct ckpt_hdr_signal {
+ 	struct ckpt_hdr h;
++	struct ckpt_rlimit rlim[CKPT_RLIM_NLIMITS];
+ } __attribute__((aligned(8)));
+ 
+ struct ckpt_hdr_signal_task {
+diff --git a/include/linux/resource.h b/include/linux/resource.h
+index f1e914e..35f6163 100644
+--- a/include/linux/resource.h
++++ b/include/linux/resource.h
+@@ -73,6 +73,7 @@ struct rlimit {
+ struct task_struct;
+ 
+ int getrusage(struct task_struct *p, int who, struct rusage __user *ru);
++int do_setrlimit(unsigned int resource, struct rlimit *rlim);
+ 
+ #endif /* __KERNEL__ */
+ 
+diff --git a/kernel/sys.c b/kernel/sys.c
+index 0df737a..033c650 100644
+--- a/kernel/sys.c
++++ b/kernel/sys.c
+@@ -1149,40 +1149,39 @@ SYSCALL_DEFINE2(old_getrlimit, unsigned int, resource,
+ 
+ #endif
+ 
+-SYSCALL_DEFINE2(setrlimit, unsigned int, resource, struct rlimit __user *, rlim)
++int do_setrlimit(unsigned int resource, struct rlimit *new_rlim)
+ {
+-	struct rlimit new_rlim, *old_rlim;
++	struct rlimit *old_rlim;
+ 	int retval;
+ 
+ 	if (resource >= RLIM_NLIMITS)
+ 		return -EINVAL;
+-	if (copy_from_user(&new_rlim, rlim, sizeof(*rlim)))
+-		return -EFAULT;
+-	if (new_rlim.rlim_cur > new_rlim.rlim_max)
++	if (new_rlim->rlim_cur > new_rlim->rlim_max)
+ 		return -EINVAL;
 +
-+	return page;
+ 	old_rlim = current->signal->rlim + resource;
+-	if ((new_rlim.rlim_max > old_rlim->rlim_max) &&
++	if ((new_rlim->rlim_max > old_rlim->rlim_max) &&
+ 	    !capable(CAP_SYS_RESOURCE))
+ 		return -EPERM;
+-	if (resource == RLIMIT_NOFILE && new_rlim.rlim_max > sysctl_nr_open)
++	if (resource == RLIMIT_NOFILE && new_rlim->rlim_max > sysctl_nr_open)
+ 		return -EPERM;
+ 
+-	retval = security_task_setrlimit(resource, &new_rlim);
++	retval = security_task_setrlimit(resource, new_rlim);
+ 	if (retval)
+ 		return retval;
+ 
+-	if (resource == RLIMIT_CPU && new_rlim.rlim_cur == 0) {
++	if (resource == RLIMIT_CPU && new_rlim->rlim_cur == 0) {
+ 		/*
+ 		 * The caller is asking for an immediate RLIMIT_CPU
+ 		 * expiry.  But we use the zero value to mean "it was
+ 		 * never set".  So let's cheat and make it one second
+ 		 * instead
+ 		 */
+-		new_rlim.rlim_cur = 1;
++		new_rlim->rlim_cur = 1;
+ 	}
+ 
+ 	task_lock(current->group_leader);
+-	*old_rlim = new_rlim;
++	*old_rlim = *new_rlim;
+ 	task_unlock(current->group_leader);
+ 
+ 	if (resource != RLIMIT_CPU)
+@@ -1194,14 +1193,25 @@ SYSCALL_DEFINE2(setrlimit, unsigned int, resource, struct rlimit __user *, rlim)
+ 	 * very long-standing error, and fixing it now risks breakage of
+ 	 * applications, so we live with it
+ 	 */
+-	if (new_rlim.rlim_cur == RLIM_INFINITY)
++	if (new_rlim->rlim_cur == RLIM_INFINITY)
+ 		goto out;
+ 
+-	update_rlimit_cpu(new_rlim.rlim_cur);
++	update_rlimit_cpu(new_rlim->rlim_cur);
+ out:
+ 	return 0;
+ }
+ 
++SYSCALL_DEFINE2(setrlimit, unsigned int, resource, struct rlimit __user *, rlim)
++{
++	struct rlimit new_rlim;
++
++	if (resource >= RLIM_NLIMITS)
++		return -EINVAL;
++	if (copy_from_user(&new_rlim, rlim, sizeof(*rlim)))
++		return -EFAULT;
++	return do_setrlimit(resource, &new_rlim);
 +}
 +
  /*
-  * This is the old fallback for page remapping.
-  *
+  * It would make sense to put struct rusage in the task_struct,
+  * except that would make the task_struct be *really big*.  After
 -- 
 1.6.3.3
