@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 32/96] c/r: support for zombie processes
-Date: Wed, 17 Mar 2010 12:08:20 -0400
-Message-ID: <1268842164-5590-33-git-send-email-orenl__33647.9763653644$1268850597$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 26/96] c/r: external checkpoint of a task other than
+	ourself
+Date: Wed, 17 Mar 2010 12:08:14 -0400
+Message-ID: <1268842164-5590-27-git-send-email-orenl__16076.435664627$1268850599$gmane$org@cs.columbia.edu>
 References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-2-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-3-git-send-email-orenl@cs.columbia.edu>
@@ -28,17 +29,11 @@ References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-24-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-25-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-26-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-27-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-28-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-29-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-30-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-31-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-32-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268842164-5590-32-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1268842164-5590-26-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -52,273 +47,336 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-During checkpoint, a zombie processes need only save p->comm,
-p->state, p->exit_state, and p->exit_code.
+Now we can do "external" checkpoint, i.e. act on another task.
 
-During restart, zombie processes are created like all other
-processes. They validate the saved exit_code restore p->comm
-and p->exit_code. Then they call do_exit() instead of waking
-up the next task in line.
+sys_checkpoint() now looks up the target pid (in our namespace) and
+checkpoints that corresponding task. That task should be the root of
+a container, unless CHECKPOINT_SUBTREE flag is given.
 
-But before, they place the @ctx in p->checkpoint_ctx, so that
-only at exit time they will wake up the next task in line,
-and drop the reference to the @ctx.
+Set state of freezer cgroup of checkpointed task hierarchy to
+"CHECKPOINTING" during a checkpoint, to ensure that task(s) cannot be
+thawed while at it.
 
-This provides the guarantee that when the coordinator's wait
-completes, all normal tasks completed their restart, and all
-zombie tasks are already zombified (as opposed to perhap only
-becoming a zombie).
+Ensure that all tasks belong to root task's freezer cgroup (the root
+task is also tested, to detect it if changes its freezer cgroups
+before it moves to "CHECKPOINTING").
 
+sys_restart() remains nearly the same, as the restart is always done
+in the context of the restarting task. However, the original task may
+have been frozen from user space, or interrupted from a syscall for
+the checkpoint. This is accounted for by restoring a suitable retval
+for the restarting task, according to how it was checkpointed.
+
+Changelog[v20]:
+  - [Nathan Lynch] Use syscall_get_error
 Changelog[v19-rc1]:
-  - Simplify logic of tracking restarting tasks
-Changelog[v18]:
-  - Fix leak of ckpt_ctx when restoring zombie tasks
-  - Add a few more ckpt_write_err()s
+  - [Serge Hallyn] Add global section container to image format
 Changelog[v17]:
-  - Validate t->exit_signal for both threads and leader
-  - Skip zombies in most of may_checkpoint_task()
-  - Save/restore t->pdeath_signal
-  - Validate ->exit_signal and ->pdeath_signal
+  - Move restore_retval() to this patch
+  - Tighten ptrace ceckpoint for checkpoint to PTRACE_MODE_ATTACH
+  - Use CHECKPOINTING state for hierarchy's freezer for checkpoint
+Changelog[v16]:
+  - Use CHECKPOINT_SUBTREE to allow subtree (partial container)
+Changelog[v14]:
+  - Refuse non-self checkpoint if target task isn't frozen
+Changelog[v12]:
+  - Replace obsolete ckpt_debug() with pr_debug()
+Changelog[v11]:
+  - Copy contents of 'init->fs->root' instead of pointing to them
+Changelog[v10]:
+  - Grab vfs root of container init, rather than current process
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/checkpoint.c        |   10 ++++--
- checkpoint/process.c           |   69 +++++++++++++++++++++++++++++++++++-----
- checkpoint/restart.c           |   22 +++++++++++--
- include/linux/checkpoint.h     |    1 +
- include/linux/checkpoint_hdr.h |    1 +
- 5 files changed, 89 insertions(+), 14 deletions(-)
+ checkpoint/Kconfig               |    1 +
+ checkpoint/checkpoint.c          |   98 +++++++++++++++++++++++++++++++++++++-
+ checkpoint/restart.c             |   63 ++++++++++++++++++++++++-
+ checkpoint/sys.c                 |   10 ++++
+ include/linux/checkpoint_types.h |    7 ++-
+ 5 files changed, 176 insertions(+), 3 deletions(-)
 
+diff --git a/checkpoint/Kconfig b/checkpoint/Kconfig
+index ef7d406..21fc86b 100644
+--- a/checkpoint/Kconfig
++++ b/checkpoint/Kconfig
+@@ -5,6 +5,7 @@
+ config CHECKPOINT
+ 	bool "Checkpoint/restart (EXPERIMENTAL)"
+ 	depends on CHECKPOINT_SUPPORT && EXPERIMENTAL
++	depends on CGROUP_FREEZER
+ 	help
+ 	  Application checkpoint/restart is the ability to save the
+ 	  state of a running application so that it can later resume
 diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index 1e38ae3..ea1494d 100644
+index c74b21e..695ab00 100644
 --- a/checkpoint/checkpoint.c
 +++ b/checkpoint/checkpoint.c
-@@ -218,7 +218,7 @@ static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
+@@ -12,6 +12,9 @@
+ #define CKPT_DFLAG  CKPT_DSYS
  
- 	ckpt_debug("check %d\n", task_pid_nr_ns(t, ctx->root_nsproxy->pid_ns));
+ #include <linux/version.h>
++#include <linux/sched.h>
++#include <linux/freezer.h>
++#include <linux/ptrace.h>
+ #include <linux/time.h>
+ #include <linux/fs.h>
+ #include <linux/file.h>
+@@ -193,17 +196,108 @@ static int checkpoint_write_tail(struct ckpt_ctx *ctx)
+ 	return ret;
+ }
  
--	if (t->state == TASK_DEAD) {
-+	if (t->exit_state == EXIT_DEAD) {
- 		_ckpt_err(ctx, -EBUSY, "%(T)Task state EXIT_DEAD\n");
- 		return -EBUSY;
- 	}
-@@ -228,6 +228,10 @@ static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
- 		return -EPERM;
- 	}
- 
-+	/* zombies are cool (and also don't have nsproxy, below...) */
-+	if (t->exit_state)
-+		return 0;
-+
- 	/* verify that all tasks belongs to same freezer cgroup */
- 	if (t != current && !in_same_cgroup_freezer(t, ctx->root_freezer)) {
- 		_ckpt_err(ctx, -EBUSY, "%(T)Not frozen or wrong cgroup\n");
-@@ -244,8 +248,8 @@ static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
- 	 * FIX: for now, disallow siblings of container init created
- 	 * via CLONE_PARENT (unclear if they will remain possible)
- 	 */
--	if (ctx->root_init && t != root && t->tgid != root->tgid &&
--	    t->real_parent == root->real_parent) {
-+	if (ctx->root_init && t != root &&
-+	    t->real_parent == root->real_parent && t->tgid != root->tgid) {
- 		_ckpt_err(ctx, -EINVAL, "%(T)Task is sibling of root\n");
- 		return -EINVAL;
- 	}
-diff --git a/checkpoint/process.c b/checkpoint/process.c
-index 9f2059c..c47dea1 100644
---- a/checkpoint/process.c
-+++ b/checkpoint/process.c
-@@ -35,12 +35,18 @@ static int checkpoint_task_struct(struct ckpt_ctx *ctx, struct task_struct *t)
- 	h->state = t->state;
- 	h->exit_state = t->exit_state;
- 	h->exit_code = t->exit_code;
--	h->exit_signal = t->exit_signal;
- 
--	h->set_child_tid = (unsigned long) t->set_child_tid;
--	h->clear_child_tid = (unsigned long) t->clear_child_tid;
-+	if (t->exit_state) {
-+		/* zombie - skip remaining state */
-+		BUG_ON(t->exit_state != EXIT_ZOMBIE);
-+	} else {
-+		/* FIXME: save remaining relevant task_struct fields */
-+		h->exit_signal = t->exit_signal;
-+		h->pdeath_signal = t->pdeath_signal;
- 
--	/* FIXME: save remaining relevant task_struct fields */
-+		h->set_child_tid = (unsigned long) t->set_child_tid;
-+		h->clear_child_tid = (unsigned long) t->clear_child_tid;
-+	}
- 
- 	ret = ckpt_write_obj(ctx, &h->h);
- 	ckpt_hdr_put(ctx, h);
-@@ -171,6 +177,11 @@ int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
- 	ckpt_debug("task %d\n", ret);
- 	if (ret < 0)
- 		goto out;
-+
-+	/* zombie - we're done here */
-+	if (t->exit_state)
-+		return 0;
-+
- 	ret = checkpoint_thread(ctx, t);
- 	ckpt_debug("thread %d\n", ret);
- 	if (ret < 0)
-@@ -190,6 +201,19 @@ int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
-  * Restart
-  */
- 
-+static inline int valid_exit_code(int exit_code)
++static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
 +{
-+	if (exit_code >= 0x10000)
-+		return 0;
-+	if (exit_code & 0xff) {
-+		if (exit_code & ~0xff)
-+			return 0;
-+		if (!valid_signal(exit_code & 0xff))
-+			return 0;
++	if (t->state == TASK_DEAD) {
++		_ckpt_err(ctx, -EBUSY, "%(T)Task state EXIT_DEAD\n");
++		return -EBUSY;
 +	}
-+	return 1;
++
++	if (!ptrace_may_access(t, PTRACE_MODE_ATTACH)) {
++		_ckpt_err(ctx, -EPERM, "%(T)Ptrace attach denied\n");
++		return -EPERM;
++	}
++
++	/* verify that all tasks belongs to same freezer cgroup */
++	if (t != current && !in_same_cgroup_freezer(t, ctx->root_freezer)) {
++		_ckpt_err(ctx, -EBUSY, "%(T)Not frozen or wrong cgroup\n");
++		return -EBUSY;
++	}
++
++	/* FIX: add support for ptraced tasks */
++	if (task_ptrace(t)) {
++		_ckpt_err(ctx, -EBUSY, "%(T)Task is ptraced\n");
++		return -EBUSY;
++	}
++
++	return 0;
 +}
 +
- /* read the task_struct into the current task */
- static int restore_task_struct(struct ckpt_ctx *ctx)
- {
-@@ -201,15 +225,39 @@ static int restore_task_struct(struct ckpt_ctx *ctx)
- 	if (IS_ERR(h))
- 		return PTR_ERR(h);
- 
-+	ret = -EINVAL;
-+	if (h->state == TASK_DEAD) {
-+		if (h->exit_state != EXIT_ZOMBIE)
-+			goto out;
-+		if (!valid_exit_code(h->exit_code))
-+			goto out;
-+		t->exit_code = h->exit_code;
-+	} else {
-+		if (h->exit_code)
-+			goto out;
-+		if ((thread_group_leader(t) && !valid_signal(h->exit_signal)) ||
-+		    (!thread_group_leader(t) && h->exit_signal != -1))
-+			goto out;
-+		if (!valid_signal(h->pdeath_signal))
-+			goto out;
-+
-+		/* FIXME: restore remaining relevant task_struct fields */
-+		t->exit_signal = h->exit_signal;
-+		t->pdeath_signal = h->pdeath_signal;
-+
-+		t->set_child_tid =
-+			(int __user *) (unsigned long) h->set_child_tid;
-+		t->clear_child_tid =
-+			(int __user *) (unsigned long) h->clear_child_tid;
-+	}
-+
- 	memset(t->comm, 0, TASK_COMM_LEN);
- 	ret = _ckpt_read_string(ctx, t->comm, TASK_COMM_LEN);
- 	if (ret < 0)
- 		goto out;
- 
--	t->set_child_tid = (int __user *) (unsigned long) h->set_child_tid;
--	t->clear_child_tid = (int __user *) (unsigned long) h->clear_child_tid;
--
--	/* FIXME: restore remaining relevant task_struct fields */
-+	/* return 1 for zombie, 0 otherwise */
-+	ret = (h->state == TASK_DEAD ? 1 : 0);
-  out:
- 	ckpt_hdr_put(ctx, h);
- 	return ret;
-@@ -329,6 +377,11 @@ int restore_task(struct ckpt_ctx *ctx)
- 	ckpt_debug("task %d\n", ret);
- 	if (ret < 0)
- 		goto out;
-+
-+	/* zombie - we're done here */
-+	if (ret)
-+		goto out;
-+
- 	ret = restore_thread(ctx);
- 	ckpt_debug("thread %d\n", ret);
- 	if (ret < 0)
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index 59c4bd8..e2ed358 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -852,7 +852,7 @@ static int wait_sync_threads(void)
- static int do_restore_task(void)
- {
- 	struct ckpt_ctx *ctx;
--	int ret;
-+	int zombie, ret;
- 
- 	ctx = wait_checkpoint_ctx();
- 	if (IS_ERR(ctx))
-@@ -862,6 +862,8 @@ static int do_restore_task(void)
- 	if (ret < 0)
- 		goto out;
- 
-+	current->flags |= PF_RESTARTING;
-+
- 	ret = wait_sync_threads();
- 	if (ret < 0)
- 		goto out;
-@@ -873,9 +875,22 @@ static int do_restore_task(void)
- 
- 	restore_debug_running(ctx);
- 
--	ret = restore_task(ctx);
--	if (ret < 0)
-+	zombie = restore_task(ctx);
-+	if (zombie < 0) {
-+		ret = zombie;
- 		goto out;
-+	}
++/* setup checkpoint-specific parts of ctx */
++static int init_checkpoint_ctx(struct ckpt_ctx *ctx, pid_t pid)
++{
++	struct task_struct *task;
++	struct nsproxy *nsproxy;
++	int ret;
 +
 +	/*
-+	 * zombie: we're done here; do_exit() will notice the @ctx on
-+	 * our current->checkpoint_ctx (and our PF_RESTARTING) - it
-+	 * will call restore_activate_next() and release the @ctx.
++	 * No need for explicit cleanup here, because if an error
++	 * occurs then ckpt_ctx_free() is eventually called.
 +	 */
-+	if (zombie) {
-+		restore_debug_exit(ctx);
-+		ckpt_ctx_put(ctx);
-+		do_exit(current->exit_code);
++
++	ctx->root_pid = pid;
++
++	/* root task */
++	read_lock(&tasklist_lock);
++	task = find_task_by_vpid(pid);
++	if (task)
++		get_task_struct(task);
++	read_unlock(&tasklist_lock);
++	if (!task)
++		return -ESRCH;
++	else
++		ctx->root_task = task;
++
++	/* root nsproxy */
++	rcu_read_lock();
++	nsproxy = task_nsproxy(task);
++	if (nsproxy)
++		get_nsproxy(nsproxy);
++	rcu_read_unlock();
++	if (!nsproxy)
++		return -ESRCH;
++	else
++		ctx->root_nsproxy = nsproxy;
++
++	/* root freezer */
++	ctx->root_freezer = task;
++	geT_task_struct(task);
++
++	ret = may_checkpoint_task(ctx, task);
++	if (ret) {
++		_ckpt_msg_complete(ctx);
++		put_task_struct(task);
++		put_task_struct(task);
++		put_nsproxy(nsproxy);
++		ctx->root_nsproxy = NULL;
++		ctx->root_task = NULL;
++		return ret;
 +	}
++
++	return 0;
++}
++
+ long do_checkpoint(struct ckpt_ctx *ctx, pid_t pid)
+ {
+ 	long ret;
  
- 	restore_task_done(ctx);
- 	ret = wait_task_sync(ctx);
-@@ -884,6 +899,7 @@ static int do_restore_task(void)
++	ret = init_checkpoint_ctx(ctx, pid);
++	if (ret < 0)
++		return ret;
++
++	if (ctx->root_freezer) {
++		ret = cgroup_freezer_begin_checkpoint(ctx->root_freezer);
++		if (ret < 0)
++			return ret;
++	}
++
+ 	ret = checkpoint_write_header(ctx);
  	if (ret < 0)
- 		ckpt_err(ctx, ret, "task restart failed\n");
- 
-+	current->flags &= ~PF_RESTARTING;
- 	clear_task_ctx(current);
- 	ckpt_ctx_put(ctx);
+ 		goto out;
+ 	ret = checkpoint_container(ctx);
+ 	if (ret < 0)
+ 		goto out;
+-	ret = checkpoint_task(ctx, current);
++	ret = checkpoint_task(ctx, ctx->root_task);
+ 	if (ret < 0)
+ 		goto out;
+ 	ret = checkpoint_write_tail(ctx);
+@@ -214,5 +308,7 @@ long do_checkpoint(struct ckpt_ctx *ctx, pid_t pid)
+ 	ctx->crid = atomic_inc_return(&ctx_count);
+ 	ret = ctx->crid;
+  out:
++	if (ctx->root_freezer)
++		cgroup_freezer_end_checkpoint(ctx->root_freezer);
  	return ret;
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index d1eb722..61581f6 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -113,6 +113,7 @@ extern long do_checkpoint(struct ckpt_ctx *ctx, pid_t pid);
- extern long do_restart(struct ckpt_ctx *ctx, pid_t pid);
+ }
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index 38a9b04..11d9738 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -447,10 +447,69 @@ static int restore_read_tail(struct ckpt_ctx *ctx)
+ 	return ret;
+ }
  
- /* task */
-+extern int ckpt_activate_next(struct ckpt_ctx *ctx);
- extern int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t);
- extern int restore_task(struct ckpt_ctx *ctx);
++static long restore_retval(void)
++{
++	struct pt_regs *regs = task_pt_regs(current);
++	long syscall_err;
++	long syscall_nr;
++
++	/*
++	 * For the restart, we entered the kernel via sys_restart(),
++	 * so our return path is via the syscall exit. In particular,
++	 * the code in entry.S will put the value that we will return
++	 * into a register (e.g. regs->eax in x86), thus passing it to
++	 * the caller task.
++	 *
++	 * What we do now depends on what happened to the checkpointed
++	 * task right before the checkpoint - there are three cases:
++	 *
++	 * 1) It was carrying out a syscall when became frozen, or
++	 * 2) It was running in userspace, or
++	 * 3) It was doing a self-checkpoint
++	 *
++	 * In case #1, if the syscall succeeded, perhaps partially,
++	 * then the retval is non-negative. If it failed, the error
++	 * may be one of -ERESTART..., which is interpreted in the
++	 * signal handling code. If that is the case, we force the
++	 * signal handler to kick in by faking a signal to ourselves
++	 * (a la freeze/thaw) when ret < 0.
++	 *
++	 * In case #2, our return value will overwrite the original
++	 * value in the affected register. Workaround by simply using
++	 * that saved value of that register as our retval.
++	 *
++	 * In case #3, then the state was recorded while the task was
++	 * in checkpoint(2) syscall. The syscall is execpted to return
++	 * 0 when returning from a restart. Fortunately, this already
++	 * has been arranged for at checkpoint time (the register that
++	 * holds the retval, e.g. regs->eax in x86, was set to
++	 * zero).
++	 */
++
++	/* needed for all 3 cases: get old value/error/retval */
++	syscall_nr = syscall_get_nr(current, regs);
++	syscall_err = syscall_get_error(current, regs);
++
++	/* if from a syscall and returning error, kick in signal handling */
++	if (syscall_nr >= 0 && syscall_err != 0)
++		set_tsk_thread_flag(current, TIF_SIGPENDING);
++
++	return syscall_get_return_value(current, regs);
++}
++
++/* setup restart-specific parts of ctx */
++static int init_restart_ctx(struct ckpt_ctx *ctx, pid_t pid)
++{
++	return 0;
++}
++
+ long do_restart(struct ckpt_ctx *ctx, pid_t pid)
+ {
+ 	long ret;
  
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 083f5d3..f85b673 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -160,6 +160,7 @@ struct ckpt_hdr_task {
- 	__u32 exit_state;
- 	__u32 exit_code;
- 	__u32 exit_signal;
-+	__u32 pdeath_signal;
++	ret = init_restart_ctx(ctx, pid);
++	if (ret < 0)
++		return ret;
+ 	ret = restore_read_header(ctx);
+ 	if (ret < 0)
+ 		return ret;
+@@ -461,7 +520,9 @@ long do_restart(struct ckpt_ctx *ctx, pid_t pid)
+ 	if (ret < 0)
+ 		return ret;
+ 	ret = restore_read_tail(ctx);
++	if (ret < 0)
++		return ret;
  
- 	__u64 set_child_tid;
- 	__u64 clear_child_tid;
+ 	/* on success, adjust the return value if needed [TODO] */
+-	return ret;
++	return restore_retval(ctx);
+ }
+diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+index f642485..308cd27 100644
+--- a/checkpoint/sys.c
++++ b/checkpoint/sys.c
+@@ -12,7 +12,9 @@
+ #define CKPT_DFLAG  CKPT_DSYS
+ 
+ #include <linux/sched.h>
++#include <linux/nsproxy.h>
+ #include <linux/kernel.h>
++#include <linux/cgroup.h>
+ #include <linux/syscalls.h>
+ #include <linux/fs.h>
+ #include <linux/file.h>
+@@ -173,6 +175,14 @@ static void ckpt_ctx_free(struct ckpt_ctx *ctx)
+ 		fput(ctx->file);
+ 	if (ctx->logfile)
+ 		fput(ctx->logfile);
++
++	if (ctx->root_nsproxy)
++		put_nsproxy(ctx->root_nsproxy);
++	if (ctx->root_task)
++		put_task_struct(ctx->root_task);
++	if (ctx->root_freezer)
++		put_task_struct(ctx->root_freezer);
++
+ 	kfree(ctx);
+ }
+ 
+diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
+index 6327ad0..dc35b21 100644
+--- a/include/linux/checkpoint_types.h
++++ b/include/linux/checkpoint_types.h
+@@ -12,12 +12,17 @@
+ 
+ #ifdef __KERNEL__
+ 
++#include <linux/sched.h>
++#include <linux/nsproxy.h>
+ #include <linux/fs.h>
+ 
+ struct ckpt_ctx {
+ 	int crid;		/* unique checkpoint id */
+ 
+-	pid_t root_pid;		/* container identifier */
++	pid_t root_pid;				/* [container] root pid */
++	struct task_struct *root_task;		/* [container] root task */
++	struct nsproxy *root_nsproxy;		/* [container] root nsproxy */
++	struct task_struct *root_freezer;	/* [container] root task */
+ 
+ 	unsigned long kflags;	/* kerenl flags */
+ 	unsigned long uflags;	/* user flags */
 -- 
 1.6.3.3
