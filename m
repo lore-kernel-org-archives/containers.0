@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 51/96] c/r: support for open pipes
-Date: Wed, 17 Mar 2010 12:08:39 -0400
-Message-ID: <1268842164-5590-52-git-send-email-orenl__25114.0076820322$1268849981$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 49/96] c/r: restore anonymous- and file-mapped-
+	shared memory
+Date: Wed, 17 Mar 2010 12:08:37 -0400
+Message-ID: <1268842164-5590-50-git-send-email-orenl__22834.6041207717$1268850060$gmane$org@cs.columbia.edu>
 References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-2-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-3-git-send-email-orenl@cs.columbia.edu>
@@ -51,13 +52,11 @@ References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-47-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-48-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-49-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-50-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-51-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268842164-5590-51-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1268842164-5590-49-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -71,327 +70,319 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-A pipe is a double-headed inode with a buffer attached to it. We
-checkpoint the pipe buffer only once, as soon as we hit one side of
-the pipe, regardless whether it is read- or write- end.
+The bulk of the work is in ckpt_read_vma(), which has been refactored:
+the part that create the suitable 'struct file *' for the mapping is
+now larger and moved to a separate function. What's left is to read
+the VMA description, get the file pointer, create the mapping, and
+proceed to read the contents in.
 
-To checkpoint a file descriptor that refers to a pipe (either end), we
-first lookup the inode in the hash table: If not found, it is the
-first encounter of this pipe. Besides the file descriptor, we also (a)
-save the pipe data, and (b) register the pipe inode in the hash. If
-found, it is the second encounter of this pipe, namely, as we hit the
-other end of the same pipe. In both cases we write the pipe-objref of
-the inode.
+Both anonymous shared VMAs that have been read earlier (as indicated
+by a look up to objhash) and file-mapped shared VMAs are skipped.
+Anonymous shared VMAs seen for the first time have their contents
+read in directly to the backing inode, as indexed by the page numbers
+(as opposed to virtual addresses).
 
-To restore, create a new pipe and thus have two file pointers (read-
-and write- ends). We only use one of them, depending on which side was
-checkpointed first. We register the file pointer of the other end in
-the hash table, with the pipe_objref given for this pipe from the
-checkpoint, to be used later when the other arrives. At this point we
-also restore the contents of the pipe buffers.
-
-To save the pipe buffer, given a source pipe, use do_tee() to clone
-its contents into a temporary 'struct pipe_inode_info', and then use
-do_splice_from() to transfer it directly to the checkpoint image file.
-
-To restore the pipe buffer, with a fresh newly allocated target pipe,
-use do_splice_to() to splice the data directly between the checkpoint
-image file and the pipe.
-
-Changelog[v19-rc1]:
-  - Switch to ckpt_obj_try_fetch()
-  - [Matt Helsley] Add cpp definitions for enums
-Changelog[v18]:
-  - Adjust format of pipe buffer to include the mandatory pre-header
-Changelog[v17]:
-  - Forward-declare 'ckpt_ctx' et-al, don't use checkpoint_types.h
+Changelog[v14]:
+  - Introduce patch
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/files.c             |    7 ++
- fs/pipe.c                      |  157 ++++++++++++++++++++++++++++++++++++++++
- include/linux/checkpoint_hdr.h |    9 +++
- include/linux/pipe_fs_i.h      |    8 ++
- 4 files changed, 181 insertions(+), 0 deletions(-)
+ checkpoint/memory.c        |   66 ++++++++++++++++++++++++++++++++------------
+ include/linux/checkpoint.h |    6 ++++
+ include/linux/mm.h         |    2 +
+ mm/filemap.c               |   13 ++++++++-
+ mm/shmem.c                 |   49 ++++++++++++++++++++++++++++++++
+ 5 files changed, 117 insertions(+), 19 deletions(-)
 
-diff --git a/checkpoint/files.c b/checkpoint/files.c
-index b404c8f..1c294fe 100644
---- a/checkpoint/files.c
-+++ b/checkpoint/files.c
-@@ -17,6 +17,7 @@
- #include <linux/file.h>
- #include <linux/fdtable.h>
- #include <linux/fsnotify.h>
-+#include <linux/pipe_fs_i.h>
- #include <linux/syscalls.h>
- #include <linux/deferqueue.h>
- #include <linux/checkpoint.h>
-@@ -592,6 +593,12 @@ static struct restore_file_ops restore_file_ops[] = {
- 		.file_type = CKPT_FILE_GENERIC,
- 		.restore = generic_file_restore,
- 	},
-+	/* pipes */
-+	{
-+		.file_name = "PIPE",
-+		.file_type = CKPT_FILE_PIPE,
-+		.restore = pipe_file_restore,
-+	},
- };
- 
- static struct file *do_restore_file(struct ckpt_ctx *ctx)
-diff --git a/fs/pipe.c b/fs/pipe.c
-index 37ba29f..747b2d7 100644
---- a/fs/pipe.c
-+++ b/fs/pipe.c
-@@ -13,11 +13,13 @@
- #include <linux/fs.h>
- #include <linux/mount.h>
- #include <linux/pipe_fs_i.h>
-+#include <linux/splice.h>
- #include <linux/uio.h>
- #include <linux/highmem.h>
- #include <linux/pagemap.h>
- #include <linux/audit.h>
- #include <linux/syscalls.h>
-+#include <linux/checkpoint.h>
- 
- #include <asm/uaccess.h>
- #include <asm/ioctls.h>
-@@ -828,6 +830,158 @@ pipe_rdwr_open(struct inode *inode, struct file *filp)
- 	return ret;
+diff --git a/checkpoint/memory.c b/checkpoint/memory.c
+index 0fe3b38..b56124e 100644
+--- a/checkpoint/memory.c
++++ b/checkpoint/memory.c
+@@ -875,16 +875,39 @@ int restore_read_page(struct ckpt_ctx *ctx, struct page *page)
+ 	return 0;
  }
  
-+#ifdef CONFIG_CHECKPOINT
-+static int checkpoint_pipe(struct ckpt_ctx *ctx, struct inode *inode)
++static struct page *bring_private_page(unsigned long addr)
 +{
-+	struct pipe_inode_info *pipe;
-+	int len, ret = -ENOMEM;
++	struct page *page;
++	int ret;
 +
-+	pipe = alloc_pipe_info(NULL);
-+	if (!pipe)
-+		return ret;
++	ret = get_user_pages(current, current->mm, addr, 1, 1, 1, &page, NULL);
++	if (ret < 0)
++		page = ERR_PTR(ret);
++	return page;
++}
 +
-+	pipe->readers = 1;	/* bluff link_pipe() below */
-+	len = link_pipe(inode->i_pipe, pipe, INT_MAX, SPLICE_F_NONBLOCK);
-+	if (len == -EAGAIN)
-+		len = 0;
-+	if (len < 0) {
-+		ret = len;
-+		goto out;
++static struct page *bring_shared_page(unsigned long idx, struct inode *ino)
++{
++	struct page *page = NULL;
++	int ret;
++
++	ret = shmem_getpage(ino, idx, &page, SGP_WRITE, NULL);
++	if (ret < 0)
++		return ERR_PTR(ret);
++	if (page)
++		unlock_page(page);
++	return page;
++}
++
+ /**
+  * read_pages_contents - read in data of pages in page-array chain
+  * @ctx - restart context
+  */
+-static int read_pages_contents(struct ckpt_ctx *ctx)
++static int read_pages_contents(struct ckpt_ctx *ctx, struct inode *inode)
+ {
+-	struct mm_struct *mm = current->mm;
+ 	struct ckpt_pgarr *pgarr;
+ 	unsigned long *vaddrs;
+-	int i, ret = 0;
++	int i, ret;
+ 
+ 	list_for_each_entry_reverse(pgarr, &ctx->pgarr_list, list) {
+ 		vaddrs = pgarr->vaddrs;
+@@ -894,11 +917,14 @@ static int read_pages_contents(struct ckpt_ctx *ctx)
+ 			/* TODO: do in chunks to reduce mmap_sem overhead */
+ 			_ckpt_debug(CKPT_DPAGE, "got page %#lx\n", vaddrs[i]);
+ 			down_read(&current->mm->mmap_sem);
+-			ret = get_user_pages(current, mm, vaddrs[i],
+-					     1, 1, 1, &page, NULL);
++			if (inode)
++				page = bring_shared_page(vaddrs[i], inode);
++			else
++				page = bring_private_page(vaddrs[i]);
+ 			up_read(&current->mm->mmap_sem);
+-			if (ret < 0)
+-				return ret;
++
++			if (IS_ERR(page))
++				return PTR_ERR(page);
+ 
+ 			ret = restore_read_page(ctx, page);
+ 			page_cache_release(page);
+@@ -907,12 +933,13 @@ static int read_pages_contents(struct ckpt_ctx *ctx)
+ 				return ret;
+ 		}
+ 	}
+-	return ret;
++	return 0;
+ }
+ 
+ /**
+- * restore_memory_contents - restore contents of a VMA with private memory
++ * restore_memory_contents - restore contents of a memory region
+  * @ctx - restart context
++ * @inode - backing inode
+  *
+  * Reads a header that specifies how many pages will follow, then reads
+  * a list of virtual addresses into ctx->pgarr_list page-array chain,
+@@ -920,7 +947,7 @@ static int read_pages_contents(struct ckpt_ctx *ctx)
+  * these steps until reaching a header specifying "0" pages, which marks
+  * the end of the contents.
+  */
+-static int restore_memory_contents(struct ckpt_ctx *ctx)
++int restore_memory_contents(struct ckpt_ctx *ctx, struct inode *inode)
+ {
+ 	struct ckpt_hdr_pgarr *h;
+ 	unsigned long nr_pages;
+@@ -947,7 +974,7 @@ static int restore_memory_contents(struct ckpt_ctx *ctx)
+ 		ret = read_pages_vaddrs(ctx, nr_pages);
+ 		if (ret < 0)
+ 			break;
+-		ret = read_pages_contents(ctx);
++		ret = read_pages_contents(ctx, inode);
+ 		if (ret < 0)
+ 			break;
+ 		pgarr_reset_all(ctx);
+@@ -1005,9 +1032,9 @@ static unsigned long calc_map_flags_bits(unsigned long orig_vm_flags)
+  * @file - file to map (NULL for anonymous)
+  * @h - vma header data
+  */
+-static unsigned long generic_vma_restore(struct mm_struct *mm,
+-					 struct file *file,
+-					 struct ckpt_hdr_vma *h)
++unsigned long generic_vma_restore(struct mm_struct *mm,
++				  struct file *file,
++				  struct ckpt_hdr_vma *h)
+ {
+ 	unsigned long vm_size, vm_start, vm_flags, vm_prot, vm_pgoff;
+ 	unsigned long addr;
+@@ -1052,7 +1079,7 @@ int private_vma_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
+ 	if (IS_ERR((void *) addr))
+ 		return PTR_ERR((void *) addr);
+ 
+-	return restore_memory_contents(ctx);
++	return restore_memory_contents(ctx, NULL);
+ }
+ 
+ /**
+@@ -1112,16 +1139,19 @@ static struct restore_vma_ops restore_vma_ops[] = {
+ 	{
+ 		.vma_name = "ANON SHARED",
+ 		.vma_type = CKPT_VMA_SHM_ANON,
++		.restore = shmem_restore,
+ 	},
+ 	/* anonymous shared (skipped) */
+ 	{
+ 		.vma_name = "ANON SHARED (skip)",
+ 		.vma_type = CKPT_VMA_SHM_ANON_SKIP,
++		.restore = shmem_restore,
+ 	},
+ 	/* file-mapped shared */
+ 	{
+ 		.vma_name = "FILE SHARED",
+ 		.vma_type = CKPT_VMA_SHM_FILE,
++		.restore = filemap_restore,
+ 	},
+ };
+ 
+@@ -1140,15 +1170,15 @@ static int restore_vma(struct ckpt_ctx *ctx, struct mm_struct *mm)
+ 	if (IS_ERR(h))
+ 		return PTR_ERR(h);
+ 
+-	ckpt_debug("vma %#lx-%#lx flags %#lx type %d vmaref %d\n",
++	ckpt_debug("vma %#lx-%#lx flags %#lx type %d vmaref %d inoref %d\n",
+ 		   (unsigned long) h->vm_start, (unsigned long) h->vm_end,
+ 		   (unsigned long) h->vm_flags, (int) h->vma_type,
+-		   (int) h->vma_objref);
++		   (int) h->vma_objref, (int) h->ino_objref);
+ 
+ 	ret = -EINVAL;
+ 	if (h->vm_end < h->vm_start)
+ 		goto out;
+-	if (h->vma_objref < 0)
++	if (h->vma_objref < 0 || h->ino_objref < 0)
+ 		goto out;
+ 	if (h->vma_type >= CKPT_VMA_MAX)
+ 		goto out;
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 68696b8..de17f9b 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -209,9 +209,15 @@ extern int ckpt_collect_mm(struct ckpt_ctx *ctx, struct task_struct *t);
+ extern int checkpoint_mm(struct ckpt_ctx *ctx, void *ptr);
+ extern void *restore_mm(struct ckpt_ctx *ctx);
+ 
++extern unsigned long generic_vma_restore(struct mm_struct *mm,
++					 struct file *file,
++					 struct ckpt_hdr_vma *h);
++
+ extern int private_vma_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
+ 			       struct file *file, struct ckpt_hdr_vma *h);
+ 
++extern int restore_memory_contents(struct ckpt_ctx *ctx, struct inode *inode);
++
+ 
+ #define CKPT_VMA_NOT_SUPPORTED						\
+ 	(VM_IO | VM_HUGETLB | VM_NONLINEAR | VM_PFNMAP |		\
+diff --git a/include/linux/mm.h b/include/linux/mm.h
+index b37a9f1..210d8e3 100644
+--- a/include/linux/mm.h
++++ b/include/linux/mm.h
+@@ -1220,6 +1220,8 @@ extern int filemap_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
+ 			   struct ckpt_hdr_vma *hh);
+ extern int special_mapping_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
+ 				   struct ckpt_hdr_vma *hh);
++extern int shmem_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
++			 struct ckpt_hdr_vma *hh);
+ #endif
+ 
+ /* readahead.c */
+diff --git a/mm/filemap.c b/mm/filemap.c
+index 5b7f169..4ea28e6 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -1654,17 +1654,28 @@ int filemap_restore(struct ckpt_ctx *ctx,
+ 		    struct ckpt_hdr_vma *h)
+ {
+ 	struct file *file;
++	unsigned long addr;
+ 	int ret;
+ 
+ 	if (h->vma_type == CKPT_VMA_FILE &&
+ 	    (h->vm_flags & (VM_SHARED | VM_MAYSHARE)))
+ 		return -EINVAL;
++	if (h->vma_type == CKPT_VMA_SHM_FILE &&
++	    !(h->vm_flags & (VM_SHARED | VM_MAYSHARE)))
++		return -EINVAL;
+ 
+ 	file = ckpt_obj_fetch(ctx, h->vma_objref, CKPT_OBJ_FILE);
+ 	if (IS_ERR(file))
+ 		return PTR_ERR(file);
+ 
+-	ret = private_vma_restore(ctx, mm, file, h);
++	if (h->vma_type == CKPT_VMA_FILE) {
++		/* private mapped file */
++		ret = private_vma_restore(ctx, mm, file, h);
++	} else {
++		/* shared mapped file */
++		addr = generic_vma_restore(mm, file, h);
++		ret = (IS_ERR((void *) addr) ? PTR_ERR((void *) addr) : 0);
 +	}
+ 	return ret;
+ }
+ #else /* !CONFIG_CHECKPOINT */
+diff --git a/mm/shmem.c b/mm/shmem.c
+index bf5993c..31fd5c7 100644
+--- a/mm/shmem.c
++++ b/mm/shmem.c
+@@ -2423,6 +2423,55 @@ static int shmem_checkpoint(struct ckpt_ctx *ctx, struct vm_area_struct *vma)
+ 
+ 	return shmem_vma_checkpoint(ctx, vma, vma_type, ino_objref);
+ }
 +
-+	ret = ckpt_write_obj_type(ctx, NULL, len, CKPT_HDR_PIPE_BUF);
-+	if (ret < 0)
-+		goto out;
-+
-+	ret = do_splice_from(pipe, ctx->file, &ctx->file->f_pos, len, 0);
-+	if (ret < 0)
-+		goto out;
-+	if (ret != len)
-+		ret = -EPIPE;  /* can occur due to an error in target file */
-+ out:
-+	__free_pipe_info(pipe);
-+	return ret;
-+}
-+
-+static int pipe_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
++int shmem_restore(struct ckpt_ctx *ctx,
++		  struct mm_struct *mm, struct ckpt_hdr_vma *h)
 +{
-+	struct ckpt_hdr_file_pipe *h;
-+	struct inode *inode = file->f_dentry->d_inode;
-+	int objref, first, ret;
-+
-+	objref = ckpt_obj_lookup_add(ctx, inode, CKPT_OBJ_INODE, &first);
-+	if (objref < 0)
-+		return objref;
-+
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE);
-+	if (!h)
-+		return -ENOMEM;
-+
-+	h->common.f_type = CKPT_FILE_PIPE;
-+	h->pipe_objref = objref;
-+
-+	ret = checkpoint_file_common(ctx, file, &h->common);
-+	if (ret < 0)
-+		goto out;
-+	ret = ckpt_write_obj(ctx, &h->common.h);
-+	if (ret < 0)
-+		goto out;
-+
-+	if (first)
-+		ret = checkpoint_pipe(ctx, inode);
-+ out:
-+	ckpt_hdr_put(ctx, h);
-+	return ret;
-+}
-+
-+static int restore_pipe(struct ckpt_ctx *ctx, struct file *file)
-+{
-+	struct pipe_inode_info *pipe;
-+	int len, ret;
-+
-+	len = _ckpt_read_obj_type(ctx, NULL, 0, CKPT_HDR_PIPE_BUF);
-+	if (len < 0)
-+		return len;
-+
-+	pipe = file->f_dentry->d_inode->i_pipe;
-+	ret = do_splice_to(ctx->file, &ctx->file->f_pos, pipe, len, 0);
-+
-+	if (ret >= 0 && ret != len)
-+		ret = -EPIPE;  /* can occur due to an error in source file */
-+
-+	return ret;
-+}
-+
-+struct file *pipe_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr)
-+{
-+	struct ckpt_hdr_file_pipe *h = (struct ckpt_hdr_file_pipe *) ptr;
++	unsigned long addr;
 +	struct file *file;
-+	int fds[2], which, ret;
++	int ret = 0;
 +
-+	if (ptr->h.type != CKPT_HDR_FILE  ||
-+	    ptr->h.len != sizeof(*h) || ptr->f_type != CKPT_FILE_PIPE)
-+		return ERR_PTR(-EINVAL);
++	file = ckpt_obj_try_fetch(ctx, h->ino_objref, CKPT_OBJ_FILE);
++	if (PTR_ERR(file) == -EINVAL)
++		file = NULL;
++	if (IS_ERR(file))
++		return PTR_ERR(file);
 +
-+	if (h->pipe_objref <= 0)
-+		return ERR_PTR(-EINVAL);
-+
-+	file = ckpt_obj_try_fetch(ctx, h->pipe_objref, CKPT_OBJ_FILE);
-+	/*
-+	 * If ckpt_obj_try_fetch() returned ERR_PTR(-EINVAL), then this is
-+	 * the first time we see this pipe so need to restore the
-+	 * contents.  Otherwise, use the file pointer skip forward.
-+	 */
-+	if (!IS_ERR(file)) {
-+		get_file(file);
-+	} else if (PTR_ERR(file) == -EINVAL) {
-+		/* first encounter of this pipe: create it */
-+		ret = do_pipe_flags(fds, 0);
-+		if (ret < 0)
-+			return file;
-+
-+		which = (ptr->f_flags & O_WRONLY ? 1 : 0);
++	/* if file is NULL, this is the premiere - create and insert */
++	if (!file) {
++		if (h->vma_type != CKPT_VMA_SHM_ANON)
++			return -EINVAL;
 +		/*
-+		 * Below we return the file corersponding to one side
-+		 * of the pipe for our caller to use. Now insert the
-+		 * other side of the pipe to the hash, to be picked up
-+		 * when that side is restored.
++		 * in theory could pass NULL to mmap and let it create
++		 * the file. But, if 'shm_size != vm_end - vm_start',
++		 * or if 'vm_pgoff != 0', then the vma reflects only a
++		 * portion of the shm object and we need to "manually"
++		 * create the full shm object.
 +		 */
-+		file = fget(fds[1-which]);	/* the 'other' side */
-+		if (!file)	/* this should _never_ happen ! */
-+			return ERR_PTR(-EBADF);
-+		ret = ckpt_obj_insert(ctx, file, h->pipe_objref, CKPT_OBJ_FILE);
++		file = shmem_file_setup("/dev/zero", h->ino_size, h->vm_flags);
++		if (IS_ERR(file))
++			return PTR_ERR(file);
++		ret = ckpt_obj_insert(ctx, file, h->ino_objref, CKPT_OBJ_FILE);
 +		if (ret < 0)
 +			goto out;
-+
-+		ret = restore_pipe(ctx, file);
-+		fput(file);
-+		if (ret < 0)
-+			return ERR_PTR(ret);
-+
-+		file = fget(fds[which]);	/* 'this' side */
-+		if (!file)	/* this should _never_ happen ! */
-+			return ERR_PTR(-EBADF);
-+
-+		/* get rid of the file descriptors (caller sets that) */
-+		sys_close(fds[which]);
-+		sys_close(fds[1-which]);
 +	} else {
-+		return file;
++		if (h->vma_type != CKPT_VMA_SHM_ANON_SKIP)
++			return -EINVAL;
++		/* Already need fput() for the file above; keep path simple */
++		get_file(file);
 +	}
 +
-+	ret = restore_file_common(ctx, file, ptr);
++	addr = generic_vma_restore(mm, file, h);
++	if (IS_ERR((void *) addr))
++		return PTR_ERR((void *) addr);
++
++	if (h->vma_type == CKPT_VMA_SHM_ANON)
++		ret = restore_memory_contents(ctx, file->f_dentry->d_inode);
 + out:
-+	if (ret < 0) {
-+		fput(file);
-+		file = ERR_PTR(ret);
-+	}
-+
-+	return file;
++	fput(file);
++	return ret;
 +}
-+#else
-+#define pipe_file_checkpoint  NULL
-+#endif /* CONFIG_CHECKPOINT */
 +
- /*
-  * The file_operations structs are not static because they
-  * are also used in linux/fs/fifo.c to do operations on FIFOs.
-@@ -844,6 +998,7 @@ const struct file_operations read_pipefifo_fops = {
- 	.open		= pipe_read_open,
- 	.release	= pipe_read_release,
- 	.fasync		= pipe_read_fasync,
-+	.checkpoint	= pipe_file_checkpoint,
- };
+ #endif /* CONFIG_CHECKPOINT */
  
- const struct file_operations write_pipefifo_fops = {
-@@ -856,6 +1011,7 @@ const struct file_operations write_pipefifo_fops = {
- 	.open		= pipe_write_open,
- 	.release	= pipe_write_release,
- 	.fasync		= pipe_write_fasync,
-+	.checkpoint	= pipe_file_checkpoint,
- };
- 
- const struct file_operations rdwr_pipefifo_fops = {
-@@ -869,6 +1025,7 @@ const struct file_operations rdwr_pipefifo_fops = {
- 	.open		= pipe_rdwr_open,
- 	.release	= pipe_rdwr_release,
- 	.fasync		= pipe_rdwr_fasync,
-+	.checkpoint	= pipe_file_checkpoint,
- };
- 
- struct pipe_inode_info * alloc_pipe_info(struct inode *inode)
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 6fae6ef..885d06b 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -90,6 +90,8 @@ enum {
- #define CKPT_HDR_FILE_NAME CKPT_HDR_FILE_NAME
- 	CKPT_HDR_FILE,
- #define CKPT_HDR_FILE CKPT_HDR_FILE
-+	CKPT_HDR_PIPE_BUF,
-+#define CKPT_HDR_PIPE_BUF CKPT_HDR_PIPE_BUF
- 
- 	CKPT_HDR_MM = 401,
- #define CKPT_HDR_MM CKPT_HDR_MM
-@@ -277,6 +279,8 @@ enum file_type {
- #define CKPT_FILE_IGNORE CKPT_FILE_IGNORE
- 	CKPT_FILE_GENERIC,
- #define CKPT_FILE_GENERIC CKPT_FILE_GENERIC
-+	CKPT_FILE_PIPE,
-+#define CKPT_FILE_PIPE CKPT_FILE_PIPE
- 	CKPT_FILE_MAX
- #define CKPT_FILE_MAX CKPT_FILE_MAX
- };
-@@ -296,6 +300,11 @@ struct ckpt_hdr_file_generic {
- 	struct ckpt_hdr_file common;
- } __attribute__((aligned(8)));
- 
-+struct ckpt_hdr_file_pipe {
-+	struct ckpt_hdr_file common;
-+	__s32 pipe_objref;
-+} __attribute__((aligned(8)));
-+
- /* memory layout */
- struct ckpt_hdr_mm {
- 	struct ckpt_hdr h;
-diff --git a/include/linux/pipe_fs_i.h b/include/linux/pipe_fs_i.h
-index b43a9e0..e526a12 100644
---- a/include/linux/pipe_fs_i.h
-+++ b/include/linux/pipe_fs_i.h
-@@ -154,4 +154,12 @@ int generic_pipe_buf_confirm(struct pipe_inode_info *, struct pipe_buffer *);
- int generic_pipe_buf_steal(struct pipe_inode_info *, struct pipe_buffer *);
- void generic_pipe_buf_release(struct pipe_inode_info *, struct pipe_buffer *);
- 
-+/* checkpoint/restart */
-+#ifdef CONFIG_CHECKPOINT
-+struct ckpt_ctx;
-+struct ckpt_hdr_file;
-+extern struct file *pipe_file_restore(struct ckpt_ctx *ctx,
-+				      struct ckpt_hdr_file *ptr);
-+#endif
-+
- #endif
+ static void init_once(void *foo)
 -- 
 1.6.3.3
