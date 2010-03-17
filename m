@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 40/96] c/r: introduce method '->checkpoint()' in
-	struct vm_operations_struct
-Date: Wed, 17 Mar 2010 12:08:28 -0400
-Message-ID: <1268842164-5590-41-git-send-email-orenl__3652.71076229892$1268848070$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 45/96] c/r: add generic '->checkpoint()' f_op to
+	simple devices
+Date: Wed, 17 Mar 2010 12:08:33 -0400
+Message-ID: <1268842164-5590-46-git-send-email-orenl__20450.6569695242$1268848399$gmane$org@cs.columbia.edu>
 References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-2-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-3-git-send-email-orenl@cs.columbia.edu>
@@ -43,11 +43,16 @@ References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-38-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-39-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-40-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-41-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-42-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-43-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-44-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-45-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268842164-5590-40-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1268842164-5590-45-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -61,37 +66,58 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Changelog[v17]
-  - Forward-declare 'ckpt_ctx et-al, don't use checkpoint_types.h
+* /dev/null
+* /dev/zero
+* /dev/random
+* /dev/urandom
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/mm.h |    4 ++++
- 1 files changed, 4 insertions(+), 0 deletions(-)
+ drivers/char/mem.c    |    2 ++
+ drivers/char/random.c |    2 ++
+ 2 files changed, 4 insertions(+), 0 deletions(-)
 
-diff --git a/include/linux/mm.h b/include/linux/mm.h
-index 60c467b..48d67ee 100644
---- a/include/linux/mm.h
-+++ b/include/linux/mm.h
-@@ -19,6 +19,7 @@ struct file_ra_state;
- struct user_struct;
- struct writeback_control;
- struct rlimit;
-+struct ckpt_ctx;
- 
- #ifndef CONFIG_DISCONTIGMEM          /* Don't use mapnrs, do it properly */
- extern unsigned long max_mapnr;
-@@ -220,6 +221,9 @@ struct vm_operations_struct {
- 	int (*migrate)(struct vm_area_struct *vma, const nodemask_t *from,
- 		const nodemask_t *to, unsigned long flags);
- #endif
-+#ifdef CONFIG_CHECKPOINT
-+	int (*checkpoint)(struct ckpt_ctx *ctx, struct vm_area_struct *vma);
-+#endif
+diff --git a/drivers/char/mem.c b/drivers/char/mem.c
+index 48788db..57e3443 100644
+--- a/drivers/char/mem.c
++++ b/drivers/char/mem.c
+@@ -763,6 +763,7 @@ static const struct file_operations null_fops = {
+ 	.read		= read_null,
+ 	.write		= write_null,
+ 	.splice_write	= splice_write_null,
++	.checkpoint	= generic_file_checkpoint,
  };
  
- struct mmu_gather;
+ #ifdef CONFIG_DEVPORT
+@@ -779,6 +780,7 @@ static const struct file_operations zero_fops = {
+ 	.read		= read_zero,
+ 	.write		= write_zero,
+ 	.mmap		= mmap_zero,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ 
+ /*
+diff --git a/drivers/char/random.c b/drivers/char/random.c
+index 2849713..c082789 100644
+--- a/drivers/char/random.c
++++ b/drivers/char/random.c
+@@ -1169,6 +1169,7 @@ const struct file_operations random_fops = {
+ 	.poll  = random_poll,
+ 	.unlocked_ioctl = random_ioctl,
+ 	.fasync = random_fasync,
++	.checkpoint = generic_file_checkpoint,
+ };
+ 
+ const struct file_operations urandom_fops = {
+@@ -1176,6 +1177,7 @@ const struct file_operations urandom_fops = {
+ 	.write = random_write,
+ 	.unlocked_ioctl = random_ioctl,
+ 	.fasync = random_fasync,
++	.checkpoint = generic_file_checkpoint,
+ };
+ 
+ /***************************************************************
 -- 
 1.6.3.3
