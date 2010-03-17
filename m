@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 18/96] cgroup freezer: interface to freeze a cgroup
-	from within the kernel
-Date: Wed, 17 Mar 2010 12:08:06 -0400
-Message-ID: <1268842164-5590-19-git-send-email-orenl__9898.6653182239$1268847652$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 17/96] cgroup freezer: Add CHECKPOINTING state to
+	safeguard container checkpoint
+Date: Wed, 17 Mar 2010 12:08:05 -0400
+Message-ID: <1268842164-5590-18-git-send-email-orenl__46285.1920784034$1268847786$gmane$org@cs.columbia.edu>
 References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-2-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-3-git-send-email-orenl@cs.columbia.edu>
@@ -20,12 +20,11 @@ References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-15-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-16-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-17-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-18-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268842164-5590-18-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1268842164-5590-17-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -39,58 +38,270 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Add public interface to freeze a cgroup freezer given a task that
-belongs to that cgroup:  cgroup_freezer_make_frozen(task)
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Freezing the root cgroup is not permitted. Freezing the cgroup to
-which current process belong is also not permitted.
+The CHECKPOINTING state prevents userspace from unfreezing tasks until
+sys_checkpoint() is finished. When doing container checkpoint userspace
+will do:
 
-This will be used for restart(2) to be able to leave the restarted
-processes in a frozen state, instead of resuming execution.
+	echo FROZEN > /cgroups/my_container/freezer.state
+	...
+	rc = sys_checkpoint( <pid of container root> );
 
-This is useful for debugging, if the user would like to attach a
-debugger to the restarted task(s).
+To ensure a consistent checkpoint image userspace should not be allowed
+to thaw the cgroup (echo THAWED > /cgroups/my_container/freezer.state)
+during checkpoint.
 
-It is also useful if the restart procedure would like to perform
-additional setup once the tasks are restored but before they are
-allowed to proceed execution.
+"CHECKPOINTING" can only be set on a "FROZEN" cgroup using the checkpoint
+system call. Once in the "CHECKPOINTING" state, the cgroup may not leave until
+the checkpoint system call is finished and ready to return. Then the
+freezer state returns to "FROZEN". Writing any new state to freezer.state while
+checkpointing will return EBUSY. These semantics ensure that userspace cannot
+unfreeze the cgroup midway through the checkpoint system call.
+
+The cgroup_freezer_begin_checkpoint() and cgroup_freezer_end_checkpoint()
+make relatively few assumptions about the task that is passed in. However the
+way they are called in do_checkpoint() assumes that the root of the container
+is in the same freezer cgroup as all the other tasks that will be
+checkpointed.
+
+Notes:
+        As a side-effect this prevents the multiple tasks from entering the
+        CHECKPOINTING state simultaneously. All but one will get -EBUSY.
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-CC: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Cc: Cedric Le Goater <legoater-GANU6spQydw@public.gmane.org>
 ---
- include/linux/freezer.h |    1 +
- kernel/cgroup_freezer.c |   27 +++++++++++++++++++++++++++
- 2 files changed, 28 insertions(+), 0 deletions(-)
+ Documentation/cgroups/freezer-subsystem.txt |   10 ++
+ include/linux/freezer.h                     |    8 ++
+ kernel/cgroup_freezer.c                     |  166 ++++++++++++++++++++-------
+ 3 files changed, 142 insertions(+), 42 deletions(-)
 
+diff --git a/Documentation/cgroups/freezer-subsystem.txt b/Documentation/cgroups/freezer-subsystem.txt
+index 41f37fe..92b68e6 100644
+--- a/Documentation/cgroups/freezer-subsystem.txt
++++ b/Documentation/cgroups/freezer-subsystem.txt
+@@ -100,3 +100,13 @@ things happens:
+ 		and returns EINVAL)
+ 	3) The tasks that blocked the cgroup from entering the "FROZEN"
+ 		state disappear from the cgroup's set of tasks.
++
++When the cgroup freezer is used to guard container checkpoint operations the
++freezer.state may be "CHECKPOINTING". "CHECKPOINTING" can only be set on a
++"FROZEN" cgroup using the checkpoint system call. Once in the "CHECKPOINTING"
++state, the cgroup may not leave until the checkpoint system call returns the
++freezer state to "FROZEN". Writing any new state to freezer.state while
++checkpointing will return EBUSY. These semantics ensure that userspace cannot
++unfreeze the cgroup midway through the checkpoint system call. Note that,
++unlike "FROZEN" and "FREEZING", there is no corresponding "CHECKPOINTED"
++state.
 diff --git a/include/linux/freezer.h b/include/linux/freezer.h
-index 3d32641..0cb22cb 100644
+index da7e52b..3d32641 100644
 --- a/include/linux/freezer.h
 +++ b/include/linux/freezer.h
-@@ -68,6 +68,7 @@ extern int cgroup_freezing_or_frozen(struct task_struct *task);
- extern int in_same_cgroup_freezer(struct task_struct *p, struct task_struct *q);
- extern int cgroup_freezer_begin_checkpoint(struct task_struct *task);
- extern void cgroup_freezer_end_checkpoint(struct task_struct *task);
-+extern int cgroup_freezer_make_frozen(struct task_struct *task);
+@@ -65,11 +65,19 @@ extern void cancel_freezing(struct task_struct *p);
+ 
+ #ifdef CONFIG_CGROUP_FREEZER
+ extern int cgroup_freezing_or_frozen(struct task_struct *task);
++extern int in_same_cgroup_freezer(struct task_struct *p, struct task_struct *q);
++extern int cgroup_freezer_begin_checkpoint(struct task_struct *task);
++extern void cgroup_freezer_end_checkpoint(struct task_struct *task);
  #else /* !CONFIG_CGROUP_FREEZER */
  static inline int cgroup_freezing_or_frozen(struct task_struct *task)
  {
+ 	return 0;
+ }
++static inline int in_same_cgroup_freezer(struct task_struct *p,
++					 struct task_struct *q)
++{
++	return 0;
++}
+ #endif /* !CONFIG_CGROUP_FREEZER */
+ 
+ /*
 diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
-index dd87010..efd4597 100644
+index 2c44736..dd87010 100644
 --- a/kernel/cgroup_freezer.c
 +++ b/kernel/cgroup_freezer.c
-@@ -479,4 +479,31 @@ void cgroup_freezer_end_checkpoint(struct task_struct *task)
- 	 */
- 	WARN_ON(freezer_checkpointing(task, CGROUP_FROZEN) != CGROUP_CHECKPOINTING);
+@@ -25,6 +25,7 @@ enum freezer_state {
+ 	CGROUP_THAWED = 0,
+ 	CGROUP_FREEZING,
+ 	CGROUP_FROZEN,
++	CGROUP_CHECKPOINTING,
+ };
+ 
+ struct freezer {
+@@ -63,6 +64,44 @@ int cgroup_freezing_or_frozen(struct task_struct *task)
+ 	return (state == CGROUP_FREEZING) || (state == CGROUP_FROZEN);
  }
+ 
++/* Task is frozen or will freeze immediately when next it gets woken */
++static bool is_task_frozen_enough(struct task_struct *task)
++{
++	return frozen(task) ||
++		(task_is_stopped_or_traced(task) && freezing(task));
++}
 +
-+int cgroup_freezer_make_frozen(struct task_struct *task)
++/*
++ * caller must hold freezer->lock
++ */
++static void update_freezer_state(struct cgroup *cgroup,
++				 struct freezer *freezer)
++{
++	struct cgroup_iter it;
++	struct task_struct *task;
++	unsigned int nfrozen = 0, ntotal = 0;
++
++	cgroup_iter_start(cgroup, &it);
++	while ((task = cgroup_iter_next(cgroup, &it))) {
++		ntotal++;
++		if (is_task_frozen_enough(task))
++			nfrozen++;
++	}
++
++	/*
++	 * Transition to FROZEN when no new tasks can be added ensures
++	 * that we never exist in the FROZEN state while there are unfrozen
++	 * tasks.
++	 */
++	if (nfrozen == ntotal)
++		freezer->state = CGROUP_FROZEN;
++	else if (nfrozen > 0)
++		freezer->state = CGROUP_FREEZING;
++	else
++		freezer->state = CGROUP_THAWED;
++	cgroup_iter_end(cgroup, &it);
++}
++
+ /*
+  * cgroups_write_string() limits the size of freezer state strings to
+  * CGROUP_LOCAL_BUFFER_SIZE
+@@ -71,6 +110,7 @@ static const char *freezer_state_strs[] = {
+ 	"THAWED",
+ 	"FREEZING",
+ 	"FROZEN",
++	"CHECKPOINTING",
+ };
+ 
+ /*
+@@ -78,9 +118,9 @@ static const char *freezer_state_strs[] = {
+  * Transitions are caused by userspace writes to the freezer.state file.
+  * The values in parenthesis are state labels. The rest are edge labels.
+  *
+- * (THAWED) --FROZEN--> (FREEZING) --FROZEN--> (FROZEN)
+- *    ^ ^                    |                     |
+- *    | \_______THAWED_______/                     |
++ * (THAWED) --FROZEN--> (FREEZING) --FROZEN--> (FROZEN) --> (CHECKPOINTING)
++ *    ^ ^                    |                     | ^             |
++ *    | \_______THAWED_______/                     | \_____________/
+  *    \__________________________THAWED____________/
+  */
+ 
+@@ -153,13 +193,6 @@ static void freezer_destroy(struct cgroup_subsys *ss,
+ 	kfree(cgroup_freezer(cgroup));
+ }
+ 
+-/* Task is frozen or will freeze immediately when next it gets woken */
+-static bool is_task_frozen_enough(struct task_struct *task)
+-{
+-	return frozen(task) ||
+-		(task_is_stopped_or_traced(task) && freezing(task));
+-}
+-
+ /*
+  * The call to cgroup_lock() in the freezer.state write method prevents
+  * a write to that file racing against an attach, and hence the
+@@ -229,37 +262,6 @@ static void freezer_fork(struct cgroup_subsys *ss, struct task_struct *task)
+ 	spin_unlock_irq(&freezer->lock);
+ }
+ 
+-/*
+- * caller must hold freezer->lock
+- */
+-static void update_freezer_state(struct cgroup *cgroup,
+-				 struct freezer *freezer)
+-{
+-	struct cgroup_iter it;
+-	struct task_struct *task;
+-	unsigned int nfrozen = 0, ntotal = 0;
+-
+-	cgroup_iter_start(cgroup, &it);
+-	while ((task = cgroup_iter_next(cgroup, &it))) {
+-		ntotal++;
+-		if (is_task_frozen_enough(task))
+-			nfrozen++;
+-	}
+-
+-	/*
+-	 * Transition to FROZEN when no new tasks can be added ensures
+-	 * that we never exist in the FROZEN state while there are unfrozen
+-	 * tasks.
+-	 */
+-	if (nfrozen == ntotal)
+-		freezer->state = CGROUP_FROZEN;
+-	else if (nfrozen > 0)
+-		freezer->state = CGROUP_FREEZING;
+-	else
+-		freezer->state = CGROUP_THAWED;
+-	cgroup_iter_end(cgroup, &it);
+-}
+-
+ static int freezer_read(struct cgroup *cgroup, struct cftype *cft,
+ 			struct seq_file *m)
+ {
+@@ -330,7 +332,10 @@ static int freezer_change_state(struct cgroup *cgroup,
+ 	freezer = cgroup_freezer(cgroup);
+ 
+ 	spin_lock_irq(&freezer->lock);
+-
++	if (freezer->state == CGROUP_CHECKPOINTING) {
++		retval = -EBUSY;
++		goto out;
++	}
+ 	update_freezer_state(cgroup, freezer);
+ 	if (goal_state == freezer->state)
+ 		goto out;
+@@ -398,3 +403,80 @@ struct cgroup_subsys freezer_subsys = {
+ 	.fork		= freezer_fork,
+ 	.exit		= NULL,
+ };
++
++#ifdef CONFIG_CHECKPOINT
++/*
++ * Caller is expected to ensure that neither @p nor @q may change its
++ * freezer cgroup during this test in a way that may affect the result.
++ * E.g., when called form c/r, @p must be in CHECKPOINTING cgroup, so
++ * may not change cgroup, and either @q is also there, or is not there
++ * and may not join.
++ */
++int in_same_cgroup_freezer(struct task_struct *p, struct task_struct *q)
++{
++	struct cgroup_subsys_state *p_css, *q_css;
++
++	task_lock(p);
++	p_css = task_subsys_state(p, freezer_subsys_id);
++	task_unlock(p);
++
++	task_lock(q);
++	q_css = task_subsys_state(q, freezer_subsys_id);
++	task_unlock(q);
++
++	return (p_css == q_css);
++}
++
++/*
++ * cgroup freezer state changes made without the aid of the cgroup filesystem
++ * must go through this function to ensure proper locking is observed.
++ */
++static int freezer_checkpointing(struct task_struct *task,
++				 enum freezer_state next_state)
 +{
 +	struct freezer *freezer;
 +	struct cgroup_subsys_state *css;
-+	int ret = -ENODEV;
++	enum freezer_state state;
 +
 +	task_lock(task);
 +	css = task_subsys_state(task, freezer_subsys_id);
@@ -98,20 +309,41 @@ index dd87010..efd4597 100644
 +	freezer = container_of(css, struct freezer, css);
 +	task_unlock(task);
 +
-+	/* Never freeze the root cgroup */
-+	if (!test_bit(CSS_ROOT, &css->flags) &&
-+	    cgroup_lock_live_group(css->cgroup)) {
-+		/* do not freeze outselves, ei ?! */
-+		if (css != task_subsys_state(current, freezer_subsys_id))
-+			ret = freezer_change_state(css->cgroup, CGROUP_FROZEN);
-+		else
-+			ret = -EPERM;
-+		cgroup_unlock();
++	if (freezer->state == CGROUP_FREEZING) {
++		/* May be in middle of a lazy FREEZING -> FROZEN transition */
++		if (cgroup_lock_live_group(css->cgroup)) {
++			spin_lock_irq(&freezer->lock);
++			update_freezer_state(css->cgroup, freezer);
++			spin_unlock_irq(&freezer->lock);
++			cgroup_unlock();
++		}
 +	}
 +
++	spin_lock_irq(&freezer->lock);
++	state = freezer->state;
++	if ((state == CGROUP_FROZEN && next_state == CGROUP_CHECKPOINTING) ||
++	    (state == CGROUP_CHECKPOINTING && next_state == CGROUP_FROZEN))
++		freezer->state = next_state;
++	spin_unlock_irq(&freezer->lock);
 +	css_put(css);
-+	return ret;
++	return state;
 +}
- #endif /* CONFIG_CHECKPOINT */
++
++int cgroup_freezer_begin_checkpoint(struct task_struct *task)
++{
++	if (freezer_checkpointing(task, CGROUP_CHECKPOINTING) != CGROUP_FROZEN)
++		return -EBUSY;
++	return 0;
++}
++
++void cgroup_freezer_end_checkpoint(struct task_struct *task)
++{
++	/*
++	 * If we weren't in CHECKPOINTING state then userspace could have
++	 * unfrozen a task and given us an inconsistent checkpoint image
++	 */
++	WARN_ON(freezer_checkpointing(task, CGROUP_FROZEN) != CGROUP_CHECKPOINTING);
++}
++#endif /* CONFIG_CHECKPOINT */
 -- 
 1.6.3.3
