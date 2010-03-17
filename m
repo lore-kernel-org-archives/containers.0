@@ -1,19 +1,18 @@
 From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH -mmotm 0/5] memcg: per cgroup dirty limit (v7)
-Date: Thu, 18 Mar 2010 00:23:27 +0530
-Message-ID: <20100317185327.GV18054__18823.6625669107$1268852289$gmane$org@balbir.in.ibm.com>
+Subject: Re: [PATCH -mmotm 2/5] memcg: dirty memory documentation
+Date: Thu, 18 Mar 2010 00:32:41 +0530
+Message-ID: <20100317190241.GW18054__22463.1403609694$1268852635$gmane$org@balbir.in.ibm.com>
 References: <1268609202-15581-1-git-send-email-arighi@develer.com>
-	<20100315171209.GI21127@redhat.com>
-	<20100315171921.GJ21127@redhat.com>
-	<20100317115427.GR18054@balbir.in.ibm.com>
-	<20100317133407.GA9198@redhat.com>
+	<1268609202-15581-3-git-send-email-arighi@develer.com>
+	<20100316164121.024e35d8.nishimura@mxp.nes.nec.co.jp>
+	<49b004811003171048h5f27405oe6ea39a103bc4ee3@mail.gmail.com>
 Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20100317133407.GA9198-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <49b004811003171048h5f27405oe6ea39a103bc4ee3-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,37 +22,64 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-* Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> [2010-03-17 09:34:07]:
+* Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> [2010-03-17 09:48:18]:
 
-> > > 
-> > > root cgroup
-> > > ==========
-> > > #time dd if=/dev/zero of=/root/zerofile bs=4K count=1M
-> > > 4294967296 bytes (4.3 GB) copied, 56.098 s, 76.6 MB/s
-> > > 
-> > > real	0m56.614s
-> > > 
-> > > test1 cgroup with memory limit 100M
-> > > ===================================
-> > > # time dd if=/dev/zero of=/root/zerofile1 bs=4K count=1M
-> > > 4294967296 bytes (4.3 GB) copied, 19.8097 s, 217 MB/s
-> > > 
-> > > real	0m19.992s
-> > > 
-> > 
-> > This is strange, did you flish the cache between the two runs?
-> > NOTE: Since the files are same, we reuse page cache from the
-> > other cgroup.
-> 
-> Files are different. Note suffix "1".
+> On Mon, Mar 15, 2010 at 11:41 PM, Daisuke Nishimura
+> <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
+> > On Mon, 15 Mar 2010 00:26:39 +0100, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org> w=
+rote:
+> >> Document cgroup dirty memory interfaces and statistics.
+> >>
+> >> Signed-off-by: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+> >> ---
+> >> =A0Documentation/cgroups/memory.txt | =A0 36 +++++++++++++++++++++++++=
++++++++++++
+> >> =A01 files changed, 36 insertions(+), 0 deletions(-)
+> >>
+> >> diff --git a/Documentation/cgroups/memory.txt b/Documentation/cgroups/=
+memory.txt
+> >> index 49f86f3..38ca499 100644
+> >> --- a/Documentation/cgroups/memory.txt
+> >> +++ b/Documentation/cgroups/memory.txt
+> >> @@ -310,6 +310,11 @@ cache =A0 =A0 =A0 =A0 =A0 =A0- # of bytes of page=
+ cache memory.
+> >> =A0rss =A0 =A0 =A0 =A0 =A0- # of bytes of anonymous and swap cache mem=
+ory.
+> >> =A0pgpgin =A0 =A0 =A0 =A0 =A0 =A0 =A0 - # of pages paged in (equivalen=
+t to # of charging events).
+> >> =A0pgpgout =A0 =A0 =A0 =A0 =A0 =A0 =A0- # of pages paged out (equivale=
+nt to # of uncharging events).
+> >> +filedirty =A0 =A0- # of pages that are waiting to get written back to=
+ the disk.
+> >> +writeback =A0 =A0- # of pages that are actively being written back to=
+ the disk.
+> >> +writeback_tmp =A0 =A0 =A0 =A0- # of pages used by FUSE for temporary =
+writeback buffers.
+> >> +nfs =A0 =A0 =A0 =A0 =A0- # of NFS pages sent to the server, but not y=
+et committed to
+> >> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 the actual storage.
+> =
+
+> Should these new memory.stat counters (filedirty, etc) report byte
+> counts rather than page counts?  I am thinking that byte counters
+> would make reporting more obvious depending on how heterogeneous page
+> sizes are used. Byte counters would also agree with /proc/meminfo.
+> Within the kernel we could still maintain page counts.  The only
+> change would be to the reporting routine, mem_cgroup_get_local_stat(),
+> which would scale the page counts by PAGE_SIZE as it does for for
+> cache,rss,etc.
 >
 
-Thanks, I'll get the perf output and see what I get. 
+I agree, byte counts would be better than page counts. pgpin and
+pgpout are special cases where the pages matter, the size does not due
+to the nature of the operation. =
 
--- 
+
+-- =
+
 	Three Cheers,
 	Balbir
