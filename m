@@ -1,8 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 71/96] c/r: [signal 4/4] support for real/virt/prof
-	itimers
-Date: Wed, 17 Mar 2010 12:08:59 -0400
-Message-ID: <1268842164-5590-72-git-send-email-orenl__18057.901497423$1268849761$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 36/96] deferqueue: generic queue to defer work
+Date: Wed, 17 Mar 2010 12:08:24 -0400
+Message-ID: <1268842164-5590-37-git-send-email-orenl__30021.8392666013$1268849900$gmane$org@cs.columbia.edu>
 References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-2-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-3-git-send-email-orenl@cs.columbia.edu>
@@ -39,46 +38,11 @@ References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-34-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-35-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-36-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-37-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-38-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-39-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-40-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-41-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-42-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-43-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-44-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-45-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-46-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-47-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-48-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-49-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-50-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-51-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-52-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-53-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-54-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-55-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-56-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-57-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-58-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-59-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-60-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-61-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-62-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-63-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-64-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-65-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-66-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-67-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-68-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-69-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-70-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-71-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268842164-5590-71-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1268842164-5590-36-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -92,216 +56,303 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This patch adds support for real/virt/prof itimers.
-Expiry and the interval values are both saved in nanoseconds.
+Add a interface to postpone an action until the end of the entire
+checkpoint or restart operation. This is useful when during the
+scan of tasks an operation cannot be performed in place, to avoid
+the need for a second scan.
 
-Changelog[v19-rc2]:
-  - Adjust virt/prof itimer code for kernel 2.6.32
-Changelog[v1]:
-  - [Louis Rilling] Fix saving of signal->it_real_incr if not expired
-  - Fix restoring of signal->it_real_incr if expire is zero
-  - Save virt/prof expire relative to process accumulated time
+One use case is when restoring an ipc shared memory region that has
+been deleted (but is still attached), during restart it needs to be
+create, attached and then deleted. However, creation and attachment
+are performed in distinct locations, so deletion can not be performed
+on the spot. Instead, this work (delete) is deferred until later.
+(This example is in one of the following patches).
+
+This interface allows chronic procrastination in the kernel:
+
+deferqueue_create(void):
+    Allocates and returns a new deferqueue.
+
+deferqueue_run(deferqueue):
+    Executes all the pending works in the queue. Returns the number
+    of works executed, or an error upon the first error reported by
+    a deferred work.
+
+deferqueue_add(deferqueue, data, size, func, dtor):
+    Enqueue a deferred work. @function is the callback function to
+    do the work, which will be called with @data as an argument.
+    @size tells the size of data. @dtor is a destructor callback
+    that is invoked for deferred works remaining in the queue when
+    the queue is destroyed. NOTE: for a given deferred work, @dtor
+    is _not_ called if @func was already called (regardless of the
+    return value of the latter).
+
+deferqueue_destroy(deferqueue):
+    Free the deferqueue and any queued items while invoking the
+    @dtor callback for each queued item.
+
+Why aren't we using the existing kernel workqueue mechanism?  We need
+to defer to work until the end of the operation: not earlier, since we
+need other things to be in place; not later, to not block waiting for
+it. However, the workqueue schedules the work for 'some time later'.
+Also, the kernel workqueue may run in any task context, but we require
+many times that an operation be run in the context of some specific
+restarting task (e.g., restoring IPC state of a certain ipc_ns).
+
+Instead, this mechanism is a simple way for the c/r operation as a
+whole, and later a task in particular, to defer some action until
+later (but not arbitrarily later) _in the restore_ operation.
+
+Changelog[v19-rc1]
+  - [Matt Helsley] Check for valid destructor before calling it
+Changelog[v18]
+  - Interface to pass simple pointers as data with deferqueue
+Changelog[v17]
+  - Fix deferqueue_add() function
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Acked-by: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/signal.c            |   90 ++++++++++++++++++++++++++++++++++++++++
- include/linux/checkpoint_hdr.h |    6 +++
- include/linux/posix-timers.h   |    9 ++++
- kernel/posix-cpu-timers.c      |    9 ----
- 4 files changed, 105 insertions(+), 9 deletions(-)
+ checkpoint/Kconfig         |    5 ++
+ include/linux/deferqueue.h |   78 +++++++++++++++++++++++++++++++
+ kernel/Makefile            |    1 +
+ kernel/deferqueue.c        |  110 ++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 194 insertions(+), 0 deletions(-)
+ create mode 100644 include/linux/deferqueue.h
+ create mode 100644 kernel/deferqueue.c
 
-diff --git a/checkpoint/signal.c b/checkpoint/signal.c
-index 3d13c56..ecb94f8 100644
---- a/checkpoint/signal.c
-+++ b/checkpoint/signal.c
-@@ -15,6 +15,8 @@
- #include <linux/signal.h>
- #include <linux/errno.h>
- #include <linux/resource.h>
-+#include <linux/timer.h>
-+#include <linux/posix-timers.h>
- #include <linux/checkpoint.h>
- #include <linux/checkpoint_hdr.h>
+diff --git a/checkpoint/Kconfig b/checkpoint/Kconfig
+index 21fc86b..4a2c845 100644
+--- a/checkpoint/Kconfig
++++ b/checkpoint/Kconfig
+@@ -2,10 +2,15 @@
+ # implemented the hooks for processor state etc. needed by the
+ # core checkpoint/restart code.
  
-@@ -315,6 +317,9 @@ static int checkpoint_signal(struct ckpt_ctx *ctx, struct task_struct *t)
- 	struct signal_struct *signal;
- 	struct sigpending shared_pending;
- 	struct rlimit *rlim;
-+	struct timeval tval;
-+	struct cpu_itimer *it;
-+	cputime_t cputime;
- 	unsigned long flags;
- 	int i, ret;
- 
-@@ -351,6 +356,53 @@ static int checkpoint_signal(struct ckpt_ctx *ctx, struct task_struct *t)
- 		h->rlim[i].rlim_cur = rlim[i].rlim_cur;
- 		h->rlim[i].rlim_max = rlim[i].rlim_max;
- 	}
++config DEFERQUEUE
++	bool
++	default n
 +
-+	/* real/virt/prof itimers */
-+	if (hrtimer_active(&signal->real_timer)) {
-+		/* For an active timer compute the time delta */
-+		ktime_t delta = hrtimer_get_remaining(&signal->real_timer);
-+		/*
-+		 * If the timer expired after the the test above, then
-+		 * set the expire to the minimum possible (because by
-+		 * now the pending signal have been saved already, but
-+		 * the signal from this very expiry won't be sent before
-+		 * we release t->sighand->siglock).
-+		 */
-+		ckpt_debug("active ! %lld\n", delta.tv64);
-+		if (delta.tv64 <= 0)
-+			delta.tv64 = NSEC_PER_USEC;
-+		h->it_real_value = ktime_to_ns(delta);
-+	} else {
-+		/*
-+		 * Timer is inactive; if @it_real_incr is 0 the timer
-+		 * will not be re-armed. Beacuse we hold siglock, if
-+		 * @it_real_incr > 0, the timer must have just expired
-+		 * but not yet re-armed, and we have a SIGALRM pending
-+		 * - that will trigger timer re-arm after restart.
-+		 */
-+		h->it_real_value = 0;
+ config CHECKPOINT
+ 	bool "Checkpoint/restart (EXPERIMENTAL)"
+ 	depends on CHECKPOINT_SUPPORT && EXPERIMENTAL
+ 	depends on CGROUP_FREEZER
++	select DEFERQUEUE
+ 	help
+ 	  Application checkpoint/restart is the ability to save the
+ 	  state of a running application so that it can later resume
+diff --git a/include/linux/deferqueue.h b/include/linux/deferqueue.h
+new file mode 100644
+index 0000000..ea3b620
+--- /dev/null
++++ b/include/linux/deferqueue.h
+@@ -0,0 +1,78 @@
++/*
++ * deferqueue.h --- deferred work queue handling for Linux.
++ */
++
++#ifndef _LINUX_DEFERQUEUE_H
++#define _LINUX_DEFERQUEUE_H
++
++#include <linux/list.h>
++#include <linux/slab.h>
++#include <linux/spinlock.h>
++
++/*
++ * This interface allows chronic procrastination in the kernel:
++ *
++ * deferqueue_create(void):
++ *     Allocates and returns a new deferqueue.
++ *
++ * deferqueue_run(deferqueue):
++ *     Executes all the pending works in the queue. Returns the number
++ *     of works executed, or an error upon the first error reported by
++ *     a deferred work.
++ *
++ * deferqueue_add(deferqueue, data, size, func, dtor):
++ * 	Enqueue a deferred work. @function is the callback function to
++ *      do the work, which will be called with @data as an argument.
++ *      @size tells the size of data. @dtor is a destructor callback
++ *      that is invoked for deferred works remaining in the queue when
++ *      the queue is destroyed. NOTE: for a given deferred work, @dtor
++ *      is _not_ called if @func was already called (regardless of the
++ *      return value of the latter).
++ *
++ * deferqueue_destroy(deferqueue):
++ *      Free the deferqueue and any queued items while invoking the
++ *      @dtor callback for each queued item.
++ *
++ * The following helpers are useful when @data is a simple pointer:
++ *
++ * deferqueue_add_ptr(deferqueue, ptr, func, dtor):
++ *	Enqueue a deferred work whos data is @ptr.
++ *
++ * deferqueue_data_ptr(data):
++ *	Convert a deferqueue @data to a void * pointer.
++ */
++
++
++typedef int (*deferqueue_func_t)(void *);
++
++struct deferqueue_entry {
++	deferqueue_func_t function;
++	deferqueue_func_t destructor;
++	struct list_head list;
++	char data[0];
++};
++
++struct deferqueue_head {
++	spinlock_t lock;
++	struct list_head list;
++};
++
++struct deferqueue_head *deferqueue_create(void);
++void deferqueue_destroy(struct deferqueue_head *head);
++int deferqueue_add(struct deferqueue_head *head, void *data, int size,
++		   deferqueue_func_t func, deferqueue_func_t dtor);
++int deferqueue_run(struct deferqueue_head *head);
++
++static inline int deferqueue_add_ptr(struct deferqueue_head *head, void *ptr,
++				     deferqueue_func_t func,
++				     deferqueue_func_t dtor)
++{
++	return deferqueue_add(head, &ptr, sizeof(ptr), func, dtor);
++}
++
++static inline void *deferqueue_data_ptr(void *data)
++{
++	return *((void **) data);
++}
++
++#endif
+diff --git a/kernel/Makefile b/kernel/Makefile
+index 864ff75..3c2c303 100644
+--- a/kernel/Makefile
++++ b/kernel/Makefile
+@@ -24,6 +24,7 @@ CFLAGS_REMOVE_sched_clock.o = -pg
+ CFLAGS_REMOVE_perf_event.o = -pg
+ endif
+ 
++obj-$(CONFIG_DEFERQUEUE) += deferqueue.o
+ obj-$(CONFIG_FREEZER) += freezer.o
+ obj-$(CONFIG_PROFILING) += profile.o
+ obj-$(CONFIG_SYSCTL_SYSCALL_CHECK) += sysctl_check.o
+diff --git a/kernel/deferqueue.c b/kernel/deferqueue.c
+new file mode 100644
+index 0000000..1204c8b
+--- /dev/null
++++ b/kernel/deferqueue.c
+@@ -0,0 +1,110 @@
++/*
++ *  Infrastructure to manage deferred work
++ *
++ *  This differs from a workqueue in that the work must be deferred
++ *  until specifically run by the caller.
++ *
++ *  As the only user currently is checkpoint/restart, which has
++ *  very simple usage, the locking is kept simple.  Adding rules
++ *  is protected by the head->lock.  But deferqueue_run() is only
++ *  called once, after all entries have been added.  So it is not
++ *  protected.  Similarly, _destroy is only called once when the
++ *  ckpt_ctx is releeased, so it is not locked or refcounted.  These
++ *  can of course be added if needed by other users.
++ *
++ *  Why not use workqueue ?  We need to defer work until the end of an
++ *  operation: not earlier, since we need other things to be in place;
++ *  not later, to not block waiting for it. However, the workqueue
++ *  schedules the work for 'some time later'. Also, workqueue may run
++ *  in any task context, but we require many times that an operation
++ *  be run in the context of some specific restarting task (e.g.,
++ *  restoring IPC state of a certain ipc_ns).
++ *
++ *  Instead, this mechanism is a simple way for the c/r operation as a
++ *  whole, and later a task in particular, to defer some action until
++ *  later (but not arbitrarily later) _in the restore_ operation.
++ *
++ *  Copyright (C) 2009 Oren Laadan
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ *
++ */
++
++#include <linux/module.h>
++#include <linux/kernel.h>
++#include <linux/deferqueue.h>
++
++struct deferqueue_head *deferqueue_create(void)
++{
++	struct deferqueue_head *h = kmalloc(sizeof(*h), GFP_KERNEL);
++	if (h) {
++		spin_lock_init(&h->lock);
++		INIT_LIST_HEAD(&h->list);
 +	}
-+	h->it_real_incr = ktime_to_ns(signal->it_real_incr);
-+
-+	/* for prof/virt, ignore error and incr_error */
-+	it = &signal->it[CPUCLOCK_VIRT];
-+	cputime = it->expires;
-+	if (!cputime_eq(cputime, cputime_zero))
-+		cputime = cputime_sub(it->expires, virt_ticks(t));
-+	cputime_to_timeval(cputime, &tval);
-+	h->it_virt_value = timeval_to_ns(&tval);
-+	cputime_to_timeval(it->incr, &tval);
-+	h->it_virt_incr = timeval_to_ns(&tval);
-+
-+	it = &signal->it[CPUCLOCK_PROF];
-+	cputime = it->expires;
-+	if (!cputime_eq(cputime, cputime_zero))
-+		cputime = cputime_sub(it->expires, prof_ticks(t));
-+	cputime_to_timeval(cputime, &tval);
-+	h->it_prof_value = timeval_to_ns(&tval);
-+	cputime_to_timeval(it->incr, &tval);
-+	h->it_prof_incr = timeval_to_ns(&tval);
-+
- 	unlock_task_sighand(t, &flags);
- 
- 	ret = ckpt_write_obj(ctx, &h->h);
-@@ -424,6 +476,7 @@ static int restore_signal(struct ckpt_ctx *ctx)
- 	struct ckpt_hdr_signal *h;
- 	struct sigpending new_pending;
- 	struct sigpending *pending;
-+	struct itimerval itimer;
- 	struct rlimit rlim;
- 	int i, ret;
- 
-@@ -444,12 +497,49 @@ static int restore_signal(struct ckpt_ctx *ctx)
- 	if (ret < 0)
- 		goto out;
- 
-+	/*
-+	 * Reset real/virt/prof itimer (in case they were set), to
-+	 * prevent unwanted signals after flushing current signals
-+	 * and before restoring original real/virt/prof itimer.
-+	 */
-+	itimer.it_value = (struct timeval) { .tv_sec = 0, .tv_usec = 0 };
-+	itimer.it_interval =  (struct timeval) { .tv_sec = 0, .tv_usec = 0 };
-+	do_setitimer(ITIMER_REAL, &itimer, NULL);
-+	do_setitimer(ITIMER_VIRTUAL, &itimer, NULL);
-+	do_setitimer(ITIMER_PROF, &itimer, NULL);
-+
- 	spin_lock_irq(&current->sighand->siglock);
- 	pending = &current->signal->shared_pending;
- 	flush_sigqueue(pending);
- 	pending->signal = new_pending.signal;
- 	list_splice_init(&new_pending.list, &pending->list);
- 	spin_unlock_irq(&current->sighand->siglock);
-+
-+	/* real/virt/prof itimers */
-+	itimer.it_value = ns_to_timeval(h->it_real_value);
-+	itimer.it_interval = ns_to_timeval(h->it_real_incr);
-+	ret = do_setitimer(ITIMER_REAL, &itimer, NULL);
-+	if (ret < 0)
-+		goto out;
-+	/*
-+	 * If expire is 0 but incr > 0 then we have a SIGALRM pending.
-+	 * It should re-arm the timer when handled. But do_setitimer()
-+	 * above already ignored @it_real_incr because @it_real_value
-+	 * that was zero. So we set it manually. (This is safe against
-+	 * malicious input, because in the worst case will generate an
-+	 * unexpected SIGALRM to this process).
-+	 */
-+	if (!h->it_real_value && h->it_real_incr)
-+		current->signal->it_real_incr = ns_to_ktime(h->it_real_incr);
-+
-+	itimer.it_value = ns_to_timeval(h->it_virt_value);
-+	itimer.it_interval = ns_to_timeval(h->it_virt_incr);
-+	ret = do_setitimer(ITIMER_VIRTUAL, &itimer, NULL);
-+	if (ret < 0)
-+		goto out;
-+	itimer.it_value = ns_to_timeval(h->it_prof_value);
-+	itimer.it_interval = ns_to_timeval(h->it_prof_incr);
-+	ret = do_setitimer(ITIMER_PROF, &itimer, NULL);
-  out:
- 	ckpt_hdr_put(ctx, h);
- 	return ret;
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 939d6f2..a09b5e5 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -581,6 +581,12 @@ struct ckpt_rlimit {
- struct ckpt_hdr_signal {
- 	struct ckpt_hdr h;
- 	struct ckpt_rlimit rlim[CKPT_RLIM_NLIMITS];
-+	__u64 it_real_value;
-+	__u64 it_real_incr;
-+	__u64 it_virt_value;
-+	__u64 it_virt_incr;
-+	__u64 it_prof_value;
-+	__u64 it_prof_incr;
- } __attribute__((aligned(8)));
- 
- struct ckpt_hdr_signal_task {
-diff --git a/include/linux/posix-timers.h b/include/linux/posix-timers.h
-index d0d6a66..7dd69c3 100644
---- a/include/linux/posix-timers.h
-+++ b/include/linux/posix-timers.h
-@@ -125,4 +125,13 @@ void update_rlimit_cpu(unsigned long rlim_new);
- 
- int invalid_clockid(const clockid_t which_clock);
- 
-+static inline cputime_t prof_ticks(struct task_struct *p)
-+{
-+	return cputime_add(p->utime, p->stime);
-+}
-+static inline cputime_t virt_ticks(struct task_struct *p)
-+{
-+	return p->utime;
++	return h;
 +}
 +
- #endif
-diff --git a/kernel/posix-cpu-timers.c b/kernel/posix-cpu-timers.c
-index 438ff45..5031bdf 100644
---- a/kernel/posix-cpu-timers.c
-+++ b/kernel/posix-cpu-timers.c
-@@ -168,15 +168,6 @@ static void bump_cpu_timer(struct k_itimer *timer,
- 	}
- }
- 
--static inline cputime_t prof_ticks(struct task_struct *p)
--{
--	return cputime_add(p->utime, p->stime);
--}
--static inline cputime_t virt_ticks(struct task_struct *p)
--{
--	return p->utime;
--}
--
- int posix_cpu_clock_getres(const clockid_t which_clock, struct timespec *tp)
- {
- 	int error = check_clock(which_clock);
++void deferqueue_destroy(struct deferqueue_head *h)
++{
++	if (!list_empty(&h->list)) {
++		struct deferqueue_entry *dq, *n;
++
++		pr_debug("%s: freeing non-empty queue\n", __func__);
++		list_for_each_entry_safe(dq, n, &h->list, list) {
++			if (dq->destructor)
++				dq->destructor(dq->data);
++			list_del(&dq->list);
++			kfree(dq);
++		}
++	}
++	kfree(h);
++}
++
++int deferqueue_add(struct deferqueue_head *head, void *data, int size,
++		   deferqueue_func_t func, deferqueue_func_t dtor)
++{
++	struct deferqueue_entry *dq;
++
++	dq = kmalloc(sizeof(*dq) + size, GFP_KERNEL);
++	if (!dq)
++		return -ENOMEM;
++
++	dq->function = func;
++	dq->destructor = dtor;
++	memcpy(dq->data, data, size);
++
++	pr_debug("%s: adding work %p func %p dtor %p\n",
++		 __func__, dq, func, dtor);
++	spin_lock(&head->lock);
++	list_add_tail(&dq->list, &head->list);
++	spin_unlock(&head->lock);
++	return 0;
++}
++
++/*
++ * deferqueue_run - perform all work in the work queue
++ * @head: deferqueue_head from which to run
++ *
++ * returns: number of works performed, or < 0 on error
++ */
++int deferqueue_run(struct deferqueue_head *head)
++{
++	struct deferqueue_entry *dq, *n;
++	int nr = 0;
++	int ret;
++
++	list_for_each_entry_safe(dq, n, &head->list, list) {
++		pr_debug("doing work %p function %p\n", dq, dq->function);
++		/* don't call destructor - function callback should do it */
++		ret = dq->function(dq->data);
++		if (ret < 0)
++			pr_debug("wq function failed %d\n", ret);
++		list_del(&dq->list);
++		kfree(dq);
++		nr++;
++	}
++
++	return nr;
++}
 -- 
 1.6.3.3
