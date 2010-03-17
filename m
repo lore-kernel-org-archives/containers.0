@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 37/96] c/r: introduce new 'file_operations':
-	->checkpoint, ->collect()
-Date: Wed, 17 Mar 2010 12:08:25 -0400
-Message-ID: <1268842164-5590-38-git-send-email-orenl__34166.9178255417$1268848703$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 75/96] c/r: introduce checkpoint/restore methods to
+	struct proto_ops
+Date: Wed, 17 Mar 2010 12:09:03 -0400
+Message-ID: <1268842164-5590-76-git-send-email-orenl__8519.08710687912$1268848864$gmane$org@cs.columbia.edu>
 References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-2-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-3-git-send-email-orenl@cs.columbia.edu>
@@ -40,11 +40,49 @@ References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-35-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-36-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-37-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-38-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-39-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-40-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-41-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-42-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-43-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-44-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-45-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-46-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-47-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-48-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-49-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-50-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-51-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-52-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-53-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-54-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-55-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-56-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-57-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-58-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-59-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-60-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-61-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-62-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-63-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-64-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-65-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-66-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-67-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-68-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-69-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-70-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-71-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-72-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-73-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-74-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-75-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268842164-5590-37-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1268842164-5590-75-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -58,118 +96,49 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-While we assume all normal files and directories can be checkpointed,
-there are, as usual in the VFS, specialized places that will always
-need an ability to override these defaults. Although we could do this
-completely in the checkpoint code, that would bitrot quickly.
+This adds new 'proto_ops' function for checkpointing and restoring
+sockets. This allows the checkpoint/restart code to compile nicely
+when, e.g., AF_UNIX sockets are selected as a module.
 
-This adds a new 'file_operations' function for checkpointing a file.
-It is assumed that there should be a dirt-simple way to make something
-(un)checkpointable that fits in with current code.
-
-As you can see in the ext[234] patches down the road, all that we have
-to do to make something simple be supported is add a single "generic"
-f_op entry.
-
-Also adds a new 'file_operations' function for 'collecting' a file for
-leak-detection during full-container checkpoint. This is useful for
-those files that hold references to other "collectable" objects. Two
-examples are pty files that point to corresponding tty objects, and
-eventpoll files that refer to the files they are monitoring.
-
-Finally, this patch introduces vfs_fcntl() so that it can be called
-from restart (see patch adding restart of files).
-
-Changelog[v17]
-  - Introduce 'collect' method
-Changelog[v17]
-  - Forward-declare 'ckpt_ctx' et-al, don't use checkpoint_types.h
+It also adds a function 'collecting' a socket for leak-detection
+during full-container checkpoint. This is useful for those sockets
+that hold references to other "collectable" objects. Two examples are
+AF_UNIX buffers which reference the socket of origin, and sockets that
+have file descriptors in-transit.
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- fs/fcntl.c         |   21 +++++++++++++--------
- include/linux/fs.h |    7 +++++++
- 2 files changed, 20 insertions(+), 8 deletions(-)
+ include/linux/net.h |    9 +++++++++
+ 1 files changed, 9 insertions(+), 0 deletions(-)
 
-diff --git a/fs/fcntl.c b/fs/fcntl.c
-index 97e01dc..e1f02ca 100644
---- a/fs/fcntl.c
-+++ b/fs/fcntl.c
-@@ -418,6 +418,18 @@ static long do_fcntl(int fd, unsigned int cmd, unsigned long arg,
- 	return err;
- }
+diff --git a/include/linux/net.h b/include/linux/net.h
+index 5e8083c..72a53b9 100644
+--- a/include/linux/net.h
++++ b/include/linux/net.h
+@@ -153,6 +153,9 @@ struct sockaddr;
+ struct msghdr;
+ struct module;
  
-+int vfs_fcntl(int fd, unsigned int cmd, unsigned long arg, struct file *filp)
-+{
-+	int err;
-+
-+	err = security_file_fcntl(filp, cmd, arg);
-+	if (err)
-+		goto out;
-+	err = do_fcntl(fd, cmd, arg, filp);
-+ out:
-+	return err;
-+}
-+
- SYSCALL_DEFINE3(fcntl, unsigned int, fd, unsigned int, cmd, unsigned long, arg)
- {	
- 	struct file *filp;
-@@ -427,14 +439,7 @@ SYSCALL_DEFINE3(fcntl, unsigned int, fd, unsigned int, cmd, unsigned long, arg)
- 	if (!filp)
- 		goto out;
- 
--	err = security_file_fcntl(filp, cmd, arg);
--	if (err) {
--		fput(filp);
--		return err;
--	}
--
--	err = do_fcntl(fd, cmd, arg, filp);
--
-+	err = vfs_fcntl(fd, cmd, arg, filp);
-  	fput(filp);
- out:
- 	return err;
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 6c08df2..65ebec5 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -394,6 +394,7 @@ struct kstatfs;
- struct vm_area_struct;
- struct vfsmount;
- struct cred;
 +struct ckpt_ctx;
- 
- extern void __init inode_init(void);
- extern void __init inode_init_early(void);
-@@ -1093,6 +1094,8 @@ struct file_lock {
- 
- #include <linux/fcntl.h>
- 
-+extern int vfs_fcntl(int fd, unsigned cmd, unsigned long arg, struct file *fp);
++struct ckpt_hdr_socket;
 +
- extern void send_sigio(struct fown_struct *fown, int fd, int band);
- 
- #ifdef CONFIG_FILE_LOCKING
-@@ -1504,6 +1507,8 @@ struct file_operations {
- 	ssize_t (*splice_write)(struct pipe_inode_info *, struct file *, loff_t *, size_t, unsigned int);
- 	ssize_t (*splice_read)(struct file *, loff_t *, struct pipe_inode_info *, size_t, unsigned int);
- 	int (*setlease)(struct file *, long, struct file_lock **);
-+	int (*checkpoint)(struct ckpt_ctx *, struct file *);
-+	int (*collect)(struct ckpt_ctx *, struct file *);
+ struct proto_ops {
+ 	int		family;
+ 	struct module	*owner;
+@@ -197,6 +200,12 @@ struct proto_ops {
+ 				      int offset, size_t size, int flags);
+ 	ssize_t 	(*splice_read)(struct socket *sock,  loff_t *ppos,
+ 				       struct pipe_inode_info *pipe, size_t len, unsigned int flags);
++	int		(*checkpoint)(struct ckpt_ctx *ctx,
++				      struct socket *sock);
++	int		(*collect)(struct ckpt_ctx *ctx,
++				   struct socket *sock);
++	int		(*restore)(struct ckpt_ctx *ctx, struct socket *sock,
++				   struct ckpt_hdr_socket *h);
  };
  
- struct inode_operations {
-@@ -2313,6 +2318,8 @@ void inode_sub_bytes(struct inode *inode, loff_t bytes);
- loff_t inode_get_bytes(struct inode *inode);
- void inode_set_bytes(struct inode *inode, loff_t bytes);
- 
-+#define generic_file_checkpoint NULL
-+
- extern int vfs_readdir(struct file *, filldir_t, void *);
- 
- extern int vfs_stat(char __user *, struct kstat *);
+ #define DECLARE_SOCKADDR(type, dst, src)	\
 -- 
 1.6.3.3
