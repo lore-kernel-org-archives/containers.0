@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 67/96] c/r: checkpoint and restore (shared) task's
-	sighand_struct
-Date: Wed, 17 Mar 2010 12:08:55 -0400
-Message-ID: <1268842164-5590-68-git-send-email-orenl__20463.5205599063$1268850460$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 48/96] c/r: dump anonymous- and file-mapped- shared
+	memory
+Date: Wed, 17 Mar 2010 12:08:36 -0400
+Message-ID: <1268842164-5590-49-git-send-email-orenl__44310.1385063075$1268850468$gmane$org@cs.columbia.edu>
 References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-2-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-3-git-send-email-orenl@cs.columbia.edu>
@@ -51,30 +51,11 @@ References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-46-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-47-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-48-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-49-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-50-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-51-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-52-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-53-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-54-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-55-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-56-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-57-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-58-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-59-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-60-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-61-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-62-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-63-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-64-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-65-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-66-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-67-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268842164-5590-67-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1268842164-5590-48-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -88,476 +69,531 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This patch adds the checkpointing and restart of signal handling
-state - 'struct sighand_struct'. Since the contents of this state
-only affect userspace, no input validation is required.
+We now handle anonymous and file-mapped shared memory. Support for IPC
+shared memory requires support for IPC first. We extend ckpt_write_vma()
+to detect shared memory VMAs and handle it separately than private
+memory.
 
-Add _NSIG to kernel constants saved/tested with image header.
+There is not much to do for file-mapped shared memory, except to force
+msync() on the region to ensure that the file system is consistent
+with the checkpoint image. Use our internal type CKPT_VMA_SHM_FILE.
 
-Number of signals (_NSIG) is arch-dependent, but is within __KERNEL__
-and not visibile to userspace compile. Therefore, define per arch
-CKPT_ARCH_NSIG in <asm/checkpoint_hdr.h>.
+Anonymous shared memory is always backed by inode in shmem filesystem.
+We use that inode to look up the VMA in the objhash and register it if
+not found (on first encounter). In this case, the type of the VMA is
+CKPT_VMA_SHM_ANON, and we dump the contents. On the other hand, if it is
+found there, we must have already saved it before, so we change the
+type to CKPT_VMA_SHM_ANON_SKIP and skip it.
 
+To dump the contents of a shmem VMA, we loop through the pages of the
+inode in the shmem filesystem, and dump the contents of each dirty
+(allocated) page - unallocated pages must be clean.
+
+Note that we save the original size of a shmem VMA because it may have
+been re-mapped partially. The format itself remains like with private
+VMAs, except that instead of addresses we record _indices_ (page nr)
+into the backing inode.
+
+Changelog[v19-rc3]:
+  - Rebase to kernel 2.6.33
 Changelog[v19-rc1]:
   - [Matt Helsley] Add cpp definitions for enums
-Changelog[v1]:
-  - Rename headerless struct ckpt_hdr_* to struct ckpt_*
+Changelog[v18]:
+  - Mark the backing file as visited at chekcpoint
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- arch/s390/include/asm/checkpoint_hdr.h |    8 ++
- arch/x86/include/asm/checkpoint_hdr.h  |    8 ++
- checkpoint/Makefile                    |    3 +-
- checkpoint/checkpoint.c                |    2 +
- checkpoint/objhash.c                   |   26 +++++
- checkpoint/process.c                   |   19 ++++
- checkpoint/restart.c                   |    3 +
- checkpoint/signal.c                    |  163 ++++++++++++++++++++++++++++++++
- include/linux/checkpoint.h             |    9 ++-
- include/linux/checkpoint_hdr.h         |   24 +++++
- 10 files changed, 263 insertions(+), 2 deletions(-)
- create mode 100644 checkpoint/signal.c
+ checkpoint/memory.c            |  141 ++++++++++++++++++++++++++++++++++++----
+ checkpoint/objhash.c           |   17 +++++
+ include/linux/checkpoint.h     |   15 +++--
+ include/linux/checkpoint_hdr.h |   12 ++++
+ mm/filemap.c                   |   39 +++++++++++-
+ mm/mmap.c                      |    2 +-
+ mm/shmem.c                     |   35 ++++++++++
+ 7 files changed, 239 insertions(+), 22 deletions(-)
 
-diff --git a/arch/s390/include/asm/checkpoint_hdr.h b/arch/s390/include/asm/checkpoint_hdr.h
-index e3312c0..7d30317 100644
---- a/arch/s390/include/asm/checkpoint_hdr.h
-+++ b/arch/s390/include/asm/checkpoint_hdr.h
-@@ -91,6 +91,14 @@ struct ckpt_hdr_mm_context {
- 	unsigned long asce_limit;
- };
+diff --git a/checkpoint/memory.c b/checkpoint/memory.c
+index 3016521..0fe3b38 100644
+--- a/checkpoint/memory.c
++++ b/checkpoint/memory.c
+@@ -22,6 +22,7 @@
+ #include <linux/pagemap.h>
+ #include <linux/mm_types.h>
+ #include <linux/proc_fs.h>
++#include <linux/swap.h>
+ #include <linux/checkpoint.h>
+ #include <linux/checkpoint_hdr.h>
  
-+#define CKPT_ARCH_NSIG  64
-+#ifdef __KERNEL__
-+#include <asm/signal.h>
-+#if CKPT_ARCH_NSIG != _SIGCONTEXT_NSIG
-+#error CKPT_ARCH_NSIG size is wrong (asm/sigcontext.h and asm/checkpoint_hdr.h)
-+#endif
-+#endif
-+
- struct ckpt_hdr_header_arch {
- 	struct ckpt_hdr h;
- };
-diff --git a/arch/x86/include/asm/checkpoint_hdr.h b/arch/x86/include/asm/checkpoint_hdr.h
-index 292bf50..44737b8 100644
---- a/arch/x86/include/asm/checkpoint_hdr.h
-+++ b/arch/x86/include/asm/checkpoint_hdr.h
-@@ -52,6 +52,14 @@ enum {
- #define CKPT_HDR_MM_CONTEXT_LDT CKPT_HDR_MM_CONTEXT_LDT
- };
- 
-+#define CKPT_ARCH_NSIG  64
-+#ifdef __KERNEL__
-+#include <asm/signal.h>
-+#if CKPT_ARCH_NSIG != _NSIG
-+#error CKPT_ARCH_NSIG size is wrong per asm/signal.h and asm/checkpoint_hdr.h
-+#endif
-+#endif
-+
- struct ckpt_hdr_header_arch {
- 	struct ckpt_hdr h;
- 	/* FIXME: add HAVE_HWFP */
-diff --git a/checkpoint/Makefile b/checkpoint/Makefile
-index bb2c0ca..f8a55df 100644
---- a/checkpoint/Makefile
-+++ b/checkpoint/Makefile
-@@ -10,4 +10,5 @@ obj-$(CONFIG_CHECKPOINT) += \
- 	process.o \
- 	namespace.o \
- 	files.o \
--	memory.o
-+	memory.o \
-+	signal.o
-diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index f2d9016..445fef7 100644
---- a/checkpoint/checkpoint.c
-+++ b/checkpoint/checkpoint.c
-@@ -113,6 +113,8 @@ static void fill_kernel_const(struct ckpt_const *h)
- 	h->task_comm_len = sizeof(tsk->comm);
- 	/* mm->saved_auxv size */
- 	h->at_vector_size = AT_VECTOR_SIZE;
-+	/* signal */
-+	h->signal_nsig = _NSIG;
- 	/* uts */
- 	h->uts_sysname_len = sizeof(uts->sysname);
- 	h->uts_nodename_len = sizeof(uts->nodename);
-diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
-index 56d450a..858613e 100644
---- a/checkpoint/objhash.c
-+++ b/checkpoint/objhash.c
-@@ -125,6 +125,22 @@ static int obj_mm_users(void *ptr)
- 	return atomic_read(&((struct mm_struct *) ptr)->mm_users);
+@@ -228,6 +229,54 @@ static struct page *consider_private_page(struct vm_area_struct *vma,
  }
  
-+static int obj_sighand_grab(void *ptr)
-+{
-+	atomic_inc(&((struct sighand_struct *) ptr)->count);
-+	return 0;
-+}
-+
-+static void obj_sighand_drop(void *ptr, int lastref)
-+{
-+	__cleanup_sighand((struct sighand_struct *) ptr);
-+}
-+
-+static int obj_sighand_users(void *ptr)
-+{
-+	return atomic_read(&((struct sighand_struct *) ptr)->count);
-+}
-+
- static int obj_ns_grab(void *ptr)
- {
- 	get_nsproxy((struct nsproxy *) ptr);
-@@ -263,6 +279,16 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
- 		.checkpoint = checkpoint_mm,
- 		.restore = restore_mm,
- 	},
-+	/* sighand object */
-+	{
-+		.obj_name = "SIGHAND",
-+		.obj_type = CKPT_OBJ_SIGHAND,
-+		.ref_drop = obj_sighand_drop,
-+		.ref_grab = obj_sighand_grab,
-+		.ref_users = obj_sighand_users,
-+		.checkpoint = checkpoint_sighand,
-+		.restore = restore_sighand,
-+	},
- 	/* ns object */
- 	{
- 		.obj_name = "NSPROXY",
-diff --git a/checkpoint/process.c b/checkpoint/process.c
-index 6741b43..71eb9a5 100644
---- a/checkpoint/process.c
-+++ b/checkpoint/process.c
-@@ -181,6 +181,7 @@ static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
- 	struct ckpt_hdr_task_objs *h;
- 	int files_objref;
- 	int mm_objref;
-+	int sighand_objref;
- 	int ret;
- 
- 	/*
-@@ -219,11 +220,19 @@ static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
- 		return mm_objref;
- 	}
- 
-+	sighand_objref = checkpoint_obj_sighand(ctx, t);
-+	ckpt_debug("sighand: objref %d\n", sighand_objref);
-+	if (sighand_objref < 0) {
-+		ckpt_err(ctx, sighand_objref, "%(T)sighand_struct\n");
-+		return sighand_objref;
-+	}
-+
- 	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_TASK_OBJS);
- 	if (!h)
- 		return -ENOMEM;
- 	h->files_objref = files_objref;
- 	h->mm_objref = mm_objref;
-+	h->sighand_objref = sighand_objref;
- 	ret = ckpt_write_obj(ctx, &h->h);
- 	ckpt_hdr_put(ctx, h);
- 
-@@ -386,6 +395,9 @@ int ckpt_collect_task(struct ckpt_ctx *ctx, struct task_struct *t)
- 	if (ret < 0)
- 		return ret;
- 	ret = ckpt_collect_mm(ctx, t);
-+	if (ret < 0)
-+		return ret;
-+	ret = ckpt_collect_sighand(ctx, t);
- 
- 	return ret;
- }
-@@ -545,10 +557,17 @@ static int restore_task_objs(struct ckpt_ctx *ctx)
- 
- 	ret = restore_obj_file_table(ctx, h->files_objref);
- 	ckpt_debug("file_table: ret %d (%p)\n", ret, current->files);
-+	if (ret < 0)
-+		goto out;
- 
- 	ret = restore_obj_mm(ctx, h->mm_objref);
- 	ckpt_debug("mm: ret %d (%p)\n", ret, current->mm);
-+	if (ret < 0)
-+		goto out;
- 
-+	ret = restore_obj_sighand(ctx, h->sighand_objref);
-+	ckpt_debug("sighand: ret %d (%p)\n", ret, current->sighand);
-+ out:
- 	ckpt_hdr_put(ctx, h);
- 	return ret;
- }
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index 60a8bb4..34d3e64 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -567,6 +567,9 @@ static int check_kernel_const(struct ckpt_const *h)
- 	/* mm->saved_auxv size */
- 	if (h->at_vector_size != AT_VECTOR_SIZE)
- 		return -EINVAL;
-+	/* signal */
-+	if (h->signal_nsig != _NSIG)
-+		return -EINVAL;
- 	/* uts */
- 	if (h->uts_sysname_len != sizeof(uts->sysname))
- 		return -EINVAL;
-diff --git a/checkpoint/signal.c b/checkpoint/signal.c
-new file mode 100644
-index 0000000..1aadadd
---- /dev/null
-+++ b/checkpoint/signal.c
-@@ -0,0 +1,163 @@
-+/*
-+ *  Checkpoint task signals
+ /**
++ * consider_shared_page - return page pointer for dirty pages
++ * @ino - inode of shmem object
++ * @idx - page index in shmem object
 + *
-+ *  Copyright (C) 2009 Oren Laadan
-+ *
-+ *  This file is subject to the terms and conditions of the GNU General Public
-+ *  License.  See the file COPYING in the main directory of the Linux
-+ *  distribution for more details.
++ * Looks up the page that corresponds to the index in the shmem object,
++ * and returns the page if it was modified (and grabs a reference to it),
++ * or otherwise returns NULL (or error).
 + */
-+
-+/* default debug level for output */
-+#define CKPT_DFLAG  CKPT_DSYS
-+
-+#include <linux/sched.h>
-+#include <linux/signal.h>
-+#include <linux/errno.h>
-+#include <linux/checkpoint.h>
-+#include <linux/checkpoint_hdr.h>
-+
-+static inline void fill_sigset(struct ckpt_sigset *h, sigset_t *sigset)
++static struct page *consider_shared_page(struct inode *ino, unsigned long idx)
 +{
-+	memcpy(&h->sigset, sigset, sizeof(*sigset));
-+}
-+
-+static inline void load_sigset(sigset_t *sigset, struct ckpt_sigset *h)
-+{
-+	memcpy(sigset, &h->sigset, sizeof(*sigset));
-+}
-+
-+/***********************************************************************
-+ * sighand checkpoint/collect/restart
-+ */
-+
-+static int do_checkpoint_sighand(struct ckpt_ctx *ctx,
-+				 struct sighand_struct *sighand)
-+{
-+	struct ckpt_hdr_sighand *h;
-+	struct ckpt_sigaction *hh;
-+	struct sigaction *sa;
-+	int i, ret;
-+
-+	h = ckpt_hdr_get_type(ctx, _NSIG * sizeof(*hh) + sizeof(*h),
-+			      CKPT_HDR_SIGHAND);
-+	if (!h)
-+		return -ENOMEM;
-+
-+	hh = h->action;
-+	spin_lock_irq(&sighand->siglock);
-+	for (i = 0; i < _NSIG; i++) {
-+		sa = &sighand->action[i].sa;
-+		hh[i]._sa_handler = (unsigned long) sa->sa_handler;
-+		hh[i].sa_flags = sa->sa_flags;
-+		hh[i].sa_restorer = (unsigned long) sa->sa_restorer;
-+		fill_sigset(&hh[i].sa_mask, &sa->sa_mask);
-+	}
-+	spin_unlock_irq(&sighand->siglock);
-+
-+	ret = ckpt_write_obj(ctx, &h->h);
-+	ckpt_hdr_put(ctx, h);
-+
-+	return ret;
-+}
-+
-+int checkpoint_sighand(struct ckpt_ctx *ctx, void *ptr)
-+{
-+	return do_checkpoint_sighand(ctx, (struct sighand_struct *) ptr);
-+}
-+
-+int checkpoint_obj_sighand(struct ckpt_ctx *ctx, struct task_struct *t)
-+{
-+	struct sighand_struct *sighand;
-+	int objref;
-+
-+	read_lock(&tasklist_lock);
-+	sighand = rcu_dereference(t->sighand);
-+	atomic_inc(&sighand->count);
-+	read_unlock(&tasklist_lock);
-+
-+	objref = checkpoint_obj(ctx, sighand, CKPT_OBJ_SIGHAND);
-+	__cleanup_sighand(sighand);
-+
-+	return objref;
-+}
-+
-+int ckpt_collect_sighand(struct ckpt_ctx *ctx, struct task_struct *t)
-+{
-+	struct sighand_struct *sighand;
++	struct page *page = NULL;
 +	int ret;
 +
-+	read_lock(&tasklist_lock);
-+	sighand = rcu_dereference(t->sighand);
-+	atomic_inc(&sighand->count);
-+	read_unlock(&tasklist_lock);
++	/*
++	 * Inspired by do_shmem_file_read(): very simplified version.
++	 *
++	 * FIXME: consolidate with do_shmem_file_read()
++	 */
 +
-+	ret = ckpt_obj_collect(ctx, sighand, CKPT_OBJ_SIGHAND);
-+	__cleanup_sighand(sighand);
++	ret = shmem_getpage(ino, idx, &page, SGP_READ, NULL);
++	if (ret < 0)
++		return ERR_PTR(ret);
 +
++	/*
++	 * Only care about dirty pages; shmem_getpage() only returns
++	 * pages that have been allocated, so they must be dirty. The
++	 * pages returned are locked and referenced.
++	 */
++
++	if (page) {
++		unlock_page(page);
++		/*
++		 * If users can be writing to this page using arbitrary
++		 * virtual addresses, take care about potential aliasing
++		 * before reading the page on the kernel side.
++		 */
++		if (mapping_writably_mapped(ino->i_mapping))
++			flush_dcache_page(page);
++		/*
++		 * Mark the page accessed if we read the beginning.
++		 */
++		mark_page_accessed(page);
++	}
++
++	return page;
++}
++
++/**
+  * vma_fill_pgarr - fill a page-array with addr/page tuples
+  * @ctx - checkpoint context
+  * @vma - vma to scan
+@@ -236,16 +285,15 @@ static struct page *consider_private_page(struct vm_area_struct *vma,
+  * Returns the number of pages collected
+  */
+ static int vma_fill_pgarr(struct ckpt_ctx *ctx,
+-			  struct vm_area_struct *vma,
+-			  unsigned long *start)
++			  struct vm_area_struct *vma, struct inode *inode,
++			  unsigned long *start, unsigned long end)
+ {
+-	unsigned long end = vma->vm_end;
+ 	unsigned long addr = *start;
+ 	struct ckpt_pgarr *pgarr;
+ 	int nr_used;
+ 	int cnt = 0;
+ 
+-	BUG_ON(vma->vm_flags & (VM_SHARED | VM_MAYSHARE));
++	BUG_ON(inode && vma);
+ 
+ 	if (vma)
+ 		down_read(&vma->vm_mm->mmap_sem);
+@@ -261,7 +309,11 @@ static int vma_fill_pgarr(struct ckpt_ctx *ctx,
+ 		while (addr < end) {
+ 			struct page *page;
+ 
+-			page = consider_private_page(vma, addr);
++			if (vma)
++				page = consider_private_page(vma, addr);
++			else
++				page = consider_shared_page(inode, addr);
++
+ 			if (IS_ERR(page)) {
+ 				cnt = PTR_ERR(page);
+ 				goto out;
+@@ -275,7 +327,10 @@ static int vma_fill_pgarr(struct ckpt_ctx *ctx,
+ 				pgarr->nr_used++;
+ 			}
+ 
+-			addr += PAGE_SIZE;
++			if (vma)
++				addr += PAGE_SIZE;
++			else
++				addr++;
+ 
+ 			if (pgarr_is_full(pgarr))
+ 				break;
+@@ -342,23 +397,32 @@ static int vma_dump_pages(struct ckpt_ctx *ctx, int total)
+ }
+ 
+ /**
+- * checkpoint_memory_contents - dump contents of a VMA with private memory
++ * checkpoint_memory_contents - dump contents of a memory region
+  * @ctx - checkpoint context
+- * @vma - vma to scan
++ * @vma - vma to scan (--or--)
++ * @inode - inode to scan
+  *
+  * Collect lists of pages that needs to be dumped, and corresponding
+  * virtual addresses into ctx->pgarr_list page-array chain. Then dump
+  * the addresses, followed by the page contents.
+  */
+ static int checkpoint_memory_contents(struct ckpt_ctx *ctx,
+-				      struct vm_area_struct *vma)
++				      struct vm_area_struct *vma,
++				      struct inode *inode)
+ {
+ 	struct ckpt_hdr_pgarr *h;
+ 	unsigned long addr, end;
+ 	int cnt, ret;
+ 
+-	addr = vma->vm_start;
+-	end = vma->vm_end;
++	BUG_ON(vma && inode);
++
++	if (vma) {
++		addr = vma->vm_start;
++		end = vma->vm_end;
++	} else {
++		addr = 0;
++		end = PAGE_ALIGN(i_size_read(inode)) >> PAGE_CACHE_SHIFT;
++	}
+ 
+ 	/*
+ 	 * Work iteratively, collecting and dumping at most CKPT_PGARR_BATCH
+@@ -428,7 +492,7 @@ static int checkpoint_memory_contents(struct ckpt_ctx *ctx,
+  * @vma_objref: vma objref
+  */
+ int generic_vma_checkpoint(struct ckpt_ctx *ctx, struct vm_area_struct *vma,
+-			   enum vma_type type, int vma_objref)
++			   enum vma_type type, int vma_objref, int ino_objref)
+ {
+ 	struct ckpt_hdr_vma *h;
+ 	int ret;
+@@ -442,6 +506,13 @@ int generic_vma_checkpoint(struct ckpt_ctx *ctx, struct vm_area_struct *vma,
+ 
+ 	h->vma_type = type;
+ 	h->vma_objref = vma_objref;
++	h->ino_objref = ino_objref;
++
++	if (vma->vm_file)
++		h->ino_size = i_size_read(vma->vm_file->f_dentry->d_inode);
++	else
++		h->ino_size = 0;
++
+ 	h->vm_start = vma->vm_start;
+ 	h->vm_end = vma->vm_end;
+ 	h->vm_page_prot = pgprot_val(vma->vm_page_prot);
+@@ -469,10 +540,37 @@ int private_vma_checkpoint(struct ckpt_ctx *ctx,
+ 
+ 	BUG_ON(vma->vm_flags & (VM_SHARED | VM_MAYSHARE));
+ 
+-	ret = generic_vma_checkpoint(ctx, vma, type, vma_objref);
++	ret = generic_vma_checkpoint(ctx, vma, type, vma_objref, 0);
+ 	if (ret < 0)
+ 		goto out;
+-	ret = checkpoint_memory_contents(ctx, vma);
++	ret = checkpoint_memory_contents(ctx, vma, NULL);
++ out:
 +	return ret;
 +}
 +
-+static struct sighand_struct *do_restore_sighand(struct ckpt_ctx *ctx)
++/**
++ * shmem_vma_checkpoint - dump contents of private (anon, file) vma
++ * @ctx: checkpoint context
++ * @vma: vma object
++ * @type: vma type
++ * @objref: vma object id
++ */
++int shmem_vma_checkpoint(struct ckpt_ctx *ctx, struct vm_area_struct *vma,
++			 enum vma_type type, int ino_objref)
 +{
-+	struct ckpt_hdr_sighand *h;
-+	struct ckpt_sigaction *hh;
-+	struct sighand_struct *sighand;
-+	struct sigaction *sa;
-+	int i;
++	struct file *file = vma->vm_file;
++	int ret;
 +
-+	h = ckpt_read_obj_type(ctx, _NSIG * sizeof(*hh) + sizeof(*h),
-+			       CKPT_HDR_SIGHAND);
-+	if (IS_ERR(h))
-+		return ERR_PTR(PTR_ERR(h));
++	ckpt_debug("type %d, ino_ref %d\n", type, ino_objref);
++	BUG_ON(!(vma->vm_flags & (VM_SHARED | VM_MAYSHARE)));
++	BUG_ON(!file);
 +
-+	sighand = kmem_cache_alloc(sighand_cachep, GFP_KERNEL);
-+	if (!sighand) {
-+		sighand = ERR_PTR(-ENOMEM);
++	ret = generic_vma_checkpoint(ctx, vma, type, 0, ino_objref);
++	if (ret < 0)
 +		goto out;
-+	}
-+	atomic_set(&sighand->count, 1);
-+
-+	hh = h->action;
-+	for (i = 0; i < _NSIG; i++) {
-+		sa = &sighand->action[i].sa;
-+		sa->sa_handler = (void *) (unsigned long) hh[i]._sa_handler;
-+		sa->sa_flags = hh[i].sa_flags;
-+		sa->sa_restorer = (void *) (unsigned long) hh[i].sa_restorer;
-+		load_sigset(&sa->sa_mask, &hh[i].sa_mask);
-+	}
-+ out:
-+	ckpt_hdr_put(ctx, h);
-+	return sighand;
-+}
-+
-+void *restore_sighand(struct ckpt_ctx *ctx)
++	if (type == CKPT_VMA_SHM_ANON_SKIP)
++		goto out;
++	ret = checkpoint_memory_contents(ctx, NULL, file->f_dentry->d_inode);
+  out:
+ 	return ret;
+ }
+@@ -1010,6 +1108,21 @@ static struct restore_vma_ops restore_vma_ops[] = {
+ 		.vma_type = CKPT_VMA_FILE,
+ 		.restore = filemap_restore,
+ 	},
++	/* anonymous shared */
++	{
++		.vma_name = "ANON SHARED",
++		.vma_type = CKPT_VMA_SHM_ANON,
++	},
++	/* anonymous shared (skipped) */
++	{
++		.vma_name = "ANON SHARED (skip)",
++		.vma_type = CKPT_VMA_SHM_ANON_SKIP,
++	},
++	/* file-mapped shared */
++	{
++		.vma_name = "FILE SHARED",
++		.vma_type = CKPT_VMA_SHM_FILE,
++	},
+ };
+ 
+ /**
+diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+index 3243bb4..8c8e622 100644
+--- a/checkpoint/objhash.c
++++ b/checkpoint/objhash.c
+@@ -64,6 +64,16 @@ static int obj_no_grab(void *ptr)
+ 	return 0;
+ }
+ 
++static int obj_inode_grab(void *ptr)
 +{
-+	return (void *) do_restore_sighand(ctx);
++	return igrab((struct inode *) ptr) ? 0 : -EBADF;
 +}
 +
-+int restore_obj_sighand(struct ckpt_ctx *ctx, int sighand_objref)
++static void obj_inode_drop(void *ptr, int lastref)
 +{
-+	struct sighand_struct *sighand;
-+	struct sighand_struct *old_sighand;
-+
-+	sighand = ckpt_obj_fetch(ctx, sighand_objref, CKPT_OBJ_SIGHAND);
-+	if (IS_ERR(sighand))
-+		return PTR_ERR(sighand);
-+
-+	if (sighand == current->sighand)
-+		return 0;
-+
-+	atomic_inc(&sighand->count);
-+
-+	/* manipulate tsk->sighand with tasklist lock write-held */
-+	write_lock_irq(&tasklist_lock);
-+	old_sighand = rcu_dereference(current->sighand);
-+	spin_lock(&old_sighand->siglock);
-+	rcu_assign_pointer(current->sighand, sighand);
-+	spin_unlock(&old_sighand->siglock);
-+	write_unlock_irq(&tasklist_lock);
-+	__cleanup_sighand(old_sighand);
-+
-+	return 0;
++	iput((struct inode *) ptr);
 +}
++
+ static int obj_file_table_grab(void *ptr)
+ {
+ 	atomic_inc(&((struct files_struct *) ptr)->count);
+@@ -120,6 +130,13 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
+ 		.ref_drop = obj_no_drop,
+ 		.ref_grab = obj_no_grab,
+ 	},
++	/* inode object */
++	{
++		.obj_name = "INODE",
++		.obj_type = CKPT_OBJ_INODE,
++		.ref_drop = obj_inode_drop,
++		.ref_grab = obj_inode_grab,
++	},
+ 	/* files_struct object */
+ 	{
+ 		.obj_name = "FILE_TABLE",
 diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index f321860..5a26f8b 100644
+index 0b47f46..68696b8 100644
 --- a/include/linux/checkpoint.h
 +++ b/include/linux/checkpoint.h
-@@ -267,6 +267,14 @@ extern int restore_memory_contents(struct ckpt_ctx *ctx, struct inode *inode);
- 	 VM_RESERVED | VM_NORESERVE | VM_HUGETLB | VM_NONLINEAR |	\
- 	 VM_MAPPED_COPY | VM_INSERTPAGE | VM_MIXEDMAP | VM_SAO)
+@@ -192,11 +192,15 @@ extern void ckpt_pgarr_free(struct ckpt_ctx *ctx);
+ extern int generic_vma_checkpoint(struct ckpt_ctx *ctx,
+ 				  struct vm_area_struct *vma,
+ 				  enum vma_type type,
+-				  int vma_objref);
++				  int vma_objref, int ino_objref);
+ extern int private_vma_checkpoint(struct ckpt_ctx *ctx,
+ 				  struct vm_area_struct *vma,
+ 				  enum vma_type type,
+ 				  int vma_objref);
++extern int shmem_vma_checkpoint(struct ckpt_ctx *ctx,
++				struct vm_area_struct *vma,
++				enum vma_type type,
++				int ino_objref);
  
-+/* signals */
-+extern int checkpoint_obj_sighand(struct ckpt_ctx *ctx, struct task_struct *t);
-+extern int restore_obj_sighand(struct ckpt_ctx *ctx, int sighand_objref);
-+
-+extern int ckpt_collect_sighand(struct ckpt_ctx *ctx, struct task_struct *t);
-+extern int checkpoint_sighand(struct ckpt_ctx *ctx, void *ptr);
-+extern void *restore_sighand(struct ckpt_ctx *ctx);
-+
+ extern int checkpoint_obj_mm(struct ckpt_ctx *ctx, struct task_struct *t);
+ extern int restore_obj_mm(struct ckpt_ctx *ctx, int mm_objref);
+@@ -209,11 +213,10 @@ extern int private_vma_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
+ 			       struct file *file, struct ckpt_hdr_vma *h);
+ 
+ 
+-#define CKPT_VMA_NOT_SUPPORTED					\
+-	(VM_SHARED | VM_MAYSHARE | VM_IO | VM_HUGETLB |		\
+-	 VM_NONLINEAR | VM_PFNMAP | VM_RESERVED | VM_NORESERVE	\
+-	 | VM_HUGETLB | VM_NONLINEAR | VM_MAPPED_COPY |		\
+-	 VM_INSERTPAGE | VM_MIXEDMAP | VM_SAO)
++#define CKPT_VMA_NOT_SUPPORTED						\
++	(VM_IO | VM_HUGETLB | VM_NONLINEAR | VM_PFNMAP |		\
++	 VM_RESERVED | VM_NORESERVE | VM_HUGETLB | VM_NONLINEAR |	\
++	 VM_MAPPED_COPY | VM_INSERTPAGE | VM_MIXEDMAP | VM_SAO)
+ 
  static inline int ckpt_validate_errno(int errno)
  {
- 	return (errno >= 0) && (errno < MAX_ERRNO);
-@@ -299,7 +307,6 @@ static inline int ckpt_validate_errno(int errno)
- 			memcpy(LIVE, SAVE, count * sizeof(*SAVE));	\
- 	} while (0)
- 
--
- /* debugging flags */
- #define CKPT_DBASE	0x1		/* anything */
- #define CKPT_DSYS	0x2		/* generic (system) */
 diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 729be96..225fd1f 100644
+index 0687b61..6fae6ef 100644
 --- a/include/linux/checkpoint_hdr.h
 +++ b/include/linux/checkpoint_hdr.h
-@@ -131,6 +131,9 @@ enum {
- 	CKPT_HDR_IPC_SEM,
- #define CKPT_HDR_IPC_SEM CKPT_HDR_IPC_SEM
- 
-+	CKPT_HDR_SIGHAND = 601,
-+#define CKPT_HDR_SIGHAND CKPT_HDR_SIGHAND
+@@ -126,6 +126,8 @@ struct ckpt_hdr_objref {
+ enum obj_type {
+ 	CKPT_OBJ_IGNORE = 0,
+ #define CKPT_OBJ_IGNORE CKPT_OBJ_IGNORE
++	CKPT_OBJ_INODE,
++#define CKPT_OBJ_INODE CKPT_OBJ_INODE
+ 	CKPT_OBJ_FILE_TABLE,
+ #define CKPT_OBJ_FILE_TABLE CKPT_OBJ_FILE_TABLE
+ 	CKPT_OBJ_FILE,
+@@ -219,6 +221,7 @@ struct ckpt_hdr_task {
+ /* task's shared resources */
+ struct ckpt_hdr_task_objs {
+ 	struct ckpt_hdr h;
 +
- 	CKPT_HDR_TAIL = 9001,
- #define CKPT_HDR_TAIL CKPT_HDR_TAIL
- 
-@@ -168,6 +171,8 @@ enum obj_type {
- #define CKPT_OBJ_FILE CKPT_OBJ_FILE
- 	CKPT_OBJ_MM,
- #define CKPT_OBJ_MM CKPT_OBJ_MM
-+	CKPT_OBJ_SIGHAND,
-+#define CKPT_OBJ_SIGHAND CKPT_OBJ_SIGHAND
- 	CKPT_OBJ_NS,
- #define CKPT_OBJ_NS CKPT_OBJ_NS
- 	CKPT_OBJ_UTS_NS,
-@@ -192,6 +197,8 @@ struct ckpt_const {
- 	__u16 task_comm_len;
- 	/* mm */
- 	__u16 at_vector_size;
-+	/* signal */
-+	__u16 signal_nsig;
- 	/* uts */
- 	__u16 uts_sysname_len;
- 	__u16 uts_nodename_len;
-@@ -365,6 +372,7 @@ struct ckpt_hdr_task_objs {
- 
  	__s32 files_objref;
  	__s32 mm_objref;
-+	__s32 sighand_objref;
  } __attribute__((aligned(8)));
+@@ -317,6 +320,12 @@ enum vma_type {
+ #define CKPT_VMA_ANON CKPT_VMA_ANON
+ 	CKPT_VMA_FILE,		/* private mapped file */
+ #define CKPT_VMA_FILE CKPT_VMA_FILE
++	CKPT_VMA_SHM_ANON,	/* shared anonymous */
++#define CKPT_VMA_SHM_ANON CKPT_VMA_SHM_ANON
++	CKPT_VMA_SHM_ANON_SKIP,	/* shared anonymous (skip contents) */
++#define CKPT_VMA_SHM_ANON_SKIP CKPT_VMA_SHM_ANON_SKIP
++	CKPT_VMA_SHM_FILE,	/* shared mapped file, only msync */
++#define CKPT_VMA_SHM_FILE CKPT_VMA_SHM_FILE
+ 	CKPT_VMA_MAX
+ #define CKPT_VMA_MAX CKPT_VMA_MAX
+ };
+@@ -326,6 +335,9 @@ struct ckpt_hdr_vma {
+ 	struct ckpt_hdr h;
+ 	__u32 vma_type;
+ 	__s32 vma_objref;	/* objref of backing file */
++	__s32 ino_objref;	/* objref of shared segment */
++	__u32 _padding;
++	__u64 ino_size;		/* size of shared segment */
  
- /* restart blocks */
-@@ -506,6 +514,22 @@ struct ckpt_hdr_pgarr {
- 	__u64 nr_pages;		/* number of pages to saved */
- } __attribute__((aligned(8)));
+ 	__u64 vm_start;
+ 	__u64 vm_end;
+diff --git a/mm/filemap.c b/mm/filemap.c
+index f53223f..5b7f169 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -1596,6 +1596,8 @@ int filemap_checkpoint(struct ckpt_ctx *ctx, struct vm_area_struct *vma)
+ {
+ 	struct file *file = vma->vm_file;
+ 	int vma_objref;
++	int ino_objref;
++	int first, ret;
  
-+/* signals */
-+struct ckpt_sigset {
-+	__u8 sigset[CKPT_ARCH_NSIG / 8];
-+} __attribute__((aligned(8)));
+ 	if (vma->vm_flags & CKPT_VMA_NOT_SUPPORTED) {
+ 		pr_warning("c/r: unsupported VMA %#lx\n", vma->vm_flags);
+@@ -1608,7 +1610,42 @@ int filemap_checkpoint(struct ckpt_ctx *ctx, struct vm_area_struct *vma)
+ 	if (vma_objref < 0)
+ 		return vma_objref;
+ 
+-	return private_vma_checkpoint(ctx, vma, CKPT_VMA_FILE, vma_objref);
++	if (vma->vm_flags & (VM_SHARED | VM_MAYSHARE)) {
++		/*
++		 * Citing mmap(2): "Updates to the mapping are visible
++		 * to other processes that map this file, and are
++		 * carried through to the underlying file. The file
++		 * may not actually be updated until msync(2) or
++		 * munmap(2) is called"
++		 *
++		 * Citing msync(2): "Without use of this call there is
++		 * no guarantee that changes are written back before
++		 * munmap(2) is called."
++		 *
++		 * Force msync for region of shared mapped files, to
++		 * ensure that that the file system is consistent with
++		 * the checkpoint image.  (inspired by sys_msync).
++		 */
 +
-+struct ckpt_sigaction {
-+	__u64 _sa_handler;
-+	__u64 sa_flags;
-+	__u64 sa_restorer;
-+	struct ckpt_sigset sa_mask;
-+} __attribute__((aligned(8)));
++		ino_objref = ckpt_obj_lookup_add(ctx, file->f_dentry->d_inode,
++					       CKPT_OBJ_INODE, &first);
++		if (ino_objref < 0)
++			return ino_objref;
 +
-+struct ckpt_hdr_sighand {
-+	struct ckpt_hdr h;
-+	struct ckpt_sigaction action[0];
-+} __attribute__((aligned(8)));
++		if (first) {
++			ret = vfs_fsync(file, file->f_path.dentry, 0);
++			if (ret < 0)
++				return ret;
++		}
++
++		ret = generic_vma_checkpoint(ctx, vma, CKPT_VMA_SHM_FILE,
++					     vma_objref, ino_objref);
++	} else {
++		ret = private_vma_checkpoint(ctx, vma, CKPT_VMA_FILE,
++					     vma_objref);
++	}
++
++	return ret;
+ }
+ EXPORT_SYMBOL(filemap_checkpoint);
  
- /* ipc commons */
- struct ckpt_hdr_ipcns {
+diff --git a/mm/mmap.c b/mm/mmap.c
+index 6573e51..83ad953 100644
+--- a/mm/mmap.c
++++ b/mm/mmap.c
+@@ -2387,7 +2387,7 @@ static int special_mapping_checkpoint(struct ckpt_ctx *ctx,
+ 	if (!name || strcmp(name, "[vdso]"))
+ 		return -ENOSYS;
+ 
+-	return generic_vma_checkpoint(ctx, vma, CKPT_VMA_VDSO, 0);
++	return generic_vma_checkpoint(ctx, vma, CKPT_VMA_VDSO, 0, 0);
+ }
+ 
+ int special_mapping_restore(struct ckpt_ctx *ctx,
+diff --git a/mm/shmem.c b/mm/shmem.c
+index d93c394..bf5993c 100644
+--- a/mm/shmem.c
++++ b/mm/shmem.c
+@@ -29,6 +29,7 @@
+ #include <linux/mm.h>
+ #include <linux/module.h>
+ #include <linux/swap.h>
++#include <linux/checkpoint.h>
+ 
+ static struct vfsmount *shm_mnt;
+ 
+@@ -2393,6 +2394,37 @@ static void shmem_destroy_inode(struct inode *inode)
+ 	kmem_cache_free(shmem_inode_cachep, SHMEM_I(inode));
+ }
+ 
++#ifdef CONFIG_CHECKPOINT
++static int shmem_checkpoint(struct ckpt_ctx *ctx, struct vm_area_struct *vma)
++{
++	enum vma_type vma_type;
++	int ino_objref;
++	int first;
++
++	/* should be private anonymous ... verify that this is the case */
++	if (vma->vm_flags & CKPT_VMA_NOT_SUPPORTED) {
++		pr_warning("c/r: unsupported VMA %#lx\n", vma->vm_flags);
++		return -ENOSYS;
++	}
++
++	BUG_ON(!vma->vm_file);
++
++	/* we collected the file but we don't checkpoint it per-se */
++	ret = ckpt_obj_visit(ctx, vma->vm_file, CKPT_OBJ_FILE);
++	if (ret < 0)
++		return ret;
++
++	ino_objref = ckpt_obj_lookup_add(ctx, vma->vm_file->f_dentry->d_inode,
++					 CKPT_OBJ_INODE, &first);
++	if (ino_objref < 0)
++		return ino_objref;
++
++	vma_type = (first ? CKPT_VMA_SHM_ANON : CKPT_VMA_SHM_ANON_SKIP);
++
++	return shmem_vma_checkpoint(ctx, vma, vma_type, ino_objref);
++}
++#endif /* CONFIG_CHECKPOINT */
++
+ static void init_once(void *foo)
+ {
+ 	struct shmem_inode_info *p = (struct shmem_inode_info *) foo;
+@@ -2505,6 +2537,9 @@ static const struct vm_operations_struct shmem_vm_ops = {
+ 	.set_policy     = shmem_set_policy,
+ 	.get_policy     = shmem_get_policy,
+ #endif
++#ifdef CONFIG_CHECKPOINT
++	.checkpoint	= shmem_checkpoint,
++#endif
+ };
+ 
+ 
 -- 
 1.6.3.3
