@@ -1,8 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 64/96] c/r: capabilities: define checkpoint and
-	restore fns
-Date: Wed, 17 Mar 2010 12:08:52 -0400
-Message-ID: <1268842164-5590-65-git-send-email-orenl__13326.1642804884$1268850552$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 94/96] c/r: add smack support to lsm c/r (v4)
+Date: Wed, 17 Mar 2010 12:09:22 -0400
+Message-ID: <1268842164-5590-95-git-send-email-orenl__30712.6375883401$1268850560$gmane$org@cs.columbia.edu>
 References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-2-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-3-git-send-email-orenl@cs.columbia.edu>
@@ -67,11 +66,41 @@ References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-62-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-63-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-64-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-65-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-66-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-67-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-68-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-69-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-70-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-71-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-72-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-73-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-74-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-75-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-76-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-77-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-78-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-79-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-80-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-81-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-82-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-83-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-84-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-85-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-86-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-87-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-88-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-89-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-90-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-91-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-92-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-93-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-94-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268842164-5590-64-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1268842164-5590-94-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -87,326 +116,435 @@ List-Id: containers.vger.kernel.org
 
 From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-[ Andrew: I am punting on dealing with the subsystem cooperation
-issues in this version, in favor of trying to get LSM issues
-straightened out ]
+Documentation/checkpoint/readme.txt begins:
+"""
+Application checkpoint/restart is the ability to save the state
+of a running application so that it can later resume its execution
+from the time at which it was checkpointed.
+"""
 
-An application checkpoint image will store capability sets
-(and the bounding set) as __u64s.  Define checkpoint and
-restart functions to translate between those and kernel_cap_t's.
+This patch implements checkpoint and restore of Smack security
+labels.  The rules are the same as in previous versions:
 
-Define a common function do_capset_tocred() which applies capability
-set changes to a passed-in struct cred.
+	1. when objects are created during restore() they are
+	   automatically labeled with current_security().
+	2. if there was a label checkpointed with the object,
+	   and that label != current_security() (which is the
+	   same as obj->security), then the object is relabeled
+	   if the sys_restart() caller has CAP_MAC_ADMIN.
+	   Otherwise we return -EPERM.
 
-The restore function uses do_capset_tocred() to apply the restored
-capabilities to the struct cred being crafted, subject to the
-current task's (task executing sys_restart()) permissions.
+This has been tested by checkpointing tasks under labels
+_, vs1, and vs2, and restarting from tasks under _, vs1,
+and vs2, with and without CAP_MAC_ADMIN in the bounding
+set, and with and without the '-k' (keep_lsm) flag to mktree.
+Expected results:
 
-Changlog [v19-rc1]:
-  - [Matt Helsley] Add cpp definitions for enums
+	#shell 1:
+	echo vs1 > /proc/self/attr/current
+	ckpt > out
+	echo vs2 > /proc/self/attr/current
+	mktree -F /cgroup/2 < out
+		(frozen)
+	# shell 2:
+	cat /proc/`pidof ckpt`/attr/current
+		vs2
+	echo THAWED > /cgroup/2/freezer.state
+	# shell 1:
+	mktree -k -F /cgroup/2 < out
+		(frozen)
+	# shell 2:
+	cat /proc/`pidof ckpt`/attr/current
+		vs1
+	echo THAWED > /cgroup/2/freezer.state
+	# shell 1:
+	capsh --drop=cap_mac_admin --
+	mktree -k -F /cgroup/2 < out
+		(permission denied)
+
+There are testcases in git://git.sr71.net/~hallyn/cr_tests.git
+under cr_tests/smack, which automate the above (and pass).
 
 Changelog:
-	Jun 09: Can't choose securebits or drop bounding set if
-		file capabilities aren't compiled into the kernel.
-		Also just store caps in __u32s (looks cleaner).
-	Jun 01: Made the checkpoint and restore functions and the
-		ckpt_hdr_capabilities struct more opaque to the
-		rest of the c/r code, as suggested by Andrew Morgan,
-		and using naming suggested by Oren.
-	Jun 01: Add commented BUILD_BUG_ON() to point out that the
-		current implementation depends on 64-bit capabilities.
-		(Andrew Morgan and Alexey Dobriyan).
-	May 28: add helpers to c/r securebits
+	sep 3: add a version to smack lsm, accessible through
+		/smack/version  (Casey and Serge)
+	sep 10: rename xyz_get_ctx() to xyz_checkpoint()
 
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Acked-by: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
 Acked-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- include/linux/capability.h     |    6 ++
- include/linux/checkpoint_hdr.h |   12 +++
- kernel/capability.c            |  164 +++++++++++++++++++++++++++++++++++++---
- security/commoncap.c           |   19 +----
- 4 files changed, 173 insertions(+), 28 deletions(-)
+ checkpoint/restart.c       |    1 +
+ security/smack/smack.h     |    1 +
+ security/smack/smack_lsm.c |  144 ++++++++++++++++++++++++++++++++++++++++++++
+ security/smack/smackfs.c   |   83 +++++++++++++++++++++++++
+ 4 files changed, 229 insertions(+), 0 deletions(-)
 
-diff --git a/include/linux/capability.h b/include/linux/capability.h
-index 39e5ff5..5abd86c 100644
---- a/include/linux/capability.h
-+++ b/include/linux/capability.h
-@@ -566,6 +566,12 @@ extern int capable(int cap);
- struct dentry;
- extern int get_vfs_caps_from_disk(const struct dentry *dentry, struct cpu_vfs_cap_data *cpu_caps);
- 
-+struct cred;
-+int apply_securebits(unsigned securebits, struct cred *new);
-+struct ckpt_capabilities;
-+int restore_capabilities(struct ckpt_capabilities *h, struct cred *new);
-+void checkpoint_capabilities(struct ckpt_capabilities *h, struct cred * cred);
-+
- #endif /* __KERNEL__ */
- 
- #endif /* !_LINUX_CAPABILITY_H */
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 825f4cc..78557ec 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -85,6 +85,8 @@ enum {
- #define CKPT_HDR_UTS_NS CKPT_HDR_UTS_NS
- 	CKPT_HDR_IPC_NS,
- #define CKPT_HDR_IPC_NS CKPT_HDR_IPC_NS
-+	CKPT_HDR_CAPABILITIES,
-+#define CKPT_HDR_CAPABILITIES CKPT_HDR_CAPABILITIES
- 
- 	/* 201-299: reserved for arch-dependent */
- 
-@@ -249,6 +251,16 @@ struct ckpt_hdr_task {
- 	__u64 clear_child_tid;
- } __attribute__((aligned(8)));
- 
-+/* Posix capabilities */
-+struct ckpt_capabilities {
-+	__u32 cap_i_0, cap_i_1; /* inheritable set */
-+	__u32 cap_p_0, cap_p_1; /* permitted set */
-+	__u32 cap_e_0, cap_e_1; /* effective set */
-+	__u32 cap_b_0, cap_b_1; /* bounding set */
-+	__u32 securebits;
-+	__u32 padding;
-+} __attribute__((aligned(8)));
-+
- /* namespaces */
- struct ckpt_hdr_task_ns {
- 	struct ckpt_hdr h;
-diff --git a/kernel/capability.c b/kernel/capability.c
-index 7f876e6..2cc66a7 100644
---- a/kernel/capability.c
-+++ b/kernel/capability.c
-@@ -14,6 +14,8 @@
- #include <linux/security.h>
- #include <linux/syscalls.h>
- #include <linux/pid_namespace.h>
-+#include <linux/securebits.h>
-+#include <linux/checkpoint.h>
- #include <asm/uaccess.h>
- #include "cred-internals.h"
- 
-@@ -215,6 +217,45 @@ SYSCALL_DEFINE2(capget, cap_user_header_t, header, cap_user_data_t, dataptr)
- 	return ret;
- }
- 
-+static int do_capset_tocred(kernel_cap_t *effective, kernel_cap_t *inheritable,
-+			kernel_cap_t *permitted, struct cred *new)
-+{
-+	int ret;
-+
-+	ret = security_capset(new, current_cred(),
-+			      effective, inheritable, permitted);
-+	if (ret < 0)
-+		return ret;
-+
-+	/*
-+	 * for checkpoint-restart, do we want to wait until end of restart?
-+	 * not sure we care */
-+	audit_log_capset(current->pid, new, current_cred());
-+
-+	return 0;
-+}
-+
-+static int do_capset(kernel_cap_t *effective, kernel_cap_t *inheritable,
-+			kernel_cap_t *permitted)
-+{
-+	struct cred *new;
-+	int ret;
-+
-+	new = prepare_creds();
-+	if (!new)
-+		return -ENOMEM;
-+
-+	ret = do_capset_tocred(effective, inheritable, permitted, new);
-+	if (ret < 0)
-+		goto error;
-+
-+	return commit_creds(new);
-+
-+error:
-+	abort_creds(new);
-+	return ret;
-+}
-+
- /**
-  * sys_capset - set capabilities for a process or (*) a group of processes
-  * @header: pointer to struct that contains capability version and
-@@ -238,7 +279,6 @@ SYSCALL_DEFINE2(capset, cap_user_header_t, header, const cap_user_data_t, data)
- 	struct __user_cap_data_struct kdata[_KERNEL_CAPABILITY_U32S];
- 	unsigned i, tocopy, copybytes;
- 	kernel_cap_t inheritable, permitted, effective;
--	struct cred *new;
- 	int ret;
- 	pid_t pid;
- 
-@@ -272,23 +312,125 @@ SYSCALL_DEFINE2(capset, cap_user_header_t, header, const cap_user_data_t, data)
- 		i++;
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index cfcb62b..0d1b9bf 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -679,6 +679,7 @@ static int restore_lsm(struct ckpt_ctx *ctx)
  	}
  
--	new = prepare_creds();
--	if (!new)
--		return -ENOMEM;
-+	return do_capset(&effective, &inheritable, &permitted);
+ 	if (strcmp(ctx->lsm_name, "lsm_none") != 0 &&
++			strcmp(ctx->lsm_name, "smack") != 0 &&
+ 			strcmp(ctx->lsm_name, "default") != 0) {
+ 		ckpt_debug("c/r: RESTART_KEEP_LSM unsupported for %s\n",
+ 				ctx->lsm_name);
+diff --git a/security/smack/smack.h b/security/smack/smack.h
+index c6e9aca..a8917b0 100644
+--- a/security/smack/smack.h
++++ b/security/smack/smack.h
+@@ -216,6 +216,7 @@ u32 smack_to_secid(const char *);
+ extern int smack_cipso_direct;
+ extern char *smack_net_ambient;
+ extern char *smack_onlycap;
++extern char *smack_version;
+ extern const char *smack_cipso_option;
  
--	ret = security_capset(new, current_cred(),
--			      &effective, &inheritable, &permitted);
+ extern struct smack_known smack_known_floor;
+diff --git a/security/smack/smack_lsm.c b/security/smack/smack_lsm.c
+index 529c9ca..cd1d330 100644
+--- a/security/smack/smack_lsm.c
++++ b/security/smack/smack_lsm.c
+@@ -27,6 +27,7 @@
+ #include <linux/udp.h>
+ #include <linux/mutex.h>
+ #include <linux/pipe_fs_i.h>
++#include <linux/checkpoint.h>
+ #include <net/netlabel.h>
+ #include <net/cipso_ipv4.h>
+ #include <linux/audit.h>
+@@ -886,6 +887,28 @@ static int smack_file_permission(struct file *file, int mask)
+ 	return 0;
+ }
+ 
++static inline char *smack_file_checkpoint(void *security)
++{
++	return kstrdup((char *)security, GFP_KERNEL);
 +}
 +
-+#ifdef CONFIG_SECURITY_FILE_CAPABILITIES
-+int apply_securebits(unsigned securebits, struct cred *new)
++static inline int smack_file_restore(struct file *file, char *ctx)
 +{
-+	if ((((new->securebits & SECURE_ALL_LOCKS) >> 1)
-+	     & (new->securebits ^ securebits))				/*[1]*/
-+	    || ((new->securebits & SECURE_ALL_LOCKS & ~securebits))	/*[2]*/
-+	    || (securebits & ~(SECURE_ALL_LOCKS | SECURE_ALL_BITS))	/*[3]*/
-+	    || (cap_capable(current, current_cred(), CAP_SETPCAP,
-+			    SECURITY_CAP_AUDIT) != 0)			/*[4]*/
-+		/*
-+		 * [1] no changing of bits that are locked
-+		 * [2] no unlocking of locks
-+		 * [3] no setting of unsupported bits
-+		 * [4] doing anything requires privilege (go read about
-+		 *     the "sendmail capabilities bug")
-+		 */
-+	    )
-+		/* cannot change a locked bit */
++	char *newsmack = smk_import(ctx, 0);
++
++	if (newsmack == NULL)
++		return -EINVAL;
++	/* I think by definition, file->f_security == current_security
++	 * right now, but let's assume somehow it might not be */
++	if (newsmack == file->f_security)
++		return 0;
++	if (!capable(CAP_MAC_ADMIN))
 +		return -EPERM;
-+	new->securebits = securebits;
-+	return 0;
-+}
-+
-+static void do_capbset_drop(struct cred *cred, int cap)
-+{
-+	cap_lower(cred->cap_bset, cap);
-+}
-+
-+static inline int restore_cap_bset(kernel_cap_t bset, struct cred *cred)
-+{
-+	int i, may_dropbcap = capable(CAP_SETPCAP);
-+
-+	for (i = 0; i < CAP_LAST_CAP; i++) {
-+		if (cap_raised(bset, i))
-+			continue;
-+		if (!cap_raised(current_cred()->cap_bset, i))
-+			continue;
-+		if (!may_dropbcap)
-+			return -EPERM;
-+		do_capbset_drop(cred, i);
-+	}
++	file->f_security = newsmack;
 +
 +	return 0;
 +}
 +
-+#else /* CONFIG_SECURITY_FILE_CAPABILITIES */
-+
-+int apply_securebits(unsigned securebits, struct cred *new)
-+{
-+	/* settable securebits not supported */
-+	return 0;
-+}
-+
-+static inline int restore_cap_bset(kernel_cap_t bset, struct cred *cred)
-+{
-+	/* bounding sets not supported */
-+	return 0;
-+}
-+#endif /* CONFIG_SECURITY_FILE_CAPABILITIES */
-+
-+#ifdef CONFIG_CHECKPOINT
-+static int do_restore_caps(struct ckpt_capabilities *h, struct cred *cred)
-+{
-+	kernel_cap_t effective, inheritable, permitted, bset;
-+	int ret;
-+
-+	effective.cap[0] = h->cap_e_0;
-+	effective.cap[1] = h->cap_e_1;
-+	inheritable.cap[0] = h->cap_i_0;
-+	inheritable.cap[1] = h->cap_i_1;
-+	permitted.cap[0] = h->cap_p_0;
-+	permitted.cap[1] = h->cap_p_1;
-+	bset.cap[0] = h->cap_b_0;
-+	bset.cap[1] = h->cap_b_1;
-+
-+	ret = do_capset_tocred(&effective, &inheritable, &permitted, cred);
- 	if (ret < 0)
--		goto error;
-+		return ret;
+ /**
+  * smack_file_alloc_security - assign a file security blob
+  * @file: the object
+@@ -1073,6 +1096,27 @@ static int smack_file_receive(struct file *file)
+  * Task hooks
+  */
  
--	audit_log_capset(pid, new, current_cred());
-+	ret = restore_cap_bset(bset, cred);
++static inline char *smack_cred_checkpoint(void *security)
++{
++	return kstrdup((char *)security, GFP_KERNEL);
++}
++
++static inline int smack_cred_restore(struct file *file, struct cred *cred,
++					char *ctx)
++{
++	char *newsmack = smk_import(ctx, 0);
++
++	if (newsmack == NULL)
++		return -EINVAL;
++	if (newsmack == cred->security)
++		return 0;
++	if (!capable(CAP_MAC_ADMIN))
++		return -EPERM;
++	cred->security = newsmack;
++
++	return 0;
++}
++
+ /**
+  * smack_cred_alloc_blank - "allocate" blank task-level security credentials
+  * @new: the new credentials
+@@ -1765,6 +1809,26 @@ static int smack_msg_msg_alloc_security(struct msg_msg *msg)
+ 	return 0;
+ }
+ 
++static inline char *smack_msg_msg_checkpoint(void *security)
++{
++	return kstrdup((char *)security, GFP_KERNEL);
++}
++
++static inline int smack_msg_msg_restore(struct msg_msg *msg, char *ctx)
++{
++	char *newsmack = smk_import(ctx, 0);
++
++	if (newsmack == NULL)
++		return -EINVAL;
++	if (newsmack == msg->security)
++		return 0;
++	if (!capable(CAP_MAC_ADMIN))
++		return -EPERM;
++	msg->security = newsmack;
++
++	return 0;
++}
++
+ /**
+  * smack_msg_msg_free_security - Clear the security blob for msg_msg
+  * @msg: the object
+@@ -2198,6 +2262,26 @@ static void smack_ipc_getsecid(struct kern_ipc_perm *ipp, u32 *secid)
+ 	*secid = smack_to_secid(smack);
+ }
+ 
++static inline char *smack_ipc_checkpoint(void *security)
++{
++	return kstrdup((char *)security, GFP_KERNEL);
++}
++
++static inline int smack_ipc_restore(struct kern_ipc_perm *ipcp, char *ctx)
++{
++	char *newsmack = smk_import(ctx, 0);
++
++	if (newsmack == NULL)
++		return -EINVAL;
++	if (newsmack == ipcp->security)
++		return 0;
++	if (!capable(CAP_MAC_ADMIN))
++		return -EPERM;
++	ipcp->security = newsmack;
++
++	return 0;
++}
++
+ /**
+  * smack_d_instantiate - Make sure the blob is correct on an inode
+  * @opt_dentry: unused
+@@ -3073,6 +3157,51 @@ static int smack_inode_getsecctx(struct inode *inode, void **ctx, u32 *ctxlen)
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_CHECKPOINT
++
++static int smack_may_restart(struct ckpt_ctx *ctx)
++{
++	struct ckpt_hdr *chp;
++	char *saved_version;
++	int ret = 0;
++
++	chp = ckpt_read_buf_type(ctx, CKPT_LSM_INFO_LEN, CKPT_HDR_LSM_INFO);
++	if (IS_ERR(chp))
++		return PTR_ERR(chp);
++
++	/*
++	 * After the checkpoint header comes the null terminated
++	 * Smack "policy" version. This will usually be the
++	 * floor label "_".
++	 */
++	saved_version = (char *)(chp + 1);
++
++	/*
++	 * Of course, it is possible that a "policy" version mismatch
++	 * is not considered threatening.
++	 */
++	if (!(ctx->uflags & RESTART_KEEP_LSM))
++		goto skip;
++
++	if (strcmp(saved_version, smack_version) != 0) {
++		ckpt_debug("Smack version at checkpoint was"
++			   "\"%s\", now is \"%s\".\n",
++				saved_version, smack_version);
++		ret = -EINVAL;
++	}
++skip:
++	ckpt_hdr_put(ctx, chp);
 +	return ret;
 +}
- 
--	return commit_creds(new);
-+void checkpoint_capabilities(struct ckpt_capabilities *h, struct cred * cred)
++
++static int smack_checkpoint_header(struct ckpt_ctx *ctx)
 +{
-+	BUILD_BUG_ON(CAP_LAST_CAP >= 64);
-+	h->securebits = cred->securebits;
-+	h->cap_i_0 = cred->cap_inheritable.cap[0];
-+	h->cap_i_1 = cred->cap_inheritable.cap[1];
-+	h->cap_p_0 = cred->cap_permitted.cap[0];
-+	h->cap_p_1 = cred->cap_permitted.cap[1];
-+	h->cap_e_0 = cred->cap_effective.cap[0];
-+	h->cap_e_1 = cred->cap_effective.cap[1];
-+	h->cap_b_0 = cred->cap_bset.cap[0];
-+	h->cap_b_1 = cred->cap_bset.cap[1];
++	return ckpt_write_obj_type(ctx, smack_version,
++					strlen(smack_version) + 1,
++					CKPT_HDR_LSM_INFO);
 +}
++#endif
++
+ struct security_operations smack_ops = {
+ 	.name =				"smack",
+ 
+@@ -3108,6 +3237,8 @@ struct security_operations smack_ops = {
+ 	.inode_getsecid =		smack_inode_getsecid,
+ 
+ 	.file_permission = 		smack_file_permission,
++	.file_checkpoint = 		smack_file_checkpoint,
++	.file_restore = 		smack_file_restore,
+ 	.file_alloc_security = 		smack_file_alloc_security,
+ 	.file_free_security = 		smack_file_free_security,
+ 	.file_ioctl = 			smack_file_ioctl,
+@@ -3118,6 +3249,10 @@ struct security_operations smack_ops = {
+ 	.file_receive = 		smack_file_receive,
+ 
+ 	.cred_alloc_blank =		smack_cred_alloc_blank,
++
++	.cred_checkpoint =		smack_cred_checkpoint,
++	.cred_restore =			smack_cred_restore,
++
+ 	.cred_free =			smack_cred_free,
+ 	.cred_prepare =			smack_cred_prepare,
+ 	.cred_commit =			smack_cred_commit,
+@@ -3140,8 +3275,12 @@ struct security_operations smack_ops = {
+ 
+ 	.ipc_permission = 		smack_ipc_permission,
+ 	.ipc_getsecid =			smack_ipc_getsecid,
++	.ipc_checkpoint =		smack_ipc_checkpoint,
++	.ipc_restore =			smack_ipc_restore,
+ 
+ 	.msg_msg_alloc_security = 	smack_msg_msg_alloc_security,
++	.msg_msg_checkpoint =		smack_msg_msg_checkpoint,
++	.msg_msg_restore =		smack_msg_msg_restore,
+ 	.msg_msg_free_security = 	smack_msg_msg_free_security,
+ 
+ 	.msg_queue_alloc_security = 	smack_msg_queue_alloc_security,
+@@ -3204,6 +3343,11 @@ struct security_operations smack_ops = {
+ 	.inode_notifysecctx =		smack_inode_notifysecctx,
+ 	.inode_setsecctx =		smack_inode_setsecctx,
+ 	.inode_getsecctx =		smack_inode_getsecctx,
++
++#ifdef CONFIG_CHECKPOINT
++	.may_restart =			smack_may_restart,
++	.checkpoint_header =		smack_checkpoint_header,
++#endif
+ };
+ 
+ 
+diff --git a/security/smack/smackfs.c b/security/smack/smackfs.c
+index aeead75..0634a08 100644
+--- a/security/smack/smackfs.c
++++ b/security/smack/smackfs.c
+@@ -42,6 +42,7 @@ enum smk_inos {
+ 	SMK_NETLBLADDR	= 8,	/* single label hosts */
+ 	SMK_ONLYCAP	= 9,	/* the only "capable" label */
+ 	SMK_LOGGING	= 10,	/* logging */
++	SMK_VERSION	= 11,	/* logging */
+ };
+ 
+ /*
+@@ -51,6 +52,7 @@ static DEFINE_MUTEX(smack_list_lock);
+ static DEFINE_MUTEX(smack_cipso_lock);
+ static DEFINE_MUTEX(smack_ambient_lock);
+ static DEFINE_MUTEX(smk_netlbladdr_lock);
++static DEFINE_MUTEX(smack_version_lock);
+ 
+ /*
+  * This is the "ambient" label for network traffic.
+@@ -60,6 +62,16 @@ static DEFINE_MUTEX(smk_netlbladdr_lock);
+ char *smack_net_ambient = smack_known_floor.smk_known;
+ 
+ /*
++ * This is the policy version. In the interest of simplicity the
++ * policy version is a string that meets all of the requirements
++ * of a Smack label. This is enforced by the expedient of
++ * importing it like a label. The policy version is thus always
++ * also a valid label on the system. This may prove useful under
++ * some as yet undiscovered circumstance.
++ */
++char *smack_version = smack_known_floor.smk_known;
 +
 +/*
-+ * restore_capabilities: called by restore_creds() to set the
-+ * restored capabilities (if permitted) in a new struct cred which
-+ * will be attached at the end of the sys_restart().
-+ * struct cred *new is prepared by caller (using prepare_creds())
-+ * (and aborted by caller on error)
-+ * return 0 on success, < 0 on error
-+ */
-+int restore_capabilities(struct ckpt_capabilities *h, struct cred *new)
-+{
-+	int ret = do_restore_caps(h, new);
+  * This is the level in a CIPSO header that indicates a
+  * smack label is contained directly in the category set.
+  * It can be reset via smackfs/direct
+@@ -1255,6 +1267,75 @@ static const struct file_operations smk_logging_ops = {
+ 	.read		= smk_read_logging,
+ 	.write		= smk_write_logging,
+ };
 +
-+	if (!ret)
-+		ret = apply_securebits(h->securebits, new);
- 
--error:
--	abort_creds(new);
- 	return ret;
- }
-+#endif /* CONFIG_CHECKPOINT */
- 
++#define SMK_VERSIONLEN 12
++/**
++ * smk_read_version - read() for /smack/version
++ * @filp: file pointer, not actually used
++ * @buf: where to put the result
++ * @cn: maximum to send along
++ * @ppos: where to start
++ *
++ * Returns number of bytes read or error code, as appropriate
++ */
++static ssize_t smk_read_version(struct file *filp, char __user *buf,
++				size_t count, loff_t *ppos)
++{
++	int rc;
++
++	if (*ppos != 0)
++		return 0;
++
++	mutex_lock(&smack_version_lock);
++
++	rc = simple_read_from_buffer(buf, count, ppos, smack_version,
++					strlen(smack_version) + 1);
++
++	mutex_unlock(&smack_version_lock);
++
++	return rc;
++}
++
++/**
++ * smk_write_version - write() for /smack/version
++ * @file: file pointer, not actually used
++ * @buf: where to get the data from
++ * @count: bytes sent
++ * @ppos: where to start
++ *
++ * Returns number of bytes written or error code, as appropriate
++ */
++static ssize_t smk_write_version(struct file *file, const char __user *buf,
++				 size_t count, loff_t *ppos)
++{
++	char *smack;
++	char in[SMK_LABELLEN];
++
++	if (!capable(CAP_MAC_ADMIN))
++		return -EPERM;
++
++	if (count >= SMK_LABELLEN)
++		return -EINVAL;
++
++	if (copy_from_user(in, buf, count) != 0)
++		return -EFAULT;
++
++	smack = smk_import(in, count);
++	if (smack == NULL)
++		return -EINVAL;
++
++	mutex_lock(&smack_version_lock);
++	smack_version = smack;
++	mutex_unlock(&smack_version_lock);
++
++	return count;
++}
++
++static const struct file_operations smk_version_ops = {
++	.read		= smk_read_version,
++	.write		= smk_write_version,
++};
++
  /**
-  * capable - Determine if the current task has a superior capability in effect
-diff --git a/security/commoncap.c b/security/commoncap.c
-index f800fdb..86b3e23 100644
---- a/security/commoncap.c
-+++ b/security/commoncap.c
-@@ -827,24 +827,9 @@ int cap_task_prctl(int option, unsigned long arg2, unsigned long arg3,
- 	 * capability-based-privilege environment.
- 	 */
- 	case PR_SET_SECUREBITS:
--		error = -EPERM;
--		if ((((new->securebits & SECURE_ALL_LOCKS) >> 1)
--		     & (new->securebits ^ arg2))			/*[1]*/
--		    || ((new->securebits & SECURE_ALL_LOCKS & ~arg2))	/*[2]*/
--		    || (arg2 & ~(SECURE_ALL_LOCKS | SECURE_ALL_BITS))	/*[3]*/
--		    || (cap_capable(current, current_cred(), CAP_SETPCAP,
--				    SECURITY_CAP_AUDIT) != 0)		/*[4]*/
--			/*
--			 * [1] no changing of bits that are locked
--			 * [2] no unlocking of locks
--			 * [3] no setting of unsupported bits
--			 * [4] doing anything requires privilege (go read about
--			 *     the "sendmail capabilities bug")
--			 */
--		    )
--			/* cannot change a locked bit */
-+		error = apply_securebits(arg2, new);
-+		if (error)
- 			goto error;
--		new->securebits = arg2;
- 		goto changed;
+  * smk_fill_super - fill the /smackfs superblock
+  * @sb: the empty superblock
+@@ -1287,6 +1368,8 @@ static int smk_fill_super(struct super_block *sb, void *data, int silent)
+ 			{"onlycap", &smk_onlycap_ops, S_IRUGO|S_IWUSR},
+ 		[SMK_LOGGING]	=
+ 			{"logging", &smk_logging_ops, S_IRUGO|S_IWUSR},
++		[SMK_VERSION]	=
++			{"version", &smk_version_ops, S_IRUGO|S_IWUSR},
+ 		/* last one */ {""}
+ 	};
  
- 	case PR_GET_SECUREBITS:
 -- 
 1.6.3.3
