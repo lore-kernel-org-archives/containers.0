@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 75/96] c/r: introduce checkpoint/restore methods to
-	struct proto_ops
-Date: Wed, 17 Mar 2010 12:09:03 -0400
-Message-ID: <1268842164-5590-76-git-send-email-orenl__8519.08710687912$1268848864$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 96/96] c/r: add an entry for checkpoint/restart in
+	MAINTAINERS
+Date: Wed, 17 Mar 2010 12:09:24 -0400
+Message-ID: <1268842164-5590-97-git-send-email-orenl__2286.81374942443$1268848932$gmane$org@cs.columbia.edu>
 References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-2-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-3-git-send-email-orenl@cs.columbia.edu>
@@ -78,11 +78,32 @@ References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-73-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-74-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-75-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-76-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-77-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-78-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-79-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-80-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-81-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-82-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-83-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-84-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-85-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-86-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-87-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-88-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-89-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-90-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-91-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-92-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-93-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-94-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-95-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-96-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268842164-5590-75-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1268842164-5590-96-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -96,49 +117,33 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This adds new 'proto_ops' function for checkpointing and restoring
-sockets. This allows the checkpoint/restart code to compile nicely
-when, e.g., AF_UNIX sockets are selected as a module.
-
-It also adds a function 'collecting' a socket for leak-detection
-during full-container checkpoint. This is useful for those sockets
-that hold references to other "collectable" objects. Two examples are
-AF_UNIX buffers which reference the socket of origin, and sockets that
-have file descriptors in-transit.
-
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/net.h |    9 +++++++++
- 1 files changed, 9 insertions(+), 0 deletions(-)
+ MAINTAINERS |   12 ++++++++++++
+ 1 files changed, 12 insertions(+), 0 deletions(-)
 
-diff --git a/include/linux/net.h b/include/linux/net.h
-index 5e8083c..72a53b9 100644
---- a/include/linux/net.h
-+++ b/include/linux/net.h
-@@ -153,6 +153,9 @@ struct sockaddr;
- struct msghdr;
- struct module;
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 2533fc4..65c8954 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -1435,6 +1435,18 @@ M:	Andy Whitcroft <apw-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+ S:	Supported
+ F:	scripts/checkpatch.pl
  
-+struct ckpt_ctx;
-+struct ckpt_hdr_socket;
++CHECKPOINT-RESTART
++M:	Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
++M:	Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
++L:	containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
++W:	http://ckpt.wiki.kernel.org/index.php/Main_Page
++S:	Maintained
++F:	*checkpoint*
++K:	checkpoint
++K:	restore
++K:	ckpt
++K:	c/r
 +
- struct proto_ops {
- 	int		family;
- 	struct module	*owner;
-@@ -197,6 +200,12 @@ struct proto_ops {
- 				      int offset, size_t size, int flags);
- 	ssize_t 	(*splice_read)(struct socket *sock,  loff_t *ppos,
- 				       struct pipe_inode_info *pipe, size_t len, unsigned int flags);
-+	int		(*checkpoint)(struct ckpt_ctx *ctx,
-+				      struct socket *sock);
-+	int		(*collect)(struct ckpt_ctx *ctx,
-+				   struct socket *sock);
-+	int		(*restore)(struct ckpt_ctx *ctx, struct socket *sock,
-+				   struct ckpt_hdr_socket *h);
- };
- 
- #define DECLARE_SOCKADDR(type, dst, src)	\
+ CISCO 10G ETHERNET DRIVER
+ M:	Scott Feldman <scofeldm-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>
+ M:	Joe Eykholt <jeykholt-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>
 -- 
 1.6.3.3
