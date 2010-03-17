@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 56/96] c/r (ipc): allow allocation of a desired ipc
-	identifier
-Date: Wed, 17 Mar 2010 12:08:44 -0400
-Message-ID: <1268842164-5590-57-git-send-email-orenl__35328.3722106882$1268850395$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 35/96] c/r: detect resource leaks for whole-container
+	checkpoint
+Date: Wed, 17 Mar 2010 12:08:23 -0400
+Message-ID: <1268842164-5590-36-git-send-email-orenl__13453.1419993893$1268850403$gmane$org@cs.columbia.edu>
 References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-2-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-3-git-send-email-orenl@cs.columbia.edu>
@@ -38,32 +38,11 @@ References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-33-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-34-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-35-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-36-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-37-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-38-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-39-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-40-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-41-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-42-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-43-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-44-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-45-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-46-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-47-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-48-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-49-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-50-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-51-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-52-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-53-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-54-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-55-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-56-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268842164-5590-56-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1268842164-5590-35-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -77,367 +56,450 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-During restart, we need to allocate ipc objects that with the same
-identifiers as recorded during checkpoint. Modify the allocation
-code allow an in-kernel caller to request a specific ipc identifier.
-The system call interface remains unchanged.
+Add a 'users' count to objhash items, and, for a !CHECKPOINT_SUBTREE
+checkpoint, return an error code if the actual objects' counts are
+higher, indicating leaks (references to the objects from a task not
+being checkpointed).
+
+The comparison of the objhash user counts to object refcounts as a
+basis for checking for leaks comes from Alexey's OpenVZ-based c/r
+patchset.
+
+"Leak detection" occurs _before_ any real state is saved, as a
+pre-step. This prevents races due to sharing with outside world where
+the sharing ceases before the leak test takes place, thus protecting
+the checkpoint image from inconsistencies.
+
+Once leak testing concludes, checkpoint will proceed. Because objects
+are already in the objhash, checkpoint_obj() cannot distinguish
+between the first and subsequent encounters. This is solved with a
+flag (CKPT_OBJ_CHECKPOINTED) per object.
+
+Two additional checks take place during checkpoint: for objects that
+were created during, and objects destroyed, while the leak-detection
+pre-step took place. (By the time this occurs part of the checkpoint
+image has been written out to disk, so this is purely advisory).
+
+Changelog[v20]:
+  - Export key symbols to enable c/r from kernel modules
+Changelog[v18]:
+  - [Dan Smith] Fix ckpt_obj_lookup_add() leak detection logic
+  - Replace some EAGAIN with EBUSY
+  - Add a few more ckpt_write_err()s
+  - Introduce CKPT_OBJ_VISITED
+  - ckpt_obj_collect() returns objref for new objects, 0 otherwise
+  - Rename ckpt_obj_checkpointed() to ckpt_obj_visited()
+  - Introduce ckpt_obj_visit() to mark objects as visited
+  - Set the CHECKPOINTED flag on objects before calling checkpoint
+Changelog[v17]:
+  - Leak detection is performed in two-steps
+  - Detect reverse-leaks (objects disappearing unexpectedly)
+  - Skip reverse-leak detection if ops->ref_users isn't defined
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- ipc/msg.c  |   17 ++++++++++++-----
- ipc/sem.c  |   17 ++++++++++++-----
- ipc/shm.c  |   19 +++++++++++++------
- ipc/util.c |   42 +++++++++++++++++++++++++++++-------------
- ipc/util.h |    9 +++++----
- 5 files changed, 71 insertions(+), 33 deletions(-)
+ checkpoint/checkpoint.c    |   41 ++++++++++
+ checkpoint/objhash.c       |  188 +++++++++++++++++++++++++++++++++++++++++++-
+ checkpoint/process.c       |    5 +
+ include/linux/checkpoint.h |    7 ++
+ 4 files changed, 237 insertions(+), 4 deletions(-)
 
-diff --git a/ipc/msg.c b/ipc/msg.c
-index af42ef8..9230e7c 100644
---- a/ipc/msg.c
-+++ b/ipc/msg.c
-@@ -73,7 +73,7 @@ struct msg_sender {
- #define msg_unlock(msq)		ipc_unlock(&(msq)->q_perm)
- 
- static void freeque(struct ipc_namespace *, struct kern_ipc_perm *);
--static int newque(struct ipc_namespace *, struct ipc_params *);
-+static int newque(struct ipc_namespace *, struct ipc_params *, int);
- #ifdef CONFIG_PROC_FS
- static int sysvipc_msg_proc_show(struct seq_file *s, void *it);
- #endif
-@@ -175,10 +175,12 @@ static inline void msg_rmid(struct ipc_namespace *ns, struct msg_queue *s)
-  * newque - Create a new msg queue
-  * @ns: namespace
-  * @params: ptr to the structure that contains the key and msgflg
-+ * @req_id: request desired id if available (-1 if don't care)
-  *
-  * Called with msg_ids.rw_mutex held (writer)
-  */
--static int newque(struct ipc_namespace *ns, struct ipc_params *params)
-+static int
-+newque(struct ipc_namespace *ns, struct ipc_params *params, int req_id)
- {
- 	struct msg_queue *msq;
- 	int id, retval;
-@@ -202,7 +204,7 @@ static int newque(struct ipc_namespace *ns, struct ipc_params *params)
- 	/*
- 	 * ipc_addid() locks msq
- 	 */
--	id = ipc_addid(&msg_ids(ns), &msq->q_perm, ns->msg_ctlmni);
-+	id = ipc_addid(&msg_ids(ns), &msq->q_perm, ns->msg_ctlmni, req_id);
- 	if (id < 0) {
- 		security_msg_queue_free(msq);
- 		ipc_rcu_putref(msq);
-@@ -310,7 +312,7 @@ static inline int msg_security(struct kern_ipc_perm *ipcp, int msgflg)
- 	return security_msg_queue_associate(msq, msgflg);
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index ea1494d..c016a2d 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -314,6 +314,24 @@ static int checkpoint_pids(struct ckpt_ctx *ctx)
+ 	return ret;
  }
  
--SYSCALL_DEFINE2(msgget, key_t, key, int, msgflg)
-+int do_msgget(key_t key, int msgflg, int req_id)
- {
- 	struct ipc_namespace *ns;
- 	struct ipc_ops msg_ops;
-@@ -325,7 +327,12 @@ SYSCALL_DEFINE2(msgget, key_t, key, int, msgflg)
- 	msg_params.key = key;
- 	msg_params.flg = msgflg;
- 
--	return ipcget(ns, &msg_ids(ns), &msg_ops, &msg_params);
-+	return ipcget(ns, &msg_ids(ns), &msg_ops, &msg_params, req_id);
-+}
-+
-+SYSCALL_DEFINE2(msgget, key_t, key, int, msgflg)
++static int collect_objects(struct ckpt_ctx *ctx)
 +{
-+	return do_msgget(key, msgflg, -1);
- }
- 
- static inline unsigned long
-diff --git a/ipc/sem.c b/ipc/sem.c
-index dbef95b..faed3a3 100644
---- a/ipc/sem.c
-+++ b/ipc/sem.c
-@@ -92,7 +92,7 @@
- #define sem_unlock(sma)		ipc_unlock(&(sma)->sem_perm)
- #define sem_checkid(sma, semid)	ipc_checkid(&sma->sem_perm, semid)
- 
--static int newary(struct ipc_namespace *, struct ipc_params *);
-+static int newary(struct ipc_namespace *, struct ipc_params *, int);
- static void freeary(struct ipc_namespace *, struct kern_ipc_perm *);
- #ifdef CONFIG_PROC_FS
- static int sysvipc_sem_proc_show(struct seq_file *s, void *it);
-@@ -228,11 +228,13 @@ static inline void sem_rmid(struct ipc_namespace *ns, struct sem_array *s)
-  * newary - Create a new semaphore set
-  * @ns: namespace
-  * @params: ptr to the structure that contains key, semflg and nsems
-+ * @req_id: request desired id if available (-1 if don't care)
-  *
-  * Called with sem_ids.rw_mutex held (as a writer)
-  */
- 
--static int newary(struct ipc_namespace *ns, struct ipc_params *params)
-+static int
-+newary(struct ipc_namespace *ns, struct ipc_params *params, int req_id)
- {
- 	int id;
- 	int retval;
-@@ -265,7 +267,7 @@ static int newary(struct ipc_namespace *ns, struct ipc_params *params)
- 		return retval;
- 	}
- 
--	id = ipc_addid(&sem_ids(ns), &sma->sem_perm, ns->sc_semmni);
-+	id = ipc_addid(&sem_ids(ns), &sma->sem_perm, ns->sc_semmni, req_id);
- 	if (id < 0) {
- 		security_sem_free(sma);
- 		ipc_rcu_putref(sma);
-@@ -315,7 +317,7 @@ static inline int sem_more_checks(struct kern_ipc_perm *ipcp,
- 	return 0;
- }
- 
--SYSCALL_DEFINE3(semget, key_t, key, int, nsems, int, semflg)
-+int do_semget(key_t key, int nsems, int semflg, int req_id)
- {
- 	struct ipc_namespace *ns;
- 	struct ipc_ops sem_ops;
-@@ -334,7 +336,12 @@ SYSCALL_DEFINE3(semget, key_t, key, int, nsems, int, semflg)
- 	sem_params.flg = semflg;
- 	sem_params.u.nsems = nsems;
- 
--	return ipcget(ns, &sem_ids(ns), &sem_ops, &sem_params);
-+	return ipcget(ns, &sem_ids(ns), &sem_ops, &sem_params, req_id);
-+}
++	int n, ret = 0;
 +
-+SYSCALL_DEFINE3(semget, key_t, key, int, nsems, int, semflg)
-+{
-+	return do_semget(key, nsems, semflg, -1);
- }
- 
- /*
-diff --git a/ipc/shm.c b/ipc/shm.c
-index 23256b8..5ae0eef 100644
---- a/ipc/shm.c
-+++ b/ipc/shm.c
-@@ -61,7 +61,7 @@ static const struct vm_operations_struct shm_vm_ops;
- #define shm_unlock(shp)			\
- 	ipc_unlock(&(shp)->shm_perm)
- 
--static int newseg(struct ipc_namespace *, struct ipc_params *);
-+static int newseg(struct ipc_namespace *, struct ipc_params *, int);
- static void shm_open(struct vm_area_struct *vma);
- static void shm_close(struct vm_area_struct *vma);
- static void shm_destroy (struct ipc_namespace *ns, struct shmid_kernel *shp);
-@@ -82,7 +82,7 @@ void shm_init_ns(struct ipc_namespace *ns)
-  * Called with shm_ids.rw_mutex (writer) and the shp structure locked.
-  * Only shm_ids.rw_mutex remains locked on exit.
-  */
--static void do_shm_rmid(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
-+void do_shm_rmid(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
- {
- 	struct shmid_kernel *shp;
- 	shp = container_of(ipcp, struct shmid_kernel, shm_perm);
-@@ -329,11 +329,13 @@ static const struct vm_operations_struct shm_vm_ops = {
-  * newseg - Create a new shared memory segment
-  * @ns: namespace
-  * @params: ptr to the structure that contains key, size and shmflg
-+ * @req_id: request desired id if available (-1 if don't care)
-  *
-  * Called with shm_ids.rw_mutex held as a writer.
-  */
- 
--static int newseg(struct ipc_namespace *ns, struct ipc_params *params)
-+static int
-+newseg(struct ipc_namespace *ns, struct ipc_params *params, int req_id)
- {
- 	key_t key = params->key;
- 	int shmflg = params->flg;
-@@ -388,7 +390,7 @@ static int newseg(struct ipc_namespace *ns, struct ipc_params *params)
- 	if (IS_ERR(file))
- 		goto no_file;
- 
--	id = ipc_addid(&shm_ids(ns), &shp->shm_perm, ns->shm_ctlmni);
-+	id = ipc_addid(&shm_ids(ns), &shp->shm_perm, ns->shm_ctlmni, req_id);
- 	if (id < 0) {
- 		error = id;
- 		goto no_id;
-@@ -448,7 +450,7 @@ static inline int shm_more_checks(struct kern_ipc_perm *ipcp,
- 	return 0;
- }
- 
--SYSCALL_DEFINE3(shmget, key_t, key, size_t, size, int, shmflg)
-+int do_shmget(key_t key, size_t size, int shmflg, int req_id)
- {
- 	struct ipc_namespace *ns;
- 	struct ipc_ops shm_ops;
-@@ -464,7 +466,12 @@ SYSCALL_DEFINE3(shmget, key_t, key, size_t, size, int, shmflg)
- 	shm_params.flg = shmflg;
- 	shm_params.u.size = size;
- 
--	return ipcget(ns, &shm_ids(ns), &shm_ops, &shm_params);
-+	return ipcget(ns, &shm_ids(ns), &shm_ops, &shm_params, req_id);
-+}
-+
-+SYSCALL_DEFINE3(shmget, key_t, key, size_t, size, int, shmflg)
-+{
-+	return do_shmget(key, size, shmflg, -1);
- }
- 
- static inline unsigned long copy_shmid_to_user(void __user *buf, struct shmid64_ds *in, int version)
-diff --git a/ipc/util.c b/ipc/util.c
-index 79ce84e..c4ce60d 100644
---- a/ipc/util.c
-+++ b/ipc/util.c
-@@ -247,10 +247,12 @@ int ipc_get_maxid(struct ipc_ids *ids)
-  *	Called with ipc_ids.rw_mutex held as a writer.
-  */
-  
--int ipc_addid(struct ipc_ids* ids, struct kern_ipc_perm* new, int size)
-+int
-+ipc_addid(struct ipc_ids *ids, struct kern_ipc_perm *new, int size, int req_id)
- {
- 	uid_t euid;
- 	gid_t egid;
-+	int lid = 0;
- 	int id, err;
- 
- 	if (size > IPCMNI)
-@@ -259,28 +261,41 @@ int ipc_addid(struct ipc_ids* ids, struct kern_ipc_perm* new, int size)
- 	if (ids->in_use >= size)
- 		return -ENOSPC;
- 
-+	if (req_id >= 0)
-+		lid = ipcid_to_idx(req_id);
-+
- 	spin_lock_init(&new->lock);
- 	new->deleted = 0;
- 	rcu_read_lock();
- 	spin_lock(&new->lock);
- 
--	err = idr_get_new(&ids->ipcs_idr, new, &id);
-+	err = idr_get_new_above(&ids->ipcs_idr, new, lid, &id);
- 	if (err) {
- 		spin_unlock(&new->lock);
- 		rcu_read_unlock();
- 		return err;
- 	}
- 
-+	if (req_id >= 0) {
-+		if (id != lid) {
-+			idr_remove(&ids->ipcs_idr, id);
-+			spin_unlock(&new->lock);
-+			rcu_read_unlock();
-+			return -EBUSY;
++	for (n = 0; n < ctx->nr_tasks; n++) {
++		ckpt_debug("dumping task #%d\n", n);
++		ret = ckpt_collect_task(ctx, ctx->tasks_arr[n]);
++		if (ret < 0) {
++			ctx->tsk = ctx->tasks_arr[n];
++			ckpt_err(ctx, ret, "%(T)Collect failed\n");
++			ctx->tsk = NULL;
++			break;
 +		}
-+		new->seq = req_id / SEQ_MULTIPLIER;
-+	} else {
-+		new->seq = ids->seq++;
-+		if (ids->seq > ids->seq_max)
-+			ids->seq = 0;
 +	}
 +
- 	ids->in_use++;
++	return ret;
++}
++
+ struct ckpt_cnt_tasks {
+ 	struct ckpt_ctx *ctx;
+ 	int nr;
+@@ -536,6 +554,21 @@ long do_checkpoint(struct ckpt_ctx *ctx, pid_t pid)
+ 	if (ret < 0)
+ 		goto out;
  
- 	current_euid_egid(&euid, &egid);
- 	new->cuid = new->uid = euid;
- 	new->gid = new->cgid = egid;
++	if (!(ctx->uflags & CHECKPOINT_SUBTREE)) {
++		/*
++		 * Verify that all objects are contained (no leaks):
++		 * First collect them all into the while counting users
++		 * and then compare to the objects' real user counts.
++		 */
++		ret = collect_objects(ctx);
++		if (ret < 0)
++			goto out;
++		if (!ckpt_obj_contained(ctx)) {
++			ret = -EBUSY;
++			goto out;
++		}
++	}
++
+ 	ret = checkpoint_write_header(ctx);
+ 	if (ret < 0)
+ 		goto out;
+@@ -548,6 +581,14 @@ long do_checkpoint(struct ckpt_ctx *ctx, pid_t pid)
+ 	ret = checkpoint_all_tasks(ctx);
+ 	if (ret < 0)
+ 		goto out;
++
++	/* verify that all objects were indeed visited */
++	if (!ckpt_obj_visited(ctx)) {
++		ckpt_err(ctx, -EBUSY, "Leak: unvisited\n");
++		ret = -EBUSY;
++		goto out;
++	}
++
+ 	ret = checkpoint_write_tail(ctx);
+ 	if (ret < 0)
+ 		goto out;
+diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+index ada5113..22b1601 100644
+--- a/checkpoint/objhash.c
++++ b/checkpoint/objhash.c
+@@ -25,27 +25,32 @@ struct ckpt_obj_ops {
+ 	enum obj_type obj_type;
+ 	void (*ref_drop)(void *ptr, int lastref);
+ 	int (*ref_grab)(void *ptr);
++	int (*ref_users)(void *ptr);
+ 	int (*checkpoint)(struct ckpt_ctx *ctx, void *ptr);
+ 	void *(*restore)(struct ckpt_ctx *ctx);
+ };
  
--	new->seq = ids->seq++;
--	if(ids->seq > ids->seq_max)
--		ids->seq = 0;
--
- 	new->id = ipc_buildid(id, new->seq);
- 	return id;
- }
-@@ -296,7 +311,7 @@ int ipc_addid(struct ipc_ids* ids, struct kern_ipc_perm* new, int size)
-  *	when the key is IPC_PRIVATE.
-  */
- static int ipcget_new(struct ipc_namespace *ns, struct ipc_ids *ids,
--		struct ipc_ops *ops, struct ipc_params *params)
-+		struct ipc_ops *ops, struct ipc_params *params, int req_id)
+ struct ckpt_obj {
++	int users;
+ 	int objref;
+ 	int flags;
+ 	void *ptr;
+ 	struct ckpt_obj_ops *ops;
+ 	struct hlist_node hash;
++	struct hlist_node next;
+ };
+ 
+ /* object internal flags */
+ #define CKPT_OBJ_CHECKPOINTED		0x1   /* object already checkpointed */
++#define CKPT_OBJ_VISITED		0x2   /* object already visited */
+ 
+ struct ckpt_obj_hash {
+ 	struct hlist_head *head;
++	struct hlist_head list;
+ 	int next_free_objref;
+ };
+ 
+-/* helper grab/drop functions: */
++/* helper grab/drop/users functions */
+ 
+ static void obj_no_drop(void *ptr, int lastref)
  {
- 	int err;
- retry:
-@@ -306,7 +321,7 @@ retry:
- 		return -ENOMEM;
+@@ -114,6 +119,7 @@ int ckpt_obj_hash_alloc(struct ckpt_ctx *ctx)
  
- 	down_write(&ids->rw_mutex);
--	err = ops->getnew(ns, params);
-+	err = ops->getnew(ns, params, req_id);
- 	up_write(&ids->rw_mutex);
+ 	obj_hash->head = head;
+ 	obj_hash->next_free_objref = 1;
++	INIT_HLIST_HEAD(&obj_hash->list);
  
- 	if (err == -EAGAIN)
-@@ -351,6 +366,7 @@ static int ipc_check_perms(struct kern_ipc_perm *ipcp, struct ipc_ops *ops,
-  *	@ids: IPC identifer set
-  *	@ops: the actual creation routine to call
-  *	@params: its parameters
-+ *	@req_id: request desired id if available (-1 if don't care)
-  *
-  *	This routine is called by sys_msgget, sys_semget() and sys_shmget()
-  *	when the key is not IPC_PRIVATE.
-@@ -360,7 +376,7 @@ static int ipc_check_perms(struct kern_ipc_perm *ipcp, struct ipc_ops *ops,
-  *	On success, the ipc id is returned.
-  */
- static int ipcget_public(struct ipc_namespace *ns, struct ipc_ids *ids,
--		struct ipc_ops *ops, struct ipc_params *params)
-+		struct ipc_ops *ops, struct ipc_params *params, int req_id)
- {
- 	struct kern_ipc_perm *ipcp;
- 	int flg = params->flg;
-@@ -381,7 +397,7 @@ retry:
- 		else if (!err)
- 			err = -ENOMEM;
- 		else
--			err = ops->getnew(ns, params);
-+			err = ops->getnew(ns, params, req_id);
+ 	ctx->obj_hash = obj_hash;
+ 	return 0;
+@@ -181,6 +187,7 @@ static struct ckpt_obj *obj_new(struct ckpt_ctx *ctx, void *ptr,
+ 
+ 	obj->ptr = ptr;
+ 	obj->ops = ops;
++	obj->users = 2;  /* extra reference that objhash itself takes */
+ 
+ 	if (!objref) {
+ 		/* use @obj->ptr to index, assign objref (checkpoint) */
+@@ -198,6 +205,7 @@ static struct ckpt_obj *obj_new(struct ckpt_ctx *ctx, void *ptr,
+ 		obj = ERR_PTR(ret);
  	} else {
- 		/* ipc object has been locked by ipc_findkey() */
+ 		hlist_add_head(&obj->hash, &ctx->obj_hash->head[i]);
++		hlist_add_head(&obj->next, &ctx->obj_hash->list);
+ 	}
  
-@@ -742,12 +758,12 @@ struct kern_ipc_perm *ipc_lock_check(struct ipc_ids *ids, int id)
-  * Common routine called by sys_msgget(), sys_semget() and sys_shmget().
-  */
- int ipcget(struct ipc_namespace *ns, struct ipc_ids *ids,
--			struct ipc_ops *ops, struct ipc_params *params)
-+		struct ipc_ops *ops, struct ipc_params *params, int req_id)
- {
- 	if (params->key == IPC_PRIVATE)
--		return ipcget_new(ns, ids, ops, params);
-+		return ipcget_new(ns, ids, ops, params, req_id);
- 	else
--		return ipcget_public(ns, ids, ops, params);
-+		return ipcget_public(ns, ids, ops, params, req_id);
+ 	return obj;
+@@ -230,12 +238,35 @@ static struct ckpt_obj *obj_lookup_add(struct ckpt_ctx *ctx, void *ptr,
+ 		*first = 1;
+ 	} else {
+ 		BUG_ON(obj->ops->obj_type != type);
++		obj->users++;
+ 		*first = 0;
+ 	}
+ 	return obj;
  }
  
  /**
-diff --git a/ipc/util.h b/ipc/util.h
-index 764b51a..159a73c 100644
---- a/ipc/util.h
-+++ b/ipc/util.h
-@@ -71,7 +71,7 @@ struct ipc_params {
-  *      . routine to call for an extra check if needed
-  */
- struct ipc_ops {
--	int (*getnew) (struct ipc_namespace *, struct ipc_params *);
-+	int (*getnew) (struct ipc_namespace *, struct ipc_params *, int);
- 	int (*associate) (struct kern_ipc_perm *, int);
- 	int (*more_checks) (struct kern_ipc_perm *, struct ipc_params *);
- };
-@@ -94,7 +94,7 @@ void __init ipc_init_proc_interface(const char *path, const char *header,
- #define ipcid_to_idx(id) ((id) % SEQ_MULTIPLIER)
- 
- /* must be called with ids->rw_mutex acquired for writing */
--int ipc_addid(struct ipc_ids *, struct kern_ipc_perm *, int);
-+int ipc_addid(struct ipc_ids *, struct kern_ipc_perm *, int, int);
- 
- /* must be called with ids->rw_mutex acquired for reading */
- int ipc_get_maxid(struct ipc_ids *);
-@@ -171,7 +171,8 @@ static inline void ipc_unlock(struct kern_ipc_perm *perm)
- 
- struct kern_ipc_perm *ipc_lock_check(struct ipc_ids *ids, int id);
- int ipcget(struct ipc_namespace *ns, struct ipc_ids *ids,
--			struct ipc_ops *ops, struct ipc_params *params);
-+	   struct ipc_ops *ops, struct ipc_params *params, int req_id);
- void free_ipcs(struct ipc_namespace *ns, struct ipc_ids *ids,
--		void (*free)(struct ipc_namespace *, struct kern_ipc_perm *));
-+	       void (*free)(struct ipc_namespace *, struct kern_ipc_perm *));
++ * ckpt_obj_collect - collect object into objhash
++ * @ctx: checkpoint context
++ * @ptr: pointer to object
++ * @type: object type
++ *
++ * [used during checkpoint].
++ * Return: objref if object is new, 0 otherwise, or an error
++ */
++int ckpt_obj_collect(struct ckpt_ctx *ctx, void *ptr, enum obj_type type)
++{
++	struct ckpt_obj *obj;
++	int first;
 +
- #endif
++	obj = obj_lookup_add(ctx, ptr, type, &first);
++	if (IS_ERR(obj))
++		return PTR_ERR(obj);
++	ckpt_debug("%s objref %d first %d\n",
++		   obj->ops->obj_name, obj->objref, first);
++	return first ? obj->objref : 0;
++}
++
++/**
+  * ckpt_obj_lookup - lookup object (by pointer) in objhash
+  * @ctx: checkpoint context
+  * @ptr: pointer to object
+@@ -256,6 +287,21 @@ int ckpt_obj_lookup(struct ckpt_ctx *ctx, void *ptr, enum obj_type type)
+ }
+ EXPORT_SYMBOL(ckpt_obj_lookup);
+ 
++static inline int obj_reverse_leak(struct ckpt_ctx *ctx, struct ckpt_obj *obj)
++{
++	/*
++	 * A "reverse" leak ?  All objects should already be in the
++	 * objhash by now. But an outside task may have created an
++	 * object while we were collecting, which we didn't catch.
++	 */
++	if (obj->ops->ref_users && !(ctx->uflags & CHECKPOINT_SUBTREE)) {
++		ckpt_err(ctx, -EBUSY, "%(O)%(P)Leak: reverse added late (%s)\n",
++			       obj->objref, obj->ptr, obj->ops->obj_name);
++		return -EBUSY;
++	}
++	return 0;
++}
++
+ /**
+  * ckpt_obj_lookup_add - lookup object and add if not in objhash
+  * @ctx: checkpoint context
+@@ -276,7 +322,11 @@ int ckpt_obj_lookup_add(struct ckpt_ctx *ctx, void *ptr,
+ 		return PTR_ERR(obj);
+ 	ckpt_debug("%s objref %d first %d\n",
+ 		   obj->ops->obj_name, obj->objref, *first);
+-	obj->flags |= CKPT_OBJ_CHECKPOINTED;
++
++	if (*first && obj_reverse_leak(ctx, obj))
++		return -EBUSY;
++
++	obj->flags |= CKPT_OBJ_VISITED;
+ 	return obj->objref;
+ }
+ EXPORT_SYMBOL(ckpt_obj_lookup_add);
+@@ -318,6 +368,9 @@ int checkpoint_obj(struct ckpt_ctx *ctx, void *ptr, enum obj_type type)
+ 	if (IS_ERR(obj))
+ 		return PTR_ERR(obj);
+ 
++	if (new && obj_reverse_leak(ctx, obj))
++		return -EBUSY;
++
+ 	if (!(obj->flags & CKPT_OBJ_CHECKPOINTED)) {
+ 		h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_OBJREF);
+ 		if (!h)
+@@ -332,15 +385,142 @@ int checkpoint_obj(struct ckpt_ctx *ctx, void *ptr, enum obj_type type)
+ 			return ret;
+ 
+ 		/* invoke callback to actually dump the state */
+-		if (obj->ops->checkpoint)
+-			ret = obj->ops->checkpoint(ctx, ptr);
++		BUG_ON(!obj->ops->checkpoint);
+ 
+ 		obj->flags |= CKPT_OBJ_CHECKPOINTED;
++		ret = obj->ops->checkpoint(ctx, ptr);
+ 	}
++
++	obj->flags |= CKPT_OBJ_VISITED;
+ 	return (ret < 0 ? ret : obj->objref);
+ }
+ EXPORT_SYMBOL(checkpoint_obj);
+ 
++/**
++ * ckpt_obj_visit - mark object as visited
++ * @ctx: checkpoint context
++ * @ptr: pointer to object
++ * @type: object type
++ *
++ * [used during checkpoint].
++ * Marks the object as visited, or fail if not found
++ */
++int ckpt_obj_visit(struct ckpt_ctx *ctx, void *ptr, enum obj_type type)
++{
++	struct ckpt_obj *obj;
++
++	obj = obj_find_by_ptr(ctx, ptr);
++	BUG_ON(obj && obj->ops->obj_type != type);
++
++	if (!obj) {
++		if (!(ctx->uflags & CHECKPOINT_SUBTREE)) {
++			/* if not found report reverse leak (full container) */
++			ckpt_err(ctx, -EBUSY,
++				 "%(O)%(P)Leak: reverse unknown (%s)\n",
++				 obj->objref, obj->ptr, obj->ops->obj_name);
++			return -EBUSY;
++		}
++	} else {
++		ckpt_debug("visit %s objref %d\n",
++			   obj->ops->obj_name, obj->objref);
++		obj->flags |= CKPT_OBJ_VISITED;
++	}
++	return 0;
++}
++EXPORT_SYMBOL(ckpt_obj_visit);
++
++/* increment the 'users' count of an object */
++static void ckpt_obj_users_inc(struct ckpt_ctx *ctx, void *ptr, int increment)
++{
++	struct ckpt_obj *obj;
++
++	obj = obj_find_by_ptr(ctx, ptr);
++	if (obj)
++		obj->users += increment;
++}
++
++/*
++ * "Leak detection" - to guarantee a consistent checkpoint of a full
++ * container we verify that all resources are confined and isolated in
++ * that container:
++ *
++ * c/r code first walks through all tasks and collects all shared
++ * resources into the objhash, while counting the references to them;
++ * then, it compares this count to the object's real reference count,
++ * and if they don't match it means that an object has "leaked" to the
++ * outside.
++ *
++ * Otherwise, it is guaranteed that there are no references outside
++ * (of container). c/r code now proceeds to walk through all tasks,
++ * again, and checkpoints the resources. It ensures that all resources
++ * are already in the objhash, and that all of them are checkpointed.
++ * Otherwise it means that due to a race, an object was created or
++ * destroyed during the first walk but not accounted for.
++ *
++ * For instance, consider an outside task A that shared files_struct
++ * with inside task B. Then, after B's files where collected, A opens
++ * or closes a file, and immediately exits - before the first leak
++ * test is performed, such that the test passes.
++ */
++
++/**
++ * ckpt_obj_contained - test if shared objects are contained in checkpoint
++ * @ctx: checkpoint context
++ *
++ * Loops through all objects in the table and compares the number of
++ * references accumulated during checkpoint, with the reference count
++ * reported by the kernel.
++ *
++ * Return 1 if respective counts match for all objects, 0 otherwise.
++ */
++int ckpt_obj_contained(struct ckpt_ctx *ctx)
++{
++	struct ckpt_obj *obj;
++	struct hlist_node *node;
++
++	/* account for ctx->{file,logfile} (if in the table already) */
++	ckpt_obj_users_inc(ctx, ctx->file, 1);
++	if (ctx->logfile)
++		ckpt_obj_users_inc(ctx, ctx->logfile, 1);
++
++	hlist_for_each_entry(obj, node, &ctx->obj_hash->list, next) {
++		if (!obj->ops->ref_users)
++			continue;
++		if (obj->ops->ref_users(obj->ptr) != obj->users) {
++			ckpt_err(ctx, -EBUSY,
++				 "%(O)%(P)%(S)Usage leak (%d != %d)\n",
++				 obj->objref, obj->ptr, obj->ops->obj_name,
++				 obj->ops->ref_users(obj->ptr), obj->users);
++			return 0;
++		}
++	}
++
++	return 1;
++}
++
++/**
++ * ckpt_obj_visited - test that all shared objects were visited
++ * @ctx: checkpoint context
++ *
++ * Return 1 if all objects where visited, 0 otherwise.
++ */
++int ckpt_obj_visited(struct ckpt_ctx *ctx)
++{
++	struct ckpt_obj *obj;
++	struct hlist_node *node;
++
++	hlist_for_each_entry(obj, node, &ctx->obj_hash->list, next) {
++		if (!(obj->flags & CKPT_OBJ_VISITED)) {
++			ckpt_err(ctx, -EBUSY,
++				 "%(O)%(P)%(S)Leak: not visited\n",
++				 obj->objref, obj->ptr, obj->ops->obj_name);
++			return 0;
++		}
++	}
++
++	return 1;
++}
++
+ /**************************************************************************
+  * Restart
+  */
+diff --git a/checkpoint/process.c b/checkpoint/process.c
+index f36e320..ef394a5 100644
+--- a/checkpoint/process.c
++++ b/checkpoint/process.c
+@@ -245,6 +245,11 @@ int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	return ret;
+ }
+ 
++int ckpt_collect_task(struct ckpt_ctx *ctx, struct task_struct *t)
++{
++	return 0;
++}
++
+ /***********************************************************************
+  * Restart
+  */
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index da6fd36..50ce8f9 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -113,6 +113,12 @@ extern int ckpt_obj_hash_alloc(struct ckpt_ctx *ctx);
+ extern int restore_obj(struct ckpt_ctx *ctx, struct ckpt_hdr_objref *h);
+ extern int checkpoint_obj(struct ckpt_ctx *ctx, void *ptr,
+ 			  enum obj_type type);
++extern int ckpt_obj_collect(struct ckpt_ctx *ctx, void *ptr,
++			    enum obj_type type);
++extern int ckpt_obj_contained(struct ckpt_ctx *ctx);
++extern int ckpt_obj_visited(struct ckpt_ctx *ctx);
++extern int ckpt_obj_visit(struct ckpt_ctx *ctx, void *ptr,
++			  enum obj_type type);
+ extern int ckpt_obj_lookup(struct ckpt_ctx *ctx, void *ptr,
+ 			   enum obj_type type);
+ extern int ckpt_obj_lookup_add(struct ckpt_ctx *ctx, void *ptr,
+@@ -133,6 +139,7 @@ extern long do_restart(struct ckpt_ctx *ctx, pid_t pid);
+ 
+ /* task */
+ extern int ckpt_activate_next(struct ckpt_ctx *ctx);
++extern int ckpt_collect_task(struct ckpt_ctx *ctx, struct task_struct *t);
+ extern int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t);
+ extern int restore_task(struct ckpt_ctx *ctx);
+ 
 -- 
 1.6.3.3
