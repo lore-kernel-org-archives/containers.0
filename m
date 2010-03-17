@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 15/96] cgroup freezer: Fix buggy resume test for
-	tasks frozen with cgroup freezer
-Date: Wed, 17 Mar 2010 12:08:03 -0400
-Message-ID: <1268842164-5590-16-git-send-email-orenl__31463.1830937744$1268847934$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 40/96] c/r: introduce method '->checkpoint()' in
+	struct vm_operations_struct
+Date: Wed, 17 Mar 2010 12:08:28 -0400
+Message-ID: <1268842164-5590-41-git-send-email-orenl__3652.71076229892$1268848070$gmane$org@cs.columbia.edu>
 References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-2-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-3-git-send-email-orenl@cs.columbia.edu>
@@ -18,11 +18,36 @@ References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-13-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-14-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-15-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-16-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-17-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-18-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-19-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-20-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-21-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-22-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-23-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-24-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-25-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-26-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-27-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-28-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-29-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-30-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-31-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-32-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-33-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-34-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-35-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-36-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-37-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-38-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-39-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-40-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268842164-5590-15-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1268842164-5590-40-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -33,113 +58,40 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Changelog[v17]
+  - Forward-declare 'ckpt_ctx et-al, don't use checkpoint_types.h
 
-When the cgroup freezer is used to freeze tasks we do not want to thaw
-those tasks during resume. Currently we test the cgroup freezer
-state of the resuming tasks to see if the cgroup is FROZEN.  If so
-then we don't thaw the task. However, the FREEZING state also indicates
-that the task should remain frozen.
-
-This also avoids a problem pointed out by Oren Ladaan: the freezer state
-transition from FREEZING to FROZEN is updated lazily when userspace reads
-or writes the freezer.state file in the cgroup filesystem. This means that
-resume will thaw tasks in cgroups which should be in the FROZEN state if
-there is no read/write of the freezer.state file to trigger this
-transition before suspend.
-
-NOTE: Another "simple" solution would be to always update the cgroup
-freezer state during resume. However it's a bad choice for several reasons:
-Updating the cgroup freezer state is somewhat expensive because it requires
-walking all the tasks in the cgroup and checking if they are each frozen.
-Worse, this could easily make resume run in N^2 time where N is the number
-of tasks in the cgroup. Finally, updating the freezer state from this code
-path requires trickier locking because of the way locks must be ordered.
-
-Instead of updating the freezer state we rely on the fact that lazy
-updates only manage the transition from FREEZING to FROZEN. We know that
-a cgroup with the FREEZING state may actually be FROZEN so test for that
-state too. This makes sense in the resume path even for partially-frozen
-cgroups -- those that really are FREEZING but not FROZEN.
-
-Reported-by: Oren Ladaan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Cedric Le Goater <legoater-GANU6spQydw@public.gmane.org>
-Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Rafael J. Wysocki <rjw-KKrjLPT3xs0@public.gmane.org>
-Cc: Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>
-Cc: linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-
-Seems like a candidate for -stable.
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/freezer.h |    7 +++++--
- kernel/cgroup_freezer.c |    9 ++++++---
- kernel/power/process.c  |    2 +-
- 3 files changed, 12 insertions(+), 6 deletions(-)
+ include/linux/mm.h |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
 
-diff --git a/include/linux/freezer.h b/include/linux/freezer.h
-index 5a361f8..da7e52b 100644
---- a/include/linux/freezer.h
-+++ b/include/linux/freezer.h
-@@ -64,9 +64,12 @@ extern bool freeze_task(struct task_struct *p, bool sig_only);
- extern void cancel_freezing(struct task_struct *p);
+diff --git a/include/linux/mm.h b/include/linux/mm.h
+index 60c467b..48d67ee 100644
+--- a/include/linux/mm.h
++++ b/include/linux/mm.h
+@@ -19,6 +19,7 @@ struct file_ra_state;
+ struct user_struct;
+ struct writeback_control;
+ struct rlimit;
++struct ckpt_ctx;
  
- #ifdef CONFIG_CGROUP_FREEZER
--extern int cgroup_frozen(struct task_struct *task);
-+extern int cgroup_freezing_or_frozen(struct task_struct *task);
- #else /* !CONFIG_CGROUP_FREEZER */
--static inline int cgroup_frozen(struct task_struct *task) { return 0; }
-+static inline int cgroup_freezing_or_frozen(struct task_struct *task)
-+{
-+	return 0;
-+}
- #endif /* !CONFIG_CGROUP_FREEZER */
+ #ifndef CONFIG_DISCONTIGMEM          /* Don't use mapnrs, do it properly */
+ extern unsigned long max_mapnr;
+@@ -220,6 +221,9 @@ struct vm_operations_struct {
+ 	int (*migrate)(struct vm_area_struct *vma, const nodemask_t *from,
+ 		const nodemask_t *to, unsigned long flags);
+ #endif
++#ifdef CONFIG_CHECKPOINT
++	int (*checkpoint)(struct ckpt_ctx *ctx, struct vm_area_struct *vma);
++#endif
+ };
  
- /*
-diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
-index 59e9ef6..eb3f34d 100644
---- a/kernel/cgroup_freezer.c
-+++ b/kernel/cgroup_freezer.c
-@@ -47,17 +47,20 @@ static inline struct freezer *task_freezer(struct task_struct *task)
- 			    struct freezer, css);
- }
- 
--int cgroup_frozen(struct task_struct *task)
-+int cgroup_freezing_or_frozen(struct task_struct *task)
- {
- 	struct freezer *freezer;
- 	enum freezer_state state;
- 
- 	task_lock(task);
- 	freezer = task_freezer(task);
--	state = freezer->state;
-+	if (!freezer->css.cgroup->parent)
-+		state = CGROUP_THAWED; /* root cgroup can't be frozen */
-+	else
-+		state = freezer->state;
- 	task_unlock(task);
- 
--	return state == CGROUP_FROZEN;
-+	return (state == CGROUP_FREEZING) || (state == CGROUP_FROZEN);
- }
- 
- /*
-diff --git a/kernel/power/process.c b/kernel/power/process.c
-index 5ade1bd..de53015 100644
---- a/kernel/power/process.c
-+++ b/kernel/power/process.c
-@@ -145,7 +145,7 @@ static void thaw_tasks(bool nosig_only)
- 		if (nosig_only && should_send_signal(p))
- 			continue;
- 
--		if (cgroup_frozen(p))
-+		if (cgroup_freezing_or_frozen(p))
- 			continue;
- 
- 		thaw_process(p);
+ struct mmu_gather;
 -- 
 1.6.3.3
