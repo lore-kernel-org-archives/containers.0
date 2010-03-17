@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 39/96] c/r: restore open file descriptors
-Date: Wed, 17 Mar 2010 12:08:27 -0400
-Message-ID: <1268842164-5590-40-git-send-email-orenl__523.082403424446$1268850286$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 56/96] c/r (ipc): allow allocation of a desired ipc
+	identifier
+Date: Wed, 17 Mar 2010 12:08:44 -0400
+Message-ID: <1268842164-5590-57-git-send-email-orenl__35328.3722106882$1268850395$gmane$org@cs.columbia.edu>
 References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-2-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-3-git-send-email-orenl@cs.columbia.edu>
@@ -41,11 +42,28 @@ References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-37-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-38-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-39-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-40-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-41-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-42-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-43-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-44-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-45-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-46-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-47-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-48-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-49-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-50-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-51-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-52-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-53-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-54-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-55-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-56-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268842164-5590-39-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1268842164-5590-56-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -59,466 +77,367 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-For each fd read 'struct ckpt_hdr_file_desc' and lookup objref in the
-hash table; If not found in the hash table, (first occurence), read in
-'struct ckpt_hdr_file', create a new file and register in the hash.
-Otherwise attach the file pointer from the hash as an FD.
-
-
-Changelog[v19-rc1]:
-  - Fix lockdep complaint in restore_obj_files()
-Changelog[v19-rc1]:
-  - Restore thread/cpu state early
-  - Ensure null-termination of file names read from image
-  - Fix compile warning in restore_open_fname()
-Changelog[v18]:
-  - Invoke set_close_on_exec() unconditionally on restart
-Changelog[v17]:
-  - Validate f_mode after restore against saved f_mode
-  - Fail if f_flags have O_CREAT|O_EXCL|O_NOCTTY|O_TRUN
-  - Reorder patch (move earlier in series)
-  - Handle shared files_struct objects
-Changelog[v14]:
-  - Introduce a per file-type restore() callback
-  - Revert change to pr_debug(), back to ckpt_debug()
-  - Rename:  restore_files() => restore_fd_table()
-  - Rename:  ckpt_read_fd_data() => restore_file()
-  - Check whether calls to ckpt_hbuf_get() fail
-  - Discard field 'hh->parent'
-Changelog[v12]:
-  - Replace obsolete ckpt_debug() with pr_debug()
-Changelog[v6]:
-  - Balance all calls to ckpt_hbuf_get() with matching ckpt_hbuf_put()
-    (even though it's not really needed)
+During restart, we need to allocate ipc objects that with the same
+identifiers as recorded during checkpoint. Modify the allocation
+code allow an in-kernel caller to request a specific ipc identifier.
+The system call interface remains unchanged.
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/files.c         |  318 ++++++++++++++++++++++++++++++++++++++++++++
- checkpoint/objhash.c       |    2 +
- checkpoint/process.c       |   20 +++
- include/linux/checkpoint.h |    7 +
- 4 files changed, 347 insertions(+), 0 deletions(-)
+ ipc/msg.c  |   17 ++++++++++++-----
+ ipc/sem.c  |   17 ++++++++++++-----
+ ipc/shm.c  |   19 +++++++++++++------
+ ipc/util.c |   42 +++++++++++++++++++++++++++++-------------
+ ipc/util.h |    9 +++++----
+ 5 files changed, 71 insertions(+), 33 deletions(-)
 
-diff --git a/checkpoint/files.c b/checkpoint/files.c
-index 7a57b24..b404c8f 100644
---- a/checkpoint/files.c
-+++ b/checkpoint/files.c
-@@ -16,6 +16,8 @@
- #include <linux/sched.h>
- #include <linux/file.h>
- #include <linux/fdtable.h>
-+#include <linux/fsnotify.h>
-+#include <linux/syscalls.h>
- #include <linux/deferqueue.h>
- #include <linux/checkpoint.h>
- #include <linux/checkpoint_hdr.h>
-@@ -442,3 +444,319 @@ int ckpt_collect_file_table(struct ckpt_ctx *ctx, struct task_struct *t)
+diff --git a/ipc/msg.c b/ipc/msg.c
+index af42ef8..9230e7c 100644
+--- a/ipc/msg.c
++++ b/ipc/msg.c
+@@ -73,7 +73,7 @@ struct msg_sender {
+ #define msg_unlock(msq)		ipc_unlock(&(msq)->q_perm)
  
- 	return ret;
+ static void freeque(struct ipc_namespace *, struct kern_ipc_perm *);
+-static int newque(struct ipc_namespace *, struct ipc_params *);
++static int newque(struct ipc_namespace *, struct ipc_params *, int);
+ #ifdef CONFIG_PROC_FS
+ static int sysvipc_msg_proc_show(struct seq_file *s, void *it);
+ #endif
+@@ -175,10 +175,12 @@ static inline void msg_rmid(struct ipc_namespace *ns, struct msg_queue *s)
+  * newque - Create a new msg queue
+  * @ns: namespace
+  * @params: ptr to the structure that contains the key and msgflg
++ * @req_id: request desired id if available (-1 if don't care)
+  *
+  * Called with msg_ids.rw_mutex held (writer)
+  */
+-static int newque(struct ipc_namespace *ns, struct ipc_params *params)
++static int
++newque(struct ipc_namespace *ns, struct ipc_params *params, int req_id)
+ {
+ 	struct msg_queue *msq;
+ 	int id, retval;
+@@ -202,7 +204,7 @@ static int newque(struct ipc_namespace *ns, struct ipc_params *params)
+ 	/*
+ 	 * ipc_addid() locks msq
+ 	 */
+-	id = ipc_addid(&msg_ids(ns), &msq->q_perm, ns->msg_ctlmni);
++	id = ipc_addid(&msg_ids(ns), &msq->q_perm, ns->msg_ctlmni, req_id);
+ 	if (id < 0) {
+ 		security_msg_queue_free(msq);
+ 		ipc_rcu_putref(msq);
+@@ -310,7 +312,7 @@ static inline int msg_security(struct kern_ipc_perm *ipcp, int msgflg)
+ 	return security_msg_queue_associate(msq, msgflg);
  }
-+
-+/**************************************************************************
-+ * Restart
-+ */
-+
-+/**
-+ * restore_open_fname - read a file name and open a file
-+ * @ctx: checkpoint context
-+ * @flags: file flags
-+ */
-+struct file *restore_open_fname(struct ckpt_ctx *ctx, int flags)
-+{
-+	struct file *file;
-+	char *fname;
-+	int len;
-+
-+	/* prevent bad input from doing bad things */
-+	if (flags & (O_CREAT | O_EXCL | O_NOCTTY | O_TRUNC))
-+		return ERR_PTR(-EINVAL);
-+
-+	len = ckpt_read_payload(ctx, (void **) &fname,
-+				PATH_MAX, CKPT_HDR_FILE_NAME);
-+	if (len < 0)
-+		return ERR_PTR(len);
-+	fname[len - 1] = '\0';	/* always play if safe */
-+	ckpt_debug("fname '%s' flags %#x\n", fname, flags);
-+
-+	file = filp_open(fname, flags, 0);
-+	kfree(fname);
-+
-+	return file;
+ 
+-SYSCALL_DEFINE2(msgget, key_t, key, int, msgflg)
++int do_msgget(key_t key, int msgflg, int req_id)
+ {
+ 	struct ipc_namespace *ns;
+ 	struct ipc_ops msg_ops;
+@@ -325,7 +327,12 @@ SYSCALL_DEFINE2(msgget, key_t, key, int, msgflg)
+ 	msg_params.key = key;
+ 	msg_params.flg = msgflg;
+ 
+-	return ipcget(ns, &msg_ids(ns), &msg_ops, &msg_params);
++	return ipcget(ns, &msg_ids(ns), &msg_ops, &msg_params, req_id);
 +}
 +
-+static int close_all_fds(struct files_struct *files)
++SYSCALL_DEFINE2(msgget, key_t, key, int, msgflg)
 +{
-+	int *fdtable;
-+	int nfds;
-+
-+	nfds = scan_fds(files, &fdtable);
-+	if (nfds < 0)
-+		return nfds;
-+	while (nfds--)
-+		sys_close(fdtable[nfds]);
-+	kfree(fdtable);
-+	return 0;
++	return do_msgget(key, msgflg, -1);
+ }
+ 
+ static inline unsigned long
+diff --git a/ipc/sem.c b/ipc/sem.c
+index dbef95b..faed3a3 100644
+--- a/ipc/sem.c
++++ b/ipc/sem.c
+@@ -92,7 +92,7 @@
+ #define sem_unlock(sma)		ipc_unlock(&(sma)->sem_perm)
+ #define sem_checkid(sma, semid)	ipc_checkid(&sma->sem_perm, semid)
+ 
+-static int newary(struct ipc_namespace *, struct ipc_params *);
++static int newary(struct ipc_namespace *, struct ipc_params *, int);
+ static void freeary(struct ipc_namespace *, struct kern_ipc_perm *);
+ #ifdef CONFIG_PROC_FS
+ static int sysvipc_sem_proc_show(struct seq_file *s, void *it);
+@@ -228,11 +228,13 @@ static inline void sem_rmid(struct ipc_namespace *ns, struct sem_array *s)
+  * newary - Create a new semaphore set
+  * @ns: namespace
+  * @params: ptr to the structure that contains key, semflg and nsems
++ * @req_id: request desired id if available (-1 if don't care)
+  *
+  * Called with sem_ids.rw_mutex held (as a writer)
+  */
+ 
+-static int newary(struct ipc_namespace *ns, struct ipc_params *params)
++static int
++newary(struct ipc_namespace *ns, struct ipc_params *params, int req_id)
+ {
+ 	int id;
+ 	int retval;
+@@ -265,7 +267,7 @@ static int newary(struct ipc_namespace *ns, struct ipc_params *params)
+ 		return retval;
+ 	}
+ 
+-	id = ipc_addid(&sem_ids(ns), &sma->sem_perm, ns->sc_semmni);
++	id = ipc_addid(&sem_ids(ns), &sma->sem_perm, ns->sc_semmni, req_id);
+ 	if (id < 0) {
+ 		security_sem_free(sma);
+ 		ipc_rcu_putref(sma);
+@@ -315,7 +317,7 @@ static inline int sem_more_checks(struct kern_ipc_perm *ipcp,
+ 	return 0;
+ }
+ 
+-SYSCALL_DEFINE3(semget, key_t, key, int, nsems, int, semflg)
++int do_semget(key_t key, int nsems, int semflg, int req_id)
+ {
+ 	struct ipc_namespace *ns;
+ 	struct ipc_ops sem_ops;
+@@ -334,7 +336,12 @@ SYSCALL_DEFINE3(semget, key_t, key, int, nsems, int, semflg)
+ 	sem_params.flg = semflg;
+ 	sem_params.u.nsems = nsems;
+ 
+-	return ipcget(ns, &sem_ids(ns), &sem_ops, &sem_params);
++	return ipcget(ns, &sem_ids(ns), &sem_ops, &sem_params, req_id);
 +}
 +
-+/**
-+ * attach_file - attach a lonely file ptr to a file descriptor
-+ * @file: lonely file pointer
-+ */
-+static int attach_file(struct file *file)
++SYSCALL_DEFINE3(semget, key_t, key, int, nsems, int, semflg)
 +{
-+	int fd = get_unused_fd_flags(0);
-+
-+	if (fd >= 0) {
-+		get_file(file);
-+		fsnotify_open(file->f_path.dentry);
-+		fd_install(fd, file);
-+	}
-+	return fd;
++	return do_semget(key, nsems, semflg, -1);
+ }
+ 
+ /*
+diff --git a/ipc/shm.c b/ipc/shm.c
+index 23256b8..5ae0eef 100644
+--- a/ipc/shm.c
++++ b/ipc/shm.c
+@@ -61,7 +61,7 @@ static const struct vm_operations_struct shm_vm_ops;
+ #define shm_unlock(shp)			\
+ 	ipc_unlock(&(shp)->shm_perm)
+ 
+-static int newseg(struct ipc_namespace *, struct ipc_params *);
++static int newseg(struct ipc_namespace *, struct ipc_params *, int);
+ static void shm_open(struct vm_area_struct *vma);
+ static void shm_close(struct vm_area_struct *vma);
+ static void shm_destroy (struct ipc_namespace *ns, struct shmid_kernel *shp);
+@@ -82,7 +82,7 @@ void shm_init_ns(struct ipc_namespace *ns)
+  * Called with shm_ids.rw_mutex (writer) and the shp structure locked.
+  * Only shm_ids.rw_mutex remains locked on exit.
+  */
+-static void do_shm_rmid(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
++void do_shm_rmid(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
+ {
+ 	struct shmid_kernel *shp;
+ 	shp = container_of(ipcp, struct shmid_kernel, shm_perm);
+@@ -329,11 +329,13 @@ static const struct vm_operations_struct shm_vm_ops = {
+  * newseg - Create a new shared memory segment
+  * @ns: namespace
+  * @params: ptr to the structure that contains key, size and shmflg
++ * @req_id: request desired id if available (-1 if don't care)
+  *
+  * Called with shm_ids.rw_mutex held as a writer.
+  */
+ 
+-static int newseg(struct ipc_namespace *ns, struct ipc_params *params)
++static int
++newseg(struct ipc_namespace *ns, struct ipc_params *params, int req_id)
+ {
+ 	key_t key = params->key;
+ 	int shmflg = params->flg;
+@@ -388,7 +390,7 @@ static int newseg(struct ipc_namespace *ns, struct ipc_params *params)
+ 	if (IS_ERR(file))
+ 		goto no_file;
+ 
+-	id = ipc_addid(&shm_ids(ns), &shp->shm_perm, ns->shm_ctlmni);
++	id = ipc_addid(&shm_ids(ns), &shp->shm_perm, ns->shm_ctlmni, req_id);
+ 	if (id < 0) {
+ 		error = id;
+ 		goto no_id;
+@@ -448,7 +450,7 @@ static inline int shm_more_checks(struct kern_ipc_perm *ipcp,
+ 	return 0;
+ }
+ 
+-SYSCALL_DEFINE3(shmget, key_t, key, size_t, size, int, shmflg)
++int do_shmget(key_t key, size_t size, int shmflg, int req_id)
+ {
+ 	struct ipc_namespace *ns;
+ 	struct ipc_ops shm_ops;
+@@ -464,7 +466,12 @@ SYSCALL_DEFINE3(shmget, key_t, key, size_t, size, int, shmflg)
+ 	shm_params.flg = shmflg;
+ 	shm_params.u.size = size;
+ 
+-	return ipcget(ns, &shm_ids(ns), &shm_ops, &shm_params);
++	return ipcget(ns, &shm_ids(ns), &shm_ops, &shm_params, req_id);
 +}
 +
-+#define CKPT_SETFL_MASK  \
-+	(O_APPEND | O_NONBLOCK | O_NDELAY | FASYNC | O_DIRECT | O_NOATIME)
-+
-+int restore_file_common(struct ckpt_ctx *ctx, struct file *file,
-+			struct ckpt_hdr_file *h)
++SYSCALL_DEFINE3(shmget, key_t, key, size_t, size, int, shmflg)
 +{
-+	fmode_t new_mode = file->f_mode;
-+	fmode_t saved_mode = (__force fmode_t) h->f_mode;
-+	int ret;
++	return do_shmget(key, size, shmflg, -1);
+ }
+ 
+ static inline unsigned long copy_shmid_to_user(void __user *buf, struct shmid64_ds *in, int version)
+diff --git a/ipc/util.c b/ipc/util.c
+index 79ce84e..c4ce60d 100644
+--- a/ipc/util.c
++++ b/ipc/util.c
+@@ -247,10 +247,12 @@ int ipc_get_maxid(struct ipc_ids *ids)
+  *	Called with ipc_ids.rw_mutex held as a writer.
+  */
+  
+-int ipc_addid(struct ipc_ids* ids, struct kern_ipc_perm* new, int size)
++int
++ipc_addid(struct ipc_ids *ids, struct kern_ipc_perm *new, int size, int req_id)
+ {
+ 	uid_t euid;
+ 	gid_t egid;
++	int lid = 0;
+ 	int id, err;
+ 
+ 	if (size > IPCMNI)
+@@ -259,28 +261,41 @@ int ipc_addid(struct ipc_ids* ids, struct kern_ipc_perm* new, int size)
+ 	if (ids->in_use >= size)
+ 		return -ENOSPC;
+ 
++	if (req_id >= 0)
++		lid = ipcid_to_idx(req_id);
 +
-+	/* FIX: need to restore uid, gid, owner etc */
-+
-+	/* safe to set 1st arg (fd) to 0, as command is F_SETFL */
-+	ret = vfs_fcntl(0, F_SETFL, h->f_flags & CKPT_SETFL_MASK, file);
-+	if (ret < 0)
-+		return ret;
-+
-+	/*
-+	 * Normally f_mode is set by open, and modified only via
-+	 * fcntl(), so its value now should match that at checkpoint.
-+	 * However, a file may be downgraded from (read-)write to
-+	 * read-only, e.g:
-+	 *  - mark_files_ro() unsets FMODE_WRITE
-+	 *  - nfs4_file_downgrade() too, and also sert FMODE_READ
-+	 * Validate the new f_mode against saved f_mode, allowing:
-+	 *  - new with FMODE_WRITE, saved without FMODE_WRITE
-+	 *  - new without FMODE_READ, saved with FMODE_READ
-+	 */
-+	if ((new_mode & FMODE_WRITE) && !(saved_mode & FMODE_WRITE)) {
-+		new_mode &= ~FMODE_WRITE;
-+		if (!(new_mode & FMODE_READ) && (saved_mode & FMODE_READ))
-+			new_mode |= FMODE_READ;
-+	}
-+	/* finally, at this point new mode should match saved mode */
-+	if (new_mode ^ saved_mode)
-+		return -EINVAL;
-+
-+	if (file->f_mode & FMODE_LSEEK)
-+		ret = vfs_llseek(file, h->f_pos, SEEK_SET);
-+
-+	return ret;
-+}
-+
-+static struct file *generic_file_restore(struct ckpt_ctx *ctx,
-+					 struct ckpt_hdr_file *ptr)
-+{
-+	struct file *file;
-+	int ret;
-+
-+	if (ptr->h.type != CKPT_HDR_FILE  ||
-+	    ptr->h.len != sizeof(*ptr) || ptr->f_type != CKPT_FILE_GENERIC)
-+		return ERR_PTR(-EINVAL);
-+
-+	file = restore_open_fname(ctx, ptr->f_flags);
-+	if (IS_ERR(file))
-+		return file;
-+
-+	ret = restore_file_common(ctx, file, ptr);
-+	if (ret < 0) {
-+		fput(file);
-+		file = ERR_PTR(ret);
-+	}
-+	return file;
-+}
-+
-+struct restore_file_ops {
-+	char *file_name;
-+	enum file_type file_type;
-+	struct file * (*restore) (struct ckpt_ctx *ctx,
-+				  struct ckpt_hdr_file *ptr);
-+};
-+
-+static struct restore_file_ops restore_file_ops[] = {
-+	/* ignored file */
-+	{
-+		.file_name = "IGNORE",
-+		.file_type = CKPT_FILE_IGNORE,
-+		.restore = NULL,
-+	},
-+	/* regular file/directory */
-+	{
-+		.file_name = "GENERIC",
-+		.file_type = CKPT_FILE_GENERIC,
-+		.restore = generic_file_restore,
-+	},
-+};
-+
-+static struct file *do_restore_file(struct ckpt_ctx *ctx)
-+{
-+	struct restore_file_ops *ops;
-+	struct ckpt_hdr_file *h;
-+	struct file *file = ERR_PTR(-EINVAL);
-+
-+	/*
-+	 * All 'struct ckpt_hdr_file_...' begin with ckpt_hdr_file,
-+	 * but the actual object depends on the file type. The length
-+	 * should never be more than page.
-+	 */
-+	h = ckpt_read_buf_type(ctx, PAGE_SIZE, CKPT_HDR_FILE);
-+	if (IS_ERR(h))
-+		return (struct file *) h;
-+	ckpt_debug("flags %#x mode %#x type %d\n",
-+		 h->f_flags, h->f_mode, h->f_type);
-+
-+	if (h->f_type >= CKPT_FILE_MAX)
-+		goto out;
-+
-+	ops = &restore_file_ops[h->f_type];
-+	BUG_ON(ops->file_type != h->f_type);
-+
-+	if (ops->restore)
-+		file = ops->restore(ctx, h);
-+ out:
-+	ckpt_hdr_put(ctx, h);
-+	return file;
-+}
-+
-+/* restore callback for file pointer */
-+void *restore_file(struct ckpt_ctx *ctx)
-+{
-+	return (void *) do_restore_file(ctx);
-+}
-+
-+/**
-+ * ckpt_read_file_desc - restore the state of a given file descriptor
-+ * @ctx: checkpoint context
-+ *
-+ * Restores the state of a file descriptor; looks up the objref (in the
-+ * header) in the hash table, and if found picks the matching file and
-+ * use it; otherwise calls restore_file to restore the file too.
-+ */
-+static int restore_file_desc(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_hdr_file_desc *h;
-+	struct file *file;
-+	int newfd, ret;
-+
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_FILE_DESC);
-+	if (IS_ERR(h))
-+		return PTR_ERR(h);
-+	ckpt_debug("ref %d fd %d c.o.e %d\n",
-+		 h->fd_objref, h->fd_descriptor, h->fd_close_on_exec);
-+
-+	ret = -EINVAL;
-+	if (h->fd_objref <= 0 || h->fd_descriptor < 0)
-+		goto out;
-+
-+	file = ckpt_obj_fetch(ctx, h->fd_objref, CKPT_OBJ_FILE);
-+	if (IS_ERR(file)) {
-+		ret = PTR_ERR(file);
-+		goto out;
-+	}
-+
-+	newfd = attach_file(file);
-+	if (newfd < 0) {
-+		ret = newfd;
-+		goto out;
-+	}
-+
-+	ckpt_debug("newfd got %d wanted %d\n", newfd, h->fd_descriptor);
-+
-+	/* reposition if newfd isn't desired fd */
-+	if (newfd != h->fd_descriptor) {
-+		ret = sys_dup2(newfd, h->fd_descriptor);
-+		if (ret < 0)
-+			goto out;
-+		sys_close(newfd);
-+	}
-+
-+	set_close_on_exec(h->fd_descriptor, h->fd_close_on_exec);
-+	ret = 0;
-+ out:
-+	ckpt_hdr_put(ctx, h);
-+	return ret;
-+}
-+
-+/* restore callback for file table */
-+static struct files_struct *do_restore_file_table(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_hdr_file_table *h;
-+	struct files_struct *files;
-+	int i, ret;
-+
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_FILE_TABLE);
-+	if (IS_ERR(h))
-+		return (struct files_struct *) h;
-+
-+	ckpt_debug("nfds %d\n", h->fdt_nfds);
-+
-+	ret = -EMFILE;
-+	if (h->fdt_nfds < 0 || h->fdt_nfds > sysctl_nr_open)
-+		goto out;
-+
-+	/*
-+	 * We assume that restarting tasks, as created in user-space,
-+	 * have distinct files_struct objects each. If not, we need to
-+	 * call dup_fd() to make sure we don't overwrite an already
-+	 * restored one.
-+	 */
-+
-+	/* point of no return -- close all file descriptors */
-+	ret = close_all_fds(current->files);
-+	if (ret < 0)
-+		goto out;
-+
-+	for (i = 0; i < h->fdt_nfds; i++) {
-+		ret = restore_file_desc(ctx);
-+		if (ret < 0)
-+			goto out;
-+	}
-+
-+	ret = deferqueue_run(ctx->files_deferq);
-+	ckpt_debug("files_deferq ran %d entries\n", ret);
-+	if (ret > 0)
-+		ret = 0;
-+ out:
-+	ckpt_hdr_put(ctx, h);
-+	if (!ret) {
-+		files = current->files;
-+		atomic_inc(&files->count);
+ 	spin_lock_init(&new->lock);
+ 	new->deleted = 0;
+ 	rcu_read_lock();
+ 	spin_lock(&new->lock);
+ 
+-	err = idr_get_new(&ids->ipcs_idr, new, &id);
++	err = idr_get_new_above(&ids->ipcs_idr, new, lid, &id);
+ 	if (err) {
+ 		spin_unlock(&new->lock);
+ 		rcu_read_unlock();
+ 		return err;
+ 	}
+ 
++	if (req_id >= 0) {
++		if (id != lid) {
++			idr_remove(&ids->ipcs_idr, id);
++			spin_unlock(&new->lock);
++			rcu_read_unlock();
++			return -EBUSY;
++		}
++		new->seq = req_id / SEQ_MULTIPLIER;
 +	} else {
-+		files = ERR_PTR(ret);
-+	}
-+	return files;
-+}
-+
-+void *restore_file_table(struct ckpt_ctx *ctx)
-+{
-+	return (void *) do_restore_file_table(ctx);
-+}
-+
-+int restore_obj_file_table(struct ckpt_ctx *ctx, int files_objref)
-+{
-+	struct files_struct *files;
-+
-+	files = ckpt_obj_fetch(ctx, files_objref, CKPT_OBJ_FILE_TABLE);
-+	if (IS_ERR(files))
-+		return PTR_ERR(files);
-+
-+	if (files != current->files) {
-+		struct files_struct *prev;
-+
-+		task_lock(current);
-+		prev = current->files;
-+		current->files = files;
-+		atomic_inc(&files->count);
-+		task_unlock(current);
-+
-+		put_files_struct(prev);
++		new->seq = ids->seq++;
++		if (ids->seq > ids->seq_max)
++			ids->seq = 0;
 +	}
 +
-+	return 0;
-+}
-diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
-index f25d130..cacc4c7 100644
---- a/checkpoint/objhash.c
-+++ b/checkpoint/objhash.c
-@@ -112,6 +112,7 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
- 		.ref_grab = obj_file_table_grab,
- 		.ref_users = obj_file_table_users,
- 		.checkpoint = checkpoint_file_table,
-+		.restore = restore_file_table,
- 	},
- 	/* file object */
- 	{
-@@ -121,6 +122,7 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
- 		.ref_grab = obj_file_grab,
- 		.ref_users = obj_file_users,
- 		.checkpoint = checkpoint_file,
-+		.restore = restore_file,
- 	},
+ 	ids->in_use++;
+ 
+ 	current_euid_egid(&euid, &egid);
+ 	new->cuid = new->uid = euid;
+ 	new->gid = new->cgid = egid;
+ 
+-	new->seq = ids->seq++;
+-	if(ids->seq > ids->seq_max)
+-		ids->seq = 0;
+-
+ 	new->id = ipc_buildid(id, new->seq);
+ 	return id;
+ }
+@@ -296,7 +311,7 @@ int ipc_addid(struct ipc_ids* ids, struct kern_ipc_perm* new, int size)
+  *	when the key is IPC_PRIVATE.
+  */
+ static int ipcget_new(struct ipc_namespace *ns, struct ipc_ids *ids,
+-		struct ipc_ops *ops, struct ipc_params *params)
++		struct ipc_ops *ops, struct ipc_params *params, int req_id)
+ {
+ 	int err;
+ retry:
+@@ -306,7 +321,7 @@ retry:
+ 		return -ENOMEM;
+ 
+ 	down_write(&ids->rw_mutex);
+-	err = ops->getnew(ns, params);
++	err = ops->getnew(ns, params, req_id);
+ 	up_write(&ids->rw_mutex);
+ 
+ 	if (err == -EAGAIN)
+@@ -351,6 +366,7 @@ static int ipc_check_perms(struct kern_ipc_perm *ipcp, struct ipc_ops *ops,
+  *	@ids: IPC identifer set
+  *	@ops: the actual creation routine to call
+  *	@params: its parameters
++ *	@req_id: request desired id if available (-1 if don't care)
+  *
+  *	This routine is called by sys_msgget, sys_semget() and sys_shmget()
+  *	when the key is not IPC_PRIVATE.
+@@ -360,7 +376,7 @@ static int ipc_check_perms(struct kern_ipc_perm *ipcp, struct ipc_ops *ops,
+  *	On success, the ipc id is returned.
+  */
+ static int ipcget_public(struct ipc_namespace *ns, struct ipc_ids *ids,
+-		struct ipc_ops *ops, struct ipc_params *params)
++		struct ipc_ops *ops, struct ipc_params *params, int req_id)
+ {
+ 	struct kern_ipc_perm *ipcp;
+ 	int flg = params->flg;
+@@ -381,7 +397,7 @@ retry:
+ 		else if (!err)
+ 			err = -ENOMEM;
+ 		else
+-			err = ops->getnew(ns, params);
++			err = ops->getnew(ns, params, req_id);
+ 	} else {
+ 		/* ipc object has been locked by ipc_findkey() */
+ 
+@@ -742,12 +758,12 @@ struct kern_ipc_perm *ipc_lock_check(struct ipc_ids *ids, int id)
+  * Common routine called by sys_msgget(), sys_semget() and sys_shmget().
+  */
+ int ipcget(struct ipc_namespace *ns, struct ipc_ids *ids,
+-			struct ipc_ops *ops, struct ipc_params *params)
++		struct ipc_ops *ops, struct ipc_params *params, int req_id)
+ {
+ 	if (params->key == IPC_PRIVATE)
+-		return ipcget_new(ns, ids, ops, params);
++		return ipcget_new(ns, ids, ops, params, req_id);
+ 	else
+-		return ipcget_public(ns, ids, ops, params);
++		return ipcget_public(ns, ids, ops, params, req_id);
+ }
+ 
+ /**
+diff --git a/ipc/util.h b/ipc/util.h
+index 764b51a..159a73c 100644
+--- a/ipc/util.h
++++ b/ipc/util.h
+@@ -71,7 +71,7 @@ struct ipc_params {
+  *      . routine to call for an extra check if needed
+  */
+ struct ipc_ops {
+-	int (*getnew) (struct ipc_namespace *, struct ipc_params *);
++	int (*getnew) (struct ipc_namespace *, struct ipc_params *, int);
+ 	int (*associate) (struct kern_ipc_perm *, int);
+ 	int (*more_checks) (struct kern_ipc_perm *, struct ipc_params *);
  };
+@@ -94,7 +94,7 @@ void __init ipc_init_proc_interface(const char *path, const char *header,
+ #define ipcid_to_idx(id) ((id) % SEQ_MULTIPLIER)
  
-diff --git a/checkpoint/process.c b/checkpoint/process.c
-index adc34a2..23e0296 100644
---- a/checkpoint/process.c
-+++ b/checkpoint/process.c
-@@ -348,6 +348,22 @@ static int restore_task_struct(struct ckpt_ctx *ctx)
- 	return ret;
- }
+ /* must be called with ids->rw_mutex acquired for writing */
+-int ipc_addid(struct ipc_ids *, struct kern_ipc_perm *, int);
++int ipc_addid(struct ipc_ids *, struct kern_ipc_perm *, int, int);
  
-+static int restore_task_objs(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_hdr_task_objs *h;
-+	int ret;
-+
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_TASK_OBJS);
-+	if (IS_ERR(h))
-+		return PTR_ERR(h);
-+
-+	ret = restore_obj_file_table(ctx, h->files_objref);
-+	ckpt_debug("file_table: ret %d (%p)\n", ret, current->files);
-+
-+	ckpt_hdr_put(ctx, h);
-+	return ret;
-+}
-+
- int restore_restart_block(struct ckpt_ctx *ctx)
- {
- 	struct ckpt_hdr_restart_block *h;
-@@ -477,6 +493,10 @@ int restore_task(struct ckpt_ctx *ctx)
- 		goto out;
- 	ret = restore_cpu(ctx);
- 	ckpt_debug("cpu %d\n", ret);
-+	if (ret < 0)
-+		goto out;
-+	ret = restore_task_objs(ctx);
-+	ckpt_debug("objs %d\n", ret);
-  out:
- 	return ret;
- }
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index d74a890..749f30c 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -163,16 +163,23 @@ extern int restore_restart_block(struct ckpt_ctx *ctx);
- extern int ckpt_collect_file_table(struct ckpt_ctx *ctx, struct task_struct *t);
- extern int checkpoint_obj_file_table(struct ckpt_ctx *ctx,
- 				     struct task_struct *t);
-+extern int restore_obj_file_table(struct ckpt_ctx *ctx, int files_objref);
- extern int checkpoint_file_table(struct ckpt_ctx *ctx, void *ptr);
-+extern void *restore_file_table(struct ckpt_ctx *ctx);
+ /* must be called with ids->rw_mutex acquired for reading */
+ int ipc_get_maxid(struct ipc_ids *);
+@@ -171,7 +171,8 @@ static inline void ipc_unlock(struct kern_ipc_perm *perm)
  
- /* files */
- extern int checkpoint_fname(struct ckpt_ctx *ctx,
- 			    struct path *path, struct path *root);
-+extern struct file *restore_open_fname(struct ckpt_ctx *ctx, int flags);
+ struct kern_ipc_perm *ipc_lock_check(struct ipc_ids *ids, int id);
+ int ipcget(struct ipc_namespace *ns, struct ipc_ids *ids,
+-			struct ipc_ops *ops, struct ipc_params *params);
++	   struct ipc_ops *ops, struct ipc_params *params, int req_id);
+ void free_ipcs(struct ipc_namespace *ns, struct ipc_ids *ids,
+-		void (*free)(struct ipc_namespace *, struct kern_ipc_perm *));
++	       void (*free)(struct ipc_namespace *, struct kern_ipc_perm *));
 +
- extern int ckpt_collect_file(struct ckpt_ctx *ctx, struct file *file);
- extern int checkpoint_file(struct ckpt_ctx *ctx, void *ptr);
-+extern void *restore_file(struct ckpt_ctx *ctx);
- 
- extern int checkpoint_file_common(struct ckpt_ctx *ctx, struct file *file,
- 				  struct ckpt_hdr_file *h);
-+extern int restore_file_common(struct ckpt_ctx *ctx, struct file *file,
-+			       struct ckpt_hdr_file *h);
- 
- static inline int ckpt_validate_errno(int errno)
- {
+ #endif
 -- 
 1.6.3.3
