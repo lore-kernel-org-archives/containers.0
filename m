@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 92/96] c/r: add lsm name and lsm_info (policy header)
-	to container info
-Date: Wed, 17 Mar 2010 12:09:20 -0400
-Message-ID: <1268842164-5590-93-git-send-email-orenl__1213.63798757574$1268847398$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 08/96] eclone (8/11): Implement sys_eclone for x86
+	(32, 64)
+Date: Wed, 17 Mar 2010 12:07:56 -0400
+Message-ID: <1268842164-5590-9-git-send-email-orenl__33650.3391540193$1268847411$gmane$org@cs.columbia.edu>
 References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-2-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-3-git-send-email-orenl@cs.columbia.edu>
@@ -11,95 +11,11 @@ References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-6-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-7-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-8-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-9-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-10-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-11-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-12-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-13-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-14-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-15-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-16-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-17-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-18-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-19-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-20-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-21-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-22-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-23-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-24-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-25-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-26-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-27-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-28-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-29-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-30-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-31-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-32-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-33-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-34-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-35-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-36-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-37-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-38-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-39-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-40-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-41-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-42-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-43-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-44-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-45-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-46-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-47-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-48-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-49-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-50-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-51-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-52-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-53-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-54-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-55-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-56-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-57-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-58-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-59-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-60-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-61-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-62-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-63-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-64-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-65-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-66-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-67-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-68-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-69-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-70-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-71-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-72-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-73-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-74-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-75-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-76-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-77-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-78-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-79-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-80-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-81-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-82-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-83-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-84-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-85-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-86-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-87-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-88-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-89-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-90-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-91-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-92-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268842164-5590-92-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1268842164-5590-8-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -110,479 +26,511 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-The LSM name is 'selinux', 'smack', 'tomoyo', or 'dummy'.  We
-add that to the container configuration section.  We also add
-a LSM policy configuration section.  That is placed after the LSM
-name.  It is written by the LSM in security_checkpoint_header(),
-called during checkpoint container(), and read by the LSM during
-security_may_restart(), which is called from restore_lsm() in
-restore_container().
+Container restart requires that a task have the same pid it had when it was
+checkpointed. When containers are nested the tasks within the containers
+exist in multiple pid namespaces and hence have multiple pids to specify
+during restart.
 
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Acked-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+eclone(), intended for use during restart, is the same as
+clone(), except that it takes a 'pids' paramter. This parameter lets
+caller choose specific pid numbers for the child process, in the
+process's active and ancestor pid namespaces. (Descendant pid namespaces
+in general don't matter since processes don't have pids in them anyway,
+but see comments in copy_target_pids() regarding CLONE_NEWPID).
+
+eclone() also attempts to address a second limitation of the
+clone() system call. clone() is restricted to 32 clone flags and all but
+one of these are in use. If more new clone flags are needed, we will be
+forced to define a new variant of the clone() system call. To address
+this, eclone() allows at least 64 clone flags with some room
+for more if necessary.
+
+To prevent unprivileged processes from misusing this interface,
+eclone() currently needs CAP_SYS_ADMIN, when the 'pids' parameter
+is non-NULL.
+
+See Documentation/eclone in next patch for more details and an
+example of its usage.
+
+NOTE:
+	- System calls are restricted to 6 parameters and the number and sizes
+	  of parameters needed for eclone() exceed 6 integers. The new
+	  prototype works around this restriction while providing some
+	  flexibility if eclone() needs to be further extended in the
+	  future.
+TODO:
+	- We should convert clone-flags to 64-bit value in all architectures.
+	  Its probably best to do that as a separate patchset since clone_flags
+	  touches several functions and that patchset seems independent of this
+	  new system call.
+
+Changelog[v14]:
+	- [Oren Laadan] Rebase to kernel 2.6.33
+	  * introduce PTREGSCALL4 for sys_eclone
+	  * consolidate syscall definitions for 32/64 bit
+	- [Oren Laadan] Merge x86_64 (trivial patch) with current
+        - [Serge Hallyn] Add eclone stub for ia32 eclone
+
+Changelog[v13]:
+	- [Dave Hansen]: Reorg to enable sharing code between x86 and x86-64.
+	- [Arnd Bergmann]: With args_size parameter, ->reserved1 is redundant
+	  and can be removed.
+	- [Nathan Lynch]: stop warnings about assigning u64 to a (32-bit) int*.
+	- [Nathan Lynch, Serge Hallyn] Rename ->child_stack_base to
+	  ->child_stack and ensure ->child_stack_size is 0 on architectures
+	  that don't need it (see comments in types.h for details).
+
+Changelog[v12]:
+	- [Serge Hallyn] Ignore ->child_stack_size if ->child_stack_base
+	  is NULL.
+	- [Oren Laadan, Serge Hallyn] Rename clone_with_pids() to eclone()
+Changelog[v11]:
+	- [Dave Hansen] Move clone_args validation checks to arch-indpeendent
+	  code.
+	- [Oren Laadan] Make args_size a parameter to system call and remove
+	  it from 'struct clone_args'
+
+Changelog[v10]:
+	- Rename clone3() to clone_with_pids()
+	- [Linus Torvalds] Use PTREGSCALL() rather than the generic syscall
+	  implementation
+
+Changelog[v9]:
+	- [Roland McGrath, H. Peter Anvin] To avoid confusion on 64-bit
+	  architectures split the new clone-flags into 'low' and 'high'
+	  words and pass in the 'lower' flags as the first argument.
+	  This would maintain similarity of the clone3() with clone()/
+	  clone2(). Also has the side-effect of the name matching the
+	  number of parameters :-)
+	- [Roland McGrath] Rename structure to 'clone_args' and add a
+	  'child_stack_size' field
+
+Changelog[v8]
+	- [Oren Laadan] parent_tid and child_tid fields in 'struct clone_arg'
+	  must be 64-bit.
+	- clone2() is in use in IA64. Rename system call to clone3().
+
+Changelog[v7]:
+	- [Peter Zijlstra, Arnd Bergmann] Rename system call to clone2()
+	  and group parameters into a new 'struct clone_struct' object.
+
+Changelog[v6]:
+	- (Nathan Lynch, Arnd Bergmann, H. Peter Anvin, Linus Torvalds)
+	  Change 'pid_set.pids' to a 'pid_t pids[]' so size of 'struct pid_set'
+	  is constant across architectures.
+	- (Nathan Lynch) Change pid_set.num_pids to unsigned and remove
+	  'unum_pids < 0' check.
+
+Changelog[v4]:
+	- (Oren Laadan) rename 'struct target_pid_set' to 'struct pid_set'
+
+Changelog[v3]:
+	- (Oren Laadan) Allow CLONE_NEWPID flag (by allocating an extra pid
+	  in the target_pids[] list and setting it 0. See copy_target_pids()).
+	- (Oren Laadan) Specified target pids should apply only to youngest
+	  pid-namespaces (see copy_target_pids())
+	- (Matt Helsley) Update patch description.
+
+Changelog[v2]:
+	- Remove unnecessary printk and add a note to callers of
+	  copy_target_pids() to free target_pids.
+	- (Serge Hallyn) Mention CAP_SYS_ADMIN restriction in patch description.
+	- (Oren Laadan) Add checks for 'num_pids < 0' (return -EINVAL) and
+	  'num_pids == 0' (fall back to normal clone()).
+	- Move arch-independent code (sanity checks and copy-in of target-pids)
+	  into kernel/fork.c and simplify sys_clone_with_pids()
+
+Changelog[v1]:
+	- Fixed some compile errors (had fixed these errors earlier in my
+	  git tree but had not refreshed patches before emailing them)
+
+Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Acked-by: Oren Laadan <orenl.cs.columbia.edu>
 ---
- Documentation/checkpoint/readme.txt |   24 ++++++++++++++
- checkpoint/checkpoint.c             |   13 +++++++-
- checkpoint/restart.c                |   41 +++++++++++++++++++++++
- checkpoint/sys.c                    |   22 ++++++++++++
- include/linux/checkpoint.h          |    6 +++
- include/linux/checkpoint_hdr.h      |   16 +++++++++
- include/linux/checkpoint_types.h    |    2 +
- include/linux/security.h            |   61 +++++++++++++++++++++++++++++++++++
- security/capability.c               |   25 ++++++++++++++
- security/security.c                 |   26 +++++++++++++++
- 10 files changed, 235 insertions(+), 1 deletions(-)
+ arch/x86/ia32/ia32entry.S          |    2 +
+ arch/x86/include/asm/syscalls.h    |    2 +
+ arch/x86/include/asm/unistd_32.h   |    3 +-
+ arch/x86/include/asm/unistd_64.h   |    2 +
+ arch/x86/kernel/entry_32.S         |   14 ++++
+ arch/x86/kernel/entry_64.S         |    1 +
+ arch/x86/kernel/process.c          |   40 +++++++++++-
+ arch/x86/kernel/syscall_table_32.S |    1 +
+ include/linux/sched.h              |    2 +
+ include/linux/types.h              |   16 +++++
+ kernel/fork.c                      |  124 +++++++++++++++++++++++++++++++++++-
+ 11 files changed, 204 insertions(+), 3 deletions(-)
 
-diff --git a/Documentation/checkpoint/readme.txt b/Documentation/checkpoint/readme.txt
-index 2548bb4..030a001 100644
---- a/Documentation/checkpoint/readme.txt
-+++ b/Documentation/checkpoint/readme.txt
-@@ -343,6 +343,30 @@ So that's why we don't want CAP_SYS_ADMIN required up-front. That way
- we will be forced to more carefully review each of those features.
- However, this can be controlled with a sysctl-variable.
+diff --git a/arch/x86/ia32/ia32entry.S b/arch/x86/ia32/ia32entry.S
+index 53147ad..5eec1d9 100644
+--- a/arch/x86/ia32/ia32entry.S
++++ b/arch/x86/ia32/ia32entry.S
+@@ -477,6 +477,7 @@ quiet_ni_syscall:
+ 	PTREGSCALL stub32_clone, sys32_clone, %rdx
+ 	PTREGSCALL stub32_vfork, sys_vfork, %rdi
+ 	PTREGSCALL stub32_iopl, sys_iopl, %rsi
++	PTREGSCALL stub32_eclone, sys_eclone, %r8
  
-+LSM
-+===
-+
-+Security modules use custom labels on subjects and objects to
-+further mediate access decisions beyond DAC controls.  When
-+checkpoint applications, these labels are [ work in progress ]
-+checkpointed along with the objects.  At restart, the
-+RESTART_KEEP_LSM flag tells the kernel whether re-created objects
-+whould keep their checkpointed labels, or get automatically
-+recalculated labels.  Since checkpointed labels will only make
-+sense to the same LSM which was active at checkpoint time,
-+sys_restart() with the RESTART_KEEP_LSM flag will fail with
-+-EINVAL if the LSM active at restart is not the same as that
-+active at checkpoint.  If RESTART_KEEP_LSM is not specified,
-+then objects will be given whatever default labels the LSM and
-+their optional policy decide.  Of course, when RESTART_KEEP_LSM
-+is specified, the LSM may choose a different label than the
-+checkpointed one, or fail the entire restart if the caller
-+does not have permission to create objects with the checkpointed
-+label.
-+
-+It should always be safe to take a checkpoint of an application
-+under LSM_1, and restart it without the RESTART_KEEP_LSM flag
-+under LSM_2.
+ ENTRY(ia32_ptregs_common)
+ 	popq %r11
+@@ -842,4 +843,5 @@ ia32_sys_call_table:
+ 	.quad compat_sys_rt_tgsigqueueinfo	/* 335 */
+ 	.quad sys_perf_event_open
+ 	.quad compat_sys_recvmmsg
++	.quad stub32_eclone
+ ia32_syscall_end:
+diff --git a/arch/x86/include/asm/syscalls.h b/arch/x86/include/asm/syscalls.h
+index 8868b94..972ab0e 100644
+--- a/arch/x86/include/asm/syscalls.h
++++ b/arch/x86/include/asm/syscalls.h
+@@ -27,6 +27,8 @@ long sys_execve(char __user *, char __user * __user *,
+ 		char __user * __user *, struct pt_regs *);
+ long sys_clone(unsigned long, unsigned long, void __user *,
+ 	       void __user *, struct pt_regs *);
++long sys_eclone(unsigned flags_low, struct clone_args __user *uca,
++		int args_size, pid_t __user *pids, struct pt_regs *regs);
  
- Sockets
- =======
-diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index aaa8500..f27af41 100644
---- a/checkpoint/checkpoint.c
-+++ b/checkpoint/checkpoint.c
-@@ -191,7 +191,18 @@ static int checkpoint_container(struct ckpt_ctx *ctx)
- 	ret = ckpt_write_obj(ctx, &h->h);
- 	ckpt_hdr_put(ctx, h);
+ /* kernel/ldt.c */
+ asmlinkage int sys_modify_ldt(int, void __user *, unsigned long);
+diff --git a/arch/x86/include/asm/unistd_32.h b/arch/x86/include/asm/unistd_32.h
+index 3baf379..cd7ca6a 100644
+--- a/arch/x86/include/asm/unistd_32.h
++++ b/arch/x86/include/asm/unistd_32.h
+@@ -343,10 +343,11 @@
+ #define __NR_rt_tgsigqueueinfo	335
+ #define __NR_perf_event_open	336
+ #define __NR_recvmmsg		337
++#define __NR_eclone		338
  
--	return ret;
-+	if (ret < 0)
-+		return ret;
+ #ifdef __KERNEL__
+ 
+-#define NR_syscalls 338
++#define NR_syscalls 339
+ 
+ #define __ARCH_WANT_IPC_PARSE_VERSION
+ #define __ARCH_WANT_OLD_READDIR
+diff --git a/arch/x86/include/asm/unistd_64.h b/arch/x86/include/asm/unistd_64.h
+index 4843f7b..d87318d 100644
+--- a/arch/x86/include/asm/unistd_64.h
++++ b/arch/x86/include/asm/unistd_64.h
+@@ -663,6 +663,8 @@ __SYSCALL(__NR_rt_tgsigqueueinfo, sys_rt_tgsigqueueinfo)
+ __SYSCALL(__NR_perf_event_open, sys_perf_event_open)
+ #define __NR_recvmmsg				299
+ __SYSCALL(__NR_recvmmsg, sys_recvmmsg)
++#define __NR_eclone                   		300
++__SYSCALL(__NR_eclone, stub_eclone)
+ 
+ #ifndef __NO_STUBS
+ #define __ARCH_WANT_OLD_READDIR
+diff --git a/arch/x86/kernel/entry_32.S b/arch/x86/kernel/entry_32.S
+index 44a8e0d..65e1735 100644
+--- a/arch/x86/kernel/entry_32.S
++++ b/arch/x86/kernel/entry_32.S
+@@ -758,6 +758,19 @@ ptregs_##name: \
+ 	addl $4,%esp; \
+ 	ret
+ 
++#define PTREGSCALL4(name) \
++	ALIGN; \
++ptregs_##name: \
++	leal 4(%esp),%eax; \
++	pushl %eax; \
++	pushl PT_ESI(%eax); \
++	movl PT_EDX(%eax),%ecx; \
++	movl PT_ECX(%eax),%edx; \
++	movl PT_EBX(%eax),%eax; \
++	call sys_##name; \
++	addl $8,%esp; \
++	ret
 +
-+	memset(ctx->lsm_name, 0, CHECKPOINT_LSM_NAME_MAX + 1);
-+	strlcpy(ctx->lsm_name, security_get_lsm_name(),
-+				CHECKPOINT_LSM_NAME_MAX + 1);
-+	ret = ckpt_write_buffer(ctx, ctx->lsm_name,
-+				CHECKPOINT_LSM_NAME_MAX + 1);
-+	if (ret < 0)
-+		return ret;
-+
-+	return security_checkpoint_header(ctx);
+ PTREGSCALL1(iopl)
+ PTREGSCALL0(fork)
+ PTREGSCALL0(vfork)
+@@ -767,6 +780,7 @@ PTREGSCALL0(sigreturn)
+ PTREGSCALL0(rt_sigreturn)
+ PTREGSCALL2(vm86)
+ PTREGSCALL1(vm86old)
++PTREGSCALL4(eclone)
+ 
+ /* Clone is an oddball.  The 4th arg is in %edi */
+ 	ALIGN;
+diff --git a/arch/x86/kernel/entry_64.S b/arch/x86/kernel/entry_64.S
+index 0697ff1..216681e 100644
+--- a/arch/x86/kernel/entry_64.S
++++ b/arch/x86/kernel/entry_64.S
+@@ -698,6 +698,7 @@ END(\label)
+ 	PTREGSCALL stub_vfork, sys_vfork, %rdi
+ 	PTREGSCALL stub_sigaltstack, sys_sigaltstack, %rdx
+ 	PTREGSCALL stub_iopl, sys_iopl, %rsi
++	PTREGSCALL stub_eclone, sys_eclone, %r8
+ 
+ ENTRY(ptregscall_common)
+ 	DEFAULT_FRAME 1 8	/* offset 8: return address */
+diff --git a/arch/x86/kernel/process.c b/arch/x86/kernel/process.c
+index c9b3522..b2352d9 100644
+--- a/arch/x86/kernel/process.c
++++ b/arch/x86/kernel/process.c
+@@ -252,6 +252,45 @@ sys_clone(unsigned long clone_flags, unsigned long newsp,
+ 	return do_fork(clone_flags, newsp, regs, 0, parent_tid, child_tid);
  }
  
- /* write the checkpoint trailer */
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index 6f206a3..cfcb62b 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -656,6 +656,42 @@ static int restore_read_header(struct ckpt_ctx *ctx)
- 	return ret;
- }
- 
-+/* read the LSM configuration section */
-+static int restore_lsm(struct ckpt_ctx *ctx)
++long
++sys_eclone(unsigned flags_low, struct clone_args __user *uca,
++	   int args_size, pid_t __user *pids, struct pt_regs *regs)
 +{
-+	int ret;
-+	char *cur_lsm = security_get_lsm_name();
++	int rc;
++	struct clone_args kca;
++	unsigned long flags;
++	int __user *parent_tidp;
++	int __user *child_tidp;
++	unsigned long __user stack;
++	unsigned long stack_size;
 +
-+	ret = _ckpt_read_buffer(ctx, ctx->lsm_name,
-+				CHECKPOINT_LSM_NAME_MAX + 1);
-+	if (ret < 0) {
-+		ckpt_debug("Error %d reading lsm name\n", ret);
-+		return ret;
-+	}
++	rc = fetch_clone_args_from_user(uca, args_size, &kca);
++	if (rc)
++		return rc;
 +
-+	if (!(ctx->uflags & RESTART_KEEP_LSM))
-+		goto skip_lsm;
-+
-+	if (strncmp(cur_lsm, ctx->lsm_name, CHECKPOINT_LSM_NAME_MAX + 1) != 0) {
-+		ckpt_debug("c/r: checkpointed LSM %s, current is %s.\n",
-+			ctx->lsm_name, cur_lsm);
-+		return -EPERM;
-+	}
-+
-+	if (strcmp(ctx->lsm_name, "lsm_none") != 0 &&
-+			strcmp(ctx->lsm_name, "default") != 0) {
-+		ckpt_debug("c/r: RESTART_KEEP_LSM unsupported for %s\n",
-+				ctx->lsm_name);
-+		return -ENOSYS;
-+	}
-+
-+skip_lsm:
-+	ret = security_may_restart(ctx);
-+	if (ret < 0)
-+		ckpt_debug("security_may_restart returned %d\n", ret);
-+	return ret;
-+}
-+
- /* read the container configuration section */
- static int restore_container(struct ckpt_ctx *ctx)
- {
-@@ -667,6 +703,11 @@ static int restore_container(struct ckpt_ctx *ctx)
- 		return PTR_ERR(h);
- 	ckpt_hdr_put(ctx, h);
- 
-+	/* read the LSM name and info which follow ("are a part of")
-+	 * the ckpt_hdr_container */
-+	ret = restore_lsm(ctx);
-+	if (ret < 0)
-+		ckpt_debug("Error %d on LSM configuration\n", ret);
- 	return ret;
- }
- 
-diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-index 62f49ad..9e9df9b 100644
---- a/checkpoint/sys.c
-+++ b/checkpoint/sys.c
-@@ -181,6 +181,28 @@ void *ckpt_hdr_get_type(struct ckpt_ctx *ctx, int len, int type)
- }
- EXPORT_SYMBOL(ckpt_hdr_get_type);
- 
-+#define DUMMY_LSM_INFO "dummy"
-+
-+int ckpt_write_dummy_lsm_info(struct ckpt_ctx *ctx)
-+{
-+	return ckpt_write_obj_type(ctx, DUMMY_LSM_INFO,
-+			strlen(DUMMY_LSM_INFO), CKPT_HDR_LSM_INFO);
-+}
-+
-+/*
-+ * ckpt_snarf_lsm_info
-+ * If there is a CKPT_HDR_LSM_INFO field, toss it.
-+ * Used when the current LSM doesn't care about this field.
-+ */
-+void ckpt_snarf_lsm_info(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_hdr *h;
-+
-+	h = ckpt_read_buf_type(ctx, CKPT_LSM_INFO_LEN, CKPT_HDR_LSM_INFO);
-+	if (!IS_ERR(h))
-+		ckpt_hdr_put(ctx, h);
-+}
-+
- /*
-  * Helpers to manage c/r contexts: allocated for each checkpoint and/or
-  * restart operation, and persists until the operation is completed.
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 64b4b8a..70198f9 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -19,6 +19,7 @@
- #define RESTART_TASKSELF	0x1
- #define RESTART_FROZEN		0x2
- #define RESTART_GHOST		0x4
-+#define RESTART_KEEP_LSM	0x8
- #define RESTART_CONN_RESET      0x10
- 
- /* misc user visible */
-@@ -59,8 +60,11 @@ extern long do_sys_restart(pid_t pid, int fd,
- 	(RESTART_TASKSELF | \
- 	 RESTART_FROZEN | \
- 	 RESTART_GHOST | \
-+	 RESTART_KEEP_LSM | \
- 	 RESTART_CONN_RESET)
- 
-+#define CKPT_LSM_INFO_LEN 200
-+
- extern int walk_task_subtree(struct task_struct *task,
- 			     int (*func)(struct task_struct *, void *),
- 			     void *data);
-@@ -73,6 +77,8 @@ extern void _ckpt_hdr_put(struct ckpt_ctx *ctx, void *ptr, int n);
- extern void ckpt_hdr_put(struct ckpt_ctx *ctx, void *ptr);
- extern void *ckpt_hdr_get(struct ckpt_ctx *ctx, int n);
- extern void *ckpt_hdr_get_type(struct ckpt_ctx *ctx, int n, int type);
-+extern int ckpt_write_dummy_lsm_info(struct ckpt_ctx *ctx);
-+extern void ckpt_snarf_lsm_info(struct ckpt_ctx *ctx);
- 
- extern int ckpt_write_obj(struct ckpt_ctx *ctx, struct ckpt_hdr *h);
- extern int ckpt_write_obj_type(struct ckpt_ctx *ctx,
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index acf964a..fad955f 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -25,6 +25,15 @@
- #endif
- 
- /*
-+ * /usr/include/linux/security.h is not exported to userspace, so
-+ * we need this value here for userspace restart.c to read.
-+ *
-+ * CHECKPOINT_LSM_NAME_MAX should be SECURITY_NAME_MAX
-+ * security_may_restart() has a BUILD_BUG_ON to enforce that.
-+ */
-+#define CHECKPOINT_LSM_NAME_MAX 10
-+
-+/*
-  * To maintain compatibility between 32-bit and 64-bit architecture flavors,
-  * keep data 64-bit aligned: use padding for structure members, and use
-  * __attribute__((aligned (8))) for the entire structure.
-@@ -69,6 +78,8 @@ enum {
- #define CKPT_HDR_STRING CKPT_HDR_STRING
- 	CKPT_HDR_OBJREF,
- #define CKPT_HDR_OBJREF CKPT_HDR_OBJREF
-+	CKPT_HDR_LSM_INFO,
-+#define CKPT_HDR_LSM_INFO CKPT_HDR_LSM_INFO
- 
- 	CKPT_HDR_TREE = 101,
- #define CKPT_HDR_TREE CKPT_HDR_TREE
-@@ -296,6 +307,11 @@ struct ckpt_hdr_tail {
- /* container configuration section header */
- struct ckpt_hdr_container {
- 	struct ckpt_hdr h;
 +	/*
-+	 * the header is followed by the string:
-+	 *   char lsm_name[SECURITY_NAME_MAX + 1]
-+	 * plus the CKPT_HDR_LSM_INFO section
++	 * TODO: Convert 'clone-flags' to 64-bits on all architectures.
++	 * TODO: When ->clone_flags_high is non-zero, copy it in to the
++	 * 	 higher word(s) of 'flags':
++	 *
++	 * 		flags = (kca.clone_flags_high << 32) | flags_low;
 +	 */
- } __attribute__((aligned(8)));;
- 
- /* task tree */
-diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
-index 75e198f..efd34b6 100644
---- a/include/linux/checkpoint_types.h
-+++ b/include/linux/checkpoint_types.h
-@@ -21,6 +21,7 @@
- #include <linux/fs.h>
- #include <linux/ktime.h>
- #include <linux/wait.h>
-+#include <linux/security.h>
- 
- struct ckpt_stats {
- 	int uts_ns;
-@@ -38,6 +39,7 @@ struct ckpt_ctx {
- 	struct task_struct *root_task;		/* [container] root task */
- 	struct nsproxy *root_nsproxy;		/* [container] root nsproxy */
- 	struct task_struct *root_freezer;	/* [container] root task */
-+	char lsm_name[SECURITY_NAME_MAX + 1];   /* security module at ckpt */
- 
- 	unsigned long kflags;	/* kerenl flags */
- 	unsigned long uflags;	/* user flags */
-diff --git a/include/linux/security.h b/include/linux/security.h
-index 2c627d3..980c942 100644
---- a/include/linux/security.h
-+++ b/include/linux/security.h
-@@ -143,6 +143,13 @@ extern int mmap_min_addr_handler(struct ctl_table *table, int write,
- 				 void __user *buffer, size_t *lenp, loff_t *ppos);
- #endif
- 
-+#ifdef CONFIG_CHECKPOINT
-+struct ckpt_ctx;
++	flags = flags_low;
++	parent_tidp = (int *)(unsigned long)kca.parent_tid_ptr;
++	child_tidp = (int *)(unsigned long)kca.child_tid_ptr;
 +
-+void ckpt_snarf_lsm_info(struct ckpt_ctx *ctx);
-+int ckpt_write_dummy_lsm_info(struct ckpt_ctx *ctx);
-+#endif
++	stack_size = (unsigned long)kca.child_stack_size;
++	if (stack_size)
++		return -EINVAL;
 +
- #ifdef CONFIG_SECURITY
++	stack = (unsigned long)kca.child_stack;
++	if (!stack)
++		stack = regs->sp;
++
++	return do_fork_with_pids(flags, stack, regs, stack_size, parent_tidp,
++				child_tidp, kca.nr_pids, pids);
++}
++
+ /*
+  * This gets run with %si containing the
+  * function to call, and %di containing
+@@ -677,4 +716,3 @@ unsigned long arch_randomize_brk(struct mm_struct *mm)
+ 	unsigned long range_end = mm->brk + 0x02000000;
+ 	return randomize_range(mm->brk, range_end, 0) ? : mm->brk;
+ }
+-
+diff --git a/arch/x86/kernel/syscall_table_32.S b/arch/x86/kernel/syscall_table_32.S
+index 15228b5..22ae7ef 100644
+--- a/arch/x86/kernel/syscall_table_32.S
++++ b/arch/x86/kernel/syscall_table_32.S
+@@ -337,3 +337,4 @@ ENTRY(sys_call_table)
+ 	.long sys_rt_tgsigqueueinfo	/* 335 */
+ 	.long sys_perf_event_open
+ 	.long sys_recvmmsg
++	.long ptregs_eclone
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index 4f079f7..bcc44ad 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -2189,6 +2189,8 @@ extern int disallow_signal(int);
  
- struct security_mnt_opts {
-@@ -1375,6 +1382,28 @@ static inline void security_free_mnt_opts(struct security_mnt_opts *opts)
-  *	@secdata contains the security context.
-  *	@seclen contains the length of the security context.
-  *
-+ * Security hooks for Checkpoint/restart
-+ * (In addition to *_checkpoint and *_restore)
-+ *
-+ * @may_restart:
-+ *	Authorize sys_restart().
-+ *	Note that all construction of kernel resources, credentials,
-+ *	etc is already authorized per the caller's credentials.  This
-+ *	hook is intended for the LSM to make further decisions about
-+ *	a task not being allowed to restart at all, for instance if
-+ *	the policy has changed since checkpoint.
-+ *	@ctx is the checkpoint/restart context (see <linux/checkpoint_types.h>)
-+ *	Return 0 if allowed, <0 on error.
-+ *
-+ * @checkpoint_header:
-+ *	Optionally write out a LSM-specific checkpoint header.  This is
-+ *	a chance to write out policy information, for instance.  The same
-+ *	LSM on restart can then use the info in security_may_restart() to
-+ * 	refuse restart (for instance) across policy changes.
-+ *	The info is to be written as a an object of type CKPT_HDR_LSM_INFO.
-+ *	@ctx is the checkpoint/restart context (see <linux/checkpoint_types.h>)
-+ *	Return 0 on success, <0 on error.
-+ *
-  * Security hooks for Audit
-  *
-  * @audit_rule_init:
-@@ -1657,6 +1686,11 @@ struct security_operations {
- 	int (*inode_setsecctx)(struct dentry *dentry, void *ctx, u32 ctxlen);
- 	int (*inode_getsecctx)(struct inode *inode, void **ctx, u32 *ctxlen);
- 
-+#ifdef CONFIG_CHECKPOINT
-+	int (*may_restart) (struct ckpt_ctx *ctx);
-+	int (*checkpoint_header) (struct ckpt_ctx *ctx);
-+#endif
-+
- #ifdef CONFIG_SECURITY_NETWORK
- 	int (*unix_stream_connect) (struct socket *sock,
- 				    struct socket *other, struct sock *newsk);
-@@ -1909,6 +1943,14 @@ void security_release_secctx(char *secdata, u32 seclen);
- int security_inode_notifysecctx(struct inode *inode, void *ctx, u32 ctxlen);
- int security_inode_setsecctx(struct dentry *dentry, void *ctx, u32 ctxlen);
- int security_inode_getsecctx(struct inode *inode, void **ctx, u32 *ctxlen);
-+
-+#ifdef CONFIG_CHECKPOINT
-+int security_may_restart(struct ckpt_ctx *ctx);
-+int security_checkpoint_header(struct ckpt_ctx *ctx);
-+#endif /* CONFIG_CHECKPOINT */
-+
-+char *security_get_lsm_name(void);
-+
- #else /* CONFIG_SECURITY */
- struct security_mnt_opts {
+ extern int do_execve(char *, char __user * __user *, char __user * __user *, struct pt_regs *);
+ extern long do_fork(unsigned long, unsigned long, struct pt_regs *, unsigned long, int __user *, int __user *);
++extern int fetch_clone_args_from_user(struct clone_args __user *, int,
++				struct clone_args *);
+ extern long do_fork_with_pids(unsigned long, unsigned long, struct pt_regs *,
+ 				unsigned long, int __user *, int __user *,
+ 				unsigned int, pid_t __user *);
+diff --git a/include/linux/types.h b/include/linux/types.h
+index c42724f..d8bfd6b 100644
+--- a/include/linux/types.h
++++ b/include/linux/types.h
+@@ -204,6 +204,22 @@ struct ustat {
+ 	char			f_fpack[6];
  };
-@@ -1931,6 +1973,12 @@ static inline int security_init(void)
- 	return 0;
+ 
++struct clone_args {
++	u64 clone_flags_high;
++	/*
++	 * Architectures can use child_stack for either the stack pointer or
++	 * the base of of stack. If child_stack is used as the stack pointer,
++	 * child_stack_size must be 0. Otherwise child_stack_size must be
++	 * set to size of allocated stack.
++	 */
++	u64 child_stack;
++	u64 child_stack_size;
++	u64 parent_tid_ptr;
++	u64 child_tid_ptr;
++	u32 nr_pids;
++	u32 reserved0;
++};
++
+ #endif	/* __KERNEL__ */
+ #endif /*  __ASSEMBLY__ */
+ #endif /* _LINUX_TYPES_H */
+diff --git a/kernel/fork.c b/kernel/fork.c
+index fb92128..0f202ae 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -1370,6 +1370,114 @@ struct task_struct * __cpuinit fork_idle(int cpu)
  }
  
-+#define DEFAULT_LSM_NAME "lsm_none"
-+static inline char *security_get_lsm_name(void)
+ /*
++ * If user specified any 'target-pids' in @upid_setp, copy them from
++ * user and return a pointer to a local copy of the list of pids. The
++ * caller must free the list, when they are done using it.
++ *
++ * If user did not specify any target pids, return NULL (caller should
++ * treat this like normal clone).
++ *
++ * On any errors, return the error code
++ */
++static pid_t *copy_target_pids(int unum_pids, pid_t __user *upids)
 +{
-+	return DEFAULT_LSM_NAME;
++	int j;
++	int rc;
++	int size;
++	int knum_pids;		/* # of pids needed in kernel */
++	pid_t *target_pids;
++
++	if (!unum_pids)
++		return NULL;
++
++	knum_pids = task_pid(current)->level + 1;
++	if (unum_pids > knum_pids)
++		return ERR_PTR(-EINVAL);
++
++	/*
++	 * To keep alloc_pid() simple, allocate an extra pid_t in target_pids[]
++	 * and set it to 0. This last entry in target_pids[] corresponds to the
++	 * (yet-to-be-created) descendant pid-namespace if CLONE_NEWPID was
++	 * specified. If CLONE_NEWPID was not specified, this last entry will
++	 * simply be ignored.
++	 */
++	target_pids = kzalloc((knum_pids + 1) * sizeof(pid_t), GFP_KERNEL);
++	if (!target_pids)
++		return ERR_PTR(-ENOMEM);
++
++	/*
++	 * A process running in a level 2 pid namespace has three pid namespaces
++	 * and hence three pid numbers. If this process is checkpointed,
++	 * information about these three namespaces are saved. We refer to these
++	 * namespaces as 'known namespaces'.
++	 *
++	 * If this checkpointed process is however restarted in a level 3 pid
++	 * namespace, the restarted process has an extra ancestor pid namespace
++	 * (i.e 'unknown namespace') and 'knum_pids' exceeds 'unum_pids'.
++	 *
++	 * During restart, the process requests specific pids for its 'known
++	 * namespaces' and lets kernel assign pids to its 'unknown namespaces'.
++	 *
++	 * Since the requested-pids correspond to 'known namespaces' and since
++	 * 'known-namespaces' are younger than (i.e descendants of) 'unknown-
++	 * namespaces', copy requested pids to the back-end of target_pids[]
++	 * (i.e before the last entry for CLONE_NEWPID mentioned above).
++	 * Any entries in target_pids[] not corresponding to a requested pid
++	 * will be set to zero and kernel assigns a pid in those namespaces.
++	 *
++	 * NOTE: The order of pids in target_pids[] is oldest pid namespace to
++	 * 	 youngest (target_pids[0] corresponds to init_pid_ns). i.e.
++	 * 	 the order is:
++	 *
++	 * 		- pids for 'unknown-namespaces' (if any)
++	 * 		- pids for 'known-namespaces' (requested pids)
++	 * 		- 0 in the last entry (for CLONE_NEWPID).
++	 */
++	j = knum_pids - unum_pids;
++	size = unum_pids * sizeof(pid_t);
++
++	rc = copy_from_user(&target_pids[j], upids, size);
++	if (rc) {
++		rc = -EFAULT;
++		goto out_free;
++	}
++
++	return target_pids;
++
++out_free:
++	kfree(target_pids);
++	return ERR_PTR(rc);
 +}
 +
- static inline int security_ptrace_access_check(struct task_struct *child,
- 					     unsigned int mode)
- {
-@@ -2678,6 +2726,19 @@ static inline int security_inode_getsecctx(struct inode *inode, void **ctx, u32
- {
- 	return -EOPNOTSUPP;
- }
-+
-+#ifdef CONFIG_CHECKPOINT
-+static inline int security_may_restart(struct ckpt_ctx *ctx)
++int
++fetch_clone_args_from_user(struct clone_args __user *uca, int args_size,
++			struct clone_args *kca)
 +{
-+	ckpt_snarf_lsm_info(ctx);
++	int rc;
++
++	/*
++	 * TODO: If size of clone_args is not what the kernel expects, it
++	 * 	 could be that kernel is newer and has an extended structure.
++	 * 	 When that happens, this check needs to be smarter.  For now,
++	 * 	 assume exact match.
++	 */
++	if (args_size != sizeof(struct clone_args))
++		return -EINVAL;
++
++	rc = copy_from_user(kca, uca, args_size);
++	if (rc)
++		return -EFAULT;
++
++	/*
++	 * To avoid future compatibility issues, ensure unused fields are 0.
++	 */
++	if (kca->reserved0 || kca->clone_flags_high)
++		return -EINVAL;
++
 +	return 0;
 +}
-+static inline int security_checkpoint_header(struct ckpt_ctx *ctx)
-+{
-+	return ckpt_write_dummy_lsm_info(ctx);
-+}
-+#endif /* CONFIG_CHECKPOINT */
 +
- #endif	/* CONFIG_SECURITY */
++/*
+  *  Ok, this is the main fork-routine.
+  *
+  * It copies the process, and if successful kick-starts
+@@ -1387,7 +1495,7 @@ long do_fork_with_pids(unsigned long clone_flags,
+ 	struct task_struct *p;
+ 	int trace = 0;
+ 	long nr;
+-	pid_t *target_pids = NULL;
++	pid_t *target_pids;
  
- #ifdef CONFIG_SECURITY_NETWORK
-diff --git a/security/capability.c b/security/capability.c
-index 5c700e1..f79911a 100644
---- a/security/capability.c
-+++ b/security/capability.c
-@@ -852,6 +852,27 @@ static int cap_inode_getsecctx(struct inode *inode, void **ctx, u32 *ctxlen)
- {
- 	return 0;
- }
-+
-+#ifdef CONFIG_CHECKPOINT
-+static int cap_may_restart(struct ckpt_ctx *ctx)
-+{
-+	/*
-+	 * Note that all construction of kernel resources, credentials,
-+	 * etc is already authorized per the caller's credentials.  This
-+	 * hook is intended for the LSM to make further decisions about
-+	 * a task not being allowed to restart at all, for instance if
-+	 * the policy has changed since checkpoint.
-+	 */
-+	ckpt_snarf_lsm_info(ctx);
-+	return 0;
-+}
-+
-+static int cap_checkpoint_header(struct ckpt_ctx *ctx)
-+{
-+	return ckpt_write_dummy_lsm_info(ctx);
-+}
-+#endif
-+
- #ifdef CONFIG_KEYS
- static int cap_key_alloc(struct key *key, const struct cred *cred,
- 			 unsigned long flags)
-@@ -1068,6 +1089,10 @@ void security_fixup_ops(struct security_operations *ops)
- 	set_to_cap_if_null(ops, inode_notifysecctx);
- 	set_to_cap_if_null(ops, inode_setsecctx);
- 	set_to_cap_if_null(ops, inode_getsecctx);
-+#ifdef CONFIG_CHECKPOINT
-+	set_to_cap_if_null(ops, may_restart);
-+	set_to_cap_if_null(ops, checkpoint_header);
-+#endif
- #ifdef CONFIG_SECURITY_NETWORK
- 	set_to_cap_if_null(ops, unix_stream_connect);
- 	set_to_cap_if_null(ops, unix_may_send);
-diff --git a/security/security.c b/security/security.c
-index 122b748..abc1142 100644
---- a/security/security.c
-+++ b/security/security.c
-@@ -17,6 +17,9 @@
- #include <linux/kernel.h>
- #include <linux/security.h>
- #include <linux/ima.h>
-+#ifdef CONFIG_CHECKPOINT
-+#include <linux/checkpoint.h>
-+#endif
+ 	/*
+ 	 * Do some preliminary argument and permissions checking before we
+@@ -1421,6 +1529,16 @@ long do_fork_with_pids(unsigned long clone_flags,
+ 		}
+ 	}
  
- /* Boot-time LSM user choice */
- static __initdata char chosen_lsm[SECURITY_NAME_MAX + 1] =
-@@ -126,6 +129,11 @@ int register_security(struct security_operations *ops)
- 	return 0;
++	target_pids = copy_target_pids(num_pids, upids);
++	if (target_pids) {
++		if (IS_ERR(target_pids))
++			return PTR_ERR(target_pids);
++
++		nr = -EPERM;
++		if (!capable(CAP_SYS_ADMIN))
++			goto out_free;
++	}
++
+ 	/*
+ 	 * When called from kernel_thread, don't do user tracing stuff.
+ 	 */
+@@ -1482,6 +1600,10 @@ long do_fork_with_pids(unsigned long clone_flags,
+ 	} else {
+ 		nr = PTR_ERR(p);
+ 	}
++
++out_free:
++	kfree(target_pids);
++
+ 	return nr;
  }
  
-+char *security_get_lsm_name(void)
-+{
-+	return security_ops->name;
-+}
-+
- /* Security operations */
- 
- int security_ptrace_access_check(struct task_struct *child, unsigned int mode)
-@@ -1035,6 +1043,24 @@ int security_inode_getsecctx(struct inode *inode, void **ctx, u32 *ctxlen)
- }
- EXPORT_SYMBOL(security_inode_getsecctx);
- 
-+#ifdef CONFIG_CHECKPOINT
-+int security_may_restart(struct ckpt_ctx *ctx)
-+{
-+	/*
-+	 * SECURITY_NAME_MAX is defined in linux/security.h,
-+	 * CHECKPOINT_LSM_NAME_MAX in linux/checkpoint_hdr.h
-+	 */
-+	BUILD_BUG_ON(CHECKPOINT_LSM_NAME_MAX != SECURITY_NAME_MAX);
-+
-+	return security_ops->may_restart(ctx);
-+}
-+
-+int security_checkpoint_header(struct ckpt_ctx *ctx)
-+{
-+	return security_ops->checkpoint_header(ctx);
-+}
-+#endif
-+
- #ifdef CONFIG_SECURITY_NETWORK
- 
- int security_unix_stream_connect(struct socket *sock, struct socket *other,
 -- 
 1.6.3.3
