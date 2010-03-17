@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 91/96] powerpc: enable checkpoint support in Kconfig
-Date: Wed, 17 Mar 2010 12:09:19 -0400
-Message-ID: <1268842164-5590-92-git-send-email-orenl__28630.1086460755$1268850582$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 27/96] c/r: export functionality used in next patch
+	for restart-blocks
+Date: Wed, 17 Mar 2010 12:08:15 -0400
+Message-ID: <1268842164-5590-28-git-send-email-orenl__20742.7786700011$1268850585$gmane$org@cs.columbia.edu>
 References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-2-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-3-git-send-email-orenl@cs.columbia.edu>
@@ -29,75 +30,11 @@ References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-25-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-26-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-27-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-28-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-29-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-30-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-31-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-32-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-33-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-34-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-35-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-36-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-37-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-38-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-39-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-40-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-41-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-42-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-43-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-44-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-45-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-46-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-47-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-48-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-49-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-50-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-51-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-52-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-53-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-54-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-55-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-56-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-57-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-58-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-59-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-60-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-61-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-62-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-63-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-64-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-65-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-66-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-67-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-68-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-69-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-70-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-71-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-72-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-73-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-74-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-75-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-76-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-77-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-78-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-79-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-80-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-81-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-82-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-83-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-84-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-85-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-86-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-87-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-88-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-89-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-90-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-91-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268842164-5590-91-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1268842164-5590-27-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -108,30 +45,165 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+To support c/r of restart-blocks (system call that need to be
+restarted because they were interrupted but there was no userspace
+visible side-effect), export restart-block callbacks for poll()
+and futex() syscalls.
 
-Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+More details on c/r of restart-blocks and how it works in the
+following patch.
+
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- arch/powerpc/Kconfig |    3 +++
- 1 files changed, 3 insertions(+), 0 deletions(-)
+ fs/select.c                  |    2 +-
+ include/linux/futex.h        |   11 +++++++++++
+ include/linux/poll.h         |    3 +++
+ include/linux/posix-timers.h |    6 ++++++
+ kernel/compat.c              |    4 ++--
+ kernel/futex.c               |   12 +-----------
+ kernel/posix-timers.c        |    2 +-
+ 7 files changed, 25 insertions(+), 15 deletions(-)
 
-diff --git a/arch/powerpc/Kconfig b/arch/powerpc/Kconfig
-index ba3948c..dd88d3d 100644
---- a/arch/powerpc/Kconfig
-+++ b/arch/powerpc/Kconfig
-@@ -26,6 +26,9 @@ config MMU
- 	bool
- 	default y
+diff --git a/fs/select.c b/fs/select.c
+index fd38ce2..7e3de2c 100644
+--- a/fs/select.c
++++ b/fs/select.c
+@@ -873,7 +873,7 @@ out_fds:
+ 	return err;
+ }
  
-+config CHECKPOINT_SUPPORT
-+	def_bool y
+-static long do_restart_poll(struct restart_block *restart_block)
++long do_restart_poll(struct restart_block *restart_block)
+ {
+ 	struct pollfd __user *ufds = restart_block->poll.ufds;
+ 	int nfds = restart_block->poll.nfds;
+diff --git a/include/linux/futex.h b/include/linux/futex.h
+index 1e5a26d..ae755f6 100644
+--- a/include/linux/futex.h
++++ b/include/linux/futex.h
+@@ -136,6 +136,17 @@ extern int
+ handle_futex_death(u32 __user *uaddr, struct task_struct *curr, int pi);
+ 
+ /*
++ * In case we must use restart_block to restart a futex_wait,
++ * we encode in the 'flags' shared capability
++ */
++#define FLAGS_SHARED		0x01
++#define FLAGS_CLOCKRT		0x02
++#define FLAGS_HAS_TIMEOUT	0x04
 +
- config GENERIC_CMOS_UPDATE
- 	def_bool y
++/* for c/r */
++extern long futex_wait_restart(struct restart_block *restart);
++
++/*
+  * Futexes are matched on equal values of this key.
+  * The key type depends on whether it's a shared or private mapping.
+  * Don't rearrange members without looking at hash_futex().
+diff --git a/include/linux/poll.h b/include/linux/poll.h
+index 6673743..6c40d42 100644
+--- a/include/linux/poll.h
++++ b/include/linux/poll.h
+@@ -134,6 +134,9 @@ extern int core_sys_select(int n, fd_set __user *inp, fd_set __user *outp,
  
+ extern int poll_select_set_timeout(struct timespec *to, long sec, long nsec);
+ 
++/* used by checkpoint/restart */
++extern long do_restart_poll(struct restart_block *restart_block);
++
+ #endif /* KERNEL */
+ 
+ #endif /* _LINUX_POLL_H */
+diff --git a/include/linux/posix-timers.h b/include/linux/posix-timers.h
+index 4f71bf4..d0d6a66 100644
+--- a/include/linux/posix-timers.h
++++ b/include/linux/posix-timers.h
+@@ -101,6 +101,10 @@ int posix_cpu_timer_create(struct k_itimer *timer);
+ int posix_cpu_nsleep(const clockid_t which_clock, int flags,
+ 		     struct timespec *rqtp, struct timespec __user *rmtp);
+ long posix_cpu_nsleep_restart(struct restart_block *restart_block);
++#ifdef CONFIG_COMPAT
++long compat_nanosleep_restart(struct restart_block *restart);
++long compat_clock_nanosleep_restart(struct restart_block *restart);
++#endif
+ int posix_cpu_timer_set(struct k_itimer *timer, int flags,
+ 			struct itimerspec *new, struct itimerspec *old);
+ int posix_cpu_timer_del(struct k_itimer *timer);
+@@ -119,4 +123,6 @@ long clock_nanosleep_restart(struct restart_block *restart_block);
+ 
+ void update_rlimit_cpu(unsigned long rlim_new);
+ 
++int invalid_clockid(const clockid_t which_clock);
++
+ #endif
+diff --git a/kernel/compat.c b/kernel/compat.c
+index f6c204f..20afdba 100644
+--- a/kernel/compat.c
++++ b/kernel/compat.c
+@@ -100,7 +100,7 @@ int put_compat_timespec(const struct timespec *ts, struct compat_timespec __user
+ 			__put_user(ts->tv_nsec, &cts->tv_nsec)) ? -EFAULT : 0;
+ }
+ 
+-static long compat_nanosleep_restart(struct restart_block *restart)
++long compat_nanosleep_restart(struct restart_block *restart)
+ {
+ 	struct compat_timespec __user *rmtp;
+ 	struct timespec rmt;
+@@ -647,7 +647,7 @@ long compat_sys_clock_getres(clockid_t which_clock,
+ 	return err;
+ }
+ 
+-static long compat_clock_nanosleep_restart(struct restart_block *restart)
++long compat_clock_nanosleep_restart(struct restart_block *restart)
+ {
+ 	long err;
+ 	mm_segment_t oldfs;
+diff --git a/kernel/futex.c b/kernel/futex.c
+index e7a35f1..23419c9 100644
+--- a/kernel/futex.c
++++ b/kernel/futex.c
+@@ -1593,16 +1593,6 @@ handle_fault:
+ 	goto retry;
+ }
+ 
+-/*
+- * In case we must use restart_block to restart a futex_wait,
+- * we encode in the 'flags' shared capability
+- */
+-#define FLAGS_SHARED		0x01
+-#define FLAGS_CLOCKRT		0x02
+-#define FLAGS_HAS_TIMEOUT	0x04
+-
+-static long futex_wait_restart(struct restart_block *restart);
+-
+ /**
+  * fixup_owner() - Post lock pi_state and corner case management
+  * @uaddr:	user address of the futex
+@@ -1876,7 +1866,7 @@ out:
+ }
+ 
+ 
+-static long futex_wait_restart(struct restart_block *restart)
++long futex_wait_restart(struct restart_block *restart)
+ {
+ 	u32 __user *uaddr = (u32 __user *)restart->futex.uaddr;
+ 	int fshared = 0;
+diff --git a/kernel/posix-timers.c b/kernel/posix-timers.c
+index 4954407..86dcae4 100644
+--- a/kernel/posix-timers.c
++++ b/kernel/posix-timers.c
+@@ -211,7 +211,7 @@ static int no_nsleep(const clockid_t which_clock, int flags,
+ /*
+  * Return nonzero if we know a priori this clockid_t value is bogus.
+  */
+-static inline int invalid_clockid(const clockid_t which_clock)
++int invalid_clockid(const clockid_t which_clock)
+ {
+ 	if (which_clock < 0)	/* CPU clock, posix_cpu_* will check it */
+ 		return 0;
 -- 
 1.6.3.3
