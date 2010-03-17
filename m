@@ -1,17 +1,14 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH -mmotm 0/5] memcg: per cgroup dirty limit (v7)
-Date: Wed, 17 Mar 2010 09:34:07 -0400
-Message-ID: <20100317133407.GA9198__42892.0826096602$1268832978$gmane$org@redhat.com>
-References: <1268609202-15581-1-git-send-email-arighi@develer.com>
-	<20100315171209.GI21127@redhat.com>
-	<20100315171921.GJ21127@redhat.com>
-	<20100317115427.GR18054@balbir.in.ibm.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: [C/R v20][PATCH 01/96] eclone (1/11): Factor out code to allocate
+	pidmap page
+Date: Wed, 17 Mar 2010 11:48:12 -0400
+Message-ID: <1268840987-4400-2-git-send-email-orenl__42528.6131482155$1268841122$gmane$org@cs.columbia.edu>
+References: <1268840987-4400-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20100317115427.GR18054-SINUvgVNF2CyUtPGxGje5AC/G2K4zDHf@public.gmane.org>
+In-Reply-To: <1268840987-4400-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,66 +18,92 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Mar 17, 2010 at 05:24:28PM +0530, Balbir Singh wrote:
-> * Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> [2010-03-15 13:19:21]:
-> 
-> > On Mon, Mar 15, 2010 at 01:12:09PM -0400, Vivek Goyal wrote:
-> > > On Mon, Mar 15, 2010 at 12:26:37AM +0100, Andrea Righi wrote:
-> > > > Control the maximum amount of dirty pages a cgroup can have at any given time.
-> > > > 
-> > > > Per cgroup dirty limit is like fixing the max amount of dirty (hard to reclaim)
-> > > > page cache used by any cgroup. So, in case of multiple cgroup writers, they
-> > > > will not be able to consume more than their designated share of dirty pages and
-> > > > will be forced to perform write-out if they cross that limit.
-> > > > 
-> > > 
-> > > For me even with this version I see that group with 100M limit is getting
-> > > much more BW.
-> > > 
-> > > root cgroup
-> > > ==========
-> > > #time dd if=/dev/zero of=/root/zerofile bs=4K count=1M
-> > > 4294967296 bytes (4.3 GB) copied, 55.7979 s, 77.0 MB/s
-> > > 
-> > > real	0m56.209s
-> > > 
-> > > test1 cgroup with memory limit of 100M
-> > > ======================================
-> > > # time dd if=/dev/zero of=/root/zerofile1 bs=4K count=1M
-> > > 4294967296 bytes (4.3 GB) copied, 20.9252 s, 205 MB/s
-> > > 
-> > > real	0m21.096s
-> > > 
-> > > Note, these two jobs are not running in parallel. These are running one
-> > > after the other.
-> > > 
-> > 
-> > Ok, here is the strange part. I am seeing similar behavior even without
-> > your patches applied.
-> > 
-> > root cgroup
-> > ==========
-> > #time dd if=/dev/zero of=/root/zerofile bs=4K count=1M
-> > 4294967296 bytes (4.3 GB) copied, 56.098 s, 76.6 MB/s
-> > 
-> > real	0m56.614s
-> > 
-> > test1 cgroup with memory limit 100M
-> > ===================================
-> > # time dd if=/dev/zero of=/root/zerofile1 bs=4K count=1M
-> > 4294967296 bytes (4.3 GB) copied, 19.8097 s, 217 MB/s
-> > 
-> > real	0m19.992s
-> > 
-> 
-> This is strange, did you flish the cache between the two runs?
-> NOTE: Since the files are same, we reuse page cache from the
-> other cgroup.
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-Files are different. Note suffix "1".
+To simplify alloc_pidmap(), move code to allocate a pid map page to a
+separate function.
 
-Vivek
+Changelog[v4]:
+	- [Oren Laadan] Adapt to kernel 2.6.33-rc5
+Changelog[v3]:
+	- Earlier version of patchset called alloc_pidmap_page() from two
+	  places. But now its called from only one place. Even so, moving
+	  this code out into a separate function simplifies alloc_pidmap().
+Changelog[v2]:
+	- (Matt Helsley, Dave Hansen) Have alloc_pidmap_page() return
+	  -ENOMEM on error instead of -1.
+
+Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Reviewed-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+---
+ kernel/pid.c |   41 ++++++++++++++++++++++++++---------------
+ 1 files changed, 26 insertions(+), 15 deletions(-)
+
+diff --git a/kernel/pid.c b/kernel/pid.c
+index 2e17c9c..39292e6 100644
+--- a/kernel/pid.c
++++ b/kernel/pid.c
+@@ -122,6 +122,30 @@ static void free_pidmap(struct upid *upid)
+ 	atomic_inc(&map->nr_free);
+ }
+ 
++static int alloc_pidmap_page(struct pidmap *map)
++{
++	void *page;
++
++	if (likely(map->page))
++		return 0;
++
++	page = kzalloc(PAGE_SIZE, GFP_KERNEL);
++	/*
++	 * Free the page if someone raced with us installing it:
++	 */
++	spin_lock_irq(&pidmap_lock);
++	if (!map->page) {
++		map->page = page;
++		page = NULL;
++	}
++	spin_unlock_irq(&pidmap_lock);
++	kfree(page);
++	if (unlikely(!map->page))
++		return -1;
++
++	return 0;
++}
++
+ static int alloc_pidmap(struct pid_namespace *pid_ns)
+ {
+ 	int i, offset, max_scan, pid, last = pid_ns->last_pid;
+@@ -134,22 +158,9 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
+ 	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
+ 	max_scan = (pid_max + BITS_PER_PAGE - 1)/BITS_PER_PAGE - !offset;
+ 	for (i = 0; i <= max_scan; ++i) {
+-		if (unlikely(!map->page)) {
+-			void *page = kzalloc(PAGE_SIZE, GFP_KERNEL);
+-			/*
+-			 * Free the page if someone raced with us
+-			 * installing it:
+-			 */
+-			spin_lock_irq(&pidmap_lock);
+-			if (!map->page) {
+-				map->page = page;
+-				page = NULL;
+-			}
+-			spin_unlock_irq(&pidmap_lock);
+-			kfree(page);
+-			if (unlikely(!map->page))
++		if (unlikely(!map->page))
++			if (alloc_pidmap_page(map) < 0)
+ 				break;
+-		}
+ 		if (likely(atomic_read(&map->nr_free))) {
+ 			do {
+ 				if (!test_and_set_bit(offset, map->page)) {
+-- 
+1.6.3.3
