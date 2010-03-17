@@ -1,8 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 68/96] c/r: [signal 1/4] blocked and template for
-	shared signals
-Date: Wed, 17 Mar 2010 12:08:56 -0400
-Message-ID: <1268842164-5590-69-git-send-email-orenl__1987.44642916626$1268850471$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 59/96] c/r: support share-memory sysv-ipc
+Date: Wed, 17 Mar 2010 12:08:47 -0400
+Message-ID: <1268842164-5590-60-git-send-email-orenl__4339.84392225302$1268850476$gmane$org@cs.columbia.edu>
 References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-2-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-3-git-send-email-orenl@cs.columbia.edu>
@@ -62,20 +61,11 @@ References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-57-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-58-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-59-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-60-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-61-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-62-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-63-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-64-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-65-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-66-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-67-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-68-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268842164-5590-68-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1268842164-5590-59-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -89,515 +79,601 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This patch adds checkpoint/restart of blocked signals mask
-(t->blocked) and a template for shared signals (t->signal).
+Checkpoint of sysvipc shared memory is performed in two steps: first,
+the entire ipc namespace is dumped as a whole by iterating through all
+shm objects and dumping the contents of each one. The shmem inode is
+registered in the objhash. Second, for each vma that refers to ipc
+shared memory we find the inode in the objhash, and save the objref.
 
-Because t->signal sharing is tied to threads, we ensure proper sharing
-of t->signal (struct signal_struct) for threads only.
+(If we find a new inode, that indicates that the ipc namespace is not
+entirely frozen and someone must have manipulated it since step 1).
 
-Access to t->signal is protected by locking t->sighand->lock.
-Therefore, the usual checkpoint_obj() invoking the callback
-checkpoint_signal(ctx, signal) is insufficient because the task
-pointer is unavailable.
+Handling of shm objects that have been deleted (via IPC_RMID) is left
+to a later patch in this series.
 
-Instead, handling of t->signal sharing is explicit using helpers
-like ckpt_obj_lookup_add(), ckpt_obj_fetch() and ckpt_obj_insert().
-The actual state is saved (if needed) _after_ the task_objs data.
-
-To prevent tasks from handling restored signals during restart,
-set their mask to block all signals and only restore the original
-mask at the very end (before the last sync point).
-
-Introduce per-task pointer 'ckpt_data' to temporary store data
-for restore actions that are deferred to the end (like restoring
-the signal block mask).
-
-Changelog [ckpt-v19]:
-  - Use task->saves_sigmask and drop task->checkpoint_data
-  - [Serge Hallyn] Handle saved_sigmask at checkpoint
-
-Changelog [ckpt-v19-rc1]:
-  - Defer restore of blocked signals mask during restart
+Changelog[v20]:
+    Fix "scheduling in atomic" while restoring ipc shm
+Changelog[v19-rc3]:
+  - Rebase to kernel 2.6.33
+Changelog[v19-rc1]:
   - [Matt Helsley] Add cpp definitions for enums
+Changelog[v18]:
+  - Collect files used by shm objects
+  - Use file instead of inode as shared object during checkpoint
+Changelog[v17]:
+  - Restore objects in the right namespace
+  - Properly initialize ctx->deferqueue
+  - Fix compilation with CONFIG_CHECKPOINT=n
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Acked-by: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- arch/s390/kernel/checkpoint.c  |    2 -
- arch/s390/kernel/signal.c      |    5 ++
- arch/x86/kernel/signal.c       |    5 ++
- checkpoint/objhash.c           |    7 +++
- checkpoint/process.c           |   71 +++++++++++++++++++++++++-
- checkpoint/restart.c           |   13 +++++
- checkpoint/signal.c            |  111 ++++++++++++++++++++++++++++++++++++++++
- include/linux/checkpoint.h     |    8 +++
- include/linux/checkpoint_hdr.h |   16 ++++++
- include/linux/signal.h         |    3 +
- kernel/fork.c                  |    3 +
- 11 files changed, 241 insertions(+), 3 deletions(-)
+ include/linux/checkpoint_hdr.h |   21 +++
+ ipc/Makefile                   |    3 +-
+ ipc/checkpoint.c               |    2 +-
+ ipc/checkpoint_msg.c           |  380 ++++++++++++++++++++++++++++++++++++++++
+ ipc/msg.c                      |   10 +-
+ ipc/msgutil.c                  |    8 -
+ ipc/util.h                     |   13 ++
+ 7 files changed, 420 insertions(+), 17 deletions(-)
+ create mode 100644 ipc/checkpoint_msg.c
 
-diff --git a/arch/s390/kernel/checkpoint.c b/arch/s390/kernel/checkpoint.c
-index 79f0a2f..894bca3 100644
---- a/arch/s390/kernel/checkpoint.c
-+++ b/arch/s390/kernel/checkpoint.c
-@@ -203,8 +203,6 @@ int restore_thread(struct ckpt_ctx *ctx)
- 	if (h->thread_info_flags & _TIF_SIG_RESTARTBLOCK)
- 		set_thread_flag(TIF_SIG_RESTARTBLOCK);
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 1b2ffef..07e918e 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -114,6 +114,8 @@ enum {
+ #define CKPT_HDR_IPC_SHM CKPT_HDR_IPC_SHM
+ 	CKPT_HDR_IPC_MSG,
+ #define CKPT_HDR_IPC_MSG CKPT_HDR_IPC_MSG
++	CKPT_HDR_IPC_MSG_MSG,
++#define CKPT_HDR_IPC_MSG_MSG CKPT_HDR_IPC_MSG_MSG
+ 	CKPT_HDR_IPC_SEM,
+ #define CKPT_HDR_IPC_SEM CKPT_HDR_IPC_SEM
  
--	/* will have to handle TIF_RESTORE_SIGMASK as well */
--
- 	ckpt_hdr_put(ctx, h);
+@@ -473,6 +475,25 @@ struct ckpt_hdr_ipc_shm {
+ 	__u32 objref;
+ } __attribute__((aligned(8)));
  
- 	return 0;
-diff --git a/arch/s390/kernel/signal.c b/arch/s390/kernel/signal.c
-index 83425b1..41e03d3 100644
---- a/arch/s390/kernel/signal.c
-+++ b/arch/s390/kernel/signal.c
-@@ -540,6 +540,11 @@ void do_signal(struct pt_regs *regs)
- 	}
- }
++struct ckpt_hdr_ipc_msg {
++	struct ckpt_hdr h;
++	struct ckpt_hdr_ipc_perms perms;
++	__u64 q_stime;
++	__u64 q_rtime;
++	__u64 q_ctime;
++	__u64 q_cbytes;
++	__u64 q_qnum;
++	__u64 q_qbytes;
++	__s32 q_lspid;
++	__s32 q_lrpid;
++} __attribute__((aligned(8)));
++
++struct ckpt_hdr_ipc_msg_msg {
++	struct ckpt_hdr h;
++	__s64 m_type;
++	__u32 m_ts;
++} __attribute__((aligned(8)));
++
  
-+int task_has_saved_sigmask(struct task_struct *task)
+ #define CKPT_TST_OVERFLOW_16(a, b) \
+ 	((sizeof(a) > sizeof(b)) && ((a) > SHORT_MAX))
+diff --git a/ipc/Makefile b/ipc/Makefile
+index db4b076..71a257f 100644
+--- a/ipc/Makefile
++++ b/ipc/Makefile
+@@ -9,4 +9,5 @@ obj_mq-$(CONFIG_COMPAT) += compat_mq.o
+ obj-$(CONFIG_POSIX_MQUEUE) += mqueue.o msgutil.o $(obj_mq-y)
+ obj-$(CONFIG_IPC_NS) += namespace.o
+ obj-$(CONFIG_POSIX_MQUEUE_SYSCTL) += mq_sysctl.o
+-obj-$(CONFIG_SYSVIPC_CHECKPOINT) += checkpoint.o checkpoint_shm.o
++obj-$(CONFIG_SYSVIPC_CHECKPOINT) += checkpoint.o \
++		checkpoint_shm.o checkpoint_msg.o
+diff --git a/ipc/checkpoint.c b/ipc/checkpoint.c
+index 7a3a9ca..6b1ec0b 100644
+--- a/ipc/checkpoint.c
++++ b/ipc/checkpoint.c
+@@ -130,11 +130,11 @@ static int do_checkpoint_ipc_ns(struct ckpt_ctx *ctx,
+ 
+ 	ret = checkpoint_ipc_any(ctx, ipc_ns, IPC_SHM_IDS,
+ 				 CKPT_HDR_IPC_SHM, checkpoint_ipc_shm);
+-#if 0 /* NEXT FEW PATCHES */
+ 	if (ret < 0)
+ 		return ret;
+ 	ret = checkpoint_ipc_any(ctx, ipc_ns, IPC_MSG_IDS,
+ 				 CKPT_HDR_IPC_MSG, checkpoint_ipc_msg);
++#if 0 /* NEXT FEW PATCHES */
+ 	if (ret < 0)
+ 		return ret;
+ 	ret = checkpoint_ipc_any(ctx, ipc_ns, IPC_SEM_IDS,
+diff --git a/ipc/checkpoint_msg.c b/ipc/checkpoint_msg.c
+new file mode 100644
+index 0000000..16ebbb5
+--- /dev/null
++++ b/ipc/checkpoint_msg.c
+@@ -0,0 +1,380 @@
++/*
++ *  Checkpoint/restart - dump state of sysvipc msg
++ *
++ *  Copyright (C) 2009 Oren Laadan
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ */
++
++/* default debug level for output */
++#define CKPT_DFLAG  CKPT_DIPC
++
++#include <linux/mm.h>
++#include <linux/msg.h>
++#include <linux/rwsem.h>
++#include <linux/sched.h>
++#include <linux/syscalls.h>
++#include <linux/nsproxy.h>
++#include <linux/security.h>
++#include <linux/ipc_namespace.h>
++
++#include "util.h"
++
++#include <linux/checkpoint.h>
++#include <linux/checkpoint_hdr.h>
++
++/************************************************************************
++ * ipc checkpoint
++ */
++
++/* called with the msgids->rw_mutex is read-held */
++static int fill_ipc_msg_hdr(struct ckpt_ctx *ctx,
++			    struct ckpt_hdr_ipc_msg *h,
++			    struct msg_queue *msq)
 +{
-+	return !!(test_tsk_thread_flag(task, TIF_RESTORE_SIGMASK));
-+}
++	int ret;
 +
- void do_notify_resume(struct pt_regs *regs)
- {
- 	clear_thread_flag(TIF_NOTIFY_RESUME);
-diff --git a/arch/x86/kernel/signal.c b/arch/x86/kernel/signal.c
-index 4fd173c..eb63d59 100644
---- a/arch/x86/kernel/signal.c
-+++ b/arch/x86/kernel/signal.c
-@@ -831,6 +831,11 @@ static void do_signal(struct pt_regs *regs)
- 	}
- }
- 
-+int task_has_saved_sigmask(struct task_struct *task)
-+{
-+	return !!(task_thread_info(task)->status & TS_RESTORE_SIGMASK);
-+}
-+
- /*
-  * notification of userspace execution resumption
-  * - triggered by the TIF_WORK_MASK flags
-diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
-index 858613e..ea2f063 100644
---- a/checkpoint/objhash.c
-+++ b/checkpoint/objhash.c
-@@ -289,6 +289,13 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
- 		.checkpoint = checkpoint_sighand,
- 		.restore = restore_sighand,
- 	},
-+	/* signal object */
-+	{
-+		.obj_name = "SIGNAL",
-+		.obj_type = CKPT_OBJ_SIGNAL,
-+		.ref_drop = obj_no_drop,
-+		.ref_grab = obj_no_grab,
-+	},
- 	/* ns object */
- 	{
- 		.obj_name = "NSPROXY",
-diff --git a/checkpoint/process.c b/checkpoint/process.c
-index 71eb9a5..c5e9357 100644
---- a/checkpoint/process.c
-+++ b/checkpoint/process.c
-@@ -182,7 +182,8 @@ static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
- 	int files_objref;
- 	int mm_objref;
- 	int sighand_objref;
--	int ret;
-+	int signal_objref;
-+	int first, ret;
- 
- 	/*
- 	 * Shared objects may have dependencies among them: task->mm
-@@ -227,14 +228,38 @@ static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
- 		return sighand_objref;
- 	}
- 
-+	/*
-+	 * Handle t->signal differently because the checkpoint method
-+	 * for t->signal needs access to owning task_struct to access
-+	 * t->sighand (to lock/unlock). First explicitly determine if
-+	 * need to save, and only below invoke checkpoint_obj_signal()
-+	 * if needed.
-+	 */
-+	signal_objref = ckpt_obj_lookup_add(ctx, t->signal,
-+					    CKPT_OBJ_SIGNAL, &first);
-+	ckpt_debug("signal: objref %d\n", signal_objref);
-+	if (signal_objref < 0) {
-+		ckpt_err(ctx, signal_objref, "%(T)process signals\n");
-+		return signal_objref;
-+	}
-+
- 	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_TASK_OBJS);
- 	if (!h)
- 		return -ENOMEM;
- 	h->files_objref = files_objref;
- 	h->mm_objref = mm_objref;
- 	h->sighand_objref = sighand_objref;
-+	h->signal_objref = signal_objref;
- 	ret = ckpt_write_obj(ctx, &h->h);
- 	ckpt_hdr_put(ctx, h);
++	ret = checkpoint_fill_ipc_perms(&h->perms, &msq->q_perm);
 +	if (ret < 0)
 +		return ret;
 +
-+	/* actually save t->signal, if need to */
-+	if (first)
-+		ret = checkpoint_obj_signal(ctx, t);
-+	if (ret < 0)
-+		ckpt_err(ctx, ret, "%(T)signal_struct\n");
- 
- 	return ret;
- }
-@@ -379,6 +404,10 @@ int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
- 		goto out;
- 	ret = checkpoint_task_objs(ctx, t);
- 	ckpt_debug("objs %d\n", ret);
-+	if (ret < 0)
-+		goto out;
-+	ret = checkpoint_task_signal(ctx, t);
-+	ckpt_debug("task-signal %d\n", ret);
-  out:
- 	ctx->tsk = NULL;
- 	return ret;
-@@ -567,6 +596,11 @@ static int restore_task_objs(struct ckpt_ctx *ctx)
- 
- 	ret = restore_obj_sighand(ctx, h->sighand_objref);
- 	ckpt_debug("sighand: ret %d (%p)\n", ret, current->sighand);
-+	if (ret < 0)
-+		goto out;
++	ipc_lock_by_ptr(&msq->q_perm);
++	h->q_stime = msq->q_stime;
++	h->q_rtime = msq->q_rtime;
++	h->q_ctime = msq->q_ctime;
++	h->q_cbytes = msq->q_cbytes;
++	h->q_qnum = msq->q_qnum;
++	h->q_qbytes = msq->q_qbytes;
++	h->q_lspid = msq->q_lspid;
++	h->q_lrpid = msq->q_lrpid;
++	ipc_unlock(&msq->q_perm);
 +
-+	ret = restore_obj_signal(ctx, h->signal_objref);
-+	ckpt_debug("signal: ret %d (%p)\n", ret, current->signal);
-  out:
- 	ckpt_hdr_put(ctx, h);
- 	return ret;
-@@ -704,6 +738,37 @@ int restore_restart_block(struct ckpt_ctx *ctx)
- 	return ret;
- }
- 
-+/* prepare the task for restore */
-+int pre_restore_task(void)
-+{
-+	sigset_t sigset;
-+
-+	/*
-+	 * Block task's signals to avoid interruptions due to signals,
-+	 * say, from restored timers, file descriptors etc. Signals
-+	 * will be unblocked when restore completes.
-+	 *
-+	 * NOTE: tasks with file descriptors set to send a SIGKILL as
-+	 * i/o notification may fail the restart if a signal occurs
-+	 * before that task completed its restore. FIX ?
-+	 */
-+	current->saved_sigmask = current->blocked;
-+
-+	sigfillset(&sigset);
-+	sigdelset(&sigset, SIGKILL);
-+	sigdelset(&sigset, SIGSTOP);
-+	sigprocmask(SIG_SETMASK, &sigset, NULL);
++	ckpt_debug("msg: lspid %d rspid %d qnum %lld qbytes %lld\n",
++		 h->q_lspid, h->q_lrpid, h->q_qnum, h->q_qbytes);
 +
 +	return 0;
 +}
 +
-+/* finish up task restore */
-+void post_restore_task(void)
++static int checkpoint_msg_contents(struct ckpt_ctx *ctx, struct msg_msg *msg)
 +{
-+	/* only now is it safe to unblock the restored task's signals */
-+	sigprocmask(SIG_SETMASK, &current->saved_sigmask, NULL);
-+}
-+
- /* read the entire state of the current task */
- int restore_task(struct ckpt_ctx *ctx)
- {
-@@ -736,6 +801,10 @@ int restore_task(struct ckpt_ctx *ctx)
- 		goto out;
- 	ret = restore_creds(ctx);
- 	ckpt_debug("creds: ret %d\n", ret);
-+	if (ret < 0)
-+		goto out;
-+	ret = restore_task_signal(ctx);
-+	ckpt_debug("signal: ret %d\n", ret);
-  out:
- 	return ret;
- }
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index 34d3e64..026911e 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -933,6 +933,10 @@ static int do_restore_task(void)
- 
- 	restore_debug_running(ctx);
- 
-+	ret = pre_restore_task();
-+	if (ret < 0)
-+		goto out;
-+
- 	zombie = restore_task(ctx);
- 	if (zombie < 0) {
- 		ret = zombie;
-@@ -946,6 +950,7 @@ static int do_restore_task(void)
- 	 */
- 	if (zombie) {
- 		restore_debug_exit(ctx);
-+		post_restore_task();
- 		ckpt_ctx_put(ctx);
- 		do_exit(current->exit_code);
- 	}
-@@ -957,6 +962,7 @@ static int do_restore_task(void)
- 	if (ret < 0)
- 		ckpt_err(ctx, ret, "task restart failed\n");
- 
-+	post_restore_task();
- 	current->flags &= ~PF_RESTARTING;
- 	clear_task_ctx(current);
- 	ckpt_ctx_put(ctx);
-@@ -1164,6 +1170,10 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
- 	 */
- 
- 	if (ctx->uflags & RESTART_TASKSELF) {
-+		ret = pre_restore_task();
-+		ckpt_debug("pre restore task: %d\n", ret);
-+		if (ret < 0)
-+			goto out;
- 		ret = restore_task(ctx);
- 		ckpt_debug("restore task: %d\n", ret);
- 		if (ret < 0)
-@@ -1196,6 +1206,9 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
- 		ckpt_debug("freezing restart tasks ... %d\n", ret);
- 	}
-  out:
-+	if (ctx->uflags & RESTART_TASKSELF)
-+		post_restore_task();
-+
- 	restore_debug_error(ctx, ret);
- 	if (ret < 0)
- 		ckpt_err(ctx, ret, "restart failed (coordinator)\n");
-diff --git a/checkpoint/signal.c b/checkpoint/signal.c
-index 1aadadd..fedb8f8 100644
---- a/checkpoint/signal.c
-+++ b/checkpoint/signal.c
-@@ -161,3 +161,114 @@ int restore_obj_sighand(struct ckpt_ctx *ctx, int sighand_objref)
- 
- 	return 0;
- }
-+
-+/***********************************************************************
-+ * signal checkpoint/restart
-+ */
-+
-+static int checkpoint_signal(struct ckpt_ctx *ctx, struct task_struct *t)
-+{
-+	struct ckpt_hdr_signal *h;
++	struct ckpt_hdr_ipc_msg_msg *h;
++	struct msg_msgseg *seg;
++	int total, len;
 +	int ret;
 +
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_SIGNAL);
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_IPC_MSG_MSG);
 +	if (!h)
 +		return -ENOMEM;
 +
-+	/* fill in later */
++	h->m_type = msg->m_type;
++	h->m_ts = msg->m_ts;
 +
 +	ret = ckpt_write_obj(ctx, &h->h);
 +	ckpt_hdr_put(ctx, h);
-+	return ret;
-+}
++	if (ret < 0)
++		return ret;
 +
-+int checkpoint_obj_signal(struct ckpt_ctx *ctx, struct task_struct *t)
-+{
-+	BUG_ON(t->flags & PF_EXITING);
-+	return checkpoint_signal(ctx, t);
-+}
++	total = msg->m_ts;
++	len = min(total, (int) DATALEN_MSG);
++	ret = ckpt_write_buffer(ctx, (msg + 1), len);
++	if (ret < 0)
++		return ret;
 +
-+static int restore_signal(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_hdr_signal *h;
++	seg = msg->next;
++	total -= len;
 +
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SIGNAL);
-+	if (IS_ERR(h))
-+		return PTR_ERR(h);
-+
-+	/* fill in later */
-+
-+	ckpt_hdr_put(ctx, h);
-+	return 0;
-+}
-+
-+int restore_obj_signal(struct ckpt_ctx *ctx, int signal_objref)
-+{
-+	struct signal_struct *signal;
-+	int ret = 0;
-+
-+	signal = ckpt_obj_fetch(ctx, signal_objref, CKPT_OBJ_SIGNAL);
-+	if (!IS_ERR(signal)) {
-+		/*
-+		 * signal_struct is already shared properly as it is
-+		 * tied to thread groups. Since thread relationships
-+		 * are already restore now, t->signal must match.
-+		 */
-+		if (signal != current->signal)
-+			ret = -EINVAL;
-+	} else if (PTR_ERR(signal) == -EINVAL) {
-+		/* first timer: add to hash and restore our t->signal */
-+		ret = ckpt_obj_insert(ctx, current->signal,
-+				      signal_objref, CKPT_OBJ_SIGNAL);
-+		if (ret >= 0)
-+			ret = restore_signal(ctx);
-+	} else {
-+		ret = PTR_ERR(signal);
++	while (total) {
++		len = min(total, (int) DATALEN_SEG);
++		ret = ckpt_write_buffer(ctx, (seg + 1), len);
++		if (ret < 0)
++			break;
++		seg = seg->next;
++		total -= len;
 +	}
 +
 +	return ret;
 +}
 +
-+int checkpoint_task_signal(struct ckpt_ctx *ctx, struct task_struct *t)
++static int checkpoint_msg_queue(struct ckpt_ctx *ctx, struct msg_queue *msq)
 +{
-+	struct ckpt_hdr_signal_task *h;
++	struct list_head messages;
++	struct msg_msg *msg;
++	int ret = -EBUSY;
++
++	/*
++	 * Scanning the msq requires the lock, but then we can't write
++	 * data out from inside. Instead, we grab the lock, remove all
++	 * messages to our own list, drop the lock, write the messages,
++	 * and finally re-attach the them to the msq with the lock taken.
++	 */
++	ipc_lock_by_ptr(&msq->q_perm);
++	if (!list_empty(&msq->q_receivers))
++		goto unlock;
++	if (!list_empty(&msq->q_senders))
++		goto unlock;
++	if (list_empty(&msq->q_messages))
++		goto unlock;
++	/* temporarily take out all messages */
++	INIT_LIST_HEAD(&messages);
++	list_splice_init(&msq->q_messages, &messages);
++ unlock:
++	ipc_unlock(&msq->q_perm);
++
++	list_for_each_entry(msg, &messages, m_list) {
++		ret = checkpoint_msg_contents(ctx, msg);
++		if (ret < 0)
++			break;
++	}
++
++	/* put all the messages back in */
++	ipc_lock_by_ptr(&msq->q_perm);
++	list_splice(&messages, &msq->q_messages);
++	ipc_unlock(&msq->q_perm);
++
++	return ret;
++}
++
++/* called with the msgids->rw_mutex is read-held */
++int checkpoint_ipc_msg(int id, void *p, void *data)
++{
++	struct ckpt_hdr_ipc_msg *h;
++	struct ckpt_ctx *ctx = (struct ckpt_ctx *) data;
++	struct kern_ipc_perm *perm = (struct kern_ipc_perm *) p;
++	struct msg_queue *msq;
 +	int ret;
 +
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_SIGNAL_TASK);
++	msq = container_of(perm, struct msg_queue, q_perm);
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_IPC_MSG);
 +	if (!h)
 +		return -ENOMEM;
 +
-+	if (task_has_saved_sigmask(t))
-+		fill_sigset(&h->blocked, &t->saved_sigmask);
-+	else
-+		fill_sigset(&h->blocked, &t->blocked);
++	ret = fill_ipc_msg_hdr(ctx, h, msq);
++	if (ret < 0)
++		goto out;
 +
 +	ret = ckpt_write_obj(ctx, &h->h);
++	if (ret < 0)
++		goto out;
++
++	if (h->q_qnum)
++		ret = checkpoint_msg_queue(ctx, msq);
++ out:
 +	ckpt_hdr_put(ctx, h);
 +	return ret;
 +}
 +
-+int restore_task_signal(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_hdr_signal_task *h;
-+	sigset_t blocked;
 +
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SIGNAL_TASK);
++/************************************************************************
++ * ipc restart
++ */
++
++/* called with the msgids->rw_mutex is write-held */
++static int load_ipc_msg_hdr(struct ckpt_ctx *ctx,
++			    struct ckpt_hdr_ipc_msg *h,
++			    struct msg_queue *msq)
++{
++	int ret = 0;
++
++	ret = restore_load_ipc_perms(&h->perms, &msq->q_perm);
++	if (ret < 0)
++		return ret;
++
++	ckpt_debug("msq: lspid %d lrpid %d qnum %lld qbytes %lld\n",
++		 h->q_lspid, h->q_lrpid, h->q_qnum, h->q_qbytes);
++
++	if (h->q_lspid < 0 || h->q_lrpid < 0)
++		return -EINVAL;
++
++	msq->q_stime = h->q_stime;
++	msq->q_rtime = h->q_rtime;
++	msq->q_ctime = h->q_ctime;
++	msq->q_lspid = h->q_lspid;
++	msq->q_lrpid = h->q_lrpid;
++
++	return 0;
++}
++
++static struct msg_msg *restore_msg_contents_one(struct ckpt_ctx *ctx, int *clen)
++{
++	struct ckpt_hdr_ipc_msg_msg *h;
++	struct msg_msg *msg = NULL;
++	struct msg_msgseg *seg, **pseg;
++	int total, len;
++	int ret;
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_IPC_MSG_MSG);
++	if (IS_ERR(h))
++		return (struct msg_msg *) h;
++
++	ret = -EINVAL;
++	if (h->m_type < 1)
++		goto out;
++	if (h->m_ts > current->nsproxy->ipc_ns->msg_ctlmax)
++		goto out;
++
++	total = h->m_ts;
++	len = min(total, (int) DATALEN_MSG);
++	msg = kmalloc(sizeof(*msg) + len, GFP_KERNEL);
++	if (!msg) {
++		ret = -ENOMEM;
++		goto out;
++	}
++	msg->next = NULL;
++	pseg = &msg->next;
++
++	ret = _ckpt_read_buffer(ctx, (msg + 1), len);
++	if (ret < 0)
++		goto out;
++
++	total -= len;
++	while (total) {
++		len = min(total, (int) DATALEN_SEG);
++		seg = kmalloc(sizeof(*seg) + len, GFP_KERNEL);
++		if (!seg) {
++			ret = -ENOMEM;
++			goto out;
++		}
++		seg->next = NULL;
++		*pseg = seg;
++		pseg = &seg->next;
++
++		ret = _ckpt_read_buffer(ctx, (seg + 1), len);
++		if (ret < 0)
++			goto out;
++		total -= len;
++	}
++
++	msg->m_type = h->m_type;
++	msg->m_ts = h->m_ts;
++	*clen = h->m_ts;
++	ret = security_msg_msg_alloc(msg);
++ out:
++	if (ret < 0 && msg) {
++		free_msg(msg);
++		msg = ERR_PTR(ret);
++	}
++	ckpt_hdr_put(ctx, h);
++	return msg;
++}
++
++static inline void free_msg_list(struct list_head *queue)
++{
++	struct msg_msg *msg, *tmp;
++
++	list_for_each_entry_safe(msg, tmp, queue, m_list)
++		free_msg(msg);
++}
++
++static int restore_msg_contents(struct ckpt_ctx *ctx, struct list_head *queue,
++				unsigned long qnum, unsigned long *cbytes)
++{
++	struct msg_msg *msg;
++	int clen = 0;
++	int ret = 0;
++
++	INIT_LIST_HEAD(queue);
++
++	*cbytes = 0;
++	while (qnum--) {
++		msg = restore_msg_contents_one(ctx, &clen);
++		if (IS_ERR(msg))
++			goto fail;
++		list_add_tail(&msg->m_list, queue);
++		*cbytes += clen;
++	}
++	return 0;
++ fail:
++	ret = PTR_ERR(msg);
++	free_msg_list(queue);
++	return ret;
++}
++
++int restore_ipc_msg(struct ckpt_ctx *ctx, struct ipc_namespace *ns)
++{
++	struct ckpt_hdr_ipc_msg *h;
++	struct kern_ipc_perm *ipc;
++	struct msg_queue *msq;
++	struct ipc_ids *msg_ids = &ns->ids[IPC_MSG_IDS];
++	struct list_head messages;
++	unsigned long cbytes;
++	int msgflag;
++	int ret;
++
++	INIT_LIST_HEAD(&messages);
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_IPC_MSG);
 +	if (IS_ERR(h))
 +		return PTR_ERR(h);
 +
-+	load_sigset(&blocked, &h->blocked);
-+	/* silently remove SIGKILL, SIGSTOP */
-+	sigdelset(&blocked, SIGKILL);
-+	sigdelset(&blocked, SIGSTOP);
++	ret = -EINVAL;
++	if (h->perms.id < 0)
++		goto out;
++
++	/* read queued messages into temporary queue */
++	ret = restore_msg_contents(ctx, &messages, h->q_qnum, &cbytes);
++	if (ret < 0)
++		goto out;
++
++	ret = -EINVAL;
++	if (h->q_cbytes != cbytes)
++		goto out;
++
++	/* restore the message queue */
++	msgflag = h->perms.mode | IPC_CREAT | IPC_EXCL;
++	ckpt_debug("msg: do_msgget key %d flag %#x id %d\n",
++		 h->perms.key, msgflag, h->perms.id);
++	ret = do_msgget(ns, h->perms.key, msgflag, h->perms.id);
++	ckpt_debug("msg: do_msgget ret %d\n", ret);
++	if (ret < 0)
++		goto out;
++
++	down_write(&msg_ids->rw_mutex);
 +
 +	/*
-+	 * Unblocking signals now may affect us in wait_task_sync().
-+	 * Instead, save blocked mask in current->saved_sigmaks for
-+	 * post_restore_task().
++	 * We are the sole owners/users of this brand new ipc-ns, so:
++	 *
++	 * 1) The msgid could not have been deleted between its creation
++	 *   and taking the rw_mutex above.
++	 *
++	 * 2) No unauthorized task will have attempted to gain access
++	 *   to it either, not even until we restore the security bit
++	 *   further below, so the theoretical security race is void.
++	 *
++	 * If/when we allow to restore the ipc state within the parent's
++	 * ipc-ns, we will need to re-examine this.
 +	 */
-+	current->saved_sigmask = blocked;
++	ipc = ipc_lock(msg_ids, h->perms.id);
++	BUG_ON(IS_ERR(ipc));
 +
++	msq = container_of(ipc, struct msg_queue, q_perm);
++	BUG_ON(!list_empty(&msq->q_messages));
++
++	/* attach queued messages we read before */
++	list_splice_init(&messages, &msq->q_messages);
++
++	/* adjust msq and namespace statistics */
++	atomic_add(h->q_cbytes, &ns->msg_bytes);
++	atomic_add(h->q_qnum, &ns->msg_hdrs);
++	msq->q_cbytes = h->q_cbytes;
++	msq->q_qbytes = h->q_qbytes;
++	msq->q_qnum = h->q_qnum;
++
++	/* this is safe because no unauthorized access is possible */
++	ipc_unlock(ipc);
++
++	ret = load_ipc_msg_hdr(ctx, h, msq);
++	if (ret < 0) {
++		ckpt_debug("msq: need to remove (%d)\n", ret);
++		ipc_lock_by_ptr(&msq->q_perm);
++		freeque(ns, ipc);
++		ipc_unlock(ipc);
++	}
++	up_write(&msg_ids->rw_mutex);
++ out:
++	free_msg_list(&messages);  /* no-op if all ok, else cleanup msgs */
 +	ckpt_hdr_put(ctx, h);
-+	return 0;
++	return ret;
 +}
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 5a26f8b..2fe2a9d 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -152,6 +152,8 @@ extern int ckpt_activate_next(struct ckpt_ctx *ctx);
- extern int ckpt_collect_task(struct ckpt_ctx *ctx, struct task_struct *t);
- extern int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t);
- extern int restore_task(struct ckpt_ctx *ctx);
-+extern int pre_restore_task(void);
-+extern void post_restore_task(void);
+diff --git a/ipc/msg.c b/ipc/msg.c
+index 9230e7c..7711c77 100644
+--- a/ipc/msg.c
++++ b/ipc/msg.c
+@@ -72,7 +72,6 @@ struct msg_sender {
  
- /* arch hooks */
- extern int checkpoint_write_header_arch(struct ckpt_ctx *ctx);
-@@ -275,6 +277,12 @@ extern int ckpt_collect_sighand(struct ckpt_ctx *ctx, struct task_struct *t);
- extern int checkpoint_sighand(struct ckpt_ctx *ctx, void *ptr);
- extern void *restore_sighand(struct ckpt_ctx *ctx);
+ #define msg_unlock(msq)		ipc_unlock(&(msq)->q_perm)
  
-+extern int checkpoint_obj_signal(struct ckpt_ctx *ctx, struct task_struct *t);
-+extern int restore_obj_signal(struct ckpt_ctx *ctx, int signal_objref);
-+
-+extern int checkpoint_task_signal(struct ckpt_ctx *ctx, struct task_struct *t);
-+extern int restore_task_signal(struct ckpt_ctx *ctx);
-+
- static inline int ckpt_validate_errno(int errno)
+-static void freeque(struct ipc_namespace *, struct kern_ipc_perm *);
+ static int newque(struct ipc_namespace *, struct ipc_params *, int);
+ #ifdef CONFIG_PROC_FS
+ static int sysvipc_msg_proc_show(struct seq_file *s, void *it);
+@@ -279,7 +278,7 @@ static void expunge_all(struct msg_queue *msq, int res)
+  * msg_ids.rw_mutex (writer) and the spinlock for this message queue are held
+  * before freeque() is called. msg_ids.rw_mutex remains locked on exit.
+  */
+-static void freeque(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
++void freeque(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
  {
- 	return (errno >= 0) && (errno < MAX_ERRNO);
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 225fd1f..535ea93 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -133,6 +133,10 @@ enum {
- 
- 	CKPT_HDR_SIGHAND = 601,
- #define CKPT_HDR_SIGHAND CKPT_HDR_SIGHAND
-+	CKPT_HDR_SIGNAL,
-+#define CKPT_HDR_SIGNAL CKPT_HDR_SIGNAL
-+	CKPT_HDR_SIGNAL_TASK,
-+#define CKPT_HDR_SIGNAL_TASK CKPT_HDR_SIGNAL_TASK
- 
- 	CKPT_HDR_TAIL = 9001,
- #define CKPT_HDR_TAIL CKPT_HDR_TAIL
-@@ -173,6 +177,8 @@ enum obj_type {
- #define CKPT_OBJ_MM CKPT_OBJ_MM
- 	CKPT_OBJ_SIGHAND,
- #define CKPT_OBJ_SIGHAND CKPT_OBJ_SIGHAND
-+	CKPT_OBJ_SIGNAL,
-+#define CKPT_OBJ_SIGNAL CKPT_OBJ_SIGNAL
- 	CKPT_OBJ_NS,
- #define CKPT_OBJ_NS CKPT_OBJ_NS
- 	CKPT_OBJ_UTS_NS,
-@@ -373,6 +379,7 @@ struct ckpt_hdr_task_objs {
- 	__s32 files_objref;
- 	__s32 mm_objref;
- 	__s32 sighand_objref;
-+	__s32 signal_objref;
- } __attribute__((aligned(8)));
- 
- /* restart blocks */
-@@ -531,6 +538,15 @@ struct ckpt_hdr_sighand {
- 	struct ckpt_sigaction action[0];
- } __attribute__((aligned(8)));
- 
-+struct ckpt_hdr_signal {
-+	struct ckpt_hdr h;
-+} __attribute__((aligned(8)));
-+
-+struct ckpt_hdr_signal_task {
-+	struct ckpt_hdr h;
-+	struct ckpt_sigset blocked;
-+} __attribute__((aligned(8)));
-+
- /* ipc commons */
- struct ckpt_hdr_ipcns {
- 	struct ckpt_hdr h;
-diff --git a/include/linux/signal.h b/include/linux/signal.h
-index ab9272c..af6cac3 100644
---- a/include/linux/signal.h
-+++ b/include/linux/signal.h
-@@ -376,6 +376,9 @@ int unhandled_signal(struct task_struct *tsk, int sig);
- 
- void signals_init(void);
- 
-+/* [arch] checkpoint: should saved_sigmask be used in place of blocked */
-+int task_has_saved_sigmask(struct task_struct *task);
-+
- #endif /* __KERNEL__ */
- 
- #endif /* _LINUX_SIGNAL_H */
-diff --git a/kernel/fork.c b/kernel/fork.c
-index 4eb8e7e..24472ec 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -910,6 +910,9 @@ static int copy_signal(unsigned long clone_flags, struct task_struct *tsk)
- 
- 	sig->oom_adj = current->signal->oom_adj;
- 
-+#ifdef CONFIG_CHECKPOINT
-+	atomic_set(&sig->restart_count, 0);
-+#endif
- 	return 0;
+ 	struct list_head *tmp;
+ 	struct msg_queue *msq = container_of(ipcp, struct msg_queue, q_perm);
+@@ -312,14 +311,11 @@ static inline int msg_security(struct kern_ipc_perm *ipcp, int msgflg)
+ 	return security_msg_queue_associate(msq, msgflg);
  }
  
+-int do_msgget(key_t key, int msgflg, int req_id)
++int do_msgget(struct ipc_namespace *ns, key_t key, int msgflg, int req_id)
+ {
+-	struct ipc_namespace *ns;
+ 	struct ipc_ops msg_ops;
+ 	struct ipc_params msg_params;
+ 
+-	ns = current->nsproxy->ipc_ns;
+-
+ 	msg_ops.getnew = newque;
+ 	msg_ops.associate = msg_security;
+ 	msg_ops.more_checks = NULL;
+@@ -332,7 +328,7 @@ int do_msgget(key_t key, int msgflg, int req_id)
+ 
+ SYSCALL_DEFINE2(msgget, key_t, key, int, msgflg)
+ {
+-	return do_msgget(key, msgflg, -1);
++	return do_msgget(current->nsproxy->ipc_ns, key, msgflg, -1);
+ }
+ 
+ static inline unsigned long
+diff --git a/ipc/msgutil.c b/ipc/msgutil.c
+index f095ee2..e119243 100644
+--- a/ipc/msgutil.c
++++ b/ipc/msgutil.c
+@@ -36,14 +36,6 @@ struct ipc_namespace init_ipc_ns = {
+ 
+ atomic_t nr_ipc_ns = ATOMIC_INIT(1);
+ 
+-struct msg_msgseg {
+-	struct msg_msgseg* next;
+-	/* the next part of the message follows immediately */
+-};
+-
+-#define DATALEN_MSG	(PAGE_SIZE-sizeof(struct msg_msg))
+-#define DATALEN_SEG	(PAGE_SIZE-sizeof(struct msg_msgseg))
+-
+ struct msg_msg *load_msg(const void __user *src, int len)
+ {
+ 	struct msg_msg *msg;
+diff --git a/ipc/util.h b/ipc/util.h
+index e0007dc..8a223f0 100644
+--- a/ipc/util.h
++++ b/ipc/util.h
+@@ -141,6 +141,14 @@ extern void free_msg(struct msg_msg *msg);
+ extern struct msg_msg *load_msg(const void __user *src, int len);
+ extern int store_msg(void __user *dest, struct msg_msg *msg, int len);
+ 
++struct msg_msgseg {
++	struct msg_msgseg *next;
++	/* the next part of the message follows immediately */
++};
++
++#define DATALEN_MSG	(PAGE_SIZE-sizeof(struct msg_msg))
++#define DATALEN_SEG	(PAGE_SIZE-sizeof(struct msg_msgseg))
++
+ extern void recompute_msgmni(struct ipc_namespace *);
+ 
+ static inline int ipc_buildid(int id, int seq)
+@@ -182,6 +190,8 @@ int do_shmget(struct ipc_namespace *ns, key_t key, size_t size, int shmflg,
+ 	      int req_id);
+ void do_shm_rmid(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp);
+ 
++int do_msgget(struct ipc_namespace *ns, key_t key, int msgflg, int req_id);
++void freeque(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp);
+ 
+ #ifdef CONFIG_CHECKPOINT
+ extern int checkpoint_fill_ipc_perms(struct ckpt_hdr_ipc_perms *h,
+@@ -192,6 +202,9 @@ extern int restore_load_ipc_perms(struct ckpt_hdr_ipc_perms *h,
+ extern int ckpt_collect_ipc_shm(int id, void *p, void *data);
+ extern int checkpoint_ipc_shm(int id, void *p, void *data);
+ extern int restore_ipc_shm(struct ckpt_ctx *ctx, struct ipc_namespace *ns);
++
++extern int checkpoint_ipc_msg(int id, void *p, void *data);
++extern int restore_ipc_msg(struct ckpt_ctx *ctx, struct ipc_namespace *ns);
+ #endif
+ 
+ #endif
 -- 
 1.6.3.3
