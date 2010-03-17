@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 73/96] c/r: correctly restore pgid
-Date: Wed, 17 Mar 2010 12:09:01 -0400
-Message-ID: <1268842164-5590-74-git-send-email-orenl__21996.0654191256$1268850460$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 67/96] c/r: checkpoint and restore (shared) task's
+	sighand_struct
+Date: Wed, 17 Mar 2010 12:08:55 -0400
+Message-ID: <1268842164-5590-68-git-send-email-orenl__20463.5205599063$1268850460$gmane$org@cs.columbia.edu>
 References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-2-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-3-git-send-email-orenl@cs.columbia.edu>
@@ -69,17 +70,11 @@ References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-65-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-66-git-send-email-orenl@cs.columbia.edu>
 	<1268842164-5590-67-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-68-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-69-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-70-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-71-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-72-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-73-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1268842164-5590-73-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1268842164-5590-67-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -93,389 +88,476 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-The main challenge with restoring the pgid of tasks is that the
-original "owner" (the process with that pid) might have exited
-already. I call these "ghost" pgids. 'mktree' does create these
-processes, but they then exit without participating in the restart.
+This patch adds the checkpointing and restart of signal handling
+state - 'struct sighand_struct'. Since the contents of this state
+only affect userspace, no input validation is required.
 
-To solve this, this patch introduces a RESTART_GHOST flag, used for
-"ghost" owners that are created only to pass their pgid to other
-tasks. ('mktree' now makes them call restart(2) instead of exiting).
+Add _NSIG to kernel constants saved/tested with image header.
 
-When a "ghost" task calls restart(2), it will be placed on a wait
-queue until the restart completes and then exit. This guarantees that
-the pgid that it owns remains available for all (regular) restarting
-tasks for when they need it.
+Number of signals (_NSIG) is arch-dependent, but is within __KERNEL__
+and not visibile to userspace compile. Therefore, define per arch
+CKPT_ARCH_NSIG in <asm/checkpoint_hdr.h>.
 
-Regular tasks perform the restart as before, except that they also
-now restore their old pgrp, which is guaranteed to exist.
-
-Changelog [v19-rc1]:
-  - Simplify logic of tracking restarting tasks
-  - Debug final process-tree state on restart
+Changelog[v19-rc1]:
   - [Matt Helsley] Add cpp definitions for enums
-  - Self-restart to tolerate missing pgid
-Changelog [v3]:
-  - Fix leak of ckpt_ctx when restoring "ghost" tasks
-Changelog [v2]:
-  - Call change_pid() only if new pgrp differs from current one
-Changelog [v1]:
-  - Verify that pgid owner is a thread-group-leader.
-  - Handle the case of pgid/sid == 0 using root's parent pid-ns
+Changelog[v1]:
+  - Rename headerless struct ckpt_hdr_* to struct ckpt_*
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- checkpoint/process.c             |  101 ++++++++++++++++++++++++++++++++++++++
- checkpoint/restart.c             |   59 +++++++++++++++++++---
- checkpoint/sys.c                 |    3 +-
- include/linux/checkpoint.h       |   11 +++-
- include/linux/checkpoint_hdr.h   |    3 +
- include/linux/checkpoint_types.h |    7 ++-
- 6 files changed, 171 insertions(+), 13 deletions(-)
+ arch/s390/include/asm/checkpoint_hdr.h |    8 ++
+ arch/x86/include/asm/checkpoint_hdr.h  |    8 ++
+ checkpoint/Makefile                    |    3 +-
+ checkpoint/checkpoint.c                |    2 +
+ checkpoint/objhash.c                   |   26 +++++
+ checkpoint/process.c                   |   19 ++++
+ checkpoint/restart.c                   |    3 +
+ checkpoint/signal.c                    |  163 ++++++++++++++++++++++++++++++++
+ include/linux/checkpoint.h             |    9 ++-
+ include/linux/checkpoint_hdr.h         |   24 +++++
+ 10 files changed, 263 insertions(+), 2 deletions(-)
+ create mode 100644 checkpoint/signal.c
 
-diff --git a/checkpoint/process.c b/checkpoint/process.c
-index c5e9357..e0ef795 100644
---- a/checkpoint/process.c
-+++ b/checkpoint/process.c
-@@ -24,6 +24,57 @@
- #include <linux/syscalls.h>
+diff --git a/arch/s390/include/asm/checkpoint_hdr.h b/arch/s390/include/asm/checkpoint_hdr.h
+index e3312c0..7d30317 100644
+--- a/arch/s390/include/asm/checkpoint_hdr.h
++++ b/arch/s390/include/asm/checkpoint_hdr.h
+@@ -91,6 +91,14 @@ struct ckpt_hdr_mm_context {
+ 	unsigned long asce_limit;
+ };
  
++#define CKPT_ARCH_NSIG  64
++#ifdef __KERNEL__
++#include <asm/signal.h>
++#if CKPT_ARCH_NSIG != _SIGCONTEXT_NSIG
++#error CKPT_ARCH_NSIG size is wrong (asm/sigcontext.h and asm/checkpoint_hdr.h)
++#endif
++#endif
++
+ struct ckpt_hdr_header_arch {
+ 	struct ckpt_hdr h;
+ };
+diff --git a/arch/x86/include/asm/checkpoint_hdr.h b/arch/x86/include/asm/checkpoint_hdr.h
+index 292bf50..44737b8 100644
+--- a/arch/x86/include/asm/checkpoint_hdr.h
++++ b/arch/x86/include/asm/checkpoint_hdr.h
+@@ -52,6 +52,14 @@ enum {
+ #define CKPT_HDR_MM_CONTEXT_LDT CKPT_HDR_MM_CONTEXT_LDT
+ };
  
-+pid_t ckpt_pid_nr(struct ckpt_ctx *ctx, struct pid *pid)
-+{
-+	return pid ? pid_nr_ns(pid, ctx->root_nsproxy->pid_ns) : CKPT_PID_NULL;
-+}
++#define CKPT_ARCH_NSIG  64
++#ifdef __KERNEL__
++#include <asm/signal.h>
++#if CKPT_ARCH_NSIG != _NSIG
++#error CKPT_ARCH_NSIG size is wrong per asm/signal.h and asm/checkpoint_hdr.h
++#endif
++#endif
 +
-+/* must be called with tasklist_lock or rcu_read_lock() held */
-+struct pid *_ckpt_find_pgrp(struct ckpt_ctx *ctx, pid_t pgid)
-+{
-+	struct task_struct *p;
-+	struct pid *pgrp;
-+
-+	if (pgid == 0) {
-+		/*
-+		 * At checkpoint the pgid owner lived in an ancestor
-+		 * pid-ns. The best we can do (sanely and safely) is
-+		 * to examine the parent of this restart's root: if in
-+		 * a distinct pid-ns, use its pgrp; otherwise fail.
-+		 */
-+		p = ctx->root_task->real_parent;
-+		if (p->nsproxy->pid_ns == current->nsproxy->pid_ns)
-+			return NULL;
-+		pgrp = task_pgrp(p);
-+	} else {
-+		/*
-+		 * Find the owner process of this pgid (it must exist
-+		 * if pgrp exists). It must be a thread group leader.
-+		 */
-+		pgrp = find_vpid(pgid);
-+		p = pid_task(pgrp, PIDTYPE_PID);
-+		if (!p || !thread_group_leader(p))
-+			return NULL;
-+		/*
-+		 * The pgrp must "belong" to our restart tree (compare
-+		 * p->checkpoint_ctx to ours). This prevents malicious
-+		 * input from (guessing and) using unrelated pgrps. If
-+		 * the owner is dead, then it doesn't have a context,
-+		 * so instead compare against its (real) parent's.
-+		 */
-+		if (p->exit_state == EXIT_ZOMBIE)
-+			p = p->real_parent;
-+		if (p->checkpoint_ctx != ctx)
-+			return NULL;
-+	}
-+
-+	if (task_session(current) != task_session(p))
-+		return NULL;
-+
-+	return pgrp;
-+}
-+
-+
- #ifdef CONFIG_FUTEX
- static void save_task_robust_futex_list(struct ckpt_hdr_task *h,
- 					struct task_struct *t)
-@@ -738,6 +789,53 @@ int restore_restart_block(struct ckpt_ctx *ctx)
- 	return ret;
+ struct ckpt_hdr_header_arch {
+ 	struct ckpt_hdr h;
+ 	/* FIXME: add HAVE_HWFP */
+diff --git a/checkpoint/Makefile b/checkpoint/Makefile
+index bb2c0ca..f8a55df 100644
+--- a/checkpoint/Makefile
++++ b/checkpoint/Makefile
+@@ -10,4 +10,5 @@ obj-$(CONFIG_CHECKPOINT) += \
+ 	process.o \
+ 	namespace.o \
+ 	files.o \
+-	memory.o
++	memory.o \
++	signal.o
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index f2d9016..445fef7 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -113,6 +113,8 @@ static void fill_kernel_const(struct ckpt_const *h)
+ 	h->task_comm_len = sizeof(tsk->comm);
+ 	/* mm->saved_auxv size */
+ 	h->at_vector_size = AT_VECTOR_SIZE;
++	/* signal */
++	h->signal_nsig = _NSIG;
+ 	/* uts */
+ 	h->uts_sysname_len = sizeof(uts->sysname);
+ 	h->uts_nodename_len = sizeof(uts->nodename);
+diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+index 56d450a..858613e 100644
+--- a/checkpoint/objhash.c
++++ b/checkpoint/objhash.c
+@@ -125,6 +125,22 @@ static int obj_mm_users(void *ptr)
+ 	return atomic_read(&((struct mm_struct *) ptr)->mm_users);
  }
  
-+static int restore_task_pgid(struct ckpt_ctx *ctx)
++static int obj_sighand_grab(void *ptr)
 +{
-+	struct task_struct *task = current;
-+	struct pid *pgrp;
-+	pid_t pgid;
-+	int ret;
++	atomic_inc(&((struct sighand_struct *) ptr)->count);
++	return 0;
++}
 +
-+	/*
-+	 * We enforce the following restrictions on restoring pgrp:
-+	 *  1) Only thread group leaders restore pgrp
-+	 *  2) Session leader cannot change own pgrp
-+	 *  3) Owner of pgrp must belong to same restart tree
-+	 *  4) Must have same session as other tasks in same pgrp
-+	 *  5) Change must pass setpgid security callback
-+	 *
-+	 * TODO - check if we need additional restrictions ?
-+	 */
++static void obj_sighand_drop(void *ptr, int lastref)
++{
++	__cleanup_sighand((struct sighand_struct *) ptr);
++}
 +
-+	if (!thread_group_leader(task))  /* (1) */
-+		return 0;
++static int obj_sighand_users(void *ptr)
++{
++	return atomic_read(&((struct sighand_struct *) ptr)->count);
++}
 +
-+	pgid = ctx->pids_arr[ctx->active_pid].vpgid;
-+
-+	if (pgid == task_pgrp_vnr(task))  /* nothing to do */
-+		return 0;
-+
-+	if (task->signal->leader)  /* (2) */
-+		return -EINVAL;
-+
-+	ret = -EINVAL;
-+
-+	write_lock_irq(&tasklist_lock);
-+	pgrp = _ckpt_find_pgrp(ctx, pgid);  /* (3) and (4) */
-+	if (pgrp && task_pgrp(task) != pgrp) {
-+		ret = security_task_setpgid(task, pgid);  /* (5) */
-+		if (!ret)
-+			change_pid(task, PIDTYPE_PGID, pgrp);
+ static int obj_ns_grab(void *ptr)
+ {
+ 	get_nsproxy((struct nsproxy *) ptr);
+@@ -263,6 +279,16 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
+ 		.checkpoint = checkpoint_mm,
+ 		.restore = restore_mm,
+ 	},
++	/* sighand object */
++	{
++		.obj_name = "SIGHAND",
++		.obj_type = CKPT_OBJ_SIGHAND,
++		.ref_drop = obj_sighand_drop,
++		.ref_grab = obj_sighand_grab,
++		.ref_users = obj_sighand_users,
++		.checkpoint = checkpoint_sighand,
++		.restore = restore_sighand,
++	},
+ 	/* ns object */
+ 	{
+ 		.obj_name = "NSPROXY",
+diff --git a/checkpoint/process.c b/checkpoint/process.c
+index 6741b43..71eb9a5 100644
+--- a/checkpoint/process.c
++++ b/checkpoint/process.c
+@@ -181,6 +181,7 @@ static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	struct ckpt_hdr_task_objs *h;
+ 	int files_objref;
+ 	int mm_objref;
++	int sighand_objref;
+ 	int ret;
+ 
+ 	/*
+@@ -219,11 +220,19 @@ static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
+ 		return mm_objref;
+ 	}
+ 
++	sighand_objref = checkpoint_obj_sighand(ctx, t);
++	ckpt_debug("sighand: objref %d\n", sighand_objref);
++	if (sighand_objref < 0) {
++		ckpt_err(ctx, sighand_objref, "%(T)sighand_struct\n");
++		return sighand_objref;
 +	}
-+	write_unlock_irq(&tasklist_lock);
 +
-+	/* self-restart: be tolerant if old pgid isn't found */
-+	if (ctx->uflags & RESTART_TASKSELF)
-+		ret = 0;
+ 	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_TASK_OBJS);
+ 	if (!h)
+ 		return -ENOMEM;
+ 	h->files_objref = files_objref;
+ 	h->mm_objref = mm_objref;
++	h->sighand_objref = sighand_objref;
+ 	ret = ckpt_write_obj(ctx, &h->h);
+ 	ckpt_hdr_put(ctx, h);
+ 
+@@ -386,6 +395,9 @@ int ckpt_collect_task(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	if (ret < 0)
+ 		return ret;
+ 	ret = ckpt_collect_mm(ctx, t);
++	if (ret < 0)
++		return ret;
++	ret = ckpt_collect_sighand(ctx, t);
+ 
+ 	return ret;
+ }
+@@ -545,10 +557,17 @@ static int restore_task_objs(struct ckpt_ctx *ctx)
+ 
+ 	ret = restore_obj_file_table(ctx, h->files_objref);
+ 	ckpt_debug("file_table: ret %d (%p)\n", ret, current->files);
++	if (ret < 0)
++		goto out;
+ 
+ 	ret = restore_obj_mm(ctx, h->mm_objref);
+ 	ckpt_debug("mm: ret %d (%p)\n", ret, current->mm);
++	if (ret < 0)
++		goto out;
+ 
++	ret = restore_obj_sighand(ctx, h->sighand_objref);
++	ckpt_debug("sighand: ret %d (%p)\n", ret, current->sighand);
++ out:
+ 	ckpt_hdr_put(ctx, h);
+ 	return ret;
+ }
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index 60a8bb4..34d3e64 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -567,6 +567,9 @@ static int check_kernel_const(struct ckpt_const *h)
+ 	/* mm->saved_auxv size */
+ 	if (h->at_vector_size != AT_VECTOR_SIZE)
+ 		return -EINVAL;
++	/* signal */
++	if (h->signal_nsig != _NSIG)
++		return -EINVAL;
+ 	/* uts */
+ 	if (h->uts_sysname_len != sizeof(uts->sysname))
+ 		return -EINVAL;
+diff --git a/checkpoint/signal.c b/checkpoint/signal.c
+new file mode 100644
+index 0000000..1aadadd
+--- /dev/null
++++ b/checkpoint/signal.c
+@@ -0,0 +1,163 @@
++/*
++ *  Checkpoint task signals
++ *
++ *  Copyright (C) 2009 Oren Laadan
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ */
++
++/* default debug level for output */
++#define CKPT_DFLAG  CKPT_DSYS
++
++#include <linux/sched.h>
++#include <linux/signal.h>
++#include <linux/errno.h>
++#include <linux/checkpoint.h>
++#include <linux/checkpoint_hdr.h>
++
++static inline void fill_sigset(struct ckpt_sigset *h, sigset_t *sigset)
++{
++	memcpy(&h->sigset, sigset, sizeof(*sigset));
++}
++
++static inline void load_sigset(sigset_t *sigset, struct ckpt_sigset *h)
++{
++	memcpy(sigset, &h->sigset, sizeof(*sigset));
++}
++
++/***********************************************************************
++ * sighand checkpoint/collect/restart
++ */
++
++static int do_checkpoint_sighand(struct ckpt_ctx *ctx,
++				 struct sighand_struct *sighand)
++{
++	struct ckpt_hdr_sighand *h;
++	struct ckpt_sigaction *hh;
++	struct sigaction *sa;
++	int i, ret;
++
++	h = ckpt_hdr_get_type(ctx, _NSIG * sizeof(*hh) + sizeof(*h),
++			      CKPT_HDR_SIGHAND);
++	if (!h)
++		return -ENOMEM;
++
++	hh = h->action;
++	spin_lock_irq(&sighand->siglock);
++	for (i = 0; i < _NSIG; i++) {
++		sa = &sighand->action[i].sa;
++		hh[i]._sa_handler = (unsigned long) sa->sa_handler;
++		hh[i].sa_flags = sa->sa_flags;
++		hh[i].sa_restorer = (unsigned long) sa->sa_restorer;
++		fill_sigset(&hh[i].sa_mask, &sa->sa_mask);
++	}
++	spin_unlock_irq(&sighand->siglock);
++
++	ret = ckpt_write_obj(ctx, &h->h);
++	ckpt_hdr_put(ctx, h);
 +
 +	return ret;
 +}
 +
- /* prepare the task for restore */
- int pre_restore_task(void)
- {
-@@ -783,6 +881,9 @@ int restore_task(struct ckpt_ctx *ctx)
- 	if (ret)
- 		goto out;
- 
-+	ret = restore_task_pgid(ctx);
-+	if (ret < 0)
-+		goto out;
- 	ret = restore_thread(ctx);
- 	ckpt_debug("thread %d\n", ret);
- 	if (ret < 0)
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index 863ee87..42885be 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -735,6 +735,7 @@ void restore_notify_error(struct ckpt_ctx *ctx)
- {
- 	complete(&ctx->complete);
- 	wake_up_all(&ctx->waitq);
-+	wake_up_all(&ctx->ghostq);
- }
- 
- static inline struct ckpt_ctx *get_task_ctx(struct task_struct *task)
-@@ -810,6 +811,9 @@ static int restore_activate_next(struct ckpt_ctx *ctx)
- 			ckpt_err(ctx, -ESRCH, "task %d not found\n", pid);
- 			return -ESRCH;
- 		}
-+	} else {
-+		/* wake up ghosts tasks so that they can terminate */
-+		wake_up_all(&ctx->ghostq);
- 	}
- 
- 	return 0;
-@@ -867,6 +871,38 @@ static struct ckpt_ctx *wait_checkpoint_ctx(void)
- 	return ctx;
- }
- 
-+static int do_ghost_task(void)
++int checkpoint_sighand(struct ckpt_ctx *ctx, void *ptr)
 +{
-+	struct ckpt_ctx *ctx;
-+	int ret;
-+
-+	ctx = wait_checkpoint_ctx();
-+	if (IS_ERR(ctx))
-+		return PTR_ERR(ctx);
-+
-+	ret = restore_debug_task(ctx, RESTART_DBG_GHOST);
-+	if (ret < 0)
-+		goto out;
-+
-+	current->flags |= PF_RESTARTING;
-+	restore_debug_running(ctx);
-+
-+	ret = wait_event_interruptible(ctx->ghostq,
-+				       all_tasks_activated(ctx) ||
-+				       ckpt_test_error(ctx));
-+ out:
-+	restore_debug_error(ctx, ret);
-+	if (ret < 0)
-+		ckpt_err(ctx, ret, "ghost restart failed\n");
-+
-+	current->exit_signal = -1;
-+	restore_debug_exit(ctx);
-+	ckpt_ctx_put(ctx);
-+	do_exit(0);
-+
-+	/* NOT REACHED */
++	return do_checkpoint_sighand(ctx, (struct sighand_struct *) ptr);
 +}
 +
- /*
-  * Ensure that all members of a thread group are in sys_restart before
-  * restoring any of them. Otherwise, restore may modify shared state
-@@ -946,10 +982,15 @@ static int do_restore_task(void)
- 		goto out;
- 	}
- 
-+	ret = restore_activate_next(ctx);
-+	if (ret < 0)
-+		goto out;
++int checkpoint_obj_sighand(struct ckpt_ctx *ctx, struct task_struct *t)
++{
++	struct sighand_struct *sighand;
++	int objref;
 +
- 	/*
- 	 * zombie: we're done here; do_exit() will notice the @ctx on
--	 * our current->checkpoint_ctx (and our PF_RESTARTING) - it
--	 * will call restore_activate_next() and release the @ctx.
-+	 * our current->checkpoint_ctx (and our PF_RESTARTING), will
-+	 * call restore_task_done() and release the @ctx. This ensures
-+	 * that we only report done after we really become zombie.
- 	 */
- 	if (zombie) {
- 		restore_debug_exit(ctx);
-@@ -1031,8 +1072,11 @@ static int prepare_descendants(struct ckpt_ctx *ctx, struct task_struct *root)
- 	if (nr_pids < 0)
- 		return nr_pids;
- 
--	/* fail unless number of processes matches */
--	if (nr_pids != ctx->nr_pids)
-+	/*
-+	 * Actual tasks count may exceed ctx->nr_pids due of 'dead'
-+	 * tasks used as place-holders for PGIDs, but not fall short.
-+	 */
-+	if (nr_pids < ctx->nr_pids)
- 		return -ESRCH;
- 
- 	atomic_set(&ctx->nr_total, nr_pids);
-@@ -1278,12 +1322,14 @@ static long restore_retval(void)
- 	return syscall_get_return_value(current, regs);
- }
- 
--long do_restart(struct ckpt_ctx *ctx, pid_t pid)
-+long do_restart(struct ckpt_ctx *ctx, pid_t pid, unsigned long flags)
- {
- 	long ret;
- 
- 	if (ctx)
- 		ret = do_restore_coord(ctx, pid);
-+	else if (flags & RESTART_GHOST)
-+		ret = do_ghost_task();
- 	else
- 		ret = do_restore_task();
- 
-@@ -1331,8 +1377,7 @@ void exit_checkpoint(struct task_struct *tsk)
- 	/* restarting zombies will activate next task in restart */
- 	if (tsk->flags & PF_RESTARTING) {
- 		BUG_ON(ctx->active_pid == -1);
--		if (restore_activate_next(ctx) < 0)
--			pr_warning("c/r: [%d] failed zombie exit\n", tsk->pid);
-+		restore_task_done(ctx);
- 	}
- 
- 	ckpt_ctx_put(ctx);
-diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-index b7cb59e..02b12a3 100644
---- a/checkpoint/sys.c
-+++ b/checkpoint/sys.c
-@@ -257,6 +257,7 @@ static struct ckpt_ctx *ckpt_ctx_alloc(int fd, unsigned long uflags,
- 	INIT_LIST_HEAD(&ctx->pgarr_list);
- 	INIT_LIST_HEAD(&ctx->pgarr_pool);
- 	init_waitqueue_head(&ctx->waitq);
-+	init_waitqueue_head(&ctx->ghostq);
- 	init_completion(&ctx->complete);
- 
- 	init_completion(&ctx->errno_sync);
-@@ -664,7 +665,7 @@ long do_sys_restart(pid_t pid, int fd, unsigned long flags, int logfd)
- 	if (IS_ERR(ctx))
- 		return PTR_ERR(ctx);
- 
--	ret = do_restart(ctx, pid);
-+	ret = do_restart(ctx, pid, flags);
- 
- 	ckpt_ctx_put(ctx);
- 	return ret;
++	read_lock(&tasklist_lock);
++	sighand = rcu_dereference(t->sighand);
++	atomic_inc(&sighand->count);
++	read_unlock(&tasklist_lock);
++
++	objref = checkpoint_obj(ctx, sighand, CKPT_OBJ_SIGHAND);
++	__cleanup_sighand(sighand);
++
++	return objref;
++}
++
++int ckpt_collect_sighand(struct ckpt_ctx *ctx, struct task_struct *t)
++{
++	struct sighand_struct *sighand;
++	int ret;
++
++	read_lock(&tasklist_lock);
++	sighand = rcu_dereference(t->sighand);
++	atomic_inc(&sighand->count);
++	read_unlock(&tasklist_lock);
++
++	ret = ckpt_obj_collect(ctx, sighand, CKPT_OBJ_SIGHAND);
++	__cleanup_sighand(sighand);
++
++	return ret;
++}
++
++static struct sighand_struct *do_restore_sighand(struct ckpt_ctx *ctx)
++{
++	struct ckpt_hdr_sighand *h;
++	struct ckpt_sigaction *hh;
++	struct sighand_struct *sighand;
++	struct sigaction *sa;
++	int i;
++
++	h = ckpt_read_obj_type(ctx, _NSIG * sizeof(*hh) + sizeof(*h),
++			       CKPT_HDR_SIGHAND);
++	if (IS_ERR(h))
++		return ERR_PTR(PTR_ERR(h));
++
++	sighand = kmem_cache_alloc(sighand_cachep, GFP_KERNEL);
++	if (!sighand) {
++		sighand = ERR_PTR(-ENOMEM);
++		goto out;
++	}
++	atomic_set(&sighand->count, 1);
++
++	hh = h->action;
++	for (i = 0; i < _NSIG; i++) {
++		sa = &sighand->action[i].sa;
++		sa->sa_handler = (void *) (unsigned long) hh[i]._sa_handler;
++		sa->sa_flags = hh[i].sa_flags;
++		sa->sa_restorer = (void *) (unsigned long) hh[i].sa_restorer;
++		load_sigset(&sa->sa_mask, &hh[i].sa_mask);
++	}
++ out:
++	ckpt_hdr_put(ctx, h);
++	return sighand;
++}
++
++void *restore_sighand(struct ckpt_ctx *ctx)
++{
++	return (void *) do_restore_sighand(ctx);
++}
++
++int restore_obj_sighand(struct ckpt_ctx *ctx, int sighand_objref)
++{
++	struct sighand_struct *sighand;
++	struct sighand_struct *old_sighand;
++
++	sighand = ckpt_obj_fetch(ctx, sighand_objref, CKPT_OBJ_SIGHAND);
++	if (IS_ERR(sighand))
++		return PTR_ERR(sighand);
++
++	if (sighand == current->sighand)
++		return 0;
++
++	atomic_inc(&sighand->count);
++
++	/* manipulate tsk->sighand with tasklist lock write-held */
++	write_lock_irq(&tasklist_lock);
++	old_sighand = rcu_dereference(current->sighand);
++	spin_lock(&old_sighand->siglock);
++	rcu_assign_pointer(current->sighand, sighand);
++	spin_unlock(&old_sighand->siglock);
++	write_unlock_irq(&tasklist_lock);
++	__cleanup_sighand(old_sighand);
++
++	return 0;
++}
 diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 2fe2a9d..220388d 100644
+index f321860..5a26f8b 100644
 --- a/include/linux/checkpoint.h
 +++ b/include/linux/checkpoint.h
-@@ -18,6 +18,7 @@
- /* restart user flags */
- #define RESTART_TASKSELF	0x1
- #define RESTART_FROZEN		0x2
-+#define RESTART_GHOST		0x4
+@@ -267,6 +267,14 @@ extern int restore_memory_contents(struct ckpt_ctx *ctx, struct inode *inode);
+ 	 VM_RESERVED | VM_NORESERVE | VM_HUGETLB | VM_NONLINEAR |	\
+ 	 VM_MAPPED_COPY | VM_INSERTPAGE | VM_MIXEDMAP | VM_SAO)
  
- /* misc user visible */
- #define CHECKPOINT_FD_NONE	-1
-@@ -52,7 +53,10 @@ extern long do_sys_restart(pid_t pid, int fd,
- 
- /* ckpt_ctx: uflags */
- #define CHECKPOINT_USER_FLAGS		CHECKPOINT_SUBTREE
--#define RESTART_USER_FLAGS		(RESTART_TASKSELF | RESTART_FROZEN)
-+#define RESTART_USER_FLAGS  \
-+	(RESTART_TASKSELF | \
-+	 RESTART_FROZEN | \
-+	 RESTART_GHOST)
- 
- extern int walk_task_subtree(struct task_struct *task,
- 			     int (*func)(struct task_struct *, void *),
-@@ -90,6 +94,9 @@ extern char *ckpt_fill_fname(struct path *path, struct path *root,
- extern int checkpoint_dump_page(struct ckpt_ctx *ctx, struct page *page);
- extern int restore_read_page(struct ckpt_ctx *ctx, struct page *page);
- 
-+/* pids */
-+extern pid_t ckpt_pid_nr(struct ckpt_ctx *ctx, struct pid *pid);
++/* signals */
++extern int checkpoint_obj_sighand(struct ckpt_ctx *ctx, struct task_struct *t);
++extern int restore_obj_sighand(struct ckpt_ctx *ctx, int sighand_objref);
 +
- /* ckpt kflags */
- #define ckpt_set_ctx_kflag(__ctx, __kflag)  \
- 	set_bit(__kflag##_BIT, &(__ctx)->kflags)
-@@ -145,7 +152,7 @@ extern struct ckpt_ctx *ckpt_ctx_get(struct ckpt_ctx *ctx);
- extern void ckpt_ctx_put(struct ckpt_ctx *ctx);
++extern int ckpt_collect_sighand(struct ckpt_ctx *ctx, struct task_struct *t);
++extern int checkpoint_sighand(struct ckpt_ctx *ctx, void *ptr);
++extern void *restore_sighand(struct ckpt_ctx *ctx);
++
+ static inline int ckpt_validate_errno(int errno)
+ {
+ 	return (errno >= 0) && (errno < MAX_ERRNO);
+@@ -299,7 +307,6 @@ static inline int ckpt_validate_errno(int errno)
+ 			memcpy(LIVE, SAVE, count * sizeof(*SAVE));	\
+ 	} while (0)
  
- extern long do_checkpoint(struct ckpt_ctx *ctx, pid_t pid);
--extern long do_restart(struct ckpt_ctx *ctx, pid_t pid);
-+extern long do_restart(struct ckpt_ctx *ctx, pid_t pid, unsigned long flags);
- 
- /* task */
- extern int ckpt_activate_next(struct ckpt_ctx *ctx);
+-
+ /* debugging flags */
+ #define CKPT_DBASE	0x1		/* anything */
+ #define CKPT_DSYS	0x2		/* generic (system) */
 diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index a09b5e5..f0a41ec 100644
+index 729be96..225fd1f 100644
 --- a/include/linux/checkpoint_hdr.h
 +++ b/include/linux/checkpoint_hdr.h
-@@ -268,6 +268,9 @@ struct ckpt_pids {
- 	__s32 vsid;
+@@ -131,6 +131,9 @@ enum {
+ 	CKPT_HDR_IPC_SEM,
+ #define CKPT_HDR_IPC_SEM CKPT_HDR_IPC_SEM
+ 
++	CKPT_HDR_SIGHAND = 601,
++#define CKPT_HDR_SIGHAND CKPT_HDR_SIGHAND
++
+ 	CKPT_HDR_TAIL = 9001,
+ #define CKPT_HDR_TAIL CKPT_HDR_TAIL
+ 
+@@ -168,6 +171,8 @@ enum obj_type {
+ #define CKPT_OBJ_FILE CKPT_OBJ_FILE
+ 	CKPT_OBJ_MM,
+ #define CKPT_OBJ_MM CKPT_OBJ_MM
++	CKPT_OBJ_SIGHAND,
++#define CKPT_OBJ_SIGHAND CKPT_OBJ_SIGHAND
+ 	CKPT_OBJ_NS,
+ #define CKPT_OBJ_NS CKPT_OBJ_NS
+ 	CKPT_OBJ_UTS_NS,
+@@ -192,6 +197,8 @@ struct ckpt_const {
+ 	__u16 task_comm_len;
+ 	/* mm */
+ 	__u16 at_vector_size;
++	/* signal */
++	__u16 signal_nsig;
+ 	/* uts */
+ 	__u16 uts_sysname_len;
+ 	__u16 uts_nodename_len;
+@@ -365,6 +372,7 @@ struct ckpt_hdr_task_objs {
+ 
+ 	__s32 files_objref;
+ 	__s32 mm_objref;
++	__s32 sighand_objref;
  } __attribute__((aligned(8)));
  
-+/* pids */
-+#define CKPT_PID_NULL  -1
-+
- /* task data */
- struct ckpt_hdr_task {
- 	struct ckpt_hdr h;
-diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
-index e03f147..6edcaea 100644
---- a/include/linux/checkpoint_types.h
-+++ b/include/linux/checkpoint_types.h
-@@ -73,10 +73,11 @@ struct ckpt_ctx {
- 	/* [multi-process restart] */
- 	struct ckpt_pids *pids_arr;	/* array of all pids [restart] */
- 	int nr_pids;			/* size of pids array */
--	atomic_t nr_total;		/* total tasks count */
-+	atomic_t nr_total;		/* total tasks count (with ghosts) */
- 	int active_pid;			/* (next) position in pids array */
--	struct completion complete;	/* container root and other tasks on */
--	wait_queue_head_t waitq;	/* start, end, and restart ordering */
-+	struct completion complete;	/* completion for container root */
-+	wait_queue_head_t waitq;	/* waitqueue for restarting tasks */
-+	wait_queue_head_t ghostq;	/* waitqueue for ghost tasks */
- 	struct cred *realcred, *ecred;	/* tmp storage for cred at restart */
+ /* restart blocks */
+@@ -506,6 +514,22 @@ struct ckpt_hdr_pgarr {
+ 	__u64 nr_pages;		/* number of pages to saved */
+ } __attribute__((aligned(8)));
  
- 	struct ckpt_stats stats;	/* statistics */
++/* signals */
++struct ckpt_sigset {
++	__u8 sigset[CKPT_ARCH_NSIG / 8];
++} __attribute__((aligned(8)));
++
++struct ckpt_sigaction {
++	__u64 _sa_handler;
++	__u64 sa_flags;
++	__u64 sa_restorer;
++	struct ckpt_sigset sa_mask;
++} __attribute__((aligned(8)));
++
++struct ckpt_hdr_sighand {
++	struct ckpt_hdr h;
++	struct ckpt_sigaction action[0];
++} __attribute__((aligned(8)));
+ 
+ /* ipc commons */
+ struct ckpt_hdr_ipcns {
 -- 
 1.6.3.3
