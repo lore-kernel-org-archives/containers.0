@@ -1,24 +1,16 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [C/R v20][PATCH 46/96] c/r: add checkpoint operation for
-	opened files of generic filesystems
-Date: Wed, 17 Mar 2010 16:25:26 -0700
-Message-ID: <20100317232526.GI3037__21877.0255487927$1268872884$gmane$org@count0.beaverton.ibm.com>
-References: <1268842164-5590-9-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-10-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-11-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-12-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-13-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-14-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-15-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-16-git-send-email-orenl@cs.columbia.edu>
-	<1268842164-5590-17-git-send-email-orenl@cs.columbia.edu>
-	<BA0C23DE-E2B5-42A9-8478-CE216D18A6C6@sun.com>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH -mmotm 1/5] memcg: disable irq at page cgroup lock
+Date: Thu, 18 Mar 2010 09:45:19 +0900
+Message-ID: <20100318094519.cd1eed72.kamezawa.hiroyu__18442.5202235163$1268873473$gmane$org@jp.fujitsu.com>
+References: <1268609202-15581-1-git-send-email-arighi@develer.com>
+	<1268609202-15581-2-git-send-email-arighi@develer.com>
+	<20100317115855.GS18054@balbir.in.ibm.com>
+	<20100318085411.834e1e46.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <BA0C23DE-E2B5-42A9-8478-CE216D18A6C6-xsfywfwIY+M@public.gmane.org>
+In-Reply-To: <20100318085411.834e1e46.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -28,114 +20,79 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andreas Dilger <adilger-xsfywfwIY+M@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Daisuke-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Greg-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Mar 17, 2010 at 03:09:00PM -0600, Andreas Dilger wrote:
-> On 2010-03-17, at 10:08, Oren Laadan wrote:
-> >These patches extend the use of the generic file checkpoint
-> >operation to
-> >non-extX filesystems which have lseek operations that ensure we
-> >can save
-> >and restore the files for later use. Note that this does not include
-> >things like FUSE, network filesystems, or pseudo-filesystem kernel
-> >interfaces.
+On Thu, 18 Mar 2010 08:54:11 +0900
+KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
+
+> On Wed, 17 Mar 2010 17:28:55 +0530
+> Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
 > 
-> I didn't see any other patches posted to linux-fsdevel regarding
-> what this code is, or what it is supposed to be doing.  Could you
-> please repost the patches related to generic_file_checkpoint(), and
-
-I'm not sure why those weren't sent to linux-fsdevel. It mainly saves
-the critical pieces of kernel information from the struct file needed
-to restart the open file descriptors. It does not save the file
-(system) contents in the checkpoint image. That's left for proper
-filesystem freezing, snapshotting, or rsync (for example) depending on
-the tools and/or filesystems userspace has chosen.
-
-> the overview email that explains what you mean by "checkpoint".  I'm
-> assuming this is related to HPC/process restart/migration, but
-> better to not guess.
-
-Your assumption is correct -- this is related to HPC/process
-restart/migration. That said, we'd like to make it as useful as
-possible for other folks as well.
-
+> > * Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org> [2010-03-15 00:26:38]:
+> > 
+> > > From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+> > > 
+> > > Now, file-mapped is maintaiend. But more generic update function
+> > > will be needed for dirty page accounting.
+> > > 
+> > > For accountig page status, we have to guarantee lock_page_cgroup()
+> > > will be never called under tree_lock held.
+> > > To guarantee that, we use trylock at updating status.
+> > > By this, we do fuzzy accounting, but in almost all case, it's correct.
+> > >
+> > 
+> > I don't like this at all, but in almost all cases is not acceptable
+> > for statistics, since decisions will be made on them and having them
+> > incorrect is really bad. Could we do a form of deferred statistics and
+> > fix this.
+> > 
 > 
-> >@@ -718,6 +718,7 @@ static const struct file_operations
-> >btrfs_ctl_fops = {
-> >	.unlocked_ioctl	 = btrfs_control_ioctl,
-> >	.compat_ioctl = btrfs_control_ioctl,
-> >	.owner	 = THIS_MODULE,
-> >+	.checkpoint = generic_file_checkpoint,
-> >};
-> >
-> >const struct file_operations exofs_file_operations = {
-> >	.llseek		= generic_file_llseek,
-> >+	.checkpoint	= generic_file_checkpoint,
-> >	.read		= do_sync_read,
-> >	.write		= do_sync_write,
-> >	.aio_read	= generic_file_aio_read,
-> >
-> >static const struct file_operations hostfs_file_fops = {
-> >	.llseek		= generic_file_llseek,
-> >+	.checkpoint	= generic_file_checkpoint,
-> >	.read		= do_sync_read,
-> >	.splice_read	= generic_file_splice_read,
-> >	.aio_read	= generic_file_aio_read,
-> >@@ -430,6 +431,7 @@ static const struct file_operations
-> >hostfs_file_fops = {
-> >
-> >static const struct file_operations hostfs_dir_fops = {
-> >	.llseek		= generic_file_llseek,
-> >+	.checkpoint	= generic_file_checkpoint,
-> >	.readdir	= hostfs_readdir,
-> >	.read		= generic_read_dir,
-> >};
-> >
-> >const struct file_operations nilfs_file_operations = {
-> >	.llseek		= generic_file_llseek,
-> >+	.checkpoint	= generic_file_checkpoint,
-> >	.read		= do_sync_read,
-> >	.write		= do_sync_write,
-> >	.aio_read	= generic_file_aio_read,
+> plz show your implementation which has no performance regresssion.
+> For me, I don't neee file_mapped accounting, at all. If we can remove that,
+> we can add simple migration lock.
+> file_mapped is a feattue you added. please improve it.
 > 
-> 
-> Minor nit - it would be good to add this method in the same place in
-> all of the *_file_operation structures for consistency.  Ideally
-> these would already be in the order that they are declared in the
-> structure, but at least new ones should be added consistently.
 
-I chose to put them right after llseek because that's a critical
-operation that determines whether generic_file_checkpoint is suitable
-or whether a custom operation is needed. Since the placement here
-has nothing to do with the order in memory it's mainly a convention
-I thought up to support review of copy-pasted file operations with
-new .checkpoint ops.
+BTW, I should explain how acculate this accounting is in this patch itself.
 
-I'll post a patch to move these down to correspond to definition-order
-unless you agree that my reasoning above justifies keeping them
-where they are.
+Now, lock_page_cgroup/unlock_page_cgroup happens when
+	- charge/uncharge/migrate/move accounting
 
-> 
-> >static const struct vm_operations_struct nfs_file_vm_ops = {
-> >	.fault = filemap_fault,
-> >	.page_mkwrite = nfs_vm_page_mkwrite,
-> >+#ifdef CONFIG_CHECKPOINT
-> >+	.checkpoint = filemap_checkpoint,
-> >+#endif
-> >};
-> 
-> Why is this one conditional, but the others are not?
+Then, the lock contention (trylock failure) seems to occur in conflict
+with
+	- charge, uncharge, migarate. move accounting
 
-filemap_checkpoint is defined in mm/filemap.c and the !CONFIG_CHECKPOINT
-section has:
+About dirty accounting, charge/uncharge/migarate are operation in synchronous
+manner with radix-tree (holding treelock etc). Then no account leak.
+move accounting is only source for inacculacy...but I don't think this move-task
+is ciritial....moreover, we don't move any file pages at task-move, now.
+(But Nishimura-san has a plan to do so.)
+So, contention will happen only at confliction with force_empty.
 
-#define filemap_checkpoint NULL
+About FILE_MAPPED accounting, it's not synchronous with radix-tree operaton.
+Then, accounting-miss seems to happen when charge/uncharge/migrate/account move.
+But
+	charge .... we don't account a page as FILE_MAPPED before it's charged.
+	uncharge .. usual operation in turncation is unmap->remove-from-radix-tree.
+		    Then, it's sequential in almost all case. The race exists when...
+		    Assume there are 2 threads A and B. A truncate a file, B map/unmap that.
+		    This is very unusal confliction.
+	migrate.... we do try_to_unmap before migrating pages. Then, FILE_MAPPED
+		    is properly handled.
+	move account .... we don't have move-account-mapped-file, yet.
 
-Of course since it's not in a header file that define is useless
-elsewhere hence the conditional here. We should move that to a
-proper header. Good catch, thanks!
+Then, this trylock contention happens at contention with force_empty and truncate.
 
-Cheers,
-	-Matt Helsley
+
+Then, main issue for contention is force_empty. But it's called for removing memcg,
+accounting for such memcg is not important.
+Then, I say "this accounting is Okay."
+
+To do more accurate, we may need another "migration lock". But to get better
+performance for root cgroup, we have to call mem_cgroup_is_root() before
+taking lock and there will be another complicated race.
+
+Bye,
+-Kame
