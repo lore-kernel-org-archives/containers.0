@@ -1,7 +1,7 @@
 From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Subject: Re: [PATCH -mmotm 1/5] memcg: disable irq at page cgroup lock
-Date: Thu, 18 Mar 2010 13:21:14 +0900
-Message-ID: <20100318132114.d5680e1e.kamezawa.hiroyu__8086.59315011955$1268886369$gmane$org@jp.fujitsu.com>
+Date: Thu, 18 Mar 2010 13:35:27 +0900
+Message-ID: <20100318133527.420b2f25.kamezawa.hiroyu__46627.0170560621$1268887353$gmane$org@jp.fujitsu.com>
 References: <1268609202-15581-1-git-send-email-arighi@develer.com>
 	<1268609202-15581-2-git-send-email-arighi@develer.com>
 	<20100317115855.GS18054@balbir.in.ibm.com>
@@ -65,7 +65,17 @@ Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
 > 
 > I will, but please don't break it silently
 > 
-I never do silently. All e-mails are open.
+Andrea, could you go in following way ?
+
+	- don't touch FILE_MAPPED stuff.
+	- add new functions for other dirty accounting stuff as in this series.
+	  (using trylock is ok.)
+	
+Then, no probelm. It's ok to add mem_cgroup_udpate_stat() indpendent from
+mem_cgroup_update_file_mapped(). The look may be messy but it's not your
+fault. But please write "why add new function" to patch description.
+
+I'm sorry for wasting your time.
 
 Thanks,
 -Kame
