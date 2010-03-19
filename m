@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 50/96] splice: export pipe/file-to-pipe/file
-	functionality
-Date: Thu, 18 Mar 2010 20:59:53 -0400
-Message-ID: <1268960401-16680-10-git-send-email-orenl__44466.5539813743$1268961096$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 53/96] c/r: refuse to checkpoint if monitoring
+	directories with dnotify
+Date: Thu, 18 Mar 2010 20:59:56 -0400
+Message-ID: <1268960401-16680-13-git-send-email-orenl__21783.8982040577$1268961100$gmane$org@cs.columbia.edu>
 References: <1268960401-16680-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,156 +22,97 @@ To: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andreas Dilger <adilger-xsfywfwIY+M@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-During pipes c/r pipes we need to save and restore pipe buffers. But
-do_splice() requires two file descriptors, therefore we can't use it,
-as we always have one file descriptor (checkpoint image) and one
-pipe_inode_info.
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-This patch exports interfaces that work at the pipe_inode_info level,
-namely link_pipe(), do_splice_to() and do_splice_from(). They are used
-in the following patch to to save and restore pipe buffers without
-unnecessary data copy.
+We do not support restarting fsnotify watches. inotify and fanotify utilize
+anon_inodes for pseudofiles which lack the .checkpoint operation. So they
+already cleanly prevent checkpoint. dnotify on the other hand registers
+its watches using fcntl() which does not require the userspace task to
+hold an fd with an empty .checkpoint operation. This means userspace
+could use dnotify to set up fsnotify watches which won't be re-created during
+restart.
 
-It slightly modifies both do_splice_to() and do_splice_from() to
-detect the case of pipe-to-pipe transfer, in which case they invoke
-splice_pipe_to_pipe() directly.
+Check for fsnotify watches created with dnotify and reject checkpoint
+if there are any.
 
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Acked-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- fs/splice.c            |   61 ++++++++++++++++++++++++++++++++---------------
- include/linux/splice.h |    9 +++++++
- 2 files changed, 50 insertions(+), 20 deletions(-)
+ checkpoint/files.c          |    5 +++++
+ fs/notify/dnotify/dnotify.c |   18 ++++++++++++++++++
+ include/linux/dnotify.h     |    6 ++++++
+ 3 files changed, 29 insertions(+), 0 deletions(-)
 
-diff --git a/fs/splice.c b/fs/splice.c
-index 3920866..76acb55 100644
---- a/fs/splice.c
-+++ b/fs/splice.c
-@@ -1051,18 +1051,43 @@ ssize_t generic_splice_sendpage(struct pipe_inode_info *pipe, struct file *out,
- EXPORT_SYMBOL(generic_splice_sendpage);
+diff --git a/checkpoint/files.c b/checkpoint/files.c
+index c647bfd..62feadd 100644
+--- a/checkpoint/files.c
++++ b/checkpoint/files.c
+@@ -207,6 +207,11 @@ int checkpoint_file(struct ckpt_ctx *ctx, void *ptr)
+ 		return -EBADF;
+ 	}
  
- /*
-+ * After the inode slimming patch, i_pipe/i_bdev/i_cdev share the same
-+ * location, so checking ->i_pipe is not enough to verify that this is a
-+ * pipe.
-+ */
-+static inline struct pipe_inode_info *pipe_info(struct inode *inode)
-+{
-+	if (S_ISFIFO(inode->i_mode))
-+		return inode->i_pipe;
++	if (is_dnotify_attached(file)) {
++		ckpt_err(ctx, -EBADF, "%(T)%(P)dnotify unsupported\n", file);
++		return -EBADF;
++	}
 +
-+	return NULL;
+ 	ret = file->f_op->checkpoint(ctx, file);
+ 	if (ret < 0)
+ 		ckpt_err(ctx, ret, "%(T)%(P)file checkpoint failed\n", file);
+diff --git a/fs/notify/dnotify/dnotify.c b/fs/notify/dnotify/dnotify.c
+index 7e54e52..0a63bf6 100644
+--- a/fs/notify/dnotify/dnotify.c
++++ b/fs/notify/dnotify/dnotify.c
+@@ -289,6 +289,24 @@ static int attach_dn(struct dnotify_struct *dn, struct dnotify_mark_entry *dnent
+ 	return 0;
+ }
+ 
++int is_dnotify_attached(struct file *filp)
++{
++	struct fsnotify_mark_entry *entry;
++	struct inode *inode;
++
++	inode = filp->f_path.dentry->d_inode;
++	if (!S_ISDIR(inode->i_mode))
++		return 0;
++
++	spin_lock(&inode->i_lock);
++	entry = fsnotify_find_mark_entry(dnotify_group, inode);
++	spin_unlock(&inode->i_lock);
++	if (!entry)
++		return 0;
++	fsnotify_put_mark(entry);
++	return 1;
 +}
 +
-+static int splice_pipe_to_pipe(struct pipe_inode_info *ipipe,
-+			       struct pipe_inode_info *opipe,
-+			       size_t len, unsigned int flags);
-+
-+/*
-  * Attempt to initiate a splice from pipe to file.
-  */
--static long do_splice_from(struct pipe_inode_info *pipe, struct file *out,
--			   loff_t *ppos, size_t len, unsigned int flags)
-+long do_splice_from(struct pipe_inode_info *pipe, struct file *out,
-+		    loff_t *ppos, size_t len, unsigned int flags)
- {
- 	ssize_t (*splice_write)(struct pipe_inode_info *, struct file *,
- 				loff_t *, size_t, unsigned int);
-+	struct pipe_inode_info *opipe;
- 	int ret;
- 
- 	if (unlikely(!(out->f_mode & FMODE_WRITE)))
- 		return -EBADF;
- 
-+	/* When called directly (e.g. from c/r) output may be a pipe */
-+	opipe = pipe_info(out->f_path.dentry->d_inode);
-+	if (opipe) {
-+		BUG_ON(opipe == pipe);
-+		return splice_pipe_to_pipe(pipe, opipe, len, flags);
-+	}
-+
- 	if (unlikely(out->f_flags & O_APPEND))
- 		return -EINVAL;
- 
-@@ -1081,17 +1106,25 @@ static long do_splice_from(struct pipe_inode_info *pipe, struct file *out,
  /*
-  * Attempt to initiate a splice from a file to a pipe.
-  */
--static long do_splice_to(struct file *in, loff_t *ppos,
--			 struct pipe_inode_info *pipe, size_t len,
--			 unsigned int flags)
-+long do_splice_to(struct file *in, loff_t *ppos,
-+		  struct pipe_inode_info *pipe, size_t len,
-+		  unsigned int flags)
+  * When a process calls fcntl to attach a dnotify watch to a directory it ends
+  * up here.  Allocate both a mark for fsnotify to add and a dnotify_struct to be
+diff --git a/include/linux/dnotify.h b/include/linux/dnotify.h
+index ecc0628..b9ce13c 100644
+--- a/include/linux/dnotify.h
++++ b/include/linux/dnotify.h
+@@ -29,6 +29,7 @@ struct dnotify_struct {
+ 			    FS_MOVED_FROM | FS_MOVED_TO)
+ 
+ extern void dnotify_flush(struct file *, fl_owner_t);
++extern int is_dnotify_attached(struct file *);
+ extern int fcntl_dirnotify(int, struct file *, unsigned long);
+ 
+ #else
+@@ -37,6 +38,11 @@ static inline void dnotify_flush(struct file *filp, fl_owner_t id)
  {
- 	ssize_t (*splice_read)(struct file *, loff_t *,
- 			       struct pipe_inode_info *, size_t, unsigned int);
-+	struct pipe_inode_info *ipipe;
- 	int ret;
+ }
  
- 	if (unlikely(!(in->f_mode & FMODE_READ)))
- 		return -EBADF;
- 
-+	/* When called firectly (e.g. from c/r) input may be a pipe */
-+	ipipe = pipe_info(in->f_path.dentry->d_inode);
-+	if (ipipe) {
-+		BUG_ON(ipipe == pipe);
-+		return splice_pipe_to_pipe(ipipe, pipe, len, flags);
-+	}
++static inline int is_dnotify_attached(struct file *)
++{
++	return 0;
++}
 +
- 	ret = rw_verify_area(READ, in, ppos, len);
- 	if (unlikely(ret < 0))
- 		return ret;
-@@ -1271,18 +1304,6 @@ long do_splice_direct(struct file *in, loff_t *ppos, struct file *out,
- static int splice_pipe_to_pipe(struct pipe_inode_info *ipipe,
- 			       struct pipe_inode_info *opipe,
- 			       size_t len, unsigned int flags);
--/*
-- * After the inode slimming patch, i_pipe/i_bdev/i_cdev share the same
-- * location, so checking ->i_pipe is not enough to verify that this is a
-- * pipe.
-- */
--static inline struct pipe_inode_info *pipe_info(struct inode *inode)
--{
--	if (S_ISFIFO(inode->i_mode))
--		return inode->i_pipe;
--
--	return NULL;
--}
- 
- /*
-  * Determine where to splice to/from.
-@@ -1887,9 +1908,9 @@ retry:
- /*
-  * Link contents of ipipe to opipe.
-  */
--static int link_pipe(struct pipe_inode_info *ipipe,
--		     struct pipe_inode_info *opipe,
--		     size_t len, unsigned int flags)
-+int link_pipe(struct pipe_inode_info *ipipe,
-+	      struct pipe_inode_info *opipe,
-+	      size_t len, unsigned int flags)
+ static inline int fcntl_dirnotify(int fd, struct file *filp, unsigned long arg)
  {
- 	struct pipe_buffer *ibuf, *obuf;
- 	int ret = 0, i = 0, nbuf;
-diff --git a/include/linux/splice.h b/include/linux/splice.h
-index 18e7c7c..431662c 100644
---- a/include/linux/splice.h
-+++ b/include/linux/splice.h
-@@ -82,4 +82,13 @@ extern ssize_t splice_to_pipe(struct pipe_inode_info *,
- extern ssize_t splice_direct_to_actor(struct file *, struct splice_desc *,
- 				      splice_direct_actor *);
- 
-+extern int link_pipe(struct pipe_inode_info *ipipe,
-+		     struct pipe_inode_info *opipe,
-+		     size_t len, unsigned int flags);
-+extern long do_splice_to(struct file *in, loff_t *ppos,
-+			 struct pipe_inode_info *pipe, size_t len,
-+			 unsigned int flags);
-+extern long do_splice_from(struct pipe_inode_info *pipe, struct file *out,
-+			   loff_t *ppos, size_t len, unsigned int flags);
-+
- #endif
+ 	return -EINVAL;
 -- 
 1.6.3.3
