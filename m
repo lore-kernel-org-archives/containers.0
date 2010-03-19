@@ -1,13 +1,12 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 5/5][lxc] Hook up lxc_checkpoint() with app_checkpoint()
-Date: Thu, 18 Mar 2010 23:41:41 -0700
-Message-ID: <20100319064141.GF25732@us.ibm.com>
+From: Michel Normand <normand-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH 0/5][lxc]: Link with USERCR
+Date: Fri, 19 Mar 2010 11:44:17 +0100
+Message-ID: <1268995457.2575.9.camel@pagloppaglop>
 References: <20100319063912.GA25732@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 In-Reply-To: <20100319063912.GA25732-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,203 +17,85 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, clg-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, DLEZCANO-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Thu, 11 Mar 2010 21:32:38 -0800
-Subject: [PATCH 5/5][lxc] Hook up lxc_checkpoint() with app_checkpoint()
-
-Have lxc_checkpoint() call app_checkpoint() implemented in checkpoint.o
-in the USER-CR git tree
-
-TODO:
-	- Map lxc_flags to flags in sys_checkpoint()
-	- Initialize app_checkpoint_args.debug and other fields based on
-	  command line options to lxc_checkpoint rather than hard-coding
-	  them
-
-Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
----
- src/lxc/checkpoint.c |   91 +++++++++++++++++++++++++++++++++++++++++++++++++-
- src/lxc/commands.c   |    3 ++
- src/lxc/commands.h   |    1 +
- src/lxc/state.c      |   26 ++++++++++++++
- 4 files changed, 120 insertions(+), 1 deletions(-)
-
-diff --git a/src/lxc/checkpoint.c b/src/lxc/checkpoint.c
-index 7e8a93e..0fbabc8 100644
---- a/src/lxc/checkpoint.c
-+++ b/src/lxc/checkpoint.c
-@@ -22,10 +22,99 @@
-  */
- #include <lxc/lxc.h>
- #include <lxc/log.h>
-+#include <sys/stat.h>
-+#include <fcntl.h>
-+#include <errno.h>
-+#include <linux/checkpoint.h>
-+
-+#include "commands.h"
-+#include "arguments.h"
-+#include "app-checkpoint.h"
- 
- lxc_log_define(lxc_checkpoint, lxc);
- 
--int lxc_checkpoint(const char *name, const char *statefile, int flags)
-+find_cinit_pid(const char *name)
- {
-+	struct lxc_command command = {
-+		.request = { .type = LXC_COMMAND_CINIT_PID },
-+	};
-+
-+	int ret, stopped;
-+
-+	ret = lxc_command(name, &command, &stopped);
-+	if (ret < 0) {
-+		ERROR("failed to send command");
-+		return -1;
-+	}
-+
-+	ERROR("find_cinit_pid %d\n", command.answer.ret);
-+
-+	return command.answer.ret;
-+}
-+
-+int lxc_checkpoint(const char *name, const char *statefile, int lxc_flags)
-+{
-+	int ret;
-+	int pid;
-+	int flags;
-+	struct stat statbuf;
-+	struct app_checkpoint_args crargs;
-+
-+	if (access(statefile, F_OK) == 0) {
-+		ret = stat(statefile, &statbuf);
-+		if (ret < 0) {
-+			ERROR("stat(%s): %s\n", statefile, strerror(errno));
-+			return -1;
-+		}
-+
-+		if (S_ISDIR(statbuf.st_mode)) {
-+			ERROR("--directory option not implemented");
-+			return -1;
-+		} else {
-+			ERROR("Checkpoint image file %s exists\n", statefile);
-+			return -1;
-+		}
-+	}
-+
-+	pid = find_cinit_pid(name);
-+	if (pid < 0) {
-+		ERROR("Unable to find cinit pid");
-+		return -1;
-+	}
-+
-+	memset(&crargs, 0, sizeof(crargs));
-+
-+	ret = open(statefile, O_CREAT|O_RDWR|O_EXCL, 0644);
-+	if (ret < 0) {
-+		ERROR("open(%s) failed\n", statefile);
-+		return -1;
-+	}
-+
-+	crargs.outfd = ret;
-+	crargs.logfd = lxc_log_fd;
-+	crargs.uerrfd = lxc_log_fd;
-+	/*
-+	 * TODO: Set this to 0 for now - otherwise we get an objhash leak
-+	 * 	 due to mismatched references to current PTY which needs to
-+	 * 	 be investigated.
-+	 *
-+	 * TODO: Map @lxc_flags to user-cr flags ?
-+	 *
-+	 * TODO: We can probably drop the ->container field since @flags
-+	 * 	 can provide the same selection. 
-+	 *
-+	 * TODO: Do we may need a --container option to lxc_checkpoint or
-+	 * 	 assume that we always work with full containers ?
-+	 */
-+	crargs.container = 0;
-+
-+	flags = CHECKPOINT_SUBTREE;
-+
-+	ret = app_checkpoint(pid, flags, &crargs);
-+	if (ret < 0) {
-+		ERROR("checkpoint of %s (pid %d) failed\n", name);
-+		return -1;
-+	}
-+
- 	return 0;
- }
-diff --git a/src/lxc/commands.c b/src/lxc/commands.c
-index 4c48571..af5c947 100644
---- a/src/lxc/commands.c
-+++ b/src/lxc/commands.c
-@@ -114,6 +114,8 @@ extern void lxc_console_remove_fd(int, struct lxc_tty_info *);
- extern int  lxc_console_callback(int, struct lxc_request *, struct lxc_handler *);
- extern int  lxc_stop_callback(int, struct lxc_request *, struct lxc_handler *);
- extern int  lxc_state_callback(int, struct lxc_request *, struct lxc_handler *);
-+extern int  lxc_cinit_pid_callback(int, struct lxc_request *,
-+				struct lxc_handler *);
- 
- static int trigger_command(int fd, struct lxc_request *request,
- 			   struct lxc_handler *handler)
-@@ -124,6 +126,7 @@ static int trigger_command(int fd, struct lxc_request *request,
- 		[LXC_COMMAND_TTY]   = lxc_console_callback,
- 		[LXC_COMMAND_STOP]  = lxc_stop_callback,
- 		[LXC_COMMAND_STATE] = lxc_state_callback,
-+		[LXC_COMMAND_CINIT_PID] = lxc_cinit_pid_callback,
- 	};
- 
- 	if (request->type < 0 || request->type >= LXC_COMMAND_MAX)
-diff --git a/src/lxc/commands.h b/src/lxc/commands.h
-index 3c6c082..22b24a9 100644
---- a/src/lxc/commands.h
-+++ b/src/lxc/commands.h
-@@ -27,6 +27,7 @@ enum {
- 	LXC_COMMAND_TTY,
- 	LXC_COMMAND_STOP,
- 	LXC_COMMAND_STATE,
-+	LXC_COMMAND_CINIT_PID,
- 	LXC_COMMAND_MAX,
- };
- 
-diff --git a/src/lxc/state.c b/src/lxc/state.c
-index ba63805..837d2da 100644
---- a/src/lxc/state.c
-+++ b/src/lxc/state.c
-@@ -168,3 +168,29 @@ out:
- 	return ret;
- }
- 
-+extern int lxc_cinit_pid_callback(int fd, struct lxc_request *request,
-+		struct lxc_handler *handler)
-+{
-+	struct lxc_answer answer;
-+	int ret;
-+	FILE *fp;
-+
-+	answer.ret = handler->pid;
-+
-+	INFO("Returning pid %d\n", handler->pid);
-+
-+	ret = send(fd, &answer, sizeof(answer), 0);
-+	if (ret < 0) {
-+		WARN("failed to send answer to the peer");
-+		goto out;
-+	}
-+
-+	if (ret != sizeof(answer)) {
-+		ERROR("partial answer sent");
-+		goto out;
-+	}
-+
-+out:
-+	return ret;
-+}
-+
--- 
-1.6.6.1
+TGUgamV1ZGkgMTggbWFycyAyMDEwIMOgIDIzOjM5IC0wNzAwLCBTdWthZGV2IEJoYXR0aXByb2x1
+IGEgw6ljcml0IDoKPiBMaW5rIGx4Y19jaGVja3BvaW50LCBseGNfcmVzdGFydCB3aXRoIFVTRVJD
+UlsyXQo+IAo+IEZvbGxvd2luZyBzZXQgb2YgcGF0Y2hlcywgd2hlbiBhcHBsaWVkIHRvIExYQyAw
+LjYuNSBhbmQgYnVpbHQgd2l0aAo+IFVTRVJDUiwgZW5hYmxlIGx4Y19jaGVja3BvaW50IGFuZCBs
+eGNfcmVzdGFydCBvZiBzb21lIHNpbXBsZSBjb250YWluZXJzLgo+IAo+IFRPRE86Cj4gCS0gRm9y
+IHNpbXBsaWNpdHksIHRoaXMgcGF0Y2hzZXQgY3VycmVudGx5IGxpbmtzICpzdGF0aWNhbGx5KiB3
+aXRoCj4gCSAgVVNFUkNSLiBXZSBzaG91bGQgZXZlbnR1YWxseSBidWlsZCBjaGVja3BvaW50Lm8g
+YW5kIHJlc3RhcnQubyBpbgo+IAkgIFVTRVJDUiBhcyBzaGFyZWQgb2JqZWN0cyBhbmQgbGluayBs
+eGNfY2hlY2twb2ludC9seGNfcmVzdGFydCB3aXRoCj4gCSAgdGhlc2Ugc2hhcmVkIG9iamVjdHMg
+YW5kIGxpYmx4Yy5zby4gKFRoaXMgYWxzbyByZXF1aXJlZCByZWJ1aWxkaW5nCj4gCSAgbHhjLWV4
+ZWN1dGUgc3RhdGljYWxseSwgc28gbHhjX2NoZWNrcG9pbnQgY2FuIGNvbW11bmljYXRlIHdpdGgK
+PiAJICBseGMtZXhlY3V0ZSB0byBnZXQgdGhlIHJvb3QtcGlkIG9mIGNvbnRhaW5lcikuCj4gCj4g
+CS0gRGV0ZXJtaW5lIGlmIGx4Y19jaGVja3BvaW50IG5lZWRzIGEgLS1jb250YWluZXIgb3B0aW9u
+IChzZWUKPiAJICBUT0RPcyBpbiBzcmMvbHhjL2NoZWNrcG9pbnQuYykKPiAKPiAJLSBUaGlzIHBh
+dGNoc2V0IHdhcyB0ZXN0ZWQgdXNpbmcgbHhjLW1hY3ZsYW4uY29uZi4gQnV0IGZvciB0aGUgVk5D
+Cj4gCSAgc2VydmVyIHRlc3RpbmcgSSByYW4gaW50byBhIHByb2JsZW0gd2l0aCBseGMtbWFjdmxh
+bi5jb25mLiBJCj4gCSAgc3dpdGNoZWQgdG8gJ2x4Yy1uby1uZXRucy5jb25mJyBhbmQgd2FzIGFi
+bGUgdG8gQy9SIHRoZSBWTkMgc2VydmVyLgo+IAkgIEkgaGF2ZSBub3QgZGVidWdnZWQgdGhlIHBy
+b2JsZW0gd2l0aCBWTkMgYW5kIGx4Yy1tYWN2bGFuLmNvbmYuCj4gCj4gCS0gJ2dsb2JhbF9zZW5k
+X3NpZ2ludCcgaXMgc3RpbGwgYSBnbG9iYWwgdmFyaWFibGUgaW4gVVNFUkNSLiBXZSBuZWVkCj4g
+CSAgdG8gZGVmaW5lIGEgYmV0dGVyIGludGVyZmFjZSB0byBleHBvc2UgaXRzIGZ1bmN0aW9uYWxp
+dHkgdG8gY2FsbGVycwo+IAkgIG9mIGFwcF9yZXN0YXJ0KCkuCj4gCj4gCS0gQ2hvb3NlIGJldHRl
+ciBuYW1lcyBhbmQgQVBJIGZvciBVU0VSQ1IgOi0pCj4gCj4gQ2hhbmdlbG9nW3YyXTogCj4gCShC
+YXNlZCBvbiBmZWVkYmFjayBmcm9tIE9yZW4gTGFhZGFuLCBTZXJnZSBIYWxseW4sIERhbmllbCBM
+ZXpjYW5vCj4gCWFuZCBDZWRyaWMgTGUgR29hdGVyKQo+IAo+IAktIFJhdGhlciB0aGFuIGRyb3Ag
+LS1kaXJlY3Rvcnkgb3B0aW9uIHRvIGx4Y19jaGVja3BvaW50L2x4Y19yZXN0YXJ0Cj4gCSAgYWRk
+IGEgbmV3IG9wdGlvbiAoLS1pbWFnZSkuCj4gCj4gCS0gSW50ZWdyYXRlIGx4Y19jaGVja3BvaW50
+IHRvIHdvcmsgd2l0aCBVU0VSQ1IKPiAKPiAJLSBVU0VSQ1IgcmVuYW1lZCB1c2VyY3IuaCB0byAi
+YXBwLWNoZWNrcG9pbnQuaCIKPiAKPiAJLSBVU0VSQ1IgZG9lcyBub3QgY3JlYXRlL2luc3RhbGwg
+bGliY2hlY2twb2ludC5hIGFuZCB1c2VyY3IuaCBmb3Igbm93Lgo+IAkgIFNvIGxpbmsgZGlyZWN0
+bHkgd2l0aCBhcHAtY2hlY2twb2ludC5oLCByZXN0YXJ0Lm8gYW5kIGNoZWNrcG9pbnQubwo+IAo+
+IAktIFVTRVJDUiByZW5hbWVzIHRoZSBpbnRlcmZhY2VzIHRvIGFwcF9jaGVja3BvaW50KCkgYW5k
+IGFwcF9yZXN0YXJ0KCkKPiAJICAnc3RydWN0IGFwcF9jaGVja3BvaW50X2FyZ3MnICdzdHJ1Y3Qg
+YXBwX3Jlc3RhcnRfYXJncycuCj4gCSAgCj4gVVNBR0U6Cj4gCj4gMS4gQnVpbGQgVVNFUkNSCj4g
+Cj4gCSQgY2QgL3Jvb3QKPiAKPiAJJCBnaXQtY2xvbmUgZ2l0Oi8vZ2l0Lm5jbC5jcy5jb2x1bWJp
+YS5lZHUvcHViL2dpdC91c2VyLWNyLmdpdCB1c2VyLWNyCj4gCj4gCSQgZ2l0LWNoZWNrb3V0IGNr
+cHQtdjIwIAo+IAkKPiAJIyBBcHBseSBwYXRjaGVzIGluIHRoZSBmb2xsb3dpbmcgc2V0Ogo+IAo+
+IAkjIGh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvcGlwZXJtYWlsL2NvbnRhaW5l
+cnMvMjAxMC1NYXJjaC8wMjM3OTMuaHRtbAo+IAo+IAkkIGNkIC9yb290L3VzZXItY3IKPiAKPiAJ
+JCBtYWtlIAo+IAo+IAkJVGhpcyBzaG91bGQgY3JlYXRlIHJlc3RhcnQubyBhbmQgY2hlY2twb2lu
+dC5vCj4gCj4gMi4gQnVpbGQvaW5zdGFsbCBseGNfY2hlY2twb2ludCBhbmQgbHhjX3Jlc3RhcnQK
+PiAKPiAJIyBEbyBub3JtYWwgTFhDIGJ1aWxkL2luc3RhbGwgb2YgMC42LjUuCj4gCj4gCSMgVGhl
+biByZXBsYWNlICdseGMtZXhlY3V0ZScsICdseGMtY2hlY2twb2ludCcsICdseGMtcmVzdGFydCcg
+d2l0aAo+IAkjIG5ldyB2ZXJzaW9uLiBpLmUgQXBwbHkgYXR0YWNoZWQgcGF0Y2hlcyBhbmQ6Cj4g
+Cj4gCSQgY2Qgc3JjL2x4YwoKWW91ciBwYXRjaCBzZXQgaXMgbm90IHVzYWJsZSBhcyBpcywgd2l0
+aCByZXF1aXJlbWVudCB0byBhcHBseSB0aGUgcGF0Y2gKYmV0d2VlbiB0d28gc2VxdWVuY2VzIG9m
+IGJ1aWxkLCBhbmQgbHhjIHVuYWJsZSB0byBiZSBidWlsdCB3aXRoIGl0LgoKUGxlYXNlIGRvIGEg
+cGF0Y2ggb2YgYXV0b21ha2UgZmlsZXMgYW5kIHJlbGF0ZWQgY29uZmlndXJlLmFjCnJhdGhlciB0
+aGFuIHRvIGNyZWF0ZSBhIE1ha2VmaWxlMiBmaWxlLgoKPiAKPiAJJCBVU0VSQ1I9L3Jvb3QvdXNl
+ci1jciBcCj4gCQltYWtlIC1mIE1ha2VmaWxlMiBseGNfY2hlY2twb2ludCBseGNfcmVzdGFydCBs
+eGNfZXhlY3V0ZQo+IAo+IAkkIGNwIGx4Y19jaGVja3BvaW50IGx4Y19yZXN0YXJ0IGx4Yy1leGVj
+dXRlICAvdXNyL2xvY2FsL2Jpbgo+IAo+IDMuIENoZWNrcG9pbnQvcmVzdGFydCBhIHNpbXBsZSBM
+WEMgY29udGFpbmVyCj4gCj4gCSQgbHhjLWV4ZWN1dGUgLS1uYW1lIGZvbyAtLXJjZmlsZSBseGMt
+bm8tbmV0bnMuY29uZiAtLSAvYmluL3NsZWVwIDEwMDAKPiAKPiAJJCBseGMtZnJlZXplIC0tbmFt
+ZSBmb28KPiAKPiAJJCBseGMtY2hlY2twb2ludCAtLW5hbWUgZm9vIC0taW1hZ2UgL3Jvb3QvbHhj
+LWZvby5ja3B0Cj4gCj4gCSQgbHhjLXVuZnJlZXplIC0tbmFtZSBmb28KPiAKPiAJJCBseGMtc3Rv
+cCAtLW5hbWUgZm9vCj4gCj4gCSQgbHhjLXJlc3RhcnQgLS1uYW1lIGZvbyAtLWltYWdlIC9yb290
+L2x4Yy1mb28uY2twdAo+IAo+IDQuIENoZWNrcG9pbnQvcmVzdGFydCBvdGhlciBMWEMgY29udGFp
+bmVycyBzdWNoIGFzOgo+IAo+IAktIGEgZmlsZS1pbyBzZXNzaW9uIChzZWUgcnVuLWZpbGVpbzEg
+aW4gY3ItdGVzdHNbMV0pCj4gCj4gCS0gcHJvY2Vzcy10cmVlIChzZWUgcnVuLXB0cmVlMSBpbiBj
+ci10ZXN0c1sxXSkKPiAKPiAJLSBBIHZpIHNlc3Npb24gaW5zaWRlIGEgVk5DIFNlcnZlciB1c2lu
+ZyAidHdtIi4gaS5lCj4gCj4gCQkkIGNhdCAvcm9vdC8udm5jL3hzdGFydHVwCj4gCQkjIS9iaW4v
+c2gKPiAKPiAJCXhzZXRyb290IC1zb2xpZCBncmV5Cj4gCQl2bmNjb25maWcgLWljb25pYyAmCj4g
+CQl4dGVybSAtZ2VvbWV0cnkgODB4MjQrMTArMTAgLWxzIC10aXRsZSAiJFZOQ0RFU0tUT1AgRGVz
+a3RvcCIgJgo+IAkJdHdtICYKPiAKPiAJCSQgbHhjLWV4ZWN1dGUgLS1uYW1lIGZvbyAtLXJjZmls
+ZSBseGMtbm8tbmV0bnMuY29uZiAtLSBcCj4gCQkJL3Vzci9iaW4vdm5jc2VydmVyIDoxCj4gCj4g
+CQkkIHZuY3ZpZXdlciA6MQo+IAo+IAkJCSMgT3BlbiBhIHZpIHNlc3Npb24KPiAKPiAJCSQgbHhj
+LWZyZWV6ZSAtLW5hbWUgZm9vIAo+IAo+IAkJCWV0Ywo+IAo+IFsxXTogY3ItdGVzdHM6CWdpdDov
+L2dpdC5zcjcxLm5ldC9+aGFsbHluL2NyX3Rlc3RzLmdpdAo+IFsyXTogVVNFUkNSOiBnaXQ6Ly9n
+aXQubmNsLmNzLmNvbHVtYmlhLmVkdS9wdWIvZ2l0L3VzZXItY3IuZ2l0Cj4gCj4gU2lnbmVkLW9m
+Zi1ieTogU3VrYWRldiBCaGF0dGlwcm9sdSA8c3VrYWRldkBsaW51eC52bmV0LmlibS5jb20+Cj4g
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KPiBDb250YWlu
+ZXJzIG1haWxpbmcgbGlzdAo+IENvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcK
+PiBodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29u
+dGFpbmVycwoKCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+CkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlv
+bi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZv
+L2NvbnRhaW5lcnM=
