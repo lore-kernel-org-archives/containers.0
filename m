@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 03/14][user-cr] Add app_restart_args->ulogfd
-Date: Thu, 18 Mar 2010 23:32:08 -0700
-Message-ID: <20100319063208.GC24844@us.ibm.com>
+Subject: [PATCH 04/14][user-cr] Add app_restart_args->uerrfd
+Date: Thu, 18 Mar 2010 23:32:26 -0700
+Message-ID: <20100319063226.GD24844@us.ibm.com>
 References: <20100319062659.GA23838@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,11 +24,11 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Thu, 4 Mar 2010 22:33:34 -0800
-Subject: [PATCH 03/14][user-cr] Add app_restart_args->ulogfd
+Date: Thu, 4 Mar 2010 22:36:31 -0800
+Subject: [PATCH 04/14][user-cr] Add app_restart_args->uerrfd
 
-Add a 'ulogfd' field in struct app_restart_args so other callers of
-app_restart() can also choose a file descriptor for the log messages
+Add a 'uerrfd' field in struct app_restart_args so other callers of
+app_restart() can also choose a file descriptor for the error messages
 from app_restart().
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
@@ -37,30 +37,30 @@ Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@pub
  1 files changed, 3 insertions(+), 0 deletions(-)
 
 diff --git a/restart.c b/restart.c
-index 9d16a4d..5ae5ec4 100644
+index 5ae5ec4..b526bbd 100644
 --- a/restart.c
 +++ b/restart.c
-@@ -385,6 +385,7 @@ struct app_restart_args {
- 	char *freezer;
+@@ -386,6 +386,7 @@ struct app_restart_args {
  	int infd;
  	int klogfd;
-+	int ulogfd;
+ 	int ulogfd;
++	int uerrfd;
  	long warn;
  	int debug;
  	int verbose;
-@@ -497,6 +498,7 @@ static void parse_args(struct app_restart_args *args, int argc, char *argv[])
- 	args->wait = 1;
+@@ -499,6 +500,7 @@ static void parse_args(struct app_restart_args *args, int argc, char *argv[])
  	args->infd = -1;
  	args->klogfd = -1;
-+	args->ulogfd = fileno(stdout);
+ 	args->ulogfd = fileno(stdout);
++	args->uerrfd = fileno(stderr);
  	args->warn = CKPT_COND_WARN;
  	args->fail = CKPT_COND_FAIL;
  	no_pidns = 0;
-@@ -819,6 +821,7 @@ int app_restart(struct app_restart_args *args)
- 
+@@ -822,6 +824,7 @@ int app_restart(struct app_restart_args *args)
  	global_debug = args->debug;
  	global_verbose = args->verbose;
-+	global_ulogfd = args->ulogfd;
+ 	global_ulogfd = args->ulogfd;
++	global_uerrfd = args->uerrfd;
  
  	/* input file descriptor (default: stdin) */
  	if (args->infd >= 0) {
