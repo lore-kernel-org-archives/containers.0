@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 37/96] c/r: introduce new 'file_operations':
-	->checkpoint, ->collect()
-Date: Thu, 18 Mar 2010 20:59:46 -0400
-Message-ID: <1268960401-16680-3-git-send-email-orenl__36286.9838638746$1268961081$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 44/96] c/r: add generic '->checkpoint' f_op to ext
+	fses
+Date: Thu, 18 Mar 2010 20:59:50 -0400
+Message-ID: <1268960401-16680-7-git-send-email-orenl__23158.2423592501$1268961081$gmane$org@cs.columbia.edu>
 References: <1268960401-16680-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -19,121 +19,119 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andreas Dilger <adilger-xsfywfwIY+M@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andreas Dilger <adilger-xsfywfwIY+M@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-While we assume all normal files and directories can be checkpointed,
-there are, as usual in the VFS, specialized places that will always
-need an ability to override these defaults. Although we could do this
-completely in the checkpoint code, that would bitrot quickly.
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-This adds a new 'file_operations' function for checkpointing a file.
-It is assumed that there should be a dirt-simple way to make something
-(un)checkpointable that fits in with current code.
+This marks ext[234] as being checkpointable.  There will be many
+more to do this to, but this is a start.
 
-As you can see in the ext[234] patches down the road, all that we have
-to do to make something simple be supported is add a single "generic"
-f_op entry.
+Changelog[ckpt-v19-rc3]:
+  - Rebase to kernel 2.6.33 (ext2)
+Changelog[v1]:
+  - [Serge Hallyn] Use filemap_checkpoint() in ext4_file_vm_ops
 
-Also adds a new 'file_operations' function for 'collecting' a file for
-leak-detection during full-container checkpoint. This is useful for
-those files that hold references to other "collectable" objects. Two
-examples are pty files that point to corresponding tty objects, and
-eventpoll files that refer to the files they are monitoring.
-
-Finally, this patch introduces vfs_fcntl() so that it can be called
-from restart (see patch adding restart of files).
-
-Changelog[v17]
-  - Introduce 'collect' method
-Changelog[v17]
-  - Forward-declare 'ckpt_ctx' et-al, don't use checkpoint_types.h
-
+Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- fs/fcntl.c         |   21 +++++++++++++--------
- include/linux/fs.h |    7 +++++++
- 2 files changed, 20 insertions(+), 8 deletions(-)
+ fs/ext2/dir.c  |    1 +
+ fs/ext2/file.c |    2 ++
+ fs/ext3/dir.c  |    1 +
+ fs/ext3/file.c |    1 +
+ fs/ext4/dir.c  |    1 +
+ fs/ext4/file.c |    4 ++++
+ 6 files changed, 10 insertions(+), 0 deletions(-)
 
-diff --git a/fs/fcntl.c b/fs/fcntl.c
-index 97e01dc..e1f02ca 100644
---- a/fs/fcntl.c
-+++ b/fs/fcntl.c
-@@ -418,6 +418,18 @@ static long do_fcntl(int fd, unsigned int cmd, unsigned long arg,
- 	return err;
- }
- 
-+int vfs_fcntl(int fd, unsigned int cmd, unsigned long arg, struct file *filp)
-+{
-+	int err;
-+
-+	err = security_file_fcntl(filp, cmd, arg);
-+	if (err)
-+		goto out;
-+	err = do_fcntl(fd, cmd, arg, filp);
-+ out:
-+	return err;
-+}
-+
- SYSCALL_DEFINE3(fcntl, unsigned int, fd, unsigned int, cmd, unsigned long, arg)
- {	
- 	struct file *filp;
-@@ -427,14 +439,7 @@ SYSCALL_DEFINE3(fcntl, unsigned int, fd, unsigned int, cmd, unsigned long, arg)
- 	if (!filp)
- 		goto out;
- 
--	err = security_file_fcntl(filp, cmd, arg);
--	if (err) {
--		fput(filp);
--		return err;
--	}
--
--	err = do_fcntl(fd, cmd, arg, filp);
--
-+	err = vfs_fcntl(fd, cmd, arg, filp);
-  	fput(filp);
- out:
- 	return err;
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 6c08df2..65ebec5 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -394,6 +394,7 @@ struct kstatfs;
- struct vm_area_struct;
- struct vfsmount;
- struct cred;
-+struct ckpt_ctx;
- 
- extern void __init inode_init(void);
- extern void __init inode_init_early(void);
-@@ -1093,6 +1094,8 @@ struct file_lock {
- 
- #include <linux/fcntl.h>
- 
-+extern int vfs_fcntl(int fd, unsigned cmd, unsigned long arg, struct file *fp);
-+
- extern void send_sigio(struct fown_struct *fown, int fd, int band);
- 
- #ifdef CONFIG_FILE_LOCKING
-@@ -1504,6 +1507,8 @@ struct file_operations {
- 	ssize_t (*splice_write)(struct pipe_inode_info *, struct file *, loff_t *, size_t, unsigned int);
- 	ssize_t (*splice_read)(struct file *, loff_t *, struct pipe_inode_info *, size_t, unsigned int);
- 	int (*setlease)(struct file *, long, struct file_lock **);
-+	int (*checkpoint)(struct ckpt_ctx *, struct file *);
-+	int (*collect)(struct ckpt_ctx *, struct file *);
+diff --git a/fs/ext2/dir.c b/fs/ext2/dir.c
+index 7516957..84c17f9 100644
+--- a/fs/ext2/dir.c
++++ b/fs/ext2/dir.c
+@@ -722,4 +722,5 @@ const struct file_operations ext2_dir_operations = {
+ 	.compat_ioctl	= ext2_compat_ioctl,
+ #endif
+ 	.fsync		= ext2_fsync,
++	.checkpoint	= generic_file_checkpoint,
+ };
+diff --git a/fs/ext2/file.c b/fs/ext2/file.c
+index 586e358..b38d7b9 100644
+--- a/fs/ext2/file.c
++++ b/fs/ext2/file.c
+@@ -75,6 +75,7 @@ const struct file_operations ext2_file_operations = {
+ 	.fsync		= ext2_fsync,
+ 	.splice_read	= generic_file_splice_read,
+ 	.splice_write	= generic_file_splice_write,
++	.checkpoint	= generic_file_checkpoint,
  };
  
- struct inode_operations {
-@@ -2313,6 +2318,8 @@ void inode_sub_bytes(struct inode *inode, loff_t bytes);
- loff_t inode_get_bytes(struct inode *inode);
- void inode_set_bytes(struct inode *inode, loff_t bytes);
+ #ifdef CONFIG_EXT2_FS_XIP
+@@ -90,6 +91,7 @@ const struct file_operations ext2_xip_file_operations = {
+ 	.open		= generic_file_open,
+ 	.release	= ext2_release_file,
+ 	.fsync		= ext2_fsync,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ #endif
  
-+#define generic_file_checkpoint NULL
-+
- extern int vfs_readdir(struct file *, filldir_t, void *);
+diff --git a/fs/ext3/dir.c b/fs/ext3/dir.c
+index 373fa90..65f98af 100644
+--- a/fs/ext3/dir.c
++++ b/fs/ext3/dir.c
+@@ -48,6 +48,7 @@ const struct file_operations ext3_dir_operations = {
+ #endif
+ 	.fsync		= ext3_sync_file,	/* BKL held */
+ 	.release	= ext3_release_dir,
++	.checkpoint	= generic_file_checkpoint,
+ };
  
- extern int vfs_stat(char __user *, struct kstat *);
+ 
+diff --git a/fs/ext3/file.c b/fs/ext3/file.c
+index 388bbdf..bcd9b88 100644
+--- a/fs/ext3/file.c
++++ b/fs/ext3/file.c
+@@ -67,6 +67,7 @@ const struct file_operations ext3_file_operations = {
+ 	.fsync		= ext3_sync_file,
+ 	.splice_read	= generic_file_splice_read,
+ 	.splice_write	= generic_file_splice_write,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ 
+ const struct inode_operations ext3_file_inode_operations = {
+diff --git a/fs/ext4/dir.c b/fs/ext4/dir.c
+index 9dc9316..f69404c 100644
+--- a/fs/ext4/dir.c
++++ b/fs/ext4/dir.c
+@@ -48,6 +48,7 @@ const struct file_operations ext4_dir_operations = {
+ #endif
+ 	.fsync		= ext4_sync_file,
+ 	.release	= ext4_release_dir,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ 
+ 
+diff --git a/fs/ext4/file.c b/fs/ext4/file.c
+index 9630583..93a129b 100644
+--- a/fs/ext4/file.c
++++ b/fs/ext4/file.c
+@@ -84,6 +84,9 @@ ext4_file_write(struct kiocb *iocb, const struct iovec *iov,
+ static const struct vm_operations_struct ext4_file_vm_ops = {
+ 	.fault		= filemap_fault,
+ 	.page_mkwrite   = ext4_page_mkwrite,
++#ifdef CONFIG_CHECKPOINT
++	.checkpoint	= filemap_checkpoint,
++#endif
+ };
+ 
+ static int ext4_file_mmap(struct file *file, struct vm_area_struct *vma)
+@@ -146,6 +149,7 @@ const struct file_operations ext4_file_operations = {
+ 	.fsync		= ext4_sync_file,
+ 	.splice_read	= generic_file_splice_read,
+ 	.splice_write	= generic_file_splice_write,
++	.checkpoint	= generic_file_checkpoint,
+ };
+ 
+ const struct inode_operations ext4_file_inode_operations = {
 -- 
 1.6.3.3
