@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 4/5][lxc] Hook up lxc_restart() with app_restart()
-Date: Thu, 18 Mar 2010 23:41:21 -0700
-Message-ID: <20100319064121.GE25732@us.ibm.com>
+Subject: [PATCH 5/5][lxc] Hook up lxc_checkpoint() with app_checkpoint()
+Date: Thu, 18 Mar 2010 23:41:41 -0700
+Message-ID: <20100319064141.GF25732@us.ibm.com>
 References: <20100319063912.GA25732@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,140 +24,197 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Thu, 11 Mar 2010 20:47:56 -0800
-Subject: [PATCH 4/5][lxc] Hook up lxc_restart() with app_restart()
+Date: Thu, 11 Mar 2010 21:32:38 -0800
+Subject: [PATCH 5/5][lxc] Hook up lxc_checkpoint() with app_checkpoint()
 
-Have lxc_restart() call app_restart() implemented in the 'restart.o' from
-USER-CR git tree.
+Have lxc_checkpoint() call app_checkpoint() implemented in checkpoint.o
+in the USER-CR git tree
 
-Changelog[v2]:
-	- Link with restart.o from usercr rather than libcheckpoint.a
-	- rename 'struct restart_args' to 'struct app_restart_args'
-	- Initialize the new field app_restart_args->uerrfd
-	- (Oren Laadan)Remove ->send_sigint field from 'struct app_restart_args'
+TODO:
+	- Map lxc_flags to flags in sys_checkpoint()
+	- Initialize app_checkpoint_args.debug and other fields based on
+	  command line options to lxc_checkpoint rather than hard-coding
+	  them
+
+Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- src/lxc/restart.c |  104 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 104 insertions(+), 0 deletions(-)
+ src/lxc/checkpoint.c |   91 +++++++++++++++++++++++++++++++++++++++++++++++++-
+ src/lxc/commands.c   |    3 ++
+ src/lxc/commands.h   |    1 +
+ src/lxc/state.c      |   26 ++++++++++++++
+ 4 files changed, 120 insertions(+), 1 deletions(-)
 
-diff --git a/src/lxc/restart.c b/src/lxc/restart.c
-index 467489e..945435c 100644
---- a/src/lxc/restart.c
-+++ b/src/lxc/restart.c
-@@ -22,11 +22,115 @@
+diff --git a/src/lxc/checkpoint.c b/src/lxc/checkpoint.c
+index 7e8a93e..0fbabc8 100644
+--- a/src/lxc/checkpoint.c
++++ b/src/lxc/checkpoint.c
+@@ -22,10 +22,99 @@
   */
  #include <lxc/lxc.h>
  #include <lxc/log.h>
-+#include <lxc/start.h>
-+#include <lxc/namespace.h>
-+#include <errno.h>
++#include <sys/stat.h>
 +#include <fcntl.h>
-+#include <signal.h>
-+#include <sys/prctl.h>
-+#include <app-checkpoint.h>
++#include <errno.h>
++#include <linux/checkpoint.h>
 +
-+struct lxc_restart_arg {
-+	const char *name;
-+	const char *statefile;
-+	char *const argv;
-+	struct lxc_handler *handler;
-+};
++#include "commands.h"
++#include "arguments.h"
++#include "app-checkpoint.h"
  
- lxc_log_define(lxc_restart, lxc);
+ lxc_log_define(lxc_checkpoint, lxc);
  
-+static int do_restart(struct lxc_restart_arg *lxcarg)
+-int lxc_checkpoint(const char *name, const char *statefile, int flags)
++find_cinit_pid(const char *name)
+ {
++	struct lxc_command command = {
++		.request = { .type = LXC_COMMAND_CINIT_PID },
++	};
++
++	int ret, stopped;
++
++	ret = lxc_command(name, &command, &stopped);
++	if (ret < 0) {
++		ERROR("failed to send command");
++		return -1;
++	}
++
++	ERROR("find_cinit_pid %d\n", command.answer.ret);
++
++	return command.answer.ret;
++}
++
++int lxc_checkpoint(const char *name, const char *statefile, int lxc_flags)
 +{
++	int ret;
 +	int pid;
-+	struct lxc_handler *handler = lxcarg->handler;
-+	const char *name = lxcarg->name;
-+	char *const argv = lxcarg->argv;
-+	const char *statefile = lxcarg->statefile;
-+	struct app_restart_args restart_args;
++	int flags;
++	struct stat statbuf;
++	struct app_checkpoint_args crargs;
 +
-+        if (sigprocmask(SIG_SETMASK, &handler->oldmask, NULL)) {
-+                SYSERROR("failed to set sigprocmask");
-+                return -1;
-+        }
++	if (access(statefile, F_OK) == 0) {
++		ret = stat(statefile, &statbuf);
++		if (ret < 0) {
++			ERROR("stat(%s): %s\n", statefile, strerror(errno));
++			return -1;
++		}
 +
-+        if (prctl(PR_SET_PDEATHSIG, SIGKILL, 0, 0, 0)) {
-+                SYSERROR("failed to set pdeath signal");
-+                return -1;
-+        }
-+
-+	memset(&restart_args, 0, sizeof(restart_args));
-+
-+	if (statefile) {
-+		restart_args.infd = open(statefile, O_RDONLY, 0);
-+		if (restart_args.infd < 0) {
-+			SYSERROR("Failed to open statefile %s\n", statefile);
++		if (S_ISDIR(statbuf.st_mode)) {
++			ERROR("--directory option not implemented");
++			return -1;
++		} else {
++			ERROR("Checkpoint image file %s exists\n", statefile);
 +			return -1;
 +		}
 +	}
 +
-+	restart_args.pids = 1;
-+	restart_args.pidns = 1;
-+	restart_args.mnt_pty = 1;
-+	restart_args.mntns = 1;
-+	restart_args.klogfd = -1;
-+	restart_args.ulogfd = lxc_log_fd;
-+	restart_args.uerrfd = fileno(stderr);
-+	restart_args.debug = 1;
-+	restart_args.wait = 0;
-+
-+        pid = app_restart(&restart_args);
-+
-+        return pid;
-+}
-+
- int lxc_restart(const char *name, const char *statefile, struct lxc_conf *conf,
- 		int flags)
- {
-+	int err;
-+	int status;
-+	struct lxc_handler *handler;
-+	struct lxc_restart_arg lxcarg = {
-+		.name = name,
-+		.statefile = statefile,
-+		.handler = NULL,
-+	};
-+
-+	handler = lxc_init(name, conf);
-+	if (!handler) {
-+		ERROR("failed to initialize the container");
++	pid = find_cinit_pid(name);
++	if (pid < 0) {
++		ERROR("Unable to find cinit pid");
 +		return -1;
 +	}
 +
-+	lxcarg.handler = handler;
-+	handler->pid = do_restart(&lxcarg);
++	memset(&crargs, 0, sizeof(crargs));
 +
-+	INFO("do_restart(): returns pid %d\n", handler->pid);
-+	lxc_rename_nsgroup(name, handler);
-+
-+	err = lxc_close_all_inherited_fd();
-+	if (err) {
-+		ERROR("unable to close inherited fds");
-+		goto out_abort;
++	ret = open(statefile, O_CREAT|O_RDWR|O_EXCL, 0644);
++	if (ret < 0) {
++		ERROR("open(%s) failed\n", statefile);
++		return -1;
 +	}
 +
-+	err = lxc_poll(name, handler);
-+	if (err) {
-+		ERROR("mainloop exited with an error");
-+		goto out_abort;
++	crargs.outfd = ret;
++	crargs.logfd = lxc_log_fd;
++	crargs.uerrfd = lxc_log_fd;
++	/*
++	 * TODO: Set this to 0 for now - otherwise we get an objhash leak
++	 * 	 due to mismatched references to current PTY which needs to
++	 * 	 be investigated.
++	 *
++	 * TODO: Map @lxc_flags to user-cr flags ?
++	 *
++	 * TODO: We can probably drop the ->container field since @flags
++	 * 	 can provide the same selection. 
++	 *
++	 * TODO: Do we may need a --container option to lxc_checkpoint or
++	 * 	 assume that we always work with full containers ?
++	 */
++	crargs.container = 0;
++
++	flags = CHECKPOINT_SUBTREE;
++
++	ret = app_checkpoint(pid, flags, &crargs);
++	if (ret < 0) {
++		ERROR("checkpoint of %s (pid %d) failed\n", name);
++		return -1;
 +	}
-+
-+	while (waitpid(handler->pid, &status, 0) < 0 && errno == EINTR)
-+		continue;
-+
-+	err =  lxc_error_set_and_log(handler->pid, status);
-+
-+out_fini:
-+	lxc_fini(name, handler);
-+	return err;
-+
-+out_abort:
-+	lxc_abort(name, handler);
-+	goto out_fini;
 +
  	return 0;
  }
+diff --git a/src/lxc/commands.c b/src/lxc/commands.c
+index 4c48571..af5c947 100644
+--- a/src/lxc/commands.c
++++ b/src/lxc/commands.c
+@@ -114,6 +114,8 @@ extern void lxc_console_remove_fd(int, struct lxc_tty_info *);
+ extern int  lxc_console_callback(int, struct lxc_request *, struct lxc_handler *);
+ extern int  lxc_stop_callback(int, struct lxc_request *, struct lxc_handler *);
+ extern int  lxc_state_callback(int, struct lxc_request *, struct lxc_handler *);
++extern int  lxc_cinit_pid_callback(int, struct lxc_request *,
++				struct lxc_handler *);
+ 
+ static int trigger_command(int fd, struct lxc_request *request,
+ 			   struct lxc_handler *handler)
+@@ -124,6 +126,7 @@ static int trigger_command(int fd, struct lxc_request *request,
+ 		[LXC_COMMAND_TTY]   = lxc_console_callback,
+ 		[LXC_COMMAND_STOP]  = lxc_stop_callback,
+ 		[LXC_COMMAND_STATE] = lxc_state_callback,
++		[LXC_COMMAND_CINIT_PID] = lxc_cinit_pid_callback,
+ 	};
+ 
+ 	if (request->type < 0 || request->type >= LXC_COMMAND_MAX)
+diff --git a/src/lxc/commands.h b/src/lxc/commands.h
+index 3c6c082..22b24a9 100644
+--- a/src/lxc/commands.h
++++ b/src/lxc/commands.h
+@@ -27,6 +27,7 @@ enum {
+ 	LXC_COMMAND_TTY,
+ 	LXC_COMMAND_STOP,
+ 	LXC_COMMAND_STATE,
++	LXC_COMMAND_CINIT_PID,
+ 	LXC_COMMAND_MAX,
+ };
+ 
+diff --git a/src/lxc/state.c b/src/lxc/state.c
+index ba63805..837d2da 100644
+--- a/src/lxc/state.c
++++ b/src/lxc/state.c
+@@ -168,3 +168,29 @@ out:
+ 	return ret;
+ }
+ 
++extern int lxc_cinit_pid_callback(int fd, struct lxc_request *request,
++		struct lxc_handler *handler)
++{
++	struct lxc_answer answer;
++	int ret;
++	FILE *fp;
++
++	answer.ret = handler->pid;
++
++	INFO("Returning pid %d\n", handler->pid);
++
++	ret = send(fd, &answer, sizeof(answer), 0);
++	if (ret < 0) {
++		WARN("failed to send answer to the peer");
++		goto out;
++	}
++
++	if (ret != sizeof(answer)) {
++		ERROR("partial answer sent");
++		goto out;
++	}
++
++out:
++	return ret;
++}
++
 -- 
 1.6.6.1
