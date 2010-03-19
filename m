@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 12/14][user-cr] app_restart(): mnt-pty implies mntns
-Date: Thu, 18 Mar 2010 23:34:19 -0700
-Message-ID: <20100319063419.GL24844@us.ibm.com>
+Subject: [PATCH 11/14][user-cr] restart: Define process_args()
+Date: Thu, 18 Mar 2010 23:34:05 -0700
+Message-ID: <20100319063405.GK24844@us.ibm.com>
 References: <20100319062659.GA23838@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,49 +24,62 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Sat, 6 Mar 2010 12:49:40 -0800
-Subject: [PATCH 12/14][user-cr] app_restart(): mnt-pty implies mntns
+Date: Sat, 6 Mar 2010 13:14:02 -0800
+Subject: [PATCH 11/14][user-cr] restart: Define process_args()
 
-If the mount_pty is set, mntns must be implied, otherwise the newinstance
-mount of devpts will make the ptys in the original pts instance inaccessible.
-
-parse_args() does this correctly, but move the code into app_restart() so
-other callers of app_restart() also get this behavior.
+Move the code that validates/processes the arguments into a separate
+function.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- restart-main.c |    4 ----
- restart.c      |    3 +++
- 2 files changed, 3 insertions(+), 4 deletions(-)
+ restart.c |   27 ++++++++++++++++++++-------
+ 1 files changed, 20 insertions(+), 7 deletions(-)
 
-diff --git a/restart-main.c b/restart-main.c
-index 237742e..36318a4 100644
---- a/restart-main.c
-+++ b/restart-main.c
-@@ -324,10 +324,6 @@ static void parse_args(struct app_restart_args *args, int argc, char *argv[])
- 			exit(1);
- 		}
- 	}
--
--
--	if (args->mnt_pty)
--		args->mntns = 1;
- }
- 
- int main(int argc, char *argv[])
 diff --git a/restart.c b/restart.c
-index 139f6db..d7b5b72 100644
+index b6ee23c..139f6db 100644
 --- a/restart.c
 +++ b/restart.c
-@@ -404,6 +404,9 @@ int process_args(struct app_restart_args *args)
+@@ -379,14 +379,12 @@ static int freezer_register(struct ckpt_ctx *ctx, pid_t pid)
+ 	return ret;
+ }
+ 
+-int app_restart(struct app_restart_args *args)
++/*
++ * Validate the specified arguments and initialize globals based on the
++ * arguments. Return 0 on success.
++ */
++int process_args(struct app_restart_args *args)
+ {
+-	struct ckpt_ctx ctx;
+-	int ret;
+-
+-	memset(&ctx, 0, sizeof(ctx));
+-	ctx.args = args;
+-
+ 	global_debug = args->debug;
+ 	global_verbose = args->verbose;
+ 	global_ulogfd = args->ulogfd;
+@@ -406,6 +404,21 @@ int app_restart(struct app_restart_args *args)
  	if (args->klogfd < 0)
  		args->klogfd = CHECKPOINT_FD_NONE;
  
-+	if (args->mnt_pty)
-+		args->mntns = 1;
++	return 0;
++}
 +
- 	return 0;
- }
- 
++int app_restart(struct app_restart_args *args)
++{
++	struct ckpt_ctx ctx;
++	int ret;
++
++	memset(&ctx, 0, sizeof(ctx));
++	ctx.args = args;
++
++	ret = process_args(args);
++	if (ret < 0)
++		return ret;
++
+ 	/* freezer preparation */
+ 	if (args->freezer && freezer_prepare(&ctx) < 0)
+ 		exit(1);
 -- 
 1.6.0.4
