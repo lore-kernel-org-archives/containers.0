@@ -1,12 +1,14 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][PATCH 0/5][lxc]: Link with USERCR
-Date: Thu, 18 Mar 2010 23:39:12 -0700
-Message-ID: <20100319063912.GA25732@us.ibm.com>
+Subject: [PATCH 2/5][lxc] lxc_restart: Add --image option
+Date: Thu, 18 Mar 2010 23:40:46 -0700
+Message-ID: <20100319064046.GC25732@us.ibm.com>
+References: <20100319063912.GA25732@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <20100319063912.GA25732-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,126 +23,116 @@ Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gm
 List-Id: containers.vger.kernel.org
 
 
-Link lxc_checkpoint, lxc_restart with USERCR[2]
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Date: Wed, 10 Mar 2010 21:59:39 -0800
+Subject: [PATCH 2/5][lxc] lxc_restart: Add --image option
 
-Following set of patches, when applied to LXC 0.6.5 and built with
-USERCR, enable lxc_checkpoint and lxc_restart of some simple containers.
+The existing --directory option to lxc_restart expects the checkpoint state
+to be a directory. USERCR however uses a single regular file to store the
+checkpoint image. So add a --image option to enable checkpointing and
+restarting applications using USERCR.
 
-TODO:
-	- For simplicity, this patchset currently links *statically* with
-	  USERCR. We should eventually build checkpoint.o and restart.o in
-	  USERCR as shared objects and link lxc_checkpoint/lxc_restart with
-	  these shared objects and liblxc.so. (This also required rebuilding
-	  lxc-execute statically, so lxc_checkpoint can communicate with
-	  lxc-execute to get the root-pid of container).
-
-	- Determine if lxc_checkpoint needs a --container option (see
-	  TODOs in src/lxc/checkpoint.c)
-
-	- This patchset was tested using lxc-macvlan.conf. But for the VNC
-	  server testing I ran into a problem with lxc-macvlan.conf. I
-	  switched to 'lxc-no-netns.conf' and was able to C/R the VNC server.
-	  I have not debugged the problem with VNC and lxc-macvlan.conf.
-
-	- 'global_send_sigint' is still a global variable in USERCR. We need
-	  to define a better interface to expose its functionality to callers
-	  of app_restart().
-
-	- Choose better names and API for USERCR :-)
-
-Changelog[v2]: 
-	(Based on feedback from Oren Laadan, Serge Hallyn, Daniel Lezcano
-	and Cedric Le Goater)
-
-	- Rather than drop --directory option to lxc_checkpoint/lxc_restart
-	  add a new option (--image).
-
-	- Integrate lxc_checkpoint to work with USERCR
-
-	- USERCR renamed usercr.h to "app-checkpoint.h"
-
-	- USERCR does not create/install libcheckpoint.a and usercr.h for now.
-	  So link directly with app-checkpoint.h, restart.o and checkpoint.o
-
-	- USERCR renames the interfaces to app_checkpoint() and app_restart()
-	  'struct app_checkpoint_args' 'struct app_restart_args'.
-	  
-USAGE:
-
-1. Build USERCR
-
-	$ cd /root
-
-	$ git-clone git://git.ncl.cs.columbia.edu/pub/git/user-cr.git user-cr
-
-	$ git-checkout ckpt-v20 
-	
-	# Apply patches in the following set:
-
-	# https://lists.linux-foundation.org/pipermail/containers/2010-March/023793.html
-
-	$ cd /root/user-cr
-
-	$ make 
-
-		This should create restart.o and checkpoint.o
-
-2. Build/install lxc_checkpoint and lxc_restart
-
-	# Do normal LXC build/install of 0.6.5.
-
-	# Then replace 'lxc-execute', 'lxc-checkpoint', 'lxc-restart' with
-	# new version. i.e Apply attached patches and:
-
-	$ cd src/lxc
-
-	$ USERCR=/root/user-cr \
-		make -f Makefile2 lxc_checkpoint lxc_restart lxc_execute
-
-	$ cp lxc_checkpoint lxc_restart lxc-execute  /usr/local/bin
-
-3. Checkpoint/restart a simple LXC container
-
-	$ lxc-execute --name foo --rcfile lxc-no-netns.conf -- /bin/sleep 1000
-
-	$ lxc-freeze --name foo
-
-	$ lxc-checkpoint --name foo --image /root/lxc-foo.ckpt
-
-	$ lxc-unfreeze --name foo
-
-	$ lxc-stop --name foo
-
-	$ lxc-restart --name foo --image /root/lxc-foo.ckpt
-
-4. Checkpoint/restart other LXC containers such as:
-
-	- a file-io session (see run-fileio1 in cr-tests[1])
-
-	- process-tree (see run-ptree1 in cr-tests[1])
-
-	- A vi session inside a VNC Server using "twm". i.e
-
-		$ cat /root/.vnc/xstartup
-		#!/bin/sh
-
-		xsetroot -solid grey
-		vncconfig -iconic &
-		xterm -geometry 80x24+10+10 -ls -title "$VNCDESKTOP Desktop" &
-		twm &
-
-		$ lxc-execute --name foo --rcfile lxc-no-netns.conf -- \
-			/usr/bin/vncserver :1
-
-		$ vncviewer :1
-
-			# Open a vi session
-
-		$ lxc-freeze --name foo 
-
-			etc
-
-[1]: cr-tests:	git://git.sr71.net/~hallyn/cr_tests.git
-[2]: USERCR: git://git.ncl.cs.columbia.edu/pub/git/user-cr.git
+Depending on how the application was checkpointed, users should specify
+either --image=CHECKPOINT-IMAGE or the --directory=STATEFILE option (but not
+both).
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+---
+ src/lxc/arguments.h   |    1 +
+ src/lxc/lxc_restart.c |   29 ++++++++++++++++++++++-------
+ 2 files changed, 23 insertions(+), 7 deletions(-)
+
+diff --git a/src/lxc/arguments.h b/src/lxc/arguments.h
+index 3bc027d..30953ee 100644
+--- a/src/lxc/arguments.h
++++ b/src/lxc/arguments.h
+@@ -45,6 +45,7 @@ struct lxc_arguments {
+ 	int daemonize;
+ 	const char *rcfile;
+ 	const char *statefile;
++	const char *imagefile;
+ 
+ 	/* for lxc-checkpoint */
+ 	int flags;
+diff --git a/src/lxc/lxc_restart.c b/src/lxc/lxc_restart.c
+index 7db1d85..39f7ea8 100644
+--- a/src/lxc/lxc_restart.c
++++ b/src/lxc/lxc_restart.c
+@@ -41,10 +41,17 @@ static struct lxc_list defines;
+ 
+ static int my_checker(const struct lxc_arguments* args)
+ {
+-	if (!args->statefile) {
+-		lxc_error(args, "no statefile specified");
+-		return -1;
+-	}
++	int i, s;
++	
++	/* make them boolean */
++	i = !!(args->imagefile);
++	s = !!(args->statefile);
++
++        if (!(i ^ s)) {
++                lxc_error(args, "Must specify exactly one of --directory "
++                                "and --image options");
++                return -1;
++        }
+ 
+ 	return 0;
+ }
+@@ -54,6 +61,7 @@ static int my_parser(struct lxc_arguments* args, int c, char* arg)
+ 	switch (c) {
+ 	case 'd': args->statefile = arg; break;
+ 	case 'f': args->rcfile = arg; break;
++	case 'i': args->imagefile = arg; break;
+ 	case 'p': args->flags = LXC_FLAG_PAUSE; break;
+ 	case 's': return lxc_config_define_add(&defines, arg);
+ 	}
+@@ -66,6 +74,7 @@ static const struct option my_longopts[] = {
+ 	{"rcfile", required_argument, 0, 'f'},
+ 	{"pause", no_argument, 0, 'p'},
+ 	{"define", required_argument, 0, 's'},
++	{"image", required_argument, 0, 'i'},
+ 	LXC_COMMON_OPTIONS
+ };
+ 
+@@ -73,14 +82,16 @@ static struct lxc_arguments my_args = {
+ 	.progname = "lxc-restart",
+ 	.help     = "\
+ --name=NAME --directory STATEFILE\n\
++\tlxc_restart --name=NAME --image CHECKPOINT-IMAGE\n\
+ \n\
+ lxc-restart restarts from STATEFILE the NAME container\n\
+ \n\
+ Options :\n\
+   -n, --name=NAME      NAME for name of the container\n\
+   -p, --pause          do not release the container after the restart\n\
+-  -d, --directory=STATEFILE for name of statefile\n\
++  -d, --directory=STATEFILE for name of statefile(legacy mode)\n\
+   -f, --rcfile=FILE Load configuration file FILE\n\
++  -i, --image=FILE Load the application state from FILE(user-cr mode)\n\
+   -s, --define KEY=VAL Assign VAL to configuration variable KEY\n",
+ 	.options  = my_longopts,
+ 	.parser   = my_parser,
+@@ -90,6 +101,7 @@ Options :\n\
+ int main(int argc, char *argv[])
+ {
+ 	char *rcfile = NULL;
++	const char *image = NULL;
+ 	struct lxc_conf *conf;
+ 
+ 	lxc_list_init(&defines);
+@@ -131,6 +143,9 @@ int main(int argc, char *argv[])
+ 	if (lxc_config_define_load(&defines, conf))
+ 		return -1;
+ 
+-	return lxc_restart(my_args.name, my_args.statefile, conf,
+-			   my_args.flags);
++	image = my_args.imagefile;
++	if (my_args.statefile)
++		image = my_args.statefile;
++
++	return lxc_restart(my_args.name, image, conf, my_args.flags);
+ }
+-- 
+1.6.6.1
