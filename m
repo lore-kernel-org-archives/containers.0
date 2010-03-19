@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 02/14][user-cr] Add app_restart_args->verbose
-Date: Thu, 18 Mar 2010 23:31:51 -0700
-Message-ID: <20100319063151.GB24844@us.ibm.com>
+Subject: [PATCH 03/14][user-cr] Add app_restart_args->ulogfd
+Date: Thu, 18 Mar 2010 23:32:08 -0700
+Message-ID: <20100319063208.GC24844@us.ibm.com>
 References: <20100319062659.GA23838@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,43 +24,43 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Thu, 4 Mar 2010 17:53:27 -0800
-Subject: [PATCH 02/14][user-cr] Add app_restart_args->verbose
+Date: Thu, 4 Mar 2010 22:33:34 -0800
+Subject: [PATCH 03/14][user-cr] Add app_restart_args->ulogfd
 
-Make 'verbose' a field in struct app_restart_args so other callers of
-app_restart() can also control the verbose output of app_restart().
+Add a 'ulogfd' field in struct app_restart_args so other callers of
+app_restart() can also choose a file descriptor for the log messages
+from app_restart().
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- restart.c |    4 +++-
- 1 files changed, 3 insertions(+), 1 deletions(-)
+ restart.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
 
 diff --git a/restart.c b/restart.c
-index 365b7ad..9d16a4d 100644
+index 9d16a4d..5ae5ec4 100644
 --- a/restart.c
 +++ b/restart.c
-@@ -387,6 +387,7 @@ struct app_restart_args {
+@@ -385,6 +385,7 @@ struct app_restart_args {
+ 	char *freezer;
+ 	int infd;
  	int klogfd;
++	int ulogfd;
  	long warn;
  	int debug;
-+	int verbose;
- 	long fail;
- 	int keep_lsm;
- };
-@@ -513,7 +514,7 @@ static void parse_args(struct app_restart_args *args, int argc, char *argv[])
- 		case 'h':
- 			usage(usage_str);
- 		case 'v':
--			global_verbose = 1;
-+			global_verbose = args->verbose = 1;
- 			break;
- 		case 5:  /* --inspect */
- 			args->inspect = 1;
-@@ -817,6 +818,7 @@ int app_restart(struct app_restart_args *args)
- 	ctx.args = args;
+ 	int verbose;
+@@ -497,6 +498,7 @@ static void parse_args(struct app_restart_args *args, int argc, char *argv[])
+ 	args->wait = 1;
+ 	args->infd = -1;
+ 	args->klogfd = -1;
++	args->ulogfd = fileno(stdout);
+ 	args->warn = CKPT_COND_WARN;
+ 	args->fail = CKPT_COND_FAIL;
+ 	no_pidns = 0;
+@@ -819,6 +821,7 @@ int app_restart(struct app_restart_args *args)
  
  	global_debug = args->debug;
-+	global_verbose = args->verbose;
+ 	global_verbose = args->verbose;
++	global_ulogfd = args->ulogfd;
  
  	/* input file descriptor (default: stdin) */
  	if (args->infd >= 0) {
