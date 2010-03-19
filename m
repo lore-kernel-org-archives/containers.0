@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 13/14][user-cr] restart: Move args checking to app_restart()
-Date: Thu, 18 Mar 2010 23:34:33 -0700
-Message-ID: <20100319063433.GM24844@us.ibm.com>
+Subject: [PATCH 12/14][user-cr] app_restart(): mnt-pty implies mntns
+Date: Thu, 18 Mar 2010 23:34:19 -0700
+Message-ID: <20100319063419.GL24844@us.ibm.com>
 References: <20100319062659.GA23838@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,106 +24,46 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Sat, 6 Mar 2010 13:06:35 -0800
-Subject: [PATCH 13/14][user-cr] restart: Move args checking to app_restart()
+Date: Sat, 6 Mar 2010 12:49:40 -0800
+Subject: [PATCH 12/14][user-cr] app_restart(): mnt-pty implies mntns
 
-parse_args() validates the specified arguments to ensure they are consistent.
-Move this code into app_restart() so that these checks apply to other callers
-of app_restart() also.
+If the mount_pty is set, mntns must be implied, otherwise the newinstance
+mount of devpts will make the ptys in the original pts instance inaccessible.
+
+parse_args() does this correctly, but move the code into app_restart() so
+other callers of app_restart() also get this behavior.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- restart-main.c |   33 +--------------------------------
- restart.c      |   36 ++++++++++++++++++++++++++++++++++++
- 2 files changed, 37 insertions(+), 32 deletions(-)
+ restart-main.c |    4 ----
+ restart.c      |    3 +++
+ 2 files changed, 3 insertions(+), 4 deletions(-)
 
 diff --git a/restart-main.c b/restart-main.c
-index 36318a4..681ff8e 100644
+index 237742e..36318a4 100644
 --- a/restart-main.c
 +++ b/restart-main.c
-@@ -261,38 +261,7 @@ static void parse_args(struct app_restart_args *args, int argc, char *argv[])
- 	if (no_pidns)
- 		args->pidns = 0;
- 
--#ifndef CLONE_NEWPID
--	if (args->pidns) {
--		ckpt_err("This version of restart was compiled without "
--		       "support for --pidns.\n");
--		exit(1);
--	}
--#endif
--
--#ifndef CHECKPOINT_DEBUG
--	if (global_debug) {
--		ckpt_err("This version of restart was compiled without "
--		       "support for --debug.\n");
--		exit(1);
--	}
--#endif
--
--	if (args->pidns)
--		args->pids = 1;
--
--#if 0   /* Defered until __NR_eclone makes it to standard headers */
--#ifndef __NR_eclone
--	if (args->pids) {
--		ckpt_err("This version of restart was compiled without "
--		       "support for --pids.\n");
--		exit(1);
--	}
--#endif
--#endif
--
--	if (args->self &&
--	    (args->pids || args->pidns || no_pidns ||
--	     args->show_status || args->copy_status || args->freezer)) {
-+	if (args->self && no_pidns) {
- 		ckpt_err("Invalid mix of --self with multiprocess options\n");
- 		exit(1);
+@@ -324,10 +324,6 @@ static void parse_args(struct app_restart_args *args, int argc, char *argv[])
+ 			exit(1);
+ 		}
  	}
+-
+-
+-	if (args->mnt_pty)
+-		args->mntns = 1;
+ }
+ 
+ int main(int argc, char *argv[])
 diff --git a/restart.c b/restart.c
-index d7b5b72..b2708c3 100644
+index 139f6db..d7b5b72 100644
 --- a/restart.c
 +++ b/restart.c
-@@ -407,6 +407,42 @@ int process_args(struct app_restart_args *args)
- 	if (args->mnt_pty)
- 		args->mntns = 1;
+@@ -404,6 +404,9 @@ int process_args(struct app_restart_args *args)
+ 	if (args->klogfd < 0)
+ 		args->klogfd = CHECKPOINT_FD_NONE;
  
-+#ifndef CLONE_NEWPID
-+	if (args->pidns) {
-+		ckpt_err("This version of restart was compiled without "
-+		       "support for --pidns.\n");
-+		exit(1);
-+	}
-+#endif
-+
-+#ifndef CHECKPOINT_DEBUG
-+	if (global_debug) {
-+		ckpt_err("This version of restart was compiled without "
-+		       "support for --debug.\n");
-+		exit(1);
-+	}
-+#endif
-+
-+	if (args->pidns)
-+		args->pids = 1;
-+
-+#if 0   /* Defered until __NR_eclone makes it to standard headers */
-+#ifndef __NR_eclone
-+	if (args->pids) {
-+		ckpt_err("This version of restart was compiled without "
-+		       "support for --pids.\n");
-+		exit(1);
-+	}
-+#endif
-+#endif
-+
-+	if (args->self &&
-+	    (args->pids || args->pidns || args->show_status ||
-+	     args->copy_status || args->freezer)) {
-+		ckpt_err("Invalid mix of --self with multiprocess options\n");
-+		exit(1);
-+	}
++	if (args->mnt_pty)
++		args->mntns = 1;
 +
  	return 0;
  }
