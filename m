@@ -1,18 +1,10 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: Linux Checkpoint-Restart - v19
-Date: Fri, 19 Mar 2010 11:34:09 -0400
-Message-ID: <4BA39971.2080402__23863.3486362689$1269012930$gmane$org@cs.columbia.edu>
-References: <4B83106C.7040203@cs.columbia.edu>
-	<a1c54a921003150155q4a0c7fc1vb02ba0464b07f452@mail.gmail.com>
-	<4B9EBAF2.1060304@cs.columbia.edu>
-	<0B4E8136-FFC6-490D-B04A-23A6E1A924FF@dependable-os.net>
-	<20100317205556.GA20750@us.ibm.com>
-	<EF179F3A-4FBA-4776-B7A4-48F5EF73DC9C@dependable-os.net>
+From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: attach to a container : general protection fault
+Date: Fri, 19 Mar 2010 16:59:22 +0100
+Message-ID: <4BA39F5A.3000603@fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="------------060605090005070807070903"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <EF179F3A-4FBA-4776-B7A4-48F5EF73DC9C-Xy3Dp9s2+bNGIRItUzBvX16hYfS7NtTn@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,147 +14,160 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jiro SEKIBA <jir-Xy3Dp9s2+bNGIRItUzBvX16hYfS7NtTn@public.gmane.org>
-Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+This is a multi-part message in MIME format.
+--------------060605090005070807070903
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: 7bit
 
 
-Jiro SEKIBA wrote:
-> Hi,
-> On 2010/03/18, at 5:55, Serge E. Hallyn wrote:
-> 
->> Quoting Jiro SEKIBA (jir-Xy3Dp9s2+bNGIRItUzBvX16hYfS7NtTn@public.gmane.org):
->>> Hi,
->>>
->>> Thank you for prompt reply!
->>> Sorry that I didn't post to containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cuFJUID1Z7QI@public.gmane.org
->>>
->>> On 2010/03/16, at 7:55, Oren Laadan wrote:
->>>
->>>> Hi,
->>>>
->>>> Thanks for taking the time to evaluate c/r. You may want to also
->>>> try the latest, which is (as of now) ckpt-v20-rc2.
->>> Yeah, I'll eventually try to keep up with the latest,
->>> but I just want to try the one  you think it's stable first anyway.
->>>
->>>> In the future, please CC the containers mailing list for issues
->>>> related to c/r, at "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org".
->>>>
->>>> Jiro SEKIBA wrote:
->>>>> Hi,
->>>>> I'm trying to evaluate external checkpoint/restart with cr-v19 kernel.
->>>>> However, when I restart, I got "Killed" message in stdout.
->>>>> Do you have any tips or clue that are not in
->>>>> Documentation/checkpoint/usage.txt ?
->>>>> I'm using kernel pulled from
->>>>> git://git.ncl.cs.columbia.edu/pub/git/linux-cr.git .
->>>>> checkout tag named "ckpt-v19". Base distro is ubuntu 9.10.
->>>>> I ran self checkpioint/restart sample program in Documentation/checkpint.
->>>>> It works as written in usage.txt.
->>>>> However, I can not make external checkpint/restart work properly.
->>>>> I made a simple test program bellow and create checkpoint externally using
->>>>> the program in Documentation/checkpoint/, it looks checkpoint file is
->>>>> created properly.
->>>>> However, when I ran self_restart < ckpt.image, I got "Killed" message.
->>>> If you take an external checkpoint, then you need to match it
->>>> with an external restart, as opposed to self_restart.
->>>>
->>>> Otherwise, restarting with self_restart from a checkpoint that is
->>>> not a self-checkpoint can yield unexpected results.
->>>>
->>>> Since you don't mention in your post, I don't know if you are using
->>>> the tools from user-cr. If not, then you should use 'checkpoint' and
->>>> 'restart' tools from there. It is available from:
->>>> 	git://git.ncl.cs.columbia.edu/pub/git/user-cr.git
->>>> (use the same branch as the one you used to linux-cr).
->>>>
->>>> Once you have the tools compiled, and you checkpoint with the
->>>> 'checkpoint' utility from there, you can restart with:
->>>> 	restart -v < ckpt.image
->>>>
->>> Thank you for the information.
->>> Actually I was trying to create checkpoint in Document/checkpints.
->>>
->>> Now, I tried with user-cr, compiled binary in the same tag (ckpt-v19).
->>> Creating checkpoint  looks OK and restart -v shows it Success.  nice!
->>> However, the contents in /tmp/test.out never get further,
->>> it remains same as when created checkpoint.
->>>
->>> I tried  "./restart -F /cgroup/0 -v --no-pidns < ckpt.image", got Success.
->>> cat /cgroup/0/tasks tells that there is a process.
->>> ps shows ./test.  So, it looks restarting.
->>>
->>> # ps axuww |grep $(cat /cgroup/0/tasks )
->>> root      7231  0.1  0.0   1588    64 pts/0    D    16:57   0:00 ./test
->>> root      7238  0.0  0.1   2716   660 pts/1    R+   16:57   0:00 grep 7231
->>>
->>> under the /proc, one file descriptor opened, and it is /tmp/test.out
->>>
->>> #  ls -l /proc/$(cat /cgroup/0/tasks)/fd
->>> total 0
->>> lrwx------ 1 root root 64 Mar 16 16:58 0 -> /tmp/test.out
->>>
->>> Nhh, it's close..
->>>
->>> I found that when I mount cgroup with -o freezer, self_checkpoint won't work.
->>> It worked even I didn't mount the cgroup.
->>> Is it what you expect?
->> No, it is not.  Can you tell us more about exactly how it fails?
->>
-> 
-> OK, I've checked differences of dmesg when self_restart does well and doesn't.
-> When it goes well, the filename is /tmp/cr-self.out
-> 
-> [  401.522556] [2307:2307:c/r:ckpt_read_fname:571] read filename '/tmp/cr-self.out'
-> [  401.522558] [2307:2307:c/r:restore_open_fname:594] fname '/tmp/cr-self.out' flags 0x2
+Hi Eric,
 
-This means that restart wants to re-open the file /tmp/cr-self.out.
-> 
-> However, when the contents of file remains, filename is /tmp/cr-self.out.org,
-> which is , of course, the one of original file binding to the original process.
-> 
-> [ 1088.414250] [2951:2951:c/r:ckpt_read_fname:571] read filename '/tmp/cr-self.out.orig'
-> [ 1088.414253] [2951:2951:c/r:restore_open_fname:594] fname '/tmp/cr-self.out.orig' flags 0x2
+I fall in a general protection fault with setns:
 
-This means that restart wants to re-open the file /tmp/cr-self.out.org.
+general protection fault: 0000 [#3] DEBUG_PAGEALLOC
+last sysfs file: /sys/devices/virtual/net/sit0/type
+CPU 0
+Pid: 6843, comm: myattach2 Tainted: G      D    2.6.33 #239 /
+RIP: 0010:[<ffffffff810e01d0>]  [<ffffffff810e01d0>] 
+d_hash_and_lookup+0x3d/0x73
+RSP: 0018:ffff880034aefd28  EFLAGS: 00010246
+RAX: 0000000000019cac RBX: ffff880034aefd78 RCX: 0000000000000000
+RDX: ffff880034aefd8a RSI: 0000000000000303 RDI: 0000000000000003
+RBP: ffff880034aefd38 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000001 R11: 0000000200000000 R12: 6b6b6b6b6b6b6b6b
+R13: ffff8800383ef740 R14: 0000000000000014 R15: ffff880034aefd78
+FS:  00007f94377816f0(0000) GS:ffffffff8161b000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+CR2: 00007fb88fb8c050 CR3: 0000000034a95000 CR4: 00000000000006f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+Process myattach2 (pid: 6843, threadinfo ffff880034aee000, task 
+ffff88003d679048)
+Stack:
+  ffff880034aefd88 0000000000000001 ffff880034aefdc8 ffffffff8111712a
+<0> ffff880034aefdc8 0000000000000046 0000000000000000 ffff8800349dcac0
+<0> 0000001400000000 ffff8800349dcac0 0000000200019cac ffff880034aefd88
+Call Trace:
+  [<ffffffff8111712a>] proc_flush_task+0x8e/0x283
+  [<ffffffff8102e4c7>] release_task+0x24/0x30f
+  [<ffffffff8102ece3>] wait_consider_task+0x531/0x923
+  [<ffffffff8102f1c2>] do_wait+0xed/0x213
+  [<ffffffff81043342>] ? find_get_pid+0x0/0x66
+  [<ffffffff8102f380>] sys_wait4+0x98/0xbb
+  [<ffffffff8102daec>] ? child_wait_callback+0x0/0x53
+  [<ffffffff810028e8>] system_call_fastpath+0x16/0x1b
+Code: 48 8b 56 08 eb 1f 0f b6 32 ff c9 48 ff c2 48 89 f7 48 c1 e6 04 48 
+c1 ef 04 48 8d 34 37 48 8d 04 06 48 6b c0 0b 85 c9 75 dd 89 03 <49> 8b 
+84 24 b8 00 00 00 48 85 c0 74 19 48 8b 40 08 48 85 c0 74
+RIP  [<ffffffff810e01d0>] d_hash_and_lookup+0x3d/0x73
+  RSP <ffff880034aefd28>
+---[ end trace 2a26f2e5384ecec1 ]---
 
-Could it be that these two restart attempts use two distinct image files
-as input ?
+That happens when creating a container, attach to it and then kill the 
+container.
 
-The first one seems to correspond to something like:
-1) start the test, 2) checkpoint, 3) mv file and cp file, 4) restart
+The program doing the attach is in "attachement" :)
 
-The second one seems to correspond to something like:
-1) start the test, 2) mv file and ctp file, 3) checkpoint, 4) restart
+That happens if you do:
 
-What is the actual error reported when it doesn't work ?  (from restart
-and from the kernel log)
+    setns()
+    fork(), exec(mycmd).
+    waitpid().
 
-> 
-> I can not reproduce yet, but at least cgroup freezer option won't affect like I mentioned.
-> Sorry that it might confuse you.
-> 
-> I still can not restart of external checkpoint.
-> I'll try to v20 next time.
 
-If it doesn't work, can you please describe again the exact order of
-commands that you use and the reported error(s) ?
+Without the fork / waitpid, that is the current process does exec, the 
+problem does not occur.
 
-Oren.
+--------------060605090005070807070903
+Content-Type: text/x-csrc;
+ name="myattach2.c"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline;
+ filename="myattach2.c"
 
-> 
->> Maybe get the cr_tests (either from Oren's tree or from
->> git clone git://git.sr71.net/~hallyn/cr_tests.git), cd cr_test,
->> make, cd simple, run ./ckpt and send us the contents of
->> /tmp/log, dmesg, and ckptinfo -ve /tmp/out ?
-> 
-> I think it runs OK, but send it in case.
-> /tmp/log was empty by the way.
-> 
-> thanks
-> 
->>> Thank you again for the help!
->>> I'm feeling better to use the latest ..
->> -serge
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <syscall.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/param.h>
+
+#define __NR_setns 300
+
+int setns(int nstype, int fd)
+{
+    return syscall (__NR_setns, nstype, fd);
+}
+
+int main(int argc, char *argv[])
+{
+    char path[MAXPATHLEN];
+    char *ns[] = { "pid", "mnt", "net", "pid", "uts" };
+    const int size = sizeof(ns) / sizeof(char *);
+    int fd[size];
+    int i;
+    pid_t pid;
+   
+    if (argc != 3) {
+        fprintf(stderr, "mynsenter <pid> <command>\n");
+        exit(1);
+    }
+
+    for (i = 0; i < size; i++) {
+       
+        sprintf(path, "/proc/%s/ns/%s", argv[1], ns[i]);
+
+        fd[i] = open(path, O_RDONLY| FD_CLOEXEC);
+        if (fd[i] < 0) {
+            perror("open");
+            return -1;
+        }
+
+    }
+   
+    for (i = 0; i < size; i++)
+        if (setns(0, fd[i])) {
+            perror("setns");
+            return -1;
+        }
+
+    pid = fork();
+    if (!pid) {
+
+        fprintf(stderr, "mypid is %d\n", syscall(__NR_getpid));
+
+        execve(argv[2], &argv[2], NULL);
+        perror("execve");
+
+    }
+
+    if (pid < 0) {
+        perror("fork");
+        return -1;
+    }
+
+    if (waitpid(pid, NULL, 0) < 0) {
+        perror("waitpid");
+    }
+
+    return 0;
+}
+
+
+--------------060605090005070807070903
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--------------060605090005070807070903--
