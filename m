@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 2/5][lxc] lxc_restart: Add --image option
-Date: Thu, 18 Mar 2010 23:40:46 -0700
-Message-ID: <20100319064046.GC25732@us.ibm.com>
+Subject: [PATCH 4/5][lxc] Hook up lxc_restart() with app_restart()
+Date: Thu, 18 Mar 2010 23:41:21 -0700
+Message-ID: <20100319064121.GE25732@us.ibm.com>
 References: <20100319063912.GA25732@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,115 +24,140 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Wed, 10 Mar 2010 21:59:39 -0800
-Subject: [PATCH 2/5][lxc] lxc_restart: Add --image option
+Date: Thu, 11 Mar 2010 20:47:56 -0800
+Subject: [PATCH 4/5][lxc] Hook up lxc_restart() with app_restart()
 
-The existing --directory option to lxc_restart expects the checkpoint state
-to be a directory. USERCR however uses a single regular file to store the
-checkpoint image. So add a --image option to enable checkpointing and
-restarting applications using USERCR.
+Have lxc_restart() call app_restart() implemented in the 'restart.o' from
+USER-CR git tree.
 
-Depending on how the application was checkpointed, users should specify
-either --image=CHECKPOINT-IMAGE or the --directory=STATEFILE option (but not
-both).
-
-Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Changelog[v2]:
+	- Link with restart.o from usercr rather than libcheckpoint.a
+	- rename 'struct restart_args' to 'struct app_restart_args'
+	- Initialize the new field app_restart_args->uerrfd
+	- (Oren Laadan)Remove ->send_sigint field from 'struct app_restart_args'
 ---
- src/lxc/arguments.h   |    1 +
- src/lxc/lxc_restart.c |   29 ++++++++++++++++++++++-------
- 2 files changed, 23 insertions(+), 7 deletions(-)
+ src/lxc/restart.c |  104 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 104 insertions(+), 0 deletions(-)
 
-diff --git a/src/lxc/arguments.h b/src/lxc/arguments.h
-index 3bc027d..30953ee 100644
---- a/src/lxc/arguments.h
-+++ b/src/lxc/arguments.h
-@@ -45,6 +45,7 @@ struct lxc_arguments {
- 	int daemonize;
- 	const char *rcfile;
- 	const char *statefile;
-+	const char *imagefile;
- 
- 	/* for lxc-checkpoint */
- 	int flags;
-diff --git a/src/lxc/lxc_restart.c b/src/lxc/lxc_restart.c
-index 7db1d85..39f7ea8 100644
---- a/src/lxc/lxc_restart.c
-+++ b/src/lxc/lxc_restart.c
-@@ -41,10 +41,17 @@ static struct lxc_list defines;
- 
- static int my_checker(const struct lxc_arguments* args)
- {
--	if (!args->statefile) {
--		lxc_error(args, "no statefile specified");
--		return -1;
--	}
-+	int i, s;
-+	
-+	/* make them boolean */
-+	i = !!(args->imagefile);
-+	s = !!(args->statefile);
+diff --git a/src/lxc/restart.c b/src/lxc/restart.c
+index 467489e..945435c 100644
+--- a/src/lxc/restart.c
++++ b/src/lxc/restart.c
+@@ -22,11 +22,115 @@
+  */
+ #include <lxc/lxc.h>
+ #include <lxc/log.h>
++#include <lxc/start.h>
++#include <lxc/namespace.h>
++#include <errno.h>
++#include <fcntl.h>
++#include <signal.h>
++#include <sys/prctl.h>
++#include <app-checkpoint.h>
 +
-+        if (!(i ^ s)) {
-+                lxc_error(args, "Must specify exactly one of --directory "
-+                                "and --image options");
++struct lxc_restart_arg {
++	const char *name;
++	const char *statefile;
++	char *const argv;
++	struct lxc_handler *handler;
++};
+ 
+ lxc_log_define(lxc_restart, lxc);
+ 
++static int do_restart(struct lxc_restart_arg *lxcarg)
++{
++	int pid;
++	struct lxc_handler *handler = lxcarg->handler;
++	const char *name = lxcarg->name;
++	char *const argv = lxcarg->argv;
++	const char *statefile = lxcarg->statefile;
++	struct app_restart_args restart_args;
++
++        if (sigprocmask(SIG_SETMASK, &handler->oldmask, NULL)) {
++                SYSERROR("failed to set sigprocmask");
 +                return -1;
 +        }
- 
- 	return 0;
- }
-@@ -54,6 +61,7 @@ static int my_parser(struct lxc_arguments* args, int c, char* arg)
- 	switch (c) {
- 	case 'd': args->statefile = arg; break;
- 	case 'f': args->rcfile = arg; break;
-+	case 'i': args->imagefile = arg; break;
- 	case 'p': args->flags = LXC_FLAG_PAUSE; break;
- 	case 's': return lxc_config_define_add(&defines, arg);
- 	}
-@@ -66,6 +74,7 @@ static const struct option my_longopts[] = {
- 	{"rcfile", required_argument, 0, 'f'},
- 	{"pause", no_argument, 0, 'p'},
- 	{"define", required_argument, 0, 's'},
-+	{"image", required_argument, 0, 'i'},
- 	LXC_COMMON_OPTIONS
- };
- 
-@@ -73,14 +82,16 @@ static struct lxc_arguments my_args = {
- 	.progname = "lxc-restart",
- 	.help     = "\
- --name=NAME --directory STATEFILE\n\
-+\tlxc_restart --name=NAME --image CHECKPOINT-IMAGE\n\
- \n\
- lxc-restart restarts from STATEFILE the NAME container\n\
- \n\
- Options :\n\
-   -n, --name=NAME      NAME for name of the container\n\
-   -p, --pause          do not release the container after the restart\n\
--  -d, --directory=STATEFILE for name of statefile\n\
-+  -d, --directory=STATEFILE for name of statefile(legacy mode)\n\
-   -f, --rcfile=FILE Load configuration file FILE\n\
-+  -i, --image=FILE Load the application state from FILE(user-cr mode)\n\
-   -s, --define KEY=VAL Assign VAL to configuration variable KEY\n",
- 	.options  = my_longopts,
- 	.parser   = my_parser,
-@@ -90,6 +101,7 @@ Options :\n\
- int main(int argc, char *argv[])
- {
- 	char *rcfile = NULL;
-+	const char *image = NULL;
- 	struct lxc_conf *conf;
- 
- 	lxc_list_init(&defines);
-@@ -131,6 +143,9 @@ int main(int argc, char *argv[])
- 	if (lxc_config_define_load(&defines, conf))
- 		return -1;
- 
--	return lxc_restart(my_args.name, my_args.statefile, conf,
--			   my_args.flags);
-+	image = my_args.imagefile;
-+	if (my_args.statefile)
-+		image = my_args.statefile;
 +
-+	return lxc_restart(my_args.name, image, conf, my_args.flags);
++        if (prctl(PR_SET_PDEATHSIG, SIGKILL, 0, 0, 0)) {
++                SYSERROR("failed to set pdeath signal");
++                return -1;
++        }
++
++	memset(&restart_args, 0, sizeof(restart_args));
++
++	if (statefile) {
++		restart_args.infd = open(statefile, O_RDONLY, 0);
++		if (restart_args.infd < 0) {
++			SYSERROR("Failed to open statefile %s\n", statefile);
++			return -1;
++		}
++	}
++
++	restart_args.pids = 1;
++	restart_args.pidns = 1;
++	restart_args.mnt_pty = 1;
++	restart_args.mntns = 1;
++	restart_args.klogfd = -1;
++	restart_args.ulogfd = lxc_log_fd;
++	restart_args.uerrfd = fileno(stderr);
++	restart_args.debug = 1;
++	restart_args.wait = 0;
++
++        pid = app_restart(&restart_args);
++
++        return pid;
++}
++
+ int lxc_restart(const char *name, const char *statefile, struct lxc_conf *conf,
+ 		int flags)
+ {
++	int err;
++	int status;
++	struct lxc_handler *handler;
++	struct lxc_restart_arg lxcarg = {
++		.name = name,
++		.statefile = statefile,
++		.handler = NULL,
++	};
++
++	handler = lxc_init(name, conf);
++	if (!handler) {
++		ERROR("failed to initialize the container");
++		return -1;
++	}
++
++	lxcarg.handler = handler;
++	handler->pid = do_restart(&lxcarg);
++
++	INFO("do_restart(): returns pid %d\n", handler->pid);
++	lxc_rename_nsgroup(name, handler);
++
++	err = lxc_close_all_inherited_fd();
++	if (err) {
++		ERROR("unable to close inherited fds");
++		goto out_abort;
++	}
++
++	err = lxc_poll(name, handler);
++	if (err) {
++		ERROR("mainloop exited with an error");
++		goto out_abort;
++	}
++
++	while (waitpid(handler->pid, &status, 0) < 0 && errno == EINTR)
++		continue;
++
++	err =  lxc_error_set_and_log(handler->pid, status);
++
++out_fini:
++	lxc_fini(name, handler);
++	return err;
++
++out_abort:
++	lxc_abort(name, handler);
++	goto out_fini;
++
+ 	return 0;
  }
 -- 
 1.6.6.1
