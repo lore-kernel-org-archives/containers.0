@@ -1,11 +1,13 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [C/R v20][PATCH 00/96] Linux Checkpoint-Restart - v20
-Date: Thu, 18 Mar 2010 20:59:44 -0400
-Message-ID: <1268960401-16680-1-git-send-email-orenl__46908.7267564193$1268960895$gmane$org@cs.columbia.edu>
+Subject: [C/R v20][PATCH 38/96] c/r: dump open file descriptors
+Date: Thu, 18 Mar 2010 20:59:47 -0400
+Message-ID: <1268960401-16680-4-git-send-email-orenl__15604.711804963$1268961076$gmane$org@cs.columbia.edu>
+References: <1268960401-16680-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1268960401-16680-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,414 +21,991 @@ To: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andreas Dilger <adilger-xsfywfwIY+M@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi,
+Dump the file table with 'struct ckpt_hdr_file_table, followed by all
+open file descriptors. Because the 'struct file' corresponding to an
+fd can be shared, they are assigned an objref and registered in the
+object hash. A reference to the 'file *' is kept for as long as it
+lives in the hash (the hash is only cleaned up at the end of the
+checkpoint).
 
-Following Andreas Dilger's reply (http://lkml.org/lkml/2010/3/17/410)
-I'm (re)posting the subset of checkpoint-restart patch-set that is
-related to linux-fsdevel. (I'm unsure why those weren't sent before).
-Altogether there are 17 patches here (out of the 96 total).
+Also provide generic_checkpoint_file() and generic_restore_file()
+which is good for normal files and directories. It does not support
+yet unlinked files or directories.
 
-For the original post/thread see: http://lkml.org/lkml/2010/3/17/232.
-
-As Matt Helsley put briefly, checkpoint-restart mainly saves the
-critical pieces of kernel information from the struct file needed to
-restart the open file descriptors. It does not save the file (system)
-contents in the checkpoint image. That's left for proper filesystem
-freezing, snapshotting, or rsync (for example) depending on the tools
-and/or filesystems userspace has chosen.
-
-Oren.
-
----
-
-Here is the introduction to the original post:
-
----
-
-Following up on the thread on the checkpoint-restart patch set
-(http://lkml.org/lkml/2010/3/1/422), the following series is the
-latest checkpoint/restart, based on 2.6.33.
-
-The first 20 patches are cleanups and prepartion for c/r; they
-are followed by the actual c/r code.
-
-Please apply to -mm, and let us know if there is any way we can
-help.
-
----
-
-Linux Checkpoint-Restart:
- web, wiki:	http://www.linux-cr.org
- bug track:	https://www.linux-cr.org/redmine
-
-The repositories for the project are in:
- kernel:	http://www.linux-cr.org/git/?p=linux-cr.git;a=summary
- user tools:	http://www.linux-cr.org/git/?p=user-cr.git;a=summary
- tests suite:	http://www.linux-cr.org/git/?p=tests-cr.git;a=summary
-
----
-
-CHANGELOG:
-
-v20 [2010-Mar-16]
- BUG FIXES (only)
-  - [Serge Hallyn] Fix unlabeled restore case
-  - [Serge Hallyn] Always restore msg_msg label
-  - [Serge Hallyn] Selinux prevents msgrcv on restore message queues?
-  - [Serge Hallyn] save_access_regs for self-checkpoint
-  - [Serge Hallyn] send uses_interp=1 to arch_setup_additional_pages
-  - Fix "scheduling in atomic" while restoring ipc (sem, shm, msg)
-  - Cleanup: no need to restore perm->{id,key,seq}
-  - Fix sysvipc=n compile
-  - Make uts_ns=n compile
-  - Only use arch_setup_additional_pages() if supported by arch
-  - Export key symbols to enable c/r from kernel modules
-  - Avoid crash if incoming object doesn't have .restore
-  - Replace error_sem with an event completion
-  - [Serge Hallyn] Change sysctl and default for unprivileged use
-  - [Nathan Lynch] Use syscall_get_error
-  - Add entry for checkpoint/restart in MAINTAINERS 
-
-[2010-Feb-19] v19
- NEW FEATURES
-  - Support for x86-64 architecture
-  - Support for c/r of LSM (smack, selinux)
-  - Support for c/r of task fs_root and pwd
-  - Support for c/r of epoll
-  - Support for c/r of eventfd
-  - Enable C/R while executing over NFS
-  - Preliminary c/r of mounts namespace
-  - Add @logfd argument to sys_{checkpoint,restart} prototypes
-  - Define new api for error and debug logging
-  - Restart to handle checkpoint images lacking {uts,ipc}-ns
-  - Refuse to checkpoint if monitoring directories with dnotify
-  - Refuse to checkpoint if file locks and leases are held
-  - Refuse to checkpoint files with f_owner 
- OTHER CHANGES
-  - Rebase to kernel 2.6.33-rc8
-  - Settled version of new sys_eclone()
-  - [Serge Hallyn] Fix potential use-before-set return (vdso)
-  - Update documentation and examples for new syscalls API (doc)
-  - [Liu Alexander] Fix typos (doc)
-  - [Serge Hallyn] Update checkpoint image format (doc)
-  - [Serge Hallyn] Use ckpt_err() to for bad header values
-  - sys_{checkpoint,restart} to use ptregs prototype
-  - Set ctx->errno in do_ckpt_msg() if needed
-  - Fix up headers so we can munge them for use by userspace
-  - Multiple fixes to _ckpt_write_err() and friends
-  - [Matt Helsley] Add cpp definitions for enums
-  - [Serge Hallyn] Add global section container to image format
-  - [Matt Helsley] Fix total byte read/write count for large images
-  - ckpt_read_buf_type() to accept max payload (excludes ckpt_hdr)
-  - [Serge Hallyn] Use ckpt_err() for arch incompatbilities
-  - Introduce walk_task_subtree() to iterate through descendants
-  - Call restore_notify_error for restart (not checkpoint !)
-  - Make kread/kwrite() abort if CKPT_CTX_ERROR is set
-  - [Serge Hallyn] Move init_completion(&ctx->complete) to ctx_alloc
-  - Simplify logic of tracking restarting tasks (->ctx)
-  - Coordinator kills descendants on failure for proper cleanup
-  - Prepare descendants needs PTRACE_MODE_ATTACH permissions
-  - Threads wait for entire thread group before restoring
-  - Add debug process-tree status during restart
-  - Fix handling of bogus pid arg to sys_restart
-  - In reparent_thread() test for PF_RESTARTING on parent
-  - Keep __u32s in even groups for 32-64 bit compatibility
-  - Define ckpt_obj_try_fetch
-  - Disallow zero or negative objref during restart
-  - Check for valid destructor before calling it (deferqueue)
+Changelog[v19]:
   - Fix false negative of test for unlinked files at checkpoint
+Changelog[v19-rc3]:
   - [Serge Hallyn] Rename fs_mnt to root_fs_path
-  - Restore thread/cpu state early
-  - Ensure null-termination of file names read from image
-  - Fix compile warning in restore_open_fname()
-  - Introduce FOLL_DIRTY to follow_page() for "dirty" pages
-  - [Serge Hallyn] Checkpoint saved_auxv as u64s
-  - Export filemap_checkpoint()
-  - [Serge Hallyn] Disallow checkpoint of tasks with aio requests
-  - Fix compilation failure when !CONFIG_CHEKCPOINT (regression)
-  - Expose page write functions
-  - Do not hold mmap_sem while checkpointing vma's
-  - Do not hold mmap_sem when reading memory pages on restart
-  -  Move consider_private_page() to mm/memory.c:__get_dirty_page()
-  - [Serge Hallyn] move destroy_mm into mmap.c and remove size check
-  - [Serge Hallyn] fill vdso (syscall32_setup_pages) for TIF_IA32/x86_64
-  - [Serge Hallyn] Fix return value of read_pages_contents()
-  - [Serge Hallyn] Change m_type to long, not int (ipc)
-  - Don't free sma if it's an error on restore
-  - Use task->saves_sigmask and drop task->checkpoint_data
-  - [Serge Hallyn] Handle saved_sigmask at checkpoint
-  - Defer restore of blocked signals mask during restart
-  - Self-restart to tolerate missing PGIDs
-  - [Serge Hallyn] skb->tail can be offset
-  - Export and leverage sock_alloc_file()
-  - [Nathan Lynch] Fix net/checkpoint.c for 64-bit
-  - [Dan Smith] Unify skb read/write functions and handle fragmented buffers
-  - [Dan Smith] Update buffer restore code to match the new format
-  - [Dan Smith] Fix compile issue with CONFIG_CHECKPOINT=n
-  - [Dan Smith] Remove an unnecessary check on socket restart
-  - [Dan Smith] Pass the stored sock->protocol into sock_create() on restore
-  - Relax tcp.window_clamp value in INET restore
-  - Restore gso_type fields on sockets and buffers for proper operation
-  - Fix broken compilation for no-c/r architectures
-  - Return -EBUSY (not BUG_ON) if fd is gone on restart
-  - Fix the chunk size instead of auto-tune (epoll) 
- ARCH: x86 (32,64)
-  - Use PTREGSCALL4 for sys_{checkpoint,restart}
-  - Remove debug-reg support (need to redo with perf_events)
-  - [Serge Hallyn] Support for ia32 (checkpoint, restart)
-  - Split arch/x86/checkpoint.c to generic and 32bit specific parts
-  - sys_{checkpoint,restore} to use ptregs
-  - Allow X86_EFLAGS_RF on restart
-  - [Serge Hallyn] Only allow 'restart' with same bit-ness as image.
-  - Move checkpoint.c from arch/x86/mm->arch/x86/kernel 
- ARCH: s390 [Serge Hallyn]
-  - Define s390x sys_restart wrapper
-  - Fixes to restart-blocks logic and signal path
-  - Fix checkpoint and restart compat wrappers
-  - sys_{checkpoint,restore} to use ptregs
-  - Use simpler test_task_thread to test current ti flags
-  - Fix 31-bit s390 checkpoint/restart wrappers
-  - Update sys_checkpoint (do_sys_checkpoint on all archs)
-  - [Oren Laadan] Move checkpoint.c from arch/s390/mm->arch/s390/kernel 
- ARCH: powerpc [Nathan Lynch]
-  - [Serge Hallyn] Add hook task_has_saved_sigmask()
-  - Warn if full register state unavailable
-  - Fix up checkpoint syscall, tidy restart
-  - [Oren Laadan] Move checkpoint.c from arch/powerpc/{mm->kernel} 
-
-[2009-Sep-22] v18
- NEW FEATURES
-  - [Nathan Lynch] Re-introduce powerpc support
-  - Save/restore pseudo-terminals
-  - Save/restore (pty) controlling terminals
-  - Save/restore restore PGIDs
-  - [Dan Smith] Save/restore unix domain sockets
-  - Save/restore FIFOs
-  - Save/restore pending signals
-  - Save/restore rlimits
-  - Save/restore itimers
-  - [Matt Helsley] Handle many non-pseudo file-systems
- OTHER CHANGES
-  - Rename headerless struct ckpt_hdr_* to struct ckpt_*
-  - [Nathan Lynch] discard const from struct cred * where appropriate
-  - [Serge Hallyn][s390] Set return value for self-checkpoint 
-  - Handle kmalloc failure in restore_sem_array()
-  - [IPC] Collect files used by shm objects
-  - [IPC] Use file (not inode) as shared object on checkpoint of shm
-  - More ckpt_write_err()s to give information on checkpoint failure
-  - Adjust format of pipe buffer to include the mandatory pre-header
-  - [LEAKS] Mark the backing file as visited at chekcpoint
-  - Tighten checks on supported vma to checkpoint or restart
-  - [Serge Hallyn] Export filemap_checkpoint() (used for ext4)
-  - Introduce ckpt_collect_file() that also uses file->collect method
-  - Use ckpt_collect_file() instead of ckpt_obj_collect() for files
-  - Fix leak-detection issue in collect_mm() (test for first-time obj)
-  - Invoke set_close_on_exec() unconditionally on restart
+  - [Dave Hansen] Error out on file locks and leases
+  - [Serge Hallyn] Refuse checkpoint of file with f_owner
+Changelog[v19-rc1]:
+  - [Matt Helsley] Add cpp definitions for enums
+Changelog[v18]:
+  - Add a few more ckpt_write_err()s
   - [Dan Smith] Export fill_fname() as ckpt_fill_fname()
-  - Interface to pass simple pointers as data with deferqueue
-  - [Dan Smith] Fix ckpt_obj_lookup_add() leak detection logic
-  - Replace EAGAIN with EBUSY where necessary
-  - Introduce CKPT_OBJ_VISITED in leak detection
-  - ckpt_obj_collect() returns objref for new objects, 0 otherwise
-  - Rename ckpt_obj_checkpointed() to ckpt_obj_visited()
-  - Introduce ckpt_obj_visit() to mark objects as visited
-  - Set the CHECKPOINTED flag on objects before calling checkpoint
-  - Introduce ckpt_obj_reserve()
-  - Change ref_drop() to accept a @lastref argument (for cleanup)
-  - Disallow multiple objects with same objref in restart
-  - Allow _ckpt_read_obj_type() to read header only (w/o payload)
-  - Fix leak of ckpt_ctx when restoring zombie tasks
-  - Fix race of prepare_descendant() with an ongoing fork()
-  - Track and report the first error if restart fails
-  - Tighten logic to protect against bogus pids in input
-  - [Matt Helsley] Improve debug output from ckpt_notify_error()
-  - [Nathan Lynch] fix compilation errors with CONFIG_COMPAT=y
-  - Detect error-headers in input data on restart, and abort.
-  - Standard format for checkpoint error strings (and documentation)
-  - [Dan Smith] Add an errno validation function
-  - Add ckpt_read_payload(): read a variable-length object (no header)
-  - Add ckpt_read_string(): same for strings (ensures null-terminated)
-  - Add ckpt_read_consume(): consumes next object without processing
-  - [John Dykstra] Fix no-dot-config-targets pattern in linux/Makefile
-
-[2009-Jul-21] v17
-  - Introduce syscall clone_with_pids() to restore original pids
-  - Support threads and zombies
-  - Save/restore task->files
-  - Save/restore task->sighand
-  - Save/restore futex
-  - Save/restore credentials
-  - Introduce PF_RESTARTING to skip notifications on task exit
-  - restart(2) allow caller to ask to freeze tasks after restart
-  - restart(2) isn't idempotent: return -EINTR if interrupted
-  - Improve debugging output handling 
-  - Make multi-process restart logic more robust and complete
-  - Correctly select return value for restarting tasks on success
-  - Tighten ptrace test for checkpoint to PTRACE_MODE_ATTACH
-  - Use CHECKPOINTING state for frozen checkpointed tasks
-  - Fix compilation without CONFIG_CHECKPOINT
-  - Fix compilation with CONFIG_COMPAT
-  - Fix headers includes and exports
-  - Leak detection performed in two steps
-  - Detect "inverse" leaks of objects (dis)appearing unexpectedly
-  - Memory: save/restore mm->{flags,def_flags,saved_auxv}
-  - Memory: only collect sub-objects of mm once (leak detection)
-  - Files: validate f_mode after restore
-  - Namespaces: leak detection for nsproxy sub-components
-  - Namespaces: proper restart from namespace(s) without namespace(s)
-  - Save global constants in header instead of per-object
-  - IPC: replace sys_unshare() with create_ipc_ns()
-  - IPC: restore objects in suitable namespace
-  - IPC: correct behavior under !CONFIG_IPC_NS
-  - UTS: save/restore all fields
-  - UTS: replace sys_unshare() with create_uts_ns()
-  - X86_32: sanitize cpu, debug, and segment registers on restart
-  - cgroup_freezer: add CHECKPOINTING state to safeguard checkpoint
-  - cgroup_freezer: add interface to freeze a cgroup (given a task)
-
-[2009-May-27] v16
-  - Privilege checks for IPC checkpoint
-  - Fix error string generation during checkpoint
-  - Use kzalloc for header allocation
-  - Restart blocks are arch-independent
-  - Redo pipe c/r using splice
-  - Fixes to s390 arch
-  - Remove powerpc arch (temporary)
-  - Explicitly restore ->nsproxy
-  - All objects in image are precedeed by 'struct ckpt_hdr'
-  - Fix leaks detection (and leaks)
-  - Reorder of patchset
-  - Misc bugs and compilation fixes
-
-[2009-Apr-12] v15
-  - Minor fixes
-
-[2009-Apr-28] v14
-  - Tested against kernel v2.6.30-rc3 on x86_32.
-  - Refactor files chekpoint to use f_ops (file operations)
-  - Refactor mm/vma to use vma_ops
-  - Explicitly handle VDSO vma (and require compat mode)
-  - Added code to c/r restat-blocks (restart timeout related syscalls)
-  - Added code to c/r namespaces: uts, ipc (with Dan Smith)
-  - Added code to c/r sysvipc (shm, msg, sem)
-  - Support for VM_CLONE shared memory
-  - Added resource leak detection for whole-container checkpoint
-  - Added sysctl gauge to allow unprivileged restart/checkpoint
-  - Improve and simplify the code and logic of shared objects
-  - Rework image format: shared objects appear prior to their use
-  - Merge checkpoint and restart functionality into same files
-  - Massive renaming of functions: prefix "ckpt_" for generics,
-    "checkpoint_" for checkpoint, and "restore_" for restart.
-  - Report checkpoint errors as a valid (string record) in the output
-  - Merged PPC architecture (by Nathan Lunch),
-  - Requires updates to userspace tools too.
-  - Misc nits and bug fixes
-
-[2009-Mar-31] v14-rc2
-  - Change along Dave's suggestion to use f_ops->checkpoint() for files
-  - Merge patch simplifying Kconfig, with CONFIG_CHECKPOINT_SUPPORT
-  - Merge support for PPC arch (Nathan Lynch)
-  - Misc cleanups and fixes in response to comments
-
-[2009-Mar-20] v14-rc1:
-  - The 'h.parent' field of 'struct cr_hdr' isn't used - discard
-  - Check whether calls to cr_hbuf_get() succeed or fail.
-  - Fixed of pipe c/r code
-  - Prevent deadlock by refusing c/r when a pipe inode == ctx->file inode
-  - Refuse non-self checkpoint if a task isn't frozen
-  - Use unsigned fields in checkpoint headers unless otherwise required
-  - Rename functions in files c/r to better reflect their role
-  - Add support for anonymous shared memory
-  - Merge support for s390 arch (Dan Smith, Serge Hallyn)
-    
-[2008-Dec-03] v13:
-  - Cleanups of 'struct cr_ctx' - remove unused fields
-  - Misc fixes for comments
-  
-[2008-Dec-17] v12:
-  - Fix re-alloc/reset of pgarr chain to correctly reuse buffers
-    (empty pgarr are saves in a separate pool chain)
-  - Add a couple of missed calls to cr_hbuf_put()
-  - cr_kwrite/cr_kread() again use vfs_read(), vfs_write() (safer)
-  - Split cr_write/cr_read() to two parts: _cr_write/read() helper
-  - Befriend with sparse: explicit conversion to 'void __user *'
-  - Redrefine 'pr_fmt' ind replace cr_debug() with pr_debug()
-
-[2008-Dec-05] v11:
-  - Use contents of 'init->fs->root' instead of pointing to it
-  - Ignore symlinks (there is no such thing as an open symlink)
-  - cr_scan_fds() retries from scratch if it hits size limits
-  - Add missing test for VM_MAYSHARE when dumping memory
-  - Improve documentation about: behavior when tasks aren't fronen,
-    life span of the object hash, references to objects in the hash
- 
-[2008-Nov-26] v10:
-  - Grab vfs root of container init, rather than current process
-  - Acquire dcache_lock around call to __d_path() in cr_fill_name()
-  - Force end-of-string in cr_read_string() (fix possible DoS)
-  - Introduce cr_write_buffer(), cr_read_buffer() and cr_read_buf_type()
-
-[2008-Nov-10] v9:
-  - Support multiple processes c/r
-  - Extend checkpoint header with archtiecture dependent header 
-  - Misc bug fixes (see individual changelogs)
-  - Rebase to v2.6.28-rc3.
-
-[2008-Oct-29] v8:
-  - Support "external" checkpoint
-  - Include Dave Hansen's 'deny-checkpoint' patch
-  - Split docs in Documentation/checkpoint/..., and improve contents
-
-[2008-Oct-17] v7:
-  - Fix save/restore state of FPU
-  - Fix argument given to kunmap_atomic() in memory dump/restore
-
-[2008-Oct-07] v6:
-  - Balance all calls to cr_hbuf_get() with matching cr_hbuf_put()
+  - Introduce ckpt_collect_file() that also uses file->collect method
+  - In collect_file_stabl() use retval from ckpt_obj_collect() to
+    test for first-time-object
+Changelog[v17]:
+  - Only collect sub-objects of files_struct once
+  - Better file error debugging
+  - Use (new) d_unlinked()
+Changelog[v16]:
+  - Fix compile warning in checkpoint_bad()
+Changelog[v16]:
+  - Reorder patch (move earlier in series)
+  - Handle shared files_struct objects
+Changelog[v14]:
+  - File objects are dumped/restored prior to the first reference
+  - Introduce a per file-type restore() callback
+  - Use struct file_operations->checkpoint()
+  - Put code for generic file descriptors in a separate function
+  - Use one CKPT_FILE_GENERIC for both regular files and dirs
+  - Revert change to pr_debug(), back to ckpt_debug()
+  - Use only unsigned fields in checkpoint headers
+  - Rename:  ckpt_write_files() => checkpoint_fd_table()
+  - Rename:  ckpt_write_fd_data() => checkpoint_file()
+  - Discard field 'h->parent'
+Changelog[v12]:
+  - Replace obsolete ckpt_debug() with pr_debug()
+Changelog[v11]:
+  - Discard handling of opened symlinks (there is no such thing)
+  - ckpt_scan_fds() retries from scratch if hits size limits
+Changelog[v9]:
+  - Fix a couple of leaks in ckpt_write_files()
+  - Drop useless kfree from ckpt_scan_fds()
+Changelog[v8]:
+  - initialize 'coe' to workaround gcc false warning
+Changelog[v6]:
+  - Balance all calls to ckpt_hbuf_get() with matching ckpt_hbuf_put()
     (even though it's not really needed)
-  - Add assumptions and what's-missing to documentation
-  - Misc fixes and cleanups
 
-[2008-Sep-11] v5:
-  - Config is now 'def_bool n' by default
-  - Improve memory dump/restore code (following Dave Hansen's comments)
-  - Change dump format (and code) to allow chunks of <vaddrs, pages>
-    instead of one long list of each
-  - Fix use of follow_page() to avoid faulting in non-present pages
-  - Memory restore now maps user pages explicitly to copy data into them,
-    instead of reading directly to user space; got rid of mprotect_fixup()
-  - Remove preempt_disable() when restoring debug registers
-  - Rename headers files s/ckpt/checkpoint/
-  - Fix misc bugs in files dump/restore
-  - Fixes and cleanups on some error paths
-  - Fix misc coding style
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ checkpoint/Makefile              |    3 +-
+ checkpoint/checkpoint.c          |   11 +
+ checkpoint/files.c               |  444 ++++++++++++++++++++++++++++++++++++++
+ checkpoint/objhash.c             |   52 +++++
+ checkpoint/process.c             |   33 +++-
+ checkpoint/sys.c                 |    8 +
+ fs/locks.c                       |   35 +++
+ include/linux/checkpoint.h       |   19 ++
+ include/linux/checkpoint_hdr.h   |   59 +++++
+ include/linux/checkpoint_types.h |    5 +
+ include/linux/fs.h               |   10 +
+ 11 files changed, 677 insertions(+), 2 deletions(-)
+ create mode 100644 checkpoint/files.c
 
-[2008-Sep-09] v4:
-  - Various fixes and clean-ups
-  - Fix calculation of hash table size
-  - Fix header structure alignment
-  - Use stand list_... for cr_pgarr
-
-[2008-Aug-29] v3:
-  - Various fixes and clean-ups
-  - Use standard hlist_... for hash table
-  - Better use of standard kmalloc/kfree
-
-[2008-Aug-20] v2:
-  - Added Dump and restore of open files (regular and directories)
-  - Added basic handling of shared objects, and improve handling of
-    'parent tag' concept
-  - Added documentation
-  - Improved ABI, 64bit padding for image data
-  - Improved locking when saving/restoring memory
-  - Added UTS information to header (release, version, machine)
-  - Cleanup extraction of filename from a file pointer
-  - Refactor to allow easier reviewing
-  - Remove requirement for CAPS_SYS_ADMIN until we come up with a
-    security policy (this means that file restore may fail)
-  - Other cleanup and response to comments for v1
-
-[2008-Jul-29] v1:
-  - Initial version: support a single task with address space of only
-    private anonymous or file-mapped VMAs; syscalls ignore pid/crid
-    argument and act on current process.
+diff --git a/checkpoint/Makefile b/checkpoint/Makefile
+index 5aa6a75..1d0c058 100644
+--- a/checkpoint/Makefile
++++ b/checkpoint/Makefile
+@@ -7,4 +7,5 @@ obj-$(CONFIG_CHECKPOINT) += \
+ 	objhash.o \
+ 	checkpoint.o \
+ 	restart.o \
+-	process.o
++	process.o \
++	files.o
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index c016a2d..2bc2495 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -18,6 +18,7 @@
+ #include <linux/time.h>
+ #include <linux/fs.h>
+ #include <linux/file.h>
++#include <linux/fs_struct.h>
+ #include <linux/dcache.h>
+ #include <linux/mount.h>
+ #include <linux/utsname.h>
+@@ -490,6 +491,7 @@ static int init_checkpoint_ctx(struct ckpt_ctx *ctx, pid_t pid)
+ {
+ 	struct task_struct *task;
+ 	struct nsproxy *nsproxy;
++	struct fs_struct *fs;
+ 
+ 	/*
+ 	 * No need for explicit cleanup here, because if an error
+@@ -531,6 +533,15 @@ static int init_checkpoint_ctx(struct ckpt_ctx *ctx, pid_t pid)
+ 		return -EINVAL;  /* cleanup by ckpt_ctx_free() */
+ 	}
+ 
++	/* root vfs (FIX: WILL CHANGE with mnt-ns etc */
++	task_lock(ctx->root_task);
++	fs = ctx->root_task->fs;
++	read_lock(&fs->lock);
++	ctx->root_fs_path = fs->root;
++	path_get(&ctx->root_fs_path);
++	read_unlock(&fs->lock);
++	task_unlock(ctx->root_task);
++
+ 	return 0;
+ }
+ 
+diff --git a/checkpoint/files.c b/checkpoint/files.c
+new file mode 100644
+index 0000000..7a57b24
+--- /dev/null
++++ b/checkpoint/files.c
+@@ -0,0 +1,444 @@
++/*
++ *  Checkpoint file descriptors
++ *
++ *  Copyright (C) 2008-2009 Oren Laadan
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ */
++
++/* default debug level for output */
++#define CKPT_DFLAG  CKPT_DFILE
++
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/sched.h>
++#include <linux/file.h>
++#include <linux/fdtable.h>
++#include <linux/deferqueue.h>
++#include <linux/checkpoint.h>
++#include <linux/checkpoint_hdr.h>
++
++
++/**************************************************************************
++ * Checkpoint
++ */
++
++/**
++ * ckpt_fill_fname - return pathname of a given file
++ * @path: path name
++ * @root: relative root
++ * @buf: buffer for pathname
++ * @len: buffer length (in) and pathname length (out)
++ */
++char *ckpt_fill_fname(struct path *path, struct path *root, char *buf, int *len)
++{
++	struct path tmp = *root;
++	char *fname;
++
++	BUG_ON(!buf);
++	spin_lock(&dcache_lock);
++	fname = __d_path(path, &tmp, buf, *len);
++	spin_unlock(&dcache_lock);
++	if (IS_ERR(fname))
++		return fname;
++	*len = (buf + (*len) - fname);
++	/*
++	 * FIX: if __d_path() changed these, it must have stepped out of
++	 * init's namespace. Since currently we require a unified namespace
++	 * within the container: simply fail.
++	 */
++	if (tmp.mnt != root->mnt || tmp.dentry != root->dentry)
++		fname = ERR_PTR(-EBADF);
++
++	return fname;
++}
++
++/**
++ * checkpoint_fname - write a file name
++ * @ctx: checkpoint context
++ * @path: path name
++ * @root: relative root
++ */
++int checkpoint_fname(struct ckpt_ctx *ctx, struct path *path, struct path *root)
++{
++	char *buf, *fname;
++	int ret, flen;
++
++	/*
++	 * FIXME: we can optimize and save memory (and storage) if we
++	 * share strings (through objhash) and reference them instead
++	 */
++
++	flen = PATH_MAX;
++	buf = kmalloc(flen, GFP_KERNEL);
++	if (!buf)
++		return -ENOMEM;
++
++	fname = ckpt_fill_fname(path, root, buf, &flen);
++	if (!IS_ERR(fname)) {
++		ret = ckpt_write_obj_type(ctx, fname, flen,
++					  CKPT_HDR_FILE_NAME);
++	} else {
++		ret = PTR_ERR(fname);
++		ckpt_err(ctx, ret, "%(T)%(S)Obtain filename\n",
++			 path->dentry->d_name.name);
++	}
++
++	kfree(buf);
++	return ret;
++}
++
++#define CKPT_DEFAULT_FDTABLE  256		/* an initial guess */
++
++/**
++ * scan_fds - scan file table and construct array of open fds
++ * @files: files_struct pointer
++ * @fdtable: (output) array of open fds
++ *
++ * Returns the number of open fds found, and also the file table
++ * array via *fdtable. The caller should free the array.
++ *
++ * The caller must validate the file descriptors collected in the
++ * array before using them, e.g. by using fcheck_files(), in case
++ * the task's fdtable changes in the meantime.
++ */
++static int scan_fds(struct files_struct *files, int **fdtable)
++{
++	struct fdtable *fdt;
++	int *fds = NULL;
++	int i = 0, n = 0;
++	int tot = CKPT_DEFAULT_FDTABLE;
++
++	/*
++	 * We assume that all tasks possibly sharing the file table are
++	 * frozen (or we are a single process and we checkpoint ourselves).
++	 * Therefore, we can safely proceed after krealloc() from where we
++	 * left off. Otherwise the file table may be modified by another
++	 * task after we scan it. The behavior is this case is undefined,
++	 * and either checkpoint or restart will likely fail.
++	 */
++ retry:
++	fds = krealloc(fds, tot * sizeof(*fds), GFP_KERNEL);
++	if (!fds)
++		return -ENOMEM;
++
++	rcu_read_lock();
++	fdt = files_fdtable(files);
++	for (/**/; i < fdt->max_fds; i++) {
++		if (!fcheck_files(files, i))
++			continue;
++		if (n == tot) {
++			rcu_read_unlock();
++			tot *= 2;	/* won't overflow: kmalloc will fail */
++			goto retry;
++		}
++		fds[n++] = i;
++	}
++	rcu_read_unlock();
++
++	*fdtable = fds;
++	return n;
++}
++
++int checkpoint_file_common(struct ckpt_ctx *ctx, struct file *file,
++			   struct ckpt_hdr_file *h)
++{
++	h->f_flags = file->f_flags;
++	h->f_mode = file->f_mode;
++	h->f_pos = file->f_pos;
++	h->f_version = file->f_version;
++
++	ckpt_debug("file %s credref %d", file->f_dentry->d_name.name,
++		h->f_credref);
++
++	/* FIX: need also file->uid, file->gid, file->f_owner, etc */
++
++	return 0;
++}
++
++int generic_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
++{
++	struct ckpt_hdr_file_generic *h;
++	int ret;
++
++	/*
++	 * FIXME: when we'll add support for unlinked files/dirs, we'll
++	 * need to distinguish between unlinked filed and unlinked dirs.
++	 */
++	if (d_unlinked(file->f_dentry)) {
++		ckpt_err(ctx, -EBADF, "%(T)%(P)Unlinked files unsupported\n",
++			 file);
++		return -EBADF;
++	}
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE);
++	if (!h)
++		return -ENOMEM;
++
++	h->common.f_type = CKPT_FILE_GENERIC;
++
++	ret = checkpoint_file_common(ctx, file, &h->common);
++	if (ret < 0)
++		goto out;
++	ret = ckpt_write_obj(ctx, &h->common.h);
++	if (ret < 0)
++		goto out;
++	ret = checkpoint_fname(ctx, &file->f_path, &ctx->root_fs_path);
++ out:
++	ckpt_hdr_put(ctx, h);
++	return ret;
++}
++EXPORT_SYMBOL(generic_file_checkpoint);
++
++/* checkpoint callback for file pointer */
++int checkpoint_file(struct ckpt_ctx *ctx, void *ptr)
++{
++	struct file *file = (struct file *) ptr;
++	int ret;
++
++	if (!file->f_op || !file->f_op->checkpoint) {
++		ckpt_err(ctx, -EBADF, "%(T)%(P)%(V)f_op lacks checkpoint\n",
++			       file, file->f_op);
++		return -EBADF;
++	}
++
++	ret = file->f_op->checkpoint(ctx, file);
++	if (ret < 0)
++		ckpt_err(ctx, ret, "%(T)%(P)file checkpoint failed\n", file);
++	return ret;
++}
++
++/**
++ * ckpt_write_file_desc - dump the state of a given file descriptor
++ * @ctx: checkpoint context
++ * @files: files_struct pointer
++ * @fd: file descriptor
++ *
++ * Saves the state of the file descriptor; looks up the actual file
++ * pointer in the hash table, and if found saves the matching objref,
++ * otherwise calls ckpt_write_file to dump the file pointer too.
++ */
++static int checkpoint_file_desc(struct ckpt_ctx *ctx,
++				struct files_struct *files, int fd)
++{
++	struct ckpt_hdr_file_desc *h;
++	struct file *file = NULL;
++	struct fdtable *fdt;
++	int objref, ret;
++	int coe = 0;	/* avoid gcc warning */
++	pid_t pid;
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE_DESC);
++	if (!h)
++		return -ENOMEM;
++
++	rcu_read_lock();
++	fdt = files_fdtable(files);
++	file = fcheck_files(files, fd);
++	if (file) {
++		coe = FD_ISSET(fd, fdt->close_on_exec);
++		get_file(file);
++	}
++	rcu_read_unlock();
++
++	ret = find_locks_with_owner(file, files);
++	/*
++	 * find_locks_with_owner() returns an error when there
++	 * are no locks found, so we *want* it to return an error
++	 * code.  Its success means we have to fail the checkpoint.
++	 */
++	if (!ret) {
++		ret = -EBADF;
++		ckpt_err(ctx, ret, "%(T)fd %d has file lock or lease\n", fd);
++		goto out;
++	}
++
++	/* sanity check (although this shouldn't happen) */
++	ret = -EBADF;
++	if (!file) {
++		ckpt_err(ctx, ret, "%(T)fd %d gone?\n", fd);
++		goto out;
++	}
++
++	/*
++	 * TODO: Implement c/r of fowner and f_sigio.  Should be
++	 * trivial, but for now we just refuse its checkpoint
++	 */
++	pid = f_getown(file);
++	if (pid) {
++		ret = -EBUSY;
++		ckpt_err(ctx, ret, "%(T)fd %d has an owner (%d)\n", fd);
++		goto out;
++	}
++
++	/*
++	 * if seen first time, this will add 'file' to the objhash, keep
++	 * a reference to it, dump its state while at it.
++	 */
++	objref = checkpoint_obj(ctx, file, CKPT_OBJ_FILE);
++	ckpt_debug("fd %d objref %d file %p coe %d)\n", fd, objref, file, coe);
++	if (objref < 0) {
++		ret = objref;
++		goto out;
++	}
++
++	h->fd_objref = objref;
++	h->fd_descriptor = fd;
++	h->fd_close_on_exec = coe;
++
++	ret = ckpt_write_obj(ctx, &h->h);
++out:
++	ckpt_hdr_put(ctx, h);
++	if (file)
++		fput(file);
++	return ret;
++}
++
++static int do_checkpoint_file_table(struct ckpt_ctx *ctx,
++				    struct files_struct *files)
++{
++	struct ckpt_hdr_file_table *h;
++	int *fdtable = NULL;
++	int nfds, n, ret;
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE_TABLE);
++	if (!h)
++		return -ENOMEM;
++
++	nfds = scan_fds(files, &fdtable);
++	if (nfds < 0) {
++		ret = nfds;
++		goto out;
++	}
++
++	h->fdt_nfds = nfds;
++
++	ret = ckpt_write_obj(ctx, &h->h);
++	ckpt_hdr_put(ctx, h);
++	if (ret < 0)
++		goto out;
++
++	ckpt_debug("nfds %d\n", nfds);
++	for (n = 0; n < nfds; n++) {
++		ret = checkpoint_file_desc(ctx, files, fdtable[n]);
++		if (ret < 0)
++			goto out;
++	}
++
++	ret = deferqueue_run(ctx->files_deferq);
++	ckpt_debug("files_deferq ran %d entries\n", ret);
++	if (ret > 0)
++		ret = 0;
++ out:
++	kfree(fdtable);
++	return ret;
++}
++
++/* checkpoint callback for file table */
++int checkpoint_file_table(struct ckpt_ctx *ctx, void *ptr)
++{
++	return do_checkpoint_file_table(ctx, (struct files_struct *) ptr);
++}
++
++/* checkpoint wrapper for file table */
++int checkpoint_obj_file_table(struct ckpt_ctx *ctx, struct task_struct *t)
++{
++	struct files_struct *files;
++	int objref;
++
++	files = get_files_struct(t);
++	if (!files)
++		return -EBUSY;
++	objref = checkpoint_obj(ctx, files, CKPT_OBJ_FILE_TABLE);
++	put_files_struct(files);
++
++	return objref;
++}
++
++/***********************************************************************
++ * Collect
++ */
++
++int ckpt_collect_file(struct ckpt_ctx *ctx, struct file *file)
++{
++	int ret;
++
++	ret = ckpt_obj_collect(ctx, file, CKPT_OBJ_FILE);
++	if (ret <= 0)
++		return ret;
++	/* if first time for this file (ret > 0), invoke ->collect() */
++	if (file->f_op->collect)
++		ret = file->f_op->collect(ctx, file);
++	if (ret < 0)
++		ckpt_err(ctx, ret, "%(T)%(P)File collect\n", file);
++	return ret;
++}
++
++static int collect_file_desc(struct ckpt_ctx *ctx,
++			     struct files_struct *files, int fd)
++{
++	struct fdtable *fdt;
++	struct file *file;
++	int ret;
++
++	rcu_read_lock();
++	fdt = files_fdtable(files);
++	file = fcheck_files(files, fd);
++	if (file)
++		get_file(file);
++	rcu_read_unlock();
++
++	if (!file) {
++		ckpt_err(ctx, -EBUSY, "%(T)%(P)File removed\n", file);
++		return -EBUSY;
++	}
++
++	ret = ckpt_collect_file(ctx, file);
++	fput(file);
++
++	return ret;
++}
++
++static int collect_file_table(struct ckpt_ctx *ctx, struct files_struct *files)
++{
++	int *fdtable;
++	int nfds, n;
++	int ret;
++
++	/* if already exists (ret == 0), nothing to do */
++	ret = ckpt_obj_collect(ctx, files, CKPT_OBJ_FILE_TABLE);
++	if (ret <= 0)
++		return ret;
++
++	/* if first time for this file table (ret > 0), proceed inside */
++	nfds = scan_fds(files, &fdtable);
++	if (nfds < 0)
++		return nfds;
++
++	for (n = 0; n < nfds; n++) {
++		ret = collect_file_desc(ctx, files, fdtable[n]);
++		if (ret < 0)
++			break;
++	}
++
++	kfree(fdtable);
++	return ret;
++}
++
++int ckpt_collect_file_table(struct ckpt_ctx *ctx, struct task_struct *t)
++{
++	struct files_struct *files;
++	int ret;
++
++	files = get_files_struct(t);
++	if (!files) {
++		ckpt_err(ctx, -EBUSY, "%(T)files_struct missing\n");
++		return -EBUSY;
++	}
++	ret = collect_file_table(ctx, files);
++	put_files_struct(files);
++
++	return ret;
++}
+diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+index 22b1601..f25d130 100644
+--- a/checkpoint/objhash.c
++++ b/checkpoint/objhash.c
+@@ -13,6 +13,8 @@
+ 
+ #include <linux/kernel.h>
+ #include <linux/hash.h>
++#include <linux/file.h>
++#include <linux/fdtable.h>
+ #include <linux/checkpoint.h>
+ #include <linux/checkpoint_hdr.h>
+ 
+@@ -62,6 +64,38 @@ static int obj_no_grab(void *ptr)
+ 	return 0;
+ }
+ 
++static int obj_file_table_grab(void *ptr)
++{
++	atomic_inc(&((struct files_struct *) ptr)->count);
++	return 0;
++}
++
++static void obj_file_table_drop(void *ptr, int lastref)
++{
++	put_files_struct((struct files_struct *) ptr);
++}
++
++static int obj_file_table_users(void *ptr)
++{
++	return atomic_read(&((struct files_struct *) ptr)->count);
++}
++
++static int obj_file_grab(void *ptr)
++{
++	get_file((struct file *) ptr);
++	return 0;
++}
++
++static void obj_file_drop(void *ptr, int lastref)
++{
++	fput((struct file *) ptr);
++}
++
++static int obj_file_users(void *ptr)
++{
++	return atomic_long_read(&((struct file *) ptr)->f_count);
++}
++
+ static struct ckpt_obj_ops ckpt_obj_ops[] = {
+ 	/* ignored object */
+ 	{
+@@ -70,6 +104,24 @@ static struct ckpt_obj_ops ckpt_obj_ops[] = {
+ 		.ref_drop = obj_no_drop,
+ 		.ref_grab = obj_no_grab,
+ 	},
++	/* files_struct object */
++	{
++		.obj_name = "FILE_TABLE",
++		.obj_type = CKPT_OBJ_FILE_TABLE,
++		.ref_drop = obj_file_table_drop,
++		.ref_grab = obj_file_table_grab,
++		.ref_users = obj_file_table_users,
++		.checkpoint = checkpoint_file_table,
++	},
++	/* file object */
++	{
++		.obj_name = "FILE",
++		.obj_type = CKPT_OBJ_FILE,
++		.ref_drop = obj_file_drop,
++		.ref_grab = obj_file_grab,
++		.ref_users = obj_file_users,
++		.checkpoint = checkpoint_file,
++	},
+ };
+ 
+ 
+diff --git a/checkpoint/process.c b/checkpoint/process.c
+index ef394a5..adc34a2 100644
+--- a/checkpoint/process.c
++++ b/checkpoint/process.c
+@@ -104,6 +104,29 @@ static int checkpoint_task_struct(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	return ckpt_write_string(ctx, t->comm, TASK_COMM_LEN);
+ }
+ 
++static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
++{
++	struct ckpt_hdr_task_objs *h;
++	int files_objref;
++	int ret;
++
++	files_objref = checkpoint_obj_file_table(ctx, t);
++	ckpt_debug("files: objref %d\n", files_objref);
++	if (files_objref < 0) {
++		ckpt_err(ctx, files_objref, "%(T)files_struct\n");
++		return files_objref;
++	}
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_TASK_OBJS);
++	if (!h)
++		return -ENOMEM;
++	h->files_objref = files_objref;
++	ret = ckpt_write_obj(ctx, &h->h);
++	ckpt_hdr_put(ctx, h);
++
++	return ret;
++}
++
+ /* dump the task_struct of a given task */
+ int checkpoint_restart_block(struct ckpt_ctx *ctx, struct task_struct *t)
+ {
+@@ -240,6 +263,10 @@ int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
+ 		goto out;
+ 	ret = checkpoint_cpu(ctx, t);
+ 	ckpt_debug("cpu %d\n", ret);
++	if (ret < 0)
++		goto out;
++	ret = checkpoint_task_objs(ctx, t);
++	ckpt_debug("objs %d\n", ret);
+  out:
+ 	ctx->tsk = NULL;
+ 	return ret;
+@@ -247,7 +274,11 @@ int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
+ 
+ int ckpt_collect_task(struct ckpt_ctx *ctx, struct task_struct *t)
+ {
+-	return 0;
++	int ret;
++
++	ret = ckpt_collect_file_table(ctx, t);
++
++	return ret;
+ }
+ 
+ /***********************************************************************
+diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+index 926c937..30b8004 100644
+--- a/checkpoint/sys.c
++++ b/checkpoint/sys.c
+@@ -206,12 +206,16 @@ static void ckpt_ctx_free(struct ckpt_ctx *ctx)
+ 	if (ctx->kflags & CKPT_CTX_RESTART)
+ 		restore_debug_free(ctx);
+ 
++	if (ctx->files_deferq)
++		deferqueue_destroy(ctx->files_deferq);
++
+ 	if (ctx->file)
+ 		fput(ctx->file);
+ 	if (ctx->logfile)
+ 		fput(ctx->logfile);
+ 
+ 	ckpt_obj_hash_free(ctx);
++	path_put(&ctx->root_fs_path);
+ 
+ 	if (ctx->tasks_arr)
+ 		task_arr_free(ctx);
+@@ -270,6 +274,10 @@ static struct ckpt_ctx *ckpt_ctx_alloc(int fd, unsigned long uflags,
+ 	if (ckpt_obj_hash_alloc(ctx) < 0)
+ 		goto err;
+ 
++	ctx->files_deferq = deferqueue_create();
++	if (!ctx->files_deferq)
++		goto err;
++
+ 	atomic_inc(&ctx->refcount);
+ 	return ctx;
+  err:
+diff --git a/fs/locks.c b/fs/locks.c
+index a8794f2..721481a 100644
+--- a/fs/locks.c
++++ b/fs/locks.c
+@@ -1994,6 +1994,41 @@ void locks_remove_posix(struct file *filp, fl_owner_t owner)
+ 
+ EXPORT_SYMBOL(locks_remove_posix);
+ 
++int find_locks_with_owner(struct file *filp, fl_owner_t owner)
++{
++	struct inode *inode = filp->f_path.dentry->d_inode;
++	struct file_lock **inode_fl;
++	int ret = -EEXIST;
++
++	lock_kernel();
++	for_each_lock(inode, inode_fl) {
++		struct file_lock *fl = *inode_fl;
++		/*
++		 * We could use posix_same_owner() along with a 'fake'
++		 * file_lock.  But, the fake file will never have the
++		 * same fl_lmops as the fl that we are looking for and
++		 * posix_same_owner() would just fall back to this
++		 * check anyway.
++		 */
++		if (IS_POSIX(fl)) {
++			if (fl->fl_owner == owner) {
++				ret = 0;
++				break;
++			}
++		} else if (IS_FLOCK(fl) || IS_LEASE(fl)) {
++			if (fl->fl_file == filp) {
++				ret = 0;
++				break;
++			}
++		} else {
++			WARN(1, "unknown file lock type, fl_flags: %x",
++				fl->fl_flags);
++		}
++	}
++	unlock_kernel();
++	return ret;
++}
++
+ /*
+  * This function is called on the last close of an open file.
+  */
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 50ce8f9..d74a890 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -80,6 +80,9 @@ extern int ckpt_read_payload(struct ckpt_ctx *ctx,
+ extern char *ckpt_read_string(struct ckpt_ctx *ctx, int max);
+ extern int ckpt_read_consume(struct ckpt_ctx *ctx, int len, int type);
+ 
++extern char *ckpt_fill_fname(struct path *path, struct path *root,
++			     char *buf, int *len);
++
+ /* ckpt kflags */
+ #define ckpt_set_ctx_kflag(__ctx, __kflag)  \
+ 	set_bit(__kflag##_BIT, &(__ctx)->kflags)
+@@ -156,6 +159,21 @@ extern int checkpoint_restart_block(struct ckpt_ctx *ctx,
+ 				    struct task_struct *t);
+ extern int restore_restart_block(struct ckpt_ctx *ctx);
+ 
++/* file table */
++extern int ckpt_collect_file_table(struct ckpt_ctx *ctx, struct task_struct *t);
++extern int checkpoint_obj_file_table(struct ckpt_ctx *ctx,
++				     struct task_struct *t);
++extern int checkpoint_file_table(struct ckpt_ctx *ctx, void *ptr);
++
++/* files */
++extern int checkpoint_fname(struct ckpt_ctx *ctx,
++			    struct path *path, struct path *root);
++extern int ckpt_collect_file(struct ckpt_ctx *ctx, struct file *file);
++extern int checkpoint_file(struct ckpt_ctx *ctx, void *ptr);
++
++extern int checkpoint_file_common(struct ckpt_ctx *ctx, struct file *file,
++				  struct ckpt_hdr_file *h);
++
+ static inline int ckpt_validate_errno(int errno)
+ {
+ 	return (errno >= 0) && (errno < MAX_ERRNO);
+@@ -166,6 +184,7 @@ static inline int ckpt_validate_errno(int errno)
+ #define CKPT_DSYS	0x2		/* generic (system) */
+ #define CKPT_DRW	0x4		/* image read/write */
+ #define CKPT_DOBJ	0x8		/* shared objects */
++#define CKPT_DFILE	0x10		/* files and filesystem */
+ 
+ #define CKPT_DDEFAULT	0xffff		/* default debug level */
+ 
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index cdca9e4..3222545 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -71,6 +71,8 @@ enum {
+ #define CKPT_HDR_TREE CKPT_HDR_TREE
+ 	CKPT_HDR_TASK,
+ #define CKPT_HDR_TASK CKPT_HDR_TASK
++	CKPT_HDR_TASK_OBJS,
++#define CKPT_HDR_TASK_OBJS CKPT_HDR_TASK_OBJS
+ 	CKPT_HDR_RESTART_BLOCK,
+ #define CKPT_HDR_RESTART_BLOCK CKPT_HDR_RESTART_BLOCK
+ 	CKPT_HDR_THREAD,
+@@ -80,6 +82,15 @@ enum {
+ 
+ 	/* 201-299: reserved for arch-dependent */
+ 
++	CKPT_HDR_FILE_TABLE = 301,
++#define CKPT_HDR_FILE_TABLE CKPT_HDR_FILE_TABLE
++	CKPT_HDR_FILE_DESC,
++#define CKPT_HDR_FILE_DESC CKPT_HDR_FILE_DESC
++	CKPT_HDR_FILE_NAME,
++#define CKPT_HDR_FILE_NAME CKPT_HDR_FILE_NAME
++	CKPT_HDR_FILE,
++#define CKPT_HDR_FILE CKPT_HDR_FILE
++
+ 	CKPT_HDR_TAIL = 9001,
+ #define CKPT_HDR_TAIL CKPT_HDR_TAIL
+ 
+@@ -106,6 +117,10 @@ struct ckpt_hdr_objref {
+ enum obj_type {
+ 	CKPT_OBJ_IGNORE = 0,
+ #define CKPT_OBJ_IGNORE CKPT_OBJ_IGNORE
++	CKPT_OBJ_FILE_TABLE,
++#define CKPT_OBJ_FILE_TABLE CKPT_OBJ_FILE_TABLE
++	CKPT_OBJ_FILE,
++#define CKPT_OBJ_FILE CKPT_OBJ_FILE
+ 	CKPT_OBJ_MAX
+ #define CKPT_OBJ_MAX CKPT_OBJ_MAX
+ };
+@@ -188,6 +203,12 @@ struct ckpt_hdr_task {
+ 	__u64 clear_child_tid;
+ } __attribute__((aligned(8)));
+ 
++/* task's shared resources */
++struct ckpt_hdr_task_objs {
++	struct ckpt_hdr h;
++	__s32 files_objref;
++} __attribute__((aligned(8)));
++
+ /* restart blocks */
+ struct ckpt_hdr_restart_block {
+ 	struct ckpt_hdr h;
+@@ -220,4 +241,42 @@ enum restart_block_type {
+ #define CKPT_RESTART_BLOCK_FUTEX CKPT_RESTART_BLOCK_FUTEX
+ };
+ 
++/* file system */
++struct ckpt_hdr_file_table {
++	struct ckpt_hdr h;
++	__s32 fdt_nfds;
++} __attribute__((aligned(8)));
++
++/* file descriptors */
++struct ckpt_hdr_file_desc {
++	struct ckpt_hdr h;
++	__s32 fd_objref;
++	__s32 fd_descriptor;
++	__u32 fd_close_on_exec;
++} __attribute__((aligned(8)));
++
++enum file_type {
++	CKPT_FILE_IGNORE = 0,
++#define CKPT_FILE_IGNORE CKPT_FILE_IGNORE
++	CKPT_FILE_GENERIC,
++#define CKPT_FILE_GENERIC CKPT_FILE_GENERIC
++	CKPT_FILE_MAX
++#define CKPT_FILE_MAX CKPT_FILE_MAX
++};
++
++/* file objects */
++struct ckpt_hdr_file {
++	struct ckpt_hdr h;
++	__u32 f_type;
++	__u32 f_mode;
++	__u32 f_flags;
++	__u32 _padding;
++	__u64 f_pos;
++	__u64 f_version;
++} __attribute__((aligned(8)));
++
++struct ckpt_hdr_file_generic {
++	struct ckpt_hdr_file common;
++} __attribute__((aligned(8)));
++
+ #endif /* _CHECKPOINT_CKPT_HDR_H_ */
+diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
+index 90bbb16..aae6755 100644
+--- a/include/linux/checkpoint_types.h
++++ b/include/linux/checkpoint_types.h
+@@ -14,6 +14,8 @@
+ 
+ #include <linux/sched.h>
+ #include <linux/nsproxy.h>
++#include <linux/list.h>
++#include <linux/path.h>
+ #include <linux/fs.h>
+ #include <linux/ktime.h>
+ #include <linux/wait.h>
+@@ -40,6 +42,9 @@ struct ckpt_ctx {
+ 	atomic_t refcount;
+ 
+ 	struct ckpt_obj_hash *obj_hash;	/* repository for shared objects */
++	struct deferqueue_head *files_deferq;	/* deferred file-table work */
++
++	struct path root_fs_path;     /* container root (FIXME) */
+ 
+ 	struct task_struct *tsk;/* checkpoint: current target task */
+ 	char err_string[256];	/* checkpoint: error string */
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 65ebec5..7902a51 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1120,6 +1120,7 @@ extern void locks_remove_posix(struct file *, fl_owner_t);
+ extern void locks_remove_flock(struct file *);
+ extern void locks_release_private(struct file_lock *);
+ extern void posix_test_lock(struct file *, struct file_lock *);
++extern int find_locks_with_owner(struct file *filp, fl_owner_t owner);
+ extern int posix_lock_file(struct file *, struct file_lock *, struct file_lock *);
+ extern int posix_lock_file_wait(struct file *, struct file_lock *);
+ extern int posix_unblock_lock(struct file *, struct file_lock *);
+@@ -1188,6 +1189,11 @@ static inline void locks_remove_posix(struct file *filp, fl_owner_t owner)
+ 	return;
+ }
+ 
++static inline int find_locks_with_owner(struct file *filp, fl_owner_t owner)
++{
++	return -ENOENT;
++}
++
+ static inline void locks_remove_flock(struct file *filp)
+ {
+ 	return;
+@@ -2318,7 +2324,11 @@ void inode_sub_bytes(struct inode *inode, loff_t bytes);
+ loff_t inode_get_bytes(struct inode *inode);
+ void inode_set_bytes(struct inode *inode, loff_t bytes);
+ 
++#ifdef CONFIG_CHECKPOINT
++extern int generic_file_checkpoint(struct ckpt_ctx *ctx, struct file *file);
++#else
+ #define generic_file_checkpoint NULL
++#endif
+ 
+ extern int vfs_readdir(struct file *, filldir_t, void *);
+ 
+-- 
+1.6.3.3
