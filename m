@@ -1,11 +1,16 @@
-From: Davalos <alkalic-EIKXeMDemBVBDgjK7y7TUQ@public.gmane.org>
-Subject: Se of political liberty. The times were thought to be out of
-Date: Sat, 20 Mar 2010 01:35:12 +0100
-Message-ID: <3jclWb7b@choulaw.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [C/R v20][PATCH 38/96] c/r: dump open file descriptors
+Date: Fri, 19 Mar 2010 21:43:10 -0700
+Message-ID: <20100320044310.GC2887__20524.0756426521$1269060255$gmane$org@count0.beaverton.ibm.com>
+References: <1268960401-16680-1-git-send-email-orenl@cs.columbia.edu>
+	<1268960401-16680-4-git-send-email-orenl@cs.columbia.edu>
+	<F18D161D-850B-4C82-83D5-1F19D573E84F@sun.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
- boundary="----------4BA415322533944"
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <F18D161D-850B-4C82-83D5-1F19D573E84F-xsfywfwIY+M@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,230 +20,89 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Torain <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Andreas Dilger <adilger-xsfywfwIY+M@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format.
-------------4BA415322533944
-Content-Type: text/plain; charset=ISO-8859-7; format=flowed
-Content-Transfer-Encoding: 7bit
+On Fri, Mar 19, 2010 at 05:19:22PM -0600, Andreas Dilger wrote:
+> On 2010-03-18, at 18:59, Oren Laadan wrote:
+> >+int checkpoint_fname(struct ckpt_ctx *ctx, struct path *path,
+> >struct path *root)
+> >+{
+> >+	fname = ckpt_fill_fname(path, root, buf, &flen);
+> >+	if (!IS_ERR(fname)) {
+> >+		ret = ckpt_write_obj_type(ctx, fname, flen,
+> >+					  CKPT_HDR_FILE_NAME);
+> 
+> What is the intended use case for the checkpoint/restore being
+> developed here?  It seems like a major risk to do the checkpoint
 
+Yes, as you anticipated below, we want to be able to migrate the
+image to a similar node.
 
-To be safe. In any case, with hostilities already begun, the issue could not be pressed to a conclusion when, as the Board of Trade asserted, "a good understanding between your
+> using the filename, since this is not guaranteed to stay constant
+> and the restore may give you a different state than what was running
+> when the checkpoint was done.  Storing a file handle in the
 
-Majesty's governors and the people is so absolutely necessary." Under the stress of war, all ministerial projects for a stricter
-control of the colonies were accordingly laid aside until the restoration
-of peace. The war itself only proved once more how defective was England's colonial administration. Three years of devastating Indian warfare again demonstrated the necessity of an adequate defense of the frontier, and a stricter control of Indian trade. A customs service which collected annually L2000 of revenue and cost L7000 to maintain, manned by officials who sold
-flags of truce to traders carrying
-ammunition and supplies to the enemy, was seen to be but an expensive luxury in time of peace and a military weakness in time of war. The assistance which Pitt, and Pitt alone, could induce the colonists to render, however adequate,
-was purchased at the price of concessions
-which deprived the governors of all but nominal influence, while placing
-in the assemblies the effective powers of government. And the results achieved by the Peace of Pa
+We're aware of this.
 
-------------4BA415322533944
-Content-Type: image/bmp;
- name="electable.jpg"
-Content-Transfer-Encoding: base64
-Content-Disposition: inline
+Our assumption is userspace will freeze the filesystem and/or take
+suitable snapshots (e.g. with btrfs) while the tasks being checkpointed
+are also frozen. If userspace wants to freeze everything but the task
+performing the checkpoint then that's fine too.
 
-/9j/4AAQSkZJRgABAQEBLAEsAAD/2wBDACgcHiMeGSgjISMtKygwPGRBPDc3PHtYXUlkkYCZ
-lo+AjIqgtObDoKrarYqMyP/L2u71////m8H////6/+b9//j/2wBDASstLTw1PHZBQXb4pYyl
-+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj/wAAR
-CAEnAV0DASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAA
-AgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkK
-FhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWG
-h4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl
-5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREA
-AgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYk
-NOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOE
-hYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk
-5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDVoooqhi0hpaQ0CFooooAKTNL0+tJnHA69
-z6UgF+vFHHr+lNz+dG6mTcdSd6A1L16UDTEopaKBiUUUUALSUvaikAlLRQOtDASilopgJRRR
-QAUUUUDCilzSUhC0g6UtIOlMBaP4Wx6UUjPtwBSYFX5jn5SfwpQxyQdwP5VYDe1LuB60gERt
-yHnODS0qBQuFAFFNAJRS0lABRRRTAKKKKACiignFIAooopgLSGlpDQAtA60nNGTSAGO0Z7np
-URemzyYkI9OKgL8VSRnKWpOXo31XLnmjfggetVYjmLIenK9Vd4BwTTw9FhqRbDA9aWqyvUyS
-A8GoaLUh1LQaKCw6Ckpe1FJAJS0UCgBKKWgDNMAopCwX3PoKYXP0qHNIaTHkgHk0Fx1Cmoi3
-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
-------------4BA415322533944
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+We decided to have userspace checkpoint the filesystem contents because
+it will likely take an extraordinarily long time. We anticipate that
+userspace will want to take advantage of many time-saving strategies
+which would be impossible to anticipate perfectly for our kernel
+syscall ABI.
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
-------------4BA415322533944--
+Even though a wide set of time-saving strategies is available,
+the goal is to keep the checkpoint image format and content
+independent of the tools that perform migration.
+
+> checkpoint, instead of (or in addition to) the filename would allow
+> restoring the state correctly.
+>
+> Note that you would also need to store some kind of FSID as part of
+> the file handle, which is a functionality that would be desirable
+> for Aneesh's recent open_by_handle() patches as well, so getting
+> this right once would be of use to both projects.
+
+I haven't looked at those, sorry. It may be useful but I think
+there's room for adding that in the future as you hinted above.
+My guess is, depending on the environment of the restarting machine,
+an FSID might not even be enough. Again -- I need to find some time
+to review those patches before I can be sure :).
+
+Userspace coordinates the management of the nodes and thus knows
+best how to map things like major:minor, /dev/foo, and/or
+uuids to the appropriate "things" when it comes time to restart.
+The best the kernel can do is provide all of those so that userspace
+can make the choices it needs to. However, most of that information is
+already available via /proc in mountinfo or via other userspace tools.
+So we don't save it in the image nor do we provide new interfaces to
+get it.
+
+> That said, if the intent is to allow the restore to be done on
+> another node with a "similar" filesystem (e.g. created by rsync/node
+> image), instead of having a coherent distributed filesystem on all
+> of the nodes then the filename makes sense.
+
+Yes, this is the intent.
+
+> I would recommend to store both the file handle+FSID and the
+> filename, preferring the former for "100% correct" restores on the
+> same node, and the latter for being able to restore on a similar
+> node (e.g. system files and such that are expected to be the same on
+> all nodes, but do not necessarily have the same inode number).
+
+This sounds like a good idea for the future. However I do not think
+inclusion of our patches should be predicated on this since the patches
+are still useful for local restart (thanks to things like mount namespaces)
+and migration without file handles.
+
+Thanks for having a look at these!
+
+Cheers,
+	-Matt Helsley
