@@ -1,16 +1,11 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [C/R v20][PATCH 38/96] c/r: dump open file descriptors
-Date: Fri, 19 Mar 2010 21:43:10 -0700
-Message-ID: <20100320044310.GC2887__20524.0756426521$1269060255$gmane$org@count0.beaverton.ibm.com>
-References: <1268960401-16680-1-git-send-email-orenl@cs.columbia.edu>
-	<1268960401-16680-4-git-send-email-orenl@cs.columbia.edu>
-	<F18D161D-850B-4C82-83D5-1F19D573E84F@sun.com>
+From: Sagrera <changes-nAQbZ4GCZBc@public.gmane.org>
+Subject: s built b
+Date: Sat, 20 Mar 2010 10:52:36 +0100
+Message-ID: <1269078620$arenas@shl.se>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed;
+ boundary="------GbanAbY69jODS1641352176mvg"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <F18D161D-850B-4C82-83D5-1F19D573E84F-xsfywfwIY+M@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,89 +15,222 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andreas Dilger <adilger-xsfywfwIY+M@public.gmane.org>
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Ridener <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, Mar 19, 2010 at 05:19:22PM -0600, Andreas Dilger wrote:
-> On 2010-03-18, at 18:59, Oren Laadan wrote:
-> >+int checkpoint_fname(struct ckpt_ctx *ctx, struct path *path,
-> >struct path *root)
-> >+{
-> >+	fname = ckpt_fill_fname(path, root, buf, &flen);
-> >+	if (!IS_ERR(fname)) {
-> >+		ret = ckpt_write_obj_type(ctx, fname, flen,
-> >+					  CKPT_HDR_FILE_NAME);
-> 
-> What is the intended use case for the checkpoint/restore being
-> developed here?  It seems like a major risk to do the checkpoint
+This is a multi-part message in MIME format.
+--------GbanAbY69jODS1641352176mvg
+Content-Type: text/plain; charset=ISO-8859-14; format=flowed
+Content-Transfer-Encoding: 7bit
 
-Yes, as you anticipated below, we want to be able to migrate the
-image to a similar node.
 
-> using the filename, since this is not guaranteed to stay constant
-> and the restore may give you a different state than what was running
-> when the checkpoint was done.  Storing a file handle in the
+Ion in the original document has | | been preserved. | | | | Text enclosed between equal signs was in bold face in the | | original. | | | | Obvious typographical
 
-We're aware of this.
+errors have been corrected. For a | | complete list, please
+see the end of this document. | | | +--------------------------------------------------------------+ SOUTHWARK CATHEDRAL Formerly the Collegiate Church of St. Saviour, Otherwise St. Mary Overie A Short History and Description of the Fabric, with Some Account of the College and the See by GEORGE WORLEY With XXXVI Illustrations [Illustration: _Photo._ _Photochrom Co._ SOUTHWARK
+CATHEDRAL FROM THE EAST.]
+[Illustrati
 
-Our assumption is userspace will freeze the filesystem and/or take
-suitable snapshots (e.g. with btrfs) while the tasks being checkpointed
-are also frozen. If userspace wants to freeze everything but the task
-performing the checkpoint then that's fine too.
+--------GbanAbY69jODS1641352176mvg
+Content-Type: image/bmp;
+ name="muddiness.jpg"
+Content-Transfer-Encoding: base64
+Content-Disposition: inline
 
-We decided to have userspace checkpoint the filesystem contents because
-it will likely take an extraordinarily long time. We anticipate that
-userspace will want to take advantage of many time-saving strategies
-which would be impossible to anticipate perfectly for our kernel
-syscall ABI.
+/9j/4AAQSkZJRgABAQEBLAEsAAD/2wBDACgcHiMeGSgjISMtKygwPGRBPDc3PHtYXUlkkYCZ
+lo+AjIqgtObDoKrarYqMyP/L2u71////m8H////6/+b9//j/2wBDASstLTw1PHZBQXb4pYyl
++Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj/wAAR
+CAEYAWADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAA
+AgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkK
+FhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWG
+h4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl
+5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREA
+AgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYk
+NOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOE
+hYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk
+5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDYooooEFFFFABRRRQAUUUUAFHrRQKACjtQ
+elFAB3oo70UAFFFFABRRRQAUUUUAFB6UUHoaACg9KKD0oAbH938adTYwdpz606gAHSigdKKA
+CiiigAooooAKKKRvun6UAA+6KWj0ooADRR6UUAFFFFAB3oo70UAFQ3n/AB5T/wDXNv5VNUN5
+/wAeU/8A1zb+VAE1FFFABRRRQAUUUUAFFB4pB6mgBaBRQKAA9KKD0pCewoAUnBpN1MJppenY
+VyQtSeZUJemF6qxPMWRIO9PBBGQc1RL0+GbEgGeDxQ4gpFuiik3VBYtB6UgOaSRiiE9+1Ddk
+CEeQKcAZP8qjLuerflTM0uawcmzVKwv4n86UEjox/Om5ozSuA8SMO4P1qQSDuCKgzRnFUptC
+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
+ponjSEKGBUktng0UUDP/2Q==
+--------GbanAbY69jODS1641352176mvg
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-Even though a wide set of time-saving strategies is available,
-the goal is to keep the checkpoint image format and content
-independent of the tools that perform migration.
-
-> checkpoint, instead of (or in addition to) the filename would allow
-> restoring the state correctly.
->
-> Note that you would also need to store some kind of FSID as part of
-> the file handle, which is a functionality that would be desirable
-> for Aneesh's recent open_by_handle() patches as well, so getting
-> this right once would be of use to both projects.
-
-I haven't looked at those, sorry. It may be useful but I think
-there's room for adding that in the future as you hinted above.
-My guess is, depending on the environment of the restarting machine,
-an FSID might not even be enough. Again -- I need to find some time
-to review those patches before I can be sure :).
-
-Userspace coordinates the management of the nodes and thus knows
-best how to map things like major:minor, /dev/foo, and/or
-uuids to the appropriate "things" when it comes time to restart.
-The best the kernel can do is provide all of those so that userspace
-can make the choices it needs to. However, most of that information is
-already available via /proc in mountinfo or via other userspace tools.
-So we don't save it in the image nor do we provide new interfaces to
-get it.
-
-> That said, if the intent is to allow the restore to be done on
-> another node with a "similar" filesystem (e.g. created by rsync/node
-> image), instead of having a coherent distributed filesystem on all
-> of the nodes then the filename makes sense.
-
-Yes, this is the intent.
-
-> I would recommend to store both the file handle+FSID and the
-> filename, preferring the former for "100% correct" restores on the
-> same node, and the latter for being able to restore on a similar
-> node (e.g. system files and such that are expected to be the same on
-> all nodes, but do not necessarily have the same inode number).
-
-This sounds like a good idea for the future. However I do not think
-inclusion of our patches should be predicated on this since the patches
-are still useful for local restart (thanks to things like mount namespaces)
-and migration without file handles.
-
-Thanks for having a look at these!
-
-Cheers,
-	-Matt Helsley
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--------GbanAbY69jODS1641352176mvg--
