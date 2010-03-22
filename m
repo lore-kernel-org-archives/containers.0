@@ -1,13 +1,18 @@
-From: Christoffer Dall <christofferdall-77OGu6e99YhyO3AAkE1OcX9LOBIZ5rWg@public.gmane.org>
-Subject: [C/R ARM][PATCH 1/3] ARM: Rudimentary syscall interfaces
-Date: Sun, 21 Mar 2010 21:06:03 -0400
-Message-ID: <1269219965-23923-2-git-send-email-christofferdall__38687.7058343545$1269220027$gmane$org@christofferdall.dk>
-References: <1269219965-23923-1-git-send-email-christofferdall@christofferdall.dk>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [C/R v20][PATCH 38/96] c/r: dump open file descriptors
+Date: Sun, 21 Mar 2010 18:06:06 -0700
+Message-ID: <20100322010606.GG2887__2649.73121597922$1269220032$gmane$org@count0.beaverton.ibm.com>
+References: <1268960401-16680-1-git-send-email-orenl@cs.columbia.edu>
+	<1268960401-16680-4-git-send-email-orenl@cs.columbia.edu>
+	<F18D161D-850B-4C82-83D5-1F19D573E84F@sun.com>
+	<20100320044310.GC2887@count0.beaverton.ibm.com>
+	<20100321172703.GC4174@shareable.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1269219965-23923-1-git-send-email-christofferdall-77OGu6e99YhyO3AAkE1OcX9LOBIZ5rWg@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20100321172703.GC4174-yetKDKU6eevNLxjTenLetw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,192 +22,203 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-arm-kernel <linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org>
-Cc: Christoffer Dall <christofferdall-77OGu6e99YhyO3AAkE1OcX9LOBIZ5rWg@public.gmane.org>, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Jamie Lokier <jamie-yetKDKU6eevNLxjTenLetw@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andreas Dilger <adilger-xsfywfwIY+M@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This small commit introduces a global state of system calls for ARM
-making it possible for a debugger or checkpointing to gain information
-about another process' state with respect to system calls.
+On Sun, Mar 21, 2010 at 05:27:03PM +0000, Jamie Lokier wrote:
+> Matt Helsley wrote:
+> > > That said, if the intent is to allow the restore to be done on
+> > > another node with a "similar" filesystem (e.g. created by rsync/node
+> > > image), instead of having a coherent distributed filesystem on all
+> > > of the nodes then the filename makes sense.
+> > 
+> > Yes, this is the intent.
+> 
+> I would worry about programs which are using files which have been
+> deleted, renamed, or (very common) renamed-over by another process
+> after being opened, as there's a good chance they will successfully
+> open the wrong file after c/r, and corrupt state from then on.
 
-The patch is based on this proposal from Roland McGrath:
-https://patchwork.kernel.org/patch/32101/
+The code in the patches does check for unlinked files and refuses
+to checkpoint if an unlinked file is open. Yes, this limits the usefulness
+of the code somewhat but it's a problem we can solve and c/r is still quite
+useful without the solution.
 
-Cc: Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Christoffer Dall <christofferdall-77OGu6e99YhyO3AAkE1OcX9LOBIZ5rWg@public.gmane.org>
-Acked-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
----
- arch/arm/include/asm/syscall.h |   31 +++++++++++++++++++++++++++++++
- arch/arm/kernel/asm-offsets.c  |    1 +
- arch/arm/kernel/entry-common.S |    8 +++++++-
- arch/arm/kernel/ptrace.c       |    2 --
- arch/arm/kernel/signal.c       |   14 +++++++-------
- 5 files changed, 46 insertions(+), 10 deletions(-)
- create mode 100644 arch/arm/include/asm/syscall.h
+My favorite solution for unlinked files is keeping the contents of the file
+in the checkpoint image. Another solution is relinking it to a new "safe"
+location in the filesystem. Determining the "safe" location is not very clean
+because we need one "safe" location per filesystem being backed-up. Hence I
+tend to favor the first approach. Neither solution is implemented
+and thoroughly tested yet though.
 
-diff --git a/arch/arm/include/asm/syscall.h b/arch/arm/include/asm/syscall.h
-new file mode 100644
-index 0000000..3b3248f
---- /dev/null
-+++ b/arch/arm/include/asm/syscall.h
-@@ -0,0 +1,31 @@
-+/*
-+ * syscalls.h - Linux syscall interfaces for ARM
-+ *
-+ * Copyright (c) 2010 Christoffer Dall
-+ *
-+ * This file is released under the GPLv2.
-+ * See the file COPYING for more details.
-+ */
-+
-+#ifndef _ASM_ARM_SYSCALLS_H
-+#define _ASM_ARM_SYSCALLS_H
-+
-+static inline int syscall_get_nr(struct task_struct *task,
-+				 struct pt_regs *regs)
-+{
-+	return (int)(task_thread_info(task)->syscall);
-+}
-+
-+static inline long syscall_get_return_value(struct task_struct *task,
-+					    struct pt_regs *regs)
-+{
-+	return regs->ARM_r0;
-+}
-+
-+static inline long syscall_get_error(struct task_struct *task,
-+				     struct pt_regs *regs)
-+{
-+	return regs->ARM_r0;
-+}
-+
-+#endif /* _ASM_ARM_SYSCALLS_H */
-diff --git a/arch/arm/kernel/asm-offsets.c b/arch/arm/kernel/asm-offsets.c
-index 4a88125..726a0ad 100644
---- a/arch/arm/kernel/asm-offsets.c
-+++ b/arch/arm/kernel/asm-offsets.c
-@@ -48,6 +48,7 @@ int main(void)
-   DEFINE(TI_CPU,		offsetof(struct thread_info, cpu));
-   DEFINE(TI_CPU_DOMAIN,		offsetof(struct thread_info, cpu_domain));
-   DEFINE(TI_CPU_SAVE,		offsetof(struct thread_info, cpu_context));
-+  DEFINE(TI_SYSCALL,		offsetof(struct thread_info, syscall));
-   DEFINE(TI_USED_CP,		offsetof(struct thread_info, used_cp));
-   DEFINE(TI_TP_VALUE,		offsetof(struct thread_info, tp_value));
-   DEFINE(TI_FPSTATE,		offsetof(struct thread_info, fpstate));
-diff --git a/arch/arm/kernel/entry-common.S b/arch/arm/kernel/entry-common.S
-index 2c1db77..f694f4d 100644
---- a/arch/arm/kernel/entry-common.S
-+++ b/arch/arm/kernel/entry-common.S
-@@ -30,6 +30,9 @@ ret_fast_syscall:
- 	tst	r1, #_TIF_WORK_MASK
- 	bne	fast_work_pending
- 
-+	mov	r2, #-1
-+	str	r2, [tsk, #TI_SYSCALL]
-+
- 	/* perform architecture specific actions before user return */
- 	arch_ret_to_user r1, lr
- 
-@@ -47,7 +50,6 @@ work_pending:
- 	tst	r1, #_TIF_SIGPENDING|_TIF_NOTIFY_RESUME
- 	beq	no_work_pending
- 	mov	r0, sp				@ 'regs'
--	mov	r2, why				@ 'syscall'
- 	bl	do_notify_resume
- 	b	ret_slow_syscall		@ Check work again
- 
-@@ -62,6 +64,9 @@ ret_slow_syscall:
- 	ldr	r1, [tsk, #TI_FLAGS]
- 	tst	r1, #_TIF_WORK_MASK
- 	bne	work_pending
-+
-+	mov	r2, #-1
-+	str	r2, [tsk, #TI_SYSCALL]
- no_work_pending:
- 	/* perform architecture specific actions before user return */
- 	arch_ret_to_user r1, lr
-@@ -274,6 +279,7 @@ ENTRY(vector_swi)
- 	eor	scno, scno, #__NR_SYSCALL_BASE	@ check OS number
- #endif
- 
-+	str	scno, [tsk, #TI_SYSCALL]	@ store syscall nr. globally
- 	stmdb	sp!, {r4, r5}			@ push fifth and sixth args
- 	tst	ip, #_TIF_SYSCALL_TRACE		@ are we tracing syscalls?
- 	bne	__sys_trace
-diff --git a/arch/arm/kernel/ptrace.c b/arch/arm/kernel/ptrace.c
-index a2ea385..44ab437 100644
---- a/arch/arm/kernel/ptrace.c
-+++ b/arch/arm/kernel/ptrace.c
-@@ -863,8 +863,6 @@ asmlinkage int syscall_trace(int why, struct pt_regs *regs, int scno)
- 	ip = regs->ARM_ip;
- 	regs->ARM_ip = why;
- 
--	current_thread_info()->syscall = scno;
--
- 	/* the 0x80 provides a way for the tracing parent to distinguish
- 	   between a syscall stop and SIGTRAP delivery */
- 	ptrace_notify(SIGTRAP | ((current->ptrace & PT_TRACESYSGOOD)
-diff --git a/arch/arm/kernel/signal.c b/arch/arm/kernel/signal.c
-index e7714f3..f695239 100644
---- a/arch/arm/kernel/signal.c
-+++ b/arch/arm/kernel/signal.c
-@@ -527,7 +527,7 @@ static inline void setup_syscall_restart(struct pt_regs *regs)
- static int
- handle_signal(unsigned long sig, struct k_sigaction *ka,
- 	      siginfo_t *info, sigset_t *oldset,
--	      struct pt_regs * regs, int syscall)
-+	      struct pt_regs *regs)
- {
- 	struct thread_info *thread = current_thread_info();
- 	struct task_struct *tsk = current;
-@@ -537,7 +537,7 @@ handle_signal(unsigned long sig, struct k_sigaction *ka,
- 	/*
- 	 * If we were from a system call, check for system call restarting...
- 	 */
--	if (syscall) {
-+	if (thread->syscall != -1) {
- 		switch (regs->ARM_r0) {
- 		case -ERESTART_RESTARTBLOCK:
- 		case -ERESTARTNOHAND:
-@@ -601,7 +601,7 @@ handle_signal(unsigned long sig, struct k_sigaction *ka,
-  * the kernel can handle, and then we build all the user-level signal handling
-  * stack-frames in one go after that.
-  */
--static void do_signal(struct pt_regs *regs, int syscall)
-+static void do_signal(struct pt_regs *regs)
- {
- 	struct k_sigaction ka;
- 	siginfo_t info;
-@@ -629,7 +629,7 @@ static void do_signal(struct pt_regs *regs, int syscall)
- 			oldset = &current->saved_sigmask;
- 		else
- 			oldset = &current->blocked;
--		if (handle_signal(signr, &ka, &info, oldset, regs, syscall) == 0) {
-+		if (handle_signal(signr, &ka, &info, oldset, regs) == 0) {
- 			/*
- 			 * A signal was successfully delivered; the saved
- 			 * sigmask will have been stored in the signal frame,
-@@ -647,7 +647,7 @@ static void do_signal(struct pt_regs *regs, int syscall)
- 	/*
- 	 * No signal to deliver to the process - restart the syscall.
- 	 */
--	if (syscall) {
-+	if (current_thread_info()->syscall != -1) {
- 		if (regs->ARM_r0 == -ERESTART_RESTARTBLOCK) {
- 			if (thumb_mode(regs)) {
- 				regs->ARM_r7 = __NR_restart_syscall - __NR_SYSCALL_BASE;
-@@ -689,10 +689,10 @@ static void do_signal(struct pt_regs *regs, int syscall)
- }
- 
- asmlinkage void
--do_notify_resume(struct pt_regs *regs, unsigned int thread_flags, int syscall)
-+do_notify_resume(struct pt_regs *regs, unsigned int thread_flags)
- {
- 	if (thread_flags & _TIF_SIGPENDING)
--		do_signal(regs, syscall);
-+		do_signal(regs);
- 
- 	if (thread_flags & _TIF_NOTIFY_RESUME) {
- 		clear_thread_flag(TIF_NOTIFY_RESUME);
--- 
-1.5.6.5
+These solutions are needed because the data is not available via a normal
+filesystem backup. Renames are dealt with by requiring userspace to freeze
+and/or safely take a snapshot of the filesystem as with any backup.
+
+> This can be avoided by ensuring every checkpointed application is
+> specially "c/r aware", but that makes the feature a lot less
+> attractive, as well as uncomfortably unsafe to use on arbitrary
+
+We avoided using that solution for the very flaws you point out.
+In fact, so far we've managed to avoid requiring cooperation with
+the tasks being checkpointed.
+
+> processes.  Ideally, c/r would fail on some types of process
+> (e.g. using sockets), but at least fail in a safe way that does not
+> lead to quiet data corruption.
+
+We've done our best to try and reach that ideal. You're welcome to have a
+look at the code to see if you can find any ways in which we haven't.
+Here's the code that refuses to checkpoint unsupported files. I think
+it's pretty easy to read:
+
+int checkpoint_file(struct ckpt_ctx *ctx, void *ptr)
+{
+        struct file *file = (struct file *) ptr;
+        int ret;
+
+        if (!file->f_op || !file->f_op->checkpoint) {
+                ckpt_err(ctx, -EBADF, "%(T)%(P)%(V)f_op lacks checkpoint\n",
+                               file, file->f_op);
+                return -EBADF;
+        }
+
+        if (is_dnotify_attached(file)) {
+                ckpt_err(ctx, -EBADF, "%(T)%(P)dnotify unsupported\n", file);
+                return -EBADF;
+        }
+
+        ret = file->f_op->checkpoint(ctx, file);
+        if (ret < 0)
+                ckpt_err(ctx, ret, "%(T)%(P)file checkpoint failed\n", file);
+        return ret;
+}
+
+(As Serge noted, we don't support inotify. inotify and fanotify require
+an fd to register the fsnotify marks and the struct file associated with
+that fd lacks the f_ops->checkpoint operation, hence that will cause
+checkpoint to fail too and, again, there will be no silent corruption)
+
+Negative return values cause sys_checkpoint() to stop checkpointing and
+return the given errno. The f_op->checkpoint is often a generic operation
+which ensures that the file is not unlinked before it saves things like
+the position of the file (checkpoint_file_common()) and the path to the file
+(checkpoint_fname()):
+
+int generic_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
+{
+        struct ckpt_hdr_file_generic *h;
+        int ret;
+
+        /*
+         * FIXME: when we'll add support for unlinked files/dirs, we'll
+         * need to distinguish between unlinked filed and unlinked dirs.
+         */
+        if (d_unlinked(file->f_dentry)) {
+                ckpt_err(ctx, -EBADF, "%(T)%(P)Unlinked files unsupported\n",
+                         file);
+                return -EBADF;
+        }
+
+        h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE);
+        if (!h)
+                return -ENOMEM;
+
+        h->common.f_type = CKPT_FILE_GENERIC;
+
+        ret = checkpoint_file_common(ctx, file, &h->common);
+        if (ret < 0)
+                goto out;
+        ret = ckpt_write_obj(ctx, &h->common.h);
+        if (ret < 0)
+                goto out;
+        ret = checkpoint_fname(ctx, &file->f_path, &ctx->root_fs_path);
+ out:
+        ckpt_hdr_put(ctx, h);
+        return ret;
+}
+EXPORT_SYMBOL(generic_file_checkpoint);
+
+I wrote a simple script to look for missing operations in things like
+file_operations. It can output counts in directories/files or show the
+spot in the files where the struct is defined and a little context.
+
+I used that script to check which files and protocols aren't supported
+(for 2.6.33-rc8), I placed a histogram of the output in the wiki, and I've
+tried to keep it up-to-date.
+
+https://ckpt.wiki.kernel.org/index.php/UncheckpointableFilesystems
+https://ckpt.wiki.kernel.org/index.php/UncheckpointableProtocols
+
+The script is also there for anyone who wants to use it on newer kernels.
+Here's the output which is of interest to folks on linux-fsdevel for anyone
+who doesn't wish to follow a link -- the number of file_operations
+structures missing the .checkpoint operation:
+
+    162 arch
+      3 block
+      1 crypto
+      1 Documentation
+    718 drivers
+    178 fs
+             3 9p
+              8 afs
+              1 autofs
+              3 autofs4
+              1 bad_inode.c
+              3 binfmt_misc.c
+              1 block_dev.c
+              2 cachefiles
+              1 char_dev.c
+             15 cifs
+              4 coda
+              2 configfs
+              3 debugfs
+              8 dlm
+              1 ext4
+              1 fifo.c
+              1 filesystems.c
+              3 fscache
+              9 fuse
+              5 gfs2
+              1 hugetlbfs
+              1 jbd2
+              6 jfs
+              1 libfs.c
+              1 locks.c
+              2 ncpfs
+              2 nfs
+              5 nfsd
+              1 no-block.c
+              1 notify
+              1 ntfs
+             15 ocfs2
+             55 proc
+              1 reiserfs
+              1 signalfd.c
+              2 smbfs
+              3 sysfs
+              1 timerfd.c
+              3 xfs
+      1 include
+      4 ipc
+     88 kernel
+      3 lib
+     12 mm
+    164 net
+      1 samples
+     35 security
+     29 sound
+      4 virt
+
+  Notes:
+   1. The missing checkpoint file operation in fs/fifo.c is only an artifact of
+	the unusual way fifo file ops are assigned. FIFOs are supported.
+   2. The ext4 missing file operation is for the multiblock groups file in /proc
+	IMHO trying to checkpoint the contents of /proc files is usually a bad
+	idea. Thankfuly, most programs don't hold these files open for very
+	long.
+
+Cheers,
+	-Matt Helsley
