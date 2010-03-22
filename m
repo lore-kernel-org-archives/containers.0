@@ -1,7 +1,7 @@
 From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 6/6] Clean up the error path in restore_veth()
-Date: Mon, 22 Mar 2010 12:33:35 -0700
-Message-ID: <1269286415-24851-7-git-send-email-danms@us.ibm.com>
+Subject: [PATCH 1/6] C/R: Netdev and NetNS fixes
+Date: Mon, 22 Mar 2010 12:33:30 -0700
+Message-ID: <1269286415-24851-2-git-send-email-danms@us.ibm.com>
 References: <1269286415-24851-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -20,166 +20,283 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This uses the previously-added rtnl_dellink() helper to tear down the
-pair all at once by specifying one of the halves by name (which is how
-userspace does it and how RTNL expects it to be done).  It also uses
-the ckpt_obj_del() function to pull the devices out of the hash and drop
-the references before it makes the call to destroy.  The result is a
-unified and much cleaner error path for the entire function.
+These are fixes to the netdev/netns code to address things that Oren
+pointed out after the initial review of that code.  Included are:
 
-All the "goto err" paths have been checked by injecting errors.  They
-all cleanup the interfaces properly and cleanly.
+ - Netdev restore function dispatching from a table
+ - Added a comment about the controverial determination of "initial netns"
+ - Simplify the E2BIG error handling
+ - Remove a redundant check for checkpoint support per-device
 
 Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- net/checkpoint_dev.c |   87 +++++++++++++++++--------------------------------
- 1 files changed, 30 insertions(+), 57 deletions(-)
+ include/linux/checkpoint_hdr.h |    1 +
+ net/checkpoint_dev.c           |  102 +++++++++++++++++++---------------------
+ 2 files changed, 49 insertions(+), 54 deletions(-)
 
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 061d1d5..01553b4 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -779,6 +779,7 @@ enum ckpt_netdev_types {
+ 	CKPT_NETDEV_VETH,
+ 	CKPT_NETDEV_SIT,
+ 	CKPT_NETDEV_MACVLAN,
++	CKPT_NETDEV_MAX,
+ };
+ 
+ struct ckpt_hdr_netdev {
 diff --git a/net/checkpoint_dev.c b/net/checkpoint_dev.c
-index 0091eb9..2bb3d4d 100644
+index 9117a55..24186c5 100644
 --- a/net/checkpoint_dev.c
 +++ b/net/checkpoint_dev.c
-@@ -21,11 +21,6 @@
- #include <net/net_namespace.h>
- #include <net/sch_generic.h>
+@@ -92,6 +92,8 @@ static struct nlmsghdr *rtnl_get_response(struct socket *rtnl,
+ 	long timeo = MAX_SCHEDULE_TIMEOUT;
+ 	struct nlmsghdr *nlh;
  
--struct dq_netdev {
--	struct net_device *dev;
--	struct ckpt_ctx *ctx;
--};
--
- struct veth_newlink {
- 	char *peer;
- };
-@@ -577,25 +572,6 @@ static int rtnl_dellink(char *name)
- 	return ret;
++	*skb = NULL;
++
+ 	ret = sk_wait_data(rtnl->sk, &timeo);
+ 	if (!ret)
+ 		return ERR_PTR(-EPIPE);
+@@ -121,6 +123,13 @@ static struct nlmsghdr *rtnl_get_response(struct socket *rtnl,
+ 
+ int ckpt_netdev_in_init_netns(struct ckpt_ctx *ctx, struct net_device *dev)
+ {
++	/*
++	 * Currently, we treat the "initial network namespace" as that
++	 * of the process doing the checkpoint.  This gives us a
++	 * consistent view of the container and its layout from the
++	 * perspective of the "agent" doing the checkpoint and
++	 * restore.
++	 */
+ 	return dev->nd_net == current->nsproxy->net_ns;
  }
  
--static int netdev_noop(void *data)
--{
--	return 0;
--}
--
--static int netdev_cleanup(void *data)
--{
--	struct dq_netdev *dq = data;
--
--	dev_put(dq->dev);
--
--	if (dq->ctx->errno) {
--		ckpt_debug("Unregistering netdev %s\n", dq->dev->name);
--		unregister_netdev(dq->dev);
+@@ -132,9 +141,9 @@ int ckpt_netdev_hwaddr(struct net_device *dev, struct ckpt_hdr_netdev *h)
+ 
+ 	memcpy(req.ifr_name, dev->name, IFNAMSIZ);
+ 	ret = __kern_dev_ioctl(net, SIOCGIFFLAGS, &req);
+-	h->flags = req.ifr_flags;
+ 	if (ret < 0)
+ 		return ret;
++	h->flags = req.ifr_flags;
+ 
+ 	ret = __kern_dev_ioctl(net, SIOCGIFHWADDR, &req);
+ 	if (ret < 0)
+@@ -150,17 +159,11 @@ int ckpt_netdev_inet_addrs(struct in_device *indev,
+ {
+ 	struct ckpt_netdev_addr *abuf = NULL;
+ 	struct in_ifaddr *addr = indev->ifa_list;
+-	int pages = 0;
+ 	int addrs = 0;
+-	int max;
++	int max = 32;
+ 
+  retry:
+-	if (++pages > 4) {
+-		addrs = -E2BIG;
+-		goto out;
 -	}
 -
--	return 0;
--}
--
- static struct net_device *restore_veth(struct ckpt_ctx *ctx,
- 				       struct ckpt_hdr_netdev *h,
- 				       struct net *net)
-@@ -606,9 +582,6 @@ static struct net_device *restore_veth(struct ckpt_ctx *ctx,
- 	struct net_device *dev;
- 	struct net_device *peer;
- 	struct ifreq req;
--	struct dq_netdev dq;
--
--	dq.ctx = ctx;
+-	*_abuf = krealloc(abuf, PAGE_SIZE * pages, GFP_KERNEL);
++	*_abuf = krealloc(abuf, max * sizeof(*abuf), GFP_KERNEL);
+ 	if (*_abuf == NULL) {
+ 		addrs = -ENOMEM;
+ 		goto out;
+@@ -169,7 +172,6 @@ int ckpt_netdev_inet_addrs(struct in_device *indev,
  
- 	ret = _ckpt_read_buffer(ctx, this_name, IFNAMSIZ);
- 	if (ret < 0)
-@@ -630,37 +603,31 @@ static struct net_device *restore_veth(struct ckpt_ctx *ctx,
- 		if (IS_ERR(dev))
- 			return dev;
+ 	read_lock(&dev_base_lock);
  
-+		ret = ckpt_obj_insert(ctx, dev, h->veth.this_ref,
-+				      CKPT_OBJ_NETDEV);
-+		dev_put(dev);
-+		if (ret < 0)
-+			goto err;
-+
- 		peer = dev_get_by_name(current->nsproxy->net_ns, peer_name);
- 		if (!peer) {
- 			ret = -EINVAL;
--			goto err_dev;
-+			goto err;
+-	max = (pages * PAGE_SIZE) / sizeof(*abuf);
+ 	while (addr) {
+ 		abuf[addrs].type = CKPT_NETDEV_ADDR_IPV4; /* Only IPv4 now */
+ 		abuf[addrs].inet4_local = htonl(addr->ifa_local);
+@@ -180,6 +182,7 @@ int ckpt_netdev_inet_addrs(struct in_device *indev,
+ 		addr = addr->ifa_next;
+ 		if (++addrs >= max) {
+ 			read_unlock(&dev_base_lock);
++			max *= 2;
+ 			goto retry;
  		}
+ 	}
+@@ -211,13 +214,8 @@ struct ckpt_hdr_netdev *ckpt_netdev_base(struct ckpt_ctx *ctx,
  
--		dq.dev = peer;
--		ret = deferqueue_add(ctx->deferqueue, &dq, sizeof(dq),
--				     netdev_noop, netdev_cleanup);
--		if (ret)
--			goto err_peer;
--
- 		ret = ckpt_obj_insert(ctx, peer, h->veth.peer_ref,
- 				      CKPT_OBJ_NETDEV);
--		if (ret < 0)
--			/* Can't recall peer dq, so let it cleanup peer */
--			goto err_dev;
- 		dev_put(peer);
--
--		dq.dev = dev;
--		ret = deferqueue_add(ctx->deferqueue, &dq, sizeof(dq),
--				     netdev_noop, netdev_cleanup);
--		if (ret)
--			/* Can't recall peer dq, so let it cleanup peer */
--			goto err_dev;
-+		if (ret < 0)
-+			goto err;
+ 	*addrs = NULL;
+ 	ret = h->inet_addrs = ckpt_netdev_inet_addrs(dev->ip_ptr, addrs);
+-	if (ret < 0) {
+-		if (ret == -E2BIG)
+-			ckpt_err(ctx, ret,
+-				 "Too many inet addresses on interface %s\n",
+-				 dev->name);
++	if (ret < 0)
+ 		goto out;
+-	}
  
- 	} else {
- 		/* We're second: get our dev from the hash */
- 		dev = ckpt_obj_fetch(ctx, h->veth.this_ref, CKPT_OBJ_NETDEV);
--		if (IS_ERR(dev))
--			return dev;
-+		if (IS_ERR(dev)) {
-+			ret = PTR_ERR(dev);
-+			goto err;
-+		}
+ 	if (ckpt_netdev_in_init_netns(ctx, dev))
+ 		ret = h->netns_ref = 0;
+@@ -238,6 +236,7 @@ struct ckpt_hdr_netdev *ckpt_netdev_base(struct ckpt_ctx *ctx,
+ int checkpoint_netdev(struct ckpt_ctx *ctx, void *ptr)
+ {
+ 	struct net_device *dev = (struct net_device *)ptr;
++	int ret;
+ 
+ 	if (!dev->netdev_ops->ndo_checkpoint) {
+ 		ckpt_err(ctx, -ENOSYS,
+@@ -247,7 +246,12 @@ int checkpoint_netdev(struct ckpt_ctx *ctx, void *ptr)
+ 
+ 	ckpt_debug("checkpointing netdev %s\n", dev->name);
+ 
+-	return dev->netdev_ops->ndo_checkpoint(ctx, dev);
++	ret = dev->netdev_ops->ndo_checkpoint(ctx, dev);
++	if (ret < 0)
++		ckpt_err(ctx, ret, "Failed to checkpoint netdev %s: %i\n",
++			 dev->name, ret);
++
++	return ret;
+ }
+ 
+ int checkpoint_netns(struct ckpt_ctx *ctx, void *ptr)
+@@ -262,21 +266,13 @@ int checkpoint_netns(struct ckpt_ctx *ctx, void *ptr)
+ 		return -ENOMEM;
+ 
+ 	h->this_ref = ckpt_obj_lookup(ctx, net, CKPT_OBJ_NET_NS);
+-	BUG_ON(h->this_ref == 0);
++	BUG_ON(h->this_ref <= 0);
+ 
+ 	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
+ 	if (ret < 0)
+ 		goto out;
+ 
+ 	for_each_netdev(net, dev) {
+-		if (!dev->netdev_ops->ndo_checkpoint) {
+-			ret = -ENOSYS;
+-			ckpt_err(ctx, ret,
+-				 "Device %s does not support checkpoint\n",
+-				 dev->name);
+-			break;
+-		}
+-
+ 		ret = checkpoint_obj(ctx, dev, CKPT_OBJ_NETDEV);
+ 		if (ret < 0)
+ 			break;
+@@ -297,11 +293,7 @@ static int restore_in_addrs(struct ckpt_ctx *ctx,
+ 	int len = naddrs * sizeof(struct ckpt_netdev_addr);
+ 	struct ckpt_netdev_addr *addrs = NULL;
+ 
+-	addrs = kmalloc(len, GFP_KERNEL);
+-	if (!addrs)
+-		return -ENOMEM;
+-
+-	ret = _ckpt_read_buffer(ctx, addrs, len);
++	ret = ckpt_read_payload(ctx, (void **)&addrs, len, CKPT_HDR_BUFFER);
+ 	if (ret < 0)
+ 		goto out;
+ 
+@@ -414,7 +406,7 @@ static int mvl_new_link_msg(struct sk_buff *skb, void *data)
+ 	linkinfo = nla_nest_start(skb, IFLA_LINKINFO);
+ 	if (!linkinfo) {
+ 		ret = -ENOMEM;
+-		goto out;
++		goto out_put;
  	}
  
- 	/* Move to our new netns */
-@@ -668,25 +635,31 @@ static struct net_device *restore_veth(struct ckpt_ctx *ctx,
- 	ret = dev_change_net_namespace(dev, net, dev->name);
- 	rtnl_unlock();
- 	if (ret < 0)
+ 	ret = nla_put_string(skb, IFLA_INFO_KIND, "macvlan");
+@@ -484,10 +476,9 @@ static struct net_device *rtnl_newlink(new_link_fn fn, void *data, char *name)
+ 
+ 	skb = new_link_msg(fn, data, name);
+ 	if (IS_ERR(skb)) {
+-		ret = PTR_ERR(skb);
+-		ckpt_debug("failed to create new link message: %i\n", ret);
+-		skb = NULL;
 -		goto out;
-+		goto err;
++		ckpt_debug("failed to create new link message: %li\n",
++			   PTR_ERR(skb));
++		return ERR_PTR(PTR_ERR(skb));
+ 	}
  
- 	/* Restore MAC address */
- 	memcpy(req.ifr_name, dev->name, IFNAMSIZ);
- 	memcpy(req.ifr_hwaddr.sa_data, h->hwaddr, sizeof(h->hwaddr));
- 	req.ifr_hwaddr.sa_family = ARPHRD_ETHER;
- 	ret = __kern_dev_ioctl(net, SIOCSIFHWADDR, &req);
-- out:
--	if (ret)
--		dev = ERR_PTR(ret);
-+	if (ret < 0)
-+		goto err;
+ 	memset(&msg, 0, sizeof(msg));
+@@ -556,7 +547,6 @@ static struct net_device *restore_veth(struct ckpt_ctx *ctx,
+ 	char peer_name[IFNAMSIZ];
+ 	struct net_device *dev;
+ 	struct net_device *peer;
+-	int didreg = 0;
+ 	struct ifreq req;
+ 	struct dq_netdev dq;
  
- 	return dev;
+@@ -578,9 +568,6 @@ static struct net_device *restore_veth(struct ckpt_ctx *ctx,
+ 			.peer = peer_name,
+ 		};
+ 
+-		/* We're first: allocate the veth pair */
+-		didreg = 1;
 -
-- err_peer:
--	dev_put(peer);
--	unregister_netdev(peer);
-- err_dev:
--	dev_put(dev);
--	unregister_netdev(dev);
-+ err:
-+	/* Delete from hash to drop reference */
-+	ckpt_obj_del(ctx, h->veth.this_ref, CKPT_OBJ_NETDEV);
-+	ckpt_obj_del(ctx, h->veth.peer_ref, CKPT_OBJ_NETDEV);
-+
-+	/* This will fail to delete the interface if we get here
-+	 * because of a failed attempt at setting the hardware
-+	 * address, since the device has been moved to another netns.
-+	 * This is not a problem, however, because the death of that
-+	 * netns will take the device (and its peer) down with it
-+	 * cleanly.
-+	 */
-+	if (rtnl_dellink(this_name) < 0)
-+		ckpt_debug("failed to delete interfaces on error\n");
- 
- 	return ERR_PTR(ret);
+ 		dev = rtnl_newlink(veth_new_link_msg, &veth, this_name);
+ 		if (IS_ERR(dev))
+ 			return dev;
+@@ -725,6 +712,17 @@ static struct net_device *restore_macvlan(struct ckpt_ctx *ctx,
+ 	return dev;
  }
+ 
++typedef struct net_device *(*restore_netdev_fn)(struct ckpt_ctx *,
++						struct ckpt_hdr_netdev *,
++						struct net *);
++
++restore_netdev_fn restore_netdev_functions[] = {
++	restore_lo,     	/* CKPT_NETDEV_LO */
++	restore_veth,   	/* CKPT_NETDEV_VETH */
++	restore_sit,    	/* CKPT_NETDEV_SIT */
++	restore_macvlan,	/* CKPT_NETDEV_MACVLAN */
++};
++
+ void *restore_netdev(struct ckpt_ctx *ctx)
+ {
+ 	struct ckpt_hdr_netdev *h;
+@@ -732,35 +730,31 @@ void *restore_netdev(struct ckpt_ctx *ctx)
+ 	struct ifreq req;
+ 	struct net *net;
+ 	int ret;
++	restore_netdev_fn restore_fn = NULL;
+ 
+ 	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_NETDEV);
+-	if (IS_ERR(h)) {
+-		ckpt_err(ctx, PTR_ERR(h), "failed to read netdev\n");
++	if (IS_ERR(h))
+ 		return h;
+-	}
+ 
+ 	if (h->netns_ref != 0) {
+ 		net = ckpt_obj_try_fetch(ctx, h->netns_ref, CKPT_OBJ_NET_NS);
+ 		if (IS_ERR(net)) {
+ 			ckpt_debug("failed to get net for %i\n", h->netns_ref);
+ 			ret = PTR_ERR(net);
+-			net = current->nsproxy->net_ns;
+ 			goto out;
+ 		}
+ 	} else
+ 		net = current->nsproxy->net_ns;
+ 
+-	if (h->type == CKPT_NETDEV_VETH)
+-		dev = restore_veth(ctx, h, net);
+-	else if (h->type == CKPT_NETDEV_LO)
+-		dev = restore_lo(ctx, h, net);
+-	else if (h->type == CKPT_NETDEV_SIT)
+-		dev = restore_sit(ctx, h, net);
+-	else if (h->type == CKPT_NETDEV_MACVLAN)
+-		dev = restore_macvlan(ctx, h, net);
+-	else
+-		dev = ERR_PTR(-EINVAL);
++	if (h->type >= CKPT_NETDEV_MAX) {
++		ret = -EINVAL;
++		ckpt_err(ctx, ret, "Invalid netdev type %i\n", h->type);
++		goto out;
++	}
++
++	restore_fn = restore_netdev_functions[h->type];
+ 
++	dev = restore_fn(ctx, h, net);
+ 	if (IS_ERR(dev)) {
+ 		ret = PTR_ERR(dev);
+ 		ckpt_err(ctx, ret, "Netdev type %i not supported\n", h->type);
 -- 
 1.6.2.5
