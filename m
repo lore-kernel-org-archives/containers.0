@@ -1,19 +1,16 @@
-From: Andreas Dilger <adilger-xsfywfwIY+M@public.gmane.org>
-Subject: Re: [C/R v20][PATCH 38/96] c/r: dump open file descriptors
-Date: Mon, 22 Mar 2010 17:18:51 -0600
-Message-ID: <28C1599C-9EF5-446E-91D3-C4DC7776A913__40974.0105541006$1269299972$gmane$org@sun.com>
-References: <1268960401-16680-1-git-send-email-orenl@cs.columbia.edu>
-	<1268960401-16680-4-git-send-email-orenl@cs.columbia.edu>
-	<F18D161D-850B-4C82-83D5-1F19D573E84F@sun.com>
-	<20100320044310.GC2887@count0.beaverton.ibm.com>
-	<20100321172703.GC4174@shareable.org>
-	<20100321194019.GA11714@hallyn.com> <4BA68884.3080003@free.fr>
-	<20100322021242.GI2887@count0.beaverton.ibm.com>
+From: "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>
+Subject: Re: [C/R v20][PATCH 15/96] cgroup freezer: Fix buggy resume test for
+	tasks frozen with cgroup freezer
+Date: Tue, 23 Mar 2010 00:28:40 +0100
+Message-ID: <201003230028.40915.rjw__43091.3569209681$1269300474$gmane$org@sisk.pl>
+References: <1268842164-5590-1-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-15-git-send-email-orenl@cs.columbia.edu>
+	<1268842164-5590-16-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-reply-to: <20100322021242.GI2887-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
+In-Reply-To: <1268842164-5590-16-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,43 +20,121 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Jamie Lokier <jamie-yetKDKU6eevNLxjTenLetw@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 2010-03-21, at 20:12, Matt Helsley wrote:
-> These are the same kinds of problems encountered during backup. You
-> can play fast and loose -- like taking a backup while everything is
-> running -- or you can play it conservative and freeze things.
->
-> I think btrfs snapshots are just one possible solution and it's not
-> overkill.
->
-> For some filesystems it might make sense to use the filesystem  
-> freezer to
-> ensure that no files are deleted while the backup takes place.  
-> Combined
-> with tools like rsync or rdiff backup these operations could be low  
-> bandwidth
-> and low latency if well-known live-migration techniques are used.
->
-> Or use dm snapshots.
+On Wednesday 17 March 2010, Oren Laadan wrote:
+> From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> 
+> When the cgroup freezer is used to freeze tasks we do not want to thaw
+> those tasks during resume. Currently we test the cgroup freezer
+> state of the resuming tasks to see if the cgroup is FROZEN.  If so
+> then we don't thaw the task. However, the FREEZING state also indicates
+> that the task should remain frozen.
+> 
+> This also avoids a problem pointed out by Oren Ladaan: the freezer state
+> transition from FREEZING to FROZEN is updated lazily when userspace reads
+> or writes the freezer.state file in the cgroup filesystem. This means that
+> resume will thaw tasks in cgroups which should be in the FROZEN state if
+> there is no read/write of the freezer.state file to trigger this
+> transition before suspend.
+> 
+> NOTE: Another "simple" solution would be to always update the cgroup
+> freezer state during resume. However it's a bad choice for several reasons:
+> Updating the cgroup freezer state is somewhat expensive because it requires
+> walking all the tasks in the cgroup and checking if they are each frozen.
+> Worse, this could easily make resume run in N^2 time where N is the number
+> of tasks in the cgroup. Finally, updating the freezer state from this code
+> path requires trickier locking because of the way locks must be ordered.
+> 
+> Instead of updating the freezer state we rely on the fact that lazy
+> updates only manage the transition from FREEZING to FROZEN. We know that
+> a cgroup with the FREEZING state may actually be FROZEN so test for that
+> state too. This makes sense in the resume path even for partially-frozen
+> cgroups -- those that really are FREEZING but not FROZEN.
+> 
+> Reported-by: Oren Ladaan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Cc: Cedric Le Goater <legoater-GANU6spQydw@public.gmane.org>
+> Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+> Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+> Cc: Rafael J. Wysocki <rjw-KKrjLPT3xs0@public.gmane.org>
+> Cc: Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>
+> Cc: linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+
+Looks reasonable.
+
+Is anyone handling that already or do you want me to take it to my tree?
+
+Rafael
 
 
-If you are using snapshots, then even an open-unlinked file will not  
-be deleted from the filesystem until it is closed, because the inode  
-will still be available on disk even without the filename.  That would  
-be a good reason to also store the file handle (e.g. inode+generation  
-for simple filesystems) in the checkpoint file, so that you can re- 
-open this file by the file handle after the process is restarted.
-
-Since Aneesh is starting to add an interface for this to the kernel  
-anyway, I don't think it would be very hard to dump/restore a handful  
-of extra bytes with each file.  Conversely, now is the time for  
-getting the open-by-handle APIs correct for this code.
-
-Cheers, Andreas
---
-Andreas Dilger
-Sr. Staff Engineer, Lustre Group
-Sun Microsystems of Canada, Inc.
+> Seems like a candidate for -stable.
+> ---
+>  include/linux/freezer.h |    7 +++++--
+>  kernel/cgroup_freezer.c |    9 ++++++---
+>  kernel/power/process.c  |    2 +-
+>  3 files changed, 12 insertions(+), 6 deletions(-)
+> 
+> diff --git a/include/linux/freezer.h b/include/linux/freezer.h
+> index 5a361f8..da7e52b 100644
+> --- a/include/linux/freezer.h
+> +++ b/include/linux/freezer.h
+> @@ -64,9 +64,12 @@ extern bool freeze_task(struct task_struct *p, bool sig_only);
+>  extern void cancel_freezing(struct task_struct *p);
+>  
+>  #ifdef CONFIG_CGROUP_FREEZER
+> -extern int cgroup_frozen(struct task_struct *task);
+> +extern int cgroup_freezing_or_frozen(struct task_struct *task);
+>  #else /* !CONFIG_CGROUP_FREEZER */
+> -static inline int cgroup_frozen(struct task_struct *task) { return 0; }
+> +static inline int cgroup_freezing_or_frozen(struct task_struct *task)
+> +{
+> +	return 0;
+> +}
+>  #endif /* !CONFIG_CGROUP_FREEZER */
+>  
+>  /*
+> diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
+> index 59e9ef6..eb3f34d 100644
+> --- a/kernel/cgroup_freezer.c
+> +++ b/kernel/cgroup_freezer.c
+> @@ -47,17 +47,20 @@ static inline struct freezer *task_freezer(struct task_struct *task)
+>  			    struct freezer, css);
+>  }
+>  
+> -int cgroup_frozen(struct task_struct *task)
+> +int cgroup_freezing_or_frozen(struct task_struct *task)
+>  {
+>  	struct freezer *freezer;
+>  	enum freezer_state state;
+>  
+>  	task_lock(task);
+>  	freezer = task_freezer(task);
+> -	state = freezer->state;
+> +	if (!freezer->css.cgroup->parent)
+> +		state = CGROUP_THAWED; /* root cgroup can't be frozen */
+> +	else
+> +		state = freezer->state;
+>  	task_unlock(task);
+>  
+> -	return state == CGROUP_FROZEN;
+> +	return (state == CGROUP_FREEZING) || (state == CGROUP_FROZEN);
+>  }
+>  
+>  /*
+> diff --git a/kernel/power/process.c b/kernel/power/process.c
+> index 5ade1bd..de53015 100644
+> --- a/kernel/power/process.c
+> +++ b/kernel/power/process.c
+> @@ -145,7 +145,7 @@ static void thaw_tasks(bool nosig_only)
+>  		if (nosig_only && should_send_signal(p))
+>  			continue;
+>  
+> -		if (cgroup_frozen(p))
+> +		if (cgroup_freezing_or_frozen(p))
+>  			continue;
+>  
+>  		thaw_process(p);
+> 
