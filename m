@@ -1,7 +1,7 @@
-From: Jamie Lokier <jamie-yetKDKU6eevNLxjTenLetw@public.gmane.org>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [C/R v20][PATCH 38/96] c/r: dump open file descriptors
-Date: Mon, 22 Mar 2010 02:20:03 +0000
-Message-ID: <20100322022003.GA16462__5097.30503331429$1269224447$gmane$org@shareable.org>
+Date: Sun, 21 Mar 2010 21:55:03 -0500
+Message-ID: <20100322025503.GA13280__25637.5492005192$1269226664$gmane$org@hallyn.com>
 References: <1268960401-16680-1-git-send-email-orenl@cs.columbia.edu>
 	<1268960401-16680-4-git-send-email-orenl@cs.columbia.edu>
 	<F18D161D-850B-4C82-83D5-1F19D573E84F@sun.com>
@@ -24,10 +24,10 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andreas Dilger <adilger-xsfywfwIY+M@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andreas Dilger <adilger-xsfywfwIY+M@public.gmane.org>, Jamie Lokier <jamie-yetKDKU6eevNLxjTenLetw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Matt Helsley wrote:
+Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
 > On Sun, Mar 21, 2010 at 05:27:03PM +0000, Jamie Lokier wrote:
 > > Matt Helsley wrote:
 > > > > That said, if the intent is to allow the restore to be done on
@@ -44,30 +44,7 @@ Matt Helsley wrote:
 > 
 > The code in the patches does check for unlinked files and refuses
 > to checkpoint if an unlinked file is open. Yes, this limits the usefulness
-> of the code somewhat but it's a problem we can solve and c/r is still quite
-> useful without the solution.
-> 
-> We've done our best to try and reach that ideal. You're welcome to have a
-> look at the code to see if you can find any ways in which we haven't.
-> Here's the code that refuses to checkpoint unsupported files. I think
-> it's pretty easy to read:
 
-From a very quick read, 
+Oh, haha - open/mapped unlinked files.  Sorry  :)
 
->         if (d_unlinked(file->f_dentry)) {
->                 ckpt_err(ctx, -EBADF, "%(T)%(P)Unlinked files unsupported\n",
->                          file);
-
-Hmm.
-
-I wonder if d_unlinked() is always true for a file which is opened,
-unlinked or renamed over, but has a hard link to it from elsewhere so
-the on-disk file hasn't gone away.
-
-I guess it probably is.  That's kinda neat!  I'd hoped there would be a
-good reason for f_dentry eventually ;-)
-
-What about files opened through /proc/self/fd/N before or after the
-original file was unlinked/renamed-over.  Where does the dentry point?
-
--- Jamie
+-serge
