@@ -1,17 +1,21 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [C/R v20][PATCH 37/96] c/r: introduce new 'file_operations':
-	->checkpoint, ->collect()
-Date: Mon, 22 Mar 2010 03:16:35 -0700
-Message-ID: <20100322101635.GC20796__9990.38425875387$1269253063$gmane$org@count0.beaverton.ibm.com>
-References: <1268960401-16680-1-git-send-email-orenl@cs.columbia.edu>
-	<1268960401-16680-3-git-send-email-orenl@cs.columbia.edu>
-	<20100322063428.GE17637@laptop>
+From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC] [PATCH 1/2] cgroups: read-write lock CLONE_THREAD
+	forking per threadgroup
+Date: Mon, 22 Mar 2010 11:22:47 +0100
+Message-ID: <20100322102247.GA8363__46118.4156979018$1269253521$gmane$org@redhat.com>
+References: <200908202114.n7KLEN5H026646@imap1.linux-foundation.org>
+	<20090821102611.GA2611@redhat.com>
+	<20090821104528.GA3487@redhat.com>
+	<6599ad830908211637w6c9fd3a7tbe41bc106ada03d7@mail.gmail.com>
+	<20090822130952.GA4240@redhat.com>
+	<20100105185330.GA17545@redhat.com>
+	<20100117204833.GA29596@unix38.andrew.cmu.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20100322063428.GE17637@laptop>
+In-Reply-To: <20100117204833.GA29596-DC+BO+AtSRVCM1neWV3AGuCmf2DRS9x2@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,170 +25,67 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nick Piggin <npiggin-l3A5Bk7waGM@public.gmane.org>
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andreas Dilger <adilger-xsfywfwIY+M@public.gmane.org>
+To: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, Mar 22, 2010 at 05:34:28PM +1100, Nick Piggin wrote:
-> On Thu, Mar 18, 2010 at 08:59:46PM -0400, Oren Laadan wrote:
-> > While we assume all normal files and directories can be checkpointed,
-> > there are, as usual in the VFS, specialized places that will always
-> > need an ability to override these defaults. Although we could do this
-> > completely in the checkpoint code, that would bitrot quickly.
-> > 
-> > This adds a new 'file_operations' function for checkpointing a file.
-> > It is assumed that there should be a dirt-simple way to make something
-> > (un)checkpointable that fits in with current code.
-> > 
-> > As you can see in the ext[234] patches down the road, all that we have
-> > to do to make something simple be supported is add a single "generic"
-> > f_op entry.
-> > 
-> > Also adds a new 'file_operations' function for 'collecting' a file for
-> > leak-detection during full-container checkpoint. This is useful for
-> > those files that hold references to other "collectable" objects. Two
-> > examples are pty files that point to corresponding tty objects, and
-> > eventpoll files that refer to the files they are monitoring.
-> > 
-> > Finally, this patch introduces vfs_fcntl() so that it can be called
-> > from restart (see patch adding restart of files).
-> > 
-> > Changelog[v17]
-> >   - Introduce 'collect' method
-> > Changelog[v17]
-> >   - Forward-declare 'ckpt_ctx' et-al, don't use checkpoint_types.h
-> > 
-> > Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-> > Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> > Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> > ---
-> >  fs/fcntl.c         |   21 +++++++++++++--------
-> >  include/linux/fs.h |    7 +++++++
-> >  2 files changed, 20 insertions(+), 8 deletions(-)
-> > 
-> > diff --git a/fs/fcntl.c b/fs/fcntl.c
-> > index 97e01dc..e1f02ca 100644
-> > --- a/fs/fcntl.c
-> > +++ b/fs/fcntl.c
-> > @@ -418,6 +418,18 @@ static long do_fcntl(int fd, unsigned int cmd, unsigned long arg,
-> >  	return err;
-> >  }
-> >  
-> > +int vfs_fcntl(int fd, unsigned int cmd, unsigned long arg, struct file *filp)
-> > +{
-> > +	int err;
-> > +
-> > +	err = security_file_fcntl(filp, cmd, arg);
-> > +	if (err)
-> > +		goto out;
-> > +	err = do_fcntl(fd, cmd, arg, filp);
-> > + out:
-> > +	return err;
-> > +}
-> > +
-> >  SYSCALL_DEFINE3(fcntl, unsigned int, fd, unsigned int, cmd, unsigned long, arg)
-> >  {	
-> >  	struct file *filp;
-> > @@ -427,14 +439,7 @@ SYSCALL_DEFINE3(fcntl, unsigned int, fd, unsigned int, cmd, unsigned long, arg)
-> >  	if (!filp)
-> >  		goto out;
-> >  
-> > -	err = security_file_fcntl(filp, cmd, arg);
-> > -	if (err) {
-> > -		fput(filp);
-> > -		return err;
-> > -	}
-> > -
-> > -	err = do_fcntl(fd, cmd, arg, filp);
-> > -
-> > +	err = vfs_fcntl(fd, cmd, arg, filp);
-> >   	fput(filp);
-> >  out:
-> >  	return err;
-> 
-> There is no point combining these two logically distinct patches.
+On 01/17, Ben Blum wrote:
+>
+> On Tue, Jan 05, 2010 at 07:53:30PM +0100, Oleg Nesterov wrote:
+> >
+> > I don't understand how this can close the race with de_thread().
+> > ...
+>
+> the race with the sighand is handled in the next patch, in attach_proc,
+> not in this function.
 
-Good point.
+OK. I didn't verify this, the patches don't apply to 2.6.32-rc, but this
+doesn't matter. Please see below.
 
-> > diff --git a/include/linux/fs.h b/include/linux/fs.h
-> > index 6c08df2..65ebec5 100644
-> > --- a/include/linux/fs.h
-> > +++ b/include/linux/fs.h
-> > @@ -394,6 +394,7 @@ struct kstatfs;
-> >  struct vm_area_struct;
-> >  struct vfsmount;
-> >  struct cred;
-> > +struct ckpt_ctx;
-> >  
-> >  extern void __init inode_init(void);
-> >  extern void __init inode_init_early(void);
-> > @@ -1093,6 +1094,8 @@ struct file_lock {
-> >  
-> >  #include <linux/fcntl.h>
-> >  
-> > +extern int vfs_fcntl(int fd, unsigned cmd, unsigned long arg, struct file *fp);
-> > +
-> >  extern void send_sigio(struct fown_struct *fown, int fd, int band);
-> >  
-> >  #ifdef CONFIG_FILE_LOCKING
-> > @@ -1504,6 +1507,8 @@ struct file_operations {
-> >  	ssize_t (*splice_write)(struct pipe_inode_info *, struct file *, loff_t *, size_t, unsigned int);
-> >  	ssize_t (*splice_read)(struct file *, loff_t *, struct pipe_inode_info *, size_t, unsigned int);
-> >  	int (*setlease)(struct file *, long, struct file_lock **);
-> > +	int (*checkpoint)(struct ckpt_ctx *, struct file *);
-> > +	int (*collect)(struct ckpt_ctx *, struct file *);
-> >  };
-> >  
-> >  struct inode_operations {
-> 
-> You didn't add any documentation for this (unless it is in a following
-> patch, which it shouldn't be).
+> > > +	/* now try to find a sighand */
+> > > +	if (likely(tsk->sighand)) {
+> > > +		sighand = tsk->sighand;
+> > > +	} else {
+> > > +		sighand = ERR_PTR(-ESRCH);
+> > > +		/*
+> > > +		 * tsk is exiting; try to find another thread in the group
+> > > +		 * whose sighand pointer is still alive.
+> > > +		 */
+> > > +		list_for_each_entry_rcu(p, &tsk->thread_group, thread_group) {
+> > > +			if (p->sighand) {
+> > > +				sighand = tsk->sighand;
+> >
+> > can't understand this "else {}" code... We hold tasklist, if the group
+> > leader is dead (->sighand == NULL), then the whole thread group is
+> > dead.
+> >
+> > Even if we had another thread with ->sighand != NULL, what is the point
+> > of "if (unlikely(!thread_group_leader(tsk)))" check then?
+>
+> doesn't the group leader stay on the threadgroup list even when it dies?
+> sighand can be null if the group leader has exited, but other threads
+> are still running.
 
-Another good point -- we should have added that to
-Documentation/filesystems/vfs.txt
+No, leader->sighand != NULL until all threads have exited.
 
-> 
-> > @@ -2313,6 +2318,8 @@ void inode_sub_bytes(struct inode *inode, loff_t bytes);
-> >  loff_t inode_get_bytes(struct inode *inode);
-> >  void inode_set_bytes(struct inode *inode, loff_t bytes);
-> >  
-> > +#define generic_file_checkpoint NULL
-> > +
-> >  extern int vfs_readdir(struct file *, filldir_t, void *);
-> >  
-> >  extern int vfs_stat(char __user *, struct kstat *);
-> 
-> Hmm, what does generic_file_checkpoint mean? A NULL checkpoint op means
-> that checkpointing is allowed, and no action is required? Shouldn't it
-> be an opt-in operation, where NULL means not allowed?
 
-generic_file_checkpoint is for files that have a seek operation and can be
-backed up or restored with a simple copy.
+Ben, I'd suggest you to redo these patches even if they are correct.
+->sighand is not the right place for the mutex/locking
 
-A NULL checkpoint op means "not allowed" as you thought it should. What
-gave you the impression it was otherwise? Here's the relevant snippet
-from checkpoint/files.c:
+	- it is per CLONE_SIGHAND, not per process
 
-/* checkpoint callback for file pointer */
-int checkpoint_file(struct ckpt_ctx *ctx, void *ptr)
-{
-        struct file *file = (struct file *) ptr;
-        int ret;
+	- we have to avoid the nasty and hard-to-test races with exec
 
-        if (!file->f_op || !file->f_op->checkpoint) {
-                ckpt_err(ctx, -EBADF, "%(T)%(P)%(V)f_op lacks checkpoint\n",
-                               file, file->f_op);
-                return -EBADF;
-        }
+	- we have to play with sighand->count and I really dislike this.
+	  this ->count is not just a reference counter, look at
+	  unshare_sighand(). Yes, this is fake, but still.
 
-> Either way, I don't know if you need to have this #define, provided you
-> have sufficient documentation.
+Please use ->signal instead. By the lucky coincidence the lifetime rules
+for (greatly misnamed) signal_struct were changed recently in -mm.
 
-We need it (or a suitable replacement) to avoid adding #ifdef around
-assignments to the operation in every filesystem. It's used if
-CONFIG_CHECKPOINT is not defined.
+With the recent changes, it is always safe to use task->signal. It can't
+be changed, can't go away, no need to bump the counter, no races, etc.
 
-Thanks for the review.
+What do you think?
 
-Cheers,
-	-Matt Helsley
+Oleg.
