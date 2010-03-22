@@ -1,20 +1,11 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [C/R v20][PATCH 38/96] c/r: dump open file descriptors
-Date: Sun, 21 Mar 2010 20:37:24 -0700
-Message-ID: <20100322033724.GA20796__33534.6897169531$1269229103$gmane$org@count0.beaverton.ibm.com>
-References: <1268960401-16680-1-git-send-email-orenl@cs.columbia.edu>
-	<1268960401-16680-4-git-send-email-orenl@cs.columbia.edu>
-	<F18D161D-850B-4C82-83D5-1F19D573E84F@sun.com>
-	<20100320044310.GC2887@count0.beaverton.ibm.com>
-	<20100321172703.GC4174@shareable.org>
-	<20100322010606.GG2887@count0.beaverton.ibm.com>
-	<20100322022003.GA16462@shareable.org>
+From: McKinstry <exhume-uCsnbULRILOU+1/U8MakDg@public.gmane.org>
+Subject: Age. She, therefore, ought to be qualified to begin
+Date: Mon, 22 Mar 2010 15:20:31 +0900
+Message-ID: <fc2qdC270mrehArCVOf9Zmb@dirmailsys.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed;
+	boundary="----------------MfCJ9jkRA4yB932529120lqVU"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20100322022003.GA16462-yetKDKU6eevNLxjTenLetw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,163 +15,228 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jamie Lokier <jamie-yetKDKU6eevNLxjTenLetw@public.gmane.org>
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andreas Dilger <adilger-xsfywfwIY+M@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Miera <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Mar 22, 2010 at 02:20:03AM +0000, Jamie Lokier wrote:
-> Matt Helsley wrote:
-> > On Sun, Mar 21, 2010 at 05:27:03PM +0000, Jamie Lokier wrote:
-> > > Matt Helsley wrote:
-> > > > > That said, if the intent is to allow the restore to be done on
-> > > > > another node with a "similar" filesystem (e.g. created by rsync/node
-> > > > > image), instead of having a coherent distributed filesystem on all
-> > > > > of the nodes then the filename makes sense.
-> > > > 
-> > > > Yes, this is the intent.
-> > > 
-> > > I would worry about programs which are using files which have been
-> > > deleted, renamed, or (very common) renamed-over by another process
-> > > after being opened, as there's a good chance they will successfully
-> > > open the wrong file after c/r, and corrupt state from then on.
-> > 
-> > The code in the patches does check for unlinked files and refuses
-> > to checkpoint if an unlinked file is open. Yes, this limits the usefulness
-> > of the code somewhat but it's a problem we can solve and c/r is still quite
-> > useful without the solution.
-> > 
-> > We've done our best to try and reach that ideal. You're welcome to have a
-> > look at the code to see if you can find any ways in which we haven't.
-> > Here's the code that refuses to checkpoint unsupported files. I think
-> > it's pretty easy to read:
-> 
-> From a very quick read, 
-> 
-> >         if (d_unlinked(file->f_dentry)) {
-> >                 ckpt_err(ctx, -EBADF, "%(T)%(P)Unlinked files unsupported\n",
-> >                          file);
-> 
-> Hmm.
-> 
-> I wonder if d_unlinked() is always true for a file which is opened,
-> unlinked or renamed over, but has a hard link to it from elsewhere so
-> the on-disk file hasn't gone away.
+This is a multi-part message in MIME format.
+------------------MfCJ9jkRA4yB932529120lqVU
+Content-Type: text/plain; charset=ISO-8859-14; format=flowed
+Content-Transfer-Encoding: 7bit
 
-Well, if the on-disk file hasn't gone away due to a hardlink then we
-won't need to save the file in the checkpoint image -- the filesystem
-content backup done during checkpoint should also get the file contents.
 
-> 
-> I guess it probably is.  That's kinda neat!  I'd hoped there would be a
-> good reason for f_dentry eventually ;-)
-> 
-> What about files opened through /proc/self/fd/N before or after the
-> original file was unlinked/renamed-over.  Where does the dentry point?
+Ing: I could not have existed in the same house with such a thing for a single month. The mopers are, too, all giggle at other times: the gaiety is for others, and the moping for the husband, to comfort him, happy man, when he is alone: plenty of smiles and of badinage for others, and for him to participate with others; but the moping is reserved exclusively
 
-Before the unlink it will result in the same file being opened. If it's
-opened by a task being checkpointed then we'll be in the same situation
-as the "self" task. If it's opened by a task not being checkpointed then
-the "leak detection" code will notice that there's an unaccounted reference
-to the file and checkpoint will fail.
+for him. One hour she is capering about, as if rehearsing
+a jig; and, the next, sighing to the motion of a lazy needle, or weeping over a novel and this is called _sentiment_!
+Music, indeed! Give me a mother singing to her clean and
+fat and rosy baby, and making the house ring with her extravagant and hyperbolical encomiums on it. That is the music which is '_the food
+of love_;' and not the formal, pedantic noises, an
 
-That code is in checkpoint/objhash.c. It works by doing two passes:
-	1. Collect references
-	2. Checkpoint referenced objects
+------------------MfCJ9jkRA4yB932529120lqVU
+Content-Type: image/bmp;
+ name="miscolouring.jpg"
+Content-Transfer-Encoding: base64
+Content-Disposition: inline
 
-We only do the second pass if the ref count matches the number of times
-we've "collected" the file (I added comments to the .ref_foo = ops so you
-don't need to see them to get the idea):
+/9j/4AAQSkZJRgABAQEBLAEsAAD/2wBDACgcHiMeGSgjISMtKygwPGRBPDc3PHtYXUlkkYCZ
+lo+AjIqgtObDoKrarYqMyP/L2u71////m8H////6/+b9//j/2wBDASstLTw1PHZBQXb4pYyl
++Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj4+Pj/wAAR
+CAFVAU0DASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAA
+AgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkK
+FhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWG
+h4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl
+5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREA
+AgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYk
+NOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOE
+hYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk
+5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDXooooGFFFFABRRRQAUUUUAFFFFABRR2pM
+EnrQAuQKTcKNopaAE5NG31NLRQA0jBFOpD1FLQAUUUUAFFFFABRRRQAUUUUAFFFFABSE47Gg
+9KTcfSgA3e1G4UbueaXINAC0UUUAFFFFABRRRQAUUUUAFY+v/wDLv/wL+lbFY+v/APLv/wAC
+/pQBsUUUUAFFFFABRRRQAUUUUAFFFFAB2oHeik9aAFoopMigBaKTPoKOaAuB6ijI9aQjkU7A
+oFqJkUZpaKA1EyKMiloxQPUKKQdaWgAooooAKKKKAEPQ0HqDQehpaAG5B7UHqKdTW6ihgOoo
+ooAKKKKACiiigAopKWgArH1//l3/AOBf0rYrH1//AJd/+Bf0oA2KKKKACikJxQM96AFooxSY
+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
+CbYx/sjJ/WqUs0kzZldnP+0c0UUCP//Z
+------------------MfCJ9jkRA4yB932529120lqVU
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-static struct ckpt_obj_ops ckpt_obj_ops[] = {
-	...
-        /* file object */
-        {
-                .obj_name = "FILE",
-                .obj_type = CKPT_OBJ_FILE,
-                .ref_drop = obj_file_drop, /* aka fput */
-                .ref_grab = obj_file_grab, /* aka get_file */
-                .ref_users = obj_file_users, /* does atomic read of f_count */
-                .checkpoint = checkpoint_file,
-                .restore = restore_file,
-        },
-	...
-};
-...
-/**
- * ckpt_obj_contained - test if shared objects are contained in checkpoint
- * @ctx: checkpoint context
- *
- * Loops through all objects in the table and compares the number of
- * references accumulated during checkpoint, with the reference count
- * reported by the kernel.
- *
- * Return 1 if respective counts match for all objects, 0 otherwise.
- */
-int ckpt_obj_contained(struct ckpt_ctx *ctx)
-{
-        struct ckpt_obj *obj;
-        struct hlist_node *node;
-
-        /* account for ctx->{file,logfile} (if in the table already) */
-        ckpt_obj_users_inc(ctx, ctx->file, 1);
-        if (ctx->logfile)
-                ckpt_obj_users_inc(ctx, ctx->logfile, 1);
-        /* account for ctx->root_nsproxy (if in the table already) */
-        ckpt_obj_users_inc(ctx, ctx->root_nsproxy, 1);
-
-        hlist_for_each_entry(obj, node, &ctx->obj_hash->list, next) {
-                if (!obj->ops->ref_users)
-                        continue;
-
-                if (obj->ops->obj_type == CKPT_OBJ_SOCK)
-                        obj_sock_adjust_users(obj);
-
-                if (obj->ops->ref_users(obj->ptr) != obj->users) {
-                        ckpt_err(ctx, -EBUSY,
-                                 "%(O)%(P)%(S)Usage leak (%d != %d)\n",
-                                 obj->objref, obj->ptr, obj->ops->obj_name,
-                                 obj->ops->ref_users(obj->ptr), obj->users);
-                        return 0;
-                }
-        }
-
-        return 1;
-}
-...
-
-So that hopefully addresses your questions regarding the use of the symlinks
-before the unlink.
-
-After the unlink those symlinks are broken since they have "(deleted)"
-appended. Making sure they are broken after restart is one detail I've
-thought about. To make it perfect I think we could:
-
-	1. Move any existing file at the original symlinked path to a
-		temporary location.
-	2. Restore the "unlinked" file to that location.
-		(in quotes since it's not unlinked yet)
-	3. Open the "unlinked" file.
-	4. Unlink the file again.
-	5. Move the existing file back from the temporary location.
-
-As with relinking, we need a good way to do the "temporary location".
-That is complicated because we need to choose a location that we have
-permission to write to, always exists during restart, and is guaranteed
-not to have files in it. Relinking the file shifts these problems from
-restart to checkpoint.
-
-In case you're bored, before Oren posted these patches I wrote:
-	https://ckpt.wiki.kernel.org/index.php/Checklist/UnlinkedFiles
-
-and there's lots of info related to what we do and don't support,
-many related to files in one way or another, in the table at:
-	https://ckpt.wiki.kernel.org/index.php/Checklist
-
-I'll update that page with some of my responses above. Getting your
-thoughts on my ideas outlined above would be excellent. If you've
-got some counter proposals I'd be happy to hear them too. I'll add
-a reference to this thread and an edited collection of my rambling
-responses to that page if you like.
-
-Cheers,
-	-Matt Helsley
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+------------------MfCJ9jkRA4yB932529120lqVU--
