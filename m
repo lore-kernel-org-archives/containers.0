@@ -1,7 +1,7 @@
 From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 5/6] Add rtnl_dellink() helper
-Date: Mon, 22 Mar 2010 12:33:34 -0700
-Message-ID: <1269286415-24851-6-git-send-email-danms@us.ibm.com>
+Subject: [PATCH 6/6] Clean up the error path in restore_veth()
+Date: Mon, 22 Mar 2010 12:33:35 -0700
+Message-ID: <1269286415-24851-7-git-send-email-danms@us.ibm.com>
 References: <1269286415-24851-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -20,140 +20,166 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is the kernel equivalent of "ip link del $name" and matches the
-existing rtnl_newlink() equivalent of "ip link add $name".  It factors
-out the message creation and dispatch code a little further into
-rtnl_do() before adding the new function.
+This uses the previously-added rtnl_dellink() helper to tear down the
+pair all at once by specifying one of the halves by name (which is how
+userspace does it and how RTNL expects it to be done).  It also uses
+the ckpt_obj_del() function to pull the devices out of the hash and drop
+the references before it makes the call to destroy.  The result is a
+unified and much cleaner error path for the entire function.
+
+All the "goto err" paths have been checked by injecting errors.  They
+all cleanup the interfaces properly and cleanly.
 
 Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- net/checkpoint_dev.c |   86 +++++++++++++++++++++++++++++++++++++++++--------
- 1 files changed, 72 insertions(+), 14 deletions(-)
+ net/checkpoint_dev.c |   87 +++++++++++++++++--------------------------------
+ 1 files changed, 30 insertions(+), 57 deletions(-)
 
 diff --git a/net/checkpoint_dev.c b/net/checkpoint_dev.c
-index 24186c5..0091eb9 100644
+index 0091eb9..2bb3d4d 100644
 --- a/net/checkpoint_dev.c
 +++ b/net/checkpoint_dev.c
-@@ -465,22 +465,49 @@ static struct sk_buff *new_link_msg(new_link_fn fn, void *data, char *name)
- 	return skb;
+@@ -21,11 +21,6 @@
+ #include <net/net_namespace.h>
+ #include <net/sch_generic.h>
+ 
+-struct dq_netdev {
+-	struct net_device *dev;
+-	struct ckpt_ctx *ctx;
+-};
+-
+ struct veth_newlink {
+ 	char *peer;
+ };
+@@ -577,25 +572,6 @@ static int rtnl_dellink(char *name)
+ 	return ret;
  }
  
--static struct net_device *rtnl_newlink(new_link_fn fn, void *data, char *name)
-+static struct sk_buff *del_link_msg(char *name)
-+{
-+	int ret = -ENOMEM;
-+	int flags = NLM_F_REQUEST | NLM_F_CREATE | NLM_F_ACK;
-+	struct nlmsghdr *nlh;
-+	struct sk_buff *skb;
-+	struct ifinfomsg *ifm;
-+
-+	skb = nlmsg_new(NLMSG_DEFAULT_SIZE, GFP_KERNEL);
-+	if (!skb)
-+		return ERR_PTR(-ENOMEM);
-+
-+	nlh = nlmsg_put(skb, 0, 0, RTM_DELLINK, sizeof(*ifm), flags);
-+	if (!nlh)
-+		goto out;
-+
-+	ifm = nlmsg_data(nlh);
-+	memset(ifm, 0, sizeof(*ifm));
-+
-+	ret = nla_put_string(skb, IFLA_IFNAME, name);
-+	if (ret)
-+		goto out;
-+
-+	nlmsg_end(skb, nlh);
-+
-+ out:
-+	if (ret < 0) {
-+		kfree_skb(skb);
-+		skb = ERR_PTR(ret);
-+	}
-+
-+	return skb;
-+}
-+
-+static int rtnl_do(struct sk_buff *skb)
- {
- 	int ret = -ENOMEM;
- 	struct socket *rtnl = NULL;
--	struct sk_buff *skb = NULL;
-+	struct sk_buff *rskb = NULL;
- 	struct nlmsghdr *nlh;
- 	struct msghdr msg;
- 	struct kvec kvec;
- 
--	skb = new_link_msg(fn, data, name);
--	if (IS_ERR(skb)) {
--		ckpt_debug("failed to create new link message: %li\n",
--			   PTR_ERR(skb));
--		return ERR_PTR(PTR_ERR(skb));
+-static int netdev_noop(void *data)
+-{
+-	return 0;
+-}
+-
+-static int netdev_cleanup(void *data)
+-{
+-	struct dq_netdev *dq = data;
+-
+-	dev_put(dq->dev);
+-
+-	if (dq->ctx->errno) {
+-		ckpt_debug("Unregistering netdev %s\n", dq->dev->name);
+-		unregister_netdev(dq->dev);
 -	}
 -
- 	memset(&msg, 0, sizeof(msg));
- 	kvec.iov_len = skb->len;
- 	kvec.iov_base = skb->head;
-@@ -500,25 +527,56 @@ static struct net_device *rtnl_newlink(new_link_fn fn, void *data, char *name)
- 		goto out;
- 	}
- 
--	/* Free the send skb to make room for the receive skb */
--	kfree_skb(skb);
+-	return 0;
+-}
 -
--	nlh = rtnl_get_response(rtnl, &skb);
-+	nlh = rtnl_get_response(rtnl, &rskb);
- 	if (IS_ERR(nlh)) {
- 		ret = PTR_ERR(nlh);
- 		ckpt_debug("RTNETLINK said: %i\n", ret);
- 	}
-  out:
- 	rtnl_close(rtnl);
-+	kfree_skb(rskb);
-  out_noclose:
--	kfree_skb(skb);
-+	return ret;
-+}
+ static struct net_device *restore_veth(struct ckpt_ctx *ctx,
+ 				       struct ckpt_hdr_netdev *h,
+ 				       struct net *net)
+@@ -606,9 +582,6 @@ static struct net_device *restore_veth(struct ckpt_ctx *ctx,
+ 	struct net_device *dev;
+ 	struct net_device *peer;
+ 	struct ifreq req;
+-	struct dq_netdev dq;
+-
+-	dq.ctx = ctx;
  
-+static struct net_device *rtnl_newlink(new_link_fn fn, void *data, char *name)
-+{
-+	struct sk_buff *skb;
-+	int ret;
-+
-+	skb = new_link_msg(fn, data, name);
-+	if (IS_ERR(skb)) {
-+		ckpt_debug("failed to create new link message: %li\n",
-+			   PTR_ERR(skb));
-+		return ERR_PTR(PTR_ERR(skb));
-+	}
-+
-+	ret = rtnl_do(skb);
-+	kfree_skb(skb);
+ 	ret = _ckpt_read_buffer(ctx, this_name, IFNAMSIZ);
  	if (ret < 0)
- 		return ERR_PTR(ret);
- 	else
- 		return dev_get_by_name(current->nsproxy->net_ns, name);
- }
+@@ -630,37 +603,31 @@ static struct net_device *restore_veth(struct ckpt_ctx *ctx,
+ 		if (IS_ERR(dev))
+ 			return dev;
  
-+static int rtnl_dellink(char *name)
-+{
-+	struct sk_buff *skb;
-+	int ret;
++		ret = ckpt_obj_insert(ctx, dev, h->veth.this_ref,
++				      CKPT_OBJ_NETDEV);
++		dev_put(dev);
++		if (ret < 0)
++			goto err;
 +
-+	skb = del_link_msg(name);
-+	if (IS_ERR(skb)) {
-+		ckpt_debug("failed to create del link message: %li\n",
-+			   PTR_ERR(skb));
-+		return PTR_ERR(skb);
-+	}
+ 		peer = dev_get_by_name(current->nsproxy->net_ns, peer_name);
+ 		if (!peer) {
+ 			ret = -EINVAL;
+-			goto err_dev;
++			goto err;
+ 		}
+ 
+-		dq.dev = peer;
+-		ret = deferqueue_add(ctx->deferqueue, &dq, sizeof(dq),
+-				     netdev_noop, netdev_cleanup);
+-		if (ret)
+-			goto err_peer;
+-
+ 		ret = ckpt_obj_insert(ctx, peer, h->veth.peer_ref,
+ 				      CKPT_OBJ_NETDEV);
+-		if (ret < 0)
+-			/* Can't recall peer dq, so let it cleanup peer */
+-			goto err_dev;
+ 		dev_put(peer);
+-
+-		dq.dev = dev;
+-		ret = deferqueue_add(ctx->deferqueue, &dq, sizeof(dq),
+-				     netdev_noop, netdev_cleanup);
+-		if (ret)
+-			/* Can't recall peer dq, so let it cleanup peer */
+-			goto err_dev;
++		if (ret < 0)
++			goto err;
+ 
+ 	} else {
+ 		/* We're second: get our dev from the hash */
+ 		dev = ckpt_obj_fetch(ctx, h->veth.this_ref, CKPT_OBJ_NETDEV);
+-		if (IS_ERR(dev))
+-			return dev;
++		if (IS_ERR(dev)) {
++			ret = PTR_ERR(dev);
++			goto err;
++		}
+ 	}
+ 
+ 	/* Move to our new netns */
+@@ -668,25 +635,31 @@ static struct net_device *restore_veth(struct ckpt_ctx *ctx,
+ 	ret = dev_change_net_namespace(dev, net, dev->name);
+ 	rtnl_unlock();
+ 	if (ret < 0)
+-		goto out;
++		goto err;
+ 
+ 	/* Restore MAC address */
+ 	memcpy(req.ifr_name, dev->name, IFNAMSIZ);
+ 	memcpy(req.ifr_hwaddr.sa_data, h->hwaddr, sizeof(h->hwaddr));
+ 	req.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+ 	ret = __kern_dev_ioctl(net, SIOCSIFHWADDR, &req);
+- out:
+-	if (ret)
+-		dev = ERR_PTR(ret);
++	if (ret < 0)
++		goto err;
+ 
+ 	return dev;
+-
+- err_peer:
+-	dev_put(peer);
+-	unregister_netdev(peer);
+- err_dev:
+-	dev_put(dev);
+-	unregister_netdev(dev);
++ err:
++	/* Delete from hash to drop reference */
++	ckpt_obj_del(ctx, h->veth.this_ref, CKPT_OBJ_NETDEV);
++	ckpt_obj_del(ctx, h->veth.peer_ref, CKPT_OBJ_NETDEV);
 +
-+	ret = rtnl_do(skb);
-+	kfree_skb(skb);
-+
-+	return ret;
-+}
-+
- static int netdev_noop(void *data)
- {
- 	return 0;
++	/* This will fail to delete the interface if we get here
++	 * because of a failed attempt at setting the hardware
++	 * address, since the device has been moved to another netns.
++	 * This is not a problem, however, because the death of that
++	 * netns will take the device (and its peer) down with it
++	 * cleanly.
++	 */
++	if (rtnl_dellink(this_name) < 0)
++		ckpt_debug("failed to delete interfaces on error\n");
+ 
+ 	return ERR_PTR(ret);
+ }
 -- 
 1.6.2.5
