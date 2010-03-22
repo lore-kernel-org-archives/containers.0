@@ -1,21 +1,15 @@
-From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC] [PATCH 1/2] cgroups: read-write lock CLONE_THREAD
-	forking per threadgroup
-Date: Mon, 22 Mar 2010 11:22:47 +0100
-Message-ID: <20100322102247.GA8363__46118.4156979018$1269253521$gmane$org@redhat.com>
-References: <200908202114.n7KLEN5H026646@imap1.linux-foundation.org>
-	<20090821102611.GA2611@redhat.com>
-	<20090821104528.GA3487@redhat.com>
-	<6599ad830908211637w6c9fd3a7tbe41bc106ada03d7@mail.gmail.com>
-	<20090822130952.GA4240@redhat.com>
-	<20100105185330.GA17545@redhat.com>
-	<20100117204833.GA29596@unix38.andrew.cmu.edu>
+From: Nick Piggin <npiggin-l3A5Bk7waGM@public.gmane.org>
+Subject: Re: [C/R v20][PATCH 38/96] c/r: dump open file descriptors
+Date: Mon, 22 Mar 2010 21:30:35 +1100
+Message-ID: <20100322103035.GF17637@laptop>
+References: <1268960401-16680-1-git-send-email-orenl@cs.columbia.edu>
+	<1268960401-16680-4-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20100117204833.GA29596-DC+BO+AtSRVCM1neWV3AGuCmf2DRS9x2@public.gmane.org>
+In-Reply-To: <1268960401-16680-4-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,67 +19,152 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andreas Dilger <adilger-xsfywfwIY+M@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 01/17, Ben Blum wrote:
->
-> On Tue, Jan 05, 2010 at 07:53:30PM +0100, Oleg Nesterov wrote:
-> >
-> > I don't understand how this can close the race with de_thread().
-> > ...
->
-> the race with the sighand is handled in the next patch, in attach_proc,
-> not in this function.
+On Thu, Mar 18, 2010 at 08:59:47PM -0400, Oren Laadan wrote:
+> @@ -531,6 +533,15 @@ static int init_checkpoint_ctx(struct ckpt_ctx *ctx, pid_t pid)
+>  		return -EINVAL;  /* cleanup by ckpt_ctx_free() */
+>  	}
+>  
+> +	/* root vfs (FIX: WILL CHANGE with mnt-ns etc */
+> +	task_lock(ctx->root_task);
+> +	fs = ctx->root_task->fs;
+> +	read_lock(&fs->lock);
+> +	ctx->root_fs_path = fs->root;
+> +	path_get(&ctx->root_fs_path);
+> +	read_unlock(&fs->lock);
+> +	task_unlock(ctx->root_task);
+> +
+>  	return 0;
+>  }
+>  
+> diff --git a/checkpoint/files.c b/checkpoint/files.c
+> new file mode 100644
+> index 0000000..7a57b24
+> --- /dev/null
+> +++ b/checkpoint/files.c
+> +char *ckpt_fill_fname(struct path *path, struct path *root, char *buf, int *len)
+> +{
+> +	struct path tmp = *root;
+> +	char *fname;
+> +
+> +	BUG_ON(!buf);
+> +	spin_lock(&dcache_lock);
+> +	fname = __d_path(path, &tmp, buf, *len);
+> +	spin_unlock(&dcache_lock);
+> +	if (IS_ERR(fname))
+> +		return fname;
+> +	*len = (buf + (*len) - fname);
+> +	/*
+> +	 * FIX: if __d_path() changed these, it must have stepped out of
+> +	 * init's namespace. Since currently we require a unified namespace
+> +	 * within the container: simply fail.
+> +	 */
+> +	if (tmp.mnt != root->mnt || tmp.dentry != root->dentry)
+> +		fname = ERR_PTR(-EBADF);
 
-OK. I didn't verify this, the patches don't apply to 2.6.32-rc, but this
-doesn't matter. Please see below.
-
-> > > +	/* now try to find a sighand */
-> > > +	if (likely(tsk->sighand)) {
-> > > +		sighand = tsk->sighand;
-> > > +	} else {
-> > > +		sighand = ERR_PTR(-ESRCH);
-> > > +		/*
-> > > +		 * tsk is exiting; try to find another thread in the group
-> > > +		 * whose sighand pointer is still alive.
-> > > +		 */
-> > > +		list_for_each_entry_rcu(p, &tsk->thread_group, thread_group) {
-> > > +			if (p->sighand) {
-> > > +				sighand = tsk->sighand;
-> >
-> > can't understand this "else {}" code... We hold tasklist, if the group
-> > leader is dead (->sighand == NULL), then the whole thread group is
-> > dead.
-> >
-> > Even if we had another thread with ->sighand != NULL, what is the point
-> > of "if (unlikely(!thread_group_leader(tsk)))" check then?
->
-> doesn't the group leader stay on the threadgroup list even when it dies?
-> sighand can be null if the group leader has exited, but other threads
-> are still running.
-
-No, leader->sighand != NULL until all threads have exited.
+Maybe something like this is better in fs/?
 
 
-Ben, I'd suggest you to redo these patches even if they are correct.
-->sighand is not the right place for the mutex/locking
+> +static int scan_fds(struct files_struct *files, int **fdtable)
+> +{
+> +	struct fdtable *fdt;
+> +	int *fds = NULL;
+> +	int i = 0, n = 0;
+> +	int tot = CKPT_DEFAULT_FDTABLE;
+> +
+> +	/*
+> +	 * We assume that all tasks possibly sharing the file table are
+> +	 * frozen (or we are a single process and we checkpoint ourselves).
+> +	 * Therefore, we can safely proceed after krealloc() from where we
+> +	 * left off. Otherwise the file table may be modified by another
+> +	 * task after we scan it. The behavior is this case is undefined,
+> +	 * and either checkpoint or restart will likely fail.
+> +	 */
+> + retry:
+> +	fds = krealloc(fds, tot * sizeof(*fds), GFP_KERNEL);
+> +	if (!fds)
+> +		return -ENOMEM;
+> +
+> +	rcu_read_lock();
+> +	fdt = files_fdtable(files);
+> +	for (/**/; i < fdt->max_fds; i++) {
+> +		if (!fcheck_files(files, i))
+> +			continue;
+> +		if (n == tot) {
+> +			rcu_read_unlock();
+> +			tot *= 2;	/* won't overflow: kmalloc will fail */
+> +			goto retry;
+> +		}
+> +		fds[n++] = i;
+> +	}
+> +	rcu_read_unlock();
 
-	- it is per CLONE_SIGHAND, not per process
+...
 
-	- we have to avoid the nasty and hard-to-test races with exec
+> +static int checkpoint_file_desc(struct ckpt_ctx *ctx,
+> +				struct files_struct *files, int fd)
+> +{
+> +	struct ckpt_hdr_file_desc *h;
+> +	struct file *file = NULL;
+> +	struct fdtable *fdt;
+> +	int objref, ret;
+> +	int coe = 0;	/* avoid gcc warning */
+> +	pid_t pid;
+> +
+> +	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE_DESC);
+> +	if (!h)
+> +		return -ENOMEM;
+> +
+> +	rcu_read_lock();
+> +	fdt = files_fdtable(files);
+> +	file = fcheck_files(files, fd);
+> +	if (file) {
+> +		coe = FD_ISSET(fd, fdt->close_on_exec);
+> +		get_file(file);
+> +	}
+> +	rcu_read_unlock();
+> +
+> +	ret = find_locks_with_owner(file, files);
+> +	/*
+> +	 * find_locks_with_owner() returns an error when there
+> +	 * are no locks found, so we *want* it to return an error
+> +	 * code.  Its success means we have to fail the checkpoint.
+> +	 */
+> +	if (!ret) {
+> +		ret = -EBADF;
+> +		ckpt_err(ctx, ret, "%(T)fd %d has file lock or lease\n", fd);
+> +		goto out;
+> +	}
+> +
+> +	/* sanity check (although this shouldn't happen) */
+> +	ret = -EBADF;
+> +	if (!file) {
+> +		ckpt_err(ctx, ret, "%(T)fd %d gone?\n", fd);
+> +		goto out;
+> +	}
+> +
+> +	/*
+> +	 * TODO: Implement c/r of fowner and f_sigio.  Should be
+> +	 * trivial, but for now we just refuse its checkpoint
+> +	 */
+> +	pid = f_getown(file);
+> +	if (pid) {
+> +		ret = -EBUSY;
+> +		ckpt_err(ctx, ret, "%(T)fd %d has an owner (%d)\n", fd);
+> +		goto out;
+> +	}
+> +
+> +	/*
+> +	 * if seen first time, this will add 'file' to the objhash, keep
+> +	 * a reference to it, dump its state while at it.
+> +	 */
 
-	- we have to play with sighand->count and I really dislike this.
-	  this ->count is not just a reference counter, look at
-	  unshare_sighand(). Yes, this is fake, but still.
+All these kinds of things (including above hunks) IMO are nasty to put
+outside fs/. It would be nice to see higher level functionality
+implemented in fs and exported to your checkpoint stuff.
 
-Please use ->signal instead. By the lucky coincidence the lifetime rules
-for (greatly misnamed) signal_struct were changed recently in -mm.
-
-With the recent changes, it is always safe to use task->signal. It can't
-be changed, can't go away, no need to bump the counter, no races, etc.
-
-What do you think?
-
-Oleg.
+Apparently it's hard because checkpointing is so incestuous with
+everything, but that's why it's important to structure the code well.
