@@ -1,19 +1,15 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC] [PATCH 1/2] cgroups: read-write lock CLONE_THREAD forking
-	per threadgroup
-Date: Mon, 22 Mar 2010 16:57:05 -0700
-Message-ID: <6599ad831003221657q61e20286q49b2ef39b3999b05__49523.4566893943$1269302264$gmane$org@mail.gmail.com>
-References: <200908202114.n7KLEN5H026646@imap1.linux-foundation.org>
-	<20090821102611.GA2611@redhat.com> <20090821104528.GA3487@redhat.com>
-	<6599ad830908211637w6c9fd3a7tbe41bc106ada03d7@mail.gmail.com>
-	<20090822130952.GA4240@redhat.com> <20100105185330.GA17545@redhat.com>
-	<20100117204833.GA29596@unix38.andrew.cmu.edu>
-	<20100322102247.GA8363@redhat.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [C/R v20][PATCH 20/96] c/r: make file_pos_read/write() public
+Date: Mon, 22 Mar 2010 20:12:45 -0400 (EDT)
+Message-ID: <Pine.LNX.4.64.1003221959450.1520__48776.7319813885$1269303216$gmane$org@takamine.ncl.cs.columbia.edu>
+References: <1268960401-16680-1-git-send-email-orenl@cs.columbia.edu>
+	<1268960401-16680-2-git-send-email-orenl@cs.columbia.edu>
+	<20100322063113.GD17637@laptop>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100322102247.GA8363-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20100322063113.GD17637@laptop>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,21 +19,105 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+To: Nick Piggin <npiggin-l3A5Bk7waGM@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andreas Dilger <adilger-xsfywfwIY+M@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Mar 22, 2010 at 3:22 AM, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
->
-> Please use ->signal instead. By the lucky coincidence the lifetime rules
-> for (greatly misnamed) signal_struct were changed recently in -mm.
->
-> With the recent changes, it is always safe to use task->signal. It can't
-> be changed, can't go away, no need to bump the counter, no races, etc.
->
-> What do you think?
+On Mon, 22 Mar 2010, Nick Piggin wrote:
 
-If signal_struct is much simpler to reason about, then using it seems
-like a good idea.
+> On Thu, Mar 18, 2010 at 08:59:45PM -0400, Oren Laadan wrote:
+> > These two are used in the next patch when calling vfs_read/write()
+> 
+> Said next patch didn't seem to make it to fsdevel.
 
-Paul
+Thanks for reviewing, and sorry about this glitch - see below.
+
+> 
+> Should it at least go to fs/internal.h?
+
+Sure.
+
+So Here is the relevant hunk from said patch (the entire
+patch is: https://patchwork.kernel.org/patch/86389/):
+
++/*
++ * Helpers to write(read) from(to) kernel space to(from) the checkpoint
++ * image file descriptor (similar to how a core-dump is performed).
++ *
++ *   ckpt_kwrite() - write a kernel-space buffer to the checkpoint image
++ *   ckpt_kread() - read from the checkpoint image to a kernel-space buffer
++ */
++
++static inline int _ckpt_kwrite(struct file *file, void *addr, int count)
++{
++	void __user *uaddr = (__force void __user *) addr;
++	ssize_t nwrite;
++	int nleft;
++
++	for (nleft = count; nleft; nleft -= nwrite) {
++		loff_t pos = file_pos_read(file);
++		nwrite = vfs_write(file, uaddr, nleft, &pos);
++		file_pos_write(file, pos);
++		if (nwrite < 0) {
++			if (nwrite == -EAGAIN)
++				nwrite = 0;
++			else
++				return nwrite;
++		}
++		uaddr += nwrite;
++	}
++	return 0;
++}
++
++int ckpt_kwrite(struct ckpt_ctx *ctx, void *addr, int count)
++{
++	mm_segment_t fs;
++	int ret;
++
++	fs = get_fs();
++	set_fs(KERNEL_DS);
++	ret = _ckpt_kwrite(ctx->file, addr, count);
++	set_fs(fs);
++
++	ctx->total += count;
++	return ret;
++}
++
++static inline int _ckpt_kread(struct file *file, void *addr, int count)
++{
++	void __user *uaddr = (__force void __user *) addr;
++	ssize_t nread;
++	int nleft;
++
++	for (nleft = count; nleft; nleft -= nread) {
++		loff_t pos = file_pos_read(file);
++		nread = vfs_read(file, uaddr, nleft, &pos);
++		file_pos_write(file, pos);
++		if (nread <= 0) {
++			if (nread == -EAGAIN) {
++				nread = 0;
++				continue;
++			} else if (nread == 0)
++				nread = -EPIPE;		/* unexecpted EOF */
++			return nread;
++		}
++		uaddr += nread;
++	}
++	return 0;
++}
++
++int ckpt_kread(struct ckpt_ctx *ctx, void *addr, int count)
++{
++	mm_segment_t fs;
++	int ret;
++
++	fs = get_fs();
++	set_fs(KERNEL_DS);
++	ret = _ckpt_kread(ctx->file , addr, count);
++	set_fs(fs);
++
++	ctx->total += count;
++	return ret;
++}
+
+Oren.
