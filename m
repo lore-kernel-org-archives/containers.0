@@ -1,7 +1,7 @@
 From: "Serge E. Hallyn" <serge@hallyn.com>
 Subject: Re: [PATCH] linux-cr: nested pid namespaces (v3)
-Date: Tue, 23 Mar 2010 08:52:44 -0500
-Message-ID: <20100323135244.GA20910@hallyn.com>
+Date: Tue, 23 Mar 2010 09:46:31 -0500
+Message-ID: <20100323144631.GA21337@hallyn.com>
 References: <20100323051839.GA16123@us.ibm.com>
  <20100323071431.GC4242@localdomain>
 Mime-Version: 1.0
@@ -15,44 +15,40 @@ Cc: "Serge E. Hallyn" <serue@us.ibm.com>, Linux Containers <containers@lists.osd
 List-Id: containers.vger.kernel.org
 
 Quoting Louis Rilling (Louis.Rilling@kerlabs.com):
-
-Hi Louis, thanks again for reviewing.
-
-> To me the real reason is to anticipate pid namespace unsharing. And this
-> together with setns() will need to re-consider much of the namespace C/R
-> logic imho. For instance, checkpoint could be done from a foreign task
-> having entered the container, leak detection should take such foreign
-> tasks into account (see example below), etc.
-
-...
-
-> >  
-> > @@ -293,10 +295,15 @@ static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
-> >  		_ckpt_err(ctx, -EPERM, "%(T)Nested net_ns unsupported\n");
-> >  		ret = -EPERM;
-> >  	}
-> > -	/* no support for >1 private pidns */
-> > -	if (nsproxy->pid_ns != ctx->root_nsproxy->pid_ns) {
-> > -		_ckpt_err(ctx, -EPERM, "%(T)Nested pid_ns unsupported\n");
-> > -		ret = -EPERM;
-> > +	/* pidns must be descendent of root_nsproxy */
-> > +	pidns = nsproxy->pid_ns;
+> On Tue, Mar 23, 2010 at 12:18:39AM -0500, Serge E. Hallyn wrote:
+> > Support checkpoint and restart of tasks in nested pid namespaces.
+> > We keep the original single pids_array to minimize memory
+> > allocations.  The pids array entries are augmented with a pidns
+> > depth (relative to the container init's pidns, and an "rpid" which
+> > is the pid in the checkpointer's pidns (or 0 if no valid pid exists).
+> > The rpid will be used by userspace to gather more information (like
+> > /proc/$$/mountinfo) after the kernel sys_checkpoint.  If any tasks
+> > are in nested pid namespace, another single array will hold all of
+> > the vpids.  At restart those are used by userspace to determine how
+> > to call eclone().  Kernel ignores them.
+> > 
+> > This patch also adds 'rpid' to struct ckpt_hdr_pids, which is not
+> > needed for nested pid_ns support, but will be needed for the
+> > userspace checkpointer to gather additional information (i.e.
+> > /proc/pid/mountinfo) after sys_checkpoint() completes.
+> > 
+> > Changelog:
+> >   Mar 22:
+> > 	Use Louis Rilling's smarter ckpt_vpids algorithm
+> > 	verbatim, to handle pid_ns depths > CKPT_HDR_PIDS_CHUNK,
+> > 	as well as fix an apparent bug in my original code.
+> > 
+> > 	As Louis suggested, use task_active_pid_ns() rather than
+> > 	task->nsproxy->pid_ns.  In fact it's a must, bc the
+> > 	checkpointed task may be dead and have NULL
+> > 	task->nsproxy->pid_ns.
 > 
-> In case of unshared pid namespace, task_active_pid_ns(t) should be checked
-> instead of t->nsproxy->pid_ns: we can't checkpoint a foreign task.
+> Hm, if task can be dead, then there is a much bigger issue:
+> task->nsproxy is NULL. Or did I miss something?
 
-Unsharing can only be done to a child ns, so it wouldn't be foreign.
-Though of course that depends on which one ends up being the original
-pid_ns (see below).
-
-Now, regarding supporting unshared pid_ns, I think that (1) it will
-be a simple matter of separately doing
-	pid_pidns = checkpoint_obj(task_active_pid_ns(task));
-	nsp_pidns = checkpoint_obj(task->nsproxy->pid_ns);
-since we will need to record both.  In addition, (2) the most
-recent emails I see on the topics are still unsure about whether
-we want to have the unshared pid_ns be reflected in 
-ns_of_pid(task_pid(task)) or task->nsproxy->pid_ns, so I think
-we'll just have to handle them when they are implemented.
+Well, it's a zombie - checkpoint/checkpoint.c:may_checkpoint_task()
+explicitly ignores nsproxy tests for zombies (but returns -EBUSY
+for exit_state == EXIT_DEAD).  So yeah, nsproxy is NULL, which is
+why I have to use task_active_pid_ns()  :)
 
 -serge
