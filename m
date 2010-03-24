@@ -1,16 +1,15 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [C/R ARM][PATCH 1/3] ARM: Rudimentary syscall interfaces
-Date: Tue, 23 Mar 2010 19:03:42 -0700
-Message-ID: <20100324020342.GB5704__48626.9235414968$1269396265$gmane$org@count0.beaverton.ibm.com>
-References: <1269219965-23923-1-git-send-email-christofferdall@christofferdall.dk>
-	<1269219965-23923-2-git-send-email-christofferdall@christofferdall.dk>
-	<20100323205342.GA19572@n2100.arm.linux.org.uk>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 14/14][user-cr] Minimize unshare() calls
+Date: Tue, 23 Mar 2010 23:08:47 -0500
+Message-ID: <20100324040847.GA2474@us.ibm.com>
+References: <20100319062659.GA23838@us.ibm.com>
+	<20100319063448.GN24844@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20100323205342.GA19572-l+eeeJia6m9vn6HldHNs0ANdhmdF6hFW@public.gmane.org>
+In-Reply-To: <20100319063448.GN24844-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,31 +19,38 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Russell King - ARM Linux <linux-lFZ/pmaqli7XmaaqVzeoHQ@public.gmane.org>
-Cc: linux-arm-kernel <linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Christoffer Dall <christofferdall-77OGu6e99YhyO3AAkE1OcX9LOBIZ5rWg@public.gmane.org>, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Mar 23, 2010 at 08:53:42PM +0000, Russell King - ARM Linux wrote:
-> On Sun, Mar 21, 2010 at 09:06:03PM -0400, Christoffer Dall wrote:
-> > This small commit introduces a global state of system calls for ARM
-> > making it possible for a debugger or checkpointing to gain information
-> > about another process' state with respect to system calls.
+Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
 > 
-> I don't particularly like the idea that we always store the syscall
-> number to memory for every system call, whether the stored version is
-> used or not.
+> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> Date: Mon, 8 Mar 2010 12:03:46 -0800
+> Subject: [PATCH 14/14][user-cr] Minimize unshare() calls
 > 
-> Since ARM caches are generally not write allocate, this means mostly
-> write-only variables can have a higher than expected expense.
+> We currently have a few unshare() calls at different points in the
+> code. While these don't affect the restart application itself, the
+> excess calls create additional levels in the cgroup hierarchy, which
+> can surprise the administrator (or other users of the hierarchy
+> such as LXC.
 > 
-> Is there not some thread flag which can be checked to see if we need to
-> store the syscall number?
+> Rather than several unshare() calls, can we instead specify the
+> appropriate clone_flags while creating the coordinator/root process
+> of the application tree ? When this root process is created it can
+> remount /proc, remount devpts, chroot() etc if necessary.
+> 
+> Note that for "new-container with init" and "subtree restart", the
+> first process is also the root of the application process tree.
+> 
+> In the case of "new-container without init", the coordinator process
+> which acts as the container-init can do the setup.
+> 
+> In case of self-restart, the main process itself can do the unshare.
+> 
+> This patch has been very gently tested :-) but wanted to get more feedback
+> on the direction and see if there is an easier way.
 
-Perhaps before we freeze the task we can save the syscall number on ARM.
-The patches suggest that the signal delivery path -- which the freezer
-utilizes -- has the syscall number already.
+No objection from me on the direction or the code.
 
-Should work since the threads must be frozen first anyway.
-
-Cheers,
-	-Matt Helsley
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
