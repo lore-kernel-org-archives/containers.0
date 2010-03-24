@@ -1,15 +1,16 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 14/14][user-cr] Minimize unshare() calls
-Date: Tue, 23 Mar 2010 23:26:53 -0500
-Message-ID: <20100324042653.GA8263@us.ibm.com>
-References: <20100319062659.GA23838@us.ibm.com>
-	<20100319063448.GN24844@us.ibm.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [C/R ARM][PATCH 1/3] ARM: Rudimentary syscall interfaces
+Date: Wed, 24 Mar 2010 00:57:46 -0400 (EDT)
+Message-ID: <Pine.LNX.4.64.1003240055050.5867@takamine.ncl.cs.columbia.edu>
+References: <1269219965-23923-1-git-send-email-christofferdall@christofferdall.dk>
+	<1269219965-23923-2-git-send-email-christofferdall@christofferdall.dk>
+	<20100323205342.GA19572@n2100.arm.linux.org.uk>
+	<20100324020342.GB5704@count0.beaverton.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20100319063448.GN24844-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20100324020342.GB5704-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,55 +20,37 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Russell King - ARM Linux <linux-lFZ/pmaqli7XmaaqVzeoHQ@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Christoffer Dall <christofferdall-77OGu6e99YhyO3AAkE1OcX9LOBIZ5rWg@public.gmane.org>, linux-arm-kernel <linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org>, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+On Tue, 23 Mar 2010, Matt Helsley wrote:
+
+> On Tue, Mar 23, 2010 at 08:53:42PM +0000, Russell King - ARM Linux wrote:
+> > On Sun, Mar 21, 2010 at 09:06:03PM -0400, Christoffer Dall wrote:
+> > > This small commit introduces a global state of system calls for ARM
+> > > making it possible for a debugger or checkpointing to gain information
+> > > about another process' state with respect to system calls.
+> > 
+> > I don't particularly like the idea that we always store the syscall
+> > number to memory for every system call, whether the stored version is
+> > used or not.
+> > 
+> > Since ARM caches are generally not write allocate, this means mostly
+> > write-only variables can have a higher than expected expense.
+> > 
+> > Is there not some thread flag which can be checked to see if we need to
+> > store the syscall number?
 > 
-> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Date: Mon, 8 Mar 2010 12:03:46 -0800
-> Subject: [PATCH 14/14][user-cr] Minimize unshare() calls
+> Perhaps before we freeze the task we can save the syscall number on ARM.
+> The patches suggest that the signal delivery path -- which the freezer
+> utilizes -- has the syscall number already.
+> 
+> Should work since the threads must be frozen first anyway.
 
-Hmm, and yet, when I run cr_tests/simple.sh, restart apparently
-does not use CLONE_NEWNS, bc I then have to
-	umount /proc
-	mount -t proc proc /proc
-to restore sanity.
+I like the idea.
 
-Not sure why...  restart -vd gives me
+However, would it also work for those cases when the freezing does not 
+occur from the signal delivery path - e.g. for vfork and ptraced tasks ?
 
-Using output dir ./cr_simple_N3wEpal
-about to clone with 20020000
-<3793>number of tasks: 1
-<3793>total tasks (including ghosts): 1
-<3793>====== TASKS
-<3793>  [0] pid 1 ppid 0 sid 0 creator 0       
-<3793>............
-<3793>new pidns with init
-<3793>forking child vpid 1 flags 0x21
-<3793>forked child vpid 3795 (asked 1)
-<1>root task pid 1
-<1>pid 1: pid 1 sid 0 parent 0
-<1>about to call sys_restart(), flags 0
-<3794>====== PIDS ARRAY
-<3794>[0] pid 1 ppid 0 sid 0 pgid 0
-<3794>............
-<3794>c/r read input 16384
-<3794>c/r read input 16384
-<3794>c/r read input 16384
-<3794>c/r read input 16384
-<3794>c/r read input 16384
-<3794>c/r read input 11161
-<3794>c/r read input 0
-Success
-<3793>restart succeeded
-<3793>SIGCHLD: already collected
-<3793>task exited with status 0
-<3793>c/r succeeded
-PASS
-
-Oh, there you go - I suppose restart.c:557 should have TASK_NEWNS added?
-Indeed that fixes that.
-
--serge
+Oren.
