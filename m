@@ -1,8 +1,7 @@
 From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/2] C/R: Fix storing IPv6 addresses and handle the "ipv6only"
-	socket flag
-Date: Wed, 24 Mar 2010 12:40:25 -0700
-Message-ID: <1269459625-21033-3-git-send-email-danms@us.ibm.com>
+Subject: [PATCH 1/2] C/R: Support for IPv6 addresses on network devices
+Date: Wed, 24 Mar 2010 12:40:24 -0700
+Message-ID: <1269459625-21033-2-git-send-email-danms@us.ibm.com>
 References: <1269459625-21033-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,148 +20,369 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-The first item is a result of sockaddr_in6 being larger than the base
-sockaddr structure, thus not being long enough to reserve enough space in
-the checkpoint header.
-
-The second comes into play when things (like sshd) bind to INADDR6_ANY,
-set the "ipv6only" socket flag and then bind an IPv4 socket to the same
-port.
-
 Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/checkpoint_hdr.h |   13 +++++++++++--
- net/ipv4/checkpoint.c          |   34 ++++++++++++++++++++--------------
- net/ipv6/af_inet6.c            |    2 ++
- 3 files changed, 33 insertions(+), 16 deletions(-)
+ include/linux/checkpoint.h     |    2 +-
+ include/linux/checkpoint_hdr.h |    8 ++
+ net/checkpoint_dev.c           |  252 +++++++++++++++++++++++++++++++---------
+ 3 files changed, 208 insertions(+), 54 deletions(-)
 
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index efbc049..a8131bd 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -129,7 +129,7 @@ extern void *restore_netdev(struct ckpt_ctx *ctx);
+ 
+ extern int ckpt_netdev_in_init_netns(struct ckpt_ctx *ctx,
+ 				     struct net_device *dev);
+-extern int ckpt_netdev_inet_addrs(struct in_device *indev,
++extern int ckpt_netdev_inet_addrs(struct net_device *dev,
+ 				  struct ckpt_netdev_addr *list[]);
+ extern int ckpt_netdev_hwaddr(struct net_device *dev,
+ 			      struct ckpt_hdr_netdev *h);
 diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 913d76d..0e8eb8b 100644
+index 01553b4..913d76d 100644
 --- a/include/linux/checkpoint_hdr.h
 +++ b/include/linux/checkpoint_hdr.h
-@@ -756,12 +756,21 @@ struct ckpt_hdr_socket_inet {
- 		struct in6_addr saddr;
- 		struct in6_addr rcv_saddr;
- 		struct in6_addr daddr;
-+		__u8 ipv6only;
- 	} inet6 __attribute__ ((aligned(8)));
+@@ -802,6 +802,7 @@ struct ckpt_hdr_netdev {
  
- 	__u32 laddr_len;
- 	__u32 raddr_len;
--	struct sockaddr_in laddr;
--	struct sockaddr_in raddr;
-+	union {
-+		struct sockaddr laddr;
-+		struct sockaddr_in laddr4;
-+		struct sockaddr_in6 laddr6;
-+	};
-+	union {
-+		struct sockaddr raddr;
-+		struct sockaddr_in raddr4;
-+		struct sockaddr_in6 raddr6;
-+	};
+ enum ckpt_netdev_addr_types {
+ 	CKPT_NETDEV_ADDR_IPV4,
++	CKPT_NETDEV_ADDR_IPV6,
+ };
+ 
+ struct ckpt_netdev_addr {
+@@ -813,6 +814,13 @@ struct ckpt_netdev_addr {
+ 			__be32 inet4_mask;
+ 			__be32 inet4_broadcast;
+ 		};
++		struct {
++			__be32 inet6_addr[4];
++			__u32  inet6_prefix_len;
++			__u32  inet6_valid_lft;
++			__u32  inet6_prefered_lft;
++			__u16  inet6_scope;
++		};
+ 	} __attribute__((aligned(8)));
  } __attribute__((aligned(8)));
  
- struct ckpt_hdr_file_socket {
-diff --git a/net/ipv4/checkpoint.c b/net/ipv4/checkpoint.c
-index b4024e7..57b185d 100644
---- a/net/ipv4/checkpoint.c
-+++ b/net/ipv4/checkpoint.c
-@@ -190,12 +190,14 @@ static int sock_inet_restore_connection(struct sock *sk,
- 	struct inet_sock *inet = inet_sk(sk);
- 	int tcp_gso = sk->sk_family == AF_INET ? SKB_GSO_TCPV4 : SKB_GSO_TCPV6;
+diff --git a/net/checkpoint_dev.c b/net/checkpoint_dev.c
+index 2bb3d4d..173c2ea 100644
+--- a/net/checkpoint_dev.c
++++ b/net/checkpoint_dev.c
+@@ -18,8 +18,11 @@
+ #include <linux/checkpoint_hdr.h>
+ #include <linux/deferqueue.h>
  
--	inet->inet_daddr = hh->raddr.sin_addr.s_addr;
--	inet->inet_saddr = hh->laddr.sin_addr.s_addr;
--	inet->inet_rcv_saddr = inet->inet_saddr;
-+	if (sk->sk_family == AF_INET) {
-+		inet->inet_daddr = hh->raddr4.sin_addr.s_addr;
-+		inet->inet_saddr = hh->laddr4.sin_addr.s_addr;
-+		inet->inet_rcv_saddr = inet->inet_saddr;
++#include <net/if_inet6.h>
++#include <net/ipv6.h>
+ #include <net/net_namespace.h>
+ #include <net/sch_generic.h>
++#include <net/addrconf.h>
  
--	inet->inet_dport = hh->raddr.sin_port;
--	inet->inet_sport = hh->laddr.sin_port;
-+		inet->inet_dport = hh->raddr4.sin_port;
-+		inet->inet_sport = hh->laddr4.sin_port;
-+	}
- 
- 	if (sk->sk_protocol == IPPROTO_TCP)
- 		sk->sk_gso_type = tcp_gso;
-@@ -266,6 +268,7 @@ static int sock_inet_cptrst(struct ckpt_ctx *ctx,
- 			ipv6_addr_copy(&inet6->rcv_saddr, &hh->inet6.rcv_saddr);
- 			ipv6_addr_copy(&inet6->daddr, &hh->inet6.daddr);
- 		}
-+		CKPT_COPY(op, hh->inet6.ipv6only, inet6->ipv6only);
- 	}
- 
+ struct veth_newlink {
+ 	char *peer;
+@@ -47,6 +50,24 @@ static int __kern_devinet_ioctl(struct net *net, unsigned int cmd, void *arg)
  	return ret;
-@@ -281,8 +284,8 @@ int inet_checkpoint(struct ckpt_ctx *ctx, struct socket *sock)
- 		return -EINVAL;
+ }
  
- 	ret = ckpt_sock_getnames(ctx, sock,
--				(struct sockaddr *)&in->laddr, &in->laddr_len,
--				(struct sockaddr *)&in->raddr, &in->raddr_len);
-+				&in->laddr, &in->laddr_len,
-+				&in->raddr, &in->raddr_len);
- 	if (ret)
++#ifdef CONFIG_IPV6
++static int __kern_addrconf(struct net *net, unsigned int cmd, void *arg)
++{
++	mm_segment_t fs;
++	int ret;
++
++	fs = get_fs();
++	set_fs(KERNEL_DS);
++	if (cmd == SIOCSIFADDR)
++		ret = addrconf_add_ifaddr(net, arg);
++	else
++		ret = -EINVAL;
++	set_fs(fs);
++
++	return ret;
++}
++#endif
++
+ static int __kern_dev_ioctl(struct net *net, unsigned int cmd, void *arg)
+ {
+ 	mm_segment_t fs;
+@@ -149,11 +170,81 @@ int ckpt_netdev_hwaddr(struct net_device *dev, struct ckpt_hdr_netdev *h)
+ 	return 0;
+ }
+ 
+-int ckpt_netdev_inet_addrs(struct in_device *indev,
++static int ckpt_netdev_inet4_addrs(struct in_device *indev,
++				   int index, int max,
++				   struct ckpt_netdev_addr *abuf)
++{
++	struct in_ifaddr *addr = indev->ifa_list;
++
++	while (addr) {
++		abuf[index].type = CKPT_NETDEV_ADDR_IPV4;
++		abuf[index].inet4_local = htonl(addr->ifa_local);
++		abuf[index].inet4_address = htonl(addr->ifa_address);
++		abuf[index].inet4_mask = htonl(addr->ifa_mask);
++		abuf[index].inet4_broadcast = htonl(addr->ifa_broadcast);
++
++		addr = addr->ifa_next;
++		if (++index >= max)
++			return -E2BIG;
++	}
++
++	return index;
++}
++
++#ifdef CONFIG_IPV6
++
++#define __BYTE_ORDER_COPY(op, dst, src)		\
++	do {					\
++	int i;					\
++	for (i = 0; i < 4; i++)			\
++		dst[i] = op(src[i]);		\
++	} while (0);
++
++#define HTON_IPV6(dst, src) __BYTE_ORDER_COPY(htonl, dst, src)
++#define NTOH_IPV6(dst, src) __BYTE_ORDER_COPY(ntohl, dst, src)
++
++static int ckpt_netdev_inet6_addrs(struct inet6_dev *indev,
++				   int index, int max,
++				   struct ckpt_netdev_addr *abuf)
++{
++	struct inet6_ifaddr *addr = indev->addr_list;
++
++	while (addr) {
++		abuf[index].type = CKPT_NETDEV_ADDR_IPV6;
++
++		HTON_IPV6(abuf[index].inet6_addr, addr->addr.in6_u.u6_addr32);
++
++		ckpt_debug("Checkpointed inet6: %x:%x:%x:%x\n",
++			   abuf[index].inet6_addr[0],
++			   abuf[index].inet6_addr[1],
++			   abuf[index].inet6_addr[2],
++			   abuf[index].inet6_addr[3]);
++
++		abuf[index].inet6_prefix_len = addr->prefix_len;
++		abuf[index].inet6_valid_lft = addr->valid_lft;
++		abuf[index].inet6_prefered_lft = addr->prefered_lft;
++		abuf[index].inet6_scope = addr->scope;
++
++		addr = addr->if_next;
++		if (++index >= max)
++			return -E2BIG;
++	}
++
++	return index;
++}
++#else
++static int ckpt_netdev_inet6_addrs(struct inet6_dev *indev,
++				   int index, int max,
++				   struct ckpt_netdev_addr *abuf)
++{
++	return -ENOSYS;
++}
++#endif
++
++int ckpt_netdev_inet_addrs(struct net_device *dev,
+ 			   struct ckpt_netdev_addr *_abuf[])
+ {
+ 	struct ckpt_netdev_addr *abuf = NULL;
+-	struct in_ifaddr *addr = indev->ifa_list;
+ 	int addrs = 0;
+ 	int max = 32;
+ 
+@@ -167,21 +258,21 @@ int ckpt_netdev_inet_addrs(struct in_device *indev,
+ 
+ 	read_lock(&dev_base_lock);
+ 
+-	while (addr) {
+-		abuf[addrs].type = CKPT_NETDEV_ADDR_IPV4; /* Only IPv4 now */
+-		abuf[addrs].inet4_local = htonl(addr->ifa_local);
+-		abuf[addrs].inet4_address = htonl(addr->ifa_address);
+-		abuf[addrs].inet4_mask = htonl(addr->ifa_mask);
+-		abuf[addrs].inet4_broadcast = htonl(addr->ifa_broadcast);
++	addrs = 0;
+ 
+-		addr = addr->ifa_next;
+-		if (++addrs >= max) {
+-			read_unlock(&dev_base_lock);
+-			max *= 2;
+-			goto retry;
+-		}
+-	}
++	addrs = ckpt_netdev_inet4_addrs(dev->ip_ptr, addrs, max, abuf);
++	if (addrs == -E2BIG) {
++		read_unlock(&dev_base_lock);
++		goto retry;
++	} else if (addrs < 0)
++		goto unlock;
+ 
++	addrs = ckpt_netdev_inet6_addrs(dev->ip6_ptr, addrs, max, abuf);
++	if (addrs == -E2BIG) {
++		read_unlock(&dev_base_lock);
++		goto retry;
++	}
++ unlock:
+ 	read_unlock(&dev_base_lock);
+  out:
+ 	if (addrs < 0) {
+@@ -208,7 +299,7 @@ struct ckpt_hdr_netdev *ckpt_netdev_base(struct ckpt_ctx *ctx,
  		goto out;
  
-@@ -387,19 +390,19 @@ static int inet_precheck(struct socket *sock, struct ckpt_hdr_socket_inet *in)
- 	__u8 nonagle_mask = TCP_NAGLE_OFF | TCP_NAGLE_CORK | TCP_NAGLE_PUSH;
- 	__u8 ecn_mask = TCP_ECN_OK | TCP_ECN_QUEUE_CWR | TCP_ECN_DEMAND_CWR;
+ 	*addrs = NULL;
+-	ret = h->inet_addrs = ckpt_netdev_inet_addrs(dev->ip_ptr, addrs);
++	ret = h->inet_addrs = ckpt_netdev_inet_addrs(dev, addrs);
+ 	if (ret < 0)
+ 		goto out;
  
--	if ((htons(in->laddr.sin_port) < PROT_SOCK) &&
-+	if ((htons(in->laddr4.sin_port) < PROT_SOCK) &&
- 	    !capable(CAP_NET_BIND_SERVICE)) {
- 		ckpt_debug("unable to bind to port %hu\n",
--			   htons(in->laddr.sin_port));
-+			   htons(in->laddr4.sin_port));
- 		return -EINVAL;
- 	}
+@@ -278,6 +369,93 @@ int checkpoint_netns(struct ckpt_ctx *ctx, void *ptr)
+ 	return ret;
+ }
  
--	if (in->laddr_len > sizeof(struct sockaddr_in)) {
-+	if (in->laddr_len > sizeof(in->laddr6)) {
- 		ckpt_debug("laddr_len is too big\n");
- 		return -EINVAL;
- 	}
- 
--	if (in->raddr_len > sizeof(struct sockaddr_in)) {
-+	if (in->raddr_len > sizeof(in->laddr6)) {
- 		ckpt_debug("raddr_len is too big\n");
- 		return -EINVAL;
- 	}
-@@ -498,13 +501,16 @@ int inet_restore(struct ckpt_ctx *ctx,
- 	    ((h->sock.state == TCP_CLOSE) && (in->laddr_len > 0))) {
- 		sock->sk->sk_reuse = 2;
- 		inet_sk(sock->sk)->freebind = 1;
--		ret = sock->ops->bind(sock,
--				      (struct sockaddr *)&in->laddr,
--				      in->laddr_len);
-+		ret = sock->ops->bind(sock, &in->laddr, in->laddr_len);
- 		ckpt_debug("inet bind: %i\n", ret);
- 		if (ret < 0)
- 			goto out;
- 
-+		if (in->inet6.ipv6only) {
-+			struct ipv6_pinfo *np = inet6_sk(sock->sk);
-+			np->ipv6only = 1;
-+		}
++static int restore_inet4_addr(struct ckpt_ctx *ctx,
++			      struct net_device *dev,
++			      struct net *net,
++			      struct ckpt_netdev_addr *addr)
++{
++	struct ifreq req;
++	struct sockaddr_in *inaddr;
++	int ret;
 +
- 		if (h->sock.state == TCP_LISTEN) {
- 			ret = sock->ops->listen(sock, h->sock.backlog);
- 			ckpt_debug("inet listen: %i\n", ret);
-diff --git a/net/ipv6/af_inet6.c b/net/ipv6/af_inet6.c
-index 12e69d3..9acb55a 100644
---- a/net/ipv6/af_inet6.c
-+++ b/net/ipv6/af_inet6.c
-@@ -523,6 +523,8 @@ const struct proto_ops inet6_stream_ops = {
- 	.mmap		   = sock_no_mmap,
- 	.sendpage	   = tcp_sendpage,
- 	.splice_read	   = tcp_splice_read,
-+	.checkpoint	   = inet_checkpoint,
-+	.restore	   = inet_restore,
- #ifdef CONFIG_COMPAT
- 	.compat_setsockopt = compat_sock_common_setsockopt,
- 	.compat_getsockopt = compat_sock_common_getsockopt,
++	ckpt_debug("restoring %s: %x/%x/%x\n",
++		   dev->name,
++		   addr->inet4_address,
++		   addr->inet4_mask,
++		   addr->inet4_broadcast);
++
++	memcpy(req.ifr_name, dev->name, IFNAMSIZ);
++
++	inaddr = (struct sockaddr_in *)&req.ifr_addr;
++	inaddr->sin_addr.s_addr = ntohl(addr->inet4_address);
++	inaddr->sin_family = AF_INET;
++	ret = __kern_devinet_ioctl(net, SIOCSIFADDR, &req);
++	if (ret < 0) {
++		ckpt_err(ctx, ret, "Failed to set address\n");
++		return ret;
++	}
++
++	inaddr = (struct sockaddr_in *)&req.ifr_addr;
++	inaddr->sin_addr.s_addr = ntohl(addr->inet4_mask);
++	inaddr->sin_family = AF_INET;
++	ret = __kern_devinet_ioctl(net, SIOCSIFNETMASK, &req);
++	if (ret < 0) {
++		ckpt_err(ctx, ret, "Failed to set netmask\n");
++		return ret;
++	}
++
++	inaddr = (struct sockaddr_in *)&req.ifr_addr;
++	inaddr->sin_addr.s_addr = ntohl(addr->inet4_broadcast);
++	inaddr->sin_family = AF_INET;
++	ret = __kern_devinet_ioctl(net, SIOCSIFBRDADDR, &req);
++	if (ret < 0) {
++		ckpt_err(ctx, ret, "Failed to set broadcast\n");
++		return ret;
++	}
++
++	return 0;
++}
++
++#ifdef CONFIG_IPV6
++static int restore_inet6_addr(struct ckpt_ctx *ctx,
++			      struct net_device *dev,
++			      struct net *net,
++			      struct ckpt_netdev_addr *addr)
++{
++	struct in6_ifreq req;
++	int ret;
++
++	ckpt_debug("restoring %s: %x:%x:%x:%x/%i\n",
++		   dev->name,
++		   addr->inet6_addr[0],
++		   addr->inet6_addr[1],
++		   addr->inet6_addr[2],
++		   addr->inet6_addr[3],
++		   addr->inet6_prefix_len);
++
++	req.ifr6_ifindex = dev->ifindex;
++	NTOH_IPV6(req.ifr6_addr.in6_u.u6_addr32, &addr->inet6_addr);
++	req.ifr6_prefixlen = addr->inet6_prefix_len;
++
++	ret = __kern_addrconf(net, SIOCSIFADDR, &req);
++	if (ret == -EEXIST)
++		ret = 0;
++	else if (ret < 0)
++		ckpt_err(ctx, ret, "Failed to set address");
++
++	return ret;
++}
++#else
++static int restore_inet6_addr(struct ckpt_ctx *ctx,
++			      struct net_device *dev,
++			      struct net *net,
++			      struct ckpt_netdev_addr *addr)
++{
++	ckpt_err(ctx, -ENOSYS, "IPv6 not supported");
++	return -ENOSYS;
++}
++#endif
++
+ static int restore_in_addrs(struct ckpt_ctx *ctx,
+ 			    __u32 naddrs,
+ 			    struct net *net,
+@@ -294,49 +472,17 @@ static int restore_in_addrs(struct ckpt_ctx *ctx,
+ 
+ 	for (i = 0; i < naddrs; i++) {
+ 		struct ckpt_netdev_addr *addr = &addrs[i];
+-		struct ifreq req;
+-		struct sockaddr_in *inaddr;
+ 
+-		if (addr->type != CKPT_NETDEV_ADDR_IPV4) {
++		if (addr->type == CKPT_NETDEV_ADDR_IPV4)
++			ret = restore_inet4_addr(ctx, dev, net, addr);
++		else if (addr->type == CKPT_NETDEV_ADDR_IPV6)
++			ret = restore_inet6_addr(ctx, dev, net, addr);
++		else {
+ 			ret = -EINVAL;
+ 			ckpt_err(ctx, ret, "Unsupported netdev addr type %i\n",
+ 				 addr->type);
+ 			break;
+ 		}
+-
+-		ckpt_debug("restoring %s: %x/%x/%x\n", dev->name,
+-			   addr->inet4_address,
+-			   addr->inet4_mask,
+-			   addr->inet4_broadcast);
+-
+-		memcpy(req.ifr_name, dev->name, IFNAMSIZ);
+-
+-		inaddr = (struct sockaddr_in *)&req.ifr_addr;
+-		inaddr->sin_addr.s_addr = ntohl(addr->inet4_address);
+-		inaddr->sin_family = AF_INET;
+-		ret = __kern_devinet_ioctl(net, SIOCSIFADDR, &req);
+-		if (ret < 0) {
+-			ckpt_err(ctx, ret, "Failed to set address\n");
+-			break;
+-		}
+-
+-		inaddr = (struct sockaddr_in *)&req.ifr_addr;
+-		inaddr->sin_addr.s_addr = ntohl(addr->inet4_mask);
+-		inaddr->sin_family = AF_INET;
+-		ret = __kern_devinet_ioctl(net, SIOCSIFNETMASK, &req);
+-		if (ret < 0) {
+-			ckpt_err(ctx, ret, "Failed to set netmask\n");
+-			break;
+-		}
+-
+-		inaddr = (struct sockaddr_in *)&req.ifr_addr;
+-		inaddr->sin_addr.s_addr = ntohl(addr->inet4_broadcast);
+-		inaddr->sin_family = AF_INET;
+-		ret = __kern_devinet_ioctl(net, SIOCSIFBRDADDR, &req);
+-		if (ret < 0) {
+-			ckpt_err(ctx, ret, "Failed to set broadcast\n");
+-			break;
+-		}
+ 	}
+ 
+  out:
 -- 
 1.6.2.5
