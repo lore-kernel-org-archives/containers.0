@@ -1,15 +1,10 @@
-From: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
-Subject: Re: Testing lxc 0.6.5 in Fedora 13
-Date: Thu, 25 Mar 2010 22:33:56 +0100
-Message-ID: <20100325213356.GB20541@megiteam.pl>
-References: <20100321195044.GA23757@megiteam.pl>
-	<20100323212834.GH20796@count0.beaverton.ibm.com>
+From: "=?koi8-r?B?58zB187PzdUgwtXIx8HM1MXS1Q==?=" <trud-dqS66rj0C8PWO3iv0lnsqw@public.gmane.org>
+Subject: =?koi8-r?B?7uTzLCDOwczPxyDOwSDQ0snC2czYINcgMjAxMCDHz8TVLiDuz9fBw8nJINrBy8/Oz8TB1MXM2NPU18E=?=
+Date: Fri, 26 Mar 2010 00:44:19 +0300
+Message-ID: <1571557549.20100326004419@secondmail.ru>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="----------=_1269553469-1814-292"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20100323212834.GH20796-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,92 +14,164 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On wto, mar 23, 2010 at 02:28:34 -0700, Matt Helsley wrote:
-> On Sun, Mar 21, 2010 at 08:50:44PM +0100, Grzegorz Nosek wrote:
-> 
-> <snip>
-> 
-> > 2. Weird strace behaviour across pidns boundary
-> > 
-> > When strace'ing (with -ff) lxc-start, I get a proper strace for the
-> > directly spawned process and the container init. However, any processes
-> > spawned by the container's init are not straced properly (I get two
-> > empty files, named <foo>.<pid-in-root-ns> and <foo>.2 -- presumably pid
-> > inside the container). The container also seems to malfunction under
-> > strace (looks like exec() failing as lxc-ps shows two "init" processes).
-> > 
-> > This is quite painful as it prevents strace'ing processes in containers
-> > even after startup. Here's a snippet of strace'ing a bash (pid 179
-> > inside, pid 2959 outside) trying to run 'ls'. The shell hangs until I
-> > kill the strace process.
-> > 
-> > pipe([3, 4])                            = 0
-> > clone(Process 197 attached
-> > child_stack=0, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0xb7859708) = 197
-> > Process 2999 attached (waiting for parent)
-> > [pid  2959] setpgid(197, 197)           = 0
-> > [pid  2959] rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
-> > [pid  2959] rt_sigprocmask(SIG_BLOCK, [CHLD], [], 8) = 0
-> > [pid  2959] close(3)                    = 0
-> > [pid  2959] close(4)                    = 0
-> > [pid  2959] rt_sigprocmask(SIG_BLOCK, [CHLD TSTP TTIN TTOU], [CHLD], 8) = 0
-> > [pid  2959] ioctl(255, TIOCSPGRP, [197]) = 0
-> > [pid  2959] rt_sigprocmask(SIG_SETMASK, [CHLD], NULL, 8) = 0
-> > [pid  2959] rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
-> > [pid  2959] rt_sigprocmask(SIG_BLOCK, [CHLD], [], 8) = 0
-> > [pid  2959] waitpid(-1, Process 2959 suspended
-> > ^C <unfinished ...>
-> > Process 2959 detached
-> > Process 197 detached
-> > Process 2999 detached
-> > 
-> > 'strace ls' ran completely inside the container works as expected.
-> 
-> I'm suprised strace of ls works across pid namespaces. I've been looking
-> at strace and it seemed to me that one kernel change and a bunch of strace
-> changes are needed to make strace'ing in child pid namespaces work. Eric
-> Biederman's setns() patches also might help.
+This is a multi-part message in MIME format...
 
-Thanks for the patch and the detailed explanation.
+------------=_1269553469-1814-292
+Content-Type: text/plain; charset="utf-7"
+Content-Transfer-Encoding: base64
+Content-Disposition: inline
 
-> Can you get a little farther with the kernel fix below?
+K0JCMEVNQVE3QkQ0RU13ICtCRDBFTUEgK0JEOEVRQVE0QkRFRVN3UTdCRXcg
+K0JEZyArQkIwRUZBUWg6ICtCRGdFUVFSSEJEZ0VRUVE3QkRVRVBRUTRCRFUg
+K0JEZyArQkVNRVB3UTdCREFFUWdRdyArQkRJIDIwMTAgK0JETUVQZ1EwQkVN
+LgoKMzEgK0JEd0VNQVJBQkVJRU1BIHwgK0JCd0VQZ1JCQkRvRU1nUXcKCitC
+Q0FFVHdReEJENEVNZ1F3ICtCQ0EuICtCQmcuIC0gK0JEb0VQZ1E5QkVFRVF3
+UTdCRXdFUWdRd0JEMEVRZyArQkJnRUh3UVIgK0JDQUVQZ1JCQkVFRU9BUTQs
+ICtCRDhFUUFRMUJEOEVQZ1EwQkRBRU1nUXdCRUlFTlFRN0JFdyArQkJ3RUV3
+UWogK0JEZ0VQQSArQkJzRVBnUThCRDRFUFFRK0JFRUVQZ1F5QkRBLgoKK0JC
+Z0VQUVJFQkQ0RVFBUThCREFFUmdRNEJFOCArQkRnICtCRUFFTlFRekJEZ0VR
+UVJDQkVBRU1BUkdCRGdFVHc6IDggKDQ5NSkgOTIxLTMwLTE3CgorQkJJICtC
+RDhFUUFRK0JETUVRQVF3QkR3RVBBUTE6IAorQkIwRU1BUTdCRDRFTXcgK0JE
+MEVNQSArQkQ4RVFBUTRCREVFU3dRN0JFdy4gK0JCZ0VOd1E4QkRVRVBRUTFC
+RDBFT0FSUCArQkRNRU93UXdCRElFU3cgMjUgK0JCMEVHZyArQkNBRUpBICtC
+RUUgMjAxMCArQkRNRVBnUTBCREEuIAoxLiArQkJnRU53UThCRFVFUFFRMUJE
+MEVPQVJQICtCREkgK0JFRUVNZ1JQQkRjRU9BICtCRUUgK0JENEVRZ1E4QkRV
+RVBRUStCRGsgK0JCVUVJUVFkLiAKMi4gK0JCNEVRZ1E4QkRVRVBRUXcgK0JE
+OC4xNSArQkRnICtCRGdFTndROEJEVUVQUVExQkQwRU9BUTEgK0JEOC4xNiAr
+QkVFRVFnUXdCRUlFVEFRNCAyNTUgK0JCb0VQZ1EwQkRVRU9nUkJCREEuCjMu
+ICtCQjRFUWdROEJEVUVQUVF3ICtCRDhFTlFSQUJEVUVQZ1JHQkRVRVBRUTZC
+RGcgK0JEQUVNZ1F3QkQwRVFRUStCREkgK0JESSArQkRnRVBRUStCRUVFUWdS
+QUJEQUVQUVE5QkQ0RU9RICtCRElFTUFRN0JFNEVRZ1ExLgo0LiArQkJnRU53
+UThCRFVFUFFRMUJEMEVPQVExICtCRDRFUmdRMUJEMEVPZ1E0ICtCQ0lFSEFR
+bSArQkRJICtCRElFT0FRMEJEVSArQkRnRU53UTdCRGdFU0FRNkJENEVNZywg
+K0JESUVTd1JQQkRJRU93UTFCRDBFUFFSTEJFVSArQkQ4RVFBUTQgK0JEZ0VQ
+UVF5QkRVRVBRUkNCREFFUUFRNEJEY0VNQVJHQkRnRU9BLCArQkRnRU93UTQg
+K0JEOEVRQVE0ICtCRFFFTlFROEJENEVQUVJDQkRBRU5nUTEgCiAgICArQkRJ
+RVN3UXlCRDRFTkFRNEJEd0VTd1JGICtCRGdFTncgK0JFMEVPZ1JCQkQ4RU93
+UkRCREFFUWdRd0JFWUVPQVE0ICtCRDRFUVFROUJENEVNZ1E5QkVzRVJRICtC
+RUVFUUFRMUJEUUVRUVJDQkRJLgo1LiArQkJnRU53UThCRFVFUFFRMUJEMEVP
+QVExICtCRDhFUGdSQUJFOEVOQVE2QkRBICtCRDBFTUFSSEJEZ0VRUVE3QkRV
+RVBRUTRCRTggK0JEQUVQQVErQkVBRVFnUTRCRGNFTUFSR0JEZ0VPQSArQkRv
+RU1BUS9CRGdFUWdRd0JEc0VUQVE5QkVzRVJRICtCRElFT3dRK0JEWUVOUVE5
+QkRnRU9RICtCRDBFTlFRK0JFSUVOQVExQkRzRU9BUThCRDRFTXdRKyArQkVV
+RU1BUkFCREFFT2dSQ0JEVUVRQVF3ICtCRUUgCiAgICArQkVBRU1BUTNCRHNF
+T0FSSEJEMEVTd1E4QkRnICtCRUVFUUFRK0JEb0VNQVE4QkRnICtCRDhFUGdR
+N0JEVUVOd1E5QkQ0RU13USsgK0JEZ0VRUVEvQkQ0RU93Uk1CRGNFUGdReUJE
+QUVQUVE0QkU4Lgo2LiArQkJnRU53UThCRFVFUFFRMUJEMEVPQVExICtCRHdF
+UGdROEJEVUVQUVJDQkRBICtCRGcgK0JEOEVQZ1JBQkU4RU5BUTZCREEgK0JE
+OEVRQVE0QkRjRVBRUXdCRDBFT0FSUCArQkRRRVBnUkZCRDRFTkFRK0JESSAr
+QkRnICtCRUFFTUFSQkJFVUVQZ1EwQkQ0RU1nICtCREkgK0JESUVPQVEwQkRV
+ICtCRDhFUUFRK0JFWUVOUVE5QkVJRVBnUXkgK0JEOEVQZyArQkRRRVBnUTdC
+RE1FUGdReUJFc0VQQSAKICAgICtCRDRFTVFSUEJEY0VNQVJDQkRVRU93Uk1C
+RUVFUWdReUJEQUVQQS4KNy4gK0JCZ0VOd1E4QkRVRVBRUTFCRDBFT0FRMSAr
+QkQ4RVBnUkFCRThFTkFRNkJEQSArQkQwRU1BUTdCRDRFTXdRK0JENEVNUVE3
+QkQ0RU5nUTFCRDBFT0FSUCArQkVZRU5RUTlCRDBFU3dSRiArQkRFRVF3UThC
+REFFTXcgK0JEZyArQkQ0RVB3UTFCRUFFTUFSR0JEZ0VPQSArQkQ4RVBnICtC
+RDhFUUFRMUJEUUVQZ1JCQkVJRU1BUXlCRHNFTlFROUJEZ0VUZyArQkRjRU1B
+UTVCRHdFTUEgCiAgICArQkVZRU5RUTlCRDBFU3dROEJEZyArQkRFRVF3UThC
+REFFTXdRd0JEd0VPQS4KOC4gK0JCZ0VOd1E4QkRVRVBRUTFCRDBFT0FRMSAr
+QkQ4RVBnUkFCRThFTkFRNkJEQSArQkQwRU1BUTdCRDRFTXdRK0JENEVNUVE3
+QkQ0RU5nUTFCRDBFT0FSUCArQkRRRU9BUXlCRGdFTkFRMUJEMEVOQVErQkRJ
+Lgo5LiArQkI4RVFBUXdCRG9FUWdRNEJEb0VNQSArQkQ4RVFBUTRCRHdFTlFR
+OUJEVUVQUVE0QkU4ICtCRE1FT3dRd0JESUVTdyAyNSArQkIwRUdnICtCQ0FF
+SkEKCitCQjBFRkFRaCArQkRJIDIwMTAgK0JETUVQZ1EwQkVNLiArQkJnRU53
+UThCRFVFUFFRMUJEMEVPQVJQICtCRGcgK0JEOEVRQVF3QkRvRVFnUTRCRG9F
+TUEgK0JEOEVRQVE0QkR3RU5RUTlCRFVFUFFRNEJFOCArQkRNRU93UXdCRElF
+U3cgMjEgK0JCMEVHZyArQkNBRUpBLgoxLiArQkNRRUZ3IE4gMzE4LStCQ1FF
+RncgLSArQkJjRU1BUlBCRElFT0FSQ0JEVUVPd1JNQkQwRVN3UTUgK0JEOEVQ
+Z1JBQkU4RU5BUStCRG8gK0JESUVQZ1EzQkR3RU5RUkpCRFVFUFFRNEJFOCAr
+QkIwRUZBUWggKCtCRU1FUVFRN0JENEVNZ1E0QkU4ICtCRGcgK0JEOEVQZ1JC
+QkRzRU5RUTBCRUVFUWdReUJEZ0VUdyk7IAogICAgK0JEMEVOUVJCQkVNRVNR
+UTFCRUVFUWdReUJEVUVQUVE5QkVzRU5RICtCRDRFU0FRNEJERUVPZ1E0ICtC
+RDhFUUFRNCArQkRjRU1BUS9CRDRFT3dROUJEVUVQUVE0QkRnICtCRUVFUndR
+MUJFSUVQZ1F5LS0rQkVRRU1BUTZCRUlFUXdSQSAoK0JCUUVQZ1EvQkQ0RU93
+UTlCRFVFUFFRNEJEVSArQkRJICtCRDguMiArQkVFRVFnLjE2OSArQkIwRUdn
+ICtCQ0FFSkEpOwoyLiArQkNRRUZ3IE4gMjg3LStCQ1FFRncgLSArQkQwRVBn
+UXlCRXNFTlEgK0JEc0VUQVF6QkQ0RVFnUkwsICtCRDRFUUFRekJEQUVQUVE0
+QkRjRU1BUkdCRGdFVHdROCwgK0JENEVNUVJCQkRzRVF3UTJCRGdFTWdRd0JF
+NEVTUVE0QkR3ICtCRFlFT0FRN0JENEVPUSArQkVRRVBnUTlCRFE7CjMuICtC
+Q1FFRncgTiAyODEtK0JDUUVGdyAtICtCRHNFVEFRekJENEVRZ1F3ICtCRDhF
+UGcgK0JEOEVOUVJBQkRVRU5BUXdCRWNFTlEgK0JETUVQZ1JCQkRnRVBBUkRC
+RWtFTlFSQkJFSUVNZ1F3ICtCREkgK0JEOEVQZ1E3QkV3RU53UStCRElFTUFR
+OUJEZ0VOUSArQkQwRU5RUTZCRDRFUEFROEJEVUVRQVJIQkRVRVFRUTZCRGdF
+UEEgK0JENEVRQVF6QkRBRVBRUTRCRGNFTUFSR0JEZ0VUd1E4OyAKICAgICtC
+RGdFTndROEJEVUVQUVExQkQwRU9BUTEgK0JFRUVQZ1JCQkVJRU1BUXlCREEg
+K0JENEVQd1ExQkVBRU1BUkdCRGdFT1EgK0JFRSArQkVZRU5RUTlCRDBFU3dR
+OEJEZyArQkRFRVF3UThCREFFTXdRd0JEd0VPQSwgK0JEMEVOUSArQkQ4RVBn
+UTBCRHNFTlFRMkJEQUVTUVE0QkVVICtCRDBFTUFRN0JENEVNd1ErQkQ0RU1R
+UTdCRDRFTmdRMUJEMEVPQVJPICtCQjBFRkFRaC4KNC4gK0JDRUVPd1ErQkRZ
+RVBRUkxCRFUgK0JESUVQZ1EvQkVBRVBnUkJCRXMgK0JEOEVRQVE0QkR3RU5R
+UTlCRFVFUFFRNEJFOCArQkRNRU93UXdCRElFU3cgMjEgK0JCMEVHZyArQkNB
+RUpBOiArQkVBRU5RUXdCRHNFT0FRM0JEQUVSZ1E0QkU4ICtCRGcgK0JEOEVR
+QVE0QkQ0RU1RUkFCRFVFUWdRMUJEMEVPQVExICtCRWNFTlFSQUJEVUVOdyAr
+QkQ4RVBnUkJCRUFFTlFRMEJEMEVPQVE2QkQ0RU1nOyAKICAgICtCRDBFTUFS
+SEJEZ0VRUVE3QkRVRVBRUTRCRFUgK0JEZyArQkRJRVN3UkhCRFVFUWdSTCAr
+QkIwRUZBUWggK0JEOEVQZyArQkRBRU1nUXdCRDBFUVFRd0JEdzsgK0JCMEVG
+QVFoICtCRDhFUUFRNCArQkVBRU1BUkJCRWNFVVFSQ0JEQUVSUSArQkRJICtC
+RU1FUVFRN0JENEVNZ1E5QkVzRVJRICtCRFVFTkFRNEJEMEVPQVJHQkRBRVJR
+ICtCRUUgK0JFTUVSd1JSQkVJRVBnUTggK0JEOEVQZ1EzQkRnRVJnUTRCRGcg
+CiAgICArQkJJRUVBUWggK0JDQUVKQTsgK0JFQUVNQVEzQkRRRU5RUTdCRXdF
+UFFSTEJEayArQkVNRVJ3UTFCRUkgK0JEZyArQkRJRVBnUkJCRUVFUWdRd0JE
+MEVQZ1F5QkRzRU5RUTlCRGdFTlEgK0JCMEVGQVFoOyArQkQwRVBnUXlCREFF
+VHcgK0JEUUVOUVE2QkRzRU1BUkFCREFFUmdRNEJFOCArQkQ4RVBnICtCQjBF
+RkFRaC0tICtCRDhFUUFRNEJEb0VNQVEzICtCQndFT0FROUJFUUVPQVE5QkRB
+IAogICAgK0JDQUVQZ1JCQkVFRU9BUTQgK0JENEVRZyAxNS4xMC4yMDA5IE4g
+MTA0K0JEMC4KCitCQ0VFUWdRK0JEZ0VQQVErQkVFRVFnUk0gK0JFTUVSd1F3
+QkVFRVFnUTRCRTg6IDY5MDAgK0JFQUVRd1F4QkRzRU5RUTUuCitCQndFTlFS
+QkJFSUVQZyArQkQ4RVFBUStCRElFTlFRMEJEVUVQUVE0QkU4OiArQkR3LiAr
+QkJFRU1BUkRCRHdFTUFROUJFRUVPZ1F3QkU4LCArQkVNRU93LiArQkJFRU1B
+UkRCRHdFTUFROUJFRUVPZ1F3QkU4LCArQkRRLjYsICtCREVFT0FRM0JEMEVO
+UVJCICtCRVlFTlFROUJFSUVRQSAiK0JCSUVPQVE2QkVJRVBnUkFCRGdFVHcg
+K0JCOEVPd1F3QkRjRU1BIi4KK0JCSSArQkVFRVFnUStCRGdFUEFRK0JFRUVR
+Z1JNICtCRElFUlFRK0JEUUVPQVJDICtCRHdFTlFSQ0JENEVOQVE0QkVjRU5R
+UkJCRG9FT0FRNSArQkR3RU1BUkNCRFVFUUFRNEJEQUVPdywgK0JENEVNUVEx
+QkRRRVN3LCArQkRvRVBnUkVCRFUtLStCRDhFTUFSREJEY0VTdywgK0JFRUVO
+UVJBQkVJRU9BUkVCRGdFT2dRd0JFSS4gCgorQkJnRVBRUkVCRDRFUUFROEJE
+QUVSZ1E0QkU4ICtCRGcgK0JFQUVOUVF6QkRnRVFRUkNCRUFFTUFSR0JEZ0VU
+dzogOCAoNDk1KSA5MjEgMzAgMTcKX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxp
+c3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRw
+czorQUM4QUx3LWxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnK0FDOC1tYWls
+bWFuK0FDOC1saXN0aW5mbytBQzgtY29udGFpbmVycw==
 
-No, not really. Attaching from outside to a shell running in a container
-and running a command yields:
+------------=_1269553469-1814-292
+Content-Type: text/plain; name="SpamAssassinReport.txt"
+Content-Disposition: inline; filename="SpamAssassinReport.txt"
+Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+X-Mailer: MIME-tools 5.425 (Entity 5.425)
 
-| rt_sigprocmask(SIG_BLOCK, [INT CHLD], [], 8) = 0
-| pipe([3, 4])                            = 0
-| clone(Process 2581 attached (waiting for parent)
-| Process 190 attached
+Spam detection software, running on the system "daredevil.linux-foundation.org", has
+identified this incoming email as possible spam.  The original message
+has been attached to this so you can view it (if it isn't spam) or label
+similar future email.  If you have any questions, see
+the administrator of that system for details.
 
-Without the patch the order of reported pids is reversed (and at least
-with the patched kernel the outside pid is consistently reported first)
+Content preview:  +BB0EMAQ7BD4EMw +BD0EMA +BD8EQAQ4BDEESwQ7BEw +BDg +BB0EFAQh:
+   +BDgEQQRHBDgEQQQ7BDUEPQQ4BDU +BDg +BEMEPwQ7BDAEQgQw +BDI 2010 +BDMEPgQ0BEM.
+   31 +BDwEMARABEIEMA | +BBwEPgRBBDoEMgQw +BCAETwQxBD4EMgQw +BCA. +BBg. - +BDoEPgQ9BEEEQwQ7BEwEQgQwBD0EQg
+   +BBgEHwQR +BCAEPgRBBEEEOAQ4, +BD8EQAQ1BD8EPgQ0BDAEMgQwBEIENQQ7BEw +BBwEEwQj
+   +BDgEPA +BBsEPgQ8BD4EPQQ+BEEEPgQyBDA. [...] 
 
-| child_stack=0, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0xb7713708) = 190
-| [pid  2549] setpgid(190, 190)           = 0
-| [pid  2549] rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
-| [pid  2549] rt_sigprocmask(SIG_BLOCK, [CHLD], [], 8) = 0
-| [pid  2549] close(3)                    = 0
-| [pid  2549] close(4)                    = 0
-| [pid  2549] rt_sigprocmask(SIG_BLOCK, [CHLD TSTP TTIN TTOU], [CHLD], 8) = 0
-| [pid  2549] ioctl(255, TIOCSPGRP, [190]) = 0
-| [pid  2549] rt_sigprocmask(SIG_SETMASK, [CHLD], NULL, 8) = 0
-| [pid  2549] rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
-| [pid  2549] rt_sigprocmask(SIG_BLOCK, [CHLD], [], 8) = 0
-| [pid  2549] waitpid(-1, Process 2549 suspended
+Content analysis details:   (5.2 points, 5.0 required)
 
-(the shell hangs here)
+ pts rule name              description
+---- ---------------------- --------------------------------------------------
+ 3.0 OUTFLUX_THEBAT         X-Mailer is from "The Bat"
+-0.5 OSDL_HEADER_SPF_PASS   SPF was valid
+ 1.2 CHARSET_FARAWAY_HEADER A foreign language charset used in headers
+ 0.0 BAYES_50               BODY: Bayesian spam probability is 40 to 60%
+                            [score: 0.5000]
+ 0.1 MIME_BASE64_TEXT       RAW: Message text disguised using base64 encoding
+ 0.1 RDNS_DYNAMIC           Delivered to trusted network by host with
+                            dynamic-looking rDNS
+ 0.5 UPPERCASE_75_100       message body is 75-100% uppercase
+ 1.8 FORGED_MUA_THEBAT_CS   Mail pretending to be from The Bat! (charset)
+-1.0 AWL                    AWL: From: address is in the auto white-list
 
-^C <unfinished ...>
-| Process 2549 detached
-| Process 2581 detached
-| Process 190 detached
 
-(the command executes here normally).
 
-Best regards,
- Grzegorz Nosek
+------------=_1269553469-1814-292--
