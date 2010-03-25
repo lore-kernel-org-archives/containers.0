@@ -1,12 +1,21 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][PATCH][lxc]: Add --with-usercr configure option
-Date: Wed, 24 Mar 2010 18:05:24 -0700
-Message-ID: <20100325010524.GA7385@us.ibm.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [C/R ARM][PATCH 1/3] ARM: Rudimentary syscall interfaces
+Date: Wed, 24 Mar 2010 18:11:32 -0700
+Message-ID: <20100325011132.GE5704__3294.84842154688$1269479538$gmane$org@count0.beaverton.ibm.com>
+References: <1269219965-23923-1-git-send-email-christofferdall@christofferdall.dk>
+	<1269219965-23923-2-git-send-email-christofferdall@christofferdall.dk>
+	<20100323205342.GA19572@n2100.arm.linux.org.uk>
+	<20100324020342.GB5704@count0.beaverton.ibm.com>
+	<Pine.LNX.4.64.1003240055050.5867@takamine.ncl.cs.columbia.edu>
+	<20100324140252.GC5704@count0.beaverton.ibm.com>
+	<4BAA3586.1020604@cs.columbia.edu>
+	<7d08b87d1003241236n2b45e6f4ife36da841351df9d@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <7d08b87d1003241236n2b45e6f4ife36da841351df9d-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,111 +25,124 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org
+To: Christoffer Dall <christofferdall-77OGu6e99YhyO3AAkE1OcX9LOBIZ5rWg@public.gmane.org>
+Cc: Russell King - ARM Linux <linux-lFZ/pmaqli7XmaaqVzeoHQ@public.gmane.org>, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-arm-kernel <linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+On Wed, Mar 24, 2010 at 08:36:39PM +0100, Christoffer Dall wrote:
+> On Wed, Mar 24, 2010 at 4:53 PM, Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> wrote:
+> >
+> >
+> > Matt Helsley wrote:
+> >>
+> >> On Wed, Mar 24, 2010 at 12:57:46AM -0400, Oren Laadan wrote:
+> >>>
+> >>> On Tue, 23 Mar 2010, Matt Helsley wrote:
+> >>>
+> >>>> On Tue, Mar 23, 2010 at 08:53:42PM +0000, Russell King - ARM Linux
+> >>>> wrote:
+> >>>>>
+> >>>>> On Sun, Mar 21, 2010 at 09:06:03PM -0400, Christoffer Dall wrote:
+> >>>>>>
+> >>>>>> This small commit introduces a global state of system calls for ARM
+> >>>>>> making it possible for a debugger or checkpointing to gain information
+> >>>>>> about another process' state with respect to system calls.
+> >>>>>
+> >>>>> I don't particularly like the idea that we always store the syscall
+> >>>>> number to memory for every system call, whether the stored version is
+> >>>>> used or not.
+> >>>>>
+> >>>>> Since ARM caches are generally not write allocate, this means mostly
+> >>>>> write-only variables can have a higher than expected expense.
+> >>>>>
+> >>>>> Is there not some thread flag which can be checked to see if we need to
+> >>>>> store the syscall number?
+> >>>>
+> >>>> Perhaps before we freeze the task we can save the syscall number on ARM.
+> >>>> The patches suggest that the signal delivery path -- which the freezer
+> >>>> utilizes -- has the syscall number already.
+> >
+> > Actually, the signal path doesn't have the syscall number, it has
+> > a binary "in syscall" value.
+> >
 
-Pls let me know if this will work. Will address your other comments
-and repost entire patchset.
+Argh. I read too much into the name :(.
 
----
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Wed, 24 Mar 2010 17:26:44 -0700
-Subject: [PATCH 1/1] Add --with-usercr configure option
+> 
+> Well, this could be changed to pass the syscall number through
+> registers along to try_to_freeze without any mentionable performance
+> hit.
 
-Add a configure option, --with-usercr=dir which would allow linking
-with external (i.e USERCR) implementation  of checkpoint/restart.
+Yes, that's possible. I was thinking we could still use your thread info
+field but only store to it when we know it will be useful for c/r rather
+than for each syscall. Personally, I'd rather avoid passing the extra
+parameter into try_to_freeze(). Your idea below seems better to me.
 
-For now, USERCR "publishes" a app-checkpoint.h, checkpoint.o and
-restart.o files which implement the functions app_checkpoint() and
-app_restart().
+> Re-using the assembly code or factoring it out so that it can be used
+> from multiple places doesn't seem very pleasing to me, as the assembly
+> code is in the critical path and written specifically for the context
+> of a process entering the kernel. Please correct me if I'm wrong.
+> 
+> I imagine simply a function in C, more or less re-implementing the
+> logic that's already in entry-common.S, might do the trick. I wouldn't
+> worry much about the performance in this case as it will not be used
+> often. The following _untested_ snippet illustrates my idea:
+> 
+> ---
+>  arch/arm/include/asm/syscall.h |   93 +++++++++++++++++++++++++++++++++++++++-
+>  1 files changed, 92 insertions(+), 1 deletions(-)
+> 
+> diff --git a/arch/arm/include/asm/syscall.h b/arch/arm/include/asm/syscall.h
+> index 3b3248f..a7f2615 100644
+> --- a/arch/arm/include/asm/syscall.h
+> +++ b/arch/arm/include/asm/syscall.h
+> @@ -10,10 +10,101 @@
+>  #ifndef _ASM_ARM_SYSCALLS_H
+>  #define _ASM_ARM_SYSCALLS_H
+> 
+> +static inline int get_swi_instruction(struct task_struct *task,
+> +				      struct pt_regs *regs,
+> +				      unsigned long *instr)
+> +{
+> +	struct page *page = NULL;
+> +	unsigned long instr_addr;
+> +	unsigned long *ptr;
+> +	int ret;
+> +
+> +	instr_addr = regs->ARM_pc - 4;
+> +
+> +	down_read(&task->mm->mmap_sem);
+> +	ret = get_user_pages(task, task->mm, instr_addr,
+> +			     1, 0, 0, &page, NULL);
+> +	up_read(&task->mm->mmap_sem);
+> +
+> +	if (ret < 0)
+> +		return ret;
+> +
+> +	ptr = (unsigned long *)kmap_atomic(page, KM_USER1);
+> +	memcpy(instr,
+> +	       ptr + (instr_addr >> PAGE_SHIFT),
+			^shouldn't this be:
+		      instr_addr & PAGE_MASK
 
-Usage:
-	$ ./autogen.sh
+> +	       sizeof(unsigned long));
+> +	kunmap_atomic(ptr, KM_USER1);
+> +
+> +	page_cache_release(page);
+> +
+> +	return 0;
+> +}
 
-	$ ./configure --help |grep usercr
-	--with-usercr=dir     use the Checkpoint/Restart implementation in 'dir'
+(again, not familiar with ARM so my understanding is:
 
-	$ ls /home/guest/user-cr/
-	app-checkpoint.h    checkpoint.o    restart.o
+I guess swi is "syscall word immediate".
 
-	$ ./configure --with-usercr=/home/guest/user-cr
+The syscall nr is embedded in the instruction as an immediate
+value and you're getting a copy of that instruction using the value of
+the pc register just after the syscall instruction was executed.)
 
-TODO:
-	If names of interfaces in USERCR change, we may want to rename
-	the config option too ?
+Perhaps I am missing or forgetting something. Why isn't this as simple
+as calling get_user() or even copy_from_user() using instr_addr?
 
-	Can we remove the src/lxc/{checkpoint.o,restart.o} files from
-	liblxc.so and lxc-checkpoint/lxc-restart directly with them ?
-	That way, the USERCR interfaces/object files don't end up in
-	liblxc.so.
-
-	USERCR_CFLAGS are only needed for src/lxc/{checkpoint.c,restart.c}
-	but not sure if there is an easy way to define autoconf CFLAGS
-	just for those two files.
-
-Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
----
- configure.ac        |   19 +++++++++++++++++++
- src/lxc/Makefile.am |   10 +++++++++-
- 2 files changed, 28 insertions(+), 1 deletions(-)
-
-diff --git a/configure.ac b/configure.ac
-index f82e7df..dd46e4d 100644
---- a/configure.ac
-+++ b/configure.ac
-@@ -12,6 +12,25 @@ AM_PROG_CC_C_O
- AC_GNU_SOURCE
- AC_CHECK_PROG(SETCAP, setcap, yes, no, $PATH$PATH_SEPARATOR/sbin)
- 
-+AC_ARG_WITH(usercr, [AS_HELP_STRING([--with-usercr=dir], \
-+           [use the Checkpoint/Restart implementation in 'dir'])], [], \
-+	   [with_usercr=no])
-+
-+if test "x$with_usercr" != "xno"; then
-+       AS_AC_EXPAND(USERCR_OBJS, "${with_usercr}/checkpoint.o ${with_usercr}/restart.o")
-+       AS_AC_EXPAND(USERCR_CFLAGS, "-DUSERCR -I${with_usercr}")
-+
-+       AC_CHECK_FILE([$with_usercr/app-checkpoint.h], [], \
-+               AC_MSG_ERROR([--with-usercr specified directory $with_usercr but $with_usercr/app-checkpoint.h was not found]))
-+
-+       AC_CHECK_FILE([${with_usercr}/checkpoint.o], [], \
-+               AC_MSG_ERROR([--with-usercr specified directory $with_usercr but ${with_usercr}/checkpoint.o was not found]))
-+
-+       AC_CHECK_FILE([${with_usercr}/restart.o], [], \
-+               AC_MSG_ERROR([--with-usercr specified directory $with_usercr but ${with_usercr}/restart.o was not found]))
-+fi
-+
-+
- AC_ARG_ENABLE([doc],
- 	[AC_HELP_STRING([--enable-doc], [make mans (require docbook2man installed) [default=auto]])],
- 	[], [enable_doc=auto])
-diff --git a/src/lxc/Makefile.am b/src/lxc/Makefile.am
-index be64b2a..e8748b5 100644
---- a/src/lxc/Makefile.am
-+++ b/src/lxc/Makefile.am
-@@ -45,12 +45,20 @@ liblxc_so_SOURCES = \
- 	mainloop.c mainloop.h \
- 	af_unix.c af_unix.h
- 
--AM_CFLAGS=-I$(top_srcdir)/src
-+# We only need $(USERCR_CFLAGS) for lxc_checkpoint and lxc_restart files
-+# but for now, just set it for all.
-+AM_CFLAGS=-I$(top_srcdir)/src $(USERCR_CFLAGS)
- 
- liblxc_so_CFLAGS = -fPIC -DPIC $(AM_CFLAGS)
- 
-+# TODO: Adding $(USERCR_OBJS) here ensures we don't have undefined references
-+# 	when building liblxc.so, but this has the side-effect of putting the
-+# 	app_checkpoint/restart functions in liblxc.so. Or alternatively,
-+# 	we could remove src/lxc/{checkpoint.o,restart.o} from liblxc.so
-+# 	and link lxc-checkpoint/lxc-restart with them directly.
- liblxc_so_LDFLAGS = \
- 	-shared \
-+	$(USERCR_OBJS) \
- 	-Wl,-soname,liblxc.so.$(firstword $(subst ., ,$(VERSION)))
- 
- liblxc_so_LDADD = -lutil
--- 
-1.6.6.1
+Cheers,
+	-Matt Helsley
