@@ -1,13 +1,22 @@
-From: Michel Normand <normand-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH][lxc]: Add --with-usercr configure option
-Date: Thu, 25 Mar 2010 09:19:03 +0100
-Message-ID: <1269505143.2914.87.camel@pagloppaglop>
-References: <20100325010524.GA7385@us.ibm.com>
+From: Christoffer Dall <christofferdall-77OGu6e99YhyO3AAkE1OcX9LOBIZ5rWg@public.gmane.org>
+Subject: Re: [C/R ARM][PATCH 1/3] ARM: Rudimentary syscall interfaces
+Date: Thu, 25 Mar 2010 11:29:45 +0100
+Message-ID: <7d08b87d1003250329t589ba41er2f1127190be078cf__8293.84304020113$1269513135$gmane$org@mail.gmail.com>
+References: <1269219965-23923-1-git-send-email-christofferdall@christofferdall.dk>
+	<1269219965-23923-2-git-send-email-christofferdall@christofferdall.dk>
+	<20100323205342.GA19572@n2100.arm.linux.org.uk>
+	<20100324020342.GB5704@count0.beaverton.ibm.com>
+	<Pine.LNX.4.64.1003240055050.5867@takamine.ncl.cs.columbia.edu>
+	<20100324140252.GC5704@count0.beaverton.ibm.com>
+	<4BAA3586.1020604@cs.columbia.edu>
+	<7d08b87d1003241236n2b45e6f4ife36da841351df9d@mail.gmail.com>
+	<20100325011132.GE5704@count0.beaverton.ibm.com>
+	<20100325011753.GF5704@count0.beaverton.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100325010524.GA7385-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20100325011753.GF5704-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,89 +26,69 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, clg-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, DLEZCANO-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Russell King - ARM Linux <linux-lFZ/pmaqli7XmaaqVzeoHQ@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-arm-kernel <linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org>, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-U3VrYSwgCkkgYW0gYWRkaW5nIG15IG93biBjb21tZW50cywgZXZlbiBpZiBtYWlsIGFkZHJlc3Nl
-ZCB0byBEYW5pZWwuCgpMZSBtZXJjcmVkaSAyNCBtYXJzIDIwMTAgw6AgMTg6MDUgLTA3MDAsIFN1
-a2FkZXYgQmhhdHRpcHJvbHUgYSDDqWNyaXQgOgo+IFBscyBsZXQgbWUga25vdyBpZiB0aGlzIHdp
-bGwgd29yay4gV2lsbCBhZGRyZXNzIHlvdXIgb3RoZXIgY29tbWVudHMKPiBhbmQgcmVwb3N0IGVu
-dGlyZSBwYXRjaHNldC4KPiAKPiAtLS0KPiBGcm9tOiBTdWthZGV2IEJoYXR0aXByb2x1IDxzdWth
-ZGV2QGxpbnV4LnZuZXQuaWJtLmNvbT4KPiBEYXRlOiBXZWQsIDI0IE1hciAyMDEwIDE3OjI2OjQ0
-IC0wNzAwCj4gU3ViamVjdDogW1BBVENIIDEvMV0gQWRkIC0td2l0aC11c2VyY3IgY29uZmlndXJl
-IG9wdGlvbgo+IAo+IEFkZCBhIGNvbmZpZ3VyZSBvcHRpb24sIC0td2l0aC11c2VyY3I9ZGlyIHdo
-aWNoIHdvdWxkIGFsbG93IGxpbmtpbmcKPiB3aXRoIGV4dGVybmFsIChpLmUgVVNFUkNSKSBpbXBs
-ZW1lbnRhdGlvbiAgb2YgY2hlY2twb2ludC9yZXN0YXJ0Lgo+IAo+IEZvciBub3csIFVTRVJDUiAi
-cHVibGlzaGVzIiBhIGFwcC1jaGVja3BvaW50LmgsIGNoZWNrcG9pbnQubyBhbmQKPiByZXN0YXJ0
-Lm8gZmlsZXMgd2hpY2ggaW1wbGVtZW50IHRoZSBmdW5jdGlvbnMgYXBwX2NoZWNrcG9pbnQoKSBh
-bmQKPiBhcHBfcmVzdGFydCgpLgo+IAo+IFVzYWdlOgo+IAkkIC4vYXV0b2dlbi5zaAo+IAo+IAkk
-IC4vY29uZmlndXJlIC0taGVscCB8Z3JlcCB1c2VyY3IKPiAJLS13aXRoLXVzZXJjcj1kaXIgICAg
-IHVzZSB0aGUgQ2hlY2twb2ludC9SZXN0YXJ0IGltcGxlbWVudGF0aW9uIGluICdkaXInCj4gCj4g
-CSQgbHMgL2hvbWUvZ3Vlc3QvdXNlci1jci8KPiAJYXBwLWNoZWNrcG9pbnQuaCAgICBjaGVja3Bv
-aW50Lm8gICAgcmVzdGFydC5vCj4gCj4gCSQgLi9jb25maWd1cmUgLS13aXRoLXVzZXJjcj0vaG9t
-ZS9ndWVzdC91c2VyLWNyCj4gCj4gVE9ETzoKPiAJSWYgbmFtZXMgb2YgaW50ZXJmYWNlcyBpbiBV
-U0VSQ1IgY2hhbmdlLCB3ZSBtYXkgd2FudCB0byByZW5hbWUKPiAJdGhlIGNvbmZpZyBvcHRpb24g
-dG9vID8KCm5vdCBzdXJlIHRvIHVuZGVyc3RhbmQsIGJ1dCB0aGUgLS13aXRoLXVzZXJjciB0byBz
-dGF5IGxvd2VyY2FzZS4KCj4gCj4gCUNhbiB3ZSByZW1vdmUgdGhlIHNyYy9seGMve2NoZWNrcG9p
-bnQubyxyZXN0YXJ0Lm99IGZpbGVzIGZyb20KPiAJbGlibHhjLnNvIGFuZCBseGMtY2hlY2twb2lu
-dC9seGMtcmVzdGFydCBkaXJlY3RseSB3aXRoIHRoZW0gPwo+IAlUaGF0IHdheSwgdGhlIFVTRVJD
-UiBpbnRlcmZhY2VzL29iamVjdCBmaWxlcyBkb24ndCBlbmQgdXAgaW4KPiAJbGlibHhjLnNvLgo+
-IAo+IAlVU0VSQ1JfQ0ZMQUdTIGFyZSBvbmx5IG5lZWRlZCBmb3Igc3JjL2x4Yy97Y2hlY2twb2lu
-dC5jLHJlc3RhcnQuY30KPiAJYnV0IG5vdCBzdXJlIGlmIHRoZXJlIGlzIGFuIGVhc3kgd2F5IHRv
-IGRlZmluZSBhdXRvY29uZiBDRkxBR1MKPiAJanVzdCBmb3IgdGhvc2UgdHdvIGZpbGVzLgoKZXhl
-bXBsZSBzaG91bGQgd29yayAoSSBkaWQgbm90IHRyaWVkKQpseGNfY2hlY2twb2ludF9TT1VSQ0VT
-ID0gbHhjX2NoZWNrcG9pbnQuYwpseGNfY2hlY2twb2ludF9DRkxBR1MgPSAtSSQodG9wX3NyY2Rp
-cikvc3JjICQoVVNFUkNSX0NGTEFHUykKCj4gCj4gU2lnbmVkLW9mZi1ieTogU3VrYWRldiBCaGF0
-dGlwcm9sdSA8c3VrYWRldkBsaW51eC52bmV0LmlibS5jb20+Cj4gLS0tCj4gIGNvbmZpZ3VyZS5h
-YyAgICAgICAgfCAgIDE5ICsrKysrKysrKysrKysrKysrKysKPiAgc3JjL2x4Yy9NYWtlZmlsZS5h
-bSB8ICAgMTAgKysrKysrKysrLQo+ICAyIGZpbGVzIGNoYW5nZWQsIDI4IGluc2VydGlvbnMoKyks
-IDEgZGVsZXRpb25zKC0pCj4gCj4gZGlmZiAtLWdpdCBhL2NvbmZpZ3VyZS5hYyBiL2NvbmZpZ3Vy
-ZS5hYwo+IGluZGV4IGY4MmU3ZGYuLmRkNDZlNGQgMTAwNjQ0Cj4gLS0tIGEvY29uZmlndXJlLmFj
-Cj4gKysrIGIvY29uZmlndXJlLmFjCj4gQEAgLTEyLDYgKzEyLDI1IEBAIEFNX1BST0dfQ0NfQ19P
-Cj4gIEFDX0dOVV9TT1VSQ0UKPiAgQUNfQ0hFQ0tfUFJPRyhTRVRDQVAsIHNldGNhcCwgeWVzLCBu
-bywgJFBBVEgkUEFUSF9TRVBBUkFUT1Ivc2JpbikKPiAgCj4gK0FDX0FSR19XSVRIKHVzZXJjciwg
-W0FTX0hFTFBfU1RSSU5HKFstLXdpdGgtdXNlcmNyPWRpcl0sIFwKPiArICAgICAgICAgICBbdXNl
-IHRoZSBDaGVja3BvaW50L1Jlc3RhcnQgaW1wbGVtZW50YXRpb24gaW4gJ2RpciddKV0sIFtdLCBc
-Cj4gKwkgICBbd2l0aF91c2VyY3I9bm9dKQo+ICsKPiAraWYgdGVzdCAieCR3aXRoX3VzZXJjciIg
-IT0gInhubyI7IHRoZW4KPiArICAgICAgIEFTX0FDX0VYUEFORChVU0VSQ1JfT0JKUywgIiR7d2l0
-aF91c2VyY3J9L2NoZWNrcG9pbnQubyAke3dpdGhfdXNlcmNyfS9yZXN0YXJ0Lm8iKQo+ICsgICAg
-ICAgQVNfQUNfRVhQQU5EKFVTRVJDUl9DRkxBR1MsICItRFVTRVJDUiAtSSR7d2l0aF91c2VyY3J9
-IikKPiArCj4gKyAgICAgICBBQ19DSEVDS19GSUxFKFskd2l0aF91c2VyY3IvYXBwLWNoZWNrcG9p
-bnQuaF0sIFtdLCBcCj4gKyAgICAgICAgICAgICAgIEFDX01TR19FUlJPUihbLS13aXRoLXVzZXJj
-ciBzcGVjaWZpZWQgZGlyZWN0b3J5ICR3aXRoX3VzZXJjciBidXQgJHdpdGhfdXNlcmNyL2FwcC1j
-aGVja3BvaW50Lmggd2FzIG5vdCBmb3VuZF0pKQo+ICsKPiArICAgICAgIEFDX0NIRUNLX0ZJTEUo
-WyR7d2l0aF91c2VyY3J9L2NoZWNrcG9pbnQub10sIFtdLCBcCj4gKyAgICAgICAgICAgICAgIEFD
-X01TR19FUlJPUihbLS13aXRoLXVzZXJjciBzcGVjaWZpZWQgZGlyZWN0b3J5ICR3aXRoX3VzZXJj
-ciBidXQgJHt3aXRoX3VzZXJjcn0vY2hlY2twb2ludC5vIHdhcyBub3QgZm91bmRdKSkKPiArCj4g
-KyAgICAgICBBQ19DSEVDS19GSUxFKFske3dpdGhfdXNlcmNyfS9yZXN0YXJ0Lm9dLCBbXSwgXAo+
-ICsgICAgICAgICAgICAgICBBQ19NU0dfRVJST1IoWy0td2l0aC11c2VyY3Igc3BlY2lmaWVkIGRp
-cmVjdG9yeSAkd2l0aF91c2VyY3IgYnV0ICR7d2l0aF91c2VyY3J9L3Jlc3RhcnQubyB3YXMgbm90
-IGZvdW5kXSkpCgpJIGRvIG5vdCB0aGluayB0aGUgdGhyZWUgYWJvdmUgQUNfQ0hFQ0tfRklMRSBh
-cmUgYSBnb29kIHRoaW5nIHRvIGJlIGRvbmUKYXMgd291bGQgbmVlZCB0byBoYXZlIHRoZSB1c2Vy
-LWNyIHRvIGJlIGFscmVhZHkgY29tcGlsZWQKYXQgdGltZSBvZiBjb25maWd1cmUgb2YgbHhjLgpJ
-IHRoaW5rIHRoaXMgaXMgYmV0dGVyIHRvIGRldGVjdCBzdWNoIHByb2JsZW0gYXQgdGltZSBvZiBt
-YWtlLgoKPiArZmkKPiArCj4gKwo+ICBBQ19BUkdfRU5BQkxFKFtkb2NdLAo+ICAJW0FDX0hFTFBf
-U1RSSU5HKFstLWVuYWJsZS1kb2NdLCBbbWFrZSBtYW5zIChyZXF1aXJlIGRvY2Jvb2sybWFuIGlu
-c3RhbGxlZCkgW2RlZmF1bHQ9YXV0b11dKV0sCj4gIAlbXSwgW2VuYWJsZV9kb2M9YXV0b10pCj4g
-ZGlmZiAtLWdpdCBhL3NyYy9seGMvTWFrZWZpbGUuYW0gYi9zcmMvbHhjL01ha2VmaWxlLmFtCj4g
-aW5kZXggYmU2NGIyYS4uZTg3NDhiNSAxMDA2NDQKPiAtLS0gYS9zcmMvbHhjL01ha2VmaWxlLmFt
-Cj4gKysrIGIvc3JjL2x4Yy9NYWtlZmlsZS5hbQo+IEBAIC00NSwxMiArNDUsMjAgQEAgbGlibHhj
-X3NvX1NPVVJDRVMgPSBcCj4gIAltYWlubG9vcC5jIG1haW5sb29wLmggXAo+ICAJYWZfdW5peC5j
-IGFmX3VuaXguaAo+ICAKPiAtQU1fQ0ZMQUdTPS1JJCh0b3Bfc3JjZGlyKS9zcmMKPiArIyBXZSBv
-bmx5IG5lZWQgJChVU0VSQ1JfQ0ZMQUdTKSBmb3IgbHhjX2NoZWNrcG9pbnQgYW5kIGx4Y19yZXN0
-YXJ0IGZpbGVzCj4gKyMgYnV0IGZvciBub3csIGp1c3Qgc2V0IGl0IGZvciBhbGwuCj4gK0FNX0NG
-TEFHUz0tSSQodG9wX3NyY2Rpcikvc3JjICQoVVNFUkNSX0NGTEFHUykKPiAgCj4gIGxpYmx4Y19z
-b19DRkxBR1MgPSAtZlBJQyAtRFBJQyAkKEFNX0NGTEFHUykKPiAgCj4gKyMgVE9ETzogQWRkaW5n
-ICQoVVNFUkNSX09CSlMpIGhlcmUgZW5zdXJlcyB3ZSBkb24ndCBoYXZlIHVuZGVmaW5lZCByZWZl
-cmVuY2VzCj4gKyMgCXdoZW4gYnVpbGRpbmcgbGlibHhjLnNvLCBidXQgdGhpcyBoYXMgdGhlIHNp
-ZGUtZWZmZWN0IG9mIHB1dHRpbmcgdGhlCj4gKyMgCWFwcF9jaGVja3BvaW50L3Jlc3RhcnQgZnVu
-Y3Rpb25zIGluIGxpYmx4Yy5zby4gT3IgYWx0ZXJuYXRpdmVseSwKPiArIyAJd2UgY291bGQgcmVt
-b3ZlIHNyYy9seGMve2NoZWNrcG9pbnQubyxyZXN0YXJ0Lm99IGZyb20gbGlibHhjLnNvCj4gKyMg
-CWFuZCBsaW5rIGx4Yy1jaGVja3BvaW50L2x4Yy1yZXN0YXJ0IHdpdGggdGhlbSBkaXJlY3RseS4K
-PiAgbGlibHhjX3NvX0xERkxBR1MgPSBcCj4gIAktc2hhcmVkIFwKPiArCSQoVVNFUkNSX09CSlMp
-IFwKPiAgCS1XbCwtc29uYW1lLGxpYmx4Yy5zby4kKGZpcnN0d29yZCAkKHN1YnN0IC4sICwkKFZF
-UlNJT04pKSkKPiAgCj4gIGxpYmx4Y19zb19MREFERCA9IC1sdXRpbAoKCl9fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0
-CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51
-eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+On Thu, Mar 25, 2010 at 2:17 AM, Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
+> On Wed, Mar 24, 2010 at 06:11:32PM -0700, Matt Helsley wrote:
+>> On Wed, Mar 24, 2010 at 08:36:39PM +0100, Christoffer Dall wrote:
+> <snip>
+>> > Re-using the assembly code or factoring it out so that it can be used
+>> > from multiple places doesn't seem very pleasing to me, as the assembly
+>> > code is in the critical path and written specifically for the context
+>> > of a process entering the kernel. Please correct me if I'm wrong.
+>> >
+>> > I imagine simply a function in C, more or less re-implementing the
+>> > logic that's already in entry-common.S, might do the trick. I wouldn't
+>> > worry much about the performance in this case as it will not be used
+>> > often. The following _untested_ snippet illustrates my idea:
+>> >
+>> > ---
+>> > =A0arch/arm/include/asm/syscall.h | =A0 93 +++++++++++++++++++++++++++=
+++++++++++++-
+>> > =A01 files changed, 92 insertions(+), 1 deletions(-)
+>> >
+>> > diff --git a/arch/arm/include/asm/syscall.h b/arch/arm/include/asm/sys=
+call.h
+>> > index 3b3248f..a7f2615 100644
+>> > --- a/arch/arm/include/asm/syscall.h
+>> > +++ b/arch/arm/include/asm/syscall.h
+>> > @@ -10,10 +10,101 @@
+>> > =A0#ifndef _ASM_ARM_SYSCALLS_H
+>> > =A0#define _ASM_ARM_SYSCALLS_H
+>> >
+>> > +static inline int get_swi_instruction(struct task_struct *task,
+>> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 stru=
+ct pt_regs *regs,
+>> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 unsi=
+gned long *instr)
+>> > +{
+>> > + =A0 struct page *page =3D NULL;
+>> > + =A0 unsigned long instr_addr;
+>> > + =A0 unsigned long *ptr;
+>> > + =A0 int ret;
+>> > +
+>> > + =A0 instr_addr =3D regs->ARM_pc - 4;
+>> > +
+>> > + =A0 down_read(&task->mm->mmap_sem);
+>> > + =A0 ret =3D get_user_pages(task, task->mm, instr_addr,
+>> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A01, 0, 0, &page, NULL);
+>> > + =A0 up_read(&task->mm->mmap_sem);
+>> > +
+>> > + =A0 if (ret < 0)
+>> > + =A0 =A0 =A0 =A0 =A0 return ret;
+>> > +
+>> > + =A0 ptr =3D (unsigned long *)kmap_atomic(page, KM_USER1);
+>> > + =A0 memcpy(instr,
+>> > + =A0 =A0 =A0 =A0 =A0ptr + (instr_addr >> PAGE_SHIFT),
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 ^shouldn't this be:
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 instr_addr & PAGE_MASK
+>
+> Oops, made my own mistake. I think the address of the kmap'd instruction
+> would be:
+>
+> =A0 =A0 =A0 =A0ptr + (instr_addr & ~PAGE_MASK)
+>
+
+Yes. Thanks for pointing it out.
