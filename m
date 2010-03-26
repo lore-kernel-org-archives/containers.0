@@ -1,20 +1,19 @@
 From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: Testing lxc 0.6.5 in Fedora 13
-Date: Fri, 26 Mar 2010 14:34:39 +0100
-Message-ID: <20100326133439.GA15790__30867.3300584362$1269610720$gmane$org@redhat.com>
+Date: Fri, 26 Mar 2010 14:47:09 +0100
+Message-ID: <20100326134709.GB15790__16517.3732363202$1269611409$gmane$org@redhat.com>
 References: <20100321195044.GA23757@megiteam.pl>
 	<20100323212834.GH20796@count0.beaverton.ibm.com>
 	<20100325213356.GB20541@megiteam.pl>
 	<20100326111131.GA8604@redhat.com>
-	<20100326113201.GB17113@megiteam.pl>
-	<20100326120028.GA11311@redhat.com>
-	<20100326124619.GC3345@count0.beaverton.ibm.com>
+	<20100326115357.GA3345@count0.beaverton.ibm.com>
+	<20100326124522.GD17113@megiteam.pl>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20100326124619.GC3345-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
+In-Reply-To: <20100326124522.GD17113-yp6mvK3Bdd2rDJvtcaxF/A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,41 +23,21 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 03/26, Matt Helsley wrote:
+On 03/26, Grzegorz Nosek wrote:
 >
-> On Fri, Mar 26, 2010 at 01:00:28PM +0100, Oleg Nesterov wrote:
-> > 
-> > > +               ptrace_pid_vnr = nr;
-> > > +               if (unlikely(p->parent != p->real_parent)) {
-> > > +                       rcu_read_lock();
-> > > +                       ptrace_pid_vnr = task_pid_nr_ns(p, p->parent->nsproxy->pid_ns);
-> > 
-> > Yes, this is what I meant.
-> > 
-> > But we should not do this in do_fork().
-> 
-> I'm puzzled. If not here, where should we do this? Or are you saying
-> ptrace should take a reference to the pid,
+> Hmm, is there a good reason why strace does not use the data explicitly
+> provided by the kernel but instead second-guesses it from syscall return
+> values? I don't know anything about ptrace, really,
 
-Ah, no, sorry.
+I know almost nothing too. But _iirc_, this all is even worse, strace
+doesn't necessary gets the notification from do_fork(), at least
+another quick grep shows it doesn't use PTRACE_O_TRACEFORK.
 
-I meant tracehook_report_clone_complete should do this under "if (trace)".
-And we need a helper to get the right pid, it could be used
-by do_notify_parent() too, and (probably) we need more changes like this.
-
-> > But once again. This change fixes the value in "tracee->ptrace_message == newpid",
-> > but a quick grep shows that strace-4.5.19 doesn't use PTRACE_GETEVENTMSG at all.
->
-> You are correct. However strace and gdb aren't necessarily the only users
-> of ptrace so wouldn't it still be good to fix this?
-
-Yes, agreed.
-
-Oh. The only problem is utrace patches in -mm. I mean the possible textual
-conflicts...
+This is another reason why the change in do_fork() can't really help
+right now.
 
 Oleg.
