@@ -1,19 +1,16 @@
-From: Jamie Lokier <jamie-yetKDKU6eevNLxjTenLetw@public.gmane.org>
-Subject: Re: [C/R ARM][PATCH 3/3] c/r: ARM implementation of checkpoint/restart
-Date: Fri, 26 Mar 2010 03:55:48 +0000
-Message-ID: <20100326035548.GT19308__24050.2357519746$1269575803$gmane$org@shareable.org>
-References: <1269219965-23923-1-git-send-email-christofferdall@christofferdall.dk>
-	<1269219965-23923-4-git-send-email-christofferdall@christofferdall.dk>
-	<20100323211843.GC19572@n2100.arm.linux.org.uk>
-	<7d08b87d1003241348g347f092k1142318490e0bdcc@mail.gmail.com>
-	<20100326024759.GN19308@shareable.org>
-	<20100326030208.GA5815@linux-sh.org>
+From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Testing lxc 0.6.5 in Fedora 13
+Date: Fri, 26 Mar 2010 12:11:31 +0100
+Message-ID: <20100326111131.GA8604__8588.50900917805$1269602042$gmane$org@redhat.com>
+References: <20100321195044.GA23757@megiteam.pl>
+	<20100323212834.GH20796@count0.beaverton.ibm.com>
+	<20100325213356.GB20541@megiteam.pl>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20100326030208.GA5815-M7jkjyW5wf5g9hUCZPvPmw@public.gmane.org>
+In-Reply-To: <20100325213356.GB20541-yp6mvK3Bdd2rDJvtcaxF/A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,20 +20,42 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Mundt <lethal-M7jkjyW5wf5g9hUCZPvPmw@public.gmane.org>
-Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Christoffer Dall <christofferdall-77OGu6e99YhyO3AAkE1OcX9LOBIZ5rWg@public.gmane.org>, Russell King - ARM Linux <linux-lFZ/pmaqli7XmaaqVzeoHQ@public.gmane.org>, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-arm-kernel <linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org>
+To: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Paul Mundt wrote:
-> FDPIC supports running the same binaries with or without MMU depending on
-> your ABI, it's not really that uncommon, even if it's mostly just used
-> for prototyping.
+On 03/25, Grzegorz Nosek wrote:
+>
+> On wto, mar 23, 2010 at 02:28:34 -0700, Matt Helsley wrote:
+> > On Sun, Mar 21, 2010 at 08:50:44PM +0100, Grzegorz Nosek wrote:
+> >
+> > <snip>
+> >
+> > > 2. Weird strace behaviour across pidns boundary
+> > >
+> > > When strace'ing (with -ff) lxc-start, I get a proper strace for the
+> > > directly spawned process and the container init. However, any processes
+> > > spawned by the container's init are not straced properly
 
-Thanks - I didn't know anyone actually did it :-)
+Yes, this is broken. More precisely, this wasn't even supposed to work.
 
-But I can see the value for product rollouts of some binaries onto a
-mixture of hardware, too.
+Even stracing of the sub-init itself (or global init btw) has problems,
+the straced init is not protected from unwanted signals.
 
-bFLT (flat) binaries should be runnable with an MMU too.
+> > I'm suprised strace of ls works across pid namespaces. I've been looking
+> > at strace and it seemed to me that one kernel change and a bunch of strace
+> > changes are needed to make strace'ing in child pid namespaces work.
 
--- Jamie
+Yes. First of all, tracehook_report_clone_complete() reports the wrong pid nr,
+as it seen inside the init's namespace. This is easy to fix, but I doubt this
+can help. IIRC strace doesn't use PTRACE_GETEVENTMSG at all, it looks at eax
+after syscall.
+
+> Eric
+> > Biederman's setns() patches also might help.
+>
+> Thanks for the patch and the detailed explanation.
+
+which patch?
+
+Oleg.
