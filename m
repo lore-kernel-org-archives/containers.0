@@ -1,18 +1,19 @@
-From: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: Testing lxc 0.6.5 in Fedora 13
-Date: Fri, 26 Mar 2010 13:45:22 +0100
-Message-ID: <20100326124522.GD17113__45343.1949987591$1269607564$gmane$org@megiteam.pl>
+Date: Fri, 26 Mar 2010 05:46:19 -0700
+Message-ID: <20100326124619.GC3345__45321.8790506527$1269607770$gmane$org@count0.beaverton.ibm.com>
 References: <20100321195044.GA23757@megiteam.pl>
 	<20100323212834.GH20796@count0.beaverton.ibm.com>
 	<20100325213356.GB20541@megiteam.pl>
 	<20100326111131.GA8604@redhat.com>
-	<20100326115357.GA3345@count0.beaverton.ibm.com>
+	<20100326113201.GB17113@megiteam.pl>
+	<20100326120028.GA11311@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20100326115357.GA3345-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
+In-Reply-To: <20100326120028.GA11311-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,27 +23,64 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, Mar 26, 2010 at 04:53:57AM -0700, Matt Helsley wrote:
-> Yup. strace would need to be modified to use that. I tried that and it still
-> won't work -- I seem to recall it didn't work because strace uses pid values
-> obtained from the wait syscall too. To make it work we'd need to be able to
-> translate those pids in userspace. That's do-able from userspace if you trace
-> all forks descending from the pidns init task. But it's not do-able for
-> simple attaches. That's why I was thinking Eric's setns() might be able to
-> help if strace used it to enter the tracee's pid namespace whenever we need to.
+On Fri, Mar 26, 2010 at 01:00:28PM +0100, Oleg Nesterov wrote:
+> On 03/26, Grzegorz Nosek wrote:
+> >
+> > On Fri, Mar 26, 2010 at 12:11:31PM +0100, Oleg Nesterov wrote:
+> > > Yes, this is broken. More precisely, this wasn't even supposed to work.
+> > >
+> > > Even stracing of the sub-init itself (or global init btw) has problems,
+> > > the straced init is not protected from unwanted signals.
+> >
+> > Is this impossible/very hard to do cleanly? I understand that container's
+> > init becomes vulnerable to signals sent from root-owned processes in the
+> > container. If so, the impact of this issue should be quite limited, no?
 > 
-> gdb often doesn't use the same methods but has similar problems with pid
-> namespaces.
+> Yes, probably we can ignore this.
+> 
+> > > Yes. First of all, tracehook_report_clone_complete() reports the wrong pid nr,
+> > > as it seen inside the init's namespace. This is easy to fix, but I doubt this
+> > > can help. IIRC strace doesn't use PTRACE_GETEVENTMSG at all, it looks at eax
+> > > after syscall.
+> > >
+> > > which patch?
+> >
+> > The patch below posted by Matt. AIUI, it fixes the
+> > tracehook_report_clone_complete() part, which results in an observable
+> > change in strace's behaviour (not that it makes strace work, though).
+> 
+> I guess it doesn't work because we need to fix strace, see "strace doesn't
+> use PTRACE_GETEVENTMSG" above.
+> 
+> > Anyway, are there any remaining issues on the kernel side or does strace
+> > have to be taught about pid namespaces?
+> 
+> At first glance, I don't see other problems, except sometimes the reported
+> pid is wrong (like in do_fork). 
+> 
+> > +               ptrace_pid_vnr = nr;
+> > +               if (unlikely(p->parent != p->real_parent)) {
+> > +                       rcu_read_lock();
+> > +                       ptrace_pid_vnr = task_pid_nr_ns(p, p->parent->nsproxy->pid_ns);
+> 
+> Yes, this is what I meant.
+> 
+> But we should not do this in do_fork().
 
-Hmm, is there a good reason why strace does not use the data explicitly
-provided by the kernel but instead second-guesses it from syscall return
-values? I don't know anything about ptrace, really, but I'd expect the
-kernel to provide the tracer with out-of-band information otherwise
-taken from clone/waitpid/other syscalls?
+I'm puzzled. If not here, where should we do this? Or are you saying
+ptrace should take a reference to the pid, store it, and get the vnr during
+PTRACE_GETEVENTMSG? (drop the reference at detach or when a new pid reference
+comes in..)
 
-Best regards,
- Grzegorz Nosek
+> But once again. This change fixes the value in "tracee->ptrace_message == newpid",
+> but a quick grep shows that strace-4.5.19 doesn't use PTRACE_GETEVENTMSG at all.
+
+You are correct. However strace and gdb aren't necessarily the only users
+of ptrace so wouldn't it still be good to fix this?
+
+Cheers,
+	-Matt Helsley
