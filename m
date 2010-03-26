@@ -1,19 +1,20 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: Testing lxc 0.6.5 in Fedora 13
-Date: Fri, 26 Mar 2010 05:54:59 -0700
-Message-ID: <20100326125459.GD3345__40607.1733953015$1269608206$gmane$org@count0.beaverton.ibm.com>
+Date: Fri, 26 Mar 2010 14:34:39 +0100
+Message-ID: <20100326133439.GA15790__30867.3300584362$1269610720$gmane$org@redhat.com>
 References: <20100321195044.GA23757@megiteam.pl>
 	<20100323212834.GH20796@count0.beaverton.ibm.com>
 	<20100325213356.GB20541@megiteam.pl>
 	<20100326111131.GA8604@redhat.com>
-	<20100326115357.GA3345@count0.beaverton.ibm.com>
-	<20100326124522.GD17113@megiteam.pl>
+	<20100326113201.GB17113@megiteam.pl>
+	<20100326120028.GA11311@redhat.com>
+	<20100326124619.GC3345@count0.beaverton.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20100326124522.GD17113-yp6mvK3Bdd2rDJvtcaxF/A@public.gmane.org>
+In-Reply-To: <20100326124619.GC3345-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,43 +24,41 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Mar 26, 2010 at 01:45:22PM +0100, Grzegorz Nosek wrote:
-> On Fri, Mar 26, 2010 at 04:53:57AM -0700, Matt Helsley wrote:
-> > Yup. strace would need to be modified to use that. I tried that and it still
-> > won't work -- I seem to recall it didn't work because strace uses pid values
-> > obtained from the wait syscall too. To make it work we'd need to be able to
-> > translate those pids in userspace. That's do-able from userspace if you trace
-> > all forks descending from the pidns init task. But it's not do-able for
-> > simple attaches. That's why I was thinking Eric's setns() might be able to
-> > help if strace used it to enter the tracee's pid namespace whenever we need to.
+On 03/26, Matt Helsley wrote:
+>
+> On Fri, Mar 26, 2010 at 01:00:28PM +0100, Oleg Nesterov wrote:
 > > 
-> > gdb often doesn't use the same methods but has similar problems with pid
-> > namespaces.
+> > > +               ptrace_pid_vnr = nr;
+> > > +               if (unlikely(p->parent != p->real_parent)) {
+> > > +                       rcu_read_lock();
+> > > +                       ptrace_pid_vnr = task_pid_nr_ns(p, p->parent->nsproxy->pid_ns);
+> > 
+> > Yes, this is what I meant.
+> > 
+> > But we should not do this in do_fork().
 > 
-> Hmm, is there a good reason why strace does not use the data explicitly
-> provided by the kernel but instead second-guesses it from syscall return
-> values? I don't know anything about ptrace, really, but I'd expect the
+> I'm puzzled. If not here, where should we do this? Or are you saying
+> ptrace should take a reference to the pid,
 
-strace isn't linux-only. Checking the syscall return values may be seen
-as being more portable. At least that's my guess. That said there are
-plenty of #ifdefs in strace and patching it to use GETEVENTMSG is quite
-a small patch.
+Ah, no, sorry.
 
-However, as I said, that still doesn't "fix" strace so that it can
-be used to trace tasks in child pid namespaces. Especially when the
-traced tasks are more than one namepace deeper. :(
+I meant tracehook_report_clone_complete should do this under "if (trace)".
+And we need a helper to get the right pid, it could be used
+by do_notify_parent() too, and (probably) we need more changes like this.
 
-> kernel to provide the tracer with out-of-band information otherwise
-> taken from clone/waitpid/other syscalls?
+> > But once again. This change fixes the value in "tracee->ptrace_message == newpid",
+> > but a quick grep shows that strace-4.5.19 doesn't use PTRACE_GETEVENTMSG at all.
+>
+> You are correct. However strace and gdb aren't necessarily the only users
+> of ptrace so wouldn't it still be good to fix this?
 
-I don't think the kernel provides special out-of-band methods for fetching
-pids related to traced tasks except during fork and clone. Not wait*(). The
-rest of ptrace tends to be focused on reading/writing registers/memory and
-managing signal delivery.
+Yes, agreed.
 
-Cheers,
-	-Matt Helsley
+Oh. The only problem is utrace patches in -mm. I mean the possible textual
+conflicts...
+
+Oleg.
