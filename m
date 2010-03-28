@@ -1,17 +1,19 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: --freezer option to /bin/restart
-Date: Sun, 28 Mar 2010 17:33:19 -0500
-Message-ID: <20100328223319.GA17523@us.ibm.com>
-References: <20100327191453.GA1533@us.ibm.com>
-	<4BAF72C6.1020806@cs.columbia.edu>
-	<20100328213254.GA12661@us.ibm.com>
-	<4BAFD132.7040704@cs.columbia.edu>
+From: Christoffer Dall <christofferdall-77OGu6e99YhyO3AAkE1OcX9LOBIZ5rWg@public.gmane.org>
+Subject: Re: [C/R ARM][PATCH 3/3] c/r: ARM implementation of
+	checkpoint/restart
+Date: Mon, 29 Mar 2010 00:55:11 +0200
+Message-ID: <7d08b87d1003281555h1eb255f8ic3bcdec08008d5b2__7025.89323414049$1269816951$gmane$org@mail.gmail.com>
+References: <1269219965-23923-1-git-send-email-christofferdall@christofferdall.dk>
+	<1269219965-23923-4-git-send-email-christofferdall@christofferdall.dk>
+	<20100323211843.GC19572@n2100.arm.linux.org.uk>
+	<7d08b87d1003241348g347f092k1142318490e0bdcc@mail.gmail.com>
+	<20100326024759.GN19308@shareable.org>
+	<20100326030208.GA5815@linux-sh.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4BAFD132.7040704-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <20100326030208.GA5815-M7jkjyW5wf5g9hUCZPvPmw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,75 +23,25 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Paul Mundt <lethal-M7jkjyW5wf5g9hUCZPvPmw@public.gmane.org>
+Cc: Russell King - ARM Linux <linux-lFZ/pmaqli7XmaaqVzeoHQ@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Jamie Lokier <jamie-yetKDKU6eevNLxjTenLetw@public.gmane.org>, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-arm-kernel <linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> 
-> 
-> Serge E. Hallyn wrote:
-> >Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> >>
-> >>Sukadev Bhattiprolu wrote:
-> >>>The help message for --freezer=CGROUP option says:
-> >>>
-> >>>	freeze tasks in freezer group CGROUP on success
-> >>>
-> >>>and if this option specifies an existing cgroup, then (and only
-> >>>then) is the RESTART_FROZEN flag to sys_restart() set.
-> >>>
-> >>>Does the --freezer option have to specify an existing cgroup ?
-> >>As it is now - yes;
-> >>
-> >>In theory I would like use -F (--freezer) without an  argument,
-> >>to use RESTART_FROZEN without explicitly adding tasks to a
-> >>target cgroup.
-> >>
-> >>The trick is that we need to put all the restarted tasks in the
-> >>traget cgroup. The coordinator must remain outside that cgroup,
-> >>or it will be frozen as well when restart succeeds.
-> >>
-> >>This means that restarted tasks (at least the root task) have
-> >>to be explicitly added to the cgroup - which is why I require
-> >>that the cgroup name be passed.
-> >>
-> >>This could be avoided if we could add 'restart' to a cgruop and
-> >>then after spawning the entire tree, we could remove 'restart'
-> >>from that cgroup. I don't think this is possible ?
-> >
-> >Why not?  You can certainly move to freezer:/restart.XYZ, spawn
-> >tasks, then move back to freezer:/.  And since the tasks should
-> >hang in sys_restart() until the coordinator calls sys_restart()
-> >itself, there should be no race issues.  Do you mean that something
-> >else won't work?
-> 
-> No, I just wasn't thinking right...
-> 
-> But even in this case, we need some more wisdom: we need to know
-> where the coordinator starts (in which cgroup) before moving it
-> to a new cgroup, so we can put it back in the original cgroup. Is
-> there an API for that ?
+On Fri, Mar 26, 2010 at 5:02 AM, Paul Mundt <lethal-M7jkjyW5wf5g9hUCZPvPmw@public.gmane.org> wrote:
+> On Fri, Mar 26, 2010 at 02:47:59AM +0000, Jamie Lokier wrote:
+>>
+>> It's possible in principle to run many non-MMU binaries on MMU
+>> kernels, but I've never heard of anyone doing it.
+>>
+> FDPIC supports running the same binaries with or without MMU depending on
+> your ABI, it's not really that uncommon, even if it's mostly just used
+> for prototyping.
+>
+I would imagine that the chance that a restart will fail anyway when
+restoring an MMU process on a non-MMU kernel. However, as you suggest,
+the other way around should be possible. Thanks for clearing that up.
 
-Yup - cat /proc/self/cgroup, or I suspect the libcgroup API gives
-you a friendlier interface (so you don't have to parse the file
-yourself).
-
-> >>>Is there a way to specify that the restarted application belong
-> >>>to a new (yet-to-be created) cgroup AND to leave the application
-> >>>FROZEN after restart ? Or would we need a new command line option
-> >>>and field in 'struct app_restart_args' to specify this ?
-> >>This is exactly what --freezer does. Well, alsmot - except for
-> >>"yet-to-be created". Do you want 'restart' to create the cgroup
-> >>if it doesn't exist ?
-> >
-> >I thought that was what Suka was asking for.
-> 
-> If he wants to add it to the 'restart' utility, then sure, with
-> a proper argument.
-> 
-> I'm not sure that creating a control group fits into the mandate
-> of a library call/api. Instead, I'd expect the caller to arrange
-> for a cgroup to be created.
-> 
-> Oren.
+Specifically, do you know the meaning of the end_brk field on the
+mm_context_t struct and if I need to checkpoint it on restart for
+non-MMU systems (and potentially do something more clever during
+restart on an MMU kernel?)
