@@ -1,12 +1,18 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH linux-cr] export net checkpoint fns
-Date: Tue, 30 Mar 2010 10:51:12 -0500
-Message-ID: <20100330155112.GA3132@us.ibm.com>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/2] C/R: Support for IPv6 addresses on network devices
+Date: Tue, 30 Mar 2010 09:17:11 -0700
+Message-ID: <87zl1peqd4.fsf@caffeine.danplanet.com>
+References: <1269459625-21033-1-git-send-email-danms@us.ibm.com>
+	<1269459625-21033-2-git-send-email-danms@us.ibm.com>
+	<4BABC967.5090908@hp.com> <87aatwf74u.fsf@caffeine.danplanet.com>
+	<4BABD594.1020301@hp.com> <87634jf63u.fsf@caffeine.danplanet.com>
+	<4BB21A45.4050300@hp.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <4BB21A45.4050300-VXdhtT5mjnY@public.gmane.org> (Brian Haley's message of "Tue\,
+	30 Mar 2010 11\:35\:33 -0400")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,36 +22,58 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Brian Haley <brian.haley-VXdhtT5mjnY@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- net/checkpoint_dev.c |    4 ++++
- 1 files changed, 4 insertions(+), 0 deletions(-)
+BH> Can I ask what the addresses were?
 
-diff --git a/net/checkpoint_dev.c b/net/checkpoint_dev.c
-index bc0415d..eb9673c 100644
---- a/net/checkpoint_dev.c
-+++ b/net/checkpoint_dev.c
-@@ -128,6 +128,8 @@ int ckpt_netdev_in_init_netns(struct ckpt_ctx *ctx, struct net_device *dev)
- 	return dev->nd_net == current->nsproxy->net_ns;
- }
- 
-+EXPORT_SYMBOL_GPL(ckpt_netdev_in_init_netns);
-+
- int ckpt_netdev_hwaddr(struct net_device *dev, struct ckpt_hdr_netdev *h)
- {
- 	struct net *net = dev->nd_net;
-@@ -228,6 +230,8 @@ struct ckpt_hdr_netdev *ckpt_netdev_base(struct ckpt_ctx *ctx,
- 	return h;
- }
- 
-+EXPORT_SYMBOL_GPL(ckpt_netdev_base);
-+
- int checkpoint_netdev(struct ckpt_ctx *ctx, void *ptr)
- {
- 	struct net_device *dev = (struct net_device *)ptr;
+I'm not sure what you mean.  You want to know what the duplicated
+address was?  My flawed byteorder adjustment caused me to have two
+fe80::X addresses on the restored interface.
+
+I've since added a check to ignore non-global scope addresses, which
+works nicely.
+
+BH> Did you move from VM to VM so the underlying NIC MAC address
+BH> changed?
+
+No, the MAC doesn't change because I reconstruct the interface on the
+other side with the original MAC address.  The netns and netdev code
+assume that you're migrating your entire network namespace, which
+includes all the devices within.
+
+BH> Again, I don't know your typical user for C/R.  For example, with
+BH> IPv4 you save all the addresses, but if one of them was configured
+BH> via DHCP, you could have an address conflict when you restore it,
+BH> since there's no way to know if it's been handed-out to another
+BH> system in the meantime.  Or does a typical C/R user only have
+BH> static addresses?
+
+I think that the expectation is that if you're migrating network
+connections, you are going to have to be in your own netns and have
+your own interface.  If DHCP is in play, then you're going to be
+migrating dhclient along with your app anyway.
+
+BH> With IPv6 it gets worse because the link-local will get created
+BH> automatically, and if you're in a VM it will probably be somewhat
+BH> random.  Then when you move to another VM you'll get another
+BH> virtual NIC with a different MAC address.  Since the global
+BH> address is going to be based off the same lower 64-bits, you'll
+BH> wind-up with a second global in most situations (since you're
+BH> restoring the original address).
+
+Well, I'm not sure of your use of "VM" in this case.  I think the
+typical usage here will be a container that behaves like a VM.  As I
+said above, you'll have your own virtual interface and your MAC
+address will go with you.
+
+Right now, I migrate sshd and sendmail around by starting them up in a
+container with a veth or macvlan device.  Then, I can move them from
+machine to machine while keeping the same interface, MAC and IP
+addresses, and without severing connections with the outside world.
+
 -- 
-1.6.2.3
+Dan Smith
+IBM Linux Technology Center
+email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
