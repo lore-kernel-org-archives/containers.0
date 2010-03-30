@@ -1,13 +1,13 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [ckpt_msg][PATCH 1/1] c/r: Fix trivial bug in ckpt_msg macro
-Date: Tue, 30 Mar 2010 00:53:13 -0400
-Message-ID: <4BB183B9.6010705@cs.columbia.edu>
-References: <1269213886-22543-1-git-send-email-christofferdall@christofferdall.dk>
+Subject: Re: C/R netdev and netns support
+Date: Tue, 30 Mar 2010 00:53:39 -0400
+Message-ID: <4BB183D3.3090009@cs.columbia.edu>
+References: <1268945512-18814-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1269213886-22543-1-git-send-email-christofferdall-77OGu6e99YhyO3AAkE1OcX9LOBIZ5rWg@public.gmane.org>
+In-Reply-To: <1268945512-18814-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,40 +17,24 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Christoffer Dall <christofferdall-77OGu6e99YhyO3AAkE1OcX9LOBIZ5rWg@public.gmane.org>
-Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
-Thanks, applied for ckpt-v21
+Thanks -- series applied for ckpt-vc21.
 
-Christoffer Dall wrote:
-> Fixing the typo "ftm->fmt" in checkpoint/restart log macro.
+Dan Smith wrote:
+> This is just the same patch set that has already been reviewed and acked,
+> except for the following:
 > 
-> Signed-off-by: Christoffer Dall <christofferdall-77OGu6e99YhyO3AAkE1OcX9LOBIZ5rWg@public.gmane.org>
-> ---
->  include/linux/checkpoint.h |    4 ++--
->  1 files changed, 2 insertions(+), 2 deletions(-)
+> 1. Rebased on v20
+> 2. Storing the IP addresses in network byte order
 > 
-> diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-> index 792b523..4f25992 100644
-> --- a/include/linux/checkpoint.h
-> +++ b/include/linux/checkpoint.h
-> @@ -443,7 +443,7 @@ extern void _ckpt_msg_complete(struct ckpt_ctx *ctx);
->   * Must be called with ckpt_msg_lock held.
->   */
->  #define _ckpt_msg(ctx, fmt, args...) do {	\
-> -	_do_ckpt_msg(ctx, 0, ftm, ##args);	\
-> +	_do_ckpt_msg(ctx, 0, fmt, ##args);	\
->  } while (0)
->  
->  /*
-> @@ -456,7 +456,7 @@ extern void _ckpt_msg_complete(struct ckpt_ctx *ctx);
->   * Must not be called under spinlock.
->   */
->  #define ckpt_msg(ctx, fmt, args...) do {	\
-> -	do_ckpt_msg(ctx, 0, ftm, ##args);	\
-> +	do_ckpt_msg(ctx, 0, fmt, ##args);	\
->  } while (0)
->  
->  /*
+> 
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
+> 
