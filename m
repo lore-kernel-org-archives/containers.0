@@ -1,14 +1,12 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 2/2] Add keep_frozen field to struct app_restart_args
-Date: Tue, 30 Mar 2010 23:56:02 -0700
-Message-ID: <20100331065602.GA21318@us.ibm.com>
-References: <20100331065443.GA21065@us.ibm.com>
+Subject: [PATCH 0/6][lxc][v3] Link LXC with USERCR
+Date: Wed, 31 Mar 2010 00:04:40 -0700
+Message-ID: <20100331070440.GA21570@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20100331065443.GA21065-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,58 +16,148 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Tue, 30 Mar 2010 23:14:53 -0700
-Subject: [PATCH 2/2] Add keep_frozen field to struct app_restart_args
-
-Add a field, keep_frozen that callers of app_restart() can use to leave the
-application frozen after restart. When this field is set, have app_restart()
-set the RESTART_FROZEN flag to sys_restart().
+lxc-checkpoint, lxc-restart in the LXC source tree are currently stubs.
+Following set of patches, when applied to LXC and built with USERCR as
+described below, enable enable lxc-checkpoint and lxc-restart of some
+simple containers
 
 TODO:
-	For now, this field will be used in LXC containers.  A follow-on
-	patch would add a command line option to /bin/restart to let users
-	select this behavior.
----
- app-checkpoint.h |    3 +++
- restart.c        |    2 +-
- 2 files changed, 4 insertions(+), 1 deletions(-)
+	- Determine if lxc_checkpoint needs a --container option (see
+	  TODOs in src/lxc/checkpoint.c)
+	- This patchset was tested using lxc-nonetns.conf. I ran into a problem
+	  creating a bridge with lxc-veth.conf and lxc-macvlan.conf.  I have
+	  not debugged the problem with VNC and lxc-macvlan.conf.
+	- 'global_send_sigint' is still a global variable in USERCR. We need
+	  to define a better interface to expose its functionality to callers
+	  of app_restart().
+	- Choose better names and API for USERCR :-)
+	- Additional TODOs specific to checkpoint/restart are listed in their
+	  specific patches.
 
-diff --git a/app-checkpoint.h b/app-checkpoint.h
-index f740085..d2455f3 100644
---- a/app-checkpoint.h
-+++ b/app-checkpoint.h
-@@ -1,3 +1,5 @@
-+#include <linux/checkpoint.h>
-+#include <linux/checkpoint_hdr.h>
- 
- struct app_checkpoint_args {
- 	int outfd;
-@@ -19,6 +21,7 @@ struct app_restart_args {
- 	int show_status;
- 	int copy_status;
- 	char *freezer;
-+	int keep_frozen;
- 	int infd;
- 	int klogfd;
- 	int ulogfd;
-diff --git a/restart.c b/restart.c
-index 5408152..d5fee0b 100644
---- a/restart.c
-+++ b/restart.c
-@@ -914,7 +914,7 @@ static int ckpt_coordinator(struct ckpt_ctx *ctx)
- 	if (ckpt_probe_child(root_pid, "root task") < 0)
- 		exit(1);
- 
--	if (ctx->args->freezer)
-+	if (ctx->args->freezer || ctx->args->keep_frozen)
- 		flags |= RESTART_FROZEN;
- 	if (ctx->args->keep_lsm)
- 		flags |= RESTART_KEEP_LSM;
--- 
-1.6.6.1
+Changelog[v3]:
+	Changed following based on feedback from Michel Normand, Daniel 
+	Lezcano and others.
+
+	- Added --with-libcr configuration option to specify the path to
+	  usercr (see usage below).
+	- lxc-checkpoint now implicitly freezes before and unfreezes after
+	  checkpoint.
+	- Implemented the --pause options to lxc-checkpoint and lxc-restart
+	  and the --kill option to lxc-checkpoint.
+	- Ported to ckpt-v20-dev (required adding CHECKPOINT_NONETNS flag to
+	  app_checkpoint() to work around)
+
+Changelog[v2]: 
+
+	(Based on feedback from Oren Laadan, Serge Hallyn, Daniel Lezcano
+	and Cedric Le Goater)
+
+	- Rather than drop --directory option to lxc_checkpoint/lxc_restart
+	  add a new option (--image).
+	- Integrate lxc_checkpoint to work with USERCR
+	- USERCR renamed usercr.h to "app-checkpoint.h"
+	- USERCR does not create/install libcheckpoint.a and usercr.h for now.
+	  So link directly with app-checkpoint.h, restart.o and checkpoint.o
+	- USERCR renames the interfaces to app_checkpoint() and app_restart()
+	  'struct app_checkpoint_args' 'struct app_restart_args'.
+	  
+USAGE:
+
+1. Build USERCR
+
+	$ cd /root
+
+	$ git-clone git://git.ncl.cs.columbia.edu/pub/git/user-cr.git user-cr
+
+	$ cd user-cr
+
+	$ git-checkout ckpt-v20-dev
+
+	  	Tested with commit e275f77e4a82d228c1df14dbeb691342e32cdac2
+		as HEAD.
+	
+	# Apply following two patches:
+
+	https://lists.linux-foundation.org/pipermail/containers/2010-March/024037.html
+	https://lists.linux-foundation.org/pipermail/containers/2010-March/024038.html
+
+	$ cd /root/user-cr
+
+	$ KERNELSRC=/root/linux-2.6/ make 
+
+		Build USERCR by pointing to corresponding kernel-source.
+		This should create restart.o and checkpoint.o needed by LXC.
+
+2. Build/install LXC
+
+	$ cd /root/lxc.git
+
+	Apply attached patches to LXC (I tested with these patches applied
+	to commit 9ea8066aa67b808f71f46e346bd7a215e2a355f3)
+
+	$ autogen.sh
+
+	$ ./configure --with-libcr=/root/user-cr
+
+		This will fail if /root/user-cr does not container checkpoint.o,
+		restart.o and app-checkpoint.h files 
+	$ make
+
+	$ make install
+
+3. Checkpoint/restart a simple LXC container
+
+	$ lxc-execute --name foo --rcfile lxc-no-netns.conf -- /bin/sleep 1000
+
+	$ lxc-checkpoint --name foo --image /root/lxc-foo.ckpt
+
+	$ lxc-stop --name foo
+
+	$ lxc-restart --name foo --image /root/lxc-foo.ckpt
+
+4. Checkpoint/restart other LXC containers such as:
+
+	- a file-io session (see run-fileio1 in cr-tests[1])
+
+	- process-tree (see run-ptree1 in cr-tests[1])
+
+	- A vi session inside a VNC Server using "twm". i.e
+
+		$ cat /root/.vnc/xstartup
+		#!/bin/sh
+
+		xsetroot -solid grey
+		vncconfig -iconic &
+		xterm -geometry 80x24+10+10 -ls -title "$VNCDESKTOP Desktop" &
+		twm &
+
+		$ lxc-execute --name foo --rcfile lxc-no-netns.conf -- \
+			/usr/bin/vncserver :1
+
+		$ vncviewer :1
+
+			# Open a vi session
+
+		$ lxc-checkpoint --name foo  --statefile /root/vnc.ckpt
+
+		$ lxc-stop --name foo
+
+		$ lxc-restart --pause --name foo --statefile /root/vnc.ckpt
+
+			# Leaves the server frozen due to --pause
+
+
+		$ lxc-unfreeze --name foo
+
+		$ vncviewer :1
+
+			# Should bring up the old VNC session with vi window
+
+[1]: cr-tests:	git://git.sr71.net/~hallyn/cr_tests.git
+
+Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
