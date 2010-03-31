@@ -1,14 +1,16 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Skip down interfaces (v2)
-Date: Wed, 31 Mar 2010 11:50:17 -0500
-Message-ID: <20100331165017.GB17491@us.ibm.com>
-References: <1270052634-8170-1-git-send-email-danms@us.ibm.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH 1/6][lxc][v3] Add --with-libcr configure option
+Date: Wed, 31 Mar 2010 10:21:18 -0700
+Message-ID: <20100331172118.GA11297@us.ibm.com>
+References: <20100331070440.GA21570@us.ibm.com>
+	<20100331070633.GA23567@us.ibm.com>
+	<1270023090.2513.24.camel@pagloppaglop>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1270052634-8170-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1270023090.2513.24.camel@pagloppaglop>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,59 +20,18 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Michel Normand <normand-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, clg-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dlezcano-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> This makes the netns checkpoint code skip interfaces that are not up.
-> Later, we want to make it possible to checkpoint down interfaces with
-> a flag, but for now this helps prevent people from getting stuck on
-> stock kernels with various unsupported and persistent virtual interfaces,
-> such as tunnel devices.
-> 
-> Changes in v2:
->  - Fix logic to only skip down interfaces if they're not supported
-> 
-> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Michel Normand [normand-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org] wrote:
+| configure error because of typo below
+| 
 
-Looks good, thanks.
+Sorry, I had not committed after fixing it. Thanks for fixing it.
 
-Tested-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Did you also need the -fPIC to compile checkpoint.o ? 
 
--serge
+Thanks,
 
-> ---
->  net/checkpoint_dev.c |   11 ++++++++++-
->  1 files changed, 10 insertions(+), 1 deletions(-)
-> 
-> diff --git a/net/checkpoint_dev.c b/net/checkpoint_dev.c
-> index bc0415d..e8d574c 100644
-> --- a/net/checkpoint_dev.c
-> +++ b/net/checkpoint_dev.c
-> @@ -268,7 +268,16 @@ int checkpoint_netns(struct ckpt_ctx *ctx, void *ptr)
->  		goto out;
-> 
->  	for_each_netdev(net, dev) {
-> -		ret = checkpoint_obj(ctx, dev, CKPT_OBJ_NETDEV);
-> +		if (dev->netdev_ops->ndo_checkpoint)
-> +			ret = checkpoint_obj(ctx, dev, CKPT_OBJ_NETDEV);
-> +		else if (dev->flags & IFF_UP)
-> +			ret = -ENOSYS;
-> +		else
-> +			/* TODO: There should be a flag to attempt a
-> +			 * checkpoint of downed interfaces, regardless
-> +			 * of whether they support checkpoint or not.
-> +			 */
-> +			ret = 0;
->  		if (ret < 0)
->  			break;
->  	}
-> -- 
-> 1.6.2.5
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+Sukadev
