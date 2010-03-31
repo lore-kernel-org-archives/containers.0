@@ -1,14 +1,13 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: ckpt-v20-dev, ckpt-v21-rc1
-Date: Wed, 31 Mar 2010 12:33:39 -0500
-Message-ID: <20100331173339.GA19371@us.ibm.com>
-References: <4BB1997B.1010901@cs.columbia.edu>
+From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 0/6][lxc][v3] Link LXC with USERCR
+Date: Wed, 31 Mar 2010 21:58:57 +0200
+Message-ID: <4BB3A981.4020709@fr.ibm.com>
+References: <20100331070440.GA21570@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4BB1997B.1010901-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <20100331070440.GA21570-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,43 +17,55 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+Sukadev Bhattiprolu wrote:
+> lxc-checkpoint, lxc-restart in the LXC source tree are currently stubs.
+> Following set of patches, when applied to LXC and built with USERCR as
+> described below, enable enable lxc-checkpoint and lxc-restart of some
+> simple containers
+
+[ ... ]
+
+> 3. Checkpoint/restart a simple LXC container
 > 
-> I pulled all the recent patches in linux-cr (except for ipv6 fixup
-> set), and created the following two branches:
+> 	$ lxc-execute --name foo --rcfile lxc-no-netns.conf -- /bin/sleep 1000
 > 
-> ckpt-v20-dev - patches applied onto pof v20
-> ckpt-v21-rc1 - patches folded into a clean patchset
+> 	$ lxc-checkpoint --name foo --image /root/lxc-foo.ckpt
 > 
-> Likewise with user-cr (but with more exceptions - working now on
-> pulling more patches in).
+> 	$ lxc-stop --name foo
 > 
-> This is totally untested except for successful compilation...
-> 
-> Oren.
+> 	$ lxc-restart --name foo --image /root/lxc-foo.ckpt
 
-v21 with the recent patches applied seems rock-solid to me, on
-x86-64, s390x, and powerpc.
+Finally, using ckpt-v20-dev, I succeeded to checkpoint sleep but when I 
+restart, I got the error:
 
-recent patches means:
-	skip down interfaces v2,
-	put fops->checkpoint under ifdef
-	get rid of ckpt_hdr_vpids,
-	export net checkpoint fns
+<4534>number of tasks: 2
+<4534>number of vpids: 0
+<4534>total tasks (including ghosts): 2
+<4534>pid 2: inherit sid 0
+<4534>pid 2: creator set to 1
+<4534>====== TASKS
+<4534>	[0] pid 1 ppid 0 sid 0 creator 0
+<4534>	[1] pid 2 ppid 1 sid 0 creator 1
+<4534>............
+<4534>task[0].vidx = -1
+<4534>task[1].vidx = -1
+<4534>new pidns with init
+<4534>forking child vpid 1 flags 0x321
+<4534>task 1 forking with flags 20020011 numpids 1
+<4534>task 1 pid[0]=0
+<4535>====== PIDS ARRAY
+<4535>[0] pid 1 ppid 0 sid 0 pgid 0
+<4535>[1] pid 2 ppid 1 sid 0 pgid 0
+<4535>............
+Error: /dev/ptmx must be a link to /dev/pts/ptmx
+<4534>forked child vpid 4536 (asked 1)
+root task exited status 0
 
-for kernel and
+What can I do to prevent this error ?
 
-	Add --nonetns switch to user-cr checkpoint
-	fix vpids
-	user-c/r: get rid of ckpt_hdr_vpids
-
-to user-cr#ckpt-v20-dev
-
-Do we want to try and incorporate Matt's patchset to clear out
-linux-2.6/checkpoint/ next, or ship what we have?
-
--serge
+Thanks
+   -- Daniel
