@@ -1,12 +1,14 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 1/2] Fix app_checkpoint() return code
-Date: Tue, 30 Mar 2010 23:54:43 -0700
-Message-ID: <20100331065443.GA21065@us.ibm.com>
+Subject: [PATCH 2/2] Add keep_frozen field to struct app_restart_args
+Date: Tue, 30 Mar 2010 23:56:02 -0700
+Message-ID: <20100331065602.GA21318@us.ibm.com>
+References: <20100331065443.GA21065@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <20100331065443.GA21065-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,54 +19,57 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Tue, 30 Mar 2010 18:59:10 -0700
-Subject: [PATCH 1/2] Fix app_checkpoint() return code
+Date: Tue, 30 Mar 2010 23:14:53 -0700
+Subject: [PATCH 2/2] Add keep_frozen field to struct app_restart_args
 
-Have app_checkpoint() return the return value from the system call
-so callers find some useful information. Have main() can convert the
-return value into a suitable exit status.
+Add a field, keep_frozen that callers of app_restart() can use to leave the
+application frozen after restart. When this field is set, have app_restart()
+set the RESTART_FROZEN flag to sys_restart().
 
-Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+TODO:
+	For now, this field will be used in LXC containers.  A follow-on
+	patch would add a command line option to /bin/restart to let users
+	select this behavior.
 ---
- checkpoint-main.c |    4 +++-
- checkpoint.c      |    2 +-
- 2 files changed, 4 insertions(+), 2 deletions(-)
+ app-checkpoint.h |    3 +++
+ restart.c        |    2 +-
+ 2 files changed, 4 insertions(+), 1 deletions(-)
 
-diff --git a/checkpoint-main.c b/checkpoint-main.c
-index f6faa32..bac65cc 100644
---- a/checkpoint-main.c
-+++ b/checkpoint-main.c
-@@ -145,6 +145,7 @@ static void parse_args(struct app_checkpoint_args *args, int argc, char *argv[])
+diff --git a/app-checkpoint.h b/app-checkpoint.h
+index f740085..d2455f3 100644
+--- a/app-checkpoint.h
++++ b/app-checkpoint.h
+@@ -1,3 +1,5 @@
++#include <linux/checkpoint.h>
++#include <linux/checkpoint_hdr.h>
  
- int main(int argc, char *argv[])
- {
-+	int ret;
- 	struct app_checkpoint_args args;
- 	unsigned long flags = 0;
- 	pid_t pid;
-@@ -167,5 +168,6 @@ int main(int argc, char *argv[])
- 	if (!args.container)
- 		flags |= CHECKPOINT_SUBTREE;
+ struct app_checkpoint_args {
+ 	int outfd;
+@@ -19,6 +21,7 @@ struct app_restart_args {
+ 	int show_status;
+ 	int copy_status;
+ 	char *freezer;
++	int keep_frozen;
+ 	int infd;
+ 	int klogfd;
+ 	int ulogfd;
+diff --git a/restart.c b/restart.c
+index 5408152..d5fee0b 100644
+--- a/restart.c
++++ b/restart.c
+@@ -914,7 +914,7 @@ static int ckpt_coordinator(struct ckpt_ctx *ctx)
+ 	if (ckpt_probe_child(root_pid, "root task") < 0)
+ 		exit(1);
  
--	return app_checkpoint(pid, flags, &args);
-+	ret = app_checkpoint(pid, flags, &args);
-+	return (ret > 0) ? 0 : 1;
- }
-diff --git a/checkpoint.c b/checkpoint.c
-index e3a1ce8..e0290c9 100644
---- a/checkpoint.c
-+++ b/checkpoint.c
-@@ -55,5 +55,5 @@ int app_checkpoint(int pid, unsigned long flags,
- 		ckpt_err("checkpoint id %d\n", ret);
- 	}
- 
--	return (ret > 0 ? 0 : 1);
-+	return ret;
- }
+-	if (ctx->args->freezer)
++	if (ctx->args->freezer || ctx->args->keep_frozen)
+ 		flags |= RESTART_FROZEN;
+ 	if (ctx->args->keep_lsm)
+ 		flags |= RESTART_KEEP_LSM;
 -- 
 1.6.6.1
