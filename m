@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 4/6][lxc][v3] Move get_init_pid() into checkpoint.c
-Date: Wed, 31 Mar 2010 00:08:48 -0700
-Message-ID: <20100331070848.GD23567@us.ibm.com>
+Subject: [PATCH 5/6][lxc][v3] Hook up lxc_restart() with app_restart()
+Date: Wed, 31 Mar 2010 00:09:39 -0700
+Message-ID: <20100331070939.GE23567@us.ibm.com>
 References: <20100331070440.GA21570@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,134 +24,175 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Mon, 29 Mar 2010 23:53:55 -0700
-Subject: [PATCH 4/6][lxc][v3] Move get_init_pid() into checkpoint.c
+Date: Thu, 11 Mar 2010 20:47:56 -0800
+Subject: [PATCH 5/6][lxc][v3] Hook up lxc_restart() with app_restart()
 
-lxc_attach.c is currently not included in liblxc.so. In  afollowon
-patch, checkpoint() function needs to also use the get_init_pid()
-interface. So move the defintions into checkpoint.c - which would
-then be accessible to both lxc_attach and lxc-checkpoint.
+Have lxc_restart() call app_restart() implemented in the 'restart.o' from
+USER-CR git tree.
 
-Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Changelog[v3]:
+	- (Daniel Lezcano) Remove unnecessary check for 'statefile' before
+	  opening it
+	- [Daniel Lezcano] Rebase to more recent version and use
+	  lxc_check_inherited() instead of lxc_close_inherited_fd().
+	- Have lxc_restart unfreeze the container if the --pause option
+	  was not specified.
+	- Use -D LIBCR to fix compile error when --with-libcr config is
+	  not specified. Return ENOSYS if built with LIBCR undefined.
+	- Implement the --pause option to set the RESTART_FROZEN flag.
+
+Changelog[v2]:
+	- Link with restart.o from usercr rather than libcheckpoint.a
+	- rename 'struct restart_args' to 'struct app_restart_args'
+	- Initialize the new field app_restart_args->uerrfd
+	- (Oren Laadan)Remove ->send_sigint field from 'struct app_restart_args'
 ---
- src/lxc/checkpoint.c |   29 +++++++++++++++++++++++++++++
- src/lxc/lxc.h        |    6 ++++++
- src/lxc/lxc_attach.c |   29 +----------------------------
- 3 files changed, 36 insertions(+), 28 deletions(-)
+ src/lxc/restart.c |  129 ++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 files changed, 128 insertions(+), 1 deletions(-)
 
-diff --git a/src/lxc/checkpoint.c b/src/lxc/checkpoint.c
-index 7e8a93e..4e75cb6 100644
---- a/src/lxc/checkpoint.c
-+++ b/src/lxc/checkpoint.c
-@@ -22,9 +22,38 @@
+diff --git a/src/lxc/restart.c b/src/lxc/restart.c
+index 467489e..220acbf 100644
+--- a/src/lxc/restart.c
++++ b/src/lxc/restart.c
+@@ -22,11 +22,138 @@
   */
  #include <lxc/lxc.h>
  #include <lxc/log.h>
-+#include <lxc/commands.h>
++#include <lxc/start.h>
++#include <lxc/namespace.h>
++#include <lxc/cgroup.h>
++#include <errno.h>
++#include <fcntl.h>
++#include <signal.h>
++#include <sys/prctl.h>
++#include <sys/wait.h>
++#include "error.h"
++#ifdef LIBCR
++#include <app-checkpoint.h>
++#endif
  
- lxc_log_define(lxc_checkpoint, lxc);
+ lxc_log_define(lxc_restart, lxc);
  
-+pid_t get_init_pid(const char *name)
++#ifdef LIBCR
++
++struct lxc_restart_arg {
++	const char *name;
++	const char *statefile;
++	char *const argv;
++	struct lxc_handler *handler;
++	int lxc_flags;
++};
++
++static int do_restart(struct lxc_restart_arg *lxcarg)
 +{
-+	struct lxc_command command = {
-+		.request = { .type = LXC_COMMAND_PID },
-+	};
++	int pid;
++	int lxc_flags = lxcarg->lxc_flags;
++	struct lxc_handler *handler = lxcarg->handler;
++	const char *statefile = lxcarg->statefile;
++	struct app_restart_args restart_args;
 +
-+	int ret, stopped = 0;
++        if (sigprocmask(SIG_SETMASK, &handler->oldmask, NULL)) {
++                SYSERROR("failed to set sigprocmask");
++                return -1;
++        }
 +
-+	ret = lxc_command(name, &command, &stopped);
-+	if (ret < 0 && stopped) {
-+		INFO("'%s' is already stopped", name);
-+		return 0;
-+	}
++        if (prctl(PR_SET_PDEATHSIG, SIGKILL, 0, 0, 0)) {
++                SYSERROR("failed to set pdeath signal");
++                return -1;
++        }
 +
-+	if (ret < 0) {
-+		ERROR("failed to send command");
++	memset(&restart_args, 0, sizeof(restart_args));
++
++	restart_args.infd = open(statefile, O_RDONLY, 0);
++	if (restart_args.infd < 0) {
++		SYSERROR("Failed to open statefile %s\n", statefile);
 +		return -1;
 +	}
 +
-+	if (command.answer.ret) {
-+		ERROR("failed to retrieve the init pid: %s",
-+		      strerror(-command.answer.ret));
-+		return -1;
-+	}
++	restart_args.pids = 1;
++	restart_args.pidns = 1;
++	restart_args.mnt_pty = 1;
++	restart_args.mntns = 1;
++	restart_args.klogfd = -1;
++	restart_args.ulogfd = lxc_log_fd;
++	restart_args.uerrfd = fileno(stderr);
++	restart_args.debug = 1;
++	restart_args.wait = 0;
 +
-+	return command.answer.pid;
++	if (lxc_flags & LXC_FLAG_PAUSE)
++		restart_args.keep_frozen = 1;
++
++        pid = app_restart(&restart_args);
++
++        return pid;
 +}
 +
- int lxc_checkpoint(const char *name, const char *statefile, int flags)
+ int lxc_restart(const char *name, const char *statefile, struct lxc_conf *conf,
+-		int flags)
++		int lxc_flags)
  {
- 	return 0;
-diff --git a/src/lxc/lxc.h b/src/lxc/lxc.h
-index b0b9f4e..bd87bdb 100644
---- a/src/lxc/lxc.h
-+++ b/src/lxc/lxc.h
-@@ -27,6 +27,7 @@
- extern "C" {
- #endif
- 
-+#include <unistd.h>
- #include <stddef.h>
- #include <lxc/state.h>
- 
-@@ -56,6 +57,11 @@ extern int lxc_start(const char *name, char *const argv[], struct lxc_conf *);
- extern int lxc_stop(const char *name);
- 
- /*
-+ * Get the pid of the root application process tree in parent-pid namespace
-+ */
-+extern pid_t get_init_pid(const char *name);
++	int err;
++	int status;
++	struct lxc_handler *handler;
++	struct lxc_restart_arg lxcarg = {
++		.name = name,
++		.statefile = statefile,
++		.lxc_flags = lxc_flags,
++		.handler = NULL,
++	};
 +
-+/*
-  * Open the monitoring mechanism for a specific container
-  * The function will return an fd corresponding to the events
-  * Returns a file descriptor on success, < 0 otherwise
-diff --git a/src/lxc/lxc_attach.c b/src/lxc/lxc_attach.c
-index a012c2c..3d2cdd5 100644
---- a/src/lxc/lxc_attach.c
-+++ b/src/lxc/lxc_attach.c
-@@ -28,6 +28,7 @@
- #include "commands.h"
- #include "arguments.h"
- #include "namespace.h"
-+#include "lxc.h"
- #include "log.h"
- 
- lxc_log_define(lxc_attach_ui, lxc);
-@@ -50,34 +51,6 @@ Options :\n\
- 	.checker  = NULL,
- };
- 
--pid_t get_init_pid(const char *name)
--{
--	struct lxc_command command = {
--		.request = { .type = LXC_COMMAND_PID },
--	};
--
--	int ret, stopped = 0;
--
--	ret = lxc_command(name, &command, &stopped);
--	if (ret < 0 && stopped) {
--		INFO("'%s' is already stopped", name);
--		return 0;
--	}
--
--	if (ret < 0) {
--		ERROR("failed to send command");
--		return -1;
--	}
--
--	if (command.answer.ret) {
--		ERROR("failed to retrieve the init pid: %s",
--		      strerror(-command.answer.ret));
--		return -1;
--	}
--
--	return command.answer.pid;
--}
--
- int main(int argc, char *argv[], char *envp[])
- {
- 	int ret;
++	if (lxc_check_inherited())
++		return -1;
++
++	handler = lxc_init(name, conf);
++	if (!handler) {
++		ERROR("failed to initialize the container");
++		return -1;
++	}
++
++	lxcarg.handler = handler;
++	handler->pid = do_restart(&lxcarg);
++
++	INFO("do_restart(): returns pid %d\n", handler->pid);
++	lxc_rename_nsgroup(name, handler);
++
++	err = lxc_poll(name, handler);
++	if (err) {
++		ERROR("mainloop exited with an error");
++		goto out_abort;
++	}
++
++	while (waitpid(handler->pid, &status, 0) < 0 && errno == EINTR)
++		continue;
++
++	if (!(lxc_flags & LXC_FLAG_PAUSE)) {
++		err = lxc_unfreeze(name);
++		if (err) {
++			ERROR("lxc_restart(): Unable to unfreeze\n");
++			goto out_fini;
++		}
++	}
++
++	err =  lxc_error_set_and_log(handler->pid, status);
++
++out_fini:
++	lxc_fini(name, handler);
++	return err;
++
++out_abort:
++	lxc_abort(name, handler);
++	goto out_fini;
++
+ 	return 0;
+ }
++#else
++int lxc_restart(const char *name, const char *statefile, struct lxc_conf *conf,
++		int lxc_flags)
++{
++	ERROR("'restart' function not configured");
++	ERROR("Try --with-libcr option to 'configure' script");
++	return -1;
++}
++#endif
 -- 
 1.6.6.1
