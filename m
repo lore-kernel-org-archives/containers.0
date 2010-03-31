@@ -1,11 +1,11 @@
-From: Michel Normand <normand-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 0/6][lxc][v3] Link LXC with USERCR
-Date: Wed, 31 Mar 2010 11:29:33 +0200
-Message-ID: <1270027773.2513.40.camel@pagloppaglop>
+Date: Wed, 31 Mar 2010 11:38:09 +0200
+Message-ID: <4BB31801.4000304@fr.ibm.com>
 References: <20100331070440.GA21570@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 In-Reply-To: <20100331070440.GA21570-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
@@ -18,55 +18,50 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, clg-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, DLEZCANO-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-SGkgU3VrYSwgCkkgdHJpZWQgdG8gZm9sbG93IHlvdXIgaG93LXRvIGJ1dCBmYWlsZWQgdG8gY2hl
-Y2twb2ludCAKeW91ciBmaXJzdCBleGFtcGxlLgoKTGUgbWVyY3JlZGkgMzEgbWFycyAyMDEwIMOg
-IDAwOjA0IC0wNzAwLCBTdWthZGV2IEJoYXR0aXByb2x1IGEgw6ljcml0IDoKPiBseGMtY2hlY2tw
-b2ludCwgbHhjLXJlc3RhcnQgaW4gdGhlIExYQyBzb3VyY2UgdHJlZSBhcmUgY3VycmVudGx5IHN0
-dWJzLgo+IEZvbGxvd2luZyBzZXQgb2YgcGF0Y2hlcywgd2hlbiBhcHBsaWVkIHRvIExYQyBhbmQg
-YnVpbHQgd2l0aCBVU0VSQ1IgYXMKPiBkZXNjcmliZWQgYmVsb3csIGVuYWJsZSBlbmFibGUgbHhj
-LWNoZWNrcG9pbnQgYW5kIGx4Yy1yZXN0YXJ0IG9mIHNvbWUKPiBzaW1wbGUgY29udGFpbmVycwoK
-PiBbQ1VUXSAuLi4KCj4gMS4gQnVpbGQgVVNFUkNSCj4gCj4gCSQgY2QgL3Jvb3QKPiAKPiAJJCBn
-aXQtY2xvbmUgZ2l0Oi8vZ2l0Lm5jbC5jcy5jb2x1bWJpYS5lZHUvcHViL2dpdC91c2VyLWNyLmdp
-dCB1c2VyLWNyCj4gCj4gCSQgY2QgdXNlci1jcgo+IAo+IAkkIGdpdC1jaGVja291dCBja3B0LXYy
-MC1kZXYKPiAKPiAJICAJVGVzdGVkIHdpdGggY29tbWl0IGUyNzVmNzdlNGE4MmQyMjhjMWRmMTRk
-YmViNjkxMzQyZTMyY2RhYzIKPiAJCWFzIEhFQUQuCj4gCQo+IAkjIEFwcGx5IGZvbGxvd2luZyB0
-d28gcGF0Y2hlczoKPiAKPiAJaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZy9waXBl
-cm1haWwvY29udGFpbmVycy8yMDEwLU1hcmNoLzAyNDAzNy5odG1sCj4gCWh0dHBzOi8vbGlzdHMu
-bGludXgtZm91bmRhdGlvbi5vcmcvcGlwZXJtYWlsL2NvbnRhaW5lcnMvMjAxMC1NYXJjaC8wMjQw
-MzguaHRtbAo+IAo+IAkkIGNkIC9yb290L3VzZXItY3IKPiAKPiAJJCBLRVJORUxTUkM9L3Jvb3Qv
-bGludXgtMi42LyBtYWtlIAo+IAo+IAkJQnVpbGQgVVNFUkNSIGJ5IHBvaW50aW5nIHRvIGNvcnJl
-c3BvbmRpbmcga2VybmVsLXNvdXJjZS4KPiAJCVRoaXMgc2hvdWxkIGNyZWF0ZSByZXN0YXJ0Lm8g
-YW5kIGNoZWNrcG9pbnQubyBuZWVkZWQgYnkgTFhDLgoKSSBhc3N1bWUgd2UgbmVlZCBhIHN1ZG8g
-bWFrZSBpbnN0YWxsLCBhdCBsZWFzdCBmb3IgY2twdGluZm8sIGRvIHdlID8KCj4gMi4gQnVpbGQv
-aW5zdGFsbCBMWEMKPiAKPiAJJCBjZCAvcm9vdC9seGMuZ2l0Cj4gCj4gCUFwcGx5IGF0dGFjaGVk
-IHBhdGNoZXMgdG8gTFhDIChJIHRlc3RlZCB3aXRoIHRoZXNlIHBhdGNoZXMgYXBwbGllZAo+IAl0
-byBjb21taXQgOWVhODA2NmFhNjdiODA4ZjcxZjQ2ZTM0NmJkN2EyMTVlMmEzNTVmMykKPiAKPiAJ
-JCBhdXRvZ2VuLnNoCj4gCj4gCSQgLi9jb25maWd1cmUgLS13aXRoLWxpYmNyPS9yb290L3VzZXIt
-Y3IKPiAKPiAJCVRoaXMgd2lsbCBmYWlsIGlmIC9yb290L3VzZXItY3IgZG9lcyBub3QgY29udGFp
-bmVyIGNoZWNrcG9pbnQubywKPiAJCXJlc3RhcnQubyBhbmQgYXBwLWNoZWNrcG9pbnQuaCBmaWxl
-cyAKPiAJJCBtYWtlCj4gCj4gCSQgbWFrZSBpbnN0YWxsCj4gCj4gMy4gQ2hlY2twb2ludC9yZXN0
-YXJ0IGEgc2ltcGxlIExYQyBjb250YWluZXIKPiAKPiAJJCBseGMtZXhlY3V0ZSAtLW5hbWUgZm9v
-IC0tcmNmaWxlIGx4Yy1uby1uZXRucy5jb25mIC0tIC9iaW4vc2xlZXAgMTAwMAo+IAo+IAkkIGx4
-Yy1jaGVja3BvaW50IC0tbmFtZSBmb28gLS1pbWFnZSAvcm9vdC9seGMtZm9vLmNrcHQKCm5vdCAt
-LWltYWdlIGJ1dCAtLXN0YXRlZmlsZQoKKiBUaGUgY29tbWFuZCBmYWlsZWQsIGJ1dCBubyBkZXRh
-aWxzIG9mIHRoZSBlcnJvci4KV291bGQgaXQgYmUgcG9zc2libGUgdG8gaGF2ZSBkaXNwbGF5ZWQg
-b24gc3RkZXJyIGFuIGVycm9yIG1lc3NhZ2UKdG8gZXhwbGFpbiB0aGUgY2F1c2Ugb2YgdGhlIHBy
-b2JsZW0gPwo9PT0KJGx4Yy1jaGVja3BvaW50IC1uIGZvbyAtLXN0YXRlZmlsZSBzZgpseGMtY2hl
-Y2twb2ludDogY2hlY2twb2ludCBvZiBmb28gKHBpZCAxNTU0KSBmYWlsZWQKCmx4Yy1jaGVja3Bv
-aW50OiBmYWlsZWQgdG8gY2hlY2twb2ludCAnZm9vJwo9PT0KCiogSWYgSSBhbSByZS1ydW5uaW5n
-IHRoZSBjb21tYW5kIGFkZGluZyAtb2Zvby5sb2cgLWxUUkFDRQpJIGhhdmUgb25lIG1vcmUgY2x1
-ZSB3aXRoIGZvbGxvd2luZyB0d28gbGluZXMsIGJ1dCBkbyBub3QgaGVscC4KY291bGQgdGhlIG1l
-c3NhZ2UgYmUgaW1wcm92ZWQgPwo9PT0KY2hlY2twb2ludDogSW52YWxpZCBhcmd1bWVudAooeW91
-IG1heSB1c2UgJ2NrcHRpbmZvIC1lJyBmb3IgbW9yZSBpbmZvKQo9PT0KCiogYW5kIGRvaW5nIGEg
-c3RyYWNlIG9mIHRoZSBjb21tYW5kLiBIb3cgdG8gZGV0ZXJtaW5lIHdoYXQgaXMgd3JvbmcgPwo9
-PT0Kb3Blbigic2YiLCBPX1JEV1J8T19DUkVBVHxPX0VYQ0wsIDA2MDApID0gNApTWVNfMzM5KDB4
-NjI4LCAweDQsIDB4MywgMHhmZmZmZmZmZiwgMHgxKSA9IC0xIEVJTlZBTCAoSW52YWxpZCBhcmd1
-bWVudCkKPT09CgotLS0KTWljaGVsCgo+IAo+IAkkIGx4Yy1zdG9wIC0tbmFtZSBmb28KPiAKPiAJ
-JCBseGMtcmVzdGFydCAtLW5hbWUgZm9vIC0taW1hZ2UgL3Jvb3QvbHhjLWZvby5ja3B0Cgo+IFtD
-VVRdIC4uLgoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18K
-Q29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9u
-Lm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8v
-Y29udGFpbmVycw==
+On 03/31/2010 09:04 AM, Sukadev Bhattiprolu wrote:
+> 3. Checkpoint/restart a simple LXC container
+>
+> 	$ lxc-execute --name foo --rcfile lxc-no-netns.conf -- /bin/sleep 1000
+>
+> 	$ lxc-checkpoint --name foo --image /root/lxc-foo.ckpt
+>
+> 	$ lxc-stop --name foo
+>
+> 	$ lxc-restart --name foo --image /root/lxc-foo.ckpt
+
+Here's a very simple program :
+
+	# pi1.sh
+	#
+	# IBM Confidential
+	#
+	# OCO Source Materials
+	#
+	# P91223
+	#
+	# (C) Copyright IBM Corp. 2003, 2008
+	#
+	# The source code for this program is not published or otherwise
+	# divested of its trade secrets, irrespective of what has been
+	# deposited with the U.S. Copyright Office.
+
+	#!/bin/sh
+
+	me=`basename "$0" 2>/dev/null`
+	ndigit=${1:-1000}
+
+	echo $me - $ndigit digits
+	echo "scale=$ndigit;a(1)*4" | bc -l
+
+can you run in a terminal :
+
+	$ lxc-execute -n pi1 -- ./pi1.sh 3000 &
+	$ lxc-checkpoint -n pi1 -d ./ckpt -k
+	$ lxc-restart -n pi1 -d ./ckpt
+
+Thanks,
+
+C.
