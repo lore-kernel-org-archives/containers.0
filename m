@@ -1,13 +1,14 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH 1/2] Fix app_checkpoint() return code
-Date: Thu, 01 Apr 2010 00:59:45 -0400
-Message-ID: <4BB42841.5010807@cs.columbia.edu>
-References: <20100331065443.GA21065@us.ibm.com>
+Subject: Re: ckpt-v20-dev, ckpt-v21-rc1
+Date: Thu, 01 Apr 2010 01:31:39 -0400
+Message-ID: <4BB42FBB.8030206@cs.columbia.edu>
+References: <4BB1997B.1010901@cs.columbia.edu>
+	<20100331173339.GA19371@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100331065443.GA21065-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20100331173339.GA19371-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,58 +18,67 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
-Both patches applies in user-cr:ckpt-v20-dev.
+Serge E. Hallyn wrote:
+> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+>> I pulled all the recent patches in linux-cr (except for ipv6 fixup
+>> set), and created the following two branches:
+>>
+>> ckpt-v20-dev - patches applied onto pof v20
+>> ckpt-v21-rc1 - patches folded into a clean patchset
+>>
+>> Likewise with user-cr (but with more exceptions - working now on
+>> pulling more patches in).
+>>
+>> This is totally untested except for successful compilation...
+>>
+>> Oren.
+> 
+> v21 with the recent patches applied seems rock-solid to me, on
+> x86-64, s390x, and powerpc.
+> 
+> recent patches means:
+> 	skip down interfaces v2,
+> 	put fops->checkpoint under ifdef
+> 	get rid of ckpt_hdr_vpids,
+> 	export net checkpoint fns
+> 
+> for kernel and
+> 
+> 	Add --nonetns switch to user-cr checkpoint
+> 	fix vpids
+> 	user-c/r: get rid of ckpt_hdr_vpids
+> 
+> to user-cr#ckpt-v20-dev
+
+
+I pushed linux-cr:ckpt-v21-rc2 with:
+
+> 	skip down interfaces v2,
+> 	put fops->checkpoint under ifdef
+> 	get rid of ckpt_hdr_vpids,
+> 	export net checkpoint fns
+
+and user-cr:ckpt-v20-dev with:
+
+> 	fix vpids
+> 	user-c/r: get rid of ckpt_hdr_vpids
+plus Suka's two recent patches.
+
+Dan's --nonetns is pending - see my reply.
+
+> 
+> Do we want to try and incorporate Matt's patchset to clear out
+> linux-2.6/checkpoint/ next, or ship what we have?
+
+IIRC there is at least one more comment from fsdevel that I need
+to address, need to dig into emails again (file_pos_ ?).
+
+I hope to start tackling the transformation to matt's-format by
+tomorrow, and will see how fast it goes.
 
 Oren.
-
-Sukadev Bhattiprolu wrote:
-> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Date: Tue, 30 Mar 2010 18:59:10 -0700
-> Subject: [PATCH 1/2] Fix app_checkpoint() return code
-> 
-> Have app_checkpoint() return the return value from the system call
-> so callers find some useful information. Have main() can convert the
-> return value into a suitable exit status.
-> 
-> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> ---
->  checkpoint-main.c |    4 +++-
->  checkpoint.c      |    2 +-
->  2 files changed, 4 insertions(+), 2 deletions(-)
-> 
-> diff --git a/checkpoint-main.c b/checkpoint-main.c
-> index f6faa32..bac65cc 100644
-> --- a/checkpoint-main.c
-> +++ b/checkpoint-main.c
-> @@ -145,6 +145,7 @@ static void parse_args(struct app_checkpoint_args *args, int argc, char *argv[])
->  
->  int main(int argc, char *argv[])
->  {
-> +	int ret;
->  	struct app_checkpoint_args args;
->  	unsigned long flags = 0;
->  	pid_t pid;
-> @@ -167,5 +168,6 @@ int main(int argc, char *argv[])
->  	if (!args.container)
->  		flags |= CHECKPOINT_SUBTREE;
->  
-> -	return app_checkpoint(pid, flags, &args);
-> +	ret = app_checkpoint(pid, flags, &args);
-> +	return (ret > 0) ? 0 : 1;
->  }
-> diff --git a/checkpoint.c b/checkpoint.c
-> index e3a1ce8..e0290c9 100644
-> --- a/checkpoint.c
-> +++ b/checkpoint.c
-> @@ -55,5 +55,5 @@ int app_checkpoint(int pid, unsigned long flags,
->  		ckpt_err("checkpoint id %d\n", ret);
->  	}
->  
-> -	return (ret > 0 ? 0 : 1);
-> +	return ret;
->  }
