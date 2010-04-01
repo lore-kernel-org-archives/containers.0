@@ -1,13 +1,15 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH] Skip down interfaces (v2)
-Date: Thu, 01 Apr 2010 00:45:37 -0400
-Message-ID: <4BB424F1.90500@cs.columbia.edu>
-References: <1270052634-8170-1-git-send-email-danms@us.ibm.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH 0/6][lxc][v3] Link LXC with USERCR
+Date: Wed, 31 Mar 2010 22:03:03 -0700
+Message-ID: <20100401050303.GA18986@us.ibm.com>
+References: <20100331070440.GA21570@us.ibm.com> <4BB31801.4000304@fr.ibm.com>
+	<4BB33C81.9070802@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1270052634-8170-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4BB33C81.9070802-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,48 +19,38 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Cedric Le Goater [clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org] wrote:
+>> 	#!/bin/sh
+>>
+>> 	me=`basename "$0" 2>/dev/null`
+>> 	ndigit=${1:-1000}
+>>
+>> 	echo $me - $ndigit digits
+>> 	echo "scale=$ndigit;a(1)*4" | bc -l
+>>
+>> can you run in a terminal :
+>>
+>> 	$ lxc-execute -n pi1 -- ./pi1.sh 3000&
+>> 	$ lxc-checkpoint -n pi1 -d ./ckpt -k
+>> 	$ lxc-restart -n pi1 -d ./ckpt
+>
+> please try that suka, it's much more interesting than sleep which can
+> silently segfault after restart.
 
-Acked and pulled for v21-rc2, thanks.
+Agree.  BTW, after the sleep I tested C/R of a VNC server with a vi session
+running inside.
 
-Dan Smith wrote:
-> This makes the netns checkpoint code skip interfaces that are not up.
-> Later, we want to make it possible to checkpoint down interfaces with
-> a flag, but for now this helps prevent people from getting stuck on
-> stock kernels with various unsupported and persistent virtual interfaces,
-> such as tunnel devices.
-> 
-> Changes in v2:
->  - Fix logic to only skip down interfaces if they're not supported
-> 
-> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  net/checkpoint_dev.c |   11 ++++++++++-
->  1 files changed, 10 insertions(+), 1 deletions(-)
-> 
-> diff --git a/net/checkpoint_dev.c b/net/checkpoint_dev.c
-> index bc0415d..e8d574c 100644
-> --- a/net/checkpoint_dev.c
-> +++ b/net/checkpoint_dev.c
-> @@ -268,7 +268,16 @@ int checkpoint_netns(struct ckpt_ctx *ctx, void *ptr)
->  		goto out;
->  
->  	for_each_netdev(net, dev) {
-> -		ret = checkpoint_obj(ctx, dev, CKPT_OBJ_NETDEV);
-> +		if (dev->netdev_ops->ndo_checkpoint)
-> +			ret = checkpoint_obj(ctx, dev, CKPT_OBJ_NETDEV);
-> +		else if (dev->flags & IFF_UP)
-> +			ret = -ENOSYS;
-> +		else
-> +			/* TODO: There should be a flag to attempt a
-> +			 * checkpoint of downed interfaces, regardless
-> +			 * of whether they support checkpoint or not.
-> +			 */
-> +			ret = 0;
->  		if (ret < 0)
->  			break;
->  	}
+I tried the above program, which is definitely more interesting, but am
+having trouble with stdout after restart - restart seems to succeed, but
+nothing shows up on stdout. If I redirect the output of "bc -l" to a file,
+the C/R (with lxc) works fine.
+
+I am investigating the stdout issue though.
+
+Thanks,
+
+Sukadev
