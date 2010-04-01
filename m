@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 1/6][v3][lxc] Add --with-libcr configure option
-Date: Wed, 31 Mar 2010 18:55:35 -0700
-Message-ID: <20100401015535.GA25712@us.ibm.com>
+Subject: [PATCH 3/6][v3][lxc] lxc_checkpoint: Add --statefile option
+Date: Wed, 31 Mar 2010 18:56:15 -0700
+Message-ID: <20100401015615.GC25712@us.ibm.com>
 References: <20100401015503.GA25228@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,103 +24,112 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Wed, 24 Mar 2010 17:26:44 -0700
-Subject: [PATCH 1/6][v3][lxc] Add --with-libcr configure option
+Date: Wed, 10 Mar 2010 22:24:17 -0800
+Subject: [PATCH 3/6][v3][lxc] lxc_checkpoint: Add --statefile option
 
-Add a configure option, --with-libcr=dir which would allow linking
-with external (i.e USERCR) implementation  of checkpoint/restart.
+The existing --directory option to lxc_checkpoint expects to save the
+checkpoint state in a directory. USERCR however uses a single regular
+file to store the checkpoint image. So add a --statefile option to enable
+checkpointing and restarting applications using USERCR.
 
-For now, USERCR "publishes" a app-checkpoint.h, checkpoint.o and
-restart.o files which implement the functions app_checkpoint() and
-app_restart().
-
-Usage:
-	$ ./autogen.sh
-
-	$ ./configure --help |grep libcr
-	--with-libcr=dir     use the Checkpoint/Restart implementation in 'dir'
-
-	$ ls /home/guest/user-cr/
-	app-checkpoint.h    checkpoint.o    restart.o
-
-	$ ./configure --with-libcr=/home/guest/user-cr
-
-TODO:
-	If names of interfaces in USERCR change, we may want to rename
-	the config option too ?
-
-	LIBCR_CFLAGS are only needed for src/lxc/{checkpoint.c,restart.c}
-	but not sure if there is an easy way to define autoconf CFLAGS
-	just for those two files.
-
-Changelog[v2]:
-	- Rename --with-usercr to --with-libcr
-	- Add libeclone.a to the LIBCR_OBJS variable since functions in
-	  libeclone.a will be used by checkpoint() and restart() functions.
-	- Add -I${with_libcr}/include to LIBCR_CFLAGS to pick up
-	  checkpoint_hdr.h, checkpoint.h etc.
+Users should specify either --statefile or --directory option (but not both)
+to select the file/directory where the application state will be stored.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- configure.ac        |   19 +++++++++++++++++++
- src/lxc/Makefile.am |   10 +++++++++-
- 2 files changed, 28 insertions(+), 1 deletions(-)
+ src/lxc/lxc_checkpoint.c |   36 +++++++++++++++++++++++++++---------
+ 1 files changed, 27 insertions(+), 9 deletions(-)
 
-diff --git a/configure.ac b/configure.ac
-index f82e7df..b5a4ff7 100644
---- a/configure.ac
-+++ b/configure.ac
-@@ -12,6 +12,25 @@ AM_PROG_CC_C_O
- AC_GNU_SOURCE
- AC_CHECK_PROG(SETCAP, setcap, yes, no, $PATH$PATH_SEPARATOR/sbin)
+diff --git a/src/lxc/lxc_checkpoint.c b/src/lxc/lxc_checkpoint.c
+index a8c74a9..b0cd634 100644
+--- a/src/lxc/lxc_checkpoint.c
++++ b/src/lxc/lxc_checkpoint.c
+@@ -37,10 +37,19 @@
  
-+AC_ARG_WITH(libcr, [AS_HELP_STRING([--with-libcr=dir], \
-+           [use the Checkpoint/Restart implementation in 'dir'])], [], \
-+	   [with_libcr=no])
-+
-+if test "x$with_libcr" != "xno"; then
-+       AS_AC_EXPAND(LIBCR_OBJS, "${with_libcr}/checkpoint.o ${with_libcr}/restart.o ${with_libcr}/libeclone.a")
-+       AS_AC_EXPAND(LIBCR_CFLAGS, "-DLIBCR -I${with_libcr} -I${with_libcr}/include")
-+
-+       AC_CHECK_FILE([$with_libcr/app-checkpoint.h], [], \
-+               AC_MSG_ERROR([--with-libcr specified directory $with_libcr but $with_libcr/app-checkpoint.h was not found]))
-+
-+       AC_CHECK_FILE([${with_libcr}/checkpoint.o], [], \
-+               AC_MSG_ERROR([--with-libcr specified directory $with_libcr but ${with_libcr}/checkpoint.o was not found]))
-+
-+       AC_CHECK_FILE([${with_libcr}/restart.o], [], \
-+               AC_MSG_ERROR([--with-libcr specified directory $with_libcr but ${with_libcr}/restart.o was not found]))
-+fi
-+
-+
- AC_ARG_ENABLE([doc],
- 	[AC_HELP_STRING([--enable-doc], [make mans (require docbook2man installed) [default=auto]])],
- 	[], [enable_doc=auto])
-diff --git a/src/lxc/Makefile.am b/src/lxc/Makefile.am
-index 890f706..699c355 100644
---- a/src/lxc/Makefile.am
-+++ b/src/lxc/Makefile.am
-@@ -46,12 +46,20 @@ liblxc_so_SOURCES = \
- 	mainloop.c mainloop.h \
- 	af_unix.c af_unix.h
+ lxc_log_define(lxc_checkpoint_ui, lxc_checkpoint);
  
--AM_CFLAGS=-I$(top_srcdir)/src
-+# We only need $(LIBCR_CFLAGS) for lxc_checkpoint and lxc_restart files
-+# but for now, just set it for all.
-+AM_CFLAGS=-I$(top_srcdir)/src $(LIBCR_CFLAGS)
++static char *statedir;
++
+ static int my_checker(const struct lxc_arguments* args)
+ {
+-	if (!args->statefile) {
+-		lxc_error(args, "no statefile specified");
++	int d, f;
++
++	/* make them boolean */
++	d = !!(statedir);
++	f = !!(args->statefile);
++
++	if (!(d ^ f)) {
++		lxc_error(args, "Must specify exactly one of --directory "
++				"and --statefile options");
+ 		return -1;
+ 	}
  
- liblxc_so_CFLAGS = -fPIC -DPIC $(AM_CFLAGS)
+@@ -52,7 +61,8 @@ static int my_parser(struct lxc_arguments* args, int c, char* arg)
+ 	switch (c) {
+ 	case 'k': args->flags = LXC_FLAG_HALT; break;
+ 	case 'p': args->flags = LXC_FLAG_PAUSE; break;
+-	case 'd': args->statefile = arg; break;
++	case 'd': statedir = arg; break;
++	case 'S': args->statefile = arg; break;
+ 	}
+ 	return 0;
+ }
+@@ -61,13 +71,15 @@ static const struct option my_longopts[] = {
+ 	{"kill", no_argument, 0, 'k'},
+ 	{"pause", no_argument, 0, 'p'},
+ 	{"directory", required_argument, 0, 'd'},
++	{"statefile", required_argument, 0, 'S'},
+ 	LXC_COMMON_OPTIONS
+ };
  
-+# TODO: Adding $(LIBCR_OBJS) here ensures we don't have undefined references
-+# 	when building liblxc.so, but this has the side-effect of putting the
-+# 	app_checkpoint/restart functions in liblxc.so. Or alternatively,
-+# 	we could remove src/lxc/{checkpoint.o,restart.o} from liblxc.so
-+# 	and link lxc-checkpoint/lxc-restart with them directly.
- liblxc_so_LDFLAGS = \
- 	-shared \
-+	$(LIBCR_OBJS) \
- 	-Wl,-soname,liblxc.so.$(firstword $(subst ., ,$(VERSION)))
+ static struct lxc_arguments my_args = {
+ 	.progname = "lxc-checkpoint",
+ 	.help     = "\
+---name=NAME --directory STATEFILE\n\
++--name=NAME --directory STATEFILE (deprecated)\n\
++\tlxc_checkpoint --name=NAME --statefile=STATEFILE\n\
+ \n\
+ lxc-checkpoint checkpoints in STATEFILE the NAME container\n\
+ \n\
+@@ -75,7 +87,8 @@ Options :\n\
+   -n, --name=NAME      NAME for name of the container\n\
+   -k, --kill           stop the container after checkpoint\n\
+   -p, --pause          don't unfreeze the container after the checkpoint\n\
+-  -d, --directory=STATEFILE where to store the statefile\n",
++  -d, --directory=STATEFILE where to store the statefile (deprecated)\n\
++  -i, --statefile=STATEFILE where to store the checkpoint-image (LIBCR mode)\n",
  
- liblxc_so_LDADD = -lutil
+ 	.options  = my_longopts,
+ 	.parser   = my_parser,
+@@ -97,6 +110,7 @@ static int create_statefile(const char *dir)
+ int main(int argc, char *argv[])
+ {
+ 	int ret;
++	const char *statefile;
+ 
+ 	ret = lxc_arguments_parse(&my_args, argc, argv);
+ 	if (ret)
+@@ -107,11 +121,15 @@ int main(int argc, char *argv[])
+ 	if (ret)
+ 		return ret;
+ 
+-	ret = create_statefile(my_args.statefile);
+-	if (ret)
+-		return ret;
++	statefile = my_args.statefile;
++	if (statedir) {
++		statefile = statedir;
++		ret = create_statefile(statefile);
++		if (ret)
++			return ret;
++	}
+ 
+-	ret = lxc_checkpoint(my_args.name, my_args.statefile, my_args.flags);
++	ret = lxc_checkpoint(my_args.name, statefile, my_args.flags);
+ 	if (ret)
+ 		ERROR("failed to checkpoint '%s'", my_args.name);
+ 	else
 -- 
 1.6.0.4
