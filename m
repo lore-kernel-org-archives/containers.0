@@ -1,13 +1,12 @@
-From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 0/6][v3][lxc] Link LXC with USERCR
-Date: Thu, 01 Apr 2010 15:24:29 +0200
-Message-ID: <4BB49E8D.1010205@fr.ibm.com>
-References: <20100401015503.GA25228@us.ibm.com>
+From: "Michael H. Warfield" <mhw-BetbSzk+GohWk0Htik3J/w@public.gmane.org>
+Subject: Mount remount operations propagating from container to host and
+	other containers.
+Date: Thu, 01 Apr 2010 09:40:48 -0400
+Message-ID: <1270129248.7564.43.camel@localhost>
+Reply-To: mhw-BetbSzk+GohWk0Htik3J/w@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============7069565533024407831=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100401015503.GA25228-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,89 +14,139 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello Suka,
 
-On 04/01/2010 03:55 AM, Sukadev Bhattiprolu wrote:
+--===============7069565533024407831==
+Content-Type: multipart/signed; micalg="pgp-sha1"; protocol="application/pgp-signature"; boundary="=-n8G6hgQxLouuPZfvT8Nv"
 
-> Resending patches after fixing whitespace damage and the typo in
-> configure.ac. Add a section to patch-0 (below) to describe the
-> kernel build (commit-id, config tokens etc).
 
-we plan to mergepatch 2,3,4 in lxc mainline real soon, maybe not as such,
-but they won't be in the way anymore. For the moment, please keep 1,5,6 but
-make it one patch. no need to resend them in a scattered mode.
+--=-n8G6hgQxLouuPZfvT8Nv
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-> 1. Build C/R-enabled Linux kernel
->
-> 	$ cd /root
->
-> 	$ git-clone  git://www.linux-cr.org/pub/git/linux-cr.git linux-cr
->
-> 	$ cd linux-cr
->
-> 	$ git-checkout ckpt-v20-dev
->
-> 		I tested with commit 3522c57a9ec6f08a129a78322318abcb4467db28
-> 		as HEAD.
+Hey all,
 
-we need to work on a better delivery scheme. I don't think a commit id is not
-the most efficient way to dialog when integrating components. We'd rather use
-a tarball or a patch on an identified kernel.
+Been running into an ugly situation with LXC-Tools that seems to be
+pointing up a real serious leakage from containers.  If you have a mount
+inside a container (presumably a bind mount in this case), if the
+container does a mount -o remount (say rw->ro or ro->rw) this propagates
+to the host mount points (all the way to the primary mount point for
+that partition in some cases) and is reflected in other containers.
 
-> 	# After every reboot, ensure '-o newinstance' mount option to /dev/pts
-> 	  works (see Documentation/filesystems/devpts.txt for details). In
-> 	  short, run following commands on each reboot:
->
-> 		$ rm /dev/ptmx
->
-> 		$ ln -s pts/ptmx /dev/ptmx
->
-> 		$ chmod 666 /dev/pts/ptmx
+This first show up with containers running full VM's running on a
+mounted fs (aot the host / fs) were causing the real mounted fs to
+become ro when they were shut down (the VM was remounting its rootfs as
+ro and it was leaking out of the container).
 
-can not it be integrated in lxc as a patch ?
+I've since confirmed that and encountered it trying to have a shared ro
+mounted fs in a container using bind mounts (bind mounts since 2.6.26
+have allowed setting the ro flag on individual mount points) and
+discovering that one container could make it rw and then all the other
+containers would see it as rw as well!  If a container made a mount
+point ro, all the other containers would see it as ro and the mount
+point for the entire real fs in the host would become ro!  This is very
+not good.  That's a pretty serious leakage from the containers out to
+the host.
 
-> 1. Build USERCR
->
-> 	$ cd /root
->
-> 	$ git-clone git://git.ncl.cs.columbia.edu/pub/git/user-cr.git user-cr
->
-> 	$ cd user-cr
->
-> 	$ git-checkout ckpt-v20-dev
->
-> 	  	Tested with commit e275f77e4a82d228c1df14dbeb691342e32cdac2
-> 		as HEAD.
+Is this a problem with the container isolation or some problem in
+creating the container?
 
-IMO, tarball and version would be better.
+I'm running and testing on a Fedora 12 system with a 2.6.32 kernel.  Not
+related (I don't think) but I have also noted that linux-utils-ng on F16
+seems to also have a bug irt something similar here.  If I mount a
+directory from a mounted partition onto another location and then make
+that other location ro, the entire partition becomes ro.  BUT!  If I
+then make the partition rw, that does not propagate back up and the bind
+mount remains ro.
 
-> 	# Apply following two patches:
->
-> 	https://lists.linux-foundation.org/pipermail/containers/2010-March/024037.html
-> 	https://lists.linux-foundation.org/pipermail/containers/2010-March/024038.html
+What should work is this:
 
-do you plan to merge them ? if not why ?
+Partition /export
+Directory /export/readonly
 
-> 	$ KERNELSRC=/root/linux-cr make
->
-> 		Build USERCR by pointing to corresponding kernel-source.
-> 		This should create restart.o and checkpoint.o needed by LXC.
->
-> 		I did not need to, but you may need to compile checkpoint.o
-> 		and restart.o with -fPIC compiler option.
+mount --bind /export/readonly /srv/readonly
 
-this needs to be worked out also to be more developer friendly.
+At this point, /export and /srv/readonly are both rw
 
-if compilation is a pain, we will put some effort into it once but be reluctant to
-do it twice. That's what happened to me this time. I didn't compile and let daniel
-spent nearly one day to make your environment work ...
+mount -o remount,ro /srv/readonly
 
-Thanks,
+Now. both /export and /srv/readonly are ro!  This is wrong.
+Only /srv/readonly is suppose to be ro!
 
-C.
+Now, running...
+
+mount -o remount,rw /export
+
+now, /export is rw and /srv/readonly is readonly.
+
+Back to containers...
+
+If I have /srv/readonly mounted in several containers (same mount point)
+it's ro in the host and in the containers...
+
+Running this in one container:
+
+mount -o remount,rw /srv/readonly
+
+(I seriously wish this would NOT WORK AT ALL, but it does.  I don't want
+the container to be able to write to that partition at all, like the
+media was RO.  Anybody have any ideas on that one?)
+
+Now /srv/readonly is rw in the host and all the containers!
+
+(EVEN WORSE!)
+
+Running this in one container:
+
+mount -o remount,ro /srv/readonly
+
+NOW /srv/readonly is ro in all the containers and /export is ro in the
+host.  NOT GOOD.
+
+Thoughts?
+
+Regards,
+Mike
+--=20
+Michael H. Warfield (AI4NB) | (770) 985-6132 |  mhw-BetbSzk+GohWk0Htik3J/w@public.gmane.org
+   /\/\|=3Dmhw=3D|\/\/          | (678) 463-0932 |  http://www.wittsend.com=
+/mhw/
+   NIC whois: MHW9          | An optimist believes we live in the best of a=
+ll
+ PGP Key: 0x674627FF        | possible worlds.  A pessimist is sure of it!
+
+--=-n8G6hgQxLouuPZfvT8Nv
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iQEVAwUAS7SiYMDrlnVnRif/AQLY9wf/acPF6h1MDxDpy0w7llpAqO/wVSmFObI7
+CIEAeheoSLcGjUW2b9YnjX4eUGy1Ujb2ALwqI2iwivxcYA/wsf9SjQZxRxvGeYL7
+JArSHtmcgm+05f8dmaC8XNfYVwENJPutOY8kwDf+GyAkriNlD5nBvM3Ja46SMQXL
+yVurkun4o7yzhYkBb6pz+iCY5hPgG+E5k2Du/ebJHnrGVFLN6IA8OdxR+hwvwR+B
+WjoXPFZh3PWkAPugMvxHOJS/4rUaX+EcCdwNN9D3QXNQ8KOkZivPbJ1KIwyyAqW6
+qpWN0s7A+q8EpxpiW0p7h2iI/QYYUyQ3o9aGKW1y3DcLjR7E7y4gOA==
+=dEDu
+-----END PGP SIGNATURE-----
+
+--=-n8G6hgQxLouuPZfvT8Nv--
+
+
+--===============7069565533024407831==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============7069565533024407831==--
