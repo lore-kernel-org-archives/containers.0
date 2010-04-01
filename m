@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 3/6][v3][lxc] lxc_checkpoint: Add --statefile option
-Date: Wed, 31 Mar 2010 18:56:15 -0700
-Message-ID: <20100401015615.GC25712@us.ibm.com>
+Subject: [PATCH 2/6][v3][lxc] lxc_restart: Add --statefile option
+Date: Wed, 31 Mar 2010 18:55:54 -0700
+Message-ID: <20100401015554.GB25712@us.ibm.com>
 References: <20100401015503.GA25228@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,32 +24,33 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Wed, 10 Mar 2010 22:24:17 -0800
-Subject: [PATCH 3/6][v3][lxc] lxc_checkpoint: Add --statefile option
+Date: Sat, 27 Mar 2010 00:08:17 -0700
+Subject: [PATCH 2/6][v3][lxc] lxc_restart: Add --statefile option
 
-The existing --directory option to lxc_checkpoint expects to save the
-checkpoint state in a directory. USERCR however uses a single regular
-file to store the checkpoint image. So add a --statefile option to enable
-checkpointing and restarting applications using USERCR.
+The existing --directory option to lxc_restart expects the checkpoint state
+to be a directory. USERCR however uses a single regular file to store the
+checkpoint image. So add a --statefile option to enable checkpointing and
+restarting applications using USERCR.
 
-Users should specify either --statefile or --directory option (but not both)
-to select the file/directory where the application state will be stored.
+Depending on how the application was checkpointed, users should specify
+either --statefile=STATEFILE or the --directory=STATEFILE option (but not
+both).
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- src/lxc/lxc_checkpoint.c |   36 +++++++++++++++++++++++++++---------
- 1 files changed, 27 insertions(+), 9 deletions(-)
+ src/lxc/lxc_restart.c |   30 +++++++++++++++++++++++-------
+ 1 files changed, 23 insertions(+), 7 deletions(-)
 
-diff --git a/src/lxc/lxc_checkpoint.c b/src/lxc/lxc_checkpoint.c
-index a8c74a9..b0cd634 100644
---- a/src/lxc/lxc_checkpoint.c
-+++ b/src/lxc/lxc_checkpoint.c
-@@ -37,10 +37,19 @@
+diff --git a/src/lxc/lxc_restart.c b/src/lxc/lxc_restart.c
+index 7db1d85..4be6f92 100644
+--- a/src/lxc/lxc_restart.c
++++ b/src/lxc/lxc_restart.c
+@@ -38,11 +38,19 @@
+ lxc_log_define(lxc_restart_ui, lxc_restart);
  
- lxc_log_define(lxc_checkpoint_ui, lxc_checkpoint);
- 
+ static struct lxc_list defines;
 +static char *statedir;
-+
+ 
  static int my_checker(const struct lxc_arguments* args)
  {
 -	if (!args->statefile) {
@@ -66,70 +67,63 @@ index a8c74a9..b0cd634 100644
  		return -1;
  	}
  
-@@ -52,7 +61,8 @@ static int my_parser(struct lxc_arguments* args, int c, char* arg)
+@@ -52,8 +60,9 @@ static int my_checker(const struct lxc_arguments* args)
+ static int my_parser(struct lxc_arguments* args, int c, char* arg)
+ {
  	switch (c) {
- 	case 'k': args->flags = LXC_FLAG_HALT; break;
- 	case 'p': args->flags = LXC_FLAG_PAUSE; break;
 -	case 'd': args->statefile = arg; break;
 +	case 'd': statedir = arg; break;
+ 	case 'f': args->rcfile = arg; break;
 +	case 'S': args->statefile = arg; break;
+ 	case 'p': args->flags = LXC_FLAG_PAUSE; break;
+ 	case 's': return lxc_config_define_add(&defines, arg);
  	}
- 	return 0;
- }
-@@ -61,13 +71,15 @@ static const struct option my_longopts[] = {
- 	{"kill", no_argument, 0, 'k'},
+@@ -66,21 +75,24 @@ static const struct option my_longopts[] = {
+ 	{"rcfile", required_argument, 0, 'f'},
  	{"pause", no_argument, 0, 'p'},
- 	{"directory", required_argument, 0, 'd'},
+ 	{"define", required_argument, 0, 's'},
 +	{"statefile", required_argument, 0, 'S'},
  	LXC_COMMON_OPTIONS
  };
  
  static struct lxc_arguments my_args = {
- 	.progname = "lxc-checkpoint",
+ 	.progname = "lxc-restart",
  	.help     = "\
 ---name=NAME --directory STATEFILE\n\
 +--name=NAME --directory STATEFILE (deprecated)\n\
-+\tlxc_checkpoint --name=NAME --statefile=STATEFILE\n\
++\tlxc_restart --name=NAME --statefile=STATEFILE\n\
  \n\
- lxc-checkpoint checkpoints in STATEFILE the NAME container\n\
+ lxc-restart restarts from STATEFILE the NAME container\n\
  \n\
-@@ -75,7 +87,8 @@ Options :\n\
+ Options :\n\
    -n, --name=NAME      NAME for name of the container\n\
-   -k, --kill           stop the container after checkpoint\n\
-   -p, --pause          don't unfreeze the container after the checkpoint\n\
--  -d, --directory=STATEFILE where to store the statefile\n",
-+  -d, --directory=STATEFILE where to store the statefile (deprecated)\n\
-+  -i, --statefile=STATEFILE where to store the checkpoint-image (LIBCR mode)\n",
- 
+   -p, --pause          do not release the container after the restart\n\
+-  -d, --directory=STATEFILE for name of statefile\n\
++  -d, --directory=STATEFILE for name of statefile (legacy mode, deprecated)\n\
+   -f, --rcfile=FILE Load configuration file FILE\n\
++  -i, --statefile=STATEFILE Load the application state from STATEFILE (libcr mode)\n\
+   -s, --define KEY=VAL Assign VAL to configuration variable KEY\n",
  	.options  = my_longopts,
  	.parser   = my_parser,
-@@ -97,6 +110,7 @@ static int create_statefile(const char *dir)
+@@ -90,6 +102,7 @@ Options :\n\
  int main(int argc, char *argv[])
  {
- 	int ret;
+ 	char *rcfile = NULL;
 +	const char *statefile;
+ 	struct lxc_conf *conf;
  
- 	ret = lxc_arguments_parse(&my_args, argc, argv);
- 	if (ret)
-@@ -107,11 +121,15 @@ int main(int argc, char *argv[])
- 	if (ret)
- 		return ret;
+ 	lxc_list_init(&defines);
+@@ -131,6 +144,9 @@ int main(int argc, char *argv[])
+ 	if (lxc_config_define_load(&defines, conf))
+ 		return -1;
  
--	ret = create_statefile(my_args.statefile);
--	if (ret)
--		return ret;
+-	return lxc_restart(my_args.name, my_args.statefile, conf,
+-			   my_args.flags);
 +	statefile = my_args.statefile;
-+	if (statedir) {
++	if (statedir)
 +		statefile = statedir;
-+		ret = create_statefile(statefile);
-+		if (ret)
-+			return ret;
-+	}
- 
--	ret = lxc_checkpoint(my_args.name, my_args.statefile, my_args.flags);
-+	ret = lxc_checkpoint(my_args.name, statefile, my_args.flags);
- 	if (ret)
- 		ERROR("failed to checkpoint '%s'", my_args.name);
- 	else
++
++	return lxc_restart(my_args.name, statefile, conf, my_args.flags);
+ }
 -- 
 1.6.0.4
