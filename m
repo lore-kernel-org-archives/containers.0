@@ -1,15 +1,13 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 0/6][lxc][v3] Link LXC with USERCR
-Date: Wed, 31 Mar 2010 22:03:03 -0700
-Message-ID: <20100401050303.GA18986@us.ibm.com>
-References: <20100331070440.GA21570@us.ibm.com> <4BB31801.4000304@fr.ibm.com>
-	<4BB33C81.9070802@fr.ibm.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [PATCH 1/2] Fix app_checkpoint() return code
+Date: Thu, 01 Apr 2010 00:59:45 -0400
+Message-ID: <4BB42841.5010807@cs.columbia.edu>
+References: <20100331065443.GA21065@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4BB33C81.9070802-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20100331065443.GA21065-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,38 +17,58 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Cedric Le Goater [clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org] wrote:
->> 	#!/bin/sh
->>
->> 	me=`basename "$0" 2>/dev/null`
->> 	ndigit=${1:-1000}
->>
->> 	echo $me - $ndigit digits
->> 	echo "scale=$ndigit;a(1)*4" | bc -l
->>
->> can you run in a terminal :
->>
->> 	$ lxc-execute -n pi1 -- ./pi1.sh 3000&
->> 	$ lxc-checkpoint -n pi1 -d ./ckpt -k
->> 	$ lxc-restart -n pi1 -d ./ckpt
->
-> please try that suka, it's much more interesting than sleep which can
-> silently segfault after restart.
 
-Agree.  BTW, after the sleep I tested C/R of a VNC server with a vi session
-running inside.
+Both patches applies in user-cr:ckpt-v20-dev.
 
-I tried the above program, which is definitely more interesting, but am
-having trouble with stdout after restart - restart seems to succeed, but
-nothing shows up on stdout. If I redirect the output of "bc -l" to a file,
-the C/R (with lxc) works fine.
+Oren.
 
-I am investigating the stdout issue though.
-
-Thanks,
-
-Sukadev
+Sukadev Bhattiprolu wrote:
+> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> Date: Tue, 30 Mar 2010 18:59:10 -0700
+> Subject: [PATCH 1/2] Fix app_checkpoint() return code
+> 
+> Have app_checkpoint() return the return value from the system call
+> so callers find some useful information. Have main() can convert the
+> return value into a suitable exit status.
+> 
+> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> ---
+>  checkpoint-main.c |    4 +++-
+>  checkpoint.c      |    2 +-
+>  2 files changed, 4 insertions(+), 2 deletions(-)
+> 
+> diff --git a/checkpoint-main.c b/checkpoint-main.c
+> index f6faa32..bac65cc 100644
+> --- a/checkpoint-main.c
+> +++ b/checkpoint-main.c
+> @@ -145,6 +145,7 @@ static void parse_args(struct app_checkpoint_args *args, int argc, char *argv[])
+>  
+>  int main(int argc, char *argv[])
+>  {
+> +	int ret;
+>  	struct app_checkpoint_args args;
+>  	unsigned long flags = 0;
+>  	pid_t pid;
+> @@ -167,5 +168,6 @@ int main(int argc, char *argv[])
+>  	if (!args.container)
+>  		flags |= CHECKPOINT_SUBTREE;
+>  
+> -	return app_checkpoint(pid, flags, &args);
+> +	ret = app_checkpoint(pid, flags, &args);
+> +	return (ret > 0) ? 0 : 1;
+>  }
+> diff --git a/checkpoint.c b/checkpoint.c
+> index e3a1ce8..e0290c9 100644
+> --- a/checkpoint.c
+> +++ b/checkpoint.c
+> @@ -55,5 +55,5 @@ int app_checkpoint(int pid, unsigned long flags,
+>  		ckpt_err("checkpoint id %d\n", ret);
+>  	}
+>  
+> -	return (ret > 0 ? 0 : 1);
+> +	return ret;
+>  }
