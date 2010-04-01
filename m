@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 2/6][v3][lxc] lxc_restart: Add --statefile option
-Date: Wed, 31 Mar 2010 18:55:54 -0700
-Message-ID: <20100401015554.GB25712@us.ibm.com>
+Subject: [PATCH 4/6][v3][lxc] Move get_init_pid() into checkpoint.c
+Date: Wed, 31 Mar 2010 18:56:33 -0700
+Message-ID: <20100401015633.GD25712@us.ibm.com>
 References: <20100401015503.GA25228@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,106 +24,134 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Sat, 27 Mar 2010 00:08:17 -0700
-Subject: [PATCH 2/6][v3][lxc] lxc_restart: Add --statefile option
+Date: Mon, 29 Mar 2010 23:53:55 -0700
+Subject: [PATCH 4/6][v3][lxc] Move get_init_pid() into checkpoint.c
 
-The existing --directory option to lxc_restart expects the checkpoint state
-to be a directory. USERCR however uses a single regular file to store the
-checkpoint image. So add a --statefile option to enable checkpointing and
-restarting applications using USERCR.
-
-Depending on how the application was checkpointed, users should specify
-either --statefile=STATEFILE or the --directory=STATEFILE option (but not
-both).
+lxc_attach.c is currently not included in liblxc.so. In  afollowon
+patch, checkpoint() function needs to also use the get_init_pid()
+interface. So move the defintions into checkpoint.c - which would
+then be accessible to both lxc_attach and lxc-checkpoint.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- src/lxc/lxc_restart.c |   30 +++++++++++++++++++++++-------
- 1 files changed, 23 insertions(+), 7 deletions(-)
+ src/lxc/checkpoint.c |   29 +++++++++++++++++++++++++++++
+ src/lxc/lxc.h        |    6 ++++++
+ src/lxc/lxc_attach.c |   29 +----------------------------
+ 3 files changed, 36 insertions(+), 28 deletions(-)
 
-diff --git a/src/lxc/lxc_restart.c b/src/lxc/lxc_restart.c
-index 7db1d85..4be6f92 100644
---- a/src/lxc/lxc_restart.c
-+++ b/src/lxc/lxc_restart.c
-@@ -38,11 +38,19 @@
- lxc_log_define(lxc_restart_ui, lxc_restart);
+diff --git a/src/lxc/checkpoint.c b/src/lxc/checkpoint.c
+index 7e8a93e..4e75cb6 100644
+--- a/src/lxc/checkpoint.c
++++ b/src/lxc/checkpoint.c
+@@ -22,9 +22,38 @@
+  */
+ #include <lxc/lxc.h>
+ #include <lxc/log.h>
++#include <lxc/commands.h>
  
- static struct lxc_list defines;
-+static char *statedir;
+ lxc_log_define(lxc_checkpoint, lxc);
  
- static int my_checker(const struct lxc_arguments* args)
- {
--	if (!args->statefile) {
--		lxc_error(args, "no statefile specified");
-+	int d, f;
++pid_t get_init_pid(const char *name)
++{
++	struct lxc_command command = {
++		.request = { .type = LXC_COMMAND_PID },
++	};
 +
-+	/* make them boolean */
-+	d = !!(statedir);
-+	f = !!(args->statefile);
++	int ret, stopped = 0;
 +
-+	if (!(d ^ f)) {
-+		lxc_error(args, "Must specify exactly one of --directory "
-+				"and --statefile options");
- 		return -1;
- 	}
- 
-@@ -52,8 +60,9 @@ static int my_checker(const struct lxc_arguments* args)
- static int my_parser(struct lxc_arguments* args, int c, char* arg)
++	ret = lxc_command(name, &command, &stopped);
++	if (ret < 0 && stopped) {
++		INFO("'%s' is already stopped", name);
++		return 0;
++	}
++
++	if (ret < 0) {
++		ERROR("failed to send command");
++		return -1;
++	}
++
++	if (command.answer.ret) {
++		ERROR("failed to retrieve the init pid: %s",
++		      strerror(-command.answer.ret));
++		return -1;
++	}
++
++	return command.answer.pid;
++}
++
+ int lxc_checkpoint(const char *name, const char *statefile, int flags)
  {
- 	switch (c) {
--	case 'd': args->statefile = arg; break;
-+	case 'd': statedir = arg; break;
- 	case 'f': args->rcfile = arg; break;
-+	case 'S': args->statefile = arg; break;
- 	case 'p': args->flags = LXC_FLAG_PAUSE; break;
- 	case 's': return lxc_config_define_add(&defines, arg);
- 	}
-@@ -66,21 +75,24 @@ static const struct option my_longopts[] = {
- 	{"rcfile", required_argument, 0, 'f'},
- 	{"pause", no_argument, 0, 'p'},
- 	{"define", required_argument, 0, 's'},
-+	{"statefile", required_argument, 0, 'S'},
- 	LXC_COMMON_OPTIONS
+ 	return 0;
+diff --git a/src/lxc/lxc.h b/src/lxc/lxc.h
+index b0b9f4e..bd87bdb 100644
+--- a/src/lxc/lxc.h
++++ b/src/lxc/lxc.h
+@@ -27,6 +27,7 @@
+ extern "C" {
+ #endif
+ 
++#include <unistd.h>
+ #include <stddef.h>
+ #include <lxc/state.h>
+ 
+@@ -56,6 +57,11 @@ extern int lxc_start(const char *name, char *const argv[], struct lxc_conf *);
+ extern int lxc_stop(const char *name);
+ 
+ /*
++ * Get the pid of the root application process tree in parent-pid namespace
++ */
++extern pid_t get_init_pid(const char *name);
++
++/*
+  * Open the monitoring mechanism for a specific container
+  * The function will return an fd corresponding to the events
+  * Returns a file descriptor on success, < 0 otherwise
+diff --git a/src/lxc/lxc_attach.c b/src/lxc/lxc_attach.c
+index a012c2c..3d2cdd5 100644
+--- a/src/lxc/lxc_attach.c
++++ b/src/lxc/lxc_attach.c
+@@ -28,6 +28,7 @@
+ #include "commands.h"
+ #include "arguments.h"
+ #include "namespace.h"
++#include "lxc.h"
+ #include "log.h"
+ 
+ lxc_log_define(lxc_attach_ui, lxc);
+@@ -50,34 +51,6 @@ Options :\n\
+ 	.checker  = NULL,
  };
  
- static struct lxc_arguments my_args = {
- 	.progname = "lxc-restart",
- 	.help     = "\
----name=NAME --directory STATEFILE\n\
-+--name=NAME --directory STATEFILE (deprecated)\n\
-+\tlxc_restart --name=NAME --statefile=STATEFILE\n\
- \n\
- lxc-restart restarts from STATEFILE the NAME container\n\
- \n\
- Options :\n\
-   -n, --name=NAME      NAME for name of the container\n\
-   -p, --pause          do not release the container after the restart\n\
--  -d, --directory=STATEFILE for name of statefile\n\
-+  -d, --directory=STATEFILE for name of statefile (legacy mode, deprecated)\n\
-   -f, --rcfile=FILE Load configuration file FILE\n\
-+  -i, --statefile=STATEFILE Load the application state from STATEFILE (libcr mode)\n\
-   -s, --define KEY=VAL Assign VAL to configuration variable KEY\n",
- 	.options  = my_longopts,
- 	.parser   = my_parser,
-@@ -90,6 +102,7 @@ Options :\n\
- int main(int argc, char *argv[])
+-pid_t get_init_pid(const char *name)
+-{
+-	struct lxc_command command = {
+-		.request = { .type = LXC_COMMAND_PID },
+-	};
+-
+-	int ret, stopped = 0;
+-
+-	ret = lxc_command(name, &command, &stopped);
+-	if (ret < 0 && stopped) {
+-		INFO("'%s' is already stopped", name);
+-		return 0;
+-	}
+-
+-	if (ret < 0) {
+-		ERROR("failed to send command");
+-		return -1;
+-	}
+-
+-	if (command.answer.ret) {
+-		ERROR("failed to retrieve the init pid: %s",
+-		      strerror(-command.answer.ret));
+-		return -1;
+-	}
+-
+-	return command.answer.pid;
+-}
+-
+ int main(int argc, char *argv[], char *envp[])
  {
- 	char *rcfile = NULL;
-+	const char *statefile;
- 	struct lxc_conf *conf;
- 
- 	lxc_list_init(&defines);
-@@ -131,6 +144,9 @@ int main(int argc, char *argv[])
- 	if (lxc_config_define_load(&defines, conf))
- 		return -1;
- 
--	return lxc_restart(my_args.name, my_args.statefile, conf,
--			   my_args.flags);
-+	statefile = my_args.statefile;
-+	if (statedir)
-+		statefile = statedir;
-+
-+	return lxc_restart(my_args.name, statefile, conf, my_args.flags);
- }
+ 	int ret;
 -- 
 1.6.0.4
