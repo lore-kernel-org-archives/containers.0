@@ -1,14 +1,23 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] user-cr: Add --netns switch to user-cr checkpoint
-Date: Mon, 5 Apr 2010 08:24:02 -0500
-Message-ID: <20100405132402.GD32049@us.ibm.com>
-References: <1270215495-4371-1-git-send-email-danms@us.ibm.com>
+Subject: Re: Linux Checkpoint-Restart - v19
+Date: Mon, 5 Apr 2010 09:06:29 -0500
+Message-ID: <20100405140629.GG32049@us.ibm.com>
+References: <4B9EBAF2.1060304@cs.columbia.edu>
+	<0B4E8136-FFC6-490D-B04A-23A6E1A924FF@dependable-os.net>
+	<20100317205556.GA20750@us.ibm.com>
+	<EF179F3A-4FBA-4776-B7A4-48F5EF73DC9C@dependable-os.net>
+	<4BA39971.2080402@cs.columbia.edu>
+	<FF5CB8EA-436D-4685-B7A2-946A83DF3F78@dependable-os.net>
+	<20100324164758.GA21021@us.ibm.com>
+	<BC2CC354-59BA-465A-A863-0CDCD921A99A@dependable-os.net>
+	<20100330030535.GA13362@us.ibm.com>
+	<18557515-762E-4EE6-90D7-C8F782E487B2@dependable-os.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1270215495-4371-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <18557515-762E-4EE6-90D7-C8F782E487B2-Xy3Dp9s2+bNGIRItUzBvX16hYfS7NtTn@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,81 +27,23 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Jiro SEKIBA <jir-Xy3Dp9s2+bNGIRItUzBvX16hYfS7NtTn@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> This allows the caller to set the CHECKPOINT_NETNS flag on the checkpoint
-> operation, thus triggering the checkpoint of network namespaces.
-> 
-> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Quoting Jiro SEKIBA (jir-Xy3Dp9s2+bNGIRItUzBvX16hYfS7NtTn@public.gmane.org):
+> I'm using ubuntu 9.10.
+> And I found that this ubuntu is using eglibc instead of glibc.
+> version is eglibc-2.10.1
 
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Interesting.
 
-> ---
->  app-checkpoint.h  |    1 +
->  checkpoint-main.c |    8 +++++++-
->  2 files changed, 8 insertions(+), 1 deletions(-)
-> 
-> diff --git a/app-checkpoint.h b/app-checkpoint.h
-> index f740085..c078f04 100644
-> --- a/app-checkpoint.h
-> +++ b/app-checkpoint.h
-> @@ -5,6 +5,7 @@ struct app_checkpoint_args {
->  	int uerrfd;
->  	int container;
->  	int verbose;
-> +	int flags;
->  };
-> 
->  struct app_restart_args {
-> diff --git a/checkpoint-main.c b/checkpoint-main.c
-> index f6faa32..3fde9b6 100644
-> --- a/checkpoint-main.c
-> +++ b/checkpoint-main.c
-> @@ -30,6 +30,7 @@ static char usage_str[] =
->  "  -l,--logfile=FILE     write error and debug data to FILE (default=none)\n"
->  "     --logile-fd=FD     write error and debug data to file descriptor FD\n"
->  "  -c,--container        require the PID is a container-init\n"
-> +"  -N,--netns            checkpoint network namespace(s)\n"
->  "  -v,--verbose          verbose output\n"
->  "";
-> 
-> @@ -61,9 +62,10 @@ static void parse_args(struct app_checkpoint_args *args, int argc, char *argv[])
->  		{ "logfile-fd",	required_argument,	NULL, 2 },
->  		{ "container",	no_argument,		NULL, 'c' },
->  		{ "verbose",	no_argument,		NULL, 'v' },
-> +		{ "netns",	no_argument,		NULL, 'N' },
->  		{ NULL,		0,			NULL, 0 }
->  	};
-> -	static char optc[] = "hvco:l:";
-> +	static char optc[] = "hvco:l:N";
->  	char *output;
->  	char *logfile;
-> 
-> @@ -109,6 +111,9 @@ static void parse_args(struct app_checkpoint_args *args, int argc, char *argv[])
->  		case 'v':
->  			args->verbose = 1;
->  			break;
-> +		case 'N':
-> +			args->flags |= CHECKPOINT_NETNS;
-> +			break;
->  		default:
->  			usage(usage_str);
->  		}
-> @@ -164,6 +169,7 @@ int main(int argc, char *argv[])
->  		exit(1);
->  	}
-> 
-> +	flags = args.flags;
->  	if (!args.container)
->  		flags |= CHECKPOINT_SUBTREE;
-> 
-> -- 
-> 1.6.3.3
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+> (gdb) p errno
+> Cannot find thread-local variables on this target
+
+I guess I'll take a look at the eglibc source code.
+
+Oren, does use of TLS and/or eglibc tell you anything offhand?
+
+thanks,
+-serge
