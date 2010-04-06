@@ -1,13 +1,15 @@
-From: Marek Kierdelewicz <marek-93dTLfYBX/9mR6Xm/wNWPw@public.gmane.org>
-Subject: Re: lxc, conntrack and routecache
-Date: Tue, 6 Apr 2010 17:43:04 +0200
-Message-ID: <20100406174304.25073aab@catlap>
-References: <20100404090757.6f1ac500@catlap> <m1iq84aaex.fsf@fess.ebiederm.org>
+From: Brian Haley <brian.haley-VXdhtT5mjnY@public.gmane.org>
+Subject: Re: [PATCH 1/3] C/R: Support for IPv6 addresses on network devices
+	(v2)
+Date: Tue, 06 Apr 2010 11:53:35 -0400
+Message-ID: <4BBB58FF.1090908@hp.com>
+References: <1270563183-9351-1-git-send-email-danms@us.ibm.com>
+	<1270563183-9351-2-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m1iq84aaex.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
+In-Reply-To: <1270563183-9351-2-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,15 +19,26 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Eric,
+Dan Smith wrote:
 
->What does it matter?
+> +static int ckpt_netdev_inet6_addrs(struct inet6_dev *indev,
+> +				   int index, int max,
+> +				   struct ckpt_netdev_addr *abuf)
+> +{
+> +	struct inet6_ifaddr *addr;
+> +	struct ifmcaddr6 *mcaddr;
+> +	struct ifacaddr6 *acaddr;
+> +
+> +	for (addr = indev->addr_list; addr; addr = addr->if_next) {
+> +		if (ipv6_addr_scope(&addr->addr))
+> +			continue; /* Ignore non-global scope addresses */
 
-It may affect memory consumption and performance in some unique setups.
-Anyway I'm simply curious.
+This will prevent the loopback address (::1) from getting checkpointed
+since it's host-local.  The ipv6 module will add it anyways so it's
+probably not a big deal.
 
-Regards,
-Marek
+-Brian
