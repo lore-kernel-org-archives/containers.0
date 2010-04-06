@@ -1,11 +1,16 @@
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH] checkpoint/i386: use task_user_gs to checkpoint gs
-Date: Tue,  6 Apr 2010 18:37:41 -0500
-Message-ID: <1270597061-26041-1-git-send-email-ntl@pobox.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 2/3] C/R: Fix storing IPv6 addresses and handle the
+	"ipv6only" socket flag
+Date: Tue, 6 Apr 2010 18:47:10 -0500
+Message-ID: <20100406234710.GD22025@us.ibm.com>
+References: <1270563183-9351-1-git-send-email-danms@us.ibm.com>
+	<1270563183-9351-3-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1270563183-9351-3-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,49 +20,49 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Depending on the setting of CONFIG_X86_32_LAZY_GS, gs may be saved in
-the thread_struct or in pt_regs.  Use the task_user_gs() accessor to
-checkpoint gs appropriately for both cases.  This solves post-restart
-program crashes when CONFIG_X86_32_LAZY_GS=n.
+Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> The first item is a result of sockaddr_in6 being larger than the base
+> sockaddr structure, thus not being long enough to reserve enough space in
+> the checkpoint header.
+> 
+> The second comes into play when things (like sshd) bind to INADDR6_ANY,
+> set the "ipv6only" socket flag and then bind an IPv4 socket to the same
+> port.
+> 
+> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Tested-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+since ipv6 can be a module, this requires:
+
+From 7132840517ecc258a2d972dae7011a6666e91c56 Mon Sep 17 00:00:00 2001
+From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Date: Tue, 6 Apr 2010 12:35:54 -0500
+Subject: [PATCH 1/1] export needed symbols needed by ipv6
+
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- arch/x86/kernel/checkpoint_32.c |    8 +-------
- 1 files changed, 1 insertions(+), 7 deletions(-)
+ net/ipv4/checkpoint.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/arch/x86/kernel/checkpoint_32.c b/arch/x86/kernel/checkpoint_32.c
-index 32cde34..c4ce450 100644
---- a/arch/x86/kernel/checkpoint_32.c
-+++ b/arch/x86/kernel/checkpoint_32.c
-@@ -86,7 +86,6 @@ static unsigned short decode_segment(__u16 seg)
+diff --git a/net/ipv4/checkpoint.c b/net/ipv4/checkpoint.c
+index 57b185d..7479ffd 100644
+--- a/net/ipv4/checkpoint.c
++++ b/net/ipv4/checkpoint.c
+@@ -299,6 +299,7 @@ int inet_checkpoint(struct ckpt_ctx *ctx, struct socket *sock)
  
- void save_cpu_regs(struct ckpt_hdr_cpu *h, struct task_struct *t)
+ 	return ret;
+ }
++EXPORT_SYMBOL_GPL(inet_checkpoint);
+ 
+ int inet_collect(struct ckpt_ctx *ctx, struct socket *sock)
  {
--	struct thread_struct *thread = &t->thread;
- 	struct pt_regs *regs = task_pt_regs(t);
- 	unsigned long _gs;
+@@ -553,3 +554,4 @@ int inet_restore(struct ckpt_ctx *ctx,
  
-@@ -108,15 +107,10 @@ void save_cpu_regs(struct ckpt_hdr_cpu *h, struct task_struct *t)
- 	h->ds = encode_segment(regs->ds);
- 	h->es = encode_segment(regs->es);
- 
--	/*
--	 * for checkpoint in process context (from within a container)
--	 * the GS segment register should be saved from the hardware;
--	 * otherwise it is already saved on the thread structure
--	 */
- 	if (t == current)
- 		_gs = get_user_gs(regs);
- 	else
--		_gs = thread->gs;
-+		_gs = task_user_gs(t);
- 
- 	h->fsindex = encode_segment(regs->fs);
- 	h->gsindex = encode_segment(_gs);
+ 	return ret;
+ }
++EXPORT_SYMBOL_GPL(inet_restore);
 -- 
-1.6.6.1
+1.6.0.6
