@@ -1,13 +1,11 @@
-From: Michel Normand <normand-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Prefix / Naming USERCR API
-Date: Thu, 08 Apr 2010 08:49:59 +0200
-Message-ID: <1270709399.2602.48.camel@pagloppaglop>
-References: <20100406020221.GA647@us.ibm.com>
+From: Leonid Snegirev <leo-n4oKp6kCDthKyFCjRbgQbg@public.gmane.org>
+Subject: [PATCH] c/r: restore tty pgrp properly
+Date: Thu, 08 Apr 2010 15:50:56 +0000
+Message-ID: <4BBDFB60.2080505@lvk.cs.msu.su>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100406020221.GA647-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,47 +15,87 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: "Nikita V. Youshchenko" <yoush-/llMDZXAvAOHXe+LvDLADg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-TGUgbHVuZGkgMDUgYXZyaWwgMjAxMCDDoCAxOTowMiAtMDcwMCwgU3VrYWRldiBCaGF0dGlwcm9s
-dSBhIMOpY3JpdCA6Cj4gUHJlZml4IC8gRnVuY3Rpb24gbmFtZXMgZm9yIFVTRVJDUiBBUEkKPiAK
-PiBJIGd1ZXNzIHRoZSBsb25nIHRlcm0gcGxhbiBpcyB0byBleHBvcnQgdGhlIFVTRVJDUiBmdW50
-aW9uYWxpdHkgdG8gbWFuYWdlbWVudAo+IG9yIG90aGVyIGFwcGxpY2F0aW9ucyBhcyBhIGxpYnJh
-cnkuIFdlIGFyZSB0cnlpbmcgdG8gY2hvb3NlIGEgZ29vZCBwcmVmaXggZm9yCj4gdGhlIFVTRVJD
-UiBBUEkuIAo+IAo+IFRoZSBjdXJyZW50IHByZWZpeCBmb3IgdGhlIEFQSSBpcywgd2hpY2ggd2Fz
-IGNvb2tlZCB1cCBvbiB0aGUgZmx5LCBpcwo+ICJhcHBfIi4gVGhpcyBwcmVmaXggaXMgY3VycmVu
-dGx5IHVzZWQgaW4gc3RydWN0dXJlcy9mdW5jdGlvbnMgbGlrZToKPiAKPiAJc3RydWN0IGFwcF9j
-aGVja3BvaW50X2FyZ3MgKiAKPiAJc3RydWN0IGFwcF9yZXN0YXJ0X2FyZ3MgKiAKPiAJYXBwX2No
-ZWNrcG9pbnQoKQo+IAlhcHBfcmVzdGFydCgpCj4gCj4gSW4gdGhlIGZ1dHVyZSB3ZSBtYXkgaGF2
-ZSBhZGRpdGlvbmFsIGFwaXMgbGlrZToKPiAKPiAJeHh4X2ZyZWV6ZSgpCj4gCXh4eF9taWdyYXRl
-KCkKPiAJeHh4X2NyX2FkdmlzZSgpID8KPiAKPiBLZXJuZWwgYXBpIGFscmVhZHkgdXNlcyBzb21l
-IHByZWZpeGVzIGxpa2UgKGNoZWNrcG9pbnQsIGNrcHRfIGV0YzoKPiAKPiAJPGxpbnV4L2NoZWNr
-cG9pbnQuaD4KPiAJPGxpbnV4L2NoZWNrcG9pbnRfaGRyLmg+Cj4gCj4gCXN0cnVjdCBja3B0X2hk
-cl9oZWFkZXIKPiAJc3RydWN0IGNrcHRfaGRyCj4gCj4gCWNoZWNrcG9pbnQoMikKPiAJcmVzdGFy
-dCgyKQo+IAo+IAkjZGVmaW5lIFJFU1RBUlRfVEFTS1NFTEYgMHgxCj4gCSNkZWZpbmUgQ0hFQ0tQ
-T0lOVF9TVUJUUkVFIDB4MQo+IAo+IEhhdmluZyBhIHByZWZpeCB3b3VsZCBtYWtlIGl0IGVhc3kg
-dG8gaWRlbnRpZnkgdGhlIEFQSSBhbmQgYXZvaWQgY29sbGlzaW9uCj4gd2l0aCBvdGhlciBsaWJy
-YXJpZXMgdGhhdCB0aGUgYXBwbGljYXRpb24gbWlnaHQgbGluayBhZ2FpbnN0LiBFZzogdGhlCj4g
-InBhbV8iIHByZWZpeGVzIFBBTSBhcGkuCj4gCj4gSGF2aW5nIGEgcHJlZml4IGxpa2UgImNyXyIg
-b3IgImFjcl8iIGNvdWxkIGNhdXNlIHNvbWUgcmVkdW5kYW5jeSBpbiBzb21lCj4gbmFtZXMsIGxp
-a2UgY3JfY2hlY2twb2ludCgpLCBidXQgaXMgcHJvYmFibHkgb2ssIGxpa2UgcGFtX2F1dGhlbnRp
-Y2F0ZSgpID8KPiAKPiBTbywgd2hhdCB3b3VsZCBiZSBhIGdvb2QgcHJlZml4ID8KPiAKPiAJY3Jf
-Cj4gCQljcl9jaGVja3BvaW50LmgsIGxpYmNyLmEKPiAJCWNyX2NoZWNrcG9pbnQoKSBjcl9yZXN0
-YXJ0KCkgY3JfZnJlZXplKCkgY3JfbWlncmF0ZSgpCj4gCQlzdHJ1Y3QgY3JfY2hlY2twb2ludF9h
-cmdzLCBzdHJ1Y3QgY3JfcmVzdGFydF9hcmdzCj4gCWFjcl8gCj4gCQlPbmx5IGFkdmFudGFnZSBv
-dmVyICdjcl8nIGlzIGxlc3NlciBsaWtlbGlob29kIG9mIGNvbGxpc2lvbgo+IAo+IAkJYWNyX2No
-ZWNrcG9pbnQuaCwgbGliYWNyLmEKPiAJCWFjcl9jaGVja3BvaW50KCkgYWNyX3Jlc3RhcnQoKSBh
-Y3JfZnJlZXplKCkgYWNyX21pZ3JhdGUoKQo+IAkJc3RydWN0IGFjcl9jaGVja3BvaW50X2FyZ3Ms
-IHN0cnVjdCBhY3JfcmVzdGFydF9hcmdzCj4gCj4gCWx4Y3JfCQo+IAkJbHhjcl9jaGVja3BvaW50
-LmgsIGxpYmx4Y3IuYSAKPiAJCWx4Y3JfY2hlY2twb2ludCgpIGx4Y3JfcmVzdGFydCgpIGx4Y3Jf
-ZnJlZXplKCkgbHhjcl9taWdyYXRlKCkKPiAJCXN0cnVjdCBseGNyX2NoZWNrcG9pbnRfYXJncywg
-c3RydWN0IGx4Y3JfcmVzdGFydF9hcmdzCgpJIGRvIG5vdCB0aGluayBseGNyXyBwcmVmaXggaXMg
-YSBnb29kIGNob2ljZSBhcyBseGMgaXMgYWJvdXQgY29udGFpbmVyCmFuZCBjb3VsZCB1c2UgZGlm
-ZmVyZW50IGxpYnJhcmllcyBmb3IgdGhlIGNoZWNrcG9pbnQvcmVzdGFydCBmdW5jdGlvbi4KCi0t
-LQpNaWNoZWwKCj4gCj4gT3RoZXIgcHJlZml4ZXMgb3IgbmFtaW5nIHN1Z2dlc3Rpb25zID8KPiAK
-PiBUaGFua3MsCj4gCj4gU3VrYWRldgoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5s
-aW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21h
-aWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+When restoring without keeping old PIDs, it is incorrect to set tty pgrp
+to same numeric value as it was at checkpoint time. This pgrp may not
+exist at restore time, and do_tiocspgrp() call from restore_signal()
+returns -ESRCH.
+
+This patch tries to solve this by searching process with pgid equal to 
+tty->pgrp
+at checkpoint time, save index of that process in checkpoint, and at use 
+restore-time
+pgid of that process to set tty->pgrp at restore.
+
+Signed-off-by: Leonid Snegirev <leo-n4oKp6kCDthKyFCjRbgQbg@public.gmane.org>
+---
+ checkpoint/signal.c            |   16 +++++++++++++---
+ include/linux/checkpoint_hdr.h |    2 +-
+ 2 files changed, 14 insertions(+), 4 deletions(-)
+
+diff --git a/checkpoint/signal.c b/checkpoint/signal.c
+index 9d0e9c3..9c90e96 100644
+--- a/checkpoint/signal.c
++++ b/checkpoint/signal.c
+@@ -323,6 +323,7 @@ static int checkpoint_signal(struct ckpt_ctx *ctx, 
+struct task_struct *t)
+     cputime_t cputime;
+     unsigned long flags;
+     int i, ret = 0;
++    pid_t tty_pgrp, prgp_i;
+ 
+     h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_SIGNAL);
+     if (!h)
+@@ -411,7 +412,16 @@ static int checkpoint_signal(struct ckpt_ctx *ctx, 
+struct task_struct *t)
+         if (tty) {
+             /* irq is already disabled */
+             spin_lock(&tty->ctrl_lock);
+-            h->tty_pgrp = ckpt_pid_nr(ctx, tty->pgrp);
++            h->tty_pgrp_owner = -1;
++            tty_pgrp = ckpt_pid_nr(ctx, tty->pgrp);
++            for (i = 0; i < ctx->nr_tasks; i++) {
++                pgrp_i = task_pgrp_nr_ns(ctx->tasks_arr[i],
++                        ctx->root_nsproxy->pid_ns);
++                if (tty_pgrp == pgrp_i) {
++                    h->tty_pgrp_owner = i;
++                    break;
++                }
++            }    
+             spin_unlock(&tty->ctrl_lock);
+             tty_kref_put(tty);
+         }
+@@ -537,13 +547,13 @@ static int restore_signal(struct ckpt_ctx *ctx)
+         if (ret < 0)
+             goto out;
+         /* now restore the foreground group (job control) */
+-        if (h->tty_pgrp) {
++        if (h->tty_pgrp_owner != -1) {
+             /*
+              * If tty_pgrp == CKPT_PID_NULL, below will
+              * fail, so no need for explicit test
+              */
+             ret = do_tiocspgrp(tty, tty_pair_get_tty(tty),
+-                       h->tty_pgrp);
++                    ctx->pids_arr[h->tty_pgrp_owner].vpgid);
+             if (ret < 0)
+                 goto out;
+         }
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 41412d1..535e138 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -898,7 +898,7 @@ struct ckpt_hdr_signal {
+     __u64 it_prof_incr;
+     /* tty */
+     __s32 tty_objref;
+-    __s32 tty_pgrp;
++    __u32 tty_pgrp_owner;
+     __s32 tty_old_pgrp;
+ } __attribute__((aligned(8)));
+ 
+-- 
+1.5.6.5
