@@ -1,18 +1,13 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/3] C/R: Support for IPv6 addresses on network devices
-	(v2)
-Date: Wed, 7 Apr 2010 09:02:39 -0500
-Message-ID: <20100407140239.GA7008@hallyn.com>
-References: <1270563183-9351-1-git-send-email-danms@us.ibm.com>
-	<1270563183-9351-2-git-send-email-danms@us.ibm.com>
-	<20100407041858.GA12287@us.ibm.com>
-	<87aatfbbtk.fsf@caffeine.danplanet.com>
+From: Michel Normand <normand-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Prefix / Naming USERCR API
+Date: Thu, 08 Apr 2010 08:49:59 +0200
+Message-ID: <1270709399.2602.48.camel@pagloppaglop>
+References: <20100406020221.GA647@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <87aatfbbtk.fsf-FLMGYpZoEPULwtHQx/6qkW3U47Q5hpJU@public.gmane.org>
+In-Reply-To: <20100406020221.GA647-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,50 +17,47 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> SH> 1. this will only trigger if CONFIG_IPV6=y, not if it =m.  So you
-> SH> might have meant
-> SH> 	#if defined(CONFIG_IPV6) || defined(CONFIG_IPV6_MODULE)
-> 
-> Ah, okay, right.
-> 
-> >> +	addrs = ckpt_netdev_inet6_addrs(dev->ip6_ptr, addrs, max, abuf);
-> >> +	if (addrs == -E2BIG) {
-> >> +		read_unlock(&dev_base_lock);
-> >> +		goto retry;
-> >> +	}
-> 
-> SH> This is the second problem.  If CONFIG_IPV6=n or CONFIG_IPV6=m, then
-> SH> ckpt_netdev_inet6_addrs() will return -ENOSYS, and you'll fail here.
-> SH> So in those cases there is now no way to do a checkpoint with
-> SH> CHECKPOINT_NETNS (or without CHECKPOINT_NONETNS :).
-> 
-> SH> The fix of course can't be quite as simple as ignoring return
-> SH> value of -ENOSYS since you'll have lost the passed-in addrs from
-> SH> ckpt_netdev_inet4_addrs.
-> 
-> If I change it to compile in with CONFIG_IPV6_MODULE as you stated
-> above, then it won't return -ENOSYS, right?  The code will still be
-
-But it'll return -ENOSYS if CONFIG_IPV6=n.
-
-> there, and will not traverse the ipv6 address list (if I make it check
-> for an empty dev->ip6_ptr) until the module is loaded and the devices
-> gain some IPv6 information.
-> 
-> I'll test this and resend the patch appropriately.
-> 
-> Thanks!
-> 
-> -- 
-> Dan Smith
-> IBM Linux Technology Center
-> email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+TGUgbHVuZGkgMDUgYXZyaWwgMjAxMCDDoCAxOTowMiAtMDcwMCwgU3VrYWRldiBCaGF0dGlwcm9s
+dSBhIMOpY3JpdCA6Cj4gUHJlZml4IC8gRnVuY3Rpb24gbmFtZXMgZm9yIFVTRVJDUiBBUEkKPiAK
+PiBJIGd1ZXNzIHRoZSBsb25nIHRlcm0gcGxhbiBpcyB0byBleHBvcnQgdGhlIFVTRVJDUiBmdW50
+aW9uYWxpdHkgdG8gbWFuYWdlbWVudAo+IG9yIG90aGVyIGFwcGxpY2F0aW9ucyBhcyBhIGxpYnJh
+cnkuIFdlIGFyZSB0cnlpbmcgdG8gY2hvb3NlIGEgZ29vZCBwcmVmaXggZm9yCj4gdGhlIFVTRVJD
+UiBBUEkuIAo+IAo+IFRoZSBjdXJyZW50IHByZWZpeCBmb3IgdGhlIEFQSSBpcywgd2hpY2ggd2Fz
+IGNvb2tlZCB1cCBvbiB0aGUgZmx5LCBpcwo+ICJhcHBfIi4gVGhpcyBwcmVmaXggaXMgY3VycmVu
+dGx5IHVzZWQgaW4gc3RydWN0dXJlcy9mdW5jdGlvbnMgbGlrZToKPiAKPiAJc3RydWN0IGFwcF9j
+aGVja3BvaW50X2FyZ3MgKiAKPiAJc3RydWN0IGFwcF9yZXN0YXJ0X2FyZ3MgKiAKPiAJYXBwX2No
+ZWNrcG9pbnQoKQo+IAlhcHBfcmVzdGFydCgpCj4gCj4gSW4gdGhlIGZ1dHVyZSB3ZSBtYXkgaGF2
+ZSBhZGRpdGlvbmFsIGFwaXMgbGlrZToKPiAKPiAJeHh4X2ZyZWV6ZSgpCj4gCXh4eF9taWdyYXRl
+KCkKPiAJeHh4X2NyX2FkdmlzZSgpID8KPiAKPiBLZXJuZWwgYXBpIGFscmVhZHkgdXNlcyBzb21l
+IHByZWZpeGVzIGxpa2UgKGNoZWNrcG9pbnQsIGNrcHRfIGV0YzoKPiAKPiAJPGxpbnV4L2NoZWNr
+cG9pbnQuaD4KPiAJPGxpbnV4L2NoZWNrcG9pbnRfaGRyLmg+Cj4gCj4gCXN0cnVjdCBja3B0X2hk
+cl9oZWFkZXIKPiAJc3RydWN0IGNrcHRfaGRyCj4gCj4gCWNoZWNrcG9pbnQoMikKPiAJcmVzdGFy
+dCgyKQo+IAo+IAkjZGVmaW5lIFJFU1RBUlRfVEFTS1NFTEYgMHgxCj4gCSNkZWZpbmUgQ0hFQ0tQ
+T0lOVF9TVUJUUkVFIDB4MQo+IAo+IEhhdmluZyBhIHByZWZpeCB3b3VsZCBtYWtlIGl0IGVhc3kg
+dG8gaWRlbnRpZnkgdGhlIEFQSSBhbmQgYXZvaWQgY29sbGlzaW9uCj4gd2l0aCBvdGhlciBsaWJy
+YXJpZXMgdGhhdCB0aGUgYXBwbGljYXRpb24gbWlnaHQgbGluayBhZ2FpbnN0LiBFZzogdGhlCj4g
+InBhbV8iIHByZWZpeGVzIFBBTSBhcGkuCj4gCj4gSGF2aW5nIGEgcHJlZml4IGxpa2UgImNyXyIg
+b3IgImFjcl8iIGNvdWxkIGNhdXNlIHNvbWUgcmVkdW5kYW5jeSBpbiBzb21lCj4gbmFtZXMsIGxp
+a2UgY3JfY2hlY2twb2ludCgpLCBidXQgaXMgcHJvYmFibHkgb2ssIGxpa2UgcGFtX2F1dGhlbnRp
+Y2F0ZSgpID8KPiAKPiBTbywgd2hhdCB3b3VsZCBiZSBhIGdvb2QgcHJlZml4ID8KPiAKPiAJY3Jf
+Cj4gCQljcl9jaGVja3BvaW50LmgsIGxpYmNyLmEKPiAJCWNyX2NoZWNrcG9pbnQoKSBjcl9yZXN0
+YXJ0KCkgY3JfZnJlZXplKCkgY3JfbWlncmF0ZSgpCj4gCQlzdHJ1Y3QgY3JfY2hlY2twb2ludF9h
+cmdzLCBzdHJ1Y3QgY3JfcmVzdGFydF9hcmdzCj4gCWFjcl8gCj4gCQlPbmx5IGFkdmFudGFnZSBv
+dmVyICdjcl8nIGlzIGxlc3NlciBsaWtlbGlob29kIG9mIGNvbGxpc2lvbgo+IAo+IAkJYWNyX2No
+ZWNrcG9pbnQuaCwgbGliYWNyLmEKPiAJCWFjcl9jaGVja3BvaW50KCkgYWNyX3Jlc3RhcnQoKSBh
+Y3JfZnJlZXplKCkgYWNyX21pZ3JhdGUoKQo+IAkJc3RydWN0IGFjcl9jaGVja3BvaW50X2FyZ3Ms
+IHN0cnVjdCBhY3JfcmVzdGFydF9hcmdzCj4gCj4gCWx4Y3JfCQo+IAkJbHhjcl9jaGVja3BvaW50
+LmgsIGxpYmx4Y3IuYSAKPiAJCWx4Y3JfY2hlY2twb2ludCgpIGx4Y3JfcmVzdGFydCgpIGx4Y3Jf
+ZnJlZXplKCkgbHhjcl9taWdyYXRlKCkKPiAJCXN0cnVjdCBseGNyX2NoZWNrcG9pbnRfYXJncywg
+c3RydWN0IGx4Y3JfcmVzdGFydF9hcmdzCgpJIGRvIG5vdCB0aGluayBseGNyXyBwcmVmaXggaXMg
+YSBnb29kIGNob2ljZSBhcyBseGMgaXMgYWJvdXQgY29udGFpbmVyCmFuZCBjb3VsZCB1c2UgZGlm
+ZmVyZW50IGxpYnJhcmllcyBmb3IgdGhlIGNoZWNrcG9pbnQvcmVzdGFydCBmdW5jdGlvbi4KCi0t
+LQpNaWNoZWwKCj4gCj4gT3RoZXIgcHJlZml4ZXMgb3IgbmFtaW5nIHN1Z2dlc3Rpb25zID8KPiAK
+PiBUaGFua3MsCj4gCj4gU3VrYWRldgoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5s
+aW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21h
+aWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
