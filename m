@@ -1,15 +1,16 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/2] cr: be more informative with obj_new errors
-Date: Fri, 9 Apr 2010 18:29:30 -0700
-Message-ID: <20100410012930.GA25363@count0.beaverton.ibm.com>
+Subject: Re: [PATCH 2/2] cr: handle CONFIG_SYSVIPC=n
+Date: Fri, 9 Apr 2010 18:42:07 -0700
+Message-ID: <20100410014207.GB25363@count0.beaverton.ibm.com>
 References: <1270847578-26250-1-git-send-email-serue@us.ibm.com>
 	<1270847578-26250-2-git-send-email-serue@us.ibm.com>
+	<1270847578-26250-3-git-send-email-serue@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1270847578-26250-2-git-send-email-serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1270847578-26250-3-git-send-email-serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,48 +24,48 @@ To: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Apr 09, 2010 at 04:12:57PM -0500, Serge Hallyn wrote:
+On Fri, Apr 09, 2010 at 04:12:58PM -0500, Serge Hallyn wrote:
 > From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 > 
-> If some checkpoint object type was mis-registered or mis-used,
-> at least give some info to help deduce the caller.
+> If CONFIG_IPC_NS=n, then checkpoint a sysvipcns of 0.  If we
+> end up restarted on a CONFIG_SYSVIPC=y host, we'll just end up
+> using the parent sysvipcns, which is fine as we won't be trying
+> to restore any sysvipc objects.
+> 
+> (The existing code worked fine with CONFIG_IPC_NS=n, but not
+> with CONFIG_SYSVIPC=n and CONFIG_POSIX_MQUEUE=n.  But we
+> trigger on CONFIG_IPC_NS since even if CONFIG_SYSVIPC=y but
+> CONFIG_IPC_NS=n, checkpointing 0 is right).
 > 
 > Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Pulled, thanks!
+Applied, thanks!
 
 Cheers,
 	-Matt Helsley
 
 > ---
->  kernel/checkpoint/objhash.c |   13 +++++++++++--
->  1 files changed, 11 insertions(+), 2 deletions(-)
+>  kernel/nsproxy.c |    4 ++++
+>  1 files changed, 4 insertions(+), 0 deletions(-)
 > 
-> diff --git a/kernel/checkpoint/objhash.c b/kernel/checkpoint/objhash.c
-> index af1e5e7..6a3937e 100644
-> --- a/kernel/checkpoint/objhash.c
-> +++ b/kernel/checkpoint/objhash.c
-> @@ -188,9 +188,18 @@ static struct ckpt_obj *obj_new(struct ckpt_ctx *ctx, void *ptr,
->  	int i, ret;
-> 
->  	/* explicitly disallow null pointers */
-> -	BUG_ON(!ptr);
-> +	if (!ptr) {
-> +		ckpt_err(ctx, -EINVAL, "checkpointing NULL type %d\n", type);
-> +		return -EINVAL;
-> +	}
-> +
->  	/* make sure we don't change this accidentally */
-> -	BUG_ON(ops->obj_type != type);
-> +	if (ops->obj_type != type)
-> +	{
-> +		ckpt_err(ctx, -EINVAL, "type mismatch: %d->ops->obj_type %d\n",
-> +			type, ops->obj_type);
-> +		return ERR_PTR(-EINVAL);
-> +	}
-> 
->  	obj = kzalloc(sizeof(*obj), GFP_KERNEL);
->  	if (!obj)
+> diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+> index 5f9d809..0b43f4d 100644
+> --- a/kernel/nsproxy.c
+> +++ b/kernel/nsproxy.c
+> @@ -290,9 +290,13 @@ static int do_checkpoint_ns(struct ckpt_ctx *ctx, struct nsproxy *nsproxy)
+>  	if (ret <= 0)
+>  		goto out;
+>  	h->uts_objref = ret;
+> +#ifdef CONFIG_IPC_NS
+>  	ret = checkpoint_obj(ctx, nsproxy->ipc_ns, CKPT_OBJ_IPC_NS);
+>  	if (ret < 0)
+>  		goto out;
+> +#else	/* CONFIG_IPC_NS */
+> +	ret = 0;
+> +#endif	/* CONFIG_IPC_NS */
+>  	h->ipc_objref = ret;
+>  #ifdef CONFIG_NETNS_CHECKPOINT
+>  	if (!(ctx->uflags & CHECKPOINT_NONETNS))
 > -- 
 > 1.7.0.4
 > 
