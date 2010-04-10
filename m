@@ -1,7 +1,7 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 1/2] cr: be more informative with obj_new errors
-Date: Fri, 9 Apr 2010 16:15:14 -0500
-Message-ID: <20100409211514.GA18061@hallyn.com>
+Date: Fri, 9 Apr 2010 18:29:30 -0700
+Message-ID: <20100410012930.GA25363@count0.beaverton.ibm.com>
 References: <1270847578-26250-1-git-send-email-serue@us.ibm.com>
 	<1270847578-26250-2-git-send-email-serue@us.ibm.com>
 Mime-Version: 1.0
@@ -23,13 +23,19 @@ To: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Serge Hallyn (serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+On Fri, Apr 09, 2010 at 04:12:57PM -0500, Serge Hallyn wrote:
 > From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 > 
 > If some checkpoint object type was mis-registered or mis-used,
 > at least give some info to help deduce the caller.
 > 
 > Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
+Pulled, thanks!
+
+Cheers,
+	-Matt Helsley
+
 > ---
 >  kernel/checkpoint/objhash.c |   13 +++++++++++--
 >  1 files changed, 11 insertions(+), 2 deletions(-)
@@ -40,15 +46,12 @@ Quoting Serge Hallyn (serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
 > +++ b/kernel/checkpoint/objhash.c
 > @@ -188,9 +188,18 @@ static struct ckpt_obj *obj_new(struct ckpt_ctx *ctx, void *ptr,
 >  	int i, ret;
->  
+> 
 >  	/* explicitly disallow null pointers */
 > -	BUG_ON(!ptr);
 > +	if (!ptr) {
 > +		ckpt_err(ctx, -EINVAL, "checkpointing NULL type %d\n", type);
 > +		return -EINVAL;
-
-Gah, sorry, that should be an ERR_PTR(-EINVAL) of course
-
 > +	}
 > +
 >  	/* make sure we don't change this accidentally */
@@ -59,13 +62,9 @@ Gah, sorry, that should be an ERR_PTR(-EINVAL) of course
 > +			type, ops->obj_type);
 > +		return ERR_PTR(-EINVAL);
 > +	}
->  
+> 
 >  	obj = kzalloc(sizeof(*obj), GFP_KERNEL);
 >  	if (!obj)
 > -- 
 > 1.7.0.4
 > 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
