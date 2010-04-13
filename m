@@ -1,14 +1,13 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH linux-cr] free ctx->coord_pidns
-Date: Tue, 13 Apr 2010 08:39:44 -0700
-Message-ID: <20100413153944.GD25363@count0.beaverton.ibm.com>
-References: <20100413000629.GA23699@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH linux-cr] cr: fs/inode.c: make sure ckpt_obj_register()
+	actually runs
+Date: Tue, 13 Apr 2010 15:35:35 -0500
+Message-ID: <20100413203535.GA9187@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20100413000629.GA23699-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,38 +17,53 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Apr 12, 2010 at 07:06:29PM -0500, Serge E. Hallyn wrote:
-> My first patchset did this, but subsequent revisions dropped
-> the put_pid_ns...
+[ This is against Matt's code-shuffled patchset ]
 
-Applied, thanks!
+So put it in its own, explicitly-called init function.
 
-Cheers,
-	-Matt Helsley
+Without this, on my s390x sles11 system CKPT_OBJ_INODE does not,
+in fact, get registered.  With, it does, and cr_tests/bashckpt
+passes.
 
-> 
-> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  kernel/checkpoint/sys.c |    2 ++
->  1 files changed, 2 insertions(+), 0 deletions(-)
-> 
-> diff --git a/kernel/checkpoint/sys.c b/kernel/checkpoint/sys.c
-> index 997fc44..88b668d 100644
-> --- a/kernel/checkpoint/sys.c
-> +++ b/kernel/checkpoint/sys.c
-> @@ -250,6 +250,8 @@ static void ckpt_ctx_free(struct ckpt_ctx *ctx)
->  	if (ctx->tasks_arr)
->  		task_arr_free(ctx);
-> 
-> +	if (ctx->coord_pidns)
-> +		put_pid_ns(ctx->coord_pidns);
->  	if (ctx->root_nsproxy)
->  		put_nsproxy(ctx->root_nsproxy);
->  	if (ctx->root_task)
-> -- 
-> 1.6.0.6
-> 
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ fs/inode.c |   13 +++++++++----
+ 1 files changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/fs/inode.c b/fs/inode.c
+index 1fcaf64..5121790 100644
+--- a/fs/inode.c
++++ b/fs/inode.c
+@@ -1582,6 +1582,15 @@ static const struct ckpt_obj_ops ckpt_obj_inode_ops = {
+ 	.ref_drop = obj_inode_drop,
+ 	.ref_grab = obj_inode_grab,
+ };
++
++static int inode_ckpt_init(void)
++{
++	int ret = ckpt_obj_register(&ckpt_obj_inode_ops);
++	printk(KERN_NOTICE "%s: ckpt_obj_register for inode returned %d\n",
++		__func__, ret);
++	return ret;
++}
++__initcall(inode_ckpt_init);
+ #endif
+ 
+ void __init inode_init(void)
+@@ -1613,10 +1622,6 @@ void __init inode_init(void)
+ 
+ 	for (loop = 0; loop < (1 << i_hash_shift); loop++)
+ 		INIT_HLIST_HEAD(&inode_hashtable[loop]);
+-
+-#ifdef CONFIG_CHECKPOINT
+-	ckpt_obj_register(&ckpt_obj_inode_ops);
+-#endif
+ }
+ 
+ void init_special_inode(struct inode *inode, umode_t mode, dev_t rdev)
+-- 
+1.7.0.4
