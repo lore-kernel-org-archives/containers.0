@@ -1,15 +1,13 @@
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: Re: Wiki for LXC with Checkpoint/Restart
-Date: Wed, 14 Apr 2010 15:55:02 -0500
-Message-ID: <1271278502.18251.122.camel@localhost>
-References: <20100412222727.GA5759@us.ibm.com>
-	<1271273662.18251.105.camel@localhost>
-	<20100414204054.GA24411@us.ibm.com>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Lockdep splat in cpuset code acquiring alloc_lock
+Date: Wed, 14 Apr 2010 14:10:51 -0700
+Message-ID: <z2m6599ad831004141410tdc40feb0h529dabe4a39d67d5__9490.73642627827$1271279771$gmane$org@mail.gmail.com>
+References: <20100414202347.GA26791@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100414204054.GA24411-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20100414202347.GA26791-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,16 +17,93 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Rusty Russell <rusty-8n+1lVoiYb80n/F98K4Iww@public.gmane.org>
+Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, 2010-04-14 at 13:40 -0700, Sukadev Bhattiprolu wrote:
-> 
-> Yes, I think thats what Michel or Daniel ran into. For some reason, I
-> did not run into on Fedora11. Can you add -fPIC to the usercr CFLAGS
-> and try ? If it works for you, I will try on Fedora11 too and we can
-> add a patch to lxc.sf.net/patches/lxc+usercr/.
+Looks like select_fallback_rq() shouldn't be calling
+cpuset_cpus_allowed_locked(), which does a task_lock(), which isn't
+IRQ safe. Also, according to its comments that should only be held
+with the cpuset callback_mutex held, which seems unlikely from a
+softirq handler.
 
-Yes, adding -fPIC to CFLAGS in the user-cr Makefile and rebuilding
-allows the lxc build to succeed.
+Also, calling cpuset_cpus_allowed_locked(p, &p->cpus_allowed) stomps
+on state in p without (AFAICS) synchronization.
+
+The description of commit e76bd8d9850c2296a7e8e24c9dce9b5e6b55fe2f
+includes the phrase " I'm fairly sure this works, but there might be a
+deadlock hiding" although I think that the lockdep-reported problem is
+different than what Rusty had in mind.
+
+Paul
+
+On Wed, Apr 14, 2010 at 1:23 PM, Paul E. McKenney
+<paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+> Hello!
+>
+> I hit the following lockdep splat on one of many runs. =A0Thoughts?
+>
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =
+=A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0Thanx, Paul
+>
+> ------------------------------------------------------------------------
+>
+> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D
+> [ INFO: inconsistent lock state ]
+> 2.6.34-rc3-autokern1 #1
+> ---------------------------------
+> inconsistent {SOFTIRQ-ON-W} -> {IN-SOFTIRQ-W} usage.
+> swapper/0 [HC0[0]:SC1[1]:HE0:SE0] takes:
+> =A0(&(&p->alloc_lock)->rlock){+.?...}, at: [<c0000000000affd4>] .cpuset_c=
+pus_allowed_locked+0x2c/0xbc
+> {SOFTIRQ-ON-W} state was registered at:
+> =A0[<c000000000097ca8>] .lock_acquire+0x5c/0x88
+> =A0[<c000000000570270>] ._raw_spin_lock+0x48/0x70
+> =A0[<c000000000126cec>] .set_task_comm+0x34/0x9c
+> =A0[<c0000000000802f0>] .kthreadd+0x30/0x160
+> =A0[<c000000000026c90>] .kernel_thread+0x54/0x70
+> irq event stamp: 782497
+> hardirqs last =A0enabled at (782496): [<c000000000570ebc>] ._raw_spin_unl=
+ock_irq+0x38/0x80
+> hardirqs last disabled at (782497): [<c000000000050fb4>] .task_rq_lock+0x=
+74/0x130
+> softirqs last =A0enabled at (782478): [<c000000000026acc>] .call_do_softi=
+rq+0x14/0x24
+> softirqs last disabled at (782493): [<c000000000026acc>] .call_do_softirq=
++0x14/0x24
+>
+> other info that might help us debug this:
+> 2 locks held by swapper/0:
+> =A0#0: =A0(&timer){+.-.-.}, at: [<c0000000000712a0>] .run_timer_softirq+0=
+x138/0x298
+> =A0#1: =A0(rcu_read_lock){.+.+..}, at: [<c000000000054180>] .select_fallb=
+ack_rq+0xe8/0x1c4
+>
+> stack backtrace:
+> Call Trace:
+> [c00000000ffff740] [c000000000010168] .show_stack+0x70/0x184 (unreliable)
+> [c00000000ffff7f0] [c0000000000933b8] .print_usage_bug+0x1d4/0x208
+> [c00000000ffff8b0] [c000000000093778] .mark_lock+0x38c/0x6f4
+> [c00000000ffff960] [c00000000009696c] .__lock_acquire+0x6ac/0x96c
+> [c00000000ffffa60] [c000000000097ca8] .lock_acquire+0x5c/0x88
+> [c00000000ffffb00] [c000000000570270] ._raw_spin_lock+0x48/0x70
+> [c00000000ffffb90] [c0000000000affd4] .cpuset_cpus_allowed_locked+0x2c/0x=
+bc
+> [c00000000ffffc20] [c0000000000541bc] .select_fallback_rq+0x124/0x1c4
+> [c00000000ffffcd0] [c00000000005ee44] .try_to_wake_up+0x1ac/0x3b4
+> [c00000000ffffd80] [c000000000071910] .process_timeout+0x10/0x24
+> [c00000000ffffdf0] [c000000000071348] .run_timer_softirq+0x1e0/0x298
+> [c00000000ffffed0] [c00000000006a440] .__do_softirq+0x158/0x254
+> [c00000000fffff90] [c000000000026acc] .call_do_softirq+0x14/0x24
+> [c00000000095b8f0] [c00000000000cd34] .do_softirq+0xb0/0x138
+> [c00000000095b990] [c00000000006a680] .irq_exit+0x88/0x100
+> [c00000000095ba20] [c0000000000243a8] .timer_interrupt+0x150/0x19c
+> [c00000000095bad0] [c000000000003704] decrementer_common+0x104/0x180
+> --- Exception: 901 at .raw_local_irq_restore+0x6c/0x80
+> =A0 =A0LR =3D .cpu_idle+0x138/0x20c
+> [c00000000095bdc0] [0000000000253400] 0x253400 (unreliable)
+> [c00000000095be40] [c0000000000129e8] .cpu_idle+0x138/0x20c
+> [c00000000095bed0] [c00000000057a844] .start_secondary+0x3c4/0x404
+> [c00000000095bf90] [c000000000008264] .start_secondary_prolog+0x10/0x14
+>
