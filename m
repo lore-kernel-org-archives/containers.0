@@ -1,14 +1,23 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][PATCH 6/6][usercr] Rename common.h to cr_log.h
-Date: Tue, 13 Apr 2010 17:53:22 -0700
-Message-ID: <20100414005322.GF13532@us.ibm.com>
-References: <20100414004927.GA13012@us.ibm.com>
+From: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH -mmotm 1/5] memcg: disable irq at page cgroup lock
+Date: Tue, 13 Apr 2010 23:55:12 -0700
+Message-ID: <xr931veiplpr.fsf__25380.4738786586$1271228213$gmane$org@ninji.mtv.corp.google.com>
+References: <1268609202-15581-1-git-send-email-arighi@develer.com>
+	<1268609202-15581-2-git-send-email-arighi@develer.com>
+	<20100317115855.GS18054@balbir.in.ibm.com>
+	<20100318085411.834e1e46.kamezawa.hiroyu@jp.fujitsu.com>
+	<20100318041944.GA18054@balbir.in.ibm.com>
+	<20100318133527.420b2f25.kamezawa.hiroyu@jp.fujitsu.com>
+	<20100318162855.GG18054@balbir.in.ibm.com>
+	<20100319102332.f1d81c8d.kamezawa.hiroyu@jp.fujitsu.com>
+	<20100319024039.GH18054@balbir.in.ibm.com>
+	<20100319120049.3dbf8440.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20100414004927.GA13012-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <xr93hbnepmj6.fsf-Pk7ff2FLCuk9fRMx9H/SexPsWskHk0ljAL8bYrjMMd8@public.gmane.org> (Greg Thelen's
+	message of "Tue\, 13 Apr 2010 23\:37\:33 -0700")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,318 +27,74 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Tue, 13 Apr 2010 17:12:04 -0700
-Subject: [RFC][PATCH 6/6][usercr] Rename common.h to cr_log.h
-
-common.h used to be shared between checkpoint.c and restart.c.  Since all
-the code is now in one file (cr_checkpoint.c), the name 'common.h' does not
-make much sense.
-
-The definitions in the file relate to logging, so rename to cr_log.h.
-
-Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
----
- Makefile          |    2 +-
- checkpoint-main.c |    2 +-
- common.h          |  112 -----------------------------------------------------
- cr_checkpoint.c   |    2 +-
- cr_log.h          |  110 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- restart-main.c    |    2 +-
- 6 files changed, 114 insertions(+), 116 deletions(-)
- delete mode 100644 common.h
- create mode 100644 cr_log.h
-
-diff --git a/Makefile b/Makefile
-index 205320a..f2c6b18 100644
---- a/Makefile
-+++ b/Makefile
-@@ -52,7 +52,7 @@ $(LIB_ECLONE):
- # restart needs to be thread-safe
- restart: CFLAGS += -D__REENTRANT -pthread
- 
--$(CR_OBJS): common.h cr_checkpoint.h
-+$(CR_OBJS): cr_log.h cr_checkpoint.h
- 
- restart: cr_checkpoint.o restart-main.o
- 	$(CC) -o $@ $^
-diff --git a/checkpoint-main.c b/checkpoint-main.c
-index b8f96a7..34eb827 100644
---- a/checkpoint-main.c
-+++ b/checkpoint-main.c
-@@ -10,7 +10,7 @@
- #include <linux/checkpoint.h>
- 
- #include "cr_checkpoint.h"
--#include "common.h"
-+#include "cr_log.h"
- 
- static int global_uerrfd = -1;
- 
-diff --git a/common.h b/common.h
-deleted file mode 100644
-index 99b224d..0000000
---- a/common.h
-+++ /dev/null
-@@ -1,112 +0,0 @@
--#include <stdio.h>
--#include <signal.h>
--
--#define BUFSIZE  (4 * 4096)
--
--static inline void ckpt_msg(int fd, char *format, ...)
--{
--	va_list ap;
--	char *bufp;
--	if (fd < 0)
--		return;
--
--	va_start(ap, format);
--
--	bufp = malloc(BUFSIZE);
--	if(bufp) {
--		vsnprintf(bufp, BUFSIZE, format, ap);
--		write(fd, bufp, strlen(bufp));
--	}
--	free(bufp);
--
--	va_end(ap);
--}
--
--#define ckpt_perror(s) 							\
--	do {								\
--		ckpt_msg(global_uerrfd, s);				\
--		ckpt_msg(global_uerrfd, ": %s\n", strerror(errno));	\
--	} while (0)
--
--#ifdef CHECKPOINT_DEBUG
--#define ckpt_dbg(_format, _args...)					\
--	do {								\
--		if (global_debug)					\
--			ckpt_msg(global_uerrfd, "<%d>" _format, 	\
--					_gettid(), ##_args); 		\
--	} while (0)
--#define ckpt_dbg_cont(_format, _args...)				\
--	do {								\
--		if (global_debug)					\
--			ckpt_msg(global_uerrfd, _format, ##_args);	\
--	} while (0)
--#else
--#define ckpt_dbg(_format, _args...)  \
--	do { } while (0)
--#define ckpt_dbg_cont(_format, _args...)  \
--	do { } while (0)
--#endif
--
--#define ckpt_err(...)  \
--	ckpt_msg(global_uerrfd, __VA_ARGS__)
--
--#define ckpt_verbose(...)					\
--	do {							\
--		if (global_verbose)				\
--			ckpt_msg(global_ulogfd, __VA_ARGS__);	\
--	} while(0)
--
--struct signal_array {
--	int signum;
--	char *sigstr;
--};
--
--#define SIGNAL_ENTRY(signal)  { SIG ## signal, #signal }
--
--#define INIT_SIGNAL_ARRAY { 	\
--	{ 0, "NONE" },		\
--	SIGNAL_ENTRY(ALRM),	\
--	SIGNAL_ENTRY(HUP),	\
--	SIGNAL_ENTRY(INT),	\
--	SIGNAL_ENTRY(KILL),	\
--	SIGNAL_ENTRY(PIPE),	\
--	SIGNAL_ENTRY(POLL),	\
--	SIGNAL_ENTRY(PROF),	\
--	SIGNAL_ENTRY(TERM),	\
--	SIGNAL_ENTRY(USR1),	\
--	SIGNAL_ENTRY(USR2),	\
--	SIGNAL_ENTRY(VTALRM),	\
--	SIGNAL_ENTRY(STKFLT),	\
--	SIGNAL_ENTRY(PWR),	\
--	SIGNAL_ENTRY(WINCH),	\
--	SIGNAL_ENTRY(CHLD),	\
--	SIGNAL_ENTRY(URG),	\
--	SIGNAL_ENTRY(TTIN),	\
--	SIGNAL_ENTRY(TTOU),	\
--	SIGNAL_ENTRY(STOP),	\
--	SIGNAL_ENTRY(CONT),	\
--	SIGNAL_ENTRY(ABRT),	\
--	SIGNAL_ENTRY(FPE),	\
--	SIGNAL_ENTRY(ILL),	\
--	SIGNAL_ENTRY(QUIT),	\
--	SIGNAL_ENTRY(SEGV),	\
--	SIGNAL_ENTRY(TRAP),	\
--	SIGNAL_ENTRY(SYS),	\
--	SIGNAL_ENTRY(BUS),	\
--	SIGNAL_ENTRY(XCPU),	\
--	SIGNAL_ENTRY(XFSZ),	\
--	{ -1, "LAST" },		\
--}
--
--#define CKPT_COND_PIDZERO  0x1
--#define CKPT_COND_MNTPROC  0x2
--#define CKPT_COND_MNTPTY   0x4
--
--#define CKPT_COND_NONE     0
--#define CKPT_COND_ANY      ULONG_MAX
--
--/* default for skip/warn/fail */
--#define CKPT_COND_WARN     (CKPT_COND_MNTPROC | \
--			    CKPT_COND_MNTPTY)
--#define CKPT_COND_FAIL     (CKPT_COND_NONE)
--
-diff --git a/cr_checkpoint.c b/cr_checkpoint.c
-index e01c08e..272c54b 100644
---- a/cr_checkpoint.c
-+++ b/cr_checkpoint.c
-@@ -41,7 +41,7 @@
- #include "genstack.h"
- #include "compat.h"
- #include "cr_checkpoint.h"
--#include "common.h"
-+#include "cr_log.h"
- 
- /*
-  * By default, 'restart' creates a new pid namespace in which the
-diff --git a/cr_log.h b/cr_log.h
-new file mode 100644
-index 0000000..c971b74
---- /dev/null
-+++ b/cr_log.h
-@@ -0,0 +1,110 @@
-+#include <stdio.h>
-+#include <signal.h>
-+
-+#define BUFSIZE  (4 * 4096)
-+
-+static inline void ckpt_msg(int fd, char *format, ...)
-+{
-+	va_list ap;
-+	char *bufp;
-+	if (fd < 0)
-+		return;
-+
-+	va_start(ap, format);
-+
-+	bufp = malloc(BUFSIZE);
-+	if(bufp) {
-+		vsnprintf(bufp, BUFSIZE, format, ap);
-+		write(fd, bufp, strlen(bufp));
-+	}
-+	free(bufp);
-+
-+	va_end(ap);
-+}
-+
-+#define ckpt_perror(s) 							\
-+	do {								\
-+		ckpt_msg(global_uerrfd, s);				\
-+		ckpt_msg(global_uerrfd, ": %s\n", strerror(errno));	\
-+	} while (0)
-+
-+#ifdef CHECKPOINT_DEBUG
-+#define ckpt_dbg(_format, _args...)					\
-+	do {								\
-+		if (global_debug)					\
-+			ckpt_msg(global_uerrfd, "<%d>" _format, 	\
-+					_gettid(), ##_args); 		\
-+	} while (0)
-+#define ckpt_dbg_cont(_format, _args...)				\
-+	do {								\
-+		if (global_debug)					\
-+			ckpt_msg(global_uerrfd, _format, ##_args);	\
-+	} while (0)
-+#else
-+#define ckpt_dbg(_format, _args...)  \
-+	do { } while (0)
-+#define ckpt_dbg_cont(_format, _args...)  \
-+	do { } while (0)
-+#endif
-+
-+#define ckpt_err(...)  \
-+	ckpt_msg(global_uerrfd, __VA_ARGS__)
-+
-+#define ckpt_verbose(...)					\
-+	do {							\
-+		if (global_verbose)				\
-+			ckpt_msg(global_ulogfd, __VA_ARGS__);	\
-+	} while(0)
-+
-+struct signal_array {
-+	int signum;
-+	char *sigstr;
-+};
-+
-+#define SIGNAL_ENTRY(signal)  { SIG ## signal, #signal }
-+
-+#define INIT_SIGNAL_ARRAY { 	\
-+	{ 0, "NONE" },		\
-+	SIGNAL_ENTRY(ALRM),	\
-+	SIGNAL_ENTRY(HUP),	\
-+	SIGNAL_ENTRY(INT),	\
-+	SIGNAL_ENTRY(KILL),	\
-+	SIGNAL_ENTRY(PIPE),	\
-+	SIGNAL_ENTRY(POLL),	\
-+	SIGNAL_ENTRY(PROF),	\
-+	SIGNAL_ENTRY(TERM),	\
-+	SIGNAL_ENTRY(USR1),	\
-+	SIGNAL_ENTRY(USR2),	\
-+	SIGNAL_ENTRY(VTALRM),	\
-+	SIGNAL_ENTRY(STKFLT),	\
-+	SIGNAL_ENTRY(PWR),	\
-+	SIGNAL_ENTRY(WINCH),	\
-+	SIGNAL_ENTRY(CHLD),	\
-+	SIGNAL_ENTRY(URG),	\
-+	SIGNAL_ENTRY(TTIN),	\
-+	SIGNAL_ENTRY(TTOU),	\
-+	SIGNAL_ENTRY(STOP),	\
-+	SIGNAL_ENTRY(CONT),	\
-+	SIGNAL_ENTRY(ABRT),	\
-+	SIGNAL_ENTRY(FPE),	\
-+	SIGNAL_ENTRY(ILL),	\
-+	SIGNAL_ENTRY(QUIT),	\
-+	SIGNAL_ENTRY(SEGV),	\
-+	SIGNAL_ENTRY(TRAP),	\
-+	SIGNAL_ENTRY(SYS),	\
-+	SIGNAL_ENTRY(BUS),	\
-+	SIGNAL_ENTRY(XCPU),	\
-+	SIGNAL_ENTRY(XFSZ),	\
-+	{ -1, "LAST" },		\
-+}
-+
-+#define CKPT_COND_PIDZERO  0x1
-+#define CKPT_COND_MNTPROC  0x2
-+#define CKPT_COND_MNTPTY   0x4
-+
-+#define CKPT_COND_NONE     0
-+#define CKPT_COND_ANY      ULONG_MAX
-+
-+/* default for skip/warn/fail */
-+#define CKPT_COND_WARN     (CKPT_COND_MNTPROC | CKPT_COND_MNTPTY)
-+#define CKPT_COND_FAIL     (CKPT_COND_NONE)
-diff --git a/restart-main.c b/restart-main.c
-index 1f1a749..c3100ac 100644
---- a/restart-main.c
-+++ b/restart-main.c
-@@ -9,7 +9,7 @@
- #include <getopt.h>
- 
- #include "cr_checkpoint.h"
--#include "common.h"
-+#include "cr_log.h"
- 
- static int global_ulogfd;
- static int global_uerrfd;
--- 
-1.6.6.1
+T24gVGh1LCBNYXIgMTgsIDIwMTAgYXQgODowMCBQTSwgS0FNRVpBV0EgSGlyb3l1a2kgPGthbWV6
+YXdhLmhpcm95dUBqcC5mdWppdHN1LmNvbT4gd3JvdGU6Cj4gT24gRnJpLCAxOSBNYXIgMjAxMCAw
+ODoxMDozOSArMDUzMAo+IEJhbGJpciBTaW5naCA8YmFsYmlyQGxpbnV4LnZuZXQuaWJtLmNvbT4g
+d3JvdGU6Cj4KPj4gKiBLQU1FWkFXQSBIaXJveXVraSA8a2FtZXphd2EuaGlyb3l1QGpwLmZ1aml0
+c3UuY29tPiBbMjAxMC0wMy0xOSAxMDoyMzozMl06Cj4+Cj4+ID4gT24gVGh1LCAxOCBNYXIgMjAx
+MCAyMTo1ODo1NSArMDUzMAo+PiA+IEJhbGJpciBTaW5naCA8YmFsYmlyQGxpbnV4LnZuZXQuaWJt
+LmNvbT4gd3JvdGU6Cj4+ID4KPj4gPiA+ICogS0FNRVpBV0EgSGlyb3l1a2kgPGthbWV6YXdhLmhp
+cm95dUBqcC5mdWppdHN1LmNvbT4gWzIwMTAtMDMtMTggMTM6MzU6MjddOgo+PiA+Cj4+ID4gPiA+
+IFRoZW4sIG5vIHByb2JlbG0uIEl0J3Mgb2sgdG8gYWRkIG1lbV9jZ3JvdXBfdWRwYXRlX3N0YXQo
+KSBpbmRwZW5kZW50IGZyb20KPj4gPiA+ID4gbWVtX2Nncm91cF91cGRhdGVfZmlsZV9tYXBwZWQo
+KS4gVGhlIGxvb2sgbWF5IGJlIG1lc3N5IGJ1dCBpdCdzIG5vdCB5b3VyCj4+ID4gPiA+IGZhdWx0
+LiBCdXQgcGxlYXNlIHdyaXRlICJ3aHkgYWRkIG5ldyBmdW5jdGlvbiIgdG8gcGF0Y2ggZGVzY3Jp
+cHRpb24uCj4+ID4gPiA+Cj4+ID4gPiA+IEknbSBzb3JyeSBmb3Igd2FzdGluZyB5b3VyIHRpbWUu
+Cj4+ID4gPgo+PiA+ID4gRG8gd2UgbmVlZCB0byBnbyBkb3duIHRoaXMgcm91dGU/IFdlIGNvdWxk
+IGNoZWNrIHRoZSBzdGF0IGFuZCBkbyB0aGUKPj4gPiA+IGNvcnJlY3QgdGhpbmcuIEluIGNhc2Ug
+b2YgRklMRV9NQVBQRUQsIGFsd2F5cyBncmFiIHBhZ2VfY2dyb3VwX2xvY2sKPj4gPiA+IGFuZCBm
+b3Igb3RoZXJzIHBvdGVudGlhbGx5IGxvb2sgYXQgdHJ5bG9jay4gSXQgaXMgT0sgZm9yIGRpZmZl
+cmVudAo+PiA+ID4gc3RhdHMgdG8gYmUgcHJvdGVjdGVkIHZpYSBkaWZmZXJlbnQgbG9ja3MuCj4+
+ID4gPgo+PiA+Cj4+ID4gSSBfZG9uJ3RfIHdhbnQgdG8gc2VlIGEgbWl4dHVyZSBvZiBzcGlubG9j
+ayBhbmQgdHJ5bG9jayBpbiBhIGZ1bmN0aW9uLgo+PiA+Cj4+Cj4+IEEgd2VsbCBkb2N1bWVudGVk
+IHdlbGwgd3JpdHRlbiBmdW5jdGlvbiBjYW4gaGVscC4gVGhlIG90aGVyIHRoaW5nIGlzIHRvCj4+
+IG9mLWNvdXJzZSBzb2x2ZSB0aGlzIGNvcnJlY3RseSBieSBpbnRyb2R1Y2luZyBkaWZmZXJlbnQg
+bG9ja2luZyBhcm91bmQKPj4gdGhlIHN0YXRpc3RpY3MuIEFyZSB5b3Ugc3VnZ2VzdGluZyB0aGUg
+bGF0ZXI/Cj4+Cj4KPiBOby4gQXMgSSB3cm90ZS4KPiDCoCDCoCDCoCDCoC0gZG9uJ3QgbW9kaWZ5
+IGNvZGVzIGFyb3VuZCBGSUxFX01BUFBFRCBpbiB0aGlzIHNlcmllcy4KPiDCoCDCoCDCoCDCoC0g
+YWRkIGEgbmV3IGZ1bmN0aW9ucyBmb3IgbmV3IHN0YXRpc3RpY3MKPiBUaGVuLAo+IMKgIMKgIMKg
+IMKgLSB0aGluayBhYm91dCBjbGVhbiB1cCBsYXRlciwgYWZ0ZXIgd2UgY29uZmlybSBhbGwgdGhp
+bmdzIHdvcmsgYXMgZXhwZWN0ZWQuCgpJIGhhdmUgcG9ydGVkIEFuZHJlYSBSaWdoaSdzIG1lbWNn
+IGRpcnR5IHBhZ2UgYWNjb3VudGluZyBwYXRjaGVzIHRvIGxhdGVzdAptbXRvbS0yMDEwLTA0LTA1
+LTE2LTA5LiAgSW4gZG9pbmcgc28gSSBoYXZlIHRvIGFkZHJlc3MgdGhpcyBsb2NraW5nIGlzc3Vl
+LiAgRG9lcwp0aGUgZm9sbG93aW5nIGxvb2sgZ29vZD8gIEkgd2lsbCAob2YgY291cnNlKSBzdWJt
+aXQgdGhlIGVudGlyZSBwYXRjaCBmb3IgcmV2aWV3LApidXQgSSB3YW50ZWQgbWFrZSBzdXJlIEkg
+d2FzIGFpbWluZyBpbiB0aGUgcmlnaHQgZGlyZWN0aW9uLgoKdm9pZCBtZW1fY2dyb3VwX3VwZGF0
+ZV9wYWdlX3N0YXQoc3RydWN0IHBhZ2UgKnBhZ2UsCgkJCWVudW0gbWVtX2Nncm91cF93cml0ZV9w
+YWdlX3N0YXRfaXRlbSBpZHgsIGJvb2wgY2hhcmdlKQp7CglzdGF0aWMgaW50IHNlcTsKCXN0cnVj
+dCBwYWdlX2Nncm91cCAqcGM7CgoJaWYgKG1lbV9jZ3JvdXBfZGlzYWJsZWQoKSkKCQlyZXR1cm47
+CglwYyA9IGxvb2t1cF9wYWdlX2Nncm91cChwYWdlKTsKCWlmICghcGMgfHwgbWVtX2Nncm91cF9p
+c19yb290KHBjLT5tZW1fY2dyb3VwKSkKCQlyZXR1cm47CgoJLyoKCSAqIFRoaXMgcm91dGluZSBk
+b2VzIG5vdCBkaXNhYmxlIGlycSB3aGVuIHVwZGF0aW5nIHN0YXRzLiAgU28gaXQgaXMKCSAqIHBv
+c3NpYmxlIHRoYXQgYSBzdGF0IHVwZGF0ZSBmcm9tIHdpdGhpbiBpbnRlcnJ1cHQgcm91dGluZSwg
+Y291bGQKCSAqIGRlYWRsb2NrLiAgVXNlIHRyeWxvY2tfcGFnZV9jZ3JvdXAoKSB0byBhdm9pZCBz
+dWNoIGRlYWRsb2NrLiAgVGhpcwoJICogbWFrZXMgdGhlIG1lbWNnIGNvdW50ZXJzIGZ1enp5LiAg
+TW9yZSBjb21wbGljYXRlZCwgb3IgbG93ZXIKCSAqIHBlcmZvcm1pbmcgbG9ja2luZyBzb2x1dGlv
+bnMgYXZvaWQgdGhpcyBmdXp6aW5lc3MsIGJ1dCBhcmUgbm90CgkgKiBjdXJyZW50bHkgbmVlZGVk
+LgoJICovCglpZiAoaXJxc19kaXNhYmxlZCgpKSB7CgkJaWYgKCEgdHJ5bG9ja19wYWdlX2Nncm91
+cChwYykpCgkJCXJldHVybjsKCX0gZWxzZQoJCWxvY2tfcGFnZV9jZ3JvdXAocGMpOwoKCV9fbWVt
+X2Nncm91cF91cGRhdGVfcGFnZV9zdGF0KHBjLCBpZHgsIGNoYXJnZSk7Cgl1bmxvY2tfcGFnZV9j
+Z3JvdXAocGMpOwp9CgpfX21lbV9jZ3JvdXBfdXBkYXRlX3BhZ2Vfc3RhdCgpIGhhcyBhIHN3aXRj
+aCBzdGF0ZW1lbnQgdGhhdCB1cGRhdGVzIGFsbCBvZiB0aGUKTUVNQ0dfTlJfRklMRV97TUFQUEVE
+LERJUlRZLFdSSVRFQkFDSyxXUklURUJBQ0tfVEVNUCxVTlNUQUJMRV9ORlN9IGNvdW50ZXJzCnVz
+aW5nIHRoZSBmb2xsb3dpbmcgZm9ybToKCXN3aXRjaCAoaWR4KSB7CgljYXNlIE1FTUNHX05SX0ZJ
+TEVfTUFQUEVEOgoJCWlmIChjaGFyZ2UpIHsKCQkJaWYgKCFQYWdlQ2dyb3VwRmlsZU1hcHBlZChw
+YykpCgkJCQlTZXRQYWdlQ2dyb3VwRmlsZU1hcHBlZChwYyk7CgkJCWVsc2UKCQkJCXZhbCA9IDA7
+CgkJfSBlbHNlIHsKCQkJaWYgKFBhZ2VDZ3JvdXBGaWxlTWFwcGVkKHBjKSkKCQkJCUNsZWFyUGFn
+ZUNncm91cEZpbGVNYXBwZWQocGMpOwoJCQllbHNlCgkJCQl2YWwgPSAwOwoJCX0KCQlpZHggPSBN
+RU1fQ0dST1VQX1NUQVRfRklMRV9NQVBQRUQ7CgkJYnJlYWs7CgoJCS4uLgoJfQoKCS8qCgkgKiBQ
+cmVlbXB0aW9uIGlzIGFscmVhZHkgZGlzYWJsZWQuIFdlIGNhbiB1c2UgX190aGlzX2NwdV94eHgK
+CSAqLwoJaWYgKHZhbCA+IDApIHsKCQlfX3RoaXNfY3B1X2luYyhtZW0tPnN0YXQtPmNvdW50W2lk
+eF0pOwoJfSBlbHNlIGlmICh2YWwgPCAwKSB7CgkJX190aGlzX2NwdV9kZWMobWVtLT5zdGF0LT5j
+b3VudFtpZHhdKTsKCX0KCkluIG15IGN1cnJlbnQgdHJlZSwgaXJxIGlzIG5ldmVyIHNhdmVkL3Jl
+c3RvcmVkIGJ5IGNncm91cCBsb2NraW5nIGNvZGUuICBUbwpwcm90ZWN0IGFnYWluc3QgaW50ZXJy
+dXB0IHJlZW50cmFuY3ksIHRyeWxvY2tfcGFnZV9jZ3JvdXAoKSBpcyB1c2VkLiAgQXMgdGhlCmNv
+bW1lbnQgaW5kaWNhdGVzLCB0aGlzIG1ha2VzIHRoZSBuZXcgY291bnRlcnMgZnV6enkuCgotLQpH
+cmVnCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRh
+aW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcK
+aHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRh
+aW5lcnM=
