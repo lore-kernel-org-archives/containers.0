@@ -1,24 +1,15 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH -mmotm 1/5] memcg: disable irq at page cgroup lock
-Date: Wed, 14 Apr 2010 20:14:24 +0530
-Message-ID: <20100414144424.GN3994__24861.0725663186$1271256719$gmane$org@balbir.in.ibm.com>
-References: <1268609202-15581-2-git-send-email-arighi@develer.com>
-	<20100317115855.GS18054@balbir.in.ibm.com>
-	<20100318085411.834e1e46.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100318041944.GA18054@balbir.in.ibm.com>
-	<20100318133527.420b2f25.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100318162855.GG18054@balbir.in.ibm.com>
-	<20100319102332.f1d81c8d.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100319024039.GH18054@balbir.in.ibm.com>
-	<20100319120049.3dbf8440.kamezawa.hiroyu@jp.fujitsu.com>
-	<xr931veiplpr.fsf@ninji.mtv.corp.google.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 3/4] cr_tests: futex: pu: Fix potential livelock
+Date: Wed, 14 Apr 2010 09:58:40 -0500
+Message-ID: <20100414145840.GA11741@us.ibm.com>
+References: <2925834e94ea965d668717d0c993b6bc02697799.1271197507.git.matthltc@us.ibm.com>
+	<4b62b2004556809368f788e9baaf39c529dc3d80.1271197507.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <xr931veiplpr.fsf-Pk7ff2FLCuk9fRMx9H/SexPsWskHk0ljAL8bYrjMMd8@public.gmane.org>
+In-Reply-To: <4b62b2004556809368f788e9baaf39c529dc3d80.1271197507.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -28,155 +19,77 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-* Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> [2010-04-13 23:55:12]:
+Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> Fixup flow of release_pi_futex to truly break out of the loop during
+> an error.
+> 
+> Also, since it's not used, remove the retries parameter from
+> do_unlock_contended_futex.
+> 
+> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  futex/pi.c |    9 +++++----
+>  1 files changed, 5 insertions(+), 4 deletions(-)
+> 
+> diff --git a/futex/pi.c b/futex/pi.c
+> index 53d4c5d..a39964d 100644
+> --- a/futex/pi.c
+> +++ b/futex/pi.c
+> @@ -330,7 +330,7 @@ again:
+>  	return -1;
+>  }
+> 
+> -int do_unlock_contended_pi_futex(int retries)
+> +int do_unlock_contended_pi_futex(void)
+>  {
+>  	if (futex(&pi_futex->counter, FUTEX_UNLOCK_PI, 1, NULL, NULL, 0) == 0)
+>  		return 0;
+> @@ -400,12 +400,12 @@ void release_pi_futex(int *retries, int *retval, pid_t tid)
+>  		/* Release the futex */
+>  		pi_val = atomic_cmpxchg(pi_futex, tid, 0);
+>  		if (pi_val != tid) {
+> -		    switch (do_unlock_contended_pi_futex(*retries)) {
+> +		    switch (do_unlock_contended_pi_futex(void)) {
 
-> On Thu, Mar 18, 2010 at 8:00 PM, KAMEZAWA Hiroyuki <kamezawa.hiroyu-LsJlEDOdPhs@public.gmane.org=
-jitsu.com> wrote:
-> > On Fri, 19 Mar 2010 08:10:39 +0530
-> > Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
-> >
-> >> * KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> [2010-03-19 10:23=
-:32]:
-> >>
-> >> > On Thu, 18 Mar 2010 21:58:55 +0530
-> >> > Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
-> >> >
-> >> > > * KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> [2010-03-18 1=
-3:35:27]:
-> >> >
-> >> > > > Then, no probelm. It's ok to add mem_cgroup_udpate_stat() indpen=
-dent from
-> >> > > > mem_cgroup_update_file_mapped(). The look may be messy but it's =
-not your
-> >> > > > fault. But please write "why add new function" to patch descript=
-ion.
-> >> > > >
-> >> > > > I'm sorry for wasting your time.
-> >> > >
-> >> > > Do we need to go down this route? We could check the stat and do t=
-he
-> >> > > correct thing. In case of FILE_MAPPED, always grab page_cgroup_lock
-> >> > > and for others potentially look at trylock. It is OK for different
-> >> > > stats to be protected via different locks.
-> >> > >
-> >> >
-> >> > I _don't_ want to see a mixture of spinlock and trylock in a functio=
-n.
-> >> >
-> >>
-> >> A well documented well written function can help. The other thing is to
-> >> of-course solve this correctly by introducing different locking around
-> >> the statistics. Are you suggesting the later?
-> >>
-> >
-> > No. As I wrote.
-> > =A0 =A0 =A0 =A0- don't modify codes around FILE_MAPPED in this series.
-> > =A0 =A0 =A0 =A0- add a new functions for new statistics
-> > Then,
-> > =A0 =A0 =A0 =A0- think about clean up later, after we confirm all thing=
-s work as expected.
-> =
+Just fyi, my compiler didn't like this.  Replacing it with
+		    switch (do_unlock_contended_pi_futex()) {
 
-> I have ported Andrea Righi's memcg dirty page accounting patches to latest
-> mmtom-2010-04-05-16-09.  In doing so I have to address this locking issue=
-.  Does
-> the following look good?  I will (of course) submit the entire patch for =
-review,
-> but I wanted make sure I was aiming in the right direction.
-> =
+It also doesn't change the failure of robust testcase on my s390 box:
 
-> void mem_cgroup_update_page_stat(struct page *page,
-> 			enum mem_cgroup_write_page_stat_item idx, bool charge)
-> {
-> 	static int seq;
-> 	struct page_cgroup *pc;
-> =
+linuz11:~/cr_tests/futex # sh run.sh 
+Using output dir ./cr_futex_PR5nlHC
+WARNING: Priority inheritance test must be able to set at least two realtime priorities. ulimit -r indicates otherwise so skipping pi futex test(s).
+Running test: plain
+Test plain done, returned 0
+PASS
+Restart of test plain done, returned 0
+PASS
+Running test: robust
+run.sh: line 49: kill: (3900) - No such process
+run.sh: line 49: kill: (3900) - No such process
 
-> 	if (mem_cgroup_disabled())
-> 		return;
-> 	pc =3D lookup_page_cgroup(page);
-> 	if (!pc || mem_cgroup_is_root(pc->mem_cgroup))
-> 		return;
-> =
+Changing the line waiting for the original testcase to
+exit from
+	wait ${TEST_PID}
+to
+        wait ${TEST_PID} || true
 
-> 	/*
-> 	 * This routine does not disable irq when updating stats.  So it is
-> 	 * possible that a stat update from within interrupt routine, could
-> 	 * deadlock.  Use trylock_page_cgroup() to avoid such deadlock.  This
-> 	 * makes the memcg counters fuzzy.  More complicated, or lower
-> 	 * performing locking solutions avoid this fuzziness, but are not
-> 	 * currently needed.
-> 	 */
-> 	if (irqs_disabled()) {
-> 		if (! trylock_page_cgroup(pc))
-> 			return;
+lets that continue and pass.
 
-Since this is just stats can we used deferred updates?
-        else
-                update a deferred structure
+(further changing it to
+	wait ${TEST_PID} || echo "wait returned $?" && true
+gives me
+	wait returned 1
+while checking process listings before and after the wait
+shows that robust is running for a few seconds, and does
+die before wait returns, so I assume robust.c is in fact
+exiting with error code)
 
-> 	} else
-> 		lock_page_cgroup(pc);
-> =
+Meanwhile, after ulimit -r 2 pi testcase still just hogs my
+cpus :)
 
-> 	__mem_cgroup_update_page_stat(pc, idx, charge);
-
-Do charging + any deferred charges pending in
-__mem_cgroup_update_page_stat().
-
-> 	unlock_page_cgroup(pc);
-> }
-> =
-
-> __mem_cgroup_update_page_stat() has a switch statement that updates all o=
-f the
-> MEMCG_NR_FILE_{MAPPED,DIRTY,WRITEBACK,WRITEBACK_TEMP,UNSTABLE_NFS} counte=
-rs
-> using the following form:
-> 	switch (idx) {
-> 	case MEMCG_NR_FILE_MAPPED:
-> 		if (charge) {
-> 			if (!PageCgroupFileMapped(pc))
-> 				SetPageCgroupFileMapped(pc);
-> 			else
-> 				val =3D 0;
-> 		} else {
-> 			if (PageCgroupFileMapped(pc))
-> 				ClearPageCgroupFileMapped(pc);
-> 			else
-> 				val =3D 0;
-> 		}
-> 		idx =3D MEM_CGROUP_STAT_FILE_MAPPED;
-> 		break;
-> =
-
-> 		...
-> 	}
-> =
-
-> 	/*
-> 	 * Preemption is already disabled. We can use __this_cpu_xxx
-> 	 */
-> 	if (val > 0) {
-> 		__this_cpu_inc(mem->stat->count[idx]);
-> 	} else if (val < 0) {
-> 		__this_cpu_dec(mem->stat->count[idx]);
-> 	}
-> =
-
-> In my current tree, irq is never saved/restored by cgroup locking code.  =
-To
-> protect against interrupt reentrancy, trylock_page_cgroup() is used.  As =
-the
-> comment indicates, this makes the new counters fuzzy.
-> =
-
-
--- =
-
-	Three Cheers,
-	Balbir
+-serge
