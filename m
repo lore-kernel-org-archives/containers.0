@@ -1,15 +1,24 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Wiki for LXC with Checkpoint/Restart
-Date: Wed, 14 Apr 2010 13:00:31 -0700
-Message-ID: <87ljcpajog.fsf@caffeine.danplanet.com>
-References: <20100412222727.GA5759@us.ibm.com>
-	<1271275047.18251.111.camel@localhost>
+From: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH -mmotm 1/5] memcg: disable irq at page cgroup lock
+Date: Wed, 14 Apr 2010 13:14:07 -0700
+Message-ID: <xr9339yxyepc.fsf__46248.891336336$1271276238$gmane$org@ninji.mtv.corp.google.com>
+References: <1268609202-15581-2-git-send-email-arighi@develer.com>
+	<20100317115855.GS18054@balbir.in.ibm.com>
+	<20100318085411.834e1e46.kamezawa.hiroyu@jp.fujitsu.com>
+	<20100318041944.GA18054@balbir.in.ibm.com>
+	<20100318133527.420b2f25.kamezawa.hiroyu@jp.fujitsu.com>
+	<20100318162855.GG18054@balbir.in.ibm.com>
+	<20100319102332.f1d81c8d.kamezawa.hiroyu@jp.fujitsu.com>
+	<20100319024039.GH18054@balbir.in.ibm.com>
+	<20100319120049.3dbf8440.kamezawa.hiroyu@jp.fujitsu.com>
+	<xr931veiplpr.fsf@ninji.mtv.corp.google.com>
+	<20100414140523.GC13535@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1271275047.18251.111.camel@localhost> (Nathan Lynch's message of
-	"Wed\, 14 Apr 2010 14\:57\:27 -0500")
+In-Reply-To: <20100414140523.GC13535-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> (Vivek Goyal's message of
+	"Wed, 14 Apr 2010 10:05:23 -0400")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,23 +28,63 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-NL> When building the kernel with the commit id specified in the wiki
-NL> (0fdca57) I get:
-
-NL> ERROR: "ckpt_netdev_base" [net/ipv6/sit.ko] undefined!
-NL> ERROR: "ckpt_netdev_in_init_netns" [drivers/net/veth.ko] undefined!
-NL> ERROR: "ckpt_netdev_base" [drivers/net/veth.ko] undefined!
-NL> ERROR: "ckpt_netdev_base" [drivers/net/macvlan.ko] undefined!
-NL> make[1]: *** [__modpost] Error 1
-NL> make: *** [modules] Error 2
-
-Right and the fixes in my latest set should eliminate that :)
-
--- 
-Dan Smith
-IBM Linux Technology Center
-email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Vml2ZWsgR295YWwgPHZnb3lhbEByZWRoYXQuY29tPiB3cml0ZXM6Cgo+IE9uIFR1ZSwgQXByIDEz
+LCAyMDEwIGF0IDExOjU1OjEyUE0gLTA3MDAsIEdyZWcgVGhlbGVuIHdyb3RlOgo+PiBPbiBUaHUs
+IE1hciAxOCwgMjAxMCBhdCA4OjAwIFBNLCBLQU1FWkFXQSBIaXJveXVraSA8a2FtZXphd2EuaGly
+b3l1QGpwLmZ1aml0c3UuY29tPiB3cm90ZToKPj4gPiBPbiBGcmksIDE5IE1hciAyMDEwIDA4OjEw
+OjM5ICswNTMwCj4+ID4gQmFsYmlyIFNpbmdoIDxiYWxiaXJAbGludXgudm5ldC5pYm0uY29tPiB3
+cm90ZToKPj4gPgo+PiA+PiAqIEtBTUVaQVdBIEhpcm95dWtpIDxrYW1lemF3YS5oaXJveXVAanAu
+ZnVqaXRzdS5jb20+IFsyMDEwLTAzLTE5IDEwOjIzOjMyXToKPj4gPj4KPj4gPj4gPiBPbiBUaHUs
+IDE4IE1hciAyMDEwIDIxOjU4OjU1ICswNTMwCj4+ID4+ID4gQmFsYmlyIFNpbmdoIDxiYWxiaXJA
+bGludXgudm5ldC5pYm0uY29tPiB3cm90ZToKPj4gPj4gPgo+PiA+PiA+ID4gKiBLQU1FWkFXQSBI
+aXJveXVraSA8a2FtZXphd2EuaGlyb3l1QGpwLmZ1aml0c3UuY29tPiBbMjAxMC0wMy0xOCAxMzoz
+NToyN106Cj4+ID4+ID4KPj4gPj4gPiA+ID4gVGhlbiwgbm8gcHJvYmVsbS4gSXQncyBvayB0byBh
+ZGQgbWVtX2Nncm91cF91ZHBhdGVfc3RhdCgpIGluZHBlbmRlbnQgZnJvbQo+PiA+PiA+ID4gPiBt
+ZW1fY2dyb3VwX3VwZGF0ZV9maWxlX21hcHBlZCgpLiBUaGUgbG9vayBtYXkgYmUgbWVzc3kgYnV0
+IGl0J3Mgbm90IHlvdXIKPj4gPj4gPiA+ID4gZmF1bHQuIEJ1dCBwbGVhc2Ugd3JpdGUgIndoeSBh
+ZGQgbmV3IGZ1bmN0aW9uIiB0byBwYXRjaCBkZXNjcmlwdGlvbi4KPj4gPj4gPiA+ID4KPj4gPj4g
+PiA+ID4gSSdtIHNvcnJ5IGZvciB3YXN0aW5nIHlvdXIgdGltZS4KPj4gPj4gPiA+Cj4+ID4+ID4g
+PiBEbyB3ZSBuZWVkIHRvIGdvIGRvd24gdGhpcyByb3V0ZT8gV2UgY291bGQgY2hlY2sgdGhlIHN0
+YXQgYW5kIGRvIHRoZQo+PiA+PiA+ID4gY29ycmVjdCB0aGluZy4gSW4gY2FzZSBvZiBGSUxFX01B
+UFBFRCwgYWx3YXlzIGdyYWIgcGFnZV9jZ3JvdXBfbG9jawo+PiA+PiA+ID4gYW5kIGZvciBvdGhl
+cnMgcG90ZW50aWFsbHkgbG9vayBhdCB0cnlsb2NrLiBJdCBpcyBPSyBmb3IgZGlmZmVyZW50Cj4+
+ID4+ID4gPiBzdGF0cyB0byBiZSBwcm90ZWN0ZWQgdmlhIGRpZmZlcmVudCBsb2Nrcy4KPj4gPj4g
+PiA+Cj4+ID4+ID4KPj4gPj4gPiBJIF9kb24ndF8gd2FudCB0byBzZWUgYSBtaXh0dXJlIG9mIHNw
+aW5sb2NrIGFuZCB0cnlsb2NrIGluIGEgZnVuY3Rpb24uCj4+ID4+ID4KPj4gPj4KPj4gPj4gQSB3
+ZWxsIGRvY3VtZW50ZWQgd2VsbCB3cml0dGVuIGZ1bmN0aW9uIGNhbiBoZWxwLiBUaGUgb3RoZXIg
+dGhpbmcgaXMgdG8KPj4gPj4gb2YtY291cnNlIHNvbHZlIHRoaXMgY29ycmVjdGx5IGJ5IGludHJv
+ZHVjaW5nIGRpZmZlcmVudCBsb2NraW5nIGFyb3VuZAo+PiA+PiB0aGUgc3RhdGlzdGljcy4gQXJl
+IHlvdSBzdWdnZXN0aW5nIHRoZSBsYXRlcj8KPj4gPj4KPj4gPgo+PiA+IE5vLiBBcyBJIHdyb3Rl
+Lgo+PiA+IMKgIMKgIMKgIMKgLSBkb24ndCBtb2RpZnkgY29kZXMgYXJvdW5kIEZJTEVfTUFQUEVE
+IGluIHRoaXMgc2VyaWVzLgo+PiA+IMKgIMKgIMKgIMKgLSBhZGQgYSBuZXcgZnVuY3Rpb25zIGZv
+ciBuZXcgc3RhdGlzdGljcwo+PiA+IFRoZW4sCj4+ID4gwqAgwqAgwqAgwqAtIHRoaW5rIGFib3V0
+IGNsZWFuIHVwIGxhdGVyLCBhZnRlciB3ZSBjb25maXJtIGFsbCB0aGluZ3Mgd29yayBhcyBleHBl
+Y3RlZC4KPj4gCj4+IEkgaGF2ZSBwb3J0ZWQgQW5kcmVhIFJpZ2hpJ3MgbWVtY2cgZGlydHkgcGFn
+ZSBhY2NvdW50aW5nIHBhdGNoZXMgdG8gbGF0ZXN0Cj4+IG1tdG9tLTIwMTAtMDQtMDUtMTYtMDku
+ICBJbiBkb2luZyBzbyBJIGhhdmUgdG8gYWRkcmVzcyB0aGlzIGxvY2tpbmcgaXNzdWUuICBEb2Vz
+Cj4+IHRoZSBmb2xsb3dpbmcgbG9vayBnb29kPyAgSSB3aWxsIChvZiBjb3Vyc2UpIHN1Ym1pdCB0
+aGUgZW50aXJlIHBhdGNoIGZvciByZXZpZXcsCj4+IGJ1dCBJIHdhbnRlZCBtYWtlIHN1cmUgSSB3
+YXMgYWltaW5nIGluIHRoZSByaWdodCBkaXJlY3Rpb24uCj4+IAo+PiB2b2lkIG1lbV9jZ3JvdXBf
+dXBkYXRlX3BhZ2Vfc3RhdChzdHJ1Y3QgcGFnZSAqcGFnZSwKPj4gCQkJZW51bSBtZW1fY2dyb3Vw
+X3dyaXRlX3BhZ2Vfc3RhdF9pdGVtIGlkeCwgYm9vbCBjaGFyZ2UpCj4+IHsKPj4gCXN0YXRpYyBp
+bnQgc2VxOwo+PiAJc3RydWN0IHBhZ2VfY2dyb3VwICpwYzsKPj4gCj4+IAlpZiAobWVtX2Nncm91
+cF9kaXNhYmxlZCgpKQo+PiAJCXJldHVybjsKPj4gCXBjID0gbG9va3VwX3BhZ2VfY2dyb3VwKHBh
+Z2UpOwo+PiAJaWYgKCFwYyB8fCBtZW1fY2dyb3VwX2lzX3Jvb3QocGMtPm1lbV9jZ3JvdXApKQo+
+PiAJCXJldHVybjsKPj4gCj4+IAkvKgo+PiAJICogVGhpcyByb3V0aW5lIGRvZXMgbm90IGRpc2Fi
+bGUgaXJxIHdoZW4gdXBkYXRpbmcgc3RhdHMuICBTbyBpdCBpcwo+PiAJICogcG9zc2libGUgdGhh
+dCBhIHN0YXQgdXBkYXRlIGZyb20gd2l0aGluIGludGVycnVwdCByb3V0aW5lLCBjb3VsZAo+PiAJ
+ICogZGVhZGxvY2suICBVc2UgdHJ5bG9ja19wYWdlX2Nncm91cCgpIHRvIGF2b2lkIHN1Y2ggZGVh
+ZGxvY2suICBUaGlzCj4+IAkgKiBtYWtlcyB0aGUgbWVtY2cgY291bnRlcnMgZnV6enkuICBNb3Jl
+IGNvbXBsaWNhdGVkLCBvciBsb3dlcgo+PiAJICogcGVyZm9ybWluZyBsb2NraW5nIHNvbHV0aW9u
+cyBhdm9pZCB0aGlzIGZ1enppbmVzcywgYnV0IGFyZSBub3QKPj4gCSAqIGN1cnJlbnRseSBuZWVk
+ZWQuCj4+IAkgKi8KPj4gCWlmIChpcnFzX2Rpc2FibGVkKCkpIHsKPiAgICAgICAgICAgICBeXl5e
+Xl5eXl4KPiBPciBtYXkgYmUgaW5faW50ZXJydXB0KCk/CgpHb29kIGNhdGNoLiAgSSB3aWxsIHJl
+cGxhY2UgaXJxc19kaXNhYmxlZCgpIHdpdGggaW5faW50ZXJydXB0KCkuCgpUaGFuayB5b3UuCgot
+LQpHcmVnCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNv
+bnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5v
+cmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2Nv
+bnRhaW5lcnM=
