@@ -1,10 +1,8 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH -mmotm 1/5] memcg: disable irq at page cgroup lock
-Date: Wed, 14 Apr 2010 18:29:04 +0900
-Message-ID: <20100414182904.2f72a63d.kamezawa.hiroyu__48066.9373450384$1271237779$gmane$org@jp.fujitsu.com>
-References: <1268609202-15581-1-git-send-email-arighi@develer.com>
-	<1268609202-15581-2-git-send-email-arighi@develer.com>
-	<20100317115855.GS18054@balbir.in.ibm.com>
+Date: Wed, 14 Apr 2010 10:04:30 -0400
+Message-ID: <20100414140430.GB13535__3209.5457114794$1271254103$gmane$org@redhat.com>
+References: <20100317115855.GS18054@balbir.in.ibm.com>
 	<20100318085411.834e1e46.kamezawa.hiroyu@jp.fujitsu.com>
 	<20100318041944.GA18054@balbir.in.ibm.com>
 	<20100318133527.420b2f25.kamezawa.hiroyu@jp.fujitsu.com>
@@ -13,11 +11,13 @@ References: <1268609202-15581-1-git-send-email-arighi@develer.com>
 	<20100319024039.GH18054@balbir.in.ibm.com>
 	<20100319120049.3dbf8440.kamezawa.hiroyu@jp.fujitsu.com>
 	<xr931veiplpr.fsf@ninji.mtv.corp.google.com>
+	<20100414182904.2f72a63d.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <xr931veiplpr.fsf-Pk7ff2FLCuk9fRMx9H/SexPsWskHk0ljAL8bYrjMMd8@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20100414182904.2f72a63d.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -27,83 +27,180 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Daisuke-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gVHVlLCAxMyBBcHIgMjAxMCAyMzo1NToxMiAtMDcwMApHcmVnIFRoZWxlbiA8Z3RoZWxlbkBn
-b29nbGUuY29tPiB3cm90ZToKCj4gT24gVGh1LCBNYXIgMTgsIDIwMTAgYXQgODowMCBQTSwgS0FN
-RVpBV0EgSGlyb3l1a2kgPGthbWV6YXdhLmhpcm95dUBqcC5mdWppdHN1LmNvbT4gd3JvdGU6Cj4g
-PiBPbiBGcmksIDE5IE1hciAyMDEwIDA4OjEwOjM5ICswNTMwCj4gPiBCYWxiaXIgU2luZ2ggPGJh
-bGJpckBsaW51eC52bmV0LmlibS5jb20+IHdyb3RlOgo+ID4KPiA+PiAqIEtBTUVaQVdBIEhpcm95
-dWtpIDxrYW1lemF3YS5oaXJveXVAanAuZnVqaXRzdS5jb20+IFsyMDEwLTAzLTE5IDEwOjIzOjMy
-XToKPiA+Pgo+ID4+ID4gT24gVGh1LCAxOCBNYXIgMjAxMCAyMTo1ODo1NSArMDUzMAo+ID4+ID4g
-QmFsYmlyIFNpbmdoIDxiYWxiaXJAbGludXgudm5ldC5pYm0uY29tPiB3cm90ZToKPiA+PiA+Cj4g
-Pj4gPiA+ICogS0FNRVpBV0EgSGlyb3l1a2kgPGthbWV6YXdhLmhpcm95dUBqcC5mdWppdHN1LmNv
-bT4gWzIwMTAtMDMtMTggMTM6MzU6MjddOgo+ID4+ID4KPiA+PiA+ID4gPiBUaGVuLCBubyBwcm9i
-ZWxtLiBJdCdzIG9rIHRvIGFkZCBtZW1fY2dyb3VwX3VkcGF0ZV9zdGF0KCkgaW5kcGVuZGVudCBm
-cm9tCj4gPj4gPiA+ID4gbWVtX2Nncm91cF91cGRhdGVfZmlsZV9tYXBwZWQoKS4gVGhlIGxvb2sg
-bWF5IGJlIG1lc3N5IGJ1dCBpdCdzIG5vdCB5b3VyCj4gPj4gPiA+ID4gZmF1bHQuIEJ1dCBwbGVh
-c2Ugd3JpdGUgIndoeSBhZGQgbmV3IGZ1bmN0aW9uIiB0byBwYXRjaCBkZXNjcmlwdGlvbi4KPiA+
-PiA+ID4gPgo+ID4+ID4gPiA+IEknbSBzb3JyeSBmb3Igd2FzdGluZyB5b3VyIHRpbWUuCj4gPj4g
-PiA+Cj4gPj4gPiA+IERvIHdlIG5lZWQgdG8gZ28gZG93biB0aGlzIHJvdXRlPyBXZSBjb3VsZCBj
-aGVjayB0aGUgc3RhdCBhbmQgZG8gdGhlCj4gPj4gPiA+IGNvcnJlY3QgdGhpbmcuIEluIGNhc2Ug
-b2YgRklMRV9NQVBQRUQsIGFsd2F5cyBncmFiIHBhZ2VfY2dyb3VwX2xvY2sKPiA+PiA+ID4gYW5k
-IGZvciBvdGhlcnMgcG90ZW50aWFsbHkgbG9vayBhdCB0cnlsb2NrLiBJdCBpcyBPSyBmb3IgZGlm
-ZmVyZW50Cj4gPj4gPiA+IHN0YXRzIHRvIGJlIHByb3RlY3RlZCB2aWEgZGlmZmVyZW50IGxvY2tz
-Lgo+ID4+ID4gPgo+ID4+ID4KPiA+PiA+IEkgX2Rvbid0XyB3YW50IHRvIHNlZSBhIG1peHR1cmUg
-b2Ygc3BpbmxvY2sgYW5kIHRyeWxvY2sgaW4gYSBmdW5jdGlvbi4KPiA+PiA+Cj4gPj4KPiA+PiBB
-IHdlbGwgZG9jdW1lbnRlZCB3ZWxsIHdyaXR0ZW4gZnVuY3Rpb24gY2FuIGhlbHAuIFRoZSBvdGhl
-ciB0aGluZyBpcyB0bwo+ID4+IG9mLWNvdXJzZSBzb2x2ZSB0aGlzIGNvcnJlY3RseSBieSBpbnRy
-b2R1Y2luZyBkaWZmZXJlbnQgbG9ja2luZyBhcm91bmQKPiA+PiB0aGUgc3RhdGlzdGljcy4gQXJl
-IHlvdSBzdWdnZXN0aW5nIHRoZSBsYXRlcj8KPiA+Pgo+ID4KPiA+IE5vLiBBcyBJIHdyb3RlLgo+
-ID4gwqAgwqAgwqAgwqAtIGRvbid0IG1vZGlmeSBjb2RlcyBhcm91bmQgRklMRV9NQVBQRUQgaW4g
-dGhpcyBzZXJpZXMuCj4gPiDCoCDCoCDCoCDCoC0gYWRkIGEgbmV3IGZ1bmN0aW9ucyBmb3IgbmV3
-IHN0YXRpc3RpY3MKPiA+IFRoZW4sCj4gPiDCoCDCoCDCoCDCoC0gdGhpbmsgYWJvdXQgY2xlYW4g
-dXAgbGF0ZXIsIGFmdGVyIHdlIGNvbmZpcm0gYWxsIHRoaW5ncyB3b3JrIGFzIGV4cGVjdGVkLgo+
-IAo+IEkgaGF2ZSBwb3J0ZWQgQW5kcmVhIFJpZ2hpJ3MgbWVtY2cgZGlydHkgcGFnZSBhY2NvdW50
-aW5nIHBhdGNoZXMgdG8gbGF0ZXN0Cj4gbW10b20tMjAxMC0wNC0wNS0xNi0wOS4gIEluIGRvaW5n
-IHNvIEkgaGF2ZSB0byBhZGRyZXNzIHRoaXMgbG9ja2luZyBpc3N1ZS4gIERvZXMKPiB0aGUgZm9s
-bG93aW5nIGxvb2sgZ29vZD8gIEkgd2lsbCAob2YgY291cnNlKSBzdWJtaXQgdGhlIGVudGlyZSBw
-YXRjaCBmb3IgcmV2aWV3LAo+IGJ1dCBJIHdhbnRlZCBtYWtlIHN1cmUgSSB3YXMgYWltaW5nIGlu
-IHRoZSByaWdodCBkaXJlY3Rpb24uCj4gCj4gdm9pZCBtZW1fY2dyb3VwX3VwZGF0ZV9wYWdlX3N0
-YXQoc3RydWN0IHBhZ2UgKnBhZ2UsCj4gCQkJZW51bSBtZW1fY2dyb3VwX3dyaXRlX3BhZ2Vfc3Rh
-dF9pdGVtIGlkeCwgYm9vbCBjaGFyZ2UpCj4gewo+IAlzdGF0aWMgaW50IHNlcTsKPiAJc3RydWN0
-IHBhZ2VfY2dyb3VwICpwYzsKPiAKPiAJaWYgKG1lbV9jZ3JvdXBfZGlzYWJsZWQoKSkKPiAJCXJl
-dHVybjsKPiAJcGMgPSBsb29rdXBfcGFnZV9jZ3JvdXAocGFnZSk7Cj4gCWlmICghcGMgfHwgbWVt
-X2Nncm91cF9pc19yb290KHBjLT5tZW1fY2dyb3VwKSkKPiAJCXJldHVybjsKPiAKPiAJLyoKPiAJ
-ICogVGhpcyByb3V0aW5lIGRvZXMgbm90IGRpc2FibGUgaXJxIHdoZW4gdXBkYXRpbmcgc3RhdHMu
-ICBTbyBpdCBpcwo+IAkgKiBwb3NzaWJsZSB0aGF0IGEgc3RhdCB1cGRhdGUgZnJvbSB3aXRoaW4g
-aW50ZXJydXB0IHJvdXRpbmUsIGNvdWxkCj4gCSAqIGRlYWRsb2NrLiAgVXNlIHRyeWxvY2tfcGFn
-ZV9jZ3JvdXAoKSB0byBhdm9pZCBzdWNoIGRlYWRsb2NrLiAgVGhpcwo+IAkgKiBtYWtlcyB0aGUg
-bWVtY2cgY291bnRlcnMgZnV6enkuICBNb3JlIGNvbXBsaWNhdGVkLCBvciBsb3dlcgo+IAkgKiBw
-ZXJmb3JtaW5nIGxvY2tpbmcgc29sdXRpb25zIGF2b2lkIHRoaXMgZnV6emluZXNzLCBidXQgYXJl
-IG5vdAo+IAkgKiBjdXJyZW50bHkgbmVlZGVkLgo+IAkgKi8KPiAJaWYgKGlycXNfZGlzYWJsZWQo
-KSkgewo+IAkJaWYgKCEgdHJ5bG9ja19wYWdlX2Nncm91cChwYykpCj4gCQkJcmV0dXJuOwo+IAl9
-IGVsc2UKPiAJCWxvY2tfcGFnZV9jZ3JvdXAocGMpOwo+IAoKSSBwcmVmZXIgdHJ5bG9ja19wYWdl
-X2Nncm91cCgpIGFsd2F5cy4KCkkgaGF2ZSBhbm90aGVyIGlkZWEgZml4aW5nIHRoaXMgdXAgX2xh
-dGVyXy4gKEJ1dCBJIHdhbnQgdG8gc3RhcnQgZnJvbSBzaW1wbGUgb25lLikKCk15IHJvdWdoIGlk
-ZWEgaXMgZm9sbG93aW5nLiAgU2ltaWxhciB0byB5b3VyIGlkZWEgd2hpY2ggeW91IGdhdmUgbWUg
-YmVmb3JlLgoKPT0KREVGSU5FX1BFUkNQVShhY2NvdW50X21vdmVfb25nb2luZyk7CkRFRklORV9N
-VVRFWChtb3ZlX2FjY291bnRfbXV0ZXgpOgoKdm9pZCBtZW1jZ19zdGFydF9hY2NvdW50X21vdmUo
-dm9pZCkKewoJbXV0ZXhfbG9jaygmbW92ZV9hY2NvdW50X211dGV4KTsKCWZvcl9lYWNoX29ubGlu
-ZV9jcHUoY3B1KQoJCXBlcl9jcHUoY3B1LCBhY2NvdW50X21vdmVfb25nb2luZykgKz0gMTsKCW11
-dGV4X3VubG9jaygmbW92ZV9hY2NvdW50X211dGV4KTsKCS8qIFdhaXQgdW50aWwgdGhlcmUgYXJl
-IG5vIGxvY2tsZXNzIHVwZGF0ZSAqLwoJc3luY2hyb25pemVfcmN1KCk7CglyZXR1cm47Cn0KCnZv
-aWQgbWVtY2dfZW5kX2FjY291bnRfbW92ZSh2b2lkKQp7CgltdXRleF9sb2NrKCZtb3ZlX2FjY291
-bnRfbXV0ZXgpOwoJZm9yX2VhY2hfb25saW5lX2NwdShjcHUpCgkJcGVyX2NwdShjcHUsIGFjY291
-bnRfbW92ZV9vbmdvaW5nKSAtPSAxOwoJbXV0ZXhfdW5sb2NrKCZtb3ZlX2FjY291bnRfbXV0ZXgp
-Owp9CgovKiByZXR1cm4gMSB3aGVuIHdlIHRvb2sgbG9jaywgcmV0dXJuIDAgaWYgbG9ja2VzcyBP
-UHMgaXMgZ3VhcmFudGVkZCB0byBiZSBzYWZlICovCmludCBtZW1jZ19zdGFydF9maWxlY2FjaGVf
-YWNjb3VudGluZyhzdHJ1Y3QgcGFnZV9jZ3JvdXAgKnBjKQp7CglyY3VfcmVhZF9sb2NrKCk7Cglz
-bXBfcm1iKCk7CglpZiAoIXRoaXNfY3B1X3JlYWQobW92ZV9hY2NvdW50X29uZ29pbmcpKQoJCXJl
-dHVybiAwOyAvKiBubyBtb3ZlIGFjY291bnQgaXMgb25nb2luZyAqLwoJbG9ja19wYWdlX2Nncm91
-cChwYyk7CglyZXR1cm4gMTsKfQoKdm9pZCBtZW1jZ19lbmRfZmlsZWNhY2hlX2FjY291bnRpbmco
-c3RydWN0IHBhZ2VfY2dyb3VwICpwYywgaW50IHVubG9jaykKewoJaWYgKHVubG9jaykKCQl1bmxv
-Y2tfcGFnZV9jZ3JvdXAocGMpOwoKCXJjdV9yZWFkX3VubG9jaygpOwp9CgphbmQgY2FsbCBtZW1j
-Z19zdGFydF9hY2NvdW50X21vdmUoKS9lbmRfYWNjb3VudF9tb3ZlKCkgaW4gdGhlIHN0YXJ0L2Vu
-ZCBvZgptaWdyYWludGluZyBjaHVuayBvZiBwYWdlcy4KCkJ5ZS4KLUthbWUKCgoKCgoKCgoKCgoK
-CgoKCgoKCgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpD
-b250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24u
-b3JnCmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9j
-b250YWluZXJz
+On Wed, Apr 14, 2010 at 06:29:04PM +0900, KAMEZAWA Hiroyuki wrote:
+> On Tue, 13 Apr 2010 23:55:12 -0700
+> Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
+> =
+
+> > On Thu, Mar 18, 2010 at 8:00 PM, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.=
+fujitsu.com> wrote:
+> > > On Fri, 19 Mar 2010 08:10:39 +0530
+> > > Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+> > >
+> > >> * KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> [2010-03-19 10:=
+23:32]:
+> > >>
+> > >> > On Thu, 18 Mar 2010 21:58:55 +0530
+> > >> > Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+> > >> >
+> > >> > > * KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> [2010-03-18=
+ 13:35:27]:
+> > >> >
+> > >> > > > Then, no probelm. It's ok to add mem_cgroup_udpate_stat() indp=
+endent from
+> > >> > > > mem_cgroup_update_file_mapped(). The look may be messy but it'=
+s not your
+> > >> > > > fault. But please write "why add new function" to patch descri=
+ption.
+> > >> > > >
+> > >> > > > I'm sorry for wasting your time.
+> > >> > >
+> > >> > > Do we need to go down this route? We could check the stat and do=
+ the
+> > >> > > correct thing. In case of FILE_MAPPED, always grab page_cgroup_l=
+ock
+> > >> > > and for others potentially look at trylock. It is OK for differe=
+nt
+> > >> > > stats to be protected via different locks.
+> > >> > >
+> > >> >
+> > >> > I _don't_ want to see a mixture of spinlock and trylock in a funct=
+ion.
+> > >> >
+> > >>
+> > >> A well documented well written function can help. The other thing is=
+ to
+> > >> of-course solve this correctly by introducing different locking arou=
+nd
+> > >> the statistics. Are you suggesting the later?
+> > >>
+> > >
+> > > No. As I wrote.
+> > > =A0 =A0 =A0 =A0- don't modify codes around FILE_MAPPED in this series.
+> > > =A0 =A0 =A0 =A0- add a new functions for new statistics
+> > > Then,
+> > > =A0 =A0 =A0 =A0- think about clean up later, after we confirm all thi=
+ngs work as expected.
+> > =
+
+> > I have ported Andrea Righi's memcg dirty page accounting patches to lat=
+est
+> > mmtom-2010-04-05-16-09.  In doing so I have to address this locking iss=
+ue.  Does
+> > the following look good?  I will (of course) submit the entire patch fo=
+r review,
+> > but I wanted make sure I was aiming in the right direction.
+> > =
+
+> > void mem_cgroup_update_page_stat(struct page *page,
+> > 			enum mem_cgroup_write_page_stat_item idx, bool charge)
+> > {
+> > 	static int seq;
+> > 	struct page_cgroup *pc;
+> > =
+
+> > 	if (mem_cgroup_disabled())
+> > 		return;
+> > 	pc =3D lookup_page_cgroup(page);
+> > 	if (!pc || mem_cgroup_is_root(pc->mem_cgroup))
+> > 		return;
+> > =
+
+> > 	/*
+> > 	 * This routine does not disable irq when updating stats.  So it is
+> > 	 * possible that a stat update from within interrupt routine, could
+> > 	 * deadlock.  Use trylock_page_cgroup() to avoid such deadlock.  This
+> > 	 * makes the memcg counters fuzzy.  More complicated, or lower
+> > 	 * performing locking solutions avoid this fuzziness, but are not
+> > 	 * currently needed.
+> > 	 */
+> > 	if (irqs_disabled()) {
+> > 		if (! trylock_page_cgroup(pc))
+> > 			return;
+> > 	} else
+> > 		lock_page_cgroup(pc);
+> > =
+
+> =
+
+> I prefer trylock_page_cgroup() always.
+> =
+
+> I have another idea fixing this up _later_. (But I want to start from sim=
+ple one.)
+> =
+
+> My rough idea is following.  Similar to your idea which you gave me befor=
+e.
+> =
+
+> =3D=3D
+> DEFINE_PERCPU(account_move_ongoing);
+> DEFINE_MUTEX(move_account_mutex):
+> =
+
+> void memcg_start_account_move(void)
+> {
+> 	mutex_lock(&move_account_mutex);
+> 	for_each_online_cpu(cpu)
+> 		per_cpu(cpu, account_move_ongoing) +=3D 1;
+> 	mutex_unlock(&move_account_mutex);
+> 	/* Wait until there are no lockless update */
+> 	synchronize_rcu();
+> 	return;
+> }
+> =
+
+> void memcg_end_account_move(void)
+> {
+> 	mutex_lock(&move_account_mutex);
+> 	for_each_online_cpu(cpu)
+> 		per_cpu(cpu, account_move_ongoing) -=3D 1;
+> 	mutex_unlock(&move_account_mutex);
+> }
+> =
+
+> /* return 1 when we took lock, return 0 if lockess OPs is guarantedd to b=
+e safe */
+> int memcg_start_filecache_accounting(struct page_cgroup *pc)
+> {
+> 	rcu_read_lock();
+> 	smp_rmb();
+> 	if (!this_cpu_read(move_account_ongoing))
+> 		return 0; /* no move account is ongoing */
+> 	lock_page_cgroup(pc);
+> 	return 1;
+> }
+> =
+
+> void memcg_end_filecache_accounting(struct page_cgroup *pc, int unlock)
+> {
+> 	if (unlock)
+> 		unlock_page_cgroup(pc);
+> =
+
+> 	rcu_read_unlock();
+> }
+> =
+
+> and call memcg_start_account_move()/end_account_move() in the start/end of
+> migrainting chunk of pages.
+> =
+
+
+Hi Kame-san,
+
+May be I am missing something but how does it solve the issue of making sure
+lock_page_cgroup() is not held in interrupt context? IIUC, above code will
+make sure that for file cache accouting, lock_page_cgroup() is taken only
+if task migration is on. But say task migration is on, and then some IO
+completes and we update WRITEBACK stat (i think this is the one which can
+be called from interrupt context), then we will still take the
+lock_page_cgroup() and again run into the issue of deadlocks?
+
+Thanks
+Vivek
