@@ -1,24 +1,13 @@
-From: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH -mmotm 1/5] memcg: disable irq at page cgroup lock
-Date: Wed, 14 Apr 2010 12:31:59 -0700
-Message-ID: <xr93k4s9ygnk.fsf__12913.8939468705$1271273823$gmane$org@ninji.mtv.corp.google.com>
-References: <20100317115855.GS18054@balbir.in.ibm.com>
-	<20100318085411.834e1e46.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100318041944.GA18054@balbir.in.ibm.com>
-	<20100318133527.420b2f25.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100318162855.GG18054@balbir.in.ibm.com>
-	<20100319102332.f1d81c8d.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100319024039.GH18054@balbir.in.ibm.com>
-	<20100319120049.3dbf8440.kamezawa.hiroyu@jp.fujitsu.com>
-	<xr931veiplpr.fsf@ninji.mtv.corp.google.com>
-	<20100414182904.2f72a63d.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100414140430.GB13535@redhat.com>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: Re: Wiki for LXC with Checkpoint/Restart
+Date: Wed, 14 Apr 2010 14:34:21 -0500
+Message-ID: <1271273662.18251.105.camel@localhost>
+References: <20100412222727.GA5759@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100414140430.GB13535-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> (Vivek Goyal's message of
-	"Wed, 14 Apr 2010 10:04:30 -0400")
+In-Reply-To: <20100412222727.GA5759-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -28,106 +17,48 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Vml2ZWsgR295YWwgPHZnb3lhbEByZWRoYXQuY29tPiB3cml0ZXM6Cgo+IE9uIFdlZCwgQXByIDE0
-LCAyMDEwIGF0IDA2OjI5OjA0UE0gKzA5MDAsIEtBTUVaQVdBIEhpcm95dWtpIHdyb3RlOgo+PiBP
-biBUdWUsIDEzIEFwciAyMDEwIDIzOjU1OjEyIC0wNzAwCj4+IEdyZWcgVGhlbGVuIDxndGhlbGVu
-QGdvb2dsZS5jb20+IHdyb3RlOgo+PiAKPj4gPiBPbiBUaHUsIE1hciAxOCwgMjAxMCBhdCA4OjAw
-IFBNLCBLQU1FWkFXQSBIaXJveXVraSA8a2FtZXphd2EuaGlyb3l1QGpwLmZ1aml0c3UuY29tPiB3
-cm90ZToKPj4gPiA+IE9uIEZyaSwgMTkgTWFyIDIwMTAgMDg6MTA6MzkgKzA1MzAKPj4gPiA+IEJh
-bGJpciBTaW5naCA8YmFsYmlyQGxpbnV4LnZuZXQuaWJtLmNvbT4gd3JvdGU6Cj4+ID4gPgo+PiA+
-ID4+ICogS0FNRVpBV0EgSGlyb3l1a2kgPGthbWV6YXdhLmhpcm95dUBqcC5mdWppdHN1LmNvbT4g
-WzIwMTAtMDMtMTkgMTA6MjM6MzJdOgo+PiA+ID4+Cj4+ID4gPj4gPiBPbiBUaHUsIDE4IE1hciAy
-MDEwIDIxOjU4OjU1ICswNTMwCj4+ID4gPj4gPiBCYWxiaXIgU2luZ2ggPGJhbGJpckBsaW51eC52
-bmV0LmlibS5jb20+IHdyb3RlOgo+PiA+ID4+ID4KPj4gPiA+PiA+ID4gKiBLQU1FWkFXQSBIaXJv
-eXVraSA8a2FtZXphd2EuaGlyb3l1QGpwLmZ1aml0c3UuY29tPiBbMjAxMC0wMy0xOCAxMzozNToy
-N106Cj4+ID4gPj4gPgo+PiA+ID4+ID4gPiA+IFRoZW4sIG5vIHByb2JlbG0uIEl0J3Mgb2sgdG8g
-YWRkIG1lbV9jZ3JvdXBfdWRwYXRlX3N0YXQoKSBpbmRwZW5kZW50IGZyb20KPj4gPiA+PiA+ID4g
-PiBtZW1fY2dyb3VwX3VwZGF0ZV9maWxlX21hcHBlZCgpLiBUaGUgbG9vayBtYXkgYmUgbWVzc3kg
-YnV0IGl0J3Mgbm90IHlvdXIKPj4gPiA+PiA+ID4gPiBmYXVsdC4gQnV0IHBsZWFzZSB3cml0ZSAi
-d2h5IGFkZCBuZXcgZnVuY3Rpb24iIHRvIHBhdGNoIGRlc2NyaXB0aW9uLgo+PiA+ID4+ID4gPiA+
-Cj4+ID4gPj4gPiA+ID4gSSdtIHNvcnJ5IGZvciB3YXN0aW5nIHlvdXIgdGltZS4KPj4gPiA+PiA+
-ID4KPj4gPiA+PiA+ID4gRG8gd2UgbmVlZCB0byBnbyBkb3duIHRoaXMgcm91dGU/IFdlIGNvdWxk
-IGNoZWNrIHRoZSBzdGF0IGFuZCBkbyB0aGUKPj4gPiA+PiA+ID4gY29ycmVjdCB0aGluZy4gSW4g
-Y2FzZSBvZiBGSUxFX01BUFBFRCwgYWx3YXlzIGdyYWIgcGFnZV9jZ3JvdXBfbG9jawo+PiA+ID4+
-ID4gPiBhbmQgZm9yIG90aGVycyBwb3RlbnRpYWxseSBsb29rIGF0IHRyeWxvY2suIEl0IGlzIE9L
-IGZvciBkaWZmZXJlbnQKPj4gPiA+PiA+ID4gc3RhdHMgdG8gYmUgcHJvdGVjdGVkIHZpYSBkaWZm
-ZXJlbnQgbG9ja3MuCj4+ID4gPj4gPiA+Cj4+ID4gPj4gPgo+PiA+ID4+ID4gSSBfZG9uJ3RfIHdh
-bnQgdG8gc2VlIGEgbWl4dHVyZSBvZiBzcGlubG9jayBhbmQgdHJ5bG9jayBpbiBhIGZ1bmN0aW9u
-Lgo+PiA+ID4+ID4KPj4gPiA+Pgo+PiA+ID4+IEEgd2VsbCBkb2N1bWVudGVkIHdlbGwgd3JpdHRl
-biBmdW5jdGlvbiBjYW4gaGVscC4gVGhlIG90aGVyIHRoaW5nIGlzIHRvCj4+ID4gPj4gb2YtY291
-cnNlIHNvbHZlIHRoaXMgY29ycmVjdGx5IGJ5IGludHJvZHVjaW5nIGRpZmZlcmVudCBsb2NraW5n
-IGFyb3VuZAo+PiA+ID4+IHRoZSBzdGF0aXN0aWNzLiBBcmUgeW91IHN1Z2dlc3RpbmcgdGhlIGxh
-dGVyPwo+PiA+ID4+Cj4+ID4gPgo+PiA+ID4gTm8uIEFzIEkgd3JvdGUuCj4+ID4gPiDCoCDCoCDC
-oCDCoC0gZG9uJ3QgbW9kaWZ5IGNvZGVzIGFyb3VuZCBGSUxFX01BUFBFRCBpbiB0aGlzIHNlcmll
-cy4KPj4gPiA+IMKgIMKgIMKgIMKgLSBhZGQgYSBuZXcgZnVuY3Rpb25zIGZvciBuZXcgc3RhdGlz
-dGljcwo+PiA+ID4gVGhlbiwKPj4gPiA+IMKgIMKgIMKgIMKgLSB0aGluayBhYm91dCBjbGVhbiB1
-cCBsYXRlciwgYWZ0ZXIgd2UgY29uZmlybSBhbGwgdGhpbmdzIHdvcmsgYXMgZXhwZWN0ZWQuCj4+
-ID4gCj4+ID4gSSBoYXZlIHBvcnRlZCBBbmRyZWEgUmlnaGkncyBtZW1jZyBkaXJ0eSBwYWdlIGFj
-Y291bnRpbmcgcGF0Y2hlcyB0byBsYXRlc3QKPj4gPiBtbXRvbS0yMDEwLTA0LTA1LTE2LTA5LiAg
-SW4gZG9pbmcgc28gSSBoYXZlIHRvIGFkZHJlc3MgdGhpcyBsb2NraW5nIGlzc3VlLiAgRG9lcwo+
-PiA+IHRoZSBmb2xsb3dpbmcgbG9vayBnb29kPyAgSSB3aWxsIChvZiBjb3Vyc2UpIHN1Ym1pdCB0
-aGUgZW50aXJlIHBhdGNoIGZvciByZXZpZXcsCj4+ID4gYnV0IEkgd2FudGVkIG1ha2Ugc3VyZSBJ
-IHdhcyBhaW1pbmcgaW4gdGhlIHJpZ2h0IGRpcmVjdGlvbi4KPj4gPiAKPj4gPiB2b2lkIG1lbV9j
-Z3JvdXBfdXBkYXRlX3BhZ2Vfc3RhdChzdHJ1Y3QgcGFnZSAqcGFnZSwKPj4gPiAJCQllbnVtIG1l
-bV9jZ3JvdXBfd3JpdGVfcGFnZV9zdGF0X2l0ZW0gaWR4LCBib29sIGNoYXJnZSkKPj4gPiB7Cj4+
-ID4gCXN0YXRpYyBpbnQgc2VxOwo+PiA+IAlzdHJ1Y3QgcGFnZV9jZ3JvdXAgKnBjOwo+PiA+IAo+
-PiA+IAlpZiAobWVtX2Nncm91cF9kaXNhYmxlZCgpKQo+PiA+IAkJcmV0dXJuOwo+PiA+IAlwYyA9
-IGxvb2t1cF9wYWdlX2Nncm91cChwYWdlKTsKPj4gPiAJaWYgKCFwYyB8fCBtZW1fY2dyb3VwX2lz
-X3Jvb3QocGMtPm1lbV9jZ3JvdXApKQo+PiA+IAkJcmV0dXJuOwo+PiA+IAo+PiA+IAkvKgo+PiA+
-IAkgKiBUaGlzIHJvdXRpbmUgZG9lcyBub3QgZGlzYWJsZSBpcnEgd2hlbiB1cGRhdGluZyBzdGF0
-cy4gIFNvIGl0IGlzCj4+ID4gCSAqIHBvc3NpYmxlIHRoYXQgYSBzdGF0IHVwZGF0ZSBmcm9tIHdp
-dGhpbiBpbnRlcnJ1cHQgcm91dGluZSwgY291bGQKPj4gPiAJICogZGVhZGxvY2suICBVc2UgdHJ5
-bG9ja19wYWdlX2Nncm91cCgpIHRvIGF2b2lkIHN1Y2ggZGVhZGxvY2suICBUaGlzCj4+ID4gCSAq
-IG1ha2VzIHRoZSBtZW1jZyBjb3VudGVycyBmdXp6eS4gIE1vcmUgY29tcGxpY2F0ZWQsIG9yIGxv
-d2VyCj4+ID4gCSAqIHBlcmZvcm1pbmcgbG9ja2luZyBzb2x1dGlvbnMgYXZvaWQgdGhpcyBmdXp6
-aW5lc3MsIGJ1dCBhcmUgbm90Cj4+ID4gCSAqIGN1cnJlbnRseSBuZWVkZWQuCj4+ID4gCSAqLwo+
-PiA+IAlpZiAoaXJxc19kaXNhYmxlZCgpKSB7Cj4+ID4gCQlpZiAoISB0cnlsb2NrX3BhZ2VfY2dy
-b3VwKHBjKSkKPj4gPiAJCQlyZXR1cm47Cj4+ID4gCX0gZWxzZQo+PiA+IAkJbG9ja19wYWdlX2Nn
-cm91cChwYyk7Cj4+ID4gCj4+IAo+PiBJIHByZWZlciB0cnlsb2NrX3BhZ2VfY2dyb3VwKCkgYWx3
-YXlzLgo+PiAKPj4gSSBoYXZlIGFub3RoZXIgaWRlYSBmaXhpbmcgdGhpcyB1cCBfbGF0ZXJfLiAo
-QnV0IEkgd2FudCB0byBzdGFydCBmcm9tIHNpbXBsZSBvbmUuKQo+PiAKPj4gTXkgcm91Z2ggaWRl
-YSBpcyBmb2xsb3dpbmcuICBTaW1pbGFyIHRvIHlvdXIgaWRlYSB3aGljaCB5b3UgZ2F2ZSBtZSBi
-ZWZvcmUuCj4+IAo+PiA9PQo+PiBERUZJTkVfUEVSQ1BVKGFjY291bnRfbW92ZV9vbmdvaW5nKTsK
-Pj4gREVGSU5FX01VVEVYKG1vdmVfYWNjb3VudF9tdXRleCk6Cj4+IAo+PiB2b2lkIG1lbWNnX3N0
-YXJ0X2FjY291bnRfbW92ZSh2b2lkKQo+PiB7Cj4+IAltdXRleF9sb2NrKCZtb3ZlX2FjY291bnRf
-bXV0ZXgpOwo+PiAJZm9yX2VhY2hfb25saW5lX2NwdShjcHUpCj4+IAkJcGVyX2NwdShjcHUsIGFj
-Y291bnRfbW92ZV9vbmdvaW5nKSArPSAxOwo+PiAJbXV0ZXhfdW5sb2NrKCZtb3ZlX2FjY291bnRf
-bXV0ZXgpOwo+PiAJLyogV2FpdCB1bnRpbCB0aGVyZSBhcmUgbm8gbG9ja2xlc3MgdXBkYXRlICov
-Cj4+IAlzeW5jaHJvbml6ZV9yY3UoKTsKPj4gCXJldHVybjsKPj4gfQo+PiAKPj4gdm9pZCBtZW1j
-Z19lbmRfYWNjb3VudF9tb3ZlKHZvaWQpCj4+IHsKPj4gCW11dGV4X2xvY2soJm1vdmVfYWNjb3Vu
-dF9tdXRleCk7Cj4+IAlmb3JfZWFjaF9vbmxpbmVfY3B1KGNwdSkKPj4gCQlwZXJfY3B1KGNwdSwg
-YWNjb3VudF9tb3ZlX29uZ29pbmcpIC09IDE7Cj4+IAltdXRleF91bmxvY2soJm1vdmVfYWNjb3Vu
-dF9tdXRleCk7Cj4+IH0KPj4gCj4+IC8qIHJldHVybiAxIHdoZW4gd2UgdG9vayBsb2NrLCByZXR1
-cm4gMCBpZiBsb2NrZXNzIE9QcyBpcyBndWFyYW50ZWRkIHRvIGJlIHNhZmUgKi8KPj4gaW50IG1l
-bWNnX3N0YXJ0X2ZpbGVjYWNoZV9hY2NvdW50aW5nKHN0cnVjdCBwYWdlX2Nncm91cCAqcGMpCj4+
-IHsKPj4gCXJjdV9yZWFkX2xvY2soKTsKPj4gCXNtcF9ybWIoKTsKPj4gCWlmICghdGhpc19jcHVf
-cmVhZChtb3ZlX2FjY291bnRfb25nb2luZykpCj4+IAkJcmV0dXJuIDA7IC8qIG5vIG1vdmUgYWNj
-b3VudCBpcyBvbmdvaW5nICovCj4+IAlsb2NrX3BhZ2VfY2dyb3VwKHBjKTsKPj4gCXJldHVybiAx
-Owo+PiB9Cj4+IAo+PiB2b2lkIG1lbWNnX2VuZF9maWxlY2FjaGVfYWNjb3VudGluZyhzdHJ1Y3Qg
-cGFnZV9jZ3JvdXAgKnBjLCBpbnQgdW5sb2NrKQo+PiB7Cj4+IAlpZiAodW5sb2NrKQo+PiAJCXVu
-bG9ja19wYWdlX2Nncm91cChwYyk7Cj4+IAo+PiAJcmN1X3JlYWRfdW5sb2NrKCk7Cj4+IH0KPj4g
-Cj4+IGFuZCBjYWxsIG1lbWNnX3N0YXJ0X2FjY291bnRfbW92ZSgpL2VuZF9hY2NvdW50X21vdmUo
-KSBpbiB0aGUgc3RhcnQvZW5kIG9mCj4+IG1pZ3JhaW50aW5nIGNodW5rIG9mIHBhZ2VzLgo+Cj4g
-SGkgS2FtZS1zYW4sCj4KPiBNYXkgYmUgSSBhbSBtaXNzaW5nIHNvbWV0aGluZyBidXQgaG93IGRv
-ZXMgaXQgc29sdmUgdGhlIGlzc3VlIG9mIG1ha2luZyBzdXJlCj4gbG9ja19wYWdlX2Nncm91cCgp
-IGlzIG5vdCBoZWxkIGluIGludGVycnVwdCBjb250ZXh0PyBJSVVDLCBhYm92ZSBjb2RlIHdpbGwK
-PiBtYWtlIHN1cmUgdGhhdCBmb3IgZmlsZSBjYWNoZSBhY2NvdXRpbmcsIGxvY2tfcGFnZV9jZ3Jv
-dXAoKSBpcyB0YWtlbiBvbmx5Cj4gaWYgdGFzayBtaWdyYXRpb24gaXMgb24uIEJ1dCBzYXkgdGFz
-ayBtaWdyYXRpb24gaXMgb24sIGFuZCB0aGVuIHNvbWUgSU8KPiBjb21wbGV0ZXMgYW5kIHdlIHVw
-ZGF0ZSBXUklURUJBQ0sgc3RhdCAoaSB0aGluayB0aGlzIGlzIHRoZSBvbmUgd2hpY2ggY2FuCj4g
-YmUgY2FsbGVkIGZyb20gaW50ZXJydXB0IGNvbnRleHQpLCB0aGVuIHdlIHdpbGwgc3RpbGwgdGFr
-ZSB0aGUKPiBsb2NrX3BhZ2VfY2dyb3VwKCkgYW5kIGFnYWluIHJ1biBpbnRvIHRoZSBpc3N1ZSBv
-ZiBkZWFkbG9ja3M/Cj4KPiBUaGFua3MKPiBWaXZlawoKSSBhZ3JlZS4gSSB0aGluayB0aGUgbG9j
-ay91bmxvY2tfcGFnZV9jZ3Jwb3VwKCkgY2FsbHMgc3VnZ2VzdGVkIGJ5CkthbWUtc2FuIHNob3Vs
-ZCBhbHNvIGluY2x1ZGUgbG9jYWxfaXJxX3NhdmUvcmVzdG9yZSgpIGNhbGxzIHRvIHByZXZlbnQK
-dGhlIGludGVycnVwdCBjb250ZXh0IGRlYWRsb2NrIFZpdmVrIGRlc2NyaWJlcy4gIFRoZXNlIG5l
-dwpsb2NhbF9pcnFfc2F2ZS9yZXN0b3JlKCkgY2FsbHMgd291bGQgb25seSBiZSB1c2VkIGlmCm1v
-dmVfYWNjb3VudF9vbmdvaW5nIGlzIHNldC4gIFRoZXkgYmVoYXZlIGp1c3QgbGlrZSB0aGUgb3B0
-aW9uYWwgY2FsbHMKdG8gbG9jay91bmxvY2tfcGFnZV9jZ3JvdXAoKS4KCi0tCkdyZWcKX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWls
-aW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xp
-c3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+On Mon, 2010-04-12 at 15:27 -0700, Sukadev Bhattiprolu wrote:
+> Hi,
+> 
+> We created following wiki to describe the process to build/test LXC
+> with checkpoint/restart.
+> 
+> 	https://ckpt.wiki.kernel.org/index.php/Link-LXC-USERCR
+> 
+> The USERCR and LXC patches that are needed are in:
+> 
+>         http://lxc.sourceforge.net/patches/lxc+usercr/usercr-patches/
+>         http://lxc.sourceforge.net/patches/lxc+usercr/lxc-patches/
+> 
+> (and also referred to in the above wiki).
+> 
+> For now, the wiki identifies specific "commit-id"s to identify the
+> commit with which the instructions in the wiki were tested. We hope
+> to create more meaningful tags to the commits and if so, we will update
+> the wiki with the tags.
+
+Commit IDs are ugly but unambiguous.  I didn't have a problem just
+copy/pasting the commands.
+
+> Please let me know if you have any comments on the wiki or run into
+> problems. 
+
+I took the liberty of cleaning up a few stray '|' characters in the last
+code snippet and fixed up the deprecated old-style git invocations (e.g.
+"git-clone" becomes "git clone").  Not trying to be picky about the git
+thing, but the hyphenated commands don't work on newer distributions.
+
+I ran into an issue trying to follow the instructions on a SLES11 x86_64
+system.  When building lxc I get:
+
+gcc -fPIC -DPIC -I../../src -DLIBCR -I/home/nathanl/user-cr
+-I/home/nathanl/user-cr/include -g -O2 -Wall
+-shared /home/nathanl/user-cr/checkpoint.o /home/nathanl/user-cr/restart.o /home/nathanl/user-cr/libeclone.a -Wl,-soname,liblxc.so.0  -o liblxc.so liblxc_so-arguments.o liblxc_so-commands.o liblxc_so-start.o liblxc_so-stop.o liblxc_so-monitor.o liblxc_so-console.o liblxc_so-freezer.o liblxc_so-checkpoint.o liblxc_so-restart.o liblxc_so-error.o liblxc_so-parse.o liblxc_so-cgroup.o liblxc_so-utils.o liblxc_so-namespace.o liblxc_so-conf.o liblxc_so-confile.o liblxc_so-state.o liblxc_so-log.o liblxc_so-network.o liblxc_so-nl.o liblxc_so-rtnl.o liblxc_so-genl.o liblxc_so-mainloop.o liblxc_so-af_unix.o -lutil
+/usr/lib64/gcc/x86_64-suse-linux/4.3/../../../../x86_64-suse-linux/bin/ld: /home/nathanl/user-cr/checkpoint.o: relocation R_X86_64_32 against `.rodata' can not be used when making a shared object; recompile with -fPIC
+
+Not sure what to do about it immediately; user-cr/checkpoint.o should be
+built with -fPIC I guess?
