@@ -1,7 +1,7 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Subject: Re: [PATCH -mmotm 1/5] memcg: disable irq at page cgroup lock
-Date: Wed, 14 Apr 2010 10:05:23 -0400
-Message-ID: <20100414140523.GC13535__9342.83777974105$1271254511$gmane$org@redhat.com>
+Date: Wed, 14 Apr 2010 20:14:24 +0530
+Message-ID: <20100414144424.GN3994__24861.0725663186$1271256719$gmane$org@balbir.in.ibm.com>
 References: <1268609202-15581-2-git-send-email-arighi@develer.com>
 	<20100317115855.GS18054@balbir.in.ibm.com>
 	<20100318085411.834e1e46.kamezawa.hiroyu@jp.fujitsu.com>
@@ -12,6 +12,7 @@ References: <1268609202-15581-2-git-send-email-arighi@develer.com>
 	<20100319024039.GH18054@balbir.in.ibm.com>
 	<20100319120049.3dbf8440.kamezawa.hiroyu@jp.fujitsu.com>
 	<xr931veiplpr.fsf@ninji.mtv.corp.google.com>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
@@ -28,10 +29,11 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Apr 13, 2010 at 11:55:12PM -0700, Greg Thelen wrote:
+* Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> [2010-04-13 23:55:12]:
+
 > On Thu, Mar 18, 2010 at 8:00 PM, KAMEZAWA Hiroyuki <kamezawa.hiroyu-LsJlEDOdPhs@public.gmane.org=
 jitsu.com> wrote:
 > > On Fri, 19 Mar 2010 08:10:39 +0530
@@ -110,17 +112,71 @@ review,
 > 	 * currently needed.
 > 	 */
 > 	if (irqs_disabled()) {
-            ^^^^^^^^^
-Or may be in_interrupt()?
-
 > 		if (! trylock_page_cgroup(pc))
 > 			return;
+
+Since this is just stats can we used deferred updates?
+        else
+                update a deferred structure
+
 > 	} else
 > 		lock_page_cgroup(pc);
 > =
 
 > 	__mem_cgroup_update_page_stat(pc, idx, charge);
+
+Do charging + any deferred charges pending in
+__mem_cgroup_update_page_stat().
+
 > 	unlock_page_cgroup(pc);
 > }
+> =
 
-Vivek
+> __mem_cgroup_update_page_stat() has a switch statement that updates all o=
+f the
+> MEMCG_NR_FILE_{MAPPED,DIRTY,WRITEBACK,WRITEBACK_TEMP,UNSTABLE_NFS} counte=
+rs
+> using the following form:
+> 	switch (idx) {
+> 	case MEMCG_NR_FILE_MAPPED:
+> 		if (charge) {
+> 			if (!PageCgroupFileMapped(pc))
+> 				SetPageCgroupFileMapped(pc);
+> 			else
+> 				val =3D 0;
+> 		} else {
+> 			if (PageCgroupFileMapped(pc))
+> 				ClearPageCgroupFileMapped(pc);
+> 			else
+> 				val =3D 0;
+> 		}
+> 		idx =3D MEM_CGROUP_STAT_FILE_MAPPED;
+> 		break;
+> =
+
+> 		...
+> 	}
+> =
+
+> 	/*
+> 	 * Preemption is already disabled. We can use __this_cpu_xxx
+> 	 */
+> 	if (val > 0) {
+> 		__this_cpu_inc(mem->stat->count[idx]);
+> 	} else if (val < 0) {
+> 		__this_cpu_dec(mem->stat->count[idx]);
+> 	}
+> =
+
+> In my current tree, irq is never saved/restored by cgroup locking code.  =
+To
+> protect against interrupt reentrancy, trylock_page_cgroup() is used.  As =
+the
+> comment indicates, this makes the new counters fuzzy.
+> =
+
+
+-- =
+
+	Three Cheers,
+	Balbir
