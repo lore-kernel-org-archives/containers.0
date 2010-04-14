@@ -1,8 +1,8 @@
 From: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH -mmotm 1/5] memcg: disable irq at page cgroup lock
-Date: Wed, 14 Apr 2010 09:22:41 -0700
-Message-ID: <p2k49b004811004140922v8b6c4c57j2dd435261ff2dd43__35717.7485632294$1271262282$gmane$org@mail.gmail.com>
-References: <1268609202-15581-1-git-send-email-arighi@develer.com>
+Date: Wed, 14 Apr 2010 12:31:59 -0700
+Message-ID: <xr93k4s9ygnk.fsf__12913.8939468705$1271273823$gmane$org@ninji.mtv.corp.google.com>
+References: <20100317115855.GS18054@balbir.in.ibm.com>
 	<20100318085411.834e1e46.kamezawa.hiroyu@jp.fujitsu.com>
 	<20100318041944.GA18054@balbir.in.ibm.com>
 	<20100318133527.420b2f25.kamezawa.hiroyu@jp.fujitsu.com>
@@ -12,11 +12,13 @@ References: <1268609202-15581-1-git-send-email-arighi@develer.com>
 	<20100319120049.3dbf8440.kamezawa.hiroyu@jp.fujitsu.com>
 	<xr931veiplpr.fsf@ninji.mtv.corp.google.com>
 	<20100414182904.2f72a63d.kamezawa.hiroyu@jp.fujitsu.com>
+	<20100414140430.GB13535@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100414182904.2f72a63d.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20100414140430.GB13535-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> (Vivek Goyal's message of
+	"Wed, 14 Apr 2010 10:04:30 -0400")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,136 +28,106 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Apr 14, 2010 at 2:29 AM, KAMEZAWA Hiroyuki
-<kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
-> On Tue, 13 Apr 2010 23:55:12 -0700
-> Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
->> On Thu, Mar 18, 2010 at 8:00 PM, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.f=
-ujitsu.com> wrote:
->> > On Fri, 19 Mar 2010 08:10:39 +0530
->> > Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
->> >> * KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> [2010-03-19 10:2=
-3:32]:
->> >>
->> >> > On Thu, 18 Mar 2010 21:58:55 +0530
->> >> > Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
->> >> >
->> >> > > * KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> [2010-03-18 =
-13:35:27]:
->> >> >
->> >> > > > Then, no probelm. It's ok to add mem_cgroup_udpate_stat() indpe=
-ndent from
->> >> > > > mem_cgroup_update_file_mapped(). The look may be messy but it's=
- not your
->> >> > > > fault. But please write "why add new function" to patch descrip=
-tion.
->> >> > > >
->> >> > > > I'm sorry for wasting your time.
->> >> > >
->> >> > > Do we need to go down this route? We could check the stat and do =
-the
->> >> > > correct thing. In case of FILE_MAPPED, always grab page_cgroup_lo=
-ck
->> >> > > and for others potentially look at trylock. It is OK for different
->> >> > > stats to be protected via different locks.
->> >> > >
->> >> >
->> >> > I _don't_ want to see a mixture of spinlock and trylock in a functi=
-on.
->> >> >
->> >>
->> >> A well documented well written function can help. The other thing is =
-to
->> >> of-course solve this correctly by introducing different locking around
->> >> the statistics. Are you suggesting the later?
->> >>
->> >
->> > No. As I wrote.
->> > =A0 =A0 =A0 =A0- don't modify codes around FILE_MAPPED in this series.
->> > =A0 =A0 =A0 =A0- add a new functions for new statistics
->> > Then,
->> > =A0 =A0 =A0 =A0- think about clean up later, after we confirm all thin=
-gs work as expected.
->>
->> I have ported Andrea Righi's memcg dirty page accounting patches to late=
-st
->> mmtom-2010-04-05-16-09. =A0In doing so I have to address this locking is=
-sue. =A0Does
->> the following look good? =A0I will (of course) submit the entire patch f=
-or review,
->> but I wanted make sure I was aiming in the right direction.
->>
->> void mem_cgroup_update_page_stat(struct page *page,
->> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 enum mem_cgroup_write_page_s=
-tat_item idx, bool charge)
->> {
->> =A0 =A0 =A0 static int seq;
->> =A0 =A0 =A0 struct page_cgroup *pc;
->>
->> =A0 =A0 =A0 if (mem_cgroup_disabled())
->> =A0 =A0 =A0 =A0 =A0 =A0 =A0 return;
->> =A0 =A0 =A0 pc =3D lookup_page_cgroup(page);
->> =A0 =A0 =A0 if (!pc || mem_cgroup_is_root(pc->mem_cgroup))
->> =A0 =A0 =A0 =A0 =A0 =A0 =A0 return;
->>
->> =A0 =A0 =A0 /*
->> =A0 =A0 =A0 =A0* This routine does not disable irq when updating stats. =
-=A0So it is
->> =A0 =A0 =A0 =A0* possible that a stat update from within interrupt routi=
-ne, could
->> =A0 =A0 =A0 =A0* deadlock. =A0Use trylock_page_cgroup() to avoid such de=
-adlock. =A0This
->> =A0 =A0 =A0 =A0* makes the memcg counters fuzzy. =A0More complicated, or=
- lower
->> =A0 =A0 =A0 =A0* performing locking solutions avoid this fuzziness, but =
-are not
->> =A0 =A0 =A0 =A0* currently needed.
->> =A0 =A0 =A0 =A0*/
->> =A0 =A0 =A0 if (irqs_disabled()) {
->> =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (! trylock_page_cgroup(pc))
->> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 return;
->> =A0 =A0 =A0 } else
->> =A0 =A0 =A0 =A0 =A0 =A0 =A0 lock_page_cgroup(pc);
->>
->
-> I prefer trylock_page_cgroup() always.
-
-What is your reason for preferring trylock_page_cgroup()?  I assume
-it's for code simplicity, but I wanted to check.
-
-I had though about using trylock_page_cgroup() always, but I think
-that would make file_mapped accounting even more fuzzy that it already
-it is.  I was trying to retain the current accuracy of file_mapped and
-only make new counters, like writeback/dirty/etc (those obtained in
-interrupt), fuzzy.
-
-> I have another idea fixing this up _later_. (But I want to start from sim=
-ple one.)
->
-> My rough idea is following. =A0Similar to your idea which you gave me bef=
-ore.
-
-Hi Kame-san,
-
-I like the general approach.  The code I previously gave you appears
-to work and is faster than non-root memcgs using mmotm due to mostly
-being lockless.
-
-> =3D=3D
-> DEFINE_PERCPU(account_move_ongoing);
-
-What's the reason for having a per-cpu account_move_ongoing flag?
-Would a single system-wide global be sufficient?  I assume the
-majority of the time this value will not be changing because
-accounting moves are rare.
-
-Perhaps all of the per-cpu variables are packed within a per-cpu
-cacheline making accessing it more likely to be local, but I'm not
-sure if this is true.
-
---
-Greg
+Vml2ZWsgR295YWwgPHZnb3lhbEByZWRoYXQuY29tPiB3cml0ZXM6Cgo+IE9uIFdlZCwgQXByIDE0
+LCAyMDEwIGF0IDA2OjI5OjA0UE0gKzA5MDAsIEtBTUVaQVdBIEhpcm95dWtpIHdyb3RlOgo+PiBP
+biBUdWUsIDEzIEFwciAyMDEwIDIzOjU1OjEyIC0wNzAwCj4+IEdyZWcgVGhlbGVuIDxndGhlbGVu
+QGdvb2dsZS5jb20+IHdyb3RlOgo+PiAKPj4gPiBPbiBUaHUsIE1hciAxOCwgMjAxMCBhdCA4OjAw
+IFBNLCBLQU1FWkFXQSBIaXJveXVraSA8a2FtZXphd2EuaGlyb3l1QGpwLmZ1aml0c3UuY29tPiB3
+cm90ZToKPj4gPiA+IE9uIEZyaSwgMTkgTWFyIDIwMTAgMDg6MTA6MzkgKzA1MzAKPj4gPiA+IEJh
+bGJpciBTaW5naCA8YmFsYmlyQGxpbnV4LnZuZXQuaWJtLmNvbT4gd3JvdGU6Cj4+ID4gPgo+PiA+
+ID4+ICogS0FNRVpBV0EgSGlyb3l1a2kgPGthbWV6YXdhLmhpcm95dUBqcC5mdWppdHN1LmNvbT4g
+WzIwMTAtMDMtMTkgMTA6MjM6MzJdOgo+PiA+ID4+Cj4+ID4gPj4gPiBPbiBUaHUsIDE4IE1hciAy
+MDEwIDIxOjU4OjU1ICswNTMwCj4+ID4gPj4gPiBCYWxiaXIgU2luZ2ggPGJhbGJpckBsaW51eC52
+bmV0LmlibS5jb20+IHdyb3RlOgo+PiA+ID4+ID4KPj4gPiA+PiA+ID4gKiBLQU1FWkFXQSBIaXJv
+eXVraSA8a2FtZXphd2EuaGlyb3l1QGpwLmZ1aml0c3UuY29tPiBbMjAxMC0wMy0xOCAxMzozNToy
+N106Cj4+ID4gPj4gPgo+PiA+ID4+ID4gPiA+IFRoZW4sIG5vIHByb2JlbG0uIEl0J3Mgb2sgdG8g
+YWRkIG1lbV9jZ3JvdXBfdWRwYXRlX3N0YXQoKSBpbmRwZW5kZW50IGZyb20KPj4gPiA+PiA+ID4g
+PiBtZW1fY2dyb3VwX3VwZGF0ZV9maWxlX21hcHBlZCgpLiBUaGUgbG9vayBtYXkgYmUgbWVzc3kg
+YnV0IGl0J3Mgbm90IHlvdXIKPj4gPiA+PiA+ID4gPiBmYXVsdC4gQnV0IHBsZWFzZSB3cml0ZSAi
+d2h5IGFkZCBuZXcgZnVuY3Rpb24iIHRvIHBhdGNoIGRlc2NyaXB0aW9uLgo+PiA+ID4+ID4gPiA+
+Cj4+ID4gPj4gPiA+ID4gSSdtIHNvcnJ5IGZvciB3YXN0aW5nIHlvdXIgdGltZS4KPj4gPiA+PiA+
+ID4KPj4gPiA+PiA+ID4gRG8gd2UgbmVlZCB0byBnbyBkb3duIHRoaXMgcm91dGU/IFdlIGNvdWxk
+IGNoZWNrIHRoZSBzdGF0IGFuZCBkbyB0aGUKPj4gPiA+PiA+ID4gY29ycmVjdCB0aGluZy4gSW4g
+Y2FzZSBvZiBGSUxFX01BUFBFRCwgYWx3YXlzIGdyYWIgcGFnZV9jZ3JvdXBfbG9jawo+PiA+ID4+
+ID4gPiBhbmQgZm9yIG90aGVycyBwb3RlbnRpYWxseSBsb29rIGF0IHRyeWxvY2suIEl0IGlzIE9L
+IGZvciBkaWZmZXJlbnQKPj4gPiA+PiA+ID4gc3RhdHMgdG8gYmUgcHJvdGVjdGVkIHZpYSBkaWZm
+ZXJlbnQgbG9ja3MuCj4+ID4gPj4gPiA+Cj4+ID4gPj4gPgo+PiA+ID4+ID4gSSBfZG9uJ3RfIHdh
+bnQgdG8gc2VlIGEgbWl4dHVyZSBvZiBzcGlubG9jayBhbmQgdHJ5bG9jayBpbiBhIGZ1bmN0aW9u
+Lgo+PiA+ID4+ID4KPj4gPiA+Pgo+PiA+ID4+IEEgd2VsbCBkb2N1bWVudGVkIHdlbGwgd3JpdHRl
+biBmdW5jdGlvbiBjYW4gaGVscC4gVGhlIG90aGVyIHRoaW5nIGlzIHRvCj4+ID4gPj4gb2YtY291
+cnNlIHNvbHZlIHRoaXMgY29ycmVjdGx5IGJ5IGludHJvZHVjaW5nIGRpZmZlcmVudCBsb2NraW5n
+IGFyb3VuZAo+PiA+ID4+IHRoZSBzdGF0aXN0aWNzLiBBcmUgeW91IHN1Z2dlc3RpbmcgdGhlIGxh
+dGVyPwo+PiA+ID4+Cj4+ID4gPgo+PiA+ID4gTm8uIEFzIEkgd3JvdGUuCj4+ID4gPiDCoCDCoCDC
+oCDCoC0gZG9uJ3QgbW9kaWZ5IGNvZGVzIGFyb3VuZCBGSUxFX01BUFBFRCBpbiB0aGlzIHNlcmll
+cy4KPj4gPiA+IMKgIMKgIMKgIMKgLSBhZGQgYSBuZXcgZnVuY3Rpb25zIGZvciBuZXcgc3RhdGlz
+dGljcwo+PiA+ID4gVGhlbiwKPj4gPiA+IMKgIMKgIMKgIMKgLSB0aGluayBhYm91dCBjbGVhbiB1
+cCBsYXRlciwgYWZ0ZXIgd2UgY29uZmlybSBhbGwgdGhpbmdzIHdvcmsgYXMgZXhwZWN0ZWQuCj4+
+ID4gCj4+ID4gSSBoYXZlIHBvcnRlZCBBbmRyZWEgUmlnaGkncyBtZW1jZyBkaXJ0eSBwYWdlIGFj
+Y291bnRpbmcgcGF0Y2hlcyB0byBsYXRlc3QKPj4gPiBtbXRvbS0yMDEwLTA0LTA1LTE2LTA5LiAg
+SW4gZG9pbmcgc28gSSBoYXZlIHRvIGFkZHJlc3MgdGhpcyBsb2NraW5nIGlzc3VlLiAgRG9lcwo+
+PiA+IHRoZSBmb2xsb3dpbmcgbG9vayBnb29kPyAgSSB3aWxsIChvZiBjb3Vyc2UpIHN1Ym1pdCB0
+aGUgZW50aXJlIHBhdGNoIGZvciByZXZpZXcsCj4+ID4gYnV0IEkgd2FudGVkIG1ha2Ugc3VyZSBJ
+IHdhcyBhaW1pbmcgaW4gdGhlIHJpZ2h0IGRpcmVjdGlvbi4KPj4gPiAKPj4gPiB2b2lkIG1lbV9j
+Z3JvdXBfdXBkYXRlX3BhZ2Vfc3RhdChzdHJ1Y3QgcGFnZSAqcGFnZSwKPj4gPiAJCQllbnVtIG1l
+bV9jZ3JvdXBfd3JpdGVfcGFnZV9zdGF0X2l0ZW0gaWR4LCBib29sIGNoYXJnZSkKPj4gPiB7Cj4+
+ID4gCXN0YXRpYyBpbnQgc2VxOwo+PiA+IAlzdHJ1Y3QgcGFnZV9jZ3JvdXAgKnBjOwo+PiA+IAo+
+PiA+IAlpZiAobWVtX2Nncm91cF9kaXNhYmxlZCgpKQo+PiA+IAkJcmV0dXJuOwo+PiA+IAlwYyA9
+IGxvb2t1cF9wYWdlX2Nncm91cChwYWdlKTsKPj4gPiAJaWYgKCFwYyB8fCBtZW1fY2dyb3VwX2lz
+X3Jvb3QocGMtPm1lbV9jZ3JvdXApKQo+PiA+IAkJcmV0dXJuOwo+PiA+IAo+PiA+IAkvKgo+PiA+
+IAkgKiBUaGlzIHJvdXRpbmUgZG9lcyBub3QgZGlzYWJsZSBpcnEgd2hlbiB1cGRhdGluZyBzdGF0
+cy4gIFNvIGl0IGlzCj4+ID4gCSAqIHBvc3NpYmxlIHRoYXQgYSBzdGF0IHVwZGF0ZSBmcm9tIHdp
+dGhpbiBpbnRlcnJ1cHQgcm91dGluZSwgY291bGQKPj4gPiAJICogZGVhZGxvY2suICBVc2UgdHJ5
+bG9ja19wYWdlX2Nncm91cCgpIHRvIGF2b2lkIHN1Y2ggZGVhZGxvY2suICBUaGlzCj4+ID4gCSAq
+IG1ha2VzIHRoZSBtZW1jZyBjb3VudGVycyBmdXp6eS4gIE1vcmUgY29tcGxpY2F0ZWQsIG9yIGxv
+d2VyCj4+ID4gCSAqIHBlcmZvcm1pbmcgbG9ja2luZyBzb2x1dGlvbnMgYXZvaWQgdGhpcyBmdXp6
+aW5lc3MsIGJ1dCBhcmUgbm90Cj4+ID4gCSAqIGN1cnJlbnRseSBuZWVkZWQuCj4+ID4gCSAqLwo+
+PiA+IAlpZiAoaXJxc19kaXNhYmxlZCgpKSB7Cj4+ID4gCQlpZiAoISB0cnlsb2NrX3BhZ2VfY2dy
+b3VwKHBjKSkKPj4gPiAJCQlyZXR1cm47Cj4+ID4gCX0gZWxzZQo+PiA+IAkJbG9ja19wYWdlX2Nn
+cm91cChwYyk7Cj4+ID4gCj4+IAo+PiBJIHByZWZlciB0cnlsb2NrX3BhZ2VfY2dyb3VwKCkgYWx3
+YXlzLgo+PiAKPj4gSSBoYXZlIGFub3RoZXIgaWRlYSBmaXhpbmcgdGhpcyB1cCBfbGF0ZXJfLiAo
+QnV0IEkgd2FudCB0byBzdGFydCBmcm9tIHNpbXBsZSBvbmUuKQo+PiAKPj4gTXkgcm91Z2ggaWRl
+YSBpcyBmb2xsb3dpbmcuICBTaW1pbGFyIHRvIHlvdXIgaWRlYSB3aGljaCB5b3UgZ2F2ZSBtZSBi
+ZWZvcmUuCj4+IAo+PiA9PQo+PiBERUZJTkVfUEVSQ1BVKGFjY291bnRfbW92ZV9vbmdvaW5nKTsK
+Pj4gREVGSU5FX01VVEVYKG1vdmVfYWNjb3VudF9tdXRleCk6Cj4+IAo+PiB2b2lkIG1lbWNnX3N0
+YXJ0X2FjY291bnRfbW92ZSh2b2lkKQo+PiB7Cj4+IAltdXRleF9sb2NrKCZtb3ZlX2FjY291bnRf
+bXV0ZXgpOwo+PiAJZm9yX2VhY2hfb25saW5lX2NwdShjcHUpCj4+IAkJcGVyX2NwdShjcHUsIGFj
+Y291bnRfbW92ZV9vbmdvaW5nKSArPSAxOwo+PiAJbXV0ZXhfdW5sb2NrKCZtb3ZlX2FjY291bnRf
+bXV0ZXgpOwo+PiAJLyogV2FpdCB1bnRpbCB0aGVyZSBhcmUgbm8gbG9ja2xlc3MgdXBkYXRlICov
+Cj4+IAlzeW5jaHJvbml6ZV9yY3UoKTsKPj4gCXJldHVybjsKPj4gfQo+PiAKPj4gdm9pZCBtZW1j
+Z19lbmRfYWNjb3VudF9tb3ZlKHZvaWQpCj4+IHsKPj4gCW11dGV4X2xvY2soJm1vdmVfYWNjb3Vu
+dF9tdXRleCk7Cj4+IAlmb3JfZWFjaF9vbmxpbmVfY3B1KGNwdSkKPj4gCQlwZXJfY3B1KGNwdSwg
+YWNjb3VudF9tb3ZlX29uZ29pbmcpIC09IDE7Cj4+IAltdXRleF91bmxvY2soJm1vdmVfYWNjb3Vu
+dF9tdXRleCk7Cj4+IH0KPj4gCj4+IC8qIHJldHVybiAxIHdoZW4gd2UgdG9vayBsb2NrLCByZXR1
+cm4gMCBpZiBsb2NrZXNzIE9QcyBpcyBndWFyYW50ZWRkIHRvIGJlIHNhZmUgKi8KPj4gaW50IG1l
+bWNnX3N0YXJ0X2ZpbGVjYWNoZV9hY2NvdW50aW5nKHN0cnVjdCBwYWdlX2Nncm91cCAqcGMpCj4+
+IHsKPj4gCXJjdV9yZWFkX2xvY2soKTsKPj4gCXNtcF9ybWIoKTsKPj4gCWlmICghdGhpc19jcHVf
+cmVhZChtb3ZlX2FjY291bnRfb25nb2luZykpCj4+IAkJcmV0dXJuIDA7IC8qIG5vIG1vdmUgYWNj
+b3VudCBpcyBvbmdvaW5nICovCj4+IAlsb2NrX3BhZ2VfY2dyb3VwKHBjKTsKPj4gCXJldHVybiAx
+Owo+PiB9Cj4+IAo+PiB2b2lkIG1lbWNnX2VuZF9maWxlY2FjaGVfYWNjb3VudGluZyhzdHJ1Y3Qg
+cGFnZV9jZ3JvdXAgKnBjLCBpbnQgdW5sb2NrKQo+PiB7Cj4+IAlpZiAodW5sb2NrKQo+PiAJCXVu
+bG9ja19wYWdlX2Nncm91cChwYyk7Cj4+IAo+PiAJcmN1X3JlYWRfdW5sb2NrKCk7Cj4+IH0KPj4g
+Cj4+IGFuZCBjYWxsIG1lbWNnX3N0YXJ0X2FjY291bnRfbW92ZSgpL2VuZF9hY2NvdW50X21vdmUo
+KSBpbiB0aGUgc3RhcnQvZW5kIG9mCj4+IG1pZ3JhaW50aW5nIGNodW5rIG9mIHBhZ2VzLgo+Cj4g
+SGkgS2FtZS1zYW4sCj4KPiBNYXkgYmUgSSBhbSBtaXNzaW5nIHNvbWV0aGluZyBidXQgaG93IGRv
+ZXMgaXQgc29sdmUgdGhlIGlzc3VlIG9mIG1ha2luZyBzdXJlCj4gbG9ja19wYWdlX2Nncm91cCgp
+IGlzIG5vdCBoZWxkIGluIGludGVycnVwdCBjb250ZXh0PyBJSVVDLCBhYm92ZSBjb2RlIHdpbGwK
+PiBtYWtlIHN1cmUgdGhhdCBmb3IgZmlsZSBjYWNoZSBhY2NvdXRpbmcsIGxvY2tfcGFnZV9jZ3Jv
+dXAoKSBpcyB0YWtlbiBvbmx5Cj4gaWYgdGFzayBtaWdyYXRpb24gaXMgb24uIEJ1dCBzYXkgdGFz
+ayBtaWdyYXRpb24gaXMgb24sIGFuZCB0aGVuIHNvbWUgSU8KPiBjb21wbGV0ZXMgYW5kIHdlIHVw
+ZGF0ZSBXUklURUJBQ0sgc3RhdCAoaSB0aGluayB0aGlzIGlzIHRoZSBvbmUgd2hpY2ggY2FuCj4g
+YmUgY2FsbGVkIGZyb20gaW50ZXJydXB0IGNvbnRleHQpLCB0aGVuIHdlIHdpbGwgc3RpbGwgdGFr
+ZSB0aGUKPiBsb2NrX3BhZ2VfY2dyb3VwKCkgYW5kIGFnYWluIHJ1biBpbnRvIHRoZSBpc3N1ZSBv
+ZiBkZWFkbG9ja3M/Cj4KPiBUaGFua3MKPiBWaXZlawoKSSBhZ3JlZS4gSSB0aGluayB0aGUgbG9j
+ay91bmxvY2tfcGFnZV9jZ3Jwb3VwKCkgY2FsbHMgc3VnZ2VzdGVkIGJ5CkthbWUtc2FuIHNob3Vs
+ZCBhbHNvIGluY2x1ZGUgbG9jYWxfaXJxX3NhdmUvcmVzdG9yZSgpIGNhbGxzIHRvIHByZXZlbnQK
+dGhlIGludGVycnVwdCBjb250ZXh0IGRlYWRsb2NrIFZpdmVrIGRlc2NyaWJlcy4gIFRoZXNlIG5l
+dwpsb2NhbF9pcnFfc2F2ZS9yZXN0b3JlKCkgY2FsbHMgd291bGQgb25seSBiZSB1c2VkIGlmCm1v
+dmVfYWNjb3VudF9vbmdvaW5nIGlzIHNldC4gIFRoZXkgYmVoYXZlIGp1c3QgbGlrZSB0aGUgb3B0
+aW9uYWwgY2FsbHMKdG8gbG9jay91bmxvY2tfcGFnZV9jZ3JvdXAoKS4KCi0tCkdyZWcKX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWls
+aW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xp
+c3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
