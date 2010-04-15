@@ -1,8 +1,8 @@
 From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Subject: Re: [PATCH -mmotm 1/5] memcg: disable irq at page cgroup lock
-Date: Thu, 15 Apr 2010 09:14:44 +0900
-Message-ID: <20100415091444.aa743668.kamezawa.hiroyu__3676.27030141211$1271290873$gmane$org@jp.fujitsu.com>
-References: <20100317115855.GS18054@balbir.in.ibm.com>
+Date: Thu, 15 Apr 2010 09:22:58 +0900
+Message-ID: <20100415092258.9f837c12.kamezawa.hiroyu__6929.54515475339$1271291362$gmane$org@jp.fujitsu.com>
+References: <1268609202-15581-1-git-send-email-arighi@develer.com>
 	<20100318085411.834e1e46.kamezawa.hiroyu@jp.fujitsu.com>
 	<20100318041944.GA18054@balbir.in.ibm.com>
 	<20100318133527.420b2f25.kamezawa.hiroyu@jp.fujitsu.com>
@@ -12,12 +12,12 @@ References: <20100317115855.GS18054@balbir.in.ibm.com>
 	<20100319120049.3dbf8440.kamezawa.hiroyu@jp.fujitsu.com>
 	<xr931veiplpr.fsf@ninji.mtv.corp.google.com>
 	<20100414182904.2f72a63d.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100414140430.GB13535@redhat.com>
+	<p2k49b004811004140922v8b6c4c57j2dd435261ff2dd43@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100414140430.GB13535-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <p2k49b004811004140922v8b6c4c57j2dd435261ff2dd43-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -27,50 +27,50 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Trond-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, Andrew-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Andrea-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Daisuke-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, 14 Apr 2010 10:04:30 -0400
-Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-
-> On Wed, Apr 14, 2010 at 06:29:04PM +0900, KAMEZAWA Hiroyuki wrote:
-
-> Hi Kame-san,
-> 
-> May be I am missing something but how does it solve the issue of making sure
-> lock_page_cgroup() is not held in interrupt context? IIUC, above code will
-> make sure that for file cache accouting, lock_page_cgroup() is taken only
-> if task migration is on. But say task migration is on, and then some IO
-> completes and we update WRITEBACK stat (i think this is the one which can
-> be called from interrupt context), then we will still take the
-> lock_page_cgroup() and again run into the issue of deadlocks?
-> 
-Yes and No.
-
-At "Set", IIRC, almost all updates against DIRTY and WRITBACK accountings
-can be done under mapping->tree_lock, which disables IRQ always.
-(ex. I don't mention TestSetPageWriteback but account_page_diritied().)
-Then, save/restore irq flags is just a cost and no benefit, in such cases.
-Of course, there are cases irqs doesn't enabled.
-
-About FILE_MAPPED, it's not updated under mapping->tree_lock. 
-So, we'll have race with charge/uncharge. We have to take lock_page_cgroup(), always.
-
-
-So, I think we'll have 2 or 3 interfaces, finally.
-	mem_cgroup_update_stat_fast()  // the caller must disable IRQ and lock_page()
-and
-	mem_cgroup_update_stat_locked() // the caller has lock_page().
-and
-	mem_cgroup_update_stat_safe()  // the caller don't have to do anything.
-
-Why update_stat_fast() is for avoiding _unnecessary_ costs.
-When we lock a page and disables IRQ, we don't have to do anything.
-There are no races. 
-
-But yes, it's complicated. I'd like to see what we can do.
-
-
-Thanks,
--Kame
+T24gV2VkLCAxNCBBcHIgMjAxMCAwOToyMjo0MSAtMDcwMApHcmVnIFRoZWxlbiA8Z3RoZWxlbkBn
+b29nbGUuY29tPiB3cm90ZToKCj4gT24gV2VkLCBBcHIgMTQsIDIwMTAgYXQgMjoyOSBBTSwgS0FN
+RVpBV0EgSGlyb3l1a2kKPiA8a2FtZXphd2EuaGlyb3l1QGpwLmZ1aml0c3UuY29tPiB3cm90ZToK
+Pgo+ID4+IMKgIMKgIMKgIGlmIChpcnFzX2Rpc2FibGVkKCkpIHsKPiA+PiDCoCDCoCDCoCDCoCDC
+oCDCoCDCoCBpZiAoISB0cnlsb2NrX3BhZ2VfY2dyb3VwKHBjKSkKPiA+PiDCoCDCoCDCoCDCoCDC
+oCDCoCDCoCDCoCDCoCDCoCDCoCByZXR1cm47Cj4gPj4gwqAgwqAgwqAgfSBlbHNlCj4gPj4gwqAg
+wqAgwqAgwqAgwqAgwqAgwqAgbG9ja19wYWdlX2Nncm91cChwYyk7Cj4gPj4KPiA+Cj4gPiBJIHBy
+ZWZlciB0cnlsb2NrX3BhZ2VfY2dyb3VwKCkgYWx3YXlzLgo+IAo+IFdoYXQgaXMgeW91ciByZWFz
+b24gZm9yIHByZWZlcnJpbmcgdHJ5bG9ja19wYWdlX2Nncm91cCgpPyAgSSBhc3N1bWUKPiBpdCdz
+IGZvciBjb2RlIHNpbXBsaWNpdHksIGJ1dCBJIHdhbnRlZCB0byBjaGVjay4KPiAKPiBJIGhhZCB0
+aG91Z2ggYWJvdXQgdXNpbmcgdHJ5bG9ja19wYWdlX2Nncm91cCgpIGFsd2F5cywgYnV0IEkgdGhp
+bmsKPiB0aGF0IHdvdWxkIG1ha2UgZmlsZV9tYXBwZWQgYWNjb3VudGluZyBldmVuIG1vcmUgZnV6
+enkgdGhhdCBpdCBhbHJlYWR5Cj4gaXQgaXMuICBJIHdhcyB0cnlpbmcgdG8gcmV0YWluIHRoZSBj
+dXJyZW50IGFjY3VyYWN5IG9mIGZpbGVfbWFwcGVkIGFuZAo+IG9ubHkgbWFrZSBuZXcgY291bnRl
+cnMsIGxpa2Ugd3JpdGViYWNrL2RpcnR5L2V0YyAodGhvc2Ugb2J0YWluZWQgaW4KPiBpbnRlcnJ1
+cHQpLCBmdXp6eS4KPiAKCmZpbGVfbWFwcGVkIHNob3VsZCBoYXZlIGRpZmZlcmVudCBpbnRlcmZh
+Y2UgYXMgbWVtX2Nncm91cF91cGRhdGVfc3RhdF92ZXJycnJ5X3NhZmUoKS4Kb3Igc29tZS4KCkkg
+ZG9uJ3QgdGhpbmsgYWNjdXJhY3kgaXMgaW1wb3J0YW50IChpZiBpdCdzIGRvZXNuJ3QgZ28gbWlu
+dXMpIGJ1dCBpZiBwZW9wbGUgd2FudCwKSSBhZ3JlZSB0byBrZWVwIGl0IGFjY3VyYXRlLgoKCj4g
+PiBJIGhhdmUgYW5vdGhlciBpZGVhIGZpeGluZyB0aGlzIHVwIF9sYXRlcl8uIChCdXQgSSB3YW50
+IHRvIHN0YXJ0IGZyb20gc2ltcGxlIG9uZS4pCj4gPgo+ID4gTXkgcm91Z2ggaWRlYSBpcyBmb2xs
+b3dpbmcuIMKgU2ltaWxhciB0byB5b3VyIGlkZWEgd2hpY2ggeW91IGdhdmUgbWUgYmVmb3JlLgo+
+IAo+IEhpIEthbWUtc2FuLAo+IAo+IEkgbGlrZSB0aGUgZ2VuZXJhbCBhcHByb2FjaC4gIFRoZSBj
+b2RlIEkgcHJldmlvdXNseSBnYXZlIHlvdSBhcHBlYXJzCj4gdG8gd29yayBhbmQgaXMgZmFzdGVy
+IHRoYW4gbm9uLXJvb3QgbWVtY2dzIHVzaW5nIG1tb3RtIGR1ZSB0byBtb3N0bHkKPiBiZWluZyBs
+b2NrbGVzcy4KPiAKSSBob3BlIHNvLgoKPiA+ID09Cj4gPiBERUZJTkVfUEVSQ1BVKGFjY291bnRf
+bW92ZV9vbmdvaW5nKTsKPiAKPiBXaGF0J3MgdGhlIHJlYXNvbiBmb3IgaGF2aW5nIGEgcGVyLWNw
+dSBhY2NvdW50X21vdmVfb25nb2luZyBmbGFnPwo+IFdvdWxkIGEgc2luZ2xlIHN5c3RlbS13aWRl
+IGdsb2JhbCBiZSBzdWZmaWNpZW50PyAgSSBhc3N1bWUgdGhlCj4gbWFqb3JpdHkgb2YgdGhlIHRp
+bWUgdGhpcyB2YWx1ZSB3aWxsIG5vdCBiZSBjaGFuZ2luZyBiZWNhdXNlCj4gYWNjb3VudGluZyBt
+b3ZlcyBhcmUgcmFyZS4KPiAKPiBQZXJoYXBzIGFsbCBvZiB0aGUgcGVyLWNwdSB2YXJpYWJsZXMg
+YXJlIHBhY2tlZCB3aXRoaW4gYSBwZXItY3B1Cj4gY2FjaGVsaW5lIG1ha2luZyBhY2Nlc3Npbmcg
+aXQgbW9yZSBsaWtlbHkgdG8gYmUgbG9jYWwsIGJ1dCBJJ20gbm90Cj4gc3VyZSBpZiB0aGlzIGlz
+IHRydWUuCj4gCgpZZXMuIHRoaXMgdmFsdWUgaXMgcmFyZWx5IHVwZGF0ZWQgYnV0IHVwZGF0ZSBp
+cyBub3QgZW5vdWdoIHJhcmUgdG8gcHV0CnRoaXMgdmFsdWUgdG8gcmVhZF9tb3N0bHkgc2VjdGlv
+bi4gV2Ugc2VlIGNhY2hlbGluZSBwaW5nLXBvbmcgYnkgcmFuZG9tCnBsYWNlbWVudCBvZiBnbG9i
+YWwgdmFyaWFibGVzLiBUaGlzIGlzIHBlcmZvcm1hbmNlIGNyaXRpY2FsLgpSZWNlbnQgdXBkYXRl
+cyBmb3IgcGVyY3B1IHZhcmlhYmxlcyBhY2Nlc3NvciBtYWtlcyBhY2Nlc3MgdG8gcGVyY3B1IAp2
+ZXJ5IGVmZmljaWVudC4gSSdkIGxpa2UgdG8gbWFrZSB1c2Ugb2YgaXQuCgpUaGFua3MsCi1LYW1l
+CgoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFp
+bmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpo
+dHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFp
+bmVycw==
