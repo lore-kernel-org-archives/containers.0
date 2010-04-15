@@ -1,15 +1,24 @@
-From: Miao Xie <miaox-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: Lockdep splat in cpuset code acquiring alloc_lock
-Date: Thu, 15 Apr 2010 14:39:47 +0800
-Message-ID: <4BC6B4B3.8070000__21676.4713208706$1271313817$gmane$org@cn.fujitsu.com>
-References: <20100414202347.GA26791@linux.vnet.ibm.com>
-	<z2m6599ad831004141410tdc40feb0h529dabe4a39d67d5@mail.gmail.com>
-Reply-To: miaox-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH -mmotm 1/5] memcg: disable irq at page cgroup lock
+Date: Thu, 15 Apr 2010 15:54:32 +0900
+Message-ID: <20100415155432.cf1861d9.kamezawa.hiroyu__41217.8840292201$1271314835$gmane$org@jp.fujitsu.com>
+References: <1268609202-15581-2-git-send-email-arighi@develer.com>
+	<20100318133527.420b2f25.kamezawa.hiroyu@jp.fujitsu.com>
+	<20100318162855.GG18054@balbir.in.ibm.com>
+	<20100319102332.f1d81c8d.kamezawa.hiroyu@jp.fujitsu.com>
+	<20100319024039.GH18054@balbir.in.ibm.com>
+	<20100319120049.3dbf8440.kamezawa.hiroyu@jp.fujitsu.com>
+	<xr931veiplpr.fsf@ninji.mtv.corp.google.com>
+	<20100414140523.GC13535@redhat.com>
+	<xr9339yxyepc.fsf@ninji.mtv.corp.google.com>
+	<20100415114022.ef01b704.nishimura@mxp.nes.nec.co.jp>
+	<g2u49b004811004142148i3db9fefaje1f20760426e0c7e@mail.gmail.com>
+	<20100415152104.62593f37.nishimura@mxp.nes.nec.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <z2m6599ad831004141410tdc40feb0h529dabe4a39d67d5-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20100415152104.62593f37.nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,32 +28,68 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Rusty Russell <rusty-8n+1lVoiYb80n/F98K4Iww@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Peter-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-CC Oleg
-CC Ingo
-
-on 2010-4-15 5:10, Paul Menage wrote:
-> Looks like select_fallback_rq() shouldn't be calling
-> cpuset_cpus_allowed_locked(), which does a task_lock(), which isn't
-> IRQ safe. Also, according to its comments that should only be held
-> with the cpuset callback_mutex held, which seems unlikely from a
-> softirq handler.
+On Thu, 15 Apr 2010 15:21:04 +0900
+Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
+> > The only reason to use trylock in this case is to prevent deadlock
+> > when running in a context that may have preempted or interrupted a
+> > routine that already holds the bit locked.  In the
+> > __remove_from_page_cache() irqs are disabled, but that does not imply
+> > that a routine holding the spinlock has been preempted.  When the bit
+> > is locked, preemption is disabled.  The only way to interrupt a holder
+> > of the bit for an interrupt to occur (I/O, timer, etc).  So I think
+> > that in_interrupt() is sufficient.  Am I missing something?
+> > 
+> IIUC, it's would be enough to prevent deadlock where one CPU tries to acquire
+> the same page cgroup lock. But there is still some possibility where 2 CPUs
+> can cause dead lock each other(please see the commit e767e056).
+> IOW, my point is "don't call lock_page_cgroup() under mapping->tree_lock". 
 > 
-> Also, calling cpuset_cpus_allowed_locked(p, &p->cpus_allowed) stomps
-> on state in p without (AFAICS) synchronization.
-> 
-> The description of commit e76bd8d9850c2296a7e8e24c9dce9b5e6b55fe2f
-> includes the phrase " I'm fairly sure this works, but there might be a
-> deadlock hiding" although I think that the lockdep-reported problem is
-> different than what Rusty had in mind.
+Hmm, maybe worth to try. We may be able to set/clear all DIRTY/WRITBACK bit
+on page_cgroup without mapping->tree_lock.
+In such case, of course, the page itself should be locked by lock_page().
 
-This problem have been fixed by Oleg Nesterov, and the patchset was merged
-into tip tree, but it's scheduled for .35 ...
+But.Hmm..for example.
 
-http://lkml.org/lkml/2010/3/15/73
+account_page_dirtied() is the best place to mark page_cgroup dirty. But
+it's called under mapping->tree_lock.
 
-Thanks!
-Miao
+Another thinking:
+I wonder we may have to change our approach for dirty page acccounting.
+
+Please see task_dirty_inc(). It's for per task dirty limiting.
+And you'll notice soon that there is no task_dirty_dec().
+
+Making use of lib/proportions.c's proportion calculation as task_dirty limit or
+per-bdi dirty limit does is worth to be considered.
+This is very simple and can be implemented without problems we have now.
+(Need to think about algorithm itself, but it's used and works well.)
+We'll never see complicated race condtions.
+
+I know some guys wants "accurate" accounting, but I myself don't want too much.
+Using propotions.c can offer us unified approach with per-task dirty accounting.
+or per-bid dirty accouting.
+
+If we do so, memcg will have interface like per-bdi dirty ratio (see below)
+[kamezawa@bluextal kvm2]$ ls /sys/block/dm-0/bdi/
+max_ratio  min_ratio  power  read_ahead_kb  subsystem  uevent
+
+Maybe
+  memory.min_ratio
+  memory.max_ratio
+
+And use this instead of  task_dirty_limit(current, pbdi_dirty); As
+
+	if (mem_cgroup_dirty_ratio_support(current)) // return 0 if root cgroup
+		memcg_dirty_limit(current, pbdi_dirty, xxxx?);
+	else
+		task_dirty_limit(current, pbdi_diryt)
+
+To be honest, I don't want to increase caller of lock_page_cgroup() and don't
+want to see complicated race conditions.
+
+Thanks,
+-Kame
