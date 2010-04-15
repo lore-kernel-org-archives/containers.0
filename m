@@ -1,11 +1,8 @@
-From: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+From: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH -mmotm 1/5] memcg: disable irq at page cgroup lock
-Date: Thu, 15 Apr 2010 11:40:22 +0900
-Message-ID: <20100415114022.ef01b704.nishimura__31854.2018336759$1271299760$gmane$org@mxp.nes.nec.co.jp>
+Date: Wed, 14 Apr 2010 21:48:25 -0700
+Message-ID: <g2u49b004811004142148i3db9fefaje1f20760426e0c7e__40653.3609530472$1271307002$gmane$org@mail.gmail.com>
 References: <1268609202-15581-2-git-send-email-arighi@develer.com>
-	<20100317115855.GS18054@balbir.in.ibm.com>
-	<20100318085411.834e1e46.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100318041944.GA18054@balbir.in.ibm.com>
 	<20100318133527.420b2f25.kamezawa.hiroyu@jp.fujitsu.com>
 	<20100318162855.GG18054@balbir.in.ibm.com>
 	<20100319102332.f1d81c8d.kamezawa.hiroyu@jp.fujitsu.com>
@@ -14,11 +11,12 @@ References: <1268609202-15581-2-git-send-email-arighi@develer.com>
 	<xr931veiplpr.fsf@ninji.mtv.corp.google.com>
 	<20100414140523.GC13535@redhat.com>
 	<xr9339yxyepc.fsf@ninji.mtv.corp.google.com>
+	<20100415114022.ef01b704.nishimura@mxp.nes.nec.co.jp>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <xr9339yxyepc.fsf-Pk7ff2FLCuk9fRMx9H/SexPsWskHk0ljAL8bYrjMMd8@public.gmane.org>
+In-Reply-To: <20100415114022.ef01b704.nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -28,72 +26,128 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Suleiman Souhlal <suleiman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gV2VkLCAxNCBBcHIgMjAxMCAxMzoxNDowNyAtMDcwMCwgR3JlZyBUaGVsZW4gPGd0aGVsZW5A
-Z29vZ2xlLmNvbT4gd3JvdGU6Cj4gVml2ZWsgR295YWwgPHZnb3lhbEByZWRoYXQuY29tPiB3cml0
-ZXM6Cj4gCj4gPiBPbiBUdWUsIEFwciAxMywgMjAxMCBhdCAxMTo1NToxMlBNIC0wNzAwLCBHcmVn
-IFRoZWxlbiB3cm90ZToKPiA+PiBPbiBUaHUsIE1hciAxOCwgMjAxMCBhdCA4OjAwIFBNLCBLQU1F
-WkFXQSBIaXJveXVraSA8a2FtZXphd2EuaGlyb3l1QGpwLmZ1aml0c3UuY29tPiB3cm90ZToKPiA+
-PiA+IE9uIEZyaSwgMTkgTWFyIDIwMTAgMDg6MTA6MzkgKzA1MzAKPiA+PiA+IEJhbGJpciBTaW5n
-aCA8YmFsYmlyQGxpbnV4LnZuZXQuaWJtLmNvbT4gd3JvdGU6Cj4gPj4gPgo+ID4+ID4+ICogS0FN
-RVpBV0EgSGlyb3l1a2kgPGthbWV6YXdhLmhpcm95dUBqcC5mdWppdHN1LmNvbT4gWzIwMTAtMDMt
-MTkgMTA6MjM6MzJdOgo+ID4+ID4+Cj4gPj4gPj4gPiBPbiBUaHUsIDE4IE1hciAyMDEwIDIxOjU4
-OjU1ICswNTMwCj4gPj4gPj4gPiBCYWxiaXIgU2luZ2ggPGJhbGJpckBsaW51eC52bmV0LmlibS5j
-b20+IHdyb3RlOgo+ID4+ID4+ID4KPiA+PiA+PiA+ID4gKiBLQU1FWkFXQSBIaXJveXVraSA8a2Ft
-ZXphd2EuaGlyb3l1QGpwLmZ1aml0c3UuY29tPiBbMjAxMC0wMy0xOCAxMzozNToyN106Cj4gPj4g
-Pj4gPgo+ID4+ID4+ID4gPiA+IFRoZW4sIG5vIHByb2JlbG0uIEl0J3Mgb2sgdG8gYWRkIG1lbV9j
-Z3JvdXBfdWRwYXRlX3N0YXQoKSBpbmRwZW5kZW50IGZyb20KPiA+PiA+PiA+ID4gPiBtZW1fY2dy
-b3VwX3VwZGF0ZV9maWxlX21hcHBlZCgpLiBUaGUgbG9vayBtYXkgYmUgbWVzc3kgYnV0IGl0J3Mg
-bm90IHlvdXIKPiA+PiA+PiA+ID4gPiBmYXVsdC4gQnV0IHBsZWFzZSB3cml0ZSAid2h5IGFkZCBu
-ZXcgZnVuY3Rpb24iIHRvIHBhdGNoIGRlc2NyaXB0aW9uLgo+ID4+ID4+ID4gPiA+Cj4gPj4gPj4g
-PiA+ID4gSSdtIHNvcnJ5IGZvciB3YXN0aW5nIHlvdXIgdGltZS4KPiA+PiA+PiA+ID4KPiA+PiA+
-PiA+ID4gRG8gd2UgbmVlZCB0byBnbyBkb3duIHRoaXMgcm91dGU/IFdlIGNvdWxkIGNoZWNrIHRo
-ZSBzdGF0IGFuZCBkbyB0aGUKPiA+PiA+PiA+ID4gY29ycmVjdCB0aGluZy4gSW4gY2FzZSBvZiBG
-SUxFX01BUFBFRCwgYWx3YXlzIGdyYWIgcGFnZV9jZ3JvdXBfbG9jawo+ID4+ID4+ID4gPiBhbmQg
-Zm9yIG90aGVycyBwb3RlbnRpYWxseSBsb29rIGF0IHRyeWxvY2suIEl0IGlzIE9LIGZvciBkaWZm
-ZXJlbnQKPiA+PiA+PiA+ID4gc3RhdHMgdG8gYmUgcHJvdGVjdGVkIHZpYSBkaWZmZXJlbnQgbG9j
-a3MuCj4gPj4gPj4gPiA+Cj4gPj4gPj4gPgo+ID4+ID4+ID4gSSBfZG9uJ3RfIHdhbnQgdG8gc2Vl
-IGEgbWl4dHVyZSBvZiBzcGlubG9jayBhbmQgdHJ5bG9jayBpbiBhIGZ1bmN0aW9uLgo+ID4+ID4+
-ID4KPiA+PiA+Pgo+ID4+ID4+IEEgd2VsbCBkb2N1bWVudGVkIHdlbGwgd3JpdHRlbiBmdW5jdGlv
-biBjYW4gaGVscC4gVGhlIG90aGVyIHRoaW5nIGlzIHRvCj4gPj4gPj4gb2YtY291cnNlIHNvbHZl
-IHRoaXMgY29ycmVjdGx5IGJ5IGludHJvZHVjaW5nIGRpZmZlcmVudCBsb2NraW5nIGFyb3VuZAo+
-ID4+ID4+IHRoZSBzdGF0aXN0aWNzLiBBcmUgeW91IHN1Z2dlc3RpbmcgdGhlIGxhdGVyPwo+ID4+
-ID4+Cj4gPj4gPgo+ID4+ID4gTm8uIEFzIEkgd3JvdGUuCj4gPj4gPiDCoCDCoCDCoCDCoC0gZG9u
-J3QgbW9kaWZ5IGNvZGVzIGFyb3VuZCBGSUxFX01BUFBFRCBpbiB0aGlzIHNlcmllcy4KPiA+PiA+
-IMKgIMKgIMKgIMKgLSBhZGQgYSBuZXcgZnVuY3Rpb25zIGZvciBuZXcgc3RhdGlzdGljcwo+ID4+
-ID4gVGhlbiwKPiA+PiA+IMKgIMKgIMKgIMKgLSB0aGluayBhYm91dCBjbGVhbiB1cCBsYXRlciwg
-YWZ0ZXIgd2UgY29uZmlybSBhbGwgdGhpbmdzIHdvcmsgYXMgZXhwZWN0ZWQuCj4gPj4gCj4gPj4g
-SSBoYXZlIHBvcnRlZCBBbmRyZWEgUmlnaGkncyBtZW1jZyBkaXJ0eSBwYWdlIGFjY291bnRpbmcg
-cGF0Y2hlcyB0byBsYXRlc3QKPiA+PiBtbXRvbS0yMDEwLTA0LTA1LTE2LTA5LiAgSW4gZG9pbmcg
-c28gSSBoYXZlIHRvIGFkZHJlc3MgdGhpcyBsb2NraW5nIGlzc3VlLiAgRG9lcwo+ID4+IHRoZSBm
-b2xsb3dpbmcgbG9vayBnb29kPyAgSSB3aWxsIChvZiBjb3Vyc2UpIHN1Ym1pdCB0aGUgZW50aXJl
-IHBhdGNoIGZvciByZXZpZXcsCj4gPj4gYnV0IEkgd2FudGVkIG1ha2Ugc3VyZSBJIHdhcyBhaW1p
-bmcgaW4gdGhlIHJpZ2h0IGRpcmVjdGlvbi4KPiA+PiAKPiA+PiB2b2lkIG1lbV9jZ3JvdXBfdXBk
-YXRlX3BhZ2Vfc3RhdChzdHJ1Y3QgcGFnZSAqcGFnZSwKPiA+PiAJCQllbnVtIG1lbV9jZ3JvdXBf
-d3JpdGVfcGFnZV9zdGF0X2l0ZW0gaWR4LCBib29sIGNoYXJnZSkKPiA+PiB7Cj4gPj4gCXN0YXRp
-YyBpbnQgc2VxOwo+ID4+IAlzdHJ1Y3QgcGFnZV9jZ3JvdXAgKnBjOwo+ID4+IAo+ID4+IAlpZiAo
-bWVtX2Nncm91cF9kaXNhYmxlZCgpKQo+ID4+IAkJcmV0dXJuOwo+ID4+IAlwYyA9IGxvb2t1cF9w
-YWdlX2Nncm91cChwYWdlKTsKPiA+PiAJaWYgKCFwYyB8fCBtZW1fY2dyb3VwX2lzX3Jvb3QocGMt
-Pm1lbV9jZ3JvdXApKQo+ID4+IAkJcmV0dXJuOwo+ID4+IAo+ID4+IAkvKgo+ID4+IAkgKiBUaGlz
-IHJvdXRpbmUgZG9lcyBub3QgZGlzYWJsZSBpcnEgd2hlbiB1cGRhdGluZyBzdGF0cy4gIFNvIGl0
-IGlzCj4gPj4gCSAqIHBvc3NpYmxlIHRoYXQgYSBzdGF0IHVwZGF0ZSBmcm9tIHdpdGhpbiBpbnRl
-cnJ1cHQgcm91dGluZSwgY291bGQKPiA+PiAJICogZGVhZGxvY2suICBVc2UgdHJ5bG9ja19wYWdl
-X2Nncm91cCgpIHRvIGF2b2lkIHN1Y2ggZGVhZGxvY2suICBUaGlzCj4gPj4gCSAqIG1ha2VzIHRo
-ZSBtZW1jZyBjb3VudGVycyBmdXp6eS4gIE1vcmUgY29tcGxpY2F0ZWQsIG9yIGxvd2VyCj4gPj4g
-CSAqIHBlcmZvcm1pbmcgbG9ja2luZyBzb2x1dGlvbnMgYXZvaWQgdGhpcyBmdXp6aW5lc3MsIGJ1
-dCBhcmUgbm90Cj4gPj4gCSAqIGN1cnJlbnRseSBuZWVkZWQuCj4gPj4gCSAqLwo+ID4+IAlpZiAo
-aXJxc19kaXNhYmxlZCgpKSB7Cj4gPiAgICAgICAgICAgICBeXl5eXl5eXl4KPiA+IE9yIG1heSBi
-ZSBpbl9pbnRlcnJ1cHQoKT8KPiAKPiBHb29kIGNhdGNoLiAgSSB3aWxsIHJlcGxhY2UgaXJxc19k
-aXNhYmxlZCgpIHdpdGggaW5faW50ZXJydXB0KCkuCj4gCkkgdGhpbmsgeW91IHNob3VsZCBjaGVj
-ayBib3RoLiBfX3JlbW92ZV9mcm9tX3BhZ2VfY2FjaGUoKSwgd2hpY2ggd2lsbCB1cGRhdGUKRElS
-VFksIGlzIGNhbGxlZCB3aXRoIGlycSBkaXNhYmxlZChpb3csIHVuZGVyIG1hcHBpbmctPnRyZWVf
-bG9jaykgYnV0IG5vdCBpbgppbnRlcnJ1cHQgY29udGV4dC4KCkFueXdheSwgSSB0ZW5kIHRvIGFn
-cmVlIHdpdGggS0FNRVpBV0Etc2FuOiB1c2UgdHJ5bG9jayBhbHdheXMoZXhjZXB0IGZvciBGSUxF
-X01BUFBFRCksCm9yIGFkZCBzb21lIG5ldyBpbnRlcmZhY2VzKGUuZy4gbWVtX2Nncm91cF91cGRh
-dGVfc3RhdF9sb2NrZWQvc2FmZS4uLikuCgpUaGFua3MsCkRhaXN1a2UgTmlzaGltdXJhLgpfX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1h
-aWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8v
-bGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+On Wed, Apr 14, 2010 at 7:40 PM, Daisuke Nishimura
+<nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
+> On Wed, 14 Apr 2010 13:14:07 -0700, Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrot=
+e:
+>> Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+>>
+>> > On Tue, Apr 13, 2010 at 11:55:12PM -0700, Greg Thelen wrote:
+>> >> On Thu, Mar 18, 2010 at 8:00 PM, KAMEZAWA Hiroyuki <kamezawa.hiroyu@j=
+p.fujitsu.com> wrote:
+>> >> > On Fri, 19 Mar 2010 08:10:39 +0530
+>> >> > Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+>> >> >
+>> >> >> * KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> [2010-03-19 1=
+0:23:32]:
+>> >> >>
+>> >> >> > On Thu, 18 Mar 2010 21:58:55 +0530
+>> >> >> > Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+>> >> >> >
+>> >> >> > > * KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> [2010-03-=
+18 13:35:27]:
+>> >> >> >
+>> >> >> > > > Then, no probelm. It's ok to add mem_cgroup_udpate_stat() in=
+dpendent from
+>> >> >> > > > mem_cgroup_update_file_mapped(). The look may be messy but i=
+t's not your
+>> >> >> > > > fault. But please write "why add new function" to patch desc=
+ription.
+>> >> >> > > >
+>> >> >> > > > I'm sorry for wasting your time.
+>> >> >> > >
+>> >> >> > > Do we need to go down this route? We could check the stat and =
+do the
+>> >> >> > > correct thing. In case of FILE_MAPPED, always grab page_cgroup=
+_lock
+>> >> >> > > and for others potentially look at trylock. It is OK for diffe=
+rent
+>> >> >> > > stats to be protected via different locks.
+>> >> >> > >
+>> >> >> >
+>> >> >> > I _don't_ want to see a mixture of spinlock and trylock in a fun=
+ction.
+>> >> >> >
+>> >> >>
+>> >> >> A well documented well written function can help. The other thing =
+is to
+>> >> >> of-course solve this correctly by introducing different locking ar=
+ound
+>> >> >> the statistics. Are you suggesting the later?
+>> >> >>
+>> >> >
+>> >> > No. As I wrote.
+>> >> > =A0 =A0 =A0 =A0- don't modify codes around FILE_MAPPED in this seri=
+es.
+>> >> > =A0 =A0 =A0 =A0- add a new functions for new statistics
+>> >> > Then,
+>> >> > =A0 =A0 =A0 =A0- think about clean up later, after we confirm all t=
+hings work as expected.
+>> >>
+>> >> I have ported Andrea Righi's memcg dirty page accounting patches to l=
+atest
+>> >> mmtom-2010-04-05-16-09. =A0In doing so I have to address this locking=
+ issue. =A0Does
+>> >> the following look good? =A0I will (of course) submit the entire patc=
+h for review,
+>> >> but I wanted make sure I was aiming in the right direction.
+>> >>
+>> >> void mem_cgroup_update_page_stat(struct page *page,
+>> >> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0enum mem_cgroup_write_page_sta=
+t_item idx, bool charge)
+>> >> {
+>> >> =A0 =A0static int seq;
+>> >> =A0 =A0struct page_cgroup *pc;
+>> >>
+>> >> =A0 =A0if (mem_cgroup_disabled())
+>> >> =A0 =A0 =A0 =A0 =A0 =A0return;
+>> >> =A0 =A0pc =3D lookup_page_cgroup(page);
+>> >> =A0 =A0if (!pc || mem_cgroup_is_root(pc->mem_cgroup))
+>> >> =A0 =A0 =A0 =A0 =A0 =A0return;
+>> >>
+>> >> =A0 =A0/*
+>> >> =A0 =A0 * This routine does not disable irq when updating stats. =A0S=
+o it is
+>> >> =A0 =A0 * possible that a stat update from within interrupt routine, =
+could
+>> >> =A0 =A0 * deadlock. =A0Use trylock_page_cgroup() to avoid such deadlo=
+ck. =A0This
+>> >> =A0 =A0 * makes the memcg counters fuzzy. =A0More complicated, or low=
+er
+>> >> =A0 =A0 * performing locking solutions avoid this fuzziness, but are =
+not
+>> >> =A0 =A0 * currently needed.
+>> >> =A0 =A0 */
+>> >> =A0 =A0if (irqs_disabled()) {
+>> > =A0 =A0 =A0 =A0 =A0 =A0 ^^^^^^^^^
+>> > Or may be in_interrupt()?
+>>
+>> Good catch. =A0I will replace irqs_disabled() with in_interrupt().
+>>
+> I think you should check both. __remove_from_page_cache(), which will upd=
+ate
+> DIRTY, is called with irq disabled(iow, under mapping->tree_lock) but not=
+ in
+> interrupt context.
+
+The only reason to use trylock in this case is to prevent deadlock
+when running in a context that may have preempted or interrupted a
+routine that already holds the bit locked.  In the
+__remove_from_page_cache() irqs are disabled, but that does not imply
+that a routine holding the spinlock has been preempted.  When the bit
+is locked, preemption is disabled.  The only way to interrupt a holder
+of the bit for an interrupt to occur (I/O, timer, etc).  So I think
+that in_interrupt() is sufficient.  Am I missing something?
+
+> Anyway, I tend to agree with KAMEZAWA-san: use trylock always(except for =
+FILE_MAPPED),
+> or add some new interfaces(e.g. mem_cgroup_update_stat_locked/safe...).
+
+Thank you for the input.  I'm thinking more on this.
+
+--
+Greg
