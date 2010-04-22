@@ -1,73 +1,63 @@
-From: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
-Subject: Re: [PATCH 3/5] sched: Fix an RCU warning in print_task()
-Date: Thu, 22 Apr 2010 15:05:04 -0700
-Message-ID: <20100422220504.GP2524@linux.vnet.ibm.com>
-References: <4BD016F4.8060108@cn.fujitsu.com>
- <4BD01740.7050805@cn.fujitsu.com>
- <1271931604.1776.337.camel@laptop>
- <20100422211212.GA32490@count0.beaverton.ibm.com>
-Reply-To: paulmck@linux.vnet.ibm.com
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] Fix acquiring socket lock before reading RTNETLINK
+	response
+Date: Thu, 22 Apr 2010 17:54:44 -0500
+Message-ID: <20100422225444.GA9992@us.ibm.com>
+References: <1271966546-20791-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20100422211212.GA32490@count0.beaverton.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Matt Helsley <matthltc@us.ibm.com>
-Cc: Peter Zijlstra <peterz@infradead.org>, Li Zefan <lizf@cn.fujitsu.com>, Andrew Morton <akpm@linux-foundation.org>, LKML <linux-kernel@vger.kernel.org>, "containers@lists.osdl.org" <containers@lists.osdl.org>, Paul Menage <menage@google.com>, Ingo Molnar <mingo@elte.hu>
+In-Reply-To: <1271966546-20791-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Apr 22, 2010 at 02:12:12PM -0700, Matt Helsley wrote:
-> On Thu, Apr 22, 2010 at 12:20:04PM +0200, Peter Zijlstra wrote:
+Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
+Looks good to my limited understanding.
+
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
+> ---
+>  net/checkpoint_dev.c |    7 ++++---
+>  1 files changed, 4 insertions(+), 3 deletions(-)
 > 
-> <snip>
+> diff --git a/net/checkpoint_dev.c b/net/checkpoint_dev.c
+> index 7ccb899..2787892 100644
+> --- a/net/checkpoint_dev.c
+> +++ b/net/checkpoint_dev.c
+> @@ -136,11 +136,12 @@ static struct nlmsghdr *rtnl_get_response(struct socket *rtnl,
 > 
-> > You can also pin a cgroup by holding whatever locks are held in the
-> > ->attach method. But the RCU annotation doesn't know (nor reasonably can
-> > know about that).
+>  	*skb = NULL;
 > 
-> For my future reference, what's the right way to "fix" these
-> situations with the RCU annotations? (I think your response re: Li's
-> freezer patch was correct and illustrates the problem I'm referring to.)
-
-There are several variants of rcu_dereference() for this purpose:
-
-o	rcu_dereference() for code that is always called within an
-	RCU read-side critical section -- rcu_read_lock().
-
-o	rcu_dereference_bh() for code that is always called within
-	an RCU-bh read-side critical section -- rcu_read_lock_bh().
-
-o	rcu_dereference_sched() for code that is always called within
-	an RCU-sched read-side critical section -- either
-	rcu_read_lock_sched() or any other primitive that disables
-	preemption.
-
-o	srcu_dereference() for code that is always called within an
-	SRCU read-side critical section -- srcu_read_lock().
-
-o	rcu_dereference_check() for code that might be called either
-	in a read-side critical section or on the update side.	This
-	interface takes a second argument, which is normally a logical
-	conjunction of rcu_read_lock_held(), rcu_read_lock_sched_held(),
-	rcu_read_lock_bh_held(), and srcu_read_lock_held for the read
-	side, and lockdep_is_held() for the update side.
-
-o	rcu_dereference_raw(p) is rcu_dereference_check(p, 1).  Expect
-	to be asked hard questions if you include this in your patch.
-	One legitimate use is for initialization and cleanup code
-	sequences where the current CPU is the only one with access
-	to the RCU-protected data structure in question.
-
-o	rcu_dereference_protected() for code that is only called from
-	the update side.  This interface takes a second argument,
-	which would normally only have a logical conjunction of
-	lockdep_is_held() invocations.  Don't even think about putting
-	rcu_read_lock_held() and friends here!!!
-
-o	rcu_access_pointer() for code that only tests the value of
-	the RCU-protected pointer, for example, against NULL.
-
-There you have it!
-
-							Thanx, Paul
+> +	lock_sock(rtnl->sk);
+>  	ret = sk_wait_data(rtnl->sk, &timeo);
+> -	if (!ret)
+> -		return ERR_PTR(-EPIPE);
+> +	if (ret)
+> +		*skb = skb_dequeue(&rtnl->sk->sk_receive_queue);
+> +	release_sock(rtnl->sk);
+> 
+> -	*skb = skb_dequeue(&rtnl->sk->sk_receive_queue);
+>  	if (!*skb)
+>  		return ERR_PTR(-EPIPE);
+> 
+> -- 
+> 1.6.2.5
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
