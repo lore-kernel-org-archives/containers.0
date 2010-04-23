@@ -1,53 +1,47 @@
-From: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
-Subject: Re: [PATCH] cgroup: Check task_lock in task_subsys_state()
-Date: Thu, 22 Apr 2010 21:10:03 -0700
-Message-ID: <20100423041003.GC2619@linux.vnet.ibm.com>
-References: <4BD10788.8060006@cn.fujitsu.com>
-Reply-To: paulmck@linux.vnet.ibm.com
+From: Peter Zijlstra <peterz@infradead.org>
+Subject: Re: [PATCH 4/5] freezer cgroup: Fix an RCU warning in
+ cgroup_freezing_or_frozen()
+Date: Fri, 23 Apr 2010 08:47:52 +0200
+Message-ID: <1272005272.1646.20.camel@laptop>
+References: <4BD016F4.8060108@cn.fujitsu.com>
+	 <4BD01768.2020606@cn.fujitsu.com> <1271939275.1776.345.camel@laptop>
+	 <20100422195911.GN2524@linux.vnet.ibm.com> <1271966935.1646.4.camel@laptop>
+	  <4BD0F261.6080302@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 7bit
 Return-path: <linux-kernel-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <4BD10788.8060006@cn.fujitsu.com>
+In-Reply-To: <4BD0F261.6080302@cn.fujitsu.com>
 Sender: linux-kernel-owner@vger.kernel.org
 To: Li Zefan <lizf@cn.fujitsu.com>
-Cc: Peter Zijlstra <peterz@infradead.org>, Lai JIangshan <laijs@cn.fujitsu.com>, Paul Menage <menage@google.com>, Matt Helsley <matthltc@us.ibm.com>, Cedric Le Goater <clg@vnet.ibm.com>, LKML <linux-kernel@vger.kernel.org>, "containers@lists.osdl.org" <containers@lists.osdl.org>, Andrew Morton <akpm@linux-foundation.org>
+Cc: paulmck@linux.vnet.ibm.com, LKML <linux-kernel@vger.kernel.org>, "containers@lists.osdl.org" <containers@lists.osdl.org>, Paul Menage <menage@google.com>, Andrew Morton <akpm@linux-foundation.org>, Matt Helsley <matthltc@us.ibm.com>, Cedric Le Goater <clg@vnet.ibm.com>
 List-Id: containers.vger.kernel.org
 
-On Fri, Apr 23, 2010 at 10:35:52AM +0800, Li Zefan wrote:
-> task_subsys_state() is safe under task_lock(). See
-> Documentation/cgroups/cgroups.txt for locking rule.
+On Fri, 2010-04-23 at 09:05 +0800, Li Zefan wrote:
 > 
-> This fixes an RCU warning when resume from suspend. The
-> warning comes from freezer cgroup in cgroup_freezing_or_frozen().
 > 
-> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
-> ---
-> 
-> I'm not sure which is preferable - access ->alloc_lock directly
-> like this patch or add task_lock_is_held() in sched.h
+> You are right in that taking task_lock() is sufficient (I forgot
+> this lock rule), but it's not true that whatever locks are held
+> in the ->attach method can pin a task's cgroup. 
 
-This is for the maintainers to decide, either way works from my viewpoint.
+Ah, can you be more specific about the ->attach() case?
 
-I have queued it as is with Matt's Acked-by, and am testing it.  Thank you!!!
+The way I read it, cgroup_attach_task():
 
-							Thanx, Paul
+        for_each_subsys(root, ss) {
+                if (ss->attach)
+                        ss->attach(ss, cgrp, oldcgrp, tsk, false);
+        }
+        set_bit(CGRP_RELEASABLE, &oldcgrp->flags);
+        synchronize_rcu();
+        put_css_set(cg);
 
-> ---
->  include/linux/cgroup.h |    1 +
->  1 files changed, 1 insertions(+), 0 deletions(-)
-> 
-> diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-> index b8ad1ea..8f78073 100644
-> --- a/include/linux/cgroup.h
-> +++ b/include/linux/cgroup.h
-> @@ -530,6 +530,7 @@ static inline struct cgroup_subsys_state *task_subsys_state(
->  {
->  	return rcu_dereference_check(task->cgroups->subsys[subsys_id],
->  				     rcu_read_lock_held() ||
-> +				     lockdep_is_held(&task->alloc_lock) ||
->  				     cgroup_lock_is_held());
->  }
-> 
-> -- 
-> 1.6.3
+So if you hold a lock that any of those ->attach() methods will use, it
+will in fact delay the put_css_set().
+
+Ah, indeed I see your point, it doesn't indeed pin the task to the
+cgroup, but does avoid the cgroup from being freed.
+
+Hrmm,.. so anything wanting to really pin a task to its cgroup will have
+to use task_lock()? I'll have to see if that works for
+sched_setscheduler().
