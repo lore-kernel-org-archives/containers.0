@@ -1,7 +1,7 @@
 From: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
 Subject: Re: [PATCH -mmotm 1/5] memcg: disable irq at page cgroup lock
-Date: Fri, 23 Apr 2010 22:57:06 +0200
-Message-ID: <1272056226.1821.41.camel__44301.5479519547$1272056281$gmane$org@laptop>
+Date: Fri, 23 Apr 2010 23:19:09 +0200
+Message-ID: <1272057549.1821.44.camel__35997.466374147$1272057696$gmane$org@laptop>
 References: <1268609202-15581-2-git-send-email-arighi@develer.com>
 	<20100318133527.420b2f25.kamezawa.hiroyu@jp.fujitsu.com>
 	<20100318162855.GG18054@balbir.in.ibm.com>
@@ -35,11 +35,26 @@ Cc: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cu
 List-Id: containers.vger.kernel.org
 
 On Fri, 2010-04-23 at 13:17 -0700, Greg Thelen wrote:
-> +static void mem_cgroup_begin_page_cgroup_reassignment(void)
-> +{
-> +       VM_BUG_ON(mem_cgroup_account_move_ongoing);
-> +       mem_cgroup_account_move_ongoing = true;
-> +       synchronize_rcu();
-> +} 
+> 
+> This is an interesting idea.  If this applies to memcg dirty accounting,
+> then would it also apply to system-wide dirty accounting?  I don't think
+> so, but I wanted to float the idea.  It looks like this proportions.c
+> code is good is at comparing the rates of events (for example: per-task
+> dirty page events).  However, in the case of system-wide dirty
+> accounting we also want to consider the amount of dirty memory, not just
+> the rate at which it is being dirtied.
 
-btw, you know synchronize_rcu() is _really_ slow?
+Correct, the whole proportion thing is purely about comparing rates of
+events.
+
+> The performance of simple irqsave locking or more advanced RCU locking
+> is similar to current locking (non-irqsave/non-rcu) for several
+> workloads (kernel build, dd).  Using a micro-benchmark some differences
+> are seen:
+> * irqsave is 1% slower than mmotm non-irqsave/non-rcu locking.
+> * RCU locking is 4% faster than mmotm non-irqsave/non-rcu locking.
+> * RCU locking is 5% faster than irqsave locking.
+
+Depending on what architecture you care about local_t might also be an
+option, it uses per-cpu irq/nmi safe instructions (and falls back to
+local_irq_save/restore for architectures lacking this support).
