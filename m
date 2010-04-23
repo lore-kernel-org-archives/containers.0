@@ -1,7 +1,7 @@
 From: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
 Subject: Re: [PATCH -mmotm 1/5] memcg: disable irq at page cgroup lock
-Date: Fri, 23 Apr 2010 22:54:34 +0200
-Message-ID: <1272056074.1821.40.camel__24193.4463302188$1272056218$gmane$org@laptop>
+Date: Fri, 23 Apr 2010 22:57:06 +0200
+Message-ID: <1272056226.1821.41.camel__44301.5479519547$1272056281$gmane$org@laptop>
 References: <1268609202-15581-2-git-send-email-arighi@develer.com>
 	<20100318133527.420b2f25.kamezawa.hiroyu@jp.fujitsu.com>
 	<20100318162855.GG18054@balbir.in.ibm.com>
@@ -35,48 +35,11 @@ Cc: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cu
 List-Id: containers.vger.kernel.org
 
 On Fri, 2010-04-23 at 13:17 -0700, Greg Thelen wrote:
-> -       lock_page_cgroup(pc);
-> +       /*
-> +        * Unless a page's cgroup reassignment is possible, then avoid grabbing
-> +        * the lock used to protect the cgroup assignment.
-> +        */
-> +       rcu_read_lock();
+> +static void mem_cgroup_begin_page_cgroup_reassignment(void)
+> +{
+> +       VM_BUG_ON(mem_cgroup_account_move_ongoing);
+> +       mem_cgroup_account_move_ongoing = true;
+> +       synchronize_rcu();
+> +} 
 
-Where is the matching barrier?
-
-> +       smp_rmb();
-> +       if (unlikely(mem_cgroup_account_move_ongoing)) {
-> +               local_irq_save(flags);
-
-So the added irq-disable is a bug-fix?
-
-> +               lock_page_cgroup(pc);
-> +               locked = true;
-> +       }
-> +
->         mem = pc->mem_cgroup;
->         if (!mem || !PageCgroupUsed(pc))
->                 goto done;
-> @@ -1449,6 +1468,7 @@ void mem_cgroup_update_file_mapped(struct page *page, int val)
->         /*
->          * Preemption is already disabled. We can use __this_cpu_xxx
->          */
-> +       VM_BUG_ON(preemptible());
-
-Insta-bug here, there is nothing guaranteeing we're not preemptible
-here.
-
->         if (val > 0) {
->                 __this_cpu_inc(mem->stat->count[MEM_CGROUP_STAT_FILE_MAPPED]);
->                 SetPageCgroupFileMapped(pc);
-> @@ -1458,7 +1478,11 @@ void mem_cgroup_update_file_mapped(struct page *page, int val)
->         }
->  
->  done:
-> -       unlock_page_cgroup(pc);
-> +       if (unlikely(locked)) {
-> +               unlock_page_cgroup(pc);
-> +               local_irq_restore(flags);
-> +       }
-> +       rcu_read_unlock();
->  } 
+btw, you know synchronize_rcu() is _really_ slow?
