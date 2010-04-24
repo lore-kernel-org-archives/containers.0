@@ -1,13 +1,15 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH] Invert the NETNS checkpoint flag
-Date: Sat, 24 Apr 2010 19:11:39 -0400
-Message-ID: <4BD37AAB.3090204@cs.columbia.edu>
-References: <1270215265-29081-1-git-send-email-danms@us.ibm.com>
+Subject: Re: [PATCH 1/3] C/R: Support for IPv6 addresses on network devices
+	(v2)
+Date: Sat, 24 Apr 2010 19:15:13 -0400
+Message-ID: <4BD37B81.3000105@cs.columbia.edu>
+References: <1270563183-9351-1-git-send-email-danms@us.ibm.com>	<1270563183-9351-2-git-send-email-danms@us.ibm.com>	<4BBB58FF.1090908@hp.com>
+	<87eiisblkn.fsf@caffeine.danplanet.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1270215265-29081-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <87eiisblkn.fsf-FLMGYpZoEPULwtHQx/6qkW3U47Q5hpJU@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,60 +24,14 @@ Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
-Applied for ckpt-v21-rc3.
 
 Dan Smith wrote:
-> Change CHECKPOINT_NONETNS to CHECKPOINT_NETNS.  This makes it the default
-> to ignore network namespaces and devices, unless specifically asked for
-> by the caller.
+> BH> This will prevent the loopback address (::1) from getting
+> BH> checkpointed since it's host-local.  The ipv6 module will add it
+> BH> anyways so it's probably not a big deal.
 > 
-> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  include/linux/checkpoint.h |    4 ++--
->  kernel/nsproxy.c           |    4 ++--
->  2 files changed, 4 insertions(+), 4 deletions(-)
-> 
-> diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-> index 6da0a2e..96693e2 100644
-> --- a/include/linux/checkpoint.h
-> +++ b/include/linux/checkpoint.h
-> @@ -14,7 +14,7 @@
->  
->  /* checkpoint user flags */
->  #define CHECKPOINT_SUBTREE	0x1
-> -#define CHECKPOINT_NONETNS	0x2
-> +#define CHECKPOINT_NETNS	0x2
->  
->  /* restart user flags */
->  #define RESTART_TASKSELF	0x1
-> @@ -59,7 +59,7 @@ extern long do_sys_restart(pid_t pid, int fd,
->  /* ckpt_ctx: uflags */
->  #define CHECKPOINT_USER_FLAGS \
->  	(CHECKPOINT_SUBTREE | \
-> -	 CHECKPOINT_NONETNS)
-> +	 CHECKPOINT_NETNS)
->  
->  #define RESTART_USER_FLAGS  \
->  	(RESTART_TASKSELF | \
-> diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
-> index c19f5fa..041fb09 100644
-> --- a/kernel/nsproxy.c
-> +++ b/kernel/nsproxy.c
-> @@ -249,7 +249,7 @@ int ckpt_collect_ns(struct ckpt_ctx *ctx, struct task_struct *t)
->  	if (ret < 0)
->  		goto out;
->  #ifdef CONFIG_NETNS_CHECKPOINT
-> -	if (!(ctx->uflags & CHECKPOINT_NONETNS))
-> +	if (ctx->uflags & CHECKPOINT_NETNS)
->  		ret = ckpt_obj_collect(ctx, nsproxy->net_ns, CKPT_OBJ_NET_NS);
->  	if (ret < 0)
->  		goto out;
-> @@ -295,7 +295,7 @@ static int do_checkpoint_ns(struct ckpt_ctx *ctx, struct nsproxy *nsproxy)
->  		goto out;
->  	h->ipc_objref = ret;
->  #ifdef CONFIG_NETNS_CHECKPOINT
-> -	if (!(ctx->uflags & CHECKPOINT_NONETNS))
-> +	if (ctx->uflags & CHECKPOINT_NETNS)
->  		ret = checkpoint_obj(ctx, nsproxy->net_ns, CKPT_OBJ_NET_NS);
->  	else
->  		ret = 0;
+> Yep, and it does.
+
+Probably worth a comment inline ?
+
+Oren.
