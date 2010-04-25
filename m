@@ -1,13 +1,14 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH][usercr] Add numeric hdr.type to ckptinfo
-Date: Sun, 25 Apr 2010 16:25:04 -0400
-Message-ID: <4BD4A520.3070706@cs.columbia.edu>
-References: <20100421022314.GA25133@us.ibm.com>
+Subject: Re: [PATCH 3/4] Add IPv6 address checkpoint handler
+Date: Sun, 25 Apr 2010 16:49:39 -0400
+Message-ID: <4BD4AAE3.1040304@cs.columbia.edu>
+References: <1270748932-26745-1-git-send-email-danms@us.ibm.com>	<1270748932-26745-4-git-send-email-danms@us.ibm.com>	<20100412161148.GC23380@us.ibm.com>	<871vekbmen.fsf@caffeine.danplanet.com>
+	<20100412174756.GA15269@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100421022314.GA25133-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20100412174756.GA15269-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,41 +18,48 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
-Pulled, thanks.
 
-Sukadev Bhattiprolu wrote:
-> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Date: Tue, 20 Apr 2010 19:08:08 -0700
-> Subject: [PATCH 1/1] Add the numeric value of hdr.type
+Serge E. Hallyn wrote:
+> Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+>>>> +#ifdef CONFIG_NETNS_CHECKPOING
+>> SH> How could that be defined?  :)
+>>
+>> Hmm, I must have typo'd that after I did all my config testing because
+>> otherwise I wouldn't have been able to test checkpointing ipv6 stuff.
+>>
+>> SH> Again, I'd prefer ckpt_err here.
+>>
+>> SH> Note that in my last email that really was a q - if you're under
+>> SH> spinlock here, then you can't use ckpt_err().
+>>
+>> Right, the point of this loop was to iterate the list quickly while
+>> holding the device lock, so we could write out the results after we
+>> release it.
+>>
+>> I think these two cases (and the ipv4 case) are pretty unlikely to be
+>> a problem as they would only be triggered if you actually have
+>> active multicast or anycast sessions configured.  This will not
+>> trigger for the default addresses.
+>>
+>> I don't think that dropping the lock to do ckpt_err() would be very
+>> pretty, nor would introducing a result string for an error message.
 > 
-> Debug messaages into dmesg rightly print only the numeric value of the
-> CKPT_HDR type. ckptinfo prints the descriptive macro. But to correlate
-> the two, one has to dive into the source to find the record type say 302
-> in dmesg and then find CKPT_HDR_FILE_DESC in ckptinfo output. Would be
-> easier if ckptinfo printed both the numeric value and descriptive macro.
+> Agreed.
 > 
-> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> ---
->  ckptinfo.c |    4 ++--
->  1 files changed, 2 insertions(+), 2 deletions(-)
+>> This is plumbed a couple levels deep.
+>>
+>> Is there some way you see this being handled better?
 > 
-> diff --git a/ckptinfo.c b/ckptinfo.c
-> index 6190301..09b9db4 100644
-> --- a/ckptinfo.c
-> +++ b/ckptinfo.c
-> @@ -182,8 +182,8 @@ static int image_read_obj(int fd, struct ckpt_hdr **hh)
->  	if (ret == 0)
->  		return 0;
->  
-> -	VERBOSE("info: [@%lu] object %s len %d\n",
-> -		__filepos, hdr_to_str(h.type), h.len);
-> +	VERBOSE("info: [@%lu] object %3d %s len %d\n",
-> +		__filepos, h.type, hdr_to_str(h.type), h.len);
->  
->  	p = malloc(h.len);
->  	if (!p) {
+> Not really...  looks like we're doing what we can at the moment
+> then, good enough :)
+
+Actually, you can use _ckpt_err() which can be called under
+spinlock, and then the caller should call _ckpt_msg_complete()
+after it drops the lock, to flush the message out.
+
+Oren.
