@@ -1,14 +1,14 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH] user-cr: Add --netns switch to user-cr checkpoint
-Date: Sun, 25 Apr 2010 00:51:24 -0400
-Message-ID: <4BD3CA4C.3040305@cs.columbia.edu>
-References: <1270215495-4371-1-git-send-email-danms@us.ibm.com>
-	<20100405132402.GD32049@us.ibm.com>
+Subject: Re: [RFC][PATCH 0/6][usercr]: Rename/reorg usercr code
+Date: Sun, 25 Apr 2010 16:24:33 -0400
+Message-ID: <4BD4A501.6070106@cs.columbia.edu>
+References: <20100414004927.GA13012@us.ibm.com>
+	<20100420180733.GA13874@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100405132402.GD32049-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20100420180733.GA13874-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,90 +18,59 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Hi Suka,
 
-Pulled, thanks.
+Thanks for the patchset. A couple of comments:
 
-Serge E. Hallyn wrote:
-> Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
->> This allows the caller to set the CHECKPOINT_NETNS flag on the checkpoint
->> operation, thus triggering the checkpoint of network namespaces.
->>
->> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+* I prefer the header exported to users to be checkpoint.h - this
+is consistent with kernel headers, and with future name of a c/r
+library if we opt libcheckpoint.a
+
+* I also prefer to leave checkpoint.c as a separate file, as is.
+It may gain more functionality in the future. If the goal was to
+only export a single .o file, then the solution IMHO is to instead
+export a single library: libcheckpoint.a
+
+Unless you have a strong opinion against the above, I'll go ahead
+and pull patches 1-3, leave out 4-6, and update the Makefile to
+create a libcheckpoint.a library.
+
+Oren.
+
+
+Sukadev Bhattiprolu wrote:
+> Sukadev Bhattiprolu [sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org] wrote:
+> | 
+> | Change the prefix of the USERCR apis to 'cr_' and reorg the code to avoid
+> | duplication and reduce code size.
+> | 
+> | 	[PATCH 1/6] Change API prefix to cr_
+> | 	[PATCH 2/6] Remove flags parameter to cr_checkpoint()
+> | 	[PATCH 3/6] Minor reorg of restart.c
+> | 	[PATCH 4/6] Move checkpoint() into restart.c
+> | 	[PATCH 5/6] Rename restart.c to cr_checkpoint.c
+> | 	[PATCH 6/6] Rename common.h to cr_log.h
+> | 
+> | With this change, USERCR for now "exports" just the following two files:
+> | 
+> | 	cr_checkpoint.o
+> | 	cr_checkpoint.h
+> | 
+> | But this patchset does cause some churn, let me know if you think any of it
+> | is unnecessary/noise.  I have tested for now along with the patch that removes
+> | most exits() from cr_restart(). If the reorg makes sense, will run all tests
+> | once more and resubmit.
 > 
-> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> All tests in cr-tests pass with these two patchsets (on usercr ckpt-v20-dev
+> and linux ckpt-v21-rc2).
 > 
->> ---
->>  app-checkpoint.h  |    1 +
->>  checkpoint-main.c |    8 +++++++-
->>  2 files changed, 8 insertions(+), 1 deletions(-)
->>
->> diff --git a/app-checkpoint.h b/app-checkpoint.h
->> index f740085..c078f04 100644
->> --- a/app-checkpoint.h
->> +++ b/app-checkpoint.h
->> @@ -5,6 +5,7 @@ struct app_checkpoint_args {
->>  	int uerrfd;
->>  	int container;
->>  	int verbose;
->> +	int flags;
->>  };
->>
->>  struct app_restart_args {
->> diff --git a/checkpoint-main.c b/checkpoint-main.c
->> index f6faa32..3fde9b6 100644
->> --- a/checkpoint-main.c
->> +++ b/checkpoint-main.c
->> @@ -30,6 +30,7 @@ static char usage_str[] =
->>  "  -l,--logfile=FILE     write error and debug data to FILE (default=none)\n"
->>  "     --logile-fd=FD     write error and debug data to file descriptor FD\n"
->>  "  -c,--container        require the PID is a container-init\n"
->> +"  -N,--netns            checkpoint network namespace(s)\n"
->>  "  -v,--verbose          verbose output\n"
->>  "";
->>
->> @@ -61,9 +62,10 @@ static void parse_args(struct app_checkpoint_args *args, int argc, char *argv[])
->>  		{ "logfile-fd",	required_argument,	NULL, 2 },
->>  		{ "container",	no_argument,		NULL, 'c' },
->>  		{ "verbose",	no_argument,		NULL, 'v' },
->> +		{ "netns",	no_argument,		NULL, 'N' },
->>  		{ NULL,		0,			NULL, 0 }
->>  	};
->> -	static char optc[] = "hvco:l:";
->> +	static char optc[] = "hvco:l:N";
->>  	char *output;
->>  	char *logfile;
->>
->> @@ -109,6 +111,9 @@ static void parse_args(struct app_checkpoint_args *args, int argc, char *argv[])
->>  		case 'v':
->>  			args->verbose = 1;
->>  			break;
->> +		case 'N':
->> +			args->flags |= CHECKPOINT_NETNS;
->> +			break;
->>  		default:
->>  			usage(usage_str);
->>  		}
->> @@ -164,6 +169,7 @@ int main(int argc, char *argv[])
->>  		exit(1);
->>  	}
->>
->> +	flags = args.flags;
->>  	if (!args.container)
->>  		flags |= CHECKPOINT_SUBTREE;
->>
->> -- 
->> 1.6.3.3
->>
->> _______________________________________________
->> Containers mailing list
->> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
->> https://lists.linux-foundation.org/mailman/listinfo/containers
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+> Pls let me know if there are comments about the patchsets.
+> 
+> Thanks,
+> 
+> Sukadev
 > 
