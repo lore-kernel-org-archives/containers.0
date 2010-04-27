@@ -1,16 +1,12 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC][PATCH 0/6][usercr]: Rename/reorg usercr code
-Date: Mon, 26 Apr 2010 14:46:41 -0400
-Message-ID: <4BD5DF91.80407@cs.columbia.edu>
-References: <20100414004927.GA13012@us.ibm.com>
-	<20100420180733.GA13874@us.ibm.com>
-	<4BD4A501.6070106@cs.columbia.edu>
-	<20100426171603.GB27542@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: lxc and consoles and unix98 ptys (and c/r)
+Date: Tue, 27 Apr 2010 17:48:55 -0500
+Message-ID: <20100427224855.GA7746@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100426171603.GB27542-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,47 +16,51 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Hi Daniel,
 
+I know you've thought the whole console situation through
+a great deal - and I haven't - so plz set me straight as
+needed.
 
-Sukadev Bhattiprolu wrote:
-> Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
->> Hi Suka,
->>
->> Thanks for the patchset. A couple of comments:
->>
->> * I prefer the header exported to users to be checkpoint.h - this
->> is consistent with kernel headers, and with future name of a c/r
->> library if we opt libcheckpoint.a
-> 
-> That is fine. Will this checkpoint.h include <linux/checkpoint.h> ?
+liblxc supports 'lxc.pts', which tells it to mount a fresh
+/dev/pts.  However, it does this very late in the container
+startup, and does not appear to support either lxc.tty consoles
+or the 'main' console being in that ptsns.
 
-Definitely.
+When I want to checkpoint and restart something which writes
+to a container in a hand-built container, what I generally do
+is start sshd and screen -dm in the container, ssh in,
+screen -r, start my job, detach and logout, then do my
+freeze/checkpoint/restart, and then i can ssh back in and
+screen -r.
 
-> 
->> * I also prefer to leave checkpoint.c as a separate file, as is.
->> It may gain more functionality in the future. If the goal was to
->> only export a single .o file, then the solution IMHO is to instead
->> export a single library: libcheckpoint.a
-> 
-> A single .o was not really a goal. Sure, if we are ready for libcheckpoint.a
-> then thats a better way.
-> 
->> Unless you have a strong opinion against the above, I'll go ahead
->> and pull patches 1-3, leave out 4-6, and update the Makefile to
->> create a libcheckpoint.a library.
-> 
-> How about patch 6, renaming 'common.h' to 'cr_log.h' (file internal to
-> usercr) ? Let me know if you want me to resend the patches dropping 4 and 5.
+That's obviously less than ideal :)  I'd like to be able to
+checkpoint lightweight containers by doing
 
-It's not strictly limited to logging affairs, and it may have more
-in the future, so I'd rather keep it as is.
+	lxc-execute -n serge -- myscript
+or maybe
+	lxc-start -d -n serge -- myscript
 
-No need to resend. I'll just pull and edit.
+and have the container init's fd 0-2 be /dev/pts/0 in the
+container's devpts mount.
 
-Thanks!
+For that to work, lxc-execute would have to mount its new
+devpts instance, then open /dev/pts/0, and start up a proxy
+to ferry the console info back and forth.  I thought in the
+past you'd talked about that, but I can't recall whether you
+said you wanted to do it, or that you thought it was too
+heavyweight :)
 
-Oren.
+Have you had any such thing in mind?
+
+The related feature of course woudl be for lxc-start with
+lxc.tty=4 to first mount a new devpts instance, then run
+getty on /dev/pts/[0-4] and let lxc-console attach to
+those.
+
+thanks,
+-serge
