@@ -1,36 +1,57 @@
-From: David Miller <davem@davemloft.net>
+From: Vlad Yasevich <vladislav.yasevich@hp.com>
 Subject: Re: [PATCH 2/4] [RFC] Add sock_create_kern_net()
-Date: Tue, 27 Apr 2010 17:18:44 -0700 (PDT)
-Message-ID: <20100427.171844.77354120.davem@davemloft.net>
-References: <1272034539-19899-1-git-send-email-danms@us.ibm.com>
-	<1272034539-19899-3-git-send-email-danms@us.ibm.com>
+Date: Tue, 27 Apr 2010 22:18:21 -0400
+Message-ID: <4BD79AED.9030507@hp.com>
+References: <1272034539-19899-1-git-send-email-danms@us.ibm.com>	<1272034539-19899-3-git-send-email-danms@us.ibm.com> <20100427.171844.77354120.davem@davemloft.net>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <1272034539-19899-3-git-send-email-danms@us.ibm.com>
+In-Reply-To: <20100427.171844.77354120.davem@davemloft.net>
 Sender: netdev-owner@vger.kernel.org
-To: danms@us.ibm.com
-Cc: containers@lists.osdl.org, netdev@vger.kernel.org
+To: David Miller <davem@davemloft.net>
+Cc: danms@us.ibm.com, containers@lists.osdl.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-From: Dan Smith <danms@us.ibm.com>
-Date: Fri, 23 Apr 2010 07:55:37 -0700
 
-> This helper allows kernel routines to create a socket in a given netns,
-> instead of forcing it to the initial or current one.
+
+David Miller wrote:
+> From: Dan Smith <danms@us.ibm.com>
+> Date: Fri, 23 Apr 2010 07:55:37 -0700
 > 
-> I know this seems like it's violating the netns boundary.  The intended
-> use (as in the following patches) is specifically when talking to RTNETLINK
-> in another netns for the purposes of creating or examining resources there.
-> It is expected that this will be used for that sort of transient socket
-> creation only.  In other words:
+>> This helper allows kernel routines to create a socket in a given netns,
+>> instead of forcing it to the initial or current one.
+>>
+>> I know this seems like it's violating the netns boundary.  The intended
+>> use (as in the following patches) is specifically when talking to RTNETLINK
+>> in another netns for the purposes of creating or examining resources there.
+>> It is expected that this will be used for that sort of transient socket
+>> creation only.  In other words:
+> 
+> If you can create netlink sockets in a remote NS you can also make
+> changes there, and the whole point is to disallow changes.
+> 
+> So maybe you won't be making changes, but others will think about
+> using this and doing so.
+> 
+> At a high level, I think this is a really bad idea, so I won't be
+> applying this, sorry.
 
-If you can create netlink sockets in a remote NS you can also make
-changes there, and the whole point is to disallow changes.
+What this is changed to be a socket option or ioctl or some other mechanism
+that allows one to move an existing unbound, unconnected socket to another
+namespace?
 
-So maybe you won't be making changes, but others will think about
-using this and doing so.
+This way, we do not modify the namespace directly, but still have ability
+to move sockets into it for required communication.
 
-At a high level, I think this is a really bad idea, so I won't be
-applying this, sorry.
+In my mind moving a socket is someone similar to moving an interface to a
+namespace.  You just moving a required resource.
+
+Thanks
+-vlad
+
+> --
+> To unsubscribe from this list: send the line "unsubscribe netdev" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
