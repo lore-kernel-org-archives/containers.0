@@ -1,89 +1,39 @@
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: lxc and consoles and unix98 ptys (and c/r)
-Date: Wed, 28 Apr 2010 16:19:34 +0200
-Message-ID: <4BD843F6.9040304@fr.ibm.com>
-References: <20100427224855.GA7746@us.ibm.com>
+From: Daniel Lezcano <daniel.lezcano@free.fr>
+Subject: Re: Checkpoint and Restart of INET routing information
+Date: Wed, 28 Apr 2010 16:24:44 +0200
+Message-ID: <4BD8452C.7040305@free.fr>
+References: <1272034539-19899-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100427224855.GA7746-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <1272034539-19899-1-git-send-email-danms@us.ibm.com>
+Sender: netdev-owner@vger.kernel.org
+To: Dan Smith <danms@us.ibm.com>
+Cc: containers@lists.osdl.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Serge E. Hallyn wrote:
-> Hi Daniel,
+Dan Smith wrote:
+> This set extends the existing network socket, device, and namespace support
+> in the checkpoint tree to cover routing information.  It does so by making
+> heavy use of RTNETLINK to dump and insert routes much like userspace would.
+> Because the task doing the checkpointing or restarting needs to examine
+> or setup resources for tasks in network namespaces other than its own, an
+> additional kernel socket setup call is added.  It provides us the ability
+> to talk to RTNETLINK in a foreign netns.
+>
+> The support added in this set allows me to configure various inet4 and inet6
+> routes in a container and have them saved and restored successfully during
+> a checkpoint/restart process.
+>   
 
-Hi Serge,
+Why do you need to do that from the kernel ? Same remark for ipv4/6 
+addresses.
+What prevents you to do 'ip route show'  and use these informations to 
+restore the routes later ?
+Will we end up by moving all the network userspace tools in the kernel ? :)
 
-> I know you've thought the whole console situation through
-> a great deal - and I haven't - so plz set me straight as
-> needed.
-> 
-> liblxc supports 'lxc.pts', which tells it to mount a fresh
-> /dev/pts.  However, it does this very late in the container
-> startup, and does not appear to support either lxc.tty consoles
-> or the 'main' console being in that ptsns.
+If you use the Eric's setns patchset, you will be able to do that easily 
+from userspace, no ?
 
-maybe I am misunderstanding but I think you should look at the 
-'lxc_create_console' and the 'setup_console' functions, that will show 
-why new pts instance and console / tty are not correlated.
 
-> When I want to checkpoint and restart something which writes
-> to a container in a hand-built container, what I generally do
-> is start sshd and screen -dm in the container, ssh in,
-> screen -r, start my job, detach and logout, then do my
-> freeze/checkpoint/restart, and then i can ssh back in and
-> screen -r.
-> 
-> That's obviously less than ideal :)  I'd like to be able to
-> checkpoint lightweight containers by doing
-> 
-> 	lxc-execute -n serge -- myscript
-> or maybe
-> 	lxc-start -d -n serge -- myscript
-> 
-> and have the container init's fd 0-2 be /dev/pts/0 in the
-> container's devpts mount.
-> 
-> For that to work, lxc-execute would have to mount its new
-> devpts instance, then open /dev/pts/0, and start up a proxy
-> to ferry the console info back and forth.  I thought in the
-> past you'd talked about that, but I can't recall whether you
-> said you wanted to do it, or that you thought it was too
-> heavyweight :)
-
-lxc-start which runs system container does that if it is specified in 
-the configuration.
-
-> Have you had any such thing in mind?
-
-lxc-execute is for running application containers and the *stdio* are 
-inherited in the container.
-
-I suppose it may be possible to generalize the console, the ttys and the 
-stdio.
-
-> The related feature of course woudl be for lxc-start with
-> lxc.tty=4 to first mount a new devpts instance, then run
-> getty on /dev/pts/[0-4] and let lxc-console attach to
-> those.
-
-I am a bit lost, what do you want to do ? Do you plan to make tty, 
-console and stdio using the same mechanism and get rid of the actual 
-bind mount of <rootfs>/dev/console|tty ?
-
-Can you elaborate a bit and send a draft-patch to illustrate your idea ?
-
-Thanks
-   -- Daniel
