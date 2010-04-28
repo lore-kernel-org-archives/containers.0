@@ -1,66 +1,36 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: lxc and consoles and unix98 ptys (and c/r)
-Date: Tue, 27 Apr 2010 17:48:55 -0500
-Message-ID: <20100427224855.GA7746@us.ibm.com>
+From: David Miller <davem@davemloft.net>
+Subject: Re: [PATCH 2/4] [RFC] Add sock_create_kern_net()
+Date: Tue, 27 Apr 2010 17:18:44 -0700 (PDT)
+Message-ID: <20100427.171844.77354120.davem@davemloft.net>
+References: <1272034539-19899-1-git-send-email-danms@us.ibm.com>
+	<1272034539-19899-3-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: Text/Plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <1272034539-19899-3-git-send-email-danms@us.ibm.com>
+Sender: netdev-owner@vger.kernel.org
+To: danms@us.ibm.com
+Cc: containers@lists.osdl.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Hi Daniel,
+From: Dan Smith <danms@us.ibm.com>
+Date: Fri, 23 Apr 2010 07:55:37 -0700
 
-I know you've thought the whole console situation through
-a great deal - and I haven't - so plz set me straight as
-needed.
+> This helper allows kernel routines to create a socket in a given netns,
+> instead of forcing it to the initial or current one.
+> 
+> I know this seems like it's violating the netns boundary.  The intended
+> use (as in the following patches) is specifically when talking to RTNETLINK
+> in another netns for the purposes of creating or examining resources there.
+> It is expected that this will be used for that sort of transient socket
+> creation only.  In other words:
 
-liblxc supports 'lxc.pts', which tells it to mount a fresh
-/dev/pts.  However, it does this very late in the container
-startup, and does not appear to support either lxc.tty consoles
-or the 'main' console being in that ptsns.
+If you can create netlink sockets in a remote NS you can also make
+changes there, and the whole point is to disallow changes.
 
-When I want to checkpoint and restart something which writes
-to a container in a hand-built container, what I generally do
-is start sshd and screen -dm in the container, ssh in,
-screen -r, start my job, detach and logout, then do my
-freeze/checkpoint/restart, and then i can ssh back in and
-screen -r.
+So maybe you won't be making changes, but others will think about
+using this and doing so.
 
-That's obviously less than ideal :)  I'd like to be able to
-checkpoint lightweight containers by doing
-
-	lxc-execute -n serge -- myscript
-or maybe
-	lxc-start -d -n serge -- myscript
-
-and have the container init's fd 0-2 be /dev/pts/0 in the
-container's devpts mount.
-
-For that to work, lxc-execute would have to mount its new
-devpts instance, then open /dev/pts/0, and start up a proxy
-to ferry the console info back and forth.  I thought in the
-past you'd talked about that, but I can't recall whether you
-said you wanted to do it, or that you thought it was too
-heavyweight :)
-
-Have you had any such thing in mind?
-
-The related feature of course woudl be for lxc-start with
-lxc.tty=4 to first mount a new devpts instance, then run
-getty on /dev/pts/[0-4] and let lxc-console attach to
-those.
-
-thanks,
--serge
+At a high level, I think this is a really bad idea, so I won't be
+applying this, sorry.
