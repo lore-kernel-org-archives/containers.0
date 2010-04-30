@@ -1,14 +1,14 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] ARM: Added user space support for c/r on ARM
-Date: Thu, 29 Apr 2010 16:33:46 -0700
-Message-ID: <20100429233346.GZ32490__34503.457012079$1272584072$gmane$org@count0.beaverton.ibm.com>
-References: <1269220484-24279-1-git-send-email-christofferdall@christofferdall.dk>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [PATCH] c/r: pin down modules registered to obj-ops
+Date: Fri, 30 Apr 2010 00:34:34 -0400
+Message-ID: <4BDA5DDA.3010701@cs.columbia.edu>
+References: <1272580878-7268-1-git-send-email-orenl@cs.columbia.edu>
+	<20100429231121.GA3862@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1269220484-24279-1-git-send-email-christofferdall-77OGu6e99YhyO3AAkE1OcX9LOBIZ5rWg@public.gmane.org>
+In-Reply-To: <20100429231121.GA3862-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,112 +18,253 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Christoffer Dall <christofferdall-77OGu6e99YhyO3AAkE1OcX9LOBIZ5rWg@public.gmane.org>
-Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, libc-ports <libc-ports-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Sun, Mar 21, 2010 at 09:14:44PM -0400, Christoffer Dall wrote:
-> General
-> --------
+
+I don't feel comfortable with posting a version that we know
+can crash a kernel, and even less so if we say that's it's broken...
+So I prefer it inside.
+
+Oren
+
+Serge E. Hallyn wrote:
+> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+>> To ensure that a module does not unload in the middle of a checkpoint
+>> or a restart operation, pin (module_get) all the modules during either
+>> operation.  For that, add a new memeber ->owner in ckpt_obj_ops.
+>>
+>> Also add a counter that keeps track of how many module_gets we have
+>> going on, to properly handle new modules that register when an
+>> operation is underway.
+>>
+>> This is a proof of concept, applies on top of the patch that introduces
+>> objhash on rc7 (patch 33).
+>>
+>> Todo:
+>>
+>> - I put the initialization part in init_*_ctx(), but it could be moved
+>> to ckpt_ctx_alloc() which is common to both checkpoint and restart.
+>>
+>> - If this is ok, then additional patches should adjust those modules
+>> that indeed register...
+>>
+>> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 > 
-> This is a first attempt to add C/R support for ARM. There are a number
-> of annoying changes in the extract-headers.sh and clone.h files due to
-> the way syscall numbers are defined on the ARM architecture.
-
-<snip>
-
-> diff --git a/scripts/extract-headers.sh b/scripts/extract-headers.sh
-> index 8c8ae69..aacb6af 100755
-> --- a/scripts/extract-headers.sh
-> +++ b/scripts/extract-headers.sh
-> @@ -144,7 +144,25 @@ echo '#endif /* _CHECKPOINT_CKPT_HDR_H_ */' >> "${OUTPUT_INCLUDES}/linux/checkpo
->  # We use ARCH_COND to break up architecture-specific sections of the header.
->  #
->  ARCH_COND='#if'
-> -REGEX='[[:space:]]*#[[:space:]]*define[[:space:]]*__NR_(checkpoint|restart|clone_with_pids)[[:space:]]+[0-9]+'
-
-Just a heads up in case there's a merge conflict later:
-
-I think I need to submit a patch which does s/clone_with_pids// since
-eclone.h and the respective clone_*.* arch files define NR_eclone anyway.
-
-> +ARM_SYSCALL_BASE="#	define __NR_OABI_SYSCALL_BASE 0x900000\n\
-> +#	if defined(__thumb__) || defined(__ARM_EABI__)\n\
-> +#		define __NR_SYSCALL_BASE	0\n\
-> +#	else\n\
-> +#		define __NR_SYSCALL_BASE	__NR_OABI_SYSCALL_BASE\n\
-> +#	endif\n"
-> +
-> +# Get the regular expression for the current architecture
-> +function get_unistd_regex()
-> +{
-
-You could decompose the regex and make it easy to see what's so special
-about ARM syscall nrs:
-
-	local SYS_NR_DEF_REGEX='[[:space:]]*#[[:space:]]*define[[:space:]]*__NR_(checkpoint|restart|clone_with_pids)[[:space:]]+'
-
-> +	case "$1" in
-> +	arm)	echo -n '[[:space:]]*#[[:space:]]*define[[:space:]]*__NR_(checkpoint|restart|clone_with_pids)[[:space:]]+'
-
-		echo -n "${SYS_NR_DEF_REGEX}"'\(__NR_SYSCALL_BASE\+[[:space:]]*[0-9]*\)'
-> +		;;
-> +	*)	echo -n '[[:space:]]*#[[:space:]]*define[[:space:]]*__NR_(checkpoint|restart|clone_with_pids)[[:space:]]+[0-9]+'
-
-		echo -n "${SYS_NR_DEF_REGEX}"'[0-9]+'
-
-> +		;;
-> +	esac
-> +	return 0
-> +}
+> Yes this looks good to me
 > 
->  cat - <<-EOFOE
->  /*
-> @@ -160,11 +178,13 @@ do_cpp "${KERNELSRC}/include/linux/checkpoint.h" "_LINUX_CHECKPOINT_H_"
->  find "${KERNELSRC}/arch" -name 'unistd*.h' -print | sort | \
->  while read UNISTDH ; do
->  	[ -n "${UNISTDH}" ] || continue
-> -	grep -q -E "${REGEX}" "${UNISTDH}" || continue
->  	KARCH=$(echo "${UNISTDH}" | sed -e 's|.*/arch/\([^/]\+\)/.*|\1|')
-> +	REGEX="$(get_unistd_regex "${KARCH}")"
-> +	grep -q -E "${REGEX}" "${UNISTDH}" || continue
->  	WORDBITS=$(basename "${UNISTDH}" | sed -e 's/unistd_*\([[:digit:]]\+\)\.h/\1/')
->  	CPPARCH="$(karch_to_cpparch "${KARCH}" "${WORDBITS}")"
->  	echo -e "${ARCH_COND} __${CPPARCH}__\\n"
-> +	[ "${KARCH}" == "arm" ] && echo -e "${ARM_SYSCALL_BASE}\n"
-
-nit:
-
-I can see what you're trying to do but this introduces arch-specific code
-in the middle of nicely arch-generic code. Currently, as you've done with
-get_unistd_regex, we've nicely encapsulated those pieces into functions.
-
-Perhaps adding blank lines above and below this is sufficient since I
-can't think of an arch-generic function which would be appropriate here.
-
->  	grep -E "${REGEX}" "${UNISTDH}" | \
->  	sed -e 's/^[ \t]*#[ \t]*define[ \t]*__NR_\([^ \t]\+\)[ \t]\+\([^ \t]\+\).*$/#\tifndef __NR_\1\n#\t\tdefine __NR_\1 \2\n#\tendif\n/'
->  	ARCH_COND='#elif'
-> diff --git a/test/Makefile b/test/Makefile
-> index cad40e0..516eee8 100644
-> --- a/test/Makefile
-> +++ b/test/Makefile
-> @@ -1,3 +1,9 @@
-> +# handle cross-compilation
-> +AR = ${CROSS_COMPILE}ar
-> +AS = ${CROSS_COMPILE}as
-> +CC = ${CROSS_COMPILE}gcc
-> +CPP = ${CROSS_COMPILE}cpp
-> +LD = ${CROSS_COMPILE}ld
-
-GNU Make nit: I prefer the :=, or simple assignment, operator. Both = and :=
-(amongst others) expand the values of variables. However = is "recursive"
-and the right-hand side is evaluated multiple times -- I think
-everywhere the variable on the left-hand side is used. In contrast the
-right-hand side of := is evaluated everywhere the left-hand side is defined
-(usually once). This is faster and non-recursive. See
-"The Two Flavors of Variables" in the GNU Make info file for a more rigorous
-discussion of the differences.
-
-Cheers,
-	-Matt Helsley
+> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> 
+> Were you going to stick this into v21 too, or queue that up as
+> first patch after the patchbomb?
+> 
+> thanks,
+> -serge
+> 
+>> ---
+>> diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+>> index 2f5af3c..4ed8a8c 100644
+>> --- a/include/linux/checkpoint.h
+>> +++ b/include/linux/checkpoint.h
+>> @@ -40,11 +40,13 @@ extern long do_sys_restart(pid_t pid, int fd,
+>>  #define CKPT_CTX_RESTART_BIT		1
+>>  #define CKPT_CTX_SUCCESS_BIT		2
+>>  #define CKPT_CTX_ERROR_BIT		3
+>> +#define CKPT_CTX_PINNED_BIT		4
+>>
+>>  #define CKPT_CTX_CHECKPOINT	(1 << CKPT_CTX_CHECKPOINT_BIT)
+>>  #define CKPT_CTX_RESTART	(1 << CKPT_CTX_RESTART_BIT)
+>>  #define CKPT_CTX_SUCCESS	(1 << CKPT_CTX_SUCCESS_BIT)
+>>  #define CKPT_CTX_ERROR		(1 << CKPT_CTX_ERROR_BIT)
+>> +#define CKPT_CTX_PINNED		(1 << CKPT_CTX_PINNED_BIT)
+>>
+>>  /* ckpt_ctx: uflags */
+>>  #define CHECKPOINT_USER_FLAGS		CHECKPOINT_SUBTREE
+>> @@ -107,6 +109,9 @@ static inline int ckpt_get_error(struct ckpt_ctx *ctx)
+>>  extern void restore_notify_error(struct ckpt_ctx *ctx);
+>>
+>>  /* obj_hash */
+>> +extern int ckpt_obj_module_get(void);
+>> +extern void ckpt_obj_module_put(void);
+>> +
+>>  extern void ckpt_obj_hash_free(struct ckpt_ctx *ctx);
+>>  extern int ckpt_obj_hash_alloc(struct ckpt_ctx *ctx);
+>>
+>> @@ -284,6 +289,7 @@ extern void _ckpt_msg_complete(struct ckpt_ctx *ctx);
+>>
+>>  struct ckpt_obj_ops;
+>>  extern int register_checkpoint_obj(const struct ckpt_obj_ops *ops);
+>> +extern void unregister_checkpoint_obj(const struct ckpt_obj_ops *ops);
+>>
+>>  #else /* CONFIG_CHEKCPOINT */
+>>
+>> @@ -293,6 +299,10 @@ static inline int register_checkpoint_obj(const struct ckpt_obj_ops *ops)
+>>  	return 0;
+>>  }
+>>
+>> +static inline void unregister_checkpoint_obj(const struct ckpt_obj_ops *ops)
+>> +{
+>> +}
+>> +
+>>  #endif /* CONFIG_CHECKPOINT */
+>>  #endif /* __KERNEL__ */
+>>
+>> diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
+>> index 912e06a..8035556 100644
+>> --- a/include/linux/checkpoint_types.h
+>> +++ b/include/linux/checkpoint_types.h
+>> @@ -79,6 +79,7 @@ struct ckpt_obj_ops {
+>>  	int (*ref_grab)(void *ptr);
+>>  	int (*checkpoint)(struct ckpt_ctx *ctx, void *ptr);
+>>  	void *(*restore)(struct ckpt_ctx *ctx);
+>> +	struct module *owner;
+>>  };
+>>
+>>
+>> diff --git a/kernel/checkpoint/checkpoint.c b/kernel/checkpoint/checkpoint.c
+>> index f451f8f..1a08bfb 100644
+>> --- a/kernel/checkpoint/checkpoint.c
+>> +++ b/kernel/checkpoint/checkpoint.c
+>> @@ -473,6 +473,7 @@ static int init_checkpoint_ctx(struct ckpt_ctx *ctx, pid_t pid)
+>>  {
+>>  	struct task_struct *task;
+>>  	struct nsproxy *nsproxy;
+>> +	int ret;
+>>
+>>  	/*
+>>  	 * No need for explicit cleanup here, because if an error
+>> @@ -514,6 +515,12 @@ static int init_checkpoint_ctx(struct ckpt_ctx *ctx, pid_t pid)
+>>  		return -EINVAL;  /* cleanup by ckpt_ctx_free() */
+>>  	}
+>>
+>> +	/* pin down modules - cleanup by ckpt_ctx_free() */
+>> +	ret = ckpt_obj_module_get();
+>> +	if (ret < 0)
+>> +		return ret;
+>> +	ckpt_ctx_set_kflag(ctx, CKPT_CTX_PINNED);
+>> +
+>>  	return 0;
+>>  }
+>>
+>> diff --git a/kernel/checkpoint/objhash.c b/kernel/checkpoint/objhash.c
+>> index 1ee06d0..db795e3 100644
+>> --- a/kernel/checkpoint/objhash.c
+>> +++ b/kernel/checkpoint/objhash.c
+>> @@ -45,17 +45,80 @@ static const struct ckpt_obj_ops *ckpt_obj_ops[CKPT_OBJ_MAX] = {
+>>  	[CKPT_OBJ_IGNORE] = &ckpt_obj_ignored_ops,
+>>  };
+>>
+>> +static int ckpt_obj_pinned_count;
+>> +static DEFINE_SPINLOCK(ckpt_obj_pinned_lock);
+>> +
+>>  int register_checkpoint_obj(const struct ckpt_obj_ops *ops)
+>>  {
+>> +	int ret = -EINVAL;
+>> +	int i;
+>> +
+>>  	if (ops->obj_type < 0 || ops->obj_type >= CKPT_OBJ_MAX)
+>>  		return -EINVAL;
+>> -	if (ckpt_obj_ops[ops->obj_type] != NULL)
+>> -		return -EINVAL;
+>> -	ckpt_obj_ops[ops->obj_type] = ops;
+>> -	return 0;
+>> +	spin_lock(&ckpt_obj_pinned_lock);
+>> +	if (ckpt_obj_ops[ops->obj_type] == NULL) {
+>> +		if (ops->owner) {
+>> +			for (i = 0; i < ckpt_obj_pinned_count)
+>> +				__module_get(owner->module);
+>> +		}
+>> +		ckpt_obj_ops[ops->obj_type] = ops;
+>> +		ret = 0;
+>> +	}
+>> +	spin_unlock(&ckpt_obj_pinned_lock);
+>> +	return ret;
+>>  }
+>>  EXPORT_SYMBOL(register_checkpoint_obj);
+>>
+>> +void unregister_checkpoint_obj(const struct ckpt_obj_ops *ops)
+>> +{
+>> +	if (ops->obj_type < 0 || ops->obj_type >= CKPT_OBJ_MAX)
+>> +		return;
+>> +	spin_lock(&ckpt_obj_pinned_lock);
+>> +	if (ckpt_obj_ops[ops->obj_type] == ops)
+>> +		ckpt_obj_ops[ops->obj_type] = NULL;
+>> +	spin_unlock(&ckpt_obj_pinned_lock);
+>> +	return ret;
+>> +}
+>> +EXPORT_SYMBOL(unregister_checkpoint_obj);
+>> +
+>> +static void _ckpt_obj_module_put(int last)
+>> +{
+>> +	int i;
+>> +
+>> +	for (i = 0; i < last; i++) {
+>> +		if (!ckpt_obj_ops[i] || !ckpt_obj_ops[i]->owner)
+>> +			continue;
+>> +		module_put(ckpt_obj_ops[i]->owner);
+>> +	}
+>> +}
+>> +void ckpt_obj_module_put(void)
+>> +{
+>> +	spin_lock(&ckpt_obj_pinned_lock);
+>> +	_ckpt_obj_module_put(CKPT_OBJ_MAX);
+>> +	ckpt_obj_pinned_count--;
+>> +	spin_unlock(&ckpt_obj_pinned_lock);
+>> +}
+>> +
+>> +int ckpt_obj_module_get(void)
+>> +{
+>> +	int i, ret = 0;
+>> +
+>> +	spin_lock(&ckpt_obj_pinned_lock);
+>> +	for (i = 0; i < CKPT_OBJ_MAX; i++) {
+>> +		if (!ckpt_obj_ops[i] || !ckpt_obj_ops[i]->owner)
+>> +			continue;
+>> +		ret = try_module_get(ckpt_obj_ops[i]->owner);
+>> +		if (ret < 0)
+>> +			break;
+>> +	}
+>> +	if (ret < 0)
+>> +		_ckpt_obj_module_put(i);
+>> +	else
+>> +		ckpt_obj_pinned_count++;
+>> +	spin_unlock(&ckpt_obj_pinned_lock);
+>> +	return ret;
+>> +}
+>> +
+>>  #define CKPT_OBJ_HASH_NBITS  10
+>>  #define CKPT_OBJ_HASH_TOTAL  (1UL << CKPT_OBJ_HASH_NBITS)
+>>
+>> diff --git a/kernel/checkpoint/restart.c b/kernel/checkpoint/restart.c
+>> index 437de4f..582e1f1 100644
+>> --- a/kernel/checkpoint/restart.c
+>> +++ b/kernel/checkpoint/restart.c
+>> @@ -1084,6 +1084,12 @@ static int init_restart_ctx(struct ckpt_ctx *ctx, pid_t pid)
+>>
+>>  	ctx->active_pid = -1;	/* see restore_activate_next, get_active_pid */
+>>
+>> +	/* pin down modules - cleanup by ckpt_ctx_free() */
+>> +	ret = ckpt_obj_module_get();
+>> +	if (ret < 0)
+>> +		return ret;
+>> +	ckpt_ctx_set_kflag(ctx, CKPT_CTX_PINNED);
+>> +
+>>  	return 0;
+>>  }
+>>
+>> diff --git a/kernel/checkpoint/sys.c b/kernel/checkpoint/sys.c
+>> index 5e84915..e1a1f96 100644
+>> --- a/kernel/checkpoint/sys.c
+>> +++ b/kernel/checkpoint/sys.c
+>> @@ -217,6 +217,10 @@ static void ckpt_ctx_free(struct ckpt_ctx *ctx)
+>>
+>>  	kfree(ctx->pids_arr);
+>>
+>> +	/* un-pin modules */
+>> +	if (ctx->kflags & CKPT_CTX_PINNED)
+>> +		ckpt_obj_module_put();
+>> +
+>>  	kfree(ctx);
+>>  }
+> 
