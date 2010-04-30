@@ -1,14 +1,11 @@
-From: Christoffer Dall <christofferdall-77OGu6e99YhyO3AAkE1OcX9LOBIZ5rWg@public.gmane.org>
-Subject: Re: [PATCH] ARM: Added user space support for c/r on ARM
-Date: Fri, 30 Apr 2010 10:42:42 +0100
-Message-ID: <k2o7d08b87d1004300242wcab639e4l176cc3674b9d3e3f__22632.1584349082$1272620608$gmane$org@mail.gmail.com>
-References: <20100429233346.GZ32490@count0.beaverton.ibm.com>
-	<1272439752-4021-1-git-send-email-christofferdall@christofferdall.dk>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] [RFC] C/R: inet4 and inet6 unicast routes (v2)
+Date: Fri, 30 Apr 2010 10:00:55 -0700
+Message-ID: <1272646855-17327-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1272439752-4021-1-git-send-email-christofferdall-77OGu6e99YhyO3AAkE1OcX9LOBIZ5rWg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,487 +15,632 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Christoffer Dall <christofferdall-77OGu6e99YhyO3AAkE1OcX9LOBIZ5rWg@public.gmane.org>, libc-ports <libc-ports-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org>
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Cc: Vlad Yasevich <vladislav.yasevich-VXdhtT5mjnY@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Apr 28, 2010 at 8:29 AM, Christoffer Dall
-<christofferdall-77OGu6e99YhyO3AAkE1OcX9LOBIZ5rWg@public.gmane.org> wrote:
-> Hi Matt.
->
-> Thanks for the feedback. I have changed the path according to your commen=
-ts
-> and am attaching it below.
->
-> =A0- Let me know if I need to adjust my patch before inclusion with respe=
-ct to
-> =A0 the s/clone_with_pids// later.
->
-> =A0- Much better with the 'local SYS_NR_DEF_REGEX' in get_unistd_regex().
-> =A0 Thanks.
->
-> =A0- I pondered about inserting arch-specific code when printing the head=
-er
-> =A0 content, and thought about a file function like add_arch_syscall_base=
-()
-> =A0 but it seems rhather synthetic as I think ARM is the only possible
-> =A0 architecture, which would use it. Instead, I added whitespace around =
-the
-> =A0 line as you suggest.
->
-> =A0- I agree regarding the make variables - it was simply a glitch. I
-> =A0 adjusted the assignment in both Makefile and test/Makefile.
+This patch adds support for checkpointing and restoring route information.
+It keeps enough information to restore basic routes at the level of detail
+of /proc/net/route.  It uses RTNETLINK to extract the information during
+checkpoint and also to insert it back during restore.  This gives us a
+nice layer of isolation between us and the various "fib" implementations.
 
-sorry, I forgot to include the changes to test/Makefile in the patch below.
->
->
-> Thanks,
-> Christoffer
->
-> diff --git a/Makefile b/Makefile
-> index 6c9ff93..37ed40a 100644
-> --- a/Makefile
-> +++ b/Makefile
-> @@ -18,6 +18,13 @@ CR_OBJS =3D checkpoint.o checkpoint-main.o restart.o r=
-estart-main.o
-> =A0# detect architecture (for eclone)
-> =A0SUBARCH ?=3D $(patsubst i%86,x86_32,$(shell uname -m))
->
-> +# handle cross-compilation
-> +AR =A0:=3D ${CROSS_COMPILE}ar
-> +AS =A0:=3D ${CROSS_COMPILE}as
-> +CC =A0:=3D ${CROSS_COMPILE}gcc
-> +CPP :=3D ${CROSS_COMPILE}cpp
-> +LD =A0:=3D ${CROSS_COMPILE}ld
-> +
-> =A0# compile with debug ?
-> =A0DEBUG =3D -DCHECKPOINT_DEBUG
->
-> @@ -77,6 +84,11 @@ ASFLAGS +=3D -m64
-> =A0$(LIB_ECLONE): clone_$(SUBARCH)_.o
-> =A0endif
->
-> +# also on ARM, need also assembly file
-> +ifeq ($(SUBARCH),arm)
-> +$(LIB_ECLONE): eclone_$(SUBARCH)_.o
-> +endif
-> +
-> =A0# ckptinfo dependencies
-> =A0ckptinfo: ckptinfo_types.o
->
-> diff --git a/clone.h b/clone.h
-> index 3569a45..b6b18ce 100644
-> --- a/clone.h
-> +++ b/clone.h
-> @@ -25,6 +25,14 @@
-> =A0# =A0 =A0define __NR_unshare 303
-> =A0#elif __powerpc__
-> =A0# =A0 =A0define __NR_unshare 282
-> +#elif __arm__
-> +# =A0 =A0define __NR_OABI_SYSCALL_BASE 0x900000
-> +# =A0 =A0if defined(__thumb__) || defined(__ARM_EABI__)
-> +# =A0 =A0 =A0 =A0define __NR_SYSCALL_BASE 0
-> +# =A0 =A0else
-> +# =A0 =A0 =A0 =A0define __NR_SYSCALL_BASE __NR_OABI_SYSCALL_BASE
-> +# =A0 =A0endif
-> +# =A0 =A0define __NR_unshare (__NR_SYSCALL_BASE+337)
-> =A0#else
-> =A0# =A0 =A0error "Architecture not supported"
-> =A0#endif
-> diff --git a/clone_arm.c b/clone_arm.c
-> new file mode 100644
-> index 0000000..b62b4ad
-> --- /dev/null
-> +++ b/clone_arm.c
-> @@ -0,0 +1,79 @@
-> +/*
-> + * =A0clone_arm.c: support for eclone() on ARM
-> + *
-> + * =A0Author: =A0 =A0Christoffer Dall <christofferdall@christofferdall.d=
-k>
-> + *
-> + * =A0This file is subject to the terms and conditions of the GNU Genera=
-l Public
-> + * =A0License. =A0See the file COPYING in the main directory of the Linux
-> + * =A0distribution for more details.
-> + */
-> +
-> +#define _GNU_SOURCE
-> +
-> +#include <unistd.h>
-> +#include <errno.h>
-> +#include <stdio.h>
-> +#include <sys/types.h>
-> +#include <sys/syscall.h>
-> +#include <asm/unistd.h>
-> +
-> +/*
-> + * libc doesn't support eclone() yet...
-> + * below is arch-dependent code to use the syscall
-> + */
-> +#include <linux/checkpoint.h>
-> +
-> +#include "eclone.h"
-> +
-> +extern int __eclone(int clone_flags_low,
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 struct clone_args *clone_args,
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 unsigned int args_size,
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 pid_t *pids);
-> +
-> +static unsigned long get_stack_pointer(unsigned long base, unsigned long=
- size)
-> +{
-> + =A0 =A0 =A0 size_t page_size =3D sysconf(_SC_PAGESIZE);
-> + =A0 =A0 =A0 return (base + size - page_size) - 1;
-> +}
-> +
-> +int eclone(int (*fn)(void *), void *fn_arg, int clone_flags_low,
-> + =A0 =A0 =A0 =A0 =A0struct clone_args *clone_args, pid_t *pids)
-> +{
-> + =A0 =A0 =A0 struct clone_args my_args;
-> + =A0 =A0 =A0 long newpid;
-> + =A0 =A0 =A0 void **sp =3D NULL;
-> +
-> + =A0 =A0 =A0 if (!fn) {
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 fprintf(stderr, "Please provide a valid fun=
-ction pointer "
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 "for the ch=
-ild process.\n");
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 return -1;
-> + =A0 =A0 =A0 }
-> +
-> + =A0 =A0 =A0 if (clone_args->child_stack) {
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 sp =3D (void **)get_stack_pointer(clone_arg=
-s->child_stack,
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
- =A0 =A0 =A0 =A0 =A0 clone_args->child_stack_size);
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 *--sp =3D fn_arg;
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 *--sp =3D fn;
-> + =A0 =A0 =A0 } else {
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 fprintf(stderr, "The ARM architecture requi=
-res a valid child "
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 "stack. clo=
-n_args->child_stack was 0.\n");
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 return -1;
-> + =A0 =A0 =A0 }
-> +
-> +
-> + =A0 =A0 =A0 my_args =3D *clone_args;
-> + =A0 =A0 =A0 my_args.child_stack =3D (unsigned long long)sp;
-> + =A0 =A0 =A0 my_args.child_stack_size =3D 0;
-> +
-> + =A0 =A0 =A0 newpid =3D __eclone(clone_flags_low,
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 &my_args,
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 sizeof(my_args),
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 pids);
-> +
-> + =A0 =A0 =A0 if (newpid < 0) {
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 errno =3D -newpid;
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 newpid =3D -1;
-> + =A0 =A0 =A0 }
-> +
-> + =A0 =A0 =A0 return newpid;
-> +}
-> diff --git a/eclone_arm_.S b/eclone_arm_.S
-> new file mode 100644
-> index 0000000..0f71d0f
-> --- /dev/null
-> +++ b/eclone_arm_.S
-> @@ -0,0 +1,86 @@
-> +/*
-> + * =A0eclone_arm_.S: ARM support for eclone()
-> + *
-> + * =A0Author: =A0 =A0Christoffer Dall <christofferdall@christofferdall.d=
-k>
-> + *
-> + * =A0This file is subject to the terms and conditions of the GNU Genera=
-l Public
-> + * =A0License. =A0See the file COPYING in the main directory of the Linux
-> + * =A0distribution for more details.
-> + */
-> +
-> +#define _ERRNO_H =A0 =A0 =A0 1
-> +#include <bits/errno.h>
-> +#include <asm/unistd.h>
-> +
-> +
-> +#define CLONE_VM =A0 =A0 =A00x00000100
-> +#define CLONE_THREAD =A00x00010000
-> +
-> +#ifndef __NR_eclone
-> +#define __NR_eclone 366
-> +#endif
-> +
-> +/*
-> + * Implements the following system call wrapper:
-> + *
-> + * =A0 =A0 extern int __eclone(int clone_flags_low,
-> + * =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 struct clone_args *cl=
-one_args,
-> + * =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 pid_t *pids);
-> + *
-> + * The system call wrapper and the system call themselves have slightly
-> + * different layouts and the following transformation takes place in
-> + * the code below:
-> + *
-> + */
-> +
-> + =A0 =A0 =A0 =A0.text
-> + =A0 =A0 =A0 .align 4
-> + =A0 =A0 =A0 .globl __eclone
-> + =A0 =A0 =A0 .type __eclone,%function
-> +__eclone:
-> + =A0 =A0 =A0 @ save flags
-> + =A0 =A0 =A0 mov =A0 =A0 ip, r0
-> +
-> + =A0 =A0 =A0 @ do the system call
-> +#ifdef __ARM_EABI__
-> + =A0 =A0 =A0 str =A0 =A0 r7, [sp, #-4]!
-> + =A0 =A0 =A0 ldr =A0 =A0 r7, =3D__NR_eclone
-> + =A0 =A0 =A0 swi =A0 =A0 0x0
-> +#else
-> + =A0 =A0 =A0 swi =A0 =A0 __NR_eclone
-> +#endif
-> + =A0 =A0 =A0 cmp =A0 =A0 r0, #0
-> + =A0 =A0 =A0 beq =A0 =A0 1f
-> +#ifdef __ARM_EABI__
-> + =A0 =A0 =A0 ldr =A0 =A0 r7, [sp], #4
-> +#endif
-> + =A0 =A0 =A0 @ return to caller
-> + =A0 =A0 =A0 bx =A0 =A0 =A0lr
-> +
-> +1:
-> + =A0 =A0 =A0 tst =A0 =A0 ip, #CLONE_THREAD
-> + =A0 =A0 =A0 bne =A0 =A0 3f
-> + =A0 =A0 =A0 mov =A0 =A0 r0, #0xffff0fff
-> + =A0 =A0 =A0 mov =A0 =A0 lr, pc
-> + =A0 =A0 =A0 sub =A0 =A0 pc, r0, #31
-> + =A0 =A0 =A0 mov =A0 =A0 r1, r0
-> + =A0 =A0 =A0 tst =A0 =A0 ip, #CLONE_VM
-> + =A0 =A0 =A0 movne =A0 r0, #-1
-> +#ifdef __ARM_EABI__
-> + =A0 =A0 =A0 ldr =A0 =A0 r7, =3D__NR_getpid
-> + =A0 =A0 =A0 swieq =A0 0x0
-> +#else
-> + =A0 =A0 =A0 swieq =A0 __NR_getpid
-> +#endif
-> + =A0 =A0 =A0 str =A0 =A0 r0, [r1, #-1108]
-> + =A0 =A0 =A0 str =A0 =A0 r0, [r1, #-1112]
-> +3:
-> + =A0 =A0 =A0 @ pick the function arg and call address off the stack and =
-execute
-> + =A0 =A0 =A0 ldr =A0 =A0 r0, [sp, #4]
-> + =A0 =A0 =A0 mov =A0 =A0 lr, pc
-> + =A0 =A0 =A0 ldr =A0 =A0 pc, [sp], #8
-> +
-> + =A0 =A0 =A0 @ and we are done, passing the return value through r0
-> + =A0 =A0 =A0 @b =A0 =A0 =A0 PLTJMP(HIDDEN_JUMPTARGET(_exit))
-> + =A0 =A0 =A0 b =A0 =A0 =A0 _exit
-> +
-> diff --git a/include/asm-arm/checkpoint_hdr.h b/include/asm-arm/checkpoin=
-t_hdr.h
-> new file mode 100644
-> index 0000000..9295f85
-> --- /dev/null
-> +++ b/include/asm-arm/checkpoint_hdr.h
-> @@ -0,0 +1,55 @@
-> +/*
-> + * Generated by extract-headers.sh.
-> + */
-> +#ifndef __ASM_ARM_CHECKPOINT_HDR_H_
-> +#define __ASM_ARM_CHECKPOINT_HDR_H_
-> +
-> +/*
-> + * =A0Checkpoint/restart - architecture specific headers ARM
-> + *
-> + * =A0Copyright (C) 2008-2010 Oren Laadan
-> + * =A0Copyright (C) =A0 =A0 =A02010 Christoffer Dall
-> + *
-> + * =A0This file is subject to the terms and conditions of the GNU Genera=
-l Public
-> + * =A0License. =A0See the file COPYING in the main directory of the Linux
-> + * =A0distribution for more details.
-> + */
-> +
-> +#include <linux/types.h>
-> +
-> +/* ARM structure seen from kernel/userspace */
-> +
-> +#define CKPT_ARCH_ID CKPT_ARCH_ARM
-> +
-> +/* arch dependent constants */
-> +#define CKPT_ARCH_NSIG 64
-> +#define CKPT_TTY_NCC 8
-> +
-> +struct ckpt_hdr_header_arch {
-> + =A0 =A0 =A0 struct ckpt_hdr h;
-> + =A0 =A0 =A0 __u32 =A0 cpu_architecture;
-> + =A0 =A0 =A0 __u8 =A0 =A0mmu; =A0 =A0 =A0 =A0 =A0 =A0/* Checkpointed on =
-mmu system */
-> + =A0 =A0 =A0 __u8 =A0 =A0aeabi; =A0 =A0 =A0 =A0 =A0/* Checkpointed on AE=
-ABI kernel */
-> + =A0 =A0 =A0 __u8 =A0 =A0oabi_compat; =A0 =A0/* Checkpointed on OABI com=
-pat. system */
-> +} __attribute__((aligned(8)));
-> +
-> +struct ckpt_hdr_thread {
-> + =A0 =A0 =A0 struct ckpt_hdr h;
-> + =A0 =A0 =A0 __u32 =A0 =A0 =A0 =A0 =A0 syscall;
-> + =A0 =A0 =A0 __u32 =A0 =A0 =A0 =A0 =A0 tp_value;
-> + =A0 =A0 =A0 __u32 =A0 =A0 =A0 =A0 =A0 thumbee_state;
-> +} __attribute__((aligned(8)));
-> +
-> +struct ckpt_hdr_cpu {
-> + =A0 =A0 =A0 struct ckpt_hdr h;
-> + =A0 =A0 =A0 __u32 =A0 =A0 =A0 =A0 =A0 uregs[18];
-> +} __attribute__((aligned(8)));
-> +
-> +struct ckpt_hdr_mm_context {
-> + =A0 =A0 =A0 struct ckpt_hdr h;
-> + =A0 =A0 =A0 __u32 =A0 =A0 =A0 =A0 =A0 end_brk;
-> +} __attribute__((aligned(8)));
-> +
-> +
-> +
-> +#endif /* __ASM_ARM_CHECKPOINT_HDR_H_ */
-> diff --git a/include/asm/checkpoint_hdr.h b/include/asm/checkpoint_hdr.h
-> index 859f58e..7f18e0e 100644
-> --- a/include/asm/checkpoint_hdr.h
-> +++ b/include/asm/checkpoint_hdr.h
-> @@ -3,7 +3,9 @@
-> =A0*/
-> =A0#ifndef __ASM_CHECKPOINT_HDR_H_
-> =A0#define __ASM_CHECKPOINT_HDR_H_
-> -#if __powerpc__
-> +#if __arm__
-> +#include <asm-arm/checkpoint_hdr.h>
-> +#elif __powerpc__
-> =A0#include <asm-powerpc/checkpoint_hdr.h>
-> =A0#elif __s390x__
-> =A0#include <asm-s390/checkpoint_hdr.h>
-> diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-> index f6a6448..359023f 100644
-> --- a/include/linux/checkpoint.h
-> +++ b/include/linux/checkpoint.h
-> @@ -31,7 +31,25 @@
-> =A0#define CHECKPOINT_FD_NONE -1
->
->
-> -#if __powerpc__
-> +#if __arm__
-> +
-> +# =A0 =A0 =A0define __NR_OABI_SYSCALL_BASE 0x900000
-> +# =A0 =A0 =A0if defined(__thumb__) || defined(__ARM_EABI__)
-> +# =A0 =A0 =A0 =A0 =A0 =A0 =A0define __NR_SYSCALL_BASE =A0 =A0 =A0 =A00
-> +# =A0 =A0 =A0else
-> +# =A0 =A0 =A0 =A0 =A0 =A0 =A0define __NR_SYSCALL_BASE =A0 =A0 =A0 =A0__N=
-R_OABI_SYSCALL_BASE
-> +# =A0 =A0 =A0endif
-> +
-> +
-> +# =A0 =A0 =A0ifndef __NR_checkpoint
-> +# =A0 =A0 =A0 =A0 =A0 =A0 =A0define __NR_checkpoint (__NR_SYSCALL_BASE+3=
-67)
-> +# =A0 =A0 =A0endif
-> +
-> +# =A0 =A0 =A0ifndef __NR_restart
-> +# =A0 =A0 =A0 =A0 =A0 =A0 =A0define __NR_restart (__NR_SYSCALL_BASE+368)
-> +# =A0 =A0 =A0endif
-> +
-> +#elif __powerpc__
->
-> =A0# =A0 =A0 =A0ifndef __NR_checkpoint
-> =A0# =A0 =A0 =A0 =A0 =A0 =A0 =A0define __NR_checkpoint 324
-> diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hd=
-r.h
-> index 65d5256..214cd11 100644
-> --- a/include/linux/checkpoint_hdr.h
-> +++ b/include/linux/checkpoint_hdr.h
-> @@ -202,6 +202,8 @@ enum {
-> =A0#define CKPT_ARCH_PPC32 CKPT_ARCH_PPC32
-> =A0 =A0 =A0 =A0CKPT_ARCH_PPC64,
-> =A0#define CKPT_ARCH_PPC64 CKPT_ARCH_PPC64
-> + =A0 =A0 =A0 CKPT_ARCH_ARM,
-> +#define CKPT_ARCH_ARM CKPT_ARCH_ARM
-> =A0};
->
-> =A0/* shared objrects (objref) */
-> diff --git a/scripts/extract-headers.sh b/scripts/extract-headers.sh
-> index 8c8ae69..19f63b4 100755
-> --- a/scripts/extract-headers.sh
-> +++ b/scripts/extract-headers.sh
-> @@ -144,7 +144,27 @@ echo '#endif /* _CHECKPOINT_CKPT_HDR_H_ */' >> "${OU=
-TPUT_INCLUDES}/linux/checkpo
-> =A0# We use ARCH_COND to break up architecture-specific sections of the h=
-eader.
-> =A0#
-> =A0ARCH_COND=3D'#if'
-> -REGEX=3D'[[:space:]]*#[[:space:]]*define[[:space:]]*__NR_(checkpoint|res=
-tart|clone_with_pids)[[:space:]]+[0-9]+'
-> +ARM_SYSCALL_BASE=3D"# =A0 =A0define __NR_OABI_SYSCALL_BASE 0x900000\n\
-> +# =A0 =A0 =A0if defined(__thumb__) || defined(__ARM_EABI__)\n\
-> +# =A0 =A0 =A0 =A0 =A0 =A0 =A0define __NR_SYSCALL_BASE =A0 =A0 =A0 =A00\n\
-> +# =A0 =A0 =A0else\n\
-> +# =A0 =A0 =A0 =A0 =A0 =A0 =A0define __NR_SYSCALL_BASE =A0 =A0 =A0 =A0__N=
-R_OABI_SYSCALL_BASE\n\
-> +# =A0 =A0 =A0endif\n"
-> +
-> +# Get the regular expression for the current architecture
-> +function get_unistd_regex()
-> +{
-> + =A0 =A0 =A0 local SYS_NR_DEF_REGEX=3D'[[:space:]]*#[[:space:]]*define[[=
-:space:]]*__NR_(checkpoint|restart|clone_with_pids)[[:space:]]+'
-> +
-> + =A0 =A0 =A0 case "$1" in
-> + =A0 =A0 =A0 arm) =A0 =A0echo -n "${SYS_NR_DEF_REGEX}"
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 echo -n '\(__NR_SYSCALL_BASE\+[[:space:]]*[=
-0-9]*\)'
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 ;;
-> + =A0 =A0 =A0 *) =A0 =A0 =A0echo -n "${SYS_NR_DEF_REGEX}"'[0-9]+'
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 ;;
-> + =A0 =A0 =A0 esac
-> + =A0 =A0 =A0 return 0
-> +}
->
-> =A0cat - <<-EOFOE
-> =A0/*
-> @@ -160,11 +180,15 @@ do_cpp "${KERNELSRC}/include/linux/checkpoint.h" "_=
-LINUX_CHECKPOINT_H_"
-> =A0find "${KERNELSRC}/arch" -name 'unistd*.h' -print | sort | \
-> =A0while read UNISTDH ; do
-> =A0 =A0 =A0 =A0[ -n "${UNISTDH}" ] || continue
-> - =A0 =A0 =A0 grep -q -E "${REGEX}" "${UNISTDH}" || continue
-> =A0 =A0 =A0 =A0KARCH=3D$(echo "${UNISTDH}" | sed -e 's|.*/arch/\([^/]\+\)=
-/.*|\1|')
-> + =A0 =A0 =A0 REGEX=3D"$(get_unistd_regex "${KARCH}")"
-> + =A0 =A0 =A0 grep -q -E "${REGEX}" "${UNISTDH}" || continue
-> =A0 =A0 =A0 =A0WORDBITS=3D$(basename "${UNISTDH}" | sed -e 's/unistd_*\([=
-[:digit:]]\+\)\.h/\1/')
-> =A0 =A0 =A0 =A0CPPARCH=3D"$(karch_to_cpparch "${KARCH}" "${WORDBITS}")"
-> =A0 =A0 =A0 =A0echo -e "${ARCH_COND} __${CPPARCH}__\\n"
-> +
-> + =A0 =A0 =A0 [ "${KARCH}" =3D=3D "arm" ] && echo -e "${ARM_SYSCALL_BASE}=
-\n"
-> +
-> =A0 =A0 =A0 =A0grep -E "${REGEX}" "${UNISTDH}" | \
-> =A0 =A0 =A0 =A0sed -e 's/^[ \t]*#[ \t]*define[ \t]*__NR_\([^ \t]\+\)[ \t]=
-\+\([^ \t]\+\).*$/#\tifndef __NR_\1\n#\t\tdefine __NR_\1 \2\n#\tendif\n/'
-> =A0 =A0 =A0 =A0ARCH_COND=3D'#elif'
-> diff --git a/test/Makefile b/test/Makefile
-> index cad40e0..516eee8 100644
-> --- a/test/Makefile
-> +++ b/test/Makefile
-> @@ -1,3 +1,9 @@
-> +# handle cross-compilation
-> +AR =3D ${CROSS_COMPILE}ar
-> +AS =3D ${CROSS_COMPILE}as
-> +CC =3D ${CROSS_COMPILE}gcc
-> +CPP =3D ${CROSS_COMPILE}cpp
-> +LD =3D ${CROSS_COMPILE}ld
->
-> =A0# extra warnings and fun
-> =A0WARNS :=3D -Wall -Wstrict-prototypes -Wno-trigraphs
-> --
-> 1.5.6.5
->
->
+Changes in v2:
+
+This version of the patch actually moves the current task into the
+desired network namespace temporarily, for the purposes of examining and
+restoring the route information.  This is a instead of creating a cross-
+namespace socket to do the job, as was done in v1.
+
+This is just an RFC to see if this is an acceptable method.  For a final
+version, adding a helper to nsproxy.c would allow us to create a new
+nsproxy with the desired netns instead of creating one with
+copy_namespaces() just to kill it off and use the target one.
+
+I still think the previous method is cleaner, but this way may violate
+fewer namespace boundaries (I'm still undecided :)
+
+Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+Cc: Vlad Yasevich <vladislav.yasevich-VXdhtT5mjnY@public.gmane.org>
+Cc: jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org>
+---
+ include/linux/checkpoint_hdr.h |   31 +++
+ net/checkpoint_dev.c           |  463 +++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 493 insertions(+), 1 deletions(-)
+
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 790214f..28b268a 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -20,6 +20,7 @@
+ #ifndef CONFIG_CHECKPOINT
+ #warn linux/checkpoint_hdr.h included directly (without CONFIG_CHECKPOINT)
+ #endif
++#include <linux/if.h>
+ 
+ #else /* __KERNEL__ */
+ 
+@@ -782,6 +783,7 @@ struct ckpt_hdr_file_socket {
+ struct ckpt_hdr_netns {
+ 	struct ckpt_hdr h;
+ 	__s32 this_ref;
++	__u32 routes;
+ } __attribute__((aligned(8)));
+ 
+ enum ckpt_netdev_types {
+@@ -826,6 +828,35 @@ struct ckpt_netdev_addr {
+ 	} __attribute__((aligned(8)));
+ } __attribute__((aligned(8)));
+ 
++enum ckpt_route_types {
++	CKPT_ROUTE_IPV4,
++	CKPT_ROUTE_IPV6,
++	CKPT_ROUTE_MAX
++};
++
++#define CKPT_ROUTE_FLAG_GW 1
++
++struct ckpt_route {
++	__u16 type;
++	__u16 flags;
++
++	union {
++		struct {
++			__be32 inet4_len;          /* mask length (bits) */
++			__u32  inet4_met;          /* metric             */
++			__be32 inet4_dst;          /* route address      */
++			__be32 inet4_gwy;          /* gateway address    */
++		};
++		struct {
++			__u32 inet6_len;           /* mask length (bits) */
++			__u32 inet6_met;           /* metric             */
++			struct in6_addr inet6_dst; /* route address      */
++			struct in6_addr inet6_gwy; /* gateway address    */
++		};
++	} __attribute__((aligned(8)));
++	char dev[IFNAMSIZ+1];
++} __attribute__((aligned(8)));
++
+ struct ckpt_hdr_eventpoll_items {
+ 	struct ckpt_hdr h;
+ 	__s32  epfile_objref;
+diff --git a/net/checkpoint_dev.c b/net/checkpoint_dev.c
+index a8e3341..cc5f0ac 100644
+--- a/net/checkpoint_dev.c
++++ b/net/checkpoint_dev.c
+@@ -16,9 +16,11 @@
+ #include <linux/veth.h>
+ #include <linux/checkpoint.h>
+ #include <linux/deferqueue.h>
++#include <linux/fib_rules.h>
+ 
+ #include <net/net_namespace.h>
+ #include <net/sch_generic.h>
++#include <net/ipv6.h>
+ 
+ struct veth_newlink {
+ 	char *peer;
+@@ -59,6 +61,22 @@ static int __kern_dev_ioctl(struct net *net, unsigned int cmd, void *arg)
+ 	return ret;
+ }
+ 
++static void debug_route(struct ckpt_route *route)
++{
++       if (route->type == CKPT_ROUTE_IPV4)
++               ckpt_debug("inet4 route %pI4/%i gw %pI4 metric %i dev %s\n",
++                          &route->inet4_dst, route->inet4_len,
++                          &route->inet4_gwy, route->inet4_met,
++                          route->dev);
++       else if (route->type == CKPT_ROUTE_IPV6)
++               ckpt_debug("inet6 route %pI6/%i gw %pI6 metric %i dev %s\n",
++                          &route->inet6_dst, route->inet6_len,
++                          &route->inet6_gwy, route->inet6_met,
++                          route->dev);
++       else
++               ckpt_debug("unknown route type %i\n", route->type);
++}
++
+ static struct socket *rtnl_open(void)
+ {
+ 	struct socket *sock;
+@@ -250,11 +268,280 @@ int checkpoint_netdev(struct ckpt_ctx *ctx, void *ptr)
+ 	return ret;
+ }
+ 
++static int rtnl_do_dump_routes(struct socket *rtnl, int family)
++{
++	struct sk_buff *skb = NULL;
++	struct rtmsg *rtm;
++	int flags = NLM_F_ROOT | NLM_F_REQUEST;
++	struct msghdr msg;
++	struct kvec kvec;
++	struct nlmsghdr *nlh;
++	int ret = -ENOMEM;
++
++	skb = nlmsg_new(NLMSG_DEFAULT_SIZE, GFP_KERNEL);
++	if (!skb)
++		return -ENOMEM;
++
++	nlh = nlmsg_put(skb, 0, 0, RTM_GETROUTE, sizeof(*rtm), flags);
++	if (!nlh)
++		goto out;
++
++	rtm = nlmsg_data(nlh);
++	memset(rtm, 0, sizeof(*rtm));
++	rtm->rtm_family = family;
++
++	nlmsg_end(skb, nlh);
++
++	memset(&msg, 0, sizeof(msg));
++	kvec.iov_len = skb->len;
++	kvec.iov_base = skb->head;
++
++	ret = kernel_sendmsg(rtnl, &msg, &kvec, 1, kvec.iov_len);
++	if ((ret >= 0) && (ret != skb->len))
++		ret = -EIO;
++ out:
++	kfree_skb(skb);
++
++	return ret;
++}
++
++static int rtnl_dump_routes(struct socket *rtnl, int family,
++			    struct sk_buff **skb)
++{
++	int ret = -ENOMEM;
++	long timeo = MAX_SCHEDULE_TIMEOUT;
++
++	*skb = NULL;
++
++	ret = rtnl_do_dump_routes(rtnl, family);
++	if (ret < 0)
++		return ret;
++
++	lock_sock(rtnl->sk);
++	ret = sk_wait_data(rtnl->sk, &timeo);
++	if (ret)
++		*skb = skb_dequeue(&rtnl->sk->sk_receive_queue);
++	release_sock(rtnl->sk);
++	if (!*skb)
++		ret = -EIO;
++
++	return ret;
++}
++
++static int rtnl_process_inet4_route(struct net *net,
++				    struct rtmsg *rtm,
++				    struct nlattr **tb,
++				    struct ckpt_route *route)
++{
++	if (rtm->rtm_type != RTN_UNICAST)
++		return 0; /* skip non-unicast routes */
++
++	route->type = CKPT_ROUTE_IPV4;
++	route->inet4_len = rtm->rtm_dst_len;
++
++	if (tb[RTA_DST])
++		route->inet4_dst = htonl(nla_get_u32(tb[RTA_DST]));
++	if (tb[RTA_GATEWAY]) {
++		route->flags |= CKPT_ROUTE_FLAG_GW;
++		route->inet4_gwy = htonl(nla_get_u32(tb[RTA_GATEWAY]));
++	}
++	if (tb[RTA_PRIORITY])
++		route->inet4_met = nla_get_u32(tb[RTA_PRIORITY]);
++
++	if (tb[RTA_OIF]) {
++		struct net_device *dev;
++
++		dev = dev_get_by_index(net, nla_get_u32(tb[RTA_OIF]));
++		if (dev) {
++			strncpy(route->dev, dev->name, IFNAMSIZ);
++			dev_put(dev);
++		}
++	}
++
++	debug_route(route);
++
++	return 1; /* save this route */
++}
++
++static int rtnl_process_inet6_route(struct net *net,
++				    struct rtmsg *rtm,
++				    struct nlattr **tb,
++				    struct ckpt_route *route)
++{
++	if (rtm->rtm_type != RTN_UNICAST)
++		return 0; /* skip non-unicast routes */
++
++	route->type = CKPT_ROUTE_IPV6;
++	route->inet6_len = rtm->rtm_dst_len;
++
++	if (tb[RTA_DST])
++		ipv6_addr_copy(&route->inet6_dst, nla_data(tb[RTA_DST]));
++	if (tb[RTA_GATEWAY]) {
++		route->flags |= CKPT_ROUTE_FLAG_GW;
++		ipv6_addr_copy(&route->inet6_gwy, nla_data(tb[RTA_GATEWAY]));
++	}
++	if (tb[RTA_PRIORITY])
++		route->inet6_met = nla_get_u32(tb[RTA_PRIORITY]);
++
++	if (tb[RTA_OIF]) {
++		struct net_device *dev;
++
++		dev = dev_get_by_index(net, nla_get_u32(tb[RTA_OIF]));
++		if (dev) {
++			strncpy(route->dev, dev->name, IFNAMSIZ);
++			dev_put(dev);
++		}
++	}
++
++	debug_route(route);
++
++	return 1;
++}
++
++static int rtnl_process_routes(struct net *net,
++			       struct nlmsghdr *nlh, int len,
++			       struct ckpt_route *routes,
++			       int idx, int max)
++{
++	struct nlmsghdr *i;
++
++	for (i = nlh; NLMSG_OK(i, len); i = NLMSG_NEXT(i, len)) {
++		struct ckpt_route *route = &routes[idx];
++		struct rtmsg *rtm = NLMSG_DATA(i);
++		struct nlattr *tb[FRA_MAX+1];
++		int ret;
++
++		if (idx >= max)
++			return -E2BIG;
++
++		if (i->nlmsg_type == NLMSG_DONE)
++			break;
++		else if (nlh->nlmsg_type != RTM_NEWROUTE) {
++			struct nlmsgerr *errmsg = nlmsg_data(nlh);
++			return errmsg->error;
++		}
++
++		ret = nlmsg_parse(i, sizeof(*rtm), tb, FRA_MAX, NULL);
++		if (ret < 0)
++			return ret;
++
++		memset(route, 0, sizeof(*route));
++
++		if (rtm->rtm_family == AF_INET)
++			ret = rtnl_process_inet4_route(net, rtm, tb, route);
++		else if (rtm->rtm_family == AF_INET6)
++			ret = rtnl_process_inet6_route(net, rtm, tb, route);
++		else
++			ret = 0; /* skip */
++		if (ret < 0)
++			return ret;
++		else if (ret)
++			idx += 1;
++	}
++
++	return idx;
++}
++
++static int temp_netns_enter(struct net *net)
++{
++	int ret;
++	struct net *tmp_netns;
++
++	ret = copy_namespaces(CLONE_NEWNET, current);
++	if (ret)
++		return ret;
++
++	tmp_netns = current->nsproxy->net_ns;
++	get_net(net);
++	current->nsproxy->net_ns = net;
++	put_net(tmp_netns);
++
++	return 0;
++}
++
++static void temp_netns_exit(struct nsproxy *prev)
++{
++	switch_task_namespaces(current, prev);
++}
++
++static int rtnl_get_routes(struct net *net, int family,
++			   struct ckpt_route *routes, int idx, int max)
++{
++	int ret;
++	struct nlmsghdr *nlh;
++	struct sk_buff *skb = NULL;
++	struct socket *rtnl = NULL;
++	struct nsproxy *prev = current->nsproxy;
++
++	ret = temp_netns_enter(net);
++	if (ret)
++		return ret;
++
++	rtnl = rtnl_open();
++	if (IS_ERR(rtnl)) {
++		ret = PTR_ERR(rtnl);
++		goto out;
++	}
++
++	ret = rtnl_dump_routes(rtnl, family, &skb);
++	if (ret < 0)
++		goto out;
++
++	nlh = nlmsg_hdr(skb);
++	if (!nlh) {
++		ret = -EINVAL;
++		goto out;
++	}
++
++	ret = rtnl_process_routes(net, nlh, skb->len, routes, idx, max);
++ out:
++	kfree_skb(skb);
++	rtnl_close(rtnl);
++	temp_netns_exit(prev);
++
++	return ret;
++}
++
++int checkpoint_netns_routes(struct ckpt_ctx *ctx, struct net *net,
++			    struct ckpt_route **_routes)
++{
++	struct ckpt_route *routes = NULL;
++	int max = 32;
++	int idx;
++	int families[] = {AF_INET, AF_INET6, 0};
++	int family;
++ retry:
++	idx = 0;
++	kfree(routes);
++	routes = kmalloc(max * sizeof(*routes), GFP_KERNEL);
++	if (!routes)
++		return -ENOMEM;
++
++	for (family = 0; families[family]; family++) {
++		idx = rtnl_get_routes(net, families[family], routes, idx, max);
++		if (idx == -E2BIG) {
++			max *= 2;
++			goto retry;
++		} else if (idx < 0)
++			break;
++	}
++
++	if (idx < 0) {
++		kfree(routes);
++		routes = NULL;
++		ckpt_err(ctx, idx, "error saving routes\n");
++	}
++	*_routes = routes;
++
++	return idx;
++}
++
+ int checkpoint_netns(struct ckpt_ctx *ctx, void *ptr)
+ {
+ 	struct net *net = ptr;
+ 	struct net_device *dev;
+ 	struct ckpt_hdr_netns *h;
++	struct ckpt_route *routes = NULL;
+ 	int ret;
+ 
+ 	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_NET_NS);
+@@ -264,10 +551,19 @@ int checkpoint_netns(struct ckpt_ctx *ctx, void *ptr)
+ 	h->this_ref = ckpt_obj_lookup(ctx, net, CKPT_OBJ_NET_NS);
+ 	BUG_ON(h->this_ref <= 0);
+ 
++	ret = checkpoint_netns_routes(ctx, net, &routes);
++	if (ret < 0)
++		goto out;
++	h->routes = ret;
++
+ 	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
+ 	if (ret < 0)
+ 		goto out;
+ 
++	ret = ckpt_write_buffer(ctx, routes, h->routes * sizeof(*routes));
++	if (ret < 0)
++		goto out;
++
+ 	for_each_netdev(net, dev) {
+ 		if (dev->netdev_ops->ndo_checkpoint)
+ 			ret = checkpoint_obj(ctx, dev, CKPT_OBJ_NETDEV);
+@@ -284,6 +580,7 @@ int checkpoint_netns(struct ckpt_ctx *ctx, void *ptr)
+ 	}
+  out:
+ 	ckpt_hdr_put(ctx, h);
++	kfree(routes);
+ 
+ 	return ret;
+ }
+@@ -825,10 +1122,152 @@ void *restore_netdev(struct ckpt_ctx *ctx)
+ 	return dev;
+ }
+ 
++static int rtnl_restore_route(struct net *net, struct ckpt_route *route)
++{
++	struct sk_buff *skb;
++	struct rtmsg *rtm;
++	int flags = NLM_F_REQUEST | NLM_F_CREATE | NLM_F_ACK;
++	struct nlmsghdr *nlh;
++	int ret = 0;
++
++	skb = nlmsg_new(NLMSG_DEFAULT_SIZE, GFP_KERNEL);
++	if (!skb)
++		return -ENOMEM;
++
++	nlh = nlmsg_put(skb, 0, 0, RTM_NEWROUTE, sizeof(*rtm), flags);
++	if (!nlh) {
++		ret = -ENOMEM;
++		goto out;
++	}
++
++	rtm = nlmsg_data(nlh);
++	memset(rtm, 0, sizeof(*rtm));
++
++	rtm->rtm_table = RT_TABLE_MAIN;
++	rtm->rtm_protocol = RTPROT_BOOT;
++	rtm->rtm_scope = RT_SCOPE_UNIVERSE;
++	rtm->rtm_type = RTN_UNICAST;
++
++	if (route->dev[0]) {
++		struct net_device *dev;
++
++		dev = dev_get_by_name(net, route->dev);
++		if (!dev) {
++			ckpt_debug("unable to find dev %s for route\n",
++				   route->dev);
++			ret = -EINVAL;
++			goto out;
++		}
++		nla_put_u32(skb, RTA_OIF, dev->ifindex);
++		dev_put(dev);
++	}
++
++	if (route->type == CKPT_ROUTE_IPV4) {
++		rtm->rtm_family = AF_INET;
++		rtm->rtm_dst_len = route->inet4_len;
++
++		nla_put_u32(skb, RTA_DST, ntohl(route->inet4_dst));
++		if (route->flags & CKPT_ROUTE_FLAG_GW)
++			nla_put_u32(skb, RTA_GATEWAY, ntohl(route->inet4_gwy));
++		nla_put_u32(skb, RTA_PRIORITY, route->inet4_met);
++	} else if (route->type == CKPT_ROUTE_IPV6) {
++		int len = sizeof(route->inet6_dst);
++
++		if (ipv6_addr_scope(&route->inet6_dst))
++			goto out; /* Skip non-global scope routes */
++
++		rtm->rtm_family = AF_INET6;
++		rtm->rtm_dst_len = route->inet6_len;
++
++		nla_put(skb, RTA_DST, len, &route->inet6_dst);
++		if (route->flags & CKPT_ROUTE_FLAG_GW)
++			nla_put(skb, RTA_GATEWAY, len, &route->inet6_gwy);
++		nla_put_u32(skb, RTA_PRIORITY, route->inet6_met);
++	} else {
++		ckpt_debug("unsupported route type %i\n", route->type);
++		ret = -EINVAL;
++		goto out;
++	}
++
++	nlmsg_end(skb, nlh);
++
++	debug_route(route);
++
++	ret = rtnl_do(skb);
++ out:
++	kfree_skb(skb);
++	return ret;
++}
++
++static int restore_routes(struct net *net, struct ckpt_route *routes, int count)
++{
++	int i;
++	int ret = 0;
++	struct nsproxy *prev = current->nsproxy;
++
++	ret = temp_netns_enter(net);
++	if (ret)
++		return ret;
++
++	for (i = 0; i < count; i++) {
++		struct ckpt_route *route = &routes[i];
++
++		ret = rtnl_restore_route(net, route);
++		if (ret == -EEXIST)
++			/* Some routes have been implied by device addresses */
++			continue;
++		else if (ret < 0)
++			break;
++	}
++
++	temp_netns_exit(prev);
++
++	return ret;
++}
++
++struct dq_routes {
++	struct ckpt_ctx *ctx;
++	struct net *net;
++	struct ckpt_route *routes;
++	int count;
++};
++
++static int deferred_restore_routes(void *data)
++{
++	struct dq_routes *dq = data;
++	int ret;
++
++	ret = restore_routes(dq->net, dq->routes, dq->count);
++	if (ret < 0)
++		ckpt_err(dq->ctx, ret, "failed to restore routes\n");
++
++	kfree(dq->routes);
++
++	return ret;
++}
++
++static int defer_restore_routes(struct ckpt_ctx *ctx,
++				struct net *net,
++				struct ckpt_route *routes,
++				int count)
++{
++	struct dq_routes dq;
++
++	dq.ctx = ctx;
++	dq.net = net;
++	dq.routes = routes;
++	dq.count = count;
++
++	return deferqueue_add(ctx->deferqueue, &dq, sizeof(dq),
++			      deferred_restore_routes, NULL);
++}
++
+ void *restore_netns(struct ckpt_ctx *ctx)
+ {
+ 	struct ckpt_hdr_netns *h;
+ 	struct net *net;
++	struct ckpt_route *routes = NULL;
++	int ret;
+ 
+ 	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_NET_NS);
+ 	if (IS_ERR(h)) {
+@@ -836,12 +1275,34 @@ void *restore_netns(struct ckpt_ctx *ctx)
+ 		return h;
+ 	}
+ 
++	ret = ckpt_read_payload(ctx, (void **)&routes,
++				h->routes * sizeof(*routes), CKPT_HDR_BUFFER);
++	if (ret < 0) {
++		ckpt_err(ctx, ret, "Unable to read routes buffer\n");
++		net = ERR_PTR(ret);
++		goto out;
++	}
++
+ 	if (h->this_ref != 0) {
+ 		net = copy_net_ns(CLONE_NEWNET, current->nsproxy->net_ns);
+ 		if (IS_ERR(net))
+ 			goto out;
+-	} else
++
++		ret = defer_restore_routes(ctx, net, routes, h->routes);
++		if (ret < 0) {
++			kfree(routes);
++			put_net(net);
++			net = ERR_PTR(ret);
++		}
++	} else {
++		if (h->routes) {
++			net = ERR_PTR(-EINVAL);
++			ckpt_err(ctx, -EINVAL,
++				 "Parent netns claims to have routes\n");
++			goto out;
++		}
+ 		net = current->nsproxy->net_ns;
++	}
+  out:
+ 	ckpt_hdr_put(ctx, h);
+ 
+-- 
+1.6.2.5
