@@ -1,32 +1,49 @@
-From: Dan Smith <danms@us.ibm.com>
-Subject: Re: [PATCH] [RFC] C/R: inet4 and inet6 unicast routes (v2)
-Date: Fri, 30 Apr 2010 11:25:56 -0700
-Message-ID: <87mxwkztjf.fsf@caffeine.danplanet.com>
-References: <1272646855-17327-1-git-send-email-danms@us.ibm.com>
-	<20100430181946.GA26761@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH RFC] nsproxy: strengthen the comment above copy_namespaces
+Date: Fri, 30 Apr 2010 13:36:38 -0500
+Message-ID: <20100430183638.GA29240@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <20100430181946.GA26761@us.ibm.com> (Serge E. Hallyn's message of "Fri\, 30 Apr 2010 13\:19\:46 -0500")
-Sender: netdev-owner@vger.kernel.org
-To: "Serge E. Hallyn" <serue@us.ibm.com>
-Cc: containers@lists.osdl.org, Vlad Yasevich <vladislav.yasevich@hp.com>, netdev@vger.kernel.org, David Miller <davem@davemloft.net>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-SH> So I'm afraid you're going to have to do a slightly uglier thing
-SH> where you unshare_nsproxy_namespaces() and then
-SH> switch_task_namespaces() to the new nsproxy.
+copy_namespaces() cannot be used on a live task.  There are two
+reasons - it can be used to assign another task's nsproxy, which
+is not legal (for a live task).  And, it does not use
+rcu_assign_pointer, so even when we're being extra-clever it is
+unsafe.
 
-Well, I think that would be hidden in the nicer helper function I
-think I'll need, which I eluded to in the patch header.  This is just
-an RFC proof that it can be done in this manner, but I think a
-separate helper in nsproxy.c is in order to make it nice (and avoid
-the extra alloc/free of the netns that copy_namespaces() will create).
-Agreed?
+Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ kernel/nsproxy.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
 
-Thanks!
-
+diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+index f74e6c0..67d8f2b 100644
+--- a/kernel/nsproxy.c
++++ b/kernel/nsproxy.c
+@@ -115,6 +115,9 @@ out_ns:
+ /*
+  * called from clone.  This now handles copy for nsproxy and all
+  * namespaces therein.
++ * Note this should only be used in fork.  Specifically, tsk should
++ * not yet be a live task.  See the the unshare code for how to handle
++ * that.
+  */
+ int copy_namespaces(unsigned long flags, struct task_struct *tsk)
+ {
 -- 
-Dan Smith
-IBM Linux Technology Center
-email: danms@us.ibm.com
+1.6.3.3
