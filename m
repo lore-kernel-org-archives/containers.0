@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH v21 048/100] c/r: support for open pipes
-Date: Sat,  1 May 2010 10:15:30 -0400
-Message-ID: <1272723382-19470-49-git-send-email-orenl@cs.columbia.edu>
+Subject: [PATCH v21 049/100] c/r: checkpoint and restore FIFOs
+Date: Sat,  1 May 2010 10:15:31 -0400
+Message-ID: <1272723382-19470-50-git-send-email-orenl__12970.9492590793$1272724836$gmane$org@cs.columbia.edu>
 References: <1272723382-19470-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,238 +21,151 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-A pipe is a double-headed inode with a buffer attached to it. We
-checkpoint the pipe buffer only once, as soon as we hit one side of
-the pipe, regardless whether it is read- or write- end.
+FIFOs are almost like pipes.
 
-To checkpoint a file descriptor that refers to a pipe (either end), we
-first lookup the inode in the hash table: If not found, it is the
-first encounter of this pipe. Besides the file descriptor, we also (a)
-save the pipe data, and (b) register the pipe inode in the hash. If
-found, it is the second encounter of this pipe, namely, as we hit the
-other end of the same pipe. In both cases we write the pipe-objref of
-the inode.
+Checkpoints adds the FIFO pathname. The first time the FIFO is found
+it also assigns an @objref and dumps the contents in the buffers.
 
-To restore, create a new pipe and thus have two file pointers (read-
-and write- ends). We only use one of them, depending on which side was
-checkpointed first. We register the file pointer of the other end in
-the hash table, with the pipe_objref given for this pipe from the
-checkpoint, to be used later when the other arrives. At this point we
-also restore the contents of the pipe buffers.
+To restore, use the @objref only to determine whether a particular
+FIFO has already been restored earlier. Note that it ignores the file
+pointer that matches that @objref (unlike with pipes, where that file
+corresponds to the other end of the pipe). Instead, it creates a new
+FIFO using the saved pathname.
 
-To save the pipe buffer, given a source pipe, use do_tee() to clone
-its contents into a temporary 'struct pipe_inode_info', and then use
-do_splice_from() to transfer it directly to the checkpoint image file.
-
-To restore the pipe buffer, with a fresh newly allocated target pipe,
-use do_splice_to() to splice the data directly between the checkpoint
-image file and the pipe.
-
-Changelog[v21]:
+Changelog [v21]:
   - Put file_ops->checkpoint under CONFIG_CHECKPOINT
-Changelog[v19-rc1]:
+Changelog [v19-rc3]:
+  - Rebase to kernel 2.6.33
+Changelog [v19-rc1]:
   - Switch to ckpt_obj_try_fetch()
   - [Matt Helsley] Add cpp definitions for enums
-Changelog[v18]:
-  - Adjust format of pipe buffer to include the mandatory pre-header
-Changelog[v17]:
-  - Forward-declare 'ckpt_ctx' et-al, don't use checkpoint_types.h
 
 Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- fs/checkpoint.c                |    7 ++
- fs/pipe.c                      |  161 ++++++++++++++++++++++++++++++++++++++++
- include/linux/checkpoint_hdr.h |    9 ++
- include/linux/pipe_fs_i.h      |    8 ++
- 4 files changed, 185 insertions(+), 0 deletions(-)
+ fs/checkpoint.c                |    6 +++
+ fs/pipe.c                      |   80 +++++++++++++++++++++++++++++++++++++++-
+ include/linux/checkpoint_hdr.h |    2 +
+ include/linux/pipe_fs_i.h      |    2 +
+ 4 files changed, 89 insertions(+), 1 deletions(-)
 
 diff --git a/fs/checkpoint.c b/fs/checkpoint.c
-index 95a51e9..e840d8a 100644
+index e840d8a..06f1130 100644
 --- a/fs/checkpoint.c
 +++ b/fs/checkpoint.c
-@@ -17,6 +17,7 @@
- #include <linux/file.h>
- #include <linux/fdtable.h>
- #include <linux/fsnotify.h>
-+#include <linux/pipe_fs_i.h>
- #include <linux/syscalls.h>
- #include <linux/deferqueue.h>
- #include <linux/checkpoint.h>
-@@ -586,6 +587,12 @@ static struct restore_file_ops restore_file_ops[] = {
- 		.file_type = CKPT_FILE_GENERIC,
- 		.restore = generic_file_restore,
+@@ -593,6 +593,12 @@ static struct restore_file_ops restore_file_ops[] = {
+ 		.file_type = CKPT_FILE_PIPE,
+ 		.restore = pipe_file_restore,
  	},
-+	/* pipes */
++	/* fifo */
 +	{
-+		.file_name = "PIPE",
-+		.file_type = CKPT_FILE_PIPE,
-+		.restore = pipe_file_restore,
++		.file_name = "FIFO",
++		.file_type = CKPT_FILE_FIFO,
++		.restore = fifo_file_restore,
 +	},
  };
  
  static void *restore_file(struct ckpt_ctx *ctx)
 diff --git a/fs/pipe.c b/fs/pipe.c
-index 37ba29f..801aad9 100644
+index 801aad9..7f00e58 100644
 --- a/fs/pipe.c
 +++ b/fs/pipe.c
-@@ -13,11 +13,13 @@
- #include <linux/fs.h>
- #include <linux/mount.h>
- #include <linux/pipe_fs_i.h>
-+#include <linux/splice.h>
- #include <linux/uio.h>
- #include <linux/highmem.h>
- #include <linux/pagemap.h>
- #include <linux/audit.h>
- #include <linux/syscalls.h>
-+#include <linux/checkpoint.h>
- 
- #include <asm/uaccess.h>
- #include <asm/ioctls.h>
-@@ -828,6 +830,156 @@ pipe_rdwr_open(struct inode *inode, struct file *filp)
+@@ -830,6 +830,8 @@ pipe_rdwr_open(struct inode *inode, struct file *filp)
  	return ret;
  }
  
-+#ifdef CONFIG_CHECKPOINT
-+static int checkpoint_pipe(struct ckpt_ctx *ctx, struct inode *inode)
-+{
-+	struct pipe_inode_info *pipe;
-+	int len, ret = -ENOMEM;
++static struct vfsmount *pipe_mnt __read_mostly;
 +
-+	pipe = alloc_pipe_info(NULL);
-+	if (!pipe)
-+		return ret;
-+
-+	pipe->readers = 1;	/* bluff link_pipe() below */
-+	len = link_pipe(inode->i_pipe, pipe, INT_MAX, SPLICE_F_NONBLOCK);
-+	if (len == -EAGAIN)
-+		len = 0;
-+	if (len < 0) {
-+		ret = len;
-+		goto out;
+ #ifdef CONFIG_CHECKPOINT
+ static int checkpoint_pipe(struct ckpt_ctx *ctx, struct inode *inode)
+ {
+@@ -877,7 +879,11 @@ static int pipe_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
+ 	if (!h)
+ 		return -ENOMEM;
+ 
+-	h->common.f_type = CKPT_FILE_PIPE;
++	/* fifo and pipe are similar at checkpoint, differ on restore */
++	if (inode->i_sb == pipe_mnt->mnt_sb)
++		h->common.f_type = CKPT_FILE_PIPE;
++	else
++		h->common.f_type = CKPT_FILE_FIFO;
+ 	h->pipe_objref = objref;
+ 
+ 	ret = checkpoint_file_common(ctx, file, &h->common);
+@@ -887,6 +893,13 @@ static int pipe_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
+ 	if (ret < 0)
+ 		goto out;
+ 
++	/* FIFO also needs a file name */
++	if (h->common.f_type == CKPT_FILE_FIFO) {
++		ret = checkpoint_fname(ctx, &file->f_path, &ctx->root_fs_path);
++		if (ret < 0)
++			goto out;
 +	}
 +
-+	ret = ckpt_write_obj_type(ctx, NULL, len, CKPT_HDR_PIPE_BUF);
-+	if (ret < 0)
-+		goto out;
+ 	if (first)
+ 		ret = checkpoint_pipe(ctx, inode);
+  out:
+@@ -978,6 +991,71 @@ struct file *pipe_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr)
+ 
+ 	return file;
+ }
 +
-+	ret = do_splice_from(pipe, ctx->file, &ctx->file->f_pos, len, 0);
-+	if (ret < 0)
-+		goto out;
-+	if (ret != len)
-+		ret = -EPIPE;  /* can occur due to an error in target file */
-+ out:
-+	__free_pipe_info(pipe);
-+	return ret;
-+}
-+
-+static int pipe_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
-+{
-+	struct ckpt_hdr_file_pipe *h;
-+	struct inode *inode = file->f_dentry->d_inode;
-+	int objref, first, ret;
-+
-+	objref = ckpt_obj_lookup_add(ctx, inode, CKPT_OBJ_INODE, &first);
-+	if (objref < 0)
-+		return objref;
-+
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE);
-+	if (!h)
-+		return -ENOMEM;
-+
-+	h->common.f_type = CKPT_FILE_PIPE;
-+	h->pipe_objref = objref;
-+
-+	ret = checkpoint_file_common(ctx, file, &h->common);
-+	if (ret < 0)
-+		goto out;
-+	ret = ckpt_write_obj(ctx, &h->common.h);
-+	if (ret < 0)
-+		goto out;
-+
-+	if (first)
-+		ret = checkpoint_pipe(ctx, inode);
-+ out:
-+	ckpt_hdr_put(ctx, h);
-+	return ret;
-+}
-+
-+static int restore_pipe(struct ckpt_ctx *ctx, struct file *file)
-+{
-+	struct pipe_inode_info *pipe;
-+	int len, ret;
-+
-+	len = _ckpt_read_obj_type(ctx, NULL, 0, CKPT_HDR_PIPE_BUF);
-+	if (len < 0)
-+		return len;
-+
-+	pipe = file->f_dentry->d_inode->i_pipe;
-+	ret = do_splice_to(ctx->file, &ctx->file->f_pos, pipe, len, 0);
-+
-+	if (ret >= 0 && ret != len)
-+		ret = -EPIPE;  /* can occur due to an error in source file */
-+
-+	return ret;
-+}
-+
-+struct file *pipe_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr)
++struct file *fifo_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr)
 +{
 +	struct ckpt_hdr_file_pipe *h = (struct ckpt_hdr_file_pipe *) ptr;
 +	struct file *file;
-+	int fds[2], which, ret;
++	int first, ret;
 +
 +	if (ptr->h.type != CKPT_HDR_FILE  ||
-+	    ptr->h.len != sizeof(*h) || ptr->f_type != CKPT_FILE_PIPE)
++	    ptr->h.len != sizeof(*h) || ptr->f_type != CKPT_FILE_FIFO)
 +		return ERR_PTR(-EINVAL);
 +
 +	if (h->pipe_objref <= 0)
 +		return ERR_PTR(-EINVAL);
 +
-+	file = ckpt_obj_try_fetch(ctx, h->pipe_objref, CKPT_OBJ_FILE);
 +	/*
-+	 * If ckpt_obj_try_fetch() returned ERR_PTR(-EINVAL), then this is
-+	 * the first time we see this pipe so need to restore the
-+	 * contents.  Otherwise, use the file pointer skip forward.
++	 * If ckpt_obj_try_fetch() returned ERR_PTR(-EINVAL), this is the
++	 * first time for this fifo.
 +	 */
-+	if (!IS_ERR(file)) {
-+		get_file(file);
-+	} else if (PTR_ERR(file) == -EINVAL) {
-+		/* first encounter of this pipe: create it */
-+		ret = do_pipe_flags(fds, 0);
-+		if (ret < 0)
-+			return file;
++	file = ckpt_obj_try_fetch(ctx, h->pipe_objref, CKPT_OBJ_FILE);
++	if (!IS_ERR(file))
++		first = 0;
++	else if (PTR_ERR(file) == -EINVAL)
++		first = 1;
++	else
++		return file;
 +
-+		which = (ptr->f_flags & O_WRONLY ? 1 : 0);
-+		/*
-+		 * Below we return the file corersponding to one side
-+		 * of the pipe for our caller to use. Now insert the
-+		 * other side of the pipe to the hash, to be picked up
-+		 * when that side is restored.
-+		 */
-+		file = fget(fds[1-which]);	/* the 'other' side */
-+		if (!file)	/* this should _never_ happen ! */
-+			return ERR_PTR(-EBADF);
++	/*
++	 * To avoid blocking, always open the fifo with O_RDWR;
++	 * then fix flags below.
++	 */
++	file = restore_open_fname(ctx, (ptr->f_flags & ~O_ACCMODE) | O_RDWR);
++	if (IS_ERR(file))
++		return file;
++
++	if ((ptr->f_flags & O_ACCMODE) == O_RDONLY) {
++		file->f_flags = (file->f_flags & ~O_ACCMODE) | O_RDONLY;
++		file->f_mode &= ~FMODE_WRITE;
++	} else if ((ptr->f_flags & O_ACCMODE) == O_WRONLY) {
++		file->f_flags = (file->f_flags & ~O_ACCMODE) | O_WRONLY;
++		file->f_mode &= ~FMODE_READ;
++	} else if ((ptr->f_flags & O_ACCMODE) != O_RDWR) {
++		ret = -EINVAL;
++		goto out;
++	}
++
++	/* first time: add to objhash and restore fifo's contents */
++	if (first) {
 +		ret = ckpt_obj_insert(ctx, file, h->pipe_objref, CKPT_OBJ_FILE);
 +		if (ret < 0)
 +			goto out;
 +
 +		ret = restore_pipe(ctx, file);
-+		fput(file);
 +		if (ret < 0)
-+			return ERR_PTR(ret);
-+
-+		file = fget(fds[which]);	/* 'this' side */
-+		if (!file)	/* this should _never_ happen ! */
-+			return ERR_PTR(-EBADF);
-+
-+		/* get rid of the file descriptors (caller sets that) */
-+		sys_close(fds[which]);
-+		sys_close(fds[1-which]);
-+	} else {
-+		return file;
++			goto out;
 +	}
 +
 +	ret = restore_file_common(ctx, file, ptr);
@@ -264,91 +177,34 @@ index 37ba29f..801aad9 100644
 +
 +	return file;
 +}
-+#endif /* CONFIG_CHECKPOINT */
-+
+ #endif /* CONFIG_CHECKPOINT */
+ 
  /*
-  * The file_operations structs are not static because they
-  * are also used in linux/fs/fifo.c to do operations on FIFOs.
-@@ -844,6 +996,9 @@ const struct file_operations read_pipefifo_fops = {
- 	.open		= pipe_read_open,
- 	.release	= pipe_read_release,
- 	.fasync		= pipe_read_fasync,
-+#ifdef CONFIG_CHECKPOINT
-+	.checkpoint	= pipe_file_checkpoint,
-+#endif
- };
- 
- const struct file_operations write_pipefifo_fops = {
-@@ -856,6 +1011,9 @@ const struct file_operations write_pipefifo_fops = {
- 	.open		= pipe_write_open,
- 	.release	= pipe_write_release,
- 	.fasync		= pipe_write_fasync,
-+#ifdef CONFIG_CHECKPOINT
-+	.checkpoint	= pipe_file_checkpoint,
-+#endif
- };
- 
- const struct file_operations rdwr_pipefifo_fops = {
-@@ -869,6 +1027,9 @@ const struct file_operations rdwr_pipefifo_fops = {
- 	.open		= pipe_rdwr_open,
- 	.release	= pipe_rdwr_release,
- 	.fasync		= pipe_rdwr_fasync,
-+#ifdef CONFIG_CHECKPOINT
-+	.checkpoint	= pipe_file_checkpoint,
-+#endif
- };
- 
- struct pipe_inode_info * alloc_pipe_info(struct inode *inode)
 diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 86cab42..50ef2b6 100644
+index 50ef2b6..fbcbee7 100644
 --- a/include/linux/checkpoint_hdr.h
 +++ b/include/linux/checkpoint_hdr.h
-@@ -95,6 +95,8 @@ enum {
- #define CKPT_HDR_FILE_NAME CKPT_HDR_FILE_NAME
- 	CKPT_HDR_FILE,
- #define CKPT_HDR_FILE CKPT_HDR_FILE
-+	CKPT_HDR_PIPE_BUF,
-+#define CKPT_HDR_PIPE_BUF CKPT_HDR_PIPE_BUF
- 
- 	CKPT_HDR_MM = 401,
- #define CKPT_HDR_MM CKPT_HDR_MM
-@@ -282,6 +284,8 @@ enum file_type {
- #define CKPT_FILE_IGNORE CKPT_FILE_IGNORE
- 	CKPT_FILE_GENERIC,
+@@ -286,6 +286,8 @@ enum file_type {
  #define CKPT_FILE_GENERIC CKPT_FILE_GENERIC
-+	CKPT_FILE_PIPE,
-+#define CKPT_FILE_PIPE CKPT_FILE_PIPE
+ 	CKPT_FILE_PIPE,
+ #define CKPT_FILE_PIPE CKPT_FILE_PIPE
++	CKPT_FILE_FIFO,
++#define CKPT_FILE_FIFO CKPT_FILE_FIFO
  	CKPT_FILE_MAX
  #define CKPT_FILE_MAX CKPT_FILE_MAX
  };
-@@ -301,6 +305,11 @@ struct ckpt_hdr_file_generic {
- 	struct ckpt_hdr_file common;
- } __attribute__((aligned(8)));
- 
-+struct ckpt_hdr_file_pipe {
-+	struct ckpt_hdr_file common;
-+	__s32 pipe_objref;
-+} __attribute__((aligned(8)));
-+
- /* memory layout */
- struct ckpt_hdr_mm {
- 	struct ckpt_hdr h;
 diff --git a/include/linux/pipe_fs_i.h b/include/linux/pipe_fs_i.h
-index b43a9e0..e526a12 100644
+index e526a12..596403e 100644
 --- a/include/linux/pipe_fs_i.h
 +++ b/include/linux/pipe_fs_i.h
-@@ -154,4 +154,12 @@ int generic_pipe_buf_confirm(struct pipe_inode_info *, struct pipe_buffer *);
- int generic_pipe_buf_steal(struct pipe_inode_info *, struct pipe_buffer *);
- void generic_pipe_buf_release(struct pipe_inode_info *, struct pipe_buffer *);
- 
-+/* checkpoint/restart */
-+#ifdef CONFIG_CHECKPOINT
-+struct ckpt_ctx;
-+struct ckpt_hdr_file;
-+extern struct file *pipe_file_restore(struct ckpt_ctx *ctx,
+@@ -160,6 +160,8 @@ struct ckpt_ctx;
+ struct ckpt_hdr_file;
+ extern struct file *pipe_file_restore(struct ckpt_ctx *ctx,
+ 				      struct ckpt_hdr_file *ptr);
++extern struct file *fifo_file_restore(struct ckpt_ctx *ctx,
 +				      struct ckpt_hdr_file *ptr);
-+#endif
-+
+ #endif
+ 
  #endif
 -- 
 1.6.3.3
