@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH v21 045/100] c/r: export shmem_getpage() to support shared
-	memory
-Date: Sat,  1 May 2010 10:15:27 -0400
-Message-ID: <1272723382-19470-46-git-send-email-orenl__26000.5532684319$1272724528$gmane$org@cs.columbia.edu>
+Subject: [PATCH v21 047/100] splice: export pipe/file-to-pipe/file
+	functionality
+Date: Sat,  1 May 2010 10:15:29 -0400
+Message-ID: <1272723382-19470-48-git-send-email-orenl__18957.4538417675$1272724608$gmane$org@cs.columbia.edu>
 References: <1272723382-19470-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -19,86 +19,160 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Export functionality to retrieve specific pages from shared memory
-given an inode in shmem-fs; this will be used in the next two patches
-to provide support for c/r of shared memory.
+During pipes c/r pipes we need to save and restore pipe buffers. But
+do_splice() requires two file descriptors, therefore we can't use it,
+as we always have one file descriptor (checkpoint image) and one
+pipe_inode_info.
 
-mm/shmem.c:
-- shmem_getpage() and 'enum sgp_type' moved to linux/mm.h
+This patch exports interfaces that work at the pipe_inode_info level,
+namely link_pipe(), do_splice_to() and do_splice_from(). They are used
+in the following patch to to save and restore pipe buffers without
+unnecessary data copy.
 
-Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org
+It slightly modifies both do_splice_to() and do_splice_from() to
+detect the case of pipe-to-pipe transfer, in which case they invoke
+splice_pipe_to_pipe() directly.
+
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/mm.h |   11 +++++++++++
- mm/shmem.c         |   15 ++-------------
- 2 files changed, 13 insertions(+), 13 deletions(-)
+ fs/splice.c            |   61 ++++++++++++++++++++++++++++++++---------------
+ include/linux/splice.h |    9 +++++++
+ 2 files changed, 50 insertions(+), 20 deletions(-)
 
-diff --git a/include/linux/mm.h b/include/linux/mm.h
-index 913c7fe..5ebb781 100644
---- a/include/linux/mm.h
-+++ b/include/linux/mm.h
-@@ -340,6 +340,17 @@ void put_pages_list(struct list_head *pages);
+diff --git a/fs/splice.c b/fs/splice.c
+index 188e17d..ed91d7a 100644
+--- a/fs/splice.c
++++ b/fs/splice.c
+@@ -1037,18 +1037,43 @@ ssize_t generic_splice_sendpage(struct pipe_inode_info *pipe, struct file *out,
+ EXPORT_SYMBOL(generic_splice_sendpage);
  
- void split_page(struct page *page, unsigned int order);
- 
-+/* Flag allocation requirements to shmem_getpage and shmem_swp_alloc */
-+enum sgp_type {
-+	SGP_READ,	/* don't exceed i_size, don't allocate page */
-+	SGP_CACHE,	/* don't exceed i_size, may allocate page */
-+	SGP_DIRTY,	/* like SGP_CACHE, but set new page dirty */
-+	SGP_WRITE,	/* may exceed i_size, may allocate page */
-+};
-+
-+extern int shmem_getpage(struct inode *inode, unsigned long idx,
-+			 struct page **pagep, enum sgp_type sgp, int *type);
-+
  /*
-  * Compound pages have a destructor function.  Provide a
-  * prototype for that function and accessor functions.
-diff --git a/mm/shmem.c b/mm/shmem.c
-index eef4ebe..d93c394 100644
---- a/mm/shmem.c
-+++ b/mm/shmem.c
-@@ -98,14 +98,6 @@ static struct vfsmount *shm_mnt;
- /* Pretend that each entry is of this size in directory's i_size */
- #define BOGO_DIRENT_SIZE 20
- 
--/* Flag allocation requirements to shmem_getpage and shmem_swp_alloc */
--enum sgp_type {
--	SGP_READ,	/* don't exceed i_size, don't allocate page */
--	SGP_CACHE,	/* don't exceed i_size, may allocate page */
--	SGP_DIRTY,	/* like SGP_CACHE, but set new page dirty */
--	SGP_WRITE,	/* may exceed i_size, may allocate page */
--};
--
- #ifdef CONFIG_TMPFS
- static unsigned long shmem_default_max_blocks(void)
- {
-@@ -118,9 +110,6 @@ static unsigned long shmem_default_max_inodes(void)
- }
- #endif
- 
--static int shmem_getpage(struct inode *inode, unsigned long idx,
--			 struct page **pagep, enum sgp_type sgp, int *type);
--
- static inline struct page *shmem_dir_alloc(gfp_t gfp_mask)
- {
- 	/*
-@@ -1213,8 +1202,8 @@ static inline struct mempolicy *shmem_get_sbmpol(struct shmem_sb_info *sbinfo)
-  * vm. If we swap it in we mark it dirty since we also free the swap
-  * entry since a page cannot live in both the swap and page cache
++ * After the inode slimming patch, i_pipe/i_bdev/i_cdev share the same
++ * location, so checking ->i_pipe is not enough to verify that this is a
++ * pipe.
++ */
++static inline struct pipe_inode_info *pipe_info(struct inode *inode)
++{
++	if (S_ISFIFO(inode->i_mode))
++		return inode->i_pipe;
++
++	return NULL;
++}
++
++static int splice_pipe_to_pipe(struct pipe_inode_info *ipipe,
++			       struct pipe_inode_info *opipe,
++			       size_t len, unsigned int flags);
++
++/*
+  * Attempt to initiate a splice from pipe to file.
   */
--static int shmem_getpage(struct inode *inode, unsigned long idx,
--			struct page **pagep, enum sgp_type sgp, int *type)
-+int shmem_getpage(struct inode *inode, unsigned long idx,
-+		  struct page **pagep, enum sgp_type sgp, int *type)
+-static long do_splice_from(struct pipe_inode_info *pipe, struct file *out,
+-			   loff_t *ppos, size_t len, unsigned int flags)
++long do_splice_from(struct pipe_inode_info *pipe, struct file *out,
++		    loff_t *ppos, size_t len, unsigned int flags)
  {
- 	struct address_space *mapping = inode->i_mapping;
- 	struct shmem_inode_info *info = SHMEM_I(inode);
+ 	ssize_t (*splice_write)(struct pipe_inode_info *, struct file *,
+ 				loff_t *, size_t, unsigned int);
++	struct pipe_inode_info *opipe;
+ 	int ret;
+ 
+ 	if (unlikely(!(out->f_mode & FMODE_WRITE)))
+ 		return -EBADF;
+ 
++	/* When called directly (e.g. from c/r) output may be a pipe */
++	opipe = pipe_info(out->f_path.dentry->d_inode);
++	if (opipe) {
++		BUG_ON(opipe == pipe);
++		return splice_pipe_to_pipe(pipe, opipe, len, flags);
++	}
++
+ 	if (unlikely(out->f_flags & O_APPEND))
+ 		return -EINVAL;
+ 
+@@ -1067,17 +1092,25 @@ static long do_splice_from(struct pipe_inode_info *pipe, struct file *out,
+ /*
+  * Attempt to initiate a splice from a file to a pipe.
+  */
+-static long do_splice_to(struct file *in, loff_t *ppos,
+-			 struct pipe_inode_info *pipe, size_t len,
+-			 unsigned int flags)
++long do_splice_to(struct file *in, loff_t *ppos,
++		  struct pipe_inode_info *pipe, size_t len,
++		  unsigned int flags)
+ {
+ 	ssize_t (*splice_read)(struct file *, loff_t *,
+ 			       struct pipe_inode_info *, size_t, unsigned int);
++	struct pipe_inode_info *ipipe;
+ 	int ret;
+ 
+ 	if (unlikely(!(in->f_mode & FMODE_READ)))
+ 		return -EBADF;
+ 
++	/* When called firectly (e.g. from c/r) input may be a pipe */
++	ipipe = pipe_info(in->f_path.dentry->d_inode);
++	if (ipipe) {
++		BUG_ON(ipipe == pipe);
++		return splice_pipe_to_pipe(ipipe, pipe, len, flags);
++	}
++
+ 	ret = rw_verify_area(READ, in, ppos, len);
+ 	if (unlikely(ret < 0))
+ 		return ret;
+@@ -1257,18 +1290,6 @@ long do_splice_direct(struct file *in, loff_t *ppos, struct file *out,
+ static int splice_pipe_to_pipe(struct pipe_inode_info *ipipe,
+ 			       struct pipe_inode_info *opipe,
+ 			       size_t len, unsigned int flags);
+-/*
+- * After the inode slimming patch, i_pipe/i_bdev/i_cdev share the same
+- * location, so checking ->i_pipe is not enough to verify that this is a
+- * pipe.
+- */
+-static inline struct pipe_inode_info *pipe_info(struct inode *inode)
+-{
+-	if (S_ISFIFO(inode->i_mode))
+-		return inode->i_pipe;
+-
+-	return NULL;
+-}
+ 
+ /*
+  * Determine where to splice to/from.
+@@ -1873,9 +1894,9 @@ retry:
+ /*
+  * Link contents of ipipe to opipe.
+  */
+-static int link_pipe(struct pipe_inode_info *ipipe,
+-		     struct pipe_inode_info *opipe,
+-		     size_t len, unsigned int flags)
++int link_pipe(struct pipe_inode_info *ipipe,
++	      struct pipe_inode_info *opipe,
++	      size_t len, unsigned int flags)
+ {
+ 	struct pipe_buffer *ibuf, *obuf;
+ 	int ret = 0, i = 0, nbuf;
+diff --git a/include/linux/splice.h b/include/linux/splice.h
+index 18e7c7c..431662c 100644
+--- a/include/linux/splice.h
++++ b/include/linux/splice.h
+@@ -82,4 +82,13 @@ extern ssize_t splice_to_pipe(struct pipe_inode_info *,
+ extern ssize_t splice_direct_to_actor(struct file *, struct splice_desc *,
+ 				      splice_direct_actor *);
+ 
++extern int link_pipe(struct pipe_inode_info *ipipe,
++		     struct pipe_inode_info *opipe,
++		     size_t len, unsigned int flags);
++extern long do_splice_to(struct file *in, loff_t *ppos,
++			 struct pipe_inode_info *pipe, size_t len,
++			 unsigned int flags);
++extern long do_splice_from(struct pipe_inode_info *pipe, struct file *out,
++			   loff_t *ppos, size_t len, unsigned int flags);
++
+ #endif
 -- 
 1.6.3.3
