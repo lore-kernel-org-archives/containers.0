@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH v21 019/100] Make file_pos_read/write() public and export
-	kernel_write()
-Date: Sat,  1 May 2010 10:15:01 -0400
-Message-ID: <1272723382-19470-20-git-send-email-orenl__24794.4928393283$1272727045$gmane$org@cs.columbia.edu>
+Subject: [PATCH v21 040/100] Introduce FOLL_DIRTY to follow_page() for "dirty"
+	pages
+Date: Sat,  1 May 2010 10:15:22 -0400
+Message-ID: <1272723382-19470-41-git-send-email-orenl__43705.033887136$1272727247$gmane$org@cs.columbia.edu>
 References: <1272723382-19470-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -19,216 +19,213 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-These three are used in a subsequent patch to allow the kernel c/r
-code to call vfs_read/write() to read and write data to and from the
-checkpoint image.
+This is a preparatory patch necessary for checkpoint/restart (next
+two patches) of memory to work correctly.
 
-This patch makes the following changes:
+The patch introduces a new FOLL_DIRTY flag which tells follow_page()
+to return -EFAULT also for not-present file-backed pages.
 
-1) Move kernel_write() from fs/splice.c to fs/exec.c to be near
-kernel_read()
+In 2.6.32 follow_page() changes its behavior due to this commit:
+	mm: FOLL_DUMP replace FOLL_ANON
+ 	8e4b9a60718970bbc02dfd3abd0b956ab65af231
 
-2) Make kernel_read/write() iterate if they face partial reads or
-writes, and retry if they face -EAGAIN.
+Also introduce __get_dirty_page() that returns a page only if it's
+"dirty", that is that has been modified before, and otherwise returns
+NULL. It uses FOLL_DUMP | FOLL_DIRTY and converts the error value
+EFAULT to NULL - telling the caller that the page in question is
+clean.
 
-3) Adjust prototypes of kernel_read/write() to use size_t and ssize_t
+(This also optimizes for checkpoint in the next patch: before, if a
+file-backed page was not-present we would first fault it in (read from
+disk) and then detect that it was virgin. Instead, now we detect that
+the page is clean earlier without needing to fault it in).
 
-4) Move file_pos_read/write() to include/linux/fs.h
+To see why it's needed, consider these scenarios:
 
-Changelog [ckpt-v21]
-  - Introduce kernel_write(), fix kernel_read()
+1. Task maps a file beyond it's limit, never touches those
+ extra page (if it did, it would get EFAULT/Bus error)
 
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+2. Task maps a file and writes the last page, then the file gets
+ truncated (by at least a page). A subsequent access to the page will
+ cause bus error (VM_FAULT_SIGBUS).
+
+3. If the file size is extended back (using truncate) and the task
+ accesses that page, then the task will get a fresh page (losing data
+ it had written to that address before).
+
+[Before kernel 2.6.32, that page would become anonymous once it was
+dirtied, such that accesses in case #2 are valid, and in case #3 the
+task would see the old page regardless of the file contents.]
+
+--CHECKPOINT: before we used FOLL_ANON flags to tell follow_page() to
+return the zero-page for case#1. For case#2, the actual page was
+returned. Without this patch, In kernel 2.3.32, FOLL_DUMP would make
+follow_page() return NULL and then fault handler would have returned
+VM_FAULT_SIGBUS in case#1 (and depending on arch, case#2 too), and
+checkpoint would fails.
+
+--RESTART: case #1 works, because mmap() works as before, and those
+pages that were never touched will not be restored either, they will
+remain untouched. The same holds for case#2 (as of kernel 2.6.32),
+because at checkpoint it would decide that the page is clean and not
+save the contents, and therefore it will not try to restore the
+contents at restart. This is consistent with the expected behavior
+after restart: if the file remains as is, subsequent accesses will
+trigger a bus error, and if the file is extended, then the user will
+observe a fresh page.
+
+Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- fs/exec.c          |   69 ++++++++++++++++++++++++++++++++++++++++++++++++----
- fs/read_write.c    |   10 -------
- fs/splice.c        |   17 +------------
- include/linux/fs.h |   13 +++++++++-
- 4 files changed, 77 insertions(+), 32 deletions(-)
+ include/linux/mm.h |    2 +
+ mm/memory.c        |   95 +++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 96 insertions(+), 1 deletions(-)
 
-diff --git a/fs/exec.c b/fs/exec.c
-index 49cdaa1..7bacb6a 100644
---- a/fs/exec.c
-+++ b/fs/exec.c
-@@ -693,23 +693,82 @@ exit:
- }
- EXPORT_SYMBOL(open_exec);
+diff --git a/include/linux/mm.h b/include/linux/mm.h
+index 4dfaf69..5e9ad0d 100644
+--- a/include/linux/mm.h
++++ b/include/linux/mm.h
+@@ -846,6 +846,7 @@ int get_user_pages(struct task_struct *tsk, struct mm_struct *mm,
+ int get_user_pages_fast(unsigned long start, int nr_pages, int write,
+ 			struct page **pages);
+ struct page *get_dump_page(unsigned long addr);
++struct page *__get_dirty_page(struct vm_area_struct *vma, unsigned long addr);
  
--int kernel_read(struct file *file, loff_t offset,
--		char *addr, unsigned long count)
-+static ssize_t _kernel_read(struct file *file, loff_t offset,
-+			    char __user *ubuf, size_t count)
- {
--	mm_segment_t old_fs;
-+	ssize_t nread;
-+	size_t nleft;
- 	loff_t pos = offset;
--	int result;
+ extern int try_to_release_page(struct page * page, gfp_t gfp_mask);
+ extern void do_invalidatepage(struct page *page, unsigned long offset);
+@@ -1373,6 +1374,7 @@ struct page *follow_page(struct vm_area_struct *, unsigned long address,
+ #define FOLL_GET	0x04	/* do get_page on page */
+ #define FOLL_DUMP	0x08	/* give error on hole if it would be zero */
+ #define FOLL_FORCE	0x10	/* get_user_pages read/write w/o permission */
++#define FOLL_DIRTY	0x20	/* give error on non-present file mapped */
+ 
+ typedef int (*pte_fn_t)(pte_t *pte, pgtable_t token, unsigned long addr,
+ 			void *data);
+diff --git a/mm/memory.c b/mm/memory.c
+index 833952d..21de72d 100644
+--- a/mm/memory.c
++++ b/mm/memory.c
+@@ -1314,8 +1314,17 @@ bad_page:
+ 
+ no_page:
+ 	pte_unmap_unlock(ptep, ptl);
+-	if (!pte_none(pte))
++	if (!pte_none(pte)) {
++		/*
++		 * When checkpointing we only care about dirty pages.
++		 * If a file-backed page is missing, then return an
++		 * error to tell __get_dirty_page() that it's clean,
++		 * so it won't try to demand page it into memory.
++		 */
++		if ((flags & FOLL_DIRTY) && pte_file(pte))
++			page = ERR_PTR(-EFAULT);
+ 		return page;
++	}
+ 
+ no_page_table:
+ 	/*
+@@ -1329,6 +1338,16 @@ no_page_table:
+ 	if ((flags & FOLL_DUMP) &&
+ 	    (!vma->vm_ops || !vma->vm_ops->fault))
+ 		return ERR_PTR(-EFAULT);
 +
-+	for (nleft = count; nleft; nleft -= nread) {
-+		nread = vfs_read(file, ubuf, nleft, &pos);
-+		if (nread <= 0) {
-+			if (nread == -EAGAIN) {
-+				nread = 0;
-+				continue;
-+			} else if (nread == 0)
-+				break;
++	/*
++	 * When checkpointing we only care about dirty pages. If there
++	 * is no page table for a non-anonymous page, we return an
++	 * error to tell __get_dirty_page() that the page is clean, so
++	 * it won't allocate page tables and the page unnecessarily.
++	 */
++	if ((flags & FOLL_DIRTY) && vma->vm_ops)
++		return ERR_PTR(-EFAULT);
++
+ 	return page;
+ }
+ 
+@@ -1586,6 +1605,80 @@ pte_t *get_locked_pte(struct mm_struct *mm, unsigned long addr,
+ 	return NULL;
+ }
+ 
++/**
++ * __get_dirty_page - return page pointer for dirty user page
++ * @vma - target vma
++ * @addr - page address
++ *
++ * Looks up the page that correspond to the address in the vma, and
++ * return the page if it was modified (and grabs a reference to it),
++ * or otherwise returns NULL or error.
++ *
++ * Should only be called for private vma.
++ * Must be called with mmap_sem held for read or write.
++ */
++struct page *__get_dirty_page(struct vm_area_struct *vma, unsigned long addr)
++{
++	struct page *page;
++
++	BUG_ON(vma->vm_flags & (VM_SHARED | VM_MAYSHARE));
++
++	/*
++	 * FOLL_DUMP tells follow_page() to return -EFAULT for either
++	 * non-present anonymous pages, or memory "holes".
++	 * FOLL_DIRTY tells follow_page() to return -EFAULT also for
++	 * non-present file-mapped pages.
++	 * Otherwise, follow_page() returns the page, or NULL if the
++	 * page is swapped out.
++	 */
++
++	cond_resched();
++	while (!(page = follow_page(vma, addr,
++				    FOLL_GET | FOLL_DUMP | FOLL_DIRTY))) {
++		int ret;
++
++		/* the page is swapped out - bring it in (optimize ?) */
++		ret = handle_mm_fault(vma->vm_mm, vma, addr, 0);
++		if (ret & VM_FAULT_ERROR) {
++			if (ret & VM_FAULT_OOM)
++				return ERR_PTR(-ENOMEM);
++			else if (ret & VM_FAULT_SIGBUS)
++				return ERR_PTR(-EFAULT);
 +			else
-+				return nread;
++				BUG();
++			break;
 +		}
-+		ubuf += nread;
++		cond_resched();
 +	}
-+	return count - nleft;
-+}
 +
-+ssize_t kernel_read(struct file *file, loff_t offset,
-+		    char *addr, size_t count)
-+{
-+	mm_segment_t old_fs;
-+	ssize_t result;
- 
- 	old_fs = get_fs();
- 	set_fs(get_ds());
- 	/* The cast to a user pointer is valid due to the set_fs() */
--	result = vfs_read(file, (void __user *)addr, count, &pos);
-+	result = _kernel_read(file, offset, (void __user *)addr, count);
- 	set_fs(old_fs);
- 	return result;
- }
- 
- EXPORT_SYMBOL(kernel_read);
- 
-+static ssize_t _kernel_write(struct file *file, loff_t offset,
-+			     const char __user *ubuf, size_t count)
-+{
-+	ssize_t nwrite;
-+	size_t nleft;
-+	loff_t pos = offset;
++	/* -EFAULT means that the page is clean (see above) */
++	if (PTR_ERR(page) == -EFAULT)
++		return NULL;
++	else if (IS_ERR(page))
++		return page;
 +
-+	for (nleft = count; nleft; nleft -= nwrite) {
-+		nwrite = vfs_write(file, ubuf, nleft, &pos);
-+		if (nwrite < 0) {
-+			if (nwrite == -EAGAIN) {
-+				nwrite = 0;
-+				continue;
-+			} else
-+				return nwrite;
-+		}
-+		ubuf += nwrite;
++	/*
++	 * Only care about dirty pages: either anonymous non-zero pages,
++	 * or file-backed COW (copy-on-write) pages that were modified.
++	 * A clean COW page is not interesting because its contents are
++	 * identical to the backing file; ignore such pages.
++	 * A file-backed broken COW is identified by its page_mapping()
++	 * being unset (NULL) because the page will no longer be mapped
++	 * to the original file after having been modified.
++	 */
++	if (is_zero_pfn(page_to_pfn(page))) {
++		/* this is the zero page: ignore */
++		page_cache_release(page);
++		page = NULL;
++	} else if (vma->vm_file && (page_mapping(page) != NULL)) {
++		/* file backed clean cow: ignore */
++		page_cache_release(page);
++		page = NULL;
 +	}
-+	return count - nleft;
++
++	return page;
 +}
 +
-+ssize_t kernel_write(struct file *file, loff_t offset,
-+		     const char *addr, size_t count)
-+{
-+	mm_segment_t old_fs;
-+	ssize_t result;
-+
-+	old_fs = get_fs();
-+	set_fs(get_ds());
-+	/* The cast to a user pointer is valid due to the set_fs() */
-+	result = _kernel_write(file, offset, (void __user *)addr, count);
-+	set_fs(old_fs);
-+	return result;
-+}
-+
-+EXPORT_SYMBOL(kernel_write);
-+
- static int exec_mmap(struct mm_struct *mm)
- {
- 	struct task_struct *tsk;
-diff --git a/fs/read_write.c b/fs/read_write.c
-index 113386d..67b7d83 100644
---- a/fs/read_write.c
-+++ b/fs/read_write.c
-@@ -361,16 +361,6 @@ ssize_t vfs_write(struct file *file, const char __user *buf, size_t count, loff_
- 
- EXPORT_SYMBOL(vfs_write);
- 
--static inline loff_t file_pos_read(struct file *file)
--{
--	return file->f_pos;
--}
--
--static inline void file_pos_write(struct file *file, loff_t pos)
--{
--	file->f_pos = pos;
--}
--
- SYSCALL_DEFINE3(read, unsigned int, fd, char __user *, buf, size_t, count)
- {
- 	struct file *file;
-diff --git a/fs/splice.c b/fs/splice.c
-index 9313b61..188e17d 100644
---- a/fs/splice.c
-+++ b/fs/splice.c
-@@ -538,21 +538,6 @@ static ssize_t kernel_readv(struct file *file, const struct iovec *vec,
- 	return res;
- }
- 
--static ssize_t kernel_write(struct file *file, const char *buf, size_t count,
--			    loff_t pos)
--{
--	mm_segment_t old_fs;
--	ssize_t res;
--
--	old_fs = get_fs();
--	set_fs(get_ds());
--	/* The cast to a user pointer is valid due to the set_fs() */
--	res = vfs_write(file, (const char __user *)buf, count, &pos);
--	set_fs(old_fs);
--
--	return res;
--}
--
- ssize_t default_file_splice_read(struct file *in, loff_t *ppos,
- 				 struct pipe_inode_info *pipe, size_t len,
- 				 unsigned int flags)
-@@ -1011,7 +996,7 @@ static int write_pipe_buf(struct pipe_inode_info *pipe, struct pipe_buffer *buf,
- 		return ret;
- 
- 	data = buf->ops->map(pipe, buf, 0);
--	ret = kernel_write(sd->u.file, data + buf->offset, sd->len, sd->pos);
-+	ret = kernel_write(sd->u.file, sd->pos, data + buf->offset, sd->len);
- 	buf->ops->unmap(pipe, buf, data);
- 
- 	return ret;
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 39d57bc..9e8b171 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -1548,6 +1548,16 @@ ssize_t rw_copy_check_uvector(int type, const struct iovec __user * uvector,
- 				struct iovec *fast_pointer,
- 				struct iovec **ret_pointer);
- 
-+static inline loff_t file_pos_read(struct file *file)
-+{
-+	return file->f_pos;
-+}
-+
-+static inline void file_pos_write(struct file *file, loff_t pos)
-+{
-+	file->f_pos = pos;
-+}
-+
- extern ssize_t vfs_read(struct file *, char __user *, size_t, loff_t *);
- extern ssize_t vfs_write(struct file *, const char __user *, size_t, loff_t *);
- extern ssize_t vfs_readv(struct file *, const struct iovec __user *,
-@@ -2127,7 +2137,8 @@ extern struct file *do_filp_open(int dfd, const char *pathname,
- 		int open_flag, int mode, int acc_mode);
- extern int may_open(struct path *, int, int);
- 
--extern int kernel_read(struct file *, loff_t, char *, unsigned long);
-+extern ssize_t kernel_read(struct file *, loff_t, char *, size_t);
-+extern ssize_t kernel_write(struct file *, loff_t, const char *, size_t);
- extern struct file * open_exec(const char *);
-  
- /* fs/dcache.c -- generic fs support functions */
+ /*
+  * This is the old fallback for page remapping.
+  *
 -- 
 1.6.3.3
