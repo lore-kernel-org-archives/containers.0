@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH v21 074/100] c/r: add support for listening INET sockets (v2)
-Date: Sat,  1 May 2010 10:15:56 -0400
-Message-ID: <1272723382-19470-75-git-send-email-orenl__32480.3817355589$1272729230$gmane$org@cs.columbia.edu>
+Subject: [PATCH v21 079/100] c/r: checkpoint/restart epoll sets
+Date: Sat,  1 May 2010 10:16:01 -0400
+Message-ID: <1272723382-19470-80-git-send-email-orenl__11971.1258485497$1272729238$gmane$org@cs.columbia.edu>
 References: <1272723382-19470-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -17,403 +17,603 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Davide Libenzi <davidel-AhlLAIvw+VEjIGhXcJzhZg@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-This is an incremental step towards supporting checkpoint/restart on
-AF_INET sockets.  In this scenario, any sockets that were in TCP_LISTEN
-state are restored as they were.  Any that were connected are forced to
-TCP_CLOSE.  This should cover a range of use cases that involve
-applications that are tolerant of such an interruption.
+Save/restore epoll items during checkpoint/restart respectively.
+
+Output the epoll header and items separately. Chunk the output much
+like the pid array gets chunked. This ensures that even sub-order 0
+allocations will enable checkpoint of large epoll sets. A subsequent
+patch will do something similar for the restore path.
+
+On restart, we grab a piece of memory suitable to store a "chunk" of
+items for input. Read the input one chunk at a time and add epoll
+items for each item in the chunk.
 
 Changelog [v21]:
-  - Do not include checkpoint_hdr.h explicitly
+  - Put file_ops->checkpoint under CONFIG_CHECKPOINT
+Changelog [v19]:
+  - [Oren Laadan] Fix broken compilation for no-c/r architectures
 Changelog [v19-rc1]:
-  - [Matt Helsley] Add cpp definitions for enums
-Changes in v2:
- - Fix whitespace
- - Fix return in inet_checkpoint() on failed ckpt_hdr_get_type()
- - Fix garbage free on error path of inet_read_buffer()
- - Fix unnecessary ret=0 in inet_read_buffers()
- - Add inet_precheck() (like unix) to validate the address lengths (and
-   more later)
+  - [Oren Laadan] Return -EBUSY (not BUG_ON) if fd is gone on restart
+  - [Oren Laadan] Fix the chunk size instead of auto-tune
 
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Changelog v5:
+	Fix potential recursion during collect.
+	Replace call to ckpt_obj_collect() with ckpt_collect_file().
+		[Oren]
+	Fix checkpoint leak detection when there are more items than
+		expected.
+	Cleanup/simplify error write paths. (will complicate in a later
+		patch) [Oren]
+	Remove files_deferq bits. [Oren]
+	Remove extra newline. [Oren]
+	Remove aggregate check on number of watches added. [Oren]
+		This is OK since these will be done individually anyway.
+	Remove check for negative objrefs during restart. [Oren]
+	Fixup comment regarding race that indicates checkpoint leaks.
+		[Oren]
+	s/ckpt_read_obj/ckpt_read_buf_type/ [Oren]
+		Patch for lots of epoll items follows.
+	Moved sys_close(epfd) right under fget(). [Oren]
+	Use CKPT_HDR_BUFFER rather than custome ckpt_read/write_*
+		This makes it more similar to the pid array code. [Oren]
+		It also simplifies the error recovery paths.
+	Tested polling a pipe and 50,000 UNIX sockets.
+
+Changelog v4: ckpt-v18
+	Use files_deferq as submitted by Dan Smith
+		Cleanup to only report >= 1 items when debugging.
+
+Changelog v3: [unposted]
+	Removed most of the TODOs -- the remainder will be removed by
+		subsequent patches.
+	Fixed missing ep_file_collect() [Serge]
+	Rather than include checkpoint_hdr.h declare (but do not define)
+		the two structs needed in eventpoll.h [Oren]
+	Complain with ckpt_write_err() when we detect checkpoint obj
+		leaks. [Oren]
+	Remove redundant is_epoll_file() check in collect. [Oren]
+	Move epfile_objref lookup to simplify error handling. [Oren]
+	Simplify error handling with early return in
+		ep_eventpoll_checkpoint(). [Oren]
+	Cleaned up a comment. [Oren]
+	Shorten CKPT_HDR_FILE_EPOLL_ITEMS (-FILE) [Oren]
+		Renumbered to indicate that it follows the file table.
+	Renamed the epoll struct in checkpoint_hdr.h [Oren]
+		Also renamed substruct.
+	Fixup return of empty ep_file_restore(). [Oren]
+	Changed some error returns. [Oren]
+	Changed some tests to BUG_ON(). [Oren]
+	Factored out watch insert with epoll_ctl() into do_epoll_ctl().
+		[Cedric, Oren]
+
+Cc: Davide Libenzi <davidel-AhlLAIvw+VEjIGhXcJzhZg@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Acked-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- Documentation/checkpoint/readme.txt |   21 ++++
- include/linux/checkpoint_hdr.h      |   15 +++
- include/net/inet_common.h           |   13 +++
- net/checkpoint.c                    |    9 ++
- net/ipv4/Makefile                   |    1 +
- net/ipv4/af_inet.c                  |    6 +
- net/ipv4/checkpoint.c               |  189 +++++++++++++++++++++++++++++++++++
- 7 files changed, 254 insertions(+), 0 deletions(-)
- create mode 100644 net/ipv4/checkpoint.c
+ fs/checkpoint.c                |    7 +
+ fs/eventpoll.c                 |  334 ++++++++++++++++++++++++++++++++++++----
+ include/linux/checkpoint_hdr.h |   18 ++
+ include/linux/eventpoll.h      |   17 ++-
+ 4 files changed, 347 insertions(+), 29 deletions(-)
 
-diff --git a/Documentation/checkpoint/readme.txt b/Documentation/checkpoint/readme.txt
-index 4fa5560..2548bb4 100644
---- a/Documentation/checkpoint/readme.txt
-+++ b/Documentation/checkpoint/readme.txt
-@@ -344,6 +344,27 @@ we will be forced to more carefully review each of those features.
- However, this can be controlled with a sysctl-variable.
+diff --git a/fs/checkpoint.c b/fs/checkpoint.c
+index 9b29a26..3bfa692 100644
+--- a/fs/checkpoint.c
++++ b/fs/checkpoint.c
+@@ -21,6 +21,7 @@
+ #include <linux/syscalls.h>
+ #include <linux/deferqueue.h>
+ #include <linux/checkpoint.h>
++#include <linux/eventpoll.h>
+ #include <net/sock.h>
  
+ /**************************************************************************
+@@ -632,6 +633,12 @@ static struct restore_file_ops restore_file_ops[] = {
+ 		.file_type = CKPT_FILE_TTY,
+ 		.restore = tty_file_restore,
+ 	},
++	/* epoll */
++	{
++		.file_name = "EPOLL",
++		.file_type = CKPT_FILE_EPOLL,
++		.restore = ep_file_restore,
++	},
+ };
  
-+Sockets
-+=======
+ static void *restore_file(struct ckpt_ctx *ctx)
+diff --git a/fs/eventpoll.c b/fs/eventpoll.c
+index bd056a5..99920d2 100644
+--- a/fs/eventpoll.c
++++ b/fs/eventpoll.c
+@@ -39,6 +39,9 @@
+ #include <asm/mman.h>
+ #include <asm/atomic.h>
+ 
++#include <linux/checkpoint.h>
++#include <linux/deferqueue.h>
 +
-+For AF_UNIX sockets, both endpoints must be within the checkpointed
-+task set to maintain a connected state after restart.  UNIX sockets
-+that are in the process of passing a descriptor will cause the
-+checkpoint to fail with -EBUSY indicating a transient state that
-+cannot be checkpointed.  Listening sockets with an unaccepted peer
-+will also cause an -EBUSY result.
-+
-+AF_INET sockets with endpoints outside the checkpointed task set may
-+remain open if care is taken to avoid TCP timeouts and resets.
-+Careful use of a virtual IP address can help avoid emission of an RST
-+to the non-checkpointed endpoint.  If desired, the
-+RESTART_SOCK_LISTENONLY flag may be passed to the restart syscall
-+which will cause all connected AF_INET sockets to be closed during the
-+restore process.  Listening sockets will still be restored to their
-+original state, which makes this mode a candidate for something like
-+an HTTP server.
-+
-+
- Kernel interfaces
- =================
- 
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 2be2d2c..07934ee 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -14,6 +14,7 @@
- #include <linux/types.h>
- #include <linux/socket.h>
- #include <linux/un.h>
-+#include <linux/in.h>
- 
- #ifndef CONFIG_CHECKPOINT
- #error linux/checkpoint_hdr.h included directly (without CONFIG_CHECKPOINT)
-@@ -21,10 +22,14 @@
- 
- #else /* __KERNEL__ */
- 
-+#else
-+
- #include <sys/types.h>
- #include <linux/types.h>
- #include <sys/socket.h>
- #include <sys/un.h>
-+#include <sys/un.h>
-+#include <netinet/in.h>
- 
- #endif
- 
-@@ -159,6 +164,8 @@ enum {
- #define CKPT_HDR_SOCKET_FRAG CKPT_HDR_SOCKET_FRAG
- 	CKPT_HDR_SOCKET_UNIX,
- #define CKPT_HDR_SOCKET_UNIX CKPT_HDR_SOCKET_UNIX
-+	CKPT_HDR_SOCKET_INET,
-+#define CKPT_HDR_SOCKET_INET CKPT_HDR_SOCKET_INET
- 
- 	CKPT_HDR_TAIL = 9001,
- #define CKPT_HDR_TAIL CKPT_HDR_TAIL
-@@ -577,6 +584,14 @@ struct ckpt_hdr_socket_unix {
- 	struct sockaddr_un raddr;
- } __attribute__ ((aligned(8)));
- 
-+struct ckpt_hdr_socket_inet {
-+	struct ckpt_hdr h;
-+	__u32 laddr_len;
-+	__u32 raddr_len;
-+	struct sockaddr_in laddr;
-+	struct sockaddr_in raddr;
-+} __attribute__((aligned(8)));
-+
- struct ckpt_hdr_file_socket {
- 	struct ckpt_hdr_file common;
- 	__s32 sock_objref;
-diff --git a/include/net/inet_common.h b/include/net/inet_common.h
-index 18c7732..bf04e6e 100644
---- a/include/net/inet_common.h
-+++ b/include/net/inet_common.h
-@@ -45,6 +45,19 @@ extern int			inet_ctl_sock_create(struct sock **sk,
- 						     unsigned char protocol,
- 						     struct net *net);
+ /*
+  * LOCKING:
+  * There are three level of locking required by epoll :
+@@ -671,10 +674,19 @@ static unsigned int ep_eventpoll_poll(struct file *file, poll_table *wait)
+ 	return pollflags != -1 ? pollflags : 0;
+ }
  
 +#ifdef CONFIG_CHECKPOINT
-+struct ckpt_ctx;
-+struct ckpt_hdr_socket;
-+extern int inet_checkpoint(struct ckpt_ctx *ctx, struct socket *sock);
-+extern int inet_collect(struct ckpt_ctx *ctx, struct socket *sock);
-+extern int inet_restore(struct ckpt_ctx *cftx, struct socket *sock,
-+			struct ckpt_hdr_socket *h);
-+#else
-+#define inet_checkpoint NULL
-+#define inet_collect NULL
-+#define inet_restore NULL
-+#endif /* CONFIG_CHECKPOINT */
++static int ep_eventpoll_checkpoint(struct ckpt_ctx *ctx, struct file *file);
++static int ep_file_collect(struct ckpt_ctx *ctx, struct file *file);
++#endif
 +
- static inline void inet_ctl_sock_destroy(struct sock *sk)
+ /* File callbacks that implement the eventpoll file behaviour */
+ static const struct file_operations eventpoll_fops = {
+ 	.release	= ep_eventpoll_release,
+-	.poll		= ep_eventpoll_poll
++	.poll		= ep_eventpoll_poll,
++#ifdef CONFIG_CHECKPOINT
++	.checkpoint	= ep_eventpoll_checkpoint,
++	.collect	= ep_file_collect,
++#endif
+ };
+ 
+ /* Fast test to see if the file is an evenpoll file */
+@@ -1226,35 +1238,18 @@ SYSCALL_DEFINE1(epoll_create, int, size)
+  * the eventpoll file that enables the insertion/removal/change of
+  * file descriptors inside the interest set.
+  */
+-SYSCALL_DEFINE4(epoll_ctl, int, epfd, int, op, int, fd,
+-		struct epoll_event __user *, event)
++int do_epoll_ctl(int op, int fd,
++		 struct file *file, struct file *tfile,
++		 struct epoll_event *epds)
  {
- 	sk_release_kernel(sk);
-diff --git a/net/checkpoint.c b/net/checkpoint.c
-index 9116d7a..d972044 100644
---- a/net/checkpoint.c
-+++ b/net/checkpoint.c
-@@ -930,6 +930,15 @@ static void *restore_sock(struct ckpt_ctx *ctx)
- 	if (ret < 0)
- 		goto err;
+ 	int error;
+-	struct file *file, *tfile;
+ 	struct eventpoll *ep;
+ 	struct epitem *epi;
+-	struct epoll_event epds;
+-
+-	error = -EFAULT;
+-	if (ep_op_has_event(op) &&
+-	    copy_from_user(&epds, event, sizeof(struct epoll_event)))
+-		goto error_return;
+-
+-	/* Get the "struct file *" for the eventpoll file */
+-	error = -EBADF;
+-	file = fget(epfd);
+-	if (!file)
+-		goto error_return;
+-
+-	/* Get the "struct file *" for the target file */
+-	tfile = fget(fd);
+-	if (!tfile)
+-		goto error_fput;
  
-+	if ((h->sock_common.family == AF_INET) &&
-+	    (h->sock.state != TCP_LISTEN)) {
-+		/* Temporary hack to enable restore of TCP_LISTEN sockets
-+		 * while forcing anything else to a closed state
-+		 */
-+		sock->sk->sk_state = TCP_CLOSE;
-+		sock->state = SS_UNCONNECTED;
-+	}
+ 	/* The target file descriptor must support poll */
+ 	error = -EPERM;
+ 	if (!tfile->f_op || !tfile->f_op->poll)
+-		goto error_tgt_fput;
++		return error;
+ 
+ 	/*
+ 	 * We have to check that the file structure underneath the file descriptor
+@@ -1263,7 +1258,7 @@ SYSCALL_DEFINE4(epoll_ctl, int, epfd, int, op, int, fd,
+ 	 */
+ 	error = -EINVAL;
+ 	if (file == tfile || !is_file_epoll(file))
+-		goto error_tgt_fput;
++		return error;
+ 
+ 	/*
+ 	 * At this point it is safe to assume that the "private_data" contains
+@@ -1284,8 +1279,8 @@ SYSCALL_DEFINE4(epoll_ctl, int, epfd, int, op, int, fd,
+ 	switch (op) {
+ 	case EPOLL_CTL_ADD:
+ 		if (!epi) {
+-			epds.events |= POLLERR | POLLHUP;
+-			error = ep_insert(ep, &epds, tfile, fd);
++			epds->events |= POLLERR | POLLHUP;
++			error = ep_insert(ep, epds, tfile, fd);
+ 		} else
+ 			error = -EEXIST;
+ 		break;
+@@ -1297,15 +1292,46 @@ SYSCALL_DEFINE4(epoll_ctl, int, epfd, int, op, int, fd,
+ 		break;
+ 	case EPOLL_CTL_MOD:
+ 		if (epi) {
+-			epds.events |= POLLERR | POLLHUP;
+-			error = ep_modify(ep, epi, &epds);
++			epds->events |= POLLERR | POLLHUP;
++			error = ep_modify(ep, epi, epds);
+ 		} else
+ 			error = -ENOENT;
+ 		break;
+ 	}
+ 	mutex_unlock(&ep->mtx);
+ 
+-error_tgt_fput:
++	return error;
++}
 +
- 	ckpt_hdr_put(ctx, h);
- 	return sock->sk;
-  err:
-diff --git a/net/ipv4/Makefile b/net/ipv4/Makefile
-index 80ff87c..c00d8ce 100644
---- a/net/ipv4/Makefile
-+++ b/net/ipv4/Makefile
-@@ -49,6 +49,7 @@ obj-$(CONFIG_TCP_CONG_LP) += tcp_lp.o
- obj-$(CONFIG_TCP_CONG_YEAH) += tcp_yeah.o
- obj-$(CONFIG_TCP_CONG_ILLINOIS) += tcp_illinois.o
- obj-$(CONFIG_NETLABEL) += cipso_ipv4.o
-+obj-$(CONFIG_CHECKPOINT) += checkpoint.o
- 
- obj-$(CONFIG_XFRM) += xfrm4_policy.o xfrm4_state.o xfrm4_input.o \
- 		      xfrm4_output.o
-diff --git a/net/ipv4/af_inet.c b/net/ipv4/af_inet.c
-index f713574..8b7d3dd 100644
---- a/net/ipv4/af_inet.c
-+++ b/net/ipv4/af_inet.c
-@@ -876,6 +876,9 @@ const struct proto_ops inet_stream_ops = {
- 	.mmap		   = sock_no_mmap,
- 	.sendpage	   = tcp_sendpage,
- 	.splice_read	   = tcp_splice_read,
-+	.checkpoint        = inet_checkpoint,
-+	.restore           = inet_restore,
-+	.collect           = inet_collect,
- #ifdef CONFIG_COMPAT
- 	.compat_setsockopt = compat_sock_common_setsockopt,
- 	.compat_getsockopt = compat_sock_common_getsockopt,
-@@ -902,6 +905,9 @@ const struct proto_ops inet_dgram_ops = {
- 	.recvmsg	   = sock_common_recvmsg,
- 	.mmap		   = sock_no_mmap,
- 	.sendpage	   = inet_sendpage,
-+	.checkpoint        = inet_checkpoint,
-+	.restore           = inet_restore,
-+	.collect           = inet_collect,
- #ifdef CONFIG_COMPAT
- 	.compat_setsockopt = compat_sock_common_setsockopt,
- 	.compat_getsockopt = compat_sock_common_getsockopt,
-diff --git a/net/ipv4/checkpoint.c b/net/ipv4/checkpoint.c
-new file mode 100644
-index 0000000..0b62a15
---- /dev/null
-+++ b/net/ipv4/checkpoint.c
-@@ -0,0 +1,189 @@
 +/*
-+ *  Copyright 2009 IBM Corporation
-+ *
-+ *  Author(s): Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-+ *
-+ *  This program is free software; you can redistribute it and/or
-+ *  modify it under the terms of the GNU General Public License as
-+ *  published by the Free Software Foundation, version 2 of the
-+ *  License.
++ * The following function implements the controller interface for
++ * the eventpoll file that enables the insertion/removal/change of
++ * file descriptors inside the interest set.
 + */
-+
-+#include <linux/namei.h>
-+#include <linux/tcp.h>
-+#include <linux/in.h>
-+#include <linux/deferqueue.h>
-+#include <linux/checkpoint.h>
-+#include <net/tcp_states.h>
-+#include <net/tcp.h>
-+
-+struct dq_sock {
-+	struct ckpt_ctx *ctx;
-+	struct sock *sk;
-+};
-+
-+struct dq_buffers {
-+	struct ckpt_ctx *ctx;
-+	struct sock *sk;
-+};
-+
-+int inet_checkpoint(struct ckpt_ctx *ctx, struct socket *sock)
++SYSCALL_DEFINE4(epoll_ctl, int, epfd, int, op, int, fd,
++		struct epoll_event __user *, event)
 +{
-+	struct ckpt_hdr_socket_inet *in;
-+	int ret;
++	int error;
++	struct file *file, *tfile;
++	struct epoll_event epds;
 +
-+	in = ckpt_hdr_get_type(ctx, sizeof(*in), CKPT_HDR_SOCKET_INET);
-+	if (!in)
-+		return -EINVAL;
++	error = -EFAULT;
++	if (ep_op_has_event(op) &&
++	    copy_from_user(&epds, event, sizeof(struct epoll_event)))
++		goto error_return;
 +
-+	ret = ckpt_sock_getnames(ctx, sock,
-+				(struct sockaddr *)&in->laddr, &in->laddr_len,
-+				(struct sockaddr *)&in->raddr, &in->raddr_len);
-+	if (ret)
-+		goto out;
++	/* Get the "struct file *" for the eventpoll file */
++	error = -EBADF;
++	file = fget(epfd);
++	if (!file)
++		goto error_return;
 +
-+	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) in);
-+ out:
-+	ckpt_hdr_put(ctx, in);
++	/* Get the "struct file *" for the target file */
++	tfile = fget(fd);
++	if (!tfile)
++		goto error_fput;
 +
-+	return ret;
-+}
-+
-+int inet_collect(struct ckpt_ctx *ctx, struct socket *sock)
++	error = do_epoll_ctl(op, fd, file, tfile, &epds);
+ 	fput(tfile);
+ error_fput:
+ 	fput(file);
+@@ -1413,6 +1439,258 @@ SYSCALL_DEFINE6(epoll_pwait, int, epfd, struct epoll_event __user *, events,
+ 
+ #endif /* HAVE_SET_RESTORE_SIGMASK */
+ 
++#ifdef CONFIG_CHECKPOINT
++static int ep_file_collect(struct ckpt_ctx *ctx, struct file *file)
 +{
-+	return ckpt_obj_collect(ctx, sock->sk, CKPT_OBJ_SOCK);
-+}
-+
-+static int inet_read_buffer(struct ckpt_ctx *ctx, struct sk_buff_head *queue)
-+{
-+	struct sk_buff *skb = NULL;
-+
-+	skb = sock_restore_skb(ctx);
-+	if (IS_ERR(skb))
-+		return PTR_ERR(skb);
-+
-+	skb_queue_tail(queue, skb);
-+	return skb->len;
-+}
-+
-+static int inet_read_buffers(struct ckpt_ctx *ctx, struct sk_buff_head *queue)
-+{
-+	struct ckpt_hdr_socket_queue *h;
++	struct rb_node *rbp;
++	struct eventpoll *ep;
 +	int ret = 0;
-+	int i;
 +
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SOCKET_QUEUE);
-+	if (IS_ERR(h))
-+		return PTR_ERR(h);
++	ep = file->private_data;
++	mutex_lock(&ep->mtx);
++	for (rbp = rb_first(&ep->rbr); rbp; rbp = rb_next(rbp)) {
++		struct epitem *epi;
 +
-+	for (i = 0; i < h->skb_count; i++) {
-+		ret = inet_read_buffer(ctx, queue);
-+		ckpt_debug("read inet buffer %i: %i", i, ret);
++		epi = rb_entry(rbp, struct epitem, rbn);
++		if (is_file_epoll(epi->ffd.file))
++			continue; /* Don't recurse */
++		ret = ckpt_collect_file(ctx, epi->ffd.file);
 +		if (ret < 0)
-+			goto out;
-+
-+		if (ret > h->total_bytes) {
-+			ret = -EINVAL;
-+			ckpt_err(ctx, ret, "Buffers exceeded claim");
-+			goto out;
-+		}
-+
-+		h->total_bytes -= ret;
++			break;
 +	}
-+
-+	ret = h->skb_count;
-+ out:
-+	ckpt_hdr_put(ctx, h);
-+
++	mutex_unlock(&ep->mtx);
 +	return ret;
 +}
 +
-+static int inet_deferred_restore_buffers(void *data)
-+{
-+	struct dq_buffers *dq = (struct dq_buffers *)data;
-+	struct ckpt_ctx *ctx = dq->ctx;
-+	struct sock *sk = dq->sk;
-+	int ret;
++struct epoll_deferq_entry {
++	struct ckpt_ctx *ctx;
++	struct file *epfile;
++};
 +
-+	ret = inet_read_buffers(ctx, &sk->sk_receive_queue);
-+	ckpt_debug("(R) inet_read_buffers: %i\n", ret);
++#define CKPT_EPOLL_CHUNK  (8096 / (int) sizeof(struct ckpt_eventpoll_item))
++
++static int ep_items_checkpoint(void *data)
++{
++	struct epoll_deferq_entry *dq_entry = data;
++	struct ckpt_ctx *ctx;
++	struct ckpt_hdr_eventpoll_items *h;
++	struct ckpt_eventpoll_item *items;
++	struct rb_node *rbp;
++	struct eventpoll *ep;
++	__s32 epfile_objref;
++	int num_items = 0, ret;
++
++	ctx = dq_entry->ctx;
++
++	epfile_objref = ckpt_obj_lookup(ctx, dq_entry->epfile, CKPT_OBJ_FILE);
++	BUG_ON(epfile_objref <= 0);
++
++	ep = dq_entry->epfile->private_data;
++	mutex_lock(&ep->mtx);
++	for (rbp = rb_first(&ep->rbr); rbp; rbp = rb_next(rbp))
++		num_items++;
++	mutex_unlock(&ep->mtx);
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_EPOLL_ITEMS);
++	if (!h)
++		return -ENOMEM;
++	h->num_items = num_items;
++	h->epfile_objref = epfile_objref;
++	ret = ckpt_write_obj(ctx, &h->h);
++	ckpt_hdr_put(ctx, h);
++	if (ret || !num_items)
++		return ret;
++
++	ret = ckpt_write_obj_type(ctx, NULL, sizeof(*items)*num_items,
++				  CKPT_HDR_BUFFER);
 +	if (ret < 0)
 +		return ret;
 +
-+	ret = inet_read_buffers(ctx, &sk->sk_write_queue);
-+	ckpt_debug("(W) inet_read_buffers: %i\n", ret);
++	items = kzalloc(sizeof(*items) * CKPT_EPOLL_CHUNK, GFP_KERNEL);
++	if (!items)
++		return -ENOMEM;
 +
++	/*
++	 * Walk the rbtree copying items into the chunk of memory and then
++	 * writing them to the checkpoint image
++	 */
++	ret = 0;
++	mutex_lock(&ep->mtx);
++	rbp = rb_first(&ep->rbr);
++	while ((num_items > 0) && rbp) {
++		int n = min(num_items, CKPT_EPOLL_CHUNK);
++		int j;
++
++		for (j = 0; rbp && j < n; j++, rbp = rb_next(rbp)) {
++			struct epitem *epi;
++			int objref;
++
++			epi = rb_entry(rbp, struct epitem, rbn);
++			items[j].fd = epi->ffd.fd;
++			items[j].events = epi->event.events;
++			items[j].data = epi->event.data;
++			objref = ckpt_obj_lookup(ctx, epi->ffd.file,
++						 CKPT_OBJ_FILE);
++			if (objref <= 0)
++				goto unlock;
++			items[j].file_objref = objref;
++		}
++		ret = ckpt_kwrite(ctx, items, n*sizeof(*items));
++		if (ret < 0)
++			break;
++		num_items -= n;
++	}
++unlock:
++	mutex_unlock(&ep->mtx);
++	kfree(items);
++	if (num_items != 0 || (num_items == 0 && rbp))
++		ret = -EBUSY; /* extra item(s) -- checkpoint obj leak */
++	if (ret)
++		ckpt_err(ctx, ret, "Checkpointing epoll items.\n");
 +	return ret;
 +}
 +
-+static int inet_defer_restore_buffers(struct ckpt_ctx *ctx, struct sock *sk)
++static int ep_eventpoll_checkpoint(struct ckpt_ctx *ctx, struct file *file)
 +{
-+	struct dq_buffers dq;
++	struct ckpt_hdr_file *h;
++	struct epoll_deferq_entry dq_entry;
++	int ret = -ENOMEM;
 +
-+	dq.ctx = ctx;
-+	dq.sk = sk;
-+
-+	return deferqueue_add(ctx->files_deferq, &dq, sizeof(dq),
-+			      inet_deferred_restore_buffers, NULL);
-+}
-+
-+static int inet_precheck(struct socket *sock, struct ckpt_hdr_socket_inet *in)
-+{
-+	if (in->laddr_len > sizeof(struct sockaddr_in)) {
-+		ckpt_debug("laddr_len is too big\n");
-+		return -EINVAL;
-+	}
-+
-+	if (in->raddr_len > sizeof(struct sockaddr_in)) {
-+		ckpt_debug("raddr_len is too big\n");
-+		return -EINVAL;
-+	}
-+
-+	return 0;
-+}
-+
-+int inet_restore(struct ckpt_ctx *ctx,
-+		 struct socket *sock,
-+		 struct ckpt_hdr_socket *h)
-+{
-+	struct ckpt_hdr_socket_inet *in;
-+	int ret = 0;
-+
-+	in = ckpt_read_obj_type(ctx, sizeof(*in), CKPT_HDR_SOCKET_INET);
-+	if (IS_ERR(in))
-+		return PTR_ERR(in);
-+
-+	ret = inet_precheck(sock, in);
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE);
++	if (!h)
++		return -ENOMEM;
++	h->f_type = CKPT_FILE_EPOLL;
++	ret = checkpoint_file_common(ctx, file, h);
++	if (ret < 0)
++		goto out;
++	ret = ckpt_write_obj(ctx, &h->h);
 +	if (ret < 0)
 +		goto out;
 +
-+	/* Listening sockets and those that are closed but have a local
-+	 * address need to call bind()
++	/*
++	 * Defer saving the epoll items until all of the ffd.file pointers
++	 * have an objref; after the file table has been checkpointed.
 +	 */
-+	if ((h->sock.state == TCP_LISTEN) ||
-+	    ((h->sock.state == TCP_CLOSE) && (in->laddr_len > 0))) {
-+		sock->sk->sk_reuse = 2;
-+		inet_sk(sock->sk)->freebind = 1;
-+		ret = sock->ops->bind(sock,
-+				      (struct sockaddr *)&in->laddr,
-+				      in->laddr_len);
-+		ckpt_debug("inet bind: %i\n", ret);
-+		if (ret < 0)
-+			goto out;
-+
-+		if (h->sock.state == TCP_LISTEN) {
-+			ret = sock->ops->listen(sock, h->sock.backlog);
-+			ckpt_debug("inet listen: %i\n", ret);
-+			if (ret < 0)
-+				goto out;
-+		}
-+	} else {
-+		if (!sock_flag(sock->sk, SOCK_DEAD))
-+			ret = inet_defer_restore_buffers(ctx, sock->sk);
-+	}
-+ out:
-+	ckpt_hdr_put(ctx, in);
-+
++	dq_entry.ctx = ctx;
++	dq_entry.epfile = file;
++	ret = deferqueue_add(ctx->files_deferq, &dq_entry,
++			     sizeof(dq_entry), ep_items_checkpoint, NULL);
++out:
++	ckpt_hdr_put(ctx, h);
 +	return ret;
 +}
 +
++static int ep_items_restore(void *data)
++{
++	struct ckpt_ctx *ctx = deferqueue_data_ptr(data);
++	struct ckpt_hdr_eventpoll_items *h;
++	struct ckpt_eventpoll_item *items = NULL;
++	struct eventpoll *ep;
++	struct file *epfile = NULL;
++	int ret, num_items;
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_EPOLL_ITEMS);
++	if (IS_ERR(h))
++		return PTR_ERR(h);
++	num_items = h->num_items;
++	epfile = ckpt_obj_fetch(ctx, h->epfile_objref, CKPT_OBJ_FILE);
++	ckpt_hdr_put(ctx, h);
++
++	/* Make sure userspace didn't give us a ref to a non-epoll file. */
++	if (IS_ERR(epfile))
++		return PTR_ERR(epfile);
++	if (!is_file_epoll(epfile))
++		return -EINVAL;
++	if (!num_items)
++		return 0;
++
++	ret = _ckpt_read_obj_type(ctx, NULL, 0, CKPT_HDR_BUFFER);
++	if (ret < 0)
++		return ret;
++	/* Make sure the items match the size we expect */
++	if (num_items != (ret / sizeof(*items)))
++		return -EINVAL;
++
++	items = kzalloc(sizeof(*items) * CKPT_EPOLL_CHUNK, GFP_KERNEL);
++	if (!items)
++		return -ENOMEM;
++
++	ep = epfile->private_data;
++
++	while (num_items > 0) {
++		int n = min(num_items, CKPT_EPOLL_CHUNK);
++		int j;
++
++		ret = ckpt_kread(ctx, items, n*sizeof(*items));
++		if (ret < 0)
++			break;
++
++		/* Restore the epoll items/watches */
++		for (j = 0; !ret && j < n; j++) {
++			struct epoll_event epev;
++			struct file *tfile;
++
++			tfile = ckpt_obj_fetch(ctx, items[j].file_objref,
++					       CKPT_OBJ_FILE);
++			if (IS_ERR(tfile)) {
++				ret = PTR_ERR(tfile);
++				goto out;
++			}
++			epev.events = items[j].events;
++			epev.data = items[j].data;
++			ret = do_epoll_ctl(EPOLL_CTL_ADD, items[j].fd,
++					   epfile, tfile, &epev);
++		}
++		num_items -= n;
++	}
++out:
++	kfree(items);
++	return ret;
++}
++
++struct file *ep_file_restore(struct ckpt_ctx *ctx,
++			     struct ckpt_hdr_file *h)
++{
++	struct file *epfile;
++	int epfd, ret;
++
++	if (h->h.type != CKPT_HDR_FILE ||
++	    h->h.len  != sizeof(*h) ||
++	    h->f_type != CKPT_FILE_EPOLL)
++		return ERR_PTR(-EINVAL);
++
++	epfd = sys_epoll_create1(h->f_flags & EPOLL_CLOEXEC);
++	if (epfd < 0)
++		return ERR_PTR(epfd);
++	epfile = fget(epfd);
++	sys_close(epfd); /* harmless even if an error occured */
++	if (!epfile)  /* can happen with a malicious user */
++		return ERR_PTR(-EBUSY);
++
++	/*
++	 * Needed before we can properly restore the watches and enforce the
++	 * limit on watch numbers.
++	 */
++	ret = restore_file_common(ctx, epfile, h);
++	if (ret < 0)
++		goto fput_out;
++
++	/*
++	 * Defer restoring the epoll items until the file table is
++	 * fully restored. Ensures that valid file objrefs will resolve.
++	 */
++	ret = deferqueue_add_ptr(ctx->files_deferq, ctx,
++				 ep_items_restore, NULL);
++	if (ret < 0) {
++fput_out:
++		fput(epfile);
++		epfile = ERR_PTR(ret);
++	}
++	return epfile;
++}
++
++#endif /* CONFIG_CHECKPOINT */
++
+ static int __init eventpoll_init(void)
+ {
+ 	struct sysinfo si;
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 79e8e2d..21540d7 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -127,6 +127,8 @@ enum {
+ #define CKPT_HDR_TTY CKPT_HDR_TTY
+ 	CKPT_HDR_TTY_LDISC,
+ #define CKPT_HDR_TTY_LDISC CKPT_HDR_TTY_LDISC
++	CKPT_HDR_EPOLL_ITEMS,  /* must be after file-table */
++#define CKPT_HDR_EPOLL_ITEMS CKPT_HDR_EPOLL_ITEMS
+ 
+ 	CKPT_HDR_MM = 401,
+ #define CKPT_HDR_MM CKPT_HDR_MM
+@@ -485,6 +487,8 @@ enum file_type {
+ #define CKPT_FILE_SOCKET CKPT_FILE_SOCKET
+ 	CKPT_FILE_TTY,
+ #define CKPT_FILE_TTY CKPT_FILE_TTY
++	CKPT_FILE_EPOLL,
++#define CKPT_FILE_EPOLL CKPT_FILE_EPOLL
+ 	CKPT_FILE_MAX
+ #define CKPT_FILE_MAX CKPT_FILE_MAX
+ };
+@@ -701,6 +705,20 @@ struct ckpt_hdr_file_socket {
+ 	__s32 sock_objref;
+ } __attribute__((aligned(8)));
+ 
++struct ckpt_hdr_eventpoll_items {
++	struct ckpt_hdr h;
++	__s32  epfile_objref;
++	__u32  num_items;
++} __attribute__((aligned(8)));
++
++/* Contained in a CKPT_HDR_BUFFER following the ckpt_hdr_eventpoll_items */
++struct ckpt_eventpoll_item {
++	__u64 data;
++	__u32 fd;
++	__s32 file_objref;
++	__u32 events;
++} __attribute__((aligned(8)));
++
+ /* memory layout */
+ struct ckpt_hdr_mm {
+ 	struct ckpt_hdr h;
+diff --git a/include/linux/eventpoll.h b/include/linux/eventpoll.h
+index f6856a5..52282ae 100644
+--- a/include/linux/eventpoll.h
++++ b/include/linux/eventpoll.h
+@@ -56,6 +56,9 @@ struct file;
+ 
+ 
+ #ifdef CONFIG_EPOLL
++struct ckpt_ctx;
++struct ckpt_hdr_file;
++
+ 
+ /* Used to initialize the epoll bits inside the "struct file" */
+ static inline void eventpoll_init_file(struct file *file)
+@@ -95,11 +98,23 @@ static inline void eventpoll_release(struct file *file)
+ 	eventpoll_release_file(file);
+ }
+ 
+-#else
+ 
++#ifdef CONFIG_CHECKPOINT
++extern struct file *ep_file_restore(struct ckpt_ctx *ctx,
++				    struct ckpt_hdr_file *h);
++#endif
++#else
++/* !defined(CONFIG_EPOLL) */
+ static inline void eventpoll_init_file(struct file *file) {}
+ static inline void eventpoll_release(struct file *file) {}
+ 
++#ifdef CONFIG_CHECKPOINT
++static inline struct file *ep_file_restore(struct ckpt_ctx *ctx,
++					   struct ckpt_hdr_file *ptr)
++{
++	return ERR_PTR(-ENOSYS);
++}
++#endif
+ #endif
+ 
+ #endif /* #ifdef __KERNEL__ */
 -- 
 1.6.3.3
