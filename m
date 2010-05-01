@@ -1,8 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH v21 040/100] Introduce FOLL_DIRTY to follow_page() for "dirty"
-	pages
-Date: Sat,  1 May 2010 10:15:22 -0400
-Message-ID: <1272723382-19470-41-git-send-email-orenl__43705.033887136$1272727247$gmane$org@cs.columbia.edu>
+Subject: [PATCH v21 070/100] c/r: correctly restore pgid
+Date: Sat,  1 May 2010 10:15:52 -0400
+Message-ID: <1272723382-19470-71-git-send-email-orenl__27701.4272789986$1272727349$gmane$org@cs.columbia.edu>
 References: <1272723382-19470-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -19,213 +18,397 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a preparatory patch necessary for checkpoint/restart (next
-two patches) of memory to work correctly.
+The main challenge with restoring the pgid of tasks is that the
+original "owner" (the process with that pid) might have exited
+already. I call these "ghost" pgids. 'mktree' does create these
+processes, but they then exit without participating in the restart.
 
-The patch introduces a new FOLL_DIRTY flag which tells follow_page()
-to return -EFAULT also for not-present file-backed pages.
+To solve this, this patch introduces a RESTART_GHOST flag, used for
+"ghost" owners that are created only to pass their pgid to other
+tasks. ('mktree' now makes them call restart(2) instead of exiting).
 
-In 2.6.32 follow_page() changes its behavior due to this commit:
-	mm: FOLL_DUMP replace FOLL_ANON
- 	8e4b9a60718970bbc02dfd3abd0b956ab65af231
+When a "ghost" task calls restart(2), it will be placed on a wait
+queue until the restart completes and then exit. This guarantees that
+the pgid that it owns remains available for all (regular) restarting
+tasks for when they need it.
 
-Also introduce __get_dirty_page() that returns a page only if it's
-"dirty", that is that has been modified before, and otherwise returns
-NULL. It uses FOLL_DUMP | FOLL_DIRTY and converts the error value
-EFAULT to NULL - telling the caller that the page in question is
-clean.
+Regular tasks perform the restart as before, except that they also
+now restore their old pgrp, which is guaranteed to exist.
 
-(This also optimizes for checkpoint in the next patch: before, if a
-file-backed page was not-present we would first fault it in (read from
-disk) and then detect that it was virgin. Instead, now we detect that
-the page is clean earlier without needing to fault it in).
+Changelog [v19-rc1]:
+  - Simplify logic of tracking restarting tasks
+  - Debug final process-tree state on restart
+  - [Matt Helsley] Add cpp definitions for enums
+  - Self-restart to tolerate missing pgid
+Changelog [v3]:
+  - Fix leak of ckpt_ctx when restoring "ghost" tasks
+Changelog [v2]:
+  - Call change_pid() only if new pgrp differs from current one
+Changelog [v1]:
+  - Verify that pgid owner is a thread-group-leader.
+  - Handle the case of pgid/sid == 0 using root's parent pid-ns
 
-To see why it's needed, consider these scenarios:
-
-1. Task maps a file beyond it's limit, never touches those
- extra page (if it did, it would get EFAULT/Bus error)
-
-2. Task maps a file and writes the last page, then the file gets
- truncated (by at least a page). A subsequent access to the page will
- cause bus error (VM_FAULT_SIGBUS).
-
-3. If the file size is extended back (using truncate) and the task
- accesses that page, then the task will get a fresh page (losing data
- it had written to that address before).
-
-[Before kernel 2.6.32, that page would become anonymous once it was
-dirtied, such that accesses in case #2 are valid, and in case #3 the
-task would see the old page regardless of the file contents.]
-
---CHECKPOINT: before we used FOLL_ANON flags to tell follow_page() to
-return the zero-page for case#1. For case#2, the actual page was
-returned. Without this patch, In kernel 2.3.32, FOLL_DUMP would make
-follow_page() return NULL and then fault handler would have returned
-VM_FAULT_SIGBUS in case#1 (and depending on arch, case#2 too), and
-checkpoint would fails.
-
---RESTART: case #1 works, because mmap() works as before, and those
-pages that were never touched will not be restored either, they will
-remain untouched. The same holds for case#2 (as of kernel 2.6.32),
-because at checkpoint it would decide that the page is clean and not
-save the contents, and therefore it will not try to restore the
-contents at restart. This is consistent with the expected behavior
-after restart: if the file remains as is, subsequent accesses will
-trigger a bus error, and if the file is extended, then the user will
-observe a fresh page.
-
-Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org
+Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/mm.h |    2 +
- mm/memory.c        |   95 +++++++++++++++++++++++++++++++++++++++++++++++++++-
- 2 files changed, 96 insertions(+), 1 deletions(-)
+ include/linux/checkpoint.h       |   11 +++-
+ include/linux/checkpoint_hdr.h   |    3 +
+ include/linux/checkpoint_types.h |    7 ++-
+ kernel/checkpoint/process.c      |  102 ++++++++++++++++++++++++++++++++++++++
+ kernel/checkpoint/restart.c      |   59 +++++++++++++++++++---
+ kernel/checkpoint/sys.c          |    3 +-
+ 6 files changed, 172 insertions(+), 13 deletions(-)
 
-diff --git a/include/linux/mm.h b/include/linux/mm.h
-index 4dfaf69..5e9ad0d 100644
---- a/include/linux/mm.h
-+++ b/include/linux/mm.h
-@@ -846,6 +846,7 @@ int get_user_pages(struct task_struct *tsk, struct mm_struct *mm,
- int get_user_pages_fast(unsigned long start, int nr_pages, int write,
- 			struct page **pages);
- struct page *get_dump_page(unsigned long addr);
-+struct page *__get_dirty_page(struct vm_area_struct *vma, unsigned long addr);
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 92a0df0..549f133 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -18,6 +18,7 @@
+ /* restart user flags */
+ #define RESTART_TASKSELF	0x1
+ #define RESTART_FROZEN		0x2
++#define RESTART_GHOST		0x4
  
- extern int try_to_release_page(struct page * page, gfp_t gfp_mask);
- extern void do_invalidatepage(struct page *page, unsigned long offset);
-@@ -1373,6 +1374,7 @@ struct page *follow_page(struct vm_area_struct *, unsigned long address,
- #define FOLL_GET	0x04	/* do get_page on page */
- #define FOLL_DUMP	0x08	/* give error on hole if it would be zero */
- #define FOLL_FORCE	0x10	/* get_user_pages read/write w/o permission */
-+#define FOLL_DIRTY	0x20	/* give error on non-present file mapped */
+ /* misc user visible */
+ #define CHECKPOINT_FD_NONE	-1
+@@ -52,7 +53,10 @@ extern long do_sys_restart(pid_t pid, int fd,
  
- typedef int (*pte_fn_t)(pte_t *pte, pgtable_t token, unsigned long addr,
- 			void *data);
-diff --git a/mm/memory.c b/mm/memory.c
-index 833952d..21de72d 100644
---- a/mm/memory.c
-+++ b/mm/memory.c
-@@ -1314,8 +1314,17 @@ bad_page:
+ /* ckpt_ctx: uflags */
+ #define CHECKPOINT_USER_FLAGS		CHECKPOINT_SUBTREE
+-#define RESTART_USER_FLAGS		(RESTART_TASKSELF | RESTART_FROZEN)
++#define RESTART_USER_FLAGS  \
++	(RESTART_TASKSELF | \
++	 RESTART_FROZEN | \
++	 RESTART_GHOST)
  
- no_page:
- 	pte_unmap_unlock(ptep, ptl);
--	if (!pte_none(pte))
-+	if (!pte_none(pte)) {
-+		/*
-+		 * When checkpointing we only care about dirty pages.
-+		 * If a file-backed page is missing, then return an
-+		 * error to tell __get_dirty_page() that it's clean,
-+		 * so it won't try to demand page it into memory.
-+		 */
-+		if ((flags & FOLL_DIRTY) && pte_file(pte))
-+			page = ERR_PTR(-EFAULT);
- 		return page;
-+	}
+ extern int walk_task_subtree(struct task_struct *task,
+ 			     int (*func)(struct task_struct *, void *),
+@@ -90,6 +94,9 @@ extern char *ckpt_fill_fname(struct path *path, struct path *root,
+ extern int checkpoint_dump_page(struct ckpt_ctx *ctx, struct page *page);
+ extern int restore_read_page(struct ckpt_ctx *ctx, struct page *page);
  
- no_page_table:
- 	/*
-@@ -1329,6 +1338,16 @@ no_page_table:
- 	if ((flags & FOLL_DUMP) &&
- 	    (!vma->vm_ops || !vma->vm_ops->fault))
- 		return ERR_PTR(-EFAULT);
++/* pids */
++extern pid_t ckpt_pid_nr(struct ckpt_ctx *ctx, struct pid *pid);
 +
-+	/*
-+	 * When checkpointing we only care about dirty pages. If there
-+	 * is no page table for a non-anonymous page, we return an
-+	 * error to tell __get_dirty_page() that the page is clean, so
-+	 * it won't allocate page tables and the page unnecessarily.
-+	 */
-+	if ((flags & FOLL_DIRTY) && vma->vm_ops)
-+		return ERR_PTR(-EFAULT);
+ /* ckpt kflags */
+ #define ckpt_set_ctx_kflag(__ctx, __kflag)  \
+ 	set_bit(__kflag##_BIT, &(__ctx)->kflags)
+@@ -147,7 +154,7 @@ extern struct ckpt_ctx *ckpt_ctx_get(struct ckpt_ctx *ctx);
+ extern void ckpt_ctx_put(struct ckpt_ctx *ctx);
+ 
+ extern long do_checkpoint(struct ckpt_ctx *ctx, pid_t pid);
+-extern long do_restart(struct ckpt_ctx *ctx, pid_t pid);
++extern long do_restart(struct ckpt_ctx *ctx, pid_t pid, unsigned long flags);
+ 
+ /* task */
+ extern int ckpt_activate_next(struct ckpt_ctx *ctx);
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 01f7493..e706636 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -273,6 +273,9 @@ struct ckpt_pids {
+ 	__s32 vsid;
+ } __attribute__((aligned(8)));
+ 
++/* pids */
++#define CKPT_PID_NULL  -1
 +
- 	return page;
- }
+ /* task data */
+ struct ckpt_hdr_task {
+ 	struct ckpt_hdr h;
+diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
+index fe20842..d69b795 100644
+--- a/include/linux/checkpoint_types.h
++++ b/include/linux/checkpoint_types.h
+@@ -73,10 +73,11 @@ struct ckpt_ctx {
+ 	/* [multi-process restart] */
+ 	struct ckpt_pids *pids_arr;	/* array of all pids [restart] */
+ 	int nr_pids;			/* size of pids array */
+-	atomic_t nr_total;		/* total tasks count */
++	atomic_t nr_total;		/* total tasks count (with ghosts) */
+ 	int active_pid;			/* (next) position in pids array */
+-	struct completion complete;	/* container root and other tasks on */
+-	wait_queue_head_t waitq;	/* start, end, and restart ordering */
++	struct completion complete;	/* completion for container root */
++	wait_queue_head_t waitq;	/* waitqueue for restarting tasks */
++	wait_queue_head_t ghostq;	/* waitqueue for ghost tasks */
+ 	struct cred *realcred, *ecred;	/* tmp storage for cred at restart */
  
-@@ -1586,6 +1605,80 @@ pte_t *get_locked_pte(struct mm_struct *mm, unsigned long addr,
- 	return NULL;
- }
+ 	struct ckpt_stats stats;	/* statistics */
+diff --git a/kernel/checkpoint/process.c b/kernel/checkpoint/process.c
+index 8cb88ae..fa08616 100644
+--- a/kernel/checkpoint/process.c
++++ b/kernel/checkpoint/process.c
+@@ -20,9 +20,61 @@
+ #include <linux/utsname.h>
+ #include <linux/syscalls.h>
+ #include <linux/user_namespace.h>
++#include <linux/syscalls.h>
++#include <linux/security.h> /* security_task_setpgid()   */
+ #include <linux/checkpoint.h>
  
-+/**
-+ * __get_dirty_page - return page pointer for dirty user page
-+ * @vma - target vma
-+ * @addr - page address
-+ *
-+ * Looks up the page that correspond to the address in the vma, and
-+ * return the page if it was modified (and grabs a reference to it),
-+ * or otherwise returns NULL or error.
-+ *
-+ * Should only be called for private vma.
-+ * Must be called with mmap_sem held for read or write.
-+ */
-+struct page *__get_dirty_page(struct vm_area_struct *vma, unsigned long addr)
+ 
++pid_t ckpt_pid_nr(struct ckpt_ctx *ctx, struct pid *pid)
 +{
-+	struct page *page;
++	return pid ? pid_nr_ns(pid, ctx->root_nsproxy->pid_ns) : CKPT_PID_NULL;
++}
 +
-+	BUG_ON(vma->vm_flags & (VM_SHARED | VM_MAYSHARE));
++/* must be called with tasklist_lock or rcu_read_lock() held */
++struct pid *_ckpt_find_pgrp(struct ckpt_ctx *ctx, pid_t pgid)
++{
++	struct task_struct *p;
++	struct pid *pgrp;
 +
-+	/*
-+	 * FOLL_DUMP tells follow_page() to return -EFAULT for either
-+	 * non-present anonymous pages, or memory "holes".
-+	 * FOLL_DIRTY tells follow_page() to return -EFAULT also for
-+	 * non-present file-mapped pages.
-+	 * Otherwise, follow_page() returns the page, or NULL if the
-+	 * page is swapped out.
-+	 */
-+
-+	cond_resched();
-+	while (!(page = follow_page(vma, addr,
-+				    FOLL_GET | FOLL_DUMP | FOLL_DIRTY))) {
-+		int ret;
-+
-+		/* the page is swapped out - bring it in (optimize ?) */
-+		ret = handle_mm_fault(vma->vm_mm, vma, addr, 0);
-+		if (ret & VM_FAULT_ERROR) {
-+			if (ret & VM_FAULT_OOM)
-+				return ERR_PTR(-ENOMEM);
-+			else if (ret & VM_FAULT_SIGBUS)
-+				return ERR_PTR(-EFAULT);
-+			else
-+				BUG();
-+			break;
-+		}
-+		cond_resched();
++	if (pgid == 0) {
++		/*
++		 * At checkpoint the pgid owner lived in an ancestor
++		 * pid-ns. The best we can do (sanely and safely) is
++		 * to examine the parent of this restart's root: if in
++		 * a distinct pid-ns, use its pgrp; otherwise fail.
++		 */
++		p = ctx->root_task->real_parent;
++		if (p->nsproxy->pid_ns == current->nsproxy->pid_ns)
++			return NULL;
++		pgrp = task_pgrp(p);
++	} else {
++		/*
++		 * Find the owner process of this pgid (it must exist
++		 * if pgrp exists). It must be a thread group leader.
++		 */
++		pgrp = find_vpid(pgid);
++		p = pid_task(pgrp, PIDTYPE_PID);
++		if (!p || !thread_group_leader(p))
++			return NULL;
++		/*
++		 * The pgrp must "belong" to our restart tree (compare
++		 * p->checkpoint_ctx to ours). This prevents malicious
++		 * input from (guessing and) using unrelated pgrps. If
++		 * the owner is dead, then it doesn't have a context,
++		 * so instead compare against its (real) parent's.
++		 */
++		if (p->exit_state == EXIT_ZOMBIE)
++			p = p->real_parent;
++		if (p->checkpoint_ctx != ctx)
++			return NULL;
 +	}
 +
-+	/* -EFAULT means that the page is clean (see above) */
-+	if (PTR_ERR(page) == -EFAULT)
++	if (task_session(current) != task_session(p))
 +		return NULL;
-+	else if (IS_ERR(page))
-+		return page;
++
++	return pgrp;
++}
++
+ #ifdef CONFIG_FUTEX
+ static void save_task_robust_futex_list(struct ckpt_hdr_task *h,
+ 					struct task_struct *t)
+@@ -737,6 +789,53 @@ int restore_restart_block(struct ckpt_ctx *ctx)
+ 	return ret;
+ }
+ 
++static int restore_task_pgid(struct ckpt_ctx *ctx)
++{
++	struct task_struct *task = current;
++	struct pid *pgrp;
++	pid_t pgid;
++	int ret;
 +
 +	/*
-+	 * Only care about dirty pages: either anonymous non-zero pages,
-+	 * or file-backed COW (copy-on-write) pages that were modified.
-+	 * A clean COW page is not interesting because its contents are
-+	 * identical to the backing file; ignore such pages.
-+	 * A file-backed broken COW is identified by its page_mapping()
-+	 * being unset (NULL) because the page will no longer be mapped
-+	 * to the original file after having been modified.
++	 * We enforce the following restrictions on restoring pgrp:
++	 *  1) Only thread group leaders restore pgrp
++	 *  2) Session leader cannot change own pgrp
++	 *  3) Owner of pgrp must belong to same restart tree
++	 *  4) Must have same session as other tasks in same pgrp
++	 *  5) Change must pass setpgid security callback
++	 *
++	 * TODO - check if we need additional restrictions ?
 +	 */
-+	if (is_zero_pfn(page_to_pfn(page))) {
-+		/* this is the zero page: ignore */
-+		page_cache_release(page);
-+		page = NULL;
-+	} else if (vma->vm_file && (page_mapping(page) != NULL)) {
-+		/* file backed clean cow: ignore */
-+		page_cache_release(page);
-+		page = NULL;
-+	}
 +
-+	return page;
++	if (!thread_group_leader(task))  /* (1) */
++		return 0;
++
++	pgid = ctx->pids_arr[ctx->active_pid].vpgid;
++
++	if (pgid == task_pgrp_vnr(task))  /* nothing to do */
++		return 0;
++
++	if (task->signal->leader)  /* (2) */
++		return -EINVAL;
++
++	ret = -EINVAL;
++
++	write_lock_irq(&tasklist_lock);
++	pgrp = _ckpt_find_pgrp(ctx, pgid);  /* (3) and (4) */
++	if (pgrp && task_pgrp(task) != pgrp) {
++		ret = security_task_setpgid(task, pgid);  /* (5) */
++		if (!ret)
++			change_pid(task, PIDTYPE_PGID, pgrp);
++	}
++	write_unlock_irq(&tasklist_lock);
++
++	/* self-restart: be tolerant if old pgid isn't found */
++	if (ctx->uflags & RESTART_TASKSELF)
++		ret = 0;
++
++	return ret;
++}
++
+ /* prepare the task for restore */
+ int pre_restore_task(void)
+ {
+@@ -782,6 +881,9 @@ int restore_task(struct ckpt_ctx *ctx)
+ 	if (ret)
+ 		goto out;
+ 
++	ret = restore_task_pgid(ctx);
++	if (ret < 0)
++		goto out;
+ 	ret = restore_thread(ctx);
+ 	ckpt_debug("thread %d\n", ret);
+ 	if (ret < 0)
+diff --git a/kernel/checkpoint/restart.c b/kernel/checkpoint/restart.c
+index 3b2593d..e7a5b5b 100644
+--- a/kernel/checkpoint/restart.c
++++ b/kernel/checkpoint/restart.c
+@@ -737,6 +737,7 @@ void restore_notify_error(struct ckpt_ctx *ctx)
+ {
+ 	complete(&ctx->complete);
+ 	wake_up_all(&ctx->waitq);
++	wake_up_all(&ctx->ghostq);
+ }
+ 
+ static inline struct ckpt_ctx *get_task_ctx(struct task_struct *task)
+@@ -812,6 +813,9 @@ static int restore_activate_next(struct ckpt_ctx *ctx)
+ 			ckpt_err(ctx, -ESRCH, "task %d not found\n", pid);
+ 			return -ESRCH;
+ 		}
++	} else {
++		/* wake up ghosts tasks so that they can terminate */
++		wake_up_all(&ctx->ghostq);
+ 	}
+ 
+ 	return 0;
+@@ -869,6 +873,38 @@ static struct ckpt_ctx *wait_checkpoint_ctx(void)
+ 	return ctx;
+ }
+ 
++static int do_ghost_task(void)
++{
++	struct ckpt_ctx *ctx;
++	int ret;
++
++	ctx = wait_checkpoint_ctx();
++	if (IS_ERR(ctx))
++		return PTR_ERR(ctx);
++
++	ret = restore_debug_task(ctx, RESTART_DBG_GHOST);
++	if (ret < 0)
++		goto out;
++
++	current->flags |= PF_RESTARTING;
++	restore_debug_running(ctx);
++
++	ret = wait_event_interruptible(ctx->ghostq,
++				       all_tasks_activated(ctx) ||
++				       ckpt_test_error(ctx));
++ out:
++	restore_debug_error(ctx, ret);
++	if (ret < 0)
++		ckpt_err(ctx, ret, "ghost restart failed\n");
++
++	current->exit_signal = -1;
++	restore_debug_exit(ctx);
++	ckpt_ctx_put(ctx);
++	do_exit(0);
++
++	/* NOT REACHED */
 +}
 +
  /*
-  * This is the old fallback for page remapping.
-  *
+  * Ensure that all members of a thread group are in sys_restart before
+  * restoring any of them. Otherwise, restore may modify shared state
+@@ -948,10 +984,15 @@ static int do_restore_task(void)
+ 		goto out;
+ 	}
+ 
++	ret = restore_activate_next(ctx);
++	if (ret < 0)
++		goto out;
++
+ 	/*
+ 	 * zombie: we're done here; do_exit() will notice the @ctx on
+-	 * our current->checkpoint_ctx (and our PF_RESTARTING) - it
+-	 * will call restore_activate_next() and release the @ctx.
++	 * our current->checkpoint_ctx (and our PF_RESTARTING), will
++	 * call restore_task_done() and release the @ctx. This ensures
++	 * that we only report done after we really become zombie.
+ 	 */
+ 	if (zombie) {
+ 		restore_debug_exit(ctx);
+@@ -1033,8 +1074,11 @@ static int prepare_descendants(struct ckpt_ctx *ctx, struct task_struct *root)
+ 	if (nr_pids < 0)
+ 		return nr_pids;
+ 
+-	/* fail unless number of processes matches */
+-	if (nr_pids != ctx->nr_pids)
++	/*
++	 * Actual tasks count may exceed ctx->nr_pids due of 'dead'
++	 * tasks used as place-holders for PGIDs, but not fall short.
++	 */
++	if (nr_pids < ctx->nr_pids)
+ 		return -ESRCH;
+ 
+ 	atomic_set(&ctx->nr_total, nr_pids);
+@@ -1280,12 +1324,14 @@ static long restore_retval(void)
+ 	return syscall_get_return_value(current, regs);
+ }
+ 
+-long do_restart(struct ckpt_ctx *ctx, pid_t pid)
++long do_restart(struct ckpt_ctx *ctx, pid_t pid, unsigned long flags)
+ {
+ 	long ret;
+ 
+ 	if (ctx)
+ 		ret = do_restore_coord(ctx, pid);
++	else if (flags & RESTART_GHOST)
++		ret = do_ghost_task();
+ 	else
+ 		ret = do_restore_task();
+ 
+@@ -1333,8 +1379,7 @@ void exit_checkpoint(struct task_struct *tsk)
+ 	/* restarting zombies will activate next task in restart */
+ 	if (tsk->flags & PF_RESTARTING) {
+ 		BUG_ON(ctx->active_pid == -1);
+-		if (restore_activate_next(ctx) < 0)
+-			pr_warning("c/r: [%d] failed zombie exit\n", tsk->pid);
++		restore_task_done(ctx);
+ 	}
+ 
+ 	ckpt_ctx_put(ctx);
+diff --git a/kernel/checkpoint/sys.c b/kernel/checkpoint/sys.c
+index 73d84bd..86dabfa 100644
+--- a/kernel/checkpoint/sys.c
++++ b/kernel/checkpoint/sys.c
+@@ -250,6 +250,7 @@ static struct ckpt_ctx *ckpt_ctx_alloc(int fd, unsigned long uflags,
+ 	INIT_LIST_HEAD(&ctx->pgarr_list);
+ 	INIT_LIST_HEAD(&ctx->pgarr_pool);
+ 	init_waitqueue_head(&ctx->waitq);
++	init_waitqueue_head(&ctx->ghostq);
+ 	init_completion(&ctx->complete);
+ 
+ 	init_completion(&ctx->errno_sync);
+@@ -658,7 +659,7 @@ long do_sys_restart(pid_t pid, int fd, unsigned long flags, int logfd)
+ 	if (IS_ERR(ctx))
+ 		return PTR_ERR(ctx);
+ 
+-	ret = do_restart(ctx, pid);
++	ret = do_restart(ctx, pid, flags);
+ 
+ 	ckpt_ctx_put(ctx);
+ 	return ret;
 -- 
 1.6.3.3
