@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH v21 081/100] c/r: restore task fs_root and pwd (v3)
-Date: Sat,  1 May 2010 10:16:03 -0400
-Message-ID: <1272723382-19470-82-git-send-email-orenl__26221.0526307628$1272728538$gmane$org@cs.columbia.edu>
+Subject: [PATCH v21 077/100] c/r: [pty 2/2] support for pseudo terminals
+Date: Sat,  1 May 2010 10:15:59 -0400
+Message-ID: <1272723382-19470-78-git-send-email-orenl__37532.583208713$1272728539$gmane$org@cs.columbia.edu>
 References: <1272723382-19470-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -18,611 +18,945 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Greg Kroah-Hartman <gregkh-l3A5Bk7waGM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Checkpoint and restore task->fs.  Tasks sharing task->fs will
-share them again after restart.
+This patch adds support for checkpoint and restart of pseudo terminals
+(PTYs). Since PTYs are shared (pointed to by file, and signal), they
+are managed via objhash.
 
-Original patch by Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+PTYs are master/slave pairs; The code arranges for the master to
+always be checkpointed first, followed by the slave. This is important
+since during restart both ends are created when restoring the master.
 
-Changelog:
-  Jan 25: [orenl] Addressed comments by .. myself:
-    - add leak detection
-    - change order of save/restore of chroot and cwd
-    - save/restore fs only after file-table and mm
-    - rename functions to adapt existing conventions
-  Dec 28: [serge] Addressed comments by Oren (and Dave)
-    - define and use {get,put}_fs_struct helpers
-    - fix locking comment
-    - define ckpt_read_fname() and use in checkpoint/files.c
+In this patch only UNIX98 style PTYs are supported.
 
-Cc: Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Currently only PTYs that are referenced by open files are handled.
+Thus PTYs checkpoint starts with a file in tty_file_checkpoint(). It
+will first checkpoint the master and slave PTYs via tty_checkpoint(),
+and then complete the saving of the file descriptor. This means that
+in the image file, the order of objects is: master-tty, slave-tty,
+file-desc.
+
+During restart, to restore the master side, we open the /dev/ptmx
+device and get a file handle. But at this point we don't know the
+designated objref for this file, because the file is due later on in
+the image stream. On the other hand, we can't just fput() the file
+because it will close the PTY too.
+
+Instead, when we checkpoint the master PTY, we _reserve_ an objref
+for the file (which won't be further used in checkpoint). Then at
+restart, use it to insert the file to objhash.
+
+TODO:
+
+* Better sanitize input from checkpoint image on restore
+* Check the locking when saving/restoring tty_struct state
+* Echo position/buffer isn't saved (is it needed ?)
+* Handle multiple devpts mounts (namespaces)
+* Paths of ptmx and slaves are hard coded (/dev/ptmx, /dev/pts/...)
+
+Changelog[v21]:
+  - Put file_ops->checkpoint under CONFIG_CHECKPOINT
+Changelog[v19-rc1]:
+  - [Matt Helsley] Add cpp definitions for enums
+Changelog[v4]:
+  - Fix error path(s) in restore_tty_ldisc()
+  - Fix memory leak in restore_tty_ldisc()
+Changelog[v3]:
+  - [Serge Hallyn] Set tty on error path
+Changelog[v2]:
+  - Don't save/restore tty->{session,pgrp}
+  - Fix leak: drop file reference after ckpt_obj_insert()
+  - Move get_file() inside locked clause (fix race)
+Changelog[v1]:
+  - Adjust include/asm/checkpoint_hdr.h for s390 architecture
+  - Add NCC to kernel constants header (ckpt_hdr_const)
+  - [Serge Hallyn] fix calculation of canon_datalen
+
+Cc: Greg Kroah-Hartman <gregkh-l3A5Bk7waGM@public.gmane.org>
+Cc: Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- fs/checkpoint.c                |  232 +++++++++++++++++++++++++++++++++++++++-
- fs/fs_struct.c                 |   21 ++++
- fs/open.c                      |   58 ++++++----
- include/linux/checkpoint.h     |    6 +-
- include/linux/checkpoint_hdr.h |   12 ++
- include/linux/fs.h             |    5 +
- include/linux/fs_struct.h      |    2 +
- kernel/checkpoint/process.c    |   17 +++
- 8 files changed, 325 insertions(+), 28 deletions(-)
+ arch/s390/include/asm/checkpoint_hdr.h |   11 +
+ arch/x86/include/asm/checkpoint_hdr.h  |   11 +
+ drivers/char/pty.c                     |    1 +
+ drivers/char/tty_io.c                  |  536 ++++++++++++++++++++++++++++++++
+ fs/checkpoint.c                        |    6 +
+ include/linux/checkpoint.h             |    1 +
+ include/linux/checkpoint_hdr.h         |   89 ++++++
+ include/linux/tty.h                    |    7 +
+ kernel/checkpoint/checkpoint.c         |    3 +
+ kernel/checkpoint/restart.c            |    6 +
+ 10 files changed, 671 insertions(+), 0 deletions(-)
 
-diff --git a/fs/checkpoint.c b/fs/checkpoint.c
-index e0f8a15..61b68da 100644
---- a/fs/checkpoint.c
-+++ b/fs/checkpoint.c
-@@ -15,6 +15,9 @@
- #include <linux/module.h>
- #include <linux/sched.h>
- #include <linux/file.h>
-+#include <linux/namei.h>
-+#include <linux/fs_struct.h>
-+#include <linux/fs.h>
- #include <linux/fdtable.h>
- #include <linux/fsnotify.h>
- #include <linux/pipe_fs_i.h>
-@@ -369,6 +372,58 @@ int checkpoint_obj_file_table(struct ckpt_ctx *ctx, struct task_struct *t)
- 	return objref;
- }
- 
-+int checkpoint_obj_fs(struct ckpt_ctx *ctx, struct task_struct *t)
-+{
-+	struct fs_struct *fs;
-+	int fs_objref;
-+
-+	task_lock(current);
-+	fs = t->fs;
-+	get_fs_struct(fs);
-+	task_unlock(current);
-+
-+	fs_objref = checkpoint_obj(ctx, fs, CKPT_OBJ_FS);
-+	put_fs_struct(fs);
-+
-+	return fs_objref;
-+}
-+
-+/* called with fs refcount bumped so it won't disappear */
-+static int checkpoint_fs(struct ckpt_ctx *ctx, void *ptr)
-+{
-+	struct fs_struct *fs = ptr;
-+	struct ckpt_hdr_fs *h;
-+	struct fs_struct *fscopy;
-+	int ret;
-+
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FS);
-+	if (!h)
-+		return -ENOMEM;
-+	ret = ckpt_write_obj(ctx, &h->h);
-+	ckpt_hdr_put(ctx, h);
-+	if (ret)
-+		return ret;
-+
-+	fscopy = copy_fs_struct(fs);
-+	if (!fs)
-+		return -ENOMEM;
-+
-+	ret = checkpoint_fname(ctx, &fscopy->pwd, &ctx->root_fs_path);
-+	if (ret < 0) {
-+		ckpt_err(ctx, ret, "%(T)writing path of cwd");
-+		goto out;
-+	}
-+	ret = checkpoint_fname(ctx, &fscopy->root, &ctx->root_fs_path);
-+	if (ret < 0) {
-+		ckpt_err(ctx, ret, "%(T)writing path of fs root");
-+		goto out;
-+	}
-+	ret = 0;
-+ out:
-+	free_fs_struct(fscopy);
-+	return ret;
-+}
-+
- /***********************************************************************
-  * Collect
-  */
-@@ -455,10 +510,41 @@ int ckpt_collect_file_table(struct ckpt_ctx *ctx, struct task_struct *t)
- 	return ret;
- }
- 
-+int ckpt_collect_fs(struct ckpt_ctx *ctx, struct task_struct *t)
-+{
-+	struct fs_struct *fs;
-+	int ret;
-+
-+	task_lock(t);
-+	fs = t->fs;
-+	get_fs_struct(fs);
-+	task_unlock(t);
-+
-+	ret = ckpt_obj_collect(ctx, fs, CKPT_OBJ_FS);
-+
-+	put_fs_struct(fs);
-+	return ret;
-+}
-+
- /**************************************************************************
-  * Restart
-  */
- 
-+static int ckpt_read_fname(struct ckpt_ctx *ctx, char **fname)
-+{
-+	int len;
-+
-+	len = ckpt_read_payload(ctx, (void **) fname,
-+				PATH_MAX, CKPT_HDR_FILE_NAME);
-+	if (len < 0)
-+		return len;
-+
-+	(*fname)[len - 1] = '\0';	/* always play if safe */
-+	ckpt_debug("read filename '%s'\n", *fname);
-+
-+	return len;
-+}
-+
- /**
-  * restore_open_fname - read a file name and open a file
-  * @ctx: checkpoint context
-@@ -474,11 +560,9 @@ struct file *restore_open_fname(struct ckpt_ctx *ctx, int flags)
- 	if (flags & (O_CREAT | O_EXCL | O_NOCTTY | O_TRUNC))
- 		return ERR_PTR(-EINVAL);
- 
--	len = ckpt_read_payload(ctx, (void **) &fname,
--				PATH_MAX, CKPT_HDR_FILE_NAME);
-+	len = ckpt_read_fname(ctx, &fname);
- 	if (len < 0)
- 		return ERR_PTR(len);
--	fname[len - 1] = '\0';	/* always play if safe */
- 	ckpt_debug("fname '%s' flags %#x\n", fname, flags);
- 
- 	file = filp_open(fname, flags, 0);
-@@ -805,8 +889,136 @@ int restore_obj_file_table(struct ckpt_ctx *ctx, int files_objref)
- }
- 
- /*
-+ * Called by task restore code to set the restarted task's
-+ * current->fs to an entry on the hash
-+ */
-+int restore_obj_fs(struct ckpt_ctx *ctx, int fs_objref)
-+{
-+	struct fs_struct *newfs, *oldfs;
-+
-+	newfs = ckpt_obj_fetch(ctx, fs_objref, CKPT_OBJ_FS);
-+	if (IS_ERR(newfs))
-+		return PTR_ERR(newfs);
-+
-+	task_lock(current);
-+	get_fs_struct(newfs);
-+	oldfs = current->fs;
-+	current->fs = newfs;
-+	task_unlock(current);
-+	put_fs_struct(oldfs);
-+
-+	return 0;
-+}
-+
-+static int restore_chroot(struct ckpt_ctx *ctx, struct fs_struct *fs, char *name)
-+{
-+	struct nameidata nd;
-+	int ret;
-+
-+	ckpt_debug("attempting chroot to %s\n", name);
-+	ret = path_lookup(name, LOOKUP_FOLLOW | LOOKUP_DIRECTORY, &nd);
-+	if (ret) {
-+		ckpt_err(ctx, ret, "%(T)Opening chroot dir %s", name);
-+		return ret;
-+	}
-+	ret = do_chroot(fs, &nd.path);
-+	path_put(&nd.path);
-+	if (ret) {
-+		ckpt_err(ctx, ret, "%(T)Setting chroot %s", name);
-+		return ret;
-+	}
-+	return 0;
-+}
-+
-+static int restore_cwd(struct ckpt_ctx *ctx, struct fs_struct *fs, char *name)
-+{
-+	struct nameidata nd;
-+	int ret;
-+
-+	ckpt_debug("attempting chdir to %s\n", name);
-+	ret = path_lookup(name, LOOKUP_FOLLOW | LOOKUP_DIRECTORY, &nd);
-+	if (ret) {
-+		ckpt_err(ctx, ret, "%(T)Opening cwd %s", name);
-+		return ret;
-+	}
-+	ret = do_chdir(fs, &nd.path);
-+	path_put(&nd.path);
-+	if (ret) {
-+		ckpt_err(ctx, ret, "%(T)Setting cwd %s", name);
-+		return ret;
-+	}
-+	return 0;
-+}
-+
-+/*
-+ * Called by objhash when it runs into a CKPT_OBJ_FS entry. Creates
-+ * an fs_struct with desired chroot/cwd and places it in the hash.
-+ */
-+static void *restore_fs(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_hdr_fs *h;
-+	struct fs_struct *fs;
-+	char *path;
-+	int ret = 0;
-+
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_FS);
-+	if (IS_ERR(h))
-+		return ERR_PTR(PTR_ERR(h));
-+	ckpt_hdr_put(ctx, h);
-+
-+	fs = copy_fs_struct(current->fs);
-+	if (!fs)
-+		return ERR_PTR(-ENOMEM);
-+
-+	ret = ckpt_read_fname(ctx, &path);
-+	if (ret < 0)
-+		goto out;
-+	ret = restore_cwd(ctx, fs, path);
-+	kfree(path);
-+	if (ret)
-+		goto out;
-+
-+	ret = ckpt_read_fname(ctx, &path);
-+	if (ret < 0)
-+		goto out;
-+	ret = restore_chroot(ctx, fs, path);
-+	kfree(path);
-+
-+out:
-+	if (ret) {
-+		free_fs_struct(fs);
-+		return ERR_PTR(ret);
-+	}
-+	return fs;
-+}
-+
-+/*
-  * fs-related checkpoint objects
-  */
-+
-+static int obj_fs_grab(void *ptr)
-+{
-+	get_fs_struct((struct fs_struct *) ptr);
-+	return 0;
-+}
-+
-+static void obj_fs_drop(void *ptr, int lastref)
-+{
-+	put_fs_struct((struct fs_struct *) ptr);
-+}
-+
-+static int obj_fs_users(void *ptr)
-+{
-+	/*
-+	 * It's safe to not use fs->lock because the fs referenced.
-+	 * It's also sufficient for leak detection: with no leak the
-+	 * count can't change; with a leak it will be too big already
-+	 * (even if it's about to grow), and if it's about to shrink
-+	 * then it's as if we sampled the count a bit earlier.
-+	 */
-+	return ((struct fs_struct *) ptr)->users;
-+}
-+
- static int obj_file_table_grab(void *ptr)
- {
- 	atomic_inc(&((struct files_struct *) ptr)->count);
-@@ -839,6 +1051,17 @@ static int obj_file_users(void *ptr)
- 	return atomic_long_read(&((struct file *) ptr)->f_count);
- }
- 
-+/* fs object */
-+static const struct ckpt_obj_ops ckpt_obj_fs_ops = {
-+	.obj_name = "FS",
-+	.obj_type = CKPT_OBJ_FS,
-+	.ref_drop = obj_fs_drop,
-+	.ref_grab = obj_fs_grab,
-+	.ref_users = obj_fs_users,
-+	.checkpoint = checkpoint_fs,
-+	.restore = restore_fs,
-+};
-+
- /* files_struct object */
- static const struct ckpt_obj_ops ckpt_obj_files_struct_ops = {
- 	.obj_name = "FILE_TABLE",
-@@ -865,6 +1088,9 @@ static __init int checkpoint_register_fs(void)
- {
- 	int ret;
- 
-+	ret = register_checkpoint_obj(&ckpt_obj_fs_ops);
-+	if (ret < 0)
-+		return ret;
- 	ret = register_checkpoint_obj(&ckpt_obj_files_struct_ops);
- 	if (ret < 0)
- 		return ret;
-diff --git a/fs/fs_struct.c b/fs/fs_struct.c
-index eee0590..2a4c6f5 100644
---- a/fs/fs_struct.c
-+++ b/fs/fs_struct.c
-@@ -6,6 +6,27 @@
- #include <linux/fs_struct.h>
- 
- /*
-+ * call with owning task locked
-+ */
-+void get_fs_struct(struct fs_struct *fs)
-+{
-+	write_lock(&fs->lock);
-+	fs->users++;
-+	write_unlock(&fs->lock);
-+}
-+
-+void put_fs_struct(struct fs_struct *fs)
-+{
-+	int kill;
-+
-+	write_lock(&fs->lock);
-+	kill = !--fs->users;
-+	write_unlock(&fs->lock);
-+	if (kill)
-+		free_fs_struct(fs);
-+}
-+
-+/*
-  * Replace the fs->{rootmnt,root} with {mnt,dentry}. Put the old values.
-  * It can block.
-  */
-diff --git a/fs/open.c b/fs/open.c
-index 74e5cd9..e9d5626 100644
---- a/fs/open.c
-+++ b/fs/open.c
-@@ -524,6 +524,18 @@ SYSCALL_DEFINE2(access, const char __user *, filename, int, mode)
- 	return sys_faccessat(AT_FDCWD, filename, mode);
- }
- 
-+int do_chdir(struct fs_struct *fs, struct path *path)
-+{
-+	int error;
-+
-+	error = inode_permission(path->dentry->d_inode, MAY_EXEC | MAY_ACCESS);
-+	if (error)
-+		return error;
-+
-+	set_fs_pwd(fs, path);
-+	return 0;
-+}
-+
- SYSCALL_DEFINE1(chdir, const char __user *, filename)
- {
- 	struct path path;
-@@ -531,17 +543,10 @@ SYSCALL_DEFINE1(chdir, const char __user *, filename)
- 
- 	error = user_path_dir(filename, &path);
- 	if (error)
--		goto out;
--
--	error = inode_permission(path.dentry->d_inode, MAY_EXEC | MAY_ACCESS);
--	if (error)
--		goto dput_and_out;
--
--	set_fs_pwd(current->fs, &path);
-+		return error;
- 
--dput_and_out:
-+	error = do_chdir(current->fs, &path);
- 	path_put(&path);
--out:
- 	return error;
- }
- 
-@@ -571,31 +576,36 @@ out:
- 	return error;
- }
- 
--SYSCALL_DEFINE1(chroot, const char __user *, filename)
-+int do_chroot(struct fs_struct *fs, struct path *path)
- {
--	struct path path;
- 	int error;
- 
--	error = user_path_dir(filename, &path);
-+	error = inode_permission(path->dentry->d_inode, MAY_EXEC | MAY_ACCESS);
- 	if (error)
--		goto out;
-+		return error;
-+
-+	if (!capable(CAP_SYS_CHROOT))
-+		return -EPERM;
- 
--	error = inode_permission(path.dentry->d_inode, MAY_EXEC | MAY_ACCESS);
-+	error = security_path_chroot(path);
- 	if (error)
--		goto dput_and_out;
-+		return error;
- 
--	error = -EPERM;
--	if (!capable(CAP_SYS_CHROOT))
--		goto dput_and_out;
--	error = security_path_chroot(&path);
-+	set_fs_root(fs, path);
-+	return 0;
-+}
-+
-+SYSCALL_DEFINE1(chroot, const char __user *, filename)
-+{
-+	struct path path;
-+	int error;
-+
-+	error = user_path_dir(filename, &path);
- 	if (error)
--		goto dput_and_out;
-+		return error;
- 
--	set_fs_root(current->fs, &path);
--	error = 0;
--dput_and_out:
-+	error = do_chroot(current->fs, &path);
- 	path_put(&path);
--out:
- 	return error;
- }
- 
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 09fbb59..c1079b7 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -10,7 +10,7 @@
-  *  distribution for more details.
-  */
- 
--#define CHECKPOINT_VERSION  3
-+#define CHECKPOINT_VERSION  4
- 
- /* checkpoint user flags */
- #define CHECKPOINT_SUBTREE	0x1
-@@ -224,6 +224,10 @@ extern int checkpoint_file_common(struct ckpt_ctx *ctx, struct file *file,
- extern int restore_file_common(struct ckpt_ctx *ctx, struct file *file,
- 			       struct ckpt_hdr_file *h);
- 
-+extern int ckpt_collect_fs(struct ckpt_ctx *ctx, struct task_struct *t);
-+extern int checkpoint_obj_fs(struct ckpt_ctx *ctx, struct task_struct *t);
-+extern int restore_obj_fs(struct ckpt_ctx *ctx, int fs_objref);
-+
- /* memory */
- extern void ckpt_pgarr_free(struct ckpt_ctx *ctx);
- 
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index e89fbf9..8dbd6e9 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -139,6 +139,9 @@ enum {
- 	CKPT_HDR_MM_CONTEXT,
- #define CKPT_HDR_MM_CONTEXT CKPT_HDR_MM_CONTEXT
- 
-+	CKPT_HDR_FS = 451,  /* must be after file-table, mm */
-+#define CKPT_HDR_FS CKPT_HDR_FS
-+
- 	CKPT_HDR_IPC = 501,
- #define CKPT_HDR_IPC CKPT_HDR_IPC
- 	CKPT_HDR_IPC_SHM,
-@@ -209,6 +212,8 @@ enum obj_type {
- #define CKPT_OBJ_FILE CKPT_OBJ_FILE
- 	CKPT_OBJ_MM,
- #define CKPT_OBJ_MM CKPT_OBJ_MM
-+	CKPT_OBJ_FS,
-+#define CKPT_OBJ_FS CKPT_OBJ_FS
- 	CKPT_OBJ_SIGHAND,
- #define CKPT_OBJ_SIGHAND CKPT_OBJ_SIGHAND
- 	CKPT_OBJ_SIGNAL,
-@@ -424,6 +429,7 @@ struct ckpt_hdr_task_objs {
- 
- 	__s32 files_objref;
- 	__s32 mm_objref;
-+	__s32 fs_objref;
- 	__s32 sighand_objref;
- 	__s32 signal_objref;
- } __attribute__((aligned(8)));
-@@ -461,6 +467,12 @@ enum restart_block_type {
+diff --git a/arch/s390/include/asm/checkpoint_hdr.h b/arch/s390/include/asm/checkpoint_hdr.h
+index 7d30317..fd8be2a 100644
+--- a/arch/s390/include/asm/checkpoint_hdr.h
++++ b/arch/s390/include/asm/checkpoint_hdr.h
+@@ -92,13 +92,24 @@ struct ckpt_hdr_mm_context {
  };
  
- /* file system */
-+struct ckpt_hdr_fs {
-+	struct ckpt_hdr h;
-+	/* char *fs_root */
-+	/* char *fs_pwd */
-+} __attribute__((aligned(8)));
+ #define CKPT_ARCH_NSIG  64
++#define CKPT_TTY_NCC  8
 +
- struct ckpt_hdr_file_table {
++/* arch dependent constants */
+ #ifdef __KERNEL__
++
+ #include <asm/signal.h>
+ #if CKPT_ARCH_NSIG != _SIGCONTEXT_NSIG
+ #error CKPT_ARCH_NSIG size is wrong (asm/sigcontext.h and asm/checkpoint_hdr.h)
+ #endif
++
++#include <linux/tty.h>
++#if CKPT_TTY_NCC != NCC
++#error CKPT_TTY_NCC size is wrong per asm-generic/termios.h
+ #endif
+ 
++#endif /* __KERNEL__ */
++
++
+ struct ckpt_hdr_header_arch {
  	struct ckpt_hdr h;
- 	__s32 fdt_nfds;
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index c0a59ea..ee725ff 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -1826,6 +1826,11 @@ extern int iterate_mounts(int (*)(struct vfsmount *, void *), void *,
- 			  struct vfsmount *);
- extern int vfs_statfs(struct dentry *, struct kstatfs *);
+ };
+diff --git a/arch/x86/include/asm/checkpoint_hdr.h b/arch/x86/include/asm/checkpoint_hdr.h
+index 44737b8..535a9c6 100644
+--- a/arch/x86/include/asm/checkpoint_hdr.h
++++ b/arch/x86/include/asm/checkpoint_hdr.h
+@@ -52,14 +52,25 @@ enum {
+ #define CKPT_HDR_MM_CONTEXT_LDT CKPT_HDR_MM_CONTEXT_LDT
+ };
  
-+struct fs_struct;
-+extern int do_chdir(struct fs_struct *fs, struct path *path);
-+extern int do_chroot(struct fs_struct *fs, struct path *path);
++/* arch dependent constants */
+ #define CKPT_ARCH_NSIG  64
++#define CKPT_TTY_NCC  8
++
+ #ifdef __KERNEL__
++
+ #include <asm/signal.h>
+ #if CKPT_ARCH_NSIG != _NSIG
+ #error CKPT_ARCH_NSIG size is wrong per asm/signal.h and asm/checkpoint_hdr.h
+ #endif
++
++#include <linux/tty.h>
++#if CKPT_TTY_NCC != NCC
++#error CKPT_TTY_NCC size is wrong per asm-generic/termios.h
+ #endif
+ 
++#endif /* __KERNEL__ */
 +
 +
- extern int current_umask(void);
+ struct ckpt_hdr_header_arch {
+ 	struct ckpt_hdr h;
+ 	/* FIXME: add HAVE_HWFP */
+diff --git a/drivers/char/pty.c b/drivers/char/pty.c
+index cfe77c8..f4bb90f 100644
+--- a/drivers/char/pty.c
++++ b/drivers/char/pty.c
+@@ -15,6 +15,7 @@
  
- /* /sys/fs */
-diff --git a/include/linux/fs_struct.h b/include/linux/fs_struct.h
-index 78a05bf..a73cbcb 100644
---- a/include/linux/fs_struct.h
-+++ b/include/linux/fs_struct.h
-@@ -20,5 +20,7 @@ extern struct fs_struct *copy_fs_struct(struct fs_struct *);
- extern void free_fs_struct(struct fs_struct *);
- extern void daemonize_fs_struct(void);
- extern int unshare_fs_struct(void);
-+extern void get_fs_struct(struct fs_struct *);
-+extern void put_fs_struct(struct fs_struct *);
+ #include <linux/errno.h>
+ #include <linux/interrupt.h>
++#include <linux/file.h>
+ #include <linux/tty.h>
+ #include <linux/tty_flip.h>
+ #include <linux/fcntl.h>
+diff --git a/drivers/char/tty_io.c b/drivers/char/tty_io.c
+index 6da962c..093f522 100644
+--- a/drivers/char/tty_io.c
++++ b/drivers/char/tty_io.c
+@@ -106,6 +106,7 @@
  
- #endif /* _LINUX_FS_STRUCT_H */
-diff --git a/kernel/checkpoint/process.c b/kernel/checkpoint/process.c
-index fa08616..922287b 100644
---- a/kernel/checkpoint/process.c
-+++ b/kernel/checkpoint/process.c
-@@ -232,6 +232,7 @@ static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
- 	struct ckpt_hdr_task_objs *h;
- 	int files_objref;
- 	int mm_objref;
-+	int fs_objref;
- 	int sighand_objref;
- 	int signal_objref;
- 	int first, ret;
-@@ -272,6 +273,13 @@ static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
- 		return mm_objref;
- 	}
+ #include <linux/kmod.h>
+ #include <linux/nsproxy.h>
++#include <linux/checkpoint.h>
  
-+	/* note: this must come *after* file-table and mm */
-+	fs_objref = checkpoint_obj_fs(ctx, t);
-+	if (fs_objref < 0) {
-+		ckpt_err(ctx, fs_objref, "%(T)process fs\n");
-+		return fs_objref;
+ #undef TTY_DEBUG_HANGUP
+ 
+@@ -150,6 +151,10 @@ static long tty_compat_ioctl(struct file *file, unsigned int cmd,
+ #define tty_compat_ioctl NULL
+ #endif
+ static int tty_fasync(int fd, struct file *filp, int on);
++#ifdef CONFIG_CHECKPOINT
++static int tty_file_checkpoint(struct ckpt_ctx *ctx, struct file *file);
++static int tty_file_collect(struct ckpt_ctx *ctx, struct file *file);
++#endif /* CONFIG_CHECKPOINT */
+ static void release_tty(struct tty_struct *tty, int idx);
+ static void __proc_set_tty(struct task_struct *tsk, struct tty_struct *tty);
+ static void proc_set_tty(struct task_struct *tsk, struct tty_struct *tty);
+@@ -416,6 +421,10 @@ static const struct file_operations tty_fops = {
+ 	.open		= tty_open,
+ 	.release	= tty_release,
+ 	.fasync		= tty_fasync,
++#ifdef CONFIG_CHECKPOINT
++	.checkpoint	= tty_file_checkpoint,
++	.collect	= tty_file_collect,
++#endif
+ };
+ 
+ static const struct file_operations console_fops = {
+@@ -438,6 +447,10 @@ static const struct file_operations hung_up_tty_fops = {
+ 	.unlocked_ioctl	= hung_up_tty_ioctl,
+ 	.compat_ioctl	= hung_up_tty_compat_ioctl,
+ 	.release	= tty_release,
++#ifdef CONFIG_CHECKPOINT
++	.checkpoint	= tty_file_checkpoint,
++	.collect	= tty_file_collect,
++#endif
+ };
+ 
+ static DEFINE_SPINLOCK(redirect_lock);
+@@ -2628,6 +2641,525 @@ static long tty_compat_ioctl(struct file *file, unsigned int cmd,
+ }
+ #endif
+ 
++#ifdef CONFIG_CHECKPOINT
++static int tty_can_checkpoint(struct ckpt_ctx *ctx, struct tty_struct *tty)
++{
++	/* only support pty driver */
++	if (tty->driver->type != TTY_DRIVER_TYPE_PTY) {
++		ckpt_err(ctx, -ENOSYS,
++			 "%(T)%(S)%(P)tty: unknown driverv type %d\n",
++			 tty->driver, tty, tty->driver->type);
++		return 0;
++	}
++	/* only support unix98 style */
++	if (tty->driver->major != UNIX98_PTY_MASTER_MAJOR &&
++	    tty->driver->major != UNIX98_PTY_SLAVE_MAJOR) {
++		ckpt_err(ctx, -ENOSYS, "%(T)%(P)tty: legacy pty\n", tty);
++		return 0;
++	}
++	/* only support n_tty ldisc */
++	if (tty->ldisc->ops->num != N_TTY) {
++		ckpt_err(ctx, -ENOSYS,
++			 "%(T)%(S)%(P)tty: unknown ldisc type %d\n",
++			 tty->ldisc->ops, tty, tty->ldisc->ops->num);
++		return 0;
 +	}
 +
- 	sighand_objref = checkpoint_obj_sighand(ctx, t);
- 	ckpt_debug("sighand: objref %d\n", sighand_objref);
- 	if (sighand_objref < 0) {
-@@ -299,6 +307,7 @@ static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
- 		return -ENOMEM;
- 	h->files_objref = files_objref;
- 	h->mm_objref = mm_objref;
-+	h->fs_objref = fs_objref;
- 	h->sighand_objref = sighand_objref;
- 	h->signal_objref = signal_objref;
- 	ret = ckpt_write_obj(ctx, &h->h);
-@@ -477,6 +486,9 @@ int ckpt_collect_task(struct ckpt_ctx *ctx, struct task_struct *t)
- 	ret = ckpt_collect_mm(ctx, t);
- 	if (ret < 0)
- 		return ret;
-+	ret = ckpt_collect_fs(ctx, t);
-+	if (ret < 0)
-+		return ret;
- 	ret = ckpt_collect_sighand(ctx, t);
- 
- 	return ret;
-@@ -645,6 +657,11 @@ static int restore_task_objs(struct ckpt_ctx *ctx)
- 	if (ret < 0)
- 		goto out;
- 
-+	ret = restore_obj_fs(ctx, h->fs_objref);
-+	ckpt_debug("fs: ret %d (%p)\n", ret, current->fs);
++	return 1;
++}
++
++static int tty_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
++{
++	struct ckpt_hdr_file_tty *h;
++	struct tty_struct *tty, *real_tty;
++	struct inode *inode;
++	int master_objref, slave_objref;
++	int ret;
++
++	tty = (struct tty_struct *)file->private_data;
++	inode = file->f_path.dentry->d_inode;
++	if (tty_paranoia_check(tty, inode, "tty_file_checkpoint"))
++		return -EIO;
++
++	if (!tty_can_checkpoint(ctx, tty))
++		return -ENOSYS;
++
++	/*
++	 * If we ever support more than PTYs, this would be tty-type
++	 * specific (and probably called via tty_operations).
++	 */
++
++	real_tty = tty_pair_get_tty(tty);
++	ckpt_debug("tty: %p, real_tty: %p\n", tty, real_tty);
++
++	master_objref = checkpoint_obj(ctx, real_tty->link, CKPT_OBJ_TTY);
++	if (master_objref < 0)
++		return master_objref;
++	slave_objref = checkpoint_obj(ctx, real_tty, CKPT_OBJ_TTY);
++	if (slave_objref < 0)
++		return slave_objref;
++	ckpt_debug("master %p %d, slave %p %d\n",
++		   real_tty->link, master_objref, real_tty, slave_objref);
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE);
++	if (!h)
++		return -ENOMEM;
++
++	h->common.f_type = CKPT_FILE_TTY;
++	h->tty_objref = (tty == real_tty ? slave_objref : master_objref);
++
++	ret = checkpoint_file_common(ctx, file, &h->common);
++	if (!ret)
++		ret = ckpt_write_obj(ctx, &h->common.h);
++
++	ckpt_hdr_put(ctx, h);
++	return ret;
++}
++
++static int tty_file_collect(struct ckpt_ctx *ctx, struct file *file)
++{
++	struct tty_struct *tty;
++	struct inode *inode;
++	int ret;
++
++	tty = (struct tty_struct *)file->private_data;
++	inode = file->f_path.dentry->d_inode;
++	if (tty_paranoia_check(tty, inode, "tty_collect"))
++		return -EIO;
++
++	if (!tty_can_checkpoint(ctx, tty))
++		return -ENOSYS;
++
++	ckpt_debug("collecting tty: %p\n", tty);
++	ret = ckpt_obj_collect(ctx, tty, CKPT_OBJ_TTY);
 +	if (ret < 0)
 +		return ret;
 +
- 	ret = restore_obj_sighand(ctx, h->sighand_objref);
- 	ckpt_debug("sighand: ret %d (%p)\n", ret, current->sighand);
- 	if (ret < 0)
++	if (tty->driver->subtype == PTY_TYPE_MASTER) {
++		if (!tty->link) {
++			ckpt_err(ctx, -EIO, "%(T)%(P)tty: missing link\n\n",
++				 tty);
++			return -EIO;
++		}
++		ckpt_debug("collecting slave tty: %p\n", tty->link);
++		ret = ckpt_obj_collect(ctx, tty->link, CKPT_OBJ_TTY);
++	}
++
++	return ret;
++}
++
++#define CKPT_LDISC_BAD   (1 << TTY_LDISC_CHANGING)
++#define CKPT_LDISC_GOOD  ((1 << TTY_LDISC_OPEN) | (1 << TTY_LDISC))
++#define CKPT_LDISC_FLAGS (CKPT_LDISC_GOOD | CKPT_LDISC_BAD)
++
++static int checkpoint_tty_ldisc(struct ckpt_ctx *ctx, struct tty_struct *tty)
++{
++	struct ckpt_hdr_ldisc_n_tty *h;
++	int datalen, read_tail;
++	int n, ret;
++
++	/* shouldn't reach here unless ldisc is n_tty */
++	BUG_ON(tty->ldisc->ops->num != N_TTY);
++
++	if ((tty->flags & CKPT_LDISC_FLAGS) != CKPT_LDISC_GOOD) {
++		ckpt_err(ctx, -EBUSY, "%(T)%(P)tty: bad ldisc flags %#lx\n",
++			       tty, tty->flags);
++		return -EBUSY;
++	}
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_TTY_LDISC);
++	if (!h)
++		return -ENOMEM;
++
++	spin_lock_irq(&tty->read_lock);
++	h->column = tty->column;
++	h->datalen = tty->read_cnt;
++	h->canon_column = tty->canon_column;
++	h->canon_datalen = tty->canon_head;
++	if (tty->canon_head > tty->read_tail)
++		h->canon_datalen -= tty->read_tail;
++	else
++		h->canon_datalen += N_TTY_BUF_SIZE - tty->read_tail;
++	h->canon_data = tty->canon_data;
++
++	datalen = tty->read_cnt;
++	read_tail = tty->read_tail;
++	spin_unlock_irq(&tty->read_lock);
++
++	h->minimum_to_wake = tty->minimum_to_wake;
++
++	h->stopped = tty->stopped;
++	h->hw_stopped = tty->hw_stopped;
++	h->flow_stopped = tty->flow_stopped;
++	h->packet = tty->packet;
++	h->ctrl_status = tty->ctrl_status;
++	h->lnext = tty->lnext;
++	h->erasing = tty->erasing;
++	h->raw = tty->raw;
++	h->real_raw = tty->real_raw;
++	h->icanon = tty->icanon;
++	h->closing = tty->closing;
++
++	BUILD_BUG_ON(sizeof(h->read_flags) != sizeof(tty->read_flags));
++	memcpy(h->read_flags, tty->read_flags, sizeof(tty->read_flags));
++
++	ret = ckpt_write_obj(ctx, &h->h);
++	ckpt_hdr_put(ctx, h);
++	if (ret < 0)
++		return ret;
++
++	ckpt_debug("datalen %d\n", datalen);
++	if (datalen) {
++		ret = ckpt_write_buffer(ctx, NULL, datalen);
++		if (ret < 0)
++			return ret;
++		n = min(datalen, N_TTY_BUF_SIZE - read_tail);
++		ret = ckpt_kwrite(ctx, &tty->read_buf[read_tail], n);
++		if (ret < 0)
++			return ret;
++		n = datalen - n;
++		ret = ckpt_kwrite(ctx, tty->read_buf, n);
++	}
++
++	return ret;
++}
++
++#define CKPT_TTY_BAD   ((1 << TTY_CLOSING) | (1 << TTY_FLUSHING))
++#define CKPT_TTY_GOOD  0
++
++static int checkpoint_tty(struct ckpt_ctx *ctx, void *ptr)
++{
++	struct tty_struct *tty = ptr;
++	struct ckpt_hdr_tty *h;
++	int link_objref;
++	int master = 0;
++	int ret;
++
++	if ((tty->flags & (CKPT_TTY_BAD | CKPT_TTY_GOOD)) != CKPT_TTY_GOOD) {
++		ckpt_err(ctx, -EBUSY, "%(T)%(P)tty: bad flags %#lx\n",
++			       tty, tty->flags);
++		return -EBUSY;
++	}
++
++	/*
++	 * If we ever support more than PTYs, this would be tty-type
++	 * specific (and probably called via tty_operations).
++	 */
++	link_objref = ckpt_obj_lookup(ctx, tty->link, CKPT_OBJ_TTY);
++
++	if (tty->driver->subtype == PTY_TYPE_MASTER)
++		master = 1;
++
++	/* tty is master if-and-only-if link_objref is zero */
++	BUG_ON(master ^ !link_objref);
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_TTY);
++	if (!h)
++		return -ENOMEM;
++
++	h->driver_type = tty->driver->type;
++	h->driver_subtype = tty->driver->subtype;
++
++	h->link_objref = link_objref;
++
++	/* if master, reserve an objref (see do_restore_tty) */
++	h->file_objref = (master ? ckpt_obj_reserve(ctx) : 0);
++	ckpt_debug("link %d file %d\n", h->link_objref, h->file_objref);
++
++	h->index = tty->index;
++	h->ldisc = tty->ldisc->ops->num;
++	h->flags = tty->flags;
++
++	mutex_lock(&tty->termios_mutex);
++	h->termios.c_line = tty->termios->c_line;
++	h->termios.c_iflag = tty->termios->c_iflag;
++	h->termios.c_oflag = tty->termios->c_oflag;
++	h->termios.c_cflag = tty->termios->c_cflag;
++	h->termios.c_lflag = tty->termios->c_lflag;
++	memcpy(h->termios.c_cc, tty->termios->c_cc, NCC);
++	h->winsize.ws_row = tty->winsize.ws_row;
++	h->winsize.ws_col = tty->winsize.ws_col;
++	h->winsize.ws_ypixel = tty->winsize.ws_ypixel;
++	h->winsize.ws_xpixel = tty->winsize.ws_xpixel;
++	mutex_unlock(&tty->termios_mutex);
++
++	ret  = ckpt_write_obj(ctx, &h->h);
++	ckpt_hdr_put(ctx, h);
++	if (ret < 0)
++		return ret;
++
++	/* save line discipline data (also writes buffer) */
++	if (!test_bit(TTY_HUPPED, &tty->flags))
++		ret = checkpoint_tty_ldisc(ctx, tty);
++
++	return ret;
++}
++
++struct file *tty_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr)
++{
++	struct ckpt_hdr_file_tty *h = (struct ckpt_hdr_file_tty *) ptr;
++	struct tty_struct *tty;
++	struct file *file;
++	char slavepath[16];	/* "/dev/pts/###" */
++	int slavelock;
++	int ret;
++
++	if (ptr->h.type != CKPT_HDR_FILE ||
++	    ptr->h.len != sizeof(*h) || ptr->f_type != CKPT_FILE_TTY)
++		return ERR_PTR(-EINVAL);
++
++	if (h->tty_objref <= 0)
++		return ERR_PTR(-EINVAL);
++
++	tty = ckpt_obj_fetch(ctx, h->tty_objref, CKPT_OBJ_TTY);
++	ckpt_debug("tty %p objref %d\n", tty, h->tty_objref);
++
++	/* at this point the tty should have been restore already */
++	if (IS_ERR(tty))
++		return (struct file *) tty;
++
++	/*
++	 * If we ever support more than PTYs, this would be tty-type
++	 * specific (and probably called via tty_operations).
++	 */
++
++	/*
++	 * If this tty is master, get the corresponding file from
++	 * tty->tty_file. Otherwise, open the slave device.
++	 */
++	if (tty->driver->subtype == PTY_TYPE_MASTER) {
++		file_list_lock();
++		file = list_first_entry(&tty->tty_files,
++					typeof(*file), f_u.fu_list);
++		get_file(file);
++		file_list_unlock();
++		ckpt_debug("master file %p\n", file);
++	} else {
++		sprintf(slavepath, "/dev/pts/%d", tty->index);
++		slavelock = test_bit(TTY_PTY_LOCK, &tty->link->flags);
++		clear_bit(TTY_PTY_LOCK, &tty->link->flags);
++		file = filp_open(slavepath, O_RDWR | O_NOCTTY, 0);
++		ckpt_debug("slave file %p (idnex %d)\n", file, tty->index);
++		if (IS_ERR(file))
++			return file;
++		if (slavelock)
++			set_bit(TTY_PTY_LOCK, &tty->link->flags);
++	}
++
++	ret = restore_file_common(ctx, file, ptr);
++	if (ret < 0) {
++		fput(file);
++		file = ERR_PTR(ret);
++	}
++
++	return file;
++}
++
++static int restore_tty_ldisc(struct ckpt_ctx *ctx,
++			     struct tty_struct *tty,
++			     struct ckpt_hdr_tty *hh)
++{
++	struct ckpt_hdr_ldisc_n_tty *h;
++	int ret = -EINVAL;
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_TTY_LDISC);
++	if (IS_ERR(h))
++		return PTR_ERR(h);
++
++	/* this is unfair shortcut, because we know ldisc is n_tty */
++	if (hh->ldisc != N_TTY)
++		goto out;
++	if ((hh->flags & CKPT_LDISC_FLAGS) != CKPT_LDISC_GOOD)
++		goto out;
++
++	if (h->datalen > N_TTY_BUF_SIZE)
++		goto out;
++	if (h->canon_datalen > N_TTY_BUF_SIZE)
++		goto out;
++
++	if (h->datalen) {
++		ret = _ckpt_read_buffer(ctx, tty->read_buf, h->datalen);
++		if (ret < 0)
++			goto out;
++	}
++
++	/* TODO: sanitize all these values ? */
++
++	spin_lock_irq(&tty->read_lock);
++	tty->column = h->column;
++	tty->read_cnt = h->datalen;
++	tty->read_head = h->datalen;
++	tty->read_tail = 0;
++	tty->canon_column = h->canon_column;
++	tty->canon_head = h->canon_datalen;
++	tty->canon_data = h->canon_data;
++	spin_unlock_irq(&tty->read_lock);
++
++	tty->minimum_to_wake = h->minimum_to_wake;
++
++	tty->stopped = h->stopped;
++	tty->hw_stopped = h->hw_stopped;
++	tty->flow_stopped = h->flow_stopped;
++	tty->packet = h->packet;
++	tty->ctrl_status = h->ctrl_status;
++	tty->lnext = h->lnext;
++	tty->erasing = h->erasing;
++	tty->raw = h->raw;
++	tty->real_raw = h->real_raw;
++	tty->icanon = h->icanon;
++	tty->closing = h->closing;
++
++	BUILD_BUG_ON(sizeof(h->read_flags) != sizeof(tty->read_flags));
++	memcpy(tty->read_flags, h->read_flags, sizeof(tty->read_flags));
++ out:
++	ckpt_hdr_put(ctx, h);
++	return 0;
++}
++
++#define CKPT_PTMX_PATH  "/dev/ptmx"
++
++static struct tty_struct *do_restore_tty(struct ckpt_ctx *ctx)
++{
++	struct ckpt_hdr_tty *h;
++	struct tty_struct *tty = ERR_PTR(-EINVAL);
++	struct file *file = NULL;
++	int master, ret;
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_TTY);
++	if (IS_ERR(h))
++		return (struct tty_struct *) h;
++
++	if (h->driver_type != TTY_DRIVER_TYPE_PTY)
++		goto out;
++	if (h->driver_subtype == PTY_TYPE_MASTER)
++		master = 1;
++	else if (h->driver_subtype == PTY_TYPE_SLAVE)
++		master = 0;
++	else
++		goto out;
++	/* @link_object is positive if-and-only-if tty is not master */
++	if (h->link_objref < 0 || (master ^ !h->link_objref))
++		goto out;
++	/* @file_object is positive if-and-only-if tty is master */
++	if (h->file_objref < 0 || (master ^ !!h->file_objref))
++		goto out;
++	if (h->flags & CKPT_TTY_BAD)
++		goto out;
++	/* hung-up tty cannot be master, or have session or pgrp */
++	if (test_bit(TTY_HUPPED, (unsigned long *) &h->flags) && master)
++		goto out;
++
++	ckpt_debug("sanity checks passed, link %d\n", h->link_objref);
++
++	/*
++	 * If we ever support more than PTYs, this would be tty-type
++	 * specific (and probably called via tty_operations).
++	 */
++	if (master) {
++		file = pty_open_by_index("/dev/ptmx", h->index);
++		if (IS_ERR(file)) {
++			int ret = PTR_ERR(file);
++			ckpt_err(ctx, ret, "%(T)Open ptmx\n");
++			tty = ERR_PTR(ret);
++			goto out;
++		}
++
++		/*
++		 * Add file to objhash to ensure proper cleanup later
++		 * (it isn't referenced elsewhere). Use h->file_objref
++		 * which was explicitly during checkpoint for this.
++		 */
++		ret = ckpt_obj_insert(ctx, file, h->file_objref, CKPT_OBJ_FILE);
++		fput(file);  /* even on succes (referenced in objash) */
++		if (ret < 0) {
++			tty = ERR_PTR(ret);
++			goto out;
++		}
++
++		tty = file->private_data;
++	} else {
++		tty = ckpt_obj_fetch(ctx, h->link_objref, CKPT_OBJ_TTY);
++		if (IS_ERR(tty))
++			goto out;
++		tty = tty->link;
++	}
++
++	ckpt_debug("tty %p (hup %d)\n",
++		   tty, test_bit(TTY_HUPPED, (unsigned long *) &h->flags));
++
++	/* we now have the desired tty: restore its state as per @h */
++
++	mutex_lock(&tty->termios_mutex);
++	tty->termios->c_line = h->termios.c_line;
++	tty->termios->c_iflag = h->termios.c_iflag;
++	tty->termios->c_oflag = h->termios.c_oflag;
++	tty->termios->c_cflag = h->termios.c_cflag;
++	tty->termios->c_lflag = h->termios.c_lflag;
++	memcpy(tty->termios->c_cc, h->termios.c_cc, NCC);
++	tty->winsize.ws_row = h->winsize.ws_row;
++	tty->winsize.ws_col = h->winsize.ws_col;
++	tty->winsize.ws_ypixel = h->winsize.ws_ypixel;
++	tty->winsize.ws_xpixel = h->winsize.ws_xpixel;
++	mutex_unlock(&tty->termios_mutex);
++
++	if (test_bit(TTY_HUPPED, (unsigned long *) &h->flags))
++		tty_vhangup(tty);
++	else {
++		ret = restore_tty_ldisc(ctx, tty, h);
++		if (ret < 0) {
++			tty = ERR_PTR(ret);
++			goto out;
++		}
++	}
++
++	tty_kref_get(tty);
++ out:
++	ckpt_hdr_put(ctx, h);
++	return tty;
++}
++
++static void *restore_tty(struct ckpt_ctx *ctx)
++{
++#ifdef CONFIG_UNIX98_PTYS
++	return (void *) do_restore_tty(ctx);
++#else
++	return ERR_PTR(-ENOSYS);
++#endif
++}
++
++static int obj_tty_grab(void *ptr)
++{
++	tty_kref_get((struct tty_struct *) ptr);
++	return 0;
++}
++
++static void obj_tty_drop(void *ptr, int lastref)
++{
++	tty_kref_put((struct tty_struct *) ptr);
++}
++
++static int obj_tty_users(void *ptr)
++{
++	return atomic_read(&((struct tty_struct *) ptr)->kref.refcount);
++}
++
++/* struct tty_struct */
++static const struct ckpt_obj_ops tty_ckpt_obj_ops = {
++	.obj_name = "TTY",
++	.obj_type = CKPT_OBJ_TTY,
++	.ref_drop = obj_tty_drop,
++	.ref_grab = obj_tty_grab,
++	.ref_users = obj_tty_users,
++	.checkpoint = checkpoint_tty,
++	.restore = restore_tty,
++};
++
++static inline int checkpoint_register_tty(void)
++{
++	return register_checkpoint_obj(&tty_ckpt_obj_ops);
++}
++#endif /* CONFIG_CHECKPOINT */
++
+ /*
+  * This implements the "Secure Attention Key" ---  the idea is to
+  * prevent trojan horses by killing all processes associated with this
+@@ -3146,6 +3678,10 @@ static int __init tty_init(void)
+ #ifdef CONFIG_VT
+ 	vty_init(&console_fops);
+ #endif
++#ifdef CONFIG_CHECKPOINT
++	return checkpoint_register_tty();
++#else
+ 	return 0;
++#endif
+ }
+ module_init(tty_init);
+diff --git a/fs/checkpoint.c b/fs/checkpoint.c
+index 23ec4de..9b29a26 100644
+--- a/fs/checkpoint.c
++++ b/fs/checkpoint.c
+@@ -626,6 +626,12 @@ static struct restore_file_ops restore_file_ops[] = {
+ 		.file_type = CKPT_FILE_SOCKET,
+ 		.restore = sock_file_restore,
+ 	},
++	/* tty */
++	{
++		.file_name = "TTY",
++		.file_type = CKPT_FILE_TTY,
++		.restore = tty_file_restore,
++	},
+ };
+ 
+ static void *restore_file(struct ckpt_ctx *ctx)
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index abf8cb5..adf5ca6 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -274,6 +274,7 @@ extern int restore_obj_signal(struct ckpt_ctx *ctx, int signal_objref);
+ extern int checkpoint_task_signal(struct ckpt_ctx *ctx, struct task_struct *t);
+ extern int restore_task_signal(struct ckpt_ctx *ctx);
+ 
++
+ static inline int ckpt_validate_errno(int errno)
+ {
+ 	return (errno >= 0) && (errno < MAX_ERRNO);
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 1820f07..50138a0 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -123,6 +123,10 @@ enum {
+ #define CKPT_HDR_FILE CKPT_HDR_FILE
+ 	CKPT_HDR_PIPE_BUF,
+ #define CKPT_HDR_PIPE_BUF CKPT_HDR_PIPE_BUF
++	CKPT_HDR_TTY,
++#define CKPT_HDR_TTY CKPT_HDR_TTY
++	CKPT_HDR_TTY_LDISC,
++#define CKPT_HDR_TTY_LDISC CKPT_HDR_TTY_LDISC
+ 
+ 	CKPT_HDR_MM = 401,
+ #define CKPT_HDR_MM CKPT_HDR_MM
+@@ -223,6 +227,8 @@ enum obj_type {
+ #define CKPT_OBJ_GROUPINFO CKPT_OBJ_GROUPINFO
+ 	CKPT_OBJ_SOCK,
+ #define CKPT_OBJ_SOCK CKPT_OBJ_SOCK
++	CKPT_OBJ_TTY,
++#define CKPT_OBJ_TTY CKPT_OBJ_TTY
+ 	CKPT_OBJ_MAX
+ #define CKPT_OBJ_MAX CKPT_OBJ_MAX
+ };
+@@ -244,6 +250,9 @@ struct ckpt_const {
+ 	__u16 uts_domainname_len;
+ 	/* rlimit */
+ 	__u16 rlimit_nlimits;
++	/* tty */
++	__u16 n_tty_buf_size;
++	__u16 tty_termios_ncc;
+ } __attribute__((aligned(8)));
+ 
+ /* checkpoint image header */
+@@ -474,6 +483,8 @@ enum file_type {
+ #define CKPT_FILE_FIFO CKPT_FILE_FIFO
+ 	CKPT_FILE_SOCKET,
+ #define CKPT_FILE_SOCKET CKPT_FILE_SOCKET
++	CKPT_FILE_TTY,
++#define CKPT_FILE_TTY CKPT_FILE_TTY
+ 	CKPT_FILE_MAX
+ #define CKPT_FILE_MAX CKPT_FILE_MAX
+ };
+@@ -897,6 +908,84 @@ struct ckpt_hdr_ipc_sem {
+ } __attribute__((aligned(8)));
+ 
+ 
++/* devices */
++struct ckpt_hdr_file_tty {
++	struct ckpt_hdr_file common;
++	__s32 tty_objref;
++};
++
++struct ckpt_hdr_tty {
++	struct ckpt_hdr h;
++
++	__u16 driver_type;
++	__u16 driver_subtype;
++
++	__s32 link_objref;
++	__s32 file_objref;
++	__u32 _padding;
++
++	__u32 index;
++	__u32 ldisc;
++	__u64 flags;
++
++	/* termios */
++	struct {
++		__u16 c_iflag;
++		__u16 c_oflag;
++		__u16 c_cflag;
++		__u16 c_lflag;
++		__u8 c_line;
++		__u8 c_cc[CKPT_TTY_NCC];
++	} __attribute__((aligned(8))) termios;
++
++	/* winsize */
++	struct {
++		__u16 ws_row;
++		__u16 ws_col;
++		__u16 ws_xpixel;
++		__u16 ws_ypixel;
++	} __attribute__((aligned(8))) winsize;
++} __attribute__((aligned(8)));
++
++/* cannot include <linux/tty.h> from userspace, so define: */
++#define CKPT_N_TTY_BUF_SIZE  4096
++#ifdef __KERNEL__
++#include <linux/tty.h>
++#if CKPT_N_TTY_BUF_SIZE != N_TTY_BUF_SIZE
++#error CKPT_N_TTY_BUF_SIZE size is wrong per linux/tty.h
++#endif
++#endif
++
++struct ckpt_hdr_ldisc_n_tty {
++	struct ckpt_hdr h;
++
++	__u32 column;
++	__u32 datalen;
++	__u32 canon_column;
++	__u32 canon_datalen;
++	__u32 canon_data;
++
++	__u16 minimum_to_wake;
++
++	__u8 stopped;
++	__u8 hw_stopped;
++	__u8 flow_stopped;
++	__u8 packet;
++	__u8 ctrl_status;
++	__u8 lnext;
++	__u8 erasing;
++	__u8 raw;
++	__u8 real_raw;
++	__u8 icanon;
++	__u8 closing;
++	__u8 padding[3];
++
++	__u8 read_flags[CKPT_N_TTY_BUF_SIZE / 8];
++
++	/* if @datalen > 0, buffer contents follow (next object) */
++} __attribute__((aligned(8)));
++
++
+ #define CKPT_TST_OVERFLOW_16(a, b) \
+ 	((sizeof(a) > sizeof(b)) && ((a) > SHORT_MAX))
+ 
+diff --git a/include/linux/tty.h b/include/linux/tty.h
+index d0cbcec..3b7d8eb 100644
+--- a/include/linux/tty.h
++++ b/include/linux/tty.h
+@@ -513,6 +513,13 @@ extern void tty_ldisc_begin(void);
+ /* This last one is just for the tty layer internals and shouldn't be used elsewhere */
+ extern void tty_ldisc_enable(struct tty_struct *tty);
+ 
++#ifdef CONFIG_CHECKPOINT
++struct ckpt_ctx;
++struct ckpt_hdr_file;
++extern struct file *tty_file_restore(struct ckpt_ctx *ctx,
++				     struct ckpt_hdr_file *ptr);
++#endif
++
+ /* n_tty.c */
+ extern struct tty_ldisc_ops tty_ldisc_N_TTY;
+ extern void n_tty_inherit_ops(struct tty_ldisc_ops *ops);
+diff --git a/kernel/checkpoint/checkpoint.c b/kernel/checkpoint/checkpoint.c
+index f72458d..72a706e 100644
+--- a/kernel/checkpoint/checkpoint.c
++++ b/kernel/checkpoint/checkpoint.c
+@@ -125,6 +125,9 @@ static void fill_kernel_const(struct ckpt_const *h)
+ 	h->uts_domainname_len = sizeof(uts->domainname);
+ 	/* rlimit */
+ 	h->rlimit_nlimits = RLIM_NLIMITS;
++	/* tty */
++	h->n_tty_buf_size = N_TTY_BUF_SIZE;
++	h->tty_termios_ncc = NCC;
+ }
+ 
+ /* write the checkpoint header */
+diff --git a/kernel/checkpoint/restart.c b/kernel/checkpoint/restart.c
+index e7a5b5b..7c38c1a 100644
+--- a/kernel/checkpoint/restart.c
++++ b/kernel/checkpoint/restart.c
+@@ -21,6 +21,7 @@
+ #include <linux/freezer.h>
+ #include <linux/magic.h>
+ #include <linux/utsname.h>
++#include <linux/termios.h>
+ #include <linux/elf.h>
+ #include <linux/deferqueue.h>
+ #include <linux/checkpoint.h>
+@@ -588,6 +589,11 @@ static int check_kernel_const(struct ckpt_const *h)
+ 	/* rlimit */
+ 	if (h->rlimit_nlimits != RLIM_NLIMITS)
+ 		return -EINVAL;
++	/* tty */
++	if (h->n_tty_buf_size != N_TTY_BUF_SIZE)
++		return -EINVAL;
++	if (h->tty_termios_ncc != NCC)
++		return -EINVAL;
+ 
+ 	return 0;
+ }
 -- 
 1.6.3.3
