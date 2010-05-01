@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH v21 067/100] c/r: [signal 3/4] pending signals (private,
-	shared)
-Date: Sat,  1 May 2010 10:15:49 -0400
-Message-ID: <1272723382-19470-68-git-send-email-orenl__7807.08772731504$1272728046$gmane$org@cs.columbia.edu>
+Subject: [PATCH v21 053/100] c/r (ipc): allow allocation of a desired ipc
+	identifier
+Date: Sat,  1 May 2010 10:15:35 -0400
+Message-ID: <1272723382-19470-54-git-send-email-orenl__32026.7377923757$1272728149$gmane$org@cs.columbia.edu>
 References: <1272723382-19470-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -19,445 +19,372 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Manfred Spraul <manfred-nhLOkwUX5cPe2c5cEj3t2g@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This patch adds checkpoint and restart of pending signals queues:
-struct sigpending, both per-task t->sigpending and shared (per-
-thread-group) t->signal->shared_sigpending.
-
-To checkpoint pending signals (private/shared) we first detach the
-signal queue (and copy the mask) to a separate struct sigpending.
-This separate structure can be iterated through without locking.
-
-Once the state is saved, we re-attaches (prepends) the original signal
-queue back to the original struct sigpending.
-
-Signals that arrive(d) in the meantime will be suitably queued after
-these (for real-time signals). Repeated non-realtime signals will not
-be queued because they will already be marked in the pending mask,
-that remains as is. This is the expected behavior of non-realtime
-signals.
-
-Changelog[v21]:
-  - [Matt Helsley] Move the signal c/r changes to kernel/signal.c
-Changelog [v19-rc1]:
-  - Switch to ckpt_obj_try_fetch()
-  - [Matt Helsley] Add cpp definitions for enums
-Changelog [v4]:
-  - Rename headerless struct ckpt_hdr_* to struct ckpt_*
-Changelog [v3]:
-  - [Dan Smith] Sanity check for number of pending signals in buffer
-Changelog [v2]:
-  - Validate si_errno from checkpoint image
-Changelog [v1]:
-  - Fix compilation warnings
-  - [Louis Rilling] Remove SIGQUEUE_PREALLOC flag from queued signals
-  - [Louis Rilling] Fail if task has posix-timers or SI_TIMER signal
+During restart, we need to allocate ipc objects that with the same
+identifiers as recorded during checkpoint. Modify the allocation
+code allow an in-kernel caller to request a specific ipc identifier.
+The system call interface remains unchanged.
 
 Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Manfred Spraul <manfred-nhLOkwUX5cPe2c5cEj3t2g@public.gmane.org>
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Acked-by: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/checkpoint_hdr.h |   24 ++++
- kernel/signal.c                |  279 +++++++++++++++++++++++++++++++++++++++-
- 2 files changed, 301 insertions(+), 2 deletions(-)
+ ipc/msg.c  |   17 ++++++++++++-----
+ ipc/sem.c  |   17 ++++++++++++-----
+ ipc/shm.c  |   19 +++++++++++++------
+ ipc/util.c |   42 +++++++++++++++++++++++++++++-------------
+ ipc/util.h |    9 +++++----
+ 5 files changed, 71 insertions(+), 33 deletions(-)
 
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 0320bfa..3e6b49b 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -142,6 +142,8 @@ enum {
- #define CKPT_HDR_SIGNAL CKPT_HDR_SIGNAL
- 	CKPT_HDR_SIGNAL_TASK,
- #define CKPT_HDR_SIGNAL_TASK CKPT_HDR_SIGNAL_TASK
-+	CKPT_HDR_SIGPENDING,
-+#define CKPT_HDR_SIGPENDING CKPT_HDR_SIGPENDING
+diff --git a/ipc/msg.c b/ipc/msg.c
+index 9547cb7..c884908 100644
+--- a/ipc/msg.c
++++ b/ipc/msg.c
+@@ -72,7 +72,7 @@ struct msg_sender {
+ #define msg_unlock(msq)		ipc_unlock(&(msq)->q_perm)
  
- 	CKPT_HDR_TAIL = 9001,
- #define CKPT_HDR_TAIL CKPT_HDR_TAIL
-@@ -545,6 +547,28 @@ struct ckpt_hdr_sighand {
- 	struct ckpt_sigaction action[0];
- } __attribute__((aligned(8)));
+ static void freeque(struct ipc_namespace *, struct kern_ipc_perm *);
+-static int newque(struct ipc_namespace *, struct ipc_params *);
++static int newque(struct ipc_namespace *, struct ipc_params *, int);
+ #ifdef CONFIG_PROC_FS
+ static int sysvipc_msg_proc_show(struct seq_file *s, void *it);
+ #endif
+@@ -174,10 +174,12 @@ static inline void msg_rmid(struct ipc_namespace *ns, struct msg_queue *s)
+  * newque - Create a new msg queue
+  * @ns: namespace
+  * @params: ptr to the structure that contains the key and msgflg
++ * @req_id: request desired id if available (-1 if don't care)
+  *
+  * Called with msg_ids.rw_mutex held (writer)
+  */
+-static int newque(struct ipc_namespace *ns, struct ipc_params *params)
++static int
++newque(struct ipc_namespace *ns, struct ipc_params *params, int req_id)
+ {
+ 	struct msg_queue *msq;
+ 	int id, retval;
+@@ -201,7 +203,7 @@ static int newque(struct ipc_namespace *ns, struct ipc_params *params)
+ 	/*
+ 	 * ipc_addid() locks msq
+ 	 */
+-	id = ipc_addid(&msg_ids(ns), &msq->q_perm, ns->msg_ctlmni);
++	id = ipc_addid(&msg_ids(ns), &msq->q_perm, ns->msg_ctlmni, req_id);
+ 	if (id < 0) {
+ 		security_msg_queue_free(msq);
+ 		ipc_rcu_putref(msq);
+@@ -309,7 +311,7 @@ static inline int msg_security(struct kern_ipc_perm *ipcp, int msgflg)
+ 	return security_msg_queue_associate(msq, msgflg);
+ }
  
-+#ifndef HAVE_ARCH_SIGINFO_T
-+struct ckpt_siginfo {
-+	__u32 signo;
-+	__u32 _errno;
-+	__u32 code;
+-SYSCALL_DEFINE2(msgget, key_t, key, int, msgflg)
++int do_msgget(key_t key, int msgflg, int req_id)
+ {
+ 	struct ipc_namespace *ns;
+ 	struct ipc_ops msg_ops;
+@@ -324,7 +326,12 @@ SYSCALL_DEFINE2(msgget, key_t, key, int, msgflg)
+ 	msg_params.key = key;
+ 	msg_params.flg = msgflg;
+ 
+-	return ipcget(ns, &msg_ids(ns), &msg_ops, &msg_params);
++	return ipcget(ns, &msg_ids(ns), &msg_ops, &msg_params, req_id);
++}
 +
-+	__u32 pid;
-+	__s32 uid;
-+	__u32 sigval_int;
-+	__u64 sigval_ptr;
-+	__u64 utime;
-+	__u64 stime;
-+} __attribute__((aligned(8)));
-+#endif
-+
-+struct ckpt_hdr_sigpending {
-+	struct ckpt_hdr h;
-+	__u32 nr_pending;
-+	struct ckpt_sigset signal;
-+	struct ckpt_siginfo siginfo[0];
-+} __attribute__((aligned(8)));
-+
- struct ckpt_rlimit {
- 	__u64 rlim_cur;
- 	__u64 rlim_max;
-diff --git a/kernel/signal.c b/kernel/signal.c
-index aae1f73..11f54ad 100644
---- a/kernel/signal.c
-+++ b/kernel/signal.c
-@@ -2911,11 +2911,155 @@ static const struct ckpt_obj_ops ckpt_obj_sighand_ops = {
-  * signal checkpoint/restart
++SYSCALL_DEFINE2(msgget, key_t, key, int, msgflg)
++{
++	return do_msgget(key, msgflg, -1);
+ }
+ 
+ static inline unsigned long
+diff --git a/ipc/sem.c b/ipc/sem.c
+index dbef95b..faed3a3 100644
+--- a/ipc/sem.c
++++ b/ipc/sem.c
+@@ -92,7 +92,7 @@
+ #define sem_unlock(sma)		ipc_unlock(&(sma)->sem_perm)
+ #define sem_checkid(sma, semid)	ipc_checkid(&sma->sem_perm, semid)
+ 
+-static int newary(struct ipc_namespace *, struct ipc_params *);
++static int newary(struct ipc_namespace *, struct ipc_params *, int);
+ static void freeary(struct ipc_namespace *, struct kern_ipc_perm *);
+ #ifdef CONFIG_PROC_FS
+ static int sysvipc_sem_proc_show(struct seq_file *s, void *it);
+@@ -228,11 +228,13 @@ static inline void sem_rmid(struct ipc_namespace *ns, struct sem_array *s)
+  * newary - Create a new semaphore set
+  * @ns: namespace
+  * @params: ptr to the structure that contains key, semflg and nsems
++ * @req_id: request desired id if available (-1 if don't care)
+  *
+  * Called with sem_ids.rw_mutex held (as a writer)
   */
  
-+static void fill_siginfo(struct ckpt_siginfo *si, siginfo_t *info)
-+{
-+	si->signo = info->si_signo;
-+	si->_errno = info->si_errno;
-+	si->code = info->si_code;
-+
-+	/* TODO: convert info->si_uid to uid_objref */
-+
-+	switch (info->si_code & __SI_MASK) {
-+	case __SI_TIMER:
-+		si->pid = info->si_tid;
-+		si->uid = info->si_overrun;
-+		si->sigval_int = info->si_int;
-+		si->utime = info->si_sys_private;
-+		break;
-+	case __SI_POLL:
-+		si->pid = info->si_band;
-+		si->sigval_int = info->si_fd;
-+		break;
-+	case __SI_FAULT:
-+		si->sigval_ptr = (unsigned long) info->si_addr;
-+#ifdef __ARCH_SI_TRAPNO
-+		si->sigval_int = info->si_trapno;
-+#endif
-+		break;
-+	case __SI_CHLD:
-+		si->pid = info->si_pid;
-+		si->uid = info->si_uid;
-+		si->sigval_int = info->si_status;
-+		si->stime = info->si_stime;
-+		si->utime = info->si_utime;
-+		break;
-+	case __SI_KILL:
-+	case __SI_RT:
-+	case __SI_MESGQ:
-+		si->pid = info->si_pid;
-+		si->uid = info->si_uid;
-+		si->sigval_ptr = (unsigned long) info->si_ptr;
-+		break;
-+	default:
-+		BUG();
-+	}
-+}
-+
-+static int load_siginfo(siginfo_t *info, struct ckpt_siginfo *si)
-+{
-+	if (!valid_signal(si->signo))
-+		return -EINVAL;
-+	if (!ckpt_validate_errno(si->_errno))
-+		return -EINVAL;
-+
-+	info->si_signo = si->signo;
-+	info->si_errno = si->_errno;
-+	info->si_code = si->code;
-+
-+	/* TODO: validate remaining signal fields */
-+
-+	switch (info->si_code & __SI_MASK) {
-+	case __SI_TIMER:
-+		info->si_tid = si->pid;
-+		info->si_overrun = si->uid;
-+		info->si_int = si->sigval_int;
-+		info->si_sys_private = si->utime;
-+		break;
-+	case __SI_POLL:
-+		info->si_band = si->pid;
-+		info->si_fd = si->sigval_int;
-+		break;
-+	case __SI_FAULT:
-+		info->si_addr = (void __user *) (unsigned long) si->sigval_ptr;
-+#ifdef __ARCH_SI_TRAPNO
-+		info->si_trapno = si->sigval_int;
-+#endif
-+		break;
-+	case __SI_CHLD:
-+		info->si_pid = si->pid;
-+		info->si_uid = si->uid;
-+		info->si_status = si->sigval_int;
-+		info->si_stime = si->stime;
-+		info->si_utime = si->utime;
-+		break;
-+	case __SI_KILL:
-+	case __SI_RT:
-+	case __SI_MESGQ:
-+		info->si_pid = si->pid;
-+		info->si_uid = si->uid;
-+		info->si_ptr = (void __user *) (unsigned long) si->sigval_ptr;
-+		break;
-+	default:
-+		return -EINVAL;
-+	}
-+
-+	return 0;
-+}
-+
-+/*
-+ * To checkpoint pending signals (private/shared) the caller moves the
-+ * signal queue (and copies the mask) to a separate struct sigpending,
-+ * therefore we can iterate through it without locking.
-+ * After we return, the caller re-attaches (prepends) the original
-+ * signal queue to the original struct sigpending. Thus, signals that
-+ * arrive(d) in the meantime will be suitably queued after these.
-+ * Finally, repeated non-realtime signals will not be queued because
-+ * they will already be marked in the pending mask, that remains as is.
-+ * This is the expected behavior of non-realtime signals.
-+ */
-+static int checkpoint_sigpending(struct ckpt_ctx *ctx,
-+				 struct sigpending *pending)
-+{
-+	struct ckpt_hdr_sigpending *h;
-+	struct ckpt_siginfo *si;
-+	struct sigqueue *q;
-+	int nr_pending = 0;
-+	int ret;
-+
-+	list_for_each_entry(q, &pending->list, list) {
-+		/* TODO: remove after adding support for posix-timers */
-+		if ((q->info.si_code & __SI_MASK) == __SI_TIMER) {
-+			ckpt_err(ctx, -ENOTSUPP, "%(T)signal SI_TIMER\n");
-+			return -ENOTSUPP;
-+		}
-+		nr_pending++;
-+	}
-+
-+	h = ckpt_hdr_get_type(ctx, nr_pending * sizeof(*si) + sizeof(*h),
-+			      CKPT_HDR_SIGPENDING);
-+	if (!h)
-+		return -ENOMEM;
-+
-+	h->nr_pending = nr_pending;
-+	fill_sigset(&h->signal, &pending->signal);
-+
-+	si = h->siginfo;
-+	list_for_each_entry(q, &pending->list, list)
-+		fill_siginfo(si++, &q->info);
-+
-+	ret = ckpt_write_obj(ctx, &h->h);
-+	ckpt_hdr_put(ctx, h);
-+
-+	return ret;
-+}
-+
- static int checkpoint_signal(struct ckpt_ctx *ctx, struct task_struct *t)
+-static int newary(struct ipc_namespace *ns, struct ipc_params *params)
++static int
++newary(struct ipc_namespace *ns, struct ipc_params *params, int req_id)
  {
- 	struct ckpt_hdr_signal *h;
- 	struct signal_struct *signal;
-+	struct sigpending shared_pending;
- 	struct rlimit *rlim;
-+	unsigned long flags;
- 	int i, ret;
- 
- 	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_SIGNAL);
-@@ -2925,13 +3069,46 @@ static int checkpoint_signal(struct ckpt_ctx *ctx, struct task_struct *t)
- 	signal = t->signal;
- 	rlim = signal->rlim;
- 
-+	INIT_LIST_HEAD(&shared_pending.list);
-+
-+	/* temporarily borrow signal queue - see chekcpoint_sigpending() */
-+	if (!lock_task_sighand(t, &flags)) {
-+		ckpt_err(ctx, -EBUSY, "%(T)c/r: [pid %d] without sighand\n",
-+			 task_pid_vnr(t));
-+		ret = -EBUSY;
-+		goto out;
-+	}
-+
-+	/* TODO: remove after adding support for posix-timers */
-+	if (!list_empty(&signal->posix_timers)) {
-+		unlock_task_sighand(t, &flags);
-+		ckpt_err(ctx, -ENOTSUPP, "%(T)%(P)posix-timers\n", signal);
-+		ret = -ENOTSUPP;
-+		goto out;
-+	}
-+
-+	list_splice_init(&signal->shared_pending.list, &shared_pending.list);
-+	shared_pending.signal = signal->shared_pending.signal;
-+
- 	/* rlimit */
- 	for (i = 0; i < RLIM_NLIMITS; i++) {
- 		h->rlim[i].rlim_cur = rlim[i].rlim_cur;
- 		h->rlim[i].rlim_max = rlim[i].rlim_max;
+ 	int id;
+ 	int retval;
+@@ -265,7 +267,7 @@ static int newary(struct ipc_namespace *ns, struct ipc_params *params)
+ 		return retval;
  	}
-+	unlock_task_sighand(t, &flags);
  
- 	ret = ckpt_write_obj(ctx, &h->h);
-+	if (!ret)
-+		ret = checkpoint_sigpending(ctx, &shared_pending);
-+
-+	/* return the borrowed queue */
-+	if (!lock_task_sighand(t, &flags)) {
-+		pr_warning("c/r: [%d] sighand disappeared\n", task_pid_vnr(t));
-+		goto out;
-+	}
-+	list_splice(&shared_pending.list, &signal->shared_pending.list);
-+	unlock_task_sighand(t, &flags);
-+ out:
- 	ckpt_hdr_put(ctx, h);
- 	return ret;
- }
-@@ -2942,9 +3119,55 @@ int checkpoint_obj_signal(struct ckpt_ctx *ctx, struct task_struct *t)
- 	return checkpoint_signal(ctx, t);
+-	id = ipc_addid(&sem_ids(ns), &sma->sem_perm, ns->sc_semmni);
++	id = ipc_addid(&sem_ids(ns), &sma->sem_perm, ns->sc_semmni, req_id);
+ 	if (id < 0) {
+ 		security_sem_free(sma);
+ 		ipc_rcu_putref(sma);
+@@ -315,7 +317,7 @@ static inline int sem_more_checks(struct kern_ipc_perm *ipcp,
+ 	return 0;
  }
  
-+static int restore_sigpending(struct ckpt_ctx *ctx, struct sigpending *pending)
-+{
-+	struct ckpt_hdr_sigpending *h;
-+	struct ckpt_siginfo *si;
-+	struct sigqueue *q;
-+	int ret = 0;
-+
-+	h = ckpt_read_buf_type(ctx, 0, CKPT_HDR_SIGPENDING);
-+	if (IS_ERR(h))
-+		return PTR_ERR(h);
-+
-+	if (h->h.len != h->nr_pending * sizeof(*si) + sizeof(*h)) {
-+		ret = -EINVAL;
-+		goto out;
-+	}
-+
-+	INIT_LIST_HEAD(&pending->list);
-+	load_sigset(&pending->signal, &h->signal);
-+
-+	si = h->siginfo;
-+	while (h->nr_pending--) {
-+		q = sigqueue_alloc();
-+		if (!q) {
-+			ret = -ENOMEM;
-+			break;
-+		}
-+
-+		ret = load_siginfo(&q->info, si++);
-+		if (ret < 0) {
-+			sigqueue_free(q);
-+			break;
-+		}
-+
-+		q->flags &= ~SIGQUEUE_PREALLOC;
-+		list_add_tail(&pending->list, &q->list);
-+	}
-+
-+	if (ret < 0)
-+		flush_sigqueue(pending);
-+ out:
-+	ckpt_hdr_put(ctx, h);
-+	return ret;
+-SYSCALL_DEFINE3(semget, key_t, key, int, nsems, int, semflg)
++int do_semget(key_t key, int nsems, int semflg, int req_id)
+ {
+ 	struct ipc_namespace *ns;
+ 	struct ipc_ops sem_ops;
+@@ -334,7 +336,12 @@ SYSCALL_DEFINE3(semget, key_t, key, int, nsems, int, semflg)
+ 	sem_params.flg = semflg;
+ 	sem_params.u.nsems = nsems;
+ 
+-	return ipcget(ns, &sem_ids(ns), &sem_ops, &sem_params);
++	return ipcget(ns, &sem_ids(ns), &sem_ops, &sem_params, req_id);
 +}
 +
- static int restore_signal(struct ckpt_ctx *ctx)
- {
- 	struct ckpt_hdr_signal *h;
-+	struct sigpending new_pending;
-+	struct sigpending *pending;
- 	struct rlimit rlim;
- 	int i, ret;
- 
-@@ -2958,8 +3181,20 @@ static int restore_signal(struct ckpt_ctx *ctx)
- 		rlim.rlim_max = h->rlim[i].rlim_max;
- 		ret = do_setrlimit(i, &rlim);
- 		if (ret < 0)
--			break;
-+			goto out;
- 	}
-+
-+	ret = restore_sigpending(ctx, &new_pending);
-+	if (ret < 0)
-+		goto out;
-+
-+	spin_lock_irq(&current->sighand->siglock);
-+	pending = &current->signal->shared_pending;
-+	flush_sigqueue(pending);
-+	pending->signal = new_pending.signal;
-+	list_splice_init(&new_pending.list, &pending->list);
-+	spin_unlock_irq(&current->sighand->siglock);
-+out:
- 	ckpt_hdr_put(ctx, h);
- 	return ret;
++SYSCALL_DEFINE3(semget, key_t, key, int, nsems, int, semflg)
++{
++	return do_semget(key, nsems, semflg, -1);
  }
-@@ -2969,7 +3204,7 @@ int restore_obj_signal(struct ckpt_ctx *ctx, int signal_objref)
- 	struct signal_struct *signal;
- 	int ret = 0;
  
--	signal = ckpt_obj_fetch(ctx, signal_objref, CKPT_OBJ_SIGNAL);
-+	signal = ckpt_obj_try_fetch(ctx, signal_objref, CKPT_OBJ_SIGNAL);
- 	if (!IS_ERR(signal)) {
- 		/*
- 		 * signal_struct is already shared properly as it is
-@@ -2994,8 +3229,34 @@ int restore_obj_signal(struct ckpt_ctx *ctx, int signal_objref)
- int checkpoint_task_signal(struct ckpt_ctx *ctx, struct task_struct *t)
+ /*
+diff --git a/ipc/shm.c b/ipc/shm.c
+index 1a314c8..76c3585 100644
+--- a/ipc/shm.c
++++ b/ipc/shm.c
+@@ -61,7 +61,7 @@ static const struct vm_operations_struct shm_vm_ops;
+ #define shm_unlock(shp)			\
+ 	ipc_unlock(&(shp)->shm_perm)
+ 
+-static int newseg(struct ipc_namespace *, struct ipc_params *);
++static int newseg(struct ipc_namespace *, struct ipc_params *, int);
+ static void shm_open(struct vm_area_struct *vma);
+ static void shm_close(struct vm_area_struct *vma);
+ static void shm_destroy (struct ipc_namespace *ns, struct shmid_kernel *shp);
+@@ -82,7 +82,7 @@ void shm_init_ns(struct ipc_namespace *ns)
+  * Called with shm_ids.rw_mutex (writer) and the shp structure locked.
+  * Only shm_ids.rw_mutex remains locked on exit.
+  */
+-static void do_shm_rmid(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
++void do_shm_rmid(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
  {
- 	struct ckpt_hdr_signal_task *h;
-+	struct sigpending pending;
-+	unsigned long flags;
- 	int ret;
+ 	struct shmid_kernel *shp;
+ 	shp = container_of(ipcp, struct shmid_kernel, shm_perm);
+@@ -329,11 +329,13 @@ static const struct vm_operations_struct shm_vm_ops = {
+  * newseg - Create a new shared memory segment
+  * @ns: namespace
+  * @params: ptr to the structure that contains key, size and shmflg
++ * @req_id: request desired id if available (-1 if don't care)
+  *
+  * Called with shm_ids.rw_mutex held as a writer.
+  */
  
-+	INIT_LIST_HEAD(&pending.list);
+-static int newseg(struct ipc_namespace *ns, struct ipc_params *params)
++static int
++newseg(struct ipc_namespace *ns, struct ipc_params *params, int req_id)
+ {
+ 	key_t key = params->key;
+ 	int shmflg = params->flg;
+@@ -388,7 +390,7 @@ static int newseg(struct ipc_namespace *ns, struct ipc_params *params)
+ 	if (IS_ERR(file))
+ 		goto no_file;
+ 
+-	id = ipc_addid(&shm_ids(ns), &shp->shm_perm, ns->shm_ctlmni);
++	id = ipc_addid(&shm_ids(ns), &shp->shm_perm, ns->shm_ctlmni, req_id);
+ 	if (id < 0) {
+ 		error = id;
+ 		goto no_id;
+@@ -448,7 +450,7 @@ static inline int shm_more_checks(struct kern_ipc_perm *ipcp,
+ 	return 0;
+ }
+ 
+-SYSCALL_DEFINE3(shmget, key_t, key, size_t, size, int, shmflg)
++int do_shmget(key_t key, size_t size, int shmflg, int req_id)
+ {
+ 	struct ipc_namespace *ns;
+ 	struct ipc_ops shm_ops;
+@@ -464,7 +466,12 @@ SYSCALL_DEFINE3(shmget, key_t, key, size_t, size, int, shmflg)
+ 	shm_params.flg = shmflg;
+ 	shm_params.u.size = size;
+ 
+-	return ipcget(ns, &shm_ids(ns), &shm_ops, &shm_params);
++	return ipcget(ns, &shm_ids(ns), &shm_ops, &shm_params, req_id);
++}
 +
-+	/* temporarily borrow signal queue - see chekcpoint_sigpending() */
-+	if (!lock_task_sighand(t, &flags)) {
-+		ckpt_err(ctx, -EBUSY, "%(T)signand missing\n");
-+		return -EBUSY;
++SYSCALL_DEFINE3(shmget, key_t, key, size_t, size, int, shmflg)
++{
++	return do_shmget(key, size, shmflg, -1);
+ }
+ 
+ static inline unsigned long copy_shmid_to_user(void __user *buf, struct shmid64_ds *in, int version)
+diff --git a/ipc/util.c b/ipc/util.c
+index 79ce84e..c4ce60d 100644
+--- a/ipc/util.c
++++ b/ipc/util.c
+@@ -247,10 +247,12 @@ int ipc_get_maxid(struct ipc_ids *ids)
+  *	Called with ipc_ids.rw_mutex held as a writer.
+  */
+  
+-int ipc_addid(struct ipc_ids* ids, struct kern_ipc_perm* new, int size)
++int
++ipc_addid(struct ipc_ids *ids, struct kern_ipc_perm *new, int size, int req_id)
+ {
+ 	uid_t euid;
+ 	gid_t egid;
++	int lid = 0;
+ 	int id, err;
+ 
+ 	if (size > IPCMNI)
+@@ -259,28 +261,41 @@ int ipc_addid(struct ipc_ids* ids, struct kern_ipc_perm* new, int size)
+ 	if (ids->in_use >= size)
+ 		return -ENOSPC;
+ 
++	if (req_id >= 0)
++		lid = ipcid_to_idx(req_id);
++
+ 	spin_lock_init(&new->lock);
+ 	new->deleted = 0;
+ 	rcu_read_lock();
+ 	spin_lock(&new->lock);
+ 
+-	err = idr_get_new(&ids->ipcs_idr, new, &id);
++	err = idr_get_new_above(&ids->ipcs_idr, new, lid, &id);
+ 	if (err) {
+ 		spin_unlock(&new->lock);
+ 		rcu_read_unlock();
+ 		return err;
+ 	}
+ 
++	if (req_id >= 0) {
++		if (id != lid) {
++			idr_remove(&ids->ipcs_idr, id);
++			spin_unlock(&new->lock);
++			rcu_read_unlock();
++			return -EBUSY;
++		}
++		new->seq = req_id / SEQ_MULTIPLIER;
++	} else {
++		new->seq = ids->seq++;
++		if (ids->seq > ids->seq_max)
++			ids->seq = 0;
 +	}
-+	list_splice_init(&t->pending.list, &pending.list);
-+	pending.signal = t->pending.signal;
-+	unlock_task_sighand(t, &flags);
 +
-+	ret = checkpoint_sigpending(ctx, &pending);
-+
-+	/* re-attach the borrowed queue */
-+	if (!lock_task_sighand(t, &flags)) {
-+		ckpt_err(ctx, -EBUSY, "%(T)signand missing\n");
-+		return -EBUSY;
-+	}
-+	list_splice(&pending.list, &t->pending.list);
-+	unlock_task_sighand(t, &flags);
-+
-+	if (ret < 0)
-+		return ret;
-+
- 	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_SIGNAL_TASK);
- 	if (!h)
+ 	ids->in_use++;
+ 
+ 	current_euid_egid(&euid, &egid);
+ 	new->cuid = new->uid = euid;
+ 	new->gid = new->cgid = egid;
+ 
+-	new->seq = ids->seq++;
+-	if(ids->seq > ids->seq_max)
+-		ids->seq = 0;
+-
+ 	new->id = ipc_buildid(id, new->seq);
+ 	return id;
+ }
+@@ -296,7 +311,7 @@ int ipc_addid(struct ipc_ids* ids, struct kern_ipc_perm* new, int size)
+  *	when the key is IPC_PRIVATE.
+  */
+ static int ipcget_new(struct ipc_namespace *ns, struct ipc_ids *ids,
+-		struct ipc_ops *ops, struct ipc_params *params)
++		struct ipc_ops *ops, struct ipc_params *params, int req_id)
+ {
+ 	int err;
+ retry:
+@@ -306,7 +321,7 @@ retry:
  		return -ENOMEM;
-@@ -3013,7 +3274,21 @@ int checkpoint_task_signal(struct ckpt_ctx *ctx, struct task_struct *t)
- int restore_task_signal(struct ckpt_ctx *ctx)
- {
- 	struct ckpt_hdr_signal_task *h;
-+	struct sigpending new_pending;
-+	struct sigpending *pending;
- 	sigset_t blocked;
-+	int ret;
-+
-+	ret = restore_sigpending(ctx, &new_pending);
-+	if (ret < 0)
-+		return ret;
-+
-+	spin_lock_irq(&current->sighand->siglock);
-+	pending = &current->pending;
-+	flush_sigqueue(pending);
-+	pending->signal = new_pending.signal;
-+	list_splice_init(&new_pending.list, &pending->list);
-+	spin_unlock_irq(&current->sighand->siglock);
  
- 	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_SIGNAL_TASK);
- 	if (IS_ERR(h))
+ 	down_write(&ids->rw_mutex);
+-	err = ops->getnew(ns, params);
++	err = ops->getnew(ns, params, req_id);
+ 	up_write(&ids->rw_mutex);
+ 
+ 	if (err == -EAGAIN)
+@@ -351,6 +366,7 @@ static int ipc_check_perms(struct kern_ipc_perm *ipcp, struct ipc_ops *ops,
+  *	@ids: IPC identifer set
+  *	@ops: the actual creation routine to call
+  *	@params: its parameters
++ *	@req_id: request desired id if available (-1 if don't care)
+  *
+  *	This routine is called by sys_msgget, sys_semget() and sys_shmget()
+  *	when the key is not IPC_PRIVATE.
+@@ -360,7 +376,7 @@ static int ipc_check_perms(struct kern_ipc_perm *ipcp, struct ipc_ops *ops,
+  *	On success, the ipc id is returned.
+  */
+ static int ipcget_public(struct ipc_namespace *ns, struct ipc_ids *ids,
+-		struct ipc_ops *ops, struct ipc_params *params)
++		struct ipc_ops *ops, struct ipc_params *params, int req_id)
+ {
+ 	struct kern_ipc_perm *ipcp;
+ 	int flg = params->flg;
+@@ -381,7 +397,7 @@ retry:
+ 		else if (!err)
+ 			err = -ENOMEM;
+ 		else
+-			err = ops->getnew(ns, params);
++			err = ops->getnew(ns, params, req_id);
+ 	} else {
+ 		/* ipc object has been locked by ipc_findkey() */
+ 
+@@ -742,12 +758,12 @@ struct kern_ipc_perm *ipc_lock_check(struct ipc_ids *ids, int id)
+  * Common routine called by sys_msgget(), sys_semget() and sys_shmget().
+  */
+ int ipcget(struct ipc_namespace *ns, struct ipc_ids *ids,
+-			struct ipc_ops *ops, struct ipc_params *params)
++		struct ipc_ops *ops, struct ipc_params *params, int req_id)
+ {
+ 	if (params->key == IPC_PRIVATE)
+-		return ipcget_new(ns, ids, ops, params);
++		return ipcget_new(ns, ids, ops, params, req_id);
+ 	else
+-		return ipcget_public(ns, ids, ops, params);
++		return ipcget_public(ns, ids, ops, params, req_id);
+ }
+ 
+ /**
+diff --git a/ipc/util.h b/ipc/util.h
+index 764b51a..159a73c 100644
+--- a/ipc/util.h
++++ b/ipc/util.h
+@@ -71,7 +71,7 @@ struct ipc_params {
+  *      . routine to call for an extra check if needed
+  */
+ struct ipc_ops {
+-	int (*getnew) (struct ipc_namespace *, struct ipc_params *);
++	int (*getnew) (struct ipc_namespace *, struct ipc_params *, int);
+ 	int (*associate) (struct kern_ipc_perm *, int);
+ 	int (*more_checks) (struct kern_ipc_perm *, struct ipc_params *);
+ };
+@@ -94,7 +94,7 @@ void __init ipc_init_proc_interface(const char *path, const char *header,
+ #define ipcid_to_idx(id) ((id) % SEQ_MULTIPLIER)
+ 
+ /* must be called with ids->rw_mutex acquired for writing */
+-int ipc_addid(struct ipc_ids *, struct kern_ipc_perm *, int);
++int ipc_addid(struct ipc_ids *, struct kern_ipc_perm *, int, int);
+ 
+ /* must be called with ids->rw_mutex acquired for reading */
+ int ipc_get_maxid(struct ipc_ids *);
+@@ -171,7 +171,8 @@ static inline void ipc_unlock(struct kern_ipc_perm *perm)
+ 
+ struct kern_ipc_perm *ipc_lock_check(struct ipc_ids *ids, int id);
+ int ipcget(struct ipc_namespace *ns, struct ipc_ids *ids,
+-			struct ipc_ops *ops, struct ipc_params *params);
++	   struct ipc_ops *ops, struct ipc_params *params, int req_id);
+ void free_ipcs(struct ipc_namespace *ns, struct ipc_ids *ids,
+-		void (*free)(struct ipc_namespace *, struct kern_ipc_perm *));
++	       void (*free)(struct ipc_namespace *, struct kern_ipc_perm *));
++
+ #endif
 -- 
 1.6.3.3
