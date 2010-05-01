@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH v21 100/100] c/r: add an entry for checkpoint/restart in
-	MAINTAINERS
-Date: Sat,  1 May 2010 10:16:22 -0400
-Message-ID: <1272723382-19470-101-git-send-email-orenl__8458.58678590066$1272725687$gmane$org@cs.columbia.edu>
+Subject: [PATCH v21 026/100] c/r: export functionality used in next patch for
+	restart-blocks
+Date: Sat,  1 May 2010 10:15:08 -0400
+Message-ID: <1272723382-19470-27-git-send-email-orenl__40068.9914859415$1272725813$gmane$org@cs.columbia.edu>
 References: <1272723382-19470-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,33 +22,162 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
----
- MAINTAINERS |   12 ++++++++++++
- 1 files changed, 12 insertions(+), 0 deletions(-)
+To support c/r of restart-blocks (system call that need to be
+restarted because they were interrupted but there was no userspace
+visible side-effect), export restart-block callbacks for poll()
+and futex() syscalls.
 
-diff --git a/MAINTAINERS b/MAINTAINERS
-index a0e3c3a..e4494d2 100644
---- a/MAINTAINERS
-+++ b/MAINTAINERS
-@@ -1501,6 +1501,18 @@ M:	Andy Whitcroft <apw-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
- S:	Supported
- F:	scripts/checkpatch.pl
+More details on c/r of restart-blocks and how it works in the
+following patch.
+
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ fs/select.c                  |    2 +-
+ include/linux/futex.h        |   11 +++++++++++
+ include/linux/poll.h         |    3 +++
+ include/linux/posix-timers.h |    6 ++++++
+ kernel/compat.c              |    4 ++--
+ kernel/futex.c               |   12 +-----------
+ kernel/posix-timers.c        |    2 +-
+ 7 files changed, 25 insertions(+), 15 deletions(-)
+
+diff --git a/fs/select.c b/fs/select.c
+index 500a669..194c6d6 100644
+--- a/fs/select.c
++++ b/fs/select.c
+@@ -890,7 +890,7 @@ out_fds:
+ 	return err;
+ }
  
-+CHECKPOINT-RESTART
-+M:	Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-+M:	Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-+L:	containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-+W:	http://ckpt.wiki.kernel.org/index.php/Main_Page
-+S:	Maintained
-+F:	*checkpoint*
-+K:	checkpoint
-+K:	restore
-+K:	ckpt
-+K:	c/r
+-static long do_restart_poll(struct restart_block *restart_block)
++long do_restart_poll(struct restart_block *restart_block)
+ {
+ 	struct pollfd __user *ufds = restart_block->poll.ufds;
+ 	int nfds = restart_block->poll.nfds;
+diff --git a/include/linux/futex.h b/include/linux/futex.h
+index 1e5a26d..ae755f6 100644
+--- a/include/linux/futex.h
++++ b/include/linux/futex.h
+@@ -136,6 +136,17 @@ extern int
+ handle_futex_death(u32 __user *uaddr, struct task_struct *curr, int pi);
+ 
+ /*
++ * In case we must use restart_block to restart a futex_wait,
++ * we encode in the 'flags' shared capability
++ */
++#define FLAGS_SHARED		0x01
++#define FLAGS_CLOCKRT		0x02
++#define FLAGS_HAS_TIMEOUT	0x04
 +
- CISCO 10G ETHERNET DRIVER
- M:	Scott Feldman <scofeldm-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>
- M:	Joe Eykholt <jeykholt-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>
++/* for c/r */
++extern long futex_wait_restart(struct restart_block *restart);
++
++/*
+  * Futexes are matched on equal values of this key.
+  * The key type depends on whether it's a shared or private mapping.
+  * Don't rearrange members without looking at hash_futex().
+diff --git a/include/linux/poll.h b/include/linux/poll.h
+index 600cc1f..03357b8 100644
+--- a/include/linux/poll.h
++++ b/include/linux/poll.h
+@@ -136,6 +136,9 @@ extern int core_sys_select(int n, fd_set __user *inp, fd_set __user *outp,
+ 
+ extern int poll_select_set_timeout(struct timespec *to, long sec, long nsec);
+ 
++/* used by checkpoint/restart */
++extern long do_restart_poll(struct restart_block *restart_block);
++
+ #endif /* KERNEL */
+ 
+ #endif /* _LINUX_POLL_H */
+diff --git a/include/linux/posix-timers.h b/include/linux/posix-timers.h
+index 4f71bf4..d0d6a66 100644
+--- a/include/linux/posix-timers.h
++++ b/include/linux/posix-timers.h
+@@ -101,6 +101,10 @@ int posix_cpu_timer_create(struct k_itimer *timer);
+ int posix_cpu_nsleep(const clockid_t which_clock, int flags,
+ 		     struct timespec *rqtp, struct timespec __user *rmtp);
+ long posix_cpu_nsleep_restart(struct restart_block *restart_block);
++#ifdef CONFIG_COMPAT
++long compat_nanosleep_restart(struct restart_block *restart);
++long compat_clock_nanosleep_restart(struct restart_block *restart);
++#endif
+ int posix_cpu_timer_set(struct k_itimer *timer, int flags,
+ 			struct itimerspec *new, struct itimerspec *old);
+ int posix_cpu_timer_del(struct k_itimer *timer);
+@@ -119,4 +123,6 @@ long clock_nanosleep_restart(struct restart_block *restart_block);
+ 
+ void update_rlimit_cpu(unsigned long rlim_new);
+ 
++int invalid_clockid(const clockid_t which_clock);
++
+ #endif
+diff --git a/kernel/compat.c b/kernel/compat.c
+index 7f40e92..8b18f5d 100644
+--- a/kernel/compat.c
++++ b/kernel/compat.c
+@@ -101,7 +101,7 @@ int put_compat_timespec(const struct timespec *ts, struct compat_timespec __user
+ 			__put_user(ts->tv_nsec, &cts->tv_nsec)) ? -EFAULT : 0;
+ }
+ 
+-static long compat_nanosleep_restart(struct restart_block *restart)
++long compat_nanosleep_restart(struct restart_block *restart)
+ {
+ 	struct compat_timespec __user *rmtp;
+ 	struct timespec rmt;
+@@ -648,7 +648,7 @@ long compat_sys_clock_getres(clockid_t which_clock,
+ 	return err;
+ }
+ 
+-static long compat_clock_nanosleep_restart(struct restart_block *restart)
++long compat_clock_nanosleep_restart(struct restart_block *restart)
+ {
+ 	long err;
+ 	mm_segment_t oldfs;
+diff --git a/kernel/futex.c b/kernel/futex.c
+index e7a35f1..23419c9 100644
+--- a/kernel/futex.c
++++ b/kernel/futex.c
+@@ -1593,16 +1593,6 @@ handle_fault:
+ 	goto retry;
+ }
+ 
+-/*
+- * In case we must use restart_block to restart a futex_wait,
+- * we encode in the 'flags' shared capability
+- */
+-#define FLAGS_SHARED		0x01
+-#define FLAGS_CLOCKRT		0x02
+-#define FLAGS_HAS_TIMEOUT	0x04
+-
+-static long futex_wait_restart(struct restart_block *restart);
+-
+ /**
+  * fixup_owner() - Post lock pi_state and corner case management
+  * @uaddr:	user address of the futex
+@@ -1876,7 +1866,7 @@ out:
+ }
+ 
+ 
+-static long futex_wait_restart(struct restart_block *restart)
++long futex_wait_restart(struct restart_block *restart)
+ {
+ 	u32 __user *uaddr = (u32 __user *)restart->futex.uaddr;
+ 	int fshared = 0;
+diff --git a/kernel/posix-timers.c b/kernel/posix-timers.c
+index 00d1fda..ec2e802 100644
+--- a/kernel/posix-timers.c
++++ b/kernel/posix-timers.c
+@@ -211,7 +211,7 @@ static int no_nsleep(const clockid_t which_clock, int flags,
+ /*
+  * Return nonzero if we know a priori this clockid_t value is bogus.
+  */
+-static inline int invalid_clockid(const clockid_t which_clock)
++int invalid_clockid(const clockid_t which_clock)
+ {
+ 	if (which_clock < 0)	/* CPU clock, posix_cpu_* will check it */
+ 		return 0;
 -- 
 1.6.3.3
