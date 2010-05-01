@@ -1,8 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH v21 001/100] eclone (1/11): Factor out code to allocate pidmap
-	page
-Date: Sat,  1 May 2010 10:14:43 -0400
-Message-ID: <1272723382-19470-2-git-send-email-orenl@cs.columbia.edu>
+Subject: [PATCH v21 013/100] c/r: break out new_user_ns()
+Date: Sat,  1 May 2010 10:14:55 -0400
+Message-ID: <1272723382-19470-14-git-send-email-orenl@cs.columbia.edu>
 References: <1272723382-19470-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -19,95 +18,140 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-mnsaURCQ41sdnm+yROfE0A@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-To simplify alloc_pidmap(), move code to allocate a pid map page to a
-separate function.
+Break out the core function which checks privilege and (if
+allowed) creates a new user namespace, with the passed-in
+creating user_struct.  Note that a user_namespace, unlike
+other namespace pointers, is not stored in the nsproxy.
+Rather it is purely a property of user_structs.
 
-Changelog[v4]:
-	- [Oren Laadan] Adapt to kernel 2.6.33-rc5
-Changelog[v3]:
-	- Earlier version of patchset called alloc_pidmap_page() from two
-	  places. But now its called from only one place. Even so, moving
-	  this code out into a separate function simplifies alloc_pidmap().
-Changelog[v2]:
-	- (Matt Helsley, Dave Hansen) Have alloc_pidmap_page() return
-	  -ENOMEM on error instead of -1.
+This will let us keep the task restore code simpler.
 
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org
-Cc: linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linuxppc-dev-mnsaURCQ41sdnm+yROfE0A@public.gmane.org
-Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Reviewed-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Acked-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- kernel/pid.c |   41 ++++++++++++++++++++++++++---------------
- 1 files changed, 26 insertions(+), 15 deletions(-)
+ include/linux/user_namespace.h |    8 ++++++
+ kernel/user_namespace.c        |   53 ++++++++++++++++++++++++++++------------
+ 2 files changed, 45 insertions(+), 16 deletions(-)
 
-diff --git a/kernel/pid.c b/kernel/pid.c
-index aebb30d..52a371a 100644
---- a/kernel/pid.c
-+++ b/kernel/pid.c
-@@ -122,6 +122,30 @@ static void free_pidmap(struct upid *upid)
- 	atomic_inc(&map->nr_free);
- }
+diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+index cc4f453..f6ea75d 100644
+--- a/include/linux/user_namespace.h
++++ b/include/linux/user_namespace.h
+@@ -20,6 +20,8 @@ extern struct user_namespace init_user_ns;
  
-+static int alloc_pidmap_page(struct pidmap *map)
+ #ifdef CONFIG_USER_NS
+ 
++struct user_namespace *new_user_ns(struct user_struct *creator,
++				   struct user_struct **newroot);
+ static inline struct user_namespace *get_user_ns(struct user_namespace *ns)
+ {
+ 	if (ns)
+@@ -38,6 +40,12 @@ static inline void put_user_ns(struct user_namespace *ns)
+ 
+ #else
+ 
++static inline struct user_namespace *new_user_ns(struct user_struct *creator,
++				   struct user_struct **newroot)
 +{
-+	void *page;
-+
-+	if (likely(map->page))
-+		return 0;
-+
-+	page = kzalloc(PAGE_SIZE, GFP_KERNEL);
-+	/*
-+	 * Free the page if someone raced with us installing it:
-+	 */
-+	spin_lock_irq(&pidmap_lock);
-+	if (!map->page) {
-+		map->page = page;
-+		page = NULL;
-+	}
-+	spin_unlock_irq(&pidmap_lock);
-+	kfree(page);
-+	if (unlikely(!map->page))
-+		return -1;
-+
-+	return 0;
++	return ERR_PTR(-EINVAL);
 +}
 +
- static int alloc_pidmap(struct pid_namespace *pid_ns)
+ static inline struct user_namespace *get_user_ns(struct user_namespace *ns)
  {
- 	int i, offset, max_scan, pid, last = pid_ns->last_pid;
-@@ -134,22 +158,9 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
- 	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
- 	max_scan = (pid_max + BITS_PER_PAGE - 1)/BITS_PER_PAGE - !offset;
- 	for (i = 0; i <= max_scan; ++i) {
--		if (unlikely(!map->page)) {
--			void *page = kzalloc(PAGE_SIZE, GFP_KERNEL);
--			/*
--			 * Free the page if someone raced with us
--			 * installing it:
--			 */
--			spin_lock_irq(&pidmap_lock);
--			if (!map->page) {
--				map->page = page;
--				page = NULL;
--			}
--			spin_unlock_irq(&pidmap_lock);
--			kfree(page);
--			if (unlikely(!map->page))
-+		if (unlikely(!map->page))
-+			if (alloc_pidmap_page(map) < 0)
- 				break;
--		}
- 		if (likely(atomic_read(&map->nr_free))) {
- 			do {
- 				if (!test_and_set_bit(offset, map->page)) {
+ 	return &init_user_ns;
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index 076c7c8..e624b0f 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -11,15 +11,8 @@
+ #include <linux/user_namespace.h>
+ #include <linux/cred.h>
+ 
+-/*
+- * Create a new user namespace, deriving the creator from the user in the
+- * passed credentials, and replacing that user with the new root user for the
+- * new namespace.
+- *
+- * This is called by copy_creds(), which will finish setting the target task's
+- * credentials.
+- */
+-int create_user_ns(struct cred *new)
++static struct user_namespace *_new_user_ns(struct user_struct *creator,
++				   struct user_struct **newroot)
+ {
+ 	struct user_namespace *ns;
+ 	struct user_struct *root_user;
+@@ -27,7 +20,7 @@ int create_user_ns(struct cred *new)
+ 
+ 	ns = kmalloc(sizeof(struct user_namespace), GFP_KERNEL);
+ 	if (!ns)
+-		return -ENOMEM;
++		return ERR_PTR(-ENOMEM);
+ 
+ 	kref_init(&ns->kref);
+ 
+@@ -38,12 +31,43 @@ int create_user_ns(struct cred *new)
+ 	root_user = alloc_uid(ns, 0);
+ 	if (!root_user) {
+ 		kfree(ns);
+-		return -ENOMEM;
++		return ERR_PTR(-ENOMEM);
+ 	}
+ 
+ 	/* set the new root user in the credentials under preparation */
+-	ns->creator = new->user;
+-	new->user = root_user;
++	ns->creator = creator;
++
++	/* alloc_uid() incremented the userns refcount.  Just set it to 1 */
++	kref_set(&ns->kref, 1);
++
++	*newroot = root_user;
++	return ns;
++}
++
++struct user_namespace *new_user_ns(struct user_struct *creator,
++				   struct user_struct **newroot)
++{
++	if (!capable(CAP_SYS_ADMIN))
++		return ERR_PTR(-EPERM);
++	return _new_user_ns(creator, newroot);
++}
++
++/*
++ * Create a new user namespace, deriving the creator from the user in the
++ * passed credentials, and replacing that user with the new root user for the
++ * new namespace.
++ *
++ * This is called by copy_creds(), which will finish setting the target task's
++ * credentials.
++ */
++int create_user_ns(struct cred *new)
++{
++	struct user_namespace *ns;
++
++	ns = new_user_ns(new->user, &new->user);
++	if (IS_ERR(ns))
++		return PTR_ERR(ns);
++
+ 	new->uid = new->euid = new->suid = new->fsuid = 0;
+ 	new->gid = new->egid = new->sgid = new->fsgid = 0;
+ 	put_group_info(new->group_info);
+@@ -54,9 +78,6 @@ int create_user_ns(struct cred *new)
+ #endif
+ 	/* tgcred will be cleared in our caller bc CLONE_THREAD won't be set */
+ 
+-	/* alloc_uid() incremented the userns refcount.  Just set it to 1 */
+-	kref_set(&ns->kref, 1);
+-
+ 	return 0;
+ }
+ 
 -- 
 1.6.3.3
