@@ -1,8 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH v21 089/100] c/r: add lsm name and lsm_info (policy header) to
-	container info
-Date: Sat,  1 May 2010 10:16:11 -0400
-Message-ID: <1272723382-19470-90-git-send-email-orenl__36663.9739055701$1272729948$gmane$org@cs.columbia.edu>
+Subject: [PATCH v21 020/100] c/r: documentation
+Date: Sat,  1 May 2010 10:15:02 -0400
+Message-ID: <1272723382-19470-21-git-send-email-orenl__41040.1171110154$1272729955$gmane$org@cs.columbia.edu>
 References: <1272723382-19470-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -19,496 +18,841 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Kentaro Takeda <takedakn-3MafRgGXt7BL9jVzuh4AOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Covers application checkpoint/restart, overall design, interfaces,
+usage, shared objects, and and checkpoint image format.
 
-The LSM name is 'selinux', 'smack', 'tomoyo', or 'dummy'.  We
-add that to the container configuration section.  We also add
-a LSM policy configuration section.  That is placed after the LSM
-name.  It is written by the LSM in security_checkpoint_header(),
-called during checkpoint container(), and read by the LSM during
-security_may_restart(), which is called from restore_lsm() in
-restore_container().
+Changelog[v19-rc1]:
+  - Update documentation and examples for new syscalls API
+  - [Liu Alexander] Fix typos
+  - [Serge Hallyn] Update checkpoint image format
+Changelog[v16]:
+  - Update documentation
+  - Unify into readme.txt and usage.txt
+Changelog[v14]:
+  - Discard the 'h.parent' field
+  - New image format (shared objects appear before they are referenced
+    unless they are compound)
+Changelog[v8]:
+  - Split into multiple files in Documentation/checkpoint/...
+  - Extend documentation, fix typos and comments from feedback
 
-Cc: linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Kentaro Takeda <takedakn-3MafRgGXt7BL9jVzuh4AOg@public.gmane.org>
-Cc: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Acked-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- Documentation/checkpoint/readme.txt |   24 ++++++++++++++
- Documentation/checkpoint/usage.txt  |    2 +
- include/linux/checkpoint.h          |    6 +++
- include/linux/checkpoint_hdr.h      |   16 +++++++++
- include/linux/checkpoint_types.h    |    2 +
- include/linux/security.h            |   61 +++++++++++++++++++++++++++++++++++
- kernel/checkpoint/checkpoint.c      |   13 +++++++-
- kernel/checkpoint/restart.c         |   41 +++++++++++++++++++++++
- kernel/checkpoint/sys.c             |   22 ++++++++++++
- security/capability.c               |   25 ++++++++++++++
- security/security.c                 |   26 +++++++++++++++
- 11 files changed, 237 insertions(+), 1 deletions(-)
+ Documentation/checkpoint/checkpoint.c      |   38 +++
+ Documentation/checkpoint/readme.txt        |  370 ++++++++++++++++++++++++++++
+ Documentation/checkpoint/self_checkpoint.c |   69 +++++
+ Documentation/checkpoint/self_restart.c    |   40 +++
+ Documentation/checkpoint/usage.txt         |  247 +++++++++++++++++++
+ 5 files changed, 764 insertions(+), 0 deletions(-)
+ create mode 100644 Documentation/checkpoint/checkpoint.c
+ create mode 100644 Documentation/checkpoint/readme.txt
+ create mode 100644 Documentation/checkpoint/self_checkpoint.c
+ create mode 100644 Documentation/checkpoint/self_restart.c
+ create mode 100644 Documentation/checkpoint/usage.txt
 
+diff --git a/Documentation/checkpoint/checkpoint.c b/Documentation/checkpoint/checkpoint.c
+new file mode 100644
+index 0000000..8560f30
+--- /dev/null
++++ b/Documentation/checkpoint/checkpoint.c
+@@ -0,0 +1,38 @@
++#include <stdio.h>
++#include <stdlib.h>
++#include <errno.h>
++#include <unistd.h>
++#include <sys/syscall.h>
++
++#include <linux/checkpoint.h>
++
++static inline int checkpoint(pid_t pid, int fd, unsigned long flags)
++{
++	return syscall(__NR_checkpoint, pid, fd, flags);
++}
++
++int main(int argc, char *argv[])
++{
++	pid_t pid;
++	int ret;
++
++	if (argc != 2) {
++		printf("usage: ckpt PID\n");
++		exit(1);
++	}
++
++	pid = atoi(argv[1]);
++	if (pid <= 0) {
++		printf("invalid pid\n");
++		exit(1);
++	}
++
++	ret = checkpoint(pid, STDOUT_FILENO, CHECKPOINT_SUBTREE);
++
++	if (ret < 0)
++		perror("checkpoint");
++	else
++		printf("checkpoint id %d\n", ret);
++
++	return (ret > 0 ? 0 : 1);
++}
 diff --git a/Documentation/checkpoint/readme.txt b/Documentation/checkpoint/readme.txt
-index 2548bb4..030a001 100644
---- a/Documentation/checkpoint/readme.txt
+new file mode 100644
+index 0000000..4fa5560
+--- /dev/null
 +++ b/Documentation/checkpoint/readme.txt
-@@ -343,6 +343,30 @@ So that's why we don't want CAP_SYS_ADMIN required up-front. That way
- we will be forced to more carefully review each of those features.
- However, this can be controlled with a sysctl-variable.
- 
-+LSM
+@@ -0,0 +1,370 @@
++
++	      Checkpoint-Restart support in the Linux kernel
++	==========================================================
++
++Copyright (C) 2008-2010 Oren Laadan
++
++Author:		Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
++
++License:	The GNU Free Documentation License, Version 1.2
++		(dual licensed under the GPL v2)
++
++Contributors:	Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
++		Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
++		Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
++		Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
++		Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
++		Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
++		Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
++
++
++Introduction
++============
++
++Application checkpoint/restart [C/R] is the ability to save the state
++of a running application so that it can later resume its execution
++from the time at which it was checkpointed. An application can be
++migrated by checkpointing it on one machine and restarting it on
++another. C/R can provide many potential benefits:
++
++* Failure recovery: by rolling back to a previous checkpoint
++
++* Improved response time: by restarting applications from checkpoints
++  instead of from scratch.
++
++* Improved system utilization: by suspending long running CPU
++  intensive jobs and resuming them when load decreases.
++
++* Fault resilience: by migrating applications off faulty hosts.
++
++* Dynamic load balancing: by migrating applications to less loaded
++  hosts.
++
++* Improved service availability and administration: by migrating
++  applications before host maintenance so that they continue to run
++  with minimal downtime
++
++* Time-travel: by taking periodic checkpoints and restarting from
++  any previous checkpoint.
++
++Compared to hypervisor approaches, application C/R is more lightweight
++since it need only save the state associated with applications, while
++operating system data structures (e.g. buffer cache, drivers state
++and the like) are uninteresting.
++
++
++Overall design
++==============
++
++Checkpoint and restart are done in the kernel as much as possible.
++Two new system calls are introduced to provide C/R: sys_checkpoint()
++and sys_restart(). They both operate on a process tree (hierarchy),
++either a whole container or a subtree of a container.
++
++Checkpointing entire containers ensures that there are no dependencies
++on anything outside the container, which guarantees that a matching
++restart will succeed (assuming that the file system state remains
++consistent). However, it requires that users will always run the tasks
++that they wish to checkpoint inside containers. This is ideal for,
++e.g., private virtual servers and the like.
++
++In contrast, when checkpointing a subtree of a container it is up to
++the user to ensure that dependencies either don't exist or can be
++safely ignored. This is useful, for instance, for HPC scenarios or
++even a user that would like to periodically checkpoint a long-running
++batch job.
++
++An additional system call, a la madvise(), is planned, so that tasks
++can advise the kernel how to handle specific resources. For instance,
++a task could ask to skip a memory area at checkpoint to save space,
++or to use a preset file descriptor at restart instead of restoring it
++from the checkpoint image. It will provide the flexibility that is
++particularly useful to address the needs of a diverse crowd of users
++and use-cases.
++
++Syscall sys_checkpoint() is given a pid that indicates the top of the
++hierarchy, a file descriptor to store the image, and flags. The code
++serializes internal user- and kernel-state and writes it out to the
++file descriptor. The resulting image is stream-able. The processes are
++expected to be frozen for the duration of the checkpoint.
++
++In general, a checkpoint consists of 5 steps:
++1. Pre-dump
++2. Freeze the container/subtree
++3. Save tasks' and kernel state		<-- sys_checkpoint()
++4. Thaw (or kill) the container/subtree
++5. Post-dump
++
++Step 3 is done by calling sys_checkpoint(). Steps 1 and 5 are an
++optimization to reduce application downtime. In particular, "pre-dump"
++works before freezing the container, e.g. the pre-copy for live
++migration, and "post-dump" works after the container resumes
++execution, e.g. write-back the data to secondary storage.
++
++The kernel exports a relatively opaque 'blob' of data to userspace
++which can then be handed to the new kernel at restart time.  The
++'blob' contains data and state of select portions of kernel structures
++such as VMAs and mm_structs, as well as copies of the actual memory
++that the tasks use. Any changes in this blob's format between kernel
++revisions can be handled by an in-userspace conversion program.
++
++To restart, userspace first create a process hierarchy that matches
++that of the checkpoint, and each task calls sys_restart(). The syscall
++reads the saved kernel state from a file descriptor, and re-creates
++the resources that the tasks need to resume execution. The restart
++code is executed by each task that is restored in the new hierarchy to
++reconstruct its own state.
++
++In general, a restart consists of 3 steps:
++1. Create hierarchy
++2. Restore tasks' and kernel state	<-- sys_restart()
++3. Resume userspace (or freeze tasks)
++
++Because the process hierarchy, during restart in created in userspace,
++the restarting tasks have the flexibility to prepare before calling
++sys_restart().
++
++
++Checkpoint image format
++=======================
++
++The checkpoint image format is built of records that consist of a
++pre-header identifying its contents, followed by a payload. This
++format allow userspace tools to easily parse and skip through the
++image without requiring intimate knowledge of the data. It will also
++be handy to enable parallel checkpointing in the future where multiple
++threads interleave data from multiple processes into a single stream.
++
++The pre-header is defined by 'struct ckpt_hdr' as follows: @type
++identifies the type of the payload, @len tells its length in bytes
++including the pre-header.
++
++struct ckpt_hdr {
++	__s32 type;
++	__s32 len;
++};
++
++The pre-header must be the first component in all other headers. For
++instance, the task data is saved in 'struct ckpt_hdr_task', which
++looks something like this:
++
++struct ckpt_hdr_task {
++	struct ckpt_hdr h;
++	__u32 pid;
++	...
++};
++
++THE IMAGE FORMAT IS EXPECTED TO CHANGE over time as more features are
++supported, or as existing features change in the kernel and require to
++adjust their representation. Any such changes will be be handled by
++in-userspace conversion tools.
++
++The general format of the checkpoint image is as follows:
++* Image header
++* Container configuration
++* Task hierarchy
++* Tasks' state
++* Image trailer
++
++The image always begins with a general header that holds a magic
++number, an architecture identifier (little endian format), a format
++version number (@rev), followed by information about the kernel
++(currently version and UTS data). It also holds the time of the
++checkpoint and the flags given to sys_checkpoint(). This header is
++followed by an arch-specific header.
++
++The container configuration section containers information that is
++global to the container. Security (LSM) configuration is one example.
++Network configuration and container-wide mounts may also go here, so
++that the userspace restart coordinator can re-create a suitable
++environment.
++
++The task hierarchy comes next so that userspace tools can read it
++early (even from a stream) and re-create the restarting tasks. This is
++basically an array of all checkpointed tasks, and their relationships
++(parent, siblings, threads, etc).
++
++Then the state of all tasks is saved, in the order that they appear in
++the tasks array above. For each state, we save data like task_struct,
++namespaces, open files, memory layout, memory contents, cpu state,
++signals and signal handlers, etc. For resources that are shared among
++multiple processes, we first checkpoint said resource (and only once),
++and in the task data we give a reference to it. More about shared
++resources below.
++
++Finally, the image always ends with a trailer that holds a (different)
++magic number, serving for sanity check.
++
++
++Shared objects
++==============
++
++Many resources may be shared by multiple tasks (e.g. file descriptors,
++memory address space, etc), or even have multiple references from
++other resources (e.g. a single inode that represents two ends of a
++pipe).
++
++Shared objects are tracked using a hash table (objhash) to ensure that
++they are only checkpointed or restored once. To handle a shared
++object, it is first looked up in the hash table, to determine if is
++the first encounter or a recurring appearance.  The hash table itself
++is not saved as part of the checkpoint image: it is constructed
++dynamically during both checkpoint and restart, and discarded at the
++end of the operation.
++
++During checkpoint, when a shared object is encountered for the first
++time, it is inserted to the hash table, indexed by its kernel address.
++It is assigned an identifier (@objref) in order of appearance, and
++then its state is saved. Subsequent lookups of that object in the hash
++will yield that entry, in which case only the @objref is saved, as
++opposed the entire state of the object.
++
++During restart, shared objects are indexed by their @objref as given
++during the checkpoint. On the first appearance of each shared object,
++a new resource will be created and its state restored from the image.
++Then the object is added to the hash table. Subsequent lookups of the
++same unique identifier in the hash table will yield that entry, and
++then the existing object instance is reused instead of creating
++a new one.
++
++The hash grabs a reference to each object that is inserted, and
++maintains this reference for the entire lifetime of the hash. Thus,
++it is always safe to reference an object that is stored in the hash.
++The hash is "one-way" in the sense that objects that are added are
++never deleted from the hash until the hash is discarded. This, in
++turn, happens only when the checkpoint (or restart) terminates.
++
++Shared objects are thus saved when they are first seen, and _before_
++the parent object that uses them. Therefore by the time the parent
++objects needs them, they should already be in the objhash. The one
++exception is when more than a single shared resource will be restarted
++at once (e.g. like the two ends of a pipe, or all the namespaces in an
++nsproxy). In this case the parent object is dumped first followed by
++the individual sub-resources).
++
++The checkpoint image is stream-able, meaning that restarting from it
++may not require lseek(). This is enforced at checkpoint time, by
++carefully selecting the order of shared objects, to respect the rule
++that an object is always saved before the objects that refers to it.
++
++
++Memory contents format
++======================
++
++The memory contents of a given memory address space (->mm) is dumped
++as a sequence of vma objects, represented by 'struct ckpt_hdr_vma'.
++This header details the vma properties, and a reference to a file
++(if file backed) or an inode (or shared memory) object.
++
++The vma header is followed by the actual contents - but only those
++pages that need to be saved, i.e. dirty pages. They are written in
++chunks of data, where each chunks contains a header that indicates
++that number of pages in the chunk, followed by an array of virtual
++addresses and then an array of actual page contents. The last chunk
++holds zero pages.
++
++To illustrate this, consider a single simple task with two vmas: one
++is file mapped with two dumped pages, and the other is anonymous with
++three dumped pages. The memory dump will look like this:
++
++	ckpt_hdr + ckpt_hdr_vma
++		ckpt_hdr_pgarr (nr_pages = 2)
++			addr1, addr2
++			page1, page2
++		ckpt_hdr_pgarr (nr_pages = 0)
++	ckpt_hdr + ckpt_hdr_vma
++		ckpt_hdr_pgarr (nr_pages = 3)
++		addr3, addr4, addr5
++		page3, page4, page5
++		ckpt_hdr_pgarr (nr_pages = 0)
++
++
++Error handling
++==============
++
++Both checkpoint and restart operations may fail due to a variety of
++reasons. Using a simple, single return value from the system call is
++insufficient to report the reason of a failure.
++
++Instead, both sys_checkpoint() and sys_restart() accept an additional
++argument - a file descriptor to which the kernel writes diagnostic
++and debugging information. Both the checkpoint and restart userspace
++utilities have options to specify a filename to store this log.
++
++In addition, checkpoint provides informative status report upon
++failure in the checkpoint image in the form of (one or more) error
++objects, 'struct ckpt_hdr_err'.  An error objects consists of a
++mandatory pre-header followed by a null character ('\0'), and then a
++string that describes the error. By default, if an error occurs, this
++will be the last object written to the checkpoint image.
++
++Upon failure, the caller can examine the image (e.g. with 'ckptinfo')
++and extract the detailed error message. The leading '\0' is useful if
++one wants to seek back from the end of the checkpoint image, instead
++of parsing the entire image separately.
++
++
++Security
++========
++
++The main question is whether sys_checkpoint() and sys_restart()
++require privileged or unprivileged operation.
++
++Early versions checked capable(CAP_SYS_ADMIN) assuming that we would
++attempt to remove the need for privilege, so that all users could
++safely use it. Arnd Bergmann pointed out that it'd make more sense to
++let unprivileged users use them now, so that we'll be more careful
++about the security as patches roll in.
++
++Checkpoint: the main concern is whether a task that performs the
++checkpoint of another task has sufficient privileges to access its
++state. We address this by requiring that the checkpointer task will be
++able to ptrace the target task, by means of ptrace_may_access() with
++access mode.
++
++Restart: the main concern is that we may allow an unprivileged user to
++feed the kernel with random data. To this end, the restart works in a
++way that does not skip the usual security checks. Task credentials,
++i.e. euid, reuid, and LSM security contexts currently come from the
++caller, not the checkpoint image.  As credentials are restored too,
++the ability of a task that calls sys_restore() to setresuid/setresgid
++to those values must be checked.
++
++Keeping the restart procedure to operate within the limits of the
++caller's credentials means that there various scenarios that cannot
++be supported. For instance, a setuid program that opened a protected
++log file and then dropped privileges will fail the restart, because
++the user won't have enough credentials to reopen the file. In these
++cases, we should probably treat restarting like inserting a kernel
++module: surely the user can cause havoc by providing incorrect data,
++but then again we must trust the root account.
++
++So that's why we don't want CAP_SYS_ADMIN required up-front. That way
++we will be forced to more carefully review each of those features.
++However, this can be controlled with a sysctl-variable.
++
++
++Kernel interfaces
++=================
++
++* To checkpoint a vma, the 'struct vm_operations_struct' needs to
++  provide a method ->checkpoint:
++    int checkpoint(struct ckpt_ctx *, struct vma_struct *)
++  Restart requires a matching (exported) restore:
++    int restore(struct ckpt_ctx *, struct mm_struct *, struct ckpt_hdr_vma *)
++
++* To checkpoint a file, the 'struct file_operations' needs to provide
++  the methods ->checkpoint and ->collect:
++    int checkpoint(struct ckpt_ctx *, struct file *)
++    int collect(struct ckpt_ctx *, struct file *)
++  Restart requires a matching (exported) restore:
++    int restore(struct ckpt_ctx *, struct ckpt_hdr_file *)
++  For most file systems, generic_file_{checkpoint,restore}() can be
++  used.
++
++* To checkpoint a socket, the 'struct proto_ops' needs to provide
++  the methods ->checkpoint, ->collect and ->restore:
++    int checkpoint(struct ckpt_ctx *ctx, struct socket *sock);
++    int collect(struct ckpt_ctx *ctx, struct socket *sock);
++    int restore(struct ckpt_ctx *, struct socket *sock, struct ckpt_hdr_socket *h)
++
+diff --git a/Documentation/checkpoint/self_checkpoint.c b/Documentation/checkpoint/self_checkpoint.c
+new file mode 100644
+index 0000000..27dba0d
+--- /dev/null
++++ b/Documentation/checkpoint/self_checkpoint.c
+@@ -0,0 +1,69 @@
++/*
++ *  self_checkpoint.c: demonstrate self-checkpoint
++ *
++ *  Copyright (C) 2008 Oren Laadan
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ */
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <unistd.h>
++#include <errno.h>
++#include <math.h>
++#include <sys/syscall.h>
++
++#include <linux/checkpoint.h>
++
++static inline int checkpoint(pid_t pid, int fd, unsigned long flags)
++{
++	return syscall(__NR_checkpoint, pid, fd, flags, CHECKPOINT_FD_NONE);
++}
++
++#define OUTFILE  "/tmp/cr-self.out"
++
++int main(int argc, char *argv[])
++{
++	pid_t pid = getpid();
++	FILE *file;
++	int i, ret;
++
++	close(0);
++	close(2);
++
++	unlink(OUTFILE);
++	file = fopen(OUTFILE, "w+");
++	if (!file) {
++		perror("open");
++		exit(1);
++	}
++	if (dup2(0, 2) < 0) {
++		perror("dup2");
++		exit(1);
++	}
++
++	fprintf(file, "hello, world!\n");
++	fflush(file);
++
++	for (i = 0; i < 1000; i++) {
++		sleep(1);
++		fprintf(file, "count %d\n", i);
++		fflush(file);
++
++		if (i != 2)
++			continue;
++		ret = checkpoint(pid, STDOUT_FILENO, CHECKPOINT_SUBTREE);
++		if (ret < 0) {
++			fprintf(file, "ckpt: %s\n", strerror(errno));
++			exit(2);
++		}
++
++		fprintf(file, "checkpoint ret: %d\n", ret);
++		fflush(file);
++	}
++
++	return 0;
++}
+diff --git a/Documentation/checkpoint/self_restart.c b/Documentation/checkpoint/self_restart.c
+new file mode 100644
+index 0000000..647ce51
+--- /dev/null
++++ b/Documentation/checkpoint/self_restart.c
+@@ -0,0 +1,40 @@
++/*
++ *  self_restart.c: demonstrate self-restart
++ *
++ *  Copyright (C) 2008 Oren Laadan
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ */
++
++#define _GNU_SOURCE        /* or _BSD_SOURCE or _SVID_SOURCE */
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <errno.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <unistd.h>
++#include <sys/syscall.h>
++
++#include <linux/checkpoint.h>
++
++static inline int restart(pid_t pid, int fd, unsigned long flags)
++{
++	return syscall(__NR_restart, pid, fd, flags, CHECKPOINT_FD_NONE);
++}
++
++int main(int argc, char *argv[])
++{
++	pid_t pid = getpid();
++	int ret;
++
++	ret = restart(pid, STDIN_FILENO, RESTART_TASKSELF);
++	if (ret < 0)
++		perror("restart");
++
++	printf("should not reach here !\n");
++
++	return 0;
++}
+diff --git a/Documentation/checkpoint/usage.txt b/Documentation/checkpoint/usage.txt
+new file mode 100644
+index 0000000..c6fc045
+--- /dev/null
++++ b/Documentation/checkpoint/usage.txt
+@@ -0,0 +1,247 @@
++
++	      How to use Checkpoint-Restart
++	=========================================
++
++
++API
 +===
 +
-+Security modules use custom labels on subjects and objects to
-+further mediate access decisions beyond DAC controls.  When
-+checkpoint applications, these labels are [ work in progress ]
-+checkpointed along with the objects.  At restart, the
-+RESTART_KEEP_LSM flag tells the kernel whether re-created objects
-+whould keep their checkpointed labels, or get automatically
-+recalculated labels.  Since checkpointed labels will only make
-+sense to the same LSM which was active at checkpoint time,
-+sys_restart() with the RESTART_KEEP_LSM flag will fail with
-+-EINVAL if the LSM active at restart is not the same as that
-+active at checkpoint.  If RESTART_KEEP_LSM is not specified,
-+then objects will be given whatever default labels the LSM and
-+their optional policy decide.  Of course, when RESTART_KEEP_LSM
-+is specified, the LSM may choose a different label than the
-+checkpointed one, or fail the entire restart if the caller
-+does not have permission to create objects with the checkpointed
-+label.
++The API consists of three new system calls:
 +
-+It should always be safe to take a checkpoint of an application
-+under LSM_1, and restart it without the RESTART_KEEP_LSM flag
-+under LSM_2.
- 
- Sockets
- =======
-diff --git a/Documentation/checkpoint/usage.txt b/Documentation/checkpoint/usage.txt
-index 239c162..d697ed1 100644
---- a/Documentation/checkpoint/usage.txt
-+++ b/Documentation/checkpoint/usage.txt
-@@ -36,6 +36,8 @@ The API consists of three new system calls:
-    - RESTART_FROEZN : processes remain frozen once restart completes
-    - RESTART_GHOST : process is a ghost (placeholder for a pid)
-    - RESTART_CONN_RESET : reset previously open sockets to be closed
-+   - RESTART_KEEP_LSM : re-created objects keep their checkpointed
-+       labels (or otherwise get automatically recalculated labels).
-  (Note that this argument may mean 'ckptid' to identify an in-kernel
-  checkpoint image, with some @flags in the future).
- 
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index b7d7258..c56ece7 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -19,6 +19,7 @@
- #define RESTART_TASKSELF	0x1
- #define RESTART_FROZEN		0x2
- #define RESTART_GHOST		0x4
-+#define RESTART_KEEP_LSM	0x8
- #define RESTART_CONN_RESET      0x10
- 
- /* misc user visible */
-@@ -59,8 +60,11 @@ extern long do_sys_restart(pid_t pid, int fd,
- 	(RESTART_TASKSELF | \
- 	 RESTART_FROZEN | \
- 	 RESTART_GHOST | \
-+	 RESTART_KEEP_LSM | \
- 	 RESTART_CONN_RESET)
- 
-+#define CKPT_LSM_INFO_LEN 200
++* long checkpoint(pid_t pid, int fd, unsigned long flag, int logfd);
 +
- extern int walk_task_subtree(struct task_struct *task,
- 			     int (*func)(struct task_struct *, void *),
- 			     void *data);
-@@ -73,6 +77,8 @@ extern void _ckpt_hdr_put(struct ckpt_ctx *ctx, void *ptr, int n);
- extern void ckpt_hdr_put(struct ckpt_ctx *ctx, void *ptr);
- extern void *ckpt_hdr_get(struct ckpt_ctx *ctx, int n);
- extern void *ckpt_hdr_get_type(struct ckpt_ctx *ctx, int n, int type);
-+extern int ckpt_write_dummy_lsm_info(struct ckpt_ctx *ctx);
-+extern void ckpt_snarf_lsm_info(struct ckpt_ctx *ctx);
- 
- extern int ckpt_write_obj(struct ckpt_ctx *ctx, struct ckpt_hdr *h);
- extern int ckpt_write_obj_type(struct ckpt_ctx *ctx,
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 90cbc15..9bf8eeb 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -33,6 +33,15 @@
- #endif
- 
- /*
-+ * /usr/include/linux/security.h is not exported to userspace, so
-+ * we need this value here for userspace restart.c to read.
-+ *
-+ * CHECKPOINT_LSM_NAME_MAX should be SECURITY_NAME_MAX
-+ * security_may_restart() has a BUILD_BUG_ON to enforce that.
-+ */
-+#define CHECKPOINT_LSM_NAME_MAX 10
++ Checkpoint a (sub-)container whose root task is identified by @pid,
++ to the open file indicated by @fd. If @logfd isn't -1, it indicates
++ an open file to which error and debug messages are written. @flags
++ may be one or more of:
++   - CHECKPOINT_SUBTREE : allow checkpoint of sub-container
++ (other value are not allowed).
 +
-+/*
-  * To maintain compatibility between 32-bit and 64-bit architecture flavors,
-  * keep data 64-bit aligned: use padding for structure members, and use
-  * __attribute__((aligned (8))) for the entire structure.
-@@ -77,6 +86,8 @@ enum {
- #define CKPT_HDR_STRING CKPT_HDR_STRING
- 	CKPT_HDR_OBJREF,
- #define CKPT_HDR_OBJREF CKPT_HDR_OBJREF
-+	CKPT_HDR_LSM_INFO,
-+#define CKPT_HDR_LSM_INFO CKPT_HDR_LSM_INFO
- 
- 	CKPT_HDR_TREE = 101,
- #define CKPT_HDR_TREE CKPT_HDR_TREE
-@@ -304,6 +315,11 @@ struct ckpt_hdr_tail {
- /* container configuration section header */
- struct ckpt_hdr_container {
- 	struct ckpt_hdr h;
-+	/*
-+	 * the header is followed by the string:
-+	 *   char lsm_name[SECURITY_NAME_MAX + 1]
-+	 * plus the CKPT_HDR_LSM_INFO section
-+	 */
- } __attribute__((aligned(8)));;
- 
- /* task tree */
-diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
-index b27312b..955a18c 100644
---- a/include/linux/checkpoint_types.h
-+++ b/include/linux/checkpoint_types.h
-@@ -21,6 +21,7 @@
- #include <linux/fs.h>
- #include <linux/ktime.h>
- #include <linux/wait.h>
-+#include <linux/security.h>
- 
- struct ckpt_stats {
- 	int uts_ns;
-@@ -38,6 +39,7 @@ struct ckpt_ctx {
- 	struct task_struct *root_task;		/* [container] root task */
- 	struct nsproxy *root_nsproxy;		/* [container] root nsproxy */
- 	struct task_struct *root_freezer;	/* [container] root task */
-+	char lsm_name[SECURITY_NAME_MAX + 1];   /* security module at ckpt */
- 
- 	unsigned long kflags;	/* kerenl flags */
- 	unsigned long uflags;	/* user flags */
-diff --git a/include/linux/security.h b/include/linux/security.h
-index 3158dd9..e45bd0f 100644
---- a/include/linux/security.h
-+++ b/include/linux/security.h
-@@ -145,6 +145,13 @@ extern int mmap_min_addr_handler(struct ctl_table *table, int write,
- 				 void __user *buffer, size_t *lenp, loff_t *ppos);
- #endif
- 
-+#ifdef CONFIG_CHECKPOINT
-+struct ckpt_ctx;
++ Returns: a positive checkpoint identifier (ckptid) upon success, 0 if
++ it returns from a restart, and -1 if an error occurs. The ckptid will
++ uniquely identify a checkpoint image, for as long as the checkpoint
++ is kept in the kernel (e.g. if one wishes to keep a checkpoint, or a
++ partial checkpoint, residing in kernel memory).
 +
-+void ckpt_snarf_lsm_info(struct ckpt_ctx *ctx);
-+int ckpt_write_dummy_lsm_info(struct ckpt_ctx *ctx);
-+#endif
++* long sys_restart(pid_t pid, int fd, unsigned long flags, int logfd);
 +
- #ifdef CONFIG_SECURITY
- 
- struct security_mnt_opts {
-@@ -1379,6 +1386,28 @@ static inline void security_free_mnt_opts(struct security_mnt_opts *opts)
-  *	@secdata contains the security context.
-  *	@seclen contains the length of the security context.
-  *
-+ * Security hooks for Checkpoint/restart
-+ * (In addition to *_checkpoint and *_restore)
-+ *
-+ * @may_restart:
-+ *	Authorize sys_restart().
-+ *	Note that all construction of kernel resources, credentials,
-+ *	etc is already authorized per the caller's credentials.  This
-+ *	hook is intended for the LSM to make further decisions about
-+ *	a task not being allowed to restart at all, for instance if
-+ *	the policy has changed since checkpoint.
-+ *	@ctx is the checkpoint/restart context (see <linux/checkpoint_types.h>)
-+ *	Return 0 if allowed, <0 on error.
-+ *
-+ * @checkpoint_header:
-+ *	Optionally write out a LSM-specific checkpoint header.  This is
-+ *	a chance to write out policy information, for instance.  The same
-+ *	LSM on restart can then use the info in security_may_restart() to
-+ *	refuse restart (for instance) across policy changes.
-+ *	The info is to be written as a an object of type CKPT_HDR_LSM_INFO.
-+ *	@ctx is the checkpoint/restart context (see <linux/checkpoint_types.h>)
-+ *	Return 0 on success, <0 on error.
-+ *
-  * Security hooks for Audit
-  *
-  * @audit_rule_init:
-@@ -1661,6 +1690,11 @@ struct security_operations {
- 	int (*inode_setsecctx)(struct dentry *dentry, void *ctx, u32 ctxlen);
- 	int (*inode_getsecctx)(struct inode *inode, void **ctx, u32 *ctxlen);
- 
-+#ifdef CONFIG_CHECKPOINT
-+	int (*may_restart) (struct ckpt_ctx *ctx);
-+	int (*checkpoint_header) (struct ckpt_ctx *ctx);
-+#endif
++ Restart a process hierarchy from a checkpoint image that is read from
++ the blob stored in the file indicated by @fd.  If @logfd isn't -1, it
++ indicates an open file to which error and debug messages are written.
++ @flags will have future meaning (must be 0 for now). @pid indicates
++ the root of the hierarchy as seen in the coordinator's pid-namespace,
++ and is expected to be a child of the coordinator. @flags may be one
++ or more of:
++   - RESTART_TASKSELF : (self) restart of a single process
++   - RESTART_FROEZN : processes remain frozen once restart completes
++   - RESTART_GHOST : process is a ghost (placeholder for a pid)
++ (Note that this argument may mean 'ckptid' to identify an in-kernel
++ checkpoint image, with some @flags in the future).
 +
- #ifdef CONFIG_SECURITY_NETWORK
- 	int (*unix_stream_connect) (struct socket *sock,
- 				    struct socket *other, struct sock *newsk);
-@@ -1913,6 +1947,14 @@ void security_release_secctx(char *secdata, u32 seclen);
- int security_inode_notifysecctx(struct inode *inode, void *ctx, u32 ctxlen);
- int security_inode_setsecctx(struct dentry *dentry, void *ctx, u32 ctxlen);
- int security_inode_getsecctx(struct inode *inode, void **ctx, u32 *ctxlen);
++ Returns: -1 if an error occurs, 0 on success when restarting from a
++ "self" checkpoint, and return value of system call at the time of the
++ checkpoint when restarting from an "external" checkpoint.
 +
-+#ifdef CONFIG_CHECKPOINT
-+int security_may_restart(struct ckpt_ctx *ctx);
-+int security_checkpoint_header(struct ckpt_ctx *ctx);
-+#endif /* CONFIG_CHECKPOINT */
++ (If a process was frozen for checkpoint while in userspace, it will
++ resume running in userspace exactly where it was interrupted. If it
++ was frozen while in kernel doing a syscall, it will return what the
++ syscall returned when interrupted/completed, and proceed from there
++ as if it had only been frozen and then thawed. Finally, if it did a
++ self-checkpoint, it will resume to the first instruction after the
++ call to checkpoint(2), having returned 0, to indicate whether the
++ return is from the checkpoint or a restart).
 +
-+char *security_get_lsm_name(void);
++* int clone_with_pid(unsigned long clone_flags, void *news,
++		     int *parent_tidptr, int *child_tidptr,
++		     struct target_pid_set *pid_set)
 +
- #else /* CONFIG_SECURITY */
- struct security_mnt_opts {
- };
-@@ -1935,6 +1977,12 @@ static inline int security_init(void)
- 	return 0;
- }
- 
-+#define DEFAULT_LSM_NAME "lsm_none"
-+static inline char *security_get_lsm_name(void)
-+{
-+	return DEFAULT_LSM_NAME;
-+}
++  struct target_pid_set {
++	 int num_pids;
++	 pid_t *target_pids;
++  }
 +
- static inline int security_ptrace_access_check(struct task_struct *child,
- 					     unsigned int mode)
- {
-@@ -2682,6 +2730,19 @@ static inline int security_inode_getsecctx(struct inode *inode, void **ctx, u32
- {
- 	return -EOPNOTSUPP;
- }
++ Container restart requires that a task have the same pid it had when
++ it was checkpointed. When containers are nested the tasks within the
++ containers exist in multiple pid namespaces and hence have multiple
++ pids to specify during restart.
 +
-+#ifdef CONFIG_CHECKPOINT
-+static inline int security_may_restart(struct ckpt_ctx *ctx)
-+{
-+	ckpt_snarf_lsm_info(ctx);
-+	return 0;
-+}
-+static inline int security_checkpoint_header(struct ckpt_ctx *ctx)
-+{
-+	return ckpt_write_dummy_lsm_info(ctx);
-+}
-+#endif /* CONFIG_CHECKPOINT */
++ clone_with_pids(), intended for use during restart, is similar to
++ clone(), except that it takes a 'target_pid_set' parameter. This
++ parameter lets caller choose specific pid numbers for the child
++ process, in the process's active and ancestor pid namespaces.
 +
- #endif	/* CONFIG_SECURITY */
- 
- #ifdef CONFIG_SECURITY_NETWORK
-diff --git a/kernel/checkpoint/checkpoint.c b/kernel/checkpoint/checkpoint.c
-index ccc5367..7a4f1ce 100644
---- a/kernel/checkpoint/checkpoint.c
-+++ b/kernel/checkpoint/checkpoint.c
-@@ -193,7 +193,18 @@ static int checkpoint_container(struct ckpt_ctx *ctx)
- 	ret = ckpt_write_obj(ctx, &h->h);
- 	ckpt_hdr_put(ctx, h);
- 
--	return ret;
-+	if (ret < 0)
-+		return ret;
++ Unlike clone(), clone_with_pids() needs CAP_SYS_ADMIN, at least for
++ now, to prevent unprivileged processes from misusing this interface.
 +
-+	memset(ctx->lsm_name, 0, CHECKPOINT_LSM_NAME_MAX + 1);
-+	strlcpy(ctx->lsm_name, security_get_lsm_name(),
-+				CHECKPOINT_LSM_NAME_MAX + 1);
-+	ret = ckpt_write_buffer(ctx, ctx->lsm_name,
-+				CHECKPOINT_LSM_NAME_MAX + 1);
-+	if (ret < 0)
-+		return ret;
++ If a target-pid is 0, the kernel continues to assign a pid for the
++ process in that namespace. If a requested pid is taken, the system
++ call fails with -EBUSY. If 'pid_set.num_pids' exceeds the current
++ nesting level of pid namespaces, the system call fails with -EINVAL.
 +
-+	return security_checkpoint_header(ctx);
- }
- 
- /* write the checkpoint trailer */
-diff --git a/kernel/checkpoint/restart.c b/kernel/checkpoint/restart.c
-index 2314f7d..6605597 100644
---- a/kernel/checkpoint/restart.c
-+++ b/kernel/checkpoint/restart.c
-@@ -659,6 +659,42 @@ static int restore_read_header(struct ckpt_ctx *ctx)
- 	return ret;
- }
- 
-+/* read the LSM configuration section */
-+static int restore_lsm(struct ckpt_ctx *ctx)
-+{
-+	int ret;
-+	char *cur_lsm = security_get_lsm_name();
 +
-+	ret = _ckpt_read_buffer(ctx, ctx->lsm_name,
-+				CHECKPOINT_LSM_NAME_MAX + 1);
-+	if (ret < 0) {
-+		ckpt_debug("Error %d reading lsm name\n", ret);
-+		return ret;
++Sysctl/proc
++===========
++
++/proc/sys/kernel/ckpt_unpriv_allowed		[default = 1]
++  controls whether c/r operation is allowed for unprivileged users
++
++
++Operation
++=========
++
++The granularity of a checkpoint usually is a process hierarchy. The
++'pid' argument is interpreted in the caller's pid namespace. So to
++checkpoint a container whose init task (pid 1 in that pidns) appears
++as pid 3497 the caller's pidns, the caller must use pid 3497. Passing
++pid 1 will attempt to checkpoint the caller's container, and if the
++caller isn't privileged and init is owned by root, it will fail.
++
++Unless the CHECKPOINT_SUBTREE flag is set, if the caller passes a pid
++which does not refer to a container's init task, then sys_checkpoint()
++would return -EINVAL.
++
++We assume that during checkpoint and restart the container state is
++quiescent. During checkpoint, this means that all affected tasks are
++frozen (or otherwise stopped). During restart, this means that all
++affected tasks are executing the sys_restart() call. In both cases, if
++there are other tasks possible sharing state with the container, they
++must not modify it during the operation. It is the responsibility of
++the caller to follow this requirement.
++
++If the assumption that all tasks are frozen and that there is no other
++sharing doesn't hold - then the results of the operation are undefined
++(just as, e.g. not calling execve() immediately after vfork() produces
++undefined results). In particular, either checkpoint will fail, or it
++may produce a checkpoint image that can't be restarted, or (unlikely)
++the restart may produce a container whose state does not match that of
++the original container.
++
++
++User tools
++==========
++
++* checkpoint(1): a tool to perform a checkpoint of a container/subtree
++* restart(1): a tool to restart a container/subtree
++* ckptinfo: a tool to examine a checkpoint image
++
++It is best to use the dedicated user tools for checkpoint and restart.
++
++If you insist, then here is a code snippet that illustrates how a
++checkpoint is initiated by a process inside a container - the logic is
++similar to fork():
++	...
++	ckptid = checkpoint(0, ...);
++	switch (crid) {
++	case -1:
++		perror("checkpoint failed");
++		break;
++	default:
++		fprintf(stderr, "checkpoint succeeded, CRID=%d\n", ret);
++		/* proceed with execution after checkpoint */
++		...
++		break;
++	case 0:
++		fprintf(stderr, "returned after restart\n");
++		/* proceed with action required following a restart */
++		...
++		break;
 +	}
++	...
 +
-+	if (!(ctx->uflags & RESTART_KEEP_LSM))
-+		goto skip_lsm;
++And to initiate a restart, the process in an empty container can use
++logic similar to execve():
++	...
++	if (restart(pid, ...) < 0)
++		perror("restart failed");
++	/* only get here if restart failed */
++	...
 +
-+	if (strncmp(cur_lsm, ctx->lsm_name, CHECKPOINT_LSM_NAME_MAX + 1) != 0) {
-+		ckpt_debug("c/r: checkpointed LSM %s, current is %s.\n",
-+			ctx->lsm_name, cur_lsm);
-+		return -EPERM;
-+	}
++Note, that the code also supports "self" checkpoint, where a process
++can checkpoint itself. This mode does not capture the relationships of
++the task with other tasks, or any shared resources. It is useful for
++application that wish to be able to save and restore their state.
++They will either not use (or care about) shared resources, or they
++will be aware of the operations and adapt suitably after a restart.
++The code above can also be used for "self" checkpoint.
 +
-+	if (strcmp(ctx->lsm_name, "lsm_none") != 0 &&
-+			strcmp(ctx->lsm_name, "default") != 0) {
-+		ckpt_debug("c/r: RESTART_KEEP_LSM unsupported for %s\n",
-+				ctx->lsm_name);
-+		return -ENOSYS;
-+	}
 +
-+skip_lsm:
-+	ret = security_may_restart(ctx);
-+	if (ret < 0)
-+		ckpt_debug("security_may_restart returned %d\n", ret);
-+	return ret;
-+}
++You may find the following sample programs useful:
 +
- /* read the container configuration section */
- static int restore_container(struct ckpt_ctx *ctx)
- {
-@@ -670,6 +706,11 @@ static int restore_container(struct ckpt_ctx *ctx)
- 		return PTR_ERR(h);
- 	ckpt_hdr_put(ctx, h);
- 
-+	/* read the LSM name and info which follow ("are a part of")
-+	 * the ckpt_hdr_container */
-+	ret = restore_lsm(ctx);
-+	if (ret < 0)
-+		ckpt_debug("Error %d on LSM configuration\n", ret);
- 	return ret;
- }
- 
-diff --git a/kernel/checkpoint/sys.c b/kernel/checkpoint/sys.c
-index a20ce9f..23073e4 100644
---- a/kernel/checkpoint/sys.c
-+++ b/kernel/checkpoint/sys.c
-@@ -175,6 +175,28 @@ void *ckpt_hdr_get_type(struct ckpt_ctx *ctx, int len, int type)
- }
- EXPORT_SYMBOL(ckpt_hdr_get_type);
- 
-+#define DUMMY_LSM_INFO "dummy"
++* checkpoint.c: accepts a 'pid' and checkpoint that task to stdout
++* self_checkpoint.c: a simple test program doing self-checkpoint
++* self_restart.c: restarts a (self-) checkpoint image from stdin
 +
-+int ckpt_write_dummy_lsm_info(struct ckpt_ctx *ctx)
-+{
-+	return ckpt_write_obj_type(ctx, DUMMY_LSM_INFO,
-+			strlen(DUMMY_LSM_INFO), CKPT_HDR_LSM_INFO);
-+}
++See also the utilities 'checkpoint' and 'restart' (from user-cr).
 +
-+/*
-+ * ckpt_snarf_lsm_info
-+ * If there is a CKPT_HDR_LSM_INFO field, toss it.
-+ * Used when the current LSM doesn't care about this field.
-+ */
-+void ckpt_snarf_lsm_info(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_hdr *h;
 +
-+	h = ckpt_read_buf_type(ctx, CKPT_LSM_INFO_LEN, CKPT_HDR_LSM_INFO);
-+	if (!IS_ERR(h))
-+		ckpt_hdr_put(ctx, h);
-+}
++"External" checkpoint
++=====================
 +
- /*
-  * Helpers to manage c/r contexts: allocated for each checkpoint and/or
-  * restart operation, and persists until the operation is completed.
-diff --git a/security/capability.c b/security/capability.c
-index 4875142..72e4c00 100644
---- a/security/capability.c
-+++ b/security/capability.c
-@@ -852,6 +852,27 @@ static int cap_inode_getsecctx(struct inode *inode, void **ctx, u32 *ctxlen)
- {
- 	return 0;
- }
++To do "external" checkpoint, you need to first freeze that other task
++either using the freezer cgroup.
 +
-+#ifdef CONFIG_CHECKPOINT
-+static int cap_may_restart(struct ckpt_ctx *ctx)
-+{
-+	/*
-+	 * Note that all construction of kernel resources, credentials,
-+	 * etc is already authorized per the caller's credentials.  This
-+	 * hook is intended for the LSM to make further decisions about
-+	 * a task not being allowed to restart at all, for instance if
-+	 * the policy has changed since checkpoint.
-+	 */
-+	ckpt_snarf_lsm_info(ctx);
-+	return 0;
-+}
++Restart does not preserve the original PID yet, (because we haven't
++solved yet the fork-with-specific-pid issue). In a real scenario, you
++probably want to first create a new names space, and have the init
++task there call 'sys_restart()'.
 +
-+static int cap_checkpoint_header(struct ckpt_ctx *ctx)
-+{
-+	return ckpt_write_dummy_lsm_info(ctx);
-+}
-+#endif
++I tested it this way:
++	$ ./test &
++	[1] 3493
 +
- #ifdef CONFIG_KEYS
- static int cap_key_alloc(struct key *key, const struct cred *cred,
- 			 unsigned long flags)
-@@ -1064,6 +1085,10 @@ void security_fixup_ops(struct security_operations *ops)
- 	set_to_cap_if_null(ops, inode_notifysecctx);
- 	set_to_cap_if_null(ops, inode_setsecctx);
- 	set_to_cap_if_null(ops, inode_getsecctx);
-+#ifdef CONFIG_CHECKPOINT
-+	set_to_cap_if_null(ops, may_restart);
-+	set_to_cap_if_null(ops, checkpoint_header);
-+#endif
- #ifdef CONFIG_SECURITY_NETWORK
- 	set_to_cap_if_null(ops, unix_stream_connect);
- 	set_to_cap_if_null(ops, unix_may_send);
-diff --git a/security/security.c b/security/security.c
-index 687c6fd..2d6ca52 100644
---- a/security/security.c
-+++ b/security/security.c
-@@ -17,6 +17,9 @@
- #include <linux/kernel.h>
- #include <linux/security.h>
- #include <linux/ima.h>
-+#ifdef CONFIG_CHECKPOINT
-+#include <linux/checkpoint.h>
-+#endif
- 
- /* Boot-time LSM user choice */
- static __initdata char chosen_lsm[SECURITY_NAME_MAX + 1] =
-@@ -133,6 +136,11 @@ int register_security(struct security_operations *ops)
- 	return 0;
- }
- 
-+char *security_get_lsm_name(void)
-+{
-+	return security_ops->name;
-+}
++	$ echo 3493 > /cgroup/0/tasks
++	$ echo FROZEN > /cgroup/0/freezer.state
++	$ ./checkpoint 3493 > ckpt.image
 +
- /* Security operations */
- 
- int security_ptrace_access_check(struct task_struct *child, unsigned int mode)
-@@ -1042,6 +1050,24 @@ int security_inode_getsecctx(struct inode *inode, void **ctx, u32 *ctxlen)
- }
- EXPORT_SYMBOL(security_inode_getsecctx);
- 
-+#ifdef CONFIG_CHECKPOINT
-+int security_may_restart(struct ckpt_ctx *ctx)
-+{
-+	/*
-+	 * SECURITY_NAME_MAX is defined in linux/security.h,
-+	 * CHECKPOINT_LSM_NAME_MAX in linux/checkpoint_hdr.h
-+	 */
-+	BUILD_BUG_ON(CHECKPOINT_LSM_NAME_MAX != SECURITY_NAME_MAX);
++	$ mv /tmp/cr-test.out /tmp/cr-test.out.orig
++	$ cp /tmp/cr-test.out.orig /tmp/cr-test.out
 +
-+	return security_ops->may_restart(ctx);
-+}
++	$ echo THAWED > /cgroup/0/freezer.state
 +
-+int security_checkpoint_header(struct ckpt_ctx *ctx)
-+{
-+	return security_ops->checkpoint_header(ctx);
-+}
-+#endif
++	$ ./self_restart < ckpt.image
++Now compare the output of the two output files.
 +
- #ifdef CONFIG_SECURITY_NETWORK
- 
- int security_unix_stream_connect(struct socket *sock, struct socket *other,
++
++"Self" checkpoint
++================
++
++To do self-checkpoint, you can incorporate the code from
++self_checkpoint.c into your application.
++
++Here is how to test the self-checkpoint:
++	$ ./self_checkpoint > self.image &
++	[1] 3512
++
++	$ sleep 3
++	$ mv /tmp/cr-self.out /tmp/cr-self.out.orig
++	$ cp /tmp/cr-self.out.orig /tmp/cr-self.out
++
++	$ cat /tmp/cr-self.out
++	hello, world!
++	count 0
++	count 1
++	count 2
++	checkpoint ret: 1
++	count 3
++	...
++
++	$ sed -i 's/count/xxxxx/g' /tmp/cr-self.out
++
++	$ ./self_restart < self.image &
++
++Now compare the output of the two output files.
++	$ cat /tmp/cr-self.out
++	hello, world!
++	xxxxx 0
++	xxxxx 1
++	xxxxx 2
++	checkpoint ret: 0
++	count 3
++	...
++
++
++Note how in test.c we close stdin, stdout, stderr - that's because
++currently we only support regular files (not ttys/ptys).
++
++If you check the output of ps, you'll see that "self_restart" changed
++its name to "test" or "self_checkpoint", as expected.
 -- 
 1.6.3.3
