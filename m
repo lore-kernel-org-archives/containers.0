@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH v21 030/100] c/r: introduce PF_RESTARTING,
-	and skip notification on exit
-Date: Sat,  1 May 2010 10:15:12 -0400
-Message-ID: <1272723382-19470-31-git-send-email-orenl__48368.1752732538$1272726817$gmane$org@cs.columbia.edu>
+Subject: [PATCH v21 037/100] c/r: introduce new 'file_operations':
+	->checkpoint, ->collect()
+Date: Sat,  1 May 2010 10:15:19 -0400
+Message-ID: <1272723382-19470-38-git-send-email-orenl__12648.5097840943$1272726929$gmane$org@cs.columbia.edu>
 References: <1272723382-19470-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -19,101 +19,108 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-To restore zombie's we will create the a task, that, on its turn to
-run, calls do_exit(). Unlike normal tasks that exit, we need to
-prevent notification side effects that send signals to other
-processes, e.g. parent (SIGCHLD) or child tasks (per child's request).
+While we assume all normal files and directories can be checkpointed,
+there are, as usual in the VFS, specialized places that will always
+need an ability to override these defaults. Although we could do this
+completely in the checkpoint code, that would bitrot quickly.
 
-There are three main cases for such notifications:
+This adds a new 'file_operations' function for checkpointing a file.
+It is assumed that there should be a dirt-simple way to make something
+(un)checkpointable that fits in with current code.
 
-1) do_notify_parent(): parent of a process is notified about a change
- in status (e.g. become zombie, reparent, etc). If parent ignores,
- then mark child for immediate release (skip zombie).
+As you can see in the ext[234] patches down the road, all that we have
+to do to make something simple be supported is add a single "generic"
+f_op entry.
 
-2) kill_orphan_pgrp(): a process group that becomes orphaned will
- signal stopped jobs (HUP then CONT).
+Also adds a new 'file_operations' function for 'collecting' a file for
+leak-detection during full-container checkpoint. This is useful for
+those files that hold references to other "collectable" objects. Two
+examples are pty files that point to corresponding tty objects, and
+eventpoll files that refer to the files they are monitoring.
 
-3) forget_original_parent(): children of a process are signaled (per
- request) with p->pdeath_signal
+Finally, this patch introduces vfs_fcntl() so that it can be called
+from restart (see patch adding restart of files).
 
-Remember that restoring signal state (for any restarting task) must
-complete _before_ it is allowed to resume execution, and not during
-the resume. Otherwise, a running task may send a signal to another
-task that hasn't restored yet, so the new signal will be lost
-soon-after.
+Changelog[v21]
+  - Update Documentation/filesystem/vfs.txt
+  - Put file_ops->checkpoint under CONFIG_CHECKPOINT
+Changelog[v17]
+  - Introduce 'collect' method
+Changelog[v17]
+  - Forward-declare 'ckpt_ctx' et-al, don't use checkpoint_types.h
 
-I considered two possible way to address this:
-
-1. Add another sync point to restart: all tasks will first restore
-their state without signals (all signals blocked), and zombies call
-do_exit(). A sync point then will ensure that all zombies are gone and
-their effects done. Then all tasks restore their signal state (and
-mask), and sync (new point) again. Only then they may resume
-execution.
-The main disadvantage is the added complexity and inefficiency,
-for no good reason.
-
-2. Introduce PF_RESTARTING: mark all restarting tasks with a new flag,
-and teach the above three notifications to skip sending the signal if
-theis flag is set.
-The main advantage is simplicity and completeness. Also, such a flag
-may to be useful later on. This the method implemented.
-
-Changelog [ckpt-v19-rc3]:
-  - Rebase to kernel 2.6.33
-Changelog [ckpt-v19-rc1]:
-  - In reparent_thread() test for PF_RESTARTING on parent
-
-Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- kernel/exit.c   |    6 +++++-
- kernel/signal.c |    4 ++++
- 2 files changed, 9 insertions(+), 1 deletions(-)
+ Documentation/filesystems/vfs.txt |   13 ++++++++++++-
+ include/linux/fs.h                |    5 +++++
+ 2 files changed, 17 insertions(+), 1 deletions(-)
 
-diff --git a/kernel/exit.c b/kernel/exit.c
-index d9da011..0ef6685 100644
---- a/kernel/exit.c
-+++ b/kernel/exit.c
-@@ -304,6 +304,10 @@ kill_orphaned_pgrp(struct task_struct *tsk, struct task_struct *parent)
- 	struct pid *pgrp = task_pgrp(tsk);
- 	struct task_struct *ignored_task = tsk;
+diff --git a/Documentation/filesystems/vfs.txt b/Documentation/filesystems/vfs.txt
+index 3de2f32..a78355d 100644
+--- a/Documentation/filesystems/vfs.txt
++++ b/Documentation/filesystems/vfs.txt
+@@ -711,7 +711,7 @@ struct file_operations
+ ----------------------
  
-+	/* restarting zombie doesn't trigger signals */
-+	if (tsk->flags & PF_RESTARTING)
-+		return;
-+
- 	if (!parent)
- 		 /* exit: our father is in a different pgrp than
- 		  * we are and we were the only connection outside.
-@@ -793,7 +797,7 @@ static void forget_original_parent(struct task_struct *father)
- 				BUG_ON(task_ptrace(t));
- 				t->parent = t->real_parent;
- 			}
--			if (t->pdeath_signal)
-+			if (t->pdeath_signal && !(t->flags & PF_RESTARTING))
- 				group_send_sig_info(t->pdeath_signal,
- 						    SEND_SIG_NOINFO, t);
- 		} while_each_thread(p, t);
-diff --git a/kernel/signal.c b/kernel/signal.c
-index dbd7fe0..be447c8 100644
---- a/kernel/signal.c
-+++ b/kernel/signal.c
-@@ -1449,6 +1449,10 @@ int do_notify_parent(struct task_struct *tsk, int sig)
- 	BUG_ON(!task_ptrace(tsk) &&
- 	       (tsk->group_leader != tsk || !thread_group_empty(tsk)));
+ This describes how the VFS can manipulate an open file. As of kernel
+-2.6.22, the following members are defined:
++2.6.34, the following members are defined:
  
-+	/* restarting zombie doesn't notify parent */
-+	if (tsk->flags & PF_RESTARTING)
-+		return ret;
+ struct file_operations {
+ 	struct module *owner;
+@@ -742,6 +742,10 @@ struct file_operations {
+ 	int (*flock) (struct file *, int, struct file_lock *);
+ 	ssize_t (*splice_write)(struct pipe_inode_info *, struct file *, size_t, unsigned int);
+ 	ssize_t (*splice_read)(struct file *, struct pipe_inode_info *, size_t, unsigned int);
++#ifdef CONFIG_CHECKPOINT
++	int (*checkpoint)(struct ckpt_ctx *, struct file *);
++	int (*collect)(struct ckpt_ctx *, struct file *);
++#endif
+ };
+ 
+ Again, all methods are called without any locks being held, unless
+@@ -813,6 +817,13 @@ otherwise noted.
+   splice_read: called by the VFS to splice data from file to a pipe. This
+ 	       method is used by the splice(2) system call
+ 
++  checkpoint: called by checkpoint(2) system call to checkpoint the
++              state of a file descriptor.
 +
- 	info.si_signo = sig;
- 	info.si_errno = 0;
- 	/*
++  collect: called by the checkpoint(2) system call to track references to
++           file descriptors, to detect leaks in full-container checkpoint
++	   (see Documentation/checkpoint/readme.txt).
++
+ Note that the file operations are implemented by the specific
+ filesystem in which the inode resides. When opening a device node
+ (character or block special) most filesystems will call special
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 65ffe9c..c06c157 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -397,6 +397,7 @@ struct kstatfs;
+ struct vm_area_struct;
+ struct vfsmount;
+ struct cred;
++struct ckpt_ctx;
+ 
+ extern void __init inode_init(void);
+ extern void __init inode_init_early(void);
+@@ -1511,6 +1512,10 @@ struct file_operations {
+ 	ssize_t (*splice_write)(struct pipe_inode_info *, struct file *, loff_t *, size_t, unsigned int);
+ 	ssize_t (*splice_read)(struct file *, loff_t *, struct pipe_inode_info *, size_t, unsigned int);
+ 	int (*setlease)(struct file *, long, struct file_lock **);
++#ifdef CONFIG_CHECKPOINT
++	int (*checkpoint)(struct ckpt_ctx *, struct file *);
++	int (*collect)(struct ckpt_ctx *, struct file *);
++#endif
+ };
+ 
+ struct inode_operations {
 -- 
 1.6.3.3
