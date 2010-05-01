@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH v21 055/100] c/r: support share-memory sysv-ipc
-Date: Sat,  1 May 2010 10:15:37 -0400
-Message-ID: <1272723382-19470-56-git-send-email-orenl__28115.1983108886$1272728537$gmane$org@cs.columbia.edu>
+Subject: [PATCH v21 081/100] c/r: restore task fs_root and pwd (v3)
+Date: Sat,  1 May 2010 10:16:03 -0400
+Message-ID: <1272723382-19470-82-git-send-email-orenl__26221.0526307628$1272728538$gmane$org@cs.columbia.edu>
 References: <1272723382-19470-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -18,868 +18,611 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Manfred Spraul <manfred-nhLOkwUX5cPe2c5cEj3t2g@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Checkpoint of sysvipc shared memory is performed in two steps: first,
-the entire ipc namespace is dumped as a whole by iterating through all
-shm objects and dumping the contents of each one. The shmem inode is
-registered in the objhash. Second, for each vma that refers to ipc
-shared memory we find the inode in the objhash, and save the objref.
+Checkpoint and restore task->fs.  Tasks sharing task->fs will
+share them again after restart.
 
-(If we find a new inode, that indicates that the ipc namespace is not
-entirely frozen and someone must have manipulated it since step 1).
+Original patch by Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Handling of shm objects that have been deleted (via IPC_RMID) is left
-to a later patch in this series.
+Changelog:
+  Jan 25: [orenl] Addressed comments by .. myself:
+    - add leak detection
+    - change order of save/restore of chroot and cwd
+    - save/restore fs only after file-table and mm
+    - rename functions to adapt existing conventions
+  Dec 28: [serge] Addressed comments by Oren (and Dave)
+    - define and use {get,put}_fs_struct helpers
+    - fix locking comment
+    - define ckpt_read_fname() and use in checkpoint/files.c
 
-Changelog[v21]:
-  - Do not include checkpoint_hdr.h explicitly
-Changelog[v20]:
-  - Fix "scheduling in atomic" while restoring ipc shm
-Changelog[v19-rc3]:
-  - Rebase to kernel 2.6.33
-Changelog[v19-rc1]:
-  - [Matt Helsley] Add cpp definitions for enums
-Changelog[v18]:
-  - Collect files used by shm objects
-  - Use file instead of inode as shared object during checkpoint
-Changelog[v17]:
-  - Restore objects in the right namespace
-  - Properly initialize ctx->deferqueue
-  - Fix compilation with CONFIG_CHECKPOINT=n
-
-Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Manfred Spraul <manfred-nhLOkwUX5cPe2c5cEj3t2g@public.gmane.org>
+Cc: Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/checkpoint.h       |   15 ++
- include/linux/checkpoint_hdr.h   |   21 +++-
- include/linux/checkpoint_types.h |    1 +
- include/linux/shm.h              |   15 ++
- ipc/Makefile                     |    2 +-
- ipc/checkpoint.c                 |   25 +++-
- ipc/checkpoint_shm.c             |  305 ++++++++++++++++++++++++++++++++++++++
- ipc/shm.c                        |   84 ++++++++++-
- ipc/util.h                       |    9 +
- kernel/checkpoint/checkpoint.c   |    5 +
- kernel/checkpoint/restart.c      |    6 +
- kernel/checkpoint/sys.c          |    7 +
- kernel/nsproxy.c                 |    8 +
- mm/checkpoint.c                  |   28 +++-
- 14 files changed, 517 insertions(+), 14 deletions(-)
- create mode 100644 ipc/checkpoint_shm.c
+ fs/checkpoint.c                |  232 +++++++++++++++++++++++++++++++++++++++-
+ fs/fs_struct.c                 |   21 ++++
+ fs/open.c                      |   58 ++++++----
+ include/linux/checkpoint.h     |    6 +-
+ include/linux/checkpoint_hdr.h |   12 ++
+ include/linux/fs.h             |    5 +
+ include/linux/fs_struct.h      |    2 +
+ kernel/checkpoint/process.c    |   17 +++
+ 8 files changed, 325 insertions(+), 28 deletions(-)
 
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index e43f7a9..2f72a6a 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -172,6 +172,18 @@ extern int restore_restart_block(struct ckpt_ctx *ctx);
- /* namespaces */
- extern int ckpt_collect_ns(struct ckpt_ctx *ctx, struct task_struct *t);
+diff --git a/fs/checkpoint.c b/fs/checkpoint.c
+index e0f8a15..61b68da 100644
+--- a/fs/checkpoint.c
++++ b/fs/checkpoint.c
+@@ -15,6 +15,9 @@
+ #include <linux/module.h>
+ #include <linux/sched.h>
+ #include <linux/file.h>
++#include <linux/namei.h>
++#include <linux/fs_struct.h>
++#include <linux/fs.h>
+ #include <linux/fdtable.h>
+ #include <linux/fsnotify.h>
+ #include <linux/pipe_fs_i.h>
+@@ -369,6 +372,58 @@ int checkpoint_obj_file_table(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	return objref;
+ }
  
-+/* ipc-ns */
-+#ifdef CONFIG_SYSVIPC
-+extern int ckpt_collect_ipc_ns(struct ckpt_ctx *ctx,
-+			       struct ipc_namespace *ipc_ns);
-+#else
-+static inline int ckpt_collect_ipc_ns(struct ckpt_ctx *ctx,
-+				      struct ipc_namespace *ipc_ns)
++int checkpoint_obj_fs(struct ckpt_ctx *ctx, struct task_struct *t)
 +{
-+	return 0;
++	struct fs_struct *fs;
++	int fs_objref;
++
++	task_lock(current);
++	fs = t->fs;
++	get_fs_struct(fs);
++	task_unlock(current);
++
++	fs_objref = checkpoint_obj(ctx, fs, CKPT_OBJ_FS);
++	put_fs_struct(fs);
++
++	return fs_objref;
 +}
-+#endif /* CONFIG_SYSVIPC */
 +
- /* file table */
- extern int ckpt_collect_file_table(struct ckpt_ctx *ctx, struct task_struct *t);
- extern int checkpoint_obj_file_table(struct ckpt_ctx *ctx,
-@@ -218,6 +230,9 @@ extern unsigned long generic_vma_restore(struct mm_struct *mm,
- extern int private_vma_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
- 			       struct file *file, struct ckpt_hdr_vma *h);
- 
-+extern int checkpoint_memory_contents(struct ckpt_ctx *ctx,
-+				      struct vm_area_struct *vma,
-+				      struct inode *inode);
- extern int restore_memory_contents(struct ckpt_ctx *ctx, struct inode *inode);
- 
- 
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 78d5996..e9983b4 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -397,7 +397,11 @@ enum vma_type {
- #define CKPT_VMA_SHM_ANON_SKIP CKPT_VMA_SHM_ANON_SKIP
- 	CKPT_VMA_SHM_FILE,	/* shared mapped file, only msync */
- #define CKPT_VMA_SHM_FILE CKPT_VMA_SHM_FILE
--	CKPT_VMA_MAX
-+	CKPT_VMA_SHM_IPC,	/* shared sysvipc */
-+#define CKPT_VMA_SHM_IPC CKPT_VMA_SHM_IPC
-+	CKPT_VMA_SHM_IPC_SKIP,	/* shared sysvipc (skip contents) */
-+#define CKPT_VMA_SHM_IPC_SKIP CKPT_VMA_SHM_IPC_SKIP
-+	CKPT_VMA_MAX,
- #define CKPT_VMA_MAX CKPT_VMA_MAX
- };
- 
-@@ -448,6 +452,7 @@ struct ckpt_hdr_ipc {
- } __attribute__((aligned(8)));
- 
- struct ckpt_hdr_ipc_perms {
-+	struct ckpt_hdr h;
- 	__s32 id;
- 	__u32 key;
- 	__u32 uid;
-@@ -459,6 +464,20 @@ struct ckpt_hdr_ipc_perms {
- 	__u64 seq;
- } __attribute__((aligned(8)));
- 
-+struct ckpt_hdr_ipc_shm {
-+	struct ckpt_hdr h;
-+	struct ckpt_hdr_ipc_perms perms;
-+	__u64 shm_segsz;
-+	__u64 shm_atim;
-+	__u64 shm_dtim;
-+	__u64 shm_ctim;
-+	__s32 shm_cprid;
-+	__s32 shm_lprid;
-+	__u32 mlock_uid;
-+	__u32 flags;
-+	__u32 objref;
-+} __attribute__((aligned(8)));
-+
- 
- #define CKPT_TST_OVERFLOW_16(a, b) \
- 	((sizeof(a) > sizeof(b)) && ((a) > SHORT_MAX))
-diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
-index cff2eb1..d1b893c 100644
---- a/include/linux/checkpoint_types.h
-+++ b/include/linux/checkpoint_types.h
-@@ -49,6 +49,7 @@ struct ckpt_ctx {
- 	atomic_t refcount;
- 
- 	struct ckpt_obj_hash *obj_hash;	/* repository for shared objects */
-+	struct deferqueue_head *deferqueue;	/* deferred c/r work */
- 	struct deferqueue_head *files_deferq;	/* deferred file-table work */
- 
- 	struct path root_fs_path;     /* container root (FIXME) */
-diff --git a/include/linux/shm.h b/include/linux/shm.h
-index eca6235..94ac1a7 100644
---- a/include/linux/shm.h
-+++ b/include/linux/shm.h
-@@ -118,6 +118,21 @@ static inline int is_file_shm_hugepages(struct file *file)
- }
- #endif
- 
-+struct ipc_namespace;
-+extern int shmctl_down(struct ipc_namespace *ns, int shmid, int cmd,
-+		       struct shmid_ds __user *buf, int version);
-+
-+#ifdef CONFIG_CHECKPOINT
-+#ifdef CONFIG_SYSVIPC
-+struct ckpt_ctx;
-+struct ckpt_hdr_vma;
-+extern int ipcshm_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
-+			  struct ckpt_hdr_vma *h);
-+#else
-+#define ipcshm_restore NULL
-+#endif
-+#endif
-+
- #endif /* __KERNEL__ */
- 
- #endif /* _LINUX_SHM_H_ */
-diff --git a/ipc/Makefile b/ipc/Makefile
-index 553c6d5..8fdc6c1 100644
---- a/ipc/Makefile
-+++ b/ipc/Makefile
-@@ -9,4 +9,4 @@ obj_mq-$(CONFIG_COMPAT) += compat_mq.o
- obj-$(CONFIG_POSIX_MQUEUE) += mqueue.o msgutil.o $(obj_mq-y)
- obj-$(CONFIG_IPC_NS) += namespace.o
- obj-$(CONFIG_POSIX_MQUEUE_SYSCTL) += mq_sysctl.o
--obj-$(CONFIG_SYSVIPC_CHECKPOINT) += checkpoint.o
-+obj-$(CONFIG_SYSVIPC_CHECKPOINT) += checkpoint.o checkpoint_shm.o
-diff --git a/ipc/checkpoint.c b/ipc/checkpoint.c
-index 6ff2ea7..18ae99d 100644
---- a/ipc/checkpoint.c
-+++ b/ipc/checkpoint.c
-@@ -127,9 +127,9 @@ static int checkpoint_ipc_ns(struct ckpt_ctx *ctx, void *ptr)
- 	if (ret < 0)
- 		return ret;
- 
--#if 0 /* NEXT FEW PATCHES */
- 	ret = checkpoint_ipc_any(ctx, ipc_ns, IPC_SHM_IDS,
- 				 CKPT_HDR_IPC_SHM, checkpoint_ipc_shm);
-+#if 0 /* NEXT FEW PATCHES */
- 	if (ret < 0)
- 		return ret;
- 	ret = checkpoint_ipc_any(ctx, ipc_ns, IPC_MSG_IDS,
-@@ -143,6 +143,27 @@ static int checkpoint_ipc_ns(struct ckpt_ctx *ctx, void *ptr)
- }
- 
- /**************************************************************************
-+ * Collect
-+ */
-+
-+int ckpt_collect_ipc_ns(struct ckpt_ctx *ctx, struct ipc_namespace *ipc_ns)
++/* called with fs refcount bumped so it won't disappear */
++static int checkpoint_fs(struct ckpt_ctx *ctx, void *ptr)
 +{
-+	struct ipc_ids *ipc_ids;
++	struct fs_struct *fs = ptr;
++	struct ckpt_hdr_fs *h;
++	struct fs_struct *fscopy;
 +	int ret;
 +
-+	/*
-+	 * Each shm object holds a reference to a file pointer, so
-+	 * collect them. Nothing to do for msg and sem.
-+	 */
-+	ipc_ids = &ipc_ns->ids[IPC_SHM_IDS];
-+	down_read(&ipc_ids->rw_mutex);
-+	ret = idr_for_each(&ipc_ids->ipcs_idr, ckpt_collect_ipc_shm, ctx);
-+	up_read(&ipc_ids->rw_mutex);
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FS);
++	if (!h)
++		return -ENOMEM;
++	ret = ckpt_write_obj(ctx, &h->h);
++	ckpt_hdr_put(ctx, h);
++	if (ret)
++		return ret;
 +
++	fscopy = copy_fs_struct(fs);
++	if (!fs)
++		return -ENOMEM;
++
++	ret = checkpoint_fname(ctx, &fscopy->pwd, &ctx->root_fs_path);
++	if (ret < 0) {
++		ckpt_err(ctx, ret, "%(T)writing path of cwd");
++		goto out;
++	}
++	ret = checkpoint_fname(ctx, &fscopy->root, &ctx->root_fs_path);
++	if (ret < 0) {
++		ckpt_err(ctx, ret, "%(T)writing path of fs root");
++		goto out;
++	}
++	ret = 0;
++ out:
++	free_fs_struct(fscopy);
 +	return ret;
 +}
 +
-+/**************************************************************************
+ /***********************************************************************
+  * Collect
+  */
+@@ -455,10 +510,41 @@ int ckpt_collect_file_table(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	return ret;
+ }
+ 
++int ckpt_collect_fs(struct ckpt_ctx *ctx, struct task_struct *t)
++{
++	struct fs_struct *fs;
++	int ret;
++
++	task_lock(t);
++	fs = t->fs;
++	get_fs_struct(fs);
++	task_unlock(t);
++
++	ret = ckpt_obj_collect(ctx, fs, CKPT_OBJ_FS);
++
++	put_fs_struct(fs);
++	return ret;
++}
++
+ /**************************************************************************
   * Restart
   */
  
-@@ -303,9 +324,9 @@ static void *restore_ipc_ns(struct ckpt_ctx *ctx)
- 	get_ipc_ns(ipc_ns);
- #endif
++static int ckpt_read_fname(struct ckpt_ctx *ctx, char **fname)
++{
++	int len;
++
++	len = ckpt_read_payload(ctx, (void **) fname,
++				PATH_MAX, CKPT_HDR_FILE_NAME);
++	if (len < 0)
++		return len;
++
++	(*fname)[len - 1] = '\0';	/* always play if safe */
++	ckpt_debug("read filename '%s'\n", *fname);
++
++	return len;
++}
++
+ /**
+  * restore_open_fname - read a file name and open a file
+  * @ctx: checkpoint context
+@@ -474,11 +560,9 @@ struct file *restore_open_fname(struct ckpt_ctx *ctx, int flags)
+ 	if (flags & (O_CREAT | O_EXCL | O_NOCTTY | O_TRUNC))
+ 		return ERR_PTR(-EINVAL);
  
--#if 0 /* NEXT FEW PATCHES */
- 	ret = restore_ipc_any(ctx, ipc_ns, IPC_SHM_IDS,
- 			      CKPT_HDR_IPC_SHM, restore_ipc_shm);
-+#if 0 /* NEXT FEW PATCHES */
- 	if (ret < 0)
- 		goto out;
- 	ret = restore_ipc_any(ctx, ipc_ns, IPC_MSG_IDS,
-diff --git a/ipc/checkpoint_shm.c b/ipc/checkpoint_shm.c
-new file mode 100644
-index 0000000..0e8a140
---- /dev/null
-+++ b/ipc/checkpoint_shm.c
-@@ -0,0 +1,305 @@
-+/*
-+ *  Checkpoint/restart - dump state of sysvipc shm
-+ *
-+ *  Copyright (C) 2009 Oren Laadan
-+ *
-+ *  This file is subject to the terms and conditions of the GNU General Public
-+ *  License.  See the file COPYING in the main directory of the Linux
-+ *  distribution for more details.
+-	len = ckpt_read_payload(ctx, (void **) &fname,
+-				PATH_MAX, CKPT_HDR_FILE_NAME);
++	len = ckpt_read_fname(ctx, &fname);
+ 	if (len < 0)
+ 		return ERR_PTR(len);
+-	fname[len - 1] = '\0';	/* always play if safe */
+ 	ckpt_debug("fname '%s' flags %#x\n", fname, flags);
+ 
+ 	file = filp_open(fname, flags, 0);
+@@ -805,8 +889,136 @@ int restore_obj_file_table(struct ckpt_ctx *ctx, int files_objref)
+ }
+ 
+ /*
++ * Called by task restore code to set the restarted task's
++ * current->fs to an entry on the hash
 + */
-+
-+/* default debug level for output */
-+#define CKPT_DFLAG  CKPT_DIPC
-+
-+#include <linux/mm.h>
-+#include <linux/shm.h>
-+#include <linux/shmem_fs.h>
-+#include <linux/hugetlb.h>
-+#include <linux/rwsem.h>
-+#include <linux/sched.h>
-+#include <linux/file.h>
-+#include <linux/syscalls.h>
-+#include <linux/nsproxy.h>
-+#include <linux/ipc_namespace.h>
-+#include <linux/deferqueue.h>
-+
-+#include <linux/msg.h>	/* needed for util.h that uses 'struct msg_msg' */
-+#include "util.h"
-+
-+#include <linux/checkpoint.h>
-+
-+/************************************************************************
-+ * ipc checkpoint
-+ */
-+
-+/* called with the msgids->rw_mutex is read-held */
-+static int fill_ipc_shm_hdr(struct ckpt_ctx *ctx,
-+			    struct ckpt_hdr_ipc_shm *h,
-+			    struct shmid_kernel *shp)
++int restore_obj_fs(struct ckpt_ctx *ctx, int fs_objref)
 +{
-+	int ret = 0;
++	struct fs_struct *newfs, *oldfs;
 +
-+	ret = checkpoint_fill_ipc_perms(&h->perms, &shp->shm_perm);
-+	if (ret < 0)
-+		return ret;
++	newfs = ckpt_obj_fetch(ctx, fs_objref, CKPT_OBJ_FS);
++	if (IS_ERR(newfs))
++		return PTR_ERR(newfs);
 +
-+	ipc_lock_by_ptr(&shp->shm_perm);
-+
-+	h->shm_segsz = shp->shm_segsz;
-+	h->shm_atim = shp->shm_atim;
-+	h->shm_dtim = shp->shm_dtim;
-+	h->shm_ctim = shp->shm_ctim;
-+	h->shm_cprid = shp->shm_cprid;
-+	h->shm_lprid = shp->shm_lprid;
-+
-+	if (shp->mlock_user)
-+		h->mlock_uid = shp->mlock_user->uid;
-+	else
-+		h->mlock_uid = (unsigned int) -1;
-+
-+	h->flags = 0;
-+	/* check if shm was setup with SHM_NORESERVE */
-+	if (SHMEM_I(shp->shm_file->f_dentry->d_inode)->flags & VM_NORESERVE)
-+		h->flags |= SHM_NORESERVE;
-+	/* check if shm was setup with SHM_HUGETLB (unsupported yet) */
-+	if (is_file_hugepages(shp->shm_file)) {
-+		pr_warning("c/r: unsupported SHM_HUGETLB\n");
-+		ret = -ENOSYS;
-+	}
-+
-+	ipc_unlock(&shp->shm_perm);
-+
-+	ckpt_debug("shm: cprid %d lprid %d segsz %lld mlock %d\n",
-+		 h->shm_cprid, h->shm_lprid, h->shm_segsz, h->mlock_uid);
-+
-+	return ret;
-+}
-+
-+/* called with the msgids->rw_mutex is read-held */
-+int checkpoint_ipc_shm(int id, void *p, void *data)
-+{
-+	struct ckpt_hdr_ipc_shm *h;
-+	struct ckpt_ctx *ctx = (struct ckpt_ctx *) data;
-+	struct kern_ipc_perm *perm = (struct kern_ipc_perm *) p;
-+	struct shmid_kernel *shp;
-+	struct inode *inode;
-+	int first, objref;
-+	int ret;
-+
-+	shp = container_of(perm, struct shmid_kernel, shm_perm);
-+	inode = shp->shm_file->f_dentry->d_inode;
-+
-+	/* we collected the file but we don't checkpoint it per-se */
-+	ret = ckpt_obj_visit(ctx, shp->shm_file, CKPT_OBJ_FILE);
-+	if (ret < 0)
-+		return ret;
-+
-+	objref = ckpt_obj_lookup_add(ctx, inode, CKPT_OBJ_INODE, &first);
-+	if (objref < 0)
-+		return objref;
-+
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_IPC_SHM);
-+	if (!h)
-+		return -ENOMEM;
-+
-+	ret = fill_ipc_shm_hdr(ctx, h, shp);
-+	if (ret < 0)
-+		goto out;
-+
-+	h->objref = objref;
-+	ckpt_debug("shm: objref %d\n", h->objref);
-+
-+	ret = ckpt_write_obj(ctx, &h->h);
-+	if (ret < 0)
-+		goto out;
-+
-+	ret = checkpoint_memory_contents(ctx, NULL, inode);
-+ out:
-+	ckpt_hdr_put(ctx, h);
-+	return ret;
-+}
-+
-+/************************************************************************
-++ * ipc collect
-++ */
-+int ckpt_collect_ipc_shm(int id, void *p, void *data)
-+{
-+	struct ckpt_ctx *ctx = (struct ckpt_ctx *) data;
-+	struct kern_ipc_perm *perm = (struct kern_ipc_perm *) p;
-+	struct shmid_kernel *shp;
-+
-+	shp = container_of(perm, struct shmid_kernel, shm_perm);
-+	return ckpt_collect_file(ctx, shp->shm_file);
-+}
-+
-+/************************************************************************
-+ * ipc restart
-+ */
-+
-+struct dq_ipcshm_del {
-+	/*
-+	 * XXX: always keep ->ipcns first so that put_ipc_ns() can
-+	 * be safely provided as the dtor for this deferqueue object
-+	 */
-+	struct ipc_namespace *ipcns;
-+	int id;
-+};
-+
-+static int _ipc_shm_delete(struct ipc_namespace *ns, int id)
-+{
-+	mm_segment_t old_fs;
-+	int ret;
-+
-+	old_fs = get_fs();
-+	set_fs(get_ds());
-+	ret = shmctl_down(ns, id, IPC_RMID, NULL, 0);
-+	set_fs(old_fs);
-+
-+	return ret;
-+}
-+
-+static int ipc_shm_delete(void *data)
-+{
-+	struct dq_ipcshm_del *dq = (struct dq_ipcshm_del *) data;
-+	int ret;
-+
-+	ret = _ipc_shm_delete(dq->ipcns, dq->id);
-+	put_ipc_ns(dq->ipcns);
-+
-+	return ret;
-+}
-+
-+/* called with the msgids->rw_mutex is write-held */
-+static int load_ipc_shm_hdr(struct ckpt_ctx *ctx,
-+			    struct ckpt_hdr_ipc_shm *h,
-+			    struct shmid_kernel *shp)
-+{
-+	int ret;
-+
-+	ret = restore_load_ipc_perms(&h->perms, &shp->shm_perm);
-+	if (ret < 0)
-+		return ret;
-+
-+	ckpt_debug("shm: cprid %d lprid %d segsz %lld mlock %d\n",
-+		 h->shm_cprid, h->shm_lprid, h->shm_segsz, h->mlock_uid);
-+
-+	if (h->shm_cprid < 0 || h->shm_lprid < 0)
-+		return -EINVAL;
-+
-+	shp->shm_atim = h->shm_atim;
-+	shp->shm_dtim = h->shm_dtim;
-+	shp->shm_ctim = h->shm_ctim;
-+	shp->shm_cprid = h->shm_cprid;
-+	shp->shm_lprid = h->shm_lprid;
++	task_lock(current);
++	get_fs_struct(newfs);
++	oldfs = current->fs;
++	current->fs = newfs;
++	task_unlock(current);
++	put_fs_struct(oldfs);
 +
 +	return 0;
 +}
 +
-+int restore_ipc_shm(struct ckpt_ctx *ctx, struct ipc_namespace *ns)
++static int restore_chroot(struct ckpt_ctx *ctx, struct fs_struct *fs, char *name)
 +{
-+	struct ckpt_hdr_ipc_shm *h;
-+	struct kern_ipc_perm *ipc;
-+	struct shmid_kernel *shp;
-+	struct ipc_ids *shm_ids = &ns->ids[IPC_SHM_IDS];
-+	struct file *file;
-+	int shmflag;
++	struct nameidata nd;
 +	int ret;
 +
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_IPC_SHM);
++	ckpt_debug("attempting chroot to %s\n", name);
++	ret = path_lookup(name, LOOKUP_FOLLOW | LOOKUP_DIRECTORY, &nd);
++	if (ret) {
++		ckpt_err(ctx, ret, "%(T)Opening chroot dir %s", name);
++		return ret;
++	}
++	ret = do_chroot(fs, &nd.path);
++	path_put(&nd.path);
++	if (ret) {
++		ckpt_err(ctx, ret, "%(T)Setting chroot %s", name);
++		return ret;
++	}
++	return 0;
++}
++
++static int restore_cwd(struct ckpt_ctx *ctx, struct fs_struct *fs, char *name)
++{
++	struct nameidata nd;
++	int ret;
++
++	ckpt_debug("attempting chdir to %s\n", name);
++	ret = path_lookup(name, LOOKUP_FOLLOW | LOOKUP_DIRECTORY, &nd);
++	if (ret) {
++		ckpt_err(ctx, ret, "%(T)Opening cwd %s", name);
++		return ret;
++	}
++	ret = do_chdir(fs, &nd.path);
++	path_put(&nd.path);
++	if (ret) {
++		ckpt_err(ctx, ret, "%(T)Setting cwd %s", name);
++		return ret;
++	}
++	return 0;
++}
++
++/*
++ * Called by objhash when it runs into a CKPT_OBJ_FS entry. Creates
++ * an fs_struct with desired chroot/cwd and places it in the hash.
++ */
++static void *restore_fs(struct ckpt_ctx *ctx)
++{
++	struct ckpt_hdr_fs *h;
++	struct fs_struct *fs;
++	char *path;
++	int ret = 0;
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_FS);
 +	if (IS_ERR(h))
-+		return PTR_ERR(h);
-+
-+	ret = -EINVAL;
-+	if (h->perms.id < 0)
-+		goto out;
-+
-+#define CKPT_SHMFL_MASK  (SHM_NORESERVE | SHM_HUGETLB)
-+	if (h->flags & ~CKPT_SHMFL_MASK)
-+		goto out;
-+
-+	ret = -ENOSYS;
-+	if (h->mlock_uid != (unsigned int) -1)	/* FIXME: support SHM_LOCK */
-+		goto out;
-+	if (h->flags & SHM_HUGETLB)	/* FIXME: support SHM_HUGETLB */
-+		goto out;
-+
-+	shmflag = h->flags | h->perms.mode | IPC_CREAT | IPC_EXCL;
-+	ckpt_debug("shm: do_shmget size %lld flag %#x id %d\n",
-+		 h->shm_segsz, shmflag, h->perms.id);
-+	ret = do_shmget(ns, h->perms.key, h->shm_segsz, shmflag, h->perms.id);
-+	ckpt_debug("shm: do_shmget ret %d\n", ret);
-+	if (ret < 0)
-+		goto out;
-+
-+	/*
-+	 * SHM_DEST means that the shm is to be deleted after creation.
-+	 * However, deleting before it's actually attached is quite silly.
-+	 * Instead, we defer this task to until restart has succeeded.
-+	 */
-+	if (h->perms.mode & SHM_DEST) {
-+		struct dq_ipcshm_del dq;
-+
-+		/* to not confuse the rest of the code */
-+		h->perms.mode &= ~SHM_DEST;
-+
-+		dq.id = h->perms.id;
-+		dq.ipcns = ns;
-+		get_ipc_ns(ns);
-+
-+		ret = deferqueue_add(ctx->deferqueue, &dq, sizeof(dq),
-+				     (deferqueue_func_t) ipc_shm_delete,
-+				     (deferqueue_func_t) ipc_shm_delete);
-+		if (ret < 0) {
-+			ipc_shm_delete((void *) &dq);
-+			goto out;
-+		}
-+	}
-+
-+	down_write(&shm_ids->rw_mutex);
-+
-+	/*
-+	 * We are the sole owners/users of this brand new ipc-ns, so:
-+	 *
-+	 * 1) The shmid could not have been deleted between its creation
-+	 *   and taking the rw_mutex above.
-+	 * 2) No unauthorized task will attempt to gain access to it,
-+	 *   so it is safe to do away with ipc_lock(). This is useful
-+	 *   because we can call functions that sleep.
-+	 * 3) Likewise, we only restore the security bits further below,
-+	 *   so it is safe to ignore this (theoretical only!) race.
-+	 *
-+	 * If/when we allow to restore the ipc state within the parent's
-+	 * ipc-ns, we will need to re-examine this.
-+	 */
-+	ipc = ipc_lock(shm_ids, h->perms.id);
-+	BUG_ON(IS_ERR(ipc));
-+
-+	shp = container_of(ipc, struct shmid_kernel, shm_perm);
-+	file = shp->shm_file;
-+	get_file(file);
-+
-+	/* this is safe because no unauthorized access is possible */
-+	ipc_unlock(ipc);
-+
-+	ret = load_ipc_shm_hdr(ctx, h, shp);
-+	if (ret < 0)
-+		goto mutex;
-+
-+	/* deposit in objhash and read contents in */
-+	ret = ckpt_obj_insert(ctx, file, h->objref, CKPT_OBJ_FILE);
-+	if (ret < 0)
-+		goto mutex;
-+	ret = restore_memory_contents(ctx, file->f_dentry->d_inode);
-+ mutex:
-+	fput(file);
-+	up_write(&shm_ids->rw_mutex);
-+
-+	/* discard this shmid if error and deferqueue wasn't set */
-+	if (ret < 0 && !(h->perms.mode & SHM_DEST)) {
-+		ckpt_debug("shm: need to remove (%d)\n", ret);
-+		_ipc_shm_delete(ns, h->perms.id);
-+	}
-+ out:
++		return ERR_PTR(PTR_ERR(h));
 +	ckpt_hdr_put(ctx, h);
-+	return ret;
-+}
-diff --git a/ipc/shm.c b/ipc/shm.c
-index 76c3585..5a5dfb5 100644
---- a/ipc/shm.c
-+++ b/ipc/shm.c
-@@ -39,6 +39,7 @@
- #include <linux/nsproxy.h>
- #include <linux/mount.h>
- #include <linux/ipc_namespace.h>
-+#include <linux/checkpoint.h>
- 
- #include <asm/uaccess.h>
- 
-@@ -294,6 +295,74 @@ static unsigned long shm_get_unmapped_area(struct file *file,
- 						pgoff, flags);
- }
- 
-+#ifdef CONFIG_CHECKPOINT
-+static int ipcshm_checkpoint(struct ckpt_ctx *ctx, struct vm_area_struct *vma)
-+{
-+	int ino_objref;
-+	int first;
 +
-+	ino_objref = ckpt_obj_lookup_add(ctx, vma->vm_file->f_dentry->d_inode,
-+				       CKPT_OBJ_INODE, &first);
-+	if (ino_objref < 0)
-+		return ino_objref;
++	fs = copy_fs_struct(current->fs);
++	if (!fs)
++		return ERR_PTR(-ENOMEM);
 +
-+	/*
-+	 * This shouldn't happen, because all IPC regions should have
-+	 * been already dumped by now via ipc namespaces; It means
-+	 * the ipc_ns has been modified recently during checkpoint.
-+	 */
-+	if (first)
-+		return -EBUSY;
++	ret = ckpt_read_fname(ctx, &path);
++	if (ret < 0)
++		goto out;
++	ret = restore_cwd(ctx, fs, path);
++	kfree(path);
++	if (ret)
++		goto out;
 +
-+	return generic_vma_checkpoint(ctx, vma, CKPT_VMA_SHM_IPC_SKIP,
-+				      0, ino_objref);
++	ret = ckpt_read_fname(ctx, &path);
++	if (ret < 0)
++		goto out;
++	ret = restore_chroot(ctx, fs, path);
++	kfree(path);
++
++out:
++	if (ret) {
++		free_fs_struct(fs);
++		return ERR_PTR(ret);
++	}
++	return fs;
 +}
 +
-+int ipcshm_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
-+		   struct ckpt_hdr_vma *h)
-+{
-+	struct file *file;
-+	int shmid, shmflg = 0;
-+	mm_segment_t old_fs;
-+	unsigned long start;
-+	unsigned long addr;
-+	int ret;
-+
-+	if (!h->ino_objref)
-+		return -EINVAL;
-+	/* FIX: verify the vm_flags too */
-+
-+	file = ckpt_obj_fetch(ctx, h->ino_objref, CKPT_OBJ_FILE);
-+	if (IS_ERR(file))
-+		PTR_ERR(file);
-+
-+	shmid = file->f_dentry->d_inode->i_ino;
-+
-+	if (!(h->vm_flags & VM_WRITE))
-+		shmflg |= SHM_RDONLY;
-+
-+	/*
-+	 * FIX: do_shmat() has limited interface: all-or-nothing
-+	 * mapping. If the vma, however, reflects a partial mapping
-+	 * then we need to modify that function to accomplish the
-+	 * desired outcome.  Partial mapping can exist due to the user
-+	 * call shmat() and then unmapping part of the region.
-+	 * Currently, we at least detect this and call it a foul play.
-+	 */
-+	if (((h->vm_end - h->vm_start) != h->ino_size) || h->vm_pgoff)
-+		return -ENOSYS;
-+
-+	old_fs = get_fs();
-+	set_fs(get_ds());
-+	start = h->vm_start;
-+	ret = do_shmat(shmid, (char __user *) start, shmflg, &addr);
-+	set_fs(old_fs);
-+
-+	BUG_ON(ret >= 0 && addr != h->vm_start);
-+	return ret;
-+}
-+#endif
-+
- static const struct file_operations shm_file_operations = {
- 	.mmap		= shm_mmap,
- 	.fsync		= shm_fsync,
-@@ -323,6 +392,9 @@ static const struct vm_operations_struct shm_vm_ops = {
- 	.set_policy = shm_set_policy,
- 	.get_policy = shm_get_policy,
- #endif
-+#if defined(CONFIG_CHECKPOINT)
-+	.checkpoint = ipcshm_checkpoint,
-+#endif
- };
- 
- /**
-@@ -450,14 +522,12 @@ static inline int shm_more_checks(struct kern_ipc_perm *ipcp,
- 	return 0;
- }
- 
--int do_shmget(key_t key, size_t size, int shmflg, int req_id)
-+int do_shmget(struct ipc_namespace *ns, key_t key, size_t size,
-+	      int shmflg, int req_id)
- {
--	struct ipc_namespace *ns;
- 	struct ipc_ops shm_ops;
- 	struct ipc_params shm_params;
- 
--	ns = current->nsproxy->ipc_ns;
--
- 	shm_ops.getnew = newseg;
- 	shm_ops.associate = shm_security;
- 	shm_ops.more_checks = shm_more_checks;
-@@ -471,7 +541,7 @@ int do_shmget(key_t key, size_t size, int shmflg, int req_id)
- 
- SYSCALL_DEFINE3(shmget, key_t, key, size_t, size, int, shmflg)
- {
--	return do_shmget(key, size, shmflg, -1);
-+	return do_shmget(current->nsproxy->ipc_ns, key, size, shmflg, -1);
- }
- 
- static inline unsigned long copy_shmid_to_user(void __user *buf, struct shmid64_ds *in, int version)
-@@ -602,8 +672,8 @@ static void shm_get_stat(struct ipc_namespace *ns, unsigned long *rss,
-  * to be held in write mode.
-  * NOTE: no locks must be held, the rw_mutex is taken inside this function.
++/*
+  * fs-related checkpoint objects
   */
--static int shmctl_down(struct ipc_namespace *ns, int shmid, int cmd,
--		       struct shmid_ds __user *buf, int version)
-+int shmctl_down(struct ipc_namespace *ns, int shmid, int cmd,
-+		struct shmid_ds __user *buf, int version)
++
++static int obj_fs_grab(void *ptr)
++{
++	get_fs_struct((struct fs_struct *) ptr);
++	return 0;
++}
++
++static void obj_fs_drop(void *ptr, int lastref)
++{
++	put_fs_struct((struct fs_struct *) ptr);
++}
++
++static int obj_fs_users(void *ptr)
++{
++	/*
++	 * It's safe to not use fs->lock because the fs referenced.
++	 * It's also sufficient for leak detection: with no leak the
++	 * count can't change; with a leak it will be too big already
++	 * (even if it's about to grow), and if it's about to shrink
++	 * then it's as if we sampled the count a bit earlier.
++	 */
++	return ((struct fs_struct *) ptr)->users;
++}
++
+ static int obj_file_table_grab(void *ptr)
  {
- 	struct kern_ipc_perm *ipcp;
- 	struct shmid64_ds shmid64;
-diff --git a/ipc/util.h b/ipc/util.h
-index 8ae1f8e..e0007dc 100644
---- a/ipc/util.h
-+++ b/ipc/util.h
-@@ -178,11 +178,20 @@ void free_ipcs(struct ipc_namespace *ns, struct ipc_ids *ids,
+ 	atomic_inc(&((struct files_struct *) ptr)->count);
+@@ -839,6 +1051,17 @@ static int obj_file_users(void *ptr)
+ 	return atomic_long_read(&((struct file *) ptr)->f_count);
+ }
  
- struct ipc_namespace *create_ipc_ns(void);
- 
-+int do_shmget(struct ipc_namespace *ns, key_t key, size_t size, int shmflg,
-+	      int req_id);
-+void do_shm_rmid(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp);
++/* fs object */
++static const struct ckpt_obj_ops ckpt_obj_fs_ops = {
++	.obj_name = "FS",
++	.obj_type = CKPT_OBJ_FS,
++	.ref_drop = obj_fs_drop,
++	.ref_grab = obj_fs_grab,
++	.ref_users = obj_fs_users,
++	.checkpoint = checkpoint_fs,
++	.restore = restore_fs,
++};
 +
-+
- #ifdef CONFIG_CHECKPOINT
- extern int checkpoint_fill_ipc_perms(struct ckpt_hdr_ipc_perms *h,
- 				     struct kern_ipc_perm *perm);
- extern int restore_load_ipc_perms(struct ckpt_hdr_ipc_perms *h,
- 				  struct kern_ipc_perm *perm);
-+
-+extern int ckpt_collect_ipc_shm(int id, void *p, void *data);
-+extern int checkpoint_ipc_shm(int id, void *p, void *data);
-+extern int restore_ipc_shm(struct ckpt_ctx *ctx, struct ipc_namespace *ns);
- #endif
+ /* files_struct object */
+ static const struct ckpt_obj_ops ckpt_obj_files_struct_ops = {
+ 	.obj_name = "FILE_TABLE",
+@@ -865,6 +1088,9 @@ static __init int checkpoint_register_fs(void)
+ {
+ 	int ret;
  
- #endif
-diff --git a/kernel/checkpoint/checkpoint.c b/kernel/checkpoint/checkpoint.c
-index 51ddce5..9743866 100644
---- a/kernel/checkpoint/checkpoint.c
-+++ b/kernel/checkpoint/checkpoint.c
-@@ -26,6 +26,7 @@
- #include <linux/utsname.h>
- #include <linux/magic.h>
- #include <linux/hrtimer.h>
-+#include <linux/deferqueue.h>
- #include <linux/checkpoint.h>
- 
- /* unique checkpoint identifier (FIXME: should be per-container ?) */
-@@ -616,6 +617,10 @@ long do_checkpoint(struct ckpt_ctx *ctx, pid_t pid)
- 	if (ret < 0)
- 		goto out;
- 
-+	ret = deferqueue_run(ctx->deferqueue);  /* run deferred work */
++	ret = register_checkpoint_obj(&ckpt_obj_fs_ops);
 +	if (ret < 0)
-+		goto out;
-+
- 	/* verify that all objects were indeed visited */
- 	if (!ckpt_obj_visited(ctx)) {
- 		ckpt_err(ctx, -EBUSY, "Leak: unvisited\n");
-diff --git a/kernel/checkpoint/restart.c b/kernel/checkpoint/restart.c
-index e43c300..a511fda 100644
---- a/kernel/checkpoint/restart.c
-+++ b/kernel/checkpoint/restart.c
-@@ -22,6 +22,7 @@
- #include <linux/magic.h>
- #include <linux/utsname.h>
- #include <linux/elf.h>
-+#include <linux/deferqueue.h>
- #include <linux/checkpoint.h>
- 
- #include <asm/syscall.h>
-@@ -1179,6 +1180,11 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
- 			goto out;
- 	}
- 
-+	ret = deferqueue_run(ctx->deferqueue);  /* run deferred work */
-+	ckpt_debug("restore deferqueue: %d\n", ret);
-+	if (ret < 0)
-+		goto out;
-+
- 	ret = restore_read_tail(ctx);
- 	ckpt_debug("restore tail: %d\n", ret);
++		return ret;
+ 	ret = register_checkpoint_obj(&ckpt_obj_files_struct_ops);
  	if (ret < 0)
-diff --git a/kernel/checkpoint/sys.c b/kernel/checkpoint/sys.c
-index b258874..73d84bd 100644
---- a/kernel/checkpoint/sys.c
-+++ b/kernel/checkpoint/sys.c
-@@ -24,6 +24,7 @@
- #include <linux/capability.h>
- #include <linux/deferqueue.h>
- #include <linux/checkpoint.h>
-+#include <linux/deferqueue.h>
+ 		return ret;
+diff --git a/fs/fs_struct.c b/fs/fs_struct.c
+index eee0590..2a4c6f5 100644
+--- a/fs/fs_struct.c
++++ b/fs/fs_struct.c
+@@ -6,6 +6,27 @@
+ #include <linux/fs_struct.h>
  
  /*
-  * ckpt_unpriv_allowed - sysctl controlled.
-@@ -199,6 +200,9 @@ static void ckpt_ctx_free(struct ckpt_ctx *ctx)
- 	if (ctx->kflags & CKPT_CTX_RESTART)
- 		restore_debug_free(ctx);
- 
-+	if (ctx->deferqueue)
-+		deferqueue_destroy(ctx->deferqueue);
-+
- 	if (ctx->files_deferq)
- 		deferqueue_destroy(ctx->files_deferq);
- 
-@@ -271,6 +275,9 @@ static struct ckpt_ctx *ckpt_ctx_alloc(int fd, unsigned long uflags,
- 	err = -ENOMEM;
- 	if (ckpt_obj_hash_alloc(ctx) < 0)
- 		goto err;
-+	ctx->deferqueue = deferqueue_create();
-+	if (!ctx->deferqueue)
-+		goto err;
- 
- 	ctx->files_deferq = deferqueue_create();
- 	if (!ctx->files_deferq)
-diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
-index 17f5a93..67a1456 100644
---- a/kernel/nsproxy.c
-+++ b/kernel/nsproxy.c
-@@ -262,6 +262,14 @@ int ckpt_collect_ns(struct ckpt_ctx *ctx, struct task_struct *t)
- 		goto out;
- #ifdef CONFIG_IPC_NS
- 	ret = ckpt_obj_collect(ctx, nsproxy->ipc_ns, CKPT_OBJ_IPC_NS);
-+	if (ret < 0)
-+		goto out;
-+	/*
-+	 * ipc_ns (shm) may keep references to files: if this is the
-+	 * first time we see this ipc_ns (ret > 0), proceed inside.
-+	 */
-+	if (ret)
-+		ret = ckpt_collect_ipc_ns(ctx, nsproxy->ipc_ns);
- #endif
- 
- 	/* TODO: collect other namespaces here */
-diff --git a/mm/checkpoint.c b/mm/checkpoint.c
-index 6d71180..d1d0bcb 100644
---- a/mm/checkpoint.c
-+++ b/mm/checkpoint.c
-@@ -21,6 +21,7 @@
- #include <linux/mman.h>
- #include <linux/pagemap.h>
- #include <linux/mm_types.h>
-+#include <linux/shm.h>
- #include <linux/proc_fs.h>
- #include <linux/swap.h>
- #include <linux/checkpoint.h>
-@@ -405,9 +406,9 @@ static int vma_dump_pages(struct ckpt_ctx *ctx, int total)
-  * virtual addresses into ctx->pgarr_list page-array chain. Then dump
-  * the addresses, followed by the page contents.
-  */
--static int checkpoint_memory_contents(struct ckpt_ctx *ctx,
--				      struct vm_area_struct *vma,
--				      struct inode *inode)
-+int checkpoint_memory_contents(struct ckpt_ctx *ctx,
-+			       struct vm_area_struct *vma,
-+			       struct inode *inode)
- {
- 	struct ckpt_hdr_pgarr *h;
- 	unsigned long addr, end;
-@@ -1096,6 +1097,13 @@ static int anon_private_restore(struct ckpt_ctx *ctx,
- 	return private_vma_restore(ctx, mm, NULL, h);
- }
- 
-+static int bad_vma_restore(struct ckpt_ctx *ctx,
-+			   struct mm_struct *mm,
-+			   struct ckpt_hdr_vma *h)
++ * call with owning task locked
++ */
++void get_fs_struct(struct fs_struct *fs)
 +{
-+	return -EINVAL;
++	write_lock(&fs->lock);
++	fs->users++;
++	write_unlock(&fs->lock);
 +}
 +
- /* callbacks to restore vma per its type: */
- struct restore_vma_ops {
- 	char *vma_name;
-@@ -1148,6 +1156,20 @@ static struct restore_vma_ops restore_vma_ops[] = {
- 		.vma_type = CKPT_VMA_SHM_FILE,
- 		.restore = filemap_restore,
- 	},
-+	/* sysvipc shared */
-+	{
-+		.vma_name = "IPC SHARED",
-+		.vma_type = CKPT_VMA_SHM_IPC,
-+		/* ipc inode itself is restore by restore_ipc_ns()... */
-+		.restore = bad_vma_restore,
++void put_fs_struct(struct fs_struct *fs)
++{
++	int kill;
 +
-+	},
-+	/* sysvipc shared (skip) */
-+	{
-+		.vma_name = "IPC SHARED (skip)",
-+		.vma_type = CKPT_VMA_SHM_IPC_SKIP,
-+		.restore = ipcshm_restore,
-+	},
++	write_lock(&fs->lock);
++	kill = !--fs->users;
++	write_unlock(&fs->lock);
++	if (kill)
++		free_fs_struct(fs);
++}
++
++/*
+  * Replace the fs->{rootmnt,root} with {mnt,dentry}. Put the old values.
+  * It can block.
+  */
+diff --git a/fs/open.c b/fs/open.c
+index 74e5cd9..e9d5626 100644
+--- a/fs/open.c
++++ b/fs/open.c
+@@ -524,6 +524,18 @@ SYSCALL_DEFINE2(access, const char __user *, filename, int, mode)
+ 	return sys_faccessat(AT_FDCWD, filename, mode);
+ }
+ 
++int do_chdir(struct fs_struct *fs, struct path *path)
++{
++	int error;
++
++	error = inode_permission(path->dentry->d_inode, MAY_EXEC | MAY_ACCESS);
++	if (error)
++		return error;
++
++	set_fs_pwd(fs, path);
++	return 0;
++}
++
+ SYSCALL_DEFINE1(chdir, const char __user *, filename)
+ {
+ 	struct path path;
+@@ -531,17 +543,10 @@ SYSCALL_DEFINE1(chdir, const char __user *, filename)
+ 
+ 	error = user_path_dir(filename, &path);
+ 	if (error)
+-		goto out;
+-
+-	error = inode_permission(path.dentry->d_inode, MAY_EXEC | MAY_ACCESS);
+-	if (error)
+-		goto dput_and_out;
+-
+-	set_fs_pwd(current->fs, &path);
++		return error;
+ 
+-dput_and_out:
++	error = do_chdir(current->fs, &path);
+ 	path_put(&path);
+-out:
+ 	return error;
+ }
+ 
+@@ -571,31 +576,36 @@ out:
+ 	return error;
+ }
+ 
+-SYSCALL_DEFINE1(chroot, const char __user *, filename)
++int do_chroot(struct fs_struct *fs, struct path *path)
+ {
+-	struct path path;
+ 	int error;
+ 
+-	error = user_path_dir(filename, &path);
++	error = inode_permission(path->dentry->d_inode, MAY_EXEC | MAY_ACCESS);
+ 	if (error)
+-		goto out;
++		return error;
++
++	if (!capable(CAP_SYS_CHROOT))
++		return -EPERM;
+ 
+-	error = inode_permission(path.dentry->d_inode, MAY_EXEC | MAY_ACCESS);
++	error = security_path_chroot(path);
+ 	if (error)
+-		goto dput_and_out;
++		return error;
+ 
+-	error = -EPERM;
+-	if (!capable(CAP_SYS_CHROOT))
+-		goto dput_and_out;
+-	error = security_path_chroot(&path);
++	set_fs_root(fs, path);
++	return 0;
++}
++
++SYSCALL_DEFINE1(chroot, const char __user *, filename)
++{
++	struct path path;
++	int error;
++
++	error = user_path_dir(filename, &path);
+ 	if (error)
+-		goto dput_and_out;
++		return error;
+ 
+-	set_fs_root(current->fs, &path);
+-	error = 0;
+-dput_and_out:
++	error = do_chroot(current->fs, &path);
+ 	path_put(&path);
+-out:
+ 	return error;
+ }
+ 
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 09fbb59..c1079b7 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -10,7 +10,7 @@
+  *  distribution for more details.
+  */
+ 
+-#define CHECKPOINT_VERSION  3
++#define CHECKPOINT_VERSION  4
+ 
+ /* checkpoint user flags */
+ #define CHECKPOINT_SUBTREE	0x1
+@@ -224,6 +224,10 @@ extern int checkpoint_file_common(struct ckpt_ctx *ctx, struct file *file,
+ extern int restore_file_common(struct ckpt_ctx *ctx, struct file *file,
+ 			       struct ckpt_hdr_file *h);
+ 
++extern int ckpt_collect_fs(struct ckpt_ctx *ctx, struct task_struct *t);
++extern int checkpoint_obj_fs(struct ckpt_ctx *ctx, struct task_struct *t);
++extern int restore_obj_fs(struct ckpt_ctx *ctx, int fs_objref);
++
+ /* memory */
+ extern void ckpt_pgarr_free(struct ckpt_ctx *ctx);
+ 
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index e89fbf9..8dbd6e9 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -139,6 +139,9 @@ enum {
+ 	CKPT_HDR_MM_CONTEXT,
+ #define CKPT_HDR_MM_CONTEXT CKPT_HDR_MM_CONTEXT
+ 
++	CKPT_HDR_FS = 451,  /* must be after file-table, mm */
++#define CKPT_HDR_FS CKPT_HDR_FS
++
+ 	CKPT_HDR_IPC = 501,
+ #define CKPT_HDR_IPC CKPT_HDR_IPC
+ 	CKPT_HDR_IPC_SHM,
+@@ -209,6 +212,8 @@ enum obj_type {
+ #define CKPT_OBJ_FILE CKPT_OBJ_FILE
+ 	CKPT_OBJ_MM,
+ #define CKPT_OBJ_MM CKPT_OBJ_MM
++	CKPT_OBJ_FS,
++#define CKPT_OBJ_FS CKPT_OBJ_FS
+ 	CKPT_OBJ_SIGHAND,
+ #define CKPT_OBJ_SIGHAND CKPT_OBJ_SIGHAND
+ 	CKPT_OBJ_SIGNAL,
+@@ -424,6 +429,7 @@ struct ckpt_hdr_task_objs {
+ 
+ 	__s32 files_objref;
+ 	__s32 mm_objref;
++	__s32 fs_objref;
+ 	__s32 sighand_objref;
+ 	__s32 signal_objref;
+ } __attribute__((aligned(8)));
+@@ -461,6 +467,12 @@ enum restart_block_type {
  };
  
- /**
+ /* file system */
++struct ckpt_hdr_fs {
++	struct ckpt_hdr h;
++	/* char *fs_root */
++	/* char *fs_pwd */
++} __attribute__((aligned(8)));
++
+ struct ckpt_hdr_file_table {
+ 	struct ckpt_hdr h;
+ 	__s32 fdt_nfds;
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index c0a59ea..ee725ff 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1826,6 +1826,11 @@ extern int iterate_mounts(int (*)(struct vfsmount *, void *), void *,
+ 			  struct vfsmount *);
+ extern int vfs_statfs(struct dentry *, struct kstatfs *);
+ 
++struct fs_struct;
++extern int do_chdir(struct fs_struct *fs, struct path *path);
++extern int do_chroot(struct fs_struct *fs, struct path *path);
++
++
+ extern int current_umask(void);
+ 
+ /* /sys/fs */
+diff --git a/include/linux/fs_struct.h b/include/linux/fs_struct.h
+index 78a05bf..a73cbcb 100644
+--- a/include/linux/fs_struct.h
++++ b/include/linux/fs_struct.h
+@@ -20,5 +20,7 @@ extern struct fs_struct *copy_fs_struct(struct fs_struct *);
+ extern void free_fs_struct(struct fs_struct *);
+ extern void daemonize_fs_struct(void);
+ extern int unshare_fs_struct(void);
++extern void get_fs_struct(struct fs_struct *);
++extern void put_fs_struct(struct fs_struct *);
+ 
+ #endif /* _LINUX_FS_STRUCT_H */
+diff --git a/kernel/checkpoint/process.c b/kernel/checkpoint/process.c
+index fa08616..922287b 100644
+--- a/kernel/checkpoint/process.c
++++ b/kernel/checkpoint/process.c
+@@ -232,6 +232,7 @@ static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	struct ckpt_hdr_task_objs *h;
+ 	int files_objref;
+ 	int mm_objref;
++	int fs_objref;
+ 	int sighand_objref;
+ 	int signal_objref;
+ 	int first, ret;
+@@ -272,6 +273,13 @@ static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
+ 		return mm_objref;
+ 	}
+ 
++	/* note: this must come *after* file-table and mm */
++	fs_objref = checkpoint_obj_fs(ctx, t);
++	if (fs_objref < 0) {
++		ckpt_err(ctx, fs_objref, "%(T)process fs\n");
++		return fs_objref;
++	}
++
+ 	sighand_objref = checkpoint_obj_sighand(ctx, t);
+ 	ckpt_debug("sighand: objref %d\n", sighand_objref);
+ 	if (sighand_objref < 0) {
+@@ -299,6 +307,7 @@ static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
+ 		return -ENOMEM;
+ 	h->files_objref = files_objref;
+ 	h->mm_objref = mm_objref;
++	h->fs_objref = fs_objref;
+ 	h->sighand_objref = sighand_objref;
+ 	h->signal_objref = signal_objref;
+ 	ret = ckpt_write_obj(ctx, &h->h);
+@@ -477,6 +486,9 @@ int ckpt_collect_task(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	ret = ckpt_collect_mm(ctx, t);
+ 	if (ret < 0)
+ 		return ret;
++	ret = ckpt_collect_fs(ctx, t);
++	if (ret < 0)
++		return ret;
+ 	ret = ckpt_collect_sighand(ctx, t);
+ 
+ 	return ret;
+@@ -645,6 +657,11 @@ static int restore_task_objs(struct ckpt_ctx *ctx)
+ 	if (ret < 0)
+ 		goto out;
+ 
++	ret = restore_obj_fs(ctx, h->fs_objref);
++	ckpt_debug("fs: ret %d (%p)\n", ret, current->fs);
++	if (ret < 0)
++		return ret;
++
+ 	ret = restore_obj_sighand(ctx, h->sighand_objref);
+ 	ckpt_debug("sighand: ret %d (%p)\n", ret, current->sighand);
+ 	if (ret < 0)
 -- 
 1.6.3.3
