@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH v21 031/100] c/r: support for zombie processes
-Date: Sat,  1 May 2010 10:15:13 -0400
-Message-ID: <1272723382-19470-32-git-send-email-orenl__40722.4609902643$1272725932$gmane$org@cs.columbia.edu>
+Subject: [PATCH v21 035/100] deferqueue: generic queue to defer work
+Date: Sat,  1 May 2010 10:15:17 -0400
+Message-ID: <1272723382-19470-36-git-send-email-orenl__27227.9883422472$1272726057$gmane$org@cs.columbia.edu>
 References: <1272723382-19470-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,273 +21,303 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-During checkpoint, a zombie processes need only save p->comm,
-p->state, p->exit_state, and p->exit_code.
+Add a interface to postpone an action until the end of the entire
+checkpoint or restart operation. This is useful when during the
+scan of tasks an operation cannot be performed in place, to avoid
+the need for a second scan.
 
-During restart, zombie processes are created like all other
-processes. They validate the saved exit_code restore p->comm
-and p->exit_code. Then they call do_exit() instead of waking
-up the next task in line.
+One use case is when restoring an ipc shared memory region that has
+been deleted (but is still attached), during restart it needs to be
+create, attached and then deleted. However, creation and attachment
+are performed in distinct locations, so deletion can not be performed
+on the spot. Instead, this work (delete) is deferred until later.
+(This example is in one of the following patches).
 
-But before, they place the @ctx in p->checkpoint_ctx, so that
-only at exit time they will wake up the next task in line,
-and drop the reference to the @ctx.
+This interface allows chronic procrastination in the kernel:
 
-This provides the guarantee that when the coordinator's wait
-completes, all normal tasks completed their restart, and all
-zombie tasks are already zombified (as opposed to perhap only
-becoming a zombie).
+deferqueue_create(void):
+    Allocates and returns a new deferqueue.
 
-Changelog[v19-rc1]:
-  - Simplify logic of tracking restarting tasks
-Changelog[v18]:
-  - Fix leak of ckpt_ctx when restoring zombie tasks
-  - Add a few more ckpt_write_err()s
-Changelog[v17]:
-  - Validate t->exit_signal for both threads and leader
-  - Skip zombies in most of may_checkpoint_task()
-  - Save/restore t->pdeath_signal
-  - Validate ->exit_signal and ->pdeath_signal
+deferqueue_run(deferqueue):
+    Executes all the pending works in the queue. Returns the number
+    of works executed, or an error upon the first error reported by
+    a deferred work.
+
+deferqueue_add(deferqueue, data, size, func, dtor):
+    Enqueue a deferred work. @function is the callback function to
+    do the work, which will be called with @data as an argument.
+    @size tells the size of data. @dtor is a destructor callback
+    that is invoked for deferred works remaining in the queue when
+    the queue is destroyed. NOTE: for a given deferred work, @dtor
+    is _not_ called if @func was already called (regardless of the
+    return value of the latter).
+
+deferqueue_destroy(deferqueue):
+    Free the deferqueue and any queued items while invoking the
+    @dtor callback for each queued item.
+
+Why aren't we using the existing kernel workqueue mechanism?  We need
+to defer to work until the end of the operation: not earlier, since we
+need other things to be in place; not later, to not block waiting for
+it. However, the workqueue schedules the work for 'some time later'.
+Also, the kernel workqueue may run in any task context, but we require
+many times that an operation be run in the context of some specific
+restarting task (e.g., restoring IPC state of a certain ipc_ns).
+
+Instead, this mechanism is a simple way for the c/r operation as a
+whole, and later a task in particular, to defer some action until
+later (but not arbitrarily later) _in the restore_ operation.
+
+Changelog[v19-rc1]
+  - [Matt Helsley] Check for valid destructor before calling it
+Changelog[v18]
+  - Interface to pass simple pointers as data with deferqueue
+Changelog[v17]
+  - Fix deferqueue_add() function
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/checkpoint.h     |    1 +
- include/linux/checkpoint_hdr.h |    1 +
- kernel/checkpoint/checkpoint.c |   10 ++++--
- kernel/checkpoint/process.c    |   69 +++++++++++++++++++++++++++++++++++-----
- kernel/checkpoint/restart.c    |   22 +++++++++++--
- 5 files changed, 89 insertions(+), 14 deletions(-)
+ include/linux/deferqueue.h |   78 +++++++++++++++++++++++++++++++
+ kernel/Makefile            |    1 +
+ kernel/checkpoint/Kconfig  |    5 ++
+ kernel/deferqueue.c        |  110 ++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 194 insertions(+), 0 deletions(-)
+ create mode 100644 include/linux/deferqueue.h
+ create mode 100644 kernel/deferqueue.c
 
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index f787a75..2d32c17 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -113,6 +113,7 @@ extern long do_checkpoint(struct ckpt_ctx *ctx, pid_t pid);
- extern long do_restart(struct ckpt_ctx *ctx, pid_t pid);
- 
- /* task */
-+extern int ckpt_activate_next(struct ckpt_ctx *ctx);
- extern int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t);
- extern int restore_task(struct ckpt_ctx *ctx);
- 
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 4abae32..68ee0f3 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -165,6 +165,7 @@ struct ckpt_hdr_task {
- 	__u32 exit_state;
- 	__u32 exit_code;
- 	__u32 exit_signal;
-+	__u32 pdeath_signal;
- 
- 	__u64 set_child_tid;
- 	__u64 clear_child_tid;
-diff --git a/kernel/checkpoint/checkpoint.c b/kernel/checkpoint/checkpoint.c
-index 14801f3..f451f8f 100644
---- a/kernel/checkpoint/checkpoint.c
-+++ b/kernel/checkpoint/checkpoint.c
-@@ -219,7 +219,7 @@ static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
- 
- 	ckpt_debug("check %d\n", task_pid_nr_ns(t, ctx->root_nsproxy->pid_ns));
- 
--	if (t->state == TASK_DEAD) {
-+	if (t->exit_state == EXIT_DEAD) {
- 		_ckpt_err(ctx, -EBUSY, "%(T)Task state EXIT_DEAD\n");
- 		return -EBUSY;
- 	}
-@@ -229,6 +229,10 @@ static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
- 		return -EPERM;
- 	}
- 
-+	/* zombies are cool (and also don't have nsproxy, below...) */
-+	if (t->exit_state)
-+		return 0;
+diff --git a/include/linux/deferqueue.h b/include/linux/deferqueue.h
+new file mode 100644
+index 0000000..51bfd68
+--- /dev/null
++++ b/include/linux/deferqueue.h
+@@ -0,0 +1,78 @@
++/*
++ * deferqueue.h --- deferred work queue handling for Linux.
++ */
 +
- 	/* verify that all tasks belongs to same freezer cgroup */
- 	if (t != current && !in_same_cgroup_freezer(t, ctx->root_freezer)) {
- 		_ckpt_err(ctx, -EBUSY, "%(T)Not frozen or wrong cgroup\n");
-@@ -245,8 +249,8 @@ static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
- 	 * FIX: for now, disallow siblings of container init created
- 	 * via CLONE_PARENT (unclear if they will remain possible)
- 	 */
--	if (ctx->root_init && t != root && t->tgid != root->tgid &&
--	    t->real_parent == root->real_parent) {
-+	if (ctx->root_init && t != root &&
-+	    t->real_parent == root->real_parent && t->tgid != root->tgid) {
- 		_ckpt_err(ctx, -EINVAL, "%(T)Task is sibling of root\n");
- 		return -EINVAL;
- 	}
-diff --git a/kernel/checkpoint/process.c b/kernel/checkpoint/process.c
-index b662e5d..ce009cb 100644
---- a/kernel/checkpoint/process.c
-+++ b/kernel/checkpoint/process.c
-@@ -34,12 +34,18 @@ static int checkpoint_task_struct(struct ckpt_ctx *ctx, struct task_struct *t)
- 	h->state = t->state;
- 	h->exit_state = t->exit_state;
- 	h->exit_code = t->exit_code;
--	h->exit_signal = t->exit_signal;
- 
--	h->set_child_tid = (unsigned long) t->set_child_tid;
--	h->clear_child_tid = (unsigned long) t->clear_child_tid;
-+	if (t->exit_state) {
-+		/* zombie - skip remaining state */
-+		BUG_ON(t->exit_state != EXIT_ZOMBIE);
-+	} else {
-+		/* FIXME: save remaining relevant task_struct fields */
-+		h->exit_signal = t->exit_signal;
-+		h->pdeath_signal = t->pdeath_signal;
- 
--	/* FIXME: save remaining relevant task_struct fields */
-+		h->set_child_tid = (unsigned long) t->set_child_tid;
-+		h->clear_child_tid = (unsigned long) t->clear_child_tid;
-+	}
- 
- 	ret = ckpt_write_obj(ctx, &h->h);
- 	ckpt_hdr_put(ctx, h);
-@@ -170,6 +176,11 @@ int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
- 	ckpt_debug("task %d\n", ret);
- 	if (ret < 0)
- 		goto out;
++#ifndef _LINUX_DEFERQUEUE_H
++#define _LINUX_DEFERQUEUE_H
 +
-+	/* zombie - we're done here */
-+	if (t->exit_state)
-+		return 0;
++#include <linux/list.h>
++#include <linux/slab.h>
++#include <linux/spinlock.h>
 +
- 	ret = checkpoint_thread(ctx, t);
- 	ckpt_debug("thread %d\n", ret);
- 	if (ret < 0)
-@@ -189,6 +200,19 @@ int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
-  * Restart
-  */
- 
-+static inline int valid_exit_code(int exit_code)
++/*
++ * This interface allows chronic procrastination in the kernel:
++ *
++ * deferqueue_create(void):
++ *     Allocates and returns a new deferqueue.
++ *
++ * deferqueue_run(deferqueue):
++ *     Executes all the pending works in the queue. Returns the number
++ *     of works executed, or an error upon the first error reported by
++ *     a deferred work.
++ *
++ * deferqueue_add(deferqueue, data, size, func, dtor):
++ *      Enqueue a deferred work. @function is the callback function to
++ *      do the work, which will be called with @data as an argument.
++ *      @size tells the size of data. @dtor is a destructor callback
++ *      that is invoked for deferred works remaining in the queue when
++ *      the queue is destroyed. NOTE: for a given deferred work, @dtor
++ *      is _not_ called if @func was already called (regardless of the
++ *      return value of the latter).
++ *
++ * deferqueue_destroy(deferqueue):
++ *      Free the deferqueue and any queued items while invoking the
++ *      @dtor callback for each queued item.
++ *
++ * The following helpers are useful when @data is a simple pointer:
++ *
++ * deferqueue_add_ptr(deferqueue, ptr, func, dtor):
++ *	Enqueue a deferred work whos data is @ptr.
++ *
++ * deferqueue_data_ptr(data):
++ *	Convert a deferqueue @data to a void * pointer.
++ */
++
++
++typedef int (*deferqueue_func_t)(void *);
++
++struct deferqueue_entry {
++	deferqueue_func_t function;
++	deferqueue_func_t destructor;
++	struct list_head list;
++	char data[0];
++};
++
++struct deferqueue_head {
++	spinlock_t lock;
++	struct list_head list;
++};
++
++struct deferqueue_head *deferqueue_create(void);
++void deferqueue_destroy(struct deferqueue_head *head);
++int deferqueue_add(struct deferqueue_head *head, void *data, int size,
++		   deferqueue_func_t func, deferqueue_func_t dtor);
++int deferqueue_run(struct deferqueue_head *head);
++
++static inline int deferqueue_add_ptr(struct deferqueue_head *head, void *ptr,
++				     deferqueue_func_t func,
++				     deferqueue_func_t dtor)
 +{
-+	if (exit_code >= 0x10000)
-+		return 0;
-+	if (exit_code & 0xff) {
-+		if (exit_code & ~0xff)
-+			return 0;
-+		if (!valid_signal(exit_code & 0xff))
-+			return 0;
-+	}
-+	return 1;
++	return deferqueue_add(head, &ptr, sizeof(ptr), func, dtor);
 +}
 +
- /* read the task_struct into the current task */
- static int restore_task_struct(struct ckpt_ctx *ctx)
- {
-@@ -200,15 +224,39 @@ static int restore_task_struct(struct ckpt_ctx *ctx)
- 	if (IS_ERR(h))
- 		return PTR_ERR(h);
++static inline void *deferqueue_data_ptr(void *data)
++{
++	return *((void **) data);
++}
++
++#endif
+diff --git a/kernel/Makefile b/kernel/Makefile
+index 1b78cca..67159cd 100644
+--- a/kernel/Makefile
++++ b/kernel/Makefile
+@@ -25,6 +25,7 @@ CFLAGS_REMOVE_sched_clock.o = -pg
+ CFLAGS_REMOVE_perf_event.o = -pg
+ endif
  
-+	ret = -EINVAL;
-+	if (h->state == TASK_DEAD) {
-+		if (h->exit_state != EXIT_ZOMBIE)
-+			goto out;
-+		if (!valid_exit_code(h->exit_code))
-+			goto out;
-+		t->exit_code = h->exit_code;
-+	} else {
-+		if (h->exit_code)
-+			goto out;
-+		if ((thread_group_leader(t) && !valid_signal(h->exit_signal)) ||
-+		    (!thread_group_leader(t) && h->exit_signal != -1))
-+			goto out;
-+		if (!valid_signal(h->pdeath_signal))
-+			goto out;
++obj-$(CONFIG_DEFERQUEUE) += deferqueue.o
+ obj-$(CONFIG_FREEZER) += freezer.o
+ obj-$(CONFIG_PROFILING) += profile.o
+ obj-$(CONFIG_SYSCTL_SYSCALL_CHECK) += sysctl_check.o
+diff --git a/kernel/checkpoint/Kconfig b/kernel/checkpoint/Kconfig
+index 21fc86b..4a2c845 100644
+--- a/kernel/checkpoint/Kconfig
++++ b/kernel/checkpoint/Kconfig
+@@ -2,10 +2,15 @@
+ # implemented the hooks for processor state etc. needed by the
+ # core checkpoint/restart code.
+ 
++config DEFERQUEUE
++	bool
++	default n
 +
-+		/* FIXME: restore remaining relevant task_struct fields */
-+		t->exit_signal = h->exit_signal;
-+		t->pdeath_signal = h->pdeath_signal;
+ config CHECKPOINT
+ 	bool "Checkpoint/restart (EXPERIMENTAL)"
+ 	depends on CHECKPOINT_SUPPORT && EXPERIMENTAL
+ 	depends on CGROUP_FREEZER
++	select DEFERQUEUE
+ 	help
+ 	  Application checkpoint/restart is the ability to save the
+ 	  state of a running application so that it can later resume
+diff --git a/kernel/deferqueue.c b/kernel/deferqueue.c
+new file mode 100644
+index 0000000..1204c8b
+--- /dev/null
++++ b/kernel/deferqueue.c
+@@ -0,0 +1,110 @@
++/*
++ *  Infrastructure to manage deferred work
++ *
++ *  This differs from a workqueue in that the work must be deferred
++ *  until specifically run by the caller.
++ *
++ *  As the only user currently is checkpoint/restart, which has
++ *  very simple usage, the locking is kept simple.  Adding rules
++ *  is protected by the head->lock.  But deferqueue_run() is only
++ *  called once, after all entries have been added.  So it is not
++ *  protected.  Similarly, _destroy is only called once when the
++ *  ckpt_ctx is releeased, so it is not locked or refcounted.  These
++ *  can of course be added if needed by other users.
++ *
++ *  Why not use workqueue ?  We need to defer work until the end of an
++ *  operation: not earlier, since we need other things to be in place;
++ *  not later, to not block waiting for it. However, the workqueue
++ *  schedules the work for 'some time later'. Also, workqueue may run
++ *  in any task context, but we require many times that an operation
++ *  be run in the context of some specific restarting task (e.g.,
++ *  restoring IPC state of a certain ipc_ns).
++ *
++ *  Instead, this mechanism is a simple way for the c/r operation as a
++ *  whole, and later a task in particular, to defer some action until
++ *  later (but not arbitrarily later) _in the restore_ operation.
++ *
++ *  Copyright (C) 2009 Oren Laadan
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ *
++ */
 +
-+		t->set_child_tid =
-+			(int __user *) (unsigned long) h->set_child_tid;
-+		t->clear_child_tid =
-+			(int __user *) (unsigned long) h->clear_child_tid;
++#include <linux/module.h>
++#include <linux/kernel.h>
++#include <linux/deferqueue.h>
++
++struct deferqueue_head *deferqueue_create(void)
++{
++	struct deferqueue_head *h = kmalloc(sizeof(*h), GFP_KERNEL);
++	if (h) {
++		spin_lock_init(&h->lock);
++		INIT_LIST_HEAD(&h->list);
++	}
++	return h;
++}
++
++void deferqueue_destroy(struct deferqueue_head *h)
++{
++	if (!list_empty(&h->list)) {
++		struct deferqueue_entry *dq, *n;
++
++		pr_debug("%s: freeing non-empty queue\n", __func__);
++		list_for_each_entry_safe(dq, n, &h->list, list) {
++			if (dq->destructor)
++				dq->destructor(dq->data);
++			list_del(&dq->list);
++			kfree(dq);
++		}
++	}
++	kfree(h);
++}
++
++int deferqueue_add(struct deferqueue_head *head, void *data, int size,
++		   deferqueue_func_t func, deferqueue_func_t dtor)
++{
++	struct deferqueue_entry *dq;
++
++	dq = kmalloc(sizeof(*dq) + size, GFP_KERNEL);
++	if (!dq)
++		return -ENOMEM;
++
++	dq->function = func;
++	dq->destructor = dtor;
++	memcpy(dq->data, data, size);
++
++	pr_debug("%s: adding work %p func %p dtor %p\n",
++		 __func__, dq, func, dtor);
++	spin_lock(&head->lock);
++	list_add_tail(&dq->list, &head->list);
++	spin_unlock(&head->lock);
++	return 0;
++}
++
++/*
++ * deferqueue_run - perform all work in the work queue
++ * @head: deferqueue_head from which to run
++ *
++ * returns: number of works performed, or < 0 on error
++ */
++int deferqueue_run(struct deferqueue_head *head)
++{
++	struct deferqueue_entry *dq, *n;
++	int nr = 0;
++	int ret;
++
++	list_for_each_entry_safe(dq, n, &head->list, list) {
++		pr_debug("doing work %p function %p\n", dq, dq->function);
++		/* don't call destructor - function callback should do it */
++		ret = dq->function(dq->data);
++		if (ret < 0)
++			pr_debug("wq function failed %d\n", ret);
++		list_del(&dq->list);
++		kfree(dq);
++		nr++;
 +	}
 +
- 	memset(t->comm, 0, TASK_COMM_LEN);
- 	ret = _ckpt_read_string(ctx, t->comm, TASK_COMM_LEN);
- 	if (ret < 0)
- 		goto out;
- 
--	t->set_child_tid = (int __user *) (unsigned long) h->set_child_tid;
--	t->clear_child_tid = (int __user *) (unsigned long) h->clear_child_tid;
--
--	/* FIXME: restore remaining relevant task_struct fields */
-+	/* return 1 for zombie, 0 otherwise */
-+	ret = (h->state == TASK_DEAD ? 1 : 0);
-  out:
- 	ckpt_hdr_put(ctx, h);
- 	return ret;
-@@ -328,6 +376,11 @@ int restore_task(struct ckpt_ctx *ctx)
- 	ckpt_debug("task %d\n", ret);
- 	if (ret < 0)
- 		goto out;
-+
-+	/* zombie - we're done here */
-+	if (ret)
-+		goto out;
-+
- 	ret = restore_thread(ctx);
- 	ckpt_debug("thread %d\n", ret);
- 	if (ret < 0)
-diff --git a/kernel/checkpoint/restart.c b/kernel/checkpoint/restart.c
-index ddc71ee..18b3815 100644
---- a/kernel/checkpoint/restart.c
-+++ b/kernel/checkpoint/restart.c
-@@ -854,7 +854,7 @@ static int wait_sync_threads(void)
- static int do_restore_task(void)
- {
- 	struct ckpt_ctx *ctx;
--	int ret;
-+	int zombie, ret;
- 
- 	ctx = wait_checkpoint_ctx();
- 	if (IS_ERR(ctx))
-@@ -864,6 +864,8 @@ static int do_restore_task(void)
- 	if (ret < 0)
- 		goto out;
- 
-+	current->flags |= PF_RESTARTING;
-+
- 	ret = wait_sync_threads();
- 	if (ret < 0)
- 		goto out;
-@@ -875,9 +877,22 @@ static int do_restore_task(void)
- 
- 	restore_debug_running(ctx);
- 
--	ret = restore_task(ctx);
--	if (ret < 0)
-+	zombie = restore_task(ctx);
-+	if (zombie < 0) {
-+		ret = zombie;
- 		goto out;
-+	}
-+
-+	/*
-+	 * zombie: we're done here; do_exit() will notice the @ctx on
-+	 * our current->checkpoint_ctx (and our PF_RESTARTING) - it
-+	 * will call restore_activate_next() and release the @ctx.
-+	 */
-+	if (zombie) {
-+		restore_debug_exit(ctx);
-+		ckpt_ctx_put(ctx);
-+		do_exit(current->exit_code);
-+	}
- 
- 	restore_task_done(ctx);
- 	ret = wait_task_sync(ctx);
-@@ -886,6 +901,7 @@ static int do_restore_task(void)
- 	if (ret < 0)
- 		ckpt_err(ctx, ret, "task restart failed\n");
- 
-+	current->flags &= ~PF_RESTARTING;
- 	clear_task_ctx(current);
- 	ckpt_ctx_put(ctx);
- 	return ret;
++	return nr;
++}
 -- 
 1.6.3.3
