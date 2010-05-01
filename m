@@ -1,8 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH v21 026/100] c/r: export functionality used in next patch for
-	restart-blocks
-Date: Sat,  1 May 2010 10:15:08 -0400
-Message-ID: <1272723382-19470-27-git-send-email-orenl__40068.9914859415$1272725813$gmane$org@cs.columbia.edu>
+Subject: [PATCH v21 031/100] c/r: support for zombie processes
+Date: Sat,  1 May 2010 10:15:13 -0400
+Message-ID: <1272723382-19470-32-git-send-email-orenl__40722.4609902643$1272725932$gmane$org@cs.columbia.edu>
 References: <1272723382-19470-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,162 +21,273 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-To support c/r of restart-blocks (system call that need to be
-restarted because they were interrupted but there was no userspace
-visible side-effect), export restart-block callbacks for poll()
-and futex() syscalls.
+During checkpoint, a zombie processes need only save p->comm,
+p->state, p->exit_state, and p->exit_code.
 
-More details on c/r of restart-blocks and how it works in the
-following patch.
+During restart, zombie processes are created like all other
+processes. They validate the saved exit_code restore p->comm
+and p->exit_code. Then they call do_exit() instead of waking
+up the next task in line.
+
+But before, they place the @ctx in p->checkpoint_ctx, so that
+only at exit time they will wake up the next task in line,
+and drop the reference to the @ctx.
+
+This provides the guarantee that when the coordinator's wait
+completes, all normal tasks completed their restart, and all
+zombie tasks are already zombified (as opposed to perhap only
+becoming a zombie).
+
+Changelog[v19-rc1]:
+  - Simplify logic of tracking restarting tasks
+Changelog[v18]:
+  - Fix leak of ckpt_ctx when restoring zombie tasks
+  - Add a few more ckpt_write_err()s
+Changelog[v17]:
+  - Validate t->exit_signal for both threads and leader
+  - Skip zombies in most of may_checkpoint_task()
+  - Save/restore t->pdeath_signal
+  - Validate ->exit_signal and ->pdeath_signal
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- fs/select.c                  |    2 +-
- include/linux/futex.h        |   11 +++++++++++
- include/linux/poll.h         |    3 +++
- include/linux/posix-timers.h |    6 ++++++
- kernel/compat.c              |    4 ++--
- kernel/futex.c               |   12 +-----------
- kernel/posix-timers.c        |    2 +-
- 7 files changed, 25 insertions(+), 15 deletions(-)
+ include/linux/checkpoint.h     |    1 +
+ include/linux/checkpoint_hdr.h |    1 +
+ kernel/checkpoint/checkpoint.c |   10 ++++--
+ kernel/checkpoint/process.c    |   69 +++++++++++++++++++++++++++++++++++-----
+ kernel/checkpoint/restart.c    |   22 +++++++++++--
+ 5 files changed, 89 insertions(+), 14 deletions(-)
 
-diff --git a/fs/select.c b/fs/select.c
-index 500a669..194c6d6 100644
---- a/fs/select.c
-+++ b/fs/select.c
-@@ -890,7 +890,7 @@ out_fds:
- 	return err;
- }
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index f787a75..2d32c17 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -113,6 +113,7 @@ extern long do_checkpoint(struct ckpt_ctx *ctx, pid_t pid);
+ extern long do_restart(struct ckpt_ctx *ctx, pid_t pid);
  
--static long do_restart_poll(struct restart_block *restart_block)
-+long do_restart_poll(struct restart_block *restart_block)
- {
- 	struct pollfd __user *ufds = restart_block->poll.ufds;
- 	int nfds = restart_block->poll.nfds;
-diff --git a/include/linux/futex.h b/include/linux/futex.h
-index 1e5a26d..ae755f6 100644
---- a/include/linux/futex.h
-+++ b/include/linux/futex.h
-@@ -136,6 +136,17 @@ extern int
- handle_futex_death(u32 __user *uaddr, struct task_struct *curr, int pi);
+ /* task */
++extern int ckpt_activate_next(struct ckpt_ctx *ctx);
+ extern int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t);
+ extern int restore_task(struct ckpt_ctx *ctx);
  
- /*
-+ * In case we must use restart_block to restart a futex_wait,
-+ * we encode in the 'flags' shared capability
-+ */
-+#define FLAGS_SHARED		0x01
-+#define FLAGS_CLOCKRT		0x02
-+#define FLAGS_HAS_TIMEOUT	0x04
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 4abae32..68ee0f3 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -165,6 +165,7 @@ struct ckpt_hdr_task {
+ 	__u32 exit_state;
+ 	__u32 exit_code;
+ 	__u32 exit_signal;
++	__u32 pdeath_signal;
+ 
+ 	__u64 set_child_tid;
+ 	__u64 clear_child_tid;
+diff --git a/kernel/checkpoint/checkpoint.c b/kernel/checkpoint/checkpoint.c
+index 14801f3..f451f8f 100644
+--- a/kernel/checkpoint/checkpoint.c
++++ b/kernel/checkpoint/checkpoint.c
+@@ -219,7 +219,7 @@ static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
+ 
+ 	ckpt_debug("check %d\n", task_pid_nr_ns(t, ctx->root_nsproxy->pid_ns));
+ 
+-	if (t->state == TASK_DEAD) {
++	if (t->exit_state == EXIT_DEAD) {
+ 		_ckpt_err(ctx, -EBUSY, "%(T)Task state EXIT_DEAD\n");
+ 		return -EBUSY;
+ 	}
+@@ -229,6 +229,10 @@ static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
+ 		return -EPERM;
+ 	}
+ 
++	/* zombies are cool (and also don't have nsproxy, below...) */
++	if (t->exit_state)
++		return 0;
 +
-+/* for c/r */
-+extern long futex_wait_restart(struct restart_block *restart);
+ 	/* verify that all tasks belongs to same freezer cgroup */
+ 	if (t != current && !in_same_cgroup_freezer(t, ctx->root_freezer)) {
+ 		_ckpt_err(ctx, -EBUSY, "%(T)Not frozen or wrong cgroup\n");
+@@ -245,8 +249,8 @@ static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	 * FIX: for now, disallow siblings of container init created
+ 	 * via CLONE_PARENT (unclear if they will remain possible)
+ 	 */
+-	if (ctx->root_init && t != root && t->tgid != root->tgid &&
+-	    t->real_parent == root->real_parent) {
++	if (ctx->root_init && t != root &&
++	    t->real_parent == root->real_parent && t->tgid != root->tgid) {
+ 		_ckpt_err(ctx, -EINVAL, "%(T)Task is sibling of root\n");
+ 		return -EINVAL;
+ 	}
+diff --git a/kernel/checkpoint/process.c b/kernel/checkpoint/process.c
+index b662e5d..ce009cb 100644
+--- a/kernel/checkpoint/process.c
++++ b/kernel/checkpoint/process.c
+@@ -34,12 +34,18 @@ static int checkpoint_task_struct(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	h->state = t->state;
+ 	h->exit_state = t->exit_state;
+ 	h->exit_code = t->exit_code;
+-	h->exit_signal = t->exit_signal;
+ 
+-	h->set_child_tid = (unsigned long) t->set_child_tid;
+-	h->clear_child_tid = (unsigned long) t->clear_child_tid;
++	if (t->exit_state) {
++		/* zombie - skip remaining state */
++		BUG_ON(t->exit_state != EXIT_ZOMBIE);
++	} else {
++		/* FIXME: save remaining relevant task_struct fields */
++		h->exit_signal = t->exit_signal;
++		h->pdeath_signal = t->pdeath_signal;
+ 
+-	/* FIXME: save remaining relevant task_struct fields */
++		h->set_child_tid = (unsigned long) t->set_child_tid;
++		h->clear_child_tid = (unsigned long) t->clear_child_tid;
++	}
+ 
+ 	ret = ckpt_write_obj(ctx, &h->h);
+ 	ckpt_hdr_put(ctx, h);
+@@ -170,6 +176,11 @@ int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	ckpt_debug("task %d\n", ret);
+ 	if (ret < 0)
+ 		goto out;
 +
-+/*
-  * Futexes are matched on equal values of this key.
-  * The key type depends on whether it's a shared or private mapping.
-  * Don't rearrange members without looking at hash_futex().
-diff --git a/include/linux/poll.h b/include/linux/poll.h
-index 600cc1f..03357b8 100644
---- a/include/linux/poll.h
-+++ b/include/linux/poll.h
-@@ -136,6 +136,9 @@ extern int core_sys_select(int n, fd_set __user *inp, fd_set __user *outp,
- 
- extern int poll_select_set_timeout(struct timespec *to, long sec, long nsec);
- 
-+/* used by checkpoint/restart */
-+extern long do_restart_poll(struct restart_block *restart_block);
++	/* zombie - we're done here */
++	if (t->exit_state)
++		return 0;
 +
- #endif /* KERNEL */
- 
- #endif /* _LINUX_POLL_H */
-diff --git a/include/linux/posix-timers.h b/include/linux/posix-timers.h
-index 4f71bf4..d0d6a66 100644
---- a/include/linux/posix-timers.h
-+++ b/include/linux/posix-timers.h
-@@ -101,6 +101,10 @@ int posix_cpu_timer_create(struct k_itimer *timer);
- int posix_cpu_nsleep(const clockid_t which_clock, int flags,
- 		     struct timespec *rqtp, struct timespec __user *rmtp);
- long posix_cpu_nsleep_restart(struct restart_block *restart_block);
-+#ifdef CONFIG_COMPAT
-+long compat_nanosleep_restart(struct restart_block *restart);
-+long compat_clock_nanosleep_restart(struct restart_block *restart);
-+#endif
- int posix_cpu_timer_set(struct k_itimer *timer, int flags,
- 			struct itimerspec *new, struct itimerspec *old);
- int posix_cpu_timer_del(struct k_itimer *timer);
-@@ -119,4 +123,6 @@ long clock_nanosleep_restart(struct restart_block *restart_block);
- 
- void update_rlimit_cpu(unsigned long rlim_new);
- 
-+int invalid_clockid(const clockid_t which_clock);
-+
- #endif
-diff --git a/kernel/compat.c b/kernel/compat.c
-index 7f40e92..8b18f5d 100644
---- a/kernel/compat.c
-+++ b/kernel/compat.c
-@@ -101,7 +101,7 @@ int put_compat_timespec(const struct timespec *ts, struct compat_timespec __user
- 			__put_user(ts->tv_nsec, &cts->tv_nsec)) ? -EFAULT : 0;
- }
- 
--static long compat_nanosleep_restart(struct restart_block *restart)
-+long compat_nanosleep_restart(struct restart_block *restart)
- {
- 	struct compat_timespec __user *rmtp;
- 	struct timespec rmt;
-@@ -648,7 +648,7 @@ long compat_sys_clock_getres(clockid_t which_clock,
- 	return err;
- }
- 
--static long compat_clock_nanosleep_restart(struct restart_block *restart)
-+long compat_clock_nanosleep_restart(struct restart_block *restart)
- {
- 	long err;
- 	mm_segment_t oldfs;
-diff --git a/kernel/futex.c b/kernel/futex.c
-index e7a35f1..23419c9 100644
---- a/kernel/futex.c
-+++ b/kernel/futex.c
-@@ -1593,16 +1593,6 @@ handle_fault:
- 	goto retry;
- }
- 
--/*
-- * In case we must use restart_block to restart a futex_wait,
-- * we encode in the 'flags' shared capability
-- */
--#define FLAGS_SHARED		0x01
--#define FLAGS_CLOCKRT		0x02
--#define FLAGS_HAS_TIMEOUT	0x04
--
--static long futex_wait_restart(struct restart_block *restart);
--
- /**
-  * fixup_owner() - Post lock pi_state and corner case management
-  * @uaddr:	user address of the futex
-@@ -1876,7 +1866,7 @@ out:
- }
- 
- 
--static long futex_wait_restart(struct restart_block *restart)
-+long futex_wait_restart(struct restart_block *restart)
- {
- 	u32 __user *uaddr = (u32 __user *)restart->futex.uaddr;
- 	int fshared = 0;
-diff --git a/kernel/posix-timers.c b/kernel/posix-timers.c
-index 00d1fda..ec2e802 100644
---- a/kernel/posix-timers.c
-+++ b/kernel/posix-timers.c
-@@ -211,7 +211,7 @@ static int no_nsleep(const clockid_t which_clock, int flags,
- /*
-  * Return nonzero if we know a priori this clockid_t value is bogus.
+ 	ret = checkpoint_thread(ctx, t);
+ 	ckpt_debug("thread %d\n", ret);
+ 	if (ret < 0)
+@@ -189,6 +200,19 @@ int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
+  * Restart
   */
--static inline int invalid_clockid(const clockid_t which_clock)
-+int invalid_clockid(const clockid_t which_clock)
+ 
++static inline int valid_exit_code(int exit_code)
++{
++	if (exit_code >= 0x10000)
++		return 0;
++	if (exit_code & 0xff) {
++		if (exit_code & ~0xff)
++			return 0;
++		if (!valid_signal(exit_code & 0xff))
++			return 0;
++	}
++	return 1;
++}
++
+ /* read the task_struct into the current task */
+ static int restore_task_struct(struct ckpt_ctx *ctx)
  {
- 	if (which_clock < 0)	/* CPU clock, posix_cpu_* will check it */
- 		return 0;
+@@ -200,15 +224,39 @@ static int restore_task_struct(struct ckpt_ctx *ctx)
+ 	if (IS_ERR(h))
+ 		return PTR_ERR(h);
+ 
++	ret = -EINVAL;
++	if (h->state == TASK_DEAD) {
++		if (h->exit_state != EXIT_ZOMBIE)
++			goto out;
++		if (!valid_exit_code(h->exit_code))
++			goto out;
++		t->exit_code = h->exit_code;
++	} else {
++		if (h->exit_code)
++			goto out;
++		if ((thread_group_leader(t) && !valid_signal(h->exit_signal)) ||
++		    (!thread_group_leader(t) && h->exit_signal != -1))
++			goto out;
++		if (!valid_signal(h->pdeath_signal))
++			goto out;
++
++		/* FIXME: restore remaining relevant task_struct fields */
++		t->exit_signal = h->exit_signal;
++		t->pdeath_signal = h->pdeath_signal;
++
++		t->set_child_tid =
++			(int __user *) (unsigned long) h->set_child_tid;
++		t->clear_child_tid =
++			(int __user *) (unsigned long) h->clear_child_tid;
++	}
++
+ 	memset(t->comm, 0, TASK_COMM_LEN);
+ 	ret = _ckpt_read_string(ctx, t->comm, TASK_COMM_LEN);
+ 	if (ret < 0)
+ 		goto out;
+ 
+-	t->set_child_tid = (int __user *) (unsigned long) h->set_child_tid;
+-	t->clear_child_tid = (int __user *) (unsigned long) h->clear_child_tid;
+-
+-	/* FIXME: restore remaining relevant task_struct fields */
++	/* return 1 for zombie, 0 otherwise */
++	ret = (h->state == TASK_DEAD ? 1 : 0);
+  out:
+ 	ckpt_hdr_put(ctx, h);
+ 	return ret;
+@@ -328,6 +376,11 @@ int restore_task(struct ckpt_ctx *ctx)
+ 	ckpt_debug("task %d\n", ret);
+ 	if (ret < 0)
+ 		goto out;
++
++	/* zombie - we're done here */
++	if (ret)
++		goto out;
++
+ 	ret = restore_thread(ctx);
+ 	ckpt_debug("thread %d\n", ret);
+ 	if (ret < 0)
+diff --git a/kernel/checkpoint/restart.c b/kernel/checkpoint/restart.c
+index ddc71ee..18b3815 100644
+--- a/kernel/checkpoint/restart.c
++++ b/kernel/checkpoint/restart.c
+@@ -854,7 +854,7 @@ static int wait_sync_threads(void)
+ static int do_restore_task(void)
+ {
+ 	struct ckpt_ctx *ctx;
+-	int ret;
++	int zombie, ret;
+ 
+ 	ctx = wait_checkpoint_ctx();
+ 	if (IS_ERR(ctx))
+@@ -864,6 +864,8 @@ static int do_restore_task(void)
+ 	if (ret < 0)
+ 		goto out;
+ 
++	current->flags |= PF_RESTARTING;
++
+ 	ret = wait_sync_threads();
+ 	if (ret < 0)
+ 		goto out;
+@@ -875,9 +877,22 @@ static int do_restore_task(void)
+ 
+ 	restore_debug_running(ctx);
+ 
+-	ret = restore_task(ctx);
+-	if (ret < 0)
++	zombie = restore_task(ctx);
++	if (zombie < 0) {
++		ret = zombie;
+ 		goto out;
++	}
++
++	/*
++	 * zombie: we're done here; do_exit() will notice the @ctx on
++	 * our current->checkpoint_ctx (and our PF_RESTARTING) - it
++	 * will call restore_activate_next() and release the @ctx.
++	 */
++	if (zombie) {
++		restore_debug_exit(ctx);
++		ckpt_ctx_put(ctx);
++		do_exit(current->exit_code);
++	}
+ 
+ 	restore_task_done(ctx);
+ 	ret = wait_task_sync(ctx);
+@@ -886,6 +901,7 @@ static int do_restore_task(void)
+ 	if (ret < 0)
+ 		ckpt_err(ctx, ret, "task restart failed\n");
+ 
++	current->flags &= ~PF_RESTARTING;
+ 	clear_task_ctx(current);
+ 	ckpt_ctx_put(ctx);
+ 	return ret;
 -- 
 1.6.3.3
