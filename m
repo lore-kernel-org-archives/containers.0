@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH v21 099/100] c/r: Add checkpoint support to macvlan driver
-Date: Sat,  1 May 2010 10:16:21 -0400
-Message-ID: <1272723382-19470-100-git-send-email-orenl__1103.43946512348$1272728783$gmane$org@cs.columbia.edu>
+Subject: [PATCH v21 063/100] c/r: restore file->f_cred
+Date: Sat,  1 May 2010 10:15:45 -0400
+Message-ID: <1272723382-19470-64-git-send-email-orenl__40574.4771393531$1272728917$gmane$org@cs.columbia.edu>
 References: <1272723382-19470-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -18,89 +18,84 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Changelog[v21]:
-  - Do not include checkpoint_hdr.h explicitly
-  - Unbreak compiling with CONFIG_CHECKPOINT=n or CONFIG_NET_NS=n
+Restore a file's f_cred.  This is set to the cred of the task doing
+the open, so often it will be the same as that of the restarted task.
 
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Acked-by: David S. Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Acked-by: Oren Laadan <oreln-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Changelog[v1]:
+  - [Nathan Lynch] discard const from struct cred * where appropriate
+
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Acked-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- drivers/net/macvlan.c |   48 ++++++++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 48 insertions(+), 0 deletions(-)
+ fs/checkpoint.c                |   21 ++++++++++++++++++---
+ include/linux/checkpoint_hdr.h |    2 +-
+ 2 files changed, 19 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/net/macvlan.c b/drivers/net/macvlan.c
-index 40faa36..360828e 100644
---- a/drivers/net/macvlan.c
-+++ b/drivers/net/macvlan.c
-@@ -455,6 +455,51 @@ static struct net_device_stats *macvlan_dev_get_stats(struct net_device *dev)
- 	return stats;
- }
- 
-+#include <linux/checkpoint.h>
-+
-+#ifdef CONFIG_NETNS_CHECKPOINT
-+static int macvlan_checkpoint(struct ckpt_ctx *ctx, struct net_device *dev)
-+{
-+	struct macvlan_dev *vlan = netdev_priv(dev);
-+	struct ckpt_hdr_netdev *h;
-+	struct ckpt_netdev_addr *addrs;
-+	int ret;
-+
-+	ckpt_debug("Checkpointing macvlan %s:%s\n",
-+		   dev->name, vlan->lowerdev->name);
-+
-+	h = ckpt_netdev_base(ctx, dev, &addrs);
-+	if (IS_ERR(h))
-+		return PTR_ERR(h);
-+
-+	h->type = CKPT_NETDEV_MACVLAN;
-+
-+	h->macvlan.mode = vlan->mode;
-+
-+	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *)h);
-+	if (ret < 0)
-+		goto out;
-+
-+	ret = ckpt_write_buffer(ctx, dev->name, IFNAMSIZ);
-+	if (ret < 0)
-+		goto out;
-+
-+	ret = ckpt_write_buffer(ctx, vlan->lowerdev->name, IFNAMSIZ);
-+	if (ret < 0)
-+		goto out;
-+
-+	if (h->inet_addrs > 0) {
-+		int len = (sizeof(struct ckpt_netdev_addr) * h->inet_addrs);
-+		ret = ckpt_write_buffer(ctx, addrs, len);
-+	}
-+ out:
-+	ckpt_hdr_put(ctx, h);
-+	kfree(addrs);
-+
-+	return ret;
-+}
-+#endif
-+
- static void macvlan_ethtool_get_drvinfo(struct net_device *dev,
- 					struct ethtool_drvinfo *drvinfo)
+diff --git a/fs/checkpoint.c b/fs/checkpoint.c
+index 874be00..783c920 100644
+--- a/fs/checkpoint.c
++++ b/fs/checkpoint.c
+@@ -148,14 +148,21 @@ static int scan_fds(struct files_struct *files, int **fdtable)
+ int checkpoint_file_common(struct ckpt_ctx *ctx, struct file *file,
+ 			   struct ckpt_hdr_file *h)
  {
-@@ -501,6 +546,9 @@ static const struct net_device_ops macvlan_netdev_ops = {
- 	.ndo_set_multicast_list	= macvlan_set_multicast_list,
- 	.ndo_get_stats		= macvlan_dev_get_stats,
- 	.ndo_validate_addr	= eth_validate_addr,
-+#ifdef CONFIG_NETNS_CHECKPOINT
-+	.ndo_checkpoint		= macvlan_checkpoint,
-+#endif
- };
++	struct cred *f_cred = (struct cred *) file->f_cred;
++
+ 	h->f_flags = file->f_flags;
+ 	h->f_mode = file->f_mode;
+ 	h->f_pos = file->f_pos;
+ 	h->f_version = file->f_version;
  
- static void macvlan_setup(struct net_device *dev)
+-	ckpt_debug("file %s", file->f_dentry->d_name.name);
++	h->f_credref = checkpoint_obj(ctx, f_cred, CKPT_OBJ_CRED);
++	if (h->f_credref < 0)
++		return h->f_credref;
++
++	ckpt_debug("file %s credref %d", file->f_dentry->d_name.name,
++		h->f_credref);
+ 
+-	/* FIX: need also file->uid, file->gid, file->f_owner, etc */
++	/* FIX: need also file->f_owner, etc */
+ 
+ 	return 0;
+ }
+@@ -516,8 +523,16 @@ int restore_file_common(struct ckpt_ctx *ctx, struct file *file,
+ 	fmode_t new_mode = file->f_mode;
+ 	fmode_t saved_mode = (__force fmode_t) h->f_mode;
+ 	int ret;
++	struct cred *cred;
++
++	/* FIX: need to restore owner etc */
+ 
+-	/* FIX: need to restore uid, gid, owner etc */
++	/* restore the cred */
++	cred = ckpt_obj_fetch(ctx, h->f_credref, CKPT_OBJ_CRED);
++	if (IS_ERR(cred))
++		return PTR_ERR(cred);
++	put_cred(file->f_cred);
++	file->f_cred = get_cred(cred);
+ 
+ 	/* safe to set 1st arg (fd) to 0, as command is F_SETFL */
+ 	ret = vfs_fcntl(0, F_SETFL, h->f_flags & CKPT_SETFL_MASK, file);
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 8598eb5..261badb 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -437,7 +437,7 @@ struct ckpt_hdr_file {
+ 	__u32 f_type;
+ 	__u32 f_mode;
+ 	__u32 f_flags;
+-	__u32 _padding;
++	__s32 f_credref;
+ 	__u64 f_pos;
+ 	__u64 f_version;
+ } __attribute__((aligned(8)));
 -- 
 1.6.3.3
