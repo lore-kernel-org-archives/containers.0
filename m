@@ -1,8 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH v21 076/100] c/r: [pty 1/2] allow allocation of desired pty
-	slave
-Date: Sat,  1 May 2010 10:15:58 -0400
-Message-ID: <1272723382-19470-77-git-send-email-orenl__7777.80919238484$1272727883$gmane$org@cs.columbia.edu>
+Subject: [PATCH v21 082/100] c/r: preliminary support mounts namespace
+Date: Sat,  1 May 2010 10:16:04 -0400
+Message-ID: <1272723382-19470-83-git-send-email-orenl__880.21563501588$1272727884$gmane$org@cs.columbia.edu>
 References: <1272723382-19470-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -19,225 +18,197 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Greg Kroah-Hartman <gregkh-l3A5Bk7waGM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-During restart, we need to allocate pty slaves with the same
-identifiers as recorded during checkpoint. Modify the allocation code
-to allow an in-kernel caller to request a specific slave identifier.
+We only allow c/r when all processes shared a single mounts ns.
 
-For this, add a new field to task_struct - 'required_id'. It will
-hold the desired identifier when restoring a (master) pty.
+We do intend to implement c/r of mounts and mounts namespaces in the
+kernel.  It shouldn't be ugly or complicate locking to do so.  Just
+haven't gotten around to it. A more complete solution is more than we
+want to take on now for v19.
 
-The code in ptmx_open() will use this value only for tasks that try to
-open /dev/ptmx that are restarting (PF_RESTARTING), and if the value
-isn't CKPT_REQUIRED_NONE (-1).
+But we'd like as much as possible for everything which we don't
+support, to not be checkpointable, since not doing so has in the past
+invited slanderous accusations of being a toy implementation :)
 
-Changelog[v19-rc3]:
-  - Rebase to kernel 2.6.33
+Meanwhile, we get the following:
+1) Checkpoint bails if not all tasks share the same mnt-ns
+2) Leak detection works for full container checkpoint
 
-Cc: Greg Kroah-Hartman <gregkh-l3A5Bk7waGM@public.gmane.org>
-Cc: Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+On restart, all tasks inherit the same mnt-ns of the coordinator, by
+default. A follow-up patch to user-cr will add a new switch to the
+'restart' to request a CLONE_NEWMNT flag when creating the root-task
+of the restart.
+
+Cc: Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Acked-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- drivers/char/pty.c        |   66 +++++++++++++++++++++++++++++++++++++++++---
- fs/devpts/inode.c         |   13 +++++++--
- include/linux/devpts_fs.h |    6 +++-
- include/linux/tty.h       |    1 -
- 4 files changed, 76 insertions(+), 10 deletions(-)
+ fs/namespace.c                 |   63 +++++++++++++++++++++++++++++----------
+ include/linux/checkpoint.h     |    2 +-
+ include/linux/checkpoint_hdr.h |    4 ++
+ kernel/nsproxy.c               |   16 ++++++++--
+ 4 files changed, 65 insertions(+), 20 deletions(-)
 
-diff --git a/drivers/char/pty.c b/drivers/char/pty.c
-index d83a431..cfe77c8 100644
---- a/drivers/char/pty.c
-+++ b/drivers/char/pty.c
-@@ -28,6 +28,7 @@
- #include <linux/device.h>
- #include <linux/uaccess.h>
- #include <linux/bitops.h>
-+#include <linux/file.h>
- #include <linux/devpts_fs.h>
- #include <linux/slab.h>
- 
-@@ -615,9 +616,10 @@ static const struct tty_operations pty_unix98_ops = {
- };
- 
- /**
-- *	ptmx_open		-	open a unix 98 pty master
-+ *	__ptmx_open		-	open a unix 98 pty master
-  *	@inode: inode of device file
-  *	@filp: file pointer to tty
-+ *	@index: desired slave index
-  *
-  *	Allocate a unix98 pty master device from the ptmx driver.
-  *
-@@ -626,16 +628,15 @@ static const struct tty_operations pty_unix98_ops = {
-  *		allocated_ptys_lock handles the list of free pty numbers
-  */
- 
--static int __ptmx_open(struct inode *inode, struct file *filp)
-+static int __ptmx_open(struct inode *inode, struct file *filp, int index)
- {
- 	struct tty_struct *tty;
- 	int retval;
--	int index;
- 
- 	nonseekable_open(inode, filp);
- 
- 	/* find a device that is not in use. */
--	index = devpts_new_index(inode);
-+	index = devpts_new_index(inode, index);
- 	if (index < 0)
- 		return index;
- 
-@@ -671,12 +672,66 @@ static int ptmx_open(struct inode *inode, struct file *filp)
- {
- 	int ret;
- 
-+#ifdef CONFIG_CHECKPOINT
-+	/*
-+	 * If current task is restarting, we skip the actual open.
-+	 * Instead, leave it up to the caller (restart code) to invoke
-+	 * __ptmx_open() with the desired pty index request.
-+	 *
-+	 * NOTE: this gives a half-baked file that has ptmx f_op but
-+	 * the tty (private_data) is NULL. It is the responsibility of
-+	 * the _caller_ to ensure proper initialization before
-+	 * allowing it to be used (ptmx_release() tolerates NULL tty).
-+	 */
-+	if (current->flags & PF_RESTARTING)
-+		return 0;
-+#endif
-+
- 	lock_kernel();
--	ret = __ptmx_open(inode, filp);
-+	ret = __ptmx_open(inode, filp, UNSPECIFIED_PTY_INDEX);
- 	unlock_kernel();
- 	return ret;
+diff --git a/fs/namespace.c b/fs/namespace.c
+index 8174c8a..e335285 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -29,6 +29,7 @@
+ #include <linux/log2.h>
+ #include <linux/idr.h>
+ #include <linux/fs_struct.h>
++#include <linux/checkpoint.h>
+ #include <asm/uaccess.h>
+ #include <asm/unistd.h>
+ #include "pnode.h"
+@@ -2318,6 +2319,49 @@ static void __init init_mount_tree(void)
+ 	set_fs_root(current->fs, &root);
  }
  
-+static int ptmx_release(struct inode *inode, struct file *filp)
++void put_mnt_ns(struct mnt_namespace *ns)
 +{
++	LIST_HEAD(umount_list);
++
++	if (!atomic_dec_and_test(&ns->count))
++		return;
++	down_write(&namespace_sem);
++	spin_lock(&vfsmount_lock);
++	umount_tree(ns->root, 0, &umount_list);
++	spin_unlock(&vfsmount_lock);
++	up_write(&namespace_sem);
++	release_mounts(&umount_list);
++	kfree(ns);
++}
++EXPORT_SYMBOL(put_mnt_ns);
++
 +#ifdef CONFIG_CHECKPOINT
-+	/*
-+	 * It is possible for a restart to create a half-baked
-+	 * ptmx file - see ptmx_open(). In that case there is no
-+	 * tty (private_data) and nothing to do.
-+	 */
-+	if (!filp->private_data)
-+		return 0;
-+#endif
-+
-+	return tty_release(inode, filp);
-+}
-+
-+struct file *pty_open_by_index(char *ptmxpath, int index)
++static int obj_mnt_ns_grab(void *ptr)
 +{
-+	struct file *ptmxfile;
-+	int ret;
-+
-+	/*
-+	 * We need to pick a way to specify which devpts mountpoint to
-+	 * use. For now, we'll just use whatever /dev/ptmx points to.
-+	 */
-+	ptmxfile = filp_open(ptmxpath, O_RDWR|O_NOCTTY, 0);
-+	if (IS_ERR(ptmxfile))
-+		return ptmxfile;
-+
-+	lock_kernel();
-+	ret = __ptmx_open(ptmxfile->f_dentry->d_inode, ptmxfile, index);
-+	unlock_kernel();
-+	if (ret) {
-+		fput(ptmxfile);
-+		return ERR_PTR(ret);
-+	}
-+
-+	return ptmxfile;
++	get_mnt_ns((struct mnt_namespace *) ptr);
++	return 0;
 +}
 +
- static struct file_operations ptmx_fops;
- 
- static void __init unix98_pty_init(void)
-@@ -733,6 +788,7 @@ static void __init unix98_pty_init(void)
- 	/* Now create the /dev/ptmx special device */
- 	tty_default_fops(&ptmx_fops);
- 	ptmx_fops.open = ptmx_open;
-+	ptmx_fops.release = ptmx_release;
- 
- 	cdev_init(&ptmx_cdev, &ptmx_fops);
- 	if (cdev_add(&ptmx_cdev, MKDEV(TTYAUX_MAJOR, 2), 1) ||
-diff --git a/fs/devpts/inode.c b/fs/devpts/inode.c
-index 0120247..75fb8c5 100644
---- a/fs/devpts/inode.c
-+++ b/fs/devpts/inode.c
-@@ -433,11 +433,11 @@ static struct file_system_type devpts_fs_type = {
-  * to the System V naming convention
++static void obj_mnt_ns_drop(void *ptr, int lastref)
++{
++	put_mnt_ns((struct mnt_namespace *) ptr);
++}
++
++static int obj_mnt_ns_users(void *ptr)
++{
++	return atomic_read(&((struct mnt_namespace *) ptr)->count);
++}
++
++/* mnt_ns object */
++static const struct ckpt_obj_ops ckpt_obj_mntns_ops = {
++	.obj_name = "MOUNTS NS",
++	.obj_type = CKPT_OBJ_MNT_NS,
++	.ref_grab = obj_mnt_ns_grab,
++	.ref_drop = obj_mnt_ns_drop,
++	.ref_users = obj_mnt_ns_users,
++};
++#endif /* CONFIG_CHECKPOINT */
++
+ void __init mnt_init(void)
+ {
+ 	unsigned u;
+@@ -2347,20 +2391,7 @@ void __init mnt_init(void)
+ 		printk(KERN_WARNING "%s: kobj create error\n", __func__);
+ 	init_rootfs();
+ 	init_mount_tree();
++#ifdef CONFIG_CHECKPOINT
++	register_checkpoint_obj(&ckpt_obj_mntns_ops);
++#endif
+ }
+-
+-void put_mnt_ns(struct mnt_namespace *ns)
+-{
+-	LIST_HEAD(umount_list);
+-
+-	if (!atomic_dec_and_test(&ns->count))
+-		return;
+-	down_write(&namespace_sem);
+-	spin_lock(&vfsmount_lock);
+-	umount_tree(ns->root, 0, &umount_list);
+-	spin_unlock(&vfsmount_lock);
+-	up_write(&namespace_sem);
+-	release_mounts(&umount_list);
+-	kfree(ns);
+-}
+-EXPORT_SYMBOL(put_mnt_ns);
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index c1079b7..6560f63 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -10,7 +10,7 @@
+  *  distribution for more details.
   */
  
--int devpts_new_index(struct inode *ptmx_inode)
-+int devpts_new_index(struct inode *ptmx_inode, int req_idx)
- {
- 	struct super_block *sb = pts_sb_from_inode(ptmx_inode);
- 	struct pts_fs_info *fsi = DEVPTS_SB(sb);
--	int index;
-+	int index = req_idx;
- 	int ida_ret;
+-#define CHECKPOINT_VERSION  4
++#define CHECKPOINT_VERSION  5
  
- retry:
-@@ -445,7 +445,9 @@ retry:
- 		return -ENOMEM;
- 
- 	mutex_lock(&allocated_ptys_lock);
--	ida_ret = ida_get_new(&fsi->allocated_ptys, &index);
-+	if (index == UNSPECIFIED_PTY_INDEX)
-+		index = 0;
-+	ida_ret = ida_get_new_above(&fsi->allocated_ptys, index, &index);
- 	if (ida_ret < 0) {
- 		mutex_unlock(&allocated_ptys_lock);
- 		if (ida_ret == -EAGAIN)
-@@ -453,6 +455,11 @@ retry:
- 		return -EIO;
- 	}
- 
-+	if (req_idx != UNSPECIFIED_PTY_INDEX && index != req_idx) {
-+		ida_remove(&fsi->allocated_ptys, index);
-+		mutex_unlock(&allocated_ptys_lock);
-+		return -EBUSY;
+ /* checkpoint user flags */
+ #define CHECKPOINT_SUBTREE	0x1
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 8dbd6e9..e74d668 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -98,6 +98,8 @@ enum {
+ #define CKPT_HDR_UTS_NS CKPT_HDR_UTS_NS
+ 	CKPT_HDR_IPC_NS,
+ #define CKPT_HDR_IPC_NS CKPT_HDR_IPC_NS
++	CKPT_HDR_MNT_NS,
++#define CKPT_HDR_MNT_NS CKPT_HDR_MNT_NS
+ 	CKPT_HDR_CAPABILITIES,
+ #define CKPT_HDR_CAPABILITIES CKPT_HDR_CAPABILITIES
+ 	CKPT_HDR_USER_NS,
+@@ -224,6 +226,8 @@ enum obj_type {
+ #define CKPT_OBJ_UTS_NS CKPT_OBJ_UTS_NS
+ 	CKPT_OBJ_IPC_NS,
+ #define CKPT_OBJ_IPC_NS CKPT_OBJ_IPC_NS
++	CKPT_OBJ_MNT_NS,
++#define CKPT_OBJ_MNT_NS CKPT_OBJ_MNT_NS
+ 	CKPT_OBJ_USER_NS,
+ #define CKPT_OBJ_USER_NS CKPT_OBJ_USER_NS
+ 	CKPT_OBJ_CRED,
+diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+index 67a1456..5bdce9e 100644
+--- a/kernel/nsproxy.c
++++ b/kernel/nsproxy.c
+@@ -268,11 +268,18 @@ int ckpt_collect_ns(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	 * ipc_ns (shm) may keep references to files: if this is the
+ 	 * first time we see this ipc_ns (ret > 0), proceed inside.
+ 	 */
+-	if (ret)
++	if (ret) {
+ 		ret = ckpt_collect_ipc_ns(ctx, nsproxy->ipc_ns);
++		if (ret < 0)
++			goto out;
 +	}
- 	if (index >= pty_limit) {
- 		ida_remove(&fsi->allocated_ptys, index);
- 		mutex_unlock(&allocated_ptys_lock);
-diff --git a/include/linux/devpts_fs.h b/include/linux/devpts_fs.h
-index 5ce0e5f..163a70e 100644
---- a/include/linux/devpts_fs.h
-+++ b/include/linux/devpts_fs.h
-@@ -15,9 +15,13 @@
+ #endif
  
- #include <linux/errno.h>
- 
-+#define UNSPECIFIED_PTY_INDEX -1
+-	/* TODO: collect other namespaces here */
++	ret = ckpt_obj_collect(ctx, nsproxy->mnt_ns, CKPT_OBJ_MNT_NS);
++	if (ret < 0)
++		goto out;
 +
- #ifdef CONFIG_UNIX98_PTYS
++	ret = 0;
+  out:
+ 	put_nsproxy(nsproxy);
+ 	return ret;
+@@ -301,7 +308,10 @@ static int checkpoint_ns(struct ckpt_ctx *ctx, void *ptr)
+ #endif	/* CONFIG_IPC_NS */
+ 	h->ipc_objref = ret;
  
--int devpts_new_index(struct inode *ptmx_inode);
-+struct file *pty_open_by_index(char *ptmxpath, int index);
-+
-+int devpts_new_index(struct inode *ptmx_inode, int req_idx);
- void devpts_kill_index(struct inode *ptmx_inode, int idx);
- /* mknod in devpts */
- int devpts_pty_new(struct inode *ptmx_inode, struct tty_struct *tty);
-diff --git a/include/linux/tty.h b/include/linux/tty.h
-index 4409967..d0cbcec 100644
---- a/include/linux/tty.h
-+++ b/include/linux/tty.h
-@@ -513,7 +513,6 @@ extern void tty_ldisc_begin(void);
- /* This last one is just for the tty layer internals and shouldn't be used elsewhere */
- extern void tty_ldisc_enable(struct tty_struct *tty);
+-	/* TODO: Write other namespaces here */
++	/* FIXME: for now, only marked visited to pacify leaks */
++	ret = ckpt_obj_visit(ctx, nsproxy->mnt_ns, CKPT_OBJ_MNT_NS);
++	if (ret < 0)
++		goto out;
  
--
- /* n_tty.c */
- extern struct tty_ldisc_ops tty_ldisc_N_TTY;
- extern void n_tty_inherit_ops(struct tty_ldisc_ops *ops);
+ 	ret = ckpt_write_obj(ctx, &h->h);
+  out:
 -- 
 1.6.3.3
