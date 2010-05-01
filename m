@@ -1,13 +1,14 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH] CONFIG_SECURITY_FILE_CAPABILITIES has been gone awhile
-Date: Fri, 30 Apr 2010 21:29:05 -0400
-Message-ID: <4BDB83E1.10308@cs.columbia.edu>
-References: <20100430234224.GA19790@us.ibm.com>
+Subject: Re: [PATCH] [RFC] C/R: inet4 and inet6 unicast routes (v2)
+Date: Fri, 30 Apr 2010 21:42:58 -0400
+Message-ID: <4BDB8722.5020401@cs.columbia.edu>
+References: <1272646855-17327-1-git-send-email-danms@us.ibm.com>
+	<4BDB3F07.2030900@free.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100430234224.GA19790-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4BDB3F07.2030900-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,52 +18,58 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Vlad Yasevich <vladislav.yasevich-VXdhtT5mjnY@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Applied for v21.
 
-Serge E. Hallyn wrote:
-> Thanks Matt for noticing the sbits testcase was screaming at us
-> about this being broken!
+
+Daniel Lezcano wrote:
+> Dan Smith wrote:
+>> This patch adds support for checkpointing and restoring route information.
+>> It keeps enough information to restore basic routes at the level of detail
+>> of /proc/net/route.  It uses RTNETLINK to extract the information during
+>> checkpoint and also to insert it back during restore.  This gives us a
+>> nice layer of isolation between us and the various "fib" implementations.
+>>
+>> Changes in v2:
+>>
+>> This version of the patch actually moves the current task into the
+>> desired network namespace temporarily, for the purposes of examining and
+>> restoring the route information.  This is a instead of creating a cross-
+>> namespace socket to do the job, as was done in v1.
+>>
+>> This is just an RFC to see if this is an acceptable method.  For a final
+>> version, adding a helper to nsproxy.c would allow us to create a new
+>> nsproxy with the desired netns instead of creating one with
+>> copy_namespaces() just to kill it off and use the target one.
+>>
+>> I still think the previous method is cleaner, but this way may violate
+>> fewer namespace boundaries (I'm still undecided :)
+>>
+>> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+>> Cc: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+>> Cc: Vlad Yasevich <vladislav.yasevich-VXdhtT5mjnY@public.gmane.org>
+>> Cc: jamal <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org>
+>> ---
+> Hi Dan,
 > 
-> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  kernel/capability.c |   16 ----------------
->  1 files changed, 0 insertions(+), 16 deletions(-)
+> Eric did a patchset (as Jamal mentioned it) where you can have a process 
+> to enter a specific namespace from userspace.
 > 
-> diff --git a/kernel/capability.c b/kernel/capability.c
-> index ccb8907..c39d6b0 100644
-> --- a/kernel/capability.c
-> +++ b/kernel/capability.c
-> @@ -316,7 +316,6 @@ SYSCALL_DEFINE2(capset, cap_user_header_t, header, const cap_user_data_t, data)
->  
->  }
->  
-> -#ifdef CONFIG_SECURITY_FILE_CAPABILITIES
->  int apply_securebits(unsigned securebits, struct cred *new)
->  {
->  	if ((((new->securebits & SECURE_ALL_LOCKS) >> 1)
-> @@ -361,21 +360,6 @@ static inline int restore_cap_bset(kernel_cap_t bset, struct cred *cred)
->  	return 0;
->  }
->  
-> -#else /* CONFIG_SECURITY_FILE_CAPABILITIES */
-> -
-> -int apply_securebits(unsigned securebits, struct cred *new)
-> -{
-> -	/* settable securebits not supported */
-> -	return 0;
-> -}
-> -
-> -static inline int restore_cap_bset(kernel_cap_t bset, struct cred *cred)
-> -{
-> -	/* bounding sets not supported */
-> -	return 0;
-> -}
-> -#endif /* CONFIG_SECURITY_FILE_CAPABILITIES */
-> -
->  #ifdef CONFIG_CHECKPOINT
->  static int do_restore_caps(struct ckpt_capabilities *h, struct cred *cred)
->  {
+> http://git.kernel.org/?p=linux/kernel/git/ebiederm/linux-2.6.33-nsfd-v5.git;a=commit;h=9c2f86a44d9ca93e78fd8e81a4e2a8c2a4cdb054
+> 
+> Is it possible to enter the namespace and dump / restore the routes with 
+> NETLINK_ROUTE from userspace ? Or is it something not possible ?
+> 
+
+I also think that restoring routes from userspace, if feasible,
+will be advantageous.
+
+Besides, that will simplify cases in which userspace would like to
+restore something different (in terms of routes) than what was
+saved in the checkpoint.
+
+So the question is, what would it take ?
+
+Oren.
