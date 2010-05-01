@@ -1,8 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH v21 016/100] cgroup freezer: Add CHECKPOINTING state to
-	safeguard container checkpoint
-Date: Sat,  1 May 2010 10:14:58 -0400
-Message-ID: <1272723382-19470-17-git-send-email-orenl__21491.2489209839$1272729488$gmane$org@cs.columbia.edu>
+Subject: [PATCH v21 091/100] c/r: add smack support to lsm c/r (v4)
+Date: Sat,  1 May 2010 10:16:13 -0400
+Message-ID: <1272723382-19470-92-git-send-email-orenl__14035.478529013$1272729865$gmane$org@cs.columbia.edu>
 References: <1272723382-19470-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -19,317 +18,443 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Cedric Le Goater <legoater-GANU6spQydw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Kentaro Takeda <takedakn-3MafRgGXt7BL9jVzuh4AOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-The CHECKPOINTING state prevents userspace from unfreezing tasks until
-sys_checkpoint() is finished. When doing container checkpoint userspace
-will do:
+Documentation/checkpoint/readme.txt begins:
+"""
+Application checkpoint/restart is the ability to save the state
+of a running application so that it can later resume its execution
+from the time at which it was checkpointed.
+"""
 
-	echo FROZEN > /cgroups/my_container/freezer.state
-	...
-	rc = sys_checkpoint( <pid of container root> );
+This patch implements checkpoint and restore of Smack security
+labels.  The rules are the same as in previous versions:
 
-To ensure a consistent checkpoint image userspace should not be allowed
-to thaw the cgroup (echo THAWED > /cgroups/my_container/freezer.state)
-during checkpoint.
+	1. when objects are created during restore() they are
+	   automatically labeled with current_security().
+	2. if there was a label checkpointed with the object,
+	   and that label != current_security() (which is the
+	   same as obj->security), then the object is relabeled
+	   if the sys_restart() caller has CAP_MAC_ADMIN.
+	   Otherwise we return -EPERM.
 
-"CHECKPOINTING" can only be set on a "FROZEN" cgroup using the checkpoint
-system call. Once in the "CHECKPOINTING" state, the cgroup may not leave until
-the checkpoint system call is finished and ready to return. Then the
-freezer state returns to "FROZEN". Writing any new state to freezer.state while
-checkpointing will return EBUSY. These semantics ensure that userspace cannot
-unfreeze the cgroup midway through the checkpoint system call.
+This has been tested by checkpointing tasks under labels
+_, vs1, and vs2, and restarting from tasks under _, vs1,
+and vs2, with and without CAP_MAC_ADMIN in the bounding
+set, and with and without the '-k' (keep_lsm) flag to mktree.
+Expected results:
 
-The cgroup_freezer_begin_checkpoint() and cgroup_freezer_end_checkpoint()
-make relatively few assumptions about the task that is passed in. However the
-way they are called in do_checkpoint() assumes that the root of the container
-is in the same freezer cgroup as all the other tasks that will be
-checkpointed.
+	#shell 1:
+	echo vs1 > /proc/self/attr/current
+	ckpt > out
+	echo vs2 > /proc/self/attr/current
+	mktree -F /cgroup/2 < out
+		(frozen)
+	# shell 2:
+	cat /proc/`pidof ckpt`/attr/current
+		vs2
+	echo THAWED > /cgroup/2/freezer.state
+	# shell 1:
+	mktree -k -F /cgroup/2 < out
+		(frozen)
+	# shell 2:
+	cat /proc/`pidof ckpt`/attr/current
+		vs1
+	echo THAWED > /cgroup/2/freezer.state
+	# shell 1:
+	capsh --drop=cap_mac_admin --
+	mktree -k -F /cgroup/2 < out
+		(permission denied)
 
-Notes:
-        As a side-effect this prevents the multiple tasks from entering the
-        CHECKPOINTING state simultaneously. All but one will get -EBUSY.
+There are testcases in git://git.sr71.net/~hallyn/cr_tests.git
+under cr_tests/smack, which automate the above (and pass).
 
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Cedric Le Goater <legoater-GANU6spQydw@public.gmane.org>
-Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Rafael J. Wysocki <rjw-KKrjLPT3xs0@public.gmane.org>
-Cc: linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Changelog:
+	sep 3: add a version to smack lsm, accessible through
+		/smack/version  (Casey and Serge)
+	sep 10: rename xyz_get_ctx() to xyz_checkpoint()
+
+Cc: linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Kentaro Takeda <takedakn-3MafRgGXt7BL9jVzuh4AOg@public.gmane.org>
+Cc: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Acked-by: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
+Acked-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- Documentation/cgroups/freezer-subsystem.txt |   10 ++
- include/linux/freezer.h                     |    8 ++
- kernel/cgroup_freezer.c                     |  166 ++++++++++++++++++++-------
- 3 files changed, 142 insertions(+), 42 deletions(-)
+ kernel/checkpoint/restart.c |    1 +
+ security/smack/smack.h      |    1 +
+ security/smack/smack_lsm.c  |  144 +++++++++++++++++++++++++++++++++++++++++++
+ security/smack/smackfs.c    |   83 +++++++++++++++++++++++++
+ 4 files changed, 229 insertions(+), 0 deletions(-)
 
-diff --git a/Documentation/cgroups/freezer-subsystem.txt b/Documentation/cgroups/freezer-subsystem.txt
-index 41f37fe..92b68e6 100644
---- a/Documentation/cgroups/freezer-subsystem.txt
-+++ b/Documentation/cgroups/freezer-subsystem.txt
-@@ -100,3 +100,13 @@ things happens:
- 		and returns EINVAL)
- 	3) The tasks that blocked the cgroup from entering the "FROZEN"
- 		state disappear from the cgroup's set of tasks.
-+
-+When the cgroup freezer is used to guard container checkpoint operations the
-+freezer.state may be "CHECKPOINTING". "CHECKPOINTING" can only be set on a
-+"FROZEN" cgroup using the checkpoint system call. Once in the "CHECKPOINTING"
-+state, the cgroup may not leave until the checkpoint system call returns the
-+freezer state to "FROZEN". Writing any new state to freezer.state while
-+checkpointing will return EBUSY. These semantics ensure that userspace cannot
-+unfreeze the cgroup midway through the checkpoint system call. Note that,
-+unlike "FROZEN" and "FREEZING", there is no corresponding "CHECKPOINTED"
-+state.
-diff --git a/include/linux/freezer.h b/include/linux/freezer.h
-index da7e52b..3d32641 100644
---- a/include/linux/freezer.h
-+++ b/include/linux/freezer.h
-@@ -65,11 +65,19 @@ extern void cancel_freezing(struct task_struct *p);
+diff --git a/kernel/checkpoint/restart.c b/kernel/checkpoint/restart.c
+index 6605597..3aa69e4 100644
+--- a/kernel/checkpoint/restart.c
++++ b/kernel/checkpoint/restart.c
+@@ -682,6 +682,7 @@ static int restore_lsm(struct ckpt_ctx *ctx)
+ 	}
  
- #ifdef CONFIG_CGROUP_FREEZER
- extern int cgroup_freezing_or_frozen(struct task_struct *task);
-+extern int in_same_cgroup_freezer(struct task_struct *p, struct task_struct *q);
-+extern int cgroup_freezer_begin_checkpoint(struct task_struct *task);
-+extern void cgroup_freezer_end_checkpoint(struct task_struct *task);
- #else /* !CONFIG_CGROUP_FREEZER */
- static inline int cgroup_freezing_or_frozen(struct task_struct *task)
- {
+ 	if (strcmp(ctx->lsm_name, "lsm_none") != 0 &&
++			strcmp(ctx->lsm_name, "smack") != 0 &&
+ 			strcmp(ctx->lsm_name, "default") != 0) {
+ 		ckpt_debug("c/r: RESTART_KEEP_LSM unsupported for %s\n",
+ 				ctx->lsm_name);
+diff --git a/security/smack/smack.h b/security/smack/smack.h
+index c6e9aca..a8917b0 100644
+--- a/security/smack/smack.h
++++ b/security/smack/smack.h
+@@ -216,6 +216,7 @@ u32 smack_to_secid(const char *);
+ extern int smack_cipso_direct;
+ extern char *smack_net_ambient;
+ extern char *smack_onlycap;
++extern char *smack_version;
+ extern const char *smack_cipso_option;
+ 
+ extern struct smack_known smack_known_floor;
+diff --git a/security/smack/smack_lsm.c b/security/smack/smack_lsm.c
+index fdfeaa2..6f01f6d 100644
+--- a/security/smack/smack_lsm.c
++++ b/security/smack/smack_lsm.c
+@@ -28,6 +28,7 @@
+ #include <linux/slab.h>
+ #include <linux/mutex.h>
+ #include <linux/pipe_fs_i.h>
++#include <linux/checkpoint.h>
+ #include <net/netlabel.h>
+ #include <net/cipso_ipv4.h>
+ #include <linux/audit.h>
+@@ -887,6 +888,28 @@ static int smack_file_permission(struct file *file, int mask)
  	return 0;
  }
-+static inline int in_same_cgroup_freezer(struct task_struct *p,
-+					 struct task_struct *q)
+ 
++static inline char *smack_file_checkpoint(void *security)
 +{
++	return kstrdup((char *)security, GFP_KERNEL);
++}
++
++static inline int smack_file_restore(struct file *file, char *ctx)
++{
++	char *newsmack = smk_import(ctx, 0);
++
++	if (newsmack == NULL)
++		return -EINVAL;
++	/* I think by definition, file->f_security == current_security
++	 * right now, but let's assume somehow it might not be */
++	if (newsmack == file->f_security)
++		return 0;
++	if (!capable(CAP_MAC_ADMIN))
++		return -EPERM;
++	file->f_security = newsmack;
++
 +	return 0;
 +}
- #endif /* !CONFIG_CGROUP_FREEZER */
- 
- /*
-diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
-index 85f19cc..58ee049 100644
---- a/kernel/cgroup_freezer.c
-+++ b/kernel/cgroup_freezer.c
-@@ -26,6 +26,7 @@ enum freezer_state {
- 	CGROUP_THAWED = 0,
- 	CGROUP_FREEZING,
- 	CGROUP_FROZEN,
-+	CGROUP_CHECKPOINTING,
- };
- 
- struct freezer {
-@@ -64,6 +65,44 @@ int cgroup_freezing_or_frozen(struct task_struct *task)
- 	return (state == CGROUP_FREEZING) || (state == CGROUP_FROZEN);
- }
- 
-+/* Task is frozen or will freeze immediately when next it gets woken */
-+static bool is_task_frozen_enough(struct task_struct *task)
-+{
-+	return frozen(task) ||
-+		(task_is_stopped_or_traced(task) && freezing(task));
-+}
 +
-+/*
-+ * caller must hold freezer->lock
-+ */
-+static void update_freezer_state(struct cgroup *cgroup,
-+				 struct freezer *freezer)
-+{
-+	struct cgroup_iter it;
-+	struct task_struct *task;
-+	unsigned int nfrozen = 0, ntotal = 0;
-+
-+	cgroup_iter_start(cgroup, &it);
-+	while ((task = cgroup_iter_next(cgroup, &it))) {
-+		ntotal++;
-+		if (is_task_frozen_enough(task))
-+			nfrozen++;
-+	}
-+
-+	/*
-+	 * Transition to FROZEN when no new tasks can be added ensures
-+	 * that we never exist in the FROZEN state while there are unfrozen
-+	 * tasks.
-+	 */
-+	if (nfrozen == ntotal)
-+		freezer->state = CGROUP_FROZEN;
-+	else if (nfrozen > 0)
-+		freezer->state = CGROUP_FREEZING;
-+	else
-+		freezer->state = CGROUP_THAWED;
-+	cgroup_iter_end(cgroup, &it);
-+}
-+
- /*
-  * cgroups_write_string() limits the size of freezer state strings to
-  * CGROUP_LOCAL_BUFFER_SIZE
-@@ -72,6 +111,7 @@ static const char *freezer_state_strs[] = {
- 	"THAWED",
- 	"FREEZING",
- 	"FROZEN",
-+	"CHECKPOINTING",
- };
- 
- /*
-@@ -79,9 +119,9 @@ static const char *freezer_state_strs[] = {
-  * Transitions are caused by userspace writes to the freezer.state file.
-  * The values in parenthesis are state labels. The rest are edge labels.
-  *
-- * (THAWED) --FROZEN--> (FREEZING) --FROZEN--> (FROZEN)
-- *    ^ ^                    |                     |
-- *    | \_______THAWED_______/                     |
-+ * (THAWED) --FROZEN--> (FREEZING) --FROZEN--> (FROZEN) --> (CHECKPOINTING)
-+ *    ^ ^                    |                     | ^             |
-+ *    | \_______THAWED_______/                     | \_____________/
-  *    \__________________________THAWED____________/
+ /**
+  * smack_file_alloc_security - assign a file security blob
+  * @file: the object
+@@ -1074,6 +1097,27 @@ static int smack_file_receive(struct file *file)
+  * Task hooks
   */
  
-@@ -154,13 +194,6 @@ static void freezer_destroy(struct cgroup_subsys *ss,
- 	kfree(cgroup_freezer(cgroup));
- }
- 
--/* Task is frozen or will freeze immediately when next it gets woken */
--static bool is_task_frozen_enough(struct task_struct *task)
--{
--	return frozen(task) ||
--		(task_is_stopped_or_traced(task) && freezing(task));
--}
--
- /*
-  * The call to cgroup_lock() in the freezer.state write method prevents
-  * a write to that file racing against an attach, and hence the
-@@ -230,37 +263,6 @@ static void freezer_fork(struct cgroup_subsys *ss, struct task_struct *task)
- 	spin_unlock_irq(&freezer->lock);
- }
- 
--/*
-- * caller must hold freezer->lock
-- */
--static void update_freezer_state(struct cgroup *cgroup,
--				 struct freezer *freezer)
--{
--	struct cgroup_iter it;
--	struct task_struct *task;
--	unsigned int nfrozen = 0, ntotal = 0;
--
--	cgroup_iter_start(cgroup, &it);
--	while ((task = cgroup_iter_next(cgroup, &it))) {
--		ntotal++;
--		if (is_task_frozen_enough(task))
--			nfrozen++;
--	}
--
--	/*
--	 * Transition to FROZEN when no new tasks can be added ensures
--	 * that we never exist in the FROZEN state while there are unfrozen
--	 * tasks.
--	 */
--	if (nfrozen == ntotal)
--		freezer->state = CGROUP_FROZEN;
--	else if (nfrozen > 0)
--		freezer->state = CGROUP_FREEZING;
--	else
--		freezer->state = CGROUP_THAWED;
--	cgroup_iter_end(cgroup, &it);
--}
--
- static int freezer_read(struct cgroup *cgroup, struct cftype *cft,
- 			struct seq_file *m)
- {
-@@ -331,7 +333,10 @@ static int freezer_change_state(struct cgroup *cgroup,
- 	freezer = cgroup_freezer(cgroup);
- 
- 	spin_lock_irq(&freezer->lock);
--
-+	if (freezer->state == CGROUP_CHECKPOINTING) {
-+		retval = -EBUSY;
-+		goto out;
-+	}
- 	update_freezer_state(cgroup, freezer);
- 	if (goal_state == freezer->state)
- 		goto out;
-@@ -399,3 +404,80 @@ struct cgroup_subsys freezer_subsys = {
- 	.fork		= freezer_fork,
- 	.exit		= NULL,
- };
-+
-+#ifdef CONFIG_CHECKPOINT
-+/*
-+ * Caller is expected to ensure that neither @p nor @q may change its
-+ * freezer cgroup during this test in a way that may affect the result.
-+ * E.g., when called form c/r, @p must be in CHECKPOINTING cgroup, so
-+ * may not change cgroup, and either @q is also there, or is not there
-+ * and may not join.
-+ */
-+int in_same_cgroup_freezer(struct task_struct *p, struct task_struct *q)
++static inline char *smack_cred_checkpoint(void *security)
 +{
-+	struct cgroup_subsys_state *p_css, *q_css;
-+
-+	task_lock(p);
-+	p_css = task_subsys_state(p, freezer_subsys_id);
-+	task_unlock(p);
-+
-+	task_lock(q);
-+	q_css = task_subsys_state(q, freezer_subsys_id);
-+	task_unlock(q);
-+
-+	return (p_css == q_css);
++	return kstrdup((char *)security, GFP_KERNEL);
 +}
 +
-+/*
-+ * cgroup freezer state changes made without the aid of the cgroup filesystem
-+ * must go through this function to ensure proper locking is observed.
-+ */
-+static int freezer_checkpointing(struct task_struct *task,
-+				 enum freezer_state next_state)
++static inline int smack_cred_restore(struct file *file, struct cred *cred,
++					char *ctx)
 +{
-+	struct freezer *freezer;
-+	struct cgroup_subsys_state *css;
-+	enum freezer_state state;
++	char *newsmack = smk_import(ctx, 0);
 +
-+	task_lock(task);
-+	css = task_subsys_state(task, freezer_subsys_id);
-+	css_get(css); /* make sure freezer doesn't go away */
-+	freezer = container_of(css, struct freezer, css);
-+	task_unlock(task);
++	if (newsmack == NULL)
++		return -EINVAL;
++	if (newsmack == cred->security)
++		return 0;
++	if (!capable(CAP_MAC_ADMIN))
++		return -EPERM;
++	cred->security = newsmack;
 +
-+	if (freezer->state == CGROUP_FREEZING) {
-+		/* May be in middle of a lazy FREEZING -> FROZEN transition */
-+		if (cgroup_lock_live_group(css->cgroup)) {
-+			spin_lock_irq(&freezer->lock);
-+			update_freezer_state(css->cgroup, freezer);
-+			spin_unlock_irq(&freezer->lock);
-+			cgroup_unlock();
-+		}
-+	}
-+
-+	spin_lock_irq(&freezer->lock);
-+	state = freezer->state;
-+	if ((state == CGROUP_FROZEN && next_state == CGROUP_CHECKPOINTING) ||
-+	    (state == CGROUP_CHECKPOINTING && next_state == CGROUP_FROZEN))
-+		freezer->state = next_state;
-+	spin_unlock_irq(&freezer->lock);
-+	css_put(css);
-+	return state;
-+}
-+
-+int cgroup_freezer_begin_checkpoint(struct task_struct *task)
-+{
-+	if (freezer_checkpointing(task, CGROUP_CHECKPOINTING) != CGROUP_FROZEN)
-+		return -EBUSY;
 +	return 0;
 +}
 +
-+void cgroup_freezer_end_checkpoint(struct task_struct *task)
+ /**
+  * smack_cred_alloc_blank - "allocate" blank task-level security credentials
+  * @new: the new credentials
+@@ -1766,6 +1810,26 @@ static int smack_msg_msg_alloc_security(struct msg_msg *msg)
+ 	return 0;
+ }
+ 
++static inline char *smack_msg_msg_checkpoint(void *security)
 +{
-+	/*
-+	 * If we weren't in CHECKPOINTING state then userspace could have
-+	 * unfrozen a task and given us an inconsistent checkpoint image
-+	 */
-+	WARN_ON(freezer_checkpointing(task, CGROUP_FROZEN) != CGROUP_CHECKPOINTING);
++	return kstrdup((char *)security, GFP_KERNEL);
 +}
-+#endif /* CONFIG_CHECKPOINT */
++
++static inline int smack_msg_msg_restore(struct msg_msg *msg, char *ctx)
++{
++	char *newsmack = smk_import(ctx, 0);
++
++	if (newsmack == NULL)
++		return -EINVAL;
++	if (newsmack == msg->security)
++		return 0;
++	if (!capable(CAP_MAC_ADMIN))
++		return -EPERM;
++	msg->security = newsmack;
++
++	return 0;
++}
++
+ /**
+  * smack_msg_msg_free_security - Clear the security blob for msg_msg
+  * @msg: the object
+@@ -2199,6 +2263,26 @@ static void smack_ipc_getsecid(struct kern_ipc_perm *ipp, u32 *secid)
+ 	*secid = smack_to_secid(smack);
+ }
+ 
++static inline char *smack_ipc_checkpoint(void *security)
++{
++	return kstrdup((char *)security, GFP_KERNEL);
++}
++
++static inline int smack_ipc_restore(struct kern_ipc_perm *ipcp, char *ctx)
++{
++	char *newsmack = smk_import(ctx, 0);
++
++	if (newsmack == NULL)
++		return -EINVAL;
++	if (newsmack == ipcp->security)
++		return 0;
++	if (!capable(CAP_MAC_ADMIN))
++		return -EPERM;
++	ipcp->security = newsmack;
++
++	return 0;
++}
++
+ /**
+  * smack_d_instantiate - Make sure the blob is correct on an inode
+  * @opt_dentry: unused
+@@ -3074,6 +3158,51 @@ static int smack_inode_getsecctx(struct inode *inode, void **ctx, u32 *ctxlen)
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_CHECKPOINT
++
++static int smack_may_restart(struct ckpt_ctx *ctx)
++{
++	struct ckpt_hdr *chp;
++	char *saved_version;
++	int ret = 0;
++
++	chp = ckpt_read_buf_type(ctx, CKPT_LSM_INFO_LEN, CKPT_HDR_LSM_INFO);
++	if (IS_ERR(chp))
++		return PTR_ERR(chp);
++
++	/*
++	 * After the checkpoint header comes the null terminated
++	 * Smack "policy" version. This will usually be the
++	 * floor label "_".
++	 */
++	saved_version = (char *)(chp + 1);
++
++	/*
++	 * Of course, it is possible that a "policy" version mismatch
++	 * is not considered threatening.
++	 */
++	if (!(ctx->uflags & RESTART_KEEP_LSM))
++		goto skip;
++
++	if (strcmp(saved_version, smack_version) != 0) {
++		ckpt_debug("Smack version at checkpoint was"
++			   "\"%s\", now is \"%s\".\n",
++				saved_version, smack_version);
++		ret = -EINVAL;
++	}
++skip:
++	ckpt_hdr_put(ctx, chp);
++	return ret;
++}
++
++static int smack_checkpoint_header(struct ckpt_ctx *ctx)
++{
++	return ckpt_write_obj_type(ctx, smack_version,
++					strlen(smack_version) + 1,
++					CKPT_HDR_LSM_INFO);
++}
++#endif
++
+ struct security_operations smack_ops = {
+ 	.name =				"smack",
+ 
+@@ -3109,6 +3238,8 @@ struct security_operations smack_ops = {
+ 	.inode_getsecid =		smack_inode_getsecid,
+ 
+ 	.file_permission = 		smack_file_permission,
++	.file_checkpoint =		smack_file_checkpoint,
++	.file_restore =			smack_file_restore,
+ 	.file_alloc_security = 		smack_file_alloc_security,
+ 	.file_free_security = 		smack_file_free_security,
+ 	.file_ioctl = 			smack_file_ioctl,
+@@ -3119,6 +3250,10 @@ struct security_operations smack_ops = {
+ 	.file_receive = 		smack_file_receive,
+ 
+ 	.cred_alloc_blank =		smack_cred_alloc_blank,
++
++	.cred_checkpoint =		smack_cred_checkpoint,
++	.cred_restore =			smack_cred_restore,
++
+ 	.cred_free =			smack_cred_free,
+ 	.cred_prepare =			smack_cred_prepare,
+ 	.cred_commit =			smack_cred_commit,
+@@ -3141,8 +3276,12 @@ struct security_operations smack_ops = {
+ 
+ 	.ipc_permission = 		smack_ipc_permission,
+ 	.ipc_getsecid =			smack_ipc_getsecid,
++	.ipc_checkpoint =		smack_ipc_checkpoint,
++	.ipc_restore =			smack_ipc_restore,
+ 
+ 	.msg_msg_alloc_security = 	smack_msg_msg_alloc_security,
++	.msg_msg_checkpoint =		smack_msg_msg_checkpoint,
++	.msg_msg_restore =		smack_msg_msg_restore,
+ 	.msg_msg_free_security = 	smack_msg_msg_free_security,
+ 
+ 	.msg_queue_alloc_security = 	smack_msg_queue_alloc_security,
+@@ -3205,6 +3344,11 @@ struct security_operations smack_ops = {
+ 	.inode_notifysecctx =		smack_inode_notifysecctx,
+ 	.inode_setsecctx =		smack_inode_setsecctx,
+ 	.inode_getsecctx =		smack_inode_getsecctx,
++
++#ifdef CONFIG_CHECKPOINT
++	.may_restart =			smack_may_restart,
++	.checkpoint_header =		smack_checkpoint_header,
++#endif
+ };
+ 
+ 
+diff --git a/security/smack/smackfs.c b/security/smack/smackfs.c
+index a2b72d7..2a551b2 100644
+--- a/security/smack/smackfs.c
++++ b/security/smack/smackfs.c
+@@ -43,6 +43,7 @@ enum smk_inos {
+ 	SMK_NETLBLADDR	= 8,	/* single label hosts */
+ 	SMK_ONLYCAP	= 9,	/* the only "capable" label */
+ 	SMK_LOGGING	= 10,	/* logging */
++	SMK_VERSION	= 11,	/* logging */
+ };
+ 
+ /*
+@@ -52,6 +53,7 @@ static DEFINE_MUTEX(smack_list_lock);
+ static DEFINE_MUTEX(smack_cipso_lock);
+ static DEFINE_MUTEX(smack_ambient_lock);
+ static DEFINE_MUTEX(smk_netlbladdr_lock);
++static DEFINE_MUTEX(smack_version_lock);
+ 
+ /*
+  * This is the "ambient" label for network traffic.
+@@ -61,6 +63,16 @@ static DEFINE_MUTEX(smk_netlbladdr_lock);
+ char *smack_net_ambient = smack_known_floor.smk_known;
+ 
+ /*
++ * This is the policy version. In the interest of simplicity the
++ * policy version is a string that meets all of the requirements
++ * of a Smack label. This is enforced by the expedient of
++ * importing it like a label. The policy version is thus always
++ * also a valid label on the system. This may prove useful under
++ * some as yet undiscovered circumstance.
++ */
++char *smack_version = smack_known_floor.smk_known;
++
++/*
+  * This is the level in a CIPSO header that indicates a
+  * smack label is contained directly in the category set.
+  * It can be reset via smackfs/direct
+@@ -1256,6 +1268,75 @@ static const struct file_operations smk_logging_ops = {
+ 	.read		= smk_read_logging,
+ 	.write		= smk_write_logging,
+ };
++
++#define SMK_VERSIONLEN 12
++/**
++ * smk_read_version - read() for /smack/version
++ * @filp: file pointer, not actually used
++ * @buf: where to put the result
++ * @cn: maximum to send along
++ * @ppos: where to start
++ *
++ * Returns number of bytes read or error code, as appropriate
++ */
++static ssize_t smk_read_version(struct file *filp, char __user *buf,
++				size_t count, loff_t *ppos)
++{
++	int rc;
++
++	if (*ppos != 0)
++		return 0;
++
++	mutex_lock(&smack_version_lock);
++
++	rc = simple_read_from_buffer(buf, count, ppos, smack_version,
++					strlen(smack_version) + 1);
++
++	mutex_unlock(&smack_version_lock);
++
++	return rc;
++}
++
++/**
++ * smk_write_version - write() for /smack/version
++ * @file: file pointer, not actually used
++ * @buf: where to get the data from
++ * @count: bytes sent
++ * @ppos: where to start
++ *
++ * Returns number of bytes written or error code, as appropriate
++ */
++static ssize_t smk_write_version(struct file *file, const char __user *buf,
++				 size_t count, loff_t *ppos)
++{
++	char *smack;
++	char in[SMK_LABELLEN];
++
++	if (!capable(CAP_MAC_ADMIN))
++		return -EPERM;
++
++	if (count >= SMK_LABELLEN)
++		return -EINVAL;
++
++	if (copy_from_user(in, buf, count) != 0)
++		return -EFAULT;
++
++	smack = smk_import(in, count);
++	if (smack == NULL)
++		return -EINVAL;
++
++	mutex_lock(&smack_version_lock);
++	smack_version = smack;
++	mutex_unlock(&smack_version_lock);
++
++	return count;
++}
++
++static const struct file_operations smk_version_ops = {
++	.read		= smk_read_version,
++	.write		= smk_write_version,
++};
++
+ /**
+  * smk_fill_super - fill the /smackfs superblock
+  * @sb: the empty superblock
+@@ -1288,6 +1369,8 @@ static int smk_fill_super(struct super_block *sb, void *data, int silent)
+ 			{"onlycap", &smk_onlycap_ops, S_IRUGO|S_IWUSR},
+ 		[SMK_LOGGING]	=
+ 			{"logging", &smk_logging_ops, S_IRUGO|S_IWUSR},
++		[SMK_VERSION]	=
++			{"version", &smk_version_ops, S_IRUGO|S_IWUSR},
+ 		/* last one */ {""}
+ 	};
+ 
 -- 
 1.6.3.3
