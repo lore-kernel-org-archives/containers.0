@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH v21 070/100] c/r: correctly restore pgid
-Date: Sat,  1 May 2010 10:15:52 -0400
-Message-ID: <1272723382-19470-71-git-send-email-orenl__27701.4272789986$1272727349$gmane$org@cs.columbia.edu>
+Subject: [PATCH v21 057/100] c/r: support semaphore sysv-ipc
+Date: Sat,  1 May 2010 10:15:39 -0400
+Message-ID: <1272723382-19470-58-git-send-email-orenl__47651.8328105614$1272727474$gmane$org@cs.columbia.edu>
 References: <1272723382-19470-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,394 +21,426 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-The main challenge with restoring the pgid of tasks is that the
-original "owner" (the process with that pid) might have exited
-already. I call these "ghost" pgids. 'mktree' does create these
-processes, but they then exit without participating in the restart.
+Checkpoint of sysvipc semaphores is performed by iterating through all
+sem objects and dumping the contents of each one. The semaphore array
+of each sem is dumped with that object.
 
-To solve this, this patch introduces a RESTART_GHOST flag, used for
-"ghost" owners that are created only to pass their pgid to other
-tasks. ('mktree' now makes them call restart(2) instead of exiting).
+The semaphore array (sem->sem_base) holds an array of 'struct sem',
+which is a {int, int}. Because this translates into the same format
+on 32- and 64-bit architectures, the checkpoint format is simply the
+dump of this array as is.
 
-When a "ghost" task calls restart(2), it will be placed on a wait
-queue until the restart completes and then exit. This guarantees that
-the pgid that it owns remains available for all (regular) restarting
-tasks for when they need it.
+TODO: this patch does not handle semaphore-undo -- this data should be
+saved per-task while iterating through the tasks.
 
-Regular tasks perform the restart as before, except that they also
-now restore their old pgrp, which is guaranteed to exist.
-
-Changelog [v19-rc1]:
-  - Simplify logic of tracking restarting tasks
-  - Debug final process-tree state on restart
-  - [Matt Helsley] Add cpp definitions for enums
-  - Self-restart to tolerate missing pgid
-Changelog [v3]:
-  - Fix leak of ckpt_ctx when restoring "ghost" tasks
-Changelog [v2]:
-  - Call change_pid() only if new pgrp differs from current one
-Changelog [v1]:
-  - Verify that pgid owner is a thread-group-leader.
-  - Handle the case of pgid/sid == 0 using root's parent pid-ns
+Changelog[v21]:
+  - Do not include checkpoint_hdr.h explicitly
+Changelog[v20]:
+  - Fix "scheduling in atomic" while restoring ipc sem
+Changelog[v19-rc3]:
+  - Don't free sma if it's an error on restore
+Changelog[v18]:
+  - Handle kmalloc failure in restore_sem_array()
+Changelog[v17]:
+  - Restore objects in the right namespace
+  - Forward declare struct msg_msg (instead of include linux/msg.h)
+  - Fix typo in comment
+  - Don't unlock ipc before calling freeary in error path
 
 Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/checkpoint.h       |   11 +++-
- include/linux/checkpoint_hdr.h   |    3 +
- include/linux/checkpoint_types.h |    7 ++-
- kernel/checkpoint/process.c      |  102 ++++++++++++++++++++++++++++++++++++++
- kernel/checkpoint/restart.c      |   59 +++++++++++++++++++---
- kernel/checkpoint/sys.c          |    3 +-
- 6 files changed, 172 insertions(+), 13 deletions(-)
+ include/linux/checkpoint_hdr.h |    8 ++
+ ipc/Makefile                   |    2 +-
+ ipc/checkpoint.c               |    4 -
+ ipc/checkpoint_sem.c           |  240 ++++++++++++++++++++++++++++++++++++++++
+ ipc/sem.c                      |   11 +-
+ ipc/util.h                     |    8 ++
+ 6 files changed, 261 insertions(+), 12 deletions(-)
+ create mode 100644 ipc/checkpoint_sem.c
 
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 92a0df0..549f133 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -18,6 +18,7 @@
- /* restart user flags */
- #define RESTART_TASKSELF	0x1
- #define RESTART_FROZEN		0x2
-+#define RESTART_GHOST		0x4
- 
- /* misc user visible */
- #define CHECKPOINT_FD_NONE	-1
-@@ -52,7 +53,10 @@ extern long do_sys_restart(pid_t pid, int fd,
- 
- /* ckpt_ctx: uflags */
- #define CHECKPOINT_USER_FLAGS		CHECKPOINT_SUBTREE
--#define RESTART_USER_FLAGS		(RESTART_TASKSELF | RESTART_FROZEN)
-+#define RESTART_USER_FLAGS  \
-+	(RESTART_TASKSELF | \
-+	 RESTART_FROZEN | \
-+	 RESTART_GHOST)
- 
- extern int walk_task_subtree(struct task_struct *task,
- 			     int (*func)(struct task_struct *, void *),
-@@ -90,6 +94,9 @@ extern char *ckpt_fill_fname(struct path *path, struct path *root,
- extern int checkpoint_dump_page(struct ckpt_ctx *ctx, struct page *page);
- extern int restore_read_page(struct ckpt_ctx *ctx, struct page *page);
- 
-+/* pids */
-+extern pid_t ckpt_pid_nr(struct ckpt_ctx *ctx, struct pid *pid);
-+
- /* ckpt kflags */
- #define ckpt_set_ctx_kflag(__ctx, __kflag)  \
- 	set_bit(__kflag##_BIT, &(__ctx)->kflags)
-@@ -147,7 +154,7 @@ extern struct ckpt_ctx *ckpt_ctx_get(struct ckpt_ctx *ctx);
- extern void ckpt_ctx_put(struct ckpt_ctx *ctx);
- 
- extern long do_checkpoint(struct ckpt_ctx *ctx, pid_t pid);
--extern long do_restart(struct ckpt_ctx *ctx, pid_t pid);
-+extern long do_restart(struct ckpt_ctx *ctx, pid_t pid, unsigned long flags);
- 
- /* task */
- extern int ckpt_activate_next(struct ckpt_ctx *ctx);
 diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 01f7493..e706636 100644
+index 0349c9a..3ae2d7d 100644
 --- a/include/linux/checkpoint_hdr.h
 +++ b/include/linux/checkpoint_hdr.h
-@@ -273,6 +273,9 @@ struct ckpt_pids {
- 	__s32 vsid;
+@@ -499,6 +499,14 @@ struct ckpt_hdr_ipc_msg_msg {
+ 	__u32 m_ts;
  } __attribute__((aligned(8)));
  
-+/* pids */
-+#define CKPT_PID_NULL  -1
++struct ckpt_hdr_ipc_sem {
++	struct ckpt_hdr h;
++	struct ckpt_hdr_ipc_perms perms;
++	__u64 sem_otime;
++	__u64 sem_ctime;
++	__u32 sem_nsems;
++} __attribute__((aligned(8)));
 +
- /* task data */
- struct ckpt_hdr_task {
- 	struct ckpt_hdr h;
-diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
-index fe20842..d69b795 100644
---- a/include/linux/checkpoint_types.h
-+++ b/include/linux/checkpoint_types.h
-@@ -73,10 +73,11 @@ struct ckpt_ctx {
- 	/* [multi-process restart] */
- 	struct ckpt_pids *pids_arr;	/* array of all pids [restart] */
- 	int nr_pids;			/* size of pids array */
--	atomic_t nr_total;		/* total tasks count */
-+	atomic_t nr_total;		/* total tasks count (with ghosts) */
- 	int active_pid;			/* (next) position in pids array */
--	struct completion complete;	/* container root and other tasks on */
--	wait_queue_head_t waitq;	/* start, end, and restart ordering */
-+	struct completion complete;	/* completion for container root */
-+	wait_queue_head_t waitq;	/* waitqueue for restarting tasks */
-+	wait_queue_head_t ghostq;	/* waitqueue for ghost tasks */
- 	struct cred *realcred, *ecred;	/* tmp storage for cred at restart */
  
- 	struct ckpt_stats stats;	/* statistics */
-diff --git a/kernel/checkpoint/process.c b/kernel/checkpoint/process.c
-index 8cb88ae..fa08616 100644
---- a/kernel/checkpoint/process.c
-+++ b/kernel/checkpoint/process.c
-@@ -20,9 +20,61 @@
- #include <linux/utsname.h>
- #include <linux/syscalls.h>
- #include <linux/user_namespace.h>
-+#include <linux/syscalls.h>
-+#include <linux/security.h> /* security_task_setpgid()   */
- #include <linux/checkpoint.h>
- 
- 
-+pid_t ckpt_pid_nr(struct ckpt_ctx *ctx, struct pid *pid)
-+{
-+	return pid ? pid_nr_ns(pid, ctx->root_nsproxy->pid_ns) : CKPT_PID_NULL;
-+}
-+
-+/* must be called with tasklist_lock or rcu_read_lock() held */
-+struct pid *_ckpt_find_pgrp(struct ckpt_ctx *ctx, pid_t pgid)
-+{
-+	struct task_struct *p;
-+	struct pid *pgrp;
-+
-+	if (pgid == 0) {
-+		/*
-+		 * At checkpoint the pgid owner lived in an ancestor
-+		 * pid-ns. The best we can do (sanely and safely) is
-+		 * to examine the parent of this restart's root: if in
-+		 * a distinct pid-ns, use its pgrp; otherwise fail.
-+		 */
-+		p = ctx->root_task->real_parent;
-+		if (p->nsproxy->pid_ns == current->nsproxy->pid_ns)
-+			return NULL;
-+		pgrp = task_pgrp(p);
-+	} else {
-+		/*
-+		 * Find the owner process of this pgid (it must exist
-+		 * if pgrp exists). It must be a thread group leader.
-+		 */
-+		pgrp = find_vpid(pgid);
-+		p = pid_task(pgrp, PIDTYPE_PID);
-+		if (!p || !thread_group_leader(p))
-+			return NULL;
-+		/*
-+		 * The pgrp must "belong" to our restart tree (compare
-+		 * p->checkpoint_ctx to ours). This prevents malicious
-+		 * input from (guessing and) using unrelated pgrps. If
-+		 * the owner is dead, then it doesn't have a context,
-+		 * so instead compare against its (real) parent's.
-+		 */
-+		if (p->exit_state == EXIT_ZOMBIE)
-+			p = p->real_parent;
-+		if (p->checkpoint_ctx != ctx)
-+			return NULL;
-+	}
-+
-+	if (task_session(current) != task_session(p))
-+		return NULL;
-+
-+	return pgrp;
-+}
-+
- #ifdef CONFIG_FUTEX
- static void save_task_robust_futex_list(struct ckpt_hdr_task *h,
- 					struct task_struct *t)
-@@ -737,6 +789,53 @@ int restore_restart_block(struct ckpt_ctx *ctx)
+ #define CKPT_TST_OVERFLOW_16(a, b) \
+ 	((sizeof(a) > sizeof(b)) && ((a) > SHORT_MAX))
+diff --git a/ipc/Makefile b/ipc/Makefile
+index ed46f37..55e38d4 100644
+--- a/ipc/Makefile
++++ b/ipc/Makefile
+@@ -10,4 +10,4 @@ obj-$(CONFIG_POSIX_MQUEUE) += mqueue.o msgutil.o $(obj_mq-y)
+ obj-$(CONFIG_IPC_NS) += namespace.o
+ obj-$(CONFIG_POSIX_MQUEUE_SYSCTL) += mq_sysctl.o
+ obj-$(CONFIG_SYSVIPC_CHECKPOINT) += checkpoint.o \
+-		checkpoint_shm.o checkpoint_msg.o
++		checkpoint_shm.o checkpoint_msg.o checkpoint_sem.o
+diff --git a/ipc/checkpoint.c b/ipc/checkpoint.c
+index dec8d6e..fa40e01 100644
+--- a/ipc/checkpoint.c
++++ b/ipc/checkpoint.c
+@@ -133,12 +133,10 @@ static int checkpoint_ipc_ns(struct ckpt_ctx *ctx, void *ptr)
+ 		return ret;
+ 	ret = checkpoint_ipc_any(ctx, ipc_ns, IPC_MSG_IDS,
+ 				 CKPT_HDR_IPC_MSG, checkpoint_ipc_msg);
+-#if 0 /* NEXT FEW PATCHES */
+ 	if (ret < 0)
+ 		return ret;
+ 	ret = checkpoint_ipc_any(ctx, ipc_ns, IPC_SEM_IDS,
+ 				 CKPT_HDR_IPC_SEM, checkpoint_ipc_sem);
+-#endif
  	return ret;
  }
  
-+static int restore_task_pgid(struct ckpt_ctx *ctx)
+@@ -326,7 +324,6 @@ static void *restore_ipc_ns(struct ckpt_ctx *ctx)
+ 
+ 	ret = restore_ipc_any(ctx, ipc_ns, IPC_SHM_IDS,
+ 			      CKPT_HDR_IPC_SHM, restore_ipc_shm);
+-#if 0 /* NEXT FEW PATCHES */
+ 	if (ret < 0)
+ 		goto out;
+ 	ret = restore_ipc_any(ctx, ipc_ns, IPC_MSG_IDS,
+@@ -335,7 +332,6 @@ static void *restore_ipc_ns(struct ckpt_ctx *ctx)
+ 		goto out;
+ 	ret = restore_ipc_any(ctx, ipc_ns, IPC_SEM_IDS,
+ 			      CKPT_HDR_IPC_SEM, restore_ipc_sem);
+-#endif
+ 	if (ret < 0)
+ 		goto out;
+ 
+diff --git a/ipc/checkpoint_sem.c b/ipc/checkpoint_sem.c
+new file mode 100644
+index 0000000..cfd6f96
+--- /dev/null
++++ b/ipc/checkpoint_sem.c
+@@ -0,0 +1,240 @@
++/*
++ *  Checkpoint/restart - dump state of sysvipc sem
++ *
++ *  Copyright (C) 2009 Oren Laadan
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ */
++
++/* default debug level for output */
++#define CKPT_DFLAG  CKPT_DIPC
++
++#include <linux/mm.h>
++#include <linux/sem.h>
++#include <linux/rwsem.h>
++#include <linux/sched.h>
++#include <linux/slab.h>
++#include <linux/syscalls.h>
++#include <linux/nsproxy.h>
++#include <linux/ipc_namespace.h>
++
++struct msg_msg;
++#include "util.h"
++
++#include <linux/checkpoint.h>
++
++/************************************************************************
++ * ipc checkpoint
++ */
++
++/* called with the msgids->rw_mutex is read-held */
++static int fill_ipc_sem_hdr(struct ckpt_ctx *ctx,
++			       struct ckpt_hdr_ipc_sem *h,
++			       struct sem_array *sem)
 +{
-+	struct task_struct *task = current;
-+	struct pid *pgrp;
-+	pid_t pgid;
++	int ret = 0;
++
++	ret = checkpoint_fill_ipc_perms(&h->perms, &sem->sem_perm);
++	if (ret < 0)
++		return ret;
++
++	ipc_lock_by_ptr(&sem->sem_perm);
++	h->sem_otime = sem->sem_otime;
++	h->sem_ctime = sem->sem_ctime;
++	h->sem_nsems = sem->sem_nsems;
++	ipc_unlock(&sem->sem_perm);
++
++	ckpt_debug("sem: nsems %u\n", h->sem_nsems);
++
++	return 0;
++}
++
++/**
++ * ckpt_write_sem_array - dump the state of a semaphore array
++ * @ctx: checkpoint context
++ * @sem: semphore array
++ *
++ * The state of a sempahore is an array of 'struct sem'. This structure
++ * is {int, int}, which translates to the same format {32 bits, 32 bits}
++ * on both 32- and 64-bit architectures. So we simply dump the array.
++ *
++ * The sem-undo information is not saved per ipc_ns, but rather per task.
++ */
++static int checkpoint_sem_array(struct ckpt_ctx *ctx, struct sem_array *sem)
++{
++	/* this is a "best-effort" test, so lock not needed */
++	if (!list_empty(&sem->sem_pending))
++		return -EBUSY;
++
++	/* our caller holds the mutex, so this is safe */
++	return ckpt_write_buffer(ctx, sem->sem_base,
++			       sem->sem_nsems * sizeof(*sem->sem_base));
++}
++
++/* called with the msgids->rw_mutex is read-held */
++int checkpoint_ipc_sem(int id, void *p, void *data)
++{
++	struct ckpt_hdr_ipc_sem *h;
++	struct ckpt_ctx *ctx = (struct ckpt_ctx *) data;
++	struct kern_ipc_perm *perm = (struct kern_ipc_perm *) p;
++	struct sem_array *sem;
 +	int ret;
 +
-+	/*
-+	 * We enforce the following restrictions on restoring pgrp:
-+	 *  1) Only thread group leaders restore pgrp
-+	 *  2) Session leader cannot change own pgrp
-+	 *  3) Owner of pgrp must belong to same restart tree
-+	 *  4) Must have same session as other tasks in same pgrp
-+	 *  5) Change must pass setpgid security callback
-+	 *
-+	 * TODO - check if we need additional restrictions ?
-+	 */
++	sem = container_of(perm, struct sem_array, sem_perm);
 +
-+	if (!thread_group_leader(task))  /* (1) */
-+		return 0;
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_IPC_SEM);
++	if (!h)
++		return -ENOMEM;
 +
-+	pgid = ctx->pids_arr[ctx->active_pid].vpgid;
++	ret = fill_ipc_sem_hdr(ctx, h, sem);
++	if (ret < 0)
++		goto out;
 +
-+	if (pgid == task_pgrp_vnr(task))  /* nothing to do */
-+		return 0;
++	ret = ckpt_write_obj(ctx, &h->h);
++	if (ret < 0)
++		goto out;
 +
-+	if (task->signal->leader)  /* (2) */
-+		return -EINVAL;
-+
-+	ret = -EINVAL;
-+
-+	write_lock_irq(&tasklist_lock);
-+	pgrp = _ckpt_find_pgrp(ctx, pgid);  /* (3) and (4) */
-+	if (pgrp && task_pgrp(task) != pgrp) {
-+		ret = security_task_setpgid(task, pgid);  /* (5) */
-+		if (!ret)
-+			change_pid(task, PIDTYPE_PGID, pgrp);
-+	}
-+	write_unlock_irq(&tasklist_lock);
-+
-+	/* self-restart: be tolerant if old pgid isn't found */
-+	if (ctx->uflags & RESTART_TASKSELF)
-+		ret = 0;
-+
++	if (h->sem_nsems)
++		ret = checkpoint_sem_array(ctx, sem);
++ out:
++	ckpt_hdr_put(ctx, h);
 +	return ret;
 +}
 +
- /* prepare the task for restore */
- int pre_restore_task(void)
- {
-@@ -782,6 +881,9 @@ int restore_task(struct ckpt_ctx *ctx)
- 	if (ret)
- 		goto out;
- 
-+	ret = restore_task_pgid(ctx);
-+	if (ret < 0)
-+		goto out;
- 	ret = restore_thread(ctx);
- 	ckpt_debug("thread %d\n", ret);
- 	if (ret < 0)
-diff --git a/kernel/checkpoint/restart.c b/kernel/checkpoint/restart.c
-index 3b2593d..e7a5b5b 100644
---- a/kernel/checkpoint/restart.c
-+++ b/kernel/checkpoint/restart.c
-@@ -737,6 +737,7 @@ void restore_notify_error(struct ckpt_ctx *ctx)
- {
- 	complete(&ctx->complete);
- 	wake_up_all(&ctx->waitq);
-+	wake_up_all(&ctx->ghostq);
- }
- 
- static inline struct ckpt_ctx *get_task_ctx(struct task_struct *task)
-@@ -812,6 +813,9 @@ static int restore_activate_next(struct ckpt_ctx *ctx)
- 			ckpt_err(ctx, -ESRCH, "task %d not found\n", pid);
- 			return -ESRCH;
- 		}
-+	} else {
-+		/* wake up ghosts tasks so that they can terminate */
-+		wake_up_all(&ctx->ghostq);
- 	}
- 
- 	return 0;
-@@ -869,6 +873,38 @@ static struct ckpt_ctx *wait_checkpoint_ctx(void)
- 	return ctx;
- }
- 
-+static int do_ghost_task(void)
++/************************************************************************
++ * ipc restart
++ */
++
++/* called with the msgids->rw_mutex is write-held */
++static int load_ipc_sem_hdr(struct ckpt_ctx *ctx,
++			       struct ckpt_hdr_ipc_sem *h,
++			       struct sem_array *sem)
 +{
-+	struct ckpt_ctx *ctx;
-+	int ret;
++	int ret = 0;
 +
-+	ctx = wait_checkpoint_ctx();
-+	if (IS_ERR(ctx))
-+		return PTR_ERR(ctx);
-+
-+	ret = restore_debug_task(ctx, RESTART_DBG_GHOST);
++	ret = restore_load_ipc_perms(&h->perms, &sem->sem_perm);
 +	if (ret < 0)
-+		goto out;
++		return ret;
 +
-+	current->flags |= PF_RESTARTING;
-+	restore_debug_running(ctx);
++	ckpt_debug("sem: nsems %u\n", h->sem_nsems);
 +
-+	ret = wait_event_interruptible(ctx->ghostq,
-+				       all_tasks_activated(ctx) ||
-+				       ckpt_test_error(ctx));
-+ out:
-+	restore_debug_error(ctx, ret);
-+	if (ret < 0)
-+		ckpt_err(ctx, ret, "ghost restart failed\n");
++	sem->sem_otime = h->sem_otime;
++	sem->sem_ctime = h->sem_ctime;
++	sem->sem_nsems = h->sem_nsems;
 +
-+	current->exit_signal = -1;
-+	restore_debug_exit(ctx);
-+	ckpt_ctx_put(ctx);
-+	do_exit(0);
-+
-+	/* NOT REACHED */
++	return 0;
 +}
 +
- /*
-  * Ensure that all members of a thread group are in sys_restart before
-  * restoring any of them. Otherwise, restore may modify shared state
-@@ -948,10 +984,15 @@ static int do_restore_task(void)
- 		goto out;
- 	}
- 
-+	ret = restore_activate_next(ctx);
++/**
++ * ckpt_read_sem_array - read the state of a semaphore array
++ * @ctx: checkpoint context
++ * @sem: semphore array
++ *
++ * Expect the data in an array of 'struct sem': {32 bit, 32 bit}.
++ * See comment in ckpt_write_sem_array().
++ *
++ * The sem-undo information is not restored per ipc_ns, but rather per task.
++ */
++static struct sem *restore_sem_array(struct ckpt_ctx *ctx, int nsems)
++{
++	struct sem *sma;
++	int i, ret;
++
++	sma = kmalloc(nsems * sizeof(*sma), GFP_KERNEL);
++	if (!sma)
++		return ERR_PTR(-ENOMEM);
++	ret = _ckpt_read_buffer(ctx, sma, nsems * sizeof(*sma));
 +	if (ret < 0)
 +		goto out;
 +
- 	/*
- 	 * zombie: we're done here; do_exit() will notice the @ctx on
--	 * our current->checkpoint_ctx (and our PF_RESTARTING) - it
--	 * will call restore_activate_next() and release the @ctx.
-+	 * our current->checkpoint_ctx (and our PF_RESTARTING), will
-+	 * call restore_task_done() and release the @ctx. This ensures
-+	 * that we only report done after we really become zombie.
- 	 */
- 	if (zombie) {
- 		restore_debug_exit(ctx);
-@@ -1033,8 +1074,11 @@ static int prepare_descendants(struct ckpt_ctx *ctx, struct task_struct *root)
- 	if (nr_pids < 0)
- 		return nr_pids;
- 
--	/* fail unless number of processes matches */
--	if (nr_pids != ctx->nr_pids)
++	/* validate sem array contents */
++	for (i = 0; i < nsems; i++) {
++		if (sma[i].semval < 0 || sma[i].sempid < 0) {
++			ret = -EINVAL;
++			break;
++		}
++	}
++ out:
++	if (ret < 0) {
++		kfree(sma);
++		sma = ERR_PTR(ret);
++	}
++	return sma;
++}
++
++int restore_ipc_sem(struct ckpt_ctx *ctx, struct ipc_namespace *ns)
++{
++	struct ckpt_hdr_ipc_sem *h;
++	struct kern_ipc_perm *ipc;
++	struct sem_array *sem;
++	struct sem *sma = NULL;
++	struct ipc_ids *sem_ids = &ns->ids[IPC_SEM_IDS];
++	int semflag, ret;
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_IPC_SEM);
++	if (IS_ERR(h))
++		return PTR_ERR(h);
++
++	ret = -EINVAL;
++	if (h->perms.id < 0)
++		goto out;
++	if (h->sem_nsems < 0)
++		goto out;
++
++	/* read sempahore array state */
++	sma = restore_sem_array(ctx, h->sem_nsems);
++	if (IS_ERR(sma)) {
++		ret = PTR_ERR(sma);
++		sma = NULL;
++		goto out;
++	}
++
++	/* restore the message queue now */
++	semflag = h->perms.mode | IPC_CREAT | IPC_EXCL;
++	ckpt_debug("sem: do_semget key %d flag %#x id %d\n",
++		 h->perms.key, semflag, h->perms.id);
++	ret = do_semget(ns, h->perms.key, h->sem_nsems, semflag, h->perms.id);
++	ckpt_debug("sem: do_semget ret %d\n", ret);
++	if (ret < 0)
++		goto out;
++
++	down_write(&sem_ids->rw_mutex);
++
 +	/*
-+	 * Actual tasks count may exceed ctx->nr_pids due of 'dead'
-+	 * tasks used as place-holders for PGIDs, but not fall short.
++	 * We are the sole owners/users of this brand new ipc-ns, so:
++	 *
++	 * 1) The semid could not have been deleted between its creation
++	 *   and taking the rw_mutex above.
++	 * 2) No unauthorized task will attempt to gain access to it,
++	 *   so it is safe to do away with ipc_lock(). This is useful
++	 *   because we can call functions that sleep.
++	 * 3) Likewise, we only restore the security bits further below,
++	 *   so it is safe to ignore this (theoretical only!) race.
++	 *
++	 * If/when we allow to restore the ipc state within the parent's
++	 * ipc-ns, we will need to re-examine this.
 +	 */
-+	if (nr_pids < ctx->nr_pids)
- 		return -ESRCH;
++	ipc = ipc_lock(sem_ids, h->perms.id);
++	BUG_ON(IS_ERR(ipc));
++
++	sem = container_of(ipc, struct sem_array, sem_perm);
++	memcpy(sem->sem_base, sma, sem->sem_nsems * sizeof(*sma));
++
++	/* this is safe because no unauthorized access is possible */
++	ipc_unlock(ipc);
++
++	ret = load_ipc_sem_hdr(ctx, h, sem);
++	if (ret < 0) {
++		ipc_lock_by_ptr(&sem->sem_perm);
++		ckpt_debug("sem: need to remove (%d)\n", ret);
++		freeary(ns, ipc);
++		ipc_unlock(ipc);
++	}
++	up_write(&sem_ids->rw_mutex);
++ out:
++	kfree(sma);
++	ckpt_hdr_put(ctx, h);
++	return ret;
++}
+diff --git a/ipc/sem.c b/ipc/sem.c
+index faed3a3..37da85e 100644
+--- a/ipc/sem.c
++++ b/ipc/sem.c
+@@ -93,7 +93,6 @@
+ #define sem_checkid(sma, semid)	ipc_checkid(&sma->sem_perm, semid)
  
- 	atomic_set(&ctx->nr_total, nr_pids);
-@@ -1280,12 +1324,14 @@ static long restore_retval(void)
- 	return syscall_get_return_value(current, regs);
+ static int newary(struct ipc_namespace *, struct ipc_params *, int);
+-static void freeary(struct ipc_namespace *, struct kern_ipc_perm *);
+ #ifdef CONFIG_PROC_FS
+ static int sysvipc_sem_proc_show(struct seq_file *s, void *it);
+ #endif
+@@ -317,14 +316,12 @@ static inline int sem_more_checks(struct kern_ipc_perm *ipcp,
+ 	return 0;
  }
  
--long do_restart(struct ckpt_ctx *ctx, pid_t pid)
-+long do_restart(struct ckpt_ctx *ctx, pid_t pid, unsigned long flags)
+-int do_semget(key_t key, int nsems, int semflg, int req_id)
++int do_semget(struct ipc_namespace *ns, key_t key, int nsems,
++	      int semflg, int req_id)
  {
- 	long ret;
+-	struct ipc_namespace *ns;
+ 	struct ipc_ops sem_ops;
+ 	struct ipc_params sem_params;
  
- 	if (ctx)
- 		ret = do_restore_coord(ctx, pid);
-+	else if (flags & RESTART_GHOST)
-+		ret = do_ghost_task();
- 	else
- 		ret = do_restore_task();
+-	ns = current->nsproxy->ipc_ns;
+-
+ 	if (nsems < 0 || nsems > ns->sc_semmsl)
+ 		return -EINVAL;
  
-@@ -1333,8 +1379,7 @@ void exit_checkpoint(struct task_struct *tsk)
- 	/* restarting zombies will activate next task in restart */
- 	if (tsk->flags & PF_RESTARTING) {
- 		BUG_ON(ctx->active_pid == -1);
--		if (restore_activate_next(ctx) < 0)
--			pr_warning("c/r: [%d] failed zombie exit\n", tsk->pid);
-+		restore_task_done(ctx);
- 	}
+@@ -341,7 +338,7 @@ int do_semget(key_t key, int nsems, int semflg, int req_id)
  
- 	ckpt_ctx_put(ctx);
-diff --git a/kernel/checkpoint/sys.c b/kernel/checkpoint/sys.c
-index 73d84bd..86dabfa 100644
---- a/kernel/checkpoint/sys.c
-+++ b/kernel/checkpoint/sys.c
-@@ -250,6 +250,7 @@ static struct ckpt_ctx *ckpt_ctx_alloc(int fd, unsigned long uflags,
- 	INIT_LIST_HEAD(&ctx->pgarr_list);
- 	INIT_LIST_HEAD(&ctx->pgarr_pool);
- 	init_waitqueue_head(&ctx->waitq);
-+	init_waitqueue_head(&ctx->ghostq);
- 	init_completion(&ctx->complete);
+ SYSCALL_DEFINE3(semget, key_t, key, int, nsems, int, semflg)
+ {
+-	return do_semget(key, nsems, semflg, -1);
++	return do_semget(current->nsproxy->ipc_ns, key, nsems, semflg, -1);
+ }
  
- 	init_completion(&ctx->errno_sync);
-@@ -658,7 +659,7 @@ long do_sys_restart(pid_t pid, int fd, unsigned long flags, int logfd)
- 	if (IS_ERR(ctx))
- 		return PTR_ERR(ctx);
+ /*
+@@ -574,7 +571,7 @@ static void free_un(struct rcu_head *head)
+  * as a writer and the spinlock for this semaphore set hold. sem_ids.rw_mutex
+  * remains locked on exit.
+  */
+-static void freeary(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
++void freeary(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
+ {
+ 	struct sem_undo *un, *tu;
+ 	struct sem_queue *q, *tq;
+diff --git a/ipc/util.h b/ipc/util.h
+index 8a223f0..ba080de 100644
+--- a/ipc/util.h
++++ b/ipc/util.h
+@@ -193,6 +193,11 @@ void do_shm_rmid(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp);
+ int do_msgget(struct ipc_namespace *ns, key_t key, int msgflg, int req_id);
+ void freeque(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp);
  
--	ret = do_restart(ctx, pid);
-+	ret = do_restart(ctx, pid, flags);
++int do_semget(struct ipc_namespace *ns, key_t key, int nsems, int semflg,
++	      int req_id);
++void freeary(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp);
++
++
+ #ifdef CONFIG_CHECKPOINT
+ extern int checkpoint_fill_ipc_perms(struct ckpt_hdr_ipc_perms *h,
+ 				     struct kern_ipc_perm *perm);
+@@ -205,6 +210,9 @@ extern int restore_ipc_shm(struct ckpt_ctx *ctx, struct ipc_namespace *ns);
  
- 	ckpt_ctx_put(ctx);
- 	return ret;
+ extern int checkpoint_ipc_msg(int id, void *p, void *data);
+ extern int restore_ipc_msg(struct ckpt_ctx *ctx, struct ipc_namespace *ns);
++
++extern int checkpoint_ipc_sem(int id, void *p, void *data);
++extern int restore_ipc_sem(struct ckpt_ctx *ctx, struct ipc_namespace *ns);
+ #endif
+ 
+ #endif
 -- 
 1.6.3.3
