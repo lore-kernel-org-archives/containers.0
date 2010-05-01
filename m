@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH v21 075/100] c/r: add support for connected INET sockets (v5)
-Date: Sat,  1 May 2010 10:15:57 -0400
-Message-ID: <1272723382-19470-76-git-send-email-orenl__1074.05321109599$1272729267$gmane$org@cs.columbia.edu>
+Subject: [PATCH v21 094/100] c/r: Basic support for network namespaces and
+	devices (v6)
+Date: Sat,  1 May 2010 10:16:16 -0400
+Message-ID: <1272723382-19470-95-git-send-email-orenl__10235.2885915481$1272729273$gmane$org@cs.columbia.edu>
 References: <1272723382-19470-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,795 +24,1265 @@ List-Id: containers.vger.kernel.org
 
 From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-This patch adds basic support for C/R of open INET sockets.  I think that
-all the important bits of the TCP and ICSK socket structures is saved,
-but I think there is still some additional IPv6 stuff that needs to be
-handled.
+When checkpointing a task tree with network namespaces, we hook into
+do_checkpoint_ns() along with the others.  Any devices in a given namespace
+are checkpointed (including their peer, in the case of veth) sequentially.
+Each network device stores a list of protocol addresses, as well as other
+information, such as hardware address.
 
-With this patch applied, the following script can be used to demonstrate
-the functionality:
+This patch supports veth pairs, as well as the loopback adapter.  The
+loopback support is there to make sure that any additional addresses and
+state (such as up/down) is copied to the loopback adapter that we are
+given in the new network namespace.
 
-  https://lists.linux-foundation.org/pipermail/containers/2009-October/021239.html
+On restart, we instantiate new network namespaces and veth pairs as
+necessary.  Any device we encounter that isn't in a network namespace
+that was checkpointed as part of a task is left in the namespace of the
+restarting process.  This will be the case for a veth half that exists
+in the init netns to provide network access to a container.
 
-It shows that this enables migration of a sendmail process with open
-connections from one machine to another without dropping.
+Still to do are:
 
-We probably need comments from the netdev people about the quality of
-sanity checking we do on the values in the ckpt_hdr_socket_inet
-structure on restart.
+  1. Routes
+  2. Netfilter rules
+  3. IPv6 addresses
+  4. Other virtual device types (e.g. bridges)
+  5. Multicast
+  6. Device config info (ipv4_devconf)
+  7. Additional ipv4 address attributes
 
-Note that this still doesn't address lingering sockets yet.
+Changelog[v21]:
+  - Do not include checkpoint_hdr.h explicitly
+ - Fix acquiring socket lock before reading RTNETLINK response
+ - Skip down interfaces (v2)
+ - Export net checkpoint fns
+ - Add CHECKPOINT_NETNS flag
+ - Rename CONFIG_CHECKPOINT_NETNS -> CONFIG_NETNS_CHECKPOINT
+ - Netdev restore function dispatching from a table
+ - Added a comment about the controverial determination of "initial netns"
+ - Simplify the E2BIG error handling
+ - Remove a redundant check for checkpoint support per-device
 
-Changelog [v21]:
-  - [Dan Smith] Fix build when CONFIG_INET=n
-Changelog [v19-rc3]:
-  - Rebase to kernel 2.6.33 (add 'inet_' prefix to some sk fields)
-  - Relax tcp.window_clamp value in INET restore
-Changelog [v19-rc2]:
-  - Restore gso_type fields on sockets and buffers, so that they're
-    properly handled on incoming path. Use the proper value from the
-    socket (instead of storing that per-buffer) to avoid needing to
-    detect (e.g.) the user restore a UDP buffer into a TCP socket.
+Changes in v6:
+ - Store addresses in network byte order, per Dave's recommendation
+
 Changes in v5:
- - Change ckpt_write_err() to ckpt_err()
+ - Rebase
+ - Remove checkpoint_container() noise
+ - Factor out some common bits of the RTNL newlink operations
+ - Add macvlan support
+
 Changes in v4:
- - Use the new socket buffer restore functions introduced in the
-   previous patch
- - Move listen_sockets list under the restart items in ckpt_ctx
- - Rename RESTART_SOCK_LISTENONLY to RESTART_CONN_RESET
+ - Fix allocation under lock in ckpt_netdev_inet_addrs()
+ - Add comment for case where there is no netns info in checkpoint image
+ - Fix inner structure alignment in netdev_addr header
+ - Fix instances of kfree(skb)
+ - Remove init_netns_ref from container header and checkpoint context
+ - Add 'extern' to checkpoint.h prototypes
+ - Swizzle do_restore_netns() to handle netns more like the others
+ - Return E2BIG for failure case when collecting inet addrs
+ - Report case where device doesn't support checkpoint
+ - Remove nested netns check from may_checkpoint_task()
+ - Move veth-specific netdev attributes into unioned struct to set an
+   example for specific attributes of additional device types
+ - Add 'sit' device restore path that doesn't really do anything
+ - Fail instead of skip when encountering a device with no checkpoint
+   support
+
 Changes in v3:
- - Prevent restart from allowing a bind on a <1024 port unless the
-   user is granted that capability
- - Add some sanity checking in the inet_precheck() function to make sure
-   the values read from the checkpoint image are within acceptable ranges
- - Check the result of sock_restore_header_info() and fail if needed
+ - Use dev->checkpoint() for per-device checkpoint operation
+ - Use RTNL for veth pair creation on restart
+ - Export some of the functions that will be needed by dev->ndo_checkpoint()
+
 Changes in v2:
- - Restore saddr, rcv_saddr, daddr, sport, and dport from the sockaddr
-   structure instead of saving them separately
- - Fix 'sock' naming in sock_cptrst()
- - Don't take the queue lock before skb_queue_tail() since it is
-   done for us
- - Allow "listen only" restore behavior if RESTART_SOCK_LISTENONLY
-   flag is specified on sys_restart()
- - Pull the implementation of the list of listening sockets back into
-   this patch
- - Fix dangling printk
- - Add some comments around the parent/child restore logic
+ - Add CONFIG_CHECKPOINT_NETNS that is dependent on NET, NET_NS, and
+   CHECKPOINT.  Conditionally compile the checkpoint_dev code based on it.
+ - Updated comment on should_checkpoint_netdev()
+ - Updated checkpoint_netdev() to explicitly check for "veth" in name
+ - Changed checkpoint_netns() to use BUG() for impossible condition
+ - Fixed a bug on restart with all devices in the init netns
+ - Lock the dev_base_lock while traversing interface addresses
+ - Collect all addresses for an interface before writing out in one
+   single pass
 
 Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Acked-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Acked-by: David S. Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
 Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Acked-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
  Documentation/checkpoint/usage.txt |    1 +
- include/linux/checkpoint.h         |    7 +-
- include/linux/checkpoint_hdr.h     |   97 +++++++++-
- include/linux/checkpoint_types.h   |    1 +
- kernel/checkpoint/sys.c            |    6 +
- net/checkpoint.c                   |   19 +-
- net/ipv4/checkpoint.c              |  373 +++++++++++++++++++++++++++++++++++-
- 7 files changed, 484 insertions(+), 20 deletions(-)
+ include/linux/checkpoint.h         |   29 ++-
+ include/linux/checkpoint_hdr.h     |   58 +++
+ kernel/checkpoint/checkpoint.c     |    5 -
+ kernel/nsproxy.c                   |   24 +-
+ net/Kconfig                        |    4 +
+ net/Makefile                       |    1 +
+ net/checkpoint.c                   |   63 +++-
+ net/checkpoint_dev.c               |  818 ++++++++++++++++++++++++++++++++++++
+ 9 files changed, 995 insertions(+), 8 deletions(-)
+ create mode 100644 net/checkpoint_dev.c
 
 diff --git a/Documentation/checkpoint/usage.txt b/Documentation/checkpoint/usage.txt
-index c6fc045..239c162 100644
+index d697ed1..5700448 100644
 --- a/Documentation/checkpoint/usage.txt
 +++ b/Documentation/checkpoint/usage.txt
-@@ -35,6 +35,7 @@ The API consists of three new system calls:
-    - RESTART_TASKSELF : (self) restart of a single process
-    - RESTART_FROEZN : processes remain frozen once restart completes
-    - RESTART_GHOST : process is a ghost (placeholder for a pid)
-+   - RESTART_CONN_RESET : reset previously open sockets to be closed
-  (Note that this argument may mean 'ckptid' to identify an in-kernel
-  checkpoint image, with some @flags in the future).
+@@ -15,6 +15,7 @@ The API consists of three new system calls:
+  an open file to which error and debug messages are written. @flags
+  may be one or more of:
+    - CHECKPOINT_SUBTREE : allow checkpoint of sub-container
++   - CHECKPOINT_NETNS : include network namespaces and devices
+  (other value are not allowed).
  
+  Returns: a positive checkpoint identifier (ckptid) upon success, 0 if
 diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 25275af..abf8cb5 100644
+index 43d67ce..84bb7a9 100644
 --- a/include/linux/checkpoint.h
 +++ b/include/linux/checkpoint.h
-@@ -19,6 +19,7 @@
- #define RESTART_TASKSELF	0x1
- #define RESTART_FROZEN		0x2
- #define RESTART_GHOST		0x4
-+#define RESTART_CONN_RESET      0x10
+@@ -14,6 +14,7 @@
  
- /* misc user visible */
- #define CHECKPOINT_FD_NONE	-1
-@@ -57,7 +58,8 @@ extern long do_sys_restart(pid_t pid, int fd,
+ /* checkpoint user flags */
+ #define CHECKPOINT_SUBTREE	0x1
++#define CHECKPOINT_NETNS	0x2
+ 
+ /* restart user flags */
+ #define RESTART_TASKSELF	0x1
+@@ -35,6 +36,7 @@
+ #include <linux/checkpoint_types.h>
+ #include <linux/checkpoint_hdr.h>
+ #include <linux/err.h>
++#include <linux/inetdevice.h>
+ #include <net/sock.h>
+ 
+ /* sycall helpers */
+@@ -55,7 +57,10 @@ extern long do_sys_restart(pid_t pid, int fd,
+ #define CKPT_CTX_ERROR		(1 << CKPT_CTX_ERROR_BIT)
+ 
+ /* ckpt_ctx: uflags */
+-#define CHECKPOINT_USER_FLAGS		CHECKPOINT_SUBTREE
++#define CHECKPOINT_USER_FLAGS \
++	(CHECKPOINT_SUBTREE | \
++	 CHECKPOINT_NETNS)
++
  #define RESTART_USER_FLAGS  \
  	(RESTART_TASKSELF | \
  	 RESTART_FROZEN | \
--	 RESTART_GHOST)
-+	 RESTART_GHOST | \
-+	 RESTART_CONN_RESET)
- 
- extern int walk_task_subtree(struct task_struct *task,
- 			     int (*func)(struct task_struct *, void *),
-@@ -103,7 +105,8 @@ extern int ckpt_sock_getnames(struct ckpt_ctx *ctx,
- 			      struct socket *socket,
- 			      struct sockaddr *loc, unsigned *loc_len,
- 			      struct sockaddr *rem, unsigned *rem_len);
--extern struct sk_buff *sock_restore_skb(struct ckpt_ctx *ctx);
-+extern struct sk_buff *sock_restore_skb(struct ckpt_ctx *ctx, struct sock *sk);
-+extern void sock_listening_list_free(struct list_head *head);
- 
- /* ckpt kflags */
- #define ckpt_set_ctx_kflag(__ctx, __kflag)  \
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 07934ee..1820f07 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -15,6 +15,7 @@
- #include <linux/socket.h>
- #include <linux/un.h>
- #include <linux/in.h>
-+#include <linux/in6.h>
- 
- #ifndef CONFIG_CHECKPOINT
- #error linux/checkpoint_hdr.h included directly (without CONFIG_CHECKPOINT)
-@@ -22,8 +23,6 @@
- 
- #else /* __KERNEL__ */
- 
--#else
--
- #include <sys/types.h>
- #include <linux/types.h>
- #include <sys/socket.h>
-@@ -586,6 +585,100 @@ struct ckpt_hdr_socket_unix {
- 
- struct ckpt_hdr_socket_inet {
- 	struct ckpt_hdr h;
-+	__u32 daddr;
-+	__u32 rcv_saddr;
-+	__u32 saddr;
-+	__u16 dport;
-+	__u16 num;
-+	__u16 sport;
-+	__s16 uc_ttl;
-+	__u16 cmsg_flags;
-+
-+	struct {
-+		__u64 timeout;
-+		__u32 ato;
-+		__u32 lrcvtime;
-+		__u16 last_seg_size;
-+		__u16 rcv_mss;
-+		__u8 pending;
-+		__u8 quick;
-+		__u8 pingpong;
-+		__u8 blocked;
-+	} icsk_ack __attribute__ ((aligned(8)));
-+
-+	/* FIXME: Skipped opt, tos, multicast, cork settings */
-+
-+	struct {
-+		__u32 rcv_nxt;
-+		__u32 copied_seq;
-+		__u32 rcv_wup;
-+		__u32 snd_nxt;
-+		__u32 snd_una;
-+		__u32 snd_sml;
-+		__u32 rcv_tstamp;
-+		__u32 lsndtime;
-+
-+		__u32 snd_wl1;
-+		__u32 snd_wnd;
-+		__u32 max_window;
-+		__u32 mss_cache;
-+		__u32 window_clamp;
-+		__u32 rcv_ssthresh;
-+		__u32 frto_highmark;
-+
-+		__u32 srtt;
-+		__u32 mdev;
-+		__u32 mdev_max;
-+		__u32 rttvar;
-+		__u32 rtt_seq;
-+
-+		__u32 packets_out;
-+		__u32 retrans_out;
-+
-+		__u32 snd_up;
-+		__u32 rcv_wnd;
-+		__u32 write_seq;
-+		__u32 pushed_seq;
-+		__u32 lost_out;
-+		__u32 sacked_out;
-+		__u32 fackets_out;
-+		__u32 tso_deferred;
-+		__u32 bytes_acked;
-+
-+		__s32 lost_cnt_hint;
-+		__u32 retransmit_high;
-+
-+		__u32 lost_retrans_low;
-+
-+		__u32 prior_ssthresh;
-+		__u32 high_seq;
-+
-+		__u32 retrans_stamp;
-+		__u32 undo_marker;
-+		__s32 undo_retrans;
-+		__u32 total_retrans;
-+
-+		__u32 urg_seq;
-+		__u32 keepalive_time;
-+		__u32 keepalive_intvl;
-+
-+		__u16 urg_data;
-+		__u16 advmss;
-+		__u8 frto_counter;
-+		__u8 nonagle;
-+
-+		__u8 ecn_flags;
-+		__u8 reordering;
-+
-+		__u8 keepalive_probes;
-+	} tcp __attribute__ ((aligned(8)));
-+
-+	struct {
-+		struct in6_addr saddr;
-+		struct in6_addr rcv_saddr;
-+		struct in6_addr daddr;
-+	} inet6 __attribute__ ((aligned(8)));
-+
- 	__u32 laddr_len;
- 	__u32 raddr_len;
- 	struct sockaddr_in laddr;
-diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
-index d69b795..79c6394 100644
---- a/include/linux/checkpoint_types.h
-+++ b/include/linux/checkpoint_types.h
-@@ -79,6 +79,7 @@ struct ckpt_ctx {
- 	wait_queue_head_t waitq;	/* waitqueue for restarting tasks */
- 	wait_queue_head_t ghostq;	/* waitqueue for ghost tasks */
- 	struct cred *realcred, *ecred;	/* tmp storage for cred at restart */
-+	struct list_head listen_sockets;/* listening parent sockets */
- 
- 	struct ckpt_stats stats;	/* statistics */
- 
-diff --git a/kernel/checkpoint/sys.c b/kernel/checkpoint/sys.c
-index 86dabfa..b8369e4 100644
---- a/kernel/checkpoint/sys.c
-+++ b/kernel/checkpoint/sys.c
-@@ -229,6 +229,10 @@ static void ckpt_ctx_free(struct ckpt_ctx *ctx)
- 
- 	kfree(ctx->pids_arr);
+@@ -119,6 +124,28 @@ extern int ckpt_sock_getnames(struct ckpt_ctx *ctx,
+ extern struct sk_buff *sock_restore_skb(struct ckpt_ctx *ctx, struct sock *sk);
+ extern void sock_listening_list_free(struct list_head *head);
  
 +#ifdef CONFIG_NETNS_CHECKPOINT
-+	sock_listening_list_free(&ctx->listen_sockets);
++extern int checkpoint_netns(struct ckpt_ctx *ctx, void *ptr);
++extern void *restore_netns(struct ckpt_ctx *ctx);
++extern int checkpoint_netdev(struct ckpt_ctx *ctx, void *ptr);
++extern void *restore_netdev(struct ckpt_ctx *ctx);
++
++extern int ckpt_netdev_in_init_netns(struct ckpt_ctx *ctx,
++				     struct net_device *dev);
++extern int ckpt_netdev_inet_addrs(struct in_device *indev,
++				  struct ckpt_netdev_addr *list[]);
++extern int ckpt_netdev_hwaddr(struct net_device *dev,
++			      struct ckpt_hdr_netdev *h);
++extern struct ckpt_hdr_netdev *ckpt_netdev_base(struct ckpt_ctx *ctx,
++					struct net_device *dev,
++					struct ckpt_netdev_addr *addrs[]);
++#else
++# define checkpoint_netns NULL
++# define restore_netns NULL
++# define checkpoint_netdev NULL
++# define restore_netdev NULL
 +#endif
 +
- 	kfree(ctx);
- }
+ /* ckpt kflags */
+ #define ckpt_set_ctx_kflag(__ctx, __kflag)  \
+ 	set_bit(__kflag##_BIT, &(__ctx)->kflags)
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 1564726..eb5e1b4 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -189,6 +189,12 @@ enum {
+ #define CKPT_HDR_SOCKET_UNIX CKPT_HDR_SOCKET_UNIX
+ 	CKPT_HDR_SOCKET_INET,
+ #define CKPT_HDR_SOCKET_INET CKPT_HDR_SOCKET_INET
++	CKPT_HDR_NET_NS,
++#define CKPT_HDR_NET_NS CKPT_HDR_NET_NS
++	CKPT_HDR_NETDEV,
++#define CKPT_HDR_NETDEV CKPT_HDR_NETDEV
++	CKPT_HDR_NETDEV_ADDR,
++#define CKPT_HDR_NETDEV_ADDR CKPT_HDR_NETDEV_ADDR
  
-@@ -262,6 +266,8 @@ static struct ckpt_ctx *ckpt_ctx_alloc(int fd, unsigned long uflags,
- 
- 	mutex_init(&ctx->msg_mutex);
- 
-+	INIT_LIST_HEAD(&ctx->listen_sockets);
-+
- 	err = -EBADF;
- 	ctx->file = fget(fd);
- 	if (!ctx->file)
-diff --git a/net/checkpoint.c b/net/checkpoint.c
-index d972044..03c1224 100644
---- a/net/checkpoint.c
-+++ b/net/checkpoint.c
-@@ -115,9 +115,9 @@ static void sock_record_header_info(struct sk_buff *skb,
- 	h->nr_frags = skb_shinfo(skb)->nr_frags;
- }
- 
--int sock_restore_header_info(struct ckpt_ctx *ctx,
--			     struct sk_buff *skb,
--			     struct ckpt_hdr_socket_buffer *h)
-+static int sock_restore_header_info(struct ckpt_ctx *ctx,
-+				    struct sock *sk, struct sk_buff *skb,
-+				    struct ckpt_hdr_socket_buffer *h)
- {
- 	if (h->mac_header + h->mac_len != h->network_header) {
- 		ckpt_err(ctx, -EINVAL,
-@@ -171,6 +171,8 @@ int sock_restore_header_info(struct ckpt_ctx *ctx,
- 	skb->data = skb->head + h->data_offset;
- 	skb->len = h->skb_len;
- 
-+	skb_shinfo(skb)->gso_type = sk->sk_gso_type;
-+
- 	return 0;
- }
- 
-@@ -216,7 +218,7 @@ static int sock_restore_skb_frag(struct ckpt_ctx *ctx,
- 	return ret;
- }
- 
--struct sk_buff *sock_restore_skb(struct ckpt_ctx *ctx)
-+struct sk_buff *sock_restore_skb(struct ckpt_ctx *ctx, struct sock *sk)
- {
- 	struct ckpt_hdr_socket_buffer *h;
- 	struct sk_buff *skb = NULL;
-@@ -269,7 +271,7 @@ struct sk_buff *sock_restore_skb(struct ckpt_ctx *ctx)
- 		goto out;
- 	}
- 
--	sock_restore_header_info(ctx, skb, h);
-+	sock_restore_header_info(ctx, sk, skb, h);
-  out:
- 	ckpt_hdr_put(ctx, h);
- 	if (ret < 0) {
-@@ -931,10 +933,9 @@ static void *restore_sock(struct ckpt_ctx *ctx)
- 		goto err;
- 
- 	if ((h->sock_common.family == AF_INET) &&
--	    (h->sock.state != TCP_LISTEN)) {
--		/* Temporary hack to enable restore of TCP_LISTEN sockets
--		 * while forcing anything else to a closed state
--		 */
-+	    (h->sock.state != TCP_LISTEN) &&
-+	    (ctx->uflags & RESTART_CONN_RESET)) {
-+		ckpt_debug("Forcing open socket closed\n");
- 		sock->sk->sk_state = TCP_CLOSE;
- 		sock->state = SS_UNCONNECTED;
- 	}
-diff --git a/net/ipv4/checkpoint.c b/net/ipv4/checkpoint.c
-index 0b62a15..bc4c998 100644
---- a/net/ipv4/checkpoint.c
-+++ b/net/ipv4/checkpoint.c
-@@ -16,6 +16,7 @@
- #include <linux/checkpoint.h>
- #include <net/tcp_states.h>
- #include <net/tcp.h>
-+#include <net/ipv6.h>
- 
- struct dq_sock {
- 	struct ckpt_ctx *ctx;
-@@ -27,6 +28,248 @@ struct dq_buffers {
- 	struct sock *sk;
+ 	CKPT_HDR_TAIL = 9001,
+ #define CKPT_HDR_TAIL CKPT_HDR_TAIL
+@@ -261,6 +267,10 @@ enum obj_type {
+ #define CKPT_OBJ_SECURITY_PTR CKPT_OBJ_SECURITY_PTR
+ 	CKPT_OBJ_SECURITY,
+ #define CKPT_OBJ_SECURITY CKPT_OBJ_SECURITY
++	CKPT_OBJ_NET_NS,
++#define CKPT_OBJ_NET_NS CKPT_OBJ_NET_NS
++	CKPT_OBJ_NETDEV,
++#define CKPT_OBJ_NETDEV CKPT_OBJ_NETDEV
+ 	CKPT_OBJ_MAX
+ #define CKPT_OBJ_MAX CKPT_OBJ_MAX
  };
+@@ -444,6 +454,7 @@ struct ckpt_hdr_ns {
+ 	struct ckpt_hdr h;
+ 	__s32 uts_objref;
+ 	__s32 ipc_objref;
++	__s32 net_objref;
+ } __attribute__((aligned(8)));
  
-+struct listen_item {
-+	struct sock *sk;
-+	struct list_head list;
+ /* cannot include <linux/tty.h> from userspace, so define: */
+@@ -768,6 +779,53 @@ struct ckpt_hdr_file_socket {
+ 	__s32 sock_objref;
+ } __attribute__((aligned(8)));
+ 
++struct ckpt_hdr_netns {
++	struct ckpt_hdr h;
++	__s32 this_ref;
++} __attribute__((aligned(8)));
++
++enum ckpt_netdev_types {
++	CKPT_NETDEV_LO,
++	CKPT_NETDEV_VETH,
++	CKPT_NETDEV_SIT,
++	CKPT_NETDEV_MACVLAN,
++	CKPT_NETDEV_MAX,
 +};
 +
-+void sock_listening_list_free(struct list_head *head)
-+{
-+	struct listen_item *item, *tmp;
++struct ckpt_hdr_netdev {
++	struct ckpt_hdr h;
++	__s32 netns_ref;
++	union {
++		struct {
++			__s32 this_ref;
++			__s32 peer_ref;
++		} veth;
++		struct {
++			__u32 mode;
++		} macvlan;
++	};
++	__u32 inet_addrs;
++	__u16 type;
++	__u16 flags;
++	__u8 hwaddr[6];
++} __attribute__((aligned(8)));
 +
-+	list_for_each_entry_safe(item, tmp, head, list) {
-+		list_del(&item->list);
-+		kfree(item);
++enum ckpt_netdev_addr_types {
++	CKPT_NETDEV_ADDR_IPV4,
++};
++
++struct ckpt_netdev_addr {
++	__u16 type;
++	union {
++		struct {
++			__be32 inet4_local;
++			__be32 inet4_address;
++			__be32 inet4_mask;
++			__be32 inet4_broadcast;
++		};
++	} __attribute__((aligned(8)));
++} __attribute__((aligned(8)));
++
+ struct ckpt_hdr_eventpoll_items {
+ 	struct ckpt_hdr h;
+ 	__s32  epfile_objref;
+diff --git a/kernel/checkpoint/checkpoint.c b/kernel/checkpoint/checkpoint.c
+index 7a4f1ce..4059c28 100644
+--- a/kernel/checkpoint/checkpoint.c
++++ b/kernel/checkpoint/checkpoint.c
+@@ -291,11 +291,6 @@ static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
+ 		_ckpt_err(ctx, -EPERM, "%(T)Nested mnt_ns unsupported\n");
+ 		ret = -EPERM;
+ 	}
+-	/* no support for >1 private netns */
+-	if (nsproxy->net_ns != ctx->root_nsproxy->net_ns) {
+-		_ckpt_err(ctx, -EPERM, "%(T)Nested net_ns unsupported\n");
+-		ret = -EPERM;
+-	}
+ 	/* pidns must be descendent of root_nsproxy */
+ 	pidns = nsproxy->pid_ns;
+ 	while (pidns != ctx->root_nsproxy->pid_ns) {
+diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+index 7fb3cea..d4af91d 100644
+--- a/kernel/nsproxy.c
++++ b/kernel/nsproxy.c
+@@ -260,6 +260,12 @@ int ckpt_collect_ns(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	ret = ckpt_obj_collect(ctx, nsproxy->uts_ns, CKPT_OBJ_UTS_NS);
+ 	if (ret < 0)
+ 		goto out;
++#ifdef CONFIG_NETNS_CHECKPOINT
++	if (ctx->uflags & CHECKPOINT_NETNS)
++		ret = ckpt_obj_collect(ctx, nsproxy->net_ns, CKPT_OBJ_NET_NS);
++	if (ret < 0)
++		goto out;
++#endif
+ #ifdef CONFIG_IPC_NS
+ 	ret = ckpt_obj_collect(ctx, nsproxy->ipc_ns, CKPT_OBJ_IPC_NS);
+ 	if (ret < 0)
+@@ -308,6 +314,15 @@ static int checkpoint_ns(struct ckpt_ctx *ctx, void *ptr)
+ #endif	/* CONFIG_IPC_NS */
+ 	h->ipc_objref = ret;
+ 
++#ifdef CONFIG_NETNS_CHECKPOINT
++	if (ctx->uflags & CHECKPOINT_NETNS)
++		ret = checkpoint_obj(ctx, nsproxy->net_ns, CKPT_OBJ_NET_NS);
++	else
++		ret = 0;
++	if (ret < 0)
++		goto out;
++	h->net_objref = ret;
++#endif
+ 	/* FIXME: for now, only marked visited to pacify leaks */
+ 	ret = ckpt_obj_visit(ctx, nsproxy->mnt_ns, CKPT_OBJ_MNT_NS);
+ 	if (ret < 0)
+@@ -341,6 +356,14 @@ static void *restore_ns(struct ckpt_ctx *ctx)
+ 		ret = PTR_ERR(uts_ns);
+ 		goto out;
+ 	}
++	if (h->net_objref == 0)
++		net_ns = current->nsproxy->net_ns;
++	else
++		net_ns = ckpt_obj_fetch(ctx, h->net_objref, CKPT_OBJ_NET_NS);
++	if (IS_ERR(net_ns)) {
++		ret = PTR_ERR(net_ns);
++		goto out;
 +	}
-+}
+ 
+ 	if (h->ipc_objref == 0)
+ 		ipc_ns = ctx->root_nsproxy->ipc_ns;
+@@ -356,7 +379,6 @@ static void *restore_ns(struct ckpt_ctx *ctx)
+ 	}
+ 
+ 	mnt_ns = ctx->root_nsproxy->mnt_ns;
+-	net_ns = ctx->root_nsproxy->net_ns;
+ 
+ 	if (uts_ns == current->nsproxy->uts_ns &&
+ 	    ipc_ns == current->nsproxy->ipc_ns &&
+diff --git a/net/Kconfig b/net/Kconfig
+index 041c35e..c1cb774 100644
+--- a/net/Kconfig
++++ b/net/Kconfig
+@@ -276,4 +276,8 @@ source "net/wimax/Kconfig"
+ source "net/rfkill/Kconfig"
+ source "net/9p/Kconfig"
+ 
++config NETNS_CHECKPOINT
++       bool
++       default y if NET && NET_NS && CHECKPOINT
 +
-+static int sock_listening_list_add(struct ckpt_ctx *ctx, struct sock *sk)
+ endif   # if NET
+diff --git a/net/Makefile b/net/Makefile
+index 74b038f..b7d78f4 100644
+--- a/net/Makefile
++++ b/net/Makefile
+@@ -67,3 +67,4 @@ endif
+ obj-$(CONFIG_WIMAX)		+= wimax/
+ 
+ obj-$(CONFIG_CHECKPOINT)	+= checkpoint.o
++obj-$(CONFIG_NETNS_CHECKPOINT)	+= checkpoint_dev.o
+diff --git a/net/checkpoint.c b/net/checkpoint.c
+index 03c1224..b1f56bf 100644
+--- a/net/checkpoint.c
++++ b/net/checkpoint.c
+@@ -986,6 +986,56 @@ struct file *sock_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr)
+  * sock-related checkpoint objects
+  */
+ 
++static int netns_grab(void *ptr)
 +{
-+	struct listen_item *item;
++	struct net *net = ptr;
 +
-+	item = kmalloc(sizeof(*item), GFP_KERNEL);
-+	if (!item)
-+		return -ENOMEM;
-+
-+	item->sk = sk;
-+	list_add(&item->list, &ctx->listen_sockets);
-+
++	get_net(net);
 +	return 0;
 +}
 +
-+static struct sock *sock_get_parent(struct ckpt_ctx *ctx, struct sock *sk)
++static void netns_drop(void *ptr, int lastref)
 +{
-+	struct listen_item *item;
++	struct net *net = ptr;
 +
-+	list_for_each_entry(item, &ctx->listen_sockets, list) {
-+		if (inet_sk(sk)->inet_sport == inet_sk(item->sk)->inet_sport)
-+			return item->sk;
-+	}
-+
-+	return NULL;
++	put_net(net);
 +}
 +
-+static int sock_hash_parent(void *data)
++/* netns object */
++static const struct ckpt_obj_ops ckpt_obj_netns_ops = {
++	.obj_name = "NET_NS",
++	.obj_type = CKPT_OBJ_NET_NS,
++	.ref_grab = netns_grab,
++	.ref_drop = netns_drop,
++	.checkpoint = checkpoint_netns,
++	.restore = restore_netns,
++};
++
++static int netdev_grab(void *ptr)
 +{
-+	struct dq_sock *dq = (struct dq_sock *)data;
-+	struct sock *parent;
++	struct net_device *dev = ptr;
 +
-+	ckpt_debug("INET post-restart hash\n");
-+
-+	dq->sk->sk_prot->hash(dq->sk);
-+
-+	/* If there is a listening socket with the same source port,
-+	 * then become a child of that socket [we are the result of an
-+	 * accept()].  Otherwise hash ourselves directly in [we are
-+	 * the result of a connect()]
-+	 */
-+
-+	parent = sock_get_parent(dq->ctx, dq->sk);
-+	if (parent) {
-+		inet_sk(dq->sk)->inet_num = ntohs(inet_sk(dq->sk)->inet_sport);
-+		local_bh_disable();
-+		__inet_inherit_port(parent, dq->sk);
-+		local_bh_enable();
-+	} else {
-+		inet_sk(dq->sk)->inet_num = 0;
-+		inet_hash_connect(&tcp_death_row, dq->sk);
-+		inet_sk(dq->sk)->inet_num = ntohs(inet_sk(dq->sk)->inet_sport);
-+	}
-+
++	dev_hold(dev);
 +	return 0;
 +}
 +
-+static int sock_defer_hash(struct ckpt_ctx *ctx, struct sock *sock)
++static void netdev_drop(void *ptr, int lastref)
 +{
-+	struct dq_sock dq;
++	struct net_device *dev = ptr;
 +
-+	dq.sk = sock;
-+	dq.ctx = ctx;
-+
-+	return deferqueue_add(ctx->deferqueue, &dq, sizeof(dq),
-+			      sock_hash_parent, NULL);
++	dev_put(dev);
 +}
 +
-+static int sock_inet_tcp_cptrst(struct ckpt_ctx *ctx,
-+				struct tcp_sock *sk,
-+				struct ckpt_hdr_socket_inet *hh,
-+				int op)
-+{
-+	CKPT_COPY(op, hh->tcp.rcv_nxt, sk->rcv_nxt);
-+	CKPT_COPY(op, hh->tcp.copied_seq, sk->copied_seq);
-+	CKPT_COPY(op, hh->tcp.rcv_wup, sk->rcv_wup);
-+	CKPT_COPY(op, hh->tcp.snd_nxt, sk->snd_nxt);
-+	CKPT_COPY(op, hh->tcp.snd_una, sk->snd_una);
-+	CKPT_COPY(op, hh->tcp.snd_sml, sk->snd_sml);
-+	CKPT_COPY(op, hh->tcp.rcv_tstamp, sk->rcv_tstamp);
-+	CKPT_COPY(op, hh->tcp.lsndtime, sk->lsndtime);
++/* netdev object */
++static const struct ckpt_obj_ops ckpt_obj_netdev_ops = {
++	.obj_name = "NET_DEV",
++	.obj_type = CKPT_OBJ_NETDEV,
++	.ref_grab = netdev_grab,
++	.ref_drop = netdev_drop,
++	.checkpoint = checkpoint_netdev,
++	.restore = restore_netdev,
++};
 +
-+	CKPT_COPY(op, hh->tcp.snd_wl1, sk->snd_wl1);
-+	CKPT_COPY(op, hh->tcp.snd_wnd, sk->snd_wnd);
-+	CKPT_COPY(op, hh->tcp.max_window, sk->max_window);
-+	CKPT_COPY(op, hh->tcp.mss_cache, sk->mss_cache);
-+	CKPT_COPY(op, hh->tcp.window_clamp, sk->window_clamp);
-+	CKPT_COPY(op, hh->tcp.rcv_ssthresh, sk->rcv_ssthresh);
-+	CKPT_COPY(op, hh->tcp.frto_highmark, sk->frto_highmark);
-+	CKPT_COPY(op, hh->tcp.advmss, sk->advmss);
-+	CKPT_COPY(op, hh->tcp.frto_counter, sk->frto_counter);
-+	CKPT_COPY(op, hh->tcp.nonagle, sk->nonagle);
-+
-+	CKPT_COPY(op, hh->tcp.srtt, sk->srtt);
-+	CKPT_COPY(op, hh->tcp.mdev, sk->mdev);
-+	CKPT_COPY(op, hh->tcp.mdev_max, sk->mdev_max);
-+	CKPT_COPY(op, hh->tcp.rttvar, sk->rttvar);
-+	CKPT_COPY(op, hh->tcp.rtt_seq, sk->rtt_seq);
-+
-+	CKPT_COPY(op, hh->tcp.packets_out, sk->packets_out);
-+	CKPT_COPY(op, hh->tcp.retrans_out, sk->retrans_out);
-+
-+	CKPT_COPY(op, hh->tcp.urg_data, sk->urg_data);
-+	CKPT_COPY(op, hh->tcp.ecn_flags, sk->ecn_flags);
-+	CKPT_COPY(op, hh->tcp.reordering, sk->reordering);
-+	CKPT_COPY(op, hh->tcp.snd_up, sk->snd_up);
-+
-+	CKPT_COPY(op, hh->tcp.keepalive_probes, sk->keepalive_probes);
-+
-+	CKPT_COPY(op, hh->tcp.rcv_wnd, sk->rcv_wnd);
-+	CKPT_COPY(op, hh->tcp.write_seq, sk->write_seq);
-+	CKPT_COPY(op, hh->tcp.pushed_seq, sk->pushed_seq);
-+	CKPT_COPY(op, hh->tcp.lost_out, sk->lost_out);
-+	CKPT_COPY(op, hh->tcp.sacked_out, sk->sacked_out);
-+	CKPT_COPY(op, hh->tcp.fackets_out, sk->fackets_out);
-+	CKPT_COPY(op, hh->tcp.tso_deferred, sk->tso_deferred);
-+	CKPT_COPY(op, hh->tcp.bytes_acked, sk->bytes_acked);
-+
-+	CKPT_COPY(op, hh->tcp.lost_cnt_hint, sk->lost_cnt_hint);
-+	CKPT_COPY(op, hh->tcp.retransmit_high, sk->retransmit_high);
-+
-+	CKPT_COPY(op, hh->tcp.lost_retrans_low, sk->lost_retrans_low);
-+
-+	CKPT_COPY(op, hh->tcp.prior_ssthresh, sk->prior_ssthresh);
-+	CKPT_COPY(op, hh->tcp.high_seq, sk->high_seq);
-+
-+	CKPT_COPY(op, hh->tcp.retrans_stamp, sk->retrans_stamp);
-+	CKPT_COPY(op, hh->tcp.undo_marker, sk->undo_marker);
-+	CKPT_COPY(op, hh->tcp.undo_retrans, sk->undo_retrans);
-+	CKPT_COPY(op, hh->tcp.total_retrans, sk->total_retrans);
-+
-+	CKPT_COPY(op, hh->tcp.urg_seq, sk->urg_seq);
-+	CKPT_COPY(op, hh->tcp.keepalive_time, sk->keepalive_time);
-+	CKPT_COPY(op, hh->tcp.keepalive_intvl, sk->keepalive_intvl);
-+
-+	if (!skb_queue_empty(&sk->ucopy.prequeue))
-+		printk(KERN_ERR "PREQUEUE!\n");
-+
-+	return 0;
-+}
-+
-+static int sock_inet_restore_connection(struct sock *sk,
-+					struct ckpt_hdr_socket_inet *hh)
-+{
-+	struct inet_sock *inet = inet_sk(sk);
-+	int tcp_gso = sk->sk_family == AF_INET ? SKB_GSO_TCPV4 : SKB_GSO_TCPV6;
-+
-+	inet->inet_daddr = hh->raddr.sin_addr.s_addr;
-+	inet->inet_saddr = hh->laddr.sin_addr.s_addr;
-+	inet->inet_rcv_saddr = inet->inet_saddr;
-+
-+	inet->inet_dport = hh->raddr.sin_port;
-+	inet->inet_sport = hh->laddr.sin_port;
-+
-+	if (sk->sk_protocol == IPPROTO_TCP)
-+		sk->sk_gso_type = tcp_gso;
-+	else if (sk->sk_protocol == IPPROTO_UDP)
-+		sk->sk_gso_type = SKB_GSO_UDP;
-+	else {
-+		ckpt_debug("Unsupported socket type while setting GSO\n");
-+		return -EINVAL;
-+	}
-+
-+	return 0;
-+}
-+
-+static int sock_inet_cptrst(struct ckpt_ctx *ctx,
-+			    struct sock *sk,
-+			    struct ckpt_hdr_socket_inet *hh,
-+			    int op)
-+{
-+	struct inet_sock *inet = inet_sk(sk);
-+	struct inet_connection_sock *icsk = inet_csk(sk);
+ static int obj_sock_grab(void *ptr)
+ {
+ 	sock_hold((struct sock *) ptr);
+@@ -1033,6 +1083,17 @@ static const struct ckpt_obj_ops ckpt_obj_sock_ops = {
+ 
+ static int __init checkpoint_register_sock(void)
+ {
+-	return register_checkpoint_obj(&ckpt_obj_sock_ops);
 +	int ret;
 +
-+	if (op == CKPT_CPT) {
-+		CKPT_COPY(op, hh->daddr, inet->inet_daddr);
-+		CKPT_COPY(op, hh->rcv_saddr, inet->inet_rcv_saddr);
-+		CKPT_COPY(op, hh->dport, inet->inet_dport);
-+		CKPT_COPY(op, hh->saddr, inet->inet_saddr);
-+		CKPT_COPY(op, hh->sport, inet->inet_sport);
-+	} else {
-+		ret = sock_inet_restore_connection(sk, hh);
-+		if (ret)
-+			return ret;
-+	}
++	ret = register_checkpoint_obj(&ckpt_obj_sock_ops);
++	if (ret < 0)
++		return ret;
++	ret = register_checkpoint_obj(&ckpt_obj_netns_ops);
++	if (ret < 0)
++		return ret;
++	ret = register_checkpoint_obj(&ckpt_obj_netdev_ops);
++	if (ret < 0)
++		return ret;
++	return 0;
+ }
+ module_init(checkpoint_register_sock);
+diff --git a/net/checkpoint_dev.c b/net/checkpoint_dev.c
+new file mode 100644
+index 0000000..34a6bdb
+--- /dev/null
++++ b/net/checkpoint_dev.c
+@@ -0,0 +1,818 @@
++/*
++ *  Copyright 2010 IBM Corporation
++ *
++ *  Author(s): Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
++ *
++ *  This program is free software; you can redistribute it and/or
++ *  modify it under the terms of the GNU General Public License as
++ *  published by the Free Software Foundation, version 2 of the
++ *  License.
++ */
 +
-+	CKPT_COPY(op, hh->num, inet->inet_num);
-+	CKPT_COPY(op, hh->uc_ttl, inet->uc_ttl);
-+	CKPT_COPY(op, hh->cmsg_flags, inet->cmsg_flags);
++#include <linux/sched.h>
++#include <linux/if.h>
++#include <linux/if_arp.h>
++#include <linux/inetdevice.h>
++#include <linux/veth.h>
++#include <linux/checkpoint.h>
++#include <linux/deferqueue.h>
 +
-+	CKPT_COPY(op, hh->icsk_ack.pending, icsk->icsk_ack.pending);
-+	CKPT_COPY(op, hh->icsk_ack.quick, icsk->icsk_ack.quick);
-+	CKPT_COPY(op, hh->icsk_ack.pingpong, icsk->icsk_ack.pingpong);
-+	CKPT_COPY(op, hh->icsk_ack.blocked, icsk->icsk_ack.blocked);
-+	CKPT_COPY(op, hh->icsk_ack.ato, icsk->icsk_ack.ato);
-+	CKPT_COPY(op, hh->icsk_ack.timeout, icsk->icsk_ack.timeout);
-+	CKPT_COPY(op, hh->icsk_ack.lrcvtime, icsk->icsk_ack.lrcvtime);
-+	CKPT_COPY(op,
-+		  hh->icsk_ack.last_seg_size, icsk->icsk_ack.last_seg_size);
-+	CKPT_COPY(op, hh->icsk_ack.rcv_mss, icsk->icsk_ack.rcv_mss);
++#include <net/net_namespace.h>
++#include <net/sch_generic.h>
 +
-+	if (sk->sk_protocol == IPPROTO_TCP)
-+		ret = sock_inet_tcp_cptrst(ctx, tcp_sk(sk), hh, op);
-+	else if (sk->sk_protocol == IPPROTO_UDP)
-+		ret = 0;
-+	else {
-+		ret = -EINVAL;
-+		ckpt_err(ctx, ret, "unknown socket protocol %d",
-+			 sk->sk_protocol);
-+	}
++struct dq_netdev {
++	struct net_device *dev;
++	struct ckpt_ctx *ctx;
++};
 +
-+	if (sk->sk_family == AF_INET6) {
-+		struct ipv6_pinfo *inet6 = inet6_sk(sk);
-+		if (op == CKPT_CPT) {
-+			ipv6_addr_copy(&hh->inet6.saddr, &inet6->saddr);
-+			ipv6_addr_copy(&hh->inet6.rcv_saddr, &inet6->rcv_saddr);
-+			ipv6_addr_copy(&hh->inet6.daddr, &inet6->daddr);
-+		} else {
-+			ipv6_addr_copy(&inet6->saddr, &hh->inet6.saddr);
-+			ipv6_addr_copy(&inet6->rcv_saddr, &hh->inet6.rcv_saddr);
-+			ipv6_addr_copy(&inet6->daddr, &hh->inet6.daddr);
-+		}
-+	}
++struct veth_newlink {
++	char *peer;
++};
++
++struct mvl_newlink {
++	char this[IFNAMSIZ+1];
++	char base[IFNAMSIZ+1];
++	int mode;
++	__u8 *hwaddr;
++};
++
++typedef int (*new_link_fn)(struct sk_buff *, void *);
++
++static int __kern_devinet_ioctl(struct net *net, unsigned int cmd, void *arg)
++{
++	mm_segment_t fs;
++	int ret;
++
++	fs = get_fs();
++	set_fs(KERNEL_DS);
++	ret = devinet_ioctl(net, cmd, arg);
++	set_fs(fs);
 +
 +	return ret;
 +}
 +
- int inet_checkpoint(struct ckpt_ctx *ctx, struct socket *sock)
- {
- 	struct ckpt_hdr_socket_inet *in;
-@@ -42,6 +285,10 @@ int inet_checkpoint(struct ckpt_ctx *ctx, struct socket *sock)
- 	if (ret)
- 		goto out;
- 
-+	ret = sock_inet_cptrst(ctx, sock->sk, in, CKPT_CPT);
++static int __kern_dev_ioctl(struct net *net, unsigned int cmd, void *arg)
++{
++	mm_segment_t fs;
++	int ret;
++
++	fs = get_fs();
++	set_fs(KERNEL_DS);
++	ret = dev_ioctl(net, cmd, arg);
++	set_fs(fs);
++
++	return ret;
++}
++
++static struct socket *rtnl_open(void)
++{
++	struct socket *sock;
++	int ret;
++
++	ret = sock_create(AF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE, &sock);
++	if (ret < 0)
++		return ERR_PTR(ret);
++
++	return sock;
++}
++
++static int rtnl_close(struct socket *rtnl)
++{
++	if (rtnl)
++		return kernel_sock_shutdown(rtnl, SHUT_RDWR);
++	else
++		return 0;
++}
++
++static struct nlmsghdr *rtnl_get_response(struct socket *rtnl,
++					  struct sk_buff **skb)
++{
++	int ret;
++	long timeo = MAX_SCHEDULE_TIMEOUT;
++	struct nlmsghdr *nlh;
++
++	*skb = NULL;
++
++	lock_sock(rtnl->sk);
++	ret = sk_wait_data(rtnl->sk, &timeo);
++	if (ret)
++		*skb = skb_dequeue(&rtnl->sk->sk_receive_queue);
++	release_sock(rtnl->sk);
++
++	if (!*skb)
++		return ERR_PTR(-EPIPE);
++
++	ret = -EINVAL;
++	nlh = nlmsg_hdr(*skb);
++	if (!nlh)
++		goto err;
++
++	if (nlh->nlmsg_type == NLMSG_ERROR) {
++		struct nlmsgerr *errmsg = nlmsg_data(nlh);
++		ret = errmsg->error;
++		goto err;
++	}
++
++	return nlh;
++ err:
++	kfree_skb(*skb);
++	*skb = NULL;
++
++	return ERR_PTR(ret);
++}
++
++int ckpt_netdev_in_init_netns(struct ckpt_ctx *ctx, struct net_device *dev)
++{
++	/*
++	 * Currently, we treat the "initial network namespace" as that
++	 * of the process doing the checkpoint.  This gives us a
++	 * consistent view of the container and its layout from the
++	 * perspective of the "agent" doing the checkpoint and
++	 * restore.
++	 */
++	return dev->nd_net == current->nsproxy->net_ns;
++}
++EXPORT_SYMBOL_GPL(ckpt_netdev_in_init_netns);
++
++int ckpt_netdev_hwaddr(struct net_device *dev, struct ckpt_hdr_netdev *h)
++{
++	struct net *net = dev->nd_net;
++	struct ifreq req;
++	int ret;
++
++	memcpy(req.ifr_name, dev->name, IFNAMSIZ);
++	ret = __kern_dev_ioctl(net, SIOCGIFFLAGS, &req);
++	if (ret < 0)
++		return ret;
++	h->flags = req.ifr_flags;
++
++	ret = __kern_dev_ioctl(net, SIOCGIFHWADDR, &req);
++	if (ret < 0)
++		return ret;
++
++	memcpy(h->hwaddr, req.ifr_hwaddr.sa_data, sizeof(h->hwaddr));
++
++	return 0;
++}
++
++int ckpt_netdev_inet_addrs(struct in_device *indev,
++			   struct ckpt_netdev_addr *_abuf[])
++{
++	struct ckpt_netdev_addr *abuf = NULL;
++	struct in_ifaddr *addr = indev->ifa_list;
++	int addrs = 0;
++	int max = 32;
++
++ retry:
++	*_abuf = krealloc(abuf, max * sizeof(*abuf), GFP_KERNEL);
++	if (*_abuf == NULL) {
++		addrs = -ENOMEM;
++		goto out;
++	}
++	abuf = *_abuf;
++
++	read_lock(&dev_base_lock);
++
++	while (addr) {
++		abuf[addrs].type = CKPT_NETDEV_ADDR_IPV4; /* Only IPv4 now */
++		abuf[addrs].inet4_local = htonl(addr->ifa_local);
++		abuf[addrs].inet4_address = htonl(addr->ifa_address);
++		abuf[addrs].inet4_mask = htonl(addr->ifa_mask);
++		abuf[addrs].inet4_broadcast = htonl(addr->ifa_broadcast);
++
++		addr = addr->ifa_next;
++		if (++addrs >= max) {
++			read_unlock(&dev_base_lock);
++			max *= 2;
++			goto retry;
++		}
++	}
++
++	read_unlock(&dev_base_lock);
++ out:
++	if (addrs < 0) {
++		kfree(abuf);
++		*_abuf = NULL;
++	}
++
++	return addrs;
++}
++
++struct ckpt_hdr_netdev *ckpt_netdev_base(struct ckpt_ctx *ctx,
++					 struct net_device *dev,
++					 struct ckpt_netdev_addr *addrs[])
++{
++	struct ckpt_hdr_netdev *h;
++	int ret;
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_NETDEV);
++	if (!h)
++		return ERR_PTR(-ENOMEM);
++
++	ret = ckpt_netdev_hwaddr(dev, h);
 +	if (ret < 0)
 +		goto out;
 +
- 	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) in);
-  out:
- 	ckpt_hdr_put(ctx, in);
-@@ -54,11 +301,13 @@ int inet_collect(struct ckpt_ctx *ctx, struct socket *sock)
- 	return ckpt_obj_collect(ctx, sock->sk, CKPT_OBJ_SOCK);
- }
- 
--static int inet_read_buffer(struct ckpt_ctx *ctx, struct sk_buff_head *queue)
-+static int inet_read_buffer(struct ckpt_ctx *ctx,
-+			    struct sk_buff_head *queue,
-+			    struct sock *sk)
- {
- 	struct sk_buff *skb = NULL;
- 
--	skb = sock_restore_skb(ctx);
-+	skb = sock_restore_skb(ctx, sk);
- 	if (IS_ERR(skb))
- 		return PTR_ERR(skb);
- 
-@@ -66,7 +315,9 @@ static int inet_read_buffer(struct ckpt_ctx *ctx, struct sk_buff_head *queue)
- 	return skb->len;
- }
- 
--static int inet_read_buffers(struct ckpt_ctx *ctx, struct sk_buff_head *queue)
-+static int inet_read_buffers(struct ckpt_ctx *ctx,
-+			     struct sk_buff_head *queue,
-+			     struct sock *sk)
- {
- 	struct ckpt_hdr_socket_queue *h;
- 	int ret = 0;
-@@ -77,7 +328,7 @@ static int inet_read_buffers(struct ckpt_ctx *ctx, struct sk_buff_head *queue)
- 		return PTR_ERR(h);
- 
- 	for (i = 0; i < h->skb_count; i++) {
--		ret = inet_read_buffer(ctx, queue);
-+		ret = inet_read_buffer(ctx, queue, sk);
- 		ckpt_debug("read inet buffer %i: %i", i, ret);
- 		if (ret < 0)
- 			goto out;
-@@ -105,12 +356,12 @@ static int inet_deferred_restore_buffers(void *data)
- 	struct sock *sk = dq->sk;
- 	int ret;
- 
--	ret = inet_read_buffers(ctx, &sk->sk_receive_queue);
-+	ret = inet_read_buffers(ctx, &sk->sk_receive_queue, sk);
- 	ckpt_debug("(R) inet_read_buffers: %i\n", ret);
- 	if (ret < 0)
- 		return ret;
- 
--	ret = inet_read_buffers(ctx, &sk->sk_write_queue);
-+	ret = inet_read_buffers(ctx, &sk->sk_write_queue, sk);
- 	ckpt_debug("(W) inet_read_buffers: %i\n", ret);
- 
- 	return ret;
-@@ -129,6 +380,19 @@ static int inet_defer_restore_buffers(struct ckpt_ctx *ctx, struct sock *sk)
- 
- static int inet_precheck(struct socket *sock, struct ckpt_hdr_socket_inet *in)
- {
-+	__u8 icsk_ack_mask = ICSK_ACK_SCHED | ICSK_ACK_TIMER |
-+		ICSK_ACK_PUSHED | ICSK_ACK_PUSHED2;
-+	__u16 urg_mask = TCP_URG_VALID | TCP_URG_NOTYET | TCP_URG_READ;
-+	__u8 nonagle_mask = TCP_NAGLE_OFF | TCP_NAGLE_CORK | TCP_NAGLE_PUSH;
-+	__u8 ecn_mask = TCP_ECN_OK | TCP_ECN_QUEUE_CWR | TCP_ECN_DEMAND_CWR;
++	*addrs = NULL;
++	ret = h->inet_addrs = ckpt_netdev_inet_addrs(dev->ip_ptr, addrs);
++	if (ret < 0)
++		goto out;
 +
-+	if ((htons(in->laddr.sin_port) < PROT_SOCK) &&
-+	    !capable(CAP_NET_BIND_SERVICE)) {
-+		ckpt_debug("unable to bind to port %hu\n",
-+			   htons(in->laddr.sin_port));
-+		return -EINVAL;
-+	}
-+
- 	if (in->laddr_len > sizeof(struct sockaddr_in)) {
- 		ckpt_debug("laddr_len is too big\n");
- 		return -EINVAL;
-@@ -139,6 +403,75 @@ static int inet_precheck(struct socket *sock, struct ckpt_hdr_socket_inet *in)
- 		return -EINVAL;
- 	}
- 
-+	/* Set ato to the default */
-+	in->icsk_ack.ato = TCP_ATO_MIN;
-+
-+	/* No quick acks are scheduled after a restart */
-+	in->icsk_ack.quick = 0;
-+
-+	if (in->icsk_ack.pending & ~icsk_ack_mask) {
-+		ckpt_debug("invalid pending flags 0x%x\n",
-+			   in->icsk_ack.pending & ~icsk_ack_mask);
-+		return -EINVAL;
-+	}
-+
-+	if (in->icsk_ack.pingpong > 1) {
-+		ckpt_debug("invalid icsk_ack.pingpong value\n");
-+		return -EINVAL;
-+	}
-+
-+	if (in->icsk_ack.blocked > 1) {
-+		ckpt_debug("invalid icsk_ack.blocked value\n");
-+		return -EINVAL;
-+	}
-+
-+	/* do_tcp_setsockopt() quietly makes this coercion */
-+	if (in->tcp.window_clamp < (SOCK_MIN_RCVBUF / 2))
-+		in->tcp.window_clamp = SOCK_MIN_RCVBUF / 2;
++	if (ckpt_netdev_in_init_netns(ctx, dev))
++		ret = h->netns_ref = 0;
 +	else
-+		in->tcp.window_clamp = min(in->tcp.window_clamp, 65535U);
-+
-+	if (in->tcp.rcv_ssthresh > (4U * in->tcp.advmss))
-+		in->tcp.rcv_ssthresh = 4U * in->tcp.advmss;
-+
-+	/* These will all be recalculated on the next call to
-+	 * tcp_rtt_estimator()
-+	 */
-+	in->tcp.srtt = in->tcp.mdev = in->tcp.mdev_max = 0;
-+	in->tcp.rttvar = in->tcp.rtt_seq = 0;
-+
-+	/* Might want to set packets_out to zero ? */
-+
-+	if (in->tcp.rcv_wnd > MAX_TCP_WINDOW)
-+		in->tcp.rcv_wnd = MAX_TCP_WINDOW;
-+
-+	if (in->tcp.keepalive_intvl > MAX_TCP_KEEPINTVL) {
-+		ckpt_debug("keepalive_intvl %i out of range\n",
-+			   in->tcp.keepalive_intvl);
-+		return -EINVAL;
++		ret = h->netns_ref = checkpoint_obj(ctx, dev->nd_net,
++						    CKPT_OBJ_NET_NS);
++ out:
++	if (ret < 0) {
++		ckpt_hdr_put(ctx, h);
++		h = ERR_PTR(ret);
++		kfree(*addrs);
 +	}
 +
-+	if (in->tcp.keepalive_probes > MAX_TCP_KEEPCNT) {
-+		ckpt_debug("Invalid keepalive_probes value %i\n",
-+			   in->tcp.keepalive_probes);
-+		return -EINVAL;
++	return h;
++}
++EXPORT_SYMBOL_GPL(ckpt_netdev_base);
++
++int checkpoint_netdev(struct ckpt_ctx *ctx, void *ptr)
++{
++	struct net_device *dev = (struct net_device *)ptr;
++	int ret;
++
++	if (!dev->netdev_ops->ndo_checkpoint) {
++		ckpt_err(ctx, -ENOSYS,
++			 "Device %s does not support checkpoint\n", dev->name);
++		return -ENOSYS;
 +	}
 +
-+	if (in->tcp.urg_data & ~urg_mask) {
-+		ckpt_debug("Invalid urg_data value\n");
-+		return -EINVAL;
-+	}
++	ckpt_debug("checkpointing netdev %s\n", dev->name);
 +
-+	if (in->tcp.nonagle & ~nonagle_mask) {
-+		ckpt_debug("Invalid nonagle value\n");
-+		return -EINVAL;
-+	}
++	ret = dev->netdev_ops->ndo_checkpoint(ctx, dev);
++	if (ret < 0)
++		ckpt_err(ctx, ret, "Failed to checkpoint netdev %s: %i\n",
++			 dev->name, ret);
 +
-+	if (in->tcp.ecn_flags & ~ecn_mask) {
-+		ckpt_debug("Invalid ecn_flags value\n");
-+		return -EINVAL;
-+	}
++	return ret;
++}
 +
- 	return 0;
- }
- 
-@@ -176,8 +509,35 @@ int inet_restore(struct ckpt_ctx *ctx,
- 			ckpt_debug("inet listen: %i\n", ret);
- 			if (ret < 0)
- 				goto out;
++int checkpoint_netns(struct ckpt_ctx *ctx, void *ptr)
++{
++	struct net *net = ptr;
++	struct net_device *dev;
++	struct ckpt_hdr_netns *h;
++	int ret;
 +
-+			/* We are a listening socket, so add ourselves
-+			 * to the list of parent sockets.  This will
-+			 * allow our children to find us later and
-+			 * link up
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_NET_NS);
++	if (!h)
++		return -ENOMEM;
++
++	h->this_ref = ckpt_obj_lookup(ctx, net, CKPT_OBJ_NET_NS);
++	BUG_ON(h->this_ref <= 0);
++
++	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) h);
++	if (ret < 0)
++		goto out;
++
++	for_each_netdev(net, dev) {
++		if (dev->netdev_ops->ndo_checkpoint)
++			ret = checkpoint_obj(ctx, dev, CKPT_OBJ_NETDEV);
++		else if (dev->flags & IFF_UP)
++			ret = -ENOSYS;
++		else
++			/* TODO: There should be a flag to attempt a
++			 * checkpoint of downed interfaces, regardless
++			 * of whether they support checkpoint or not.
 +			 */
++			ret = 0;
++		if (ret < 0)
++			break;
++	}
++ out:
++	ckpt_hdr_put(ctx, h);
 +
-+			ret = sock_listening_list_add(ctx, sock->sk);
-+			if (ret < 0)
-+				goto out;
- 		}
- 	} else {
-+		ret = sock_inet_cptrst(ctx, sock->sk, in, CKPT_RST);
-+		if (ret)
-+			goto out;
++	return ret;
++}
 +
-+		if ((h->sock.state == TCP_ESTABLISHED) &&
-+		    (h->sock.protocol == IPPROTO_TCP)) {
-+			/* A connected socket that was spawned from an
-+			 * accept() needs to be hashed with its parent
-+			 * listening socket in order to receive
-+			 * traffic on the original port.  Since we may
-+			 * not have restarted the parent yet, we defer
-+			 * this until later when we know we have all
-+			 * the listening sockets accounted for.
-+			 */
-+			ret = sock_defer_hash(ctx, sock->sk);
++static int restore_in_addrs(struct ckpt_ctx *ctx,
++			    __u32 naddrs,
++			    struct net *net,
++			    struct net_device *dev)
++{
++	__u32 i;
++	int ret = 0;
++	int len = naddrs * sizeof(struct ckpt_netdev_addr);
++	struct ckpt_netdev_addr *addrs = NULL;
++
++	ret = ckpt_read_payload(ctx, (void **)&addrs, len, CKPT_HDR_BUFFER);
++	if (ret < 0)
++		goto out;
++
++	for (i = 0; i < naddrs; i++) {
++		struct ckpt_netdev_addr *addr = &addrs[i];
++		struct ifreq req;
++		struct sockaddr_in *inaddr;
++
++		if (addr->type != CKPT_NETDEV_ADDR_IPV4) {
++			ret = -EINVAL;
++			ckpt_err(ctx, ret, "Unsupported netdev addr type %i\n",
++				 addr->type);
++			break;
 +		}
 +
- 		if (!sock_flag(sock->sk, SOCK_DEAD))
- 			ret = inet_defer_restore_buffers(ctx, sock->sk);
- 	}
-@@ -186,4 +546,3 @@ int inet_restore(struct ckpt_ctx *ctx,
- 
- 	return ret;
- }
--
++		ckpt_debug("restoring %s: %x/%x/%x\n", dev->name,
++			   addr->inet4_address,
++			   addr->inet4_mask,
++			   addr->inet4_broadcast);
++
++		memcpy(req.ifr_name, dev->name, IFNAMSIZ);
++
++		inaddr = (struct sockaddr_in *)&req.ifr_addr;
++		inaddr->sin_addr.s_addr = ntohl(addr->inet4_address);
++		inaddr->sin_family = AF_INET;
++		ret = __kern_devinet_ioctl(net, SIOCSIFADDR, &req);
++		if (ret < 0) {
++			ckpt_err(ctx, ret, "Failed to set address\n");
++			break;
++		}
++
++		inaddr = (struct sockaddr_in *)&req.ifr_addr;
++		inaddr->sin_addr.s_addr = ntohl(addr->inet4_mask);
++		inaddr->sin_family = AF_INET;
++		ret = __kern_devinet_ioctl(net, SIOCSIFNETMASK, &req);
++		if (ret < 0) {
++			ckpt_err(ctx, ret, "Failed to set netmask\n");
++			break;
++		}
++
++		inaddr = (struct sockaddr_in *)&req.ifr_addr;
++		inaddr->sin_addr.s_addr = ntohl(addr->inet4_broadcast);
++		inaddr->sin_family = AF_INET;
++		ret = __kern_devinet_ioctl(net, SIOCSIFBRDADDR, &req);
++		if (ret < 0) {
++			ckpt_err(ctx, ret, "Failed to set broadcast\n");
++			break;
++		}
++	}
++
++ out:
++	kfree(addrs);
++
++	return ret;
++}
++
++static int veth_new_link_msg(struct sk_buff *skb, void *data)
++{
++	struct nlattr *linkinfo;
++	struct nlattr *linkdata;
++	struct ifinfomsg ifm;
++	int ret = -ENOMEM;
++	struct veth_newlink *d = data;
++
++	linkinfo = nla_nest_start(skb, IFLA_LINKINFO);
++	if (!linkinfo)
++		goto out;
++
++	ret = nla_put_string(skb, IFLA_INFO_KIND, "veth");
++	if (ret)
++		goto out;
++
++	linkdata = nla_nest_start(skb, IFLA_INFO_DATA);
++	if (!linkdata) {
++		ret = -ENOMEM;
++		goto out;
++	}
++
++	ret = nla_put(skb, VETH_INFO_PEER, sizeof(ifm), &ifm);
++	if (!ret)
++		ret = nla_put_string(skb, IFLA_IFNAME, d->peer);
++
++	nla_nest_end(skb, linkdata);
++ out:
++	nla_nest_end(skb, linkinfo);
++
++	return ret;
++}
++
++static int mvl_new_link_msg(struct sk_buff *skb, void *data)
++{
++	struct mvl_newlink *d = data;
++	struct nlattr *linkinfo;
++	struct nlattr *linkdata;
++	struct net_device *lowerdev;
++	int ret;
++
++	lowerdev = dev_get_by_name(current->nsproxy->net_ns, d->base);
++	if (!lowerdev)
++		return -ENOENT;
++
++	ret = nla_put(skb, IFLA_ADDRESS, ETH_ALEN, d->hwaddr);
++	if (ret)
++		goto out_put;
++
++	ret = nla_put_u32(skb, IFLA_LINK, lowerdev->ifindex);
++	if (ret)
++		goto out_put;
++
++	linkinfo = nla_nest_start(skb, IFLA_LINKINFO);
++	if (!linkinfo) {
++		ret = -ENOMEM;
++		goto out_put;
++	}
++
++	ret = nla_put_string(skb, IFLA_INFO_KIND, "macvlan");
++	if (ret)
++		goto out;
++
++	linkdata = nla_nest_start(skb, IFLA_INFO_DATA);
++	if (!linkdata) {
++		ret = -ENOMEM;
++		goto out;
++	}
++
++	ret = nla_put_u32(skb, IFLA_MACVLAN_MODE, d->mode);
++	nla_nest_end(skb, linkdata);
++ out:
++	nla_nest_end(skb, linkinfo);
++ out_put:
++	dev_put(lowerdev);
++
++	return ret;
++}
++
++static struct sk_buff *new_link_msg(new_link_fn fn, void *data, char *name)
++{
++	int ret = -ENOMEM;
++	int flags = NLM_F_REQUEST | NLM_F_CREATE | NLM_F_ACK;
++	struct nlmsghdr *nlh;
++	struct sk_buff *skb;
++	struct ifinfomsg *ifm;
++
++	skb = nlmsg_new(NLMSG_DEFAULT_SIZE, GFP_KERNEL);
++	if (!skb)
++		goto out;
++
++	nlh = nlmsg_put(skb, 0, 0, RTM_NEWLINK, sizeof(*ifm), flags);
++	if (!nlh)
++		goto out;
++
++	ifm = nlmsg_data(nlh);
++	memset(ifm, 0, sizeof(*ifm));
++
++	ret = nla_put_string(skb, IFLA_IFNAME, name);
++	if (ret)
++		goto out;
++
++	ret = fn(skb, data);
++
++	nlmsg_end(skb, nlh);
++
++ out:
++	if (ret < 0) {
++		kfree_skb(skb);
++		skb = ERR_PTR(ret);
++	}
++
++	return skb;
++}
++
++static struct net_device *rtnl_newlink(new_link_fn fn, void *data, char *name)
++{
++	int ret = -ENOMEM;
++	struct socket *rtnl = NULL;
++	struct sk_buff *skb = NULL;
++	struct nlmsghdr *nlh;
++	struct msghdr msg;
++	struct kvec kvec;
++
++	skb = new_link_msg(fn, data, name);
++	if (IS_ERR(skb)) {
++		ckpt_debug("failed to create new link message: %li\n",
++			   PTR_ERR(skb));
++		return ERR_PTR(PTR_ERR(skb));
++	}
++
++	memset(&msg, 0, sizeof(msg));
++	kvec.iov_len = skb->len;
++	kvec.iov_base = skb->head;
++
++	rtnl = rtnl_open();
++	if (IS_ERR(rtnl)) {
++		ret = PTR_ERR(rtnl);
++		ckpt_debug("Unable to open rtnetlink socket: %i\n", ret);
++		goto out_noclose;
++	}
++
++	ret = kernel_sendmsg(rtnl, &msg, &kvec, 1, kvec.iov_len);
++	if (ret < 0)
++		goto out;
++	else if (ret != skb->len) {
++		ret = -EIO;
++		goto out;
++	}
++
++	/* Free the send skb to make room for the receive skb */
++	kfree_skb(skb);
++
++	nlh = rtnl_get_response(rtnl, &skb);
++	if (IS_ERR(nlh)) {
++		ret = PTR_ERR(nlh);
++		ckpt_debug("RTNETLINK said: %i\n", ret);
++	}
++ out:
++	rtnl_close(rtnl);
++ out_noclose:
++	kfree_skb(skb);
++
++	if (ret < 0)
++		return ERR_PTR(ret);
++	else
++		return dev_get_by_name(current->nsproxy->net_ns, name);
++}
++
++static int netdev_noop(void *data)
++{
++	return 0;
++}
++
++static int netdev_cleanup(void *data)
++{
++	struct dq_netdev *dq = data;
++
++	dev_put(dq->dev);
++
++	if (dq->ctx->errno) {
++		ckpt_debug("Unregistering netdev %s\n", dq->dev->name);
++		unregister_netdev(dq->dev);
++	}
++
++	return 0;
++}
++
++static struct net_device *restore_veth(struct ckpt_ctx *ctx,
++				       struct ckpt_hdr_netdev *h,
++				       struct net *net)
++{
++	int ret;
++	char this_name[IFNAMSIZ];
++	char peer_name[IFNAMSIZ];
++	struct net_device *dev;
++	struct net_device *peer;
++	struct ifreq req;
++	struct dq_netdev dq;
++
++	dq.ctx = ctx;
++
++	ret = _ckpt_read_buffer(ctx, this_name, IFNAMSIZ);
++	if (ret < 0)
++		return ERR_PTR(ret);
++
++	ret = _ckpt_read_buffer(ctx, peer_name, IFNAMSIZ);
++	if (ret < 0)
++		return ERR_PTR(ret);
++
++	ckpt_debug("restored veth netdev %s:%s\n", this_name, peer_name);
++
++	peer = ckpt_obj_try_fetch(ctx, h->veth.peer_ref, CKPT_OBJ_NETDEV);
++	if (IS_ERR(peer)) {
++		struct veth_newlink veth = {
++			.peer = peer_name,
++		};
++
++		dev = rtnl_newlink(veth_new_link_msg, &veth, this_name);
++		if (IS_ERR(dev))
++			return dev;
++
++		peer = dev_get_by_name(current->nsproxy->net_ns, peer_name);
++		if (!peer) {
++			ret = -EINVAL;
++			goto err_dev;
++		}
++
++		dq.dev = peer;
++		ret = deferqueue_add(ctx->deferqueue, &dq, sizeof(dq),
++				     netdev_noop, netdev_cleanup);
++		if (ret)
++			goto err_peer;
++
++		ret = ckpt_obj_insert(ctx, peer, h->veth.peer_ref,
++				      CKPT_OBJ_NETDEV);
++		if (ret < 0)
++			/* Can't recall peer dq, so let it cleanup peer */
++			goto err_dev;
++		dev_put(peer);
++
++		dq.dev = dev;
++		ret = deferqueue_add(ctx->deferqueue, &dq, sizeof(dq),
++				     netdev_noop, netdev_cleanup);
++		if (ret)
++			/* Can't recall peer dq, so let it cleanup peer */
++			goto err_dev;
++
++	} else {
++		/* We're second: get our dev from the hash */
++		dev = ckpt_obj_fetch(ctx, h->veth.this_ref, CKPT_OBJ_NETDEV);
++		if (IS_ERR(dev))
++			return dev;
++	}
++
++	/* Move to our new netns */
++	rtnl_lock();
++	ret = dev_change_net_namespace(dev, net, dev->name);
++	rtnl_unlock();
++	if (ret < 0)
++		goto out;
++
++	/* Restore MAC address */
++	memcpy(req.ifr_name, dev->name, IFNAMSIZ);
++	memcpy(req.ifr_hwaddr.sa_data, h->hwaddr, sizeof(h->hwaddr));
++	req.ifr_hwaddr.sa_family = ARPHRD_ETHER;
++	ret = __kern_dev_ioctl(net, SIOCSIFHWADDR, &req);
++ out:
++	if (ret)
++		dev = ERR_PTR(ret);
++
++	return dev;
++
++ err_peer:
++	dev_put(peer);
++	unregister_netdev(peer);
++ err_dev:
++	dev_put(dev);
++	unregister_netdev(dev);
++
++	return ERR_PTR(ret);
++}
++
++static struct net_device *restore_lo(struct ckpt_ctx *ctx,
++				     struct ckpt_hdr_netdev *h,
++				     struct net *net)
++{
++	struct net_device *dev;
++	char name[IFNAMSIZ+1];
++	int ret;
++
++	dev = dev_get_by_name(net, "lo");
++	if (!dev)
++		return ERR_PTR(-EINVAL);
++
++	ret = _ckpt_read_buffer(ctx, name, IFNAMSIZ);
++	if (ret < 0)
++		goto err;
++
++	if (strncmp(dev->name, name, IFNAMSIZ) != 0) {
++		ret = dev_change_name(dev, name);
++		if (ret < 0)
++			goto err;
++	}
++
++	return dev;
++ err:
++	dev_put(dev);
++
++	return ERR_PTR(ret);
++}
++
++static struct net_device *restore_sit(struct ckpt_ctx *ctx,
++				      struct ckpt_hdr_netdev *h,
++				      struct net *net)
++{
++	/* Don't actually do anything for SIT devices yet */
++	return dev_get_by_name(net, "sit0");
++}
++
++static struct net_device *restore_macvlan(struct ckpt_ctx *ctx,
++					  struct ckpt_hdr_netdev *h,
++					  struct net *net)
++{
++	struct net_device *dev;
++	struct mvl_newlink mvl = {
++		.mode = h->macvlan.mode,
++		.hwaddr = h->hwaddr,
++	};
++	int ret;
++
++	ret = _ckpt_read_buffer(ctx, mvl.this, IFNAMSIZ);
++	if (ret < 0)
++		return ERR_PTR(ret);
++
++	ret = _ckpt_read_buffer(ctx, mvl.base, IFNAMSIZ);
++	if (ret < 0)
++		return ERR_PTR(ret);
++
++	dev = rtnl_newlink(mvl_new_link_msg, &mvl, mvl.this);
++	if (IS_ERR(dev)) {
++		ckpt_err(ctx, PTR_ERR(dev),
++			 "Failed to create macvlan device %s:%s",
++			 mvl.this, mvl.base);
++		goto out;
++	}
++
++	rtnl_lock();
++	ret = dev_change_net_namespace(dev, net, dev->name);
++	rtnl_unlock();
++
++	if (ret) {
++		ckpt_err(ctx, ret, "Failed to change netns of %s:%s\n",
++			 mvl.this, mvl.base);
++		dev_put(dev);
++		unregister_netdev(dev);
++		dev = ERR_PTR(ret);
++	}
++ out:
++	return dev;
++}
++
++typedef struct net_device *(*restore_netdev_fn)(struct ckpt_ctx *,
++						struct ckpt_hdr_netdev *,
++						struct net *);
++
++restore_netdev_fn restore_netdev_functions[] = {
++	restore_lo,		/* CKPT_NETDEV_LO */
++	restore_veth,		/* CKPT_NETDEV_VETH */
++	restore_sit,		/* CKPT_NETDEV_SIT */
++	restore_macvlan,	/* CKPT_NETDEV_MACVLAN */
++};
++
++void *restore_netdev(struct ckpt_ctx *ctx)
++{
++	struct ckpt_hdr_netdev *h;
++	struct net_device *dev = NULL;
++	struct ifreq req;
++	struct net *net;
++	int ret;
++	restore_netdev_fn restore_fn = NULL;
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_NETDEV);
++	if (IS_ERR(h))
++		return h;
++
++	if (h->netns_ref != 0) {
++		net = ckpt_obj_try_fetch(ctx, h->netns_ref, CKPT_OBJ_NET_NS);
++		if (IS_ERR(net)) {
++			ckpt_debug("failed to get net for %i\n", h->netns_ref);
++			ret = PTR_ERR(net);
++			goto out;
++		}
++	} else
++		net = current->nsproxy->net_ns;
++
++	if (h->type >= CKPT_NETDEV_MAX) {
++		ret = -EINVAL;
++		ckpt_err(ctx, ret, "Invalid netdev type %i\n", h->type);
++		goto out;
++	}
++
++	restore_fn = restore_netdev_functions[h->type];
++
++	dev = restore_fn(ctx, h, net);
++	if (IS_ERR(dev)) {
++		ret = PTR_ERR(dev);
++		ckpt_err(ctx, ret, "Netdev type %i not supported\n", h->type);
++		goto out;
++	}
++
++	/* Restore flags (which will likely bring the interface up) */
++	memcpy(req.ifr_name, dev->name, IFNAMSIZ);
++	req.ifr_flags = h->flags;
++	ret = __kern_dev_ioctl(net, SIOCSIFFLAGS, &req);
++	if (ret < 0)
++		goto out;
++
++	if (h->inet_addrs > 0)
++		ret = restore_in_addrs(ctx, h->inet_addrs, net, dev);
++ out:
++	if (ret) {
++		ckpt_err(ctx, ret, "Failed to restore netdevice\n");
++		if ((h->type == CKPT_NETDEV_VETH) && !IS_ERR(dev))
++			dev_put(dev);
++		dev = ERR_PTR(ret);
++	} else
++		ckpt_debug("restored netdev %s\n", dev->name);
++
++	ckpt_hdr_put(ctx, h);
++
++	return dev;
++}
++
++void *restore_netns(struct ckpt_ctx *ctx)
++{
++	struct ckpt_hdr_netns *h;
++	struct net *net;
++
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_NET_NS);
++	if (IS_ERR(h)) {
++		ckpt_err(ctx, PTR_ERR(h), "failed to read netns\n");
++		return h;
++	}
++
++	if (h->this_ref != 0) {
++		net = copy_net_ns(CLONE_NEWNET, current->nsproxy->net_ns);
++		if (IS_ERR(net))
++			goto out;
++	} else
++		net = current->nsproxy->net_ns;
++ out:
++	ckpt_hdr_put(ctx, h);
++
++	return net;
++}
 -- 
 1.6.3.3
