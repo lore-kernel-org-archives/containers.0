@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH v21 049/100] c/r: checkpoint and restore FIFOs
-Date: Sat,  1 May 2010 10:15:31 -0400
-Message-ID: <1272723382-19470-50-git-send-email-orenl__12970.9492590793$1272724836$gmane$org@cs.columbia.edu>
+Subject: [PATCH v21 050/100] c/r: refuse to checkpoint if monitoring
+	directories with dnotify
+Date: Sat,  1 May 2010 10:15:32 -0400
+Message-ID: <1272723382-19470-51-git-send-email-orenl__27737.1493088596$1272724907$gmane$org@cs.columbia.edu>
 References: <1272723382-19470-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,190 +22,101 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-FIFOs are almost like pipes.
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Checkpoints adds the FIFO pathname. The first time the FIFO is found
-it also assigns an @objref and dumps the contents in the buffers.
+We do not support restarting fsnotify watches. inotify and fanotify utilize
+anon_inodes for pseudofiles which lack the .checkpoint operation. So they
+already cleanly prevent checkpoint. dnotify on the other hand registers
+its watches using fcntl() which does not require the userspace task to
+hold an fd with an empty .checkpoint operation. This means userspace
+could use dnotify to set up fsnotify watches which won't be re-created during
+restart.
 
-To restore, use the @objref only to determine whether a particular
-FIFO has already been restored earlier. Note that it ignores the file
-pointer that matches that @objref (unlike with pipes, where that file
-corresponds to the other end of the pipe). Instead, it creates a new
-FIFO using the saved pathname.
+Check for fsnotify watches created with dnotify and reject checkpoint
+if there are any.
 
 Changelog [v21]:
-  - Put file_ops->checkpoint under CONFIG_CHECKPOINT
-Changelog [v19-rc3]:
-  - Rebase to kernel 2.6.33
-Changelog [v19-rc1]:
-  - Switch to ckpt_obj_try_fetch()
-  - [Matt Helsley] Add cpp definitions for enums
+  - [Stanislav O. Bezzubtsev] Fix omitted parameter name error
 
 Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Acked-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- fs/checkpoint.c                |    6 +++
- fs/pipe.c                      |   80 +++++++++++++++++++++++++++++++++++++++-
- include/linux/checkpoint_hdr.h |    2 +
- include/linux/pipe_fs_i.h      |    2 +
- 4 files changed, 89 insertions(+), 1 deletions(-)
+ fs/checkpoint.c             |    5 +++++
+ fs/notify/dnotify/dnotify.c |   18 ++++++++++++++++++
+ include/linux/dnotify.h     |    6 ++++++
+ 3 files changed, 29 insertions(+), 0 deletions(-)
 
 diff --git a/fs/checkpoint.c b/fs/checkpoint.c
-index e840d8a..06f1130 100644
+index 06f1130..874be00 100644
 --- a/fs/checkpoint.c
 +++ b/fs/checkpoint.c
-@@ -593,6 +593,12 @@ static struct restore_file_ops restore_file_ops[] = {
- 		.file_type = CKPT_FILE_PIPE,
- 		.restore = pipe_file_restore,
- 	},
-+	/* fifo */
-+	{
-+		.file_name = "FIFO",
-+		.file_type = CKPT_FILE_FIFO,
-+		.restore = fifo_file_restore,
-+	},
- };
+@@ -206,6 +206,11 @@ static int checkpoint_file(struct ckpt_ctx *ctx, void *ptr)
+ 		return -EBADF;
+ 	}
  
- static void *restore_file(struct ckpt_ctx *ctx)
-diff --git a/fs/pipe.c b/fs/pipe.c
-index 801aad9..7f00e58 100644
---- a/fs/pipe.c
-+++ b/fs/pipe.c
-@@ -830,6 +830,8 @@ pipe_rdwr_open(struct inode *inode, struct file *filp)
- 	return ret;
- }
- 
-+static struct vfsmount *pipe_mnt __read_mostly;
++	if (is_dnotify_attached(file)) {
++		ckpt_err(ctx, -EBADF, "%(T)%(P)dnotify unsupported\n", file);
++		return -EBADF;
++	}
 +
- #ifdef CONFIG_CHECKPOINT
- static int checkpoint_pipe(struct ckpt_ctx *ctx, struct inode *inode)
- {
-@@ -877,7 +879,11 @@ static int pipe_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
- 	if (!h)
- 		return -ENOMEM;
- 
--	h->common.f_type = CKPT_FILE_PIPE;
-+	/* fifo and pipe are similar at checkpoint, differ on restore */
-+	if (inode->i_sb == pipe_mnt->mnt_sb)
-+		h->common.f_type = CKPT_FILE_PIPE;
-+	else
-+		h->common.f_type = CKPT_FILE_FIFO;
- 	h->pipe_objref = objref;
- 
- 	ret = checkpoint_file_common(ctx, file, &h->common);
-@@ -887,6 +893,13 @@ static int pipe_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
+ 	ret = file->f_op->checkpoint(ctx, file);
  	if (ret < 0)
- 		goto out;
- 
-+	/* FIFO also needs a file name */
-+	if (h->common.f_type == CKPT_FILE_FIFO) {
-+		ret = checkpoint_fname(ctx, &file->f_path, &ctx->root_fs_path);
-+		if (ret < 0)
-+			goto out;
-+	}
-+
- 	if (first)
- 		ret = checkpoint_pipe(ctx, inode);
-  out:
-@@ -978,6 +991,71 @@ struct file *pipe_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr)
- 
- 	return file;
+ 		ckpt_err(ctx, ret, "%(T)%(P)file checkpoint failed\n", file);
+diff --git a/fs/notify/dnotify/dnotify.c b/fs/notify/dnotify/dnotify.c
+index 7e54e52..0a63bf6 100644
+--- a/fs/notify/dnotify/dnotify.c
++++ b/fs/notify/dnotify/dnotify.c
+@@ -289,6 +289,24 @@ static int attach_dn(struct dnotify_struct *dn, struct dnotify_mark_entry *dnent
+ 	return 0;
  }
-+
-+struct file *fifo_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr)
+ 
++int is_dnotify_attached(struct file *filp)
 +{
-+	struct ckpt_hdr_file_pipe *h = (struct ckpt_hdr_file_pipe *) ptr;
-+	struct file *file;
-+	int first, ret;
++	struct fsnotify_mark_entry *entry;
++	struct inode *inode;
 +
-+	if (ptr->h.type != CKPT_HDR_FILE  ||
-+	    ptr->h.len != sizeof(*h) || ptr->f_type != CKPT_FILE_FIFO)
-+		return ERR_PTR(-EINVAL);
++	inode = filp->f_path.dentry->d_inode;
++	if (!S_ISDIR(inode->i_mode))
++		return 0;
 +
-+	if (h->pipe_objref <= 0)
-+		return ERR_PTR(-EINVAL);
-+
-+	/*
-+	 * If ckpt_obj_try_fetch() returned ERR_PTR(-EINVAL), this is the
-+	 * first time for this fifo.
-+	 */
-+	file = ckpt_obj_try_fetch(ctx, h->pipe_objref, CKPT_OBJ_FILE);
-+	if (!IS_ERR(file))
-+		first = 0;
-+	else if (PTR_ERR(file) == -EINVAL)
-+		first = 1;
-+	else
-+		return file;
-+
-+	/*
-+	 * To avoid blocking, always open the fifo with O_RDWR;
-+	 * then fix flags below.
-+	 */
-+	file = restore_open_fname(ctx, (ptr->f_flags & ~O_ACCMODE) | O_RDWR);
-+	if (IS_ERR(file))
-+		return file;
-+
-+	if ((ptr->f_flags & O_ACCMODE) == O_RDONLY) {
-+		file->f_flags = (file->f_flags & ~O_ACCMODE) | O_RDONLY;
-+		file->f_mode &= ~FMODE_WRITE;
-+	} else if ((ptr->f_flags & O_ACCMODE) == O_WRONLY) {
-+		file->f_flags = (file->f_flags & ~O_ACCMODE) | O_WRONLY;
-+		file->f_mode &= ~FMODE_READ;
-+	} else if ((ptr->f_flags & O_ACCMODE) != O_RDWR) {
-+		ret = -EINVAL;
-+		goto out;
-+	}
-+
-+	/* first time: add to objhash and restore fifo's contents */
-+	if (first) {
-+		ret = ckpt_obj_insert(ctx, file, h->pipe_objref, CKPT_OBJ_FILE);
-+		if (ret < 0)
-+			goto out;
-+
-+		ret = restore_pipe(ctx, file);
-+		if (ret < 0)
-+			goto out;
-+	}
-+
-+	ret = restore_file_common(ctx, file, ptr);
-+ out:
-+	if (ret < 0) {
-+		fput(file);
-+		file = ERR_PTR(ret);
-+	}
-+
-+	return file;
++	spin_lock(&inode->i_lock);
++	entry = fsnotify_find_mark_entry(dnotify_group, inode);
++	spin_unlock(&inode->i_lock);
++	if (!entry)
++		return 0;
++	fsnotify_put_mark(entry);
++	return 1;
 +}
- #endif /* CONFIG_CHECKPOINT */
- 
++
  /*
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 50ef2b6..fbcbee7 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -286,6 +286,8 @@ enum file_type {
- #define CKPT_FILE_GENERIC CKPT_FILE_GENERIC
- 	CKPT_FILE_PIPE,
- #define CKPT_FILE_PIPE CKPT_FILE_PIPE
-+	CKPT_FILE_FIFO,
-+#define CKPT_FILE_FIFO CKPT_FILE_FIFO
- 	CKPT_FILE_MAX
- #define CKPT_FILE_MAX CKPT_FILE_MAX
- };
-diff --git a/include/linux/pipe_fs_i.h b/include/linux/pipe_fs_i.h
-index e526a12..596403e 100644
---- a/include/linux/pipe_fs_i.h
-+++ b/include/linux/pipe_fs_i.h
-@@ -160,6 +160,8 @@ struct ckpt_ctx;
- struct ckpt_hdr_file;
- extern struct file *pipe_file_restore(struct ckpt_ctx *ctx,
- 				      struct ckpt_hdr_file *ptr);
-+extern struct file *fifo_file_restore(struct ckpt_ctx *ctx,
-+				      struct ckpt_hdr_file *ptr);
- #endif
+  * When a process calls fcntl to attach a dnotify watch to a directory it ends
+  * up here.  Allocate both a mark for fsnotify to add and a dnotify_struct to be
+diff --git a/include/linux/dnotify.h b/include/linux/dnotify.h
+index ecc0628..7093052 100644
+--- a/include/linux/dnotify.h
++++ b/include/linux/dnotify.h
+@@ -29,6 +29,7 @@ struct dnotify_struct {
+ 			    FS_MOVED_FROM | FS_MOVED_TO)
  
- #endif
+ extern void dnotify_flush(struct file *, fl_owner_t);
++extern int is_dnotify_attached(struct file *);
+ extern int fcntl_dirnotify(int, struct file *, unsigned long);
+ 
+ #else
+@@ -37,6 +38,11 @@ static inline void dnotify_flush(struct file *filp, fl_owner_t id)
+ {
+ }
+ 
++static inline int is_dnotify_attached(struct file *filp)
++{
++	return 0;
++}
++
+ static inline int fcntl_dirnotify(int fd, struct file *filp, unsigned long arg)
+ {
+ 	return -EINVAL;
 -- 
 1.6.3.3
