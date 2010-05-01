@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH v21 037/100] c/r: introduce new 'file_operations':
-	->checkpoint, ->collect()
-Date: Sat,  1 May 2010 10:15:19 -0400
-Message-ID: <1272723382-19470-38-git-send-email-orenl__12648.5097840943$1272726929$gmane$org@cs.columbia.edu>
+Subject: [PATCH v21 019/100] Make file_pos_read/write() public and export
+	kernel_write()
+Date: Sat,  1 May 2010 10:15:01 -0400
+Message-ID: <1272723382-19470-20-git-send-email-orenl__24794.4928393283$1272727045$gmane$org@cs.columbia.edu>
 References: <1272723382-19470-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,105 +22,213 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-While we assume all normal files and directories can be checkpointed,
-there are, as usual in the VFS, specialized places that will always
-need an ability to override these defaults. Although we could do this
-completely in the checkpoint code, that would bitrot quickly.
+These three are used in a subsequent patch to allow the kernel c/r
+code to call vfs_read/write() to read and write data to and from the
+checkpoint image.
 
-This adds a new 'file_operations' function for checkpointing a file.
-It is assumed that there should be a dirt-simple way to make something
-(un)checkpointable that fits in with current code.
+This patch makes the following changes:
 
-As you can see in the ext[234] patches down the road, all that we have
-to do to make something simple be supported is add a single "generic"
-f_op entry.
+1) Move kernel_write() from fs/splice.c to fs/exec.c to be near
+kernel_read()
 
-Also adds a new 'file_operations' function for 'collecting' a file for
-leak-detection during full-container checkpoint. This is useful for
-those files that hold references to other "collectable" objects. Two
-examples are pty files that point to corresponding tty objects, and
-eventpoll files that refer to the files they are monitoring.
+2) Make kernel_read/write() iterate if they face partial reads or
+writes, and retry if they face -EAGAIN.
 
-Finally, this patch introduces vfs_fcntl() so that it can be called
-from restart (see patch adding restart of files).
+3) Adjust prototypes of kernel_read/write() to use size_t and ssize_t
 
-Changelog[v21]
-  - Update Documentation/filesystem/vfs.txt
-  - Put file_ops->checkpoint under CONFIG_CHECKPOINT
-Changelog[v17]
-  - Introduce 'collect' method
-Changelog[v17]
-  - Forward-declare 'ckpt_ctx' et-al, don't use checkpoint_types.h
+4) Move file_pos_read/write() to include/linux/fs.h
+
+Changelog [ckpt-v21]
+  - Introduce kernel_write(), fix kernel_read()
 
 Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- Documentation/filesystems/vfs.txt |   13 ++++++++++++-
- include/linux/fs.h                |    5 +++++
- 2 files changed, 17 insertions(+), 1 deletions(-)
+ fs/exec.c          |   69 ++++++++++++++++++++++++++++++++++++++++++++++++----
+ fs/read_write.c    |   10 -------
+ fs/splice.c        |   17 +------------
+ include/linux/fs.h |   13 +++++++++-
+ 4 files changed, 77 insertions(+), 32 deletions(-)
 
-diff --git a/Documentation/filesystems/vfs.txt b/Documentation/filesystems/vfs.txt
-index 3de2f32..a78355d 100644
---- a/Documentation/filesystems/vfs.txt
-+++ b/Documentation/filesystems/vfs.txt
-@@ -711,7 +711,7 @@ struct file_operations
- ----------------------
+diff --git a/fs/exec.c b/fs/exec.c
+index 49cdaa1..7bacb6a 100644
+--- a/fs/exec.c
++++ b/fs/exec.c
+@@ -693,23 +693,82 @@ exit:
+ }
+ EXPORT_SYMBOL(open_exec);
  
- This describes how the VFS can manipulate an open file. As of kernel
--2.6.22, the following members are defined:
-+2.6.34, the following members are defined:
- 
- struct file_operations {
- 	struct module *owner;
-@@ -742,6 +742,10 @@ struct file_operations {
- 	int (*flock) (struct file *, int, struct file_lock *);
- 	ssize_t (*splice_write)(struct pipe_inode_info *, struct file *, size_t, unsigned int);
- 	ssize_t (*splice_read)(struct file *, struct pipe_inode_info *, size_t, unsigned int);
-+#ifdef CONFIG_CHECKPOINT
-+	int (*checkpoint)(struct ckpt_ctx *, struct file *);
-+	int (*collect)(struct ckpt_ctx *, struct file *);
-+#endif
- };
- 
- Again, all methods are called without any locks being held, unless
-@@ -813,6 +817,13 @@ otherwise noted.
-   splice_read: called by the VFS to splice data from file to a pipe. This
- 	       method is used by the splice(2) system call
- 
-+  checkpoint: called by checkpoint(2) system call to checkpoint the
-+              state of a file descriptor.
+-int kernel_read(struct file *file, loff_t offset,
+-		char *addr, unsigned long count)
++static ssize_t _kernel_read(struct file *file, loff_t offset,
++			    char __user *ubuf, size_t count)
+ {
+-	mm_segment_t old_fs;
++	ssize_t nread;
++	size_t nleft;
+ 	loff_t pos = offset;
+-	int result;
 +
-+  collect: called by the checkpoint(2) system call to track references to
-+           file descriptors, to detect leaks in full-container checkpoint
-+	   (see Documentation/checkpoint/readme.txt).
++	for (nleft = count; nleft; nleft -= nread) {
++		nread = vfs_read(file, ubuf, nleft, &pos);
++		if (nread <= 0) {
++			if (nread == -EAGAIN) {
++				nread = 0;
++				continue;
++			} else if (nread == 0)
++				break;
++			else
++				return nread;
++		}
++		ubuf += nread;
++	}
++	return count - nleft;
++}
 +
- Note that the file operations are implemented by the specific
- filesystem in which the inode resides. When opening a device node
- (character or block special) most filesystems will call special
++ssize_t kernel_read(struct file *file, loff_t offset,
++		    char *addr, size_t count)
++{
++	mm_segment_t old_fs;
++	ssize_t result;
+ 
+ 	old_fs = get_fs();
+ 	set_fs(get_ds());
+ 	/* The cast to a user pointer is valid due to the set_fs() */
+-	result = vfs_read(file, (void __user *)addr, count, &pos);
++	result = _kernel_read(file, offset, (void __user *)addr, count);
+ 	set_fs(old_fs);
+ 	return result;
+ }
+ 
+ EXPORT_SYMBOL(kernel_read);
+ 
++static ssize_t _kernel_write(struct file *file, loff_t offset,
++			     const char __user *ubuf, size_t count)
++{
++	ssize_t nwrite;
++	size_t nleft;
++	loff_t pos = offset;
++
++	for (nleft = count; nleft; nleft -= nwrite) {
++		nwrite = vfs_write(file, ubuf, nleft, &pos);
++		if (nwrite < 0) {
++			if (nwrite == -EAGAIN) {
++				nwrite = 0;
++				continue;
++			} else
++				return nwrite;
++		}
++		ubuf += nwrite;
++	}
++	return count - nleft;
++}
++
++ssize_t kernel_write(struct file *file, loff_t offset,
++		     const char *addr, size_t count)
++{
++	mm_segment_t old_fs;
++	ssize_t result;
++
++	old_fs = get_fs();
++	set_fs(get_ds());
++	/* The cast to a user pointer is valid due to the set_fs() */
++	result = _kernel_write(file, offset, (void __user *)addr, count);
++	set_fs(old_fs);
++	return result;
++}
++
++EXPORT_SYMBOL(kernel_write);
++
+ static int exec_mmap(struct mm_struct *mm)
+ {
+ 	struct task_struct *tsk;
+diff --git a/fs/read_write.c b/fs/read_write.c
+index 113386d..67b7d83 100644
+--- a/fs/read_write.c
++++ b/fs/read_write.c
+@@ -361,16 +361,6 @@ ssize_t vfs_write(struct file *file, const char __user *buf, size_t count, loff_
+ 
+ EXPORT_SYMBOL(vfs_write);
+ 
+-static inline loff_t file_pos_read(struct file *file)
+-{
+-	return file->f_pos;
+-}
+-
+-static inline void file_pos_write(struct file *file, loff_t pos)
+-{
+-	file->f_pos = pos;
+-}
+-
+ SYSCALL_DEFINE3(read, unsigned int, fd, char __user *, buf, size_t, count)
+ {
+ 	struct file *file;
+diff --git a/fs/splice.c b/fs/splice.c
+index 9313b61..188e17d 100644
+--- a/fs/splice.c
++++ b/fs/splice.c
+@@ -538,21 +538,6 @@ static ssize_t kernel_readv(struct file *file, const struct iovec *vec,
+ 	return res;
+ }
+ 
+-static ssize_t kernel_write(struct file *file, const char *buf, size_t count,
+-			    loff_t pos)
+-{
+-	mm_segment_t old_fs;
+-	ssize_t res;
+-
+-	old_fs = get_fs();
+-	set_fs(get_ds());
+-	/* The cast to a user pointer is valid due to the set_fs() */
+-	res = vfs_write(file, (const char __user *)buf, count, &pos);
+-	set_fs(old_fs);
+-
+-	return res;
+-}
+-
+ ssize_t default_file_splice_read(struct file *in, loff_t *ppos,
+ 				 struct pipe_inode_info *pipe, size_t len,
+ 				 unsigned int flags)
+@@ -1011,7 +996,7 @@ static int write_pipe_buf(struct pipe_inode_info *pipe, struct pipe_buffer *buf,
+ 		return ret;
+ 
+ 	data = buf->ops->map(pipe, buf, 0);
+-	ret = kernel_write(sd->u.file, data + buf->offset, sd->len, sd->pos);
++	ret = kernel_write(sd->u.file, sd->pos, data + buf->offset, sd->len);
+ 	buf->ops->unmap(pipe, buf, data);
+ 
+ 	return ret;
 diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 65ffe9c..c06c157 100644
+index 39d57bc..9e8b171 100644
 --- a/include/linux/fs.h
 +++ b/include/linux/fs.h
-@@ -397,6 +397,7 @@ struct kstatfs;
- struct vm_area_struct;
- struct vfsmount;
- struct cred;
-+struct ckpt_ctx;
+@@ -1548,6 +1548,16 @@ ssize_t rw_copy_check_uvector(int type, const struct iovec __user * uvector,
+ 				struct iovec *fast_pointer,
+ 				struct iovec **ret_pointer);
  
- extern void __init inode_init(void);
- extern void __init inode_init_early(void);
-@@ -1511,6 +1512,10 @@ struct file_operations {
- 	ssize_t (*splice_write)(struct pipe_inode_info *, struct file *, loff_t *, size_t, unsigned int);
- 	ssize_t (*splice_read)(struct file *, loff_t *, struct pipe_inode_info *, size_t, unsigned int);
- 	int (*setlease)(struct file *, long, struct file_lock **);
-+#ifdef CONFIG_CHECKPOINT
-+	int (*checkpoint)(struct ckpt_ctx *, struct file *);
-+	int (*collect)(struct ckpt_ctx *, struct file *);
-+#endif
- };
++static inline loff_t file_pos_read(struct file *file)
++{
++	return file->f_pos;
++}
++
++static inline void file_pos_write(struct file *file, loff_t pos)
++{
++	file->f_pos = pos;
++}
++
+ extern ssize_t vfs_read(struct file *, char __user *, size_t, loff_t *);
+ extern ssize_t vfs_write(struct file *, const char __user *, size_t, loff_t *);
+ extern ssize_t vfs_readv(struct file *, const struct iovec __user *,
+@@ -2127,7 +2137,8 @@ extern struct file *do_filp_open(int dfd, const char *pathname,
+ 		int open_flag, int mode, int acc_mode);
+ extern int may_open(struct path *, int, int);
  
- struct inode_operations {
+-extern int kernel_read(struct file *, loff_t, char *, unsigned long);
++extern ssize_t kernel_read(struct file *, loff_t, char *, size_t);
++extern ssize_t kernel_write(struct file *, loff_t, const char *, size_t);
+ extern struct file * open_exec(const char *);
+  
+ /* fs/dcache.c -- generic fs support functions */
 -- 
 1.6.3.3
