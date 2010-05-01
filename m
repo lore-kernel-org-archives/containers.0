@@ -1,8 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH v21 072/100] c/r: introduce checkpoint/restore methods to
-	struct proto_ops
-Date: Sat,  1 May 2010 10:15:54 -0400
-Message-ID: <1272723382-19470-73-git-send-email-orenl__45700.8982230493$1272726599$gmane$org@cs.columbia.edu>
+Subject: [PATCH v21 036/100] c/r: introduce vfs_fcntl()
+Date: Sat,  1 May 2010 10:15:18 -0400
+Message-ID: <1272723382-19470-37-git-send-email-orenl__44200.6185222$1272726604$gmane$org@cs.columbia.edu>
 References: <1272723382-19470-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -19,53 +18,72 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This adds new 'proto_ops' function for checkpointing and restoring
-sockets. This allows the checkpoint/restart code to compile nicely
-when, e.g., AF_UNIX sockets are selected as a module.
+This patch introduces vfs_fcntl() so that it can be called from
+restart (see patch adding restart of files).
 
-It also adds a function 'collecting' a socket for leak-detection
-during full-container checkpoint. This is useful for those sockets
-that hold references to other "collectable" objects. Two examples are
-AF_UNIX buffers which reference the socket of origin, and sockets that
-have file descriptors in-transit.
-
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/net.h |    9 +++++++++
- 1 files changed, 9 insertions(+), 0 deletions(-)
+ fs/fcntl.c         |   21 +++++++++++++--------
+ include/linux/fs.h |    2 ++
+ 2 files changed, 15 insertions(+), 8 deletions(-)
 
-diff --git a/include/linux/net.h b/include/linux/net.h
-index 4157b5d..1f32c70 100644
---- a/include/linux/net.h
-+++ b/include/linux/net.h
-@@ -153,6 +153,9 @@ struct sockaddr;
- struct msghdr;
- struct module;
+diff --git a/fs/fcntl.c b/fs/fcntl.c
+index 452d02f..2079af0 100644
+--- a/fs/fcntl.c
++++ b/fs/fcntl.c
+@@ -418,6 +418,18 @@ static long do_fcntl(int fd, unsigned int cmd, unsigned long arg,
+ 	return err;
+ }
  
-+struct ckpt_ctx;
-+struct ckpt_hdr_socket;
++int vfs_fcntl(int fd, unsigned int cmd, unsigned long arg, struct file *filp)
++{
++	int err;
 +
- struct proto_ops {
- 	int		family;
- 	struct module	*owner;
-@@ -201,6 +204,12 @@ struct proto_ops {
- 				      int offset, size_t size, int flags);
- 	ssize_t 	(*splice_read)(struct socket *sock,  loff_t *ppos,
- 				       struct pipe_inode_info *pipe, size_t len, unsigned int flags);
-+	int		(*checkpoint)(struct ckpt_ctx *ctx,
-+				      struct socket *sock);
-+	int		(*collect)(struct ckpt_ctx *ctx,
-+				   struct socket *sock);
-+	int		(*restore)(struct ckpt_ctx *ctx, struct socket *sock,
-+				   struct ckpt_hdr_socket *h);
- };
++	err = security_file_fcntl(filp, cmd, arg);
++	if (err)
++		goto out;
++	err = do_fcntl(fd, cmd, arg, filp);
++ out:
++	return err;
++}
++
+ SYSCALL_DEFINE3(fcntl, unsigned int, fd, unsigned int, cmd, unsigned long, arg)
+ {	
+ 	struct file *filp;
+@@ -427,14 +439,7 @@ SYSCALL_DEFINE3(fcntl, unsigned int, fd, unsigned int, cmd, unsigned long, arg)
+ 	if (!filp)
+ 		goto out;
  
- #define DECLARE_SOCKADDR(type, dst, src)	\
+-	err = security_file_fcntl(filp, cmd, arg);
+-	if (err) {
+-		fput(filp);
+-		return err;
+-	}
+-
+-	err = do_fcntl(fd, cmd, arg, filp);
+-
++	err = vfs_fcntl(fd, cmd, arg, filp);
+  	fput(filp);
+ out:
+ 	return err;
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 9e8b171..65ffe9c 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1096,6 +1096,8 @@ struct file_lock {
+ 
+ #include <linux/fcntl.h>
+ 
++extern int vfs_fcntl(int fd, unsigned cmd, unsigned long arg, struct file *fp);
++
+ extern void send_sigio(struct fown_struct *fown, int fd, int band);
+ 
+ #ifdef CONFIG_FILE_LOCKING
 -- 
 1.6.3.3
