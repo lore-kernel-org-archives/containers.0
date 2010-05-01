@@ -1,8 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH v21 051/100] c/r: make ckpt_may_checkpoint_task() check each
-	namespace individually
-Date: Sat,  1 May 2010 10:15:33 -0400
-Message-ID: <1272723382-19470-52-git-send-email-orenl__42202.5395710536$1272726369$gmane$org@cs.columbia.edu>
+Subject: [PATCH v21 027/100] c/r: restart-blocks
+Date: Sat,  1 May 2010 10:15:09 -0400
+Message-ID: <1272723382-19470-28-git-send-email-orenl__24651.0396282703$1272726452$gmane$org@cs.columbia.edu>
 References: <1272723382-19470-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,448 +21,443 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-For a given namespace type, say XXX, if a checkpoint was taken on a
-CONFIG_XXX_NS system, is restarted on a !CONFIG_XXX_NS, then ensure
-that:
+(Paraphrasing what's said this message:
+http://lists.openwall.net/linux-kernel/2007/12/05/64)
 
-1) The global settings of the global (init) namespace do not get
-overwritten. Creating new objects in that namespace is ok, as long as
-the request identifier is available.
+Restart blocks are callbacks used cause a system call to be restarted
+with the arguments specified in the system call restart block. It is
+useful for system call that are not idempotent, i.e. the argument(s)
+might be a relative timeout, where some adjustments are required when
+restarting the system call. It relies on the system call itself to set
+up its restart point and the argument save area.  They are rare: an
+actual signal would turn that it an EINTR. The only case that should
+ever trigger this is some kernel action that interrupts the system
+call, but does not actually result in any user-visible state changes -
+like freeze and thaw.
 
-2) All restarting tasks use a single namespace - because it is
-impossible to create additional namespaces to accommodate for what had
-been checkpointed.
+So restart blocks are about time remaining for the system call to
+sleep/wait. Generally in c/r, there are two possible time models that
+we can follow: absolute, relative. Here, I chose to save the relative
+timeout, measured from the beginning of the checkpoint. The time when
+the checkpoint (and restart) begin is also saved. This information is
+sufficient to restart in either model (absolute or negative).
 
-Original patch introducing nsproxy c/r by Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Which model to use should eventually be a per application choice (and
+possible configurable via cradvise() or some sort). For now, we adopt
+the relative model, namely, at restart the timeout is set relative to
+the beginning of the restart.
 
-Chagnelog[v19]:
-  - Restart to handle checkpoint images lacking {uts,ipc}-ns
-Chagnelog[v19-rc1]:
+To checkpoint, we check if a task has a valid restart block, and if so
+we save the *remaining* time that is has to wait/sleep, and the type
+of the restart block.
+
+To restart, we fill in the data required at the proper place in the
+thread information. If the system call return an error (which is
+possibly an -ERESTARTSYS eg), we not only use that error as our own
+return value, but also arrange for the task to execute the signal
+handler (by faking a signal). The handler, in turn, already has the
+code to handle these restart request gracefully.
+
+Changelog[v19-rc1]:
   - [Matt Helsley] Add cpp definitions for enums
-Chagnelog[v18]:
-  - Add a few more ckpt_write_err()s
-Chagnelog[v17]:
-  - Only collect sub-objects of struct_nsproxy once.
-  - Restore namespace pieces directly instead of using sys_unshare()
-  - Proper handling of restart from namespace(s) without namespace(s)
+Changelog[v1]:
+  - [Nathan Lynch] fix compilation errors with CONFIG_COMPAT=y
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/checkpoint.h     |    3 +
- include/linux/checkpoint_hdr.h |   16 +++++
- kernel/checkpoint/checkpoint.c |   29 +++++++-
- kernel/checkpoint/objhash.c    |    2 +
- kernel/checkpoint/process.c    |   81 ++++++++++++++++++++++++
- kernel/nsproxy.c               |  136 ++++++++++++++++++++++++++++++++++++++++
- 6 files changed, 263 insertions(+), 4 deletions(-)
+ include/linux/checkpoint.h       |    4 +
+ include/linux/checkpoint_hdr.h   |   34 ++++++
+ include/linux/checkpoint_types.h |    3 +
+ kernel/checkpoint/checkpoint.c   |    1 +
+ kernel/checkpoint/process.c      |  226 ++++++++++++++++++++++++++++++++++++++
+ kernel/checkpoint/restart.c      |    1 -
+ kernel/checkpoint/sys.c          |    1 +
+ 7 files changed, 269 insertions(+), 1 deletions(-)
 
 diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 24ad717..2b6d0c7 100644
+index 077bbcd..20dcd95 100644
 --- a/include/linux/checkpoint.h
 +++ b/include/linux/checkpoint.h
-@@ -166,6 +166,9 @@ extern int checkpoint_restart_block(struct ckpt_ctx *ctx,
- 				    struct task_struct *t);
- extern int restore_restart_block(struct ckpt_ctx *ctx);
+@@ -79,6 +79,10 @@ extern int restore_read_header_arch(struct ckpt_ctx *ctx);
+ extern int restore_thread(struct ckpt_ctx *ctx);
+ extern int restore_cpu(struct ckpt_ctx *ctx);
  
-+/* namespaces */
-+extern int ckpt_collect_ns(struct ckpt_ctx *ctx, struct task_struct *t);
++extern int checkpoint_restart_block(struct ckpt_ctx *ctx,
++				    struct task_struct *t);
++extern int restore_restart_block(struct ckpt_ctx *ctx);
 +
- /* file table */
- extern int ckpt_collect_file_table(struct ckpt_ctx *ctx, struct task_struct *t);
- extern int checkpoint_obj_file_table(struct ckpt_ctx *ctx,
+ static inline int ckpt_validate_errno(int errno)
+ {
+ 	return (errno >= 0) && (errno < MAX_ERRNO);
 diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index fbcbee7..f119991 100644
+index ecc4afb..f17f081 100644
 --- a/include/linux/checkpoint_hdr.h
 +++ b/include/linux/checkpoint_hdr.h
-@@ -76,6 +76,8 @@ enum {
- #define CKPT_HDR_TREE CKPT_HDR_TREE
- 	CKPT_HDR_TASK,
+@@ -72,6 +72,8 @@ enum {
+ 
+ 	CKPT_HDR_TASK = 101,
  #define CKPT_HDR_TASK CKPT_HDR_TASK
-+	CKPT_HDR_TASK_NS,
-+#define CKPT_HDR_TASK_NS CKPT_HDR_TASK_NS
- 	CKPT_HDR_TASK_OBJS,
- #define CKPT_HDR_TASK_OBJS CKPT_HDR_TASK_OBJS
- 	CKPT_HDR_RESTART_BLOCK,
-@@ -84,6 +86,8 @@ enum {
++	CKPT_HDR_RESTART_BLOCK,
++#define CKPT_HDR_RESTART_BLOCK CKPT_HDR_RESTART_BLOCK
+ 	CKPT_HDR_THREAD,
  #define CKPT_HDR_THREAD CKPT_HDR_THREAD
  	CKPT_HDR_CPU,
- #define CKPT_HDR_CPU CKPT_HDR_CPU
-+	CKPT_HDR_NS,
-+#define CKPT_HDR_NS CKPT_HDR_NS
- 
- 	/* 201-299: reserved for arch-dependent */
- 
-@@ -141,6 +145,8 @@ enum obj_type {
- #define CKPT_OBJ_FILE CKPT_OBJ_FILE
- 	CKPT_OBJ_MM,
- #define CKPT_OBJ_MM CKPT_OBJ_MM
-+	CKPT_OBJ_NS,
-+#define CKPT_OBJ_NS CKPT_OBJ_NS
- 	CKPT_OBJ_MAX
- #define CKPT_OBJ_MAX CKPT_OBJ_MAX
- };
-@@ -225,6 +231,16 @@ struct ckpt_hdr_task {
+@@ -152,4 +154,36 @@ struct ckpt_hdr_task {
  	__u64 clear_child_tid;
  } __attribute__((aligned(8)));
  
-+/* namespaces */
-+struct ckpt_hdr_task_ns {
++/* restart blocks */
++struct ckpt_hdr_restart_block {
 +	struct ckpt_hdr h;
-+	__s32 ns_objref;
++	__u64 function_type;
++	__u64 arg_0;
++	__u64 arg_1;
++	__u64 arg_2;
++	__u64 arg_3;
++	__u64 arg_4;
 +} __attribute__((aligned(8)));
 +
-+struct ckpt_hdr_ns {
-+	struct ckpt_hdr h;
-+} __attribute__((aligned(8)));
++enum restart_block_type {
++	CKPT_RESTART_BLOCK_NONE = 1,
++#define CKPT_RESTART_BLOCK_NONE CKPT_RESTART_BLOCK_NONE
++	CKPT_RESTART_BLOCK_HRTIMER_NANOSLEEP,
++#define CKPT_RESTART_BLOCK_HRTIMER_NANOSLEEP \
++		CKPT_RESTART_BLOCK_HRTIMER_NANOSLEEP
++	CKPT_RESTART_BLOCK_POSIX_CPU_NANOSLEEP,
++#define CKPT_RESTART_BLOCK_POSIX_CPU_NANOSLEEP \
++		CKPT_RESTART_BLOCK_POSIX_CPU_NANOSLEEP
++	CKPT_RESTART_BLOCK_COMPAT_NANOSLEEP,
++#define CKPT_RESTART_BLOCK_COMPAT_NANOSLEEP \
++		CKPT_RESTART_BLOCK_COMPAT_NANOSLEEP
++	CKPT_RESTART_BLOCK_COMPAT_CLOCK_NANOSLEEP,
++#define CKPT_RESTART_BLOCK_COMPAT_CLOCK_NANOSLEEP \
++		CKPT_RESTART_BLOCK_COMPAT_CLOCK_NANOSLEEP
++	CKPT_RESTART_BLOCK_POLL,
++#define CKPT_RESTART_BLOCK_POLL CKPT_RESTART_BLOCK_POLL
++	CKPT_RESTART_BLOCK_FUTEX,
++#define CKPT_RESTART_BLOCK_FUTEX CKPT_RESTART_BLOCK_FUTEX
++};
 +
- /* task's shared resources */
- struct ckpt_hdr_task_objs {
- 	struct ckpt_hdr h;
+ #endif /* _CHECKPOINT_CKPT_HDR_H_ */
+diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
+index ff35b97..417e119 100644
+--- a/include/linux/checkpoint_types.h
++++ b/include/linux/checkpoint_types.h
+@@ -15,10 +15,13 @@
+ #include <linux/sched.h>
+ #include <linux/nsproxy.h>
+ #include <linux/fs.h>
++#include <linux/ktime.h>
+ 
+ struct ckpt_ctx {
+ 	int crid;		/* unique checkpoint id */
+ 
++	ktime_t ktime_begin;	/* checkpoint start time */
++
+ 	pid_t root_pid;				/* [container] root pid */
+ 	struct task_struct *root_task;		/* [container] root task */
+ 	struct nsproxy *root_nsproxy;		/* [container] root nsproxy */
 diff --git a/kernel/checkpoint/checkpoint.c b/kernel/checkpoint/checkpoint.c
-index 0f83cca..ab1081c 100644
+index e45653b..0dbf3e7 100644
 --- a/kernel/checkpoint/checkpoint.c
 +++ b/kernel/checkpoint/checkpoint.c
-@@ -219,6 +219,8 @@ static int checkpoint_all_tasks(struct ckpt_ctx *ctx)
- static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
- {
- 	struct task_struct *root = ctx->root_task;
-+	struct nsproxy *nsproxy;
-+	int ret = 0;
+@@ -23,6 +23,7 @@
+ #include <linux/mount.h>
+ #include <linux/utsname.h>
+ #include <linux/magic.h>
++#include <linux/hrtimer.h>
+ #include <linux/checkpoint.h>
  
- 	ckpt_debug("check %d\n", task_pid_nr_ns(t, ctx->root_nsproxy->pid_ns));
- 
-@@ -258,11 +260,30 @@ static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
- 		return -EINVAL;
- 	}
- 
--	/* FIX: change this when namespaces are added */
--	if (task_nsproxy(t) != ctx->root_nsproxy)
--		return -EPERM;
-+	rcu_read_lock();
-+	nsproxy = task_nsproxy(t);
-+	if (nsproxy->uts_ns != ctx->root_nsproxy->uts_ns)
-+		ret = -EPERM;
-+	if (nsproxy->ipc_ns != ctx->root_nsproxy->ipc_ns)
-+		ret = -EPERM;
-+	/* no support for >1 private mntns */
-+	if (nsproxy->mnt_ns != ctx->root_nsproxy->mnt_ns) {
-+		_ckpt_err(ctx, -EPERM, "%(T)Nested mnt_ns unsupported\n");
-+		ret = -EPERM;
-+	}
-+	/* no support for >1 private netns */
-+	if (nsproxy->net_ns != ctx->root_nsproxy->net_ns) {
-+		_ckpt_err(ctx, -EPERM, "%(T)Nested net_ns unsupported\n");
-+		ret = -EPERM;
-+	}
-+	/* no support for >1 private pidns */
-+	if (nsproxy->pid_ns != ctx->root_nsproxy->pid_ns) {
-+		_ckpt_err(ctx, -EPERM, "%(T)Nested pid_ns unsupported\n");
-+		ret = -EPERM;
-+	}
-+	rcu_read_unlock();
- 
--	return 0;
-+	return ret;
- }
- 
- #define CKPT_HDR_PIDS_CHUNK	256
-diff --git a/kernel/checkpoint/objhash.c b/kernel/checkpoint/objhash.c
-index 1d78dbf..d504568 100644
---- a/kernel/checkpoint/objhash.c
-+++ b/kernel/checkpoint/objhash.c
-@@ -498,6 +498,8 @@ int ckpt_obj_contained(struct ckpt_ctx *ctx)
- 	ckpt_obj_users_inc(ctx, ctx->file, 1);
- 	if (ctx->logfile)
- 		ckpt_obj_users_inc(ctx, ctx->logfile, 1);
-+	/* account for ctx->root_nsproxy (if in the table already) */
-+	ckpt_obj_users_inc(ctx, ctx->root_nsproxy, 1);
- 
- 	hlist_for_each_entry(obj, node, &ctx->obj_hash->list, next) {
- 		if (!obj->ops->ref_users)
+ /* unique checkpoint identifier (FIXME: should be per-container ?) */
 diff --git a/kernel/checkpoint/process.c b/kernel/checkpoint/process.c
-index 1ec5c6a..22fb938 100644
+index e78b29b..b662e5d 100644
 --- a/kernel/checkpoint/process.c
 +++ b/kernel/checkpoint/process.c
-@@ -12,6 +12,7 @@
+@@ -12,6 +12,9 @@
  #define CKPT_DFLAG  CKPT_DSYS
  
  #include <linux/sched.h>
-+#include <linux/nsproxy.h>
- #include <linux/posix-timers.h>
- #include <linux/futex.h>
- #include <linux/compat.h>
-@@ -103,6 +104,35 @@ static int checkpoint_task_struct(struct ckpt_ctx *ctx, struct task_struct *t)
++#include <linux/posix-timers.h>
++#include <linux/futex.h>
++#include <linux/poll.h>
+ #include <linux/checkpoint.h>
+ 
+ /***********************************************************************
+@@ -46,6 +49,116 @@ static int checkpoint_task_struct(struct ckpt_ctx *ctx, struct task_struct *t)
  	return ckpt_write_string(ctx, t->comm, TASK_COMM_LEN);
  }
  
-+static int checkpoint_task_ns(struct ckpt_ctx *ctx, struct task_struct *t)
++/* dump the task_struct of a given task */
++int checkpoint_restart_block(struct ckpt_ctx *ctx, struct task_struct *t)
 +{
-+	struct ckpt_hdr_task_ns *h;
-+	struct nsproxy *nsproxy;
-+	int ns_objref;
++	struct ckpt_hdr_restart_block *h;
++	struct restart_block *restart_block;
++	long (*fn)(struct restart_block *);
++	s64 base, expire = 0;
 +	int ret;
 +
-+	rcu_read_lock();
-+	nsproxy = task_nsproxy(t);
-+	get_nsproxy(nsproxy);
-+	rcu_read_unlock();
-+
-+	ns_objref = checkpoint_obj(ctx, nsproxy, CKPT_OBJ_NS);
-+	put_nsproxy(nsproxy);
-+
-+	ckpt_debug("nsproxy: objref %d\n", ns_objref);
-+	if (ns_objref < 0)
-+		return ns_objref;
-+
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_TASK_NS);
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_RESTART_BLOCK);
 +	if (!h)
 +		return -ENOMEM;
-+	h->ns_objref = ns_objref;
++
++	base = ktime_to_ns(ctx->ktime_begin);
++	restart_block = &task_thread_info(t)->restart_block;
++	fn = restart_block->fn;
++
++	/* FIX: enumerate clockid_t so we're immune to changes */
++
++	if (fn == do_no_restart_syscall) {
++
++		h->function_type = CKPT_RESTART_BLOCK_NONE;
++		ckpt_debug("restart_block: non\n");
++
++	} else if (fn == hrtimer_nanosleep_restart) {
++
++		h->function_type = CKPT_RESTART_BLOCK_HRTIMER_NANOSLEEP;
++		h->arg_0 = restart_block->nanosleep.index;
++		h->arg_1 = (unsigned long) restart_block->nanosleep.rmtp;
++		expire = restart_block->nanosleep.expires;
++		ckpt_debug("restart_block: hrtimer expire %lld now %lld\n",
++			 expire, base);
++
++	} else if (fn == posix_cpu_nsleep_restart) {
++		struct timespec ts;
++
++		h->function_type = CKPT_RESTART_BLOCK_POSIX_CPU_NANOSLEEP;
++		h->arg_0 = restart_block->arg0;
++		h->arg_1 = restart_block->arg1;
++		ts.tv_sec = restart_block->arg2;
++		ts.tv_nsec = restart_block->arg3;
++		expire = timespec_to_ns(&ts);
++		ckpt_debug("restart_block: posix_cpu expire %lld now %lld\n",
++			 expire, base);
++
++#ifdef CONFIG_COMPAT
++	} else if (fn == compat_nanosleep_restart) {
++
++		h->function_type = CKPT_RESTART_BLOCK_COMPAT_NANOSLEEP;
++		h->arg_0 = restart_block->nanosleep.index;
++		h->arg_1 = (unsigned long)restart_block->nanosleep.rmtp;
++		h->arg_2 = (unsigned long)restart_block->nanosleep.compat_rmtp;
++		expire = restart_block->nanosleep.expires;
++		ckpt_debug("restart_block: compat expire %lld now %lld\n",
++			 expire, base);
++
++	} else if (fn == compat_clock_nanosleep_restart) {
++
++		h->function_type = CKPT_RESTART_BLOCK_COMPAT_CLOCK_NANOSLEEP;
++		h->arg_0 = restart_block->nanosleep.index;
++		h->arg_1 = (unsigned long)restart_block->nanosleep.rmtp;
++		h->arg_2 = (unsigned long)restart_block->nanosleep.compat_rmtp;
++		expire = restart_block->nanosleep.expires;
++		ckpt_debug("restart_block: compat_clock expire %lld now %lld\n",
++			 expire, base);
++
++#endif
++	} else if (fn == futex_wait_restart) {
++
++		h->function_type = CKPT_RESTART_BLOCK_FUTEX;
++		h->arg_0 = (unsigned long) restart_block->futex.uaddr;
++		h->arg_1 = restart_block->futex.val;
++		h->arg_2 = restart_block->futex.flags;
++		h->arg_3 = restart_block->futex.bitset;
++		expire = restart_block->futex.time;
++		ckpt_debug("restart_block: futex expire %lld now %lld\n",
++			 expire, base);
++
++	} else if (fn == do_restart_poll) {
++		struct timespec ts;
++
++		h->function_type = CKPT_RESTART_BLOCK_POLL;
++		h->arg_0 = (unsigned long) restart_block->poll.ufds;
++		h->arg_1 = restart_block->poll.nfds;
++		h->arg_2 = restart_block->poll.has_timeout;
++		ts.tv_sec = restart_block->poll.tv_sec;
++		ts.tv_nsec = restart_block->poll.tv_nsec;
++		expire = timespec_to_ns(&ts);
++		ckpt_debug("restart_block: poll expire %lld now %lld\n",
++			 expire, base);
++
++	} else {
++
++		BUG();
++
++	}
++
++	/* common to all restart blocks: */
++	h->arg_4 = (base < expire ? expire - base : 0);
++
++	ckpt_debug("restart_block: args %#llx %#llx %#llx %#llx %#llx\n",
++		 h->arg_0, h->arg_1, h->arg_2, h->arg_3, h->arg_4);
++
 +	ret = ckpt_write_obj(ctx, &h->h);
 +	ckpt_hdr_put(ctx, h);
 +
++	ckpt_debug("restart_block ret %d\n", ret);
 +	return ret;
 +}
 +
- static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
+ /* dump the entire state of a given task */
+ int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
  {
- 	struct ckpt_hdr_task_objs *h;
-@@ -110,6 +140,19 @@ static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
- 	int mm_objref;
- 	int ret;
- 
-+	/*
-+	 * Shared objects may have dependencies among them: task->mm
-+	 * depends on task->nsproxy (by ipc_ns). Therefore first save
-+	 * the namespaces, and then the remaining shared objects.
-+	 * During restart a task will already have its namespaces
-+	 * restored when it gets to restore, e.g. its memory.
-+	 */
-+
-+	ret = checkpoint_task_ns(ctx, t);
-+	ckpt_debug("ns: objref %d\n", ret);
-+	if (ret < 0)
-+		return ret;
-+
- 	files_objref = checkpoint_obj_file_table(ctx, t);
- 	ckpt_debug("files: objref %d\n", files_objref);
- 	if (files_objref < 0) {
-@@ -284,6 +327,9 @@ int ckpt_collect_task(struct ckpt_ctx *ctx, struct task_struct *t)
- {
- 	int ret;
- 
-+	ret = ckpt_collect_ns(ctx, t);
-+	if (ret < 0)
-+		return ret;
- 	ret = ckpt_collect_file_table(ctx, t);
+@@ -61,6 +174,10 @@ int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	ckpt_debug("thread %d\n", ret);
  	if (ret < 0)
- 		return ret;
-@@ -359,11 +405,46 @@ static int restore_task_struct(struct ckpt_ctx *ctx)
+ 		goto out;
++	ret = checkpoint_restart_block(ctx, t);
++	ckpt_debug("restart-blocks %d\n", ret);
++	if (ret < 0)
++		goto out;
+ 	ret = checkpoint_cpu(ctx, t);
+ 	ckpt_debug("cpu %d\n", ret);
+  out:
+@@ -97,6 +214,111 @@ static int restore_task_struct(struct ckpt_ctx *ctx)
  	return ret;
  }
  
-+static int restore_task_ns(struct ckpt_ctx *ctx)
++int restore_restart_block(struct ckpt_ctx *ctx)
 +{
-+	struct ckpt_hdr_task_ns *h;
-+	struct nsproxy *nsproxy;
++	struct ckpt_hdr_restart_block *h;
++	struct restart_block restart_block;
++	struct timespec ts;
++	clockid_t clockid;
++	s64 expire;
 +	int ret = 0;
 +
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_TASK_NS);
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_RESTART_BLOCK);
 +	if (IS_ERR(h))
 +		return PTR_ERR(h);
 +
-+	nsproxy = ckpt_obj_fetch(ctx, h->ns_objref, CKPT_OBJ_NS);
-+	if (IS_ERR(nsproxy)) {
-+		ret = PTR_ERR(nsproxy);
-+		goto out;
-+	}
++	expire = ktime_to_ns(ctx->ktime_begin) + h->arg_4;
++	restart_block.fn = NULL;
 +
-+	if (nsproxy != task_nsproxy(current)) {
-+		get_nsproxy(nsproxy);
-+		switch_task_namespaces(current, nsproxy);
-+	}
-+ out:
-+	ckpt_debug("nsproxy: ret %d (%p)\n", ret, task_nsproxy(current));
-+	ckpt_hdr_put(ctx, h);
-+	return ret;
-+}
++	ckpt_debug("restart_block: expire %lld begin %lld\n",
++		 expire, ktime_to_ns(ctx->ktime_begin));
++	ckpt_debug("restart_block: args %#llx %#llx %#llx %#llx %#llx\n",
++		 h->arg_0, h->arg_1, h->arg_2, h->arg_3, h->arg_4);
 +
- static int restore_task_objs(struct ckpt_ctx *ctx)
- {
- 	struct ckpt_hdr_task_objs *h;
- 	int ret;
- 
-+	/*
-+	 * Namespaces come first, because ->mm depends on ->nsproxy,
-+	 * and because shared objects are restored before they are
-+	 * referenced. See comment in checkpoint_task_objs.
-+	 */
-+	ret = restore_task_ns(ctx);
-+	if (ret < 0)
-+		return ret;
-+
- 	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_TASK_OBJS);
- 	if (IS_ERR(h))
- 		return PTR_ERR(h);
-diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
-index f74e6c0..7082283 100644
---- a/kernel/nsproxy.c
-+++ b/kernel/nsproxy.c
-@@ -22,6 +22,7 @@
- #include <linux/pid_namespace.h>
- #include <net/net_namespace.h>
- #include <linux/ipc_namespace.h>
-+#include <linux/checkpoint.h>
- 
- static struct kmem_cache *nsproxy_cachep;
- 
-@@ -233,10 +234,145 @@ void exit_task_namespaces(struct task_struct *p)
- 	switch_task_namespaces(p, NULL);
- }
- 
-+#ifdef CONFIG_CHECKPOINT
-+int ckpt_collect_ns(struct ckpt_ctx *ctx, struct task_struct *t)
-+{
-+	struct nsproxy *nsproxy;
-+	int exists;
-+	int ret;
-+
-+	rcu_read_lock();
-+	nsproxy = task_nsproxy(t);
-+	if (nsproxy)
-+		get_nsproxy(nsproxy);
-+	rcu_read_unlock();
-+
-+	if (!nsproxy)
-+		return 0;
-+
-+	/* if already exists, don't proceed inside the struct */
-+	exists = ckpt_obj_lookup(ctx, nsproxy, CKPT_OBJ_NS);
-+
-+	ret = ckpt_obj_collect(ctx, nsproxy, CKPT_OBJ_NS);
-+	if (ret < 0 || exists)
-+		goto out;
-+
-+	/* TODO: collect other namespaces here */
-+ out:
-+	put_nsproxy(nsproxy);
-+	return ret;
-+}
-+
-+static int checkpoint_ns(struct ckpt_ctx *ctx, void *ptr)
-+{
-+	struct nsproxy *nsproxy = ptr;
-+	struct ckpt_hdr_ns *h;
-+	int ret;
-+
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_NS);
-+	if (!h)
-+		return -ENOMEM;
-+
-+	/* TODO: Write other namespaces here */
-+
-+	ret = ckpt_write_obj(ctx, &h->h);
-+	ckpt_hdr_put(ctx, h);
-+	return ret;
-+}
-+
-+static void *restore_ns(struct ckpt_ctx *ctx)
-+{
-+	struct ckpt_hdr_ns *h;
-+	struct nsproxy *nsproxy = NULL;
-+	struct uts_namespace *uts_ns;
-+	struct ipc_namespace *ipc_ns;
-+	struct mnt_namespace *mnt_ns;
-+	struct net *net_ns;
-+	int ret = 0;
-+
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_NS);
-+	if (IS_ERR(h))
-+		return (void *) h;
-+
-+	uts_ns = ctx->root_nsproxy->uts_ns;
-+	ipc_ns = ctx->root_nsproxy->ipc_ns;
-+	mnt_ns = ctx->root_nsproxy->mnt_ns;
-+	net_ns = ctx->root_nsproxy->net_ns;
-+
-+	if (uts_ns == current->nsproxy->uts_ns &&
-+	    ipc_ns == current->nsproxy->ipc_ns &&
-+	    mnt_ns == current->nsproxy->mnt_ns &&
-+	    net_ns == current->nsproxy->net_ns) {
-+		/* all xxx-ns are identical: reuse nsproxy */
-+		nsproxy = current->nsproxy;
-+		get_nsproxy(nsproxy);
-+	} else {
-+		nsproxy = create_nsproxy();
-+		if (!nsproxy) {
-+			ret = -ENOMEM;
-+			goto out;
-+		}
-+
-+		get_uts_ns(uts_ns);
-+		nsproxy->uts_ns = uts_ns;
-+		get_ipc_ns(ipc_ns);
-+		nsproxy->ipc_ns = ipc_ns;
-+		get_mnt_ns(mnt_ns);
-+		nsproxy->mnt_ns = mnt_ns;
-+		get_net(net_ns);
-+		nsproxy->net_ns = net_ns;
-+
-+		get_pid_ns(current->nsproxy->pid_ns);
-+		nsproxy->pid_ns = current->nsproxy->pid_ns;
-+	}
-+ out:
-+	if (ret < 0)
-+		nsproxy = ERR_PTR(ret);
-+	ckpt_hdr_put(ctx, h);
-+	return (void *) nsproxy;
-+}
-+
-+static int obj_ns_grab(void *ptr)
-+{
-+	get_nsproxy((struct nsproxy *) ptr);
-+	return 0;
-+}
-+
-+static void obj_ns_drop(void *ptr, int lastref)
-+{
-+	put_nsproxy((struct nsproxy *) ptr);
-+}
-+
-+static int obj_ns_users(void *ptr)
-+{
-+	return atomic_read(&((struct nsproxy *) ptr)->count);
-+}
-+
-+/* ns object */
-+static const struct ckpt_obj_ops ckpt_obj_nsproxy_ops = {
-+	.obj_name = "NSPROXY",
-+	.obj_type = CKPT_OBJ_NS,
-+	.ref_drop = obj_ns_drop,
-+	.ref_grab = obj_ns_grab,
-+	.ref_users = obj_ns_users,
-+	.checkpoint = checkpoint_ns,
-+	.restore = restore_ns,
-+};
-+
-+static inline int checkpoint_register_nsproxy(void)
-+{
-+	return register_checkpoint_obj(&ckpt_obj_nsproxy_ops);
-+}
-+#endif /* CONFIG_CHECKPOINT */
-+
- static int __init nsproxy_cache_init(void)
- {
- 	nsproxy_cachep = KMEM_CACHE(nsproxy, SLAB_PANIC);
-+#ifdef CONFIG_CHECKPOINT
-+	return checkpoint_register_nsproxy();
-+#else
- 	return 0;
++	switch (h->function_type) {
++	case CKPT_RESTART_BLOCK_NONE:
++		restart_block.fn = do_no_restart_syscall;
++		break;
++	case CKPT_RESTART_BLOCK_HRTIMER_NANOSLEEP:
++		clockid = h->arg_0;
++		if (clockid < 0 || invalid_clockid(clockid))
++			break;
++		restart_block.fn = hrtimer_nanosleep_restart;
++		restart_block.nanosleep.index = clockid;
++		restart_block.nanosleep.rmtp =
++			(struct timespec __user *) (unsigned long) h->arg_1;
++		restart_block.nanosleep.expires = expire;
++		break;
++	case CKPT_RESTART_BLOCK_POSIX_CPU_NANOSLEEP:
++		clockid = h->arg_0;
++		if (clockid < 0 || invalid_clockid(clockid))
++			break;
++		restart_block.fn = posix_cpu_nsleep_restart;
++		restart_block.arg0 = clockid;
++		restart_block.arg1 = h->arg_1;
++		ts = ns_to_timespec(expire);
++		restart_block.arg2 = ts.tv_sec;
++		restart_block.arg3 = ts.tv_nsec;
++		break;
++#ifdef CONFIG_COMPAT
++	case CKPT_RESTART_BLOCK_COMPAT_NANOSLEEP:
++		clockid = h->arg_0;
++		if (clockid < 0 || invalid_clockid(clockid))
++			break;
++		restart_block.fn = compat_nanosleep_restart;
++		restart_block.nanosleep.index = clockid;
++		restart_block.nanosleep.rmtp =
++			(struct timespec __user *) (unsigned long) h->arg_1;
++		restart_block.nanosleep.compat_rmtp =
++			(struct compat_timespec __user *)
++				(unsigned long) h->arg_2;
++		restart_block.nanosleep.expires = expire;
++		break;
++	case CKPT_RESTART_BLOCK_COMPAT_CLOCK_NANOSLEEP:
++		clockid = h->arg_0;
++		if (clockid < 0 || invalid_clockid(clockid))
++			break;
++		restart_block.fn = compat_clock_nanosleep_restart;
++		restart_block.nanosleep.index = clockid;
++		restart_block.nanosleep.rmtp =
++			(struct timespec __user *) (unsigned long) h->arg_1;
++		restart_block.nanosleep.compat_rmtp =
++			(struct compat_timespec __user *)
++				(unsigned long) h->arg_2;
++		restart_block.nanosleep.expires = expire;
++		break;
 +#endif
- }
++	case CKPT_RESTART_BLOCK_FUTEX:
++		restart_block.fn = futex_wait_restart;
++		restart_block.futex.uaddr = (u32 *) (unsigned long) h->arg_0;
++		restart_block.futex.val = h->arg_1;
++		restart_block.futex.flags = h->arg_2;
++		restart_block.futex.bitset = h->arg_3;
++		restart_block.futex.time = expire;
++		break;
++	case CKPT_RESTART_BLOCK_POLL:
++		restart_block.fn = do_restart_poll;
++		restart_block.poll.ufds =
++			(struct pollfd __user *) (unsigned long) h->arg_0;
++		restart_block.poll.nfds = h->arg_1;
++		restart_block.poll.has_timeout = h->arg_2;
++		ts = ns_to_timespec(expire);
++		restart_block.poll.tv_sec = ts.tv_sec;
++		restart_block.poll.tv_nsec = ts.tv_nsec;
++		break;
++	default:
++		break;
++	}
++
++	if (restart_block.fn)
++		task_thread_info(current)->restart_block = restart_block;
++	else
++		ret = -EINVAL;
++
++	ckpt_hdr_put(ctx, h);
++	return ret;
++}
++
+ /* read the entire state of the current task */
+ int restore_task(struct ckpt_ctx *ctx)
+ {
+@@ -110,6 +332,10 @@ int restore_task(struct ckpt_ctx *ctx)
+ 	ckpt_debug("thread %d\n", ret);
+ 	if (ret < 0)
+ 		goto out;
++	ret = restore_restart_block(ctx);
++	ckpt_debug("restart-blocks %d\n", ret);
++	if (ret < 0)
++		goto out;
+ 	ret = restore_cpu(ctx);
+ 	ckpt_debug("cpu %d\n", ret);
+  out:
+diff --git a/kernel/checkpoint/restart.c b/kernel/checkpoint/restart.c
+index 7b6caf9..d9eeb39 100644
+--- a/kernel/checkpoint/restart.c
++++ b/kernel/checkpoint/restart.c
+@@ -527,6 +527,5 @@ long do_restart(struct ckpt_ctx *ctx, pid_t pid)
+ 	if (ret < 0)
+ 		return ret;
  
- module_init(nsproxy_cache_init);
+-	/* on success, adjust the return value if needed [TODO] */
+ 	return restore_retval();
+ }
+diff --git a/kernel/checkpoint/sys.c b/kernel/checkpoint/sys.c
+index 28a1b27..4345bcc 100644
+--- a/kernel/checkpoint/sys.c
++++ b/kernel/checkpoint/sys.c
+@@ -188,6 +188,7 @@ static struct ckpt_ctx *ckpt_ctx_alloc(int fd, unsigned long uflags,
+ 
+ 	ctx->uflags = uflags;
+ 	ctx->kflags = kflags;
++	ctx->ktime_begin = ktime_get();
+ 
+ 	mutex_init(&ctx->msg_mutex);
+ 
 -- 
 1.6.3.3
