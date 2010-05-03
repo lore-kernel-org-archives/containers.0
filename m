@@ -1,45 +1,47 @@
-From: "Brian K. White" <brian-goxB3+SAe6wAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH v21 001/100] eclone (1/11): Factor out code to allocate
-	pidmap page
-Date: Mon, 03 May 2010 04:48:11 -0400
-Message-ID: <4BDE8DCB.4000404@aljex.com>
-References: <1272723382-19470-1-git-send-email-orenl@cs.columbia.edu>	<1272723382-19470-2-git-send-email-orenl@cs.columbia.edu>
-	<20100501.151022.190375136.davem@davemloft.net>
+From: Dan Smith <danms@us.ibm.com>
+Subject: Re: [PATCH] [RFC] C/R: inet4 and inet6 unicast routes (v2)
+Date: Mon, 03 May 2010 07:21:02 -0700
+Message-ID: <87y6g1xe0h.fsf@caffeine.danplanet.com>
+References: <1272646855-17327-1-git-send-email-danms@us.ibm.com>
+	<4BDB3F07.2030900@free.fr> <87bpd0zl9l.fsf@caffeine.danplanet.com>
+	<1272673614.14499.10.camel@bigi>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100501.151022.190375136.davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-Cc: linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-mnsaURCQ41sdnm+yROfE0A@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <1272673614.14499.10.camel@bigi> (jamal's message of "Fri\, 30 Apr 2010 20\:26\:54 -0400")
+Sender: netdev-owner@vger.kernel.org
+To: hadi@cyberus.ca
+Cc: Daniel Lezcano <daniel.lezcano@free.fr>, containers@lists.osdl.org, Vlad Yasevich <vladislav.yasevich@hp.com>, netdev@vger.kernel.org, David Miller <davem@davemloft.net>
 List-Id: containers.vger.kernel.org
 
-David Miller wrote:
-> NO WAY, there is no way in the world you should post 100 patches
-> at a time to any mailing list, especially those at vger.kernel.org
-> that have thousands upon thousands of subscribers.
-> 
-> Post only small, well contained, sets of patches at a time.  At most
-> 10 or so in one go.
-> 
-> Do you realize how much mail traffic you generate by posting so many
-> patches at one time, and how unlikely it is for anyone to actually
-> sift through and review your patches after you've spammed them by
-> posting so many at one time?
-> 
-> A second infraction and I will have no choice but to block you at the
-> SMTP level at vger.kernel.org so please do not do it again.
+j> The problem as i see it (with all net structures not just routes -
+j> i was equally pessimistic when i saw those other net structure
+j> checkpoint/restore changes) is you are faced with a herculean
+j> high-maintainance effort...  You have a separate piece of code
+j> which populates structures that _you_ maintain for attributes that
+j> are defined elsewhere by other people.  Nobody adding a new
+j> attribute that is very important to route restoration for example
+j> is likely to change your code. Unless you tie the two together (so
+j> changing one forces the coder to change the other).  And once
+j> people deploy kernels it is hard to change. Historically (for
+j> pragmatic reasons) such rich interfaces sit in user space - much
+j> easier to update user space.
 
-Some people, you give them gold and they just complain it's heavy.
+The benefits of doing what we can in userspace are well-understood and
+arguing for doing so where it makes sense is, of course, a good idea.
+
+However, it seems to me that the rtnl interface provides us a
+reasonable layer of isolation between us and such changes.  Am I
+wrong?  The rtnl messages appear to be rather generic and timeless,
+and in most cases have a significant amount of flexibility with
+respect to allowing advanced attributes to be ignored (which implies
+taking the default).
+
+In many other areas of C/R we're not so lucky and don't have a
+well-defined interface for dumping that information out of the
+kernel...
 
 -- 
-bkw
+Dan Smith
+IBM Linux Technology Center
+email: danms@us.ibm.com
