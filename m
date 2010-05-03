@@ -1,65 +1,70 @@
-From: jamal <hadi@cyberus.ca>
-Subject: Re: [PATCH] [RFC] C/R: inet4 and inet6 unicast routes (v2)
-Date: Mon, 03 May 2010 16:34:17 -0400
-Message-ID: <1272918857.3926.30.camel@bigi>
-References: <1272646855-17327-1-git-send-email-danms@us.ibm.com>
-	 <4BDB3F07.2030900@free.fr> <87bpd0zl9l.fsf@caffeine.danplanet.com>
-	 <1272673614.14499.10.camel@bigi>  <87y6g1xe0h.fsf@caffeine.danplanet.com>
-Reply-To: hadi@cyberus.ca
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH v21 001/100] eclone (1/11): Factor out code to allocate
+	pidmap page
+Date: Mon, 03 May 2010 14:02:31 -0700
+Message-ID: <1272920551.12034.4729.camel__5669.45273099027$1272920600$gmane$org@nimitz>
+References: <1272723382-19470-1-git-send-email-orenl@cs.columbia.edu>
+	<1272723382-19470-2-git-send-email-orenl@cs.columbia.edu>
+	<20100501.151022.190375136.davem@davemloft.net>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <87y6g1xe0h.fsf@caffeine.danplanet.com>
-Sender: netdev-owner@vger.kernel.org
-To: Dan Smith <danms@us.ibm.com>
-Cc: Daniel Lezcano <daniel.lezcano@free.fr>, containers@lists.osdl.org, Vlad Yasevich <vladislav.yasevich@hp.com>, netdev@vger.kernel.org, David Miller <davem@davemloft.net>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20100501.151022.190375136.davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+Cc: linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-mnsaURCQ41sdnm+yROfE0A@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, 2010-05-03 at 07:21 -0700, Dan Smith wrote:
-
-> The benefits of doing what we can in userspace are well-understood and
-> arguing for doing so where it makes sense is, of course, a good idea.
+On Sat, 2010-05-01 at 15:10 -0700, David Miller wrote:
+> NO WAY, there is no way in the world you should post 100 patches
+> at a time to any mailing list, especially those at vger.kernel.org
+> that have thousands upon thousands of subscribers.
 > 
-> However, it seems to me that the rtnl interface provides us a
-> reasonable layer of isolation between us and such changes.  Am I
-> wrong?  
+> Post only small, well contained, sets of patches at a time.  At most
+> 10 or so in one go.
 
-I may not have made my point earlier:
-Let me give you an example by looking at your migration attributes..
+Hi Dave,
 
------
-+            __be32 inet4_len;          /* mask length (bits)*/
-+            __u32  inet4_met;          /* metric            */
-+            __be32 inet4_dst;          /* route address     */
-+            __be32 inet4_gwy;          /* gateway address   */
------
+I really do apologize if these caused undue traffic on vger.  It
+certainly wasn't our intention to cause any problems.
 
-At some point i had a discussion with some folks on netdev where it
-seemed valueable to add a fwmark to the route. If such is made, I dont
-see what the motivation for whoever is codifying to add it to your
-attributes so you can migrate the fwmark. One good motivation is to make
-sure the main route code fails to compile if your attributes dont get
-modified - this could happen if you re-use the same data structures as
-the kernel etc.
+We've had a fear all along that we'll just go back into our little
+containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, and go astray of what the
+community wants done with these patches.  It's also important to
+remember that these really do affect the entire kernel.  Unfortunately,
+it's not really a single feature or something that fits well on any
+other mailing list.  It has implications _everywhere_.  I think Andrew
+Morton also asked that these continue coming to LKML, although his
+request probably came at a time when the set was a wee bit smaller.
 
-> The rtnl messages appear to be rather generic and timeless,
-> and in most cases have a significant amount of flexibility with
-> respect to allowing advanced attributes to be ignored (which implies
-> taking the default).
+> Do you realize how much mail traffic you generate by posting so many
+> patches at one time, and how unlikely it is for anyone to actually
+> sift through and review your patches after you've spammed them by
+> posting so many at one time?
 
-True - but you still need to worry about compat issues etc i.e when you
-migrate to a remote kernel they better have the same features and kernel
-config.. I am assuming this is not hard to impose on an admin.
-Doing things in user space allows for doing more interesting things like
-negotiating on capabilities etc
+I honestly don't expect people to be reading the whole thing at once.
+But, I do hope that people can take a look at their individual bits that
+are touched.
 
-> In many other areas of C/R we're not so lucky and don't have a
-> well-defined interface for dumping that information out of the
-> kernel...
+> A second infraction and I will have no choice but to block you at the
+> SMTP level at vger.kernel.org so please do not do it again.
 
-Maybe the answer is to start by formalizing that, not sure.
+I know these patches are certainly not at the level of importance as,
+say the pata or -stable updates, but they're certainly not of
+unprecedented scale.  I've seen a number of patchbombs of this size
+recently.
 
-cheers,
-jamal
+I hope Andrew pulls this set into -mm so this doesn't even come up
+again.  But, if it does, can you make some suggestions on how to be more
+kind to vger in the process?
 
+-- Dave
