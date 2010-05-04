@@ -1,15 +1,15 @@
-From: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH v21 001/100] eclone (1/11): Factor out code to allocate
-	pidmap page
-Date: Tue, 04 May 2010 15:43:13 +0100
-Message-ID: <3803.1272984193__35431.3739728697$1272984315$gmane$org@redhat.com>
-References: <1272723382-19470-2-git-send-email-orenl@cs.columbia.edu>
-	<1272723382-19470-1-git-send-email-orenl@cs.columbia.edu>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH][cr-test] eclone-2 bug fix
+Date: Tue, 4 May 2010 10:30:51 -0700
+Message-ID: <20100504173051.GA11116@us.ibm.com>
+References: <20100504020919.GB5098@us.ibm.com>
+	<20100504133328.GA10214@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1272723382-19470-2-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20100504133328.GA10214-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,12 +19,19 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linuxppc-dev-mnsaURCQ41sdnm+yROfE0A@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Serge E. Hallyn [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
+| Note that if pid > 0 you don't print out an error msg.  I pushed a
+| trivial patch on top of this one to do so.  Pls let me know if I
+| misunderstood and that wasn't right.
 
-With a huge patch series like this, can you post a cover note at the front
-(usually patch 0) saying what the point of the whole series is?
+Well, if the child was created (i.e pid > 0) do_child() prints a "FAIL"
+message and the test exits with 1. But the message does not hurt, although
+for consistency we should mark it "FAIL" rather than "ERROR".
 
-David
+Thanks,
+
+Sukadev
