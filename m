@@ -1,16 +1,12 @@
-From: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-Subject: Re: [PATCH v21 001/100] eclone (1/11): Factor out code to allocate
-	pidmap page
-Date: Mon, 03 May 2010 14:12:40 -0700 (PDT)
-Message-ID: <20100503.141240.22516688.davem__3069.93906056068$1272921279$gmane$org@davemloft.net>
-References: <1272723382-19470-2-git-send-email-orenl@cs.columbia.edu>
-	<20100501.151022.190375136.davem@davemloft.net>
-	<1272920551.12034.4729.camel@nimitz>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [PATCH][cr][nit]: eclone() - Remove extra __user and add a comment
+Date: Mon, 3 May 2010 19:04:39 -0700
+Message-ID: <20100504020439.GA5098@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1272920551.12034.4729.camel@nimitz>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,35 +16,72 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-mnsaURCQ41sdnm+yROfE0A@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, christofferdall-77OGu6e99YhyO3AAkE1OcX9LOBIZ5rWg@public.gmane.org, linux-lFZ/pmaqli7XmaaqVzeoHQ@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Mon, 03 May 2010 14:02:31 -0700
 
-> It has implications _everywhere_.
+Sorry, I thought I had sent this minor patch out earlier, but I just
+realized I had not.
+---
 
-That does not remove the responsibility to break things up into
-managable pieces, not does it make such a task impossible or
-even hard to do.
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Date: Mon, 3 May 2010 11:38:16 -0700
+Subject: [PATCH 1/1] eclone(): Remove extra __user and add a comment
 
-You post sets of 10 to 15 at a time, once those are agreed to
-and to everyone's general liking, you toss them into a GIT tree
-and you say "here's the next 10 to 15 and they are relative to
-the changes in GIT tree X which have already been fully reviewed"
+As pointed out by Russel King, '__user' does not make sense on an integer
+type. Remove it. Also add a comment on why we want 'stack_size' to be 0
+on x86 and s390.
 
-And so on and so forth.
+Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+---
+ arch/s390/kernel/process.c |    5 ++++-
+ arch/x86/kernel/process.c  |    5 ++++-
+ 2 files changed, 8 insertions(+), 2 deletions(-)
 
-And this is the only logical thing to do, because if someone wants
-a change in patch 7, it can effect patch 23 so it's pointless to
-post for review a patch that's going to end up changing anyways.
-That's a waste of reviewer resources.
-
-To be honest, I'm really tired of what tends to be people's knee jerk
-reaction to this situations, which is a lot of people doing nothing
-but defending themselves.  Even if it did not violate documented
-policy (it did), it violates common sense.  So, can people do
-something more constructive than trying to defend themselves on this?
-
-It's stupid and shouldn't have been done, and we should move on.
+diff --git a/arch/s390/kernel/process.c b/arch/s390/kernel/process.c
+index efc7e8a..b00ffad 100644
+--- a/arch/s390/kernel/process.c
++++ b/arch/s390/kernel/process.c
+@@ -276,7 +276,7 @@ SYSCALL_DEFINE4(eclone, unsigned int, flags_low, struct clone_args __user *,
+ 	int __user *parent_tid_ptr;
+ 	int __user *child_tid_ptr;
+ 	unsigned long flags;
+-	unsigned long __user child_stack;
++	unsigned long child_stack;
+ 	unsigned long stack_size;
+ 
+ 	rc = fetch_clone_args_from_user(uca, args_size, &kca);
+@@ -288,6 +288,9 @@ SYSCALL_DEFINE4(eclone, unsigned int, flags_low, struct clone_args __user *,
+ 	child_tid_ptr =  (int __user *) kca.child_tid_ptr;
+ 
+ 	stack_size = (unsigned long) kca.child_stack_size;
++	/*
++	 * s390 does not need/use the stack_size. Ensure it is unused.
++	 */
+ 	if (stack_size)
+ 		return -EINVAL;
+ 
+diff --git a/arch/x86/kernel/process.c b/arch/x86/kernel/process.c
+index 5abad20..8b1699a 100644
+--- a/arch/x86/kernel/process.c
++++ b/arch/x86/kernel/process.c
+@@ -268,7 +268,7 @@ sys_eclone(unsigned flags_low, struct clone_args __user *uca,
+ 	unsigned long flags;
+ 	int __user *parent_tidp;
+ 	int __user *child_tidp;
+-	unsigned long __user stack;
++	unsigned long stack;
+ 	unsigned long stack_size;
+ 
+ 	rc = fetch_clone_args_from_user(uca, args_size, &kca);
+@@ -286,6 +286,9 @@ sys_eclone(unsigned flags_low, struct clone_args __user *uca,
+ 	parent_tidp = (int *)(unsigned long)kca.parent_tid_ptr;
+ 	child_tidp = (int *)(unsigned long)kca.child_tid_ptr;
+ 
++	/*
++	 * x86 does not need/use the stack_size. Ensure it is unused.
++	 */
+ 	stack_size = (unsigned long)kca.child_stack_size;
+ 	if (stack_size)
+ 		return -EINVAL;
