@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][cr][PATCH  3/6] Define flock_set()
-Date: Tue, 4 May 2010 22:31:29 -0700
-Message-ID: <20100505053129.GC20993__20922.8569445715$1273037152$gmane$org@us.ibm.com>
+Subject: [RFC][cr][PATCH  4/6] Restore file-locks
+Date: Tue, 4 May 2010 22:31:46 -0700
+Message-ID: <20100505053146.GD20993__18326.6597138301$1273037181$gmane$org@us.ibm.com>
 References: <20100505053016.GA20483@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,124 +23,170 @@ Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <container
 List-Id: containers.vger.kernel.org
 
 
-From e773dc3d5e3d4ead9db7ddbd85b58a20ec95afc0 Mon Sep 17 00:00:00 2001
+From 58da2b18ee4389fdb1c0602d098ccde2dd3bf194 Mon Sep 17 00:00:00 2001
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Fri, 30 Apr 2010 11:03:28 -0700
-Subject: [RFC][cr][PATCH  3/6] Define flock_set()
+Date: Sun, 2 May 2010 23:10:18 -0700
+Subject: [RFC][cr][PATCH  4/6] Restore file-locks
 
-Extract core functionality of fcntl_setlk() into a separate function,
-flock_set(). flock_set() can be also used when restarting a checkpointed
-application and restoring its file-locks.
+Restore POSIX file-locks of an application from its checkpoint image.
+
+Read the saved file-locks from the checkpoint image and for each POSIX
+lock, call flock_set() to set the lock on the file.
+
+As pointed out by Matt Helsley, no special handling is necessary for a
+process P2 in the checkpointed container that is blocked on a lock, L1
+held by another process P1.  Since processes in the restarted container
+begin execution only after all processes have restored. If the blocked
+process P2 is restored first, first, it will prepare to return an
+-ERESTARTSYS from the fcntl() system call, but wait for P1 to be
+restored. When P1 is restored, it will re-acquire the lock L1 before P1
+and P2 begin actual execution. This ensures that even if P2 is scheduled
+to run before P1, P2 will go back to waiting for the lock L1.
+
+TODO:
+	Checkpoint/restart 64-bit file-locks (set by fctnl_getlk64() and
+	fcntl_setlk64()).
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- fs/locks.c         |   44 +++++++++++++++++++++++++++-----------------
- include/linux/fs.h |    1 +
- 2 files changed, 28 insertions(+), 17 deletions(-)
+ fs/checkpoint.c |   97 ++++++++++++++++++++++++++++++++++++++++++++++++++----
+ 1 files changed, 89 insertions(+), 8 deletions(-)
 
-diff --git a/fs/locks.c b/fs/locks.c
-index da53795..6c6ced4 100644
---- a/fs/locks.c
-+++ b/fs/locks.c
-@@ -1758,14 +1758,10 @@ static int do_lock_file_wait(struct file *filp, unsigned int cmd,
- 	return error;
- }
+diff --git a/fs/checkpoint.c b/fs/checkpoint.c
+index 180302e..625ccb9 100644
+--- a/fs/checkpoint.c
++++ b/fs/checkpoint.c
+@@ -269,9 +269,6 @@ static int checkpoint_one_file_lock(struct ckpt_ctx *ctx, struct file *file,
  
--/* Apply the lock described by l to an open file descriptor.
-- * This implements both the F_SETLK and F_SETLKW commands of fcntl().
-- */
--int fcntl_setlk(unsigned int fd, struct file *filp, unsigned int cmd,
--		struct flock __user *l)
-+int flock_set(unsigned int fd, struct file *filp, unsigned int cmd,
-+		struct flock *flock)
- {
- 	struct file_lock *file_lock = locks_alloc_lock();
--	struct flock flock;
- 	struct inode *inode;
- 	struct file *f;
- 	int error;
-@@ -1773,13 +1769,6 @@ int fcntl_setlk(unsigned int fd, struct file *filp, unsigned int cmd,
- 	if (file_lock == NULL)
- 		return -ENOLCK;
+ 	ckpt_hdr_put(ctx, h);
  
--	/*
--	 * This might block, so we do it before checking the inode.
--	 */
--	error = -EFAULT;
--	if (copy_from_user(&flock, l, sizeof(flock)))
--		goto out;
+-	ckpt_debug("Lock [%lld, %lld, %d, 0x%x] fd %d, rc %d\n", lock->fl_start,
+-			lock->fl_end, lock->fl_type, lock->fl_flags, fd, rc);
 -
- 	inode = filp->f_path.dentry->d_inode;
- 
- 	/* Don't allow mandatory locks on files that may be memory mapped
-@@ -1791,7 +1780,7 @@ int fcntl_setlk(unsigned int fd, struct file *filp, unsigned int cmd,
- 	}
- 
- again:
--	error = flock_to_posix_lock(filp, file_lock, &flock);
-+	error = flock_to_posix_lock(filp, file_lock, flock);
- 	if (error)
- 		goto out;
- 	if (cmd == F_SETLKW) {
-@@ -1799,7 +1788,7 @@ again:
- 	}
- 	
- 	error = -EBADF;
--	switch (flock.l_type) {
-+	switch (flock->l_type) {
- 	case F_RDLCK:
- 		if (!(filp->f_mode & FMODE_READ))
- 			goto out;
-@@ -1829,8 +1818,8 @@ again:
- 	spin_lock(&current->files->file_lock);
- 	f = fcheck(fd);
- 	spin_unlock(&current->files->file_lock);
--	if (!error && f != filp && flock.l_type != F_UNLCK) {
--		flock.l_type = F_UNLCK;
-+	if (!error && f != filp && flock->l_type != F_UNLCK) {
-+		flock->l_type = F_UNLCK;
- 		goto again;
- 	}
- 
-@@ -1839,6 +1828,27 @@ out:
- 	return error;
+ 	return rc;
  }
  
-+/* Apply the lock described by l to an open file descriptor.
-+ * This implements both the F_SETLK and F_SETLKW commands of fcntl().
-+ */
-+int fcntl_setlk(unsigned int fd, struct file *filp, unsigned int cmd,
-+		struct flock __user *l)
+@@ -289,9 +286,9 @@ checkpoint_file_locks(struct ckpt_ctx *ctx, struct files_struct *files,
+ 	inode = file->f_path.dentry->d_inode;
+ 	for_each_lock(inode, lockpp) {
+ 		lockp = *lockpp;
+-		ckpt_debug("Found lock [%lld, %lld, %d, 0x%x]\n",
+-				lockp->fl_start, lockp->fl_end, 
+-				lockp->fl_type, lockp->fl_flags);
++		ckpt_debug("Lock [%lld, %lld, %d, 0x%x], fd %d\n",
++				lockp->fl_start, lockp->fl_end,
++				lockp->fl_type, lockp->fl_flags, fd);
+ 
+ 		if (lockp->fl_owner != files)
+ 			continue;
+@@ -831,6 +828,86 @@ static struct restore_file_ops restore_file_ops[] = {
+ 	},
+ };
+ 
++static int
++ckpt_hdr_file_lock_to_flock(struct ckpt_hdr_file_lock *h, struct flock *fl)
 +{
-+	int error;
-+	struct flock flock;
-+	
 +	/*
-+	 * This might block, so we do it before checking the inode
-+	 * in flock_set().
++	 * We checkpoint the 'raw' fl_type which in case of leases includes
++	 * the F_INPROGRESS flag. But for posix-locks, the fl_type should
++	 * be simple.
 +	 */
-+	error = -EFAULT;
-+	if (copy_from_user(&flock, l, sizeof(flock)))
-+		return error;
++	switch(h->fl_type) {
++		case F_RDLCK:
++		case F_WRLCK:
++		case F_UNLCK:
++			break;
++		default:
++			ckpt_debug("Bad posix lock type 0x%x ?\n", h->fl_type);
++			return -EINVAL;
++	}
 +
-+	return flock_set(fd, filp, cmd, &flock);
++	memset(fl, 0, sizeof(*fl));
++	fl->l_type = h->fl_type;
++	fl->l_start = h->fl_start;
++	fl->l_len = h->fl_end - h->fl_start;
++	fl->l_whence = SEEK_SET;
++
++	/* TODO: Init ->l_sysid, l_pid fields */
++
++	return 0;
 +}
 +
++static int restore_file_locks(struct ckpt_ctx *ctx, struct file *file, int fd)
++{
++	int ret;
++	struct flock fl;
++	struct ckpt_hdr_file_lock *h;
 +
- #if BITS_PER_LONG == 32
- /* Report the first existing lock that would conflict with l.
-  * This implements the F_GETLK command of fcntl().
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 909a535..5e9ea17 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -1112,6 +1112,7 @@ extern void send_sigio(struct fown_struct *fown, int fd, int band);
- extern int fcntl_getlk(struct file *, struct flock __user *);
- extern int fcntl_setlk(unsigned int, struct file *, unsigned int,
- 			struct flock __user *);
-+extern int flock_set(unsigned int, struct file *, unsigned int, struct flock *);
++	ret = 0;
++	while (!ret) {
++
++		h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_FILE_LOCK);
++		if (IS_ERR(h))
++			return PTR_ERR(h);
++
++		ckpt_debug("Lock [%lld, %lld, %d, 0x%x]\n", h->fl_start,
++				h->fl_end, (int)h->fl_type, h->fl_flags);
++
++		/*
++		 * If we found a dummy-lock, then the fd has no more
++		 * file-locks
++		 */
++		if ((h->fl_flags & FL_POSIX) && (h->fl_start == (loff_t)-1)) {
++			ckpt_debug("Found last lock for fd\n");
++			break;
++		}
++
++		if (h->fl_flags & FL_POSIX) {
++			ret = ckpt_hdr_file_lock_to_flock(h, &fl);
++			if (ret < 0) {
++				ckpt_err(ctx, ret, "%(T) Unexpected flock\n");
++				break;
++			}
++			/*
++			 * Use F_SETLK because we should not have to wait for
++			 * the lock. If another process holds the lock, it
++			 * indicates that filesystem-state is not consistent
++			 * with what it was at checkpoint. In which case we
++			 * better fail.
++			 */
++			ret = flock_set(fd, file, F_SETLK, &fl);
++			if (ret)
++				ckpt_err(ctx, ret, "flock_set(): %d\n",
++						(int)h->fl_type);
++		} else {
++			ret = EINVAL;
++			ckpt_err(ctx, ret, "%(T) Unexpected fl_flags 0x%x\n",
++					h->fl_flags);
++		}
++	}
++	return ret;
++}
++
+ static void *restore_file(struct ckpt_ctx *ctx)
+ {
+ 	struct restore_file_ops *ops;
+@@ -862,7 +939,7 @@ static void *restore_file(struct ckpt_ctx *ctx)
+ }
  
- #if BITS_PER_LONG == 32
- extern int fcntl_getlk64(struct file *, struct flock64 __user *);
+ /**
+- * ckpt_read_file_desc - restore the state of a given file descriptor
++ * restore_file_desc - restore the state of a given file descriptor
+  * @ctx: checkpoint context
+  *
+  * Restores the state of a file descriptor; looks up the objref (in the
+@@ -908,7 +985,11 @@ static int restore_file_desc(struct ckpt_ctx *ctx)
+ 	}
+ 
+ 	set_close_on_exec(h->fd_descriptor, h->fd_close_on_exec);
+-	ret = 0;
++	ret = restore_file_locks(ctx, file, h->fd_descriptor);
++	if (ret < 0) {
++		ckpt_err(ctx, ret, "Error restoring locks on fd %d\n",
++				h->fd_descriptor);
++	}
+  out:
+ 	ckpt_hdr_put(ctx, h);
+ 	return ret;
 -- 
 1.6.0.4
