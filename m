@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][cr][PATCH  2/6] Checkpoint file-locks
-Date: Tue, 4 May 2010 22:31:09 -0700
-Message-ID: <20100505053109.GB20993__39953.8462902003$1273037137$gmane$org@us.ibm.com>
+Subject: [RFC][cr][PATCH  3/6] Define flock_set()
+Date: Tue, 4 May 2010 22:31:29 -0700
+Message-ID: <20100505053129.GC20993__20922.8569445715$1273037152$gmane$org@us.ibm.com>
 References: <20100505053016.GA20483@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,179 +23,124 @@ Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <container
 List-Id: containers.vger.kernel.org
 
 
-From 46f8a088d15eda817f537cbb17574253a3af4e8c Mon Sep 17 00:00:00 2001
+From e773dc3d5e3d4ead9db7ddbd85b58a20ec95afc0 Mon Sep 17 00:00:00 2001
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Thu, 29 Apr 2010 23:43:46 -0700
-Subject: [RFC][cr][PATCH  2/6] Checkpoint file-locks
+Date: Fri, 30 Apr 2010 11:03:28 -0700
+Subject: [RFC][cr][PATCH  3/6] Define flock_set()
 
-While checkpointing each file-descriptor, find all the locks on the
-file and save information about the lock in the checkpoint-image.
-A follow-on patch will use this informaiton to restore the file-locks.
+Extract core functionality of fcntl_setlk() into a separate function,
+flock_set(). flock_set() can be also used when restarting a checkpointed
+application and restoring its file-locks.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- fs/checkpoint.c                |   98 ++++++++++++++++++++++++++++++++++-----
- include/linux/checkpoint_hdr.h |   10 ++++
- 2 files changed, 95 insertions(+), 13 deletions(-)
+ fs/locks.c         |   44 +++++++++++++++++++++++++++-----------------
+ include/linux/fs.h |    1 +
+ 2 files changed, 28 insertions(+), 17 deletions(-)
 
-diff --git a/fs/checkpoint.c b/fs/checkpoint.c
-index e036a7a..180302e 100644
---- a/fs/checkpoint.c
-+++ b/fs/checkpoint.c
-@@ -26,6 +26,7 @@
- #include <linux/checkpoint.h>
- #include <linux/eventpoll.h>
- #include <linux/eventfd.h>
-+#include <linux/smp_lock.h>
- #include <net/sock.h>
- 
- /**************************************************************************
-@@ -249,8 +250,86 @@ static int checkpoint_file(struct ckpt_ctx *ctx, void *ptr)
- 	return ret;
+diff --git a/fs/locks.c b/fs/locks.c
+index da53795..6c6ced4 100644
+--- a/fs/locks.c
++++ b/fs/locks.c
+@@ -1758,14 +1758,10 @@ static int do_lock_file_wait(struct file *filp, unsigned int cmd,
+ 	return error;
  }
  
-+static int checkpoint_one_file_lock(struct ckpt_ctx *ctx, struct file *file,
-+		int fd, struct file_lock *lock)
-+{
-+	int rc;
-+	struct ckpt_hdr_file_lock *h;
-+
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE_LOCK);
-+	if (!h)
-+		return -ENOMEM;
-+
-+	h->fl_start = lock->fl_start;
-+	h->fl_end = lock->fl_end;
-+	h->fl_type = lock->fl_type;
-+	h->fl_flags = lock->fl_flags;
-+
-+	rc = ckpt_write_obj(ctx, &h->h);
-+
-+	ckpt_hdr_put(ctx, h);
-+
-+	ckpt_debug("Lock [%lld, %lld, %d, 0x%x] fd %d, rc %d\n", lock->fl_start,
-+			lock->fl_end, lock->fl_type, lock->fl_flags, fd, rc);
-+
-+	return rc;
-+}
-+
-+int
-+checkpoint_file_locks(struct ckpt_ctx *ctx, struct files_struct *files,
-+		struct file *file, int fd)
-+{
-+	int rc;
-+	struct inode *inode;
-+	struct file_lock **lockpp;
-+	struct file_lock *lockp;
-+	struct file_lock last_lock;
-+
-+	lock_kernel();
-+	inode = file->f_path.dentry->d_inode;
-+	for_each_lock(inode, lockpp) {
-+		lockp = *lockpp;
-+		ckpt_debug("Found lock [%lld, %lld, %d, 0x%x]\n",
-+				lockp->fl_start, lockp->fl_end, 
-+				lockp->fl_type, lockp->fl_flags);
-+
-+		if (lockp->fl_owner != files)
-+			continue;
-+
-+		if (IS_POSIX(lockp)) {
-+			rc = checkpoint_one_file_lock(ctx, file, fd, lockp);
-+			if (rc < 0) {
-+				ckpt_err(ctx,  rc, "%(T)fd %d, checkpoint "
-+						"lock failed\n", fd);
-+				goto out;
-+			}
-+		} else {
-+			rc = -EBADF;
-+			ckpt_err(ctx, rc, "%(T)fd %d has unsupported file "
-+					"lock type, flags 0x%x\n", fd,
-+					lockp->fl_flags);
-+			goto out;
-+		}
-+	}
-+
-+	/*
-+	 * Checkpoint a dummy file-lock to mark the end of file-locks
-+	 * for this fd.
-+	 */
-+	memset(&last_lock, 0, sizeof(struct file_lock));
-+	last_lock.fl_start = -1;
-+	last_lock.fl_flags = FL_POSIX;
-+	rc = checkpoint_one_file_lock(ctx, file, fd, &last_lock);
-+	if (rc < 0)
-+		ckpt_err(ctx,  rc, "%(T)fd %d, checkpoint last-lock failed\n",
-+				fd);
-+out:
-+	unlock_kernel();
-+	return rc;
-+}
-+
- /**
-- * ckpt_write_file_desc - dump the state of a given file descriptor
-+ * checkpoint_file_desc - dump the state of a given file descriptor
-  * @ctx: checkpoint context
-  * @files: files_struct pointer
-  * @fd: file descriptor
-@@ -282,18 +361,6 @@ static int checkpoint_file_desc(struct ckpt_ctx *ctx,
- 	}
- 	rcu_read_unlock();
+-/* Apply the lock described by l to an open file descriptor.
+- * This implements both the F_SETLK and F_SETLKW commands of fcntl().
+- */
+-int fcntl_setlk(unsigned int fd, struct file *filp, unsigned int cmd,
+-		struct flock __user *l)
++int flock_set(unsigned int fd, struct file *filp, unsigned int cmd,
++		struct flock *flock)
+ {
+ 	struct file_lock *file_lock = locks_alloc_lock();
+-	struct flock flock;
+ 	struct inode *inode;
+ 	struct file *f;
+ 	int error;
+@@ -1773,13 +1769,6 @@ int fcntl_setlk(unsigned int fd, struct file *filp, unsigned int cmd,
+ 	if (file_lock == NULL)
+ 		return -ENOLCK;
  
--	ret = find_locks_with_owner(file, files);
 -	/*
--	 * find_locks_with_owner() returns an error when there
--	 * are no locks found, so we *want* it to return an error
--	 * code.  Its success means we have to fail the checkpoint.
+-	 * This might block, so we do it before checking the inode.
 -	 */
--	if (!ret) {
--		ret = -EBADF;
--		ckpt_err(ctx, ret, "%(T)fd %d has file lock or lease\n", fd);
+-	error = -EFAULT;
+-	if (copy_from_user(&flock, l, sizeof(flock)))
 -		goto out;
--	}
 -
- 	/* sanity check (although this shouldn't happen) */
- 	ret = -EBADF;
- 	if (!file) {
-@@ -328,6 +395,11 @@ static int checkpoint_file_desc(struct ckpt_ctx *ctx,
- 	h->fd_close_on_exec = coe;
+ 	inode = filp->f_path.dentry->d_inode;
  
- 	ret = ckpt_write_obj(ctx, &h->h);
-+	if (ret < 0)
-+		goto out;
-+
-+	ret = checkpoint_file_locks(ctx, files, file, fd);
-+
- out:
- 	ckpt_hdr_put(ctx, h);
- 	if (file)
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 790214f..d2a0fcd 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -144,6 +144,8 @@ enum {
- #define CKPT_HDR_TTY_LDISC CKPT_HDR_TTY_LDISC
- 	CKPT_HDR_EPOLL_ITEMS,  /* must be after file-table */
- #define CKPT_HDR_EPOLL_ITEMS CKPT_HDR_EPOLL_ITEMS
-+	CKPT_HDR_FILE_LOCK,
-+#define CKPT_HDR_FILE_LOCK CKPT_HDR_FILE_LOCK
+ 	/* Don't allow mandatory locks on files that may be memory mapped
+@@ -1791,7 +1780,7 @@ int fcntl_setlk(unsigned int fd, struct file *filp, unsigned int cmd,
+ 	}
  
- 	CKPT_HDR_MM = 401,
- #define CKPT_HDR_MM CKPT_HDR_MM
-@@ -576,6 +578,14 @@ struct ckpt_hdr_file_generic {
- 	struct ckpt_hdr_file common;
- } __attribute__((aligned(8)));
+ again:
+-	error = flock_to_posix_lock(filp, file_lock, &flock);
++	error = flock_to_posix_lock(filp, file_lock, flock);
+ 	if (error)
+ 		goto out;
+ 	if (cmd == F_SETLKW) {
+@@ -1799,7 +1788,7 @@ again:
+ 	}
+ 	
+ 	error = -EBADF;
+-	switch (flock.l_type) {
++	switch (flock->l_type) {
+ 	case F_RDLCK:
+ 		if (!(filp->f_mode & FMODE_READ))
+ 			goto out;
+@@ -1829,8 +1818,8 @@ again:
+ 	spin_lock(&current->files->file_lock);
+ 	f = fcheck(fd);
+ 	spin_unlock(&current->files->file_lock);
+-	if (!error && f != filp && flock.l_type != F_UNLCK) {
+-		flock.l_type = F_UNLCK;
++	if (!error && f != filp && flock->l_type != F_UNLCK) {
++		flock->l_type = F_UNLCK;
+ 		goto again;
+ 	}
  
-+struct ckpt_hdr_file_lock {
-+       struct ckpt_hdr h;
-+       loff_t fl_start;
-+       loff_t fl_end;
-+       __u8 fl_type;
-+       __u8 fl_flags;
-+};
+@@ -1839,6 +1828,27 @@ out:
+ 	return error;
+ }
+ 
++/* Apply the lock described by l to an open file descriptor.
++ * This implements both the F_SETLK and F_SETLKW commands of fcntl().
++ */
++int fcntl_setlk(unsigned int fd, struct file *filp, unsigned int cmd,
++		struct flock __user *l)
++{
++	int error;
++	struct flock flock;
++	
++	/*
++	 * This might block, so we do it before checking the inode
++	 * in flock_set().
++	 */
++	error = -EFAULT;
++	if (copy_from_user(&flock, l, sizeof(flock)))
++		return error;
 +
- struct ckpt_hdr_file_pipe {
- 	struct ckpt_hdr_file common;
- 	__s32 pipe_objref;
++	return flock_set(fd, filp, cmd, &flock);
++}
++
++
+ #if BITS_PER_LONG == 32
+ /* Report the first existing lock that would conflict with l.
+  * This implements the F_GETLK command of fcntl().
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 909a535..5e9ea17 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1112,6 +1112,7 @@ extern void send_sigio(struct fown_struct *fown, int fd, int band);
+ extern int fcntl_getlk(struct file *, struct flock __user *);
+ extern int fcntl_setlk(unsigned int, struct file *, unsigned int,
+ 			struct flock __user *);
++extern int flock_set(unsigned int, struct file *, unsigned int, struct flock *);
+ 
+ #if BITS_PER_LONG == 32
+ extern int fcntl_getlk64(struct file *, struct flock64 __user *);
 -- 
 1.6.0.4
