@@ -1,58 +1,76 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH v21 015/100] cgroup freezer: Update stale locking comments
-Date: Thu, 6 May 2010 15:34:57 -0700
-Message-ID: <20100506223457.GN31830__39181.4635637731$1273185435$gmane$org@count0.beaverton.ibm.com>
-References: <1272723382-19470-1-git-send-email-orenl@cs.columbia.edu>
-	<1272723382-19470-16-git-send-email-orenl@cs.columbia.edu>
-	<201005062140.19821.rjw@sisk.pl>
-	<20100506203117.GM31830@count0.beaverton.ibm.com>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: [PATCH 5/5] blk-cgroup: Fix an RCU warning in blkiocg_create()
+Date: Fri, 07 May 2010 14:56:05 +0800
+Message-ID: <4BE3B985.1000407@cn.fujitsu.com>
+References: <4BD016F4.8060108@cn.fujitsu.com> <4BD017AC.1020209@cn.fujitsu.com> <20100422195725.GM2524@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20100506203117.GM31830-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Cedric Le Goater <legoater-GANU6spQydw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <20100422195725.GM2524@linux.vnet.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: paulmck@linux.vnet.ibm.com, Jens Axboe <jens.axboe@oracle.com>
+Cc: "containers@lists.osdl.org" <containers@lists.osdl.org>, Paul Menage <menage@google.com>, Andrew Morton <akpm@linux-foundation.org>, LKML <linux-kernel@vger.kernel.org>, Vivek Goyal <vgoyal@redhat.com>, Gui Jianfeng <GuiJianfeng@cn.fujitsu.com>
 List-Id: containers.vger.kernel.org
 
-On Thu, May 06, 2010 at 01:31:17PM -0700, Matt Helsley wrote:
-> On Thu, May 06, 2010 at 09:40:19PM +0200, Rafael J. Wysocki wrote:
-> > On Saturday 01 May 2010, Oren Laadan wrote:
-> > > From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> > > 
-> > > Update stale comments regarding locking order and add a little more detail
-> > > so it's easier to follow the locking between the cgroup freezer and the
-> > > power management freezer code.
-> > 
-> > I guess these three patches are for me.
-> > 
-> > Do you want me to handle them?
-> > 
-> > Rafael
+Paul E. McKenney wrote:
+> On Thu, Apr 22, 2010 at 05:32:28PM +0800, Li Zefan wrote:
+>> with CONFIG_PROVE_RCU=y, a warning can be triggered:
+>>
+>>   # mount -t cgroup -o blkio xxx /mnt
+>>   # mkdir /mnt/subgroup
+>>
+>> ...
+>> kernel/cgroup.c:4442 invoked rcu_dereference_check() without protection!
+>> ...
+>>
+>> To fix this, we avoid caling css_depth() here, which is a bit simpler
+>> than the original code.
 > 
-> Hi Rafael,
+> Queued for 2.6.34, thank you!
 > 
-> 	I think you can take 15 as it's an update to the comments.
+
+Seems neither you nor Jens queued this patch...
+
+> 							Thanx, Paul
 > 
-> 16 and 17 are specific to checkpoint/restart. There are no other in-kernel
-> uses, that we've identified, for them. So I was under the impression that it's
-> inappropriate to add them without also adding the checkpoint/restart patches
-> that use them.
-
-Of course, assuming I'm wrong about the dependency on checkpoint/restart, I
-have no objection to your taking them.
-
-Thanks again!
-
-Cheers,
-	-Matt Helsley
+>> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+>> ---
+>>  block/blk-cgroup.c |    8 ++++----
+>>  1 files changed, 4 insertions(+), 4 deletions(-)
+>>
+>> diff --git a/block/blk-cgroup.c b/block/blk-cgroup.c
+>> index 5fe03de..2cc682b 100644
+>> --- a/block/blk-cgroup.c
+>> +++ b/block/blk-cgroup.c
+>> @@ -286,16 +286,16 @@ done:
+>>  static struct cgroup_subsys_state *
+>>  blkiocg_create(struct cgroup_subsys *subsys, struct cgroup *cgroup)
+>>  {
+>> -	struct blkio_cgroup *blkcg, *parent_blkcg;
+>> +	struct blkio_cgroup *blkcg;
+>> +	struct cgroup *parent = cgroup->parent;
+>>
+>> -	if (!cgroup->parent) {
+>> +	if (!parent) {
+>>  		blkcg = &blkio_root_cgroup;
+>>  		goto done;
+>>  	}
+>>
+>>  	/* Currently we do not support hierarchy deeper than two level (0,1) */
+>> -	parent_blkcg = cgroup_to_blkio_cgroup(cgroup->parent);
+>> -	if (css_depth(&parent_blkcg->css) > 0)
+>> +	if (parent != cgroup->top_cgroup)
+>>  		return ERR_PTR(-EINVAL);
+>>
+>>  	blkcg = kzalloc(sizeof(*blkcg), GFP_KERNEL);
+>> -- 
+>> 1.6.3
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>> Please read the FAQ at  http://www.tux.org/lkml/
+> 
+> 
