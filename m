@@ -1,14 +1,11 @@
 From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Subject: Re: [PATCH] cgroups: make cftype.unregister_event() void-returning
-Date: Sun, 9 May 2010 00:35:15 +0300
-Message-ID: <i2mcc557aab1005081435g3cd209fbg4eedd0791c2fb358__43324.8827619993$1273354583$gmane$org@mail.gmail.com>
-References: <l2pcc557aab1005070446y1f9c8169v58a3f7847676eaa@mail.gmail.com>
-	<p2l6599ad831005071407yaa994357s1261317cc7f552b@mail.gmail.com>
+Subject: [PATCH v2] cgroups: make cftype.unregister_event() void-returning
+Date: Sun,  9 May 2010 03:10:22 +0300
+Message-ID: <1273363822-7796-1-git-send-email-kirill__49533.7882348851$1273363945$gmane$org@shutemov.name>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <p2l6599ad831005071407yaa994357s1261317cc7f552b-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,162 +15,195 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Phil Carmody <ext-phil.2.carmody-xNZwKgViW5gAvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Phil Carmody <ext-phil.2.carmody-xNZwKgViW5gAvxtiuMwx3w@public.gmane.org>, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gU2F0LCBNYXkgOCwgMjAxMCBhdCAxMjowNyBBTSwgUGF1bCBNZW5hZ2UgPG1lbmFnZUBnb29n
-bGUuY29tPiB3cm90ZToKPiBJIGxpa2UgdGhlIHByaW5jaXBsZS4gSSB0aGluayB0aGlzIHBhdGNo
-IGxlYWtzIGFycmF5cywgdGhvdWdoLgo+Cj4gSSB0aGluayB0aGUgc2VxdWVuY2U6Cj4KPiByZWdp
-c3RlcjtyZWdpc3Rlcjt1bnJlZ2lzdGVyO3VucmVnaXN0ZXIKPgo+IHdpbGwgbGVhayB0aGUgYXJy
-YXkgb2Ygc2l6ZSAyLiBVc2luZyB0aGUgbm90YXRpb24gQXgsIEJ4LCBDeCwgZXRjIHRvCj4gcmVw
-cmVzZW50IGRpc3RpbmN0IGJ1ZmZlcnMgb2Ygc2l6ZSB4LCB3ZSBoYXZlOgo+Cj4gaW5pdGlhbGx5
-OiBzaXplID0gMCwgdGhyZXNob2xkcyA9IE5VTEwsIHNwYXJlID0gTlVMTAo+IHJlZ2lzdGVyOiBz
-aXplID0gMSwgdGhyZXNob2xkcyA9IEExLCBzcGFyZSA9IE5VTEwKPiByZWdpc3Rlcjogc2l6ZSA9
-IDIsIHRocmVzaG9sZHMgPSBCMiwgc3BhcmUgPSBBMQo+IHVucmVnaXN0ZXI6IHNpemUgPSAxLCB0
-aHJlc2hvbGRzID0gQTEsIHNwYXJlID0gQjIKPiB1bnJlZ2lzdGVyOiBzaXplID0gMCwgdGhyZXNo
-b2xkcyA9IE5VTEwsIHNwYXJlID0gQTEgKEIyIGlzIGxlYWtlZCkKPgo+IEluIHRoZSBjYXNlIHdo
-ZW4geW91J3JlIHVucmVnaXN0ZXJpbmcgYW5kIHRoZSBzaXplIGdvZXMgZG93biB0byAwLCB5b3UK
-PiBuZWVkIHRvIGZyZWUgdGhlIHNwYXJlIGJlZm9yZSBkb2luZyB0aGUgc3dhcC4KCk5pY2UgY2F0
-Y2ghCgo+IE1heWJlIGdldCByaWQgb2YgdGhlCj4gdGhyZXNob2xkc19uZXcgbG9jYWwgdmFyaWFi
-bGUsIGFuZCBpbnN0ZWFkIGluIHRoZSBpZighc2l6ZSkge30gYnJhbmNoCj4ganVzdCBmcmVlIGFu
-ZCB0aGUgc3BhcmUgYnVmZmVyIGFuZCBzZXQgaXRzIHBvaW50ZXIgdG8gTlVMTD8gVGhlbiBhdAo+
-IHN3YXBfYnVmZmVyczosIHVuY29uZGl0aW9uYWxseSBzd2FwIHRoZSB0d28uCgpHb29kIGlkZWEu
-IFRoYW5rcy4KCj4gQWxzbywgSSB0aGluayB0aGUgY29kZSB3b3VsZCBiZSBjbGVhbmVyIGlmIHlv
-dSBjcmVhdGVkIGEgc3RydWN0dXJlIHRvCj4gaG9sZCBhIHByaW1hcnkgdGhyZXNob2xkIGFuZCBp
-dHMgc3BhcmU7IHRoZW4geW91IGNvdWxkIGhhdmUgb25lIGZvcgo+IGVhY2ggdGhyZXNob2xkIHNl
-dCwgYW5kIGp1c3QgcGFzcyB0aGF0IHRvIHRoZSByZWdpc3Rlci91bnJlZ2lzdGVyCj4gZnVuY3Rp
-b25zLCByYXRoZXIgdGhhbiB0aGVtIGhhdmluZyB0byBiZSBhd2FyZSBvZiBob3cgdGhlIHR5cGUg
-bWFwcyB0bwo+IHRoZSBwcmltYXJ5IGFuZCBiYWNrdXAgYXJyYXkgcG9pbnRlcnMuCgpPay4gSSds
-bCB0cnkgdG8gaW1wbGVtZW50IGl0IGluIHNlcGFyYXRlIHBhdGNoLgoKVGhhbmsgeW91IGZvciBy
-ZXZpZXdpbmcuCgo+Cj4gUGF1bAo+Cj4gT24gRnJpLCBNYXkgNywgMjAxMCBhdCA0OjQ2IEFNLCBL
-aXJpbGwgQS4gU2h1dGVtb3YgPGtpcmlsbEBzaHV0ZW1vdi5uYW1lPiB3cm90ZToKPj4gU2luY2Ug
-d2UgdW5hYmxlIHRvIGhhbmRsZSBlcnJvciByZXR1cm5lZCBieSBjZnR5cGUudW5yZWdpc3Rlcl9l
-dmVudCgpCj4+IHByb3Blcmx5LCBsZXQncyBtYWtlIHRoZSBjYWxsYmFjayB2b2lkLXJldHVybmlu
-Zy4KPj4KPj4gbWVtX2Nncm91cF91bnJlZ2lzdGVyX2V2ZW50KCkgaGFzIGJlZW4gcmV3cml0dGVu
-IHRvIGJlICJuZXZlciBmYWlsIgo+PiBmdW5jdGlvbi4gT24gbWVtX2Nncm91cF91c2FnZV9yZWdp
-c3Rlcl9ldmVudCgpIHdlIHNhdmUgb2xkIGJ1ZmZlcgo+PiBmb3IgdGhyZXNob2xkcyBhcnJheSBh
-bmQgcmV1c2UgaXQgaW4gbWVtX2Nncm91cF91c2FnZV91bnJlZ2lzdGVyX2V2ZW50KCkKPj4gdG8g
-YXZvaWQgYWxsb2NhdGlvbi4KPj4KPj4gU2lnbmVkLW9mZi1ieTogS2lyaWxsIEEuIFNodXRlbW92
-IDxraXJpbGxAc2h1dGVtb3YubmFtZT4KPj4gLS0tCj4+IMKgaW5jbHVkZS9saW51eC9jZ3JvdXAu
-aCB8IMKgIMKgMiArLQo+PiDCoGtlcm5lbC9jZ3JvdXAuYyDCoCDCoCDCoCDCoHwgwqAgwqAxIC0K
-Pj4gwqBtbS9tZW1jb250cm9sLmMgwqAgwqAgwqAgwqB8IMKgIDY0ICsrKysrKysrKysrKysrKysr
-KysrKysrKysrKysrKy0tLS0tLS0tLS0tLS0tLS0tLQo+PiDCoDMgZmlsZXMgY2hhbmdlZCwgNDEg
-aW5zZXJ0aW9ucygrKSwgMjYgZGVsZXRpb25zKC0pCj4+Cj4+IGRpZmYgLS1naXQgYS9pbmNsdWRl
-L2xpbnV4L2Nncm91cC5oIGIvaW5jbHVkZS9saW51eC9jZ3JvdXAuaAo+PiBpbmRleCA4Zjc4MDcz
-Li4wYzYyMTYwIDEwMDY0NAo+PiAtLS0gYS9pbmNsdWRlL2xpbnV4L2Nncm91cC5oCj4+ICsrKyBi
-L2luY2x1ZGUvbGludXgvY2dyb3VwLmgKPj4gQEAgLTM5Nyw3ICszOTcsNyBAQCBzdHJ1Y3QgY2Z0
-eXBlIHsKPj4gwqAgwqAgwqAgwqAgKiBUaGlzIGNhbGxiYWNrIG11c3QgYmUgaW1wbGVtZW50ZWQs
-IGlmIHlvdSB3YW50IHByb3ZpZGUKPj4gwqAgwqAgwqAgwqAgKiBub3RpZmljYXRpb24gZnVuY3Rp
-b25hbGl0eS4KPj4gwqAgwqAgwqAgwqAgKi8KPj4gLSDCoCDCoCDCoCBpbnQgKCp1bnJlZ2lzdGVy
-X2V2ZW50KShzdHJ1Y3QgY2dyb3VwICpjZ3JwLCBzdHJ1Y3QgY2Z0eXBlICpjZnQsCj4+ICsgwqAg
-wqAgwqAgdm9pZCAoKnVucmVnaXN0ZXJfZXZlbnQpKHN0cnVjdCBjZ3JvdXAgKmNncnAsIHN0cnVj
-dCBjZnR5cGUgKmNmdCwKPj4gwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqBzdHJ1
-Y3QgZXZlbnRmZF9jdHggKmV2ZW50ZmQpOwo+PiDCoH07Cj4+Cj4+IGRpZmYgLS1naXQgYS9rZXJu
-ZWwvY2dyb3VwLmMgYi9rZXJuZWwvY2dyb3VwLmMKPj4gaW5kZXggMDZkYmY5Ny4uNjY3NWU4YyAx
-MDA2NDQKPj4gLS0tIGEva2VybmVsL2Nncm91cC5jCj4+ICsrKyBiL2tlcm5lbC9jZ3JvdXAuYwo+
-PiBAQCAtMjk4OCw3ICsyOTg4LDYgQEAgc3RhdGljIHZvaWQgY2dyb3VwX2V2ZW50X3JlbW92ZShz
-dHJ1Y3Qgd29ya19zdHJ1Y3QgKndvcmspCj4+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKg
-IMKgIMKgcmVtb3ZlKTsKPj4gwqAgwqAgwqAgwqBzdHJ1Y3QgY2dyb3VwICpjZ3JwID0gZXZlbnQt
-PmNncnA7Cj4+Cj4+IC0gwqAgwqAgwqAgLyogVE9ETzogY2hlY2sgcmV0dXJuIGNvZGUgKi8KPj4g
-wqAgwqAgwqAgwqBldmVudC0+Y2Z0LT51bnJlZ2lzdGVyX2V2ZW50KGNncnAsIGV2ZW50LT5jZnQs
-IGV2ZW50LT5ldmVudGZkKTsKPj4KPj4gwqAgwqAgwqAgwqBldmVudGZkX2N0eF9wdXQoZXZlbnQt
-PmV2ZW50ZmQpOwo+PiBkaWZmIC0tZ2l0IGEvbW0vbWVtY29udHJvbC5jIGIvbW0vbWVtY29udHJv
-bC5jCj4+IGluZGV4IDhjYjI3MjIuLjBhMzdiNWQgMTAwNjQ0Cj4+IC0tLSBhL21tL21lbWNvbnRy
-b2wuYwo+PiArKysgYi9tbS9tZW1jb250cm9sLmMKPj4gQEAgLTIyNiw5ICsyMjYsMTkgQEAgc3Ry
-dWN0IG1lbV9jZ3JvdXAgewo+PiDCoCDCoCDCoCDCoC8qIHRocmVzaG9sZHMgZm9yIG1lbW9yeSB1
-c2FnZS4gUkNVLXByb3RlY3RlZCAqLwo+PiDCoCDCoCDCoCDCoHN0cnVjdCBtZW1fY2dyb3VwX3Ro
-cmVzaG9sZF9hcnkgKnRocmVzaG9sZHM7Cj4+Cj4+ICsgwqAgwqAgwqAgLyoKPj4gKyDCoCDCoCDC
-oCDCoCogUHJlYWxsb2NhdGVkIGJ1ZmZlciB0byBiZSB1c2VkIGluIG1lbV9jZ3JvdXBfdW5yZWdp
-c3Rlcl9ldmVudCgpCj4+ICsgwqAgwqAgwqAgwqAqIHRvIG1ha2UgaXQgIm5ldmVyIGZhaWwiLgo+
-PiArIMKgIMKgIMKgIMKgKiBJdCBtdXN0IGJlIGFibGUgdG8gc3RvcmUgYXQgbGVhc3QgdGhyZXNo
-b2xkcy0+c2l6ZSAtIDEgZW50cmllcy4KPj4gKyDCoCDCoCDCoCDCoCovCj4+ICsgwqAgwqAgwqAg
-c3RydWN0IG1lbV9jZ3JvdXBfdGhyZXNob2xkX2FyeSAqX190aHJlc2hvbGRzOwo+PiArCj4+IMKg
-IMKgIMKgIMKgLyogdGhyZXNob2xkcyBmb3IgbWVtK3N3YXAgdXNhZ2UuIFJDVS1wcm90ZWN0ZWQg
-Ki8KPj4gwqAgwqAgwqAgwqBzdHJ1Y3QgbWVtX2Nncm91cF90aHJlc2hvbGRfYXJ5ICptZW1zd190
-aHJlc2hvbGRzOwo+Pgo+PiArIMKgIMKgIMKgIC8qIHRoZSBzYW1lIGFzIF9fdGhyZXNob2xkcywg
-YnV0IGZvciBtZW1zd190aHJlc2hvbGRzICovCj4+ICsgwqAgwqAgwqAgc3RydWN0IG1lbV9jZ3Jv
-dXBfdGhyZXNob2xkX2FyeSAqX19tZW1zd190aHJlc2hvbGRzOwo+PiArCj4+IMKgIMKgIMKgIMKg
-LyogRm9yIG9vbSBub3RpZmllciBldmVudCBmZCAqLwo+PiDCoCDCoCDCoCDCoHN0cnVjdCBsaXN0
-X2hlYWQgb29tX25vdGlmeTsKPj4KPj4gQEAgLTM1NzUsMTcgKzM1ODUsMjcgQEAgc3RhdGljIGlu
-dAo+PiBtZW1fY2dyb3VwX3VzYWdlX3JlZ2lzdGVyX2V2ZW50KHN0cnVjdCBjZ3JvdXAgKmNncnAs
-Cj4+IMKgIMKgIMKgIMKgZWxzZQo+PiDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoHJjdV9hc3NpZ25f
-cG9pbnRlcihtZW1jZy0+bWVtc3dfdGhyZXNob2xkcywgdGhyZXNob2xkc19uZXcpOwo+Pgo+PiAt
-IMKgIMKgIMKgIC8qIFRvIGJlIHN1cmUgdGhhdCBub2JvZHkgdXNlcyB0aHJlc2hvbGRzIGJlZm9y
-ZSBmcmVlaW5nIGl0ICovCj4+ICsgwqAgwqAgwqAgLyogVG8gYmUgc3VyZSB0aGF0IG5vYm9keSB1
-c2VzIHRocmVzaG9sZHMgKi8KPj4gwqAgwqAgwqAgwqBzeW5jaHJvbml6ZV9yY3UoKTsKPj4KPj4g
-LSDCoCDCoCDCoCBrZnJlZSh0aHJlc2hvbGRzKTsKPj4gKyDCoCDCoCDCoCAvKgo+PiArIMKgIMKg
-IMKgIMKgKiBGcmVlIG9sZCBwcmVhbGxvY2F0ZWQgYnVmZmVyIGFuZCB1c2UgdGhyZXNob2xkcyBh
-cyBuZXcKPj4gKyDCoCDCoCDCoCDCoCogcHJlYWxsb2NhdGVkIGJ1ZmZlci4KPj4gKyDCoCDCoCDC
-oCDCoCovCj4+ICsgwqAgwqAgwqAgaWYgKHR5cGUgPT0gX01FTSkgewo+PiArIMKgIMKgIMKgIMKg
-IMKgIMKgIMKgIGtmcmVlKG1lbWNnLT5fX3RocmVzaG9sZHMpOwo+PiArIMKgIMKgIMKgIMKgIMKg
-IMKgIMKgIG1lbWNnLT5fX3RocmVzaG9sZHMgPSB0aHJlc2hvbGRzOwo+PiArIMKgIMKgIMKgIH0g
-ZWxzZSB7Cj4+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAga2ZyZWUobWVtY2ctPl9fbWVtc3dfdGhy
-ZXNob2xkcyk7Cj4+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgbWVtY2ctPl9fbWVtc3dfdGhyZXNo
-b2xkcyA9IHRocmVzaG9sZHM7Cj4+ICsgwqAgwqAgwqAgfQo+PiDCoHVubG9jazoKPj4gwqAgwqAg
-wqAgwqBtdXRleF91bmxvY2soJm1lbWNnLT50aHJlc2hvbGRzX2xvY2spOwo+Pgo+PiDCoCDCoCDC
-oCDCoHJldHVybiByZXQ7Cj4+IMKgfQo+Pgo+PiAtc3RhdGljIGludCBtZW1fY2dyb3VwX3VzYWdl
-X3VucmVnaXN0ZXJfZXZlbnQoc3RydWN0IGNncm91cCAqY2dycCwKPj4gK3N0YXRpYyB2b2lkIG1l
-bV9jZ3JvdXBfdXNhZ2VfdW5yZWdpc3Rlcl9ldmVudChzdHJ1Y3QgY2dyb3VwICpjZ3JwLAo+PiDC
-oCDCoCDCoCDCoHN0cnVjdCBjZnR5cGUgKmNmdCwgc3RydWN0IGV2ZW50ZmRfY3R4ICpldmVudGZk
-KQo+PiDCoHsKPj4gwqAgwqAgwqAgwqBzdHJ1Y3QgbWVtX2Nncm91cCAqbWVtY2cgPSBtZW1fY2dy
-b3VwX2Zyb21fY29udChjZ3JwKTsKPj4gQEAgLTM1OTMsNyArMzYxMyw3IEBAIHN0YXRpYyBpbnQK
-Pj4gbWVtX2Nncm91cF91c2FnZV91bnJlZ2lzdGVyX2V2ZW50KHN0cnVjdCBjZ3JvdXAgKmNncnAs
-Cj4+IMKgIMKgIMKgIMKgaW50IHR5cGUgPSBNRU1GSUxFX1RZUEUoY2Z0LT5wcml2YXRlKTsKPj4g
-wqAgwqAgwqAgwqB1NjQgdXNhZ2U7Cj4+IMKgIMKgIMKgIMKgaW50IHNpemUgPSAwOwo+PiAtIMKg
-IMKgIMKgIGludCBpLCBqLCByZXQgPSAwOwo+PiArIMKgIMKgIMKgIGludCBpLCBqOwo+Pgo+PiDC
-oCDCoCDCoCDCoG11dGV4X2xvY2soJm1lbWNnLT50aHJlc2hvbGRzX2xvY2spOwo+PiDCoCDCoCDC
-oCDCoGlmICh0eXBlID09IF9NRU0pCj4+IEBAIC0zNjIzLDE3ICszNjQzLDE1IEBAIHN0YXRpYyBp
-bnQKPj4gbWVtX2Nncm91cF91c2FnZV91bnJlZ2lzdGVyX2V2ZW50KHN0cnVjdCBjZ3JvdXAgKmNn
-cnAsCj4+IMKgIMKgIMKgIMKgLyogU2V0IHRocmVzaG9sZHMgYXJyYXkgdG8gTlVMTCBpZiB3ZSBk
-b24ndCBoYXZlIHRocmVzaG9sZHMgKi8KPj4gwqAgwqAgwqAgwqBpZiAoIXNpemUpIHsKPj4gwqAg
-wqAgwqAgwqAgwqAgwqAgwqAgwqB0aHJlc2hvbGRzX25ldyA9IE5VTEw7Cj4+IC0gwqAgwqAgwqAg
-wqAgwqAgwqAgwqAgZ290byBhc3NpZ247Cj4+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgZ290byBz
-d2FwX2J1ZmZlcnM7Cj4+IMKgIMKgIMKgIMKgfQo+Pgo+PiAtIMKgIMKgIMKgIC8qIEFsbG9jYXRl
-IG1lbW9yeSBmb3IgbmV3IGFycmF5IG9mIHRocmVzaG9sZHMgKi8KPj4gLSDCoCDCoCDCoCB0aHJl
-c2hvbGRzX25ldyA9IGttYWxsb2Moc2l6ZW9mKCp0aHJlc2hvbGRzX25ldykgKwo+PiAtIMKgIMKg
-IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIHNpemUgKiBzaXplb2Yoc3RydWN0IG1lbV9jZ3Jv
-dXBfdGhyZXNob2xkKSwKPj4gLSDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCBHRlBf
-S0VSTkVMKTsKPj4gLSDCoCDCoCDCoCBpZiAoIXRocmVzaG9sZHNfbmV3KSB7Cj4+IC0gwqAgwqAg
-wqAgwqAgwqAgwqAgwqAgcmV0ID0gLUVOT01FTTsKPj4gLSDCoCDCoCDCoCDCoCDCoCDCoCDCoCBn
-b3RvIHVubG9jazsKPj4gLSDCoCDCoCDCoCB9Cj4+ICsgwqAgwqAgwqAgLyogVXNlIHByZWFsbG9j
-YXRlZCBidWZmZXIgZm9yIG5ldyBhcnJheSBvZiB0aHJlc2hvbGRzICovCj4+ICsgwqAgwqAgwqAg
-aWYgKHR5cGUgPT0gX01FTSkKPj4gKyDCoCDCoCDCoCDCoCDCoCDCoCDCoCB0aHJlc2hvbGRzX25l
-dyA9IG1lbWNnLT5fX3RocmVzaG9sZHM7Cj4+ICsgwqAgwqAgwqAgZWxzZQo+PiArIMKgIMKgIMKg
-IMKgIMKgIMKgIMKgIHRocmVzaG9sZHNfbmV3ID0gbWVtY2ctPl9fbWVtc3dfdGhyZXNob2xkczsK
-Pj4gKwo+PiDCoCDCoCDCoCDCoHRocmVzaG9sZHNfbmV3LT5zaXplID0gc2l6ZTsKPj4KPj4gwqAg
-wqAgwqAgwqAvKiBDb3B5IHRocmVzaG9sZHMgYW5kIGZpbmQgY3VycmVudCB0aHJlc2hvbGQgKi8K
-Pj4gQEAgLTM2NTQsMjAgKzM2NzIsMjAgQEAgc3RhdGljIGludAo+PiBtZW1fY2dyb3VwX3VzYWdl
-X3VucmVnaXN0ZXJfZXZlbnQoc3RydWN0IGNncm91cCAqY2dycCwKPj4gwqAgwqAgwqAgwqAgwqAg
-wqAgwqAgwqBqKys7Cj4+IMKgIMKgIMKgIMKgfQo+Pgo+PiAtYXNzaWduOgo+PiAtIMKgIMKgIMKg
-IGlmICh0eXBlID09IF9NRU0pCj4+ICtzd2FwX2J1ZmZlcnM6Cj4+ICsgwqAgwqAgwqAgLyogU3dh
-cCB0aHJlc2hvbGRzIGFycmF5IGFuZCBwcmVhbGxvY2F0ZWQgYnVmZmVyICovCj4+ICsgwqAgwqAg
-wqAgaWYgKHR5cGUgPT0gX01FTSkgewo+PiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIG1lbWNnLT5f
-X3RocmVzaG9sZHMgPSB0aHJlc2hvbGRzOwo+PiDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoHJjdV9h
-c3NpZ25fcG9pbnRlcihtZW1jZy0+dGhyZXNob2xkcywgdGhyZXNob2xkc19uZXcpOwo+PiAtIMKg
-IMKgIMKgIGVsc2UKPj4gKyDCoCDCoCDCoCB9IGVsc2Ugewo+PiArIMKgIMKgIMKgIMKgIMKgIMKg
-IMKgIG1lbWNnLT5fX21lbXN3X3RocmVzaG9sZHMgPSB0aHJlc2hvbGRzOwo+PiDCoCDCoCDCoCDC
-oCDCoCDCoCDCoCDCoHJjdV9hc3NpZ25fcG9pbnRlcihtZW1jZy0+bWVtc3dfdGhyZXNob2xkcywg
-dGhyZXNob2xkc19uZXcpOwo+PiArIMKgIMKgIMKgIH0KPj4KPj4gLSDCoCDCoCDCoCAvKiBUbyBi
-ZSBzdXJlIHRoYXQgbm9ib2R5IHVzZXMgdGhyZXNob2xkcyBiZWZvcmUgZnJlZWluZyBpdCAqLwo+
-PiArIMKgIMKgIMKgIC8qIFRvIGJlIHN1cmUgdGhhdCBub2JvZHkgdXNlcyB0aHJlc2hvbGRzICov
-Cj4+IMKgIMKgIMKgIMKgc3luY2hyb25pemVfcmN1KCk7Cj4+Cj4+IC0gwqAgwqAgwqAga2ZyZWUo
-dGhyZXNob2xkcyk7Cj4+IC11bmxvY2s6Cj4+IMKgIMKgIMKgIMKgbXV0ZXhfdW5sb2NrKCZtZW1j
-Zy0+dGhyZXNob2xkc19sb2NrKTsKPj4gLQo+PiAtIMKgIMKgIMKgIHJldHVybiByZXQ7Cj4+IMKg
-fQo+Pgo+PiDCoHN0YXRpYyBpbnQgbWVtX2Nncm91cF9vb21fcmVnaXN0ZXJfZXZlbnQoc3RydWN0
-IGNncm91cCAqY2dycCwKPj4gQEAgLTM2OTUsNyArMzcxMyw3IEBAIHN0YXRpYyBpbnQgbWVtX2Nn
-cm91cF9vb21fcmVnaXN0ZXJfZXZlbnQoc3RydWN0Cj4+IGNncm91cCAqY2dycCwKPj4gwqAgwqAg
-wqAgwqByZXR1cm4gMDsKPj4gwqB9Cj4+Cj4+IC1zdGF0aWMgaW50IG1lbV9jZ3JvdXBfb29tX3Vu
-cmVnaXN0ZXJfZXZlbnQoc3RydWN0IGNncm91cCAqY2dycCwKPj4gK3N0YXRpYyB2b2lkIG1lbV9j
-Z3JvdXBfb29tX3VucmVnaXN0ZXJfZXZlbnQoc3RydWN0IGNncm91cCAqY2dycCwKPj4gwqAgwqAg
-wqAgwqBzdHJ1Y3QgY2Z0eXBlICpjZnQsIHN0cnVjdCBldmVudGZkX2N0eCAqZXZlbnRmZCkKPj4g
-wqB7Cj4+IMKgIMKgIMKgIMKgc3RydWN0IG1lbV9jZ3JvdXAgKm1lbSA9IG1lbV9jZ3JvdXBfZnJv
-bV9jb250KGNncnApOwo+PiBAQCAtMzcxNCw4ICszNzMyLDYgQEAgc3RhdGljIGludAo+PiBtZW1f
-Y2dyb3VwX29vbV91bnJlZ2lzdGVyX2V2ZW50KHN0cnVjdCBjZ3JvdXAgKmNncnAsCj4+IMKgIMKg
-IMKgIMKgfQo+Pgo+PiDCoCDCoCDCoCDCoG11dGV4X3VubG9jaygmbWVtY2dfb29tX211dGV4KTsK
-Pj4gLQo+PiAtIMKgIMKgIMKgIHJldHVybiAwOwo+PiDCoH0KPj4KPj4gwqBzdGF0aWMgaW50IG1l
-bV9jZ3JvdXBfb29tX2NvbnRyb2xfcmVhZChzdHJ1Y3QgY2dyb3VwICpjZ3JwLAo+PiAtLQo+PiAx
-LjcuMC40Cj4+Cj4KX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0
-aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGlu
-Zm8vY29udGFpbmVycw==
+Since we unable to handle error returned by cftype.unregister_event()
+properly, let's make the callback void-returning.
+
+mem_cgroup_unregister_event() has been rewritten to be "never fail"
+function. On mem_cgroup_usage_register_event() we save old buffer
+for thresholds array and reuse it in mem_cgroup_usage_unregister_event()
+to avoid allocation.
+
+Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+---
+Changelog:
+
+* v1 -> v2
+  - Fix memory leak.
+
+---
+ include/linux/cgroup.h |    2 +-
+ kernel/cgroup.c        |    1 -
+ mm/memcontrol.c        |   65 ++++++++++++++++++++++++++++++-----------------
+ 3 files changed, 42 insertions(+), 26 deletions(-)
+
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index 8f78073..0c62160 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -397,7 +397,7 @@ struct cftype {
+ 	 * This callback must be implemented, if you want provide
+ 	 * notification functionality.
+ 	 */
+-	int (*unregister_event)(struct cgroup *cgrp, struct cftype *cft,
++	void (*unregister_event)(struct cgroup *cgrp, struct cftype *cft,
+ 			struct eventfd_ctx *eventfd);
+ };
+ 
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 06dbf97..6675e8c 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -2988,7 +2988,6 @@ static void cgroup_event_remove(struct work_struct *work)
+ 			remove);
+ 	struct cgroup *cgrp = event->cgrp;
+ 
+-	/* TODO: check return code */
+ 	event->cft->unregister_event(cgrp, event->cft, event->eventfd);
+ 
+ 	eventfd_ctx_put(event->eventfd);
+diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+index 8cb2722..a6d2a4c 100644
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -226,9 +226,19 @@ struct mem_cgroup {
+ 	/* thresholds for memory usage. RCU-protected */
+ 	struct mem_cgroup_threshold_ary *thresholds;
+ 
++	/*
++	 * Preallocated buffer to be used in mem_cgroup_unregister_event()
++	 * to make it "never fail".
++	 * It must be able to store at least thresholds->size - 1 entries.
++	 */
++	struct mem_cgroup_threshold_ary *__thresholds;
++
+ 	/* thresholds for mem+swap usage. RCU-protected */
+ 	struct mem_cgroup_threshold_ary *memsw_thresholds;
+ 
++	/* the same as __thresholds, but for memsw_thresholds */
++	struct mem_cgroup_threshold_ary *__memsw_thresholds;
++
+ 	/* For oom notifier event fd */
+ 	struct list_head oom_notify;
+ 
+@@ -3575,17 +3585,27 @@ static int mem_cgroup_usage_register_event(struct cgroup *cgrp,
+ 	else
+ 		rcu_assign_pointer(memcg->memsw_thresholds, thresholds_new);
+ 
+-	/* To be sure that nobody uses thresholds before freeing it */
++	/* To be sure that nobody uses thresholds */
+ 	synchronize_rcu();
+ 
+-	kfree(thresholds);
++	/*
++	 * Free old preallocated buffer and use thresholds as new
++	 * preallocated buffer.
++	 */
++	if (type == _MEM) {
++		kfree(memcg->__thresholds);
++		memcg->__thresholds = thresholds;
++	} else {
++		kfree(memcg->__memsw_thresholds);
++		memcg->__memsw_thresholds = thresholds;
++	}
+ unlock:
+ 	mutex_unlock(&memcg->thresholds_lock);
+ 
+ 	return ret;
+ }
+ 
+-static int mem_cgroup_usage_unregister_event(struct cgroup *cgrp,
++static void mem_cgroup_usage_unregister_event(struct cgroup *cgrp,
+ 	struct cftype *cft, struct eventfd_ctx *eventfd)
+ {
+ 	struct mem_cgroup *memcg = mem_cgroup_from_cont(cgrp);
+@@ -3593,7 +3613,7 @@ static int mem_cgroup_usage_unregister_event(struct cgroup *cgrp,
+ 	int type = MEMFILE_TYPE(cft->private);
+ 	u64 usage;
+ 	int size = 0;
+-	int i, j, ret = 0;
++	int i, j;
+ 
+ 	mutex_lock(&memcg->thresholds_lock);
+ 	if (type == _MEM)
+@@ -3620,20 +3640,19 @@ static int mem_cgroup_usage_unregister_event(struct cgroup *cgrp,
+ 			size++;
+ 	}
+ 
++	/* Use preallocated buffer for new array of thresholds */
++	if (type == _MEM)
++		thresholds_new = memcg->__thresholds;
++	else
++		thresholds_new = memcg->__memsw_thresholds;
++
+ 	/* Set thresholds array to NULL if we don't have thresholds */
+ 	if (!size) {
++		kfree(thresholds_new);
+ 		thresholds_new = NULL;
+-		goto assign;
++		goto swap_buffers;
+ 	}
+ 
+-	/* Allocate memory for new array of thresholds */
+-	thresholds_new = kmalloc(sizeof(*thresholds_new) +
+-			size * sizeof(struct mem_cgroup_threshold),
+-			GFP_KERNEL);
+-	if (!thresholds_new) {
+-		ret = -ENOMEM;
+-		goto unlock;
+-	}
+ 	thresholds_new->size = size;
+ 
+ 	/* Copy thresholds and find current threshold */
+@@ -3654,20 +3673,20 @@ static int mem_cgroup_usage_unregister_event(struct cgroup *cgrp,
+ 		j++;
+ 	}
+ 
+-assign:
+-	if (type == _MEM)
++swap_buffers:
++	/* Swap thresholds array and preallocated buffer */
++	if (type == _MEM) {
++		memcg->__thresholds = thresholds;
+ 		rcu_assign_pointer(memcg->thresholds, thresholds_new);
+-	else
++	} else {
++		memcg->__memsw_thresholds = thresholds;
+ 		rcu_assign_pointer(memcg->memsw_thresholds, thresholds_new);
++	}
+ 
+-	/* To be sure that nobody uses thresholds before freeing it */
++	/* To be sure that nobody uses thresholds */
+ 	synchronize_rcu();
+ 
+-	kfree(thresholds);
+-unlock:
+ 	mutex_unlock(&memcg->thresholds_lock);
+-
+-	return ret;
+ }
+ 
+ static int mem_cgroup_oom_register_event(struct cgroup *cgrp,
+@@ -3695,7 +3714,7 @@ static int mem_cgroup_oom_register_event(struct cgroup *cgrp,
+ 	return 0;
+ }
+ 
+-static int mem_cgroup_oom_unregister_event(struct cgroup *cgrp,
++static void mem_cgroup_oom_unregister_event(struct cgroup *cgrp,
+ 	struct cftype *cft, struct eventfd_ctx *eventfd)
+ {
+ 	struct mem_cgroup *mem = mem_cgroup_from_cont(cgrp);
+@@ -3714,8 +3733,6 @@ static int mem_cgroup_oom_unregister_event(struct cgroup *cgrp,
+ 	}
+ 
+ 	mutex_unlock(&memcg_oom_mutex);
+-
+-	return 0;
+ }
+ 
+ static int mem_cgroup_oom_control_read(struct cgroup *cgrp,
+-- 
+1.7.0.4
