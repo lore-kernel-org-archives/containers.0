@@ -1,11 +1,13 @@
-From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Subject: [RFC] [PATCH] memcg: cleanup memory thresholds
-Date: Sun,  9 May 2010 03:11:12 +0300
-Message-ID: <1273363872-8031-1-git-send-email-kirill__35237.6060015105$1273363971$gmane$org@shutemov.name>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: Cgroup OOM bug
+Date: Mon, 10 May 2010 09:01:31 +0900
+Message-ID: <20100510090131.5e8cccfe.kamezawa.hiroyu@jp.fujitsu.com>
+References: <E4EC4A83-EB60-46E1-A212-483F6DC0150C@hq.newdream.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <E4EC4A83-EB60-46E1-A212-483F6DC0150C-L5o5AL9CYN0tUFlbccrkMA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,289 +17,40 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: Phil Carmody <ext-phil.2.carmody-xNZwKgViW5gAvxtiuMwx3w@public.gmane.org>, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Jeremy Hanmer <jeremy-L5o5AL9CYN0tUFlbccrkMA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Introduce struct mem_cgroup_thresholds. It helps to reduce number of
-checks of thresholds type (memory or mem+swap).
+On Fri, 7 May 2010 14:30:21 -0700
+Jeremy Hanmer <jeremy-L5o5AL9CYN0tUFlbccrkMA@public.gmane.org> wrote:
 
-Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
----
- mm/memcontrol.c |  151 ++++++++++++++++++++++++-------------------------------
- 1 files changed, 66 insertions(+), 85 deletions(-)
+> I've found a reproducible case where you can create an infinite loop inside the oom killer if you create a cgroup with a single process that has oom_adj=-17 and trigger an OOM situation inside that cgroup.
+> 
+> It seems that oom_adj should probably be ignored in the case where it makes the OOM situation unsolvable.  Here's an excerpt from the console output when the bug is triggered:
+> 
+> Memory cgroup out of memory: kill process 25306 (memeater) score 0 or a child
+> Memory cgroup out of memory: kill process 25306 (memeater) score 0 or a child
+> Memory cgroup out of memory: kill process 25306 (memeater) score 0 or a child
+> Memory cgroup out of memory: kill process 25306 (memeater) score 0 or a child
+> Memory cgroup out of memory: kill process 25306 (memeater) score 0 or a child
+> Memory cgroup out of memory: kill process 25306 (memeater) score 0 or a child
+> Memory cgroup out of memory: kill process 25306 (memeater) score 0 or a child
+> Memory cgroup out of memory: kill process 25306 (memeater) score 0 or a child
+> Memory cgroup out of memory: kill process 25306 (memeater) score 0 or a child
+> Memory cgroup out of memory: kill process 25306 (memeater) score 0 or a child
+> Memory cgroup out of memory: kill process 25306 (memeater) score 0 or a child
+> Memory cgroup out of memory: kill process 25306 (memeater) score 0 or a child
+> 
 
-diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index a6d2a4c..a6c6268 100644
---- a/mm/memcontrol.c
-+++ b/mm/memcontrol.c
-@@ -158,6 +158,18 @@ struct mem_cgroup_threshold_ary {
- 	/* Array of thresholds */
- 	struct mem_cgroup_threshold entries[0];
- };
-+
-+struct mem_cgroup_thresholds {
-+	/* Primary thresholds array */
-+	struct mem_cgroup_threshold_ary *primary;
-+	/*
-+	 * Spare threshold array.
-+	 * It needed to make mem_cgroup_unregister_event() "never fail".
-+	 * It must be able to store at least primary->size - 1 entires.
-+	 */
-+	struct mem_cgroup_threshold_ary *spare;
-+};
-+
- /* for OOM */
- struct mem_cgroup_eventfd_list {
- 	struct list_head list;
-@@ -224,20 +236,10 @@ struct mem_cgroup {
- 	struct mutex thresholds_lock;
- 
- 	/* thresholds for memory usage. RCU-protected */
--	struct mem_cgroup_threshold_ary *thresholds;
--
--	/*
--	 * Preallocated buffer to be used in mem_cgroup_unregister_event()
--	 * to make it "never fail".
--	 * It must be able to store at least thresholds->size - 1 entries.
--	 */
--	struct mem_cgroup_threshold_ary *__thresholds;
-+	struct mem_cgroup_thresholds thresholds;
- 
- 	/* thresholds for mem+swap usage. RCU-protected */
--	struct mem_cgroup_threshold_ary *memsw_thresholds;
--
--	/* the same as __thresholds, but for memsw_thresholds */
--	struct mem_cgroup_threshold_ary *__memsw_thresholds;
-+	struct mem_cgroup_thresholds memsw_thresholds;
- 
- 	/* For oom notifier event fd */
- 	struct list_head oom_notify;
-@@ -3438,9 +3440,9 @@ static void __mem_cgroup_threshold(struct mem_cgroup *memcg, bool swap)
- 
- 	rcu_read_lock();
- 	if (!swap)
--		t = rcu_dereference(memcg->thresholds);
-+		t = rcu_dereference(memcg->thresholds.primary);
- 	else
--		t = rcu_dereference(memcg->memsw_thresholds);
-+		t = rcu_dereference(memcg->memsw_thresholds.primary);
- 
- 	if (!t)
- 		goto unlock;
-@@ -3514,91 +3516,78 @@ static int mem_cgroup_usage_register_event(struct cgroup *cgrp,
- 	struct cftype *cft, struct eventfd_ctx *eventfd, const char *args)
- {
- 	struct mem_cgroup *memcg = mem_cgroup_from_cont(cgrp);
--	struct mem_cgroup_threshold_ary *thresholds, *thresholds_new;
-+	struct mem_cgroup_thresholds *thresholds;
-+	struct mem_cgroup_threshold_ary *new;
- 	int type = MEMFILE_TYPE(cft->private);
- 	u64 threshold, usage;
--	int size;
--	int i, ret;
-+	int i, size, ret;
- 
- 	ret = res_counter_memparse_write_strategy(args, &threshold);
- 	if (ret)
- 		return ret;
- 
- 	mutex_lock(&memcg->thresholds_lock);
-+
- 	if (type == _MEM)
--		thresholds = memcg->thresholds;
-+		thresholds = &memcg->thresholds;
- 	else if (type == _MEMSWAP)
--		thresholds = memcg->memsw_thresholds;
-+		thresholds = &memcg->memsw_thresholds;
- 	else
- 		BUG();
- 
- 	usage = mem_cgroup_usage(memcg, type == _MEMSWAP);
- 
- 	/* Check if a threshold crossed before adding a new one */
--	if (thresholds)
-+	if (thresholds->primary)
- 		__mem_cgroup_threshold(memcg, type == _MEMSWAP);
- 
--	if (thresholds)
--		size = thresholds->size + 1;
--	else
--		size = 1;
-+	size = thresholds->primary ? thresholds->primary->size + 1 : 1;
- 
- 	/* Allocate memory for new array of thresholds */
--	thresholds_new = kmalloc(sizeof(*thresholds_new) +
--			size * sizeof(struct mem_cgroup_threshold),
-+	new = kmalloc(sizeof(*new) + size * sizeof(struct mem_cgroup_threshold),
- 			GFP_KERNEL);
--	if (!thresholds_new) {
-+	if (!new) {
- 		ret = -ENOMEM;
- 		goto unlock;
- 	}
--	thresholds_new->size = size;
-+	new->size = size;
- 
- 	/* Copy thresholds (if any) to new array */
--	if (thresholds)
--		memcpy(thresholds_new->entries, thresholds->entries,
--				thresholds->size *
-+	if (thresholds->primary) {
-+		memcpy(new->entries, thresholds->primary->entries, (size - 1) *
- 				sizeof(struct mem_cgroup_threshold));
-+	}
-+
- 	/* Add new threshold */
--	thresholds_new->entries[size - 1].eventfd = eventfd;
--	thresholds_new->entries[size - 1].threshold = threshold;
-+	new->entries[size - 1].eventfd = eventfd;
-+	new->entries[size - 1].threshold = threshold;
- 
- 	/* Sort thresholds. Registering of new threshold isn't time-critical */
--	sort(thresholds_new->entries, size,
--			sizeof(struct mem_cgroup_threshold),
-+	sort(new->entries, size, sizeof(struct mem_cgroup_threshold),
- 			compare_thresholds, NULL);
- 
- 	/* Find current threshold */
--	thresholds_new->current_threshold = -1;
-+	new->current_threshold = -1;
- 	for (i = 0; i < size; i++) {
--		if (thresholds_new->entries[i].threshold < usage) {
-+		if (new->entries[i].threshold < usage) {
- 			/*
--			 * thresholds_new->current_threshold will not be used
--			 * until rcu_assign_pointer(), so it's safe to increment
-+			 * new->current_threshold will not be used until
-+			 * rcu_assign_pointer(), so it's safe to increment
- 			 * it here.
- 			 */
--			++thresholds_new->current_threshold;
-+			++new->current_threshold;
- 		}
- 	}
- 
--	if (type == _MEM)
--		rcu_assign_pointer(memcg->thresholds, thresholds_new);
--	else
--		rcu_assign_pointer(memcg->memsw_thresholds, thresholds_new);
-+	/* Free old spare buffer and save old primary buffer as spare */
-+	kfree(thresholds->spare);
-+	thresholds->spare = thresholds->primary;
-+
-+	rcu_assign_pointer(thresholds->primary, new);
- 
- 	/* To be sure that nobody uses thresholds */
- 	synchronize_rcu();
- 
--	/*
--	 * Free old preallocated buffer and use thresholds as new
--	 * preallocated buffer.
--	 */
--	if (type == _MEM) {
--		kfree(memcg->__thresholds);
--		memcg->__thresholds = thresholds;
--	} else {
--		kfree(memcg->__memsw_thresholds);
--		memcg->__memsw_thresholds = thresholds;
--	}
- unlock:
- 	mutex_unlock(&memcg->thresholds_lock);
- 
-@@ -3609,17 +3598,17 @@ static void mem_cgroup_usage_unregister_event(struct cgroup *cgrp,
- 	struct cftype *cft, struct eventfd_ctx *eventfd)
- {
- 	struct mem_cgroup *memcg = mem_cgroup_from_cont(cgrp);
--	struct mem_cgroup_threshold_ary *thresholds, *thresholds_new;
-+	struct mem_cgroup_thresholds *thresholds;
-+	struct mem_cgroup_threshold_ary *new;
- 	int type = MEMFILE_TYPE(cft->private);
- 	u64 usage;
--	int size = 0;
--	int i, j;
-+	int i, j, size;
- 
- 	mutex_lock(&memcg->thresholds_lock);
- 	if (type == _MEM)
--		thresholds = memcg->thresholds;
-+		thresholds = &memcg->thresholds;
- 	else if (type == _MEMSWAP)
--		thresholds = memcg->memsw_thresholds;
-+		thresholds = &memcg->memsw_thresholds;
- 	else
- 		BUG();
- 
-@@ -3635,53 +3624,45 @@ static void mem_cgroup_usage_unregister_event(struct cgroup *cgrp,
- 	__mem_cgroup_threshold(memcg, type == _MEMSWAP);
- 
- 	/* Calculate new number of threshold */
--	for (i = 0; i < thresholds->size; i++) {
--		if (thresholds->entries[i].eventfd != eventfd)
-+	size = 0;
-+	for (i = 0; i < thresholds->primary->size; i++) {
-+		if (thresholds->primary->entries[i].eventfd != eventfd)
- 			size++;
- 	}
- 
--	/* Use preallocated buffer for new array of thresholds */
--	if (type == _MEM)
--		thresholds_new = memcg->__thresholds;
--	else
--		thresholds_new = memcg->__memsw_thresholds;
-+	new = thresholds->spare;
- 
- 	/* Set thresholds array to NULL if we don't have thresholds */
- 	if (!size) {
--		kfree(thresholds_new);
--		thresholds_new = NULL;
-+		kfree(new);
-+		new = NULL;
- 		goto swap_buffers;
- 	}
- 
--	thresholds_new->size = size;
-+	new->size = size;
- 
- 	/* Copy thresholds and find current threshold */
--	thresholds_new->current_threshold = -1;
--	for (i = 0, j = 0; i < thresholds->size; i++) {
--		if (thresholds->entries[i].eventfd == eventfd)
-+	new->current_threshold = -1;
-+	for (i = 0, j = 0; i < thresholds->primary->size; i++) {
-+		if (thresholds->primary->entries[i].eventfd == eventfd)
- 			continue;
- 
--		thresholds_new->entries[j] = thresholds->entries[i];
--		if (thresholds_new->entries[j].threshold < usage) {
-+		new->entries[j] = thresholds->primary->entries[i];
-+		if (new->entries[j].threshold < usage) {
- 			/*
--			 * thresholds_new->current_threshold will not be used
-+			 * new->current_threshold will not be used
- 			 * until rcu_assign_pointer(), so it's safe to increment
- 			 * it here.
- 			 */
--			++thresholds_new->current_threshold;
-+			++new->current_threshold;
- 		}
- 		j++;
- 	}
- 
- swap_buffers:
--	/* Swap thresholds array and preallocated buffer */
--	if (type == _MEM) {
--		memcg->__thresholds = thresholds;
--		rcu_assign_pointer(memcg->thresholds, thresholds_new);
--	} else {
--		memcg->__memsw_thresholds = thresholds;
--		rcu_assign_pointer(memcg->memsw_thresholds, thresholds_new);
--	}
-+	/* Swap primary and spare array */
-+	thresholds->spare = thresholds->primary;
-+	rcu_assign_pointer(thresholds->primary, new);
- 
- 	/* To be sure that nobody uses thresholds */
- 	synchronize_rcu();
--- 
-1.7.0.4
+Now, In -mm tree, 2 options are supproted and it's under test.
+
+  1. oom_notifier ... an event notifier which notifies OOM.
+
+  2. oom_disable  ... disable OOM-Killer. All threads will wait for the end of
+     OOM. No cpu consumption.
+
+By 1+2, an user(user-land deamon) can implement its own OOM handler.
+Please wait it.
+
+Thanks,
+-Kame
