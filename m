@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][PATCH 1/4][cr]: Add uid, euid params to f_modown()
-Date: Tue, 11 May 2010 15:38:17 -0700
-Message-ID: <1273617500-13653-2-git-send-email-sukadev__43432.5188085952$1273617421$gmane$org@linux.vnet.ibm.com>
+Subject: [RFC][PATCH 4/4][cr]: Restore file_owner info
+Date: Tue, 11 May 2010 15:38:20 -0700
+Message-ID: <1273617500-13653-5-git-send-email-sukadev__38178.8907493048$1273617554$gmane$org@linux.vnet.ibm.com>
 References: <1273617500-13653-1-git-send-email-sukadev@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,59 +21,67 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Checkpoint/restart of file-owner.
-
-Add uid, euid parameters to f_modown(). These parameters will be needed
-when restarting an application (and hence restoring the file information),
-from a checkpoint image.
+Restore the file-owner information for each 'struct file'.  This is
+essentially is like a new fcntl(F_SETOWN) and fcntl(F_SETSIG) calls,
+except that the pid, uid, euid and signum values are read from the
+checkpoint image.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- fs/fcntl.c |   11 +++++------
- 1 files changed, 5 insertions(+), 6 deletions(-)
+ fs/checkpoint.c |   34 ++++++++++++++++++++++++++++++++++
+ 1 files changed, 34 insertions(+), 0 deletions(-)
 
-diff --git a/fs/fcntl.c b/fs/fcntl.c
-index 2079af0..aeab1f4 100644
---- a/fs/fcntl.c
-+++ b/fs/fcntl.c
-@@ -197,7 +197,7 @@ static int setfl(int fd, struct file * filp, unsigned long arg)
+diff --git a/fs/checkpoint.c b/fs/checkpoint.c
+index 0fa4ce8..73e2bc9 100644
+--- a/fs/checkpoint.c
++++ b/fs/checkpoint.c
+@@ -615,6 +615,36 @@ static int attach_file(struct file *file)
+ 	return fd;
  }
  
- static void f_modown(struct file *filp, struct pid *pid, enum pid_type type,
--                     int force)
-+                     uid_t uid, uid_t euid, int force)
- {
- 	write_lock_irq(&filp->f_owner.lock);
- 	if (force || !filp->f_owner.pid) {
-@@ -206,9 +206,8 @@ static void f_modown(struct file *filp, struct pid *pid, enum pid_type type,
- 		filp->f_owner.pid_type = type;
++static int restore_file_owner(struct ckpt_ctx *ctx, struct ckpt_hdr_file *h,
++		struct file *file)
++{
++	int ret;
++	struct pid *pid;
++
++	ckpt_debug("restore_file_owner(): uid %u, euid %u, pid %d, type %d\n",
++			h->f_owner_uid, h->f_owner_euid, h->f_owner_pid,
++			h->f_owner_pid_type);
++
++	rcu_read_lock();
++	pid = find_vpid(h->f_owner_pid);
++
++	/*
++	 * TODO: Do we need to force==1 or can it be 0 ? 'force' is used to
++	 * 	 modify the owner, if one is already set. Can it be set when
++	 * 	 we restart an application ?
++	 */
++	ret = __f_setown_uid(file, pid, h->f_owner_pid_type, h->f_owner_uid,
++			h->f_owner_euid, 1);
++	rcu_read_unlock();
++
++	file->f_owner.signum = h->f_owner_signum;
++
++	if (ret < 0)
++		ckpt_err(ctx, ret, "__fsetown_uid() failed\n");
++
++	return ret;
++}
++
+ #define CKPT_SETFL_MASK  \
+ 	(O_APPEND | O_NONBLOCK | O_NDELAY | FASYNC | O_DIRECT | O_NOATIME)
  
- 		if (pid) {
--			const struct cred *cred = current_cred();
--			filp->f_owner.uid = cred->uid;
--			filp->f_owner.euid = cred->euid;
-+			filp->f_owner.uid = uid;
-+			filp->f_owner.euid = euid;
- 		}
- 	}
- 	write_unlock_irq(&filp->f_owner.lock);
-@@ -223,7 +222,7 @@ int __f_setown(struct file *filp, struct pid *pid, enum pid_type type,
- 	if (err)
- 		return err;
+@@ -648,6 +678,10 @@ int restore_file_common(struct ckpt_ctx *ctx, struct file *file,
+ 	if (ret < 0)
+ 		return ret;
  
--	f_modown(filp, pid, type, force);
-+	f_modown(filp, pid, type, current_uid(), current_euid(), force);
- 	return 0;
- }
- EXPORT_SYMBOL(__f_setown);
-@@ -249,7 +248,7 @@ EXPORT_SYMBOL(f_setown);
- 
- void f_delown(struct file *filp)
- {
--	f_modown(filp, NULL, PIDTYPE_PID, 1);
-+	f_modown(filp, NULL, PIDTYPE_PID, current_uid(), current_euid(), 1);
- }
- 
- pid_t f_getown(struct file *filp)
++	ret = restore_file_owner(ctx, h, file);
++	if (ret < 0)
++		return ret;
++
+ 	/*
+ 	 * Normally f_mode is set by open, and modified only via
+ 	 * fcntl(), so its value now should match that at checkpoint.
 -- 
 1.6.0.4
