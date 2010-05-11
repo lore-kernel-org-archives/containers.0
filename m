@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][PATCH 2/4][cr]: Define __f_setown_uid()
-Date: Tue, 11 May 2010 15:38:18 -0700
-Message-ID: <1273617500-13653-3-git-send-email-sukadev__4253.39449798248$1273617351$gmane$org@linux.vnet.ibm.com>
+Subject: [RFC][PATCH 1/4][cr]: Add uid, euid params to f_modown()
+Date: Tue, 11 May 2010 15:38:17 -0700
+Message-ID: <1273617500-13653-2-git-send-email-sukadev__43432.5188085952$1273617421$gmane$org@linux.vnet.ibm.com>
 References: <1273617500-13653-1-git-send-email-sukadev@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,66 +21,59 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-__f_setown_uid() is same as __f_setown(), except that instead of assuming the
-uid and euid of current process, it expects them to be passed in as parameters.
+Checkpoint/restart of file-owner.
 
-This interface will be useful when checkpointing and restarting an application
-that has a 'file owner' specified for any of the application's open files.
-The uid, euid of the process setting up the owner is saved in the checkpoint
-image. When the application is restarted, the save uid and euid values are
-restored.
+Add uid, euid parameters to f_modown(). These parameters will be needed
+when restarting an application (and hence restoring the file information),
+from a checkpoint image.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- fs/fcntl.c         |   13 ++++++++++---
- include/linux/fs.h |    2 ++
- 2 files changed, 12 insertions(+), 3 deletions(-)
+ fs/fcntl.c |   11 +++++------
+ 1 files changed, 5 insertions(+), 6 deletions(-)
 
 diff --git a/fs/fcntl.c b/fs/fcntl.c
-index aeab1f4..6e5d2bc 100644
+index 2079af0..aeab1f4 100644
 --- a/fs/fcntl.c
 +++ b/fs/fcntl.c
-@@ -213,8 +213,8 @@ static void f_modown(struct file *filp, struct pid *pid, enum pid_type type,
- 	write_unlock_irq(&filp->f_owner.lock);
+@@ -197,7 +197,7 @@ static int setfl(int fd, struct file * filp, unsigned long arg)
  }
  
--int __f_setown(struct file *filp, struct pid *pid, enum pid_type type,
--		int force)
-+int __f_setown_uid(struct file *filp, struct pid *pid, enum pid_type type,
-+		uid_t uid, uid_t euid, int force)
+ static void f_modown(struct file *filp, struct pid *pid, enum pid_type type,
+-                     int force)
++                     uid_t uid, uid_t euid, int force)
  {
- 	int err;
+ 	write_lock_irq(&filp->f_owner.lock);
+ 	if (force || !filp->f_owner.pid) {
+@@ -206,9 +206,8 @@ static void f_modown(struct file *filp, struct pid *pid, enum pid_type type,
+ 		filp->f_owner.pid_type = type;
  
-@@ -222,9 +222,16 @@ int __f_setown(struct file *filp, struct pid *pid, enum pid_type type,
+ 		if (pid) {
+-			const struct cred *cred = current_cred();
+-			filp->f_owner.uid = cred->uid;
+-			filp->f_owner.euid = cred->euid;
++			filp->f_owner.uid = uid;
++			filp->f_owner.euid = euid;
+ 		}
+ 	}
+ 	write_unlock_irq(&filp->f_owner.lock);
+@@ -223,7 +222,7 @@ int __f_setown(struct file *filp, struct pid *pid, enum pid_type type,
  	if (err)
  		return err;
  
--	f_modown(filp, pid, type, current_uid(), current_euid(), force);
-+	f_modown(filp, pid, type, uid, euid, force);
+-	f_modown(filp, pid, type, force);
++	f_modown(filp, pid, type, current_uid(), current_euid(), force);
  	return 0;
  }
-+
-+int __f_setown(struct file *filp, struct pid *pid, enum pid_type type,
-+		int force)
-+{
-+	return __f_setown_uid(filp, pid, type, current_uid(), current_euid(),
-+			force);
-+}
  EXPORT_SYMBOL(__f_setown);
+@@ -249,7 +248,7 @@ EXPORT_SYMBOL(f_setown);
  
- int f_setown(struct file *filp, unsigned long arg, int force)
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index ee725ff..8257b1a 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -1304,6 +1304,8 @@ extern void kill_fasync(struct fasync_struct **, int, int);
- /* only for net: no internal synchronization */
- extern void __kill_fasync(struct fasync_struct *, int, int);
+ void f_delown(struct file *filp)
+ {
+-	f_modown(filp, NULL, PIDTYPE_PID, 1);
++	f_modown(filp, NULL, PIDTYPE_PID, current_uid(), current_euid(), 1);
+ }
  
-+extern int __f_setown_uid(struct file *filp, struct pid *, enum pid_type,
-+		uid_t uid, uid_t euid, int force);
- extern int __f_setown(struct file *filp, struct pid *, enum pid_type, int force);
- extern int f_setown(struct file *filp, unsigned long arg, int force);
- extern void f_delown(struct file *filp);
+ pid_t f_getown(struct file *filp)
 -- 
 1.6.0.4
