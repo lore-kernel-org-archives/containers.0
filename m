@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][PATCH 4/4][cr]: Restore file_owner info
-Date: Tue, 11 May 2010 15:38:20 -0700
-Message-ID: <1273617500-13653-5-git-send-email-sukadev__38178.8907493048$1273617554$gmane$org@linux.vnet.ibm.com>
+Subject: [RFC][PATCH 3/4][cr]: Checkpoint file-owner information
+Date: Tue, 11 May 2010 15:38:19 -0700
+Message-ID: <1273617500-13653-4-git-send-email-sukadev__26994.1457700499$1273617555$gmane$org@linux.vnet.ibm.com>
 References: <1273617500-13653-1-git-send-email-sukadev@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,67 +21,100 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Restore the file-owner information for each 'struct file'.  This is
-essentially is like a new fcntl(F_SETOWN) and fcntl(F_SETSIG) calls,
-except that the pid, uid, euid and signum values are read from the
-checkpoint image.
+Checkpoint the file->f_owner information for an open file. This
+information will be used to restore the file-owner information
+when the application is restarted from the checkpoint.
+
+The file->f_owner information is "private" to each 'struct file' i.e.
+fown_struct is not an external object shared with other file structures.
+So the information can directly be added to the 'ckpt_hdr_file' object.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- fs/checkpoint.c |   34 ++++++++++++++++++++++++++++++++++
- 1 files changed, 34 insertions(+), 0 deletions(-)
+ fs/checkpoint.c                |   27 +++++++++++----------------
+ include/linux/checkpoint_hdr.h |    5 +++++
+ 2 files changed, 16 insertions(+), 16 deletions(-)
 
 diff --git a/fs/checkpoint.c b/fs/checkpoint.c
-index 0fa4ce8..73e2bc9 100644
+index e036a7a..0fa4ce8 100644
 --- a/fs/checkpoint.c
 +++ b/fs/checkpoint.c
-@@ -615,6 +615,36 @@ static int attach_file(struct file *file)
- 	return fd;
+@@ -168,12 +168,19 @@ int checkpoint_file_common(struct ckpt_ctx *ctx, struct file *file,
+ 			   struct ckpt_hdr_file *h)
+ {
+ 	struct cred *f_cred = (struct cred *) file->f_cred;
++	struct pid *pid = file->f_owner.pid;
+ 
+ 	h->f_flags = file->f_flags;
+ 	h->f_mode = file->f_mode;
+ 	h->f_pos = file->f_pos;
+ 	h->f_version = file->f_version;
+ 
++	h->f_owner_pid = pid_nr_ns(pid, ns_of_pid(pid));
++	h->f_owner_pid_type = file->f_owner.pid_type;
++	h->f_owner_uid = file->f_owner.uid;
++	h->f_owner_euid = file->f_owner.euid;
++	h->f_owner_signum = file->f_owner.signum;
++
+ 	h->f_credref = checkpoint_obj(ctx, f_cred, CKPT_OBJ_CRED);
+ 	if (h->f_credref < 0)
+ 		return h->f_credref;
+@@ -184,10 +191,10 @@ int checkpoint_file_common(struct ckpt_ctx *ctx, struct file *file,
+ 		return h->f_secref;
+ 	}
+ 
+-	ckpt_debug("file %s credref %d secref %d\n",
+-		file->f_dentry->d_name.name, h->f_credref, h->f_secref);
+-
+-	/* FIX: need also file->f_owner, etc */
++	ckpt_debug("file %s credref %d secref %d, fowner-pid %d, type %d, "
++			"fowner-signum %d\n", file->f_dentry->d_name.name,
++			h->f_credref, h->f_secref, h->f_owner_pid,
++			h->f_owner_pid_type, h->f_owner_signum);
+ 
+ 	return 0;
  }
+@@ -267,7 +274,6 @@ static int checkpoint_file_desc(struct ckpt_ctx *ctx,
+ 	struct fdtable *fdt;
+ 	int objref, ret;
+ 	int coe = 0;	/* avoid gcc warning */
+-	pid_t pid;
  
-+static int restore_file_owner(struct ckpt_ctx *ctx, struct ckpt_hdr_file *h,
-+		struct file *file)
-+{
-+	int ret;
-+	struct pid *pid;
-+
-+	ckpt_debug("restore_file_owner(): uid %u, euid %u, pid %d, type %d\n",
-+			h->f_owner_uid, h->f_owner_euid, h->f_owner_pid,
-+			h->f_owner_pid_type);
-+
-+	rcu_read_lock();
-+	pid = find_vpid(h->f_owner_pid);
-+
-+	/*
-+	 * TODO: Do we need to force==1 or can it be 0 ? 'force' is used to
-+	 * 	 modify the owner, if one is already set. Can it be set when
-+	 * 	 we restart an application ?
-+	 */
-+	ret = __f_setown_uid(file, pid, h->f_owner_pid_type, h->f_owner_uid,
-+			h->f_owner_euid, 1);
-+	rcu_read_unlock();
-+
-+	file->f_owner.signum = h->f_owner_signum;
-+
-+	if (ret < 0)
-+		ckpt_err(ctx, ret, "__fsetown_uid() failed\n");
-+
-+	return ret;
-+}
-+
- #define CKPT_SETFL_MASK  \
- 	(O_APPEND | O_NONBLOCK | O_NDELAY | FASYNC | O_DIRECT | O_NOATIME)
+ 	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE_DESC);
+ 	if (!h)
+@@ -302,17 +308,6 @@ static int checkpoint_file_desc(struct ckpt_ctx *ctx,
+ 	}
  
-@@ -648,6 +678,10 @@ int restore_file_common(struct ckpt_ctx *ctx, struct file *file,
- 	if (ret < 0)
- 		return ret;
- 
-+	ret = restore_file_owner(ctx, h, file);
-+	if (ret < 0)
-+		return ret;
-+
  	/*
- 	 * Normally f_mode is set by open, and modified only via
- 	 * fcntl(), so its value now should match that at checkpoint.
+-	 * TODO: Implement c/r of fowner and f_sigio.  Should be
+-	 * trivial, but for now we just refuse its checkpoint
+-	 */
+-	pid = f_getown(file);
+-	if (pid) {
+-		ret = -EBUSY;
+-		ckpt_err(ctx, ret, "%(T)fd %d has an owner (%d)\n", fd);
+-		goto out;
+-	}
+-
+-	/*
+ 	 * if seen first time, this will add 'file' to the objhash, keep
+ 	 * a reference to it, dump its state while at it.
+ 	 */
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 790214f..44e2a0d 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -570,6 +570,11 @@ struct ckpt_hdr_file {
+ 	__u64 f_pos;
+ 	__u64 f_version;
+ 	__s32 f_secref;
++	__s32 f_owner_pid;
++	__u32 f_owner_pid_type;
++	__u32 f_owner_uid;
++	__u32 f_owner_euid;
++	__s32 f_owner_signum;
+ } __attribute__((aligned(8)));
+ 
+ struct ckpt_hdr_file_generic {
 -- 
 1.6.0.4
