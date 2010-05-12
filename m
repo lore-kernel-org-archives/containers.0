@@ -1,11 +1,17 @@
-From: Jean-Philippe Menil <jean-philippe.menil-zanJymNeSEOeCSforKHNpg@public.gmane.org>
-Subject: Containerized syslog
-Date: Wed, 12 May 2010 16:57:44 +0200
-Message-ID: <4BEAC1E8.1070506__30999.314148403$1273676312$gmane$org@univ-nantes.fr>
-Reply-To: jean-philippe.menil-zanJymNeSEOeCSforKHNpg@public.gmane.org
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC][PATCH 2/4][cr]: Define __f_setown_uid()
+Date: Wed, 12 May 2010 09:59:22 -0700
+Message-ID: <20100512165922.GA11144@us.ibm.com>
+References: <1273617500-13653-1-git-send-email-sukadev@linux.vnet.ibm.com>
+	<1273617500-13653-3-git-send-email-sukadev@linux.vnet.ibm.com>
+	<20100512080629.GB2636@us.ibm.com>
+	<20100512084317.GA8842@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------070908040505020206000608"
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20100512084317.GA8842-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,77 +21,63 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format.
---------------070908040505020206000608
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Content-Transfer-Encoding: 7bit
+Serge E. Hallyn [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
+| Quoting Serge E. Hallyn (serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+| > Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+| > 
+| > [From patch 2]
+| > 
+| > > @@ -222,9 +222,16 @@ int __f_setown(struct file *filp, struct pid *pid, enum pid_type type,
+| > >  	if (err)
+| > >  		return err;
+| > > 
+| > > -	f_modown(filp, pid, type, current_uid(), current_euid(), force);
+| > > +	f_modown(filp, pid, type, uid, euid, force);
+| > >  	return 0;
+| > >  }
+| > > +
+| > > +int __f_setown(struct file *filp, struct pid *pid, enum pid_type type,
+| > > +		int force)
+| > > +{
+| > > +	return __f_setown_uid(filp, pid, type, current_uid(), current_euid(),
+| > > +			force);
+| > > +}
+| > >  EXPORT_SYMBOL(__f_setown);
+| > 
+| > [From patch 4]
+| > 
+| > > +	/*
+| > > +	 * TODO: Do we need to force==1 or can it be 0 ? 'force' is used to
+| > > +	 * 	 modify the owner, if one is already set. Can it be set when
+| > > +	 * 	 we restart an application ?
+| > > +	 */
+| > > +	ret = __f_setown_uid(file, pid, h->f_owner_pid_type, h->f_owner_uid,
+| > > +			h->f_owner_euid, 1);
+| > > +	rcu_read_unlock();
+| > 
+| > I think you need to modify how __f_setown() is calling
+| > security_file_set_fowner().  Though I guess noone looks at the
+| > current_uid(), so maybe it's not so important at this point.
+| > 
+| > (I do wonder whether converting fowner to using a struct cred
+| > is the way to go)
+| 
+| Well you can probably skip LSM implications at this point.
+| 
+| But I'm worried about the fact that you do no check on uid here.
+| Note that now if a signal is to be sent, fown->pid will
+| get signal fow->signum sent by fown->uid.  So this looks like
+| a way for an unprivileged task to use root privs to kill a
+| task he shouldn't be able to.
 
-Hi,
+Yes, the uid should not be trusted since the checkpoint image can be
+tampered.  Matt pointed it out too.
 
-I'm playing with containers under debian (squeeze, 2.6.33.3) with the 
-lxc tools.
-I'm really happy about all the features (attach veth on bridge, filter 
-with iptables inside the containers, etc ...), and i was thinking to 
-replace some of our vservers (and maybe some of our kvm) with this solution.
-
-But actually, i experiment a problem with the iptables logs:
-i've iptables on the host to filter some container, basically a squid 
-proxy. I've another container who act as router, and he has his own 
-iptables inside.
-All the log are deported to a dedicated syslog server.
-It appear that, the iptables log of the host are also deported by the 
-syslog container (proxy).
-
-Some of our guest (container, vserver, etc ) are administer by other 
-sys-admin, that should not have access to theses informations.
-
-This point is blocking me today, before going into production with 
-containers.
-
-I've seen some patch made by Jean-Marc Pigeon about this problem,
-but they have not been commited.
-
-Is there any reason for that?
-Can someone advice me to circumvent this problem?
-
-Thanks a lot.
-
-Regards.
-
---------------070908040505020206000608
-Content-Type: text/x-vcard; charset=utf-8;
- name="jean-philippe_menil.vcf"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: attachment;
- filename="jean-philippe_menil.vcf"
-
-begin:vcard
-fn:Jean-Philippe Menil
-n:Menil;Jean-Philippe
-org;quoted-printable:Universit=C3=A9 de Nantes;IRTS - DSI
-adr;quoted-printable:;;2, rue de la Houssini=C3=A8re;Nantes;Loire-Atlantique;44332;France
-email;internet:jean-philippe.menil-zanJymNeSEOeCSforKHNpg@public.gmane.org
-title;quoted-printable:Administrateur R=C3=A9seau
-tel;work:02.51.12.53.92
-tel;fax:02.51.12.58.60
-x-mozilla-html:FALSE
-url:http://www.criun.univ-nantes.fr/
-version:2.1
-end:vcard
-
-
---------------070908040505020206000608
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---------------070908040505020206000608--
+The process P1 that called fcntl(F_SETOWN) may have exited and hence
+may not in the checkpoint-image. So during restart, some other process
+will need to act for P1. Would requiring CAP_SETUID, like we do for
+restoring creds be an overkill ?
