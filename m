@@ -1,16 +1,15 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC][PATCH 2/4][cr]: Define __f_setown_uid()
-Date: Wed, 12 May 2010 10:05:10 -0700
-Message-ID: <20100512170510.GB11144__37682.586714118$1273683628$gmane$org@us.ibm.com>
+From: Jamie Lokier <jamie-yetKDKU6eevNLxjTenLetw@public.gmane.org>
+Subject: Re: [RFC][PATCH 1/4][cr]: Add uid, euid params to f_modown()
+Date: Wed, 12 May 2010 18:05:13 +0100
+Message-ID: <20100512170513.GD19314__1115.57677523724$1273683958$gmane$org@shareable.org>
 References: <1273617500-13653-1-git-send-email-sukadev@linux.vnet.ibm.com>
-	<1273617500-13653-3-git-send-email-sukadev@linux.vnet.ibm.com>
-	<20100512140741.GF10452@parisc-linux.org>
+	<1273617500-13653-2-git-send-email-sukadev@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20100512140741.GF10452-6jwH94ZQLHl74goWV3ctuw@public.gmane.org>
+In-Reply-To: <1273617500-13653-2-git-send-email-sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,24 +19,28 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matthew Wilcox <matthew-Ztpu424NOJ8@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Matthew Wilcox [matthew-Ztpu424NOJ8@public.gmane.org] wrote:
-| On Tue, May 11, 2010 at 03:38:18PM -0700, Sukadev Bhattiprolu wrote:
-| > __f_setown_uid() is same as __f_setown(), except that instead of assuming the
-| > uid and euid of current process, it expects them to be passed in as parameters.
-| > 
-| > This interface will be useful when checkpointing and restarting an application
-| > that has a 'file owner' specified for any of the application's open files.
-| > The uid, euid of the process setting up the owner is saved in the checkpoint
-| > image. When the application is restarted, the save uid and euid values are
-| > restored.
-| 
-| There are only four callers of __f_setown in the kernel.  I'd rather see
-| __f_setown converted to take the arguments directly.
+Sukadev Bhattiprolu wrote:
+> Checkpoint/restart of file-owner.
+> 
+> Add uid, euid parameters to f_modown(). These parameters will be needed
+> when restarting an application (and hence restoring the file information),
+> from a checkpoint image.
 
-Ok.
+This is used to make sure I/O signals on sockets, ttys, devices and so
+on are delivered to a particular process.
 
-Sukadev
+If any of those signals are lost when an event happens around the same
+time as c/r (for example, more data arriving on a pipe, a device
+becomes readable/writable, or room becoming available to write, or
+urgent data on a socket), a process depending on it can get stuck -
+unless the process knows that c/r happened, so it knows to call
+select() on all those fds after the c/r.
+
+Can you say if the c/r avoids that kind of race condition?
+
+Thanks,
+-- Jamie
