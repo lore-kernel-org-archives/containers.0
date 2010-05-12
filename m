@@ -1,11 +1,14 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] setns: netns: Fix compilation of net/core/net_namespace.c
-Date: Tue, 11 May 2010 18:19:38 -0700
-Message-ID: <3bd51012f566b5d4560c6b866112a72a9af10d0a.1273627176.git.matthltc@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] cred_to_ucred: use the creator of the right namespace
+Date: Wed, 12 May 2010 02:31:05 -0500
+Message-ID: <20100512073105.GA372@us.ibm.com>
+References: <20100507220248.GA2075@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20100507220248.GA2075-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,44 +18,63 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Eric Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-TG9va3MgbGlrZSB0aGUgZXNzZW50aWFsIGRlZmluaXRpb25zIGZvciBwcm9jX25zX29wZXJhdGlv
-bnMgYXJlIG1pc3NpbmcKZnJvbSBuZXQvY29yZS9uZXRfbmFtZXNwYWNlLmMuIEluY2x1ZGUgdGhl
-bS4KCldpdGhvdXQgdGhpcyBwYXRjaCBjb21waWxhdGlvbiBmYWlscyB3aXRoOgpuZXQvY29yZS9u
-ZXRfbmFtZXNwYWNlLmM6NTk4OiBlcnJvcjogdmFyaWFibGUg4oCYbmV0bnNfb3BlcmF0aW9uc+KA
-mSBoYXMgaW5pdGlhbGl6ZXIgYnV0IGluY29tcGxldGUgdHlwZQpuZXQvY29yZS9uZXRfbmFtZXNw
-YWNlLmM6NTk5OiBlcnJvcjogdW5rbm93biBmaWVsZCDigJhuYW1l4oCZIHNwZWNpZmllZCBpbiBp
-bml0aWFsaXplcgpuZXQvY29yZS9uZXRfbmFtZXNwYWNlLmM6NTk5OiBlcnJvcjogaW1wbGljaXQg
-ZGVjbGFyYXRpb24gb2YgZnVuY3Rpb24g4oCYUFJPQ19OU05BTUXigJkKbmV0L2NvcmUvbmV0X25h
-bWVzcGFjZS5jOjU5OTogd2FybmluZzogZXhjZXNzIGVsZW1lbnRzIGluIHN0cnVjdCBpbml0aWFs
-aXplcgpuZXQvY29yZS9uZXRfbmFtZXNwYWNlLmM6NTk5OiB3YXJuaW5nOiAobmVhciBpbml0aWFs
-aXphdGlvbiBmb3Ig4oCYbmV0bnNfb3BlcmF0aW9uc+KAmSkKbmV0L2NvcmUvbmV0X25hbWVzcGFj
-ZS5jOjYwMDogZXJyb3I6IHVua25vd24gZmllbGQg4oCYZ2V04oCZIHNwZWNpZmllZCBpbiBpbml0
-aWFsaXplcgpuZXQvY29yZS9uZXRfbmFtZXNwYWNlLmM6NjAwOiB3YXJuaW5nOiBleGNlc3MgZWxl
-bWVudHMgaW4gc3RydWN0IGluaXRpYWxpemVyCm5ldC9jb3JlL25ldF9uYW1lc3BhY2UuYzo2MDA6
-IHdhcm5pbmc6IChuZWFyIGluaXRpYWxpemF0aW9uIGZvciDigJhuZXRuc19vcGVyYXRpb25z4oCZ
-KQpuZXQvY29yZS9uZXRfbmFtZXNwYWNlLmM6NjAxOiBlcnJvcjogdW5rbm93biBmaWVsZCDigJhw
-dXTigJkgc3BlY2lmaWVkIGluIGluaXRpYWxpemVyCm5ldC9jb3JlL25ldF9uYW1lc3BhY2UuYzo2
-MDE6IHdhcm5pbmc6IGV4Y2VzcyBlbGVtZW50cyBpbiBzdHJ1Y3QgaW5pdGlhbGl6ZXIKbmV0L2Nv
-cmUvbmV0X25hbWVzcGFjZS5jOjYwMTogd2FybmluZzogKG5lYXIgaW5pdGlhbGl6YXRpb24gZm9y
-IOKAmG5ldG5zX29wZXJhdGlvbnPigJkpCm5ldC9jb3JlL25ldF9uYW1lc3BhY2UuYzo2MDI6IGVy
-cm9yOiB1bmtub3duIGZpZWxkIOKAmGluc3RhbGzigJkgc3BlY2lmaWVkIGluIGluaXRpYWxpemVy
-Cm5ldC9jb3JlL25ldF9uYW1lc3BhY2UuYzo2MDI6IHdhcm5pbmc6IGV4Y2VzcyBlbGVtZW50cyBp
-biBzdHJ1Y3QgaW5pdGlhbGl6ZXIKbmV0L2NvcmUvbmV0X25hbWVzcGFjZS5jOjYwMjogd2Fybmlu
-ZzogKG5lYXIgaW5pdGlhbGl6YXRpb24gZm9yIOKAmG5ldG5zX29wZXJhdGlvbnPigJkpCm1ha2Vb
-M106ICoqKiBbbmV0L2NvcmUvbmV0X25hbWVzcGFjZS5vXSBFcnJvciAxCgpTaWduZWQtb2ZmLWJ5
-OiBNYXR0IEhlbHNsZXkgPG1hdHRobHRjQHVzLmlibS5jb20+Ci0tLQogbmV0L2NvcmUvbmV0X25h
-bWVzcGFjZS5jIHwgICAgMSArCiAxIGZpbGVzIGNoYW5nZWQsIDEgaW5zZXJ0aW9ucygrKSwgMCBk
-ZWxldGlvbnMoLSkKCmRpZmYgLS1naXQgYS9uZXQvY29yZS9uZXRfbmFtZXNwYWNlLmMgYi9uZXQv
-Y29yZS9uZXRfbmFtZXNwYWNlLmMKaW5kZXggMGI1MTQxMy4uYTdkOWRmYiAxMDA2NDQKLS0tIGEv
-bmV0L2NvcmUvbmV0X25hbWVzcGFjZS5jCisrKyBiL25ldC9jb3JlL25ldF9uYW1lc3BhY2UuYwpA
-QCAtOCw2ICs4LDcgQEAKICNpbmNsdWRlIDxsaW51eC9pZHIuaD4KICNpbmNsdWRlIDxsaW51eC9y
-Y3VsaXN0Lmg+CiAjaW5jbHVkZSA8bGludXgvbnNwcm94eS5oPgorI2luY2x1ZGUgPGxpbnV4L3By
-b2NfZnMuaD4KICNpbmNsdWRlIDxuZXQvbmV0X25hbWVzcGFjZS5oPgogI2luY2x1ZGUgPG5ldC9u
-ZXRucy9nZW5lcmljLmg+CiAKLS0gCjEuNi4zLjMKCl9fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNA
-bGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9u
-Lm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+Quoting Serge E. Hallyn (serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> Hey Eric,
+> 
+> I ported a subset of your nsfd-v5 patchset to current git (took no
+> tweaking at all) and tested the received values of SCM_CREDENTIALS
+> ancillary msgs.  You'd asked me if it looked right before and I said
+> it did, but in fact there is a little bug, fixed by the below patch.
+> 
+> thanks,
+> -serge
+> 
+> From c99daef4d7927bf002b493039c86e3de70d7b8b1 Mon Sep 17 00:00:00 2001
+> From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Date: Fri, 7 May 2010 17:35:50 -0400
+> Subject: [PATCH 1/1] cred_to_ucred: use the creator of the right namespace
+> 
+> If cred->creator->user_ns == current->user_ns, then it is the
+> cred->creator>uid, not the current->user_ns->creator->uid which
+> we are interested in.
+> 
+> Tested with SCM_CREDENTIALS test program.  Without this patch,
+> if uid 1001 clones a task with clone(CLONE_NEWUSER), which
+> then does setresuid(25,25,25) and sends a SCM_CREDENTIALS msg
+> back to the parent, then the parent gets uid 0 and gid overflowgid.
+> The reason is that we were returning the uid of the creator of
+> the *parent*'s userns.
+> 
+> With this patch, the uid, gid, and pid are all correct.
+
+Except, while it is *technically* correct, semantically I'm
+not sure that's what we want either.
+
+Assuming again that pid 100 owned by uid 1001 clones a task 200 in a new
+user_ns, which does setresuid(25,25,25).  Now 200 sends SCM_CREDENTIALS
+to 100.  (Again clearly uid 0 was wrong.)  But sending 1001 isn't quite
+right either.  In particular, there is a reason why 100 cloned a new
+user namespace: so the uid passed back perhaps should just be
+overflowuid?
+
+As a concrete example I'll again use the case where a task owned by uid
+0 in init_user_ns creates a child in new user_ns, with uid 25 there, and
+now the child calls /sbin/reboot.  reboot talks over abstract unix sock to
+init in the parent and sends SCM_CREDENTIALS.  With my patch above, it
+would now send uid 0, and so init would reboot the host.  That this is
+wrong becomes particularly obvious when we consider sending posix caps
+along with uid:  any posix caps which the child has should be N/A to
+the init_user_ns.
+
+IIUC you coded this originally for use by NFS - would sending
+overflowuid make sense for its use as well?
+
+The existing code is still right in the inverse case - if pid 100
+sends SCM_CREDENTIALS to pid 200, it sends uid 0 which I think always
+makes sense.
+
+-serge
