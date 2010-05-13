@@ -1,12 +1,12 @@
-From: Tetsuo Handa <penguin-kernel-JPay3/Yim36HaxMnTkn67Xf5DAMn2ifp@public.gmane.org>
-Subject: Re: [PATCH 1/9] mm: add generic adaptive large memory allocationAPIs
-Date: Thu, 13 May 2010 22:36:51 +0900
-Message-ID: <201005132236.ADJ57893.FLFFMtOVJHOOSQ__15147.6047620692$1273757941$gmane$org@I-love.SAKURA.ne.jp>
+From: Changli Gao <xiaosuo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 1/9] mm: add generic adaptive large memory allocation APIs
+Date: Thu, 13 May 2010 22:08:26 +0800
+Message-ID: <AANLkTinLT5g5SKjqmQlS2kxvvMq1gsi1jPDgOKTnrT-q__25133.4692737602$1273759782$gmane$org@mail.gmail.com>
 References: <1273744285-8128-1-git-send-email-xiaosuo@gmail.com>
 	<1273756816.5605.3547.camel@twins>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 In-Reply-To: <1273756816.5605.3547.camel@twins>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
@@ -18,16 +18,68 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, xiaosuo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Cc: adilger-xsfywfwIY+M@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, sean.hefty-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, linux-rdma-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-ext4-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, hal.rosenstock-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, James.Bottomley-l3A5Bk7waGM@public.gmane.org, hnguyen-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, divy-ut6Up61K2wZBDgjK7y7TUQ@public.gmane.org, rolandd-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org, tytso-3s7WtUTddSA@public.gmane.org, linux-scsi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, raisch-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+Cc: Andreas Dilger <adilger-xsfywfwIY+M@public.gmane.org>, Tetsuo Handa <penguin-kernel-1yMVhJb1mP/7nzcFbJAaVXf5DAMn2ifp@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Sean Hefty <sean.hefty-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-rdma-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-ext4-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hal Rosenstock <hal.rosenstock-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "James E.J. Bottomley" <James.Bottomley-l3A5Bk7waGM@public.gmane.org>, Hoang-Nam Nguyen <hnguyen-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Divy Le Ray <divy-ut6Up61K2wZBDgjK7y7TUQ@public.gmane.org>, Roland Dreier <rolandd-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>, Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, linux-scsi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Christoph Raisch <raisch-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Peter Zijlstra wrote:
-> NAK, I really utterly dislike that inatomic argument. The alloc side
-> doesn't function in atomic context either. Please keep the thing
-> symmetric in that regards.
-
-Excuse me. kmalloc(GFP_KERNEL) may sleep (and therefore cannot be used in
-atomic context). However, kfree() for memory allocated with kmalloc(GFP_KERNEL)
-never sleep (and therefore can be used in atomic context).
-Why kmalloc() and kfree() are NOT kept symmetric?
+T24gVGh1LCBNYXkgMTMsIDIwMTAgYXQgOToyMCBQTSwgUGV0ZXIgWmlqbHN0cmEgPHBldGVyekBp
+bmZyYWRlYWQub3JnPiB3cm90ZToKPiBPbiBUaHUsIDIwMTAtMDUtMTMgYXQgMTc6NTEgKzA4MDAs
+IENoYW5nbGkgR2FvIHdyb3RlOgo+PiArdm9pZCAqX19rdm1hbGxvYyhzaXplX3Qgc2l6ZSwgZ2Zw
+X3QgZmxhZ3MpCj4+ICt7Cj4+ICsgwqAgwqAgwqAgdm9pZCAqcHRyOwo+PiArCj4+ICsgwqAgwqAg
+wqAgaWYgKHNpemUgPCBQQUdFX1NJWkUpCj4+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgcmV0dXJu
+IGttYWxsb2Moc2l6ZSwgR0ZQX0tFUk5FTCB8IGZsYWdzKTsKPj4gKyDCoCDCoCDCoCBzaXplID0g
+UEFHRV9BTElHTihzaXplKTsKPj4gKyDCoCDCoCDCoCBpZiAoaXNfcG93ZXJfb2ZfMihzaXplKSkK
+Pj4gKyDCoCDCoCDCoCDCoCDCoCDCoCDCoCBwdHIgPSAodm9pZCAqKV9fZ2V0X2ZyZWVfcGFnZXMo
+R0ZQX0tFUk5FTCB8IGZsYWdzIHwKPj4gKyDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDC
+oCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoF9fR0ZQX05PV0FSTiwgZ2V0X29y
+ZGVyKHNpemUpKTsKPj4gKyDCoCDCoCDCoCBlbHNlCj4+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAg
+cHRyID0gYWxsb2NfcGFnZXNfZXhhY3Qoc2l6ZSwgR0ZQX0tFUk5FTCB8IGZsYWdzIHwKPj4gKyDC
+oCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDC
+oCDCoCDCoCBfX0dGUF9OT1dBUk4pOwo+PiArIMKgIMKgIMKgIGlmIChwdHIgIT0gTlVMTCkgewo+
+PiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIHZpcnRfdG9faGVhZF9wYWdlKHB0ciktPnByaXZhdGUg
+PSBzaXplOwo+PiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIHJldHVybiBwdHI7Cj4+ICsgwqAgwqAg
+wqAgfQo+PiArCj4+ICsgwqAgwqAgwqAgcHRyID0gdm1hbGxvYyhzaXplKTsKPj4gKyDCoCDCoCDC
+oCBpZiAocHRyICE9IE5VTEwgJiYgKGZsYWdzICYgX19HRlBfWkVSTykpCj4+ICsgwqAgwqAgwqAg
+wqAgwqAgwqAgwqAgbWVtc2V0KHB0ciwgMCwgc2l6ZSk7Cj4+ICsKPj4gKyDCoCDCoCDCoCByZXR1
+cm4gcHRyOwo+PiArfQo+PiArRVhQT1JUX1NZTUJPTChfX2t2bWFsbG9jKTsKPgo+IFNvIGlmIEkg
+ZG8ga3ZtYWxsb2Moc2l6ZSwgR0ZQX0FUT01JQykgSSBnZXQgR0ZQX0tFUk5FTHxHRlBfQVRPTUlD
+LCB3aGljaAo+IGlzIG5vdCBhIHJlY29tbWVuZGVkIHZhcmlhdGlvbiBiZWNhdXNlIG9uZSBzaG91
+bGQgbm90IG1peCBfX0dGUF9XQUlUIGFuZAo+IF9fR0ZQX0hJR0guCgpfX2t2bWFsbG9jKCkgaXMg
+b25seSBmb3IgaW50ZXJuYWwgdXNlKGt2bWFsbG9jLCBrdmNhbGxvYywgYW5kCmt2emFsbG9jKSwg
+YW5kIHRoZSBvbmx5IHZhbHVlIG9mIGZsYWdzIGlzIF9fR0ZQX1pFUk8uIEhvdyBhYm91dApyZXBs
+YWNpbmcgZmxhZ3Mgd2l0aCBhIGJvb2wgdmFyaWFibGUgemVybz8KCnZvaWQgKl9fa3ZtYWxsb2Mo
+c2l6ZV90IHNpemUsIGJvb2wgemVybyk7CgogT3IgY2hlY2sgdGhlIHZhbHVlIG9mIGZsYWdzIGlu
+IHRoZSBmcm9udCBvZiBfX2t2bWFsbG9jKCkuCgpCVUdfT04oKGZsYWdzICYgKH5fX0dGUF9aRVJP
+KSkgIT0gMCk7Cgo+Cj4gU28gSSB3b3VsZCBzaW1wbHkgZHJvcCB0aGUgZ2ZwIGFyZ3VtZW50IHRv
+IGF2b2lkIGNvbmZ1c2lvbi4KPgo+PiArdm9pZCBfX2t2ZnJlZSh2b2lkICpwdHIsIGJvb2wgaW5h
+dG9taWMpCj4+ICt7Cj4+ICsgwqAgwqAgwqAgaWYgKHVubGlrZWx5KFpFUk9fT1JfTlVMTF9QVFIo
+cHRyKSkpCj4+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgcmV0dXJuOwo+PiArIMKgIMKgIMKgIGlm
+IChpc192bWFsbG9jX2FkZHIocHRyKSkgewo+PiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIGlmIChp
+bmF0b21pYykgewo+PiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIHN0cnVjdCB3
+b3JrX3N0cnVjdCAqd29yazsKPj4gKwo+PiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKg
+IMKgIHdvcmsgPSBwdHI7Cj4+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgQlVJ
+TERfQlVHX09OKHNpemVvZihzdHJ1Y3Qgd29ya19zdHJ1Y3QpID4gUEFHRV9TSVpFKTsKPj4gKyDC
+oCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCBJTklUX1dPUksod29yaywga3ZmcmVlX3dv
+cmspOwo+PiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIHNjaGVkdWxlX3dvcmso
+d29yayk7Cj4+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgfSBlbHNlIHsKPj4gKyDCoCDCoCDCoCDC
+oCDCoCDCoCDCoCDCoCDCoCDCoCDCoCB2ZnJlZShwdHIpOwo+PiArIMKgIMKgIMKgIMKgIMKgIMKg
+IMKgIH0KPj4gKyDCoCDCoCDCoCB9IGVsc2Ugewo+PiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIHN0
+cnVjdCBwYWdlICpwYWdlOwo+PiArCj4+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgcGFnZSA9IHZp
+cnRfdG9faGVhZF9wYWdlKHB0cik7Cj4+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgaWYgKFBhZ2VT
+bGFiKHBhZ2UpIHx8IFBhZ2VDb21wb3VuZChwYWdlKSkKPj4gKyDCoCDCoCDCoCDCoCDCoCDCoCDC
+oCDCoCDCoCDCoCDCoCBrZnJlZShwdHIpOwo+PiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIGVsc2Ug
+aWYgKGlzX3Bvd2VyX29mXzIocGFnZS0+cHJpdmF0ZSkpCj4+ICsgwqAgwqAgwqAgwqAgwqAgwqAg
+wqAgwqAgwqAgwqAgwqAgZnJlZV9wYWdlcygodW5zaWduZWQgbG9uZylwdHIsCj4+ICsgwqAgwqAg
+wqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqBnZXRfb3JkZXIocGFn
+ZS0+cHJpdmF0ZSkpOwo+PiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIGVsc2UKPj4gKyDCoCDCoCDC
+oCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCBmcmVlX3BhZ2VzX2V4YWN0KHB0ciwgcGFnZS0+cHJp
+dmF0ZSk7Cj4+ICsgwqAgwqAgwqAgfQo+PiArfQo+PiArRVhQT1JUX1NZTUJPTChfX2t2ZnJlZSk7
+Cj4KPiBOQUssIEkgcmVhbGx5IHV0dGVybHkgZGlzbGlrZSB0aGF0IGluYXRvbWljIGFyZ3VtZW50
+LiBUaGUgYWxsb2Mgc2lkZQo+IGRvZXNuJ3QgZnVuY3Rpb24gaW4gYXRvbWljIGNvbnRleHQgZWl0
+aGVyLiBQbGVhc2Uga2VlcCB0aGUgdGhpbmcKPiBzeW1tZXRyaWMgaW4gdGhhdCByZWdhcmRzLgo+
+CgpUaGVyZSBhcmUgc29tZSB1c2Vycywgd2hvIHJlbGVhc2UgbWVtb3J5IGluIGF0b21pYyBjb250
+ZXh0LiBmb3IKZXhhbXBsZTogZnMvZmlsZS5jOiBmZG1lbS4KCi0tIApSZWdhcmRz77yMCkNoYW5n
+bGkgR2FvKHhpYW9zdW9AZ21haWwuY29tKQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3Rz
+LmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcv
+bWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
