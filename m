@@ -1,14 +1,14 @@
-From: KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 1/9] mm: add generic adaptive large memory allocationAPIs
-Date: Mon, 17 May 2010 10:34:30 +0900 (JST)
-Message-ID: <20100517103050.21B6.A69D9226__41094.9255842299$1274060139$gmane$org@jp.fujitsu.com>
-References: <1273756816.5605.3547.camel@twins>
-	<201005132236.ADJ57893.FLFFMtOVJHOOSQ@I-love.SAKURA.ne.jp>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH lxc 2/2] lxc-unshare: make CLONE_NEWPID imply CLONE_NEWNS
+Date: Thu, 13 May 2010 14:34:47 -0500
+Message-ID: <20100513193447.GA15830@us.ibm.com>
+References: <20100513193412.GA15433@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <201005132236.ADJ57893.FLFFMtOVJHOOSQ-JPay3/Yim36HaxMnTkn67Xf5DAMn2ifp@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20100513193412.GA15433-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,22 +18,43 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tetsuo Handa <penguin-kernel-JPay3/Yim36HaxMnTkn67Xf5DAMn2ifp@public.gmane.org>
-Cc: adilger-xsfywfwIY+M@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, sean.hefty-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, linux-scsi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-rdma-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, linux-ext4-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, hal.rosenstock-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, xiaosuo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, James.Bottomley-l3A5Bk7waGM@public.gmane.org, hnguyen-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, divy-ut6Up61K2wZBDgjK7y7TUQ@public.gmane.org, rolandd-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org, tytso-3s7WtUTddSA@public.gmane.org, eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, raisch-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-> Peter Zijlstra wrote:
-> > NAK, I really utterly dislike that inatomic argument. The alloc side
-> > doesn't function in atomic context either. Please keep the thing
-> > symmetric in that regards.
-> 
-> Excuse me. kmalloc(GFP_KERNEL) may sleep (and therefore cannot be used in
-> atomic context). However, kfree() for memory allocated with kmalloc(GFP_KERNEL)
-> never sleep (and therefore can be used in atomic context).
-> Why kmalloc() and kfree() are NOT kept symmetric?
+I would like to also automatically have /proc remounted, but
+that would require digging deeper into lxc_clone.
 
-In kmalloc case, we need to consider both kmalloc(GFP_KERNEL)/kfree() pair and
-kmalloc(GFP_ATOMIC)/kfree() pair. latter is mainly used on atomic context.
-To make kfree() atomic help to keep the implementation simple.
+Mind you perhaps having NEWPID imply NEWNS should be done there,
+at src/lxc/namespace.c:lxc_clone anyway.  I'm starting here...
+Won't be offended if it's rejected on those grounds :)
 
-But kvmalloc don't have GFP_ATOMIC feautre. that's big difference.
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ src/lxc/lxc_unshare.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+diff --git a/src/lxc/lxc_unshare.c b/src/lxc/lxc_unshare.c
+index 8db1cb7..8531b59 100644
+--- a/src/lxc/lxc_unshare.c
++++ b/src/lxc/lxc_unshare.c
+@@ -49,6 +49,7 @@ void usage(char *cmd)
+ 			"\t           MOUNT, PID, UTSNAME, IPC, USER, NETWORK\n");
+ 	fprintf(stderr, "\t -u <id> : new id to be set if -s USER is specified\n");
+ 	fprintf(stderr, "\t if -s PID is specified, <command> is mandatory)\n");
++	fprintf(stderr, "\t If -s PID is specified, then -s MOUNT is implied\n");
+ 	_exit(1);
+ }
+ 
+@@ -213,6 +214,9 @@ int main(int argc, char *argv[])
+  	if (ret)
+ 		usage(argv[0]);
+ 
++	if (flags & CLONE_NEWPID)
++		flags |= CLONE_NEWNS;
++
+ 	if (!(flags & CLONE_NEWUSER) && uid != -1) {
+ 		ERROR("-u <uid> needs -s USER option");
+ 		return 1;
+-- 
+1.6.3.3
