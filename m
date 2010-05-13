@@ -1,13 +1,11 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: [lxc-devel] Containerized syslog
-Date: Wed, 12 May 2010 23:15:05 +0200
-Message-ID: <4BEB1A59.6010905__40208.8277660825$1273699045$gmane$org@free.fr>
-References: <4BEAC1E8.1070506@univ-nantes.fr>
+From: Changli Gao <xiaosuo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH 0/9] mm: generic adaptive large memory allocation APIs
+Date: Thu, 13 May 2010 17:49:07 +0800
+Message-ID: <1273744147-7594-1-git-send-email-xiaosuo__17579.9625031233$1273744328$gmane$org@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4BEAC1E8.1070506-zanJymNeSEOeCSforKHNpg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,55 +15,40 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: jean-philippe.menil-zanJymNeSEOeCSforKHNpg@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andreas Dilger <adilger-xsfywfwIY+M@public.gmane.org>, linux-ext4-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, linux-scsi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-rdma-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "James E.J. Bottomley" <James.Bottomley-l3A5Bk7waGM@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Christoph Raisch <raisch-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>, Hoang-Nam Nguyen <hnguyen-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Changli Gao <xiaosuo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Sean Hefty <sean.hefty-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Roland Dreier <rolandd-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>, Hal Rosenstock <hal.rosenstock-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Divy Le Ray <divy-ut6Up61K2wZBDgjK7y7TUQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Jean-Philippe Menil wrote:
-> Hi,
->
-> I'm playing with containers under debian (squeeze, 2.6.33.3) with the 
-> lxc tools.
-> I'm really happy about all the features (attach veth on bridge, filter 
-> with iptables inside the containers, etc ...), and i was thinking to 
-> replace some of our vservers (and maybe some of our kvm) with this 
-> solution.
->
-> But actually, i experiment a problem with the iptables logs:
-> i've iptables on the host to filter some container, basically a squid 
-> proxy. I've another container who act as router, and he has his own 
-> iptables inside.
-> All the log are deported to a dedicated syslog server.
-> It appear that, the iptables log of the host are also deported by the 
-> syslog container (proxy).
->
-> Some of our guest (container, vserver, etc ) are administer by other 
-> sys-admin, that should not have access to theses informations.
->
-> This point is blocking me today, before going into production with 
-> containers.
->
-> I've seen some patch made by Jean-Marc Pigeon about this problem,
-> but they have not been commited.
+generic adaptive large memory allocation APIs
 
-I thing a consensus was not reach. The big deal with syslog is netfilter 
-logs in an interrupt context where it is difficult to find the right log 
-buffer ring as we are not in the process context making possible to 
-identify the namespace.
+kv*alloc are used to allocate large contiguous memory and the users don't mind
+whether the memory is physically or virtually contiguous. The allocator always
+try its best to allocate physically contiguous memory first.
 
-IMHO, there are two parts to implement, (1) multiple instances of 
-/dev/log with a new ring buffer each time attached to the file and (2) 
-add an iptables rules to specify the file to log. This approach allows 
-to get rid of namespace (in all the cases the clone flags are exhausted 
-now), and provides a generic mechanism for other use cases (eg. separate 
-logs for iptables) different from a container specific problem.
+In this patch set, some APIs are introduced: kvmalloc(), kvzalloc(), kvcalloc(),
+kvrealloc(), kvfree() and kvfree_inatomic().
 
-This is from a kernel POV, but from the userspace POV, that will means 
-the iptables rules in the vps configuration files should be modified, I 
-don't know if it's acceptable.
-> Is there any reason for that?
-> Can someone advice me to circumvent this problem?
-I don't know a workaround for this problem.
+Some code are converted to use the new generic APIs instead.
 
-Thanks
-  -- Daniel
+Signed-off-by: Changli Gao <xiaosuo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+----
+ drivers/infiniband/hw/ehca/ipz_pt_fn.c |   22 +-----
+ drivers/net/cxgb3/cxgb3_defs.h         |    2 
+ drivers/net/cxgb3/cxgb3_offload.c      |   31 ---------
+ drivers/net/cxgb3/l2t.c                |    4 -
+ drivers/net/cxgb4/cxgb4.h              |    3 
+ drivers/net/cxgb4/cxgb4_main.c         |   37 +----------
+ drivers/net/cxgb4/l2t.c                |    2 
+ drivers/scsi/cxgb3i/cxgb3i_ddp.c       |   12 +--
+ drivers/scsi/cxgb3i/cxgb3i_ddp.h       |   26 -------
+ drivers/scsi/cxgb3i/cxgb3i_offload.c   |    6 -
+ fs/ext4/super.c                        |   21 +-----
+ fs/file.c                              |  109 ++++-----------------------------
+ include/linux/mm.h                     |   31 +++++++++
+ include/linux/vmalloc.h                |    1 
+ kernel/cgroup.c                        |   47 +-------------
+ kernel/relay.c                         |   35 ----------
+ mm/nommu.c                             |    6 +
+ mm/util.c                              |  104 +++++++++++++++++++++++++++++++
+ mm/vmalloc.c                           |   14 ++++
+ 19 files changed, 207 insertions(+), 306 deletions(-)
