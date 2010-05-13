@@ -1,13 +1,15 @@
-From: James Bottomley <James.Bottomley-l3A5Bk7waGM@public.gmane.org>
-Subject: Re: [PATCH 0/9] mm: generic adaptive large memory allocation APIs
-Date: Thu, 13 May 2010 10:04:15 -0500
-Message-ID: <1273763055.4353.136.camel__46457.7844636098$1273763362$gmane$org@mulgrave.site>
-References: <1273744147-7594-1-git-send-email-xiaosuo@gmail.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [lxc-devel] Containerized syslog
+Date: Thu, 13 May 2010 14:21:39 -0700
+Message-ID: <20100513212139.GT31830@count0.beaverton.ibm.com>
+References: <4BEAC1E8.1070506@univ-nantes.fr>
+ <4BEB1A59.6010905@free.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1273744147-7594-1-git-send-email-xiaosuo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4BEB1A59.6010905-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,56 +19,68 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Changli Gao <xiaosuo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andreas Dilger <adilger-xsfywfwIY+M@public.gmane.org>, linux-ext4-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, linux-scsi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-rdma-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hal Rosenstock <hal.rosenstock-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Christoph Raisch <raisch-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>, Hoang-Nam Nguyen <hnguyen-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Sean Hefty <sean.hefty-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Roland Dreier <rolandd-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Divy Le Ray <divy-ut6Up61K2wZBDgjK7y7TUQ@public.gmane.org>
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serue-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, 2010-05-13 at 17:49 +0800, Changli Gao wrote:
-> generic adaptive large memory allocation APIs
+On Wed, May 12, 2010 at 11:15:05PM +0200, Daniel Lezcano wrote:
+> Jean-Philippe Menil wrote:
+> > Hi,
+> >
+> > I'm playing with containers under debian (squeeze, 2.6.33.3) with the 
+> > lxc tools.
+> > I'm really happy about all the features (attach veth on bridge, filter 
+> > with iptables inside the containers, etc ...), and i was thinking to 
+> > replace some of our vservers (and maybe some of our kvm) with this 
+> > solution.
+> >
+> > But actually, i experiment a problem with the iptables logs:
+> > i've iptables on the host to filter some container, basically a squid 
+> > proxy. I've another container who act as router, and he has his own 
+> > iptables inside.
+> > All the log are deported to a dedicated syslog server.
+> > It appear that, the iptables log of the host are also deported by the 
+> > syslog container (proxy).
+> >
+> > Some of our guest (container, vserver, etc ) are administer by other 
+> > sys-admin, that should not have access to theses informations.
+> >
+> > This point is blocking me today, before going into production with 
+> > containers.
+> >
+> > I've seen some patch made by Jean-Marc Pigeon about this problem,
+> > but they have not been commited.
 > 
-> kv*alloc are used to allocate large contiguous memory and the users don't mind
-> whether the memory is physically or virtually contiguous. The allocator always
-> try its best to allocate physically contiguous memory first.
-
-This isn't necessarily true ... most drivers and filesystems have to
-know what type they're getting.  Often they have to do extra tricks to
-process vmalloc areas.  Conversely, large kmalloc areas are a very
-precious commodity: if a driver or filesystem can handle vmalloc for
-large allocations, it should: it's easier for us to expand the vmalloc
-area than to try to make page reclaim keep large contiguous areas ... I
-notice your proposed API does the exact opposite of this ... tries
-kmalloc first and then does vmalloc.
-
-Given this policy problem, isn't it easier simply to hand craft the
-vmalloc fall back to kmalloc (or vice versa) in the driver than add this
-whole massive raft of APIs for it?
-
-> In this patch set, some APIs are introduced: kvmalloc(), kvzalloc(), kvcalloc(),
-> kvrealloc(), kvfree() and kvfree_inatomic().
+> I thing a consensus was not reach. The big deal with syslog is netfilter 
+> logs in an interrupt context where it is difficult to find the right log 
+> buffer ring as we are not in the process context making possible to 
+> identify the namespace.
 > 
-> Some code are converted to use the new generic APIs instead.
-> 
-> Signed-off-by: Changli Gao <xiaosuo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> ----
->  drivers/infiniband/hw/ehca/ipz_pt_fn.c |   22 +-----
->  drivers/net/cxgb3/cxgb3_defs.h         |    2 
->  drivers/net/cxgb3/cxgb3_offload.c      |   31 ---------
->  drivers/net/cxgb3/l2t.c                |    4 -
->  drivers/net/cxgb4/cxgb4.h              |    3 
->  drivers/net/cxgb4/cxgb4_main.c         |   37 +----------
->  drivers/net/cxgb4/l2t.c                |    2 
->  drivers/scsi/cxgb3i/cxgb3i_ddp.c       |   12 +--
->  drivers/scsi/cxgb3i/cxgb3i_ddp.h       |   26 -------
->  drivers/scsi/cxgb3i/cxgb3i_offload.c   |    6 -
->  fs/ext4/super.c                        |   21 +-----
->  fs/file.c                              |  109 ++++-----------------------------
->  include/linux/mm.h                     |   31 +++++++++
->  include/linux/vmalloc.h                |    1 
->  kernel/cgroup.c                        |   47 +-------------
->  kernel/relay.c                         |   35 ----------
->  mm/nommu.c                             |    6 +
->  mm/util.c                              |  104 +++++++++++++++++++++++++++++++
->  mm/vmalloc.c                           |   14 ++++
->  19 files changed, 207 insertions(+), 306 deletions(-)
+> IMHO, there are two parts to implement, (1) multiple instances of 
+> /dev/log with a new ring buffer each time attached to the file and 
 
-James
+Just for reference, here are some archived mailing list threads on the
+subject of containerized syslog:
+
+	http://www.mail-archive.com/devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org/msg20104.html
+	http://thread.gmane.org/gmane.linux.kernel.containers/16526
+
+> (2) 
+> add an iptables rules to specify the file to log. This approach allows 
+> to get rid of namespace (in all the cases the clone flags are exhausted 
+> now), and provides a generic mechanism for other use cases (eg. separate 
+> logs for iptables) different from a container specific problem.
+
+(3) Security implications.
+
+	Depending on how the syslog is split off, whether the host
+	expects to be "Cc'd", etc. there could be some security
+	implications. More importantly, the syslog control syscalls need
+	to be modified to at least prevent containers from changing syslog
+	policy of the host. Serge could probably explain this much better
+	than I can (cc'd). Here's a thread on the subject:
+
+	http://lwn.net/Articles/378472/
+
+Cheers,
+	-Matt Helsley
