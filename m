@@ -1,7 +1,7 @@
 From: Changli Gao <xiaosuo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 1/9] mm: add generic adaptive large memory allocation APIs
-Date: Thu, 13 May 2010 17:51:25 +0800
-Message-ID: <1273744285-8128-1-git-send-email-xiaosuo__15165.0491323837$1273744482$gmane$org@gmail.com>
+Subject: [PATCH 3/9] cgroup: use kvmalloc, kvrealloc and kvfree
+Date: Thu, 13 May 2010 17:58:16 +0800
+Message-ID: <1273744696-10119-1-git-send-email-xiaosuo__22562.9731001847$1273744797$gmane$org@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -16,240 +16,110 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
-Cc: Andreas Dilger <adilger-xsfywfwIY+M@public.gmane.org>, Tetsuo Handa <penguin-kernel-1yMVhJb1mP/7nzcFbJAaVXf5DAMn2ifp@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Sean Hefty <sean.hefty-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-rdma-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Changli Gao <xiaosuo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-ext4-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hal Rosenstock <hal.rosenstock-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "James E.J. Bottomley" <James.Bottomley-l3A5Bk7waGM@public.gmane.org>, Hoang-Nam Nguyen <hnguyen-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Divy Le Ray <divy-ut6Up61K2wZBDgjK7y7TUQ@public.gmane.org>, Roland Dreier <rolandd-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>, Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, linux-scsi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Christoph Raisch <raisch-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Changli Gao <xiaosuo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-generic adaptive large memory allocation APIs
+use kvmalloc, kvrealloc and kvfree
 
-kv*alloc are used to allocate large contiguous memory and the users don't mind
-whether the memory is physically or virtually contiguous. The allocator always
-try its best to allocate physically contiguous memory first.
-
-In this patch set, some APIs are introduced: kvmalloc(), kvzalloc(), kvcalloc(),
-kvrealloc(), kvfree() and kvfree_inatomic().
+use kvmalloc, kvrealloc and kvfree
 
 Signed-off-by: Changli Gao <xiaosuo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ----
- include/linux/mm.h      |   31 ++++++++++++++
- include/linux/vmalloc.h |    1 
- mm/nommu.c              |    6 ++
- mm/util.c               |  104 ++++++++++++++++++++++++++++++++++++++++++++++++
- mm/vmalloc.c            |   14 ++++++
- 5 files changed, 156 insertions(+)
-diff --git a/include/linux/mm.h b/include/linux/mm.h
-index 462acaf..0ece978 100644
---- a/include/linux/mm.h
-+++ b/include/linux/mm.h
-@@ -1467,5 +1467,36 @@ extern int soft_offline_page(struct page *page, int flags);
+ kernel/cgroup.c |   47 +++++------------------------------------------
+ 1 file changed, 5 insertions(+), 42 deletions(-)
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 6d870f2..4a1dab7 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -55,7 +55,6 @@
+ #include <linux/smp_lock.h>
+ #include <linux/pid_namespace.h>
+ #include <linux/idr.h>
+-#include <linux/vmalloc.h> /* TODO: replace with more sophisticated array */
+ #include <linux/eventfd.h>
+ #include <linux/poll.h>
  
- extern void dump_page(struct page *page);
+@@ -2553,42 +2552,6 @@ int cgroup_scan_tasks(struct cgroup_scanner *scan)
+  */
  
-+void *__kvmalloc(size_t size, gfp_t flags);
-+
-+static inline void *kvmalloc(size_t size)
-+{
-+	return __kvmalloc(size, 0);
-+}
-+
-+static inline void *kvzalloc(size_t size)
-+{
-+	return __kvmalloc(size, __GFP_ZERO);
-+}
-+
-+static inline void *kvcalloc(size_t n, size_t size)
-+{
-+	return __kvmalloc(n * size, __GFP_ZERO);
-+}
-+
-+void __kvfree(void *ptr, bool inatomic);
-+
-+static inline void kvfree(void *ptr)
-+{
-+	__kvfree(ptr, false);
-+}
-+
-+static inline void kvfree_inatomic(void *ptr)
-+{
-+	__kvfree(ptr, true);
-+}
-+
-+void *kvrealloc(void *ptr, size_t newsize);
-+
- #endif /* __KERNEL__ */
- #endif /* _LINUX_MM_H */
-diff --git a/include/linux/vmalloc.h b/include/linux/vmalloc.h
-index 227c2a5..33ec828 100644
---- a/include/linux/vmalloc.h
-+++ b/include/linux/vmalloc.h
-@@ -60,6 +60,7 @@ extern void *__vmalloc(unsigned long size, gfp_t gfp_mask, pgprot_t prot);
- extern void *__vmalloc_area(struct vm_struct *area, gfp_t gfp_mask,
- 				pgprot_t prot);
- extern void vfree(const void *addr);
-+extern unsigned long vsize(const void *addr);
- 
- extern void *vmap(struct page **pages, unsigned int count,
- 			unsigned long flags, pgprot_t prot);
-diff --git a/mm/nommu.c b/mm/nommu.c
-index 63fa17d..1ddf3fe 100644
---- a/mm/nommu.c
-+++ b/mm/nommu.c
-@@ -223,6 +223,12 @@ void vfree(const void *addr)
- }
- EXPORT_SYMBOL(vfree);
- 
-+unsigned long vsize(const void *addr)
-+{
-+	return ksize(addr);
-+}
-+EXPORT_SYMBOL(vsize);
-+
- void *__vmalloc(unsigned long size, gfp_t gfp_mask, pgprot_t prot)
- {
- 	/*
-diff --git a/mm/util.c b/mm/util.c
-index f5712e8..7cc364a 100644
---- a/mm/util.c
-+++ b/mm/util.c
-@@ -5,6 +5,7 @@
- #include <linux/err.h>
- #include <linux/sched.h>
- #include <asm/uaccess.h>
-+#include <linux/vmalloc.h>
- 
- #define CREATE_TRACE_POINTS
- #include <trace/events/kmem.h>
-@@ -289,6 +290,109 @@ int __attribute__((weak)) get_user_pages_fast(unsigned long start,
- }
- EXPORT_SYMBOL_GPL(get_user_pages_fast);
- 
-+void *__kvmalloc(size_t size, gfp_t flags)
-+{
-+	void *ptr;
-+
-+	if (size < PAGE_SIZE)
-+		return kmalloc(size, GFP_KERNEL | flags);
-+	size = PAGE_ALIGN(size);
-+	if (is_power_of_2(size))
-+		ptr = (void *)__get_free_pages(GFP_KERNEL | flags |
-+					       __GFP_NOWARN, get_order(size));
-+	else
-+		ptr = alloc_pages_exact(size, GFP_KERNEL | flags |
-+					      __GFP_NOWARN);
-+	if (ptr != NULL) {
-+		virt_to_head_page(ptr)->private = size;
-+		return ptr;
-+	}
-+
-+	ptr = vmalloc(size);
-+	if (ptr != NULL && (flags & __GFP_ZERO))
-+		memset(ptr, 0, size);
-+
-+	return ptr;
-+}
-+EXPORT_SYMBOL(__kvmalloc);
-+
-+static void kvfree_work(struct work_struct *work)
-+{
-+	vfree(work);
-+}
-+
-+void __kvfree(void *ptr, bool inatomic)
-+{
-+	if (unlikely(ZERO_OR_NULL_PTR(ptr)))
-+		return;
-+	if (is_vmalloc_addr(ptr)) {
-+		if (inatomic) {
-+			struct work_struct *work;
-+
-+			work = ptr;
-+			BUILD_BUG_ON(sizeof(struct work_struct) > PAGE_SIZE);
-+			INIT_WORK(work, kvfree_work);
-+			schedule_work(work);
-+		} else {
-+			vfree(ptr);
-+		}
-+	} else {
-+		struct page *page;
-+
-+		page = virt_to_head_page(ptr);
-+		if (PageSlab(page) || PageCompound(page))
-+			kfree(ptr);
-+		else if (is_power_of_2(page->private))
-+			free_pages((unsigned long)ptr,
-+				   get_order(page->private));
-+		else
-+			free_pages_exact(ptr, page->private);
-+	}
-+}
-+EXPORT_SYMBOL(__kvfree);
-+
-+void *kvrealloc(void *ptr, size_t newsize)
-+{
-+	void *nptr;
-+	size_t oldsize;
-+
-+	if (unlikely(!newsize)) {
-+		kvfree(ptr);
-+		return ZERO_SIZE_PTR;
-+	}
-+
-+	if (unlikely(ZERO_OR_NULL_PTR(ptr)))
-+		return kvmalloc(newsize);
-+
-+	if (is_vmalloc_addr(ptr)) {
-+		oldsize = vsize(ptr);
-+		if (newsize <= oldsize)
-+			return ptr;
-+	} else {
-+		struct page *page;
-+
-+		page = virt_to_head_page(ptr);
-+		if (PageSlab(page) || PageCompound(page)) {
-+			if (newsize < PAGE_SIZE)
-+				return krealloc(ptr, newsize, GFP_KERNEL);
-+			oldsize = ksize(ptr);
-+		} else {
-+			oldsize = page->private;
-+			if (newsize <= oldsize)
-+				return ptr;
-+		}
-+	}
-+
-+	nptr = kvmalloc(newsize);
-+	if (nptr != NULL) {
-+		memcpy(nptr, ptr, oldsize);
-+		kvfree(ptr);
-+	}
-+
-+	return nptr;
-+}
-+EXPORT_SYMBOL(kvrealloc);
-+
- /* Tracepoints definitions. */
- EXPORT_TRACEPOINT_SYMBOL(kmalloc);
- EXPORT_TRACEPOINT_SYMBOL(kmem_cache_alloc);
-diff --git a/mm/vmalloc.c b/mm/vmalloc.c
-index ae00746..93552a8 100644
---- a/mm/vmalloc.c
-+++ b/mm/vmalloc.c
-@@ -1413,6 +1413,20 @@ void vfree(const void *addr)
- EXPORT_SYMBOL(vfree);
- 
- /**
-+ *	vsize  -  get the actual amount of memory allocated by vmalloc()
-+ *	@addr:		memory base address
-+ */
-+unsigned long vsize(const void *addr)
-+{
-+	struct vmap_area *va;
-+
-+	va = find_vmap_area((unsigned long)addr);
-+
-+	return va->va_end - va->va_start - PAGE_SIZE;
-+}
-+EXPORT_SYMBOL(vsize);
-+
-+/**
-  *	vunmap  -  release virtual mapping obtained by vmap()
-  *	@addr:		memory base address
-  *
+ /*
+- * The following two functions "fix" the issue where there are more pids
+- * than kmalloc will give memory for; in such cases, we use vmalloc/vfree.
+- * TODO: replace with a kernel-wide solution to this problem
+- */
+-#define PIDLIST_TOO_LARGE(c) ((c) * sizeof(pid_t) > (PAGE_SIZE * 2))
+-static void *pidlist_allocate(int count)
+-{
+-	if (PIDLIST_TOO_LARGE(count))
+-		return vmalloc(count * sizeof(pid_t));
+-	else
+-		return kmalloc(count * sizeof(pid_t), GFP_KERNEL);
+-}
+-static void pidlist_free(void *p)
+-{
+-	if (is_vmalloc_addr(p))
+-		vfree(p);
+-	else
+-		kfree(p);
+-}
+-static void *pidlist_resize(void *p, int newcount)
+-{
+-	void *newlist;
+-	/* note: if new alloc fails, old p will still be valid either way */
+-	if (is_vmalloc_addr(p)) {
+-		newlist = vmalloc(newcount * sizeof(pid_t));
+-		if (!newlist)
+-			return NULL;
+-		memcpy(newlist, p, newcount * sizeof(pid_t));
+-		vfree(p);
+-	} else {
+-		newlist = krealloc(p, newcount * sizeof(pid_t), GFP_KERNEL);
+-	}
+-	return newlist;
+-}
+-
+-/*
+  * pidlist_uniq - given a kmalloc()ed list, strip out all duplicate entries
+  * If the new stripped list is sufficiently smaller and there's enough memory
+  * to allocate a new buffer, will let go of the unneeded memory. Returns the
+@@ -2627,7 +2590,7 @@ after:
+ 	 * we'll just stay with what we've got.
+ 	 */
+ 	if (PIDLIST_REALLOC_DIFFERENCE(length, dest)) {
+-		newlist = pidlist_resize(list, dest);
++		newlist = kvrealloc(list, dest * sizeof(pid_t));
+ 		if (newlist)
+ 			*p = newlist;
+ 	}
+@@ -2705,7 +2668,7 @@ static int pidlist_array_load(struct cgroup *cgrp, enum cgroup_filetype type,
+ 	 * show up until sometime later on.
+ 	 */
+ 	length = cgroup_task_count(cgrp);
+-	array = pidlist_allocate(length);
++	array = kvmalloc(length * sizeof(pid_t));
+ 	if (!array)
+ 		return -ENOMEM;
+ 	/* now, populate the array */
+@@ -2729,11 +2692,11 @@ static int pidlist_array_load(struct cgroup *cgrp, enum cgroup_filetype type,
+ 		length = pidlist_uniq(&array, length);
+ 	l = cgroup_pidlist_find(cgrp, type);
+ 	if (!l) {
+-		pidlist_free(array);
++		kvfree(array);
+ 		return -ENOMEM;
+ 	}
+ 	/* store array, freeing old if necessary - lock already held */
+-	pidlist_free(l->list);
++	kvfree(l->list);
+ 	l->list = array;
+ 	l->length = length;
+ 	l->use_count++;
+@@ -2894,7 +2857,7 @@ static void cgroup_release_pid_array(struct cgroup_pidlist *l)
+ 		/* we're the last user if refcount is 0; remove and free */
+ 		list_del(&l->links);
+ 		mutex_unlock(&l->owner->pidlist_mutex);
+-		pidlist_free(l->list);
++		kvfree(l->list);
+ 		put_pid_ns(l->key.ns);
+ 		up_write(&l->mutex);
+ 		kfree(l);
