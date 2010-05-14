@@ -1,14 +1,15 @@
-From: Andreas Dilger <andreas.dilger-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 0/9] mm: generic adaptive large memory allocation APIs
-Date: Thu, 13 May 2010 15:56:43 -0600
-Message-ID: <7280ADBE-F4BF-43B4-8BAC-5BF129C9DDB3__22485.2437539541$1273788109$gmane$org@oracle.com>
-References: <1273744147-7594-1-git-send-email-xiaosuo@gmail.com>
-	<1273763055.4353.136.camel@mulgrave.site>
-Mime-Version: 1.0 (Apple Message framework v1078)
+From: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+Subject: Re: [PATCH 1/9] mm: add generic adaptive large memory allocation APIs
+Date: Fri, 14 May 2010 10:03:34 +0200
+Message-ID: <1273824214.5605.3625.camel__1783.99182991615$1273824400$gmane$org@twins>
+References: <1273744285-8128-1-git-send-email-xiaosuo@gmail.com>
+	<1273756816.5605.3547.camel@twins>
+	<AANLkTinLT5g5SKjqmQlS2kxvvMq1gsi1jPDgOKTnrT-q@mail.gmail.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1273763055.4353.136.camel-0iu6Cu4xQGLYCGPCin2YbQ@public.gmane.org>
+In-Reply-To: <AANLkTinLT5g5SKjqmQlS2kxvvMq1gsi1jPDgOKTnrT-q-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,30 +19,22 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: James Bottomley <James.Bottomley-l3A5Bk7waGM@public.gmane.org>
-Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "linux-ext4-u79uwXL29TY76Z2rM5mHXA@public.gmane.org development" <linux-ext4-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, linux-scsi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-rdma-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org Mailinglist" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Hal Rosenstock <hal.rosenstock-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Christoph Raisch <raisch-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>, Hoang-Nam Nguyen <hnguyen-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Changli Gao <xiaosuo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Sean Hefty <sean.hefty-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Roland Dreier <rolandd-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Divy Le Ray <divy-ut6Up61K2wZBDgjK7y7TUQ@public.gmane.org>
+To: Changli Gao <xiaosuo-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Andreas Dilger <adilger-xsfywfwIY+M@public.gmane.org>, Tetsuo Handa <penguin-kernel-1yMVhJb1mP/7nzcFbJAaVXf5DAMn2ifp@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Sean Hefty <sean.hefty-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-rdma-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-ext4-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hal Rosenstock <hal.rosenstock-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "James E.J. Bottomley" <James.Bottomley-l3A5Bk7waGM@public.gmane.org>, Hoang-Nam Nguyen <hnguyen-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Divy Le Ray <divy-ut6Up61K2wZBDgjK7y7TUQ@public.gmane.org>, Roland Dreier <rolandd-FYB4Gu1CFyUAvxtiuMwx3w@public.gmane.org>, Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, linux-scsi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Christoph Raisch <raisch-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 2010-05-13, at 09:04, James Bottomley wrote:
-> This isn't necessarily true ... most drivers and filesystems have to
-> know what type they're getting.  Often they have to do extra tricks to
-> process vmalloc areas.  Conversely, large kmalloc areas are a very
-> precious commodity: if a driver or filesystem can handle vmalloc for
-> large allocations, it should: it's easier for us to expand the vmalloc
-> area than to try to make page reclaim keep large contiguous areas ... I
-> notice your proposed API does the exact opposite of this ... tries
-> kmalloc first and then does vmalloc.
+On Thu, 2010-05-13 at 22:08 +0800, Changli Gao wrote:
+> > NAK, I really utterly dislike that inatomic argument. The alloc side
+> > doesn't function in atomic context either. Please keep the thing
+> > symmetric in that regards.
+> >
 > 
-> Given this policy problem, isn't it easier simply to hand craft the
-> vmalloc fall back to kmalloc (or vice versa) in the driver than add this
-> whole massive raft of APIs for it?
+> There are some users, who release memory in atomic context. for
+> example: fs/file.c: fdmem. 
 
-I know we wouldn't mind using large vmalloc allocations for e.g. per-group arrays in ext4 (allocated once per mount), but I'd always understood that using vmalloc for general purpose uses can have a significant impact because the vmalloc() engine has (had?) serious performance problems.  That means it is better performance-wise to have a wrapper function like this to switch between kmalloc() and vmalloc() based on the allocation size, but it makes the code ugly.  Having the wrapper in the kernel would at least identify the different places that are using this kind of workaround.
+urgh, but yeah, aside from not using vmalloc to allocate fd tables one
+needs to deal with this.
 
-If the performance of vmalloc() has been improved in the last few years, then I'd be happy to just use vmalloc() all the time.  That said, vmalloc still isn't suitable for sub-page allocations, so if you have a variable-sized allocation that may be very small or very large the small allocations will waste a whole page and a wrapper is still needed, or vmalloc should be changed to call kmalloc/kfree for the sub-page allocations.
-
-Cheers, Andreas
---
-Andreas Dilger
-Lustre Technical Lead
-Oracle Corporation Canada Inc.
+But if that is the only one, I'd let them do the workqueue thing that's
+already there. If there really are more people wanting to do this, then
+maybe add: kvfree_atomic().
