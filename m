@@ -1,11 +1,11 @@
-From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [RFC] [PATCH] memcg: cleanup memory thresholds
-Date: Mon, 17 May 2010 16:24:27 +0300
-Message-ID: <AANLkTilf7lSsoURcchVSpON1y0innKzveGB5AYA3WAVg__26020.6968443983$1274102812$gmane$org@mail.gmail.com>
+Date: Mon, 17 May 2010 13:17:47 -0700
+Message-ID: <AANLkTilPPYOQ62mzDA4ttrXnkwxN1sYZWK0M871x4Eso__21900.683877948$1274127612$gmane$org@mail.gmail.com>
 References: <1273363872-8031-1-git-send-email-kirill@shutemov.name>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 In-Reply-To: <1273363872-8031-1-git-send-email-kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
@@ -17,229 +17,355 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: Phil Carmody <ext-phil.2.carmody-xNZwKgViW5gAvxtiuMwx3w@public.gmane.org>, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+Cc: Phil Carmody <ext-phil.2.carmody-xNZwKgViW5gAvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-QW55IGNvbW1lbnRzPwoKT24gU3VuLCBNYXkgOSwgMjAxMCBhdCAzOjExIEFNLCBLaXJpbGwgQS4g
-U2h1dGVtb3YgPGtpcmlsbEBzaHV0ZW1vdi5uYW1lPiB3cm90ZToKPiBJbnRyb2R1Y2Ugc3RydWN0
-IG1lbV9jZ3JvdXBfdGhyZXNob2xkcy4gSXQgaGVscHMgdG8gcmVkdWNlIG51bWJlciBvZgo+IGNo
-ZWNrcyBvZiB0aHJlc2hvbGRzIHR5cGUgKG1lbW9yeSBvciBtZW0rc3dhcCkuCj4KPiBTaWduZWQt
-b2ZmLWJ5OiBLaXJpbGwgQS4gU2h1dGVtb3YgPGtpcmlsbEBzaHV0ZW1vdi5uYW1lPgo+IC0tLQo+
-IMKgbW0vbWVtY29udHJvbC5jIHwgwqAxNTEgKysrKysrKysrKysrKysrKysrKysrKysrLS0tLS0t
-LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQo+IMKgMSBmaWxlcyBjaGFuZ2VkLCA2NiBpbnNlcnRp
-b25zKCspLCA4NSBkZWxldGlvbnMoLSkKPgo+IGRpZmYgLS1naXQgYS9tbS9tZW1jb250cm9sLmMg
-Yi9tbS9tZW1jb250cm9sLmMKPiBpbmRleCBhNmQyYTRjLi5hNmM2MjY4IDEwMDY0NAo+IC0tLSBh
-L21tL21lbWNvbnRyb2wuYwo+ICsrKyBiL21tL21lbWNvbnRyb2wuYwo+IEBAIC0xNTgsNiArMTU4
-LDE4IEBAIHN0cnVjdCBtZW1fY2dyb3VwX3RocmVzaG9sZF9hcnkgewo+IMKgIMKgIMKgIMKgLyog
-QXJyYXkgb2YgdGhyZXNob2xkcyAqLwo+IMKgIMKgIMKgIMKgc3RydWN0IG1lbV9jZ3JvdXBfdGhy
-ZXNob2xkIGVudHJpZXNbMF07Cj4gwqB9Owo+ICsKPiArc3RydWN0IG1lbV9jZ3JvdXBfdGhyZXNo
-b2xkcyB7Cj4gKyDCoCDCoCDCoCAvKiBQcmltYXJ5IHRocmVzaG9sZHMgYXJyYXkgKi8KPiArIMKg
-IMKgIMKgIHN0cnVjdCBtZW1fY2dyb3VwX3RocmVzaG9sZF9hcnkgKnByaW1hcnk7Cj4gKyDCoCDC
-oCDCoCAvKgo+ICsgwqAgwqAgwqAgwqAqIFNwYXJlIHRocmVzaG9sZCBhcnJheS4KPiArIMKgIMKg
-IMKgIMKgKiBJdCBuZWVkZWQgdG8gbWFrZSBtZW1fY2dyb3VwX3VucmVnaXN0ZXJfZXZlbnQoKSAi
-bmV2ZXIgZmFpbCIuCj4gKyDCoCDCoCDCoCDCoCogSXQgbXVzdCBiZSBhYmxlIHRvIHN0b3JlIGF0
-IGxlYXN0IHByaW1hcnktPnNpemUgLSAxIGVudGlyZXMuCj4gKyDCoCDCoCDCoCDCoCovCj4gKyDC
-oCDCoCDCoCBzdHJ1Y3QgbWVtX2Nncm91cF90aHJlc2hvbGRfYXJ5ICpzcGFyZTsKPiArfTsKPiAr
-Cj4gwqAvKiBmb3IgT09NICovCj4gwqBzdHJ1Y3QgbWVtX2Nncm91cF9ldmVudGZkX2xpc3Qgewo+
-IMKgIMKgIMKgIMKgc3RydWN0IGxpc3RfaGVhZCBsaXN0Owo+IEBAIC0yMjQsMjAgKzIzNiwxMCBA
-QCBzdHJ1Y3QgbWVtX2Nncm91cCB7Cj4gwqAgwqAgwqAgwqBzdHJ1Y3QgbXV0ZXggdGhyZXNob2xk
-c19sb2NrOwo+Cj4gwqAgwqAgwqAgwqAvKiB0aHJlc2hvbGRzIGZvciBtZW1vcnkgdXNhZ2UuIFJD
-VS1wcm90ZWN0ZWQgKi8KPiAtIMKgIMKgIMKgIHN0cnVjdCBtZW1fY2dyb3VwX3RocmVzaG9sZF9h
-cnkgKnRocmVzaG9sZHM7Cj4gLQo+IC0gwqAgwqAgwqAgLyoKPiAtIMKgIMKgIMKgIMKgKiBQcmVh
-bGxvY2F0ZWQgYnVmZmVyIHRvIGJlIHVzZWQgaW4gbWVtX2Nncm91cF91bnJlZ2lzdGVyX2V2ZW50
-KCkKPiAtIMKgIMKgIMKgIMKgKiB0byBtYWtlIGl0ICJuZXZlciBmYWlsIi4KPiAtIMKgIMKgIMKg
-IMKgKiBJdCBtdXN0IGJlIGFibGUgdG8gc3RvcmUgYXQgbGVhc3QgdGhyZXNob2xkcy0+c2l6ZSAt
-IDEgZW50cmllcy4KPiAtIMKgIMKgIMKgIMKgKi8KPiAtIMKgIMKgIMKgIHN0cnVjdCBtZW1fY2dy
-b3VwX3RocmVzaG9sZF9hcnkgKl9fdGhyZXNob2xkczsKPiArIMKgIMKgIMKgIHN0cnVjdCBtZW1f
-Y2dyb3VwX3RocmVzaG9sZHMgdGhyZXNob2xkczsKPgo+IMKgIMKgIMKgIMKgLyogdGhyZXNob2xk
-cyBmb3IgbWVtK3N3YXAgdXNhZ2UuIFJDVS1wcm90ZWN0ZWQgKi8KPiAtIMKgIMKgIMKgIHN0cnVj
-dCBtZW1fY2dyb3VwX3RocmVzaG9sZF9hcnkgKm1lbXN3X3RocmVzaG9sZHM7Cj4gLQo+IC0gwqAg
-wqAgwqAgLyogdGhlIHNhbWUgYXMgX190aHJlc2hvbGRzLCBidXQgZm9yIG1lbXN3X3RocmVzaG9s
-ZHMgKi8KPiAtIMKgIMKgIMKgIHN0cnVjdCBtZW1fY2dyb3VwX3RocmVzaG9sZF9hcnkgKl9fbWVt
-c3dfdGhyZXNob2xkczsKPiArIMKgIMKgIMKgIHN0cnVjdCBtZW1fY2dyb3VwX3RocmVzaG9sZHMg
-bWVtc3dfdGhyZXNob2xkczsKPgo+IMKgIMKgIMKgIMKgLyogRm9yIG9vbSBub3RpZmllciBldmVu
-dCBmZCAqLwo+IMKgIMKgIMKgIMKgc3RydWN0IGxpc3RfaGVhZCBvb21fbm90aWZ5Owo+IEBAIC0z
-NDM4LDkgKzM0NDAsOSBAQCBzdGF0aWMgdm9pZCBfX21lbV9jZ3JvdXBfdGhyZXNob2xkKHN0cnVj
-dCBtZW1fY2dyb3VwICptZW1jZywgYm9vbCBzd2FwKQo+Cj4gwqAgwqAgwqAgwqByY3VfcmVhZF9s
-b2NrKCk7Cj4gwqAgwqAgwqAgwqBpZiAoIXN3YXApCj4gLSDCoCDCoCDCoCDCoCDCoCDCoCDCoCB0
-ID0gcmN1X2RlcmVmZXJlbmNlKG1lbWNnLT50aHJlc2hvbGRzKTsKPiArIMKgIMKgIMKgIMKgIMKg
-IMKgIMKgIHQgPSByY3VfZGVyZWZlcmVuY2UobWVtY2ctPnRocmVzaG9sZHMucHJpbWFyeSk7Cj4g
-wqAgwqAgwqAgwqBlbHNlCj4gLSDCoCDCoCDCoCDCoCDCoCDCoCDCoCB0ID0gcmN1X2RlcmVmZXJl
-bmNlKG1lbWNnLT5tZW1zd190aHJlc2hvbGRzKTsKPiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIHQg
-PSByY3VfZGVyZWZlcmVuY2UobWVtY2ctPm1lbXN3X3RocmVzaG9sZHMucHJpbWFyeSk7Cj4KPiDC
-oCDCoCDCoCDCoGlmICghdCkKPiDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoGdvdG8gdW5sb2NrOwo+
-IEBAIC0zNTE0LDkxICszNTE2LDc4IEBAIHN0YXRpYyBpbnQgbWVtX2Nncm91cF91c2FnZV9yZWdp
-c3Rlcl9ldmVudChzdHJ1Y3QgY2dyb3VwICpjZ3JwLAo+IMKgIMKgIMKgIMKgc3RydWN0IGNmdHlw
-ZSAqY2Z0LCBzdHJ1Y3QgZXZlbnRmZF9jdHggKmV2ZW50ZmQsIGNvbnN0IGNoYXIgKmFyZ3MpCj4g
-wqB7Cj4gwqAgwqAgwqAgwqBzdHJ1Y3QgbWVtX2Nncm91cCAqbWVtY2cgPSBtZW1fY2dyb3VwX2Zy
-b21fY29udChjZ3JwKTsKPiAtIMKgIMKgIMKgIHN0cnVjdCBtZW1fY2dyb3VwX3RocmVzaG9sZF9h
-cnkgKnRocmVzaG9sZHMsICp0aHJlc2hvbGRzX25ldzsKPiArIMKgIMKgIMKgIHN0cnVjdCBtZW1f
-Y2dyb3VwX3RocmVzaG9sZHMgKnRocmVzaG9sZHM7Cj4gKyDCoCDCoCDCoCBzdHJ1Y3QgbWVtX2Nn
-cm91cF90aHJlc2hvbGRfYXJ5ICpuZXc7Cj4gwqAgwqAgwqAgwqBpbnQgdHlwZSA9IE1FTUZJTEVf
-VFlQRShjZnQtPnByaXZhdGUpOwo+IMKgIMKgIMKgIMKgdTY0IHRocmVzaG9sZCwgdXNhZ2U7Cj4g
-LSDCoCDCoCDCoCBpbnQgc2l6ZTsKPiAtIMKgIMKgIMKgIGludCBpLCByZXQ7Cj4gKyDCoCDCoCDC
-oCBpbnQgaSwgc2l6ZSwgcmV0Owo+Cj4gwqAgwqAgwqAgwqByZXQgPSByZXNfY291bnRlcl9tZW1w
-YXJzZV93cml0ZV9zdHJhdGVneShhcmdzLCAmdGhyZXNob2xkKTsKPiDCoCDCoCDCoCDCoGlmIChy
-ZXQpCj4gwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqByZXR1cm4gcmV0Owo+Cj4gwqAgwqAgwqAgwqBt
-dXRleF9sb2NrKCZtZW1jZy0+dGhyZXNob2xkc19sb2NrKTsKPiArCj4gwqAgwqAgwqAgwqBpZiAo
-dHlwZSA9PSBfTUVNKQo+IC0gwqAgwqAgwqAgwqAgwqAgwqAgwqAgdGhyZXNob2xkcyA9IG1lbWNn
-LT50aHJlc2hvbGRzOwo+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgdGhyZXNob2xkcyA9ICZtZW1j
-Zy0+dGhyZXNob2xkczsKPiDCoCDCoCDCoCDCoGVsc2UgaWYgKHR5cGUgPT0gX01FTVNXQVApCj4g
-LSDCoCDCoCDCoCDCoCDCoCDCoCDCoCB0aHJlc2hvbGRzID0gbWVtY2ctPm1lbXN3X3RocmVzaG9s
-ZHM7Cj4gKyDCoCDCoCDCoCDCoCDCoCDCoCDCoCB0aHJlc2hvbGRzID0gJm1lbWNnLT5tZW1zd190
-aHJlc2hvbGRzOwo+IMKgIMKgIMKgIMKgZWxzZQo+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgQlVH
-KCk7Cj4KPiDCoCDCoCDCoCDCoHVzYWdlID0gbWVtX2Nncm91cF91c2FnZShtZW1jZywgdHlwZSA9
-PSBfTUVNU1dBUCk7Cj4KPiDCoCDCoCDCoCDCoC8qIENoZWNrIGlmIGEgdGhyZXNob2xkIGNyb3Nz
-ZWQgYmVmb3JlIGFkZGluZyBhIG5ldyBvbmUgKi8KPiAtIMKgIMKgIMKgIGlmICh0aHJlc2hvbGRz
-KQo+ICsgwqAgwqAgwqAgaWYgKHRocmVzaG9sZHMtPnByaW1hcnkpCj4gwqAgwqAgwqAgwqAgwqAg
-wqAgwqAgwqBfX21lbV9jZ3JvdXBfdGhyZXNob2xkKG1lbWNnLCB0eXBlID09IF9NRU1TV0FQKTsK
-Pgo+IC0gwqAgwqAgwqAgaWYgKHRocmVzaG9sZHMpCj4gLSDCoCDCoCDCoCDCoCDCoCDCoCDCoCBz
-aXplID0gdGhyZXNob2xkcy0+c2l6ZSArIDE7Cj4gLSDCoCDCoCDCoCBlbHNlCj4gLSDCoCDCoCDC
-oCDCoCDCoCDCoCDCoCBzaXplID0gMTsKPiArIMKgIMKgIMKgIHNpemUgPSB0aHJlc2hvbGRzLT5w
-cmltYXJ5ID8gdGhyZXNob2xkcy0+cHJpbWFyeS0+c2l6ZSArIDEgOiAxOwo+Cj4gwqAgwqAgwqAg
-wqAvKiBBbGxvY2F0ZSBtZW1vcnkgZm9yIG5ldyBhcnJheSBvZiB0aHJlc2hvbGRzICovCj4gLSDC
-oCDCoCDCoCB0aHJlc2hvbGRzX25ldyA9IGttYWxsb2Moc2l6ZW9mKCp0aHJlc2hvbGRzX25ldykg
-Kwo+IC0gwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgc2l6ZSAqIHNpemVvZihzdHJ1
-Y3QgbWVtX2Nncm91cF90aHJlc2hvbGQpLAo+ICsgwqAgwqAgwqAgbmV3ID0ga21hbGxvYyhzaXpl
-b2YoKm5ldykgKyBzaXplICogc2l6ZW9mKHN0cnVjdCBtZW1fY2dyb3VwX3RocmVzaG9sZCksCj4g
-wqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqBHRlBfS0VSTkVMKTsKPiAtIMKgIMKg
-IMKgIGlmICghdGhyZXNob2xkc19uZXcpIHsKPiArIMKgIMKgIMKgIGlmICghbmV3KSB7Cj4gwqAg
-wqAgwqAgwqAgwqAgwqAgwqAgwqByZXQgPSAtRU5PTUVNOwo+IMKgIMKgIMKgIMKgIMKgIMKgIMKg
-IMKgZ290byB1bmxvY2s7Cj4gwqAgwqAgwqAgwqB9Cj4gLSDCoCDCoCDCoCB0aHJlc2hvbGRzX25l
-dy0+c2l6ZSA9IHNpemU7Cj4gKyDCoCDCoCDCoCBuZXctPnNpemUgPSBzaXplOwo+Cj4gwqAgwqAg
-wqAgwqAvKiBDb3B5IHRocmVzaG9sZHMgKGlmIGFueSkgdG8gbmV3IGFycmF5ICovCj4gLSDCoCDC
-oCDCoCBpZiAodGhyZXNob2xkcykKPiAtIMKgIMKgIMKgIMKgIMKgIMKgIMKgIG1lbWNweSh0aHJl
-c2hvbGRzX25ldy0+ZW50cmllcywgdGhyZXNob2xkcy0+ZW50cmllcywKPiAtIMKgIMKgIMKgIMKg
-IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIHRocmVzaG9sZHMtPnNpemUgKgo+ICsg
-wqAgwqAgwqAgaWYgKHRocmVzaG9sZHMtPnByaW1hcnkpIHsKPiArIMKgIMKgIMKgIMKgIMKgIMKg
-IMKgIG1lbWNweShuZXctPmVudHJpZXMsIHRocmVzaG9sZHMtPnByaW1hcnktPmVudHJpZXMsIChz
-aXplIC0gMSkgKgo+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKg
-IMKgc2l6ZW9mKHN0cnVjdCBtZW1fY2dyb3VwX3RocmVzaG9sZCkpOwo+ICsgwqAgwqAgwqAgfQo+
-ICsKPiDCoCDCoCDCoCDCoC8qIEFkZCBuZXcgdGhyZXNob2xkICovCj4gLSDCoCDCoCDCoCB0aHJl
-c2hvbGRzX25ldy0+ZW50cmllc1tzaXplIC0gMV0uZXZlbnRmZCA9IGV2ZW50ZmQ7Cj4gLSDCoCDC
-oCDCoCB0aHJlc2hvbGRzX25ldy0+ZW50cmllc1tzaXplIC0gMV0udGhyZXNob2xkID0gdGhyZXNo
-b2xkOwo+ICsgwqAgwqAgwqAgbmV3LT5lbnRyaWVzW3NpemUgLSAxXS5ldmVudGZkID0gZXZlbnRm
-ZDsKPiArIMKgIMKgIMKgIG5ldy0+ZW50cmllc1tzaXplIC0gMV0udGhyZXNob2xkID0gdGhyZXNo
-b2xkOwo+Cj4gwqAgwqAgwqAgwqAvKiBTb3J0IHRocmVzaG9sZHMuIFJlZ2lzdGVyaW5nIG9mIG5l
-dyB0aHJlc2hvbGQgaXNuJ3QgdGltZS1jcml0aWNhbCAqLwo+IC0gwqAgwqAgwqAgc29ydCh0aHJl
-c2hvbGRzX25ldy0+ZW50cmllcywgc2l6ZSwKPiAtIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKg
-IMKgIMKgIHNpemVvZihzdHJ1Y3QgbWVtX2Nncm91cF90aHJlc2hvbGQpLAo+ICsgwqAgwqAgwqAg
-c29ydChuZXctPmVudHJpZXMsIHNpemUsIHNpemVvZihzdHJ1Y3QgbWVtX2Nncm91cF90aHJlc2hv
-bGQpLAo+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgY29tcGFyZV90aHJlc2hv
-bGRzLCBOVUxMKTsKPgo+IMKgIMKgIMKgIMKgLyogRmluZCBjdXJyZW50IHRocmVzaG9sZCAqLwo+
-IC0gwqAgwqAgwqAgdGhyZXNob2xkc19uZXctPmN1cnJlbnRfdGhyZXNob2xkID0gLTE7Cj4gKyDC
-oCDCoCDCoCBuZXctPmN1cnJlbnRfdGhyZXNob2xkID0gLTE7Cj4gwqAgwqAgwqAgwqBmb3IgKGkg
-PSAwOyBpIDwgc2l6ZTsgaSsrKSB7Cj4gLSDCoCDCoCDCoCDCoCDCoCDCoCDCoCBpZiAodGhyZXNo
-b2xkc19uZXctPmVudHJpZXNbaV0udGhyZXNob2xkIDwgdXNhZ2UpIHsKPiArIMKgIMKgIMKgIMKg
-IMKgIMKgIMKgIGlmIChuZXctPmVudHJpZXNbaV0udGhyZXNob2xkIDwgdXNhZ2UpIHsKPiDCoCDC
-oCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoC8qCj4gLSDCoCDCoCDCoCDCoCDCoCDCoCDC
-oCDCoCDCoCDCoCDCoCDCoCogdGhyZXNob2xkc19uZXctPmN1cnJlbnRfdGhyZXNob2xkIHdpbGwg
-bm90IGJlIHVzZWQKPiAtIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgKiB1bnRp
-bCByY3VfYXNzaWduX3BvaW50ZXIoKSwgc28gaXQncyBzYWZlIHRvIGluY3JlbWVudAo+ICsgwqAg
-wqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAqIG5ldy0+Y3VycmVudF90aHJlc2hvbGQg
-d2lsbCBub3QgYmUgdXNlZCB1bnRpbAo+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAg
-wqAgwqAqIHJjdV9hc3NpZ25fcG9pbnRlcigpLCBzbyBpdCdzIHNhZmUgdG8gaW5jcmVtZW50Cj4g
-wqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgKiBpdCBoZXJlLgo+IMKgIMKgIMKg
-IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgICovCj4gLSDCoCDCoCDCoCDCoCDCoCDCoCDCoCDC
-oCDCoCDCoCDCoCArK3RocmVzaG9sZHNfbmV3LT5jdXJyZW50X3RocmVzaG9sZDsKPiArIMKgIMKg
-IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgICsrbmV3LT5jdXJyZW50X3RocmVzaG9sZDsKPiDC
-oCDCoCDCoCDCoCDCoCDCoCDCoCDCoH0KPiDCoCDCoCDCoCDCoH0KPgo+IC0gwqAgwqAgwqAgaWYg
-KHR5cGUgPT0gX01FTSkKPiAtIMKgIMKgIMKgIMKgIMKgIMKgIMKgIHJjdV9hc3NpZ25fcG9pbnRl
-cihtZW1jZy0+dGhyZXNob2xkcywgdGhyZXNob2xkc19uZXcpOwo+IC0gwqAgwqAgwqAgZWxzZQo+
-IC0gwqAgwqAgwqAgwqAgwqAgwqAgwqAgcmN1X2Fzc2lnbl9wb2ludGVyKG1lbWNnLT5tZW1zd190
-aHJlc2hvbGRzLCB0aHJlc2hvbGRzX25ldyk7Cj4gKyDCoCDCoCDCoCAvKiBGcmVlIG9sZCBzcGFy
-ZSBidWZmZXIgYW5kIHNhdmUgb2xkIHByaW1hcnkgYnVmZmVyIGFzIHNwYXJlICovCj4gKyDCoCDC
-oCDCoCBrZnJlZSh0aHJlc2hvbGRzLT5zcGFyZSk7Cj4gKyDCoCDCoCDCoCB0aHJlc2hvbGRzLT5z
-cGFyZSA9IHRocmVzaG9sZHMtPnByaW1hcnk7Cj4gKwo+ICsgwqAgwqAgwqAgcmN1X2Fzc2lnbl9w
-b2ludGVyKHRocmVzaG9sZHMtPnByaW1hcnksIG5ldyk7Cj4KPiDCoCDCoCDCoCDCoC8qIFRvIGJl
-IHN1cmUgdGhhdCBub2JvZHkgdXNlcyB0aHJlc2hvbGRzICovCj4gwqAgwqAgwqAgwqBzeW5jaHJv
-bml6ZV9yY3UoKTsKPgo+IC0gwqAgwqAgwqAgLyoKPiAtIMKgIMKgIMKgIMKgKiBGcmVlIG9sZCBw
-cmVhbGxvY2F0ZWQgYnVmZmVyIGFuZCB1c2UgdGhyZXNob2xkcyBhcyBuZXcKPiAtIMKgIMKgIMKg
-IMKgKiBwcmVhbGxvY2F0ZWQgYnVmZmVyLgo+IC0gwqAgwqAgwqAgwqAqLwo+IC0gwqAgwqAgwqAg
-aWYgKHR5cGUgPT0gX01FTSkgewo+IC0gwqAgwqAgwqAgwqAgwqAgwqAgwqAga2ZyZWUobWVtY2ct
-Pl9fdGhyZXNob2xkcyk7Cj4gLSDCoCDCoCDCoCDCoCDCoCDCoCDCoCBtZW1jZy0+X190aHJlc2hv
-bGRzID0gdGhyZXNob2xkczsKPiAtIMKgIMKgIMKgIH0gZWxzZSB7Cj4gLSDCoCDCoCDCoCDCoCDC
-oCDCoCDCoCBrZnJlZShtZW1jZy0+X19tZW1zd190aHJlc2hvbGRzKTsKPiAtIMKgIMKgIMKgIMKg
-IMKgIMKgIMKgIG1lbWNnLT5fX21lbXN3X3RocmVzaG9sZHMgPSB0aHJlc2hvbGRzOwo+IC0gwqAg
-wqAgwqAgfQo+IMKgdW5sb2NrOgo+IMKgIMKgIMKgIMKgbXV0ZXhfdW5sb2NrKCZtZW1jZy0+dGhy
-ZXNob2xkc19sb2NrKTsKPgo+IEBAIC0zNjA5LDE3ICszNTk4LDE3IEBAIHN0YXRpYyB2b2lkIG1l
-bV9jZ3JvdXBfdXNhZ2VfdW5yZWdpc3Rlcl9ldmVudChzdHJ1Y3QgY2dyb3VwICpjZ3JwLAo+IMKg
-IMKgIMKgIMKgc3RydWN0IGNmdHlwZSAqY2Z0LCBzdHJ1Y3QgZXZlbnRmZF9jdHggKmV2ZW50ZmQp
-Cj4gwqB7Cj4gwqAgwqAgwqAgwqBzdHJ1Y3QgbWVtX2Nncm91cCAqbWVtY2cgPSBtZW1fY2dyb3Vw
-X2Zyb21fY29udChjZ3JwKTsKPiAtIMKgIMKgIMKgIHN0cnVjdCBtZW1fY2dyb3VwX3RocmVzaG9s
-ZF9hcnkgKnRocmVzaG9sZHMsICp0aHJlc2hvbGRzX25ldzsKPiArIMKgIMKgIMKgIHN0cnVjdCBt
-ZW1fY2dyb3VwX3RocmVzaG9sZHMgKnRocmVzaG9sZHM7Cj4gKyDCoCDCoCDCoCBzdHJ1Y3QgbWVt
-X2Nncm91cF90aHJlc2hvbGRfYXJ5ICpuZXc7Cj4gwqAgwqAgwqAgwqBpbnQgdHlwZSA9IE1FTUZJ
-TEVfVFlQRShjZnQtPnByaXZhdGUpOwo+IMKgIMKgIMKgIMKgdTY0IHVzYWdlOwo+IC0gwqAgwqAg
-wqAgaW50IHNpemUgPSAwOwo+IC0gwqAgwqAgwqAgaW50IGksIGo7Cj4gKyDCoCDCoCDCoCBpbnQg
-aSwgaiwgc2l6ZTsKPgo+IMKgIMKgIMKgIMKgbXV0ZXhfbG9jaygmbWVtY2ctPnRocmVzaG9sZHNf
-bG9jayk7Cj4gwqAgwqAgwqAgwqBpZiAodHlwZSA9PSBfTUVNKQo+IC0gwqAgwqAgwqAgwqAgwqAg
-wqAgwqAgdGhyZXNob2xkcyA9IG1lbWNnLT50aHJlc2hvbGRzOwo+ICsgwqAgwqAgwqAgwqAgwqAg
-wqAgwqAgdGhyZXNob2xkcyA9ICZtZW1jZy0+dGhyZXNob2xkczsKPiDCoCDCoCDCoCDCoGVsc2Ug
-aWYgKHR5cGUgPT0gX01FTVNXQVApCj4gLSDCoCDCoCDCoCDCoCDCoCDCoCDCoCB0aHJlc2hvbGRz
-ID0gbWVtY2ctPm1lbXN3X3RocmVzaG9sZHM7Cj4gKyDCoCDCoCDCoCDCoCDCoCDCoCDCoCB0aHJl
-c2hvbGRzID0gJm1lbWNnLT5tZW1zd190aHJlc2hvbGRzOwo+IMKgIMKgIMKgIMKgZWxzZQo+IMKg
-IMKgIMKgIMKgIMKgIMKgIMKgIMKgQlVHKCk7Cj4KPiBAQCAtMzYzNSw1MyArMzYyNCw0NSBAQCBz
-dGF0aWMgdm9pZCBtZW1fY2dyb3VwX3VzYWdlX3VucmVnaXN0ZXJfZXZlbnQoc3RydWN0IGNncm91
-cCAqY2dycCwKPiDCoCDCoCDCoCDCoF9fbWVtX2Nncm91cF90aHJlc2hvbGQobWVtY2csIHR5cGUg
-PT0gX01FTVNXQVApOwo+Cj4gwqAgwqAgwqAgwqAvKiBDYWxjdWxhdGUgbmV3IG51bWJlciBvZiB0
-aHJlc2hvbGQgKi8KPiAtIMKgIMKgIMKgIGZvciAoaSA9IDA7IGkgPCB0aHJlc2hvbGRzLT5zaXpl
-OyBpKyspIHsKPiAtIMKgIMKgIMKgIMKgIMKgIMKgIMKgIGlmICh0aHJlc2hvbGRzLT5lbnRyaWVz
-W2ldLmV2ZW50ZmQgIT0gZXZlbnRmZCkKPiArIMKgIMKgIMKgIHNpemUgPSAwOwo+ICsgwqAgwqAg
-wqAgZm9yIChpID0gMDsgaSA8IHRocmVzaG9sZHMtPnByaW1hcnktPnNpemU7IGkrKykgewo+ICsg
-wqAgwqAgwqAgwqAgwqAgwqAgwqAgaWYgKHRocmVzaG9sZHMtPnByaW1hcnktPmVudHJpZXNbaV0u
-ZXZlbnRmZCAhPSBldmVudGZkKQo+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKg
-c2l6ZSsrOwo+IMKgIMKgIMKgIMKgfQo+Cj4gLSDCoCDCoCDCoCAvKiBVc2UgcHJlYWxsb2NhdGVk
-IGJ1ZmZlciBmb3IgbmV3IGFycmF5IG9mIHRocmVzaG9sZHMgKi8KPiAtIMKgIMKgIMKgIGlmICh0
-eXBlID09IF9NRU0pCj4gLSDCoCDCoCDCoCDCoCDCoCDCoCDCoCB0aHJlc2hvbGRzX25ldyA9IG1l
-bWNnLT5fX3RocmVzaG9sZHM7Cj4gLSDCoCDCoCDCoCBlbHNlCj4gLSDCoCDCoCDCoCDCoCDCoCDC
-oCDCoCB0aHJlc2hvbGRzX25ldyA9IG1lbWNnLT5fX21lbXN3X3RocmVzaG9sZHM7Cj4gKyDCoCDC
-oCDCoCBuZXcgPSB0aHJlc2hvbGRzLT5zcGFyZTsKPgo+IMKgIMKgIMKgIMKgLyogU2V0IHRocmVz
-aG9sZHMgYXJyYXkgdG8gTlVMTCBpZiB3ZSBkb24ndCBoYXZlIHRocmVzaG9sZHMgKi8KPiDCoCDC
-oCDCoCDCoGlmICghc2l6ZSkgewo+IC0gwqAgwqAgwqAgwqAgwqAgwqAgwqAga2ZyZWUodGhyZXNo
-b2xkc19uZXcpOwo+IC0gwqAgwqAgwqAgwqAgwqAgwqAgwqAgdGhyZXNob2xkc19uZXcgPSBOVUxM
-Owo+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAga2ZyZWUobmV3KTsKPiArIMKgIMKgIMKgIMKgIMKg
-IMKgIMKgIG5ldyA9IE5VTEw7Cj4gwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqBnb3RvIHN3YXBfYnVm
-ZmVyczsKPiDCoCDCoCDCoCDCoH0KPgo+IC0gwqAgwqAgwqAgdGhyZXNob2xkc19uZXctPnNpemUg
-PSBzaXplOwo+ICsgwqAgwqAgwqAgbmV3LT5zaXplID0gc2l6ZTsKPgo+IMKgIMKgIMKgIMKgLyog
-Q29weSB0aHJlc2hvbGRzIGFuZCBmaW5kIGN1cnJlbnQgdGhyZXNob2xkICovCj4gLSDCoCDCoCDC
-oCB0aHJlc2hvbGRzX25ldy0+Y3VycmVudF90aHJlc2hvbGQgPSAtMTsKPiAtIMKgIMKgIMKgIGZv
-ciAoaSA9IDAsIGogPSAwOyBpIDwgdGhyZXNob2xkcy0+c2l6ZTsgaSsrKSB7Cj4gLSDCoCDCoCDC
-oCDCoCDCoCDCoCDCoCBpZiAodGhyZXNob2xkcy0+ZW50cmllc1tpXS5ldmVudGZkID09IGV2ZW50
-ZmQpCj4gKyDCoCDCoCDCoCBuZXctPmN1cnJlbnRfdGhyZXNob2xkID0gLTE7Cj4gKyDCoCDCoCDC
-oCBmb3IgKGkgPSAwLCBqID0gMDsgaSA8IHRocmVzaG9sZHMtPnByaW1hcnktPnNpemU7IGkrKykg
-ewo+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgaWYgKHRocmVzaG9sZHMtPnByaW1hcnktPmVudHJp
-ZXNbaV0uZXZlbnRmZCA9PSBldmVudGZkKQo+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKg
-IMKgIMKgY29udGludWU7Cj4KPiAtIMKgIMKgIMKgIMKgIMKgIMKgIMKgIHRocmVzaG9sZHNfbmV3
-LT5lbnRyaWVzW2pdID0gdGhyZXNob2xkcy0+ZW50cmllc1tpXTsKPiAtIMKgIMKgIMKgIMKgIMKg
-IMKgIMKgIGlmICh0aHJlc2hvbGRzX25ldy0+ZW50cmllc1tqXS50aHJlc2hvbGQgPCB1c2FnZSkg
-ewo+ICsgwqAgwqAgwqAgwqAgwqAgwqAgwqAgbmV3LT5lbnRyaWVzW2pdID0gdGhyZXNob2xkcy0+
-cHJpbWFyeS0+ZW50cmllc1tpXTsKPiArIMKgIMKgIMKgIMKgIMKgIMKgIMKgIGlmIChuZXctPmVu
-dHJpZXNbal0udGhyZXNob2xkIDwgdXNhZ2UpIHsKPiDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDC
-oCDCoCDCoCDCoC8qCj4gLSDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCogdGhy
-ZXNob2xkc19uZXctPmN1cnJlbnRfdGhyZXNob2xkIHdpbGwgbm90IGJlIHVzZWQKPiArIMKgIMKg
-IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgKiBuZXctPmN1cnJlbnRfdGhyZXNob2xkIHdp
-bGwgbm90IGJlIHVzZWQKPiDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCAqIHVu
-dGlsIHJjdV9hc3NpZ25fcG9pbnRlcigpLCBzbyBpdCdzIHNhZmUgdG8gaW5jcmVtZW50Cj4gwqAg
-wqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgKiBpdCBoZXJlLgo+IMKgIMKgIMKgIMKg
-IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgICovCj4gLSDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDC
-oCDCoCDCoCArK3RocmVzaG9sZHNfbmV3LT5jdXJyZW50X3RocmVzaG9sZDsKPiArIMKgIMKgIMKg
-IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgICsrbmV3LT5jdXJyZW50X3RocmVzaG9sZDsKPiDCoCDC
-oCDCoCDCoCDCoCDCoCDCoCDCoH0KPiDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoGorKzsKPiDCoCDC
-oCDCoCDCoH0KPgo+IMKgc3dhcF9idWZmZXJzOgo+IC0gwqAgwqAgwqAgLyogU3dhcCB0aHJlc2hv
-bGRzIGFycmF5IGFuZCBwcmVhbGxvY2F0ZWQgYnVmZmVyICovCj4gLSDCoCDCoCDCoCBpZiAodHlw
-ZSA9PSBfTUVNKSB7Cj4gLSDCoCDCoCDCoCDCoCDCoCDCoCDCoCBtZW1jZy0+X190aHJlc2hvbGRz
-ID0gdGhyZXNob2xkczsKPiAtIMKgIMKgIMKgIMKgIMKgIMKgIMKgIHJjdV9hc3NpZ25fcG9pbnRl
-cihtZW1jZy0+dGhyZXNob2xkcywgdGhyZXNob2xkc19uZXcpOwo+IC0gwqAgwqAgwqAgfSBlbHNl
-IHsKPiAtIMKgIMKgIMKgIMKgIMKgIMKgIMKgIG1lbWNnLT5fX21lbXN3X3RocmVzaG9sZHMgPSB0
-aHJlc2hvbGRzOwo+IC0gwqAgwqAgwqAgwqAgwqAgwqAgwqAgcmN1X2Fzc2lnbl9wb2ludGVyKG1l
-bWNnLT5tZW1zd190aHJlc2hvbGRzLCB0aHJlc2hvbGRzX25ldyk7Cj4gLSDCoCDCoCDCoCB9Cj4g
-KyDCoCDCoCDCoCAvKiBTd2FwIHByaW1hcnkgYW5kIHNwYXJlIGFycmF5ICovCj4gKyDCoCDCoCDC
-oCB0aHJlc2hvbGRzLT5zcGFyZSA9IHRocmVzaG9sZHMtPnByaW1hcnk7Cj4gKyDCoCDCoCDCoCBy
-Y3VfYXNzaWduX3BvaW50ZXIodGhyZXNob2xkcy0+cHJpbWFyeSwgbmV3KTsKPgo+IMKgIMKgIMKg
-IMKgLyogVG8gYmUgc3VyZSB0aGF0IG5vYm9keSB1c2VzIHRocmVzaG9sZHMgKi8KPiDCoCDCoCDC
-oCDCoHN5bmNocm9uaXplX3JjdSgpOwo+IC0tCj4gMS43LjAuNAo+Cj4KX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QK
-Q29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4
-LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+On Sat, May 8, 2010 at 5:11 PM, Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org> w=
+rote:
+> Introduce struct mem_cgroup_thresholds. It helps to reduce number of
+> checks of thresholds type (memory or mem+swap).
+>
+> Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+
+Acked-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+
+Thanks,
+Paul
+
+> ---
+> =A0mm/memcontrol.c | =A0151 ++++++++++++++++++++++++---------------------=
+----------
+> =A01 files changed, 66 insertions(+), 85 deletions(-)
+>
+> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+> index a6d2a4c..a6c6268 100644
+> --- a/mm/memcontrol.c
+> +++ b/mm/memcontrol.c
+> @@ -158,6 +158,18 @@ struct mem_cgroup_threshold_ary {
+> =A0 =A0 =A0 =A0/* Array of thresholds */
+> =A0 =A0 =A0 =A0struct mem_cgroup_threshold entries[0];
+> =A0};
+> +
+> +struct mem_cgroup_thresholds {
+> + =A0 =A0 =A0 /* Primary thresholds array */
+> + =A0 =A0 =A0 struct mem_cgroup_threshold_ary *primary;
+> + =A0 =A0 =A0 /*
+> + =A0 =A0 =A0 =A0* Spare threshold array.
+> + =A0 =A0 =A0 =A0* It needed to make mem_cgroup_unregister_event() "never=
+ fail".
+> + =A0 =A0 =A0 =A0* It must be able to store at least primary->size - 1 en=
+tires.
+> + =A0 =A0 =A0 =A0*/
+> + =A0 =A0 =A0 struct mem_cgroup_threshold_ary *spare;
+> +};
+> +
+> =A0/* for OOM */
+> =A0struct mem_cgroup_eventfd_list {
+> =A0 =A0 =A0 =A0struct list_head list;
+> @@ -224,20 +236,10 @@ struct mem_cgroup {
+> =A0 =A0 =A0 =A0struct mutex thresholds_lock;
+>
+> =A0 =A0 =A0 =A0/* thresholds for memory usage. RCU-protected */
+> - =A0 =A0 =A0 struct mem_cgroup_threshold_ary *thresholds;
+> -
+> - =A0 =A0 =A0 /*
+> - =A0 =A0 =A0 =A0* Preallocated buffer to be used in mem_cgroup_unregiste=
+r_event()
+> - =A0 =A0 =A0 =A0* to make it "never fail".
+> - =A0 =A0 =A0 =A0* It must be able to store at least thresholds->size - 1=
+ entries.
+> - =A0 =A0 =A0 =A0*/
+> - =A0 =A0 =A0 struct mem_cgroup_threshold_ary *__thresholds;
+> + =A0 =A0 =A0 struct mem_cgroup_thresholds thresholds;
+>
+> =A0 =A0 =A0 =A0/* thresholds for mem+swap usage. RCU-protected */
+> - =A0 =A0 =A0 struct mem_cgroup_threshold_ary *memsw_thresholds;
+> -
+> - =A0 =A0 =A0 /* the same as __thresholds, but for memsw_thresholds */
+> - =A0 =A0 =A0 struct mem_cgroup_threshold_ary *__memsw_thresholds;
+> + =A0 =A0 =A0 struct mem_cgroup_thresholds memsw_thresholds;
+>
+> =A0 =A0 =A0 =A0/* For oom notifier event fd */
+> =A0 =A0 =A0 =A0struct list_head oom_notify;
+> @@ -3438,9 +3440,9 @@ static void __mem_cgroup_threshold(struct mem_cgrou=
+p *memcg, bool swap)
+>
+> =A0 =A0 =A0 =A0rcu_read_lock();
+> =A0 =A0 =A0 =A0if (!swap)
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 t =3D rcu_dereference(memcg->thresholds);
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 t =3D rcu_dereference(memcg->thresholds.pri=
+mary);
+> =A0 =A0 =A0 =A0else
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 t =3D rcu_dereference(memcg->memsw_threshol=
+ds);
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 t =3D rcu_dereference(memcg->memsw_threshol=
+ds.primary);
+>
+> =A0 =A0 =A0 =A0if (!t)
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0goto unlock;
+> @@ -3514,91 +3516,78 @@ static int mem_cgroup_usage_register_event(struct=
+ cgroup *cgrp,
+> =A0 =A0 =A0 =A0struct cftype *cft, struct eventfd_ctx *eventfd, const cha=
+r *args)
+> =A0{
+> =A0 =A0 =A0 =A0struct mem_cgroup *memcg =3D mem_cgroup_from_cont(cgrp);
+> - =A0 =A0 =A0 struct mem_cgroup_threshold_ary *thresholds, *thresholds_ne=
+w;
+> + =A0 =A0 =A0 struct mem_cgroup_thresholds *thresholds;
+> + =A0 =A0 =A0 struct mem_cgroup_threshold_ary *new;
+> =A0 =A0 =A0 =A0int type =3D MEMFILE_TYPE(cft->private);
+> =A0 =A0 =A0 =A0u64 threshold, usage;
+> - =A0 =A0 =A0 int size;
+> - =A0 =A0 =A0 int i, ret;
+> + =A0 =A0 =A0 int i, size, ret;
+>
+> =A0 =A0 =A0 =A0ret =3D res_counter_memparse_write_strategy(args, &thresho=
+ld);
+> =A0 =A0 =A0 =A0if (ret)
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0return ret;
+>
+> =A0 =A0 =A0 =A0mutex_lock(&memcg->thresholds_lock);
+> +
+> =A0 =A0 =A0 =A0if (type =3D=3D _MEM)
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 thresholds =3D memcg->thresholds;
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 thresholds =3D &memcg->thresholds;
+> =A0 =A0 =A0 =A0else if (type =3D=3D _MEMSWAP)
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 thresholds =3D memcg->memsw_thresholds;
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 thresholds =3D &memcg->memsw_thresholds;
+> =A0 =A0 =A0 =A0else
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0BUG();
+>
+> =A0 =A0 =A0 =A0usage =3D mem_cgroup_usage(memcg, type =3D=3D _MEMSWAP);
+>
+> =A0 =A0 =A0 =A0/* Check if a threshold crossed before adding a new one */
+> - =A0 =A0 =A0 if (thresholds)
+> + =A0 =A0 =A0 if (thresholds->primary)
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0__mem_cgroup_threshold(memcg, type =3D=3D =
+_MEMSWAP);
+>
+> - =A0 =A0 =A0 if (thresholds)
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 size =3D thresholds->size + 1;
+> - =A0 =A0 =A0 else
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 size =3D 1;
+> + =A0 =A0 =A0 size =3D thresholds->primary ? thresholds->primary->size + =
+1 : 1;
+>
+> =A0 =A0 =A0 =A0/* Allocate memory for new array of thresholds */
+> - =A0 =A0 =A0 thresholds_new =3D kmalloc(sizeof(*thresholds_new) +
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 size * sizeof(struct mem_cg=
+roup_threshold),
+> + =A0 =A0 =A0 new =3D kmalloc(sizeof(*new) + size * sizeof(struct mem_cgr=
+oup_threshold),
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0GFP_KERNEL);
+> - =A0 =A0 =A0 if (!thresholds_new) {
+> + =A0 =A0 =A0 if (!new) {
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0ret =3D -ENOMEM;
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0goto unlock;
+> =A0 =A0 =A0 =A0}
+> - =A0 =A0 =A0 thresholds_new->size =3D size;
+> + =A0 =A0 =A0 new->size =3D size;
+>
+> =A0 =A0 =A0 =A0/* Copy thresholds (if any) to new array */
+> - =A0 =A0 =A0 if (thresholds)
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 memcpy(thresholds_new->entries, thresholds-=
+>entries,
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 thresholds-=
+>size *
+> + =A0 =A0 =A0 if (thresholds->primary) {
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 memcpy(new->entries, thresholds->primary->e=
+ntries, (size - 1) *
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0sizeof(str=
+uct mem_cgroup_threshold));
+> + =A0 =A0 =A0 }
+> +
+> =A0 =A0 =A0 =A0/* Add new threshold */
+> - =A0 =A0 =A0 thresholds_new->entries[size - 1].eventfd =3D eventfd;
+> - =A0 =A0 =A0 thresholds_new->entries[size - 1].threshold =3D threshold;
+> + =A0 =A0 =A0 new->entries[size - 1].eventfd =3D eventfd;
+> + =A0 =A0 =A0 new->entries[size - 1].threshold =3D threshold;
+>
+> =A0 =A0 =A0 =A0/* Sort thresholds. Registering of new threshold isn't tim=
+e-critical */
+> - =A0 =A0 =A0 sort(thresholds_new->entries, size,
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 sizeof(struct mem_cgroup_th=
+reshold),
+> + =A0 =A0 =A0 sort(new->entries, size, sizeof(struct mem_cgroup_threshold=
+),
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0compare_thresholds, NULL);
+>
+> =A0 =A0 =A0 =A0/* Find current threshold */
+> - =A0 =A0 =A0 thresholds_new->current_threshold =3D -1;
+> + =A0 =A0 =A0 new->current_threshold =3D -1;
+> =A0 =A0 =A0 =A0for (i =3D 0; i < size; i++) {
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (thresholds_new->entries[i].threshold < =
+usage) {
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (new->entries[i].threshold < usage) {
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0/*
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0* thresholds_new->curren=
+t_threshold will not be used
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0* until rcu_assign_point=
+er(), so it's safe to increment
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0* new->current_threshold=
+ will not be used until
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0* rcu_assign_pointer(), =
+so it's safe to increment
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 * it here.
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 */
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 ++thresholds_new->current_t=
+hreshold;
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 ++new->current_threshold;
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0}
+> =A0 =A0 =A0 =A0}
+>
+> - =A0 =A0 =A0 if (type =3D=3D _MEM)
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 rcu_assign_pointer(memcg->thresholds, thres=
+holds_new);
+> - =A0 =A0 =A0 else
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 rcu_assign_pointer(memcg->memsw_thresholds,=
+ thresholds_new);
+> + =A0 =A0 =A0 /* Free old spare buffer and save old primary buffer as spa=
+re */
+> + =A0 =A0 =A0 kfree(thresholds->spare);
+> + =A0 =A0 =A0 thresholds->spare =3D thresholds->primary;
+> +
+> + =A0 =A0 =A0 rcu_assign_pointer(thresholds->primary, new);
+>
+> =A0 =A0 =A0 =A0/* To be sure that nobody uses thresholds */
+> =A0 =A0 =A0 =A0synchronize_rcu();
+>
+> - =A0 =A0 =A0 /*
+> - =A0 =A0 =A0 =A0* Free old preallocated buffer and use thresholds as new
+> - =A0 =A0 =A0 =A0* preallocated buffer.
+> - =A0 =A0 =A0 =A0*/
+> - =A0 =A0 =A0 if (type =3D=3D _MEM) {
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 kfree(memcg->__thresholds);
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 memcg->__thresholds =3D thresholds;
+> - =A0 =A0 =A0 } else {
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 kfree(memcg->__memsw_thresholds);
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 memcg->__memsw_thresholds =3D thresholds;
+> - =A0 =A0 =A0 }
+> =A0unlock:
+> =A0 =A0 =A0 =A0mutex_unlock(&memcg->thresholds_lock);
+>
+> @@ -3609,17 +3598,17 @@ static void mem_cgroup_usage_unregister_event(str=
+uct cgroup *cgrp,
+> =A0 =A0 =A0 =A0struct cftype *cft, struct eventfd_ctx *eventfd)
+> =A0{
+> =A0 =A0 =A0 =A0struct mem_cgroup *memcg =3D mem_cgroup_from_cont(cgrp);
+> - =A0 =A0 =A0 struct mem_cgroup_threshold_ary *thresholds, *thresholds_ne=
+w;
+> + =A0 =A0 =A0 struct mem_cgroup_thresholds *thresholds;
+> + =A0 =A0 =A0 struct mem_cgroup_threshold_ary *new;
+> =A0 =A0 =A0 =A0int type =3D MEMFILE_TYPE(cft->private);
+> =A0 =A0 =A0 =A0u64 usage;
+> - =A0 =A0 =A0 int size =3D 0;
+> - =A0 =A0 =A0 int i, j;
+> + =A0 =A0 =A0 int i, j, size;
+>
+> =A0 =A0 =A0 =A0mutex_lock(&memcg->thresholds_lock);
+> =A0 =A0 =A0 =A0if (type =3D=3D _MEM)
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 thresholds =3D memcg->thresholds;
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 thresholds =3D &memcg->thresholds;
+> =A0 =A0 =A0 =A0else if (type =3D=3D _MEMSWAP)
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 thresholds =3D memcg->memsw_thresholds;
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 thresholds =3D &memcg->memsw_thresholds;
+> =A0 =A0 =A0 =A0else
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0BUG();
+>
+> @@ -3635,53 +3624,45 @@ static void mem_cgroup_usage_unregister_event(str=
+uct cgroup *cgrp,
+> =A0 =A0 =A0 =A0__mem_cgroup_threshold(memcg, type =3D=3D _MEMSWAP);
+>
+> =A0 =A0 =A0 =A0/* Calculate new number of threshold */
+> - =A0 =A0 =A0 for (i =3D 0; i < thresholds->size; i++) {
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (thresholds->entries[i].eventfd !=3D eve=
+ntfd)
+> + =A0 =A0 =A0 size =3D 0;
+> + =A0 =A0 =A0 for (i =3D 0; i < thresholds->primary->size; i++) {
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (thresholds->primary->entries[i].eventfd=
+ !=3D eventfd)
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0size++;
+> =A0 =A0 =A0 =A0}
+>
+> - =A0 =A0 =A0 /* Use preallocated buffer for new array of thresholds */
+> - =A0 =A0 =A0 if (type =3D=3D _MEM)
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 thresholds_new =3D memcg->__thresholds;
+> - =A0 =A0 =A0 else
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 thresholds_new =3D memcg->__memsw_threshold=
+s;
+> + =A0 =A0 =A0 new =3D thresholds->spare;
+>
+> =A0 =A0 =A0 =A0/* Set thresholds array to NULL if we don't have threshold=
+s */
+> =A0 =A0 =A0 =A0if (!size) {
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 kfree(thresholds_new);
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 thresholds_new =3D NULL;
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 kfree(new);
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 new =3D NULL;
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0goto swap_buffers;
+> =A0 =A0 =A0 =A0}
+>
+> - =A0 =A0 =A0 thresholds_new->size =3D size;
+> + =A0 =A0 =A0 new->size =3D size;
+>
+> =A0 =A0 =A0 =A0/* Copy thresholds and find current threshold */
+> - =A0 =A0 =A0 thresholds_new->current_threshold =3D -1;
+> - =A0 =A0 =A0 for (i =3D 0, j =3D 0; i < thresholds->size; i++) {
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (thresholds->entries[i].eventfd =3D=3D e=
+ventfd)
+> + =A0 =A0 =A0 new->current_threshold =3D -1;
+> + =A0 =A0 =A0 for (i =3D 0, j =3D 0; i < thresholds->primary->size; i++) {
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (thresholds->primary->entries[i].eventfd=
+ =3D=3D eventfd)
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0continue;
+>
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 thresholds_new->entries[j] =3D thresholds->=
+entries[i];
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (thresholds_new->entries[j].threshold < =
+usage) {
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 new->entries[j] =3D thresholds->primary->en=
+tries[i];
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (new->entries[j].threshold < usage) {
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0/*
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0* thresholds_new->curren=
+t_threshold will not be used
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0* new->current_threshold=
+ will not be used
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 * until rcu_assign_pointe=
+r(), so it's safe to increment
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 * it here.
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 */
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 ++thresholds_new->current_t=
+hreshold;
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 ++new->current_threshold;
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0}
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0j++;
+> =A0 =A0 =A0 =A0}
+>
+> =A0swap_buffers:
+> - =A0 =A0 =A0 /* Swap thresholds array and preallocated buffer */
+> - =A0 =A0 =A0 if (type =3D=3D _MEM) {
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 memcg->__thresholds =3D thresholds;
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 rcu_assign_pointer(memcg->thresholds, thres=
+holds_new);
+> - =A0 =A0 =A0 } else {
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 memcg->__memsw_thresholds =3D thresholds;
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 rcu_assign_pointer(memcg->memsw_thresholds,=
+ thresholds_new);
+> - =A0 =A0 =A0 }
+> + =A0 =A0 =A0 /* Swap primary and spare array */
+> + =A0 =A0 =A0 thresholds->spare =3D thresholds->primary;
+> + =A0 =A0 =A0 rcu_assign_pointer(thresholds->primary, new);
+>
+> =A0 =A0 =A0 =A0/* To be sure that nobody uses thresholds */
+> =A0 =A0 =A0 =A0synchronize_rcu();
+> --
+> 1.7.0.4
+>
+> --
+> To unsubscribe, send a message with 'unsubscribe linux-mm' in
+> the body to majordomo-Bw31MaZKKs0EbZ0PF+XxCw@public.gmane.org =A0For more info on Linux MM,
+> see: http://www.linux-mm.org/ .
+> Don't email: <a href=3Dmailto:"dont-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org"> email-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org </a>
+>
