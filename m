@@ -1,15 +1,14 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [lxc-devel] Containerized syslog
-Date: Mon, 17 May 2010 23:49:20 -0500
-Message-ID: <20100518044920.GB5625__39925.0507158742$1274158214$gmane$org@us.ibm.com>
-References: <4BEAC1E8.1070506@univ-nantes.fr> <4BEB1A59.6010905@free.fr>
-	<20100513212139.GT31830@count0.beaverton.ibm.com>
+Subject: Re: [PATCH lxc 1/2] lxc-unshare: accept multiple -s options
+Date: Tue, 18 May 2010 11:07:35 -0500
+Message-ID: <20100518160735.GA23657@us.ibm.com>
+References: <20100513193412.GA15433@us.ibm.com> <4BF2B71A.8020906@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20100513212139.GT31830-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
+In-Reply-To: <4BF2B71A.8020906-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,77 +18,80 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> On Wed, May 12, 2010 at 11:15:05PM +0200, Daniel Lezcano wrote:
-> > Jean-Philippe Menil wrote:
-> > > Hi,
-> > >
-> > > I'm playing with containers under debian (squeeze, 2.6.33.3) with the 
-> > > lxc tools.
-> > > I'm really happy about all the features (attach veth on bridge, filter 
-> > > with iptables inside the containers, etc ...), and i was thinking to 
-> > > replace some of our vservers (and maybe some of our kvm) with this 
-> > > solution.
-> > >
-> > > But actually, i experiment a problem with the iptables logs:
-> > > i've iptables on the host to filter some container, basically a squid 
-> > > proxy. I've another container who act as router, and he has his own 
-> > > iptables inside.
-> > > All the log are deported to a dedicated syslog server.
-> > > It appear that, the iptables log of the host are also deported by the 
-> > > syslog container (proxy).
-> > >
-> > > Some of our guest (container, vserver, etc ) are administer by other 
-> > > sys-admin, that should not have access to theses informations.
-> > >
-> > > This point is blocking me today, before going into production with 
-> > > containers.
-> > >
-> > > I've seen some patch made by Jean-Marc Pigeon about this problem,
-> > > but they have not been commited.
-> > 
-> > I thing a consensus was not reach. The big deal with syslog is netfilter 
-> > logs in an interrupt context where it is difficult to find the right log 
-> > buffer ring as we are not in the process context making possible to 
-> > identify the namespace.
-> > 
-> > IMHO, there are two parts to implement, (1) multiple instances of 
-> > /dev/log with a new ring buffer each time attached to the file and 
+Quoting Daniel Lezcano (dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org):
+> On 05/13/2010 09:34 PM, Serge E. Hallyn wrote:
+> >(also remove -f from usage as it is not actually supported)
+> >
+> >Signed-off-by: Serge E. Hallyn<serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> >---
+> >  src/lxc/lxc_unshare.c |   28 ++++++++++++++++++++++++++--
+> >  1 files changed, 26 insertions(+), 2 deletions(-)
+> >
+> >diff --git a/src/lxc/lxc_unshare.c b/src/lxc/lxc_unshare.c
+> >index 10654f7..8db1cb7 100644
+> >--- a/src/lxc/lxc_unshare.c
+> >+++ b/src/lxc/lxc_unshare.c
+> >@@ -48,7 +48,7 @@ void usage(char *cmd)
+> >  	fprintf(stderr, "\t -s flags: Ored list of flags to unshare:\n" \
+> >  			"\t           MOUNT, PID, UTSNAME, IPC, USER, NETWORK\n");
+> >  	fprintf(stderr, "\t -u<id>  : new id to be set if -s USER is specified\n");
+> >-	fprintf(stderr, "\t if -f or -s PID is specified,<command>  is mandatory)\n");
+> >+	fprintf(stderr, "\t if -s PID is specified,<command>  is mandatory)\n");
+> >  	_exit(1);
+> >  }
+> >
+> >@@ -154,6 +154,29 @@ static int do_start(void *arg)
+> >  	return 1;
+> >  }
+> >
+> >+void extend_namespaces(char **n, char *optarg)
+> >+{
+> >+	char *namespaces = *n;
+> >+	int cont = 0, newlen = strlen(optarg) + 1; /* +1 for trailing \0 */
+> >+
+> >+	if (namespaces) {
+> >+		cont = 1;
+> >+		newlen += strlen(namespaces) + 1; /* +1 for '|' */
+> >+	}
+> >+
+> >+	namespaces = realloc(namespaces, newlen);
+> >+	if (!namespaces) {
+> >+		perror("realloc");
+> >+		exit(1);
+> >+	}
+> >+	if (cont)
+> >+		sprintf(namespaces+strlen(namespaces), "|%s", optarg);
+> >+	else
+> >+		sprintf(namespaces, "%s", optarg);
+> >+	namespaces[newlen-1] = '\0';
+> >+	*n = namespaces;
+> >+}
+> >+
+> >  int main(int argc, char *argv[])
+> >  {
+> >  	int opt, status;
+> >@@ -174,7 +197,8 @@ int main(int argc, char *argv[])
+> >  	while ((opt = getopt(argc, argv, "s:u:")) != -1) {
+> >  		switch (opt) {
+> >  		case 's':
+> >-			namespaces = optarg;
+> >+			extend_namespaces(&namespaces, optarg);
+> >+			printf("namespaces is %s\n", namespaces);
+> >  			break;
+> >  		case 'u':
+> >  			uid = lookup_user(optarg);
 > 
-> Just for reference, here are some archived mailing list threads on the
-> subject of containerized syslog:
+> Hi Serge,
 > 
-> 	http://www.mail-archive.com/devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org/msg20104.html
-> 	http://thread.gmane.org/gmane.linux.kernel.containers/16526
+> Sorry for the delay.
 > 
-> > (2) 
-> > add an iptables rules to specify the file to log. This approach allows 
-> > to get rid of namespace (in all the cases the clone flags are exhausted 
-> > now), and provides a generic mechanism for other use cases (eg. separate 
-> > logs for iptables) different from a container specific problem.
-> 
-> (3) Security implications.
-> 
-> 	Depending on how the syslog is split off, whether the host
-> 	expects to be "Cc'd", etc. there could be some security
-> 	implications. More importantly, the syslog control syscalls need
-> 	to be modified to at least prevent containers from changing syslog
-> 	policy of the host. Serge could probably explain this much better
-> 	than I can (cc'd). Here's a thread on the subject:
-> 
-> 	http://lwn.net/Articles/378472/
+> Is it possible to just kill the "Ored" option format and have only
+> multiple "-s" options ? That will simplificate the code a lot.
 
-Yes, i think that's the first step.  Then, as Oren and Matt were
-discussing on irc, we can talk about a userspace daemon on the host
-forwarding either syslog or audit msgs to containers as appropriate.
-This leaves that policy chunk in userspace, but we'd still have to
-decide on a way to mark messages (which is why audit would be
-easier).  First question then is how do we identify a container?
-With pidns we can point to a definitive global pid for the container
-init task.  For netns, no such thing.
+Agreed I think that'd be better
 
 -serge
