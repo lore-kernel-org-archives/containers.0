@@ -1,16 +1,13 @@
-From: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
-Subject: Re: [PATCH] scheduler: Extract cgroups_cpuaccount code from
-	sched.c into own file
-Date: Wed, 19 May 2010 12:27:57 +0200
-Message-ID: <1274264877.5605.10541.camel__8950.64121946252$1274264993$gmane$org@twins>
-References: <1274232620-23003-1-git-send-email-mike@android.com>
-	<1274232620-23003-4-git-send-email-mike@android.com>
-	<201005191130.42851.trenn@suse.de> <1274261856.5605.10439.camel@twins>
+From: Martin Fick <mogulguy-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>
+Subject: Re: NFS Kernel server inside a container
+Date: Wed, 19 May 2010 08:26:48 -0700 (PDT)
+Message-ID: <516306.35958.qm@web36107.mail.mud.yahoo.com>
+References: <4BF3B677.7080601@free.fr>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1274261856.5605.10439.camel@twins>
+In-Reply-To: <4BF3B677.7080601-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,37 +17,80 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Cc: khilman-1D3HCaltpLuhEniVeURVKkEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cpufreq-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mike Chan <mike-z5hGa2qSFaRBDgjK7y7TUQ@public.gmane.org>, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, linux-omap-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gV2VkLCAyMDEwLTA1LTE5IGF0IDExOjM3ICswMjAwLCBQZXRlciBaaWpsc3RyYSB3cm90ZToK
-PiBPbiBXZWQsIDIwMTAtMDUtMTkgYXQgMTE6MzAgKzAyMDAsIFRob21hcyBSZW5uaW5nZXIgd3Jv
-dGU6Cj4gPiAKPiA+IFRoaXMgaXMgYSBjbGVhbnVwIGFnYWluc3QgY3VycmVudCBsaW51eC0yLjYg
-TGludXMgdHJlZS4KPiA+ICAgICAKPiA+IEhhdmluZyBDT05GSUdfQ0dST1VQX0NQVUFDQ1QgY29k
-ZSBpbiBrZXJuZWwvc2NoZWQuYyBsb29rcyB3cm9uZy4KPiA+IE1vdmUgdGhpcyBvdXQgdG8ga2Vy
-bmVsL2Nncm91cF9jcHVhY2NvdW50LmMKPiA+ICAgICAKPiA+IFRlc3QgY29tcGlsZWQgd2l0aCBh
-bmQgd2l0aG91dCBDT05GSUdfQ0dST1VQX0NQVUFDQ1Qgc2V0IG9uIHg4Nl82NC4KPiAKPiBTdXJl
-LCB3b3JrcyBmb3IgbWUsIGxlc3MgY29kZSB0byBsb29rIGF0IDotKQoKCkluIGZpbGUgaW5jbHVk
-ZWQgZnJvbSAvbW50L2J1aWxkL2xpbnV4LTIuNi9rZXJuZWwvc2NoZWQuYzoxOTA4OgovbW50L2J1
-aWxkL2xpbnV4LTIuNi9rZXJuZWwvc2NoZWRfZmFpci5jOiBJbiBmdW5jdGlvbiDigJh1cGRhdGVf
-Y3VycuKAmToKL21udC9idWlsZC9saW51eC0yLjYva2VybmVsL3NjaGVkX2ZhaXIuYzo1NDQ6IGVy
-cm9yOiBpbXBsaWNpdCBkZWNsYXJhdGlvbiBvZiBmdW5jdGlvbiDigJhjcHVhY2N0X2NoYXJnZeKA
-mQogIENDICAgICAga2VybmVsL3N5c2N0bF9iaW5hcnkubwovbW50L2J1aWxkL2xpbnV4LTIuNi9r
-ZXJuZWwvc2NoZWQuYzogSW4gZnVuY3Rpb24g4oCYYWNjb3VudF91c2VyX3RpbWXigJk6Ci9tbnQv
-YnVpbGQvbGludXgtMi42L2tlcm5lbC9zY2hlZC5jOjMyNjU6IGVycm9yOiBpbXBsaWNpdCBkZWNs
-YXJhdGlvbiBvZiBmdW5jdGlvbiDigJhjcHVhY2N0X3VwZGF0ZV9zdGF0c+KAmQovbW50L2J1aWxk
-L2xpbnV4LTIuNi9rZXJuZWwvc2NoZWQuYzozMjY1OiBlcnJvcjog4oCYQ1BVQUNDVF9TVEFUX1VT
-RVLigJkgdW5kZWNsYXJlZCAoZmlyc3QgdXNlIGluIHRoaXMgZnVuY3Rpb24pCi9tbnQvYnVpbGQv
-bGludXgtMi42L2tlcm5lbC9zY2hlZC5jOjMyNjU6IGVycm9yOiAoRWFjaCB1bmRlY2xhcmVkIGlk
-ZW50aWZpZXIgaXMgcmVwb3J0ZWQgb25seSBvbmNlCi9tbnQvYnVpbGQvbGludXgtMi42L2tlcm5l
-bC9zY2hlZC5jOjMyNjU6IGVycm9yOiBmb3IgZWFjaCBmdW5jdGlvbiBpdCBhcHBlYXJzIGluLikK
-L21udC9idWlsZC9saW51eC0yLjYva2VybmVsL3NjaGVkLmM6IEluIGZ1bmN0aW9uIOKAmGFjY291
-bnRfc3lzdGVtX3RpbWXigJk6Ci9tbnQvYnVpbGQvbGludXgtMi42L2tlcm5lbC9zY2hlZC5jOjMz
-MzI6IGVycm9yOiDigJhDUFVBQ0NUX1NUQVRfU1lTVEVN4oCZIHVuZGVjbGFyZWQgKGZpcnN0IHVz
-ZSBpbiB0aGlzIGZ1bmN0aW9uKQptYWtlWzJdOiAqKiogW2tlcm5lbC9zY2hlZC5vXSBFcnJvciAx
-Cm1ha2VbMl06ICoqKiBXYWl0aW5nIGZvciB1bmZpbmlzaGVkIGpvYnMuLi4uCm1ha2VbMV06ICoq
-KiBba2VybmVsL10gRXJyb3IgMgptYWtlOiAqKiogW3N1Yi1tYWtlXSBFcnJvciAyCgpfX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxp
-bmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlz
-dHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+--- On Wed, 5/19/10, Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org> wrote:
+
+> > I was wondering if it is possible to run an NFS kernel
+> server inside a linux container?
+> >
+> > I tried setting one up on a debian (vserver enabled)
+> kernel, and it seems to start the portmap, rpc.statd,
+> rpc.idmapd rpc.mountd daemons inside the container, but I
+> cannot seem to mount the filesystem from a client.  I
+> do get the following error message on server startup:
+> >
+> >    FATAL: Could not load
+> /lib/modules/2.6.32-trunk-vserver-686/modules.dep: No such
+> file or directory
+> >
+> >
+> > When trying to mount on the client, after blocking on
+> the mount for a while, I get:
+> >
+> >    mount.nfs: mount system call failed
+> >    
+> 
+> It may be possible your network configuration is not
+> correct regarding 
+> the nfs server access. Can you ping the nfs server from the
+> container ?
+> 
+> > Any thoughts?  Has anyone else done this? 
+> Should this be possible in the first place?  Thanks,
+> >    
+> 
+> I thought NFS was isolated through the mount namespace.
+> 
+> I have a nfs server on 172.20.0.1 exporting "/home".
+> 
+> On my host (IP 172.20.0.166), I mounted /home via nfs
+> 
+> I created a debian system container with its own rootfs and
+> network. 
+> Started it. As expected, the nfs mount point is unmounted
+> as it does not 
+> belong to the rootfs, and then I remounted /home from my
+> container (IP 
+> 172.20.0.42). This mount point is private to the container
+> and not 
+> accessible from the other containers.
+> 
+> This is what you want to do ? Or did I miss something ?
+
+It sounds like you did an NFS client mount inside a
+container. I am actually trying to do the reverse, I
+would like to do kernel server exports from within
+a container.  Specifically, I would like to have
+several data partitions replicated with drbd and to
+be able to export these partitions via NFS 
+independently from different containers with
+different IPs.  
+
+So, for example, from 2 hosts, I might have 6 NFS 
+partitions to export and during normal operation
+I would expect each host to make 3 of the 
+partitions primary via drbd and to then to
+each launch three containers each with separate 
+IPs which will individually export the 3 different 
+drbd partitions via NFS.  For failover or load 
+balancing, it should then be able to shut down
+any individual container on one host and bring it
+up on the other host without affecting the other
+exports.
+
+Thanks,
+
+-Martin
