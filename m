@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 7/9][cr][v2]: Define flock_set()
-Date: Tue, 18 May 2010 20:07:30 -0700
-Message-ID: <1274238452-15382-8-git-send-email-sukadev__15334.1548903429$1274238436$gmane$org@linux.vnet.ibm.com>
+Subject: [PATCH 8/9][cr][v2]: Define flock64_set()
+Date: Tue, 18 May 2010 20:07:31 -0700
+Message-ID: <1274238452-15382-9-git-send-email-sukadev__35359.275333076$1274238517$gmane$org@linux.vnet.ibm.com>
 References: <1274238452-15382-1-git-send-email-sukadev@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,38 +21,35 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, matthew-Ztpu424NOJ8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Extract core functionality of fcntl_setlk() into a separate function,
-flock_set(). flock_set() can be also used when restarting a checkpointed
+Extract core functionality of fcntl_setlk64() into a separate function,
+flock64_set(). flock64_set() can be also used when restarting a checkpointed
 application and restoring its file-locks.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- fs/locks.c         |   44 +++++++++++++++++++++++++++-----------------
- include/linux/fs.h |    1 +
- 2 files changed, 28 insertions(+), 17 deletions(-)
+ fs/locks.c         |   38 ++++++++++++++++++++++++--------------
+ include/linux/fs.h |    2 ++
+ 2 files changed, 26 insertions(+), 14 deletions(-)
 
 diff --git a/fs/locks.c b/fs/locks.c
-index 741b8b7..cb83741 100644
+index cb83741..c62ab7f 100644
 --- a/fs/locks.c
 +++ b/fs/locks.c
-@@ -1759,14 +1759,10 @@ static int do_lock_file_wait(struct file *filp, unsigned int cmd,
- 	return error;
- }
- 
--/* Apply the lock described by l to an open file descriptor.
-- * This implements both the F_SETLK and F_SETLKW commands of fcntl().
-- */
--int fcntl_setlk(unsigned int fd, struct file *filp, unsigned int cmd,
--		struct flock __user *l)
-+int flock_set(unsigned int fd, struct file *filp, unsigned int cmd,
-+		struct flock *flock)
+@@ -1890,11 +1890,10 @@ out:
+ /* Apply the lock described by l to an open file descriptor.
+  * This implements both the F_SETLK and F_SETLKW commands of fcntl().
+  */
+-int fcntl_setlk64(unsigned int fd, struct file *filp, unsigned int cmd,
+-		struct flock64 __user *l)
++int flock64_set(unsigned int fd, struct file *filp, unsigned int cmd,
++		struct flock64 *flock)
  {
  	struct file_lock *file_lock = locks_alloc_lock();
--	struct flock flock;
+-	struct flock64 flock;
  	struct inode *inode;
  	struct file *f;
  	int error;
-@@ -1774,13 +1770,6 @@ int fcntl_setlk(unsigned int fd, struct file *filp, unsigned int cmd,
+@@ -1902,13 +1901,6 @@ int fcntl_setlk64(unsigned int fd, struct file *filp, unsigned int cmd,
  	if (file_lock == NULL)
  		return -ENOLCK;
  
@@ -66,16 +63,16 @@ index 741b8b7..cb83741 100644
  	inode = filp->f_path.dentry->d_inode;
  
  	/* Don't allow mandatory locks on files that may be memory mapped
-@@ -1792,7 +1781,7 @@ int fcntl_setlk(unsigned int fd, struct file *filp, unsigned int cmd,
+@@ -1920,7 +1912,7 @@ int fcntl_setlk64(unsigned int fd, struct file *filp, unsigned int cmd,
  	}
  
  again:
--	error = flock_to_posix_lock(filp, file_lock, &flock);
-+	error = flock_to_posix_lock(filp, file_lock, flock);
+-	error = flock64_to_posix_lock(filp, file_lock, &flock);
++	error = flock64_to_posix_lock(filp, file_lock, flock);
  	if (error)
  		goto out;
- 	if (cmd == F_SETLKW) {
-@@ -1800,7 +1789,7 @@ again:
+ 	if (cmd == F_SETLKW64) {
+@@ -1928,7 +1920,7 @@ again:
  	}
  	
  	error = -EBADF;
@@ -84,7 +81,7 @@ index 741b8b7..cb83741 100644
  	case F_RDLCK:
  		if (!(filp->f_mode & FMODE_READ))
  			goto out;
-@@ -1830,8 +1819,8 @@ again:
+@@ -1953,8 +1945,8 @@ again:
  	spin_lock(&current->files->file_lock);
  	f = fcheck(fd);
  	spin_unlock(&current->files->file_lock);
@@ -95,45 +92,43 @@ index 741b8b7..cb83741 100644
  		goto again;
  	}
  
-@@ -1840,6 +1829,27 @@ out:
+@@ -1962,6 +1954,24 @@ out:
+ 	locks_free_lock(file_lock);
  	return error;
  }
- 
++
 +/* Apply the lock described by l to an open file descriptor.
 + * This implements both the F_SETLK and F_SETLKW commands of fcntl().
 + */
-+int fcntl_setlk(unsigned int fd, struct file *filp, unsigned int cmd,
-+		struct flock __user *l)
++int fcntl_setlk64(unsigned int fd, struct file *filp, unsigned int cmd,
++		struct flock64 __user *l)
 +{
-+	int error;
-+	struct flock flock;
-+	
++	struct flock64 flock;
++
 +	/*
-+	 * This might block, so we do it before checking the inode
-+	 * in flock_set().
++	 * This might block, so we do it before checking the inode in
++	 * flock64_set().
 +	 */
-+	error = -EFAULT;
 +	if (copy_from_user(&flock, l, sizeof(flock)))
-+		return error;
++		return -EFAULT;
 +
-+	return flock_set(fd, filp, cmd, &flock);
++	return flock64_set(fd, filp, cmd, &flock);
 +}
-+
-+
- #if BITS_PER_LONG == 32
- /* Report the first existing lock that would conflict with l.
-  * This implements the F_GETLK command of fcntl().
+ #endif /* BITS_PER_LONG == 32 */
+ 
+ /*
 diff --git a/include/linux/fs.h b/include/linux/fs.h
-index abd2267..fd66f37 100644
+index fd66f37..49d4eeb 100644
 --- a/include/linux/fs.h
 +++ b/include/linux/fs.h
-@@ -1112,6 +1112,7 @@ extern void send_sigio(struct fown_struct *fown, int fd, int band);
- extern int fcntl_getlk(struct file *, struct flock __user *);
- extern int fcntl_setlk(unsigned int, struct file *, unsigned int,
- 			struct flock __user *);
-+extern int flock_set(unsigned int, struct file *, unsigned int, struct flock *);
- 
- #if BITS_PER_LONG == 32
+@@ -1118,6 +1118,8 @@ extern int flock_set(unsigned int, struct file *, unsigned int, struct flock *);
  extern int fcntl_getlk64(struct file *, struct flock64 __user *);
+ extern int fcntl_setlk64(unsigned int, struct file *, unsigned int,
+ 			struct flock64 __user *);
++extern int flock64_set(unsigned int, struct file *, unsigned int,
++			struct flock64 *);
+ #endif
+ 
+ extern int fcntl_setlease(unsigned int fd, struct file *filp, long arg);
 -- 
 1.6.0.4
