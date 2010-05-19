@@ -1,11 +1,13 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 0/9][cr][v2]: C/R file owner and posix file locks
-Date: Tue, 18 May 2010 20:07:23 -0700
-Message-ID: <1274238452-15382-1-git-send-email-sukadev__37380.6983152919$1274238165$gmane$org@linux.vnet.ibm.com>
+Subject: [PATCH 5/9][cr][v2]: Move file_lock macros into linux/fs.h
+Date: Tue, 18 May 2010 20:07:28 -0700
+Message-ID: <1274238452-15382-6-git-send-email-sukadev__32095.104098744$1274238227$gmane$org@linux.vnet.ibm.com>
+References: <1274238452-15382-1-git-send-email-sukadev@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1274238452-15382-1-git-send-email-sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,26 +21,54 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, matthew-Ztpu424NOJ8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Checkpoint/restart file-owner and posix file locks.
-
-  [PATCH 1/9] Add uid, euid params to f_modown()
-  [PATCH 2/9] Add uid, euid params to __f_setown()
-  [PATCH 3/9] Checkpoint file-owner information
-  [PATCH 4/9] Restore file_owner info
-  [PATCH 5/9] Move file_lock macros into linux/fs.h
-  [PATCH 6/9] Checkpoint file-locks
-  [PATCH 7/9] Define flock_set()
-  [PATCH 8/9] Define flock64_set()
-  [PATCH 9/9] Restore file-locks
-
- drivers/char/tty_io.c          |    3 +-
- drivers/net/tun.c              |    3 +-
- fs/checkpoint.c                |  353 ++++++++++++++++++++++++++++++++++++----
- fs/fcntl.c                     |   19 +-
- fs/locks.c                     |   92 ++++++-----
- fs/notify/dnotify/dnotify.c    |    3 +-
- include/linux/checkpoint_hdr.h |   15 ++
- include/linux/fs.h             |   13 ++-
- 8 files changed, 418 insertions(+), 83 deletions(-)
+Move IS_POSIX(), IS_FLOCK(), IS_LEASE() and 'for_each_lock()' into
+include/linux/fs.h since these are also needed to checkpoint/restart
+file-locks.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+---
+ fs/locks.c         |    7 -------
+ include/linux/fs.h |    7 +++++++
+ 2 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/fs/locks.c b/fs/locks.c
+index ca0c7e2..741b8b7 100644
+--- a/fs/locks.c
++++ b/fs/locks.c
+@@ -130,16 +130,9 @@
+ 
+ #include <asm/uaccess.h>
+ 
+-#define IS_POSIX(fl)	(fl->fl_flags & FL_POSIX)
+-#define IS_FLOCK(fl)	(fl->fl_flags & FL_FLOCK)
+-#define IS_LEASE(fl)	(fl->fl_flags & FL_LEASE)
+-
+ int leases_enable = 1;
+ int lease_break_time = 45;
+ 
+-#define for_each_lock(inode, lockp) \
+-	for (lockp = &inode->i_flock; *lockp != NULL; lockp = &(*lockp)->fl_next)
+-
+ static LIST_HEAD(file_lock_list);
+ static LIST_HEAD(blocked_list);
+ 
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index b4a6fb0..abd2267 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1088,6 +1088,13 @@ struct file_lock {
+ 	} fl_u;
+ };
+ 
++#define IS_POSIX(fl)	(fl->fl_flags & FL_POSIX)
++#define IS_FLOCK(fl)	(fl->fl_flags & FL_FLOCK)
++#define IS_LEASE(fl)	(fl->fl_flags & FL_LEASE)
++
++#define for_each_lock(inode, lockp) \
++	for (lockp = &inode->i_flock; *lockp != NULL; lockp = &(*lockp)->fl_next)
++
+ /* The following constant reflects the upper bound of the file/locking space */
+ #ifndef OFFSET_MAX
+ #define INT_LIMIT(x)	(~((x)1 << (sizeof(x)*8 - 1)))
+-- 
+1.6.0.4
