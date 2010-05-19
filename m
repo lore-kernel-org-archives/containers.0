@@ -1,15 +1,13 @@
-From: Mike Chan <mike-z5hGa2qSFaRBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 2/2] scheduler: cgroups cpuaccouting: Make cpuusage atomic
-Date: Wed, 19 May 2010 12:31:27 -0700
-Message-ID: <AANLkTilgcX0fHfGSyNRBsc257SsnZ4T3LNWvXb0VNseo__44870.3733076856$1274297749$gmane$org@mail.gmail.com>
-References: <1274264877.5605.10541.camel@twins>
-	<1274295539-7798-3-git-send-email-trenn@suse.de>
-	<1274295743.1674.1545.camel@laptop> <201005192113.52535.trenn@suse.de>
+From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Subject: Re: NFS Kernel server inside a container
+Date: Wed, 19 May 2010 21:33:58 +0200
+Message-ID: <4BF43D26.7040807@free.fr>
+References: <516306.35958.qm@web36107.mail.mud.yahoo.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <201005192113.52535.trenn-l3A5Bk7waGM@public.gmane.org>
+In-Reply-To: <516306.35958.qm-xC2hcER8YRCvuULXzWHTWIglqE1Y4D90QQ4Iyu8u01E@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,42 +17,96 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org
+To: Martin Fick <mogulguy-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, May 19, 2010 at 12:13 PM, Thomas Renninger <trenn-l3A5Bk7waGM@public.gmane.org> wrote:
-> On Wednesday 19 May 2010 09:02:23 pm Peter Zijlstra wrote:
->> On Wed, 2010-05-19 at 20:58 +0200, Thomas Renninger wrote:
->> > and avoid locking on 32 bit.
->> > This resolves an ugly dependency in cgroups_cpuaccount.c
->> > to per_cpu runqueues lock variable.
+On 05/19/2010 05:26 PM, Martin Fick wrote:
+> --- On Wed, 5/19/10, Daniel Lezcano<daniel.lezcano-GANU6spQydw@public.gmane.org>  wrote:
+>
+>    
+>>> I was wondering if it is possible to run an NFS kernel
+>>>        
+>> server inside a linux container?
+>>      
+>>> I tried setting one up on a debian (vserver enabled)
+>>>        
+>> kernel, and it seems to start the portmap, rpc.statd,
+>> rpc.idmapd rpc.mountd daemons inside the container, but I
+>> cannot seem to mount the filesystem from a client.  I
+>> do get the following error message on server startup:
+>>      
+>>>     FATAL: Could not load
+>>>        
+>> /lib/modules/2.6.32-trunk-vserver-686/modules.dep: No such
+>> file or directory
+>>      
+>>>
+>>> When trying to mount on the client, after blocking on
+>>>        
+>> the mount for a while, I get:
+>>      
+>>>     mount.nfs: mount system call failed
+>>>
+>>>        
+>> It may be possible your network configuration is not
+>> correct regarding
+>> the nfs server access. Can you ping the nfs server from the
+>> container ?
 >>
->> While I totally agree with the sentiments here, atomic64_t isn't
->> available on all 32bit archs and is _terribly_ expensive on ARCH=3Di386.
-> Speed on i386 shouldn't count that much here.
-> Big machines run x86_64 and cgroup cpu accounting doesn't make much
-> sense on old i386 single core machines.
->
+>>      
+>>> Any thoughts?  Has anyone else done this?
+>>>        
+>> Should this be possible in the first place?  Thanks,
+>>      
+>>>
+>>>        
+>> I thought NFS was isolated through the mount namespace.
+>>
+>> I have a nfs server on 172.20.0.1 exporting "/home".
+>>
+>> On my host (IP 172.20.0.166), I mounted /home via nfs
+>>
+>> I created a debian system container with its own rootfs and
+>> network.
+>> Started it. As expected, the nfs mount point is unmounted
+>> as it does not
+>> belong to the rootfs, and then I remounted /home from my
+>> container (IP
+>> 172.20.0.42). This mount point is private to the container
+>> and not
+>> accessible from the other containers.
+>>
+>> This is what you want to do ? Or did I miss something ?
+>>      
+> It sounds like you did an NFS client mount inside a
+> container. I am actually trying to do the reverse, I
+> would like to do kernel server exports from within
+> a container.  Specifically, I would like to have
+> several data partitions replicated with drbd and to
+> be able to export these partitions via NFS
+> independently from different containers with
+> different IPs.
+>    
+Oh, ok. Right. I misunderstood. As Michael mentioned, that will need 
+some kernel work.
+I think nobody is working on that but I recall Denis Lunev from, OpenVZ, 
+studied it, a couple of years ago, and said that was a big deal.
 
-cpuacct can still be useful for single core machines, at least in
-Android it tracks the cpu usage if your apps. On ARM I'm not sure
-(maybe someone more knowledgeable can chime in) how much overhead this
-will incur relative to scheduler / cpuacct overhead that's already
-there.
+> So, for example, from 2 hosts, I might have 6 NFS
+> partitions to export and during normal operation
+> I would expect each host to make 3 of the
+> partitions primary via drbd and to then to
+> each launch three containers each with separate
+> IPs which will individually export the 3 different
+> drbd partitions via NFS.  For failover or load
+> balancing, it should then be able to shut down
+> any individual container on one host and bring it
+> up on the other host without affecting the other
+> exports.
+>    
 
-Since this is a per-cpu value already, is it not sufficient to just
-disable interrupts on that cpu while doing a normal u64 add for both
-MP and UP systems?
+Sounds a good idea.
 
--- Mike
-
-> Would still be great to see the first patch go in then.
-> The idea of splitting was to:
-> =A0a) show the real change
-> =A0b) make at least the first go in if the snd does not work out
->
-> Thanks,
->
-> =A0 =A0 Thomas
->
+Thanks
+   -- Daniel
