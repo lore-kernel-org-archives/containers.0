@@ -1,11 +1,13 @@
-From: Martin Fick <mogulguy-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>
-Subject: Re: NFS Kernel server inside a container
-Date: Tue, 18 May 2010 14:09:26 -0700 (PDT)
-Message-ID: <187493.1732.qm@web36105.mail.mud.yahoo.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [PATCH 2/9][cr][v2]: Add uid, euid params to __f_setown()
+Date: Tue, 18 May 2010 20:07:25 -0700
+Message-ID: <1274238452-15382-3-git-send-email-sukadev__34616.9878998355$1274238141$gmane$org@linux.vnet.ibm.com>
+References: <1274238452-15382-1-git-send-email-sukadev@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1274238452-15382-1-git-send-email-sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,40 +17,146 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Michael Tokarev <mjt-XAri/EZa3C4vJsYlp49lxw@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, matthew-Ztpu424NOJ8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---- On Tue, 5/18/10, Michael Tokarev <mjt-XAri/EZa3C4vJsYlp49lxw@public.gmane.org> wrote:
-> 18.05.2010 22:51, Martin Fick wrote:
-> >    FATAL: Could not load
-> /lib/modules/2.6.32-trunk-vserver-686/modules.dep: No such
-> file or directory
-> 
-> Obviously you have to have necessary modules in the
-> container in order to _load_ them.  But it is simpler
-> to pre-load all required modules from the host system
-> instead.
+Instead of letting __f_setown() use the UID and EUID of the calling process,
+pass them in as parameters.
 
-Right, I actually ran the kernel server on the host 
-too, just to make sure the modules were loaded.
+This modified interface will be useful when checkpointing and restarting an
+application that has a 'file owner' specified for an open file.  When
+checkpointing the application, the UID and EUID of the process setting up
+the owner are saved in the checkpoint image.
 
-> Actually it does not work even after solving
-> module issue.  I asked about this very issue
-> at the end of last year (I think), but no one
-> answered.  It looks like knfsd threads are
-> working in "global" (i.e host) namespace, not
-> in the container namespace, or the said
-> namespace isn't being set up correctly in
-> the kernel.  In any way, nfs service needs
-> to be "containerized" properly before being
-> useful inside a container, which is not done
-> currently, it seems.
+When the application is restarted, we use the UID and EUID values saved in
+the checkpoint-image, rather than that of the calling process.
 
-Is anyone working on this?  It certainly
-would be a very useful feature. :)  If it
-is only a matter of setting up the 
-container appropriately, any ideas how to
-do that? Thanks,
+Changelog[v2]:
+	- [Matthew Wilcox] Rather than a new __f_setown_uid() interface add
+	  the uid parameters to __f_setown() itself.
 
--Martin
+Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+---
+ drivers/char/tty_io.c       |    3 ++-
+ drivers/net/tun.c           |    3 ++-
+ fs/fcntl.c                  |   10 ++++++----
+ fs/locks.c                  |    3 ++-
+ fs/notify/dnotify/dnotify.c |    3 ++-
+ include/linux/fs.h          |    3 ++-
+ 6 files changed, 16 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/char/tty_io.c b/drivers/char/tty_io.c
+index d264000..3f2f115 100644
+--- a/drivers/char/tty_io.c
++++ b/drivers/char/tty_io.c
+@@ -1968,7 +1968,8 @@ static int tty_fasync(int fd, struct file *filp, int on)
+ 		}
+ 		get_pid(pid);
+ 		spin_unlock_irqrestore(&tty->ctrl_lock, flags);
+-		retval = __f_setown(filp, pid, type, 0);
++		retval = __f_setown(filp, pid, type, current_uid(),
++				current_euid(), 0);
+ 		put_pid(pid);
+ 		if (retval)
+ 			goto out;
+diff --git a/drivers/net/tun.c b/drivers/net/tun.c
+index 4326520..dcbc37d 100644
+--- a/drivers/net/tun.c
++++ b/drivers/net/tun.c
+@@ -1400,7 +1400,8 @@ static int tun_chr_fasync(int fd, struct file *file, int on)
+ 		goto out;
+ 
+ 	if (on) {
+-		ret = __f_setown(file, task_pid(current), PIDTYPE_PID, 0);
++		ret = __f_setown(file, task_pid(current), PIDTYPE_PID,
++				current_uid(), current_euid(), 0);
+ 		if (ret)
+ 			goto out;
+ 		tun->flags |= TUN_FASYNC;
+diff --git a/fs/fcntl.c b/fs/fcntl.c
+index aeab1f4..f44327d 100644
+--- a/fs/fcntl.c
++++ b/fs/fcntl.c
+@@ -214,7 +214,7 @@ static void f_modown(struct file *filp, struct pid *pid, enum pid_type type,
+ }
+ 
+ int __f_setown(struct file *filp, struct pid *pid, enum pid_type type,
+-		int force)
++		uid_t uid, uid_t euid, int force)
+ {
+ 	int err;
+ 
+@@ -222,7 +222,7 @@ int __f_setown(struct file *filp, struct pid *pid, enum pid_type type,
+ 	if (err)
+ 		return err;
+ 
+-	f_modown(filp, pid, type, current_uid(), current_euid(), force);
++	f_modown(filp, pid, type, uid, euid, force);
+ 	return 0;
+ }
+ EXPORT_SYMBOL(__f_setown);
+@@ -240,7 +240,8 @@ int f_setown(struct file *filp, unsigned long arg, int force)
+ 	}
+ 	rcu_read_lock();
+ 	pid = find_vpid(who);
+-	result = __f_setown(filp, pid, type, force);
++	result = __f_setown(filp, pid, type, current_uid(), current_euid(),
++			force);
+ 	rcu_read_unlock();
+ 	return result;
+ }
+@@ -296,7 +297,8 @@ static int f_setown_ex(struct file *filp, unsigned long arg)
+ 	if (owner.pid && !pid)
+ 		ret = -ESRCH;
+ 	else
+-		ret = __f_setown(filp, pid, type, 1);
++		ret = __f_setown(filp, pid, type, current_uid(), 
++				current_euid(), 1);
+ 	rcu_read_unlock();
+ 
+ 	return ret;
+diff --git a/fs/locks.c b/fs/locks.c
+index 9cd859e..ca0c7e2 100644
+--- a/fs/locks.c
++++ b/fs/locks.c
+@@ -1514,7 +1514,8 @@ int fcntl_setlease(unsigned int fd, struct file *filp, long arg)
+ 		goto out_unlock;
+ 	}
+ 
+-	error = __f_setown(filp, task_pid(current), PIDTYPE_PID, 0);
++	error = __f_setown(filp, task_pid(current), PIDTYPE_PID, current_uid(),
++				current_euid(), 0);
+ out_unlock:
+ 	unlock_kernel();
+ 	return error;
+diff --git a/fs/notify/dnotify/dnotify.c b/fs/notify/dnotify/dnotify.c
+index 0a63bf6..3e025e5 100644
+--- a/fs/notify/dnotify/dnotify.c
++++ b/fs/notify/dnotify/dnotify.c
+@@ -409,7 +409,8 @@ int fcntl_dirnotify(int fd, struct file *filp, unsigned long arg)
+ 		goto out;
+ 	}
+ 
+-	error = __f_setown(filp, task_pid(current), PIDTYPE_PID, 0);
++	error = __f_setown(filp, task_pid(current), PIDTYPE_PID, current_uid(),
++				current_euid(), 0);
+ 	if (error) {
+ 		/* if we added, we must shoot */
+ 		if (dnentry == new_dnentry)
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index ee725ff..b4a6fb0 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1304,7 +1304,8 @@ extern void kill_fasync(struct fasync_struct **, int, int);
+ /* only for net: no internal synchronization */
+ extern void __kill_fasync(struct fasync_struct *, int, int);
+ 
+-extern int __f_setown(struct file *filp, struct pid *, enum pid_type, int force);
++extern int __f_setown(struct file *filp, struct pid *pid, enum pid_type type,
++		uid_t uid, uid_t euid, int force);
+ extern int f_setown(struct file *filp, unsigned long arg, int force);
+ extern void f_delown(struct file *filp);
+ extern pid_t f_getown(struct file *filp);
+-- 
+1.6.0.4
