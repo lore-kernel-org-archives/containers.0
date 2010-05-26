@@ -1,21 +1,15 @@
 From: Enrico Weigelt <weigelt-EU+a56NjgY8@public.gmane.org>
-Subject: Re: [Devel] Re: [RFC][PATCH] ns: Syscalls for better namespace
-	sharing control.
-Date: Thu, 27 May 2010 14:06:15 +0200
-Message-ID: <20100527120615.GB31480@nibiru.local>
-References: <m1mxyvrqvk.fsf@fess.ebiederm.org> <4B88E431.6040609@parallels.com>
-	<m1bpfbqajn.fsf@fess.ebiederm.org> <4B894564.7080104@parallels.com>
-	<m1iq9io5sc.fsf@fess.ebiederm.org> <4B89727C.9040602@parallels.com>
-	<m1ljeempk6.fsf@fess.ebiederm.org> <4B8AE8C1.1030305@free.fr>
-	<4B8ECD99.3040107@cs.columbia.edu>
-	<m18wa9glpo.fsf@fess.ebiederm.org>
+Subject: Re: [Devel] Re: [lxc-devel] Containerized syslog
+Date: Wed, 26 May 2010 16:25:15 +0200
+Message-ID: <20100526142515.GA31480@nibiru.local>
+References: <4BEAC1E8.1070506@univ-nantes.fr> <4BEB1A59.6010905@free.fr>
 Reply-To: weigelt-EU+a56NjgY8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <m18wa9glpo.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
+In-Reply-To: <4BEB1A59.6010905-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,25 +19,28 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-* Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> schrieb:
+* Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org> schrieb:
 
-> At least for the network namespace there is a lot of value in being
-> able to just change that single namespace.  Having multiple logical
-> network stacks has it's challenges but has a lot of practical
-> applications.  Especially when there is the possibility of private
-> ipv4 addresses overlapping, or you have interfaces where you never
-> want to forward between them but you want forwarding enabled.
+> I thing a consensus was not reach. The big deal with syslog is netfilter 
+> logs in an interrupt context where it is difficult to find the right log 
+> buffer ring as we are not in the process context making possible to 
+> identify the namespace.
 
-ACK. One practical example: virtualized routes, eg. for VPNs.
-Several years ago, I had a customer who provided VPNs via central
-hubs - one of the main problem was that he had dedicated physical
-machines for the VPN hubs due overlapping IP spaces. We've 
-later migrated them to coliunx-based VMs to save a lot iron.
+That's one of the BIG problems in the Linux kernel, we've recently
+stumbled with in another project (artificial disk bw limits): 
+far too much happening within interrupt context. 
 
-In one of my next projects this issue will pop up again.
+Interrupts were originally as _short time_ step-ins for time critical 
+signaling. What's happening here is an abuse of that concept, w/ really
+bad implications (eg. arbitrary users can create loads to bring down 
+the whole system on extreme load). A clean and more robust solution 
+IMHO could be that the interrupt handler only loads the received l1 
+frames and enqueue them for an kernel thread (or multiple ones) - an 
+containerized setup then would have separate queues and kthreads on 
+per-container basis.
 
 
 cu
