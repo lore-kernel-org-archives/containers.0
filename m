@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][PATCH 2/3][cr][v2]: Checkpoint/restart file leases
-Date: Tue, 25 May 2010 18:07:42 -0700
-Message-ID: <1274836063-13271-3-git-send-email-sukadev__5105.33324345506$1274835821$gmane$org@linux.vnet.ibm.com>
+Subject: [RFC][PATCH 1/3][cr][v2]: Define do_setlease()
+Date: Tue, 25 May 2010 18:07:41 -0700
+Message-ID: <1274836063-13271-2-git-send-email-sukadev__2541.96563405475$1274835821$gmane$org@linux.vnet.ibm.com>
 References: <1274836063-13271-1-git-send-email-sukadev@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,213 +21,73 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, matthew-Ztpu424NOJ8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Build upon the C/R of file-locks to C/R file-leases. C/R of a lease that is
-not being broken is almost identical to C/R of file-locks.  i.e save the type
-of lease for the file in the checkpoint image and when restarting, restore
-the lease by calling do_setlease().
-
-C/R of file-lease gets complicated (I think), if a process is checkpointed
-when its lease was being revoked. i.e if P1 has a F_WRLCK lease on file F1
-and P2 opens F1 for write, P2's open is blocked for lease_break_time (45 secs).
-P1's lease is revoked (i.e set to F_UNLCK) and P1 is notified via a SIGIO to
-flush any dirty data.
-
-This brings up two issues:
-
-First, if P1 is checkpointed during this lease_break_time, we need to remember
-to that P1 originally had a F_WRLCK lease which is now revoked to F_UNLCK.
-Checkpointing the "current lease type" would wrongly save the lease-type as
-F_UNLCK.
-
-Secondly, if P1 was checkpointed 40 seconds into the lease_break_time,(i.e.
-it had 5 seconds remaining in the lease), we want to ensure that after restart,
-P1 gets at least 5 more seconds in the lease (no ?). (i.e P1 could be in the
-its SIGIO handler when it was checkpointed and may be about to start a new
-write(). If P1 does not gets its 5 seconds and P2's open and a read()
-completes, we would have a data corruption).
-
-This patch addresses the first issue above by adding file_lock->fl_type_prev
-field. When a lease is downgraded/revoked, the original lease type is saved
-in ->fl_type_prev and is also checkpointed. When the process P1 is restarted,
-the kernel temporarily restores the original (F_WRLCK) lease.  When process
-P2 is restarted, the open() would fail with -ERESTARTSYS and the open() would
-be repeated. This open() would initiate the lease-break protocol again on P1.
-
-To address the second issue above, this patch saves the remaining-lease in
-the checkpoint image, but does not (yet) use this value. The plan is to use
-this remaining-lease period when P1/P2 are restarted so that P2 is blocked
-only for the remaining-lease rather than entire lease_break_time. I want to
-check if there are better ways to address this.
-
-Changelog[v2]:
-	- Added [PATCH 3/3] to remove the TODOs that were listed in this patch
+Move the core functionality of fcntl_setlease() into a new function,
+do_setlease(). do_setlease() is same as fcntl_setlease() except that
+it takes an extra 'rem_lease' parameter. do_setlease() will be used
+in a follow-on patch to checkpoint/restart file-leases.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- fs/checkpoint.c                |   25 ++++++++++++++++++++++---
- fs/locks.c                     |   40 ++++++++++++++++++++++++++++++++++++++++
- include/linux/checkpoint_hdr.h |    2 ++
- include/linux/fs.h             |    1 +
- 4 files changed, 65 insertions(+), 3 deletions(-)
+ fs/locks.c         |   27 ++++++++++++++++-----------
+ include/linux/fs.h |    1 +
+ 2 files changed, 17 insertions(+), 11 deletions(-)
 
-diff --git a/fs/checkpoint.c b/fs/checkpoint.c
-index 64809db..2baeb32 100644
---- a/fs/checkpoint.c
-+++ b/fs/checkpoint.c
-@@ -280,8 +280,14 @@ static int checkpoint_one_file_lock(struct ckpt_ctx *ctx, struct file *file,
- 	if (lock) {
- 		h->fl_start = lock->fl_start;
- 		h->fl_end = lock->fl_end;
-+		/* checkpoint F_INPROGRESS if set for now */
- 		h->fl_type = lock->fl_type;
-+		h->fl_type_prev = lock->fl_type_prev;
- 		h->fl_flags = lock->fl_flags;
-+		if (h->fl_type & F_INPROGRESS && 
-+					(lock->fl_break_time > jiffies))
-+			h->fl_rem_lease = (lock->fl_break_time - jiffies) / HZ;
-+
- 	} else {
- 		/* Checkpoint a dummy lock as a marker */
- 		h->fl_start = -1;
-@@ -315,7 +321,7 @@ checkpoint_file_locks(struct ckpt_ctx *ctx, struct files_struct *files,
- 			continue;
- 
- 		rc = -EBADF;
--		if (IS_POSIX(lockp))
-+		if (IS_POSIX(lockp) || IS_LEASE(lockp))
- 			rc = checkpoint_one_file_lock(ctx, file, lockp);
- 
- 		if (rc < 0) {
-@@ -1055,8 +1061,10 @@ static int restore_file_locks(struct ckpt_ctx *ctx, struct file *file, int fd)
- 		if (IS_ERR(h))
- 			return PTR_ERR(h);
- 
--		ckpt_debug("Lock [%lld, %lld, %d, 0x%x]\n", h->fl_start,
--				h->fl_end, (int)h->fl_type, h->fl_flags);
-+		ckpt_debug("Lock [%lld, %lld, %d, 0x%x], rem-lease %lus, "
-+				"fl-type-prev %d\n", h->fl_start, h->fl_end,
-+				(int)h->fl_type, h->fl_flags, h->fl_rem_lease,
-+				h->fl_type_prev);
- 
- 		/*
- 		 * If it is a dummy-lock, we are done with this fd.
-@@ -1070,6 +1078,17 @@ static int restore_file_locks(struct ckpt_ctx *ctx, struct file *file, int fd)
- 		if (h->fl_flags & FL_POSIX)
- 			ret = restore_one_file_lock(ctx, file, fd, h); 
- 
-+		else if (h->fl_flags & FL_LEASE) {
-+			int type;
-+
-+			type = h->fl_type;
-+			if (h->fl_type & F_INPROGRESS)
-+				type = h->fl_type_prev;
-+			ret = do_setlease(fd, file, type, h->fl_rem_lease);
-+			if (ret)
-+				ckpt_err(ctx, ret, "do_setlease(): %d\n", type);
-+		}
-+
- 		if (ret < 0)
- 			ckpt_err(ctx, ret, "%(T) fl_flags 0x%x\n", h->fl_flags);
- 	}
 diff --git a/fs/locks.c b/fs/locks.c
-index 4107295..7a80278 100644
+index c62ab7f..4107295 100644
 --- a/fs/locks.c
 +++ b/fs/locks.c
-@@ -184,6 +184,8 @@ void locks_init_lock(struct file_lock *fl)
- 	fl->fl_file = NULL;
- 	fl->fl_flags = 0;
- 	fl->fl_type = 0;
-+	fl->fl_type_prev = 0;
-+	fl->fl_break_time = 0UL;
- 	fl->fl_start = fl->fl_end = 0;
- 	fl->fl_ops = NULL;
- 	fl->fl_lmops = NULL;
-@@ -291,6 +293,13 @@ static int assign_type(struct file_lock *fl, int type)
- 	case F_WRLCK:
- 	case F_UNLCK:
- 		fl->fl_type = type;
-+		/*
-+		 * Clear fl_type_prev since we now have a new lease-type.
-+		 * That way, break_lease() will know to save the new lease-type
-+		 * in case of a checkpoint. (non-lease file-locks don't use
-+		 * ->fl_type_prev).  
-+		 */
-+		fl->fl_type_prev = 0;
- 		break;
- 	default:
- 		return -EINVAL;
-@@ -1211,6 +1220,16 @@ int __break_lease(struct inode *inode, unsigned int mode)
- 		goto out;
- 	}
+@@ -1471,17 +1471,7 @@ int vfs_setlease(struct file *filp, long arg, struct file_lock **lease)
+ }
+ EXPORT_SYMBOL_GPL(vfs_setlease);
  
-+	/*
-+	 * TODO: Checkpoint/restart. Suppose lease_break_time was 45 seonds and
-+	 * 	 we were checkpointed when we had 35 seconds remaining in our
-+	 * 	 lease. When we are restarted, should we get only 35 seconds
-+	 * 	 of the lease and not the full lease_break_time ?
-+	 *
-+	 * 	 We checkpoint ->fl_break_time in the hope that we can use it
-+	 * 	 to calculate the remaining lease, but for now, give the
-+	 * 	 restarted process the full 'lease_break_time'.
-+	 */
- 	break_time = 0;
- 	if (lease_break_time > 0) {
- 		break_time = jiffies + lease_break_time * HZ;
-@@ -1220,8 +1239,29 @@ int __break_lease(struct inode *inode, unsigned int mode)
+-/**
+- *	fcntl_setlease	-	sets a lease on an open file
+- *	@fd: open file descriptor
+- *	@filp: file pointer
+- *	@arg: type of lease to obtain
+- *
+- *	Call this fcntl to establish a lease on the file.
+- *	Note that you also need to call %F_SETSIG to
+- *	receive a signal when the lease is broken.
+- */
+-int fcntl_setlease(unsigned int fd, struct file *filp, long arg)
++int do_setlease(unsigned int fd, struct file *filp, long arg, int rem_lease)
+ {
+ 	struct file_lock fl, *flp = &fl;
+ 	struct inode *inode = filp->f_path.dentry->d_inode;
+@@ -1515,6 +1505,21 @@ out_unlock:
+ }
  
- 	for (fl = flock; fl && IS_LEASE(fl); fl = fl->fl_next) {
- 		if (fl->fl_type != future) {
-+			/*
-+			 * CHECK:
-+			 *
-+			 * If fl_type_prev is already set, we could be in a
-+			 * recursive checkpoint-restart i.e we were checkpointed
-+			 * once when our lease was being broken. We were then
-+			 * restarted from the checkpoint and checkpointed
-+			 * again before the restored lease expired. In this
-+			 * case, we want to restore the lease to the original
-+			 * type. So don't overwrite fl_type_prev if its already
-+			 * set.
-+			 */
-+			if (!fl->fl_type_prev)
-+				fl->fl_type_prev = fl->fl_type;
- 			fl->fl_type = future;
- 			fl->fl_break_time = break_time;
+ /**
++ *	fcntl_setlease	-	sets a lease on an open file
++ *	@fd: open file descriptor
++ *	@filp: file pointer
++ *	@arg: type of lease to obtain
++ *
++ *	Call this fcntl to establish a lease on the file.
++ *	Note that you also need to call %F_SETSIG to
++ *	receive a signal when the lease is broken.
++ */
++int fcntl_setlease(unsigned int fd, struct file *filp, long arg)
++{
++	return do_setlease(fd, filp, arg, 0);
++}
 +
-+			/*
-+			 * TODO: ->fl_break() sends the SIGIO to lease-holder.
-+			 *       If lease-holder was checkpointed/restarted and
-+			 *       this is a restarted lease, we should not
-+			 *       re-send the SIGIO ?
-+			 */
- 			/* lease must have lmops break callback */
- 			fl->fl_lmops->fl_break(fl);
- 		}
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 4509016..ddad73f 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -588,7 +588,9 @@ struct ckpt_hdr_file_lock {
-        __s64 fl_start;
-        __s64 fl_end;
-        __u8 fl_type;
-+       __u8 fl_type_prev;
-        __u8 fl_flags;
-+       unsigned long fl_rem_lease;
- };
- 
- struct ckpt_hdr_file_pipe {
++/**
+  * flock_lock_file_wait - Apply a FLOCK-style lock to a file
+  * @filp: The file to apply the lock to
+  * @fl: The lock to be applied
 diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 700317a..54b2a7b 100644
+index 49d4eeb..700317a 100644
 --- a/include/linux/fs.h
 +++ b/include/linux/fs.h
-@@ -1066,6 +1066,7 @@ struct file_lock {
- 	fl_owner_t fl_owner;
- 	unsigned char fl_flags;
- 	unsigned char fl_type;
-+	unsigned char fl_type_prev;
- 	unsigned int fl_pid;
- 	struct pid *fl_nspid;
- 	wait_queue_head_t fl_wait;
+@@ -1122,6 +1122,7 @@ extern int flock64_set(unsigned int, struct file *, unsigned int,
+ 			struct flock64 *);
+ #endif
+ 
++extern int do_setlease(unsigned int fd, struct file *filp, long arg, int rem_lease);
+ extern int fcntl_setlease(unsigned int fd, struct file *filp, long arg);
+ extern int fcntl_getlease(struct file *filp);
+ 
 -- 
 1.6.0.4
