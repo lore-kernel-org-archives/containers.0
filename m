@@ -1,15 +1,11 @@
-From: Enrico Weigelt <weigelt-EU+a56NjgY8@public.gmane.org>
-Subject: Re: [Devel] Re: [lxc-devel] Containerized syslog
-Date: Wed, 26 May 2010 16:25:15 +0200
-Message-ID: <20100526142515.GA31480@nibiru.local>
-References: <4BEAC1E8.1070506@univ-nantes.fr> <4BEB1A59.6010905@free.fr>
-Reply-To: weigelt-EU+a56NjgY8@public.gmane.org
+From: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] cgroup: alloc_css_id() increments hierarchy depth
+Date: Fri, 28 May 2010 08:16:21 -0700
+Message-ID: <1275059781-9831-1-git-send-email-gthelen__38438.0366806456$1275060196$gmane$org@google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4BEB1A59.6010905-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,37 +15,84 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-* Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org> schrieb:
+Child groups should have a greater depth than their parents.
+Prior to this change, the parent would incorrectly report zero
+memory usage for child cgroups when use_hierarchy is enabled.
 
-> I thing a consensus was not reach. The big deal with syslog is netfilter 
-> logs in an interrupt context where it is difficult to find the right log 
-> buffer ring as we are not in the process context making possible to 
-> identify the namespace.
+test script:
+  mount -t cgroup none /cgroups -o memory
+  cd /cgroups
+  mkdir cg1
 
-That's one of the BIG problems in the Linux kernel, we've recently
-stumbled with in another project (artificial disk bw limits): 
-far too much happening within interrupt context. 
+  echo 1 > cg1/memory.use_hierarchy
+  mkdir cg1/cg11
 
-Interrupts were originally as _short time_ step-ins for time critical 
-signaling. What's happening here is an abuse of that concept, w/ really
-bad implications (eg. arbitrary users can create loads to bring down 
-the whole system on extreme load). A clean and more robust solution 
-IMHO could be that the interrupt handler only loads the received l1 
-frames and enqueue them for an kernel thread (or multiple ones) - an 
-containerized setup then would have separate queues and kthreads on 
-per-container basis.
+  echo $$ > cg1/cg11/tasks
+  dd if=/dev/zero of=/tmp/foo bs=1M count=1
 
+  echo
+  echo CHILD
+  grep cache cg1/cg11/memory.stat
 
-cu
+  echo
+  echo PARENT
+  grep cache cg1/memory.stat
+
+  echo $$ > tasks
+  rmdir cg1/cg11 cg1
+  cd /
+  umount /cgroups
+
+Using fae9c79, a recent patch that changed alloc_css_id() depth computation,
+the parent incorrectly reports zero usage:
+  root@ubuntu:~# ./test
+  1+0 records in
+  1+0 records out
+  1048576 bytes (1.0 MB) copied, 0.0151844 s, 69.1 MB/s
+
+  CHILD
+  cache 1048576
+  total_cache 1048576
+
+  PARENT
+  cache 0
+  total_cache 0
+
+With this patch, the parent correctly includes child usage:
+  root@ubuntu:~# ./test
+  1+0 records in
+  1+0 records out
+  1048576 bytes (1.0 MB) copied, 0.0136827 s, 76.6 MB/s
+
+  CHILD
+  cache 1052672
+  total_cache 1052672
+
+  PARENT
+  cache 0
+  total_cache 1052672
+
+Signed-off-by: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+---
+ kernel/cgroup.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 422cb19..3ac6f5b 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -4598,7 +4598,7 @@ static int alloc_css_id(struct cgroup_subsys *ss, struct cgroup *parent,
+ 	parent_css = parent->subsys[subsys_id];
+ 	child_css = child->subsys[subsys_id];
+ 	parent_id = parent_css->id;
+-	depth = parent_id->depth;
++	depth = parent_id->depth + 1;
+ 
+ 	child_id = get_new_cssid(ss, depth);
+ 	if (IS_ERR(child_id))
 -- 
----------------------------------------------------------------------
- Enrico Weigelt    ==   metux IT service - http://www.metux.de/
----------------------------------------------------------------------
- Please visit the OpenSource QM Taskforce:
- 	http://wiki.metux.de/public/OpenSource_QM_Taskforce
- Patches / Fixes for a lot dozens of packages in dozens of versions:
-	http://patches.metux.de/
----------------------------------------------------------------------
+1.7.0.1
