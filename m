@@ -1,14 +1,15 @@
 From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Subject: Re: [PATCH] cgroup: alloc_css_id() increments hierarchy depth
-Date: Mon, 31 May 2010 08:45:29 +0900
-Message-ID: <20100531084529.2b1f0d25.kamezawa.hiroyu__28926.9411856823$1275263446$gmane$org@jp.fujitsu.com>
+Date: Mon, 31 May 2010 08:54:31 +0900
+Message-ID: <20100531085431.a45b30b9.kamezawa.hiroyu__24092.318051453$1275264413$gmane$org@jp.fujitsu.com>
 References: <1275059781-9831-1-git-send-email-gthelen@google.com>
 	<AANLkTino0k-wok9kXLmWTyr40dZKSCnR0Uk41uxAj5k1@mail.gmail.com>
+	<20100531084529.2b1f0d25.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <AANLkTino0k-wok9kXLmWTyr40dZKSCnR0Uk41uxAj5k1-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20100531084529.2b1f0d25.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,34 +19,34 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gRnJpLCAyOCBNYXkgMjAxMCAxNToyNTowOCAtMDcwMApQYXVsIE1lbmFnZSA8bWVuYWdlQGdv
-b2dsZS5jb20+IHdyb3RlOgoKPiBPbiBGcmksIE1heSAyOCwgMjAxMCBhdCA4OjE2IEFNLCBHcmVn
-IFRoZWxlbiA8Z3RoZWxlbkBnb29nbGUuY29tPiB3cm90ZToKPiA+Cj4gPiBTaWduZWQtb2ZmLWJ5
-OiBHcmVnIFRoZWxlbiA8Z3RoZWxlbkBnb29nbGUuY29tPgo+IAo+IEFja2VkLWJ5OiBQYXVsIE1l
-bmFnZSA8bWVuYWdlQGdvb2dsZS5jb20+Cj4gCj4gR29vZCBjYXRjaCwgdGhhbmtzLgo+IApOaWNl
-IENhdGNoLgpBY2tlZC1ieTogS0FNRVpBV0EgSGlyb3l1a2kgPGthbWV6YXdhLmhpcm95dUBqcC5m
-dWppdHN1LmNvbT4KCkJ1dCwgd2hvIGJyZWFrcyB0aGlzID8gRG8gd2UgbmVlZCBiYWNrcG9ydCB0
-aGlzIGFnYWluc3Qgb2xkIGtlcm5lbHMgPwoKMi42LjMzIGhhcyB0aGlzLgo+IDM5NTkgICAgICAg
-ICBkZXB0aCA9IGNzc19kZXB0aChwYXJlbnRfY3NzKSArIDE7Cj4gMzk2MCAgICAgICAgIHBhcmVu
-dF9pZCA9IHBhcmVudF9jc3MtPmlkOwo+IDM5NjEgCj4gMzk2MiAgICAgICAgIGNoaWxkX2lkID0g
-Z2V0X25ld19jc3NpZChzcywgZGVwdGgpOwoKClRoYW5rcywKLUthbWUKCgo+IFBhdWwKPiAKPiA+
-IC0tLQo+ID4gwqBrZXJuZWwvY2dyb3VwLmMgfCDCoCDCoDIgKy0KPiA+IMKgMSBmaWxlcyBjaGFu
-Z2VkLCAxIGluc2VydGlvbnMoKyksIDEgZGVsZXRpb25zKC0pCj4gPgo+ID4gZGlmZiAtLWdpdCBh
-L2tlcm5lbC9jZ3JvdXAuYyBiL2tlcm5lbC9jZ3JvdXAuYwo+ID4gaW5kZXggNDIyY2IxOS4uM2Fj
-NmY1YiAxMDA2NDQKPiA+IC0tLSBhL2tlcm5lbC9jZ3JvdXAuYwo+ID4gKysrIGIva2VybmVsL2Nn
-cm91cC5jCj4gPiBAQCAtNDU5OCw3ICs0NTk4LDcgQEAgc3RhdGljIGludCBhbGxvY19jc3NfaWQo
-c3RydWN0IGNncm91cF9zdWJzeXMgKnNzLCBzdHJ1Y3QgY2dyb3VwICpwYXJlbnQsCj4gPiDCoCDC
-oCDCoCDCoHBhcmVudF9jc3MgPSBwYXJlbnQtPnN1YnN5c1tzdWJzeXNfaWRdOwo+ID4gwqAgwqAg
-wqAgwqBjaGlsZF9jc3MgPSBjaGlsZC0+c3Vic3lzW3N1YnN5c19pZF07Cj4gPiDCoCDCoCDCoCDC
-oHBhcmVudF9pZCA9IHBhcmVudF9jc3MtPmlkOwo+ID4gLSDCoCDCoCDCoCBkZXB0aCA9IHBhcmVu
-dF9pZC0+ZGVwdGg7Cj4gPiArIMKgIMKgIMKgIGRlcHRoID0gcGFyZW50X2lkLT5kZXB0aCArIDE7
-Cj4gPgo+ID4gwqAgwqAgwqAgwqBjaGlsZF9pZCA9IGdldF9uZXdfY3NzaWQoc3MsIGRlcHRoKTsK
-PiA+IMKgIMKgIMKgIMKgaWYgKElTX0VSUihjaGlsZF9pZCkpCj4gPiAtLQo+ID4gMS43LjAuMQo+
-ID4KPiA+Cj4gCgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-XwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRp
-b24ub3JnCmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5m
-by9jb250YWluZXJz
+On Mon, 31 May 2010 08:45:29 +0900
+KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
+
+> On Fri, 28 May 2010 15:25:08 -0700
+> Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
+> 
+> > On Fri, May 28, 2010 at 8:16 AM, Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
+> > >
+> > > Signed-off-by: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+> > 
+> > Acked-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+> > 
+> > Good catch, thanks.
+> > 
+> Nice Catch.
+> Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+> 
+> But, who breaks this ? Do we need backport this against old kernels ?
+> 
+http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=commitdiff;h=fae9c791703606636c1220e47f6690660042ce7f
+
+Hmm. this one. and 2.6.34 needs this patch. Greg, could you post this to
+stable-2.6.34 tree ?
+
+
+Thanks,
+-Kame
