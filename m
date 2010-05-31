@@ -1,17 +1,11 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH] cgroup: alloc_css_id() increments hierarchy depth
-Date: Mon, 31 May 2010 09:01:17 +0800
-Message-ID: <4C030A5D.2000700__25281.6924629316$1275267662$gmane$org@cn.fujitsu.com>
-References: <1275059781-9831-1-git-send-email-gthelen@google.com>
-	<AANLkTino0k-wok9kXLmWTyr40dZKSCnR0Uk41uxAj5k1@mail.gmail.com>
-	<20100531084529.2b1f0d25.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100531085431.a45b30b9.kamezawa.hiroyu@jp.fujitsu.com>
-	<AANLkTilNrrsNluDBUlXCsZMz7d_-VHn31Ogvkw9AUPnE@mail.gmail.com>
+From: Ganzoo Awaasuren <ganaa.8.91-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: USB Write Checkpoint
+Date: Mon, 31 May 2010 18:57:13 +0800
+Message-ID: <AANLkTikYoK7EIJ4AoAT83qDujVFeDhPoo08GbzEF07b6@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <AANLkTilNrrsNluDBUlXCsZMz7d_-VHn31Ogvkw9AUPnE-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,30 +15,59 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
->>>> On Fri, May 28, 2010 at 8:16 AM, Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
->>>>> Signed-off-by: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
->>>> Acked-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
->>>>
->>>> Good catch, thanks.
->>>>
->>> Nice Catch.
->>> Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
->>>
->>> But, who breaks this ? Do we need backport this against old kernels ?
->>>
->> http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=commitdiff;h=fae9c791703606636c1220e47f6690660042ce7f
->>
->> Hmm. this one. and 2.6.34 needs this patch. Greg, could you post this to
->> stable-2.6.34 tree ?
-> 
-> Given that I forgot to include "Cc: stable <stable-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>" in the
-> patch, I assume the best way to get this patch into -stable is for me
-> to email the commit id to stable-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org once the patch is accepted
-> into Linus' tree.  Let me know if there is a better way.
-> 
+Dear All
 
-I think Andrew will mark it and send it to stable.
+Now I am changing and developing some kernel stuffs which is related to
+Linux FileSystems.
+
+My work is just to find the solution for the inconvinence use of the USB
+disk. We have to click "safe remove" button for flush the buffer data to
+disk before the plug off the USB disk .
+
+So my aim of the work is just avoid to click the safe remove button and plug
+off the USB disk straightly. Even if buffer cache data couldn't written to
+USB disk, then plug in the USB disk again and recover the buffer cache data
+
+Here is my Idea step by step. Please check it out
+
+1. Let's suppose to write A.txt file to USB external hard disk or flash
+disk.
+
+in the linux kernel source code, write system call is invoke the following
+function flows - sys_write (write, int, fd, __user, buf, size_t, count) ->
+do_sync_write (file, buf, count, pos) -> generic_file_aio_write(kiocb,
+iov,1, kiocb.ki_pos) -> generic_file_buffered_write (iocb, iov, m_segs,
+pos,ppos, count, written) -> generic_performance_write (struct file,
+iov_iter i, pos)
+
+and then write operation has divided into 3 separate fields. First
+block_write_begin allocating and initializing buffer heads for the page,
+Second - copy the data from the user mode buffer to disk's buffer page.
+Third - block_write_end marks the underlying buffers as disrty so they are
+written to disk later.
+
+So my idea is when the kernel perform the write operations then check that
+the disk is USB or not, and if it is USB disk then take *Checkpoint *on this
+write request. in order to get Checkpoint, i tried to copy that page buffers
+to the some secure buffer which is save the page buffer. Then if we plug off
+the USB disk before the flush to the disk, then this secure buffers data
+will be held until that USB disk plug in again or reach the some certain
+amount of deadline time. If we plug in the USB disk again then check that
+USB disk and sending signal to the Secure buffer then recover the unwritten
+block to the USB disk.
+
+As far as i understand from your developed checkpoint technique on linux
+kernel , probably i can get it and apply it for my purpose. So is it
+possible to call that sys_checkpoint function in kernel's sys_write system
+call ? if it is possible then , is this checkpointed image will include that
+all of the open files ?
+
+I am sorry for my bad english
+
+Thanks
+
+
+Best Regards
