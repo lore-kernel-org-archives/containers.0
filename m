@@ -1,13 +1,18 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: LXC bringup issue on Fedora
-Date: Wed, 02 Jun 2010 15:51:24 +0200
-Message-ID: <4C0661DC.109@free.fr>
-References: <AANLkTilLWByODGTM23nKkAAlsDgON_pAUSFylsQ8Z3I-@mail.gmail.com>
+From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC] [PATCH 2/2] cgroups: make procs file writable
+Date: Wed, 2 Jun 2010 16:06:59 +0200
+Message-ID: <20100602140659.GA5324__13582.2291755632$1275487866$gmane$org@redhat.com>
+References: <20100530013002.GA762@ghc01.ghc.andrew.cmu.edu>
+	<20100530013303.GC762@ghc01.ghc.andrew.cmu.edu>
+	<20100531175242.GA14691@redhat.com>
+	<20100531180446.GA16249@redhat.com>
+	<AANLkTimcrX0TjzDMNJdubR92pAO4IPATbVpyvvVt0qIV@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <AANLkTilLWByODGTM23nKkAAlsDgON_pAUSFylsQ8Z3I--JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <AANLkTimcrX0TjzDMNJdubR92pAO4IPATbVpyvvVt0qIV-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,62 +22,46 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nirmal Guhan <vavatutu-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 06/02/2010 07:09 AM, Nirmal Guhan wrote:
-> Hi,
+On 06/01, Paul Menage wrote:
 >
-> Am trying to get lenny (latest debian from http://ftp.us.debian.org/debian)
-> run as a container on Fedora12 with 2.6.32.13 kernel and running into below
-> error :
+> On Mon, May 31, 2010 at 11:04 AM, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> >
+> > And, forgot to mention, I do not understand the PF_EXITING check in
+> > attach_task_by_pid() (and some others).
+> >
+> > At first glance, it buys nothing. PF_EXITING can be set right after
+> > the check.
 >
-> lxc-start -n lennycont
-> SELinux:  Could not open policy file<=
-> /etc/selinux/targeted/policy/policy.24:  No such file or directory
-> INIT: version 2.86 booting
-> INIT: Entering runlevel: 2
-> Starting enhanced syslogd: rsyslogd.
-> Starting periodic command scheduler: crond.
->
-> INIT: Id "4" respawning too fast: disabled for 5 minutes
-> INIT: Id "2" respawning too fast: disabled for 5 minutes
-> INIT: Id "T1" respawning too fast: disabled for 5 minutes
-> INIT: Id "1" respawning too fast: disabled for 5 minutes
-> INIT: Id "5" respawning too fast: disabled for 5 minutes
-> INIT: Id "3" respawning too fast: disabled for 5 minutes
-> INIT: Id "T0" respawning too fast: disabled for 5 minutes
-> INIT: Id "6" respawning too fast: disabled for 5 minutes
-> INIT: no more processes left in this runlevel
->
-> My config file is as below :
->
-> lxc.utsname = lennycont
-> lxc.network.type = veth
-> lxc.network.flags = up
-> lxc.network.link = br0
-> lxc.network.ipv4 = 128.107.159.180/22
-> lxc.network.name = eth0
-> lxc.rootfs = /lxc/lenny-chroot
-> lxc.mount = /lxc/lenny.fstab
-> lxc.tty = 1
->
-> fstab :
-> none /lxc/lenny-chroot/dev/pts devpts defaults 0 0
-> none /lxc/lenny-chroot/proc    proc   defaults 0 0
-> none /lxc/lenny-chroot/sys     sysfs  defaults 0 0
-> none /lxc/lenny-chroot/dev/shm tmpfs  defaults 0 0
->
-> I googled and found some solutions but none of them worked for me :-( Could
-> you please help?
->    
+> It can, but it's a benign race.
 
-Hi,
+Yes,
 
-it is probable the number of ttys of your container configuration does 
-not match the number of ttys used by the container.
-Please ask to lxc-users-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+> Moving a non-current thread into a cgroup takes task->alloc_lock and
+> checks for PF_EXITING before manipulating that thread's cgroup links.
+> The exit procedure sets PF_EXITING and then (somewhat later, but
+> guaranteed) moves current to the root cgroups while holding
+> alloc_lock.
 
-Thanks
-   -- Daniel
+Yes sure, I understand this part. cgroup_attach_task() correctly checks
+PF_EXITING under task_lock(), this protects from the case when this
+task has already passed cgroup_exit() which takes this lock too.
+
+But. This exactly means that the PF_EXITING check in attach_task_by_pid()
+is not necessary from the correctness pov (while probably can be considered
+as optimization), right?
+
+And,
+
+> so it's fine to refuse to move it to a new cgroup.
+
+I am not sure. It doesn't hurt when we try to move a thread. But if
+we want to move the whole thread group, we should proceed even if the
+group leader has already exited and thus has PF_EXITING bit set.
+
+That was my question.
+
+Oleg.
