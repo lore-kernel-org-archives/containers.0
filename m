@@ -1,14 +1,10 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Freezer cgroup Failed
-Date: Thu, 10 Jun 2010 07:17:46 -0700
-Message-ID: <20100610141746.GM21016@count0.beaverton.ibm.com>
-References: <AANLkTin9Eyes8zKTzK5EUWmjFRWjSw5ab86LvT5WCQpM@mail.gmail.com>
+From: Huerto Saffel <dulia-ov4m9CKgim8AvxtiuMwx3w@public.gmane.org>
+Subject: they must have it f
+Date: Thu, 10 Jun 2010 13:48:43 -0400
+Message-ID: <4C11245D.7070107@spict.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============9043784827279312515=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <AANLkTin9Eyes8zKTzK5EUWmjFRWjSw5ab86LvT5WCQpM-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,41 +12,43 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jerf gefera <jgefera-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Hismith Ramesh <containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Jun 10, 2010 at 01:45:05PM +0900, Jerf gefera wrote:
-> Dear there,
-> The self_checkpoint and self_restart are working now, but why external
-> checkpoint cannot work.I did it like the following two ways:
-> 1)     $./onetask &
->     $./checkpoint 4347 >img
->     checkpoint: Device or resource busy
->     (you may use 'ckptinfo -e' for more info)
-> 
-> And the content in the image file is "[Error at do_checkpoint:583][err
-> -16]Freezer cgroup failed"
+--===============9043784827279312515==
+Content-Type: application/octet-stream; name="ceram.rtf"
+Content-Transfer-Encoding: base64
 
-(You need to freeze it as you're trying to do below...)
+e1xydGYxXGFuc2lcYW5zaWNwZzEyNTFcZGVmZjBcZGVmbGFuZzEwNDl7XGZvbnR0Ymx7XGYw
+XGZzd2lzc1xmcHJxMlxmY2hhcnNldDIwNHtcKlxmbmFtZSBBcmlhbDt9QXJpYWwgQ1lSO317
+XGYxXGZzd2lzc1xmY2hhcnNldDIwNHtcKlxmbmFtZSBBcmlhbDt9QXJpYWwgQ1lSO319DQp7
+XGNvbG9ydGJsIDtccmVkMFxncmVlbjBcYmx1ZTI1NTtccmVkMFxncmVlbjEyOFxibHVlMDt9
+DQp7XCpcZ2VuZXJhdG9yIE1zZnRlZGl0IDUuOC42LjU2MDk7fVx2aWV3a2luZDRcdWMxXHBh
+cmRcc2EyMDBcc2wyNzZcc2xtdWx0MVxsYW5nOVxmMFxmczMye1xmaWVsZHtcKlxmbGRpbnN0
+e0hZUEVSTElOSyAiaHtcKlxkZCA1LjguNi41NjA5O310dHA6Ly9nYW1lemRyZWFtcy5pbmZv
+In19e1xmbGRyc2x0e1x1bFxjZjEgaHR0cDovL2dhbWV6ZHJlYW1zLmluZm99fX1cZjBcY2Yx
+XGJcZnMzMiAgLSBPTkxJTkUgQ0FTSU5PIVxwYXINClxsaW5lXGNmMlxiXGYwXGZzMjggVklQ
+IENMVUIgQ2FzaW5vIGlzIGEgZ3JlYXQgb25saW5lIGNhc2lubyB0aGF0IG9mZmVycyB0aGUg
+dW5pcXVlIGNvbWJpbmF0aW9uIG9mIHRvcCBxdWFsaXR5IGdhbWVzLCBoaWdoIHBheW91dHMg
+YW5kIGEgMjQvNyBwcm9mZXNzaW9uYWwgY3VzdG9tZXIgc3VwcG9ydC5ccGFyDQpccGFyMTAw
+IHByb2dyZXNzaXZlIGdhbWVzIHdpdGggdG93ZXJpbmcgamFja3BvdHMsIHdoaWNoIGFyZSBy
+ZWFkeSB0byBleHBsb2RlIGFuZCBjYW4gbWFrZSBtdWx0aS1taWxsaW9uYWlyZXMgb3V0IG9m
+IFZJUCBDTFVCIHBsYXllcnMhIERvd25sb2FkIHRoZSBzb2Z0d2FyZSBmb3IgZnJlZSwgcGlj
+ayB1cCB0aGUgaW5jcmVkaWJsZSAkNzc3IFdlbGNvbWUgQm9udXMgb24geW91IHdheSBpbiBh
+bmQgc3RhcnQgcGxheWluZyAmIHdpbm5pbmchXHBhcg0KfQ0KAA==
 
-> 2)     $./onetask &
->       $.echo 4354 > /cgroup/0/tasks
->     $echo FROZEN > /cgroup/0/freezer.state
->     $./checkpoint 4354 > ckpt.image
->     checkpoint: Device or resource busy
->     (you may use 'ckptinfo -e' for more info)
-> And the content in the image file is "[Error at do_checkpoint:583][err
-> -16]Freezer cgoup failed"
-> The content in freezer.state is "FROZEN". I do not know what is wrong, can
-> anyone can give me a hand.
 
-You verified that the task shows up in /cgroup/0/tasks? (I ask because you
-can't move a task into an already-frozen cgroup)
+--===============9043784827279312515==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-Are you still using v19?
-
-Cheers,
-	-Matt Helsley
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============9043784827279312515==--
