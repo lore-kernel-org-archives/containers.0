@@ -1,16 +1,20 @@
-From: Mathieu Peresse <mathieu.peresse-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: VRF-like use of Network Namespaces
-Date: Fri, 11 Jun 2010 16:47:00 +0200
-Message-ID: <AANLkTilUNrMAeeUjHsXkTwd7Ysx0o9mdl8UaSUvG6wvf@mail.gmail.com>
+Date: Fri, 11 Jun 2010 07:59:17 -0700
+Message-ID: <878w6lobsq.fsf@caffeine.danplanet.com>
 References: <AANLkTimA_0aZwZM1uZ-GH3OxfEZvegoitaaKTYPLvW5F@mail.gmail.com>
 	<4C0E6466.3030100@free.fr>
 	<AANLkTik77W7F7BV7qp9ZQlM3yJCKNydHAMN47FaLTr7Z@mail.gmail.com>
 	<4C0EB0C5.8070904@free.fr>
 	<AANLkTinmsRRKdWaf8QONeRRJSQRXPhaUtY1cFv_JGcy8@mail.gmail.com>
+	<AANLkTilUNrMAeeUjHsXkTwd7Ysx0o9mdl8UaSUvG6wvf@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary=0016e6daa7de58eb830488c2372e
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <AANLkTinmsRRKdWaf8QONeRRJSQRXPhaUtY1cFv_JGcy8-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <AANLkTilUNrMAeeUjHsXkTwd7Ysx0o9mdl8UaSUvG6wvf-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+	(Mathieu Peresse's message of "Fri\,
+	11 Jun 2010 16\:47\:00 +0200")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,283 +24,23 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+To: Mathieu Peresse <mathieu.peresse-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---0016e6daa7de58eb830488c2372e
-Content-Type: text/plain; charset=ISO-8859-1
+MP> I saw there was a rtnetlink attribute to set the netns of a device but it
+MP> uses the PID of a namespace owner to do so... within 'ip' i can refer to
+MP> only one namespace (i.e. the one that 'ip' task_struct->ns_proxy currently
+MP> points to), so I won't be able to move an interface from outside my
+MP> namespace to my namespace...
 
-Hi,
-
-[this is related to the use of Eric Biederman's new set of patches for named
-netns / netns switching]
-
-ok so I successfully modified /sbin/ip. I can now:
-- add/del a new netns by name: "ip netns {addns,delns} ns_name"
--> The namespace files are mounted on /var/run/netns/ns_name (so you have to
-mkdir /var/run/netns/ for this to work).
-- list netns: "ip netns show"
-- use /sbin/ip in any named netns: "ip -netns ns_name link show"
-
-(rough patch against current git tree attached)
-
-I want now to move devices across namespaces using their filesystem names
-(instead of using PIDs...). I'm not sure I can do it in userspace with the
-current code yet, can I ?
-I saw there was a rtnetlink attribute to set the netns of a device but it
-uses the PID of a namespace owner to do so... within 'ip' i can refer to
-only one namespace (i.e. the one that 'ip' task_struct->ns_proxy currently
-points to), so I won't be able to move an interface from outside my
-namespace to my namespace...
-I hope my explanation is clear and that this will get some interest... :)
-
-BTW is this the right ML to post this on ?
-
-Thanks,
-
-Mathieu.
-
-On Tue, Jun 8, 2010 at 11:48 PM, Mathieu Peresse
-<mathieu.peresse-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>wrote:
-
-> I want to be able to type say: "ip vrf add vrf_name" to create a persisting
-> network namespace, and then be able to add a net device to this namespace
-> "ip link add dev tun0 vrf vrf_name" and then add a route to a subnet in this
-> namespace using e.g. "ip route add 192.168.1.0/24 dev tun0 vrf vrf_name"
->
-> I believe i can patch iproute2 (providing the 'ip' config utility) to use
-> setns() and unshare() to add new namespaces and configure interfaces and
-> routing in namespace ?
->
-> I will look more into it tomorrow :)
->
-> Thanks a lot for this awesome work anyways !
->
-> mathieu.
->
->
-> On Tue, Jun 8, 2010 at 11:06 PM, Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>wrote:
->
->> On 06/08/2010 07:12 PM, Mathieu Peresse wrote:
->>
->>> Looks good, thanks ! Has anyone worked to make 'ip' use these facilities
->>> ?
->>>
->>> If I understand correctly, from a network resource configuration
->>> perspective:
->>>
->>> - Creating a persisting namespace ('VRF') is equivalent to: create a
->>> namespace (using clone()),  which creates a proc entry for that
->>> namespace,
->>> and then bind mount the file so that it stays open.
->>>
->>>
->>
->> From the same process, unshare (using unshare()), open /proc/self/ns/net,
->> store the fd, unshare again, open /proc/self/ns/net, store the fd, ...
->> A single process handles by this way several network namespaces.
->>
->> To switch from one namespace to another, just use the setns syscall.
->>
->> Well this is one example to use it, AFAIK you are looking for this very
->> specific usage no ?
->>
->> Thanks
->>  -- Daniel
->>
->>
->>
->
->
-> --
-> a+
-> mathieu
->
-
-
+Not just the owner, but any process in the namespace, AFAIK.  So, you
+should be able to fork() a child, have that child setns() into the
+namespace of your choosing, and then move the device to the process of
+your child (since you now know the pid).  It's a little indirect, but
+it should work.
 
 -- 
-a+
-mathieu
-
---0016e6daa7de58eb830488c2372e
-Content-Type: text/x-patch; charset=US-ASCII; name="iproute2-netns20090611.patch"
-Content-Disposition: attachment; filename="iproute2-netns20090611.patch"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_gab4mywi0
-
-ZGlmZiAtcHJ1TiBpcHJvdXRlMi9pcC9pcC5jIGlwcm91dGUyX25ldG5zL2lwL2lwLmMKLS0tIGlw
-cm91dGUyL2lwL2lwLmMJMjAxMC0wNi0xMSAxNjoyMToyNS45NDg2NzE1OTIgKzAyMDAKKysrIGlw
-cm91dGUyX25ldG5zL2lwL2lwLmMJMjAxMC0wNi0xMSAxNjoxOTo0NS42ODQ2NzI0OTMgKzAyMDAK
-QEAgLTQyLDExICs0MiwxMSBAQCBzdGF0aWMgdm9pZCB1c2FnZSh2b2lkKQogIlVzYWdlOiBpcCBb
-IE9QVElPTlMgXSBPQkpFQ1QgeyBDT01NQU5EIHwgaGVscCB9XG4iCiAiICAgICAgIGlwIFsgLWZv
-cmNlIF0gLWJhdGNoIGZpbGVuYW1lXG4iCiAid2hlcmUgIE9CSkVDVCA6PSB7IGxpbmsgfCBhZGRy
-IHwgYWRkcmxhYmVsIHwgcm91dGUgfCBydWxlIHwgbmVpZ2ggfCBudGFibGUgfFxuIgotIiAgICAg
-ICAgICAgICAgICAgICB0dW5uZWwgfCB0dW50YXAgfCBtYWRkciB8IG1yb3V0ZSB8IG1ydWxlIHwg
-bW9uaXRvciB8IHhmcm0gfVxuIgorIiAgICAgICAgICAgICAgICAgICB0dW5uZWwgfCB0dW50YXAg
-fCBtYWRkciB8IG1yb3V0ZSB8IG1ydWxlIHwgbW9uaXRvciB8IHhmcm0gfCBuZXRucyB9XG4iCiAi
-ICAgICAgIE9QVElPTlMgOj0geyAtVltlcnNpb25dIHwgLXNbdGF0aXN0aWNzXSB8IC1kW2V0YWls
-c10gfCAtcltlc29sdmVdIHxcbiIKICIgICAgICAgICAgICAgICAgICAgIC1mW2FtaWx5XSB7IGlu
-ZXQgfCBpbmV0NiB8IGlweCB8IGRuZXQgfCBsaW5rIH0gfFxuIgogIiAgICAgICAgICAgICAgICAg
-ICAgLW9bbmVsaW5lXSB8IC10W2ltZXN0YW1wXSB8IC1iW2F0Y2hdIFtmaWxlbmFtZV0gfFxuIgot
-IiAgICAgICAgICAgICAgICAgICAgLXJjW3ZidWZdIFtzaXplXX1cbiIpOworIiAgICAgICAgICAg
-ICAgICAgICAgLXJjW3ZidWZdIFtzaXplXSB8IC1bbl1ldG5zIG5ldG5zbmFtZX1cbiIpOwogCWV4
-aXQoLTEpOwogfQogCkBAIC03NSw2ICs3NSw3IEBAIHN0YXRpYyBjb25zdCBzdHJ1Y3QgY21kIHsK
-IAl7ICJ0YXAiLAlkb19pcHR1bnRhcCB9LAogCXsgIm1vbml0b3IiLAlkb19pcG1vbml0b3IgfSwK
-IAl7ICJ4ZnJtIiwJZG9feGZybSB9LAorCXsgIm5ldG5zIiwJZG9faXBuZXRucyB9LAogCXsgIm1y
-b3V0ZSIsCWRvX211bHRpcm91dGUgfSwKIAl7ICJtcnVsZSIsCWRvX211bHRpcnVsZSB9LAogCXsg
-ImhlbHAiLAlkb19oZWxwIH0sCkBAIC0yMjUsNiArMjI2LDI3IEBAIGludCBtYWluKGludCBhcmdj
-LCBjaGFyICoqYXJndikKIAkJCQlleGl0KC0xKTsKIAkJCX0KIAkJCXJjdmJ1ZiA9IHNpemU7CisJ
-CX0gZWxzZSBpZiAobWF0Y2hlcyhvcHQsICItbmV0bnMiKSA9PSAwKSB7CisJCQlpbnQgbnNmZDsK
-KwkJCWNoYXIgbmV0bnNfcGF0aFsyNTVdOworCQkJYXJnYy0tOworCQkJYXJndisrOworCQkJaWYg
-KHN0cmxlbihhcmd2WzFdKSA+IE5FVE5TX1NUUl9NQVhMRU4pIHsKKwkJCQlmcHJpbnRmKHN0ZGVy
-ciwgIkludmFsaWQgbmV0bnMgbmFtZS5cbiIpOworCQkJCWV4aXQoLTEpOworCQkJfQorCQkJc3Ry
-Y3B5KG5ldG5zX3BhdGgsIE5FVE5TX0RJUik7CisJCQlzdHJjYXQobmV0bnNfcGF0aCwgYXJndlsx
-XSk7CisJCQlpZiAoKG5zZmQgPSBvcGVuKG5ldG5zX3BhdGgsIE9fUkRPTkxZKSkgPCAwKSB7CisJ
-CQkJCWZwcmludGYoc3RkZXJyLCAiQ291bGQgbm90IG9wZW4gbmV0bnMgZmlsZS5cbiIpOworCQkJ
-CQlleGl0KC0xKTsKKwkJCX0KKwkJCS8qIENoYW5nZSBuYW1lc3BhY2UgZm9yIGlmYWNlIGNvbmZp
-Z3VyYXRpb24gKi8KKwkJCWlmIChzZXRucygwLCBuc2ZkKSA8IDApIHsKKwkJCQlmcHJpbnRmKHN0
-ZGVyciwgInNldG5zKCkgZmFpbGVkOiAlc1xuIiwKKwkJCQkJCXN0cmVycm9yKGVycm5vKSk7CisJ
-CQkJZXhpdCgtMSk7CisJCQl9CiAJCX0gZWxzZSBpZiAobWF0Y2hlcyhvcHQsICItaGVscCIpID09
-IDApIHsKIAkJCXVzYWdlKCk7CiAJCX0gZWxzZSB7CmRpZmYgLXBydU4gaXByb3V0ZTIvaXAvaXBf
-Y29tbW9uLmggaXByb3V0ZTJfbmV0bnMvaXAvaXBfY29tbW9uLmgKLS0tIGlwcm91dGUyL2lwL2lw
-X2NvbW1vbi5oCTIwMTAtMDYtMTEgMTY6MjE6MjUuOTQ4NjcxNTkyICswMjAwCisrKyBpcHJvdXRl
-Ml9uZXRucy9pcC9pcF9jb21tb24uaAkyMDEwLTA2LTExIDE2OjIwOjE0LjkwMDcyNDk1OCArMDIw
-MApAQCAtMzksNiArMzksNyBAQCBleHRlcm4gaW50IGRvX211bHRpYWRkcihpbnQgYXJnYywgY2hh
-ciAqCiBleHRlcm4gaW50IGRvX211bHRpcm91dGUoaW50IGFyZ2MsIGNoYXIgKiphcmd2KTsKIGV4
-dGVybiBpbnQgZG9fbXVsdGlydWxlKGludCBhcmdjLCBjaGFyICoqYXJndik7CiBleHRlcm4gaW50
-IGRvX3hmcm0oaW50IGFyZ2MsIGNoYXIgKiphcmd2KTsKK2V4dGVybiBpbnQgZG9faXBuZXRucyhp
-bnQgYXJnYywgY2hhciAqKmFyZ3YpOwogCiBzdGF0aWMgaW5saW5lIGludCBydG1fZ2V0X3RhYmxl
-KHN0cnVjdCBydG1zZyAqciwgc3RydWN0IHJ0YXR0ciAqKnRiKQogewpAQCAtNjUsNiArNjYsNTEg
-QEAgc3RydWN0IGxpbmtfdXRpbAogCiBzdHJ1Y3QgbGlua191dGlsICpnZXRfbGlua19raW5kKGNv
-bnN0IGNoYXIgKmtpbmQpOwogCisKKy8qIGlwIG5ldG5zIHN0dWZmICovCisjZGVmaW5lIE5FVE5T
-X1NUUl9NQVhMRU4gMTYKKyNkZWZpbmUgTVlfTlNfUFJPQ19GSUxFICIvcHJvYy9zZWxmL25zL25l
-dCIKKyNkZWZpbmUgTkVUTlNfRElSCSIvdmFyL3J1bi9uZXRucy8iCisKKyNpZm5kZWYgX3N5c2Nh
-bGwwCisjaW5jbHVkZSA8dW5pc3RkLmg+CisjZGVmaW5lIF9zeXNjYWxsMCh0eXBlLG5hbWUpIFwK
-Kwl0eXBlIG5hbWUodm9pZCkgXAore1wKKwkgICAgICAgIHJldHVybiBzeXNjYWxsKF9fTlJfIyNu
-YW1lKTtcCit9CisjZW5kaWYKKworI2lmbmRlZiBfc3lzY2FsbDEKKyNpbmNsdWRlIDx1bmlzdGQu
-aD4KKyNkZWZpbmUgX3N5c2NhbGwxKHR5cGUsbmFtZSx0eXBlMSxhcmcxLCB0eXBlMiwgYXJnMikg
-XAorCXR5cGUgbmFtZSh0eXBlMSBhcmcxLCB0eXBlMiBhcmcyKSBcCit7XAorCSAgICAgICAgcmV0
-dXJuIHN5c2NhbGwoX19OUl8jI25hbWUsIGFyZzEsIGFyZzIpO1wKK30KKyNlbmRpZgorCisjaWZu
-ZGVmIEhBVkVfU0VUTlMKKworI2lmIF9faTM4Nl9fCisjICAgIGRlZmluZSBfX05SX3NldG5zIDMz
-OAorI2VsaWYgX194ODZfNjRfXworIyAgICBkZWZpbmUgX19OUl9zZXRucyAzMDAgCisjZWxzZQor
-IyAgICBlcnJvciAiQXJjaGl0ZWN0dXJlIG5vdCBzdXBwb3J0ZWQiCisjZW5kaWYKKworI2VuZGlm
-IC8qIEhBVkVfU0VUTlMgKi8KKworI2lmbmRlZiBDTE9ORV9ORVdORVQKKyNkZWZpbmUgQ0xPTkVf
-TkVXTkVUCQkweDIwMDAwMDAwCisjZW5kaWYKKworI2lmbmRlZiBzZXRucyAKK3N0YXRpYyBpbmxp
-bmUgX3N5c2NhbGwxIChpbnQsICBzZXRucywgdW5zaWduZWQgaW50LCBuc3R5cGUsIGludCwgZmQp
-CisjZW5kaWYKKworCiAjaWZuZGVmCUlORklOSVRZX0xJRkVfVElNRQogI2RlZmluZSAgICAgSU5G
-SU5JVFlfTElGRV9USU1FICAgICAgMHhGRkZGRkZGRlUKICNlbmRpZgpkaWZmIC1wcnVOIGlwcm91
-dGUyL2lwL2lwbGluay5jIGlwcm91dGUyX25ldG5zL2lwL2lwbGluay5jCi0tLSBpcHJvdXRlMi9p
-cC9pcGxpbmsuYwkyMDEwLTA2LTExIDE2OjIxOjI1Ljk0ODY3MTU5MiArMDIwMAorKysgaXByb3V0
-ZTJfbmV0bnMvaXAvaXBsaW5rLmMJMjAxMC0wNi0xMSAxNjoxOToxNi4yMzI2NjM5NzMgKzAyMDAK
-QEAgLTI4LDYgKzI4LDEwIEBACiAjaW5jbHVkZSA8c3lzL2lvY3RsLmg+CiAjaW5jbHVkZSA8bGlu
-dXgvc29ja2lvcy5oPgogCisjaW5jbHVkZSA8bGliZ2VuLmg+CisjaW5jbHVkZSA8c2NoZWQuaD4K
-KyNpbmNsdWRlIDxsaW51eC91bmlzdGQuaD4KKwogI2luY2x1ZGUgInJ0X25hbWVzLmgiCiAjaW5j
-bHVkZSAidXRpbHMuaCIKICNpbmNsdWRlICJpcF9jb21tb24uaCIKZGlmZiAtcHJ1TiBpcHJvdXRl
-Mi9pcC9pcG5ldG5zLmMgaXByb3V0ZTJfbmV0bnMvaXAvaXBuZXRucy5jCi0tLSBpcHJvdXRlMi9p
-cC9pcG5ldG5zLmMJMTk3MC0wMS0wMSAwMTowMDowMC4wMDAwMDAwMDAgKzAxMDAKKysrIGlwcm91
-dGUyX25ldG5zL2lwL2lwbmV0bnMuYwkyMDEwLTA2LTExIDE2OjE5OjE2LjIzMjY2Mzk3MyArMDIw
-MApAQCAtMCwwICsxLDE5MCBAQAorLyoKKyAqIGlwbmV0bnMuYwkJImlwIG5ldG5zIi4KKyAqCisg
-KgkJVGhpcyBwcm9ncmFtIGlzIGZyZWUgc29mdHdhcmU7IHlvdSBjYW4gcmVkaXN0cmlidXRlIGl0
-IGFuZC9vcgorICoJCW1vZGlmeSBpdCB1bmRlciB0aGUgdGVybXMgb2YgdGhlIEdOVSBHZW5lcmFs
-IFB1YmxpYyBMaWNlbnNlCisgKgkJYXMgcHVibGlzaGVkIGJ5IHRoZSBGcmVlIFNvZnR3YXJlIEZv
-dW5kYXRpb247IGVpdGhlciB2ZXJzaW9uCisgKgkJMiBvZiB0aGUgTGljZW5zZSwgb3IgKGF0IHlv
-dXIgb3B0aW9uKSBhbnkgbGF0ZXIgdmVyc2lvbi4KKyAqCisgKiBBdXRob3JzOglKYW1lcyBSLiBM
-ZXUgPGpsZXVAbWluZHNwcmluZy5jb20+CisgKiAJCU1hdGhpZXUgUGVyZXNzZSA8bXBlcmVzc2VA
-Y29ycC5mcmVlLmZyPgorICoKKyAqLworCisjaW5jbHVkZSA8c3RkaW8uaD4KKyNpbmNsdWRlIDxz
-dGRsaWIuaD4KKyNpbmNsdWRlIDx1bmlzdGQuaD4KKyNpbmNsdWRlIDxzeXNsb2cuaD4KKyNpbmNs
-dWRlIDxmY250bC5oPgorI2luY2x1ZGUgPHN5cy9zb2NrZXQuaD4KKyNpbmNsdWRlIDxzeXMvaW9j
-dGwuaD4KKyNpbmNsdWRlIDxlcnJuby5oPgorI2luY2x1ZGUgPG5ldGluZXQvaW4uaD4KKyNpbmNs
-dWRlIDxhcnBhL2luZXQuaD4KKyNpbmNsdWRlIDxzdHJpbmcuaD4KKyNpbmNsdWRlIDx0aW1lLmg+
-CisjaW5jbHVkZSA8c2NoZWQuaD4KKyNpbmNsdWRlIDxzeXMvbW91bnQuaD4KKyNpbmNsdWRlIDxz
-eXMvdHlwZXMuaD4KKyNpbmNsdWRlIDxkaXJlbnQuaD4KKworI2luY2x1ZGUgInV0aWxzLmgiCisj
-aW5jbHVkZSAiaXBfY29tbW9uLmgiCisKKyNkZWZpbmUgTkVUTlNfQURETlMgMQorI2RlZmluZSBO
-RVROU19ERUxOUyAyIAorI2RlZmluZSBORVROU19BRERJRiAzCisjZGVmaW5lIE5FVE5TX0RFTElG
-IDQgCisKK3N0YXRpYyB2b2lkIHVzYWdlKHZvaWQpIF9fYXR0cmlidXRlX18oKG5vcmV0dXJuKSk7
-CisKK3N0YXRpYyB2b2lkIHVzYWdlKHZvaWQpCit7CisJZnByaW50ZihzdGRlcnIsICJVc2FnZTog
-aXAgbmV0bnMgWyBhZGQgfCByZW1vdmUgXSBORVROU19OQU1FXG4iKTsKKwlmcHJpbnRmKHN0ZGVy
-ciwgIiAgICAgICBpcCBuZXRucyBzaG93XG4iKTsKKwlleGl0KC0xKTsKK30KKworc3RhdGljIGlu
-dCBkb19uZXRuc19zaG93KGNoYXIgKnBhdGgpCit7CisJRElSICpteWRpciA9IE5VTEw7CisgICAg
-ICAgIHN0cnVjdCBkaXJlbnQgKmVudHJ5ID0gTlVMTDsKKworCisJaWYgKChteWRpciA9IG9wZW5k
-aXIocGF0aCkpID09IE5VTEwpIHsKKwkJZnByaW50ZihzdGRlcnIsICJDb3VsZCBub3Qgb3BlbiBk
-aXI6ICVzXG4iLCBzdHJlcnJvcihlcnJubykpOworCQlyZXR1cm4gLTE7CisJfQorCisJd2hpbGUo
-KGVudHJ5ID0gcmVhZGRpcihteWRpcikpKSAKKwl7CisJCWlmICgoc3RyY21wKGVudHJ5LT5kX25h
-bWUsICIuLiIpICE9IDApICYmIAorCQkJCShzdHJjbXAoZW50cnktPmRfbmFtZSwgIi4iKSAhPSAw
-KSkgCisJCQlmcHJpbnRmKHN0ZGVyciwgIiVzXG4iLCBlbnRyeS0+ZF9uYW1lKTsKKwl9CisKKwlj
-bG9zZWRpcihteWRpcik7CisJcmV0dXJuIDA7Cit9CisKK3N0YXRpYyBpbnQgaXBuZXRuc19tdmRl
-dihjaGFyICpkZXYsIGNoYXIgKm5ldG5zKQoreworICAgICAgIHN0cnVjdCBydG5sX2hhbmRsZSBy
-dGg7CisgICAgICAgc3RydWN0IHsKKyAgICAgICAgICAgICAgIHN0cnVjdCBubG1zZ2hkciAgICAg
-ICAgIG47CisgICAgICAgICAgICAgICBzdHJ1Y3QgaWZpbmZvbXNnICAgICAgICByOworICAgICAg
-ICAgICAgICAgY2hhciAgICAgICAgICAgICAgICAgICAgYnVmWzE2XTsKKyAgICAgICB9IHJlcTsK
-KyAgICAgICBpbnQgcGlkID0gZ2V0cGlkKCk7CisgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCisgICAg
-ICAgbWVtc2V0KCZyZXEsIDAsIHNpemVvZihyZXEpKTsKKworICAgICAgIHJlcS5uLm5sbXNnX3R5
-cGUgPSBSVE1fU0VUTElOSzsKKyAgICAgICByZXEubi5ubG1zZ19sZW4gPSBOTE1TR19MRU5HVEgo
-c2l6ZW9mKHN0cnVjdCBpZmluZm9tc2cpKTsKKyAgICAgICByZXEubi5ubG1zZ19mbGFncyA9IE5M
-TV9GX1JFUVVFU1Q7CisKKyAgICAgICBpZiAocnRubF9vcGVuKCZydGgsIDApIDwgMCkKKyAgICAg
-ICAgICAgICAgIHJldHVybiAxOworCisgICAgICAgbGxfaW5pdF9tYXAoJnJ0aCk7CisKKyAgICAg
-ICByZXEuci5pZmlfZmFtaWx5ID0gQUZfVU5TUEVDOworICAgICAgIHJlcS5yLmlmaV9pbmRleCA9
-IGxsX25hbWVfdG9faW5kZXgoZGV2KTsKKyAgICAgICBhZGRhdHRyX2woJnJlcS5uLCBzaXplb2Yo
-cmVxKSwgSUZMQV9ORVRfTlNfUElELCAmcGlkLCA0KTsKKworICAgICAgIGlmIChydG5sX3RhbGso
-JnJ0aCwgJnJlcS5uLCAwLCAwLCBOVUxMLCBOVUxMLCBOVUxMKSA8IDApCisgICAgICAgICAgICAg
-ICByZXR1cm4gMjsKKworICAgICAgIHJldHVybiAoMCk7Cit9CisKK2ludCBpcG5ldG5zX21vZGlm
-eShpbnQgY21kLCBjaGFyIG5ldG5zW05FVE5TX1NUUl9NQVhMRU5dKQoreworCisJY2hhciBuZXRu
-c19wYXRoWzI1NV0gPSBORVROU19ESVI7CisJdW5zaWduZWQgbG9uZyBmbGFncyA9IENMT05FX05F
-V05FVDsKKwlpbnQgZmQ7CisJCisJc3RybmNhdChuZXRuc19wYXRoLCBuZXRucywgc2l6ZW9mKG5l
-dG5zKSk7IAorCisJc3dpdGNoIChjbWQpIAorCXsKKwkvKiBhZGQgbmV3IG5hbWVzcGFjZSAqLwor
-CWNhc2UgTkVUTlNfQURETlM6CisJCWlmICh1bnNoYXJlKGZsYWdzKSA8IDApIHsKKwkJCWZwcmlu
-dGYoc3RkZXJyLCAidW5zaGFyZSgpIGZhaWxlZDogJXMiLAorCQkJCQlzdHJlcnJvcihlcnJubykp
-OworCQkJcmV0dXJuIC0xOworCQl9CisJCS8qY2hlY2sgbmV0bnMgZG9lc24ndCBhbHJlYWR5IGV4
-aXN0cyAqLworCQlpZiAoKGZkID0gb3BlbihuZXRuc19wYXRoLCBPX1JET05MWSkpID4gMCkgewor
-CQkJZnByaW50ZihzdGRlcnIsICJuZXRucyBhbHJlYWR5IGV4aXN0cy5cbiIpOworCQkJY2xvc2Uo
-ZmQpOworCQkJcmV0dXJuIC0xOworCQl9CisJCS8qIGNyZWF0ZSBmaWxlIGZvciBuZXRucyAqLwor
-CQlpZiAoKGZkID0gb3BlbihuZXRuc19wYXRoLCBPX0NSRUFULCBTX0lSVVNSKSkgPCAwKSB7CisJ
-CQlmcHJpbnRmKHN0ZGVyciwgImNvdWxkIG5vdCBjcmVhdGUgZmlsZS5cbiIpOworCQkJcmV0dXJu
-IC0xOworCQl9CisJCWNsb3NlKGZkKTsKKwkJaWYobW91bnQoTVlfTlNfUFJPQ19GSUxFLCBuZXRu
-c19wYXRoLCAicHJvYyIsIE1TX0JJTkQsIE5VTEwpIDwgMCkgeworCQkJZnByaW50ZihzdGRlcnIs
-ICJiaW5kIG1vdW50IGZhaWxlZDogJXNcbiIsCisJCQkJCXN0cmVycm9yKGVycm5vKSk7CisJCQly
-ZXR1cm4gLTE7CisJCX0KKwkJYnJlYWs7CisJLyogZGVsICovCisJY2FzZSBORVROU19ERUxOUzoK
-KwkJaWYodW1vdW50KG5ldG5zX3BhdGgpIDwgMCkgeworCQkJZnByaW50ZihzdGRlcnIsICJ1bW91
-bnQgZmFpbGVkOiAlc1xuIiwgc3RyZXJyb3IoZXJybm8pKTsKKwkJCXJldHVybiAtMTsKKwkJfQor
-CQlpZihyZW1vdmUobmV0bnNfcGF0aCkgPCAwKSB7CisJCQlmcHJpbnRmKHN0ZGVyciwgInJlbW92
-ZSBmYWlsZWQ6ICVzXG4iLCBzdHJlcnJvcihlcnJubykpOworCQkJcmV0dXJuIC0xOworCQl9CisJ
-CWJyZWFrOworCS8qIGFkZCBuZXcgaW50ZXJmYWNlIGluIHRoZSBjdXJyZW50IG5hbWVzcGFjZSAK
-KwkgKiAoY2FuIGJlIGV4cGxpY2l0ZWx5IHNwZWNpZmllZCBieSAtbmV0bnMgc3dpdGNoKSovCisJ
-Y2FzZSBORVROU19BRERJRjoKKwkJYnJlYWs7CisJLyogZGVsICovCisJY2FzZSBORVROU19ERUxJ
-RjoKKwkJYnJlYWs7CisJfQorCisJcmV0dXJuIDA7Cit9CisKKworCisKKworaW50IGRvX2lwbmV0
-bnMoaW50IGFyZ2MsIGNoYXIgKiphcmd2KQoreworCWlmIChhcmdjID4gMCkgeworCQlpZiAobWF0
-Y2hlcygqYXJndiwgInNob3ciKSA9PSAwKQorCQkJcmV0dXJuIGRvX25ldG5zX3Nob3coTkVUTlNf
-RElSKTsKKwkJaWYgKG1hdGNoZXMoKmFyZ3YsICJoZWxwIikgPT0gMCkKKwkJCXVzYWdlKCk7CisJ
-CWlmIChtYXRjaGVzKCphcmd2LCAiYWRkbnMiKSA9PSAwKSB7CisJCSAgICAgICAgTkVYVF9BUkco
-KTsKKwkJCWlmIChzdHJsZW4oKmFyZ3YpID4gTkVUTlNfU1RSX01BWExFTikKKwkJCSAgICAgICAg
-aW52YXJnKCJJbnZhbGlkIFwibmV0bnNcIiB2YWx1ZSAobXVzdCBiZSA8IDE2IGNoYXJzKVxuIiwg
-KmFyZ3YpOworCQkJcmV0dXJuIGlwbmV0bnNfbW9kaWZ5KE5FVE5TX0FERE5TLCAqYXJndik7CisJ
-CX0KKwkJaWYgKG1hdGNoZXMoKmFyZ3YsICJyZW1vdmUiKSA9PSAwIHx8CisJCSAgICBtYXRjaGVz
-KCphcmd2LCAiZGVsZXRlIikgPT0gMCB8fAorCQkgICAgbWF0Y2hlcygqYXJndiwgImRlbG5zIikg
-PT0gMCkgeworCQkgICAgICAgIE5FWFRfQVJHKCk7CisJCQlpZiAoc3RybGVuKCphcmd2KSA+IE5F
-VE5TX1NUUl9NQVhMRU4pCisJCQkgICAgICAgIGludmFyZygiSW52YWxpZCBcIm5ldG5zXCIgdmFs
-dWUgKG11c3QgYmUgPCAxNiBjaGFycylcbiIsICphcmd2KTsKKwkJCXJldHVybiBpcG5ldG5zX21v
-ZGlmeShORVROU19ERUxOUywgKmFyZ3YpOworCQl9CisJfSBlbHNlCisJICAgICAgICByZXR1cm4g
-ZG9fbmV0bnNfc2hvdyhORVROU19ESVIpOworCisJZnByaW50ZihzdGRlcnIsICJDb21tYW5kIFwi
-JXNcIiBpcyB1bmtub3duLCB0cnkgXCJpcCBuZXRucyBoZWxwXCIuXG4iLCAqYXJndik7CisJZXhp
-dCgtMSk7Cit9CmRpZmYgLXBydU4gaXByb3V0ZTIvaXAvTWFrZWZpbGUgaXByb3V0ZTJfbmV0bnMv
-aXAvTWFrZWZpbGUKLS0tIGlwcm91dGUyL2lwL01ha2VmaWxlCTIwMTAtMDYtMTEgMTY6MjE6MjUu
-OTQ4NjcxNTkyICswMjAwCisrKyBpcHJvdXRlMl9uZXRucy9pcC9NYWtlZmlsZQkyMDEwLTA2LTEx
-IDE2OjE5OjE2LjIzMjY2Mzk3MyArMDIwMApAQCAtMyw3ICszLDcgQEAgSVBPQko9aXAubyBpcGFk
-ZHJlc3MubyBpcGFkZHJsYWJlbC5vIGlwcgogICAgIGlwbWFkZHIubyBpcG1vbml0b3IubyBpcG1y
-b3V0ZS5vIGlwcHJlZml4Lm8gaXB0dW50YXAubyBcCiAgICAgaXB4ZnJtLm8geGZybV9zdGF0ZS5v
-IHhmcm1fcG9saWN5Lm8geGZybV9tb25pdG9yLm8gXAogICAgIGlwbGlua192bGFuLm8gbGlua192
-ZXRoLm8gbGlua19ncmUubyBpcGxpbmtfY2FuLm8gXAotICAgIGlwbGlua19tYWN2bGFuLm8KKyAg
-ICBpcGxpbmtfbWFjdmxhbi5vIGlwbmV0bnMubwogCiBSVE1PTk9CSj1ydG1vbi5vCiAK
---0016e6daa7de58eb830488c2372e
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---0016e6daa7de58eb830488c2372e--
+Dan Smith
+IBM Linux Technology Center
+email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
