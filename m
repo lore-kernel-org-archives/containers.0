@@ -1,85 +1,135 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: [PATCH 8/8] af_unix: Allow connecting to sockets in other network namespaces.
-Date: Sun, 13 Jun 2010 06:35:48 -0700
-Message-ID: <m11vcbgimj.fsf@fess.ebiederm.org>
-References: <m1hbl7hxo3.fsf@fess.ebiederm.org>
+From: Mathieu Peresse <mathieu.peresse-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: VRF-like use of Network Namespaces
+Date: Sun, 13 Jun 2010 15:35:16 +0200
+Message-ID: <AANLkTimyiohNB9daVbOnnRwwmGePT6ACX-Mh0qxJmYFc@mail.gmail.com>
+References: <AANLkTimA_0aZwZM1uZ-GH3OxfEZvegoitaaKTYPLvW5F@mail.gmail.com>
+	<4C0E6466.3030100@free.fr>
+	<AANLkTik77W7F7BV7qp9ZQlM3yJCKNydHAMN47FaLTr7Z@mail.gmail.com>
+	<4C0EB0C5.8070904@free.fr>
+	<AANLkTinmsRRKdWaf8QONeRRJSQRXPhaUtY1cFv_JGcy8@mail.gmail.com>
+	<AANLkTilUNrMAeeUjHsXkTwd7Ysx0o9mdl8UaSUvG6wvf@mail.gmail.com>
+	<4C125BA4.4020300@free.fr> <m11vcbl0d5.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <m1hbl7hxo3.fsf@fess.ebiederm.org> (Eric W. Biederman's message of "Sun\, 13 Jun 2010 06\:25\:32 -0700")
-Sender: netdev-owner@vger.kernel.org
-To: David Miller <davem@davemloft.net>
-Cc: Serge Hallyn <serue@us.ibm.com>, Linux Containers <containers@lists.osdl.org>, Daniel Lezcano <daniel.lezcano@free.fr>, netdev@vger.kernel.org, Pavel Emelyanov <xemul@parallels.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <m11vcbl0d5.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Hi,
 
-Remove the restriction that only allows connecting to a unix domain
-socket identified by unix path that is in the same network namespace.
+On Sun, Jun 13, 2010 at 11:59 AM, Eric W. Biederman
+<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>wrote:
 
-Crossing network namespaces is always tricky and we did not support
-this at first, because of a strict policy of don't mix the namespaces.
-Later after Pavel proposed this we did not support this because no one
-had performed the audit to make certain using unix domain sockets
-across namespaces is safe.
+> Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org> writes:
+>
+> > On 06/11/2010 04:47 PM, Mathieu Peresse wrote:
+> >> Hi,
+> >>
+> >> [this is related to the use of Eric Biederman's new set of patches for
+> named
+> >> netns / netns switching]
+> >>
+> >> ok so I successfully modified /sbin/ip. I can now:
+> >> - add/del a new netns by name: "ip netns {addns,delns} ns_name"
+> >> ->  The namespace files are mounted on /var/run/netns/ns_name (so you
+> have to
+> >> mkdir /var/run/netns/ for this to work).
+> >>
+> >
+> > IMHO, the ip command is not suitable for this, it does not write
+> > anything to the fs.
+>
+> It does configuration by all kinds of means.  As far as it goes I
+> think the ip command is perfectly suitable in this particular
+> situation.  Having a vrf functionality in linux is very desirable.
+>
 
-What fundamentally makes connecting to af_unix sockets in other
-namespaces is safe is that you have to have the proper permissions on
-the unix domain socket inode that lives in the filesystem.  If you
-want strict isolation you just don't create inodes where unfriendlys
-can get at them, or with permissions that allow unfriendlys to open
-them.  All nicely handled for us by the mount namespace and other
-standard file system facilities.
+I agree. And ip is just a cool tool :)
 
-I looked through unix domain sockets and they are a very controlled
-environment so none of the work that goes on in dev_forward_skb to
-make crossing namespaces safe appears needed, we are not loosing
-controll of the skb and so do not need to set up the skb to look like
-it is comming in fresh from the outside world.  Further the fields in
-struct unix_skb_parms should not have any problems crossing network
-namespaces.
 
-Now that we handle SCM_CREDENTIALS in a way that gives useable values
-across namespaces.  There does not appear to be any operational
-problems with encouraging the use of unix domain sockets across
-containers either.
+> Getting this into ip has the major advantage that we will have a defacto
+> standard, and using IFLA_NET_NS_FD makes a lot more sense if everything
+> is in ip.
+>
+> > You should write you own command, which can be a perl script using the
+> > 'unshare' command (util-linux package on my distro).
+> >
+> > vrf create <name>
+> > vrf delete <name>
+> > vrf attach <name>
+> > vrf list
+> >
+> > vrf create will bind mount the ns at the place you decided in the script
+> > (eg. a tmpfs in order to keep the directory consistent across (unclean)
+> > reboots).
+> >
+> >> - list netns: "ip netns show"
+> >> - use /sbin/ip in any named netns: "ip -netns ns_name link show"
+> >>
+> >> (rough patch against current git tree attached)
+> >>
+> >> I want now to move devices across namespaces using their filesystem
+> names
+> >> (instead of using PIDs...). I'm not sure I can do it in userspace with
+> the
+> >> current code yet, can I ?
+> >>
+> > No, you can do that only with pids, but why don't you move the devices
+> > at the create time ?
+> > You have all the latitude to do that, no ?
+>
+> Does my published tree not have IFLA_NET_NS_FD in it?
+>
 
-Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
----
- net/unix/af_unix.c |    7 ++-----
- 1 files changed, 2 insertions(+), 5 deletions(-)
+No I don't think so... I'll have to check tomorrow at work though.
 
-diff --git a/net/unix/af_unix.c b/net/unix/af_unix.c
-index 78d412a..4aaff40 100644
---- a/net/unix/af_unix.c
-+++ b/net/unix/af_unix.c
-@@ -282,7 +282,7 @@ static inline struct sock *unix_find_socket_byname(struct net *net,
- 	return s;
- }
- 
--static struct sock *unix_find_socket_byinode(struct net *net, struct inode *i)
-+static struct sock *unix_find_socket_byinode(struct inode *i)
- {
- 	struct sock *s;
- 	struct hlist_node *node;
-@@ -292,9 +292,6 @@ static struct sock *unix_find_socket_byinode(struct net *net, struct inode *i)
- 		    &unix_socket_table[i->i_ino & (UNIX_HASH_SIZE - 1)]) {
- 		struct dentry *dentry = unix_sk(s)->dentry;
- 
--		if (!net_eq(sock_net(s), net))
--			continue;
--
- 		if (dentry && dentry->d_inode == i) {
- 			sock_hold(s);
- 			goto found;
-@@ -757,7 +754,7 @@ static struct sock *unix_find_other(struct net *net,
- 		err = -ECONNREFUSED;
- 		if (!S_ISSOCK(inode->i_mode))
- 			goto put_fail;
--		u = unix_find_socket_byinode(net, inode);
-+		u = unix_find_socket_byinode(inode);
- 		if (!u)
- 			goto put_fail;
- 
+
+>
+> >> I saw there was a rtnetlink attribute to set the netns of a device but
+> it
+> >> uses the PID of a namespace owner to do so... within 'ip' i can refer to
+> >> only one namespace (i.e. the one that 'ip' task_struct->ns_proxy
+> currently
+> >> points to), so I won't be able to move an interface from outside my
+> >> namespace to my namespace...
+> >> I hope my explanation is clear and that this will get some interest...
+> :)
+> >>
+> >
+> > Your 'create' command can open a fd to its current  netns, unshare a new
+> > namespace, bind mount it, and then return to the previously saved netns.
+> >
+> >> BTW is this the right ML to post this on ?
+> >>
+> >
+> > Well, this is something related to a subsystem of the containers, so it
+> > has some interest but I would suggest to send to the netdev@ mailing
+> > list (netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org), maybe cc'ing this mailing list.
+>
+> Anyway it looks like time to post the core of my patchset for review,
+> and get things moving on this.
+>
+
+Definitely :) Thanks.
+
+
+> Eric
+>
+
+
+
 -- 
-1.6.5.2.143.g8cc62
-
+a+
+mathieu
