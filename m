@@ -1,15 +1,20 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Problem: Device or resource busy
-Date: Fri, 11 Jun 2010 17:52:38 -0500
-Message-ID: <20100611225237.GB1038@hallyn.com>
-References: <AANLkTinpoXDREZSFkjC5IB5NFWsVh_1UDUyANS5vQyDr@mail.gmail.com>
-	<AANLkTim4p6EY0RVcpEl_x1Dovck6-arAzexxv9Xh6JI3@mail.gmail.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: VRF-like use of Network Namespaces
+Date: Sun, 13 Jun 2010 02:43:49 -0700
+Message-ID: <m1ljajl12i.fsf@fess.ebiederm.org>
+References: <AANLkTimA_0aZwZM1uZ-GH3OxfEZvegoitaaKTYPLvW5F@mail.gmail.com>
+	<4C0E6466.3030100@free.fr>
+	<AANLkTik77W7F7BV7qp9ZQlM3yJCKNydHAMN47FaLTr7Z@mail.gmail.com>
+	<4C0EB0C5.8070904@free.fr>
+	<AANLkTinmsRRKdWaf8QONeRRJSQRXPhaUtY1cFv_JGcy8@mail.gmail.com>
+	<AANLkTilUNrMAeeUjHsXkTwd7Ysx0o9mdl8UaSUvG6wvf@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <AANLkTim4p6EY0RVcpEl_x1Dovck6-arAzexxv9Xh6JI3-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <AANLkTilUNrMAeeUjHsXkTwd7Ysx0o9mdl8UaSUvG6wvf-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+	(Mathieu Peresse's message of "Fri\,
+	11 Jun 2010 16\:47\:00 +0200")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,45 +24,46 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jerf gefera <jgefera-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Mathieu Peresse <mathieu.peresse-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Jerf gefera (jgefera-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> Dear serge,
-> You are right, I am using the checkpoint_self.c in Documentation/checkpoint
-> dir.
-> Now, I am using the self_checkpoint in user-cr, but it still has some
-> errors:
-> some content in image file:
-> "f_op lacks checkpoint^@^O'^@^@^H^@^@^@^D^@^@^@<^@^@^@^@pid 4375 ts
-> k self_checkpoint err -9]: files_struct"
-> In fact, when checkpoint externally, it also has the error message mentioned
-> above.
-> I traced there is an error in freezer_checkpointing(external checkpointing),
-> can you point out me where might be wrong?
-> Jefera
+Mathieu Peresse <mathieu.peresse-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
 
-As Matt asked in another thread, are you still using v19?
+> Hi,
+>
+> [this is related to the use of Eric Biederman's new set of patches for named
+> netns / netns switching]
+>
+> ok so I successfully modified /sbin/ip. I can now:
+> - add/del a new netns by name: "ip netns {addns,delns} ns_name"
+> -> The namespace files are mounted on /var/run/netns/ns_name (so you have to
+> mkdir /var/run/netns/ for this to work).
+> - list netns: "ip netns show"
+> - use /sbin/ip in any named netns: "ip -netns ns_name link show"
+>
+> (rough patch against current git tree attached)
+>
+> I want now to move devices across namespaces using their filesystem names
+> (instead of using PIDs...). I'm not sure I can do it in userspace with the
+> current code yet, can I ?
+> I saw there was a rtnetlink attribute to set the netns of a device but it
+> uses the PID of a namespace owner to do so... within 'ip' i can refer to
+> only one namespace (i.e. the one that 'ip' task_struct->ns_proxy currently
+> points to), so I won't be able to move an interface from outside my
+> namespace to my namespace...
+> I hope my explanation is clear and that this will get some interest... :)
 
-v21 should iirc tell you the name of the file causing the trouble.  If
-v21 is not an option, then pls modify your external checkpoint script
-to keep the task frozen, then look at the contents of /proc/pid/fd
-and /proc/pid/fdinfo for the checkpointed pid.  Something like
-	pid=$1
-	touch outout
-	/bin/ls /proc/$pid/fd >> outout
-	/bin/ls /proc/$pid/fdinfo >> outout
-	for f in `/bin/ls /proc/$pid/fdinfo`; do
-		echo "/proc/$pid/fdinfo/$f:" >> outout
-		/bin/ls /proc/$pid/fdinfo/$f >> outout
-	done
-	for f in `/bin/ls /proc/$pid/fd`; do
-		echo "/proc/$pid/fd/$f:" >> outout
-		stat /proc/$pid/fd/$f >> outout
-	done
+In my nsfd tree if you look there is a new IFLA_NET_NS_FD attribute so should
+be able to update the existing code in ip that takes a netns by pid, and do
+a name based search first, and if you don't find the name and the value is
+numeric do a search by ip.
 
-Really, I'm assuming that the problem is either an inherited open fd to
-your pty, or an inherited nscd socket.  But let's see.
+> BTW is this the right ML to post this on ?
 
--serge
+For hashing out the idea this is fine.  Ultimately this conversation needs
+to hit netdev, before we merge all of this.
+
+That rough patch looks particularly promising.
+
+Eric
