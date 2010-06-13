@@ -1,20 +1,20 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
 Subject: Re: VRF-like use of Network Namespaces
-Date: Sun, 13 Jun 2010 02:43:49 -0700
-Message-ID: <m1ljajl12i.fsf@fess.ebiederm.org>
+Date: Sun, 13 Jun 2010 02:59:02 -0700
+Message-ID: <m11vcbl0d5.fsf@fess.ebiederm.org>
 References: <AANLkTimA_0aZwZM1uZ-GH3OxfEZvegoitaaKTYPLvW5F@mail.gmail.com>
 	<4C0E6466.3030100@free.fr>
 	<AANLkTik77W7F7BV7qp9ZQlM3yJCKNydHAMN47FaLTr7Z@mail.gmail.com>
 	<4C0EB0C5.8070904@free.fr>
 	<AANLkTinmsRRKdWaf8QONeRRJSQRXPhaUtY1cFv_JGcy8@mail.gmail.com>
 	<AANLkTilUNrMAeeUjHsXkTwd7Ysx0o9mdl8UaSUvG6wvf@mail.gmail.com>
+	<4C125BA4.4020300@free.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <AANLkTilUNrMAeeUjHsXkTwd7Ysx0o9mdl8UaSUvG6wvf-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-	(Mathieu Peresse's message of "Fri\,
-	11 Jun 2010 16\:47\:00 +0200")
+In-Reply-To: <4C125BA4.4020300-GANU6spQydw@public.gmane.org> (Daniel Lezcano's message of "Fri\,
+	11 Jun 2010 17\:52\:04 +0200")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,46 +24,81 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Mathieu Peresse <mathieu.peresse-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Mathieu Peresse <mathieu.peresse-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
+Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org> writes:
 
-> Hi,
+> On 06/11/2010 04:47 PM, Mathieu Peresse wrote:
+>> Hi,
+>>
+>> [this is related to the use of Eric Biederman's new set of patches for named
+>> netns / netns switching]
+>>
+>> ok so I successfully modified /sbin/ip. I can now:
+>> - add/del a new netns by name: "ip netns {addns,delns} ns_name"
+>> ->  The namespace files are mounted on /var/run/netns/ns_name (so you have to
+>> mkdir /var/run/netns/ for this to work).
+>>    
 >
-> [this is related to the use of Eric Biederman's new set of patches for named
-> netns / netns switching]
+> IMHO, the ip command is not suitable for this, it does not write 
+> anything to the fs.
+
+It does configuration by all kinds of means.  As far as it goes I
+think the ip command is perfectly suitable in this particular
+situation.  Having a vrf functionality in linux is very desirable.
+
+Getting this into ip has the major advantage that we will have a defacto
+standard, and using IFLA_NET_NS_FD makes a lot more sense if everything
+is in ip.
+
+> You should write you own command, which can be a perl script using the 
+> 'unshare' command (util-linux package on my distro).
 >
-> ok so I successfully modified /sbin/ip. I can now:
-> - add/del a new netns by name: "ip netns {addns,delns} ns_name"
-> -> The namespace files are mounted on /var/run/netns/ns_name (so you have to
-> mkdir /var/run/netns/ for this to work).
-> - list netns: "ip netns show"
-> - use /sbin/ip in any named netns: "ip -netns ns_name link show"
+> vrf create <name>
+> vrf delete <name>
+> vrf attach <name>
+> vrf list
 >
-> (rough patch against current git tree attached)
+> vrf create will bind mount the ns at the place you decided in the script 
+> (eg. a tmpfs in order to keep the directory consistent across (unclean) 
+> reboots).
 >
-> I want now to move devices across namespaces using their filesystem names
-> (instead of using PIDs...). I'm not sure I can do it in userspace with the
-> current code yet, can I ?
-> I saw there was a rtnetlink attribute to set the netns of a device but it
-> uses the PID of a namespace owner to do so... within 'ip' i can refer to
-> only one namespace (i.e. the one that 'ip' task_struct->ns_proxy currently
-> points to), so I won't be able to move an interface from outside my
-> namespace to my namespace...
-> I hope my explanation is clear and that this will get some interest... :)
+>> - list netns: "ip netns show"
+>> - use /sbin/ip in any named netns: "ip -netns ns_name link show"
+>>
+>> (rough patch against current git tree attached)
+>>
+>> I want now to move devices across namespaces using their filesystem names
+>> (instead of using PIDs...). I'm not sure I can do it in userspace with the
+>> current code yet, can I ?
+>>    
+> No, you can do that only with pids, but why don't you move the devices 
+> at the create time ?
+> You have all the latitude to do that, no ?
 
-In my nsfd tree if you look there is a new IFLA_NET_NS_FD attribute so should
-be able to update the existing code in ip that takes a netns by pid, and do
-a name based search first, and if you don't find the name and the value is
-numeric do a search by ip.
+Does my published tree not have IFLA_NET_NS_FD in it?
 
-> BTW is this the right ML to post this on ?
+>> I saw there was a rtnetlink attribute to set the netns of a device but it
+>> uses the PID of a namespace owner to do so... within 'ip' i can refer to
+>> only one namespace (i.e. the one that 'ip' task_struct->ns_proxy currently
+>> points to), so I won't be able to move an interface from outside my
+>> namespace to my namespace...
+>> I hope my explanation is clear and that this will get some interest... :)
+>>    
+>
+> Your 'create' command can open a fd to its current  netns, unshare a new 
+> namespace, bind mount it, and then return to the previously saved netns.
+>
+>> BTW is this the right ML to post this on ?
+>>    
+>
+> Well, this is something related to a subsystem of the containers, so it 
+> has some interest but I would suggest to send to the netdev@ mailing 
+> list (netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org), maybe cc'ing this mailing list.
 
-For hashing out the idea this is fine.  Ultimately this conversation needs
-to hit netdev, before we merge all of this.
-
-That rough patch looks particularly promising.
+Anyway it looks like time to post the core of my patchset for review,
+and get things moving on this.
 
 Eric
