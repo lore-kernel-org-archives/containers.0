@@ -1,30 +1,42 @@
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 8/8] af_unix: Allow connecting to sockets in other network
-	namespaces.
-Date: Tue, 15 Jun 2010 12:12:07 +0400
-Message-ID: <4C1735D7.3040701@openvz.org>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [PATCH 6/8] scm: Capture the full credentials of the scm sender.
+Date: Tue, 15 Jun 2010 02:53:57 -0700
+Message-ID: <m1r5k8bozu.fsf@fess.ebiederm.org>
 References: <m1hbl7hxo3.fsf@fess.ebiederm.org>
-	<m11vcbgimj.fsf@fess.ebiederm.org>
+	<m1d3vvgirx.fsf@fess.ebiederm.org> <4C173510.4030007@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m11vcbgimj.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <4C173510.4030007@openvz.org> (Pavel Emelyanov's message of "Tue\, 15 Jun 2010 12\:08\:48 +0400")
+Sender: netdev-owner@vger.kernel.org
+To: Pavel Emelyanov <xemul@openvz.org>
+Cc: David Miller <davem@davemloft.net>, Serge Hallyn <serue@us.ibm.com>, Linux Containers <containers@lists.osdl.org>, Daniel Lezcano <daniel.lezcano@free.fr>, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-> [snip]
-> 
-> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Pavel Emelyanov <xemul@openvz.org> writes:
 
-Acked-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+>> +static __inline__ void scm_destroy_cred(struct scm_cookie *scm)
+>> +{
+>> +	put_pid(scm->pid);
+>> +	scm->pid  = NULL;
+>> +
+>> +	if (scm->cred)
+>> +		put_cred(scm->cred);
+>> +	scm->cred = NULL;
+>> +}
+>> +
+>>  static __inline__ void scm_destroy(struct scm_cookie *scm)
+>>  {
+>> +	scm_destroy_cred(scm);
+>>  	if (scm && scm->fp)
+>>  		__scm_destroy(scm);
+>>  }
+>
+> I'm a bit worried by the "if (scm" check. It makes me think scm can
+> be NULL here and thus scm_destroy_cred can oops.
+
+Interesting point.  I just looked at all of the callers and scm
+appears to always be valid.
+
+Eric
+
