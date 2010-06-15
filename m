@@ -1,13 +1,13 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH RFC] nsproxy: strengthen the comment above copy_namespaces
-Date: Mon, 14 Jun 2010 22:54:13 -0400
-Message-ID: <4C16EB55.1090101@cs.columbia.edu>
-References: <20100430183638.GA29240@us.ibm.com>
+Subject: Re: [PATCH][cr][nit]: eclone() - Remove extra __user and add a comment
+Date: Mon, 14 Jun 2010 22:55:45 -0400
+Message-ID: <4C16EBB1.7000806@cs.columbia.edu>
+References: <20100504020439.GA5098@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100430183638.GA29240-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20100504020439.GA5098-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,40 +17,82 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, christofferdall-77OGu6e99YhyO3AAkE1OcX9LOBIZ5rWg@public.gmane.org, linux-lFZ/pmaqli7XmaaqVzeoHQ@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Serge -
 
-Is this intended for linux-cr ?
-Sounds like it should go (or already?) upstream.
+Applied in ckpt-v22-dev (will be pushed soon)
+
+Thanks,
 
 Oren.
 
-On 04/30/2010 02:36 PM, Serge E. Hallyn wrote:
-> copy_namespaces() cannot be used on a live task.  There are two
-> reasons - it can be used to assign another task's nsproxy, which
-> is not legal (for a live task).  And, it does not use
-> rcu_assign_pointer, so even when we're being extra-clever it is
-> unsafe.
+On 05/03/2010 10:04 PM, Sukadev Bhattiprolu wrote:
 > 
-> Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Sorry, I thought I had sent this minor patch out earlier, but I just
+> realized I had not.
 > ---
->  kernel/nsproxy.c |    3 +++
->  1 files changed, 3 insertions(+), 0 deletions(-)
 > 
-> diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
-> index f74e6c0..67d8f2b 100644
-> --- a/kernel/nsproxy.c
-> +++ b/kernel/nsproxy.c
-> @@ -115,6 +115,9 @@ out_ns:
->  /*
->   * called from clone.  This now handles copy for nsproxy and all
->   * namespaces therein.
-> + * Note this should only be used in fork.  Specifically, tsk should
-> + * not yet be a live task.  See the the unshare code for how to handle
-> + * that.
->   */
->  int copy_namespaces(unsigned long flags, struct task_struct *tsk)
->  {
+> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> Date: Mon, 3 May 2010 11:38:16 -0700
+> Subject: [PATCH 1/1] eclone(): Remove extra __user and add a comment
+> 
+> As pointed out by Russel King, '__user' does not make sense on an integer
+> type. Remove it. Also add a comment on why we want 'stack_size' to be 0
+> on x86 and s390.
+> 
+> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> ---
+>  arch/s390/kernel/process.c |    5 ++++-
+>  arch/x86/kernel/process.c  |    5 ++++-
+>  2 files changed, 8 insertions(+), 2 deletions(-)
+> 
+> diff --git a/arch/s390/kernel/process.c b/arch/s390/kernel/process.c
+> index efc7e8a..b00ffad 100644
+> --- a/arch/s390/kernel/process.c
+> +++ b/arch/s390/kernel/process.c
+> @@ -276,7 +276,7 @@ SYSCALL_DEFINE4(eclone, unsigned int, flags_low, struct clone_args __user *,
+>  	int __user *parent_tid_ptr;
+>  	int __user *child_tid_ptr;
+>  	unsigned long flags;
+> -	unsigned long __user child_stack;
+> +	unsigned long child_stack;
+>  	unsigned long stack_size;
+>  
+>  	rc = fetch_clone_args_from_user(uca, args_size, &kca);
+> @@ -288,6 +288,9 @@ SYSCALL_DEFINE4(eclone, unsigned int, flags_low, struct clone_args __user *,
+>  	child_tid_ptr =  (int __user *) kca.child_tid_ptr;
+>  
+>  	stack_size = (unsigned long) kca.child_stack_size;
+> +	/*
+> +	 * s390 does not need/use the stack_size. Ensure it is unused.
+> +	 */
+>  	if (stack_size)
+>  		return -EINVAL;
+>  
+> diff --git a/arch/x86/kernel/process.c b/arch/x86/kernel/process.c
+> index 5abad20..8b1699a 100644
+> --- a/arch/x86/kernel/process.c
+> +++ b/arch/x86/kernel/process.c
+> @@ -268,7 +268,7 @@ sys_eclone(unsigned flags_low, struct clone_args __user *uca,
+>  	unsigned long flags;
+>  	int __user *parent_tidp;
+>  	int __user *child_tidp;
+> -	unsigned long __user stack;
+> +	unsigned long stack;
+>  	unsigned long stack_size;
+>  
+>  	rc = fetch_clone_args_from_user(uca, args_size, &kca);
+> @@ -286,6 +286,9 @@ sys_eclone(unsigned flags_low, struct clone_args __user *uca,
+>  	parent_tidp = (int *)(unsigned long)kca.parent_tid_ptr;
+>  	child_tidp = (int *)(unsigned long)kca.child_tid_ptr;
+>  
+> +	/*
+> +	 * x86 does not need/use the stack_size. Ensure it is unused.
+> +	 */
+>  	stack_size = (unsigned long)kca.child_stack_size;
+>  	if (stack_size)
+>  		return -EINVAL;
+> 
+> 
