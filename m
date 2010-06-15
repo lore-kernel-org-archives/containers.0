@@ -1,42 +1,51 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH 6/8] scm: Capture the full credentials of the scm sender.
-Date: Tue, 15 Jun 2010 02:53:57 -0700
-Message-ID: <m1r5k8bozu.fsf@fess.ebiederm.org>
-References: <m1hbl7hxo3.fsf@fess.ebiederm.org>
-	<m1d3vvgirx.fsf@fess.ebiederm.org> <4C173510.4030007@openvz.org>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [PATCH 2/3] Make extract_headers.sh bring out the __NR_setns
+	symbol
+Date: Tue, 15 Jun 2010 10:30:12 -0400
+Message-ID: <4C178E74.1000108@cs.columbia.edu>
+References: <1274884956-21005-1-git-send-email-danms@us.ibm.com>
+	<1274884956-21005-3-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <4C173510.4030007@openvz.org> (Pavel Emelyanov's message of "Tue\, 15 Jun 2010 12\:08\:48 +0400")
-Sender: netdev-owner@vger.kernel.org
-To: Pavel Emelyanov <xemul@openvz.org>
-Cc: David Miller <davem@davemloft.net>, Serge Hallyn <serue@us.ibm.com>, Linux Containers <containers@lists.osdl.org>, Daniel Lezcano <daniel.lezcano@free.fr>, netdev@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1274884956-21005-3-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Pavel Emelyanov <xemul@openvz.org> writes:
 
->> +static __inline__ void scm_destroy_cred(struct scm_cookie *scm)
->> +{
->> +	put_pid(scm->pid);
->> +	scm->pid  = NULL;
->> +
->> +	if (scm->cred)
->> +		put_cred(scm->cred);
->> +	scm->cred = NULL;
->> +}
->> +
->>  static __inline__ void scm_destroy(struct scm_cookie *scm)
->>  {
->> +	scm_destroy_cred(scm);
->>  	if (scm && scm->fp)
->>  		__scm_destroy(scm);
->>  }
->
-> I'm a bit worried by the "if (scm" check. It makes me think scm can
-> be NULL here and thus scm_destroy_cred can oops.
 
-Interesting point.  I just looked at all of the callers and scm
-appears to always be valid.
+On 05/26/2010 10:42 AM, Dan Smith wrote:
+> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  scripts/extract-headers.sh |    2 +-
+>  1 files changed, 1 insertions(+), 1 deletions(-)
+> 
+> diff --git a/scripts/extract-headers.sh b/scripts/extract-headers.sh
+> index 8c8ae69..0deed98 100755
+> --- a/scripts/extract-headers.sh
+> +++ b/scripts/extract-headers.sh
+> @@ -144,7 +144,7 @@ echo '#endif /* _CHECKPOINT_CKPT_HDR_H_ */' >> "${OUTPUT_INCLUDES}/linux/checkpo
+>  # We use ARCH_COND to break up architecture-specific sections of the header.
+>  #
+>  ARCH_COND='#if'
+> -REGEX='[[:space:]]*#[[:space:]]*define[[:space:]]*__NR_(checkpoint|restart|clone_with_pids)[[:space:]]+[0-9]+'
+> +REGEX='[[:space:]]*#[[:space:]]*define[[:space:]]*__NR_(checkpoint|restart|clone_with_pids|setns)[[:space:]]+[0-9]+'
 
-Eric
+Which reminds me that "clone_with_pids" is now "eclone" ...
 
+Oren.
+
+>  
+>  cat - <<-EOFOE
+>  /*
