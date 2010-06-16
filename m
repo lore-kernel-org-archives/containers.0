@@ -1,98 +1,56 @@
-From: Louis Rilling <louis.rilling@kerlabs.com>
-Subject: [PATCH] procfs: Do not release pid_ns->proc_mnt too early
-Date: Wed, 16 Jun 2010 18:34:28 +0200
-Message-ID: <1276706068-18567-1-git-send-email-louis.rilling@kerlabs.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Oleg Nesterov <oleg@redhat.com>, Pavel Emelyanov <xemul@openvz.org>, Linux Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org, Louis Rilling <louis.rilling@kerlabs.com>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] Initialize the sem->sem_pending list after restoring
+Date: Wed, 16 Jun 2010 09:54:40 -0700
+Message-ID: <1276707280-28974-1-git-send-email-danms@us.ibm.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-[ Resending, hopefully with all pieces ]
+Right now, we leave (effectively) garbage in it after restart.  Not only
+must this be re-initialized (since we know it was empty on checkpoint), but
+it must be initialized after being copied into the final resting place.
 
-Detached tasks are not seen by zap_pid_ns_processes()->sys_wait4(), so
-that release_task()->proc_flush_task() of container init can be called
-before it is for some detached tasks in the namespace.
+Without this, you get lots of fun crashes in various places :)
 
-Pin proc_mnt's in copy_process(), so that proc_flush_task() becomes safe
-whatever the ordering of tasks.
-
-Signed-off-by: Louis Rilling <louis.rilling@kerlabs.com>
+Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- fs/proc/base.c          |   18 ++++++++++++++++++
- include/linux/proc_fs.h |    4 ++++
- kernel/fork.c           |    1 +
- 3 files changed, 23 insertions(+), 0 deletions(-)
+ ipc/checkpoint_sem.c |    5 ++++-
+ 1 files changed, 4 insertions(+), 1 deletions(-)
 
-diff --git a/fs/proc/base.c b/fs/proc/base.c
-index acb7ef8..d6cdd91 100644
---- a/fs/proc/base.c
-+++ b/fs/proc/base.c
-@@ -2663,6 +2663,23 @@ static const struct inode_operations proc_tgid_base_inode_operations = {
- 	.setattr	= proc_setattr,
- };
+diff --git a/ipc/checkpoint_sem.c b/ipc/checkpoint_sem.c
+index ab1830e..43e3cdf 100644
+--- a/ipc/checkpoint_sem.c
++++ b/ipc/checkpoint_sem.c
+@@ -171,7 +171,7 @@ int restore_ipc_sem(struct ckpt_ctx *ctx, struct ipc_namespace *ns)
+ 	struct sem_array *sem;
+ 	struct sem *sma = NULL;
+ 	struct ipc_ids *sem_ids = &ns->ids[IPC_SEM_IDS];
+-	int semflag, ret;
++	int semflag, ret, i;
  
-+/*
-+ * Pin all proc_mnt so that detached tasks can safely call proc_flush_task()
-+ * after container init calls itself proc_flush_task().
-+ */
-+void proc_new_task(struct task_struct *task)
-+{
-+	struct pid *pid;
-+	int i;
+ 	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_IPC_SEM);
+ 	if (IS_ERR(h))
+@@ -222,6 +222,9 @@ int restore_ipc_sem(struct ckpt_ctx *ctx, struct ipc_namespace *ns)
+ 	sem = container_of(ipc, struct sem_array, sem_perm);
+ 	memcpy(sem->sem_base, sma, sem->sem_nsems * sizeof(*sma));
+ 
++	for (i = 0; i < sem->sem_nsems; i++)
++		INIT_LIST_HEAD(&sem->sem_base[i].sem_pending);
 +
-+	if (!task->pid)
-+		return;
-+
-+	pid = task_pid(task);
-+	for (i = 0; i <= pid->level; i++)
-+		mntget(pid->numbers[i].ns->proc_mnt);
-+}
-+
- static void proc_flush_task_mnt(struct vfsmount *mnt, pid_t pid, pid_t tgid)
- {
- 	struct dentry *dentry, *leader, *dir;
-@@ -2744,6 +2761,7 @@ void proc_flush_task(struct task_struct *task)
- 		upid = &pid->numbers[i];
- 		proc_flush_task_mnt(upid->ns->proc_mnt, upid->nr,
- 					tgid->numbers[i].nr);
-+		mntput(upid->ns->proc_mnt);
- 	}
+ 	/* this is safe because no unauthorized access is possible */
+ 	ipc_unlock(ipc);
  
- 	upid = &pid->numbers[pid->level];
-diff --git a/include/linux/proc_fs.h b/include/linux/proc_fs.h
-index 379eaed..f24faa1 100644
---- a/include/linux/proc_fs.h
-+++ b/include/linux/proc_fs.h
-@@ -104,6 +104,7 @@ struct vmcore {
- 
- extern void proc_root_init(void);
- 
-+void proc_new_task(struct task_struct *task);
- void proc_flush_task(struct task_struct *task);
- 
- extern struct proc_dir_entry *create_proc_entry(const char *name, mode_t mode,
-@@ -184,6 +185,9 @@ extern void dup_mm_exe_file(struct mm_struct *oldmm, struct mm_struct *newmm);
- #define proc_net_fops_create(net, name, mode, fops)  ({ (void)(mode), NULL; })
- static inline void proc_net_remove(struct net *net, const char *name) {}
- 
-+static inline void proc_new_task(struct task_struct *task)
-+{
-+}
- static inline void proc_flush_task(struct task_struct *task)
- {
- }
-diff --git a/kernel/fork.c b/kernel/fork.c
-index b6cce14..c6c2874 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -1281,6 +1281,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
- 	total_forks++;
- 	spin_unlock(&current->sighand->siglock);
- 	write_unlock_irq(&tasklist_lock);
-+	proc_new_task(p);
- 	proc_fork_connector(p);
- 	cgroup_post_fork(p);
- 	perf_event_fork(p);
 -- 
-1.5.6.5
+1.7.0.4
