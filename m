@@ -1,7 +1,7 @@
 From: Louis Rilling <Louis.Rilling@kerlabs.com>
 Subject: Re: [PATCH] procfs: Do not release pid_ns->proc_mnt too early
-Date: Wed, 16 Jun 2010 18:15:37 +0200
-Message-ID: <20100616161537.GA16877@hawkmoon.kerlabs.com>
+Date: Wed, 16 Jun 2010 18:16:52 +0200
+Message-ID: <20100616161652.GB16877@hawkmoon.kerlabs.com>
 References: <1276703910-16936-1-git-send-email-louis.rilling@kerlabs.com> <4C18F625.9040107@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
@@ -30,14 +30,19 @@ On 16/06/10 20:04 +0400, Pavel Emelyanov wrote:
 > I feel I'm missing something significant, but this patch breaks
 > the mntget/mntput balance. Doesn't it?
 
-Why?
-
-all mntget() here have their mntput() in proc_flush_task(). At least, this is
-the intent...
+Gah. Sorry, the part in proc_flush_task() is missing. Will resend ASAP.
 
 Thanks,
 
 Louis
+
+> 
+> > +}
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Please read the FAQ at  http://www.tux.org/lkml/
 
 -- 
 Dr Louis Rilling			Kerlabs
