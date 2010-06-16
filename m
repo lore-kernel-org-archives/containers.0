@@ -1,15 +1,16 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH][cr][nit]: eclone() - Remove extra __user and add a	comment
-Date: Wed, 16 Jun 2010 15:36:08 -0400
-Message-ID: <4C1927A8.6050309@cs.columbia.edu>
-References: <20100504020439.GA5098@us.ibm.com>
-	<4C16EBB1.7000806@cs.columbia.edu>
-	<20100615224353.GA4985@us.ibm.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC][PATCH 3/3][cr][v2]: fileleases: C/R of an in-progress lease.
+Date: Wed, 16 Jun 2010 12:57:46 -0700
+Message-ID: <20100616195746.GA29256__21445.0201056481$1276717704$gmane$org@us.ibm.com>
+References: <1274836063-13271-1-git-send-email-sukadev@linux.vnet.ibm.com>
+	<1274836063-13271-4-git-send-email-sukadev@linux.vnet.ibm.com>
+	<4C18E534.80700@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100615224353.GA4985-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4C18E534.80700-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,96 +20,68 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, christofferdall-77OGu6e99YhyO3AAkE1OcX9LOBIZ5rWg@public.gmane.org, linux-lFZ/pmaqli7XmaaqVzeoHQ@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, matthew-Ztpu424NOJ8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
+| 
+| 
+| On 05/25/2010 09:07 PM, Sukadev Bhattiprolu wrote:
+| > If process P1 has a F_WRLCK lease on file F1 and process P2 opens the
+| > file, P2's open() blocks for lease_break_time (45 seconds) and P1 gets
+| > a SIGIO to cleanup it lease in preparation for P2's open.  If the two
+| > processes are checkpointed/restarted in this window, we should address
+| > following two issues:
+| > 
+| > 	- P1 should get a SIGIO only once for the lease (i.e if P1 got the
+| > 	  SIGIO before checkpoint, it should not get the SIGIO after restart).
+| 
+| The qualification "before" is vague in our case - a checkpoint is
+| potentially a length operation, so before *which part* of the
+| checkpoint you mean here ?
 
-Since I haven't pushed this yet, do you want me to un-pull
-this patch then ?
+I should have been more specific. I meant - if P1 got the SIGIO before
+freezing the container for checkpoint, it should not get the SIGIO after
+restart/unfreeze. So checkpoint can take minutes, but if P2 is in the
+same container and P2 is frozen too.
 
-Sukadev Bhattiprolu wrote:
-> Oh, well, Albert pointed out we could make all architectures specify
-> stack as base and offset so applications won't need #ifdefs. I am
-> planning on resending the eclone patchset with that change. So
-> the following change is not needed now.
-> 
-> Sukadev
-> 
-> Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
-> | 
-> | Applied in ckpt-v22-dev (will be pushed soon)
-> | 
-> | Thanks,
-> | 
-> | Oren.
-> | 
-> | On 05/03/2010 10:04 PM, Sukadev Bhattiprolu wrote:
-> | > 
-> | > Sorry, I thought I had sent this minor patch out earlier, but I just
-> | > realized I had not.
-> | > ---
-> | > 
-> | > From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> | > Date: Mon, 3 May 2010 11:38:16 -0700
-> | > Subject: [PATCH 1/1] eclone(): Remove extra __user and add a comment
-> | > 
-> | > As pointed out by Russel King, '__user' does not make sense on an integer
-> | > type. Remove it. Also add a comment on why we want 'stack_size' to be 0
-> | > on x86 and s390.
-> | > 
-> | > Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> | > ---
-> | >  arch/s390/kernel/process.c |    5 ++++-
-> | >  arch/x86/kernel/process.c  |    5 ++++-
-> | >  2 files changed, 8 insertions(+), 2 deletions(-)
-> | > 
-> | > diff --git a/arch/s390/kernel/process.c b/arch/s390/kernel/process.c
-> | > index efc7e8a..b00ffad 100644
-> | > --- a/arch/s390/kernel/process.c
-> | > +++ b/arch/s390/kernel/process.c
-> | > @@ -276,7 +276,7 @@ SYSCALL_DEFINE4(eclone, unsigned int, flags_low, struct clone_args __user *,
-> | >  	int __user *parent_tid_ptr;
-> | >  	int __user *child_tid_ptr;
-> | >  	unsigned long flags;
-> | > -	unsigned long __user child_stack;
-> | > +	unsigned long child_stack;
-> | >  	unsigned long stack_size;
-> | >  
-> | >  	rc = fetch_clone_args_from_user(uca, args_size, &kca);
-> | > @@ -288,6 +288,9 @@ SYSCALL_DEFINE4(eclone, unsigned int, flags_low, struct clone_args __user *,
-> | >  	child_tid_ptr =  (int __user *) kca.child_tid_ptr;
-> | >  
-> | >  	stack_size = (unsigned long) kca.child_stack_size;
-> | > +	/*
-> | > +	 * s390 does not need/use the stack_size. Ensure it is unused.
-> | > +	 */
-> | >  	if (stack_size)
-> | >  		return -EINVAL;
-> | >  
-> | > diff --git a/arch/x86/kernel/process.c b/arch/x86/kernel/process.c
-> | > index 5abad20..8b1699a 100644
-> | > --- a/arch/x86/kernel/process.c
-> | > +++ b/arch/x86/kernel/process.c
-> | > @@ -268,7 +268,7 @@ sys_eclone(unsigned flags_low, struct clone_args __user *uca,
-> | >  	unsigned long flags;
-> | >  	int __user *parent_tidp;
-> | >  	int __user *child_tidp;
-> | > -	unsigned long __user stack;
-> | > +	unsigned long stack;
-> | >  	unsigned long stack_size;
-> | >  
-> | >  	rc = fetch_clone_args_from_user(uca, args_size, &kca);
-> | > @@ -286,6 +286,9 @@ sys_eclone(unsigned flags_low, struct clone_args __user *uca,
-> | >  	parent_tidp = (int *)(unsigned long)kca.parent_tid_ptr;
-> | >  	child_tidp = (int *)(unsigned long)kca.child_tid_ptr;
-> | >  
-> | > +	/*
-> | > +	 * x86 does not need/use the stack_size. Ensure it is unused.
-> | > +	 */
-> | >  	stack_size = (unsigned long)kca.child_stack_size;
-> | >  	if (stack_size)
-> | >  		return -EINVAL;
-> | > 
-> | > 
-> 
+| > 
+| > 	- If R seconds remain in the lease, P2's open should be blocked for
+| > 	  at least the R seconds, so P1 has the time to clean up its lease.
+| > 	  The previous patch gives P1 the entire lease_break_time but that
+| > 	  can leave P2 stalled for 2*lease_break_time.
+| > 
+| > To address first, we add a field ->fl_break_notified to "remember" if we
+| > notified the lease-holder already. We save this field in the checkpoint
+| > image and when restarting, we notify the lease-holder only if this field
+| > is not set.
+| 
+| I'm not sure I understand.
+| 
+| Signals are saved last, in particular they are saved after files, and
+| file leases. What happens if we at checkpoint, we look at a file lease -
+| we save the least_break_time, now we proceed with the checkpoint, now
+| the lease expires before we are done, so we get a signal, and finally
+| we save the signals. In this case, we get both an expiry time and the
+| signal recorded.
+| 
+| (Am I mis-reading the code ?)
+
+The signal is sent when P2 opens the file and lease-break is initiated.
+No signal is sent when the lease actually expires.
+
+So when P1 and P2 are *both frozen*, then only one of these are true right ?
+
+	- P2 initiated the lease-break and sent the SIGIO or
+	- the lease-break was not initiated at all
+
+As youmentioned in your other email, I will look into the ctx->ktime_begin.
+| 
+| It seems to me that we need to mark the file lease at checkpoint to
+| prevent the signal from being sent until _after_ the checkpoint ends
+| (as opposed to remembering that the signal was sent). And then at the
+| end of the checkpoint, iterate through the leases for each marked
+| lease - remove the mark and fire the signal.
+| 
+| Oren.
