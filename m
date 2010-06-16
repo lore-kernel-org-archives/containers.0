@@ -1,15 +1,11 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC][PATCH 3/3][cr][v2]: fileleases: C/R of an in-progress lease.
-Date: Wed, 16 Jun 2010 11:08:04 -0400
-Message-ID: <4C18E8D4.7000705__32193.0883139887$1276700965$gmane$org@cs.columbia.edu>
-References: <1274836063-13271-1-git-send-email-sukadev@linux.vnet.ibm.com>
-	<1274836063-13271-4-git-send-email-sukadev@linux.vnet.ibm.com>
-	<20100616111843.GA15054@shareable.org>
+From: Louis Rilling <louis.rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
+Subject: [PATCH] procfs: Do not release pid_ns->proc_mnt too early
+Date: Wed, 16 Jun 2010 17:58:30 +0200
+Message-ID: <1276703910-16936-1-git-send-email-louis.rilling@kerlabs.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100616111843.GA15054-yetKDKU6eevNLxjTenLetw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,90 +15,85 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jamie Lokier <jamie-yetKDKU6eevNLxjTenLetw@public.gmane.org>
-Cc: matthew-Ztpu424NOJ8@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Detached tasks are not seen by zap_pid_ns_processes()->sys_wait4(), so
+that release_task()->proc_flush_task() of container init can be called
+before it is for some detached tasks in the namespace.
 
+Pin proc_mnt's in copy_process(), so that proc_flush_task() becomes safe
+whatever the ordering of tasks.
 
-On 06/16/2010 07:18 AM, Jamie Lokier wrote:
-> Sukadev Bhattiprolu wrote:
->> If process P1 has a F_WRLCK lease on file F1 and process P2 opens the
->> file, P2's open() blocks for lease_break_time (45 seconds) and P1 gets
->> a SIGIO to cleanup it lease in preparation for P2's open.  If the two
->> processes are checkpointed/restarted in this window, we should address
->> following two issues:
->>
->> 	- P1 should get a SIGIO only once for the lease (i.e if P1 got the
->> 	  SIGIO before checkpoint, it should not get the SIGIO after restart).
->>
->> 	- If R seconds remain in the lease, P2's open should be blocked for
->> 	  at least the R seconds, so P1 has the time to clean up its lease.
->> 	  The previous patch gives P1 the entire lease_break_time but that
->> 	  can leave P2 stalled for 2*lease_break_time.
->>
->> To address first, we add a field ->fl_break_notified to "remember" if we
->> notified the lease-holder already. We save this field in the checkpoint
->> image and when restarting, we notify the lease-holder only if this field
->> is not set.
->>
->> To address the second issue, we also checkpoint the ->fl_break_time for
->> an in-progress lease. When restarting the process, we ensure that the
->> lease-holder sleeps only for the remaining-lease rather than the entire
->> lease.
->>
->> These two fixes sound like an approximation (see comments in do_setlease()
->> and __break_lease() below) and are also a bit kludgy (hence a separate patch
->> for now).
->>
->> Appreciate comments on how we can do this better. Specifically:
->>
->> 	- do we even need to try and address the second issue above or
->> 	  just let P1 have the entire lease_break_time again ?
->>
->> 	- theoretically, the R seconds should start counting after *all*
->> 	  processes in the application-process tree have been restarted,
->> 	  since P1 waits inside the kernel for a portion of the remaining
->> 	  lease - should we then add a delta to R ?
-> 
-> For P1 running out of time would be an abnormal error condition which
-> it might not be prepared to handle gracefully, and it's best if c/r
-> doesn't add new ones of those, perhaps due to the process tree restart
-> taking up too much of the time, perhaps exarcerbated by the processes
-> themselves if they take a burst of CPU reacting to the restart.
-> 
-> Also, P1 userspace may use an algorithm which is dependent on
-> lease_break_time, so it can do "check for lease break events -> no
-> events", and subsequently "check the time" is sufficient to confirm
-> that a particular file has not been opened and its contents can be
-> assumed unchanged.  Checking the time is faster.
-> 
-> P2 is unlikely to care about the timeout, as long as it doesn't get
-> permanently stuck.
-> 
-> So I would let P1 have the lease_break_time again, and/or set the
-> times ticking after the whole process tree is restarted and make sure
-> to round up any errors in favour of P1.
-> 
-> -- Jamie
-> 
+Signed-off-by: Louis Rilling <louis.rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
+---
+ fs/proc/base.c          |   17 +++++++++++++++++
+ include/linux/proc_fs.h |    4 ++++
+ kernel/fork.c           |    1 +
+ 3 files changed, 22 insertions(+), 0 deletions(-)
 
-For what it's worth, the restored break-time will be relative to after
-all the processes are created (because that's where the kernel part of
-the restart begins) - but yes, before they are fully restored.
-
-So the problem that you describe exists, however I'm uncomfortable with
-forcing this behavior in the kernel - because they may be other cases
-in which userspace expect the lease to end within a certain time, and
-such behavior may break it.
-
-An alternative approach would be to modify the value of the lease break
-time in _userspace_ - eg. by "massasging" the checkpoint image as we
-feed it to the kenrel. This provides the flexibility to choose which
-policy to use, by the application user/developer.
-
-For example, we could have 'restart --lease-reset ...." parameter to
-induce this behavior, or have it be default, and use 'restart --lease-keep'
-to avoid it.
-
-Oren.
+diff --git a/fs/proc/base.c b/fs/proc/base.c
+index acb7ef8..4d7328f 100644
+--- a/fs/proc/base.c
++++ b/fs/proc/base.c
+@@ -2663,6 +2663,23 @@ static const struct inode_operations proc_tgid_base_inode_operations = {
+ 	.setattr	= proc_setattr,
+ };
+ 
++/*
++ * Pin all proc_mnt so that detached tasks can safely call proc_flush_task()
++ * after container init calls itself proc_flush_task().
++ */
++void proc_new_task(struct task_struct *task)
++{
++	struct pid *pid;
++	int i;
++
++	if (!task->pid)
++		return;
++
++	pid = task_pid(task);
++	for (i = 0; i <= pid->level; i++)
++		mntget(pid->numbers[i].ns->proc_mnt);
++}
++
+ static void proc_flush_task_mnt(struct vfsmount *mnt, pid_t pid, pid_t tgid)
+ {
+ 	struct dentry *dentry, *leader, *dir;
+diff --git a/include/linux/proc_fs.h b/include/linux/proc_fs.h
+index 379eaed..f24faa1 100644
+--- a/include/linux/proc_fs.h
++++ b/include/linux/proc_fs.h
+@@ -104,6 +104,7 @@ struct vmcore {
+ 
+ extern void proc_root_init(void);
+ 
++void proc_new_task(struct task_struct *task);
+ void proc_flush_task(struct task_struct *task);
+ 
+ extern struct proc_dir_entry *create_proc_entry(const char *name, mode_t mode,
+@@ -184,6 +185,9 @@ extern void dup_mm_exe_file(struct mm_struct *oldmm, struct mm_struct *newmm);
+ #define proc_net_fops_create(net, name, mode, fops)  ({ (void)(mode), NULL; })
+ static inline void proc_net_remove(struct net *net, const char *name) {}
+ 
++static inline void proc_new_task(struct task_struct *task)
++{
++}
+ static inline void proc_flush_task(struct task_struct *task)
+ {
+ }
+diff --git a/kernel/fork.c b/kernel/fork.c
+index b6cce14..c6c2874 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -1281,6 +1281,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 	total_forks++;
+ 	spin_unlock(&current->sighand->siglock);
+ 	write_unlock_irq(&tasklist_lock);
++	proc_new_task(p);
+ 	proc_fork_connector(p);
+ 	cgroup_post_fork(p);
+ 	perf_event_fork(p);
+-- 
+1.5.6.5
