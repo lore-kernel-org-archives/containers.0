@@ -1,45 +1,55 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH 2/8] user_ns: Introduce user_nsmap_uid and user_ns_map_gid.
-Date: Tue, 15 Jun 2010 15:37:51 -0700
-Message-ID: <m1typ3udkw.fsf@fess.ebiederm.org>
+From: "Serge E. Hallyn" <serge@hallyn.com>
+Subject: Re: [PATCH 6/8] scm: Capture the full credentials of the scm
+ sender.
+Date: Tue, 15 Jun 2010 23:47:19 -0500
+Message-ID: <20100616044719.GA23863@hallyn.com>
 References: <m1hbl7hxo3.fsf@fess.ebiederm.org>
-	<m1d3vvhxlj.fsf@fess.ebiederm.org>
-	<m17hm3hxjw.fsf_-_@fess.ebiederm.org> <4C173389.1010000@openvz.org>
+ <m1d3vvgirx.fsf@fess.ebiederm.org>
+ <20100615214541.GA22570@hallyn.com>
+ <m1sk4oueym.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <4C173389.1010000@openvz.org> (Pavel Emelyanov's message of "Tue\, 15 Jun 2010 12\:02\:17 +0400")
+Content-Disposition: inline
+In-Reply-To: <m1sk4oueym.fsf@fess.ebiederm.org>
 Sender: netdev-owner@vger.kernel.org
-To: Pavel Emelyanov <xemul@openvz.org>
-Cc: David Miller <davem@davemloft.net>, Serge Hallyn <serue@us.ibm.com>, Linux Containers <containers@lists.osdl.org>, Daniel Lezcano <daniel.lezcano@free.fr>, netdev@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: David Miller <davem@davemloft.net>, Linux Containers <containers@lists.osdl.org>, Serge Hallyn <serue@us.ibm.com>, Pavel Emelyanov <xemul@parallels.com>, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Pavel Emelyanov <xemul@openvz.org> writes:
+Quoting Eric W. Biederman (ebiederm@xmission.com):
+> "Serge E. Hallyn" <serge@hallyn.com> writes:
+> > I think this hunk needs to be documented.  I.e. given that scm_send()
+> > will call scm_set_cred() before calling __scm_send, I don't see how
+> > these conditions could happen?  If the condition can legitimately
+> > happen, then given all of the pid_t vs struct pid and 'cred' vs. 'creds'
+> > in these two hunks, I think a comment over each would be nice.
+> 
+> I think if you have the full context of __scm_send it becomes pretty obvious.
+> 
+> 		case SCM_CREDENTIALS:
+> 			if (cmsg->cmsg_len != CMSG_LEN(sizeof(struct ucred)))
+> 				goto error;
+> 			memcpy(&p->creds, CMSG_DATA(cmsg), sizeof(struct ucred));
+> 			err = scm_check_creds(&p->creds);
+> 			if (err)
+> 				goto error;
+> 
+> At this point we have just copied ucred from userspace.  We have done
+> scm_check_creds to ensure we allow the user to send the pid, uid, and
+> gid they have passed in.
+> 
+> These tests catch the case where the user is legitimately sending
+> something other than their own credentials.
 
-> On 06/13/2010 05:28 PM, Eric W. Biederman wrote:
->> 
->> Define what happens when a we view a uid from one user_namespace
->> in another user_namepece.
->> 
->> - If the user namespaces are the same no mapping is necessary.
->> 
->> - For most cases of difference use overflowuid and overflowgid,
->>   the uid and gid currently used for 16bit apis when we have a 32bit uid
->>   that does fit in 16bits.  Effectively the situation is the same,
->>   we want to return a uid or gid that is not assigned to any user.
->> 
->> - For the case when we happen to be mapping the uid or gid of the
->>   creator of the target user namespace use uid 0 and gid as confusing
->>   that user with root is not a problem.
->> 
->> Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
->
-> I suppose this one should go via Andrew, not Dave.
+Of course.  Sorry.  And I even had the context in the window next to the
+email...  So finally,
 
-If it was stand alone I would send it that way.
+Acked-by: Serge E. Hallyn <serge@hallyn.com>
 
-In this case I'm hope Dave will indulge me because this bit is
-simple, the only user for now is the network stack, and the people
-maintaining the code have already acked the patch.
+to the set, and I'm looking forward to this being in.  And it should solve
+the nuisance of containers without private netns rebooting their hosts
+when both use upstart.
 
-Eric
+thanks,
+-serge
