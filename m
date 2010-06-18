@@ -1,13 +1,13 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC] checkpoint: un-blacklist VM_NORESERVE
-Date: Fri, 18 Jun 2010 11:33:35 -0400
-Message-ID: <4C1B91CF.6070701@cs.columbia.edu>
-References: <1276808838.6401.6.camel@localhost>
+Subject: Re: [RFC] checkpoint: handle more siginfo->si_code values
+Date: Fri, 18 Jun 2010 11:58:17 -0400
+Message-ID: <4C1B9799.5040302@cs.columbia.edu>
+References: <1276814259.6401.21.camel@localhost>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1276808838.6401.6.camel@localhost>
+In-Reply-To: <1276814259.6401.21.camel@localhost>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,44 +22,92 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
-On 06/17/2010 05:07 PM, Nathan Lynch wrote:
-> While a region mapped with MAP_NORESERVE may segv on a write in
-> low-memory conditions, reading it (as we do during checkpoint) is
-> fine.  Remove the VM_NORESERVE flag from CKPT_VMA_NOT_SUPPORTED.
+
+On 06/17/2010 06:37 PM, Nathan Lynch wrote:
+> I have a multithreaded testcase that easily hits the BUG() in
+> fill_siginfo() by raise()'ing a signal it has blocked before
+> checkpoint.  The value of si_code in this case is SI_TKILL.
+
+Thanks for pointing out - this was indeed overlooked.
+
 > 
+> This gets my testcase to pass, but I'm not sure it's a complete
+> solution...  comments?
 > ---
+>  kernel/signal.c |    8 ++++++--
+>  1 files changed, 6 insertions(+), 2 deletions(-)
 > 
-> Oren, what do you think about this?  I've tested this lightly with no
-> apparent problems; is there some reason I'm missing to not support
-> MAP_NORESERVE regions?
+> diff --git a/kernel/signal.c b/kernel/signal.c
+> index e4ca9a6..cd25592 100644
+> --- a/kernel/signal.c
+> +++ b/kernel/signal.c
+> @@ -2919,6 +2919,9 @@ static void fill_siginfo(struct ckpt_siginfo *si, siginfo_t *info)
+>  	si->_errno = info->si_errno;
+>  	si->code = info->si_code;
+>  
+> +	if (info->si_code < 0)
+> +		return;
+> +
 
-Sounds reasonable. I originally left it out because I wasn't sure.
-In particular, my concern was whether a user may cause troubles by
-specifying this flag. Now I looked deeper, and I think it's safe.
+This means that we do not save (nor restore) additional state
+related to signals from tkill() syscall, or from other kernel
+generated signals.
 
-Note, however, it isn't enough to allow the flag, we also need to
-modify calc_map_flags_bits() to reintroduce MAP_NORESERVE for the
-flags argument to do_mmap_pgoff(). Otherwise it won't be restored
-at restart...
+For example -
 
-No need to repost the patch. I'll do it.
+---
+static int do_tkill(pid_t tgid, pid_t pid, int sig)
+{
+        struct siginfo info;
+
+        info.si_signo = sig;
+        info.si_errno = 0;
+        info.si_code = SI_TKILL;
+        info.si_pid = task_tgid_vnr(current);
+        info.si_uid = current_uid();
+
+        return do_send_specific(tgid, pid, sig, &info);
+}
+---
+
+In this case, we lose the values of @si_pid and @si_uid fields.
+
+The correct solution would be to examine each si_code < 0 and
+add to the switch() statements (both checkpoint and restart)
+to save/restart the additional information. (If it does not
+carry more info, then add to the switch and do nothing).
+
+>  	/* TODO: convert info->si_uid to uid_objref */
+>  
+>  	switch (info->si_code & __SI_MASK) {
+> @@ -2953,7 +2956,8 @@ static void fill_siginfo(struct ckpt_siginfo *si, siginfo_t *info)
+>  		si->sigval_ptr = (unsigned long) info->si_ptr;
+>  		break;
+>  	default:
+> -		BUG();
+> +		ckpt_debug("unknown si_code 0x%x\n", info->si_code);
+> +		break;
+
+The reason I put a BUG there, is to make a kernel bug visible...
+and it surely worked :)
+
+>  	}
+>  }
+>  
+> @@ -3002,7 +3006,7 @@ static int load_siginfo(siginfo_t *info, struct ckpt_siginfo *si)
+>  		info->si_ptr = (void __user *) (unsigned long) si->sigval_ptr;
+>  		break;
+>  	default:
+> -		return -EINVAL;
+> +		break;
+
+Nack. This will allow users to inject arbitrary values here (at
+the moment it's probably harmless, I think, but the kernel could
+rely on values there).
+
+Instead, let's add the missing si_code values explicitly to the
+switch statement.
+
+Thanks,
 
 Oren.
-
-> 
->  include/linux/checkpoint.h |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
-> 
-> diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-> index 84bb7a9..f3e0d11 100644
-> --- a/include/linux/checkpoint.h
-> +++ b/include/linux/checkpoint.h
-> @@ -301,7 +301,7 @@ extern int restore_memory_contents(struct ckpt_ctx *ctx, struct inode *inode);
->  
->  #define CKPT_VMA_NOT_SUPPORTED						\
->  	(VM_IO | VM_HUGETLB | VM_NONLINEAR | VM_PFNMAP |		\
-> -	 VM_RESERVED | VM_NORESERVE | VM_HUGETLB | VM_NONLINEAR |	\
-> +	 VM_RESERVED | VM_HUGETLB | VM_NONLINEAR |	\
->  	 VM_MAPPED_COPY | VM_INSERTPAGE | VM_MIXEDMAP | VM_SAO)
->  
->  /* signals */
