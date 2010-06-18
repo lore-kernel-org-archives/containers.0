@@ -1,113 +1,145 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC] checkpoint: handle more siginfo->si_code values
-Date: Fri, 18 Jun 2010 11:58:17 -0400
-Message-ID: <4C1B9799.5040302@cs.columbia.edu>
-References: <1276814259.6401.21.camel@localhost>
+From: Oleg Nesterov <oleg@redhat.com>
+Subject: Re: [PATCH] procfs: Do not release pid_ns->proc_mnt too early
+Date: Fri, 18 Jun 2010 18:08:49 +0200
+Message-ID: <20100618160849.GA7404@redhat.com>
+References: <1276706068-18567-1-git-send-email-louis.rilling@kerlabs.com> <20100617212003.GA4182@redhat.com> <20100618082033.GD16877@hawkmoon.kerlabs.com> <20100618111554.GA3252@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1276814259.6401.21.camel@localhost>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <20100618111554.GA3252@redhat.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>, Pavel Emelyanov <xemul@openvz.org>, Linux Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org, Louis Rilling <Louis.Rillin>
 List-Id: containers.vger.kernel.org
 
+On 06/18, Oleg Nesterov wrote:
+>
+> On 06/18, Louis Rilling wrote:
+> >
+> > On 17/06/10 23:20 +0200, Oleg Nesterov wrote:
+> > > On 06/16, Louis Rilling wrote:
+> > > >
+> > > > Detached tasks are not seen by zap_pid_ns_processes()->sys_wait4(), so
+> > > > that release_task()->proc_flush_task() of container init can be called
+> > > > before it is for some detached tasks in the namespace.
+> > > >
+> > > > Pin proc_mnt's in copy_process(), so that proc_flush_task() becomes safe
+> > > > whatever the ordering of tasks.
+> > >
+> > > I must have missed something, but can't we just move mntput() ?
+> >
+> > See the log of the commit introducing pid_ns_release_proc() (6f4e6433):
+> >
+> >     Sice the namespace holds the vfsmnt, vfsmnt holds the superblock and the
+> >     superblock holds the namespace we must explicitly break this circle to destroy
+> >     all the stuff.  This is done after the init of the namespace dies.
+>
+> I see thanks.
 
+Not sure I ever understood this code. Certainly I can't say I understand
+it now. Still, do we really need this circle? I am almost sure the patch
+below is not right (and it wasn't tested at all), but could you take a
+look?
 
-On 06/17/2010 06:37 PM, Nathan Lynch wrote:
-> I have a multithreaded testcase that easily hits the BUG() in
-> fill_siginfo() by raise()'ing a signal it has blocked before
-> checkpoint.  The value of si_code in this case is SI_TKILL.
+Note: afaics we have another problem. What if copy_process(CLONE_NEWPID)
+fails after pid_ns_prepare_proc() ? Who will do mntput() ? This patch
+should fix this too (again, ___if___ it correct).
 
-Thanks for pointing out - this was indeed overlooked.
+Oleg.
 
-> 
-> This gets my testcase to pass, but I'm not sure it's a complete
-> solution...  comments?
-> ---
->  kernel/signal.c |    8 ++++++--
->  1 files changed, 6 insertions(+), 2 deletions(-)
-> 
-> diff --git a/kernel/signal.c b/kernel/signal.c
-> index e4ca9a6..cd25592 100644
-> --- a/kernel/signal.c
-> +++ b/kernel/signal.c
-> @@ -2919,6 +2919,9 @@ static void fill_siginfo(struct ckpt_siginfo *si, siginfo_t *info)
->  	si->_errno = info->si_errno;
->  	si->code = info->si_code;
->  
-> +	if (info->si_code < 0)
-> +		return;
-> +
+ include/linux/pid_namespace.h |    1 +
+ kernel/pid_namespace.c        |    3 +++
+ fs/proc/base.c                |    4 ----
+ fs/proc/root.c                |   18 ++++++++++++++----
+ 4 files changed, 18 insertions(+), 8 deletions(-)
 
-This means that we do not save (nor restore) additional state
-related to signals from tkill() syscall, or from other kernel
-generated signals.
-
-For example -
-
----
-static int do_tkill(pid_t tgid, pid_t pid, int sig)
-{
-        struct siginfo info;
-
-        info.si_signo = sig;
-        info.si_errno = 0;
-        info.si_code = SI_TKILL;
-        info.si_pid = task_tgid_vnr(current);
-        info.si_uid = current_uid();
-
-        return do_send_specific(tgid, pid, sig, &info);
-}
----
-
-In this case, we lose the values of @si_pid and @si_uid fields.
-
-The correct solution would be to examine each si_code < 0 and
-add to the switch() statements (both checkpoint and restart)
-to save/restart the additional information. (If it does not
-carry more info, then add to the switch and do nothing).
-
->  	/* TODO: convert info->si_uid to uid_objref */
->  
->  	switch (info->si_code & __SI_MASK) {
-> @@ -2953,7 +2956,8 @@ static void fill_siginfo(struct ckpt_siginfo *si, siginfo_t *info)
->  		si->sigval_ptr = (unsigned long) info->si_ptr;
->  		break;
->  	default:
-> -		BUG();
-> +		ckpt_debug("unknown si_code 0x%x\n", info->si_code);
-> +		break;
-
-The reason I put a BUG there, is to make a kernel bug visible...
-and it surely worked :)
-
->  	}
->  }
->  
-> @@ -3002,7 +3006,7 @@ static int load_siginfo(siginfo_t *info, struct ckpt_siginfo *si)
->  		info->si_ptr = (void __user *) (unsigned long) si->sigval_ptr;
->  		break;
->  	default:
-> -		return -EINVAL;
-> +		break;
-
-Nack. This will allow users to inject arbitrary values here (at
-the moment it's probably harmless, I think, but the kernel could
-rely on values there).
-
-Instead, let's add the missing si_code values explicitly to the
-switch statement.
-
-Thanks,
-
-Oren.
+--- 34-rc1/include/linux/pid_namespace.h~PID_NS	2010-06-18 17:48:56.000000000 +0200
++++ 34-rc1/include/linux/pid_namespace.h	2010-06-18 17:53:11.000000000 +0200
+@@ -26,6 +26,7 @@ struct pid_namespace {
+ 	struct pid_namespace *parent;
+ #ifdef CONFIG_PROC_FS
+ 	struct vfsmount *proc_mnt;
++	struct work_struct proc_put;
+ #endif
+ #ifdef CONFIG_BSD_PROCESS_ACCT
+ 	struct bsd_acct_struct *bacct;
+--- 34-rc1/kernel/pid_namespace.c~PID_NS	2010-06-18 17:48:56.000000000 +0200
++++ 34-rc1/kernel/pid_namespace.c	2010-06-18 17:53:44.000000000 +0200
+@@ -10,6 +10,7 @@
+ 
+ #include <linux/pid.h>
+ #include <linux/pid_namespace.h>
++#include <linux/proc_fs.h>
+ #include <linux/syscalls.h>
+ #include <linux/err.h>
+ #include <linux/acct.h>
+@@ -109,6 +110,8 @@ static void destroy_pid_namespace(struct
+ {
+ 	int i;
+ 
++	pid_ns_release_proc(ns);
++
+ 	for (i = 0; i < PIDMAP_ENTRIES; i++)
+ 		kfree(ns->pidmap[i].page);
+ 	kmem_cache_free(pid_ns_cachep, ns);
+--- 34-rc1/fs/proc/base.c~PID_NS	2010-06-18 17:48:56.000000000 +0200
++++ 34-rc1/fs/proc/base.c	2010-06-18 17:49:45.000000000 +0200
+@@ -2720,10 +2720,6 @@ void proc_flush_task(struct task_struct 
+ 		proc_flush_task_mnt(upid->ns->proc_mnt, upid->nr,
+ 					tgid->numbers[i].nr);
+ 	}
+-
+-	upid = &pid->numbers[pid->level];
+-	if (upid->nr == 1)
+-		pid_ns_release_proc(upid->ns);
+ }
+ 
+ static struct dentry *proc_pid_instantiate(struct inode *dir,
+--- 34-rc1/fs/proc/root.c~PID_NS	2010-06-18 17:48:56.000000000 +0200
++++ 34-rc1/fs/proc/root.c	2010-06-18 17:56:57.000000000 +0200
+@@ -31,7 +31,7 @@ static int proc_set_super(struct super_b
+ 	struct pid_namespace *ns;
+ 
+ 	ns = (struct pid_namespace *)data;
+-	sb->s_fs_info = get_pid_ns(ns);
++	sb->s_fs_info = ns;
+ 	return set_anon_super(sb, NULL);
+ }
+ 
+@@ -74,7 +74,7 @@ static int proc_get_sb(struct file_syste
+ 		ei = PROC_I(sb->s_root->d_inode);
+ 		if (!ei->pid) {
+ 			rcu_read_lock();
+-			ei->pid = get_pid(find_pid_ns(1, ns));
++			ei->pid = find_pid_ns(1, ns);
+ 			rcu_read_unlock();
+ 		}
+ 
+@@ -92,7 +92,6 @@ static void proc_kill_sb(struct super_bl
+ 
+ 	ns = (struct pid_namespace *)sb->s_fs_info;
+ 	kill_anon_super(sb);
+-	put_pid_ns(ns);
+ }
+ 
+ static struct file_system_type proc_fs_type = {
+@@ -216,7 +215,18 @@ int pid_ns_prepare_proc(struct pid_names
+ 	return 0;
+ }
+ 
+-void pid_ns_release_proc(struct pid_namespace *ns)
++static void proc_mntput(struct work_struct *work)
+ {
++	struct pid_namespace *ns = container_of(work, struct pid_namespace, proc_put);
++
++	PROC_I(ns->proc_mnt->mnt_sb->s_root->d_inode)->pid = NULL;
+ 	mntput(ns->proc_mnt);
+ }
++
++void pid_ns_release_proc(struct pid_namespace *ns)
++{
++	if (ns->proc_mnt) {
++		INIT_WORK(&ns->proc_put, proc_mntput);
++		schedule_work(&ns->proc_put);
++	}
++}
