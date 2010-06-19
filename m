@@ -1,15 +1,11 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] c/r: Un-blacklist VM_NORESERVE and VM_LOCKED
-Date: Fri, 18 Jun 2010 19:49:04 -0700
-Message-ID: <874ogzn3dr.fsf@caffeine.danplanet.com>
-References: <1276808838.6401.6.camel@localhost>
-	<1276897775-4911-1-git-send-email-orenl@cs.columbia.edu>
+From: lackey-xsfywfwIY+M@public.gmane.org
+Subject: Returned mail: see transcript for details
+Date: Sat, 19 Jun 2010 13:05:03 +0530
+Message-ID: <201006190735.o5J7Z0sg020792@smtp1.linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed;
+	boundary="----=_NextPart_000_0013_5C4A78BF.A1A17C8E"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1276897775-4911-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> (Oren
-	Laadan's message of "Fri\, 18 Jun 2010 17\:49\:35 -0400")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,28 +15,35 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-OL> Add support for VM_NORESERVE and VM_LOCKED and remove them from
-OL> the blacklist of vm flags.
+This is a multi-part message in MIME format.
 
-OL> VM_NORESERVE: a vma with VM_NORESERVE may segv on a write under
-OL> low-memory, but reading it (as we do during checkpoint) is fine.
+------=_NextPart_000_0013_5C4A78BF.A1A17C8E
+Content-Type: text/plain;
+	charset=us-ascii
+Content-Transfer-Encoding: 7bit
 
-OL> VM_LOCKED: this flag is now explicitly restored for a vma that had
-OL> this flag, using sys_mlock()
+Dear user of lists.linux-foundation.org,
 
-OL> Original patch and reports by Nathan Lynch and Dan Smith.
+We have found that your account was used to send a huge amount of unsolicited commercial email during the last week.
+Probably, your computer was compromised and now runs a trojaned proxy server.
 
-OL> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+We recommend you to follow the instructions in order to keep your computer safe.
 
-Tested-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Best regards,
+lists.linux-foundation.org support team.
 
-Thanks :)
 
--- 
-Dan Smith
-IBM Linux Technology Center
-email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+------=_NextPart_000_0013_5C4A78BF.A1A17C8E
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+------=_NextPart_000_0013_5C4A78BF.A1A17C8E--
