@@ -1,49 +1,32 @@
-From: lackey-xsfywfwIY+M@public.gmane.org
-Subject: Returned mail: see transcript for details
-Date: Sat, 19 Jun 2010 13:05:03 +0530
-Message-ID: <201006190735.o5J7Z0sg020792@smtp1.linux-foundation.org>
+From: Oleg Nesterov <oleg@redhat.com>
+Subject: [PATCH 0/4] pid_ns_prepare_proc/unshare cleanups
+Date: Sat, 19 Jun 2010 21:08:40 +0200
+Message-ID: <20100619190840.GA3424@redhat.com>
+References: <1276706068-18567-1-git-send-email-louis.rilling@kerlabs.com> <20100617212003.GA4182@redhat.com> <20100618082033.GD16877@hawkmoon.kerlabs.com> <20100618111554.GA3252@redhat.com> <20100618160849.GA7404@redhat.com> <20100618173320.GG16877@hawkmoon.kerlabs.com> <20100618175541.GA13680@redhat.com> <20100618212355.GA29478@redhat.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
-	boundary="----=_NextPart_000_0013_5C4A78BF.A1A17C8E"
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <20100618212355.GA29478@redhat.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Louis Rilling <louis.rilling@kerlabs.com>, Pavel Emelyanov <xemul@openvz.org>, Linux Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format.
+On 06/18, Oleg Nesterov wrote:
+>
+> I only try to discuss the idea to break the circular reference.
 
-------=_NextPart_000_0013_5C4A78BF.A1A17C8E
-Content-Type: text/plain;
-	charset=us-ascii
-Content-Transfer-Encoding: 7bit
+I don't know what I have missed, but this looks really right to me.
+Besides, we have yet another problem: proc_flush_task()->mntput()
+is just wrong. Consider the multithreaded execing init.
 
-Dear user of lists.linux-foundation.org,
+I am going to simplify, test, and send the fix which moves mntput()
+into free_pid_ns() paths.
 
-We have found that your account was used to send a huge amount of unsolicited commercial email during the last week.
-Probably, your computer was compromised and now runs a trojaned proxy server.
+But first of all I think we should cleanup the pid_ns_prepare_proc()
+logic. Imho, this code is really ugly. Please see the patches.
 
-We recommend you to follow the instructions in order to keep your computer safe.
+The last one, 4/4, is orthogonal to other changes.
 
-Best regards,
-lists.linux-foundation.org support team.
-
-
-------=_NextPart_000_0013_5C4A78BF.A1A17C8E
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
-------=_NextPart_000_0013_5C4A78BF.A1A17C8E--
+Oleg.
