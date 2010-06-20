@@ -1,55 +1,57 @@
 From: Oleg Nesterov <oleg@redhat.com>
-Subject: Re: [PATCH 6/6] pidns: Support unsharing the pid namespace.
-Date: Sun, 20 Jun 2010 22:14:54 +0200
-Message-ID: <20100620201454.GA6902@redhat.com>
-References: <20100617212003.GA4182@redhat.com> <20100618082033.GD16877@hawkmoon.kerlabs.com> <20100618111554.GA3252@redhat.com> <20100618160849.GA7404@redhat.com> <20100618173320.GG16877@hawkmoon.kerlabs.com> <20100618175541.GA13680@redhat.com> <20100618212355.GA29478@redhat.com> <20100619190840.GA3424@redhat.com> <m1pqzmqema.fsf_-_@fess.ebiederm.org> <m1wrtuozq6.fsf_-_@fess.ebiederm.org>
+Subject: Re: [PATCH 1/6] pid:  Remove the child_reaper special case in
+	init/main.c
+Date: Sun, 20 Jun 2010 22:27:36 +0200
+Message-ID: <20100620202736.GB6902@redhat.com>
+References: <20100618082033.GD16877@hawkmoon.kerlabs.com> <20100618111554.GA3252@redhat.com> <20100618160849.GA7404@redhat.com> <20100618173320.GG16877@hawkmoon.kerlabs.com> <20100618175541.GA13680@redhat.com> <20100618212355.GA29478@redhat.com> <20100619190840.GA3424@redhat.com> <m1pqzmqema.fsf_-_@fess.ebiederm.org> <m1ljaaqejm.fsf_-_@fess.ebiederm.org> <20100620182948.GB3258@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <linux-kernel-owner@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <m1wrtuozq6.fsf_-_@fess.ebiederm.org>
+In-Reply-To: <20100620182948.GB3258@redhat.com>
 Sender: linux-kernel-owner@vger.kernel.org
 To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Louis Rilling <louis.rilling@kerlabs.com>, Pavel Emelyanov <xemul@openvz.org>, Linux Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org, Daniel Lezcano <dlezcano@fr.ibm.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Louis Rilling <louis.rilling@kerlabs.com>, Pavel Emelyanov <xemul@openvz.org>, Linux Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org, Daniel Lezcano <dlezcano@fr.ibm.com>, Roland McGrath <roland@redhat.com>
 List-Id: containers.vger.kernel.org
 
-On 06/20, Eric W. Biederman wrote:
+On 06/20, Oleg Nesterov wrote:
 >
-> Unsharing of the pid namespace unlike unsharing of other namespaces
-> does not take affect immediately.  Instead it affects the children
-> created with fork and clone.
+> On 06/20, Eric W. Biederman wrote:
+> >
+> > --- a/kernel/fork.c
+> > +++ b/kernel/fork.c
+> > @@ -1263,7 +1263,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+> >  		tracehook_finish_clone(p, clone_flags, trace);
+> >
+> >  		if (thread_group_leader(p)) {
+> > -			if (clone_flags & CLONE_NEWPID)
+> > +			if (pid->numbers[pid->level].nr == 1)
+> >  				p->nsproxy->pid_ns->child_reaper = p;
+>
+> I must admit, personally I dislike this change. If it is needed for
+> the next changes, please explain the need?
+>
+> Yes, it removes the line from __init function, but it complicates
+> copy_process(), this doesn't look fair to me ;) I agree, the complication
+> is minor, but still. And, in fact, to me this change hides CLONE_NEWPID
+> from grep.
+>
+> In fact, I was looking at this code when I did 1/4. And I think it is
+> better to move it (and perhaps another CLONE_NEWPID check in copy_signal)
+> into copy_pid_ns() path.
 
-Cough. It is too late to me to even try to understand the changelog.
+OK, this is needed for 6/6. I still can't say I like this change (and
+6/6 too ;), and it is not enough.
 
-Instead I tried to quickly read the patch. Most probably I missed
-somthing, but still I'd like to ask the quiestion.
+If we spawn the new init because we called sys_unshare(CLONE_NEWPID)
+in the past (Eric, imho this can't be the really nice idea) we should
+also set TASK_UNKILLABLE at least.
 
-So. If I understand correctly, the patch is simple:
+IOW. Not only this hides CLONE_NEWPID from grep, unshare() also hides
+it from paths which should know about this flag.
 
-	- unshare(CLONE_NEWPID) changes current->proxy->pid_ns,
-	  but do not change current->pids[] and thus it doesn't
-	  change task_active_pid_ns().
-
-	- since copy_process() uses ->proxy->pid_ns for alloc_pid()
-	  the new children will fall into the new ns.
-
-IOW, the caller becomes the "swapper" for the new namespace.
-
-Correct?
-
-If yes, I'm afraid nobody except you will understand this magic ;)
-
-But what if the task T does unshare(CLONE_NEWPID) and then, say,
-pthread_create() ? Unless I missed something, the new thread won't
-be able to see T ?
-
-OK, suppose it does fork() after unshare(), then another fork().
-In this case the second child lives in the same namespace with
-init created by the 1st fork, but it is not descendant ? This means
-in particular that if the new init exits, zap_pid_ns_processes()->
-do_wait() can't work.
-
-I hope I missed something, this all is too subtle for me. And I
-still do not understand 4/6 which adds ns->dead.
+I'd rather prefer the straightforward implementation of unshare(NEWPID)
+which merely adds SIGNAL_THE_NEXT_FORK_SHOULD_USE_CLONE_NEWPID flag
+to current->signal->flags. Yes, this is very ugly too.
 
 Oleg.
