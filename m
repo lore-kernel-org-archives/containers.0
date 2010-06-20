@@ -1,189 +1,50 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: [PATCH 6/6] pidns: Support unsharing the pid namespace.
-Date: Sun, 20 Jun 2010 01:49:37 -0700
-Message-ID: <m1wrtuozq6.fsf_-_@fess.ebiederm.org>
-References: <1276706068-18567-1-git-send-email-louis.rilling@kerlabs.com>
-	<20100617212003.GA4182@redhat.com>
-	<20100618082033.GD16877@hawkmoon.kerlabs.com>
-	<20100618111554.GA3252@redhat.com> <20100618160849.GA7404@redhat.com>
-	<20100618173320.GG16877@hawkmoon.kerlabs.com>
-	<20100618175541.GA13680@redhat.com>
-	<20100618212355.GA29478@redhat.com> <20100619190840.GA3424@redhat.com>
-	<m1pqzmqema.fsf_-_@fess.ebiederm.org>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: new commits to ckpt-v22-dev
+Date: Sun, 20 Jun 2010 13:08:14 -0400
+Message-ID: <4C1E4AFE.9010500@cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <m1pqzmqema.fsf_-_@fess.ebiederm.org> (Eric W. Biederman's message of "Sun\, 20 Jun 2010 01\:42\:37 -0700")
-Sender: linux-kernel-owner@vger.kernel.org
-To: Oleg Nesterov <oleg@redhat.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Louis Rilling <louis.rilling@kerlabs.com>, Pavel Emelyanov <xemul@openvz.org>, Linux Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org, Daniel Lezcano <dlezcano@fr.ibm.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Cc: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Hi
 
-- Allow CLONEW_NEWPID into unshare.
-- Pass both nsproxy->pid_ns and task_active_pid_ns to copy_pid_ns
-  As they can now be different.
+While waiting on the review, I pushed some recent work to a new
+ckpt-v22-dev, including:
 
-Unsharing of the pid namespace unlike unsharing of other namespaces
-does not take affect immediately.  Instead it affects the children
-created with fork and clone.  The first of these children becomes the init
-process of the new pid namespace, the rest become oddball children
-of pid 0.  From the point of view of the new pid namespace the process
-that created it is pid 0, as it's pid does not map.
+8fd5cc0459... c/r: ARM implementation of checkpoint/restart
+61c3e0df4b... ARM: Add the eclone system call
+15be6841fe... ARM: Rudimentary syscall interfaces
+48d0ea4fb8... c/r: Un-blacklist VM_NORESERVE and VM_LOCKED
+c3e8484f28... c/r: detect use of multiple devpts mounts in container
+bc40da1798... Initialize the sem->sem_pending list after restoring
+2cb36bd2be... c/r: pin down modules registered to obj-ops
+a6ec7e051e... eclone: fix typos and minor errors in eclone documentation
 
-A couple of different semantics were considered but this one was
-settled on because it is easy to implement and it is usable from
-pam modules.  The core reasons for the existence of unshare.
+There are also a couple of commits for user-cr:
 
-I took a survey of the callers of pam modules and the following
-appears to be a representative sample of their logic.
-{
-	setup stuff include pam
-	child = fork();
-	if (!child) {
-		setuid()
-                exec /bin/bash
-        }
-        waitpid(child);
+f67877308e... ARM: Added user space support for c/r on ARM
+19b55e0290... Minor reorg of restart.c
+84336dc1e2... Remove flags parameter to cr_checkpoint()
+758fe976d9... Change API prefix to cr_
+d1f7a0bc1f... Add -p option to ckptinfo to dump pids tree
+abe68111e4... improve end-of-file handling and reporting
 
-        pam and other cleanup
-}
+Suka: does eclone() for ARM require an update ?  Also, note the
+user-cr patches that I pulled from your series.
 
-As you can see there is a fork to create the unprivileged user
-space process.  Which means that the unprivileged user space
-process will appear as pid 1 in the new pid namespace.  Further
-most login processes do not cope with extraneous children which
-means shifting the duty of reaping extraneous child process to
-the creator of those extraneous children makes the system more
-comprehensible.
+Thanks,
 
-The practical reason for this set of pid namespace semantics is
-that it is simple to implement and verify they work correctly.
-Whereas an implementation that requres changing the struct
-pid on a process comes with a lot more races and pain.  Not
-the least of which is that glibc caches getpid().
-
-These semantics are implemented by having two notions
-of the pid namespace of a proces.  There is task_active_pid_ns
-which is the pid namspace the process was created with
-and the pid namespace that all pids are presented to
-that process in.  The task_active_pid_ns is stored
-in the struct pid of the task.
-
-There there is the pid namespace that will be used for children
-that pid namespace is stored in task->nsproxy->pid_ns.
-
-There is one really nasty corner case in all of this.  Which
-pid namespace are you in if your parent unshared it's pid
-namespace and then on clone you also unshare the pid namespace.
-To me there are only two possible answers.  Either the cases
-is so bizarre and we deny it completely.  or the new pid
-namespace is a descendent of our parent's active pid namespace,
-and we ignore the task->nsproxy->pid_ns.
-
-To that end I have modified copy_pid_ns to take both of these
-pid namespaces.  The active pid namespace and the default
-pid namespace of children.  Allowing me to simply implement
-unsharing a pid namespace in clone after already unsharing
-a pid namespace with unshare.
-
-Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
----
- include/linux/pid_namespace.h |   11 ++++++-----
- kernel/fork.c                 |    3 ++-
- kernel/nsproxy.c              |    5 +++--
- kernel/pid_namespace.c        |    7 ++++---
- 4 files changed, 15 insertions(+), 11 deletions(-)
-
-diff --git a/include/linux/pid_namespace.h b/include/linux/pid_namespace.h
-index b447d37..95b1d8f 100644
---- a/include/linux/pid_namespace.h
-+++ b/include/linux/pid_namespace.h
-@@ -43,7 +43,8 @@ static inline struct pid_namespace *get_pid_ns(struct pid_namespace *ns)
- 	return ns;
- }
- 
--extern struct pid_namespace *copy_pid_ns(unsigned long flags, struct pid_namespace *ns);
-+extern struct pid_namespace *copy_pid_ns(unsigned long flags,
-+	struct pid_namespace *default_ns, struct pid_namespace *active_ns);
- extern void free_pid_ns(struct kref *kref);
- extern void zap_pid_ns_processes(struct pid_namespace *pid_ns);
- 
-@@ -61,12 +62,12 @@ static inline struct pid_namespace *get_pid_ns(struct pid_namespace *ns)
- 	return ns;
- }
- 
--static inline struct pid_namespace *
--copy_pid_ns(unsigned long flags, struct pid_namespace *ns)
-+static inline struct pid_namespace *copy_pid_ns(unsigned long flags,
-+	struct pid_namespace *default_ns, struct pid_namespace *active_ns)
- {
- 	if (flags & CLONE_NEWPID)
--		ns = ERR_PTR(-EINVAL);
--	return ns;
-+		return ERR_PTR(-EINVAL);
-+	return default_ns;
- }
- 
- static inline void put_pid_ns(struct pid_namespace *ns)
-diff --git a/kernel/fork.c b/kernel/fork.c
-index 3c2501d..b452825 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -1628,7 +1628,8 @@ SYSCALL_DEFINE1(unshare, unsigned long, unshare_flags)
- 	err = -EINVAL;
- 	if (unshare_flags & ~(CLONE_THREAD|CLONE_FS|CLONE_NEWNS|CLONE_SIGHAND|
- 				CLONE_VM|CLONE_FILES|CLONE_SYSVSEM|
--				CLONE_NEWUTS|CLONE_NEWIPC|CLONE_NEWNET))
-+				CLONE_NEWUTS|CLONE_NEWIPC|CLONE_NEWNET|
-+				CLONE_NEWPID))
- 		goto bad_unshare_out;
- 
- 	/*
-diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
-index f74e6c0..6ffa36d 100644
---- a/kernel/nsproxy.c
-+++ b/kernel/nsproxy.c
-@@ -81,7 +81,8 @@ static struct nsproxy *create_new_namespaces(unsigned long flags,
- 		goto out_ipc;
- 	}
- 
--	new_nsp->pid_ns = copy_pid_ns(flags, task_active_pid_ns(tsk));
-+	new_nsp->pid_ns = copy_pid_ns(flags, tsk->nsproxy->pid_ns,
-+						task_active_pid_ns(tsk));
- 	if (IS_ERR(new_nsp->pid_ns)) {
- 		err = PTR_ERR(new_nsp->pid_ns);
- 		goto out_pid;
-@@ -185,7 +186,7 @@ int unshare_nsproxy_namespaces(unsigned long unshare_flags,
- 	int err = 0;
- 
- 	if (!(unshare_flags & (CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC |
--			       CLONE_NEWNET)))
-+			       CLONE_NEWNET | CLONE_NEWPID)))
- 		return 0;
- 
- 	if (!capable(CAP_SYS_ADMIN))
-diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
-index 34a251d..7225c83 100644
---- a/kernel/pid_namespace.c
-+++ b/kernel/pid_namespace.c
-@@ -120,13 +120,14 @@ static void destroy_pid_namespace(struct pid_namespace *ns)
- 	kmem_cache_free(pid_ns_cachep, ns);
- }
- 
--struct pid_namespace *copy_pid_ns(unsigned long flags, struct pid_namespace *old_ns)
-+struct pid_namespace *copy_pid_ns(unsigned long flags,
-+	struct pid_namespace *default_ns, struct pid_namespace *active_ns)
- {
- 	if (!(flags & CLONE_NEWPID))
--		return get_pid_ns(old_ns);
-+		return get_pid_ns(default_ns);
- 	if (flags & (CLONE_THREAD|CLONE_PARENT))
- 		return ERR_PTR(-EINVAL);
--	return create_pid_namespace(old_ns);
-+	return create_pid_namespace(active_ns);
- }
- 
- void free_pid_ns(struct kref *kref)
--- 
-1.6.5.2.143.g8cc62
+Oren.
