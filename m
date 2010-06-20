@@ -1,68 +1,59 @@
-From: Oleg Nesterov <oleg@redhat.com>
+From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 0/6] Unshare support for the pid namespace.
-Date: Sun, 20 Jun 2010 23:48:28 +0200
-Message-ID: <20100620214828.GA17517@redhat.com>
-References: <20100618082033.GD16877@hawkmoon.kerlabs.com> <20100618111554.GA3252@redhat.com> <20100618160849.GA7404@redhat.com> <20100618173320.GG16877@hawkmoon.kerlabs.com> <20100618175541.GA13680@redhat.com> <20100618212355.GA29478@redhat.com> <20100619190840.GA3424@redhat.com> <m1pqzmqema.fsf_-_@fess.ebiederm.org> <20100620180335.GA17120@redhat.com> <m14ogxctd6.fsf@fess.ebiederm.org>
+Date: Sun, 20 Jun 2010 23:56:46 +0200
+Message-ID: <20100620215646.GB17517@redhat.com>
+References: <20100618082033.GD16877@hawkmoon.kerlabs.com>
+	<20100618111554.GA3252@redhat.com>
+	<20100618160849.GA7404@redhat.com>
+	<20100618173320.GG16877@hawkmoon.kerlabs.com>
+	<20100618175541.GA13680@redhat.com>
+	<20100618212355.GA29478@redhat.com>
+	<20100619190840.GA3424@redhat.com>
+	<m1pqzmqema.fsf_-_@fess.ebiederm.org>
+	<20100620180335.GA17120@redhat.com>
+	<m14ogxctd6.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <m14ogxctd6.fsf@fess.ebiederm.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Louis Rilling <louis.rilling@kerlabs.com>, Pavel Emelyanov <xemul@openvz.org>, Linux Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org, Daniel Lezcano <dlezcano@fr.ibm.com>
+In-Reply-To: <m14ogxctd6.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 On 06/20, Eric W. Biederman wrote:
 >
-> Oleg Nesterov <oleg@redhat.com> writes:
+> Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
 >
-> > Why?
-> >
-> > Once again, it is very possible I am wrong. I forgot this code if ever
-> > knew. But could you please explain?
+> > And. I do not think these series can fix the discussed problems. ns->dead
+> > definitely can't, no?
 >
-> There are two kinds of dead for a pid namespace. There are:
-> - no processes left.
-> - no more references to struct pid_namespace.
->
-> I just looked and I don't see any references to proc_mnt except from
-> living processes.
->
-> So while it isn't necessary that we kill the proc_mnt earlier it does
-> mean that we hold the resources longer then necessary.
+> I'm am fairly confident that we have the signal sending races fixed so
+> we can reasonably expect having sent SIGKILL to all processes in a pid
+> namespace
 
-Yes, it can delay destroy_pid_namespace(), sure. OK, I am not going
-to argue. I never said this fix is perfect. I'll be wating for the
-better fix.
+Sorry, didn't notice this part...
 
-> > Eric, why you can't do these changes on top of the cleanups I sent?
->
-> Because there are conflicts,
+Which races? I am talking about the current problems with pid_ns_release_proc(),
+we have at least 3 bugs, from the 2/2 changelog:
 
-I don't see any conflicts, but perhaps I missed something.
+	- Nobody does mntput() if copy_process() fails after
+	  pid_ns_prepare_proc().
 
-> > OK, personally I certainly dislike 1/6, but perhaps it is needed for
-> > 6/6 which I didn't read yet. But, in any case, it is orthogonal to
-> > pid_ns_prepare_proc() cleanups?
->
-> 1/6 is.  If you unshare a pid namespace.  Your first child is pid one.
-> Which means we can on longer count on CLONE_PID.
+	- proc_flush_task() checks upid->nr == 1 to verify we are init,
+	  this is wrong if a multi-threaded init does exec.
 
-I understand, but I think it should be 5/6.
-
-> > 	- remove the MS_KERNMOUNT check around ei->pid = find_pid(1).
-> > 	  OK, I agree it was not strictly needed, but imho makes the
-> > 	  code cleaner.
-> >
-> > 	  Or I missed something and this check was wrong?
->
-> The MS_KERNMOUNT check was simply unnecessary, and it makes the code
-> uglier to read and more brittle.
-
-I disagree here. Sure, it is unnecessary, and I already said this.
-I added it to simply document the fact that find_pid() can't work if
-MS_KERNMOUNT is set, to me this certainly makes the code more
-understandable to the reader.
+	- As Louis pointed out, this namespace can have the detached
+	  EXIT_DEAD tasks which can use ns->proc_mnt after this mntput().
 
 Oleg.
