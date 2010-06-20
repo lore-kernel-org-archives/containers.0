@@ -1,91 +1,62 @@
-From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/6] pid:  Remove the child_reaper special case in
-	init/main.c
-Date: Sun, 20 Jun 2010 20:29:48 +0200
-Message-ID: <20100620182948.GB3258@redhat.com>
-References: <20100617212003.GA4182@redhat.com>
-	<20100618082033.GD16877@hawkmoon.kerlabs.com>
-	<20100618111554.GA3252@redhat.com>
-	<20100618160849.GA7404@redhat.com>
-	<20100618173320.GG16877@hawkmoon.kerlabs.com>
-	<20100618175541.GA13680@redhat.com>
-	<20100618212355.GA29478@redhat.com>
-	<20100619190840.GA3424@redhat.com>
-	<m1pqzmqema.fsf_-_@fess.ebiederm.org>
-	<m1ljaaqejm.fsf_-_@fess.ebiederm.org>
+From: Oleg Nesterov <oleg@redhat.com>
+Subject: Re: [PATCH 4/6] pidns: Don't allow new pids after the namespace is
+	dead.
+Date: Sun, 20 Jun 2010 20:44:20 +0200
+Message-ID: <20100620184420.GC3258@redhat.com>
+References: <20100617212003.GA4182@redhat.com> <20100618082033.GD16877@hawkmoon.kerlabs.com> <20100618111554.GA3252@redhat.com> <20100618160849.GA7404@redhat.com> <20100618173320.GG16877@hawkmoon.kerlabs.com> <20100618175541.GA13680@redhat.com> <20100618212355.GA29478@redhat.com> <20100619190840.GA3424@redhat.com> <m1pqzmqema.fsf_-_@fess.ebiederm.org> <m1631eqeeq.fsf_-_@fess.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <m1ljaaqejm.fsf_-_-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <m1631eqeeq.fsf_-_@fess.ebiederm.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Louis Rilling <louis.rilling@kerlabs.com>, Pavel Emelyanov <xemul@openvz.org>, Linux Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org, Daniel Lezcano <dlezcano@fr.ibm.com>
 List-Id: containers.vger.kernel.org
 
 On 06/20, Eric W. Biederman wrote:
 >
-> It turns out that the existing assignment in copy_process of
-> the child_reaper can handle the initial assignment of child_reaper
-> we just need to generalize the test in kernel/fork.c
+> In the case of unsharing or joining a pid namespace, it becomes
+> possible to attempt to allocate a pid after zap_pid_namespace has
+> killed everything in the namespace.  Close the hole for now by simply
+> not allowing any of those pid allocations to succeed.  At least for
+> now it is too strange to think about.
+
+Well, I didn't read the next patch, so I don't understand the changelog.
+
+Still, a couple of stupid questions. Feel free to ignore me...
+
+> --- a/include/linux/pid_namespace.h
+> +++ b/include/linux/pid_namespace.h
+> @@ -20,6 +20,7 @@ struct pid_namespace {
+>  	struct kref kref;
+>  	struct pidmap pidmap[PIDMAP_ENTRIES];
+>  	int last_pid;
+> +	atomic_t dead;
+
+Why it is atomic_t? It is used like a simple boolean, and the next
+patch doesn't use ns->dead.
+
+> @@ -248,6 +248,10 @@ struct pid *alloc_pid(struct pid_namespace *ns)
+>  	struct pid_namespace *tmp;
+>  	struct upid *upid;
 >
-> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> ---
->  init/main.c   |    9 ---------
->  kernel/fork.c |    2 +-
->  2 files changed, 1 insertions(+), 10 deletions(-)
->
-> diff --git a/init/main.c b/init/main.c
-> index 3bdb152..38f7edc 100644
-> --- a/init/main.c
-> +++ b/init/main.c
-> @@ -865,15 +865,6 @@ static int __init kernel_init(void * unused)
->  	 * init can run on any cpu.
+> +	pid = NULL;
+> +	if (atomic_read(&ns->dead))
+> +		goto out;
+> +
+> [...snip...]
+> @@ -161,6 +162,7 @@ void zap_pid_ns_processes(struct pid_namespace *pid_ns)
+>  	 *
 >  	 */
->  	set_cpus_allowed_ptr(current, cpu_all_mask);
-> -	/*
-> -	 * Tell the world that we're going to be the grim
-> -	 * reaper of innocent orphaned children.
-> -	 *
-> -	 * We don't want people to have to make incorrect
-> -	 * assumptions about where in the task array this
-> -	 * can be found.
-> -	 */
-> -	init_pid_ns.child_reaper = current;
->
->  	cad_pid = task_pid(current);
->
-> diff --git a/kernel/fork.c b/kernel/fork.c
-> index b6cce14..8b85b17 100644
-> --- a/kernel/fork.c
-> +++ b/kernel/fork.c
-> @@ -1263,7 +1263,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
->  		tracehook_finish_clone(p, clone_flags, trace);
->
->  		if (thread_group_leader(p)) {
-> -			if (clone_flags & CLONE_NEWPID)
-> +			if (pid->numbers[pid->level].nr == 1)
->  				p->nsproxy->pid_ns->child_reaper = p;
+>  	read_lock(&tasklist_lock);
+> +	atomic_set(&pid_ns->dead, 1);
+>  	nr = next_pidmap(pid_ns, 1);
 
-I must admit, personally I dislike this change. If it is needed for
-the next changes, please explain the need?
+The only caller of alloc_pid() is copy_process(). So, at first glance this
+patch tries to block the attempts to create the tasks in this namespace.
 
-Yes, it removes the line from __init function, but it complicates
-copy_process(), this doesn't look fair to me ;) I agree, the complication
-is minor, but still. And, in fact, to me this change hides CLONE_NEWPID
-from grep.
-
-In fact, I was looking at this code when I did 1/4. And I think it is
-better to move it (and perhaps another CLONE_NEWPID check in copy_signal)
-into copy_pid_ns() path.
+But what if copy_process() has already called alloc_pid() using this ns,
+but didn't do attach_pid() yet?
 
 Oleg.
