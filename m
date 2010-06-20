@@ -1,14 +1,13 @@
 From: Oleg Nesterov <oleg@redhat.com>
-Subject: Re: [PATCH 4/6] pidns: Don't allow new pids after the namespace is
-	dead.
-Date: Sun, 20 Jun 2010 20:44:20 +0200
-Message-ID: <20100620184420.GC3258@redhat.com>
-References: <20100617212003.GA4182@redhat.com> <20100618082033.GD16877@hawkmoon.kerlabs.com> <20100618111554.GA3252@redhat.com> <20100618160849.GA7404@redhat.com> <20100618173320.GG16877@hawkmoon.kerlabs.com> <20100618175541.GA13680@redhat.com> <20100618212355.GA29478@redhat.com> <20100619190840.GA3424@redhat.com> <m1pqzmqema.fsf_-_@fess.ebiederm.org> <m1631eqeeq.fsf_-_@fess.ebiederm.org>
+Subject: Re: [PATCH 6/6] pidns: Support unsharing the pid namespace.
+Date: Sun, 20 Jun 2010 22:14:54 +0200
+Message-ID: <20100620201454.GA6902@redhat.com>
+References: <20100617212003.GA4182@redhat.com> <20100618082033.GD16877@hawkmoon.kerlabs.com> <20100618111554.GA3252@redhat.com> <20100618160849.GA7404@redhat.com> <20100618173320.GG16877@hawkmoon.kerlabs.com> <20100618175541.GA13680@redhat.com> <20100618212355.GA29478@redhat.com> <20100619190840.GA3424@redhat.com> <m1pqzmqema.fsf_-_@fess.ebiederm.org> <m1wrtuozq6.fsf_-_@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <linux-kernel-owner@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <m1631eqeeq.fsf_-_@fess.ebiederm.org>
+In-Reply-To: <m1wrtuozq6.fsf_-_@fess.ebiederm.org>
 Sender: linux-kernel-owner@vger.kernel.org
 To: "Eric W. Biederman" <ebiederm@xmission.com>
 Cc: Andrew Morton <akpm@linux-foundation.org>, Louis Rilling <louis.rilling@kerlabs.com>, Pavel Emelyanov <xemul@openvz.org>, Linux Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org, Daniel Lezcano <dlezcano@fr.ibm.com>
@@ -16,47 +15,41 @@ List-Id: containers.vger.kernel.org
 
 On 06/20, Eric W. Biederman wrote:
 >
-> In the case of unsharing or joining a pid namespace, it becomes
-> possible to attempt to allocate a pid after zap_pid_namespace has
-> killed everything in the namespace.  Close the hole for now by simply
-> not allowing any of those pid allocations to succeed.  At least for
-> now it is too strange to think about.
+> Unsharing of the pid namespace unlike unsharing of other namespaces
+> does not take affect immediately.  Instead it affects the children
+> created with fork and clone.
 
-Well, I didn't read the next patch, so I don't understand the changelog.
+Cough. It is too late to me to even try to understand the changelog.
 
-Still, a couple of stupid questions. Feel free to ignore me...
+Instead I tried to quickly read the patch. Most probably I missed
+somthing, but still I'd like to ask the quiestion.
 
-> --- a/include/linux/pid_namespace.h
-> +++ b/include/linux/pid_namespace.h
-> @@ -20,6 +20,7 @@ struct pid_namespace {
->  	struct kref kref;
->  	struct pidmap pidmap[PIDMAP_ENTRIES];
->  	int last_pid;
-> +	atomic_t dead;
+So. If I understand correctly, the patch is simple:
 
-Why it is atomic_t? It is used like a simple boolean, and the next
-patch doesn't use ns->dead.
+	- unshare(CLONE_NEWPID) changes current->proxy->pid_ns,
+	  but do not change current->pids[] and thus it doesn't
+	  change task_active_pid_ns().
 
-> @@ -248,6 +248,10 @@ struct pid *alloc_pid(struct pid_namespace *ns)
->  	struct pid_namespace *tmp;
->  	struct upid *upid;
->
-> +	pid = NULL;
-> +	if (atomic_read(&ns->dead))
-> +		goto out;
-> +
-> [...snip...]
-> @@ -161,6 +162,7 @@ void zap_pid_ns_processes(struct pid_namespace *pid_ns)
->  	 *
->  	 */
->  	read_lock(&tasklist_lock);
-> +	atomic_set(&pid_ns->dead, 1);
->  	nr = next_pidmap(pid_ns, 1);
+	- since copy_process() uses ->proxy->pid_ns for alloc_pid()
+	  the new children will fall into the new ns.
 
-The only caller of alloc_pid() is copy_process(). So, at first glance this
-patch tries to block the attempts to create the tasks in this namespace.
+IOW, the caller becomes the "swapper" for the new namespace.
 
-But what if copy_process() has already called alloc_pid() using this ns,
-but didn't do attach_pid() yet?
+Correct?
+
+If yes, I'm afraid nobody except you will understand this magic ;)
+
+But what if the task T does unshare(CLONE_NEWPID) and then, say,
+pthread_create() ? Unless I missed something, the new thread won't
+be able to see T ?
+
+OK, suppose it does fork() after unshare(), then another fork().
+In this case the second child lives in the same namespace with
+init created by the 1st fork, but it is not descendant ? This means
+in particular that if the new init exits, zap_pid_ns_processes()->
+do_wait() can't work.
+
+I hope I missed something, this all is too subtle for me. And I
+still do not understand 4/6 which adds ns->dead.
 
 Oleg.
