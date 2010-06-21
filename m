@@ -1,59 +1,80 @@
-From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 0/6] Unshare support for the pid namespace.
-Date: Sun, 20 Jun 2010 23:56:46 +0200
-Message-ID: <20100620215646.GB17517@redhat.com>
-References: <20100618082033.GD16877@hawkmoon.kerlabs.com>
-	<20100618111554.GA3252@redhat.com>
-	<20100618160849.GA7404@redhat.com>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [PATCH 6/6] pidns: Support unsharing the pid namespace.
+Date: Sun, 20 Jun 2010 18:53:52 -0700
+Message-ID: <m1d3vlw3pr.fsf@fess.ebiederm.org>
+References: <20100617212003.GA4182@redhat.com>
+	<20100618082033.GD16877@hawkmoon.kerlabs.com>
+	<20100618111554.GA3252@redhat.com> <20100618160849.GA7404@redhat.com>
 	<20100618173320.GG16877@hawkmoon.kerlabs.com>
 	<20100618175541.GA13680@redhat.com>
-	<20100618212355.GA29478@redhat.com>
-	<20100619190840.GA3424@redhat.com>
+	<20100618212355.GA29478@redhat.com> <20100619190840.GA3424@redhat.com>
 	<m1pqzmqema.fsf_-_@fess.ebiederm.org>
-	<20100620180335.GA17120@redhat.com>
-	<m14ogxctd6.fsf@fess.ebiederm.org>
+	<m1wrtuozq6.fsf_-_@fess.ebiederm.org>
+	<20100620201454.GA6902@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <m14ogxctd6.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <20100620201454.GA6902@redhat.com> (Oleg Nesterov's message of "Sun\, 20 Jun 2010 22\:14\:54 +0200")
+Sender: linux-kernel-owner@vger.kernel.org
+To: Oleg Nesterov <oleg@redhat.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Louis Rilling <louis.rilling@kerlabs.com>, Pavel Emelyanov <xemul@openvz.org>, Linux Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org, Daniel Lezcano <dlezcano@fr.ibm.com>
 List-Id: containers.vger.kernel.org
 
-On 06/20, Eric W. Biederman wrote:
+Oleg Nesterov <oleg@redhat.com> writes:
+
+> On 06/20, Eric W. Biederman wrote:
+>>
+>> Unsharing of the pid namespace unlike unsharing of other namespaces
+>> does not take affect immediately.  Instead it affects the children
+>> created with fork and clone.
 >
-> Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+> Cough. It is too late to me to even try to understand the changelog.
 >
-> > And. I do not think these series can fix the discussed problems. ns->dead
-> > definitely can't, no?
+> Instead I tried to quickly read the patch. Most probably I missed
+> somthing, but still I'd like to ask the quiestion.
 >
-> I'm am fairly confident that we have the signal sending races fixed so
-> we can reasonably expect having sent SIGKILL to all processes in a pid
-> namespace
+> So. If I understand correctly, the patch is simple:
+>
+> 	- unshare(CLONE_NEWPID) changes current->proxy->pid_ns,
+> 	  but do not change current->pids[] and thus it doesn't
+> 	  change task_active_pid_ns().
+>
+> 	- since copy_process() uses ->proxy->pid_ns for alloc_pid()
+> 	  the new children will fall into the new ns.
+>
+> IOW, the caller becomes the "swapper" for the new namespace.
+>
+> Correct?
 
-Sorry, didn't notice this part...
+Roughly.  The caller is not in the pid namespace so shows up as pid 0.
 
-Which races? I am talking about the current problems with pid_ns_release_proc(),
-we have at least 3 bugs, from the 2/2 changelog:
+> If yes, I'm afraid nobody except you will understand this magic ;)
+>
+> But what if the task T does unshare(CLONE_NEWPID) and then, say,
+> pthread_create() ? Unless I missed something, the new thread won't
+> be able to see T ?
 
-	- Nobody does mntput() if copy_process() fails after
-	  pid_ns_prepare_proc().
+Good question.  I need to go back and look at that.
 
-	- proc_flush_task() checks upid->nr == 1 to verify we are init,
-	  this is wrong if a multi-threaded init does exec.
+> OK, suppose it does fork() after unshare(), then another fork().
+> In this case the second child lives in the same namespace with
+> init created by the 1st fork, but it is not descendant ? This means
+> in particular that if the new init exits, zap_pid_ns_processes()->
+> do_wait() can't work.
 
-	- As Louis pointed out, this namespace can have the detached
-	  EXIT_DEAD tasks which can use ns->proc_mnt after this mntput().
+do_wait() can't work and I missed that dependency the first time
+around.  Having looked at my earlier bug report from Daniel when
+I was playing with this patchset earlier it is clear that he was
+triggering the proc_mnt race with such a process.
 
-Oleg.
+So except for ptrace I don't think the proc_mnt problem is possible
+to trigger in the current code.
+
+> I hope I missed something, this all is too subtle for me. And I
+> still do not understand 4/6 which adds ns->dead.
+
+ns->dead is just a flag to say no more processes in the pid namespace.
+Which means an unshare into the pid namespace after zap_pid_ns_processes
+has been called will fail().
+
+Eric
