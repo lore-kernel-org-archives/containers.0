@@ -1,84 +1,269 @@
-From: Louis Rilling <louis.rilling@kerlabs.com>
-Subject: [RESEND PATCH] pid_ns: Fix proc_flush_task() accessing freed proc_mnt
-Date: Thu, 24 Jun 2010 19:08:49 +0200
-Message-ID: <1277399329-18087-1-git-send-email-louis.rilling@kerlabs.com>
-References: <20100623203652.GA25298@redhat.com>
+From: Oleg Nesterov <oleg@redhat.com>
+Subject: Re: [RESEND PATCH] pid_ns: Fix proc_flush_task() accessing freed
+	proc_mnt
+Date: Thu, 24 Jun 2010 21:18:43 +0200
+Message-ID: <20100624191843.GA14205@redhat.com>
+References: <20100623203652.GA25298@redhat.com> <1277399329-18087-1-git-send-email-louis.rilling@kerlabs.com>
+Mime-Version: 1.0
+Content-Type: multipart/mixed; boundary="J2SCkAp4GZ/dPZZf"
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20100623203652.GA25298@redhat.com>
+Content-Disposition: inline
+In-Reply-To: <1277399329-18087-1-git-send-email-louis.rilling@kerlabs.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Oleg Nesterov <oleg@redhat.com>
+To: Louis Rilling <louis.rilling@kerlabs.com>
 Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Pavel Emelyanov <xemul@openvz.org>, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Linux Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-[ Resending because of buggy quotes in Eric's address. Sorry for the noise. ]
 
-On 06/19, Oleg Nesterov wrote:
-> And the last one on top of this series, before I go away from this
-> thread ;)
+--J2SCkAp4GZ/dPZZf
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+On 06/24, Louis Rilling wrote:
 >
-> Since my further fixes were not approved, I think at least it makes
-> sense to cleanup pid_ns_release_proc() logic a bit.
-
-It's completely untested and could be split into three patches. But I think that
-it solves the issues found so far, and that it will work with Eric's
-unshare(CLONE_NEWPID) too.
-
-What do you think about this approach?
-
-Thanks,
-
-Louis
-
-On 20/06/10 20:06 +0200, Oleg Nesterov wrote:
-> pid_namespace holds ns->proc_mnt, while this vfsmount has a referene to
-> the namespace via PROC_I(sb->s_root->d_inode)->pid. To break this circle
-> /sbin/init does mntput() in pid_ns_release_proc(). See 6f4e6433.
+> [ Resending because of buggy quotes in Eric's address. Sorry for the noise. ]
 >
-> But we have the following problems:
+> On 06/19, Oleg Nesterov wrote:
+> > And the last one on top of this series, before I go away from this
+> > thread ;)
+> >
+> > Since my further fixes were not approved, I think at least it makes
+> > sense to cleanup pid_ns_release_proc() logic a bit.
 >
->         - Nobody does mntput() if copy_process() fails after
->           pid_ns_prepare_proc().
+> It's completely untested and could be split into three patches. But I think that
+> it solves the issues found so far, and that it will work with Eric's
+> unshare(CLONE_NEWPID) too.
 >
->         - proc_flush_task() checks upid->nr == 1 to verify we are init,
->           this is wrong if a multi-threaded init does exec.
->
->         - As Louis pointed out, this namespace can have the detached
->           EXIT_DEAD tasks which can use ns->proc_mnt after this mntput().
+> What do you think about this approach?
 
-This patch does four things:
-- defer pid_ns_release_proc()->mntput() to a worqueue context, so that
-  pid_ns_release_proc() can be called in atomic context;
-- introduce pid_ns->nr_pids, so that we can count the number of pids
-  allocated by alloc_pidmap();
-- move the call to pid_ns_prepare_proc() to alloc_pid(), where we know
-  when the first pid of a namespace is allocated;
-- move the call to pid_ns_release_proc() to free_pid(), where we are now
-  able to know when the last pid of a namespace is detached.
+Oh. I shouldn't continue to participate in this discussion... I don't have
+the time and my previous patch proves that my patches should be ignored ;)
 
-This solves the missing mntput() in copy_process() cleanup path, since
-free_pid() is called to cleanup alloc_pid().
+But, looking at this patch,
 
-This solves the multi-threaded init doing exec issue, since all
-sub-threads including former leader have called proc_flush_task() when the
-last pid is detached.
+> - defer pid_ns_release_proc()->mntput() to a worqueue context, so that
+>   pid_ns_release_proc() can be called in atomic context;
 
-This solves the EXIT_DEAD tasks issue for the same reason.
+OK, not good but this is what I did too,
 
-Signed-off-by: Louis Rilling <louis.rilling@kerlabs.com>
+> - introduce pid_ns->nr_pids, so that we can count the number of pids
+>   allocated by alloc_pidmap();
+
+and this adds the extra code to alloc/free pidmap.
+
+> - move the call to pid_ns_prepare_proc() to alloc_pid(), where we know
+>   when the first pid of a namespace is allocated;
+
+This is what I personally dislike. I do not think pid_ns_prepare_proc()
+should depend on the fact that the first pid was already allocated.
+
+And, this subjective, yes, but it looks a bit strange that upid->nr
+has a reference to proc_mnt.
+
+And of course, imho it would nice to not create the circular reference
+we currently have.
+
+
+Louis, Eric.
+
+I am attaching my 2 patches (on top of cleanups) again. Could you take
+a look?
+
+Changes:
+
+	- pid_ns_release_proc() nullifies sb->s_fs_info
+
+	- proc_pid_lookup() and proc_self_readlink() check ns != NULL
+	  (this is sb->s_fs_info)
+
+I even tried to test this finally, seems to work.
+
+I am not going to argue if you prefer Louis's approach. But I will appreciate
+if you explain why my fix is wrong. I am curious because I spent 3 hours doing
+grep fs/proc ;)
+
+Oleg.
+
+--J2SCkAp4GZ/dPZZf
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: attachment; filename="PNS_5_DESTROY_FROM_WQ.patch"
+
+[PATCH 1/2] pid_ns: move destroy_pid_namespace() into workqueue context
+
+A separate patch to simplify the review of the next change.
+
+Move destroy_pid_namespace() into workqueue context. This allows us to do
+mntput() from free_pid_ns() paths, see the next patch.
+
+Add the new member, "struct work_struct destroy" into struct pid_namespace
+and change free_pid_ns() to call destroy_pid_namespace() via schedule_work().
+
+The patch looks a bit complicated because it also moves copy_pid_ns() up.
+
+Signed-off-by: Oleg Nesterov <oleg@redhat.com>
 ---
- fs/proc/base.c                |    4 ----
- fs/proc/root.c                |   11 ++++++++++-
- include/linux/pid_namespace.h |    3 +++
- kernel/fork.c                 |    6 ------
- kernel/pid.c                  |   16 +++++++++++++---
- kernel/pid_namespace.c        |    1 +
- 6 files changed, 27 insertions(+), 14 deletions(-)
 
-diff --git a/fs/proc/base.c b/fs/proc/base.c
-index acb7ef8..455b109 100644
---- a/fs/proc/base.c
-+++ b/fs/proc/base.c
-@@ -2745,10 +2745,6 @@ void proc_flush_task(struct task_struct *task)
+ include/linux/pid_namespace.h |    1 +
+ kernel/pid_namespace.c        |   25 +++++++++++++++++--------
+ 2 files changed, 18 insertions(+), 8 deletions(-)
+
+--- 35-rc3/include/linux/pid_namespace.h~PNS_5_DESTROY_FROM_WQ	2010-06-23 22:06:07.000000000 +0200
++++ 35-rc3/include/linux/pid_namespace.h	2010-06-24 15:17:46.000000000 +0200
+@@ -24,6 +24,7 @@ struct pid_namespace {
+ 	struct kmem_cache *pid_cachep;
+ 	unsigned int level;
+ 	struct pid_namespace *parent;
++	struct work_struct destroy;
+ #ifdef CONFIG_PROC_FS
+ 	struct vfsmount *proc_mnt;
+ #endif
+--- 35-rc3/kernel/pid_namespace.c~PNS_5_DESTROY_FROM_WQ	2010-06-24 15:16:22.000000000 +0200
++++ 35-rc3/kernel/pid_namespace.c	2010-06-24 15:17:46.000000000 +0200
+@@ -114,6 +114,16 @@ out:
+ 	return ERR_PTR(err);
+ }
+ 
++struct pid_namespace *copy_pid_ns(unsigned long flags,
++					struct pid_namespace *old_ns)
++{
++	if (!(flags & CLONE_NEWPID))
++		return get_pid_ns(old_ns);
++	if (flags & (CLONE_THREAD|CLONE_PARENT))
++		return ERR_PTR(-EINVAL);
++	return create_pid_namespace(old_ns);
++}
++
+ static void destroy_pid_namespace(struct pid_namespace *ns)
+ {
+ 	int i;
+@@ -123,13 +133,11 @@ static void destroy_pid_namespace(struct
+ 	kmem_cache_free(pid_ns_cachep, ns);
+ }
+ 
+-struct pid_namespace *copy_pid_ns(unsigned long flags, struct pid_namespace *old_ns)
++static void destroy_pid_namespace_work(struct work_struct *work)
+ {
+-	if (!(flags & CLONE_NEWPID))
+-		return get_pid_ns(old_ns);
+-	if (flags & (CLONE_THREAD|CLONE_PARENT))
+-		return ERR_PTR(-EINVAL);
+-	return create_pid_namespace(old_ns);
++	struct pid_namespace *ns =
++			container_of(work, struct pid_namespace, destroy);
++	destroy_pid_namespace(ns);
+ }
+ 
+ void free_pid_ns(struct kref *kref)
+@@ -137,9 +145,10 @@ void free_pid_ns(struct kref *kref)
+ 	struct pid_namespace *ns, *parent;
+ 
+ 	ns = container_of(kref, struct pid_namespace, kref);
+-
+ 	parent = ns->parent;
+-	destroy_pid_namespace(ns);
++
++	INIT_WORK(&ns->destroy, destroy_pid_namespace_work);
++	schedule_work(&ns->destroy);
+ 
+ 	if (parent != NULL)
+ 		put_pid_ns(parent);
+
+--J2SCkAp4GZ/dPZZf
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: attachment; filename="PNS_6_BREAK_CIRCLE.patch"
+
+[PATCH 2/2] pid_ns: refactor the buggy pid_ns_release_proc() logic
+
+pid_namespace holds ns->proc_mnt, while this vfsmount has a referene to
+the namespace via PROC_I(sb->s_root->d_inode)->pid. To break this circle
+/sbin/init does mntput() in pid_ns_release_proc(). See 6f4e6433.
+
+But we have the following problems:
+
+	- Nobody does mntput() if copy_process() fails after
+	  pid_ns_prepare_proc().
+
+	- proc_flush_task() checks upid->nr == 1 to verify we are init,
+	  this is wrong if a multi-threaded init does exec.
+
+	- As Louis pointed out, this namespace can have the detached
+	  EXIT_DEAD tasks which can use ns->proc_mnt after this mntput().
+
+With this patch only pid_namespace has a reference to ns->proc_mnt, and
+mntput(ns->proc_mnt) is called by destroy_pid_namespace() paths when we
+know that this ns must not have any references (in particular, there are
+no pids in this namespace).
+
+Changes:
+
+	- kill proc_flush_task()->pid_ns_release_proc()
+
+	- change fs/proc/root.c so that we don't create the "artificial"
+	  references to the namespace or its pid==1.
+
+	- change destroy_pid_namespace() to call pid_ns_release_proc().
+
+	- change pid_ns_release_proc() to clear s_root->d_inode->pid and
+	  sb->s_fs_info. The caller is destroy_pid_namespace(), both pid
+	  and ns must not have any reference.
+
+	- change proc_self_readlink() and proc_pid_lookup() to check
+	  sb->s_fs_info != NULL to detect the case when the proc fs is
+	  kept mounted after pid_ns_release_proc().
+
+Reported-by:  Louis Rilling <louis.rilling@kerlabs.com>
+Signed-off-by: Oleg Nesterov <oleg@redhat.com>
+---
+
+ kernel/pid_namespace.c |    2 ++
+ fs/proc/base.c         |   20 ++++++++++++--------
+ fs/proc/root.c         |   11 +++++++----
+ 3 files changed, 21 insertions(+), 12 deletions(-)
+
+--- 35-rc3/kernel/pid_namespace.c~PNS_6_BREAK_CIRCLE	2010-06-24 15:17:46.000000000 +0200
++++ 35-rc3/kernel/pid_namespace.c	2010-06-24 20:48:18.000000000 +0200
+@@ -128,6 +128,8 @@ static void destroy_pid_namespace(struct
+ {
+ 	int i;
+ 
++	pid_ns_release_proc(ns);
++
+ 	for (i = 0; i < PIDMAP_ENTRIES; i++)
+ 		kfree(ns->pidmap[i].page);
+ 	kmem_cache_free(pid_ns_cachep, ns);
+--- 35-rc3/fs/proc/base.c~PNS_6_BREAK_CIRCLE	2010-06-24 15:16:21.000000000 +0200
++++ 35-rc3/fs/proc/base.c	2010-06-24 20:48:18.000000000 +0200
+@@ -2349,11 +2349,17 @@ static const struct file_operations proc
+ /*
+  * /proc/self:
+  */
++
++static inline pid_t self_tgid(struct dentry *dentry)
++{
++	struct pid_namespace *ns = dentry->d_sb->s_fs_info;
++	return ns ? task_tgid_nr_ns(current, ns) : 0;
++}
++
+ static int proc_self_readlink(struct dentry *dentry, char __user *buffer,
+ 			      int buflen)
+ {
+-	struct pid_namespace *ns = dentry->d_sb->s_fs_info;
+-	pid_t tgid = task_tgid_nr_ns(current, ns);
++	pid_t tgid = self_tgid(dentry);
+ 	char tmp[PROC_NUMBUF];
+ 	if (!tgid)
+ 		return -ENOENT;
+@@ -2363,8 +2369,7 @@ static int proc_self_readlink(struct den
+ 
+ static void *proc_self_follow_link(struct dentry *dentry, struct nameidata *nd)
+ {
+-	struct pid_namespace *ns = dentry->d_sb->s_fs_info;
+-	pid_t tgid = task_tgid_nr_ns(current, ns);
++	pid_t tgid = self_tgid(dentry);
+ 	char *name = ERR_PTR(-ENOENT);
+ 	if (tgid) {
+ 		name = __getname();
+@@ -2745,10 +2750,6 @@ void proc_flush_task(struct task_struct 
  		proc_flush_task_mnt(upid->ns->proc_mnt, upid->nr,
  					tgid->numbers[i].nr);
  	}
@@ -89,153 +274,54 @@ index acb7ef8..455b109 100644
  }
  
  static struct dentry *proc_pid_instantiate(struct inode *dir,
-diff --git a/fs/proc/root.c b/fs/proc/root.c
-index 4258384..9876cd9 100644
---- a/fs/proc/root.c
-+++ b/fs/proc/root.c
-@@ -215,7 +215,16 @@ int pid_ns_prepare_proc(struct pid_namespace *ns)
- 	return 0;
+@@ -2796,6 +2797,9 @@ struct dentry *proc_pid_lookup(struct in
+ 		goto out;
+ 
+ 	ns = dentry->d_sb->s_fs_info;
++	if (!ns)
++		goto out;
++
+ 	rcu_read_lock();
+ 	task = find_task_by_pid_ns(tgid, ns);
+ 	if (task)
+--- 35-rc3/fs/proc/root.c~PNS_6_BREAK_CIRCLE	2010-06-23 22:06:01.000000000 +0200
++++ 35-rc3/fs/proc/root.c	2010-06-24 20:48:18.000000000 +0200
+@@ -31,7 +31,7 @@ static int proc_set_super(struct super_b
+ 	struct pid_namespace *ns;
+ 
+ 	ns = (struct pid_namespace *)data;
+-	sb->s_fs_info = get_pid_ns(ns);
++	sb->s_fs_info = ns;
+ 	return set_anon_super(sb, NULL);
  }
  
--void pid_ns_release_proc(struct pid_namespace *ns)
-+static void do_pid_ns_release_proc(struct work_struct *work)
- {
-+	struct pid_namespace *ns;
-+
-+	ns = container_of(work, struct pid_namespace, release_proc_work);
- 	mntput(ns->proc_mnt);
- }
-+
-+void pid_ns_release_proc(struct pid_namespace *ns)
-+{
-+	INIT_WORK(&ns->release_proc_work, do_pid_ns_release_proc);
-+	schedule_work(&ns->release_proc_work);
-+}
-diff --git a/include/linux/pid_namespace.h b/include/linux/pid_namespace.h
-index 38d1032..1010733 100644
---- a/include/linux/pid_namespace.h
-+++ b/include/linux/pid_namespace.h
-@@ -4,6 +4,7 @@
- #include <linux/sched.h>
- #include <linux/mm.h>
- #include <linux/threads.h>
-+#include <linux/workqueue.h>
- #include <linux/nsproxy.h>
- #include <linux/kref.h>
- 
-@@ -19,6 +20,7 @@ struct bsd_acct_struct;
- struct pid_namespace {
- 	struct kref kref;
- 	struct pidmap pidmap[PIDMAP_ENTRIES];
-+	atomic_t nr_pids;
- 	int last_pid;
- 	struct task_struct *child_reaper;
- 	struct kmem_cache *pid_cachep;
-@@ -26,6 +28,7 @@ struct pid_namespace {
- 	struct pid_namespace *parent;
- #ifdef CONFIG_PROC_FS
- 	struct vfsmount *proc_mnt;
-+	struct work_struct release_proc_work;
- #endif
- #ifdef CONFIG_BSD_PROCESS_ACCT
- 	struct bsd_acct_struct *bacct;
-diff --git a/kernel/fork.c b/kernel/fork.c
-index b6cce14..b063a9c 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -1154,12 +1154,6 @@ static struct task_struct *copy_process(unsigned long clone_flags,
- 		pid = alloc_pid(p->nsproxy->pid_ns);
- 		if (!pid)
- 			goto bad_fork_cleanup_io;
--
--		if (clone_flags & CLONE_NEWPID) {
--			retval = pid_ns_prepare_proc(p->nsproxy->pid_ns);
--			if (retval < 0)
--				goto bad_fork_free_pid;
--		}
+@@ -68,7 +68,7 @@ static int proc_get_sb(struct file_syste
+ 		struct proc_inode *ei = PROC_I(sb->s_root->d_inode);
+ 		if (!ei->pid) {
+ 			rcu_read_lock();
+-			ei->pid = get_pid(find_pid_ns(1, ns));
++			ei->pid = find_pid_ns(1, ns);
+ 			rcu_read_unlock();
+ 		}
  	}
+@@ -83,7 +83,6 @@ static void proc_kill_sb(struct super_bl
  
- 	p->pid = pid_nr(pid);
-diff --git a/kernel/pid.c b/kernel/pid.c
-index e9fd8c1..fdb73e1 100644
---- a/kernel/pid.c
-+++ b/kernel/pid.c
-@@ -34,6 +34,7 @@
- #include <linux/bootmem.h>
- #include <linux/hash.h>
- #include <linux/pid_namespace.h>
-+#include <linux/proc_fs.h>
- #include <linux/init_task.h>
- #include <linux/syscalls.h>
- 
-@@ -112,7 +113,7 @@ EXPORT_SYMBOL(is_container_init);
- 
- static  __cacheline_aligned_in_smp DEFINE_SPINLOCK(pidmap_lock);
- 
--static void free_pidmap(struct upid *upid)
-+static bool free_pidmap(struct upid *upid)
- {
- 	int nr = upid->nr;
- 	struct pidmap *map = upid->ns->pidmap + nr / BITS_PER_PAGE;
-@@ -120,6 +121,7 @@ static void free_pidmap(struct upid *upid)
- 
- 	clear_bit(offset, map->page);
- 	atomic_inc(&map->nr_free);
-+	return atomic_dec_and_test(&upid->ns->nr_pids);
+ 	ns = (struct pid_namespace *)sb->s_fs_info;
+ 	kill_anon_super(sb);
+-	put_pid_ns(ns);
  }
  
- static int alloc_pidmap(struct pid_namespace *pid_ns)
-@@ -154,6 +156,7 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
- 			do {
- 				if (!test_and_set_bit(offset, map->page)) {
- 					atomic_dec(&map->nr_free);
-+					atomic_inc(&pid_ns->nr_pids);
- 					pid_ns->last_pid = pid;
- 					return pid;
- 				}
-@@ -226,6 +229,7 @@ static void delayed_put_pid(struct rcu_head *rhp)
- void free_pid(struct pid *pid)
+ static struct file_system_type proc_fs_type = {
+@@ -209,5 +208,9 @@ int pid_ns_prepare_proc(struct pid_names
+ 
+ void pid_ns_release_proc(struct pid_namespace *ns)
  {
- 	/* We can be called with write_lock_irq(&tasklist_lock) held */
-+	struct upid *upid;
- 	int i;
- 	unsigned long flags;
- 
-@@ -234,8 +238,11 @@ void free_pid(struct pid *pid)
- 		hlist_del_rcu(&pid->numbers[i].pid_chain);
- 	spin_unlock_irqrestore(&pidmap_lock, flags);
- 
--	for (i = 0; i <= pid->level; i++)
--		free_pidmap(pid->numbers + i);
-+	for (i = 0; i <= pid->level; i++) {
-+		upid = pid->numbers + i;
-+		if (free_pidmap(upid))
-+			pid_ns_release_proc(upid->ns);
+-	mntput(ns->proc_mnt);
++	if (ns->proc_mnt) {
++		ns->proc_mnt->mnt_sb->s_fs_info = NULL;
++		PROC_I(ns->proc_mnt->mnt_sb->s_root->d_inode)->pid = NULL;
++		mntput(ns->proc_mnt);
 +	}
- 
- 	call_rcu(&pid->rcu, delayed_put_pid);
  }
-@@ -276,6 +283,9 @@ struct pid *alloc_pid(struct pid_namespace *ns)
- 				&pid_hash[pid_hashfn(upid->nr, upid->ns)]);
- 	spin_unlock_irq(&pidmap_lock);
- 
-+	if (pid->numbers[pid->level].nr == 1)
-+		pid_ns_prepare_proc(ns);
-+
- out:
- 	return pid;
- 
-diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
-index a5aff94..beba2b4 100644
---- a/kernel/pid_namespace.c
-+++ b/kernel/pid_namespace.c
-@@ -92,6 +92,7 @@ static struct pid_namespace *create_pid_namespace(struct pid_namespace *parent_p
- 
- 	set_bit(0, ns->pidmap[0].page);
- 	atomic_set(&ns->pidmap[0].nr_free, BITS_PER_PAGE - 1);
-+	atomic_set(&ns->nr_pids, 0);
- 
- 	for (i = 1; i < PIDMAP_ENTRIES; i++)
- 		atomic_set(&ns->pidmap[i].nr_free, BITS_PER_PAGE);
--- 
-1.5.6.5
+
+--J2SCkAp4GZ/dPZZf--
