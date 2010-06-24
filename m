@@ -1,7 +1,7 @@
 From: "Sharp, John M." <johnsharp-Oqun+mw3t3di10Plx8piMg@public.gmane.org>
 Subject: Last Call For Automation
 Date: Wed, 23 Jun 2010 17:42:06 -0700
-Message-ID: <201006240108.o5O18PDh028675@smtp1.linux-foundation.org>
+Message-ID: <201006240108.o5O18OWW028673@smtp1.linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: base64
@@ -15,7 +15,7 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 SGF2ZSB5b3Ugc2lnbmVkIHVwIHlldD8gV2XigJlsbCBoZXJl4oCZcyB5b3VyIGxhc3QgY2hhbmNl
@@ -56,7 +56,7 @@ ZSBvbiB0aGUgY2FsbCB0b25pZ2h0LiBOTyBFWENFUFRJT05TLgoKCgotLS0tLS0tLS0tLS0tLS0t
 LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQoKaHR0cHM6Ly93d3cyLmdvdG9t
 ZWV0aW5nLmNvbS9yZWdpc3Rlci84ODA1NDAyNTEKCi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
 LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tCgoKaHR0cDovL2FwcC5zdHJlYW1zZW5kLmNvbS9w
-cml2YXRlL3c0RDAvTmVYL0VkMDVVbTQvdW5zdWJzY3JpYmUvMTE3Nzk1NDEKX19fX19fX19fX19f
+cml2YXRlL3c0RDAvTmVYL1BkQ285dTIvdW5zdWJzY3JpYmUvMTE3Nzk1NDEKX19fX19fX19fX19f
 X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxp
 c3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxp
 bnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
