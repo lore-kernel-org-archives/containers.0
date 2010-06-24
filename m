@@ -1,24 +1,11 @@
-From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/1] pid_ns: move pid_ns_release_proc() from
-	proc_flush_task() to zap_pid_ns_processes()
-Date: Wed, 23 Jun 2010 22:37:35 +0200
-Message-ID: <20100623203735.GB25298@redhat.com>
-References: <1276706068-18567-1-git-send-email-louis.rilling@kerlabs.com>
-	<20100617212003.GA4182@redhat.com>
-	<20100618082033.GD16877@hawkmoon.kerlabs.com>
-	<20100618111554.GA3252@redhat.com>
-	<20100618160849.GA7404@redhat.com>
-	<20100618173320.GG16877@hawkmoon.kerlabs.com>
-	<20100618175541.GA13680@redhat.com>
-	<20100618212355.GA29478@redhat.com>
-	<20100619190840.GA3424@redhat.com>
-	<20100623203652.GA25298@redhat.com>
+From: "Sharp, John M." <johnsharp-Oqun+mw3t3di10Plx8piMg@public.gmane.org>
+Subject: Last Call For Automation
+Date: Wed, 23 Jun 2010 17:42:06 -0700
+Message-ID: <201006240108.o5O18PDh028675@smtp1.linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20100623203652.GA25298-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -28,51 +15,48 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is mostly cleanup and optimization, but also fixes the bug.
-
-proc_flush_task() checks upid->nr == 1 to detect the case when
-a sub-namespace exits. However, this doesn't work in case when
-a multithreaded init execs and calls release_task(old_leader),
-the old leader has the same pid 1.
-
-Move pid_ns_release_proc() to zap_pid_ns_processes(), it is called
-when we know for sure that init is exiting.
-
-Note: with or without this change this mntput() can happen before the
-EXIT_DEAD tasks not visible to do_wait() have passed proc_flush_task().
-We need more fixes.
-
-Signed-off-by: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
----
-
- fs/proc/base.c         |    4 ----
- kernel/pid_namespace.c |    2 ++
- 2 files changed, 2 insertions(+), 4 deletions(-)
-
---- 35-rc3/fs/proc/base.c~PNS_5_MOVE_MNTPUT_TO_ZAP	2010-06-23 22:06:01.000000000 +0200
-+++ 35-rc3/fs/proc/base.c	2010-06-23 22:10:26.000000000 +0200
-@@ -2745,10 +2745,6 @@ void proc_flush_task(struct task_struct 
- 		proc_flush_task_mnt(upid->ns->proc_mnt, upid->nr,
- 					tgid->numbers[i].nr);
- 	}
--
--	upid = &pid->numbers[pid->level];
--	if (upid->nr == 1)
--		pid_ns_release_proc(upid->ns);
- }
- 
- static struct dentry *proc_pid_instantiate(struct inode *dir,
---- 35-rc3/kernel/pid_namespace.c~PNS_5_MOVE_MNTPUT_TO_ZAP	2010-06-23 22:13:07.000000000 +0200
-+++ 35-rc3/kernel/pid_namespace.c	2010-06-23 22:13:55.000000000 +0200
-@@ -189,6 +189,8 @@ void zap_pid_ns_processes(struct pid_nam
- 	} while (rc != -ECHILD);
- 
- 	acct_exit_ns(pid_ns);
-+	pid_ns_release_proc(pid_ns);
-+
- 	return;
- }
+SGF2ZSB5b3Ugc2lnbmVkIHVwIHlldD8gV2XigJlsbCBoZXJl4oCZcyB5b3VyIGxhc3QgY2hhbmNl
+LgoKCioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKgpodHRwczovL3d3dzIuZ290b21lZXRp
+bmcuY29tL3JlZ2lzdGVyLzg4MDU0MDI1MQoqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioq
+CgpJ4oCZbSBnb2luZyB0byBrZWVwIHRoaXMgcXVpY2sgYW5kIHRvIHRoZSBwb2ludC4gCkkgZG9u
+4oCZdCBicmluZyBhIGd1ZXN0IGluIHRvIHRlYWNoIHRoYXQgb2Z0ZW4uIApXaGVuIEkgZG8gaXTi
+gJlzIGJlY2F1c2UgdGhleSBhcmUgdGhlIGJlc3Qgb2YgdGhlIGJlc3QgCmFuZCB0aGUgc2hlZXIg
+YW1vdW50IG9mIGNvbnRlbnQgYW5kIHZhbHVlIGlzIHdlbGwgCndvcnRoIHlvdXIgdGltZS4gCgpU
+aGlzIHdlZWsgd2lsbCBiZSBubyBleGNlcHRpb24uIApNeSBpcyBndWVzdCBvbmUgb2YgdGhlIHRv
+cCB3aG9sZXNhbGVycyBpbiB0aGUgY291bnRyeSwgCmFuZCBoYXMgdGFrZW4gdGhlIGF1dG9tYXRp
+b24gb2YgaGlzIGJ1c2luZXNzIHRvIGEgbmV3IGxldmVsLiAKU28gbXVjaCBzbywgdGhhdCBoZeKA
+mXMgZWFybmVkIHRoZSBuaWNrbmFtZS0g4oCcTXIgQXV0b21hdGlvbuKAneKApgoKSSBrbm93IGl0
+4oCZcyBhIGxpdHRsZSBjaGVlc3kgYnV0IHdoZW4geW91ciBnZXQgdGFnZ2VkIHdpdGggYSAKbmlj
+a25hbWUgbGlrZSB0aGF0IGl04oCZcyBjYXVzZSB5b3Uga25vdyB5b3VyIHN0dWZmLiAgCgo9PT09
+PT09PT09PT09PT09PT09PT09PT09PT09PT09CgpodHRwczovL3d3dzIuZ290b21lZXRpbmcuY29t
+L3JlZ2lzdGVyLzg4MDU0MDI1MQoKPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQoKIEhl
+IHdpbGwgYmUgc2hvd2luZyB1cy0gCgrigKIJSG93IHlvdSBjYW4gY29tcGxldGVseSBhdXRvbWF0
+ZSBhbGwgb2YgeW91ciAKcmVhbCBlc3RhdGUgbWFya2V0aW5nCgrigKIJMyBzaW1wbGUgd2F5cyB0
+byBwdWxsIGRlYWxzIHN0cmFpZ2h0IG91dCBvZiB0aGUgCk1MUyBmb3IgNDAtNTAgY2VudHMgb24g
+dGhlIGRvbGxhciBtb250aCBhZnRlciBtb250aAoK4oCiCUV4YWN0bHkgd2hlcmUgeW91IGNhbiBn
+byB0byBmaW5kIGEgZnVsbCB0aW1lIHN0YWZmIAp0aGF0IHdpbGwgYnVpbGQgeW91ciByZWFsIGVz
+dGF0ZSBidXNpbmVzcyBmb3IgbGVzcyB0aGFuIHRoZSAKYXZlcmFnZSBBbWVyaWNhbiBzcGVuZHMg
+b24gU3RhcmJ1Y2tzIHBlciB3ZWVrLiAKCuKAoglBbGwgb2YgdGhlIHNjcmlwdHMsIHRpcHMsIGFu
+ZCB0cmFpbmluZyBtYW51YWxzIHRvIApoaXJlIHRoZXNlIGZvbGtzLiAKCuKAoglUaGUgNyBrZXkg
+c3RlcHMgaW4gYW55IHJlYWwgZXN0YXRlIGludmVzdGluZyBidXNpbmVzcy4KCkFuZCBtdWNoIG1v
+cmXigKYuCgoKU2VlIHlvdSB0b25pZ2h0LAoKCkpvaG4gU2hhcnAgCkF1dG9tYXRlZCBDb25jZXB0
+cyBMTEMg4oCiIDE0IEplZmZlcnNvbiBBdmVudWUsIERhbGxhcywgVFggNzUwNjMKCgpQLlMuCgpT
+UEVDSUFMIEJPTlVT4oCmICAKQXQgdGhlIGVuZCBvZiB0aGUgY2FsbCB3ZSBhcmUgZ29pbmcgdG8g
+Z2l2ZSBhd2F5IGEgU3RlcC1ieS1TdGVwIAptYW51YWwgZm9yIHNldHRpbmcgdXAgYSAxMDAlIEZV
+TExZIEFVVE9NQVRFRCBSZWFsIEVzdGF0ZSAKSW52ZXN0aW5nIGJ1c2luZXNzLiAKUGljdHVyZSBh
+ICJXZSBCdXkgVUdMWSBIb3VzZXMiICQ1MCwwMDAgRnJhbmNoaXNlIFN5c3RlbeKApnRoZW4gCnBp
+Y3R1cmUgaXQgVE9UQUxMWSBPTiBBVVRPLVBJTE9UIHNvIHlvdSBjYW4gcnVuIGl0IGZyb20gYW55
+d2hlcmUgCmluIHRoZSB3b3JsZOKApnRoYXQncyB3aGF0IG15IGd1ZXN0IGlzIGdvaW5nIHRvIGdp
+dmUgeW91IGp1c3QgZm9yIAphdHRlbmRpbmcuIAoKUC5QLlMuICBFdmVyeW9uZSB3aWxsIGdldCBh
+IHRlbXBvcmFyeSBsaW5rIHRvIGFjY2VzcyB0byB0aGlzIApzeXN0ZW0sIGJ1dCB5b3UgTVVTVCBi
+ZSBvbiB0aGUgY2FsbCB0b25pZ2h0LiBOTyBFWENFUFRJT05TLgoKCgotLS0tLS0tLS0tLS0tLS0t
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQoKaHR0cHM6Ly93d3cyLmdvdG9t
+ZWV0aW5nLmNvbS9yZWdpc3Rlci84ODA1NDAyNTEKCi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tCgoKaHR0cDovL2FwcC5zdHJlYW1zZW5kLmNvbS9w
+cml2YXRlL3c0RDAvTmVYL0VkMDVVbTQvdW5zdWJzY3JpYmUvMTE3Nzk1NDEKX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxp
+c3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxp
+bnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
