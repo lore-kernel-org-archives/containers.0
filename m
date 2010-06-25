@@ -1,8 +1,8 @@
-From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Subject: Re: [RESEND PATCH] pid_ns: Fix proc_flush_task() accessing freed
 	proc_mnt
-Date: Fri, 25 Jun 2010 14:21:18 +0200
-Message-ID: <20100625122118.GA5341@redhat.com>
+Date: Fri, 25 Jun 2010 11:37:33 -0700
+Message-ID: <20100625183733.GA2627__1687.52138638428$1277490551$gmane$org@us.ibm.com>
 References: <20100623203652.GA25298@redhat.com>
 	<1277399329-18087-1-git-send-email-louis.rilling@kerlabs.com>
 	<20100624191843.GA14205@redhat.com>
@@ -22,69 +22,24 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Andrew Morton <akpm@linux-found>
+To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 06/25, Louis Rilling wrote:
->
-> On 24/06/10 21:18 +0200, Oleg Nesterov wrote:
-> >
-> > and this adds the extra code to alloc/free pidmap.
->
-> Hopefully this is not much in alloc_pidmap() since we can expect that nr_pids
-> and last_pid are in the same cache line.
+Louis Rilling [Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org] wrote:
+| - proc_pid_readdir():
+|   Needs similar check and protection to proc_pid_lookup(), but there is another
+|   issue: next_tgid() can find a dying task:
 
-This also adds atomic op. But I mostly dislike the pid-ns-specific
-complications itself (including the mount-after-the-first-alloc_pid
-dependancy), not the minor perfomance penalty.
+Hmm, I thought proc_pid_readdir() would be a problem too but convinced myself
+that it would not - since a process running proc_pid_readdir() would have
+a reference to the pid namespace, in which case destroy_pid_ns() would not
+be called.
+| 
+|   next_tgid() finds a task
+|                                    task dies
+|                                    last reference to ns is dropped
+|                                    destroy_pid_namespace()
 
-But see below...
+caller of next_tgid() holds a ref to pid-ns right ?
 
-> > And, this subjective, yes, but it looks a bit strange that upid->nr
-> > has a reference to proc_mnt.
->
-> I presume that you wanted to say upid->ns.
-
-I meant ns->nr_pids ;)
-
-> This last point is what made me worry about your approach so far, although I did
-> not take time to spot the precise issues. Unfortunately I don't see what the
-> checks you added in proc_self_readlink(), proc_self_follow_link() and
-> proc_pid_lookup() buy. What does prevent destroy_pid_namespace() from running
-> concurrently? Maybe RCU could help in those cases?
-
-Very good point. And the strong argument against this approach.
-
-> Moreover, I think that proc_pid_readdir() should get some check too.
-
-Well, it checks ->reaper != NULL, that is why I don't verify ns.
-
-But yes, we have the same race (races) you pointed out here.
-
->     void pid_ns_release_proc(struct pid_namespace *ns)
->     {
-> 	struct inode *root_inode;
->
-> 	if (ns->proc_mnt) {
-> 		root_inode = ns->proc_mnt->mnt_sb->s_root->d_inode;
->
-> 		mutex_lock(&root_inode->i_mutex);
-> 		ns->proc_mnt->mnt_sb->s_fs_info = NULL;
-> 		PROC_I(root_inode)->pid = NULL;
-> 		mutex_unlock(&root_inode->i_mutex);
->
-> 		mntput(ns->proc_mnt);
-> 	}
->     }
->
->   This would also solve the issue for proc_pid_lookup() btw.
-
-Looks like you are right, but this doesn't help proc_self_readlink().
-
-I think we can fix all these problems, but I no longer think this
-approach can pretend to simplify the code. No, it will make the
-code more complex/ugly and potentially more buggy.
-
-Louis, thank you very much.
-
-Oleg.
+Sukadev
