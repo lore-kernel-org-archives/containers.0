@@ -1,49 +1,24 @@
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: Re: [RESEND PATCH] pid_ns: Fix proc_flush_task() accessing freed
-	proc_mnt
-Date: Fri, 25 Jun 2010 15:07:13 -0700
-Message-ID: <20100625220713.GA31123@us.ibm.com>
-References: <20100623203652.GA25298@redhat.com> <1277399329-18087-1-git-send-email-louis.rilling@kerlabs.com> <20100624191843.GA14205@redhat.com> <20100625102303.GG3773@hawkmoon.kerlabs.com> <20100625183733.GA2627@us.ibm.com> <20100625192945.GA25532@redhat.com> <20100625212618.GA11917@us.ibm.com> <20100625212758.GA30474@redhat.com>
+From: "Lisabeth Valrie" <lvalrieyp-3sBC+ynHN6tBDgjK7y7TUQ@public.gmane.org>
+Subject: lyxx jn
+Date: Fri, 25 Jun 2010 20:28:24 -0700
+Message-ID: <4C2573D8.DB21D903@ups-scs.com>
+References: <579201cb11b8$de1ec130$fc7cef9a@u2rnad2>
+Reply-To: Lisabeth Valrie <lvalrieyp-3sBC+ynHN6tBDgjK7y7TUQ@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20100625212758.GA30474@redhat.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Oleg Nesterov <oleg@redhat.com>
-Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Pavel Emelyanov <xemul@openvz.org>, Andrew Morton <akpm@linux-foundation.org>, Linux Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <579201cb11b8$de1ec130$fc7cef9a@u2rnad2>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Oleg Nesterov [oleg@redhat.com] wrote:
-| On 06/25, Sukadev Bhattiprolu wrote:
-| >
-| > Oleg Nesterov [oleg@redhat.com] wrote:
-| > | On 06/25, Sukadev Bhattiprolu wrote:
-| > | >
-| > | > Louis Rilling [Louis.Rilling@kerlabs.com] wrote:
-| > | > | - proc_pid_readdir():
-| > | > |   Needs similar check and protection to proc_pid_lookup(), but there is another
-| > | > |   issue: next_tgid() can find a dying task:
-| > | >
-| > | > Hmm, I thought proc_pid_readdir() would be a problem too but convinced myself
-| > | > that it would not - since a process running proc_pid_readdir() would have
-| > | > a reference to the pid namespace,
-| > |
-| > | Where does this reference comes from ?
-| >
-| > Caller of proc_pid_readdir() would be living in the same pid namespace right ?
-| 
-| Afaics, in general not.
-| 
-| Suppose that we do something like
-| 
-| 	if (!clone(CLONE_NEWPID)) {
-| 		mount("none", "/SUB_PROC", "proc", 0, NULL);
-| 		exit();
-| 	}
-| 
-| After that /SUB_PROC/ still exists, one can do "ls /SUB_PROC/".
-
-Yes, I see it now. Thanks,
-
-Sukadev
+7il
