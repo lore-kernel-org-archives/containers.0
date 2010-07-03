@@ -1,13 +1,11 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 10/11][v15]: Implement sys_eclone for powerpc
-Date: Sat,  3 Jul 2010 13:32:43 -0700
-Message-ID: <1278189164-28408-11-git-send-email-sukadev@linux.vnet.ibm.com>
-References: <1278189164-28408-1-git-send-email-sukadev@linux.vnet.ibm.com>
+Subject: [PATCH 00/11][v15]: Implement eclone() system call
+Date: Sat,  3 Jul 2010 13:32:33 -0700
+Message-ID: <1278189164-28408-1-git-send-email-sukadev@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1278189164-28408-1-git-send-email-sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,181 +19,188 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>, Serge Hallyn <s
 Cc: Randy Dunlap <randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, Albert Cahalan <acahalan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+To support application checkpoint/restart, a task must have the same pid it
+had when it was checkpointed.  When containers are nested, the tasks within
+the containers exist in multiple pid namespaces and hence have multiple pids
+to specify during restart.
 
-Wired up for both ppc32 and ppc64, but tested only with the latter.
+This patchset implements a new system call, eclone() that lets a process
+specify the pids of the child process.
 
-Changelog:
-  - Jun 21: (Sukadev): Specify stack as [base, offset].
-  - Jan 20: (ntl) fix 32-bit build
-  - Nov 17: (serge) remove redundant flags_high check, and
-    	    don't fold it into flags.
+Summary:
+	Patches 1 through 7 are helper patches needed for choosing a pid
+	for the child process.
 
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org
-Cc: linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linuxppc-dev-mnsaURCQ41sdnm+yROfE0A@public.gmane.org
-Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- arch/powerpc/include/asm/syscalls.h |    6 +++
+	Patches 8 through 10 implement the eclone() system call on x86,
+	x86_64, s390 and powerpc.
+
+	Patch 11 documents the new system call, some/all of which will
+	eventually go into a man page.
+
+Changelog[v15]:
+	- [Albert Cahalan, Randy Dunlap]: Specify stack as [base, offset]
+	  on all architectures rather than [base, offset] on a few and
+	  stack pointer on others.
+	- [Randy Dunlap] Fix typos in documentation and pointer to usage
+	  examples of eclone()
+
+Changelog[v14]:
+	- Updates to documentaiton
+
+Changelog[v13]:
+	- Implement sys_eclone() on x86_64, s390 and powerpc architectures
+	- Reorg x86 implementation to enable sharing code with x86_64
+	- [Arnd Bergmann] Remove the ->reserved1 field we now have args_size
+	- [Nathan Lynch, Serge Hallyn]: Rename ->child_stack_base to
+	  ->child_stack and ensure ->child_stack_size is 0 on architectures
+	  that don't need the stack size.
+	- Modify exmaple in Documentation to avoid unnecessary register copy.
+
+Changelog[v12]:
+	- Ignore ->child_stack_size when ->child_stack_base is NULL (PATCH 8)
+	- Cleanup/simplify example in Documentation/eclone (PATCH 9).
+	- Rename sys call to a shorter name, eclone()
+
+Changelog[v11]:
+	- [Dave Hansen] Move clone_args validation checks to arch-indpeendent
+	  code.
+	- [Oren Laadan] Make args_size a parameter to system call and remove
+	  it from 'struct clone_args'
+
+Changelog[v10]:
+	- [Linus Torvalds] Use PTREGSCALL() implementation for clone rather
+	  than the generic system call
+	- Rename clone3() to clone_with_pids()
+	- Update Documentation/clone_with_pids() to show example usage with
+	  the PTREGSCALL implementation.
+
+Changelog[v9]:
+	- [Pavel Emelyanov] Drop the patch that made 'pid_max' a property
+	  of struct pid_namespace
+	- [Roland McGrath, H. Peter Anvin and earlier on, Serge Hallyn] To
+	  avoid inadvertent truncation clone_flags, preserve the first
+	  parameter of clone3() as 'u32 clone_flags' and specify newer
+	  flags in clone_args.flags_high (PATCH 8/9 and PATCH 9/9)
+	- [Eric Biederman] Generalize alloc_pidmap() code to simplify and
+	  remove duplication (see PATCH 3/9].
+	  
+Changelog[v8]:
+	- [Oren Laadan, Louis Rilling, KOSAKI Motohiro]
+	  The name 'clone2()' is in use - renamed new syscall to clone3().
+	- [Oren Laadan] ->parent_tidptr and ->child_tidptr need to be 64bit.
+	- [Oren Laadan] Ensure that unused fields/flags in clone_struct are 0.
+	  (Added [PATCH 7/10] to the patchset).
+
+Changelog[v7]:
+	- [Peter Zijlstra, Arnd Bergmann]
+	  Group the arguments to clone2() into a 'struct clone_arg' to
+	  workaround the issue of exceeding 6 arguments to the system call.
+	  Also define clone-flags as u64 to allow additional clone-flags.
+
+Changelog[v6]:
+	- [Nathan Lynch, Arnd Bergmann, H. Peter Anvin, Linus Torvalds]
+	  Change 'pid_set.pids' to 'pid_t pids[]' so sizeof(struct pid_set) is
+	  constant across architectures (Patches 7, 8).
+	- (Nathan Lynch) Change pid_set.num_pids to unsigned and remove
+	  'unum_pids < 0' check (Patches 7,8)
+	- (Pavel Machek) New patch (Patch 9) to add some documentation.
+
+Changelog[v5]:
+	- Make 'pid_max' a property of pid_ns (Integrated Serge Hallyn's patch
+	  into this set)
+	- (Eric Biederman): Avoid the new function, set_pidmap() - added
+	  couple of checks on 'target_pid' in alloc_pidmap() itself.
+
+=== IMPORTANT NOTE:
+
+clone() system call has another limitation - all but one bits in clone-flags
+are in use and if more new clone-flags are needed, we will need a variant of
+the clone() system call. 
+
+It appears to make sense to try and extend this new system call to address
+this limitation as well. The requirements of a new clone system call could
+then be summarized as:
+
+	- do everything clone() does today, and
+	- give application an ability to choose pids for the child process
+	  in all ancestor pid namespaces, and
+	- allow more clone_flags
+
+Contstraints:
+
+	- system-calls are restricted to 6 parameters and clone() already
+	  takes 5 parameters, any extension to clone() interface would require
+	  one or more copy_from_user().  (Not sure if copy_from_user() of ~40
+	  bytes would have a significant impact on performance of clone()).
+
+Based on these requirements and constraints, we explored a couple of system
+call interfaces (in earlier versions of this patchset). Based on input from
+Arnd Bergmann and others, the new interface of the system call is: 
+
+	struct clone_args {
+		u64 clone_flags_high;
+		u64 child_stack_base;
+		u64 child_stack_size;
+		u64 parent_tid_ptr;
+		u64 child_tid_ptr;
+		u32 nr_pids;
+		u32 reserved0;
+	};
+
+	sys_eclone(u32 flags_low, struct clone_args *cargs, int args_size,
+			pid_t *pids)
+
+Details of the struct clone_args and the usage are explained in the
+documentation (PATCH 11/11).
+
+NOTE:
+	While this patchset enables support for more clone-flags, actual
+	implementation for additional clone-flags is best implemented as
+	a separate patchset (PATCH 8/9 identifies some TODOs)
+
+Nathan Lynch (1):
+  eclone (10/11): Implement sys_eclone for powerpc
+
+Serge E. Hallyn (1):
+  eclone (9/11): Implement sys_eclone for s390
+
+Sukadev Bhattiprolu (9):
+  eclone (1/11): Factor out code to allocate pidmap page
+  eclone (2/11): Have alloc_pidmap() return actual error code
+  eclone (3/11): Define set_pidmap() function
+  eclone (4/11): Add target_pids parameter to alloc_pid()
+  eclone (5/11): Add target_pids parameter to copy_process()
+  eclone (6/11): Check invalid clone flags
+  eclone (7/11): Define do_fork_with_pids()
+  eclone (8/11): Implement sys_eclone for x86 (32,64)
+  eclone (11/11): Document sys_eclone
+
+ Documentation/eclone                |  354 +++++++++++++++++++++++++++++++++++
+ arch/powerpc/include/asm/syscalls.h |    6 +
  arch/powerpc/include/asm/systbl.h   |    1 +
  arch/powerpc/include/asm/unistd.h   |    3 +-
- arch/powerpc/kernel/entry_32.S      |    8 ++++
- arch/powerpc/kernel/entry_64.S      |    5 +++
- arch/powerpc/kernel/process.c       |   62 ++++++++++++++++++++++++++++++++++-
- 6 files changed, 83 insertions(+), 2 deletions(-)
+ arch/powerpc/kernel/entry_32.S      |    8 +
+ arch/powerpc/kernel/entry_64.S      |    5 +
+ arch/powerpc/kernel/process.c       |   62 ++++++-
+ arch/s390/include/asm/unistd.h      |    3 +-
+ arch/s390/kernel/compat_linux.c     |   17 ++
+ arch/s390/kernel/compat_wrapper.S   |    8 +
+ arch/s390/kernel/process.c          |   39 ++++
+ arch/s390/kernel/syscalls.S         |    1 +
+ arch/x86/ia32/ia32entry.S           |    2 +
+ arch/x86/include/asm/syscalls.h     |    2 +
+ arch/x86/include/asm/unistd_32.h    |    3 +-
+ arch/x86/include/asm/unistd_64.h    |    2 +
+ arch/x86/kernel/entry_32.S          |   14 ++
+ arch/x86/kernel/entry_64.S          |    1 +
+ arch/x86/kernel/process.c           |   43 ++++-
+ arch/x86/kernel/syscall_table_32.S  |    1 +
+ include/linux/pid.h                 |    2 +-
+ include/linux/sched.h               |   17 ++
+ include/linux/types.h               |   10 +
+ kernel/fork.c                       |  155 +++++++++++++++-
+ kernel/pid.c                        |  101 +++++++---
+ 25 files changed, 818 insertions(+), 42 deletions(-)
+ create mode 100644 Documentation/eclone
 
-diff --git a/arch/powerpc/include/asm/syscalls.h b/arch/powerpc/include/asm/syscalls.h
-index 4084e56..920cefd 100644
---- a/arch/powerpc/include/asm/syscalls.h
-+++ b/arch/powerpc/include/asm/syscalls.h
-@@ -23,6 +23,12 @@ asmlinkage int sys_execve(unsigned long a0, unsigned long a1,
- asmlinkage int sys_clone(unsigned long clone_flags, unsigned long usp,
- 		int __user *parent_tidp, void __user *child_threadptr,
- 		int __user *child_tidp, int p6, struct pt_regs *regs);
-+asmlinkage int sys_eclone(unsigned long flags_low,
-+			  struct clone_args __user *args,
-+			  size_t args_size,
-+			  pid_t __user *pids,
-+			  unsigned long p5, unsigned long p6,
-+			  struct pt_regs *regs);
- asmlinkage int sys_fork(unsigned long p1, unsigned long p2,
- 		unsigned long p3, unsigned long p4, unsigned long p5,
- 		unsigned long p6, struct pt_regs *regs);
-diff --git a/arch/powerpc/include/asm/systbl.h b/arch/powerpc/include/asm/systbl.h
-index a5ee345..f94fc43 100644
---- a/arch/powerpc/include/asm/systbl.h
-+++ b/arch/powerpc/include/asm/systbl.h
-@@ -326,3 +326,4 @@ SYSCALL_SPU(perf_event_open)
- COMPAT_SYS_SPU(preadv)
- COMPAT_SYS_SPU(pwritev)
- COMPAT_SYS(rt_tgsigqueueinfo)
-+PPC_SYS(eclone)
-diff --git a/arch/powerpc/include/asm/unistd.h b/arch/powerpc/include/asm/unistd.h
-index f0a1026..4cdbd5c 100644
---- a/arch/powerpc/include/asm/unistd.h
-+++ b/arch/powerpc/include/asm/unistd.h
-@@ -345,10 +345,11 @@
- #define __NR_preadv		320
- #define __NR_pwritev		321
- #define __NR_rt_tgsigqueueinfo	322
-+#define __NR_eclone		323
- 
- #ifdef __KERNEL__
- 
--#define __NR_syscalls		323
-+#define __NR_syscalls		324
- 
- #define __NR__exit __NR_exit
- #define NR_syscalls	__NR_syscalls
-diff --git a/arch/powerpc/kernel/entry_32.S b/arch/powerpc/kernel/entry_32.S
-index 1175a85..579f1da 100644
---- a/arch/powerpc/kernel/entry_32.S
-+++ b/arch/powerpc/kernel/entry_32.S
-@@ -586,6 +586,14 @@ ppc_clone:
- 	stw	r0,_TRAP(r1)		/* register set saved */
- 	b	sys_clone
- 
-+	.globl	ppc_eclone
-+ppc_eclone:
-+	SAVE_NVGPRS(r1)
-+	lwz	r0,_TRAP(r1)
-+	rlwinm	r0,r0,0,0,30		/* clear LSB to indicate full */
-+	stw	r0,_TRAP(r1)		/* register set saved */
-+	b	sys_eclone
-+
- 	.globl	ppc_swapcontext
- ppc_swapcontext:
- 	SAVE_NVGPRS(r1)
-diff --git a/arch/powerpc/kernel/entry_64.S b/arch/powerpc/kernel/entry_64.S
-index 07109d8..b763340 100644
---- a/arch/powerpc/kernel/entry_64.S
-+++ b/arch/powerpc/kernel/entry_64.S
-@@ -344,6 +344,11 @@ _GLOBAL(ppc_clone)
- 	bl	.sys_clone
- 	b	syscall_exit
- 
-+_GLOBAL(ppc_eclone)
-+	bl	.save_nvgprs
-+	bl	.sys_eclone
-+	b	syscall_exit
-+
- _GLOBAL(ppc32_swapcontext)
- 	bl	.save_nvgprs
- 	bl	.compat_sys_swapcontext
-diff --git a/arch/powerpc/kernel/process.c b/arch/powerpc/kernel/process.c
-index e4d71ce..f12a805 100644
---- a/arch/powerpc/kernel/process.c
-+++ b/arch/powerpc/kernel/process.c
-@@ -961,7 +961,67 @@ int sys_clone(unsigned long clone_flags, unsigned long usp,
- 		child_tidp = TRUNC_PTR(child_tidp);
- 	}
- #endif
-- 	return do_fork(clone_flags, usp, regs, 0, parent_tidp, child_tidp);
-+	return do_fork(clone_flags, usp, regs, 0, parent_tidp, child_tidp);
-+}
-+
-+#ifdef CONFIG_PPC64
-+#define MIN_STACK_FRAME 48
-+#else
-+#define MIN_STACK_FRAME 16
-+#endif
-+
-+static inline unsigned long get_user_stack_pointer(unsigned long base,
-+		unsigned long size)
-+{
-+	return ((base + size - 1) & ~0xF) - MIN_STACK_FRAME;
-+}
-+
-+int sys_eclone(unsigned long clone_flags_low,
-+	       struct clone_args __user *uclone_args,
-+	       size_t size,
-+	       pid_t __user *upids,
-+	       unsigned long p5, unsigned long p6,
-+	       struct pt_regs *regs)
-+{
-+	struct clone_args kclone_args;
-+	unsigned long stack_base;
-+	int __user *parent_tidp;
-+	int __user *child_tidp;
-+	unsigned long stack_sz;
-+	unsigned int nr_pids;
-+	unsigned long flags;
-+	unsigned long usp;
-+	int rc;
-+
-+	CHECK_FULL_REGS(regs);
-+
-+	rc = fetch_clone_args_from_user(uclone_args, size, &kclone_args);
-+	if (rc)
-+		return rc;
-+
-+	stack_sz = kclone_args.child_stack_size;
-+	stack_base = kclone_args.child_stack_base;
-+
-+	/* Interpret stack_base as the child sp if it is set. */
-+	usp = regs->gpr[1];
-+	if (stack_base)
-+		usp = get_user_stack_pointer(stack_base, stack_sz);
-+
-+	flags = clone_flags_low;
-+
-+	nr_pids = kclone_args.nr_pids;
-+
-+	parent_tidp = (int __user *)(unsigned long)kclone_args.parent_tid_ptr;
-+	child_tidp = (int __user *)(unsigned long)kclone_args.child_tid_ptr;
-+
-+#ifdef CONFIG_PPC64
-+	if (test_thread_flag(TIF_32BIT)) {
-+		parent_tidp = TRUNC_PTR(parent_tidp);
-+		child_tidp = TRUNC_PTR(child_tidp);
-+	}
-+#endif
-+	return do_fork_with_pids(flags, usp, regs, 0UL, parent_tidp,
-+			child_tidp, nr_pids, upids);
- }
- 
- int sys_fork(unsigned long p1, unsigned long p2, unsigned long p3,
--- 
-1.6.0.4
+Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
