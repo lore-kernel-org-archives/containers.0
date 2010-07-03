@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 07/11][v15]: Define do_fork_with_pids()
-Date: Sat,  3 Jul 2010 13:32:40 -0700
-Message-ID: <1278189164-28408-8-git-send-email-sukadev@linux.vnet.ibm.com>
+Subject: [PATCH 09/11][v15]: Implement sys_eclone for s390
+Date: Sat,  3 Jul 2010 13:32:42 -0700
+Message-ID: <1278189164-28408-10-git-send-email-sukadev@linux.vnet.ibm.com>
 References: <1278189164-28408-1-git-send-email-sukadev@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,100 +21,150 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>, Serge Hallyn <s
 Cc: Randy Dunlap <randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, Albert Cahalan <acahalan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-do_fork_with_pids() is same as do_fork(), except that it takes an
-additional, 'pid_set', parameter. This parameter, currently unused,
-specifies the set of target pids of the process in each of its pid
-namespaces.
+From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Changelog[v7]:
-	- Drop 'struct pid_set' object and pass in 'pid_t *target_pids'
-	  instead of 'struct pid_set *'.
+Implement the s390 hook for sys_eclone().
 
-Changelog[v6]:
-	- (Nathan Lynch, Arnd Bergmann, H. Peter Anvin, Linus Torvalds)
-	  Change 'pid_set.pids' to a 'pid_t pids[]' so size of 'struct pid_set'
-	  is constant across architectures.
-	- (Nathan Lynch) Change 'pid_set.num_pids' to 'unsigned int'.
-
-Changelog[v4]:
-	- Rename 'struct target_pid_set' to 'struct pid_set' since it may
-	  be useful in other contexts.
-
-Changelog[v3]:
-	- Fix "long-line" warning from checkpatch.pl
-
-Changelog[v2]:
-	- To facilitate moving architecture-inpdendent code to kernel/fork.c
-	  pass in 'struct target_pid_set __user *' to do_fork_with_pids()
-	  rather than 'pid_t *' (next patch moves the arch-independent
-	  code to kernel/fork.c)
+Changelog:
+	Jun 23: [Albert Cahalan, Randy Dunlap] Specify stack as [base,offset]
+	        [Russel King] Don't specify '__user' for integer types
+	Nov 24: Removed user-space code from commit log. See user-cr git tree.
+	Nov 17: remove redundant flags_high check
+	Nov 13: As suggested by Heiko, convert eclone to take its
+		parameters via registers.
 
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org
 Cc: linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: linuxppc-dev-mnsaURCQ41sdnm+yROfE0A@public.gmane.org
-Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Reviewed-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/sched.h |    3 +++
- kernel/fork.c         |   17 +++++++++++++++--
- 2 files changed, 18 insertions(+), 2 deletions(-)
+ arch/s390/include/asm/unistd.h    |    3 +-
+ arch/s390/kernel/compat_linux.c   |   17 ++++++++++++++++
+ arch/s390/kernel/compat_wrapper.S |    8 +++++++
+ arch/s390/kernel/process.c        |   39 +++++++++++++++++++++++++++++++++++++
+ arch/s390/kernel/syscalls.S       |    1 +
+ 5 files changed, 67 insertions(+), 1 deletions(-)
 
-diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 5de3ce5..f4ae3e3 100644
---- a/include/linux/sched.h
-+++ b/include/linux/sched.h
-@@ -2129,6 +2129,9 @@ extern int disallow_signal(int);
+diff --git a/arch/s390/include/asm/unistd.h b/arch/s390/include/asm/unistd.h
+index 5f00751..ff13be1 100644
+--- a/arch/s390/include/asm/unistd.h
++++ b/arch/s390/include/asm/unistd.h
+@@ -269,7 +269,8 @@
+ #define	__NR_pwritev		329
+ #define __NR_rt_tgsigqueueinfo	330
+ #define __NR_perf_event_open	331
+-#define NR_syscalls 332
++#define __NR_eclone		332
++#define NR_syscalls 333
  
- extern int do_execve(char *, char __user * __user *, char __user * __user *, struct pt_regs *);
- extern long do_fork(unsigned long, unsigned long, struct pt_regs *, unsigned long, int __user *, int __user *);
-+extern long do_fork_with_pids(unsigned long, unsigned long, struct pt_regs *,
-+				unsigned long, int __user *, int __user *,
-+				unsigned int, pid_t __user *);
- struct task_struct *fork_idle(int);
- 
- extern void set_task_comm(struct task_struct *tsk, char *from);
-diff --git a/kernel/fork.c b/kernel/fork.c
-index e41b3d1..2559d7a 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -1355,12 +1355,14 @@ struct task_struct * __cpuinit fork_idle(int cpu)
-  * It copies the process, and if successful kick-starts
-  * it and waits for it to finish using the VM if required.
-  */
--long do_fork(unsigned long clone_flags,
-+long do_fork_with_pids(unsigned long clone_flags,
- 	      unsigned long stack_start,
- 	      struct pt_regs *regs,
- 	      unsigned long stack_size,
- 	      int __user *parent_tidptr,
--	      int __user *child_tidptr)
-+	      int __user *child_tidptr,
-+	      unsigned int num_pids,
-+	      pid_t __user *upids)
- {
- 	struct task_struct *p;
- 	int trace = 0;
-@@ -1463,6 +1465,17 @@ long do_fork(unsigned long clone_flags,
- 	return nr;
+ /* 
+  * There are some system calls that are not present on 64 bit, some
+diff --git a/arch/s390/kernel/compat_linux.c b/arch/s390/kernel/compat_linux.c
+index 73b624e..1f70d6f 100644
+--- a/arch/s390/kernel/compat_linux.c
++++ b/arch/s390/kernel/compat_linux.c
+@@ -663,6 +663,23 @@ asmlinkage long sys32_write(unsigned int fd, char __user * buf, size_t count)
+ 	return sys_write(fd, buf, count);
  }
  
-+long do_fork(unsigned long clone_flags,
-+	      unsigned long stack_start,
-+	      struct pt_regs *regs,
-+	      unsigned long stack_size,
-+	      int __user *parent_tidptr,
-+	      int __user *child_tidptr)
++asmlinkage long sys32_clone(void)
 +{
-+	return do_fork_with_pids(clone_flags, stack_start, regs, stack_size,
-+			parent_tidptr, child_tidptr, 0, NULL);
++	struct pt_regs *regs = task_pt_regs(current);
++	unsigned long clone_flags;
++	unsigned long newsp;
++	int __user *parent_tidptr, *child_tidptr;
++
++	clone_flags = regs->gprs[3] & 0xffffffffUL;
++	newsp = regs->orig_gpr2 & 0x7fffffffUL;
++	parent_tidptr = compat_ptr(regs->gprs[4]);
++	child_tidptr = compat_ptr(regs->gprs[5]);
++	if (!newsp)
++		newsp = regs->gprs[15];
++	return do_fork(clone_flags, newsp, regs, 0,
++		       parent_tidptr, child_tidptr);
 +}
 +
- #ifndef ARCH_MIN_MMSTRUCT_ALIGN
- #define ARCH_MIN_MMSTRUCT_ALIGN 0
- #endif
+ /*
+  * 31 bit emulation wrapper functions for sys_fadvise64/fadvise64_64.
+  * These need to rewrite the advise values for POSIX_FADV_{DONTNEED,NOREUSE}
+diff --git a/arch/s390/kernel/compat_wrapper.S b/arch/s390/kernel/compat_wrapper.S
+index 672ce52..b7bedfa 100644
+--- a/arch/s390/kernel/compat_wrapper.S
++++ b/arch/s390/kernel/compat_wrapper.S
+@@ -1847,6 +1847,14 @@ sys_clone_wrapper:
+ 	llgtr	%r5,%r5			# int *
+ 	jg	sys_clone		# branch to system call
+ 
++	.globl	sys_eclone_wrapper
++sys_eclone_wrapper:
++	llgfr	%r2,%r2			# unsigned int
++	llgtr	%r3,%r3			# struct clone_args *
++	lgfr	%r4,%r4			# int
++	llgtr	%r5,%r5			# pid_t *
++	jg	sys_eclone		# branch to system call
++
+ 	.globl	sys32_execve_wrapper
+ sys32_execve_wrapper:
+ 	llgtr	%r2,%r2			# char *
+diff --git a/arch/s390/kernel/process.c b/arch/s390/kernel/process.c
+index 1039fde..e511122 100644
+--- a/arch/s390/kernel/process.c
++++ b/arch/s390/kernel/process.c
+@@ -240,6 +240,45 @@ SYSCALL_DEFINE4(clone, unsigned long, newsp, unsigned long, clone_flags,
+ 		       parent_tidptr, child_tidptr);
+ }
+ 
++SYSCALL_DEFINE4(eclone, unsigned int, flags_low, struct clone_args __user *,
++		uca, int, args_size, pid_t __user *, pids)
++{
++	int rc;
++	struct pt_regs *regs = task_pt_regs(current);
++	struct clone_args kca;
++	int __user *parent_tid_ptr;
++	int __user *child_tid_ptr;
++	unsigned long flags;
++	unsigned long stack;
++	unsigned long stack_base;
++	unsigned long stack_size;
++
++	rc = fetch_clone_args_from_user(uca, args_size, &kca);
++	if (rc)
++		return rc;
++
++	flags = flags_low;
++	parent_tid_ptr = (int __user *) kca.parent_tid_ptr;
++	child_tid_ptr =  (int __user *) kca.child_tid_ptr;
++	stack_base = (unsigned long) kca.child_stack_base;
++	stack_size = (unsigned long) kca.child_stack_size;
++
++	/*
++	 * Compute stack pointer and adjust for function-arg and return
++	 * adderss values on the stack.
++	 */
++	stack = regs->gprs[15];
++	if (!stack)
++		stack = stack_base + stack_size - 2*sizeof(void *);
++
++	/*
++	 * TODO: On 32-bit systems, clone_flags is passed in as 32-bit value
++	 * to several functions. Need to convert clone_flags to 64-bit.
++	 */
++	return do_fork_with_pids(flags, stack, regs, 0, parent_tid_ptr,
++				child_tid_ptr, kca.nr_pids, pids);
++}
++
+ /*
+  * This is trivial, and on the face of it looks like it
+  * could equally well be done in user mode.
+diff --git a/arch/s390/kernel/syscalls.S b/arch/s390/kernel/syscalls.S
+index 201ce6b..08eab1d 100644
+--- a/arch/s390/kernel/syscalls.S
++++ b/arch/s390/kernel/syscalls.S
+@@ -340,3 +340,4 @@ SYSCALL(sys_preadv,sys_preadv,compat_sys_preadv_wrapper)
+ SYSCALL(sys_pwritev,sys_pwritev,compat_sys_pwritev_wrapper)
+ SYSCALL(sys_rt_tgsigqueueinfo,sys_rt_tgsigqueueinfo,compat_sys_rt_tgsigqueueinfo_wrapper) /* 330 */
+ SYSCALL(sys_perf_event_open,sys_perf_event_open,sys_perf_event_open_wrapper)
++SYSCALL(sys_eclone,sys_eclone,sys_eclone_wrapper)
 -- 
 1.6.0.4
