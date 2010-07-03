@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 02/11][v15]: Have alloc_pidmap() return actual error code
-Date: Sat,  3 Jul 2010 13:32:35 -0700
-Message-ID: <1278189164-28408-3-git-send-email-sukadev@linux.vnet.ibm.com>
+Subject: [PATCH 04/11][v15]: Add target_pids parameter to alloc_pid()
+Date: Sat,  3 Jul 2010 13:32:37 -0700
+Message-ID: <1278189164-28408-5-git-send-email-sukadev@linux.vnet.ibm.com>
 References: <1278189164-28408-1-git-send-email-sukadev@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,16 +21,7 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>, Serge Hallyn <s
 Cc: Randy Dunlap <randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, Albert Cahalan <acahalan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-alloc_pidmap() can fail either because all pid numbers are in use or
-because memory allocation failed.  With support for setting a specific
-pid number, alloc_pidmap() would also fail if either the given pid
-number is invalid or in use.
-
-Rather than have callers assume -ENOMEM, have alloc_pidmap() return
-the actual error.
-
-Changelog[v1]:
-	- [Oren Laadan] Rebase to kernel 2.6.33
+This parameter is currently NULL, but will be used in a follow-on patch.
 
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org
@@ -41,70 +32,77 @@ Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Reviewed-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- kernel/fork.c |    5 +++--
- kernel/pid.c  |   10 ++++++----
- 2 files changed, 9 insertions(+), 6 deletions(-)
+ include/linux/pid.h |    2 +-
+ kernel/fork.c       |    3 ++-
+ kernel/pid.c        |    9 +++++++--
+ 3 files changed, 10 insertions(+), 4 deletions(-)
 
+diff --git a/include/linux/pid.h b/include/linux/pid.h
+index 49f1c2f..914185d 100644
+--- a/include/linux/pid.h
++++ b/include/linux/pid.h
+@@ -119,7 +119,7 @@ extern struct pid *find_get_pid(int nr);
+ extern struct pid *find_ge_pid(int nr, struct pid_namespace *);
+ int next_pidmap(struct pid_namespace *pid_ns, int last);
+ 
+-extern struct pid *alloc_pid(struct pid_namespace *ns);
++extern struct pid *alloc_pid(struct pid_namespace *ns, pid_t *target_pids);
+ extern void free_pid(struct pid *pid);
+ 
+ /*
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 44b0791..afdfb08 100644
+index afdfb08..62018c8 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -1147,10 +1147,11 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+@@ -962,6 +962,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 	int retval;
+ 	struct task_struct *p;
+ 	int cgroup_callbacks_done = 0;
++	pid_t *target_pids = NULL;
+ 
+ 	if ((clone_flags & (CLONE_NEWNS|CLONE_FS)) == (CLONE_NEWNS|CLONE_FS))
+ 		return ERR_PTR(-EINVAL);
+@@ -1147,7 +1148,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
  		goto bad_fork_cleanup_io;
  
  	if (pid != &init_struct_pid) {
--		retval = -ENOMEM;
- 		pid = alloc_pid(p->nsproxy->pid_ns);
--		if (!pid)
-+		if (IS_ERR(pid)) {
-+			retval = PTR_ERR(pid);
+-		pid = alloc_pid(p->nsproxy->pid_ns);
++		pid = alloc_pid(p->nsproxy->pid_ns, target_pids);
+ 		if (IS_ERR(pid)) {
+ 			retval = PTR_ERR(pid);
  			goto bad_fork_cleanup_io;
-+		}
- 
- 		if (clone_flags & CLONE_NEWPID) {
- 			retval = pid_ns_prepare_proc(p->nsproxy->pid_ns);
 diff --git a/kernel/pid.c b/kernel/pid.c
-index 52a371a..8330488 100644
+index 4eaf975..57f1344 100644
 --- a/kernel/pid.c
 +++ b/kernel/pid.c
-@@ -160,7 +160,7 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
- 	for (i = 0; i <= max_scan; ++i) {
- 		if (unlikely(!map->page))
- 			if (alloc_pidmap_page(map) < 0)
--				break;
-+				return -ENOMEM;
- 		if (likely(atomic_read(&map->nr_free))) {
- 			do {
- 				if (!test_and_set_bit(offset, map->page)) {
-@@ -191,7 +191,7 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
- 		}
- 		pid = mk_pid(pid_ns, map, offset);
- 	}
--	return -1;
-+	return -EBUSY;
+@@ -276,13 +276,14 @@ void free_pid(struct pid *pid)
+ 	call_rcu(&pid->rcu, delayed_put_pid);
  }
  
- int next_pidmap(struct pid_namespace *pid_ns, int last)
-@@ -260,8 +260,10 @@ struct pid *alloc_pid(struct pid_namespace *ns)
+-struct pid *alloc_pid(struct pid_namespace *ns)
++struct pid *alloc_pid(struct pid_namespace *ns, pid_t *target_pids)
+ {
+ 	struct pid *pid;
+ 	enum pid_type type;
+ 	int i, nr;
+ 	struct pid_namespace *tmp;
  	struct upid *upid;
++	pid_t tpid;
  
  	pid = kmem_cache_alloc(ns->pid_cachep, GFP_KERNEL);
--	if (!pid)
-+	if (!pid) {
-+		pid = ERR_PTR(-ENOMEM);
- 		goto out;
-+	}
+ 	if (!pid) {
+@@ -292,7 +293,11 @@ struct pid *alloc_pid(struct pid_namespace *ns)
  
  	tmp = ns;
  	for (i = ns->level; i >= 0; i--) {
-@@ -295,7 +297,7 @@ out_free:
- 		free_pidmap(pid->numbers + i);
- 
- 	kmem_cache_free(ns->pid_cachep, pid);
--	pid = NULL;
-+	pid = ERR_PTR(nr);
- 	goto out;
- }
+-		nr = alloc_pidmap(tmp);
++		tpid = 0;
++		if (target_pids)
++			tpid = target_pids[i];
++
++		nr = set_pidmap(tmp, tpid);
+ 		if (nr < 0)
+ 			goto out_free;
  
 -- 
 1.6.0.4
