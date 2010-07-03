@@ -1,102 +1,122 @@
-From: Michael Tokarev <mjt-XAri/EZa3C4vJsYlp49lxw@public.gmane.org>
-Subject: Network separation q
-Date: Fri, 02 Jul 2010 10:16:38 +0400
-Message-ID: <4C2D8446.4080102@msgid.tls.msk.ru>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: container support in DazukoFS
+Date: Sat, 03 Jul 2010 08:42:36 -0700
+Message-ID: <m1vd8wr2qb.fsf@fess.ebiederm.org>
+References: <87tyogde9l.fsf@lonestar.fn.ogness.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <87tyogde9l.fsf@lonestar.fn.ogness.net> (John Ogness's message of "Sat\, 03 Jul 2010 12\:57\:10 +0200")
+Sender: linux-fsdevel-owner@vger.kernel.org
+To: John Ogness <dazukolist3@ogness.net>
+Cc: dazuko-devel@nongnu.org, Linux Containers <containers@lists.osdl.org>, linux-fsdevel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Hello.
+John Ogness <dazukolist3@ogness.net> writes:
 
-I'm - again - evaluating possibilities to use
-current container mechanisms (with a help from
-lxc) to improve security in our environment.
+> [Cc: Eric Biederman because of his container feedback on LKML.
+>  Hi Eric, the Dazuko-Devel mailing list is register-only, but if you
+>  reply to me, then I can post your comments on the list.]
 
-One of the places where - to my view - containers
-fits well - is to work around wrong programming
-practices in certain daemons.  For example, we --
-historically -- use vtun tunnels and pptp, and
-since they both run as root all the time, I've
-no confidence in security of the host where they're
-running.  So, -- and I think it's quite natural --
-I thought about putting these into containers, to
-at least add _some_ additional barriers.
+I am not willing to discuss design ideas in detail on a closed list,
+as such I have copied a couple appropriate mailing lists to have such
+a discussion.
 
-But I immediately come to an.. issue, even 2, both
-of which are related to our historical infrastructure,
-but I don't actually know better ways.
+> I've been wondering what we could do to make DazukoFS more acceptable
+> for mainline inclusion. Aside from making DazukoFS more complete:
+>
+> http://lists.gnu.org/archive/html/dazuko-devel/2010-06/msg00000.html
+>
+> the main issue reported from LKML reviews was that we need to support
+> containers. I think I have a solution for this, which will also make
+> DazukoFS more flexible when not using containers.
 
-First of all, we've a single machine which does all
-the routing and firewalling, and is running tunnels
-of all sorts.  It is our main and only gateway
-machine.
+That is a very odd way of putting it.   We really don't allow the
+ability to compile out container support.  So you really have only
+two cases.  When there is only one instance of various namespaces
+or when there are many.    Your code is simply broken if it doesn't
+handle namespaces properly, especially the mount namespace.
 
-So naturally it has a set of firewall rules.  Which,
-among others, are based off the network interface
-name, -- various tunnels are named, and are allowed
-to contact only a listed networks.  So first question
-that popped up when I tried to naively move some
-services into container - is there a way to use the
-"original" interface names in firewall rules on the
-main host, or how to un-hide that original iface when
-it's hidden by the container's veth or macvlan?
+> My idea is the following:
+>
+> 1. There is only 1 global device "/dev/dazukofs.ctrl".
+>
+> 2. When a group is added (using the "add" or "addtrack" commands),
+> DazukoFS will create the "/dev/dazukofs.N" group device within the
+> container-space of the process adding the group. This means that
+> contained environments can create their own local group devices. For
+> systems not using containers this is also an improvement because it
+> means group devices are created dynamically (instead of the 10 static
+> groups that exist now).
 
-For this very issue, I think the best way is to split
-the rules into 2 parts, one per-vpn-interface which
-goes into container, and another to list all networks
-which are allowed to come from any of tunnels, to
-attach to the new container's interface.  So this
-seems to be doable.
+What is a container-space ?  So far we only have a single device namespace.
+
+If you are going around creating control devices dynamically, I
+suggest a control pseudo filesystem like devpts might be more appropriate.
+The you can keep your per instance configuration as per mount data
+in your control fs.
+
+> 3. When a process reads the global control device to see the group
+> names, only the groups within the same container-space as the reading
+> process are shown. This keeps information about other containers
+> private.
+>
+> 4. When a file is accessed, only the groups from container-spaces
+> where the file exists in that container-space will be notified.
+>
+> 5. If an ignore device is desired, it may be created using a new
+> command for the control device. Perhaps something like "addign". The
+> ignore device would be created within the same container-space of the
+> process requesting the ignore device. The ignore scope would only be
+> the container-space of the ignore device. This means that if a process
+> is being ignored within its container, a non-contained process on the
+> host machine could still react to files accesses by the contained
+> ignored process.
+>
+> 6. When a new group is created, it does not go live until the first
+> read on the group device has occured. This allows an application to
+> setup a new group and set the permissions on the new group device
+> before dropping its privileges and beginning file access control.
+>
+>
+> There are a couple things that I like about these changes. First off,
+> I like that group and ignore devices are created dynamically. This
+> should have been the way it was done from the beginning. This not only
+> removes restrictions on the number of groups, but makes it much easier
+> to think in terms of containers.
+>
+> Secondly, I like that a group does not go live until the first read on
+> the group device. This makes it much simpler (and cleaner) for
+> developing non-privileged applications to perform online file access
+> control.
+>
+> I also see some open issues here. When automatically creating new
+> devices, one must always consider the permissions and ownership
+> involved. Right now this can be handled using udev rules or by a
+> privileged process setting them appropriately. I think that this is
+> probably ok for now, especially since complex SElinux rules could come
+> into play. But it is something we need to keep in mind.
+>
+> I am not familiar with how udev works for containers. For example,
+> would every container be able to have its own /dev/dazukofs.0 or must
+> udev devices be globally unique? Either way, I do not see this as a
+> problem, but will need to be considered.
+>
+> I am also not familiar with the kernel API's for container
+> management. So my idea may need to be adjusted a bit, but I think in
+> general it should work. If anyone has experience with containers, I'd
+> be interested in hearing about this.
+
+For the mount namespace which sounds like you primarily care about the
+APIs are:
+clone( ... CLONE_NEWNS ... )
+unshare( CLONE_NEWNS )
+mount( ... )
+chroot( ... )
+
+They have been in the kernel since at least 2.5.early.  If you are doing
+interesting things with filesystems and you don't understand those APIs
+I don't see how you can possibly create correct code.
 
 
-And another question is about routing, and for this
-one I've no alternative currently.
-
-Some our VPNs are used as "backup routes".  I.e.,
-normally whole certain network gets routed to a
-"usual" place, but it is possible for some nodes
-to come to us, establishing a direct tunnel, in
-which case routing to this very node goes over
-the said tunnel.  This works well, because /32
-route to a tunnel is obviously more specific
-than generic /24  (or wider range) route to the
-whole network.
-
-Now, if I move that vpn/tunnel server into a
-container, my main host wont know when the
-specific nodes comes up and down, so I have
-to install/configure some additional software/
-ways to notify host from a container about
-tunnels (and don't forget about stale info
-in case vpn daemon crashed - normally kernel
-cleans it all up in this case).
-
-Granted, I'm just trying to think about all
-this, and I don't pretend I understand how
-it all works.  My observations are based
-solely on my understanding (or lack thereof).
-That to say: I'm not sure I know what I need. ;)
-
-But it appears that what I want is a semi-
-transparent network separation.  So that the
-container can only see its own "subnetwork"
-(and can only mess with it, not with anything
-else), but host sees whole thing, for firewall
-rules and routing.  Or maybe there are better
-ways to do it all....
-
-Thanks!
-
-/mjt
+Eric
