@@ -1,152 +1,106 @@
-From: John Ogness <dazukolist3@ogness.net>
-Subject: Re: container support in DazukoFS
-Date: Sun, 04 Jul 2010 01:15:57 +0200
-Message-ID: <87tyog2m36.fsf@lonestar.fn.ogness.net>
-References: <87tyogde9l.fsf@lonestar.fn.ogness.net>
-	<m1vd8wr2qb.fsf@fess.ebiederm.org> <m18w5splhz.fsf@fess.ebiederm.org>
+From: Albert Cahalan <acahalan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 11/11][v15]: Document sys_eclone
+Date: Sat, 3 Jul 2010 19:41:30 -0400
+Message-ID: <AANLkTinM1jqG-9Mgbzft8bALGri7ZpzU9ZcPbMTe4fvW@mail.gmail.com>
+References: <1278189164-28408-1-git-send-email-sukadev@linux.vnet.ibm.com>
+	<1278189164-28408-12-git-send-email-sukadev@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <dazuko-devel-bounces+gldd-dazuko-devel=gmane.org@nongnu.org>
-In-Reply-To: <m18w5splhz.fsf@fess.ebiederm.org> (Eric W. Biederman's message
-	of "Sat\, 03 Jul 2010 09\:40\:08 -0700")
-List-Unsubscribe: <http://lists.nongnu.org/mailman/listinfo/dazuko-devel>,
-	<mailto:dazuko-devel-request@nongnu.org?subject=unsubscribe>
-List-Archive: <http://lists.nongnu.org/archive/html/dazuko-devel>
-List-Post: <mailto:dazuko-devel@nongnu.org>
-List-Help: <mailto:dazuko-devel-request@nongnu.org?subject=help>
-List-Subscribe: <http://lists.nongnu.org/mailman/listinfo/dazuko-devel>,
-	<mailto:dazuko-devel-request@nongnu.org?subject=subscribe>
-Sender: dazuko-devel-bounces+gldd-dazuko-devel=gmane.org@nongnu.org
-Errors-To: dazuko-devel-bounces+gldd-dazuko-devel=gmane.org@nongnu.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Linux Containers <containers@lists.osdl.org>, linux-fsdevel@vger.kernel.org, dazuko-devel@nongnu.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1278189164-28408-12-git-send-email-sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Randy Dunlap <randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 2010-07-03, ebiederm@xmission.com (Eric W. Biederman) wrote:
->> I've been wondering what we could do to make DazukoFS more acceptable
->> for mainline inclusion.
->>
->> [...]
->
-> I just looked back at the reviews, and what I see is that your code
-> essentially got the a brush off, as not really being worth
-> reviewing.
+On Sat, Jul 3, 2010 at 4:32 PM, Sukadev Bhattiprolu
+<sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
 
-I didn't get that impression. Especially since posting the patches led
-to a relatively positive LWN.net article from Jake Edge.
+> +struct clone_args {
+> +       u64 clone_flags_high;
+> +       u64 child_stack_base;
+> +       u64 child_stack_size;
+> +       u64 parent_tid_ptr;
+> +       u64 child_tid_ptr;
+> +       u32 nr_pids;
+> +       u32 reserved0;
+> +};
+> +
+> +
+> +sys_eclone(u32 flags_low, struct clone_args * __user cargs, int cargs_size,
+> +               pid_t * __user pids)
 
-> The comments were largely to point out giant design flaws in your
-> approach to you, more than a serious hey this is a good idea, here a
-> couple of little problems you need to fix to make it a good
-> implementation.
+I don't see why cargs_size is needed for expansion if you have flags.
 
-The only giant design flaws that were discussed were related to
-stackable filesystems in general and affect current mainline code
-(eCryptfs) just as much as DazukoFS. Since eCryptfs also has these
-issues and was accepted mainline, I did not view this as a reason to
-reject DazukoFS.
+> +       The order of pids in @pids is oldest in pids[0] to youngest pid
+> +       namespace in pids[nr_pids-1]. If the number of pids specified in the
+> +       @pids list is fewer than the nesting level of the process, the pids
+> +       are applied from youngest namespace. I.e if the process is nested in
+> +       a level-6 pid namespace and @pids only specifies 3 pids, the 3 pids
+> +       are applied to levels 6, 5 and 4. Levels 0 through 3 are assumed to
+> +       have a pid of '0' (the kernel will assign a pid in those namespaces).
 
-As I stated in the original patch posts, one of the reasons for adding
-another stackable filesystem to mainline would be to help identify
-common functionality between the stackable filesystems. And then
-together figure out how we can solve these problems, which currently
-affect any stackable filesystem in Linux.
+That feels backwards. I'd have guessed pids[0] is how the
+process sees itself. You'd truncate the array to reduce nesting
+level rather than pointing into it.
 
-> [...]
->
-> In particular Al was saying that the scenario you warn about in your
-> readme is impossible to avoid, and thus Dazuko is broken by design.
+> +       On failure, eclone() returns -1 and sets 'errno' to one of following
+> +       values (the child process is not created).
 
-His comments were saying that stackable filesystems are broken by
-design. Do we need to fix filesystem stacking in Linux before
-accepting any more broken stackable filesystems? Or do we just pretend
-that eCryptfs doesn't have these problems while brushing off any other
-stackable filesystem submissions?
+Careful here: do you intend to document the system call itself,
+or an expected glibc wrapper that doesn't exist yet?
 
-> [...]
->
-> I am a bit puzzled why you are making something like this a kernel
-> feature at all instead of treating virus scanning as something that
-> apps can voluntarily participate in.
+> +       EPERM   Caller does not have the CAP_SYS_ADMIN privilege needed to
+> +               specify the pids in this call (if pids are not specifed
+> +               CAP_SYS_ADMIN is not required).
 
-Getting every possible application on a system to participate is a lot
-more work than simply letting the filesystem handle it. All file
-access must go through the filesystem, so if you want to control file
-access I think it makes sense to implement that at the filesystem
-level.
+It seems appropriate to let PID 1 in any PID namespace be
+able to assign PIDs in it's own namespace and in any
+child namespaces.
 
-> With so many races and holes in your implementation I don't see how
-> a userspace implemenation in something like the gnome-vfs would be
-> less effective.
+> +       EINVAL  The child_stack_size field is not 0 (on architectures that
+> +               pass in a stack pointer in ->child_stack field).
 
-The only races and holes are related to stackable filesystems on Linux
-in general.
+need to change this
 
-> [...]
->
-> If you are going around creating control devices dynamically, I
-> suggest a control pseudo filesystem like devpts might be more
-> appropriate.  The you can keep your per instance configuration as
-> per mount data in your control fs.
+> +                "int $0x80\n\t"        /* Linux/i386 system call */
+> +                "testl %0,%0\n\t"      /* check return value */
+> +                "jne 1f\n\t"           /* jump if parent */
+> +
+> +                "popl %%esi\n\t"       /* get subthread function */
+> +                "call *%%esi\n\t"      /* start subthread function */
+> +                "movl %2,%0\n\t"
+> +                "int $0x80\n"          /* exit system call: exit subthread */
+...
+> +/*
+> + * Allocate a stack for the clone-child and arrange to have the child
+> + * execute @child_fn with @child_arg as the argument.
+> + */
+...
+> +       *--stack = child_arg;
+> +       *--stack = child_fn;
+...
+> +static int do_clone(int (*child_fn)(void *), void *child_arg,
+> +               unsigned int flags_low, int nr_pids, pid_t *pids_list)
 
-That is an interesting suggestion. I will think about how we
-could/should do that.
+There needs to be a way to pass child_fn and child_arg
+via the kernel. Besides being required for kernel-managed
+stacks, it's normally a saner interface. Stack setup would
+be much like the stack setup for signal handlers. Imagine
+using this for a vfork-like interface that didn't have painful
+interactions with the compiler.
 
-> [...]
->
-> What I was objecting to long ago is the existence of group names,
-> your current design has global group names.  I can't understand what
-> your groups are doing, or why your groups need names, but having
-> group names in a new interface makes them global and unusable by
-> containers, and pretty much so fragile that you are going to wish
-> you had sense to design something less prone to problems later on.
->
-> Also using the concept of a dazuko group when we already have the
-> concept of process group is to put it mildly confusing.
->
-> I looked at your tracking code a little bit I don't understand what
-> you are trying to accomplish but the code certainly does not track
-> the process that opens the dazuko group as the description indicates
-> it should.
+Speaking of vfork....
 
-A Dazuko group is not associated with processes. Instead, processes
-decide if they want to do work for an existing group. Maybe "file
-access event queue" is a more appropriate description than
-"group". There is no restriction on which processes can handle an item
-of a file access event queue except for the Linux security permissions
-on the queue itself (which is currently a device node).
+1. can you implement it for i386 (register starved) using eclone?
 
-I can see how using Linux process groups to implement this feature
-would be possible. But it would be changing the semantics of the
-feature considerably and making things IMHO unnecessarily complicated.
-
-Perhaps I need technical documentation that is geared towards kernel
-rather than userspace developers. Then such misunderstandings and
-incorrect associations could be (possibly) avoided.
-
-> [...]
->
-> Since you asked you should not use current->pid.  You want something
-> that is struct pid based for your notifications, or you will never
-> figure out which process is doing what in the presence of pid
-> namespaces.
-
-Thank you. These changes were implemented after your comment on LKML.
-
-> [...]
->
-> For the mount namespace which sounds like you primarily care about
-> the APIs are:
-> clone( ... CLONE_NEWNS ... )
-> unshare( CLONE_NEWNS )
-> mount( ... )
-> chroot( ... )
->
-> They have been in the kernel since at least 2.5.early.  If you are
-> doing interesting things with filesystems and you don't understand
-> those APIs I don't see how you can possibly create correct code.
-
-I am interested in creating correct code. That is why I have asked
-questions.
-
-John Ogness
+2. can you restart a pair of processes between vfork and execve?
