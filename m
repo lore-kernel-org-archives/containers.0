@@ -1,19 +1,16 @@
-From: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Subject: Re: [PATCH 11/11][v15]: Document sys_eclone
-Date: Tue, 6 Jul 2010 08:12:17 -0500
-Message-ID: <20100706131217.GA6175@hallyn.com>
-References: <1278189164-28408-1-git-send-email-sukadev@linux.vnet.ibm.com>
-	<1278189164-28408-12-git-send-email-sukadev@linux.vnet.ibm.com>
-	<AANLkTinM1jqG-9Mgbzft8bALGri7ZpzU9ZcPbMTe4fvW@mail.gmail.com>
-	<20100704233951.GK3338@count0.beaverton.ibm.com>
-	<4C315D2D.6000107@cs.columbia.edu>
-	<AANLkTinr_2u-_0S2UvMDc7hOE_JOVIOjGtVo9Tzuk21E@mail.gmail.com>
+From: Pavel Labushev <p.labushev-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: How do containers tie to multiple IP's on a NIC?
+Date: Tue, 06 Jul 2010 23:00:51 +0800
+Message-ID: <4C334523.2080503@gmail.com>
+References: <20100704034023.GA29753@transpect.com> <4C30BC16.9090802@free.fr>
+	<20100704191841.GA31425@transpect.com> <4C30E5CB.1080902@free.fr>
+	<20100704230827.GA1066@transpect.com> <4C31AAEE.5010201@gmail.com>
+	<20100705140750.GA3113@transpect.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <AANLkTinr_2u-_0S2UvMDc7hOE_JOVIOjGtVo9Tzuk21E-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20100705140750.GA3113-M6G8SDWvnhfby3iVrkZq2A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,39 +20,47 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Albert Cahalan <acahalan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Randy Dunlap <randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Albert Cahalan (acahalan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> On Mon, Jul 5, 2010 at 12:18 AM, Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> wrote:
-> > Finally, there have been objections before to allow pid-selection
-> > by non-privileged process.
-> 
-> Eh, I dearly hope that privileged processes are generally not
-> even addressable (never mind creatable or accessable) from
-> inside anything other than the top-level pid namespace.
-
-If a privileged task was created in the top-level pid namespace,
-then it is not addressable from inside a descendent pid namespace.
-
-> Well, at least nothing should get more privilege than PID 1.
-> This would include having UID values that PID 1 can switch
-> to and having capability sets that PID 1 can switch to, and
-> any other (SE Linux, AppArmor, etc.) things too.
-
-IIUC the spirit of what you say here is what is intended by
-the completion of the user namespaces.  They'll ensure that
-things like setuid-root and file capabilities limit privilege
-to resources owned by the task which created the namespace.
-
-That's why unprivileged pid ns unsharing won't be considered
-until user namespaces are completed.
-
-> Restarting a privileged process with a less privileged PID 1
-> should result in privilege loss, and ought to require some sort of
-> "--force" option to ensure the person accepts possible breakage.
-
-Interesting point.  Do we allow ptrace of a container init?
-
--serge
+MDUuMDcuMjAxMCAyMjowNywgV2hpdCBCbGF1dmVsdCDQv9C40YjQtdGCOgoKPiBUaGUgZXhhbXBs
+ZXMgSSBoYXZlIGZvdW5kIGFyZSBhbG9uZyB0aGUgbGluZXMgb2Y6IEhlcmUncyBob3cgdG8gc3Rh
+cnQgYQo+IGNvbnRhaW5lciwgYnJpZGdlIGl0IHRvIGEgTklDIHdoaWNoIGhhcyBhIHNpbmdsZSBJ
+UCBhc3NpZ25lZCwgc3NoIHRvIGl0IC4uLgo+IGFuZCB0aGUgZXhhbXBsZXMgc3RvcCB0aGVyZS4g
+V2hhdCBJJ2QgbGlrZSB0byBhY2hpZXZlIGlzIGEgc2V0dXAgd2hlcmUsIHNheSwKPiBhIGJveCB3
+aXRoIDYgSVBzIG9uIGFuIGV4dGVybmFsIG5ldHdvcmsgLSBvbiBldGgwIGJlZm9yZSBicmlkZ2lu
+ZyAob3IgaXRzCj4gYWx0ZXJuYXRpdmVzKSAtIGNhbiBoYXZlIDUgb2YgdGhvc2UgSVBzIGVhY2gg
+ZGVkaWNhdGVkIHRvIGRpZmZlcmVudCBzaW5nbGUKPiBjb250YWluZXIuCgpJIGhhdmUgYSBzZXR1
+cCBzaW1pbGFyIHRvIHRoYXQgeW91IGRlc2NyaWJlLiBJdCdzIGEgYml0IGhhY2tpc2gsIGJ1dCBJ
+Cmxpa2UgaXQncyB0cmFuc3BhcmVuY3kgYW5kIGlzb2xhdGlvbiBjYXBhYmlsaXRpZXMgKHNvIEkg
+Y2FuIGxlYXZlCkNBUF9ORVRfUkFXIGFuZCBDQVBfTkVUX0FETUlOIGZvciBjb250YWluZXJzKS4g
+SXQgbG9va3MgbGlrZSB0aGF0OgoKRm9yIHRoZSBob3N0OgoKaG9zdCAjIGlwIGFkZHIgYWRkIDEu
+MS4xMjguMi8yMCBkZXYgZXRoMApob3N0ICMgcm91dGUgYWRkIC1uZXQgZGVmYXVsdCBndyAxLjEu
+MTI4LjEKCgpGb3IgbHhjMToKCmhvc3QgIyBjYXQgL2V0Yy9seGMvbHhjMS9jb25maWcgfCBncmVw
+IG5ldApseGMubmV0d29yay50eXBlID0gdmV0aApseGMubmV0d29yay52ZXRoLnBhaXIgPSBseGMx
+X3ZldGgwCmx4Yy5uZXR3b3JrLmZsYWdzID0gdXAKCmhvc3QgIyBhcnAgLURzIDEuMS4xMjguMyBl
+dGgwIHB1Ygpob3N0ICMgYXJwIC1EcyAxLjEuMTI4LjQgZXRoMCBwdWIKaG9zdCAjIGFycCAtRHMg
+MS4xLjEyOC41IGV0aDAgcHViCmhvc3QgIyBhcnAgLURzIDEuMS4xMjguNiBldGgwIHB1YgoKaG9z
+dCAjIHN5c2N0bCAtdyBuZXQuaXB2NC5jb25mLmx4YzFfdmV0aDAucHJveHlfYXJwID0gMQoKaG9z
+dCAjIGlwIGFkZHIgYWRkIDEwLjAuMS4xLzI0IGRldiBseGMxX3ZldGgwCgpob3N0ICMgcm91dGUg
+YWRkIC1ob3N0IDEuMS4xMjguMyBndyAxMC4wLjEuMgpob3N0ICMgcm91dGUgYWRkIC1ob3N0IDEu
+MS4xMjguNCBndyAxMC4wLjEuMgpob3N0ICMgcm91dGUgYWRkIC1ob3N0IDEuMS4xMjguNSBndyAx
+MC4wLjEuMgpob3N0ICMgcm91dGUgYWRkIC1ob3N0IDEuMS4xMjguNiBndyAxMC4wLjEuMgoKbHhj
+MSAjIGlwIGFkZHIgYWRkIDEwLjAuMS4yLzI0IGRldiBseGMxX3ZldGgwCgpseGMxICMgaXAgYWRk
+ciBhZGQgMS4xLjEyOC4zLzIwIGRldiBldGgwCmx4YzEgIyBpcCBhZGRyIGFkZCAxLjEuMTI4LjQv
+MjAgZGV2IGV0aDAKbHhjMSAjIGlwIGFkZHIgYWRkIDEuMS4xMjguNS8yMCBkZXYgZXRoMApseGMx
+ICMgaXAgYWRkciBhZGQgMS4xLjEyOC42LzIwIGRldiBldGgwCgpseGMxICMgcm91dGUgYWRkIC1u
+ZXQgZGVmYXVsdCBndyAxLjEuMTI4LjEKCgpGb3IgbHhjMjoKCmhvc3QgIyBjYXQgL2V0Yy9seGMv
+bHhjMi9jb25maWcgfCBncmVwIG5ldApseGMubmV0d29yay50eXBlID0gdmV0aApseGMubmV0d29y
+ay52ZXRoLnBhaXIgPSBseGMyX3ZldGgwCmx4Yy5uZXR3b3JrLmZsYWdzID0gdXAKCmhvc3QgIyBh
+cnAgLURzIDEuMS4xMjguNyBldGgwIHB1Ygpob3N0ICMgc3lzY3RsIC13IG5ldC5pcHY0LmNvbmYu
+bHhjMl92ZXRoMC5wcm94eV9hcnAgPSAxCmhvc3QgIyBpcCBhZGRyIGFkZCAxMC4wLjIuMS8yNCBk
+ZXYgbHhjMl92ZXRoMApob3N0ICMgcm91dGUgYWRkIC1ob3N0IDEuMS4xMjguNyBndyAxMC4wLjIu
+MgoKbHhjMiAjIGlwIGFkZHIgYWRkIDEwLjAuMi4yLzI0IGRldiBldGgwCmx4YzIgIyBpcCBhZGRy
+IGFkZCAxLjEuMTI4LjcvMjAgZGV2IGV0aDAKbHhjMiAjIHJvdXRlIGFkZCAtbmV0IGRlZmF1bHQg
+Z3cgMS4xLjEyOC4xCgoKSG9wZSBpdCBoZWxwcy4gQnR3LCBJIHVzZSBjdXN0b20gdWRldiBzY3Jp
+cHRzIHRvIGRvIHRoZSBob3N0IHBhcnQsIGFuZApzdG9jayBpbml0IHNjcmlwdHMgaW5zaWRlIHRo
+ZSBjb250YWluZXJzIHRvIGRvIHRoZSBseGMgcGFydC4KX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVy
+c0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRp
+b24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
