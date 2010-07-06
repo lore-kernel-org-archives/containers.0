@@ -1,7 +1,7 @@
 From: "Jenn Kennedy (VP, San Diego)" <jennkennedy-YKN35+g/NR460jQDQQQ/sqmn/OTskMXa@public.gmane.org>
 Subject: Tap into this massive buyers list!
 Date: Mon, 05 Jul 2010 17:17:48 -0700
-Message-ID: <201007060052.o660qPmD006603@smtp1.linux-foundation.org>
+Message-ID: <201007060101.o6610jo0007205@smtp1.linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: base64
@@ -15,7 +15,7 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 SGV5IQoKSeKAmXZlIGJlZW4gc2F5aW5nIGl0IGZvciB5ZWFyc+KApiDigJxIZSBvciBzaGUgd2hv
@@ -102,7 +102,7 @@ c3Qgb2YgOTUwLDAwMOKApiBhbmQgZ2V0IHBhaWQgRkFTVCEgIChPciwgc2ltcGx5IHBhcnRuZXIg
 d2l0aCAKSm9zaCBpZiB5b3Ugd2FudCB0by4pCgpBZ2FpbiwgVGh1cnNkYXnigJlzIHdlYmluYXIg
 c3RhcnRzIGF0IDk6MDAgcG0gRWFzdGVybgpUaW1lLiAgUmVnaXN0ZXIgaGVyZeKApgoKaHR0cHM6
 Ly93d3cyLmdvdG9tZWV0aW5nLmNvbS9yZWdpc3Rlci85NTQxNjQ1NzEKCgpodHRwOi8vYXBwLnN0
-cmVhbXNlbmQuY29tL3ByaXZhdGUvdzREMC9OZVgvRWQwNVVtNC91bnN1YnNjcmliZS8xMjAyNTkx
+cmVhbXNlbmQuY29tL3ByaXZhdGUvdzREMC9OZVgvUGRDbzl1Mi91bnN1YnNjcmliZS8xMjAyNTkx
 MQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWlu
 ZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0
 dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWlu
