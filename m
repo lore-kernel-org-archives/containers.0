@@ -1,11 +1,17 @@
-From: "Jenn Kennedy (VP, San Diego)" <jennkennedy-YKN35+g/NR460jQDQQQ/sqmn/OTskMXa@public.gmane.org>
-Subject: Tap into this massive buyers list!
-Date: Mon, 05 Jul 2010 17:17:48 -0700
-Message-ID: <201007060101.o6610jo0007205@smtp1.linux-foundation.org>
+From: Albert Cahalan <acahalan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 11/11][v15]: Document sys_eclone
+Date: Mon, 5 Jul 2010 23:59:19 -0400
+Message-ID: <AANLkTinr_2u-_0S2UvMDc7hOE_JOVIOjGtVo9Tzuk21E@mail.gmail.com>
+References: <1278189164-28408-1-git-send-email-sukadev@linux.vnet.ibm.com>
+	<1278189164-28408-12-git-send-email-sukadev@linux.vnet.ibm.com>
+	<AANLkTinM1jqG-9Mgbzft8bALGri7ZpzU9ZcPbMTe4fvW@mail.gmail.com>
+	<20100704233951.GK3338@count0.beaverton.ibm.com>
+	<4C315D2D.6000107@cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <4C315D2D.6000107-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,95 +21,80 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Randy Dunlap <randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-SGV5IQoKSeKAmXZlIGJlZW4gc2F5aW5nIGl0IGZvciB5ZWFyc+KApiDigJxIZSBvciBzaGUgd2hv
-IGhhcyB0aGUgbGFyZ2VzdApidXllcnMgbGlzdCB3aWxsIG1ha2UgdGhlIG1vc3QgbW9uZXkgYXMg
-YSByZWFsIGVzdGF0ZSBpbnZlc3Rvci7igJ0KCkFzIHlvdSBrbm93LCBkZWFscyBhcmUgZXZlcnl3
-aGVyZSByaWdodCBub3cuICBUaGV5IGFyZSB2ZXJ5IGVhc3kgCnRvIGZpbmQuCgpUaGUga2V5IGlz
-IGJlaW5nIGFibGUgdG8gc2VsbCB0aGVt4oCmIGFuZCB0byBzZWxsIHRoZW0gcXVpY2tseSBhbmQK
-ZWFzaWx5ISAKClRoaXMgVGh1cnNkYXksIEkgd2lsbCBpbnRyb2R1Y2UgeW91IHRvIGEgZnJpZW5k
-IG9mIG1pbmUgd2hvIGhhcwpzcGVudCB0aGUgbGFzdCB0d28geWVhcnMgY29tcGlsaW5nIGEgbmF0
-aW9ud2lkZSBsaXN0IG9mCmludmVzdG9yLWJ1eWVycyB3aG8gYnV5IGhvdXNlcyB3aXRoIGNhc2gu
-CgpUaGVyZSBhcmUgb3ZlciA5NTAsMDAwIGludmVzdG9yLWJ1eWVycyBvbiB0aGlzIGxpc3TigKYg
-YW5kIHRoZXkgYXJlCmJ1eWluZyBkZWFscyBpbiBhbG1vc3QgZXZlcnkgY291bnR5IG9mIHRoZSBV
-bml0ZWQgU3RhdGVzIQoKRXZlcnkgaW52ZXN0b3ItYnV5ZXIgb24gdGhpcyBsaXN0IGhhcyBib3Vn
-aHQgYXQgbGVhc3QgT05FIGRlYWwgZnJvbQphbm90aGVyIGludmVzdG9yIHdpdGhpbiB0aGUgbGFz
-dCB0d28geWVhcnMhICBBbmQgdGhleSBhcmUgbG9va2luZwpmb3IgbW9yZSBkZWFsc+KApiBZT1VS
-IGRlYWxzIQoKU3RhcnRpbmcgdGhpcyBGcmlkYXksIHlvdSB3aWxsIGJlIGFibGUgdG8gZW1haWwg
-YW55IGRlYWwgeW91IGZpbmQKdG8gdGhpcyBsaXN0IG9mIG92ZXIgOTUwLDAwMCBidXllcnMhCgpU
-aGUgbmFtZSBvZiB0aGUgZ3V5IHdobyBjb21waWxlZCB0aGlzIGxpc3QgaXMsIEpvc2guICAKCkpv
-c2ggc3BlY2lhbGl6ZXMgaW4gZmxpcHBpbmcgc2hvcnQgc2FsZSBhbmQgd2hvbGVzYWxlIGRlYWxz
-LiAgCkhl4oCZcyBkb25lIG92ZXIgNDUwIG9mIHRoZXNlIGRlYWxzIGp1c3QgaW4gdGhlIGxhc3Qg
-ZmV3IHllYXJz4oCmIAplYXJuaW5nIGhpbSBtaWxsaW9ucyBvZiBkb2xsYXJzISAgKEhlIGN1cnJl
-bnRseSBlYXJucyBvdmVyIG9uZSAKbWlsbGlvbiBkb2xsYXJzIHBlciB5ZWFyLikKCkluIGZhY3Qs
-IG9uIGF2ZXJhZ2UsIEpvc2ggaXMgZ2V0dGluZyBwYWlkIG9uIGEgZGVhbCBldmVyeSA0IGRheXPi
-gKYKYW5kIHRoaXMgaXMgYmVjYXVzZSBoZSBoYXMgYSBtYXNzaXZlIGxpc3QhICAoVGhhdCBoZSB3
-aWxsIGFsbG93IAp5b3UgZW1haWwgeW91ciBkZWFscyB0b+KApiB3aXRob3V0IHNwbGl0dGluZyB0
-aGUgcHJvZml0cyB3aXRoIGhpbSEpCgpKb3NoIHRlbGxzIG1lIHRoYXQgb25jZSBoZSBzZW5kcyBh
-IGRlYWwgb3V0IHRvIHRoaXMgaHVnZSBsaXN0LCBpdAp1c3VhbGx5IG9ubHkgdGFrZXMgaGltIGEg
-ZmV3IGhvdXJzIHRvIHNlbGwgaXQuLi5JbWFnaW5lIHNlbmRpbmcgCm9uZSBlbWFpbCB0byB0aGlz
-IGxpc3QsYW5kIDMgaG91cnMgbGF0ZXIgeW91ciBkZWFsIGlzIHNvbGTigKYgYW5kIAp5b3UgaGF2
-ZSBiYWNrLXVwIGJ1eWVycyB0b28hCihUaGF04oCZcyBob3cgaXQgd29ya3MgZm9yIEpvc2jigKYg
-YW5kIG5vdyBpdCBjYW4gd29yayB0aGlzIHdheSAKZm9yIHlvdSwgdG9vISkKCkpvc2ggaXMgYSBw
-cmV0dHkgcXVpZXQgZ3V54oCmIGJ1dCBJJ3ZlIGNvbnZpbmNlZCBKb3NoIHRvIGdldCBvbiBhCndl
-YmluYXIgd2l0aCBtZSB0aGlzIFRodXJzZGF5IHdoZXJlIGhlIHdpbGwgdGVsbCB5b3UgYWxsIGFi
-b3V0IApoaXMgYnV5ZXJzIGxpc3QgYW5kIGhvdyB5b3UgY2FuIGVtYWlsIHlvdXIgZGVhbHMgdG8g
-aXQuIAoKSGUgd2lsbCBhbHNvIHRlYWNoIHlvdSBhYm91dCBoaXMgMzMgZGlzdGluY3QgbWV0aG9k
-cyB0byBmaW5kIApkZWFscy5Nb3N0IGFyZSBubyBtb25leSBkb3duIHRlY2huaXF1ZXMuICAKCkFm
-dGVyIFRodXJzZGF54oCZcyBjYWxsLCB5b3UgY2FuIHN0YXJ0IG91dCBieSB1c2luZyBqdXN0IG9u
-ZSBvciB0d28Kb2YgaGlzIDMzIG1ldGhvZHMgdG8gZmluZCBkZWFsc+KApiBhbmQgZWFjaCB0aW1l
-IHlvdSBmaW5kIG9uZeKApmVtYWlsCnRoYXQgZGVhbCB0byBoaXMgYmVoZW1vdGgsIHJlc3BvbnNp
-dmUgbGlzdOKApiBhbmQgeW91IGNhbiBnZXQgeW91cgpkZWFsIHNvbGQgaW4gYSBtYXR0ZXIgb2Yg
-aG91cnMhCgpIZXJl4oCZcyB3aGF0IGVsc2UgSm9zaCB3aWxsIHNoYXJlIG9uIHRoZSBjYWxs4oCm
-Cgo+ICBFdmVyeSBvbmNlIGluIGEgd2hpbGUsIHlvdSBtYXkgY29tZSBhY3Jvc3MgYSBkZWFsIHRo
-YXQgZG9lcwpyZXF1aXJlIHNvbWUgbW9uZXkgZG93bi4gIFdoZW4geW91IGNvbWUgYWNyb3NzIG9u
-ZSBvZiB0aG9zZSAKZGVhbHPigKZKb3NoIGhhcyBhbm90aGVyIGxpc3QgdGhhdCBoZSBjYWxscyBo
-aXMg4oCcbW9uZXkgcGFydG5lcnPigJ0gCndobyB3aWxsIGxldCB5b3UgdXNlIHRoZWlyIG1vbmV5
-IHRvIGdldCB0aGUgZGVhbCBkb25lLiAgCk9yIHlvdSBjYW4gcGFydG5lciB3aXRoIEpvc2ggb24g
-dGhlc2UgZGVhbHMsIGFuZCBoZeKAmWxsIGZ1bmQgdGhlbQpmb3IgeW91LCBhbmQgc3BsaXQgdGhl
-IHByb2ZpdHMgd2l0aCB5b3UgNTAtNTAuKQoKPiAgSm9zaCB3aWxsIHRlYWNoIHlvdSB3aGF0IGhl
-IGNhbGxzIOKAnDYgc3RlcHMgdG8gJDZLIGluIDE2IGRheXMu4oCdIApUaGlzIGlzIGhvdyBoZSB3
-aG9sZXNhbGVzIGhvdXNlcy4gIEl04oCZcyBzaW1wbGUuSXTigJlzIHN0ZXAtYnktc3RlcC4KQW55
-b25lIGNhbiBkbyB0aGlzIGZyb20gYW55d2hlcmUuICBZb3UgY2FuIGV2ZW4gZG8gdGhpcyBpbiB5
-b3VyCnNwYXJlIHRpbWUsIGlmIHlvdSBoYXZlIGEgZnVsbC10aW1lIGpvYi4gIEFuZCwgb2YgY291
-cnNlLCB0aGUKOTUwLDAwMCBpbnZlc3Rvci1idXllcnMgbGlzdCBMT1ZFIHdob2xlc2FsZSBkZWFs
-cyBhbmQgYnV5IHRoZXNlCmRlYWxzIGZhc3QhICBUaGlzIGlzIHF1aWNrIGFuZCBlYXN5IG1vbmV5
-IGZvciB5b3UuCgo+ICBKb3NoIGhhcyBhbHNvIGRpc2NvdmVyZWQgYSB3YXkgdG8gc2VsbCB5b3Vy
-IGRlYWxzIHRvIOKAnEZIQQpidXllcnPigJ0gd2l0aG91dCBhbnkgc2Vhc29uaW5nIGlzc3Vlcy4g
-SGXigJlsbCB0ZWFjaCB5b3UgYWJvdXQgdGhpcwpvbiB0aGUgd2ViaW5hci4KCj4gIEpvc2ggaXMg
-bm93IGludGVyZXN0ZWQgaW4gZG9pbmcgZGVhbHMgd2l0aCBvdGhlcgppbnZlc3Rvci1wYXJ0bmVy
-cyBhcm91bmQgdGhlIGNvdW50cnkuICBIZeKAmXMgZ290IGEgdmVyeSBjb21wZXRlbnQKc3RhZmYg
-YW5kIHZlcnkgZWZmaWNpZW50IHN5c3RlbXMgaW4gcGxhY2UsdGhhdCBoZSB3aWxsIGFsc28gdGVh
-Y2gKeW91IGFib3V0KeKApiBhbmQgaGUgY2FuIGVhc2lseSBoYW5kbGUgYWRkaXRpb25hbCBkZWFs
-cy4gSm9zaCBjYWxscwp0aGlzIGhpcyDigJxBcHByZW50aWNlIFBhcnRuZXJpbmcgUHJvZ3JhbeKA
-nSBhbmQgaWYgdGhlIHR3byBvZiB5b3UKcGFydG5lciBvbiBhIGRlYWzigKYgeW914oCZbGwgc3Bs
-aXQgaXQgNTAtNTAsIGJ1dCBKb3NoIGFuZCBoaXMgdGVhbSAKZG8gbW9zdCBvZiB0aGUgd29yay4K
-ClNpZ24tdXAgZm9yIG15IHdlYmluYXIgcmlnaHQgbm93IHNvIHlvdSBjYW4gc3RhcnQgZG9pbmcg
-ZGVhbHMgCmxpa2UgSm9zaCAob3Igd2l0aCBoaW0p4oCmIGFuZCBnZXQgYWNjZXNzIHRvIGhpcyBo
-dWdlLCByZXNwb25zaXZlIApsaXN0IG9mIG92ZXIgOTUwLDAwMCBpbnZlc3Rvci1idXllcnMgd2hv
-IGFyZSBidXlpbmcgZGVhbHMgdG9kYXkuICAKTWFueSB0aW1lcyB3aXRoaW4gaG91cnMgYWZ0ZXIg
-dGhlIGRlYWwgaXMgc3VibWl0dGVkIHRvIHRoZSBsaXN0LgoKVGhlIHdlYmluYXIgaXMgdGhpcyBU
-aHVyc2RheS4KCkNsaWNrIGhlcmUgdG8gUmVnaXN0ZXI6IApodHRwczovL3d3dzIuZ290b21lZXRp
-bmcuY29tL3JlZ2lzdGVyLzk1NDE2NDU3MQoKVGhpcyBXZWJpbmFyIHN0YXJ0cyBhdOKApgoKOTow
-MCBwbSBFQVNURVJOIFNUQU5EQVJEIFRJTUUKODowMCBwbSBDRU5UUkFMCjc6MDAgcG0gTU9VTlRB
-SU4KNjowMCBwbSBQQUNJRklDCgoKClRoZSBiZXN0IGFsd2F5cywKCkplbm4gS2VubmVkeQpXZWFs
-dGggU3RyYXRlZ3kgSW5zdGl0dXRlCjUyNjAgQ2hhcG1hbiBTdHJlZXQKU2FuIERpZWdvLCBDQSA5
-MjExMC01Njk0CgoKUC5TLiAgSWYgeW91IGhhdmUgQU5ZIGRlYWxzIHJpZ2h0IG5vdyB0aGF0IHlv
-dSBuZWVkIHRvIHNlbGwsIHRoZW4KZ2V0IG9uIHRoZSB3ZWJpbmFyIHRoaXMgVGh1cnNkYXkuICBC
-ZWNhdXNlIG9uIEZyaWRheSwgeW91IGNhbiAKZW1haWwgeW91ciBkZWFsIChvciBkZWFscykgdG8g
-Sm9zaOKAmXMgbGlzdCBvZiA5NTAsMDAwIGludmVzdG9yIApidXllcnPigKYgYW5kIGhhdmUgdGhl
-bSBzb2xkIGluIGEgbWF0dGVyIG9mIGhvdXJzLiAgCgpQLlAuUy4gIElmIHlvdSBkbyBOT1QgY3Vy
-cmVudGx5IGhhdmUgYW55IGRlYWxzLCB0aGVuIHlvdSBzaG91bGQKYWxzbyBnZXQgb24gdGhlIHdl
-YmluYXIgYmVjYXVzZSBKb3NoIHdpbGwgdGVhY2ggeW91IDMzIHdheXMgdG8gCmZpbmQgZGVhbHMg
-RkFTVC4gIFRoZW4gZWFjaCB0aW1lIHlvdSBmaW5kIGEgZGVhbCwgZW1haWwgaXQgdG8gdGhlCmxp
-c3Qgb2YgOTUwLDAwMOKApiBhbmQgZ2V0IHBhaWQgRkFTVCEgIChPciwgc2ltcGx5IHBhcnRuZXIg
-d2l0aCAKSm9zaCBpZiB5b3Ugd2FudCB0by4pCgpBZ2FpbiwgVGh1cnNkYXnigJlzIHdlYmluYXIg
-c3RhcnRzIGF0IDk6MDAgcG0gRWFzdGVybgpUaW1lLiAgUmVnaXN0ZXIgaGVyZeKApgoKaHR0cHM6
-Ly93d3cyLmdvdG9tZWV0aW5nLmNvbS9yZWdpc3Rlci85NTQxNjQ1NzEKCgpodHRwOi8vYXBwLnN0
-cmVhbXNlbmQuY29tL3ByaXZhdGUvdzREMC9OZVgvUGRDbzl1Mi91bnN1YnNjcmliZS8xMjAyNTkx
-MQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWlu
-ZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0
-dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWlu
-ZXJz
+On Mon, Jul 5, 2010 at 12:18 AM, Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> wrote:
+> Matt Helsley wrote:
+>> On Sat, Jul 03, 2010 at 07:41:30PM -0400, Albert Cahalan wrote:
+>>> On Sat, Jul 3, 2010 at 4:32 PM, Sukadev Bhattiprolu
+>>> <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+
+> It follows that trying to set pid's in pid-namespaces _below_ you
+> simply doesn't make sense (beyond the CLONE_NEWPID case).
+
+I may have some wrong ideas about how process restart works,
+but I'd thought it would normally be done from above or from PID 1
+in the same pid namespace.
+
+> Finally, there have been objections before to allow pid-selection
+> by non-privileged process.
+
+Eh, I dearly hope that privileged processes are generally not
+even addressable (never mind creatable or accessable) from
+inside anything other than the top-level pid namespace.
+
+Well, at least nothing should get more privilege than PID 1.
+This would include having UID values that PID 1 can switch
+to and having capability sets that PID 1 can switch to, and
+any other (SE Linux, AppArmor, etc.) things too.
+
+Restarting a privileged process with a less privileged PID 1
+should result in privilege loss, and ought to require some sort of
+"--force" option to ensure the person accepts possible breakage.
+
+>>>> +static int do_clone(int (*child_fn)(void *), void *child_arg,
+>>>> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 unsigned int flags_low, int nr_pids, pid=
+_t *pids_list)
+>>>
+>>> There needs to be a way to pass child_fn and child_arg
+>>> via the kernel. Besides being required for kernel-managed
+>>> stacks, it's normally a saner interface. Stack setup would
+>>> be much like the stack setup for signal handlers. Imagine
+>>
+>> I'm inclined to say this is a bad idea.
+>>
+>> I didn't think we had "kernel-managed stacks" in mainline. The most we
+>> have, to my knowledge, is the sigaltstack support and kernel threads.
+>>
+>> I don't see how being able to pass in child_fn and child_arg to the
+>> kernel improves the sanity of the interface. If anything it will make
+>> eclone even more exotic -- now at the end of the syscall we'll
+>> need to mess with the registers/stack of the child much like when we're
+>> invoking a signal handler. That just adds more arch-specific code than is
+>> necessary.
+>>
+>> Userspace wrappers are perfectly capable of invoking the child function
+>> and passing the arguments. Furthermore, passing those arguments requires
+>> expanding the argument structure or putting even greater pressure on
+>> registers (which, as you pointed out below, is an issue for vfork).
+
+BSD's rfork_thread has, among other things, these two arguments:
+
+int (*func)(void *arg)
+void *arg
+
+>>> using this for a vfork-like interface that didn't have painful
+>>> interactions with the compiler.
+>
+> Pardon my ignorance - what sort of painful interactions ?
+
+The child returns from vfork, via the same return address that
+the parent will later use. (on the stack for many architectures)
+The child then calls a function which might not have the same
+stack layout as vfork, scrambling whatever may be on the stack
+that the parent will be using to return from vfork. The parent may
+then end up using a return address that has been corrupted.
+To make this work, gcc actually recognizes vfork and has
+special handling for it.
