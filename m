@@ -1,7 +1,7 @@
 From: "Jenn Kennedy (VP, San Diego)" <jennkennedy-YKN35+g/NR460jQDQQQ/sqmn/OTskMXa@public.gmane.org>
 Subject: This REI 'robot' works FOR you and sells your deals
 Date: Wed, 07 Jul 2010 15:18:48 -0700
-Message-ID: <201007072303.o67N3kjS005780@smtp1.linux-foundation.org>
+Message-ID: <201007072303.o67N3qfp005797@smtp1.linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: base64
@@ -15,7 +15,7 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 SGV5IHRoZXJlISAKCgoKVGhlcmXigJlzIGEgbmV3IFJFSSDigJxyb2JvdOKAnSBzeXN0ZW0gb3V0
@@ -93,7 +93,7 @@ aXMgb27igKYgVGh1cnNkYXksIEp1bHkgOHRoIGF04oCmCgo5OjAwIHBtIEVhc3Rlcm4gVGltZSAg
 IAoKODowMCBwbSBDZW50cmFsICAgCgo3OjAwIHBtIE1vdW50YWluICAgCgo2OjAwIHBtIFBhY2lm
 aWMKCiAKClJlZ2lzdGVyIGhlcmXigKYuCgpodHRwczovL3d3dzIuZ290b21lZXRpbmcuY29tL3Jl
 Z2lzdGVyLzk1NDE2NDU3MQoKCmh0dHA6Ly9hcHAuc3RyZWFtc2VuZC5jb20vcHJpdmF0ZS93NEQw
-L05lWC9QZENvOXUyL3Vuc3Vic2NyaWJlLzEyMDc4NjUxCl9fX19fX19fX19fX19fX19fX19fX19f
+L05lWC9FZDA1VW00L3Vuc3Vic2NyaWJlLzEyMDc4NjUxCl9fX19fX19fX19fX19fX19fX19fX19f
 X19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5l
 cnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0
 aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
