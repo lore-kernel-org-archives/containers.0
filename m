@@ -1,7 +1,7 @@
 From: "Vanessa Bauer" <vanessa-3F4H3t6TLQZiCbKXbTv9yWb8qiTeHX/p@public.gmane.org>
 Subject: I Found a $300,000 Business Line of Credit for YOU!
 Date: Thu, 08 Jul 2010 11:35:14 -0700
-Message-ID: <201007081851.o68IpGvh021683@smtp1.linux-foundation.org>
+Message-ID: <201007081851.o68IpGj7021685@smtp1.linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: base64
@@ -15,7 +15,7 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 SGV5IFRoZXJlLCAKCkxhc3QgeWVhciB3YXMgYSByb2xsZXIgY29hc3RlciB5ZWFyIGZvciBtYW55
@@ -71,7 +71,7 @@ cgpLaXNoIEJ1c2luZXNzIENyZWRpdCBMTEMKMzc1MyBIb3dhcmQgSHVnaGVzIFBhcmt3YXksIFN1
 aXRlIDIwMApMYXMgVmVnYXMsIE5WIDg5MTY5CgoKUC5TLiAgUmVnaXN0ZXIgcmlnaHQgYXdheSBi
 ZWZvcmUgYWxsIHRoZSBsaW5lcyBmaWxsIHVwIGFuZCB5b3XigJlyZSAKTEVGVCBPVVQgaW4gdGhl
 IGNvbGQhICAKCmh0dHA6Ly93d3cua2lzaGJ1c2luZXNzY3JlZGl0LmNvbS8KCmh0dHA6Ly9hcHAu
-c3RyZWFtc2VuZC5jb20vcHJpdmF0ZS93NEQwL05lWC9FZDA1VW00L3Vuc3Vic2NyaWJlLzEyMDc4
+c3RyZWFtc2VuZC5jb20vcHJpdmF0ZS93NEQwL05lWC9QZENvOXUyL3Vuc3Vic2NyaWJlLzEyMDc4
 NjIxCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRh
 aW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcK
 aHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRh
