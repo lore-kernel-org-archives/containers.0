@@ -1,15 +1,11 @@
-From: atp <Andrew.Phillips-xheW4WVAX9Y@public.gmane.org>
-Subject: Re: [Lxc-users] PHYS type lxc not working
-Date: Thu, 08 Jul 2010 08:57:47 +0100
-Message-ID: <1278575867.29985.2.camel__8756.89392346448$1278576022$gmane$org@foo.co.tradefair>
-References: <AANLkTino_Vt88QmLt8o4nzLmex2NwBSxkO4bSRBbS-UD@mail.gmail.com>
-	<20100707223344.GA3129@count0.beaverton.ibm.com>
-	<AANLkTinItYFIWCjJ_bbi0ah7dg98E2I8rYd8WOpjI_DK@mail.gmail.com>
+From: "Vanessa Bauer" <vanessa-3F4H3t6TLQZiCbKXbTv9yWb8qiTeHX/p@public.gmane.org>
+Subject: I Found a $300,000 Business Line of Credit for YOU!
+Date: Thu, 08 Jul 2010 11:35:14 -0700
+Message-ID: <201007081851.o68IpGvh021683@smtp1.linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <AANLkTinItYFIWCjJ_bbi0ah7dg98E2I8rYd8WOpjI_DK-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,90 +15,64 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sabdar <sabdar-ETsMpvZGyKJdeDdKuUvyIgC/G2K4zDHf@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lxc-users-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-You need to add a macvlan device to the parent device with the same
-mode.
-
-So, if you have a macvlan with a link device of eth0, you'll need to
-create a macvlan device off eth0 - e.g. eth0:1 that is of mode bridge.
-
-There was an email yesterday that showed how to do that. 
-
-Andy
-
-On Thu, 2010-07-08 at 10:13 +0530, Sabdar wrote:
-> ok thanks for the information,i will make a try on 2.6.35-rc4 kernel
-> and with latest lxc package.Also can anyone suggest how to make
-> macvlan container communicate with the host.i can make macvlan
-> communicate with other container using macvlan bridge mode similarly
-> is there any way that i can make it to allow communicate with host as
-> well.
-> 
-> 
-> Thanks,
-> Sabdar.  
-> 
-> On Thu, Jul 8, 2010 at 4:03 AM, Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> wrote:
->         
->         On Mon, Jul 05, 2010 at 10:09:21AM +0530, Sabdar wrote:
->         >    Hi all,
->         >         I want to use the below configuration in lxc, but
->         the problem is the
->         > physical interface is not getting release after i stop the
->         container like it
->         > happens in macvlan type.The interface gets disappear from
->         host and i can
->         > restore that only if i reboot my system,
->         >
->         > lxc.utsname = gamma
->         > lxc.network.type = phys
->         > lxc.network.flags = up
->         > lxc.network.link = eth0
->         > lxc.network.name = eth0
->         > lxc.network.ipv4 = 192.168.10.1
->         >
->         > My kernel version :- linux-2.6.33
->         
->         
->         Have you tried 2.6.35-rc4? It has Eric's sysfs and netns
->         tagging
->         patches which enhance support for using physical interfaces.
->         
->         Cc'ing lxc-users (which is probably a better place to ask)
->         
->         > Lxc version :- 0.6.5
->         
->         
->         lxc 0.7.1 is also out.
->         
->         I'm sorry, I know this isn't much help in figuring out the
->         exact nature of the problem. Hopefully Cc'ing lxc-users will
->         help.
->         
->         Cheers,
->                -Matt Helsley
-> 
-> 
-> ------------------------------------------------------------------------------
-> This SF.net email is sponsored by Sprint
-> What will you do first with EVO, the first 4G phone?
-> Visit sprint.com/first -- http://p.sf.net/sfu/sprint-com-first
-> _______________________________________________ Lxc-users mailing list Lxc-users-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org https://lists.sourceforge.net/lists/listinfo/lxc-users
-Andrew Phillips
-Head of Systems
-
-www.lmax.com 
-
-Office: +44 203 1922509
-Mobile: +44 (0)7595 242 900
-
-LMAX | Level 2, Yellow Building | 1 Nicholas Road | London | W11 4AN
-
-
-
-
-The information in this e-mail and any attachment is confidential and is intended only for the named recipient(s). The e-mail may not be disclosed or used by any person other than the addressee, nor may it be copied in any way. If you are not a named recipient please notify the sender immediately and delete any copies of this message. Any unauthorized copying, disclosure or distribution of the material in this e-mail is strictly forbidden. Any view or opinions presented are solely those of the author and do not necessarily represent those of the company.
+SGV5IFRoZXJlLCAKCkxhc3QgeWVhciB3YXMgYSByb2xsZXIgY29hc3RlciB5ZWFyIGZvciBtYW55
+IG9mIHVzIGR1ZSB0byB0aGUgZWNvbm9teS4KIApTbyBJIHdhbnRlZCB0byB0YWtlIGEgbW9tZW50
+IHRvZGF5IHRvIGludHJvZHVjZSB5b3UgdG8gYW4gQXV0aG9yIApmcmllbmQgb2YgbWluZSB0aGF0
+IHNoYXJlcyBvdXIgbWlzc2lvbiBvZiBlZHVjYXRpbmcgYW5kIGVtcG93ZXJpbmcgCnRoZSB3b3Js
+ZC4KIApUaGF0IEF1dGhvciBpcyDigJxUSEXigJ0gbmF0aW9uYWxseSByZWNvZ25pemVkIEJ1c2lu
+ZXNzIENyZWRpdCBFeHBlcnQsIApUaG9tYXMgS2lzaC4gQW5kIGhpcyByZWNlbnQgd3JpdGluZyBh
+ZGRyZXNzZXMgb25lIG9mIHRoZSBrZXkgCmVsZW1lbnRzIGVzc2VudGlhbCB0byB5b3VyIHN1Y2Nl
+c3MgaW4gQU5ZIGJ1c2luZXNzIC0gCmhhdmluZyBhY2Nlc3MgdG8gYnVzaW5lc3MgbGluZXMgb2Yg
+Y3JlZGl0LgoKKkRpZCB5b3Uga25vdyB0aGF0IG1vbip5IGlzIGF2YWlsYWJsZSBSSUdIVCBOT1cs
+IGV2ZW4gaW4gdG9kYXnigJlzIAp0b3VnaCBlY29ub215IGlmIHlvdSBrbm93IGhvdyB0byBnZXQg
+aXQ/CgpTZXJpb3VzbHkgLSBOT1cgaXMgb25lIG9mIHRoZSBncmVhdGVzdCB0aW1lcyB0byBiZSBh
+YmxlIHRvIGdldCBNT05FWS4KCkFuZCBvbmUgb2YgdGhlIGNvb2xlc3Qgd2F5cyB0byBzdGFydCBp
+bnZlc3Rpbmcgb3IgdG8gc3RhcnQgb3IgCmV4cGFuZCBhIGJ1c2luZXNzIGlzIHdpdGggdGhlIGtp
+bmQgb2YgbW9uZXkgdGhhdCBtb3N0IHBlb3BsZSAKYXJlbuKAmXQgYXdhcmUgb2YgLSBCdXNpbmVz
+cyBMaW5lcyBvZiBDcmVkaXQuCgpJZiB5b3Uga25vdyB0aGUgdGVjaG5pcXVlcywgeW91IGNhbiBx
+dWlja2x5IGdldCAkMzAwLDAwMCBpbiAKdW5zZWN1cmVkIGJ1c2luZXNzIGNyZWRpdCB0aGF0IGNh
+biBiZSB1c2VkIGZvciBBTlkgcHVycG9zZS4gIApBbmQgdGhpcyBpcyBtb25leSB0aGF0IG5ldmVy
+IHJlcG9ydHMgb24geW91ciBwZXJzb25hbCBjcmVkaXQgCnJlcG9ydHMuLi4KCklmIHlvdSB3YW50
+IHRvIGdldCB0aGlzIGtpbmQgb2YgYnVzaW5lc3MgY3JlZGl0IEZBU1QsIGRvbuKAmXQgbWlzcyAK
+dGhlIHNwZWNpYWwgU2F0dXJkYXkgd2ViaW5hciB3ZSBqdXN0IGZvdW5kIG91dCBhYm91dC4KCkl0
+4oCZcyBob3N0ZWQgYnkg4oCcVEhF4oCdIE5hdGlvbmFsIEJ1c2luZXNzIENyZWRpdCBFeHBlcnQg
+aGltc2VsZiwgClRob21hcyBLaXNoLiAgCgpZb3XigJlsbCBuZWVkIHRvIHJlZ2lzdGVyIGZvciB0
+aGlzIHdlYmluYXIgcXVpY2tseSBiZWZvcmUgYWxsIHRoZSAKbGluZXMgZmlsbCB1cCAobGlrZSBs
+YXN0IHRpbWUhKSAKClJlZ2lzdGVyIHJpZ2h0IG5vdyBhdDogCgpodHRwOi8vd3d3Lmtpc2hidXNp
+bmVzc2NyZWRpdC5jb20vCgpUaGUgdHJhaW5pbmcgd2ViaW5hciB3aWxsIGJlIGhlbGQg4oCTCgpT
+YXQuIEp1bHkgMTB0aAo5YW0gcGFjLi8xMWFtIGNlbnRyYWwvTm9vbiBlYXN0ZXJuCgpJbiB0aGlz
+IHVwY29taW5nIGNsYXNzLCB5b3UnbGwgbGVhcm4gaG93IHRvOgoK74OeCSpSZWdpc3RlciBhIGJ1
+c2luZXNzIG5hbWUgaW4gYW55IHN0YXRlLgoK74OeCSpTZXBhcmF0ZSB5b3VyIHBlcnNvbmFsIGNy
+ZWRpdCBmcm9tIHlvdXIgYnVzaW5lc3MuCgrvg54JKlJlbW92ZSBkZWJ0IHRoYXQgaXMgeW91ciBw
+ZXJzb25hbCBuYW1lLgoK74OeCSpTYXZlIGJpZyBvbiB5b3VyIHRheGVzLiAKCu+DngkqR2V0IEhV
+R0UgY2FzaCBsaW5lcyBvZiBidXNpbmVzcyBjcmVkaXQuCgrvg54JKlBsdXMgbW9yZSEKCkFjY2Vz
+cyB0byBidXNpbmVzcyBjcmVkaXQgaXMgYSB2YWx1YWJsZSBwcml2aWxlZ2UgaW4gdG9kYXnigJlz
+IHRvdWdoCm1hcmtldCBjb25kaXRpb25zLiBBbmQgeW91IGNhbiBxdWlja2x5IGVuam95IHRoYXQg
+cHJpdmlsZWdlIGlmIHlvdSAKa25vdyB0aGUgc2VjcmV0IHNob3J0Y3V0cyB0byBidWlsZGluZyBi
+dXNpbmVzcyBjcmVkaXQgYW5kIGdldHRpbmcgCm1vbmV5IHRoYXQgeW91IGNhbiB1c2UgZm9yIGFu
+eSBwdXJwb3NlLgoKVG9tIGlzIHRoZSBjcmVhdG9yIG9mIGEgdHJhZGVtYXJrZWQgNCBzdGVwIHJl
+Y2lwZSB0byBnZXR0aW5nIG5ldyAKdW5zZWN1cmVkIGJ1c2luZXNzIGxpbmVzIG9mIGNyZWRpdCBm
+b3IgYW55IHB1cnBvc2UuCgpUaGUgc3lzdGVtIGFib3V0IHRvIGJlIHJldmVhbGVkIG9uIHRoaXMg
+dHJhaW5pbmcgaXMgYW4gYW1hemluZ2x5IApzaW1wbGUgd2F5IHRvIGdldCAkMjAwLDAwMCB0byAk
+MzAwLDAwMCBpbiBjYXNoIGFuZCBidXNpbmVzcyBsaW5lcyAKb2YgY3JlZGl0IG5vIG1hdHRlciB3
+aGF0IGtpbmQgb2YgaW5jb21lLCBhc3NldHMgb3Igc2NvcmUgeW91IApjdXJyZW50bHkgaGF2ZS4g
+CgpBbmQgaXQgZ2V0cyBFVkVOIEJFVFRFUiDigJMgeW914oCZcmUgYWxzbyBnb2luZyB0byBsZWFy
+biBob3cgdG8gZG91YmxlIApvciB0cmlwbGUgeW91ciBsaW5lcyBvZiBjcmVkaXQgYW5kIGJ1aWxk
+IHRoZW0gdG8gYSBtaWxsaW9uIGRvbGxhcnMuCgpTbyBwbGVhc2Ugam9pbiBUb20gb24gdGhpcyBz
+cGVjaWFsIExJVkUgY2FsbCB0byBsZWFybiBhbGwgYWJvdXQgCmhpcyBwcm92ZW4gc2hvcnRjdXQg
+dG8gZ2V0dGluZyBidXNpbmVzcyBsaW5lcyBvZiBjcmVkaXQgaW4gdG9kYXnigJlzIAplY29ub215
+LgoKUmVnaXN0ZXIgcmlnaHQgbm93IGFuZCByZWNlaXZlIHRoZSB3ZWJpbmFyIGFjY2VzcyBjb2Rl
+cyBhdDogCgpodHRwOi8vd3d3Lmtpc2hidXNpbmVzc2NyZWRpdC5jb20vCgpTZXJpb3VzbHk7IERP
+TuKAmVQgTUlTUyBUSElTIOKAkyBJIHdvbuKAmXQhCgpTaW5jZXJlbHksIApWYW5lc3NhIEJhdW1l
+cgpLaXNoIEJ1c2luZXNzIENyZWRpdCBMTEMKMzc1MyBIb3dhcmQgSHVnaGVzIFBhcmt3YXksIFN1
+aXRlIDIwMApMYXMgVmVnYXMsIE5WIDg5MTY5CgoKUC5TLiAgUmVnaXN0ZXIgcmlnaHQgYXdheSBi
+ZWZvcmUgYWxsIHRoZSBsaW5lcyBmaWxsIHVwIGFuZCB5b3XigJlyZSAKTEVGVCBPVVQgaW4gdGhl
+IGNvbGQhICAKCmh0dHA6Ly93d3cua2lzaGJ1c2luZXNzY3JlZGl0LmNvbS8KCmh0dHA6Ly9hcHAu
+c3RyZWFtc2VuZC5jb20vcHJpdmF0ZS93NEQwL05lWC9FZDA1VW00L3Vuc3Vic2NyaWJlLzEyMDc4
+NjIxCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRh
+aW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcK
+aHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRh
+aW5lcnM=
