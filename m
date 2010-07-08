@@ -1,7 +1,7 @@
 From: "Jenn Kennedy (VP, San Diego)" <jennkennedy-YKN35+g/NR460jQDQQQ/sqmn/OTskMXa@public.gmane.org>
 Subject: Tonight's the night!!
 Date: Thu, 08 Jul 2010 13:10:00 -0700
-Message-ID: <201007082059.o68KwxYi008157@smtp1.linux-foundation.org>
+Message-ID: <201007082059.o68Kx0CR008163@smtp1.linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: base64
@@ -15,7 +15,7 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 SGV5LCAKCkl0IGhhcHBlbnMgdG9uaWdodCBhdCA5OjAwIFBNIEVhc3Rlcm4uIEkgd2lsbCBiZSBl
@@ -56,7 +56,7 @@ ZWJpbmFyIHN0YXJ0cyBhdOKApgoKOTowMCBwbSBFQVNURVJOIFNUQU5EQVJEIFRJTUUKODowMCBw
 bSBDRU5UUkFMCjc6MDAgcG0gTU9VTlRBSU4KNjowMCBwbSBQQUNJRklDCgoKPj5DTElDSyBIRVJF
 IFRPIFJFR0lTVEVSIEZPUiBUSEUgTElWRSBUUkFJTklORyBUT05JR0hUPDwKaHR0cHM6Ly93d3cy
 LmdvdG9tZWV0aW5nLmNvbS9yZWdpc3Rlci85NTQxNjQ1NzEKCgpodHRwOi8vYXBwLnN0cmVhbXNl
-bmQuY29tL3ByaXZhdGUvdzREMC9OZVgvUGRDbzl1Mi91bnN1YnNjcmliZS8xMjEwMDk2MQpfX19f
+bmQuY29tL3ByaXZhdGUvdzREMC9OZVgvRWQwNVVtNC91bnN1YnNjcmliZS8xMjEwMDk2MQpfX19f
 X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1h
 aWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8v
 bGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
