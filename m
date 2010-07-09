@@ -2,7 +2,7 @@ From: "Baumer, Vanessa" <vanessa-3F4H3t6TLQZiCbKXbTv9yWb8qiTeHX/p@public.gmane.o
 Subject: =?utf-8?Q?Don=E2=80=99t=20Miss=20the=20Saturday=20Call=20about?=
 	=?utf-8?Q?=20Business=20Credit=20?=
 Date: Fri, 09 Jul 2010 07:16:59 -0700
-Message-ID: <201007091423.o69ENmKH005956@smtp1.linux-foundation.org>
+Message-ID: <201007091423.o69ENnB5005958@smtp1.linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: base64
@@ -16,7 +16,7 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 SGV5LAoKSSBISUdITFkgcmVjb21tZW5kIHlvdSBhdHRlbmQgYSBSQVJFIFNhdHVyZGF5IHRyYWlu
@@ -61,7 +61,7 @@ cyBtb25leSBsYXN0IHdlZWsuCgpUbyBZb3VyIFN1Y2Nlc3MKClZhbmVzc2EgQmF1bWVyCktpc2gg
 QnVzaW5lc3MgQ3JlZGl0IExMQwozNzUzIEhvd2FyZCBIdWdoZXMgUGFya3dheSwgU3VpdGUgMjAw
 CkxhcyBWZWdhcywgTlYgODkxNjkKClAuUy4gIFRoaXMgY2FsbCBpcyB0b28gaW1wb3J0YW50IHRv
 IG1pc3PigKYgCgpodHRwOi8vd3d3Lmtpc2hidXNpbmVzc2NyZWRpdC5jb20vCgpodHRwOi8vYXBw
-LnN0cmVhbXNlbmQuY29tL3ByaXZhdGUvdzREMC9OZVgvUGRDbzl1Mi91bnN1YnNjcmliZS8xMjEx
+LnN0cmVhbXNlbmQuY29tL3ByaXZhdGUvdzREMC9OZVgvRWQwNVVtNC91bnN1YnNjcmliZS8xMjEx
 NDkxMQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250
 YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3Jn
 Cmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250
