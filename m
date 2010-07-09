@@ -1,125 +1,68 @@
-From: Louis Rilling <Louis.Rilling@kerlabs.com>
-Subject: Re: [RFC][PATCH 2/2] pidns: Remove proc flush races when a pid
-	namespaces are exiting.
-Date: Fri, 9 Jul 2010 16:13:24 +0200
-Message-ID: <20100709141324.GC18586@hawkmoon.kerlabs.com>
-References: <20100625102303.GG3773@hawkmoon.kerlabs.com> <20100625183733.GA2627@us.ibm.com> <20100625192945.GA25532@redhat.com> <20100625212618.GA11917@us.ibm.com> <20100625212758.GA30474@redhat.com> <20100625220713.GA31123@us.ibm.com> <m1r5jd5l0v.fsf_-_@fess.ebiederm.org> <m1mxu15kv4.fsf_-_@fess.ebiederm.org> <20100709121425.GB18586@hawkmoon.kerlabs.com> <m1lj9k4xfx.fsf@fess.ebiederm.org>
+From: "Baumer, Vanessa" <vanessa-3F4H3t6TLQZiCbKXbTv9yWb8qiTeHX/p@public.gmane.org>
+Subject: =?utf-8?Q?Don=E2=80=99t=20Miss=20the=20Saturday=20Call=20about?=
+	=?utf-8?Q?=20Business=20Credit=20?=
+Date: Fri, 09 Jul 2010 07:16:59 -0700
+Message-ID: <201007091423.o69ENmKH005956@smtp1.linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-5569-1278684730-0001-2"
-Return-path: <linux-kernel-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <m1lj9k4xfx.fsf@fess.ebiederm.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Oleg Nesterov <oleg@redhat.com>, Linux Containers <containers@lists.osdl.org>, Andrew Morton <akpm@linux-foundation.org>, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, linux-kernel@vger.kernel.org, Pavel Emelyanov <xemul@openvz.org>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
-
---=_bohort-5569-1278684730-0001-2
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-On 09/07/10  6:05 -0700, Eric W. Biederman wrote:
-> Louis Rilling <Louis.Rilling@kerlabs.com> writes:
->=20
-> > On 08/07/10 21:39 -0700, Eric W. Biederman wrote:
-> >>=20
-> >> Currently it is possible to put proc_mnt before we have flushed the
-> >> last process that will use the proc_mnt to flush it's proc entries.
-> >>=20
-> >> This race is fixed by not flushing proc entries for dead pid
-> >> namespaces, and calling pid_ns_release_proc unconditionally from
-> >> zap_pid_ns_processes after the pid namespace has been declared dead.
-> >
-> > One comment below.
-> >
-> >>=20
-> >> To ensure we don't unnecessarily leak any dcache entries with skipped
-> >> flushes pid_ns_release_proc flushes the entire proc_mnt when it is
-> >> called.
-> >>=20
-> >> Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
-> >> ---
-> >>  fs/proc/base.c         |    9 +++++----
-> >>  fs/proc/root.c         |    3 +++
-> >>  kernel/pid_namespace.c |    1 +
-> >>  3 files changed, 9 insertions(+), 4 deletions(-)
-> >>=20
-> >> diff --git a/fs/proc/base.c b/fs/proc/base.c
-> >> index acb7ef8..e9d84e1 100644
-> >> --- a/fs/proc/base.c
-> >> +++ b/fs/proc/base.c
-> >> @@ -2742,13 +2742,14 @@ void proc_flush_task(struct task_struct *task)
-> >> =20
-> >>  	for (i =3D 0; i <=3D pid->level; i++) {
-> >>  		upid =3D &pid->numbers[i];
-> >> +
-> >> +		/* Don't bother flushing dead pid namespaces */
-> >> +		if (test_bit(PIDNS_DEAD, &upid->ns->flags))
-> >> +			continue;
-> >> +
-> >
-> > IMHO, nothing prevents zap_pid_ns_processes() from setting PIDNS_DEAD a=
-nd
-> > calling pid_ns_release_proc() right now. zap_pid_ns_processes() does no=
-t wait
-> > for EXIT_DEAD (self-reaping) children to be released.
->=20
-> Good point we need something probably a lock to prevent proc_mnt from
-> going away here.  We might do a little better if we were starting with
-> a specific dentry, those at least have some rcu properties but that isn't
-> a big help.
->=20
-> Hmm.  Perhaps there is a way to completely restructure this flushing
-> of dentries.  It is just an optimization after all so we don't get too ma=
-ny
-> stale dentries building up.
->=20
-> It might just be worth it simply kill proc_flush_mnt altogether.  I know
-> it is measurable when we don't do the flushing but perhaps there can
-> be a work struct that periodically wakes up and smacks stale proc dentrie=
-s.
->=20
-> Right now I really don't think proc_flush_task is worth the hassle it
-> causes.
-
-Indeed, proc_flush_task() seems to be the only bad guy trying to access
-pid_ns->proc_mnt after the death of the init process.
-
-But I don't know enough about the performance impact of removing it.
-
-Louis
-
->=20
-> Grumble, Grumble more thinking to do.
->=20
-> Eric
-> _______________________________________________
-> Containers mailing list
-> Containers@lists.linux-foundation.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
-
---=20
-Dr Louis Rilling			Kerlabs
-Skype: louis.rilling			Batiment Germanium
-Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
-http://www.kerlabs.com/			35700 Rennes
-
---=_bohort-5569-1278684730-0001-2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Transfer-Encoding: 7bit
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
-
-iEYEARECAAYFAkw3LoQACgkQVKcRuvQ9Q1TZYwCdF0hDAPJjDiurc9192I0ijLTs
-FqwAn3L5GDtb4TBeaHFS0PJDeVxVi1Tc
-=r0qJ
------END PGP SIGNATURE-----
-
---=_bohort-5569-1278684730-0001-2--
+SGV5LAoKSSBISUdITFkgcmVjb21tZW5kIHlvdSBhdHRlbmQgYSBSQVJFIFNhdHVyZGF5IHRyYWlu
+aW5nIHdlYmluYXIgdG8gCmxlYXJuIGhvdyB5b3UgY2FuIHF1aWNrbHkgZ2V0ICQzMDAsMDAwIGlu
+IG5ldyBidXNpbmVzcyBjcmVkaXQgCnRoYXQgY2FuIGJlIHVzZWQgZm9yIEFOWSBwdXJwb3NlLgoK
+VGhpcyBpcyBSRUFMIE1PTkVZIGluIHRoZSBmb3JtIG9mOgoK74OeCUZpeGVkIHJhdGUsIGZpeGVk
+IHRlcm0gbG9hbnMgdG8geW91ciBidXNpbmVzcwoK74OeCSoqQnVzaW5lc3MgTGluZXMgb2YgQ3Jl
+ZGl0IHdpdGggY2hlY2sgd3JpdGluZyBwcml2aWxlZ2VzIQoK74OeCVNtYWxsIGJ1c2luZXNzIGNy
+ZWRpdCBjYXJkcyB0aGF0IGRvbuKAmXQgcmVwb3J0IGFueSBiYWxhbmNlIApvbiB5b3VyIHBlcnNv
+bmFsIGNyZWRpdCB3aGVuIHlvdSB1c2UgdGhlbQoKVGhpcyDigJxuby1icmFpbmVy4oCdIHdlYmlu
+YXIgaXMgaG9zdGVkIGJ5IG5hdGlvbmFsIGJ1c2luZXNzIGNyZWRpdCAKZXhwZXJ0IChmcm9tIENC
+UyBSYWRpbykgVGhvbWFzIEtpc2guCgpSZWdpc3RlciBub3cgYmVmb3JlIHRoZSBsaW5lcyBnZXQg
+ZmlsbGVkIHVwIGF0OiAKCgpodHRwOi8vd3d3Lmtpc2hidXNpbmVzc2NyZWRpdC5jb20vCgoKVGhl
+IHRyYWluaW5nIHdlYmluYXIgd2lsbCBiZSBoZWxkIG9uOgoKVGhpcyBTYXR1cmRheSBKdWx5IDEw
+dGgKCjlhbSBQYWNpZmljIC8gMTFhbSBjZW50cmFsIC8gTm9vbiBlYXN0ZXJuCgpJbiB0aGlzIHVw
+Y29taW5nIGNsYXNzLCB5b3UnbGwgbGVhcm4gaG93IHRvOgoKMS4JUmVnaXN0ZXIgYSBidXNpbmVz
+cyBuYW1lIGluIGFueSBzdGF0ZS4KCjIuCVNlcGFyYXRlIHlvdXIgcGVyc29uYWwgY3JlZGl0IGZy
+b20geW91ciBidXNpbmVzcy4KCjMuCVJlbW92ZSBkZWJ0IHRoYXQgaXMgeW91ciBwZXJzb25hbCBu
+YW1lLgoKNC4JU2F2ZSBiaWcgb24geW91ciB0YXhlcy4KCjUuCUdldCBIVUdFIGNhc2ggbGluZXMg
+b2YgYnVzaW5lc3MgY3JlZGl0LgoKNi4JUGx1cyBtb3JlIQoKKk9uZSBvZiB0aGUgY29vbGVzdCB3
+YXlzIHRvIHN0YXJ0IGludmVzdGluZyBvciB0byBleHBhbmQgb3Igc3RhcnQgCmEgYnVzaW5lc3Mg
+aXMgd2l0aCBhIGZvcm0gb2YgbW9uZXkgdGhhdCBtb3N0IHBlb3BsZSAKRE9O4oCZVCBLTk9XIEFC
+T1VUIC0gQnVzaW5lc3MgTGluZXMgb2YgQ3JlZGl0LgoKSWYgeW91IGtub3cgYWJvdXQgdGhlbSwg
+eW91IGNhbiBxdWlja2x5IGdldCAkMzAwLDAwMCBpbiB1bnNlY3VyZWQgCmJ1c2luZXNzIGNyZWRp
+dCBmb3IgYW55IHB1cnBvc2UuIAoKQW5kIHRoaXMgaXMgbW9uZXkgdGhhdCBuZXZlciByZXBvcnRz
+IG9uIHlvdXIgcGVyc29uYWwgY3JlZGl0LgoKVG9tIGlzIHRoZSBjcmVhdG9yIG9mIGEgdHJhZGVt
+YXJrZWQgNCBzdGVwIHJlY2lwZSB0byBnZXR0aW5nIG5ldyAKdW5zZWN1cmVkIGJ1c2luZXNzIGxp
+bmVzIG9mIGNyZWRpdCBmb3IgYW55IHB1cnBvc2UuCgpUaGUgc3lzdGVtIGFib3V0IHRvIGJlIHJl
+dmVhbGVkIG9uIHRoaXMgdHJhaW5pbmcgY2FsbCBpcyBhbiAKYW1hemluZ2x5IHNpbXBsZSB3YXkg
+dG8gZ2V0ICQyMDAsMDAwIHRvICQzMDAsMDAwIGluIGNhc2ggYW5kIApidXNpbmVzcyBsaW5lcyBv
+ZiBjcmVkaXQgbm8gbWF0dGVyIHdoYXQga2luZCBvZiBpbmNvbWUsIGFzc2V0cyBvciAKc2NvcmUg
+eW91IGN1cnJlbnRseSBoYXZlLiAKCnJlZ2lzdGVyIG5vdyBhdDogCgpodHRwOi8vd3d3Lmtpc2hi
+dXNpbmVzc2NyZWRpdC5jb20vCgoKQW5kIHlvdSB3aWxsIGFsc28gbGVhcm4gaG93IHRvIGRvdWJs
+ZSBvciB0cmlwbGUgdGhlIGxpbmVzIG9mIApjcmVkaXQgYW5kIGJ1aWxkIHRvIGEgbWlsbGlvbiBk
+b2xsYXJzIQoKU28sIGdldCBzb21lIGNvZmZlZSBhbmQgYSBjb21mb3J0YWJsZSBjaGFpciBhbmQg
+am9pbiBUb20gb24gdGhpcyAKc3BlY2lhbCBMSVZFIGNhbGwgdG8gbGVhcm4gYWxsIGFib3V0IGhp
+cyBwcm92ZW4gc2hvcnRjdXQgdG8gCmdldHRpbmcgYnVzaW5lc3MgbGluZXMgb2YgY3JlZGl0IGlu
+IHRvZGF54oCZcyBlY29ub215LgoKV2l0aCB0aGlzIGluZm8sIHlvdSBjYW4gZ2V0IHlvdXIgaGFu
+ZHMgb24gJDMwMCwwMDAgcmlnaHQgbm93LCAKZXZlbiBpbiB0b2RheeKAmXMgdG91Z2ggZWNvbm9t
+eS4gIEkga25vdyB0aGlzIGJlY2F1c2UgcGVvcGxlIGp1c3QgCmdvdCBhcHByb3ZlZCBmb3IgdGhp
+cyBtb25leSBsYXN0IHdlZWsuCgpUbyBZb3VyIFN1Y2Nlc3MKClZhbmVzc2EgQmF1bWVyCktpc2gg
+QnVzaW5lc3MgQ3JlZGl0IExMQwozNzUzIEhvd2FyZCBIdWdoZXMgUGFya3dheSwgU3VpdGUgMjAw
+CkxhcyBWZWdhcywgTlYgODkxNjkKClAuUy4gIFRoaXMgY2FsbCBpcyB0b28gaW1wb3J0YW50IHRv
+IG1pc3PigKYgCgpodHRwOi8vd3d3Lmtpc2hidXNpbmVzc2NyZWRpdC5jb20vCgpodHRwOi8vYXBw
+LnN0cmVhbXNlbmQuY29tL3ByaXZhdGUvdzREMC9OZVgvUGRDbzl1Mi91bnN1YnNjcmliZS8xMjEx
+NDkxMQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250
+YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3Jn
+Cmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250
+YWluZXJz
