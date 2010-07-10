@@ -1,57 +1,50 @@
-From: "Serge E. Hallyn" <serge@hallyn.com>
-Subject: Re: [PATCH 01/24] pidns: Remove races by stopping the caching of
- proc_mnt
-Date: Fri, 9 Jul 2010 17:13:41 -0500
-Message-ID: <20100709221341.GA31259@hallyn.com>
-References: <20100625192945.GA25532@redhat.com>
- <20100625212618.GA11917@us.ibm.com>
- <20100625212758.GA30474@redhat.com>
- <20100625220713.GA31123@us.ibm.com>
- <m1r5jd5l0v.fsf_-_@fess.ebiederm.org>
- <m1mxu15kv4.fsf_-_@fess.ebiederm.org>
- <20100709121425.GB18586@hawkmoon.kerlabs.com>
- <m1lj9k4xfx.fsf@fess.ebiederm.org>
- <20100709141324.GC18586@hawkmoon.kerlabs.com>
- <m1aaq04ph2.fsf_-_@fess.ebiederm.org>
+From: Dan Carpenter <error27-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [patch] cgroups: save space for the terminator
+Date: Sat, 10 Jul 2010 12:54:29 +0200
+Message-ID: <20100710105429.GW19184__21131.9113303491$1278759457$gmane$org@bicker>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <m1aaq04ph2.fsf_-_@fess.ebiederm.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Oleg Nesterov <oleg@redhat.com>, linux-kernel@vger.kernel.org, Louis Rilling <Louis.Rilling@kerlabs.com>, Linux Containers <containers@lists.osdl.org>, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, Pavel Emelyanov <xemul@openvz.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, kernel-janitors-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Eric W. Biederman (ebiederm@xmission.com):
-...
-> @@ -2742,13 +2743,13 @@ void proc_flush_task(struct task_struct *task)
->  
->  	for (i = 0; i <= pid->level; i++) {
->  		upid = &pid->numbers[i];
-> -		proc_flush_task_mnt(upid->ns->proc_mnt, upid->nr,
-> -					tgid->numbers[i].nr);
-> -	}
-> +		mnt = get_proc_mnt(upid->ns);
+The original code didn't leave enough space for a NULL terminator.
+These strings are copied with strcpy() into fixed length buffers in
+cgroup_root_from_opts().
+ 
+Signed-off-by: Dan Carpenter <error27-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-...
-
-> -int pid_ns_prepare_proc(struct pid_namespace *ns)
-> +struct vfsmount *get_proc_mnt(struct pid_namespace *ns)
->  {
-> -	struct vfsmount *mnt;
-> -
-> -	mnt = kern_mount_data(&proc_fs_type, ns);
-> -	if (IS_ERR(mnt))
-> -		return PTR_ERR(mnt);
-> -
-> -	return 0;
-> +	return kern_mount_data(&proc_fs_type, ns);
-
-Uh, that looks like it's got to be a *huge* hit.  Each kern_mount_data()
-will at least alloc space for a vfsmnt and proc_fs_type->name.  Once for
-each pid level of each exiting task.
-
-(Or am I misreading?)
-
--serge
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 3ac6f5b..a942820 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -1102,7 +1102,7 @@ static int parse_cgroupfs_options(char *data, struct cgroup_sb_opts *opts)
+ 			if (opts->release_agent)
+ 				return -EINVAL;
+ 			opts->release_agent =
+-				kstrndup(token + 14, PATH_MAX, GFP_KERNEL);
++				kstrndup(token + 14, PATH_MAX - 1, GFP_KERNEL);
+ 			if (!opts->release_agent)
+ 				return -ENOMEM;
+ 		} else if (!strncmp(token, "name=", 5)) {
+@@ -1123,7 +1123,7 @@ static int parse_cgroupfs_options(char *data, struct cgroup_sb_opts *opts)
+ 			if (opts->name)
+ 				return -EINVAL;
+ 			opts->name = kstrndup(name,
+-					      MAX_CGROUP_ROOT_NAMELEN,
++					      MAX_CGROUP_ROOT_NAMELEN - 1,
+ 					      GFP_KERNEL);
+ 			if (!opts->name)
+ 				return -ENOMEM;
