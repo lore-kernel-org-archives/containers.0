@@ -1,55 +1,62 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH 01/24] pidns: Remove races by stopping the caching of proc_mnt
-Date: Sun, 11 Jul 2010 07:25:18 -0700
-Message-ID: <m1mxtyt7sh.fsf@fess.ebiederm.org>
-References: <20100625192945.GA25532@redhat.com>
-	<20100625212618.GA11917@us.ibm.com>
-	<20100625212758.GA30474@redhat.com>
-	<20100625220713.GA31123@us.ibm.com>
-	<m1r5jd5l0v.fsf_-_@fess.ebiederm.org>
-	<m1mxu15kv4.fsf_-_@fess.ebiederm.org>
-	<20100709121425.GB18586@hawkmoon.kerlabs.com>
-	<m1lj9k4xfx.fsf@fess.ebiederm.org>
-	<20100709141324.GC18586@hawkmoon.kerlabs.com>
-	<m1aaq04ph2.fsf_-_@fess.ebiederm.org>
-	<20100711141406.GD18586@hawkmoon.kerlabs.com>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [patch] cgroups: save space for the terminator
+Date: Sun, 11 Jul 2010 19:10:22 -0500
+Message-ID: <20100712001022.GA6832__49379.0108398118$1278893419$gmane$org@hallyn.com>
+References: <20100710105429.GW19184@bicker>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20100711141406.GD18586@hawkmoon.kerlabs.com> (Louis Rilling's message of "Sun\, 11 Jul 2010 16\:14\:07 +0200")
-Sender: linux-kernel-owner@vger.kernel.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Linux Containers <containers@lists.osdl.org>, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, linux-kernel@vger.kernel.org, Pavel Emelyanov <xemul@openvz.org>, Oleg Nesterov <oleg@redhat.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20100710105429.GW19184@bicker>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dan Carpenter <error27-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Louis Rilling <Louis.Rilling@kerlabs.com> writes:
+Quoting Dan Carpenter (error27-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
+> The original code didn't leave enough space for a NULL terminator.
+> These strings are copied with strcpy() into fixed length buffers in
+> cgroup_root_from_opts().
+>  
+> Signed-off-by: Dan Carpenter <error27-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-> On 09/07/10  8:58 -0700, Eric W. Biederman wrote:
->> 
->> Having proc reference the pid_namespace and the pid_namespace
->> reference proc is a serious reference counting problem, which has
->> resulted in both leaks and use after free problems.  Mount already
->> knows how to go from a pid_namespace to a mount of proc, so we don't
->> need to cache the proc mount.
->> 
->> To do this I introduce get_proc_mnt and replace pid_ns->proc_mnt users
->> with it. Additionally I remove pid_ns_(prepare|release)_proc as they
->> are now unneeded.
->> 
->> This is slightly less efficient but it is much easier to avoid the
->> races.  If efficiency winds up being a problem we can revisit our data
->> structures.
->
-> IIUC, the difference between this solution and the first one I proposed is that
-> instead of pinning proc_mnt with mntget() at copy_process()-time, proc_mnt is
-> looked for and, if possible, mntget() at release_task()-time.
->
-> Could you elaborate on the trade-off, that is accessing proc_mnt at
-> copy_process()-time vs looking up proc_mnt at release_task()-time?
+Hmm, yes - the fact that kstrndup() allocs len+1 probably threw off
+the author of these original lines.  Thanks for spotting this!
 
-A little code simplicity.  But Serge was right there is cost a noticeable
-cost.  About 5%-7% more on lat_proc from lmbench.
+Acked-by: Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 
-The real benefit was simplicity.
 
-Eric
+> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+> index 3ac6f5b..a942820 100644
+> --- a/kernel/cgroup.c
+> +++ b/kernel/cgroup.c
+> @@ -1102,7 +1102,7 @@ static int parse_cgroupfs_options(char *data, struct cgroup_sb_opts *opts)
+>  			if (opts->release_agent)
+>  				return -EINVAL;
+>  			opts->release_agent =
+> -				kstrndup(token + 14, PATH_MAX, GFP_KERNEL);
+> +				kstrndup(token + 14, PATH_MAX - 1, GFP_KERNEL);
+>  			if (!opts->release_agent)
+>  				return -ENOMEM;
+>  		} else if (!strncmp(token, "name=", 5)) {
+> @@ -1123,7 +1123,7 @@ static int parse_cgroupfs_options(char *data, struct cgroup_sb_opts *opts)
+>  			if (opts->name)
+>  				return -EINVAL;
+>  			opts->name = kstrndup(name,
+> -					      MAX_CGROUP_ROOT_NAMELEN,
+> +					      MAX_CGROUP_ROOT_NAMELEN - 1,
+>  					      GFP_KERNEL);
+>  			if (!opts->name)
+>  				return -ENOMEM;
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
