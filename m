@@ -1,11 +1,13 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH 1/2] c/r: fix task tree traversal for threads
-Date: Sun, 11 Jul 2010 22:05:21 -0400
-Message-ID: <1278900322-15287-1-git-send-email-orenl@cs.columbia.edu>
+Subject: [PATCH 2/2] c/r: [x86] save/restore 'sysenter_return' for threads
+Date: Sun, 11 Jul 2010 22:05:22 -0400
+Message-ID: <1278900322-15287-2-git-send-email-orenl@cs.columbia.edu>
+References: <1278900322-15287-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1278900322-15287-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,72 +21,58 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This patch fixes the logic of walk_task_subtree() to correctly account
-for all threads (and not only threads of the tree root).
+On x86 architecture, save/restore the 'thread_info->sysenter_return'
+of tasks. This fixes crashes of threads immediately after restart.
+
+This field is set in arch_setup_additional_pages() for thread group
+leaders, and then inherited by threads. At restart, we first create
+all tasks (and threads) and then restore their MMs. In particular, we
+call arch_setup_additional_page() again, which may re-map the vdso
+page to the saved location. However, we only do so explicitly to the
+thread group leader, so the 'sysenter_return' pointers of the threads
+aren't automatically adjusted.
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Tested-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- kernel/checkpoint/sys.c |   24 ++++++++++++++----------
- 1 files changed, 14 insertions(+), 10 deletions(-)
+ arch/x86/include/asm/checkpoint_hdr.h |    1 +
+ arch/x86/kernel/checkpoint.c          |    5 +++++
+ 2 files changed, 6 insertions(+), 0 deletions(-)
 
-diff --git a/kernel/checkpoint/sys.c b/kernel/checkpoint/sys.c
-index 5e6994e..171c867 100644
---- a/kernel/checkpoint/sys.c
-+++ b/kernel/checkpoint/sys.c
-@@ -565,7 +565,10 @@ EXPORT_SYMBOL(do_ckpt_msg);
-  *
-  * The function will start with @root, and iterate through all the
-  * descendants, including threads, in a DFS manner. Children of a task
-- * are traversed before proceeding to the next thread of that task.
-+ * are traversed before proceeding to the next thread of that task,
-+ * and threads of a task are traversed before proceeding to the next
-+ * sibling of that task. (Threads of the root task are included, but
-+ * siblings of the root task are skipped).
-  *
-  * For each task, the callback @func will be called providing the task
-  * pointer and the @data. The callback is invoked while holding the
-@@ -580,10 +583,8 @@ int walk_task_subtree(struct task_struct *root,
- 		      int (*func)(struct task_struct *, void *),
- 		      void *data)
- {
--
--	struct task_struct *leader = root;
--	struct task_struct *parent = NULL;
- 	struct task_struct *task = root;
-+	struct task_struct *parent = NULL;
- 	int total = 0;
- 	int ret;
+diff --git a/arch/x86/include/asm/checkpoint_hdr.h b/arch/x86/include/asm/checkpoint_hdr.h
+index 535a9c6..0505329 100644
+--- a/arch/x86/include/asm/checkpoint_hdr.h
++++ b/arch/x86/include/asm/checkpoint_hdr.h
+@@ -82,6 +82,7 @@ struct ckpt_hdr_header_arch {
  
-@@ -604,7 +605,13 @@ int walk_task_subtree(struct task_struct *root,
- 			continue;
+ struct ckpt_hdr_thread {
+ 	struct ckpt_hdr h;
++	__u64 sysenter_return;
+ 	__u32 thread_info_flags;
+ 	__u16 gdt_entry_tls_entries;
+ 	__u16 sizeof_tls_array;
+diff --git a/arch/x86/kernel/checkpoint.c b/arch/x86/kernel/checkpoint.c
+index 0258245..3fb9deb 100644
+--- a/arch/x86/kernel/checkpoint.c
++++ b/arch/x86/kernel/checkpoint.c
+@@ -103,6 +103,8 @@ int checkpoint_thread(struct ckpt_ctx *ctx, struct task_struct *t)
+ 		task_thread_info(t)->flags & ~CKPT_X86_TIF_UNSUPPORTED;
+ 	h->gdt_entry_tls_entries = GDT_ENTRY_TLS_ENTRIES;
+ 	h->sizeof_tls_array = tls_size;
++	h->sysenter_return = (__u64) (unsigned long)
++		task_thread_info(current)->sysenter_return;
+ 
+ 	/* For simplicity dump the entire array */
+ 	memcpy(h + 1, t->thread.tls_array, tls_size);
+@@ -297,6 +299,9 @@ int restore_thread(struct ckpt_ctx *ctx)
  		}
- 
-+		/* by definition, skip siblings of root */
- 		while (task != root) {
-+			/* if not last thread - proceed with thread */
-+			task = next_thread(task);
-+			if (!thread_group_leader(task))
-+				break;
-+
- 			/* if has sibling - proceed with sibling */
- 			if (!list_is_last(&task->sibling, &parent->children)) {
- 				task = list_entry(task->sibling.next,
-@@ -617,12 +624,9 @@ int walk_task_subtree(struct task_struct *root,
- 			parent = parent->real_parent;
- 		}
- 
--		if (task == root) {
--			/* in case root task is multi-threaded */
--			root = task = next_thread(task);
--			if (root == leader)
--				break;
--		}
-+		/* if we arrive at root again -- done */
-+		if (task == root)
-+			break;
  	}
- 	read_unlock(&tasklist_lock);
  
++	task_thread_info(current)->sysenter_return =
++		(void __user *) (unsigned long) h->sysenter_return;
++
+ 	/* TODO: restore TIF flags as necessary (e.g. TIF_NOTSC) */
+ 
+ 	ret = 0;
 -- 
 1.7.0.4
