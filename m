@@ -1,7 +1,7 @@
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 8/8] checkpoint: handle siginfo->si_code < 0
-Date: Tue, 13 Jul 2010 10:44:24 -0500
-Message-ID: <1279035864-10533-9-git-send-email-ntl@pobox.com>
+Subject: [PATCH 4/8] checkpoint: clean up __SI_POLL siginfo save/restore
+Date: Tue, 13 Jul 2010 10:44:20 -0500
+Message-ID: <1279035864-10533-5-git-send-email-ntl@pobox.com>
 References: <1279035864-10533-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,73 +21,39 @@ To: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-If we checkpoint a task that has a pending signal with si_code < 0
-(easily caused by raising a blocked signal) we hit the BUG() in
-fill_siginfo.  In this case, we should checkpoint and restore si_pid,
-si_uid, and the members of the si_val union.
+ckpt_siginfo now has fields for band and fd; use them for the
+__SI_POLL case.
 
 Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 ---
- kernel/signal.c |   40 ++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 40 insertions(+), 0 deletions(-)
+ kernel/signal.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/kernel/signal.c b/kernel/signal.c
-index 85757e1..cc7aee9 100644
+index e78a08e..df9b7be 100644
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
-@@ -2920,6 +2920,25 @@ static void fill_siginfo(struct ckpt_siginfo *si, const siginfo_t *info)
- 	si->csi_code = info->si_code;
- 
- 	/* TODO: convert info->si_uid to uid_objref */
-+	if (info->si_code < 0) {
-+		switch(info->si_code) {
-+		case SI_QUEUE:
-+		case SI_TIMER:
-+		case SI_MESGQ:
-+		case SI_ASYNCIO:
-+		case SI_SIGIO:
-+		case SI_TKILL:
-+		case SI_DETHREAD:
-+			si->csi_pid = info->si_pid;
-+			si->csi_uid = info->si_uid;
-+			si->csi_ptr = (unsigned long)info->si_ptr;
-+			si->csi_int = info->si_int;
-+			break;
-+		default:
-+			BUG();
-+		}
-+		return;
-+	}
- 
- 	switch (info->si_code & __SI_MASK) {
- 	case __SI_KILL:
-@@ -2972,6 +2991,27 @@ static int load_siginfo(siginfo_t *info, const struct ckpt_siginfo *si)
- 	info->si_code = si->csi_code;
- 
- 	/* TODO: validate remaining signal fields */
-+	if (info->si_code < 0) {
-+		switch(info->si_code) {
-+		case SI_QUEUE:
-+		case SI_TIMER:
-+		case SI_MESGQ:
-+		case SI_ASYNCIO:
-+		case SI_SIGIO:
-+		case SI_TKILL:
-+		case SI_DETHREAD:
-+			info->si_pid = si->csi_pid;
-+			info->si_uid = si->csi_uid;
-+			info->si_ptr = (void __user *)
-+				(unsigned long)si->csi_ptr;
-+			info->si_int = si->csi_int;
-+			break;
-+		default:
-+			return -EINVAL;
-+			break;
-+		}
-+		return 0;
-+	}
- 
- 	switch (info->si_code & __SI_MASK) {
- 	case __SI_KILL:
+@@ -2929,8 +2929,8 @@ static void fill_siginfo(struct ckpt_siginfo *si, const siginfo_t *info)
+ 		si->csi_sys_private = info->si_sys_private;
+ 		break;
+ 	case __SI_POLL:
+-		si->csi_pid = info->si_band;
+-		si->csi_int = info->si_fd;
++		si->csi_band = info->si_band;
++		si->csi_fd = info->si_fd;
+ 		break;
+ 	case __SI_FAULT:
+ 		si->csi_ptr = (unsigned long) info->si_addr;
+@@ -2978,8 +2978,8 @@ static int load_siginfo(siginfo_t *info, const struct ckpt_siginfo *si)
+ 		info->si_sys_private = si->csi_sys_private;
+ 		break;
+ 	case __SI_POLL:
+-		info->si_band = si->csi_pid;
+-		info->si_fd = si->csi_int;
++		info->si_band = si->csi_band;
++		info->si_fd = si->csi_fd;
+ 		break;
+ 	case __SI_FAULT:
+ 		info->si_addr = (void __user *) (unsigned long) si->csi_ptr;
 -- 
 1.7.1.1
