@@ -1,15 +1,16 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/8] checkpoint: add const qualifiers to siginfo handlers
-Date: Tue, 13 Jul 2010 16:29:00 -0700
-Message-ID: <20100713232900.GH17990@count0.beaverton.ibm.com>
+Subject: Re: [PATCH 9/8] restore_sigpending: fix reversed list_add_tail
+	arguments
+Date: Tue, 13 Jul 2010 16:36:12 -0700
+Message-ID: <20100713233612.GI17990@count0.beaverton.ibm.com>
 References: <1279035864-10533-1-git-send-email-ntl@pobox.com>
-	<1279035864-10533-3-git-send-email-ntl@pobox.com>
+	<1279059777.3002.1282.camel@localhost>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1279035864-10533-3-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1279059777.3002.1282.camel@localhost>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,41 +24,41 @@ To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Jul 13, 2010 at 10:44:18AM -0500, Nathan Lynch wrote:
-> fill_siginfo and load_siginfo both have parameters that can be const.
+On Tue, Jul 13, 2010 at 05:22:57PM -0500, Nathan Lynch wrote:
+> A testcase that posts several realtime signals via sigqueue before C/R
+> uncovered this.  Without this change only the first queued signal is
+> delivered after restart.
 > 
 > Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+
+Nice catch!
 
 Reviewed-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
 > ---
->  kernel/signal.c |    4 ++--
->  1 files changed, 2 insertions(+), 2 deletions(-)
+> 
+> [only noticed this after posting the series, oops]
+> 
+>  kernel/signal.c |    2 +-
+>  1 files changed, 1 insertions(+), 1 deletions(-)
 > 
 > diff --git a/kernel/signal.c b/kernel/signal.c
-> index 07647d7..13ab68e 100644
+> index cc7aee9..ba8a623 100644
 > --- a/kernel/signal.c
 > +++ b/kernel/signal.c
-> @@ -2913,7 +2913,7 @@ static const struct ckpt_obj_ops ckpt_obj_sighand_ops = {
->   * signal checkpoint/restart
->   */
+> @@ -3277,7 +3277,7 @@ static int restore_sigpending(struct ckpt_ctx *ctx, struct sigpending *pending)
+>  		}
 > 
-> -static void fill_siginfo(struct ckpt_siginfo *si, siginfo_t *info)
-> +static void fill_siginfo(struct ckpt_siginfo *si, const siginfo_t *info)
->  {
->  	si->csi_signo = info->si_signo;
->  	si->csi_errno = info->si_errno;
-> @@ -2957,7 +2957,7 @@ static void fill_siginfo(struct ckpt_siginfo *si, siginfo_t *info)
+>  		q->flags &= ~SIGQUEUE_PREALLOC;
+> -		list_add_tail(&pending->list, &q->list);
+> +		list_add_tail(&q->list, &pending->list);
 >  	}
->  }
 > 
-> -static int load_siginfo(siginfo_t *info, struct ckpt_siginfo *si)
-> +static int load_siginfo(siginfo_t *info, const struct ckpt_siginfo *si)
->  {
->  	if (!valid_signal(si->csi_signo))
->  		return -EINVAL;
+>  	if (ret < 0)
 > -- 
 > 1.7.1.1
+> 
+> 
 > 
 > _______________________________________________
 > Containers mailing list
