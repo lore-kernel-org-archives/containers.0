@@ -1,7 +1,7 @@
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 4/8] checkpoint: clean up __SI_POLL siginfo save/restore
-Date: Tue, 13 Jul 2010 10:44:20 -0500
-Message-ID: <1279035864-10533-5-git-send-email-ntl@pobox.com>
+Subject: [PATCH 6/8] checkpoint: clean up __SI_CHLD siginfo save/restore
+Date: Tue, 13 Jul 2010 10:44:22 -0500
+Message-ID: <1279035864-10533-7-git-send-email-ntl@pobox.com>
 References: <1279035864-10533-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,39 +21,34 @@ To: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-ckpt_siginfo now has fields for band and fd; use them for the
-__SI_POLL case.
+ckpt_siginfo now has a field for exit status; use it.
 
 Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 ---
- kernel/signal.c |    8 ++++----
- 1 files changed, 4 insertions(+), 4 deletions(-)
+ kernel/signal.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/kernel/signal.c b/kernel/signal.c
-index e78a08e..df9b7be 100644
+index de85c35..fccf9b6 100644
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
-@@ -2929,8 +2929,8 @@ static void fill_siginfo(struct ckpt_siginfo *si, const siginfo_t *info)
- 		si->csi_sys_private = info->si_sys_private;
+@@ -2941,7 +2941,7 @@ static void fill_siginfo(struct ckpt_siginfo *si, const siginfo_t *info)
+ 	case __SI_CHLD:
+ 		si->csi_pid = info->si_pid;
+ 		si->csi_uid = info->si_uid;
+-		si->csi_int = info->si_status;
++		si->csi_status = info->si_status;
+ 		si->csi_stime = info->si_stime;
+ 		si->csi_utime = info->si_utime;
  		break;
- 	case __SI_POLL:
--		si->csi_pid = info->si_band;
--		si->csi_int = info->si_fd;
-+		si->csi_band = info->si_band;
-+		si->csi_fd = info->si_fd;
+@@ -2990,7 +2990,7 @@ static int load_siginfo(siginfo_t *info, const struct ckpt_siginfo *si)
+ 	case __SI_CHLD:
+ 		info->si_pid = si->csi_pid;
+ 		info->si_uid = si->csi_uid;
+-		info->si_status = si->csi_int;
++		info->si_status = si->csi_status;
+ 		info->si_stime = si->csi_stime;
+ 		info->si_utime = si->csi_utime;
  		break;
- 	case __SI_FAULT:
- 		si->csi_ptr = (unsigned long) info->si_addr;
-@@ -2978,8 +2978,8 @@ static int load_siginfo(siginfo_t *info, const struct ckpt_siginfo *si)
- 		info->si_sys_private = si->csi_sys_private;
- 		break;
- 	case __SI_POLL:
--		info->si_band = si->csi_pid;
--		info->si_fd = si->csi_int;
-+		info->si_band = si->csi_band;
-+		info->si_fd = si->csi_fd;
- 		break;
- 	case __SI_FAULT:
- 		info->si_addr = (void __user *) (unsigned long) si->csi_ptr;
 -- 
 1.7.1.1
