@@ -1,96 +1,103 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] Checkpoint and restore task->fs->umask
-Date: Wed, 14 Jul 2010 13:10:43 -0700
-Message-ID: <1279138243-25087-1-git-send-email-danms@us.ibm.com>
+From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+Subject: Re: [PATCH] pidns: Fix wait for zombies to be reaped in
+	zap_pid_ns_processes
+Date: Wed, 14 Jul 2010 13:53:24 -0700
+Message-ID: <20100714205324.GA13956@us.ibm.com>
+References: <20100625212758.GA30474@redhat.com> <20100625220713.GA31123@us.ibm.com> <m1r5jd5l0v.fsf_-_@fess.ebiederm.org> <m1mxu15kv4.fsf_-_@fess.ebiederm.org> <20100709121425.GB18586@hawkmoon.kerlabs.com> <m1lj9k4xfx.fsf@fess.ebiederm.org> <20100709141324.GC18586@hawkmoon.kerlabs.com> <m1aaq04ph2.fsf_-_@fess.ebiederm.org> <20100711141406.GD18586@hawkmoon.kerlabs.com> <m1tyo4shas.fsf_-_@fess.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <m1tyo4shas.fsf_-_@fess.ebiederm.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Linux Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org, Pavel Emelyanov <xemul@openvz.org>, Oleg Nesterov <oleg@redhat.com>, "Serge E. Hallyn" <serge@hallyn.com>
 List-Id: containers.vger.kernel.org
 
-Without this, a task's umask will likely be different before and after
-a c/r cycle.  Since the user is able to set their umask to anything
-(within reason) this is a rather trivial addition.
+Eric W. Biederman [ebiederm@xmission.com] wrote:
+| 
+|   Changing zap_pid_ns_processes to fix the problem instead of
+|   changing the code elsewhere is one of the few solutions I have
+|   seen that does not increase the cost of the lat_proc test from
+|   lmbench.
 
-Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- fs/checkpoint.c                |   18 +++++++++++++-----
- include/linux/checkpoint_hdr.h |    1 +
- 2 files changed, 14 insertions(+), 5 deletions(-)
+I think its a good fix for the problem. but I have a nit and a minor
+comment below.
 
-diff --git a/fs/checkpoint.c b/fs/checkpoint.c
-index 70248b1..08b727f 100644
---- a/fs/checkpoint.c
-+++ b/fs/checkpoint.c
-@@ -418,6 +418,9 @@ static int checkpoint_fs(struct ckpt_ctx *ctx, void *ptr)
- 	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FS);
- 	if (!h)
- 		return -ENOMEM;
-+
-+	h->umask = fs->umask;
-+
- 	ret = ckpt_write_obj(ctx, &h->h);
- 	ckpt_hdr_put(ctx, h);
- 	if (ret)
-@@ -984,18 +987,21 @@ static int restore_cwd(struct ckpt_ctx *ctx, struct fs_struct *fs, char *name)
- static void *restore_fs(struct ckpt_ctx *ctx)
- {
- 	struct ckpt_hdr_fs *h;
--	struct fs_struct *fs;
-+	struct fs_struct *fs = NULL;
- 	char *path;
- 	int ret = 0;
- 
- 	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_FS);
- 	if (IS_ERR(h))
- 		return ERR_PTR(PTR_ERR(h));
--	ckpt_hdr_put(ctx, h);
- 
- 	fs = copy_fs_struct(current->fs);
--	if (!fs)
--		return ERR_PTR(-ENOMEM);
-+	if (!fs) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+
-+	fs->umask = h->umask & S_IRWXUGO;
- 
- 	ret = ckpt_read_fname(ctx, &path);
- 	if (ret < 0)
-@@ -1012,8 +1018,10 @@ static void *restore_fs(struct ckpt_ctx *ctx)
- 	kfree(path);
- 
- out:
-+	ckpt_hdr_put(ctx, h);
- 	if (ret) {
--		free_fs_struct(fs);
-+		if (fs)
-+			free_fs_struct(fs);
- 		return ERR_PTR(ret);
- 	}
- 	return fs;
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 16b1723..a0eb2bb 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -524,6 +524,7 @@ enum restart_block_type {
- /* file system */
- struct ckpt_hdr_fs {
- 	struct ckpt_hdr h;
-+	__u32 umask;
- 	/* char *fs_root */
- 	/* char *fs_pwd */
- } __attribute__((aligned(8)));
--- 
-1.7.1.1
+Thanks,
+
+Sukadev
+
+| 
+| Reported-by: Louis Rilling <Louis.Rilling@kerlabs.com>
+
+Reviewed-by: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+
+| Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
+| ---
+|  kernel/pid_namespace.c |   50 ++++++++++++++++++++++++++++++++++++-----------
+|  1 files changed, 38 insertions(+), 12 deletions(-)
+| 
+| diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
+| index a5aff94..aaf2ab0 100644
+| --- a/kernel/pid_namespace.c
+| +++ b/kernel/pid_namespace.c
+| @@ -139,16 +139,20 @@ void free_pid_ns(struct kref *kref)
+| 
+|  void zap_pid_ns_processes(struct pid_namespace *pid_ns)
+|  {
+| +	struct task_struct *me = current;
+|  	int nr;
+|  	int rc;
+|  	struct task_struct *task;
+| 
+|  	/*
+| -	 * The last thread in the cgroup-init thread group is terminating.
+| -	 * Find remaining pid_ts in the namespace, signal and wait for them
+| -	 * to exit.
+| +	 * The last task in the pid namespace-init threa group is terminating.
+
+nit:                                               thread
+
+| +	 * Find remaining pids in the namespace, signal and wait for them
+| +	 * to to be reaped.
+|  	 *
+| -	 * Note:  This signals each threads in the namespace - even those that
+| +	 * By waiting for all of the tasks to be reaped before init is reaped
+| +	 * we provide the invariant that no task can escape the pid namespace.
+| +	 *
+| +	 * Note:  This signals each task in the namespace - even those that
+|  	 * 	  belong to the same thread group, To avoid this, we would have
+|  	 * 	  to walk the entire tasklist looking a processes in this
+|  	 * 	  namespace, but that could be unnecessarily expensive if the
+| @@ -157,28 +161,50 @@ void zap_pid_ns_processes(struct pid_namespace *pid_ns)
+|  	 *
+|  	 */
+|  	read_lock(&tasklist_lock);
+| -	nr = next_pidmap(pid_ns, 1);
+| -	while (nr > 0) {
+| -		rcu_read_lock();
+| +	for (nr = next_pidmap(pid_ns, 0); nr > 0; nr = next_pidmap(pid_ns, nr)) {
+
+Is it necessary to start the search at nr == 0 ? We will find nr == 1
+first and then immediately skip over it - bc same_thread_group() will
+be TRUE.
+
+| 
+|  		/*
+|  		 * Any nested-container's init processes won't ignore the
+|  		 * SEND_SIG_NOINFO signal, see send_signal()->si_fromuser().
+|  		 */
+| -		task = pid_task(find_vpid(nr), PIDTYPE_PID);
+| -		if (task)
+| +		rcu_read_lock();
+| +		task = pid_task(find_pid_ns(nr, pid_ns), PIDTYPE_PID);
+| +		if (task && !same_thread_group(task, me))
+|  			send_sig_info(SIGKILL, SEND_SIG_NOINFO, task);
+
+Also, if we start the search at 1, we could skip the only the other possible
+thread in the group with
+
+	(nr != my_pid_nr)
+
+but its not really an optimization.
