@@ -1,66 +1,50 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 9/8] restore_sigpending: fix reversed list_add_tail
-	arguments
-Date: Tue, 13 Jul 2010 16:36:12 -0700
-Message-ID: <20100713233612.GI17990@count0.beaverton.ibm.com>
-References: <1279035864-10533-1-git-send-email-ntl@pobox.com>
-	<1279059777.3002.1282.camel@localhost>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [PATCH] pidns: Fix wait for zombies to be reaped in zap_pid_ns_processes
+Date: Tue, 13 Jul 2010 18:47:38 -0700
+Message-ID: <m1oceakf5x.fsf@fess.ebiederm.org>
+References: <20100625212758.GA30474@redhat.com>
+	<20100625220713.GA31123@us.ibm.com>
+	<m1r5jd5l0v.fsf_-_@fess.ebiederm.org>
+	<m1mxu15kv4.fsf_-_@fess.ebiederm.org>
+	<20100709121425.GB18586@hawkmoon.kerlabs.com>
+	<m1lj9k4xfx.fsf@fess.ebiederm.org>
+	<20100709141324.GC18586@hawkmoon.kerlabs.com>
+	<m1aaq04ph2.fsf_-_@fess.ebiederm.org>
+	<20100711141406.GD18586@hawkmoon.kerlabs.com>
+	<m1tyo4shas.fsf_-_@fess.ebiederm.org>
+	<20100713214234.GA21042@hawkmoon.kerlabs.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1279059777.3002.1282.camel@localhost>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <20100713214234.GA21042@hawkmoon.kerlabs.com> (Louis Rilling's message of "Tue\, 13 Jul 2010 23\:42\:35 +0200")
+Sender: linux-kernel-owner@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Pavel Emelyanov <xemul@openvz.org>, Oleg Nesterov <oleg@redhat.com>, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
 List-Id: containers.vger.kernel.org
 
-On Tue, Jul 13, 2010 at 05:22:57PM -0500, Nathan Lynch wrote:
-> A testcase that posts several realtime signals via sigqueue before C/R
-> uncovered this.  Without this change only the first queued signal is
-> delivered after restart.
-> 
-> Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Louis Rilling <Louis.Rilling@kerlabs.com> writes:
 
-Nice catch!
+> This patch looks like it is working (only a small RCU issue shown below). I
+> couldn't try it yet though.
 
-Reviewed-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+It certainly worked in my testing. 
 
-> ---
-> 
-> [only noticed this after posting the series, oops]
-> 
->  kernel/signal.c |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
-> 
-> diff --git a/kernel/signal.c b/kernel/signal.c
-> index cc7aee9..ba8a623 100644
-> --- a/kernel/signal.c
-> +++ b/kernel/signal.c
-> @@ -3277,7 +3277,7 @@ static int restore_sigpending(struct ckpt_ctx *ctx, struct sigpending *pending)
->  		}
-> 
->  		q->flags &= ~SIGQUEUE_PREALLOC;
-> -		list_add_tail(&pending->list, &q->list);
-> +		list_add_tail(&q->list, &pending->list);
->  	}
-> 
->  	if (ret < 0)
-> -- 
-> 1.7.1.1
-> 
-> 
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+> I must admit that I am using a similar back-off solution in Kerrighed (not to
+> solve the issue of proc_flush_task(), but for one of the reasons that you stated
+> above: we want to be sure that all tasks of the namespace have been reaped), but
+> I considered it too ugly to propose it for Linux ;)
+
+Well sometimes you have to go with what works.
+
+Thanks for spotting those issue with my patch.  I guess it needs one more
+pass before I can call it done.
+
+> That said, this is probably the least intrusive solution we have seen yet.
+
+Thanks for the review.  The bug where processes can escape a pid
+namespace is really the reason I did it this way.  I also have the
+patches needed to cleanly fix the pid namespace ref counting.
+(Hopefully I can get them posted soon).  So if there was just the
+ref counting bug I would drop this patch.
+
+Eric
