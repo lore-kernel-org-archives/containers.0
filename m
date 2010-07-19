@@ -1,16 +1,11 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: [Lxc-users] PHYS type lxc not working
-Date: Mon, 19 Jul 2010 12:20:56 +0200
-Message-ID: <4C442708.8030509__614.524939055805$1279534934$gmane$org@free.fr>
-References: <AANLkTino_Vt88QmLt8o4nzLmex2NwBSxkO4bSRBbS-UD@mail.gmail.com>
-	<20100707223344.GA3129@count0.beaverton.ibm.com>	<AANLkTinItYFIWCjJ_bbi0ah7dg98E2I8rYd8WOpjI_DK@mail.gmail.com>
-	<1278575867.29985.2.camel@foo.co.tradefair>
-	<AANLkTimQkO58LbEaEK95XJKA-03o5ZNRBOXZGp28nO49@mail.gmail.com>
+From: John Paul Walters <jpnwalters-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: multi-threaded app fails to restart
+Date: Mon, 19 Jul 2010 15:36:25 -0400
+Message-ID: <AANLkTilxfsYGyYLwO__VmDLSFQ_s_Qe03G49kIEztVja@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <AANLkTimQkO58LbEaEK95XJKA-03o5ZNRBOXZGp28nO49-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,57 +15,75 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sabdar <sabdar-ETsMpvZGyKJdeDdKuUvyIgC/G2K4zDHf@public.gmane.org>
-Cc: atp <Andrew.Phillips-xheW4WVAX9Y@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lxc-users-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 07/19/2010 09:21 AM, Sabdar wrote:
-> Hi,
->       i tried the same but by upgrading to the latest ip utility and its
-> works fine as you specified.With the old ip utility the "link add" commands
-> fails,Thanks for the help.
->
-> I tried "PHYS" in the kernel version 2.6.35-rc4 and phys seems to work but
-> with a problem ie) the working configuration is as follows,
->
-> lxc.utsname = gamma
-> lxc.network.type = phys
-> lxc.network.flags = up
-> *lxc.network.link = eth0*
-> *lxc.network.name*<http://lxc.network.name/>* = eth0*
-> lxc.network.ipv4 = 192.168.10.1
->
-> The same when we change as below  fails to release the host interface after
-> lxc is stopped
->
-> lxc.utsname = gamma
-> lxc.network.type = phys
-> lxc.network.flags = up
-> *lxc.network.link = eth1*
-> *lxc.network.name*<http://lxc.network.name/>* = eth0*
-> lxc.network.ipv4 = 192.168.10.1
->
-> Instead i see an interface as dev3 in my host after the lxc is stopped.Is it
-> necessary that both the network.link and network.name has to be same in the
-> case of "PHYS".
->    
+I have a very simple multi-threaded application that I'm testing with,
+but I'm unable to get a restart to complete.  I've tried both versions
+21 and version 22-dev.  I'm using a debian 32 bit install inside of a
+VMWare fusion virtual machine.  The problem seems to be limited to
+threads as I'm able to checkpoint and restart the multitask test
+application.  The steps that I'm executing are:
 
-When the container exits, the kernel "move" the physical interface from 
-the container space to the host space.
-But within the container, the physical interface is named "eth0", when 
-it goes back to the host, the name is conflicting because the host has 
-another interface with the eth0 name. So the kernel creates a new name 
-(eg. dev3).
+./pthread_test  &
+[1] 3982
 
-When no name is specified in the configuration file, the default name is 
-"eth0", you are probably right that would make sense to keep the 
-original name for the physical interface instead of defaulting to "eth0" 
-but at the cost of having to modify generic scripts within the container 
-to match the physical interface name.
+ ps -efL | grep pthread_test
+jwalters  3982  3357  3982  0    2 19:21 pts/0    00:00:00 ./pthread_test
+jwalters  3982  3357  3983  0    2 19:21 pts/0    00:00:00 ./pthread_test
 
-IMHO, the kernel should reassign the previous name when the interface 
-goes back to the host namespace, and if it conflicts then create a new 
-name like "dev%d".
+for i in 3982 3983; do echo $i > /containers/1/tasks ; done
 
-Thanks
-   -- Daniel
+echo FROZEN /containers/1/freezer.state
+
+cat /containers/1/freezer.state
+FROZEN
+
+ ./checkpoint 3982 > checkpoint_out
+(there aren't any unusual looking messages in the dmesg output at this point)
+
+After thawing and killing off the running instance, I attempt to restart:
+./restart -d < checkpoint_out
+...
+
+<4030>c/r read input 16384
+<4030>c/r read input 16384
+<4030>c/r read input 12789
+<4030>c/r read input 0
+<4029>restart succeeded
+<4029>SIGCHLD: already collected
+<4029>task terminated with signal 11
+<4029>c/r succeeded
+
+The tail end of the syslog also contains:
+[ 3210.327177] [4029:4029:c/r:do_restart:1451] sys_restart returns 0
+[ 3210.327190] [4033:4033:c/r:wait_task_sync:919] task sync done (errno 0)
+[ 3210.327192] [4033:4033:c/r:clear_task_ctx:852] task 4033 clear checkpoint_ctx
+[ 3210.327194] [4033:4033:c/r:do_restart:1451] sys_restart returns -516
+[ 3210.327227] pthread_test[4033]: segfault at b781f424 ip b781f424 sp
+b75cc1c0 error 4
+[ 3210.330254] [4031:4031:c/r:wait_task_sync:919] task sync done (errno 0)
+[ 3210.330257] [4031:4031:c/r:clear_task_ctx:852] task 4031 clear checkpoint_ctx
+[ 3210.330259] [4031:4031:c/r:restore_debug_free:144] 4 tasks
+registered, nr_tasks was 0 nr_total 0
+[ 3210.330261] [4031:4031:c/r:restore_debug_free:147] active pid was
+2, ctx->errno 0
+[ 3210.330263] [4031:4031:c/r:restore_debug_free:149] kflags 22 uflags
+0 oflags 1
+[ 3210.330265] [4031:4031:c/r:restore_debug_free:151] task[0] to run 4031
+[ 3210.330267] [4031:4031:c/r:restore_debug_free:151] task[1] to run 4033
+[ 3210.330269] [4031:4031:c/r:restore_debug_free:176] pid 4029 type
+Coord state Success
+[ 3210.330272] [4031:4031:c/r:restore_debug_free:176] pid 4031 type
+Root state Success
+[ 3210.330274] [4031:4031:c/r:restore_debug_free:176] pid 4033 type
+Task state Success
+[ 3210.330276] [4031:4031:c/r:restore_debug_free:176] pid 4032 type
+Ghost state Success
+[ 3210.330285] [4031:4031:c/r:pgarr_release_pages:102] total pages 0
+[ 3210.330288] [4031:4031:c/r:do_restart:1451] sys_restart returns -512
+
+Any thoughts?
+
+best regards,
+JP
