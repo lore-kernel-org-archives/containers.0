@@ -1,14 +1,13 @@
-From: John Paul Walters <jpnwalters-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: multi-threaded app fails to restart
-Date: Mon, 19 Jul 2010 16:27:30 -0400
-Message-ID: <AANLkTimpXSXQr1wew1wvZKnBFsOXD7f2tblY4EGmJoFM@mail.gmail.com>
-References: <AANLkTilxfsYGyYLwO__VmDLSFQ_s_Qe03G49kIEztVja@mail.gmail.com>
-	<1279569285.25071.98.camel@localhost>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [PATCH] checkpoint: handle sigaltstack
+Date: Mon, 19 Jul 2010 22:29:21 -0400
+Message-ID: <4C450A01.1030507@cs.columbia.edu>
+References: <1279121025-17795-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1279569285.25071.98.camel@localhost>
+In-Reply-To: <1279121025-17795-1-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,29 +17,60 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
->> Ghost state Success
->> [ 3210.330285] [4031:4031:c/r:pgarr_release_pages:102] total pages 0
->> [ 3210.330288] [4031:4031:c/r:do_restart:1451] sys_restart returns -512
->>
->> Any thoughts?
->
-> There were two patches posted to the containers list on 11 July - "fix
-> task tree traversal for threads" and "save/restore 'sysenter_return' for
-> threads".  Can you try with those on top of ckpt-v22-dev?
->
->
->
 
-Hi Nathan,
+Acked, and pulled to v22-dev, thanks.
 
-Thanks for your help.  I applied the two patches as you suggested.
-They fixed the first of the two bad sys_restart return values, but the
-final one (quoted above, for what it's worth) still returns -512.
-When I use the -d -v switches to restart, it appears to work (no error
-messages are returned), but only the main thread is restored while the
-second thread is not.
+Oren.
 
-JP
+On 07/14/2010 11:23 AM, Nathan Lynch wrote:
+> sigaltstack(2) manipulates two fields in task_struct; save and restore
+> these.  Without this change the alternate stack is not used after
+> restart.
+> 
+> Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+> ---
+>  include/linux/checkpoint_hdr.h |    2 ++
+>  kernel/checkpoint/process.c    |    6 ++++++
+>  2 files changed, 8 insertions(+), 0 deletions(-)
+> 
+> diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+> index c8383c0..bc4ef43 100644
+> --- a/include/linux/checkpoint_hdr.h
+> +++ b/include/linux/checkpoint_hdr.h
+> @@ -380,6 +380,8 @@ struct ckpt_hdr_task {
+>  
+>  	__u64 set_child_tid;
+>  	__u64 clear_child_tid;
+> +	__u64 sas_ss_sp;
+> +	__u32 sas_ss_size;
+>  } __attribute__((aligned(8)));
+>  
+>  /* Posix capabilities */
+> diff --git a/kernel/checkpoint/process.c b/kernel/checkpoint/process.c
+> index f6f3771..936675a 100644
+> --- a/kernel/checkpoint/process.c
+> +++ b/kernel/checkpoint/process.c
+> @@ -138,6 +138,9 @@ static int checkpoint_task_struct(struct ckpt_ctx *ctx, struct task_struct *t)
+>  	h->exit_state = t->exit_state;
+>  	h->exit_code = t->exit_code;
+>  
+> +	h->sas_ss_sp = t->sas_ss_sp;
+> +	h->sas_ss_size = t->sas_ss_size;
+> +
+>  	if (t->exit_state) {
+>  		/* zombie - skip remaining state */
+>  		BUG_ON(t->exit_state != EXIT_ZOMBIE);
+> @@ -542,6 +545,9 @@ static int restore_task_struct(struct ckpt_ctx *ctx)
+>  		t->exit_signal = h->exit_signal;
+>  		t->pdeath_signal = h->pdeath_signal;
+>  
+> +		t->sas_ss_sp = (unsigned long)h->sas_ss_sp;
+> +		t->sas_ss_size = h->sas_ss_size;
+> +
+>  		t->set_child_tid =
+>  			(int __user *) (unsigned long) h->set_child_tid;
+>  		t->clear_child_tid =
