@@ -1,17 +1,20 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH] cgroupfs: create /sys/fs/cgroup to mount cgroupfs on
-Date: Thu, 22 Jul 2010 17:26:34 -0400
-Message-ID: <20100722212634.GC2688__29414.3894956962$1279834163$gmane$org@redhat.com>
+Date: Thu, 22 Jul 2010 14:48:21 -0700
+Message-ID: <20100722214821.GB14303__2864.00916888869$1279835442$gmane$org@count0.beaverton.ibm.com>
 References: <20100722182638.GA12712@kroah.com>
 	<AANLkTinRGBksuWAZhdmvr39FNACU18+kc5ut49VUf=mp@mail.gmail.com>
-	<20100722183614.GA5443@suse.de> <20100722193741.GA2688@redhat.com>
-	<20100722211856.GA1297@suse.de>
+	<20100722183614.GA5443@suse.de>
+	<AANLkTimbcuzH6_bBhYX0U6vqftYgRwE0ZTmcbaRNzXef@mail.gmail.com>
+	<20100722185301.GA528@suse.de>
+	<AANLkTik07hZot_x0p7xJuY8s4f8pGRd2Mn1+jYfHH2iq@mail.gmail.com>
+	<20100722191200.GA5609@suse.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20100722211856.GA1297-l3A5Bk7waGM@public.gmane.org>
+In-Reply-To: <20100722191200.GA5609-l3A5Bk7waGM@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,87 +25,68 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Greg KH <gregkh-l3A5Bk7waGM@public.gmane.org>
-Cc: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jan Safranek <jsafrane-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Jul 22, 2010 at 02:18:56PM -0700, Greg KH wrote:
-> On Thu, Jul 22, 2010 at 03:37:41PM -0400, Vivek Goyal wrote:
-> > On Thu, Jul 22, 2010 at 11:36:15AM -0700, Greg KH wrote:
-> > > On Thu, Jul 22, 2010 at 11:31:07AM -0700, Paul Menage wrote:
-> > > > On Thu, Jul 22, 2010 at 11:26 AM, Greg KH <gregkh-l3A5Bk7waGM@public.gmane.org> wrote:
-> > > > > We really shouldn't be asking userspace to create new root filesy=
-stems.
-> > > > > So follow along with all of the other in-kernel filesystems, and =
-provide
-> > > > > a mount point in sysfs.
-> > > > >
-> > > > > For cgroupfs, this should be in /sys/fs/cgroup/ =A0This change pr=
-ovides
-> > > > > that mount point when the cgroup filesystem is registered in the =
-kernel.
-> > > > =
+On Thu, Jul 22, 2010 at 12:12:00PM -0700, Greg KH wrote:
+> On Thu, Jul 22, 2010 at 12:07:43PM -0700, Paul Menage wrote:
+> > On Thu, Jul 22, 2010 at 11:53 AM, Greg KH <gregkh-l3A5Bk7waGM@public.gmane.org> wrote:
+> > >
+> > > If you are using /dev/cgroup/ that's nice, but I don't think that people
+> > > are expecting a whole filesystem under a /dev/ subdirectory.
+> > 
+> > Sure - as I said that's just for historical reasons from when we
+> > migrated from cpusets which were traditionally mounted at /dev/cpuset,
+> > so it involved less change. There's no particular reason to mount it
+> > there (although having said that, what about /dev/pts and /dev/shm?).
+> 
+> Yeah, /dev/pts and /dev/shm are long-time users of the /dev filesystem.
+> I don't know if we want to encourage that as a mount point, do you?
 
-> > > > But cgroups will typically have multiple mounts, with different
-> > > > resource controllers/options on each mount. That doesn't really fit=
- in
-> > > > with this scheme.
-> > > =
+Makes sense. cgroups don't share any of the distinctive characteristics
+that make pts filesystems such a natural fit in /dev: They're
+not made to look like a dynamic set of character devices, there are
+user-made subdirectories, there aren't any device nodes, and probably
+more I'm forgetting.
 
-> > > Really?  I see systems mounting it at /cgroups/ in the filesystem tod=
-ay.
-> > > Where are you expecting it to be mounted at?
-> > > =
+In my opinion, the primary purpose of cgroups is allowing an admin/user
+to organize tasks in ways they personally find useful -- so too much
+"standardization" could easily be detrimental. A single standard mount
+point is the first small step on that slippery slope.
 
-> > =
+If we really want to standardize then perhaps it should be based on the
+names of the tools that make assumptions about how cgroups are organized.
+Forgive me if my recollection is wrong, but I seem to recall systemd
+imposed a certain scheme for organization of cgroups -- at least at the
+top level of the subsystem(s). (That's not a bad thing. Distros/admins
+that choose to use systemd are implicitly approving of systemd's
+organizational scheme and any limitations it imposes). So I'd suggest
+those cgroup mounts go in /var/run/systemd/cgroup or something like that.
 
-> > Greg,
-> > =
+Suppose we also have a daemon for managing applications with the freezer to
+improve runtime power consumption. It might only care about the freezer
+cgroup subsystem so it might choose to mount the freezer at:
 
-> > [CCing few more folks who might be interested in this dicussion ]
-> > =
+/var/run/runtime_powerd/freezer
 
-> > We do want to retain facility to mount different controllers at differe=
-nt
-> > mount points. We were discussing the other day that in libvirt we might
-> > want to mount block IO controller and network controller separately as
-> > by default we will not put a new virtual machine in a cgroup of its own
-> > because of the penatly involved.
-> =
+and then it would organize its cgroups according to its own schemes
+(e.g. "trusted" vs "untrusted").
 
-> That's fine, I'm not changing that ability at all.  We just need a
-> "default" mount point for "normal" users.
-> =
+But if systemd and the runtime_powerd both want the freezer subsystem
+then one would fail to mount it. That ensures that we don't have two
+management daemons which make contradictory assumptions about cgroup
+organization making a mess instead of keeping order.
 
-> > For other controllers like cpu, memory etc, libvirt automatically puts
-> > each new virtual machine in a cgroup of own. So this is one use case
-> > where we might want to mount different controllers at different mount
-> > points.
-> > =
+Other tools that are agnostic about the organization of cgroups
+shouldn't rely on a 'standard' mount point -- that way they can work
+well with either of these example organizations (systemd or runtime_powerd).
+They should work with an existing cgroup and its descendants -- usually
+not destroying pre-existing cgroups that it did not create.
 
-> > For my testing I now always use /cgroup/ and create directories under it
-> > /cgroup/blkio /cgroup/cpu etc and mount controllers on respective
-> > directories.
-> =
+At least that's my perspective on how things can be done sanely while
+giving users the flexibility to manage their own cgroups. It's also why
+I think the lure of standardizing these mounts may be something to be
+wary of.
 
-> Lennart and Kay, is this what systemd is doing?  I really don't think we
-> should be adding a root /cgroup/ mount point to the system for something
-> like this.
-> =
-
-> Maybe /dev/cgroup/ is better to use, as that way users can create
-> sub-mount points easier.  They can't do that in /sys/fs/cgroup/
-
-The only problem with /dev/cgroup seems to be that it seems little
-unintutive. To me, we have devices under /dev/ dir and cgroups are not
-devices.
-
-I think people have floated similar threads in the past on lkml with
-various opinions and everybody had their own choices but nothing was
-conclusive. =
-
-
-Polluting / definitely sounds odd but it does not look that bad once
-we can't find any other good choices.
-
-Thanks
-Vivek
+Cheers,
+	-Matt Helsley
