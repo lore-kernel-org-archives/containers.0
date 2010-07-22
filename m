@@ -1,14 +1,16 @@
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Re: [Bugme-new] [Bug 16417] New: Slow context switches with SMP and
-	CONFIG_FAIR_GROUP_SCHED
-Date: Thu, 22 Jul 2010 15:52:22 -0700
-Message-ID: <20100722155222.f0fdc50a.akpm@linux-foundation.org>
-References: <bug-16417-10286@https.bugzilla.kernel.org/>
+From: Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>
+Subject: Re: [PATCH] cgroupfs: create /sys/fs/cgroup to mount cgroupfs on
+Date: Fri, 23 Jul 2010 01:08:12 +0200
+Message-ID: <AANLkTinFQtwrCC82T9KlKskDV8fn-zYgimyH2wguHkqY__17499.1032378331$1279840140$gmane$org@mail.gmail.com>
+References: <20100722182638.GA12712@kroah.com>
+	<AANLkTinRGBksuWAZhdmvr39FNACU18+kc5ut49VUf=mp@mail.gmail.com>
+	<20100722183614.GA5443@suse.de> <20100722193741.GA2688@redhat.com>
+	<20100722211856.GA1297@suse.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <bug-16417-10286-3bo0kxnWaOQUvHkbgXJLS5sdmw4N0Rt+2LY78lusg7I@public.gmane.org/>
+In-Reply-To: <20100722211856.GA1297-l3A5Bk7waGM@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,68 +20,23 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Th
-Cc: pbourdon-SxHCd5+OuqTrt3ojHgZu+w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, bugzilla-daemon-590EEB7GvNiWaY/ihj7yzEB+6BGkLq7r@public.gmane.org, bugme-daemon-590EEB7GvNiWaY/ihj7yzEB+6BGkLq7r@public.gmane.org
+To: Greg KH <gregkh-l3A5Bk7waGM@public.gmane.org>
+Cc: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jan Safranek <jsafrane-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-(switched to email.  Please respond via emailed reply-to-all, not via the
-bugzilla web interface).
-
-sched suckage!  Do we have a linear search in there?
-
-
-On Mon, 19 Jul 2010 14:38:09 GMT
-bugzilla-daemon-590EEB7GvNiWaY/ihj7yzEB+6BGkLq7r@public.gmane.org wrote:
-
-> https://bugzilla.kernel.org/show_bug.cgi?id=16417
-> 
->            Summary: Slow context switches with SMP and
->                     CONFIG_FAIR_GROUP_SCHED
->            Product: Process Management
->            Version: 2.5
->     Kernel Version: 2.6.34.1
->           Platform: All
->         OS/Version: Linux
->               Tree: Mainline
->             Status: NEW
->           Severity: normal
->           Priority: P1
->          Component: Scheduler
->         AssignedTo: mingo-X9Un+BFzKDI@public.gmane.org
->         ReportedBy: pbourdon-SxHCd5+OuqTrt3ojHgZu+w@public.gmane.org
->         Regression: No
-> 
-> 
-> Hello,
-> 
-> We have been experiencing slow context switches using a large number of cgroups
-> (around 600 groups) and CONFIG_FAIR_GROUP_SCHED. This causes a system time
-> usage increase on context switching heavy processes (measured with pidstat -w)
-> and a drop in timer interrupts handling.
-> 
-> This problem only appears on SMP : when booting with nosmp, the issue does not
-> appear. From maxprocs=2 to maxprocs=8 we were able to reproduce it accurately.
-> 
-> Steps to reproduce :
-> - mount the cgroup filesystem in /dev/cgroup
-> - cd /dev/cgroup && for i in $(seq 1 5000); do mkdir test_group_$i; done
-> - launch lat_ctx from lmbench, for instance ./lat_ctx -N 200 100
-> 
-> The results from lat_ctx were the following :
-> - SMP enabled, no cgroups : 2.65
-> - SMP enabled, 1000 cgroups : 3.40
-> - SMP enabled, 6000 cgroups : 3957.36
-> - SMP disabled, 6000 cgroups : 1.58
-> 
-> We can see that from a certain amount of cgroups, the context switching starts
-> taking a lot of time. Another way to reproduce this problem :
-> - launch cat /dev/zero | pv -L 1G > /dev/null
-> - look at the CPU usage (about 40% here)
-> - cd /dev/cgroup && for i in $(seq 1 5000); do mkdir test_group_$i; done
-> - look at the CPU usage (about 80% here)
-> 
-> Also note that when a lot of cgroups are present, the system is spending a lot
-> of time in softirqs, and there are less timer interrupts handled than normally
-> (according to our graphs).
-> 
+T24gVGh1LCBKdWwgMjIsIDIwMTAgYXQgMjM6MTgsIEdyZWcgS0ggPGdyZWdraEBzdXNlLmRlPiB3
+cm90ZToKPj4gRm9yIG15IHRlc3RpbmcgSSBub3cgYWx3YXlzIHVzZSAvY2dyb3VwLyBhbmQgY3Jl
+YXRlIGRpcmVjdG9yaWVzIHVuZGVyIGl0Cj4+IC9jZ3JvdXAvYmxraW8gL2Nncm91cC9jcHUgZXRj
+IGFuZCBtb3VudCBjb250cm9sbGVycyBvbiByZXNwZWN0aXZlCj4+IGRpcmVjdG9yaWVzLgo+Cj4g
+TGVubmFydCBhbmQgS2F5LCBpcyB0aGlzIHdoYXQgc3lzdGVtZCBpcyBkb2luZz8gwqBJIHJlYWxs
+eSBkb24ndCB0aGluayB3ZQo+IHNob3VsZCBiZSBhZGRpbmcgYSByb290IC9jZ3JvdXAvIG1vdW50
+IHBvaW50IHRvIHRoZSBzeXN0ZW0gZm9yIHNvbWV0aGluZwo+IGxpa2UgdGhpcy4KCkFscmVhZHkg
+c29sdmVkLiBTeXN0ZW1kIGFsd2F5cyBtb3VudHMgYW4gZW1wdHkgdG1wZnMgYXQgdGhlICdjZ3Jv
+dXAnCm1vdW50cG9pbnQsIGFuZCBzdHVmZiBpcyBmcmVlIHRvIGNyZWF0ZSBzdWJkaXJzIHRoZXJl
+LiBTeXN0ZW1kIGl0c2VsZgptb3VudCAnc3lzdGVtZCcgdGhlcmUuCgpJIGd1ZXNzIHRoYXQgY292
+ZXJzIGFsbCBuZWVkcyBleHByZXNzZWQgaGVyZSwgYW5kIHdlIGFyZSBoYXBweSB0bwpzd2l0Y2gg
+c3lzdGVtZCBvdmVyIGZyb20gL2Nncm91cCB0byAvc3lzL2ZzL2Nncm91cCBhcyBzb29uIGFzIHRo
+ZQprZXJuZWwgY2FycmllcyB0aGUgcGF0Y2guCgpUaGFua3MsCktheQpfX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApD
+b250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXgt
+Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
