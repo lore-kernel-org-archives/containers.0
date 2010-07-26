@@ -1,18 +1,16 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+From: Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>
 Subject: Re: [PATCH] cgroupfs: create /sys/fs/cgroup to mount cgroupfs on
-Date: Sat, 24 Jul 2010 19:45:00 +0530
-Message-ID: <20100724141500.GO14369__7610.35363325409$1279981058$gmane$org@balbir.in.ibm.com>
+Date: Mon, 26 Jul 2010 11:12:08 +0200
+Message-ID: <AANLkTimm9XGvK2H55V7N76JPU05iHk_dY5JjOLifQTsr__2786.47722811929$1280135682$gmane$org@mail.gmail.com>
 References: <20100722182638.GA12712@kroah.com>
 	<AANLkTinRGBksuWAZhdmvr39FNACU18+kc5ut49VUf=mp@mail.gmail.com>
-	<20100722183614.GA5443@suse.de> <20100722193741.GA2688@redhat.com>
-	<20100722211856.GA1297@suse.de> <20100722212634.GC2688@redhat.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+	<20100722183614.GA5443@suse.de>
+	<AANLkTinsd2gWOHb3w9gzvKO5vdwLBT7DZOY+2xCUz_5_@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20100722212634.GC2688-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <AANLkTinsd2gWOHb3w9gzvKO5vdwLBT7DZOY+2xCUz_5_-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,103 +20,35 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Greg KH <gregkh-l3A5Bk7waGM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jan Safranek <jsafrane-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: Dhaval Giani <dhaval.lists-4ks6kJTmIHHINaghk1cIrg@public.gmane.org>
+Cc: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Greg KH <gregkh-l3A5Bk7waGM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-* Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> [2010-07-22 17:26:34]:
-
-> On Thu, Jul 22, 2010 at 02:18:56PM -0700, Greg KH wrote:
-> > On Thu, Jul 22, 2010 at 03:37:41PM -0400, Vivek Goyal wrote:
-> > > On Thu, Jul 22, 2010 at 11:36:15AM -0700, Greg KH wrote:
-> > > > On Thu, Jul 22, 2010 at 11:31:07AM -0700, Paul Menage wrote:
-> > > > > On Thu, Jul 22, 2010 at 11:26 AM, Greg KH <gregkh-l3A5Bk7waGM@public.gmane.org> wrote:
-> > > > > > We really shouldn't be asking userspace to create new root file=
-systems.
-> > > > > > So follow along with all of the other in-kernel filesystems, an=
-d provide
-> > > > > > a mount point in sysfs.
-> > > > > >
-> > > > > > For cgroupfs, this should be in /sys/fs/cgroup/ =A0This change =
-provides
-> > > > > > that mount point when the cgroup filesystem is registered in th=
-e kernel.
-> > > > > =
-
-> > > > > But cgroups will typically have multiple mounts, with different
-> > > > > resource controllers/options on each mount. That doesn't really f=
-it in
-> > > > > with this scheme.
-> > > > =
-
-> > > > Really?  I see systems mounting it at /cgroups/ in the filesystem t=
-oday.
-> > > > Where are you expecting it to be mounted at?
-> > > > =
-
-> > > =
-
-> > > Greg,
-> > > =
-
-> > > [CCing few more folks who might be interested in this dicussion ]
-> > > =
-
-> > > We do want to retain facility to mount different controllers at diffe=
-rent
-> > > mount points. We were discussing the other day that in libvirt we mig=
-ht
-> > > want to mount block IO controller and network controller separately as
-> > > by default we will not put a new virtual machine in a cgroup of its o=
-wn
-> > > because of the penatly involved.
-> > =
-
-> > That's fine, I'm not changing that ability at all.  We just need a
-> > "default" mount point for "normal" users.
-> > =
-
-> > > For other controllers like cpu, memory etc, libvirt automatically puts
-> > > each new virtual machine in a cgroup of own. So this is one use case
-> > > where we might want to mount different controllers at different mount
-> > > points.
-> > > =
-
-> > > For my testing I now always use /cgroup/ and create directories under=
- it
-> > > /cgroup/blkio /cgroup/cpu etc and mount controllers on respective
-> > > directories.
-> > =
-
-> > Lennart and Kay, is this what systemd is doing?  I really don't think we
-> > should be adding a root /cgroup/ mount point to the system for something
-> > like this.
-> > =
-
-> > Maybe /dev/cgroup/ is better to use, as that way users can create
-> > sub-mount points easier.  They can't do that in /sys/fs/cgroup/
-> =
-
-> The only problem with /dev/cgroup seems to be that it seems little
-> unintutive. To me, we have devices under /dev/ dir and cgroups are not
-> devices.
-> =
-
-> I think people have floated similar threads in the past on lkml with
-> various opinions and everybody had their own choices but nothing was
-> conclusive. =
-
-> =
-
-> Polluting / definitely sounds odd but it does not look that bad once
-> we can't find any other good choices.
->
-
-I think it breaks the filesystem hierarchy standard and I've seen
-bugzilla's around it. I'd prefer /sys/fs/cgroup. =
-
-
--- =
-
-	Three Cheers,
-	Balbir
+T24gTW9uLCBKdWwgMjYsIDIwMTAgYXQgMTE6MDgsIERoYXZhbCBHaWFuaSA8ZGhhdmFsLmxpc3Rz
+QHRoZWdpYW5pcy5pbj4gd3JvdGU6Cj4gT24gVGh1LCBKdWwgMjIsIDIwMTAgYXQgODozNiBQTSwg
+R3JlZyBLSCA8Z3JlZ2toQHN1c2UuZGU+IHdyb3RlOgo+PiBPbiBUaHUsIEp1bCAyMiwgMjAxMCBh
+dCAxMTozMTowN0FNIC0wNzAwLCBQYXVsIE1lbmFnZSB3cm90ZToKPj4+IE9uIFRodSwgSnVsIDIy
+LCAyMDEwIGF0IDExOjI2IEFNLCBHcmVnIEtIIDxncmVna2hAc3VzZS5kZT4gd3JvdGU6Cj4+PiA+
+IFdlIHJlYWxseSBzaG91bGRuJ3QgYmUgYXNraW5nIHVzZXJzcGFjZSB0byBjcmVhdGUgbmV3IHJv
+b3QgZmlsZXN5c3RlbXMuCj4+PiA+IFNvIGZvbGxvdyBhbG9uZyB3aXRoIGFsbCBvZiB0aGUgb3Ro
+ZXIgaW4ta2VybmVsIGZpbGVzeXN0ZW1zLCBhbmQgcHJvdmlkZQo+Pj4gPiBhIG1vdW50IHBvaW50
+IGluIHN5c2ZzLgo+Pj4gPgo+Pj4gPiBGb3IgY2dyb3VwZnMsIHRoaXMgc2hvdWxkIGJlIGluIC9z
+eXMvZnMvY2dyb3VwLyDCoFRoaXMgY2hhbmdlIHByb3ZpZGVzCj4+PiA+IHRoYXQgbW91bnQgcG9p
+bnQgd2hlbiB0aGUgY2dyb3VwIGZpbGVzeXN0ZW0gaXMgcmVnaXN0ZXJlZCBpbiB0aGUga2VybmVs
+Lgo+Pj4KPj4+IEJ1dCBjZ3JvdXBzIHdpbGwgdHlwaWNhbGx5IGhhdmUgbXVsdGlwbGUgbW91bnRz
+LCB3aXRoIGRpZmZlcmVudAo+Pj4gcmVzb3VyY2UgY29udHJvbGxlcnMvb3B0aW9ucyBvbiBlYWNo
+IG1vdW50LiBUaGF0IGRvZXNuJ3QgcmVhbGx5IGZpdCBpbgo+Pj4gd2l0aCB0aGlzIHNjaGVtZS4K
+Pj4KPj4gUmVhbGx5PyDCoEkgc2VlIHN5c3RlbXMgbW91bnRpbmcgaXQgYXQgL2Nncm91cHMvIGlu
+IHRoZSBmaWxlc3lzdGVtIHRvZGF5Lgo+PiBXaGVyZSBhcmUgeW91IGV4cGVjdGluZyBpdCB0byBi
+ZSBtb3VudGVkIGF0Pwo+Pgo+Cj4gTm90IHJlYWxseS4gSXQgaXMgZ2V0dGluZyBtb3VudGVkIGF0
+IC9jZ3JvdXBzLzxuYW1lIG9mIHJlc291cmNlCj4gY29udHJvbGxlcj4vIGF0IGEgbnVtYmVyIG9m
+IHBsYWNlcy4gS2VlcGluZyBpdCBpbiBzeXNmcyBsb3NlcyB1cyBhIGxvdAo+IG9mIHRoaXMgZmxl
+eGliaWxpdHkuIFVubGVzcyB5b3UgYXJlIHJlYWR5IHRvIGtlZXAgYWRkaW5nIGEgbmV3Cj4gbW91
+bnRwb2ludCBmb3IgZWFjaCBzdWJzeXN0ZW0sIGl0IHdpbGwgbm90IHJlYWxseSB3b3JrIG91dCBp
+biB0aGUgbG9uZwo+IHRlcm0uCgpBcyBtZW50aW9uZWQgZWFybGllciBpbiB0aGlzIHRocmVhZCwg
+c3lzdGVtZCBhbHJlYWR5IG1vdW50cyBhIHRtcGZzIGF0CnRoZSBjZ3JvdXAgbW91bnRwb2ludC4g
+V2UgbmVlZCBvbmx5IGEgc2luZ2xlIGRpcmVjdG9yeS4gVGhpcyBzaG91bGQKbm90IGJlIGFuIGlz
+c3VlLgoKS2F5Cl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+CkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlv
+bi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZv
+L2NvbnRhaW5lcnM=
