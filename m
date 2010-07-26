@@ -1,26 +1,11 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: multi-threaded app fails to restart
-Date: Mon, 26 Jul 2010 14:18:54 -0400
-Message-ID: <4C4DD18E.4070905@cs.columbia.edu>
-References: <AANLkTilxfsYGyYLwO__VmDLSFQ_s_Qe03G49kIEztVja@mail.gmail.com>
-	<1279569285.25071.98.camel@localhost>
-	<AANLkTimpXSXQr1wew1wvZKnBFsOXD7f2tblY4EGmJoFM@mail.gmail.com>
-	<4C4516DD.1000809@cs.columbia.edu>
-	<AANLkTimPENgm-LSh6iMv2uxegRdHEivbGMTYmEfiOEJG@mail.gmail.com>
-	<Pine.LNX.4.64.1007201906370.15255@takamine.ncl.cs.columbia.edu>
-	<AANLkTinZYiWPtSegjRJWnlc6hipFAZyujr8-2ug6ettF@mail.gmail.com>
-	<Pine.LNX.4.64.1007210143120.22870@takamine.ncl.cs.columbia.edu>
-	<AANLkTinOFIzK8RZnp9NHouKv-WA7Omr08pPTGfrfVLfP@mail.gmail.com>
-	<Pine.LNX.4.64.1007212102010.6257@takamine.ncl.cs.columbia.edu>
-	<AANLkTimW98q0sFZeCAk3xHsEfBV9yhL4kUKHjNGxn_2P@mail.gmail.com>
-	<Pine.LNX.4.64.1007260711310.1050@takamine.ncl.cs.columbia.edu>
-	<8739v6tbgj.fsf@caffeine.danplanet.com>
-	<AANLkTikaaxCdjgKywJ6SvHpez_R1PNiW5LzNYAdAONxr@mail.gmail.com>
+From: Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>
+Subject: user-cr thread safety
+Date: Mon, 26 Jul 2010 13:37:52 -0500
+Message-ID: <1280169472.7875.4290.camel@localhost>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <AANLkTikaaxCdjgKywJ6SvHpez_R1PNiW5LzNYAdAONxr-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -30,49 +15,69 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: John Paul Walters <jpnwalters-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+user-cr's restart program creates a thread to pipe the checkpoint image
+into the sys_restart file descriptor.  This is a thread created with
+clone(2) and it shares its address space with the coordinator.
 
-Great.
-Pushed fixes to ckpt-v22-dev.
+While glibc has internal mechanisms to ensure thread safety, these work
+only with threads that were created using glibc/pthread interfaces.
+clone(2) bypasses the housekeeping that glibc does to track threads.  It
+is not safe to call e.g. malloc or printf from the feeder thread.
 
-Oren.
+The behavior I've been seeing is that restart will occasionally abort,
+crash, or sleep indefinitely (with both the coordinator and feeder
+threads waiting forever on the same futex) - before restart(2) or
+eclone(2) are ever called.
 
-On 07/26/2010 01:56 PM, John Paul Walters wrote:
-> It works for me as well.  Thanks for your help Oren.
-> 
-> JP
-> 
-> 
-> 
-> On Mon, Jul 26, 2010 at 1:11 PM, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
->> OL> diff --git a/kernel/checkpoint/sys.c b/kernel/checkpoint/sys.c
->> OL> index 171c867..c5517c2 100644
->> OL> --- a/kernel/checkpoint/sys.c
->> OL> +++ b/kernel/checkpoint/sys.c
->> OL> @@ -625,8 +625,11 @@ int walk_task_subtree(struct task_struct *root,
->> OL>             }
->>
->> OL>             /* if we arrive at root again -- done */
->> OL> -           if (task == root)
->> OL> -                   break;
->> OL> +           if (task == root) {
->> OL> +                   /* if not last thread - proceed with thread */
->> OL> +                   task = root = next_thread(task);
->> OL> +                   if (thread_group_leader(task))
->> OL> +                           break;
->>
->>                } // Need to close this block
->>
->> Otherwise it seems to work for me:
->>
->> Tested-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
->>
->> --
->> Dan Smith
->> IBM Linux Technology Center
->> email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
->>
-> 
+I have tried patching user-cr to create the feeder thread with
+pthread_create, but it's not trivial -- I think the program's correct
+functioning depends heavily on the threads having separate file
+descriptor tables.
+
+The best I can come up with right now is to allocate ckpt_msg's buffer
+on the stack - I think this avoids most if not all of the concurrent
+malloc activity associated with the crashes/hangs I've been seing.
+
+ common.h |   16 ++++++----------
+ 1 files changed, 6 insertions(+), 10 deletions(-)
+
+diff --git a/common.h b/common.h
+index 99b224d..927b146 100644
+--- a/common.h
++++ b/common.h
+@@ -1,25 +1,21 @@
+ #include <stdio.h>
+ #include <signal.h>
+ 
+-#define BUFSIZE  (4 * 4096)
++#define BUFSIZE  (4096)
+ 
+ static inline void ckpt_msg(int fd, char *format, ...)
+ {
++	char buf[BUFSIZE] = { '\0' };
+ 	va_list ap;
+-	char *bufp;
++
+ 	if (fd < 0)
+ 		return;
+ 
+ 	va_start(ap, format);
+-
+-	bufp = malloc(BUFSIZE);
+-	if(bufp) {
+-		vsnprintf(bufp, BUFSIZE, format, ap);
+-		write(fd, bufp, strlen(bufp));
+-	}
+-	free(bufp);
+-
++	vsnprintf(buf, BUFSIZE, format, ap);
+ 	va_end(ap);
++
++	write(fd, buf, strlen(buf));
+ }
+ 
+ #define ckpt_perror(s) 							\
