@@ -1,7 +1,7 @@
-From: Dhaval Giani <dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH] cgroupfs: create /sys/fs/cgroup to mount cgroupfs on
-Date: Tue, 27 Jul 2010 00:08:03 +0200
-Message-ID: <AANLkTi=d1-Uf4TeyvMH3evo91zPWjbincij=HC0ny0Ym__23701.8267428086$1280182291$gmane$org@mail.gmail.com>
+Date: Mon, 26 Jul 2010 15:09:09 -0700
+Message-ID: <AANLkTi=Vrax+ob87uiDzeMxOmuDNYUWnDKG0jpfQppAp__45421.3282595903$1280182651$gmane$org@mail.gmail.com>
 References: <20100722182638.GA12712@kroah.com>
 	<AANLkTinRGBksuWAZhdmvr39FNACU18+kc5ut49VUf=mp@mail.gmail.com>
 	<20100722183614.GA5443@suse.de>
@@ -26,33 +26,16 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Greg KH <gregkh-l3A5Bk7waGM@public.gmane.org>
-Cc: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>, Dhaval Giani <dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Jul 27, 2010 at 12:05 AM, Greg KH <gregkh-l3A5Bk7waGM@public.gmane.org> wrote:
-> On Mon, Jul 26, 2010 at 02:55:18PM -0700, Paul Menage wrote:
->> On Mon, Jul 26, 2010 at 2:28 PM, Greg KH <gregkh-l3A5Bk7waGM@public.gmane.org> wrote:
->> >
->> > Ok, again, after all of this, who is going to be applying this patch to
->> > their tree for the .36 merge window?
->>
->> There's no specific cgroups tree - cgroups patches generally go via akpm.
->>
->> >
->> > Or should I apply it to my driver-core one?
->> >
->>
->> That sounds like an OK option too.
+On Mon, Jul 26, 2010 at 3:05 PM, Greg KH <gregkh-l3A5Bk7waGM@public.gmane.org> wrote:
 >
 > Wonderful, can I get some acks from the cgroups maintainers? =A0I'll
 > gladly take it through my tree.
->
 
-while I am not a maintainer, from the libcgroup side at least,
+Sure.
 
-Acked-by: Dhaval Giani <dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Acked-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 
-> thanks,
->
-> greg k-h
->
+Paul
