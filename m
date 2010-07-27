@@ -1,7 +1,7 @@
 From: javadoc-xsfywfwIY+M@public.gmane.org
 Subject: delivery failed
 Date: Tue, 27 Jul 2010 14:06:01 +0600
-Message-ID: <201007270806.o6R86UCb029829@smtp1.linux-foundation.org>
+Message-ID: <201007270807.o6R87B9s029933@smtp1.linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: multipart/mixed;
 	boundary="----=_NextPart_000_0013_CB6A1BBC.864CBFC5"
