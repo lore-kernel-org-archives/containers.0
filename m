@@ -1,16 +1,16 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 4/9][cr][v2]: Restore file_owner info
-Date: Wed, 28 Jul 2010 12:25:03 -0700
-Message-ID: <20100728192503.GA14570__19160.48623757$1280344919$gmane$org@us.ibm.com>
+Subject: Re: [PATCH 6/9][cr][v2]: Checkpoint file-locks
+Date: Wed, 28 Jul 2010 12:26:49 -0700
+Message-ID: <20100728192649.GB14570__308.166238437657$1280344981$gmane$org@us.ibm.com>
 References: <1274238452-15382-1-git-send-email-sukadev@linux.vnet.ibm.com>
-	<1274238452-15382-5-git-send-email-sukadev@linux.vnet.ibm.com>
-	<4C16FC14.1090001@cs.columbia.edu>
+	<1274238452-15382-7-git-send-email-sukadev@linux.vnet.ibm.com>
+	<4C16FDE7.7050709@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4C16FC14.1090001-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <4C16FDE7.7050709-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,31 +25,19 @@ Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, serue-r/Jw6+rmf7HQT0d
 List-Id: containers.vger.kernel.org
 
 Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
-| > +
-| > +	rcu_read_lock();
-| > +	pid = find_vpid(h->f_owner_pid);
 | 
-| What if this fails - the pid is invalid/non-existent ?
-
-Good point. ->f_owner_pid can be 0 (in the normal case) and __fsetown()
-below will set the owner to NULL pid. But if ->f_owner_pid is non-zero,
-we should ensure we found a valid pid - added a check for this.
-
 | 
-| > +	/*
-| > +	 * TODO: Do we need to force==1 or can it be 0 ? 'force' is used to
-| > +	 * 	 modify the owner, if one is already set. Can it be set when
-| > +	 * 	 we restart an application ?
-| > +	 */
-| > +	ret = __f_setown(file, pid, h->f_owner_pid_type, uid, euid, 1);
-| > +	rcu_read_unlock();
+| > +	if (lock) {
+| > +		h->fl_start = lock->fl_start;
+| > +		h->fl_end = lock->fl_end;
+| > +		h->fl_type = lock->fl_type;
+| > +		h->fl_flags = lock->fl_flags;
+| > +	} else {
+| > +		/* Checkpoint a dummy lock as a marker */
+| > +		h->fl_start = -1;
 | 
-| I wonder if this would be a problem in terms of security on a
-| non-container restart (e.g. not in a new pid-ns): one could set
-| any pid as owner and any signal to be sent, and cause an arbitrary
-| signal to be sent to an arbitrary process ?
+| Maybe designate some constant for this ?  e.g. CKPT_FLOCK_NONE ?
+| In any case, you need a (loff_t) -1  (like in the restore code).
 
-Yes, Matt and Serge pointed it out and for now we need CAP_KILL
-capability to restore an application that has file-leases.
-
-Sukadev
+Ok. Defining macros CKPT_HDR_SET_MARKER_LOCK() and
+CKPT_HDR_CHECK_MARKER_LOCK().  Also added the missing (loff_t).
