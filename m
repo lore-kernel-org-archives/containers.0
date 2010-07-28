@@ -1,20 +1,16 @@
-From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
-Subject: Re: [RFC] [PATCH v3 1/2] cgroups: read-write lock CLONE_THREAD
-	forking per threadgroup
-Date: Wed, 28 Jul 2010 11:41:07 -0400
-Message-ID: <20100728154107.GA21985@ghc01.ghc.andrew.cmu.edu>
-References: <20100625054541.GA20610@ghc01.ghc.andrew.cmu.edu>
-	<20100625054654.GB20610@ghc01.ghc.andrew.cmu.edu>
-	<20100628161031.a8c71fce.kamezawa.hiroyu@jp.fujitsu.com>
-	<20100628154359.GA24629@ghc01.ghc.andrew.cmu.edu>
-	<20100728082953.GA15455@ghc01.ghc.andrew.cmu.edu>
-	<20100728182813.7c2826ae.kamezawa.hiroyu@jp.fujitsu.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH 4/9][cr][v2]: Restore file_owner info
+Date: Wed, 28 Jul 2010 12:25:03 -0700
+Message-ID: <20100728192503.GA14570__19160.48623757$1280344919$gmane$org@us.ibm.com>
+References: <1274238452-15382-1-git-send-email-sukadev@linux.vnet.ibm.com>
+	<1274238452-15382-5-git-send-email-sukadev@linux.vnet.ibm.com>
+	<4C16FC14.1090001@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20100728182813.7c2826ae.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <4C16FC14.1090001-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,76 +20,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, matthew-Ztpu424NOJ8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Jul 28, 2010 at 06:28:13PM +0900, KAMEZAWA Hiroyuki wrote:
-> On Wed, 28 Jul 2010 04:29:53 -0400
-> Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org> wrote:
-> 
-> > On Mon, Jun 28, 2010 at 11:43:59AM -0400, Ben Blum wrote:
-> > > On Mon, Jun 28, 2010 at 04:10:31PM +0900, KAMEZAWA Hiroyuki wrote:
-> > > > By the way, IMHO, hiding lock in cgroup_fork() and cgroup_post_fork() doesn't
-> > > > seem good idea. How about a code like this ?
-> > > > 
-> > > >   read_lock_thread_clone(current);
-> > > >   cgroup_fork();
-> > > >  .....
-> > > >   cgroup_post_fork();
-> > > >   read_unlock_thrad_clone(current);
-> > > > 
-> > > > We may have chances to move these lock to better position if cgroup is
-> > > > an only user.
-> > > 
-> > > I didn't do that out of a desire to change fork.c as little as possible,
-> > > but that does look better than what I've got. Those two functions should
-> > > be in fork.c under #ifdef CONFIG_CGROUPS.
-> > 
-> > I'm looking at this now and am not sure where the best place to put
-> > these is:
-> > 
-> > 1) Don't make new functions, just put:
-> > 
-> >     #ifdef CONFIG_CGROUPS
-> >         if (clone_flags & CLONE_THREAD)
-> >             down/up_read(...);
-> >     #endif
-> > 
-> > directly in copy_process() in fork.c. Simplest, but uglifies the code.
-> > 
-> > 2) Make static helper functions in fork.c. Good, but not consistent with
-> > directly using the lock in write-side (attach_proc).
-> > 
-> > 3) Define inline functions under #ifdef CONFIG_CGROUPS in sched.h, just
-> > under the declaration of the lock. Most robust, but I'm hesitant to add
-> > unneeded stuff to such a popular header file.
-> > 
-> > Any opinions?
-> > 
-> 
-> My point was simple. Because copy_process() is very important path,
-> the new lock should be visible in copy_process() or kernek/fork.c.
-> "If the lock is visible in copy_process(), the reader can notice it".
-> 
-> Then, I offer you 2 options.
-> 
-> rename cgroup_fork() and cgroup_post_fork() as
->        cgroup_fork_lock() and cgroup_post_fork_unlock() 
-> 
-> Now, the lock is visible and the change is minimum.
-> 
-> Or
->        add the definition of lock/unlock to cgroup.h and include it 
->        from kernel/fork.c
-> 
-> Thanks,
-> -Kame
+Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
+| > +
+| > +	rcu_read_lock();
+| > +	pid = find_vpid(h->f_owner_pid);
+| 
+| What if this fails - the pid is invalid/non-existent ?
 
-I don't like either of these. Renaming to cgroup_fork_lock not only
-conveys the sense that a cgroup-specific lock is taken, but also hides
-the real purpose of these functions, which is to manipulate cgroup
-pointers. And it's not a cgroup-specific lock - only write-side is
-*currently* used by cgroups - so it shouldn't go in cgroup.h.
+Good point. ->f_owner_pid can be 0 (in the normal case) and __fsetown()
+below will set the owner to NULL pid. But if ->f_owner_pid is non-zero,
+we should ensure we found a valid pid - added a check for this.
 
--- Ben
+| 
+| > +	/*
+| > +	 * TODO: Do we need to force==1 or can it be 0 ? 'force' is used to
+| > +	 * 	 modify the owner, if one is already set. Can it be set when
+| > +	 * 	 we restart an application ?
+| > +	 */
+| > +	ret = __f_setown(file, pid, h->f_owner_pid_type, uid, euid, 1);
+| > +	rcu_read_unlock();
+| 
+| I wonder if this would be a problem in terms of security on a
+| non-container restart (e.g. not in a new pid-ns): one could set
+| any pid as owner and any signal to be sent, and cause an arbitrary
+| signal to be sent to an arbitrary process ?
+
+Yes, Matt and Serge pointed it out and for now we need CAP_KILL
+capability to restore an application that has file-leases.
+
+Sukadev
