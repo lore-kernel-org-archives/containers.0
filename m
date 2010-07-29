@@ -1,19 +1,11 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Remaining work for userns (WAS Re: [PATCH 3/3] cgroup : remove
-	the ns_cgroup)
-Date: Thu, 29 Jul 2010 18:23:52 -0500
-Message-ID: <20100729232352.GC13902__47391.6580704556$1280445835$gmane$org@hallyn.com>
-References: <20100729195629.GA13378@hallyn.com>
-	<20100729195812.GB19015@hallyn.com>
-	<20100729214008.GA2785@count0.beaverton.ibm.com>
-	<20100729223957.GA12387@hallyn.com>
-	<20100729230052.GB2785@count0.beaverton.ibm.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: [FS/MM TOPIC]  Support for checkpoint/restart in fs/mm
+Date: Thu, 29 Jul 2010 19:28:23 -0400
+Message-ID: <4C520E97.4010703__25921.5918639258$1280446247$gmane$org@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20100729230052.GB2785-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,44 +15,47 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Daniel Lezcano <dlezcano-GANU6spQydw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: lsf10-pc-cunTk1MwBs98uUxBSJOaYoYkZiVZrdSR2LY78lusg7I@public.gmane.org
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> On Thu, Jul 29, 2010 at 05:39:57PM -0500, Serge E. Hallyn wrote:
-> > Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> > > On Thu, Jul 29, 2010 at 02:58:12PM -0500, Serge E. Hallyn wrote:
-> 
-> <snip>
-> 
-> > 
-> > BTW in the past the only reason I saw for keeping ns cgroup was
-> > to lock tasks into a devices cgroup.  Until that lazy guy who was
-> > going to do it gets off his butt and implements user namespaces,
-> > you'll just have to use LSMs, which is the right way.
-> 
-> And the only missing piece of userns is replacing the cred checks
-> right? If so, it might be possible to come up with a coccinelle semantic
-> patch which would do all/most of the hard work -- depends on whether the
-> all the checks fit a small number of semantic patterns.
+[Topic]
+Support for checkpoint/restart in fs/mm.
 
-I think the thing that always puts the brakes on when I get started
-is siginfo_t.  We need some way to reference user namespaces in there,
-without enforcing lifetime rules on siginfo.
+[Abstract]
+Linux-CR implements transparent application checkpoint-restart
+aiming for inclusion in the mainline kernel. We'd like to briefly
+present our approach, and discuss pending issues. (for more info
+on linux-cr: http://www.linux-cr.org/)
 
-What you mention is definately a chunk as well, so if you are interested
-in pursuing that that'd be great.
+* Quick review of the approach:
 
-Also, reviewing the patches at the top of
-http://git.kernel.org/?p=linux/kernel/git/sergeh/linux-cr.git;a=shortlog;h=refs/heads/userns.feb16.1
-to give us some fresh feedback on the general approach is
-valuable.
+Checkpoint: we add .checkpoint method to 'struct file_operations",
+(which so far simply calls a generic checkpoint function).
+Restart: to restore the state of an open fd we reopen it based on
+the pathname saved during checkpoint, and then some adjustments.
 
-And from there, the whole discussion (which we've had several times
-in the past) about how to have the VFS map userids should probably be
-had again.  (I believe august 2008 was the last time we really got
-into that)
+* Handling of unlinked files:
 
-thanks,
--serge
+Unlinked files are accessible by their open fd only, but at
+restart the fd cannot be restored (re-opened) since the original
+pathname is gone. We'd like to suggset a .relink filesystem
+method to attach a (new) pathname to an existing inode.
+
+* Handling of fsnotify/inotify:
+
+Both fsnotify/inotify track inode(s) directly without respective
+dentry(s). However, to restore an inotify fd, we need to have had
+recorded the pathname to that inode to re-add the watch at restart.
+We'd like to discuss possibilities for doing so.
+
+* Tracking of mm/pages modification per-process:
+
+We envision two optimizations - pre-copy (for fast live-migration)
+and incremental checkpoints. Both require tracking memory changes
+such as mm layout and modified pages. Tracking needs to be done on
+a per-process basis. We'd like to discuss possible approaches.
+
+Thanks,
+
+Oren.
