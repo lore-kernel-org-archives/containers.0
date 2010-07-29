@@ -1,12 +1,14 @@
 From: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Subject: [PATCH 1/3] cgroup : add clone_children control file
-Date: Thu, 29 Jul 2010 14:56:29 -0500
-Message-ID: <20100729195629.GA13378__14199.494632385$1280433670$gmane$org@hallyn.com>
+Subject: [PATCH 2/3] cgroup : make the mount options parsing more accurate
+Date: Thu, 29 Jul 2010 14:57:36 -0500
+Message-ID: <20100729195736.GA19015__40927.3966019557$1280433878$gmane$org@hallyn.com>
+References: <20100729195629.GA13378@hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <20100729195629.GA13378-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,185 +22,153 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9
 Cc: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This patch is sent as an answer to a previous thread around the ns_cgroup.
+The actual code does not detect 'all' with one subsystem name, which
+is IMHO mutually exclusive and when an option is specified even if it
+is not a subsystem name, we have to specify the 'all' option with the
+other option.
+eg:
+ not detected : mount -t cgroup -o all,freezer cgroup /cgroup
+ not flexible : mount -t cgroup -o noprefix,all cgroup /cgroup
 
-https://lists.linux-foundation.org/pipermail/containers/2009-June/018627.html
-
-It adds a control file 'clone_children' for a cgroup.
-This control file is a boolean specifying if the child cgroup should
-be a clone of the parent cgroup or not. The default value is 'false'.
-
-This flag makes the child cgroup to call the post_clone callback of all
-the subsystem, if it is available.
-
-At present, the cpuset is the only one which had implemented the post_clone
-callback.
-
-The option can be set at mount time by specifying the 'clone_children' mount
-option.
+This patch fix this and makes the code a bit more clear by replacing
+'else if' indentation by 'continue' blocks in the loop.
 
 Signed-off-by: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
 Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Cc: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 ---
- Documentation/cgroups/cgroups.txt |   14 +++++++++++-
- include/linux/cgroup.h            |    4 +++
- kernel/cgroup.c                   |   39 +++++++++++++++++++++++++++++++++++++
- 3 files changed, 55 insertions(+), 2 deletions(-)
+ kernel/cgroup.c |   91 +++++++++++++++++++++++++++++++++++++------------------
+ 1 files changed, 61 insertions(+), 30 deletions(-)
 
-diff --git a/Documentation/cgroups/cgroups.txt b/Documentation/cgroups/cgroups.txt
-index b34823f..190018b 100644
---- a/Documentation/cgroups/cgroups.txt
-+++ b/Documentation/cgroups/cgroups.txt
-@@ -18,7 +18,8 @@ CONTENTS:
-   1.2 Why are cgroups needed ?
-   1.3 How are cgroups implemented ?
-   1.4 What does notify_on_release do ?
--  1.5 How do I use cgroups ?
-+  1.5 What does clone_children do ?
-+  1.6 How do I use cgroups ?
- 2. Usage Examples and Syntax
-   2.1 Basic Usage
-   2.2 Attaching processes
-@@ -293,7 +294,16 @@ notify_on_release in the root cgroup at system boot is disabled
- value of their parents notify_on_release setting. The default value of
- a cgroup hierarchy's release_agent path is empty.
- 
--1.5 How do I use cgroups ?
-+1.5 What does clone_children do ?
-+---------------------------------
-+
-+If the clone_children flag is enabled (1) in a cgroup, then all
-+cgroups created beneath will call the post_clone callbacks for each
-+subsystem of the newly created cgroup. Usually when this callback is
-+implemented for a subsystem, it copies the values of the parent
-+subsystem, this is the case for the cpuset.
-+
-+1.6 How do I use cgroups ?
- --------------------------
- 
- To start a new job that is to be contained within a cgroup, using
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index e3d00fd..f3cbd73 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -154,6 +154,10 @@ enum {
- 	 * A thread in rmdir() is wating for this cgroup.
- 	 */
- 	CGRP_WAIT_ON_RMDIR,
-+	/*
-+	 * Clone cgroup values when creating a new child cgroup
-+	 */
-+	CGRP_CLONE_CHILDREN,
- };
- 
- /* which pidlist file are we talking about? */
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 3ac6f5b..dfbff78 100644
+index dfbff78..09fb6f9 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -229,6 +229,7 @@ inline int cgroup_is_removed(const struct cgroup *cgrp)
- /* bits in struct cgroupfs_root flags field */
- enum {
- 	ROOT_NOPREFIX, /* mounted subsystems have no named prefix */
-+	ROOT_CLONE_CHILDREN, /* mounted subsystems will inherit from parent */
- };
+@@ -1074,7 +1074,8 @@ struct cgroup_sb_opts {
+  */
+ static int parse_cgroupfs_options(char *data, struct cgroup_sb_opts *opts)
+ {
+-	char *token, *o = data ?: "all";
++	char *token, *o = data;
++	bool all_ss = false, one_ss = false;
+ 	unsigned long mask = (unsigned long)-1;
+ 	int i;
+ 	bool module_pin_failed = false;
+@@ -1088,26 +1089,30 @@ static int parse_cgroupfs_options(char *data, struct cgroup_sb_opts *opts)
+ 	memset(opts, 0, sizeof(*opts));
  
- static int cgroup_is_releasable(const struct cgroup *cgrp)
-@@ -244,6 +245,11 @@ static int notify_on_release(const struct cgroup *cgrp)
- 	return test_bit(CGRP_NOTIFY_ON_RELEASE, &cgrp->flags);
- }
- 
-+static int clone_children(const struct cgroup *cgrp)
-+{
-+	return test_bit(CGRP_CLONE_CHILDREN, &cgrp->flags);
-+}
+ 	while ((token = strsep(&o, ",")) != NULL) {
 +
- /*
-  * for_each_subsys() allows you to iterate on each subsystem attached to
-  * an active hierarchy
-@@ -1038,6 +1044,8 @@ static int cgroup_show_options(struct seq_file *seq, struct vfsmount *vfs)
- 		seq_printf(seq, ",%s", ss->name);
- 	if (test_bit(ROOT_NOPREFIX, &root->flags))
- 		seq_puts(seq, ",noprefix");
-+	if (test_bit(ROOT_CLONE_CHILDREN, &root->flags))
-+		seq_puts(seq, ",clone_children");
- 	if (strlen(root->release_agent_path))
- 		seq_printf(seq, ",release_agent=%s", root->release_agent_path);
- 	if (strlen(root->name))
-@@ -1097,6 +1105,8 @@ static int parse_cgroupfs_options(char *data, struct cgroup_sb_opts *opts)
+ 		if (!*token)
+ 			return -EINVAL;
+-		if (!strcmp(token, "all")) {
+-			/* Add all non-disabled subsystems */
+-			opts->subsys_bits = 0;
+-			for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
+-				struct cgroup_subsys *ss = subsys[i];
+-				if (ss == NULL)
+-					continue;
+-				if (!ss->disabled)
+-					opts->subsys_bits |= 1ul << i;
+-			}
+-		} else if (!strcmp(token, "none")) {
++		if (!strcmp(token, "none")) {
+ 			/* Explicitly have no subsystems */
  			opts->none = true;
- 		} else if (!strcmp(token, "noprefix")) {
+-		} else if (!strcmp(token, "noprefix")) {
++			continue;
++		}
++		if (!strcmp(token, "all")) {
++			/* Mutually exclusive option 'all' + subsystem name */
++			if (one_ss)
++				return -EINVAL;
++			all_ss = true;
++			continue;
++		}
++		if (!strcmp(token, "noprefix")) {
  			set_bit(ROOT_NOPREFIX, &opts->flags);
-+		} else if (!strcmp(token, "clone_children")) {
-+			set_bit(ROOT_CLONE_CHILDREN, &opts->flags);
- 		} else if (!strncmp(token, "release_agent=", 14)) {
+-		} else if (!strcmp(token, "clone_children")) {
++			continue;
++		}
++		if (!strcmp(token, "clone_children")) {
+ 			set_bit(ROOT_CLONE_CHILDREN, &opts->flags);
+-		} else if (!strncmp(token, "release_agent=", 14)) {
++			continue;
++		}
++		if (!strncmp(token, "release_agent=", 14)) {
  			/* Specifying two release agents is forbidden */
  			if (opts->release_agent)
-@@ -1357,6 +1367,8 @@ static struct cgroupfs_root *cgroup_root_from_opts(struct cgroup_sb_opts *opts)
- 		strcpy(root->release_agent_path, opts->release_agent);
- 	if (opts->name)
- 		strcpy(root->name, opts->name);
-+	if (test_bit(ROOT_CLONE_CHILDREN, &opts->flags))
-+		set_bit(CGRP_CLONE_CHILDREN, &root->top_cgroup.flags);
- 	return root;
- }
- 
-@@ -3150,6 +3162,23 @@ fail:
- 	return ret;
- }
- 
-+static u64 cgroup_clone_children_read(struct cgroup *cgrp,
-+				    struct cftype *cft)
-+{
-+	return clone_children(cgrp);
-+}
+ 				return -EINVAL;
+@@ -1115,7 +1120,9 @@ static int parse_cgroupfs_options(char *data, struct cgroup_sb_opts *opts)
+ 				kstrndup(token + 14, PATH_MAX, GFP_KERNEL);
+ 			if (!opts->release_agent)
+ 				return -ENOMEM;
+-		} else if (!strncmp(token, "name=", 5)) {
++			continue;
++		}
++		if (!strncmp(token, "name=", 5)) {
+ 			const char *name = token + 5;
+ 			/* Can't specify an empty name */
+ 			if (!strlen(name))
+@@ -1137,20 +1144,44 @@ static int parse_cgroupfs_options(char *data, struct cgroup_sb_opts *opts)
+ 					      GFP_KERNEL);
+ 			if (!opts->name)
+ 				return -ENOMEM;
+-		} else {
+-			struct cgroup_subsys *ss;
+-			for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
+-				ss = subsys[i];
+-				if (ss == NULL)
+-					continue;
+-				if (!strcmp(token, ss->name)) {
+-					if (!ss->disabled)
+-						set_bit(i, &opts->subsys_bits);
+-					break;
+-				}
+-			}
+-			if (i == CGROUP_SUBSYS_COUNT)
+-				return -ENOENT;
 +
-+static int cgroup_clone_children_write(struct cgroup *cgrp,
-+				     struct cftype *cft,
-+				     u64 val)
-+{
-+	if (val)
-+		set_bit(CGRP_CLONE_CHILDREN, &cgrp->flags);
-+	else
-+		clear_bit(CGRP_CLONE_CHILDREN, &cgrp->flags);
-+	return 0;
-+}
++			continue;
++		}
 +
- /*
-  * for the common functions, 'private' gives the type of file
-  */
-@@ -3180,6 +3209,11 @@ static struct cftype files[] = {
- 		.write_string = cgroup_write_event_control,
- 		.mode = S_IWUGO,
- 	},
-+	{
-+		.name = "cgroup.clone_children",
-+		.read_u64 = cgroup_clone_children_read,
-+		.write_u64 = cgroup_clone_children_write,
-+	},
- };
- 
- static struct cftype cft_release_agent = {
-@@ -3309,6 +3343,9 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
- 	if (notify_on_release(parent))
- 		set_bit(CGRP_NOTIFY_ON_RELEASE, &cgrp->flags);
- 
-+	if (clone_children(parent))
-+		set_bit(CGRP_CLONE_CHILDREN, &cgrp->flags);
++		for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
++			struct cgroup_subsys *ss = subsys[i];
++			if (ss == NULL)
++				continue;
++			if (strcmp(token, ss->name))
++				continue;
++			if (ss->disabled)
++				continue;
 +
- 	for_each_subsys(root, ss) {
- 		struct cgroup_subsys_state *css = ss->create(ss, cgrp);
- 
-@@ -3323,6 +3360,8 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
- 				goto err_destroy;
++			/* Mutually exclusive option 'all' + subsystem name */
++			if (all_ss)
++				return -EINVAL;
++			set_bit(i, &opts->subsys_bits);
++			one_ss = true;
++
++			break;
++		}
++		if (i == CGROUP_SUBSYS_COUNT)
++			return -ENOENT;
++	}
++
++	/*
++	 * If the 'all' option was specified select all the subsystems,
++	 * otherwise 'all, 'none' and a subsystem name options were not
++	 * specified, let's default to 'all'
++	 */
++	if (all_ss || (!all_ss && !one_ss && !opts->none)) {
++		for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
++			struct cgroup_subsys *ss = subsys[i];
++			if (ss == NULL)
++				continue;
++			if (ss->disabled)
++				continue;
++			set_bit(i, &opts->subsys_bits);
  		}
- 		/* At error, ->destroy() callback has to free assigned ID. */
-+		if (clone_children(parent) && ss->post_clone)
-+			ss->post_clone(ss, cgrp);
  	}
  
- 	cgroup_lock_hierarchy(root);
 -- 
 1.7.0.4
