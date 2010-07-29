@@ -1,13 +1,13 @@
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: Re: pid namespace isolation broken with powertop
-Date: Thu, 29 Jul 2010 09:35:31 -0500
-Message-ID: <1280414131.3143.45.camel@localhost>
-References: <4C51747A.4050203@free.fr>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: user-cr thread safety
+Date: Thu, 29 Jul 2010 10:56:13 -0400
+Message-ID: <4C51968D.3000301@cs.columbia.edu>
+References: <1280169472.7875.4290.camel@localhost>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4C51747A.4050203-GANU6spQydw@public.gmane.org>
+In-Reply-To: <1280169472.7875.4290.camel@localhost>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,35 +17,96 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, 2010-07-29 at 14:30 +0200, Daniel Lezcano wrote:
-> Hi all,
-> 
-> I noticed all the tasks of the host are listed in /proc/timer_stats
-> These information is not virtualized neither isolated within a container.
-> 
-> I was expecting to see only the tasks in the container with the 
-> corresponding pids.
-> 
-> I am not sure this is something critical, but the usage of powertop in 
-> the container shows all the tasks of the system.
-> 
-> While looking at the code in kernel/time/timer.c, it is not obvious to 
-> fix this isolation because it is the pid number which is stored in a 
-> list, so there is not enough informations to discriminate the pid 
-> namespace against the current one.
-> 
-> I am wondering if:
-> 
->   1) is it worth to isolate these informations ? (IMHO, yes).
->   2) should the stats be stored per pid namespace or adding an hash 
-> value + pid namespace as a key in the timer stats list ?
+Nathan,
 
-Well, powertop is used for monitoring and modifying global system
-characteristics (e.g. processor C states, USB autosuspend) that don't
-make sense to virtualize.  Many events in /proc/timer_stats are
-accocunted to pid 0 (swapper/idle).  I think the question is whether a
-pidns-relative slice of timer events will be useful or just confusing.
+Thanks for pointing this out. A couple of comments:
+
+1) The separate fd-table between the coordinator and the feeder
+is just a convenience and can be relatively easily relaxed so
+that pthreads may be used. However, ...
+
+2) More importantly, malloc() and printf() also occur in the
+processes and threads generated during the creation of the new
+(restored) task tree. So the same problems may occur there as
+well. Unfortunately, here we can't use glibc, in part because
+it is not even supported by glibc.
+
+Maybe a more robust way to address this is to: (1) use mmap()
+and munmap() instead of malloc() and free(), and also (2) use
+sprintf() + write() instead of printf().
+That should make everything thread-safe. Did you notice other
+libc calls which may be problematic ?
+
+Oren.
+
+
+Nathan Lynch wrote:
+> user-cr's restart program creates a thread to pipe the checkpoint image
+> into the sys_restart file descriptor.  This is a thread created with
+> clone(2) and it shares its address space with the coordinator.
+> 
+> While glibc has internal mechanisms to ensure thread safety, these work
+> only with threads that were created using glibc/pthread interfaces.
+> clone(2) bypasses the housekeeping that glibc does to track threads.  It
+> is not safe to call e.g. malloc or printf from the feeder thread.
+> 
+> The behavior I've been seeing is that restart will occasionally abort,
+> crash, or sleep indefinitely (with both the coordinator and feeder
+> threads waiting forever on the same futex) - before restart(2) or
+> eclone(2) are ever called.
+> 
+> I have tried patching user-cr to create the feeder thread with
+> pthread_create, but it's not trivial -- I think the program's correct
+> functioning depends heavily on the threads having separate file
+> descriptor tables.
+> 
+> The best I can come up with right now is to allocate ckpt_msg's buffer
+> on the stack - I think this avoids most if not all of the concurrent
+> malloc activity associated with the crashes/hangs I've been seing.
+> 
+>  common.h |   16 ++++++----------
+>  1 files changed, 6 insertions(+), 10 deletions(-)
+> 
+> diff --git a/common.h b/common.h
+> index 99b224d..927b146 100644
+> --- a/common.h
+> +++ b/common.h
+> @@ -1,25 +1,21 @@
+>  #include <stdio.h>
+>  #include <signal.h>
+>  
+> -#define BUFSIZE  (4 * 4096)
+> +#define BUFSIZE  (4096)
+>  
+>  static inline void ckpt_msg(int fd, char *format, ...)
+>  {
+> +	char buf[BUFSIZE] = { '\0' };
+>  	va_list ap;
+> -	char *bufp;
+> +
+>  	if (fd < 0)
+>  		return;
+>  
+>  	va_start(ap, format);
+> -
+> -	bufp = malloc(BUFSIZE);
+> -	if(bufp) {
+> -		vsnprintf(bufp, BUFSIZE, format, ap);
+> -		write(fd, bufp, strlen(bufp));
+> -	}
+> -	free(bufp);
+> -
+> +	vsnprintf(buf, BUFSIZE, format, ap);
+>  	va_end(ap);
+> +
+> +	write(fd, buf, strlen(buf));
+>  }
+>  
+>  #define ckpt_perror(s) 							\
+> 
+> 
+> 
