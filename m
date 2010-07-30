@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH 1/4] restart: check for overflow when counting (nested) vpids
-Date: Fri, 30 Jul 2010 13:08:30 -0400
-Message-ID: <1280509713-6745-1-git-send-email-orenl@cs.columbia.edu>
+Subject: [PATCH 4/4] restart thread-safety: avoid malloc in ckpt_msg()
+Date: Fri, 30 Jul 2010 13:08:33 -0400
+Message-ID: <1280509713-6745-4-git-send-email-orenl@cs.columbia.edu>
 References: <1280169472.7875.4290.camel@localhost>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,64 +21,114 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+We use clone and eclone directly and not through glibc, therefore
+must explicitly care about thread-safety of malloc.
+
+This patch removes the use of malloc in ckpt_msg() and instead
+allocate a buffer on the stack. Also convert calls to strerr() to
+to calls to strerr_r() which are thread-safe.
+
+This patch is based on Nathan Lynch's patch:
+"""
+  I have tried patching user-cr to create the feeder thread with
+  pthread_create, but it's not trivial -- I think the program's
+  correct functioning depends heavily on the threads having separate
+  file descriptor tables.
+
+  The best I can come up with right now is to allocate ckpt_msg's
+  buffer on the stack - I think this avoids most if not all of the
+  concurrent malloc activity associated with the crashes/hangs I've
+  been seing.
+"""
+
+Todo ??
+
+Now the only remaining non-thread-safe behavior that I'm aware of is
+the use of @errno: it is possible that an error in one thread will be
+incorrectly reported by another thread. I think we can tolerate this
+because it does not impact correctness when restart should succeed; at
+worst it may confuse us about userspace errors in the restart.
+
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- restart.c |   29 +++++++++++++++++------------
- 1 files changed, 17 insertions(+), 12 deletions(-)
+ common.h  |   25 +++++++++++--------------
+ restart.c |    7 +++++--
+ 2 files changed, 16 insertions(+), 16 deletions(-)
 
+diff --git a/common.h b/common.h
+index 99b224d..faf180e 100644
+--- a/common.h
++++ b/common.h
+@@ -1,31 +1,28 @@
+ #include <stdio.h>
+ #include <signal.h>
+ 
+-#define BUFSIZE  (4 * 4096)
++#define BUFSIZE  (4096)
+ 
+ static inline void ckpt_msg(int fd, char *format, ...)
+ {
++	char buf[BUFSIZE];
+ 	va_list ap;
+-	char *bufp;
++
+ 	if (fd < 0)
+ 		return;
+ 
+ 	va_start(ap, format);
+-
+-	bufp = malloc(BUFSIZE);
+-	if(bufp) {
+-		vsnprintf(bufp, BUFSIZE, format, ap);
+-		write(fd, bufp, strlen(bufp));
+-	}
+-	free(bufp);
+-
++	vsnprintf(buf, BUFSIZE, format, ap);
+ 	va_end(ap);
++
++	write(fd, buf, strlen(buf));
+ }
+ 
+-#define ckpt_perror(s) 							\
+-	do {								\
+-		ckpt_msg(global_uerrfd, s);				\
+-		ckpt_msg(global_uerrfd, ": %s\n", strerror(errno));	\
++#define ckpt_perror(s)						\
++	do {							\
++		char __buf[256];				\
++		strerror_r(errno, __buf, 256);			\
++		ckpt_msg(global_uerrfd, "%s: %s\n", s, __buf);	\
+ 	} while (0)
+ 
+ #ifdef CHECKPOINT_DEBUG
 diff --git a/restart.c b/restart.c
-index d813269..b281ca2 100644
+index b274e37..9cb7430 100644
 --- a/restart.c
 +++ b/restart.c
-@@ -1780,14 +1780,10 @@ static pid_t ckpt_fork_child(struct ckpt_ctx *ctx, struct task *child)
- 			flags |= CLONE_NEWPID;
- 		}
- 		if (flags & CLONE_NEWPID && !ctx->args->pidns) {
--			ckpt_err("Must use --pidns for nested pidns container");
-+			ckpt_err("need --pidns for nested pidns container");
- 			errno = -EINVAL;
- 			return -1;
- 		}
--#if 0
--		if (flags & CLONE_NEWPID)
--			clone_args.nr_pids--;
--#endif
- #endif /* CLONE_NEWPID */
- 	}
- 
-@@ -2375,17 +2371,26 @@ static int ckpt_read_vpids(struct ckpt_ctx *ctx)
+@@ -739,6 +739,7 @@ static int ckpt_pretend_reaper(struct ckpt_ctx *ctx)
+ static int ckpt_probe_child(pid_t pid, char *str)
  {
- 	int i, len, ret;
+ 	int status, ret;
++	char buf[256];
  
--	for (i = 0; i < ctx->pids_nr; i++)
--		ctx->vpids_nr += ctx->pids_arr[i].depth;
-+	for (i = 0; i < ctx->pids_nr; i++) {
-+		if (ctx->pids_arr[i].depth < 0) {
-+			ckpt_err("Invalid depth %d for pid %d",
-+				 ctx->pids_arr[i].depth,
-+				 ctx->tasks_arr[i].pid);
-+			errno = -EINVAL;
-+			return -1;
-+		}
- 
--	ckpt_dbg("number of vpids: %d\n", ctx->vpids_nr);
-+		ctx->vpids_nr += ctx->pids_arr[i].depth;
- 
--	if (ctx->vpids_nr < 0) {
--		ckpt_err("Invalid number of vpids %d", ctx->vpids_nr);
--		errno = -EINVAL;
--		return -1;
-+		if(ctx->vpids_nr < 0) {
-+			ckpt_err("Number of vpids overflowed");
-+			errno = -E2BIG;
-+			return -1;
-+		}
+ 	/* use waitpid() to probe that a child is still alive */
+ 	ret = waitpid(pid, &status, WNOHANG);
+@@ -746,11 +747,13 @@ static int ckpt_probe_child(pid_t pid, char *str)
+ 		report_exit_status(status, str, 0);
+ 		exit(1);
+ 	} else if (ret < 0 && errno == ECHILD) {
++		strerror_r(errno, buf, 256);
+ 		ckpt_err("WEIRD: %s exited without trace (%s)\n",
+-			 str, strerror(errno));
++			 str, buf);
+ 		exit(1);
+ 	} else if (ret != 0) {
+-		ckpt_err("waitpid for %s (%s)", str, strerror(errno));
++		strerror_r(errno, buf, 256);
++		ckpt_err("waitpid for %s (%s)", str, buf);
+ 		exit(1);
  	}
- 
-+	ckpt_dbg("number of vpids: %d\n", ctx->vpids_nr);
-+
- 	if (!ctx->vpids_nr)
- 		return 0;
- 
+ 	return 0;
 -- 
 1.7.0.4
