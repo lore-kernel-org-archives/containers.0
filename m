@@ -1,15 +1,13 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 3/4] restart thread safety: remove malloc from genstack
-Date: Fri, 30 Jul 2010 11:46:41 -0700
-Message-ID: <20100730184641.GB3426@count0.beaverton.ibm.com>
-References: <1280169472.7875.4290.camel@localhost>
-	<1280509713-6745-3-git-send-email-orenl@cs.columbia.edu>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: AF_UNIX fixes (v2)
+Date: Fri, 30 Jul 2010 15:10:30 -0400
+Message-ID: <4C5323A6.8050801@cs.columbia.edu>
+References: <1280504563-24338-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1280509713-6745-3-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1280504563-24338-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,21 +17,15 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Jul 30, 2010 at 01:08:32PM -0400, Oren Laadan wrote:
-> We use clone and eclone directly and not through glibc, therefore
-> must explicitly care about thread-safety of malloc.
+
+Applied on ckpt-v22-dev.
+
+Dan Smith wrote:
+> This is a re-send of the AF_UNIX fix set with the "need buffers" function
+> moved to net/checkpoint.c since it's only used in one place now.
 > 
-> This patch eliminates the use of malloc() in genstack_alloc().
-> Use mmap() instead. While an overkill, I don't expect performance
-> issues of this.
-
-Should work so long as we know the glibc mmap wrappers themselves are
-reentrant/thread-safe. I expect they are but this might be a good thing
-to confirm.
-
-Cheers,
-	-Matt Helsley
+> 
