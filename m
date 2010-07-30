@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH 4/4] restart thread-safety: avoid malloc in ckpt_msg()
-Date: Fri, 30 Jul 2010 13:08:33 -0400
-Message-ID: <1280509713-6745-4-git-send-email-orenl@cs.columbia.edu>
+Subject: [PATCH 2/4] restart thread safety: remove malloc from ckpt_fork_child
+Date: Fri, 30 Jul 2010 13:08:31 -0400
+Message-ID: <1280509713-6745-2-git-send-email-orenl@cs.columbia.edu>
 References: <1280169472.7875.4290.camel@localhost>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,111 +24,136 @@ List-Id: containers.vger.kernel.org
 We use clone and eclone directly and not through glibc, therefore
 must explicitly care about thread-safety of malloc.
 
-This patch removes the use of malloc in ckpt_msg() and instead
-allocate a buffer on the stack. Also convert calls to strerr() to
-to calls to strerr_r() which are thread-safe.
-
-This patch is based on Nathan Lynch's patch:
-"""
-  I have tried patching user-cr to create the feeder thread with
-  pthread_create, but it's not trivial -- I think the program's
-  correct functioning depends heavily on the threads having separate
-  file descriptor tables.
-
-  The best I can come up with right now is to allocate ckpt_msg's
-  buffer on the stack - I think this avoids most if not all of the
-  concurrent malloc activity associated with the crashes/hangs I've
-  been seing.
-"""
-
-Todo ??
-
-Now the only remaining non-thread-safe behavior that I'm aware of is
-the use of @errno: it is possible that an error in one thread will be
-incorrectly reported by another thread. I think we can tolerate this
-because it does not impact correctness when restart should succeed; at
-worst it may confuse us about userspace errors in the restart.
+This patch eliminates the use of malloc() from ckpt_fork_child(). The
+malloc was needed to make a pid-array for eclone using data from the
+vpids from the checkpoint image. In particular, it added the 0th level
+pid. Instead, we re-package vpids array early on by expanding the array
+and pre-adding 0th pids before any of the forks take place.
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- common.h  |   25 +++++++++++--------------
- restart.c |    7 +++++--
- 2 files changed, 16 insertions(+), 16 deletions(-)
+ restart.c |   82 ++++++++++++++++++++++++++++++++----------------------------
+ 1 files changed, 44 insertions(+), 38 deletions(-)
 
-diff --git a/common.h b/common.h
-index 99b224d..faf180e 100644
---- a/common.h
-+++ b/common.h
-@@ -1,31 +1,28 @@
- #include <stdio.h>
- #include <signal.h>
- 
--#define BUFSIZE  (4 * 4096)
-+#define BUFSIZE  (4096)
- 
- static inline void ckpt_msg(int fd, char *format, ...)
- {
-+	char buf[BUFSIZE];
- 	va_list ap;
--	char *bufp;
-+
- 	if (fd < 0)
- 		return;
- 
- 	va_start(ap, format);
--
--	bufp = malloc(BUFSIZE);
--	if(bufp) {
--		vsnprintf(bufp, BUFSIZE, format, ap);
--		write(fd, bufp, strlen(bufp));
--	}
--	free(bufp);
--
-+	vsnprintf(buf, BUFSIZE, format, ap);
- 	va_end(ap);
-+
-+	write(fd, buf, strlen(buf));
- }
- 
--#define ckpt_perror(s) 							\
--	do {								\
--		ckpt_msg(global_uerrfd, s);				\
--		ckpt_msg(global_uerrfd, ": %s\n", strerror(errno));	\
-+#define ckpt_perror(s)						\
-+	do {							\
-+		char __buf[256];				\
-+		strerror_r(errno, __buf, 256);			\
-+		ckpt_msg(global_uerrfd, "%s: %s\n", s, __buf);	\
- 	} while (0)
- 
- #ifdef CHECKPOINT_DEBUG
 diff --git a/restart.c b/restart.c
-index b274e37..9cb7430 100644
+index b281ca2..b274e37 100644
 --- a/restart.c
 +++ b/restart.c
-@@ -739,6 +739,7 @@ static int ckpt_pretend_reaper(struct ckpt_ctx *ctx)
- static int ckpt_probe_child(pid_t pid, char *str)
- {
- 	int status, ret;
-+	char buf[256];
+@@ -1725,9 +1725,9 @@ static pid_t ckpt_fork_child(struct ckpt_ctx *ctx, struct task *child)
+ 	unsigned long flags = SIGCHLD;
+ 	pid_t pid = 0;
+ 	pid_t *pids = &pid;
+-	int i, j, depth;
++	int i, depth;
  
- 	/* use waitpid() to probe that a child is still alive */
- 	ret = waitpid(pid, &status, WNOHANG);
-@@ -746,11 +747,13 @@ static int ckpt_probe_child(pid_t pid, char *str)
- 		report_exit_status(status, str, 0);
- 		exit(1);
- 	} else if (ret < 0 && errno == ECHILD) {
-+		strerror_r(errno, buf, 256);
- 		ckpt_err("WEIRD: %s exited without trace (%s)\n",
--			 str, strerror(errno));
-+			 str, buf);
- 		exit(1);
- 	} else if (ret != 0) {
--		ckpt_err("waitpid for %s (%s)", str, strerror(errno));
-+		strerror_r(errno, buf, 256);
-+		ckpt_err("waitpid for %s (%s)", str, buf);
- 		exit(1);
+-	ckpt_dbg("forking child vpid %d flags %#x\n", child->pid, child->flags);
++	ckpt_dbg("fork child vpid %d flags %#x\n", child->pid, child->flags);
+ 
+ 	stk = genstack_alloc(PTHREAD_STACK_MIN);
+ 	if (!stk) {
+@@ -1747,17 +1747,7 @@ static pid_t ckpt_fork_child(struct ckpt_ctx *ctx, struct task *child)
+ 		depth = child->piddepth + 1;
+ 		clone_args.nr_pids = depth;
+ 
+-		pids = malloc(sizeof(pid_t) * depth);
+-		if (!pids) {
+-			perror("ckpt_fork_child pids malloc");
+-			return -1;
+-		}
+-
+-		memset(pids, 0, sizeof(pid_t) * depth);
+-		pids[0] = child->pid;
+-
+-		for (i = child->piddepth - 1, j = 0; i >= 0; i--, j++)
+-			pids[j + 1] = ctx->vpids_arr[child->vidx + j];
++		pids = &ctx->vpids_arr[child->vidx];
+ 
+ #ifndef CLONE_NEWPID
+ 		if (child->piddepth > child->creator->piddepth) {
+@@ -1810,9 +1800,6 @@ static pid_t ckpt_fork_child(struct ckpt_ctx *ctx, struct task *child)
+ 	if (pid < 0 || !(child->flags & TASK_THREAD))
+ 		genstack_release(stk);
+ 
+-	if (pids != &pid)
+-		free(pids);
+-
+ 	ckpt_dbg("forked child vpid %d (asked %d)\n", pid, child->pid);
+ 	return pid;
+ }
+@@ -2336,34 +2323,53 @@ static int ckpt_read_tree(struct ckpt_ctx *ctx)
+ 	return ret;
+ }
+ 
+-/* set the vpids pointers in all the tasks */
++/*
++ * transform vpids arrays to the format convenient for eclone:
++ * prefix the level 0 pid to every sequence of nested pids.
++ * also,  set the vpids pointers in all the tasks.
++ */
+ static int assign_vpids(struct ckpt_ctx *ctx)
+ {
+-	int d, hidx, tidx;
+-	struct task *t;
++	__s32 *vpids_arr;
++	int depth, hidx, vidx, tidx;
++	struct task *task;
+ 
+-	for (hidx = 0, tidx = 0; tidx < ctx->pids_nr; tidx++) {
+-		t = &ctx->tasks_arr[tidx];
+-		d = t->piddepth = ctx->pids_arr[tidx].depth;
+-		if (!d) {
+-			ckpt_dbg("task[%d].vidx = -1\n", tidx);
+-			t->vidx = -1;
+-			continue;
+-		}
+-		t->vidx = hidx;
++	vpids_arr = malloc(sizeof(__s32) * (ctx->vpids_nr + ctx->pids_nr));
++	if (vpids_arr == NULL) {
++		perror("assign_vpids malloc");
++		return -1;
++	}
++
++	for (tidx = 0, hidx = 0, vidx = 0; tidx < ctx->pids_nr; tidx++) {
++		task = &ctx->tasks_arr[tidx];
++		depth = ctx->pids_arr[tidx].depth;
++
++		task->vidx = vidx;
++		task->piddepth = depth;
++
++		/* set task's and top level pid */
++		vpids_arr[vidx++] = task->pid;
++		/* copy task's nested pids */
++		memcpy(&vpids_arr[vidx], &ctx->vpids_arr[hidx],
++		       sizeof(__s32) * depth);
++
++		vidx += depth;
++		hidx += depth;
++
++#ifdef CHECKPOINT_DEBUG
+ 		ckpt_dbg("task[%d].vidx = %d (depth %d, rpid %d)\n",
+-			tidx, hidx, t->piddepth, ctx->pids_arr[tidx].vpid);
+-		int i;
+-		for (i=0; i<t->piddepth; i++)
+-			ckpt_dbg("task[%d].vpid[%d] = %d\n", tidx, i,
+-				ctx->vpids_arr[hidx+i]);
+-		hidx += d;
+-		if (hidx > ctx->vpids_nr) {
+-			ckpt_err("Error parsing vpids array");
+-			return -1;
++			tidx, vidx, depth, ctx->pids_arr[tidx].vpid);
++		while (depth-- > 0)  {
++			ckpt_dbg("task[%d].vpid[%d] = %d\n", tidx,
++				 depth, vpids_arr[hidx - depth - 1]);
+ 		}
++#endif
  	}
+ 
++	/* relpace "raw" vpids_arr with this one */
++	free(ctx->vpids_arr);
++	ctx->vpids_arr = vpids_arr;
++
  	return 0;
+ }
+ 
 -- 
 1.7.0.4
