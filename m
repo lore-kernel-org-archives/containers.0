@@ -1,16 +1,18 @@
-From: john stultz <johnstul-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Subject: Re: [RFC][PATCH 2/3][cr][v2]: Checkpoint/restart file leases
-Date: Fri, 30 Jul 2010 14:37:51 -0700
-Message-ID: <1280525871.2451.23.camel__31535.8139844195$1280526042$gmane$org@localhost.localdomain>
-References: <1274836063-13271-1-git-send-email-sukadev@linux.vnet.ibm.com>
-	<1274836063-13271-3-git-send-email-sukadev@linux.vnet.ibm.com>
-	<4C170430.2030708@cs.columbia.edu> <20100730191607.GA16238@us.ibm.com>
+Date: Fri, 30 Jul 2010 18:32:15 -0400
+Message-ID: <4C5352EF.9080601__32548.0611449622$1280529088$gmane$org@cs.columbia.edu>
+References: <1274836063-13271-1-git-send-email-sukadev@linux.vnet.ibm.com>	
+	<1274836063-13271-3-git-send-email-sukadev@linux.vnet.ibm.com>	
+	<4C170430.2030708@cs.columbia.edu>
+	<20100730191607.GA16238@us.ibm.com>	
 	<4C532BC9.6050109@cs.columbia.edu>
+	<1280525871.2451.23.camel@localhost.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4C532BC9.6050109-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1280525871.2451.23.camel-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,74 +22,131 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: matthew-Ztpu424NOJ8@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: john stultz <johnstul-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: matthew-Ztpu424NOJ8@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, 2010-07-30 at 15:45 -0400, Oren Laadan wrote:
+
+
+john stultz wrote:
+> On Fri, 2010-07-30 at 15:45 -0400, Oren Laadan wrote:
+>> Sukadev Bhattiprolu wrote:
+>>> Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
+>>> | 
+>>> | 
+>>> | >  		h->fl_type = lock->fl_type;
+>>> | > +		h->fl_type_prev = lock->fl_type_prev;
+>>> | >  		h->fl_flags = lock->fl_flags;
+>>> | > +		if (h->fl_type & F_INPROGRESS && 
+>>> | > +					(lock->fl_break_time > jiffies))
+>>> | > +			h->fl_rem_lease = (lock->fl_break_time - jiffies) / HZ;
+>>> | 
+>>> | Hmmm -- we have a ctx->ktime_begin marking the start of the checkpoint.
+>>> | It is used for relative-time calculations, for example, the expiry of
+>>> | restart-blocks and timeouts.  I suggest that we use it here too to be
+>>> | consistent.
+>>>
+>>> Well, I started off using ktime_begin but discussed this with John Stultz
+>>> (CC'd here) who pointed out that mixing different domains of time is likely
+>>> to cause errors. ktime is an absolute time and fl_break_time uses jiffies -
+>>> a relative time. 
+>>>
+>>> I think use of ktime_begin for restart_blocks is fine (since they use
+>>> ktime_t) but using ktime_t for file leases and converting between jiffies
+>>> and nanoseconds could be a problem, unless we convert fl_break_time to
+>>> seconds.
+>>>
+>>> IOW, can we leave the above computation of ->fl_rem_lease for now ?
+>> The data on restart_blocks keep relative time - it's the the time
+>> to expiry relative to ktime_begin (which is absolute).
+>>
+>> ktime_begin merely gives a reference point in time against which
+>> all other time-related values should be saved. The advantage is
+>> that all time computation are relative to the same point in time
+>> at checkpoint/restart - the time when the ktime_begin is set. It's
+>> more consistent this way.
 > 
-> Sukadev Bhattiprolu wrote:
-> > Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
-> > | 
-> > | 
-> > | >  		h->fl_type = lock->fl_type;
-> > | > +		h->fl_type_prev = lock->fl_type_prev;
-> > | >  		h->fl_flags = lock->fl_flags;
-> > | > +		if (h->fl_type & F_INPROGRESS && 
-> > | > +					(lock->fl_break_time > jiffies))
-> > | > +			h->fl_rem_lease = (lock->fl_break_time - jiffies) / HZ;
-> > | 
-> > | Hmmm -- we have a ctx->ktime_begin marking the start of the checkpoint.
-> > | It is used for relative-time calculations, for example, the expiry of
-> > | restart-blocks and timeouts.  I suggest that we use it here too to be
-> > | consistent.
-> > 
-> > Well, I started off using ktime_begin but discussed this with John Stultz
-> > (CC'd here) who pointed out that mixing different domains of time is likely
-> > to cause errors. ktime is an absolute time and fl_break_time uses jiffies -
-> > a relative time. 
-> > 
-> > I think use of ktime_begin for restart_blocks is fine (since they use
-> > ktime_t) but using ktime_t for file leases and converting between jiffies
-> > and nanoseconds could be a problem, unless we convert fl_break_time to
-> > seconds.
-> > 
-> > IOW, can we leave the above computation of ->fl_rem_lease for now ?
+> First, forgive me for not being very aware of the checkpoint/restart
+> code. 
+
+On the contrary, forgive me if I'm stating the obvious below ...
+
 > 
-> The data on restart_blocks keep relative time - it's the the time
-> to expiry relative to ktime_begin (which is absolute).
+> So, ktime_begin is an absolute CLOCK_MONOTONIC time, relative to the
+> time the system booted (more or less). And it represents the checkpoint
+> time, correct?
+
+As a rule, all time measurements in the checkpoint image are
+saved as relative values, using the start-of-checkpoint as the
+reference point in time (*).
+
+So at checkpoint, every absolute time value should be converted
+to a value relative to the start-of-checkpoint. At restart, every
+relative time value from the image is converted back (if needed)
+to an absolute time value using a respective start-of-restart.
+
+This makes sense for the most common case, where if a process
+had 5 more seconds to sleep at the time of checkpoint, we would
+like it to have 5 more seconds to sleep after it restarts.
+
+(For the rare case where you care about the absolute timeout,
+userspace can modify the checkpoint image on-the-fly during
+restart to adjust the timeout value to be 0, or close enough
+to zero that the timeout will happen as soon as the restart
+completes).
+
+That said, ktime_begin has two purposes:
+
+1) It stores the start-of-{checkpoint,restart} during checkpoint
+and restart respectively, and used for all conversions from
+absolute to relative time values.  This is purely internal use
+during the checkpoint/restart operations.
+It make sense to use a single value, as opposed to compute the
+deltas "on the go", because checkpoint/restart can be lengthy
+operations (depending on the image size and IO speed). Doing
+so against current time, which is a moving target, can yield
+inconsistent results.
+
+(*) Looking at the code, I see that the hrtimer expiry times
+are actually calculated against current time - I'll fix that...
+
+2) It provides information for the admin/user about what was
+the absolute time when the checkpoint operation began (maybe
+we should also end ktime_end...). Otherwise, we would have to
+wrap each checkpoint image with additional meta-data from
+userspace.
+(In particular, having that absolute time in the checkpoint
+image will allow a userspace filter to modify timeout values
+as needed in the rare case mentioned above).
+
+> Is there a similar checkpointed jiffies value?
+
+No. but ...
+
+>> I don't see the problem with jiffies vs ktime - there are functions
+>> to convert between different units (see jiffies.h). Even if you are
+>> concerned about reducing the resolution because of a conversion -
+>> well, it isn't realistic to expect nano-sec resolution after restart...
 > 
-> ktime_begin merely gives a reference point in time against which
-> all other time-related values should be saved. The advantage is
-> that all time computation are relative to the same point in time
-> at checkpoint/restart - the time when the ktime_begin is set. It's
-> more consistent this way.
+> You're right, there are functions to convert from relative jiffies to
+> relative nanoseconds, but there really aren't good functions to convert
+> from absolute jiffies to absolute CLOCK_MONOTONIC time.
+> 
+> One can make a rough approximation, but its not a very precise method
+> with a number of complications (ie: 32bit jiffies wraps every ~50 days,
+> the INITIAL_JIFFIES offset has to be remembered, and the larger issue of
+> the fact that CLOCK_MONOTONIC is NTP corrected, while jiffies may or may
+> not be). So I'd strongly advise against trying to directly convert abs
+> jiffies values to abs CLOCK_MONOTONIC time.
 
-First, forgive me for not being very aware of the checkpoint/restart
-code. 
+... given this, to be able to compute the relative time where
+jiffies are involved (e.g. the remaining lease time relative to
+ktime_begin) we could also keep a ctx->jiffies_begin, calculate
+the delta, and then convert to ktime_t delta.
 
-So, ktime_begin is an absolute CLOCK_MONOTONIC time, relative to the
-time the system booted (more or less). And it represents the checkpoint
-time, correct?
+Suka: if that works for you, can you please add this piece to
+your patch ?
 
-Is there a similar checkpointed jiffies value?
+Thanks for the feedback !
 
-
-> I don't see the problem with jiffies vs ktime - there are functions
-> to convert between different units (see jiffies.h). Even if you are
-> concerned about reducing the resolution because of a conversion -
-> well, it isn't realistic to expect nano-sec resolution after restart...
-
-You're right, there are functions to convert from relative jiffies to
-relative nanoseconds, but there really aren't good functions to convert
-from absolute jiffies to absolute CLOCK_MONOTONIC time.
-
-One can make a rough approximation, but its not a very precise method
-with a number of complications (ie: 32bit jiffies wraps every ~50 days,
-the INITIAL_JIFFIES offset has to be remembered, and the larger issue of
-the fact that CLOCK_MONOTONIC is NTP corrected, while jiffies may or may
-not be). So I'd strongly advise against trying to directly convert abs
-jiffies values to abs CLOCK_MONOTONIC time.
-
-thanks
--john
+Oren.
