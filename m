@@ -1,11 +1,10 @@
-From: "Mike" <feiyongze7ndao-LWAfsSFWpa4@public.gmane.org>
-Subject: =?GB2312?B?aVBob25lL2lQYWQgQXBwbGljYXRpb24gRA==?=
-	=?GB2312?B?ZXZlbG9wbWVudCAtIEFuZHJvaWQvQmxhYw==?=
-	=?GB2312?B?a0JlcnJ5IEFwcGxpY2F0aW9uIERldmVsbw==?=
-	=?GB2312?B?cG1lbnQ=?=
-Date: Sat, 31 Jul 2010 19:35:50 +0800
-Message-ID: <ALECTRO-SBSCOZrmQCP00011c50@alectro.com>
-Reply-To: dandevelop-KN7UnAbNpbg@public.gmane.org
+From: Tom <feiyongz100endao-LWAfsSFWpa4@public.gmane.org>
+Subject: =?GB2312?B?RVJQICYgQ1JNIHNvbHV0aW9ucyAtIEN1cw==?=
+	=?GB2312?B?dG9tZXIgUmVsYXRpb25zaGlwIE1hbmFnZQ==?=
+	=?GB2312?B?bWVudC4=?=
+Date: Sun, 1 Aug 2010 02:33:22 +0800
+Message-ID: <677b1bfe-530e-4f76-8a1b-552cd887f9da@WAKEFIELD.waimea.school.nz>
+Reply-To: ibsoftware-KN7UnAbNpbg@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -23,30 +22,36 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-iPhone/iPad Application Development - BlackBerry/Android  Application Development
+ERP & CRM solutions - Enterprise Resource Planning - Customer Relationship Management.
 
-We are China based company explicitly active for iPhone software programming solutions and Mobile Application Development services as well as wireless application (WAP) development. We have the extensive expertise in Mobile, iPhone, iPad, Blackberry, Palm and PocketPC enterprise solutions. Our dedicate d team has a unique combination of technical expertise, functional knowledge base, result oriented management and extensive experience.
+What's ERP? ERP stands for Enterprise Resource Planning and is a combination of Accounting software (think Quickbooks - not Quicken), Sales Order Processing- order entry, shipping, invoicing, Inventory Control, Manufacturing Resource Planning, Manufacturing Scheduling, Shop Floor Control (work order) software and often CRM -
+Customer Relationship Management.
 
-Our team is perfect blend of experience and talented Mobile Application Developers, who are successfully providing appropriate & quality solutions to our global iPhone clients according to their respective needs like Android Mobile Application Development & Mobile Website Development. Our highly trained staffs are also capable of tapping new avenues in mobile software development solutions and we can achieve this with custom designed applications for Pocket PCs, Smartphones and PDAs utilizing the power of the .NET Framework, J2ME and C++ 
+(ERP) Enterprise solutions are software applications that allow people to access and manage real-time information and transaction processes across an entire organization. Our enterprise solutions help our clients achieve high performance. Our innovative solutions deliver value by increasing process efficiency, enhancing workforce productivity, cutting operating costs, boosting employee and customer satisfaction, and enabling better, faster decisions. 
 
-Services offered:
-iPhone Application Development
-iPad Application Development
-iPhone Game Development
-Mobile Application Development
-Android Application Development
-BlackBerry Application Development
-Symbian Applications Development
-Window Mobile App. Development
-iPhone Application Development
-Mobile Website Development
-iPad Application Development
-Wireless (WAP) Mobile Applications Development
+With our deep enterprise solutions capabilities our professionals can help in designing, building and managing the innovative solutions that enable high performance. We are committed to helping you achieve enterprise-wide benefits and seize new opportunities for growth. We take enterprise solutions to a new level, focusing on the performance of the whole enterprise.
+
+Maximize your customer relationship with CRM Solutions
+(CRM) Customer relationship management 
+We know the value of each customer to your business and the paramount necessity of maintaining excellent relationship with them. Our CRM solution will help you go an extra mile to attain and maintain customer satisfaction. It will provide you with the tools and the methodology to manage a variety of CRM implementation issues in areas like customer retention, account management, campaign management, customer self service and devise strategies to increase revenue, productivity and customer satisfaction.
+
+You will be able to manage your customer contacts in an efficient manner and perform conclusive analysis in the area of (CRM) customer relationship management. 
+
+We have deep functional expertise in the following areas: 
+Customer Relationship Management (CRM)
+Enterprise Resource Planning (ERP)
+Enterprise Portal Solution 
+Sales Force Automation 
+Knowledge Management 
+Workflow Application 
+Wireless Solutions 
+Ecommerce Solutions 
+Marketplace Solutions 
 
 Best regards,
-Mike
-Mansainmake Mobile Application Development
-Contact: iphoneibtech-Mj/0Miq2reM@public.gmane.org
+Tom
+Tomsansinsa Software Development
+Contact: ibsoftcontact-Mj/0Miq2reM@public.gmane.org
 
 
 
@@ -61,14 +66,4 @@ Contact: iphoneibtech-Mj/0Miq2reM@public.gmane.org
 
 
 
-
-
-
-
-
-
-
-
-
-
-Pls send address to iphonpprsano-Xb2Y1Dfb9CI@public.gmane.org for remove
+Pls send address to thinkremove112-/E1597aS9LTXPF5Rlphj1Q@public.gmane.org for remove
