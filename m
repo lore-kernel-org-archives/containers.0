@@ -1,16 +1,16 @@
-From: Pierre Bourdon <pbourdon-SxHCd5+OuqTrt3ojHgZu+w@public.gmane.org>
-Subject: Re: [Bugme-new] [Bug 16417] New: Slow context switches with SMP and
-	=?UTF-8?Q?CONFIG=5FFAIR=5FGROUP=5FSCHED?=
-Date: Mon, 02 Aug 2010 12:52:38 +0200
-Message-ID: <0801eaf1eefd2f499069888240a834ad@imap1>
-References: <bug-16417-10286@https.bugzilla.kernel.org/>
-	<20100722155222.f0fdc50a.akpm@linux-foundation.org>
-	<1280739521.1923.18.camel@laptop>
+From: Mike <atatheai50samt-LWAfsSFWpa4@public.gmane.org>
+Subject: =?GB2312?B?aVBob25lL2lQYWQgQXBwbGljYXRpb24gRA==?=
+	=?GB2312?B?ZXZlbG9wbWVudCAtIEJsYWNrQmVycnkvQQ==?=
+	=?GB2312?B?bmRyb2lkICBBcHBsaWNhdGlvbiBEZXZlbA==?=
+	=?GB2312?B?b3BtZW50?=
+Date: Tue, 3 Aug 2010 03:43:08 +0800
+Message-ID: <e7e6b950-c800-4462-9e70-77945438f2b5@GHL-EXH-HT1.milbury.org.uk>
+Reply-To: dandevelop-KN7UnAbNpbg@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1280739521.1923.18.camel@laptop>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,18 +20,42 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
-Cc: bugzilla-daemon-590EEB7GvNiWaY/ihj7yzEB+6BGkLq7r@public.gmane.org, Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, bugme-daemon-590EEB7GvNiWaY/ihj7yzEB+6BGkLq7r@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
+To: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, 02 Aug 2010 10:58:41 +0200, Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
-wrote:
-> Does: echo NO_LB_SHARES_UPDATE > /debug/sched_features
-> (or wherever you mounted debugfs) help things?
+iPhone/iPad Application Development - BlackBerry/Android  Application Development
 
-It does not, sorry. Latency with lat_ctx is still high, and CPU usage with
-cat | pv is still high too.
+We are China based company explicitly active for iPhone software programming solutions and Mobile Application Development services as well as wireless application (WAP) development. We have the extensive expertise in Mobile, iPhone, iPad, Blackberry, Palm and PocketPC enterprise solutions. Our dedicate d team has a unique combination of technical expertise, functional knowledge base, result oriented management and extensive experience.
 
-Regards,
--- 
-Pierre Bourdon
+Our team is perfect blend of experience and talented Mobile Application Developers, who are successfully providing appropriate & quality solutions to our global iPhone clients according to their respective needs like Android Mobile Application Development & Mobile Website Development. Our highly trained staffs are also capable of tapping new avenues in mobile software development solutions and we can achieve this with custom designed applications for Pocket PCs, Smartphones and PDAs utilizing the power of the .NET Framework, J2ME and C++
+
+Services offered:
+iPhone Application Development
+iPad Application Development
+iPhone Game Development
+Mobile Application Development
+Android Application Development
+BlackBerry Application Development
+Symbian Applications Development
+Window Mobile App. Development
+iPhone Application Development
+Mobile Website Development
+iPad Application Development
+Wireless (WAP) Mobile Applications Development
+
+Best regards,
+Mike
+Mansainmake Mobile Application Development
+Contact: iphoneibtech-Mj/0Miq2reM@public.gmane.org
+
+
+
+
+
+
+
+
+
+
+
+Pls send address to iphonremoveand-Xb2Y1Dfb9CI@public.gmane.org for remove
