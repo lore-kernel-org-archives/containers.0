@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 05/16][cr][v3]: Move file_lock macros into linux/fs.h
-Date: Tue,  3 Aug 2010 16:11:26 -0700
-Message-ID: <1280877097-12377-6-git-send-email-sukadev__42811.8850141347$1280877395$gmane$org@linux.vnet.ibm.com>
+Subject: [PATCH 11/16][cr][v3]: Add ->fl_type_prev field.
+Date: Tue,  3 Aug 2010 16:11:32 -0700
+Message-ID: <1280877097-12377-12-git-send-email-sukadev__31480.119287926$1280877398$gmane$org@linux.vnet.ibm.com>
 References: <1280877097-12377-1-git-send-email-sukadev@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,54 +21,73 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: Matthew Wilcox <matthew-Ztpu424NOJ8@public.gmane.org>, John Stultz <johnstul-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Jamie Lokier <jamie-yetKDKU6eevNLxjTenLetw@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Move IS_POSIX(), IS_FLOCK(), IS_LEASE() and 'for_each_lock()' into
-include/linux/fs.h since these are also needed to checkpoint/restart
-file-locks.
+In preparation for checkpoint/restart of file leases, add ->fl_type_prev
+field to 'struct file_lock'. This field is needed to correctly restore
+file leases in case of recursive checkpoint/restart of an in-progress
+lease.
+
+This ->fl_type_prev is only initialized in this patch. It will actually
+be used when restoring file leases after a checkpoint.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- fs/locks.c         |    7 -------
- include/linux/fs.h |    7 +++++++
- 2 files changed, 7 insertions(+), 7 deletions(-)
+ fs/locks.c         |   10 ++++++++++
+ include/linux/fs.h |    1 +
+ 2 files changed, 11 insertions(+), 0 deletions(-)
 
 diff --git a/fs/locks.c b/fs/locks.c
-index ca0c7e2..741b8b7 100644
+index 0bd5af7..9a00876 100644
 --- a/fs/locks.c
 +++ b/fs/locks.c
-@@ -130,16 +130,9 @@
+@@ -184,6 +184,7 @@ void locks_init_lock(struct file_lock *fl)
+ 	fl->fl_file = NULL;
+ 	fl->fl_flags = 0;
+ 	fl->fl_type = 0;
++	fl->fl_type_prev = 0;
+ 	fl->fl_start = fl->fl_end = 0;
+ 	fl->fl_break_time = 0UL;
+ 	fl->fl_ops = NULL;
+@@ -227,6 +228,7 @@ void __locks_copy_lock(struct file_lock *new, const struct file_lock *fl)
+ 	new->fl_file = NULL;
+ 	new->fl_flags = fl->fl_flags;
+ 	new->fl_type = fl->fl_type;
++	new->fl_type_prev = fl->fl_type_prev;
+ 	new->fl_start = fl->fl_start;
+ 	new->fl_end = fl->fl_end;
+ 	new->fl_break_time = 0UL;
+@@ -293,6 +295,13 @@ static int assign_type(struct file_lock *fl, int type)
+ 	case F_WRLCK:
+ 	case F_UNLCK:
+ 		fl->fl_type = type;
++		/*
++		 * Clear ->fl_type_prev since this is a new lease type.
++		 * break_lease() will use this cleared state to know
++		 * if it must save the lease-type in case of checkpoint/
++		 * restart.
++		 */
++		fl->fl_type_prev = 0;
+ 		break;
+ 	default:
+ 		return -EINVAL;
+@@ -1222,6 +1231,7 @@ int __break_lease(struct inode *inode, unsigned int mode)
  
- #include <asm/uaccess.h>
- 
--#define IS_POSIX(fl)	(fl->fl_flags & FL_POSIX)
--#define IS_FLOCK(fl)	(fl->fl_flags & FL_FLOCK)
--#define IS_LEASE(fl)	(fl->fl_flags & FL_LEASE)
--
- int leases_enable = 1;
- int lease_break_time = 45;
- 
--#define for_each_lock(inode, lockp) \
--	for (lockp = &inode->i_flock; *lockp != NULL; lockp = &(*lockp)->fl_next)
--
- static LIST_HEAD(file_lock_list);
- static LIST_HEAD(blocked_list);
- 
+ 	for (fl = flock; fl && IS_LEASE(fl); fl = fl->fl_next) {
+ 		if (fl->fl_type != future) {
++			fl->fl_type_prev = fl->fl_type;
+ 			fl->fl_type = future;
+ 			fl->fl_break_time = break_time;
+ 			/* lease must have lmops break callback */
 diff --git a/include/linux/fs.h b/include/linux/fs.h
-index b4a6fb0..abd2267 100644
+index 49d4eeb..299cc09 100644
 --- a/include/linux/fs.h
 +++ b/include/linux/fs.h
-@@ -1088,6 +1088,13 @@ struct file_lock {
- 	} fl_u;
- };
- 
-+#define IS_POSIX(fl)	(fl->fl_flags & FL_POSIX)
-+#define IS_FLOCK(fl)	(fl->fl_flags & FL_FLOCK)
-+#define IS_LEASE(fl)	(fl->fl_flags & FL_LEASE)
-+
-+#define for_each_lock(inode, lockp) \
-+	for (lockp = &inode->i_flock; *lockp != NULL; lockp = &(*lockp)->fl_next)
-+
- /* The following constant reflects the upper bound of the file/locking space */
- #ifndef OFFSET_MAX
- #define INT_LIMIT(x)	(~((x)1 << (sizeof(x)*8 - 1)))
+@@ -1066,6 +1066,7 @@ struct file_lock {
+ 	fl_owner_t fl_owner;
+ 	unsigned char fl_flags;
+ 	unsigned char fl_type;
++	unsigned char fl_type_prev;
+ 	unsigned int fl_pid;
+ 	struct pid *fl_nspid;
+ 	wait_queue_head_t fl_wait;
 -- 
 1.6.0.4
