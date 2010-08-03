@@ -1,13 +1,15 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 13/16][cr][v3]: Add jiffies_begin field to ckpt_ctx
-Date: Tue,  3 Aug 2010 16:11:34 -0700
-Message-ID: <1280877097-12377-14-git-send-email-sukadev__31319.782723631$1280878430$gmane$org@linux.vnet.ibm.com>
-References: <1280877097-12377-1-git-send-email-sukadev@linux.vnet.ibm.com>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH v4 0/2] cgroups: implement moving a threadgroup's
+	threads atomically with cgroup.procs
+Date: Wed, 4 Aug 2010 08:45:23 +0900
+Message-ID: <20100804084523.768cd353.kamezawa.hiroyu__15465.5984290459$1280879691$gmane$org@jp.fujitsu.com>
+References: <20100730235649.GA22644@ghc17.ghc.andrew.cmu.edu>
+	<20100803125827.0822e6ab.akpm@linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1280877097-12377-1-git-send-email-sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <20100803125827.0822e6ab.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,44 +19,40 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Matthew Wilcox <matthew-Ztpu424NOJ8@public.gmane.org>, John Stultz <johnstul-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Jamie Lokier <jamie-yetKDKU6eevNLxjTenLetw@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-'jiffies_begin' is needed to compute relative time-offsets after restart.
-We cannot use ->ktime_begin for these computations since, as pointed out
-by John Stultz, converting jiffies to CLOCK_MONOTONIC can result in
-incorrect values.
+On Tue, 3 Aug 2010 12:58:27 -0700
+Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> wrote:
 
-Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
----
- include/linux/checkpoint_types.h |    1 +
- kernel/checkpoint/sys.c          |    1 +
- 2 files changed, 2 insertions(+), 0 deletions(-)
+> On Fri, 30 Jul 2010 19:56:49 -0400
+> Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org> wrote:
+> 
+> > This patch series implements a write function for the 'cgroup.procs'
+> > per-cgroup file, which enables atomic movement of multithreaded
+> > applications between cgroups. Writing the thread-ID of any thread in a
+> > threadgroup to a cgroup's procs file causes all threads in the group to
+> > be moved to that cgroup safely with respect to threads forking/exiting.
+> > (Possible usage scenario: If running a multithreaded build system that
+> > sucks up system resources, this lets you restrict it all at once into a
+> > new cgroup to keep it under control.)
+> 
+> I can see how that would be useful.  No comments from anyone else?
+> 
 
-diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
-index 3ffe9bd..aba9380 100644
---- a/include/linux/checkpoint_types.h
-+++ b/include/linux/checkpoint_types.h
-@@ -33,6 +33,7 @@ struct ckpt_ctx {
- 	int crid;		/* unique checkpoint id */
- 
- 	ktime_t ktime_begin;	/* checkpoint start time */
-+	unsigned long jiffies_begin;
- 
- 	int root_init;				/* [container] root init ? */
- 	pid_t root_pid;				/* [container] root pid */
-diff --git a/kernel/checkpoint/sys.c b/kernel/checkpoint/sys.c
-index b761ec0..0beeee5 100644
---- a/kernel/checkpoint/sys.c
-+++ b/kernel/checkpoint/sys.c
-@@ -278,6 +278,7 @@ static struct ckpt_ctx *ckpt_ctx_alloc(int fd, unsigned long uflags,
- 	ctx->uflags = uflags;
- 	ctx->kflags = kflags;
- 	ctx->ktime_begin = ktime_get();
-+	ctx->jiffies_begin = jiffies;
- 	ctx->coord_pidns = get_pid_ns(current->nsproxy->pid_ns);
- 
- 	atomic_set(&ctx->refcount, 0);
--- 
-1.6.0.4
+I think the feature itself is good and useful. I welcome this.
+
+> patch 1/2 makes me cry with all those ifdefs.  Maybe helper functions
+> would help, but not a lot.
+> 
+Add static inline functions ?
+
+
+> patch 2/2 looks very complicated.
+
+yes. that's a concern.
+I'd like to look deeper, today.
+
+Thanks,
+-Kame
