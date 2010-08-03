@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 01/16][cr][v3]: Add uid, euid params to f_modown()
-Date: Tue,  3 Aug 2010 16:11:22 -0700
-Message-ID: <1280877097-12377-2-git-send-email-sukadev__31466.8292565786$1280877167$gmane$org@linux.vnet.ibm.com>
+Subject: [PATCH 03/16][cr][v3]: Checkpoint file-owner information
+Date: Tue,  3 Aug 2010 16:11:24 -0700
+Message-ID: <1280877097-12377-4-git-send-email-sukadev__10727.2156551064$1280877363$gmane$org@linux.vnet.ibm.com>
 References: <1280877097-12377-1-git-send-email-sukadev@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,59 +21,100 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: Matthew Wilcox <matthew-Ztpu424NOJ8@public.gmane.org>, John Stultz <johnstul-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Jamie Lokier <jamie-yetKDKU6eevNLxjTenLetw@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Checkpoint/restart of file-owner.
+Checkpoint the file->f_owner information for an open file. This
+information will be used to restore the file-owner information
+when the application is restarted from the checkpoint.
 
-Add uid, euid parameters to f_modown(). These parameters will be needed
-when restarting an application (and hence restoring the file information),
-from a checkpoint image.
+The file->f_owner information is "private" to each 'struct file' i.e.
+fown_struct is not an external object shared with other file structures.
+So the information can directly be added to the 'ckpt_hdr_file' object.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- fs/fcntl.c |   11 +++++------
- 1 files changed, 5 insertions(+), 6 deletions(-)
+ fs/checkpoint.c                |   27 +++++++++++----------------
+ include/linux/checkpoint_hdr.h |    5 +++++
+ 2 files changed, 16 insertions(+), 16 deletions(-)
 
-diff --git a/fs/fcntl.c b/fs/fcntl.c
-index 2079af0..aeab1f4 100644
---- a/fs/fcntl.c
-+++ b/fs/fcntl.c
-@@ -197,7 +197,7 @@ static int setfl(int fd, struct file * filp, unsigned long arg)
- }
- 
- static void f_modown(struct file *filp, struct pid *pid, enum pid_type type,
--                     int force)
-+                     uid_t uid, uid_t euid, int force)
+diff --git a/fs/checkpoint.c b/fs/checkpoint.c
+index 87d7c6e..ce1b4af 100644
+--- a/fs/checkpoint.c
++++ b/fs/checkpoint.c
+@@ -168,12 +168,19 @@ int checkpoint_file_common(struct ckpt_ctx *ctx, struct file *file,
+ 			   struct ckpt_hdr_file *h)
  {
- 	write_lock_irq(&filp->f_owner.lock);
- 	if (force || !filp->f_owner.pid) {
-@@ -206,9 +206,8 @@ static void f_modown(struct file *filp, struct pid *pid, enum pid_type type,
- 		filp->f_owner.pid_type = type;
+ 	struct cred *f_cred = (struct cred *) file->f_cred;
++	struct pid *pid = file->f_owner.pid;
  
- 		if (pid) {
--			const struct cred *cred = current_cred();
--			filp->f_owner.uid = cred->uid;
--			filp->f_owner.euid = cred->euid;
-+			filp->f_owner.uid = uid;
-+			filp->f_owner.euid = euid;
- 		}
+ 	h->f_flags = file->f_flags;
+ 	h->f_mode = file->f_mode;
+ 	h->f_pos = file->f_pos;
+ 	h->f_version = file->f_version;
+ 
++	h->f_owner_pid = pid_nr_ns(pid, ns_of_pid(pid));
++	h->f_owner_pid_type = file->f_owner.pid_type;
++	h->f_owner_uid = file->f_owner.uid;
++	h->f_owner_euid = file->f_owner.euid;
++	h->f_owner_signum = file->f_owner.signum;
++
+ 	h->f_credref = checkpoint_obj(ctx, f_cred, CKPT_OBJ_CRED);
+ 	if (h->f_credref < 0)
+ 		return h->f_credref;
+@@ -184,10 +191,10 @@ int checkpoint_file_common(struct ckpt_ctx *ctx, struct file *file,
+ 		return h->f_secref;
  	}
- 	write_unlock_irq(&filp->f_owner.lock);
-@@ -223,7 +222,7 @@ int __f_setown(struct file *filp, struct pid *pid, enum pid_type type,
- 	if (err)
- 		return err;
  
--	f_modown(filp, pid, type, force);
-+	f_modown(filp, pid, type, current_uid(), current_euid(), force);
+-	ckpt_debug("file %s credref %d secref %d\n",
+-		file->f_dentry->d_name.name, h->f_credref, h->f_secref);
+-
+-	/* FIX: need also file->f_owner, etc */
++	ckpt_debug("file %s credref %d secref %d, fowner-pid %d, type %d, "
++			"fowner-signum %d\n", file->f_dentry->d_name.name,
++			h->f_credref, h->f_secref, h->f_owner_pid,
++			h->f_owner_pid_type, h->f_owner_signum);
+ 
  	return 0;
  }
- EXPORT_SYMBOL(__f_setown);
-@@ -249,7 +248,7 @@ EXPORT_SYMBOL(f_setown);
+@@ -267,7 +274,6 @@ static int checkpoint_file_desc(struct ckpt_ctx *ctx,
+ 	struct fdtable *fdt;
+ 	int objref, ret;
+ 	int coe = 0;	/* avoid gcc warning */
+-	pid_t pid;
  
- void f_delown(struct file *filp)
- {
--	f_modown(filp, NULL, PIDTYPE_PID, 1);
-+	f_modown(filp, NULL, PIDTYPE_PID, current_uid(), current_euid(), 1);
- }
+ 	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE_DESC);
+ 	if (!h)
+@@ -302,17 +308,6 @@ static int checkpoint_file_desc(struct ckpt_ctx *ctx,
+ 	}
  
- pid_t f_getown(struct file *filp)
+ 	/*
+-	 * TODO: Implement c/r of fowner and f_sigio.  Should be
+-	 * trivial, but for now we just refuse its checkpoint
+-	 */
+-	pid = f_getown(file);
+-	if (pid) {
+-		ret = -EBUSY;
+-		ckpt_err(ctx, ret, "%(T)fd %d has an owner (%d)\n", fd);
+-		goto out;
+-	}
+-
+-	/*
+ 	 * if seen first time, this will add 'file' to the objhash, keep
+ 	 * a reference to it, dump its state while at it.
+ 	 */
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 9e8d518..0381019 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -575,6 +575,11 @@ struct ckpt_hdr_file {
+ 	__u64 f_pos;
+ 	__u64 f_version;
+ 	__s32 f_secref;
++	__s32 f_owner_pid;
++	__u32 f_owner_pid_type;
++	__u32 f_owner_uid;
++	__u32 f_owner_euid;
++	__s32 f_owner_signum;
+ } __attribute__((aligned(8)));
+ 
+ struct ckpt_hdr_file_generic {
 -- 
 1.6.0.4
