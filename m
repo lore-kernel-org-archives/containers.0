@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 14/16][cr][v3]: Checkpoint file-leases
-Date: Tue,  3 Aug 2010 16:11:35 -0700
-Message-ID: <1280877097-12377-15-git-send-email-sukadev__19341.076401952$1280878083$gmane$org@linux.vnet.ibm.com>
+Subject: [PATCH 12/16][cr][v3]: Add ->fl_break_notified field.
+Date: Tue,  3 Aug 2010 16:11:33 -0700
+Message-ID: <1280877097-12377-13-git-send-email-sukadev__33440.5967886143$1280878317$gmane$org@linux.vnet.ibm.com>
 References: <1280877097-12377-1-git-send-email-sukadev@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,110 +21,79 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: Matthew Wilcox <matthew-Ztpu424NOJ8@public.gmane.org>, John Stultz <johnstul-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Jamie Lokier <jamie-yetKDKU6eevNLxjTenLetw@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Build upon the C/R of file-locks to checkpoint file-leases. This patch
-simply checkpoints the file-lease information. A follow-on patch
-will use this checkpoint information to restorethe file leases.
+The file_lock->fl_break_notified field will be used when checkpointing and
+restarting a file-lease. It is needed if the application was checkpointed
+during the lease-break-protocol, to "remember" if the application was notified
+of the lease-break.
 
-C/R of file leases depends on whether the lease is currently being broken
-(i.e F_INPROGRESS is set) or not.  If the file-lease is not being broken,
-checkpoint of file-lease is identical to checkpoint of file-locks.
-
-But if the lease is being broken, we checkpoint additional information,
-such as:
-        - the previous lease type,
-        - the time remaining in the lease, and
-        - whether we already notified the lease-holder about the lease-break
-
-See follow-on patch ("Restore file-leases") for more details on how this
-information is used while restoring file leases and for other semantics
-relating to file-leases.
-
-Changelog[v3]:
-	- [Oren Laadan, John Stultz]: Use ->jiffies_begin to compute
-	  remaining lease
-        - Broke-up the draft-patch from previous version into smaller
-          patches and addressed comments from Oren Laadan.
+This patch just initializes the ->fl_break_notified field. It will be used
+in a follow-on patch, when checkpoint/restart of file-leases are implemented.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- fs/checkpoint.c                |   28 +++++++++++++++++++++++++---
- include/linux/checkpoint_hdr.h |    3 +++
- 2 files changed, 28 insertions(+), 3 deletions(-)
+ fs/locks.c         |    7 +++++++
+ include/linux/fs.h |    1 +
+ 2 files changed, 8 insertions(+), 0 deletions(-)
 
-diff --git a/fs/checkpoint.c b/fs/checkpoint.c
-index d76b073..5e5d0c5 100644
---- a/fs/checkpoint.c
-+++ b/fs/checkpoint.c
-@@ -267,6 +267,17 @@ static int checkpoint_file(struct ckpt_ctx *ctx, void *ptr)
- 	return ret;
- }
+diff --git a/fs/locks.c b/fs/locks.c
+index 9a00876..b5eb4c0 100644
+--- a/fs/locks.c
++++ b/fs/locks.c
+@@ -185,6 +185,7 @@ void locks_init_lock(struct file_lock *fl)
+ 	fl->fl_flags = 0;
+ 	fl->fl_type = 0;
+ 	fl->fl_type_prev = 0;
++	fl->fl_break_notified = 0;
+ 	fl->fl_start = fl->fl_end = 0;
+ 	fl->fl_break_time = 0UL;
+ 	fl->fl_ops = NULL;
+@@ -230,6 +231,7 @@ void __locks_copy_lock(struct file_lock *new, const struct file_lock *fl)
+ 	new->fl_type = fl->fl_type;
+ 	new->fl_type_prev = fl->fl_type_prev;
+ 	new->fl_start = fl->fl_start;
++	new->fl_break_notified = fl->fl_break_notified;
+ 	new->fl_end = fl->fl_end;
+ 	new->fl_break_time = 0UL;
+ 	new->fl_ops = NULL;
+@@ -458,6 +460,7 @@ static int lease_init(struct file *filp, int type, struct file_lock *fl)
  
-+static int get_rem_lease(struct ckpt_ctx *ctx, struct file_lock *lock)
-+{
-+	int rem_lease;
+ 	fl->fl_file = filp;
+ 	fl->fl_flags = FL_LEASE;
++	fl->fl_break_notified = 0;
+ 	fl->fl_start = 0;
+ 	fl->fl_end = OFFSET_MAX;
+ 	fl->fl_ops = NULL;
+@@ -1141,6 +1144,8 @@ int lease_modify(struct file_lock **before, int arg)
+ 	struct file_lock *fl = *before;
+ 	int error = assign_type(fl, arg);
+ 
++	fl->fl_break_notified = 0;
 +
-+	rem_lease = 0;
-+	if ((lock->fl_type & F_INPROGRESS))
-+		rem_lease = (lock->fl_break_time - ctx->jiffies_begin) / HZ;
+ 	if (error)
+ 		return error;
+ 	locks_wake_up_blocks(fl);
+@@ -1234,8 +1239,10 @@ int __break_lease(struct inode *inode, unsigned int mode)
+ 			fl->fl_type_prev = fl->fl_type;
+ 			fl->fl_type = future;
+ 			fl->fl_break_time = break_time;
 +
-+	return rem_lease;
-+}
-+
- static int checkpoint_one_file_lock(struct ckpt_ctx *ctx, struct file *file,
- 		struct file_lock *lock)
- {
-@@ -280,8 +291,14 @@ static int checkpoint_one_file_lock(struct ckpt_ctx *ctx, struct file *file,
- 	if (lock) {
- 		h->fl_start = lock->fl_start;
- 		h->fl_end = lock->fl_end;
-+		/* checkpoint F_INPROGRESS also, if set */
- 		h->fl_type = lock->fl_type;
-+		h->fl_type_prev = lock->fl_type_prev;
- 		h->fl_flags = lock->fl_flags;
-+		if (IS_LEASE(lock)) {
-+			h->fl_break_notified = lock->fl_break_notified;
-+			h->fl_rem_lease = get_rem_lease(ctx, lock);
-+		}
- 	} else {
- 		/* Checkpoint a dummy lock as a marker */
- 		CKPT_HDR_SET_MARKER_FILE_LOCK(h);
-@@ -307,14 +324,19 @@ checkpoint_file_locks(struct ckpt_ctx *ctx, struct files_struct *files,
- 	inode = file->f_path.dentry->d_inode;
- 	for_each_lock(inode, lockpp) {
- 		lockp = *lockpp;
--		ckpt_debug("Lock [%lld, %lld, %d, 0x%x]\n", lockp->fl_start,
--				lockp->fl_end, lockp->fl_type, lockp->fl_flags);
-+
-+		ckpt_debug("Lock [%lld, %lld, %d, 0x%x], type_prev %d, "
-+				"break-notified %d, rem-lease %d\n",
-+				lockp->fl_start, lockp->fl_end, lockp->fl_type,
-+				lockp->fl_flags, lockp->fl_type_prev,
-+				lockp->fl_break_notified,
-+				get_rem_lease(ctx, lockp));
+ 			/* lease must have lmops break callback */
+ 			fl->fl_lmops->fl_break(fl);
++			fl->fl_break_notified = 1;
+ 		}
+ 	}
  
- 		if (lockp->fl_owner != files)
- 			continue;
- 
- 		rc = -EBADF;
--		if (IS_POSIX(lockp))
-+		if (IS_POSIX(lockp) || IS_LEASE(lockp))
- 			rc = checkpoint_one_file_lock(ctx, file, lockp);
- 
- 		if (rc < 0) {
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index ad08c8e..9526504 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -593,7 +593,10 @@ struct ckpt_hdr_file_lock {
-        __s64 fl_start;
-        __s64 fl_end;
-        __u8 fl_type;
-+       __u8 fl_type_prev;
-        __u8 fl_flags;
-+       __u8 fl_break_notified;
-+       __s32 fl_rem_lease;
- };
- 
- #define CKPT_HDR_SET_MARKER_FILE_LOCK(h) {		\
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 299cc09..c21f002 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1067,6 +1067,7 @@ struct file_lock {
+ 	unsigned char fl_flags;
+ 	unsigned char fl_type;
+ 	unsigned char fl_type_prev;
++	unsigned char fl_break_notified;
+ 	unsigned int fl_pid;
+ 	struct pid *fl_nspid;
+ 	wait_queue_head_t fl_wait;
 -- 
 1.6.0.4
