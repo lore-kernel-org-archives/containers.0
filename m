@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 12/16][cr][v3]: Add ->fl_break_notified field.
-Date: Tue,  3 Aug 2010 16:11:33 -0700
-Message-ID: <1280877097-12377-13-git-send-email-sukadev__33440.5967886143$1280878317$gmane$org@linux.vnet.ibm.com>
+Subject: [PATCH 13/16][cr][v3]: Add jiffies_begin field to ckpt_ctx
+Date: Tue,  3 Aug 2010 16:11:34 -0700
+Message-ID: <1280877097-12377-14-git-send-email-sukadev__31319.782723631$1280878430$gmane$org@linux.vnet.ibm.com>
 References: <1280877097-12377-1-git-send-email-sukadev@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,79 +21,40 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: Matthew Wilcox <matthew-Ztpu424NOJ8@public.gmane.org>, John Stultz <johnstul-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Jamie Lokier <jamie-yetKDKU6eevNLxjTenLetw@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-The file_lock->fl_break_notified field will be used when checkpointing and
-restarting a file-lease. It is needed if the application was checkpointed
-during the lease-break-protocol, to "remember" if the application was notified
-of the lease-break.
-
-This patch just initializes the ->fl_break_notified field. It will be used
-in a follow-on patch, when checkpoint/restart of file-leases are implemented.
+'jiffies_begin' is needed to compute relative time-offsets after restart.
+We cannot use ->ktime_begin for these computations since, as pointed out
+by John Stultz, converting jiffies to CLOCK_MONOTONIC can result in
+incorrect values.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- fs/locks.c         |    7 +++++++
- include/linux/fs.h |    1 +
- 2 files changed, 8 insertions(+), 0 deletions(-)
+ include/linux/checkpoint_types.h |    1 +
+ kernel/checkpoint/sys.c          |    1 +
+ 2 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/fs/locks.c b/fs/locks.c
-index 9a00876..b5eb4c0 100644
---- a/fs/locks.c
-+++ b/fs/locks.c
-@@ -185,6 +185,7 @@ void locks_init_lock(struct file_lock *fl)
- 	fl->fl_flags = 0;
- 	fl->fl_type = 0;
- 	fl->fl_type_prev = 0;
-+	fl->fl_break_notified = 0;
- 	fl->fl_start = fl->fl_end = 0;
- 	fl->fl_break_time = 0UL;
- 	fl->fl_ops = NULL;
-@@ -230,6 +231,7 @@ void __locks_copy_lock(struct file_lock *new, const struct file_lock *fl)
- 	new->fl_type = fl->fl_type;
- 	new->fl_type_prev = fl->fl_type_prev;
- 	new->fl_start = fl->fl_start;
-+	new->fl_break_notified = fl->fl_break_notified;
- 	new->fl_end = fl->fl_end;
- 	new->fl_break_time = 0UL;
- 	new->fl_ops = NULL;
-@@ -458,6 +460,7 @@ static int lease_init(struct file *filp, int type, struct file_lock *fl)
+diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
+index 3ffe9bd..aba9380 100644
+--- a/include/linux/checkpoint_types.h
++++ b/include/linux/checkpoint_types.h
+@@ -33,6 +33,7 @@ struct ckpt_ctx {
+ 	int crid;		/* unique checkpoint id */
  
- 	fl->fl_file = filp;
- 	fl->fl_flags = FL_LEASE;
-+	fl->fl_break_notified = 0;
- 	fl->fl_start = 0;
- 	fl->fl_end = OFFSET_MAX;
- 	fl->fl_ops = NULL;
-@@ -1141,6 +1144,8 @@ int lease_modify(struct file_lock **before, int arg)
- 	struct file_lock *fl = *before;
- 	int error = assign_type(fl, arg);
+ 	ktime_t ktime_begin;	/* checkpoint start time */
++	unsigned long jiffies_begin;
  
-+	fl->fl_break_notified = 0;
-+
- 	if (error)
- 		return error;
- 	locks_wake_up_blocks(fl);
-@@ -1234,8 +1239,10 @@ int __break_lease(struct inode *inode, unsigned int mode)
- 			fl->fl_type_prev = fl->fl_type;
- 			fl->fl_type = future;
- 			fl->fl_break_time = break_time;
-+
- 			/* lease must have lmops break callback */
- 			fl->fl_lmops->fl_break(fl);
-+			fl->fl_break_notified = 1;
- 		}
- 	}
+ 	int root_init;				/* [container] root init ? */
+ 	pid_t root_pid;				/* [container] root pid */
+diff --git a/kernel/checkpoint/sys.c b/kernel/checkpoint/sys.c
+index b761ec0..0beeee5 100644
+--- a/kernel/checkpoint/sys.c
++++ b/kernel/checkpoint/sys.c
+@@ -278,6 +278,7 @@ static struct ckpt_ctx *ckpt_ctx_alloc(int fd, unsigned long uflags,
+ 	ctx->uflags = uflags;
+ 	ctx->kflags = kflags;
+ 	ctx->ktime_begin = ktime_get();
++	ctx->jiffies_begin = jiffies;
+ 	ctx->coord_pidns = get_pid_ns(current->nsproxy->pid_ns);
  
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 299cc09..c21f002 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -1067,6 +1067,7 @@ struct file_lock {
- 	unsigned char fl_flags;
- 	unsigned char fl_type;
- 	unsigned char fl_type_prev;
-+	unsigned char fl_break_notified;
- 	unsigned int fl_pid;
- 	struct pid *fl_nspid;
- 	wait_queue_head_t fl_wait;
+ 	atomic_set(&ctx->refcount, 0);
 -- 
 1.6.0.4
