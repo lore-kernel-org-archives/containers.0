@@ -1,14 +1,14 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH 04/16][cr][v3]: Restore file_owner info
-Date: Wed, 04 Aug 2010 19:01:29 -0400
-Message-ID: <4C59F149.90606__6279.51148567281$1280962923$gmane$org@cs.columbia.edu>
-References: <1280877097-12377-1-git-send-email-sukadev@linux.vnet.ibm.com>
-	<1280877097-12377-5-git-send-email-sukadev@linux.vnet.ibm.com>
+From: Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>
+Subject: Re: [PATCH 3/4] restart thread safety: remove malloc from genstack
+Date: Wed, 04 Aug 2010 18:08:56 -0500
+Message-ID: <1280963336.9502.1.camel@localhost>
+References: <1280169472.7875.4290.camel@localhost>
+	<1280509713-6745-3-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1280877097-12377-5-git-send-email-sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <1280509713-6745-3-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,101 +18,17 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Matthew Wilcox <matthew-Ztpu424NOJ8@public.gmane.org>, John Stultz <johnstul-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Jamie Lokier <jamie-yetKDKU6eevNLxjTenLetw@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+On Fri, 2010-07-30 at 13:08 -0400, Oren Laadan wrote:
+> We use clone and eclone directly and not through glibc, therefore
+> must explicitly care about thread-safety of malloc.
+> 
+> This patch eliminates the use of malloc() in genstack_alloc().
+> Use mmap() instead. While an overkill, I don't expect performance
+> issues of this.
 
-
-On 08/03/2010 07:11 PM, Sukadev Bhattiprolu wrote:
-> Restore the file-owner information for each 'struct file'.  This is
-> essentially is like a new fcntl(F_SETOWN) and fcntl(F_SETSIG) calls,
-> except that the pid, uid, euid and signum values are read from the
-> checkpoint image.
->
-> Changelog[v3]:
-> 	- [Oren Laadan]: Ensure find_vpid() found a valid pid before
-> 	  making it the file owner.
-> Changelog[v2]:
-> 	- [Matt Helsley, Serge Hallyn]: Don't trust uids in checkpoint image.
-> 	  (added CAP_KILL check)
-> 	- Check that signal number read from the checkpoint image is valid.
-> 	  (not sure it is required, since its an incomplete check for tampering)
->
-> Signed-off-by: Sukadev Bhattiprolu<sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-
-I may have missed a previous discussion on this - but: do you
-plan to relate the uid/euid to the userns ?
-
-[...]
-
-> diff --git a/fs/checkpoint.c b/fs/checkpoint.c
-> index ce1b4af..b5486c1 100644
-> --- a/fs/checkpoint.c
-> +++ b/fs/checkpoint.c
-> @@ -618,6 +618,68 @@ static int attach_file(struct file *file)
->   	return fd;
->   }
->
-> +static int restore_file_owner(struct ckpt_ctx *ctx, struct ckpt_hdr_file *h,
-> +		struct file *file)
-> +{
-> +	int ret;
-> +	struct pid *pid;
-> +	uid_t uid, euid;
-> +
-> +	uid = h->f_owner_uid;
-> +	euid = h->f_owner_euid;
-> +
-> +	ckpt_debug("restore_file_owner(): uid %u, euid %u, pid %d, type %d\n",
-> +			uid, euid, h->f_owner_pid, h->f_owner_pid_type);
-> +	/*
-> +	 * We can't trust the uids in the checkpoint image and normally need
-> +	 * CAP_KILL. But if the uids match our ids, should be fine since we
-> +	 * have access to the file.
-> +	 *
-> +	 * TODO: Move this check to __f_setown() ?
-> +	 */
-> +	ret = -EACCES;
-> +	if (!capable(CAP_KILL)&&
-> +			(uid != current_uid() || euid != current_euid())) {
-> +		ckpt_err(ctx, ret, "image uids [%d, %d] don't match current "
-> +				"process uids [%d, %d] and no CAP_KILL\n",
-> +				uid, euid, current_uid(), current_euid());
-> +		return ret;
-> +	}
-> +
-> +	ret = -EINVAL;
-> +	if (!valid_signal(h->f_owner_signum)) {
-> +		ckpt_err(ctx, ret, "Invalid signum %d\n", h->f_owner_signum);
-> +		return ret;
-> +	}
-> +	file->f_owner.signum = h->f_owner_signum;
-> +
-> +	rcu_read_lock();
-> +
-> +	/*
-> +	 * If file had a non-NULL owner and we can't find the owner after
-> +	 * restart, return error.
-> +	 */
-> +	pid = find_vpid(h->f_owner_pid);
-> +	if (h->f_owner_pid&&  !pid)
-> +		ret = -ESRCH;
-> +	else {
-> +		/*
-> +		 * TODO: Do we need 'force' to be 1 here or can it be 0 ?
-> +		 * 	 'force' is used to modify the owner, if one is
-> +		 * 	 already set. Can it be set when we restart an
-> +		 * 	 application ?
-> +		 */
-> +		ret = __f_setown(file, pid, h->f_owner_pid_type, uid, euid, 1);
-
-__f_setown() does not check its pid_type argument - you need
-to sanitize here, no ?
-
-(and not that I expect the PIDTYPE_... will ever change, but -
-possibly encode the PIDTYPE_... types into CKPT_PIDTYPE_... )
-
-[...]
-
-Oren.
+Other than a missed conversion of free -> munmap in one of the error
+paths in genstack_alloc, this looks fine.
