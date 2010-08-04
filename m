@@ -1,13 +1,15 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/2] Add ipc_namespace to struct sem_undo_list
-Date: Wed,  4 Aug 2010 10:02:24 -0700
-Message-ID: <1280941345-27566-2-git-send-email-danms@us.ibm.com>
-References: <1280941345-27566-1-git-send-email-danms@us.ibm.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 00/16][cr][v3]: C/R file owner, locks, leases
+Date: Wed, 4 Aug 2010 10:26:49 -0700
+Message-ID: <20100804172649.GM2927__7435.41726046732$1280943405$gmane$org@count0.beaverton.ibm.com>
+References: <1280877097-12377-1-git-send-email-sukadev@linux.vnet.ibm.com>
+	<1280918720.2566.18.camel@localhost>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1280941345-27566-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1280918720.2566.18.camel@localhost>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,107 +19,66 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Steven Whitehouse <swhiteho-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Matthew Wilcox <matthew-Ztpu424NOJ8@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Jamie Lokier <jamie-yetKDKU6eevNLxjTenLetw@public.gmane.org>, John Stultz <johnstul-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Checkpoint/Restart needs to have a pointer to the ipc_namespace that the
-sem_undo_list applies to in order to properly bring up and tear down
-the object hash.  This patch adds a pointer to the namespace to the list
-structure, as well as breaks out the allocation of the undo list to a
-separate function (which is needed in a later C/R patch anyway).
+On Wed, Aug 04, 2010 at 11:45:20AM +0100, Steven Whitehouse wrote:
+> Hi,
+> 
+> On Tue, 2010-08-03 at 16:11 -0700, Sukadev Bhattiprolu wrote:
+> > Checkpoint/restart file owner, file-locks and file-lease information.
+> > 
+> Can you explain roughly how this is intended to work, or point me at a
+> document explaining it?
+> 
+> I'm trying to figure out how the file lock checkpoint will work with
+> cluster filesystems, or if there needs to be a mechanism to turn this
+> feature off for those filesystems. What prevents the lock state changing
+> in an incompatible way between the checkpoint and the restore?
 
-Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- include/linux/sem.h |    2 ++
- ipc/sem.c           |   30 +++++++++++++++++++++---------
- 2 files changed, 23 insertions(+), 9 deletions(-)
+Hi Steve,
 
-diff --git a/include/linux/sem.h b/include/linux/sem.h
-index 8a4adbe..8cf9636 100644
---- a/include/linux/sem.h
-+++ b/include/linux/sem.h
-@@ -127,12 +127,14 @@ struct sem_undo {
- 	short *			semadj;		/* array of adjustments, one per semaphore */
- };
- 
-+struct ipc_namespace;
- /* sem_undo_list controls shared access to the list of sem_undo structures
-  * that may be shared among all a CLONE_SYSVSEM task group.
-  */ 
- struct sem_undo_list {
- 	atomic_t		refcnt;
- 	spinlock_t		lock;
-+	struct ipc_namespace	*ipc_ns;
- 	struct list_head	list_proc;
- };
- 
-diff --git a/ipc/sem.c b/ipc/sem.c
-index 37da85e..e439b73 100644
---- a/ipc/sem.c
-+++ b/ipc/sem.c
-@@ -983,6 +983,21 @@ asmlinkage long SyS_semctl(int semid, int semnum, int cmd, union semun arg)
- SYSCALL_ALIAS(sys_semctl, SyS_semctl);
- #endif
- 
-+static struct sem_undo_list *alloc_undo_list(struct ipc_namespace *ipc_ns)
-+{
-+	struct sem_undo_list *undo_list;
-+
-+	undo_list = kzalloc(sizeof(*undo_list), GFP_KERNEL);
-+	if (undo_list == NULL)
-+		return NULL;
-+	spin_lock_init(&undo_list->lock);
-+	atomic_set(&undo_list->refcnt, 1);
-+	INIT_LIST_HEAD(&undo_list->list_proc);
-+	undo_list->ipc_ns = ipc_ns;
-+
-+	return undo_list;
-+}
-+
- /* If the task doesn't already have a undo_list, then allocate one
-  * here.  We guarantee there is only one thread using this undo list,
-  * and current is THE ONE
-@@ -994,19 +1009,16 @@ SYSCALL_ALIAS(sys_semctl, SyS_semctl);
-  *
-  * This can block, so callers must hold no locks.
-  */
--static inline int get_undo_list(struct sem_undo_list **undo_listp)
-+static inline int get_undo_list(struct sem_undo_list **undo_listp,
-+				struct ipc_namespace *ipc_ns)
- {
- 	struct sem_undo_list *undo_list;
- 
- 	undo_list = current->sysvsem.undo_list;
- 	if (!undo_list) {
--		undo_list = kzalloc(sizeof(*undo_list), GFP_KERNEL);
--		if (undo_list == NULL)
-+		undo_list = alloc_undo_list(ipc_ns);
-+		if (!undo_list)
- 			return -ENOMEM;
--		spin_lock_init(&undo_list->lock);
--		atomic_set(&undo_list->refcnt, 1);
--		INIT_LIST_HEAD(&undo_list->list_proc);
--
- 		current->sysvsem.undo_list = undo_list;
- 	}
- 	*undo_listp = undo_list;
-@@ -1057,7 +1069,7 @@ static struct sem_undo *find_alloc_undo(struct ipc_namespace *ns, int semid)
- 	int nsems;
- 	int error;
- 
--	error = get_undo_list(&ulp);
-+	error = get_undo_list(&ulp, ns);
- 	if (error)
- 		return ERR_PTR(error);
- 
-@@ -1328,7 +1340,7 @@ int copy_semundo(unsigned long clone_flags, struct task_struct *tsk)
- 	int error;
- 
- 	if (clone_flags & CLONE_SYSVSEM) {
--		error = get_undo_list(&undo_list);
-+		error = get_undo_list(&undo_list, tsk->nsproxy->ipc_ns);
- 		if (error)
- 			return error;
- 		atomic_inc(&undo_list->refcnt);
--- 
-1.7.1.1
+[ I'm just going to address your cluster filesystem question and let
+  Suka answer your questions on these patches. ]
+
+	Open files whose file operations structs are missing the
+.checkpoint operation cause checkpoint to fail. We haven't added a
+.checkpoint operation to cluster filesystems because of the kinds of
+issues you're referring to.
+
+	I don't think there are any file locks/leases which do not
+require opening the file(s) in question. That means file locks
+and leases in cluster filesystems should also cause checkpoint
+to fail.
+
+	Each cluster filesystem probably needs some special care when
+considering the use of the generic_file_checkpoint operation. 
+
+	Using generic_file_checkpoint is appropriate when we have some
+way to get a consistent image of the filesystem at the time checkpoint
+takes place. How that happens is largely up to the userspace tools
+called user-cr. Device-mapper snapshots, fsfreezer + rsync, and
+filesystem snapshots will all work. Of course those tools usually don't
+save more volatile state information like locks.
+
+	It's quite possible cluster filesystems will need their own
+.checkpoint file operations. generic_file_checkpoint is composed of a few
+smaller functions which could make writing such ops easier. For example,
+we've already reused the smaller functions in .checkpoint operations for
+anon_inode-based interfaces, pipes, fifos, and more,
+
+	What it may come down to is this: How do you backup a cluster
+filesystem? If there's already a backup method that works then we can
+write the .checkpoint operation to rely on it. Often that means we
+can use generic_file_checkpoint. The "backup method" should be
+something which can be invoked by the userspace checkpoint/restart tools
+(user-cr). If the backup method is too slow we can work on
+improving it or we can try something else.
+
+	So perhaps the best thing we can do to help you is learn how
+folks backup their cluster filesystems. Got any pointers to basic info
+on that?
+
+Cheers,
+	-Matt Helsley
