@@ -1,17 +1,13 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH v4 2/2] cgroups: make procs file writable
-Date: Tue, 3 Aug 2010 21:46:29 -0700
-Message-ID: <AANLkTikxYHOCbuh=6R43BjzZ5QCA2kfTpt7h_ZrEbNoU__37464.2399409369$1280897224$gmane$org@mail.gmail.com>
-References: <20100730235649.GA22644@ghc17.ghc.andrew.cmu.edu>
-	<20100730235902.GC22644@ghc17.ghc.andrew.cmu.edu>
-	<20100804100811.199d73ba.kamezawa.hiroyu@jp.fujitsu.com>
-	<AANLkTikMofFGHSwF2QrdcAsit+hU6ihndhK5cod8duwS@mail.gmail.com>
-	<20100804043849.GC11950@ghc17.ghc.andrew.cmu.edu>
+From: Steven Whitehouse <swhiteho-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 00/16][cr][v3]: C/R file owner, locks, leases
+Date: Wed, 04 Aug 2010 11:45:20 +0100
+Message-ID: <1280918720.2566.18.camel__26802.3170916878$1280918571$gmane$org@localhost>
+References: <1280877097-12377-1-git-send-email-sukadev@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100804043849.GC11950-dJQ2lsn+DImqwBT9kiuFm8WGCVk0P7UB@public.gmane.org>
+In-Reply-To: <1280877097-12377-1-git-send-email-sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,41 +17,21 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Matthew Wilcox <matthew-Ztpu424NOJ8@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Jamie Lokier <jamie-yetKDKU6eevNLxjTenLetw@public.gmane.org>, John Stultz <johnstul-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Aug 3, 2010 at 9:38 PM, Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org> wrote:
->
-> rcu_read_lock();
-> for_each_subsys(...) {
-> =A0 =A0 =A0 =A0can_attach(...);
-> }
-> rcu_read_unlock();
+Hi,
 
-Sorry, I was misreading this, and didn't notice that it was already
-inside an "if (threadgroup) {}" test.
+On Tue, 2010-08-03 at 16:11 -0700, Sukadev Bhattiprolu wrote:
+> Checkpoint/restart file owner, file-locks and file-lease information.
+> 
+Can you explain roughly how this is intended to work, or point me at a
+document explaining it?
 
->
-> Which forces all can_attaches to not sleep. So by dropping
-> rcu_read_lock(), we allow the possibility of the exec race I described
-> in my last email, and therefore we have to check each time we re-acquire
-> rcu_read to iterate thread_group.
+I'm trying to figure out how the file lock checkpoint will work with
+cluster filesystems, or if there needs to be a mechanism to turn this
+feature off for those filesystems. What prevents the lock state changing
+in an incompatible way between the checkpoint and the restore?
 
-Agreed.
-
->
-> Yeah, it is not pretty. I call it "double-double-toil-and-trouble-check
-> locking". But it is safe.
-
-As a cleanup, I'd be inclined to have a wrapper in cgroup.c, something like
-
-cgroup_can_attach_threadgroup(struct cgroup_subsys *ss, struct cgroup
-*cg, struct task_struct *leader, int (*cb)(struct task_struct *t,
-struct cgroup *cg))
-
-which handles the RCU section, checking threadgroup_leader(), and
-looping through each thread. The the subsystem just has to define a
-callback which will be called for each thread.
-
-Paul
+Steve.
