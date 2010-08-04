@@ -1,15 +1,16 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH 00/16][cr][v3]: C/R file owner, locks, leases
-Date: Wed, 04 Aug 2010 15:16:17 -0400
-Message-ID: <4C59BC81.80401__19539.1572466635$1280949555$gmane$org@cs.columbia.edu>
-References: <1280877097-12377-1-git-send-email-sukadev@linux.vnet.ibm.com>
-	<1280918720.2566.18.camel@localhost>
-	<20100804190112.GA11571@us.ibm.com>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 2/2] Add support for the per-task sem_undo list (v2)
+Date: Wed, 04 Aug 2010 13:17:12 -0700
+Message-ID: <87pqxyku9j.fsf@caffeine.danplanet.com>
+References: <1280941345-27566-1-git-send-email-danms@us.ibm.com>
+	<1280941345-27566-3-git-send-email-danms@us.ibm.com>
+	<4C59B625.7000007@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100804190112.GA11571-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4C59B625.7000007-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> (Oren Laadan's message of
+	"Wed\, 04 Aug 2010 14\:49\:09 -0400")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,40 +20,51 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Matthew Wilcox <matthew-Ztpu424NOJ8@public.gmane.org>, John Stultz <johnstul-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Jamie Lokier <jamie-yetKDKU6eevNLxjTenLetw@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Steven Whitehouse <swhiteho-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+>> +static void put_undo_list(struct sem_undo_list *ulp);
 
-On 08/04/2010 03:01 PM, Sukadev Bhattiprolu wrote:
-> Steven Whitehouse [swhiteho-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org] wrote:
-> | Hi,
-> |
-> | On Tue, 2010-08-03 at 16:11 -0700, Sukadev Bhattiprolu wrote:
-> |>  Checkpoint/restart file owner, file-locks and file-lease information.
-> |>
-> | Can you explain roughly how this is intended to work, or point me at a
-> | document explaining it?
->
-> Well, there is no document atm and I tried to explain how it is supposed
-> to work in the patches that restart file-locks (patches 4. 9, 16).
->
-> |
-> | I'm trying to figure out how the file lock checkpoint will work with
-> | cluster filesystems, or if there needs to be a mechanism to turn this
-> | feature off for those filesystems. What prevents the lock state changing
-> | in an incompatible way between the checkpoint and the restore?
->
-> But I see that your question is about the bigger picture. Given that
-> this question was asked on the previous version of the patchset, I will
-> add a FAQ/description in patch 0 next time.
->
-> For now, please see:
->
-> 	http://marc.info/?l=linux-fsdevel&m=127657580718791&w=2
->
+OL> nit: to me it makes more sense to move
+OL> grab/drop/checkpoint/restart code, as well sem_init(), to the end
+OL> of the file (and avoid those statics...).
 
-Would probably be a good idea to put something on the wiki
-and/or inside Documentation/checkpoint/...
+Okay, was trying to avoid chopping the file up too much.
 
-Oren
+OL> Can get rid of ..._users() since we don't collect them.
+
+Oops :)
+
+OL> semadj is short, so:
+OL> s/__u16/__s16/
+
+Gah, yeah, I always want everything to be unsigned for some reason :D
+
+>> -		sma = sem_lock_check(tsk->nsproxy->ipc_ns, un->semid);
+>> +		sma = sem_lock_check(ulp->ipc_ns, un->semid);
+
+OL> This hunk belongs to previous patch, no ?
+
+It could, but it seems more relevant when converting the function from
+using a task to using just the undo_list itself...
+
+>> +	atomic_inc(&ulp->refcnt);
+
+OL> I suspect there is a leak here: atomic_inc is needed only for
+OL> tasks other than the first task; The first task already gets the
+OL> refcount deep inside find_alloc_undo(), and the hash-table gets
+OL> its ref via the obj->grab method.
+
+But then it drops that ref right after it inserts it, thus we need
+another one, right?.  I think the confusion may come from the fact
+that the hash assumes the first refcount is its own and the caller of
+restore_obj() will grab another (for the task, in this case).  Since
+we don't do that, we need to grab both early on.  I hit this in
+another place in the network stuff, IIRC, which generated a similar
+review comment ;)
+
+-- 
+Dan Smith
+IBM Linux Technology Center
+email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
