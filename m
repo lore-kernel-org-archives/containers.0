@@ -1,18 +1,13 @@
 From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/2] Add support for the per-task sem_undo list (v2)
-Date: Thu, 05 Aug 2010 09:17:31 -0700
-Message-ID: <87aap1kp9g.fsf@caffeine.danplanet.com>
-References: <1280941345-27566-1-git-send-email-danms@us.ibm.com>
-	<1280941345-27566-3-git-send-email-danms@us.ibm.com>
-	<4C59B625.7000007@cs.columbia.edu>
-	<87pqxyku9j.fsf@caffeine.danplanet.com>
-	<4C59DBD0.1000107@cs.columbia.edu>
-	<87lj8mkqhk.fsf@caffeine.danplanet.com>
-	<4C59E010.2090200@cs.columbia.edu>
+Subject: [PATCH 3/3] Add support for the per-task sem_undo list (v3.01)
+Date: Thu,  5 Aug 2010 10:54:49 -0700
+Message-ID: <1281030889-1260-3-git-send-email-danms@us.ibm.com>
+References: <1281030889-1260-2-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1281030889-1260-2-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,24 +17,8 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
-
-OL> Deal :)
-
-Okay, included below.  I put the refcount for the first task before
-the "out:" label to avoid the curly braces on the else clause, which
-should be functionally the same.  Hope that's okay :)
-
-Thanks!
-
--- 
-Dan Smith
-IBM Linux Technology Center
-email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-
-Add support for the per-task sem_undo list (v3)
 
 The semaphore undo list is a set of adjustments to be made to semaphores
 held by a task on exit.  Right now, we do not checkpoint or restore this
@@ -52,6 +31,9 @@ Changes in v3:
  - Fix uses of __u16 to represent a short
  - Fix potential for overrunning the un->semadj buffer in restore
  - Move the checkpoint object and init functions to the bottom of sem.c
+ - Use ckpt_read_payload() instead of allocating our own semadj buffer
+ - Change the build bug macro to use the new one introduced in the previous
+   patch
 
 Changes in v2:
  - Remove collect operation
@@ -65,6 +47,12 @@ Changes in v2:
    from our drop() function in case we're the last one.
 
 Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ include/linux/checkpoint.h     |    4 +
+ include/linux/checkpoint_hdr.h |   18 ++
+ ipc/sem.c                      |  344 ++++++++++++++++++++++++++++++++++++++--
+ kernel/checkpoint/process.c    |   13 ++
+ 4 files changed, 363 insertions(+), 16 deletions(-)
 
 diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
 index 4e25042..a11d40e 100644
@@ -82,10 +70,10 @@ index 4e25042..a11d40e 100644
  extern void ckpt_pgarr_free(struct ckpt_ctx *ctx);
  
 diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index f4f9577..b48fa37 100644
+index 75d863d..005cd8d 100644
 --- a/include/linux/checkpoint_hdr.h
 +++ b/include/linux/checkpoint_hdr.h
-@@ -167,6 +167,10 @@ enum {
+@@ -182,6 +182,10 @@ enum {
  #define CKPT_HDR_IPC_MSG_MSG CKPT_HDR_IPC_MSG_MSG
  	CKPT_HDR_IPC_SEM,
  #define CKPT_HDR_IPC_SEM CKPT_HDR_IPC_SEM
@@ -96,7 +84,7 @@ index f4f9577..b48fa37 100644
  
  	CKPT_HDR_SIGHAND = 601,
  #define CKPT_HDR_SIGHAND CKPT_HDR_SIGHAND
-@@ -273,6 +277,8 @@ enum obj_type {
+@@ -288,6 +292,8 @@ enum obj_type {
  #define CKPT_OBJ_NET_NS CKPT_OBJ_NET_NS
  	CKPT_OBJ_NETDEV,
  #define CKPT_OBJ_NETDEV CKPT_OBJ_NETDEV
@@ -105,7 +93,7 @@ index f4f9577..b48fa37 100644
  	CKPT_OBJ_MAX
  #define CKPT_OBJ_MAX CKPT_OBJ_MAX
  };
-@@ -461,6 +467,17 @@ struct ckpt_hdr_ns {
+@@ -476,6 +482,17 @@ struct ckpt_hdr_ns {
  	__s32 net_objref;
  } __attribute__((aligned(8)));
  
@@ -123,7 +111,7 @@ index f4f9577..b48fa37 100644
  /* cannot include <linux/tty.h> from userspace, so define: */
  #define CKPT_NEW_UTS_LEN  64
  #ifdef __KERNEL__
-@@ -487,6 +504,7 @@ struct ckpt_hdr_task_objs {
+@@ -502,6 +519,7 @@ struct ckpt_hdr_task_objs {
  	__s32 files_objref;
  	__s32 mm_objref;
  	__s32 fs_objref;
@@ -132,7 +120,7 @@ index f4f9577..b48fa37 100644
  	__s32 signal_objref;
  } __attribute__((aligned(8)));
 diff --git a/ipc/sem.c b/ipc/sem.c
-index e439b73..d79b1ee 100644
+index e439b73..ee5b386 100644
 --- a/ipc/sem.c
 +++ b/ipc/sem.c
 @@ -132,14 +132,6 @@ void sem_exit_ns(struct ipc_namespace *ns)
@@ -192,7 +180,7 @@ index e439b73..d79b1ee 100644
  #ifdef CONFIG_PROC_FS
  static int sysvipc_sem_proc_show(struct seq_file *s, void *it)
  {
-@@ -1470,3 +1466,324 @@ static int sysvipc_sem_proc_show(struct seq_file *s, void *it)
+@@ -1470,3 +1466,319 @@ static int sysvipc_sem_proc_show(struct seq_file *s, void *it)
  			  sma->sem_ctime);
  }
  #endif
@@ -382,18 +370,14 @@ index e439b73..d79b1ee 100644
 +	int ret = -ENOMEM;
 +	struct sem_undo *un;
 +	int nsems;
-+	short *semadj = NULL;
++	__s16 *semadj = NULL;
 +
 +	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_TASK_SEM_UNDO);
 +	if (IS_ERR(h))
 +		return PTR_ERR(h);
 +
 +	len = sizeof(__s16) * h->semadj_count;
-+	semadj = kzalloc(len, GFP_KERNEL);
-+	if (!semadj)
-+		goto out;
-+
-+	ret = _ckpt_read_buffer(ctx, semadj, len);
++	ret = ckpt_read_payload(ctx, (void **)&semadj, len, CKPT_HDR_BUFFER);
 +	if (ret < 0)
 +		goto out;
 +
@@ -510,10 +494,9 @@ index e439b73..d79b1ee 100644
 +				"       key      semid perms      nsems   uid   gid  cuid  cgid      otime      ctime\n",
 +				IPC_SEM_IDS, sysvipc_sem_proc_show);
 +
-+	/* sem_undo_list          uses a short
-+	*  ckpt_hdr_task_sem_undo uses a __s16
-+	*/
-+	BUILD_BUG_ON(sizeof(short) != sizeof(__s16));
++	/* sem_undo_list uses a short but we write a __s16 */
++	CKPT_BUILD_BUG_ON_MISMATCH(*CKPT_STRUCT_MEMBER(sem_undo, semadj),
++				   __s16);
 +
 +	register_checkpoint_obj(&ckpt_obj_sem_undo_ops);
 +}
@@ -562,3 +545,5 @@ index 936675a..4ec9cdd 100644
  	ret = restore_obj_sighand(ctx, h->sighand_objref);
  	ckpt_debug("sighand: ret %d (%p)\n", ret, current->sighand);
  	if (ret < 0)
+-- 
+1.7.1.1
