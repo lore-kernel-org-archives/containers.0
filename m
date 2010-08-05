@@ -1,8 +1,7 @@
 From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/3] Add two macros for build-time testing of time
-	compatibility
-Date: Thu,  5 Aug 2010 10:54:48 -0700
-Message-ID: <1281030889-1260-2-git-send-email-danms@us.ibm.com>
+Subject: [PATCH] Add two macros for build-time testing of time compatibility
+Date: Thu,  5 Aug 2010 10:55:30 -0700
+Message-ID: <1281030930-1699-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
