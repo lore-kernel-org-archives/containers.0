@@ -1,13 +1,15 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/2] Add ipc_namespace to struct sem_undo_list
-Date: Thu,  5 Aug 2010 10:57:05 -0700
-Message-ID: <1281031026-2357-2-git-send-email-danms@us.ibm.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 2/2] Add support for the per-task sem_undo list (v3.01)
+Date: Thu, 5 Aug 2010 14:48:42 -0700
+Message-ID: <20100805214842.GP2927@count0.beaverton.ibm.com>
 References: <1281031026-2357-1-git-send-email-danms@us.ibm.com>
+	<1281031026-2357-3-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1281031026-2357-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1281031026-2357-3-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,107 +19,185 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Checkpoint/Restart needs to have a pointer to the ipc_namespace that the
-sem_undo_list applies to in order to properly bring up and tear down
-the object hash.  This patch adds a pointer to the namespace to the list
-structure, as well as breaks out the allocation of the undo list to a
-separate function (which is needed in a later C/R patch anyway).
+On Thu, Aug 05, 2010 at 10:57:06AM -0700, Dan Smith wrote:
+> The semaphore undo list is a set of adjustments to be made to semaphores
+> held by a task on exit.  Right now, we do not checkpoint or restore this
+> list which could cause undesirable behavior by a restarted process on exit.
 
-Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- include/linux/sem.h |    2 ++
- ipc/sem.c           |   30 +++++++++++++++++++++---------
- 2 files changed, 23 insertions(+), 9 deletions(-)
+<snip>
 
-diff --git a/include/linux/sem.h b/include/linux/sem.h
-index 8a4adbe..8cf9636 100644
---- a/include/linux/sem.h
-+++ b/include/linux/sem.h
-@@ -127,12 +127,14 @@ struct sem_undo {
- 	short *			semadj;		/* array of adjustments, one per semaphore */
- };
- 
-+struct ipc_namespace;
- /* sem_undo_list controls shared access to the list of sem_undo structures
-  * that may be shared among all a CLONE_SYSVSEM task group.
-  */ 
- struct sem_undo_list {
- 	atomic_t		refcnt;
- 	spinlock_t		lock;
-+	struct ipc_namespace	*ipc_ns;
- 	struct list_head	list_proc;
- };
- 
-diff --git a/ipc/sem.c b/ipc/sem.c
-index 37da85e..e439b73 100644
---- a/ipc/sem.c
-+++ b/ipc/sem.c
-@@ -983,6 +983,21 @@ asmlinkage long SyS_semctl(int semid, int semnum, int cmd, union semun arg)
- SYSCALL_ALIAS(sys_semctl, SyS_semctl);
- #endif
- 
-+static struct sem_undo_list *alloc_undo_list(struct ipc_namespace *ipc_ns)
-+{
-+	struct sem_undo_list *undo_list;
-+
-+	undo_list = kzalloc(sizeof(*undo_list), GFP_KERNEL);
-+	if (undo_list == NULL)
-+		return NULL;
-+	spin_lock_init(&undo_list->lock);
-+	atomic_set(&undo_list->refcnt, 1);
-+	INIT_LIST_HEAD(&undo_list->list_proc);
-+	undo_list->ipc_ns = ipc_ns;
-+
-+	return undo_list;
-+}
-+
- /* If the task doesn't already have a undo_list, then allocate one
-  * here.  We guarantee there is only one thread using this undo list,
-  * and current is THE ONE
-@@ -994,19 +1009,16 @@ SYSCALL_ALIAS(sys_semctl, SyS_semctl);
-  *
-  * This can block, so callers must hold no locks.
-  */
--static inline int get_undo_list(struct sem_undo_list **undo_listp)
-+static inline int get_undo_list(struct sem_undo_list **undo_listp,
-+				struct ipc_namespace *ipc_ns)
- {
- 	struct sem_undo_list *undo_list;
- 
- 	undo_list = current->sysvsem.undo_list;
- 	if (!undo_list) {
--		undo_list = kzalloc(sizeof(*undo_list), GFP_KERNEL);
--		if (undo_list == NULL)
-+		undo_list = alloc_undo_list(ipc_ns);
-+		if (!undo_list)
- 			return -ENOMEM;
--		spin_lock_init(&undo_list->lock);
--		atomic_set(&undo_list->refcnt, 1);
--		INIT_LIST_HEAD(&undo_list->list_proc);
--
- 		current->sysvsem.undo_list = undo_list;
- 	}
- 	*undo_listp = undo_list;
-@@ -1057,7 +1069,7 @@ static struct sem_undo *find_alloc_undo(struct ipc_namespace *ns, int semid)
- 	int nsems;
- 	int error;
- 
--	error = get_undo_list(&ulp);
-+	error = get_undo_list(&ulp, ns);
- 	if (error)
- 		return ERR_PTR(error);
- 
-@@ -1328,7 +1340,7 @@ int copy_semundo(unsigned long clone_flags, struct task_struct *tsk)
- 	int error;
- 
- 	if (clone_flags & CLONE_SYSVSEM) {
--		error = get_undo_list(&undo_list);
-+		error = get_undo_list(&undo_list, tsk->nsproxy->ipc_ns);
- 		if (error)
- 			return error;
- 		atomic_inc(&undo_list->refcnt);
--- 
-1.7.1.1
+> diff --git a/ipc/sem.c b/ipc/sem.c
+> index e439b73..ee5b386 100644
+> --- a/ipc/sem.c
+> +++ b/ipc/sem.c
+
+<snip>
+
+> @@ -1470,3 +1466,319 @@ static int sysvipc_sem_proc_show(struct seq_file *s, void *it)
+>  			  sma->sem_ctime);
+>  }
+>  #endif
+> +
+> +static int __get_task_semids(struct sem_undo_list *ulp, int *semids, int max)
+
+Why "task"? I'd name it __get_undo_list_semids or something like that
+instead.
+
+> +{
+> +	int count = 0;
+> +	struct sem_undo *un;
+> +
+> +	if (!ulp)
+> +		return 0;
+> +
+> +	spin_lock(&ulp->lock);
+> +	list_for_each_entry_rcu(un, &ulp->list_proc, list_proc) {
+> +		if (count >= max) {
+> +			count = -E2BIG;
+> +			break;
+> +		}
+> +		semids[count++] = un->semid;
+> +	}
+> +	spin_unlock(&ulp->lock);
+> +
+> +	return count;
+> +}
+
+<snip>
+
+> +int checkpoint_sem_undo_adj(struct ckpt_ctx *ctx, struct sem_undo *un)
+
+Should be static.
+
+<snip>
+
+> +
+> +int write_sem_undo_list(struct ckpt_ctx *ctx, struct sem_undo_list *ulp,
+> +			int count, int *semids)
+
+Should be static.
+
+> +{
+> +	int i;
+> +	int ret;
+> +
+> +	for (i = 0; i < count; i++) {
+> +		struct sem_undo *un;
+> +
+> +		spin_lock(&ulp->lock);
+> +		un = lookup_undo(ulp, semids[i]);
+> +		spin_unlock(&ulp->lock);
+> +
+> +		if (!un) {
+> +			ckpt_debug("unable to lookup semid %i\n", semids[i]);
+
+Or should this be a ckpt_err() ?
+
+> +			return -EINVAL;
+> +		}
+> +
+> +		ret = checkpoint_sem_undo_adj(ctx, un);
+> +		ckpt_debug("checkpoint_sem_undo: %i\n", ret);
+> +		if (ret < 0)
+> +			return ret;
+> +	}
+> +
+> +	return 0;
+> +}
+
+<snip>
+
+> +static int restore_task_sem_undo_adj(struct ckpt_ctx *ctx)
+> +{
+> +	struct ckpt_hdr_task_sem_undo *h;
+> +	int len;
+> +	int ret = -ENOMEM;
+> +	struct sem_undo *un;
+> +	int nsems;
+> +	__s16 *semadj = NULL;
+> +
+> +	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_TASK_SEM_UNDO);
+> +	if (IS_ERR(h))
+> +		return PTR_ERR(h);
+> +
+> +	len = sizeof(__s16) * h->semadj_count;
+> +	ret = ckpt_read_payload(ctx, (void **)&semadj, len, CKPT_HDR_BUFFER);
+> +	if (ret < 0)
+> +		goto out;
+> +
+
+As best I can tell exit_sem() does not do permission checking -- it
+relies on semop and semtimedop to check permissions on the operation
+that created the undo in the first place. Thus I think we need to check
+permissions here with ipc_check_perms() or ipcperms(). Otherwise it may
+be possible to manipulate semaphores we do not have permission to
+manipulate.
+
+> +	un = find_alloc_undo(current->nsproxy->ipc_ns, h->semid);
+> +	if (IS_ERR(un)) {
+> +		ret = PTR_ERR(un);
+> +		ckpt_debug("unable to find semid %i\n", h->semid);
+> +		goto out;
+> +	}
+> +
+> +	nsems = sem_undo_nsems(un, current->nsproxy->ipc_ns);
+> +	len = sizeof(__s16) * nsems;
+> +	if (h->semadj_count == nsems)
+> +		memcpy(un->semadj, semadj, len);
+> +	rcu_read_unlock();
+> +
+> +	if (nsems != h->semadj_count)
+> +		ckpt_err(ctx, -EINVAL,
+> +			 "semid %i has nmsems=%i but %i undo adjustments\n",
+> +			 h->semid, nsems, h->semadj_count);
+> +	else
+> +		ckpt_debug("semid %i restored with %i adjustments\n",
+> +			   h->semid, h->semadj_count);
+> + out:
+> +	ckpt_hdr_put(ctx, h);
+> +	kfree(semadj);
+> +
+> +	return ret;
+> +}
+> +
+> +static void *restore_sem_undo(struct ckpt_ctx *ctx)
+> +{
+> +	struct ckpt_hdr_task_sem_undo_list *h;
+> +	struct sem_undo_list *ulp = NULL;
+> +	int i;
+> +	int ret = 0;
+> +
+> +	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_TASK_SEM_UNDO_LIST);
+> +	if (IS_ERR(h))
+> +		return ERR_PTR(PTR_ERR(h));
+> +
+> +	ulp = alloc_undo_list(current->nsproxy->ipc_ns);
+> +	if (!ulp) {
+> +		ret = -ENOMEM;
+> +		goto out;
+> +	}
+> +
+> +	for (i = 0; i < h->count; i++) {
+> +		ret = restore_task_sem_undo_adj(ctx);
+> +		if (ret < 0)
+> +			goto out;
+> +	}
+> +
+> +	atomic_inc(&ulp->refcnt);
+> + out:
+> +	ckpt_hdr_put(ctx, h);
+> +	if (ret < 0)
+
+Don't we need to check ulp and clean up the alloc'd undo list here?
+
+> +		return ERR_PTR(ret);
+> +	else
+> +		return ulp;
+> +}
+
+Cheers,
+	-Matt Helsley
