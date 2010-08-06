@@ -1,18 +1,12 @@
 From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/2] Add support for the per-task sem_undo list (v3.01)
-Date: Fri, 06 Aug 2010 07:31:08 -0700
-Message-ID: <8762znlsnn.fsf@caffeine.danplanet.com>
-References: <1281031026-2357-1-git-send-email-danms@us.ibm.com>
-	<1281031026-2357-3-git-send-email-danms@us.ibm.com>
-	<20100805214842.GP2927@count0.beaverton.ibm.com>
-	<4C5B3DF9.4000907@cs.columbia.edu>
-	<20100805234902.GS2927@count0.beaverton.ibm.com>
+Subject: [PATCH] Add two macros for build-time testing of time compatibility
+	(v2)
+Date: Fri,  6 Aug 2010 07:57:20 -0700
+Message-ID: <1281106640-32545-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100805234902.GS2927-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org> (Matt Helsley's
-	message of "Thu\, 5 Aug 2010 16\:49\:02 -0700")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,30 +16,52 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-MH> Perhaps instead of mimicking the kernel data structure in the
-MH> checkpoint image and then restoring that kernel structure during
-MH> restart we could create a set of semops to write in the checkpoint
-MH> image and then perform them during restart. By effectively calling
-MH> sys_semop during restart we would ensure that we're doing the
-MH> proper security checks, make the checkpoint image more portable
-MH> (since the semop interface can't change), and greatly reduce the
-MH> probability that c/r of the semaphores and their undo lists will
-MH> bitrot (IOW make maintenance easy for everyone).
+We often canonicalize data from internal kernel data structures that use
+ambiguous types (int, short, long, etc) and write them to the checkpoint
+stream with unambiguous types (__u16, __u32, __u64, etc).  If an internal
+structure changes a type somewhere down the road, we may not notice and
+write invalid data to the checkpoint stream as a result.
 
-I actually started thinking down that road at one point.  However, the
-way you get something into the undo list is you take action on a
-semaphore, specifying that it should be undone later.  Unless we add a
-semop to allow you to arbitrarily adjust the undo list (bad idea,
-IMHO), using the semop interface would require us to modify the actual
-semaphore.  We could potentially try to replay the semops that led to
-the semaphore's value at checkpoint, but that seems more likely to
-break to me.
+This patch introduces two helper macros to make it easier to generate
+a BUILD_BUG when this happens.  Examples of usage are included in the
+comment before the macros in the code.
 
+Changes in v2:
+ - Fix the example to match the code
+
+Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ include/linux/checkpoint_hdr.h |   15 +++++++++++++++
+ 1 files changed, 15 insertions(+), 0 deletions(-)
+
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index f4f9577..e455b99 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -42,6 +42,21 @@
+ #define CHECKPOINT_LSM_NAME_MAX 10
+ 
+ /*
++ * Macros to help generate a build break if an ambiguous type changes
++ * in such a way that the size differs from the unambiguous type we
++ * actually write to the checkpoint stream.
++ *
++ * Examples:
++ *
++ * CKPT_BUILD_BUG_ON_MISMATCH(short, __u16);
++ * CKPT_BUILD_BUG_ON_MISMATCH(CKPT_STRUCT_MEMBER(mystruct, mymember),
++ *                            CKPT_STRUCT_MEMBER(ckpt_hdr_foo, bar));
++ *
++ */
++#define CKPT_STRUCT_MEMBER(type, member) (((struct type *)(NULL))->member)
++#define CKPT_BUILD_BUG_ON_MISMATCH(a, b) (BUILD_BUG_ON(sizeof(a) != sizeof(b)))
++
++/*
+  * To maintain compatibility between 32-bit and 64-bit architecture flavors,
+  * keep data 64-bit aligned: use padding for structure members, and use
+  * __attribute__((aligned (8))) for the entire structure.
 -- 
-Dan Smith
-IBM Linux Technology Center
-email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+1.7.1.1
