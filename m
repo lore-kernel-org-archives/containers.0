@@ -1,13 +1,11 @@
-From: Alex Williamson <alex.williamson-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] cgroups: fix API thinko
-Date: Fri, 06 Aug 2010 10:38:24 -0600
-Message-ID: <1281112704.10055.0.camel@x201>
-References: <20100805225914.GA26772@redhat.com> <4C5C3985.5060706@us.ibm.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: [PATCH] c/r: support ipc shm regions which are partially mapped
+Date: Fri,  6 Aug 2010 17:18:52 -0400
+Message-ID: <1281129532-4041-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4C5C3985.5060706-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,139 +15,145 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sridhar Samudrala <sri-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, kvm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Michael S. Tsirkin" <mst-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Ben Blum <bblum-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, 2010-08-06 at 09:34 -0700, Sridhar Samudrala wrote:
-> On 8/5/2010 3:59 PM, Michael S. Tsirkin wrote:
-> > cgroup_attach_task_current_cg API that have upstream is backwards: we
-> > really need an API to attach to the cgroups from another process A to
-> > the current one.
-> >
-> > In our case (vhost), a priveledged user wants to attach it's task to cgroups
-> > from a less priveledged one, the API makes us run it in the other
-> > task's context, and this fails.
-> >
-> > So let's make the API generic and just pass in 'from' and 'to' tasks.
-> > Add an inline wrapper for cgroup_attach_task_current_cg to avoid
-> > breaking bisect.
-> >
-> > Signed-off-by: Michael S. Tsirkin<mst-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> > ---
-> >
-> > Paul, Li, Sridhar, could you please review the following
-> > patch?
-> >
-> > I only compile-tested it due to travel, but looks
-> > straight-forward to me.
-> > Alex Williamson volunteered to test and report the results.
-> > Sending out now for review as I might be offline for a bit.
-> > Will only try to merge when done, obviously.
-> >
-> > If OK, I would like to merge this through -net tree,
-> > together with the patch fixing vhost-net.
-> > Let me know if that sounds ok.
-> >
-> > Thanks!
-> >
-> > This patch is on top of net-next, it is needed for fix
-> > vhost-net regression in net-next, where a non-priveledged
-> > process can't enable the device anymore:
-> >
-> > when qemu uses vhost, inside the ioctl call it
-> > creates a thread, and tries to add
-> > this thread to the groups of current, and it fails.
-> > But we control the thread, so to solve the problem,
-> > we really should tell it 'connect to out cgroups'.
-> >    
-> So an unprivileged qemu cannot attach vhost thread to its own cgroups.
-> I guess you are planning to make the cgroup_attach_task_all() call in 
-> vhost_worker()
-> to attach itself to the cgroups of qemu.
+UNTESTED....
 
-Yes, exactly.
+Because do_shmat() has limited interface of all-or-nothing mapping,
+previous we did not support VMAs that reflect partiaul mapping to a
+shared memory from IPC. For example, if a task calls shmat() and
+then munmap() part of that mapping.
 
-Alex
+Now that Dan Smith hit an application that actually does that, it's
+time to fix the situation:
 
-> The new API looks fine, but the
-> name is little confusing. How about
->    task_inherit_cgroups(struct task_struct *from, struct task_struct *to)
-> 
-> > What this patch does is add an API for that.
-> >
-> >   include/linux/cgroup.h |   11 ++++++++++-
-> >   kernel/cgroup.c        |    9 +++++----
-> >   2 files changed, 15 insertions(+), 5 deletions(-)
-> >
-> > diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-> > index 43b2072..b38ec60 100644
-> > --- a/include/linux/cgroup.h
-> > +++ b/include/linux/cgroup.h
-> > @@ -525,7 +525,11 @@ struct task_struct *cgroup_iter_next(struct cgroup *cgrp,
-> >   void cgroup_iter_end(struct cgroup *cgrp, struct cgroup_iter *it);
-> >   int cgroup_scan_tasks(struct cgroup_scanner *scan);
-> >   int cgroup_attach_task(struct cgroup *, struct task_struct *);
-> > -int cgroup_attach_task_current_cg(struct task_struct *);
-> > +int cgroup_attach_task_all(struct task_struct *from, struct task_struct *);
-> > +static inline int cgroup_attach_task_current_cg(struct task_struct *tsk)
-> > +{
-> > +	return cgroup_attach_task_all(current, tsk);
-> > +}
-> >
-> >   /*
-> >    * CSS ID is ID for cgroup_subsys_state structs under subsys. This only works
-> > @@ -583,6 +587,11 @@ static inline int cgroupstats_build(struct cgroupstats *stats,
-> >   }
-> >
-> >   /* No cgroups - nothing to do */
-> > +static inline int cgroup_attach_task_all(struct task_struct *from,
-> > +					 struct task_struct *t)
-> > +{
-> > +	return 0;
-> > +}
-> >   static inline int cgroup_attach_task_current_cg(struct task_struct *t)
-> >   {
-> >   	return 0;
-> > diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-> > index dce8ebc..e6293b8 100644
-> > --- a/kernel/cgroup.c
-> > +++ b/kernel/cgroup.c
-> > @@ -1606,10 +1606,11 @@ int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *tsk)
-> >   }
-> >
-> >   /**
-> > - * cgroup_attach_task_current_cg - attach task 'tsk' to current task's cgroup
-> > + * cgroup_attach_task_all - attach task 'tsk' to all cgroups of task 'from'
-> > + * @from: attach to all cgroups of a given task
-> >    * @tsk: the task to be attached
-> >    */
-> > -int cgroup_attach_task_current_cg(struct task_struct *tsk)
-> > +int cgroup_attach_task_all(struct task_struct *from, struct task_struct *tsk)
-> >   {
-> >   	struct cgroupfs_root *root;
-> >   	struct cgroup *cur_cg;
-> > @@ -1617,7 +1618,7 @@ int cgroup_attach_task_current_cg(struct task_struct *tsk)
-> >
-> >   	cgroup_lock();
-> >   	for_each_active_root(root) {
-> > -		cur_cg = task_cgroup_from_root(current, root);
-> > +		cur_cg = task_cgroup_from_root(from, root);
-> >    
-> Now that we are not operating on current, cur_cg should be renamed as 
-> from_cg
-> >   		retval = cgroup_attach_task(cur_cg, tsk);
-> >   		if (retval)
-> >   			break;
-> > @@ -1626,7 +1627,7 @@ int cgroup_attach_task_current_cg(struct task_struct *tsk)
-> >
-> >   	return retval;
-> >   }
-> > -EXPORT_SYMBOL_GPL(cgroup_attach_task_current_cg);
-> > +EXPORT_SYMBOL_GPL(cgroup_attach_task_all);
-> >
-> >   /*
-> >    * Attach task with pid 'pid' to cgroup 'cgrp'. Call with cgroup_mutex
-> >    
-> 
-> 
+Introduce do_shmat_pgoff() that accepts also @shmsize and @shmpgoff.
+If these two are 0, then it behaves like do_shmat(). Otherwise, it
+attempts to map only the relevant region within the shared memory
+segment.
+
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+---
+ include/linux/shm.h |    3 +++
+ ipc/shm.c           |   50 ++++++++++++++++++++++++++++++++------------------
+ 2 files changed, 35 insertions(+), 18 deletions(-)
+
+diff --git a/include/linux/shm.h b/include/linux/shm.h
+index 94ac1a7..1f6af8c 100644
+--- a/include/linux/shm.h
++++ b/include/linux/shm.h
+@@ -105,6 +105,9 @@ struct shmid_kernel /* private to the kernel */
+ 
+ #ifdef CONFIG_SYSVIPC
+ long do_shmat(int shmid, char __user *shmaddr, int shmflg, unsigned long *addr);
++long do_shmat_pgoff(int shmid, char __user *shmaddr,
++		    int shmflg, unsigned long *addr,
++		    unsigned long shmsize, unsigned long shmpgoff);
+ extern int is_file_shm_hugepages(struct file *file);
+ #else
+ static inline long do_shmat(int shmid, char __user *shmaddr,
+diff --git a/ipc/shm.c b/ipc/shm.c
+index 5a5dfb5..5336dc9 100644
+--- a/ipc/shm.c
++++ b/ipc/shm.c
+@@ -323,7 +323,6 @@ int ipcshm_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
+ {
+ 	struct file *file;
+ 	int shmid, shmflg = 0;
+-	mm_segment_t old_fs;
+ 	unsigned long start;
+ 	unsigned long addr;
+ 	int ret;
+@@ -341,22 +340,14 @@ int ipcshm_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
+ 	if (!(h->vm_flags & VM_WRITE))
+ 		shmflg |= SHM_RDONLY;
+ 
+-	/*
+-	 * FIX: do_shmat() has limited interface: all-or-nothing
+-	 * mapping. If the vma, however, reflects a partial mapping
+-	 * then we need to modify that function to accomplish the
+-	 * desired outcome.  Partial mapping can exist due to the user
+-	 * call shmat() and then unmapping part of the region.
+-	 * Currently, we at least detect this and call it a foul play.
+-	 */
+-	if (((h->vm_end - h->vm_start) != h->ino_size) || h->vm_pgoff)
+-		return -ENOSYS;
++	/* just another sanity check; rest is done by do_shmat */
++	if (h->ino_size != i_size_read(file->f_dentry->d_inode))
++		return -EINVAL;
+ 
+-	old_fs = get_fs();
+-	set_fs(get_ds());
+-	start = h->vm_start;
+-	ret = do_shmat(shmid, (char __user *) start, shmflg, &addr);
+-	set_fs(old_fs);
++	/* do_shmat() below handles partial and offset mapping */
++	start = (unsigned long) h->vm_start;
++	ret = do_shmat_pgoff(shmid, (char __user *) start, shmflg,
++			     &addr, h->vm_end - h->vm_start, h->vm_pgoff);
+ 
+ 	BUG_ON(ret >= 0 && addr != h->vm_start);
+ 	return ret;
+@@ -887,11 +878,13 @@ out:
+  * "raddr" thing points to kernel space, and there has to be a wrapper around
+  * this.
+  */
+-long do_shmat(int shmid, char __user *shmaddr, int shmflg, ulong *raddr)
++long do_shmat_pgoff(int shmid, char __user *shmaddr, int shmflg,
++		    ulong *raddr, ulong shmsize, ulong shmpgoff)
+ {
+ 	struct shmid_kernel *shp;
+ 	unsigned long addr;
+ 	unsigned long size;
++	unsigned long pgoff;
+ 	struct file * file;
+ 	int    err;
+ 	unsigned long flags;
+@@ -963,6 +956,17 @@ long do_shmat(int shmid, char __user *shmaddr, int shmflg, ulong *raddr)
+ 	size = i_size_read(path.dentry->d_inode);
+ 	shm_unlock(shp);
+ 
++	pgoff = 0;
++
++	err = -EINVAL;
++	if (shmsize) {
++		if (shmpgoff + shmsize > size ||
++		    shmpgoff + shmsize < shmpgoff)
++			goto out_put_dentry;
++		size = shmsize;
++		pgoff = shmpgoff;
++	}
++
+ 	err = -ENOMEM;
+ 	sfd = kzalloc(sizeof(*sfd), GFP_KERNEL);
+ 	if (!sfd)
+@@ -996,7 +1000,7 @@ long do_shmat(int shmid, char __user *shmaddr, int shmflg, ulong *raddr)
+ 			goto invalid;
+ 	}
+ 		
+-	user_addr = do_mmap (file, addr, size, prot, flags, 0);
++	user_addr = do_mmap (file, addr, size, prot, flags, pgoff);
+ 	*raddr = user_addr;
+ 	err = 0;
+ 	if (IS_ERR_VALUE(user_addr))
+@@ -1032,6 +1036,16 @@ out_put_dentry:
+ 	goto out_nattch;
+ }
+ 
++/*
++ * NOTE! Despite the name, this is NOT a direct system call entrypoint. The
++ * "raddr" thing points to kernel space, and there has to be a wrapper around
++ * this.
++ */
++long do_shmat(int shmid, char __user *shmaddr, int shmflg, ulong *raddr)
++{
++	return do_shmat_pgoff(shmid, shmaddr, shmflg, raddr, 0, 0);
++}
++
+ SYSCALL_DEFINE3(shmat, int, shmid, char __user *, shmaddr, int, shmflg)
+ {
+ 	unsigned long ret;
+-- 
+1.7.0.4
