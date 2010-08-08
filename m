@@ -1,7 +1,7 @@
-From: Hiroyuki Kamezawa <kamezawa.hiroyuki-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Subject: Re: [PATCH] cgroup: add missing __percpu markup in mm/memcontrol.c
-Date: Sun, 8 Aug 2010 11:51:45 +0900
-Message-ID: <AANLkTim5bS_nwa_10i6i9u7At=9L+gpEPSyzqXPVP8mD__38572.2533021637$1281236022$gmane$org@mail.gmail.com>
+Date: Sun, 8 Aug 2010 11:24:05 +0530
+Message-ID: <AANLkTikvBwMG1sjYK3cizi+x0EXosnP-cRL7bwCgHEzN__49263.2925314412$1281246894$gmane$org@mail.gmail.com>
 References: <1281194812-18052-1-git-send-email-namhyung@gmail.com>
 	<4C5D7C4C.1020206@kernel.org>
 Mime-Version: 1.0
@@ -22,7 +22,7 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Namhyung Kim <namhyung-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-2010/8/8 Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>:
+On Sat, Aug 7, 2010 at 9:01 PM, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org> wrote:
 > From: Namhyung Kim <namhyung-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 >
 > mem_cgroup->stat is a percpu pointer but was missing __percpu markup.
@@ -30,6 +30,12 @@ List-Id: containers.vger.kernel.org
 >
 > Signed-off-by: Namhyung Kim <namhyung-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 > Acked-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+> ---
+> Namhyung, can you please look up the maintainers in MAINTAINERS and/or
+> using scripts/get_maintainer.pl and submit __percpu markup patches to
+> the respective maintainers w/ me cc'd?
+>
 
-Thank you.
-Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Acked-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+
+Balbir
