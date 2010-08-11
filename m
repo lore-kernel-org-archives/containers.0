@@ -1,14 +1,15 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] cgroup_freezer: Freezing and task move race fix
-Date: Tue, 10 Aug 2010 18:10:33 -0700
-Message-ID: <20100811011033.GF2927__48836.4771161743$1281489124$gmane$org@count0.beaverton.ibm.com>
-References: <1281470001-14320-1-git-send-email-tomasz.buchert@inria.fr>
+Subject: Re: [PATCH 1/2] Add ipc_namespace to struct sem_undo_list
+Date: Tue, 10 Aug 2010 20:00:00 -0700
+Message-ID: <20100811025959.GG2927@count0.beaverton.ibm.com>
+References: <1281457254-18890-1-git-send-email-danms@us.ibm.com>
+	<1281457254-18890-2-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1281470001-14320-1-git-send-email-tomasz.buchert-MZpvjPyXg2s@public.gmane.org>
+In-Reply-To: <1281457254-18890-2-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,158 +19,113 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tomasz Buchert <tomasz.buchert-MZpvjPyXg2s@public.gmane.org>
-Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Aug 10, 2010 at 09:53:21PM +0200, Tomasz Buchert wrote:
-> Writing 'FROZEN' to freezer.state file does not
-> forbid the task to be moved away from its cgroup
-> (for a very short time). Nevertheless the moved task
-> can become frozen OUTSIDE its cgroup which puts
-> discussed task in a permanent 'D' state.
-
-SUMMARY (for supporting info see the "DETAILS" heading below)
-
-I can't reproduce this.
-
-My preliminary conclusion is that your testcase doesn't really reproduce
-what you described. Instead, your testcase prints an incorrect message which
-could easily lead the person running it to the wrong conclusion.
-
-DETAILS
-
-I tried it with and without the cpuset portions of the testcase on a dual
-core bare metal system with a 2.6.31-derived distro kernel. Since it
-*should* be obeying the cpuset portions of the testcase I don't think the
-fact that it's dual-core should make a difference.
-
-I also tried with a 2.6.34-rc5 kernel in a single-cpu kvm on a different
-distro (but on the same physical hardware). I also tried it with and without
-the sleep(1) in the child's for(;;) loop in case the cpu load somehow enabled
-me to trigger the race.
-
-I used the following bash snippet to run the testcase variations and did not
-observe any tasks in the D state:
-
-mount -t cgroup -o freezer,cpuset none /cg
-while /bin/true ; do
-	./bug /cg
-	ps -C bug -o state= | grep D && break
-done
-
-If there is a race then I should be able to run that ps line anytime afterwards
-to see the stuck task.
-
-Note that the test message:
-
-	printf("Succesfully moved frozen task!\n");
-
-is bogus. In fact there is no guarantee the task or cgroup is frozen at that
-point in the testcase. This should be apparent from a careful reading of
-Documentation/cgroups/freezer-subsystem.txt, especially:
-
-	This is the basic mechanism which should do the right thing for user space task
-	in a simple scenario.
-
-	It's important to note that freezing can be incomplete. In that case we return
-	EBUSY. This means that some tasks in the cgroup are busy doing something that
-	prevents us from completely freezing the cgroup at this time. After EBUSY,
-	the cgroup will remain partially frozen -- reflected by freezer.state reporting
-	"FREEZING" when read. The state will remain "FREEZING" until one of these
-	things happens:
-
-		1) Userspace cancels the freezing operation by writing "THAWED" to
-			the freezer.state file
-		2) Userspace retries the freezing operation by writing "FROZEN" to
-			the freezer.state file (writing "FREEZING" is not legal
-			and returns EINVAL)
-		3) The tasks that blocked the cgroup from entering the "FROZEN"
-			state disappear from the cgroup's set of tasks.
-
-So simply writing FROZEN to freezer.state is necessary to initiate freezing
-but insufficient to assert that the task and/or cgroup is frozen.
-That's why the FREEZING state exists. It's intentionally not specified when/why
-we can't immediately enter FROZEN. Thus userspace must read the freezer.state
-to determine if the current state matches the requested/expected state.
-
-This is why I have the extra ps step in the script above -- to determine
-if the task is actually in D. I should also check that the cgroup it belongs
-to is THAWED. However while attempting to reproduce your report that hasn't
-been necessary -- none of the tasks have even entered the D state.
-
-Which brings us to the final portion of this analysis: Why isn't anything
-entering the D state?
-
-The behavior I have been able to reproduce and which is not a bug is
-moving the task immediately after writing FROZEN to freezer.state. We don't
-know the state of the task or cgroup at that time (in this testcase) so
-this is acceptable. I've even made a sequence of modifications to your
-testcase and run it after each modification to bring it successively more
-in line with correct use of the cgroup freezer. I still was unable to
-reproduce your report.
-
-So I'm fairly confident there is no bug. I say "fairly" because there may
-be some aspect of your system that I am not reproducing. At this point it
-would be great if you could provide more details so I can more thoroughly
-attempt to recreate your conditions.
-
-Cheers,
-	-Matt Helsley
-
+On Tue, Aug 10, 2010 at 09:20:53AM -0700, Dan Smith wrote:
+> Checkpoint/Restart needs to have a pointer to the ipc_namespace that the
+> sem_undo_list applies to in order to properly bring up and tear down
+> the object hash.  This patch adds a pointer to the namespace to the list
+> structure, as well as breaks out the allocation of the undo list to a
+> separate function (which is needed in a later C/R patch anyway).
 > 
-> This patch forbids migration of either FROZEN
-> or FREEZING tasks.
-> 
-> This behavior was observed and easily reproduced on
-> a single core laptop. Program and instructions how
-> to reproduce the bug can be fetched from:
-> http://pentium.hopto.org/~thinred/repos/linux-misc/freezer_bug.c
-> 
-> Signed-off-by: Tomasz Buchert <tomasz.buchert-MZpvjPyXg2s@public.gmane.org>
+> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 > ---
->  kernel/cgroup_freezer.c |   10 ++++++++--
->  1 files changed, 8 insertions(+), 2 deletions(-)
+
+Reviewed-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
+>  include/linux/sem.h |    2 ++
+>  ipc/sem.c           |   30 +++++++++++++++++++++---------
+>  2 files changed, 23 insertions(+), 9 deletions(-)
 > 
-> diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
-> index ce71ed5..e49aa8c 100644
-> --- a/kernel/cgroup_freezer.c
-> +++ b/kernel/cgroup_freezer.c
-> @@ -161,6 +161,12 @@ static bool is_task_frozen_enough(struct task_struct *task)
->  		(task_is_stopped_or_traced(task) && freezing(task));
->  }
+> diff --git a/include/linux/sem.h b/include/linux/sem.h
+> index 8a4adbe..8cf9636 100644
+> --- a/include/linux/sem.h
+> +++ b/include/linux/sem.h
+> @@ -127,12 +127,14 @@ struct sem_undo {
+>  	short *			semadj;		/* array of adjustments, one per semaphore */
+>  };
 > 
-> +/* Task is in a state that forbids any cgroup migration. */
-> +static bool is_task_pinned_down(struct task_struct *task)
+> +struct ipc_namespace;
+>  /* sem_undo_list controls shared access to the list of sem_undo structures
+>   * that may be shared among all a CLONE_SYSVSEM task group.
+>   */ 
+>  struct sem_undo_list {
+>  	atomic_t		refcnt;
+>  	spinlock_t		lock;
+> +	struct ipc_namespace	*ipc_ns;
+>  	struct list_head	list_proc;
+>  };
+> 
+> diff --git a/ipc/sem.c b/ipc/sem.c
+> index 37da85e..e439b73 100644
+> --- a/ipc/sem.c
+> +++ b/ipc/sem.c
+> @@ -983,6 +983,21 @@ asmlinkage long SyS_semctl(int semid, int semnum, int cmd, union semun arg)
+>  SYSCALL_ALIAS(sys_semctl, SyS_semctl);
+>  #endif
+> 
+> +static struct sem_undo_list *alloc_undo_list(struct ipc_namespace *ipc_ns)
 > +{
-> +	return freezing(task) || frozen(task);
+> +	struct sem_undo_list *undo_list;
+> +
+> +	undo_list = kzalloc(sizeof(*undo_list), GFP_KERNEL);
+> +	if (undo_list == NULL)
+> +		return NULL;
+> +	spin_lock_init(&undo_list->lock);
+> +	atomic_set(&undo_list->refcnt, 1);
+> +	INIT_LIST_HEAD(&undo_list->list_proc);
+> +	undo_list->ipc_ns = ipc_ns;
+> +
+> +	return undo_list;
 > +}
 > +
->  /*
->   * The call to cgroup_lock() in the freezer.state write method prevents
->   * a write to that file racing against an attach, and hence the
-> @@ -179,7 +185,7 @@ static int freezer_can_attach(struct cgroup_subsys *ss,
->  	 * frozen, so it's sufficient to check the latter condition.
->  	 */
+>  /* If the task doesn't already have a undo_list, then allocate one
+>   * here.  We guarantee there is only one thread using this undo list,
+>   * and current is THE ONE
+> @@ -994,19 +1009,16 @@ SYSCALL_ALIAS(sys_semctl, SyS_semctl);
+>   *
+>   * This can block, so callers must hold no locks.
+>   */
+> -static inline int get_undo_list(struct sem_undo_list **undo_listp)
+> +static inline int get_undo_list(struct sem_undo_list **undo_listp,
+> +				struct ipc_namespace *ipc_ns)
+>  {
+>  	struct sem_undo_list *undo_list;
 > 
-> -	if (is_task_frozen_enough(task))
-> +	if (is_task_pinned_down(task))
->  		return -EBUSY;
+>  	undo_list = current->sysvsem.undo_list;
+>  	if (!undo_list) {
+> -		undo_list = kzalloc(sizeof(*undo_list), GFP_KERNEL);
+> -		if (undo_list == NULL)
+> +		undo_list = alloc_undo_list(ipc_ns);
+> +		if (!undo_list)
+>  			return -ENOMEM;
+> -		spin_lock_init(&undo_list->lock);
+> -		atomic_set(&undo_list->refcnt, 1);
+> -		INIT_LIST_HEAD(&undo_list->list_proc);
+> -
+>  		current->sysvsem.undo_list = undo_list;
+>  	}
+>  	*undo_listp = undo_list;
+> @@ -1057,7 +1069,7 @@ static struct sem_undo *find_alloc_undo(struct ipc_namespace *ns, int semid)
+>  	int nsems;
+>  	int error;
 > 
->  	freezer = cgroup_freezer(new_cgroup);
-> @@ -191,7 +197,7 @@ static int freezer_can_attach(struct cgroup_subsys *ss,
+> -	error = get_undo_list(&ulp);
+> +	error = get_undo_list(&ulp, ns);
+>  	if (error)
+>  		return ERR_PTR(error);
 > 
->  		rcu_read_lock();
->  		list_for_each_entry_rcu(c, &task->thread_group, thread_group) {
-> -			if (is_task_frozen_enough(c)) {
-> +			if (is_task_pinned_down(c)) {
->  				rcu_read_unlock();
->  				return -EBUSY;
->  			}
+> @@ -1328,7 +1340,7 @@ int copy_semundo(unsigned long clone_flags, struct task_struct *tsk)
+>  	int error;
+> 
+>  	if (clone_flags & CLONE_SYSVSEM) {
+> -		error = get_undo_list(&undo_list);
+> +		error = get_undo_list(&undo_list, tsk->nsproxy->ipc_ns);
+>  		if (error)
+>  			return error;
+>  		atomic_inc(&undo_list->refcnt);
 > -- 
-> 1.6.3.3
+> 1.7.1.1
 > 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
