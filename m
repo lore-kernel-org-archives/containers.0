@@ -1,15 +1,16 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/2] Add ipc_namespace to struct sem_undo_list
-Date: Tue, 10 Aug 2010 20:00:00 -0700
-Message-ID: <20100811025959.GG2927@count0.beaverton.ibm.com>
-References: <1281457254-18890-1-git-send-email-danms@us.ibm.com>
-	<1281457254-18890-2-git-send-email-danms@us.ibm.com>
+Subject: Re: [PATCH] cgroup_freezer: Freezing and task move race fix
+Date: Tue, 10 Aug 2010 21:27:38 -0700
+Message-ID: <20100811042738.GH2927__11793.8979216435$1281501072$gmane$org@count0.beaverton.ibm.com>
+References: <1281470001-14320-1-git-send-email-tomasz.buchert@inria.fr>
+	<20100810215741.GC2927@count0.beaverton.ibm.com>
+	<4C61D044.2060703@inria.fr>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1281457254-18890-2-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4C61D044.2060703-MZpvjPyXg2s@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,113 +20,130 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Tomasz Buchert <Tomasz.Buchert-MZpvjPyXg2s@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Aug 10, 2010 at 09:20:53AM -0700, Dan Smith wrote:
-> Checkpoint/Restart needs to have a pointer to the ipc_namespace that the
-> sem_undo_list applies to in order to properly bring up and tear down
-> the object hash.  This patch adds a pointer to the namespace to the list
-> structure, as well as breaks out the allocation of the undo list to a
-> separate function (which is needed in a later C/R patch anyway).
-> 
-> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
+On Wed, Aug 11, 2010 at 12:18:44AM +0200, Tomasz Buchert wrote:
+> Matt Helsley a =E9crit :
+> > On Tue, Aug 10, 2010 at 09:53:21PM +0200, Tomasz Buchert wrote:
+> >> Writing 'FROZEN' to freezer.state file does not
+> >> forbid the task to be moved away from its cgroup
+> >> (for a very short time). Nevertheless the moved task
+> >> can become frozen OUTSIDE its cgroup which puts
+> >> discussed task in a permanent 'D' state.
+> >>
+> >> This patch forbids migration of either FROZEN
+> >> or FREEZING tasks.
+> >>
+> >> This behavior was observed and easily reproduced on
+> >> a single core laptop. Program and instructions how
+> >> to reproduce the bug can be fetched from:
+> >> http://pentium.hopto.org/~thinred/repos/linux-misc/freezer_bug.c
+> > =
 
-Reviewed-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> > Thanks for the report and the test code.
+> > =
 
->  include/linux/sem.h |    2 ++
->  ipc/sem.c           |   30 +++++++++++++++++++++---------
->  2 files changed, 23 insertions(+), 9 deletions(-)
-> 
-> diff --git a/include/linux/sem.h b/include/linux/sem.h
-> index 8a4adbe..8cf9636 100644
-> --- a/include/linux/sem.h
-> +++ b/include/linux/sem.h
-> @@ -127,12 +127,14 @@ struct sem_undo {
->  	short *			semadj;		/* array of adjustments, one per semaphore */
->  };
-> 
-> +struct ipc_namespace;
->  /* sem_undo_list controls shared access to the list of sem_undo structures
->   * that may be shared among all a CLONE_SYSVSEM task group.
->   */ 
->  struct sem_undo_list {
->  	atomic_t		refcnt;
->  	spinlock_t		lock;
-> +	struct ipc_namespace	*ipc_ns;
->  	struct list_head	list_proc;
->  };
-> 
-> diff --git a/ipc/sem.c b/ipc/sem.c
-> index 37da85e..e439b73 100644
-> --- a/ipc/sem.c
-> +++ b/ipc/sem.c
-> @@ -983,6 +983,21 @@ asmlinkage long SyS_semctl(int semid, int semnum, int cmd, union semun arg)
->  SYSCALL_ALIAS(sys_semctl, SyS_semctl);
->  #endif
-> 
-> +static struct sem_undo_list *alloc_undo_list(struct ipc_namespace *ipc_ns)
-> +{
-> +	struct sem_undo_list *undo_list;
-> +
-> +	undo_list = kzalloc(sizeof(*undo_list), GFP_KERNEL);
-> +	if (undo_list == NULL)
-> +		return NULL;
-> +	spin_lock_init(&undo_list->lock);
-> +	atomic_set(&undo_list->refcnt, 1);
-> +	INIT_LIST_HEAD(&undo_list->list_proc);
-> +	undo_list->ipc_ns = ipc_ns;
-> +
-> +	return undo_list;
-> +}
-> +
->  /* If the task doesn't already have a undo_list, then allocate one
->   * here.  We guarantee there is only one thread using this undo list,
->   * and current is THE ONE
-> @@ -994,19 +1009,16 @@ SYSCALL_ALIAS(sys_semctl, SyS_semctl);
->   *
->   * This can block, so callers must hold no locks.
->   */
-> -static inline int get_undo_list(struct sem_undo_list **undo_listp)
-> +static inline int get_undo_list(struct sem_undo_list **undo_listp,
-> +				struct ipc_namespace *ipc_ns)
->  {
->  	struct sem_undo_list *undo_list;
-> 
->  	undo_list = current->sysvsem.undo_list;
->  	if (!undo_list) {
-> -		undo_list = kzalloc(sizeof(*undo_list), GFP_KERNEL);
-> -		if (undo_list == NULL)
-> +		undo_list = alloc_undo_list(ipc_ns);
-> +		if (!undo_list)
->  			return -ENOMEM;
-> -		spin_lock_init(&undo_list->lock);
-> -		atomic_set(&undo_list->refcnt, 1);
-> -		INIT_LIST_HEAD(&undo_list->list_proc);
-> -
->  		current->sysvsem.undo_list = undo_list;
->  	}
->  	*undo_listp = undo_list;
-> @@ -1057,7 +1069,7 @@ static struct sem_undo *find_alloc_undo(struct ipc_namespace *ns, int semid)
->  	int nsems;
->  	int error;
-> 
-> -	error = get_undo_list(&ulp);
-> +	error = get_undo_list(&ulp, ns);
->  	if (error)
->  		return ERR_PTR(error);
-> 
-> @@ -1328,7 +1340,7 @@ int copy_semundo(unsigned long clone_flags, struct task_struct *tsk)
->  	int error;
-> 
->  	if (clone_flags & CLONE_SYSVSEM) {
-> -		error = get_undo_list(&undo_list);
-> +		error = get_undo_list(&undo_list, tsk->nsproxy->ipc_ns);
->  		if (error)
->  			return error;
->  		atomic_inc(&undo_list->refcnt);
-> -- 
-> 1.7.1.1
-> 
+> > I'm will try to reproduce this race in the next few hours and analyze
+> > it since I'm not sure the patch really fixes the race -- it may only
+> > make the race trigger less frequently.
+> > =
+
+> > At the very least the patch won't break the current code since it's
+> > essentially a more-strict version of is_task_frozen_enough() -- it lets
+> > fewer tasks attach/detach to/from frozen cgroups.
+> > =
+
+> > Cheers,
+> > 	-Matt Helsley
+> =
+
+> Hi Matt!
+> I am a novice if it comes to the kernel and I find the cgroup_freezer
+> code especially complicated, so definetely this may be not enough to fix =
+that.
+> Notice also that if you uncomment the line 55 in my testcase this will al=
+so
+> trigger the race! This, however, makes sense since process may not be in =
+the cgroup anymore
+> and consequently won't be thawed.
+
+OK, I triggered it with that. Interesting.
+
+> I think that this patch fixes these problems because it does the flag che=
+cking in a right order:
+> first freezing() is used and then frozen() which assures (see frozen_proc=
+ess()) that
+> the race will not happen. Right? :)
+
+I see what you mean. It still seems like it wouldn't actually fix the race =
+-- just make it
+harder to trigger. I think you're saying this is what happens without the p=
+atch:
+
+Time	"bug" goes through these states		cgroup code checks for these states
+---------------------------------------------------------------------------=
+--------
+|	freezing
+|						is_frozen? Nope.
+|	frozen
+|						is_freezing? Nope.
+|						<move>
+V
+
+But, without having carefully investigated the details, this could just as =
+easily happen
+with your patch:
+
+Time	"bug" goes through these states		cgroup code checks for these states
+---------------------------------------------------------------------------=
+--------
+|						is_freezing? Nope.
+|						is_frozen? Nope.
+|	freezing
+|						<move>
+|	frozen
+V
+
+or:
+
+Time	"bug" goes through these states		cgroup code checks for these states
+---------------------------------------------------------------------------=
+--------
+|						is_freezing? Nope.
+|						is_frozen? Nope.
+|	freezing
+|	frozen
+|						<move>
+V
+
+Time	"bug" goes through these states		cgroup code checks for these states
+---------------------------------------------------------------------------=
+--------
+|						is_freezing? Nope.
+|	freezing
+|						is_frozen? Nope.
+|						<move>
+|	frozen
+V
+
+or:
+
+Time	"bug" goes through these states		cgroup code checks for these states
+---------------------------------------------------------------------------=
+--------
+|						is_freezing? Nope.
+|	freezing
+|						is_frozen? Nope.
+|	frozen
+|						<move>
+V
+
+(even with 1 cpu/core)
+
+Your patch only improves things in the sense that it works for the first
+example. We need to prevent the latter cases as well.
+
+Cheers,
+	-Matt
