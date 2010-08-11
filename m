@@ -1,15 +1,14 @@
-From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
-Subject: [PATCH v5 3/3] cgroups: make procs file writable
-Date: Wed, 11 Aug 2010 01:48:51 -0400
-Message-ID: <20100811054851.GD8743__18481.2391213656$1281505852$gmane$org@ghc17.ghc.andrew.cmu.edu>
-References: <20100730235649.GA22644@ghc17.ghc.andrew.cmu.edu>
-	<20100811054604.GA8743@ghc17.ghc.andrew.cmu.edu>
+From: Tomasz Buchert <Tomasz.Buchert-MZpvjPyXg2s@public.gmane.org>
+Subject: Re: [PATCH] cgroup_freezer: Freezing and task move race fix
+Date: Wed, 11 Aug 2010 09:30:09 +0200
+Message-ID: <4C625181.4060606__29995.9996519194$1281511866$gmane$org@inria.fr>
+References: <1281470001-14320-1-git-send-email-tomasz.buchert@inria.fr>
+	<20100811011033.GF2927@count0.beaverton.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: attachment; filename="cgroup-procs-writable.patch"
-In-Reply-To: <20100811054604.GA8743-dJQ2lsn+DImqwBT9kiuFm8WGCVk0P7UB@public.gmane.org>
+In-Reply-To: <20100811011033.GF2927-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,567 +18,167 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Makes procs file writable to move all threads by tgid at once
+Matt Helsley a =E9crit :
+> On Tue, Aug 10, 2010 at 09:53:21PM +0200, Tomasz Buchert wrote:
+>> Writing 'FROZEN' to freezer.state file does not
+>> forbid the task to be moved away from its cgroup
+>> (for a very short time). Nevertheless the moved task
+>> can become frozen OUTSIDE its cgroup which puts
+>> discussed task in a permanent 'D' state.
+> =
 
-From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
+> SUMMARY (for supporting info see the "DETAILS" heading below)
+> =
 
-This patch adds functionality that enables users to move all threads in a
-threadgroup at once to a cgroup by writing the tgid to the 'cgroup.procs'
-file. This current implementation makes use of a per-threadgroup rwsem that's
-taken for reading in the fork() path to prevent newly forking threads within
-the threadgroup from "escaping" while the move is in progress.
+> I can't reproduce this.
+> =
 
-Signed-off-by: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
----
- Documentation/cgroups/cgroups.txt |   13 +
- kernel/cgroup.c                   |  424 +++++++++++++++++++++++++++++++++----
- 2 files changed, 387 insertions(+), 50 deletions(-)
+> My preliminary conclusion is that your testcase doesn't really reproduce
+> what you described. Instead, your testcase prints an incorrect message wh=
+ich
+> could easily lead the person running it to the wrong conclusion.
+> =
 
-diff --git a/Documentation/cgroups/cgroups.txt b/Documentation/cgroups/cgroups.txt
-index b34823f..5f3c707 100644
---- a/Documentation/cgroups/cgroups.txt
-+++ b/Documentation/cgroups/cgroups.txt
-@@ -235,7 +235,8 @@ containing the following files describing that cgroup:
-  - cgroup.procs: list of tgids in the cgroup.  This list is not
-    guaranteed to be sorted or free of duplicate tgids, and userspace
-    should sort/uniquify the list if this property is required.
--   This is a read-only file, for now.
-+   Writing a thread group id into this file moves all threads in that
-+   group into this cgroup.
-  - notify_on_release flag: run the release agent on exit?
-  - release_agent: the path to use for release notifications (this file
-    exists in the top cgroup only)
-@@ -416,6 +417,12 @@ You can attach the current shell task by echoing 0:
- 
- # echo 0 > tasks
- 
-+You can use the cgroup.procs file instead of the tasks file to move all
-+threads in a threadgroup at once. Echoing the pid of any task in a
-+threadgroup to cgroup.procs causes all tasks in that threadgroup to be
-+be attached to the cgroup. Writing 0 to cgroup.procs moves all tasks
-+in the writing task's threadgroup.
-+
- 2.3 Mounting hierarchies by name
- --------------------------------
- 
-@@ -564,7 +571,9 @@ called on a fork. If this method returns 0 (success) then this should
- remain valid while the caller holds cgroup_mutex and it is ensured that either
- attach() or cancel_attach() will be called in future. If threadgroup is
- true, then a successful result indicates that all threads in the given
--thread's threadgroup can be moved together.
-+thread's threadgroup can be moved together. If the subsystem wants to
-+iterate over task->thread_group, it must take rcu_read_lock then check
-+if thread_group_leader(task), returning -EAGAIN if that fails.
- 
- void cancel_attach(struct cgroup_subsys *ss, struct cgroup *cgrp,
- 	       struct task_struct *task, bool threadgroup)
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index e8b8f71..586dbb7 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -1723,6 +1723,76 @@ int cgroup_can_attach_per_thread(struct cgroup *cgrp, struct task_struct *task,
- }
- EXPORT_SYMBOL_GPL(cgroup_can_attach_per_thread);
- 
-+/*
-+ * cgroup_task_migrate - move a task from one cgroup to another.
-+ *
-+ * 'guarantee' is set if the caller promises that a new css_set for the task
-+ * will already exit. If not set, this function might sleep, and can fail with
-+ * -ENOMEM. Otherwise, it can only fail with -ESRCH.
-+ */
-+static int cgroup_task_migrate(struct cgroup *cgrp, struct cgroup *oldcgrp,
-+			       struct task_struct *tsk, bool guarantee)
-+{
-+	struct css_set *oldcg;
-+	struct css_set *newcg;
-+
-+	/*
-+	 * get old css_set. we need to take task_lock and refcount it, because
-+	 * an exiting task can change its css_set to init_css_set and drop its
-+	 * old one without taking cgroup_mutex.
-+	 */
-+	task_lock(tsk);
-+	oldcg = tsk->cgroups;
-+	get_css_set(oldcg);
-+	task_unlock(tsk);
-+
-+	/* locate or allocate a new css_set for this task. */
-+	if (guarantee) {
-+		/* we know the css_set we want already exists. */
-+		struct cgroup_subsys_state *template[CGROUP_SUBSYS_COUNT];
-+		read_lock(&css_set_lock);
-+		newcg = find_existing_css_set(oldcg, cgrp, template);
-+		BUG_ON(!newcg);
-+		get_css_set(newcg);
-+		read_unlock(&css_set_lock);
-+	} else {
-+		might_sleep();
-+		/* find_css_set will give us newcg already referenced. */
-+		newcg = find_css_set(oldcg, cgrp);
-+		if (!newcg) {
-+			put_css_set(oldcg);
-+			return -ENOMEM;
-+		}
-+	}
-+	put_css_set(oldcg);
-+
-+	/* if PF_EXITING is set, the tsk->cgroups pointer is no longer safe. */
-+	task_lock(tsk);
-+	if (tsk->flags & PF_EXITING) {
-+		task_unlock(tsk);
-+		put_css_set(newcg);
-+		return -ESRCH;
-+	}
-+	rcu_assign_pointer(tsk->cgroups, newcg);
-+	task_unlock(tsk);
-+
-+	/* Update the css_set linked lists if we're using them */
-+	write_lock(&css_set_lock);
-+	if (!list_empty(&tsk->cg_list))
-+		list_move(&tsk->cg_list, &newcg->tasks);
-+	write_unlock(&css_set_lock);
-+
-+	/*
-+	 * We just gained a reference on oldcg by taking it from the task. As
-+	 * trading it for newcg is protected by cgroup_mutex, we're safe to drop
-+	 * it here; it will be freed under RCU.
-+	 */
-+	put_css_set(oldcg);
-+
-+	set_bit(CGRP_RELEASABLE, &oldcgrp->flags);
-+	return 0;
-+}
-+
- /**
-  * cgroup_attach_task - attach task 'tsk' to cgroup 'cgrp'
-  * @cgrp: the cgroup the task is attaching to
-@@ -1733,11 +1803,9 @@ EXPORT_SYMBOL_GPL(cgroup_can_attach_per_thread);
-  */
- int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *tsk)
- {
--	int retval = 0;
-+	int retval;
- 	struct cgroup_subsys *ss, *failed_ss = NULL;
- 	struct cgroup *oldcgrp;
--	struct css_set *cg;
--	struct css_set *newcg;
- 	struct cgroupfs_root *root = cgrp->root;
- 
- 	/* Nothing to do if the task is already in that cgroup */
-@@ -1761,46 +1829,16 @@ int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *tsk)
- 		}
- 	}
- 
--	task_lock(tsk);
--	cg = tsk->cgroups;
--	get_css_set(cg);
--	task_unlock(tsk);
--	/*
--	 * Locate or allocate a new css_set for this task,
--	 * based on its final set of cgroups
--	 */
--	newcg = find_css_set(cg, cgrp);
--	put_css_set(cg);
--	if (!newcg) {
--		retval = -ENOMEM;
--		goto out;
--	}
--
--	task_lock(tsk);
--	if (tsk->flags & PF_EXITING) {
--		task_unlock(tsk);
--		put_css_set(newcg);
--		retval = -ESRCH;
-+	retval = cgroup_task_migrate(cgrp, oldcgrp, tsk, false);
-+	if (retval)
- 		goto out;
--	}
--	rcu_assign_pointer(tsk->cgroups, newcg);
--	task_unlock(tsk);
--
--	/* Update the css_set linked lists if we're using them */
--	write_lock(&css_set_lock);
--	if (!list_empty(&tsk->cg_list)) {
--		list_del(&tsk->cg_list);
--		list_add(&tsk->cg_list, &newcg->tasks);
--	}
--	write_unlock(&css_set_lock);
- 
- 	for_each_subsys(root, ss) {
- 		if (ss->attach)
- 			ss->attach(ss, cgrp, oldcgrp, tsk, false);
- 	}
--	set_bit(CGRP_RELEASABLE, &oldcgrp->flags);
-+
- 	synchronize_rcu();
--	put_css_set(cg);
- 
- 	/*
- 	 * wake up rmdir() waiter. the rmdir should fail since the cgroup
-@@ -1826,49 +1864,339 @@ out:
- }
- 
- /*
-- * Attach task with pid 'pid' to cgroup 'cgrp'. Call with cgroup_mutex
-- * held. May take task_lock of task
-+ * cgroup_attach_proc works in two stages, the first of which prefetches all
-+ * new css_sets needed (to make sure we have enough memory before committing
-+ * to the move) and stores them in a list of entries of the following type.
-+ * TODO: possible optimization: use css_set->rcu_head for chaining instead
-+ */
-+struct cg_list_entry {
-+	struct css_set *cg;
-+	struct list_head links;
-+};
-+
-+static bool css_set_check_fetched(struct cgroup *cgrp,
-+				  struct task_struct *tsk, struct css_set *cg,
-+				  struct list_head *newcg_list)
-+{
-+	struct css_set *newcg;
-+	struct cg_list_entry *cg_entry;
-+	struct cgroup_subsys_state *template[CGROUP_SUBSYS_COUNT];
-+
-+	read_lock(&css_set_lock);
-+	newcg = find_existing_css_set(cg, cgrp, template);
-+	if (newcg)
-+		get_css_set(newcg);
-+	read_unlock(&css_set_lock);
-+
-+	/* doesn't exist at all? */
-+	if (!newcg)
-+		return false;
-+	/* see if it's already in the list */
-+	list_for_each_entry(cg_entry, newcg_list, links) {
-+		if (cg_entry->cg == newcg) {
-+			put_css_set(newcg);
-+			return true;
-+		}
-+	}
-+
-+	/* not found */
-+	put_css_set(newcg);
-+	return false;
-+}
-+
-+/*
-+ * Find the new css_set and store it in the list in preparation for moving the
-+ * given task to the given cgroup. Returns 0 or -ENOMEM.
-  */
--static int attach_task_by_pid(struct cgroup *cgrp, u64 pid)
-+static int css_set_prefetch(struct cgroup *cgrp, struct css_set *cg,
-+			    struct list_head *newcg_list)
-+{
-+	struct css_set *newcg;
-+	struct cg_list_entry *cg_entry;
-+
-+	/* ensure a new css_set will exist for this thread */
-+	newcg = find_css_set(cg, cgrp);
-+	if (!newcg)
-+		return -ENOMEM;
-+	/* add it to the list */
-+	cg_entry = kmalloc(sizeof(struct cg_list_entry), GFP_KERNEL);
-+	if (!cg_entry) {
-+		put_css_set(newcg);
-+		return -ENOMEM;
-+	}
-+	cg_entry->cg = newcg;
-+	list_add(&cg_entry->links, newcg_list);
-+	return 0;
-+}
-+
-+/**
-+ * cgroup_attach_proc - attach all threads in a threadgroup to a cgroup
-+ * @cgrp: the cgroup to attach to
-+ * @leader: the threadgroup leader task_struct of the group to be attached
-+ *
-+ * Call holding cgroup_mutex. Will take task_lock of each thread in leader's
-+ * threadgroup individually in turn.
-+ */
-+int cgroup_attach_proc(struct cgroup *cgrp, struct task_struct *leader)
-+{
-+	int retval;
-+	struct cgroup_subsys *ss, *failed_ss = NULL;
-+	struct cgroup *oldcgrp;
-+	struct css_set *oldcg;
-+	struct cgroupfs_root *root = cgrp->root;
-+	/* threadgroup list cursor */
-+	struct task_struct *tsk;
-+	/*
-+	 * we need to make sure we have css_sets for all the tasks we're
-+	 * going to move -before- we actually start moving them, so that in
-+	 * case we get an ENOMEM we can bail out before making any changes.
-+	 */
-+	struct list_head newcg_list;
-+	struct cg_list_entry *cg_entry, *temp_nobe;
-+
-+	/* check that we can legitimately attach to the cgroup. */
-+	for_each_subsys(root, ss) {
-+		if (ss->can_attach) {
-+			retval = ss->can_attach(ss, cgrp, leader, true);
-+			if (retval) {
-+				failed_ss = ss;
-+				goto out;
-+			}
-+		}
-+	}
-+
-+	/*
-+	 * step 1: make sure css_sets exist for all threads to be migrated.
-+	 * we use find_css_set, which allocates a new one if necessary.
-+	 */
-+	INIT_LIST_HEAD(&newcg_list);
-+	oldcgrp = task_cgroup_from_root(leader, root);
-+	if (cgrp != oldcgrp) {
-+		/* get old css_set */
-+		task_lock(leader);
-+		if (leader->flags & PF_EXITING) {
-+			task_unlock(leader);
-+			goto prefetch_loop;
-+		}
-+		oldcg = leader->cgroups;
-+		get_css_set(oldcg);
-+		task_unlock(leader);
-+		/* acquire new one */
-+		retval = css_set_prefetch(cgrp, oldcg, &newcg_list);
-+		put_css_set(oldcg);
-+		if (retval)
-+			goto list_teardown;
-+	}
-+prefetch_loop:
-+	rcu_read_lock();
-+	/* sanity check - if we raced with de_thread, we must abort */
-+	if (!thread_group_leader(leader)) {
-+		retval = -EAGAIN;
-+		goto list_teardown;
-+	}
-+	/*
-+	 * if we need to fetch a new css_set for this task, we must exit the
-+	 * rcu_read section because allocating it can sleep. afterwards, we'll
-+	 * need to restart iteration on the threadgroup list - the whole thing
-+	 * will be O(nm) in the number of threads and css_sets; as the typical
-+	 * case has only one css_set for all of them, usually O(n). which ones
-+	 * we need allocated won't change as long as we hold cgroup_mutex.
-+	 */
-+	list_for_each_entry_rcu(tsk, &leader->thread_group, thread_group) {
-+		/* nothing to do if this task is already in the cgroup */
-+		oldcgrp = task_cgroup_from_root(tsk, root);
-+		if (cgrp == oldcgrp)
-+			continue;
-+		/* get old css_set pointer */
-+		task_lock(tsk);
-+		if (tsk->flags & PF_EXITING) {
-+			/* ignore this task if it's going away */
-+			task_unlock(tsk);
-+			continue;
-+		}
-+		oldcg = tsk->cgroups;
-+		get_css_set(oldcg);
-+		task_unlock(tsk);
-+		/* see if the new one for us is already in the list? */
-+		if (css_set_check_fetched(cgrp, tsk, oldcg, &newcg_list)) {
-+			/* was already there, nothing to do. */
-+			put_css_set(oldcg);
-+		} else {
-+			/* we don't already have it. get new one. */
-+			rcu_read_unlock();
-+			retval = css_set_prefetch(cgrp, oldcg, &newcg_list);
-+			put_css_set(oldcg);
-+			if (retval)
-+				goto list_teardown;
-+			/* begin iteration again. */
-+			goto prefetch_loop;
-+		}
-+	}
-+	rcu_read_unlock();
-+
-+	/*
-+	 * step 2: now that we're guaranteed success wrt the css_sets, proceed
-+	 * to move all tasks to the new cgroup. we need to lock against possible
-+	 * races with fork(). note: we can safely take the threadgroup_fork_lock
-+	 * of leader since attach_task_by_pid took a reference.
-+	 * threadgroup_fork_lock must be taken outside of tasklist_lock to match
-+	 * the order in the fork path.
-+	 */
-+	threadgroup_fork_write_lock(leader);
-+	read_lock(&tasklist_lock);
-+	/* sanity check - if we raced with de_thread, we must abort */
-+	if (!thread_group_leader(leader)) {
-+		retval = -EAGAIN;
-+		read_unlock(&tasklist_lock);
-+		threadgroup_fork_write_unlock(leader);
-+		goto list_teardown;
-+	}
-+	/*
-+	 * No failure cases left, so this is the commit point.
-+	 *
-+	 * If the leader is already there, skip moving him. Note: even if the
-+	 * leader is PF_EXITING, we still move all other threads; if everybody
-+	 * is PF_EXITING, we end up doing nothing, which is ok.
-+	 */
-+	oldcgrp = task_cgroup_from_root(leader, root);
-+	if (cgrp != oldcgrp) {
-+		retval = cgroup_task_migrate(cgrp, oldcgrp, leader, true);
-+		BUG_ON(retval != 0 && retval != -ESRCH);
-+	}
-+	/* Now iterate over each thread in the group. */
-+	list_for_each_entry_rcu(tsk, &leader->thread_group, thread_group) {
-+		/* leave current thread as it is if it's already there */
-+		oldcgrp = task_cgroup_from_root(tsk, root);
-+		if (cgrp == oldcgrp)
-+			continue;
-+		/* we don't care whether these threads are exiting */
-+		retval = cgroup_task_migrate(cgrp, oldcgrp, tsk, true);
-+		BUG_ON(retval != 0 && retval != -ESRCH);
-+	}
-+
-+	/*
-+	 * step 3: attach whole threadgroup to each subsystem
-+	 * TODO: if ever a subsystem needs to know the oldcgrp for each task
-+	 * being moved, this call will need to be reworked to communicate that.
-+	 */
-+	for_each_subsys(root, ss) {
-+		if (ss->attach)
-+			ss->attach(ss, cgrp, oldcgrp, leader, true);
-+	}
-+	/* holding these until here keeps us safe from exec() and fork(). */
-+	read_unlock(&tasklist_lock);
-+	threadgroup_fork_write_unlock(leader);
-+
-+	/*
-+	 * step 4: success! and cleanup
-+	 */
-+	synchronize_rcu();
-+	cgroup_wakeup_rmdir_waiter(cgrp);
-+	retval = 0;
-+list_teardown:
-+	/* clean up the list of prefetched css_sets. */
-+	list_for_each_entry_safe(cg_entry, temp_nobe, &newcg_list, links) {
-+		list_del(&cg_entry->links);
-+		put_css_set(cg_entry->cg);
-+		kfree(cg_entry);
-+	}
-+out:
-+	if (retval) {
-+		/* same deal as in cgroup_attach_task, with threadgroup=true */
-+		for_each_subsys(root, ss) {
-+			if (ss == failed_ss)
-+				break;
-+			if (ss->cancel_attach)
-+				ss->cancel_attach(ss, cgrp, leader, true);
-+		}
-+	}
-+	return retval;
-+}
-+
-+/*
-+ * Find the task_struct of the task to attach by vpid and pass it along to the
-+ * function to attach either it or all tasks in its threadgroup. Will take
-+ * cgroup_mutex; may take task_lock of task.
-+ */
-+static int attach_task_by_pid(struct cgroup *cgrp, u64 pid, bool threadgroup)
- {
- 	struct task_struct *tsk;
- 	const struct cred *cred = current_cred(), *tcred;
- 	int ret;
- 
-+	if (!cgroup_lock_live_group(cgrp))
-+		return -ENODEV;
-+
- 	if (pid) {
- 		rcu_read_lock();
- 		tsk = find_task_by_vpid(pid);
--		if (!tsk || tsk->flags & PF_EXITING) {
-+		if (!tsk) {
-+			rcu_read_unlock();
-+			cgroup_unlock();
-+			return -ESRCH;
-+		}
-+		if (threadgroup) {
-+			/*
-+			 * it is safe to find group_leader because tsk was found
-+			 * in the tid map, meaning it can't have been unhashed
-+			 * by someone in de_thread changing the leadership.
-+			 */
-+			tsk = tsk->group_leader;
-+			BUG_ON(!thread_group_leader(tsk));
-+		} else if (tsk->flags & PF_EXITING) {
-+			/* optimization for the single-task-only case */
- 			rcu_read_unlock();
-+			cgroup_unlock();
- 			return -ESRCH;
- 		}
- 
-+		/*
-+		 * even if we're attaching all tasks in the thread group, we
-+		 * only need to check permissions on one of them.
-+		 */
- 		tcred = __task_cred(tsk);
- 		if (cred->euid &&
- 		    cred->euid != tcred->uid &&
- 		    cred->euid != tcred->suid) {
- 			rcu_read_unlock();
-+			cgroup_unlock();
- 			return -EACCES;
- 		}
- 		get_task_struct(tsk);
- 		rcu_read_unlock();
- 	} else {
--		tsk = current;
-+		if (threadgroup)
-+			tsk = current->group_leader;
-+		else
-+			tsk = current;
- 		get_task_struct(tsk);
- 	}
- 
--	ret = cgroup_attach_task(cgrp, tsk);
-+	if (threadgroup)
-+		ret = cgroup_attach_proc(cgrp, tsk);
-+	else
-+		ret = cgroup_attach_task(cgrp, tsk);
- 	put_task_struct(tsk);
-+	cgroup_unlock();
- 	return ret;
- }
- 
- static int cgroup_tasks_write(struct cgroup *cgrp, struct cftype *cft, u64 pid)
- {
-+	return attach_task_by_pid(cgrp, pid, false);
-+}
-+
-+static int cgroup_procs_write(struct cgroup *cgrp, struct cftype *cft, u64 tgid)
-+{
- 	int ret;
--	if (!cgroup_lock_live_group(cgrp))
--		return -ENODEV;
--	ret = attach_task_by_pid(cgrp, pid);
--	cgroup_unlock();
-+	do {
-+		/*
-+		 * attach_proc fails with -EAGAIN if threadgroup leadership
-+		 * changes in the middle of the operation, in which case we need
-+		 * to find the task_struct for the new leader and start over.
-+		 */
-+		ret = attach_task_by_pid(cgrp, tgid, true);
-+	} while (ret == -EAGAIN);
- 	return ret;
- }
- 
-@@ -3203,9 +3531,9 @@ static struct cftype files[] = {
- 	{
- 		.name = CGROUP_FILE_GENERIC_PREFIX "procs",
- 		.open = cgroup_procs_open,
--		/* .write_u64 = cgroup_procs_write, TODO */
-+		.write_u64 = cgroup_procs_write,
- 		.release = cgroup_pidlist_release,
--		.mode = S_IRUGO,
-+		.mode = S_IRUGO | S_IWUSR,
- 	},
- 	{
- 		.name = "notify_on_release",
+> DETAILS
+> =
+
+> I tried it with and without the cpuset portions of the testcase on a dual
+> core bare metal system with a 2.6.31-derived distro kernel. Since it
+> *should* be obeying the cpuset portions of the testcase I don't think the
+> fact that it's dual-core should make a difference.
+> =
+
+> I also tried with a 2.6.34-rc5 kernel in a single-cpu kvm on a different
+> distro (but on the same physical hardware). I also tried it with and with=
+out
+> the sleep(1) in the child's for(;;) loop in case the cpu load somehow ena=
+bled
+> me to trigger the race.
+> =
+
+> I used the following bash snippet to run the testcase variations and did =
+not
+> observe any tasks in the D state:
+> =
+
+> mount -t cgroup -o freezer,cpuset none /cg
+> while /bin/true ; do
+> 	./bug /cg
+> 	ps -C bug -o state=3D | grep D && break
+> done
+> =
+
+> If there is a race then I should be able to run that ps line anytime afte=
+rwards
+> to see the stuck task.
+> =
+
+> Note that the test message:
+> =
+
+> 	printf("Succesfully moved frozen task!\n");
+> =
+
+> is bogus. In fact there is no guarantee the task or cgroup is frozen at t=
+hat
+> point in the testcase. This should be apparent from a careful reading of
+> Documentation/cgroups/freezer-subsystem.txt, especially:
+> =
+
+> 	This is the basic mechanism which should do the right thing for user spa=
+ce task
+> 	in a simple scenario.
+> =
+
+> 	It's important to note that freezing can be incomplete. In that case we =
+return
+> 	EBUSY. This means that some tasks in the cgroup are busy doing something=
+ that
+> 	prevents us from completely freezing the cgroup at this time. After EBUS=
+Y,
+> 	the cgroup will remain partially frozen -- reflected by freezer.state re=
+porting
+> 	"FREEZING" when read. The state will remain "FREEZING" until one of these
+> 	things happens:
+> =
+
+> 		1) Userspace cancels the freezing operation by writing "THAWED" to
+> 			the freezer.state file
+> 		2) Userspace retries the freezing operation by writing "FROZEN" to
+> 			the freezer.state file (writing "FREEZING" is not legal
+> 			and returns EINVAL)
+> 		3) The tasks that blocked the cgroup from entering the "FROZEN"
+> 			state disappear from the cgroup's set of tasks.
+> =
+
+> So simply writing FROZEN to freezer.state is necessary to initiate freezi=
+ng
+> but insufficient to assert that the task and/or cgroup is frozen.
+> That's why the FREEZING state exists. It's intentionally not specified wh=
+en/why
+> we can't immediately enter FROZEN. Thus userspace must read the freezer.s=
+tate
+> to determine if the current state matches the requested/expected state.
+> =
+
+> This is why I have the extra ps step in the script above -- to determine
+> if the task is actually in D. I should also check that the cgroup it belo=
+ngs
+> to is THAWED. However while attempting to reproduce your report that hasn=
+'t
+> been necessary -- none of the tasks have even entered the D state.
+> =
+
+> Which brings us to the final portion of this analysis: Why isn't anything
+> entering the D state?
+> =
+
+> The behavior I have been able to reproduce and which is not a bug is
+> moving the task immediately after writing FROZEN to freezer.state. We don=
+'t
+> know the state of the task or cgroup at that time (in this testcase) so
+> this is acceptable. I've even made a sequence of modifications to your
+> testcase and run it after each modification to bring it successively more
+> in line with correct use of the cgroup freezer. I still was unable to
+> reproduce your report.
+> =
+
+> So I'm fairly confident there is no bug. I say "fairly" because there may
+> be some aspect of your system that I am not reproducing. At this point it
+> would be great if you could provide more details so I can more thoroughly
+> attempt to recreate your conditions.
+> =
+
+> Cheers,
+> 	-Matt Helsley
+> =
+
+
+Maybe this is a problem with different timings. I have a qemu minimal image
+with two different kernels 2.6.35 - vanilla and patached. I don't use kvm
+with qemu though. You can get it from here:
+	http://pentium.hopto.org/~thinred/files/qemu.tar.bz2
+in the package there is also minimal '.config' for current Linus's tree.
+You run it with ./run-linux <bzImageOfTheKernel>. In /root you will have
+'minimal' program which is my testcase. The small problem with this image i=
+s that
+ps segfaults but it's not a big problem. :)
+
+I am also aware that:
+	printf("Succesfully moved frozen task!\n");
+does not show that task was moved. Only the message is just wrong. What I w=
+anted to observe
+is that the kernel actually ALLOWED to start the process of freezing.
+When you run the testcase with 'strace' you'll see that 'write' returns a p=
+ositive number
+instead of -EBUSY. And that's the bug.
+
+Anyway, I deduce from your later mail that you actually reproduced the prob=
+lem.
+
+Cheers,
+Tomasz
