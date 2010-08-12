@@ -1,17 +1,20 @@
-From: Tomasz Buchert <tomasz.buchert-MZpvjPyXg2s@public.gmane.org>
-Subject: [PATCH 3/3] cgroup_freezer: update_freezer_state does incorrect state
-	transactions
-Date: Thu, 12 Aug 2010 11:45:23 +0200
-Message-ID: <1281606323-16245-4-git-send-email-tomasz.buchert__20081.4709569842$1281606398$gmane$org@inria.fr>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] cgroup_freezer: Freezing and task move race fix
+Date: Thu, 12 Aug 2010 13:13:34 -0700
+Message-ID: <20100812201334.GA29096__48346.6364363723$1281647861$gmane$org@count0.beaverton.ibm.com>
 References: <1281470001-14320-1-git-send-email-tomasz.buchert@inria.fr>
-	<1281606323-16245-1-git-send-email-tomasz.buchert@inria.fr>
-	<1281606323-16245-2-git-send-email-tomasz.buchert@inria.fr>
-	<1281606323-16245-3-git-send-email-tomasz.buchert@inria.fr>
+	<20100810215741.GC2927@count0.beaverton.ibm.com>
+	<4C61D044.2060703@inria.fr>
+	<20100811042738.GH2927@count0.beaverton.ibm.com>
+	<4C6252CF.1090100@inria.fr>
+	<20100812002154.GJ2927@count0.beaverton.ibm.com>
+	<4C634605.50301@inria.fr>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1281606323-16245-3-git-send-email-tomasz.buchert-MZpvjPyXg2s@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4C634605.50301-MZpvjPyXg2s@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,126 +24,189 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Tomasz Buchert <tomasz.buchert-MZpvjPyXg2s@public.gmane.org>
+To: Tomasz Buchert <Tomasz.Buchert-MZpvjPyXg2s@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-There are 4 state transitions possible for a freezer.
-Only FREEZING -> FROZEN transaction is done lazily.
-This patch allows update_freezer_state  only to perform
-this transaction and renames the function to update_if_frozen.
+On Thu, Aug 12, 2010 at 02:53:25AM +0200, Tomasz Buchert wrote:
+> Matt Helsley a =E9crit :
+> > On Wed, Aug 11, 2010 at 09:35:43AM +0200, Tomasz Buchert wrote:
+> >> Matt Helsley a =E9crit :
+> >>> On Wed, Aug 11, 2010 at 12:18:44AM +0200, Tomasz Buchert wrote:
+> >>>> Matt Helsley a =E9crit :
+> >>>>> On Tue, Aug 10, 2010 at 09:53:21PM +0200, Tomasz Buchert wrote:
+> >>>>>> Writing 'FROZEN' to freezer.state file does not
+> >>>>>> forbid the task to be moved away from its cgroup
+> >>>>>> (for a very short time). Nevertheless the moved task
+> >>>>>> can become frozen OUTSIDE its cgroup which puts
+> >>>>>> discussed task in a permanent 'D' state.
+> >>>>>>
+> >>>>>> This patch forbids migration of either FROZEN
+> >>>>>> or FREEZING tasks.
+> >>>>>>
+> >>>>>> This behavior was observed and easily reproduced on
+> >>>>>> a single core laptop. Program and instructions how
+> >>>>>> to reproduce the bug can be fetched from:
+> >>>>>> http://pentium.hopto.org/~thinred/repos/linux-misc/freezer_bug.c
+> >>>>> Thanks for the report and the test code.
+> >>>>>
+> >>>>> I'm will try to reproduce this race in the next few hours and analy=
+ze
+> >>>>> it since I'm not sure the patch really fixes the race -- it may only
+> >>>>> make the race trigger less frequently.
+> >>>>>
+> >>>>> At the very least the patch won't break the current code since it's
+> >>>>> essentially a more-strict version of is_task_frozen_enough() -- it =
+lets
+> >>>>> fewer tasks attach/detach to/from frozen cgroups.
+> >>>>>
+> >>>>> Cheers,
+> >>>>> 	-Matt Helsley
+> >>>> Hi Matt!
+> >>>> I am a novice if it comes to the kernel and I find the cgroup_freezer
+> >>>> code especially complicated, so definetely this may be not enough to=
+ fix that.
+> >>>> Notice also that if you uncomment the line 55 in my testcase this wi=
+ll also
+> >>>> trigger the race! This, however, makes sense since process may not b=
+e in the cgroup anymore
+> >>>> and consequently won't be thawed.
+> >>> OK, I triggered it with that. Interesting.
+> >>>
+> >> Good!
+> >>
+> >>>> I think that this patch fixes these problems because it does the fla=
+g checking in a right order:
+> >>>> first freezing() is used and then frozen() which assures (see frozen=
+_process()) that
+> >>>> the race will not happen. Right? :)
+> >>> I see what you mean. It still seems like it wouldn't actually fix the=
+ race -- just make it
+> >>> harder to trigger. I think you're saying this is what happens without=
+ the patch:
+> >>>
+> >>> Time	"bug" goes through these states		cgroup code checks for these st=
+ates
+> >>> ---------------------------------------------------------------------=
+--------------
+> >>> |	freezing
+> >>> |						is_frozen? Nope.
+> >>> |	frozen
+> >>> |						is_freezing? Nope.
+> >>> |						<move>
+> >>> V
+> >>>
+> >> My first scenario was a bit different:
+> >> Time	"bug" goes through these states		cgroup code checks for these sta=
+tes
+> >> ----------------------------------------------------------------------=
+-------------
+> >> |	freezing
+> >> |						is_task_frozen_enough? Nope.
+> >> |						<move>
+> >> |	frozen
+> >> V
+> >> but the problem is the same.
+> > =
 
-Moreover is_task_frozen_enough function is removed and its
-every occurence is replaced with frozen(). Therefore for a group
-to become FROZEN every task must be frozen.
+> > I think I found a bug in the cgroup freezer which your patch fixes.
+> > However I don't think it's a race.
+> > =
 
-The previous version could trigger a following bug:
-When cgroup is in the process of freezing (but none of its tasks
-are frozen yet), update_freezer_state() (called from freezer_read
-or freezer_write) would incorrectly report that a group is 'THAWED'
-(because nfrozen = 0), allowing the transaction FREEZING -> THAWED
-without writing anything to 'freezer.state'. This is incorrect
-according to the documentation. This could result in a 'THAWED' cgroup
-with frozen tasks inside.
+> > /* Task is frozen or will freeze immediately when next it gets woken */
+> > static bool is_task_frozen_enough(struct task_struct *task)
+> > {
+> >         return frozen(task) ||
+> >                 (task_is_stopped_or_traced(task) && freezing(task));
+> > }
+> > =
 
-A code to reproduce this bug is available here:
-http://pentium.hopto.org/~thinred/repos/linux-misc/freezer_bug2.c
+> > So it will only refuse to attach freezing tasks which have been stopped
+> > or traced! Yet for attach we need to refuse to move _any_ freezing task=
+s.
+> > =
 
-Signed-off-by: Tomasz Buchert <tomasz.buchert-MZpvjPyXg2s@public.gmane.org>
----
- kernel/cgroup_freezer.c |   40 +++++++++++++++++-----------------------
- 1 files changed, 17 insertions(+), 23 deletions(-)
+> > Though stopped/traced _is_ relevant to the cgroup freezer state itself.
+> > If we uses frozen(task) || freezing(task) to determine whether a cgroup
+> > is frozen then it would be possible for the task to still be active
+> > when the cgroup is finally reported FROZEN. However that's not possible
+> > when the task is stopped/traced *and* freezing since even if woken it
+> > won't exit the kernel before entering the refrigerator.
+> > =
 
-diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
-index c287627..a5f7cb6 100644
---- a/kernel/cgroup_freezer.c
-+++ b/kernel/cgroup_freezer.c
-@@ -153,13 +153,6 @@ static void freezer_destroy(struct cgroup_subsys *ss,
- 	kfree(cgroup_freezer(cgroup));
- }
- 
--/* Task is frozen or will freeze immediately when next it gets woken */
--static bool is_task_frozen_enough(struct task_struct *task)
--{
--	return frozen(task) ||
--		(task_is_stopped_or_traced(task) && freezing(task));
--}
--
- /*
-  * The call to cgroup_lock() in the freezer.state write method prevents
-  * a write to that file racing against an attach, and hence the
-@@ -236,31 +229,32 @@ static void freezer_fork(struct cgroup_subsys *ss, struct task_struct *task)
- /*
-  * caller must hold freezer->lock
-  */
--static void update_freezer_state(struct cgroup *cgroup,
-+static void update_if_frozen(struct cgroup *cgroup,
- 				 struct freezer *freezer)
- {
- 	struct cgroup_iter it;
- 	struct task_struct *task;
- 	unsigned int nfrozen = 0, ntotal = 0;
-+	enum freezer_state old_state = freezer->state;
- 
- 	cgroup_iter_start(cgroup, &it);
- 	while ((task = cgroup_iter_next(cgroup, &it))) {
- 		ntotal++;
--		if (is_task_frozen_enough(task))
-+		if (frozen(task))
- 			nfrozen++;
- 	}
- 
--	/*
--	 * Transition to FROZEN when no new tasks can be added ensures
--	 * that we never exist in the FROZEN state while there are unfrozen
--	 * tasks.
--	 */
--	if (nfrozen == ntotal)
--		freezer->state = CGROUP_FROZEN;
--	else if (nfrozen > 0)
--		freezer->state = CGROUP_FREEZING;
--	else
--		freezer->state = CGROUP_THAWED;
-+	if (old_state == CGROUP_THAWED) {
-+		BUG_ON(nfrozen > 0);
-+	}
-+	else if (old_state == CGROUP_FREEZING) {
-+		if (nfrozen == ntotal)
-+			freezer->state = CGROUP_FROZEN;
-+	}
-+	else { /* old_state == CGROUP_FROZEN */
-+		BUG_ON(nfrozen != ntotal);
-+	}
-+
- 	cgroup_iter_end(cgroup, &it);
- }
- 
-@@ -279,7 +273,7 @@ static int freezer_read(struct cgroup *cgroup, struct cftype *cft,
- 	if (state == CGROUP_FREEZING) {
- 		/* We change from FREEZING to FROZEN lazily if the cgroup was
- 		 * only partially frozen when we exitted write. */
--		update_freezer_state(cgroup, freezer);
-+		update_if_frozen(cgroup, freezer);
- 		state = freezer->state;
- 	}
- 	spin_unlock_irq(&freezer->lock);
-@@ -301,7 +295,7 @@ static int try_to_freeze_cgroup(struct cgroup *cgroup, struct freezer *freezer)
- 	while ((task = cgroup_iter_next(cgroup, &it))) {
- 		if (!freeze_task(task, true))
- 			continue;
--		if (is_task_frozen_enough(task))
-+		if (frozen(task))
- 			continue;
- 		if (!freezing(task) && !freezer_should_skip(task))
- 			num_cant_freeze_now++;
-@@ -335,7 +329,7 @@ static int freezer_change_state(struct cgroup *cgroup,
- 
- 	spin_lock_irq(&freezer->lock);
- 
--	update_freezer_state(cgroup, freezer);
-+	update_if_frozen(cgroup, freezer);
- 	if (goal_state == freezer->state)
- 		goto out;
- 
--- 
-1.6.3.3
+> >>> But, without having carefully investigated the details, this could ju=
+st as easily happen
+> >>> with your patch:
+> >>>
+> >>> Time	"bug" goes through these states		cgroup code checks for these st=
+ates
+> >>> ---------------------------------------------------------------------=
+--------------
+> >>> |						is_freezing? Nope.
+> >>> |						is_frozen? Nope.
+> >>> |	freezing
+> >>> |						<move>
+> >>> |	frozen
+> >>> V
+> >>>
+> >> This can't happen as far as I know because there is cgroup_lock around=
+ the code in freezer_write()
+> >> and freezer_can_attach().
+> >> The task can't enter 'freezing' state when can_attach is executed.
+> > =
+
+> > You're right, cgroup_mutex should protect against that. However presuma=
+bly
+> > that same logic applies to the first case. So again I don't think the b=
+ug
+> > is a race.
+> > =
+
+> > <snipped the remaining cases which should be the same>
+> > =
+
+> > At this point I think the bug description in your patch needs to change
+> > but the patch itself is perfect. Assuming you agree with my assessment
+> > of the bug I think the process is: you'll rewrite the description, add =
+-stable
+> > maintaners to your current Cc's (since this bug is simple, exists in pr=
+evious
+> > versions, and is somewhat nasty), add:
+> > =
+
+> > Reviewed-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> > Tested-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> > =
+
+> > and send it to Andrew Morton. Hopefully then (if not before) Paul and Li
+> > will ack it.
+> > =
+
+> > Thanks!
+> > =
+
+> > Cheers,
+> > 	-Matt Helsley
+> =
+
+> I agree with your assessment, Matt. The wrong the definition of being 'fr=
+ozen enough'
+> allows a task to sneak out of its freezing cgroup.
+> The problem is that I found another, closely related bug. Right now, I ha=
+ve
+> a new queue of 3 patches to fix both bugs in a more general setting. They=
+ are not well tested
+> yet but I'm fairly confident that they do the right thing. I'm going to t=
+est them tomorrow.
+> Do you still want me to push the first patch? I propose to let me work a =
+bit on
+> the new patches and prepare the code for the incoming fix to the related =
+bug.
+> What is your opinion?
+
+OK, I'll have a look at the 3 new patches and your test(s) then we can disc=
+uss
+what to do.
+
+Cheers,
+	-Matt
