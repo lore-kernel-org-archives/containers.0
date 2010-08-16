@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 08/17][cr][v4]: Define flock64_set()
-Date: Mon, 16 Aug 2010 12:43:12 -0700
-Message-ID: <1281987801-1293-9-git-send-email-sukadev__26573.285033419$1281988256$gmane$org@linux.vnet.ibm.com>
+Subject: [PATCH 11/17][cr][v4]: Add ->fl_type_prev field.
+Date: Mon, 16 Aug 2010 12:43:15 -0700
+Message-ID: <1281987801-1293-12-git-send-email-sukadev__5412.94984655014$1281988257$gmane$org@linux.vnet.ibm.com>
 References: <1281987801-1293-1-git-send-email-sukadev@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,114 +21,73 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: Matthew Wilcox <matthew-Ztpu424NOJ8@public.gmane.org>, John Stultz <johnstul-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Jamie Lokier <jamie-yetKDKU6eevNLxjTenLetw@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Steven Whitehouse <swhiteho-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Extract core functionality of fcntl_setlk64() into a separate function,
-flock64_set(). flock64_set() can be also used when restarting a checkpointed
-application and restoring its file-locks.
+In preparation for checkpoint/restart of file leases, add ->fl_type_prev
+field to 'struct file_lock'. This field is needed to correctly restore
+file leases in case of recursive checkpoint/restart of an in-progress
+lease.
+
+This ->fl_type_prev is only initialized in this patch. It will actually
+be used when restoring file leases after a checkpoint.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- fs/locks.c         |   38 ++++++++++++++++++++++++--------------
- include/linux/fs.h |    2 ++
- 2 files changed, 26 insertions(+), 14 deletions(-)
+ fs/locks.c         |   10 ++++++++++
+ include/linux/fs.h |    1 +
+ 2 files changed, 11 insertions(+), 0 deletions(-)
 
 diff --git a/fs/locks.c b/fs/locks.c
-index cb83741..c62ab7f 100644
+index 0bd5af7..9a00876 100644
 --- a/fs/locks.c
 +++ b/fs/locks.c
-@@ -1890,11 +1890,10 @@ out:
- /* Apply the lock described by l to an open file descriptor.
-  * This implements both the F_SETLK and F_SETLKW commands of fcntl().
-  */
--int fcntl_setlk64(unsigned int fd, struct file *filp, unsigned int cmd,
--		struct flock64 __user *l)
-+int flock64_set(unsigned int fd, struct file *filp, unsigned int cmd,
-+		struct flock64 *flock)
- {
- 	struct file_lock *file_lock = locks_alloc_lock();
--	struct flock64 flock;
- 	struct inode *inode;
- 	struct file *f;
- 	int error;
-@@ -1902,13 +1901,6 @@ int fcntl_setlk64(unsigned int fd, struct file *filp, unsigned int cmd,
- 	if (file_lock == NULL)
- 		return -ENOLCK;
+@@ -184,6 +184,7 @@ void locks_init_lock(struct file_lock *fl)
+ 	fl->fl_file = NULL;
+ 	fl->fl_flags = 0;
+ 	fl->fl_type = 0;
++	fl->fl_type_prev = 0;
+ 	fl->fl_start = fl->fl_end = 0;
+ 	fl->fl_break_time = 0UL;
+ 	fl->fl_ops = NULL;
+@@ -227,6 +228,7 @@ void __locks_copy_lock(struct file_lock *new, const struct file_lock *fl)
+ 	new->fl_file = NULL;
+ 	new->fl_flags = fl->fl_flags;
+ 	new->fl_type = fl->fl_type;
++	new->fl_type_prev = fl->fl_type_prev;
+ 	new->fl_start = fl->fl_start;
+ 	new->fl_end = fl->fl_end;
+ 	new->fl_break_time = 0UL;
+@@ -293,6 +295,13 @@ static int assign_type(struct file_lock *fl, int type)
+ 	case F_WRLCK:
+ 	case F_UNLCK:
+ 		fl->fl_type = type;
++		/*
++		 * Clear ->fl_type_prev since this is a new lease type.
++		 * break_lease() will use this cleared state to know
++		 * if it must save the lease-type in case of checkpoint/
++		 * restart.
++		 */
++		fl->fl_type_prev = 0;
+ 		break;
+ 	default:
+ 		return -EINVAL;
+@@ -1222,6 +1231,7 @@ int __break_lease(struct inode *inode, unsigned int mode)
  
--	/*
--	 * This might block, so we do it before checking the inode.
--	 */
--	error = -EFAULT;
--	if (copy_from_user(&flock, l, sizeof(flock)))
--		goto out;
--
- 	inode = filp->f_path.dentry->d_inode;
- 
- 	/* Don't allow mandatory locks on files that may be memory mapped
-@@ -1920,7 +1912,7 @@ int fcntl_setlk64(unsigned int fd, struct file *filp, unsigned int cmd,
- 	}
- 
- again:
--	error = flock64_to_posix_lock(filp, file_lock, &flock);
-+	error = flock64_to_posix_lock(filp, file_lock, flock);
- 	if (error)
- 		goto out;
- 	if (cmd == F_SETLKW64) {
-@@ -1928,7 +1920,7 @@ again:
- 	}
- 	
- 	error = -EBADF;
--	switch (flock.l_type) {
-+	switch (flock->l_type) {
- 	case F_RDLCK:
- 		if (!(filp->f_mode & FMODE_READ))
- 			goto out;
-@@ -1953,8 +1945,8 @@ again:
- 	spin_lock(&current->files->file_lock);
- 	f = fcheck(fd);
- 	spin_unlock(&current->files->file_lock);
--	if (!error && f != filp && flock.l_type != F_UNLCK) {
--		flock.l_type = F_UNLCK;
-+	if (!error && f != filp && flock->l_type != F_UNLCK) {
-+		flock->l_type = F_UNLCK;
- 		goto again;
- 	}
- 
-@@ -1962,6 +1954,24 @@ out:
- 	locks_free_lock(file_lock);
- 	return error;
- }
-+
-+/* Apply the lock described by l to an open file descriptor.
-+ * This implements both the F_SETLK and F_SETLKW commands of fcntl().
-+ */
-+int fcntl_setlk64(unsigned int fd, struct file *filp, unsigned int cmd,
-+		struct flock64 __user *l)
-+{
-+	struct flock64 flock;
-+
-+	/*
-+	 * This might block, so we do it before checking the inode in
-+	 * flock64_set().
-+	 */
-+	if (copy_from_user(&flock, l, sizeof(flock)))
-+		return -EFAULT;
-+
-+	return flock64_set(fd, filp, cmd, &flock);
-+}
- #endif /* BITS_PER_LONG == 32 */
- 
- /*
+ 	for (fl = flock; fl && IS_LEASE(fl); fl = fl->fl_next) {
+ 		if (fl->fl_type != future) {
++			fl->fl_type_prev = fl->fl_type;
+ 			fl->fl_type = future;
+ 			fl->fl_break_time = break_time;
+ 			/* lease must have lmops break callback */
 diff --git a/include/linux/fs.h b/include/linux/fs.h
-index fd66f37..49d4eeb 100644
+index 49d4eeb..299cc09 100644
 --- a/include/linux/fs.h
 +++ b/include/linux/fs.h
-@@ -1118,6 +1118,8 @@ extern int flock_set(unsigned int, struct file *, unsigned int, struct flock *);
- extern int fcntl_getlk64(struct file *, struct flock64 __user *);
- extern int fcntl_setlk64(unsigned int, struct file *, unsigned int,
- 			struct flock64 __user *);
-+extern int flock64_set(unsigned int, struct file *, unsigned int,
-+			struct flock64 *);
- #endif
- 
- extern int fcntl_setlease(unsigned int fd, struct file *filp, long arg);
+@@ -1066,6 +1066,7 @@ struct file_lock {
+ 	fl_owner_t fl_owner;
+ 	unsigned char fl_flags;
+ 	unsigned char fl_type;
++	unsigned char fl_type_prev;
+ 	unsigned int fl_pid;
+ 	struct pid *fl_nspid;
+ 	wait_queue_head_t fl_wait;
 -- 
 1.6.0.4
