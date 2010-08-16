@@ -1,7 +1,7 @@
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 04/17][cr][v4]: Restore file_owner info
-Date: Mon, 16 Aug 2010 12:43:08 -0700
-Message-ID: <1281987801-1293-5-git-send-email-sukadev__29768.2403507226$1281987882$gmane$org@linux.vnet.ibm.com>
+Subject: [PATCH 02/17][cr][v4]: Add uid, euid params to __f_setown()
+Date: Mon, 16 Aug 2010 12:43:06 -0700
+Message-ID: <1281987801-1293-3-git-send-email-sukadev__43667.2417600223$1281987978$gmane$org@linux.vnet.ibm.com>
 References: <1281987801-1293-1-git-send-email-sukadev@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,122 +21,142 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: Matthew Wilcox <matthew-Ztpu424NOJ8@public.gmane.org>, John Stultz <johnstul-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Jamie Lokier <jamie-yetKDKU6eevNLxjTenLetw@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Steven Whitehouse <swhiteho-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Restore the file-owner information for each 'struct file'.  This is
-essentially is like a new fcntl(F_SETOWN) and fcntl(F_SETSIG) calls,
-except that the pid, uid, euid and signum values are read from the
-checkpoint image.
+Instead of letting __f_setown() use the UID and EUID of the calling process,
+pass them in as parameters.
 
-Changelog[v4]:
-	- [Oren Laadan]: Sanitize the pid-type field read from checkpoint image.
-Changelog[v3]:
-	- [Oren Laadan]: Ensure find_vpid() found a valid pid before
-	  making it the file owner.
+This modified interface will be useful when checkpointing and restarting an
+application that has a 'file owner' specified for an open file.  When
+checkpointing the application, the UID and EUID of the process setting up
+the owner are saved in the checkpoint image.
+
+When the application is restarted, we use the UID and EUID values saved in
+the checkpoint-image, rather than that of the calling process.
+
 Changelog[v2]:
-	- [Matt Helsley, Serge Hallyn]: Don't trust uids in checkpoint image.
-	  (added CAP_KILL check)
-	- Check that signal number read from the checkpoint image is valid.
-	  (not sure it is required, since its an incomplete check for tampering)
+	- [Matthew Wilcox] Rather than a new __f_setown_uid() interface add
+	  the uid parameters to __f_setown() itself.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- fs/checkpoint.c |   78 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 78 insertions(+), 0 deletions(-)
+ drivers/char/tty_io.c       |    3 ++-
+ drivers/net/tun.c           |    3 ++-
+ fs/fcntl.c                  |   10 ++++++----
+ fs/locks.c                  |    3 ++-
+ fs/notify/dnotify/dnotify.c |    3 ++-
+ include/linux/fs.h          |    3 ++-
+ 6 files changed, 16 insertions(+), 9 deletions(-)
 
-diff --git a/fs/checkpoint.c b/fs/checkpoint.c
-index ce1b4af..be9d39a 100644
---- a/fs/checkpoint.c
-+++ b/fs/checkpoint.c
-@@ -618,6 +618,80 @@ static int attach_file(struct file *file)
- 	return fd;
+diff --git a/drivers/char/tty_io.c b/drivers/char/tty_io.c
+index 115c8e4..9c282b2 100644
+--- a/drivers/char/tty_io.c
++++ b/drivers/char/tty_io.c
+@@ -1969,7 +1969,8 @@ static int tty_fasync(int fd, struct file *filp, int on)
+ 		}
+ 		get_pid(pid);
+ 		spin_unlock_irqrestore(&tty->ctrl_lock, flags);
+-		retval = __f_setown(filp, pid, type, 0);
++		retval = __f_setown(filp, pid, type, current_uid(),
++				current_euid(), 0);
+ 		put_pid(pid);
+ 		if (retval)
+ 			goto out;
+diff --git a/drivers/net/tun.c b/drivers/net/tun.c
+index 4326520..dcbc37d 100644
+--- a/drivers/net/tun.c
++++ b/drivers/net/tun.c
+@@ -1400,7 +1400,8 @@ static int tun_chr_fasync(int fd, struct file *file, int on)
+ 		goto out;
+ 
+ 	if (on) {
+-		ret = __f_setown(file, task_pid(current), PIDTYPE_PID, 0);
++		ret = __f_setown(file, task_pid(current), PIDTYPE_PID,
++				current_uid(), current_euid(), 0);
+ 		if (ret)
+ 			goto out;
+ 		tun->flags |= TUN_FASYNC;
+diff --git a/fs/fcntl.c b/fs/fcntl.c
+index aeab1f4..f44327d 100644
+--- a/fs/fcntl.c
++++ b/fs/fcntl.c
+@@ -214,7 +214,7 @@ static void f_modown(struct file *filp, struct pid *pid, enum pid_type type,
  }
  
-+static int restore_file_owner(struct ckpt_ctx *ctx, struct ckpt_hdr_file *h,
-+		struct file *file)
-+{
-+	int ret;
-+	struct pid *pid;
-+	uid_t uid, euid;
-+
-+	uid = h->f_owner_uid;
-+	euid = h->f_owner_euid;
-+
-+	ckpt_debug("restore_file_owner(): uid %u, euid %u, pid %d, type %d\n",
-+			uid, euid, h->f_owner_pid, h->f_owner_pid_type);
-+	/*
-+	 * We can't trust the uids in the checkpoint image and normally need
-+	 * CAP_KILL. But if the uids match our ids, should be fine since we
-+	 * have access to the file.
-+	 *
-+	 * TODO: Move this check to __f_setown() ?
-+	 */
-+	ret = -EACCES;
-+	if (!capable(CAP_KILL) &&
-+			(uid != current_uid() || euid != current_euid())) {
-+		ckpt_err(ctx, ret, "image uids [%d, %d] don't match current "
-+				"process uids [%d, %d] and no CAP_KILL\n",
-+				uid, euid, current_uid(), current_euid());
-+		return ret;
-+	}
-+
-+	ret = -EINVAL;
-+	if (!valid_signal(h->f_owner_signum)) {
-+		ckpt_err(ctx, ret, "Invalid signum %d\n", h->f_owner_signum);
-+		return ret;
-+	}
-+	file->f_owner.signum = h->f_owner_signum;
-+
-+	switch(h->f_owner_pid_type) {
-+		case PIDTYPE_PID:
-+		case PIDTYPE_PGID:
-+		case PIDTYPE_SID:
-+			break;
-+		default:
-+			ckpt_err(ctx, ret, "Invalid pid-type %d\n",
-+						h->f_owner_pid_type);
-+			return ret;
-+			
-+	}
-+
-+	rcu_read_lock();
-+
-+	/*
-+	 * If file had a non-NULL owner and we can't find the owner after
-+	 * restart, return error.
-+	 */
-+	pid = find_vpid(h->f_owner_pid);
-+	if (h->f_owner_pid && !pid)
-+		ret = -ESRCH;
-+	else {
-+		/*
-+		 * TODO: Do we need 'force' to be 1 here or can it be 0 ?
-+		 * 	 'force' is used to modify the owner, if one is
-+		 * 	 already set. Can it be set when we restart an
-+		 * 	 application ?
-+		 */
-+		ret = __f_setown(file, pid, h->f_owner_pid_type, uid, euid, 1);
-+	}
-+
-+	rcu_read_unlock();
-+
-+	if (ret < 0)
-+		ckpt_err(ctx, ret, "__fsetown_uid() failed\n");
-+
-+	return ret;
-+}
-+
- #define CKPT_SETFL_MASK  \
- 	(O_APPEND | O_NONBLOCK | O_NDELAY | FASYNC | O_DIRECT | O_NOATIME)
+ int __f_setown(struct file *filp, struct pid *pid, enum pid_type type,
+-		int force)
++		uid_t uid, uid_t euid, int force)
+ {
+ 	int err;
  
-@@ -651,6 +725,10 @@ int restore_file_common(struct ckpt_ctx *ctx, struct file *file,
- 	if (ret < 0)
- 		return ret;
+@@ -222,7 +222,7 @@ int __f_setown(struct file *filp, struct pid *pid, enum pid_type type,
+ 	if (err)
+ 		return err;
  
-+	ret = restore_file_owner(ctx, h, file);
-+	if (ret < 0)
-+		return ret;
-+
- 	/*
- 	 * Normally f_mode is set by open, and modified only via
- 	 * fcntl(), so its value now should match that at checkpoint.
+-	f_modown(filp, pid, type, current_uid(), current_euid(), force);
++	f_modown(filp, pid, type, uid, euid, force);
+ 	return 0;
+ }
+ EXPORT_SYMBOL(__f_setown);
+@@ -240,7 +240,8 @@ int f_setown(struct file *filp, unsigned long arg, int force)
+ 	}
+ 	rcu_read_lock();
+ 	pid = find_vpid(who);
+-	result = __f_setown(filp, pid, type, force);
++	result = __f_setown(filp, pid, type, current_uid(), current_euid(),
++			force);
+ 	rcu_read_unlock();
+ 	return result;
+ }
+@@ -296,7 +297,8 @@ static int f_setown_ex(struct file *filp, unsigned long arg)
+ 	if (owner.pid && !pid)
+ 		ret = -ESRCH;
+ 	else
+-		ret = __f_setown(filp, pid, type, 1);
++		ret = __f_setown(filp, pid, type, current_uid(), 
++				current_euid(), 1);
+ 	rcu_read_unlock();
+ 
+ 	return ret;
+diff --git a/fs/locks.c b/fs/locks.c
+index 9cd859e..ca0c7e2 100644
+--- a/fs/locks.c
++++ b/fs/locks.c
+@@ -1514,7 +1514,8 @@ int fcntl_setlease(unsigned int fd, struct file *filp, long arg)
+ 		goto out_unlock;
+ 	}
+ 
+-	error = __f_setown(filp, task_pid(current), PIDTYPE_PID, 0);
++	error = __f_setown(filp, task_pid(current), PIDTYPE_PID, current_uid(),
++				current_euid(), 0);
+ out_unlock:
+ 	unlock_kernel();
+ 	return error;
+diff --git a/fs/notify/dnotify/dnotify.c b/fs/notify/dnotify/dnotify.c
+index 0a63bf6..3e025e5 100644
+--- a/fs/notify/dnotify/dnotify.c
++++ b/fs/notify/dnotify/dnotify.c
+@@ -409,7 +409,8 @@ int fcntl_dirnotify(int fd, struct file *filp, unsigned long arg)
+ 		goto out;
+ 	}
+ 
+-	error = __f_setown(filp, task_pid(current), PIDTYPE_PID, 0);
++	error = __f_setown(filp, task_pid(current), PIDTYPE_PID, current_uid(),
++				current_euid(), 0);
+ 	if (error) {
+ 		/* if we added, we must shoot */
+ 		if (dnentry == new_dnentry)
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index ee725ff..b4a6fb0 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1304,7 +1304,8 @@ extern void kill_fasync(struct fasync_struct **, int, int);
+ /* only for net: no internal synchronization */
+ extern void __kill_fasync(struct fasync_struct *, int, int);
+ 
+-extern int __f_setown(struct file *filp, struct pid *, enum pid_type, int force);
++extern int __f_setown(struct file *filp, struct pid *pid, enum pid_type type,
++		uid_t uid, uid_t euid, int force);
+ extern int f_setown(struct file *filp, unsigned long arg, int force);
+ extern void f_delown(struct file *filp);
+ extern pid_t f_getown(struct file *filp);
 -- 
 1.6.0.4
