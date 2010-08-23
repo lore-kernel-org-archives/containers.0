@@ -1,18 +1,11 @@
-From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [Devel] Re: Containers vs. OpenVZ
-Date: Mon, 23 Aug 2010 13:38:02 +0400
-Message-ID: <4C72417A.6060005@parallels.com>
-References: <20100817103339.GA8495@nibiru.local>	
-	<20100818002416.GG3648@count0.beaverton.ibm.com>	
-	<4C6B3082.2070802@cs.columbia.edu>	
-	<AANLkTinLMVV21pW_icDriWbrZ1U8NgfKYWMhFLBD5XS-@mail.gmail.com>	
-	<20100818170256.GA3642@count0.beaverton.ibm.com>	
-	<4C7226EA.5020600@parallels.com> <1282554513.2701.50.camel@tablet>
+From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Subject: unshare pidns and setns syscall
+Date: Mon, 23 Aug 2010 17:11:55 +0200
+Message-ID: <4C728FBB.8040204@free.fr>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1282554513.2701.50.camel@tablet>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,34 +15,18 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Peter Volkov <pva-aBrp7R+bbdUdnm+yROfE0A@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gMDgvMjMvMjAxMCAwMTowOCBQTSwgUGV0ZXIgVm9sa292IHdyb3RlOgo+INCSINCf0L3QtCwg
-MjMvMDgvMjAxMCDQsiAxMTo0NCArMDQwMCwgUGF2ZWwgRW1lbHlhbm92INC/0LjRiNC10YI6Cj4+
-IEFuZCBubyAtIHlvdSBjYW5ub3QgcmVwbGFjZSBvcGVudnogd2l0aCBseGMgeWV0IGZvciBtYW55
-IHJlYXNvbnMuCj4gCj4gUGF2ZWwsIEkgdGhpbmsgbG90J3Mgb2YgcGVvcGxlIHdpbGwgYmVuZWZp
-dCBpZiB5b3Ugc3VtbWFyaXplIGltcG9ydGFudAo+IHBvaW50cyBvZiBkaWZmZXJlbmNlcy4gWWVh
-LCBJIGhhdmUgbXkgb3duIGxpc3QgYnV0IEknZCBiZXR0ZXIgbGlzdGVuIHRvCj4ga25vd2xlZGdl
-YWJsZSBwZW9wbGUgZmlyc3QgOykKCjopCgpPSywgYnV0IGZpcnN0IG9mIGFsbCAtIHRoZSBsaXN0
-IEkgcHJvdmlkZSBpcyBqdXN0IHRoZSBzaXR1YXRpb24gd2UgY3VycmVudGx5CmhhdmUgdGhhdCB3
-aWxsIGNoYW5nZSBpbiB0aGUgZnV0dXJlLCBub3Qgc29tZSBmdW5kYW1lbnRhbCBwcm9ibGVtLiBC
-ZXNpZGVzLCBJCmNhbiBiZSBub3QgYXdhcmUgb2Ygc29tZSByZWNlbnQgY2hhbmdlcywgc28gcGxl
-YXNlIGNvcnJlY3QgbWUgaWYgSSdtIHdyb25nLgoKU28sIHRoZSBiZW5lZml0cyBvZiB0aGUgT3Bl
-blZaIGFnYWluc3QgTFhDLgoKMS4gQ2hlY2twb2ludGluZy4gVGhhdCdzIHRoZSBiaWdnZXN0IGRp
-ZmZlcmVuY2UuCjIuIFJlc291cmNlIG1hbmFnZW1lbnQuIEN1cnJlbnRseSBpbiBMQ1ggeW91IG1h
-eSBvbmx5IGhhdmUgYSBwZXIgY29udGFpbmVyCiAgIHVzZXIgbWVtb3J5IG1hbmFnZW1lbnQuIElu
-IE9wZW5WWiB3ZSBjb250cm9sIG11Y2ggbW9yZSByZXNvdXJjZXMgbGlrZQogICBrZXJuZWwgbWVt
-b3J5IG9yIG5ldHdvcmtpbmcgYnVmZmVycwozLiBFbnRlcmluZyBhIGNvbnRhaW5lci4gSSd2ZSBz
-ZWVuIG1hbnkgYXBwcm9hY2hlcyBvZiBob3cgdG8gam9pbiBhIGZvcmVpZ24KICAgY29udGFpbmVy
-IChzeXNfaGlqYWNrLCBzeXNfbnNmZCwgc3lzX2Nsb25lYXQsIGV0YykgYnV0IEFGQUlLIG5vbmUg
-b2YgdGhlbQogICBpcyBpbmNsdWRlZCBpbiB0aGUgbWFpbmxpbmUuCjQuIDItbGV2ZWwgZGlzayBx
-dW90YS4gV2UncmUgdHJ5aW5nIHRvIHB1c2ggb25lIGludG8gdGhlIEFsJ3MgdHJlZSBob3dldmVy
-IDspCjUuIEJlbGxzLWFuZC13aGlzdGxlcyBsaWtlIE5GUy9ORlNkIHZpcnR1YWxpemF0aW9uLCBG
-VVNFIHZpcnR1YWxpemF0aW9uLCBldGMKNi4gQ29udGFpbmVycyBtYW5hZ2VtZW50IGxpa2Ugdnps
-aXN0IHRvb2wgb3IgdmFyaW91cyAvcHJvYyBmaWxlcywgdGhhdCBoZWxwCiAgIHlvdSB0byB0cmFj
-ayBjb250YWluZXJzIHN0YXRlIGFuZCByZXNvdXJjZXMKCj4gV2l0aCBiZXN0IHJlZ2FyZHMsCgpf
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJz
-IG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBz
-Oi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+
+Hi Eric,
+
+do you plan to send a new version of the 'setns' patchset ? I will be 
+happy to test it if you have a more recent one.
+
+In the meantime, we kept porting your patchset on top of the latest kernels.
+http://lxc.sourceforge.net/patches/linux/2.6.35/2.6.35-lxc1/patches/
+
+Thanks
+   -- Daniel
