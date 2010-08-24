@@ -1,7 +1,7 @@
 From: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
 Subject: Returned mail: see transcript for details
 Date: Mon, 23 Aug 2010 19:58:13 -0700
-Message-ID: <201008240258.o7O2wJp8019963@smtp1.linux-foundation.org>
+Message-ID: <201008240258.o7O2ws76020088@smtp1.linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: multipart/mixed;
 	boundary="----=_NextPart_000_0009_F37F2363.6E84B951"
@@ -24,7 +24,7 @@ This is a multi-part message in MIME format.
 Content-Type: text/plain;
 	charset=us-ascii
 Content-Transfer-Encoding: base64
-X-MIME-Autoconverted: from 8bit to base64 by smtp1.linux-foundation.org id o7O2xETL020202
+X-MIME-Autoconverted: from 8bit to base64 by smtp1.linux-foundation.org id o7O31V16020395
 
 TeXHzOOGP5e0nU+Vk667mJ6L1osh6sRi15Ek6EmtyWt51EXii3baP/rdLEayaZLS5o6DRepX
 flabpM1EN3xc8MvrUK/6dCzqOzw0a9ZVMtCCc4ha6fQlZbINCkg2bPKF9KBI9YZztrahDQqm
