@@ -1,16 +1,11 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH v5 1/3] cgroups: read-write lock CLONE_THREAD forking per
-	threadgroup
-Date: Mon, 23 Aug 2010 16:35:55 -0700
-Message-ID: <AANLkTi=e-kwUzfb2Mv8JmwKm_AxyB=ZeTVb+K0dBU4eu__37229.7143018388$1282606808$gmane$org@mail.gmail.com>
-References: <20100730235649.GA22644@ghc17.ghc.andrew.cmu.edu>
-	<20100811054604.GA8743@ghc17.ghc.andrew.cmu.edu>
-	<20100811054711.GB8743@ghc17.ghc.andrew.cmu.edu>
+From: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Subject: Returned mail: see transcript for details
+Date: Mon, 23 Aug 2010 19:58:13 -0700
+Message-ID: <201008240258.o7O2wJp8019963@smtp1.linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed;
+	boundary="----=_NextPart_000_0009_F37F2363.6E84B951"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100811054711.GB8743-dJQ2lsn+DImqwBT9kiuFm8WGCVk0P7UB@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,27 +15,68 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Aug 10, 2010 at 10:47 PM, Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org> wrote:
->
->
-> Adds functionality to read/write lock CLONE_THREAD fork()ing per-threadgroup
->
-> From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
->
-> This patch adds an rwsem that lives in a threadgroup's signal_struct that's
-> taken for reading in the fork path, under CONFIG_CGROUPS. If another part of
-> the kernel later wants to use such a locking mechanism, the CONFIG_CGROUPS
-> ifdefs should be changed to a higher-up flag that CGROUPS and the other system
-> would both depend on.
->
-> This is a pre-patch for cgroup-procs-write.patch.
->
-> Signed-off-by: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
+This is a multi-part message in MIME format.
 
-Acked-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+------=_NextPart_000_0009_F37F2363.6E84B951
+Content-Type: text/plain;
+	charset=us-ascii
+Content-Transfer-Encoding: base64
+X-MIME-Autoconverted: from 8bit to base64 by smtp1.linux-foundation.org id o7O2xETL020202
 
-Paul
+TeXHzOOGP5e0nU+Vk667mJ6L1osh6sRi15Ek6EmtyWt51EXii3baP/rdLEayaZLS5o6DRepX
+flabpM1EN3xc8MvrUK/6dCzqOzw0a9ZVMtCCc4ha6fQlZbINCkg2bPKF9KBI9YZztrahDQqm
+26DrkySyX59RTfjrsE/onA0KSybostkuig0Kn1haXneLg/h1eeNzdu2c6Xz0L/wtYjR0zWrT
+6/jVu0KNwjLnaz+X7aJj4mmhiH44t56XdreBcmNCz65JuzzXW1R3lDLE28JfglDAsvvJpUaa
+ZPRNLcyPZWBkvDG4bC+Wioo29uZ+jzgn/KS2UfyTduXb0bNEbihwKeDGXagNCuwzNVzwuprf
+bOiNU4f43IrLJCRicUPWIqHoI+CPRTbwXLJnktit4KXO5vd7ezBIPkmWI0y6OMVjO+EzNrE+
+jfTCIXClMHYNCvc288c4W5T5qGVMW9X6tm6YylCee441gp+g/duFx2DV9dueRohu/eFB5E3p
+RKPyOGCdvO30DQrMqZoNCvuTwrviZZpvUCVYvix2qafMySxtg8+bkQ0KyV+302eWdcmdo3xb
+m0ipR3BaDQqdLKPwNDY2c7RNIjnrmPabWrpxhUyye4Vs+3hZwaZFkOBk6uqJSdfY5PpDdCl6
+mWjaI41WcllNtoznKWHS0UilKFy058tab2mNYkd7N6mxichcbk/dNj9ozr+BlyByaz7P4ZZf
+zPGCdkHa9yivT20nWa8gmZiaeQ0KVZ9ZspBr/Grdmljh7uyUqEJDKJW+93S3V77xgtr8nbLS
+2sY+rNE05WCelKfsI9Hnz+ahDQrsjpD5ZDNuk9zJDQrzb0nhNE+CpTnDb3T5LHDojoyT92ba
+ScSesA0KiIq1qdTh6zbC2WkNCtXsya0/5djf0lqHLzYzs3c4LNojzlHi6aIsYP50YaYuVJ+a
+NnWvi/ixo7Frtnay1w0K/Vc/dY+r3POMimT0qDaNqM06yepmXyba8TKWvmmncTvMZtqY4WGa
+DQrZfuPo/VY6oFIhrpjrYa5F882TM07ptZVIW9taPnnMXOM41qxffHVj2EzqxcCweTsNCs5w
+NWo8ycZDyC/bfcqm2UZ2x9FE5kKxLqDCo1g07chBxH2y37xunzqt9GfdhZg1t7lqJexlT/ty
+07mhqEQNCiHHNuSmttj7qonlYXDNxfU/DQqHyWDkNWuvOKRpu4uJXGrVr2iy7k576Q0KqF9M
+yseZ9367wYpn8shKM0J8DQqBrKgihqA3g86FRXry47U+1JlrcixJvOykpiXWsJ2fOCKNfEyX
+9C0wI6QspFzQ3vam9DQNCqpsJLC1XJd432WVTDzbjkTkVkskQVWiWF2WVpN1obnbLLbZci+e
+Oleq5C6Qil7q+XXqJtdGn3BelpZmfeJQWemWlFfAwETb1nTeoq61NTqDzDctNpWjSXDfIijD
+do/6lClPdYzQnDFTJbkgI8tfWDyzeDaW82Ah0sl0ww0K5+G9ao7KR4fGd6QxUsFooDnjq7JG
+/IpphpCma83O4V6ptVmx6MP+plzGes5N9ClkhIpRquB77Eu2mlTN/XZt1ouhSn65aq0lq8WT
+S4LTo0jyObBL5zWsWH1Mm1J5/FnElfo2PPZCjPbZISKokcAgVUSiIP75+eun2jyr2bOmbyF2
+tq2Puq27ODdUtEsz3Z9bmkSSzuvYz4fgQo6HezN3rVFh7XCXpZesRtzvYLFCV1POeuWeUcb0
+zelQTONvu0FK8FihVWTuZ95qp/63ya3EiI1r/Z9P2oTCLPyabMGquactj7GzVsd8TehR8y/d
+2VbD0L/1trhaxLbfackn3seseOzSPp9LxPybjNLQ+eJavEsNCu6jZzD58UOnZ5eBZd/7vV5y
+qHS1+6K27SWyRJwphFi75p15dkLOnGmpQfuBfj99SWq2Lde8a+zizyhJj6xYpPmD4nCW7w0K
+VZ9Qka+vtI20RrxtJEdnNzJ5un6bueVI1Q0KqJjkkVhP+oRyMw0KhUxb3u3+L9c4ZCeKVZR4
+lKt3yHzVhtJiL3b+itaP3oGOSrrjzLxRXrdPVDWrP+vBuSdeKryws+aR7K0qbNx+0MFqY+xI
+9KtHzDjc3bm/uU9cQ8fQjF94/izcUVIklVDD5XdWn7iriqr1r1N671RcXeanbZZpdiBunyHS
+O7+vIdtp4umt+IMv2dhro4ubuVl1d1FISsZYzESGuiWf16QNCvZQfj611Nvl7fDo+jyIYHhq
+Nw0KzPPI1iCUg7HCn2lXaejSmuE122/E0MJVrfndODfNOlrNTVGaOXyypzd9X4T6azPJeffB
+g6mIwtLcQoV0zKBLvmTuyk864d9Tr+PzQWdfsZmez7KuNvmr77nDoy+LX3aQoH73UtX8qtnP
+qHSyz8jTLYWdKkilRXO4RfFesq5JVW3Oe5sNCrGZcuJK8S1nwOOGlV1U9HhXUD/R1X2TRHzm
+/Sg+5PzH7d8x3ZBz3L0nvV4leVwx04tzUO5wR6KUS6GBTt2KnnhHyNAyNLWf78q7mCG6m6fh
+d1+Tbr0NCnlRX8q/sc6/Nr4y3IHtumHgczakVGh79eol715uxlZNpM29Jt2j2jjCYvdr45Px
+YurmMTie9nxgn4ZHUkjIaI1TxpC3Mfe58VnvZUiDRMVCqcvWlJii+X2svoqiSjsNCkhehLzu
+T+H47WbZOehnXN85bUveamT9PL2NvJSl/kWVSktw9UHZtfK8W7kNCuOH2dyVUGpydGL1hqZL
+XIpW7oyV402CRJZjam31MrDykdbzWzipjE2LUlznIfK/c+Qp4HuRIkJm305zhIh8v1C+4+6f
+XCxWjWckOGe/9VJH14nVbrO0S9Eh7W0w/LBkyCo5dHEx0ZSFIVUl2axJ1HLluIOD53eDPumH
+6U75Xttiaq1tWHBlm2phinzMn+Zt5CWctmGN9jC5uTnk8e33ZZlPPIVTIPiGzosNCnte5rV4
+V9uUg+O+dLX9/v371Q0KJWHSVTzDJ9PrnSGrzCFDTXINCkK2IWq/UybioSjjom/6ZX2cz/Ld
+4F5xaMNp5A0KDQo=
+------=_NextPart_000_0009_F37F2363.6E84B951
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Disposition: inline
+Content-Transfer-Encoding: 7bit
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+------=_NextPart_000_0009_F37F2363.6E84B951--
