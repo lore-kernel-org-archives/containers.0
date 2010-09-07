@@ -1,14 +1,12 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/3] cgroup : make the mount options parsing more accurate
-Date: Tue, 7 Sep 2010 12:38:54 -0700
-Message-ID: <AANLkTi=2qWKXGBsqmbZjUs_H2VSDykheAABha079puT3@mail.gmail.com>
-References: <1283585466-30265-1-git-send-email-daniel.lezcano@free.fr>
-	<1283585466-30265-2-git-send-email-daniel.lezcano@free.fr>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: C/R and stdio redirection
+Date: Tue, 7 Sep 2010 13:03:26 -0700
+Message-ID: <20100907200326.GA22256@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1283585466-30265-2-git-send-email-daniel.lezcano-GANU6spQydw@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,24 +16,48 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Cc: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Sat, Sep 4, 2010 at 12:31 AM, Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org> wr=
-ote:
-> The actual code does not detect 'all' with one subsystem name, which
-> is IMHO mutually exclusive and when an option is specified even if it
-> is not a subsystem name, we have to specify the 'all' option with the
-> other option.
-> eg:
-> =A0not detected : mount -t cgroup -o all,freezer cgroup /cgroup
-> =A0not flexible : mount -t cgroup -o noprefix,all cgroup /cgroup
->
-> This patch fix this and makes the code a bit more clear by replacing
-> 'else if' indentation by 'continue' blocks in the loop.
 
-Can you fix this description to be clearer about the new behaviour of the c=
-ode?
+Suppose we create a container and redirect its stdout/stderr as follows:
 
-Reviewed-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+	lxc-execute -name foo -- /path/to/app > /tmp/xyz.out 2>&1
+
+If we attempt to checkpoint the container 'foo', we fail bc one of the
+fds in the application refers to /tmp/xyz.out, which is also in use
+outside the container (specifically sys_checkpoint() fails due to the
+"alien mount ns" check in ckpt_fill_fname()).
+
+It can be argued, 'foo' is not a strict container (since it shares the
+fd with another container).  For this reason, we currently need the
+CHECKPOINT_SUBTREE flag in lxc-checkpoint.
+
+We initially thought that solving mount-namespaces will solve this, but
+realized that they are both separate problems. Mount-namespace C/R addresses
+preserving the mounts within the container and /tmp/xyz.out is outside
+the container.
+
+So if an application container needs to redirect stdio as above, we should
+either 
+	a) disable/ignore the alien-mount-ns check or 
+
+	b) try and start the application something like:
+
+		$ cat /tmp/wrapper
+		/path/to/app > /tmp/xyz.out 2>&1
+
+		$ lxc-execute --name foo --  /tmp/wrapper
+
+with the difference being /tmp/xyz.out is now inside the container's /tmp
+filesystem rather than in the parent container.
+
+Maybe we can go with approach 'a' above only if CHECKPOINT_SUBTREE is also
+set - we had discussed this before and considered it hacky.
+
+Or are there other solutions to this stdio redirection issue ?
+
+Thanks,
+
+Sukadev
