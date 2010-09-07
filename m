@@ -1,11 +1,11 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: [PATCH 2/3] cgroup : make the mount options parsing more accurate
-Date: Sat,  4 Sep 2010 09:31:05 +0200
-Message-ID: <1283585466-30265-2-git-send-email-daniel.lezcano@free.fr>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/3] cgroup : add clone_children control file
+Date: Tue, 7 Sep 2010 12:34:07 -0700
+Message-ID: <AANLkTi=hM66-F-U2-ZoiDgksh51hq3MLb5aSLmwsShwi@mail.gmail.com>
 References: <1283585466-30265-1-git-send-email-daniel.lezcano@free.fr>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 In-Reply-To: <1283585466-30265-1-git-send-email-daniel.lezcano-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
@@ -17,158 +17,26 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
-Cc: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-The actual code does not detect 'all' with one subsystem name, which
-is IMHO mutually exclusive and when an option is specified even if it
-is not a subsystem name, we have to specify the 'all' option with the
-other option.
-eg:
- not detected : mount -t cgroup -o all,freezer cgroup /cgroup
- not flexible : mount -t cgroup -o noprefix,all cgroup /cgroup
+On Sat, Sep 4, 2010 at 12:31 AM, Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org> wr=
+ote:
+> @@ -229,6 +229,7 @@ inline int cgroup_is_removed(const struct cgroup *cgr=
+p)
+> =A0/* bits in struct cgroupfs_root flags field */
+> =A0enum {
+> =A0 =A0 =A0 =A0ROOT_NOPREFIX, /* mounted subsystems have no named prefix =
+*/
+> + =A0 =A0 =A0 ROOT_CLONE_CHILDREN, /* mounted subsystems will inherit fro=
+m parent */
+> =A0};
 
-This patch fix this and makes the code a bit more clear by replacing
-'else if' indentation by 'continue' blocks in the loop.
+This bit is awkward - you're storing the original value of the
+clone_children flag to report in the mount options, but this isn't
+necessarily the current state. Might it be better to not store this
+and just report the current value of the root cgroup's
+CGRP_CLONE_CHILDREN flag?
 
-Signed-off-by: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Cc: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Reviewed-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
----
- kernel/cgroup.c |   91 +++++++++++++++++++++++++++++++++++++------------------
- 1 files changed, 61 insertions(+), 30 deletions(-)
-
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 0473a9a..ca2314f 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -1074,7 +1074,8 @@ struct cgroup_sb_opts {
-  */
- static int parse_cgroupfs_options(char *data, struct cgroup_sb_opts *opts)
- {
--	char *token, *o = data ?: "all";
-+	char *token, *o = data;
-+	bool all_ss = false, one_ss = false;
- 	unsigned long mask = (unsigned long)-1;
- 	int i;
- 	bool module_pin_failed = false;
-@@ -1088,26 +1089,30 @@ static int parse_cgroupfs_options(char *data, struct cgroup_sb_opts *opts)
- 	memset(opts, 0, sizeof(*opts));
- 
- 	while ((token = strsep(&o, ",")) != NULL) {
-+
- 		if (!*token)
- 			return -EINVAL;
--		if (!strcmp(token, "all")) {
--			/* Add all non-disabled subsystems */
--			opts->subsys_bits = 0;
--			for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
--				struct cgroup_subsys *ss = subsys[i];
--				if (ss == NULL)
--					continue;
--				if (!ss->disabled)
--					opts->subsys_bits |= 1ul << i;
--			}
--		} else if (!strcmp(token, "none")) {
-+		if (!strcmp(token, "none")) {
- 			/* Explicitly have no subsystems */
- 			opts->none = true;
--		} else if (!strcmp(token, "noprefix")) {
-+			continue;
-+		}
-+		if (!strcmp(token, "all")) {
-+			/* Mutually exclusive option 'all' + subsystem name */
-+			if (one_ss)
-+				return -EINVAL;
-+			all_ss = true;
-+			continue;
-+		}
-+		if (!strcmp(token, "noprefix")) {
- 			set_bit(ROOT_NOPREFIX, &opts->flags);
--		} else if (!strcmp(token, "clone_children")) {
-+			continue;
-+		}
-+		if (!strcmp(token, "clone_children")) {
- 			set_bit(ROOT_CLONE_CHILDREN, &opts->flags);
--		} else if (!strncmp(token, "release_agent=", 14)) {
-+			continue;
-+		}
-+		if (!strncmp(token, "release_agent=", 14)) {
- 			/* Specifying two release agents is forbidden */
- 			if (opts->release_agent)
- 				return -EINVAL;
-@@ -1115,7 +1120,9 @@ static int parse_cgroupfs_options(char *data, struct cgroup_sb_opts *opts)
- 				kstrndup(token + 14, PATH_MAX - 1, GFP_KERNEL);
- 			if (!opts->release_agent)
- 				return -ENOMEM;
--		} else if (!strncmp(token, "name=", 5)) {
-+			continue;
-+		}
-+		if (!strncmp(token, "name=", 5)) {
- 			const char *name = token + 5;
- 			/* Can't specify an empty name */
- 			if (!strlen(name))
-@@ -1137,20 +1144,44 @@ static int parse_cgroupfs_options(char *data, struct cgroup_sb_opts *opts)
- 					      GFP_KERNEL);
- 			if (!opts->name)
- 				return -ENOMEM;
--		} else {
--			struct cgroup_subsys *ss;
--			for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
--				ss = subsys[i];
--				if (ss == NULL)
--					continue;
--				if (!strcmp(token, ss->name)) {
--					if (!ss->disabled)
--						set_bit(i, &opts->subsys_bits);
--					break;
--				}
--			}
--			if (i == CGROUP_SUBSYS_COUNT)
--				return -ENOENT;
-+
-+			continue;
-+		}
-+
-+		for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
-+			struct cgroup_subsys *ss = subsys[i];
-+			if (ss == NULL)
-+				continue;
-+			if (strcmp(token, ss->name))
-+				continue;
-+			if (ss->disabled)
-+				continue;
-+
-+			/* Mutually exclusive option 'all' + subsystem name */
-+			if (all_ss)
-+				return -EINVAL;
-+			set_bit(i, &opts->subsys_bits);
-+			one_ss = true;
-+
-+			break;
-+		}
-+		if (i == CGROUP_SUBSYS_COUNT)
-+			return -ENOENT;
-+	}
-+
-+	/*
-+	 * If the 'all' option was specified select all the subsystems,
-+	 * otherwise 'all, 'none' and a subsystem name options were not
-+	 * specified, let's default to 'all'
-+	 */
-+	if (all_ss || (!all_ss && !one_ss && !opts->none)) {
-+		for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
-+			struct cgroup_subsys *ss = subsys[i];
-+			if (ss == NULL)
-+				continue;
-+			if (ss->disabled)
-+				continue;
-+			set_bit(i, &opts->subsys_bits);
- 		}
- 	}
- 
--- 
-1.7.0.4
+Paul
