@@ -1,14 +1,14 @@
-From: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: C/R and stdio redirection
-Date: Wed, 8 Sep 2010 12:21:54 +0200
-Message-ID: <20100908102154.GD4812@hawkmoon.kerlabs.com>
-References: <20100907200326.GA22256@us.ibm.com>
-	<20100908084152.GC4812@hawkmoon.kerlabs.com>
-	<1283940033.32527.77.camel@bahia>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: C/R: File substitution at restart
+Date: Wed, 8 Sep 2010 08:09:31 -0500
+Message-ID: <20100908130931.GA11161@hallyn.com>
+References: <4C875F6E.2030004@kerlabs.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============8952948969648367881=="
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1283940033.32527.77.camel@bahia>
+Content-Disposition: inline
+In-Reply-To: <4C875F6E.2030004-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,75 +16,36 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Greg Kurz <gkurz-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, matthieu.fertre-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>
+To: Matthieu =?iso-8859-1?Q?Fertr=E9?= <matthieu.fertre-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
+Cc: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
+Quoting Matthieu Fertr=E9 (matthieu.fertre-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org):
+> Hi,
+> =
 
---===============8952948969648367881==
-Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-26679-1283941290-0001-2"
-Content-Disposition: inline
+> Here is a proposal for a C/R related feature already developed in
+> Kerrighed: file substitution at restart.
+> =
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
+> The goal of this mail is to start a discussion about adding such feature
+> to Linux cr. Comments are welcome!
 
---=_bohort-26679-1283941290-0001-2
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Yup, AFAIK metacluster and zap do this too.  I don't think there is
+any question about whether we want to support this, but rather
+what the user-kernel API should look like.  Perhaps the easiest
+"API" is to have the userspace program rewrite the checkpoint image,
+but that probably isn't quite as simple as just substituting #s in
+the image, bc we'll have to also find the place where the source of
+the original fd was specified and tweak that.
 
-On 08/09/10 12:00 +0200, Greg Kurz wrote:
-> On Wed, 2010-09-08 at 10:41 +0200, Louis Rilling wrote:
-> > Both of those mechanisms have been developed in Kerrighed, and Matthieu=
- (in Cc)
-> > should start a discussion about this in the next weeks.
-> >=20
->=20
-> Matthieu doesn't appear on the Cc line...
+I assume this is one of the things Oren would have 'cradvise()'
+do, and at this point that sounds nice to me - might be worth
+seeing how the community reacts.  Sentiments on such things change,
+after all.
 
-He appeared in the Mail-Followup-To line, and received a copy, but it looks=
- like
-the mailing list didn't take his address in Cc. Maybe because of the '=E9' =
-in his
-name?
+Have there been any other suggestions?
 
-Louis
-
---=20
-Dr Louis Rilling			Kerlabs
-Skype: louis.rilling			Batiment Germanium
-Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
-http://www.kerlabs.com/			35700 Rennes
-
---=_bohort-26679-1283941290-0001-2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Transfer-Encoding: 7bit
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
-
-iEYEARECAAYFAkyHY8IACgkQVKcRuvQ9Q1R4lACfSFz1Nyfwmf/rdKPnYkTXbOng
-NcoAniV+RfK7SqtrQn3nJJ5RZIgPV/eh
-=XNpa
------END PGP SIGNATURE-----
-
---=_bohort-26679-1283941290-0001-2--
-
---===============8952948969648367881==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============8952948969648367881==--
+-serge
