@@ -1,11 +1,14 @@
-From: =?ISO-8859-1?Q?Matthieu_Fertr=E9?= <matthieu.fertre-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
-Subject: C/R: File substitution at restart
-Date: Wed, 08 Sep 2010 12:03:26 +0200
-Message-ID: <4C875F6E.2030004@kerlabs.com>
+From: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: C/R and stdio redirection
+Date: Wed, 8 Sep 2010 12:21:54 +0200
+Message-ID: <20100908102154.GD4812@hawkmoon.kerlabs.com>
+References: <20100907200326.GA22256@us.ibm.com>
+	<20100908084152.GC4812@hawkmoon.kerlabs.com>
+	<1283940033.32527.77.camel@bahia>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============8952948969648367881=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1283940033.32527.77.camel@bahia>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -13,103 +16,75 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Greg Kurz <gkurz-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, matthieu.fertre-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi,
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-Here is a proposal for a C/R related feature already developed in
-Kerrighed: file substitution at restart.
+--===============8952948969648367881==
+Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-26679-1283941290-0001-2"
+Content-Disposition: inline
 
-The goal of this mail is to start a discussion about adding such feature
-to Linux cr. Comments are welcome!
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
+--=_bohort-26679-1283941290-0001-2
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
+On 08/09/10 12:00 +0200, Greg Kurz wrote:
+> On Wed, 2010-09-08 at 10:41 +0200, Louis Rilling wrote:
+> > Both of those mechanisms have been developed in Kerrighed, and Matthieu=
+ (in Cc)
+> > should start a discussion about this in the next weeks.
+> >=20
+>=20
+> Matthieu doesn't appear on the Cc line...
 
-What is file substitution ?
-===========================
+He appeared in the Mail-Followup-To line, and received a copy, but it looks=
+ like
+the mailing list didn't take his address in Cc. Maybe because of the '=E9' =
+in his
+name?
 
-It is the ability, at restart of a checkpointed application, to
-substitute some of the opened files by some other files.
+Louis
 
-Only files accessed through a FD can be substituted, not mapped file
-(unless they are reachable through a FD in the same time).
+--=20
+Dr Louis Rilling			Kerlabs
+Skype: louis.rilling			Batiment Germanium
+Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
+http://www.kerlabs.com/			35700 Rennes
 
-The feature ensures 'struct file' sharing as before the checkpoint.
-Thus, if a process is for instance sharing the same struct file for
-stdin, stdout, and stderr, it is not possible to give a different file
-for each at restart.
+--=_bohort-26679-1283941290-0001-2
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Transfer-Encoding: 7bit
+Content-Description: Digital signature
+Content-Disposition: inline
 
-Use cases
-=========
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (GNU/Linux)
 
-1) Circumvent Checkpointer limitations:
+iEYEARECAAYFAkyHY8IACgkQVKcRuvQ9Q1R4lACfSFz1Nyfwmf/rdKPnYkTXbOng
+NcoAniV+RfK7SqtrQn3nJJ5RZIgPV/eh
+=XNpa
+-----END PGP SIGNATURE-----
 
-* Allow to restart an application that has some files not supported by
-checkpoint/restart implementation.
+--=_bohort-26679-1283941290-0001-2--
 
-2) Conflicts between existing files and files that should be restored:
+--===============8952948969648367881==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-* Allow to restart an application of which one input data file is not
-writable by the user and thus can not be restored/replaced.
-
-* Allow to restart an application of which one output data file is
-already open by another instance of the program.
-
-3) Checkpoint/restart optimization/flexibility:
-
-* Let the application checkpoint and restore files by itself to get
-better performance or flexibility.
-
-Example: OpenMPI sockets. Avoid to handle communication buffers and
-ensure consistent distributed state.
-
-How user(s) can use it ?
-========================
-
-(Kerrighed) restart manual page quote:
-"-s file_identifier,fd, --substitute-file=file_identifier,fd
-
-This option allows to replace one of the open files of the checkpointed
-application by one of the file opened by the process calling the restart
-command.
-
-fd is the file descriptor (as given by open (2)) of the calling process
-that will be used as a replacement after the restart.
-
-file_identifier is an identifier of one the open files of the
-checkpointed application. This identifier is generated at checkpoint
-time. It can be retrieved from the file(s) user_info_*.txt that live(s)
-in the checkpoint directory. Each line of this file refers to one of the
-open files of the checkpointed application. For each open file, we get
-the following information:
-type|file_identifier|symbolic name|list of pid:fd
-
-This option can be used several times to substitute several files."
-
-Here is a simple (and stupid?) example extracted from Louis's talk at OLS:
-
-$ krgcr-run ping localhost
-Running application 6315097
-(ping output omitted)
-$ checkpoint -i 6315097
-$
-$ cat /var/chkpt/6315097/v1/user_info_1.txt
-socket |0001FFFF880066D68EA8|socket:[219057]|6315097:3
-tty    |0001FFFF88007D040EA8|/dev/pts/1|6315097:0,6315097:1,6315097:2
-
-$ # Use current terminal for standard I/O at restart:
-$ # ('-t' stands for tty and acts as a wrapper for option '-s')
-$ restart -t 6315097 1
-
-$ # Use stdin instead of socket at restart:
-$ restart -s 0001FFFF880066D68EA8,0 6315097 1
-
-
-
-Thanks,
-
-Matthieu
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============8952948969648367881==--
