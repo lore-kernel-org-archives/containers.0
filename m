@@ -1,14 +1,11 @@
-From: Greg Kurz <gkurz-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: C/R and stdio redirection
-Date: Wed, 08 Sep 2010 12:00:33 +0200
-Message-ID: <1283940033.32527.77.camel@bahia>
-References: <20100907200326.GA22256@us.ibm.com>
-	<20100908084152.GC4812@hawkmoon.kerlabs.com>
+From: =?ISO-8859-1?Q?Matthieu_Fertr=E9?= <matthieu.fertre-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
+Subject: C/R: File substitution at restart
+Date: Wed, 08 Sep 2010 12:03:26 +0200
+Message-ID: <4C875F6E.2030004@kerlabs.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100908084152.GC4812-Hu8+6S1rdjywhHL9vcZdMVaTQe2KTcn/@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,42 +15,101 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
-Cc: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, 2010-09-08 at 10:41 +0200, Louis Rilling wrote:
-> I think that this should be solved by a file substitution facility combined with
-> an ability to ignore "unsupported files" at checkpoint.
-> File substitution is the ability to tell sys_restart() to substitute some of
-> caller's file descriptors to checkpointed file descriptors.
-> Ignoring "unsupported files" means that the checkpoint could record that a given
-> file descriptor was shared by some files_struct, but the file descriptor itself
-> is not checkpointed because of various reasons, like file descriptor outside
-> the container, unsupported file systems, etc.
-> 
+Hi,
 
-Metacluster (old IBM proprietary C/R solution) had also a similar
-mechanism. This is the only sensible way to C/R a container with
-inherited descriptors.
+Here is a proposal for a C/R related feature already developed in
+Kerrighed: file substitution at restart.
 
-> Both of those mechanisms have been developed in Kerrighed, and Matthieu (in Cc)
-> should start a discussion about this in the next weeks.
-> 
+The goal of this mail is to start a discussion about adding such feature
+to Linux cr. Comments are welcome!
 
-Matthieu doesn't appear on the Cc line...
 
-> Thanks,
-> 
-> Louis
-> 
 
-Regards.
+What is file substitution ?
+===========================
 
--- 
-Gregory Kurz                                     gkurz-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org
-Software Engineer @ IBM/Meiosys                  http://www.ibm.com
-Tel +33 (0)534 638 479                           Fax +33 (0)561 400 420
+It is the ability, at restart of a checkpointed application, to
+substitute some of the opened files by some other files.
 
-"Anarchy is about taking complete responsibility for yourself."
-        Alan Moore.
+Only files accessed through a FD can be substituted, not mapped file
+(unless they are reachable through a FD in the same time).
+
+The feature ensures 'struct file' sharing as before the checkpoint.
+Thus, if a process is for instance sharing the same struct file for
+stdin, stdout, and stderr, it is not possible to give a different file
+for each at restart.
+
+Use cases
+=========
+
+1) Circumvent Checkpointer limitations:
+
+* Allow to restart an application that has some files not supported by
+checkpoint/restart implementation.
+
+2) Conflicts between existing files and files that should be restored:
+
+* Allow to restart an application of which one input data file is not
+writable by the user and thus can not be restored/replaced.
+
+* Allow to restart an application of which one output data file is
+already open by another instance of the program.
+
+3) Checkpoint/restart optimization/flexibility:
+
+* Let the application checkpoint and restore files by itself to get
+better performance or flexibility.
+
+Example: OpenMPI sockets. Avoid to handle communication buffers and
+ensure consistent distributed state.
+
+How user(s) can use it ?
+========================
+
+(Kerrighed) restart manual page quote:
+"-s file_identifier,fd, --substitute-file=file_identifier,fd
+
+This option allows to replace one of the open files of the checkpointed
+application by one of the file opened by the process calling the restart
+command.
+
+fd is the file descriptor (as given by open (2)) of the calling process
+that will be used as a replacement after the restart.
+
+file_identifier is an identifier of one the open files of the
+checkpointed application. This identifier is generated at checkpoint
+time. It can be retrieved from the file(s) user_info_*.txt that live(s)
+in the checkpoint directory. Each line of this file refers to one of the
+open files of the checkpointed application. For each open file, we get
+the following information:
+type|file_identifier|symbolic name|list of pid:fd
+
+This option can be used several times to substitute several files."
+
+Here is a simple (and stupid?) example extracted from Louis's talk at OLS:
+
+$ krgcr-run ping localhost
+Running application 6315097
+(ping output omitted)
+$ checkpoint -i 6315097
+$
+$ cat /var/chkpt/6315097/v1/user_info_1.txt
+socket |0001FFFF880066D68EA8|socket:[219057]|6315097:3
+tty    |0001FFFF88007D040EA8|/dev/pts/1|6315097:0,6315097:1,6315097:2
+
+$ # Use current terminal for standard I/O at restart:
+$ # ('-t' stands for tty and acts as a wrapper for option '-s')
+$ restart -t 6315097 1
+
+$ # Use stdin instead of socket at restart:
+$ restart -s 0001FFFF880066D68EA8,0 6315097 1
+
+
+
+Thanks,
+
+Matthieu
