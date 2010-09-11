@@ -1,8 +1,8 @@
-From: "Alycia" <ymijior4109-XgcMedQSbuTk1uMJSBkQmQ@public.gmane.org>
-Subject: Branded anti-impotence remedies
-Date: Fri, 10 Sep 2010 05:11:55 +0300
-Message-ID: <5l2a306l66e07@localhost.localdomain>
-Reply-To: ymijior4109-XgcMedQSbuTk1uMJSBkQmQ@public.gmane.org
+From: "Dominic" <eehaw2941-dAC0/IlH02vVh4GI3C9Uog@public.gmane.org>
+Subject: Order anti-ed without prescription
+Date: Sat, 11 Sep 2010 06:50:23 +0300
+Message-ID: <09402n2yt0246@localhost.localdomain>
+Reply-To: eehaw2941-dAC0/IlH02vVh4GI3C9Uog@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -16,7 +16,7 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-http://themilesplace.com/defend80.html
+http://www.thpharmacy.info/
