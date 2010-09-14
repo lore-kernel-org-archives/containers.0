@@ -1,7 +1,8 @@
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 3/8] checkpoint/sysvshm: release rwsem earlier during restore
-Date: Tue, 14 Sep 2010 15:02:05 -0500
-Message-ID: <1284494530-25946-4-git-send-email-ntl@pobox.com>
+Subject: [PATCH 4/8] checkpoint/ipc: allow shmat callers to specify ipc
+	namespace
+Date: Tue, 14 Sep 2010 15:02:06 -0500
+Message-ID: <1284494530-25946-5-git-send-email-ntl@pobox.com>
 References: <1284494530-25946-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -20,47 +21,100 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-shm_ids->rw_mutex protects namespace-wide shm info, but not the
-attributes or contents of individual shm regions, so release it as
-soon as possible in the restart path.
+Restore of huge page shm regions will require that the restarting
+process temporarily shmat-attach to regions which are not in the
+current ipc namespace.  Add an ipc_namespace argument to
+do_shmat_pgoff; convert callers to pass current->nsproxy->ipc_ns.
 
-The SHM_HUGETLB-specific restore code (unfortunately) needs to take
-mmap_sem, which cannot be taken while holding shm_ids->rw_mutex (see
-sys_shmdt -> do_munmap -> shm_close), so this is a prerequisite for
-restoring hugetlb shm regions.
+This depends on the patch "support ipc shm regions which are partially
+mapped" posted to the containers list on 6 August.
 
 Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 ---
- ipc/checkpoint_shm.c |    8 ++++----
- 1 files changed, 4 insertions(+), 4 deletions(-)
+ include/linux/shm.h |    8 +++++---
+ ipc/shm.c           |   15 ++++++++-------
+ 2 files changed, 13 insertions(+), 10 deletions(-)
 
-diff --git a/ipc/checkpoint_shm.c b/ipc/checkpoint_shm.c
-index a929e33..69ba35a 100644
---- a/ipc/checkpoint_shm.c
-+++ b/ipc/checkpoint_shm.c
-@@ -284,19 +284,19 @@ int restore_ipc_shm(struct ckpt_ctx *ctx, struct ipc_namespace *ns)
+diff --git a/include/linux/shm.h b/include/linux/shm.h
+index 1f6af8c..9ca3196 100644
+--- a/include/linux/shm.h
++++ b/include/linux/shm.h
+@@ -104,10 +104,12 @@ struct shmid_kernel /* private to the kernel */
+ #define SHM_NORESERVE   010000  /* don't check for reservations */
  
- 	/* this is safe because no unauthorized access is possible */
- 	ipc_unlock(ipc);
-+	up_write(&shm_ids->rw_mutex);
+ #ifdef CONFIG_SYSVIPC
++struct ipc_namespace;
++
+ long do_shmat(int shmid, char __user *shmaddr, int shmflg, unsigned long *addr);
+-long do_shmat_pgoff(int shmid, char __user *shmaddr,
+-		    int shmflg, unsigned long *addr,
+-		    unsigned long shmsize, unsigned long shmpgoff);
++long do_shmat_ns_pgoff(struct ipc_namespace *ns, int shmid,
++		       char __user *shmaddr, int shmflg, unsigned long *addr,
++		       unsigned long shmsize, unsigned long shmpgoff);
+ extern int is_file_shm_hugepages(struct file *file);
+ #else
+ static inline long do_shmat(int shmid, char __user *shmaddr,
+diff --git a/ipc/shm.c b/ipc/shm.c
+index 1ba9193..6768fe4 100644
+--- a/ipc/shm.c
++++ b/ipc/shm.c
+@@ -321,6 +321,7 @@ static int ipcshm_checkpoint(struct ckpt_ctx *ctx, struct vm_area_struct *vma)
+ int ipcshm_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
+ 		   struct ckpt_hdr_vma *h)
+ {
++	struct ipc_namespace *ipcns = current->nsproxy->ipc_ns;
+ 	struct file *file;
+ 	int shmid, shmflg = 0;
+ 	unsigned long start;
+@@ -348,8 +349,8 @@ int ipcshm_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
+ 	/* do_shmat() below handles partial and offset mapping */
+ 	start = (unsigned long) h->vm_start;
+ 	size = min(h->ino_size, h->vm_end - h->vm_start);
+-	ret = do_shmat_pgoff(shmid, (char __user *) start, shmflg,
+-			     &addr, size, h->vm_pgoff << PAGE_SHIFT);
++	ret = do_shmat_ns_pgoff(ipcns, shmid, (char __user *) start, shmflg,
++				&addr, size, h->vm_pgoff << PAGE_SHIFT);
  
- 	ret = load_ipc_shm_hdr(ctx, h, shp);
- 	if (ret < 0)
--		goto mutex;
-+		goto fput;
+ 	BUG_ON(ret >= 0 && addr != h->vm_start);
+ 	return ret;
+@@ -880,8 +881,9 @@ out:
+  * "raddr" thing points to kernel space, and there has to be a wrapper around
+  * this.
+  */
+-long do_shmat_pgoff(int shmid, char __user *shmaddr, int shmflg,
+-		    ulong *raddr, ulong shmsize, ulong shmpgoff)
++long do_shmat_ns_pgoff(struct ipc_namespace *ns, int shmid,
++		       char __user *shmaddr, int shmflg, ulong *raddr,
++		       ulong shmsize, ulong shmpgoff)
+ {
+ 	struct shmid_kernel *shp;
+ 	unsigned long addr;
+@@ -893,7 +895,6 @@ long do_shmat_pgoff(int shmid, char __user *shmaddr, int shmflg,
+ 	unsigned long prot;
+ 	int acc_mode;
+ 	unsigned long user_addr;
+-	struct ipc_namespace *ns;
+ 	struct shm_file_data *sfd;
+ 	struct path path;
+ 	fmode_t f_mode;
+@@ -937,7 +938,6 @@ long do_shmat_pgoff(int shmid, char __user *shmaddr, int shmflg,
+ 	 * We cannot rely on the fs check since SYSV IPC does have an
+ 	 * additional creator id...
+ 	 */
+-	ns = current->nsproxy->ipc_ns;
+ 	shp = shm_lock_check(ns, shmid);
+ 	if (IS_ERR(shp)) {
+ 		err = PTR_ERR(shp);
+@@ -1045,7 +1045,8 @@ out_put_dentry:
+  */
+ long do_shmat(int shmid, char __user *shmaddr, int shmflg, ulong *raddr)
+ {
+-	return do_shmat_pgoff(shmid, shmaddr, shmflg, raddr, 0, 0);
++	return do_shmat_ns_pgoff(current->nsproxy->ipc_ns, shmid, shmaddr,
++				 shmflg, raddr, 0, 0);
+ }
  
- 	/* deposit in objhash and read contents in */
- 	ret = ckpt_obj_insert(ctx, file, h->objref, CKPT_OBJ_FILE);
- 	if (ret < 0)
--		goto mutex;
-+		goto fput;
- 	ret = restore_memory_contents(ctx, file->f_dentry->d_inode);
-- mutex:
-+fput:
- 	fput(file);
--	up_write(&shm_ids->rw_mutex);
- 
- 	/* discard this shmid if error and deferqueue wasn't set */
- 	if (ret < 0 && !(h->perms.mode & SHM_DEST)) {
+ SYSCALL_DEFINE3(shmat, int, shmid, char __user *, shmaddr, int, shmflg)
 -- 
 1.7.2.2
