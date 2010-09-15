@@ -1,16 +1,11 @@
-From: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
-Subject: Re: [PATCH 3/3] perf events: Cleanup pid passing
-Date: Wed, 15 Sep 2010 10:18:30 +0200
-Message-ID: <1284538710.3764.245.camel__4348.3444177129$1284538776$gmane$org@twins>
-References: <1284408080-2135-1-git-send-email-matthltc@us.ibm.com>
-	<f63454af09fb1915717251570423eb9ddd338340.1284407762.git.matthltc@us.ibm.com>
-	<561205417b450b8a4bf7488374541d64b4690431.1284407762.git.matthltc@us.ibm.com>
-	<a134e5e392ab0204961fd1a62c84a222bf5874a9.1284407763.git.matthltc@us.ibm.com>
+From: "Loriann Laskowski" <LoriannLaskowski5184-OqJK2x97wXM@public.gmane.org>
+Subject: You won't believe what I've found
+Date: Wed, 15 Sep 2010 13:05:32 +0200
+Message-ID: <2482363090.100708118057231@linux-foundation.org>
+Reply-To: Loriann Laskowski <LoriannLaskowski5184-OqJK2x97wXM@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="----------=_1284548733-31630-222"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <a134e5e392ab0204961fd1a62c84a222bf5874a9.1284407763.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,58 +15,54 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Will Deacon <will.deacon-5wv7dgnIgG8@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>, Arnaldo Carvalho de Melo <acme-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Mahesh Salgaonkar <mahesh-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Robin Green <greenrd-tZez7oB1z75AfugRpC6u6w@public.gmane.org>, Prasad <prasad-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: containers <containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, 2010-09-13 at 13:01 -0700, Matt Helsley wrote:
-> The kernel perf event creation path shouldn't use find_task_by_vpid()
-> because a vpid exists in a specific namespace. find_task_by_vpid() uses
-> current's pid namespace which isn't always the correct namespace to use
-> for the vpid in all the places perf_event_create_kernel_counter() (and
-> thus find_get_context()) is called.
-> 
-> The goal is to clean up pid namespace handling and prevent bugs like:
-> 
->         https://bugzilla.kernel.org/show_bug.cgi?id=17281
-> 
-> Instead of using pids switch find_get_context() to use task struct
-> pointers directly. The syscall is responsible for resolving the pid to
-> a task struct. This moves the pid namespace resolution into the syscall
-> much like every other syscall that takes pid parameters.
+This is a multi-part message in MIME format...
+
+------------=_1284548733-31630-222
+Content-Type: text/plain; charset="ISO-8859-1"
+Content-Transfer-Encoding: 8bit
+Content-Disposition: inline
+
+My pal told me about this great web page where all you need to do is sign up to get a totally free new iphone 4, I did and I'm having so much fun with mine, just click this link!
+http://dyanytginter.livejournal.com
+
+------------=_1284548733-31630-222
+Content-Type: text/plain; name="SpamAssassinReport.txt"
+Content-Disposition: inline; filename="SpamAssassinReport.txt"
+Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+X-Mailer: MIME-tools 5.425 (Entity 5.425)
+
+Spam detection software, running on the system "murdock.linux-foundation.org", has
+identified this incoming email as possible spam.  The original message
+has been attached to this so you can view it (if it isn't spam) or label
+similar future email.  If you have any questions, see
+the administrator of that system for details.
+
+Content preview:  My pal told me about this great web page where all you need
+   to do is sign up to get a totally free new iphone 4, I did and I'm having
+   so much fun with mine, just click this link! http://dyanytginter.livejournal.com
+   [...] 
+
+Content analysis details:   (7.0 points, 5.0 required)
+
+ pts rule name              description
+---- ---------------------- --------------------------------------------------
+ 7.0 BAYES_99               BODY: Bayesian spam probability is 99 to 100%
+                            [score: 0.9991]
 
 
-I took the three patches with the following change to this patch:
 
----
-Index: linux-2.6/kernel/perf_event.c
-===================================================================
---- linux-2.6.orig/kernel/perf_event.c
-+++ linux-2.6/kernel/perf_event.c
-@@ -5522,7 +5522,7 @@ SYSCALL_DEFINE5(perf_event_open,
- 	struct perf_event_context *ctx;
- 	struct file *event_file = NULL;
- 	struct file *group_file = NULL;
--	struct task_struct *task;
-+	struct task_struct *task = NULL;
- 	struct pmu *pmu;
- 	int event_fd;
- 	int fput_needed = 0;
-@@ -5577,14 +5577,12 @@ SYSCALL_DEFINE5(perf_event_open,
- 	if ((pmu->task_ctx_nr == perf_sw_context) && group_leader)
- 		pmu = group_leader->pmu;
- 
-+	if (pid != -1)
-+		task = find_lively_task_by_vpid(pid);
-+
- 	/*
- 	 * Get the target context (task or percpu):
- 	 */
--	if (pid == -1 && cpu != -1)
--		task = NULL;
--	else
--		task = find_lively_task_by_vpid(pid);
--
- 	ctx = find_get_context(pmu, task, cpu);
- 	if (IS_ERR(ctx)) {
- 		err = PTR_ERR(ctx);
+------------=_1284548733-31630-222
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+------------=_1284548733-31630-222--
