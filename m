@@ -1,14 +1,15 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH] Add two macros for build-time testing of time
-	compatibility (v2)
-Date: Wed, 15 Sep 2010 23:54:43 -0400
-Message-ID: <4C919503.3060102@cs.columbia.edu>
-References: <1281106640-32545-1-git-send-email-danms@us.ibm.com>
+Subject: Re: [PATCH 1/2] c/r: compute hrtimer remaining time relative to
+	ktime_begin
+Date: Thu, 16 Sep 2010 00:07:40 -0400
+Message-ID: <4C91980C.70608@cs.columbia.edu>
+References: <1280786108-17820-1-git-send-email-orenl@cs.columbia.edu>
+	<20100803064004.GK2927@count0.beaverton.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1281106640-32545-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20100803064004.GK2927-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,58 +19,60 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
-Queueed for ckpt-v22-dev, thanks.
-Now we need to use these everywhere :)
+On 08/03/2010 02:40 AM, Matt Helsley wrote:
+> On Mon, Aug 02, 2010 at 05:55:08PM -0400, Oren Laadan wrote:
+>> The rule for time values in c/r is: all time measurements in
+>> the checkpoint image are saved as relative values, using the
+>> start-of-checkpoint as the reference point in time.
+>>
+>> This patch fixes how hrtimer delta is calculated to make it
+>> really follow this rule.
+>>
+>> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+>> ---
+>>  kernel/signal.c |    3 ++-
+>>  1 files changed, 2 insertions(+), 1 deletions(-)
+>>
+>> diff --git a/kernel/signal.c b/kernel/signal.c
+>> index de76729..0ec4a46 100644
+>> --- a/kernel/signal.c
+>> +++ b/kernel/signal.c
+>> @@ -3151,7 +3151,8 @@ static int checkpoint_signal(struct ckpt_ctx *ctx, struct task_struct *t)
+>>  	/* real/virt/prof itimers */
+>>  	if (hrtimer_active(&signal->real_timer)) {
+>>  		/* For an active timer compute the time delta */
+>> -		ktime_t delta = hrtimer_get_remaining(&signal->real_timer);
+>> +		ktime_t delta = ktime_sub(ctx->ktime_begin,
+>> +					  signal->real_timer._expires);
+> 
+> (Cc'ing Thomas -- perhaps he'd like to see something else..)
+> 
+> This doesn't look clean. Perhaps you should introduce a new hrtimer function
+> rather than access signal->real_timer._expires directly. I'm thinking something
+> like the following in include/linux/hrtimer.h:
+> 
+> /* after will usually be <= now */
+> static inline ktime_t hrtimer_get_remaining_after(const struct hrtimer *timer,
+> 						ktime_t after)
+> {
+>     return ktime_sub(timer->_expires, after);
+> }
+> 
+> then in kernel/signal.c you'd replace the above patch hunk with:
+> 
+> 		ktime_t delta = hrtimer_get_remaining_after(&signal->real_timer,
+> 							ctx->ktime_begin);
+> 
+> which is functionally the same but looks cleaner.
+
+Makes sense. Did that, with s/get/expires/ in the choice of
+name to match the existing name convention (no lock taken).
+
+Thanks,
 
 Oren.
-
-On 08/06/2010 10:57 AM, Dan Smith wrote:
-> We often canonicalize data from internal kernel data structures that use
-> ambiguous types (int, short, long, etc) and write them to the checkpoint
-> stream with unambiguous types (__u16, __u32, __u64, etc).  If an internal
-> structure changes a type somewhere down the road, we may not notice and
-> write invalid data to the checkpoint stream as a result.
-> 
-> This patch introduces two helper macros to make it easier to generate
-> a BUILD_BUG when this happens.  Examples of usage are included in the
-> comment before the macros in the code.
-> 
-> Changes in v2:
->  - Fix the example to match the code
-> 
-> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  include/linux/checkpoint_hdr.h |   15 +++++++++++++++
->  1 files changed, 15 insertions(+), 0 deletions(-)
-> 
-> diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-> index f4f9577..e455b99 100644
-> --- a/include/linux/checkpoint_hdr.h
-> +++ b/include/linux/checkpoint_hdr.h
-> @@ -42,6 +42,21 @@
->  #define CHECKPOINT_LSM_NAME_MAX 10
->  
->  /*
-> + * Macros to help generate a build break if an ambiguous type changes
-> + * in such a way that the size differs from the unambiguous type we
-> + * actually write to the checkpoint stream.
-> + *
-> + * Examples:
-> + *
-> + * CKPT_BUILD_BUG_ON_MISMATCH(short, __u16);
-> + * CKPT_BUILD_BUG_ON_MISMATCH(CKPT_STRUCT_MEMBER(mystruct, mymember),
-> + *                            CKPT_STRUCT_MEMBER(ckpt_hdr_foo, bar));
-> + *
-> + */
-> +#define CKPT_STRUCT_MEMBER(type, member) (((struct type *)(NULL))->member)
-> +#define CKPT_BUILD_BUG_ON_MISMATCH(a, b) (BUILD_BUG_ON(sizeof(a) != sizeof(b)))
-> +
-> +/*
->   * To maintain compatibility between 32-bit and 64-bit architecture flavors,
->   * keep data 64-bit aligned: use padding for structure members, and use
->   * __attribute__((aligned (8))) for the entire structure.
