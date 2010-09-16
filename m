@@ -1,14 +1,14 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH 03/17][cr][v4]: Checkpoint file-owner information
-Date: Thu, 16 Sep 2010 19:34:11 -0400
-Message-ID: <4C92A973.9040801@cs.columbia.edu>
+Subject: Re: [PATCH 04/17][cr][v4]: Restore file_owner info
+Date: Thu, 16 Sep 2010 19:45:41 -0400
+Message-ID: <4C92AC25.8010700__29486.7911180065$1284680793$gmane$org@cs.columbia.edu>
 References: <1281987801-1293-1-git-send-email-sukadev@linux.vnet.ibm.com>
-	<1281987801-1293-4-git-send-email-sukadev@linux.vnet.ibm.com>
+	<1281987801-1293-5-git-send-email-sukadev@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1281987801-1293-4-git-send-email-sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <1281987801-1293-5-git-send-email-sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,143 +22,129 @@ To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.o
 Cc: Matthew Wilcox <matthew-Ztpu424NOJ8@public.gmane.org>, John Stultz <johnstul-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Jamie Lokier <jamie-yetKDKU6eevNLxjTenLetw@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Steven Whitehouse <swhiteho-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi Suka,
 
-I was just about to pull this series, and merge every pair of
-checkpoint-restore patches into a single patch. But then I saw
-the problem described below, and I expect there will be v5. So
-please for v5 and on, merge the checkpoint and restore parts
-of a patch - it makes reviewing easier and reduced the number
-of individual patches.
 
 On 08/16/2010 03:43 PM, Sukadev Bhattiprolu wrote:
-> Checkpoint the file->f_owner information for an open file. This
-> information will be used to restore the file-owner information
-> when the application is restarted from the checkpoint.
+> Restore the file-owner information for each 'struct file'.  This is
+> essentially is like a new fcntl(F_SETOWN) and fcntl(F_SETSIG) calls,
+> except that the pid, uid, euid and signum values are read from the
+> checkpoint image.
 > 
-> The file->f_owner information is "private" to each 'struct file' i.e.
-> fown_struct is not an external object shared with other file structures.
-> So the information can directly be added to the 'ckpt_hdr_file' object.
+> Changelog[v4]:
+> 	- [Oren Laadan]: Sanitize the pid-type field read from checkpoint image.
+> Changelog[v3]:
+> 	- [Oren Laadan]: Ensure find_vpid() found a valid pid before
+> 	  making it the file owner.
+> Changelog[v2]:
+> 	- [Matt Helsley, Serge Hallyn]: Don't trust uids in checkpoint image.
+> 	  (added CAP_KILL check)
+> 	- Check that signal number read from the checkpoint image is valid.
+> 	  (not sure it is required, since its an incomplete check for tampering)
 > 
 > Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 > ---
->  fs/checkpoint.c                |   27 +++++++++++----------------
->  include/linux/checkpoint_hdr.h |    5 +++++
->  2 files changed, 16 insertions(+), 16 deletions(-)
+>  fs/checkpoint.c |   78 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  1 files changed, 78 insertions(+), 0 deletions(-)
 > 
 > diff --git a/fs/checkpoint.c b/fs/checkpoint.c
-> index 87d7c6e..ce1b4af 100644
+> index ce1b4af..be9d39a 100644
 > --- a/fs/checkpoint.c
 > +++ b/fs/checkpoint.c
-> @@ -168,12 +168,19 @@ int checkpoint_file_common(struct ckpt_ctx *ctx, struct file *file,
->  			   struct ckpt_hdr_file *h)
->  {
->  	struct cred *f_cred = (struct cred *) file->f_cred;
-> +	struct pid *pid = file->f_owner.pid;
+> @@ -618,6 +618,80 @@ static int attach_file(struct file *file)
+>  	return fd;
+>  }
 >  
->  	h->f_flags = file->f_flags;
->  	h->f_mode = file->f_mode;
->  	h->f_pos = file->f_pos;
->  	h->f_version = file->f_version;
->  
-> +	h->f_owner_pid = pid_nr_ns(pid, ns_of_pid(pid));
+> +static int restore_file_owner(struct ckpt_ctx *ctx, struct ckpt_hdr_file *h,
+> +		struct file *file)
+> +{
+> +	int ret;
+> +	struct pid *pid;
+> +	uid_t uid, euid;
+> +
+> +	uid = h->f_owner_uid;
+> +	euid = h->f_owner_euid;
+> +
+> +	ckpt_debug("restore_file_owner(): uid %u, euid %u, pid %d, type %d\n",
+> +			uid, euid, h->f_owner_pid, h->f_owner_pid_type);
+> +	/*
+> +	 * We can't trust the uids in the checkpoint image and normally need
+> +	 * CAP_KILL. But if the uids match our ids, should be fine since we
+> +	 * have access to the file.
+> +	 *
+> +	 * TODO: Move this check to __f_setown() ?
+> +	 */
+> +	ret = -EACCES;
+> +	if (!capable(CAP_KILL) &&
+> +			(uid != current_uid() || euid != current_euid())) {
+> +		ckpt_err(ctx, ret, "image uids [%d, %d] don't match current "
+> +				"process uids [%d, %d] and no CAP_KILL\n",
+> +				uid, euid, current_uid(), current_euid());
+> +		return ret;
+> +	}
+> +
+> +	ret = -EINVAL;
+> +	if (!valid_signal(h->f_owner_signum)) {
+> +		ckpt_err(ctx, ret, "Invalid signum %d\n", h->f_owner_signum);
+> +		return ret;
+> +	}
+> +	file->f_owner.signum = h->f_owner_signum;
+> +
+> +	switch(h->f_owner_pid_type) {
+> +		case PIDTYPE_PID:
+> +		case PIDTYPE_PGID:
+> +		case PIDTYPE_SID:
+> +			break;
+> +		default:
+> +			ckpt_err(ctx, ret, "Invalid pid-type %d\n",
+> +						h->f_owner_pid_type);
+> +			return ret;
+> +			
+> +	}
+> +
+> +	rcu_read_lock();
+> +
+> +	/*
+> +	 * If file had a non-NULL owner and we can't find the owner after
+> +	 * restart, return error.
+> +	 */
+> +	pid = find_vpid(h->f_owner_pid);
+> +	if (h->f_owner_pid && !pid)
+> +		ret = -ESRCH;
+> +	else {
+> +		/*
+> +		 * TODO: Do we need 'force' to be 1 here or can it be 0 ?
+> +		 * 	 'force' is used to modify the owner, if one is
+> +		 * 	 already set. Can it be set when we restart an
+> +		 * 	 application ?
+> +		 */
+> +		ret = __f_setown(file, pid, h->f_owner_pid_type, uid, euid, 1);
 
-You take the pid as seen in the namespace in which ths @pid was
-allocated (ns_of_pid). I'm not sure this is what we want .. is it ?
-
-I would assume that the way to go is to save the pid as seen from
-the _top_ pid-ns of the containers/subtree - so use ctx->root_task's
-pid-ns as a reference.
-
-Moreover, when restarting (now fast-forward to next patch where you
-do the restore) - the restore occurs in the context of the restarting
-task. However, in that context the pid may at all be invalid.
-
-Perhaps the proper way to tackle this is to make 'struct pid *'
-citizens of the objhash - that is, treat them as shared objects,
-and refer to them through the tag.
-
-Also, the pid may be invalid even if we originally only had one
-single pid-ns, in the case that the original task carrying that pid
-had already died by the time we checkpoint.
-
-In this case, perhaps we can just ignore that pid (because there
-will be no process to receive a signal, anyway). The alternative
-is to create dummy 'struct pid *' on restart as necessary.
-
-Once addressed, we will also need some test cases in the suite to
-show that it works correctly ...
-
-Thoughts ?
-
-> +	h->f_owner_pid_type = file->f_owner.pid_type;
-> +	h->f_owner_uid = file->f_owner.uid;
-> +	h->f_owner_euid = file->f_owner.euid;
-
-We will also need something like the above for user-ns, when the
-user-ns is eventually conceived - maybe leave a "todo" comment ?
+The owner should not be set by now. So I suggest removing the
+comment and bailing if already set.
 
 Oren.
 
-> +	h->f_owner_signum = file->f_owner.signum;
+> +	}
 > +
->  	h->f_credref = checkpoint_obj(ctx, f_cred, CKPT_OBJ_CRED);
->  	if (h->f_credref < 0)
->  		return h->f_credref;
-> @@ -184,10 +191,10 @@ int checkpoint_file_common(struct ckpt_ctx *ctx, struct file *file,
->  		return h->f_secref;
->  	}
+> +	rcu_read_unlock();
+> +
+> +	if (ret < 0)
+> +		ckpt_err(ctx, ret, "__fsetown_uid() failed\n");
+> +
+> +	return ret;
+> +}
+> +
+>  #define CKPT_SETFL_MASK  \
+>  	(O_APPEND | O_NONBLOCK | O_NDELAY | FASYNC | O_DIRECT | O_NOATIME)
 >  
-> -	ckpt_debug("file %s credref %d secref %d\n",
-> -		file->f_dentry->d_name.name, h->f_credref, h->f_secref);
-> -
-> -	/* FIX: need also file->f_owner, etc */
-> +	ckpt_debug("file %s credref %d secref %d, fowner-pid %d, type %d, "
-> +			"fowner-signum %d\n", file->f_dentry->d_name.name,
-> +			h->f_credref, h->f_secref, h->f_owner_pid,
-> +			h->f_owner_pid_type, h->f_owner_signum);
+> @@ -651,6 +725,10 @@ int restore_file_common(struct ckpt_ctx *ctx, struct file *file,
+>  	if (ret < 0)
+>  		return ret;
 >  
->  	return 0;
->  }
-> @@ -267,7 +274,6 @@ static int checkpoint_file_desc(struct ckpt_ctx *ctx,
->  	struct fdtable *fdt;
->  	int objref, ret;
->  	int coe = 0;	/* avoid gcc warning */
-> -	pid_t pid;
->  
->  	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE_DESC);
->  	if (!h)
-> @@ -302,17 +308,6 @@ static int checkpoint_file_desc(struct ckpt_ctx *ctx,
->  	}
->  
+> +	ret = restore_file_owner(ctx, h, file);
+> +	if (ret < 0)
+> +		return ret;
+> +
 >  	/*
-> -	 * TODO: Implement c/r of fowner and f_sigio.  Should be
-> -	 * trivial, but for now we just refuse its checkpoint
-> -	 */
-> -	pid = f_getown(file);
-> -	if (pid) {
-> -		ret = -EBUSY;
-> -		ckpt_err(ctx, ret, "%(T)fd %d has an owner (%d)\n", fd);
-> -		goto out;
-> -	}
-> -
-> -	/*
->  	 * if seen first time, this will add 'file' to the objhash, keep
->  	 * a reference to it, dump its state while at it.
->  	 */
-> diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-> index 9e8d518..0381019 100644
-> --- a/include/linux/checkpoint_hdr.h
-> +++ b/include/linux/checkpoint_hdr.h
-> @@ -575,6 +575,11 @@ struct ckpt_hdr_file {
->  	__u64 f_pos;
->  	__u64 f_version;
->  	__s32 f_secref;
-> +	__s32 f_owner_pid;
-> +	__u32 f_owner_pid_type;
-> +	__u32 f_owner_uid;
-> +	__u32 f_owner_euid;
-> +	__s32 f_owner_signum;
->  } __attribute__((aligned(8)));
->  
->  struct ckpt_hdr_file_generic {
+>  	 * Normally f_mode is set by open, and modified only via
+>  	 * fcntl(), so its value now should match that at checkpoint.
