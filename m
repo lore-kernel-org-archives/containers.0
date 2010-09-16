@@ -1,16 +1,14 @@
-From: Will Drewry <wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-Subject: Re: [PATCH][RFC] fs/exec.c: provide the correct process pid to the
-	pipe helper
-Date: Thu, 16 Sep 2010 16:02:36 -0500
-Message-ID: <AANLkTikDDUjvd-hnZ32BiQNc609GdTXtCFtPXrje=zGM__10675.5129331306$1284671056$gmane$org@mail.gmail.com>
-References: <1284663599-3549-1-git-send-email-wad@chromium.org>
-	<20100916193543.GA11016@redhat.com>
-	<m1zkvh4fdc.fsf@fess.ebiederm.org>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [PATCH 03/17][cr][v4]: Checkpoint file-owner information
+Date: Thu, 16 Sep 2010 19:34:11 -0400
+Message-ID: <4C92A973.9040801@cs.columbia.edu>
+References: <1281987801-1293-1-git-send-email-sukadev@linux.vnet.ibm.com>
+	<1281987801-1293-4-git-send-email-sukadev@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m1zkvh4fdc.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
+In-Reply-To: <1281987801-1293-4-git-send-email-sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,107 +18,147 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andi Kleen <andi-Vw/NltI1exuRpAAqCnN02g@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Matthew Wilcox <matthew-Ztpu424NOJ8@public.gmane.org>, John Stultz <johnstul-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Jamie Lokier <jamie-yetKDKU6eevNLxjTenLetw@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Steven Whitehouse <swhiteho-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Sep 16, 2010 at 3:12 PM, Eric W. Biederman
-<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
-> Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
->
->> On 09/16, Will Drewry wrote:
->>>
->>> --- a/fs/exec.c
->>> +++ b/fs/exec.c
->>> @@ -1467,6 +1467,13 @@ static int format_corename(char *corename, long =
-signr)
->>> =A0 =A0 =A0char *const out_end =3D corename + CORENAME_MAX_SIZE;
->>> =A0 =A0 =A0int rc;
->>> =A0 =A0 =A0int pid_in_pattern =3D 0;
->>> + =A0 =A0pid_t pid =3D task_tgid_vnr(current);
->>> +
->>> + =A0 =A0/* The pipe helper runs in the init namespace and should
->>> + =A0 =A0 * receive the matching pid until that changes.
->>> + =A0 =A0 */
->>> + =A0 =A0if (ispipe)
->>> + =A0 =A0 =A0 =A0 =A0 =A0pid =3D task_tgid_nr(current);
->>
->> Agreed, it doesn't make sense to pass the "local" pid to the init ns.
->
-> Yes, passing the local pid to the init pid namespace doesn't make a lot
-> of sense. =A0I have recently fixed unix domain sockets to avoid doing that
-> kind of silliness.
->
-> That said I don't think this is a complete fix. =A0We also potentially
-> have the same issue with the uts namespace and the user namespace.
+Hi Suka,
 
-Hrm true.  I was looking at getting the proper pid to the core handler
-as a means for it to get the rest from
-/proc/<pid>/[status|mountinfo|root] and so on.  As is, it seemed
-non-trivial to reliably walk the /proc tree to find the dumping
-process.
+I was just about to pull this series, and merge every pair of
+checkpoint-restore patches into a single patch. But then I saw
+the problem described below, and I expect there will be v5. So
+please for v5 and on, merge the checkpoint and restore parts
+of a patch - it makes reviewing easier and reduced the number
+of individual patches.
 
-> I believe the core file holds all of this information relative to the
-> process that is dying, one elf note or other so we don't need to worry
-> about information loss.
+On 08/16/2010 03:43 PM, Sukadev Bhattiprolu wrote:
+> Checkpoint the file->f_owner information for an open file. This
+> information will be used to restore the file-owner information
+> when the application is restarted from the checkpoint.
+> 
+> The file->f_owner information is "private" to each 'struct file' i.e.
+> fown_struct is not an external object shared with other file structures.
+> So the information can directly be added to the 'ckpt_hdr_file' object.
+> 
+> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> ---
+>  fs/checkpoint.c                |   27 +++++++++++----------------
+>  include/linux/checkpoint_hdr.h |    5 +++++
+>  2 files changed, 16 insertions(+), 16 deletions(-)
+> 
+> diff --git a/fs/checkpoint.c b/fs/checkpoint.c
+> index 87d7c6e..ce1b4af 100644
+> --- a/fs/checkpoint.c
+> +++ b/fs/checkpoint.c
+> @@ -168,12 +168,19 @@ int checkpoint_file_common(struct ckpt_ctx *ctx, struct file *file,
+>  			   struct ckpt_hdr_file *h)
+>  {
+>  	struct cred *f_cred = (struct cred *) file->f_cred;
+> +	struct pid *pid = file->f_owner.pid;
+>  
+>  	h->f_flags = file->f_flags;
+>  	h->f_mode = file->f_mode;
+>  	h->f_pos = file->f_pos;
+>  	h->f_version = file->f_version;
+>  
+> +	h->f_owner_pid = pid_nr_ns(pid, ns_of_pid(pid));
 
-Yeah - my main concern was /proc access to get information that might
-otherwise be lost.
+You take the pid as seen in the namespace in which ths @pid was
+allocated (ns_of_pid). I'm not sure this is what we want .. is it ?
 
-> As for how to implement this for the pid case can we simply grab the
-> namespace at the ispipe stage and use task_tgid_nr_ns. =A0Something like:
-> pid_ns =3D current->nsproxy->pid_ns;
-> if (is_pipe)
-> =A0 =A0 =A0 =A0pid_ns =3D &init_pid_ns;
->
-> ....
-> =A0 =A0 =A0 =A0/* pid */
-> =A0 =A0 =A0 =A0case 'p':
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0pid_in_pattern =3D 1;
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0rc =3D snprintf(out_ptr, out_end - out_ptr,
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0"%d", task_tgi=
-d_pid_nr_ns(pid_ns, current));
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0if (rc > out_end - out_ptr)
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0goto out;
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0out_ptr +=3D rc;
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0break;
+I would assume that the way to go is to save the pid as seen from
+the _top_ pid-ns of the containers/subtree - so use ctx->root_task's
+pid-ns as a reference.
 
-Would that yield different results than the task_tgid_nr versus vnr,
-or is it just cleaner?
+Moreover, when restarting (now fast-forward to next patch where you
+do the restore) - the restore occurs in the context of the restarting
+task. However, in that context the pid may at all be invalid.
 
-> Will you were saying something about complex namespacing (in particular
-> the network namespace giving you problems). =A0The network namespace has
-> no influence over pipes so how does that come into play?
+Perhaps the proper way to tackle this is to make 'struct pid *'
+citizens of the objhash - that is, treat them as shared objects,
+and refer to them through the tag.
 
-Ah! All I meant is that this patch lets you access anything that is in
-/proc/[tgid]/... for the dumping process.  However, it seems that in
-the long run, core_pattern should run the pipe handler inside the
-namespace(s) of the process do_coredump is running for.  For instance,
-if it wanted to make a network connection on coredump, it'd be doing
-it from the init namespace.
+Also, the pid may be invalid even if we originally only had one
+single pid-ns, in the case that the original task carrying that pid
+had already died by the time we checkpoint.
 
-> I can imagine that it would be nice to have different core patterns
-> depending on where you are in the process tree, so a container can
-> do something different than the system outside of the container. =A0Are
-> you thinking along those lines, or are you imagining something else?
+In this case, perhaps we can just ignore that pid (because there
+will be no process to receive a signal, anyway). The alternative
+is to create dummy 'struct pid *' on restart as necessary.
 
-Yup - in general, I was thinking that even if core_pattern was not
-split by namespace, it would be nice to attempt to execute it in the
-namespace of the process that needs it.  My understand of namespaces
-is that they were a gateway to longer term lightweight containers (as
-the patches go into kernel.org) which would mean that a change to
-core_pattern shouldn't result in a process running in the init
-namespace (at least not by default!).
+Once addressed, we will also need some test cases in the suite to
+show that it works correctly ...
 
-To that end, I implemented a function similar to your setns() syscall
-patch which calls create_new_namespaces (and copy_fs_struct) to create
-an unattached fs and nsproxy which I then migrate the
-____call_usermodehelper thread over to in umh_setup_pipe.  It leaves
-it with a pid of 0, but otherwise functional.  (I also played with
-changing its pid or best effort assigning one in the namespace as per
-older threads, but it all seemed to fragile.) I can post them on this
-thread (or wherever) if you'd like to see them, but they're pretty
-trivial, and I'm unsure of their correctness.
+Thoughts ?
 
-cheers!
-will
+> +	h->f_owner_pid_type = file->f_owner.pid_type;
+> +	h->f_owner_uid = file->f_owner.uid;
+> +	h->f_owner_euid = file->f_owner.euid;
+
+We will also need something like the above for user-ns, when the
+user-ns is eventually conceived - maybe leave a "todo" comment ?
+
+Oren.
+
+> +	h->f_owner_signum = file->f_owner.signum;
+> +
+>  	h->f_credref = checkpoint_obj(ctx, f_cred, CKPT_OBJ_CRED);
+>  	if (h->f_credref < 0)
+>  		return h->f_credref;
+> @@ -184,10 +191,10 @@ int checkpoint_file_common(struct ckpt_ctx *ctx, struct file *file,
+>  		return h->f_secref;
+>  	}
+>  
+> -	ckpt_debug("file %s credref %d secref %d\n",
+> -		file->f_dentry->d_name.name, h->f_credref, h->f_secref);
+> -
+> -	/* FIX: need also file->f_owner, etc */
+> +	ckpt_debug("file %s credref %d secref %d, fowner-pid %d, type %d, "
+> +			"fowner-signum %d\n", file->f_dentry->d_name.name,
+> +			h->f_credref, h->f_secref, h->f_owner_pid,
+> +			h->f_owner_pid_type, h->f_owner_signum);
+>  
+>  	return 0;
+>  }
+> @@ -267,7 +274,6 @@ static int checkpoint_file_desc(struct ckpt_ctx *ctx,
+>  	struct fdtable *fdt;
+>  	int objref, ret;
+>  	int coe = 0;	/* avoid gcc warning */
+> -	pid_t pid;
+>  
+>  	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE_DESC);
+>  	if (!h)
+> @@ -302,17 +308,6 @@ static int checkpoint_file_desc(struct ckpt_ctx *ctx,
+>  	}
+>  
+>  	/*
+> -	 * TODO: Implement c/r of fowner and f_sigio.  Should be
+> -	 * trivial, but for now we just refuse its checkpoint
+> -	 */
+> -	pid = f_getown(file);
+> -	if (pid) {
+> -		ret = -EBUSY;
+> -		ckpt_err(ctx, ret, "%(T)fd %d has an owner (%d)\n", fd);
+> -		goto out;
+> -	}
+> -
+> -	/*
+>  	 * if seen first time, this will add 'file' to the objhash, keep
+>  	 * a reference to it, dump its state while at it.
+>  	 */
+> diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+> index 9e8d518..0381019 100644
+> --- a/include/linux/checkpoint_hdr.h
+> +++ b/include/linux/checkpoint_hdr.h
+> @@ -575,6 +575,11 @@ struct ckpt_hdr_file {
+>  	__u64 f_pos;
+>  	__u64 f_version;
+>  	__s32 f_secref;
+> +	__s32 f_owner_pid;
+> +	__u32 f_owner_pid_type;
+> +	__u32 f_owner_uid;
+> +	__u32 f_owner_euid;
+> +	__s32 f_owner_signum;
+>  } __attribute__((aligned(8)));
+>  
+>  struct ckpt_hdr_file_generic {
