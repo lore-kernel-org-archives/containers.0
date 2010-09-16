@@ -1,11 +1,14 @@
-From: "Loriann Laskowski" <LoriannLaskowski5184-OqJK2x97wXM@public.gmane.org>
-Subject: You won't believe what I've found
-Date: Wed, 15 Sep 2010 13:05:32 +0200
-Message-ID: <2482363090.100708118057231@linux-foundation.org>
-Reply-To: Loriann Laskowski <LoriannLaskowski5184-OqJK2x97wXM@public.gmane.org>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [PATCH] Add two macros for build-time testing of time
+	compatibility (v2)
+Date: Wed, 15 Sep 2010 23:54:43 -0400
+Message-ID: <4C919503.3060102@cs.columbia.edu>
+References: <1281106640-32545-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="----------=_1284548733-31630-222"
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1281106640-32545-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,54 +18,58 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers <containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format...
 
-------------=_1284548733-31630-222
-Content-Type: text/plain; charset="ISO-8859-1"
-Content-Transfer-Encoding: 8bit
-Content-Disposition: inline
+Queueed for ckpt-v22-dev, thanks.
+Now we need to use these everywhere :)
 
-My pal told me about this great web page where all you need to do is sign up to get a totally free new iphone 4, I did and I'm having so much fun with mine, just click this link!
-http://dyanytginter.livejournal.com
+Oren.
 
-------------=_1284548733-31630-222
-Content-Type: text/plain; name="SpamAssassinReport.txt"
-Content-Disposition: inline; filename="SpamAssassinReport.txt"
-Content-Transfer-Encoding: 7bit
-MIME-Version: 1.0
-X-Mailer: MIME-tools 5.425 (Entity 5.425)
-
-Spam detection software, running on the system "murdock.linux-foundation.org", has
-identified this incoming email as possible spam.  The original message
-has been attached to this so you can view it (if it isn't spam) or label
-similar future email.  If you have any questions, see
-the administrator of that system for details.
-
-Content preview:  My pal told me about this great web page where all you need
-   to do is sign up to get a totally free new iphone 4, I did and I'm having
-   so much fun with mine, just click this link! http://dyanytginter.livejournal.com
-   [...] 
-
-Content analysis details:   (7.0 points, 5.0 required)
-
- pts rule name              description
----- ---------------------- --------------------------------------------------
- 7.0 BAYES_99               BODY: Bayesian spam probability is 99 to 100%
-                            [score: 0.9991]
-
-
-
-------------=_1284548733-31630-222
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
-------------=_1284548733-31630-222--
+On 08/06/2010 10:57 AM, Dan Smith wrote:
+> We often canonicalize data from internal kernel data structures that use
+> ambiguous types (int, short, long, etc) and write them to the checkpoint
+> stream with unambiguous types (__u16, __u32, __u64, etc).  If an internal
+> structure changes a type somewhere down the road, we may not notice and
+> write invalid data to the checkpoint stream as a result.
+> 
+> This patch introduces two helper macros to make it easier to generate
+> a BUILD_BUG when this happens.  Examples of usage are included in the
+> comment before the macros in the code.
+> 
+> Changes in v2:
+>  - Fix the example to match the code
+> 
+> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  include/linux/checkpoint_hdr.h |   15 +++++++++++++++
+>  1 files changed, 15 insertions(+), 0 deletions(-)
+> 
+> diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+> index f4f9577..e455b99 100644
+> --- a/include/linux/checkpoint_hdr.h
+> +++ b/include/linux/checkpoint_hdr.h
+> @@ -42,6 +42,21 @@
+>  #define CHECKPOINT_LSM_NAME_MAX 10
+>  
+>  /*
+> + * Macros to help generate a build break if an ambiguous type changes
+> + * in such a way that the size differs from the unambiguous type we
+> + * actually write to the checkpoint stream.
+> + *
+> + * Examples:
+> + *
+> + * CKPT_BUILD_BUG_ON_MISMATCH(short, __u16);
+> + * CKPT_BUILD_BUG_ON_MISMATCH(CKPT_STRUCT_MEMBER(mystruct, mymember),
+> + *                            CKPT_STRUCT_MEMBER(ckpt_hdr_foo, bar));
+> + *
+> + */
+> +#define CKPT_STRUCT_MEMBER(type, member) (((struct type *)(NULL))->member)
+> +#define CKPT_BUILD_BUG_ON_MISMATCH(a, b) (BUILD_BUG_ON(sizeof(a) != sizeof(b)))
+> +
+> +/*
+>   * To maintain compatibility between 32-bit and 64-bit architecture flavors,
+>   * keep data 64-bit aligned: use padding for structure members, and use
+>   * __attribute__((aligned (8))) for the entire structure.
