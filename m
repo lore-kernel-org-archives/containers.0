@@ -1,18 +1,15 @@
-From: Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH][RFC] fs/exec.c: provide the correct process pid to the
-	pipe helper
-Date: Fri, 17 Sep 2010 12:08:00 -0700 (PDT)
-Message-ID: <20100917190800.D2C4B403E8__36337.4549350285$1284752062$gmane$org@magilla.sf.frob.com>
-References: <1284663599-3549-1-git-send-email-wad@chromium.org>
-	<20100916193543.GA11016@redhat.com>
-	<m1zkvh4fdc.fsf@fess.ebiederm.org>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 5/8] checkpoint/restart of anonymous hugetlb mappings
+Date: Fri, 17 Sep 2010 15:23:13 -0500
+Message-ID: <1284754993.4109.397.camel@localhost.localdomain>
+References: <1284494530-25946-1-git-send-email-ntl@pobox.com>
+	<1284494530-25946-6-git-send-email-ntl@pobox.com>
+	<4C92BA08.70106@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: Eric W. Biederman's message of  Thursday,
-	16 September 2010 13:12:31 -0700
-	<m1zkvh4fdc.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
+In-Reply-To: <4C92BA08.70106-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,32 +19,135 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Will Drewry <wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andi Kleen <andi-Vw/NltI1exuRpAAqCnN02g@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-> That said I don't think this is a complete fix.  We also potentially
-> have the same issue with the uts namespace and the user namespace.
+On Thu, 2010-09-16 at 20:44 -0400, Oren Laadan wrote:
+> 
+> On 09/14/2010 04:02 PM, Nathan Lynch wrote:
+> > Support checkpoint and restore of both private and shared
+> > hugepage-backed mappings established via mmap(MAP_HUGETLB).  Introduce
+> > APIs for checkpoint and restart of individual huge pages which are to
+> > be used by the sysv SHM_HUGETLB c/r code.
+> > 
+> > Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+> 
+> The code looks clean, but I need to learn more about HUGETLB
+> before I can say much...
+> 
+> Do you also have test-suite for this ?
 
-True.
-
-> I believe the core file holds all of this information relative to the
-> process that is dying, one elf note or other so we don't need to worry
-> about information loss.
-
-That's correct (see linux/elfcore.h, pr_*id fields in prstatus and prpsinfo).
-
-> I can imagine that it would be nice to have different core patterns
-> depending on where you are in the process tree, so a container can
-> do something different than the system outside of the container.  Are
-> you thinking along those lines, or are you imagining something else?
-
-I agree.  The format string being part of the pid_ns makes sense to me.  
-(I don't have any ideas about the interface for setting it.)
-Of course, then what would make most sense is for the pipe handler to
-run in the innermost namespace that set its own format, rather than in
-the global ns.
+Included below is a throwaway patch to user-cr's shmem and ipcshm tests
+which will cause them to use huge pages.  You'll need to configure huge
+pages on your system; see Documentation/vm/hugetlbpage.txt in the kernel
+source.
 
 
-Thanks,
-Roland
+> 
+> [...]
+> 
+> > +static int hugetlb_dump_contents(struct ckpt_ctx *ctx, struct vm_area_struct *vma)
+> > +{
+> > +	struct ckpt_hdr_hpage hdr;
+> > +	unsigned long pageshift;
+> > +	unsigned long pagesize;
+> > +	unsigned long addr;
+> > +	int ret;
+> > +
+> > +	pageshift = huge_page_shift(hstate_vma(vma));
+> > +	pagesize = vma_kernel_pagesize(vma);
+> > +
+> > +	ckpt_hdr_hpage_init(&hdr, pageshift);
+> > +
+> > +	for (addr = vma->vm_start; addr < vma->vm_end; addr += pagesize) {
+> > +		struct page *page = NULL;
+> > +
+> > +		down_read(&vma->vm_mm->mmap_sem);
+> > +		ret = __get_user_pages(ctx->tsk, vma->vm_mm,
+> > +				       addr, 1, FOLL_DUMP | FOLL_GET,
+> > +				       &page, NULL);
+> > +		/* FOLL_DUMP gives -EFAULT for holes */
+> > +		if (ret == -EFAULT)
+> > +			ret = 0;
+> 
+> With regular pages, this didn't always work, especially after they
+> slightly changed the semantics of FOLL_DUMP. So I introduced the
+> FOLL_DIRTY flag to detect dirty (non-zero) pages.  I wonder if
+> something like that may be needed here too ?
+
+I don't think so - huge pages are never used to map regular files (they
+are always on hugetlbfs), so they can't get out of sync with a backing
+store.
+
+
+ test/ipcshm.c |    7 ++++---
+ test/shmem.c  |    8 ++++++--
+ 2 files changed, 10 insertions(+), 5 deletions(-)
+
+diff --git a/test/ipcshm.c b/test/ipcshm.c
+index cf932b4..f4b5e8a 100644
+--- a/test/ipcshm.c
++++ b/test/ipcshm.c
+@@ -7,6 +7,7 @@
+ 
+ #define OUTFILE  "/tmp/cr-test.out"
+ #define SEG_SIZE (20 * 4096)
++#define HTLB_SEG_SIZE (1024 * 1024 * 16)
+ #define SEG_KEY1 11
+ 
+ int main(int argc, char *argv[])
+@@ -37,7 +38,7 @@ int main(int argc, char *argv[])
+ 		exit(1);
+ 	}
+ 
+-	id2 = shmget(IPC_PRIVATE, SEG_SIZE, 0700|IPC_CREAT|IPC_EXCL);
++	id2 = shmget(IPC_PRIVATE, HTLB_SEG_SIZE, 0700|IPC_CREAT|IPC_EXCL|SHM_HUGETLB);
+ 	if (id2 < 0) {		
+ 		perror("shmget2");
+ 		exit(1);
+@@ -63,9 +64,9 @@ int main(int argc, char *argv[])
+ 	if (shmdt(seg1) < 0)
+ 		perror("shmdt1");
+ 
+-	fprintf(file, "detaches 2nd, sleeping 30\n");
++	fprintf(file, "detaches 2nd, sleeping 120\n");
+ 	fflush(file);
+-	sleep(20);
++	sleep(120);
+ 	fprintf(file, "waking up\n");
+ 	fflush(file);
+ 
+diff --git a/test/shmem.c b/test/shmem.c
+index 6d7dd8a..cb9fd10 100644
+--- a/test/shmem.c
++++ b/test/shmem.c
+@@ -5,6 +5,10 @@
+ #include <math.h>
+ #include <sys/mman.h>
+ 
++#ifndef MAP_HUGETLB
++#define MAP_HUGETLB 0x40000
++#endif
++
+ #define OUTFILE  "/tmp/cr-test.out"
+ 
+ int main(int argc, char *argv[])
+@@ -41,7 +45,7 @@ int main(int argc, char *argv[])
+ 	}
+ 
+ 	addr = mmap(NULL, 16384, PROT_READ | PROT_WRITE,
+-		    MAP_ANONYMOUS | MAP_SHARED, 0, 0);
++		    MAP_ANONYMOUS | MAP_SHARED | MAP_HUGETLB, 0, 0);
+ 	if (addr == MAP_FAILED) {
+ 		perror("mmap");
+ 		exit(1);
+@@ -66,7 +70,7 @@ int main(int argc, char *argv[])
+ 		close(pipefd[1]);
+ 	}
+ 
+-	for (i = 0; i < 10; i++) {
++	for (i = 0; i < 120; i++) {
+ 		sleep(1);
+ 		/* make the fpu work ->  a = a + i/10  */
+ 		a = sqrt(a*a + 2*a*(i/10.0) + i*i/100.0);
