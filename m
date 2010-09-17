@@ -1,15 +1,18 @@
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 8/8] checkpoint/restart of SysV SHM_HUGETLB regions
-Date: Fri, 17 Sep 2010 14:03:22 -0500
-Message-ID: <1284750203.4109.316.camel@localhost.localdomain>
-References: <1284494530-25946-1-git-send-email-ntl@pobox.com>
-	<1284494530-25946-9-git-send-email-ntl@pobox.com>
-	<4C92B903.20304@cs.columbia.edu>
+From: Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH][RFC] fs/exec.c: provide the correct process pid to the
+	pipe helper
+Date: Fri, 17 Sep 2010 12:08:00 -0700 (PDT)
+Message-ID: <20100917190800.D2C4B403E8__36337.4549350285$1284752062$gmane$org@magilla.sf.frob.com>
+References: <1284663599-3549-1-git-send-email-wad@chromium.org>
+	<20100916193543.GA11016@redhat.com>
+	<m1zkvh4fdc.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4C92B903.20304-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: Eric W. Biederman's message of  Thursday,
+	16 September 2010 13:12:31 -0700
+	<m1zkvh4fdc.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,34 +22,32 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Will Drewry <wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andi Kleen <andi-Vw/NltI1exuRpAAqCnN02g@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, 2010-09-16 at 20:40 -0400, Oren Laadan wrote:
-> 
-> On 09/14/2010 04:02 PM, Nathan Lynch wrote:
-> > Large page-backed shm regions require special handling, especially
-> > during restart.  The association of a large page with a shm region's
-> > inode can occur only in the context of a process causing a fault with
-> > the region mapped into its mm.  In order to restore that association,
-> > temporarily shmat-attach the restored SHM_HUGETLB region to the
-> > restarting process's mm, using the just-restored ipc namespace
-> > instead of the current one (the nsproxy switch hasn't occured yet).
-> > 
-> > Since the temporary shmat of the region during restart causes some of
-> > the shm attributes to be updated, re-restore them from the ipc_shm
-> > checkpoint header after unmapping.
-> 
-> Would it work to just move the original call to load_ipc_shm_hdr()
-> further down in restore_ipc_shm(), especially since the mutex is
-> not needed anymore - that way you don't need to re-restore them ?
+> That said I don't think this is a complete fix.  We also potentially
+> have the same issue with the uts namespace and the user namespace.
 
-load_ipc_shm_hdr indirectly calls the security context restore stuff, so
-I'm not sure whether it's okay to change the ordering here.  But perhaps
-it would make sense to defer restoring the shm_* fields until after
-restoring contents.
+True.
 
-Of course, it would be best if we could figure out a way to restore
-SHM_HUGETLB contents without artificially attaching segments to the
-restoring task's mm.  But so far I haven't been able to do that.
+> I believe the core file holds all of this information relative to the
+> process that is dying, one elf note or other so we don't need to worry
+> about information loss.
+
+That's correct (see linux/elfcore.h, pr_*id fields in prstatus and prpsinfo).
+
+> I can imagine that it would be nice to have different core patterns
+> depending on where you are in the process tree, so a container can
+> do something different than the system outside of the container.  Are
+> you thinking along those lines, or are you imagining something else?
+
+I agree.  The format string being part of the pid_ns makes sense to me.  
+(I don't have any ideas about the interface for setting it.)
+Of course, then what would make most sense is for the pipe handler to
+run in the innermost namespace that set its own format, rather than in
+the global ns.
+
+
+Thanks,
+Roland
