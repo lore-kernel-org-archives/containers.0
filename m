@@ -1,14 +1,16 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH 12/17][cr][v4]: Add ->fl_break_notified field.
-Date: Thu, 16 Sep 2010 20:07:35 -0400
-Message-ID: <4C92B147.9040008__2672.17136356539$1284682274$gmane$org@cs.columbia.edu>
-References: <1281987801-1293-1-git-send-email-sukadev@linux.vnet.ibm.com>
-	<1281987801-1293-13-git-send-email-sukadev@linux.vnet.ibm.com>
+Subject: Re: [PATCH 2/8] sysvshm: report error on failure to reattach, avoid
+	crash
+Date: Thu, 16 Sep 2010 20:17:05 -0400
+Message-ID: <4C92B381.7090407@cs.columbia.edu>
+References: <1284494530-25946-1-git-send-email-ntl@pobox.com>
+	<1284494530-25946-3-git-send-email-ntl@pobox.com>
+	<20100915025502.GG8957@count0.beaverton.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1281987801-1293-13-git-send-email-sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <20100915025502.GG8957-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,87 +20,83 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Matthew Wilcox <matthew-Ztpu424NOJ8@public.gmane.org>, John Stultz <johnstul-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Jamie Lokier <jamie-yetKDKU6eevNLxjTenLetw@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Steven Whitehouse <swhiteho-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
-Same nit as for previous patch :)
+
+On 09/14/2010 10:55 PM, Matt Helsley wrote:
+> On Tue, Sep 14, 2010 at 03:02:04PM -0500, Nathan Lynch wrote:
+>> If ipcshm_restore fails to look up the file object for the region
+>> being restored, it should return the error to its caller and not
+>> proceed to dereference the file pointer.
+>>
+>> Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+> 
+> (Important fix. Adding Oren to Cc)
+> 
+> Reviewed-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> 
+>> ---
+>>  ipc/shm.c |    2 +-
+>>  1 files changed, 1 insertions(+), 1 deletions(-)
+>>
+>> diff --git a/ipc/shm.c b/ipc/shm.c
+>> index eed4b9a..1ba9193 100644
+>> --- a/ipc/shm.c
+>> +++ b/ipc/shm.c
+>> @@ -334,7 +334,7 @@ int ipcshm_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
+>>
+>>  	file = ckpt_obj_fetch(ctx, h->ino_objref, CKPT_OBJ_FILE);
+>>  	if (IS_ERR(file))
+>> -		PTR_ERR(file);
+>> +		return PTR_ERR(file);
+
+Hrm ... I really don't see what's the problem ;)
 
 Oren.
 
-On 08/16/2010 03:43 PM, Sukadev Bhattiprolu wrote:
-> The file_lock->fl_break_notified field will be used when checkpointing and
-> restarting a file-lease. It is needed if the application was checkpointed
-> during the lease-break-protocol, to "remember" if the application was notified
-> of the lease-break.
 > 
-> This patch just initializes the ->fl_break_notified field. It will be used
-> in a follow-on patch, when checkpoint/restart of file-leases are implemented.
+> Odd that the original code didn't trigger any unused result or must check
+> warnings. In linux/err.h I already see:
 > 
-> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> ---
->  fs/locks.c         |    7 +++++++
->  include/linux/fs.h |    1 +
->  2 files changed, 8 insertions(+), 0 deletions(-)
+> 	static inline long __must_check PTR_ERR(const void *ptr)
+> 	...
 > 
-> diff --git a/fs/locks.c b/fs/locks.c
-> index 9a00876..b5eb4c0 100644
-> --- a/fs/locks.c
-> +++ b/fs/locks.c
-> @@ -185,6 +185,7 @@ void locks_init_lock(struct file_lock *fl)
->  	fl->fl_flags = 0;
->  	fl->fl_type = 0;
->  	fl->fl_type_prev = 0;
-> +	fl->fl_break_notified = 0;
->  	fl->fl_start = fl->fl_end = 0;
->  	fl->fl_break_time = 0UL;
->  	fl->fl_ops = NULL;
-> @@ -230,6 +231,7 @@ void __locks_copy_lock(struct file_lock *new, const struct file_lock *fl)
->  	new->fl_type = fl->fl_type;
->  	new->fl_type_prev = fl->fl_type_prev;
->  	new->fl_start = fl->fl_start;
-> +	new->fl_break_notified = fl->fl_break_notified;
->  	new->fl_end = fl->fl_end;
->  	new->fl_break_time = 0UL;
->  	new->fl_ops = NULL;
-> @@ -458,6 +460,7 @@ static int lease_init(struct file *filp, int type, struct file_lock *fl)
->  
->  	fl->fl_file = filp;
->  	fl->fl_flags = FL_LEASE;
-> +	fl->fl_break_notified = 0;
->  	fl->fl_start = 0;
->  	fl->fl_end = OFFSET_MAX;
->  	fl->fl_ops = NULL;
-> @@ -1141,6 +1144,8 @@ int lease_modify(struct file_lock **before, int arg)
->  	struct file_lock *fl = *before;
->  	int error = assign_type(fl, arg);
->  
-> +	fl->fl_break_notified = 0;
-> +
->  	if (error)
->  		return error;
->  	locks_wake_up_blocks(fl);
-> @@ -1234,8 +1239,10 @@ int __break_lease(struct inode *inode, unsigned int mode)
->  			fl->fl_type_prev = fl->fl_type;
->  			fl->fl_type = future;
->  			fl->fl_break_time = break_time;
-> +
->  			/* lease must have lmops break callback */
->  			fl->fl_lmops->fl_break(fl);
-> +			fl->fl_break_notified = 1;
->  		}
->  	}
->  
-> diff --git a/include/linux/fs.h b/include/linux/fs.h
-> index 299cc09..c21f002 100644
-> --- a/include/linux/fs.h
-> +++ b/include/linux/fs.h
-> @@ -1067,6 +1067,7 @@ struct file_lock {
->  	unsigned char fl_flags;
->  	unsigned char fl_type;
->  	unsigned char fl_type_prev;
-> +	unsigned char fl_break_notified;
->  	unsigned int fl_pid;
->  	struct pid *fl_nspid;
->  	wait_queue_head_t fl_wait;
+> And in linux/compiler-gcc3.h
+> 	if __GNUC_MINOR__ >= 4
+> 	#define __must_check            __attribute__((warn_unused_result))
+> 	#endif
+> 
+> or for those of us using GCC 4.x (linux/compiler-gcc4.h):
+> 	#define __must_check            __attribute__((warn_unused_result))
+> 
+> and in my .config I have:
+> 	CONFIG_SYSVIPC=y
+> 	CONFIG_SYSVIPC_CHECKPOINT=y
+> 	...
+> 	CONFIG_ENABLE_MUST_CHECK=y
+> 
+> plus a simple test:
+> 
+> 	#include <stdlib.h>
+> 
+> 	static inline void * __attribute__((warn_unused_result)) foo(void)
+> 	{
+> 		return NULL;
+> 	}
+> 
+> 	int main (void)
+> 	{
+> 		if (0)
+> 			foo();
+> 		return 0;
+> 	}
+> 
+> even without -Wall triggers the compiler warning just fine. So I can't
+> see why the warning is not triggering.
+> 
+> Cheers,
+> 	-Matt
+> 
