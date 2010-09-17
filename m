@@ -1,14 +1,14 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH 06/17][cr][v4]: Checkpoint file-locks
-Date: Thu, 16 Sep 2010 20:03:06 -0400
-Message-ID: <4C92B03A.5030204__40701.1158568368$1284681930$gmane$org@cs.columbia.edu>
+Subject: Re: [PATCH 11/17][cr][v4]: Add ->fl_type_prev field.
+Date: Thu, 16 Sep 2010 20:06:46 -0400
+Message-ID: <4C92B116.7060601__39759.446893777$1284682154$gmane$org@cs.columbia.edu>
 References: <1281987801-1293-1-git-send-email-sukadev@linux.vnet.ibm.com>
-	<1281987801-1293-7-git-send-email-sukadev@linux.vnet.ibm.com>
+	<1281987801-1293-12-git-send-email-sukadev@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1281987801-1293-7-git-send-email-sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <1281987801-1293-12-git-send-email-sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,266 +25,78 @@ List-Id: containers.vger.kernel.org
 
 
 On 08/16/2010 03:43 PM, Sukadev Bhattiprolu wrote:
-> While checkpointing each file-descriptor, find all the locks on the
-> file and save information about the lock in the checkpoint-image.
-> A follow-on patch will use this informaiton to restore the file-locks.
+> In preparation for checkpoint/restart of file leases, add ->fl_type_prev
+> field to 'struct file_lock'. This field is needed to correctly restore
+> file leases in case of recursive checkpoint/restart of an in-progress
+> lease.
+
+Nit: since it isn't obvious why fl_type_prev field exists,
+maybe add this comment also inside fs.h  (so that future
+readers won't need to look it up in the git history) ?
+
+Oren.
+
 > 
-> Changelog[v4]:
-> 	[Oren Laadan]: For consistency with other such objects, replace
-> 	the "marker lock" checkpoint with a checkpoint of a count of the
-> 	file-locks before the first file-lock of each file.
-> 
-> Changelog[v3]:
-> 	[Oren Laadan] Add a missing (loff_t) type cast and use a macro
-> 		to set the marker/dummy file lock
-> 
-> Changelog[v2]:
-> 	[Matt Helsley]: Use fixed sizes (__s64) instead of 'loff_t' in
-> 		'struct ckpt_hdr_file_lock'.
-> 	[Matt Helsley, Serge Hallyn]: Highlight new use of BKL (using
-> 		lock_flocks() macros as suggested by Serge).
-> 	[Matt Helsley]: Reorg code a bit to simplify error handling.
-> 	[Matt Helsley]: Reorg code to initialize marker-lock (Pass a
-> 		NULL lock to checkpoint_one_lock() to indicate marker).
+> This ->fl_type_prev is only initialized in this patch. It will actually
+> be used when restoring file leases after a checkpoint.
 > 
 > Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 > ---
->  fs/checkpoint.c                |  142 ++++++++++++++++++++++++++++++++++++----
->  include/linux/checkpoint_hdr.h |   17 +++++
->  2 files changed, 146 insertions(+), 13 deletions(-)
+>  fs/locks.c         |   10 ++++++++++
+>  include/linux/fs.h |    1 +
+>  2 files changed, 11 insertions(+), 0 deletions(-)
 > 
-> diff --git a/fs/checkpoint.c b/fs/checkpoint.c
-> index be9d39a..47aa802 100644
-> --- a/fs/checkpoint.c
-> +++ b/fs/checkpoint.c
-> @@ -26,8 +26,19 @@
->  #include <linux/checkpoint.h>
->  #include <linux/eventpoll.h>
->  #include <linux/eventfd.h>
-> +#include <linux/smp_lock.h>
->  #include <net/sock.h>
+> diff --git a/fs/locks.c b/fs/locks.c
+> index 0bd5af7..9a00876 100644
+> --- a/fs/locks.c
+> +++ b/fs/locks.c
+> @@ -184,6 +184,7 @@ void locks_init_lock(struct file_lock *fl)
+>  	fl->fl_file = NULL;
+>  	fl->fl_flags = 0;
+>  	fl->fl_type = 0;
+> +	fl->fl_type_prev = 0;
+>  	fl->fl_start = fl->fl_end = 0;
+>  	fl->fl_break_time = 0UL;
+>  	fl->fl_ops = NULL;
+> @@ -227,6 +228,7 @@ void __locks_copy_lock(struct file_lock *new, const struct file_lock *fl)
+>  	new->fl_file = NULL;
+>  	new->fl_flags = fl->fl_flags;
+>  	new->fl_type = fl->fl_type;
+> +	new->fl_type_prev = fl->fl_type_prev;
+>  	new->fl_start = fl->fl_start;
+>  	new->fl_end = fl->fl_end;
+>  	new->fl_break_time = 0UL;
+> @@ -293,6 +295,13 @@ static int assign_type(struct file_lock *fl, int type)
+>  	case F_WRLCK:
+>  	case F_UNLCK:
+>  		fl->fl_type = type;
+> +		/*
+> +		 * Clear ->fl_type_prev since this is a new lease type.
+> +		 * break_lease() will use this cleared state to know
+> +		 * if it must save the lease-type in case of checkpoint/
+> +		 * restart.
+> +		 */
+> +		fl->fl_type_prev = 0;
+>  		break;
+>  	default:
+>  		return -EINVAL;
+> @@ -1222,6 +1231,7 @@ int __break_lease(struct inode *inode, unsigned int mode)
 >  
-> +/*
-> + * TODO: This code uses the BKL for consistency with other uses of
-> + * 	 'for_each_lock()'. But since the BKL may be replaced with another
-> + * 	 lock in the future, use lock_flocks() macros instead. lock_flocks()
-> + * 	 are currently used in BKL-fix sand boxes and when those changes
-> + * 	 are merged, the following macros can be removed
-> + */
-> +#define lock_flocks()		lock_kernel()
-> +#define unlock_flocks()	unlock_kernel()
-> +
->  /**************************************************************************
->   * Checkpoint
->   */
-> @@ -256,8 +267,120 @@ static int checkpoint_file(struct ckpt_ctx *ctx, void *ptr)
->  	return ret;
->  }
->  
-> +static int checkpoint_one_file_lock(struct ckpt_ctx *ctx, 
-> +		struct file_lock *lock)
-> +{
-> +	int rc;
-> +	struct ckpt_hdr_file_lock *h;
-> +
-> +	if (!IS_POSIX(lock)) {
-> +		/* Hmm, we should have caught this while counting locks */
-> +		return -EBADF;
-> +	}
-> +
-> +	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE_LOCK);
-> +	if (!h)
-> +		return -ENOMEM;
-> +
-> +	h->fl_start = lock->fl_start;
-> +	h->fl_end = lock->fl_end;
-> +	h->fl_type = lock->fl_type;
-> +	h->fl_flags = lock->fl_flags;
-> +
-> +	rc = ckpt_write_obj(ctx, &h->h);
-> +
-> +	ckpt_hdr_put(ctx, h);
-> +
-> +	return rc;
-> +}
-> +
-> +static int checkpoint_file_lock_count(struct ckpt_ctx *ctx, int num_locks)
-> +{
-> +	int rc;
-> +	struct ckpt_hdr_file_lock_count *h;
-> +
-> +	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE_LOCK_COUNT);
-> +	if (!h)
-> +		return -ENOMEM;
-> +
-> +	h->nr_locks = num_locks;
-> +
-> +	rc = ckpt_write_obj(ctx, &h->h);
-> +
-> +	ckpt_hdr_put(ctx, h);
-> +
-> +	return rc;
-> +}
-> +
-> +int
-> +checkpoint_file_locks(struct ckpt_ctx *ctx, struct files_struct *files,
-> +		struct file *file)
-> +{
-> +	int n;
-> +	int rc;
-> +	struct inode *inode;
-> +	struct file_lock **lockpp;
-> +	struct file_lock *lockp;
-> +
-> +	lock_flocks();
-> +
-> +	/*
-> +	 * First count the number of file-locks on this file
-> +	 */
-> +	n = 0;
-> +	rc = -EBADF;
-> +	inode = file->f_path.dentry->d_inode;
-> +	for_each_lock(inode, lockpp) {
-> +		lockp = *lockpp;
-> +		if (lockp->fl_owner != files)
-> +			continue;
-> +
-> +		ckpt_debug("Lock [%lld, %lld, %d, 0x%x]\n", lockp->fl_start,
-> +				lockp->fl_end, lockp->fl_type, lockp->fl_flags);
-> +
-> +		if (lockp->fl_owner != files)
-> +			continue;
-> +
-> +		if (IS_POSIX(lockp))
-> +			n++;
-> +		else {
-> +			ckpt_err(ctx,  rc, "%(T), checkpoint of lock "
-> +					"[%lld, %lld, %d, 0x%x] failed\n",
-> +					lockp->fl_start, lockp->fl_end,
-> +					lockp->fl_type, lockp->fl_flags);
-> +			goto out;
-> +		}
-> +	}
-> +
-> +	/*
-> +	 * Checkpoint the count of file-locks
-> +	 */
-> +	rc = checkpoint_file_lock_count(ctx, n);
-> +	if (rc < 0) {
-> +		ckpt_err(ctx,  rc, "%(T), checkpoint file-lock count failed\n");
-> +		goto out;
-> +	}
-> +
-> +	/*
-> +	 * Make a second pass and checkpoint file-locks themselves.
-> +	 */
-> +	for_each_lock(inode, lockpp) {
-> +		lockp = *lockpp;
-> +		if (lockp->fl_owner != files)
-> +			continue;
-> +
-> +		rc = checkpoint_one_file_lock(ctx, lockp);
-> +		if (rc < 0)
-> +			goto out;
-> +	}
-> +
-> +out:
-> +	unlock_flocks();
-> +	return rc;
-> +}
-> +
->  /**
-> - * ckpt_write_file_desc - dump the state of a given file descriptor
-> + * checkpoint_file_desc - dump the state of a given file descriptor
->   * @ctx: checkpoint context
->   * @files: files_struct pointer
->   * @fd: file descriptor
-> @@ -288,18 +411,6 @@ static int checkpoint_file_desc(struct ckpt_ctx *ctx,
->  	}
->  	rcu_read_unlock();
->  
-> -	ret = find_locks_with_owner(file, files);
-> -	/*
-> -	 * find_locks_with_owner() returns an error when there
-> -	 * are no locks found, so we *want* it to return an error
-> -	 * code.  Its success means we have to fail the checkpoint.
-> -	 */
-> -	if (!ret) {
-> -		ret = -EBADF;
-> -		ckpt_err(ctx, ret, "%(T)fd %d has file lock or lease\n", fd);
-> -		goto out;
-> -	}
-> -
->  	/* sanity check (although this shouldn't happen) */
->  	ret = -EBADF;
->  	if (!file) {
-> @@ -323,6 +434,11 @@ static int checkpoint_file_desc(struct ckpt_ctx *ctx,
->  	h->fd_close_on_exec = coe;
->  
->  	ret = ckpt_write_obj(ctx, &h->h);
-> +	if (ret < 0)
-> +		goto out;
-> +
-> +	ret = checkpoint_file_locks(ctx, files, file);
-> +
->  out:
->  	ckpt_hdr_put(ctx, h);
->  	if (file)
-> diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-> index 0381019..14b287f 100644
-> --- a/include/linux/checkpoint_hdr.h
-> +++ b/include/linux/checkpoint_hdr.h
-> @@ -144,6 +144,10 @@ enum {
->  #define CKPT_HDR_TTY_LDISC CKPT_HDR_TTY_LDISC
->  	CKPT_HDR_EPOLL_ITEMS,  /* must be after file-table */
->  #define CKPT_HDR_EPOLL_ITEMS CKPT_HDR_EPOLL_ITEMS
-> +	CKPT_HDR_FILE_LOCK_COUNT,
-> +#define CKPT_HDR_FILE_LOCK_COUNT CKPT_HDR_FILE_LOCK_COUNT
-> +	CKPT_HDR_FILE_LOCK,
-> +#define CKPT_HDR_FILE_LOCK CKPT_HDR_FILE_LOCK
->  
->  	CKPT_HDR_MM = 401,
->  #define CKPT_HDR_MM CKPT_HDR_MM
-> @@ -586,6 +590,19 @@ struct ckpt_hdr_file_generic {
->  	struct ckpt_hdr_file common;
->  } __attribute__((aligned(8)));
->  
-> +struct ckpt_hdr_file_lock_count {
-> +       struct ckpt_hdr h;
-> +       __u32 nr_locks;
-> +};
-> +
-> +struct ckpt_hdr_file_lock {
-> +       struct ckpt_hdr h;
-> +       __s64 fl_start;
-> +       __s64 fl_end;
-> +       __u8 fl_type;
-> +       __u8 fl_flags;
-> +};
-> +
-
-You forgot to add "__attribute__((aligned(8)));".
-
-[maybe picking.. but-] Giving a "whole" object per lock seems
-wasteful; I was hoping for something similar to how we do the
-'struct ckpt_hdr_sigpending', e.g.
-
-struct ckpt_file_lock {
-	__s64 fl_start;
-	__s64 fl_end;
-	__u8 fl_type;
-	__u8 fl_flags;
-} __attribute__((aligned(8)));
-
-struct ckpt_hdr_file_locks {
-	struct ckpt_hdr h;
-	__u32 nr_locks;
-	struct ckpt_file_lock locks[0];
-} __attribute__((aligned(8)));
-
-You could use ckpt_write_obj_type() with null pointer, and then
-follow with the payload in chunks in the loop in checkpoint_file_locks()
-
-Makes sense ?
-
-Oren.
+>  	for (fl = flock; fl && IS_LEASE(fl); fl = fl->fl_next) {
+>  		if (fl->fl_type != future) {
+> +			fl->fl_type_prev = fl->fl_type;
+>  			fl->fl_type = future;
+>  			fl->fl_break_time = break_time;
+>  			/* lease must have lmops break callback */
+> diff --git a/include/linux/fs.h b/include/linux/fs.h
+> index 49d4eeb..299cc09 100644
+> --- a/include/linux/fs.h
+> +++ b/include/linux/fs.h
+> @@ -1066,6 +1066,7 @@ struct file_lock {
+>  	fl_owner_t fl_owner;
+>  	unsigned char fl_flags;
+>  	unsigned char fl_type;
+> +	unsigned char fl_type_prev;
+>  	unsigned int fl_pid;
+>  	struct pid *fl_nspid;
+>  	wait_queue_head_t fl_wait;
