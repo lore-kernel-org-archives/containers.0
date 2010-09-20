@@ -1,16 +1,18 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH][RFC] v2 exec: move core_pattern pipe helper into the
+From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 2/2] exec: move core_pattern pipe helper into the
 	crashing namespace
-Date: Mon, 20 Sep 2010 11:34:00 -0700
-Message-ID: <m1eico1cyv.fsf__41556.8793695003$1285012432$gmane$org@fess.ebiederm.org>
-References: <20100918012939.GA25046@redhat.com>
-	<1284779629-15273-1-git-send-email-wad@chromium.org>
+Date: Mon, 20 Sep 2010 20:50:01 +0200
+Message-ID: <20100920185001.GA955__4835.42735823921$1285012966$gmane$org@redhat.com>
+References: <20100917152639.0e88341a@basil.nowhere.org>
+	<1284736618-27153-2-git-send-email-wad@chromium.org>
+	<20100918012939.GA25046@redhat.com>
+	<AANLkTimsNtoT2GGCv1Zk2cGCsZ17zsOqV1DiF7D5tV=L@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1284779629-15273-1-git-send-email-wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org> (Will
-	Drewry's message of "Fri, 17 Sep 2010 22:13:49 -0500")
+Content-Disposition: inline
+In-Reply-To: <AANLkTimsNtoT2GGCv1Zk2cGCsZ17zsOqV1DiF7D5tV=L@mail.gmail.com>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,44 +23,39 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Will Drewry <wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-Cc: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Eugene Teo <eteo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andi Kleen <andi-Vw/NltI1exuRpAAqCnN02g@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Eugene Teo <eteo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andi Kleen <andi-Vw/NltI1exuRpAAqCnN02g@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Will Drewry <wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org> writes:
-
-> Presently, a core_pattern pipe endpoint will be run in the init
-> namespace.  It will receive the virtual pid (task_tgid_vnr->%p) of the
-> core dumping process but will have no access to that processes /proc
-> without walking the init namespace /proc looking through all the global
-> pids until it finds the one it thinks matches.
+On 09/17, Will Drewry wrote:
 >
-> One option for fixing this is to change the reported pid:
->   https://patchwork.kernel.org/patch/185912/
-> However, it's unclear if it is desirable for the core_pattern to run
-> outside the namespace.  In particular, it can easily access the mounts
-> via /proc/[pid_nr]/root, but if there is a net namespace, it will not
-> have access.  (Originally introduced in 2007 in commit
-> b488893a390edfe027bae7a46e9af8083e740668 )
+> On Fri, Sep 17, 2010 at 8:29 PM, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> >
+> > This looks overcomplicated to me, or I missed something.
+> >
+> > I do not understand why should we do this beforehand, and why we need
+> > copy_namespaces_unattached().
+> >
+> > Can't you just pass current to umh_pipe_setup() (or another helper) as
+> > the argument? Then this helper can copy ->fs and ->nsproxy itself.
 >
-> Instead, this change implements the more complex option two.  It
-> migrates the ____call_usermodehelper() thread into the same namespaces
-> as the dumping process.  It does not assign a pid in that namespace so
-> the collector will appear to be pid 0 in the namespace.
+> I wasn't sure if it was reasonable to pass the current task_struct
+> over, but I certainly can.
 
-I like the direction this is going but as structured this looks like a
-security exploit waiting to happen.
+Why not? current calls call_usermodehelper_exec(), it can't go away
+until subprocess_info->init() returns, it sleeps on wait_for_completion().
 
-The pipe process needs to run in the namespaces of the process who set
-the core pattern, not in the namespaces of the dumping process.
-Otherwise it is possible to trigger a privileged process to run in a
-context where it's reality that it expected, causing it to misuse
-it's privileges.  Even if we don't have a privilege problem I think
-we will have a case of mismatched functionality where the core pattern
-will not work as expected.
+> In practice, this seems to amount to just adding a refcount to all the
+> namespaces and creating a new nsproxy which isn't really needed.  Most
+> likely, doing what you've suggested above plus the copy_fs_struct and
+> the swap out will do the trick.  I'll try it out and see.  That's make
+> it much clearer I think.
 
-I believe the solution here is to move the core pattern into the pid
-namespace and to capture the namespaces when set, but if the core
-pattern hasn't been set to use the core pattern of the parent pid
-namespace.
+Yes, just get_nsproxy() (like fork() does) should be fine in this case.
 
-Eric
+As for copying ->fs, I am not sure actually. core_pattern is global,
+say it is "|/coredumper". If you change ->root, then exec can fail
+because that binary is not visible to the coredumping process?
+
+Probably we should move core_pattern into ->pid_ns, I dunno.
+
+Oleg.
