@@ -1,47 +1,61 @@
-From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [PATCH 8/8] net: Implement socketat.
-Date: Thu, 23 Sep 2010 16:34:37 +0400
-Message-ID: <4C9B495D.70200@parallels.com>
-References: <m1ocborgq7.fsf@fess.ebiederm.org>	
-	<m1bp7oq1u8.fsf@fess.ebiederm.org>
-	<4C9B162E.7040201@parallels.com>	
-	<1285240797.5036.5.camel@bigi> <4C9B3B06.900@parallels.com>	
-	<1285242055.5036.9.camel@bigi> <4C9B3F9C.8080506@parallels.com>
-	<1285243881.5036.22.camel@bigi>
+From: Brian Haley <brian.haley@hp.com>
+Subject: Re: [PATCH 7/8] net: Allow setting the network namespace by fd
+Date: Thu, 23 Sep 2010 10:22:25 -0400
+Message-ID: <4C9B62A1.7020606@hp.com>
+References: <m1ocborgq7.fsf@fess.ebiederm.org> <m1hbhgq1v1.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1285243881.5036.22.camel@bigi>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, Ulrich Drepper <drepper-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jan Engelhardt <jengelh-nopoi9nDyk+ELgA04lAiVw@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Ben Greear <greearb-my8/4N5VtI7c+919tysfdA@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <m1hbhgq1v1.fsf@fess.ebiederm.org>
+Sender: netdev-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, netfilter-devel@vger.kernel.org, linux-fsdevel@vger.kernel.org, jamal <hadi@cyberus.ca>, Daniel Lezcano <daniel.lezcano@free.fr>, Linus Torvalds <torvalds@linux-foundation.org>, Michael Kerrisk <mtk.manpages@gmail.com>, Ulrich Drepper <drepper@gmail.com>, Al Viro <viro@ZenIV.linux.org.uk>, David Miller <davem@davemloft.net>, "Serge E. Hallyn" <serge@hallyn.com>, Pavel Emelyanov <xemul@openvz.org>, Pavel Emelyanov <xemul@parallels.com>, Ben Greear <greearb@candelatech.com>, Matt Helsley <matthltc@us.ibm.com>, Jonathan Corbet <corbet@lwn.net>, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, Jan Engelhardt <jengelh@medozas.de>, Patrick McHardy <kaber@trash.net>
 List-Id: containers.vger.kernel.org
 
-On 09/23/2010 04:11 PM, jamal wrote:
-> On Thu, 2010-09-23 at 15:53 +0400, Pavel Emelyanov wrote:
+On 09/23/2010 04:51 AM, Eric W. Biederman wrote:
 > 
->> Why does it matter? You told, that the usage scenario was to
->> add routes to container. If I do 2 syscalls instead of 1, is
->> it THAT worse?
->>
+> Take advantage of the new abstraction and allow network devices
+> to be placed in any network namespace that we have a fd to talk
+> about.
 > 
-> Anything to do with socket IO that requires namespace awareness
-> applies for usage; it could be tcp/udp/etc socket. If it doesnt
-> make any difference performance wise using one scheme vs other
-> to write/read heavy messages then i dont see an issue and socketat
-> is redundant.
+...
+> +struct net *get_net_ns_by_fd(int fd)
+> +{
+> +	struct proc_inode *ei;
+> +	struct file *file;
+> +	struct net *net;
+> +
+> +	file = NULL;
 
-That's what my point is about - unless we know why would we need it
-we don't need it.
+No need to initialize this.
 
-Eric, please clarify, what is the need in creating a socket in foreign
-net namespace?
+> +	net = ERR_PTR(-EINVAL);
+
+or this?
+
+> +	file = proc_ns_fget(fd);
+> +	if (!fd)
+> +		goto out;
+> +		return ERR_PTR(-EINVAL);
+
+Shouldn't this be:
+
+	if (!file)
+
+And the "goto" seems wrong, especially without a {} here.  Unless you
+meant to keep the "goto" and branch below?
+
+-Brian
+
+> +
+> +	ei = PROC_I(file->f_dentry->d_inode);
+> +	if (ei->ns_ops != &netns_operations)
+> +		goto out;
+> +
+> +	net = get_net(ei->ns);
+> +out:
+> +	if (file)
+> +		fput(file);
+> +	return net;
+> +}
