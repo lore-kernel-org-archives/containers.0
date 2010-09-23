@@ -1,72 +1,62 @@
-From: David Lamparter <equinox@diac24.net>
-Subject: Re: [ABI REVIEW][PATCH 0/8] Namespace file descriptors
-Date: Thu, 23 Sep 2010 18:49:44 +0200
-Message-ID: <20100923164944.GA1202237@jupiter.n2.diac24.net>
-References: <m1ocborgq7.fsf@fess.ebiederm.org>
- <20100923151853.GC1160234@jupiter.n2.diac24.net>
- <m11v8kh142.fsf@fess.ebiederm.org>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] Fix build break when CONFIG_CHECKPOINT=n
+Date: Thu, 23 Sep 2010 09:48:04 -0700
+Message-ID: <1285260484-17134-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <netfilter-devel-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <m11v8kh142.fsf@fess.ebiederm.org>
-Sender: netfilter-devel-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: David Lamparter <equinox@diac24.net>, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, netfilter-devel@vger.kernel.org, linux-fsdevel@vger.kernel.org, jamal <hadi@cyberus.ca>, Daniel Lezcano <daniel.lezcano@free.fr>, Linus Torvalds <torvalds@linux-foundation.org>, Michael Kerrisk <mtk.manpages@gmail.com>, Ulrich Drepper <drepper@gmail.com>, Al Viro <viro@ZenIV.linux.org.uk>, David Miller <davem@davemloft.net>, "Serge E. Hallyn" <serge@hallyn.com>, Pavel Emelyanov <xemul@openvz.org>, Pavel Emelyanov <xemul@parallels.com>, Ben Greear <greearb@candelatech.com>, Matt Helsley <matthltc@us.ibm.com>, Jonathan Corbet <corbet@lwn.net>, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, Jan Engelhardt <jengelh@medozas.de>, Patrick McHardy <kaber@trash.net>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Sep 23, 2010 at 09:32:29AM -0700, Eric W. Biederman wrote:
-> > At several occasions, I was left with either some runaway daemon which
-> > kept the namespace alive. To describe this a little more graphically:
-> > I found no other way than doing a
-> > 	md5sum /proc/*/net/if_inet6 | sort | uniq -c -w 32
-> > to find out which runaway to kill to terminate the namespace.
-> >
-> > This makes network namespaces particularly cumbersome to use without PID
-> > namespaces. While I agree that a large part of the users - namely lxc -
-> > will use them together, network namespaces without pidns are very
-> > interesting for routing applications implementing VRFs.
-> >
-> > Is it possible to add some kind of "all namespaces" list, optimally
-> > giving an opportunity to open() exactly this file descriptor that you
-> > get from /proc/<pid>/ns/net?
-> >
-> > Also, is it possible to extend that file descriptor to have an
-> > "get all pids" ioctl,
-> > ...or, wait, maybe have /proc/...ns/proc/<pid> symlink?
-> >
-> > (This obviously isn't fully thought to the end, please pick up...)
-> 
-> Maybe.  I can understand the pain.
-> 
-> Is the problem you are facing you are shutting down a vrf and you want
-> to make certain nothing is using it any longer?
+This was introduced in my sem_undo patch.  Oops.
 
-Hrm. There are 2 and a half problems i can describe:
+Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ ipc/sem.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
 
-1) identifying namespaces. You can walk over /proc just fine and look at
-   all processes namespaces, but you don't know which are actually the
-   same aside from looking at some entry like if_inet6. There is no
-   identifier and no easy equality match. (As far as i can tell.)
-
-   Bonus difficulty: your patch will allow namespaces that have no
-   process attached to them anymore since they only exist as files.
-   Those will be invisible to someone running through /proc. Which leads
-   to:
-2) enumerating namespaces. Sure you can walk through /proc, but that's
-   racy and won't even work with fd-only namespaces. It might even be a
-   security risk if some trojan creates, say, a VLAN on your eth0, or a
-   macvlan, hides it in a network namespace and communicates through it.
-
-2 1/2) is terminating a namespace. It's not really a problem to add a
-   PID namespace when you have "uncontrollable" daemons; however you
-   can't be sure whether someone else took a reference on the network
-   namespace from the outside.
-
-These all are mainly administration/management issues, not that much
-regular operation. Writing routing software with VRF support works just
-fine, but the sysadmin can be at somewhat of an odd end here.
-
-
--David
-
+diff --git a/ipc/sem.c b/ipc/sem.c
+index 9e3e463..2e54c21 100644
+--- a/ipc/sem.c
++++ b/ipc/sem.c
+@@ -1478,6 +1478,7 @@ static int sysvipc_sem_proc_show(struct seq_file *s, void *it)
+ }
+ #endif
+ 
++#ifdef CONFIG_CHECKPOINT
+ static int __get_semids(struct sem_undo_list *ulp, int *semids, int max)
+ {
+ 	int count = 0;
+@@ -1786,6 +1787,7 @@ static const struct ckpt_obj_ops ckpt_obj_sem_undo_ops = {
+ 	.checkpoint = checkpoint_sem_undo,
+ 	.restore = restore_sem_undo,
+ };
++#endif
+ 
+ void __init sem_init (void)
+ {
+@@ -1794,9 +1796,11 @@ void __init sem_init (void)
+ 				"       key      semid perms      nsems   uid   gid  cuid  cgid      otime      ctime\n",
+ 				IPC_SEM_IDS, sysvipc_sem_proc_show);
+ 
++#ifdef CONFIG_CHECKPOINT
+ 	/* sem_undo_list uses a short but we write a __s16 */
+ 	CKPT_BUILD_BUG_ON_MISMATCH(*CKPT_STRUCT_MEMBER(sem_undo, semadj),
+ 				   __s16);
+ 
+ 	register_checkpoint_obj(&ckpt_obj_sem_undo_ops);
++#endif
+ }
+-- 
+1.7.2.2
