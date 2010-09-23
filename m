@@ -1,13 +1,18 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/6] Move sys-wrappers
-Date: Thu, 23 Sep 2010 14:53:27 -0700
-Message-ID: <6987185123220ec2034677299859c5a63eaf2aed.1285278339.git.matthltc@us.ibm.com>
+Subject: [PATCH 4/6] [RFC] Split do_linkat() out of sys_linkat
+Date: Thu, 23 Sep 2010 14:53:30 -0700
+Message-ID: <9eade1f1ec10c23dae296feda8af9fe87085e843.1285278339.git.matthltc__13999.4221892723$1285278917$gmane$org@us.ibm.com>
 References: <1285278812-16972-1-git-send-email-matthltc@us.ibm.com>
+	<6987185123220ec2034677299859c5a63eaf2aed.1285278339.git.matthltc@us.ibm.com>
+	<d91e3660266d3a2956c4d1aebc9cb618081b21ef.1285278339.git.matthltc@us.ibm.com>
+	<59e9d9fe9db11c6e06ef314541b1112f2b720a59.1285278339.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1285278812-16972-1-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <59e9d9fe9db11c6e06ef314541b1112f2b720a59.1285278339.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <6987185123220ec2034677299859c5a63eaf2aed.1285278339.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+References: <6987185123220ec2034677299859c5a63eaf2aed.1285278339.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,462 +23,136 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Jamie Lokier <jamie-yetKDKU6eevNLxjTenLetw@public.gmane.org>, Amir Goldstein <amir73il-iA+eEnwkJgzk1uMJSBkQmQ@public.gmane.org>, Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Checkpoint/restart code will be using the sys-wrappers. Move it to a more
-appropriate location.
+Separate the __user pathname handling from the bulk of the syscall.
+Since we're doing this to enable relinking of unlinked files by
+sys_checkpoint and not sys_linkat we're not using a sys-wrapper.
 
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Amir Goldstein <amir73il-iA+eEnwkJgzk1uMJSBkQmQ@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+Cc: Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+Cc: Jamie Lokier <jamie-yetKDKU6eevNLxjTenLetw@public.gmane.org>
 ---
- include/linux/sys-wrapper.h |  216 +++++++++++++++++++++++++++++++++++++++++++
- init/sys-wrapper.h          |  216 -------------------------------------------
- 2 files changed, 216 insertions(+), 216 deletions(-)
- create mode 100644 include/linux/sys-wrapper.h
- delete mode 100644 init/sys-wrapper.h
+ fs/namei.c |   79 ++++++++++++++++++++++++++++++++++++++---------------------
+ 1 files changed, 51 insertions(+), 28 deletions(-)
 
-diff --git a/include/linux/sys-wrapper.h b/include/linux/sys-wrapper.h
-new file mode 100644
-index 0000000..10109b6
---- /dev/null
-+++ b/include/linux/sys-wrapper.h
-@@ -0,0 +1,216 @@
-+/*
-+ * wrappers for various syscalls for use in the init code
-+ *
-+ * Copyright (C) 2010  Namhyung Kim <namhyung-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-+ *
-+ * This file is released under the GPLv2.
-+ */
-+
-+#include <linux/syscalls.h>
-+#include <linux/uaccess.h>
-+#include <linux/dirent.h>
-+#include <linux/types.h>
-+#include <linux/fs.h>
-+
-+
-+#define kernel_sys_call(call, ...)		\
-+({						\
-+	long result;				\
-+	mm_segment_t old_fs = get_fs();		\
-+	set_fs(KERNEL_DS);			\
-+	result = call(__VA_ARGS__);		\
-+	set_fs(old_fs);				\
-+	result;					\
-+})
-+
-+static inline int kernel_sys_mount(char *dev_name, char *dir_name, char *type,
-+				   unsigned long flags, void *data)
+diff --git a/fs/namei.c b/fs/namei.c
+index eb279e3..8c9663d 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -2456,6 +2456,51 @@ int vfs_link(struct dentry *old_dentry, struct inode *dir, struct dentry *new_de
+ 	return error;
+ }
+ 
++/* If the file has been unlinked then old_dentry doesn't match old_path */
++static int do_linkat(struct path *old_path, struct dentry *old_dentry,
++		     struct nameidata *nd, int flags)
 +{
-+	return kernel_sys_call(sys_mount,
-+			       (char __user __force *) dev_name,
-+			       (char __user __force *) dir_name,
-+			       (char __user __force *) type,
-+			       flags,
-+			       (void __user __force *) data);
++	struct dentry *new_dentry;
++	int error = -EXDEV;
++
++	if (old_path->mnt != nd->path.mnt)
++		goto out;
++	new_dentry = lookup_create(nd, 0);
++	error = PTR_ERR(new_dentry);
++	if (IS_ERR(new_dentry))
++		goto out_unlock;
++	error = mnt_want_write(nd->path.mnt);
++	if (error)
++		goto out_dput;
++	error = security_path_link(old_dentry, &nd->path, new_dentry);
++	if (error)
++		goto out_drop_write;
++	error = vfs_link(old_dentry, nd->path.dentry->d_inode, new_dentry);
++out_drop_write:
++	mnt_drop_write(nd->path.mnt);
++out_dput:
++	dput(new_dentry);
++out_unlock:
++	mutex_unlock(&nd->path.dentry->d_inode->i_mutex);
++out:
++	return error;
 +}
 +
-+static inline int kernel_sys_umount(char *name, int flags)
++static int do_kern_linkat(struct path *old_path, struct dentry *old_dentry,
++			  int newdfd, const char * newname, int flags)
 +{
-+	return kernel_sys_call(sys_umount,
-+			       (char __user __force *) name, flags);
++	struct nameidata nd;
++	int error;
++
++	error = do_path_lookup(newdfd, newname, LOOKUP_PARENT, &nd);
++	if (error)
++		goto out;
++	error = do_linkat(old_path, old_dentry, &nd, flags);
++	path_put(&nd.path);
++out:
++	return error;
 +}
 +
-+static inline int kernel_sys_chroot(const char *pathname)
-+{
-+	return kernel_sys_call(sys_chroot,
-+			       (const char __user __force *) pathname);
-+}
-+
-+static inline int kernel_sys_link(const char *oldname, const char *newname)
-+{
-+	return kernel_sys_call(sys_link,
-+			       (const char __user __force *) oldname,
-+			       (const char __user __force *) newname);
-+}
-+
-+static inline int kernel_sys_unlink(const char *pathname)
-+{
-+	return kernel_sys_call(sys_unlink,
-+			       (const char __user __force *) pathname);
-+}
-+
-+static inline int kernel_sys_newlstat(const char *filename,
-+				      struct stat *statbuf)
-+{
-+	return kernel_sys_call(sys_newlstat,
-+			       (const char __user __force *) filename,
-+			       (struct stat __user __force *) statbuf);
-+}
-+
-+static inline int kernel_sys_mkdir(const char *pathname, int mode)
-+{
-+	return kernel_sys_call(sys_mkdir,
-+			       (const char __user __force *) pathname, mode);
-+}
-+
-+static inline int kernel_sys_rmdir(const char *pathname)
-+{
-+	return kernel_sys_call(sys_rmdir,
-+			       (const char __user __force *) pathname);
-+}
-+
-+static inline int kernel_sys_chdir(const char *pathname)
-+{
-+	return kernel_sys_call(sys_chdir,
-+			       (const char __user __force *) pathname);
-+}
-+
-+static inline int kernel_sys_mknod(const char *filename,
-+				   int mode, unsigned dev)
-+{
-+	return kernel_sys_call(sys_mknod,
-+			       (const char __user __force *) filename,
-+			       mode, dev);
-+}
-+
-+static inline int kernel_sys_chown(const char *filename,
-+				   uid_t user, gid_t group)
-+{
-+	return kernel_sys_call(sys_chown,
-+			       (const char __user __force *) filename,
-+			       user, group);
-+}
-+
-+static inline int kernel_sys_chmod(const char *filename, mode_t mode)
-+{
-+	return kernel_sys_call(sys_chmod,
-+			       (const char __user __force *) filename, mode);
-+}
-+
-+static inline int kernel_sys_open(const char *filename, int flags, int mode)
-+{
-+	return kernel_sys_call(sys_open,
-+			       (const char __user __force *) filename,
-+			       flags, mode);
-+}
-+
-+static inline int kernel_sys_fchown(unsigned int fd, uid_t user, gid_t group)
-+{
-+	return sys_fchown(fd, user, group);
-+}
-+
-+static inline int kernel_sys_fchmod(unsigned int fd, mode_t mode)
-+{
-+	return sys_fchmod(fd, mode);
-+}
-+
-+static inline int kernel_sys_fchdir(unsigned int fd)
-+{
-+	return sys_fchdir(fd);
-+}
-+
-+static inline int kernel_sys_ftruncate(unsigned int fd, unsigned long length)
-+{
-+	return sys_ftruncate(fd, length);
-+}
-+
-+static inline int kernel_sys_read(unsigned int fd, char *buf, size_t count)
-+{
-+	return kernel_sys_call(sys_read,
-+			       fd, (char __user __force *) buf, count);
-+}
-+
-+static inline int kernel_sys_write(unsigned int fd, const char *buf,
-+				   size_t count)
-+{
-+	return kernel_sys_call(sys_write,
-+			       fd, (const char __user __force *) buf, count);
-+}
-+
-+static inline int kernel_sys_lseek(unsigned int fd, off_t offset,
-+				   unsigned int origin)
-+{
-+	return sys_lseek(fd, offset, origin);
-+}
-+
-+static inline int kernel_sys_ioctl(unsigned int fd, unsigned int cmd,
-+				   unsigned long arg)
-+{
-+	return sys_ioctl(fd, cmd, arg);
-+}
-+
-+static inline int kernel_sys_dup(unsigned int fd)
-+{
-+	return sys_dup(fd);
-+}
-+
-+static inline int kernel_sys_close(unsigned int fd)
-+{
-+	return sys_close(fd);
-+}
-+
-+static inline int kernel_sys_symlink(const char *oldname, const char *newname)
-+{
-+	return kernel_sys_call(sys_symlink,
-+			       (const char __user __force *) oldname,
-+			       (const char __user __force *) newname);
-+}
-+
-+static inline int kernel_sys_lchown(const char *filename, uid_t user,
-+				    gid_t group)
-+{
-+	return kernel_sys_call(sys_lchown,
-+			       (const char __user __force *) filename,
-+			       user, group);
-+}
-+
-+static inline int kernel_sys_getdents64(unsigned int fd,
-+					struct linux_dirent64 *dirent,
-+					unsigned int count)
-+{
-+	return kernel_sys_call(sys_getdents64,
-+			       fd,
-+			       (struct linux_dirent64 __user __force *) dirent,
-+			       count);
-+}
-+
-+static inline int kernel_sys_access(const char *filename, int mode)
-+{
-+	return kernel_sys_call(sys_access,
-+			       (const char __user __force *) filename, mode);
-+}
-+
-+static inline int kernel_sys_setsid(void)
-+{
-+	return sys_setsid();
-+}
-+
-+static inline int kernel_sys_wait4(pid_t upid, int *stat_addr, int options,
-+				   struct rusage *ru)
-+{
-+	return kernel_sys_call(sys_wait4,
-+			       upid,
-+			       (int __user __force *) stat_addr,
-+			       options,
-+			       (struct rusage __user __force *) ru);
-+}
-diff --git a/init/sys-wrapper.h b/init/sys-wrapper.h
-deleted file mode 100644
-index 10109b6..0000000
---- a/init/sys-wrapper.h
-+++ /dev/null
-@@ -1,216 +0,0 @@
--/*
-- * wrappers for various syscalls for use in the init code
-- *
-- * Copyright (C) 2010  Namhyung Kim <namhyung-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-- *
-- * This file is released under the GPLv2.
-- */
+ /*
+  * Hardlinks are often used in delicate situations.  We avoid
+  * security-related surprises by not following symlinks on the
+@@ -2468,11 +2513,10 @@ int vfs_link(struct dentry *old_dentry, struct inode *dir, struct dentry *new_de
+ SYSCALL_DEFINE5(linkat, int, olddfd, const char __user *, oldname,
+ 		int, newdfd, const char __user *, newname, int, flags)
+ {
+-	struct dentry *new_dentry;
+ 	struct nameidata nd;
+ 	struct path old_path;
+-	int error;
+ 	char *to;
++	int error;
+ 
+ 	if ((flags & ~AT_SYMLINK_FOLLOW) != 0)
+ 		return -EINVAL;
+@@ -2481,37 +2525,16 @@ SYSCALL_DEFINE5(linkat, int, olddfd, const char __user *, oldname,
+ 			     flags & AT_SYMLINK_FOLLOW ? LOOKUP_FOLLOW : 0,
+ 			     &old_path);
+ 	if (error)
+-		return error;
 -
--#include <linux/syscalls.h>
--#include <linux/uaccess.h>
--#include <linux/dirent.h>
--#include <linux/types.h>
--#include <linux/fs.h>
+-	error = user_path_parent(newdfd, newname, &nd, &to);
+-	if (error)
+ 		goto out;
+-	error = -EXDEV;
+-	if (old_path.mnt != nd.path.mnt)
+-		goto out_release;
+-	new_dentry = lookup_create(&nd, 0);
+-	error = PTR_ERR(new_dentry);
+-	if (IS_ERR(new_dentry))
+-		goto out_unlock;
+-	error = mnt_want_write(nd.path.mnt);
+-	if (error)
+-		goto out_dput;
+-	error = security_path_link(old_path.dentry, &nd.path, new_dentry);
++	error = user_path_parent(newdfd, newname, &nd, &to);
+ 	if (error)
+-		goto out_drop_write;
+-	error = vfs_link(old_path.dentry, nd.path.dentry->d_inode, new_dentry);
+-out_drop_write:
+-	mnt_drop_write(nd.path.mnt);
+-out_dput:
+-	dput(new_dentry);
+-out_unlock:
+-	mutex_unlock(&nd.path.dentry->d_inode->i_mutex);
+-out_release:
++		goto out_put_old_path;
++	error = do_linkat(&old_path, old_path.dentry, &nd, flags);
+ 	path_put(&nd.path);
+ 	putname(to);
+-out:
++out_put_old_path:
+ 	path_put(&old_path);
 -
--
--#define kernel_sys_call(call, ...)		\
--({						\
--	long result;				\
--	mm_segment_t old_fs = get_fs();		\
--	set_fs(KERNEL_DS);			\
--	result = call(__VA_ARGS__);		\
--	set_fs(old_fs);				\
--	result;					\
--})
--
--static inline int kernel_sys_mount(char *dev_name, char *dir_name, char *type,
--				   unsigned long flags, void *data)
--{
--	return kernel_sys_call(sys_mount,
--			       (char __user __force *) dev_name,
--			       (char __user __force *) dir_name,
--			       (char __user __force *) type,
--			       flags,
--			       (void __user __force *) data);
--}
--
--static inline int kernel_sys_umount(char *name, int flags)
--{
--	return kernel_sys_call(sys_umount,
--			       (char __user __force *) name, flags);
--}
--
--static inline int kernel_sys_chroot(const char *pathname)
--{
--	return kernel_sys_call(sys_chroot,
--			       (const char __user __force *) pathname);
--}
--
--static inline int kernel_sys_link(const char *oldname, const char *newname)
--{
--	return kernel_sys_call(sys_link,
--			       (const char __user __force *) oldname,
--			       (const char __user __force *) newname);
--}
--
--static inline int kernel_sys_unlink(const char *pathname)
--{
--	return kernel_sys_call(sys_unlink,
--			       (const char __user __force *) pathname);
--}
--
--static inline int kernel_sys_newlstat(const char *filename,
--				      struct stat *statbuf)
--{
--	return kernel_sys_call(sys_newlstat,
--			       (const char __user __force *) filename,
--			       (struct stat __user __force *) statbuf);
--}
--
--static inline int kernel_sys_mkdir(const char *pathname, int mode)
--{
--	return kernel_sys_call(sys_mkdir,
--			       (const char __user __force *) pathname, mode);
--}
--
--static inline int kernel_sys_rmdir(const char *pathname)
--{
--	return kernel_sys_call(sys_rmdir,
--			       (const char __user __force *) pathname);
--}
--
--static inline int kernel_sys_chdir(const char *pathname)
--{
--	return kernel_sys_call(sys_chdir,
--			       (const char __user __force *) pathname);
--}
--
--static inline int kernel_sys_mknod(const char *filename,
--				   int mode, unsigned dev)
--{
--	return kernel_sys_call(sys_mknod,
--			       (const char __user __force *) filename,
--			       mode, dev);
--}
--
--static inline int kernel_sys_chown(const char *filename,
--				   uid_t user, gid_t group)
--{
--	return kernel_sys_call(sys_chown,
--			       (const char __user __force *) filename,
--			       user, group);
--}
--
--static inline int kernel_sys_chmod(const char *filename, mode_t mode)
--{
--	return kernel_sys_call(sys_chmod,
--			       (const char __user __force *) filename, mode);
--}
--
--static inline int kernel_sys_open(const char *filename, int flags, int mode)
--{
--	return kernel_sys_call(sys_open,
--			       (const char __user __force *) filename,
--			       flags, mode);
--}
--
--static inline int kernel_sys_fchown(unsigned int fd, uid_t user, gid_t group)
--{
--	return sys_fchown(fd, user, group);
--}
--
--static inline int kernel_sys_fchmod(unsigned int fd, mode_t mode)
--{
--	return sys_fchmod(fd, mode);
--}
--
--static inline int kernel_sys_fchdir(unsigned int fd)
--{
--	return sys_fchdir(fd);
--}
--
--static inline int kernel_sys_ftruncate(unsigned int fd, unsigned long length)
--{
--	return sys_ftruncate(fd, length);
--}
--
--static inline int kernel_sys_read(unsigned int fd, char *buf, size_t count)
--{
--	return kernel_sys_call(sys_read,
--			       fd, (char __user __force *) buf, count);
--}
--
--static inline int kernel_sys_write(unsigned int fd, const char *buf,
--				   size_t count)
--{
--	return kernel_sys_call(sys_write,
--			       fd, (const char __user __force *) buf, count);
--}
--
--static inline int kernel_sys_lseek(unsigned int fd, off_t offset,
--				   unsigned int origin)
--{
--	return sys_lseek(fd, offset, origin);
--}
--
--static inline int kernel_sys_ioctl(unsigned int fd, unsigned int cmd,
--				   unsigned long arg)
--{
--	return sys_ioctl(fd, cmd, arg);
--}
--
--static inline int kernel_sys_dup(unsigned int fd)
--{
--	return sys_dup(fd);
--}
--
--static inline int kernel_sys_close(unsigned int fd)
--{
--	return sys_close(fd);
--}
--
--static inline int kernel_sys_symlink(const char *oldname, const char *newname)
--{
--	return kernel_sys_call(sys_symlink,
--			       (const char __user __force *) oldname,
--			       (const char __user __force *) newname);
--}
--
--static inline int kernel_sys_lchown(const char *filename, uid_t user,
--				    gid_t group)
--{
--	return kernel_sys_call(sys_lchown,
--			       (const char __user __force *) filename,
--			       user, group);
--}
--
--static inline int kernel_sys_getdents64(unsigned int fd,
--					struct linux_dirent64 *dirent,
--					unsigned int count)
--{
--	return kernel_sys_call(sys_getdents64,
--			       fd,
--			       (struct linux_dirent64 __user __force *) dirent,
--			       count);
--}
--
--static inline int kernel_sys_access(const char *filename, int mode)
--{
--	return kernel_sys_call(sys_access,
--			       (const char __user __force *) filename, mode);
--}
--
--static inline int kernel_sys_setsid(void)
--{
--	return sys_setsid();
--}
--
--static inline int kernel_sys_wait4(pid_t upid, int *stat_addr, int options,
--				   struct rusage *ru)
--{
--	return kernel_sys_call(sys_wait4,
--			       upid,
--			       (int __user __force *) stat_addr,
--			       options,
--			       (struct rusage __user __force *) ru);
--}
++out:
+ 	return error;
+ }
+ 
 -- 
 1.6.3.3
