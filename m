@@ -1,74 +1,84 @@
-From: Will Drewry <wad-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-Subject: Re: [PATCH 2/2] exec: move core_pattern pipe helper into the crashing
-	namespace
-Date: Mon, 20 Sep 2010 15:28:52 -0500
-Message-ID: <AANLkTikRurUqfPmJ_GWqG5XvvMzgUHt0yac7QN-pNkpX__28486.9587667801$1285016187$gmane$org@mail.gmail.com>
-References: <20100917152639.0e88341a@basil.nowhere.org>
-	<1284736618-27153-2-git-send-email-wad@chromium.org>
-	<20100918012939.GA25046@redhat.com>
-	<AANLkTimsNtoT2GGCv1Zk2cGCsZ17zsOqV1DiF7D5tV=L@mail.gmail.com>
-	<20100920185001.GA955@redhat.com>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: [ABI REVIEW][PATCH 0/8] Namespace file descriptors
+Date: Thu, 23 Sep 2010 01:45:04 -0700
+Message-ID: <m1ocborgq7.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100920185001.GA955-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Eugene Teo <eteo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andi Kleen <andi-Vw/NltI1exuRpAAqCnN02g@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner@vger.kernel.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, netfilter-devel@vger.kernel.org, linux-fsdevel@vger.kernel.org, jamal <hadi@cyberus.ca>, Daniel Lezcano <daniel.lezcano@free.fr>, Linus Torvalds <torvalds@linux-foundation.org>, Michael Kerrisk <mtk.manpages@gmail.com>, Ulrich Drepper <drepper@gmail.com>, Al Viro <viro@ZenIV.linux.org.uk>, David Miller <davem@davemloft.net>, "Serge E. Hallyn" <serge@hallyn.com>, Pavel Emelyanov <xemul@openvz.org>, Pavel Emelyanov <xemul@parallels.com>, Ben Greear <greearb@candelatech.com>, Matt Helsley <matthltc@us.ibm.com>, Jonathan Corbet <corbet@lwn.net>, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, Jan Engelhardt <jengelh@medozas.de>, Patrick McHardy <kaber@trash.net>
 List-Id: containers.vger.kernel.org
 
-On Mon, Sep 20, 2010 at 1:50 PM, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> On 09/17, Will Drewry wrote:
->>
->> On Fri, Sep 17, 2010 at 8:29 PM, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
->> >
->> > This looks overcomplicated to me, or I missed something.
->> >
->> > I do not understand why should we do this beforehand, and why we need
->> > copy_namespaces_unattached().
->> >
->> > Can't you just pass current to umh_pipe_setup() (or another helper) as
->> > the argument? Then this helper can copy ->fs and ->nsproxy itself.
->>
->> I wasn't sure if it was reasonable to pass the current task_struct
->> over, but I certainly can.
->
-> Why not? current calls call_usermodehelper_exec(), it can't go away
-> until subprocess_info->init() returns, it sleeps on wait_for_completion().
 
-yeah - I wasn't sure because the other coredump_params didn't pass it,
-so I assumed there was some history around that.  Though it sounds
-like the current approach may not be the way forward anyhow.
+Introduce file for manipulating namespaces and related syscalls.
+files:
+/proc/self/ns/<nstype>
 
->> In practice, this seems to amount to just adding a refcount to all the
->> namespaces and creating a new nsproxy which isn't really needed. =A0Most
->> likely, doing what you've suggested above plus the copy_fs_struct and
->> the swap out will do the trick. =A0I'll try it out and see. =A0That's ma=
-ke
->> it much clearer I think.
->
-> Yes, just get_nsproxy() (like fork() does) should be fine in this case.
->
-> As for copying ->fs, I am not sure actually. core_pattern is global,
-> say it is "|/coredumper". If you change ->root, then exec can fail
-> because that binary is not visible to the coredumping process?
+syscalls:
+int setns(unsigned long nstype, int fd);
+socketat(int nsfd, int family, int type, int protocol);
 
-Yeah - it's lose-lose I think.  On one hand, it may not run, on the
-other hand it may have access where it shouldn't or not have access it
-where it needs it.
+Netlink attribute:
+IFLA_NS_FD int fd.
 
-> Probably we should move core_pattern into ->pid_ns, I dunno.
+Name space file descriptors address three specific problems that
+can make namespaces hard to work with.
+- Namespaces require a dedicated process to pin them in memory.
+- It is not possible to use a namespace unless you are the child of the
+  original creator.
+- Namespaces don't have names that userspace can use to talk about them.
 
-Sounds like this is worth doing. I'll look into it and post something
-for further consideration!
-thanks again -
-will
+Opening of the /proc/self/ns/<nstype> files return a file descriptor
+that can be used to talk about a specific namespace, and to keep the
+specified namespace alive.
+
+/proc/self/ns/<nstype> can be bind mounted as:
+mount --bind /proc/self/ns/net /some/filesystem/path
+to keep the namespace alive as long as the mount exists.
+
+setns() as a companion to unshare allows changing the namespace
+of the current process, being able to unshare the namespace is
+a requirement.
+
+There are two primary envisioned uses for this functionality.
+o ``Entering'' an existing container.
+o Allowing multiple network namespaces to be in use at once on
+  the same machine, without requiring elaborate infrastructure.
+
+Overall this received positive reviews on the containers list but this
+needs a wider review of the ABI as this is pretty fundamental kernel
+functionality.
+
+
+I have left out the pid namespaces bits for the moment because the pid
+namespace still needs work before it is safe to unshare, and my concern
+at the moment is ensuring the system calls seem reasonable.
+
+Eric W. Biederman (8):
+      ns: proc files for namespace naming policy.
+      ns: Introduce the setns syscall
+      ns proc: Add support for the network namespace.
+      ns proc: Add support for the uts namespace
+      ns proc: Add support for the ipc namespace
+      ns proc: Add support for the mount namespace
+      net: Allow setting the network namespace by fd
+      net: Implement socketat.
+
+---
+ fs/namespace.c              |   57 +++++++++++++
+ fs/proc/Makefile            |    1 +
+ fs/proc/base.c              |   22 +++---
+ fs/proc/inode.c             |    7 ++
+ fs/proc/internal.h          |   18 ++++
+ fs/proc/namespaces.c        |  193 +++++++++++++++++++++++++++++++++++++++++++
+ include/linux/if_link.h     |    1 +
+ include/linux/proc_fs.h     |   20 +++++
+ include/net/net_namespace.h |    1 +
+ ipc/namespace.c             |   31 +++++++
+ kernel/nsproxy.c            |   39 +++++++++
+ kernel/utsname.c            |   32 +++++++
+ net/core/net_namespace.c    |   56 +++++++++++++
+ net/core/rtnetlink.c        |    4 +-
+ net/socket.c                |   26 ++++++-
+ 15 files changed, 494 insertions(+), 14 deletions(-)
