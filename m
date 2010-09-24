@@ -1,77 +1,80 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [ABI REVIEW][PATCH 0/8] Namespace file descriptors
-Date: Fri, 24 Sep 2010 10:06:41 -0700
-Message-ID: <m1fwwzdqam.fsf@fess.ebiederm.org>
-References: <m1ocborgq7.fsf@fess.ebiederm.org> <4C9CA16F.3000505@mit.edu>
-	<4C9CAC7C.2080900@free.fr>
+From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Subject: Re: [RFC][PATCH 00/10] taskstats: Enhancements for precise accounting
+Date: Fri, 24 Sep 2010 11:50:02 -0700
+Message-ID: <20100924115002.fcb4385a.akpm@linux-foundation.org>
+References: <1285249681.1837.28.camel@holzheu-laptop>
+	<20100923131136.356075f4.akpm@linux-foundation.org>
+	<1285319415.2179.116.camel@holzheu-laptop>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <4C9CAC7C.2080900@free.fr> (Daniel Lezcano's message of "Fri, 24
-	Sep 2010 15:49:48 +0200")
-Sender: linux-kernel-owner@vger.kernel.org
-To: Daniel Lezcano <daniel.lezcano@free.fr>
-Cc: Andrew Lutomirski <luto@mit.edu>, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, Pavel Emelyanov <xemul@openvz.org>, Pavel Emelyanov <xemul@parallels.com>, Ulrich Drepper <drepper@gmail.com>, netdev@vger.kernel.org, Jonathan Corbet <corbet@lwn.net>, linux-kernel@vger.kernel.org, Jan Engelhardt <jengelh@medozas.de>, linux-fsdevel@vger.kernel.org, netfilter-devel@vger.kernel.org, Michael Kerrisk <mtk.manpages@gmail.com>, Linux Containers <containers@lists.osdl.org>, Ben Greear <greearb@candelatech.com>, Linus Torvalds <torvalds@linux-foundation.org>, David Miller <davem@davemloft.net>, Al Viro <viro@ZenIV.linux.org.uk>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1285319415.2179.116.camel@holzheu-laptop>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: holzheu-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: Shailabh Nagar <nagar1234-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, Thomas-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, Heiko Carstens <heiko.carstens-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>, Venkatesh Pallipadi <venki-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, John stultz <johnstul-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Martin Schwidefsky <schwidefsky-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Peter-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Suresh Siddha <suresh.b.siddha-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Daniel Lezcano <daniel.lezcano@free.fr> writes:
+On Fri, 24 Sep 2010 11:10:15 +0200
+Michael Holzheu <holzheu-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
 
-> On 09/24/2010 03:02 PM, Andrew Lutomirski wrote:
->> Eric W. Biederman wrote:
->>> Introduce file for manipulating namespaces and related syscalls.
->>> files:
->>> /proc/self/ns/<nstype>
->>>
->>> syscalls:
->>> int setns(unsigned long nstype, int fd);
->>> socketat(int nsfd, int family, int type, int protocol);
->>>
->>
->> How does security work?  Are there different kinds of fd that give (say) pin-the-namespace permission, socketat permission, and setns permission?
->
-> AFAICS, socketat, setns and "set netns by fd" only accept fd from
-> /proc/<pid>/ns/<ns>.
->
-> setns does :
->
-> 	file = proc_ns_fget(fd);
-> 	if (IS_ERR(file))
-> 		return PTR_ERR(file);
->
-> proc_ns_fget checks if (file->f_op != &ns_file_operations)
->
->
-> socketat and get_net_ns_by_fd:
->
-> 	net = get_net_ns_by_fd(fd);
->
-> this one calls proc_ns_fget.
->
-> We have the guarantee here, the fd is resulting from an open of the file with
-> the right permissions.
+> Hello Andrew,
+> 
+> On Thu, 2010-09-23 at 13:11 -0700, Andrew Morton wrote:
+> > > GOALS OF THIS PATCH SET
+> > > -----------------------
+> > > The intention of this patch set is to provide better support for tools like
+> > > top. The goal is to:
+> > > 
+> > > * provide a task snapshot mechanism where we can get a consistent view of
+> > >   all running tasks.
+> > > * provide a transport mechanism that does not require a lot of system calls
+> > >   and that allows implementing low CPU overhead task monitoring.
+> > > * provide microsecond CPU time granularity.
+> > 
+> > This is a big change!  If this is done right then we're heading in the
+> > direction of deprecating the longstanding way in which userspace
+> > observes the state of Linux processes and we're recommending that the
+> > whole world migrate to taskstats.  I think?
+> 
+> Or it can be used as alternative. Since procfs has its drawbacks (e.g.
+> performance) an alternative could be helpful. 
 
-In particular the default /proc permissions say you have to be the owner
-of the process (or root) to access the file.  If you are the owner of
-the process with a namespace (or root) you already have permission to
-access and manipulate the namespace.
+And it can be harmful.  More kernel code to maintain and test, more
+userspace code to develop, maintain, etc.  Less user testing than if
+there was a single interface.
 
-Additionally setns like unshare requires CAP_SYS_ADMIN (aka root magic).
+> 
+> > I worry that there's a dependency on CONFIG_NET?  If so then that's a
+> > big problem because in N years time, 99% of the world will be using
+> > taskstats, but a few embedded losers will be stuck using (and having to
+> > support) the old tools.
+> 
+> Sure, but if we could add the /proc/taskstats approach, this dependency
+> would not be there.
 
-> Another way to pin the namespace, would be to mount --bind /proc/<pid>/ns/<ns>
-> but we have to be root to do that ...
+So why do we need to present the same info over netlink?
 
-Simply keeping the process running, pins the namespace. That requires no
-new permissions.
+If the info is available via procfs then userspace code should use that
+and not netlink, because that userspace code would also be applicable
+to CONFIG_NET=n systems.
 
-Similarly socketat.  It is possible to use unix domain sockets to
-implement it today without any kernel changes.  It is just an
-unnecessary pain to run a server process to pin a namespace or to serve
-up file descriptors in other network namespaces.
+> 
+> > Does this have the potential to save us from the CONFIG_NET=n problem?
+> 
+> Yes
 
-The primary change of this patchset is the ability to do everything
-with file descriptors, and with the mount namespace.  That moves
-everything from a bizarre hard to understand and manipulate interface
-to one where things can be done much more easily, and cheaply.
-Resulting in a much more powerful and usable interface.
+Let's say that when it's all tested ;)
 
-Eric
+> Are PIDs over all namespaces unique?
+
+Nope.  The same pid can be present in different namespaces at the same
+time.
