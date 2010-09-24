@@ -1,53 +1,77 @@
-From: jamal <hadi@cyberus.ca>
-Subject: Re: [PATCH 7/8] net: Allow setting the network namespace by fd
-Date: Fri, 24 Sep 2010 10:16:58 -0400
-Message-ID: <1285337818.13976.697.camel@bigi>
-References: <m1ocborgq7.fsf@fess.ebiederm.org>
-	 <m1hbhgq1v1.fsf@fess.ebiederm.org> <1285240926.5036.7.camel@bigi>
-	 <20100923145856.GB1160234@jupiter.n2.diac24.net>
-	 <1285329084.13976.661.camel@bigi>
-	 <20100924125704.GA1551619@jupiter.n2.diac24.net>
-	 <1285335173.13976.693.camel@bigi>
-	 <20100924140943.GB1551619@jupiter.n2.diac24.net>
-Reply-To: hadi@cyberus.ca
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [ABI REVIEW][PATCH 0/8] Namespace file descriptors
+Date: Fri, 24 Sep 2010 10:06:41 -0700
+Message-ID: <m1fwwzdqam.fsf@fess.ebiederm.org>
+References: <m1ocborgq7.fsf@fess.ebiederm.org> <4C9CA16F.3000505@mit.edu>
+	<4C9CAC7C.2080900@free.fr>
 Mime-Version: 1.0
-Content-Type: text/plain
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20100924140943.GB1551619@jupiter.n2.diac24.net>
+In-Reply-To: <4C9CAC7C.2080900@free.fr> (Daniel Lezcano's message of "Fri, 24
+	Sep 2010 15:49:48 +0200")
 Sender: linux-kernel-owner@vger.kernel.org
-To: David Lamparter <equinox@diac24.net>
-Cc: "Eric W. Biederman" <ebiederm@xmission.com>, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, netfilter-devel@vger.kernel.org, linux-fsdevel@vger.kernel.org
+To: Daniel Lezcano <daniel.lezcano@free.fr>
+Cc: Andrew Lutomirski <luto@mit.edu>, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, Pavel Emelyanov <xemul@openvz.org>, Pavel Emelyanov <xemul@parallels.com>, Ulrich Drepper <drepper@gmail.com>, netdev@vger.kernel.org, Jonathan Corbet <corbet@lwn.net>, linux-kernel@vger.kernel.org, Jan Engelhardt <jengelh@medozas.de>, linux-fsdevel@vger.kernel.org, netfilter-devel@vger.kernel.org, Michael Kerrisk <mtk.manpages@gmail.com>, Linux Containers <containers@lists.osdl.org>, Ben Greear <greearb@candelatech.com>, Linus Torvalds <torvalds@linux-foundation.org>, David Miller <davem@davemloft.net>, Al Viro <viro@ZenIV.linux.org.uk>
 List-Id: containers.vger.kernel.org
 
-On Fri, 2010-09-24 at 16:09 +0200, David Lamparter wrote:
+Daniel Lezcano <daniel.lezcano@free.fr> writes:
 
-> I understood your point. What I'm saying is that that functional graph
-> you're describing is too simplistic do be a workable model. Your graph
-> allows for what you're trying to do, yes. But your graph is not modeling
-> the reality.
+> On 09/24/2010 03:02 PM, Andrew Lutomirski wrote:
+>> Eric W. Biederman wrote:
+>>> Introduce file for manipulating namespaces and related syscalls.
+>>> files:
+>>> /proc/self/ns/<nstype>
+>>>
+>>> syscalls:
+>>> int setns(unsigned long nstype, int fd);
+>>> socketat(int nsfd, int family, int type, int protocol);
+>>>
+>>
+>> How does security work?  Are there different kinds of fd that give (say) pin-the-namespace permission, socketat permission, and setns permission?
+>
+> AFAICS, socketat, setns and "set netns by fd" only accept fd from
+> /proc/<pid>/ns/<ns>.
+>
+> setns does :
+>
+> 	file = proc_ns_fget(fd);
+> 	if (IS_ERR(file))
+> 		return PTR_ERR(file);
+>
+> proc_ns_fget checks if (file->f_op != &ns_file_operations)
+>
+>
+> socketat and get_net_ns_by_fd:
+>
+> 	net = get_net_ns_by_fd(fd);
+>
+> this one calls proc_ns_fget.
+>
+> We have the guarantee here, the fd is resulting from an open of the file with
+> the right permissions.
 
-How about we put this specific point to rest by agreeing to
-disagree? ;->
+In particular the default /proc permissions say you have to be the owner
+of the process (or root) to access the file.  If you are the owner of
+the process with a namespace (or root) you already have permission to
+access and manipulate the namespace.
 
-> Err... I'm migrating netdevs to assign them to namespaces to allow them
-> to use them? Setup, basically. Either way a device move only happens as
-> result of some administrative action; be it creating a new namespace or
-> changing the physical/logical network setup.
-> 
+Additionally setns like unshare requires CAP_SYS_ADMIN (aka root magic).
 
-Ok, different need. You have a much more basic requirement than i do.
+> Another way to pin the namespace, would be to mount --bind /proc/<pid>/ns/<ns>
+> but we have to be root to do that ...
 
-> wtf is a "remote" namespace?
-> 
+Simply keeping the process running, pins the namespace. That requires no
+new permissions.
 
-A namespace that is remotely located on another machine/hardware ;->
+Similarly socketat.  It is possible to use unix domain sockets to
+implement it today without any kernel changes.  It is just an
+unnecessary pain to run a server process to pin a namespace or to serve
+up file descriptors in other network namespaces.
 
-> Can you please describe your application that requires moving possibly
-> several network devices together with "their" routes to a different
-> namespace?
+The primary change of this patchset is the ability to do everything
+with file descriptors, and with the mount namespace.  That moves
+everything from a bizarre hard to understand and manipulate interface
+to one where things can be done much more easily, and cheaply.
+Resulting in a much more powerful and usable interface.
 
-scaling and availability are the driving requirements.
-
-cheers,
-jamal
+Eric
