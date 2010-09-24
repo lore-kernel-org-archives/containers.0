@@ -1,51 +1,76 @@
-From: Daniel Lezcano <daniel.lezcano@free.fr>
-Subject: Re: [ABI REVIEW][PATCH 0/8] Namespace file descriptors
-Date: Fri, 24 Sep 2010 15:49:48 +0200
-Message-ID: <4C9CAC7C.2080900@free.fr>
-References: <m1ocborgq7.fsf@fess.ebiederm.org> <4C9CA16F.3000505@mit.edu>
+From: David Lamparter <equinox@diac24.net>
+Subject: Re: [PATCH 7/8] net: Allow setting the network namespace by fd
+Date: Fri, 24 Sep 2010 16:09:43 +0200
+Message-ID: <20100924140943.GB1551619@jupiter.n2.diac24.net>
+References: <m1ocborgq7.fsf@fess.ebiederm.org>
+ <m1hbhgq1v1.fsf@fess.ebiederm.org>
+ <1285240926.5036.7.camel@bigi>
+ <20100923145856.GB1160234@jupiter.n2.diac24.net>
+ <1285329084.13976.661.camel@bigi>
+ <20100924125704.GA1551619@jupiter.n2.diac24.net>
+ <1285335173.13976.693.camel@bigi>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <4C9CA16F.3000505@mit.edu>
+Content-Disposition: inline
+In-Reply-To: <1285335173.13976.693.camel@bigi>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Andrew Lutomirski <luto@mit.edu>
-Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, Pavel Emelyanov <xemul@openvz.org>, Pavel Emelyanov <xemul@parallels.com>, Ulrich Drepper <drepper@gmail.com>, netdev@vger.kernel.org, Jonathan Corbet <corbet@lwn.net>, linux-kernel@vger.kernel.org, Jan Engelhardt <jengelh@medozas.de>, linux-fsdevel@vger.kernel.org, netfilter-devel@vger.kernel.org, Michael Kerrisk <mtk.manpages@gmail.com>, Linux Containers <containers@lists.osdl.org>, Ben Greear <greearb@candelatech.com>, Linus Torvalds <torvalds@linux-foundation.org>, David Miller <davem@davemloft.net>, Al Viro <viro@ZenIV.linux.org.uk>
+To: jamal <hadi@cyberus.ca>
+Cc: David Lamparter <equinox@diac24.net>, "Eric W. Biederman" <ebiederm@xmission.com>, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, netfilter-devel@vger.kernel.org, linux-fsdevel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-On 09/24/2010 03:02 PM, Andrew Lutomirski wrote:
-> Eric W. Biederman wrote:
->> Introduce file for manipulating namespaces and related syscalls.
->> files:
->> /proc/self/ns/<nstype>
->>
->> syscalls:
->> int setns(unsigned long nstype, int fd);
->> socketat(int nsfd, int family, int type, int protocol);
->>
->
-> How does security work?  Are there different kinds of fd that give (say) pin-the-namespace permission, socketat permission, and setns permission?
+On Fri, Sep 24, 2010 at 09:32:53AM -0400, jamal wrote:
+> On Fri, 2010-09-24 at 14:57 +0200, David Lamparter wrote:
+> > No. While you sure could associate routes with devices, they don't
+> > *functionally* reside on top of network devices. They reside on top of
+> > the entire IP configuration, 
+> 
+> I think i am not clearly making my point. There are data dependencies;
+> If you were to move routes, youd need everything that routes depend on.
+> IOW, if i was to draw a functional graph, routes would appear on top
+> of netdevs (I dont care what other functional blocks you put in between
+> or sideways to them).
 
-AFAICS, socketat, setns and "set netns by fd" only accept fd from 
-/proc/<pid>/ns/<ns>.
+I understood your point. What I'm saying is that that functional graph
+you're describing is too simplistic do be a workable model. Your graph
+allows for what you're trying to do, yes. But your graph is not modeling
+the reality.
 
-setns does :
+> > The routes depend on your BGP view, and
+> > if your set of interfaces (and peers) changes, your routes will change.
+> > Your bgpd will, either way, need to set up new peerings and redo best
+> > path evaluations.
+> 
+> Worst case scenario, yes. I am beginning to get a feeling we are trying 
+> to achieve different goals maybe? Why are you even migrating netdevs?
 
-	file = proc_ns_fget(fd);
-	if (IS_ERR(file))
-		return PTR_ERR(file);
+Err... I'm migrating netdevs to assign them to namespaces to allow them
+to use them? Setup, basically. Either way a device move only happens as
+result of some administrative action; be it creating a new namespace or
+changing the physical/logical network setup.
 
-proc_ns_fget checks if (file->f_op != &ns_file_operations)
+> > (On an unrelated note, how often are you planning to move stuff between
+> > namespaces? I don't expect to be moving stuff except on configuration
+> > events...)
+> 
+> Triggering on config events is useful and it is likely the only
+> possibility if you assumed the other namespace is remote.
+
+wtf is a "remote" namespace?
+
+>                                                           But if could
+> send a single command to migrate several things in the kernel (in my
+> case to recover state to a different ns), then that is much simpler and
+> uses the least resources (memory, cpu, bandwidth). I admit it is very
+> hard to do in most cases where the underlying dependencies are evolving
+> and synchronizing via user space is the best approach. The example
+> of route table i pointed to is simple.
+> Besides that: dynamic state created in the kernel that doesnt have to be
+> recreated by the next arriving 100K packets helps to improve recovery.
+
+Can you please describe your application that requires moving possibly
+several network devices together with "their" routes to a different
+namespace?
 
 
-socketat and get_net_ns_by_fd:
-
-	net = get_net_ns_by_fd(fd);
-
-this one calls proc_ns_fget.
-
-We have the guarantee here, the fd is resulting from an open of the file 
-with the right permissions.
-
-Another way to pin the namespace, would be to mount --bind 
-/proc/<pid>/ns/<ns> but we have to be root to do that ...
+-David
