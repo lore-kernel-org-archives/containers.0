@@ -1,54 +1,51 @@
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 7/8] net: Allow setting the network namespace by fd
-Date: Fri, 24 Sep 2010 15:46:28 +0200
-Message-ID: <4C9CABB4.3010002@fr.ibm.com>
-References: <m1ocborgq7.fsf@fess.ebiederm.org>
-	<m1hbhgq1v1.fsf@fess.ebiederm.org>
+From: Daniel Lezcano <daniel.lezcano@free.fr>
+Subject: Re: [ABI REVIEW][PATCH 0/8] Namespace file descriptors
+Date: Fri, 24 Sep 2010 15:49:48 +0200
+Message-ID: <4C9CAC7C.2080900@free.fr>
+References: <m1ocborgq7.fsf@fess.ebiederm.org> <4C9CA16F.3000505@mit.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m1hbhgq1v1.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Ulrich Drepper <drepper-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jan Engelhardt <jengelh-nopoi9nDyk+ELgA04lAiVw@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ben Greear <greearb-my8/4N5VtI7c+919tysfdA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <4C9CA16F.3000505@mit.edu>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Andrew Lutomirski <luto@mit.edu>
+Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, Pavel Emelyanov <xemul@openvz.org>, Pavel Emelyanov <xemul@parallels.com>, Ulrich Drepper <drepper@gmail.com>, netdev@vger.kernel.org, Jonathan Corbet <corbet@lwn.net>, linux-kernel@vger.kernel.org, Jan Engelhardt <jengelh@medozas.de>, linux-fsdevel@vger.kernel.org, netfilter-devel@vger.kernel.org, Michael Kerrisk <mtk.manpages@gmail.com>, Linux Containers <containers@lists.osdl.org>, Ben Greear <greearb@candelatech.com>, Linus Torvalds <torvalds@linux-foundation.org>, David Miller <davem@davemloft.net>, Al Viro <viro@ZenIV.linux.org.uk>
 List-Id: containers.vger.kernel.org
 
-On 09/23/2010 10:51 AM, Eric W. Biederman wrote:
+On 09/24/2010 03:02 PM, Andrew Lutomirski wrote:
+> Eric W. Biederman wrote:
+>> Introduce file for manipulating namespaces and related syscalls.
+>> files:
+>> /proc/self/ns/<nstype>
+>>
+>> syscalls:
+>> int setns(unsigned long nstype, int fd);
+>> socketat(int nsfd, int family, int type, int protocol);
+>>
 >
-> Take advantage of the new abstraction and allow network devices
-> to be placed in any network namespace that we have a fd to talk
-> about.
->
-> Signed-off-by: Eric W. Biederman<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> ---
+> How does security work?  Are there different kinds of fd that give (say) pin-the-namespace permission, socketat permission, and setns permission?
 
-[ ... ]
+AFAICS, socketat, setns and "set netns by fd" only accept fd from 
+/proc/<pid>/ns/<ns>.
 
-> +struct net *get_net_ns_by_fd(int fd)
-> +{
-> +	struct proc_inode *ei;
-> +	struct file *file;
-> +	struct net *net;
-> +
-> +	file = NULL;
-> +	net = ERR_PTR(-EINVAL);
-> +	file = proc_ns_fget(fd);
-> +	if (!fd)
-> +		goto out;
-> +		return ERR_PTR(-EINVAL);
-> +
-> +	ei = PROC_I(file->f_dentry->d_inode);
-> +	if (ei->ns_ops !=&netns_operations)
-> +		goto out;
+setns does :
 
-Is this check necessary here ? proc_ns_fget checks "file->f_op != 
-&ns_file_operations", no ?
+	file = proc_ns_fget(fd);
+	if (IS_ERR(file))
+		return PTR_ERR(file);
+
+proc_ns_fget checks if (file->f_op != &ns_file_operations)
+
+
+socketat and get_net_ns_by_fd:
+
+	net = get_net_ns_by_fd(fd);
+
+this one calls proc_ns_fget.
+
+We have the guarantee here, the fd is resulting from an open of the file 
+with the right permissions.
+
+Another way to pin the namespace, would be to mount --bind 
+/proc/<pid>/ns/<ns> but we have to be root to do that ...
