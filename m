@@ -1,66 +1,54 @@
-From: jamal <hadi@cyberus.ca>
+From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 7/8] net: Allow setting the network namespace by fd
-Date: Fri, 24 Sep 2010 09:32:53 -0400
-Message-ID: <1285335173.13976.693.camel@bigi>
+Date: Fri, 24 Sep 2010 15:46:28 +0200
+Message-ID: <4C9CABB4.3010002@fr.ibm.com>
 References: <m1ocborgq7.fsf@fess.ebiederm.org>
-	 <m1hbhgq1v1.fsf@fess.ebiederm.org> <1285240926.5036.7.camel@bigi>
-	 <20100923145856.GB1160234@jupiter.n2.diac24.net>
-	 <1285329084.13976.661.camel@bigi>
-	 <20100924125704.GA1551619@jupiter.n2.diac24.net>
-Reply-To: hadi@cyberus.ca
+	<m1hbhgq1v1.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20100924125704.GA1551619@jupiter.n2.diac24.net>
-Sender: linux-kernel-owner@vger.kernel.org
-To: David Lamparter <equinox@diac24.net>
-Cc: "Eric W. Biederman" <ebiederm@xmission.com>, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, netfilter-devel@vger.kernel.org, linux-fsdevel@vger.kernel.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <m1hbhgq1v1.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Ulrich Drepper <drepper-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jan Engelhardt <jengelh-nopoi9nDyk+ELgA04lAiVw@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ben Greear <greearb-my8/4N5VtI7c+919tysfdA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, 2010-09-24 at 14:57 +0200, David Lamparter wrote:
+On 09/23/2010 10:51 AM, Eric W. Biederman wrote:
+>
+> Take advantage of the new abstraction and allow network devices
+> to be placed in any network namespace that we have a fd to talk
+> about.
+>
+> Signed-off-by: Eric W. Biederman<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> ---
 
-> No. While you sure could associate routes with devices, they don't
-> *functionally* reside on top of network devices. They reside on top of
-> the entire IP configuration, 
+[ ... ]
 
-I think i am not clearly making my point. There are data dependencies;
-If you were to move routes, youd need everything that routes depend on.
-IOW, if i was to draw a functional graph, routes would appear on top
-of netdevs (I dont care what other functional blocks you put in between
-or sideways to them).
+> +struct net *get_net_ns_by_fd(int fd)
+> +{
+> +	struct proc_inode *ei;
+> +	struct file *file;
+> +	struct net *net;
+> +
+> +	file = NULL;
+> +	net = ERR_PTR(-EINVAL);
+> +	file = proc_ns_fget(fd);
+> +	if (!fd)
+> +		goto out;
+> +		return ERR_PTR(-EINVAL);
+> +
+> +	ei = PROC_I(file->f_dentry->d_inode);
+> +	if (ei->ns_ops !=&netns_operations)
+> +		goto out;
 
-> and in case of BGP they even reside on top
-> of your set of peerings and their data.
-> Even if you could "move" routes together with a network device, the
-> result would be utter nonsense. 
-
-You could argue that moving a netdevice where some of its fundamental
-properties such as an ifindex change is utter nonsense. But you can
-work around it.
-
-> The routes depend on your BGP view, and
-> if your set of interfaces (and peers) changes, your routes will change.
-> Your bgpd will, either way, need to set up new peerings and redo best
-> path evaluations.
-
-Worst case scenario, yes. I am beginning to get a feeling we are trying 
-to achieve different goals maybe? Why are you even migrating netdevs?
-
-> (On an unrelated note, how often are you planning to move stuff between
-> namespaces? I don't expect to be moving stuff except on configuration
-> events...)
-
-Triggering on config events is useful and it is likely the only
-possibility if you assumed the other namespace is remote. But if could
-send a single command to migrate several things in the kernel (in my
-case to recover state to a different ns), then that is much simpler and
-uses the least resources (memory, cpu, bandwidth). I admit it is very
-hard to do in most cases where the underlying dependencies are evolving
-and synchronizing via user space is the best approach. The example
-of route table i pointed to is simple.
-Besides that: dynamic state created in the kernel that doesnt have to be
-recreated by the next arriving 100K packets helps to improve recovery.
-
-cheers,
-jamal
+Is this check necessary here ? proc_ns_fget checks "file->f_op != 
+&ns_file_operations", no ?
