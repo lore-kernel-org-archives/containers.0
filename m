@@ -1,14 +1,16 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 1/3][V2] cgroup : add clone_children control file
-Date: Mon, 27 Sep 2010 19:41:48 +0530
-Message-ID: <AANLkTimk8+tNQdKu_mMnMW+4aDy2i+BUJTv+M=ewSOaB@mail.gmail.com>
-References: <1285582453-6127-1-git-send-email-daniel.lezcano@free.fr>
-	<1285582453-6127-2-git-send-email-daniel.lezcano@free.fr>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 2/6] [RFC] Create the .relink file_operation
+Date: Mon, 27 Sep 2010 12:16:28 -0700
+Message-ID: <20100927191628.GN23839__41992.7636780359$1285615065$gmane$org@count0.beaverton.ibm.com>
+References: <6987185123220ec2034677299859c5a63eaf2aed.1285278339.git.matthltc@us.ibm.com>
+	<d91e3660266d3a2956c4d1aebc9cb618081b21ef.1285278339.git.matthltc@us.ibm.com>
+	<20100926190837.GA9308@cynthia.pants.nu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1285582453-6127-2-git-send-email-daniel.lezcano-GANU6spQydw@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20100926190837.GA9308-gUHvAUm18WIVF38mYka5EQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,35 +20,30 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Cc: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Brad Boyer <flar-POGeQm5F+FGB+jHODAdFcQ@public.gmane.org>
+Cc: Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andreas Dilger <adilger.kernel-m1MBpc4rdrD3fQ9qLvQP4Q@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, linux-ext4-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Sep 27, 2010 at 3:44 PM, Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org> wrote:
->
-> This patch is sent as an answer to a previous thread around the ns_cgroup.
->
-> https://lists.linux-foundation.org/pipermail/containers/2009-June/018627.html
->
-> It adds a control file 'clone_children' for a cgroup.
-> This control file is a boolean specifying if the child cgroup should
-> be a clone of the parent cgroup or not. The default value is 'false'.
->
-> This flag makes the child cgroup to call the post_clone callback of all
-> the subsystem, if it is available.
->
-> At present, the cpuset is the only one which had implemented the post_clone
-> callback.
->
-> The option can be set at mount time by specifying the 'clone_children' mount
-> option.
->
-> Signed-off-by: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-> Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+On Sun, Sep 26, 2010 at 12:08:37PM -0700, Brad Boyer wrote:
+> On Thu, Sep 23, 2010 at 02:53:28PM -0700, Matt Helsley wrote:
+> > Not all filesystems will necessarily be able to support relinking an
+> > orphan inode back into the filesystem. Some offlist feedback suggested
+> > that instead of overloading .link that relinking should be a separate
+> > file operation for this reason.
+> > 
+> > Since .relink is a superset of .link make the VFS call .relink where
+> > possible and .link otherwise.
+> > 
+> > The next commit will change ext3/4 to enable this operation.
+> 
+> I may have missed something in one of these patches (patch 1 and any
+> original summary if there was one don't appear in my email), but
+> what is the point of the new operation? I didn't see any case that
+> treats one any different than the other. What is disallowed (and how)
+> for a driver which does not implement .relink but has .link?
 
-This feature is very useful, thanks for looking into this. The only
-comment I have is that clone says, it clones values, actually it
-provides the opportunity for cgroup controllers to do so or anything
-else after create succeeds.
+Did you get patch 3? It shows how ext3/ext4 add the ability to take an
+inode that has been unlinked, placed onto the orphan list, and relink it.
 
-Acked-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cheers,
+	-Matt Helsley
