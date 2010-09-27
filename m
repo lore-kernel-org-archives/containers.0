@@ -1,17 +1,15 @@
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Re: [RFC][PATCH 00/10] taskstats: Enhancements for precise accounting
-Date: Mon, 27 Sep 2010 13:02:56 -0700
-Message-ID: <20100927130256.5d9a3db8.akpm__34161.0619718724$1285617942$gmane$org@linux-foundation.org>
-References: <1285249681.1837.28.camel@holzheu-laptop>
-	<20100923131136.356075f4.akpm@linux-foundation.org>
-	<1285319415.2179.116.camel@holzheu-laptop>
-	<20100924115002.fcb4385a.akpm@linux-foundation.org>
-	<1285579127.2116.62.camel@holzheu-laptop>
+From: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Subject: Re: [PATCH 0/3][V2] remove the ns_cgroup
+Date: Mon, 27 Sep 2010 15:36:58 -0500
+Message-ID: <20100927203658.GA5320@hallyn.com>
+References: <1285582453-6127-1-git-send-email-daniel.lezcano@free.fr>
+	<20100927125741.0df22f09.akpm@linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1285579127.2116.62.camel@holzheu-laptop>
+Content-Disposition: inline
+In-Reply-To: <20100927125741.0df22f09.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,66 +19,60 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: holzheu-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: Shailabh Nagar <nagar1234-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, Thomas-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, Heiko Carstens <heiko.carstens-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>, Venkatesh Pallipadi <venki-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, John stultz <johnstul-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Martin Schwidefsky <schwidefsky-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Peter-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Suresh Siddha <suresh.b.siddha-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, 27 Sep 2010 11:18:47 +0200
-Michael Holzheu <holzheu-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
-
-> Hello Andrew,
+Quoting Andrew Morton (akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org):
+> On Mon, 27 Sep 2010 12:14:10 +0200
+> Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org> wrote:
 > 
-> On Fri, 2010-09-24 at 11:50 -0700, Andrew Morton wrote:
-> > > > This is a big change!  If this is done right then we're heading in the
-> > > > direction of deprecating the longstanding way in which userspace
-> > > > observes the state of Linux processes and we're recommending that the
-> > > > whole world migrate to taskstats.  I think?
-> > > 
-> > > Or it can be used as alternative. Since procfs has its drawbacks (e.g.
-> > > performance) an alternative could be helpful. 
+> > The ns_cgroup is a control group interacting with the namespaces.
+> > When a new namespace is created, a corresponding cgroup is 
+> > automatically created too. The cgroup name is the pid of the process
+> > who did 'unshare' or the child of 'clone'.
 > > 
-> > And it can be harmful.  More kernel code to maintain and test, more
-> > userspace code to develop, maintain, etc.  Less user testing than if
-> > there was a single interface.
-> 
-> Sure, the value has to be big enough to justify the effort.
-> 
-> But as I said, with taskstats and procfs we already have two interfaces
-> for getting task information.
-
-That doesn't mean it was the right thing to do!  For the reasons I
-outline above, it can be the wrong thing to do and strengthening one of
-the alternatives worsens the problem.
-
-> Currently in procfs there is information
-> than you can't find in taskstats. But also the other way round in the
-> taskstats structure there is very useful information that you can't get
-> under proc. E.g. the task delay times, IO accounting, etc.
-
-Sounds like a big screwup ;)
-
-Look at it this way: if you were going to sit down and start to design
-a new operating system from scratch, would you design the task status
-reporting system as it currently stands in Linux?  Don't think so!
-
-> So currently
-> tools have to use both interfaces to get all information, which is not
-> optimal.
-> 
-> > > 
-> > > > I worry that there's a dependency on CONFIG_NET?  If so then that's a
-> > > > big problem because in N years time, 99% of the world will be using
-> > > > taskstats, but a few embedded losers will be stuck using (and having to
-> > > > support) the old tools.
-> > > 
-> > > Sure, but if we could add the /proc/taskstats approach, this dependency
-> > > would not be there.
+> > This cgroup is tied with the namespace because it prevents a
+> > process to escape the control group and use the post_clone callback,
+> > so the child cgroup inherits the values of the parent cgroup.
 > > 
-> > So why do we need to present the same info over netlink?
+> > Unfortunately, the more we use this cgroup and the more we are facing
+> > problems with it:
+> > 
+> >  (1) when a process unshares, the cgroup name may conflict with a previous
+> >  cgroup with the same pid, so unshare or clone return -EEXIST
+> > 
+> >  (2) the cgroup creation is out of control because there may have an
+> >  application creating several namespaces where the system will automatically
+> >  create several cgroups in his back and let them on the cgroupfs (eg. a vrf
+> >  based on the network namespace).
+> > 
+> >  (3) the mix of (1) and (2) force an administrator to regularly check and
+> >  clean these cgroups.
+> > 
+> > This patchset removes the ns_cgroup by adding a new flag to the cgroup
+> > and the cgroupfs mount option. It enables the copy of the parent cgroup
+> > when a child cgroup is created. We can then safely remove the ns_cgroup as
+> > this flag brings a compatibility. We have now to manually create and add the
+> > task to a cgroup, which is consistent with the cgroup framework.
 > 
-> Good point. It is not really necessary. I started development using the
-> netlink code. Therefore I first added the new command in the netlink
-> code. I also thought, it would be a good idea to provide all netlink
-> commands over the procfs interface to be consistent.
+> So this is a non-backward-compatible userspace-visible change?
 
-Maybe we should have delivered taskstats over procfs from day one.
+Yes, it is.
+
+Patch 1 is needed to let lxc and libvirt both control containers with
+same cgroup setup.  Patch 3 however isn't *necessary* for that.  Daniel,
+what do you think about holding off on patch 3?
+
+> What are the implications of this?
+
+The ns cgroup does 2 things which no other cgroup does:  (1) it
+moves tasks into a child cgroup any time they unshare or clone
+a namespace.  And (2) it prevents them from moving up to a parent
+cgroup.  The latter in particular makes it the only way, without
+using an LSM, of locking root into a cgroup, until user namespaces
+are further developed (*).
+
+-serge
+
+(*) - Maybe something to add to that new kernel todo list
