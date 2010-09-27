@@ -1,11 +1,13 @@
 From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: [PATCH 0/3][V2] remove the ns_cgroup
-Date: Mon, 27 Sep 2010 12:14:10 +0200
-Message-ID: <1285582453-6127-1-git-send-email-daniel.lezcano@free.fr>
+Subject: [PATCH 2/3][V2] cgroup : make the mount options parsing more accurate
+Date: Mon, 27 Sep 2010 12:14:12 +0200
+Message-ID: <1285582453-6127-3-git-send-email-daniel.lezcano@free.fr>
+References: <1285582453-6127-1-git-send-email-daniel.lezcano@free.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1285582453-6127-1-git-send-email-daniel.lezcano-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,78 +18,188 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-The ns_cgroup is a control group interacting with the namespaces.
-When a new namespace is created, a corresponding cgroup is 
-automatically created too. The cgroup name is the pid of the process
-who did 'unshare' or the child of 'clone'.
+Current behavior:
+=================
 
-This cgroup is tied with the namespace because it prevents a
-process to escape the control group and use the post_clone callback,
-so the child cgroup inherits the values of the parent cgroup.
+(1) When we mount a cgroup, we can specify the 'all' option which means
+to enable all the cgroup subsystems. This is the default option when
+no option is specified.
 
-Unfortunately, the more we use this cgroup and the more we are facing
-problems with it:
+(2) If we want to mount a cgroup with a subset of the supported cgroup
+subsystems, we have to specify a subsystems name list for the mount
+option.
 
- (1) when a process unshares, the cgroup name may conflict with a previous
- cgroup with the same pid, so unshare or clone return -EEXIST
+(3) If we specify another option like 'noprefix' or 'release_agent', the
+actual code wants the 'all' or a subsystem name option specified also.
+Not critical but a bit not friendly as we should assume (1) in this case.
 
- (2) the cgroup creation is out of control because there may have an
- application creating several namespaces where the system will automatically
- create several cgroups in his back and let them on the cgroupfs (eg. a vrf
- based on the network namespace).
+(4) Logically, the 'all' option is mutually exclusive with a subsystem
+name, but this is not detected.
 
- (3) the mix of (1) and (2) force an administrator to regularly check and
- clean these cgroups.
+In other words:
+ succeed : mount -t cgroup -o all,freezer cgroup /cgroup
+	=> is it 'all' or 'freezer' ?
+ fails : mount -t cgroup -o noprefix cgroup /cgroup
+	=> succeed if we do '-o noprefix,all'
 
-This patchset removes the ns_cgroup by adding a new flag to the cgroup
-and the cgroupfs mount option. It enables the copy of the parent cgroup
-when a child cgroup is created. We can then safely remove the ns_cgroup as
-this flag brings a compatibility. We have now to manually create and add the
-task to a cgroup, which is consistent with the cgroup framework.
+The following patches consolidate a bit the mount options check.
 
-Changelog:
-=========
+New behavior:
+=============
 
- * V2 
-	Changed the following as Paul Menage suggested:
-	* removed the clone_children flag from the cgroupfs_root
-	* used the 'top_cgroup' to check if the 'clone_children' or not
-	  in the mount option
-	* improved the description of the patch 2/3
+(1) untouched
+(2) untouched
+(3) the 'all' option will be by default when specifying other than
+    a subsystem name option
+(4) raises an error
 
-	* removed CONFIG_CGROUP_NS against new default configs
- * V1 
-	initial post
+In other words:
+ fails   : mount -t cgroup -o all,freezer cgroup /cgroup
+ succeed : mount -t cgroup -o noprefix cgroup /cgroup
 
-Daniel Lezcano (3):
-  cgroup : add clone_children control file
-  cgroup : make the mount options parsing more accurate
-  cgroup : remove the ns_cgroup
+For the sake of lisibility, the if ... then ... else ... if ...
+indentation when parsing the options has been changed to:
+if ... then
+	...
+	continue
+fi
 
- Documentation/cgroups/cgroups.txt      |   16 ++-
- arch/arm/configs/tegra_defconfig       |    1 -
- arch/mips/configs/bcm47xx_defconfig    |    1 -
- arch/powerpc/configs/ppc6xx_defconfig  |    1 -
- arch/powerpc/configs/pseries_defconfig |    1 -
- arch/s390/defconfig                    |    1 -
- arch/sh/configs/sdk7786_defconfig      |    1 -
- arch/sh/configs/se7206_defconfig       |    1 -
- arch/sh/configs/shx3_defconfig         |    1 -
- arch/sh/configs/urquell_defconfig      |    1 -
- arch/x86/configs/i386_defconfig        |    1 -
- arch/x86/configs/x86_64_defconfig      |    1 -
- include/linux/cgroup.h                 |    7 +-
- include/linux/cgroup_subsys.h          |    6 -
- include/linux/nsproxy.h                |    9 --
- init/Kconfig                           |    9 --
- kernel/Makefile                        |    1 -
- kernel/cgroup.c                        |  243 +++++++++++++-------------------
- kernel/cpuset.c                        |    7 +-
- kernel/fork.c                          |    6 -
- kernel/ns_cgroup.c                     |  110 --------------
- kernel/nsproxy.c                       |    4 -
- 22 files changed, 118 insertions(+), 311 deletions(-)
- delete mode 100644 kernel/ns_cgroup.c
+Signed-off-by: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Reviewed-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Reviewed-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+---
+ kernel/cgroup.c |   90 ++++++++++++++++++++++++++++++++++++------------------
+ 1 files changed, 60 insertions(+), 30 deletions(-)
+
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 7b17c3e..9eace43 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -1073,7 +1073,8 @@ struct cgroup_sb_opts {
+  */
+ static int parse_cgroupfs_options(char *data, struct cgroup_sb_opts *opts)
+ {
+-	char *token, *o = data ?: "all";
++	char *token, *o = data;
++	bool all_ss = false, one_ss = false;
+ 	unsigned long mask = (unsigned long)-1;
+ 	int i;
+ 	bool module_pin_failed = false;
+@@ -1089,24 +1090,27 @@ static int parse_cgroupfs_options(char *data, struct cgroup_sb_opts *opts)
+ 	while ((token = strsep(&o, ",")) != NULL) {
+ 		if (!*token)
+ 			return -EINVAL;
+-		if (!strcmp(token, "all")) {
+-			/* Add all non-disabled subsystems */
+-			opts->subsys_bits = 0;
+-			for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
+-				struct cgroup_subsys *ss = subsys[i];
+-				if (ss == NULL)
+-					continue;
+-				if (!ss->disabled)
+-					opts->subsys_bits |= 1ul << i;
+-			}
+-		} else if (!strcmp(token, "none")) {
++		if (!strcmp(token, "none")) {
+ 			/* Explicitly have no subsystems */
+ 			opts->none = true;
+-		} else if (!strcmp(token, "noprefix")) {
++			continue;
++		}
++		if (!strcmp(token, "all")) {
++			/* Mutually exclusive option 'all' + subsystem name */
++			if (one_ss)
++				return -EINVAL;
++			all_ss = true;
++			continue;
++		}
++		if (!strcmp(token, "noprefix")) {
+ 			set_bit(ROOT_NOPREFIX, &opts->flags);
+-		} else if (!strcmp(token, "clone_children")) {
++			continue;
++		}
++		if (!strcmp(token, "clone_children")) {
+ 			opts->clone_children = true;
+-		} else if (!strncmp(token, "release_agent=", 14)) {
++			continue;
++		}
++		if (!strncmp(token, "release_agent=", 14)) {
+ 			/* Specifying two release agents is forbidden */
+ 			if (opts->release_agent)
+ 				return -EINVAL;
+@@ -1114,7 +1118,9 @@ static int parse_cgroupfs_options(char *data, struct cgroup_sb_opts *opts)
+ 				kstrndup(token + 14, PATH_MAX - 1, GFP_KERNEL);
+ 			if (!opts->release_agent)
+ 				return -ENOMEM;
+-		} else if (!strncmp(token, "name=", 5)) {
++			continue;
++		}
++		if (!strncmp(token, "name=", 5)) {
+ 			const char *name = token + 5;
+ 			/* Can't specify an empty name */
+ 			if (!strlen(name))
+@@ -1136,20 +1142,44 @@ static int parse_cgroupfs_options(char *data, struct cgroup_sb_opts *opts)
+ 					      GFP_KERNEL);
+ 			if (!opts->name)
+ 				return -ENOMEM;
+-		} else {
+-			struct cgroup_subsys *ss;
+-			for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
+-				ss = subsys[i];
+-				if (ss == NULL)
+-					continue;
+-				if (!strcmp(token, ss->name)) {
+-					if (!ss->disabled)
+-						set_bit(i, &opts->subsys_bits);
+-					break;
+-				}
+-			}
+-			if (i == CGROUP_SUBSYS_COUNT)
+-				return -ENOENT;
++
++			continue;
++		}
++
++		for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
++			struct cgroup_subsys *ss = subsys[i];
++			if (ss == NULL)
++				continue;
++			if (strcmp(token, ss->name))
++				continue;
++			if (ss->disabled)
++				continue;
++
++			/* Mutually exclusive option 'all' + subsystem name */
++			if (all_ss)
++				return -EINVAL;
++			set_bit(i, &opts->subsys_bits);
++			one_ss = true;
++
++			break;
++		}
++		if (i == CGROUP_SUBSYS_COUNT)
++			return -ENOENT;
++	}
++
++	/*
++	 * If the 'all' option was specified select all the subsystems,
++	 * otherwise 'all, 'none' and a subsystem name options were not
++	 * specified, let's default to 'all'
++	 */
++	if (all_ss || (!all_ss && !one_ss && !opts->none)) {
++		for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
++			struct cgroup_subsys *ss = subsys[i];
++			if (ss == NULL)
++				continue;
++			if (ss->disabled)
++				continue;
++			set_bit(i, &opts->subsys_bits);
+ 		}
+ 	}
+ 
+-- 
+1.7.0.4
