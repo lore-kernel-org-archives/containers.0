@@ -1,17 +1,17 @@
-From: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
 Subject: Re: [PATCH 0/3][V2] remove the ns_cgroup
-Date: Mon, 27 Sep 2010 15:53:36 -0500
-Message-ID: <20100927205336.GA1488@hallyn.com>
+Date: Mon, 27 Sep 2010 14:13:27 -0700
+Message-ID: <m1hbhanb48.fsf@fess.ebiederm.org>
 References: <1285582453-6127-1-git-send-email-daniel.lezcano@free.fr>
 	<20100927125741.0df22f09.akpm@linux-foundation.org>
-	<20100927203658.GA5320@hallyn.com>
-	<20100927134619.ecefe9f4.akpm@linux-foundation.org>
+	<20100927203658.GA5320@hallyn.com> <m1zkv2ncex.fsf@fess.ebiederm.org>
+	<20100927135025.74e297c3.akpm@linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20100927134619.ecefe9f4.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+In-Reply-To: <20100927135025.74e297c3.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> (Andrew
+	Morton's message of "Mon, 27 Sep 2010 13:50:25 -0700")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,35 +22,26 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Andrew Morton (akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org):
-> On Mon, 27 Sep 2010 15:36:58 -0500
-> "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org> wrote:
-> 
-> > > > This patchset removes the ns_cgroup by adding a new flag to the cgroup
-> > > > and the cgroupfs mount option. It enables the copy of the parent cgroup
-> > > > when a child cgroup is created. We can then safely remove the ns_cgroup as
-> > > > this flag brings a compatibility. We have now to manually create and add the
-> > > > task to a cgroup, which is consistent with the cgroup framework.
-> > > 
-> > > So this is a non-backward-compatible userspace-visible change?
-> > 
-> > Yes, it is.
-> > 
-> > Patch 1 is needed to let lxc and libvirt both control containers with
-> > same cgroup setup.  Patch 3 however isn't *necessary* for that.  Daniel,
-> > what do you think about holding off on patch 3?
-> 
-> One way of handling this would be to merge patches 1&2 which add the
-> new interface and also arrange for usage of the old interface(s) to
-> emit a printk, telling people that they're using a feature which is
-> scheduled for removal.
-> 
-> Later, we remove the old interface.
+Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> writes:
 
-I see no downside to that.
+>> We have always been able to compile out the ns cgroup right?
+>> 
+>> In which case this is not a backwards incompatible change so much
+>> as the permanent removal of a borked kernel feature.
+>> 
+>
+> That's just spin ;) People whose code is dependent on the old feature
+> get screwed over if we remove it.
 
-thanks,
--serge
+Sure.  I'm just really pointing out that there is a difference
+between changing the semantics and completely removing something.
+
+It makes the change discoverable and something you can cope with,
+if you so choose.
+
+Overall I agree with at transition period, just look at sys_sysctl. Bleh.
+
+Eric
