@@ -1,17 +1,17 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 0/3][V2] remove the ns_cgroup
-Date: Mon, 27 Sep 2010 14:13:27 -0700
-Message-ID: <m1hbhanb48.fsf@fess.ebiederm.org>
-References: <1285582453-6127-1-git-send-email-daniel.lezcano@free.fr>
-	<20100927125741.0df22f09.akpm@linux-foundation.org>
-	<20100927203658.GA5320@hallyn.com> <m1zkv2ncex.fsf@fess.ebiederm.org>
-	<20100927135025.74e297c3.akpm@linux-foundation.org>
+From: Brad Boyer <flar-POGeQm5F+FGB+jHODAdFcQ@public.gmane.org>
+Subject: Re: [PATCH 2/6] [RFC] Create the .relink file_operation
+Date: Mon, 27 Sep 2010 15:03:46 -0700
+Message-ID: <20100927220346.GA30726__6173.3991526582$1285625182$gmane$org@cynthia.pants.nu>
+References: <6987185123220ec2034677299859c5a63eaf2aed.1285278339.git.matthltc@us.ibm.com>
+	<d91e3660266d3a2956c4d1aebc9cb618081b21ef.1285278339.git.matthltc@us.ibm.com>
+	<20100926190837.GA9308@cynthia.pants.nu>
+	<20100927191628.GN23839@count0.beaverton.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100927135025.74e297c3.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> (Andrew
-	Morton's message of "Mon, 27 Sep 2010 13:50:25 -0700")
+Content-Disposition: inline
+In-Reply-To: <20100927191628.GN23839-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,27 +21,42 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andreas Dilger <adilger.kernel-m1MBpc4rdrD3fQ9qLvQP4Q@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, linux-ext4-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> writes:
+On Mon, Sep 27, 2010 at 12:16:28PM -0700, Matt Helsley wrote:
+> On Sun, Sep 26, 2010 at 12:08:37PM -0700, Brad Boyer wrote:
+> > On Thu, Sep 23, 2010 at 02:53:28PM -0700, Matt Helsley wrote:
+> > > Not all filesystems will necessarily be able to support relinking an
+> > > orphan inode back into the filesystem. Some offlist feedback suggested
+> > > that instead of overloading .link that relinking should be a separate
+> > > file operation for this reason.
+> > > 
+> > > Since .relink is a superset of .link make the VFS call .relink where
+> > > possible and .link otherwise.
+> > > 
+> > > The next commit will change ext3/4 to enable this operation.
+> > 
+> > I may have missed something in one of these patches (patch 1 and any
+> > original summary if there was one don't appear in my email), but
+> > what is the point of the new operation? I didn't see any case that
+> > treats one any different than the other. What is disallowed (and how)
+> > for a driver which does not implement .relink but has .link?
+> 
+> Did you get patch 3? It shows how ext3/ext4 add the ability to take an
+> inode that has been unlinked, placed onto the orphan list, and relink it.
 
->> We have always been able to compile out the ns cgroup right?
->> 
->> In which case this is not a backwards incompatible change so much
->> as the permanent removal of a borked kernel feature.
->> 
->
-> That's just spin ;) People whose code is dependent on the old feature
-> get screwed over if we remove it.
+Yes, I did get patch 3. I think you misunderstood my question. You point
+both .link and .relink to the same function in ext3 and ext4. The common
+code which calls them will call .relink if it is set and .link if it is
+not set. If nothing acts any different based on .relink being NULL or
+not-NULL, and the only implementation isn't any different from .link
+what was the point of introducing a new operation?
 
-Sure.  I'm just really pointing out that there is a difference
-between changing the semantics and completely removing something.
+What I expected to see was that some particular code path would check
+if .relink was NULL and fail in that case. Unless there is a code path
+that will only call .relink and not .link, it seems useless to me.
 
-It makes the change discoverable and something you can cope with,
-if you so choose.
-
-Overall I agree with at transition period, just look at sys_sysctl. Bleh.
-
-Eric
+	Brad Boyer
+	flar-POGeQm5F+FGB+jHODAdFcQ@public.gmane.org
