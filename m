@@ -1,13 +1,17 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: [PATCH 3/3][V2] cgroup : remove the ns_cgroup
-Date: Mon, 27 Sep 2010 12:14:13 +0200
-Message-ID: <1285582453-6127-4-git-send-email-daniel.lezcano@free.fr>
-References: <1285582453-6127-1-git-send-email-daniel.lezcano@free.fr>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC][PATCH 00/10] taskstats: Enhancements for precise accounting
+Date: Mon, 27 Sep 2010 16:19:23 +0530
+Message-ID: <20100927104923.GI11780__6363.23487055979$1285584729$gmane$org@balbir.in.ibm.com>
+References: <1285249681.1837.28.camel@holzheu-laptop>
+	<20100923131136.356075f4.akpm@linux-foundation.org>
+	<1285319415.2179.116.camel@holzheu-laptop>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1285582453-6127-1-git-send-email-daniel.lezcano-GANU6spQydw@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1285319415.2179.116.camel@holzheu-laptop>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,588 +21,253 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
-Cc: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Michael Holzheu <holzheu-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Shailabh Nagar <nagar1234-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, Venkatesh Pallipadi <venki-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, John stultz <johnstul-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Heiko Carstens <heiko.carstens-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Martin Schwidefsky <schwidefsky-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Suresh Siddha <suresh.b.siddha-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-The ns_cgroup is an annoying cgroup at the namespace / cgroup frontier.
+* Michael Holzheu <holzheu-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> [2010-09-24 11:10:15]:
 
-For example, a single process can not handle a big amount of namespaces
-without interacting with this cgroup and falling in an exponential creation
-time due to the nested cgroup directory depth (eg. /cgroup/<pid>/.../<pid>/...).
+> Hello Andrew,
+> 
+> On Thu, 2010-09-23 at 13:11 -0700, Andrew Morton wrote:
+> > > GOALS OF THIS PATCH SET
+> > > -----------------------
+> > > The intention of this patch set is to provide better support for tools like
+> > > top. The goal is to:
+> > > 
+> > > * provide a task snapshot mechanism where we can get a consistent view of
+> > >   all running tasks.
+> > > * provide a transport mechanism that does not require a lot of system calls
+> > >   and that allows implementing low CPU overhead task monitoring.
+> > > * provide microsecond CPU time granularity.
+> > 
+> > This is a big change!  If this is done right then we're heading in the
+> > direction of deprecating the longstanding way in which userspace
+> > observes the state of Linux processes and we're recommending that the
+> > whole world migrate to taskstats.  I think?
+>
 
-That was spotted when creating a single process using multiple network namespaces,
-the objective was 4096 network namespaces, but at 820 netns, the creation time
-was dramatically slow and the creation time for a namespace increased from 10msec
-to 10sec. After five hours, the expected numbers of netns was not reached.
-Without the ns_cgroup interaction, 4K netns are created after 2 minutes.
+Wouldn't I love that :)
+ 
+> Or it can be used as alternative. Since procfs has its drawbacks (e.g.
+> performance) an alternative could be helpful. 
+> 
+> And the taskstats interface with the TASKSTATS_CMD_ATTR_PID command
+> already exists and can be used. So we already have a second mechanism to
+> query tasks accounting information besides of procfs.
+> 
 
-In order to solve that, we have to mount the cgroup with all the subsystems
-except the ns_cgroup, it's a little weird and hard to manage from an administration
-pov because we have to know what are the cgroup available on the system and we
-can't do a simple 'mount -t cgroup cgroup /cgroup'.
+Yes, an alternative for simple data extraction without having to write
+network code to extract it.
 
-With the previous patch which adds a 'clone_children' parameter to a cgroup,
-we should be able to remove the ns_cgroup and manage manually the creation +
-adding a task to the cgroup consistenly with the rest of the subsystems.
+> > 
+> > If so, much chin-scratching will be needed, coordination with
+> > util-linux people, etc.
+> 
+> I agree.
+> 
+> > We'd need to think about the implications of taskstats versioning.  It
+> > _is_ a versioned interface, so people can't just go and toss random new
+> > stuff in there at will - it's not like adding a new procfs file, or
+> > adding a new line to an existing one.  I don't know if that's likely to
+> > be a significant problem.
+> 
+> I already thought about that problem. Another problem is that depending
+> on the kernel config options, some taskstats fields may be not
+> initialized. E.g. CONFIG_TASK_DELAY_ACCT or CONFIG_TASK_XACCT. Currently
+> there does not exist a good interface to userspace to query which fields
+> are valid.
+> 
+> Regarding the taskstats versions  I described a possible solution in the
+> userspace tarball in the README.libtaskstats file:
+> 
+> The "struct taskstats" structure contains accounting information for one
+> Linux task. This structure is defined in "/usr/include/linux/taskstats.h".
+> With new kernel versions new fields can be added to that structure.
+> In that case the kernel taskstats version number defined with the macro
+> TASKSTATS_VERSION will be increased.
+>
+> The taskstats library distinguishes between two taskstats versions:
+> * Kernel taskstats version (KV)
+> * Program compile taskstats version (CV)
+> 
+> Depending on the taskstats version CV that is used for compiling the program,
+> this version numbers can be different:
+> * KV > CV:
+>   The libtaskstats library only copies the CV taskstats fields and the fields
+>   that belong to version > CV will be ignored.
+> * KV < CV:
+>   The libtaskstats library only copies the version KV fields and the fields
+>   that belong to version > KV remain uninitialized.
+> 
+> If a program wants to support multiple taskstats versions, this can be done
+> using the ts_version() function and process fields according to that version
+> number.
+> 
+> Example:
+> 
+>   if (ts_version() < 7) {
+>          fprintf(stderr, "Error: kernel taskstats version too low\n");
+>          exit(1);
+>   }
+>   if (ts_version() >= 7)
+>          print_attrs_v7();
+>   if (ts_version() >= 8)
+>          print_attrs_v8();
+> 
+> In this example the program has to be compiled with a taskstats.h header file
+> that has at least version 8.
 
-This patch removes the ns_cgroup as suggested in the following thread:
+Fair enough
 
-https://lists.linux-foundation.org/pipermail/containers/2009-June/018616.html
+> 
+> > I worry that there's a dependency on CONFIG_NET?  If so then that's a
+> > big problem because in N years time, 99% of the world will be using
+> > taskstats, but a few embedded losers will be stuck using (and having to
+> > support) the old tools.
+> 
+> Sure, but if we could add the /proc/taskstats approach, this dependency
+> would not be there.
+> 
+> > 
+> > > FIRST RESULTS
+> > > -------------
+> > > Together with this kernel patch set also user space code for a new top
+> > > utility (ptop) is provided that exploits the new kernel infrastructure. See
+> > > patch 10 for more details.
+> > > 
+> > > TEST1: System with many sleeping tasks
+> > > 
+> > >   for ((i=0; i < 1000; i++))
+> > >   do
+> > >          sleep 1000000 &
+> > >   done
+> > > 
+> > >   # ptop_new_proc
+> > > 
+> > >              VVVV
+> > >   pid   user  sys  ste  total  Name
+> > >   (#)    (%)  (%)  (%)    (%)  (str)
+> > >   541   0.37 2.39 0.10   2.87  top
+> > >   3743  0.03 0.05 0.00   0.07  ptop_new_proc
+> > >              ^^^^
+> > > 
+> > > Compared to the old top command that has to scan more than 1000 proc
+> > > directories the new ptop consumes much less CPU time (0.05% system time
+> > > on my s390 system).
+> > 
+> > How many CPUs does that system have?
+> 
+> The system is a virtual machine and has three CPUs.
+> 
+> > What's the `top' update period?  One second?
+> 
+> The update period is two seconds.
+> 
+> > So we're saying that a `top -d 1' consumes 2.4% of this
+> > mystery-number-of-CPUs machine?  That's quite a lot.
+> 
+> When I run that testcase on my laptop, 2 CPUs (Intel Core 2 - 2.33GHz),
+> I get about 1-2% system time for top.
+> 
+> > > PATCHSET OVERVIEW
+> > > -----------------
+> > > The code is not final and still has a few TODOs. But it is good enough for a
+> > > first round of review. The following kernel patches are provided:
+> > > 
+> > > [01] Prepare-0: Use real microsecond granularity for taskstats CPU times.
+> > > [02] Prepare-1: Restructure taskstats.c in order to be able to add new commands
+> > >      more easily.
+> > > [03] Prepare-2: Separate the finding of a task_struct by PID or TGID from
+> > >      filling the taskstats.
+> > > [04] Add new command "TASKSTATS_CMD_ATTR_PIDS" to get a snapshot of multiple
+> > >      tasks.
+> > > [05] Add procfs interface for taskstats commands. This allows to get a complete
+> > >      and consistent snapshot with all tasks using two system calls (ioctl and
+> > >      read). Transferring a snapshot of all running tasks is not possible using
+> > >      the existing netlink interface, because there we have the socket buffer
+> > >      size as restricting factor.
+> > 
+> > So this is a binary interface which uses an ioctl.  People don't like
+> > ioctls.  Could we have triggered it with a write() instead?
+> 
+> The current idea is the following:
+> 
+> 1. Open /proc/taskstats
+> 2. Set the requested command (e.g. TASKSTATS_CMD_ATTR_PIDS) using
+>    an ioctl. For the TASKSTATS_CMD_ATTR_PIDS ioctl the following
+>    structure is sent:
+> 
+>    struct taskstats_cmd_pids {
+>         __u64   time_ns;
+>         __u32   pid;
+>         __u32   cnt;
+>    };
+> 
+> 3. After the command is defined, with a read() the command is executed
+>    and the result is returned to the user's read buffer.
+> 
+> We could replace step 2 with a write, that transfers the command.
+>
 
-The 'cgroup_clone' function is removed because it is no longer used.
+I don't like ioctls either, write sounds interesting.
+ 
+> > Does this have the potential to save us from the CONFIG_NET=n problem?
+> 
+> Yes
+> 
+> > > [06] Add TGID to taskstats.
+> > > [07] Add steal time per task accounting.
+> > > [08] Add cumulative CPU time (user, system and steal) to taskstats.
+> > 
+> > These didn't update the taskstats version number.  Should they have?
+> 
+> Patch 04/10 updates the taskstats version number from 7 to 8.
+> I didn't want to update the version number with each patch.
+> 
+> > > [09] Fix exit CPU time accounting.
+> > > 
+> > > [10] Besides of the kernel patches also user space code is provided that
+> > >      exploits the new kernel infrastructure. The user space code provides the
+> > >      following:
+> > >      1. A proposal for a taskstats user space library:
+> > >         1.1 Based on netlink (requires libnl-devel-1.1-5)
+> > >         2.1 Based on the new /proc/taskstats interface (see [05])
+> > >      2. A proposal for a task snapshot library based on taskstats library (1.1)
+> > 
+> > ooh, excellent.  A standardised userspace access library.
+> 
+> Yes, at least a proposal for that.
+> 
+> > >      3. A new tool "ptop" (precise top) that uses the libraries
+> > 
+> > Talk to me about namespaces, please.  A lot of the new code involves
+> > PIDs, but PIDs are not system-wide unique.  A PID is relative to a PID
+> > namespace.  Does everything Just Work?  When userspace sends a PID to
+> > the kernel, that PID is assumed to be within the sending process's PID
+> > namespace?  If so, then please spell it all out in the changelogs.  If
+> > not then that is a problem!
+> 
+> To be honest, I have not tested that. I assumed that the current
+> taskstats code does this correctly. E.g. it uses find_task_by_vpid() for
+> TASKSTATS_CMD_ATTR_PID and this function uses
+> "current->nsproxy->pid_ns". So I would assume that we get only tasks
+> from the caller's namespace. The new TASKSTATS_CMD_ATTR_PIDS command
+> also uses also only functions with "current->nsproxy->pid_ns".
+> 
+> > If I can only observe processes in my PID namespace then is that a
+> > problem?  Should I be allowed to observe another PID namespace's
+> > processes?  I assume so, because I might be root.  If so, how is that
+> > to be done?
+> 
+> Good question. Probably I have to learn a bit more about the PID
+> namespace implementation. Are PIDs over all namespaces unique?
+> 
+>
 
-Signed-off-by: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Cc: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Jamal Hadi Salim <hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org>
-Reviewed-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Acked-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Acked-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- Documentation/cgroups/cgroups.txt      |    2 +-
- arch/arm/configs/tegra_defconfig       |    1 -
- arch/mips/configs/bcm47xx_defconfig    |    1 -
- arch/powerpc/configs/ppc6xx_defconfig  |    1 -
- arch/powerpc/configs/pseries_defconfig |    1 -
- arch/s390/defconfig                    |    1 -
- arch/sh/configs/sdk7786_defconfig      |    1 -
- arch/sh/configs/se7206_defconfig       |    1 -
- arch/sh/configs/shx3_defconfig         |    1 -
- arch/sh/configs/urquell_defconfig      |    1 -
- arch/x86/configs/i386_defconfig        |    1 -
- arch/x86/configs/x86_64_defconfig      |    1 -
- include/linux/cgroup.h                 |    3 -
- include/linux/cgroup_subsys.h          |    6 --
- include/linux/nsproxy.h                |    9 ---
- init/Kconfig                           |    9 ---
- kernel/Makefile                        |    1 -
- kernel/cgroup.c                        |  116 --------------------------------
- kernel/cpuset.c                        |    7 +-
- kernel/fork.c                          |    6 --
- kernel/ns_cgroup.c                     |  110 ------------------------------
- kernel/nsproxy.c                       |    4 -
- 22 files changed, 4 insertions(+), 280 deletions(-)
- delete mode 100644 kernel/ns_cgroup.c
+I think the namespaces are OK, we might peep into namespaces nested
+within the current one, but that is legal today. 
 
-diff --git a/Documentation/cgroups/cgroups.txt b/Documentation/cgroups/cgroups.txt
-index 190018b..6a5ba63 100644
---- a/Documentation/cgroups/cgroups.txt
-+++ b/Documentation/cgroups/cgroups.txt
-@@ -618,7 +618,7 @@ always handled well.
- void post_clone(struct cgroup_subsys *ss, struct cgroup *cgrp)
- (cgroup_mutex held by caller)
- 
--Called at the end of cgroup_clone() to do any parameter
-+Called during cgroup_create() to do any parameter
- initialization which might be required before a task could attach.  For
- example in cpusets, no task may attach before 'cpus' and 'mems' are set
- up.
-diff --git a/arch/arm/configs/tegra_defconfig b/arch/arm/configs/tegra_defconfig
-index c81b6d9..ebb8c55 100644
---- a/arch/arm/configs/tegra_defconfig
-+++ b/arch/arm/configs/tegra_defconfig
-@@ -65,7 +65,6 @@ CONFIG_IKCONFIG_PROC=y
- CONFIG_LOG_BUF_SHIFT=17
- CONFIG_CGROUPS=y
- CONFIG_CGROUP_DEBUG=y
--# CONFIG_CGROUP_NS is not set
- CONFIG_CGROUP_FREEZER=y
- # CONFIG_CGROUP_DEVICE is not set
- # CONFIG_CPUSETS is not set
-diff --git a/arch/mips/configs/bcm47xx_defconfig b/arch/mips/configs/bcm47xx_defconfig
-index 927d58b..c4338e0 100644
---- a/arch/mips/configs/bcm47xx_defconfig
-+++ b/arch/mips/configs/bcm47xx_defconfig
-@@ -16,7 +16,6 @@ CONFIG_TASK_IO_ACCOUNTING=y
- CONFIG_AUDIT=y
- CONFIG_TINY_RCU=y
- CONFIG_CGROUPS=y
--CONFIG_CGROUP_NS=y
- CONFIG_CGROUP_CPUACCT=y
- CONFIG_RELAY=y
- CONFIG_BLK_DEV_INITRD=y
-diff --git a/arch/powerpc/configs/ppc6xx_defconfig b/arch/powerpc/configs/ppc6xx_defconfig
-index 9d64a68..9b253f6 100644
---- a/arch/powerpc/configs/ppc6xx_defconfig
-+++ b/arch/powerpc/configs/ppc6xx_defconfig
-@@ -10,7 +10,6 @@ CONFIG_TASK_XACCT=y
- CONFIG_TASK_IO_ACCOUNTING=y
- CONFIG_AUDIT=y
- CONFIG_CGROUPS=y
--CONFIG_CGROUP_NS=y
- CONFIG_CGROUP_DEVICE=y
- CONFIG_CGROUP_CPUACCT=y
- CONFIG_RESOURCE_COUNTERS=y
-diff --git a/arch/powerpc/configs/pseries_defconfig b/arch/powerpc/configs/pseries_defconfig
-index f87f0e1..972587f 100644
---- a/arch/powerpc/configs/pseries_defconfig
-+++ b/arch/powerpc/configs/pseries_defconfig
-@@ -15,7 +15,6 @@ CONFIG_AUDITSYSCALL=y
- CONFIG_IKCONFIG=y
- CONFIG_IKCONFIG_PROC=y
- CONFIG_CGROUPS=y
--CONFIG_CGROUP_NS=y
- CONFIG_CGROUP_FREEZER=y
- CONFIG_CGROUP_DEVICE=y
- CONFIG_CPUSETS=y
-diff --git a/arch/s390/defconfig b/arch/s390/defconfig
-index e40ac6e..4b6d1a1 100644
---- a/arch/s390/defconfig
-+++ b/arch/s390/defconfig
-@@ -5,7 +5,6 @@ CONFIG_AUDIT=y
- CONFIG_IKCONFIG=y
- CONFIG_IKCONFIG_PROC=y
- CONFIG_CGROUPS=y
--CONFIG_CGROUP_NS=y
- CONFIG_SYSFS_DEPRECATED_V2=y
- CONFIG_UTS_NS=y
- CONFIG_IPC_NS=y
-diff --git a/arch/sh/configs/sdk7786_defconfig b/arch/sh/configs/sdk7786_defconfig
-index dc4a2eb..9fdabe2 100644
---- a/arch/sh/configs/sdk7786_defconfig
-+++ b/arch/sh/configs/sdk7786_defconfig
-@@ -12,7 +12,6 @@ CONFIG_IKCONFIG=y
- CONFIG_IKCONFIG_PROC=y
- CONFIG_CGROUPS=y
- CONFIG_CGROUP_DEBUG=y
--CONFIG_CGROUP_NS=y
- CONFIG_CGROUP_FREEZER=y
- CONFIG_CGROUP_DEVICE=y
- CONFIG_CPUSETS=y
-diff --git a/arch/sh/configs/se7206_defconfig b/arch/sh/configs/se7206_defconfig
-index a468ff2..72c3fad 100644
---- a/arch/sh/configs/se7206_defconfig
-+++ b/arch/sh/configs/se7206_defconfig
-@@ -8,7 +8,6 @@ CONFIG_RCU_TRACE=y
- CONFIG_LOG_BUF_SHIFT=14
- CONFIG_CGROUPS=y
- CONFIG_CGROUP_DEBUG=y
--CONFIG_CGROUP_NS=y
- CONFIG_CGROUP_DEVICE=y
- CONFIG_CGROUP_CPUACCT=y
- CONFIG_RESOURCE_COUNTERS=y
-diff --git a/arch/sh/configs/shx3_defconfig b/arch/sh/configs/shx3_defconfig
-index 3f92d37..6bb4130 100644
---- a/arch/sh/configs/shx3_defconfig
-+++ b/arch/sh/configs/shx3_defconfig
-@@ -9,7 +9,6 @@ CONFIG_IKCONFIG=y
- CONFIG_IKCONFIG_PROC=y
- CONFIG_LOG_BUF_SHIFT=14
- CONFIG_CGROUPS=y
--CONFIG_CGROUP_NS=y
- CONFIG_CGROUP_FREEZER=y
- CONFIG_CGROUP_DEVICE=y
- CONFIG_CGROUP_CPUACCT=y
-diff --git a/arch/sh/configs/urquell_defconfig b/arch/sh/configs/urquell_defconfig
-index 7b3daec..8bfa4d0 100644
---- a/arch/sh/configs/urquell_defconfig
-+++ b/arch/sh/configs/urquell_defconfig
-@@ -9,7 +9,6 @@ CONFIG_IKCONFIG_PROC=y
- CONFIG_LOG_BUF_SHIFT=14
- CONFIG_CGROUPS=y
- CONFIG_CGROUP_DEBUG=y
--CONFIG_CGROUP_NS=y
- CONFIG_CGROUP_FREEZER=y
- CONFIG_CGROUP_DEVICE=y
- CONFIG_CPUSETS=y
-diff --git a/arch/x86/configs/i386_defconfig b/arch/x86/configs/i386_defconfig
-index 6f98726..2bf1805 100644
---- a/arch/x86/configs/i386_defconfig
-+++ b/arch/x86/configs/i386_defconfig
-@@ -10,7 +10,6 @@ CONFIG_TASK_IO_ACCOUNTING=y
- CONFIG_AUDIT=y
- CONFIG_LOG_BUF_SHIFT=18
- CONFIG_CGROUPS=y
--CONFIG_CGROUP_NS=y
- CONFIG_CGROUP_FREEZER=y
- CONFIG_CPUSETS=y
- CONFIG_CGROUP_CPUACCT=y
-diff --git a/arch/x86/configs/x86_64_defconfig b/arch/x86/configs/x86_64_defconfig
-index ee01a9d..22a0dc8 100644
---- a/arch/x86/configs/x86_64_defconfig
-+++ b/arch/x86/configs/x86_64_defconfig
-@@ -11,7 +11,6 @@ CONFIG_TASK_IO_ACCOUNTING=y
- CONFIG_AUDIT=y
- CONFIG_LOG_BUF_SHIFT=18
- CONFIG_CGROUPS=y
--CONFIG_CGROUP_NS=y
- CONFIG_CGROUP_FREEZER=y
- CONFIG_CPUSETS=y
- CONFIG_CGROUP_CPUACCT=y
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index ed4ba11..4170663 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -552,9 +552,6 @@ static inline struct cgroup* task_cgroup(struct task_struct *task,
- 	return task_subsys_state(task, subsys_id)->cgroup;
- }
- 
--int cgroup_clone(struct task_struct *tsk, struct cgroup_subsys *ss,
--							char *nodename);
--
- /* A cgroup_iter should be treated as an opaque object */
- struct cgroup_iter {
- 	struct list_head *cg_link;
-diff --git a/include/linux/cgroup_subsys.h b/include/linux/cgroup_subsys.h
-index ccefff0..4ba5259 100644
---- a/include/linux/cgroup_subsys.h
-+++ b/include/linux/cgroup_subsys.h
-@@ -19,12 +19,6 @@ SUBSYS(debug)
- 
- /* */
- 
--#ifdef CONFIG_CGROUP_NS
--SUBSYS(ns)
--#endif
--
--/* */
--
- #ifdef CONFIG_CGROUP_SCHED
- SUBSYS(cpu_cgroup)
- #endif
-diff --git a/include/linux/nsproxy.h b/include/linux/nsproxy.h
-index 7b370c7..50d20ab 100644
---- a/include/linux/nsproxy.h
-+++ b/include/linux/nsproxy.h
-@@ -81,13 +81,4 @@ static inline void get_nsproxy(struct nsproxy *ns)
- 	atomic_inc(&ns->count);
- }
- 
--#ifdef CONFIG_CGROUP_NS
--int ns_cgroup_clone(struct task_struct *tsk, struct pid *pid);
--#else
--static inline int ns_cgroup_clone(struct task_struct *tsk, struct pid *pid)
--{
--	return 0;
--}
--#endif
--
- #endif
-diff --git a/init/Kconfig b/init/Kconfig
-index 0859284..913c379 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -518,15 +518,6 @@ config CGROUP_DEBUG
- 
- 	  Say N if unsure.
- 
--config CGROUP_NS
--	bool "Namespace cgroup subsystem"
--	depends on CGROUPS
--	help
--	  Provides a simple namespace cgroup subsystem to
--	  provide hierarchical naming of sets of namespaces,
--	  for instance virtual servers and checkpoint/restart
--	  jobs.
--
- config CGROUP_FREEZER
- 	bool "Freezer cgroup subsystem"
- 	depends on CGROUPS
-diff --git a/kernel/Makefile b/kernel/Makefile
-index 92b7420..a390a76 100644
---- a/kernel/Makefile
-+++ b/kernel/Makefile
-@@ -61,7 +61,6 @@ obj-$(CONFIG_COMPAT) += compat.o
- obj-$(CONFIG_CGROUPS) += cgroup.o
- obj-$(CONFIG_CGROUP_FREEZER) += cgroup_freezer.o
- obj-$(CONFIG_CPUSETS) += cpuset.o
--obj-$(CONFIG_CGROUP_NS) += ns_cgroup.o
- obj-$(CONFIG_UTS_NS) += utsname.o
- obj-$(CONFIG_USER_NS) += user_namespace.o
- obj-$(CONFIG_PID_NS) += pid_namespace.o
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 9eace43..dd0210f 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -4242,122 +4242,6 @@ void cgroup_exit(struct task_struct *tsk, int run_callbacks)
- }
- 
- /**
-- * cgroup_clone - clone the cgroup the given subsystem is attached to
-- * @tsk: the task to be moved
-- * @subsys: the given subsystem
-- * @nodename: the name for the new cgroup
-- *
-- * Duplicate the current cgroup in the hierarchy that the given
-- * subsystem is attached to, and move this task into the new
-- * child.
-- */
--int cgroup_clone(struct task_struct *tsk, struct cgroup_subsys *subsys,
--							char *nodename)
--{
--	struct dentry *dentry;
--	int ret = 0;
--	struct cgroup *parent, *child;
--	struct inode *inode;
--	struct css_set *cg;
--	struct cgroupfs_root *root;
--	struct cgroup_subsys *ss;
--
--	/* We shouldn't be called by an unregistered subsystem */
--	BUG_ON(!subsys->active);
--
--	/* First figure out what hierarchy and cgroup we're dealing
--	 * with, and pin them so we can drop cgroup_mutex */
--	mutex_lock(&cgroup_mutex);
-- again:
--	root = subsys->root;
--	if (root == &rootnode) {
--		mutex_unlock(&cgroup_mutex);
--		return 0;
--	}
--
--	/* Pin the hierarchy */
--	if (!atomic_inc_not_zero(&root->sb->s_active)) {
--		/* We race with the final deactivate_super() */
--		mutex_unlock(&cgroup_mutex);
--		return 0;
--	}
--
--	/* Keep the cgroup alive */
--	task_lock(tsk);
--	parent = task_cgroup(tsk, subsys->subsys_id);
--	cg = tsk->cgroups;
--	get_css_set(cg);
--	task_unlock(tsk);
--
--	mutex_unlock(&cgroup_mutex);
--
--	/* Now do the VFS work to create a cgroup */
--	inode = parent->dentry->d_inode;
--
--	/* Hold the parent directory mutex across this operation to
--	 * stop anyone else deleting the new cgroup */
--	mutex_lock(&inode->i_mutex);
--	dentry = lookup_one_len(nodename, parent->dentry, strlen(nodename));
--	if (IS_ERR(dentry)) {
--		printk(KERN_INFO
--		       "cgroup: Couldn't allocate dentry for %s: %ld\n", nodename,
--		       PTR_ERR(dentry));
--		ret = PTR_ERR(dentry);
--		goto out_release;
--	}
--
--	/* Create the cgroup directory, which also creates the cgroup */
--	ret = vfs_mkdir(inode, dentry, 0755);
--	child = __d_cgrp(dentry);
--	dput(dentry);
--	if (ret) {
--		printk(KERN_INFO
--		       "Failed to create cgroup %s: %d\n", nodename,
--		       ret);
--		goto out_release;
--	}
--
--	/* The cgroup now exists. Retake cgroup_mutex and check
--	 * that we're still in the same state that we thought we
--	 * were. */
--	mutex_lock(&cgroup_mutex);
--	if ((root != subsys->root) ||
--	    (parent != task_cgroup(tsk, subsys->subsys_id))) {
--		/* Aargh, we raced ... */
--		mutex_unlock(&inode->i_mutex);
--		put_css_set(cg);
--
--		deactivate_super(root->sb);
--		/* The cgroup is still accessible in the VFS, but
--		 * we're not going to try to rmdir() it at this
--		 * point. */
--		printk(KERN_INFO
--		       "Race in cgroup_clone() - leaking cgroup %s\n",
--		       nodename);
--		goto again;
--	}
--
--	/* do any required auto-setup */
--	for_each_subsys(root, ss) {
--		if (ss->post_clone)
--			ss->post_clone(ss, child);
--	}
--
--	/* All seems fine. Finish by moving the task into the new cgroup */
--	ret = cgroup_attach_task(child, tsk);
--	mutex_unlock(&cgroup_mutex);
--
-- out_release:
--	mutex_unlock(&inode->i_mutex);
--
--	mutex_lock(&cgroup_mutex);
--	put_css_set(cg);
--	mutex_unlock(&cgroup_mutex);
--	deactivate_super(root->sb);
--	return ret;
--}
--
--/**
-  * cgroup_is_descendant - see if @cgrp is a descendant of @task's cgrp
-  * @cgrp: the cgroup in question
-  * @task: the task in question
-diff --git a/kernel/cpuset.c b/kernel/cpuset.c
-index b23c097..1309fe0 100644
---- a/kernel/cpuset.c
-+++ b/kernel/cpuset.c
-@@ -1829,10 +1829,9 @@ static int cpuset_populate(struct cgroup_subsys *ss, struct cgroup *cont)
- }
- 
- /*
-- * post_clone() is called at the end of cgroup_clone().
-- * 'cgroup' was just created automatically as a result of
-- * a cgroup_clone(), and the current task is about to
-- * be moved into 'cgroup'.
-+ * post_clone() is called during cgroup_create() when the
-+ * clone_children mount argument was specified.  The cgroup
-+ * can not yet have any tasks.
-  *
-  * Currently we refuse to set up the cgroup - thereby
-  * refusing the task to be entered, and as a result refusing
-diff --git a/kernel/fork.c b/kernel/fork.c
-index c445f8c..623b9c1 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -1171,12 +1171,6 @@ static struct task_struct *copy_process(unsigned long clone_flags,
- 	if (clone_flags & CLONE_THREAD)
- 		p->tgid = current->tgid;
- 
--	if (current->nsproxy != p->nsproxy) {
--		retval = ns_cgroup_clone(p, pid);
--		if (retval)
--			goto bad_fork_free_pid;
--	}
--
- 	p->set_child_tid = (clone_flags & CLONE_CHILD_SETTID) ? child_tidptr : NULL;
- 	/*
- 	 * Clear TID on mm_release()?
-diff --git a/kernel/ns_cgroup.c b/kernel/ns_cgroup.c
-deleted file mode 100644
-index 2a5dfec..0000000
---- a/kernel/ns_cgroup.c
-+++ /dev/null
-@@ -1,110 +0,0 @@
--/*
-- * ns_cgroup.c - namespace cgroup subsystem
-- *
-- * Copyright 2006, 2007 IBM Corp
-- */
--
--#include <linux/module.h>
--#include <linux/cgroup.h>
--#include <linux/fs.h>
--#include <linux/proc_fs.h>
--#include <linux/slab.h>
--#include <linux/nsproxy.h>
--
--struct ns_cgroup {
--	struct cgroup_subsys_state css;
--};
--
--struct cgroup_subsys ns_subsys;
--
--static inline struct ns_cgroup *cgroup_to_ns(
--		struct cgroup *cgroup)
--{
--	return container_of(cgroup_subsys_state(cgroup, ns_subsys_id),
--			    struct ns_cgroup, css);
--}
--
--int ns_cgroup_clone(struct task_struct *task, struct pid *pid)
--{
--	char name[PROC_NUMBUF];
--
--	snprintf(name, PROC_NUMBUF, "%d", pid_vnr(pid));
--	return cgroup_clone(task, &ns_subsys, name);
--}
--
--/*
-- * Rules:
-- *   1. you can only enter a cgroup which is a descendant of your current
-- *     cgroup
-- *   2. you can only place another process into a cgroup if
-- *     a. you have CAP_SYS_ADMIN
-- *     b. your cgroup is an ancestor of task's destination cgroup
-- *       (hence either you are in the same cgroup as task, or in an
-- *        ancestor cgroup thereof)
-- */
--static int ns_can_attach(struct cgroup_subsys *ss, struct cgroup *new_cgroup,
--			 struct task_struct *task, bool threadgroup)
--{
--	if (current != task) {
--		if (!capable(CAP_SYS_ADMIN))
--			return -EPERM;
--
--		if (!cgroup_is_descendant(new_cgroup, current))
--			return -EPERM;
--	}
--
--	if (!cgroup_is_descendant(new_cgroup, task))
--		return -EPERM;
--
--	if (threadgroup) {
--		struct task_struct *c;
--		rcu_read_lock();
--		list_for_each_entry_rcu(c, &task->thread_group, thread_group) {
--			if (!cgroup_is_descendant(new_cgroup, c)) {
--				rcu_read_unlock();
--				return -EPERM;
--			}
--		}
--		rcu_read_unlock();
--	}
--
--	return 0;
--}
--
--/*
-- * Rules: you can only create a cgroup if
-- *     1. you are capable(CAP_SYS_ADMIN)
-- *     2. the target cgroup is a descendant of your own cgroup
-- */
--static struct cgroup_subsys_state *ns_create(struct cgroup_subsys *ss,
--						struct cgroup *cgroup)
--{
--	struct ns_cgroup *ns_cgroup;
--
--	if (!capable(CAP_SYS_ADMIN))
--		return ERR_PTR(-EPERM);
--	if (!cgroup_is_descendant(cgroup, current))
--		return ERR_PTR(-EPERM);
--
--	ns_cgroup = kzalloc(sizeof(*ns_cgroup), GFP_KERNEL);
--	if (!ns_cgroup)
--		return ERR_PTR(-ENOMEM);
--	return &ns_cgroup->css;
--}
--
--static void ns_destroy(struct cgroup_subsys *ss,
--			struct cgroup *cgroup)
--{
--	struct ns_cgroup *ns_cgroup;
--
--	ns_cgroup = cgroup_to_ns(cgroup);
--	kfree(ns_cgroup);
--}
--
--struct cgroup_subsys ns_subsys = {
--	.name = "ns",
--	.can_attach = ns_can_attach,
--	.create = ns_create,
--	.destroy  = ns_destroy,
--	.subsys_id = ns_subsys_id,
--};
-diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
-index f74e6c0..014a90d 100644
---- a/kernel/nsproxy.c
-+++ b/kernel/nsproxy.c
-@@ -198,10 +198,6 @@ int unshare_nsproxy_namespaces(unsigned long unshare_flags,
- 		goto out;
- 	}
- 
--	err = ns_cgroup_clone(current, task_pid(current));
--	if (err)
--		put_nsproxy(*new_nsp);
--
- out:
- 	return err;
- }
 -- 
-1.7.0.4
+	Three Cheers,
+	Balbir
