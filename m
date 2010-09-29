@@ -1,14 +1,14 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Subject: Re: [PATCH 2/6] [RFC] Create the .relink file_operation
-Date: Wed, 29 Sep 2010 16:16:10 -0400
-Message-ID: <4CA39E8A.1040805__5777.2702807144$1285791500$gmane$org@cs.columbia.edu>
-References: <6987185123220ec2034677299859c5a63eaf2aed.1285278339.git.matthltc@us.ibm.com>	<d91e3660266d3a2956c4d1aebc9cb618081b21ef.1285278339.git.matthltc@us.ibm.com>	<20100926190837.GA9308@cynthia.pants.nu>	<20100927191628.GN23839@count0.beaverton.ibm.com>
-	<20100927220346.GA30726@cynthia.pants.nu>
+Date: Wed, 29 Sep 2010 16:19:31 -0400
+Message-ID: <4CA39F53.6040506__2033.72222972593$1285791678$gmane$org@cs.columbia.edu>
+References: <1285278812-16972-1-git-send-email-matthltc@us.ibm.com>	<6987185123220ec2034677299859c5a63eaf2aed.1285278339.git.matthltc@us.ibm.com>
+	<d91e3660266d3a2956c4d1aebc9cb618081b21ef.1285278339.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100927220346.GA30726-gUHvAUm18WIVF38mYka5EQ@public.gmane.org>
+In-Reply-To: <d91e3660266d3a2956c4d1aebc9cb618081b21ef.1285278339.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,60 +18,70 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Brad Boyer <flar-POGeQm5F+FGB+jHODAdFcQ@public.gmane.org>
-Cc: Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andreas Dilger <adilger.kernel-m1MBpc4rdrD3fQ9qLvQP4Q@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, linux-ext4-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andreas Dilger <adilger.kernel-m1MBpc4rdrD3fQ9qLvQP4Q@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, linux-ext4-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
 
-On 09/27/2010 06:03 PM, Brad Boyer wrote:
-> On Mon, Sep 27, 2010 at 12:16:28PM -0700, Matt Helsley wrote:
->> On Sun, Sep 26, 2010 at 12:08:37PM -0700, Brad Boyer wrote:
->>> On Thu, Sep 23, 2010 at 02:53:28PM -0700, Matt Helsley wrote:
->>>> Not all filesystems will necessarily be able to support relinking an
->>>> orphan inode back into the filesystem. Some offlist feedback suggested
->>>> that instead of overloading .link that relinking should be a separate
->>>> file operation for this reason.
-
-In light of Brad's comment (below), maybe elaborate on this:
-
-   Some offlist feedback suggested that instead of overloading .link
-   to provide this functionality, relinking of an orphan inode back
-   into the filesystem should be a separate file operation.
-   This is because some filesystems may not be able to support this
-   operation. Their existing .link already assumes that the inode
-   isn't orphan (i_nlink != 0), but still won't explicitly test for
-   the condition. If this is the case, the overloading .link may
-   break their assumptions and a call to relink may not be handled
-   too gracefully.
-
->>>>
->>>> Since .relink is a superset of .link make the VFS call .relink where
->>>> possible and .link otherwise.
->>>>
->>>> The next commit will change ext3/4 to enable this operation.
->>>
->>> I may have missed something in one of these patches (patch 1 and any
->>> original summary if there was one don't appear in my email), but
->>> what is the point of the new operation? I didn't see any case that
->>> treats one any different than the other. What is disallowed (and how)
->>> for a driver which does not implement .relink but has .link?
->>
->> Did you get patch 3? It shows how ext3/ext4 add the ability to take an
->> inode that has been unlinked, placed onto the orphan list, and relink it.
+On 09/23/2010 05:53 PM, Matt Helsley wrote:
+> Not all filesystems will necessarily be able to support relinking an
+> orphan inode back into the filesystem. Some offlist feedback suggested
+> that instead of overloading .link that relinking should be a separate
+> file operation for this reason.
 >
-> Yes, I did get patch 3. I think you misunderstood my question. You point
-> both .link and .relink to the same function in ext3 and ext4. The common
-> code which calls them will call .relink if it is set and .link if it is
-> not set. If nothing acts any different based on .relink being NULL or
-> not-NULL, and the only implementation isn't any different from .link
-> what was the point of introducing a new operation?
+> Since .relink is a superset of .link make the VFS call .relink where
+> possible and .link otherwise.
 >
-> What I expected to see was that some particular code path would check
-> if .relink was NULL and fail in that case. Unless there is a code path
-> that will only call .relink and not .link, it seems useless to me.
+> The next commit will change ext3/4 to enable this operation.
+>
+> Signed-off-by: Matt Helsley<matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Cc: Theodore Ts'o<tytso-3s7WtUTddSA@public.gmane.org>
+> Cc: Andreas Dilger<adilger.kernel-m1MBpc4rdrD3fQ9qLvQP4Q@public.gmane.org>
+> Cc: Jan Kara<jack-AlSwsSmVLrQ@public.gmane.org>
+> Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> Cc: linux-ext4-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> Cc: Al Viro<viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+> ---
+>   fs/namei.c         |    5 ++++-
+>   include/linux/fs.h |    1 +
+>   2 files changed, 5 insertions(+), 1 deletions(-)
+>
+> diff --git a/fs/namei.c b/fs/namei.c
+> index a7dce91..eb279e3 100644
+> --- a/fs/namei.c
+> +++ b/fs/namei.c
+> @@ -2446,7 +2446,10 @@ int vfs_link(struct dentry *old_dentry, struct inode *dir, struct dentry *new_de
+>   		return error;
+>
+>   	mutex_lock(&inode->i_mutex);
+> -	error = dir->i_op->link(old_dentry, dir, new_dentry);
+> +	if (dir->i_op->relink)
+> +		error = dir->i_op->relink(old_dentry, dir, new_dentry);
+> +	else
+> +		error = dir->i_op->link(old_dentry, dir, new_dentry);
 
-Does the above help clarify this ?
-The test performed in vfs_link().
+Can there be a scenario/filesystem in which .relink implementation
+is so much more complex (and expensive) than .link ?
+
+If the answer is "yes", then this we probably don't want to do
+this, and let vfs_link() call .link, and instead add a new helper
+vfs_relink().
 
 Oren.
+
+>   	mutex_unlock(&inode->i_mutex);
+>   	if (!error)
+>   		fsnotify_link(dir, inode, new_dentry);
+> diff --git a/include/linux/fs.h b/include/linux/fs.h
+> index ee725ff..d932eb7 100644
+> --- a/include/linux/fs.h
+> +++ b/include/linux/fs.h
+> @@ -1528,6 +1528,7 @@ struct inode_operations {
+>   	int (*create) (struct inode *,struct dentry *,int, struct nameidata *);
+>   	struct dentry * (*lookup) (struct inode *,struct dentry *, struct nameidata *);
+>   	int (*link) (struct dentry *,struct inode *,struct dentry *);
+> +	int (*relink) (struct dentry *,struct inode *,struct dentry *);
+>   	int (*unlink) (struct inode *,struct dentry *);
+>   	int (*symlink) (struct inode *,struct dentry *,const char *);
+>   	int (*mkdir) (struct inode *,struct dentry *,int);
