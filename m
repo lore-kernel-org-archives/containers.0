@@ -1,10 +1,14 @@
-From: Nazareno Smoker <fumatory-WjtuqceRds59qp0gCGiW7Q@public.gmane.org>
-Subject: Holy, why, pray? I have the solos to-ni
-Date: Fri, 01 Oct 2010 07:22:03 +0200
-Message-ID: <4CA56EDA.2030805@jjazproject.com>
+From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Subject: Re: [PATCH] Replace pid_t in autofs4 with struct pid reference.
+Date: Fri, 01 Oct 2010 12:48:38 +0200
+Message-ID: <4CA5BC86.2040006@free.fr>
+References: <1285840564-10251-1-git-send-email-daniel.lezcano@free.fr>
+	<20100930223639.GA12959@hallyn.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------020001030801080306080201"
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20100930223639.GA12959-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -14,263 +18,130 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Meck Schroff <containers-3NddpPZAyC0@public.gmane.org>
+To: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Cc: Helmut Lichtenberg <heli-dxCdbQ03lbiELgA04lAiVw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Eric Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Ian Kent <raven-PKsaG3nR2I+sTnJN9+BGXg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format.
---------------020001030801080306080201
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Content-Transfer-Encoding: 7bit
+On 10/01/2010 12:36 AM, Serge Hallyn wrote:
+> Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
+>    
+>> I resurect and refreshed this old patch from
+>> https://lists.linux-foundation.org/pipermail/containers/2007-February/003726.html
+>>
+>> This patch makes automount to work within a container.
+>>
+>> Make autofs4 container-friendly by caching struct pid reference rather
+>> than pid_t and using pid_nr() to retreive a task's pid_t.
+>>
+>> ChangeLog:
+>> 	- Refreshed against linux-next (added dev-ioctl.c)
+>> 	- Fix Eric Biederman's comments - Use find_get_pid() to hold a
+>> 	  reference to oz_pgrp and release while unmounting; separate out
+>> 	  changes to autofs and autofs4.
+>> 	- Also rollback my earlier change to autofs_wait_queue (pid and tgid
+>> 	  in the wait queue are just used to write to a userspace daemon's
+>> 	  pipe).
+>>          - Fix Cedric's comments: retain old prototype of parse_options()
+>>            and move necessary change to its caller.
+>>
+>> Signed-off-by: Sukadev Bhattiprolu<sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+>> Signed-off-by: Daniel Lezcano<daniel.lezcano-GANU6spQydw@public.gmane.org>
+>> Cc: Ian Kent<raven-PKsaG3nR2I+sTnJN9+BGXg@public.gmane.org>
+>> Cc: Cedric Le Goater<clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+>> Cc: Dave Hansen<haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+>> Cc: Serge E. Hallyn<serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+>> Cc: Eric Biederman<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+>> Cc: Helmut Lichtenberg<heli-dxCdbQ03lbiELgA04lAiVw@public.gmane.org>
+>> ---
+>>      
 
- Say it again; don't tremble like that." "I would die," she
-whispered,
-"A thousand times I would die rather than have brought
-this on you. If I had known--if I had guessed!" "Your hair
-is like down," said Velasco, "a soft, golden fluff. I can't
-see it, or you; are you there? I shouldn't know if I didn't feel you
-breathing,
+[ cut ]
 
-and the touch of your head and your hand. Go to sleep; I will watch."
-She murmured and stirred in his arms. "Yes, yes, I forgive you. I
-never was angry
+>> @@ -133,7 +133,7 @@ static int autofs4_show_options(struct seq_file *m, struct vfsmount *mnt)
+>>   		seq_printf(m, ",uid=%u", root_inode->i_uid);
+>>   	if (root_inode->i_gid != 0)
+>>   		seq_printf(m, ",gid=%u", root_inode->i_gid);
+>> -	seq_printf(m, ",pgrp=%d", sbi->oz_pgrp);
+>> +	seq_printf(m, ",pgrp=%d", pid_nr(sbi->oz_pgrp));
+>>   	seq_printf(m, ",timeout=%lu", sbi->exp_timeout/HZ);
+>>   	seq_printf(m, ",minproto=%d", sbi->min_proto);
+>>   	seq_printf(m, ",maxproto=%d", sbi->max_proto);
+>> @@ -263,6 +263,7 @@ int autofs4_fill_super(struct super_block *s, void *data, int silent)
+>>   	int pipefd;
+>>   	struct autofs_sb_info *sbi;
+>>   	struct autofs_info *ino;
+>> +	pid_t pgid;
+>>
+>>   	sbi = kzalloc(sizeof(*sbi), GFP_KERNEL);
+>>   	if (!sbi)
+>> @@ -275,7 +276,7 @@ int autofs4_fill_super(struct super_block *s, void *data, int silent)
+>>   	sbi->pipe = NULL;
+>>   	sbi->catatonic = 1;
+>>   	sbi->exp_timeout = 0;
+>> -	sbi->oz_pgrp = task_pgrp_nr(current);
+>> +	sbi->oz_pgrp = task_pgrp(current);
+>>   	sbi->sb = s;
+>>   	sbi->version = 0;
+>>   	sbi->sub_version = 0;
+>> @@ -314,7 +315,7 @@ int autofs4_fill_super(struct super_block *s, void *data, int silent)
+>>
+>>   	/* Can this call block? */
+>>   	if (parse_options(data,&pipefd,&root_inode->i_uid,&root_inode->i_gid,
+>> -				&sbi->oz_pgrp,&sbi->type,&sbi->min_proto,
+>> +				&pgid,&sbi->type,&sbi->min_proto,
+>>   				&sbi->max_proto)) {
+>>   		printk("autofs: called with bogus options\n");
+>>   		goto fail_dput;
+>> @@ -342,12 +343,19 @@ int autofs4_fill_super(struct super_block *s, void *data, int silent)
+>>   		sbi->version = sbi->max_proto;
+>>   	sbi->sub_version = AUTOFS_PROTO_SUBVERSION;
+>>
+>> -	DPRINTK("pipe fd = %d, pgrp = %u", pipefd, sbi->oz_pgrp);
+>> +	DPRINTK("pipe fd = %d, pgrp = %u", pipefd, pgid);
+>> +
+>> +	sbi->oz_pgrp = find_get_pid(pgid);
+>>      
+> This is a little backward.  You first get current's pgid pid, but don't
+> take a reference;  then parse_options gets current's pgid pid_nr (and
+> keeps that if no pgid was specified), passes that back here, and here we
+> get the pid_nr and take a ref.  I was actually first going to say that
+> I didn't want to block this patch on this, but it should be cleaned up
+> at some point (i.e. at top of this function get the struct pid and get
+> a ref, pass that to parse_options, and have parse_options get the
+> specified pgid instead if a valid one was passed in.
+>    
 
---------------020001030801080306080201
-Content-Type: application/octet-stream;
- name="blackwater.jpg"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment;
- filename="blackwater.jpg"
+I agree, I will cleanup this part.
 
-/9j/4AAQSkZJRgABAQEBLAEsAAD/2wBDACAWGBwYFCAcGhwkIiAmMFA0MCwsMGJGSjpQdGZ6
-eHJmcG6AkLicgIiuim5woNqirr7EztDOfJri8uDI8LjKzsb/2wBDASIkJDAqMF40NF7GhHCE
-xsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsb/wAAR
-CAEbATADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAA
-AgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkK
-FhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWG
-h4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl
-5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREA
-AgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYk
-NOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOE
-hYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk
-5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDbpR1ppYD60AkkcYHvSAWgkDqcU047sT7C
-gey/iaAF3egJpVyQeMUmGPU4+gpyjg8k5oYDee5A/CkyO8n8qdtUdsmjgelOwXG5H/PT+VGR
-/wA9P1FPyP8AJo49fzosFxn0cGj5t46Hg+1OKjuBTdo3jAxwelIAJOVyO/al3D1x9eKQjlcE
-9aX5vY/pQAfxj6H+lLTBjePlxwadz2INMBaT+M/QUbvUEUgILHBzwKAHUg+8x/Cl70g6t9aA
-FooooEFFFBOAT6UANj6fl/IU6mxjC06kNhRRRQAUjdPxH86WkbsPU0ALTf8Alj/wGlY4Ukel
-DcKB7j+dAC0UUUxCL90H15paRPuD6UpIHU4oGFQX/wDx4XP/AFyb+RqbJPQH8eKr3+fsFxlg
-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
---------------020001030801080306080201
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+Also, I noticed the:
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---------------020001030801080306080201--
+         ...
+         case Opt_pgrp:
+             if (match_int(args, &option))
+                 return 1;
+             *pgrp = option;
+             break;
+         ...
+
+ouch !
+
+
+> But now I'm wondering whether this actually is unsafe, bc I'm not quite
+> sure how to read the comment above task_pgrp() (in sched.h) says not
+> to dereference this if it wasn't gotten under task_lock or rcu_read_lock.
+> Which this isn't.  So is this actually unsafe?
+>    
+
+Good point.
+
+task_pgrp_nr calls __task_pid_nr_ns which does rcu_read_lock.
+task_pgrp does not take any lock.
+
+So you are right, replacing task_pgrp_nr by task_pgrp is unsafe.
+
+I suppose get_task_pid(current, PIDTYPE_PGID) is the right call.
+
+
+Thanks for looking at the patch.
+
+   -- Daniel
