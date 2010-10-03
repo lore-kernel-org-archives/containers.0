@@ -1,105 +1,103 @@
-From: Daniel Lezcano <daniel.lezcano@free.fr>
+From: jamal <hadi@cyberus.ca>
 Subject: Re: [PATCH 8/8] net: Implement socketat.
-Date: Sat, 02 Oct 2010 23:13:32 +0200
-Message-ID: <4CA7A07C.5030504@free.fr>
-References: <m1ocborgq7.fsf@fess.ebiederm.org>	 <m1bp7oq1u8.fsf@fess.ebiederm.org>  <4C9B162E.7040201@parallels.com>	 <1285240797.5036.5.camel@bigi>  <4C9B3B06.900@parallels.com> <1285242055.5036.9.camel@bigi> <4C9B3F9C.8080506@parallels.com>
+Date: Sun, 03 Oct 2010 09:44:01 -0400
+Message-ID: <1286113441.3812.229.camel@bigi>
+References: <m1ocborgq7.fsf@fess.ebiederm.org>
+	 <m1bp7oq1u8.fsf@fess.ebiederm.org>  <4C9B162E.7040201@parallels.com>
+	 <1285240797.5036.5.camel@bigi>  <4C9B3B06.900@parallels.com>
+	 <1285242055.5036.9.camel@bigi> <4C9B3F9C.8080506@parallels.com>
+	 <4CA7A07C.5030504@free.fr>
+Reply-To: hadi@cyberus.ca
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain
 Content-Transfer-Encoding: 7bit
 Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <4C9B3F9C.8080506@parallels.com>
+In-Reply-To: <4CA7A07C.5030504@free.fr>
 Sender: linux-fsdevel-owner@vger.kernel.org
-To: Pavel Emelyanov <xemul@parallels.com>
-Cc: hadi@cyberus.ca, "Eric W. Biederman" <ebiederm@xmission.com>, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, netfilter-devel@vger.kernel.org, linux-fsdevel@vger.kernel.org, Linus Torvalds <torvalds@linux-foundation.org>, Michael Kerrisk <mtk.manpages@gmail.com>, Ulrich Drepper <drepper@gmail.com>, Al Viro <viro@ZenIV.linux.org.uk>, David Miller <davem@davemloft.net>, "Serge E. Hallyn" <serge@hallyn.com>, Pavel Emelyanov <xemul@openvz.org>, Ben Greear <greearb@candelatech.com>, Matt Helsley <matthltc@us.ibm.com>, Jonathan Corbet <corbet@lwn.net>, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, Jan Engelhardt <jengelh@medozas.de>, Patrick McHardy <kaber@trash.net>
+To: Daniel Lezcano <daniel.lezcano@free.fr>
+Cc: Pavel Emelyanov <xemul@parallels.com>, "Eric W. Biederman" <ebiederm@xmission.com>, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, netfilter-devel@vger.kernel.org, linux-fsdevel@vger.kernel.org, Linus Torvalds <torvalds@linux-foundation.org>, Michael Kerrisk <mtk.manpages@gmail.com>, Ulrich Drepper <drepper@gmail.com>, Al Viro <viro@ZenIV.linux.org.uk>, David Miller <davem@davemloft.net>, "Serge E. Hallyn" <serge@hallyn.com>, Pavel Emelyanov <xemul@openvz.org>, Ben Greear <greearb@candelatech.com>, Matt Helsley <matthltc@us.ibm.com>, Jonathan Corbet <corbet@lwn.net>, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, Jan Engelhardt <jengelh@medozas.de>, Patrick McHardy <kaber@trash.net>
 List-Id: containers.vger.kernel.org
 
-On 09/23/2010 01:53 PM, Pavel Emelyanov wrote:
-> On 09/23/2010 03:40 PM, jamal wrote:
->    
->> On Thu, 2010-09-23 at 15:33 +0400, Pavel Emelyanov wrote:
->>
->>      
->>> This particular usecase is unneeded once you have the "enter" ability.
->>>        
->> Is that cheaper from a syscall count/cost?
->>      
-> Why does it matter? You told, that the usage scenario was to
-> add routes to container. If I do 2 syscalls instead of 1, is
-> it THAT worse?
+Hi Daniel,
+
+Thanks for clarifying this ..
+
+On Sat, 2010-10-02 at 23:13 +0200, Daniel Lezcano wrote:
+> Just to clarify this point. You enter the namespace, create the socket
+> and go back to the initial namespace (or create a new one). Further 
+> operations can be made against this fd because it is the network 
+> namespace stored in the sock struct which is used, not the current 
+> process network namespace which is used at the socket creation only.
+> 
+> We can actually already do that by unsharing and then create a
+> socket. 
+> This socket will pin the namespace and can be used as a control socket
+> for the namespace (assuming the socket domain will be ok for all the 
+> operations).
 >
->    
->> i.e do I have to enter every time i want to write/read this fd?
->>      
-> No - you enter once, create a socket and do whatever you need
-> withing the enterned namespace.
->    
+> Jamal, I don't know what kind of application you want to use but if I 
+> assume you want to create a process controlling 1024 netns, 
 
-Just to clarify this point. You enter the namespace, create the socket 
-and go back to the initial namespace (or create a new one). Further 
-operations can be made against this fd because it is the network 
-namespace stored in the sock struct which is used, not the current 
-process network namespace which is used at the socket creation only.
+At the moment i am looking at 8K on a Nehalem with lots of RAM. They
+will mostly be created at startup but some could be created afterwards.
+Each will have its own netdevs etc. also created at startup (and some
+other config that may happen later). 
+Because startup time may accumulate, it is clearly important to me
+to pick whatever scheme that reduces the number of calls...
 
-We can actually already do that by unsharing and then create a socket. 
-This socket will pin the namespace and can be used as a control socket 
-for the namespace (assuming the socket domain will be ok for all the 
-operations).
+> let's try to identificate what happen with setns and with socketat :
+> 
+> With setns:
+> 
+>      * open /proc/self/ns/net (1)
+>      * unshare the netns
+>      * open /proc/self/ns/net (2)
+>      * setns (1)
+>      * create a virtual network device
+>      * move the virtual device to (2) (using the set netns by fd)
+>      * unshare the netns
+>      ...
+> 
+> With socketat:
+> 
+>      * open a socket (1)
+>      * unshare the netns
+>      * open a netlink with socketat(1) => (2)
+>      * create a virtual device using (2) (at this point it is
+> init_net_ns)
+>      * move the virtual device to the current netns (using the set
+> netns 
+> by pid)
+>      * open a socket (3)
+>      * unshare the netns
+>      ...
+> 
+> We have the same number of file descriptors kept opened. Except, with 
+> setns we can bind mount the directory somewhere, that will pin the 
+> namespace and then we can close the /proc/self/ns/net file descriptors
+> and reopen them later.
+> 
 
-Jamal, I don't know what kind of application you want to use but if I 
-assume you want to create a process controlling 1024 netns, let's try to 
-identificate what happen with setns and with socketat :
+Ok, so a wrapper such as: create_socket_on(namespaceid)
+will have generally less system calls with socketat()
 
-With setns:
+> If your application has to do a lot of specific network processing, 
+> during its life cycle, in different namespaces, the socketat syscall 
+> will be better because it will reduce the number of syscalls but at
+> the cost of keeping the file descriptors opened (potentially a big
+> number). Otherwise, setns should fit your needs.
 
-     * open /proc/self/ns/net (1)
+Makes sense. 
+
+One thing still confuses me...
+The app control point is in namespace0. I still want to be able to
+"boot" namespaces first and maybe a few seconds later do a socketat()...
+and create devices, tcp sockets etc. I suspect create_ns(namespace-name)
+would involve:
+     * open /proc/self/ns/net (namespace-name)
      * unshare the netns
-     * open /proc/self/ns/net (2)
-     * setns (1)
-     * create a virtual network device
-     * move the virtual device to (2) (using the set netns by fd)
-     * unshare the netns
-     ...
+Is this correct?
 
-With socketat:
-
-     * open a socket (1)
-     * unshare the netns
-     * open a netlink with socketat(1) => (2)
-     * create a virtual device using (2) (at this point it is init_net_ns)
-     * move the virtual device to the current netns (using the set netns 
-by pid)
-     * open a socket (3)
-     * unshare the netns
-     ...
-
-We have the same number of file descriptors kept opened. Except, with 
-setns we can bind mount the directory somewhere, that will pin the 
-namespace and then we can close the /proc/self/ns/net file descriptors 
-and reopen them later.
-
-If your application has to do a lot of specific network processing, 
-during its life cycle, in different namespaces, the socketat syscall 
-will be better because it will reduce the number of syscalls but at the 
-cost of keeping the file descriptors opened (potentially a big number). 
-Otherwise, setns should fit your needs.
-
-
-
->> How does poll/select work in that enter scenario?
->>      
-> Just like it used to before the enter.
->
->    
->> cheers,
->> jamal
->>
->>
->>      
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/
->
->    
+cheers,
+jamal
 
