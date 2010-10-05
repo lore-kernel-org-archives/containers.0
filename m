@@ -1,72 +1,101 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/1] cgroups: strcpy destination string overflow
-Date: Tue, 5 Oct 2010 12:50:41 -0700
-Message-ID: <AANLkTi=W7-aA1kG7-BQf7j0Yoykb2fY0gnLyQXsz1JMK__44233.1350678161$1286308275$gmane$org@mail.gmail.com>
-References: <cover.1286193571.git.EXT-Eugeny.Kuznetsov@nokia.com>
-	<2acb25707f916de866aa520b1a9f04f0f48c949c.1286193571.git.EXT-Eugeny.Kuznetsov@nokia.com>
-	<20101005124802.989f6214.akpm@linux-foundation.org>
+From: Greg Thelen <gthelen@google.com>
+Subject: Re: [PATCH 03/10] memcg: create extensible page stat update routines
+Date: Tue, 05 Oct 2010 12:59:37 -0700
+Message-ID: <xr93aamstnpy.fsf@ninji.mtv.corp.google.com>
+References: <1286175485-30643-1-git-send-email-gthelen@google.com>
+	<1286175485-30643-4-git-send-email-gthelen@google.com>
+	<20101005154250.GA9515@barrios-desktop>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20101005124802.989f6214.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org, Evgeny Kuznetsov <EXT-Eugeny.Kuznetsov-xNZwKgViW5gAvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <20101005154250.GA9515@barrios-desktop> (Minchan Kim's message of
+	"Wed, 6 Oct 2010 00:42:50 +0900")
+Sender: owner-linux-mm@kvack.org
+To: Minchan Kim <minchan.kim@gmail.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
 List-Id: containers.vger.kernel.org
 
-On Tue, Oct 5, 2010 at 12:48 PM, Andrew Morton
-<akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> wrote:
-> On Tue, =A05 Oct 2010 12:38:05 +0400
-> Evgeny Kuznetsov <EXT-Eugeny.Kuznetsov-xNZwKgViW5gAvxtiuMwx3w@public.gmane.org> wrote:
->
->> From: Evgeny Kuznetsov <ext-eugeny.kuznetsov-xNZwKgViW5gAvxtiuMwx3w@public.gmane.org>
->>
->> Function "strcpy" is used without check for maximum allowed source
->> string length and could cause destination string overflow.
->> Check for string length is added before using "strcpy".
->> Function now is return error if source string length is more than
->> a maximum.
->>
->> Signed-off-by: Evgeny Kuznetsov <EXT-Eugeny.Kuznetsov-xNZwKgViW5gAvxtiuMwx3w@public.gmane.org>
+Minchan Kim <minchan.kim@gmail.com> writes:
+
+> On Sun, Oct 03, 2010 at 11:57:58PM -0700, Greg Thelen wrote:
+>> Replace usage of the mem_cgroup_update_file_mapped() memcg
+>> statistic update routine with two new routines:
+>> * mem_cgroup_inc_page_stat()
+>> * mem_cgroup_dec_page_stat()
+>> 
+>> As before, only the file_mapped statistic is managed.  However,
+>> these more general interfaces allow for new statistics to be
+>> more easily added.  New statistics are added with memcg dirty
+>> page accounting.
+>> 
+>> Signed-off-by: Greg Thelen <gthelen@google.com>
+>> Signed-off-by: Andrea Righi <arighi@develer.com>
 >> ---
->> =A0kernel/cgroup.c | =A0 =A02 ++
->> =A01 files changed, 2 insertions(+), 0 deletions(-)
->>
->> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
->> index c9483d8..82bbede 100644
->> --- a/kernel/cgroup.c
->> +++ b/kernel/cgroup.c
->> @@ -1883,6 +1883,8 @@ static int cgroup_release_agent_write(struct cgrou=
-p *cgrp, struct cftype *cft,
->> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =
-const char *buffer)
->> =A0{
->> =A0 =A0 =A0 BUILD_BUG_ON(sizeof(cgrp->root->release_agent_path) < PATH_M=
-AX);
->> + =A0 =A0 if (strlen(buffer) >=3D PATH_MAX)
->> + =A0 =A0 =A0 =A0 =A0 =A0 return -EINVAL;
->> =A0 =A0 =A0 if (!cgroup_lock_live_group(cgrp))
->> =A0 =A0 =A0 =A0 =A0 =A0 =A0 return -ENODEV;
->> =A0 =A0 =A0 strcpy(cgrp->root->release_agent_path, buffer);
+>>  include/linux/memcontrol.h |   31 ++++++++++++++++++++++++++++---
+>>  mm/memcontrol.c            |   17 ++++++++---------
+>>  mm/rmap.c                  |    4 ++--
+>>  3 files changed, 38 insertions(+), 14 deletions(-)
+>> 
+>> diff --git a/include/linux/memcontrol.h b/include/linux/memcontrol.h
+>> index 159a076..7c7bec4 100644
+>> --- a/include/linux/memcontrol.h
+>> +++ b/include/linux/memcontrol.h
+>> @@ -25,6 +25,11 @@ struct page_cgroup;
+>>  struct page;
+>>  struct mm_struct;
+>>  
+>> +/* Stats that can be updated by kernel. */
+>> +enum mem_cgroup_write_page_stat_item {
+>> +	MEMCG_NR_FILE_MAPPED, /* # of pages charged as file rss */
+>> +};
+>> +
 >
-> I don't think this can happen, because cftype.max_write_len is
-> PATH_MAX.
+> mem_cgrou_"write"_page_stat_item?
+> Does "write" make sense to abstract page_state generally?
 
-Yes, it shouldn't be possible.
+First I will summarize the portion of the design relevant to this
+comment:
 
->
-> But it's pretty unobvious if this is actually true, and the code is
-> fragile against future changes.
+This patch series introduces two sets of memcg statistics.
+a) the writable set of statistics the kernel updates when pages change
+   state (example: when a page becomes dirty) using:
+     mem_cgroup_inc_page_stat(struct page *page,
+     				enum mem_cgroup_write_page_stat_item idx)
+     mem_cgroup_dec_page_stat(struct page *page,
+     				enum mem_cgroup_write_page_stat_item idx)
 
-Fair enough - adding the check doesn't hurt anything.
+b) the read-only set of statistics the kernel queries to measure the
+   amount of dirty memory used by the current cgroup using:
+     s64 mem_cgroup_page_stat(enum mem_cgroup_read_page_stat_item item)
 
-Acked-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+   This read-only set of statistics is set of a higher level conceptual
+   counters.  For example, MEMCG_NR_DIRTYABLE_PAGES is the sum of the
+   counts of pages in various states (active + inactive).  mem_cgroup
+   exports this value as a higher level counter rather than individual
+   counters (active & inactive) to minimize the number of calls into
+   mem_cgroup_page_stat().  This avoids extra calls to cgroup tree
+   iteration with for_each_mem_cgroup_tree().
+
+Notice that each of the two sets of statistics are addressed by a
+different type, mem_cgroup_{read vs write}_page_stat_item.
+
+This particular patch (memcg: create extensible page stat update
+routines) introduces part of this design.  A later patch I emailed
+(memcg: add dirty limits to mem_cgroup) added
+mem_cgroup_read_page_stat_item.
+
+
+I think the code would read better if I renamed 
+enum mem_cgroup_write_page_stat_item to 
+enum mem_cgroup_update_page_stat_item.
+
+Would this address your concern?
+
+--
+Greg
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
