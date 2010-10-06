@@ -1,96 +1,83 @@
-From: Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
-Subject: Re: [PATCH 02/10] memcg: document cgroup dirty memory interfaces
-Date: Wed, 6 Oct 2010 09:49:28 +0900
-Message-ID: <20101006094928.cae0dbf7.nishimura@mxp.nes.nec.co.jp>
+From: Balbir Singh <balbir@linux.vnet.ibm.com>
+Subject: Re: [PATCH 00/10] memcg: per cgroup dirty page accounting
+Date: Wed, 6 Oct 2010 08:53:10 +0530
+Message-ID: <20101006032310.GU7896@balbir.in.ibm.com>
 References: <1286175485-30643-1-git-send-email-gthelen@google.com>
-	<1286175485-30643-3-git-send-email-gthelen@google.com>
+Reply-To: balbir@linux.vnet.ibm.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=iso-8859-1
 Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <1286175485-30643-3-git-send-email-gthelen@google.com>
+Content-Disposition: inline
+In-Reply-To: <1286175485-30643-1-git-send-email-gthelen@google.com>
 Sender: owner-linux-mm@kvack.org
 To: Greg Thelen <gthelen@google.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
 List-Id: containers.vger.kernel.org
 
-On Sun,  3 Oct 2010 23:57:57 -0700
-Greg Thelen <gthelen@google.com> wrote:
+* Greg Thelen <gthelen@google.com> [2010-10-03 23:57:55]:
 
-> Document cgroup dirty memory interfaces and statistics.
+> This patch set provides the ability for each cgroup to have independent dirty
+> page limits.
 > 
-> Signed-off-by: Andrea Righi <arighi@develer.com>
-> Signed-off-by: Greg Thelen <gthelen@google.com>
-
-I think you will change "nfs" to "nfs_unstable", but anyway,
-
-Acked-by: Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
-
-Thanks
-Daisuke Nishimura.
-
-> ---
->  Documentation/cgroups/memory.txt |   37 +++++++++++++++++++++++++++++++++++++
->  1 files changed, 37 insertions(+), 0 deletions(-)
+> Limiting dirty memory is like fixing the max amount of dirty (hard to reclaim)
+> page cache used by a cgroup.  So, in case of multiple cgroup writers, they will
+> not be able to consume more than their designated share of dirty pages and will
+> be forced to perform write-out if they cross that limit.
 > 
-> diff --git a/Documentation/cgroups/memory.txt b/Documentation/cgroups/memory.txt
-> index 7781857..eab65e2 100644
-> --- a/Documentation/cgroups/memory.txt
-> +++ b/Documentation/cgroups/memory.txt
-> @@ -385,6 +385,10 @@ mapped_file	- # of bytes of mapped file (includes tmpfs/shmem)
->  pgpgin		- # of pages paged in (equivalent to # of charging events).
->  pgpgout		- # of pages paged out (equivalent to # of uncharging events).
->  swap		- # of bytes of swap usage
-> +dirty		- # of bytes that are waiting to get written back to the disk.
-> +writeback	- # of bytes that are actively being written back to the disk.
-> +nfs		- # of bytes sent to the NFS server, but not yet committed to
-> +		the actual storage.
->  inactive_anon	- # of bytes of anonymous memory and swap cache memory on
->  		LRU list.
->  active_anon	- # of bytes of anonymous and swap cache memory on active
-> @@ -453,6 +457,39 @@ memory under it will be reclaimed.
->  You can reset failcnt by writing 0 to failcnt file.
->  # echo 0 > .../memory.failcnt
->  
-> +5.5 dirty memory
-> +
-> +Control the maximum amount of dirty pages a cgroup can have at any given time.
-> +
-> +Limiting dirty memory is like fixing the max amount of dirty (hard to reclaim)
-> +page cache used by a cgroup.  So, in case of multiple cgroup writers, they will
-> +not be able to consume more than their designated share of dirty pages and will
-> +be forced to perform write-out if they cross that limit.
-> +
-> +The interface is equivalent to the procfs interface: /proc/sys/vm/dirty_*.  It
-> +is possible to configure a limit to trigger both a direct writeback or a
-> +background writeback performed by per-bdi flusher threads.  The root cgroup
-> +memory.dirty_* control files are read-only and match the contents of
-> +the /proc/sys/vm/dirty_* files.
-> +
-> +Per-cgroup dirty limits can be set using the following files in the cgroupfs:
-> +
-> +- memory.dirty_ratio: the amount of dirty memory (expressed as a percentage of
-> +  cgroup memory) at which a process generating dirty pages will itself start
-> +  writing out dirty data.
-> +
-> +- memory.dirty_bytes: the amount of dirty memory (expressed in bytes) in the
-> +  cgroup at which a process generating dirty pages will start itself writing out
-> +  dirty data.
-> +
-> +- memory.dirty_background_ratio: the amount of dirty memory of the cgroup
-> +  (expressed as a percentage of cgroup memory) at which background writeback
-> +  kernel threads will start writing out dirty data.
-> +
-> +- memory.dirty_background_bytes: the amount of dirty memory (expressed in bytes)
-> +  in the cgroup at which background writeback kernel threads will start writing
-> +  out dirty data.
-> +
->  6. Hierarchy support
->  
->  The memory controller supports a deep hierarchy and hierarchical accounting.
-> -- 
-> 1.7.1
+> These patches were developed and tested on mmotm 2010-09-28-16-13.  The patches
+> are based on a series proposed by Andrea Righi in Mar 2010.
 > 
+> Overview:
+> - Add page_cgroup flags to record when pages are dirty, in writeback, or nfs
+>   unstable.
+> - Extend mem_cgroup to record the total number of pages in each of the 
+>   interesting dirty states (dirty, writeback, unstable_nfs).  
+> - Add dirty parameters similar to the system-wide  /proc/sys/vm/dirty_*
+>   limits to mem_cgroup.  The mem_cgroup dirty parameters are accessible
+>   via cgroupfs control files.
+> - Consider both system and per-memcg dirty limits in page writeback when
+>   deciding to queue background writeback or block for foreground writeback.
+> 
+> Known shortcomings:
+> - When a cgroup dirty limit is exceeded, then bdi writeback is employed to
+>   writeback dirty inodes.  Bdi writeback considers inodes from any cgroup, not
+>   just inodes contributing dirty pages to the cgroup exceeding its limit.  
+> 
+> Performance measurements:
+> - kernel builds are unaffected unless run with a small dirty limit.
+> - all data collected with CONFIG_CGROUP_MEM_RES_CTLR=y.
+> - dd has three data points (in secs) for three data sizes (100M, 200M, and 1G).  
+>   As expected, dd slows when it exceed its cgroup dirty limit.
+> 
+>                kernel_build          dd
+> mmotm             2:37        0.18, 0.38, 1.65
+>   root_memcg
+> 
+> mmotm             2:37        0.18, 0.35, 1.66
+>   non-root_memcg
+> 
+> mmotm+patches     2:37        0.18, 0.35, 1.68
+>   root_memcg
+> 
+> mmotm+patches     2:37        0.19, 0.35, 1.69
+>   non-root_memcg
+> 
+> mmotm+patches     2:37        0.19, 2.34, 22.82
+>   non-root_memcg
+>   150 MiB memcg dirty limit
+> 
+> mmotm+patches     3:58        1.71, 3.38, 17.33
+>   non-root_memcg
+>   1 MiB memcg dirty limit
+>
+
+Greg, could you please try the parallel page fault test. Could you
+look at commit 0c3e73e84fe3f64cf1c2e8bb4e91e8901cbcdc38 and
+569b846df54ffb2827b83ce3244c5f032394cba4 for examples. 
+
+-- 
+	Three Cheers,
+	Balbir
 
 --
 To unsubscribe, send a message with 'unsubscribe linux-mm' in
