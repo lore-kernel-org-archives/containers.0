@@ -1,165 +1,48 @@
-From: Andrea Righi <arighi@develer.com>
-Subject: Re: [PATCH 08/10] memcg: add cgroupfs interface to memcg dirty
- limits
-Date: Wed, 6 Oct 2010 22:54:41 +0200
-Message-ID: <20101006205440.GA1266@linux.develer.com>
-References: <1286175485-30643-1-git-send-email-gthelen@google.com>
- <1286175485-30643-9-git-send-email-gthelen@google.com>
- <20101005161340.9bb7382e.kamezawa.hiroyu@jp.fujitsu.com>
- <xr93r5g5w0uc.fsf@ninji.mtv.corp.google.com>
- <20101005091836.GA1698@linux.develer.com>
- <xr937hhvjhlj.fsf@ninji.mtv.corp.google.com>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [RFC] Restrict size of page_cgroup->flags
+Date: Thu, 7 Oct 2010 08:58:58 +0900
+Message-ID: <20101007085858.0e07de59.kamezawa.hiroyu__42445.5220149413$1286409997$gmane$org@jp.fujitsu.com>
+References: <20101006142314.GG4195@balbir.in.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <owner-linux-mm@kvack.org>
-Content-Disposition: inline
-In-Reply-To: <xr937hhvjhlj.fsf@ninji.mtv.corp.google.com>
-Sender: owner-linux-mm@kvack.org
-To: Greg Thelen <gthelen@google.com>
-Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Balbir Singh <balbir@linux.vnet.ibm.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, David Rientjes <rientjes@google.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20101006142314.GG4195-SINUvgVNF2CyUtPGxGje5AC/G2K4zDHf@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Oct 06, 2010 at 11:34:16AM -0700, Greg Thelen wrote:
-> Andrea Righi <arighi@develer.com> writes:
-> 
-> > On Tue, Oct 05, 2010 at 12:33:15AM -0700, Greg Thelen wrote:
-> >> KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com> writes:
-> >> 
-> >> > On Sun,  3 Oct 2010 23:58:03 -0700
-> >> > Greg Thelen <gthelen@google.com> wrote:
-> >> >
-> >> >> Add cgroupfs interface to memcg dirty page limits:
-> >> >>   Direct write-out is controlled with:
-> >> >>   - memory.dirty_ratio
-> >> >>   - memory.dirty_bytes
-> >> >> 
-> >> >>   Background write-out is controlled with:
-> >> >>   - memory.dirty_background_ratio
-> >> >>   - memory.dirty_background_bytes
-> >> >> 
-> >> >> Signed-off-by: Andrea Righi <arighi@develer.com>
-> >> >> Signed-off-by: Greg Thelen <gthelen@google.com>
-> >> >
-> >> > Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-> >> >
-> >> > a question below.
-> >> >
-> >> >
-> >> >> ---
-> >> >>  mm/memcontrol.c |   89 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
-> >> >>  1 files changed, 89 insertions(+), 0 deletions(-)
-> >> >> 
-> >> >> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-> >> >> index 6ec2625..2d45a0a 100644
-> >> >> --- a/mm/memcontrol.c
-> >> >> +++ b/mm/memcontrol.c
-> >> >> @@ -100,6 +100,13 @@ enum mem_cgroup_stat_index {
-> >> >>  	MEM_CGROUP_STAT_NSTATS,
-> >> >>  };
-> >> >>  
-> >> >> +enum {
-> >> >> +	MEM_CGROUP_DIRTY_RATIO,
-> >> >> +	MEM_CGROUP_DIRTY_BYTES,
-> >> >> +	MEM_CGROUP_DIRTY_BACKGROUND_RATIO,
-> >> >> +	MEM_CGROUP_DIRTY_BACKGROUND_BYTES,
-> >> >> +};
-> >> >> +
-> >> >>  struct mem_cgroup_stat_cpu {
-> >> >>  	s64 count[MEM_CGROUP_STAT_NSTATS];
-> >> >>  };
-> >> >> @@ -4292,6 +4299,64 @@ static int mem_cgroup_oom_control_write(struct cgroup *cgrp,
-> >> >>  	return 0;
-> >> >>  }
-> >> >>  
-> >> >> +static u64 mem_cgroup_dirty_read(struct cgroup *cgrp, struct cftype *cft)
-> >> >> +{
-> >> >> +	struct mem_cgroup *mem = mem_cgroup_from_cont(cgrp);
-> >> >> +	bool root;
-> >> >> +
-> >> >> +	root = mem_cgroup_is_root(mem);
-> >> >> +
-> >> >> +	switch (cft->private) {
-> >> >> +	case MEM_CGROUP_DIRTY_RATIO:
-> >> >> +		return root ? vm_dirty_ratio : mem->dirty_param.dirty_ratio;
-> >> >> +	case MEM_CGROUP_DIRTY_BYTES:
-> >> >> +		return root ? vm_dirty_bytes : mem->dirty_param.dirty_bytes;
-> >> >> +	case MEM_CGROUP_DIRTY_BACKGROUND_RATIO:
-> >> >> +		return root ? dirty_background_ratio :
-> >> >> +			mem->dirty_param.dirty_background_ratio;
-> >> >> +	case MEM_CGROUP_DIRTY_BACKGROUND_BYTES:
-> >> >> +		return root ? dirty_background_bytes :
-> >> >> +			mem->dirty_param.dirty_background_bytes;
-> >> >> +	default:
-> >> >> +		BUG();
-> >> >> +	}
-> >> >> +}
-> >> >> +
-> >> >> +static int
-> >> >> +mem_cgroup_dirty_write(struct cgroup *cgrp, struct cftype *cft, u64 val)
-> >> >> +{
-> >> >> +	struct mem_cgroup *memcg = mem_cgroup_from_cont(cgrp);
-> >> >> +	int type = cft->private;
-> >> >> +
-> >> >> +	if (cgrp->parent == NULL)
-> >> >> +		return -EINVAL;
-> >> >> +	if ((type == MEM_CGROUP_DIRTY_RATIO ||
-> >> >> +	     type == MEM_CGROUP_DIRTY_BACKGROUND_RATIO) && val > 100)
-> >> >> +		return -EINVAL;
-> >> >> +	switch (type) {
-> >> >> +	case MEM_CGROUP_DIRTY_RATIO:
-> >> >> +		memcg->dirty_param.dirty_ratio = val;
-> >> >> +		memcg->dirty_param.dirty_bytes = 0;
-> >> >> +		break;
-> >> >> +	case MEM_CGROUP_DIRTY_BYTES:
-> >> >> +		memcg->dirty_param.dirty_bytes = val;
-> >> >> +		memcg->dirty_param.dirty_ratio  = 0;
-> >> >> +		break;
-> >> >> +	case MEM_CGROUP_DIRTY_BACKGROUND_RATIO:
-> >> >> +		memcg->dirty_param.dirty_background_ratio = val;
-> >> >> +		memcg->dirty_param.dirty_background_bytes = 0;
-> >> >> +		break;
-> >> >> +	case MEM_CGROUP_DIRTY_BACKGROUND_BYTES:
-> >> >> +		memcg->dirty_param.dirty_background_bytes = val;
-> >> >> +		memcg->dirty_param.dirty_background_ratio = 0;
-> >> >> +		break;
-> >> >
-> >> >
-> >> > Curious....is this same behavior as vm_dirty_ratio ?
-> >> 
-> >> I think this is same behavior as vm_dirty_ratio.  When vm_dirty_ratio is
-> >> changed then dirty_ratio_handler() will set vm_dirty_bytes=0.  When
-> >> vm_dirty_bytes is written dirty_bytes_handler() will set
-> >> vm_dirty_ratio=0.  So I think that the per-memcg dirty memory parameters
-> >> mimic the behavior of vm_dirty_ratio, vm_dirty_bytes and the other
-> >> global dirty parameters.
-> >> 
-> >> Am I missing your question?
-> >
-> > mmh... looking at the code it seems the same behaviour, but in
-> > Documentation/sysctl/vm.txt we say a different thing (i.e., for
-> > dirty_bytes):
-> >
-> > "If dirty_bytes is written, dirty_ratio becomes a function of its value
-> > (dirty_bytes / the amount of dirtyable system memory)."
-> >
-> > However, in dirty_bytes_handler()/dirty_ratio_handler() we actually set
-> > the counterpart value as 0.
-> >
-> > I think we should clarify the documentation.
-> >
-> > Signed-off-by: Andrea Righi <arighi@develer.com>
-> 
-> Reviewed-by: Greg Thelen <gthelen@google.com>
-> 
-> This documentation change is general cleanup that is independent of the
-> memcg patch series shown on the subject.
+On Wed, 6 Oct 2010 19:53:14 +0530
+Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
 
-Thanks Greg. I'll resend it as an independent patch.
+> I propose restricting page_cgroup.flags to 16 bits. The patch for the
+> same is below. Comments?
+> 
+> 
+> Restrict the bits usage in page_cgroup.flags
+> 
+> From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> 
+> Restricting the flags helps control growth of the flags unbound.
+> Restriciting it to 16 bits gives us the possibility of merging
+> cgroup id with flags (atomicity permitting) and saving a whole
+> long word in page_cgroup
+> 
+> Signed-off-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
--Andrea
+Doesn't make sense until you show the usage of existing bits.
+And I guess 16bit may be too large on 32bit systems.
 
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+Nack for now.
+
+Thanks,
+-Kame
