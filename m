@@ -1,91 +1,180 @@
-From: MALATTAR <mouhannad.alattar-jI/kxupzh7HSLaPbPq81kw@public.gmane.org>
-Subject: lxc performance?
-Date: Wed, 06 Oct 2010 17:41:45 +0200
-Message-ID: <4CAC98B9.4030903@univ-fcomte.fr>
+From: Balbir Singh <balbir@linux.vnet.ibm.com>
+Subject: Re: [PATCH 03/10] memcg: create extensible page stat update routines
+Date: Wed, 6 Oct 2010 21:49:09 +0530
+Message-ID: <20101006161909.GI4195@balbir.in.ibm.com>
+References: <1286175485-30643-1-git-send-email-gthelen@google.com>
+ <1286175485-30643-4-git-send-email-gthelen@google.com>
+Reply-To: balbir@linux.vnet.ibm.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Content-Type: text/plain; charset=iso-8859-1
+Return-path: <owner-linux-mm@kvack.org>
+Content-Disposition: inline
+In-Reply-To: <1286175485-30643-4-git-send-email-gthelen@google.com>
+Sender: owner-linux-mm@kvack.org
+To: Greg Thelen <gthelen@google.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
 List-Id: containers.vger.kernel.org
 
-  Hi all,
-I subscribed in this list recently and i have some questions about lxc =
+* Greg Thelen <gthelen@google.com> [2010-10-03 23:57:58]:
 
-performance.
-firstly, let me explain where i am using lxc:
-i am using lxc with ns3 in order to simulate adhoc network where i will =
+> Replace usage of the mem_cgroup_update_file_mapped() memcg
+> statistic update routine with two new routines:
+> * mem_cgroup_inc_page_stat()
+> * mem_cgroup_dec_page_stat()
+> 
+> As before, only the file_mapped statistic is managed.  However,
+> these more general interfaces allow for new statistics to be
+> more easily added.  New statistics are added with memcg dirty
+> page accounting.
+> 
+> Signed-off-by: Greg Thelen <gthelen@google.com>
+> Signed-off-by: Andrea Righi <arighi@develer.com>
+> ---
+>  include/linux/memcontrol.h |   31 ++++++++++++++++++++++++++++---
+>  mm/memcontrol.c            |   17 ++++++++---------
+>  mm/rmap.c                  |    4 ++--
+>  3 files changed, 38 insertions(+), 14 deletions(-)
+> 
+> diff --git a/include/linux/memcontrol.h b/include/linux/memcontrol.h
+> index 159a076..7c7bec4 100644
+> --- a/include/linux/memcontrol.h
+> +++ b/include/linux/memcontrol.h
+> @@ -25,6 +25,11 @@ struct page_cgroup;
+>  struct page;
+>  struct mm_struct;
+> 
+> +/* Stats that can be updated by kernel. */
+> +enum mem_cgroup_write_page_stat_item {
+> +	MEMCG_NR_FILE_MAPPED, /* # of pages charged as file rss */
+> +};
+> +
+>  extern unsigned long mem_cgroup_isolate_pages(unsigned long nr_to_scan,
+>  					struct list_head *dst,
+>  					unsigned long *scanned, int order,
+> @@ -121,7 +126,22 @@ static inline bool mem_cgroup_disabled(void)
+>  	return false;
+>  }
+> 
+> -void mem_cgroup_update_file_mapped(struct page *page, int val);
+> +void mem_cgroup_update_page_stat(struct page *page,
+> +				 enum mem_cgroup_write_page_stat_item idx,
+> +				 int val);
+> +
+> +static inline void mem_cgroup_inc_page_stat(struct page *page,
+> +				enum mem_cgroup_write_page_stat_item idx)
+> +{
+> +	mem_cgroup_update_page_stat(page, idx, 1);
+> +}
+> +
+> +static inline void mem_cgroup_dec_page_stat(struct page *page,
+> +				enum mem_cgroup_write_page_stat_item idx)
+> +{
+> +	mem_cgroup_update_page_stat(page, idx, -1);
+> +}
+> +
+>  unsigned long mem_cgroup_soft_limit_reclaim(struct zone *zone, int order,
+>  						gfp_t gfp_mask);
+>  u64 mem_cgroup_get_limit(struct mem_cgroup *mem);
+> @@ -293,8 +313,13 @@ mem_cgroup_print_oom_info(struct mem_cgroup *memcg, struct task_struct *p)
+>  {
+>  }
+> 
+> -static inline void mem_cgroup_update_file_mapped(struct page *page,
+> -							int val)
+> +static inline void mem_cgroup_inc_page_stat(struct page *page,
+> +				enum mem_cgroup_write_page_stat_item idx)
+> +{
+> +}
+> +
+> +static inline void mem_cgroup_dec_page_stat(struct page *page,
+> +				enum mem_cgroup_write_page_stat_item idx)
+>  {
+>  }
+> 
+> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+> index 512cb12..f4259f4 100644
+> --- a/mm/memcontrol.c
+> +++ b/mm/memcontrol.c
+> @@ -1592,7 +1592,9 @@ bool mem_cgroup_handle_oom(struct mem_cgroup *mem, gfp_t mask)
+>   * possibility of race condition. If there is, we take a lock.
+>   */
+> 
+> -static void mem_cgroup_update_file_stat(struct page *page, int idx, int val)
+> +void mem_cgroup_update_page_stat(struct page *page,
+> +				 enum mem_cgroup_write_page_stat_item idx,
+> +				 int val)
+>  {
+>  	struct mem_cgroup *mem;
+>  	struct page_cgroup *pc = lookup_page_cgroup(page);
+> @@ -1615,30 +1617,27 @@ static void mem_cgroup_update_file_stat(struct page *page, int idx, int val)
+>  			goto out;
+>  	}
+> 
+> -	this_cpu_add(mem->stat->count[idx], val);
+> -
+>  	switch (idx) {
+> -	case MEM_CGROUP_STAT_FILE_MAPPED:
+> +	case MEMCG_NR_FILE_MAPPED:
+>  		if (val > 0)
+>  			SetPageCgroupFileMapped(pc);
+>  		else if (!page_mapped(page))
+>  			ClearPageCgroupFileMapped(pc);
+> +		idx = MEM_CGROUP_STAT_FILE_MAPPED;
+>  		break;
+>  	default:
+>  		BUG();
+>  	}
+> 
+> +	this_cpu_add(mem->stat->count[idx], val);
+> +
+>  out:
+>  	if (unlikely(need_unlock))
+>  		unlock_page_cgroup(pc);
+>  	rcu_read_unlock();
+>  	return;
+>  }
+> -
+> -void mem_cgroup_update_file_mapped(struct page *page, int val)
+> -{
+> -	mem_cgroup_update_file_stat(page, MEM_CGROUP_STAT_FILE_MAPPED, val);
+> -}
+> +EXPORT_SYMBOL(mem_cgroup_update_page_stat);
+> 
+>  /*
+>   * size of first charge trial. "32" comes from vmscan.c's magic value.
+> diff --git a/mm/rmap.c b/mm/rmap.c
+> index 8734312..779c0db 100644
+> --- a/mm/rmap.c
+> +++ b/mm/rmap.c
+> @@ -912,7 +912,7 @@ void page_add_file_rmap(struct page *page)
+>  {
+>  	if (atomic_inc_and_test(&page->_mapcount)) {
+>  		__inc_zone_page_state(page, NR_FILE_MAPPED);
+> -		mem_cgroup_update_file_mapped(page, 1);
+> +		mem_cgroup_inc_page_stat(page, MEMCG_NR_FILE_MAPPED);
+>  	}
+>  }
+> 
+> @@ -950,7 +950,7 @@ void page_remove_rmap(struct page *page)
+>  		__dec_zone_page_state(page, NR_ANON_PAGES);
+>  	} else {
+>  		__dec_zone_page_state(page, NR_FILE_MAPPED);
+> -		mem_cgroup_update_file_mapped(page, -1);
+> +		mem_cgroup_dec_page_stat(page, MEMCG_NR_FILE_MAPPED);
+>  	}
+>  	/*
+>  	 * It would be tidy to reset the PageAnon mapping here,
 
-test my IDS(intrusion detection system for adhoc routing protocol).
-i create until now only 10 containers with the same configuration (i =
 
-based on the tutorial =
+Acked-by: Balbir Singh <balbir@linux.vnet.ibm.com>
+ 
 
-http://blog.bodhizazen.net/linux/lxc-configure-fedora-containers/)
-my IDS is written in perl, using mysql dataBase and syslog service in =
+-- 
+	Three Cheers,
+	Balbir
 
-order to collect, treating the logs of the simulation and apply the =
-
-detection rules.
-In order to have several types of devices(e.g., laptops, PDA and mobile =
-
-telephone) in adhoc network, i need to create the lxc containers with =
-
-different resources limits.
-In other words, some of the containers must be powerful where others =
-
-must be supplied with limited resources. Also, i have to test the =
-
-effects of my IDS at the resources
-(e.g, memory consumption)
-Therefore, i used the next lxc-cgroup commands (recommended by Daniel =
-
-lezcano):
-lxc-cgroup -n dora1 memory.usage_in_bytes (to get the current used =
-
-physical memory by the container dora1)
-lxc-cgroup -n dora1 cpuacct.usage (to get the cpu sharing)
-lxc-cgroup -n dora1 memory.limit_in_bytes 268435456 (to define the =
-
-available memory for the container as 256MB)
-Finally, my problem(after the long introduction :-) ):
-the container dora1, where i launch an instance of my IDS, does not take =
-
-more than 70 MB as memory even though the memory limit for it is much =
-
-bigger than this value,
-as a result the IDS works very slowly (the detection operation, which is =
-
-composed of a simple perl script contacts with 3 tables in the DB, for 2 =
-
-minutes of simulation takes more than 1 hour)
-
-Someone has any idea how to give more resources for a container?
-Creating several containers with different resources needs special =
-
-configuration?
-
-
-NB: lastly i tried to create only one container without connecting it =
-
-with the ns3 simulation, but i still have the same problem.
-i am using Ubuntu 10.04 lucid, the lxc system is fedora12
-
--- =
-
-Mouhannad AlATTAR
-Doctorant =E0 L=92UFR Sciences,Techniques et Gestion de l=92Industrie
-P=F4le multimedia de Franche Comt=E9 - numerica
-1, cours Leprince-Ringuet
-25201 Montb=E9liard
-Fixe bureau : 03 81 99 47 87
-Portable : 06 16 71 05 10
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
