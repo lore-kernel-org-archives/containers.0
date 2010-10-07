@@ -1,87 +1,68 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Subject: Re: [PATCH 04/10] memcg: disable local interrupts in
- lock_page_cgroup()
-Date: Thu, 7 Oct 2010 11:17:43 +0900
-Message-ID: <20101007111743.322c3993.kamezawa.hiroyu@jp.fujitsu.com>
-References: <1286175485-30643-1-git-send-email-gthelen@google.com>
-	<1286175485-30643-5-git-send-email-gthelen@google.com>
-	<20101005160332.GB9515@barrios-desktop>
-	<xr93wrpwkypv.fsf@ninji.mtv.corp.google.com>
-	<AANLkTikKXNx-Cj2UY+tJj8ifC+Je5WDbS=eR6xsKM1uU@mail.gmail.com>
-	<20101007093545.429fe04a.kamezawa.hiroyu@jp.fujitsu.com>
-	<20101007105456.d86d8092.nishimura@mxp.nes.nec.co.jp>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC] Restrict size of page_cgroup->flags
+Date: Thu, 7 Oct 2010 08:42:04 +0530
+Message-ID: <20101007031203.GK4195__5687.81553670323$1286421263$gmane$org@balbir.in.ibm.com>
+References: <20101006142314.GG4195@balbir.in.ibm.com>
+	<20101007085858.0e07de59.kamezawa.hiroyu@jp.fujitsu.com>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <20101007105456.d86d8092.nishimura@mxp.nes.nec.co.jp>
-Sender: owner-linux-mm@kvack.org
-To: Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
-Cc: Minchan Kim <minchan.kim@gmail.com>, Greg Thelen <gthelen@google.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20101007085858.0e07de59.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, 7 Oct 2010 10:54:56 +0900
-Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp> wrote:
+* KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> [2010-10-07 08:58:58]:
 
-> On Thu, 7 Oct 2010 09:35:45 +0900
-> KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com> wrote:
+> On Wed, 6 Oct 2010 19:53:14 +0530
+> Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
 > 
-> > On Wed, 6 Oct 2010 09:15:34 +0900
-> > Minchan Kim <minchan.kim@gmail.com> wrote:
-> > 
-> > > First of all, we could add your patch as it is and I don't expect any
-> > > regression report about interrupt latency.
-> > > That's because many embedded guys doesn't use mmotm and have a
-> > > tendency to not report regression of VM.
-> > > Even they don't use memcg. Hmm...
-> > > 
-> > > I pass the decision to MAINTAINER Kame and Balbir.
-> > > Thanks for the detail explanation.
-> > > 
-> > 
-> > Hmm. IRQ delay is a concern. So, my option is this. How do you think ?
-> > 
-> > 1. remove local_irq_save()/restore() in lock/unlock_page_cgroup().
-> >    yes, I don't like it.
-> > 
-> > 2. At moving charge, do this:
-> > 	a) lock_page()/ or trylock_page()
-> > 	b) wait_on_page_writeback()
-> > 	c) do move_account under lock_page_cgroup().
-> > 	c) unlock_page()
+> > I propose restricting page_cgroup.flags to 16 bits. The patch for the
+> > same is below. Comments?
 > > 
 > > 
-> > Then, Writeback updates will never come from IRQ context while
-> > lock/unlock_page_cgroup() is held by move_account(). There will be no race.
+> > Restrict the bits usage in page_cgroup.flags
 > > 
-> hmm, if we'll do that, I think we need to do that under pte_lock in
-> mem_cgroup_move_charge_pte_range(). But, we can't do wait_on_page_writeback()
-> under pte_lock, right? Or, we need re-organize current move-charge implementation.
+> > From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> > 
+> > Restricting the flags helps control growth of the flags unbound.
+> > Restriciting it to 16 bits gives us the possibility of merging
+> > cgroup id with flags (atomicity permitting) and saving a whole
+> > long word in page_cgroup
+> > 
+> > Signed-off-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 > 
-Nice catch. I think releaseing pte_lock() is okay. (and it should be released)
+> Doesn't make sense until you show the usage of existing bits.
 
-IIUC, task's css_set() points to new cgroup when "move" is called. Then,
-it's not necessary to take pte_lock, I guess.
-(And taking pte_lock too long is not appreciated..)
+??
 
-I'll write a sample patch today.
+> And I guess 16bit may be too large on 32bit systems.
 
-Thanks,
--Kame
+too large on 32 bit systems? My intention is to keep the flags to 16
+bits and then use cgroup id for the rest and see if we can remove
+mem_cgroup pointer
 
+> Nack for now.
+>
 
-
-
-
-
-
-
+The issue is - do you see further growth of flags?
+ 
 > Thanks,
-> Daisuke Nishimura.
+> -Kame
 > 
 
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+-- 
+	Three Cheers,
+	Balbir
