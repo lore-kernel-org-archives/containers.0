@@ -1,98 +1,159 @@
-From: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
-Subject: Re: [RFC] Restrict size of page_cgroup->flags
-Date: Thu, 7 Oct 2010 14:44:01 +0900
-Message-ID: <20101007144401.dfc716dc.nishimura__32108.614096842$1286430604$gmane$org@mxp.nes.nec.co.jp>
-References: <20101006142314.GG4195@balbir.in.ibm.com>
-	<20101007085858.0e07de59.kamezawa.hiroyu@jp.fujitsu.com>
-	<20101007031203.GK4195@balbir.in.ibm.com>
-	<20101007121816.bbd009c1.kamezawa.hiroyu@jp.fujitsu.com>
-	<20101007035608.GN4195@balbir.in.ibm.com>
-	<20101007132233.f695aa2c.kamezawa.hiroyu@jp.fujitsu.com>
+From: Ciju Rajan K <ciju@linux.vnet.ibm.com>
+Subject: Re: [PATCH 08/10] memcg: add cgroupfs interface to memcg dirty limits
+Date: Thu, 07 Oct 2010 11:53:48 +0530
+Message-ID: <4CAD6774.7030302@linux.vnet.ibm.com>
+References: <1286175485-30643-1-git-send-email-gthelen@google.com> <1286175485-30643-9-git-send-email-gthelen@google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20101007132233.f695aa2c.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <1286175485-30643-9-git-send-email-gthelen@google.com>
+Sender: owner-linux-mm@kvack.org
+To: Greg Thelen <gthelen@google.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Ciju Rajan K <ciju@linux.vnet.ibm.com>
 List-Id: containers.vger.kernel.org
 
-On Thu, 7 Oct 2010 13:22:33 +0900
-KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
+Greg Thelen wrote:
+> Add cgroupfs interface to memcg dirty page limits:
+>   Direct write-out is controlled with:
+>   - memory.dirty_ratio
+>   - memory.dirty_bytes
+>
+>   Background write-out is controlled with:
+>   - memory.dirty_background_ratio
+>   - memory.dirty_background_bytes
+>
+> Signed-off-by: Andrea Righi <arighi@develer.com>
+> Signed-off-by: Greg Thelen <gthelen@google.com>
+> ---
+>  mm/memcontrol.c |   89 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  1 files changed, 89 insertions(+), 0 deletions(-)
+>
+> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+> index 6ec2625..2d45a0a 100644
+> --- a/mm/memcontrol.c
+> +++ b/mm/memcontrol.c
+> @@ -100,6 +100,13 @@ enum mem_cgroup_stat_index {
+>  	MEM_CGROUP_STAT_NSTATS,
+>  };
+>
+> +enum {
+> +	MEM_CGROUP_DIRTY_RATIO,
+> +	MEM_CGROUP_DIRTY_BYTES,
+> +	MEM_CGROUP_DIRTY_BACKGROUND_RATIO,
+> +	MEM_CGROUP_DIRTY_BACKGROUND_BYTES,
+> +};
+> +
+>  struct mem_cgroup_stat_cpu {
+>  	s64 count[MEM_CGROUP_STAT_NSTATS];
+>  };
+> @@ -4292,6 +4299,64 @@ static int mem_cgroup_oom_control_write(struct cgroup *cgrp,
+>  	return 0;
+>  }
+>
+> +static u64 mem_cgroup_dirty_read(struct cgroup *cgrp, struct cftype *cft)
+> +{
+> +	struct mem_cgroup *mem = mem_cgroup_from_cont(cgrp);
+> +	bool root;
+> +
+> +	root = mem_cgroup_is_root(mem);
+> +
+> +	switch (cft->private) {
+> +	case MEM_CGROUP_DIRTY_RATIO:
+> +		return root ? vm_dirty_ratio : mem->dirty_param.dirty_ratio;
+> +	case MEM_CGROUP_DIRTY_BYTES:
+> +		return root ? vm_dirty_bytes : mem->dirty_param.dirty_bytes;
+> +	case MEM_CGROUP_DIRTY_BACKGROUND_RATIO:
+> +		return root ? dirty_background_ratio :
+> +			mem->dirty_param.dirty_background_ratio;
+> +	case MEM_CGROUP_DIRTY_BACKGROUND_BYTES:
+> +		return root ? dirty_background_bytes :
+> +			mem->dirty_param.dirty_background_bytes;
+> +	default:
+> +		BUG();
+> +	}
+> +}
+> +
+> +static int
+> +mem_cgroup_dirty_write(struct cgroup *cgrp, struct cftype *cft, u64 val)
+> +{
+> +	struct mem_cgroup *memcg = mem_cgroup_from_cont(cgrp);
+> +	int type = cft->private;
+> +
+> +	if (cgrp->parent == NULL)
+> +		return -EINVAL;
+> +	if ((type == MEM_CGROUP_DIRTY_RATIO ||
+> +	     type == MEM_CGROUP_DIRTY_BACKGROUND_RATIO) && val > 100)
+> +		return -EINVAL;
+> +	switch (type) {
+> +	case MEM_CGROUP_DIRTY_RATIO:
+> +		memcg->dirty_param.dirty_ratio = val;
+> +		memcg->dirty_param.dirty_bytes = 0;
+> +		break;
+> +	case MEM_CGROUP_DIRTY_BYTES:
+> +		memcg->dirty_param.dirty_bytes = val;
+> +		memcg->dirty_param.dirty_ratio  = 0;
+> +		break;
+> +	case MEM_CGROUP_DIRTY_BACKGROUND_RATIO:
+> +		memcg->dirty_param.dirty_background_ratio = val;
+> +		memcg->dirty_param.dirty_background_bytes = 0;
+> +		break;
+> +	case MEM_CGROUP_DIRTY_BACKGROUND_BYTES:
+> +		memcg->dirty_param.dirty_background_bytes = val;
+> +		memcg->dirty_param.dirty_background_ratio = 0;
+> +		break;
+> +	default:
+> +		BUG();
+> +		break;
+> +	}
+> +	return 0;
+> +}
+> +
+>  static struct cftype mem_cgroup_files[] = {
+>  	{
+>  		.name = "usage_in_bytes",
+> @@ -4355,6 +4420,30 @@ static struct cftype mem_cgroup_files[] = {
+>  		.unregister_event = mem_cgroup_oom_unregister_event,
+>  		.private = MEMFILE_PRIVATE(_OOM_TYPE, OOM_CONTROL),
+>  	},
+> +	{
+> +		.name = "dirty_ratio",
+> +		.read_u64 = mem_cgroup_dirty_read,
+> +		.write_u64 = mem_cgroup_dirty_write,
+> +		.private = MEM_CGROUP_DIRTY_RATIO,
+> +	},
+> +	{
+> +		.name = "dirty_bytes",
+> +		.read_u64 = mem_cgroup_dirty_read,
+> +		.write_u64 = mem_cgroup_dirty_write,
+> +		.private = MEM_CGROUP_DIRTY_BYTES,
+> +	},
+> +	{
+>   
+Is it a good idea to rename "dirty_bytes" to "dirty_limit_in_bytes" ?
+So that it can match with other memcg tunable naming convention.
+We already have memory.memsw.limit_in_bytes, memory.limit_in_bytes, 
+memory.soft_limit_in_bytes, etc.
+> +		.name = "dirty_background_ratio",
+> +		.read_u64 = mem_cgroup_dirty_read,
+> +		.write_u64 = mem_cgroup_dirty_write,
+> +		.private = MEM_CGROUP_DIRTY_BACKGROUND_RATIO,
+> +	},
+> +	{
+> +		.name = "dirty_background_bytes",
+> +		.read_u64 = mem_cgroup_dirty_read,
+> +		.write_u64 = mem_cgroup_dirty_write,
+> +		.private = MEM_CGROUP_DIRTY_BACKGROUND_BYTES,
+>   
+Similarly "dirty_background_bytes" to dirty_background_limit_in_bytes ?
+> +	},
+>  };
+>
+>  #ifdef CONFIG_CGROUP_MEM_RES_CTLR_SWAP
+>   
 
-> On Thu, 7 Oct 2010 09:26:08 +0530
-> Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
-> 
-> > * KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> [2010-10-07 12:18:16]:
-> > 
-> > > On Thu, 7 Oct 2010 08:42:04 +0530
-> > > Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
-> > > 
-> > > > * KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> [2010-10-07 08:58:58]:
-> > > > 
-> > > > > On Wed, 6 Oct 2010 19:53:14 +0530
-> > > > > Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
-> > > > > 
-> > > > > > I propose restricting page_cgroup.flags to 16 bits. The patch for the
-> > > > > > same is below. Comments?
-> > > > > > 
-> > > > > > 
-> > > > > > Restrict the bits usage in page_cgroup.flags
-> > > > > > 
-> > > > > > From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> > > > > > 
-> > > > > > Restricting the flags helps control growth of the flags unbound.
-> > > > > > Restriciting it to 16 bits gives us the possibility of merging
-> > > > > > cgroup id with flags (atomicity permitting) and saving a whole
-> > > > > > long word in page_cgroup
-> > > > > > 
-> > > > > > Signed-off-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> > > > > 
-> > > > > Doesn't make sense until you show the usage of existing bits.
-> > > > 
-> > > > ??
-> > > > 
-> > > Limiting something for NOT EXISTING PATCH doesn't make sense, in general.
-> > > 
-> > > 
-> > > > > And I guess 16bit may be too large on 32bit systems.
-> > > > 
-> > > > too large on 32 bit systems? My intention is to keep the flags to 16
-> > > > bits and then use cgroup id for the rest and see if we can remove
-> > > > mem_cgroup pointer
-> > > > 
-> > > 
-> > > You can't use flags field to store mem_cgroup_id while we use lock bit on it.
-> > > We have to store something more stable...as pfn or node-id or zone-id.
-> > > 
-> > > It's very racy. 
-> > >
-> > 
-> > Yes, correct it is racy, there is no easy way from what I know we can write
-> > the upper 16 bits of the flag without affecting the lower 16 bits, if
-> > the 16 bits are changing. One of the techniques could be to have lock
-> > for the unsigned long word itself - but I don't know what performance
-> > overhead that would add. Having said that I would like to explore
-> > techniques that allow me to merge the two.
-> > 
-> 
-> to store pfn, we need to limit under 12bit.
-I'm sorry if I miss something, but is it valid in PAE case too ?
-I think it would be better to store section id(or node id) rather than pfn.
-
-> I'll schedule my patch if dirty_ratio one goes.
-> 
-Agreed. I think we should do dirty_ratio patches first.
-
-
-Thanks,
-Daisuke Nishimura.
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
