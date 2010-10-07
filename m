@@ -1,16 +1,16 @@
 From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Subject: Re: [RFC] Restrict size of page_cgroup->flags
-Date: Thu, 7 Oct 2010 08:42:04 +0530
-Message-ID: <20101007031203.GK4195__5687.81553670323$1286421263$gmane$org@balbir.in.ibm.com>
+Date: Thu, 7 Oct 2010 08:44:59 +0530
+Message-ID: <20101007031459.GL4195__16879.3702185669$1286421425$gmane$org@balbir.in.ibm.com>
 References: <20101006142314.GG4195@balbir.in.ibm.com>
-	<20101007085858.0e07de59.kamezawa.hiroyu@jp.fujitsu.com>
+	<20101007095458.a992969e.nishimura@mxp.nes.nec.co.jp>
 Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20101007085858.0e07de59.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20101007095458.a992969e.nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,11 +20,11 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+To: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
 Cc: "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-* KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> [2010-10-07 08:58:58]:
+* nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org> [2010-10-07 09:54:58]:
 
 > On Wed, 6 Oct 2010 19:53:14 +0530
 > Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
@@ -42,26 +42,11 @@ List-Id: containers.vger.kernel.org
 > > cgroup id with flags (atomicity permitting) and saving a whole
 > > long word in page_cgroup
 > > 
-> > Signed-off-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> 
-> Doesn't make sense until you show the usage of existing bits.
-
-??
-
-> And I guess 16bit may be too large on 32bit systems.
-
-too large on 32 bit systems? My intention is to keep the flags to 16
-bits and then use cgroup id for the rest and see if we can remove
-mem_cgroup pointer
-
-> Nack for now.
+> I agree that reducing the size of page_cgroup would be good and important.
+> But, wouldn't it be better to remove ->page, if possible ?
 >
 
-The issue is - do you see further growth of flags?
- 
-> Thanks,
-> -Kame
-> 
+Without the page pointer, how do we go from pc to page for reclaim? 
 
 -- 
 	Three Cheers,
