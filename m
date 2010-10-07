@@ -1,13 +1,11 @@
 From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: [PATCH 2/2] Kconfig : default all the namespaces to 'yes'
-Date: Thu,  7 Oct 2010 15:15:33 +0200
-Message-ID: <1286457333-10500-2-git-send-email-daniel.lezcano@free.fr>
-References: <1286457333-10500-1-git-send-email-daniel.lezcano@free.fr>
+Subject: [PATCH 1/2] Kconfig : remove pid_ns and net_ns experimental
+Date: Thu,  7 Oct 2010 15:15:32 +0200
+Message-ID: <1286457333-10500-1-git-send-email-daniel.lezcano@free.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1286457333-10500-1-git-send-email-daniel.lezcano-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,59 +19,42 @@ To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-As the different namespaces depend on 'CONFIG_NAMESPACES', it is
-logical to enable all the namespaces when we enable NAMESPACES.
+The pid namespace is in the kernel since 2.6.27 and the net_ns
+since 2.6.29. They are enabled in the distro by default and used by
+userspace component. They are mature enough to remove the 'experimental'
+label.
 
 Signed-off-by: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
 ---
- init/Kconfig |    7 +++++--
- 1 files changed, 5 insertions(+), 2 deletions(-)
+ init/Kconfig |    9 +++------
+ 1 files changed, 3 insertions(+), 6 deletions(-)
 
 diff --git a/init/Kconfig b/init/Kconfig
-index a52124e..a7fe61e 100644
+index a175935..a52124e 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -739,6 +739,7 @@ config NAMESPACES
- config UTS_NS
- 	bool "UTS namespace"
- 	depends on NAMESPACES
-+	default y
- 	help
- 	  In this namespace tasks see different info provided with the
- 	  uname() system call
-@@ -746,6 +747,7 @@ config UTS_NS
- config IPC_NS
- 	bool "IPC namespace"
- 	depends on NAMESPACES && (SYSVIPC || POSIX_MQUEUE)
-+	default y
- 	help
- 	  In this namespace tasks work with IPC ids which correspond to
- 	  different IPC objects in different namespaces.
-@@ -753,6 +755,7 @@ config IPC_NS
- config USER_NS
- 	bool "User namespace (EXPERIMENTAL)"
- 	depends on NAMESPACES && EXPERIMENTAL
-+	default y
- 	help
- 	  This allows containers, i.e. vservers, to use user namespaces
- 	  to provide different user info for different servers.
-@@ -760,8 +763,8 @@ config USER_NS
+@@ -759,21 +759,18 @@ config USER_NS
+ 	  If unsure, say N.
  
  config PID_NS
- 	bool "PID Namespaces"
--	default n
- 	depends on NAMESPACES
-+	default y
+-	bool "PID Namespaces (EXPERIMENTAL)"
++	bool "PID Namespaces"
+ 	default n
+-	depends on NAMESPACES && EXPERIMENTAL
++	depends on NAMESPACES
  	help
  	  Support process id namespaces.  This allows having multiple
  	  processes with the same pid as long as they are in different
-@@ -769,8 +772,8 @@ config PID_NS
+ 	  pid namespaces.  This is a building block of containers.
  
+-	  Unless you want to work with an experimental feature
+-	  say N here.
+-
  config NET_NS
  	bool "Network namespace"
--	default n
- 	depends on NAMESPACES && NET
-+	default y
+ 	default n
+-	depends on NAMESPACES && EXPERIMENTAL && NET
++	depends on NAMESPACES && NET
  	help
  	  Allow user space to create what appear to be multiple instances
  	  of the network stack.
