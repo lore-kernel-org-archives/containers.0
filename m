@@ -1,14 +1,16 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Fwd: Re: lxc-performance?
-Date: Fri, 8 Oct 2010 11:41:22 -0500
-Message-ID: <20101008164122.GA16891@hallyn.com>
-References: <4CAED1CF.6050908@univ-fcomte.fr>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH v5 3/3] cgroups: make procs file writable
+Date: Fri, 8 Oct 2010 14:57:52 -0700
+Message-ID: <AANLkTim7HW0wNyqOPePFXmEMV8hx_fMKNMTAsSwkRzZX@mail.gmail.com>
+References: <20100730235649.GA22644@ghc17.ghc.andrew.cmu.edu>
+	<20100811054604.GA8743@ghc17.ghc.andrew.cmu.edu>
+	<20100811054851.GD8743@ghc17.ghc.andrew.cmu.edu>
+	<AANLkTimRM8rDe+u7fTy853RK=1mnLJMK57Tci2OLPR7L@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4CAED1CF.6050908-jI/kxupzh7HSLaPbPq81kw@public.gmane.org>
+In-Reply-To: <AANLkTimRM8rDe+u7fTy853RK=1mnLJMK57Tci2OLPR7L-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,46 +20,32 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: MALATTAR <mouhannad.alattar-jI/kxupzh7HSLaPbPq81kw@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting MALATTAR (mouhannad.alattar-jI/kxupzh7HSLaPbPq81kw@public.gmane.org):
-> =
+Hi Andrew,
 
-> =
+Do you see any road-blockers for including this patch set in -mm ?
 
-> -------- Message original --------
-> Sujet: 	Re: lxc-performance
-> Date : 	Thu, 07 Oct 2010 16:56:05 +0200
-> De : 	MALATTAR <mouhannad.alattar-jI/kxupzh7HSLaPbPq81kw@public.gmane.org>
-> Pour : 	MALATTAR <mouhannad.alattar-jI/kxupzh7HSLaPbPq81kw@public.gmane.org>
-> =
+Thanks,
+Paul
 
-> =
-
-> =
-
-> Le 07/10/2010 16:43, MALATTAR a =E9crit :
-> > ------------------------------------------------------------------------
-> > 06.10.2010 23:41, MALATTAR ?????:
-> >
-> > >/  the container dora1, where i launch an instance of my IDS, does not=
- take
-> > />/  more than 70 MB as memory even though the memory limit for it is m=
-uch
-> > />/  bigger than this value,
-> > /
-> > How do you measure memory usage?
-> =
-
-> by using the command:
-> lxc-cgroup -n dora1 memory.usage_in_bytes
-> >   What's in memory.max_usage_in_bytes of
-> > the container's cgroup?
-> executing the next command lxc-cgroup -n dora1 memory.max_usage_in_bytes
-> gave me 70193152 bytes
-
-Interesting - that's not the value you set in your intro email.
-
-What does /var/lib/lxc/dora1/config have?
+On Tue, Aug 24, 2010 at 11:08 AM, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
+> On Tue, Aug 10, 2010 at 10:48 PM, Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org> wrote:
+>>
+>>
+>> Makes procs file writable to move all threads by tgid at once
+>>
+>> From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
+>>
+>> This patch adds functionality that enables users to move all threads in a
+>> threadgroup at once to a cgroup by writing the tgid to the 'cgroup.procs'
+>> file. This current implementation makes use of a per-threadgroup rwsem that's
+>> taken for reading in the fork() path to prevent newly forking threads within
+>> the threadgroup from "escaping" while the move is in progress.
+>>
+>> Signed-off-by: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
+>
+> Reviewed-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+>
