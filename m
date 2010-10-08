@@ -1,8 +1,8 @@
-From: Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
 Subject: Re: [PATCH v2] memcg: reduce lock time at move charge (Was Re:
  [PATCH 04/10] memcg: disable local interrupts in lock_page_cgroup()
-Date: Fri, 8 Oct 2010 10:12:22 +0900
-Message-ID: <20101008101222.1aab03ae.nishimura@mxp.nes.nec.co.jp>
+Date: Fri, 8 Oct 2010 13:37:12 +0900
+Message-ID: <20101008133712.2a836331.kamezawa.hiroyu@jp.fujitsu.com>
 References: <1286175485-30643-1-git-send-email-gthelen@google.com>
 	<1286175485-30643-5-git-send-email-gthelen@google.com>
 	<20101005160332.GB9515@barrios-desktop>
@@ -23,7 +23,7 @@ Return-path: <owner-linux-mm@kvack.org>
 In-Reply-To: <20101007161454.84570cf9.akpm@linux-foundation.org>
 Sender: owner-linux-mm@kvack.org
 To: Andrew Morton <akpm@linux-foundation.org>
-Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Minchan Kim <minchan.kim@gmail.com>, Greg Thelen <gthelen@google.com>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
+Cc: Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Greg Thelen <gthelen@google.com>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>
 List-Id: containers.vger.kernel.org
 
 On Thu, 7 Oct 2010 16:14:54 -0700
@@ -62,26 +62,21 @@ Andrew Morton <akpm@linux-foundation.org> wrote:
 > 
 > The patch makes the code larger, more complex and slower!
 > 
-Before this patch:
-   text    data     bss     dec     hex filename
-  27163   11782    4100   43045    a825 mm/memcontrol.o
 
-After this patch:
-   text    data     bss     dec     hex filename
-  27307   12294    4100   43701    aab5 mm/memcontrol.o
-
-hmm, allocating mc.target[] statically might be bad, but I'm now wondering
-whether I could allocate mc itself dynamically(I'll try).
+Slower ?
 
 > I do think we're owed a more complete description of its benefits than
 > "seems a bit long".  Have problems been observed?  Any measurements
 > taken?
 > 
-IIUC, this patch is necessary for "[PATCH] memcg: lock-free clear page writeback"
-later, but I agree we should describe it.
+
+I'll rewrite the whole patch against today's mmotom.
 
 Thanks,
-Daisuke Nishimura.
+-Kame
+
+> 
+> 
 
 --
 To unsubscribe, send a message with 'unsubscribe linux-mm' in
