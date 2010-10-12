@@ -1,55 +1,71 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: Fwd: Re: lxc-performance?
-Date: Tue, 12 Oct 2010 14:05:09 +0900
-Message-ID: <20101012140509.0ab6c617.kamezawa.hiroyu@jp.fujitsu.com>
-References: <4CAED1CF.6050908@univ-fcomte.fr>
+From: Balbir Singh <balbir@linux.vnet.ibm.com>
+Subject: Re: [PATCH 04/10] memcg: disable local interrupts in
+ lock_page_cgroup()
+Date: Tue, 12 Oct 2010 11:09:35 +0530
+Message-ID: <20101012053935.GD25875@balbir.in.ibm.com>
+References: <1286175485-30643-1-git-send-email-gthelen@google.com>
+ <1286175485-30643-5-git-send-email-gthelen@google.com>
+Reply-To: balbir@linux.vnet.ibm.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4CAED1CF.6050908-jI/kxupzh7HSLaPbPq81kw@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: MALATTAR <mouhannad.alattar-jI/kxupzh7HSLaPbPq81kw@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Content-Type: text/plain; charset=iso-8859-1
+Return-path: <owner-linux-mm@kvack.org>
+Content-Disposition: inline
+In-Reply-To: <1286175485-30643-5-git-send-email-gthelen@google.com>
+Sender: owner-linux-mm@kvack.org
+To: Greg Thelen <gthelen@google.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
 List-Id: containers.vger.kernel.org
 
-T24gRnJpLCAwOCBPY3QgMjAxMCAxMDowOTo1MSArMDIwMApNQUxBVFRBUiA8bW91aGFubmFkLmFs
-YXR0YXJAdW5pdi1mY29tdGUuZnI+IHdyb3RlOgoKPiBMZSAwNy8xMC8yMDEwIDE2OjQzLCBNQUxB
-VFRBUiBhIMOpY3JpdCA6Cj4gPiAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
-LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0KPiA+IDA2LjEwLjIwMTAgMjM6NDEs
-IE1BTEFUVEFSID8/Pz8/Ogo+ID4KPiA+ID4vICB0aGUgY29udGFpbmVyIGRvcmExLCB3aGVyZSBp
-IGxhdW5jaCBhbiBpbnN0YW5jZSBvZiBteSBJRFMsIGRvZXMgbm90IHRha2UKPiA+IC8+LyAgbW9y
-ZSB0aGFuIDcwIE1CIGFzIG1lbW9yeSBldmVuIHRob3VnaCB0aGUgbWVtb3J5IGxpbWl0IGZvciBp
-dCBpcyBtdWNoCj4gPiAvPi8gIGJpZ2dlciB0aGFuIHRoaXMgdmFsdWUsCj4gPiAvCj4gPiBIb3cg
-ZG8geW91IG1lYXN1cmUgbWVtb3J5IHVzYWdlPwo+IAo+IGJ5IHVzaW5nIHRoZSBjb21tYW5kOgo+
-IGx4Yy1jZ3JvdXAgLW4gZG9yYTEgbWVtb3J5LnVzYWdlX2luX2J5dGVzCj4gPiAgIFdoYXQncyBp
-biBtZW1vcnkubWF4X3VzYWdlX2luX2J5dGVzIG9mCj4gPiB0aGUgY29udGFpbmVyJ3MgY2dyb3Vw
-Pwo+IGV4ZWN1dGluZyB0aGUgbmV4dCBjb21tYW5kIGx4Yy1jZ3JvdXAgLW4gZG9yYTEgbWVtb3J5
-Lm1heF91c2FnZV9pbl9ieXRlcwo+IGdhdmUgbWUgNzAxOTMxNTIgYnl0ZXMKPiAKCkhtbS4gd2hh
-dCBsYXRlbmN5dG9wIHNob3dzID8KCllvdSBjYW4gc2VlIHRoaXMga2luZCBvZiBvdXRwdXQuCj09
-CkNhdXNlICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgTWF4
-aW11bSAgICAgUGVyY2VudGFnZQpXcml0aW5nIGEgcGFnZSB0byBkaXNrICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgIDU1MS42IG1zZWMgICAgICAgICAzNi44ICUKRm9yaygpIHN5c3RlbSBjYWxs
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAyNzMuNyBtc2VjICAgICAgICAgIDEuMSAl
-ClBhZ2UgZmF1bHQgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgMjUzLjkg
-bXNlYyAgICAgICAgIDI5LjUgJQpXcml0aW5nIGJ1ZmZlciB0byBkaXNrIChzeW5jaHJvbm91cykg
-ICAgICAgICAgICAgIDIyNS45IG1zZWMgICAgICAgICAgMi45ICUKQ3JlYXRpbmcgYmxvY2sgbGF5
-ZXIgcmVxdWVzdCAgICAgICAgICAgICAgICAgICAgICAyMDIuNyBtc2VjICAgICAgICAgMTcuMSAl
-CldhbGtpbmcgZGlyZWN0b3J5IHRyZWUgICAgICAgICAgICAgICAgICAgICAgICAgICAgMTYxLjUg
-bXNlYyAgICAgICAgICAxLjQgJQpbY29uZ2VzdGlvbl93YWl0XSAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICA5Ny42IG1zZWMgICAgICAgICAgNC40ICUKRXhlY3V0aW5nIGEgcHJvZ3Jh
-bSAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgOTcuMSBtc2VjICAgICAgICAgIDAuMyAl
-CnN5bmNocm9ub3VzIHdyaXRlICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDczLjkg
-bXNlYyAgICAgICAgICAwLjEgJQo9PQoKSU1ITywgaWYgbWVtb3J5IGxpbWl0IGlzIHRoZSBwcm9i
-bGVtLCAiUGFnZSBGYXVsdCIgdGVuZCB0byBiZSBiaWcuIAoKClRoYW5rcywKLUthbWUKCl9fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFp
-bGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9s
-aXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+* Greg Thelen <gthelen@google.com> [2010-10-03 23:57:59]:
+
+> If pages are being migrated from a memcg, then updates to that
+> memcg's page statistics are protected by grabbing a bit spin lock
+> using lock_page_cgroup().  In an upcoming commit memcg dirty page
+> accounting will be updating memcg page accounting (specifically:
+> num writeback pages) from softirq.  Avoid a deadlocking nested
+> spin lock attempt by disabling interrupts on the local processor
+> when grabbing the page_cgroup bit_spin_lock in lock_page_cgroup().
+> This avoids the following deadlock:
+> statistic
+>       CPU 0             CPU 1
+>                     inc_file_mapped
+>                     rcu_read_lock
+>   start move
+>   synchronize_rcu
+>                     lock_page_cgroup
+>                       softirq
+>                       test_clear_page_writeback
+>                       mem_cgroup_dec_page_stat(NR_WRITEBACK)
+>                       rcu_read_lock
+>                       lock_page_cgroup   /* deadlock */
+>                       unlock_page_cgroup
+>                       rcu_read_unlock
+>                     unlock_page_cgroup
+>                     rcu_read_unlock
+> 
+> By disabling interrupts in lock_page_cgroup, nested calls
+> are avoided.  The softirq would be delayed until after inc_file_mapped
+> enables interrupts when calling unlock_page_cgroup().
+> 
+> The normal, fast path, of memcg page stat updates typically
+> does not need to call lock_page_cgroup(), so this change does
+> not affect the performance of the common case page accounting.
+> 
+> Signed-off-by: Andrea Righi <arighi@develer.com>
+> Signed-off-by: Greg Thelen <gthelen@google.com>
+-- 
+
+
+It will take more convincing, all important functions (charge/uncharge
+use lock_page_cgroup()). I'd like to see the page fault scalability
+test results. I am not against this patch, just want to see the
+scalability numbers.
+
+	Three Cheers,
+	Balbir
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
