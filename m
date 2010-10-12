@@ -1,149 +1,70 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Subject: Re: [PATCH 07/10] memcg: add dirty limits to mem_cgroup
-Date: Tue, 12 Oct 2010 09:55:46 +0900
-Message-ID: <20101012095546.f23bb950.kamezawa.hiroyu@jp.fujitsu.com>
-References: <1286175485-30643-1-git-send-email-gthelen@google.com>
-	<1286175485-30643-8-git-send-email-gthelen@google.com>
-	<20101005094302.GA4314@linux.develer.com>
-	<xr93eic4wjlq.fsf@ninji.mtv.corp.google.com>
-	<20101007091343.82ca9f7d.kamezawa.hiroyu@jp.fujitsu.com>
-	<xr937hhuj19a.fsf@ninji.mtv.corp.google.com>
-	<20101007094845.9e6a1b0f.kamezawa.hiroyu@jp.fujitsu.com>
-	<xr93bp70febu.fsf@ninji.mtv.corp.google.com>
+From: Balbir Singh <balbir@linux.vnet.ibm.com>
+Subject: Re: [PATCH v2] memcg: reduce lock time at move charge (Was Re:
+ [PATCH 04/10] memcg: disable local interrupts in lock_page_cgroup()
+Date: Tue, 12 Oct 2010 09:09:15 +0530
+Message-ID: <20101012033915.GA25875@balbir.in.ibm.com>
+References: <20101007111743.322c3993.kamezawa.hiroyu@jp.fujitsu.com>
+ <20101007152111.df687a62.kamezawa.hiroyu@jp.fujitsu.com>
+ <20101007162811.c3a35be9.nishimura@mxp.nes.nec.co.jp>
+ <20101007164204.83b207c6.kamezawa.hiroyu@jp.fujitsu.com>
+ <20101007170405.27ed964c.kamezawa.hiroyu@jp.fujitsu.com>
+ <20101007161454.84570cf9.akpm@linux-foundation.org>
+ <20101008133712.2a836331.kamezawa.hiroyu@jp.fujitsu.com>
+ <20101007215556.21412ae6.akpm@linux-foundation.org>
+ <20101008141201.c1e3a4e2.kamezawa.hiroyu@jp.fujitsu.com>
+ <20101008194131.20b44a9d.kamezawa.hiroyu@jp.fujitsu.com>
+Reply-To: balbir@linux.vnet.ibm.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=iso-8859-1
 Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <xr93bp70febu.fsf@ninji.mtv.corp.google.com>
+Content-Disposition: inline
+In-Reply-To: <20101008194131.20b44a9d.kamezawa.hiroyu@jp.fujitsu.com>
 Sender: owner-linux-mm@kvack.org
-To: Greg Thelen <gthelen@google.com>
-Cc: Andrea Righi <arighi@develer.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Balbir Singh <balbir@linux.vnet.ibm.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Greg Thelen <gthelen@google.com>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>
 List-Id: containers.vger.kernel.org
 
-On Mon, 11 Oct 2010 17:24:21 -0700
-Greg Thelen <gthelen@google.com> wrote:
+* KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com> [2010-10-08 19:41:31]:
 
-> >> Is your motivation to increase performance with the same functionality?
-> >> If so, then would a 'static inline' be performance equivalent to a
-> >> preprocessor macro yet be safer to use?
-> >> 
-> > Ah, if lockdep finds this as bug, I think other parts will hit this,
-> > too.  like this.
-> >> static struct mem_cgroup *try_get_mem_cgroup_from_mm(struct mm_struct *mm)
-> >> {
-> >>         struct mem_cgroup *mem = NULL;
-> >> 
-> >>         if (!mm)
-> >>                 return NULL;
-> >>         /*
-> >>          * Because we have no locks, mm->owner's may be being moved to other
-> >>          * cgroup. We use css_tryget() here even if this looks
-> >>          * pessimistic (rather than adding locks here).
-> >>          */
-> >>         rcu_read_lock();
-> >>         do {
-> >>                 mem = mem_cgroup_from_task(rcu_dereference(mm->owner));
-> >>                 if (unlikely(!mem))
-> >>                         break;
-> >>         } while (!css_tryget(&mem->css));
-> >>         rcu_read_unlock();
-> >>         return mem;
-> >> }
+> On Fri, 8 Oct 2010 14:12:01 +0900
+> KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com> wrote:
+> > > Sure.  It walks the same data three times, potentially causing
+> > > thrashing in the L1 cache.
+> > 
+> > Hmm, make this 2 times, at least.
+> > 
+> How about this ?
+> ==
+> From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
 > 
-> mem_cgroup_from_task() calls task_subsys_state() calls
-> task_subsys_state_check().  task_subsys_state_check() will be happy if
-> rcu_read_lock is held.
+> Presently, at task migration among cgroups, memory cgroup scans page tables and
+> moves accounting if flags are properly set.
 > 
-yes.
-
-> I don't think that this will fail lockdep, because rcu_read_lock_held()
-> is true when calling mem_cgroup_from_task() within
-> try_get_mem_cgroup_from_mm()..
 > 
-agreed.
-
-> > mem_cgroup_from_task() is designed to be used as this.
-> > If dqefined as macro, I think it will not be catched.
+> The core code, mem_cgroup_move_charge_pte_range() does
 > 
-> I do not understand how making mem_cgroup_from_task() a macro will
-> change its behavior wrt. to lockdep assertion checking.  I assume that
-> as a macro mem_cgroup_from_task() would still call task_subsys_state(),
-> which requires either:
-> a) rcu read lock held
-> b) task->alloc_lock held
-> c) cgroup lock held
+>  	pte_offset_map_lock();
+> 	for all ptes in a page table:
+> 		1. look into page table, find_and_get a page
+> 		2. remove it from LRU.
+> 		3. move charge.
+> 		4. putback to LRU. put_page()
+> 	pte_offset_map_unlock();
 > 
-
-Hmm. Maybe I was wrong.
-
+> for pte entries on a 3rd level? page table.
 > 
-> >> Maybe it makes more sense to find a way to perform this check in
-> >> mem_cgroup_has_dirty_limit() without needing to grab the rcu lock.  I
-> >> think this lock grab is unneeded.  I am still collecting performance
-> >> data, but suspect that this may be making the code slower than it needs
-> >> to be.
-> >> 
-> >
-> > Hmm. css_set[] itself is freed by RCU..what idea to remove rcu_read_lock() do
-> > you have ? Adding some flags ?
-> 
-> It seems like a shame to need a lock to determine if current is in the
-> root cgroup.  Especially given that as soon as
-> mem_cgroup_has_dirty_limit() returns, the task could be moved
-> in-to/out-of the root cgroup thereby invaliding the answer.  So the
-> answer is just a sample that may be wrong. 
-
-Yes. But it's not a bug but a specification.
-
-> But I think you are correct.
-> We will need the rcu read lock in mem_cgroup_has_dirty_limit().
-> 
-
-yes.
+> As a planned updates, we'll support dirty-page accounting. Because move_charge()
+> is highly race, we need to add more check in move_charge.
+> For example, lock_page();-> wait_on_page_writeback();-> unlock_page();
+> is an candidate for new check.
+>
 
 
-> > Ah...I noticed that you should do
-> >
-> >  mem = mem_cgroup_from_task(current->mm->owner);
-> >
-> > to check has_dirty_limit...
-> 
-> What are the cases where current->mm->owner->cgroups !=
-> current->cgroups?
-> 
-In that case, assume group A and B.
-
-   thread(1) -> belongs to cgroup A  (thread(1) is mm->owner)
-   thread(2) -> belongs to cgroup B
-and
-   a page    -> charnged to cgroup A
-
-Then, thread(2) make the page dirty which is under cgroup A.
-
-In this case, if page's dirty_pages accounting is added to cgroup B, cgroup B'
-statistics may show "dirty_pages > all_lru_pages". This is bug.
-
-
-> I was hoping to avoid having add even more logic into
-> mem_cgroup_has_dirty_limit() to handle the case where current->mm is
-> NULL.
-> 
-
-Blease check current->mm. We can't limit works of kernel-thread by this, let's
-consider it later if necessary.
-
-> Presumably the newly proposed vm_dirty_param(),
-> mem_cgroup_has_dirty_limit(), and mem_cgroup_page_stat() routines all
-> need to use the same logic.  I assume they should all be consistently
-> using current->mm->owner or current.
-> 
-
-please.
-
-Thanks,
--Kame
-
-
+Is this a change to help dirty limits or is it a generic bug fix.
+ 
+-- 
+	Three Cheers,
+	Balbir
 
 --
 To unsubscribe, send a message with 'unsubscribe linux-mm' in
