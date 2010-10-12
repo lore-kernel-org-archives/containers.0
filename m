@@ -1,16 +1,14 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/2] Kconfig : default all the namespaces to 'yes'
-Date: Tue, 12 Oct 2010 12:16:22 -0500
-Message-ID: <20101012171622.GA16543@hallyn.com>
-References: <1286457333-10500-1-git-send-email-daniel.lezcano@free.fr>
-	<1286457333-10500-2-git-send-email-daniel.lezcano@free.fr>
-	<20101011185757.GJ23839@count0.beaverton.ibm.com>
+From: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Subject: Re: [RFC V1] Replace pid_t in autofs4 with struct pid reference.
+Date: Tue, 12 Oct 2010 10:47:18 -0500
+Message-ID: <20101012154718.GA23137@hallyn.com>
+References: <1286299696-13955-1-git-send-email-daniel.lezcano@free.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20101011185757.GJ23839-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
+In-Reply-To: <1286299696-13955-1-git-send-email-daniel.lezcano-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,31 +18,46 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Biederman Eric Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Helmut Lichtenberg <heli-dxCdbQ03lbiELgA04lAiVw@public.gmane.org>, Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Eric Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Ian Kent <raven-PKsaG3nR2I+sTnJN9+BGXg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> On Thu, Oct 07, 2010 at 03:15:33PM +0200, Daniel Lezcano wrote:
-> > As the different namespaces depend on 'CONFIG_NAMESPACES', it is
-> > logical to enable all the namespaces when we enable NAMESPACES.
-> > 
-> > Signed-off-by: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
+> I resurect and refreshed this old patch from
+> https://lists.linux-foundation.org/pipermail/containers/2007-February/003726.html
 > 
-> Subject of the patch email is a little confusing as it's not
-> quite what happens. I'm mostly OK with it but I'm not sure we
-> should enable user-ns by default just yet.
+> This patch makes automount to work within a container.
 > 
-> Acked-By: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Make autofs4 container-friendly by caching struct pid reference rather
+> than pid_t and using pid_nr() to retreive a task's pid_t.
+> 
+> ChangeLog:
+> 
+> V1:
+> 	- fixed pgrp option in parse_options
+> 	- used get_task_pid(current, PIDTYPE_PGID) instead of task_pgrp
+> 	- fixed how is passed the 'pgrp' argument autofs4_fill_super
+> 	- fixed bad pid conversion, was pid_vnr not pid_nr in autofs4_wait
+> V0:
+> 	- Refreshed against linux-next (added dev-ioctl.c)
+> 	- Fix Eric Biederman's comments - Use find_get_pid() to hold a
+> 	  reference to oz_pgrp and release while unmounting; separate out
+> 	  changes to autofs and autofs4.
+> 	- Also rollback my earlier change to autofs_wait_queue (pid and tgid
+> 	  in the wait queue are just used to write to a userspace daemon's
+> 	  pipe).
+>         - Fix Cedric's comments: retain old prototype of parse_options()
+>           and move necessary change to its caller.
+> 
+> Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Signed-off-by: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+> Cc: Ian Kent <raven-PKsaG3nR2I+sTnJN9+BGXg@public.gmane.org>
+> Cc: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+> Cc: Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Cc: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 
-In fact, perhaps we should keep the experimental tag on user namespaces.
-If/when I/someone returns to heavy hacking on user namespaces, the
-changes will be very invasive.  (Of course then we get back to questions
-of the usefulness of experimental tag)
+Acked-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 
-In particular, when we start refusing access for certain accesses between
-user namespaces, it might confuse userspace.
-
-Definately Ack to the other two.
+Thanks, Daniel, this looks good!  Thanks for pushing this needed fix.
 
 -serge
