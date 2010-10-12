@@ -1,54 +1,55 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Subject: Re: [PATCH v2] memcg: reduce lock time at move charge (Was Re:
- [PATCH 04/10] memcg: disable local interrupts in lock_page_cgroup()
-Date: Tue, 12 Oct 2010 14:01:51 +0900
-Message-ID: <20101012140151.767fbba6.kamezawa.hiroyu@jp.fujitsu.com>
-References: <1286175485-30643-1-git-send-email-gthelen@google.com>
-	<20101005160332.GB9515@barrios-desktop>
-	<xr93wrpwkypv.fsf@ninji.mtv.corp.google.com>
-	<AANLkTikKXNx-Cj2UY+tJj8ifC+Je5WDbS=eR6xsKM1uU@mail.gmail.com>
-	<20101007093545.429fe04a.kamezawa.hiroyu@jp.fujitsu.com>
-	<20101007105456.d86d8092.nishimura@mxp.nes.nec.co.jp>
-	<20101007111743.322c3993.kamezawa.hiroyu@jp.fujitsu.com>
-	<20101007152111.df687a62.kamezawa.hiroyu@jp.fujitsu.com>
-	<20101007162811.c3a35be9.nishimura@mxp.nes.nec.co.jp>
-	<20101007164204.83b207c6.kamezawa.hiroyu@jp.fujitsu.com>
-	<20101007170405.27ed964c.kamezawa.hiroyu@jp.fujitsu.com>
-	<20101007161454.84570cf9.akpm@linux-foundation.org>
-	<20101008133712.2a836331.kamezawa.hiroyu@jp.fujitsu.com>
-	<20101007215556.21412ae6.akpm@linux-foundation.org>
-	<20101008141201.c1e3a4e2.kamezawa.hiroyu@jp.fujitsu.com>
-	<20101008194131.20b44a9d.kamezawa.hiroyu@jp.fujitsu.com>
-	<20101012125613.1accc1bd.nishimura@mxp.nes.nec.co.jp>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: Fwd: Re: lxc-performance?
+Date: Tue, 12 Oct 2010 14:05:09 +0900
+Message-ID: <20101012140509.0ab6c617.kamezawa.hiroyu@jp.fujitsu.com>
+References: <4CAED1CF.6050908@univ-fcomte.fr>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <20101012125613.1accc1bd.nishimura@mxp.nes.nec.co.jp>
-Sender: owner-linux-mm@kvack.org
-To: Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Minchan Kim <minchan.kim@gmail.com>, Greg Thelen <gthelen@google.com>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <4CAED1CF.6050908-jI/kxupzh7HSLaPbPq81kw@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: MALATTAR <mouhannad.alattar-jI/kxupzh7HSLaPbPq81kw@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, 12 Oct 2010 12:56:13 +0900
-Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp> wrote:
-
-> > +err_out:
-> > +	for (; mt < info + num; mt++)
-> > +		if (mt->type == MC_TARGET_PAGE) {
-> > +			putback_lru_page(mt->val.page);
-> Is this putback_lru_page() necessary ?
-> is_target_pte_for_mc() doesn't isolate the page.
-> 
-Unnecessary, will post v2.
-
-I'm sorry for my low-quality patches :(
-
-Thanks,
--Kame
-
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+T24gRnJpLCAwOCBPY3QgMjAxMCAxMDowOTo1MSArMDIwMApNQUxBVFRBUiA8bW91aGFubmFkLmFs
+YXR0YXJAdW5pdi1mY29tdGUuZnI+IHdyb3RlOgoKPiBMZSAwNy8xMC8yMDEwIDE2OjQzLCBNQUxB
+VFRBUiBhIMOpY3JpdCA6Cj4gPiAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0KPiA+IDA2LjEwLjIwMTAgMjM6NDEs
+IE1BTEFUVEFSID8/Pz8/Ogo+ID4KPiA+ID4vICB0aGUgY29udGFpbmVyIGRvcmExLCB3aGVyZSBp
+IGxhdW5jaCBhbiBpbnN0YW5jZSBvZiBteSBJRFMsIGRvZXMgbm90IHRha2UKPiA+IC8+LyAgbW9y
+ZSB0aGFuIDcwIE1CIGFzIG1lbW9yeSBldmVuIHRob3VnaCB0aGUgbWVtb3J5IGxpbWl0IGZvciBp
+dCBpcyBtdWNoCj4gPiAvPi8gIGJpZ2dlciB0aGFuIHRoaXMgdmFsdWUsCj4gPiAvCj4gPiBIb3cg
+ZG8geW91IG1lYXN1cmUgbWVtb3J5IHVzYWdlPwo+IAo+IGJ5IHVzaW5nIHRoZSBjb21tYW5kOgo+
+IGx4Yy1jZ3JvdXAgLW4gZG9yYTEgbWVtb3J5LnVzYWdlX2luX2J5dGVzCj4gPiAgIFdoYXQncyBp
+biBtZW1vcnkubWF4X3VzYWdlX2luX2J5dGVzIG9mCj4gPiB0aGUgY29udGFpbmVyJ3MgY2dyb3Vw
+Pwo+IGV4ZWN1dGluZyB0aGUgbmV4dCBjb21tYW5kIGx4Yy1jZ3JvdXAgLW4gZG9yYTEgbWVtb3J5
+Lm1heF91c2FnZV9pbl9ieXRlcwo+IGdhdmUgbWUgNzAxOTMxNTIgYnl0ZXMKPiAKCkhtbS4gd2hh
+dCBsYXRlbmN5dG9wIHNob3dzID8KCllvdSBjYW4gc2VlIHRoaXMga2luZCBvZiBvdXRwdXQuCj09
+CkNhdXNlICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgTWF4
+aW11bSAgICAgUGVyY2VudGFnZQpXcml0aW5nIGEgcGFnZSB0byBkaXNrICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgIDU1MS42IG1zZWMgICAgICAgICAzNi44ICUKRm9yaygpIHN5c3RlbSBjYWxs
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAyNzMuNyBtc2VjICAgICAgICAgIDEuMSAl
+ClBhZ2UgZmF1bHQgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgMjUzLjkg
+bXNlYyAgICAgICAgIDI5LjUgJQpXcml0aW5nIGJ1ZmZlciB0byBkaXNrIChzeW5jaHJvbm91cykg
+ICAgICAgICAgICAgIDIyNS45IG1zZWMgICAgICAgICAgMi45ICUKQ3JlYXRpbmcgYmxvY2sgbGF5
+ZXIgcmVxdWVzdCAgICAgICAgICAgICAgICAgICAgICAyMDIuNyBtc2VjICAgICAgICAgMTcuMSAl
+CldhbGtpbmcgZGlyZWN0b3J5IHRyZWUgICAgICAgICAgICAgICAgICAgICAgICAgICAgMTYxLjUg
+bXNlYyAgICAgICAgICAxLjQgJQpbY29uZ2VzdGlvbl93YWl0XSAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICA5Ny42IG1zZWMgICAgICAgICAgNC40ICUKRXhlY3V0aW5nIGEgcHJvZ3Jh
+bSAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgOTcuMSBtc2VjICAgICAgICAgIDAuMyAl
+CnN5bmNocm9ub3VzIHdyaXRlICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDczLjkg
+bXNlYyAgICAgICAgICAwLjEgJQo9PQoKSU1ITywgaWYgbWVtb3J5IGxpbWl0IGlzIHRoZSBwcm9i
+bGVtLCAiUGFnZSBGYXVsdCIgdGVuZCB0byBiZSBiaWcuIAoKClRoYW5rcywKLUthbWUKCl9fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFp
+bGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9s
+aXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
