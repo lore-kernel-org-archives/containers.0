@@ -1,28 +1,36 @@
-From: jamal <hadi@cyberus.ca>
-Subject: netns patches WAS( Re: [PATCH 8/8] net: Implement socketat.
-Date: Fri, 15 Oct 2010 08:30:55 -0400
-Message-ID: <1287145855.3642.30.camel@bigi>
-References: <m1ocborgq7.fsf@fess.ebiederm.org>
-	 <m1bp7oq1u8.fsf@fess.ebiederm.org>  <4C9B162E.7040201@parallels.com>
-	 <1285240797.5036.5.camel@bigi>  <4C9B3B06.900@parallels.com>
-	 <1285242055.5036.9.camel@bigi> <4C9B3F9C.8080506@parallels.com>
-	 <4CA7A07C.5030504@free.fr>  <1286113441.3812.229.camel@bigi>
-Reply-To: hadi@cyberus.ca
+From: Pavel Labushev <p.labushev-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: Fwd: Re: lxc-performance?
+Date: Fri, 15 Oct 2010 22:32:23 +0800
+Message-ID: <4CB865F7.8070904@gmail.com>
+References: <4CAED1CF.6050908@univ-fcomte.fr>
+	<20101012140509.0ab6c617.kamezawa.hiroyu@jp.fujitsu.com>
+	<4CB708A1.7000403@univ-fcomte.fr>
 Mime-Version: 1.0
-Content-Type: text/plain
-Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <1286113441.3812.229.camel@bigi>
-Sender: netdev-owner@vger.kernel.org
-To: Daniel Lezcano <daniel.lezcano@free.fr>, "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Pavel Emelyanov <xemul@parallels.com>, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, netfilter-devel@vger.kernel.org, linux-fsdevel@vger.kernel.org, Linus Torvalds <torvalds@linux-foundation.org>, Michael Kerrisk <mtk.manpages@gmail.com>, Ulrich Drepper <drepper@gmail.com>, Al Viro <viro@ZenIV.linux.org.uk>, David Miller <davem@davemloft.net>, "Serge E. Hallyn" <serge@hallyn.com>, Pavel Emelyanov <xemul@openvz.org>, Ben Greear <greearb@candelatech.com>, Matt Helsley <matthltc@us.ibm.com>, Jonathan Corbet <corbet@lwn.net>, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, Jan Engelhardt <jengelh@medozas.de>, Patrick McHardy <kaber@trash.net>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <4CB708A1.7000403-jI/kxupzh7HSLaPbPq81kw@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Eric et al,
-
-Did these patches make it in? I was looking at
-two Davem net trees and i dont see them.
-
-cheers,
-jamal
-
+MTQuMTAuMjAxMCAyMTo0MSwgTUFMQVRUQVIg0L/QuNGI0LXRgjoKCj4gYWxzbyBtZW10ZXN0IGNv
+bW1hbmQgd2FzIGFibGUgdG8gYWxsb2NhdGUgdXAgdG8gMTAyNE1CIGJ1dCBpdCB0YWtlcyBhCj4g
+bG9uZyB0aW1lCj4gZm9yIG9uZSBsb29wIG9ubHkgLi4uCgpPSywgdGhlIHByb2JsZW0gaXMgbm90
+IHdpdGggTFhDIG1lbW9yeSBsaW1pdHMgdGhlcmVmb3JlLgoKPiBTbywgaSB0aGluayB0aGUgcHJv
+YmxlbSBpcyBpbiBteSBwcm9ncmFtIG5vdCBpbiB0aGUgY29udGFpbmVyLCBpcyBub3QgaXQ/CgpJ
+dCBjb3VsZCBiZSB5b3VyIHByb2dyYW0gb3IgdG9vIGxvdyBybGltaXRzLiBXaGF0ICd1bGltaXQg
+LWEnIHNheXM/IE5vdGUKdGhhdCBybGltaXRzIGFyZSBwZXItcHJvY2Vzcywgc28geW91IHNob3Vs
+ZCBpbnZlc3RpZ2F0ZSB0aGVpciB2YWx1ZXMKZnJvbSBpbnNpZGUgeW91ciBwcm9ncmFtJ3Mgb3Bl
+cmF0aW5nIGVudmlyb25tZW50LgoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51
+eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxt
+YW4vbGlzdGluZm8vY29udGFpbmVycw==
