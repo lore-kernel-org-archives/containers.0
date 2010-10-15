@@ -1,15 +1,12 @@
-From: Pavel Labushev <p.labushev-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: Fwd: Re: lxc-performance?
-Date: Fri, 15 Oct 2010 22:32:23 +0800
-Message-ID: <4CB865F7.8070904@gmail.com>
-References: <4CAED1CF.6050908@univ-fcomte.fr>
-	<20101012140509.0ab6c617.kamezawa.hiroyu@jp.fujitsu.com>
-	<4CB708A1.7000403@univ-fcomte.fr>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] Clear the objhash before completing restart,
+	but delay free until later
+Date: Fri, 15 Oct 2010 08:20:39 -0700
+Message-ID: <1287156039-31496-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4CB708A1.7000403-jI/kxupzh7HSLaPbPq81kw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,18 +16,125 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-MTQuMTAuMjAxMCAyMTo0MSwgTUFMQVRUQVIg0L/QuNGI0LXRgjoKCj4gYWxzbyBtZW10ZXN0IGNv
-bW1hbmQgd2FzIGFibGUgdG8gYWxsb2NhdGUgdXAgdG8gMTAyNE1CIGJ1dCBpdCB0YWtlcyBhCj4g
-bG9uZyB0aW1lCj4gZm9yIG9uZSBsb29wIG9ubHkgLi4uCgpPSywgdGhlIHByb2JsZW0gaXMgbm90
-IHdpdGggTFhDIG1lbW9yeSBsaW1pdHMgdGhlcmVmb3JlLgoKPiBTbywgaSB0aGluayB0aGUgcHJv
-YmxlbSBpcyBpbiBteSBwcm9ncmFtIG5vdCBpbiB0aGUgY29udGFpbmVyLCBpcyBub3QgaXQ/CgpJ
-dCBjb3VsZCBiZSB5b3VyIHByb2dyYW0gb3IgdG9vIGxvdyBybGltaXRzLiBXaGF0ICd1bGltaXQg
-LWEnIHNheXM/IE5vdGUKdGhhdCBybGltaXRzIGFyZSBwZXItcHJvY2Vzcywgc28geW91IHNob3Vs
-ZCBpbnZlc3RpZ2F0ZSB0aGVpciB2YWx1ZXMKZnJvbSBpbnNpZGUgeW91ciBwcm9ncmFtJ3Mgb3Bl
-cmF0aW5nIGVudmlyb25tZW50LgoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51
-eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxt
-YW4vbGlzdGluZm8vY29udGFpbmVycw==
+This patch causes the restart coordinator to clear the object hash
+before releasing the restarted tasks.  It does this to make sure
+that any objects being held exclusively by the hash are released
+before the tasks start running again.
+
+To avoid the overhead of actually freeing the object hash's structures
+at the same time, this adds a queue to ckpt_obj_hash and pushes
+the ckpt_obj structures there to be free()'d later during the cleanup
+process.
+
+Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ include/linux/checkpoint.h  |    1 +
+ kernel/checkpoint/objhash.c |   20 +++++++++++++++++---
+ kernel/checkpoint/restart.c |    2 ++
+ 3 files changed, 20 insertions(+), 3 deletions(-)
+
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index a11d40e..f888363 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -179,6 +179,7 @@ extern void restore_notify_error(struct ckpt_ctx *ctx);
+ extern int ckpt_obj_module_get(void);
+ extern void ckpt_obj_module_put(void);
+ 
++extern void ckpt_obj_hash_clear(struct ckpt_ctx *ctx);
+ extern void ckpt_obj_hash_free(struct ckpt_ctx *ctx);
+ extern int ckpt_obj_hash_alloc(struct ckpt_ctx *ctx);
+ 
+diff --git a/kernel/checkpoint/objhash.c b/kernel/checkpoint/objhash.c
+index 62c34ff..b62fe8d 100644
+--- a/kernel/checkpoint/objhash.c
++++ b/kernel/checkpoint/objhash.c
+@@ -27,6 +27,7 @@ struct ckpt_obj {
+ 	const struct ckpt_obj_ops *ops;
+ 	struct hlist_node hash;
+ 	struct hlist_node next;
++	struct list_head free;
+ };
+ 
+ /*` object internal flags */
+@@ -36,6 +37,7 @@ struct ckpt_obj {
+ struct ckpt_obj_hash {
+ 	struct hlist_head *head;
+ 	struct hlist_head list;
++	struct list_head free;
+ 	int next_free_objref;
+ };
+ 
+@@ -128,8 +130,9 @@ int ckpt_obj_module_get(void)
+ #define CKPT_OBJ_HASH_NBITS  10
+ #define CKPT_OBJ_HASH_TOTAL  (1UL << CKPT_OBJ_HASH_NBITS)
+ 
+-static void obj_hash_clear(struct ckpt_obj_hash *obj_hash)
++void ckpt_obj_hash_clear(struct ckpt_ctx *ctx)
+ {
++	struct ckpt_obj_hash *obj_hash = ctx->obj_hash;
+ 	struct hlist_head *h = obj_hash->head;
+ 	struct hlist_node *n, *t;
+ 	struct ckpt_obj *obj;
+@@ -139,7 +142,9 @@ static void obj_hash_clear(struct ckpt_obj_hash *obj_hash)
+ 		hlist_for_each_entry_safe(obj, n, t, &h[i], hash) {
+ 			if (obj->ops->ref_drop)
+ 				obj->ops->ref_drop(obj->ptr, 1);
+-			kfree(obj);
++			hlist_del(&obj->hash);
++			hlist_del(&obj->next);
++			list_add(&obj->free, &obj_hash->free);
+ 		}
+ 	}
+ }
+@@ -149,7 +154,13 @@ void ckpt_obj_hash_free(struct ckpt_ctx *ctx)
+ 	struct ckpt_obj_hash *obj_hash = ctx->obj_hash;
+ 
+ 	if (obj_hash) {
+-		obj_hash_clear(obj_hash);
++		struct ckpt_obj *obj, *next;
++
++		ckpt_obj_hash_clear(ctx);
++
++		list_for_each_entry_safe(obj, next, &obj_hash->free, free)
++			kfree(obj);
++
+ 		kfree(obj_hash->head);
+ 		kfree(ctx->obj_hash);
+ 		ctx->obj_hash = NULL;
+@@ -173,6 +184,7 @@ int ckpt_obj_hash_alloc(struct ckpt_ctx *ctx)
+ 	obj_hash->head = head;
+ 	obj_hash->next_free_objref = 1;
+ 	INIT_HLIST_HEAD(&obj_hash->list);
++	INIT_LIST_HEAD(&obj_hash->free);
+ 
+ 	ctx->obj_hash = obj_hash;
+ 	return 0;
+@@ -260,6 +272,8 @@ static struct ckpt_obj *obj_new(struct ckpt_ctx *ctx, void *ptr,
+ 		i = hash_long((unsigned long) objref, CKPT_OBJ_HASH_NBITS);
+ 	}
+ 
++	INIT_LIST_HEAD(&obj->free);
++
+ 	ret = ops->ref_grab ? ops->ref_grab(obj->ptr) : 0;
+ 	if (ret < 0) {
+ 		kfree(obj);
+diff --git a/kernel/checkpoint/restart.c b/kernel/checkpoint/restart.c
+index 17270b8..f2241a9 100644
+--- a/kernel/checkpoint/restart.c
++++ b/kernel/checkpoint/restart.c
+@@ -1349,6 +1349,8 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
+ 	if (ret < 0)
+ 		ckpt_err(ctx, ret, "restart failed (coordinator)\n");
+ 
++	ckpt_obj_hash_clear(ctx);
++
+ 	if (ckpt_test_error(ctx)) {
+ 		destroy_descendants(ctx);
+ 		ret = ckpt_get_error(ctx);
+-- 
+1.7.2.2
