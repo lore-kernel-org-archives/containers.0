@@ -1,140 +1,157 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] Clear the objhash before completing restart,
-	but delay free until later
-Date: Fri, 15 Oct 2010 08:20:39 -0700
-Message-ID: <1287156039-31496-1-git-send-email-danms@us.ibm.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+From: Greg Thelen <gthelen@google.com>
+Subject: [PATCH v2 00/11] memcg: per cgroup dirty page accounting
+Date: Fri, 15 Oct 2010 14:14:28 -0700
+Message-ID: <1287177279-30876-1-git-send-email-gthelen@google.com>
+Return-path: <owner-linux-mm@kvack.org>
+Sender: owner-linux-mm@kvack.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Greg Thelen <gthelen@google.com>
 List-Id: containers.vger.kernel.org
 
-This patch causes the restart coordinator to clear the object hash
-before releasing the restarted tasks.  It does this to make sure
-that any objects being held exclusively by the hash are released
-before the tasks start running again.
+Changes since V1:
+- Renamed "nfs"/"total_nfs" to "nfs_unstable"/"total_nfs_unstable" in per cgroup
+  memory.stat to match /proc/meminfo.
 
-To avoid the overhead of actually freeing the object hash's structures
-at the same time, this adds a queue to ckpt_obj_hash and pushes
-the ckpt_obj structures there to be free()'d later during the cleanup
-process.
+- Avoid lockdep warnings by using rcu_read_[un]lock() in
+  mem_cgroup_has_dirty_limit().
 
-Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- include/linux/checkpoint.h  |    1 +
- kernel/checkpoint/objhash.c |   20 +++++++++++++++++---
- kernel/checkpoint/restart.c |    2 ++
- 3 files changed, 20 insertions(+), 3 deletions(-)
+- Fixed lockdep issue in mem_cgroup_read_stat() which is exposed by these
+  patches.
 
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index a11d40e..f888363 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -179,6 +179,7 @@ extern void restore_notify_error(struct ckpt_ctx *ctx);
- extern int ckpt_obj_module_get(void);
- extern void ckpt_obj_module_put(void);
- 
-+extern void ckpt_obj_hash_clear(struct ckpt_ctx *ctx);
- extern void ckpt_obj_hash_free(struct ckpt_ctx *ctx);
- extern int ckpt_obj_hash_alloc(struct ckpt_ctx *ctx);
- 
-diff --git a/kernel/checkpoint/objhash.c b/kernel/checkpoint/objhash.c
-index 62c34ff..b62fe8d 100644
---- a/kernel/checkpoint/objhash.c
-+++ b/kernel/checkpoint/objhash.c
-@@ -27,6 +27,7 @@ struct ckpt_obj {
- 	const struct ckpt_obj_ops *ops;
- 	struct hlist_node hash;
- 	struct hlist_node next;
-+	struct list_head free;
- };
- 
- /*` object internal flags */
-@@ -36,6 +37,7 @@ struct ckpt_obj {
- struct ckpt_obj_hash {
- 	struct hlist_head *head;
- 	struct hlist_head list;
-+	struct list_head free;
- 	int next_free_objref;
- };
- 
-@@ -128,8 +130,9 @@ int ckpt_obj_module_get(void)
- #define CKPT_OBJ_HASH_NBITS  10
- #define CKPT_OBJ_HASH_TOTAL  (1UL << CKPT_OBJ_HASH_NBITS)
- 
--static void obj_hash_clear(struct ckpt_obj_hash *obj_hash)
-+void ckpt_obj_hash_clear(struct ckpt_ctx *ctx)
- {
-+	struct ckpt_obj_hash *obj_hash = ctx->obj_hash;
- 	struct hlist_head *h = obj_hash->head;
- 	struct hlist_node *n, *t;
- 	struct ckpt_obj *obj;
-@@ -139,7 +142,9 @@ static void obj_hash_clear(struct ckpt_obj_hash *obj_hash)
- 		hlist_for_each_entry_safe(obj, n, t, &h[i], hash) {
- 			if (obj->ops->ref_drop)
- 				obj->ops->ref_drop(obj->ptr, 1);
--			kfree(obj);
-+			hlist_del(&obj->hash);
-+			hlist_del(&obj->next);
-+			list_add(&obj->free, &obj_hash->free);
- 		}
- 	}
- }
-@@ -149,7 +154,13 @@ void ckpt_obj_hash_free(struct ckpt_ctx *ctx)
- 	struct ckpt_obj_hash *obj_hash = ctx->obj_hash;
- 
- 	if (obj_hash) {
--		obj_hash_clear(obj_hash);
-+		struct ckpt_obj *obj, *next;
-+
-+		ckpt_obj_hash_clear(ctx);
-+
-+		list_for_each_entry_safe(obj, next, &obj_hash->free, free)
-+			kfree(obj);
-+
- 		kfree(obj_hash->head);
- 		kfree(ctx->obj_hash);
- 		ctx->obj_hash = NULL;
-@@ -173,6 +184,7 @@ int ckpt_obj_hash_alloc(struct ckpt_ctx *ctx)
- 	obj_hash->head = head;
- 	obj_hash->next_free_objref = 1;
- 	INIT_HLIST_HEAD(&obj_hash->list);
-+	INIT_LIST_HEAD(&obj_hash->free);
- 
- 	ctx->obj_hash = obj_hash;
- 	return 0;
-@@ -260,6 +272,8 @@ static struct ckpt_obj *obj_new(struct ckpt_ctx *ctx, void *ptr,
- 		i = hash_long((unsigned long) objref, CKPT_OBJ_HASH_NBITS);
- 	}
- 
-+	INIT_LIST_HEAD(&obj->free);
-+
- 	ret = ops->ref_grab ? ops->ref_grab(obj->ptr) : 0;
- 	if (ret < 0) {
- 		kfree(obj);
-diff --git a/kernel/checkpoint/restart.c b/kernel/checkpoint/restart.c
-index 17270b8..f2241a9 100644
---- a/kernel/checkpoint/restart.c
-+++ b/kernel/checkpoint/restart.c
-@@ -1349,6 +1349,8 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
- 	if (ret < 0)
- 		ckpt_err(ctx, ret, "restart failed (coordinator)\n");
- 
-+	ckpt_obj_hash_clear(ctx);
-+
- 	if (ckpt_test_error(ctx)) {
- 		destroy_descendants(ctx);
- 		ret = ckpt_get_error(ctx);
--- 
-1.7.2.2
+- Remove redundant comments.
+
+- Rename (for clarity):
+  - mem_cgroup_write_page_stat_item -> mem_cgroup_page_stat_item
+  - mem_cgroup_read_page_stat_item -> mem_cgroup_nr_pages_item
+
+- Renamed newly created proc files:
+  - memory.dirty_bytes -> memory.dirty_limit_in_bytes
+  - memory.dirty_background_bytes -> memory.dirty_background_limit_in_bytes
+
+- Removed unnecessary get_ prefix from get_xxx() functions.
+
+- Allow [kKmMgG] suffixes for newly created dirty limit value cgroupfs files.
+
+- Disable softirq rather than hardirq in lock_page_cgroup()
+
+- Made mem_cgroup_move_account_page_stat() inline.
+
+- Ported patches to mmotm-2010-10-13-17-13.
+
+
+This patch set provides the ability for each cgroup to have independent dirty
+page limits.
+
+Limiting dirty memory is like fixing the max amount of dirty (hard to reclaim)
+page cache used by a cgroup.  So, in case of multiple cgroup writers, they will
+not be able to consume more than their designated share of dirty pages and will
+be forced to perform write-out if they cross that limit.
+
+The patches are based on a series proposed by Andrea Righi in Mar 2010.
+
+
+Overview:
+- Add page_cgroup flags to record when pages are dirty, in writeback, or nfs
+  unstable.
+
+- Extend mem_cgroup to record the total number of pages in each of the 
+  interesting dirty states (dirty, writeback, unstable_nfs).  
+
+- Add dirty parameters similar to the system-wide  /proc/sys/vm/dirty_*
+  limits to mem_cgroup.  The mem_cgroup dirty parameters are accessible
+  via cgroupfs control files.
+
+- Consider both system and per-memcg dirty limits in page writeback when
+  deciding to queue background writeback or block for foreground writeback.
+
+
+Known shortcomings:
+- When a cgroup dirty limit is exceeded, then bdi writeback is employed to
+  writeback dirty inodes.  Bdi writeback considers inodes from any cgroup, not
+  just inodes contributing dirty pages to the cgroup exceeding its limit.  
+
+
+Performance data:
+- A page fault microbenchmark workload was used to measure performance, which
+  can be called in read or write mode:
+        f = open(foo. $cpu)
+        truncate(f, 4096)
+        alarm(60)
+        while (1) {
+                p = mmap(f, 4096)
+                if (write)
+			*p = 1
+		else
+			x = *p
+                munmap(p)
+        }
+
+- The workload was called for several points in the patch series in different
+  modes:
+  - s_read is a single threaded reader
+  - s_write is a single threaded writer
+  - p_read is a 16 thread reader, each operating on a different file
+  - p_write is a 16 thread writer, each operating on a different file
+
+- Measurements were collected on a 16 core non-numa system using "perf stat
+  --repeat 3".  The -a option was used for parallel (p_*) runs.
+
+- All numbers are page fault rate (M/sec).  Higher is better.
+
+- Patch 04/11 disables softirq in lock_page_cgroup().  There has been some
+  discussion about the performance of this change.  To compare the cost of
+  disabling softirq in patch 04/11, compare the patch 03 and patch 04 rows.
+
+- To compare the performance of a kernel without non-memcg compare the first and
+  last rows, neither has memcg configured.  The first row does not include any
+  of these memcg patches.
+
+- To compare the performance of using memcg dirty limits, compare the baseline
+  (2nd row titled "w/ memcg") with the the code and memcg enabled (2nd to last
+  row titled "all patches").
+
+                           root_cgroup                     child_cgroup
+                 s_read s_write p_read p_write    s_read s_write p_read p_write
+mmotm w/o memcg   0.424  0.399   0.421  0.395
+w/ memcg          0.418  0.389   0.398  0.369      0.414  0.389  0.395  0.369
+patch 03/11       0.429  0.394   0.405  0.378      0.427  0.393  0.405  0.379
+ create extensible routines
+patch 04/11       0.424  0.394   0.400  0.373      0.421  0.389  0.398  0.366
+  disable softirq
+all patches       0.419  0.379   0.392  0.365      0.416  0.379  0.391  0.362
+all patches       0.428  0.395   0.421  0.391
+  w/o memcg
+
+
+Balbir Singh (1):
+  memcg: CPU hotplug lockdep warning fix
+
+Greg Thelen (10):
+  memcg: add page_cgroup flags for dirty page tracking
+  memcg: document cgroup dirty memory interfaces
+  memcg: create extensible page stat update routines
+  memcg: disable softirq in lock_page_cgroup()
+  memcg: add dirty page accounting infrastructure
+  memcg: add kernel calls for memcg dirty page stats
+  memcg: add dirty limits to mem_cgroup
+  memcg: add cgroupfs interface to memcg dirty limits
+  writeback: make determine_dirtyable_memory() static.
+  memcg: check memcg dirty limits in page writeback
+
+ Documentation/cgroups/memory.txt |   60 ++++++
+ fs/nfs/write.c                   |    4 +
+ include/linux/memcontrol.h       |   78 +++++++-
+ include/linux/page_cgroup.h      |   29 +++
+ include/linux/writeback.h        |    2 -
+ mm/filemap.c                     |    1 +
+ mm/memcontrol.c                  |  408 ++++++++++++++++++++++++++++++++++++--
+ mm/page-writeback.c              |  213 +++++++++++++-------
+ mm/rmap.c                        |    4 +-
+ mm/truncate.c                    |    1 +
+ 10 files changed, 697 insertions(+), 103 deletions(-)
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
