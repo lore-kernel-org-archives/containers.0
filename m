@@ -1,107 +1,179 @@
-From: Minchan Kim <minchan.kim@gmail.com>
-Subject: Re: [PATCH v2 04/11] memcg: disable softirq in lock_page_cgroup()
-Date: Sun, 17 Oct 2010 14:56:20 +0900
-Message-ID: <AANLkTimosH8egHCY1BJ_8DisweJDm1VwxXJ=sGzxUJJe@mail.gmail.com>
-References: <1287177279-30876-1-git-send-email-gthelen@google.com>
-	<1287177279-30876-5-git-send-email-gthelen@google.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] Clear the objhash before completing restart,	but
+	delay free until later
+Date: Sun, 17 Oct 2010 15:55:07 -0700
+Message-ID: <20101017225507.GA10119@count0.beaverton.ibm.com>
+References: <1287156039-31496-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <1287177279-30876-5-git-send-email-gthelen@google.com>
-Sender: owner-linux-mm@kvack.org
-To: Greg Thelen <gthelen@google.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1287156039-31496-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Sat, Oct 16, 2010 at 6:14 AM, Greg Thelen <gthelen@google.com> wrote:
-> If pages are being migrated from a memcg, then updates to that
-> memcg's page statistics are protected by grabbing a bit spin lock
-> using lock_page_cgroup(). =A0In an upcoming commit memcg dirty page
-> accounting will be updating memcg page accounting (specifically:
-> num writeback pages) from softirq. =A0Avoid a deadlocking nested
-> spin lock attempt by disabling softirq on the local processor
-> when grabbing the page_cgroup bit_spin_lock in lock_page_cgroup().
-> This avoids the following deadlock:
-> statistic
-> =A0 =A0 =A0CPU 0 =A0 =A0 =A0 =A0 =A0 =A0 CPU 1
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0inc_file_mapped
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0rcu_read_lock
-> =A0start move
-> =A0synchronize_rcu
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0lock_page_cgroup
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0softirq
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0test_clear_page_writeback
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0mem_cgroup_dec_page_stat(NR_WR=
-ITEBACK)
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0rcu_read_lock
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0lock_page_cgroup =A0 /* deadlo=
-ck */
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0unlock_page_cgroup
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0rcu_read_unlock
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0unlock_page_cgroup
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0rcu_read_unlock
->
-> By disabling softirq in lock_page_cgroup, nested calls are avoided.
-> The softirq would be delayed until after inc_file_mapped enables
-> softirq when calling unlock_page_cgroup().
->
-> The normal, fast path, of memcg page stat updates typically
-> does not need to call lock_page_cgroup(), so this change does
-> not affect the performance of the common case page accounting.
->
-> Signed-off-by: Andrea Righi <arighi@develer.com>
-> Signed-off-by: Greg Thelen <gthelen@google.com>
+On Fri, Oct 15, 2010 at 08:20:39AM -0700, Dan Smith wrote:
+> This patch causes the restart coordinator to clear the object hash
+> before releasing the restarted tasks.  It does this to make sure
+> that any objects being held exclusively by the hash are released
+> before the tasks start running again.
+
+Perhaps this could use a little more description (please review and
+correct if necessary)...
+
+If we postpone clearing the object hash until restart returns to
+userspace there can be a race where the restarted tasks behave
+differently due to the references held by the objhash.
+One specific example of this is restarting half-closed pipes.
+Without this patch we've got a race between the coordinator --
+about to clear the object hash -- and two restarted tasks connected
+via a half-closed pipe. Because the object hash contains a reference
+to both ends of the pipe one end of the pipe will not be closed
+and EPIPE/SIGPIPE won't be handled when the reading from the pipe
+for instance. As far as the restarted userspace task can tell the
+pipe may briefly appear to re-open. Moving the object hash clear
+prevents this race and others like it.
+
+Note that eventually the coordinator would close the pipe and correct
+behavior would be restored. Thus this bug would only affect the
+correctness of userspace -- after a close() the pipe may briefly re-open
+and allow more data to be sent before automatically closing again.
+
+> 
+> To avoid the overhead of actually freeing the object hash's structures
+> at the same time, this adds a queue to ckpt_obj_hash and pushes
+> the ckpt_obj structures there to be free()'d later during the cleanup
+> process.
+
+You might simplify this by making the queue portion into a separate
+patch. Then we can discuss that independently of moving the objhash
+clear call.
+
+Cheers,
+	-Matt Helsley
+
+> 
+> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 > ---
-> =A0include/linux/page_cgroup.h | =A0 =A06 ++++++
-> =A01 files changed, 6 insertions(+), 0 deletions(-)
->
-> diff --git a/include/linux/page_cgroup.h b/include/linux/page_cgroup.h
-> index b59c298..0585546 100644
-> --- a/include/linux/page_cgroup.h
-> +++ b/include/linux/page_cgroup.h
-> @@ -3,6 +3,8 @@
->
-> =A0#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-> =A0#include <linux/bit_spinlock.h>
-> +#include <linux/hardirq.h>
+>  include/linux/checkpoint.h  |    1 +
+>  kernel/checkpoint/objhash.c |   20 +++++++++++++++++---
+>  kernel/checkpoint/restart.c |    2 ++
+>  3 files changed, 20 insertions(+), 3 deletions(-)
+> 
+> diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+> index a11d40e..f888363 100644
+> --- a/include/linux/checkpoint.h
+> +++ b/include/linux/checkpoint.h
+> @@ -179,6 +179,7 @@ extern void restore_notify_error(struct ckpt_ctx *ctx);
+>  extern int ckpt_obj_module_get(void);
+>  extern void ckpt_obj_module_put(void);
+> 
+> +extern void ckpt_obj_hash_clear(struct ckpt_ctx *ctx);
+>  extern void ckpt_obj_hash_free(struct ckpt_ctx *ctx);
+>  extern int ckpt_obj_hash_alloc(struct ckpt_ctx *ctx);
+> 
+> diff --git a/kernel/checkpoint/objhash.c b/kernel/checkpoint/objhash.c
+> index 62c34ff..b62fe8d 100644
+> --- a/kernel/checkpoint/objhash.c
+> +++ b/kernel/checkpoint/objhash.c
+> @@ -27,6 +27,7 @@ struct ckpt_obj {
+>  	const struct ckpt_obj_ops *ops;
+>  	struct hlist_node hash;
+>  	struct hlist_node next;
+> +	struct list_head free;
+>  };
+> 
+>  /*` object internal flags */
+> @@ -36,6 +37,7 @@ struct ckpt_obj {
+>  struct ckpt_obj_hash {
+>  	struct hlist_head *head;
+>  	struct hlist_head list;
+> +	struct list_head free;
+>  	int next_free_objref;
+>  };
+> 
+> @@ -128,8 +130,9 @@ int ckpt_obj_module_get(void)
+>  #define CKPT_OBJ_HASH_NBITS  10
+>  #define CKPT_OBJ_HASH_TOTAL  (1UL << CKPT_OBJ_HASH_NBITS)
+> 
+> -static void obj_hash_clear(struct ckpt_obj_hash *obj_hash)
+> +void ckpt_obj_hash_clear(struct ckpt_ctx *ctx)
+>  {
+> +	struct ckpt_obj_hash *obj_hash = ctx->obj_hash;
+>  	struct hlist_head *h = obj_hash->head;
+>  	struct hlist_node *n, *t;
+>  	struct ckpt_obj *obj;
+> @@ -139,7 +142,9 @@ static void obj_hash_clear(struct ckpt_obj_hash *obj_hash)
+>  		hlist_for_each_entry_safe(obj, n, t, &h[i], hash) {
+>  			if (obj->ops->ref_drop)
+>  				obj->ops->ref_drop(obj->ptr, 1);
+> -			kfree(obj);
+> +			hlist_del(&obj->hash);
+> +			hlist_del(&obj->next);
+> +			list_add(&obj->free, &obj_hash->free);
+>  		}
+>  	}
+>  }
+> @@ -149,7 +154,13 @@ void ckpt_obj_hash_free(struct ckpt_ctx *ctx)
+>  	struct ckpt_obj_hash *obj_hash = ctx->obj_hash;
+> 
+>  	if (obj_hash) {
+> -		obj_hash_clear(obj_hash);
+> +		struct ckpt_obj *obj, *next;
 > +
-> =A0/*
-> =A0* Page Cgroup can be considered as an extended mem_map.
-> =A0* A page_cgroup page is associated with every page descriptor. The
-> @@ -119,12 +121,16 @@ static inline enum zone_type page_cgroup_zid(struct=
- page_cgroup *pc)
->
-> =A0static inline void lock_page_cgroup(struct page_cgroup *pc)
-> =A0{
-> + =A0 =A0 =A0 /* This routine is only deadlock safe from softirq or lower=
-. */
-> + =A0 =A0 =A0 VM_BUG_ON(in_irq());
-> + =A0 =A0 =A0 local_bh_disable();
-> =A0 =A0 =A0 =A0bit_spin_lock(PCG_LOCK, &pc->flags);
-> =A0}
->
-> =A0static inline void unlock_page_cgroup(struct page_cgroup *pc)
-> =A0{
-> =A0 =A0 =A0 =A0bit_spin_unlock(PCG_LOCK, &pc->flags);
-> + =A0 =A0 =A0 local_bh_enable();
-> =A0}
->
-> =A0#else /* CONFIG_CGROUP_MEM_RES_CTLR */
-> --
-> 1.7.1
->
->
-
-Please, see recent Kame's patch.
-http://lkml.org/lkml/2010/10/15/54
-
---=20
-Kind regards,
-Minchan Kim
-
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+> +		ckpt_obj_hash_clear(ctx);
+> +
+> +		list_for_each_entry_safe(obj, next, &obj_hash->free, free)
+> +			kfree(obj);
+> +
+>  		kfree(obj_hash->head);
+>  		kfree(ctx->obj_hash);
+>  		ctx->obj_hash = NULL;
+> @@ -173,6 +184,7 @@ int ckpt_obj_hash_alloc(struct ckpt_ctx *ctx)
+>  	obj_hash->head = head;
+>  	obj_hash->next_free_objref = 1;
+>  	INIT_HLIST_HEAD(&obj_hash->list);
+> +	INIT_LIST_HEAD(&obj_hash->free);
+> 
+>  	ctx->obj_hash = obj_hash;
+>  	return 0;
+> @@ -260,6 +272,8 @@ static struct ckpt_obj *obj_new(struct ckpt_ctx *ctx, void *ptr,
+>  		i = hash_long((unsigned long) objref, CKPT_OBJ_HASH_NBITS);
+>  	}
+> 
+> +	INIT_LIST_HEAD(&obj->free);
+> +
+>  	ret = ops->ref_grab ? ops->ref_grab(obj->ptr) : 0;
+>  	if (ret < 0) {
+>  		kfree(obj);
+> diff --git a/kernel/checkpoint/restart.c b/kernel/checkpoint/restart.c
+> index 17270b8..f2241a9 100644
+> --- a/kernel/checkpoint/restart.c
+> +++ b/kernel/checkpoint/restart.c
+> @@ -1349,6 +1349,8 @@ static int do_restore_coord(struct ckpt_ctx *ctx, pid_t pid)
+>  	if (ret < 0)
+>  		ckpt_err(ctx, ret, "restart failed (coordinator)\n");
+> 
+> +	ckpt_obj_hash_clear(ctx);
+> +
+>  	if (ckpt_test_error(ctx)) {
+>  		destroy_descendants(ctx);
+>  		ret = ckpt_get_error(ctx);
+> -- 
+> 1.7.2.2
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
