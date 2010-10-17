@@ -1,176 +1,104 @@
-From: Greg Thelen <gthelen@google.com>
-Subject: [PATCH v2 11/11] memcg: check memcg dirty limits in page writeback
-Date: Fri, 15 Oct 2010 14:14:39 -0700
-Message-ID: <1287177279-30876-12-git-send-email-gthelen@google.com>
+From: Minchan Kim <minchan.kim@gmail.com>
+Subject: Re: [PATCH v2 04/11] memcg: disable softirq in lock_page_cgroup()
+Date: Sun, 17 Oct 2010 14:56:20 +0900
+Message-ID: <AANLkTimosH8egHCY1BJ_8DisweJDm1VwxXJ=sGzxUJJe@mail.gmail.com>
 References: <1287177279-30876-1-git-send-email-gthelen@google.com>
+	<1287177279-30876-5-git-send-email-gthelen@google.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
 Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <1287177279-30876-1-git-send-email-gthelen@google.com>
+In-Reply-To: <1287177279-30876-5-git-send-email-gthelen@google.com>
 Sender: owner-linux-mm@kvack.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Greg Thelen <gthelen@google.com>
+To: Greg Thelen <gthelen@google.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>
 List-Id: containers.vger.kernel.org
 
-If the current process is in a non-root memcg, then
-global_dirty_limits() will consider the memcg dirty limit.
-This allows different cgroups to have distinct dirty limits
-which trigger direct and background writeback at different
-levels.
+On Sat, Oct 16, 2010 at 6:14 AM, Greg Thelen <gthelen@google.com> wrote:
+> If pages are being migrated from a memcg, then updates to that
+> memcg's page statistics are protected by grabbing a bit spin lock
+> using lock_page_cgroup(). =A0In an upcoming commit memcg dirty page
+> accounting will be updating memcg page accounting (specifically:
+> num writeback pages) from softirq. =A0Avoid a deadlocking nested
+> spin lock attempt by disabling softirq on the local processor
+> when grabbing the page_cgroup bit_spin_lock in lock_page_cgroup().
+> This avoids the following deadlock:
+> statistic
+> =A0 =A0 =A0CPU 0 =A0 =A0 =A0 =A0 =A0 =A0 CPU 1
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0inc_file_mapped
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0rcu_read_lock
+> =A0start move
+> =A0synchronize_rcu
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0lock_page_cgroup
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0softirq
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0test_clear_page_writeback
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0mem_cgroup_dec_page_stat(NR_WR=
+ITEBACK)
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0rcu_read_lock
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0lock_page_cgroup =A0 /* deadlo=
+ck */
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0unlock_page_cgroup
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0rcu_read_unlock
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0unlock_page_cgroup
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0rcu_read_unlock
+>
+> By disabling softirq in lock_page_cgroup, nested calls are avoided.
+> The softirq would be delayed until after inc_file_mapped enables
+> softirq when calling unlock_page_cgroup().
+>
+> The normal, fast path, of memcg page stat updates typically
+> does not need to call lock_page_cgroup(), so this change does
+> not affect the performance of the common case page accounting.
+>
+> Signed-off-by: Andrea Righi <arighi@develer.com>
+> Signed-off-by: Greg Thelen <gthelen@google.com>
+> ---
+> =A0include/linux/page_cgroup.h | =A0 =A06 ++++++
+> =A01 files changed, 6 insertions(+), 0 deletions(-)
+>
+> diff --git a/include/linux/page_cgroup.h b/include/linux/page_cgroup.h
+> index b59c298..0585546 100644
+> --- a/include/linux/page_cgroup.h
+> +++ b/include/linux/page_cgroup.h
+> @@ -3,6 +3,8 @@
+>
+> =A0#ifdef CONFIG_CGROUP_MEM_RES_CTLR
+> =A0#include <linux/bit_spinlock.h>
+> +#include <linux/hardirq.h>
+> +
+> =A0/*
+> =A0* Page Cgroup can be considered as an extended mem_map.
+> =A0* A page_cgroup page is associated with every page descriptor. The
+> @@ -119,12 +121,16 @@ static inline enum zone_type page_cgroup_zid(struct=
+ page_cgroup *pc)
+>
+> =A0static inline void lock_page_cgroup(struct page_cgroup *pc)
+> =A0{
+> + =A0 =A0 =A0 /* This routine is only deadlock safe from softirq or lower=
+. */
+> + =A0 =A0 =A0 VM_BUG_ON(in_irq());
+> + =A0 =A0 =A0 local_bh_disable();
+> =A0 =A0 =A0 =A0bit_spin_lock(PCG_LOCK, &pc->flags);
+> =A0}
+>
+> =A0static inline void unlock_page_cgroup(struct page_cgroup *pc)
+> =A0{
+> =A0 =A0 =A0 =A0bit_spin_unlock(PCG_LOCK, &pc->flags);
+> + =A0 =A0 =A0 local_bh_enable();
+> =A0}
+>
+> =A0#else /* CONFIG_CGROUP_MEM_RES_CTLR */
+> --
+> 1.7.1
+>
+>
 
-Signed-off-by: Andrea Righi <arighi@develer.com>
-Signed-off-by: Greg Thelen <gthelen@google.com>
----
- mm/page-writeback.c |   89 +++++++++++++++++++++++++++++++++++++++++---------
- 1 files changed, 73 insertions(+), 16 deletions(-)
+Please, see recent Kame's patch.
+http://lkml.org/lkml/2010/10/15/54
 
-diff --git a/mm/page-writeback.c b/mm/page-writeback.c
-index a0bb3e2..9b34f01 100644
---- a/mm/page-writeback.c
-+++ b/mm/page-writeback.c
-@@ -180,7 +180,7 @@ static unsigned long highmem_dirtyable_memory(unsigned long total)
-  * Returns the numebr of pages that can currently be freed and used
-  * by the kernel for direct mappings.
-  */
--static unsigned long determine_dirtyable_memory(void)
-+static unsigned long global_dirtyable_memory(void)
- {
- 	unsigned long x;
- 
-@@ -192,6 +192,58 @@ static unsigned long determine_dirtyable_memory(void)
- 	return x + 1;	/* Ensure that we never return 0 */
- }
- 
-+static unsigned long dirtyable_memory(void)
-+{
-+	unsigned long memory;
-+	s64 memcg_memory;
-+
-+	memory = global_dirtyable_memory();
-+	if (!mem_cgroup_has_dirty_limit())
-+		return memory;
-+	memcg_memory = mem_cgroup_page_stat(MEMCG_NR_DIRTYABLE_PAGES);
-+	BUG_ON(memcg_memory < 0);
-+
-+	return min((unsigned long)memcg_memory, memory);
-+}
-+
-+static long reclaimable_pages(void)
-+{
-+	s64 ret;
-+
-+	if (!mem_cgroup_has_dirty_limit())
-+		return global_page_state(NR_FILE_DIRTY) +
-+			global_page_state(NR_UNSTABLE_NFS);
-+	ret = mem_cgroup_page_stat(MEMCG_NR_RECLAIM_PAGES);
-+	BUG_ON(ret < 0);
-+
-+	return ret;
-+}
-+
-+static long writeback_pages(void)
-+{
-+	s64 ret;
-+
-+	if (!mem_cgroup_has_dirty_limit())
-+		return global_page_state(NR_WRITEBACK);
-+	ret = mem_cgroup_page_stat(MEMCG_NR_WRITEBACK);
-+	BUG_ON(ret < 0);
-+
-+	return ret;
-+}
-+
-+static unsigned long dirty_writeback_pages(void)
-+{
-+	s64 ret;
-+
-+	if (!mem_cgroup_has_dirty_limit())
-+		return global_page_state(NR_UNSTABLE_NFS) +
-+			global_page_state(NR_WRITEBACK);
-+	ret = mem_cgroup_page_stat(MEMCG_NR_DIRTY_WRITEBACK_PAGES);
-+	BUG_ON(ret < 0);
-+
-+	return ret;
-+}
-+
- /*
-  * couple the period to the dirty_ratio:
-  *
-@@ -204,8 +256,8 @@ static int calc_period_shift(void)
- 	if (vm_dirty_bytes)
- 		dirty_total = vm_dirty_bytes / PAGE_SIZE;
- 	else
--		dirty_total = (vm_dirty_ratio * determine_dirtyable_memory()) /
--				100;
-+		dirty_total = (vm_dirty_ratio * global_dirtyable_memory()) /
-+			100;
- 	return 2 + ilog2(dirty_total - 1);
- }
- 
-@@ -410,18 +462,23 @@ void global_dirty_limits(unsigned long *pbackground, unsigned long *pdirty)
- {
- 	unsigned long background;
- 	unsigned long dirty;
--	unsigned long available_memory = determine_dirtyable_memory();
-+	unsigned long available_memory = dirtyable_memory();
- 	struct task_struct *tsk;
-+	struct vm_dirty_param dirty_param;
- 
--	if (vm_dirty_bytes)
--		dirty = DIV_ROUND_UP(vm_dirty_bytes, PAGE_SIZE);
-+	vm_dirty_param(&dirty_param);
-+
-+	if (dirty_param.dirty_bytes)
-+		dirty = DIV_ROUND_UP(dirty_param.dirty_bytes, PAGE_SIZE);
- 	else
--		dirty = (vm_dirty_ratio * available_memory) / 100;
-+		dirty = (dirty_param.dirty_ratio * available_memory) / 100;
- 
--	if (dirty_background_bytes)
--		background = DIV_ROUND_UP(dirty_background_bytes, PAGE_SIZE);
-+	if (dirty_param.dirty_background_bytes)
-+		background = DIV_ROUND_UP(dirty_param.dirty_background_bytes,
-+					  PAGE_SIZE);
- 	else
--		background = (dirty_background_ratio * available_memory) / 100;
-+		background = (dirty_param.dirty_background_ratio *
-+			      available_memory) / 100;
- 
- 	if (background >= dirty)
- 		background = dirty / 2;
-@@ -493,9 +550,8 @@ static void balance_dirty_pages(struct address_space *mapping,
- 			.range_cyclic	= 1,
- 		};
- 
--		nr_reclaimable = global_page_state(NR_FILE_DIRTY) +
--					global_page_state(NR_UNSTABLE_NFS);
--		nr_writeback = global_page_state(NR_WRITEBACK);
-+		nr_reclaimable = reclaimable_pages();
-+		nr_writeback = writeback_pages();
- 
- 		global_dirty_limits(&background_thresh, &dirty_thresh);
- 
-@@ -652,6 +708,7 @@ void throttle_vm_writeout(gfp_t gfp_mask)
- {
- 	unsigned long background_thresh;
- 	unsigned long dirty_thresh;
-+	unsigned long dirty;
- 
-         for ( ; ; ) {
- 		global_dirty_limits(&background_thresh, &dirty_thresh);
-@@ -662,9 +719,9 @@ void throttle_vm_writeout(gfp_t gfp_mask)
-                  */
-                 dirty_thresh += dirty_thresh / 10;      /* wheeee... */
- 
--                if (global_page_state(NR_UNSTABLE_NFS) +
--			global_page_state(NR_WRITEBACK) <= dirty_thresh)
--                        	break;
-+		dirty = dirty_writeback_pages();
-+		if (dirty <= dirty_thresh)
-+			break;
-                 congestion_wait(BLK_RW_ASYNC, HZ/10);
- 
- 		/*
--- 
-1.7.1
+--=20
+Kind regards,
+Minchan Kim
 
 --
 To unsubscribe, send a message with 'unsubscribe linux-mm' in
