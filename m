@@ -1,203 +1,143 @@
 From: Greg Thelen <gthelen@google.com>
-Subject: Re: [PATCH 00/10] memcg: per cgroup dirty page accounting
-Date: Mon, 18 Oct 2010 11:09:26 -0700
-Message-ID: <xr93d3r79xux.fsf@ninji.mtv.corp.google.com>
-References: <1286175485-30643-1-git-send-email-gthelen@google.com>
-	<20101018145636.806446aa.kamezawa.hiroyu@jp.fujitsu.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Subject: [PATCH v3 00/11] memcg: per cgroup dirty page accounting
+Date: Mon, 18 Oct 2010 17:39:33 -0700
+Message-ID: <1287448784-25684-1-git-send-email-gthelen@google.com>
 Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <20101018145636.806446aa.kamezawa.hiroyu@jp.fujitsu.com>
-	(KAMEZAWA Hiroyuki's message of "Mon, 18 Oct 2010 14:56:36 +0900")
 Sender: owner-linux-mm@kvack.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Greg Thelen <gthelen@google.com>
 List-Id: containers.vger.kernel.org
 
-KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com> writes:
+Changes since v2:
+- Rather than disabling softirq in lock_page_cgroup(), introduce a separate lock
+  to synchronize between memcg page accounting and migration.  This only affects
+  patch 4 of the series.  Patch 4 used to disable softirq, now it introduces the
+  new lock.
 
-> On Sun,  3 Oct 2010 23:57:55 -0700
-> Greg Thelen <gthelen@google.com> wrote:
->
->> Greg Thelen (10):
->>   memcg: add page_cgroup flags for dirty page tracking
->>   memcg: document cgroup dirty memory interfaces
->>   memcg: create extensible page stat update routines
->>   memcg: disable local interrupts in lock_page_cgroup()
->>   memcg: add dirty page accounting infrastructure
->>   memcg: add kernel calls for memcg dirty page stats
->>   memcg: add dirty limits to mem_cgroup
->>   memcg: add cgroupfs interface to memcg dirty limits
->>   writeback: make determine_dirtyable_memory() static.
->>   memcg: check memcg dirty limits in page writeback
->
-> Greg, this is a patch on your set.
->
->  mmotm-1014 
->  - memcg-reduce-lock-hold-time-during-charge-moving.patch
->    (I asked Andrew to drop this)
->  + your 1,2,3,5,6,7,8,9,10 (dropped patch "4")
->
-> I'm grad if you merge this to your set as replacement of "4".
-> I'll prepare a performance improvement patch and post it if this dirty_limit
-> patches goes to -mm.
+Changes since v1:
+- Renamed "nfs"/"total_nfs" to "nfs_unstable"/"total_nfs_unstable" in per cgroup
+  memory.stat to match /proc/meminfo.
+- Avoid lockdep warnings by using rcu_read_[un]lock() in
+  mem_cgroup_has_dirty_limit().
+- Fixed lockdep issue in mem_cgroup_read_stat() which is exposed by these
+  patches.
+- Remove redundant comments.
+- Rename (for clarity):
+  - mem_cgroup_write_page_stat_item -> mem_cgroup_page_stat_item
+  - mem_cgroup_read_page_stat_item -> mem_cgroup_nr_pages_item
+- Renamed newly created proc files:
+  - memory.dirty_bytes -> memory.dirty_limit_in_bytes
+  - memory.dirty_background_bytes -> memory.dirty_background_limit_in_bytes
+- Removed unnecessary get_ prefix from get_xxx() functions.
+- Allow [kKmMgG] suffixes for newly created dirty limit value cgroupfs files.
+- Disable softirq rather than hardirq in lock_page_cgroup()
+- Made mem_cgroup_move_account_page_stat() inline.
+- Ported patches to mmotm-2010-10-13-17-13.
 
-Thanks for the patch.  I will merge your patch (below) as a replacement
-of memcg dirty limits patch #4 and repost the entire series.
+This patch set provides the ability for each cgroup to have independent dirty
+page limits.
 
-> Thank you for your work.
->
-> ==
-> From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
->
-> Now, at supporing dirty limit, there is a deadlock problem in accounting.
->
->  1. If pages are being migrated from a memcg, then updates to that
-> memcg page statistics are protected by grabbing a bit spin lock
-> using lock_page_cgroup().  In recent changes of dirty page accounting
-> is updating memcg page accounting (specifically: num writeback pages)
-> from IRQ context (softirq).  Avoid a deadlocking nested spin lock attempt
-> by irq on the local processor when grabbing the page_cgroup.
->
->  2. lock for update_stat is used only for avoiding race with move_account().
-> So, IRQ awareness of lock_page_cgroup() itself is not a problem. The problem
-> is in update_stat() and move_account().
->
-> Then, this reworks locking scheme of update_stat() and move_account() by
-> adding new lock bit PCG_MOVE_LOCK, which is always taken under IRQ disable.
->
-> Trade-off
->   * using lock_page_cgroup() + disable IRQ has some impacts on performance
->     and I think it's bad to disable IRQ when it's not necessary.
->   * adding a new lock makes move_account() slow. Score is here.
->
-> Peformance Impact: moving a 8G anon process.
->
-> Before:
-> 	real    0m0.792s
-> 	user    0m0.000s
-> 	sys     0m0.780s
->
-> After:
-> 	real    0m0.854s
-> 	user    0m0.000s
-> 	sys     0m0.842s
->
-> This score is bad but planned patches for optimization can reduce
-> this impact.
->
-> Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-> ---
->  include/linux/page_cgroup.h |   31 ++++++++++++++++++++++++++++---
->  mm/memcontrol.c             |    9 +++++++--
->  2 files changed, 35 insertions(+), 5 deletions(-)
->
-> Index: dirty_limit_new/include/linux/page_cgroup.h
-> ===================================================================
-> --- dirty_limit_new.orig/include/linux/page_cgroup.h
-> +++ dirty_limit_new/include/linux/page_cgroup.h
-> @@ -35,15 +35,18 @@ struct page_cgroup *lookup_page_cgroup(s
->  
->  enum {
->  	/* flags for mem_cgroup */
-> -	PCG_LOCK,  /* page cgroup is locked */
-> +	PCG_LOCK,  /* Lock for pc->mem_cgroup and following bits. */
->  	PCG_CACHE, /* charged as cache */
->  	PCG_USED, /* this object is in use. */
-> -	PCG_ACCT_LRU, /* page has been accounted for */
-> +	PCG_MIGRATION, /* under page migration */
-> +	/* flags for mem_cgroup and file and I/O status */
-> +	PCG_MOVE_LOCK, /* For race between move_account v.s. following bits */
->  	PCG_FILE_MAPPED, /* page is accounted as "mapped" */
->  	PCG_FILE_DIRTY, /* page is dirty */
->  	PCG_FILE_WRITEBACK, /* page is under writeback */
->  	PCG_FILE_UNSTABLE_NFS, /* page is NFS unstable */
-> -	PCG_MIGRATION, /* under page migration */
-> +	/* No lock in page_cgroup */
-> +	PCG_ACCT_LRU, /* page has been accounted for (under lru_lock) */
->  };
->  
->  #define TESTPCGFLAG(uname, lname)			\
-> @@ -119,6 +122,10 @@ static inline enum zone_type page_cgroup
->  
->  static inline void lock_page_cgroup(struct page_cgroup *pc)
->  {
-> +	/*
-> +	 * Don't take this lock in IRQ context.
-> +	 * This lock is for pc->mem_cgroup, USED, CACHE, MIGRATION
-> +	 */
->  	bit_spin_lock(PCG_LOCK, &pc->flags);
->  }
->  
-> @@ -127,6 +134,24 @@ static inline void unlock_page_cgroup(st
->  	bit_spin_unlock(PCG_LOCK, &pc->flags);
->  }
->  
-> +static inline void move_lock_page_cgroup(struct page_cgroup *pc,
-> +	unsigned long *flags)
-> +{
-> +	/*
-> +	 * We know updates to pc->flags of page cache's stats are from both of
-> +	 * usual context or IRQ context. Disable IRQ to avoid deadlock.
-> +	 */
-> +	local_irq_save(*flags);
-> +	bit_spin_lock(PCG_MOVE_LOCK, &pc->flags);
-> +}
-> +
-> +static inline void move_unlock_page_cgroup(struct page_cgroup *pc,
-> +	unsigned long *flags)
-> +{
-> +	bit_spin_unlock(PCG_MOVE_LOCK, &pc->flags);
-> +	local_irq_restore(*flags);
-> +}
-> +
->  #else /* CONFIG_CGROUP_MEM_RES_CTLR */
->  struct page_cgroup;
->  
-> Index: dirty_limit_new/mm/memcontrol.c
-> ===================================================================
-> --- dirty_limit_new.orig/mm/memcontrol.c
-> +++ dirty_limit_new/mm/memcontrol.c
-> @@ -1784,6 +1784,7 @@ void mem_cgroup_update_page_stat(struct 
->  	struct mem_cgroup *mem;
->  	struct page_cgroup *pc = lookup_page_cgroup(page);
->  	bool need_unlock = false;
-> +	unsigned long uninitialized_var(flags);
->  
->  	if (unlikely(!pc))
->  		return;
-> @@ -1795,7 +1796,7 @@ void mem_cgroup_update_page_stat(struct 
->  	/* pc->mem_cgroup is unstable ? */
->  	if (unlikely(mem_cgroup_stealed(mem))) {
->  		/* take a lock against to access pc->mem_cgroup */
-> -		lock_page_cgroup(pc);
-> +		move_lock_page_cgroup(pc, &flags);
->  		need_unlock = true;
->  		mem = pc->mem_cgroup;
->  		if (!mem || !PageCgroupUsed(pc))
-> @@ -1856,7 +1857,7 @@ void mem_cgroup_update_page_stat(struct 
->  
->  out:
->  	if (unlikely(need_unlock))
-> -		unlock_page_cgroup(pc);
-> +		move_unlock_page_cgroup(pc, &flags);
->  	rcu_read_unlock();
->  	return;
->  }
-> @@ -2426,9 +2427,13 @@ static int mem_cgroup_move_account(struc
->  		struct mem_cgroup *from, struct mem_cgroup *to, bool uncharge)
->  {
->  	int ret = -EINVAL;
-> +	unsigned long flags;
-> +
->  	lock_page_cgroup(pc);
->  	if (PageCgroupUsed(pc) && pc->mem_cgroup == from) {
-> +		move_lock_page_cgroup(pc, &flags);
->  		__mem_cgroup_move_account(pc, from, to, uncharge);
-> +		move_unlock_page_cgroup(pc, &flags);
->  		ret = 0;
->  	}
->  	unlock_page_cgroup(pc);
+Limiting dirty memory is like fixing the max amount of dirty (hard to reclaim)
+page cache used by a cgroup.  So, in case of multiple cgroup writers, they will
+not be able to consume more than their designated share of dirty pages and will
+be forced to perform write-out if they cross that limit.
+
+The patches are based on a series proposed by Andrea Righi in Mar 2010.
+
+
+Overview:
+- Add page_cgroup flags to record when pages are dirty, in writeback, or nfs
+  unstable.
+
+- Extend mem_cgroup to record the total number of pages in each of the 
+  interesting dirty states (dirty, writeback, unstable_nfs).  
+
+- Add dirty parameters similar to the system-wide  /proc/sys/vm/dirty_*
+  limits to mem_cgroup.  The mem_cgroup dirty parameters are accessible
+  via cgroupfs control files.
+
+- Consider both system and per-memcg dirty limits in page writeback when
+  deciding to queue background writeback or block for foreground writeback.
+
+
+Known shortcomings:
+- When a cgroup dirty limit is exceeded, then bdi writeback is employed to
+  writeback dirty inodes.  Bdi writeback considers inodes from any cgroup, not
+  just inodes contributing dirty pages to the cgroup exceeding its limit.  
+
+
+Performance data:
+- A page fault microbenchmark workload was used to measure performance, which
+  can be called in read or write mode:
+        f = open(foo. $cpu)
+        truncate(f, 4096)
+        alarm(60)
+        while (1) {
+                p = mmap(f, 4096)
+                if (write)
+			*p = 1
+		else
+			x = *p
+                munmap(p)
+        }
+
+- The workload was called for several points in the patch series in different
+  modes:
+  - s_read is a single threaded reader
+  - s_write is a single threaded writer
+  - p_read is a 16 thread reader, each operating on a different file
+  - p_write is a 16 thread writer, each operating on a different file
+
+- Measurements were collected on a 16 core non-numa system using "perf stat
+  --repeat 3".  The -a option was used for parallel (p_*) runs.
+
+- All numbers are page fault rate (M/sec).  Higher is better.
+
+- To compare the performance of a kernel without non-memcg compare the first and
+  last rows, neither has memcg configured.  The first row does not include any
+  of these memcg patches.
+
+- To compare the performance of using memcg dirty limits, compare the baseline
+  (2nd row titled "w/ memcg") with the the code and memcg enabled (2nd to last
+  row titled "all patches").
+
+                           root_cgroup                     child_cgroup
+                 s_read s_write p_read p_write    s_read s_write p_read p_write
+mmotm w/o memcg   0.424  0.400   0.420  0.395
+w/ memcg          0.419  0.390   0.395  0.371      0.413  0.385   0.385  0.361
+all patches       0.421  0.384   0.395  0.362      0.418  0.380   0.396  0.360
+all patches       0.425  0.396   0.423  0.388
+  w/o memcg
+
+
+Balbir Singh (1):
+  memcg: CPU hotplug lockdep warning fix
+
+Greg Thelen (9):
+  memcg: add page_cgroup flags for dirty page tracking
+  memcg: document cgroup dirty memory interfaces
+  memcg: create extensible page stat update routines
+  memcg: add dirty page accounting infrastructure
+  memcg: add kernel calls for memcg dirty page stats
+  memcg: add dirty limits to mem_cgroup
+  memcg: add cgroupfs interface to memcg dirty limits
+  writeback: make determine_dirtyable_memory() static.
+  memcg: check memcg dirty limits in page writeback
+
+KAMEZAWA Hiroyuki (1):
+  memcg: add lock to synchronize page accounting and migration
+
+ Documentation/cgroups/memory.txt |   60 ++++++
+ fs/nfs/write.c                   |    4 +
+ include/linux/memcontrol.h       |   78 +++++++-
+ include/linux/page_cgroup.h      |   54 +++++-
+ include/linux/writeback.h        |    2 -
+ mm/filemap.c                     |    1 +
+ mm/memcontrol.c                  |  417 ++++++++++++++++++++++++++++++++++++--
+ mm/page-writeback.c              |  213 +++++++++++++-------
+ mm/rmap.c                        |    4 +-
+ mm/truncate.c                    |    1 +
+ 10 files changed, 726 insertions(+), 108 deletions(-)
 
 --
 To unsubscribe, send a message with 'unsubscribe linux-mm' in
