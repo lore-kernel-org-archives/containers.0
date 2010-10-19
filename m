@@ -1,178 +1,37 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Subject: [RFC][PATCH 2/2] memcg: move_account optimization  by reduce locks
- (Re: [PATCH v3 04/11] memcg: add lock to synchronize page accounting and
- migration
-Date: Tue, 19 Oct 2010 13:45:41 +0900
-Message-ID: <20101019134541.455eeaba.kamezawa.hiroyu@jp.fujitsu.com>
+From: Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
+Subject: Re: [PATCH v3 03/11] memcg: create extensible page stat update
+ routines
+Date: Tue, 19 Oct 2010 13:52:30 +0900
+Message-ID: <20101019135230.4369a25e.nishimura@mxp.nes.nec.co.jp>
 References: <1287448784-25684-1-git-send-email-gthelen@google.com>
-	<1287448784-25684-5-git-send-email-gthelen@google.com>
-	<20101019094512.11eabc62.kamezawa.hiroyu@jp.fujitsu.com>
-	<20101019134308.3fe81638.kamezawa.hiroyu@jp.fujitsu.com>
+	<1287448784-25684-4-git-send-email-gthelen@google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
 Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <20101019134308.3fe81638.kamezawa.hiroyu@jp.fujitsu.com>
+In-Reply-To: <1287448784-25684-4-git-send-email-gthelen@google.com>
 Sender: owner-linux-mm@kvack.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Cc: Greg Thelen <gthelen@google.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>
+To: Greg Thelen <gthelen@google.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
 List-Id: containers.vger.kernel.org
 
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+On Mon, 18 Oct 2010 17:39:36 -0700
+Greg Thelen <gthelen@google.com> wrote:
 
-reduce lock at account moving.
+> Replace usage of the mem_cgroup_update_file_mapped() memcg
+> statistic update routine with two new routines:
+> * mem_cgroup_inc_page_stat()
+> * mem_cgroup_dec_page_stat()
+> 
+> As before, only the file_mapped statistic is managed.  However,
+> these more general interfaces allow for new statistics to be
+> more easily added.  New statistics are added with memcg dirty
+> page accounting.
+> 
+> Signed-off-by: Greg Thelen <gthelen@google.com>
+> Signed-off-by: Andrea Righi <arighi@develer.com>
 
-a patch "memcg: add lock to synchronize page accounting and migration" add
-a new lock and make locking cost twice. This patch is for reducing the cost.
-
-At moving charges by scanning page table, we do all jobs under pte_lock.
-This means we never have race with "uncharge". Because of that,
-we can remove lock_page_cgroup() in some situation.
-
-The cost of moing 8G anon process
-==
-[mmotm-1013]
-Before:
-	real    0m0.792s
-	user    0m0.000s
-	sys     0m0.780s
-	
-[dirty-limit v3 patch]
-        real    0m0.854s
-        user    0m0.000s
-        sys     0m0.842s
-[get/put optimization ]
-	real    0m0.757s
-	user    0m0.000s
-	sys     0m0.746s
-
-[this patch]
-	real    0m0.732s
-	user    0m0.000s
-	sys     0m0.721s
-
-Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
----
- Documentation/cgroups/memory.txt |   23 ++++++++++++++++++++++-
- mm/memcontrol.c                  |   29 ++++++++++++++++++++++-------
- 2 files changed, 44 insertions(+), 8 deletions(-)
-
-Index: dirty_limit_new/mm/memcontrol.c
-===================================================================
---- dirty_limit_new.orig/mm/memcontrol.c
-+++ dirty_limit_new/mm/memcontrol.c
-@@ -2386,7 +2386,6 @@ static void __mem_cgroup_move_account(st
- {
- 	VM_BUG_ON(from == to);
- 	VM_BUG_ON(PageLRU(pc->page));
--	VM_BUG_ON(!PageCgroupLocked(pc));
- 	VM_BUG_ON(!PageCgroupUsed(pc));
- 	VM_BUG_ON(pc->mem_cgroup != from);
- 
-@@ -2424,19 +2423,32 @@ static void __mem_cgroup_move_account(st
-  * __mem_cgroup_move_account()
-  */
- static int mem_cgroup_move_account(struct page_cgroup *pc,
--		struct mem_cgroup *from, struct mem_cgroup *to, bool uncharge)
-+		struct mem_cgroup *from, struct mem_cgroup *to,
-+		bool uncharge, bool stable)
- {
- 	int ret = -EINVAL;
- 	unsigned long flags;
--
--	lock_page_cgroup(pc);
-+	/*
-+	 * When stable==true, some lock (page_table_lock etc.) prevents
-+	 * modification of PCG_USED bit and pc->mem_cgroup never be invalid.
-+	 * IOW, there will be no race with charge/uncharge. From another point
-+	 * of view, there will be other races with codes which accesses
-+	 * pc->mem_cgroup under lock_page_cgroup(). Considering what
-+	 * pc->mem_cgroup the codes will see, they'll see old or new value and
-+	 * both of values will never be invalid while they holds
-+	 * lock_page_cgroup(). There is no probelm to skip lock_page_cgroup
-+	 * when we can.
-+	 */
-+	if (!stable)
-+		lock_page_cgroup(pc);
- 	if (PageCgroupUsed(pc) && pc->mem_cgroup == from) {
- 		move_lock_page_cgroup(pc, &flags);
- 		__mem_cgroup_move_account(pc, from, to, uncharge);
- 		move_unlock_page_cgroup(pc, &flags);
- 		ret = 0;
- 	}
--	unlock_page_cgroup(pc);
-+	if (!stable)
-+		unlock_page_cgroup(pc);
- 	/*
- 	 * check events
- 	 */
-@@ -2474,7 +2486,7 @@ static int mem_cgroup_move_parent(struct
- 	if (ret || !parent)
- 		goto put_back;
- 
--	ret = mem_cgroup_move_account(pc, child, parent, true);
-+	ret = mem_cgroup_move_account(pc, child, parent, true, false);
- 	if (ret)
- 		mem_cgroup_cancel_charge(parent);
- put_back:
-@@ -5156,6 +5168,7 @@ retry:
- 		struct page *page;
- 		struct page_cgroup *pc;
- 		swp_entry_t ent;
-+		bool mapped = false;
- 
- 		if (!mc.precharge)
- 			break;
-@@ -5163,12 +5176,14 @@ retry:
- 		type = is_target_pte_for_mc(vma, addr, ptent, &target);
- 		switch (type) {
- 		case MC_TARGET_PAGE:
-+			mapped = true;
-+			/* Fall Through */
- 		case MC_TARGET_UNMAPPED_PAGE:
- 			page = target.page;
- 			if (!isolate_lru_page(page)) {
- 				pc = lookup_page_cgroup(page);
- 				if (!mem_cgroup_move_account(pc, mc.from,
--						mc.to, false)) {
-+						mc.to, false, mapped)) {
- 					mc.precharge--;
- 					/* we uncharge from mc.from later. */
- 					mc.moved_charge++;
-Index: dirty_limit_new/Documentation/cgroups/memory.txt
-===================================================================
---- dirty_limit_new.orig/Documentation/cgroups/memory.txt
-+++ dirty_limit_new/Documentation/cgroups/memory.txt
-@@ -637,7 +637,28 @@ memory cgroup.
-       | page_mapcount(page) > 1). You must enable Swap Extension(see 2.4) to
-       | enable move of swap charges.
- 
--8.3 TODO
-+8.3 Implemenation Detail
-+
-+  At moving, we need to take care of races. At first thinking, there are
-+  several sources of race when we overwrite pc->mem_cgroup.
-+  - charge/uncharge
-+  - file stat (dirty, writeback, etc..) accounting
-+  - LRU add/remove
-+
-+  Against charge/uncharge, we do all "move" under pte_lock. So, if we move
-+  chareges of a mapped pages, we don't need extra locks. If not mapped,
-+  we need to take lock_page_cgroup.
-+
-+  Against file-stat accouning, we need some locks. Current implementation
-+  uses 2 level locking, one is light-weight, another is heavy.
-+  A light-weight scheme is to use per-cpu counter. If someone moving a charge
-+  from a mem_cgroup, per-cpu "caution" counter is incremented and file-stat
-+  update will use heavy lock. This heavy lock is a special lock for move_charge
-+  and allow mutual execution of accessing pc->mem_cgroup.
-+
-+  Against LRU, we do isolate_lru_page() before move_account().
-+
-+8.4 TODO
- 
- - Implement madvise(2) to let users decide the vma to be moved or not to be
-   moved.
+Acked-by: Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
 
 --
 To unsubscribe, send a message with 'unsubscribe linux-mm' in
