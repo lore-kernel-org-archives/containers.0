@@ -1,57 +1,69 @@
 From: Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
-Subject: Re: [PATCH v3 02/11] memcg: document cgroup dirty memory interfaces
-Date: Wed, 20 Oct 2010 09:48:21 +0900
-Message-ID: <20101020094821.75c70fe3.nishimura@mxp.nes.nec.co.jp>
+Subject: Re: [PATCH v3 07/11] memcg: add dirty limits to mem_cgroup
+Date: Wed, 20 Oct 2010 09:50:56 +0900
+Message-ID: <20101020095056.48098b34.nishimura@mxp.nes.nec.co.jp>
 References: <1287448784-25684-1-git-send-email-gthelen@google.com>
-	<1287448784-25684-3-git-send-email-gthelen@google.com>
-	<20101019172744.45e0a8dc.nishimura@mxp.nes.nec.co.jp>
-	<xr93lj5t5245.fsf@ninji.mtv.corp.google.com>
-	<20101020091109.ccd7b39a.kamezawa.hiroyu@jp.fujitsu.com>
+	<1287448784-25684-8-git-send-email-gthelen@google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20101020091109.ccd7b39a.kamezawa.hiroyu@jp.fujitsu.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Cc: Greg Thelen <gthelen@google.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <1287448784-25684-8-git-send-email-gthelen@google.com>
+Sender: owner-linux-mm@kvack.org
+To: Greg Thelen <gthelen@google.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
 List-Id: containers.vger.kernel.org
 
-On Wed, 20 Oct 2010 09:11:09 +0900
-KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com> wrote:
+> +static unsigned long long
+> +memcg_hierarchical_free_pages(struct mem_cgroup *mem)
+> +{
+> +	struct cgroup *cgroup;
+> +	unsigned long long min_free, free;
+> +
+> +	min_free = res_counter_read_u64(&mem->res, RES_LIMIT) -
+> +		res_counter_read_u64(&mem->res, RES_USAGE);
+> +	cgroup = mem->css.cgroup;
+> +	if (!mem->use_hierarchy)
+> +		goto out;
+> +
+> +	while (cgroup->parent) {
+> +		cgroup = cgroup->parent;
+> +		mem = mem_cgroup_from_cont(cgroup);
+> +		if (!mem->use_hierarchy)
+> +			break;
+> +		free = res_counter_read_u64(&mem->res, RES_LIMIT) -
+> +			res_counter_read_u64(&mem->res, RES_USAGE);
+> +		min_free = min(min_free, free);
+> +	}
+> +out:
+> +	/* Translate free memory in pages */
+> +	return min_free >> PAGE_SHIFT;
+> +}
+> +
+I think you can simplify this function using parent_mem_cgroup().
 
-> On Tue, 19 Oct 2010 14:00:58 -0700
-> Greg Thelen <gthelen@google.com> wrote:
-> 
-(snip)
-> > +When use_hierarchy=0, each cgroup has independent dirty memory usage and limits.
-> > +
-> > +When use_hierarchy=1, a parent cgroup increasing its dirty memory usage will
-> > +compare its total_dirty memory (which includes sum of all child cgroup dirty
-> > +memory) to its dirty limits.  This keeps a parent from explicitly exceeding its
-> > +dirty limits.  However, a child cgroup can increase its dirty usage without
-> > +considering the parent's dirty limits.  Thus the parent's total_dirty can exceed
-> > +the parent's dirty limits as a child dirties pages.
-> 
-> Hmm. in short, dirty_ratio in use_hierarchy=1 doesn't work as an user expects.
-> Is this a spec. or a current implementation ?
-> 
-> I think as following.
->  - add a limitation as "At setting chidlren's dirty_ratio, it must be below parent's.
->    If it exceeds parent's dirty_ratio, EINVAL is returned."
-> 
-> Could you modify setting memory.dirty_ratio code ?
-> Then, parent's dirty_ratio will never exceeds its own. (If I understand correctly.)
-> 
-> "memory.dirty_limit_in_bytes" will be a bit more complecated, but I think you can.
-> 
-I agree.
+	unsigned long free, min_free = ULLONG_MAX;
 
-At the first impression, this limitation seems a bit overkill for me, because
-we allow memory.limit_in_bytes of a child bigger than that of parent now.
-But considering more, the situation is different, because usage_in_bytes never
-exceeds limit_in_bytes.
+	while (mem) {
+		free = res_counter_read_u64(&mem->res, RES_LIMIT) -
+			res_counter_read_u64(&mem->res, RES_USAGE);
+		min_free = min(min_free, free);
+		mem = parent_mem_cgroup();
+	}
+
+	/* Translate free memory in pages */
+	return min_free >> PAGE_SHIFT;
+
+And, IMHO, we should return min(global_page_state(NR_FREE_PAGES), min_free >> PAGE_SHIFT).
+Because we are allowed to set no-limit(or a very big limit) in memcg,
+so min_free can be very big if we don't set a limit against all the memcg's in hierarchy.
 
 
 Thanks,
-Daisuke Nishimura.
+Dasiuke Nishimura.
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
