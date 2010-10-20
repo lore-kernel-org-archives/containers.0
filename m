@@ -1,34 +1,41 @@
-From: Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
-Subject: Re: [PATCH v3 05/11] memcg: add dirty page accounting
- infrastructure
-Date: Wed, 20 Oct 2010 09:53:07 +0900
-Message-ID: <20101020095307.49b0be9a.nishimura@mxp.nes.nec.co.jp>
-References: <1287448784-25684-1-git-send-email-gthelen@google.com>
-	<1287448784-25684-6-git-send-email-gthelen@google.com>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: cgroup debug seems dead?
+Date: Wed, 20 Oct 2010 09:11:10 +0800
+Message-ID: <4CBE41AE.2020101@cn.fujitsu.com>
+References: <20101019085139.1ccb22bc@nehalam>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <1287448784-25684-6-git-send-email-gthelen@google.com>
-Sender: owner-linux-mm@kvack.org
-To: Greg Thelen <gthelen@google.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20101019085139.1ccb22bc@nehalam>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Stephen Hemminger <shemminger-ZtmgI6mnKB3QT0dZR+AlfA@public.gmane.org>
+Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, 18 Oct 2010 17:39:38 -0700
-Greg Thelen <gthelen@google.com> wrote:
-
-> Add memcg routines to track dirty, writeback, and unstable_NFS pages.
-> These routines are not yet used by the kernel to count such pages.
-> A later change adds kernel calls to these new routines.
+Stephen Hemminger wrote:
+> While running namespace checks to look for dead code,
+> I found that debug_subsys is declared global but never
+> used in current code.
 > 
-> Signed-off-by: Greg Thelen <gthelen@google.com>
-> Signed-off-by: Andrea Righi <arighi@develer.com>
+> This leads to the fact that since debug_subsys is never
+> used, the whole set of debugging functions is also never
+> used.  Is the whole CGROUP_DEBUG config option dead?
+> 
 
-Acked-by: Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
+No, it's not.
 
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+The debug code has been moved from kernel/cgroup_debug.c to
+kernel/cgroup.c, but the config and the code is not dead.
+
+Is it a false positive of that check? The pointer to debug_subsys
+is stored in an array, and the array will be iterated in some places,
+so debug_subsys will be accessed.
