@@ -1,33 +1,50 @@
 From: Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
-Subject: Re: [PATCH v3 11/11] memcg: check memcg dirty limits in page
- writeback
-Date: Wed, 20 Oct 2010 14:25:54 +0900
-Message-ID: <20101020142554.75c09286.nishimura@mxp.nes.nec.co.jp>
+Subject: Re: [PATCH v2][memcg+dirtylimit] Fix  overwriting global vm dirty
+ limit setting by memcg (Re: [PATCH v3 00/11] memcg: per cgroup dirty page
+ accounting
+Date: Wed, 20 Oct 2010 15:09:57 +0900
+Message-ID: <20101020150957.547c76d2.nishimura@mxp.nes.nec.co.jp>
 References: <1287448784-25684-1-git-send-email-gthelen@google.com>
-	<1287448784-25684-12-git-send-email-gthelen@google.com>
+	<20101020122144.47f2b60b.kamezawa.hiroyu@jp.fujitsu.com>
+	<20101020140255.5b8afb63.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
 Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <1287448784-25684-12-git-send-email-gthelen@google.com>
+In-Reply-To: <20101020140255.5b8afb63.kamezawa.hiroyu@jp.fujitsu.com>
 Sender: owner-linux-mm@kvack.org
-To: Greg Thelen <gthelen@google.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+Cc: Greg Thelen <gthelen@google.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
 List-Id: containers.vger.kernel.org
 
-On Mon, 18 Oct 2010 17:39:44 -0700
-Greg Thelen <gthelen@google.com> wrote:
+On Wed, 20 Oct 2010 14:02:55 +0900
+KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com> wrote:
 
-> If the current process is in a non-root memcg, then
-> global_dirty_limits() will consider the memcg dirty limit.
-> This allows different cgroups to have distinct dirty limits
-> which trigger direct and background writeback at different
-> levels.
+> Fixed one here.
+> ==
+> From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
 > 
-> Signed-off-by: Andrea Righi <arighi@develer.com>
-> Signed-off-by: Greg Thelen <gthelen@google.com>
+> Now, at calculating dirty limit, vm_dirty_param() is called.
+> This function returns dirty-limit related parameters considering
+> memory cgroup settings.
+> 
+> Now, assume that vm_dirty_bytes=100M (global dirty limit) and
+> memory cgroup has 1G of pages and 40 dirty_ratio, dirtyable memory is
+> 500MB.
+> 
+> In this case, global_dirty_limits will consider dirty_limt as
+> 500 *0.4 = 200MB. This is bad...memory cgroup is not back door.
+> 
+> This patch limits the return value of vm_dirty_param() considring
+> global settings.
+> 
+> Changelog:
+>  - fixed an argument "mem" int to u64
+>  - fixed to use global available memory to cap memcg's value.
+> 
+> Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
 
-Reviewed-by: Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
+Acked-by: Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
 
 --
 To unsubscribe, send a message with 'unsubscribe linux-mm' in
