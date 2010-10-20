@@ -1,42 +1,60 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Subject: Re: [PATCH v3 11/11] memcg: check memcg dirty limits in page
- writeback
-Date: Wed, 20 Oct 2010 13:18:57 +0900
-Message-ID: <20101020131857.cd0ecd38.kamezawa.hiroyu@jp.fujitsu.com>
+From: Greg Thelen <gthelen@google.com>
+Subject: Re: [PATCH v3 02/11] memcg: document cgroup dirty memory interfaces
+Date: Tue, 19 Oct 2010 21:25:53 -0700
+Message-ID: <xr93vd4xze0e.fsf@ninji.mtv.corp.google.com>
 References: <1287448784-25684-1-git-send-email-gthelen@google.com>
-	<1287448784-25684-12-git-send-email-gthelen@google.com>
-	<20101019100015.7a0d4695.kamezawa.hiroyu@jp.fujitsu.com>
+	<1287448784-25684-3-git-send-email-gthelen@google.com>
+	<20101019172744.45e0a8dc.nishimura@mxp.nes.nec.co.jp>
+	<xr93lj5t5245.fsf@ninji.mtv.corp.google.com>
+	<20101020091109.ccd7b39a.kamezawa.hiroyu@jp.fujitsu.com>
+	<xr93r5fl1poc.fsf@ninji.mtv.corp.google.com>
+	<20101020130654.bf861eda.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
 Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <20101019100015.7a0d4695.kamezawa.hiroyu@jp.fujitsu.com>
 Sender: owner-linux-mm@kvack.org
 To: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Cc: Greg Thelen <gthelen@google.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>
+Cc: Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>
 List-Id: containers.vger.kernel.org
 
-On Tue, 19 Oct 2010 10:00:15 +0900
-KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com> wrote:
+KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com> writes:
 
-> On Mon, 18 Oct 2010 17:39:44 -0700
+> On Tue, 19 Oct 2010 17:45:08 -0700
 > Greg Thelen <gthelen@google.com> wrote:
-> 
-> > If the current process is in a non-root memcg, then
-> > global_dirty_limits() will consider the memcg dirty limit.
-> > This allows different cgroups to have distinct dirty limits
-> > which trigger direct and background writeback at different
-> > levels.
-> > 
-> > Signed-off-by: Andrea Righi <arighi@develer.com>
-> > Signed-off-by: Greg Thelen <gthelen@google.com>
-> 
-> Reviewed-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-> 
-Why FREEPAGES in memcg is not counted as dirtyable ?
+>
+>> KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com> writes:
+>> > BTW, how about supporing dirty_limit_in_bytes when use_hierarchy=0 or
+>> > leave it as broken when use_hierarchy=1 ?  It seems we can only
+>> > support dirty_ratio when hierarchy is used.
+>> 
+>> I am not sure what you mean here.
+>
+> When using dirty_ratio, we can check the value of dirty_ratio at setting it
+> and make guarantee that any children's dirty_ratio cannot exceeds it parent's.
+>
+> If we guarantee that, we can keep dirty_ratio even under hierarchy.
+>
+> When it comes to dirty_limit_in_bytes, we never able to do such kind of
+> controls. So, it will be broken and will do different behavior than
+> dirty_ratio.
 
-Thanks,
--Kame
+I think that for use_hierarchy=1, we could support either dirty_ratio or
+dirty_limit_in_bytes.  The code that modifies dirty_limit_in_bytes could
+ensure that the sum the dirty_limit_in_bytes of each child does not
+exceed the parent's dirty_limit_in_bytes.
+
+> So, not supporing dirty_bytes when use_hierarchy==1 for now sounds
+> reasonable to me.
+
+Ok, I will add the use_hierarchy==1 check and repost the patches.
+
+I will wait to post the -v4 patch series until you post an improved
+"[PATCH][memcg+dirtylimit] Fix overwriting global vm dirty limit setting
+by memcg (Re: [PATCH v3 00/11] memcg: per cgroup dirty page accounting"
+patch.  I think it makes sense to integrate that into -v4 of the series.
+
+> Thanks,
+> -Kame
 
 --
 To unsubscribe, send a message with 'unsubscribe linux-mm' in
