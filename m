@@ -1,76 +1,131 @@
 From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Subject: Re: [PATCH v3 02/11] memcg: document cgroup dirty memory interfaces
-Date: Wed, 20 Oct 2010 11:24:31 +0900
-Message-ID: <20101020112431.b76b861d.kamezawa.hiroyu@jp.fujitsu.com>
+Subject: [PATCH][memcg+dirtylimit] Fix  overwriting global vm dirty limit
+ setting by memcg (Re: [PATCH v3 00/11] memcg: per cgroup dirty page
+ accounting
+Date: Wed, 20 Oct 2010 12:21:44 +0900
+Message-ID: <20101020122144.47f2b60b.kamezawa.hiroyu@jp.fujitsu.com>
 References: <1287448784-25684-1-git-send-email-gthelen@google.com>
-	<1287448784-25684-3-git-send-email-gthelen@google.com>
-	<20101019172744.45e0a8dc.nishimura@mxp.nes.nec.co.jp>
-	<xr93lj5t5245.fsf@ninji.mtv.corp.google.com>
-	<20101020091109.ccd7b39a.kamezawa.hiroyu@jp.fujitsu.com>
-	<20101020094821.75c70fe3.nishimura@mxp.nes.nec.co.jp>
-	<20101020101421.05325710.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
 Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <20101020101421.05325710.kamezawa.hiroyu@jp.fujitsu.com>
+In-Reply-To: <1287448784-25684-1-git-send-email-gthelen@google.com>
 Sender: owner-linux-mm@kvack.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Cc: Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Greg Thelen <gthelen@google.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>
+To: Greg Thelen <gthelen@google.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>
 List-Id: containers.vger.kernel.org
 
-On Wed, 20 Oct 2010 10:14:21 +0900
-KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com> wrote:
 
-> On Wed, 20 Oct 2010 09:48:21 +0900
-> Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp> wrote:
-> 
-> > On Wed, 20 Oct 2010 09:11:09 +0900
-> > KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com> wrote:
-> > 
-> > > On Tue, 19 Oct 2010 14:00:58 -0700
-> > > Greg Thelen <gthelen@google.com> wrote:
-> > > 
-> > (snip)
-> > > > +When use_hierarchy=0, each cgroup has independent dirty memory usage and limits.
-> > > > +
-> > > > +When use_hierarchy=1, a parent cgroup increasing its dirty memory usage will
-> > > > +compare its total_dirty memory (which includes sum of all child cgroup dirty
-> > > > +memory) to its dirty limits.  This keeps a parent from explicitly exceeding its
-> > > > +dirty limits.  However, a child cgroup can increase its dirty usage without
-> > > > +considering the parent's dirty limits.  Thus the parent's total_dirty can exceed
-> > > > +the parent's dirty limits as a child dirties pages.
-> > > 
-> > > Hmm. in short, dirty_ratio in use_hierarchy=1 doesn't work as an user expects.
-> > > Is this a spec. or a current implementation ?
-> > > 
-> > > I think as following.
-> > >  - add a limitation as "At setting chidlren's dirty_ratio, it must be below parent's.
-> > >    If it exceeds parent's dirty_ratio, EINVAL is returned."
-> > > 
-> > > Could you modify setting memory.dirty_ratio code ?
-> > > Then, parent's dirty_ratio will never exceeds its own. (If I understand correctly.)
-> > > 
-> > > "memory.dirty_limit_in_bytes" will be a bit more complecated, but I think you can.
-> > > 
-> > I agree.
-> > 
-> > At the first impression, this limitation seems a bit overkill for me, because
-> > we allow memory.limit_in_bytes of a child bigger than that of parent now.
-> > But considering more, the situation is different, because usage_in_bytes never
-> > exceeds limit_in_bytes.
-> > 
-> 
-> I'd like to consider a patch.
-> Please mention that "use_hierarchy=1 case depends on implemenation." for now.
-> 
+One bug fix here.
+==
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
 
-BTW, how about supporing dirty_limit_in_bytes when use_hierarchy=0 or leave it as
-broken when use_hierarchy=1 ?
-It seems we can only support dirty_ratio when hierarchy is used.
+Now, at calculating dirty limit, vm_dirty_param() is called.
+This function returns dirty-limit related parameters considering
+memory cgroup settings.
 
-Thanks,
--Kame
+Now, assume that vm_dirty_bytes=100M (global dirty limit) and
+memory cgroup has 1G of pages and 40 dirty_ratio, dirtyable memory is
+500MB.
+
+In this case, global_dirty_limits will consider dirty_limt as
+500 *0.4 = 200MB. This is bad...memory cgroup is not back door.
+
+This patch limits the return value of vm_dirty_param() considring
+global settings.
+
+
+Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+---
+ include/linux/memcontrol.h |    4 ++--
+ mm/memcontrol.c            |   29 ++++++++++++++++++++++++++++-
+ mm/page-writeback.c        |    2 +-
+ 3 files changed, 31 insertions(+), 4 deletions(-)
+
+Index: dirty_limit_new/mm/memcontrol.c
+===================================================================
+--- dirty_limit_new.orig/mm/memcontrol.c
++++ dirty_limit_new/mm/memcontrol.c
+@@ -1171,9 +1171,10 @@ static void __mem_cgroup_dirty_param(str
+  * can be moved after our access and writeback tends to take long time.  At
+  * least, "memcg" will not be freed while holding rcu_read_lock().
+  */
+-void vm_dirty_param(struct vm_dirty_param *param)
++void vm_dirty_param(struct vm_dirty_param *param, unsigned long mem)
+ {
+ 	struct mem_cgroup *memcg;
++	u64 limit, bglimit;
+ 
+ 	if (mem_cgroup_disabled()) {
+ 		global_vm_dirty_param(param);
+@@ -1183,6 +1184,32 @@ void vm_dirty_param(struct vm_dirty_para
+ 	rcu_read_lock();
+ 	memcg = mem_cgroup_from_task(current);
+ 	__mem_cgroup_dirty_param(param, memcg);
++	/*
++ 	 * A limitation under memory cgroup is under global vm, too.
++ 	 */
++	if (vm_dirty_ratio)
++		limit = mem * vm_dirty_ratio / 100;
++	else
++		limit = vm_dirty_bytes;
++	if (param->dirty_ratio) {
++		param->dirty_bytes = mem * param->dirty_ratio / 100;
++		param->dirty_ratio = 0;
++	}
++	if (param->dirty_bytes > limit)
++		param->dirty_bytes = limit;
++
++	if (dirty_background_ratio)
++		bglimit = mem * dirty_background_ratio / 100;
++	else
++		bglimit = dirty_background_bytes;
++
++	if (param->dirty_background_ratio) {
++		param->dirty_background_bytes =
++			mem * param->dirty_background_ratio /100;
++		param->dirty_background_ratio = 0;
++	}
++	if (param->dirty_background_bytes > bglimit)
++		param->dirty_background_bytes = bglimit;
+ 	rcu_read_unlock();
+ }
+ 
+Index: dirty_limit_new/include/linux/memcontrol.h
+===================================================================
+--- dirty_limit_new.orig/include/linux/memcontrol.h
++++ dirty_limit_new/include/linux/memcontrol.h
+@@ -171,7 +171,7 @@ static inline void mem_cgroup_dec_page_s
+ }
+ 
+ bool mem_cgroup_has_dirty_limit(void);
+-void vm_dirty_param(struct vm_dirty_param *param);
++void vm_dirty_param(struct vm_dirty_param *param, u64 mem);
+ s64 mem_cgroup_page_stat(enum mem_cgroup_nr_pages_item item);
+ 
+ unsigned long mem_cgroup_soft_limit_reclaim(struct zone *zone, int order,
+@@ -360,7 +360,7 @@ static inline bool mem_cgroup_has_dirty_
+ 	return false;
+ }
+ 
+-static inline void vm_dirty_param(struct vm_dirty_param *param)
++static inline void vm_dirty_param(struct vm_dirty_param *param, u64 mem)
+ {
+ 	global_vm_dirty_param(param);
+ }
+Index: dirty_limit_new/mm/page-writeback.c
+===================================================================
+--- dirty_limit_new.orig/mm/page-writeback.c
++++ dirty_limit_new/mm/page-writeback.c
+@@ -466,7 +466,7 @@ void global_dirty_limits(unsigned long *
+ 	struct task_struct *tsk;
+ 	struct vm_dirty_param dirty_param;
+ 
+-	vm_dirty_param(&dirty_param);
++	vm_dirty_param(&dirty_param, avialable_memory);
+ 
+ 	if (dirty_param.dirty_bytes)
+ 		dirty = DIV_ROUND_UP(dirty_param.dirty_bytes, PAGE_SIZE);
 
 --
 To unsubscribe, send a message with 'unsubscribe linux-mm' in
