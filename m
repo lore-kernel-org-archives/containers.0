@@ -1,67 +1,65 @@
-From: Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
-Subject: Re: [PATCH v3 11/11] memcg: check memcg dirty limits in page
- writeback
-Date: Wed, 20 Oct 2010 13:34:51 +0900
-Message-ID: <20101020133451.93026a1b.nishimura@mxp.nes.nec.co.jp>
-References: <1287448784-25684-1-git-send-email-gthelen@google.com>
-	<1287448784-25684-12-git-send-email-gthelen@google.com>
-	<20101019100015.7a0d4695.kamezawa.hiroyu@jp.fujitsu.com>
-	<20101020131857.cd0ecd38.kamezawa.hiroyu@jp.fujitsu.com>
+From: =?utf-8?Q?Am=C3=A9rico?= Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: cgroup debug seems dead?
+Date: Wed, 20 Oct 2010 12:49:21 +0800
+Message-ID: <20101020044921.GC5316@cr0.nay.redhat.com>
+References: <20101019085139.1ccb22bc@nehalam> <4CBE41AE.2020101@cn.fujitsu.com>
+	<20101019181245.7902113a@nehalam>
+	<AANLkTinH2t41jvGG_D9qAdN5MvRHg7aR+J2mKV5ifMfC@mail.gmail.com>
+	<20101019183705.04a11816@nehalam> <4CBE492A.3020208@cn.fujitsu.com>
+	<20101019191434.379035c9@nehalam> <4CBE52AE.2010409@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <20101020131857.cd0ecd38.kamezawa.hiroyu@jp.fujitsu.com>
-Sender: owner-linux-mm@kvack.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Cc: Greg Thelen <gthelen@google.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4CBE52AE.2010409-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Stephen Hemminger <shemminger-ZtmgI6mnKB3QT0dZR+AlfA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, 20 Oct 2010 13:18:57 +0900
-KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com> wrote:
+On Wed, Oct 20, 2010 at 10:23:42AM +0800, Li Zefan wrote:
+>Stephen Hemminger wrote:
+>> On Wed, 20 Oct 2010 09:43:06 +0800
+>> Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+>> 
+>>> Stephen Hemminger wrote:
+>>>> On Tue, 19 Oct 2010 18:14:10 -0700
+>>>> Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
+>>>>
+>>>>> On Tue, Oct 19, 2010 at 6:12 PM, Stephen Hemminger
+>>>>> <shemminger-ZtmgI6mnKB3QT0dZR+AlfA@public.gmane.org> wrote:
+>>>>>> Where is it stored in an array?
+>>>>>>
+>>>>>> ~/kernel/linux-2.6$ git grep debug_subsys
+>>>>>> kernel/cgroup.c:        kfree(cont->subsys[debug_subsys_id]);
+>>>>>> kernel/cgroup.c:struct cgroup_subsys debug_subsys = {
+>>>>>> kernel/cgroup.c:        .subsys_id = debug_subsys_id,
+>>>>> It's via the include of cgroup_subsys.h at the start of kernel/cgroup.c
+>>>>>
+>>>>> Paul
+>>>> That would work but doesn't because the following is missing
+>>>> in cgroup_subsys.h!
+>>> It's there in cgroup_subsys.h (2.6.36-rc8). What kernel are you using?
+>> 
+>> Found it, thanks. Still not sure why the tools were confused.
+>> 
+>
+>That's normal. Think about how many false positives we can get with
+>checkpatch.pl.
+>
+>Your tools should be static code analyzers, and the macro we use in cgroup
+>is too complex for them.
 
-> On Tue, 19 Oct 2010 10:00:15 +0900
-> KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com> wrote:
-> 
-> > On Mon, 18 Oct 2010 17:39:44 -0700
-> > Greg Thelen <gthelen@google.com> wrote:
-> > 
-> > > If the current process is in a non-root memcg, then
-> > > global_dirty_limits() will consider the memcg dirty limit.
-> > > This allows different cgroups to have distinct dirty limits
-> > > which trigger direct and background writeback at different
-> > > levels.
-> > > 
-> > > Signed-off-by: Andrea Righi <arighi@develer.com>
-> > > Signed-off-by: Greg Thelen <gthelen@google.com>
-> > 
-> > Reviewed-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-> > 
-> Why FREEPAGES in memcg is not counted as dirtyable ?
-> 
-It's counted as memcg_hierarchical_free_pages() in mem_cgroup_page_stat().
-As for FREEPAGES, we should count ancestors, not children.
+namespace.pl is not that static. Becuase it checks the binary not
+the source, a little more dynamic that you think. ;)
 
-mem_cgroup_page_stat():
-   1311         if (mem && !mem_cgroup_is_root(mem)) {
-   1312                 /*
-   1313                  * If we're looking for dirtyable pages we need to evaluate
-   1314                  * free pages depending on the limit and usage of the parents
-   1315                  * first of all.
-   1316                  */
-   1317                 if (item == MEMCG_NR_DIRTYABLE_PAGES)
-   1318                         value = memcg_hierarchical_free_pages(mem);
-   1319                 else
-   1320                         value = 0;
-   1321                 /*
-   1322                  * Recursively evaluate page statistics against all cgroup
-   1323                  * under hierarchy tree
-   1324                  */
-   1325                 for_each_mem_cgroup_tree(iter, mem)
-   1326                         value += mem_cgroup_local_page_stat(iter, item);
-
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+Stephen, what message did you see?
