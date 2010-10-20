@@ -1,55 +1,79 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: cgroup debug seems dead?
-Date: Wed, 20 Oct 2010 10:23:42 +0800
-Message-ID: <4CBE52AE.2010409@cn.fujitsu.com>
-References: <20101019085139.1ccb22bc@nehalam>	<4CBE41AE.2020101@cn.fujitsu.com>	<20101019181245.7902113a@nehalam>	<AANLkTinH2t41jvGG_D9qAdN5MvRHg7aR+J2mKV5ifMfC@mail.gmail.com>	<20101019183705.04a11816@nehalam>	<4CBE492A.3020208@cn.fujitsu.com>
-	<20101019191434.379035c9@nehalam>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+Subject: Re: [PATCH v3 02/11] memcg: document cgroup dirty memory interfaces
+Date: Wed, 20 Oct 2010 11:24:31 +0900
+Message-ID: <20101020112431.b76b861d.kamezawa.hiroyu@jp.fujitsu.com>
+References: <1287448784-25684-1-git-send-email-gthelen@google.com>
+	<1287448784-25684-3-git-send-email-gthelen@google.com>
+	<20101019172744.45e0a8dc.nishimura@mxp.nes.nec.co.jp>
+	<xr93lj5t5245.fsf@ninji.mtv.corp.google.com>
+	<20101020091109.ccd7b39a.kamezawa.hiroyu@jp.fujitsu.com>
+	<20101020094821.75c70fe3.nishimura@mxp.nes.nec.co.jp>
+	<20101020101421.05325710.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20101019191434.379035c9@nehalam>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Stephen Hemminger <shemminger-ZtmgI6mnKB3QT0dZR+AlfA@public.gmane.org>
-Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <20101020101421.05325710.kamezawa.hiroyu@jp.fujitsu.com>
+Sender: owner-linux-mm@kvack.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+Cc: Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Greg Thelen <gthelen@google.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>
 List-Id: containers.vger.kernel.org
 
-Stephen Hemminger wrote:
-> On Wed, 20 Oct 2010 09:43:06 +0800
-> Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+On Wed, 20 Oct 2010 10:14:21 +0900
+KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com> wrote:
+
+> On Wed, 20 Oct 2010 09:48:21 +0900
+> Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp> wrote:
 > 
->> Stephen Hemminger wrote:
->>> On Tue, 19 Oct 2010 18:14:10 -0700
->>> Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
->>>
->>>> On Tue, Oct 19, 2010 at 6:12 PM, Stephen Hemminger
->>>> <shemminger-ZtmgI6mnKB3QT0dZR+AlfA@public.gmane.org> wrote:
->>>>> Where is it stored in an array?
->>>>>
->>>>> ~/kernel/linux-2.6$ git grep debug_subsys
->>>>> kernel/cgroup.c:        kfree(cont->subsys[debug_subsys_id]);
->>>>> kernel/cgroup.c:struct cgroup_subsys debug_subsys = {
->>>>> kernel/cgroup.c:        .subsys_id = debug_subsys_id,
->>>> It's via the include of cgroup_subsys.h at the start of kernel/cgroup.c
->>>>
->>>> Paul
->>> That would work but doesn't because the following is missing
->>> in cgroup_subsys.h!
->> It's there in cgroup_subsys.h (2.6.36-rc8). What kernel are you using?
+> > On Wed, 20 Oct 2010 09:11:09 +0900
+> > KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com> wrote:
+> > 
+> > > On Tue, 19 Oct 2010 14:00:58 -0700
+> > > Greg Thelen <gthelen@google.com> wrote:
+> > > 
+> > (snip)
+> > > > +When use_hierarchy=0, each cgroup has independent dirty memory usage and limits.
+> > > > +
+> > > > +When use_hierarchy=1, a parent cgroup increasing its dirty memory usage will
+> > > > +compare its total_dirty memory (which includes sum of all child cgroup dirty
+> > > > +memory) to its dirty limits.  This keeps a parent from explicitly exceeding its
+> > > > +dirty limits.  However, a child cgroup can increase its dirty usage without
+> > > > +considering the parent's dirty limits.  Thus the parent's total_dirty can exceed
+> > > > +the parent's dirty limits as a child dirties pages.
+> > > 
+> > > Hmm. in short, dirty_ratio in use_hierarchy=1 doesn't work as an user expects.
+> > > Is this a spec. or a current implementation ?
+> > > 
+> > > I think as following.
+> > >  - add a limitation as "At setting chidlren's dirty_ratio, it must be below parent's.
+> > >    If it exceeds parent's dirty_ratio, EINVAL is returned."
+> > > 
+> > > Could you modify setting memory.dirty_ratio code ?
+> > > Then, parent's dirty_ratio will never exceeds its own. (If I understand correctly.)
+> > > 
+> > > "memory.dirty_limit_in_bytes" will be a bit more complecated, but I think you can.
+> > > 
+> > I agree.
+> > 
+> > At the first impression, this limitation seems a bit overkill for me, because
+> > we allow memory.limit_in_bytes of a child bigger than that of parent now.
+> > But considering more, the situation is different, because usage_in_bytes never
+> > exceeds limit_in_bytes.
+> > 
 > 
-> Found it, thanks. Still not sure why the tools were confused.
+> I'd like to consider a patch.
+> Please mention that "use_hierarchy=1 case depends on implemenation." for now.
 > 
 
-That's normal. Think about how many false positives we can get with
-checkpatch.pl.
+BTW, how about supporing dirty_limit_in_bytes when use_hierarchy=0 or leave it as
+broken when use_hierarchy=1 ?
+It seems we can only support dirty_ratio when hierarchy is used.
 
-Your tools should be static code analyzers, and the macro we use in cgroup
-is too complex for them.
+Thanks,
+-Kame
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
