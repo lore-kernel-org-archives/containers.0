@@ -1,57 +1,146 @@
-From: Minchan Kim <minchan.kim@gmail.com>
-Subject: Re: [PATCH v2][memcg+dirtylimit] Fix  overwriting global vm dirty
- limit setting by memcg (Re: [PATCH v3 00/11] memcg: per cgroup dirty page
- accounting
-Date: Wed, 20 Oct 2010 23:35:15 +0900
-Message-ID: <20101020143515.GB5243@barrios-desktop>
-References: <1287448784-25684-1-git-send-email-gthelen@google.com>
- <20101020122144.47f2b60b.kamezawa.hiroyu@jp.fujitsu.com>
- <20101020140255.5b8afb63.kamezawa.hiroyu@jp.fujitsu.com>
+From: =?GB2312?B?xeDRtQ==?= <weh-OXUDhRpber8@public.gmane.org>
+Subject: =?GB2312?B?QTJjb250YWluZXJzz/rK276r06K1xLykwPg=?=
+Date: Thu, 21 Oct 2010 02:48:23 +0800
+Message-ID: <201010201848.o9KImHEm029414@smtp1.linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <owner-linux-mm@kvack.org>
-Content-Disposition: inline
-In-Reply-To: <20101020140255.5b8afb63.kamezawa.hiroyu@jp.fujitsu.com>
-Sender: owner-linux-mm@kvack.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Cc: Greg Thelen <gthelen@google.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>
+Content-Type: multipart/mixed; boundary="===============3328346186537631349=="
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Oct 20, 2010 at 02:02:55PM +0900, KAMEZAWA Hiroyuki wrote:
-> Fixed one here.
-> ==
-> From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-> 
-> Now, at calculating dirty limit, vm_dirty_param() is called.
-> This function returns dirty-limit related parameters considering
-> memory cgroup settings.
-> 
-> Now, assume that vm_dirty_bytes=100M (global dirty limit) and
-> memory cgroup has 1G of pages and 40 dirty_ratio, dirtyable memory is
-> 500MB.
-> 
-> In this case, global_dirty_limits will consider dirty_limt as
-> 500 *0.4 = 200MB. This is bad...memory cgroup is not back door.
-> 
-> This patch limits the return value of vm_dirty_param() considring
-> global settings.
-> 
-> Changelog:
->  - fixed an argument "mem" int to u64
->  - fixed to use global available memory to cap memcg's value.
-> 
-> Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Reviewed-by: Minchan Kim <minchan.kim@gmail.com>
+--===============3328346186537631349==
+Content-Type: text/plain;charset="GB2312"
+Content-Transfer-Encoding: base64
+X-MIME-Autoconverted: from 8bit to base64 by smtp1.linux-foundation.org id o9KImORM029449
 
-It should have written this on Documentation.
-"memcg dirty limit can't exceed global dirty limit"
+Y29udGFpbmVyc8/6ytu+q9OiMszs0rvSubfov/ENCqHUodSh1KHUodSh1KHUodSh1KHUodSh
+1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodQN
+CsqxvOS12LXjo7oyMDEwxOoxMNTCMjMtMjTI1SAgICAgt/DJvQ0KyrG85LXYteOjujIwMTDE
+6jEw1MIzMC0zMcjVICAgICC6vNbdDQrKsbzktdi146O6MjAxMMTqMTHUwjYtN8jVICAgICAg
+ILnj1t0NCsqxvOS12LXjo7oyMDEwxOoxMdTCMTMtMTTI1SAgICAgsbG+qQ0KyrG85LXYteOj
+ujIwMTDE6jEx1MIyMC0yMcjVICAgICDJ7tvaDQrKsbzktdi146O6MjAxMMTqMTHUwjI3LTI4
+yNUgICAgIMnPuqMNCg0KxeDRtbbUz/Ojutfcvq3A7aGiz/rK29fcvOChosf40/K+rcDtoaLP
++srbvq3A7aGi0rXO8bT6se3P+srbxeDRtdeo1LENCsXg0bW30dPDo7oyNDcw1KovyMujqLqs
+Mszs0ae30aGivcyyxLfRoaK74c7xt9Ghos7nss230aOpDQoNCtfJ0a+157uwo7owMjAtODA1
+NjA2MzijuzAyMC04NTkxNzk0NdC70KG946OosrvQ6NKqtMvA4NDFvP7H67vYuLS159PK1sFj
+aGluYW1tYzIwMTBAMTI2LmNvbc3L0MWjqQ0KPT09PT09PT09PT09PT09PT09PT09PT09PT09
+PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
+PT09PT0NCr/Os8yxs76wo7pKdWRnZaOoxsC826Op0ru49sjLo6zSu7j2uavLvsrHsrvKx9PF
+0OOjrLK70qq/tMv7yseyu8rHSGFydmFyZKOouf638LTz0aejqaOsyseyu8rHDQpTdGFuZm9y
+ZKOoy7nMubijtPPRp6OpLrK70qpqdWRnZaOoxsC826OpwO/D5tPQtuDJ2cP7xca089Gnsc/S
+tcn6o6y2+NKqanVkZ2WjqMbAvNujqdXisO/Iy7jJDQq77srHsrvKx7eit+jSu9H5uMmjrL+0
+y/vDv8zsz8Kw4MrHsrvKx9Cmw9DD0LvYvNKjoQ0KqESoRKhEqESoRKhEsKLA77DNsM25q8u+
+wu3Uxg0KMaGizqrKssO0z+DNrLXEsvrGt6Os0rXO8cjL1LG1xNK1vKjP4LLuvLjKrrG2o78N
+CjKhos6qyrLDtM/6ytvIy9Sxvq2zo8/yuavLvsnqx+vV/rLf1qez1qOstavStbyoyLS63LK7
+wO3P66O/DQozoaLOqsqyw7Syu82stcS/zbuno6zP+srbyMvUscu1tMrHp8aq0rvCyaO/DQo0
+oaLOqsqyw7TP+srbyMvUscfh0te4+L/Nu6fBwbP219S8urXEobC118XGobGjvw0KNaGitrzW
+qrXA0qq24Mz9ydnLtaOstavOqsqyw7TT9rW9v827p7rzwazLtba8sru74cu1xNijvw0KNqGi
+zqrKssO0z/rK28jL1LHX3MrHzvO94r/Nu6fSqrHttO+1xNLiy7yjvw0KN6GizqrKssO0z/rK
+28jL1LHX3MrH0tS08rmk1d+1xNDEzKyjrLK71LjS4rj8tuC1xM22yOujvw0KOKGizqrKssO0
+z/rK28jL1LGxqM/6tcS30dPD1L3AtNS9uN+jrLWr0rW8qMi01L3AtNS9srvA7c/ro78NCqHU
+odSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHU
+odSh1KHUodSh1KHUodSh1KHUodQNCqG+v86zzLTzuNmhvw0K0ruhos/6ytvIy9Sx06a4w77f
+sbi1xDEwuPbQxMysDQoxoaLX9s/6ytvSqtPQx7/B0rXExvPNvNDEoaqzybmmtcTT+837DQoy
+oaLX9s/6ytuyu9Kq19zKx86qwcvHrqGq09DA7c/rDQozoaKw3bfDwb/Kx8/6ytu5pNf3tcTJ
++sP8z9+hqsfat9wNCjShor7fsbihsNKq0NShsbrNobDRqtDUobGhqrykx+kNCjWhosrAvefJ
+z8O709C5tc2osrvBy7XEv827p6Gq19TQxQ0KNqGiz8ihsL+qx7mhsbrzobDD6de8obGhqrjf
+0KfWtNDQDQo3oaKyu7WxobDB1MrWobG1saGwxam38qGxoarH2r/SDQo4oaK84bPWsrvSu7ao
+s8m5pqOstau3xcb60ru2qMqnsNyhqta018UNCjmhosqk1PK+2bGtz+DH7KOszqPU8sa0y8DP
+4L7IoarNxb3hDQoxMKGivfHM7LXExazBpqOsw/fM7LXEveG5+6Gq09DEv7HqDQoNCrb+oaLT
+67/Nu6e08r27tcC1xDm49rv5sb7UrdTyDQoxoaLP+srbzLjF0NbQzqrKssO00ru2qNKq0tS/
+zbunzqrW0NDEo78NCrC4wP2jurm1zai+zcrH0+u/zbunyLfBormyzay147XEuf2zzA0KsLjA
+/aO6z/rK277Nysew0b/Nu6e1xMrCtbHX1Ly6tcTKwg0KMqGisrvSqsL61+PP+srbyMvUsc23
+xNTP68/x1tC1xL/Nu6ejuw0KsLjA/aO6v827p8zhs/bAtLXEsrvSu7aoysfL+7fHs6PU2tLi
+tcQNCrC4wP2jur/Nu6eyorK70ru2qMrHxOPP67XExMe49systsgNCjOhorK70qrW97nb0tyy
+4qOs0tTS0c3GyMujuw0KsLjA/aO6xOPT9rW9tcTOyszio6yx8MjLsrvSu7aou+HT9rW9DQo0
+oaK/zbun09DS4s/yo6y+zdK7tqi74cLywvCjvw0KsLjA/aO6zKy2yLK7xNzN6sirvva2qNDQ
+zqqjrNDQzqq/ydLU07DP7MystsgNCjWhor/Nu6fPsru216i80rXE1qrKtqOssrvPsru216i8
+0rXE18vMrA0KsLjA/aO6ysq1sbXE19TO0sq+yPWjrLvxtcOx8MjLtcS6w7jQDQo2oaLP+srb
+tcTP38K3srvSu7aoysfX39axz98NCrC4wP2jur/Nu6e74dTasrvNrMjLw+bHsLHtz9az9rK7
+zay1xMystsgNCjehor/Nu6e1xMystsjKx9PJz/rK28jL1LHS/bW8tcQNCrC4wP2jurbgv7zC
+x7/Nu6e1xM3i1NrS8svYDQo4oaKyu9Kq1Nq/zbunw+bHsLSrsqXIzrrOuLrD5rXE0MXPog0K
+sLjA/aO6v827p7K7z7K7trT4wLS4usPm0MXPorXEz/rK28jL1LENCjmhor/Nu6eyu7K7z7K7
+trG7ycu6pqOs0rKyu8+yu7axu9fUvLrJy7qmtcTIyw0KsLjA/aO6tbG/zbunttTE48j2u9HK
+scTju+HU9cO01/ajvw0KDQrI/aGiubXNqNbQ09DExNCp0vLL2NOwz+y/zbunyse38dPrztLD
+x8eptaU/DQoNCkGhosuty7Wjv8/6ytvIy9Sx19S8urXE0vLL2A0Kv827p86qyrLDtLbUsrvN
+rLXEz/rK28jL1LHT0LK7zay1xMystsijvw0Kyrm/zbunsvrJ+tDFwLW40NKqwvrX48TE0KnS
+8svYo78NCsjnus7Iw9fUvLq4/NfU0MWjvw0KDQpCoaLLtdCpyrLDtKO/y7W0yrK70qrHp8aq
+0rvCyQ0KMaGius7KsdKq08PC37yt0NS1xMDt0NTLtbf+o78NCjKhorrOyrHSqtPDvKS3osfp
+0Pe3tNOmtcTH6bjQy7W3/qO/DQozoaK6zsqxvenJ3NfUvLqy+sa3tcTIsbXjo7+6zsqxsrvE
+3KO/DQo0oaK6zsqxvenJ3L661fm21MrWtcS5q8u+o7+6zsqxsrvE3KO/DQo1oaK/zbuns9mz
+2bK7z8K+9raotcTUrdLy09DExNCpo78NCjahos/It6LR1NPruvO3otHUo6zLrbj809DTxcrG
+o78NCjehor/Nu6e45svfxOPSu7TzttG+utX5ttTK1rXE08XKxqOsxOO74cjnus60psDto78N
+Cg0KQ6GittTLrcu1o7+/zbun0vLL2LXE07DP7A0KDQrLxKGiyOe6zsnovMbP+srbsrvNrL3X
+ts61xMzhzsrE2sjdo78NCrXa0ruhos6qyrLDtNKqobDOyqGxo7/Oqsqyw7TSqtGnz7DM4c7K
+DQrLwMHLtrzSqs7Ko6zE/r/JzsrLwKOs0rKyu7Hvy8AhDQrM4bP2tcTOyszi0ru2qMrHzOHH
+sMnovMa6w7XEDQq/zbuntcS72LTw0ru2qMrH19S8ur/Jv9jWxrXEDQq12rb+oaLU9cO0obDO
+yqGxo7/M4c7K09DExNCpt723qA0Ks6PTw7XEM9bWzOHOyreoDQrM4c7KyrHQ6NKq16LS4rXE
+Nrj21K3U8g0KtdrI/aGittTLraGwzsqhsaO/srvNrL/Nu6e1xMzhzsq3vcq9DQoxoaK/zbun
+zsS7r8uuxr21xNOwz+wNCjKhor/Nu6fK7Naqs8y2yLXE07DP7A0KM6Giv827p8qxvOTT69DL
+yKS1xNOwz+zS8svYDQo0oaLP+srb1tCyu82svde2zrXE07DP7A0KDQq12svEoaKhsM7KobHK
+ssO0o78NCtPrv827p7P1tM68+8Pm0qrBy73ixMQ5uPbOyszio78NCrWxv827p8zhs/bS7NLp
+yrHTprjDzOGz9sTENbj2zsrM4qO/DQq/zbun09DBy7mp06bJzMqx0qrOysTENLj2zsrM4qO/
+DQq/zbunvty++Lm6wvIsxOPQ6NKqwcu94sTEM7j2zsrM4j8NCrrPzayzyb27uvMsxOPSqsHL
+veLExDS49s7KzOI/DQoNCs7loaLI57rOxdC2z9XmyrW1xM/rt6ihqtPQ0KfH48z9y8Syvdbo
+DQrH48z9ysfX8NbYsfDIy6Osxaq2rrHwyMu1xNLiy7wNCrXa0ruyvaGizaPWubav1/ejrM2j
+1rk3uPayu8G8tcTQxMysus3Q0M6qDQq12rb+sr2hotfQz7i527Lso6zNqLn9NLj2t73Kvbnb
+suy/zbun0qqx7bTv1ebKtdLiy7wNCrXayP2yvaGis+S31rnEwPi/zbunse2077XEM7e9yr0N
+CrXay8SyvaGisLLIq82ouf2jrMi3tqi/zbun1ebKtdLiy7wNCg0Kwfmhosjnus60psDt0um8
+287KzOINCjGhosjnus64+L/Nu6exqLzbDQrI57rOtKbA7b/Nu6fT68/6ytvIy9Sxs/W0zr3T
+tKXKsdGvvNsNCtX9yr2xqLzbx7DQ6NKqyLfIz8TENLj2zsrM4qO/DQqxqLzbyrHQ6NKq16LS
+4rXENs/u1K3U8g0KyrLDtMqxuvKxqMq1vNujv8qyw7TKsbrysajQ6bzbo78NCg0KMqGiyOe6
+zrSmwO2/zbuntcS7ubzbDQq1sb/Nu6e7ubXEvNu48crHxOPN6sirv8nS1L3TytzKscTju+HI
+57rOtKbA7aO/DQq1sb/Nu6e7ubXEvNu48crHxOPDu7Dst6i908rcyrGjrMTju+HI57rOtKbA
+7aO/DQrKssO0yrG68r/J0tS9tbzbo6zKssO0yrG68rK7xNyjvw0KvbW828qx0OjX8crYtcQ2
+z+67+bG+1K3U8g0Kvty++L/Nu6e1xLy8x8kNCsjnus7TprbUv827p7XEwazQ+M7KvNujvw0K
+yOe6ztOmttS/zbun0rvOtrXY0bm826O/DQoNCsbfoaKyu82sv827p8fpv/bI57rOx6LMuA0K
+MaGitbHO0sPHyse/zbunvdO0pbXEtdrSu7j2uanTpsnMyrGjuw0KMqGitbHO0sPHyse/zbun
+vdO0pbXEtdq2/rj20tTJz7mp06bJzMqxo7sNCjOhosjnus7Tpri2obC1t8LS1d+hsaO/DQoN
+CqHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh
+1KHUodSh1KHUodSh1KHUodSh1KHUodQNCr2yyqa96cnco7rN9dS9wM/Kpg0K1tC5+s/6ytu+
+q9Oit+i/8dG1wbe0tMq8yMujuw0Kz/rK283FttO53MDt18nRr8qmoaLP+srbxeDRtb2yyqaj
+uw0K1PjIzr/Jv9q/ycDWo6jW0Ln6o6m5q8u+0rXO8b6twO2juw0KsKLA77DNsM2jqNbQufqj
+qc34wue8vMr109DP3rmry77Stc7xvq3A7Q0Kx+W7qrTz0acu1tDJvbTz0acuxM++qbTz0adF
+TUJBzNjR+8Xg0bW9ssqmDQoyMDAwxOrWwb3x0rvWsbTTysLP+srb0+vP+srbyMvUsbykwPjT
+69G1wbe5pNf3LNT4yM6/yb/av8nA1rXE0rXO8b6twO2jrMirx/LWqsP7DQrG89K1sKLA77DN
+sM25q8u+tcTStc7xvq3A7SzU+MO/1MK36L/xyc/DxbDdt8MxMDC80tLUyc+1xL/Nu6ejrLDr
+vvzKwruvtcTP+srb1rANCtK1yfrRxKOsuN/Hv7bItcS5pNf30bnBpizIq8Pmz7XNs7XEytzR
+tb6twPosu/3A28HLt+G4u7XEv827p8rVvK+hos/6ytvMuMXQoaK/zQ0Ku6e4+r34oaK/zbun
+t/7O8aGi19TO0rykwPi1xL6t0emjrNTauavLvtT4u/GhsLq3vauxraGxsPHR26GjDQotLS0t
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+LS0tLS0tLS0tLS0tLS0tLS0tDQqhts/6ytu+q9OiMszs0rvSubfov/HRtcG3obexqMP7u9jW
+tLHto6jH67Sr1eYwMjAtNjIzNTExNTajqQ0KDQqyzrvhtaXOu8P7s8ajul9fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18NCg0Kss6807XY
+teOjur/ayc+6oyC/2snu29ogv9qxsb6pIL/auePW3SC/2rfwyb0gv9q6vNbdDQoNCsGqz7XI
+y6O6X19fX19fX19fX19fX1+157uwOl9fX19fX19fX19fX19fX1+0q9XmOl9fX19fX19fX19f
+X19fX18NCg0K08q8/qO6X19fX19fX19fX19fX1+yzrvhyMvK/TpfX19fX19fX1/Iy7fR08Oj
+pKO6X19fX19fX19f1KoNCg0Kss674cjLo7pfX19fX19fX19fX8v5yM7WsM7xo7pfX19fX19f
+X19fX1/Sxravtee7sKO6X19fX19fX19fX19fXw0KDQqyzrvhyMujul9fX19fX19fX19fy/nI
+ztawzvGjul9fX19fX19fX19fX9LGtq+157uwo7pfX19fX19fX19fX19fDQoNCrLOu+HIy6O6
+X19fX19fX19fX1/L+cjO1rDO8aO6X19fX19fX19fX19f0sa2r7Xnu7Cjul9fX19fX19fX19f
+X18NCg0Kss674cjLo7pfX19fX19fX19fX8v5yM7WsM7xo7pfX19fX19fX19fX1/Sxravtee7
+sKO6X19fX19fX19fX19fXw0KDQq4tr/ut73KvaOox+vRodTxtPKhsKHMobGjqaO6ofUxoaLP
+1r3wofUyoaLXqtXKofUzoaK157vjDQo9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
+PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0N
+CrG416I6x+vE+rDRsajD+7vY1rS72LSrztLLvqOszqrIt7GjxPqxqMP7zt7O8yzH68T61Nm0
+zrXnu7CjqDAyMC04MDU2MDYzOKOpyLfIzyENCg==
+--===============3328346186537631349==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Disposition: inline
+Content-Transfer-Encoding: 7bit
 
--- 
-Kind regards,
-Minchan Kim
-
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============3328346186537631349==--
