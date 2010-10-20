@@ -1,7 +1,8 @@
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 09/11] hugetlbfs checkpoint/restart hooks
-Date: Wed, 20 Oct 2010 13:56:44 -0500
-Message-ID: <1287601006-13794-10-git-send-email-ntl@pobox.com>
+Subject: [PATCH 07/11] checkpoint/ipc: allow shmat callers to specify ipc
+	namespace
+Date: Wed, 20 Oct 2010 13:56:42 -0500
+Message-ID: <1287601006-13794-8-git-send-email-ntl@pobox.com>
 References: <1287601006-13794-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,68 +22,103 @@ To: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add the necessary plumbing to to checkpoint open hugetlbfs files.
+Restore of huge page shm regions will require that the restarting
+process temporarily shmat-attach to regions which are not in the
+current ipc namespace.  Add an ipc_namespace argument to
+do_shmat_pgoff; convert callers to pass current->nsproxy->ipc_ns.
+
+This depends on the patch "support ipc shm regions which are partially
+mapped" posted to the containers list on 6 August.
 
 Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 ---
- fs/hugetlbfs/inode.c |   24 +++++++++++++++++++++++-
- 1 files changed, 23 insertions(+), 1 deletions(-)
+ include/linux/shm.h |    8 +++++---
+ ipc/shm.c           |   18 +++++++++---------
+ 2 files changed, 14 insertions(+), 12 deletions(-)
 
-diff --git a/fs/hugetlbfs/inode.c b/fs/hugetlbfs/inode.c
-index a0bbd3d..575f837 100644
---- a/fs/hugetlbfs/inode.c
-+++ b/fs/hugetlbfs/inode.c
-@@ -21,6 +21,7 @@
- #include <linux/string.h>
- #include <linux/capability.h>
- #include <linux/ctype.h>
-+#include <linux/checkpoint.h>
- #include <linux/backing-dev.h>
- #include <linux/hugetlb.h>
- #include <linux/pagevec.h>
-@@ -463,6 +464,24 @@ out:
- 	return error;
+diff --git a/include/linux/shm.h b/include/linux/shm.h
+index 1f6af8c..9ca3196 100644
+--- a/include/linux/shm.h
++++ b/include/linux/shm.h
+@@ -104,10 +104,12 @@ struct shmid_kernel /* private to the kernel */
+ #define SHM_NORESERVE   010000  /* don't check for reservations */
+ 
+ #ifdef CONFIG_SYSVIPC
++struct ipc_namespace;
++
+ long do_shmat(int shmid, char __user *shmaddr, int shmflg, unsigned long *addr);
+-long do_shmat_pgoff(int shmid, char __user *shmaddr,
+-		    int shmflg, unsigned long *addr,
+-		    unsigned long shmsize, unsigned long shmpgoff);
++long do_shmat_ns_pgoff(struct ipc_namespace *ns, int shmid,
++		       char __user *shmaddr, int shmflg, unsigned long *addr,
++		       unsigned long shmsize, unsigned long shmpgoff);
+ extern int is_file_shm_hugepages(struct file *file);
+ #else
+ static inline long do_shmat(int shmid, char __user *shmaddr,
+diff --git a/ipc/shm.c b/ipc/shm.c
+index b988974..15fc909 100644
+--- a/ipc/shm.c
++++ b/ipc/shm.c
+@@ -321,6 +321,7 @@ static int ipcshm_checkpoint(struct ckpt_ctx *ctx, struct vm_area_struct *vma)
+ int ipcshm_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
+ 		   struct ckpt_hdr_vma *h)
+ {
++	struct ipc_namespace *ipcns = current->nsproxy->ipc_ns;
+ 	struct file *file;
+ 	int shmid, shmflg = 0;
+ 	unsigned long start;
+@@ -352,10 +353,9 @@ int ipcshm_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
+ 	 */
+ 	start = (unsigned long) h->vm_start;
+ 	size = h->vm_end - h->vm_start;
+-	ret = do_shmat_pgoff(shmid, (char __user *) start, shmflg, &addr,
+-			     min(size, (unsigned long) h->ino_size),
+-			     h->vm_pgoff << PAGE_SHIFT);
+-
++	ret = do_shmat_ns_pgoff(ipcns, shmid, (char __user *) start, shmflg,
++				&addr, min(size, (unsigned long) h->ino_size),
++				h->vm_pgoff << PAGE_SHIFT);
+ 	BUG_ON(ret >= 0 && addr != h->vm_start);
+ 	return ret;
+ }
+@@ -885,8 +885,9 @@ out:
+  * "raddr" thing points to kernel space, and there has to be a wrapper around
+  * this.
+  */
+-long do_shmat_pgoff(int shmid, char __user *shmaddr, int shmflg,
+-		    ulong *raddr, ulong shmsize, ulong shmpgoff)
++long do_shmat_ns_pgoff(struct ipc_namespace *ns, int shmid,
++		       char __user *shmaddr, int shmflg, ulong *raddr,
++		       ulong shmsize, ulong shmpgoff)
+ {
+ 	struct shmid_kernel *shp;
+ 	unsigned long addr;
+@@ -898,7 +899,6 @@ long do_shmat_pgoff(int shmid, char __user *shmaddr, int shmflg,
+ 	unsigned long prot;
+ 	int acc_mode;
+ 	unsigned long user_addr;
+-	struct ipc_namespace *ns;
+ 	struct shm_file_data *sfd;
+ 	struct path path;
+ 	fmode_t f_mode;
+@@ -942,7 +942,6 @@ long do_shmat_pgoff(int shmid, char __user *shmaddr, int shmflg,
+ 	 * We cannot rely on the fs check since SYSV IPC does have an
+ 	 * additional creator id...
+ 	 */
+-	ns = current->nsproxy->ipc_ns;
+ 	shp = shm_lock_check(ns, shmid);
+ 	if (IS_ERR(shp)) {
+ 		err = PTR_ERR(shp);
+@@ -1050,7 +1049,8 @@ out_put_dentry:
+  */
+ long do_shmat(int shmid, char __user *shmaddr, int shmflg, ulong *raddr)
+ {
+-	return do_shmat_pgoff(shmid, shmaddr, shmflg, raddr, 0, 0);
++	return do_shmat_ns_pgoff(current->nsproxy->ipc_ns, shmid, shmaddr,
++				 shmflg, raddr, 0, 0);
  }
  
-+#ifdef CONFIG_CHECKPOINT
-+static const struct file_operations hugetlbfs_dir_operations = {
-+	/* Just like simple_dir_operations except... */
-+	.open		= dcache_dir_open,
-+	.release	= dcache_dir_close,
-+	.llseek		= dcache_dir_lseek,
-+	.read		= generic_read_dir,
-+	.readdir	= dcache_readdir,
-+	.fsync		= simple_sync_file,
-+
-+	/* The checkpoint ops are unlike simple_dir_operations */
-+	.checkpoint	= generic_file_checkpoint,
-+};
-+#else
-+#define hugetlbfs_dir_operations simple_dir_operations
-+#endif
-+
-+
- static struct inode *hugetlbfs_get_inode(struct super_block *sb, uid_t uid, 
- 					gid_t gid, int mode, dev_t dev)
- {
-@@ -497,7 +516,7 @@ static struct inode *hugetlbfs_get_inode(struct super_block *sb, uid_t uid,
- 			break;
- 		case S_IFDIR:
- 			inode->i_op = &hugetlbfs_dir_inode_operations;
--			inode->i_fop = &simple_dir_operations;
-+			inode->i_fop = &hugetlbfs_dir_operations;
- 
- 			/* directory inodes start off with i_nlink == 2 (for "." entry) */
- 			inc_nlink(inode);
-@@ -690,6 +709,9 @@ const struct file_operations hugetlbfs_file_operations = {
- 	.mmap			= hugetlbfs_file_mmap,
- 	.fsync			= simple_sync_file,
- 	.get_unmapped_area	= hugetlb_get_unmapped_area,
-+#ifdef CONFIG_CHECKPOINT
-+	.checkpoint	= generic_file_checkpoint,
-+#endif
- };
- 
- static const struct inode_operations hugetlbfs_dir_inode_operations = {
+ SYSCALL_DEFINE3(shmat, int, shmid, char __user *, shmaddr, int, shmflg)
 -- 
 1.7.2.2
