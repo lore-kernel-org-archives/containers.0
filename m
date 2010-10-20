@@ -1,36 +1,57 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: [PATCH 1/4] Kconfig: make namespace a submenu
-Date: Wed, 20 Oct 2010 11:21:42 +0200
-Message-ID: <4CBEB4A6.6090805@free.fr>
-References: <1286962125-23871-1-git-send-email-daniel.lezcano@free.fr>
+From: Minchan Kim <minchan.kim@gmail.com>
+Subject: Re: [PATCH v2][memcg+dirtylimit] Fix  overwriting global vm dirty
+ limit setting by memcg (Re: [PATCH v3 00/11] memcg: per cgroup dirty page
+ accounting
+Date: Wed, 20 Oct 2010 23:35:15 +0900
+Message-ID: <20101020143515.GB5243@barrios-desktop>
+References: <1287448784-25684-1-git-send-email-gthelen@google.com>
+ <20101020122144.47f2b60b.kamezawa.hiroyu@jp.fujitsu.com>
+ <20101020140255.5b8afb63.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1286962125-23871-1-git-send-email-daniel.lezcano-GANU6spQydw@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <owner-linux-mm@kvack.org>
+Content-Disposition: inline
+In-Reply-To: <20101020140255.5b8afb63.kamezawa.hiroyu@jp.fujitsu.com>
+Sender: owner-linux-mm@kvack.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+Cc: Greg Thelen <gthelen@google.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>
 List-Id: containers.vger.kernel.org
 
-On 10/13/2010 11:28 AM, Daniel Lezcano wrote:
-> Make the namespaces config option a submenu.
->
-> Signed-off-by: Daniel Lezcano<daniel.lezcano-GANU6spQydw@public.gmane.org>
-> ---
->    
+On Wed, Oct 20, 2010 at 02:02:55PM +0900, KAMEZAWA Hiroyuki wrote:
+> Fixed one here.
+> ==
+> From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+> 
+> Now, at calculating dirty limit, vm_dirty_param() is called.
+> This function returns dirty-limit related parameters considering
+> memory cgroup settings.
+> 
+> Now, assume that vm_dirty_bytes=100M (global dirty limit) and
+> memory cgroup has 1G of pages and 40 dirty_ratio, dirtyable memory is
+> 500MB.
+> 
+> In this case, global_dirty_limits will consider dirty_limt as
+> 500 *0.4 = 200MB. This is bad...memory cgroup is not back door.
+> 
+> This patch limits the return value of vm_dirty_param() considring
+> global settings.
+> 
+> Changelog:
+>  - fixed an argument "mem" int to u64
+>  - fixed to use global available memory to cap memcg's value.
+> 
+> Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+Reviewed-by: Minchan Kim <minchan.kim@gmail.com>
 
-Hi Andrew,
+It should have written this on Documentation.
+"memcg dirty limit can't exceed global dirty limit"
 
-do you plan to take this patchset ?
+-- 
+Kind regards,
+Minchan Kim
 
-Thanks
-   -- Daniel
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
