@@ -1,45 +1,63 @@
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 11/11] remove VM_HUGETLB from CKPT_VMA_NOT_SUPPORTED
-Date: Wed, 20 Oct 2010 13:56:46 -0500
-Message-ID: <1287601006-13794-12-git-send-email-ntl@pobox.com>
-References: <1287601006-13794-1-git-send-email-ntl@pobox.com>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+Subject: Re: [PATCH v2][memcg+dirtylimit] Fix  overwriting global vm dirty
+ limit setting by memcg (Re: [PATCH v3 00/11] memcg: per cgroup dirty page
+ accounting
+Date: Thu, 21 Oct 2010 09:10:29 +0900
+Message-ID: <20101021091029.48082934.kamezawa.hiroyu@jp.fujitsu.com>
+References: <1287448784-25684-1-git-send-email-gthelen@google.com>
+	<20101020122144.47f2b60b.kamezawa.hiroyu@jp.fujitsu.com>
+	<20101020140255.5b8afb63.kamezawa.hiroyu@jp.fujitsu.com>
+	<20101020143515.GB5243@barrios-desktop>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1287601006-13794-1-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <20101020143515.GB5243@barrios-desktop>
+Sender: owner-linux-mm@kvack.org
+To: Minchan Kim <minchan.kim@gmail.com>
+Cc: Greg Thelen <gthelen@google.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>
 List-Id: containers.vger.kernel.org
 
-Now that the hugetlb c/r support code is in place we can remove
-VM_HUGETLB from the bitmask of unsupported vma flags.
+On Wed, 20 Oct 2010 23:35:15 +0900
+Minchan Kim <minchan.kim@gmail.com> wrote:
 
-Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
----
- include/linux/checkpoint.h |    1 -
- 1 files changed, 0 insertions(+), 1 deletions(-)
+> On Wed, Oct 20, 2010 at 02:02:55PM +0900, KAMEZAWA Hiroyuki wrote:
+> > Fixed one here.
+> > ==
+> > From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+> > 
+> > Now, at calculating dirty limit, vm_dirty_param() is called.
+> > This function returns dirty-limit related parameters considering
+> > memory cgroup settings.
+> > 
+> > Now, assume that vm_dirty_bytes=100M (global dirty limit) and
+> > memory cgroup has 1G of pages and 40 dirty_ratio, dirtyable memory is
+> > 500MB.
+> > 
+> > In this case, global_dirty_limits will consider dirty_limt as
+> > 500 *0.4 = 200MB. This is bad...memory cgroup is not back door.
+> > 
+> > This patch limits the return value of vm_dirty_param() considring
+> > global settings.
+> > 
+> > Changelog:
+> >  - fixed an argument "mem" int to u64
+> >  - fixed to use global available memory to cap memcg's value.
+> > 
+> > Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+> Reviewed-by: Minchan Kim <minchan.kim@gmail.com>
+> 
+> It should have written this on Documentation.
+> "memcg dirty limit can't exceed global dirty limit"
+> 
+Sure. Anyway we need review & rewrite Documenation after dirty limit
+merged. (I think Greg will do much.)
 
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 7b30ce5..8f874da 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -314,7 +314,6 @@ extern int restore_memory_contents(struct ckpt_ctx *ctx, struct inode *inode);
- 
- 
- #define CKPT_VMA_NOT_SUPPORTED (			\
--		VM_HUGETLB |				\
- 		VM_INSERTPAGE |				\
- 		VM_MAPPED_COPY |			\
- 		VM_MIXEDMAP |				\
--- 
-1.7.2.2
+Thanks,
+-Kame
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
