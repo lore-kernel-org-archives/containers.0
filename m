@@ -1,7 +1,7 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 5/7] cgroups: Make freezer subsystem bindable
-Date: Fri, 22 Oct 2010 14:46:50 -0700
-Message-ID: <20101022214650.GL10119__45561.4977203824$1287784143$gmane$org@count0.beaverton.ibm.com>
+Date: Fri, 22 Oct 2010 14:57:08 -0700
+Message-ID: <20101022215708.GM10119__27486.3617182293$1287785038$gmane$org@count0.beaverton.ibm.com>
 References: <4CC146A4.9090505@cn.fujitsu.com> <4CC1473D.9070201@cn.fujitsu.com>
 	<20101022205755.GJ10119@count0.beaverton.ibm.com>
 Mime-Version: 1.0
@@ -29,19 +29,21 @@ On Fri, Oct 22, 2010 at 01:57:55PM -0700, Matt Helsley wrote:
 > > the freezer subsystem from a cgroup hierarchy.
 > > 
 > > Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-
-<snip>
-
 > 
-> Alternately you could split the bind/unbind op function pointers
-> and get rid of the boolean argument. Then just don't fill in the
-> freezer's unbind op and refuse to unbind subsystems that lack
-> the unbind op. That seems a bit cleaner for now at least.
+> Based on experience using cgroups and questions we've fielded in the
+> past on IRC I'd say users will really appreciate this.
+> 
+> We're planning to use the freezer in checkpoint/restart. Since
+> checkpoint requires the tasks to remain frozen for the duration of
+> the syscall we add a kernel-internal freezer subsystem interface
+> which prevents the cgroup from thawing. So we'll need some way to
+> "block" unbinding for that as well.
 
-Or alternately to the alternate :):  add a can_unbind:1 field and keep
-the boolean bind op argument. That might be best -- avoids an extra
-function pointer and still splits the bind/unbind-ability of a
-subsystem.
+And in case you're curious here are the portions of the checkpoint/restart
+tree which implement the above:
+
+http://www.linux-cr.org/git/?p=linux-cr.git;a=commitdiff;h=a584c1c6b729a544c76cbb173ce62ffb6575b1d3
+http://www.linux-cr.org/git/?p=linux-cr.git;a=commitdiff;h=34869146ecd662352c0024e0769ec77e643fb1e1
 
 Cheers,
 	-Matt Helsley
