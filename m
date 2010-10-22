@@ -1,15 +1,12 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 03/11] checkpoint: reformat CKPT_VMA_NOT_SUPPORTED
-Date: Thu, 21 Oct 2010 17:34:34 -0700
-Message-ID: <20101022003434.GI10119@count0.beaverton.ibm.com>
-References: <1287601006-13794-1-git-send-email-ntl@pobox.com>
-	<1287601006-13794-4-git-send-email-ntl@pobox.com>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: [PATCH 0/7] cgroups: Allow to bind/unbind subsystems to/from
+	non-trival hierarchy
+Date: Fri, 22 Oct 2010 16:09:08 +0800
+Message-ID: <4CC146A4.9090505__17581.0875407935$1287734943$gmane$org@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1287601006-13794-4-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,53 +16,52 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "akpm >> Andrew Morton" <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Stephane Eranian <eranian-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Oct 20, 2010 at 01:56:38PM -0500, Nathan Lynch wrote:
-> Remove duplicate VM_HUGETLB and VM_NONLINEAR; place each flag on its
-> own line and alphabetize the list.  This will make future
-> modifications to CKPT_VMA_NOT_SUPPORTED easier to review.
-> 
-> Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Stephane posted a patchset to add perf_cgroup subsystem, so perf can
+be used to monitor all threads belonging to a cgroup.
 
-Reviewed-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+But if you already mounted a cgroup hierarchy but without perf_cgroup
+and the hierarchy has sub-cgroups, you can't bind perf_cgroup to it,
+and thus you're not able to use per-cgroup perf feature.
 
-> ---
->  include/linux/checkpoint.h |   15 +++++++++++----
->  1 files changed, 11 insertions(+), 4 deletions(-)
-> 
-> diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-> index a11d40e..49cf01e 100644
-> --- a/include/linux/checkpoint.h
-> +++ b/include/linux/checkpoint.h
-> @@ -309,10 +309,17 @@ extern int checkpoint_memory_contents(struct ckpt_ctx *ctx,
->  extern int restore_memory_contents(struct ckpt_ctx *ctx, struct inode *inode);
-> 
-> 
-> -#define CKPT_VMA_NOT_SUPPORTED						\
-> -	(VM_IO | VM_HUGETLB | VM_NONLINEAR | VM_PFNMAP |		\
-> -	 VM_RESERVED | VM_HUGETLB | VM_NONLINEAR |	\
-> -	 VM_MAPPED_COPY | VM_INSERTPAGE | VM_MIXEDMAP | VM_SAO)
-> +#define CKPT_VMA_NOT_SUPPORTED (			\
-> +		VM_HUGETLB |				\
-> +		VM_INSERTPAGE |				\
-> +		VM_IO |					\
-> +		VM_MAPPED_COPY |			\
-> +		VM_MIXEDMAP |				\
-> +		VM_NONLINEAR |				\
-> +		VM_PFNMAP |				\
-> +		VM_RESERVED |				\
-> +		VM_SAO |				\
-> +		0)
-> 
->  /* signals */
->  extern int checkpoint_obj_sighand(struct ckpt_ctx *ctx, struct task_struct *t);
-> -- 
-> 1.7.2.2
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+This patchset alleviates the pain, and then a subsytem can be
+bound/unbound to/from a hierarchy which has sub-cgroups in it.
+
+Some subsystems still can't take advantage of this patchset, memcgroup
+and cpuset in specific.
+
+For cpuset, if a hierarchy has a sub-cgroup and the cgroup has tasks,
+we can't decide sub-cgroup's cpuset.mems and cpuset.cpus automatically
+if we try to bind cpuset to this hierarchy.
+
+For memcgroup, memcgroup uses css_get/put(), and due to some complexity,
+for now bindable subsystems should not use css_get/put().
+
+Usage:
+
+# mount -t cgroup -o cpuset xxx /mnt
+# mkdir /mnt/tmp
+# echo $$ > /mnt/tmp/tasks
+
+(add cpuacct to the hierarchy)
+# mount -o remount,cpuset,cpuacct xxx /mnt
+
+(remove it from the hierarchy)
+# mount -o remount,cpuset xxx /mnt
+
+There's another limitation, cpuacct should not be bound to any mounted
+hierarchy before the above operation. But that's not a problem, as you
+can remove it from a hierarchy and bind it to another one.
+
+---
+ Documentation/cgroups/cgroups.txt |   26 ++-
+ include/linux/cgroup.h            |   25 +++-
+ kernel/cgroup.c                   |  305 +++++++++++++++++++++++++++++++------
+ kernel/cgroup_freezer.c           |   19 ++-
+ kernel/sched.c                    |    1 +
+ net/sched/cls_cgroup.c            |    1 +
+ security/device_cgroup.c          |    1 +
+ 7 files changed, 311 insertions(+), 67 deletions(-)
