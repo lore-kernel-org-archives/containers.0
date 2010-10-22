@@ -1,14 +1,14 @@
 From: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
-Subject: Re: [PATCH 2/7] cgroups: Allow to bind a subsystem to a cgroup
-	hierarchy
-Date: Fri, 22 Oct 2010 14:47:11 +0200
-Message-ID: <1287751631.15336.33.camel__34912.1680636474$1287751780$gmane$org@twins>
-References: <4CC146A4.9090505@cn.fujitsu.com> <4CC146D4.7030009@cn.fujitsu.com>
+Subject: Re: [PATCH 0/7] cgroups: Allow to bind/unbind subsystems to/from
+	non-trival hierarchy
+Date: Fri, 22 Oct 2010 14:50:01 +0200
+Message-ID: <1287751801.15336.35.camel__9661.77061568505$1287751930$gmane$org@twins>
+References: <4CC146A4.9090505@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4CC146D4.7030009-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <4CC146A4.9090505-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,9 +23,45 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "ak
 List-Id: containers.vger.kernel.org
 
 On Fri, 2010-10-22 at 16:09 +0800, Li Zefan wrote:
-> For example, we can't decide a cgroup's cpuset.mems and
-> cpuset.cpus automatically, so cpuset is not bindable. 
+> Stephane posted a patchset to add perf_cgroup subsystem, so perf can
+> be used to monitor all threads belonging to a cgroup.
+> 
+> But if you already mounted a cgroup hierarchy but without perf_cgroup
+> and the hierarchy has sub-cgroups, you can't bind perf_cgroup to it,
+> and thus you're not able to use per-cgroup perf feature.
+> 
+> This patchset alleviates the pain, and then a subsytem can be
+> bound/unbound to/from a hierarchy which has sub-cgroups in it.
+> 
+> Some subsystems still can't take advantage of this patchset, memcgroup
+> and cpuset in specific.
+> 
+> For cpuset, if a hierarchy has a sub-cgroup and the cgroup has tasks,
+> we can't decide sub-cgroup's cpuset.mems and cpuset.cpus automatically
+> if we try to bind cpuset to this hierarchy.
+> 
+> For memcgroup, memcgroup uses css_get/put(), and due to some complexity,
+> for now bindable subsystems should not use css_get/put().
+> 
+> Usage:
+> 
+> # mount -t cgroup -o cpuset xxx /mnt
+> # mkdir /mnt/tmp
+> # echo $$ > /mnt/tmp/tasks
+> 
+> (add cpuacct to the hierarchy)
+> # mount -o remount,cpuset,cpuacct xxx /mnt
+> 
+> (remove it from the hierarchy)
+> # mount -o remount,cpuset xxx /mnt
+> 
+> There's another limitation, cpuacct should not be bound to any mounted
+> hierarchy before the above operation. But that's not a problem, as you
+> can remove it from a hierarchy and bind it to another one.
 
-You mean to say that you cannot add cpuset to an existing hierarchy
-right? Not that you cannot add perf/cpuacct to an existing cpuset
-hierarchy?
+Right, so the only remaining problem I see with this approach is that
+you cannot profile two different hierarchies at the same time, but I
+can't really think of a solution to that problem (nor do I care very
+much).
+
+Seems like a nice approach, Thanks Li!
