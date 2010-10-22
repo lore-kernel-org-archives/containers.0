@@ -1,7 +1,7 @@
 From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH 6/7] cgroups: Warn if a bindable subsystem calls css_get()
-Date: Fri, 22 Oct 2010 16:12:06 +0800
-Message-ID: <4CC14756.5010504__42463.68739191$1287735348$gmane$org@cn.fujitsu.com>
+Subject: [PATCH 7/7] cgroups: Update documentation for bindable subsystems
+Date: Fri, 22 Oct 2010 16:12:25 +0800
+Message-ID: <4CC14769.2000406__22379.03341088$1287735453$gmane$org@cn.fujitsu.com>
 References: <4CC146A4.9090505@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,58 +21,65 @@ To: "akpm >> Andrew Morton" <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Stephane Eranian <eranian-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-For now bindable subsystems should not use css_get/put(), so warn
-on this misuse.
+Provide a usage example, and update the bind() callback API.
 
 Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- include/linux/cgroup.h |    7 +++++--
- kernel/cgroup.c        |    3 +++
- 2 files changed, 8 insertions(+), 2 deletions(-)
+ Documentation/cgroups/cgroups.txt |   26 +++++++++++++++++---------
+ 1 files changed, 17 insertions(+), 9 deletions(-)
 
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index 1e4e1df..10e4e02 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -80,13 +80,15 @@ struct cgroup_subsys_state {
+diff --git a/Documentation/cgroups/cgroups.txt b/Documentation/cgroups/cgroups.txt
+index 190018b..5b5382a 100644
+--- a/Documentation/cgroups/cgroups.txt
++++ b/Documentation/cgroups/cgroups.txt
+@@ -363,17 +363,23 @@ Note this will add ns to the hierarchy but won't remove memory or
+ cpuset, because the new options are appended to the old ones:
+ # mount -o remount,ns /dev/cgroup
  
- /* bits in struct cgroup_subsys_state flags field */
- enum {
--	CSS_ROOT, /* This CSS is the root of the subsystem */
--	CSS_REMOVED, /* This CSS is dead */
-+	CSS_ROOT,	/* This CSS is the root of the subsystem */
-+	CSS_REMOVED,	/* This CSS is dead */
-+	CSS_NO_GET,	/* Forbid calling css_get/put() */
- };
++For some subsystems you can bind them to a mounted hierarchy or
++remove them from it, even if there're sub-cgroups in it:
++# mount -t cgroup -o freezer hier1 /dev/cgroup
++# echo $$ > /dev/cgroup/my_cgroup
++# mount -o freezer,cpuset hier1 /dev/cgroup
++(failed)
++# mount -o freezer,cpuacct hier1 /dev/cgroup
++# mount -o cpuacct hier1 /dev/cgroup
++
++Note cpuacct should be sit in the default hierarchy before remount.
++
+ To Specify a hierarchy's release_agent:
+ # mount -t cgroup -o cpuset,release_agent="/sbin/cpuset_release_agent" \
+   xxx /dev/cgroup
  
- /* Caller must verify that the css is not for root cgroup */
- static inline void __css_get(struct cgroup_subsys_state *css, int count)
- {
-+	BUG_ON(test_bit(CSS_NO_GET, &css->flags));
- 	atomic_add(count, &css->refcnt);
- }
+ Note that specifying 'release_agent' more than once will return failure.
  
-@@ -119,6 +121,7 @@ static inline bool css_tryget(struct cgroup_subsys_state *css)
- {
- 	if (test_bit(CSS_ROOT, &css->flags))
- 		return true;
-+	BUG_ON(test_bit(CSS_NO_GET, &css->flags));
- 	while (!atomic_inc_not_zero(&css->refcnt)) {
- 		if (test_bit(CSS_REMOVED, &css->flags))
- 			return false;
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 12c1f7c..88e265d 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -936,6 +936,9 @@ static void init_cgroup_css(struct cgroup_subsys_state *css,
- 	css->cgroup = cgrp;
- 	atomic_set(&css->refcnt, 1);
- 	css->flags = 0;
-+	/* For now, a bindable subsystem should not call css_get/put(). */
-+	if (ss->can_bind)
-+		set_bit(CSS_NO_GET, &css->flags);
- 	css->id = NULL;
- 	if (cgrp == dummytop)
- 		set_bit(CSS_ROOT, &css->flags);
+-Note that changing the set of subsystems is currently only supported
+-when the hierarchy consists of a single (root) cgroup. Supporting
+-the ability to arbitrarily bind/unbind subsystems from an existing
+-cgroup hierarchy is intended to be implemented in the future.
+-
+ Then under /dev/cgroup you can find a tree that corresponds to the
+ tree of the cgroups in the system. For instance, /dev/cgroup
+ is the cgroup that holds the whole system.
+@@ -623,13 +629,15 @@ initialization which might be required before a task could attach.  For
+ example in cpusets, no task may attach before 'cpus' and 'mems' are set
+ up.
+ 
+-void bind(struct cgroup_subsys *ss, struct cgroup *root)
++void bind(struct cgroup_subsys *ss, struct cgroup *cgrp, bool unbind)
+ (cgroup_mutex and ss->hierarchy_mutex held by caller)
+ 
+ Called when a cgroup subsystem is rebound to a different hierarchy
+-and root cgroup. Currently this will only involve movement between
+-the default hierarchy (which never has sub-cgroups) and a hierarchy
+-that is being created/destroyed (and hence has no sub-cgroups).
++and root cgroup. For some subsystems this will only involve movement
++between the default hierarchy (which never has sub-cgroups) and a
++hierarchy that is being created/destroyed (and hence has no sub-cgroups).
++For some other subsystems this can involve movement between the default
++hierarchy and a mounted hierarchy which may have sub-cgroups in it.
+ 
+ 4. Questions
+ ============
 -- 
 1.7.0.1
