@@ -1,14 +1,15 @@
 From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 5/7] cgroups: Make freezer subsystem bindable
-Date: Mon, 25 Oct 2010 09:15:36 +0800
-Message-ID: <4CC4DA38.6000907__40627.9143797748$1287969326$gmane$org@cn.fujitsu.com>
-References: <4CC146A4.9090505@cn.fujitsu.com> <4CC1473D.9070201@cn.fujitsu.com>
-	<20101022205755.GJ10119@count0.beaverton.ibm.com>
+Subject: Re: [PATCH 2/7] cgroups: Allow to bind a subsystem to a cgroup
+	hierarchy
+Date: Mon, 25 Oct 2010 09:23:00 +0800
+Message-ID: <4CC4DBF4.1030405@cn.fujitsu.com>
+References: <4CC146A4.9090505@cn.fujitsu.com> <4CC146D4.7030009@cn.fujitsu.com>
+	<20101022213819.GK10119@count0.beaverton.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20101022205755.GJ10119-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
+In-Reply-To: <20101022213819.GK10119-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,41 +20,114 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "akpm >> Andrew Morton" <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Stephane Eranian <eranian-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "akpm >> Andrew Morton" <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Stephane Eranian <eranian-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Matt Helsley wrote:
-> On Fri, Oct 22, 2010 at 04:11:41PM +0800, Li Zefan wrote:
->> To make it bindable, we need to thaw all processes when unbinding
->> the freezer subsystem from a cgroup hierarchy.
+>> +/*
+>> + * cgroup_walk_herarchy - iterate through a cgroup hierarchy
+>> + * @process_cgroup: callback called on each cgroup in the hierarchy
+>> + * @data: will be passed to @process_cgroup
+>> + * @top_cgrp: the root cgroup of the hierarchy
+>> + *
+>> + * For such a hierarchy:
+>> + *        a1        c1
+>> + *      /         /
+>> + * Root - a2 - b1 - c2
+>> + *      \
+>> + *        a3
+>> + *
+>> + * The iterating order is: a1, a2, b1, c1, c2, a3. So a parent will be
+>> + * processed before its children.
+>> + */
+> 
+> You could just say it's a depth-first walk except we process the parent before
+> its children.
+> 
+
+Will revise the comment. A diagram is intuitive. :)
+
+>> +static int cgroup_walk_hierarchy(int (*process_cgroup)(struct cgroup *, void *),
+>> +				 void *data, struct cgroup *top_cgrp)
+> 
+> <snip>
+> 
+>> +static int hierarchy_populate_dir(struct cgroup *cgrp, void *data)
+>> +{
+>> +	mutex_lock_nested(&cgrp->dentry->d_inode->i_mutex, I_MUTEX_CHILD);
+>> +	cgroup_populate_dir(cgrp);
+>> +	mutex_unlock(&cgrp->dentry->d_inode->i_mutex);
+>> +	return 0;
+>> +}
+>> +
+>>  /*
+>>   * Call with cgroup_mutex held. Drops reference counts on modules, including
+>>   * any duplicate ones that parse_cgroupfs_options took. If this function
+>> @@ -945,36 +1079,53 @@ static int rebind_subsystems(struct cgroupfs_root *root,
+>>  	unsigned long added_bits, removed_bits;
+>>  	struct cgroup *cgrp = &root->top_cgroup;
+>>  	int i;
+>> +	int err;
 >>
->> Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+>>  	BUG_ON(!mutex_is_locked(&cgroup_mutex));
+>>
+>>  	removed_bits = root->actual_subsys_bits & ~final_bits;
+>>  	added_bits = final_bits & ~root->actual_subsys_bits;
+>> +
+>>  	/* Check that any added subsystems are currently free */
+>> -	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
+>> -		unsigned long bit = 1UL << i;
+>> -		struct cgroup_subsys *ss = subsys[i];
+>> -		if (!(bit & added_bits))
+>> -			continue;
+>> +	for_each_set_bit(i, &added_bits, CGROUP_SUBSYS_COUNT) {
+>>  		/*
+>>  		 * Nobody should tell us to do a subsys that doesn't exist:
+>>  		 * parse_cgroupfs_options should catch that case and refcounts
+>>  		 * ensure that subsystems won't disappear once selected.
+>>  		 */
+>> -		BUG_ON(ss == NULL);
+>> -		if (ss->root != &rootnode) {
+>> +		BUG_ON(subsys[i] == NULL);
+>> +		if (subsys[i]->root != &rootnode) {
+>>  			/* Subsystem isn't free */
+>>  			return -EBUSY;
+>>  		}
+>>  	}
+>>
+>> -	/* Currently we don't handle adding/removing subsystems when
+>> -	 * any child cgroups exist. This is theoretically supportable
+>> -	 * but involves complex error handling, so it's being left until
+>> -	 * later */
+>> -	if (root->number_of_cgroups > 1)
+>> +	/* removing will be supported later */
+>> +	if (root->number_of_cgroups > 1 && removed_bits)
+>>  		return -EBUSY;
+>>
+>> +	if (root->number_of_cgroups > 1) {
 > 
-> Based on experience using cgroups and questions we've fielded in the
-> past on IRC I'd say users will really appreciate this.
-> 
-> We're planning to use the freezer in checkpoint/restart. Since
-> checkpoint requires the tasks to remain frozen for the duration of
-> the syscall we add a kernel-internal freezer subsystem interface
-> which prevents the cgroup from thawing. So we'll need some way to
-> "block" unbinding for that as well.
+> Is there something wrong with the indentation here? I can't
+> see the closing brace for the "if (root->number_of_cgroups > 1)"
+> that should precede the for_each_set_bit() loop below.
 > 
 
-How about, we allow unbinding only when all the cgroups' state is
-THAWED ?
+Oops, I must have forgot to commit the change when I fixed this.
 
-> Perhaps the bind op should be able to return an error when
-> unbind == true? Although that raises the question of what to do if
-> only one of multiple unbinds fails..
+>> +		for_each_set_bit(i, &added_bits, CGROUP_SUBSYS_COUNT)
+>> +			if (!subsys[i]->can_bind)
+>> +				return -EBUSY;
 > 
-> Alternately you could split the bind/unbind op function pointers
-> and get rid of the boolean argument. Then just don't fill in the
-> freezer's unbind op and refuse to unbind subsystems that lack
-> the unbind op. That seems a bit cleaner for now at least.
+> I think you could avoid the can_bind flag field entirely and do:
+> 
+> 			if (!subsys[i]->bind)
 > 
 
-We can use bindable:1 along with a callback can_bind().
+Nope. For some subsystems we just set the flag and need not to
+provide a bind() callback.
 
-For some subsystems, we just set bindable to true. For freezer subsystem,
-we set it to true and provide freezer_can_bind(), and return true only
-if no cgroup's state is FROZEN.
+> Also, if we're going with my "split out unbind" suggestion I think
+> the part here would be:
+> 
+> 		for_each_set_bit(i, &removed_bits, CGROUP_SUBSYS_COUNT)
+> 			if (!subsys[i]->unbind)
+> 				return -EBUSY;
+> 
