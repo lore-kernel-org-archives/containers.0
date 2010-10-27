@@ -1,41 +1,51 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: netns patches WAS( Re: [PATCH 8/8] net: Implement socketat.
-Date: Tue, 26 Oct 2010 17:27:47 -0700
-Message-ID: <m1aam032f0.fsf@fess.ebiederm.org>
-References: <m1ocborgq7.fsf@fess.ebiederm.org>
-	<m1bp7oq1u8.fsf@fess.ebiederm.org> <4C9B162E.7040201@parallels.com>
-	<1285240797.5036.5.camel@bigi> <4C9B3B06.900@parallels.com>
-	<1285242055.5036.9.camel@bigi> <4C9B3F9C.8080506@parallels.com>
-	<4CA7A07C.5030504@free.fr> <1286113441.3812.229.camel@bigi>
-	<1287145855.3642.30.camel@bigi> <1288126326.2094.131.camel@mojatatu>
+From: MALATTAR <mouhannad.alattar-jI/kxupzh7HSLaPbPq81kw@public.gmane.org>
+Subject: several mysql-connections problem
+Date: Wed, 27 Oct 2010 17:57:35 +0200
+Message-ID: <4CC84BEF.1070807@univ-fcomte.fr>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <netfilter-devel-owner@vger.kernel.org>
-In-Reply-To: <1288126326.2094.131.camel@mojatatu> (jamal's message of "Tue, 26
-	Oct 2010 16:52:06 -0400")
-Sender: netfilter-devel-owner@vger.kernel.org
-To: hadi@cyberus.ca
-Cc: Daniel Lezcano <daniel.lezcano@free.fr>, Pavel Emelyanov <xemul@parallels.com>, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, netfilter-devel@vger.kernel.org, linux-fsdevel@vger.kernel.org, Linus Torvalds <torvalds@linux-foundation.org>, Michael Kerrisk <mtk.manpages@gmail.com>, Ulrich Drepper <drepper@gmail.com>, Al Viro <viro@ZenIV.linux.org.uk>, David Miller <davem@davemloft.net>, "Serge E. Hallyn" <serge@hallyn.com>, Pavel Emelyanov <xemul@openvz.org>, Ben Greear <greearb@candelatech.com>, Matt Helsley <matthltc@us.ibm.com>, Jonathan Corbet <corbet@lwn.net>, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, Jan Engelhardt <jengelh@medozas.de>, Patrick McHardy <kaber@trash.net>
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-jamal <hadi@cyberus.ca> writes:
+Hi,
+I have several lxc (fedora12) working under Ubuntu 10.10 host.
+With one container i can connect to mysql database without any problem.
+When i launched simultaneously several containers and tried to connect =
 
-> Eric,
->
-> Ping?
-> If you are too busy to push these in maybe have
-> someone clueful like Daniel help out submitting? I think it
-> should probably be reasonable to leave out the sockeat
-> patch initially if it is deemed controversial..
+to mysql database from each one of them, mysql service starts is ok
+but connecting to the database will not be possible only from one =
 
-This merge cycle I am too busy, and my patches did not make it into
-linux-next before the merge window.
+container. Trying to connect to mysql from another container will figure =
 
-Everything except socketat at seems non-controversial.  socketat makes
-sense to post-pone a little bit until we start converting applications,
-and there is a little real world experience about what is needed.
+out the next error:
+"Can't connect to local MySQL server through socket =
 
-I anticipate some time freeing up in the next couple of weeks so I
-should be ready for the next merge window.
+'/var/lib/mysql/mysql.sock'"
+I think this error happens because the container, which connects to =
 
-Eric
+mysql, reserves the mysql.sock or other mysql configuration files and =
+
+prevents other nodes to use them!!!!
+N.B: the last container starting mysql service is the one that is able =
+
+to connecting to the database
+
+any suggestion to resolve this problem?
+a+
+
+-- =
+
+Mouhannad AlATTAR
+Doctorant =E0 L=92UFR Sciences,Techniques et Gestion de l=92Industrie
+P=F4le multimedia de Franche Comt=E9 - numerica
