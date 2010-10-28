@@ -1,15 +1,13 @@
 From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 0/7] cgroups: Allow to bind/unbind subsystems to/from
-	non-trival hierarchy
-Date: Thu, 28 Oct 2010 16:33:41 -0700
-Message-ID: <AANLkTin9Lzvqw_Dz6b6mywFAOLfoK0P_EfHN9Nchec9j__4259.88003048605$1288308872$gmane$org@mail.gmail.com>
-References: <4CC146A4.9090505@cn.fujitsu.com> <1287751801.15336.35.camel@twins>
-	<4CC4D84C.5000705@cn.fujitsu.com>
+Subject: Re: [PATCH 1/7] cgroups: Shrink struct cgroup_subsys
+Date: Thu, 28 Oct 2010 16:34:56 -0700
+Message-ID: <AANLkTikf-1kLStxqi5UjP=vn3pqVBHy0OA7ibeWTkJ5z__29394.6142461666$1288308930$gmane$org@mail.gmail.com>
+References: <4CC146A4.9090505@cn.fujitsu.com> <4CC146BA.7080009@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4CC4D84C.5000705-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <4CC146BA.7080009-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,28 +21,50 @@ To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "akpm >> Andrew Morton" <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Stephane Eranian <eranian-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Sun, Oct 24, 2010 at 6:07 PM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+On Fri, Oct 22, 2010 at 1:09 AM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+> On x86_32, sizeof(struct cgroup_subsys) shrinks from 276 bytes
+> to 264.
 >
-> Paul had a patch to allow some subsystems to be added to multi-hierarchies,
-> which may help.
+> Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 
-I more or less dropped it since I couldn't see a big use for it - all
-the examples I had were more easily implemented as basic cgroup
-control files (and hence available in all hierarchies automatically)
+Acked-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 
-> But it forbids accessing t->cgroups, which makes this
-> feature of limited use.
-
-Not exactly - it meant that you couldn't do a fast dereference via
-t->cgroups to get to your cgroup_subsys_state, since there was no
-longer a unique css for each task for that subsystem - there would be
-one per mounted instance of the subsystem. Instead it became necessary
-to follow a chain of pointers to find the appropriate css for the
-hierarchy in question.
-
-In general this also means that it's harder for the multi-bound
-subsystem have any real-world meaning - it's mostly useful for
-stateless subsystems, or ones where the cgroup_subsys_state contents
-have no direct connection with machine-wide data.
+Maybe use "bool" here?
 
 Paul
+
+> ---
+> include/linux/cgroup.h | =A0 10 ++++++----
+> =A01 files changed, 6 insertions(+), 4 deletions(-)
+>
+> diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+> index ed4ba11..e23ded6 100644
+> --- a/include/linux/cgroup.h
+> +++ b/include/linux/cgroup.h
+> @@ -481,14 +481,16 @@ struct cgroup_subsys {
+> =A0 =A0 =A0 =A0void (*bind)(struct cgroup_subsys *ss, struct cgroup *root=
+);
+>
+> =A0 =A0 =A0 =A0int subsys_id;
+> - =A0 =A0 =A0 int active;
+> - =A0 =A0 =A0 int disabled;
+> - =A0 =A0 =A0 int early_init;
+> +
+> + =A0 =A0 =A0 unsigned int active:1;
+> + =A0 =A0 =A0 unsigned int disabled:1;
+> + =A0 =A0 =A0 unsigned int early_init:1;
+> =A0 =A0 =A0 =A0/*
+> =A0 =A0 =A0 =A0 * True if this subsys uses ID. ID is not available before=
+ cgroup_init()
+> =A0 =A0 =A0 =A0 * (not available in early_init time.)
+> =A0 =A0 =A0 =A0 */
+> - =A0 =A0 =A0 bool use_id;
+> + =A0 =A0 =A0 unsigned int use_id:1;
+> +
+> =A0#define MAX_CGROUP_TYPE_NAMELEN 32
+> =A0 =A0 =A0 =A0const char *name;
+>
+> --
+> 1.7.0.1
+>
+>
