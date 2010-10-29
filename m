@@ -1,59 +1,37 @@
-From: Greg Thelen <gthelen@google.com>
-Subject: Re: [PATCH v4 02/11] memcg: document cgroup dirty memory interfaces
-Date: Fri, 29 Oct 2010 14:37:30 -0700
-Message-ID: <xr93wrp0k7dx.fsf@ninji.mtv.corp.google.com>
-References: <1288336154-23256-1-git-send-email-gthelen@google.com>
-	<1288336154-23256-3-git-send-email-gthelen@google.com>
-	<20101029131952.1191023d.akpm@linux-foundation.org>
+From: =?UTF-8?Q?=D0=9F=D1=91=D1=82=D1=80_=D0=92=D0=BE=D0=BB=D0=BA=D0=BE?=
+	=?UTF-8?Q?=D0=B2?= <pva-IzMiZDvh46SHXe+LvDLADg@public.gmane.org>
+Subject: Need help to debug container's freeze
+Date: Fri, 29 Oct 2010 16:27:40 +0400
+Message-ID: <1288355260.4451.121.camel@tablet>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <20101029131952.1191023d.akpm@linux-foundation.org> (Andrew
-	Morton's message of "Fri, 29 Oct 2010 13:19:52 -0700")
-Sender: owner-linux-mm@kvack.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Andrew Morton <akpm@linux-foundation.org> writes:
+Hi. We are using lxc to separate different services into containers: for
+this discussions we have apache+php, mysql, nginx containers to serve
+our web application. After upgrade (I think from kernel 2.6.32 into
+something newer, now we are using 2.6.35, but tried 34 too) we've
+experience following issue: at some point nginx starts to show us "504
+Gateway Time-out" error and while it is possible to ssh on server `ps
+aux` hangs (with no ability to stop it), it is impossible to restart
+apache container (hangs on stop) and the only way to fix this is to
+restart server using sysrq or power button. At the same time there is
+nothing in the logs. I suspect apache starts to eat lots of memory but
+oom killer somehow freezes container but I don't have any proves. What
+could you suggest to debug this issue? What sysrq information could be
+useful here?
 
-> On Fri, 29 Oct 2010 00:09:05 -0700
-> Greg Thelen <gthelen@google.com> wrote:
->
->> Document cgroup dirty memory interfaces and statistics.
->> 
->>
->> ...
->>
->> +When use_hierarchy=0, each cgroup has dirty memory usage and limits.
->> +System-wide dirty limits are also consulted.  Dirty memory consumption is
->> +checked against both system-wide and per-cgroup dirty limits.
->> +
->> +The current implementation does enforce per-cgroup dirty limits when
->
-> "does not", I trust.
-
-Correct.  Thanks.
-
->> +use_hierarchy=1.  System-wide dirty limits are used for processes in such
->> +cgroups.  Attempts to read memory.dirty_* files return the system-wide values.
->> +Writes to the memory.dirty_* files return error.  An enhanced implementation is
->> +needed to check the chain of parents to ensure that no dirty limit is exceeded.
->> +
->>  6. Hierarchy support
->>  
->>  The memory controller supports a deep hierarchy and hierarchical accounting.
->> -- 
->> 1.7.3.1
->
-> --
-> To unsubscribe, send a message with 'unsubscribe linux-mm' in
-> the body to majordomo@kvack.org.  For more info on Linux MM,
-> see: http://www.linux-mm.org/ .
-> Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
-
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+-- 
+Peter.
