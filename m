@@ -1,45 +1,44 @@
-From: Greg Thelen <gthelen@google.com>
-Subject: Re: [PATCH v4 11/11] memcg: check memcg dirty limits in page writeback
-Date: Fri, 29 Oct 2010 09:06:33 -0700
-Message-ID: <xr93eib9nfue.fsf@ninji.mtv.corp.google.com>
-References: <1288336154-23256-1-git-send-email-gthelen@google.com>
-	<1288336154-23256-12-git-send-email-gthelen@google.com>
-	<20101029164835.06eef3cf.kamezawa.hiroyu@jp.fujitsu.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH 0/5][v5][cr] Checkpoint/restart file locks
+Date: Fri, 29 Oct 2010 11:35:07 -0700
+Message-ID: <20101029183507.GA6726__11884.5520228662$1288376904$gmane$org@us.ibm.com>
+References: <1288333001-28838-1-git-send-email-sukadev@linux.vnet.ibm.com>
+	<AANLkTiktKVuAtjPaHT9d+7ATpKn+jMonFYzeEmd85L3o@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20101029164835.06eef3cf.kamezawa.hiroyu@jp.fujitsu.com>
-	(KAMEZAWA Hiroyuki's message of "Fri, 29 Oct 2010 16:48:35 +0900")
-Sender: linux-kernel-owner@vger.kernel.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <AANLkTiktKVuAtjPaHT9d+7ATpKn+jMonFYzeEmd85L3o-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Lin Ming <lin-7mNXGst3two@public.gmane.org>
+Cc: Matthew Wilcox <matthew-Ztpu424NOJ8@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Jamie Lokier <jamie-yetKDKU6eevNLxjTenLetw@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Steven Whitehouse <swhiteho-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com> writes:
+Lin Ming [lin-7mNXGst3two@public.gmane.org] wrote:
+| Hi,
+| 
+| Which tree are these patches against?
+| 
+| I can't apply them neither to Linus tree(18cb657c) nor
+| vfs-2.6.git/for-linus branch(a4cdbd8b).
 
-> On Fri, 29 Oct 2010 00:09:14 -0700
-> Greg Thelen <gthelen@google.com> wrote:
->
->> If the current process is in a non-root memcg, then
->> balance_dirty_pages() will consider the memcg dirty limits
->> as well as the system-wide limits.  This allows different
->> cgroups to have distinct dirty limits which trigger direct
->> and background writeback at different levels.
->> 
->> Signed-off-by: Andrea Righi <arighi@develer.com>
->> Signed-off-by: Greg Thelen <gthelen@google.com>
->
-> Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
->
-> Ideally, I think some comments in the code for "why we need double-check system's
-> dirty limit and memcg's dirty limit" will be appreciated.
+These apply to the checkpoint/restart tree:
 
-I will add to the balance_dirty_pages() comment.  It will read:
-/*
- * balance_dirty_pages() must be called by processes which are generating dirty
- * data.  It looks at the number of dirty pages in the machine and will force
- * the caller to perform writeback if the system is over `vm_dirty_ratio'.
- * If we're over `background_thresh' then the writeback threads are woken to
- * perform some writeout.  The current task may have per-memcg dirty
- * limits, which are also checked.
- */
+	git://git.ncl.cs.columbia.edu/pub/git/linux-cr.git
+
+They need the checkpoint/restart infrastructure which is not in the main
+line kernel yet. We have been using the [cr] prefix to identify these
+patches, but will add a pointer to the above tree in the future.
+
+Thanks,
+
+Sukadev
