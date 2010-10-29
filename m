@@ -1,139 +1,163 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 2/5][v5][cr]: Define flock_set()
-Date: Thu, 28 Oct 2010 23:16:38 -0700
-Message-ID: <1288333001-28838-3-git-send-email-sukadev__19311.2022745938$1288332630$gmane$org@linux.vnet.ibm.com>
-References: <1288333001-28838-1-git-send-email-sukadev@linux.vnet.ibm.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1288333001-28838-1-git-send-email-sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Matthew Wilcox <matthew-Ztpu424NOJ8@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Jamie Lokier <jamie-yetKDKU6eevNLxjTenLetw@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Steven Whitehouse <swhiteho-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: Greg Thelen <gthelen@google.com>
+Subject: [PATCH v4 00/11] memcg: per cgroup dirty page accounting
+Date: Fri, 29 Oct 2010 00:09:03 -0700
+Message-ID: <1288336154-23256-1-git-send-email-gthelen@google.com>
+Return-path: <owner-linux-mm@kvack.org>
+Sender: owner-linux-mm@kvack.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Greg Thelen <gthelen@google.com>
 List-Id: containers.vger.kernel.org
 
-Extract core functionality of fcntl_setlk() into a separate function,
-flock_set(). flock_set() can be also used when restarting a checkpointed
-application and restoring its file-locks.
+Changes since v3:
+- Refactored balance_dirty_pages() dirtying checking to use new struct
+  dirty_info, which is used to compare both system and memcg dirty limits
+  against usage.
+- Disabled memcg dirty limits when memory.use_hierarchy=1.  An enhancement is
+  needed to check the chain of parents to ensure that no dirty limit is
+  exceeded.
+- Ported to mmotm-2010-10-22-16-36.
 
-Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
----
- fs/locks.c         |   44 +++++++++++++++++++++++++++-----------------
- include/linux/fs.h |    1 +
- 2 files changed, 28 insertions(+), 17 deletions(-)
+Changes since v2:
+- Rather than disabling softirq in lock_page_cgroup(), introduce a separate lock
+  to synchronize between memcg page accounting and migration.  This only affects
+  patch 4 of the series.  Patch 4 used to disable softirq, now it introduces the
+  new lock.
 
-diff --git a/fs/locks.c b/fs/locks.c
-index da53795..6c6ced4 100644
---- a/fs/locks.c
-+++ b/fs/locks.c
-@@ -1758,14 +1758,10 @@ static int do_lock_file_wait(struct file *filp, unsigned int cmd,
- 	return error;
- }
- 
--/* Apply the lock described by l to an open file descriptor.
-- * This implements both the F_SETLK and F_SETLKW commands of fcntl().
-- */
--int fcntl_setlk(unsigned int fd, struct file *filp, unsigned int cmd,
--		struct flock __user *l)
-+int flock_set(unsigned int fd, struct file *filp, unsigned int cmd,
-+		struct flock *flock)
- {
- 	struct file_lock *file_lock = locks_alloc_lock();
--	struct flock flock;
- 	struct inode *inode;
- 	struct file *f;
- 	int error;
-@@ -1773,13 +1769,6 @@ int fcntl_setlk(unsigned int fd, struct file *filp, unsigned int cmd,
- 	if (file_lock == NULL)
- 		return -ENOLCK;
- 
--	/*
--	 * This might block, so we do it before checking the inode.
--	 */
--	error = -EFAULT;
--	if (copy_from_user(&flock, l, sizeof(flock)))
--		goto out;
--
- 	inode = filp->f_path.dentry->d_inode;
- 
- 	/* Don't allow mandatory locks on files that may be memory mapped
-@@ -1791,7 +1780,7 @@ int fcntl_setlk(unsigned int fd, struct file *filp, unsigned int cmd,
- 	}
- 
- again:
--	error = flock_to_posix_lock(filp, file_lock, &flock);
-+	error = flock_to_posix_lock(filp, file_lock, flock);
- 	if (error)
- 		goto out;
- 	if (cmd == F_SETLKW) {
-@@ -1799,7 +1788,7 @@ again:
- 	}
- 	
- 	error = -EBADF;
--	switch (flock.l_type) {
-+	switch (flock->l_type) {
- 	case F_RDLCK:
- 		if (!(filp->f_mode & FMODE_READ))
- 			goto out;
-@@ -1829,8 +1818,8 @@ again:
- 	spin_lock(&current->files->file_lock);
- 	f = fcheck(fd);
- 	spin_unlock(&current->files->file_lock);
--	if (!error && f != filp && flock.l_type != F_UNLCK) {
--		flock.l_type = F_UNLCK;
-+	if (!error && f != filp && flock->l_type != F_UNLCK) {
-+		flock->l_type = F_UNLCK;
- 		goto again;
- 	}
- 
-@@ -1839,6 +1828,27 @@ out:
- 	return error;
- }
- 
-+/* Apply the lock described by l to an open file descriptor.
-+ * This implements both the F_SETLK and F_SETLKW commands of fcntl().
-+ */
-+int fcntl_setlk(unsigned int fd, struct file *filp, unsigned int cmd,
-+		struct flock __user *l)
-+{
-+	int error;
-+	struct flock flock;
-+	
-+	/*
-+	 * This might block, so we do it before checking the inode
-+	 * in flock_set().
-+	 */
-+	error = -EFAULT;
-+	if (copy_from_user(&flock, l, sizeof(flock)))
-+		return error;
-+
-+	return flock_set(fd, filp, cmd, &flock);
-+}
-+
-+
- #if BITS_PER_LONG == 32
- /* Report the first existing lock that would conflict with l.
-  * This implements the F_GETLK command of fcntl().
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 909a535..5e9ea17 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -1112,6 +1112,7 @@ extern void send_sigio(struct fown_struct *fown, int fd, int band);
- extern int fcntl_getlk(struct file *, struct flock __user *);
- extern int fcntl_setlk(unsigned int, struct file *, unsigned int,
- 			struct flock __user *);
-+extern int flock_set(unsigned int, struct file *, unsigned int, struct flock *);
- 
- #if BITS_PER_LONG == 32
- extern int fcntl_getlk64(struct file *, struct flock64 __user *);
+Changes since v1:
+- Renamed "nfs"/"total_nfs" to "nfs_unstable"/"total_nfs_unstable" in per cgroup
+  memory.stat to match /proc/meminfo.
+- Avoid lockdep warnings by using rcu_read_[un]lock() in
+  mem_cgroup_has_dirty_limit().
+- Fixed lockdep issue in mem_cgroup_read_stat() which is exposed by these
+  patches.
+- Remove redundant comments.
+- Rename (for clarity):
+  - mem_cgroup_write_page_stat_item -> mem_cgroup_page_stat_item
+  - mem_cgroup_read_page_stat_item -> mem_cgroup_nr_pages_item
+- Renamed newly created proc files:
+  - memory.dirty_bytes -> memory.dirty_limit_in_bytes
+  - memory.dirty_background_bytes -> memory.dirty_background_limit_in_bytes
+- Removed unnecessary get_ prefix from get_xxx() functions.
+- Allow [kKmMgG] suffixes for newly created dirty limit value cgroupfs files.
+- Disable softirq rather than hardirq in lock_page_cgroup()
+- Made mem_cgroup_move_account_page_stat() inline.
+- Ported patches to mmotm-2010-10-13-17-13.
+
+This patch set provides the ability for each cgroup to have independent dirty
+page limits.
+
+Limiting dirty memory is like fixing the max amount of dirty (hard to reclaim)
+page cache used by a cgroup.  So, in case of multiple cgroup writers, they will
+not be able to consume more than their designated share of dirty pages and will
+be forced to perform write-out if they cross that limit.
+
+The patches are based on a series proposed by Andrea Righi in Mar 2010.
+
+Overview:
+- Add page_cgroup flags to record when pages are dirty, in writeback, or nfs
+  unstable.
+
+- Extend mem_cgroup to record the total number of pages in each of the 
+  interesting dirty states (dirty, writeback, unstable_nfs).  
+
+- Add dirty parameters similar to the system-wide  /proc/sys/vm/dirty_*
+  limits to mem_cgroup.  The mem_cgroup dirty parameters are accessible
+  via cgroupfs control files.
+
+- Consider both system and per-memcg dirty limits in page writeback when
+  deciding to queue background writeback or block for foreground writeback.
+
+Known shortcomings:
+- When a cgroup dirty limit is exceeded, then bdi writeback is employed to
+  writeback dirty inodes.  Bdi writeback considers inodes from any cgroup, not
+  just inodes contributing dirty pages to the cgroup exceeding its limit.  
+
+- When memory.use_hierarchy is set, then dirty limits are disabled.  This is a
+  implementation detail.  An enhanced implementation is needed to check the
+  chain of parents to ensure that no dirty limit is exceeded.
+
+Performance data:
+- A page fault microbenchmark workload was used to measure performance, which
+  can be called in read or write mode:
+        f = open(foo. $cpu)
+        truncate(f, 4096)
+        alarm(60)
+        while (1) {
+                p = mmap(f, 4096)
+                if (write)
+			*p = 1
+		else
+			x = *p
+                munmap(p)
+        }
+
+- The workload was called for several points in the patch series in different
+  modes:
+  - s_read is a single threaded reader
+  - s_write is a single threaded writer
+  - p_read is a 16 thread reader, each operating on a different file
+  - p_write is a 16 thread writer, each operating on a different file
+
+- Measurements were collected on a 16 core non-numa system using "perf stat
+  --repeat 3".  The -a option was used for parallel (p_*) runs.
+
+- All numbers are page fault rate (M/sec).  Higher is better.
+
+- To compare the performance of a kernel without non-memcg compare the first and
+  last rows, neither has memcg configured.  The first row does not include any
+  of these memcg patches.
+
+- To compare the performance of using memcg dirty limits, compare the baseline
+  (2nd row titled "w/ memcg") with the the code and memcg enabled (2nd to last
+  row titled "all patches").
+
+                           root_cgroup                    child_cgroup
+                 s_read s_write p_read p_write   s_read s_write p_read p_write
+mmotm w/o memcg   0.428  0.390   0.429  0.388
+mmotm w/ memcg    0.411  0.378   0.391  0.362     0.412  0.377   0.385  0.363
+all patches       0.384  0.360   0.370  0.348     0.381  0.363   0.368  0.347
+all patches       0.431  0.402   0.427  0.395
+  w/o memcg
+
+Balbir Singh (1):
+  memcg: CPU hotplug lockdep warning fix
+
+Greg Thelen (9):
+  memcg: add page_cgroup flags for dirty page tracking
+  memcg: document cgroup dirty memory interfaces
+  memcg: create extensible page stat update routines
+  writeback: create dirty_info structure
+  memcg: add dirty page accounting infrastructure
+  memcg: add kernel calls for memcg dirty page stats
+  memcg: add dirty limits to mem_cgroup
+  memcg: add cgroupfs interface to memcg dirty limits
+  memcg: check memcg dirty limits in page writeback
+
+KAMEZAWA Hiroyuki (1):
+  memcg: add lock to synchronize page accounting and migration
+
+ Documentation/cgroups/memory.txt |   73 ++++++
+ fs/fs-writeback.c                |    7 +-
+ fs/nfs/write.c                   |    4 +
+ include/linux/memcontrol.h       |   64 +++++-
+ include/linux/page_cgroup.h      |   54 ++++-
+ include/linux/writeback.h        |    9 +-
+ mm/backing-dev.c                 |   12 +-
+ mm/filemap.c                     |    1 +
+ mm/memcontrol.c                  |  477 ++++++++++++++++++++++++++++++++++++--
+ mm/page-writeback.c              |  135 ++++++++----
+ mm/rmap.c                        |    4 +-
+ mm/truncate.c                    |    1 +
+ mm/vmstat.c                      |    6 +-
+ 13 files changed, 764 insertions(+), 83 deletions(-)
+
 -- 
-1.6.0.4
+1.7.3.1
+
+
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
