@@ -1,35 +1,45 @@
 From: Andrew Morton <akpm@linux-foundation.org>
-Subject: Re: [PATCH v4 09/11] memcg: CPU hotplug lockdep warning fix
-Date: Fri, 29 Oct 2010 13:19:57 -0700
-Message-ID: <20101029131957.e0ea4013.akpm@linux-foundation.org>
+Subject: Re: [PATCH v4 02/11] memcg: document cgroup dirty memory interfaces
+Date: Fri, 29 Oct 2010 13:19:52 -0700
+Message-ID: <20101029131952.1191023d.akpm@linux-foundation.org>
 References: <1288336154-23256-1-git-send-email-gthelen@google.com>
-	<1288336154-23256-10-git-send-email-gthelen@google.com>
+	<1288336154-23256-3-git-send-email-gthelen@google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
 Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <1288336154-23256-10-git-send-email-gthelen@google.com>
+In-Reply-To: <1288336154-23256-3-git-send-email-gthelen@google.com>
 Sender: owner-linux-mm@kvack.org
 To: Greg Thelen <gthelen@google.com>
 Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>
 List-Id: containers.vger.kernel.org
 
-On Fri, 29 Oct 2010 00:09:12 -0700
+On Fri, 29 Oct 2010 00:09:05 -0700
 Greg Thelen <gthelen@google.com> wrote:
 
-> From: Balbir Singh <balbir@linux.vnet.ibm.com>
+> Document cgroup dirty memory interfaces and statistics.
 > 
-> memcg has lockdep warnings (sleep inside rcu lock)
-> >
+>
 > ...
 >
-> Acked-by: Greg Thelen <gthelen@google.com>
+> +When use_hierarchy=0, each cgroup has dirty memory usage and limits.
+> +System-wide dirty limits are also consulted.  Dirty memory consumption is
+> +checked against both system-wide and per-cgroup dirty limits.
+> +
+> +The current implementation does enforce per-cgroup dirty limits when
 
-You were on the patch delivery path, so this should be Signed-off-by:. 
-I made that change to my copy.
+"does not", I trust.
 
-> Signed-off-by: Balbir Singh <balbir@linux.vnet.ibm.com>
-
+> +use_hierarchy=1.  System-wide dirty limits are used for processes in such
+> +cgroups.  Attempts to read memory.dirty_* files return the system-wide values.
+> +Writes to the memory.dirty_* files return error.  An enhanced implementation is
+> +needed to check the chain of parents to ensure that no dirty limit is exceeded.
+> +
+>  6. Hierarchy support
+>  
+>  The memory controller supports a deep hierarchy and hierarchical accounting.
+> -- 
+> 1.7.3.1
 
 --
 To unsubscribe, send a message with 'unsubscribe linux-mm' in
