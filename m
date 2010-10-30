@@ -1,83 +1,88 @@
-From: Wu Fengguang <fengguang.wu@intel.com>
-Subject: Re: [PATCH v4 02/11] memcg: document cgroup dirty memory interfaces
-Date: Sat, 30 Oct 2010 11:02:49 +0800
-Message-ID: <20101030030249.GA16895@localhost>
-References: <1288336154-23256-1-git-send-email-gthelen@google.com>
- <1288336154-23256-3-git-send-email-gthelen@google.com>
- <20101029110331.GA29774@localhost>
- <xr9339rolm15.fsf@ninji.mtv.corp.google.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [RFC][PATCH][cr]: Mark ghost tasks as detached earlier
+Date: Sat, 30 Oct 2010 00:01:51 -0700
+Message-ID: <20101030070151.GA4850@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <owner-linux-mm@kvack.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <xr9339rolm15.fsf@ninji.mtv.corp.google.com>
-Sender: owner-linux-mm@kvack.org
-To: Greg Thelen <gthelen@google.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linux-mm@kvack.org" <linux-mm@kvack.org>, "containers@lists.osdl.org" <containers@lists.osdl.org>, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Sat, Oct 30, 2010 at 05:35:50AM +0800, Greg Thelen wrote:
-> >> +A cgroup may contain more dirty memory than its dirty limit.  This is possible
-> >> +because of the principle that the first cgroup to touch a page is charged for
-> >> +it.  Subsequent page counting events (dirty, writeback, nfs_unstable) are also
-> >> +counted to the originally charged cgroup.
-> >> +
-> >> +Example: If page is allocated by a cgroup A task, then the page is charged to
-> >> +cgroup A.  If the page is later dirtied by a task in cgroup B, then the cgroup A
-> >> +dirty count will be incremented.  If cgroup A is over its dirty limit but cgroup
-> >> +B is not, then dirtying a cgroup A page from a cgroup B task may push cgroup A
-> >> +over its dirty limit without throttling the dirtying cgroup B task.
-> >
-> > It's good to document the above "misbehavior". But why not throttling
-> > the dirtying cgroup B task? Is it simply not implemented or makes no
-> > sense to do so at all?
-> 
-> Ideally cgroup B would be throttled.  Note, even with this misbehavior,
-> the system dirty limit will keep cgroup B from exceeding system-wide
-> limits.
+From ce9dd2fc7332597d46872f3f8c52ac0806f381d1 Mon Sep 17 00:00:00 2001
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Date: Fri, 29 Oct 2010 23:16:10 -0700
+Subject: [PATCH 1/1] Mark ghost task as detached earlier
 
-Yeah. And I'm OK with the current behavior, since
-1) it does not impact the global limits
-2) the common memcg usage (the workload you cared) seems don't share
-   pages between memcg's a lot
+During restart() of an application, ghost tasks are be marked as "detached"
+so they don't send a SIGCHLD to their parent when they exit. But this is
+currently being done a little too late in the "life" of the ghost and
+ends up confusing the container-init.
 
-So I'm OK to improve it in future when there comes a need.
+Suppose a ghost child of the container-init is waiting in do_ghost_task().
+It is not yet detached. If the container-init is terminated for some
+reason, the container-init sends SIGKILL to its children (including this
+ghost). The container-init then waits for the un-detached children to
+exit, expecting to be notified via SIGCHLD.
 
-> The challenge here is that when the current system increments dirty
-> counters using account_page_dirtied() which does not immediately check
-> against dirty limits.  Later balance_dirty_pages() checks to see if any
-> limits were exceeded, but only after a batch of pages may have been
-> dirtied.  The task may have written many pages in many different memcg.
-> So checking all possible memcg that may have been written in the mapping
-> may be a large set.  I do not like this approach.
+When the ghost-child receives the SIGKILL, it wakes up and marks itself
+detached and proceeds to exit. Since it is now detached, it will not
+notify the parent, thus leaving the container-init blocked indefintely.
 
-Me too.
+Some background:
 
-> memcontrol.c can easily detect when memcg other than the current task's
-> memcg is charged for a dirty page.  It does not record this today, but
-> it could.  When such a foreign page dirty event occurs the associated
-> memcg could be linked into the dirtying address_space so that
-> balance_dirty_pages() could check the limits of all foreign memcg.  In
-> the common case I think the task is dirtying pages that have been
-> charged to the task's cgroup, so the address_space's foreign_memcg list
-> would be empty.  But when such foreign memcg are dirtied
-> balance_dirty_pages() would have access to references to all memcg that
-> need dirty limits checking.  This approach might work.  Comments?
+When running some tests on the C/R code we ran into the problem of the
+container-init not waiting for detached processes. This problem was
+extensively discssued here:
 
-It still introduce complexities of maintaining the foreign memcg <=>
-task mutual links.
+	http://lkml.org/lkml/2010/6/16/295
 
-Another approach may to add a parameter "struct page *page" to
-balance_dirty_pages(). Then balance_dirty_pages() can check the memcg
-that is associated with the _current_ dirtied page. It may not catch
-all foreign memcg's, but should work fine with good probability
-without introducing new data structure.
+Eric Biederman had a fix for the problem:
 
-Thanks,
-Fengguang
+	http://lkml.org/lkml/2010/7/12/213
 
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+When I applied this fix to the C/R tree and repeated the tests, I ran
+into the above issue of the container-init hanging. Marking the ghost
+as detached earlier seems to fix the confusion in the container-init.
+
+Oren, is there a reason not to mark the ghost task detached earlier
+than is currently being done ?
+
+Signed-off-by: Sukadev Bhattiprolu (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org)
+---
+ kernel/checkpoint/restart.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/kernel/checkpoint/restart.c b/kernel/checkpoint/restart.c
+index 17270b8..95789c0 100644
+--- a/kernel/checkpoint/restart.c
++++ b/kernel/checkpoint/restart.c
+@@ -953,6 +953,7 @@ static int do_ghost_task(void)
+ 	struct ckpt_ctx *ctx;
+ 	int ret;
+ 
++	current->exit_signal = -1;
+ 	ctx = wait_checkpoint_ctx();
+ 	if (IS_ERR(ctx))
+ 		return PTR_ERR(ctx);
+@@ -972,7 +973,6 @@ static int do_ghost_task(void)
+ 	if (ret < 0)
+ 		ckpt_err(ctx, ret, "ghost restart failed\n");
+ 
+-	current->exit_signal = -1;
+ 	restore_debug_exit(ctx);
+ 	ckpt_ctx_put(ctx);
+ 	do_exit(0);
+-- 
+1.6.6.1
