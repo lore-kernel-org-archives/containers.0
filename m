@@ -1,49 +1,67 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH] cgroup: Avoid a memset by using vzalloc
-Date: Sun, 31 Oct 2010 23:03:36 +0530
-Message-ID: <20101031173336.GA28141__4811.98607380993$1288546483$gmane$org@balbir.in.ibm.com>
-References: <alpine.LNX.2.00.1010302333130.1572@swampdragon.chaosbits.net>
-	<AANLkTi=nMU3ezNFD8LKBhJxr6CmW6-qHY_Mo3HRt6Os0@mail.gmail.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Wu Fengguang <fengguang.wu@intel.com>
+Subject: Re: [PATCH v4 11/11] memcg: check memcg dirty limits in page
+ writeback
+Date: Mon, 1 Nov 2010 04:03:41 +0800
+Message-ID: <20101031200341.GA455@localhost>
+References: <1288336154-23256-1-git-send-email-gthelen@google.com>
+ <1288336154-23256-12-git-send-email-gthelen@google.com>
+ <20101029164835.06eef3cf.kamezawa.hiroyu@jp.fujitsu.com>
+ <xr93eib9nfue.fsf@ninji.mtv.corp.google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <owner-linux-mm@kvack.org>
 Content-Disposition: inline
-In-Reply-To: <AANLkTi=nMU3ezNFD8LKBhJxr6CmW6-qHY_Mo3HRt6Os0-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Minchan Kim <minchan.kim-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Jesper Juhl <jj-IYz4IdjRLj0sV2N9l4h3zg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <xr93eib9nfue.fsf@ninji.mtv.corp.google.com>
+Sender: owner-linux-mm@kvack.org
+To: Greg Thelen <gthelen@google.com>
+Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Andrew Morton <akpm@linux-foundation.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linux-mm@kvack.org" <linux-mm@kvack.org>, "containers@lists.osdl.org" <containers@lists.osdl.org>, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>
 List-Id: containers.vger.kernel.org
 
-* MinChan Kim <minchan.kim-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> [2010-10-31 08:34:01]:
-
-> On Sun, Oct 31, 2010 at 6:35 AM, Jesper Juhl <jj-IYz4IdjRLj0sV2N9l4h3zg@public.gmane.org> wrote:
-> > Hi,
-> >
-> > We can avoid doing a memset in swap_cgroup_swapon() by using vzalloc().
-> >
-> >
-> > Signed-off-by: Jesper Juhl <jj-IYz4IdjRLj0sV2N9l4h3zg@public.gmane.org>
-> Reviewed-by: Minchan Kim <minchan.kim-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+On Sat, Oct 30, 2010 at 12:06:33AM +0800, Greg Thelen wrote:
+> KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com> writes:
 > 
-> There are so many placed need vzalloc.
-> Thanks, Jesper.
+> > On Fri, 29 Oct 2010 00:09:14 -0700
+> > Greg Thelen <gthelen@google.com> wrote:
+> >
+> >> If the current process is in a non-root memcg, then
+> >> balance_dirty_pages() will consider the memcg dirty limits
+> >> as well as the system-wide limits.  This allows different
+> >> cgroups to have distinct dirty limits which trigger direct
+> >> and background writeback at different levels.
+> >> 
+> >> Signed-off-by: Andrea Righi <arighi@develer.com>
+> >> Signed-off-by: Greg Thelen <gthelen@google.com>
+> >
+> > Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
 
-Yes, please check memcontrol.c as well
+The "check both memcg&global dirty limit" looks much more sane than
+the V3 implementation. Although it still has misbehaviors in some
+cases, it's generally a good new feature to have.
 
+Acked-by: Wu Fengguang <fengguang.wu@intel.com>
 
-Acked-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
- 
+> > Ideally, I think some comments in the code for "why we need double-check system's
+> > dirty limit and memcg's dirty limit" will be appreciated.
+> 
+> I will add to the balance_dirty_pages() comment.  It will read:
+> /*
+>  * balance_dirty_pages() must be called by processes which are generating dirty
+>  * data.  It looks at the number of dirty pages in the machine and will force
+>  * the caller to perform writeback if the system is over `vm_dirty_ratio'.
+                   ~~~~~~~~~~~~~~~~~                  ~~~~
 
--- 
-	Three Cheers,
-	Balbir
+To be exact, it tries to throttle the dirty speed so that
+vm_dirty_ratio is not exceeded. In fact balance_dirty_pages() starts
+throttling the dirtier slightly below vm_dirty_ratio.
+
+>  * If we're over `background_thresh' then the writeback threads are woken to
+>  * perform some writeout.  The current task may have per-memcg dirty
+>  * limits, which are also checked.
+>  */
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom policy in Canada: sign http://dissolvethecrtc.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
