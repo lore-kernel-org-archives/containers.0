@@ -1,92 +1,192 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Need help to debug container's freeze
-Date: Sat, 30 Oct 2010 17:36:52 -0700
-Message-ID: <20101031003652.GD3566__33001.1927675971$1288485470$gmane$org@count0.beaverton.ibm.com>
-References: <1288355260.4451.121.camel@tablet>
+From: Ciju Rajan K <ciju@linux.vnet.ibm.com>
+Subject: Re: [PATCH v4 03/11] memcg: create extensible page stat update routines
+Date: Sun, 31 Oct 2010 20:18:43 +0530
+Message-ID: <4CCD81CB.9030503@linux.vnet.ibm.com>
+References: <1288336154-23256-1-git-send-email-gthelen@google.com> <1288336154-23256-4-git-send-email-gthelen@google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1288355260.4451.121.camel@tablet>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: =?utf-8?B?0J/RkdGC0YAg0JLQvtC70LrQvtCy?= <pva-IzMiZDvh46SHXe+LvDLADg@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lxc-users-TtF/mJH4Jtrk1uMJSBkQmQ@public.gmane.org
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: 7bit
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <1288336154-23256-4-git-send-email-gthelen@google.com>
+Sender: owner-linux-mm@kvack.org
+To: Greg Thelen <gthelen@google.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>
 List-Id: containers.vger.kernel.org
 
-T24gRnJpLCBPY3QgMjksIDIwMTAgYXQgMDQ6Mjc6NDBQTSArMDQwMCwg0J/RkdGC0YAg0JLQvtC7
-0LrQvtCyIHdyb3RlOgo+IEhpLiBXZSBhcmUgdXNpbmcgbHhjIHRvIHNlcGFyYXRlIGRpZmZlcmVu
-dCBzZXJ2aWNlcyBpbnRvIGNvbnRhaW5lcnM6IGZvcgo+IHRoaXMgZGlzY3Vzc2lvbnMgd2UgaGF2
-ZSBhcGFjaGUrcGhwLCBteXNxbCwgbmdpbnggY29udGFpbmVycyB0byBzZXJ2ZQo+IG91ciB3ZWIg
-YXBwbGljYXRpb24uIEFmdGVyIHVwZ3JhZGUgKEkgdGhpbmsgZnJvbSBrZXJuZWwgMi42LjMyIGlu
-dG8KPiBzb21ldGhpbmcgbmV3ZXIsIG5vdyB3ZSBhcmUgdXNpbmcgMi42LjM1LCBidXQgdHJpZWQg
-MzQgdG9vKSB3ZSd2ZQo+IGV4cGVyaWVuY2UgZm9sbG93aW5nIGlzc3VlOiBhdCBzb21lIHBvaW50
-IG5naW54IHN0YXJ0cyB0byBzaG93IHVzICI1MDQKPiBHYXRld2F5IFRpbWUtb3V0IiBlcnJvciBh
-bmQgd2hpbGUgaXQgaXMgcG9zc2libGUgdG8gc3NoIG9uIHNlcnZlciBgcHMKPiBhdXhgIGhhbmdz
-ICh3aXRoIG5vIGFiaWxpdHkgdG8gc3RvcCBpdCksIGl0IGlzIGltcG9zc2libGUgdG8gcmVzdGFy
-dAo+IGFwYWNoZSBjb250YWluZXIgKGhhbmdzIG9uIHN0b3ApIGFuZCB0aGUgb25seSB3YXkgdG8g
-Zml4IHRoaXMgaXMgdG8KPiByZXN0YXJ0IHNlcnZlciB1c2luZyBzeXNycSBvciBwb3dlciBidXR0
-b24uIEF0IHRoZSBzYW1lIHRpbWUgdGhlcmUgaXMKPiBub3RoaW5nIGluIHRoZSBsb2dzLiBJIHN1
-c3BlY3QgYXBhY2hlIHN0YXJ0cyB0byBlYXQgbG90cyBvZiBtZW1vcnkgYnV0Cj4gb29tIGtpbGxl
-ciBzb21laG93IGZyZWV6ZXMgY29udGFpbmVyIGJ1dCBJIGRvbid0IGhhdmUgYW55IHByb3Zlcy4g
-V2hhdAoKVGhlIE9PTSBraWxsZXIgZG9lcyBub3QgZnJlZXplIHRhc2tzLiBOb3cgaWYgdGhlIHRh
-c2tzIHdlcmUgYWxyZWFkeQpmcm96ZW4gYW5kIGlmIHRoZSBPT00ga2lsbGVyIHNlbGVjdGVkIHRo
-ZW0gdGhlbiBJIGNhbiBzZWUgaG93IHRoYXQKd291bGQgYmUgYSBwcm9ibGVtLiBIb3dldmVyLCBh
-Z2FpbiBJIGRvdWJ0IHRoYXQncyB3aGF0J3MgaGFwcGVuaW5nIGhlcmUKZm9yIHNldmVyYWwgcmVh
-c29ucy4KCjEuIGx4YyBkb2Vzbid0IGFyYml0cmFyaWx5IGZyZWV6ZSB0YXNrcyAtLSB1bmxlc3Mg
-eW91IHdlcmUgY2hlY2twb2ludGluZwoJb3IgZnJlZXppbmcgdGhlIHRhc2sgeW91cnNlbGYgKG9y
-IHVzaW5nIGEgY3VzdG9tIHNjcmlwdCB0byBkbwoJc28pLCB0aGUgdGFza3MgaW4gdGhlIGNvbnRh
-aW5lcidzIGNncm91cCBzaG91bGQgbm90IGJlIGZyb3plbi4KCjIuIElmIHRoZSB0YXNrKHMpIGFy
-ZSBmcm96ZW4gdGhlbiBieSBkZWZpbml0aW9uIHRoZXkgYXJlIG5vdCBhbGxvY2F0aW5nCgltZW1v
-cnkuIEF0IGJlc3QgdGhleSdyZSBwaW5uaW5nIHRoZSBtZW1vcnkgdGhleSd2ZSBhbHJlYWR5Cglh
-bGxvY2F0ZWQgYmVmb3JlIGJlaW5nIGZyb3plbi4gWyBUaGUgdGFza3Mgd2lsbCByZXNwb25kIHRv
-CglraWxsIHNpZ25hbHMgd2hlbiB0aGF3ZWQuIF0KCj4gY291bGQgeW91IHN1Z2dlc3QgdG8gZGVi
-dWcgdGhpcyBpc3N1ZT8gV2hhdCBzeXNycSBpbmZvcm1hdGlvbiBjb3VsZCBiZQo+IHVzZWZ1bCBo
-ZXJlPwoKWyBDYydpbmcgbHhjLXVzZXJzQGxpc3RzLnNmLm5ldCBmb3IgbHhjLXNwZWNpZmljIGRl
-YnVnZ2luZyBpZGVhcy9hZHZpY2UuIF0KCkhlcmUncyBzb21lIGluZm8gb24gY29sbGVjdGluZyBh
-bmQgZGlhZ25vc2luZyB0aGUgc3RhdGUgb2YgdGhlIGZyZWV6ZXIKc28gdGhhdCBob3BlZnVsbHkg
-d2UgY2FuIGVsaW1pbmF0ZSB5b3VyIGNvbmNlcm5zIGFib3V0IGl0IGJlaW5nIGludm92bGVkCmFu
-ZCBjb25maXJtIHdoYXQgSSd2ZSBzYWlkIGFib3ZlOgoKSWYgeW91IHdhbnQgdG8gZmlndXJlIG91
-dCBpZiB0aGUgY2dyb3VwIGZyZWV6ZXIgaXMgaW52b2x2ZWQgYXQgYWxsCmRlYnVnZ2luZyBpdCBy
-ZXF1aXJlcyB0aGF0IHlvdSBiZSBpbiB0aGUgImhvc3QiLiBGaW5kIG91dCB3aGljaApwcm9jZXNz
-IGlkcyBhcmUgeW91ciBhcGFjaGUvbmdpbngvZXRjIHByb2Nlc3Nlcy4gVGhlbiBsb29rIGF0IHRo
-ZWlyCmNncm91cHMgaW4gL3Byb2MvPHBpZD4vY2dyb3VwLiBLZWVwIGluIG1pbmQgdGhhdCB0aGUg
-Ii8iIGluIHRob3NlCnBhdGhzIGlzbid0IHRoZSBzYW1lIGFzICIvIiAtLSBpdCdzIHRoZSBkaXJl
-Y3RvcnkgdGhlIGNncm91cApzdWJzeXN0ZW1zIGFyZSBtb3VudGVkIGF0IChzZWUgL3Byb2MvbW91
-bnRzIHRvIGZpZ3VyZSBvdXQgd2hlcmUpLgpZb3Ugd2FudCB0aGUgbGluZSB0aGF0IHNheXMgImZy
-ZWV6ZXIiLgoKTG9vayBhdCB0aGUgY2dyb3VwcyBtb3VudCBwb2ludCB3aXRoIHRoZSBmcmVlemVy
-IHN1YnNzeXN0ZW0gaW4gdGhlCmNncm91cChzKSBvZiB0aGVzZSBwcm9jZXNzZXMgKGl0J2xsIHNh
-eSAiZnJlZXplciIgaW4gdGhlIG1vdW50IG9wdGlvbnMpLgpDb25maXJtIHRoYXQgeW91ciBwaWRz
-IGFyZSBsaXN0ZWQgaW4gdGhlIGNncm91cCBieSBsb29raW5nIGF0IHRoZSB0YXNrcwpmaWxlLgoK
-SWYgdGhlIGZyZWV6ZXIuc3RhdGUgZmlsZSBvZiB0aG9zZSBjZ3JvdXBzIGNvbnRhaW5zIHRoZSB3
-b3JkICJUSEFXRUQiCnRoZW4gdGhlIHByb2JsZW0gbGllcyBlbHNld2hlcmUuIElmIHRoZSBmcmVl
-emVyLnN0YXRlIHNheXMgIkZSRUVaSU5HIgpvciAiRlJPWkVOIiBob3dldmVyIHRoZW4geW91J2xs
-IHdhbnQgdG8gbG9vayBhdCB0aGUgc3RhdGUgb2YgdGhlCnByb2Nlc3Nlcy4gU29tZSBvciBhbGwg
-c2hvdWxkIGJlIGluIHRoZSAiRCIgc3RhdGUgd2hpbGUgIkZSRUVaSU5HIi4KQWxsIHNob3VsZCBi
-ZSBpbiAiRCIgc3RhdGUgd2hpbGUgIkZST1pFTiIuCgoiRlJFRVpJTkciIGlzIGFuIGludGVybWVk
-aWF0ZSBzdGF0ZSBob3dldmVyIHNvIGl0J3Mgbm90IHBvc3NpYmxlIHRvCmRldGVybWluZSBpZiB0
-aGVyZSdzIGEgYnVnIGJhc2VkIHB1cmVseSBvbiB0aGUgaW5mbyBjb2xsZWN0ZWQgc28gZmFyLgpU
-aGUgYmVzdCB5b3UgY2FuIGRvIHdpdGggIkZSRUVaSU5HIiBpcyB0cnkgYW5kIHdyaXRlICJGUk9a
-RU4iIGludG8KZnJlZXplci5zdGF0ZSBvbmUgb3IgbW9yZSB0aW1lcyBhbmQgc2VlIGlmIGl0ICdl
-dmVudHVhbGx5JyBzdWNjZWVkcwotLSBzYXkgd2l0aGluIDEwIHNlY29uZHMgb3IgMjAgYXR0ZW1w
-dHMsIHdoaWNoZXZlciB0YWtlcyBsb25nZXIuCklmIGl0IGRvZXNuJ3QgdGhlbiB5b3UgbmVlZCB0
-byBzdHJhY2UgdGhlIHByb2Nlc3NlcyBhbmQgc2VlIGlmIGFueQphcmUgc3R1Y2sgaW4gYSBzeXNj
-YWxsIC0tIHZmb3JrIHBlcmhhcHMuIFlvdSBjYW4gYWxzbyB0cnkgd3JpdGluZwoiVEhBV0VEIi4g
-SWYgaXQgZG9lc24ndCB0aGF3IG9uIHRoZSBmaXJzdCB0cnkgdGhlbiB0aGVyZSdzIGEgYnVnLgoK
-V2hlbmV2ZXIgeW91IHdyaXRlIGEgbmV3IHN0YXRlIHRvIGZyZWV6ZXIuc3RhdGUgeW91IHNob3Vs
-ZCByZWFkIHRoZQpmaWxlIGFnYWluIHRvIGZpbmQgb3V0IHdoZXRoZXIgdGhlIHN0YXRlIGNoYW5n
-ZSB0b29rIHBsYWNlLiBTb21lCnRyYW5zaXRpb25zIGFyZSBoYW5kbGVkIGxhemlseSBhbmQgb25s
-eSB0YWtlIHBsYWNlIHdoZW4geW91IGFzayBmb3IKdGhlIHN0YXRlIGJ5IHJlYWRpbmcgaXQuCgpU
-aGF0J3MgdGhlIHdheSB0byBmaWd1cmUgb3V0IGlmIHRoZSBmcmVlemVyIGlzIGludm9sdmVkIGFu
-ZCwgaWYgc28sCndoZXJlIGl0J3Mgc3R1Y2suCgpDaGVlcnMsCgktTWF0dCBIZWxzbGV5Cl9fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFp
-bGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9s
-aXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+Greg Thelen wrote:
+> Replace usage of the mem_cgroup_update_file_mapped() memcg
+> statistic update routine with two new routines:
+> * mem_cgroup_inc_page_stat()
+> * mem_cgroup_dec_page_stat()
+>
+> As before, only the file_mapped statistic is managed.  However,
+> these more general interfaces allow for new statistics to be
+> more easily added.  New statistics are added with memcg dirty
+> page accounting.
+>
+> Signed-off-by: Greg Thelen <gthelen@google.com>
+> Signed-off-by: Andrea Righi <arighi@develer.com>
+> Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+> Acked-by: Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
+> ---
+> Changelog since v1:
+> - Rename (for clarity):
+>   - mem_cgroup_write_page_stat_item -> mem_cgroup_page_stat_item
+>   - mem_cgroup_read_page_stat_item -> mem_cgroup_nr_pages_item
+>
+>  include/linux/memcontrol.h |   31 ++++++++++++++++++++++++++++---
+>  mm/memcontrol.c            |   16 +++++++---------
+>  mm/rmap.c                  |    4 ++--
+>  3 files changed, 37 insertions(+), 14 deletions(-)
+>
+> diff --git a/include/linux/memcontrol.h b/include/linux/memcontrol.h
+> index 159a076..067115c 100644
+> --- a/include/linux/memcontrol.h
+> +++ b/include/linux/memcontrol.h
+> @@ -25,6 +25,11 @@ struct page_cgroup;
+>  struct page;
+>  struct mm_struct;
+>
+> +/* Stats that can be updated by kernel. */
+> +enum mem_cgroup_page_stat_item {
+> +	MEMCG_NR_FILE_MAPPED, /* # of pages charged as file rss */
+> +};
+> +
+>  extern unsigned long mem_cgroup_isolate_pages(unsigned long nr_to_scan,
+>  					struct list_head *dst,
+>  					unsigned long *scanned, int order,
+> @@ -121,7 +126,22 @@ static inline bool mem_cgroup_disabled(void)
+>  	return false;
+>  }
+>
+> -void mem_cgroup_update_file_mapped(struct page *page, int val);
+> +void mem_cgroup_update_page_stat(struct page *page,
+> +				 enum mem_cgroup_page_stat_item idx,
+> +				 int val);
+> +
+> +static inline void mem_cgroup_inc_page_stat(struct page *page,
+> +					    enum mem_cgroup_page_stat_item idx)
+> +{
+> +	mem_cgroup_update_page_stat(page, idx, 1);
+> +}
+> +
+> +static inline void mem_cgroup_dec_page_stat(struct page *page,
+> +					    enum mem_cgroup_page_stat_item idx)
+> +{
+> +	mem_cgroup_update_page_stat(page, idx, -1);
+> +}
+> +
+>  unsigned long mem_cgroup_soft_limit_reclaim(struct zone *zone, int order,
+>  						gfp_t gfp_mask);
+>  u64 mem_cgroup_get_limit(struct mem_cgroup *mem);
+> @@ -293,8 +313,13 @@ mem_cgroup_print_oom_info(struct mem_cgroup *memcg, struct task_struct *p)
+>  {
+>  }
+>
+> -static inline void mem_cgroup_update_file_mapped(struct page *page,
+> -							int val)
+> +static inline void mem_cgroup_inc_page_stat(struct page *page,
+> +					    enum mem_cgroup_page_stat_item idx)
+> +{
+> +}
+> +
+> +static inline void mem_cgroup_dec_page_stat(struct page *page,
+> +					    enum mem_cgroup_page_stat_item idx)
+>  {
+>  }
+>
+> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+> index 9a99cfa..4fd00c4 100644
+> --- a/mm/memcontrol.c
+> +++ b/mm/memcontrol.c
+> @@ -1592,7 +1592,8 @@ bool mem_cgroup_handle_oom(struct mem_cgroup *mem, gfp_t mask)
+>   * possibility of race condition. If there is, we take a lock.
+>   */
+>
+>   
+Greg,
+
+I am not seeing the function mem_cgroup_update_file_stat() in the latest 
+mmotm 2010-10-22-16-36.
+So not able to apply this patch. Tried couple of times cloning the 
+entire mmotm git repository. But no luck.
+Tried in the web interface 
+http://git.zen-kernel.org/mmotm/tree/mm/memcontrol.c also. It is not there.
+Surprisingly git log doesn't show any recent changes to mm/memcontrol.c. 
+Am I missing something?
+I could see this function in the mainline linux 2.6 git tree.
+
+-Ciju
+
+> -static void mem_cgroup_update_file_stat(struct page *page, int idx, int val)
+> +void mem_cgroup_update_page_stat(struct page *page,
+> +				 enum mem_cgroup_page_stat_item idx, int val)
+>  {
+>  	struct mem_cgroup *mem;
+>  	struct page_cgroup *pc = lookup_page_cgroup(page);
+> @@ -1615,30 +1616,27 @@ static void mem_cgroup_update_file_stat(struct page *page, int idx, int val)
+>  			goto out;
+>  	}
+>
+> -	this_cpu_add(mem->stat->count[idx], val);
+> -
+>  	switch (idx) {
+> -	case MEM_CGROUP_STAT_FILE_MAPPED:
+> +	case MEMCG_NR_FILE_MAPPED:
+>  		if (val > 0)
+>  			SetPageCgroupFileMapped(pc);
+>  		else if (!page_mapped(page))
+>  			ClearPageCgroupFileMapped(pc);
+> +		idx = MEM_CGROUP_STAT_FILE_MAPPED;
+>  		break;
+>  	default:
+>  		BUG();
+>  	}
+>
+> +	this_cpu_add(mem->stat->count[idx], val);
+> +
+>  out:
+>  	if (unlikely(need_unlock))
+>  		unlock_page_cgroup(pc);
+>  	rcu_read_unlock();
+>  	return;
+>  }
+> -
+> -void mem_cgroup_update_file_mapped(struct page *page, int val)
+> -{
+> -	mem_cgroup_update_file_stat(page, MEM_CGROUP_STAT_FILE_MAPPED, val);
+> -}
+> +EXPORT_SYMBOL(mem_cgroup_update_page_stat);
+>
+>  /*
+>   * size of first charge trial. "32" comes from vmscan.c's magic value.
+> diff --git a/mm/rmap.c b/mm/rmap.c
+> index 1a8bf76..a66ab76 100644
+> --- a/mm/rmap.c
+> +++ b/mm/rmap.c
+> @@ -911,7 +911,7 @@ void page_add_file_rmap(struct page *page)
+>  {
+>  	if (atomic_inc_and_test(&page->_mapcount)) {
+>  		__inc_zone_page_state(page, NR_FILE_MAPPED);
+> -		mem_cgroup_update_file_mapped(page, 1);
+> +		mem_cgroup_inc_page_stat(page, MEMCG_NR_FILE_MAPPED);
+>  	}
+>  }
+>
+> @@ -949,7 +949,7 @@ void page_remove_rmap(struct page *page)
+>  		__dec_zone_page_state(page, NR_ANON_PAGES);
+>  	} else {
+>  		__dec_zone_page_state(page, NR_FILE_MAPPED);
+> -		mem_cgroup_update_file_mapped(page, -1);
+> +		mem_cgroup_dec_page_stat(page, MEMCG_NR_FILE_MAPPED);
+>  	}
+>  	/*
+>  	 * It would be tidy to reset the PageAnon mapping here,
+>   
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom policy in Canada: sign http://dissolvethecrtc.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
