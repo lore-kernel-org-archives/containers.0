@@ -1,15 +1,13 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH] Clear the objhash before completing restart, but delay
-	free (v2)
-Date: Mon, 01 Nov 2010 13:50:12 -0400
-Message-ID: <4CCEFDD4.1030308@cs.columbia.edu>
-References: <1287496991-18207-1-git-send-email-danms@us.ibm.com>	<4CCEE9AD.7010105@cs.columbia.edu>
-	<87oca9vuyw.fsf@localhost6.localdomain6>
+Subject: Re: [RFC][PATCH][cr]: Mark ghost tasks as detached earlier
+Date: Mon, 01 Nov 2010 14:02:34 -0400
+Message-ID: <4CCF00BA.2030500@cs.columbia.edu>
+References: <20101030070151.GA4850@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87oca9vuyw.fsf-bi+AKbBUZKagILUCTcTcHdKyNwTtLsGr@public.gmane.org>
+In-Reply-To: <20101030070151.GA4850-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,36 +17,106 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, matthltc-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
 
-On 11/01/2010 01:01 PM, Dan Smith wrote:
-> OL> Does this patch solve the performance problem in freeing all
-> OL> the objhash entries upfront (e.g. before letting userspace
-> OL> resume) ?
+On 10/30/2010 03:01 AM, Sukadev Bhattiprolu wrote:
+> From ce9dd2fc7332597d46872f3f8c52ac0806f381d1 Mon Sep 17 00:00:00 2001
+> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> Date: Fri, 29 Oct 2010 23:16:10 -0700
+> Subject: [PATCH 1/1] Mark ghost task as detached earlier
 > 
-> OL> If so, is there still a performance hit for doing the 'clear'
-> OL> portion early before resuming the tasks ?   How much does it
-> OL> depend on the complexity of the hierarchy being checkpointed ?
+> During restart() of an application, ghost tasks are be marked as "detached"
+> so they don't send a SIGCHLD to their parent when they exit. But this is
+> currently being done a little too late in the "life" of the ghost and
+> ends up confusing the container-init.
 > 
-> I've actually been unable to detect any real different in performance
-> between this and the way it was before.  I've run it against several
-> different large checkpoints (multiple processes, with sockets, IPC,
-> many files open, etc).  I have another option for the functionality,
-> which is to mark only specific items as needing to be free()'d early,
-> but I can't discern a difference between that or this option either.
-> What I can discern is that this patch is more likely to prevent
-> similar issues in the future by making the behavior of the hash far
-> more generally correct, IMHO.
+> Suppose a ghost child of the container-init is waiting in do_ghost_task().
+> It is not yet detached. If the container-init is terminated for some
+> reason, the container-init sends SIGKILL to its children (including this
+> ghost). The container-init then waits for the un-detached children to
+> exit, expecting to be notified via SIGCHLD.
+> 
+> When the ghost-child receives the SIGKILL, it wakes up and marks itself
+> detached and proceeds to exit. Since it is now detached, it will not
+> notify the parent, thus leaving the container-init blocked indefintely.
+> 
+> Some background:
+> 
+> When running some tests on the C/R code we ran into the problem of the
+> container-init not waiting for detached processes. This problem was
+> extensively discssued here:
+> 
+> 	http://lkml.org/lkml/2010/6/16/295
+> 
+> Eric Biederman had a fix for the problem:
+> 
+> 	http://lkml.org/lkml/2010/7/12/213
+> 
+> When I applied this fix to the C/R tree and repeated the tests, I ran
+> into the above issue of the container-init hanging. Marking the ghost
+> as detached earlier seems to fix the confusion in the container-init.
 
-So to be clear: is there a performance issue due to moving the
-cleanup - some or all - to before allowing tasks to resume ?
-(This is what I understood over IRC).
+Let me see if I get this correctly: first, the container-init calls
+wait(), then goes to sleep because children aren't ready, then the
+ghost changes state to detached and exits, but the container-init is
+not notified so not woken up. Is that correct ?
 
-I agree that it's more correct and safe this way. But I want to
-know what the implications of a (or any) fix we make.
+If so, then the problem is that changing from non-detached to detached
+is racy. Therefore, just doing it earlier may still not be correct,
+because the race (theoretically) still exists. It just makes it less
+likely to occur.
+
+If this analysis is correct, then I can think of two options:
+
+1) when creating the ghost tasks, create them as detached from
+user-space, and they won't need to be waited-for not become
+detached.
+
+- or -
+
+2) in the kernel, when changing from non-detached to detached, we
+should also try to wake up the parent if it is sleeping in wait,
+to force the notify - the parent will wake up, check again and will
+see no remaining children.
+
+Thoughts ?
+
+> 
+> Oren, is there a reason not to mark the ghost task detached earlier
+> than is currently being done ?
+
+I don't think so, but let me sleep on it :)
 
 Oren.
+
+
+> 
+> Signed-off-by: Sukadev Bhattiprolu (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org)
+> ---
+>  kernel/checkpoint/restart.c |    2 +-
+>  1 files changed, 1 insertions(+), 1 deletions(-)
+> 
+> diff --git a/kernel/checkpoint/restart.c b/kernel/checkpoint/restart.c
+> index 17270b8..95789c0 100644
+> --- a/kernel/checkpoint/restart.c
+> +++ b/kernel/checkpoint/restart.c
+> @@ -953,6 +953,7 @@ static int do_ghost_task(void)
+>  	struct ckpt_ctx *ctx;
+>  	int ret;
+>  
+> +	current->exit_signal = -1;
+>  	ctx = wait_checkpoint_ctx();
+>  	if (IS_ERR(ctx))
+>  		return PTR_ERR(ctx);
+> @@ -972,7 +973,6 @@ static int do_ghost_task(void)
+>  	if (ret < 0)
+>  		ckpt_err(ctx, ret, "ghost restart failed\n");
+>  
+> -	current->exit_signal = -1;
+>  	restore_debug_exit(ctx);
+>  	ckpt_ctx_put(ctx);
+>  	do_exit(0);
