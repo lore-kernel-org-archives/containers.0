@@ -1,7 +1,8 @@
 From: Jiri Olsa <jolsa-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/3] cgroup - removing superfluous rcu_read_lock_held check
-Date: Mon,  1 Nov 2010 20:15:07 +0100
-Message-ID: <1288638909-10541-2-git-send-email-jolsa__44580.9709876359$1288639045$gmane$org@redhat.com>
+Subject: [PATCH 2/3] kernel, cred, kvm,
+	security - removing superfluous rcu_read_lock_held check
+Date: Mon,  1 Nov 2010 20:15:08 +0100
+Message-ID: <1288638909-10541-3-git-send-email-jolsa__11397.8860587396$1288639047$gmane$org@redhat.com>
 References: <1288638909-10541-1-git-send-email-jolsa@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -35,59 +36,106 @@ jirka
 
 Signed-off-by: Jiri Olsa <jolsa-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/cgroup.h |    1 -
- kernel/cgroup.c        |    6 ++----
- 2 files changed, 2 insertions(+), 5 deletions(-)
+ include/linux/cred.h     |    1 -
+ include/linux/fdtable.h  |    1 -
+ include/linux/kvm_host.h |    1 -
+ kernel/exit.c            |    1 -
+ kernel/pid.c             |    1 -
+ kernel/rcutorture.c      |    2 --
+ security/keys/keyring.c  |    1 -
+ 7 files changed, 0 insertions(+), 8 deletions(-)
 
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index ed4ba11..caed568 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -536,7 +536,6 @@ static inline struct cgroup_subsys_state *cgroup_subsys_state(
-  */
- #define task_subsys_state_check(task, subsys_id, __c)			\
- 	rcu_dereference_check(task->cgroups->subsys[subsys_id],		\
--			      rcu_read_lock_held() ||			\
- 			      lockdep_is_held(&task->alloc_lock) ||	\
- 			      cgroup_lock_is_held() || (__c))
+diff --git a/include/linux/cred.h b/include/linux/cred.h
+index 4aaeab3..a6b9afc 100644
+--- a/include/linux/cred.h
++++ b/include/linux/cred.h
+@@ -283,7 +283,6 @@ static inline void put_cred(const struct cred *_cred)
+ 	({								\
+ 		const struct task_struct *__t = (task);			\
+ 		rcu_dereference_check(__t->real_cred,			\
+-				      rcu_read_lock_held() ||		\
+ 				      task_is_dead(__t));		\
+ 	})
  
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 66a416b..1f329a2 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -1687,7 +1687,6 @@ int cgroup_path(const struct cgroup *cgrp, char *buf, int buflen)
+diff --git a/include/linux/fdtable.h b/include/linux/fdtable.h
+index 133c0ba..df7e3cf 100644
+--- a/include/linux/fdtable.h
++++ b/include/linux/fdtable.h
+@@ -60,7 +60,6 @@ struct files_struct {
+ 
+ #define rcu_dereference_check_fdtable(files, fdtfd) \
+ 	(rcu_dereference_check((fdtfd), \
+-			       rcu_read_lock_held() || \
+ 			       lockdep_is_held(&(files)->file_lock) || \
+ 			       atomic_read(&(files)->count) == 1 || \
+ 			       rcu_my_thread_group_empty()))
+diff --git a/include/linux/kvm_host.h b/include/linux/kvm_host.h
+index a055742..a90a7e3 100644
+--- a/include/linux/kvm_host.h
++++ b/include/linux/kvm_host.h
+@@ -256,7 +256,6 @@ void kvm_put_kvm(struct kvm *kvm);
+ static inline struct kvm_memslots *kvm_memslots(struct kvm *kvm)
  {
- 	char *start;
- 	struct dentry *dentry = rcu_dereference_check(cgrp->dentry,
--						      rcu_read_lock_held() ||
- 						      cgroup_lock_is_held());
+ 	return rcu_dereference_check(kvm->memslots,
+-			srcu_read_lock_held(&kvm->srcu)
+ 			|| lockdep_is_held(&kvm->slots_lock));
+ }
  
- 	if (!dentry || cgrp == dummytop) {
-@@ -1713,7 +1712,6 @@ int cgroup_path(const struct cgroup *cgrp, char *buf, int buflen)
- 			break;
+diff --git a/kernel/exit.c b/kernel/exit.c
+index b194feb..f753342 100644
+--- a/kernel/exit.c
++++ b/kernel/exit.c
+@@ -85,7 +85,6 @@ static void __exit_signal(struct task_struct *tsk)
+ 	struct tty_struct *uninitialized_var(tty);
  
- 		dentry = rcu_dereference_check(cgrp->dentry,
--					       rcu_read_lock_held() ||
- 					       cgroup_lock_is_held());
- 		if (!cgrp->parent)
- 			continue;
-@@ -4544,7 +4542,7 @@ unsigned short css_id(struct cgroup_subsys_state *css)
- 	 * it's unchanged until freed.
- 	 */
- 	cssid = rcu_dereference_check(css->id,
--			rcu_read_lock_held() || atomic_read(&css->refcnt));
-+			atomic_read(&css->refcnt));
+ 	sighand = rcu_dereference_check(tsk->sighand,
+-					rcu_read_lock_held() ||
+ 					lockdep_tasklist_lock_is_held());
+ 	spin_lock(&sighand->siglock);
  
- 	if (cssid)
- 		return cssid->id;
-@@ -4557,7 +4555,7 @@ unsigned short css_depth(struct cgroup_subsys_state *css)
- 	struct css_id *cssid;
+diff --git a/kernel/pid.c b/kernel/pid.c
+index 39b65b6..c02adda 100644
+--- a/kernel/pid.c
++++ b/kernel/pid.c
+@@ -402,7 +402,6 @@ struct task_struct *pid_task(struct pid *pid, enum pid_type type)
+ 	if (pid) {
+ 		struct hlist_node *first;
+ 		first = rcu_dereference_check(hlist_first_rcu(&pid->tasks[type]),
+-					      rcu_read_lock_held() ||
+ 					      lockdep_tasklist_lock_is_held());
+ 		if (first)
+ 			result = hlist_entry(first, struct task_struct, pids[(type)].node);
+diff --git a/kernel/rcutorture.c b/kernel/rcutorture.c
+index 9d8e8fb..0956a73 100644
+--- a/kernel/rcutorture.c
++++ b/kernel/rcutorture.c
+@@ -807,7 +807,6 @@ static void rcu_torture_timer(unsigned long unused)
+ 	idx = cur_ops->readlock();
+ 	completed = cur_ops->completed();
+ 	p = rcu_dereference_check(rcu_torture_current,
+-				  rcu_read_lock_held() ||
+ 				  rcu_read_lock_bh_held() ||
+ 				  rcu_read_lock_sched_held() ||
+ 				  srcu_read_lock_held(&srcu_ctl));
+@@ -868,7 +867,6 @@ rcu_torture_reader(void *arg)
+ 		idx = cur_ops->readlock();
+ 		completed = cur_ops->completed();
+ 		p = rcu_dereference_check(rcu_torture_current,
+-					  rcu_read_lock_held() ||
+ 					  rcu_read_lock_bh_held() ||
+ 					  rcu_read_lock_sched_held() ||
+ 					  srcu_read_lock_held(&srcu_ctl));
+diff --git a/security/keys/keyring.c b/security/keys/keyring.c
+index d37f713..73c23f2 100644
+--- a/security/keys/keyring.c
++++ b/security/keys/keyring.c
+@@ -157,7 +157,6 @@ static void keyring_destroy(struct key *keyring)
+ 	}
  
- 	cssid = rcu_dereference_check(css->id,
--			rcu_read_lock_held() || atomic_read(&css->refcnt));
-+			atomic_read(&css->refcnt));
- 
- 	if (cssid)
- 		return cssid->depth;
+ 	klist = rcu_dereference_check(keyring->payload.subscriptions,
+-				      rcu_read_lock_held() ||
+ 				      atomic_read(&keyring->usage) == 0);
+ 	if (klist) {
+ 		for (loop = klist->nkeys - 1; loop >= 0; loop--)
 -- 
 1.7.1
