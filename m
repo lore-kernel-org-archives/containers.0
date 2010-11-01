@@ -1,13 +1,16 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH 0/6] Relink unlinked files for checkpoint/restart support
-Date: Mon, 01 Nov 2010 12:38:23 -0400
-Message-ID: <4CCEECFF.9010909@cs.columbia.edu>
-References: <1285278812-16972-1-git-send-email-matthltc@us.ibm.com>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] Clear the objhash before completing restart,
+	but delay free (v2)
+Date: Mon, 01 Nov 2010 10:01:43 -0700
+Message-ID: <87oca9vuyw.fsf@localhost6.localdomain6>
+References: <1287496991-18207-1-git-send-email-danms@us.ibm.com>
+	<4CCEE9AD.7010105@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1285278812-16972-1-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4CCEE9AD.7010105-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> (Oren Laadan's message of
+	"Mon\, 01 Nov 2010 12\:24\:13 -0400")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,39 +20,29 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, matthltc-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Matt,
+OL> Does this patch solve the performance problem in freeing all
+OL> the objhash entries upfront (e.g. before letting userspace
+OL> resume) ?
 
-This is v2, right ?
-If so, is there a changelog ?
+OL> If so, is there still a performance hit for doing the 'clear'
+OL> portion early before resuming the tasks ?   How much does it
+OL> depend on the complexity of the hierarchy being checkpointed ?
 
-Oren.
+I've actually been unable to detect any real different in performance
+between this and the way it was before.  I've run it against several
+different large checkpoints (multiple processes, with sockets, IPC,
+many files open, etc).  I have another option for the functionality,
+which is to mark only specific items as needing to be free()'d early,
+but I can't discern a difference between that or this option either.
+What I can discern is that this patch is more likely to prevent
+similar issues in the future by making the behavior of the hash far
+more generally correct, IMHO.
 
-On 09/23/2010 05:53 PM, Matt Helsley wrote:
-> This series enables the relinking of unlinked files for the purpose of
-> enabling checkpoint/restart of tasks with open unlinked files. It
-> relies on Namhyung Kim's sys-wrapper patches to provide unlink and
-> rmdir calls for sys_restart.
-> 
-> There are two patches with long descriptions. Patch 3 describes
-> what we want from the VFS -- relinking support -- and uses ext3/4 as an
-> example of what kinds of changes that entails. Patch 5 then details
-> how we intend to use relinking during checkpoint to enable restart
-> of tasks that have unlinked files open.
-> 
-> Applies to Oren's ckpt-v22-dev branch. I chose Oren's tree because
-> I assume people want to see code showing how relinking will be used.
-> If this is wrong I'll be happy to respin these patches against a
-> more recent branch of mainline.
-> 
-> Cheers,
-> 	-Matt Helsley
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
-> 
+-- 
+Dan Smith
+IBM Linux Technology Center
+email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
