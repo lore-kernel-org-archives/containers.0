@@ -1,105 +1,235 @@
-From: Jesper Juhl <jj-IYz4IdjRLj0sV2N9l4h3zg@public.gmane.org>
-Subject: Re: [PATCH] cgroup: prefer [kv]zalloc over [kv]malloc+memset in
-	memory controller code.
-Date: Mon, 1 Nov 2010 20:59:13 +0100 (CET)
-Message-ID: <alpine.LNX.2.00.1011012056250.12889__27293.7105423354$1288642226$gmane$org@swampdragon.chaosbits.net>
-References: <alpine.LNX.2.00.1011012038490.12889@swampdragon.chaosbits.net>
-	<20101101200122.GH840@cmpxchg.org>
+From: Ciju Rajan K <ciju@linux.vnet.ibm.com>
+Subject: Re: [PATCH v4 03/11] memcg: create extensible page stat update routines
+Date: Tue, 02 Nov 2010 01:46:53 +0530
+Message-ID: <4CCF2035.9020603@linux.vnet.ibm.com>
+References: <1288336154-23256-1-git-send-email-gthelen@google.com> <1288336154-23256-4-git-send-email-gthelen@google.com> <4CCD81CB.9030503@linux.vnet.ibm.com> <xr93sjzmcebh.fsf@ninji.mtv.corp.google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=us-ascii; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20101101200122.GH840-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <xr93sjzmcebh.fsf@ninji.mtv.corp.google.com>
+Sender: owner-linux-mm@kvack.org
+To: Greg Thelen <gthelen@google.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>
 List-Id: containers.vger.kernel.org
 
-On Mon, 1 Nov 2010, Johannes Weiner wrote:
+Greg Thelen wrote:
+> Ciju Rajan K <ciju@linux.vnet.ibm.com> writes:
+>
+>   
+>> Greg Thelen wrote:
+>>     
+>>> Replace usage of the mem_cgroup_update_file_mapped() memcg
+>>> statistic update routine with two new routines:
+>>> * mem_cgroup_inc_page_stat()
+>>> * mem_cgroup_dec_page_stat()
+>>>
+>>> As before, only the file_mapped statistic is managed.  However,
+>>> these more general interfaces allow for new statistics to be
+>>> more easily added.  New statistics are added with memcg dirty
+>>> page accounting.
+>>>
+>>> Signed-off-by: Greg Thelen <gthelen@google.com>
+>>> Signed-off-by: Andrea Righi <arighi@develer.com>
+>>> Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+>>> Acked-by: Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
+>>> ---
+>>> Changelog since v1:
+>>> - Rename (for clarity):
+>>>   - mem_cgroup_write_page_stat_item -> mem_cgroup_page_stat_item
+>>>   - mem_cgroup_read_page_stat_item -> mem_cgroup_nr_pages_item
+>>>
+>>>  include/linux/memcontrol.h |   31 ++++++++++++++++++++++++++++---
+>>>  mm/memcontrol.c            |   16 +++++++---------
+>>>  mm/rmap.c                  |    4 ++--
+>>>  3 files changed, 37 insertions(+), 14 deletions(-)
+>>>
+>>> diff --git a/include/linux/memcontrol.h b/include/linux/memcontrol.h
+>>> index 159a076..067115c 100644
+>>> --- a/include/linux/memcontrol.h
+>>> +++ b/include/linux/memcontrol.h
+>>> @@ -25,6 +25,11 @@ struct page_cgroup;
+>>>  struct page;
+>>>  struct mm_struct;
+>>>
+>>> +/* Stats that can be updated by kernel. */
+>>> +enum mem_cgroup_page_stat_item {
+>>> +	MEMCG_NR_FILE_MAPPED, /* # of pages charged as file rss */
+>>> +};
+>>> +
+>>>  extern unsigned long mem_cgroup_isolate_pages(unsigned long nr_to_scan,
+>>>  					struct list_head *dst,
+>>>  					unsigned long *scanned, int order,
+>>> @@ -121,7 +126,22 @@ static inline bool mem_cgroup_disabled(void)
+>>>  	return false;
+>>>  }
+>>>
+>>> -void mem_cgroup_update_file_mapped(struct page *page, int val);
+>>> +void mem_cgroup_update_page_stat(struct page *page,
+>>> +				 enum mem_cgroup_page_stat_item idx,
+>>> +				 int val);
+>>> +
+>>> +static inline void mem_cgroup_inc_page_stat(struct page *page,
+>>> +					    enum mem_cgroup_page_stat_item idx)
+>>> +{
+>>> +	mem_cgroup_update_page_stat(page, idx, 1);
+>>> +}
+>>> +
+>>> +static inline void mem_cgroup_dec_page_stat(struct page *page,
+>>> +					    enum mem_cgroup_page_stat_item idx)
+>>> +{
+>>> +	mem_cgroup_update_page_stat(page, idx, -1);
+>>> +}
+>>> +
+>>>  unsigned long mem_cgroup_soft_limit_reclaim(struct zone *zone, int order,
+>>>  						gfp_t gfp_mask);
+>>>  u64 mem_cgroup_get_limit(struct mem_cgroup *mem);
+>>> @@ -293,8 +313,13 @@ mem_cgroup_print_oom_info(struct mem_cgroup *memcg, struct task_struct *p)
+>>>  {
+>>>  }
+>>>
+>>> -static inline void mem_cgroup_update_file_mapped(struct page *page,
+>>> -							int val)
+>>> +static inline void mem_cgroup_inc_page_stat(struct page *page,
+>>> +					    enum mem_cgroup_page_stat_item idx)
+>>> +{
+>>> +}
+>>> +
+>>> +static inline void mem_cgroup_dec_page_stat(struct page *page,
+>>> +					    enum mem_cgroup_page_stat_item idx)
+>>>  {
+>>>  }
+>>>
+>>> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+>>> index 9a99cfa..4fd00c4 100644
+>>> --- a/mm/memcontrol.c
+>>> +++ b/mm/memcontrol.c
+>>> @@ -1592,7 +1592,8 @@ bool mem_cgroup_handle_oom(struct mem_cgroup *mem, gfp_t mask)
+>>>   * possibility of race condition. If there is, we take a lock.
+>>>   */
+>>>
+>>>   
+>>>       
+>> Greg,
+>>
+>> I am not seeing the function mem_cgroup_update_file_stat() in the latest mmotm
+>> 2010-10-22-16-36.
+>> So not able to apply this patch. Tried couple of times cloning the entire mmotm
+>> git repository. But no luck.
+>> Tried in the web interface http://git.zen-kernel.org/mmotm/tree/mm/memcontrol.c
+>> also. It is not there.
+>> Surprisingly git log doesn't show any recent changes to mm/memcontrol.c. Am I
+>> missing something?
+>> I could see this function in the mainline linux 2.6 git tree.
+>>
+>> -Ciju
+>>     
+>
+> mem_cgroup_update_file_mapped() was renamed to
+> mem_cgroup_update_file_stat() in
+> http://userweb.kernel.org/~akpm/mmotm/broken-out/memcg-generic-filestat-update-interface.patch
+>
+> I also do not see this in the mmotm git repo.  However, if I manually
+> apply the mmotm patches to v2.6.36 using quilt then I see the expected
+> patched memcontrol.c.  I am not sure why the zen-kernel.org git mmotm
+> repo differs from a mmotm patched mainline 2.6.36.
+>
+> Here is my procedure using quilt to patch mainline:
+>
+> # Checkout 2.6.36 mainline
+> $ git checkout v2.6.36
+>
+> # Confirm mainline 2.6.36 does not have mem_cgroup_update_file_stat()
+> $ grep mem_cgroup_update_file_stat -r mm
+>
+> # Apply patches
+> $ curl http://userweb.kernel.org/~akpm/mmotm/broken-out.tar.gz | tar -xzf -
+> $ export QUILT_PATCHES=broken-out
+> $ quilt push -aq
+> ...
+> Now at patch memblock-add-input-size-checking-to-memblock_find_region-fix.patch
+>
+> # Now the memcontrol contains mem_cgroup_update_file_stat()
+> $ grep mem_cgroup_update_file_stat -r mm
+> mm/memcontrol.c:static void mem_cgroup_update_file_stat(struct page *page, int idx, int val)
+> mm/memcontrol.c:        mem_cgroup_update_file_stat(page, MEM_CGROUP_STAT_FILE_MAPPED, val);
+>
+>   
+Thank you Greg! I will try these steps.
+I could see the per cgroup dirty page accounting patches already in the 
+latest broken-out.tar.gz
 
-> On Mon, Nov 01, 2010 at 08:40:56PM +0100, Jesper Juhl wrote:
-> > Hi (please CC me on replies),
-> > 
-> > 
-> > Apologies to those who receive this multiple times. I screwed up the To: 
-> > field in my original mail :-(
-> > 
-> > 
-> > In mem_cgroup_alloc() we currently do either kmalloc() or vmalloc() then 
-> > followed by memset() to zero the memory. This can be more efficiently 
-> > achieved by using kzalloc() and vzalloc().
-> > 
-> > 
-> > Signed-off-by: Jesper Juhl <jj-IYz4IdjRLj0sV2N9l4h3zg@public.gmane.org>
-> 
-> Looks good to me, but there is also the memset after kmalloc in
-> alloc_mem_cgroup_per_zone_info(). 
+-Ciju
+>>> -static void mem_cgroup_update_file_stat(struct page *page, int idx, int val)
+>>> +void mem_cgroup_update_page_stat(struct page *page,
+>>> +				 enum mem_cgroup_page_stat_item idx, int val)
+>>>  {
+>>>  	struct mem_cgroup *mem;
+>>>  	struct page_cgroup *pc = lookup_page_cgroup(page);
+>>> @@ -1615,30 +1616,27 @@ static void mem_cgroup_update_file_stat(struct page *page, int idx, int val)
+>>>  			goto out;
+>>>  	}
+>>>
+>>> -	this_cpu_add(mem->stat->count[idx], val);
+>>> -
+>>>  	switch (idx) {
+>>> -	case MEM_CGROUP_STAT_FILE_MAPPED:
+>>> +	case MEMCG_NR_FILE_MAPPED:
+>>>  		if (val > 0)
+>>>  			SetPageCgroupFileMapped(pc);
+>>>  		else if (!page_mapped(page))
+>>>  			ClearPageCgroupFileMapped(pc);
+>>> +		idx = MEM_CGROUP_STAT_FILE_MAPPED;
+>>>  		break;
+>>>  	default:
+>>>  		BUG();
+>>>  	}
+>>>
+>>> +	this_cpu_add(mem->stat->count[idx], val);
+>>> +
+>>>  out:
+>>>  	if (unlikely(need_unlock))
+>>>  		unlock_page_cgroup(pc);
+>>>  	rcu_read_unlock();
+>>>  	return;
+>>>  }
+>>> -
+>>> -void mem_cgroup_update_file_mapped(struct page *page, int val)
+>>> -{
+>>> -	mem_cgroup_update_file_stat(page, MEM_CGROUP_STAT_FILE_MAPPED, val);
+>>> -}
+>>> +EXPORT_SYMBOL(mem_cgroup_update_page_stat);
+>>>
+>>>  /*
+>>>   * size of first charge trial. "32" comes from vmscan.c's magic value.
+>>> diff --git a/mm/rmap.c b/mm/rmap.c
+>>> index 1a8bf76..a66ab76 100644
+>>> --- a/mm/rmap.c
+>>> +++ b/mm/rmap.c
+>>> @@ -911,7 +911,7 @@ void page_add_file_rmap(struct page *page)
+>>>  {
+>>>  	if (atomic_inc_and_test(&page->_mapcount)) {
+>>>  		__inc_zone_page_state(page, NR_FILE_MAPPED);
+>>> -		mem_cgroup_update_file_mapped(page, 1);
+>>> +		mem_cgroup_inc_page_stat(page, MEMCG_NR_FILE_MAPPED);
+>>>  	}
+>>>  }
+>>>
+>>> @@ -949,7 +949,7 @@ void page_remove_rmap(struct page *page)
+>>>  		__dec_zone_page_state(page, NR_ANON_PAGES);
+>>>  	} else {
+>>>  		__dec_zone_page_state(page, NR_FILE_MAPPED);
+>>> -		mem_cgroup_update_file_mapped(page, -1);
+>>> +		mem_cgroup_dec_page_stat(page, MEMCG_NR_FILE_MAPPED);
+>>>  	}
+>>>  	/*
+>>>  	 * It would be tidy to reset the PageAnon mapping here,
+>>>   
+>>>       
 
-Dang, I missed that one. Thanks for pointing it out.
-
-Hmm, I'm wondering if we should perhaps add kzalloc_node()/vzalloc_node() 
-just like kzalloc() and vzalloc()..
-
-
-> Can you switch that over as well in
-> this patch?  You can pass __GFP_ZERO to kmalloc_node() for zeroing.
-> 
-
-Sure thing.
-
-
-Signed-off-by: Jesper Juhl <jj-IYz4IdjRLj0sV2N9l4h3zg@public.gmane.org>
----
- memcontrol.c |    9 +++------
- 1 file changed, 3 insertions(+), 6 deletions(-)
-
-diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index 9a99cfa..bc32ffe 100644
---- a/mm/memcontrol.c
-+++ b/mm/memcontrol.c
-@@ -4169,13 +4169,11 @@ static int alloc_mem_cgroup_per_zone_info(struct mem_cgroup *mem, int node)
- 	 */
- 	if (!node_state(node, N_NORMAL_MEMORY))
- 		tmp = -1;
--	pn = kmalloc_node(sizeof(*pn), GFP_KERNEL, tmp);
-+	pn = kmalloc_node(sizeof(*pn), GFP_KERNEL|__GFP_ZERO, tmp);
- 	if (!pn)
- 		return 1;
- 
- 	mem->info.nodeinfo[node] = pn;
--	memset(pn, 0, sizeof(*pn));
--
- 	for (zone = 0; zone < MAX_NR_ZONES; zone++) {
- 		mz = &pn->zoneinfo[zone];
- 		for_each_lru(l)
-@@ -4199,14 +4197,13 @@ static struct mem_cgroup *mem_cgroup_alloc(void)
- 
- 	/* Can be very big if MAX_NUMNODES is very big */
- 	if (size < PAGE_SIZE)
--		mem = kmalloc(size, GFP_KERNEL);
-+		mem = kzalloc(size, GFP_KERNEL);
- 	else
--		mem = vmalloc(size);
-+		mem = vzalloc(size);
- 
- 	if (!mem)
- 		return NULL;
- 
--	memset(mem, 0, size);
- 	mem->stat = alloc_percpu(struct mem_cgroup_stat_cpu);
- 	if (!mem->stat) {
- 		if (size < PAGE_SIZE)
-
-
--- 
-Jesper Juhl <jj-IYz4IdjRLj0sV2N9l4h3zg@public.gmane.org>             http://www.chaosbits.net/
-Plain text mails only, please      http://www.expita.com/nomime.html
-Don't top-post  http://www.catb.org/~esr/jargon/html/T/top-post.html
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom policy in Canada: sign http://dissolvethecrtc.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
