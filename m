@@ -1,7 +1,7 @@
 From: Jiri Olsa <jolsa-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 3/3] net - removing superfluous rcu_read_lock_held check
-Date: Mon,  1 Nov 2010 20:15:09 +0100
-Message-ID: <1288638909-10541-4-git-send-email-jolsa__47495.9147432402$1288639044$gmane$org@redhat.com>
+Subject: [PATCH 1/3] cgroup - removing superfluous rcu_read_lock_held check
+Date: Mon,  1 Nov 2010 20:15:07 +0100
+Message-ID: <1288638909-10541-2-git-send-email-jolsa__44580.9709876359$1288639045$gmane$org@redhat.com>
 References: <1288638909-10541-1-git-send-email-jolsa@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -35,104 +35,59 @@ jirka
 
 Signed-off-by: Jiri Olsa <jolsa-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/rtnetlink.h          |    3 +--
- include/net/sock.h                 |    3 +--
- net/mac80211/sta_info.c            |    4 ----
- net/netlabel/netlabel_domainhash.c |    3 +--
- net/netlabel/netlabel_unlabeled.c  |    3 +--
- 5 files changed, 4 insertions(+), 12 deletions(-)
+ include/linux/cgroup.h |    1 -
+ kernel/cgroup.c        |    6 ++----
+ 2 files changed, 2 insertions(+), 5 deletions(-)
 
-diff --git a/include/linux/rtnetlink.h b/include/linux/rtnetlink.h
-index d42f274..dfe5ba1 100644
---- a/include/linux/rtnetlink.h
-+++ b/include/linux/rtnetlink.h
-@@ -758,8 +758,7 @@ extern int lockdep_rtnl_is_held(void);
-  * or RTNL. Note : Please prefer rtnl_dereference() or rcu_dereference()
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index ed4ba11..caed568 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -536,7 +536,6 @@ static inline struct cgroup_subsys_state *cgroup_subsys_state(
   */
- #define rcu_dereference_rtnl(p)					\
--	rcu_dereference_check(p, rcu_read_lock_held() ||	\
--				 lockdep_rtnl_is_held())
-+	rcu_dereference_check(p, lockdep_rtnl_is_held())
+ #define task_subsys_state_check(task, subsys_id, __c)			\
+ 	rcu_dereference_check(task->cgroups->subsys[subsys_id],		\
+-			      rcu_read_lock_held() ||			\
+ 			      lockdep_is_held(&task->alloc_lock) ||	\
+ 			      cgroup_lock_is_held() || (__c))
  
- /**
-  * rtnl_dereference - fetch RCU pointer when updates are prevented by RTNL
-diff --git a/include/net/sock.h b/include/net/sock.h
-index c7a7362..bee3e9c 100644
---- a/include/net/sock.h
-+++ b/include/net/sock.h
-@@ -1274,8 +1274,7 @@ extern unsigned long sock_i_ino(struct sock *sk);
- static inline struct dst_entry *
- __sk_dst_get(struct sock *sk)
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 66a416b..1f329a2 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -1687,7 +1687,6 @@ int cgroup_path(const struct cgroup *cgrp, char *buf, int buflen)
  {
--	return rcu_dereference_check(sk->sk_dst_cache, rcu_read_lock_held() ||
--						       sock_owned_by_user(sk) ||
-+	return rcu_dereference_check(sk->sk_dst_cache, sock_owned_by_user(sk) ||
- 						       lockdep_is_held(&sk->sk_lock.slock));
- }
+ 	char *start;
+ 	struct dentry *dentry = rcu_dereference_check(cgrp->dentry,
+-						      rcu_read_lock_held() ||
+ 						      cgroup_lock_is_held());
  
-diff --git a/net/mac80211/sta_info.c b/net/mac80211/sta_info.c
-index 6d8f897..c879217 100644
---- a/net/mac80211/sta_info.c
-+++ b/net/mac80211/sta_info.c
-@@ -94,7 +94,6 @@ struct sta_info *sta_info_get(struct ieee80211_sub_if_data *sdata,
- 	struct sta_info *sta;
- 
- 	sta = rcu_dereference_check(local->sta_hash[STA_HASH(addr)],
--				    rcu_read_lock_held() ||
- 				    lockdep_is_held(&local->sta_lock) ||
- 				    lockdep_is_held(&local->sta_mtx));
- 	while (sta) {
-@@ -102,7 +101,6 @@ struct sta_info *sta_info_get(struct ieee80211_sub_if_data *sdata,
- 		    memcmp(sta->sta.addr, addr, ETH_ALEN) == 0)
+ 	if (!dentry || cgrp == dummytop) {
+@@ -1713,7 +1712,6 @@ int cgroup_path(const struct cgroup *cgrp, char *buf, int buflen)
  			break;
- 		sta = rcu_dereference_check(sta->hnext,
--					    rcu_read_lock_held() ||
- 					    lockdep_is_held(&local->sta_lock) ||
- 					    lockdep_is_held(&local->sta_mtx));
- 	}
-@@ -120,7 +118,6 @@ struct sta_info *sta_info_get_bss(struct ieee80211_sub_if_data *sdata,
- 	struct sta_info *sta;
  
- 	sta = rcu_dereference_check(local->sta_hash[STA_HASH(addr)],
--				    rcu_read_lock_held() ||
- 				    lockdep_is_held(&local->sta_lock) ||
- 				    lockdep_is_held(&local->sta_mtx));
- 	while (sta) {
-@@ -129,7 +126,6 @@ struct sta_info *sta_info_get_bss(struct ieee80211_sub_if_data *sdata,
- 		    memcmp(sta->sta.addr, addr, ETH_ALEN) == 0)
- 			break;
- 		sta = rcu_dereference_check(sta->hnext,
--					    rcu_read_lock_held() ||
- 					    lockdep_is_held(&local->sta_lock) ||
- 					    lockdep_is_held(&local->sta_mtx));
- 	}
-diff --git a/net/netlabel/netlabel_domainhash.c b/net/netlabel/netlabel_domainhash.c
-index d37b7f8..82795a4 100644
---- a/net/netlabel/netlabel_domainhash.c
-+++ b/net/netlabel/netlabel_domainhash.c
-@@ -55,8 +55,7 @@ struct netlbl_domhsh_tbl {
-  * should be okay */
- static DEFINE_SPINLOCK(netlbl_domhsh_lock);
- #define netlbl_domhsh_rcu_deref(p) \
--	rcu_dereference_check(p, rcu_read_lock_held() || \
--				 lockdep_is_held(&netlbl_domhsh_lock))
-+	rcu_dereference_check(p, lockdep_is_held(&netlbl_domhsh_lock))
- static struct netlbl_domhsh_tbl *netlbl_domhsh = NULL;
- static struct netlbl_dom_map *netlbl_domhsh_def = NULL;
+ 		dentry = rcu_dereference_check(cgrp->dentry,
+-					       rcu_read_lock_held() ||
+ 					       cgroup_lock_is_held());
+ 		if (!cgrp->parent)
+ 			continue;
+@@ -4544,7 +4542,7 @@ unsigned short css_id(struct cgroup_subsys_state *css)
+ 	 * it's unchanged until freed.
+ 	 */
+ 	cssid = rcu_dereference_check(css->id,
+-			rcu_read_lock_held() || atomic_read(&css->refcnt));
++			atomic_read(&css->refcnt));
  
-diff --git a/net/netlabel/netlabel_unlabeled.c b/net/netlabel/netlabel_unlabeled.c
-index e2b0a68..d2f982f 100644
---- a/net/netlabel/netlabel_unlabeled.c
-+++ b/net/netlabel/netlabel_unlabeled.c
-@@ -116,8 +116,7 @@ struct netlbl_unlhsh_walk_arg {
-  * hash table should be okay */
- static DEFINE_SPINLOCK(netlbl_unlhsh_lock);
- #define netlbl_unlhsh_rcu_deref(p) \
--	rcu_dereference_check(p, rcu_read_lock_held() || \
--				 lockdep_is_held(&netlbl_unlhsh_lock))
-+	rcu_dereference_check(p, lockdep_is_held(&netlbl_unlhsh_lock))
- static struct netlbl_unlhsh_tbl *netlbl_unlhsh = NULL;
- static struct netlbl_unlhsh_iface *netlbl_unlhsh_def = NULL;
+ 	if (cssid)
+ 		return cssid->id;
+@@ -4557,7 +4555,7 @@ unsigned short css_depth(struct cgroup_subsys_state *css)
+ 	struct css_id *cssid;
  
+ 	cssid = rcu_dereference_check(css->id,
+-			rcu_read_lock_held() || atomic_read(&css->refcnt));
++			atomic_read(&css->refcnt));
+ 
+ 	if (cssid)
+ 		return cssid->depth;
 -- 
 1.7.1
