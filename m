@@ -1,15 +1,14 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC][PATCH][cr]: Mark ghost tasks as detached earlier
-Date: Tue, 2 Nov 2010 08:57:04 -0700
-Message-ID: <20101102155704.GA7054@us.ibm.com>
-References: <20101030070151.GA4850@us.ibm.com>
-	<4CCF00BA.2030500@cs.columbia.edu>
+From: Li Zefan <lizf.kern-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 1/3] cgroup - removing superfluous rcu_read_lock_held check
+Date: Wed, 03 Nov 2010 01:54:55 +0800
+Message-ID: <4CD0506F.6080600__29265.0222931572$1288720554$gmane$org@gmail.com>
+References: <1288638909-10541-1-git-send-email-jolsa@redhat.com>
+	<1288638909-10541-2-git-send-email-jolsa@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4CCF00BA.2030500-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1288638909-10541-2-git-send-email-jolsa-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,36 +18,33 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Jiri Olsa <jolsa-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: paul.moore-VXdhtT5mjnY@public.gmane.org, kvm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dipankar-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org, johannes-cdvu00un1VgdHxzADdlk8Q@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
-| 
-| 
-| On 10/30/2010 03:01 AM, Sukadev Bhattiprolu wrote:
-| Let me see if I get this correctly: first, the container-init calls
-| wait(), then goes to sleep because children aren't ready, then the
-| ghost changes state to detached and exits, but the container-init is
-| not notified so not woken up. Is that correct ?
-| 
-| If so, then the problem is that changing from non-detached to detached
-| is racy. Therefore, just doing it earlier may still not be correct,
-| because the race (theoretically) still exists. It just makes it less
-| likely to occur.
-
-True. I was trying to understand if there was a need to mark it detached
-that late.
-
-| 
-| If this analysis is correct, then I can think of two options:
-| 
-| 1) when creating the ghost tasks, create them as detached from
-| user-space, and they won't need to be waited-for not become
-| detached.
-
-Yes and if we remove the assignment to ->exit_signal in do_ghost_task(),
-we should be fine. This would be a better option than sending a signal
-to the parent.
-
-Sukadev
+T24gMjAxMOW5tDEx5pyIMDLml6UgMDM6MTUsIEppcmkgT2xzYSB3cm90ZToKPiBoaSwKClRoaXMu
+LgoKPiB0aGUgcmN1X2RlcmVmZXJlbmNlX2NoZWNrIGlzIGRlZmluZWQgYXMKPiAKPiAJI2RlZmlu
+ZSByY3VfZGVyZWZlcmVuY2VfY2hlY2socCwgYykgXAo+IAkgICBfX3JjdV9kZXJlZmVyZW5jZV9j
+aGVjaygocCksIHJjdV9yZWFkX2xvY2tfaGVsZCgpIHx8IChjKSwgX19yY3UpCj4gCj4gc28gdGhl
+IGNhbGxlciBkb2VzIG5vdCBuZWVkIHRvIHNwZWNpZnkgcmN1X3JlYWRfbG9ja19oZWxkKCkgY29u
+ZGl0aW9uLgo+CiAKPiB3YnIsCj4gamlya2EKCmFuZCB0aGlzIHNob3VsZCBiZSBleGNsdWRlZCBm
+cm9tIHRoZSBjaGFuZ2Vsb2cuCgo+IAo+IAo+IFNpZ25lZC1vZmYtYnk6IEppcmkgT2xzYSA8am9s
+c2FAcmVkaGF0LmNvbT4KClJldmlld2VkLWJ5OiBMaSBaZWZhbiA8bGl6ZkBjbi5mdWppdHN1LmNv
+bT4KCkhvd2V2ZXIgYSBuaXRwaWNrOgoKPiAtLS0KPiAgaW5jbHVkZS9saW51eC9jZ3JvdXAuaCB8
+ICAgIDEgLQo+ICBrZXJuZWwvY2dyb3VwLmMgICAgICAgIHwgICAgNiArKy0tLS0KPiAgMiBmaWxl
+cyBjaGFuZ2VkLCAyIGluc2VydGlvbnMoKyksIDUgZGVsZXRpb25zKC0pCi4uLgo+IEBAIC00NTQ0
+LDcgKzQ1NDIsNyBAQCB1bnNpZ25lZCBzaG9ydCBjc3NfaWQoc3RydWN0IGNncm91cF9zdWJzeXNf
+c3RhdGUgKmNzcykKPiAgCSAqIGl0J3MgdW5jaGFuZ2VkIHVudGlsIGZyZWVkLgo+ICAJICovCj4g
+IAljc3NpZCA9IHJjdV9kZXJlZmVyZW5jZV9jaGVjayhjc3MtPmlkLAo+IC0JCQlyY3VfcmVhZF9s
+b2NrX2hlbGQoKSB8fCBhdG9taWNfcmVhZCgmY3NzLT5yZWZjbnQpKTsKPiArCQkJYXRvbWljX3Jl
+YWQoJmNzcy0+cmVmY250KSk7CgpOb3cgdGhlIDIgbGluZXMgY2FuIGJlIG1hZGUgaW50byBvbmUg
+bGluZSBhbmQgc3RpbGwgZml0IGludG8gODAgY2hhcnMuCgo+ICAKPiAgCWlmIChjc3NpZCkKPiAg
+CQlyZXR1cm4gY3NzaWQtPmlkOwo+IEBAIC00NTU3LDcgKzQ1NTUsNyBAQCB1bnNpZ25lZCBzaG9y
+dCBjc3NfZGVwdGgoc3RydWN0IGNncm91cF9zdWJzeXNfc3RhdGUgKmNzcykKPiAgCXN0cnVjdCBj
+c3NfaWQgKmNzc2lkOwo+ICAKPiAgCWNzc2lkID0gcmN1X2RlcmVmZXJlbmNlX2NoZWNrKGNzcy0+
+aWQsCj4gLQkJCXJjdV9yZWFkX2xvY2tfaGVsZCgpIHx8IGF0b21pY19yZWFkKCZjc3MtPnJlZmNu
+dCkpOwo+ICsJCQlhdG9taWNfcmVhZCgmY3NzLT5yZWZjbnQpKTsKCmRpdG8KCj4gIAo+ICAJaWYg
+KGNzc2lkKQo+ICAJCXJldHVybiBjc3NpZC0+ZGVwdGg7Cl9fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5l
+cnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0
+aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
