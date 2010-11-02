@@ -1,17 +1,15 @@
-From: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
-Subject: Re: [PATCH] cgroup: prefer [kv]zalloc over [kv]malloc+memset in
-	memory controller code.
-Date: Tue, 2 Nov 2010 08:24:13 -0400
-Message-ID: <20101102122413.GJ840__24506.2428796247$1288700808$gmane$org@cmpxchg.org>
-References: <alpine.LNX.2.00.1011012038490.12889@swampdragon.chaosbits.net>
-	<20101101200122.GH840@cmpxchg.org>
-	<alpine.LNX.2.00.1011012056250.12889@swampdragon.chaosbits.net>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC][PATCH][cr]: Mark ghost tasks as detached earlier
+Date: Tue, 2 Nov 2010 08:57:04 -0700
+Message-ID: <20101102155704.GA7054@us.ibm.com>
+References: <20101030070151.GA4850@us.ibm.com>
+	<4CCF00BA.2030500@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <alpine.LNX.2.00.1011012056250.12889-h2p7t3/P30RzeRGmFJ5qR7ZzlVVXadcDXqFh9Ls21Oc@public.gmane.org>
+In-Reply-To: <4CCF00BA.2030500-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,28 +19,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jesper Juhl <jj-IYz4IdjRLj0sV2N9l4h3zg@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Nov 01, 2010 at 08:59:13PM +0100, Jesper Juhl wrote:
-> On Mon, 1 Nov 2010, Johannes Weiner wrote:
-> 
-> > On Mon, Nov 01, 2010 at 08:40:56PM +0100, Jesper Juhl wrote:
-> > > In mem_cgroup_alloc() we currently do either kmalloc() or vmalloc() then 
-> > > followed by memset() to zero the memory. This can be more efficiently 
-> > > achieved by using kzalloc() and vzalloc().
-> > > 
-> > > Signed-off-by: Jesper Juhl <jj-IYz4IdjRLj0sV2N9l4h3zg@public.gmane.org>
-> > 
-> > Looks good to me, but there is also the memset after kmalloc in
-> > alloc_mem_cgroup_per_zone_info().  Can you switch that over as well
-> > in this patch?  You can pass __GFP_ZERO to kmalloc_node() for zeroing.
->
-> Sure thing.
-> 
-> Signed-off-by: Jesper Juhl <jj-IYz4IdjRLj0sV2N9l4h3zg@public.gmane.org>
+Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
+| 
+| 
+| On 10/30/2010 03:01 AM, Sukadev Bhattiprolu wrote:
+| Let me see if I get this correctly: first, the container-init calls
+| wait(), then goes to sleep because children aren't ready, then the
+| ghost changes state to detached and exits, but the container-init is
+| not notified so not woken up. Is that correct ?
+| 
+| If so, then the problem is that changing from non-detached to detached
+| is racy. Therefore, just doing it earlier may still not be correct,
+| because the race (theoretically) still exists. It just makes it less
+| likely to occur.
 
-Thanks.
+True. I was trying to understand if there was a need to mark it detached
+that late.
 
-Reviewed-by: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
+| 
+| If this analysis is correct, then I can think of two options:
+| 
+| 1) when creating the ghost tasks, create them as detached from
+| user-space, and they won't need to be waited-for not become
+| detached.
+
+Yes and if we remove the assignment to ->exit_signal in do_ghost_task(),
+we should be fine. This would be a better option than sending a signal
+to the parent.
+
+Sukadev
