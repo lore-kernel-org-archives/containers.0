@@ -1,50 +1,219 @@
-From: Li Zefan <lizf.kern-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 1/3] cgroup - removing superfluous rcu_read_lock_held check
-Date: Wed, 03 Nov 2010 01:54:55 +0800
-Message-ID: <4CD0506F.6080600__29265.0222931572$1288720554$gmane$org@gmail.com>
-References: <1288638909-10541-1-git-send-email-jolsa@redhat.com>
-	<1288638909-10541-2-git-send-email-jolsa@redhat.com>
+From: Ciju Rajan K <ciju@linux.vnet.ibm.com>
+Subject: Re: [PATCH v4 00/11] memcg: per cgroup dirty page accounting
+Date: Wed, 03 Nov 2010 01:03:15 +0530
+Message-ID: <4CD0677B.3060800@linux.vnet.ibm.com>
+References: <1288336154-23256-1-git-send-email-gthelen@google.com> <20101029131946.5905d244.akpm@linux-foundation.org> <xr93sjzne4m6.fsf@ninji.mtv.corp.google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1288638909-10541-2-git-send-email-jolsa-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jiri Olsa <jolsa-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: paul.moore-VXdhtT5mjnY@public.gmane.org, kvm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dipankar-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org, johannes-cdvu00un1VgdHxzADdlk8Q@public.gmane.org
+Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Transfer-Encoding: 7bit
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <xr93sjzne4m6.fsf@ninji.mtv.corp.google.com>
+Sender: owner-linux-mm@kvack.org
+To: Greg Thelen <gthelen@google.com>, Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>
 List-Id: containers.vger.kernel.org
 
-T24gMjAxMOW5tDEx5pyIMDLml6UgMDM6MTUsIEppcmkgT2xzYSB3cm90ZToKPiBoaSwKClRoaXMu
-LgoKPiB0aGUgcmN1X2RlcmVmZXJlbmNlX2NoZWNrIGlzIGRlZmluZWQgYXMKPiAKPiAJI2RlZmlu
-ZSByY3VfZGVyZWZlcmVuY2VfY2hlY2socCwgYykgXAo+IAkgICBfX3JjdV9kZXJlZmVyZW5jZV9j
-aGVjaygocCksIHJjdV9yZWFkX2xvY2tfaGVsZCgpIHx8IChjKSwgX19yY3UpCj4gCj4gc28gdGhl
-IGNhbGxlciBkb2VzIG5vdCBuZWVkIHRvIHNwZWNpZnkgcmN1X3JlYWRfbG9ja19oZWxkKCkgY29u
-ZGl0aW9uLgo+CiAKPiB3YnIsCj4gamlya2EKCmFuZCB0aGlzIHNob3VsZCBiZSBleGNsdWRlZCBm
-cm9tIHRoZSBjaGFuZ2Vsb2cuCgo+IAo+IAo+IFNpZ25lZC1vZmYtYnk6IEppcmkgT2xzYSA8am9s
-c2FAcmVkaGF0LmNvbT4KClJldmlld2VkLWJ5OiBMaSBaZWZhbiA8bGl6ZkBjbi5mdWppdHN1LmNv
-bT4KCkhvd2V2ZXIgYSBuaXRwaWNrOgoKPiAtLS0KPiAgaW5jbHVkZS9saW51eC9jZ3JvdXAuaCB8
-ICAgIDEgLQo+ICBrZXJuZWwvY2dyb3VwLmMgICAgICAgIHwgICAgNiArKy0tLS0KPiAgMiBmaWxl
-cyBjaGFuZ2VkLCAyIGluc2VydGlvbnMoKyksIDUgZGVsZXRpb25zKC0pCi4uLgo+IEBAIC00NTQ0
-LDcgKzQ1NDIsNyBAQCB1bnNpZ25lZCBzaG9ydCBjc3NfaWQoc3RydWN0IGNncm91cF9zdWJzeXNf
-c3RhdGUgKmNzcykKPiAgCSAqIGl0J3MgdW5jaGFuZ2VkIHVudGlsIGZyZWVkLgo+ICAJICovCj4g
-IAljc3NpZCA9IHJjdV9kZXJlZmVyZW5jZV9jaGVjayhjc3MtPmlkLAo+IC0JCQlyY3VfcmVhZF9s
-b2NrX2hlbGQoKSB8fCBhdG9taWNfcmVhZCgmY3NzLT5yZWZjbnQpKTsKPiArCQkJYXRvbWljX3Jl
-YWQoJmNzcy0+cmVmY250KSk7CgpOb3cgdGhlIDIgbGluZXMgY2FuIGJlIG1hZGUgaW50byBvbmUg
-bGluZSBhbmQgc3RpbGwgZml0IGludG8gODAgY2hhcnMuCgo+ICAKPiAgCWlmIChjc3NpZCkKPiAg
-CQlyZXR1cm4gY3NzaWQtPmlkOwo+IEBAIC00NTU3LDcgKzQ1NTUsNyBAQCB1bnNpZ25lZCBzaG9y
-dCBjc3NfZGVwdGgoc3RydWN0IGNncm91cF9zdWJzeXNfc3RhdGUgKmNzcykKPiAgCXN0cnVjdCBj
-c3NfaWQgKmNzc2lkOwo+ICAKPiAgCWNzc2lkID0gcmN1X2RlcmVmZXJlbmNlX2NoZWNrKGNzcy0+
-aWQsCj4gLQkJCXJjdV9yZWFkX2xvY2tfaGVsZCgpIHx8IGF0b21pY19yZWFkKCZjc3MtPnJlZmNu
-dCkpOwo+ICsJCQlhdG9taWNfcmVhZCgmY3NzLT5yZWZjbnQpKTsKCmRpdG8KCj4gIAo+ICAJaWYg
-KGNzc2lkKQo+ICAJCXJldHVybiBjc3NpZC0+ZGVwdGg7Cl9fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5l
-cnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0
-aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+Greg Thelen wrote:
+> Andrew Morton <akpm@linux-foundation.org> writes:
+>
+>   
+>> On Fri, 29 Oct 2010 00:09:03 -0700
+>> Greg Thelen <gthelen@google.com> wrote:
+>>
+>> This is cool stuff - it's been a long haul.  One day we'll be
+>> nearly-finished and someone will write a book telling people how to use
+>> it all and lots of people will go "holy crap".  I hope.
+>>
+>>     
+>>> Limiting dirty memory is like fixing the max amount of dirty (hard to reclaim)
+>>> page cache used by a cgroup.  So, in case of multiple cgroup writers, they will
+>>> not be able to consume more than their designated share of dirty pages and will
+>>> be forced to perform write-out if they cross that limit.
+>>>
+>>> The patches are based on a series proposed by Andrea Righi in Mar 2010.
+>>>
+>>> Overview:
+>>> - Add page_cgroup flags to record when pages are dirty, in writeback, or nfs
+>>>   unstable.
+>>>
+>>> - Extend mem_cgroup to record the total number of pages in each of the 
+>>>   interesting dirty states (dirty, writeback, unstable_nfs).  
+>>>
+>>> - Add dirty parameters similar to the system-wide  /proc/sys/vm/dirty_*
+>>>   limits to mem_cgroup.  The mem_cgroup dirty parameters are accessible
+>>>   via cgroupfs control files.
+>>>       
+>> Curious minds will want to know what the default values are set to and
+>> how they were determined.
+>>     
+>
+> When a memcg is created, its dirty limits are set to a copy of the
+> parent's limits.  If the new cgroup is a top level cgroup, then it
+> inherits from the system parameters (/proc/sys/vm/dirty_*).
+>
+>   
+>>> - Consider both system and per-memcg dirty limits in page writeback when
+>>>   deciding to queue background writeback or block for foreground writeback.
+>>>
+>>> Known shortcomings:
+>>> - When a cgroup dirty limit is exceeded, then bdi writeback is employed to
+>>>   writeback dirty inodes.  Bdi writeback considers inodes from any cgroup, not
+>>>   just inodes contributing dirty pages to the cgroup exceeding its limit.  
+>>>       
+>> yup.  Some broader discussion of the implications of this shortcoming
+>> is needed.  I'm not sure where it would be placed, though. 
+>> Documentation/ for now, until you write that book.
+>>     
+>
+> Fair enough.  I can add more text to Documentation/ describing the
+> behavior and issue in more detail.
+>
+>   
+>>> - When memory.use_hierarchy is set, then dirty limits are disabled.  This is a
+>>>   implementation detail.
+>>>       
+>> So this is unintentional, and forced upon us my the present implementation?
+>>     
+>
+> Yes, this is not ideal.  I chose not to address this particular issue in
+> this series to keep the series smaller.
+>
+>   
+>>>  An enhanced implementation is needed to check the
+>>>   chain of parents to ensure that no dirty limit is exceeded.
+>>>       
+>> How important is it that this be fixed?
+>>     
+>
+> I am not sure if there is interest in hierarchical per-memcg dirty
+> limits.  So I don't think that this is very important to be fixed
+> immediately.  But the fact that it doesn't work is unexpected.  It would
+> be nice if it just worked.  I'll look into making it work.
+>
+>   
+>> And how feasible would that fix be?  A linear walk up the hierarchy
+>> list?  More than that?
+>>     
+>
+> I think it should be a simple matter of enhancing
+> mem_cgroup_dirty_info() to walk up the hierarchy looking for the cgroup
+> closest to its dirty limit.  The only tricky part is that there are
+> really two limits (foreground/throttling limit, and a background limit)
+> that need to be considered when finding the memcg that most deserves
+> inspection by balance_dirty_pages().
+>
+>   
+>>> Performance data:
+>>> - A page fault microbenchmark workload was used to measure performance, which
+>>>   can be called in read or write mode:
+>>>         f = open(foo. $cpu)
+>>>         truncate(f, 4096)
+>>>         alarm(60)
+>>>         while (1) {
+>>>                 p = mmap(f, 4096)
+>>>                 if (write)
+>>> 			*p = 1
+>>> 		else
+>>> 			x = *p
+>>>                 munmap(p)
+>>>         }
+>>>
+>>> - The workload was called for several points in the patch series in different
+>>>   modes:
+>>>   - s_read is a single threaded reader
+>>>   - s_write is a single threaded writer
+>>>   - p_read is a 16 thread reader, each operating on a different file
+>>>   - p_write is a 16 thread writer, each operating on a different file
+>>>
+>>> - Measurements were collected on a 16 core non-numa system using "perf stat
+>>>   --repeat 3".  The -a option was used for parallel (p_*) runs.
+>>>
+>>> - All numbers are page fault rate (M/sec).  Higher is better.
+>>>
+>>> - To compare the performance of a kernel without non-memcg compare the first and
+>>>   last rows, neither has memcg configured.  The first row does not include any
+>>>   of these memcg patches.
+>>>
+>>> - To compare the performance of using memcg dirty limits, compare the baseline
+>>>   (2nd row titled "w/ memcg") with the the code and memcg enabled (2nd to last
+>>>   row titled "all patches").
+>>>
+>>>                            root_cgroup                    child_cgroup
+>>>                  s_read s_write p_read p_write   s_read s_write p_read p_write
+>>> mmotm w/o memcg   0.428  0.390   0.429  0.388
+>>> mmotm w/ memcg    0.411  0.378   0.391  0.362     0.412  0.377   0.385  0.363
+>>> all patches       0.384  0.360   0.370  0.348     0.381  0.363   0.368  0.347
+>>> all patches       0.431  0.402   0.427  0.395
+>>>   w/o memcg
+>>>       
+>> afaict this benchmark has demonstrated that the changes do not cause an
+>> appreciable performance regression in terms of CPU loading, yes?
+>>     
+>
+> Using the mmap() workload, which is a fault heavy workload...
+>
+> When memcg is not configured, there is no significant performance
+> change.  Depending on the workload the performance is between 0%..3%
+> faster.  This is likely workload noise.
+>
+> When memcg is configured, the performance drops between 4% and 8%.  Some
+> of this might be noise, but it is expected that memcg faults will get
+> slower because there's more code in the fault path.
+>
+>   
+>> Can we come up with any tests which demonstrate the _benefits_ of the
+>> feature?
+>>     
+>
+> Here is a test script that shows a situation where memcg dirty limits
+> are beneficial.  The script runs two programs: a dirty page background
+> antagonist (dd) and an interactive foreground process (tar).  If the
+> scripts argument is false, then both processes are run together in the
+> root cgroup sharing system-wide dirty memory in classic fashion.  If the
+> script is given a true argument, then a cgroup is used to contain dd
+> dirty page consumption.
+>
+> ---[start]---
+> #!/bin/bash
+> # dirty.sh - dirty limit performance test script
+> echo use_cgroup: $1
+>
+> # start antagonist
+> if $1; then    # if using cgroup to contain 'dd'...
+>   mkdir /dev/cgroup/A
+>   echo 400M > /dev/cgroup/A/memory.dirty_limit_in_bytes
+>   (echo $BASHPID > /dev/cgroup/A/tasks; dd if=/dev/zero of=big.file
+>   count=10k bs=1M) &
+> else
+>   dd if=/dev/zero of=big.file count=10k bs=1M &
+> fi
+>
+> sleep 10
+>
+> time tar -xzf linux-2.6.36.tar.gz
+> wait
+> $1 && rmdir /dev/cgroup/A
+> ---[end]---
+>
+> dirty.sh false : dd 59.7MB/s stddev 7.442%, tar 12.2s stddev 25.720%
+>   # both in root_cgroup
+> dirty.sh true  : dd 55.4MB/s stddev 0.958%, tar  3.8s stddev  0.250%
+>   # tar in root_cgroup, dd in cgroup
+>   
+Reviewed-by: Ciju Rajan K <ciju@linux.vnet.ibm.com>
+
+Tested-by: Ciju Rajan K <ciju@linux.vnet.ibm.com>
+
+> The cgroup reserved dirty memory resources for the rest of the system
+> processes (tar in this case).  The tar process had faster and more
+> predictable performance.  memcg dirty ratios might be useful to serve
+> different task classes (interactive vs batch).  A past discussion
+> touched on this: http://lkml.org/lkml/2010/5/20/136
+>   
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom policy in Canada: sign http://dissolvethecrtc.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
