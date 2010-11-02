@@ -1,215 +1,227 @@
 From: Ciju Rajan K <ciju@linux.vnet.ibm.com>
-Subject: Re: [PATCH v4 00/11] memcg: per cgroup dirty page accounting
-Date: Wed, 03 Nov 2010 01:03:15 +0530
-Message-ID: <4CD0677B.3060800@linux.vnet.ibm.com>
-References: <1288336154-23256-1-git-send-email-gthelen@google.com> <20101029131946.5905d244.akpm@linux-foundation.org> <xr93sjzne4m6.fsf@ninji.mtv.corp.google.com>
+Subject: Re: [PATCH v4 03/11] memcg: create extensible page stat update routines
+Date: Wed, 03 Nov 2010 01:05:39 +0530
+Message-ID: <4CD0680B.2070108@linux.vnet.ibm.com>
+References: <1288336154-23256-1-git-send-email-gthelen@google.com> <1288336154-23256-4-git-send-email-gthelen@google.com> <4CCD81CB.9030503@linux.vnet.ibm.com> <xr93sjzmcebh.fsf@ninji.mtv.corp.google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
 Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <xr93sjzne4m6.fsf@ninji.mtv.corp.google.com>
+In-Reply-To: <xr93sjzmcebh.fsf@ninji.mtv.corp.google.com>
 Sender: owner-linux-mm@kvack.org
 To: Greg Thelen <gthelen@google.com>, Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>
+Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>
 List-Id: containers.vger.kernel.org
 
 Greg Thelen wrote:
-> Andrew Morton <akpm@linux-foundation.org> writes:
+> Ciju Rajan K <ciju@linux.vnet.ibm.com> writes:
 >
 >   
->> On Fri, 29 Oct 2010 00:09:03 -0700
->> Greg Thelen <gthelen@google.com> wrote:
+>> Greg Thelen wrote:
+>>     
+>>> Replace usage of the mem_cgroup_update_file_mapped() memcg
+>>> statistic update routine with two new routines:
+>>> * mem_cgroup_inc_page_stat()
+>>> * mem_cgroup_dec_page_stat()
+>>>
+>>> As before, only the file_mapped statistic is managed.  However,
+>>> these more general interfaces allow for new statistics to be
+>>> more easily added.  New statistics are added with memcg dirty
+>>> page accounting.
+>>>
+>>> Signed-off-by: Greg Thelen <gthelen@google.com>
+>>> Signed-off-by: Andrea Righi <arighi@develer.com>
+>>> Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+>>> Acked-by: Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
+>>> ---
+>>> Changelog since v1:
+>>> - Rename (for clarity):
+>>>   - mem_cgroup_write_page_stat_item -> mem_cgroup_page_stat_item
+>>>   - mem_cgroup_read_page_stat_item -> mem_cgroup_nr_pages_item
+>>>
+>>>  include/linux/memcontrol.h |   31 ++++++++++++++++++++++++++++---
+>>>  mm/memcontrol.c            |   16 +++++++---------
+>>>  mm/rmap.c                  |    4 ++--
+>>>  3 files changed, 37 insertions(+), 14 deletions(-)
+>>>
+>>> diff --git a/include/linux/memcontrol.h b/include/linux/memcontrol.h
+>>> index 159a076..067115c 100644
+>>> --- a/include/linux/memcontrol.h
+>>> +++ b/include/linux/memcontrol.h
+>>> @@ -25,6 +25,11 @@ struct page_cgroup;
+>>>  struct page;
+>>>  struct mm_struct;
+>>>
+>>> +/* Stats that can be updated by kernel. */
+>>> +enum mem_cgroup_page_stat_item {
+>>> +	MEMCG_NR_FILE_MAPPED, /* # of pages charged as file rss */
+>>> +};
+>>> +
+>>>  extern unsigned long mem_cgroup_isolate_pages(unsigned long nr_to_scan,
+>>>  					struct list_head *dst,
+>>>  					unsigned long *scanned, int order,
+>>> @@ -121,7 +126,22 @@ static inline bool mem_cgroup_disabled(void)
+>>>  	return false;
+>>>  }
+>>>
+>>> -void mem_cgroup_update_file_mapped(struct page *page, int val);
+>>> +void mem_cgroup_update_page_stat(struct page *page,
+>>> +				 enum mem_cgroup_page_stat_item idx,
+>>> +				 int val);
+>>> +
+>>> +static inline void mem_cgroup_inc_page_stat(struct page *page,
+>>> +					    enum mem_cgroup_page_stat_item idx)
+>>> +{
+>>> +	mem_cgroup_update_page_stat(page, idx, 1);
+>>> +}
+>>> +
+>>> +static inline void mem_cgroup_dec_page_stat(struct page *page,
+>>> +					    enum mem_cgroup_page_stat_item idx)
+>>> +{
+>>> +	mem_cgroup_update_page_stat(page, idx, -1);
+>>> +}
+>>> +
+>>>  unsigned long mem_cgroup_soft_limit_reclaim(struct zone *zone, int order,
+>>>  						gfp_t gfp_mask);
+>>>  u64 mem_cgroup_get_limit(struct mem_cgroup *mem);
+>>> @@ -293,8 +313,13 @@ mem_cgroup_print_oom_info(struct mem_cgroup *memcg, struct task_struct *p)
+>>>  {
+>>>  }
+>>>
+>>> -static inline void mem_cgroup_update_file_mapped(struct page *page,
+>>> -							int val)
+>>> +static inline void mem_cgroup_inc_page_stat(struct page *page,
+>>> +					    enum mem_cgroup_page_stat_item idx)
+>>> +{
+>>> +}
+>>> +
+>>> +static inline void mem_cgroup_dec_page_stat(struct page *page,
+>>> +					    enum mem_cgroup_page_stat_item idx)
+>>>  {
+>>>  }
+>>>
+>>> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+>>> index 9a99cfa..4fd00c4 100644
+>>> --- a/mm/memcontrol.c
+>>> +++ b/mm/memcontrol.c
+>>> @@ -1592,7 +1592,8 @@ bool mem_cgroup_handle_oom(struct mem_cgroup *mem, gfp_t mask)
+>>>   * possibility of race condition. If there is, we take a lock.
+>>>   */
+>>>
+>>>   
+>>>       
+>> Greg,
 >>
->> This is cool stuff - it's been a long haul.  One day we'll be
->> nearly-finished and someone will write a book telling people how to use
->> it all and lots of people will go "holy crap".  I hope.
+>> I am not seeing the function mem_cgroup_update_file_stat() in the latest mmotm
+>> 2010-10-22-16-36.
+>> So not able to apply this patch. Tried couple of times cloning the entire mmotm
+>> git repository. But no luck.
+>> Tried in the web interface http://git.zen-kernel.org/mmotm/tree/mm/memcontrol.c
+>> also. It is not there.
+>> Surprisingly git log doesn't show any recent changes to mm/memcontrol.c. Am I
+>> missing something?
+>> I could see this function in the mainline linux 2.6 git tree.
 >>
->>     
->>> Limiting dirty memory is like fixing the max amount of dirty (hard to reclaim)
->>> page cache used by a cgroup.  So, in case of multiple cgroup writers, they will
->>> not be able to consume more than their designated share of dirty pages and will
->>> be forced to perform write-out if they cross that limit.
->>>
->>> The patches are based on a series proposed by Andrea Righi in Mar 2010.
->>>
->>> Overview:
->>> - Add page_cgroup flags to record when pages are dirty, in writeback, or nfs
->>>   unstable.
->>>
->>> - Extend mem_cgroup to record the total number of pages in each of the 
->>>   interesting dirty states (dirty, writeback, unstable_nfs).  
->>>
->>> - Add dirty parameters similar to the system-wide  /proc/sys/vm/dirty_*
->>>   limits to mem_cgroup.  The mem_cgroup dirty parameters are accessible
->>>   via cgroupfs control files.
->>>       
->> Curious minds will want to know what the default values are set to and
->> how they were determined.
+>> -Ciju
 >>     
 >
-> When a memcg is created, its dirty limits are set to a copy of the
-> parent's limits.  If the new cgroup is a top level cgroup, then it
-> inherits from the system parameters (/proc/sys/vm/dirty_*).
+> mem_cgroup_update_file_mapped() was renamed to
+> mem_cgroup_update_file_stat() in
+> http://userweb.kernel.org/~akpm/mmotm/broken-out/memcg-generic-filestat-update-interface.patch
 >
->   
->>> - Consider both system and per-memcg dirty limits in page writeback when
->>>   deciding to queue background writeback or block for foreground writeback.
->>>
->>> Known shortcomings:
->>> - When a cgroup dirty limit is exceeded, then bdi writeback is employed to
->>>   writeback dirty inodes.  Bdi writeback considers inodes from any cgroup, not
->>>   just inodes contributing dirty pages to the cgroup exceeding its limit.  
->>>       
->> yup.  Some broader discussion of the implications of this shortcoming
->> is needed.  I'm not sure where it would be placed, though. 
->> Documentation/ for now, until you write that book.
->>     
+> I also do not see this in the mmotm git repo.  However, if I manually
+> apply the mmotm patches to v2.6.36 using quilt then I see the expected
+> patched memcontrol.c.  I am not sure why the zen-kernel.org git mmotm
+> repo differs from a mmotm patched mainline 2.6.36.
 >
-> Fair enough.  I can add more text to Documentation/ describing the
-> behavior and issue in more detail.
+> Here is my procedure using quilt to patch mainline:
 >
->   
->>> - When memory.use_hierarchy is set, then dirty limits are disabled.  This is a
->>>   implementation detail.
->>>       
->> So this is unintentional, and forced upon us my the present implementation?
->>     
+> # Checkout 2.6.36 mainline
+> $ git checkout v2.6.36
 >
-> Yes, this is not ideal.  I chose not to address this particular issue in
-> this series to keep the series smaller.
+> # Confirm mainline 2.6.36 does not have mem_cgroup_update_file_stat()
+> $ grep mem_cgroup_update_file_stat -r mm
 >
->   
->>>  An enhanced implementation is needed to check the
->>>   chain of parents to ensure that no dirty limit is exceeded.
->>>       
->> How important is it that this be fixed?
->>     
+> # Apply patches
+> $ curl http://userweb.kernel.org/~akpm/mmotm/broken-out.tar.gz | tar -xzf -
+> $ export QUILT_PATCHES=broken-out
+> $ quilt push -aq
+> ...
+> Now at patch memblock-add-input-size-checking-to-memblock_find_region-fix.patch
 >
-> I am not sure if there is interest in hierarchical per-memcg dirty
-> limits.  So I don't think that this is very important to be fixed
-> immediately.  But the fact that it doesn't work is unexpected.  It would
-> be nice if it just worked.  I'll look into making it work.
+> # Now the memcontrol contains mem_cgroup_update_file_stat()
+> $ grep mem_cgroup_update_file_stat -r mm
+> mm/memcontrol.c:static void mem_cgroup_update_file_stat(struct page *page, int idx, int val)
+> mm/memcontrol.c:        mem_cgroup_update_file_stat(page, MEM_CGROUP_STAT_FILE_MAPPED, val);
 >
->   
->> And how feasible would that fix be?  A linear walk up the hierarchy
->> list?  More than that?
->>     
->
-> I think it should be a simple matter of enhancing
-> mem_cgroup_dirty_info() to walk up the hierarchy looking for the cgroup
-> closest to its dirty limit.  The only tricky part is that there are
-> really two limits (foreground/throttling limit, and a background limit)
-> that need to be considered when finding the memcg that most deserves
-> inspection by balance_dirty_pages().
->
->   
->>> Performance data:
->>> - A page fault microbenchmark workload was used to measure performance, which
->>>   can be called in read or write mode:
->>>         f = open(foo. $cpu)
->>>         truncate(f, 4096)
->>>         alarm(60)
->>>         while (1) {
->>>                 p = mmap(f, 4096)
->>>                 if (write)
->>> 			*p = 1
->>> 		else
->>> 			x = *p
->>>                 munmap(p)
->>>         }
->>>
->>> - The workload was called for several points in the patch series in different
->>>   modes:
->>>   - s_read is a single threaded reader
->>>   - s_write is a single threaded writer
->>>   - p_read is a 16 thread reader, each operating on a different file
->>>   - p_write is a 16 thread writer, each operating on a different file
->>>
->>> - Measurements were collected on a 16 core non-numa system using "perf stat
->>>   --repeat 3".  The -a option was used for parallel (p_*) runs.
->>>
->>> - All numbers are page fault rate (M/sec).  Higher is better.
->>>
->>> - To compare the performance of a kernel without non-memcg compare the first and
->>>   last rows, neither has memcg configured.  The first row does not include any
->>>   of these memcg patches.
->>>
->>> - To compare the performance of using memcg dirty limits, compare the baseline
->>>   (2nd row titled "w/ memcg") with the the code and memcg enabled (2nd to last
->>>   row titled "all patches").
->>>
->>>                            root_cgroup                    child_cgroup
->>>                  s_read s_write p_read p_write   s_read s_write p_read p_write
->>> mmotm w/o memcg   0.428  0.390   0.429  0.388
->>> mmotm w/ memcg    0.411  0.378   0.391  0.362     0.412  0.377   0.385  0.363
->>> all patches       0.384  0.360   0.370  0.348     0.381  0.363   0.368  0.347
->>> all patches       0.431  0.402   0.427  0.395
->>>   w/o memcg
->>>       
->> afaict this benchmark has demonstrated that the changes do not cause an
->> appreciable performance regression in terms of CPU loading, yes?
->>     
->
-> Using the mmap() workload, which is a fault heavy workload...
->
-> When memcg is not configured, there is no significant performance
-> change.  Depending on the workload the performance is between 0%..3%
-> faster.  This is likely workload noise.
->
-> When memcg is configured, the performance drops between 4% and 8%.  Some
-> of this might be noise, but it is expected that memcg faults will get
-> slower because there's more code in the fault path.
->
->   
->> Can we come up with any tests which demonstrate the _benefits_ of the
->> feature?
->>     
->
-> Here is a test script that shows a situation where memcg dirty limits
-> are beneficial.  The script runs two programs: a dirty page background
-> antagonist (dd) and an interactive foreground process (tar).  If the
-> scripts argument is false, then both processes are run together in the
-> root cgroup sharing system-wide dirty memory in classic fashion.  If the
-> script is given a true argument, then a cgroup is used to contain dd
-> dirty page consumption.
->
-> ---[start]---
-> #!/bin/bash
-> # dirty.sh - dirty limit performance test script
-> echo use_cgroup: $1
->
-> # start antagonist
-> if $1; then    # if using cgroup to contain 'dd'...
->   mkdir /dev/cgroup/A
->   echo 400M > /dev/cgroup/A/memory.dirty_limit_in_bytes
->   (echo $BASHPID > /dev/cgroup/A/tasks; dd if=/dev/zero of=big.file
->   count=10k bs=1M) &
-> else
->   dd if=/dev/zero of=big.file count=10k bs=1M &
-> fi
->
-> sleep 10
->
-> time tar -xzf linux-2.6.36.tar.gz
-> wait
-> $1 && rmdir /dev/cgroup/A
-> ---[end]---
->
-> dirty.sh false : dd 59.7MB/s stddev 7.442%, tar 12.2s stddev 25.720%
->   # both in root_cgroup
-> dirty.sh true  : dd 55.4MB/s stddev 0.958%, tar  3.8s stddev  0.250%
->   # tar in root_cgroup, dd in cgroup
 >   
 Reviewed-by: Ciju Rajan K <ciju@linux.vnet.ibm.com>
-
-Tested-by: Ciju Rajan K <ciju@linux.vnet.ibm.com>
-
-> The cgroup reserved dirty memory resources for the rest of the system
-> processes (tar in this case).  The tar process had faster and more
-> predictable performance.  memcg dirty ratios might be useful to serve
-> different task classes (interactive vs batch).  A past discussion
-> touched on this: http://lkml.org/lkml/2010/5/20/136
->   
+>>> -static void mem_cgroup_update_file_stat(struct page *page, int idx, int val)
+>>> +void mem_cgroup_update_page_stat(struct page *page,
+>>> +				 enum mem_cgroup_page_stat_item idx, int val)
+>>>  {
+>>>  	struct mem_cgroup *mem;
+>>>  	struct page_cgroup *pc = lookup_page_cgroup(page);
+>>> @@ -1615,30 +1616,27 @@ static void mem_cgroup_update_file_stat(struct page *page, int idx, int val)
+>>>  			goto out;
+>>>  	}
+>>>
+>>> -	this_cpu_add(mem->stat->count[idx], val);
+>>> -
+>>>  	switch (idx) {
+>>> -	case MEM_CGROUP_STAT_FILE_MAPPED:
+>>> +	case MEMCG_NR_FILE_MAPPED:
+>>>  		if (val > 0)
+>>>  			SetPageCgroupFileMapped(pc);
+>>>  		else if (!page_mapped(page))
+>>>  			ClearPageCgroupFileMapped(pc);
+>>> +		idx = MEM_CGROUP_STAT_FILE_MAPPED;
+>>>  		break;
+>>>  	default:
+>>>  		BUG();
+>>>  	}
+>>>
+>>> +	this_cpu_add(mem->stat->count[idx], val);
+>>> +
+>>>  out:
+>>>  	if (unlikely(need_unlock))
+>>>  		unlock_page_cgroup(pc);
+>>>  	rcu_read_unlock();
+>>>  	return;
+>>>  }
+>>> -
+>>> -void mem_cgroup_update_file_mapped(struct page *page, int val)
+>>> -{
+>>> -	mem_cgroup_update_file_stat(page, MEM_CGROUP_STAT_FILE_MAPPED, val);
+>>> -}
+>>> +EXPORT_SYMBOL(mem_cgroup_update_page_stat);
+>>>
+>>>  /*
+>>>   * size of first charge trial. "32" comes from vmscan.c's magic value.
+>>> diff --git a/mm/rmap.c b/mm/rmap.c
+>>> index 1a8bf76..a66ab76 100644
+>>> --- a/mm/rmap.c
+>>> +++ b/mm/rmap.c
+>>> @@ -911,7 +911,7 @@ void page_add_file_rmap(struct page *page)
+>>>  {
+>>>  	if (atomic_inc_and_test(&page->_mapcount)) {
+>>>  		__inc_zone_page_state(page, NR_FILE_MAPPED);
+>>> -		mem_cgroup_update_file_mapped(page, 1);
+>>> +		mem_cgroup_inc_page_stat(page, MEMCG_NR_FILE_MAPPED);
+>>>  	}
+>>>  }
+>>>
+>>> @@ -949,7 +949,7 @@ void page_remove_rmap(struct page *page)
+>>>  		__dec_zone_page_state(page, NR_ANON_PAGES);
+>>>  	} else {
+>>>  		__dec_zone_page_state(page, NR_FILE_MAPPED);
+>>> -		mem_cgroup_update_file_mapped(page, -1);
+>>> +		mem_cgroup_dec_page_stat(page, MEMCG_NR_FILE_MAPPED);
+>>>  	}
+>>>  	/*
+>>>  	 * It would be tidy to reset the PageAnon mapping here,
+>>>   
+>>>       
 
 --
 To unsubscribe, send a message with 'unsubscribe linux-mm' in
