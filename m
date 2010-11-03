@@ -1,11 +1,17 @@
-From: Michael Tokarev <mjt-XAri/EZa3C4vJsYlp49lxw@public.gmane.org>
-Subject: Adding a mount after container is running?
-Date: Wed, 03 Nov 2010 12:52:59 +0300
-Message-ID: <4CD130FB.9060408@msgid.tls.msk.ru>
+From: Wu Fengguang <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH] cgroup: prefer [kv]zalloc over [kv]malloc+memset in
+	memory controller code.
+Date: Wed, 3 Nov 2010 22:15:29 +0800
+Message-ID: <20101103141529.GA7713__14869.5549033166$1288793885$gmane$org@localhost>
+References: <alpine.LNX.2.00.1011012038490.12889@swampdragon.chaosbits.net>
+	<20101101200122.GH840@cmpxchg.org>
+	<alpine.LNX.2.00.1011012056250.12889@swampdragon.chaosbits.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <alpine.LNX.2.00.1011012056250.12889-h2p7t3/P30RzeRGmFJ5qR7ZzlVVXadcDXqFh9Ls21Oc@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,34 +21,29 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Jesper Juhl <jj-IYz4IdjRLj0sV2N9l4h3zg@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hello.
+On Mon, Nov 01, 2010 at 08:59:13PM +0100, Jesper Juhl wrote:
 
-What is the way to add a new filesystem mount to
-an already running container?  I want to "propagate"
-a newly created filesystem, or another part of host
-filesystem, to a container without restarting it.
+> @@ -4169,13 +4169,11 @@ static int alloc_mem_cgroup_per_zone_info(struct mem_cgroup *mem, int node)
+>  	 */
+>  	if (!node_state(node, N_NORMAL_MEMORY))
+>  		tmp = -1;
+> -	pn = kmalloc_node(sizeof(*pn), GFP_KERNEL, tmp);
+> +	pn = kmalloc_node(sizeof(*pn), GFP_KERNEL|__GFP_ZERO, tmp);
 
-I can imagine a way to "propagate" a new filesystem -
-by (maybe temporarily) granting access for the
-block device in question to the container and
-doing a real mount from there.  I'm not sure if
-it's equivalent to a bind-mount in terms of
-resulting behavour (I sent this question to
-lkml a few mins ago), but at least this is
-easily doable.
+Use the simpler kzalloc_node()? It's introduced here:
 
-But if I want to add a part of existing filesystem
-tree to my container, things becomes somewhat less
-clean.  Still doable in a similar way - by mounting
-it in container in a temp place, bind-mounting a
-needed part to the right place, and umounting the
-temp one.  But it's not clean ;)
+        commit 979b0fea2d9ae5d57237a368d571cbc84655fba6
+        Author: Jeff Layton <jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+        Date:   Thu Jun 5 22:47:00 2008 -0700
 
-Is there a better way?
+            vm: add kzalloc_node() inline
 
-Thanks!
 
-/mjt
+Reviewed-by: Wu Fengguang <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+
+Thanks,
+Fengguang
