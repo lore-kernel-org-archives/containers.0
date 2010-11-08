@@ -1,15 +1,14 @@
 From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 2/7] cgroups: Allow to bind a subsystem to a cgroup
-	hierarchy
-Date: Mon, 08 Nov 2010 13:26:13 +0800
-Message-ID: <4CD789F5.4000208__2185.87346976182$1289193940$gmane$org@cn.fujitsu.com>
-References: <4CC146A4.9090505@cn.fujitsu.com> <4CC146D4.7030009@cn.fujitsu.com>
-	<AANLkTimCD90s+y_6y=LyOL1QqEOOAaT+b2b4guDrzo_g@mail.gmail.com>
+Subject: Re: [PATCH 7/7] cgroups: Update documentation for bindable subsystems
+Date: Mon, 08 Nov 2010 13:27:54 +0800
+Message-ID: <4CD78A5A.30309__34473.7797081054$1289194193$gmane$org@cn.fujitsu.com>
+References: <4CC146A4.9090505@cn.fujitsu.com> <4CC14769.2000406@cn.fujitsu.com>
+	<AANLkTinbtLkF=haFeDkzecEWv_FE9jG4TefiptSnZcPi@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <AANLkTimCD90s+y_6y=LyOL1QqEOOAaT+b2b4guDrzo_g-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <AANLkTinbtLkF=haFeDkzecEWv_FE9jG4TefiptSnZcPi-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,26 +23,40 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "ak
 List-Id: containers.vger.kernel.org
 
 Paul Menage wrote:
-> On Fri, Oct 22, 2010 at 1:09 AM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
->> +       /*
->> +        * Indicate if this subsystem can be bound/unbound to/from a cgroup
->> +        * hierarchy which has child cgroups.
->> +        */
->> +       unsigned int can_bind:1;
+>>  Called when a cgroup subsystem is rebound to a different hierarchy
+>> -and root cgroup. Currently this will only involve movement between
+>> -the default hierarchy (which never has sub-cgroups) and a hierarchy
+>> -that is being created/destroyed (and hence has no sub-cgroups).
+>> +and root cgroup. For some subsystems this will only involve movement
+>> +between the default hierarchy (which never has sub-cgroups) and a
+>> +hierarchy that is being created/destroyed (and hence has no sub-cgroups).
+>> +For some other subsystems this can involve movement between the default
+>> +hierarchy and a mounted hierarchy which may have sub-cgroups in it.
 > 
-> Maybe call this "bindable"?
+> This is a bit vague. How about:
 > 
-> Basic idea looks great, it could do with a bunch more comments, and
-> maybe locking rules.
+> For non-bindable subsystems, this will  only involve movement
+> between the default hierarchy (which never has sub-cgroups) and a
+> hierarchy that is being created/destroyed (and hence has no sub-cgroups).
 > 
-> Is there any chance of a lock inversion between dir->i_mutex and
-> cgroup_lock in hierarchy_popuiate_dir() ?
+> For binadable subsystems, this may also involve movement between the
+> default hierarchy and a mounted hierarchy that's populated with
+> sub-cgroups.
+> 
+> Also, the docs should mention that a cgroup setting the can_bind flag
+> has to be able to support side-effect free movement of a task into any
+> just-created cgroup, and into the root cgroup at any time. i.e. it's
+> not suitable for any subsystem where can_attach() might return false
+> for the root cgroup or a newly-created cgroup, or attach() might have
+> side-effects for those same cases.
+> 
+> Actually, perhaps we should forbid the combination of having both an
+> attach() callback and can_bind=true ?
+> 
+> Also, post_clone() doesn't get called when creating the css hierarchy
+> during binding.
 > 
 
-The lock order is:
+This is much better. :)
 
-mutex_lock(&dir->i_mutex)
-  mutex_lock(&cgroup_mutex)
-    mutex_lock(&dir->i_mutex, I_MUTEX_CHILD)
-
-it should be safe.
+Documentation often causes my headache due to my limited English skill.
