@@ -1,62 +1,46 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 7/7] cgroups: Update documentation for bindable subsystems
-Date: Mon, 08 Nov 2010 13:27:54 +0800
-Message-ID: <4CD78A5A.30309__34473.7797081054$1289194193$gmane$org@cn.fujitsu.com>
-References: <4CC146A4.9090505@cn.fujitsu.com> <4CC14769.2000406@cn.fujitsu.com>
-	<AANLkTinbtLkF=haFeDkzecEWv_FE9jG4TefiptSnZcPi@mail.gmail.com>
+From: Oren Laadan <orenl@cs.columbia.edu>
+Subject: Re: [Ksummit-2010-discuss] checkpoint-restart: naked patch
+Date: Mon, 08 Nov 2010 13:14:12 -0500
+Message-ID: <4CD83DF4.4080009@cs.columbia.edu>
+References: <AANLkTinOg6n3ZA+0gHzw9LouRuUmJ7DJwHtABRy5c=gM@mail.gmail.com> <4CD26948.7050009@kernel.org> <20101104164401.GC10656@sundance.ccs.neu.edu> <4CD3CE29.2010105@kernel.org> <AANLkTimDXKsBCxbsEOfgkYV2R8FK=bhFdmx9UQow5hqp@mail.gmail.com> <4CD5DCE3.3000109@cs.columbia.edu> <20101107194222.GG31077@sundance.ccs.neu.edu> <4CD71A6B.3020905@cs.columbia.edu> <20101107230516.GJ31077@sundance.ccs.neu.edu> <4CD774CA.8030004@cs.columbia.edu> <20101108162630.GN31077@sundance.ccs.neu.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <AANLkTinbtLkF=haFeDkzecEWv_FE9jG4TefiptSnZcPi-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "akpm >> Andrew Morton" <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Stephane Eranian <eranian-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <20101108162630.GN31077@sundance.ccs.neu.edu>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Gene Cooperman <gene@ccs.neu.edu>
+Cc: Kapil Arya <kapil@ccs.neu.edu>, Tejun Heo <tj@kernel.org>, ksummit-2010-discuss@lists.linux-foundation.org, linux-kernel@vger.kernel.org, hch@lst.de, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-Paul Menage wrote:
->>  Called when a cgroup subsystem is rebound to a different hierarchy
->> -and root cgroup. Currently this will only involve movement between
->> -the default hierarchy (which never has sub-cgroups) and a hierarchy
->> -that is being created/destroyed (and hence has no sub-cgroups).
->> +and root cgroup. For some subsystems this will only involve movement
->> +between the default hierarchy (which never has sub-cgroups) and a
->> +hierarchy that is being created/destroyed (and hence has no sub-cgroups).
->> +For some other subsystems this can involve movement between the default
->> +hierarchy and a mounted hierarchy which may have sub-cgroups in it.
-> 
-> This is a bit vague. How about:
-> 
-> For non-bindable subsystems, this will  only involve movement
-> between the default hierarchy (which never has sub-cgroups) and a
-> hierarchy that is being created/destroyed (and hence has no sub-cgroups).
-> 
-> For binadable subsystems, this may also involve movement between the
-> default hierarchy and a mounted hierarchy that's populated with
-> sub-cgroups.
-> 
-> Also, the docs should mention that a cgroup setting the can_bind flag
-> has to be able to support side-effect free movement of a task into any
-> just-created cgroup, and into the root cgroup at any time. i.e. it's
-> not suitable for any subsystem where can_attach() might return false
-> for the root cgroup or a newly-created cgroup, or attach() might have
-> side-effects for those same cases.
-> 
-> Actually, perhaps we should forbid the combination of having both an
-> attach() callback and can_bind=true ?
-> 
-> Also, post_clone() doesn't get called when creating the css hierarchy
-> during binding.
-> 
+Hi,
 
-This is much better. :)
+Ok, I'll bite the bullet for now - to be continued...
 
-Documentation often causes my headache due to my limited English skill.
+Just one important clarification:
+
+>> Linux-cr can do live migration - e.g. VDI, move the desktop - in
+>> which case skype's sockets' network stacks are reconstructed,
+>> transparently to both skype (local apps) and the peer (remote apps).
+>> Then, at the destination host and skype continues to work.
+>
+> That's a really cool thing to do, and it's definitely not part of what
+> DMTCP does.  It might be possible to do userland live migration,
+> but it's definitely not part of our current scope.  But if we're talking
+> about live migration, have you also looked at the work of
+> Andres Lagar Caviilla on SnowFlock?
+>      http://andres.lagarcavilla.com/publications/LagarCavillaEurosys09.pdf
+> He does live migration of entire virtual machines, again with very
+> small delay.  Of course, the issue for any type of live migration is that
+> if the rate of dirtying pages is very high (e.g. HPC), then there is
+> still a delay or slow response, due to page faults to a remote host.
+
+VMware, Xen and KVM already do live migration. However, VMs
+are a separate beast.
+
+We are concerned about _application_ level c/r and migration
+(complete containers or individual applications). Many proven
+techniques from the VM world apply to our context too (in your
+example, post-copy migration).
+
+Oren.
