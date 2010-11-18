@@ -1,148 +1,142 @@
-From: Matt Helsley <matthltc@us.ibm.com>
-Subject: Re: [Ksummit-2010-discuss] checkpoint-restart: naked patch
-Date: Wed, 17 Nov 2010 14:17:13 -0800
-Message-ID: <20101117221713.GA27736@count0.beaverton.ibm.com>
-References: <AANLkTinOg6n3ZA+0gHzw9LouRuUmJ7DJwHtABRy5c=gM@mail.gmail.com>
- <4CD26948.7050009@kernel.org>
- <20101104164401.GC10656@sundance.ccs.neu.edu>
- <4CD3CE29.2010105@kernel.org>
- <20101106053204.GB12449@count0.beaverton.ibm.com>
- <20101106204008.GA31077@sundance.ccs.neu.edu>
- <4CD5D99A.8000402@cs.columbia.edu>
- <20101107184927.GF31077@sundance.ccs.neu.edu>
- <4CD72150.9070705@cs.columbia.edu>
- <4CE3C334.9080401@kernel.org>
+From: Andrew Morton <akpm@linux-foundation.org>
+Subject: Re: [PATCH v4 05/11] writeback: create dirty_info structure
+Date: Wed, 17 Nov 2010 16:49:24 -0800
+Message-ID: <20101117164924.25e6cc11.akpm@linux-foundation.org>
+References: <1288336154-23256-1-git-send-email-gthelen@google.com>
+	<1288336154-23256-6-git-send-email-gthelen@google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <4CE3C334.9080401@kernel.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Tejun Heo <tj@kernel.org>
-Cc: Oren Laadan <orenl@cs.columbia.edu>, Gene Cooperman <gene@ccs.neu.edu>, Matt Helsley <matthltc@us.ibm.com>, Kapil Arya <kapil@ccs.neu.edu>, ksummit-2010-discuss@lists.linux-foundation.org, linux-kernel@vger.kernel.org, hch@lst.de, Linux Containers <containers@lists.osdl.org>
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <1288336154-23256-6-git-send-email-gthelen@google.com>
+Sender: owner-linux-mm@kvack.org
+To: Greg Thelen <gthelen@google.com>
+Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>
 List-Id: containers.vger.kernel.org
 
-On Wed, Nov 17, 2010 at 12:57:40PM +0100, Tejun Heo wrote:
-> Hello, Oren.
-> 
-> On 11/07/2010 10:59 PM, Oren Laadan wrote:
+On Fri, 29 Oct 2010 00:09:08 -0700
+Greg Thelen <gthelen@google.com> wrote:
 
-<snip>
+> Bundle dirty limits and dirty memory usage metrics into a dirty_info
+> structure to simplify interfaces of routines that need all.
 
-> 
-> > Even if that happens (which is very unlikely and unnecessary),
-> > it will generate all the very same code in the kernel that Tejun
-> > has been complaining about, and _more_. And we will still suffer
-> > from issues such as lack of atomicity and being unable to do many
-> > simple and advanced optimizations.
-> 
-> It may be harder but those will be localized for specific features
-> which would be useful for other purposes too.  With in-kernel CR,
-> you're adding a bunch of intrusive changes which can't be tested or
-> used apart from CR.
+Problems...
 
-You seem to be arguing "Z is only testable/useful for doing the things Z
-was made for". I couldn't agree more with that. CR is useful for:
+These patches interact pretty badly with Fengguang's "IO-less dirty
+throttling v2" patches.  I fixed up
+writeback-create-dirty_info-structure.patch pretty mechanically but
+when it got to memcg-check-memcg-dirty-limits-in-page-writeback.patch
+things got sticky and I gave up.
 
-	Fault-tolerance (typical HPC)
-	Load-balancing (less-typical HPC)
-	Debugging (simple [e.g. instead of coredumps] or complex
-		time-reversible)
-	Embedded devices that need to deal with persistent low-memory
-		situations.
+As your stuff was merged first, I'd normally send the bad news to
+Fengguang, but the memcg code is logically built upon the core
+writeback code so I do think these patches should be staged after the
+changes to core writeback.
 
-I think Oren's Kernel Summit presentation succinctly summarized these:
-	http://www.cs.columbia.edu/~orenl/talks/ksummit-2010.pdf
+Also, while I was there it seemed that the chosen members of the
+dirty_info structure were a bit random.  Perhaps we should be putting
+nr_dirty in there as well, perhaps other things.  Please have a think
+about that.
 
-My personal favorite idea (that hasn't been implemented yet) is an
-application startup cache. I've been wondering if caching bash startup
-after all the shared libraries have been searched, loaded, and linked
-couldn't save a bunch of time spent in shell scripts. Post-link actually
-seems like a checkpoint in application startup which would be generally
-useful too. Of course you'd want to flush [portions of] the cache when
-packages get upgraded/removed or shell PATHs change and the caches
-would have to be per-user.
+Also, in ratelimit_pages() we call global_dirty_info() to return four
+items, but that caller only actually uses two of them.  Wasted effort?
 
-I'm less confident but still curious about caching after running rc
-scripts (less confident because it would depend highly on the content
-of the rc scripts). A scripted boot, for example, might be able to save
-some time if the same rc scripts are run and they don't vary over time.
-That in turn might be useful for carefully-tuned boots on embedded devices.
 
-That said we don't currently have code for application caching. Yet we
-can't be expected to write tools for every possible use of our API in
-order to show just how true your tautology is.
+So I'm afraid I'm going to have to request that you redo and retest
+these patches:
 
-> 
-> > Or we could use linux-cr for that: do the c/r in the kernel,
-> > keep the know-how in the kernel, expose (and commit to) a
-> > per-kernel-version ABI (not vow to keep countless new individual
+writeback-create-dirty_info-structure.patch
+memcg-add-dirty-page-accounting-infrastructure.patch
+memcg-add-kernel-calls-for-memcg-dirty-page-stats.patch
+memcg-add-dirty-limits-to-mem_cgroup.patch
+memcg-add-dirty-limits-to-mem_cgroup-use-native-word-to-represent-dirtyable-pages.patch
+memcg-add-dirty-limits-to-mem_cgroup-catch-negative-per-cpu-sums-in-dirty-info.patch
+memcg-add-dirty-limits-to-mem_cgroup-avoid-overflow-in-memcg_hierarchical_free_pages.patch
+memcg-add-dirty-limits-to-mem_cgroup-correct-memcg_hierarchical_free_pages-return-type.patch
+memcg-add-dirty-limits-to-mem_cgroup-avoid-free-overflow-in-memcg_hierarchical_free_pages.patch
+memcg-cpu-hotplug-lockdep-warning-fix.patch
+memcg-add-cgroupfs-interface-to-memcg-dirty-limits.patch
+memcg-break-out-event-counters-from-other-stats.patch
+memcg-check-memcg-dirty-limits-in-page-writeback.patch
+memcg-use-native-word-page-statistics-counters.patch
+memcg-use-native-word-page-statistics-counters-fix.patch
+#
+memcg-add-mem_cgroup-parameter-to-mem_cgroup_page_stat.patch
+memcg-pass-mem_cgroup-to-mem_cgroup_dirty_info.patch
+#memcg-make-throttle_vm_writeout-memcg-aware.patch: "troublesome": Kamezawa
+memcg-make-throttle_vm_writeout-memcg-aware.patch
+memcg-make-throttle_vm_writeout-memcg-aware-fix.patch
+memcg-simplify-mem_cgroup_page_stat.patch
+memcg-simplify-mem_cgroup_dirty_info.patch
+memcg-make-mem_cgroup_page_stat-return-value-unsigned.patch
 
-Oren, that statement might be read to imply that it's based on
-something as useless as kernel version numbers. Arnd has pointed out in the
-past how unsuitable that is and I tend to agree. There are at least two
-possible things we can relate it to: the SHA of the compiled kernel tree
-(which doesn't quite work because it assumes everybody uses git trees :( ),
-or perhaps the SHA/hash of the cpp-processed checkpoint_hdr.h. We could
-also stuff that header into the kernel (much like kconfigs are output from
-/proc) for programs that want the kernel to describe the ABI to them.
+against the http://userweb.kernel.org/~akpm/mmotm/ which I just
+uploaded, sorry.  I've uploaded my copy of all the above to
+http://userweb.kernel.org/~akpm/stuff/gthelen.tar.gz.  I think only the
+two patches need fixing and retesting.
 
-> > ABIs forever after getting them wrongly...), be able to do all
-> > sorts of useful optimization and provide atomicity and guarantees
-> > (see under "leak detection" in the OLS linux-cr paper). Also,
-> > once the c/r infrastructure is in the kernel, it will be easy
-> > (and encouraged) to support new =ly introduced features.
-> 
-> And the only reason it seems easier is because you're working around
-> the ABI problem by declaring that these binary blobs wouldn't be kept
-> compatible between different kernel versions and configurations.  That
+Also, while wrangling the above patches, I stumbled across rejects such
+as:
 
-Not true. First of all, if you look at checkpoint_hdr.h, the contents and
-layout of the structs don't vary according to kernel configurations.
-Secondly, we have taken measures to increase the likelihood that the
-structures will remain compatible. We've designed them to layout the
-same on 32-bit and 64-bit variants of an arch. We add to the end of the
-structs. We use an explicit length field in a header to each section
-to ensure that changes in the size of the structures don't necessarily
-break compatibility.
 
-That said, yes, these measures don't absolutely preclude incompatibility.
-They will however make compatibility more likely.
+***************
+*** 99,106 ****
+                   "state:            %8lx\n",
+                   (unsigned long) K(bdi_stat(bdi, BDI_WRITEBACK)),
+                   (unsigned long) K(bdi_stat(bdi, BDI_RECLAIMABLE)),
+-                  K(bdi_thresh), K(dirty_thresh),
+-                  K(background_thresh), nr_dirty, nr_io, nr_more_io,
+                   !list_empty(&bdi->bdi_list), bdi->state);
+  #undef K
+  
+--- 98,106 ----
+                   "state:            %8lx\n",
+                   (unsigned long) K(bdi_stat(bdi, BDI_WRITEBACK)),
+                   (unsigned long) K(bdi_stat(bdi, BDI_RECLAIMABLE)),
++                  K(bdi_thresh), K(dirty_info.dirty_thresh),
++                  K(dirty_info.background_thresh),
++                  nr_dirty, nr_io, nr_more_io,
+                   !list_empty(&bdi->bdi_list), bdi->state);
 
-Then there's the fact that structures like siginfo (for example) so rarely
-change because they're already part of an ABI. That in turn means that the
-corresponding checkpoint ABI rarely changes (we don't reuse the existing
-struct because that would require compat-syscall-style code).
+Please, if you discover crud like this, just fix it up.  One item per
+line:
 
-Most of the time, in fact, the fields we output are there only because
-they reflect the 'model' of how things work that the kernel presents to
-userspace. That model also rarely changes (we've never gotten rid of the
-POSIX concept of process groups in one extreme example). Perhaps the 
-closest thing we have to wholly-kernel-internal data structures are the
-signal/sighand structs which echo the way these fields are split from the
-task struct and shared between tasks. Though I'd argue that gets back into
-the 'model' presented to userspace (via fork/clone) anyway...
+                   "state:            %8lx\n",
+                   (unsigned long) K(bdi_stat(bdi, BDI_WRITEBACK)),
+                   (unsigned long) K(bdi_stat(bdi, BDI_RECLAIMABLE)),
+		   K(bdi_thresh),
+		   K(dirty_info.dirty_thresh),
+		   K(dirty_info.background_thresh),
+		   nr_dirty,
+		   nr_io,
+		   nr_more_io,
+                   !list_empty(&bdi->bdi_list), bdi->state);
 
-I'd estimate that the biggest 'model' changes have come via various
-filesystem interfaces over the years. We don't checkpoint tasks with open
-sysfs, /proc, or debugfs files (for example) so that's not part of our
-ABI and we don't intend to make it so.
+all very simple.  And while you're there, fix up the
+tab-tab-space-space-space indenting - just use tabs.
 
-Nor do we output wholly kernel-internal structures and fields that are
-often chosen for their performance benefits (e.g. rbtrees, linked lists,
-hash tables, idrs, various caches, locks, RCU heads, refcounts, etc). So
-the kernel is free to change implementations without affecting our ABI.
 
-The compatibility has natural limits. For instance we can't ever
-restart an x86_64 binary on a 32-bit kernel. If you add a new syscall
-interface (e.g. fanotify) then you can't use a checkpoint of a task that
-makes use of it on fanotify-disabled kernels. Yet these limitations exist
-no matter where or how you choose to implement checkpoint/restart.
+The other area where code maintenance is harder than it needs to be is
+in definitions of locals:
 
-We've made almost every effort at making this a proper ABI (I say
-'almost' because we still need to export a description of it at runtime
-and we need to do something better in place of the logfd output). Still,
-the essentials of a proper checkpoint/restart ABI are already there.
+        long nr_reclaimable;
+        long nr_dirty, bdi_dirty;  /* = file_dirty + writeback + unstable_nfs */
+        long bdi_prev_dirty = 0;
 
-Cheers,
-	-Matt Helsley
+again, that's just dopey.  Change it to
+
+        long nr_reclaimable;
+        long nr_dirty;
+	long bdi_dirty;		/* = file_dirty + writeback + unstable_nfs */
+        long bdi_prev_dirty = 0;
+
+All very simple.
+
+Thanks.
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom policy in Canada: sign http://dissolvethecrtc.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
