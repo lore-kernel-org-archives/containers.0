@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan@gmail.com>
 Subject: Re: [Ksummit-2010-discuss] checkpoint-restart: naked patch
-Date: Fri, 19 Nov 2010 18:25:13 +0200
-Message-ID: <AANLkTimUYkzgimgLOtEFDKO6ApY=J2QQxr-mz6AQMmoZ@mail.gmail.com>
+Date: Fri, 19 Nov 2010 18:27:44 +0200
+Message-ID: <AANLkTin7kd3crS+fTLLea5PhAii7B3dz=n7p7YtQ6d4g@mail.gmail.com>
 References: <20101104164401.GC10656@sundance.ccs.neu.edu>
 	<4CD3CE29.2010105@kernel.org>
 	<20101106053204.GB12449@count0.beaverton.ibm.com>
@@ -17,34 +17,28 @@ References: <20101104164401.GC10656@sundance.ccs.neu.edu>
 	<04F4899E-B5C7-4BAF-8F2F-05D507A91408@parallels.com>
 	<4CE698C5.5060806@kernel.org>
 	<AANLkTikRHuaCpaROtty6X_Oe6JixzgcbVsxHxvtsu+UV@mail.gmail.com>
-	<AANLkTikqpv8j-H15qjyhy7RJ92wNsWzeFykVMFKypt13@mail.gmail.com>
-	<4CE6A172.7010603@kernel.org>
+	<4CE6A076.2020807@kernel.org>
+	<AANLkTikz++4_SvqU_Wvx5CjcpKJhPsD7q470swdqwn94@mail.gmail.com>
+	<4CE6A397.6010105@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <4CE6A172.7010603@kernel.org>
+In-Reply-To: <4CE6A397.6010105@kernel.org>
 Sender: linux-kernel-owner@vger.kernel.org
 To: Tejun Heo <tj@kernel.org>
 Cc: Kirill Korotaev <dev@parallels.com>, Serge Hallyn <serge.hallyn@canonical.com>, Kapil Arya <kapil@ccs.neu.edu>, Gene Cooperman <gene@ccs.neu.edu>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Pavel Emelianov <xemul@parallels.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, Nov 19, 2010 at 6:10 PM, Tejun Heo <tj@kernel.org> wrote:
-> Well, if you ask me, having pidns w/o a way to reinstate PID from
-> userland is pretty silly
+On Fri, Nov 19, 2010 at 6:19 PM, Tejun Heo <tj@kernel.org> wrote:
+>> The paragon of absurdity is struct task_struct::did_exec .
+>
+> Yeah, then go and figure how to do that in a way which would be usefu=
+l
+> for other purposes too instead of trying to shove the whole
+> checkpointer inside the kernel. =A0It sure would be harder but hey
+> that's the way it is.
 
-No.
-Chrome uses CLONE_PID so that exploit couldn't attach to processes in
-parent pidns.
-
-> and you and I might not know yet but it's
-> quite imaginable that there will be other use cases for the capabilit=
-y
-> unlike in-kernel CR. =A0Kernel provides building blocks not the whole
-> frigging package and for very good reasons.
-
-Speaking of pids, pid's value itself is never interesing (except maybe =
-pid 1).
-It's a cookie.
-
-CLONE_SET_PID came up only now because only C/R wants it.
+System call for one bit? This is ridiculous.
+Doing execve(2) for userspace C/R is ridicoulous too (and likely doesn'=
+t work).
