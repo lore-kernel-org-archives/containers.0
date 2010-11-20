@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Subject: Re: [Ksummit-2010-discuss] checkpoint-restart: naked patch
-Date: Sat, 20 Nov 2010 13:08:13 -0500 (EST)
-Message-ID: <4CE69B93.3050904@cs.columbia.edu>
+Date: Sat, 20 Nov 2010 13:11:35 -0500 (EST)
+Message-ID: <4CE69B8C.6050606@cs.columbia.edu>
 References: <20101104164401.GC10656@sundance.ccs.neu.edu>
 	<4CD3CE29.2010105@kernel.org>
 	<20101106053204.GB12449@count0.beaverton.ibm.com>
@@ -49,57 +49,111 @@ Cc      : Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>,
           xemul-3ImXcnM4P+0@public.gmane.org,
           "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>,
           Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Fcc     : imap://ol2104-u1PCbA9B4pbMrJhsLK8IO4dd74u8MsAO@public.gmane.org/Sent
 Attchmnt:
 Subject : Re: [Ksummit-2010-discuss] checkpoint-restart: naked patch
 ----- Message Text -----
 Hi,
 
-[continuation of posting regarding kernel vs userspace approach]
-
+[continuation of discussion of kernel vs userspace c/r approach]
 part I: perpsectice about the types of scopes of c/r in discussion
 part II: linux-cr design adn objectives
 part III: comparison kernel/userspace approaches
 
 
-PART II:  ==PHILOSOPHY==
+PART III:  ==SOME TECHNICAL ASPECTS==
 
-Linux-cr is a _generic_ c/r-engine with multiple capabilities. It can
-checkpoint a full container, a process hierarchy, or a single process,
-For containers, it provides guarantees like restart-ability; For the
-others, it provides the flexibility so that c/r-aware applications,
-libraries, helpers, and wrappers can glue what they wish to glue.
+Important to know about userspace (DMTCP example) before presenting a
+comparison between kernel and userspace approaches:
 
-1) Transparent - completely transparent for container-c/r, and largely
-  so for standalone-cr ("largely" - as in except for the glue which is
-  needed due to loss of eco-system, not due to restarting).
-2) Reliable - if checkpoint succeeds that it is guaranteed for
-  to succeed too (for container-c/r).
-3) Preemtptive - works without requiring that checkpointed processes
-  be scheduled to run (and thus "collaborate")
-4) Complete - covers all visible and hidden state in the kernel
-  about processes (even if not directly visible to userspace)
-5) Efficient - can be optimized along multiple axes: _zero_ impact on
-  runtime, low downtime during checkpoint, partial and incremental
-  checkpoint, live-migration, etc.
-6) Flexible - can integrate nicely with different userspace "glueing"
-  methods.
-7) Maintainable - small part of the code is to refactor kernel code
-  so that it can be reused in restart; the rest is new code that in
-  our experience rarely changes. Same hods for the image format.
+DMTCP has two components: 1) c/r-engine to save/restore process state,
+and 2) glue to restart processes out of their original context. They
+are _orthogonal_: the glue can be used with of other c/r-engines, like
+linux-cr. This discussion refers to the c/r-engine _only_.
 
-What linux-cr _does not_ do in the kernel, nor plans to support is:
+Focusing on the c/r-engine of DMTCP - it uses syscall interposition
+for three reasons:
 
-1) Hardware devices: their state is per-device/vendor. Instead one
-   should use virtual devices (VNC for dislpay, pulseaudio for sound,
-   screen for ttys), or have a userspace glue to restore the state of
-   the device. That said, in the future vendors may opt to provide
-   logic for c/r in drivers, e.g. ->checkpoint, ->restart methods.
-2) Userspace glue: (as defined for standalone-c/r above) the kernel
-   knows about processes and their state, not about their intentions.
-   We leave that for userspace.
-3) External dependencies: (outside of the local host) the kernel does
-   not control what's outside the host. That is the responsibility of
-   userspace. (Even with live-migration, the linux-cr only restores
-   the local state of the TCP connections).
+1) To take control of processes at checkpoint
+2) To always track state of resources not visible to userspace
+3) To virtualize identifiers after restart
 
-Oren.
+#1 is needed because processes saves their own state (and need to run
+the checkpoint code for that).
+
+#2 is needed because the kernel does not expose all state, and #3 is
+needed because the kernel does not give ways to restore all state. So
+these two logics are used to mirror in userspace functionality that
+already exists in the kernel.
+
+The main advantages of the approach: (a) portability to other system
+(like BSD), though with considerable effort (b) it's "good enough" for
+several use-cases, without kernel changes.
+
+Putting the c/r-engine in the kernel provides many advantages, which I
+summarize in the following table:
+
+category        linux-cr                        userspace
+--------------------------------------------------------------------------------
+PERFORMANCE     has _zero_ runtime overhead     visible overhead due to syscalls
+                                                interposition and state tracking
+                                                even w/o checkpoints;
+
+OPTIMIZATIONS   many optimizations possible     limited, less effective
+                only in kernel, for downtime,   w/ much larger overhead.
+                image size, live-migration
+
+OPERATION       applications run unmodified     to do c/r, needs 'controller'
+                                                task (launch and manage _entire_
+                                                execution) - point of failure.
+                                                restricts how a system is used.
+
+PREEMPTIVE      checkpoint at any time, use     processes must be runnable and
+                auxiliary task to save state;   "collaborate" for checkpoint;
+                non-intrusive: failure does     long task coordination time
+                not impact checkpointees.       with many tasks/threads. alters
+                                                state of checkpointee if fails.
+                                                e.g. cannot checkpoint when in
+                                                vfork(), ptrace states, etc.
+
+COVERAGE        save/restore _all_ task state;  needs new ABI for everything:
+                identify shared resources; can  expose state, provide means to
+                extend for new kernel features  restore state (e.g. TCP protocol
+                easily                          options negotiated with peers)
+
+RELIABILITY     checkpoint w/ single syscall;   non-atomic, cannot find leaks
+                atomic operation. guaranteed    to determine restartability
+                restartability for containers
+
+USERSPACE GLUE  possible                        possible
+
+SECURITY        root and non-root modes         root and non-root modes
+                native support for LSM
+
+MAINTENANCE     changes mainly for features     changes mainly for features;
+                                                create new ABI for features
+
+I'm not saying Gene's work isn't good - on the contrary, it's a fine
+piece of engineering. However, the part of it that does c/r poses many 
+constraints that limits the generality, mode of use, and performance of 
+the whole. That may be enough for Tejun, for your cluster. But not 
+for other users of the technology.
+
+And by all means, I intend to cooperate with Gene to see how to
+make the other part of DMTCP, namely the userspace "glue", work on
+top of linux-cr to have the benefits of all worlds !
+
+All in all, kernel c/r is far more generic and less restrictive than
+userspace, can provide nice guarantees, and has superior performance.
+It can do everything the a userspace c/r can do, and much more - and
+that "much more" is crucial for important use cases.
+
+Last word about maintenance - once the core code is in mainline (which
+means a code "spike"), experience (both kernel/userspace) shows that
+both code and image format hardly change. The format is tied to specific
+set of features supported (i.e. kernel versions) so that the kernel
+does not need to maintain backward compatibility.
+
+Thanks,
+
+Oren
