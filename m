@@ -1,67 +1,40 @@
-From: Oren Laadan <orenl@cs.columbia.edu>
+From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
 Subject: Re: [Ksummit-2010-discuss] checkpoint-restart: naked patch
-Date: Mon, 22 Nov 2010 12:34:54 -0500 (EST)
-Message-ID: <Pine.LNX.4.64.1011221222260.14320@takamine.ncl.cs.columbia.edu>
-References: <20101107184927.GF31077@sundance.ccs.neu.edu> <4CD72150.9070705@cs.columbia.edu>
- <4CE3C334.9080401@kernel.org> <20101117153902.GA1155@hallyn.com>
- <4CE3F8D1.10003@kernel.org> <20101119041045.GC24031@hallyn.com>
- <4CE683E1.6010500@kernel.org> <4CE69B8C.6050606@cs.columbia.edu>
- <Pine.LNX.4.64.1011201312470.15662@takamine.ncl.cs.columbia.edu>
- <4CE8228C.3000108@kernel.org> <20101121081853.GA21672@sundance.ccs.neu.edu>
+Date: Mon, 22 Nov 2010 10:02:41 -0800
+Message-ID: <20101122180241.GA25301@us.ibm.com>
+References: <4CE3C334.9080401@kernel.org> <20101117153902.GA1155@hallyn.com> <4CE3F8D1.10003@kernel.org> <20101119041045.GC24031@hallyn.com> <4CE683E1.6010500@kernel.org> <4CE69B8C.6050606@cs.columbia.edu> <Pine.LNX.4.64.1011201312470.15662@takamine.ncl.cs.columbia.edu> <4CE8228C.3000108@kernel.org> <20101121081853.GA21672@sundance.ccs.neu.edu> <20101121082143.GB21672@sundance.ccs.neu.edu>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+Content-Type: text/plain; charset=us-ascii
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20101121081853.GA21672@sundance.ccs.neu.edu>
+Content-Disposition: inline
+In-Reply-To: <20101121082143.GB21672@sundance.ccs.neu.edu>
 Sender: linux-kernel-owner@vger.kernel.org
 To: Gene Cooperman <gene@ccs.neu.edu>
-Cc: Tejun Heo <tj@kernel.org>, Kapil Arya <kapil@ccs.neu.edu>, linux-kernel@vger.kernel.org, xemul@sw.ru, "Eric W. Biederman" <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>
+Cc: Kapil Arya <kapil@ccs.neu.edu>, linux-kernel@vger.kernel.org, xemul@sw.ru, Linux Containers <containers@lists.osdl.org>, "Eric W. Biederman" <ebiederm@xmission.com>, Tejun Heo <tj@kernel.org>
 List-Id: containers.vger.kernel.org
 
-On Sun, 21 Nov 2010, Gene Cooperman wrote:
+Gene Cooperman [gene@ccs.neu.edu] wrote:
+| > RELIABILITY     checkpoint w/ single syscall;   non-atomic, cannot find leaks
+| >                 atomic operation. guaranteed    to determine restartability
+| >                 restartability for containers
+| 
+| My understanding is that the guarantees apply for Linux containers, but not
+| for a tree of processes.  Does this imply that linux-cr would have some
+| of the same reliability issues as DMTCP for a tree of processes?  (I mean
+| the question sincerely, and am not intending to be rude.)  In any case,
+| won't DMTCP and Linux C/R have to handle orthogonal reliability issues
+| such as external database, time virtualization, and other examples
+| from our previous post?
 
-> Below, we'll summarize the four major questions that we've understood from
-> this discussion so far.  But before doing so, I want to point out that a single
-> process or process tree will always have many possible interactions with
-> the rest of the world.  Within our own group, we have an internal slogan:
->   "You can't checkpoint the world."
-> A virtual machine can have a relatively closed world, which makes it more
-> robust, but checkpointing will always have some fragile parts.
+Yes if the user attempts to checkpoint a partial container (what we refer
+to process subtree) or fails to snapshot/restore filesystem there could be
+leaks that we cannot detect.
 
-That depends of what your definition of "world". One definition
-is "world := VM", as you state above. Another is "world := container"
-which I stated in my post(s). You can checkpoint both.
+But one guarantee we are trying to provide is that if the user checkpoints
+a _complete_ container, then we will detect a leak if one exists.
 
-For those cases where the "world" cannot be fully checkpointed, 
-I explicitly pointed  that we should focus on the core c/r 
-functionality, because the "glue" can be done either way.
+Is there a way to establish a set of constraints (eg: run application in a
+container, snapshot/restore filesystem) and then provide leak detection with
+a pure userpsace implementation ?
 
-> We give four examples below: 
-> a.  time virtualization
-
-IMHO, irrelevant to current discussion. And btw, this is done in
-linux-cr for live migration of tcp connections.
-
-> b.  external database
-> c.  NSCD daemon
-
-This falls within the category of "glue", and is - as I try once
-again to remind - tentirely oorthogonal to the topic of where
-to do c/r.
-
-> d.  screen and other full-screen text programs
-> These are not the only examples of difficult interactions with the
-> rest of the world.
-
-This actually never required a userspace "component" with Zap
-or linux-cr (to the best of my knowledge)..
-
-Even if it did - the question is not how to deal with "glue"
-(you demonstrated quite well how to do that with DMTCP), but 
-how should teh basic, core c/r functionality work - which is
-below, and orthogonal to the "glue".
-
-Let us please focus on the base c/r engine functionality...
-
-(gotta disconnect now .. more later)
-
-Oren.
+Sukadev
