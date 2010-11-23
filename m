@@ -1,40 +1,73 @@
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: Re: [Ksummit-2010-discuss] checkpoint-restart: naked patch
-Date: Mon, 22 Nov 2010 10:02:41 -0800
-Message-ID: <20101122180241.GA25301@us.ibm.com>
-References: <4CE3C334.9080401@kernel.org> <20101117153902.GA1155@hallyn.com> <4CE3F8D1.10003@kernel.org> <20101119041045.GC24031@hallyn.com> <4CE683E1.6010500@kernel.org> <4CE69B8C.6050606@cs.columbia.edu> <Pine.LNX.4.64.1011201312470.15662@takamine.ncl.cs.columbia.edu> <4CE8228C.3000108@kernel.org> <20101121081853.GA21672@sundance.ccs.neu.edu> <20101121082143.GB21672@sundance.ccs.neu.edu>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH] cgroup: Convert synchronize_rcu to call_rcu in
+	cgroup_attach_task
+Date: Tue, 23 Nov 2010 16:14:24 +0800
+Message-ID: <4CEB77E0.10202__31736.5587958649$1290500033$gmane$org@cn.fujitsu.com>
+References: <AANLkTikx6d0_VFtZ4zWQucRCf=vFt7N2M6=0jpnKasEE@mail.gmail.com>
+	<1290398767-15230-1-git-send-email-ccross@android.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20101121082143.GB21672@sundance.ccs.neu.edu>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Gene Cooperman <gene@ccs.neu.edu>
-Cc: Kapil Arya <kapil@ccs.neu.edu>, linux-kernel@vger.kernel.org, xemul@sw.ru, Linux Containers <containers@lists.osdl.org>, "Eric W. Biederman" <ebiederm@xmission.com>, Tejun Heo <tj@kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1290398767-15230-1-git-send-email-ccross-z5hGa2qSFaRBDgjK7y7TUQ@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Colin Cross <ccross-z5hGa2qSFaRBDgjK7y7TUQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Gene Cooperman [gene@ccs.neu.edu] wrote:
-| > RELIABILITY     checkpoint w/ single syscall;   non-atomic, cannot find leaks
-| >                 atomic operation. guaranteed    to determine restartability
-| >                 restartability for containers
-| 
-| My understanding is that the guarantees apply for Linux containers, but not
-| for a tree of processes.  Does this imply that linux-cr would have some
-| of the same reliability issues as DMTCP for a tree of processes?  (I mean
-| the question sincerely, and am not intending to be rude.)  In any case,
-| won't DMTCP and Linux C/R have to handle orthogonal reliability issues
-| such as external database, time virtualization, and other examples
-| from our previous post?
+12:06, Colin Cross wrote:
+> The synchronize_rcu call in cgroup_attach_task can be very
+> expensive.  All fastpath accesses to task->cgroups that expect
+> task->cgroups not to change already use task_lock() or
+> cgroup_lock() to protect against updates, and, in cgroup.c,
+> only the CGROUP_DEBUG files have RCU read-side critical
+> sections.
+> 
+> sched.c uses RCU read-side-critical sections on task->cgroups,
+> but only to ensure that a dereference of task->cgroups does
+> not become invalid, not that it doesn't change.
+> 
 
-Yes if the user attempts to checkpoint a partial container (what we refer
-to process subtree) or fails to snapshot/restore filesystem there could be
-leaks that we cannot detect.
+Other cgroup subsystems also use rcu_read_lock to access task->cgroups,
+for example net_cls cgroup and device cgroup.
 
-But one guarantee we are trying to provide is that if the user checkpoints
-a _complete_ container, then we will detect a leak if one exists.
+I don't think the performance of task attaching is so critically
+important that we have to use call_rcu() instead of synchronize_rcu()?
 
-Is there a way to establish a set of constraints (eg: run application in a
-container, snapshot/restore filesystem) and then provide leak detection with
-a pure userpsace implementation ?
+> This patch adds a function put_css_set_rcu, which delays the
+> put until after a grace period has elapsed.  This ensures that
+> any RCU read-side critical sections that dereferenced
+> task->cgroups in sched.c have completed before the css_set is
+> deleted.  The synchronize_rcu()/put_css_set() combo in
+> cgroup_attach_task() can then be replaced with
+> put_css_set_rcu().
+> 
 
-Sukadev
+> Also converts the CGROUP_DEBUG files that access
+> current->cgroups to use task_lock(current) instead of
+> rcu_read_lock().
+> 
+
+What for? What do we gain from doing this for those debug
+interfaces?
+
+> Signed-off-by: Colin Cross <ccross-z5hGa2qSFaRBDgjK7y7TUQ@public.gmane.org>
+> 
+> ---
+> 
+> This version fixes the problems with the previous patch by
+> keeping the use of RCU in cgroup_attach_task, but allowing
+> cgroup_attach_task to return immediately by deferring the
+> final put_css_reg to an rcu callback.
+> 
+>  include/linux/cgroup.h |    4 +++
+>  kernel/cgroup.c        |   58 ++++++++++++++++++++++++++++++++++++++----------
+>  2 files changed, 50 insertions(+), 12 deletions(-)
