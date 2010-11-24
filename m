@@ -1,17 +1,15 @@
-From: Colin Cross <ccross-z5hGa2qSFaRBDgjK7y7TUQ@public.gmane.org>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH] cgroup: Convert synchronize_rcu to call_rcu in
 	cgroup_attach_task
-Date: Tue, 23 Nov 2010 12:22:45 -0800
-Message-ID: <AANLkTimJ4QeNRBg4U2V-H8WdxnG-h_8XyZHiC4G6kur___9782.68272378973$1290543814$gmane$org@mail.gmail.com>
+Date: Tue, 23 Nov 2010 17:24:30 -0800
+Message-ID: <AANLkTi=4-OgPUugnUBaqSU3oC=3wxTjAsOB_Ais3Or+i__41026.6441097066$1290562035$gmane$org@mail.gmail.com>
 References: <AANLkTikx6d0_VFtZ4zWQucRCf=vFt7N2M6=0jpnKasEE@mail.gmail.com>
 	<1290398767-15230-1-git-send-email-ccross@android.com>
-	<4CEB77E0.10202@cn.fujitsu.com>
-	<AANLkTimjpW6NZ6fEiVi0VzjkpQGVob4=VHsohXUiDQkJ@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <AANLkTimjpW6NZ6fEiVi0VzjkpQGVob4=VHsohXUiDQkJ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <1290398767-15230-1-git-send-email-ccross-z5hGa2qSFaRBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,74 +19,60 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Colin Cross <ccross-z5hGa2qSFaRBDgjK7y7TUQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Nov 23, 2010 at 12:58 AM, Colin Cross <ccross-z5hGa2qSFaRBDgjK7y7TUQ@public.gmane.org> wrote:
-> On Tue, Nov 23, 2010 at 12:14 AM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
->> 12:06, Colin Cross wrote:
->>> The synchronize_rcu call in cgroup_attach_task can be very
->>> expensive. =A0All fastpath accesses to task->cgroups that expect
->>> task->cgroups not to change already use task_lock() or
->>> cgroup_lock() to protect against updates, and, in cgroup.c,
->>> only the CGROUP_DEBUG files have RCU read-side critical
->>> sections.
->>>
->>> sched.c uses RCU read-side-critical sections on task->cgroups,
->>> but only to ensure that a dereference of task->cgroups does
->>> not become invalid, not that it doesn't change.
->>>
->>
->> Other cgroup subsystems also use rcu_read_lock to access task->cgroups,
->> for example net_cls cgroup and device cgroup.
-> I believe the same comment applies as sched.c, I'll update the commit mes=
-sage.
->
->> I don't think the performance of task attaching is so critically
->> important that we have to use call_rcu() instead of synchronize_rcu()?
-> On my desktop, moving a task between cgroups averages 100 ms, and on
-> an Tegra2 SMP ARM platform it takes 20 ms. =A0Moving a task with many
-> threads can take hundreds of milliseconds or more. =A0With this patch it
-> takes 50 microseconds to move one task, a 400x improvement.
->
->>> This patch adds a function put_css_set_rcu, which delays the
->>> put until after a grace period has elapsed. =A0This ensures that
->>> any RCU read-side critical sections that dereferenced
->>> task->cgroups in sched.c have completed before the css_set is
->>> deleted. =A0The synchronize_rcu()/put_css_set() combo in
->>> cgroup_attach_task() can then be replaced with
->>> put_css_set_rcu().
->>>
->>
->>> Also converts the CGROUP_DEBUG files that access
->>> current->cgroups to use task_lock(current) instead of
->>> rcu_read_lock().
->>>
->>
->> What for? What do we gain from doing this for those debug
->> interfaces?
-> Left over from the previous patch that incorrectly dropped RCU
-> completely. =A0I'll put the rcu_read_locks back.
->
->>> Signed-off-by: Colin Cross <ccross-z5hGa2qSFaRBDgjK7y7TUQ@public.gmane.org>
->>>
->>> ---
->>>
->>> This version fixes the problems with the previous patch by
->>> keeping the use of RCU in cgroup_attach_task, but allowing
->>> cgroup_attach_task to return immediately by deferring the
->>> final put_css_reg to an rcu callback.
->>>
->>> =A0include/linux/cgroup.h | =A0 =A04 +++
->>> =A0kernel/cgroup.c =A0 =A0 =A0 =A0| =A0 58 ++++++++++++++++++++++++++++=
-++++++++++----------
->>> =A02 files changed, 50 insertions(+), 12 deletions(-)
->>
->
+On Sun, Nov 21, 2010 at 8:06 PM, Colin Cross <ccross-z5hGa2qSFaRBDgjK7y7TUQ@public.gmane.org> wrote:
+> The synchronize_rcu call in cgroup_attach_task can be very
+> expensive. =A0All fastpath accesses to task->cgroups that expect
+> task->cgroups not to change already use task_lock() or
+> cgroup_lock() to protect against updates, and, in cgroup.c,
+> only the CGROUP_DEBUG files have RCU read-side critical
+> sections.
 
-This patch has another problem - calling put_css_set_rcu twice before
-an rcu grace period has elapsed would not guarantee the appropriate
-rcu grace period for the second call.  I'll try a new approach, moving
-the parts of put_css_set that need to be protected by rcu into
-free_css_set_rcu.
+I definitely agree with the goal of using lighter-weight
+synchronization than the current synchronize_rcu() call. However,
+there are definitely some subtleties to worry about in this code.
+
+One of the reasons originally for the current synchronization was to
+avoid the case of calling subsystem destroy() callbacks while there
+could still be threads with RCU references to the subsystem state. The
+fact that synchronize_rcu() was called within a cgroup_mutex critical
+section meant that an rmdir (or any other significant cgrooup
+management action) couldn't possibly start until any RCU read sections
+were done.
+
+I suspect that when we moved a lot of the cgroup teardown code from
+cgroup_rmdir() to cgroup_diput() (which also has a synchronize_rcu()
+call in it) this restriction could have been eased, but I think I left
+it as it was mostly out of paranoia that I was missing/forgetting some
+crucial reason for keeping it in place.
+
+I'd suggest trying the following approach, which I suspect is similar
+to what you were suggesting in your last email
+
+1) make find_existing_css_set ignore css_set objects with a zero refcount
+2) change __put_css_set to be simply
+
+if (atomic_dec_and_test(&cg->refcount)) {
+  call_rcu(&cg->rcu_head, free_css_set_rcu);
+}
+
+3) move the rest of __put_css_set into a delayed work struct that's
+scheduled by free_css_set_rcu
+
+4) Get rid of the taskexit parameter - I think we can do that via a
+simple flag that indicates whether any task has ever been moved into
+the cgroup.
+
+5) Put extra checks in cgroup_rmdir() such that if it tries to remove
+a cgroup that has a non-zero refcount, it scans the cgroup's css_sets
+list - if it finds only zero-refcount entries, then wait (via
+synchronize_rcu() or some other appropriate means, maybe reusing the
+CGRP_WAIT_ON_RMDIR mechanism?) until the css_set objects have been
+fully cleaned up and the cgroup's refcounts have been released.
+Otherwise the operation of moving the last thread out of a cgroup and
+immediately deleting the cgroup would very likely fail with an EBUSY
+
+Paul
