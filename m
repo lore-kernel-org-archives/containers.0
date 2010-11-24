@@ -1,259 +1,197 @@
-From: Kapil Arya <kapil@ccs.neu.edu>
-Subject: Re: [Ksummit-2010-discuss] checkpoint-restart: naked patch
-Date: Tue, 23 Nov 2010 22:50:44 -0500
-Message-ID: <AANLkTinXZ-xO0h7DPB7YrdWhDBNmWM7jg74XT9bWrshK@mail.gmail.com>
-References: <4CD72150.9070705@cs.columbia.edu> <4CE3C334.9080401@kernel.org>
- <20101117153902.GA1155@hallyn.com> <4CE3F8D1.10003@kernel.org>
- <20101119041045.GC24031@hallyn.com> <4CE683E1.6010500@kernel.org>
- <4CE69B8C.6050606@cs.columbia.edu> <Pine.LNX.4.64.1011201312470.15662@takamine.ncl.cs.columbia.edu>
- <4CE8228C.3000108@kernel.org> <20101121081853.GA21672@sundance.ccs.neu.edu>
- <20101121082143.GB21672@sundance.ccs.neu.edu> <Pine.LNX.4.64.1011231234410.11731@takamine.ncl.cs.columbia.edu>
+From: Colin Cross <ccross-z5hGa2qSFaRBDgjK7y7TUQ@public.gmane.org>
+Subject: [PATCH 1/2] cgroup: Set CGRP_RELEASABLE when adding to a cgroup
+Date: Tue, 23 Nov 2010 21:37:03 -0800
+Message-ID: <1290577024-12347-1-git-send-email-ccross__39554.8033681282$1290577091$gmane$org@android.com>
+References: <AANLkTi=6nwDCdzDz7E2EaAw2pf3KUVjmKMRqGfz5zVhP@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: QUOTED-PRINTABLE
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <Pine.LNX.4.64.1011231234410.11731@takamine.ncl.cs.columbia.edu>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Oren Laadan <orenl@cs.columbia.edu>
-Cc: Gene Cooperman <gene@ccs.neu.edu>, Tejun Heo <tj@kernel.org>, linux-kernel@vger.kernel.org, xemul@sw.ru, "Eric W. Biederman" <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <AANLkTi=6nwDCdzDz7E2EaAw2pf3KUVjmKMRqGfz5zVhP-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Colin Cross <ccross-z5hGa2qSFaRBDgjK7y7TUQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-(Our first comment below actually replies to an earlier post by Oren. I=
-t seemed
-simpler to combine our comments.)
+Changes the meaning of CGRP_RELEASABLE to be set on any cgroup
+that has ever had a task or cgroup in it, or had css_get called
+on it.  The bit is set in cgroup_attach_task, cgroup_create,
+and __css_get.  It is not necessary to set the bit in
+cgroup_fork, as the task is either in the root cgroup, in
+which can never be released, or the task it was forked from
+already set the bit in croup_attach_task.
 
-> > d. =A0screen and other full-screen text programs These are not the =
-only
-> > examples of difficult interactions with the rest of the world.
->
-> This actually never required a userspace "component" with Zap or linu=
-x-cr (to
-> the best of my knowledge).
+Signed-off-by: Colin Cross <ccross-z5hGa2qSFaRBDgjK7y7TUQ@public.gmane.org>
+---
+ include/linux/cgroup.h |   12 +--------
+ kernel/cgroup.c        |   54 ++++++++++++++++++++---------------------------
+ 2 files changed, 25 insertions(+), 41 deletions(-)
 
-We would guess that Zap would not be able to support screen without a u=
-ser
-space component. The bug occurs when screen is configured to have a sta=
-tus line
-at the bottom. We would be interested if you want to try it and let us =
-know the
-results.
-
-=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
-
-> > > category =A0 =A0 =A0 =A0linux-cr
-> > > userspace
-> > > -----------------------------------------------------------------=
----------------
-> > > PERFORMANCE =A0 =A0 has _zero_ runtime overhead =A0 =A0 visible o=
-verhead due to
-> > > syscalls interposition and state tracking even w/o checkpoints;
-> >
-> > In our experiments so far, the overhead of system calls has been
-> > unmeasurable. =A0We never wrap read() or write(), in order to keep =
-overhead
-> > low. =A0We also never wrap pthread synchronization primitives such =
-as locks,
-> > for the same reason. =A0The other system calls are used much less o=
-ften, and
-> > so the overhead has been too small to measure in our experiments.
->
-> Syscall interception will have visible effect on applications that us=
-e those
-> syscalls. You may not observe overheasd with HPC ones, but do you hav=
-e
-> numbers on server apps ? =A0apps that use fork/clone and pipes extens=
-ively ?
-> threads benchmarks et ? =A0compare that to aboslute zero overhead of =
-linux-cr.
-
-Its true that we haven't taken serious data on overhead with server app=
-s. Is
-there a particular server app that you are thinking of as an example? I=
- would
-expect fork/clone and pipes to be invoked infrequently in the server ap=
-ps and do
-not add measurably to CPU time. In most server apps such as MySQL, it i=
-s
-common to maintain a pool of threads for reuse rather than to repeatedl=
-y call
-clone for a new thread. This is done to ensure that the overhead of the=
- clone
-calls is not significant. I would expect a similar policy for fork and =
-pipes.
-
-<snip>
-
-> > > OPERATION =A0 =A0 =A0 applications run unmodified =A0 =A0 to do c=
-/r, needs
-> > > 'controller' task (launch and manage _entire_ execution) - point =
-of
-> > > failure. =A0restricts how a system is used.
-> >
-> > We'd like to clarify what may be some misconceptions. =A0The DMTCP =
-controller
-> > does not launch or manage any tasks. =A0The DMTCP controller is sta=
-teless,
-> > and is only there to provide a barrier, namespace server, and singl=
-e point
-> > of contact to relay ckpt/restart commands. =A0Recall that the DMTCP
-> > controller handls processes across hosts --- not just on a single h=
-ost.
->
-> The controller is another point of failure. I already pointed that th=
-e
-> (controlled) application crashes when your controller dies, and you m=
-entioned
-> it's a bug that should be fixed. But then there will always be a risk=
- for
-> another, and another ... =A0 You also mentioned that if the controlle=
-r dies,
-> then the app should contionue to run, but will not be checkpointable =
-anymore
-> (IIUC).
->
-> The point is, that the controller is another point of failure, and ma=
-kes the
-> execution/checkpoint intrusive. It also adds security and user-manage=
-ment
-> issues as you'll need one (or more ?) controller per user (right now,=
- it's
-> one for all, no ?). and so on.
-
-Just to clarify, DMTCP uses one coordinator for each checkpointable
-computation. A single user may be running multiple computations with on=
-e
-coordinator for each computation. We don't actually use the word contro=
-ller
-in DMTCP terminology because the coordinator is stateless and so in
-coordinating but not controlling other processes.
-
-> Plus, because the restarted apps get their virtualized IDs from the
-> controller, then they can't now "see" existing/new processes that may=
- get the
-> "same" pids (virtualization is not in the kernel).
-
-This appears to be a misconception. The wrappers within the user proces=
-s
-maintain the pid-translation table for that process. The translation ta=
-ble is
-the translation between the original pid given by the kernel and the cu=
-rrent
-pid set by the kernel on restart. This is handled locally and does not =
-involve
-the coordinator.
-
-In the case of a fork there could be a pid-clash (the original pid
-generated for a
-new process that conflicts with someone else's original pid). However, =
-DMTCP
-handles this by checking within the fork wrapper for a pid-clash. In th=
-e rare
-case of a pid-clash, the child process exits and the parent forks again=
-=2E Same
-applies for clone and any pid clash at restart time.
-
-> > =A0 =A0 Also, in any computation involving multiple processes, _eve=
-ry_ process
-> > =A0 =A0 of the computation is a point of failure. =A0If any process=
- of the
-> > =A0 =A0 computation dies, then the simple application strategy is t=
-o give up
-> > =A0 =A0 and revert to an earlier checkpoint. =A0There are technique=
-s by which an
-> > =A0 =A0 app or DMTCP can recreate certain failed processes. =A0DMTC=
-P doesn't
-> > =A0 =A0 currently recreate a dead controller (no demand for it), bu=
-t it's not
-> > =A0 =A0 hard to do technically.
->
-> The point is that you _add_ a point of failure: you make the "checkpo=
-int"
-> operation a possible reason for the application to crash. In contrast=
-, in
-> linux-cr the checkpoiint is idempotent - nunharmful because it does n=
-ot make
-> the applications execute. Instead, it merely observes their state.
-
-We were speaking above of the case when the process dies during a
-computation. We were not referring to checkpoint time.
-
-<snip>
-
-We would like to add our own comment/question. To set the context we qu=
-ote an
-earlier post:
-
-OL> Even if it did - the question is not how to deal with "glue"
-OL> (you demonstrated quite well how to do that with DMTCP), but
-OL> how should teh basic, core c/r functionality work - which is
-OL> below, and orthogonal to the "glue".
-
-There seems to be an implicit assumption that it is easy to separate th=
-e DMTCP
-"glue code" from the DMTCP C/R engine as separate modules. DMTCP is mod=
-ular but
-it splits the problems into modules along a different line than Linux C=
-/R. We
-look forward to the joint experiment in which we would try to combine D=
-MTCP
-with Linux C/R. This will help answer the question in our mind.
-
-In order to explore the issue, let's imagine that we have a successful =
-merge of
-DMTCP and Linux C/R. The following are some user-space glue issues. It'=
-s not
-obvious to us how the merged software will handle these issues.
-
-1. Sockets -- DMTCP handles all sockets in a common manner through a si=
-ngle
-module. Sockets are checkpointed independently of whether they are loca=
-l or
-remote. In a merger of DMTCP and Linux C/R, what does Linux C/R do when=
- it sees
-remote sockets? Or should DMTCP take down all remote sockets before
-checkpointing? If DMTCP has to do this, it would be less efficient than=
- the
-current design which keeps the remote sockets connections alive during
-checkpoint.
-
-2. XLib and X11-server -- Consider checkpointing a single X11 app witho=
-ut the
-X11-server and without VNC. This is something we intend to add to DMTCP=
- in the
-next few months. We have already mapped out the design in our minds. An=
- X11
-application includes the Xlib library. The data of an X11 window is, by
-default, contained in the X11 library -- not in the X11-server. The app=
-lication
-communicates with the X11-server using socket connections, which would =
-be
-considered a leak by Linux C/R. At restart time, DMTCP will ask the
-X11-server to create a bare window and then make the appropriate Xlib c=
-all to
-repaint the window based on the data stored in the Xlib =A0library.
-=46or checkpoint/resume, the window stays up and does not has to be rep=
-ainted.
-How will the combined DMTCP/Linux C/R work? Will DMTCP have to take
-down the window prior to Linux C/R and paint a new window at resume tim=
-e?
-Doesn't this add inefficiency?
-
-3. Checkpointing a single process (e.g. a bash shell) talking to an xte=
-rm via
-a pty -- We assume that from the viewpoint of Linux C/R a pty is a leak=
- since
-there is a second process operating the master end of the pty. In this
-case we are
-guessing that Linux C/R would checkpoint and restart without the gurant=
-ees of
-reliability. We are guessing that Linux C/R would not save and restore =
-the pty,
-instead it would be the responsibility of DMTCP to restore the current =
-settings
-of the pty (e.g. packet mode vs. regular mode). Is our understanding co=
-rrect?
-Would this work?
-
-Thanks,
-Gene and Kapil
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index ed4ba11..9e13078 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -84,12 +84,6 @@ enum {
+ 	CSS_REMOVED, /* This CSS is dead */
+ };
+ 
+-/* Caller must verify that the css is not for root cgroup */
+-static inline void __css_get(struct cgroup_subsys_state *css, int count)
+-{
+-	atomic_add(count, &css->refcnt);
+-}
+-
+ /*
+  * Call css_get() to hold a reference on the css; it can be used
+  * for a reference obtained via:
+@@ -97,6 +91,7 @@ static inline void __css_get(struct cgroup_subsys_state *css, int count)
+  * - task->cgroups for a locked task
+  */
+ 
++extern void __css_get(struct cgroup_subsys_state *css, int count);
+ static inline void css_get(struct cgroup_subsys_state *css)
+ {
+ 	/* We don't need to reference count the root state */
+@@ -143,10 +138,7 @@ static inline void css_put(struct cgroup_subsys_state *css)
+ enum {
+ 	/* Control Group is dead */
+ 	CGRP_REMOVED,
+-	/*
+-	 * Control Group has previously had a child cgroup or a task,
+-	 * but no longer (only if CGRP_NOTIFY_ON_RELEASE is set)
+-	 */
++	/* Control Group has ever had a child cgroup or a task */
+ 	CGRP_RELEASABLE,
+ 	/* Control Group requires release notifications to userspace */
+ 	CGRP_NOTIFY_ON_RELEASE,
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 66a416b..34e855e 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -338,7 +338,15 @@ static void free_css_set_rcu(struct rcu_head *obj)
+  * compiled into their kernel but not actually in use */
+ static int use_task_css_set_links __read_mostly;
+ 
+-static void __put_css_set(struct css_set *cg, int taskexit)
++/*
++ * refcounted get/put for css_set objects
++ */
++static inline void get_css_set(struct css_set *cg)
++{
++	atomic_inc(&cg->refcount);
++}
++
++static void put_css_set(struct css_set *cg)
+ {
+ 	struct cg_cgroup_link *link;
+ 	struct cg_cgroup_link *saved_link;
+@@ -364,12 +372,8 @@ static void __put_css_set(struct css_set *cg, int taskexit)
+ 		struct cgroup *cgrp = link->cgrp;
+ 		list_del(&link->cg_link_list);
+ 		list_del(&link->cgrp_link_list);
+-		if (atomic_dec_and_test(&cgrp->count) &&
+-		    notify_on_release(cgrp)) {
+-			if (taskexit)
+-				set_bit(CGRP_RELEASABLE, &cgrp->flags);
++		if (atomic_dec_and_test(&cgrp->count))
+ 			check_for_release(cgrp);
+-		}
+ 
+ 		kfree(link);
+ 	}
+@@ -379,24 +383,6 @@ static void __put_css_set(struct css_set *cg, int taskexit)
+ }
+ 
+ /*
+- * refcounted get/put for css_set objects
+- */
+-static inline void get_css_set(struct css_set *cg)
+-{
+-	atomic_inc(&cg->refcount);
+-}
+-
+-static inline void put_css_set(struct css_set *cg)
+-{
+-	__put_css_set(cg, 0);
+-}
+-
+-static inline void put_css_set_taskexit(struct css_set *cg)
+-{
+-	__put_css_set(cg, 1);
+-}
+-
+-/*
+  * compare_css_sets - helper function for find_existing_css_set().
+  * @cg: candidate css_set being tested
+  * @old_cg: existing css_set for a task
+@@ -1801,7 +1787,7 @@ int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *tsk)
+ 		if (ss->attach)
+ 			ss->attach(ss, cgrp, oldcgrp, tsk, false);
+ 	}
+-	set_bit(CGRP_RELEASABLE, &oldcgrp->flags);
++	set_bit(CGRP_RELEASABLE, &cgrp->flags);
+ 	synchronize_rcu();
+ 	put_css_set(cg);
+ 
+@@ -3427,6 +3413,8 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
+ 	if (err < 0)
+ 		goto err_remove;
+ 
++	set_bit(CGRP_RELEASABLE, &parent->flags);
++
+ 	/* The cgroup directory was pre-locked for us */
+ 	BUG_ON(!mutex_is_locked(&cgrp->dentry->d_inode->i_mutex));
+ 
+@@ -3645,7 +3633,6 @@ again:
+ 	cgroup_d_remove_dir(d);
+ 	dput(d);
+ 
+-	set_bit(CGRP_RELEASABLE, &parent->flags);
+ 	check_for_release(parent);
+ 
+ 	/*
+@@ -4240,7 +4227,7 @@ void cgroup_exit(struct task_struct *tsk, int run_callbacks)
+ 	tsk->cgroups = &init_css_set;
+ 	task_unlock(tsk);
+ 	if (cg)
+-		put_css_set_taskexit(cg);
++		put_css_set(cg);
+ }
+ 
+ /**
+@@ -4410,6 +4397,14 @@ static void check_for_release(struct cgroup *cgrp)
+ }
+ 
+ /* Caller must verify that the css is not for root cgroup */
++void __css_get(struct cgroup_subsys_state *css, int count)
++{
++	atomic_add(count, &css->refcnt);
++	set_bit(CGRP_RELEASABLE, &css->cgroup->flags);
++}
++EXPORT_SYMBOL_GPL(__css_get);
++
++/* Caller must verify that the css is not for root cgroup */
+ void __css_put(struct cgroup_subsys_state *css, int count)
+ {
+ 	struct cgroup *cgrp = css->cgroup;
+@@ -4417,10 +4412,7 @@ void __css_put(struct cgroup_subsys_state *css, int count)
+ 	rcu_read_lock();
+ 	val = atomic_sub_return(count, &css->refcnt);
+ 	if (val == 1) {
+-		if (notify_on_release(cgrp)) {
+-			set_bit(CGRP_RELEASABLE, &cgrp->flags);
+-			check_for_release(cgrp);
+-		}
++		check_for_release(cgrp);
+ 		cgroup_wakeup_rmdir_waiter(cgrp);
+ 	}
+ 	rcu_read_unlock();
+-- 
+1.7.3.1
