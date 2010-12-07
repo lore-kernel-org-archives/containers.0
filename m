@@ -1,62 +1,89 @@
-From: Colin Cross <ccross-z5hGa2qSFaRBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 1/2] cgroup: Set CGRP_RELEASABLE when adding to a cgroup
-Date: Thu, 2 Dec 2010 19:07:12 -0800
-Message-ID: <AANLkTim67fLN+PYz-P0TM0QRmvQKP80tyXSNKNSZhFZ2__37701.6762890436$1291345754$gmane$org@mail.gmail.com>
-References: <AANLkTi=6nwDCdzDz7E2EaAw2pf3KUVjmKMRqGfz5zVhP@mail.gmail.com>
-	<1290577024-12347-1-git-send-email-ccross@android.com>
-	<AANLkTimFqJ+qPidS_81DKd7ExSxDG7GNi0gjcUEEq_7j@mail.gmail.com>
-	<AANLkTimwvP2Ey1gJ6AbbFNtDKjGZt4cwqL=08nGBa_PT@mail.gmail.com>
-	<AANLkTimJA52-GTM=AzS+tkOugrsi6Keh0_j87vK1BkGv@mail.gmail.com>
+From: Pavel Emelyanov <xemul@parallels.com>
+Subject: [PATCH] user_ns: Improve the user_ns on-the-slab packaging
+Date: Tue, 07 Dec 2010 17:12:33 +0300
+Message-ID: <4CFE40D1.5000309@parallels.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <AANLkTimJA52-GTM=AzS+tkOugrsi6Keh0_j87vK1BkGv-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner@vger.kernel.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>, Linux Containers <containers@lists.osdl.org>
+Cc: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, "Serge E. Hallyn" <serge@hallyn.com>
 List-Id: containers.vger.kernel.org
 
-On Wed, Nov 24, 2010 at 4:21 PM, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
-> On Wed, Nov 24, 2010 at 4:11 PM, Colin Cross <ccross-z5hGa2qSFaRBDgjK7y7TUQ@public.gmane.org> wrote:
->>>
->>> We seem to have lost some notify_on_release() checks - maybe move that
->>> to check_for_release()?
->> check_for_release immediately calls cgroup_is_releasable, which checks
->> for the same bit as notify_on_release. =A0There's no need for
->> CGRP_RELEASABLE to depend on notify_on_release, or to check
->> notify_on_release before calling check_for_release.
->
-> OK.
->
->> I matched the existing behavior, __css_put sets CGRP_RELEASABLE when
->> refcnt goes to 0.
->>
->
-> Ah, we do appear to have had that behaviour for a while. I don't
-> remember the justification for it at this point :-)
->
->> check_for_release is only called from __css_put, cgroup_rmdir, and
->> __put_css_set (or free_css_set_work after my second patch). =A0Those all
->> imply that __css_get, get_css_set, or cgroup_create have been
->> previously called, which are the functions that set CGRP_RELEASABLE.
->
-> Not in one case - if we create a new cgroup and try to move a thread
-> into it, but the thread is exiting as we move it, we'll call
-> put_css_set() on the new css_set, which will drop the refcount on the
-> target cgroup back to 0. We wouldn't want the auto-release
-> notification to kick in in that situation, I think.
+Currently on 64-bit arch the user_namespace is 2096 and when
+being kmalloc-ed it resides on a 4k slab wasting 2003 bytes.
 
-Clearing the CGRP_RELEASABLE bit any time after the tests in
-check_for_release introduces a race if __css_get is called between the
-check and clearing the bit - the cgroup will have an entry, but the
-bit will not be set.  Without additional locking in __css_get, I don't
-see any way to safely clear CGRP_RELEASABLE.
+If we allocate a separate cache for it and reduce the hash size
+from 128 to 64 chains the packaging becomes *much* better - the
+struct is 1072 bytes and the hole between is 98 bytes.
+
+Signed-off-by: Pavel Emelyanov <xemul@openvz.org>
+
+---
+
+diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+index 8178156..faf4679 100644
+--- a/include/linux/user_namespace.h
++++ b/include/linux/user_namespace.h
+@@ -6,7 +6,7 @@
+ #include <linux/sched.h>
+ #include <linux/err.h>
+ 
+-#define UIDHASH_BITS	(CONFIG_BASE_SMALL ? 3 : 8)
++#define UIDHASH_BITS	(CONFIG_BASE_SMALL ? 3 : 7)
+ #define UIDHASH_SZ	(1 << UIDHASH_BITS)
+ 
+ struct user_namespace {
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index 2591583..8aafa80 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -12,6 +12,8 @@
+ #include <linux/highuid.h>
+ #include <linux/cred.h>
+ 
++static struct kmem_cache *user_ns_cachep __read_mostly;
++
+ /*
+  * Create a new user namespace, deriving the creator from the user in the
+  * passed credentials, and replacing that user with the new root user for the
+@@ -26,7 +28,7 @@ int create_user_ns(struct cred *new)
+ 	struct user_struct *root_user;
+ 	int n;
+ 
+-	ns = kmalloc(sizeof(struct user_namespace), GFP_KERNEL);
++	ns = kmem_cache_alloc(user_ns_cachep, GFP_KERNEL);
+ 	if (!ns)
+ 		return -ENOMEM;
+ 
+@@ -38,7 +40,7 @@ int create_user_ns(struct cred *new)
+ 	/* Alloc new root user.  */
+ 	root_user = alloc_uid(ns, 0);
+ 	if (!root_user) {
+-		kfree(ns);
++		kmem_cache_free(user_ns_cachep, ns);
+ 		return -ENOMEM;
+ 	}
+ 
+@@ -71,7 +73,7 @@ static void free_user_ns_work(struct work_struct *work)
+ 	struct user_namespace *ns =
+ 		container_of(work, struct user_namespace, destroyer);
+ 	free_uid(ns->creator);
+-	kfree(ns);
++	kmem_cache_free(user_ns_cachep, ns);
+ }
+ 
+ void free_user_ns(struct kref *kref)
+@@ -126,3 +128,11 @@ gid_t user_ns_map_gid(struct user_namespace *to, const struct cred *cred, gid_t
+ 	/* No useful relationship so no mapping */
+ 	return overflowgid;
+ }
++
++static __init int user_namespaces_init(void)
++{
++	user_ns_cachep = KMEM_CACHE(user_namespace, SLAB_PANIC);
++	return 0;
++}
++
++__initcall(user_namespaces_init);
