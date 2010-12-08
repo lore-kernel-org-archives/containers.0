@@ -1,12 +1,15 @@
-From: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Containers HOWTO?  (Where do I start?)
-Date: Wed, 8 Dec 2010 08:36:05 +0000
-Message-ID: <7E28E74ACE78074AAD1BDD3E455CF87493D3@US-EXCH1.sw.swsoft.com>
+From: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Subject: Re: trying to build simple checkpoint/restart recipes
+Date: Wed, 8 Dec 2010 08:52:45 -0600
+Message-ID: <20101208145245.GB8316@hallyn.com>
+References: <20101208045322.GA17602@mail.hallyn.com>
+	<20101208055320.GH10470@count0.beaverton.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: en-US
+Content-Disposition: inline
+In-Reply-To: <20101208055320.GH10470-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,17 +19,62 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-I've been poking at the container code and reading the openvz wiki and the pages linked from http://lxc.sourceforge.net/index.php/about/kernel-namespaces/ and random other things Google finds like http://www.howtoforge.com/how-to-do-live-migration-of-openvz-containers but I have yet to find a good "start here" document for what I want to do.
+Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> > So far, so good.  Note that I couldn't use upstart for my init bc upstart
+> > uses inotify, which we don't yet checkpoint.  The kernel is compiled without
+> 
+> Interesting, I didn't know that. What does upstart use inotify for?
 
-I want to build a containers test environment from source.  I.E. I want to configure and build a kernel, build and configure my own root filesystem, invoke a chroot-with-benefits binary to set up a new init process in a container, and run test programs in the container.
+Dunno :)  I was quite put out though.
 
-I've found a lot of articles on how to use a distro to automate away the details, and I've found articles on several of the individual components, but if there's a design overview or a HOWTO on adding container support to a system you built yourself, I haven't found it yet.  (A case insensitive search of Documentation didn't find a filename with "contain" or "vz" in it.)
+> > There are two issues:
+> > 
+> > 1. how to re-create the mounts.  Kernel doesn't do it yet.  There
+> >    isn't (that I know of) a clean way to hook lxc-restart to do it.
+> >    Comments?
+> 
+> It's incomplete but I think you can save the most important portions of
+> a mount namespace with a simple 1-line command:
+> 
+> lxc-attach -n cr1 cat /proc/self/mountinfo > cr1.mountinfo
+> 
+> It's incomplete because:
+> 
+> 	1. It does not adequately address cross-mount-ns bind mounts (IIRC).
+> 
+> 	2. It won't work for nested containers (though I don't know if
+> 		lxc supports this already it's not *too* far fetched
+> 		to expect folks will ask for it in the future). We can
+> 		extend the hack to deal with this by making a small
+> 		change in sys_checkpoint but I can't see how to fix #1
+> 		without doing it all in-kernel anyway.
 
-I have no shortage of things to read, but it's all really unfocused.  Any hints to help narrow my search?
+Heck, for these examples I don't mind just having a sort of dummy
+fstab file which both the dummy init and restart use.
 
-Thanks,
+> The restoration of the mounts is not scriptable however. It involves
+> parsing the mountinfo file and coordinating the mounts with those done by
+> lxc itself during lxc-restart. I honestly haven't looked at that closely
 
-Rob
+I'd be fine with requiring some bit of hand-parsing.  But right, even
+once we get a list of the mounts to be restored, I don't know of any
+good way to get those mounts re-created at the right time.
+
+I suppose I could hack lxc-restart to do it.  But I'm sort of hoping we
+can get something less hacked and more true to the 'real' upstream
+code.
+
+> enough yet to say how pretty/ugly that'd be but it entails
+> modifications to lxc-restart itself. And since #1 above would still
+> be an issue I'm not sure it's worth doing it that way.
+
+So do you know of anyone who's been working on re-creation of mounts
+in the kernel?  If not, what have you been doing, hand-scripting
+all container creation, checkpoint, and restart?
+
+thanks,
+-serge
