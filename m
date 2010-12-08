@@ -1,15 +1,14 @@
 From: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: RE: trying to build simple checkpoint/restart recipes
-Date: Wed, 8 Dec 2010 21:10:45 +0000
-Message-ID: <7E28E74ACE78074AAD1BDD3E455CF8749422@US-EXCH1.sw.swsoft.com>
-References: <20101208045322.GA17602@mail.hallyn.com>
-	<20101208055320.GH10470@count0.beaverton.ibm.com>,
-	<20101208145245.GB8316@hallyn.com>
+Subject: RE: Containers HOWTO?  (Where do I start?)
+Date: Wed, 8 Dec 2010 21:17:45 +0000
+Message-ID: <7E28E74ACE78074AAD1BDD3E455CF874942D@US-EXCH1.sw.swsoft.com>
+References: <7E28E74ACE78074AAD1BDD3E455CF87493D3@US-EXCH1.sw.swsoft.com>,
+	<20101208150239.GC8316@hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20101208145245.GB8316-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20101208150239.GC8316-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Content-Language: en-US
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -20,43 +19,39 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-> > The restoration of the mounts is not scriptable however. It involves
-> > parsing the mountinfo file and coordinating the mounts with those done by
-> > lxc itself during lxc-restart. I honestly haven't looked at that closely
+> A few places to start since you want to start from the ground up:
 >
-> I'd be fine with requiring some bit of hand-parsing.  But right, even
-> once we get a list of the mounts to be restored, I don't know of any
-> good way to get those mounts re-created at the right time.
+> 1. man clone
 
-Mount code is one of my old stomping grounds from back when I wrote
-the busybox mount and switch_root commands and had to learn more
-implementation details about it than I ever wanted to know. :)
+Yup, got that one already.
 
-I never could find a proper mount spec, and kept meaning to write one,
-but I blathered about some of the less obvious details here:
+> 2. man pivot_root
 
-  http://www.mail-archive.com/busybox-9GAsQqxh4YTR7s880joybQ@public.gmane.org/msg07013.html
+I wrote the busybox switch_root implementation, which meant I had to
+really _understand_ the full horror of the pivot_root implementation
+and why it _wasn't_ switch_root (examining every process in the system
+so you can move their chroot entry for kernel threads and daemons is
+really ugly, but you can't unmount a filesystem that has processes
+pinning it).  Although come to think of it I thought kernel threads were
+parked in initramfs these days?  (Doesn't initrd overmount initramfs?
+Now I have to go look at what the code's doing again...)
 
-There are four top level categories of filesystem:  Block backed, ram backed,
-pipe backed (network and fuse and so on), and synthetic (sysfs, procfs,
-devtmpfs...).  And that's not counting bind mounts (which are internal
-to the VFS and not really a filesystem), and loopback devices (which are
-sort of the _opposite_ of a filesystem)...
+But how does pivot_root enter into this when you haven't got an initrd to
+free?  I thought when you killed a container's init process that killed all
+the children and freed the resources, so how does pivot_root enter
+into this?  (You don't reparent existing processes, you span new ones,
+right?)
 
-> I suppose I could hack lxc-restart to do it.  But I'm sort of hoping we
-> can get something less hacked and more true to the 'real' upstream
-> code.
+> http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=tree;f=Documentation/cgroups;h=8c6b3f6c41a929f8db38b51a39442387ecbd5986;hb=HEAD
 
-Which upstream code?
+Ah, _that_ is what i was looking for.  Documentation/cgroups.
 
-> So do you know of anyone who's been working on re-creation of mounts
-> in the kernel?  If not, what have you been doing, hand-scripting
-> all container creation, checkpoint, and restart?
+I'll look at #3 and #5 after reading that.
 
-I express interest in this topic.
+Thanks,
 
 Rob
