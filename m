@@ -1,17 +1,12 @@
-From: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Subject: Re: trying to build simple checkpoint/restart recipes
-Date: Wed, 8 Dec 2010 16:26:16 -0600
-Message-ID: <20101208222616.GB7952@hallyn.com>
-References: <20101208045322.GA17602@mail.hallyn.com>
-	<20101208055320.GH10470@count0.beaverton.ibm.com>
-	<20101208145245.GB8316@hallyn.com>
-	<7E28E74ACE78074AAD1BDD3E455CF8749422@US-EXCH1.sw.swsoft.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: C/R of termios
+Date: Wed, 8 Dec 2010 17:28:20 -0800
+Message-ID: <20101209012820.GA10001@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <7E28E74ACE78074AAD1BDD3E455CF8749422-w6YtkvcGFufufkSEj+1U85Z3qXmFLfmx@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,68 +16,90 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Rob Landley (rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org):
-> > > The restoration of the mounts is not scriptable however. It involves
-> > > parsing the mountinfo file and coordinating the mounts with those done by
-> > > lxc itself during lxc-restart. I honestly haven't looked at that closely
-> >
-> > I'd be fine with requiring some bit of hand-parsing.  But right, even
-> > once we get a list of the mounts to be restored, I don't know of any
-> > good way to get those mounts re-created at the right time.
-> 
-> Mount code is one of my old stomping grounds from back when I wrote
-> the busybox mount and switch_root commands and had to learn more
-> implementation details about it than I ever wanted to know. :)
-> 
-> I never could find a proper mount spec, and kept meaning to write one,
-> but I blathered about some of the less obvious details here:
-> 
->   http://www.mail-archive.com/busybox-9GAsQqxh4YTR7s880joybQ@public.gmane.org/msg07013.html
+Oren,
 
-Bookmarked :)
+Any reason we only checkpoint/restore a 'struct termio' instead of a
+'struct termios' ?
 
-> There are four top level categories of filesystem:  Block backed, ram backed,
-> pipe backed (network and fuse and so on), and synthetic (sysfs, procfs,
-> devtmpfs...).  And that's not counting bind mounts (which are internal
-> to the VFS and not really a filesystem), and loopback devices (which are
-> sort of the _opposite_ of a filesystem)...
+AFAICT, 'struct termios' seems to supersede 'struct termio' (i.e includes
+all fields of 'struct termio' plus more). The TCGETS ioctl and tcgetattr()
+interface return a 'struct termios' to user space.
 
-Right, for starters handling only bind mounts would be useful.  It's feasible
-for userspace to rsync the contents of tmpfs filesystems during checkpoint
-and before restart - but it's harder to find the right place for the bind
-mounts to get re-attached if done in userspace, because we don't want to
-do it too early and risk having mount leaks (so we can't checkpoint later),
-and it's hard to coordinate doing it later since someone inside the container
-has to do it (unlesss, again, we have leaks - well, or maybe having
-MNT_SHARED / for the container would suffice).
+The man page termio(7) says the 'struct termio' interface is obsolete.
 
-> > I suppose I could hack lxc-restart to do it.  But I'm sort of hoping we
-> > can get something less hacked and more true to the 'real' upstream
-> > code.
-> 
-> Which upstream code?
+The kernel uses 'struct ktermios' to represent the attributes internally.
+So shouldn't we checkpoint/restore the 'struct ktermios' object ?
 
-Heh, I should have said upstream-destined code.  Referring to
-lxc.sf.net and the kernel at www.linux-cr.org.
+If application uses legacy interface (TCGETA/TCSETA with 'struct termio')
+the kernel converts the 'struct ktermios' to the 'struct termio' in
+kernel_termios_to_user_termio(). So we should be fine if we C/R the
+ktermios object right ?
 
-> > So do you know of anyone who's been working on re-creation of mounts
-> > in the kernel?  If not, what have you been doing, hand-scripting
-> > all container creation, checkpoint, and restart?
-> 
-> I express interest in this topic.
+Here is a quick hack, just for reference. With this hack, I can C/R an
+app that does tcgetattr() of a pty before/after checkpoint.
 
-Awesome.  Note that we've had lots of prior discussions about the
-topic, it's just that we never came to a conclusion, so some fresh
-experienced blood would be very helpful.
-
-The last time I went into detail on the topic was at
-http://www.mail-archive.com/devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org/msg21418.html
-while some older notes on the simpler topics are at
-https://ckpt.wiki.kernel.org/index.php/Mounts
-
-thanks,
--serge
+---
+diff --git a/arch/x86/include/asm/checkpoint_hdr.h b/arch/x86/include/asm/checkpoint_hdr.h
+index 0505329..2778aed 100644
+--- a/arch/x86/include/asm/checkpoint_hdr.h
++++ b/arch/x86/include/asm/checkpoint_hdr.h
+@@ -55,6 +55,7 @@ enum {
+ /* arch dependent constants */
+ #define CKPT_ARCH_NSIG  64
+ #define CKPT_TTY_NCC  8
++#define CKPT_TTY_NCCS  19
+ 
+ #ifdef __KERNEL__
+ 
+@@ -68,6 +69,10 @@ enum {
+ #error CKPT_TTY_NCC size is wrong per asm-generic/termios.h
+ #endif
+ 
++#if CKPT_TTY_NCCS != NCCS
++#error CKPT_TTY_NCCS size is wrong per asm-generic/termbits.h
++#endif
++
+ #endif /* __KERNEL__ */
+ 
+ 
+diff --git a/drivers/char/tty_io.c b/drivers/char/tty_io.c
+index 3a2c770..2b3f001 100644
+--- a/drivers/char/tty_io.c
++++ b/drivers/char/tty_io.c
+@@ -2882,7 +2882,7 @@ static int checkpoint_tty(struct ckpt_ctx *ctx, void *ptr)
+ 	h->termios.c_oflag = tty->termios->c_oflag;
+ 	h->termios.c_cflag = tty->termios->c_cflag;
+ 	h->termios.c_lflag = tty->termios->c_lflag;
+-	memcpy(h->termios.c_cc, tty->termios->c_cc, NCC);
++	memcpy(h->termios.c_cc, tty->termios->c_cc, NCCS);
+ 	h->winsize.ws_row = tty->winsize.ws_row;
+ 	h->winsize.ws_col = tty->winsize.ws_col;
+ 	h->winsize.ws_ypixel = tty->winsize.ws_ypixel;
+@@ -3099,7 +3099,7 @@ static struct tty_struct *do_restore_tty(struct ckpt_ctx *ctx)
+ 	tty->termios->c_oflag = h->termios.c_oflag;
+ 	tty->termios->c_cflag = h->termios.c_cflag;
+ 	tty->termios->c_lflag = h->termios.c_lflag;
+-	memcpy(tty->termios->c_cc, h->termios.c_cc, NCC);
++	memcpy(tty->termios->c_cc, h->termios.c_cc, NCCS);
+ 	tty->winsize.ws_row = h->winsize.ws_row;
+ 	tty->winsize.ws_col = h->winsize.ws_col;
+ 	tty->winsize.ws_ypixel = h->winsize.ws_ypixel;
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 4303235..e432b04 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -1143,7 +1143,9 @@ struct ckpt_hdr_tty {
+ 		__u16 c_cflag;
+ 		__u16 c_lflag;
+ 		__u8 c_line;
+-		__u8 c_cc[CKPT_TTY_NCC];
++		__u8 c_cc[CKPT_TTY_NCCS];
++		__u32 c_ispeed;
++		__u32 c_ospeed;
+ 	} __attribute__((aligned(8))) termios;
+ 
+ 	/* winsize */
