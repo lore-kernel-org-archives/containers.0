@@ -1,11 +1,12 @@
-From: Mail Delivery Subsystem <mailer-daemon-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
-Subject: Delivery Status Notification (Failure)
-Date: Thu, 09 Dec 2010 17:01:14 +0000
-Message-ID: <0016e64f90487c98500496fd2f51@google.com>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: [RFC PATCH 1/4] Add a user_namespace as creator/owner of uts_namespace
+Date: Thu, 9 Dec 2010 17:20:27 +0000
+Message-ID: <20101209172027.GA10085__30344.0119293102$1291915266$gmane$org@mail.hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,35 +16,131 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kees Cook <kees.cook-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Delivery to the following recipient failed permanently:
+copy_process() handles CLONE_NEWUSER before the rest of the
+namespaces.  So in the case of clone(CLONE_NEWUSER|CLONE_NEWUTS)
+the new uts namespace will have the new user namespace as its
+owner.  That is what we want, since we want root in that new
+userns to be able to have privilege over it.
 
-     containerproject-sIHpD95uFFcdnm+yROfE0A@public.gmane.org
+Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+---
+ include/linux/utsname.h |    3 +++
+ init/version.c          |    2 ++
+ kernel/nsproxy.c        |    3 +++
+ kernel/user.c           |    8 ++++++--
+ kernel/utsname.c        |    4 ++++
+ 5 files changed, 18 insertions(+), 2 deletions(-)
 
-Technical details of permanent failure: 
-Message rejected. Please visit http://www.google.com/support/a/bin/answer.py?hl=en&answer=168383 to review our Bulk Email Senders Guidelines.
-
------ Original message -----
-
-Received: by 10.90.82.3 with SMTP id f3mr11660494agb.83.1291914074256;
-        Thu, 09 Dec 2010 09:01:14 -0800 (PST)
-Received: by 10.90.82.3 with SMTP id f3mr11660493agb.83.1291914074198;
-        Thu, 09 Dec 2010 09:01:14 -0800 (PST)
-Return-Path: <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
-Received: from microsof-0bcf7e (109-167-41-234.dynamic.peoplenet.ua [109.167.41.234])
-        by mx.google.com with SMTP id g26si4811693yhc.140.2010.12.09.09.01.08;
-        Thu, 09 Dec 2010 09:01:14 -0800 (PST)
-Received-SPF: fail (google.com: domain of containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org does not designate 109.167.41.234 as permitted sender) client-ip=109.167.41.234;
-Authentication-Results: mx.google.com; spf=hardfail (google.com: domain of containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org does not designate 109.167.41.234 as permitted sender) smtp.mail=containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
-Message-Id: <4d010b5a.a635ec0a.60f5.4df4SMTPIN_ADDED-ATjtLOhZ0NVl57MIdRCFDg@public.gmane.org>
-From: Swiss Watches Rolex <no-replay-v7eC1BmvSlkAvxtiuMwx3w@public.gmane.org>
-To: containerproject-sIHpD95uFFcdnm+yROfE0A@public.gmane.org
-DATE: Thu, 9 Dec 2010 07:00:01 +0200
-Subject: containerproject-sIHpD95uFFcdnm+yROfE0A@public.gmane.org Swiss Watches *ROLEX*  -20%
-Mime-Version: 1.0
-Content-type: text/html; charset="utf-8"
-Content-Transfer-Encoding: 7bit
-
------ End of message -----
+diff --git a/include/linux/utsname.h b/include/linux/utsname.h
+index 69f3997..85171be 100644
+--- a/include/linux/utsname.h
++++ b/include/linux/utsname.h
+@@ -37,9 +37,12 @@ struct new_utsname {
+ #include <linux/nsproxy.h>
+ #include <linux/err.h>
+ 
++struct user_namespace;
++
+ struct uts_namespace {
+ 	struct kref kref;
+ 	struct new_utsname name;
++	struct user_namespace *user_ns;
+ };
+ extern struct uts_namespace init_uts_ns;
+ 
+diff --git a/init/version.c b/init/version.c
+index 79fb8c2c..9eb19fb 100644
+--- a/init/version.c
++++ b/init/version.c
+@@ -21,6 +21,7 @@ extern int version_string(LINUX_VERSION_CODE);
+ int version_string(LINUX_VERSION_CODE);
+ #endif
+ 
++extern struct user_namespace init_user_ns;
+ struct uts_namespace init_uts_ns = {
+ 	.kref = {
+ 		.refcount	= ATOMIC_INIT(2),
+@@ -33,6 +34,7 @@ struct uts_namespace init_uts_ns = {
+ 		.machine	= UTS_MACHINE,
+ 		.domainname	= UTS_DOMAINNAME,
+ 	},
++	.user_ns = &init_user_ns,
+ };
+ EXPORT_SYMBOL_GPL(init_uts_ns);
+ 
+diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+index f74e6c0..5a22dcf 100644
+--- a/kernel/nsproxy.c
++++ b/kernel/nsproxy.c
+@@ -74,6 +74,9 @@ static struct nsproxy *create_new_namespaces(unsigned long flags,
+ 		err = PTR_ERR(new_nsp->uts_ns);
+ 		goto out_uts;
+ 	}
++	put_user_ns(new_nsp->uts_ns->user_ns);
++	new_nsp->uts_ns->user_ns = task_cred_xxx(tsk, user)->user_ns;
++	get_user_ns(new_nsp->uts_ns->user_ns);
+ 
+ 	new_nsp->ipc_ns = copy_ipcs(flags, tsk->nsproxy->ipc_ns);
+ 	if (IS_ERR(new_nsp->ipc_ns)) {
+diff --git a/kernel/user.c b/kernel/user.c
+index 2c7d8d5..5125681 100644
+--- a/kernel/user.c
++++ b/kernel/user.c
+@@ -17,9 +17,13 @@
+ #include <linux/module.h>
+ #include <linux/user_namespace.h>
+ 
++/*
++ * userns count is 1 for root user, 1 for init_uts_ns,
++ * and 1 for... ?
++ */
+ struct user_namespace init_user_ns = {
+ 	.kref = {
+-		.refcount	= ATOMIC_INIT(2),
++		.refcount	= ATOMIC_INIT(3),
+ 	},
+ 	.creator = &root_user,
+ };
+@@ -47,7 +51,7 @@ static struct kmem_cache *uid_cachep;
+  */
+ static DEFINE_SPINLOCK(uidhash_lock);
+ 
+-/* root_user.__count is 2, 1 for init task cred, 1 for init_user_ns->creator */
++/* root_user.__count is 2, 1 for init task cred, 1 for init_user_ns->user_ns */
+ struct user_struct root_user = {
+ 	.__count	= ATOMIC_INIT(2),
+ 	.processes	= ATOMIC_INIT(1),
+diff --git a/kernel/utsname.c b/kernel/utsname.c
+index 8a82b4b..a7b3a8d 100644
+--- a/kernel/utsname.c
++++ b/kernel/utsname.c
+@@ -14,6 +14,7 @@
+ #include <linux/utsname.h>
+ #include <linux/err.h>
+ #include <linux/slab.h>
++#include <linux/user_namespace.h>
+ 
+ static struct uts_namespace *create_uts_ns(void)
+ {
+@@ -40,6 +41,8 @@ static struct uts_namespace *clone_uts_ns(struct uts_namespace *old_ns)
+ 
+ 	down_read(&uts_sem);
+ 	memcpy(&ns->name, &old_ns->name, sizeof(ns->name));
++	ns->user_ns = old_ns->user_ns;
++	get_user_ns(ns->user_ns);
+ 	up_read(&uts_sem);
+ 	return ns;
+ }
+@@ -71,5 +74,6 @@ void free_uts_ns(struct kref *kref)
+ 	struct uts_namespace *ns;
+ 
+ 	ns = container_of(kref, struct uts_namespace, kref);
++	put_user_ns(ns->user_ns);
+ 	kfree(ns);
+ }
+-- 
+1.7.2.3
