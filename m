@@ -1,16 +1,12 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [RFC PATCH 1/4] Add a user_namespace as creator/owner of
-	uts_namespace
-Date: Fri, 10 Dec 2010 17:29:10 -0800
-Message-ID: <m1r5dpxfkp.fsf__48912.603283725$1292031112$gmane$org@fess.ebiederm.org>
-References: <20101209172027.GA10085@mail.hallyn.com>
-	<20101211005044.GA25513@p183.telecom.by>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [PATCH][cr]: Ghost tasks must not be detached in kernel
+Date: Fri, 10 Dec 2010 19:33:15 -0800
+Message-ID: <20101211033315.GA12292@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20101211005044.GA25513-ymPLPWd2ZGbSs3Ovhc6N8g@public.gmane.org> (Alexey Dobriyan's
-	message of "Sat, 11 Dec 2010 02:50:44 +0200")
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,32 +16,67 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kees Cook <kees.cook-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
+Oren,
 
-> On Thu, Dec 09, 2010 at 05:20:27PM +0000, Serge E. Hallyn wrote:
->>  struct uts_namespace {
->>  	struct kref kref;
->>  	struct new_utsname name;
->> +	struct user_namespace *user_ns;
->
-> You're going to add these to the rest?
+As discussed (a while ago)
 
-That is the idea.
+https://lists.linux-foundation.org/pipermail/containers/2010-November/025905.html
 
-namespaces and other objects of interest will keep a user_ns
-pointer referencing the context in which they were created.
+here is a patch. I will send a follow-on user-cr patch to mark
+the task detached in user-space.
 
-I took a quick look and all of the namespaces seem to have capability
-checks that we want to allow if you are in the proper context.
+---
 
-What is particularly interesting is that this makes a root user in
-something other than the init_user_ns with all capabilities essentially
-a normal user because capable(CAP_XXX) becomes capable(&init_user_ns, CAP_XXX).
-And as such will always fail except where we have updated the capability
-checks.
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Date: Fri, 10 Dec 2010 18:37:17 -0800
+Subject: [PATCH 1/1] Ghost tasks must not be detached in kernel
 
-Eric
+Ghost tasks are "temporary" tasks created during sys_restart() to
+restore "orphaned" sessions/process groups (i.e. those in which the
+original session/pgrp leader had exited before checkpoint but other
+processes exist in that session/pgrp).
+
+We only create the ghost task so we have a valid session/pgrp that
+the other processes in the session/pgrp can use. Once those other
+processes are created, the ghost tasks must silently vanish (without
+sending another SIGCHLD).
+
+do_ghost_task() was setting the exit_signal to -1 so the ghosts don't
+send a signal. But rather than set the ->exit_signal here, the caller
+(i.e user-space) can create the ghost task by explicitly setting the
+CSIGNAL mask to 0xFF. i.e it is not something the we need to do in the
+kernel.
+
+The downside of marking the task detached in do_ghost_task() is that
+with current/older kernels container-init does not wait for detached
+tasks.  See:
+
+	http://lkml.org/lkml/2010/6/16/272
+	http://lkml.org/lkml/2010/7/12/213
+
+This can lead to a kernel crash if the container-init pre-deceases a
+ghost task.
+
+Signed-off-by: Sukadev Bhattiprolu (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org)
+---
+ kernel/checkpoint/restart.c |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+diff --git a/kernel/checkpoint/restart.c b/kernel/checkpoint/restart.c
+index 17270b8..2bb7197 100644
+--- a/kernel/checkpoint/restart.c
++++ b/kernel/checkpoint/restart.c
+@@ -972,7 +972,6 @@ static int do_ghost_task(void)
+ 	if (ret < 0)
+ 		ckpt_err(ctx, ret, "ghost restart failed\n");
+ 
+-	current->exit_signal = -1;
+ 	restore_debug_exit(ctx);
+ 	ckpt_ctx_put(ctx);
+ 	do_exit(0);
+-- 
+1.6.0.4
