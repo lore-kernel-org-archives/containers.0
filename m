@@ -1,13 +1,15 @@
-From: ccmail111 <ccmail111-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>
+From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Subject: Re: cgroup tasks file error
-Date: Tue, 14 Dec 2010 09:33:18 -0800 (PST)
-Message-ID: <166364.22607.qm@web34208.mail.mud.yahoo.com>
+Date: Tue, 14 Dec 2010 11:40:40 -0600
+Message-ID: <20101214174040.GA4644@peq>
 References: <AANLkTi=tpq0Jo9WAd5eu=fP2bLaSG6iLpHtAVR1xe=Ub@mail.gmail.com>
+	<166364.22607.qm@web34208.mail.mud.yahoo.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <AANLkTi=tpq0Jo9WAd5eu=fP2bLaSG6iLpHtAVR1xe=Ub-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <166364.22607.qm-VjZBGxy5l2evuULXzWHTWIglqE1Y4D90QQ4Iyu8u01E@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,92 +19,50 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jue Hong <honshj-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: ccmail111 <ccmail111-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Cklzbid0IG5zIG1vdW50ZWQgYnkgZGVmYXVsdCA/CkkgcmVib290ZWQgbWFjaGluZSwKYmFzZWQg
-b24gMi42LjMyIGtlcm5lbC4KClRoZW4sCgpbaG9zdDp+XSQgbWtkaXIgL2Rldi9jZ3JvdXAKW2hv
-c3Q6fl0kIG1vdW50IC10IGNncm91cCBjcHVzZXQgLW9jcHVzZXQsbnMgL2Rldi9jZ3JvdXAKW2hv
-c3Q6fl0kIHBzIGF1eCB8IGdyZXAgbGlidmlydApyb290ICAgICAgIDU3NSAgMC42ICAwLjkgIDg4
-ODE2ICAyMjE2ID8gICAgICAgIFNsICAgMTc6MjggICAwOjAwIG15cHJvYyAtLWRhZW1vbgpyb290
-ICAgICAgIDY1NCAgMC4wICAwLjIgICA0MDQ0ICAgNjY0IHR0eVMwICAgIFMrICAgMTc6MjkgICAw
-OjAwIGdyZXAgbGlidmlydApbaG9zdDp+XSQgbWtkaXIgL2Rldi9jZ3JvdXAvaGVsbG8KW2hvc3Q6
-fl0kIGNhdCAvZGV2L2Nncm91cC9oZWxsby90YXNrcwpbaG9zdDp+XSQgZWNobyAwID4gL2Rldi9j
-Z3JvdXAvaGVsbG8vY3B1c2V0LmNwdXMKW2hvc3Q6fl0kIGVjaG8gMCA+IC9kZXYvY2dyb3VwL2hl
-bGxvL2NwdXNldC5tZW1zCltob3N0On5dJCBlY2hvIDU3NSA+IC9kZXYvY2dyb3VwL2hlbGxvL3Rh
-c2tzCltob3N0On5dJCBjYXQgL2Rldi9jZ3JvdXAvaGVsbG8vdGFza3MKNTc1Cltob3N0On5dJCBp
-ZAp1aWQ9MChyb290KSBnaWQ9MChyb290KSBncm91cHM9MChyb290KQpbaG9zdDp+XSQKCk5vdywg
-SSB0cnkgdG8gbW92ZSB0aGUgdGFzayBvdXQgLSB0aGUgcGFyZW50L3Jvb3Q6CgpbaG9zdDp+XSQg
-ZWNobyA1NzUgPiAvZGV2L2Nncm91cC90YXNrcwotYmFzaDogZWNobzogd3JpdGUgZXJyb3I6IE9w
-ZXJhdGlvbiBub3QgcGVybWl0dGVkCgoKQW55IHRob3VnaHRzICE/CgoKCgotLS0gT24gVHVlLCAx
-Mi8xNC8xMCwgSnVlIEhvbmcgPGhvbnNoakBnbWFpbC5jb20+IHdyb3RlOgoKPiBGcm9tOiBKdWUg
-SG9uZyA8aG9uc2hqQGdtYWlsLmNvbT4KPiBTdWJqZWN0OiBSZTogY2dyb3VwIHRhc2tzIGZpbGUg
-ZXJyb3IKPiBUbzogImNjbWFpbDExMSIgPGNjbWFpbDExMUB5YWhvby5jb20+Cj4gQ2M6ICJTZXJn
-ZSBFLiBIYWxseW4iIDxzZXJnZS5oYWxseW5AY2Fub25pY2FsLmNvbT4sICJNYXR0IEhlbHNsZXki
-IDxtYXR0aGx0Y0B1cy5pYm0uY29tPiwgY29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9u
-Lm9yZwo+IERhdGU6IFR1ZXNkYXksIERlY2VtYmVyIDE0LCAyMDEwLCA0OjM5IEFNCj4gSGF2ZSB5
-b3UgbW91bnRlZCB0aGUgbnMgc3Vic3lzPwo+IFRoZSBucyBzdWJzeXMgd2lsbCBwbGFjZSBzb21l
-IHJlc3RyaWN0aW9ucyBvbiB0aGUgdGFzawo+IG1vdmVtZW50Lgo+IAo+IE9uIFR1ZSwgRGVjIDE0
-LCAyMDEwIGF0IDM6MjggUE0sIGNjbWFpbDExMSA8Y2NtYWlsMTExQHlhaG9vLmNvbT4KPiB3cm90
-ZToKPiA+Cj4gPiBUaGFua3MgTWF0dC4KPiA+IEFmdGVyIGRvaW5nIHdoYXQgU2VyZ2Ugc3VnZ2Vz
-dHMsIEkgd2FzIGFibGUgdG8gY3JlYXRlCj4gYSBkdW1teSBjZ3JvdXAgYW5kCj4gPiBtb3ZlIHRh
-c2sgKCM1ODApIGJlbG93IHRvIHRoZSBncm91cC4gQnV0IG5vdy4uCj4gPiBJIHNlZSBhbm90aGVy
-IGlzc3VlOiBjYW5ub3QgbW92ZSB0aGUgdGFzayBiYWNrIHRvIGl0cwo+IHBhcmVudCAocm9vdCks
-IGZyb20gdGhlIGdyb3VwIChoZWxsbykgYXMgaW46Cj4gPgo+ID4gSSBhbSB0cnlpbmcgdG8gbW92
-ZSBiYWNrIHRhc2sgIzU4MC4uCj4gPgo+ID4gW2hvc3Q6L2Rldi9jZ3JvdXBdJCBpZAo+ID4gdWlk
-PTAocm9vdCkgZ2lkPTAocm9vdCkgZ3JvdXBzPTAocm9vdCkKPiA+Cj4gPgo+ID4gW2hvc3Q6L2Rl
-di9jZ3JvdXBdJCBlY2hvIDU4MCA+IHRhc2tzCj4gPiAtYmFzaDogZWNobzogd3JpdGUgZXJyb3I6
-IE9wZXJhdGlvbiBub3QgcGVybWl0dGVkCj4gPgo+ID4gW2hvc3Q6L2Rldi9jZ3JvdXBdJCBjYXQg
-aGVsbG8vdGFza3MKPiA+IDU4MAo+ID4gNjEwCj4gPiAyMTA0Cj4gPiBbaG9zdDovZGV2L2Nncm91
-cF0kCj4gPgo+ID4KPiA+IC0tLSBPbiBNb24sIDEyLzEzLzEwLCBNYXR0IEhlbHNsZXkgPG1hdHRo
-bHRjQHVzLmlibS5jb20+Cj4gd3JvdGU6Cj4gPgo+ID4+IEZyb206IE1hdHQgSGVsc2xleSA8bWF0
-dGhsdGNAdXMuaWJtLmNvbT4KPiA+PiBTdWJqZWN0OiBSZTogY2dyb3VwIHRhc2tzIGZpbGUgZXJy
-b3IKPiA+PiBUbzogIlNlcmdlIEUuIEhhbGx5biIgPHNlcmdlLmhhbGx5bkBjYW5vbmljYWwuY29t
-Pgo+ID4+IENjOiAiY2NtYWlsMTExIiA8Y2NtYWlsMTExQHlhaG9vLmNvbT4sCj4gY29udGFpbmVy
-c0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwo+ID4+IERhdGU6IE1vbmRheSwgRGVjZW1iZXIg
-MTMsIDIwMTAsIDg6MDIgUE0KPiA+PiBPbiBNb24sIERlYyAxMywgMjAxMCBhdCAwNToxNjoyOFBN
-Cj4gPj4gLTA2MDAsIFNlcmdlIEUuIEhhbGx5biB3cm90ZToKPiA+PiA+IFF1b3RpbmcgY2NtYWls
-MTExIChjY21haWwxMTFAeWFob28uY29tKToKPiA+PiA+ID4KPiA+PiA+ID4gSSBzZWUgZXJyb3I6
-W2hvc3Q6L2Rldi9jZ3JvdXBdJCBlY2hvIDY5Mwo+ID4KPiA+PiBoZWxsby10ZXN0L3Rhc2tzCj4g
-Pj4gPiA+IC1iYXNoOiBlY2hvOiB3cml0ZSBlcnJvcjogTm8gc3BhY2UgbGVmdAo+IG9uCj4gPj4g
-ZGV2aWNlCj4gPj4KPiA+PiBUaGlzIGRvZXMgc2VlbSBxdWl0ZSBvZGQgc28gSSBzcGVudCBhIGxp
-dHRsZSB0aW1lCj4gbG9va2luZwo+ID4+IGF0IHRoaXMgYW5kIEkgYWdyZWUgd2l0aCBTZXJnZS4K
-PiA+Pgo+ID4+ID4gPiBbaG9zdDovZGV2L2Nncm91cF0kIHB3ZC9kZXYvY2dyb3VwCj4gPj4gPiA+
-Cj4gPj4gPiA+IEJ1dCB0aGUgdXNlciBwcm9jZXNzIGlzIHVwIGFuZAo+IHJ1bm5pbmcuLgo+ID4+
-ID4gPgo+ID4+ID4gPiBbaG9zdDovZGV2L2Nncm91cF0kIHBzIGF1eCB8IGdyZXAKPiBwcm9jcm9v
-dAo+ID4+Cj4gPj4gPiA+Cj4gPj4gPiA+IDY5MyDCoDAuMCDCoDAuNCDCoDM0NzIwIMKgMTExMiB0
-dHlTMCDCoAo+IMKgU2wKPiA+PiAxOToxMSDCoCAwOjAwIC9vcHQvYmluL215cHJvYyAtZXh0Cj4g
-Pj4gPiA+Cj4gPj4gPiA+IEFsc28gdGhlIGNncm91cCBleGlzdHMgYW5kIHZhbGlkLi4KPiA+PiA+
-ID4KPiA+PiA+ID4gW2hvc3Q6L2Rldi9jZ3JvdXBdJCBscyB8IGdyZXAKPiBoZWxsby10ZXN0Cj4g
-Pj4gPiA+IGhlbGxvLXRlc3QKPiA+PiA+ID4KPiA+PiA+ID4gV2hhdCBhYm92ZSBlcnJvciBtZWFu
-IGFuZCBhbnkKPiBzdWdnZXN0aW9ucyA/Cj4gPj4gPiA+IFBsZWFzZSBlbWFpbC4KPiA+PiA+Cj4g
-Pj4gPiBXaGljaCBjZ3JvdXBzIGRvIHlvdSBoYXZlIGNvbXBvc2VkIG9uIHRoYXQKPiA+PiBtb3Vu
-dD/CoCBJJ20gZ3Vlc3MgeW91Cj4gPj4gPiBoYXZlIGNwdXNldCwgYW5kIHlvdSBuZWVkIHRvIHNl
-dCB0aGUKPiBjcHVzZXQubWVtcyBhbmQKPiA+PiBjcHVzZXQuY3B1cy4KPiA+PiA+IFVudGlsIHlv
-dSBkbyB0aGF0LCBubyB0YXNrcyBjYW4gYmUgYXNzaWduZWQKPiB0byBpdC4KPiA+Pgo+ID4+IEkg
-bG9va2VkIGEgYSBmZXcgcGxhY2VzIGluIGtlcm5lbC9jZ3JvdXAuYyB3aGljaAo+IHJldHVybgo+
-ID4+IEVOT1NQQwo+ID4+IG9yIGNvdWxkIHBvdGVudGlhbGx5IGZvcndhcmQgc3VjaCBhbiBlcnJv
-ci4gVGhlCj4gb25seSBwbGFjZQo+ID4+IHRoYXQKPiA+PiBmaXRzIGlzIGluIHRoZSBhdHRhY2gg
-cGF0aCBhbmQgaXMgY29uc2lzdGVudCB3aXRoCj4gdGhlCj4gPj4gbm90aW9uIHRoYXQKPiA+PiBp
-dCdzIGEgY3B1c2V0IGlzc3VlOgo+ID4+Cj4gPj4gZWNobyA8cGlkPiA+IHRhc2tzID0+Cj4gPj4g
-Y2dyb3VwX3Rhc2tzX3dyaXRlKCkgPT4KPiA+PiBhdHRhY2hfdGFza19ieV9waWQoKSA9Pgo+ID4+
-IGNncm91cF9hdHRhY2hfdGFzaygpID0+ICh2aWEKPiBzcy0+Y2FuX2F0dGFjaCgpIHdoZXJlCj4g
-Pj4gc3MgaXMgdGhlIGNwdXNldCBzdWJzeXN0ZW0pCj4gPj4gY3B1c2V0X2Nhbl9hdHRhY2goKToK
-PiA+PiDCoCDCoCDCoCDCoCBpZgo+ID4+IChjcHVtYXNrX2VtcHR5KGNzLT5jcHVzX2FsbG93ZWQp
-IHx8Cj4gPj4gbm9kZXNfZW1wdHkoY3MtPm1lbXNfYWxsb3dlZCkpCj4gPj4KPiA+PiByZXR1cm4g
-LUVOT1NQQzsKPiA+Pgo+ID4+IE5vIG90aGVyIGNncm91cCBzdWJzeXN0ZW0gdGhhdCBJIGxvb2tl
-ZCBhdAo+IChmcmVlemVyLAo+ID4+IG1lbWNvbnRyb2wsIG5zLAo+ID4+IMKgwqDCoCBibGtpbywg
-ZGV2Y2dyb3VwKSByZXR1cm5zIEVOT1NQQyB3aGVuCj4gPj4gYXR0YWNoaW5nIGEgdGFzay4KPiA+
-Pgo+ID4+IFNvIG5vdCBvbmx5IGRvIHlvdSBuZWVkIHRvIHNldCB0aG9zZSBtYXNrcyBidXQKPiBl
-YWNoIG1hc2sKPiA+PiBtdXN0IGhhdmUgYXQKPiA+PiBsZWFzdCBvbmUgY3B1IGFuZCAibWVtIiBy
-ZXNwZWN0aXZlbHkuCj4gPj4KPiA+PiBDaGVlcnMsCj4gPj4gwqDCoMKgIC1NYXR0IEhlbHNsZXkK
-PiA+Pgo+ID4KPiA+Cj4gPgo+ID4gX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX18KPiA+IENvbnRhaW5lcnMgbWFpbGluZyBsaXN0Cj4gPiBDb250YWluZXJzQGxp
-c3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCj4gPiBodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRp
-b24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycwo+ID4KPiAKPiAKPiAKPiAtLSAKPiBK
-dWUgSG9uZyAo5rSq54i1KQo+IERlcGFydG1lbnQgb2YgTmV0d29yayBJbmZyYXN0cnVjdHVyZQo+
-IFRlbmNlbnQgQ29tcGFueSwgU2hlbnpoZW4sIENoaW5hCj4gCgoKICAgICAgCl9fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBs
-aXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5s
-aW51eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+Quoting ccmail111 (ccmail111-/E1597aS9LQAvxtiuMwx3w@public.gmane.org):
+> 
+> Isn't ns mounted by default ?
+
+I thought that in an earlier email you said you had done
+
+	mount -t cgroup cpuset -ocpuset /dev/cgroup
+
+in which case ns would not be mounted.  But note, we DO NOT
+want you to have ns mounted :)
+
+> I rebooted machine,
+> based on 2.6.32 kernel.
+> 
+> Then,
+> 
+> [host:~]$ mkdir /dev/cgroup
+> [host:~]$ mount -t cgroup cpuset -ocpuset,ns /dev/cgroup
+> [host:~]$ ps aux | grep libvirt
+> root       575  0.6  0.9  88816  2216 ?        Sl   17:28   0:00 myproc --daemon
+> root       654  0.0  0.2   4044   664 ttyS0    S+   17:29   0:00 grep libvirt
+> [host:~]$ mkdir /dev/cgroup/hello
+> [host:~]$ cat /dev/cgroup/hello/tasks
+> [host:~]$ echo 0 > /dev/cgroup/hello/cpuset.cpus
+> [host:~]$ echo 0 > /dev/cgroup/hello/cpuset.mems
+> [host:~]$ echo 575 > /dev/cgroup/hello/tasks
+> [host:~]$ cat /dev/cgroup/hello/tasks
+> 575
+> [host:~]$ id
+> uid=0(root) gid=0(root) groups=0(root)
+> [host:~]$
+> 
+> Now, I try to move the task out - the parent/root:
+> 
+> [host:~]$ echo 575 > /dev/cgroup/tasks
+> -bash: echo: write error: Operation not permitted
+> 
+> 
+> Any thoughts !?
+
+Yes, ns cgroup is forbidding you from moving back :)  Mount without it.
+
+-serge
