@@ -1,14 +1,15 @@
-From: Jue Hong <honshj-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Subject: Re: cgroup tasks file error
-Date: Tue, 14 Dec 2010 17:39:39 +0800
-Message-ID: <AANLkTi=tpq0Jo9WAd5eu=fP2bLaSG6iLpHtAVR1xe=Ub@mail.gmail.com>
-References: <20101214010243.GC26523@count0.beaverton.ibm.com>
-	<464217.68381.qm@web34208.mail.mud.yahoo.com>
+Date: Tue, 14 Dec 2010 17:13:09 +0000
+Message-ID: <20101214171309.GA7133@mail.hallyn.com>
+References: <4D06C996.9010101@cn.fujitsu.com>
+	<903526.98695.qm@web34207.mail.mud.yahoo.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <464217.68381.qm-VjZBGxy5l2evuULXzWHTWIglqE1Y4D90QQ4Iyu8u01E@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <903526.98695.qm-I5qWG7eNxUOvuULXzWHTWIglqE1Y4D90QQ4Iyu8u01E@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,62 +23,31 @@ To: ccmail111 <ccmail111-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-SGF2ZSB5b3UgbW91bnRlZCB0aGUgbnMgc3Vic3lzPwpUaGUgbnMgc3Vic3lzIHdpbGwgcGxhY2Ug
-c29tZSByZXN0cmljdGlvbnMgb24gdGhlIHRhc2sgbW92ZW1lbnQuCgpPbiBUdWUsIERlYyAxNCwg
-MjAxMCBhdCAzOjI4IFBNLCBjY21haWwxMTEgPGNjbWFpbDExMUB5YWhvby5jb20+IHdyb3RlOgo+
-Cj4gVGhhbmtzIE1hdHQuCj4gQWZ0ZXIgZG9pbmcgd2hhdCBTZXJnZSBzdWdnZXN0cywgSSB3YXMg
-YWJsZSB0byBjcmVhdGUgYSBkdW1teSBjZ3JvdXAgYW5kCj4gbW92ZSB0YXNrICgjNTgwKSBiZWxv
-dyB0byB0aGUgZ3JvdXAuIEJ1dCBub3cuLgo+IEkgc2VlIGFub3RoZXIgaXNzdWU6IGNhbm5vdCBt
-b3ZlIHRoZSB0YXNrIGJhY2sgdG8gaXRzIHBhcmVudCAocm9vdCksIGZyb20gdGhlIGdyb3VwICho
-ZWxsbykgYXMgaW46Cj4KPiBJIGFtIHRyeWluZyB0byBtb3ZlIGJhY2sgdGFzayAjNTgwLi4KPgo+
-IFtob3N0Oi9kZXYvY2dyb3VwXSQgaWQKPiB1aWQ9MChyb290KSBnaWQ9MChyb290KSBncm91cHM9
-MChyb290KQo+Cj4KPiBbaG9zdDovZGV2L2Nncm91cF0kIGVjaG8gNTgwID4gdGFza3MKPiAtYmFz
-aDogZWNobzogd3JpdGUgZXJyb3I6IE9wZXJhdGlvbiBub3QgcGVybWl0dGVkCj4KPiBbaG9zdDov
-ZGV2L2Nncm91cF0kIGNhdCBoZWxsby90YXNrcwo+IDU4MAo+IDYxMAo+IDIxMDQKPiBbaG9zdDov
-ZGV2L2Nncm91cF0kCj4KPgo+IC0tLSBPbiBNb24sIDEyLzEzLzEwLCBNYXR0IEhlbHNsZXkgPG1h
-dHRobHRjQHVzLmlibS5jb20+IHdyb3RlOgo+Cj4+IEZyb206IE1hdHQgSGVsc2xleSA8bWF0dGhs
-dGNAdXMuaWJtLmNvbT4KPj4gU3ViamVjdDogUmU6IGNncm91cCB0YXNrcyBmaWxlIGVycm9yCj4+
-IFRvOiAiU2VyZ2UgRS4gSGFsbHluIiA8c2VyZ2UuaGFsbHluQGNhbm9uaWNhbC5jb20+Cj4+IENj
-OiAiY2NtYWlsMTExIiA8Y2NtYWlsMTExQHlhaG9vLmNvbT4sIGNvbnRhaW5lcnNAbGlzdHMubGlu
-dXgtZm91bmRhdGlvbi5vcmcKPj4gRGF0ZTogTW9uZGF5LCBEZWNlbWJlciAxMywgMjAxMCwgODow
-MiBQTQo+PiBPbiBNb24sIERlYyAxMywgMjAxMCBhdCAwNToxNjoyOFBNCj4+IC0wNjAwLCBTZXJn
-ZSBFLiBIYWxseW4gd3JvdGU6Cj4+ID4gUXVvdGluZyBjY21haWwxMTEgKGNjbWFpbDExMUB5YWhv
-by5jb20pOgo+PiA+ID4KPj4gPiA+IEkgc2VlIGVycm9yOltob3N0Oi9kZXYvY2dyb3VwXSQgZWNo
-byA2OTMgPgo+PiBoZWxsby10ZXN0L3Rhc2tzCj4+ID4gPiAtYmFzaDogZWNobzogd3JpdGUgZXJy
-b3I6IE5vIHNwYWNlIGxlZnQgb24KPj4gZGV2aWNlCj4+Cj4+IFRoaXMgZG9lcyBzZWVtIHF1aXRl
-IG9kZCBzbyBJIHNwZW50IGEgbGl0dGxlIHRpbWUgbG9va2luZwo+PiBhdCB0aGlzIGFuZCBJIGFn
-cmVlIHdpdGggU2VyZ2UuCj4+Cj4+ID4gPiBbaG9zdDovZGV2L2Nncm91cF0kIHB3ZC9kZXYvY2dy
-b3VwCj4+ID4gPgo+PiA+ID4gQnV0IHRoZSB1c2VyIHByb2Nlc3MgaXMgdXAgYW5kIHJ1bm5pbmcu
-Lgo+PiA+ID4KPj4gPiA+IFtob3N0Oi9kZXYvY2dyb3VwXSQgcHMgYXV4IHwgZ3JlcCBwcm9jcm9v
-dAo+Pgo+PiA+ID4KPj4gPiA+IDY5MyDCoDAuMCDCoDAuNCDCoDM0NzIwIMKgMTExMiB0dHlTMCDC
-oCDCoFNsCj4+IDE5OjExIMKgIDA6MDAgL29wdC9iaW4vbXlwcm9jIC1leHQKPj4gPiA+Cj4+ID4g
-PiBBbHNvIHRoZSBjZ3JvdXAgZXhpc3RzIGFuZCB2YWxpZC4uCj4+ID4gPgo+PiA+ID4gW2hvc3Q6
-L2Rldi9jZ3JvdXBdJCBscyB8IGdyZXAgaGVsbG8tdGVzdAo+PiA+ID4gaGVsbG8tdGVzdAo+PiA+
-ID4KPj4gPiA+IFdoYXQgYWJvdmUgZXJyb3IgbWVhbiBhbmQgYW55IHN1Z2dlc3Rpb25zID8KPj4g
-PiA+IFBsZWFzZSBlbWFpbC4KPj4gPgo+PiA+IFdoaWNoIGNncm91cHMgZG8geW91IGhhdmUgY29t
-cG9zZWQgb24gdGhhdAo+PiBtb3VudD/CoCBJJ20gZ3Vlc3MgeW91Cj4+ID4gaGF2ZSBjcHVzZXQs
-IGFuZCB5b3UgbmVlZCB0byBzZXQgdGhlIGNwdXNldC5tZW1zIGFuZAo+PiBjcHVzZXQuY3B1cy4K
-Pj4gPiBVbnRpbCB5b3UgZG8gdGhhdCwgbm8gdGFza3MgY2FuIGJlIGFzc2lnbmVkIHRvIGl0Lgo+
-Pgo+PiBJIGxvb2tlZCBhIGEgZmV3IHBsYWNlcyBpbiBrZXJuZWwvY2dyb3VwLmMgd2hpY2ggcmV0
-dXJuCj4+IEVOT1NQQwo+PiBvciBjb3VsZCBwb3RlbnRpYWxseSBmb3J3YXJkIHN1Y2ggYW4gZXJy
-b3IuIFRoZSBvbmx5IHBsYWNlCj4+IHRoYXQKPj4gZml0cyBpcyBpbiB0aGUgYXR0YWNoIHBhdGgg
-YW5kIGlzIGNvbnNpc3RlbnQgd2l0aCB0aGUKPj4gbm90aW9uIHRoYXQKPj4gaXQncyBhIGNwdXNl
-dCBpc3N1ZToKPj4KPj4gZWNobyA8cGlkPiA+IHRhc2tzID0+Cj4+IGNncm91cF90YXNrc193cml0
-ZSgpID0+Cj4+IGF0dGFjaF90YXNrX2J5X3BpZCgpID0+Cj4+IGNncm91cF9hdHRhY2hfdGFzaygp
-ID0+ICh2aWEgc3MtPmNhbl9hdHRhY2goKSB3aGVyZQo+PiBzcyBpcyB0aGUgY3B1c2V0IHN1YnN5
-c3RlbSkKPj4gY3B1c2V0X2Nhbl9hdHRhY2goKToKPj4gwqAgwqAgwqAgwqAgaWYKPj4gKGNwdW1h
-c2tfZW1wdHkoY3MtPmNwdXNfYWxsb3dlZCkgfHwKPj4gbm9kZXNfZW1wdHkoY3MtPm1lbXNfYWxs
-b3dlZCkpCj4+Cj4+IHJldHVybiAtRU5PU1BDOwo+Pgo+PiBObyBvdGhlciBjZ3JvdXAgc3Vic3lz
-dGVtIHRoYXQgSSBsb29rZWQgYXQgKGZyZWV6ZXIsCj4+IG1lbWNvbnRyb2wsIG5zLAo+PiDCoMKg
-wqAgYmxraW8sIGRldmNncm91cCkgcmV0dXJucyBFTk9TUEMgd2hlbgo+PiBhdHRhY2hpbmcgYSB0
-YXNrLgo+Pgo+PiBTbyBub3Qgb25seSBkbyB5b3UgbmVlZCB0byBzZXQgdGhvc2UgbWFza3MgYnV0
-IGVhY2ggbWFzawo+PiBtdXN0IGhhdmUgYXQKPj4gbGVhc3Qgb25lIGNwdSBhbmQgIm1lbSIgcmVz
-cGVjdGl2ZWx5Lgo+Pgo+PiBDaGVlcnMsCj4+IMKgwqDCoCAtTWF0dCBIZWxzbGV5Cj4+Cj4KPgo+
-Cj4gX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KPiBDb250
-YWluZXJzIG1haWxpbmcgbGlzdAo+IENvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5v
-cmcKPiBodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8v
-Y29udGFpbmVycwo+CgoKCi0tIApKdWUgSG9uZyAo5rSq54i1KQpEZXBhcnRtZW50IG9mIE5ldHdv
-cmsgSW5mcmFzdHJ1Y3R1cmUKVGVuY2VudCBDb21wYW55LCBTaGVuemhlbiwgQ2hpbmEKX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWls
-aW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xp
-c3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+Quoting ccmail111 (ccmail111-/E1597aS9LQAvxtiuMwx3w@public.gmane.org):
+> Hi Li,
+> 
+> uid is already root:
+> 
+> [host:/dev/cgroup]$ id
+> uid=0(root) gid=0(root) groups=0(root)
+> 
+> 
+> [host:/dev/cgroup]$ echo 580 > tasks
+> -bash: echo: write error: Operation not permitted
+> 
+> [host:/dev/cgroup]$ cat hello/tasks
+> 580
+> 610
+> 2104
+> [host:/dev/cgroup]$
+
+Could you give:
+	ls -lZd /dev/cgroup /dev/cgroup/tasks
+	id -Z
+	ls -laFZ /dev/cgroup/
+	cat /dev/cgroup/*
+	mount
+
+I'm wondering whether an lsm is stopping you.
+
+-serge
