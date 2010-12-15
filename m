@@ -1,13 +1,16 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH v2 6/6] cgroups: Update documentation for bindable subsystems
-Date: Wed, 15 Dec 2010 17:36:38 +0800
-Message-ID: <4D088C26.5090205__23500.479051336$1292405827$gmane$org@cn.fujitsu.com>
-References: <4D088BB5.30903@cn.fujitsu.com>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: cgroup tasks file error
+Date: Wed, 15 Dec 2010 23:21:58 +0530
+Message-ID: <20101215175158.GB9587@balbir.in.ibm.com>
+References: <AANLkTi=gR2JVXf0uidRMZo7s88th1wu-4+AbC0ZwRUJk@mail.gmail.com>
+	<478906.58374.qm@web34205.mail.mud.yahoo.com>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4D088BB5.30903-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <478906.58374.qm-NvXQCeNhX6ivuULXzWHTWIglqE1Y4D90QQ4Iyu8u01E@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,84 +20,158 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Stephane Eranian <eranian-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: ccmail111 <ccmail111-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Provide a usage example, update the bind() callback API, etc.
+* ccmail111 <ccmail111-/E1597aS9LQAvxtiuMwx3w@public.gmane.org> [2010-12-14 10:22:32]:
 
-Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
----
- Documentation/cgroups/cgroups.txt |   37 +++++++++++++++++++++++++++++--------
- 1 files changed, 29 insertions(+), 8 deletions(-)
+> =
 
-diff --git a/Documentation/cgroups/cgroups.txt b/Documentation/cgroups/cgroups.txt
-index 190018b..4e772cc 100644
---- a/Documentation/cgroups/cgroups.txt
-+++ b/Documentation/cgroups/cgroups.txt
-@@ -363,17 +363,23 @@ Note this will add ns to the hierarchy but won't remove memory or
- cpuset, because the new options are appended to the old ones:
- # mount -o remount,ns /dev/cgroup
- 
-+For some subsystems you can bind them to a mounted hierarchy or
-+remove them from it, even if there're sub-cgroups in it:
-+# mount -t cgroup -o freezer hier1 /dev/cgroup
-+# echo $$ > /dev/cgroup/my_cgroup
-+# mount -o freezer,cpuset hier1 /dev/cgroup
-+(failed)
-+# mount -o freezer,cpuacct hier1 /dev/cgroup
-+# mount -o cpuacct hier1 /dev/cgroup
-+
-+Note cpuacct should be sit in the default hierarchy before remount.
-+
- To Specify a hierarchy's release_agent:
- # mount -t cgroup -o cpuset,release_agent="/sbin/cpuset_release_agent" \
-   xxx /dev/cgroup
- 
- Note that specifying 'release_agent' more than once will return failure.
- 
--Note that changing the set of subsystems is currently only supported
--when the hierarchy consists of a single (root) cgroup. Supporting
--the ability to arbitrarily bind/unbind subsystems from an existing
--cgroup hierarchy is intended to be implemented in the future.
--
- Then under /dev/cgroup you can find a tree that corresponds to the
- tree of the cgroups in the system. For instance, /dev/cgroup
- is the cgroup that holds the whole system.
-@@ -523,6 +529,15 @@ module initcall a call to cgroup_load_subsys(), and in its exitcall a
- call to cgroup_unload_subsys(). It should also set its_subsys.module =
- THIS_MODULE in its .c file.
- 
-+If a subsystem has bindable flag set, normally it has to be able to
-+support side-effect free movement of a task into any just-created
-+cgroups. i.e. it's probably not suitable for any subsystem where
-+can_attach() might return false for the newly-created cgroup, or
-+attach() might have side-effects for those same cases.
-+
-+If a subsystem has unbindable flag set, normally it has to be able to
-+support side-effect free movement of a task into the roog cgroup.
-+
- Each subsystem may export the following methods. The only mandatory
- methods are create/destroy. Any others that are null are presumed to
- be successful no-ops.
-@@ -627,9 +642,15 @@ void bind(struct cgroup_subsys *ss, struct cgroup *root)
- (cgroup_mutex and ss->hierarchy_mutex held by caller)
- 
- Called when a cgroup subsystem is rebound to a different hierarchy
--and root cgroup. Currently this will only involve movement between
--the default hierarchy (which never has sub-cgroups) and a hierarchy
--that is being created/destroyed (and hence has no sub-cgroups).
-+and root cgroup.
-+
-+For non-bindable subsystems, this will only involve movement
-+between the default hierarchy (which never has sub-cgroups) and a
-+hierarchy that is being created/destroyed (and hence has no sub-cgroups).
-+
-+For binadable subsystems, this may also involve movement between the
-+default hierarchy and a mounted hierarchy that's populated with
-+sub-cgroups.
- 
- 4. Questions
- ============
--- 
-1.6.3
+> =
+
+> --- On Tue, 12/14/10, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+> =
+
+> > From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> > Subject: Re: cgroup tasks file error
+> > To: "ccmail111" <ccmail111-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>
+> > Cc: "Jue Hong" <honshj-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> > Date: Tuesday, December 14, 2010, 12:41 PM
+> > On Tue, Dec 14, 2010 at 11:03 PM,
+> > ccmail111 <ccmail111-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>
+> > wrote:
+> > >
+> > > Isn't ns mounted by default ?
+> > > I rebooted machine,
+> > > based on 2.6.32 kernel.
+> > >
+> > > Then,
+> > >
+> > > [host:~]$ mkdir /dev/cgroup
+> > > [host:~]$ mount -t cgroup cpuset -ocpuset,ns
+> > /dev/cgroup
+> > > [host:~]$ ps aux | grep libvirt
+> > > root =A0 =A0 =A0 575 =A00.6 =A00.9 =A088816 =A02216 ? =A0 =A0
+> > =A0 =A0Sl =A0 17:28 =A0 0:00 myproc --daemon
+> > > root =A0 =A0 =A0 654 =A00.0 =A00.2 =A0 4044 =A0 664 ttyS0 =A0
+> > =A0S+ =A0 17:29 =A0 0:00 grep libvirt
+> > > [host:~]$ mkdir /dev/cgroup/hello
+> > > [host:~]$ cat /dev/cgroup/hello/tasks
+> > > [host:~]$ echo 0 > /dev/cgroup/hello/cpuset.cpus
+> > > [host:~]$ echo 0 > /dev/cgroup/hello/cpuset.mems
+> > =
+
+> > Can you paste the output of
+> > =
+
+> > cat /dev/cgroup/hello/cpuset.cpus and mems.
+> > =
+
+> > Also please paste the o/p of /dev/cgroup/cpuset.cpus and
+> > mems
+> > =
+
+> > > [host:~]$ echo 575 > /dev/cgroup/hello/tasks
+> > > [host:~]$ cat /dev/cgroup/hello/tasks
+> > > 575
+> > > [host:~]$ id
+> > > uid=3D0(root) gid=3D0(root) groups=3D0(root)
+> > > [host:~]$
+> > >
+> > > Now, I try to move the task out - the parent/root:
+> > >
+> > > [host:~]$ echo 575 > /dev/cgroup/tasks
+> > > -bash: echo: write error: Operation not permitted
+> > =
+
+> > can you send us the o/p of
+> > =
+
+> > ls -al /dev/cgroup
+> > =
+
+> > and ls -al /dev/cgroup/hello
+> > =
+
+> > Balbir
+> > =
+
+> ----
+> =
+
+> Please find output requested below:
+> =
+
+> =
+
+> [host:~]$ mkdir /dev/cgroup/hello
+> [host:~]$ cat /dev/cgroup/hello/tasks
+> [host:~]$ echo 0 > /dev/cgroup/hello/cpuset.cpus
+> [host:~]$ echo 0 > /dev/cgroup/hello/cpuset.mems
+> [host:~]$ echo 575 > /dev/cgroup/hello/tasks
+> [host:~]$ cat /dev/cgroup/hello/tasks
+> 575
+> [host:~]$ id
+> uid=3D0(root) gid=3D0(root) groups=3D0(root)
+> [host:~]$ echo 575 > /dev/cgroup/tasks
+> -bash: echo: write error: Operation not permitted
+> [host:~]$ cat /dev/cgroup/hello/cpuset.cpus
+> 0
+> [host:~]$ cat /dev/cgroup/hello/cpuset.mems
+> 0
+> [host:~]$ cat /dev/cgroup/cpuset.mems
+> 0
+> [host:~]$ cat /dev/cgroup/cpuset.cpus
+> 0
+> [host:~]$ ls -al /dev/cgroup/
+> total 0
+> drwxr-xr-x  3 root root    0 Dec 14 17:29 .
+> drwxr-xr-x 11 root root 2980 Dec 14 17:29 ..
+> -r--r--r--  1 root root    0 Dec 14 17:29 cgroup.procs
+> -rw-r--r--  1 root root    0 Dec 14 17:29 cpuset.cpu_exclusive
+> -rw-r--r--  1 root root    0 Dec 14 17:29 cpuset.cpus
+> -rw-r--r--  1 root root    0 Dec 14 17:29 cpuset.mem_exclusive
+> -rw-r--r--  1 root root    0 Dec 14 17:29 cpuset.mem_hardwall
+> -rw-r--r--  1 root root    0 Dec 14 17:29 cpuset.memory_migrate
+> -r--r--r--  1 root root    0 Dec 14 17:29 cpuset.memory_pressure
+> -rw-r--r--  1 root root    0 Dec 14 17:29 cpuset.memory_pressure_enabled
+> -rw-r--r--  1 root root    0 Dec 14 17:29 cpuset.memory_spread_page
+> -rw-r--r--  1 root root    0 Dec 14 17:29 cpuset.memory_spread_slab
+> -rw-r--r--  1 root root    0 Dec 14 17:29 cpuset.mems
+> -rw-r--r--  1 root root    0 Dec 14 17:29 cpuset.sched_load_balance
+> -rw-r--r--  1 root root    0 Dec 14 17:29 cpuset.sched_relax_domain_level
+> drwxr-xr-x  2 root root    0 Dec 14 17:29 hello
+> -rw-r--r--  1 root root    0 Dec 14 17:29 notify_on_release
+> -rw-r--r--  1 root root    0 Dec 14 17:29 release_agent
+> -rw-r--r--  1 root root    0 Dec 14 17:31 tasks
+> [host:~]$ ls -al /dev/cgroup/hello/
+> total 0
+> drwxr-xr-x 2 root root 0 Dec 14 17:29 .
+> drwxr-xr-x 3 root root 0 Dec 14 17:29 ..
+> -r--r--r-- 1 root root 0 Dec 14 17:29 cgroup.procs
+> -rw-r--r-- 1 root root 0 Dec 14 17:29 cpuset.cpu_exclusive
+> -rw-r--r-- 1 root root 0 Dec 14 17:30 cpuset.cpus
+> -rw-r--r-- 1 root root 0 Dec 14 17:29 cpuset.mem_exclusive
+> -rw-r--r-- 1 root root 0 Dec 14 17:29 cpuset.mem_hardwall
+> -rw-r--r-- 1 root root 0 Dec 14 17:29 cpuset.memory_migrate
+> -r--r--r-- 1 root root 0 Dec 14 17:29 cpuset.memory_pressure
+> -rw-r--r-- 1 root root 0 Dec 14 17:29 cpuset.memory_spread_page
+> -rw-r--r-- 1 root root 0 Dec 14 17:29 cpuset.memory_spread_slab
+> -rw-r--r-- 1 root root 0 Dec 14 17:30 cpuset.mems
+> -rw-r--r-- 1 root root 0 Dec 14 17:29 cpuset.sched_load_balance
+> -rw-r--r-- 1 root root 0 Dec 14 17:29 cpuset.sched_relax_domain_level
+> -rw-r--r-- 1 root root 0 Dec 14 17:29 notify_on_release
+> -rw-r--r-- 1 root root 0 Dec 14 17:30 tasks
+> [host:~]$ id
+> uid=3D0(root) gid=3D0(root) groups=3D0(root)
+> [host:~]$
+>
+
+Looks like Serge's ns suggestion solved your problem, right? =
+
+
+-- =
+
+	Three Cheers,
+	Balbir
