@@ -1,12 +1,15 @@
 From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC 0/5] user namespaces: start clamping down
-Date: Fri, 17 Dec 2010 15:22:46 +0000
-Message-ID: <20101217152246.GA8221__33733.2260249697$1292599413$gmane$org@mail.hallyn.com>
+Subject: [RFC 1/5] user namespaces: Add a user_namespace as creator/owner
+	of uts_namespace
+Date: Fri, 17 Dec 2010 15:24:58 +0000
+Message-ID: <20101217152458.GA11162__32053.2624413774$1292599510$gmane$org@mail.hallyn.com>
+References: <20101217152246.GA8221@mail.hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <20101217152246.GA8221-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,43 +19,131 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Michael Kerrisk <michael.kerrisk-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Kees Cook <kees.cook-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Michael Kerrisk <michael.kerrisk-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Kees Cook <kees.cook-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Following is the next version of the user namespace patchset.
+copy_process() handles CLONE_NEWUSER before the rest of the
+namespaces.  So in the case of clone(CLONE_NEWUSER|CLONE_NEWUTS)
+the new uts namespace will have the new user namespace as its
+owner.  That is what we want, since we want root in that new
+userns to be able to have privilege over it.
 
-The core of the set is patch 2, originally conceived of and
-implemented by Eric Biederman.  The concept is to target
-capabilities at user namespaces.  A task's capabilities are
-now contextualized as follows (previously, capabilities had
-no context):
+Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+---
+ include/linux/utsname.h |    3 +++
+ init/version.c          |    2 ++
+ kernel/nsproxy.c        |    3 +++
+ kernel/user.c           |    8 ++++++--
+ kernel/utsname.c        |    4 ++++
+ 5 files changed, 18 insertions(+), 2 deletions(-)
 
-1. For a task in the initial user namespace, the calculated
-capabilities (pi, pe, pp) are available to act upon any
-user namespace.
-
-2. For a task in a child user namespace, the calculated
-capabilities are available to act only on its own or any
-descendent user namespace.  It has no capabilities to any
-parent or unrelated user namespaces.
-
-3. If a user A creates a new user namespace, that user has
-all capabilities to that new user namespace and any of its
-descendents.  (Contrast this with a user namespace created
-by another user B in the same user namespace, to which this
-user A has only his calculated capabilities)
-
-All existing 'capable' checks are automatically converted to
-checks against the initial user namespace.  This means that
-by default, root in a child user namespace is powerless.
-Patches 3-5 begin to enable capabilities in child user
-namespaces to set hostnames, kill tasks, and do ptrace.
-
-My near-term next goals will be to enable setuid and setgid,
-and to provide a way for the filesystem to be usable in child
-user namespaces.  At the very least I'd like a fresh loopback
-or LVM mount and proc mounts to be supported.
-
-thanks,
--serge
+diff --git a/include/linux/utsname.h b/include/linux/utsname.h
+index 69f3997..85171be 100644
+--- a/include/linux/utsname.h
++++ b/include/linux/utsname.h
+@@ -37,9 +37,12 @@ struct new_utsname {
+ #include <linux/nsproxy.h>
+ #include <linux/err.h>
+ 
++struct user_namespace;
++
+ struct uts_namespace {
+ 	struct kref kref;
+ 	struct new_utsname name;
++	struct user_namespace *user_ns;
+ };
+ extern struct uts_namespace init_uts_ns;
+ 
+diff --git a/init/version.c b/init/version.c
+index 79fb8c2..9eb19fb 100644
+--- a/init/version.c
++++ b/init/version.c
+@@ -21,6 +21,7 @@ extern int version_string(LINUX_VERSION_CODE);
+ int version_string(LINUX_VERSION_CODE);
+ #endif
+ 
++extern struct user_namespace init_user_ns;
+ struct uts_namespace init_uts_ns = {
+ 	.kref = {
+ 		.refcount	= ATOMIC_INIT(2),
+@@ -33,6 +34,7 @@ struct uts_namespace init_uts_ns = {
+ 		.machine	= UTS_MACHINE,
+ 		.domainname	= UTS_DOMAINNAME,
+ 	},
++	.user_ns = &init_user_ns,
+ };
+ EXPORT_SYMBOL_GPL(init_uts_ns);
+ 
+diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+index f74e6c0..5a22dcf 100644
+--- a/kernel/nsproxy.c
++++ b/kernel/nsproxy.c
+@@ -74,6 +74,9 @@ static struct nsproxy *create_new_namespaces(unsigned long flags,
+ 		err = PTR_ERR(new_nsp->uts_ns);
+ 		goto out_uts;
+ 	}
++	put_user_ns(new_nsp->uts_ns->user_ns);
++	new_nsp->uts_ns->user_ns = task_cred_xxx(tsk, user)->user_ns;
++	get_user_ns(new_nsp->uts_ns->user_ns);
+ 
+ 	new_nsp->ipc_ns = copy_ipcs(flags, tsk->nsproxy->ipc_ns);
+ 	if (IS_ERR(new_nsp->ipc_ns)) {
+diff --git a/kernel/user.c b/kernel/user.c
+index 2c7d8d5..5125681 100644
+--- a/kernel/user.c
++++ b/kernel/user.c
+@@ -17,9 +17,13 @@
+ #include <linux/module.h>
+ #include <linux/user_namespace.h>
+ 
++/*
++ * userns count is 1 for root user, 1 for init_uts_ns,
++ * and 1 for... ?
++ */
+ struct user_namespace init_user_ns = {
+ 	.kref = {
+-		.refcount	= ATOMIC_INIT(2),
++		.refcount	= ATOMIC_INIT(3),
+ 	},
+ 	.creator = &root_user,
+ };
+@@ -47,7 +51,7 @@ static struct kmem_cache *uid_cachep;
+  */
+ static DEFINE_SPINLOCK(uidhash_lock);
+ 
+-/* root_user.__count is 2, 1 for init task cred, 1 for init_user_ns->creator */
++/* root_user.__count is 2, 1 for init task cred, 1 for init_user_ns->user_ns */
+ struct user_struct root_user = {
+ 	.__count	= ATOMIC_INIT(2),
+ 	.processes	= ATOMIC_INIT(1),
+diff --git a/kernel/utsname.c b/kernel/utsname.c
+index 8a82b4b..a7b3a8d 100644
+--- a/kernel/utsname.c
++++ b/kernel/utsname.c
+@@ -14,6 +14,7 @@
+ #include <linux/utsname.h>
+ #include <linux/err.h>
+ #include <linux/slab.h>
++#include <linux/user_namespace.h>
+ 
+ static struct uts_namespace *create_uts_ns(void)
+ {
+@@ -40,6 +41,8 @@ static struct uts_namespace *clone_uts_ns(struct uts_namespace *old_ns)
+ 
+ 	down_read(&uts_sem);
+ 	memcpy(&ns->name, &old_ns->name, sizeof(ns->name));
++	ns->user_ns = old_ns->user_ns;
++	get_user_ns(ns->user_ns);
+ 	up_read(&uts_sem);
+ 	return ns;
+ }
+@@ -71,5 +74,6 @@ void free_uts_ns(struct kref *kref)
+ 	struct uts_namespace *ns;
+ 
+ 	ns = container_of(kref, struct uts_namespace, kref);
++	put_user_ns(ns->user_ns);
+ 	kfree(ns);
+ }
+-- 
+1.7.0.4
