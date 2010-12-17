@@ -1,18 +1,16 @@
-From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+From: Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>
 Subject: Re: [RFC 1/5] user namespaces: Add a user_namespace as
 	creator/owner of uts_namespace
-Date: Fri, 17 Dec 2010 10:17:00 -0600
-Message-ID: <20101217161700.GA5926__40819.9266683825$1292602750$gmane$org@peq>
+Date: Fri, 17 Dec 2010 09:31:25 -0800
+Message-ID: <20101217173125.GA29982__25468.5171683834$1292607155$gmane$org@kroah.com>
 References: <20101217152246.GA8221@mail.hallyn.com>
 	<20101217152458.GA11162@mail.hallyn.com>
-	<AANLkTinPBAPjeEdhn21JN6zVpAKDHR9=3gszj84CyyNx@mail.gmail.com>
-	<AANLkTik2ry7zbRMgiwhrXMYfQ4tr07BW0ODCNbKBMWmc@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <AANLkTik2ry7zbRMgiwhrXMYfQ4tr07BW0ODCNbKBMWmc-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20101217152458.GA11162-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,38 +20,66 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Michael Kerrisk <michael.kerrisk-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Kees Cook <kees.cook-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Michael Kerrisk <michael.kerrisk-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Kees Cook <kees.cook-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Alexey Dobriyan (adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> On Fri, Dec 17, 2010 at 5:56 PM, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wr=
-ote:
-> > On Fri, Dec 17, 2010 at 5:24 PM, Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wro=
-te:
-> >> +/*
-> >> + * userns count is 1 for root user, 1 for init_uts_ns,
-> >> + * and 1 for... ?
-> >> + */
-> >> =A0struct user_namespace init_user_ns =3D {
-> >> =A0 =A0 =A0 =A0.kref =3D {
-> >> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 .refcount =A0 =A0 =A0 =3D ATOMIC_INIT(2),
-> >> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .refcount =A0 =A0 =A0 =3D ATOMIC_INIT(3),
-> >
-> > +1 is for init_nsproxy ;-)
-> =
+On Fri, Dec 17, 2010 at 03:24:58PM +0000, Serge E. Hallyn wrote:
+> copy_process() handles CLONE_NEWUSER before the rest of the
+> namespaces.  So in the case of clone(CLONE_NEWUSER|CLONE_NEWUTS)
+> the new uts namespace will have the new user namespace as its
+> owner.  That is what we want, since we want root in that new
+> userns to be able to have privilege over it.
+> 
+> Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+> ---
+>  include/linux/utsname.h |    3 +++
+>  init/version.c          |    2 ++
+>  kernel/nsproxy.c        |    3 +++
+>  kernel/user.c           |    8 ++++++--
+>  kernel/utsname.c        |    4 ++++
+>  5 files changed, 18 insertions(+), 2 deletions(-)
+> 
+> diff --git a/include/linux/utsname.h b/include/linux/utsname.h
+> index 69f3997..85171be 100644
+> --- a/include/linux/utsname.h
+> +++ b/include/linux/utsname.h
+> @@ -37,9 +37,12 @@ struct new_utsname {
+>  #include <linux/nsproxy.h>
+>  #include <linux/err.h>
+>  
+> +struct user_namespace;
+> +
+>  struct uts_namespace {
+>  	struct kref kref;
+>  	struct new_utsname name;
+> +	struct user_namespace *user_ns;
+>  };
+>  extern struct uts_namespace init_uts_ns;
+>  
+> diff --git a/init/version.c b/init/version.c
+> index 79fb8c2..9eb19fb 100644
+> --- a/init/version.c
+> +++ b/init/version.c
+> @@ -21,6 +21,7 @@ extern int version_string(LINUX_VERSION_CODE);
+>  int version_string(LINUX_VERSION_CODE);
+>  #endif
+>  
+> +extern struct user_namespace init_user_ns;
+>  struct uts_namespace init_uts_ns = {
+>  	.kref = {
+>  		.refcount	= ATOMIC_INIT(2),
 
-> Err, no.
-> =
+Wait, WTF?
 
-> +1 is to ensure it's never freed, but since allocator will BUG_ON (?) if =
-fed
-> with static object, maybe it's completely bogus.
+You have a static kref and you try to automatically instanciate it here?
+As it's static, why are you even having a kref at all, what good does it
+do you, you can't delete the thing, it's always around, so just remove
+it entirely please.
 
-Right.  On the one hand so long as it's high enough it doesn't really matte=
-r.
-But I think it's worth getting the # exactly right in order to help document
-what's going on.  So I'll try dropping it back down to 2.
+Or, dynamically create it properly.  In other words, this is majorly
+broken.
 
 thanks,
--serge
+
+greg k-h
