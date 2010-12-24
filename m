@@ -1,9 +1,8 @@
 From: David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH v5 3/3] cgroups: make procs file writable
-Date: Fri, 24 Dec 2010 13:32:28 -0800 (PST)
-Message-ID: <alpine.DEB.2.00.1012241327570.13509@chino.kir.corp.google.com>
-References: <20100811054604.GA8743@ghc17.ghc.andrew.cmu.edu>
-	<20100811054851.GD8743@ghc17.ghc.andrew.cmu.edu>
+Date: Fri, 24 Dec 2010 13:34:06 -0800 (PST)
+Message-ID: <alpine.DEB.2.00.1012241333010.13509@chino.kir.corp.google.com>
+References: <20100811054851.GD8743@ghc17.ghc.andrew.cmu.edu>
 	<AANLkTimRM8rDe+u7fTy853RK=1mnLJMK57Tci2OLPR7L@mail.gmail.com>
 	<AANLkTim7HW0wNyqOPePFXmEMV8hx_fMKNMTAsSwkRzZX@mail.gmail.com>
 	<AANLkTin7aK5uEFi0U+iU_9=cbfRTHfDzKsbWupn73fSL@mail.gmail.com>
@@ -13,11 +12,12 @@ References: <20100811054604.GA8743@ghc17.ghc.andrew.cmu.edu>
 	<20101224114500.GA18036@ghc17.ghc.andrew.cmu.edu>
 	<20101224035331.b907b410.akpm@linux-foundation.org>
 	<20101224120853.GA18518@ghc17.ghc.andrew.cmu.edu>
+	<20101224212452.GA27275@ghc17.ghc.andrew.cmu.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20101224120853.GA18518-dJQ2lsn+DImqwBT9kiuFm8WGCVk0P7UB@public.gmane.org>
+In-Reply-To: <20101224212452.GA27275-dJQ2lsn+DImqwBT9kiuFm8WGCVk0P7UB@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -33,21 +33,12 @@ List-Id: containers.vger.kernel.org
 
 On Fri, 24 Dec 2010, Ben Blum wrote:
 
-> Good point. How about pre-allocating the nodemasks in cpuset_can_attach,
-> and having a cpuset_cancel_attach function which can free them up?
-> 
-> They could be stored in the struct cpuset (protected by cgroup_mutex)
-> after being pre-allocated - but also only if a heap-allocation was
-> required, so there might need to be an extra interface, like
-> "NODEMASK_PREALLOC" (a no-op if heap not required, otherwise allocates
-> and stores in the struct cpuset) and "NODEMASK_RETRIEVE"?
+> Oh, also, most (not all) times that NODEMASK_ALLOC is used in cpusets,
+> cgroup_mutex is also held. So how about just using static storage for
+> them? (There could be a new macro "NODEMASK_ALLOC_STATIC", for use when
+> the caller can never race against itself.) As long as the call-graph
+> isn't recursive, there shouldn't be a problem...
 > 
 
-I don't think it should be limited to only cpusets since what's being 
-described is a characteristic of cgroups and others may need to allocate 
-nodemasks in attach functions either presently or in the future as well.
-
-If you're protecting the attach function with cgroup_mutex (or can protect 
-it with a lock), then you should be able to statically allocate the 
-nodemasks.  Such an implementation could complement NODEMASK_ALLOC() but 
-be done statically regardless of CONFIG_NODES_SHIFT.
+Yes, that sounds good but I'd suggest using it only when dynamic 
+allocation cannot be done with GFP_KERNEL to avoid the waste.
