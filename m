@@ -1,16 +1,17 @@
 From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
-Subject: [PATCH v6 0/3] cgroups: implement moving a threadgroup's threads
-	atomically with cgroup.procs
-Date: Fri, 24 Dec 2010 03:22:26 -0500
-Message-ID: <20101224082226.GA13872@ghc17.ghc.andrew.cmu.edu>
+Subject: [PATCH v6 1/3] cgroups: read-write lock CLONE_THREAD forking per
+	threadgroup
+Date: Fri, 24 Dec 2010 03:23:52 -0500
+Message-ID: <20101224082352.GB13872@ghc17.ghc.andrew.cmu.edu>
 References: <20100730235649.GA22644@ghc17.ghc.andrew.cmu.edu>
 	<20100811054604.GA8743@ghc17.ghc.andrew.cmu.edu>
+	<20101224082226.GA13872@ghc17.ghc.andrew.cmu.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20100811054604.GA8743-dJQ2lsn+DImqwBT9kiuFm8WGCVk0P7UB@public.gmane.org>
+Content-Disposition: attachment; filename="cgroup-threadgroup-fork-lock.patch"
+In-Reply-To: <20101224082226.GA13872-dJQ2lsn+DImqwBT9kiuFm8WGCVk0P7UB@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,88 +25,144 @@ To: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Aug 11, 2010 at 01:46:04AM -0400, Ben Blum wrote:
-> On Fri, Jul 30, 2010 at 07:56:49PM -0400, Ben Blum wrote:
-> > This patch series is a revision of http://lkml.org/lkml/2010/6/25/11 .
-> > 
-> > This patch series implements a write function for the 'cgroup.procs'
-> > per-cgroup file, which enables atomic movement of multithreaded
-> > applications between cgroups. Writing the thread-ID of any thread in a
-> > threadgroup to a cgroup's procs file causes all threads in the group to
-> > be moved to that cgroup safely with respect to threads forking/exiting.
-> > (Possible usage scenario: If running a multithreaded build system that
-> > sucks up system resources, this lets you restrict it all at once into a
-> > new cgroup to keep it under control.)
-> > 
-> > Example: Suppose pid 31337 clones new threads 31338 and 31339.
-> > 
-> > # cat /dev/cgroup/tasks
-> > ...
-> > 31337
-> > 31338
-> > 31339
-> > # mkdir /dev/cgroup/foo
-> > # echo 31337 > /dev/cgroup/foo/cgroup.procs
-> > # cat /dev/cgroup/foo/tasks
-> > 31337
-> > 31338
-> > 31339
-> > 
-> > A new lock, called threadgroup_fork_lock and living in signal_struct, is
-> > introduced to ensure atomicity when moving threads between cgroups. It's
-> > taken for writing during the operation, and taking for reading in fork()
-> > around the calls to cgroup_fork() and cgroup_post_fork(). I put calls to
-> > down_read/up_read directly in copy_process(), since new inline functions
-> > seemed like overkill.
-> > 
-> > -- Ben
-> > 
-> > ---
-> >  Documentation/cgroups/cgroups.txt |   13 -
-> >  include/linux/init_task.h         |    9
-> >  include/linux/sched.h             |   10
-> >  kernel/cgroup.c                   |  426 +++++++++++++++++++++++++++++++++-----
-> >  kernel/cgroup_freezer.c           |    4
-> >  kernel/cpuset.c                   |    4
-> >  kernel/fork.c                     |   16 +
-> >  kernel/ns_cgroup.c                |    4
-> >  kernel/sched.c                    |    4
-> >  9 files changed, 440 insertions(+), 50 deletions(-)
-> 
-> Here's an updated patchset. I've added an extra patch to implement the 
-> callback scheme Paul suggested (note how there are twice as many deleted
-> lines of code as before :) ), and also moved the up_read/down_read calls
-> to static inline functions in sched.h near the other threadgroup-related
-> calls.
+Adds functionality to read/write lock CLONE_THREAD fork()ing per-threadgroup
 
-One more go at this. I've refreshed the patches for some conflicts in
-cgroup_freezer.c, by adding an extra argument to the per_thread() call,
-"need_rcu", which makes the function take rcu_read_lock even around the
-single-task case (like freezer now requires). So no semantics have been
-changed.
+From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
 
-I also poked around at some attach() calls which also iterate over the
-threadgroup (blkiocg_attach, cpuset_attach, cpu_cgroup_attach). I was
-borderline about making another function, cgroup_attach_per_thread(),
-but decided against.
+This patch adds an rwsem that lives in a threadgroup's signal_struct that's
+taken for reading in the fork path, under CONFIG_CGROUPS. If another part of
+the kernel later wants to use such a locking mechanism, the CONFIG_CGROUPS
+ifdefs should be changed to a higher-up flag that CGROUPS and the other system
+would both depend on.
 
-There is a big issue in cpuset_attach, as explained in this email:
-http://www.spinics.net/lists/linux-containers/msg22223.html
-but the actual code/diffs for this patchset are independent of that
-getting fixed, so I'm putting this up for consideration now.
+This is a pre-patch for cgroup-procs-write.patch.
 
--- Ben
-
+Signed-off-by: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
 ---
- Documentation/cgroups/cgroups.txt |   13 -
- block/blk-cgroup.c                |   31 ++
- include/linux/cgroup.h            |   14 +
- include/linux/init_task.h         |    9 
- include/linux/sched.h             |   35 ++
- kernel/cgroup.c                   |  469 ++++++++++++++++++++++++++++++++++----
- kernel/cgroup_freezer.c           |   33 +-
- kernel/cpuset.c                   |   30 --
- kernel/fork.c                     |   10 
- kernel/ns_cgroup.c                |   25 --
- kernel/sched.c                    |   24 -
- 11 files changed, 565 insertions(+), 128 deletions(-)
+ include/linux/init_task.h |    9 +++++++++
+ include/linux/sched.h     |   35 +++++++++++++++++++++++++++++++++++
+ kernel/fork.c             |   10 ++++++++++
+ 3 files changed, 54 insertions(+), 0 deletions(-)
+
+diff --git a/include/linux/init_task.h b/include/linux/init_task.h
+index 6b281fa..b560381 100644
+--- a/include/linux/init_task.h
++++ b/include/linux/init_task.h
+@@ -15,6 +15,14 @@
+ extern struct files_struct init_files;
+ extern struct fs_struct init_fs;
+ 
++#ifdef CONFIG_CGROUPS
++#define INIT_THREADGROUP_FORK_LOCK(sig)					\
++	.threadgroup_fork_lock =					\
++		__RWSEM_INITIALIZER(sig.threadgroup_fork_lock),
++#else
++#define INIT_THREADGROUP_FORK_LOCK(sig)
++#endif
++
+ #define INIT_SIGNALS(sig) {						\
+ 	.nr_threads	= 1,						\
+ 	.wait_chldexit	= __WAIT_QUEUE_HEAD_INITIALIZER(sig.wait_chldexit),\
+@@ -31,6 +39,7 @@ extern struct fs_struct init_fs;
+ 	},								\
+ 	.cred_guard_mutex =						\
+ 		 __MUTEX_INITIALIZER(sig.cred_guard_mutex),		\
++	INIT_THREADGROUP_FORK_LOCK(sig)					\
+ }
+ 
+ extern struct nsproxy init_nsproxy;
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index 8580dc6..213a0b9 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -623,6 +623,16 @@ struct signal_struct {
+ 	unsigned audit_tty;
+ 	struct tty_audit_buf *tty_audit_buf;
+ #endif
++#ifdef CONFIG_CGROUPS
++	/*
++	 * The threadgroup_fork_lock prevents threads from forking with
++	 * CLONE_THREAD while held for writing. Use this for fork-sensitive
++	 * threadgroup-wide operations. It's taken for reading in fork.c in
++	 * copy_process().
++	 * Currently only needed write-side by cgroups.
++	 */
++	struct rw_semaphore threadgroup_fork_lock;
++#endif
+ 
+ 	int oom_adj;		/* OOM kill score adjustment (bit shift) */
+ 	int oom_score_adj;	/* OOM kill score adjustment */
+@@ -2270,6 +2280,31 @@ static inline void unlock_task_sighand(struct task_struct *tsk,
+ 	spin_unlock_irqrestore(&tsk->sighand->siglock, *flags);
+ }
+ 
++/* See the declaration of threadgroup_fork_lock in signal_struct. */
++#ifdef CONFIG_CGROUPS
++static inline void threadgroup_fork_read_lock(struct task_struct *tsk)
++{
++	down_read(&tsk->signal->threadgroup_fork_lock);
++}
++static inline void threadgroup_fork_read_unlock(struct task_struct *tsk)
++{
++	up_read(&tsk->signal->threadgroup_fork_lock);
++}
++static inline void threadgroup_fork_write_lock(struct task_struct *tsk)
++{
++	down_write(&tsk->signal->threadgroup_fork_lock);
++}
++static inline void threadgroup_fork_write_unlock(struct task_struct *tsk)
++{
++	up_write(&tsk->signal->threadgroup_fork_lock);
++}
++#else
++static inline void threadgroup_fork_read_lock(struct task_struct *tsk) {}
++static inline void threadgroup_fork_read_unlock(struct task_struct *tsk) {}
++static inline void threadgroup_fork_write_lock(struct task_struct *tsk) {}
++static inline void threadgroup_fork_write_unlock(struct task_struct *tsk) {}
++#endif
++
+ #ifndef __HAVE_THREAD_FUNCTIONS
+ 
+ #define task_thread_info(task)	((struct thread_info *)(task)->stack)
+diff --git a/kernel/fork.c b/kernel/fork.c
+index 0979527..aefe61f 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -905,6 +905,10 @@ static int copy_signal(unsigned long clone_flags, struct task_struct *tsk)
+ 
+ 	tty_audit_fork(sig);
+ 
++#ifdef CONFIG_CGROUPS
++	init_rwsem(&sig->threadgroup_fork_lock);
++#endif
++
+ 	sig->oom_adj = current->signal->oom_adj;
+ 	sig->oom_score_adj = current->signal->oom_score_adj;
+ 	sig->oom_score_adj_min = current->signal->oom_score_adj_min;
+@@ -1087,6 +1091,8 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 	monotonic_to_bootbased(&p->real_start_time);
+ 	p->io_context = NULL;
+ 	p->audit_context = NULL;
++	if (clone_flags & CLONE_THREAD)
++		threadgroup_fork_read_lock(current);
+ 	cgroup_fork(p);
+ #ifdef CONFIG_NUMA
+ 	p->mempolicy = mpol_dup(p->mempolicy);
+@@ -1294,6 +1300,8 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 	write_unlock_irq(&tasklist_lock);
+ 	proc_fork_connector(p);
+ 	cgroup_post_fork(p);
++	if (clone_flags & CLONE_THREAD)
++		threadgroup_fork_read_unlock(current);
+ 	perf_event_fork(p);
+ 	return p;
+ 
+@@ -1332,6 +1340,8 @@ bad_fork_cleanup_policy:
+ 	mpol_put(p->mempolicy);
+ bad_fork_cleanup_cgroup:
+ #endif
++	if (clone_flags & CLONE_THREAD)
++		threadgroup_fork_read_unlock(current);
+ 	cgroup_exit(p, cgroup_callbacks_done);
+ 	delayacct_tsk_free(p);
+ 	module_put(task_thread_info(p)->exec_domain->module);
