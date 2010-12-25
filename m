@@ -1,7 +1,7 @@
 From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
 Subject: Re: [PATCH v5 3/3] cgroups: make procs file writable
-Date: Fri, 24 Dec 2010 21:55:08 -0500
-Message-ID: <20101225025508.GA649@ghc17.ghc.andrew.cmu.edu>
+Date: Fri, 24 Dec 2010 23:24:33 -0500
+Message-ID: <20101225042432.GB649@ghc17.ghc.andrew.cmu.edu>
 References: <20100811054604.GA8743@ghc17.ghc.andrew.cmu.edu>
 	<20100811054851.GD8743@ghc17.ghc.andrew.cmu.edu>
 	<AANLkTimRM8rDe+u7fTy853RK=1mnLJMK57Tci2OLPR7L@mail.gmail.com>
@@ -25,7 +25,7 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
-Cc: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Miao Xie <miaox-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Miao Xie <miaox-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 On Thu, Dec 23, 2010 at 10:33:52PM -0500, Ben Blum wrote:
@@ -56,43 +56,42 @@ On Thu, Dec 23, 2010 at 10:33:52PM -0500, Ben Blum wrote:
 > cc'ing Miao Xie (author) and David Rientjes (acker).
 > 
 > -- Ben
+> 
 
-Well even with the proposed solution to this there is still another
-problem that I see - that of mmap_sem. cpuset_attach() calls into
-mpol_rebind_mm() and do_migrate_pages(), which take mm->mmap_sem for
-writing and reading respectively. This is going to conflict with
-tasklist_lock... but moreover, the memcontrol subsys also touches the
-task's mm->mmap_sem, holding onto it between mem_cgroup_can_attach() and
-mem_cgroup_move_task() - as of b1dd693e5b9348bd68a80e679e03cf9c0973b01b.
+By the way, there is still another issue on top of this.
 
-So we have (currently, even without my patches):
+cpuset_attach
+-> do_migrate_pages
+-> migrate_prep
+-> lru_add_drain_all
+-> __alloc_percpu, which does GFP_KERNEL, which can sleep.
 
-cgroup_attach_task
-(1) cpuset_can_attach
-(2) mem_cgroup_can_attach
-     - down_read(&mm->mmap_sem);
-(3) cpuset_attach
-     - mpol_rebind_mm
-        - down_write(&mm->mmap_sem);
-        - up_write(&mm->mmap_sem);
-     - cpuset_migrate_mm
-        - do_migrate_pages
-           - down_read(&mm->mmap_sem);
-           - up_read(&mm->mmap_sem);
-(4) mem_cgroup_move_task
-     - mem_cgroup_clear_mc
-        - up_read(...);
+This will be no good if we call ss->attach with tasklist_lock held. A
+friend points out that even without the sleeping/etc you still don't
+want to be doing a memory migration while holding a spinlock.
 
-Is there some interdependency I'm missing here that guarantees recursive
-locking/deadlock will be avoided? It all looks like typical-case code.
+I think the best solution for this would be to add another subsystem
+callback, "attach_thread", which would do the cheap once-per-thread
+operations and be called under tasklist_lock. It'd look like this:
 
-I think we should move taking the mmap_sem all the way up into
-cgroup_attach_task and cgroup_attach_proc; it will be held for writing
-the whole time. I don't quite understand the mempolicy stuff but maybe
-there can be ways to use mpol_rebind_mm and do_migrate_pages when the
-lock is already held.
+read_lock(tasklist_lock)
+for each thread (c) {
+    cgroup_task_migrate(c)
+    for each subsys (ss) {
+        ss->attach_thread(c)
+    }
+}
+read_unlock(tasklist_lock)
+for each subsys (ss) {
+    ss->attach(leader)
+}
 
-Adding Daisuke Nishimura and Kamezawa Hiroyuki from the commit mentioned
-above.
+For cpuset, this will need to keep the nodemask data between the
+attach_thread and attach functions, so the nodemasks will need to be
+global instead of local.
 
 -- Ben
+
+P.S. when i'm iterating over tsk->thread_group while using tasklist_lock
+to protect it instead of rcu_read_lock, should i use list_for_each_entry
+or list_for_each_entry_rcu? it has been a while since i wrote that bit.
