@@ -1,7 +1,7 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
 Subject: Re: [PATCH v5 3/3] cgroups: make procs file writable
-Date: Mon, 27 Dec 2010 10:15:46 +0900
-Message-ID: <20101227101546.fdd3d0ee.kamezawa.hiroyu@jp.fujitsu.com>
+Date: Sun, 26 Dec 2010 23:22:54 -0500
+Message-ID: <20101227042254.GA15417@ghc17.ghc.andrew.cmu.edu>
 References: <20100811054604.GA8743@ghc17.ghc.andrew.cmu.edu>
 	<20100811054851.GD8743@ghc17.ghc.andrew.cmu.edu>
 	<AANLkTimRM8rDe+u7fTy853RK=1mnLJMK57Tci2OLPR7L@mail.gmail.com>
@@ -15,6 +15,7 @@ Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 In-Reply-To: <20101227095353.48d95687.nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -29,9 +30,7 @@ To: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.o
 Cc: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, Miao Xie <miaox-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, 27 Dec 2010 09:53:53 +0900
-Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
-
+On Mon, Dec 27, 2010 at 09:53:53AM +0900, Daisuke Nishimura wrote:
 > On Fri, 24 Dec 2010 21:55:08 -0500
 > Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org> wrote:
 > 
@@ -111,8 +110,18 @@ Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org> 
 > under the same mount point. But, hmm... it's not a good idea to make a subsystem
 > take account of another subsystem, IMHO.
 > 
+> 
+> Thanks,
+> Daisuke Nishimura.
 
-Taking tasklist_lock is bad, I think.
+It looks to me like when memcg holds the mmap_sem the whole time, it's
+just to avoid the deadlock, not that there's there some need for the
+stuff under mmap_sem not to change between can_attach and attach. But if
+there is such a need, then the write-side in mpol_rebind_mm may conflict
+even with my proposed solution.
 
-Thanks,
--Kame
+Regardless, the best way would be to avoid holding the mmap_sem across
+the whole window, possibly by solving the move_charge deadlock some
+other internal way, if at all possible?
+
+-- Ben
