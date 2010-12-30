@@ -1,7 +1,7 @@
-From: David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Subject: Re: [PATCH v5 3/3] cgroups: make procs file writable
-Date: Wed, 29 Dec 2010 21:49:02 -0800 (PST)
-Message-ID: <alpine.DEB.2.00.1012292149000.29486@chino.kir.corp.google.com>
+Date: Thu, 30 Dec 2010 14:12:34 +0800
+Message-ID: <4D1C22D2.9090007@cn.fujitsu.com>
 References: <alpine.DEB.2.00.1012240245040.775@chino.kir.corp.google.com>
 	<20101224114500.GA18036@ghc17.ghc.andrew.cmu.edu>
 	<20101224035331.b907b410.akpm@linux-foundation.org>
@@ -19,11 +19,12 @@ References: <alpine.DEB.2.00.1012240245040.775@chino.kir.corp.google.com>
 	<4D1C0464.5090801@cn.fujitsu.com>
 	<alpine.DEB.2.00.1012292019540.27634@chino.kir.corp.google.com>
 	<4D1C0CC6.4090107@cn.fujitsu.com>
+	<alpine.DEB.2.00.1012292149000.29486@chino.kir.corp.google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4D1C0CC6.4090107-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <alpine.DEB.2.00.1012292149000.29486-X6Q0R45D7oAcqpCFd4KODRPsWskHk0ljAL8bYrjMMd8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -33,32 +34,43 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+To: David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Cc: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Miao Xie <miaox-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, 30 Dec 2010, Li Zefan wrote:
+David Rientjes wrote:
+> On Thu, 30 Dec 2010, Li Zefan wrote:
+> 
+>>> This needs to be done with cgroup_lock() instead of callback_mutex since 
+>>> the post_clone() callback will store to cs->mems_allowed on 
+>>> cgroup_clone().
+>>>
+>> Then cpuset_post_clone() breaks the lock rule:
+>>
+>>  * A task must hold both mutexes to modify cpusets...
+>>  ...
+>>  * If a task is only holding callback_mutex, then it has read-only
+>>  * access to cpusets.
+>>
+>> But that's Ok, because cgroup_clone() is called during the creation of
+>> the new cgroup, so no one can access the cpuset at that time.
+>>
+> 
+> I'm saying that if cpusets implements a cgroup_clone() handler that the 
+> locking will break with only callback_mutex here because the only 
+> synchronization after the new cgroup dentry is added is cgroup_lock() that 
+> is always held when a post_clone callback is invoked and reading a mems 
+> file may race since it is accessible before the task is attached in the 
+> cgroup_clone() case.  It's not a problem right now but may subtly break if 
+> cpusets were to use cgroup_clone().
+> 
 
-> > This needs to be done with cgroup_lock() instead of callback_mutex since 
-> > the post_clone() callback will store to cs->mems_allowed on 
-> > cgroup_clone().
-> > 
-> 
-> Then cpuset_post_clone() breaks the lock rule:
-> 
->  * A task must hold both mutexes to modify cpusets...
->  ...
->  * If a task is only holding callback_mutex, then it has read-only
->  * access to cpusets.
-> 
-> But that's Ok, because cgroup_clone() is called during the creation of
-> the new cgroup, so no one can access the cpuset at that time.
-> 
+cgroup_clone() was implemented for ns_cgroup, and ns_cgroup is scheduled to be
+removed in the coming 2.6.38, and so will be cgroup_clone().
 
-I'm saying that if cpusets implements a cgroup_clone() handler that the 
-locking will break with only callback_mutex here because the only 
-synchronization after the new cgroup dentry is added is cgroup_lock() that 
-is always held when a post_clone callback is invoked and reading a mems 
-file may race since it is accessible before the task is attached in the 
-cgroup_clone() case.  It's not a problem right now but may subtly break if 
-cpusets were to use cgroup_clone().
+As a replacement we've added cgroup.clone_children, and the post_clone() callback
+will be called in cgroup_create() if the clone_children flag is set.
+
+If we want to avoid subtle break in case post_clone() is used in other cases
+than cgroup creation in the future, we can just hold callback_mutex() in
+cpuset_post_clone().
