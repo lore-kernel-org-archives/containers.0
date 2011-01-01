@@ -1,21 +1,23 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC 5/5] user namespaces: Allow ptrace from non-init user
-	namespaces
-Date: Sat, 1 Jan 2011 04:47:06 +0000
-Message-ID: <20110101044706.GB26476__24979.3445495472$1293857214$gmane$org@mail.hallyn.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [RFC 4/5] user namespaces: allow killing tasks in your own or
+	child userns
+Date: Sat, 01 Jan 2011 15:10:19 -0800
+Message-ID: <m1zkrkuso4.fsf__38880.8347205215$1293923485$gmane$org@fess.ebiederm.org>
 References: <20101217152246.GA8221@mail.hallyn.com>
 	<20101217152458.GA11162@mail.hallyn.com>
 	<20101217152547.GB11162@mail.hallyn.com>
 	<20101217152625.GC11162@mail.hallyn.com>
 	<20101217152659.GD11162@mail.hallyn.com>
-	<20101217152737.GE11162@mail.hallyn.com>
-	<m1hbecqj2q.fsf@fess.ebiederm.org>
+	<m14oacryar.fsf@fess.ebiederm.org>
+	<20101217200903.GA15528@mail.hallyn.com>
+	<m1d3p0qhl5.fsf@fess.ebiederm.org>
+	<20110101044522.GA26476@mail.hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <m1hbecqj2q.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
+In-Reply-To: <20110101044522.GA26476-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org> (Serge E. Hallyn's
+	message of "Sat, 1 Jan 2011 04:45:22 +0000")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,260 +27,109 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Michael Kerrisk <michael.kerrisk-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kees Cook <kees.cook-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Kees Cook <kees.cook-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
-> 
-> > ptrace is allowed to tasks in the same user namespace according to
-> > the usual rules (i.e. the same rules as for two tasks in the init
-> > user namespace).  ptrace is also allowed to a user namespace to
-> > which the current task the has CAP_SYS_PTRACE capability.
-> 
-> The uid equality check below is broken.
+"Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
 
-Thanks for the review, Eric.  Updated version appended.  Assuming there
-are no big problems with this version, I hope to do setuid/setgid and
-start the simplest vfs access controls next.
+> Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+>> "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
+>> 
+>> > Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+>> >> > --- a/kernel/signal.c
+>> >> > +++ b/kernel/signal.c
+>> >> > @@ -659,11 +686,7 @@ static int check_kill_permission(int sig, struct siginfo *info,
+>> >> >  	cred = current_cred();
+>> >> >  	tcred = __task_cred(t);
+>> >> Nit pick  you don't need to compute cred and tcred here now.
+>> >
+>> > Just to make sure I understand right: you mean wait until after the
+>> > same_thread_group() check to save calculation in that case, right?
+>> 
+>> I mean cred and tcred are only use in kill_ok_by_cred.
+>> So we can eliminate those two variables from check_kill_permission.
+>
+> Thanks for the review.  Here is an updated version.
 
-Subject: [PATCH 5/5] Allow ptrace from non-init user namespaces
+This one looks good.
 
-ptrace is allowed to tasks in the same user namespace according to
-the usual rules (i.e. the same rules as for two tasks in the init
-user namespace).  ptrace is also allowed to a user namespace to
-which the current task the has CAP_SYS_PTRACE capability.
+Reviewed-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-Changelog:
-	Dec 31: Address feedback by Eric:
-		. Correct ptrace uid check
-		. Rename may_ptrace_ns to ptrace_capable
-		. Also fix the cap_ptrace checks.
-
-Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
----
- include/linux/capability.h     |    2 +
- include/linux/user_namespace.h |    9 +++++++
- kernel/ptrace.c                |   40 +++++++++++++++++++++++----------
- kernel/user_namespace.c        |   16 +++++++++++++
- security/commoncap.c           |   48 +++++++++++++++++++++++++++++++++------
- 5 files changed, 95 insertions(+), 20 deletions(-)
-
-diff --git a/include/linux/capability.h b/include/linux/capability.h
-index cc3e976..777a166 100644
---- a/include/linux/capability.h
-+++ b/include/linux/capability.h
-@@ -543,6 +543,8 @@ extern const kernel_cap_t __cap_init_eff_set;
-  */
- #define has_capability(t, cap) (security_real_capable((t), &init_user_ns, (cap)) == 0)
- 
-+#define has_ns_capability(t, ns, cap) (security_real_capable((t), (ns), (cap)) == 0)
-+
- /**
-  * has_capability_noaudit - Determine if a task has a superior capability available (unaudited)
-  * @t: The task in question
-diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-index 8178156..91c4f10 100644
---- a/include/linux/user_namespace.h
-+++ b/include/linux/user_namespace.h
-@@ -39,6 +39,9 @@ static inline void put_user_ns(struct user_namespace *ns)
- uid_t user_ns_map_uid(struct user_namespace *to, const struct cred *cred, uid_t uid);
- gid_t user_ns_map_gid(struct user_namespace *to, const struct cred *cred, gid_t gid);
- 
-+int same_or_ancestor_user_ns(struct task_struct *task,
-+	struct task_struct *victim);
-+
- #else
- 
- static inline struct user_namespace *get_user_ns(struct user_namespace *ns)
-@@ -66,6 +69,12 @@ static inline gid_t user_ns_map_gid(struct user_namespace *to,
- 	return gid;
- }
- 
-+static inline int same_or_ancestor_user_ns(struct task_struct *task,
-+	struct task_struct *victim)
-+{
-+	return 1;
-+}
-+
- #endif
- 
- #endif /* _LINUX_USER_H */
-diff --git a/kernel/ptrace.c b/kernel/ptrace.c
-index 99bbaa3..88e3fb3 100644
---- a/kernel/ptrace.c
-+++ b/kernel/ptrace.c
-@@ -116,6 +116,19 @@ int ptrace_check_attach(struct task_struct *child, int kill)
- 	return ret;
- }
- 
-+static inline int ptrace_capable(struct task_struct *t)
-+{
-+	struct user_namespace *ns;
-+	int ret;
-+
-+	rcu_read_lock();
-+	ns = task_cred_xxx(t, user)->user_ns;
-+	ret = ns_capable(ns, CAP_SYS_PTRACE);
-+	rcu_read_unlock();
-+
-+	return ret;
-+}
-+
- int __ptrace_may_access(struct task_struct *task, unsigned int mode)
- {
- 	const struct cred *cred = current_cred(), *tcred;
-@@ -134,21 +147,24 @@ int __ptrace_may_access(struct task_struct *task, unsigned int mode)
- 		return 0;
- 	rcu_read_lock();
- 	tcred = __task_cred(task);
--	if ((cred->uid != tcred->euid ||
--	     cred->uid != tcred->suid ||
--	     cred->uid != tcred->uid  ||
--	     cred->gid != tcred->egid ||
--	     cred->gid != tcred->sgid ||
--	     cred->gid != tcred->gid) &&
--	    !capable(CAP_SYS_PTRACE)) {
--		rcu_read_unlock();
--		return -EPERM;
--	}
-+	if (cred->user->user_ns == tcred->user->user_ns &&
-+	    (cred->uid == tcred->euid &&
-+	     cred->uid == tcred->suid &&
-+	     cred->uid == tcred->uid  &&
-+	     cred->gid == tcred->egid &&
-+	     cred->gid == tcred->sgid &&
-+	     cred->gid == tcred->gid))
-+		goto ok;
-+	if (ns_capable(tcred->user->user_ns, CAP_SYS_PTRACE))
-+		goto ok;
-+	rcu_read_unlock();
-+	return -EPERM;
-+ok:
- 	rcu_read_unlock();
- 	smp_rmb();
- 	if (task->mm)
- 		dumpable = get_dumpable(task->mm);
--	if (!dumpable && !capable(CAP_SYS_PTRACE))
-+	if (!dumpable && !ptrace_capable(task))
- 		return -EPERM;
- 
- 	return security_ptrace_access_check(task, mode);
-@@ -198,7 +214,7 @@ int ptrace_attach(struct task_struct *task)
- 		goto unlock_tasklist;
- 
- 	task->ptrace = PT_PTRACED;
--	if (capable(CAP_SYS_PTRACE))
-+	if (ptrace_capable(task))
- 		task->ptrace |= PT_PTRACE_CAP;
- 
- 	__ptrace_link(task, current);
-diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index 2591583..4b70999 100644
---- a/kernel/user_namespace.c
-+++ b/kernel/user_namespace.c
-@@ -126,3 +126,19 @@ gid_t user_ns_map_gid(struct user_namespace *to, const struct cred *cred, gid_t
- 	/* No useful relationship so no mapping */
- 	return overflowgid;
- }
-+
-+int same_or_ancestor_user_ns(struct task_struct *task,
-+	struct task_struct *victim)
-+{
-+	struct user_namespace *u1 = task_cred_xxx(task, user)->user_ns;
-+	struct user_namespace *u2 = task_cred_xxx(victim, user)->user_ns;
-+	for (;;) {
-+		if (u1 == u2)
-+			return 1;
-+		if (u1 == &init_user_ns)
-+			return 0;
-+		u1 = u1->creator->user_ns;
-+	}
-+	/* We never get here */
-+	return 0;
-+}
-diff --git a/security/commoncap.c b/security/commoncap.c
-index 9d910e6..8fa4285 100644
---- a/security/commoncap.c
-+++ b/security/commoncap.c
-@@ -130,18 +130,34 @@ int cap_settime(struct timespec *ts, struct timezone *tz)
-  * @child: The process to be accessed
-  * @mode: The mode of attachment.
-  *
-+ * If we are in the same or an ancestor user_ns and have all the target
-+ * task's capabilities, then ptrace access is allowed.
-+ * If we have the ptrace capability to the target user_ns, then ptrace
-+ * access is allowed.
-+ * Else denied.
-+ *
-  * Determine whether a process may access another, returning 0 if permission
-  * granted, -ve if denied.
-  */
- int cap_ptrace_access_check(struct task_struct *child, unsigned int mode)
- {
- 	int ret = 0;
-+	struct cred *cred, *tcred;
- 
- 	rcu_read_lock();
--	if (!cap_issubset(__task_cred(child)->cap_permitted,
--			  current_cred()->cap_permitted) &&
--	    !capable(CAP_SYS_PTRACE))
--		ret = -EPERM;
-+	cred = current_cred();
-+	tcred = __task_cred(child);
-+	/*
-+	 * The ancestor user_ns check may be gratuitous, as I think
-+	 * we've already guaranteed that in kernel/ptrace.c.
-+	 */
-+	if (same_or_ancestor_user_ns(current, child) &&
-+	    cap_issubset(tcred->cap_permitted, cred->cap_permitted))
-+		goto out;
-+	if (ns_capable(tcred->user->user_ns, CAP_SYS_PTRACE))
-+		goto out;
-+	ret = -EPERM;
-+out:
- 	rcu_read_unlock();
- 	return ret;
- }
-@@ -150,18 +166,34 @@ int cap_ptrace_access_check(struct task_struct *child, unsigned int mode)
-  * cap_ptrace_traceme - Determine whether another process may trace the current
-  * @parent: The task proposed to be the tracer
-  *
-+ * If parent is in the same or an ancestor user_ns and has all current's
-+ * capabilities, then ptrace access is allowed.
-+ * If parent has the ptrace capability to current's user_ns, then ptrace
-+ * access is allowed.
-+ * Else denied.
-+ *
-  * Determine whether the nominated task is permitted to trace the current
-  * process, returning 0 if permission is granted, -ve if denied.
-  */
- int cap_ptrace_traceme(struct task_struct *parent)
- {
- 	int ret = 0;
-+	struct cred *cred, *tcred;
- 
- 	rcu_read_lock();
--	if (!cap_issubset(current_cred()->cap_permitted,
--			  __task_cred(parent)->cap_permitted) &&
--	    !has_capability(parent, CAP_SYS_PTRACE))
--		ret = -EPERM;
-+	cred = __task_cred(parent);
-+	tcred = current_cred();
-+	/*
-+	 * The ancestor user_ns check may be gratuitous, as I think
-+	 * we've already guaranteed that in kernel/ptrace.c.
-+	 */
-+	if (same_or_ancestor_user_ns(parent, current) &&
-+	    cap_issubset(tcred->cap_permitted, cred->cap_permitted))
-+		goto out;
-+	if (has_ns_capability(parent, tcred->user->user_ns, CAP_SYS_PTRACE))
-+		goto out;
-+	ret = -EPERM;
-+out:
- 	rcu_read_unlock();
- 	return ret;
- }
--- 
-1.7.0.4
+>
+> Subject: [PATCH 4/5] allow killing tasks in your own or child userns
+>
+> Changelog:
+> 	Dec 8: Fixed bug in my check_kill_permission pointed out by
+> 	       Eric Biederman.
+> 	Dec 13: Apply Eric's suggestion to pass target task into kill_ok_by_cred()
+> 	        for clarity
+> 	Dec 31: address comment by Eric Biederman:
+> 		don't need cred/tcred in check_kill_permission.
+>
+> Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+> ---
+>  kernel/signal.c |   36 ++++++++++++++++++++++++++++--------
+>  1 files changed, 28 insertions(+), 8 deletions(-)
+>
+> diff --git a/kernel/signal.c b/kernel/signal.c
+> index 4e3cff1..d890c99 100644
+> --- a/kernel/signal.c
+> +++ b/kernel/signal.c
+> @@ -636,13 +636,39 @@ static inline bool si_fromuser(const struct siginfo *info)
+>  }
+>  
+>  /*
+> + * called with RCU read lock from check_kill_permission()
+> + */
+> +static inline int kill_ok_by_cred(struct task_struct *t)
+> +{
+> +	struct cred *cred = current_cred();
+> +	struct cred *tcred = __task_cred(t);
+> +
+> +	if (cred->user->user_ns != tcred->user->user_ns) {
+> +		/* userids are not equivalent - either you have the
+> +		   capability to the target user ns or you don't */
+> +		if (ns_capable(tcred->user->user_ns, CAP_KILL))
+> +			return 1;
+> +		return 0;
+> +	}
+> +
+> +	/* same user namespace - usual credentials checks apply */
+> +	if ((cred->euid ^ tcred->suid) &&
+> +	    (cred->euid ^ tcred->uid) &&
+> +	    (cred->uid  ^ tcred->suid) &&
+> +	    (cred->uid  ^ tcred->uid) &&
+> +	    !ns_capable(tcred->user->user_ns, CAP_KILL))
+> +		return 0;
+> +
+> +	return 1;
+> +}
+> +
+> +/*
+>   * Bad permissions for sending the signal
+>   * - the caller must hold the RCU read lock
+>   */
+>  static int check_kill_permission(int sig, struct siginfo *info,
+>  				 struct task_struct *t)
+>  {
+> -	const struct cred *cred, *tcred;
+>  	struct pid *sid;
+>  	int error;
+>  
+> @@ -656,14 +682,8 @@ static int check_kill_permission(int sig, struct siginfo *info,
+>  	if (error)
+>  		return error;
+>  
+> -	cred = current_cred();
+> -	tcred = __task_cred(t);
+>  	if (!same_thread_group(current, t) &&
+> -	    (cred->euid ^ tcred->suid) &&
+> -	    (cred->euid ^ tcred->uid) &&
+> -	    (cred->uid  ^ tcred->suid) &&
+> -	    (cred->uid  ^ tcred->uid) &&
+> -	    !capable(CAP_KILL)) {
+> +	    !kill_ok_by_cred(t)) {
+>  		switch (sig) {
+>  		case SIGCONT:
+>  			sid = task_session(t);
