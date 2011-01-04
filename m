@@ -1,14 +1,14 @@
 From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
 Subject: Re: Mapping PIDs from parent->child namespaces
-Date: Tue, 04 Jan 2011 23:02:18 +0100
-Message-ID: <4D2398EA.6020807@free.fr>
+Date: Tue, 04 Jan 2011 23:13:06 +0100
+Message-ID: <4D239B72.4000103@free.fr>
 References: <4D225579.6030106@fesnel.com> <4D23451B.6060807@free.fr>
-	<4D234E77.6000605@free.fr>
+	<4D237B9C.5060007@fesnel.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4D234E77.6000605-GANU6spQydw@public.gmane.org>
+In-Reply-To: <4D237B9C.5060007-ql8fK+M3D0TQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,12 +18,12 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <legoater-GANU6spQydw@public.gmane.org>
+To: Mike Heffner <mikeh-ql8fK+M3D0TQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 01/04/2011 05:44 PM, Cedric Le Goater wrote:
-> On 01/04/2011 05:04 PM, Daniel Lezcano wrote:
+On 01/04/2011 08:57 PM, Mike Heffner wrote:
+> On 01/04/2011 11:04 AM, Daniel Lezcano wrote:
 >> On 01/04/2011 12:02 AM, Mike Heffner wrote:
 >>> Hi,
 >>>
@@ -32,11 +32,13 @@ On 01/04/2011 05:44 PM, Cedric Le Goater wrote:
 >>> parent->child's namespace? For example, if I span the process "myproc"
 >>> with CLONE_NEWPID then a call to getpid() inside myproc will return "1"
 >>> whereas in the parent's namespace that process could actually be PID
->>> "23495". I'd like to be able to know that 23495 maps to 1 in the new NS.
+>>> "23495". I'd like to be able to know that 23495 maps to 1 in the new 
+>>> NS.
 >>> Obviously, just mapping the first PID is straightforward since I can
 >>> just look at the result of clone(). However, mapping the PIDs of
 >>> processes subsequently forked from "myproc" -- in this example -- I
 >>> haven't been able to figure out.
+>>
 >> AFAIK, it is not possible.
 >>
 >> That would be very nice to show the pid<->  vpid association.
@@ -55,18 +57,18 @@ On 01/04/2011 05:44 PM, Cedric Le Goater wrote:
 >> If the process '1234' looks at /proc/4321/root/proc/1/status, it sees:
 >>
 >> ...
->> Tgid:	1
->> Pid:	1
->> PPid:	0
+>> Tgid:    1
+>> Pid:    1
+>> PPid:    0
 >> ...
 >>
 >>
 >> It could be:
 >>
 >> ...
->> Tgid:	4321
->> Pid:	4321
->> PPid:	1234
+>> Tgid:    4321
+>> Pid:    4321
+>> PPid:    1234
 >> ...
 >>
 >> as the file is inspected from the parent namespace. Of course, if the
@@ -76,62 +78,22 @@ On 01/04/2011 05:44 PM, Cedric Le Goater wrote:
 >> I suppose the patch in the kernel should very small also.
 >>
 >> Thoughts ?
-> we use the following patch to get the pid of a task as seen from its
-> pid namespace. It can be useful to identify tasks writing pids in files.
 >
-> Cheers,
->
-> C.
->
-> diff --git a/fs/proc/array.c b/fs/proc/array.c
-> index fff6572..9a7bfde 100644
-> --- a/fs/proc/array.c
-> +++ b/fs/proc/array.c
-> @@ -337,6 +337,12 @@ static void task_cpus_allowed(struct seq_file *m, struct task
->          seq_printf(m, "\n");
->   }
->
-> +static void task_vpid(struct seq_file *m, struct task_struct *task)
-> +{
-> +       struct pid_namespace *ns = task_active_pid_ns(task);
-> +       seq_printf(m, "Vpid:\t%d\n", ns ? task_pid_nr_ns(task, ns) : 0);
-> +}
-> +
->   int proc_pid_status(struct seq_file *m, struct pid_namespace *ns,
->                          struct pid *pid, struct task_struct *task)
->   {
-> @@ -357,6 +363,7 @@ int proc_pid_status(struct seq_file *m, struct pid_namespace *
->          task_show_regs(m, task);
->   #endif
->          task_context_switch_counts(m, task);
-> +       task_vpid(m, task);
->          return 0;
->   }
+> Would that mean that finding the pid->vpid association for a real PID 
+> X requires checking all files /proc/<X>/root/proc/<Y>/status where Y 
+> is all vpids until you find the one where Pid == X? It would be nice 
+> to have a have a way to check a single file for the association where 
+> vpid is not known beforehand -- unless I'm misunderstanding your 
+> solution.
 
-Right, it is another way to show the vpid but is it enough ? I mean if 
-there are multiple pid namespaces, you will see the vpid '2' or whatever 
-several times in different /proc/<pid>/status, you will need extra 
-information to group these processes to belong to a specific pid 
-namespace, no ?
+Hmm, right. But how do you know a pid is belonging to a specific pid 
+namespace ? I mean you can have a single process creating several pid 
+namespaces. So while looking at the /proc/<pid>/status, you can see 
+several times the same vpid, no ?
+I am not sure the kind of informations you want to collect but it is not 
+really a problem to build an association table from the userspace by 
+browsing the /proc/<pid>/root/proc/<vpids> and their corresponding pid 
+from the 'status' file information.
 
-I am also worried about the 'status' file format and if it is allowed to 
-add a line in it ... dunno ...
-
-The solution I was proposing is quite similar to this patch, it is just 
-the 'task_state' function which is modified to show the pid number 
-relatively to the pid namespace which is looking at the file.
-
-If we are the parent pid namespace, we can look at 
-/proc/<pid>/root/proc/<vpids>
-  * we have the list of the processes with the vpids which are the 
-<vpid> filename
-  * as we are the parent pid namespace, we look at 
-/proc/<pid>/root/proc/<vpid>/status and the pids number are the real pids.
-  * if we are in the child pid namespace, we will see the vpid.
-
-It is similar to the /cgroup/tasks file where the pid numbers are 
-different depending on what pid namespace we are looking from.
-
-By this way, we don't change the status file format, we have the list of 
-the processes belonging to a pid namespace with <vpid> and <pid> and we 
-support nested pid namespaces.
+Do you have an example for a pid -> vpid association without looking at 
+more informations from /proc ?
