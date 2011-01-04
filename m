@@ -1,7 +1,7 @@
-From: Cedric Le Goater <legoater-GANU6spQydw@public.gmane.org>
+From: Mike Heffner <mikeh-ql8fK+M3D0TQT0dZR+AlfA@public.gmane.org>
 Subject: Re: Mapping PIDs from parent->child namespaces
-Date: Tue, 04 Jan 2011 17:44:39 +0100
-Message-ID: <4D234E77.6000605@free.fr>
+Date: Tue, 04 Jan 2011 14:57:16 -0500
+Message-ID: <4D237B9C.5060007@fesnel.com>
 References: <4D225579.6030106@fesnel.com> <4D23451B.6060807@free.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,7 +21,7 @@ To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 01/04/2011 05:04 PM, Daniel Lezcano wrote:
+On 01/04/2011 11:04 AM, Daniel Lezcano wrote:
 > On 01/04/2011 12:02 AM, Mike Heffner wrote:
 >> Hi,
 >>
@@ -35,75 +35,54 @@ On 01/04/2011 05:04 PM, Daniel Lezcano wrote:
 >> just look at the result of clone(). However, mapping the PIDs of
 >> processes subsequently forked from "myproc" -- in this example -- I
 >> haven't been able to figure out.
-> 
+>
 > AFAIK, it is not possible.
-> 
-> That would be very nice to show the pid <-> vpid association.
-> 
+>
+> That would be very nice to show the pid<->  vpid association.
+>
 > The procfs is a good candidate to show these informations.
-> 
-> That would makes sense to show the content of /proc/<pid>/status with 
+>
+> That would makes sense to show the content of /proc/<pid>/status with
 > the pid relatively to the namespace.
-> 
+>
 > Let me give an example:
-> 
-> Assuming the process '1234' creates a new pid namespace, and the child 
-> which is '1' in the new namespace has the real pid '4321'. This one 
+>
+> Assuming the process '1234' creates a new pid namespace, and the child
+> which is '1' in the new namespace has the real pid '4321'. This one
 > mounts its /proc.
-> 
+>
 > If the process '1234' looks at /proc/4321/root/proc/1/status, it sees:
-> 
+>
 > ...
 > Tgid:	1
 > Pid:	1
 > PPid:	0
 > ...
-> 
-> 
+>
+>
 > It could be:
-> 
+>
 > ...
 > Tgid:	4321
 > Pid:	4321
 > PPid:	1234
 > ...
-> 
-> as the file is inspected from the parent namespace. Of course, if the 
-> file is looked from the child namespace context, we will see '1', '1' 
+>
+> as the file is inspected from the parent namespace. Of course, if the
+> file is looked from the child namespace context, we will see '1', '1'
 > and '0'.
-> 
+>
 > I suppose the patch in the kernel should very small also.
-> 
+>
 > Thoughts ?
 
-we use the following patch to get the pid of a task as seen from its
-pid namespace. It can be useful to identify tasks writing pids in files. 
+Would that mean that finding the pid->vpid association for a real PID X 
+requires checking all files /proc/<X>/root/proc/<Y>/status where Y is 
+all vpids until you find the one where Pid == X? It would be nice to 
+have a have a way to check a single file for the association where vpid 
+is not known beforehand -- unless I'm misunderstanding your solution.
+
 
 Cheers,
 
-C.
-
-diff --git a/fs/proc/array.c b/fs/proc/array.c
-index fff6572..9a7bfde 100644
---- a/fs/proc/array.c
-+++ b/fs/proc/array.c
-@@ -337,6 +337,12 @@ static void task_cpus_allowed(struct seq_file *m, struct task
-        seq_printf(m, "\n");
- }
- 
-+static void task_vpid(struct seq_file *m, struct task_struct *task)
-+{
-+       struct pid_namespace *ns = task_active_pid_ns(task);
-+       seq_printf(m, "Vpid:\t%d\n", ns ? task_pid_nr_ns(task, ns) : 0);
-+}
-+
- int proc_pid_status(struct seq_file *m, struct pid_namespace *ns,
-                        struct pid *pid, struct task_struct *task)
- {
-@@ -357,6 +363,7 @@ int proc_pid_status(struct seq_file *m, struct pid_namespace *
-        task_show_regs(m, task);
- #endif
-        task_context_switch_counts(m, task);
-+       task_vpid(m, task);
-        return 0;
- }
+Mike
