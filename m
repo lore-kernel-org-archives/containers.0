@@ -1,15 +1,15 @@
-From: Cedric Le Goater <legoater-GANU6spQydw@public.gmane.org>
-Subject: Re: Mapping PIDs from parent->child namespaces
-Date: Wed, 05 Jan 2011 14:54:20 +0100
-Message-ID: <4D24780C.1090607@free.fr>
-References: <4D225579.6030106@fesnel.com>
-	<4D23451B.6060807@free.fr>	<4D234E77.6000605@free.fr>
-	<4D23806C.5040806@fesnel.com> <4D24773F.8050800@free.fr>
+From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Subject: Re: Containers and /proc/sys/vm/drop_caches
+Date: Wed, 5 Jan 2011 08:01:59 -0600
+Message-ID: <20110105140159.GC2718@hallyn.com>
+References: <20110105094022.GA5366@glandium.org>
+ <4D243EC3.1050101@free.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4D24773F.8050800-GANU6spQydw@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4D243EC3.1050101-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,13 +19,47 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <legoater-GANU6spQydw@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: Mike Hommey <mh-YmoObPS1fuhg9hUCZPvPmw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 01/05/2011 02:50 PM, Cedric Le Goater wrote:
-> Why do you need it ? 
+Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
+> On 01/05/2011 10:40 AM, Mike Hommey wrote:
+> >[Copy/pasted from a previous message to lkml, where it was suggested to
+> >  try containers@]
+> >
+> >Hi,
+> >
+> >I noticed that from within a lxc container, writing "3" to
+> >/proc/sys/vm/drop_caches would flush the host page cache. That sounds a
+> >little dangerous for VPS offerings that would be based on lxc, as in one
+> >VPS instance root user could impact the overall performance of the host.
+> >I don't know about other containers but I've been told openvz isn't
+> >subject to this problem.
+> >I only tested the current Debian Squeeze kernel, which is based on
+> >2.6.32.27.
+> 
+> There is definitively a big work to do with /proc.
+> 
+> Some files should be not accessible (/proc/sys/vm/drop_caches,
+> /proc/sys/kernel/sysrq, ...) and some other should be virtualized
+> (/proc/meminfo, /proc/cpuinfo, ...).
+> 
+> Serge suggested to create something similar to the cgroup device
+> whitelist but for /proc, maybe it is a good approach for denying
+> access a specific proc's file.
 
-I see you answered that question in another thread.
+Long-term, user namespaces should fix this - /proc will be owned
+by the user namespace which mounted it, but we can tell proc to
+always have some files (like drop_caches) be owned by init_user_ns.
 
-C.
+I'm hoping to push my final targeted capabilities prototype in the
+next few weeks, and after that I start seriously attacking VFS
+interaction.
+
+In the meantime, though, you can use SELinux/Smack, or a custom
+cgroup file does sound useful.  Can cgroups be modules nowadays?
+(I can't keep up)  If so, an out of tree proc-cgroup module seems
+like a good interim solution.
+
+-serge
