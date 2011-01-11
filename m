@@ -1,13 +1,13 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: STDIN_FILENO during restart
-Date: Mon, 10 Jan 2011 20:50:45 -0500
-Message-ID: <4D2BB775.9020501@cs.columbia.edu>
-References: <20101214055043.GA26636@us.ibm.com>
+Subject: Re: [PATCH][usercr]: Ghost tasks must be detached
+Date: Mon, 10 Jan 2011 20:51:06 -0500
+Message-ID: <4D2BB78A.9090701@cs.columbia.edu>
+References: <20101211033548.GA12584@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20101214055043.GA26636-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20101211033548.GA12584-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,166 +21,48 @@ To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.o
 Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi Suka,
 
-Indeed the use of STDIN_FILENO wasn't too friendly to callers
-of the library. However, I think the correct fix is different.
-So I fixed that, and added a few other cleanups in an attempt
-to ensure that the restart code cleans up properly after being
-called (succesfully or unsuccesfully) - including memory leaks,
-file decsriptors, and even drop a call to setpgrp(). I pushed
-those patches to user-cr.
+Applied to user-cr.
 
 Thanks,
 
 Oren.
 
-
-On 12/14/2010 12:50 AM, Sukadev Bhattiprolu wrote:
-> Oren
+On 12/10/2010 10:35 PM, Sukadev Bhattiprolu wrote:
 > 
-> Is there a reason we hard code STDIN_FILENO during restart in usercr ?
+> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> Date: Fri, 10 Dec 2010 19:23:58 -0800
+> Subject: [PATCH 1/1] Ghost tasks must be detached
 > 
-> Or can we simply use the fd passed by the caller of cr_restart() -
-> something like in this patch ? 
+> Ghost processes are created only to help restore orphaned sessions/pgrps.
+> As such once the session/pgrp is created the ghost must not send another
+> SIGCHLD to the parent but exit silently.  So create such tasks as
+> "detached".
 > 
-> Whether it is STDIN_FILENO or another fd, do_sys_restart() holds a reference
-> to the 'struct file' and so we should still be able to read the image even
-> if close_all_fds() closes the fd. Or is there a subtle reason, we stick to
-> STDIN_FILENO ?
+> See also:
 > 
-> Sukadev
+> https://lists.linux-foundation.org/pipermail/containers/2010-December/026076.html
+> 
+> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 > ---
->  src/lxc/user-cr/restart.c |   35 ++++++++++++++++++++++-------------
->  1 files changed, 22 insertions(+), 13 deletions(-)
+>  restart.c |    7 +++++++
+>  1 files changed, 7 insertions(+), 0 deletions(-)
 > 
-> diff --git a/src/lxc/user-cr/restart.c b/src/lxc/user-cr/restart.c
-> index 5b22948..944dbf1 100644
-> --- a/src/lxc/user-cr/restart.c
-> +++ b/src/lxc/user-cr/restart.c
-> @@ -169,6 +169,7 @@ static int global_child_status;
->  static int global_child_collected;
->  static int global_sent_sigint;
->  static struct signal_array signal_array[] = INIT_SIGNAL_ARRAY;
-> +static int global_input_fd = -1;
-> 
->  /*
->   * TODO: Implement an API to let callers choose if/how an interrupt be sent
-> @@ -403,15 +404,23 @@ int process_args(struct cr_restart_args *args)
->  	global_ulogfd = args->ulogfd;
->  	global_uerrfd = args->uerrfd;
-> 
-> +	if (args->infd < 0) {
-> +		ckpt_err("Invalid input fd %d\n", args->infd);
-> +		exit(1);
+> diff --git a/restart.c b/restart.c
+> index 9fb5e9f..d7ba26b 100644
+> --- a/restart.c
+> +++ b/restart.c
+> @@ -1744,6 +1744,13 @@ static pid_t ckpt_fork_child(struct ckpt_ctx *ctx, struct task *child)
+>  		flags |= CLONE_THREAD | CLONE_SIGHAND | CLONE_VM;
+>  	else if (child->flags & TASK_SIBLING)
+>  		flags |= CLONE_PARENT;
+> +	else if (child->flags & (TASK_GHOST|TASK_DEAD)) {
+> +		/* 
+> +		 * Ghosts must vanish silently (without signalling parent)
+> +		 * when they are done.
+> +		 */
+> +		flags = 0xFF;
 > +	}
-> +	global_input_fd = args->infd;
-> +
-> +#if 0
->  	/* input file descriptor (default: stdin) */
->  	if (args->infd >= 0) {
-> -		if (dup2(args->infd, STDIN_FILENO) < 0) {
-> +		if (dup2(args->infd, global_input_fd) < 0) {
->  			ckpt_perror("dup2 input file");
->  			exit(1);
->  		}
-> -		if (args->infd != STDIN_FILENO)
-> +		if (args->infd != global_input_fd)
->  			close(args->infd);
->  	}
-> +#endif
-> 
->  	/* output file descriptor (default: none) */
->  	if (args->klogfd < 0)
-> @@ -492,7 +501,7 @@ int cr_restart(struct cr_restart_args *args)
->  		if (args->mnt_pty && ckpt_remount_devpts(&ctx) < 0)
->  			exit(1);
-> 
-> -		restart(getpid(), STDIN_FILENO, RESTART_TASKSELF, args->klogfd);
-> +		restart(getpid(), global_input_fd, RESTART_TASKSELF, args->klogfd);
-> 
->  		/* reach here if restart(2) failed ! */
->  		ckpt_perror("restart");
-> @@ -926,7 +935,7 @@ static int ckpt_coordinator(struct ckpt_ctx *ctx)
->  	if (ctx->args->keep_lsm)
->  		flags |= RESTART_KEEP_LSM;
-> 
-> -	ret = restart(root_pid, STDIN_FILENO, flags, ctx->args->klogfd);
-> +	ret = restart(root_pid, global_input_fd, flags, ctx->args->klogfd);
-> 
->  	if (ret < 0) {
->  		ckpt_perror("restart failed");
-> @@ -1658,7 +1667,7 @@ static int ckpt_make_tree(struct ckpt_ctx *ctx, struct task *task)
-> 
->  	/* on success this doesn't return */
->  	ckpt_dbg("about to call sys_restart(), flags %#lx\n", flags);
-> -	ret = restart(0, STDIN_FILENO, flags, CHECKPOINT_FD_NONE);
-> +	ret = restart(0, global_input_fd, flags, CHECKPOINT_FD_NONE);
->  	if (ret < 0)
->  		ckpt_perror("task restore failed");
->  	return ret;
-> @@ -1857,8 +1866,8 @@ static int ckpt_fork_feeder(struct ckpt_ctx *ctx)
->  	ctx->pipe_out = ctx->pipe_child[1];
->  	/* feeder pipe */
->  	close(ctx->pipe_feed[1]);
-> -	if (ctx->pipe_feed[0] != STDIN_FILENO) {
-> -		dup2(ctx->pipe_feed[0], STDIN_FILENO);
-> +	if (ctx->pipe_feed[0] != global_input_fd) {
-> +		dup2(ctx->pipe_feed[0], global_input_fd);
->  		close(ctx->pipe_feed[0]);
->  	}
-> 
-> @@ -1878,7 +1887,7 @@ static void ckpt_read_write_blind(struct ckpt_ctx *ctx)
->  	int ret;
-> 
->  	while (1) {
-> -		ret = read(STDIN_FILENO, ctx->buf, BUFSIZE);
-> +		ret = read(global_input_fd, ctx->buf, BUFSIZE);
->  		ckpt_dbg("c/r read input %d\n", ret);
->  		if (ret == 0)
->  			break;
-> @@ -1897,7 +1906,7 @@ static void ckpt_read_write_inspect(struct ckpt_ctx *ctx)
->  	int len, ret;
-> 
->  	while (1) {
-> -		ret = _ckpt_read(STDIN_FILENO, &h, sizeof(h));
-> +		ret = _ckpt_read(global_input_fd, &h, sizeof(h));
->  ckpt_dbg("ret %d len %d type %d\n", ret, h.len, h.type);
->  		if (ret == 0)
->  			break;
-> @@ -1915,7 +1924,7 @@ ckpt_dbg("ret %d len %d type %d\n", ret, h.len, h.type);
->  		h.len -= sizeof(h);
->  		if (h.type == CKPT_HDR_ERROR) {
->  			len = (h.len > BUFSIZE ? BUFSIZE : h.len);
-> -			ret = read(STDIN_FILENO, ctx->buf, len);
-> +			ret = read(global_input_fd, ctx->buf, len);
->  			if (ret < 0)
->  				ckpt_abort(ctx, "error record");
->  			errno = EIO;
-> @@ -1926,7 +1935,7 @@ ckpt_dbg("ret %d len %d type %d\n", ret, h.len, h.type);
-> 
->  		while (h.len) {
->  			len = (h.len > BUFSIZE ? BUFSIZE : h.len);
-> -			ret = read(STDIN_FILENO, ctx->buf, len);
-> +			ret = read(global_input_fd, ctx->buf, len);
->  			if (ret == 0)
->  				ckpt_abort(ctx, "short record");
->  			if (ret < 0)
-> @@ -2163,7 +2172,7 @@ static int ckpt_read_obj(struct ckpt_ctx *ctx,
->  {
->  	int ret;
-> 
-> -	ret = ckpt_read(STDIN_FILENO, h, sizeof(*h));
-> +	ret = ckpt_read(global_input_fd, h, sizeof(*h));
->  	if (ret < 0)
->  		return ret;
->  	if (h->len < sizeof(*h) || h->len > n) {
-> @@ -2172,7 +2181,7 @@ static int ckpt_read_obj(struct ckpt_ctx *ctx,
->  	}
->  	if (h->len == sizeof(*h))
->  		return 0;
-> -	return ckpt_read(STDIN_FILENO, buf, h->len - sizeof(*h));
-> +	return ckpt_read(global_input_fd, buf, h->len - sizeof(*h));
->  }
-> 
->  static int ckpt_read_obj_type(struct ckpt_ctx *ctx, void *buf, int n, int type)
+>  
+>  	memset(&clone_args, 0, sizeof(clone_args));
+>  	clone_args.nr_pids = 1;
