@@ -1,13 +1,13 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH][usercr]: Ghost tasks must be detached
-Date: Mon, 10 Jan 2011 20:51:06 -0500
-Message-ID: <4D2BB78A.9090701@cs.columbia.edu>
-References: <20101211033548.GA12584@us.ibm.com>
+Subject: Re: [PATCH][cr]: Ghost tasks must not be detached in kernel
+Date: Mon, 10 Jan 2011 20:51:20 -0500
+Message-ID: <4D2BB798.4050500@cs.columbia.edu>
+References: <20101211033315.GA12292@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20101211033548.GA12584-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20101211033315.GA12292-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,47 +22,68 @@ Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gm
 List-Id: containers.vger.kernel.org
 
 
-Applied to user-cr.
+Merged into v23-rc1.
 
 Thanks,
 
 Oren.
 
-On 12/10/2010 10:35 PM, Sukadev Bhattiprolu wrote:
+On 12/10/2010 10:33 PM, Sukadev Bhattiprolu wrote:
+> Oren,
+> 
+> As discussed (a while ago)
+> 
+> https://lists.linux-foundation.org/pipermail/containers/2010-November/025905.html
+> 
+> here is a patch. I will send a follow-on user-cr patch to mark
+> the task detached in user-space.
+> 
+> ---
 > 
 > From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Date: Fri, 10 Dec 2010 19:23:58 -0800
-> Subject: [PATCH 1/1] Ghost tasks must be detached
+> Date: Fri, 10 Dec 2010 18:37:17 -0800
+> Subject: [PATCH 1/1] Ghost tasks must not be detached in kernel
 > 
-> Ghost processes are created only to help restore orphaned sessions/pgrps.
-> As such once the session/pgrp is created the ghost must not send another
-> SIGCHLD to the parent but exit silently.  So create such tasks as
-> "detached".
+> Ghost tasks are "temporary" tasks created during sys_restart() to
+> restore "orphaned" sessions/process groups (i.e. those in which the
+> original session/pgrp leader had exited before checkpoint but other
+> processes exist in that session/pgrp).
 > 
-> See also:
+> We only create the ghost task so we have a valid session/pgrp that
+> the other processes in the session/pgrp can use. Once those other
+> processes are created, the ghost tasks must silently vanish (without
+> sending another SIGCHLD).
 > 
-> https://lists.linux-foundation.org/pipermail/containers/2010-December/026076.html
+> do_ghost_task() was setting the exit_signal to -1 so the ghosts don't
+> send a signal. But rather than set the ->exit_signal here, the caller
+> (i.e user-space) can create the ghost task by explicitly setting the
+> CSIGNAL mask to 0xFF. i.e it is not something the we need to do in the
+> kernel.
 > 
-> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> The downside of marking the task detached in do_ghost_task() is that
+> with current/older kernels container-init does not wait for detached
+> tasks.  See:
+> 
+> 	http://lkml.org/lkml/2010/6/16/272
+> 	http://lkml.org/lkml/2010/7/12/213
+> 
+> This can lead to a kernel crash if the container-init pre-deceases a
+> ghost task.
+> 
+> Signed-off-by: Sukadev Bhattiprolu (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org)
 > ---
->  restart.c |    7 +++++++
->  1 files changed, 7 insertions(+), 0 deletions(-)
+>  kernel/checkpoint/restart.c |    1 -
+>  1 files changed, 0 insertions(+), 1 deletions(-)
 > 
-> diff --git a/restart.c b/restart.c
-> index 9fb5e9f..d7ba26b 100644
-> --- a/restart.c
-> +++ b/restart.c
-> @@ -1744,6 +1744,13 @@ static pid_t ckpt_fork_child(struct ckpt_ctx *ctx, struct task *child)
->  		flags |= CLONE_THREAD | CLONE_SIGHAND | CLONE_VM;
->  	else if (child->flags & TASK_SIBLING)
->  		flags |= CLONE_PARENT;
-> +	else if (child->flags & (TASK_GHOST|TASK_DEAD)) {
-> +		/* 
-> +		 * Ghosts must vanish silently (without signalling parent)
-> +		 * when they are done.
-> +		 */
-> +		flags = 0xFF;
-> +	}
+> diff --git a/kernel/checkpoint/restart.c b/kernel/checkpoint/restart.c
+> index 17270b8..2bb7197 100644
+> --- a/kernel/checkpoint/restart.c
+> +++ b/kernel/checkpoint/restart.c
+> @@ -972,7 +972,6 @@ static int do_ghost_task(void)
+>  	if (ret < 0)
+>  		ckpt_err(ctx, ret, "ghost restart failed\n");
 >  
->  	memset(&clone_args, 0, sizeof(clone_args));
->  	clone_args.nr_pids = 1;
+> -	current->exit_signal = -1;
+>  	restore_debug_exit(ctx);
+>  	ckpt_ctx_put(ctx);
+>  	do_exit(0);
