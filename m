@@ -1,17 +1,11 @@
-From: Bastian Blank <bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org>
-Subject: Re: [PATCH 4/7] allow killing tasks in your own or child userns
-Date: Tue, 11 Jan 2011 00:23:35 +0100
-Message-ID: <20110110232335.GA27029__28645.084918435$1294701856$gmane$org@wavehammer.waldi.eu.org>
-References: <20110110211135.GA22446@mail.hallyn.com>
-	<20110110211334.GD22564@mail.hallyn.com>
-	<20110110215240.GA21351@wavehammer.waldi.eu.org>
-	<20110110225151.GA18944@localhost>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: linux-cr:  v23-rc1 pushed
+Date: Mon, 10 Jan 2011 20:18:12 -0500
+Message-ID: <4D2BAFD4.1080400@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20110110225151.GA18944@localhost>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,39 +15,38 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Kees Cook <kees.cook-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Cc: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Jan 10, 2011 at 04:51:51PM -0600, Serge Hallyn wrote:
-> Quoting Bastian Blank (bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org):
-> > Isn't that equal to this?
-> > 
-> > 	if (ns_capable(tcred->user->user_ns, CAP_KILL))
-> > 		return 1;
-> > 
-> > 	if (cred->user->user_ns == tcred->user->user_ns &&
-> > 	    (cred->euid == tcred->suid ||
-> > 	     cred->euid == tcred->uid ||
-> > 	     cred->uid == tcred->suid ||
-> > 	     cred->uid == tcred->uid))
-> > 		return 1;
-> > 
-> > 	return 0;
-> > 
-> > I would consider this much easier to read.
-> 
-> Unfortunately, it's actually not equivalent.  when capable()
-> returns success, then it sets the current->flags |= PF_SUPERPRIV.
-> If permission is granted based on userids and the capability
-> isn't needed, then we don't want to needlessly set PF_SUPERPRIV.
+Folks,
 
-Well, then switch the two if-clauses.
+I just pushed out a new v23-rc1 branch of linux-cr. This one is
+rebased to 2.6.37, and contains nearly all the patches pulled
+on v22-dev. I only gave it a brief test drive... feel free to 
+throw all your ammo it.
 
-What is this flag used for anyway? I only see it used in the accounting
-stuff, and if every user can get it, it is not longer useful.
+Rebasing was fairly straightforward, but I'd feel more comfortable 
+with more eyes looking at some code, specifically:
 
-Bastian
+userns [Serge ?]
+sockets [Dan ?]
+cgroup_freezer [Matt ?]
 
--- 
-Bones: "The man's DEAD, Jim!"
+I skipped PowerPC patches and ARM patches. Nathan, Christoffer -
+can you take a look at those, respectively, and re-post to list ?
+
+For the "final" v23, I'm hoping to add at least the logic for
+unlinked files and inotify-and-friends; so now is probably a
+good time to start circulating them ... (hint!)
+
+There are some updates and fixes to user-cr too, mainly pulling
+(and reworking) suka's old cleanup patches, and updating the
+include files.
+
+I also pulled and reworked Suka's patches for file-locks, and 
+Nathan's patches for hugetlb - will post those seperately.
+
+Happy New Year,
+
+Oren.
