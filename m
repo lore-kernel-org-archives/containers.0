@@ -1,13 +1,13 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: global_send_sigint
-Date: Mon, 10 Jan 2011 20:59:17 -0500
-Message-ID: <4D2BB975.2010306@cs.columbia.edu>
-References: <20100225034746.GA18829@us.ibm.com>
+Subject: [PATCH 0/4] Checkpoint/restart support for HUGETLB pages
+Date: Mon, 10 Jan 2011 21:11:25 -0500
+Message-ID: <1294711889-30343-1-git-send-email-orenl@cs.columbia.edu>
+References: <1287601006-13794-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20100225034746.GA18829-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1287601006-13794-1-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,46 +17,24 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+The following 4 patches add supoprt for c/r of HUGETLB pages.
+They are based on the original post by Nathan Lynch: 
+https://lists.linux-foundation.org/pipermail/containers/2010-October/025794.html
 
-At the moment, at least @klogd field has to be set manually.
+Nathan:
 
-Perhaps it would be better to provide a pre-initialized struct,
-so that users could do:
+I did some serious refactoring of your patches to be able to re-use
+the existing infrastructure for memory-dump/restore in our code. It
+would be great if you could double check that the results makes sense.
 
-  args = CR_RESTART_ARGS;
-or
-  cr_init_restart_args(&args);
+Also, I noticed that during restart the code ignored the 'shift' (or
+huge page size?) and assumed the default one is used, while in other
+places it does use the @shift value. Should there not be at least 
+some sanity test and a clear error message in case of mismatch ?
 
-?
+Thanks,
 
-Oren
-
-
-On 02/24/2010 10:47 PM, Sukadev Bhattiprolu wrote:
-> 
-> global_send_sigint is -1 by default. 
-> 
-> If it is -1, we either send SIGKILL or SIGINIT depending on whether
-> we started "new pidns with init" or "new pidns without init".
-> 
-> If global_send_sigint is explicitly set to 0 by user (--signal is set).
-> no signal is sent.
-> 
-> Given that we are making restart() available in libcheckpoint.a, would
-> it make sense to switch the behaviors of 0 and -1 ?
-> 
-> i.e if global_send_sigint is 0, send the default signal (SIGINT or SIGKILL).
-> If it is -1, then don't send any signal.
-> 
-> That way, applications of restart() (i.e LXC) can simply
-> 
-> 	memset(&args, 0, sizeof(args))
-> 
-> and get the default behavior. Now they have to explicitly set to -1.
-> 
-> Sukadev
-> 
+Oren.
