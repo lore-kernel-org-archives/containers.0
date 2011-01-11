@@ -1,13 +1,13 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH][cr]: Fix C/R of termios
-Date: Mon, 10 Jan 2011 20:46:49 -0500
-Message-ID: <4D2BB689.4070504@cs.columbia.edu>
-References: <20101222091559.GA32053@us.ibm.com>
+Subject: Re: STDIN_FILENO during restart
+Date: Mon, 10 Jan 2011 20:50:45 -0500
+Message-ID: <4D2BB775.9020501@cs.columbia.edu>
+References: <20101214055043.GA26636@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20101222091559.GA32053-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20101214055043.GA26636-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,163 +21,166 @@ To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.o
 Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Hi Suka,
 
-Pulled and merged in v23-rc1, with a slight change: NCCS is
-known to userspace, so no need for CKPT_TTY_NCCS...
+Indeed the use of STDIN_FILENO wasn't too friendly to callers
+of the library. However, I think the correct fix is different.
+So I fixed that, and added a few other cleanups in an attempt
+to ensure that the restart code cleans up properly after being
+called (succesfully or unsuccesfully) - including memory leaks,
+file decsriptors, and even drop a call to setpgrp(). I pushed
+those patches to user-cr.
 
-Thanks
+Thanks,
 
 Oren.
 
-On 12/22/2010 04:15 AM, Sukadev Bhattiprolu wrote:
-> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Date: Fri, 10 Dec 2010 18:36:34 -0800
-> Subject: [PATCH 1/1] Fix C/R of termios
+
+On 12/14/2010 12:50 AM, Sukadev Bhattiprolu wrote:
+> Oren
 > 
-> The kernel uses 'struct ktermios' to represent the terminal attributes.
-> We should checkpoint and restart the 'struct ktermios' object rather
-> than the 'struct termio'.
+> Is there a reason we hard code STDIN_FILENO during restart in usercr ?
 > 
-> Signed-off-by: Sukadev Bhattiprolu (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org)
+> Or can we simply use the fd passed by the caller of cr_restart() -
+> something like in this patch ? 
+> 
+> Whether it is STDIN_FILENO or another fd, do_sys_restart() holds a reference
+> to the 'struct file' and so we should still be able to read the image even
+> if close_all_fds() closes the fd. Or is there a subtle reason, we stick to
+> STDIN_FILENO ?
+> 
+> Sukadev
 > ---
->  arch/powerpc/include/asm/checkpoint_hdr.h |    6 +++---
->  arch/x86/include/asm/checkpoint_hdr.h     |    6 +++---
->  drivers/char/tty_io.c                     |    8 ++++++--
->  include/linux/checkpoint_hdr.h            |   14 ++++++++------
->  kernel/checkpoint/checkpoint.c            |    2 +-
->  kernel/checkpoint/restart.c               |    2 +-
->  6 files changed, 22 insertions(+), 16 deletions(-)
+>  src/lxc/user-cr/restart.c |   35 ++++++++++++++++++++++-------------
+>  1 files changed, 22 insertions(+), 13 deletions(-)
 > 
-> diff --git a/arch/powerpc/include/asm/checkpoint_hdr.h b/arch/powerpc/include/asm/checkpoint_hdr.h
-> index fbb1705..d2e6096 100644
-> --- a/arch/powerpc/include/asm/checkpoint_hdr.h
-> +++ b/arch/powerpc/include/asm/checkpoint_hdr.h
-> @@ -5,7 +5,7 @@
->  
->  /* arch dependent constants */
->  #define CKPT_ARCH_NSIG 64
-> -#define CKPT_TTY_NCC  10
-> +#define CKPT_TTY_NCCS  19
->  
->  #ifdef __KERNEL__
->  
-> @@ -15,8 +15,8 @@
->  #endif
->  
->  #include <linux/tty.h>
-> -#if CKPT_TTY_NCC != NCC
-> -#error CKPT_TTY_NCC size is wrong per asm-generic/termios.h
-> +#if CKPT_TTY_NCCS != NCCS
-> +#error CKPT_TTY_NCCS size is wrong per asm/termbits.h
->  #endif
->  
->  #endif /* __KERNEL__ */
-> diff --git a/arch/x86/include/asm/checkpoint_hdr.h b/arch/x86/include/asm/checkpoint_hdr.h
-> index 0505329..3ac9d29 100644
-> --- a/arch/x86/include/asm/checkpoint_hdr.h
-> +++ b/arch/x86/include/asm/checkpoint_hdr.h
-> @@ -54,7 +54,7 @@ enum {
->  
->  /* arch dependent constants */
->  #define CKPT_ARCH_NSIG  64
-> -#define CKPT_TTY_NCC  8
-> +#define CKPT_TTY_NCCS	19
->  
->  #ifdef __KERNEL__
->  
-> @@ -64,8 +64,8 @@ enum {
->  #endif
->  
->  #include <linux/tty.h>
-> -#if CKPT_TTY_NCC != NCC
-> -#error CKPT_TTY_NCC size is wrong per asm-generic/termios.h
-> +#if CKPT_TTY_NCCS != NCCS
-> +#error CKPT_TTY_NCCS size is wrong per asm-generic/termbits.h
->  #endif
->  
->  #endif /* __KERNEL__ */
-> diff --git a/drivers/char/tty_io.c b/drivers/char/tty_io.c
-> index 3a2c770..857d43a 100644
-> --- a/drivers/char/tty_io.c
-> +++ b/drivers/char/tty_io.c
-> @@ -2882,7 +2882,9 @@ static int checkpoint_tty(struct ckpt_ctx *ctx, void *ptr)
->  	h->termios.c_oflag = tty->termios->c_oflag;
->  	h->termios.c_cflag = tty->termios->c_cflag;
->  	h->termios.c_lflag = tty->termios->c_lflag;
-> -	memcpy(h->termios.c_cc, tty->termios->c_cc, NCC);
-> +	memcpy(h->termios.c_cc, tty->termios->c_cc, NCCS);
-> +	h->termios.c_ispeed = tty->termios->c_ispeed;
-> +	h->termios.c_ospeed = tty->termios->c_ospeed;
->  	h->winsize.ws_row = tty->winsize.ws_row;
->  	h->winsize.ws_col = tty->winsize.ws_col;
->  	h->winsize.ws_ypixel = tty->winsize.ws_ypixel;
-> @@ -3099,7 +3101,9 @@ static struct tty_struct *do_restore_tty(struct ckpt_ctx *ctx)
->  	tty->termios->c_oflag = h->termios.c_oflag;
->  	tty->termios->c_cflag = h->termios.c_cflag;
->  	tty->termios->c_lflag = h->termios.c_lflag;
-> -	memcpy(tty->termios->c_cc, h->termios.c_cc, NCC);
-> +	memcpy(tty->termios->c_cc, h->termios.c_cc, NCCS);
-> +	tty->termios->c_ispeed = h->termios.c_ispeed;
-> +	tty->termios->c_ospeed = h->termios.c_ospeed;
->  	tty->winsize.ws_row = h->winsize.ws_row;
->  	tty->winsize.ws_col = h->winsize.ws_col;
->  	tty->winsize.ws_ypixel = h->winsize.ws_ypixel;
-> diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-> index 4303235..2f10011 100644
-> --- a/include/linux/checkpoint_hdr.h
-> +++ b/include/linux/checkpoint_hdr.h
-> @@ -317,7 +317,7 @@ struct ckpt_const {
->  	__u16 rlimit_nlimits;
->  	/* tty */
->  	__u16 n_tty_buf_size;
-> -	__u16 tty_termios_ncc;
-> +	__u16 tty_termios_nccs;
->  } __attribute__((aligned(8)));
->  
->  /* checkpoint image header */
-> @@ -1138,12 +1138,14 @@ struct ckpt_hdr_tty {
->  
->  	/* termios */
->  	struct {
-> -		__u16 c_iflag;
-> -		__u16 c_oflag;
-> -		__u16 c_cflag;
-> -		__u16 c_lflag;
-> +		__u32 c_iflag;
-> +		__u32 c_oflag;
-> +		__u32 c_cflag;
-> +		__u32 c_lflag;
->  		__u8 c_line;
-> -		__u8 c_cc[CKPT_TTY_NCC];
-> +		__u8 c_cc[CKPT_TTY_NCCS];
-> +		__u32 c_ispeed;
-> +		__u32 c_ospeed;
->  	} __attribute__((aligned(8))) termios;
->  
->  	/* winsize */
-> diff --git a/kernel/checkpoint/checkpoint.c b/kernel/checkpoint/checkpoint.c
-> index 55f4dc2..853de1b 100644
-> --- a/kernel/checkpoint/checkpoint.c
-> +++ b/kernel/checkpoint/checkpoint.c
-> @@ -128,7 +128,7 @@ static void fill_kernel_const(struct ckpt_const *h)
->  	h->rlimit_nlimits = RLIM_NLIMITS;
->  	/* tty */
->  	h->n_tty_buf_size = N_TTY_BUF_SIZE;
-> -	h->tty_termios_ncc = NCC;
-> +	h->tty_termios_nccs = NCCS;
+> diff --git a/src/lxc/user-cr/restart.c b/src/lxc/user-cr/restart.c
+> index 5b22948..944dbf1 100644
+> --- a/src/lxc/user-cr/restart.c
+> +++ b/src/lxc/user-cr/restart.c
+> @@ -169,6 +169,7 @@ static int global_child_status;
+>  static int global_child_collected;
+>  static int global_sent_sigint;
+>  static struct signal_array signal_array[] = INIT_SIGNAL_ARRAY;
+> +static int global_input_fd = -1;
+> 
+>  /*
+>   * TODO: Implement an API to let callers choose if/how an interrupt be sent
+> @@ -403,15 +404,23 @@ int process_args(struct cr_restart_args *args)
+>  	global_ulogfd = args->ulogfd;
+>  	global_uerrfd = args->uerrfd;
+> 
+> +	if (args->infd < 0) {
+> +		ckpt_err("Invalid input fd %d\n", args->infd);
+> +		exit(1);
+> +	}
+> +	global_input_fd = args->infd;
+> +
+> +#if 0
+>  	/* input file descriptor (default: stdin) */
+>  	if (args->infd >= 0) {
+> -		if (dup2(args->infd, STDIN_FILENO) < 0) {
+> +		if (dup2(args->infd, global_input_fd) < 0) {
+>  			ckpt_perror("dup2 input file");
+>  			exit(1);
+>  		}
+> -		if (args->infd != STDIN_FILENO)
+> +		if (args->infd != global_input_fd)
+>  			close(args->infd);
+>  	}
+> +#endif
+> 
+>  	/* output file descriptor (default: none) */
+>  	if (args->klogfd < 0)
+> @@ -492,7 +501,7 @@ int cr_restart(struct cr_restart_args *args)
+>  		if (args->mnt_pty && ckpt_remount_devpts(&ctx) < 0)
+>  			exit(1);
+> 
+> -		restart(getpid(), STDIN_FILENO, RESTART_TASKSELF, args->klogfd);
+> +		restart(getpid(), global_input_fd, RESTART_TASKSELF, args->klogfd);
+> 
+>  		/* reach here if restart(2) failed ! */
+>  		ckpt_perror("restart");
+> @@ -926,7 +935,7 @@ static int ckpt_coordinator(struct ckpt_ctx *ctx)
+>  	if (ctx->args->keep_lsm)
+>  		flags |= RESTART_KEEP_LSM;
+> 
+> -	ret = restart(root_pid, STDIN_FILENO, flags, ctx->args->klogfd);
+> +	ret = restart(root_pid, global_input_fd, flags, ctx->args->klogfd);
+> 
+>  	if (ret < 0) {
+>  		ckpt_perror("restart failed");
+> @@ -1658,7 +1667,7 @@ static int ckpt_make_tree(struct ckpt_ctx *ctx, struct task *task)
+> 
+>  	/* on success this doesn't return */
+>  	ckpt_dbg("about to call sys_restart(), flags %#lx\n", flags);
+> -	ret = restart(0, STDIN_FILENO, flags, CHECKPOINT_FD_NONE);
+> +	ret = restart(0, global_input_fd, flags, CHECKPOINT_FD_NONE);
+>  	if (ret < 0)
+>  		ckpt_perror("task restore failed");
+>  	return ret;
+> @@ -1857,8 +1866,8 @@ static int ckpt_fork_feeder(struct ckpt_ctx *ctx)
+>  	ctx->pipe_out = ctx->pipe_child[1];
+>  	/* feeder pipe */
+>  	close(ctx->pipe_feed[1]);
+> -	if (ctx->pipe_feed[0] != STDIN_FILENO) {
+> -		dup2(ctx->pipe_feed[0], STDIN_FILENO);
+> +	if (ctx->pipe_feed[0] != global_input_fd) {
+> +		dup2(ctx->pipe_feed[0], global_input_fd);
+>  		close(ctx->pipe_feed[0]);
+>  	}
+> 
+> @@ -1878,7 +1887,7 @@ static void ckpt_read_write_blind(struct ckpt_ctx *ctx)
+>  	int ret;
+> 
+>  	while (1) {
+> -		ret = read(STDIN_FILENO, ctx->buf, BUFSIZE);
+> +		ret = read(global_input_fd, ctx->buf, BUFSIZE);
+>  		ckpt_dbg("c/r read input %d\n", ret);
+>  		if (ret == 0)
+>  			break;
+> @@ -1897,7 +1906,7 @@ static void ckpt_read_write_inspect(struct ckpt_ctx *ctx)
+>  	int len, ret;
+> 
+>  	while (1) {
+> -		ret = _ckpt_read(STDIN_FILENO, &h, sizeof(h));
+> +		ret = _ckpt_read(global_input_fd, &h, sizeof(h));
+>  ckpt_dbg("ret %d len %d type %d\n", ret, h.len, h.type);
+>  		if (ret == 0)
+>  			break;
+> @@ -1915,7 +1924,7 @@ ckpt_dbg("ret %d len %d type %d\n", ret, h.len, h.type);
+>  		h.len -= sizeof(h);
+>  		if (h.type == CKPT_HDR_ERROR) {
+>  			len = (h.len > BUFSIZE ? BUFSIZE : h.len);
+> -			ret = read(STDIN_FILENO, ctx->buf, len);
+> +			ret = read(global_input_fd, ctx->buf, len);
+>  			if (ret < 0)
+>  				ckpt_abort(ctx, "error record");
+>  			errno = EIO;
+> @@ -1926,7 +1935,7 @@ ckpt_dbg("ret %d len %d type %d\n", ret, h.len, h.type);
+> 
+>  		while (h.len) {
+>  			len = (h.len > BUFSIZE ? BUFSIZE : h.len);
+> -			ret = read(STDIN_FILENO, ctx->buf, len);
+> +			ret = read(global_input_fd, ctx->buf, len);
+>  			if (ret == 0)
+>  				ckpt_abort(ctx, "short record");
+>  			if (ret < 0)
+> @@ -2163,7 +2172,7 @@ static int ckpt_read_obj(struct ckpt_ctx *ctx,
+>  {
+>  	int ret;
+> 
+> -	ret = ckpt_read(STDIN_FILENO, h, sizeof(*h));
+> +	ret = ckpt_read(global_input_fd, h, sizeof(*h));
+>  	if (ret < 0)
+>  		return ret;
+>  	if (h->len < sizeof(*h) || h->len > n) {
+> @@ -2172,7 +2181,7 @@ static int ckpt_read_obj(struct ckpt_ctx *ctx,
+>  	}
+>  	if (h->len == sizeof(*h))
+>  		return 0;
+> -	return ckpt_read(STDIN_FILENO, buf, h->len - sizeof(*h));
+> +	return ckpt_read(global_input_fd, buf, h->len - sizeof(*h));
 >  }
->  
->  /* write the checkpoint header */
-> diff --git a/kernel/checkpoint/restart.c b/kernel/checkpoint/restart.c
-> index 17270b8..0e359c2 100644
-> --- a/kernel/checkpoint/restart.c
-> +++ b/kernel/checkpoint/restart.c
-> @@ -593,7 +593,7 @@ static int check_kernel_const(struct ckpt_const *h)
->  	/* tty */
->  	if (h->n_tty_buf_size != N_TTY_BUF_SIZE)
->  		return -EINVAL;
-> -	if (h->tty_termios_ncc != NCC)
-> +	if (h->tty_termios_nccs != NCCS)
->  		return -EINVAL;
->  
->  	return 0;
+> 
+>  static int ckpt_read_obj_type(struct ckpt_ctx *ctx, void *buf, int n, int type)
