@@ -1,7 +1,8 @@
 From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 04/08] allow killing tasks in your own or child userns
-Date: Tue, 11 Jan 2011 06:44:29 +0000
-Message-ID: <20110111064429.GE27515__5997.35000073469$1294728430$gmane$org@mail.hallyn.com>
+Subject: [PATCH 06/08] user namespaces: convert all capable checks in
+	kernel/sys.c
+Date: Tue, 11 Jan 2011 06:44:49 +0000
+Message-ID: <20110111064449.GG27515__32658.6827556186$1294728431$gmane$org@mail.hallyn.com>
 References: <20110111064342.GA27515@mail.hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,76 +23,195 @@ To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Kees Cook <kees.cook-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Bastian Blank <bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+This allows setuid/setgid in containers.  It also fixes some
+corner cases where kernel logic foregoes capability checks when
+uids are equivalent.  The latter will need to be done throughout
+the whole kernel.
+
 Changelog:
-	Dec  8: Fixed bug in my check_kill_permission pointed out by
-	        Eric Biederman.
-	Dec 13: Apply Eric's suggestion to pass target task into kill_ok_by_cred()
-	        for clarity
-	Dec 31: address comment by Eric Biederman:
-		don't need cred/tcred in check_kill_permission.
-	Jan  1: use const cred struct.
-	Jan 11: Per Bastian Blank's advice, clean up kill_ok_by_cred().
+	Jan 11: Use nsown_capable() as suggested by Bastian Blank.
+	Jan 11: Fix logic errors in uid checks pointed out by Bastian.
 
 Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Reviewed-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- kernel/signal.c |   30 ++++++++++++++++++++++--------
- 1 files changed, 22 insertions(+), 8 deletions(-)
+ kernel/sys.c |   67 +++++++++++++++++++++++++++++++++++----------------------
+ 1 files changed, 41 insertions(+), 26 deletions(-)
 
-diff --git a/kernel/signal.c b/kernel/signal.c
-index 4e3cff1..b64d06e 100644
---- a/kernel/signal.c
-+++ b/kernel/signal.c
-@@ -636,13 +636,33 @@ static inline bool si_fromuser(const struct siginfo *info)
- }
+diff --git a/kernel/sys.c b/kernel/sys.c
+index 9b9b03b..b68cd67 100644
+--- a/kernel/sys.c
++++ b/kernel/sys.c
+@@ -116,17 +116,29 @@ EXPORT_SYMBOL(cad_pid);
  
- /*
-+ * called with RCU read lock from check_kill_permission()
-+ */
-+static inline int kill_ok_by_cred(struct task_struct *t)
+ void (*pm_power_off_prepare)(void);
+ 
++/* called with rcu_read_lock, creds are safe */
++static inline int set_one_prio_perm(struct task_struct *p)
 +{
-+	const struct cred *cred = current_cred();
-+	const struct cred *tcred = __task_cred(t);
++	const struct cred *cred = current_cred(), *pcred = __task_cred(p);
 +
-+	if (cred->user->user_ns == tcred->user->user_ns &&
-+	    (cred->euid == tcred->suid) ||
-+	     cred->euid == tcred->uid ||
-+	     cred->uid  == tcred->suid ||
-+	     cred->uid  == tcred->uid)
++	if (pcred->user->user_ns == cred->user->user_ns &&
++	    (pcred->uid  == cred->euid ||
++	     pcred->euid == cred->euid))
 +		return 1;
-+
-+	if (ns_capable(tcred->user->user_ns, CAP_KILL))
++	if (ns_capable(pcred->user->user_ns, CAP_SYS_NICE))
 +		return 1;
-+
 +	return 0;
 +}
 +
-+/*
-  * Bad permissions for sending the signal
+ /*
+  * set the priority of a task
   * - the caller must hold the RCU read lock
   */
- static int check_kill_permission(int sig, struct siginfo *info,
- 				 struct task_struct *t)
+ static int set_one_prio(struct task_struct *p, int niceval, int error)
  {
--	const struct cred *cred, *tcred;
- 	struct pid *sid;
- 	int error;
+-	const struct cred *cred = current_cred(), *pcred = __task_cred(p);
+-	int no_nice;
++	int ret, no_nice;
  
-@@ -656,14 +676,8 @@ static int check_kill_permission(int sig, struct siginfo *info,
- 	if (error)
- 		return error;
+-	if (pcred->uid  != cred->euid &&
+-	    pcred->euid != cred->euid && !capable(CAP_SYS_NICE)) {
++	if (!set_one_prio_perm(p)) {
+ 		error = -EPERM;
+ 		goto out;
+ 	}
+@@ -496,7 +508,7 @@ SYSCALL_DEFINE2(setregid, gid_t, rgid, gid_t, egid)
+ 	if (rgid != (gid_t) -1) {
+ 		if (old->gid == rgid ||
+ 		    old->egid == rgid ||
+-		    capable(CAP_SETGID))
++		    nsown_capable(CAP_SETGID))
+ 			new->gid = rgid;
+ 		else
+ 			goto error;
+@@ -505,7 +517,7 @@ SYSCALL_DEFINE2(setregid, gid_t, rgid, gid_t, egid)
+ 		if (old->gid == egid ||
+ 		    old->egid == egid ||
+ 		    old->sgid == egid ||
+-		    capable(CAP_SETGID))
++		    nsown_capable(CAP_SETGID))
+ 			new->egid = egid;
+ 		else
+ 			goto error;
+@@ -540,7 +552,7 @@ SYSCALL_DEFINE1(setgid, gid_t, gid)
+ 	old = current_cred();
  
--	cred = current_cred();
--	tcred = __task_cred(t);
- 	if (!same_thread_group(current, t) &&
--	    (cred->euid ^ tcred->suid) &&
--	    (cred->euid ^ tcred->uid) &&
--	    (cred->uid  ^ tcred->suid) &&
--	    (cred->uid  ^ tcred->uid) &&
--	    !capable(CAP_KILL)) {
-+	    !kill_ok_by_cred(t)) {
- 		switch (sig) {
- 		case SIGCONT:
- 			sid = task_session(t);
+ 	retval = -EPERM;
+-	if (capable(CAP_SETGID))
++	if (nsown_capable(CAP_SETGID))
+ 		new->gid = new->egid = new->sgid = new->fsgid = gid;
+ 	else if (gid == old->gid || gid == old->sgid)
+ 		new->egid = new->fsgid = gid;
+@@ -607,7 +619,7 @@ SYSCALL_DEFINE2(setreuid, uid_t, ruid, uid_t, euid)
+ 		new->uid = ruid;
+ 		if (old->uid != ruid &&
+ 		    old->euid != ruid &&
+-		    !capable(CAP_SETUID))
++		    !nsown_capable(CAP_SETUID))
+ 			goto error;
+ 	}
+ 
+@@ -616,7 +628,7 @@ SYSCALL_DEFINE2(setreuid, uid_t, ruid, uid_t, euid)
+ 		if (old->uid != euid &&
+ 		    old->euid != euid &&
+ 		    old->suid != euid &&
+-		    !capable(CAP_SETUID))
++		    !nsown_capable(CAP_SETUID))
+ 			goto error;
+ 	}
+ 
+@@ -664,7 +676,7 @@ SYSCALL_DEFINE1(setuid, uid_t, uid)
+ 	old = current_cred();
+ 
+ 	retval = -EPERM;
+-	if (capable(CAP_SETUID)) {
++	if (nsown_capable(CAP_SETUID)) {
+ 		new->suid = new->uid = uid;
+ 		if (uid != old->uid) {
+ 			retval = set_user(new);
+@@ -706,7 +718,7 @@ SYSCALL_DEFINE3(setresuid, uid_t, ruid, uid_t, euid, uid_t, suid)
+ 	old = current_cred();
+ 
+ 	retval = -EPERM;
+-	if (!capable(CAP_SETUID)) {
++	if (!nsown_capable(CAP_SETUID)) {
+ 		if (ruid != (uid_t) -1 && ruid != old->uid &&
+ 		    ruid != old->euid  && ruid != old->suid)
+ 			goto error;
+@@ -770,7 +782,7 @@ SYSCALL_DEFINE3(setresgid, gid_t, rgid, gid_t, egid, gid_t, sgid)
+ 	old = current_cred();
+ 
+ 	retval = -EPERM;
+-	if (!capable(CAP_SETGID)) {
++	if (!nsown_capable(CAP_SETGID)) {
+ 		if (rgid != (gid_t) -1 && rgid != old->gid &&
+ 		    rgid != old->egid  && rgid != old->sgid)
+ 			goto error;
+@@ -830,7 +842,7 @@ SYSCALL_DEFINE1(setfsuid, uid_t, uid)
+ 
+ 	if (uid == old->uid  || uid == old->euid  ||
+ 	    uid == old->suid || uid == old->fsuid ||
+-	    capable(CAP_SETUID)) {
++	    nsown_capable(CAP_SETUID)) {
+ 		if (uid != old_fsuid) {
+ 			new->fsuid = uid;
+ 			if (security_task_fix_setuid(new, old, LSM_SETID_FS) == 0)
+@@ -863,7 +875,7 @@ SYSCALL_DEFINE1(setfsgid, gid_t, gid)
+ 
+ 	if (gid == old->gid  || gid == old->egid  ||
+ 	    gid == old->sgid || gid == old->fsgid ||
+-	    capable(CAP_SETGID)) {
++	    nsown_capable(CAP_SETGID)) {
+ 		if (gid != old_fsgid) {
+ 			new->fsgid = gid;
+ 			goto change_okay;
+@@ -1220,7 +1232,7 @@ SYSCALL_DEFINE2(setdomainname, char __user *, name, int, len)
+ 	int errno;
+ 	char tmp[__NEW_UTS_LEN];
+ 
+-	if (!capable(CAP_SYS_ADMIN))
++	if (!ns_capable(current->nsproxy->uts_ns->user_ns, CAP_SYS_ADMIN))
+ 		return -EPERM;
+ 	if (len < 0 || len > __NEW_UTS_LEN)
+ 		return -EINVAL;
+@@ -1335,6 +1347,8 @@ int do_prlimit(struct task_struct *tsk, unsigned int resource,
+ 	rlim = tsk->signal->rlim + resource;
+ 	task_lock(tsk->group_leader);
+ 	if (new_rlim) {
++		/* Keep the capable check against init_user_ns until
++		   cgroups can contain all limits */
+ 		if (new_rlim->rlim_max > rlim->rlim_max &&
+ 				!capable(CAP_SYS_RESOURCE))
+ 			retval = -EPERM;
+@@ -1379,17 +1393,18 @@ static int check_prlimit_permission(struct task_struct *task)
+ 	const struct cred *cred = current_cred(), *tcred;
+ 
+ 	tcred = __task_cred(task);
+-	if ((cred->uid != tcred->euid ||
+-	     cred->uid != tcred->suid ||
+-	     cred->uid != tcred->uid  ||
+-	     cred->gid != tcred->egid ||
+-	     cred->gid != tcred->sgid ||
+-	     cred->gid != tcred->gid) &&
+-	     !capable(CAP_SYS_RESOURCE)) {
+-		return -EPERM;
+-	}
+-
+-	return 0;
++	if (cred->user->user_ns == tcred->user->user_ns &&
++	    (cred->uid == tcred->euid &&
++	     cred->uid == tcred->suid &&
++	     cred->uid == tcred->uid  &&
++	     cred->gid == tcred->egid &&
++	     cred->gid == tcred->sgid &&
++	     cred->gid == tcred->gid))
++		return 0;
++	if (ns_capable(tcred->user->user_ns, CAP_SYS_RESOURCE))
++		return 0;
++
++	return -EPERM;
+ }
+ 
+ SYSCALL_DEFINE4(prlimit64, pid_t, pid, unsigned int, resource,
 -- 
 1.7.0.4
