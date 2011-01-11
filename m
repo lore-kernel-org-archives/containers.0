@@ -1,17 +1,12 @@
 From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 6/7] user namespaces: convert all capable checks in
-	kernel/sys.c
-Date: Tue, 11 Jan 2011 05:27:59 +0000
-Message-ID: <20110111052759.GA24970__47071.9734709293$1294723865$gmane$org@mail.hallyn.com>
-References: <20110110211135.GA22446@mail.hallyn.com>
-	<20110110211406.GF22564@mail.hallyn.com>
-	<20110110215937.GB21351@wavehammer.waldi.eu.org>
+Subject: userns: targeted capabilities v4
+Date: Tue, 11 Jan 2011 06:43:42 +0000
+Message-ID: <20110111064342.GA27515__44867.5364292741$1294728245$gmane$org@mail.hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20110110215937.GB21351-0IJIQSrh9RL9UF0aPl6fsj8Kkb2uy4ct@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,31 +16,55 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Bastian Blank <bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org>, "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LSM
+To: LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Kees Cook <kees.cook-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Bastian Blank <bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Bastian Blank (bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org):
-> On Mon, Jan 10, 2011 at 09:14:07PM +0000, Serge E. Hallyn wrote:
-> > -	if (pcred->uid  != cred->euid &&
-> > -	    pcred->euid != cred->euid && !capable(CAP_SYS_NICE)) {
-> > +	if (pcred->user->user_ns != cred->user->user_ns &&
-> > +	    pcred->uid  != cred->euid &&
-> > +	    pcred->euid != cred->euid &&
-> > +	    !ns_capable(pcred->user->user_ns, CAP_SYS_NICE)) {
-> 
-> I don't think this is correct. This would not error out if the both
-> userns are the same. Because the same patern (check uid if same userns,
-> otherwise only capability) shows up in several parts of the code, maybe
-> this should be factored out.
+This version addresses feedback from and bugs pointed out by
+Bastian.  It also adds user namespace checks in fs/namei.c.
+If a task reads a file owned by another user_ns, it gets the
+world access rights to that file.  Since inodes don't yet have
+a user namespace, we just declare that init_user_ns owns them all.
+So if you are root in a child user namespace, you effectively
+are roaming the system as user nobody.  See 
+http://www.spinics.net/lists/linux-containers/msg09716.html
+and
+http://www.spinics.net/lists/linux-containers/msg08486.html
+for prior discussions.
 
-Yeah, I'd really like to factor this out because it shows up everywhere
-and I have to think about it every time I look at it.  But each time it
-shows up, the uids being compared slightly change.  There must be some
-clever way of doing it, hopefully it'll fall out soon.
+[ Intro to v3 follows ]
 
-Eric's ns_capable() has already simplified this quite a bit - which is
-part of why I've sometimes not been thinking about it right, it's now
-simpler than it used to be :)
+The core of the set is patch 2, originally conceived and
+implemented by Eric Biederman.  The concept is to target
+capabilities at user namespaces.  A task's capabilities are
+now contextualized as follows (previously, capabilities had
+no context):
+
+1. For a task in the initial user namespace, the calculated
+capabilities (pi, pe, pp) are available to act upon any
+user namespace.
+
+2. For a task in a child user namespace, the calculated
+capabilities are available to act only on its own or any
+descendent user namespace.  It has no capabilities to any
+parent or unrelated user namespaces.
+
+3. If a user A creates a new user namespace, that user has
+all capabilities to that new user namespace and any of its
+descendents.  (Contrast this with a user namespace created
+by another user B in the same user namespace, to which this
+user A has only his calculated capabilities)
+
+All existing 'capable' checks are automatically converted to
+checks against the initial user namespace.  The rest of the
+patches begin to enable capabilities in child user namespaces
+to setuid, setgid, set hostnames, kill tasks, and do ptrace.
+
+My next step would be to re-introduce a part of a several year
+old patchset which assigns a userns to a superblock (and hence
+to inodes), and grants 'user other' permissions to any task
+whose uid does not map to the target userns.  (By default, this
+will be all but the initial userns)
 
 thanks,
 -serge
