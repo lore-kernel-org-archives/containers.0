@@ -1,15 +1,15 @@
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 04/11] checkpoint: introduce device vma type
-Date: Tue, 11 Jan 2011 08:15:03 -0600
-Message-ID: <1294755303.26638.29.camel@tp-t61>
-References: <1287601006-13794-1-git-send-email-ntl@pobox.com>
-	<1287601006-13794-5-git-send-email-ntl@pobox.com>
-	<4D2BC09B.1010402@cs.columbia.edu>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 03/08] allow sethostname in a container
+Date: Tue, 11 Jan 2011 16:14:31 +0000
+Message-ID: <20110111161431.GA1406__16570.461417041$1294762440$gmane$org@mail.hallyn.com>
+References: <20110111064342.GA27515@mail.hallyn.com>
+	<20110111064420.GD27515@mail.hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4D2BC09B.1010402-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20110111064420.GD27515-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,44 +19,39 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Kees Cook <kees.cook-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Bastian Blank <bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, 2011-01-10 at 21:29 -0500, Oren Laadan wrote:
-> Hi,
+Quoting Serge E. Hallyn (serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org):
+> Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+> ---
+>  kernel/sys.c |    2 +-
+>  1 files changed, 1 insertions(+), 1 deletions(-)
 > 
-> Thanks for bringing up the issue.
-> 
-> We clearly will need device-specific vma types (in plural!),
-> and I suspect that the way it will work is that devices will
-> register their vma types at boot time or dynamically (for
-> kernel modules).
-> 
-> On 10/20/2010 02:56 PM, Nathan Lynch wrote:
-> > This is intended to be used by drivers that allow userspace to map
-> > hardware resources via mmap(2).  The mapping is restored but we don't
-> > worry about the contents.  This is pretty much how we treat shared
-> > file mappings, where it is the user's responsibility to ensure file
-> > (device) availability and integrity for restart.  I think this is a
-> > reasonable approach for the timer implementations in drivers/char as
-> > well as the bsr driver (for which a patch follows).
-> 
-> The given use case is for a specific device, and assumes special
-> userspace behavior and awareness (if not the application, at 
-> least the admin that runs the c/r).
-> 
-> A similar solution will also apply for memory regions marked by
-> the process as "scratch" - a way for programmers to tell the kernel
-> that certain memory need not be saved/restored beyond the mapping.
-> 
-> I'm a bit concerned about tying this behavior permanently to a
-> drivers. (Although, it may make sense for some drivers). What do
-> you think ?
-> 
-> Otherwise, the patch looks correct. Perhaps modify the types to
-> something more generic, like CKPT_VMA_VANILLA ?
+> diff --git a/kernel/sys.c b/kernel/sys.c
+> index 2745dcd..9b9b03b 100644
+> --- a/kernel/sys.c
+> +++ b/kernel/sys.c
+> @@ -1171,7 +1171,7 @@ SYSCALL_DEFINE2(sethostname, char __user *, name, int, len)
+>  	int errno;
+>  	char tmp[__NEW_UTS_LEN];
+>  
+> -	if (!capable(CAP_SYS_ADMIN))
+> +	if (!ns_capable(current->nsproxy->uts_ns->user_ns, CAP_SYS_ADMIN))
+>  		return -EPERM;
+>  	if (len < 0 || len > __NEW_UTS_LEN)
+>  		return -EINVAL;
+> -- 
+> 1.7.0.4
 
-My use case has disappeared in the interim and I've moved on to other
-matters, so I'm inclined to defer c/r of device mappings until another
-user comes along.
+An interesting note here is that since the task doing ns_exec (and
+therefore in the init_user_ns) requires CAP_SYS_ADMIN to unshare,
+this check will actually always be true if uts_ns was not unshared.
+If uts is unshared, then regular capabilities semantics in the
+child user_ns apply (that is, root can do sethostname, unpriv user
+cannot)  The intent is that user namespaces will eventually allow
+unprivileged users to unshare, after which this will make much more
+sense.
+
+-serge
