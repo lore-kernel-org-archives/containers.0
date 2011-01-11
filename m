@@ -1,8 +1,7 @@
 From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 06/08] user namespaces: convert all capable checks in
-	kernel/sys.c
-Date: Tue, 11 Jan 2011 06:44:49 +0000
-Message-ID: <20110111064449.GG27515__32658.6827556186$1294728431$gmane$org@mail.hallyn.com>
+Subject: [PATCH 07/08] user namespaces: convert several capable() calls
+Date: Tue, 11 Jan 2011 06:45:00 +0000
+Message-ID: <20110111064500.GH27515__39767.6396104091$1294728432$gmane$org@mail.hallyn.com>
 References: <20110111064342.GA27515@mail.hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,195 +22,166 @@ To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Kees Cook <kees.cook-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Bastian Blank <bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This allows setuid/setgid in containers.  It also fixes some
-corner cases where kernel logic foregoes capability checks when
-uids are equivalent.  The latter will need to be done throughout
-the whole kernel.
+CAP_IPC_OWNER and CAP_IPC_LOCK can be checked against current_user_ns(),
+because the resource comes from current's own ipc namespace.
+
+setuid/setgid are to uids in own namespace, so again checks can be
+against current_user_ns().
 
 Changelog:
+	Jan 11: Use task_ns_capable() in place of sched_capable().
 	Jan 11: Use nsown_capable() as suggested by Bastian Blank.
-	Jan 11: Fix logic errors in uid checks pointed out by Bastian.
+	Jan 11: Clarify (hopefully) some logic in futex and sched.c
 
 Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 ---
- kernel/sys.c |   67 +++++++++++++++++++++++++++++++++++----------------------
- 1 files changed, 41 insertions(+), 26 deletions(-)
+ ipc/shm.c             |    2 +-
+ ipc/util.c            |    5 +++--
+ kernel/futex.c        |   11 ++++++++++-
+ kernel/futex_compat.c |   11 ++++++++++-
+ kernel/groups.c       |    2 +-
+ kernel/sched.c        |    9 ++++++---
+ kernel/uid16.c        |    2 +-
+ 7 files changed, 32 insertions(+), 10 deletions(-)
 
-diff --git a/kernel/sys.c b/kernel/sys.c
-index 9b9b03b..b68cd67 100644
---- a/kernel/sys.c
-+++ b/kernel/sys.c
-@@ -116,17 +116,29 @@ EXPORT_SYMBOL(cad_pid);
+diff --git a/ipc/shm.c b/ipc/shm.c
+index 7d3bb22..b5a0c2b 100644
+--- a/ipc/shm.c
++++ b/ipc/shm.c
+@@ -773,7 +773,7 @@ SYSCALL_DEFINE3(shmctl, int, shmid, int, cmd, struct shmid_ds __user *, buf)
  
- void (*pm_power_off_prepare)(void);
+ 		audit_ipc_obj(&(shp->shm_perm));
  
-+/* called with rcu_read_lock, creds are safe */
-+static inline int set_one_prio_perm(struct task_struct *p)
-+{
-+	const struct cred *cred = current_cred(), *pcred = __task_cred(p);
-+
-+	if (pcred->user->user_ns == cred->user->user_ns &&
-+	    (pcred->uid  == cred->euid ||
-+	     pcred->euid == cred->euid))
-+		return 1;
-+	if (ns_capable(pcred->user->user_ns, CAP_SYS_NICE))
-+		return 1;
-+	return 0;
-+}
-+
- /*
-  * set the priority of a task
-  * - the caller must hold the RCU read lock
-  */
- static int set_one_prio(struct task_struct *p, int niceval, int error)
- {
--	const struct cred *cred = current_cred(), *pcred = __task_cred(p);
--	int no_nice;
-+	int ret, no_nice;
+-		if (!capable(CAP_IPC_LOCK)) {
++		if (!nsown_capable(CAP_IPC_LOCK)) {
+ 			uid_t euid = current_euid();
+ 			err = -EPERM;
+ 			if (euid != shp->shm_perm.uid &&
+diff --git a/ipc/util.c b/ipc/util.c
+index 69a0cc1..0bb65a6 100644
+--- a/ipc/util.c
++++ b/ipc/util.c
+@@ -627,7 +627,7 @@ int ipcperms (struct kern_ipc_perm *ipcp, short flag)
+ 		granted_mode >>= 3;
+ 	/* is there some bit set in requested_mode but not in granted_mode? */
+ 	if ((requested_mode & ~granted_mode & 0007) && 
+-	    !capable(CAP_IPC_OWNER))
++	    !nsown_capable(CAP_IPC_OWNER))
+ 		return -1;
  
--	if (pcred->uid  != cred->euid &&
--	    pcred->euid != cred->euid && !capable(CAP_SYS_NICE)) {
-+	if (!set_one_prio_perm(p)) {
- 		error = -EPERM;
- 		goto out;
+ 	return security_ipc_permission(ipcp, flag);
+@@ -800,7 +800,8 @@ struct kern_ipc_perm *ipcctl_pre_down(struct ipc_ids *ids, int id, int cmd,
+ 
+ 	euid = current_euid();
+ 	if (euid == ipcp->cuid ||
+-	    euid == ipcp->uid  || capable(CAP_SYS_ADMIN))
++	    euid == ipcp->uid  ||
++	    nsown_capable(CAP_SYS_ADMIN))
+ 		return ipcp;
+ 
+ 	err = -EPERM;
+diff --git a/kernel/futex.c b/kernel/futex.c
+index 40a8777..f02cb1c 100644
+--- a/kernel/futex.c
++++ b/kernel/futex.c
+@@ -2401,10 +2401,19 @@ SYSCALL_DEFINE3(get_robust_list, int, pid,
+ 			goto err_unlock;
+ 		ret = -EPERM;
+ 		pcred = __task_cred(p);
++		/* If victim is in different user_ns, then uids are not
++		   comparable, so we must have CAP_SYS_PTRACE */
++		if (cred->user->user_ns != pcred->user->user_ns) {
++			if (!ns_capable(pcred->user->user_ns, CAP_SYS_PTRACE))
++				goto err_unlock;
++			goto ok;
++		}
++		/* If victim is in same user_ns, then uids are comparable */
+ 		if (cred->euid != pcred->euid &&
+ 		    cred->euid != pcred->uid &&
+-		    !capable(CAP_SYS_PTRACE))
++		    !ns_capable(pcred->user->user_ns, CAP_SYS_PTRACE))
+ 			goto err_unlock;
++ok:
+ 		head = p->robust_list;
+ 		rcu_read_unlock();
  	}
-@@ -496,7 +508,7 @@ SYSCALL_DEFINE2(setregid, gid_t, rgid, gid_t, egid)
- 	if (rgid != (gid_t) -1) {
- 		if (old->gid == rgid ||
- 		    old->egid == rgid ||
--		    capable(CAP_SETGID))
-+		    nsown_capable(CAP_SETGID))
- 			new->gid = rgid;
- 		else
- 			goto error;
-@@ -505,7 +517,7 @@ SYSCALL_DEFINE2(setregid, gid_t, rgid, gid_t, egid)
- 		if (old->gid == egid ||
- 		    old->egid == egid ||
- 		    old->sgid == egid ||
--		    capable(CAP_SETGID))
-+		    nsown_capable(CAP_SETGID))
- 			new->egid = egid;
- 		else
- 			goto error;
-@@ -540,7 +552,7 @@ SYSCALL_DEFINE1(setgid, gid_t, gid)
- 	old = current_cred();
- 
- 	retval = -EPERM;
--	if (capable(CAP_SETGID))
-+	if (nsown_capable(CAP_SETGID))
- 		new->gid = new->egid = new->sgid = new->fsgid = gid;
- 	else if (gid == old->gid || gid == old->sgid)
- 		new->egid = new->fsgid = gid;
-@@ -607,7 +619,7 @@ SYSCALL_DEFINE2(setreuid, uid_t, ruid, uid_t, euid)
- 		new->uid = ruid;
- 		if (old->uid != ruid &&
- 		    old->euid != ruid &&
--		    !capable(CAP_SETUID))
-+		    !nsown_capable(CAP_SETUID))
- 			goto error;
+diff --git a/kernel/futex_compat.c b/kernel/futex_compat.c
+index a7934ac..5f9e689 100644
+--- a/kernel/futex_compat.c
++++ b/kernel/futex_compat.c
+@@ -153,10 +153,19 @@ compat_sys_get_robust_list(int pid, compat_uptr_t __user *head_ptr,
+ 			goto err_unlock;
+ 		ret = -EPERM;
+ 		pcred = __task_cred(p);
++		/* If victim is in different user_ns, then uids are not
++		   comparable, so we must have CAP_SYS_PTRACE */
++		if (cred->user->user_ns != pcred->user->user_ns) {
++			if (!ns_capable(pcred->user->user_ns, CAP_SYS_PTRACE))
++				goto err_unlock;
++			goto ok;
++		}
++		/* If victim is in same user_ns, then uids are comparable */
+ 		if (cred->euid != pcred->euid &&
+ 		    cred->euid != pcred->uid &&
+-		    !capable(CAP_SYS_PTRACE))
++		    !ns_capable(pcred->user->user_ns, CAP_SYS_PTRACE))
+ 			goto err_unlock;
++ok:
+ 		head = p->compat_robust_list;
+ 		rcu_read_unlock();
  	}
+diff --git a/kernel/groups.c b/kernel/groups.c
+index 253dc0f..1cc476d 100644
+--- a/kernel/groups.c
++++ b/kernel/groups.c
+@@ -233,7 +233,7 @@ SYSCALL_DEFINE2(setgroups, int, gidsetsize, gid_t __user *, grouplist)
+ 	struct group_info *group_info;
+ 	int retval;
  
-@@ -616,7 +628,7 @@ SYSCALL_DEFINE2(setreuid, uid_t, ruid, uid_t, euid)
- 		if (old->uid != euid &&
- 		    old->euid != euid &&
- 		    old->suid != euid &&
--		    !capable(CAP_SETUID))
-+		    !nsown_capable(CAP_SETUID))
- 			goto error;
- 	}
- 
-@@ -664,7 +676,7 @@ SYSCALL_DEFINE1(setuid, uid_t, uid)
- 	old = current_cred();
- 
- 	retval = -EPERM;
--	if (capable(CAP_SETUID)) {
-+	if (nsown_capable(CAP_SETUID)) {
- 		new->suid = new->uid = uid;
- 		if (uid != old->uid) {
- 			retval = set_user(new);
-@@ -706,7 +718,7 @@ SYSCALL_DEFINE3(setresuid, uid_t, ruid, uid_t, euid, uid_t, suid)
- 	old = current_cred();
- 
- 	retval = -EPERM;
--	if (!capable(CAP_SETUID)) {
-+	if (!nsown_capable(CAP_SETUID)) {
- 		if (ruid != (uid_t) -1 && ruid != old->uid &&
- 		    ruid != old->euid  && ruid != old->suid)
- 			goto error;
-@@ -770,7 +782,7 @@ SYSCALL_DEFINE3(setresgid, gid_t, rgid, gid_t, egid, gid_t, sgid)
- 	old = current_cred();
- 
- 	retval = -EPERM;
--	if (!capable(CAP_SETGID)) {
-+	if (!nsown_capable(CAP_SETGID)) {
- 		if (rgid != (gid_t) -1 && rgid != old->gid &&
- 		    rgid != old->egid  && rgid != old->sgid)
- 			goto error;
-@@ -830,7 +842,7 @@ SYSCALL_DEFINE1(setfsuid, uid_t, uid)
- 
- 	if (uid == old->uid  || uid == old->euid  ||
- 	    uid == old->suid || uid == old->fsuid ||
--	    capable(CAP_SETUID)) {
-+	    nsown_capable(CAP_SETUID)) {
- 		if (uid != old_fsuid) {
- 			new->fsuid = uid;
- 			if (security_task_fix_setuid(new, old, LSM_SETID_FS) == 0)
-@@ -863,7 +875,7 @@ SYSCALL_DEFINE1(setfsgid, gid_t, gid)
- 
- 	if (gid == old->gid  || gid == old->egid  ||
- 	    gid == old->sgid || gid == old->fsgid ||
--	    capable(CAP_SETGID)) {
-+	    nsown_capable(CAP_SETGID)) {
- 		if (gid != old_fsgid) {
- 			new->fsgid = gid;
- 			goto change_okay;
-@@ -1220,7 +1232,7 @@ SYSCALL_DEFINE2(setdomainname, char __user *, name, int, len)
- 	int errno;
- 	char tmp[__NEW_UTS_LEN];
- 
--	if (!capable(CAP_SYS_ADMIN))
-+	if (!ns_capable(current->nsproxy->uts_ns->user_ns, CAP_SYS_ADMIN))
+-	if (!capable(CAP_SETGID))
++	if (!nsown_capable(CAP_SETGID))
  		return -EPERM;
- 	if (len < 0 || len > __NEW_UTS_LEN)
+ 	if ((unsigned)gidsetsize > NGROUPS_MAX)
  		return -EINVAL;
-@@ -1335,6 +1347,8 @@ int do_prlimit(struct task_struct *tsk, unsigned int resource,
- 	rlim = tsk->signal->rlim + resource;
- 	task_lock(tsk->group_leader);
- 	if (new_rlim) {
-+		/* Keep the capable check against init_user_ns until
-+		   cgroups can contain all limits */
- 		if (new_rlim->rlim_max > rlim->rlim_max &&
- 				!capable(CAP_SYS_RESOURCE))
- 			retval = -EPERM;
-@@ -1379,17 +1393,18 @@ static int check_prlimit_permission(struct task_struct *task)
- 	const struct cred *cred = current_cred(), *tcred;
+diff --git a/kernel/sched.c b/kernel/sched.c
+index 82c057c..cfd78e4 100644
+--- a/kernel/sched.c
++++ b/kernel/sched.c
+@@ -4903,8 +4903,11 @@ static bool check_same_owner(struct task_struct *p)
  
- 	tcred = __task_cred(task);
--	if ((cred->uid != tcred->euid ||
--	     cred->uid != tcred->suid ||
--	     cred->uid != tcred->uid  ||
--	     cred->gid != tcred->egid ||
--	     cred->gid != tcred->sgid ||
--	     cred->gid != tcred->gid) &&
--	     !capable(CAP_SYS_RESOURCE)) {
--		return -EPERM;
--	}
--
--	return 0;
-+	if (cred->user->user_ns == tcred->user->user_ns &&
-+	    (cred->uid == tcred->euid &&
-+	     cred->uid == tcred->suid &&
-+	     cred->uid == tcred->uid  &&
-+	     cred->gid == tcred->egid &&
-+	     cred->gid == tcred->sgid &&
-+	     cred->gid == tcred->gid))
-+		return 0;
-+	if (ns_capable(tcred->user->user_ns, CAP_SYS_RESOURCE))
-+		return 0;
-+
-+	return -EPERM;
+ 	rcu_read_lock();
+ 	pcred = __task_cred(p);
+-	match = (cred->euid == pcred->euid ||
+-		 cred->euid == pcred->uid);
++	if (cred->user->user_ns == pcred->user->user_ns)
++		match = (cred->euid == pcred->euid ||
++			 cred->euid == pcred->uid);
++	else
++		match = false;
+ 	rcu_read_unlock();
+ 	return match;
  }
+@@ -5229,7 +5232,7 @@ long sched_setaffinity(pid_t pid, const struct cpumask *in_mask)
+ 		goto out_free_cpus_allowed;
+ 	}
+ 	retval = -EPERM;
+-	if (!check_same_owner(p) && !capable(CAP_SYS_NICE))
++	if (!check_same_owner(p) && !task_ns_capable(p, CAP_SYS_NICE))
+ 		goto out_unlock;
  
- SYSCALL_DEFINE4(prlimit64, pid_t, pid, unsigned int, resource,
+ 	retval = security_task_setscheduler(p);
+diff --git a/kernel/uid16.c b/kernel/uid16.c
+index 4192098..51c6e89 100644
+--- a/kernel/uid16.c
++++ b/kernel/uid16.c
+@@ -189,7 +189,7 @@ SYSCALL_DEFINE2(setgroups16, int, gidsetsize, old_gid_t __user *, grouplist)
+ 	struct group_info *group_info;
+ 	int retval;
+ 
+-	if (!capable(CAP_SETGID))
++	if (!nsown_capable(CAP_SETGID))
+ 		return -EPERM;
+ 	if ((unsigned)gidsetsize > NGROUPS_MAX)
+ 		return -EINVAL;
 -- 
 1.7.0.4
