@@ -1,15 +1,14 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 08/08] userns: check user namespace for task->file uid
-	equivalence checks
-Date: Tue, 11 Jan 2011 06:45:09 +0000
-Message-ID: <20110111064509.GI27515__34371.7613294304$1294728440$gmane$org@mail.hallyn.com>
-References: <20110111064342.GA27515@mail.hallyn.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] Teach cifs about network namespaces.
+Date: Mon, 10 Jan 2011 23:12:39 -0800
+Message-ID: <20110111071239.GL29064__41559.7692867324$1294730002$gmane$org@count0.beaverton.ibm.com>
+References: <4D2BDE07.40202@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20110111064342.GA27515-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
+In-Reply-To: <4D2BDE07.40202-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,160 +18,198 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Kees Cook <kees.cook-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Bastian Blank <bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: linux-cifs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, kir-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Cheat for now and say all files belong to init_user_ns.  Next
-step will be to let superblocks belong to a user_ns, and derive
-inode_userns(inode) from inode->i_sb->s_user_ns.  Finally we'll
-introduce more flexible arrangements.
+On Mon, Jan 10, 2011 at 10:35:19PM -0600, Rob Landley wrote:
+> From: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+> 
+> Teach cifs about network namespaces, so mounting uses adresses and
+> routing visible from a container rather than from init context.
+> 
+> For a long drawn out test reproduction sequence, see:
+> 
+>   http://landley.livejournal.com/47024.html
+>   http://landley.livejournal.com/47205.html
+>   http://landley.livejournal.com/47476.html
+> 
+> Signed-off-by: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+> ---
+> 
+>  fs/cifs/cifsglob.h |   32 ++++++++++++++++++++++++++++++++
+>  fs/cifs/connect.c  |   22 +++++++++++++++++-----
+>  2 files changed, 49 insertions(+), 5 deletions(-)
+> 
+> diff --git a/fs/cifs/cifsglob.h b/fs/cifs/cifsglob.h
+> index 7136c0c..86f31bb 100644
+> --- a/fs/cifs/cifsglob.h
+> +++ b/fs/cifs/cifsglob.h
+> @@ -168,6 +168,9 @@ struct TCP_Server_Info {
+>  		struct sockaddr_in6 sockAddr6;
+>  	} addr;
+>  	struct sockaddr_storage srcaddr; /* locally bind to this IP */
+> +#ifdef CONFIG_NET_NS
+> +	struct net *net;
+> +#endif
 
-Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
----
- fs/inode.c         |   17 +++++++++++++++++
- fs/namei.c         |   20 +++++++++++++++-----
- include/linux/fs.h |    9 +++++++--
- 3 files changed, 39 insertions(+), 7 deletions(-)
+I'm assuming this bit is correct -- don't know enough about CIFS to be
+sure...
 
-diff --git a/fs/inode.c b/fs/inode.c
-index 4a924c7..ebb2b85 100644
---- a/fs/inode.c
-+++ b/fs/inode.c
-@@ -25,6 +25,7 @@
- #include <linux/async.h>
- #include <linux/posix_acl.h>
- #include <linux/ima.h>
-+#include <linux/cred.h>
- 
- /*
-  * This is needed for the following functions:
-@@ -1710,6 +1711,22 @@ void inode_init_owner(struct inode *inode, const struct inode *dir,
- }
- EXPORT_SYMBOL(inode_init_owner);
- 
-+/*
-+ * return 1 if current either has CAP_FOWNER to the
-+ * file, or owns the file.
-+ */
-+int is_owner_or_cap(struct inode *inode)
-+{
-+	struct user_namespace *ns = inode_userns(inode);
-+
-+	if (current_user_ns() == ns && current_fsuid() == inode->i_uid)
-+		return 1;
-+	if (ns_capable(ns, CAP_FOWNER))
-+		return 1;
-+	return 0;
-+}
-+EXPORT_SYMBOL(is_owner_or_cap);
-+
- #define CREATE_TRACE_POINTS
- #include <trace/events/vfs.h>
- 
-diff --git a/fs/namei.c b/fs/namei.c
-index b020c45..d956ce3 100644
---- a/fs/namei.c
-+++ b/fs/namei.c
-@@ -176,6 +176,9 @@ static int acl_permission_check(struct inode *inode, int mask,
- 
- 	mask &= MAY_READ | MAY_WRITE | MAY_EXEC;
- 
-+	if (current_user_ns() != inode_userns(inode))
-+		goto other_perms;
-+
- 	if (current_fsuid() == inode->i_uid)
- 		mode >>= 6;
- 	else {
-@@ -189,6 +192,7 @@ static int acl_permission_check(struct inode *inode, int mask,
- 			mode >>= 3;
- 	}
- 
-+other_perms:
- 	/*
- 	 * If the DACs are ok we don't need any capability check.
- 	 */
-@@ -225,7 +229,7 @@ int generic_permission(struct inode *inode, int mask,
- 	 * Executable DACs are overridable if at least one exec bit is set.
- 	 */
- 	if (!(mask & MAY_EXEC) || execute_ok(inode))
--		if (capable(CAP_DAC_OVERRIDE))
-+		if (ns_capable(inode_userns(inode), CAP_DAC_OVERRIDE))
- 			return 0;
- 
- 	/*
-@@ -233,7 +237,7 @@ int generic_permission(struct inode *inode, int mask,
- 	 */
- 	mask &= MAY_READ | MAY_WRITE | MAY_EXEC;
- 	if (mask == MAY_READ || (S_ISDIR(inode->i_mode) && !(mask & MAY_WRITE)))
--		if (capable(CAP_DAC_READ_SEARCH))
-+		if (ns_capable(inode_userns(inode), CAP_DAC_READ_SEARCH))
- 			return 0;
- 
- 	return -EACCES;
-@@ -463,6 +467,7 @@ force_reval_path(struct path *path, struct nameidata *nd)
- static int exec_permission(struct inode *inode)
- {
- 	int ret;
-+	struct user_namespace *ns = inode_userns(inode);
- 
- 	if (inode->i_op->permission) {
- 		ret = inode->i_op->permission(inode, MAY_EXEC);
-@@ -474,7 +479,7 @@ static int exec_permission(struct inode *inode)
- 	if (!ret)
- 		goto ok;
- 
--	if (capable(CAP_DAC_OVERRIDE) || capable(CAP_DAC_READ_SEARCH))
-+	if (ns_capable(ns, CAP_DAC_OVERRIDE) || ns_capable(ns, CAP_DAC_READ_SEARCH))
- 		goto ok;
- 
- 	return ret;
-@@ -1262,11 +1267,15 @@ static inline int check_sticky(struct inode *dir, struct inode *inode)
- 
- 	if (!(dir->i_mode & S_ISVTX))
- 		return 0;
-+	if (current_user_ns() != inode_userns(inode))
-+		goto other_userns;
- 	if (inode->i_uid == fsuid)
- 		return 0;
- 	if (dir->i_uid == fsuid)
- 		return 0;
--	return !capable(CAP_FOWNER);
-+
-+other_userns:
-+	return !ns_capable(inode_userns(inode), CAP_FOWNER);
- }
- 
- /*
-@@ -1954,7 +1963,8 @@ int vfs_mknod(struct inode *dir, struct dentry *dentry, int mode, dev_t dev)
- 	if (error)
- 		return error;
- 
--	if ((S_ISCHR(mode) || S_ISBLK(mode)) && !capable(CAP_MKNOD))
-+	if ((S_ISCHR(mode) || S_ISBLK(mode)) &&
-+	    !ns_capable(inode_userns(dir), CAP_MKNOD))
- 		return -EPERM;
- 
- 	if (!dir->i_op->mknod)
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 090f0ea..674c06a 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -1437,8 +1437,13 @@ enum {
- #define put_fs_excl() atomic_dec(&current->fs_excl)
- #define has_fs_excl() atomic_read(&current->fs_excl)
- 
--#define is_owner_or_cap(inode)	\
--	((current_fsuid() == (inode)->i_uid) || capable(CAP_FOWNER))
-+/*
-+ * until VFS tracks user namespaces for inodes, just make all files
-+ * belong to init_user_ns
-+ */
-+extern struct user_namespace init_user_ns;
-+#define inode_userns(inode) (&init_user_ns)
-+extern int is_owner_or_cap(struct inode *inode);
- 
- /* not quite ready to be deprecated, but... */
- extern void lock_super(struct super_block *);
--- 
-1.7.0.4
+>  	wait_queue_head_t response_q;
+>  	wait_queue_head_t request_q; /* if more than maxmpx to srvr must block*/
+>  	struct list_head pending_mid_q;
+> @@ -227,6 +230,35 @@ struct TCP_Server_Info {
+>  };
+> 
+>  /*
+> + * Macros to allow the TCP_Server_Info->net field and related code to drop out
+> + * when CONFIG_NET_NS isn't set.
+> + */
+> +
+> +static inline struct net *
+> +cifs_net_ns(struct TCP_Server_Info *srv)
+> +{
+> +#ifdef CONFIG_NET_NS
+> +	return srv->net;
+> +#else
+> +	return &init_net;
+> +#endif
+> +}
+
+I thought style dictated we do this a different way:
+
+#ifdef CONFIG_NET_NS
+static inline struct net * cifs_net_ns(struct TCP_Server_Info *srv)
+{
+	return srv->net;
+}
+<other CONFIG_NET_NS cases>
+#else
+static inline struct net * cifs_net_ns(struct TCP_Server_Info *srv)
+{
+	return &init_net;
+}
+<other no-ops>
+#endif /* CONFIG_NET_NS */
+
+> +
+> +static inline void
+> +cifs_set_net_ns(struct TCP_Server_Info *srv, struct net *net)
+> +{
+> +#ifdef CONFIG_NET_NS
+> +	srv->net = net;
+> +#endif
+> +}
+> +
+> +#ifdef CONFIG_NET_NS
+> +#define cifs_use_net_ns() (1)
+> +#else
+> +#define cifs_use_net_ns() (0)
+> +#endif
+
+This looks wrong -- we shouldn't need this at all. The #ifdef bits in
+your patch already make all the cases below become empty/no-ops when
+CONFIG_NET_NS=n.
+
+> +
+> +/*
+>   * Session structure.  One of these for each uid session with a particular host
+>   */
+>  struct cifsSesInfo {
+> diff --git a/fs/cifs/connect.c b/fs/cifs/connect.c
+> index cc1a860..b4faef0 100644
+> --- a/fs/cifs/connect.c
+> +++ b/fs/cifs/connect.c
+> @@ -1545,6 +1545,10 @@ cifs_find_tcp_session(struct sockaddr *addr, struct smb_vol *vol)
+> 
+>  	spin_lock(&cifs_tcp_ses_lock);
+>  	list_for_each_entry(server, &cifs_tcp_ses_list, tcp_ses_list) {
+> +		if (cifs_use_net_ns()
+> +		    && cifs_net_ns(server) == current->nsproxy->net_ns)
+> +			continue;
+
+This looks wrong -- you want to invert part of this I think (and drop the
+unnecessary cifs_use_net_ns()):
+
+	if (cifs_net_ns(server) != current->nsproxy->net_ns)
+		continue;
+
+This is obvious when you note that the context below shows that we
+'continue' to the next entry when the addresses don't match:
+
+> +
+>  		if (!match_address(server, addr,
+>  				   (struct sockaddr *)&vol->srcaddr))
+>  			continue;
+> @@ -1572,6 +1576,9 @@ cifs_put_tcp_session(struct TCP_Server_Info *server)
+>  		return;
+>  	}
+> 
+> +	if (cifs_use_net_ns())
+> +		put_net(cifs_net_ns(server));
+> +
+
+I think this should just be:
+
+	put_net(cifs_net_ns(server));
+
+>  	list_del_init(&server->tcp_ses_list);
+>  	spin_unlock(&cifs_tcp_ses_lock);
+> 
+> @@ -1677,6 +1684,9 @@ cifs_get_tcp_session(struct smb_vol *volume_info)
+>  	       sizeof(tcp_ses->srcaddr));
+>  	++tcp_ses->srv_count;
+> 
+> +	if (cifs_use_net_ns())
+> +		cifs_set_net_ns(tcp_ses, get_net(current->nsproxy->net_ns));
+> +
+
+Just use cifs_set_net_ns() because it already turns into a no-op when
+CONFIG_NET_NS=n
+
+>  	if (addr.ss_family == AF_INET6) {
+>  		cFYI(1, "attempting ipv6 connect");
+>  		/* BB should we allow ipv6 on port 139? */
+> @@ -1720,6 +1730,9 @@ cifs_get_tcp_session(struct smb_vol *volume_info)
+>  out_err_crypto_release:
+>  	cifs_crypto_shash_release(tcp_ses);
+> 
+> +	if (cifs_use_net_ns())
+> +		put_net(cifs_net_ns(tcp_ses));
+
+etc.
+
+> +
+>  out_err:
+>  	if (tcp_ses) {
+>  		if (!IS_ERR(tcp_ses->hostname))
+> @@ -2145,8 +2158,8 @@ ipv4_connect(struct TCP_Server_Info *server)
+>  	struct socket *socket = server->ssocket;
+> 
+>  	if (socket == NULL) {
+> -		rc = sock_create_kern(PF_INET, SOCK_STREAM,
+> -				      IPPROTO_TCP, &socket);
+> +		rc = __sock_create(cifs_net_ns(server), PF_INET,
+> +				   SOCK_STREAM, IPPROTO_TCP, &socket, 1);
+>  		if (rc < 0) {
+>  			cERROR(1, "Error %d creating socket", rc);
+>  			return rc;
+> @@ -2310,11 +2323,10 @@ ipv6_connect(struct TCP_Server_Info *server)
+>  	struct socket *socket = server->ssocket;
+> 
+>  	if (socket == NULL) {
+> -		rc = sock_create_kern(PF_INET6, SOCK_STREAM,
+> -				      IPPROTO_TCP, &socket);
+> +		rc = __sock_create(cifs_net_ns(server), PF_INET6,
+> +				   SOCK_STREAM, IPPROTO_TCP, &socket, 1);
+>  		if (rc < 0) {
+>  			cERROR(1, "Error %d creating ipv6 socket", rc);
+> -			socket = NULL;
+>  			return rc;
+>  		}
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
