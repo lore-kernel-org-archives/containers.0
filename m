@@ -1,13 +1,15 @@
-From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-Subject: Re: Two newbie questions on containers
-Date: Tue, 11 Jan 2011 18:02:26 -0600
-Message-ID: <1294790546.26638.36.camel@tp-t61>
-References: <4D2CD4F7.9040006@freescale.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [Patch 0/2] Checkpoint and restart of file locks
+Date: Tue, 11 Jan 2011 16:17:00 -0800
+Message-ID: <20110112001700.GB7229@us.ibm.com>
+References: <1288333001-28838-1-git-send-email-sukadev@linux.vnet.ibm.com>
+	<1294709825-23357-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4D2CD4F7.9040006-KZfg59tc24xl57MIdRCFDg@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1294709825-23357-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,32 +19,50 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Timur Tabi <timur-KZfg59tc24xl57MIdRCFDg@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Timur,
+Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
+| 
+| The following two patches add c/r support for POSIX file locks. They
+| are based on the series posted by Suka some time ago:
+| https://lists.linux-foundation.org/pipermail/containers/2010-October/025855.html
+| 
+| Suka:
+| 
+| When I read your post I thought that boht posix and flock were   
+| supported, but looking at the code I saw only posix. Am I missing
+| anything ?
 
-On Tue, 2011-01-11 at 16:08 -0600, Timur Tabi wrote:
-> I'm in the process of learning about Linux containers, including cgroups, and
-> the learning curve seems pretty steep to me.  So I have a couple newbie
-> questions for all of you.  Any detailed answered are greatly appreciated.
-> 
-> 1) For the PowerPC architecture, is there anything that is "missing"?  I can't
-> really tell how much of cgroups and lxc is architecture-specific, and there
-> appears to be PowerPC support for both already.  I'd like to know if this
-> another one of those areas, like KVM, where x86 is fully implemented and PowerPC
-> support is lagging.
+Hmm. I have been working with only the posix locks for starters since
+it checkpoints/restarts the more general, 'struct file_lock' object.
 
-cgroups and the lxc utilities work just as well on powerpc as they do on
-x86; there's nothing arch-specific about them.
+But I should make that explicit. If a patch description implies that
+it covers flocks can be checkpointed, please let me know and I will
+fix it.
 
+C/R of leases/file-owner info is blocked on C/R of 'struct pids'.
 
-> 2) Given a random device driver, like a driver for a serial port, is there an
-> opportunity for the driver to be enhanced to support cgroups or lxc?  Doing a
-> simple search of the kernel source code, I don't really see any drivers making
-> calls into any cgroup code, so I don't understand how to restrict device access
-> to a specific container or cgroup.
+| 
+| Also, I'm not sure that all the input is well sanitized during
+| restart - for example, the possible values for the lock flags.
+| Any thoughts ?
 
-Not totally sure about this myself, but have you read
-Documentation/cgroups/devices.txt in the kernel source yet?
+I have this check in restore_file_locks():
+
++               ret = -EBADF;
++               if (h->fl_flags & FL_POSIX)
++                       ret = restore_one_posix_lock(ctx, file, fd, 
+
+The other fields (lock type for instance) will be validated by flock64_set()
+as for a new fcntl() call - no ?
+
+| 
+| Lastly, do you have test cases to run against this patch and test
+| it ?
+
+Yes, I added some tests to cr-tests a while ago and then updated them.
+Will find the updates and post them.
+
+Sukadev
