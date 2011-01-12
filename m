@@ -1,15 +1,13 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [Patch 0/2] Checkpoint and restart of file locks
-Date: Tue, 11 Jan 2011 19:30:55 -0500
-Message-ID: <4D2CF63F.5090300@cs.columbia.edu>
-References: <1288333001-28838-1-git-send-email-sukadev@linux.vnet.ibm.com>
-	<1294709825-23357-1-git-send-email-orenl@cs.columbia.edu>
-	<20110112001700.GB7229@us.ibm.com>
+From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: Re: [PATCH] Teach cifs about network namespaces.
+Date: Wed, 12 Jan 2011 16:02:51 +0300
+Message-ID: <4D2DA67B.1020203__8364.45151730931$1294837524$gmane$org@parallels.com>
+References: <4D2BDE07.40202@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110112001700.GB7229-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4D2BDE07.40202-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,72 +17,15 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: "linux-cifs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-cifs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kir Kolyshkin <kir-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+> @@ -1545,6 +1545,10 @@ cifs_find_tcp_session(struct sockaddr *addr, struct smb_vol *vol)
+>  
+>  	spin_lock(&cifs_tcp_ses_lock);
+>  	list_for_each_entry(server, &cifs_tcp_ses_list, tcp_ses_list) {
+> +		if (cifs_use_net_ns()
+> +		    && cifs_net_ns(server) == current->nsproxy->net_ns)
 
-
-On 01/11/2011 07:17 PM, Sukadev Bhattiprolu wrote:
-> Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
-> | 
-> | The following two patches add c/r support for POSIX file locks. They
-> | are based on the series posted by Suka some time ago:
-> | https://lists.linux-foundation.org/pipermail/containers/2010-October/025855.html
-> | 
-> | Suka:
-> | 
-> | When I read your post I thought that boht posix and flock were   
-> | supported, but looking at the code I saw only posix. Am I missing
-> | anything ?
-> 
-> Hmm. I have been working with only the posix locks for starters since
-> it checkpoints/restarts the more general, 'struct file_lock' object.
-> 
-> But I should make that explicit. If a patch description implies that
-> it covers flocks can be checkpointed, please let me know and I will
-> fix it.
-> 
-
-Ok, just checking - I already modified the patch description
-and the inline comments.
-
-> C/R of leases/file-owner info is blocked on C/R of 'struct pids'.
-
-It's in the working ...
-
-> 
-> | 
-> | Also, I'm not sure that all the input is well sanitized during
-> | restart - for example, the possible values for the lock flags.
-> | Any thoughts ?
-> 
-> I have this check in restore_file_locks():
-> 
-> +               ret = -EBADF;
-> +               if (h->fl_flags & FL_POSIX)
-> +                       ret = restore_one_posix_lock(ctx, file, fd, 
-
-In this specific example, I fixed it to ensure that only one of
-FL_POSIX, FL_FLOCK and FL_LEASE is is present.
-
-(Actually, now I see that I used fl_type, and I should fix it to
-be fl_flags, but the intent was good ...)
-
-> 
-> The other fields (lock type for instance) will be validated by flock64_set()
-> as for a new fcntl() call - no ?
-
-That's what I was asking :o
-
-> 
-> | 
-> | Lastly, do you have test cases to run against this patch and test
-> | it ?
-> 
-> Yes, I added some tests to cr-tests a while ago and then updated them.
-> Will find the updates and post them.
-
-Thanks,
-
-Oren.
+The netns_eq helper will handle that.
