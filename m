@@ -1,13 +1,14 @@
-From: Bruno =?UTF-8?B?UHLDqW1vbnQ=?= <bonbons-ud5FBsm0p/xEiooADzr8i9i2O/JbrIOy@public.gmane.org>
+From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
 Subject: Re: [RFD] reboot / shutdown of a container
-Date: Thu, 13 Jan 2011 21:09:18 +0100
-Message-ID: <20110113210918.48f3e85e__24771.1464683109$1294950073$gmane$org@neptune.home>
-References: <4D2F299B.4000509@free.fr>
+Date: Thu, 13 Jan 2011 23:09:15 +0100
+Message-ID: <4D2F780B.6090800__30309.3830975287$1294957346$gmane$org@free.fr>
+References: <4D2F299B.4000509@free.fr>	<20110113210918.48f3e85e@neptune.home>	<4D2F6F63.8090904@free.fr>
+	<20110113225059.6f46cd44@neptune.home>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4D2F299B.4000509-GANU6spQydw@public.gmane.org>
+In-Reply-To: <20110113225059.6f46cd44-hY15tx4IgV39zxVx7UNMDg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,65 +18,104 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+To: =?UTF-8?B?QnJ1bm8gUHLDqW1vbnQ=?= <bonbons-ud5FBsm0p/xEiooADzr8i9i2O/JbrIOy@public.gmane.org>
 Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, 13 January 2011 Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org> wrote:
-> in the container implementation, we are facing the problem of a process 
-> calling the sys_reboot syscall which of course makes the host to 
-> poweroff/reboot.
-> 
-> If we drop the cap_sys_reboot capability, sys_reboot fails and the 
-> container reach a shutdown state but the init process stay there, hence 
-> the container becomes stuck waiting indefinitely the process '1' to exit.
-> 
-> The current implementation to make the shutdown / reboot of the 
-> container to work is we watch, from a process outside of the container, 
-> the <rootfs>/var/run/utmp file and check the runlevel each time the file 
-> changes. When the 'reboot' or 'shutdown' level is detected, we wait for 
-> a single remaining in the container and then we kill it.
-> 
-> That works but this is not efficient in case of a large number of 
-> containers as we will have to watch a lot of utmp files. In addition, 
-> the /var/run directory must *not* mounted as tmpfs in the distro. 
-> Unfortunately, it is the default setup on most of the distros and tends 
-> to generalize. That implies, the rootfs init's scripts must be modified 
-> for the container when we put in place its rootfs and as /var/run is 
-> supposed to be a tmpfs, most of the applications do not cleanup the 
-> directory, so we need to add extra services to wipeout the files.
-> 
-> More problems arise when we do an upgrade of the distro inside the 
-> container, because all the setup we made at creation time will be lost. 
-> The upgrade overwrite the scripts, the fstab and so on.
-> 
-> We did what was possible to solve the problem from userspace but we 
-> reach always a limit because there are different implementations of the 
-> 'init' process and the init's scripts differ from a distro to another 
-> and the same with the versions.
-> 
-> We think this problem can only be solved from the kernel.
-> 
-> The idea was to send a signal SIGPWR to the parent of the pid '1' of the 
-> pid namespace when the sys_reboot is called. Of course that won't occur 
-> for the init pid namespace.
-
-Wouldn't sending SIGKILL to the pid '1' process of the originating PID
-namespace be sufficient (that would trigger a SIGCHLD for the parent
-process in the outer PID namespace.
-(as far as I remember the PID namespace is killed when its 'init' exits,
-if this is not the case all other processes in the given namespace would
-have to be killed as well)
-
-Only issue is how to differentiate the various reboot() modes (restart, 
-power-off/halt) from outside, though that one also exists with the SIGPWR
-signal.
-
-Bruno
-
-
-> Does it make sense ?
-> 
-> Any idea is very welcome :)
-> 
->    -- Daniel
+T24gMDEvMTMvMjAxMSAxMDo1MCBQTSwgQnJ1bm8gUHLDqW1vbnQgd3JvdGU6Cj4gT24gVGh1LCAx
+MyBKYW51YXJ5IDIwMTEgRGFuaWVsIExlemNhbm88ZGFuaWVsLmxlemNhbm9AZnJlZS5mcj4gIHdy
+b3RlOgo+Cj4+IE9uIDAxLzEzLzIwMTEgMDk6MDkgUE0sIEJydW5vIFByw6ltb250IHdyb3RlOgo+
+Pj4gT24gVGh1LCAxMyBKYW51YXJ5IDIwMTEgRGFuaWVsIExlemNhbm88ZGFuaWVsLmxlemNhbm9A
+ZnJlZS5mcj4gICB3cm90ZToKPj4+PiBpbiB0aGUgY29udGFpbmVyIGltcGxlbWVudGF0aW9uLCB3
+ZSBhcmUgZmFjaW5nIHRoZSBwcm9ibGVtIG9mIGEgcHJvY2Vzcwo+Pj4+IGNhbGxpbmcgdGhlIHN5
+c19yZWJvb3Qgc3lzY2FsbCB3aGljaCBvZiBjb3Vyc2UgbWFrZXMgdGhlIGhvc3QgdG8KPj4+PiBw
+b3dlcm9mZi9yZWJvb3QuCj4+Pj4KPj4+PiBJZiB3ZSBkcm9wIHRoZSBjYXBfc3lzX3JlYm9vdCBj
+YXBhYmlsaXR5LCBzeXNfcmVib290IGZhaWxzIGFuZCB0aGUKPj4+PiBjb250YWluZXIgcmVhY2gg
+YSBzaHV0ZG93biBzdGF0ZSBidXQgdGhlIGluaXQgcHJvY2VzcyBzdGF5IHRoZXJlLCBoZW5jZQo+
+Pj4+IHRoZSBjb250YWluZXIgYmVjb21lcyBzdHVjayB3YWl0aW5nIGluZGVmaW5pdGVseSB0aGUg
+cHJvY2VzcyAnMScgdG8gZXhpdC4KPj4+Pgo+Pj4+IFRoZSBjdXJyZW50IGltcGxlbWVudGF0aW9u
+IHRvIG1ha2UgdGhlIHNodXRkb3duIC8gcmVib290IG9mIHRoZQo+Pj4+IGNvbnRhaW5lciB0byB3
+b3JrIGlzIHdlIHdhdGNoLCBmcm9tIGEgcHJvY2VzcyBvdXRzaWRlIG9mIHRoZSBjb250YWluZXIs
+Cj4+Pj4gdGhlPHJvb3Rmcz4vdmFyL3J1bi91dG1wIGZpbGUgYW5kIGNoZWNrIHRoZSBydW5sZXZl
+bCBlYWNoIHRpbWUgdGhlIGZpbGUKPj4+PiBjaGFuZ2VzLiBXaGVuIHRoZSAncmVib290JyBvciAn
+c2h1dGRvd24nIGxldmVsIGlzIGRldGVjdGVkLCB3ZSB3YWl0IGZvcgo+Pj4+IGEgc2luZ2xlIHJl
+bWFpbmluZyBpbiB0aGUgY29udGFpbmVyIGFuZCB0aGVuIHdlIGtpbGwgaXQuCj4+Pj4KPj4+PiBU
+aGF0IHdvcmtzIGJ1dCB0aGlzIGlzIG5vdCBlZmZpY2llbnQgaW4gY2FzZSBvZiBhIGxhcmdlIG51
+bWJlciBvZgo+Pj4+IGNvbnRhaW5lcnMgYXMgd2Ugd2lsbCBoYXZlIHRvIHdhdGNoIGEgbG90IG9m
+IHV0bXAgZmlsZXMuIEluIGFkZGl0aW9uLAo+Pj4+IHRoZSAvdmFyL3J1biBkaXJlY3RvcnkgbXVz
+dCAqbm90KiBtb3VudGVkIGFzIHRtcGZzIGluIHRoZSBkaXN0cm8uCj4+Pj4gVW5mb3J0dW5hdGVs
+eSwgaXQgaXMgdGhlIGRlZmF1bHQgc2V0dXAgb24gbW9zdCBvZiB0aGUgZGlzdHJvcyBhbmQgdGVu
+ZHMKPj4+PiB0byBnZW5lcmFsaXplLiBUaGF0IGltcGxpZXMsIHRoZSByb290ZnMgaW5pdCdzIHNj
+cmlwdHMgbXVzdCBiZSBtb2RpZmllZAo+Pj4+IGZvciB0aGUgY29udGFpbmVyIHdoZW4gd2UgcHV0
+IGluIHBsYWNlIGl0cyByb290ZnMgYW5kIGFzIC92YXIvcnVuIGlzCj4+Pj4gc3VwcG9zZWQgdG8g
+YmUgYSB0bXBmcywgbW9zdCBvZiB0aGUgYXBwbGljYXRpb25zIGRvIG5vdCBjbGVhbnVwIHRoZQo+
+Pj4+IGRpcmVjdG9yeSwgc28gd2UgbmVlZCB0byBhZGQgZXh0cmEgc2VydmljZXMgdG8gd2lwZW91
+dCB0aGUgZmlsZXMuCj4+Pj4KPj4+PiBNb3JlIHByb2JsZW1zIGFyaXNlIHdoZW4gd2UgZG8gYW4g
+dXBncmFkZSBvZiB0aGUgZGlzdHJvIGluc2lkZSB0aGUKPj4+PiBjb250YWluZXIsIGJlY2F1c2Ug
+YWxsIHRoZSBzZXR1cCB3ZSBtYWRlIGF0IGNyZWF0aW9uIHRpbWUgd2lsbCBiZSBsb3N0Lgo+Pj4+
+IFRoZSB1cGdyYWRlIG92ZXJ3cml0ZSB0aGUgc2NyaXB0cywgdGhlIGZzdGFiIGFuZCBzbyBvbi4K
+Pj4+Pgo+Pj4+IFdlIGRpZCB3aGF0IHdhcyBwb3NzaWJsZSB0byBzb2x2ZSB0aGUgcHJvYmxlbSBm
+cm9tIHVzZXJzcGFjZSBidXQgd2UKPj4+PiByZWFjaCBhbHdheXMgYSBsaW1pdCBiZWNhdXNlIHRo
+ZXJlIGFyZSBkaWZmZXJlbnQgaW1wbGVtZW50YXRpb25zIG9mIHRoZQo+Pj4+ICdpbml0JyBwcm9j
+ZXNzIGFuZCB0aGUgaW5pdCdzIHNjcmlwdHMgZGlmZmVyIGZyb20gYSBkaXN0cm8gdG8gYW5vdGhl
+cgo+Pj4+IGFuZCB0aGUgc2FtZSB3aXRoIHRoZSB2ZXJzaW9ucy4KPj4+Pgo+Pj4+IFdlIHRoaW5r
+IHRoaXMgcHJvYmxlbSBjYW4gb25seSBiZSBzb2x2ZWQgZnJvbSB0aGUga2VybmVsLgo+Pj4+Cj4+
+Pj4gVGhlIGlkZWEgd2FzIHRvIHNlbmQgYSBzaWduYWwgU0lHUFdSIHRvIHRoZSBwYXJlbnQgb2Yg
+dGhlIHBpZCAnMScgb2YgdGhlCj4+Pj4gcGlkIG5hbWVzcGFjZSB3aGVuIHRoZSBzeXNfcmVib290
+IGlzIGNhbGxlZC4gT2YgY291cnNlIHRoYXQgd29uJ3Qgb2NjdXIKPj4+PiBmb3IgdGhlIGluaXQg
+cGlkIG5hbWVzcGFjZS4KPj4+IFdvdWxkbid0IHNlbmRpbmcgU0lHS0lMTCB0byB0aGUgcGlkICcx
+JyBwcm9jZXNzIG9mIHRoZSBvcmlnaW5hdGluZyBQSUQKPj4+IG5hbWVzcGFjZSBiZSBzdWZmaWNp
+ZW50ICh0aGF0IHdvdWxkIHRyaWdnZXIgYSBTSUdDSExEIGZvciB0aGUgcGFyZW50Cj4+PiBwcm9j
+ZXNzIGluIHRoZSBvdXRlciBQSUQgbmFtZXNwYWNlLgo+PiBUaGlzIGlzIGFscmVhZHkgdGhlIGNh
+c2UuIFRoZSBxdWVzdGlvbiBpcyA6IHdoZW4gZG8gd2Ugc2VuZCB0aGlzIHNpZ25hbCA/Cj4+IFdl
+IGhhdmUgdG8gd2FpdCBmb3IgdGhlIGNvbnRhaW5lciBzeXN0ZW0gc2h1dGRvd24gYmVmb3JlIGtp
+bGxpbmcgaXQuCj4gSSBtZWFudCB0aGF0IHN5c19yZWJvb3QoKSB3b3VsZCBraWxsIHRoZSBuYW1l
+c3BhY2UncyBpbml0IGlmIGl0J3Mgbm90Cj4gY2FsbGVkIGZyb20gYm9vdCBuYW1lc3BhY2UuCj4K
+PiBTZWUgYmVsb3cKPgo+Pj4gKGFzIGZhciBhcyBJIHJlbWVtYmVyIHRoZSBQSUQgbmFtZXNwYWNl
+IGlzIGtpbGxlZCB3aGVuIGl0cyAnaW5pdCcgZXhpdHMsCj4+PiBpZiB0aGlzIGlzIG5vdCB0aGUg
+Y2FzZSBhbGwgb3RoZXIgcHJvY2Vzc2VzIGluIHRoZSBnaXZlbiBuYW1lc3BhY2Ugd291bGQKPj4+
+IGhhdmUgdG8gYmUga2lsbGVkIGFzIHdlbGwpCj4+IFllcywgYWJzb2x1dGVseSBidXQgdGhpcyBp
+cyBub3QgdGhlIHBvaW50LCByZWFwaW5nIHRoZSBjb250YWluZXIgaXMgbm90Cj4+IGEgcHJvYmxl
+bS4KPj4KPj4gV2hhdCB3ZSBhcmUgdHJ5aW5nIHRvIGFjaGlldmUgaXMgdG8gc2h1dGRvd24gcHJv
+cGVybHkgdGhlIGNvbnRhaW5lciBmcm9tCj4+IGluc2lkZSAoZnJvbSBvdXRzaWRlIHdpbGwgYmUg
+cG9zc2libGUgdG9vIHdpdGggdGhlIHNldG5zIHN5c2NhbGwpLgo+Pgo+PiBBc3N1bWluZyB0aGUg
+cHJvY2VzcyAnMTIzNCcgY3JlYXRlcyBhIG5ldyBwcm9jZXNzIGluIGEgbmV3IG5hbWVzcGFjZSBz
+ZXQKPj4gYW5kIHdhaXQgZm9yIGl0Lgo+Pgo+PiBUaGUgbmV3IHByb2Nlc3MgJzEnIHdpbGwgZXhl
+YyAvc2Jpbi9pbml0IGFuZCB0aGUgc3lzdGVtIHdpbGwgYm9vdCB1cC4KPj4gQnV0LCB3aGVuIHRo
+ZSBzeXN0ZW0gaXMgc2h1dGRvd24gb3IgcmVib290ZWQsIGFmdGVyIHRoZSBkb3duIHNjcmlwdHMg
+YXJlCj4+IGV4ZWN1dGVkIHRoZSBraWxsIC0xNSAtMSB3aWxsIGJlIGludm9rZWQsIGtpbGxpbmcg
+YWxsIHRoZSBwcm9jZXNzZXMKPj4gZXhwZWN0IHRoZSBwcm9jZXNzICcxJyBhbmQgdGhlIGNhbGxl
+ci4gVGhpcyBvbmUgd2lsbCB0aGVuIGNhbGwKPj4gJ3N5c19yZWJvb3QnIGFuZCBleGl0LiBIZW5j
+ZSB3ZSBzdGlsbCBoYXZlIHRoZSBpbml0IHByb2Nlc3MgaWRsZSBhbmQgaXRzCj4+IHBhcmVudCAn
+MTIzNCcgd2FpdGluZyBmb3IgaXQgdG8gZGllLgo+IFRoaXMgY2FsbCB0byBzeXNfcmVib290KCkg
+d291bGQga2lsbCAibmV3IHByb2Nlc3MgJzEnIiBpbnN0ZWFkIG9mIHRyeWluZyB0bwo+IG9wZXJh
+dGUgb24gdGhlIEhXIGJveC4KPiBUaGlzIGFsc28gaGFzIHRoZSBhZHZhbnRhZ2UgdGhhdCBhIGNv
+bnRhaW5lciB3b3VsZCBub3QgcmVxdWlyZSBhbiBpbmZvcm1lZAo+IHBhcmVudCAibW9uaXRvcmlu
+ZyIgaXQgZnJvbSBvdXRzaWRlICh0aG91Z2ggaXQgd291bGQgbm90IGJlIHJlc3RhcnRlZCBldmVu
+IGlmCj4gcmVxdWVzdGVkIHdpdGhvdXQgc3VjaCBpbmZvcm1lZCBvdXRzaWRlIHBhcmVudCkuCgpP
+aCwgb2suIFNvcnJ5IEkgbWlzdW5kZXJzdG9vZC4KClllcywgdGhhdCBjb3VsZCBiZSBiZXR0ZXIg
+dGhhbiBjcm9zc2luZyB0aGUgbmFtZXNwYWNlIGJvdW5kYXJpZXMuCgo+PiBJZiB3ZSBhcmUgYWJs
+ZSB0byByZWNlaXZlIHRoZSBpbmZvcm1hdGlvbiBpbiB0aGUgcHJvY2VzcyAnMTIzNCcgOiAidGhl
+Cj4+IHN5c19yZWJvb3Qgd2FzIGNhbGxlZCBpbiB0aGUgY2hpbGQgcGlkIG5hbWVzcGFjZSIsIHdl
+IGNhbiB0YWtlIHRoZW4ga2lsbAo+PiBvdXIgY2hpbGQgcGlkLiAgSWYgdGhpcyBpbmZvcm1hdGlv
+biBpcyByYWlzZWQgdmlhIGEgc2lnbmFsIHNlbnQgYnkgdGhlCj4+IGtlcm5lbCB3aXRoIHRoZSBw
+cm9wZXIgaW5mb3JtYXRpb24gaW4gdGhlIHNpZ2luZm9fdCAoZWcuIHNpX2NvZGUKPj4gY29udGFp
+bnMgIkxJTlVYX1JFQk9PVF9DTURfUkVTVEFSVCIsICJMSU5VWF9SRUJPT1RfQ01EX0hBTFQiLCAu
+Li4gKSwgdGhlCj4+IHNvbHV0aW9uIHdpbGwgYmUgZ2VuZXJpYyBmb3IgYWxsIHRoZSBzaHV0ZG93
+bi9yZWJvb3Qgb2YgYW55IGtpbmQgb2YKPj4gY29udGFpbmVyIGFuZCBpbml0IHZlcnNpb24uCj4g
+Q291bGQgdGhpcyBiZSBwYXNzZWQgZm9yIGEgU0lHQ0hMRD8gKHdoZW4gbmFtZXNwYWNlIGlzIHJl
+YXBlZCwgYW5kIHJlY2VpdmVkCj4gYnkgMTIzNCBmcm9tIGFib3ZlIGV4YW1wbGUgYXNzdW1pbmcg
+c3lzX3JlYm9vdCgpIGtpbGxzIHRoZSAibmV3IHByb2Nlc3MgJzEnIikKClllcywgdGhhdCBzb3Vu
+ZHMgYSBnb29kIGlkZWEuCgo+IExvb2tzIGxpa2UgeWVzLCBidXQgd2l0aCB0aGUgbmVlZCB0byBk
+ZWZpbmUgbmV3IHZhbHVlcyBmb3Igc2lfY29kZSAocmV1c2luZwo+IExJTlVYX1JFQk9PVF9DTURf
+KiB3b3VsZCBjZXJ0YWlubHkgY2xhc2gsIG5vIG1hdHRlciB3aGljaCBzaWduYWwgaXMgY2hvb3Nl
+bikuCgpDTERfUkVCT09UX0NNRF9SRVNUQVJUCkNMRF9SRUJPT1RfQ01EX0hBTFQKQ0xEX1JFQk9P
+VF9DTURfUE9XRVJfT0ZGCkNMRF9SRUJPT1RfQ01EX1JFU1RBUlQyICh3aGF0IGFib3V0IHRoZSBj
+bWQgYnVmZmVyLCBzaGFsbCB3ZSBpZ25vcmUgaXQgPykKQ0xEX1JFQk9PVF9DTURfS0VYRUMgKD8p
+CkNMRF9SRUJPT1RfQ01EX1NXX1NVU1BFTkQgKHVzZWZ1bCBmb3IgdGhlIGZ1dHVyZSBjaGVja3Bv
+aW50L3Jlc3RhcnQpCgpMSU5VWF9SRUJPT1RfQ01EX0NBRF9PTiBhbmQgTElOVVhfUkVCT09UX0NN
+RF9DQURfT0ZGIGNvdWxkIGJlIGRpc2FibGVkIApmb3IgYSBub24taW5pdCBwaWQgbmFtZXNwYWNl
+LCBubyA/CgoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18K
+Q29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9u
+Lm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8v
+Y29udGFpbmVycw==
