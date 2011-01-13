@@ -1,9 +1,10 @@
-From: Valdis.Kletnieks-PjAqaU27lzQ@public.gmane.org
-Subject: linux-next: lockdep whinge in cgroup_rmdir
-Date: Thu, 13 Jan 2011 10:34:09 -0500
-Message-ID: <12545.1294932849__30333.3028489307$1294933050$gmane$org@localhost>
+From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Subject: [RFD] reboot / shutdown of a container
+Date: Thu, 13 Jan 2011 17:34:35 +0100
+Message-ID: <4D2F299B.4000509__1655.15276971764$1294936524$gmane$org@free.fr>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============7846391949137158405=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -12,99 +13,54 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Stephen Smalley <sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>, James Morris <jmorris-gx6/JNMH7DfYtjvyW6yDsg@public.gmane.org>, Eric Paris <eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
---===============7846391949137158405==
-Content-Type: multipart/signed; boundary="==_Exmh_1294932849_5688P";
-	 micalg=pgp-sha1; protocol="application/pgp-signature"
-Content-Transfer-Encoding: 7bit
 
---==_Exmh_1294932849_5688P
-Content-Type: text/plain; charset=us-ascii
+Hi all,
 
-Seen booting yesterday's linux-next, was not present in 2.6.37-rc7-mmotm1202.
+in the container implementation, we are facing the problem of a process 
+calling the sys_reboot syscall which of course makes the host to 
+poweroff/reboot.
 
-Not sure if it's an selinux or cgroup issue, so I'm throwing it at every
-address I can find for either.  This is easily replicatable and happens at
-every boot, so I can test patches if needed.  Am willing to bisect it down if
-nobody knows right off the bat what the problem is.
+If we drop the cap_sys_reboot capability, sys_reboot fails and the 
+container reach a shutdown state but the init process stay there, hence 
+the container becomes stuck waiting indefinitely the process '1' to exit.
 
-The 'W' taint is from the already-reported kernel/workqueue.c worker_enter_idle issue.
+The current implementation to make the shutdown / reboot of the 
+container to work is we watch, from a process outside of the container, 
+the <rootfs>/var/run/utmp file and check the runlevel each time the file 
+changes. When the 'reboot' or 'shutdown' level is detected, we wait for 
+a single remaining in the container and then we kill it.
 
-[   85.100795] systemd[1]: readahead-replay.service: main process exited, code=exited, status=1
-[   85.101530] 
-[   85.101531] =============================================
-[   85.101796] [ INFO: possible recursive locking detected ]
-[   85.102002] 2.6.37-next-20110111 #1
-[   85.102009] ---------------------------------------------
-[   85.102009] systemd/1 is trying to acquire lock:
-[   85.102009]  (&(&dentry->d_lock)->rlock){+.+...}, at: [<ffffffff8107ca5c>] cgroup_rmdir+0x339/0x479
-[   85.102009] 
-[   85.102009] but task is already holding lock:
-[   85.102009]  (&(&dentry->d_lock)->rlock){+.+...}, at: [<ffffffff8107ca54>] cgroup_rmdir+0x331/0x479
-[   85.102009] 
-[   85.102009] other info that might help us debug this:
-[   85.102009] 4 locks held by systemd/1:
-[   85.102009]  #0:  (&sb->s_type->i_mutex_key#14/1){+.+.+.}, at: [<ffffffff810fea4d>] do_rmdir+0x7d/0x121
-[   85.102009]  #1:  (&sb->s_type->i_mutex_key#14){+.+.+.}, at: [<ffffffff810fd4bc>] vfs_rmdir+0x4a/0xbe
-[   85.102009]  #2:  (cgroup_mutex){+.+.+.}, at: [<ffffffff8107cb84>] cgroup_rmdir+0x461/0x479
-[   85.102009]  #3:  (&(&dentry->d_lock)->rlock){+.+...}, at: [<ffffffff8107ca54>] cgroup_rmdir+0x331/0x479
-[   85.102009] 
-[   85.102009] stack backtrace:
-[   85.102009] Pid: 1, comm: systemd Tainted: G        W   2.6.37-next-20110111 #1
-[   85.102009] Call Trace:
-[   85.102009]  [<ffffffff81069f22>] ? __lock_acquire+0x929/0xd4e
-[   85.102009]  [<ffffffff8107c6f1>] ? cgroup_clear_directory+0xff/0x131
-[   85.102009]  [<ffffffff8107c6f1>] ? cgroup_clear_directory+0xff/0x131
-[   85.102009]  [<ffffffff8107ca5c>] ? cgroup_rmdir+0x339/0x479
-[   85.102009]  [<ffffffff8106a859>] ? lock_acquire+0x100/0x126
-[   85.102009]  [<ffffffff8107ca5c>] ? cgroup_rmdir+0x339/0x479
-[   85.102009]  [<ffffffff815521ef>] ? sub_preempt_count+0x35/0x48
-[   85.102009]  [<ffffffff8154e401>] ? _raw_spin_lock+0x36/0x45
-[   85.102009]  [<ffffffff8107ca5c>] ? cgroup_rmdir+0x339/0x479
-[   85.102009]  [<ffffffff8107ca5c>] ? cgroup_rmdir+0x339/0x479
-[   85.102009]  [<ffffffff810579cd>] ? autoremove_wake_function+0x0/0x34
-[   85.102009]  [<ffffffff811e1839>] ? selinux_inode_rmdir+0x15/0x17
-[   85.102009]  [<ffffffff810fd4eb>] ? vfs_rmdir+0x79/0xbe
-[   85.102009]  [<ffffffff810feaa0>] ? do_rmdir+0xd0/0x121
-[   85.102009]  [<ffffffff8100256c>] ? sysret_check+0x27/0x62
-[   85.102009]  [<ffffffff8106ac79>] ? trace_hardirqs_on_caller+0x117/0x13b
-[   85.102009]  [<ffffffff8154e201>] ? trace_hardirqs_on_thunk+0x3a/0x3f
-[   85.102009]  [<ffffffff8110040b>] ? sys_rmdir+0x11/0x13
-[   85.102009]  [<ffffffff8100253b>] ? system_call_fastpath+0x16/0x1b
-[   85.268272] systemd[1]: readahead-collect.service: main process exited, code=exited, status=1
+That works but this is not efficient in case of a large number of 
+containers as we will have to watch a lot of utmp files. In addition, 
+the /var/run directory must *not* mounted as tmpfs in the distro. 
+Unfortunately, it is the default setup on most of the distros and tends 
+to generalize. That implies, the rootfs init's scripts must be modified 
+for the container when we put in place its rootfs and as /var/run is 
+supposed to be a tmpfs, most of the applications do not cleanup the 
+directory, so we need to add extra services to wipeout the files.
 
-Any ideas?
+More problems arise when we do an upgrade of the distro inside the 
+container, because all the setup we made at creation time will be lost. 
+The upgrade overwrite the scripts, the fstab and so on.
 
+We did what was possible to solve the problem from userspace but we 
+reach always a limit because there are different implementations of the 
+'init' process and the init's scripts differ from a distro to another 
+and the same with the versions.
 
---==_Exmh_1294932849_5688P
-Content-Type: application/pgp-signature
+We think this problem can only be solved from the kernel.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-Comment: Exmh version 2.5 07/13/2001
+The idea was to send a signal SIGPWR to the parent of the pid '1' of the 
+pid namespace when the sys_reboot is called. Of course that won't occur 
+for the init pid namespace.
 
-iD8DBQFNLxtxcC3lWbTT17ARAprOAKDqao+AU5izb3IG7atw6j0cAWRI3gCg0P7w
-y/gJHwTPriOaZQCK0HHjBJ0=
-=Ovgw
------END PGP SIGNATURE-----
+Does it make sense ?
 
---==_Exmh_1294932849_5688P--
+Any idea is very welcome :)
 
-
---===============7846391949137158405==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============7846391949137158405==--
+   -- Daniel
