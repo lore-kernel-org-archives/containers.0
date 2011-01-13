@@ -1,14 +1,13 @@
-From: Bruno =?UTF-8?B?UHLDqW1vbnQ=?= <bonbons-ud5FBsm0p/xEiooADzr8i9i2O/JbrIOy@public.gmane.org>
+From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
 Subject: Re: [RFD] reboot / shutdown of a container
-Date: Thu, 13 Jan 2011 22:50:59 +0100
-Message-ID: <20110113225059.6f46cd44__25499.0283553072$1294965934$gmane$org@neptune.home>
+Date: Thu, 13 Jan 2011 22:32:19 +0100
+Message-ID: <4D2F6F63.8090904__13796.9825220809$1294970906$gmane$org@free.fr>
 References: <4D2F299B.4000509@free.fr> <20110113210918.48f3e85e@neptune.home>
-	<4D2F6F63.8090904@free.fr>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4D2F6F63.8090904-GANU6spQydw@public.gmane.org>
+In-Reply-To: <20110113210918.48f3e85e-hY15tx4IgV39zxVx7UNMDg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,97 +17,101 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+To: =?ISO-8859-1?Q?Bruno_Pr=E9mont?= <bonbons-ud5FBsm0p/xEiooADzr8i9i2O/JbrIOy@public.gmane.org>
 Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gVGh1LCAxMyBKYW51YXJ5IDIwMTEgRGFuaWVsIExlemNhbm8gPGRhbmllbC5sZXpjYW5vQGZy
-ZWUuZnI+IHdyb3RlOgoKPiBPbiAwMS8xMy8yMDExIDA5OjA5IFBNLCBCcnVubyBQcsOpbW9udCB3
-cm90ZToKPiA+IE9uIFRodSwgMTMgSmFudWFyeSAyMDExIERhbmllbCBMZXpjYW5vPGRhbmllbC5s
-ZXpjYW5vQGZyZWUuZnI+ICB3cm90ZToKPiA+PiBpbiB0aGUgY29udGFpbmVyIGltcGxlbWVudGF0
-aW9uLCB3ZSBhcmUgZmFjaW5nIHRoZSBwcm9ibGVtIG9mIGEgcHJvY2Vzcwo+ID4+IGNhbGxpbmcg
-dGhlIHN5c19yZWJvb3Qgc3lzY2FsbCB3aGljaCBvZiBjb3Vyc2UgbWFrZXMgdGhlIGhvc3QgdG8K
-PiA+PiBwb3dlcm9mZi9yZWJvb3QuCj4gPj4KPiA+PiBJZiB3ZSBkcm9wIHRoZSBjYXBfc3lzX3Jl
-Ym9vdCBjYXBhYmlsaXR5LCBzeXNfcmVib290IGZhaWxzIGFuZCB0aGUKPiA+PiBjb250YWluZXIg
-cmVhY2ggYSBzaHV0ZG93biBzdGF0ZSBidXQgdGhlIGluaXQgcHJvY2VzcyBzdGF5IHRoZXJlLCBo
-ZW5jZQo+ID4+IHRoZSBjb250YWluZXIgYmVjb21lcyBzdHVjayB3YWl0aW5nIGluZGVmaW5pdGVs
-eSB0aGUgcHJvY2VzcyAnMScgdG8gZXhpdC4KPiA+Pgo+ID4+IFRoZSBjdXJyZW50IGltcGxlbWVu
-dGF0aW9uIHRvIG1ha2UgdGhlIHNodXRkb3duIC8gcmVib290IG9mIHRoZQo+ID4+IGNvbnRhaW5l
-ciB0byB3b3JrIGlzIHdlIHdhdGNoLCBmcm9tIGEgcHJvY2VzcyBvdXRzaWRlIG9mIHRoZSBjb250
-YWluZXIsCj4gPj4gdGhlPHJvb3Rmcz4vdmFyL3J1bi91dG1wIGZpbGUgYW5kIGNoZWNrIHRoZSBy
-dW5sZXZlbCBlYWNoIHRpbWUgdGhlIGZpbGUKPiA+PiBjaGFuZ2VzLiBXaGVuIHRoZSAncmVib290
-JyBvciAnc2h1dGRvd24nIGxldmVsIGlzIGRldGVjdGVkLCB3ZSB3YWl0IGZvcgo+ID4+IGEgc2lu
-Z2xlIHJlbWFpbmluZyBpbiB0aGUgY29udGFpbmVyIGFuZCB0aGVuIHdlIGtpbGwgaXQuCj4gPj4K
-PiA+PiBUaGF0IHdvcmtzIGJ1dCB0aGlzIGlzIG5vdCBlZmZpY2llbnQgaW4gY2FzZSBvZiBhIGxh
-cmdlIG51bWJlciBvZgo+ID4+IGNvbnRhaW5lcnMgYXMgd2Ugd2lsbCBoYXZlIHRvIHdhdGNoIGEg
-bG90IG9mIHV0bXAgZmlsZXMuIEluIGFkZGl0aW9uLAo+ID4+IHRoZSAvdmFyL3J1biBkaXJlY3Rv
-cnkgbXVzdCAqbm90KiBtb3VudGVkIGFzIHRtcGZzIGluIHRoZSBkaXN0cm8uCj4gPj4gVW5mb3J0
-dW5hdGVseSwgaXQgaXMgdGhlIGRlZmF1bHQgc2V0dXAgb24gbW9zdCBvZiB0aGUgZGlzdHJvcyBh
-bmQgdGVuZHMKPiA+PiB0byBnZW5lcmFsaXplLiBUaGF0IGltcGxpZXMsIHRoZSByb290ZnMgaW5p
-dCdzIHNjcmlwdHMgbXVzdCBiZSBtb2RpZmllZAo+ID4+IGZvciB0aGUgY29udGFpbmVyIHdoZW4g
-d2UgcHV0IGluIHBsYWNlIGl0cyByb290ZnMgYW5kIGFzIC92YXIvcnVuIGlzCj4gPj4gc3VwcG9z
-ZWQgdG8gYmUgYSB0bXBmcywgbW9zdCBvZiB0aGUgYXBwbGljYXRpb25zIGRvIG5vdCBjbGVhbnVw
-IHRoZQo+ID4+IGRpcmVjdG9yeSwgc28gd2UgbmVlZCB0byBhZGQgZXh0cmEgc2VydmljZXMgdG8g
-d2lwZW91dCB0aGUgZmlsZXMuCj4gPj4KPiA+PiBNb3JlIHByb2JsZW1zIGFyaXNlIHdoZW4gd2Ug
-ZG8gYW4gdXBncmFkZSBvZiB0aGUgZGlzdHJvIGluc2lkZSB0aGUKPiA+PiBjb250YWluZXIsIGJl
-Y2F1c2UgYWxsIHRoZSBzZXR1cCB3ZSBtYWRlIGF0IGNyZWF0aW9uIHRpbWUgd2lsbCBiZSBsb3N0
-Lgo+ID4+IFRoZSB1cGdyYWRlIG92ZXJ3cml0ZSB0aGUgc2NyaXB0cywgdGhlIGZzdGFiIGFuZCBz
-byBvbi4KPiA+Pgo+ID4+IFdlIGRpZCB3aGF0IHdhcyBwb3NzaWJsZSB0byBzb2x2ZSB0aGUgcHJv
-YmxlbSBmcm9tIHVzZXJzcGFjZSBidXQgd2UKPiA+PiByZWFjaCBhbHdheXMgYSBsaW1pdCBiZWNh
-dXNlIHRoZXJlIGFyZSBkaWZmZXJlbnQgaW1wbGVtZW50YXRpb25zIG9mIHRoZQo+ID4+ICdpbml0
-JyBwcm9jZXNzIGFuZCB0aGUgaW5pdCdzIHNjcmlwdHMgZGlmZmVyIGZyb20gYSBkaXN0cm8gdG8g
-YW5vdGhlcgo+ID4+IGFuZCB0aGUgc2FtZSB3aXRoIHRoZSB2ZXJzaW9ucy4KPiA+Pgo+ID4+IFdl
-IHRoaW5rIHRoaXMgcHJvYmxlbSBjYW4gb25seSBiZSBzb2x2ZWQgZnJvbSB0aGUga2VybmVsLgo+
-ID4+Cj4gPj4gVGhlIGlkZWEgd2FzIHRvIHNlbmQgYSBzaWduYWwgU0lHUFdSIHRvIHRoZSBwYXJl
-bnQgb2YgdGhlIHBpZCAnMScgb2YgdGhlCj4gPj4gcGlkIG5hbWVzcGFjZSB3aGVuIHRoZSBzeXNf
-cmVib290IGlzIGNhbGxlZC4gT2YgY291cnNlIHRoYXQgd29uJ3Qgb2NjdXIKPiA+PiBmb3IgdGhl
-IGluaXQgcGlkIG5hbWVzcGFjZS4KPiA+IFdvdWxkbid0IHNlbmRpbmcgU0lHS0lMTCB0byB0aGUg
-cGlkICcxJyBwcm9jZXNzIG9mIHRoZSBvcmlnaW5hdGluZyBQSUQKPiA+IG5hbWVzcGFjZSBiZSBz
-dWZmaWNpZW50ICh0aGF0IHdvdWxkIHRyaWdnZXIgYSBTSUdDSExEIGZvciB0aGUgcGFyZW50Cj4g
-PiBwcm9jZXNzIGluIHRoZSBvdXRlciBQSUQgbmFtZXNwYWNlLgo+IAo+IFRoaXMgaXMgYWxyZWFk
-eSB0aGUgY2FzZS4gVGhlIHF1ZXN0aW9uIGlzIDogd2hlbiBkbyB3ZSBzZW5kIHRoaXMgc2lnbmFs
-ID8KPiBXZSBoYXZlIHRvIHdhaXQgZm9yIHRoZSBjb250YWluZXIgc3lzdGVtIHNodXRkb3duIGJl
-Zm9yZSBraWxsaW5nIGl0LgoKSSBtZWFudCB0aGF0IHN5c19yZWJvb3QoKSB3b3VsZCBraWxsIHRo
-ZSBuYW1lc3BhY2UncyBpbml0IGlmIGl0J3Mgbm90CmNhbGxlZCBmcm9tIGJvb3QgbmFtZXNwYWNl
-LgoKU2VlIGJlbG93Cgo+ID4gKGFzIGZhciBhcyBJIHJlbWVtYmVyIHRoZSBQSUQgbmFtZXNwYWNl
-IGlzIGtpbGxlZCB3aGVuIGl0cyAnaW5pdCcgZXhpdHMsCj4gPiBpZiB0aGlzIGlzIG5vdCB0aGUg
-Y2FzZSBhbGwgb3RoZXIgcHJvY2Vzc2VzIGluIHRoZSBnaXZlbiBuYW1lc3BhY2Ugd291bGQKPiA+
-IGhhdmUgdG8gYmUga2lsbGVkIGFzIHdlbGwpCj4gCj4gWWVzLCBhYnNvbHV0ZWx5IGJ1dCB0aGlz
-IGlzIG5vdCB0aGUgcG9pbnQsIHJlYXBpbmcgdGhlIGNvbnRhaW5lciBpcyBub3QgCj4gYSBwcm9i
-bGVtLgo+IAo+IFdoYXQgd2UgYXJlIHRyeWluZyB0byBhY2hpZXZlIGlzIHRvIHNodXRkb3duIHBy
-b3Blcmx5IHRoZSBjb250YWluZXIgZnJvbSAKPiBpbnNpZGUgKGZyb20gb3V0c2lkZSB3aWxsIGJl
-IHBvc3NpYmxlIHRvbyB3aXRoIHRoZSBzZXRucyBzeXNjYWxsKS4KPiAKPiBBc3N1bWluZyB0aGUg
-cHJvY2VzcyAnMTIzNCcgY3JlYXRlcyBhIG5ldyBwcm9jZXNzIGluIGEgbmV3IG5hbWVzcGFjZSBz
-ZXQgCj4gYW5kIHdhaXQgZm9yIGl0Lgo+IAo+IFRoZSBuZXcgcHJvY2VzcyAnMScgd2lsbCBleGVj
-IC9zYmluL2luaXQgYW5kIHRoZSBzeXN0ZW0gd2lsbCBib290IHVwLiAKPiBCdXQsIHdoZW4gdGhl
-IHN5c3RlbSBpcyBzaHV0ZG93biBvciByZWJvb3RlZCwgYWZ0ZXIgdGhlIGRvd24gc2NyaXB0cyBh
-cmUgCj4gZXhlY3V0ZWQgdGhlIGtpbGwgLTE1IC0xIHdpbGwgYmUgaW52b2tlZCwga2lsbGluZyBh
-bGwgdGhlIHByb2Nlc3NlcyAKPiBleHBlY3QgdGhlIHByb2Nlc3MgJzEnIGFuZCB0aGUgY2FsbGVy
-LiBUaGlzIG9uZSB3aWxsIHRoZW4gY2FsbCAKPiAnc3lzX3JlYm9vdCcgYW5kIGV4aXQuIEhlbmNl
-IHdlIHN0aWxsIGhhdmUgdGhlIGluaXQgcHJvY2VzcyBpZGxlIGFuZCBpdHMgCj4gcGFyZW50ICcx
-MjM0JyB3YWl0aW5nIGZvciBpdCB0byBkaWUuCgpUaGlzIGNhbGwgdG8gc3lzX3JlYm9vdCgpIHdv
-dWxkIGtpbGwgIm5ldyBwcm9jZXNzICcxJyIgaW5zdGVhZCBvZiB0cnlpbmcgdG8Kb3BlcmF0ZSBv
-biB0aGUgSFcgYm94LgpUaGlzIGFsc28gaGFzIHRoZSBhZHZhbnRhZ2UgdGhhdCBhIGNvbnRhaW5l
-ciB3b3VsZCBub3QgcmVxdWlyZSBhbiBpbmZvcm1lZApwYXJlbnQgIm1vbml0b3JpbmciIGl0IGZy
-b20gb3V0c2lkZSAodGhvdWdoIGl0IHdvdWxkIG5vdCBiZSByZXN0YXJ0ZWQgZXZlbiBpZgpyZXF1
-ZXN0ZWQgd2l0aG91dCBzdWNoIGluZm9ybWVkIG91dHNpZGUgcGFyZW50KS4KCj4gSWYgd2UgYXJl
-IGFibGUgdG8gcmVjZWl2ZSB0aGUgaW5mb3JtYXRpb24gaW4gdGhlIHByb2Nlc3MgJzEyMzQnIDog
-InRoZSAKPiBzeXNfcmVib290IHdhcyBjYWxsZWQgaW4gdGhlIGNoaWxkIHBpZCBuYW1lc3BhY2Ui
-LCB3ZSBjYW4gdGFrZSB0aGVuIGtpbGwgCj4gb3VyIGNoaWxkIHBpZC4gIElmIHRoaXMgaW5mb3Jt
-YXRpb24gaXMgcmFpc2VkIHZpYSBhIHNpZ25hbCBzZW50IGJ5IHRoZSAKPiBrZXJuZWwgd2l0aCB0
-aGUgcHJvcGVyIGluZm9ybWF0aW9uIGluIHRoZSBzaWdpbmZvX3QgKGVnLiBzaV9jb2RlIAo+IGNv
-bnRhaW5zICJMSU5VWF9SRUJPT1RfQ01EX1JFU1RBUlQiLCAiTElOVVhfUkVCT09UX0NNRF9IQUxU
-IiwgLi4uICksIHRoZSAKPiBzb2x1dGlvbiB3aWxsIGJlIGdlbmVyaWMgZm9yIGFsbCB0aGUgc2h1
-dGRvd24vcmVib290IG9mIGFueSBraW5kIG9mIAo+IGNvbnRhaW5lciBhbmQgaW5pdCB2ZXJzaW9u
-LgoKQ291bGQgdGhpcyBiZSBwYXNzZWQgZm9yIGEgU0lHQ0hMRD8gKHdoZW4gbmFtZXNwYWNlIGlz
-IHJlYXBlZCwgYW5kIHJlY2VpdmVkCmJ5IDEyMzQgZnJvbSBhYm92ZSBleGFtcGxlIGFzc3VtaW5n
-IHN5c19yZWJvb3QoKSBraWxscyB0aGUgIm5ldyBwcm9jZXNzICcxJyIpCgpMb29rcyBsaWtlIHll
-cywgYnV0IHdpdGggdGhlIG5lZWQgdG8gZGVmaW5lIG5ldyB2YWx1ZXMgZm9yIHNpX2NvZGUgKHJl
-dXNpbmcKTElOVVhfUkVCT09UX0NNRF8qIHdvdWxkIGNlcnRhaW5seSBjbGFzaCwgbm8gbWF0dGVy
-IHdoaWNoIHNpZ25hbCBpcyBjaG9vc2VuKS4KCj4gPiBPbmx5IGlzc3VlIGlzIGhvdyB0byBkaWZm
-ZXJlbnRpYXRlIHRoZSB2YXJpb3VzIHJlYm9vdCgpIG1vZGVzIChyZXN0YXJ0LAo+ID4gcG93ZXIt
-b2ZmL2hhbHQpIGZyb20gb3V0c2lkZSwgdGhvdWdoIHRoYXQgb25lIGFsc28gZXhpc3RzIHdpdGgg
-dGhlIFNJR1BXUgo+ID4gc2lnbmFsLgoKQnJ1bm8KX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0Bs
-aXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24u
-b3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+On 01/13/2011 09:09 PM, Bruno Pr=E9mont wrote:
+> On Thu, 13 January 2011 Daniel Lezcano<daniel.lezcano-GANU6spQydw@public.gmane.org>  wrote:
+>> in the container implementation, we are facing the problem of a process
+>> calling the sys_reboot syscall which of course makes the host to
+>> poweroff/reboot.
+>>
+>> If we drop the cap_sys_reboot capability, sys_reboot fails and the
+>> container reach a shutdown state but the init process stay there, hence
+>> the container becomes stuck waiting indefinitely the process '1' to exit.
+>>
+>> The current implementation to make the shutdown / reboot of the
+>> container to work is we watch, from a process outside of the container,
+>> the<rootfs>/var/run/utmp file and check the runlevel each time the file
+>> changes. When the 'reboot' or 'shutdown' level is detected, we wait for
+>> a single remaining in the container and then we kill it.
+>>
+>> That works but this is not efficient in case of a large number of
+>> containers as we will have to watch a lot of utmp files. In addition,
+>> the /var/run directory must *not* mounted as tmpfs in the distro.
+>> Unfortunately, it is the default setup on most of the distros and tends
+>> to generalize. That implies, the rootfs init's scripts must be modified
+>> for the container when we put in place its rootfs and as /var/run is
+>> supposed to be a tmpfs, most of the applications do not cleanup the
+>> directory, so we need to add extra services to wipeout the files.
+>>
+>> More problems arise when we do an upgrade of the distro inside the
+>> container, because all the setup we made at creation time will be lost.
+>> The upgrade overwrite the scripts, the fstab and so on.
+>>
+>> We did what was possible to solve the problem from userspace but we
+>> reach always a limit because there are different implementations of the
+>> 'init' process and the init's scripts differ from a distro to another
+>> and the same with the versions.
+>>
+>> We think this problem can only be solved from the kernel.
+>>
+>> The idea was to send a signal SIGPWR to the parent of the pid '1' of the
+>> pid namespace when the sys_reboot is called. Of course that won't occur
+>> for the init pid namespace.
+> Wouldn't sending SIGKILL to the pid '1' process of the originating PID
+> namespace be sufficient (that would trigger a SIGCHLD for the parent
+> process in the outer PID namespace.
+
+This is already the case. The question is : when do we send this signal ?
+We have to wait for the container system shutdown before killing it.
+
+> (as far as I remember the PID namespace is killed when its 'init' exits,
+> if this is not the case all other processes in the given namespace would
+> have to be killed as well)
+
+Yes, absolutely but this is not the point, reaping the container is not =
+
+a problem.
+
+What we are trying to achieve is to shutdown properly the container from =
+
+inside (from outside will be possible too with the setns syscall).
+
+Assuming the process '1234' creates a new process in a new namespace set =
+
+and wait for it.
+
+The new process '1' will exec /sbin/init and the system will boot up. =
+
+But, when the system is shutdown or rebooted, after the down scripts are =
+
+executed the kill -15 -1 will be invoked, killing all the processes =
+
+expect the process '1' and the caller. This one will then call =
+
+'sys_reboot' and exit. Hence we still have the init process idle and its =
+
+parent '1234' waiting for it to die.
+
+If we are able to receive the information in the process '1234' : "the =
+
+sys_reboot was called in the child pid namespace", we can take then kill =
+
+our child pid.  If this information is raised via a signal sent by the =
+
+kernel with the proper information in the siginfo_t (eg. si_code =
+
+contains "LINUX_REBOOT_CMD_RESTART", "LINUX_REBOOT_CMD_HALT", ... ), the =
+
+solution will be generic for all the shutdown/reboot of any kind of =
+
+container and init version.
+
+> Only issue is how to differentiate the various reboot() modes (restart,
+> power-off/halt) from outside, though that one also exists with the SIGPWR
+> signal.
+
+
+<javascript:void(0);>
