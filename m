@@ -1,18 +1,14 @@
-From: Bastian Blank <bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org>
-Subject: Re: [PATCH 6/7] user namespaces: convert all capable checks in
-	kernel/sys.c
-Date: Fri, 14 Jan 2011 16:02:17 +0100
-Message-ID: <20110114150217.GC20945__1834.15774158693$1295017554$gmane$org@wavehammer.waldi.eu.org>
-References: <20110110211135.GA22446@mail.hallyn.com>
-	<20110110211406.GF22564@mail.hallyn.com>
-	<20110110215937.GB21351@wavehammer.waldi.eu.org>
-	<20110111052759.GA24970@mail.hallyn.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: linux-cr:  v23-rc1 pushed
+Date: Fri, 14 Jan 2011 13:53:53 -0500
+Message-ID: <4D309BC1.3010502@cs.columbia.edu>
+References: <4D2BAFD4.1080400@cs.columbia.edu>
+	<20110114065911.GA11086@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20110111052759.GA24970-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
+In-Reply-To: <20110114065911.GA11086-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,47 +18,47 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Kees Cook <kees.cook-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Jan 11, 2011 at 05:27:59AM +0000, Serge E. Hallyn wrote:
-> Quoting Bastian Blank (bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org):
-> > On Mon, Jan 10, 2011 at 09:14:07PM +0000, Serge E. Hallyn wrote:
-> > > -	if (pcred->uid  != cred->euid &&
-> > > -	    pcred->euid != cred->euid && !capable(CAP_SYS_NICE)) {
-> > > +	if (pcred->user->user_ns != cred->user->user_ns &&
-> > > +	    pcred->uid  != cred->euid &&
-> > > +	    pcred->euid != cred->euid &&
-> > > +	    !ns_capable(pcred->user->user_ns, CAP_SYS_NICE)) {
-> > 
-> > I don't think this is correct. This would not error out if the both
-> > userns are the same. Because the same patern (check uid if same userns,
-> > otherwise only capability) shows up in several parts of the code, maybe
-> > this should be factored out.
+
+
+On 01/14/2011 01:59 AM, Sukadev Bhattiprolu wrote:
+> Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
+> | Folks,
+> | 
+> | I just pushed out a new v23-rc1 branch of linux-cr. This one is
+> | rebased to 2.6.37, and contains nearly all the patches pulled
+> | on v22-dev. I only gave it a brief test drive... feel free to 
+> | throw all your ammo it.
 > 
-> Yeah, I'd really like to factor this out because it shows up everywhere
-> and I have to think about it every time I look at it.  But each time it
-> shows up, the uids being compared slightly change.  There must be some
-> clever way of doing it, hopefully it'll fall out soon.
+> Oren,
+> 
+> We need the file_tty() helper to get the tty object from the file pointer
+> (otherwise we will be off by 4 bytes and fail tty_paranoia_check() in
+> tty_file_checkpoint()).
 
-Well, then make mostly identical (_inline_) functions in one location
-(include/linux/cred.h comes in mind).  You can ask later why they have
-to be different.
+Ok, applied. Thanks,
 
-You are scaling the complexity up. So you need to make it somehow
-manageable, and even slightly different versions in one place are much
-easier to handle than the same in many different places.
+Oren.
 
-kill_ok_by_cred would be:
-cred_check_euid_suid(struct task_struct *p, X capable)
-
-set_one_prio_perm would be:
-cred_check_euid_euid(struct task_struct *p, X capable)
-
-Bastian
-
--- 
-	"Life and death are seldom logical."
-	"But attaining a desired goal always is."
-		-- McCoy and Spock, "The Galileo Seven", stardate 2821.7
+> 
+> Thanks,
+> 
+> Sukadev
+> 
+> diff --git a/drivers/tty/tty_io.c b/drivers/tty/tty_io.c
+> index c89f055..6aa458e 100644
+> --- a/drivers/tty/tty_io.c
+> +++ b/drivers/tty/tty_io.c
+> @@ -2781,7 +2784,7 @@ static int tty_file_checkpoint(struct ckpt_ctx *ctx, struc
+>         int master_objref, slave_objref;
+>         int ret;
+>  
+> -       tty = (struct tty_struct *)file->private_data;
+> +       tty = file_tty(file);
+>         inode = file->f_path.dentry->d_inode;
+>         if (tty_paranoia_check(tty, inode, "tty_file_checkpoint"))
+>                 return -EIO;
+> 
