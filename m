@@ -1,13 +1,13 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: [RFD] reboot / shutdown of a container
-Date: Thu, 13 Jan 2011 22:32:19 +0100
-Message-ID: <4D2F6F63.8090904__13796.9825220809$1294970906$gmane$org@free.fr>
-References: <4D2F299B.4000509@free.fr> <20110113210918.48f3e85e@neptune.home>
+From: Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: linux-next: lockdep whinge in cgroup_rmdir
+Date: Thu, 13 Jan 2011 21:47:20 -0500
+Message-ID: <1294973240.18912.1.camel__27484.8718465821$1294973373$gmane$org@localhost.localdomain>
+References: <12545.1294932849@localhost>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110113210918.48f3e85e-hY15tx4IgV39zxVx7UNMDg@public.gmane.org>
+In-Reply-To: <12545.1294932849@localhost>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,101 +17,70 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: =?ISO-8859-1?Q?Bruno_Pr=E9mont?= <bonbons-ud5FBsm0p/xEiooADzr8i9i2O/JbrIOy@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Valdis.Kletnieks-PjAqaU27lzQ@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Eric Paris <eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Stephen Smalley <sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 01/13/2011 09:09 PM, Bruno Pr=E9mont wrote:
-> On Thu, 13 January 2011 Daniel Lezcano<daniel.lezcano-GANU6spQydw@public.gmane.org>  wrote:
->> in the container implementation, we are facing the problem of a process
->> calling the sys_reboot syscall which of course makes the host to
->> poweroff/reboot.
->>
->> If we drop the cap_sys_reboot capability, sys_reboot fails and the
->> container reach a shutdown state but the init process stay there, hence
->> the container becomes stuck waiting indefinitely the process '1' to exit.
->>
->> The current implementation to make the shutdown / reboot of the
->> container to work is we watch, from a process outside of the container,
->> the<rootfs>/var/run/utmp file and check the runlevel each time the file
->> changes. When the 'reboot' or 'shutdown' level is detected, we wait for
->> a single remaining in the container and then we kill it.
->>
->> That works but this is not efficient in case of a large number of
->> containers as we will have to watch a lot of utmp files. In addition,
->> the /var/run directory must *not* mounted as tmpfs in the distro.
->> Unfortunately, it is the default setup on most of the distros and tends
->> to generalize. That implies, the rootfs init's scripts must be modified
->> for the container when we put in place its rootfs and as /var/run is
->> supposed to be a tmpfs, most of the applications do not cleanup the
->> directory, so we need to add extra services to wipeout the files.
->>
->> More problems arise when we do an upgrade of the distro inside the
->> container, because all the setup we made at creation time will be lost.
->> The upgrade overwrite the scripts, the fstab and so on.
->>
->> We did what was possible to solve the problem from userspace but we
->> reach always a limit because there are different implementations of the
->> 'init' process and the init's scripts differ from a distro to another
->> and the same with the versions.
->>
->> We think this problem can only be solved from the kernel.
->>
->> The idea was to send a signal SIGPWR to the parent of the pid '1' of the
->> pid namespace when the sys_reboot is called. Of course that won't occur
->> for the init pid namespace.
-> Wouldn't sending SIGKILL to the pid '1' process of the originating PID
-> namespace be sufficient (that would trigger a SIGCHLD for the parent
-> process in the outer PID namespace.
+On Thu, 2011-01-13 at 10:34 -0500, Valdis.Kletnieks-PjAqaU27lzQ@public.gmane.org wrote:
+> Seen booting yesterday's linux-next, was not present in 2.6.37-rc7-mmotm1202.
+> 
+> Not sure if it's an selinux or cgroup issue, so I'm throwing it at every
+> address I can find for either.  This is easily replicatable and happens at
+> every boot, so I can test patches if needed.  Am willing to bisect it down if
+> nobody knows right off the bat what the problem is.
 
-This is already the case. The question is : when do we send this signal ?
-We have to wait for the container system shutdown before killing it.
+Not an SELinux issue.  selinux_inode_rmdir() on the stack trace is just
+left over junk.  The vfs doesn't call into the filesystem rmdir code
+(cgroup_rmdir()) until after the selinux code has already returned.  So
+cgroup people, you might as well pretend that wasn't on the stack trace
+at all.
 
-> (as far as I remember the PID namespace is killed when its 'init' exits,
-> if this is not the case all other processes in the given namespace would
-> have to be killed as well)
-
-Yes, absolutely but this is not the point, reaping the container is not =
-
-a problem.
-
-What we are trying to achieve is to shutdown properly the container from =
-
-inside (from outside will be possible too with the setns syscall).
-
-Assuming the process '1234' creates a new process in a new namespace set =
-
-and wait for it.
-
-The new process '1' will exec /sbin/init and the system will boot up. =
-
-But, when the system is shutdown or rebooted, after the down scripts are =
-
-executed the kill -15 -1 will be invoked, killing all the processes =
-
-expect the process '1' and the caller. This one will then call =
-
-'sys_reboot' and exit. Hence we still have the init process idle and its =
-
-parent '1234' waiting for it to die.
-
-If we are able to receive the information in the process '1234' : "the =
-
-sys_reboot was called in the child pid namespace", we can take then kill =
-
-our child pid.  If this information is raised via a signal sent by the =
-
-kernel with the proper information in the siginfo_t (eg. si_code =
-
-contains "LINUX_REBOOT_CMD_RESTART", "LINUX_REBOOT_CMD_HALT", ... ), the =
-
-solution will be generic for all the shutdown/reboot of any kind of =
-
-container and init version.
-
-> Only issue is how to differentiate the various reboot() modes (restart,
-> power-off/halt) from outside, though that one also exists with the SIGPWR
-> signal.
-
-
-<javascript:void(0);>
+-Eric
+> 
+> The 'W' taint is from the already-reported kernel/workqueue.c worker_enter_idle issue.
+> 
+> [   85.100795] systemd[1]: readahead-replay.service: main process exited, code=exited, status=1
+> [   85.101530] 
+> [   85.101531] =============================================
+> [   85.101796] [ INFO: possible recursive locking detected ]
+> [   85.102002] 2.6.37-next-20110111 #1
+> [   85.102009] ---------------------------------------------
+> [   85.102009] systemd/1 is trying to acquire lock:
+> [   85.102009]  (&(&dentry->d_lock)->rlock){+.+...}, at: [<ffffffff8107ca5c>] cgroup_rmdir+0x339/0x479
+> [   85.102009] 
+> [   85.102009] but task is already holding lock:
+> [   85.102009]  (&(&dentry->d_lock)->rlock){+.+...}, at: [<ffffffff8107ca54>] cgroup_rmdir+0x331/0x479
+> [   85.102009] 
+> [   85.102009] other info that might help us debug this:
+> [   85.102009] 4 locks held by systemd/1:
+> [   85.102009]  #0:  (&sb->s_type->i_mutex_key#14/1){+.+.+.}, at: [<ffffffff810fea4d>] do_rmdir+0x7d/0x121
+> [   85.102009]  #1:  (&sb->s_type->i_mutex_key#14){+.+.+.}, at: [<ffffffff810fd4bc>] vfs_rmdir+0x4a/0xbe
+> [   85.102009]  #2:  (cgroup_mutex){+.+.+.}, at: [<ffffffff8107cb84>] cgroup_rmdir+0x461/0x479
+> [   85.102009]  #3:  (&(&dentry->d_lock)->rlock){+.+...}, at: [<ffffffff8107ca54>] cgroup_rmdir+0x331/0x479
+> [   85.102009] 
+> [   85.102009] stack backtrace:
+> [   85.102009] Pid: 1, comm: systemd Tainted: G        W   2.6.37-next-20110111 #1
+> [   85.102009] Call Trace:
+> [   85.102009]  [<ffffffff81069f22>] ? __lock_acquire+0x929/0xd4e
+> [   85.102009]  [<ffffffff8107c6f1>] ? cgroup_clear_directory+0xff/0x131
+> [   85.102009]  [<ffffffff8107c6f1>] ? cgroup_clear_directory+0xff/0x131
+> [   85.102009]  [<ffffffff8107ca5c>] ? cgroup_rmdir+0x339/0x479
+> [   85.102009]  [<ffffffff8106a859>] ? lock_acquire+0x100/0x126
+> [   85.102009]  [<ffffffff8107ca5c>] ? cgroup_rmdir+0x339/0x479
+> [   85.102009]  [<ffffffff815521ef>] ? sub_preempt_count+0x35/0x48
+> [   85.102009]  [<ffffffff8154e401>] ? _raw_spin_lock+0x36/0x45
+> [   85.102009]  [<ffffffff8107ca5c>] ? cgroup_rmdir+0x339/0x479
+> [   85.102009]  [<ffffffff8107ca5c>] ? cgroup_rmdir+0x339/0x479
+> [   85.102009]  [<ffffffff810579cd>] ? autoremove_wake_function+0x0/0x34
+> [   85.102009]  [<ffffffff811e1839>] ? selinux_inode_rmdir+0x15/0x17
+> [   85.102009]  [<ffffffff810fd4eb>] ? vfs_rmdir+0x79/0xbe
+> [   85.102009]  [<ffffffff810feaa0>] ? do_rmdir+0xd0/0x121
+> [   85.102009]  [<ffffffff8100256c>] ? sysret_check+0x27/0x62
+> [   85.102009]  [<ffffffff8106ac79>] ? trace_hardirqs_on_caller+0x117/0x13b
+> [   85.102009]  [<ffffffff8154e201>] ? trace_hardirqs_on_thunk+0x3a/0x3f
+> [   85.102009]  [<ffffffff8110040b>] ? sys_rmdir+0x11/0x13
+> [   85.102009]  [<ffffffff8100253b>] ? system_call_fastpath+0x16/0x1b
+> [   85.268272] systemd[1]: readahead-collect.service: main process exited, code=exited, status=1
+> 
+> Any ideas?
+> 
