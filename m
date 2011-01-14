@@ -1,14 +1,13 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: linux-cr:  v23-rc1 pushed
-Date: Thu, 13 Jan 2011 22:59:11 -0800
-Message-ID: <20110114065911.GA11086@us.ibm.com>
-References: <4D2BAFD4.1080400@cs.columbia.edu>
+From: "Kirill A. Shutemov" <kas-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: [PATCH v3 12/16] sunrpc: introduce get_rpc_pipefs()
+Date: Fri, 14 Jan 2011 15:49:10 +0200
+Message-ID: <1295012954-7769-13-git-send-email-kas__25282.106959685$1295013118$gmane$org@openvz.org>
+References: <1295012954-7769-1-git-send-email-kas@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4D2BAFD4.1080400-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1295012954-7769-1-git-send-email-kas-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,38 +17,100 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>, "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>, Neil Brown <neilb-l3A5Bk7waGM@public.gmane.org>
+Cc: linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "Kirill A. Shutemov" <kas-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
-| Folks,
-| 
-| I just pushed out a new v23-rc1 branch of linux-cr. This one is
-| rebased to 2.6.37, and contains nearly all the patches pulled
-| on v22-dev. I only gave it a brief test drive... feel free to 
-| throw all your ammo it.
+Get rpc_pipefs mount point by path. If path is NULL, we use first
+rpc_pipefs from mount table visible from current root directory.
 
-Oren,
+Signed-off-by: Kirill A. Shutemov <kas-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Acked-by: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+---
+ include/linux/sunrpc/rpc_pipe_fs.h |    1 +
+ net/sunrpc/rpc_pipe.c              |   51 ++++++++++++++++++++++++++++++++++++
+ 2 files changed, 52 insertions(+), 0 deletions(-)
 
-We need the file_tty() helper to get the tty object from the file pointer
-(otherwise we will be off by 4 bytes and fail tty_paranoia_check() in
-tty_file_checkpoint()).
-
-Thanks,
-
-Sukadev
-
-diff --git a/drivers/tty/tty_io.c b/drivers/tty/tty_io.c
-index c89f055..6aa458e 100644
---- a/drivers/tty/tty_io.c
-+++ b/drivers/tty/tty_io.c
-@@ -2781,7 +2784,7 @@ static int tty_file_checkpoint(struct ckpt_ctx *ctx, struc
-        int master_objref, slave_objref;
-        int ret;
+diff --git a/include/linux/sunrpc/rpc_pipe_fs.h b/include/linux/sunrpc/rpc_pipe_fs.h
+index f5216f1..4a8830a 100644
+--- a/include/linux/sunrpc/rpc_pipe_fs.h
++++ b/include/linux/sunrpc/rpc_pipe_fs.h
+@@ -46,6 +46,7 @@ RPC_I(struct inode *inode)
  
--       tty = (struct tty_struct *)file->private_data;
-+       tty = file_tty(file);
-        inode = file->f_path.dentry->d_inode;
-        if (tty_paranoia_check(tty, inode, "tty_file_checkpoint"))
-                return -EIO;
+ extern struct vfsmount *init_rpc_pipefs;
+ 
++extern struct vfsmount *get_rpc_pipefs(const char *path);
+ extern int rpc_pipefs_add_destroy_cb(struct super_block *sb,
+ 		void (*destroy_cb)(void *data), void *data);
+ 
+diff --git a/net/sunrpc/rpc_pipe.c b/net/sunrpc/rpc_pipe.c
+index 39511e3..b72cb01 100644
+--- a/net/sunrpc/rpc_pipe.c
++++ b/net/sunrpc/rpc_pipe.c
+@@ -16,6 +16,9 @@
+ #include <linux/namei.h>
+ #include <linux/fsnotify.h>
+ #include <linux/kernel.h>
++#include <linux/nsproxy.h>
++#include <linux/mnt_namespace.h>
++#include <linux/fs_struct.h>
+ 
+ #include <asm/ioctls.h>
+ #include <linux/fs.h>
+@@ -939,6 +942,54 @@ static const struct super_operations s_ops = {
+ 
+ #define RPCAUTH_GSSMAGIC 0x67596969
+ 
++static int check_rpc_pipefs(struct vfsmount *mnt, void *arg)
++{
++	struct vfsmount **rpcmount = arg;
++	struct path path = {
++		.mnt = mnt,
++		.dentry = mnt->mnt_root,
++	};
++
++	if (!mnt->mnt_sb)
++		return 0;
++	if (mnt->mnt_sb->s_magic != RPCAUTH_GSSMAGIC)
++		return 0;
++
++	if (!path_is_under(&path, &current->fs->root))
++		return 0;
++
++	*rpcmount = mntget(mnt);
++	return 1;
++}
++
++struct vfsmount *get_rpc_pipefs(const char *p)
++{
++	int error;
++	struct vfsmount *rpcmount = ERR_PTR(-EINVAL);
++	struct path path;
++
++	if (!p) {
++		iterate_mounts(check_rpc_pipefs, &rpcmount,
++				current->nsproxy->mnt_ns->root);
++
++		if (IS_ERR(rpcmount) && (current->nsproxy->mnt_ns ==
++					init_task.nsproxy->mnt_ns))
++			return mntget(init_rpc_pipefs);
++
++		return rpcmount;
++	}
++
++	error = kern_path(p, LOOKUP_FOLLOW | LOOKUP_DIRECTORY, &path);
++	if (error)
++		return ERR_PTR(error);
++
++	check_rpc_pipefs(path.mnt, &rpcmount);
++	path_put(&path);
++
++	return rpcmount;
++}
++EXPORT_SYMBOL_GPL(get_rpc_pipefs);
++
+ struct destroy_cb {
+ 	struct list_head list;
+ 	void (*callback)(void *data);
+-- 
+1.7.3.4
