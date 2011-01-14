@@ -1,19 +1,16 @@
 From: Bastian Blank <bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org>
-Subject: Re: [PATCH 4/7] allow killing tasks in your own or child userns
-Date: Fri, 14 Jan 2011 15:50:01 +0100
-Message-ID: <20110114145001.GB20945__157.033888581459$1295016669$gmane$org@wavehammer.waldi.eu.org>
-References: <20110110211135.GA22446@mail.hallyn.com>
-	<20110110211334.GD22564@mail.hallyn.com>
-	<20110110215240.GA21351@wavehammer.waldi.eu.org>
-	<20110110225151.GA18944@localhost>
-	<20110110232335.GA27029@wavehammer.waldi.eu.org>
-	<20110111013152.GA23860@mail.hallyn.com>
+Subject: Re: [PATCH 05/08] Allow ptrace from non-init user namespaces
+Date: Fri, 14 Jan 2011 16:00:55 +0100
+Message-ID: <20110114150055.GA22496__15135.9328105629$1295017424$gmane$org@wavehammer.waldi.eu.org>
+References: <20110111064342.GA27515@mail.hallyn.com>
+	<20110111064439.GF27515@mail.hallyn.com>
+	<20110114144608.GA20945@wavehammer.waldi.eu.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20110111013152.GA23860-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
+In-Reply-To: <20110114144608.GA20945-0IJIQSrh9RL9UF0aPl6fsj8Kkb2uy4ct@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,25 +20,51 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TaqPxH82wqD4g@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Jan 11, 2011 at 01:31:52AM +0000, Serge E. Hallyn wrote:
-> Quoting Bastian Blank (bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org):
-> > What is this flag used for anyway? I only see it used in the accounting
-> > stuff, and if every user can get it, it is not longer useful.
-> hm, I'm not sure...  maybe noone is using it!
+On Fri, Jan 14, 2011 at 03:46:09PM +0100, Bastian Blank wrote:
+> On Tue, Jan 11, 2011 at 06:44:39AM +0000, Serge E. Hallyn wrote:
+> > diff --git a/kernel/ptrace.c b/kernel/ptrace.c
+> > index 99bbaa3..ec7605d 100644
+> > --- a/kernel/ptrace.c
+> > +++ b/kernel/ptrace.c
+> > @@ -134,21 +134,24 @@ int __ptrace_may_access(struct task_struct *task, unsigned int mode)
+> >  		return 0;
+> >  	rcu_read_lock();
+> >  	tcred = __task_cred(task);
+> > -	if ((cred->uid != tcred->euid ||
+> > -	     cred->uid != tcred->suid ||
+> > -	     cred->uid != tcred->uid  ||
+> > -	     cred->gid != tcred->egid ||
+> > -	     cred->gid != tcred->sgid ||
+> > -	     cred->gid != tcred->gid) &&
+> > -	    !capable(CAP_SYS_PTRACE)) {
+> > -		rcu_read_unlock();
+> > -		return -EPERM;
+> > -	}
+> > +	if (cred->user->user_ns == tcred->user->user_ns &&
+> > +	    (cred->uid == tcred->euid &&
+> > +	     cred->uid == tcred->suid &&
+> > +	     cred->uid == tcred->uid  &&
+> > +	     cred->gid == tcred->egid &&
+> > +	     cred->gid == tcred->sgid &&
+> > +	     cred->gid == tcred->gid))
+> > +		goto ok;
+> > +	if (ns_capable(tcred->user->user_ns, CAP_SYS_PTRACE))
+> > +		goto ok;
+> > +	rcu_read_unlock();
+> > +	return -EPERM;
+> > +ok:
+> 
+> This is wrong.
 
-This flag is from pre-git.
-
-The only information is:
-| #define ASU                0x02    /* ... used super-user privileges */
-
-However with your patches (or at least the goal), everyone is super-user
-in derived namespaces.
+Whoops, it _is_ right. However the nested parenthes is unnecessary and
+can lead to other conclusions.
 
 Bastian
 
 -- 
-Where there's no emotion, there's no motive for violence.
-		-- Spock, "Dagger of the Mind", stardate 2715.1
+Lots of people drink from the wrong bottle sometimes.
+		-- Edith Keeler, "The City on the Edge of Forever",
+		   stardate unknown
