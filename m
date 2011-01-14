@@ -1,14 +1,14 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: kernel BUG at fs/dcache.c:1363 (from cgroup)
-Date: Fri, 14 Jan 2011 13:29:34 +0800
-Message-ID: <4D2FDF3E.5030309__8820.48330172456$1294983091$gmane$org@cn.fujitsu.com>
-References: <4D2FD771.9040301@cn.fujitsu.com>
-	<20110114051453.GY19804@ZenIV.linux.org.uk>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: linux-cr:  v23-rc1 pushed
+Date: Thu, 13 Jan 2011 22:59:11 -0800
+Message-ID: <20110114065911.GA11086@us.ibm.com>
+References: <4D2BAFD4.1080400@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110114051453.GY19804-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4D2BAFD4.1080400-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,40 +18,38 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
-Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Nick Piggin <npiggin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Nathan Lynch <nathanl-V7BBcbaFuwjMbYB6QlFGEg@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Al Viro wrote:
-> On Fri, Jan 14, 2011 at 12:56:17PM +0800, Li Zefan wrote:
->> Just mount the cgroupfs:
->>
->> # mount -t cgroup -o cpuset xxx /mnt
->> (oops!!)
->>
->> The bug is caused by:
->>
->> =========
->> commit 0df6a63f8735a7c8a877878bc215d4312e41ef81
->> Author: Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
->> Date:   Tue Dec 21 13:29:29 2010 -0500
->>
->>     switch cgroup
->>     
->>     switching it to s_d_op allows to kill the cgroup_lookup() kludge.
->>     
->>     Signed-off-by: Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
->> =========
->>
->> This line:
->>
->> +       sb->s_d_op = &cgroup_dops;
-> 
-> Oh, crap...  Right, it's using simple_lookup().  Let me check if anything
-> else might be stepping on that.
-> 
-> Umm...  There's a very strange codepath in btrfs that also might.
-> Interesting.  Fix for cgroup, AFAICS, should be this:
-> 
+Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
+| Folks,
+| 
+| I just pushed out a new v23-rc1 branch of linux-cr. This one is
+| rebased to 2.6.37, and contains nearly all the patches pulled
+| on v22-dev. I only gave it a brief test drive... feel free to 
+| throw all your ammo it.
 
-patch tested. thanks!
+Oren,
+
+We need the file_tty() helper to get the tty object from the file pointer
+(otherwise we will be off by 4 bytes and fail tty_paranoia_check() in
+tty_file_checkpoint()).
+
+Thanks,
+
+Sukadev
+
+diff --git a/drivers/tty/tty_io.c b/drivers/tty/tty_io.c
+index c89f055..6aa458e 100644
+--- a/drivers/tty/tty_io.c
++++ b/drivers/tty/tty_io.c
+@@ -2781,7 +2784,7 @@ static int tty_file_checkpoint(struct ckpt_ctx *ctx, struc
+        int master_objref, slave_objref;
+        int ret;
+ 
+-       tty = (struct tty_struct *)file->private_data;
++       tty = file_tty(file);
+        inode = file->f_path.dentry->d_inode;
+        if (tty_paranoia_check(tty, inode, "tty_file_checkpoint"))
+                return -EIO;
