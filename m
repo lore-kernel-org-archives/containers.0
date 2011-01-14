@@ -1,7 +1,8 @@
 From: "Kirill A. Shutemov" <kas-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH v3 12/16] sunrpc: introduce get_rpc_pipefs()
-Date: Fri, 14 Jan 2011 15:49:10 +0200
-Message-ID: <1295012954-7769-13-git-send-email-kas__25282.106959685$1295013118$gmane$org@openvz.org>
+Subject: [PATCH v3 11/16] Export iterate_mounts symbol to be able to use from
+	sunrpc module.
+Date: Fri, 14 Jan 2011 15:49:09 +0200
+Message-ID: <1295012954-7769-12-git-send-email-kas__32178.4399021$1295013243$gmane$org@openvz.org>
 References: <1295012954-7769-1-git-send-email-kas@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,96 +22,22 @@ To: Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>, "
 Cc: linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "Kirill A. Shutemov" <kas-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Get rpc_pipefs mount point by path. If path is NULL, we use first
-rpc_pipefs from mount table visible from current root directory.
-
 Signed-off-by: Kirill A. Shutemov <kas-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Acked-by: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 ---
- include/linux/sunrpc/rpc_pipe_fs.h |    1 +
- net/sunrpc/rpc_pipe.c              |   51 ++++++++++++++++++++++++++++++++++++
- 2 files changed, 52 insertions(+), 0 deletions(-)
+ fs/namespace.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-diff --git a/include/linux/sunrpc/rpc_pipe_fs.h b/include/linux/sunrpc/rpc_pipe_fs.h
-index f5216f1..4a8830a 100644
---- a/include/linux/sunrpc/rpc_pipe_fs.h
-+++ b/include/linux/sunrpc/rpc_pipe_fs.h
-@@ -46,6 +46,7 @@ RPC_I(struct inode *inode)
+diff --git a/fs/namespace.c b/fs/namespace.c
+index 3ddfd90..f73054d 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -1498,6 +1498,7 @@ int iterate_mounts(int (*f)(struct vfsmount *, void *), void *arg,
+ 	}
+ 	return 0;
+ }
++EXPORT_SYMBOL_GPL(iterate_mounts);
  
- extern struct vfsmount *init_rpc_pipefs;
- 
-+extern struct vfsmount *get_rpc_pipefs(const char *path);
- extern int rpc_pipefs_add_destroy_cb(struct super_block *sb,
- 		void (*destroy_cb)(void *data), void *data);
- 
-diff --git a/net/sunrpc/rpc_pipe.c b/net/sunrpc/rpc_pipe.c
-index 39511e3..b72cb01 100644
---- a/net/sunrpc/rpc_pipe.c
-+++ b/net/sunrpc/rpc_pipe.c
-@@ -16,6 +16,9 @@
- #include <linux/namei.h>
- #include <linux/fsnotify.h>
- #include <linux/kernel.h>
-+#include <linux/nsproxy.h>
-+#include <linux/mnt_namespace.h>
-+#include <linux/fs_struct.h>
- 
- #include <asm/ioctls.h>
- #include <linux/fs.h>
-@@ -939,6 +942,54 @@ static const struct super_operations s_ops = {
- 
- #define RPCAUTH_GSSMAGIC 0x67596969
- 
-+static int check_rpc_pipefs(struct vfsmount *mnt, void *arg)
-+{
-+	struct vfsmount **rpcmount = arg;
-+	struct path path = {
-+		.mnt = mnt,
-+		.dentry = mnt->mnt_root,
-+	};
-+
-+	if (!mnt->mnt_sb)
-+		return 0;
-+	if (mnt->mnt_sb->s_magic != RPCAUTH_GSSMAGIC)
-+		return 0;
-+
-+	if (!path_is_under(&path, &current->fs->root))
-+		return 0;
-+
-+	*rpcmount = mntget(mnt);
-+	return 1;
-+}
-+
-+struct vfsmount *get_rpc_pipefs(const char *p)
-+{
-+	int error;
-+	struct vfsmount *rpcmount = ERR_PTR(-EINVAL);
-+	struct path path;
-+
-+	if (!p) {
-+		iterate_mounts(check_rpc_pipefs, &rpcmount,
-+				current->nsproxy->mnt_ns->root);
-+
-+		if (IS_ERR(rpcmount) && (current->nsproxy->mnt_ns ==
-+					init_task.nsproxy->mnt_ns))
-+			return mntget(init_rpc_pipefs);
-+
-+		return rpcmount;
-+	}
-+
-+	error = kern_path(p, LOOKUP_FOLLOW | LOOKUP_DIRECTORY, &path);
-+	if (error)
-+		return ERR_PTR(error);
-+
-+	check_rpc_pipefs(path.mnt, &rpcmount);
-+	path_put(&path);
-+
-+	return rpcmount;
-+}
-+EXPORT_SYMBOL_GPL(get_rpc_pipefs);
-+
- struct destroy_cb {
- 	struct list_head list;
- 	void (*callback)(void *data);
+ static void cleanup_group_ids(struct vfsmount *mnt, struct vfsmount *end)
+ {
 -- 
 1.7.3.4
