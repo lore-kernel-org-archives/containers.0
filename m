@@ -1,8 +1,7 @@
 From: "Kirill A. Shutemov" <kas-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH v3 08/16] sunrpc: tag pipefs field of cache_detail with
-	rpc_pipefs mount point
-Date: Fri, 14 Jan 2011 15:49:06 +0200
-Message-ID: <1295012954-7769-9-git-send-email-kas__18421.062481548$1295014261$gmane$org@openvz.org>
+Subject: [PATCH v3 15/16] sunrpc: remove global init_rpc_pipefs
+Date: Fri, 14 Jan 2011 15:49:13 +0200
+Message-ID: <1295012954-7769-16-git-send-email-kas__19052.7741484859$1295014264$gmane$org@openvz.org>
 References: <1295012954-7769-1-git-send-email-kas@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,114 +21,116 @@ To: Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>, "
 Cc: linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "Kirill A. Shutemov" <kas-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Replace remaining init_rpc_pipefs references with get_rpc_pipefs(NULL)
+and make init_rpc_pipefs static.
+
 Signed-off-by: Kirill A. Shutemov <kas-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 ---
- fs/nfs/cache_lib.c           |    3 +--
- include/linux/sunrpc/cache.h |    9 +++------
- net/sunrpc/cache.c           |   16 ++++++++++------
- 3 files changed, 14 insertions(+), 14 deletions(-)
+ fs/nfsd/nfs4callback.c             |    5 ++++-
+ fs/nfsd/nfssvc.c                   |   16 ++++++++++++++--
+ include/linux/sunrpc/rpc_pipe_fs.h |    2 --
+ net/sunrpc/rpc_pipe.c              |    1 -
+ 4 files changed, 18 insertions(+), 6 deletions(-)
 
-diff --git a/fs/nfs/cache_lib.c b/fs/nfs/cache_lib.c
-index dd7ca5f..0944d4e 100644
---- a/fs/nfs/cache_lib.c
-+++ b/fs/nfs/cache_lib.c
-@@ -123,7 +123,7 @@ int nfs_cache_register(struct cache_detail *cd)
- 	ret = vfs_path_lookup(mnt->mnt_root, mnt, "/cache", 0, &nd);
- 	if (ret)
- 		goto err;
--	ret = sunrpc_cache_register_pipefs(nd.path.dentry,
-+	ret = sunrpc_cache_register_pipefs(mnt, nd.path.dentry,
- 			cd->name, 0600, cd);
- 	path_put(&nd.path);
- 	if (!ret)
-@@ -136,6 +136,5 @@ err:
- void nfs_cache_unregister(struct cache_detail *cd)
- {
- 	sunrpc_cache_unregister_pipefs(cd);
--	mntput(init_rpc_pipefs);
- }
+diff --git a/fs/nfsd/nfs4callback.c b/fs/nfsd/nfs4callback.c
+index 9bec643..61210b6 100644
+--- a/fs/nfsd/nfs4callback.c
++++ b/fs/nfsd/nfs4callback.c
+@@ -647,7 +647,6 @@ int setup_callback_client(struct nfs4_client *clp, struct nfs4_cb_conn *conn)
+ 		.version	= 0,
+ 		.authflavor	= clp->cl_flavor,
+ 		.flags		= (RPC_CLNT_CREATE_NOPING | RPC_CLNT_CREATE_QUIET),
+-		.rpcmount	= init_rpc_pipefs,
+ 	};
+ 	struct rpc_clnt *client;
  
-diff --git a/include/linux/sunrpc/cache.h b/include/linux/sunrpc/cache.h
-index 78aa104..339bca3 100644
---- a/include/linux/sunrpc/cache.h
-+++ b/include/linux/sunrpc/cache.h
-@@ -65,10 +65,6 @@ struct cache_detail_procfs {
- 	struct proc_dir_entry   *flush_ent, *channel_ent, *content_ent;
- };
- 
--struct cache_detail_pipefs {
--	struct dentry *dir;
--};
--
- struct cache_detail {
- 	struct module *		owner;
- 	int			hash_size;
-@@ -115,7 +111,7 @@ struct cache_detail {
- 
- 	union {
- 		struct cache_detail_procfs procfs;
--		struct cache_detail_pipefs pipefs;
-+		struct path pipefs;
- 	} u;
- };
- 
-@@ -202,7 +198,8 @@ extern int cache_register_net(struct cache_detail *cd, struct net *net);
- extern void cache_unregister(struct cache_detail *cd);
- extern void cache_unregister_net(struct cache_detail *cd, struct net *net);
- 
--extern int sunrpc_cache_register_pipefs(struct dentry *parent, const char *,
-+extern int sunrpc_cache_register_pipefs(struct vfsmount *rpcmount,
-+					struct dentry *parent, const char *,
- 					mode_t, struct cache_detail *);
- extern void sunrpc_cache_unregister_pipefs(struct cache_detail *);
- 
-diff --git a/net/sunrpc/cache.c b/net/sunrpc/cache.c
-index e433e75..ed50d49 100644
---- a/net/sunrpc/cache.c
-+++ b/net/sunrpc/cache.c
-@@ -28,6 +28,7 @@
- #include <linux/workqueue.h>
- #include <linux/mutex.h>
- #include <linux/pagemap.h>
-+#include <linux/mount.h>
- #include <asm/ioctls.h>
- #include <linux/sunrpc/types.h>
- #include <linux/sunrpc/cache.h>
-@@ -1753,7 +1754,8 @@ const struct file_operations cache_flush_operations_pipefs = {
- 	.llseek		= no_llseek,
- };
- 
--int sunrpc_cache_register_pipefs(struct dentry *parent,
-+int sunrpc_cache_register_pipefs(struct vfsmount *rpcmount,
-+				 struct dentry *parent,
- 				 const char *name, mode_t umode,
- 				 struct cache_detail *cd)
- {
-@@ -1766,9 +1768,10 @@ int sunrpc_cache_register_pipefs(struct dentry *parent,
- 	q.len = strlen(name);
- 	q.hash = full_name_hash(q.name, q.len);
- 	dir = rpc_create_cache_dir(parent, &q, umode, cd);
--	if (!IS_ERR(dir))
--		cd->u.pipefs.dir = dir;
--	else {
-+	if (!IS_ERR(dir)) {
-+		cd->u.pipefs.mnt = mntget(rpcmount);
-+		cd->u.pipefs.dentry = dir;
-+	} else {
- 		sunrpc_destroy_cache_detail(cd);
- 		ret = PTR_ERR(dir);
+@@ -663,8 +662,12 @@ int setup_callback_client(struct nfs4_client *clp, struct nfs4_cb_conn *conn)
+ 		args.prognumber = clp->cl_cb_session->se_cb_prog;
+ 		args.protocol = XPRT_TRANSPORT_BC_TCP;
  	}
-@@ -1778,8 +1781,9 @@ EXPORT_SYMBOL_GPL(sunrpc_cache_register_pipefs);
- 
- void sunrpc_cache_unregister_pipefs(struct cache_detail *cd)
++	args.rpcmount = get_rpc_pipefs(NULL);
++	if (IS_ERR(args.rpcmount))
++		return PTR_ERR(args.rpcmount);
+ 	/* Create RPC client */
+ 	client = rpc_create(&args);
++	mntput(args.rpcmount);
+ 	if (IS_ERR(client)) {
+ 		dprintk("NFSD: couldn't create callback client: %ld\n",
+ 			PTR_ERR(client));
+diff --git a/fs/nfsd/nfssvc.c b/fs/nfsd/nfssvc.c
+index 17d78d3..7353420 100644
+--- a/fs/nfsd/nfssvc.c
++++ b/fs/nfsd/nfssvc.c
+@@ -206,6 +206,7 @@ static bool nfsd_up = false;
+ static int nfsd_startup(unsigned short port, int nrservs)
  {
--	rpc_remove_cache_dir(cd->u.pipefs.dir);
--	cd->u.pipefs.dir = NULL;
-+	rpc_remove_cache_dir(cd->u.pipefs.dentry);
-+	cd->u.pipefs.dentry = NULL;
-+	mntput(cd->u.pipefs.mnt);
- 	sunrpc_destroy_cache_detail(cd);
+ 	int ret;
++	struct vfsmount *rpcmount;
+ 
+ 	if (nfsd_up)
+ 		return 0;
+@@ -220,7 +221,13 @@ static int nfsd_startup(unsigned short port, int nrservs)
+ 	ret = nfsd_init_socks(port);
+ 	if (ret)
+ 		goto out_racache;
+-	ret = lockd_up(init_rpc_pipefs);
++	rpcmount = get_rpc_pipefs(NULL);
++	if (IS_ERR(rpcmount)) {
++		ret = PTR_ERR(rpcmount);
++		goto out_racache;
++	}
++	ret = lockd_up(rpcmount);
++	mntput(rpcmount);
+ 	if (ret)
+ 		goto out_racache;
+ 	ret = nfs4_state_start();
+@@ -308,6 +315,7 @@ static void set_max_drc(void)
+ int nfsd_create_serv(void)
+ {
+ 	int err = 0;
++	struct vfsmount *rpcmount;
+ 
+ 	WARN_ON(!mutex_is_locked(&nfsd_mutex));
+ 	if (nfsd_serv) {
+@@ -332,9 +340,13 @@ int nfsd_create_serv(void)
+ 	}
+ 	nfsd_reset_versions();
+ 
+-	nfsd_serv = svc_create_pooled(&nfsd_program, init_rpc_pipefs,
++	rpcmount = get_rpc_pipefs(NULL);
++	if (IS_ERR(rpcmount))
++		return PTR_ERR(rpcmount);
++	nfsd_serv = svc_create_pooled(&nfsd_program, rpcmount,
+ 				      nfsd_max_blksize, nfsd_last_thread, nfsd,
+ 				      THIS_MODULE);
++	mntput(rpcmount);
+ 	if (nfsd_serv == NULL)
+ 		return -ENOMEM;
+ 
+diff --git a/include/linux/sunrpc/rpc_pipe_fs.h b/include/linux/sunrpc/rpc_pipe_fs.h
+index 4a8830a..a0b9c46 100644
+--- a/include/linux/sunrpc/rpc_pipe_fs.h
++++ b/include/linux/sunrpc/rpc_pipe_fs.h
+@@ -44,8 +44,6 @@ RPC_I(struct inode *inode)
+ 	return container_of(inode, struct rpc_inode, vfs_inode);
  }
- EXPORT_SYMBOL_GPL(sunrpc_cache_unregister_pipefs);
+ 
+-extern struct vfsmount *init_rpc_pipefs;
+-
+ extern struct vfsmount *get_rpc_pipefs(const char *path);
+ extern int rpc_pipefs_add_destroy_cb(struct super_block *sb,
+ 		void (*destroy_cb)(void *data), void *data);
+diff --git a/net/sunrpc/rpc_pipe.c b/net/sunrpc/rpc_pipe.c
+index 02416f1..96973c0 100644
+--- a/net/sunrpc/rpc_pipe.c
++++ b/net/sunrpc/rpc_pipe.c
+@@ -33,7 +33,6 @@
+ #include <linux/sunrpc/cache.h>
+ 
+ struct vfsmount *init_rpc_pipefs __read_mostly;
+-EXPORT_SYMBOL_GPL(init_rpc_pipefs);
+ 
+ static struct file_system_type rpc_pipe_fs_type;
+ 
 -- 
 1.7.3.4
