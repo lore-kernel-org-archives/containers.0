@@ -1,12 +1,13 @@
-From: Facebook Greetings Cards <invitefriend-/3Njrn7rdJAAvxtiuMwx3w@public.gmane.org>
-Subject: mitsutaka.amano-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org sent you a Happy Holidays and New Years
-	Card for you!
-Date: Mon, 17 Jan 2011 03:00:56 +0000
-Message-ID: <90e6ba6e8c9a27e2b2049a01fea5@google.com>
+From: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: Re: [PATCH v3 00/16] make rpc_pipefs be mountable multiple time
+Date: Mon, 17 Jan 2011 06:30:16 -0600
+Message-ID: <4D343658.1020205__17028.3968131573$1295267582$gmane$org@parallels.com>
+References: <1295012954-7769-1-git-send-email-kas@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1295012954-7769-1-git-send-email-kas-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,21 +17,24 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: "Kirill A. Shutemov" <kas-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Neil Brown <neilb-l3A5Bk7waGM@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-<h2>mitsutaka.amano-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org sent you a Happy Holidays and New Years Card  
-for you!</h2><table><tr><td><a  
-href='http://greetings.eyari.org/facebook-greetings/email.php?inviteremailid=43361&email=containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org&campaign=thirdround-newyearcards1'  
-target='_blank' style='font-size:16px'><img  
-src='http://graph.facebook.com/444444/picture/' height='44' /><br  
-/>mitsutaka.amano-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org</a></td><td><a  
-href='http://greetings.eyari.org/facebook-greetings/email.php?inviteremailid=43361&email=containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org&campaign=thirdround-newyearcards1'  
-target='_blank' style='font-size:16px'><img  
-src='http://i56.tinypic.com/2lswj79.jpg' height='100' /></a></td><td  
-valign='top'><a  
-href='http://greetings.eyari.org/facebook-greetings/email.php?inviteremailid=43361&email=containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org&campaign=thirdround-newyearcards1'  
-target='_blank' style='font-size:16px'>Click here to view the greeting card  
-that mitsutaka.amano-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org sent to you!</a><br  
-/>mitsutaka.amano-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org wants you to view the card that they made for  
-you. </td></tr></table>
+On 01/14/2011 07:48 AM, Kirill A. Shutemov wrote:
+> Prepare nfs/sunrpc stack to use multiple instances of rpc_pipefs.
+> Only for client for now.
+
+Ok, Google is being really unhelpful here.
+
+What is rpc_pipefs for?  What uses it, and to do what exactly?  Is it
+used by nfs server code, or by the client code, or both?  Is it a way
+for userspace to talk to the kernel, or for the kernel to talk to
+itself?  Is it used at mount time, or during filesystem operation?
+
+I'm interested in giving this patch series a much more thorough review,
+but I can't figure out what the subsystem it's modifying actually _is_.
+
+(Maybe this is something to do with filesystems/nfs/rpc-cache.txt?)
+
+Rob
