@@ -1,15 +1,17 @@
-From: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+From: "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>
 Subject: Re: [PATCH v3 00/16] make rpc_pipefs be mountable multiple time
-Date: Thu, 20 Jan 2011 07:57:52 -0600
-Message-ID: <4D383F60.4080907__40405.3414510146$1295532036$gmane$org@parallels.com>
+Date: Thu, 20 Jan 2011 10:52:39 -0500
+Message-ID: <20110120155238.GD11588__26969.9370525361$1295538958$gmane$org@fieldses.org>
 References: <1295012954-7769-1-git-send-email-kas@openvz.org>
 	<4D343658.1020205@parallels.com>
 	<20110120113552.GB24349@shutemov.name>
+	<4D383F60.4080907@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110120113552.GB24349-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4D383F60.4080907-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,68 +21,33 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Kirill A. Shutemov" <kas-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Neil Brown <neilb-l3A5Bk7waGM@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+To: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Neil Brown <neilb-l3A5Bk7waGM@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, "Kirill A. Shutemov" <kas-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 01/20/2011 05:35 AM, Kirill A. Shutemov wrote:
-> On Mon, Jan 17, 2011 at 06:30:16AM -0600, Rob Landley wrote:
->> On 01/14/2011 07:48 AM, Kirill A. Shutemov wrote:
->>> Prepare nfs/sunrpc stack to use multiple instances of rpc_pipefs.
->>> Only for client for now.
->>
->> Ok, Google is being really unhelpful here.
+On Thu, Jan 20, 2011 at 07:57:52AM -0600, Rob Landley wrote:
+> I've also mounted NFS shares in test environments I never mounted
+> rpc_pipefs in.  (It's possible that the nfs.mount command was doing so
+> for me, and apparently unmounting it again afterwards.)  My test
+> environment is exporting with the userspace NFS daemon so it's not using
+> the kernel cacheing infrastructure.
+
+If you grep for rpc_mkpipe() you'll see it's only used in the idmapping
+and rpcsec_gss code; which means you wouldn't need it unless using NFSv4
+(which uses idmapping) or rpcsec_gss.
+
+> > There is client dir (nfs/clntX) in rpc_pipefs for every sunrpc client.
+> > Both client and server (see fs/nfsd/nfs4callback.c) can create sunrpc
+> > client. So we rpc_pipefs on both side.
 > 
-> It's better if you read the code. :)
-
-I did.  That doesn't necessarily help if I don't know what it's _trying_
-to do and this implementation is just one small piece of a much larger
-mechanism.
-
->> What is rpc_pipefs for?  What uses it, and to do what exactly?  Is it
->> used by nfs server code, or by the client code, or both?  Is it a way
->> for userspace to talk to the kernel, or for the kernel to talk to
->> itself?  Is it used at mount time, or during filesystem operation?
+> Ok, both client and server can create instances.  And use them to do what?
 > 
-> Ok, It try to answer. Please correct me, if I'm wrong.
-> 
-> rpc_pipefs is a userland/kernel interface (I don't see kernel-kernel
-> usecases, but it's possible, I guess).
+> I understand that the kernel needs to handle RPC calls to service NFS
+> requests, what I'm not figuring out is how userspace is involved after
+> the initial mount except on the other side of filesystem-agnostic system
+> calls.
 
-Then why is the host context treated specially with an init_rcp_pipefs
-instance that isn't necessarily mounted anywhere?  (How does userspace
-access it if it isn't mounted anywhere?  Why doesn't the host context
-just use the same does-not-exist code as container context?  Presumably
-there's a reason for this?)
+If you want to see the code on the userland side of the interfaces, see
+utils/gssd and utils/idmapd in the nfs-utils code.
 
-I've also mounted NFS shares in test environments I never mounted
-rpc_pipefs in.  (It's possible that the nfs.mount command was doing so
-for me, and apparently unmounting it again afterwards.)  My test
-environment is exporting with the userspace NFS daemon so it's not using
-the kernel cacheing infrastructure.
-
-> There is client dir (nfs/clntX) in rpc_pipefs for every sunrpc client.
-> Both client and server (see fs/nfsd/nfs4callback.c) can create sunrpc
-> client. So we rpc_pipefs on both side.
-
-Ok, both client and server can create instances.  And use them to do what?
-
-I understand that the kernel needs to handle RPC calls to service NFS
-requests, what I'm not figuring out is how userspace is involved after
-the initial mount except on the other side of filesystem-agnostic system
-calls.
-
-> rpc_pipefs uses not only on mount time. See old idmapper, for example.
-
-Um, does this sentence say that the old idmapper uses rpc_pipefs?
-(Presumably not the kernel infrastructure controlled by
-CONFIG_NFS_USE_NEW_IDMAPPER because you said it's not a kernel-kernel
-communication mechanism...  So you're saying that whatever userspace
-infrastructure interacts with that will also depend on rpc_pipefs.  But
-the new infrastructure doesn't, which is why I need to look at the old?)
-
-(And again, CONFIG_NFS_USE_NEW_IDMAPPER needs /sbin/request-key from the
-keyutils package implying this is primarily for authentication, which
-would explain why I haven't seen it in my simple test environment...)
-
-Rob
+--b.
