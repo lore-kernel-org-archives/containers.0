@@ -1,17 +1,12 @@
-From: "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>
-Subject: Re: [PATCH v3 00/16] make rpc_pipefs be mountable multiple time
-Date: Thu, 20 Jan 2011 10:52:39 -0500
-Message-ID: <20110120155238.GD11588__26969.9370525361$1295538958$gmane$org@fieldses.org>
-References: <1295012954-7769-1-git-send-email-kas@openvz.org>
-	<4D343658.1020205@parallels.com>
-	<20110120113552.GB24349@shutemov.name>
-	<4D383F60.4080907@parallels.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: ctx->pipe_child bug ?
+Date: Thu, 20 Jan 2011 23:39:18 -0800
+Message-ID: <20110121073918.GA15385@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4D383F60.4080907-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,33 +16,40 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Neil Brown <neilb-l3A5Bk7waGM@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, "Kirill A. Shutemov" <kas-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Jan 20, 2011 at 07:57:52AM -0600, Rob Landley wrote:
-> I've also mounted NFS shares in test environments I never mounted
-> rpc_pipefs in.  (It's possible that the nfs.mount command was doing so
-> for me, and apparently unmounting it again afterwards.)  My test
-> environment is exporting with the userspace NFS daemon so it's not using
-> the kernel cacheing infrastructure.
+Oren,
 
-If you grep for rpc_mkpipe() you'll see it's only used in the idmapping
-and rpcsec_gss code; which means you wouldn't need it unless using NFSv4
-(which uses idmapping) or rpcsec_gss.
 
-> > There is client dir (nfs/clntX) in rpc_pipefs for every sunrpc client.
-> > Both client and server (see fs/nfsd/nfs4callback.c) can create sunrpc
-> > client. So we rpc_pipefs on both side.
-> 
-> Ok, both client and server can create instances.  And use them to do what?
-> 
-> I understand that the kernel needs to handle RPC calls to service NFS
-> requests, what I'm not figuring out is how userspace is involved after
-> the initial mount except on the other side of filesystem-agnostic system
-> calls.
+In usercr commit 0dd3f9dacc0a08f5fb562e385a4e4244f453b41c we have the following
+diff:
 
-If you want to see the code on the userland side of the interfaces, see
-utils/gssd and utils/idmapd in the nfs-utils code.
+@@ -1868,10 +1902,16 @@ static int ckpt_fork_feeder(struct ckpt_ctx *ctx)
+        close(ctx->pipe_child[0]);
+        ctx->pipe_out = ctx->pipe_child[1];
 
---b.
++       ctx->pipe_child[0] = -1;  /* mark unused */
++       ctx->pipe_child[1] = -1;  /* mark unused */
+
+---
+
+ckpt_fork_feeder() creates the ->pipe_child[] pipe and clones the fork_feeder.
+ckpt_do_feeder() does the following:
+
+
+        /* children pipe */
+        close(ctx->pipe_child[1]);
+        ctx->pipe_in = ctx->pipe_child[0];
+
+        /* feeder pipe */
+        close(ctx->pipe_feed[0]);
+
+But if the fork_feeder process runs after the parent marks the fds unused, the
+fork feeder would end up with a -1 in ctx->pipe_in right ?
+
+The two threads don't share the fds but they do share the same VM and hence
+changes to 'ctx' in one process is visible in the other right ?
+
+Sukadev
