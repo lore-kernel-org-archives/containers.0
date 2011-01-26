@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH 3/5] c/r: [PIDS 1/3] introduce pids objects
-Date: Wed, 26 Jan 2011 11:10:49 -0500
-Message-ID: <1296058251-21295-4-git-send-email-orenl@cs.columbia.edu>
+Subject: [PATCH 1/5] c/r: introduce ckpt_task_vnr(), ckpt_pid_vnr()
+Date: Wed, 26 Jan 2011 11:10:47 -0500
+Message-ID: <1296058251-21295-2-git-send-email-orenl@cs.columbia.edu>
 References: <1296058251-21295-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -20,131 +20,102 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add the interface to handle pids as proper c/r shared objects.  This
-is the first step in converting the c/r code to hanlde pid as pids
-objects that are namespace aware. Also remote the unused field
-@root_pid from struct ckpt_ctx.
+This helpoer is Useful to get the pid from the root task's (checkpoint
+or restart) point of view.
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- include/linux/checkpoint_hdr.h   |    6 +++++-
- include/linux/checkpoint_types.h |    1 -
- kernel/checkpoint/checkpoint.c   |    2 --
- kernel/checkpoint/restart.c      |    1 -
- kernel/pid.c                     |   28 ++++++++++++++++++++++++++++
- 5 files changed, 33 insertions(+), 5 deletions(-)
+ include/linux/checkpoint.h     |   10 +++++++++-
+ kernel/checkpoint/checkpoint.c |    5 +++--
+ kernel/checkpoint/restart.c    |    6 ++----
+ kernel/signal.c                |    2 +-
+ 4 files changed, 15 insertions(+), 8 deletions(-)
 
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index b12d586..922eff0 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -245,6 +245,8 @@ struct ckpt_hdr_objref {
- enum obj_type {
- 	CKPT_OBJ_IGNORE = 0,
- #define CKPT_OBJ_IGNORE CKPT_OBJ_IGNORE
-+	CKPT_OBJ_PID,
-+#define CKPT_OBJ_PID CKPT_OBJ_PID
- 	CKPT_OBJ_INODE,
- #define CKPT_OBJ_INODE CKPT_OBJ_INODE
- 	CKPT_OBJ_FILE_TABLE,
-@@ -373,7 +375,9 @@ struct ckpt_pids {
- } __attribute__((aligned(8)));
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index c015106..fe61edb 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -110,8 +110,16 @@ extern int checkpoint_dump_page(struct ckpt_ctx *ctx, struct page *page);
+ extern int restore_read_page(struct ckpt_ctx *ctx, struct page *page);
  
  /* pids */
--#define CKPT_PID_NULL  -1
-+/* (negative but not valid error) */
-+#define CKPT_PID_NULL  (-4096)  /* null pid pointer */
-+#define CKPT_PID_ROOT  (-4097)  /* pid same as root task */
+-extern pid_t ckpt_pid_nr(struct ckpt_ctx *ctx, struct pid *pid);
+ extern struct pid *_ckpt_find_pgrp(struct ckpt_ctx *ctx, pid_t pgid);
++static inline pid_t ckpt_task_vnr(struct ckpt_ctx *ctx, struct task_struct *task)
++{
++	return task_pid_nr_ns(task, ctx->root_nsproxy->pid_ns);
++}
++static inline pid_t ckpt_pid_vnr(struct ckpt_ctx *ctx, struct pid *pid)
++{
++	return pid_nr_ns(pid, ctx->root_nsproxy->pid_ns);
++}
++extern int ckpt_lookup_pid(struct ckpt_ctx *ctx, struct pid *pid);
  
- /* task data */
- struct ckpt_hdr_task {
-diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
-index cf74d3e..87a569a 100644
---- a/include/linux/checkpoint_types.h
-+++ b/include/linux/checkpoint_types.h
-@@ -35,7 +35,6 @@ struct ckpt_ctx {
- 	ktime_t ktime_begin;		/* operation start time */
- 
- 	int root_init;				/* [container] root init ? */
--	pid_t root_pid;				/* [container] root pid */
- 	struct task_struct *root_task;		/* [container] root task */
- 	struct nsproxy *root_nsproxy;		/* [container] root nsproxy */
- 	struct task_struct *root_freezer;	/* [container] root task */
+ /* defined in objhash.c and also used in security/security.c */
+ extern void lsm_string_free(struct kref *kref);
 diff --git a/kernel/checkpoint/checkpoint.c b/kernel/checkpoint/checkpoint.c
-index 7cd491b..42de30a 100644
+index 0f46acf..7cd491b 100644
 --- a/kernel/checkpoint/checkpoint.c
 +++ b/kernel/checkpoint/checkpoint.c
-@@ -629,8 +629,6 @@ static int init_checkpoint_ctx(struct ckpt_ctx *ctx, pid_t pid)
- 	 * occurs then ckpt_ctx_free() is eventually called.
- 	 */
+@@ -28,6 +28,7 @@
+ #include <linux/hrtimer.h>
+ #include <linux/deferqueue.h>
+ #include <linux/checkpoint.h>
++#include <linux/flex_array.h>
+ #include <linux/pid_namespace.h>
  
--	ctx->root_pid = pid;
--
- 	/* root task */
- 	rcu_read_lock();
- 	task = find_task_by_vpid(pid);
+ /* unique checkpoint identifier (FIXME: should be per-container ?) */
+@@ -243,10 +244,10 @@ static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
+ {
+ 	struct task_struct *root = ctx->root_task;
+ 	struct nsproxy *nsproxy;
+-	int ret = 0;
+ 	struct pid_namespace *pidns;
++	int ret = 0;
+ 
+-	ckpt_debug("check %d\n", task_pid_nr_ns(t, ctx->root_nsproxy->pid_ns));
++	ckpt_debug("check %d\n", ckpt_task_vnr(ctx, t));
+ 
+ 	if (t->exit_state == EXIT_DEAD) {
+ 		_ckpt_err(ctx, -EBUSY, "%(T)Task state EXIT_DEAD\n");
 diff --git a/kernel/checkpoint/restart.c b/kernel/checkpoint/restart.c
-index e844568..adcfb23 100644
+index 2eae499..e844568 100644
 --- a/kernel/checkpoint/restart.c
 +++ b/kernel/checkpoint/restart.c
-@@ -1178,7 +1178,6 @@ static struct task_struct *choose_root_task(struct ckpt_ctx *ctx, pid_t pid)
- 	struct task_struct *task;
+@@ -913,8 +913,7 @@ static int wait_task_active(struct ckpt_ctx *ctx)
  
- 	if (ctx->uflags & RESTART_TASKSELF) {
--		ctx->root_pid = pid;
- 		ctx->root_task = current;
- 		get_task_struct(current);
- 		return current;
-diff --git a/kernel/pid.c b/kernel/pid.c
-index f08f40a..0269991 100644
---- a/kernel/pid.c
-+++ b/kernel/pid.c
-@@ -36,6 +36,7 @@
- #include <linux/pid_namespace.h>
- #include <linux/init_task.h>
- #include <linux/syscalls.h>
-+#include <linux/checkpoint.h>
+ static int wait_task_sync(struct ckpt_ctx *ctx)
+ {
+-	ckpt_debug("pid %d syncing\n",
+-		task_pid_nr_ns(current, task_active_pid_ns(ctx->root_task)));
++	ckpt_debug("pid %d syncing\n", ckpt_task_vnr(ctx, current));
+ 	wait_event_interruptible(ctx->waitq, ckpt_test_complete(ctx));
+ 	ckpt_debug("task sync done (errno %d)\n", ctx->errno);
+ 	if (ckpt_test_error(ctx))
+@@ -1187,10 +1186,9 @@ static struct task_struct *choose_root_task(struct ckpt_ctx *ctx, pid_t pid)
  
- #define pid_hashfn(nr, ns)	\
- 	hash_long((unsigned long)nr + (unsigned long)ns, pidhash_shift)
-@@ -571,6 +572,30 @@ struct pid *find_ge_pid(int nr, struct pid_namespace *ns)
- 	return pid;
- }
- 
-+#ifdef CONFIG_CHECKPOINT
-+
-+/* pid-related checkpoint objects */
-+
-+static int obj_pid_grab(void *ptr)
-+{
-+	get_pid((struct pid *) ptr);
-+	return 0;
-+}
-+
-+static void obj_pid_drop(void *ptr, int lastref)
-+{
-+	put_pid((struct pid *) ptr);
-+}
-+
-+static const struct ckpt_obj_ops ckpt_obj_pid_ops = {
-+	.obj_name = "PID",
-+	.obj_type = CKPT_OBJ_PID,
-+	.ref_drop = obj_pid_drop,
-+	.ref_grab = obj_pid_grab,
-+};
-+
-+#endif /* CONFIG_CHECKPOINT */
-+
- /*
-  * The pid hash table is scaled according to the amount of memory in the
-  * machine.  From a minimum of 16 slots up to 4096 slots at one gigabyte or
-@@ -605,4 +630,7 @@ void __init pidmap_init(void)
- 
- 	init_pid_ns.pid_cachep = KMEM_CACHE(pid,
- 			SLAB_HWCACHE_ALIGN | SLAB_PANIC);
-+#ifdef CONFIG_CHECKPOINT
-+	register_checkpoint_obj(&ckpt_obj_pid_ops);
-+#endif
- }
+ 	read_lock(&tasklist_lock);
+ 	list_for_each_entry(task, &current->children, sibling) {
+-		if (task_pid_nr_ns(task, ctx->coord_pidns) == pid) {
++		if (task_pid_vnr(task) == pid) {
+ 			get_task_struct(task);
+ 			ctx->root_task = task;
+-			ctx->root_pid = pid;
+ 			break;
+ 		}
+ 	}
+diff --git a/kernel/signal.c b/kernel/signal.c
+index b1e6a31..dca40be 100644
+--- a/kernel/signal.c
++++ b/kernel/signal.c
+@@ -3352,7 +3352,7 @@ static int restore_signal(struct ckpt_ctx *ctx)
+ 			 * fail, so no need for explicit test
+ 			 */
+ 			ret = do_tiocspgrp(tty, tty_pair_get_tty(tty),
+-					   h->tty_pgrp);
++					   pid_vnr(pgrp));
+ 			if (ret < 0)
+ 				goto out;
+ 		}
 -- 
 1.7.1
