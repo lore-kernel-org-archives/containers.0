@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH 3/9] restart: cleanup setup/cleanup of freezer cgroups
-Date: Wed, 26 Jan 2011 11:19:02 -0500
-Message-ID: <1296058748-21418-4-git-send-email-orenl@cs.columbia.edu>
+Subject: [PATCH 1/9] Initialize of args->{outfd, logfd,
+	infd} in main c/r programs
+Date: Wed, 26 Jan 2011 11:19:00 -0500
+Message-ID: <1296058748-21418-2-git-send-email-orenl@cs.columbia.edu>
 References: <1296058748-21418-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -20,74 +21,66 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+The initialization belongs to the caller of the cr-library - i.e.
+restart-main and checkpoint-main, and not in the cr-library.
+
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- restart.c |   22 ++++++++++------------
- 1 files changed, 10 insertions(+), 12 deletions(-)
+ checkpoint-main.c |    4 ++--
+ checkpoint.c      |    8 --------
+ restart-main.c    |    4 ++--
+ 3 files changed, 4 insertions(+), 12 deletions(-)
 
-diff --git a/restart.c b/restart.c
-index 8106fd6..195a892 100644
---- a/restart.c
-+++ b/restart.c
-@@ -359,35 +359,32 @@ static void sigint_handler(int sig)
+diff --git a/checkpoint-main.c b/checkpoint-main.c
+index a2a7d94..b2ec9c8 100644
+--- a/checkpoint-main.c
++++ b/checkpoint-main.c
+@@ -70,8 +70,8 @@ static void parse_args(struct cr_checkpoint_args *args, int argc, char *argv[])
+ 	char *logfile;
  
- static int freezer_prepare(struct ckpt_ctx *ctx)
- {
--	char *freezer;
- 	int fd, ret;
+ 	/* defaults */
+-	args->outfd = -1;
+-	args->logfd = -1;
++	args->outfd = fileno(stdout);
++	args->logfd = CHECKPOINT_FD_NONE;
+ 	args->uerrfd = fileno(stderr);
+ 	output = NULL;
+ 	logfile = NULL;
+diff --git a/checkpoint.c b/checkpoint.c
+index cce3d9d..f9b0b3b 100644
+--- a/checkpoint.c
++++ b/checkpoint.c
+@@ -37,14 +37,6 @@ int cr_checkpoint(int pid, struct cr_checkpoint_args *args)
  
- #define FREEZER_THAWED  "THAWED"
+ 	global_uerrfd = args->uerrfd;
  
--	freezer = malloc(strlen(ctx->args->freezer) + 32);
--	if (!freezer) {
-+	ctx->freezer = malloc(strlen(ctx->args->freezer) + 32);
-+	if (!ctx->freezer) {
- 		ckpt_perror("malloc freezer buf");
--		return -1;
-+		return ctx_set_errno(ctx);
- 	}
+-	/* output file descriptor (default: stdout) */
+-	if (args->outfd < 0)
+-		args->outfd = STDOUT_FILENO;
+-
+-	/* output file descriptor (default: none) */
+-	if (args->logfd < 0)
+-		args->logfd = CHECKPOINT_FD_NONE;
+-
+ 	if (!args->container)
+ 		args->flags |= CHECKPOINT_SUBTREE;
  
--	sprintf(freezer, "%s/freezer.state", ctx->args->freezer);
-+	sprintf(ctx->freezer, "%s/freezer.state", ctx->args->freezer);
- 
--	fd = open(freezer, O_WRONLY, 0);
-+	fd = open(ctx->freezer, O_WRONLY, 0);
- 	if (fd < 0) {
- 		ckpt_perror("freezer path");
--		free(freezer);
--		return -1;
-+		return ctx_set_errno(ctx);
- 	}
- 	ret = write(fd, FREEZER_THAWED, sizeof(FREEZER_THAWED)); 
- 	if (ret != sizeof(FREEZER_THAWED)) {
- 		ckpt_perror("thawing freezer");
--		free(freezer);
-+		ctx_set_errno(ctx);
- 		close(fd);
- 		return -1;
- 	}
- 
--	sprintf(freezer, "%s/tasks", ctx->args->freezer);
--	ctx->freezer = freezer;
-+	sprintf(ctx->freezer, "%s/tasks", ctx->args->freezer);
- 	close(fd);
- 	return 0;
- }
-@@ -400,13 +397,14 @@ static int freezer_register(struct ckpt_ctx *ctx, pid_t pid)
- 	fd = open(ctx->freezer, O_WRONLY, 0);
- 	if (fd < 0) {
- 		ckpt_perror("freezer path");
--		return -1;
-+		return ctx_set_errno(ctx);
- 	}
- 
- 	n = sprintf(pidstr, "%d", pid);
- 	ret = write(fd, pidstr, n);
- 	if (ret != n) {
- 		ckpt_perror("adding pid %d to freezer");
-+		ctx_set_errno(ctx);
- 		close(fd);
- 		return -1;
- 	}
+diff --git a/restart-main.c b/restart-main.c
+index 6eed101..efa6a8f 100644
+--- a/restart-main.c
++++ b/restart-main.c
+@@ -146,10 +146,10 @@ static void parse_args(struct cr_restart_args *args, int argc, char *argv[])
+ 	/* defaults */
+ 	memset(args, 0, sizeof(*args));
+ 	args->wait = 1;
+-	args->infd = -1;
+-	args->klogfd = -1;
++	args->infd = fileno(stdin);
+ 	args->ulogfd = fileno(stdout);
+ 	args->uerrfd = fileno(stderr);
++	args->klogfd = CHECKPOINT_FD_NONE;
+ 	args->warn = CKPT_COND_WARN;
+ 	args->fail = CKPT_COND_FAIL;
+ 	no_pidns = 0;
 -- 
 1.7.1
