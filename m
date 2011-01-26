@@ -1,35 +1,32 @@
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Add linux-next specific files for 20110121
-Date: Tue, 25 Jan 2011 10:44:14 +0100
-Message-ID: <4D3E9B6E.6070401__3010.37055110118$1295948697$gmane$org@fr.ibm.com>
-References: <1295948347-15023-1-git-send-email-daniel.lezcano@free.fr>
+From: Daniel Lezcano <daniel.lezcano@free.fr>
+Subject: Re: [PATCH 0/6] Unshare support for the pid namespace.
+Date: Wed, 26 Jan 2011 16:57:41 +0100
+Message-ID: <4D404475.30304@free.fr>
+References: <1276706068-18567-1-git-send-email-louis.rilling@kerlabs.com>	<20100617212003.GA4182@redhat.com>	<20100618082033.GD16877@hawkmoon.kerlabs.com>	<20100618111554.GA3252@redhat.com> <20100618160849.GA7404@redhat.com>	<20100618173320.GG16877@hawkmoon.kerlabs.com>	<20100618175541.GA13680@redhat.com>	<20100618212355.GA29478@redhat.com> <20100619190840.GA3424@redhat.com> <m1pqzmqema.fsf_-_@fess.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1295948347-15023-1-git-send-email-daniel.lezcano-GANU6spQydw@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <m1pqzmqema.fsf_-_@fess.ebiederm.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>, Oleg Nesterov <oleg@redhat.com>, Louis Rilling <Louis.Rilling@kerlabs.com>
+Cc: linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, Andrew Morton <akpm@linux-foundation.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, Pavel Emelyanov <xemul@openvz.org>, jamal <hadi@cyberus.ca>
 List-Id: containers.vger.kernel.org
 
-On 01/25/2011 10:39 AM, Daniel Lezcano wrote:
-> From: Stephen Rothwell<sfr-3FnU+UHB4dNDw9hX6IcOSA@public.gmane.org>
->
-> Signed-off-by: Stephen Rothwell<sfr-3FnU+UHB4dNDw9hX6IcOSA@public.gmane.org>
-> ---
 
-Oops ! wrong patch.
-Please ignore.
+Hi All,
 
-sorry for the noise.
+I refreshed this patchset on top of linux-next and I would like to 
+resend it for inclusion if nobody is opposed.
+I read the looong thread about this patchset and I am a bit lost with if 
+the patches are right or not.
+I will be glad to contribute to this patchset if that make sense to 
+improve some parts.
 
+Can someone enlight me ?
+
+Thanks
    -- Daniel
+
+
+<javascript:void(0);>
