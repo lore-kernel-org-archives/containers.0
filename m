@@ -1,13 +1,14 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH 5/5] c/r: use pids objects for the pgrp/old_pgdp of ttys
-Date: Wed, 26 Jan 2011 11:10:51 -0500
-Message-ID: <1296058251-21295-6-git-send-email-orenl@cs.columbia.edu>
+Subject: Re: [PATCH 1/5] c/r: introduce ckpt_task_vnr(), ckpt_pid_vnr()
+Date: Wed, 26 Jan 2011 11:20:04 -0500
+Message-ID: <4D4049B4.5090702@cs.columbia.edu>
 References: <1296058251-21295-1-git-send-email-orenl@cs.columbia.edu>
+	<1296058251-21295-2-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1296058251-21295-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1296058251-21295-2-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,113 +18,118 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Make tty_old_pgrp and tty_pgrp use the shared pid instead of saving
-the actual pid number in {checkpoint,restore}_signal().
 
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
----
- kernel/signal.c |   42 ++++++++++++++++++++++++++++++++----------
- 1 files changed, 32 insertions(+), 10 deletions(-)
+Hmmm.. the cover post did not make it :(
 
-diff --git a/kernel/signal.c b/kernel/signal.c
-index 3842f5d..5c174a9 100644
---- a/kernel/signal.c
-+++ b/kernel/signal.c
-@@ -3218,25 +3218,34 @@ static int checkpoint_signal(struct ckpt_ctx *ctx, struct task_struct *t)
- 
- 	/* tty */
- 	if (signal->leader) {
--		h->tty_old_pgrp = ckpt_pid_nr(ctx, signal->tty_old_pgrp);
-+		h->tty_old_pgrp = ckpt_lookup_pid(ctx, signal->tty_old_pgrp);
- 		tty = tty_kref_get(signal->tty);
- 		if (tty) {
- 			/* irq is already disabled */
- 			spin_lock(&tty->ctrl_lock);
--			h->tty_pgrp = ckpt_pid_nr(ctx, tty->pgrp);
-+			h->tty_pgrp = ckpt_lookup_pid(ctx, tty->pgrp);
- 			spin_unlock(&tty->ctrl_lock);
--			tty_kref_put(tty);
- 		}
- 	}
- 
- 	unlock_task_sighand(t, &flags);
- 
- 	/*
-+	 * tty_pgrp must be in our namespace, since we are the
-+	 * session leader and could not have unshared pidns !
-+	 */
-+	if (tty && h->tty_pgrp == 0) {
-+		ckpt_err(ctx, -EBUSY, "%(T)tty_pgrp outside namespace\n");
-+		ret = -EBUSY;
-+		goto out;
-+	}
-+
-+	/*
- 	 * If the session is in an ancestor namespace, skip this tty
- 	 * and set tty_objref = 0. It will not be explicitly restored,
- 	 * but rather inherited from parent pid-ns at restart time.
- 	 */
--	if (tty && ckpt_pid_nr(ctx, tty->session) > 0) {
-+	if (tty && ckpt_lookup_pid(ctx, tty->session) > 0) {
- 		h->tty_objref = checkpoint_obj(ctx, tty, CKPT_OBJ_TTY);
- 		if (h->tty_objref < 0)
- 			ret = h->tty_objref;
-@@ -3255,6 +3264,7 @@ static int checkpoint_signal(struct ckpt_ctx *ctx, struct task_struct *t)
- 	list_splice(&shared_pending.list, &signal->shared_pending.list);
- 	unlock_task_sighand(t, &flags);
-  out:
-+	tty_kref_put(tty);
- 	ckpt_hdr_put(ctx, h);
- 	return ret;
- }
-@@ -3339,6 +3349,10 @@ static int restore_signal(struct ckpt_ctx *ctx)
- 
- 	/* tty - session */
- 	if (h->tty_objref) {
-+		/*
-+		 * should only get here if we are session leader, but
-+		 * we don't explicitly check: forced by calls below
-+		 */
- 		tty = ckpt_obj_fetch(ctx, h->tty_objref, CKPT_OBJ_TTY);
- 		if (IS_ERR(tty)) {
- 			ret = PTR_ERR(tty);
-@@ -3354,6 +3368,11 @@ static int restore_signal(struct ckpt_ctx *ctx)
- 			 * If tty_pgrp == CKPT_PID_NULL, below will
- 			 * fail, so no need for explicit test
- 			 */
-+			pgrp = ckpt_obj_fetch(ctx, h->tty_pgrp, CKPT_OBJ_PID);
-+			if (IS_ERR(pgrp)) {
-+				ret = PTR_ERR(pgrp);
-+				goto out;
-+			}
- 			ret = do_tiocspgrp(tty, tty_pair_get_tty(tty),
- 					   pid_vnr(pgrp));
- 			if (ret < 0)
-@@ -3382,13 +3401,16 @@ static int restore_signal(struct ckpt_ctx *ctx)
- 	do_setitimer(ITIMER_VIRTUAL, &itimer, NULL);
- 	do_setitimer(ITIMER_PROF, &itimer, NULL);
- 
--	/* tty - tty_old_pgrp */
--	if (current->signal->leader && h->tty_old_pgrp != CKPT_PID_NULL) {
--		rcu_read_lock();
--		pgrp = get_pid(_ckpt_find_pgrp(ctx, h->tty_old_pgrp));
--		rcu_read_unlock();
--		if (!pgrp)
-+	/*
-+	 * tty - tty_old_pgrp: only for session leaders and for valid
-+	 * tty_old_pgrp, ie, within our namespace, and not CKPT_PID_NULL.
-+	 */
-+	if (current->signal->leader && h->tty_old_pgrp > 0) {
-+		pgrp = ckpt_obj_fetch(ctx, h->tty_old_pgrp, CKPT_OBJ_PID);
-+		if (IS_ERR(pgrp)) {
-+			ret = PTR_ERR(pgrp);
- 			goto out;
-+		}
- 	}
- 
- 	spin_lock_irq(&current->sighand->siglock);
--- 
-1.7.1
+This patch-set changes the way pids are handled in c/r - instead
+of simple pid numbers, we now treat them as proper shared objects.
+
+The patch applies on top of the most recent branch 'ckpt-v23-rc1' 
+of c/r (for 2.6.37 kernel).
+
+Thanks,
+
+Oren.
+
+On 01/26/2011 11:10 AM, Oren Laadan wrote:
+> This helpoer is Useful to get the pid from the root task's (checkpoint
+> or restart) point of view.
+> 
+> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+> ---
+>  include/linux/checkpoint.h     |   10 +++++++++-
+>  kernel/checkpoint/checkpoint.c |    5 +++--
+>  kernel/checkpoint/restart.c    |    6 ++----
+>  kernel/signal.c                |    2 +-
+>  4 files changed, 15 insertions(+), 8 deletions(-)
+> 
+> diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+> index c015106..fe61edb 100644
+> --- a/include/linux/checkpoint.h
+> +++ b/include/linux/checkpoint.h
+> @@ -110,8 +110,16 @@ extern int checkpoint_dump_page(struct ckpt_ctx *ctx, struct page *page);
+>  extern int restore_read_page(struct ckpt_ctx *ctx, struct page *page);
+>  
+>  /* pids */
+> -extern pid_t ckpt_pid_nr(struct ckpt_ctx *ctx, struct pid *pid);
+>  extern struct pid *_ckpt_find_pgrp(struct ckpt_ctx *ctx, pid_t pgid);
+> +static inline pid_t ckpt_task_vnr(struct ckpt_ctx *ctx, struct task_struct *task)
+> +{
+> +	return task_pid_nr_ns(task, ctx->root_nsproxy->pid_ns);
+> +}
+> +static inline pid_t ckpt_pid_vnr(struct ckpt_ctx *ctx, struct pid *pid)
+> +{
+> +	return pid_nr_ns(pid, ctx->root_nsproxy->pid_ns);
+> +}
+> +extern int ckpt_lookup_pid(struct ckpt_ctx *ctx, struct pid *pid);
+>  
+>  /* defined in objhash.c and also used in security/security.c */
+>  extern void lsm_string_free(struct kref *kref);
+> diff --git a/kernel/checkpoint/checkpoint.c b/kernel/checkpoint/checkpoint.c
+> index 0f46acf..7cd491b 100644
+> --- a/kernel/checkpoint/checkpoint.c
+> +++ b/kernel/checkpoint/checkpoint.c
+> @@ -28,6 +28,7 @@
+>  #include <linux/hrtimer.h>
+>  #include <linux/deferqueue.h>
+>  #include <linux/checkpoint.h>
+> +#include <linux/flex_array.h>
+>  #include <linux/pid_namespace.h>
+>  
+>  /* unique checkpoint identifier (FIXME: should be per-container ?) */
+> @@ -243,10 +244,10 @@ static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
+>  {
+>  	struct task_struct *root = ctx->root_task;
+>  	struct nsproxy *nsproxy;
+> -	int ret = 0;
+>  	struct pid_namespace *pidns;
+> +	int ret = 0;
+>  
+> -	ckpt_debug("check %d\n", task_pid_nr_ns(t, ctx->root_nsproxy->pid_ns));
+> +	ckpt_debug("check %d\n", ckpt_task_vnr(ctx, t));
+>  
+>  	if (t->exit_state == EXIT_DEAD) {
+>  		_ckpt_err(ctx, -EBUSY, "%(T)Task state EXIT_DEAD\n");
+> diff --git a/kernel/checkpoint/restart.c b/kernel/checkpoint/restart.c
+> index 2eae499..e844568 100644
+> --- a/kernel/checkpoint/restart.c
+> +++ b/kernel/checkpoint/restart.c
+> @@ -913,8 +913,7 @@ static int wait_task_active(struct ckpt_ctx *ctx)
+>  
+>  static int wait_task_sync(struct ckpt_ctx *ctx)
+>  {
+> -	ckpt_debug("pid %d syncing\n",
+> -		task_pid_nr_ns(current, task_active_pid_ns(ctx->root_task)));
+> +	ckpt_debug("pid %d syncing\n", ckpt_task_vnr(ctx, current));
+>  	wait_event_interruptible(ctx->waitq, ckpt_test_complete(ctx));
+>  	ckpt_debug("task sync done (errno %d)\n", ctx->errno);
+>  	if (ckpt_test_error(ctx))
+> @@ -1187,10 +1186,9 @@ static struct task_struct *choose_root_task(struct ckpt_ctx *ctx, pid_t pid)
+>  
+>  	read_lock(&tasklist_lock);
+>  	list_for_each_entry(task, &current->children, sibling) {
+> -		if (task_pid_nr_ns(task, ctx->coord_pidns) == pid) {
+> +		if (task_pid_vnr(task) == pid) {
+>  			get_task_struct(task);
+>  			ctx->root_task = task;
+> -			ctx->root_pid = pid;
+>  			break;
+>  		}
+>  	}
+> diff --git a/kernel/signal.c b/kernel/signal.c
+> index b1e6a31..dca40be 100644
+> --- a/kernel/signal.c
+> +++ b/kernel/signal.c
+> @@ -3352,7 +3352,7 @@ static int restore_signal(struct ckpt_ctx *ctx)
+>  			 * fail, so no need for explicit test
+>  			 */
+>  			ret = do_tiocspgrp(tty, tty_pair_get_tty(tty),
+> -					   h->tty_pgrp);
+> +					   pid_vnr(pgrp));
+>  			if (ret < 0)
+>  				goto out;
+>  		}
