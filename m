@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH 7/9] udpate kernel headers: support for pids objects
-Date: Wed, 26 Jan 2011 11:19:06 -0500
-Message-ID: <1296058748-21418-8-git-send-email-orenl@cs.columbia.edu>
+Subject: [PATCH 5/9] restart: obtain pid_max from /proc/sys/kernel/pid_max
+Date: Wed, 26 Jan 2011 11:19:04 -0500
+Message-ID: <1296058748-21418-6-git-send-email-orenl@cs.columbia.edu>
 References: <1296058748-21418-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -20,76 +20,65 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- include/linux/checkpoint_hdr.h |   28 +++++++++++++++++++++++-----
- 1 files changed, 23 insertions(+), 5 deletions(-)
+ restart.c |   19 +++++++++++++++++--
+ 1 files changed, 17 insertions(+), 2 deletions(-)
 
-diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index f7c4d9a..8087250 100644
---- a/include/linux/checkpoint_hdr.h
-+++ b/include/linux/checkpoint_hdr.h
-@@ -94,7 +94,9 @@ enum {
- 	CKPT_HDR_SECURITY,
- #define CKPT_HDR_SECURITY CKPT_HDR_SECURITY
+diff --git a/restart.c b/restart.c
+index 9535543..d998834 100644
+--- a/restart.c
++++ b/restart.c
+@@ -157,6 +157,9 @@ struct ckpt_ctx {
+ 	struct cr_restart_args *args;
  
--	CKPT_HDR_TREE = 101,
-+	CKPT_HDR_PIDS = 101,
-+#define CKPT_HDR_PIDS CKPT_HDR_PIDS
-+	CKPT_HDR_TREE,
- #define CKPT_HDR_TREE CKPT_HDR_TREE
- 	CKPT_HDR_TASK,
- #define CKPT_HDR_TASK CKPT_HDR_TASK
-@@ -232,6 +234,8 @@ struct ckpt_hdr_objref {
- enum obj_type {
- 	CKPT_OBJ_IGNORE = 0,
- #define CKPT_OBJ_IGNORE CKPT_OBJ_IGNORE
-+	CKPT_OBJ_PID,
-+#define CKPT_OBJ_PID CKPT_OBJ_PID
- 	CKPT_OBJ_INODE,
- #define CKPT_OBJ_INODE CKPT_OBJ_INODE
- 	CKPT_OBJ_FILE_TABLE,
-@@ -343,24 +347,38 @@ struct ckpt_hdr_container {
+ 	char *freezer;
++
++	/* system limits */
++	pid_t pid_max;
+ };
+ 
+ struct pid_swap {
+@@ -488,6 +491,9 @@ int process_args(struct cr_restart_args *args)
+ 
+ static void init_ctx(struct ckpt_ctx *ctx)
+ {
++	FILE *file;
++	char buf[1024];
++
+ 	memset(ctx, 0, sizeof(*ctx));
+ 
+ 	/* mark all fds as unused */
+@@ -499,6 +505,15 @@ static void init_ctx(struct ckpt_ctx *ctx)
+ 	ctx->pipe_feed[1] = -1;
+ 	ctx->pipe_coord[0] = -1;
+ 	ctx->pipe_coord[1] = -1;
++
++	/* system limits */
++	ctx->pid_max = SHRT_MAX;  /* default */
++	file = fopen("/proc/sys/kernel/pid_max", "r");
++	if (file) {
++		if (fgets(buf, 1024, file))
++			ctx->pid_max = atoi(buf);
++		fclose(file);
++	}
+ }
+ 
+ static void exit_ctx(struct ckpt_ctx *ctx)
+@@ -1212,12 +1227,12 @@ static int ckpt_alloc_pid(struct ckpt_ctx *ctx)
+ 	 * (this will become inefficient if pid-space is exhausted)
  	 */
- } __attribute__((aligned(8)));;
+ 	do {
+-		if (ctx->tasks_pid == INT_MAX)
++		if (ctx->tasks_pid == ctx->pid_max)
+ 			ctx->tasks_pid = CKPT_RESERVED_PIDS;
+ 		else
+ 			ctx->tasks_pid++;
  
-+/* pids array */
-+struct ckpt_hdr_pids {
-+	struct ckpt_hdr h;
-+	__u32 nr_pids;
-+	__u32 nr_vpids;
-+} __attribute__((aligned(8)));
-+
-+struct ckpt_pids {
-+	__u32 depth;
-+	__s32 numbers[1];
-+} __attribute__((aligned(8)));
-+
- /* task tree */
- struct ckpt_hdr_tree {
- 	struct ckpt_hdr h;
--	__s32 nr_tasks;
-+	__u32 nr_tasks;
- } __attribute__((aligned(8)));
- 
--struct ckpt_pids {
-+struct ckpt_task_pids {
- 	/* These pids are in the root_nsproxy's pid ns */
- 	__s32 vpid;
- 	__s32 vppid;
- 	__s32 vtgid;
- 	__s32 vpgid;
- 	__s32 vsid;
--	__s32 depth; /* pid namespace depth relative to container init */
-+	__u32 depth;
- } __attribute__((aligned(8)));
- 
- /* pids */
--#define CKPT_PID_NULL -1
-+/* (negative but not valid error) */
-+#define CKPT_PID_NULL (-4096) /* null pid pointer */
-+#define CKPT_PID_ROOT (-4097) /* pid same as root task */
- 
- /* task data */
- struct ckpt_hdr_task {
+-		if (n++ == INT_MAX) {	/* ohhh... */
++		if (n++ == ctx->pid_max) {	/* ohhh... */
+ 			ckpt_err("pid namsepace exhausted");
+ 			return -1;
+ 		}
 -- 
 1.7.1
