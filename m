@@ -1,16 +1,14 @@
-From: Michael Bohan <mbohan-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>
-Subject: Re: [PATCH 1/2] cgroup: Set CGRP_RELEASABLE when adding to a cgroup
-Date: Thu, 27 Jan 2011 17:48:01 -0800
-Message-ID: <4D422051.4090407__28302.7125908577$1296179325$gmane$org@codeaurora.org>
-References: <AANLkTi=6nwDCdzDz7E2EaAw2pf3KUVjmKMRqGfz5zVhP@mail.gmail.com>
-	<1290577024-12347-1-git-send-email-ccross@android.com>
-	<4D42192C.9000701@codeaurora.org>
-	<AANLkTin7B51maXHRH+FNmZ14bmWmEp9P2=2QTNqgq_Fi@mail.gmail.com>
+From: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Subject: Re: device(s) namespace
+Date: Fri, 28 Jan 2011 08:33:04 -0600
+Message-ID: <20110128143304.GA4287@localhost>
+References: <4D404C0E.6040603@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <AANLkTin7B51maXHRH+FNmZ14bmWmEp9P2=2QTNqgq_Fi-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4D404C0E.6040603-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,40 +18,34 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Bryan Huntsman <bryanh-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Colin Cross <ccross-z5hGa2qSFaRBDgjK7y7TUQ@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 1/27/2011 5:30 PM, Paul Menage wrote:
-> On Thu, Jan 27, 2011 at 5:17 PM, Bryan Huntsman<bryanh-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>  wrote:
->>
->> Tested-by: Mike Bohan<mbohan-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>
->>
->> I'm responding on Mike's behalf and adding him to this thread.  This
->> patch improves launch time of a test app from ~700ms to ~250ms on MSM,
->> with much lower variance across tests.  We also see UI latency
->> improvements, but have not quantified the gains.
->>
->
-> Is this attached to the wrong patch? I'd thought that it was the other
-> patch (removing the rcu_synchronize()) that's the performance booster.
-> This one is more about preserving the semantics of the notification
-> API.
+Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+> Hi,
+> 
+> I vaguely recall some discussions/ideas about the possibility
+> of a devices namespace, its pros and cons, and alternative.
+> Related to that is also device viruatlization, and isolation
+> of devices in containers.
+> 
+> Any thoughts and or pointers to past/current discussions are
+> welcome :)
+> 
+> Thanks,
 
-You are correct. "[PATCH 2/2] cgroup: Remove call to synchronize_rcu in 
-cgroup_attach_task" improved the performance.
+What I find in my old containers folders when grepping for
+'device namespace' is mainly vague references to devicens as
+a more ideal solution to other patches being submitted (namely
+the device cgroup, the sysfs directory tagging, and ptyns).
 
-To be more correct, I tested this patch (eg. "cgroup: Set 
-CGRP_RELEASABLE when adding to a cgroup") to the degree that it didn't 
-appear to cause any stability or functional regressions when performing 
-the simple benchmark procedure described above. I did also test "[PATCH 
-2/2] cgroup: Remove call to synchronize_rcu in cgroup_attach_task" 
-independently of this patch to verify that it alone improved the 
-performance.
+A link which was referenced in one of those emails:
 
-Thanks,
-Mike
+https://lists.linux-foundation.org/pipermail/containers/2008-April/010810.html
 
--- 
-Employee of Qualcomm Innovation Center, Inc.
-Qualcomm Innovation Center, Inc. is a member of Code Aurora Forum
+So while I'm pretty sure I have in the past seen discussions on what
+the device namespace would look like, they must have been on irc or
+in person.
+
+-serge
