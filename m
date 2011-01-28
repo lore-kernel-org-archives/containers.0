@@ -1,11 +1,14 @@
-From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] Fix restoring pipes with full buffers
-Date: Fri, 28 Jan 2011 10:45:11 -0800
-Message-ID: <1296240311-5050-1-git-send-email-danms@us.ibm.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: udev in containers
+Date: Fri, 28 Jan 2011 12:18:47 -0800
+Message-ID: <m1pqrgvl20.fsf@fess.ebiederm.org>
+References: <20110128144827.GA4981@localhost>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20110128144827.GA4981@localhost> (Serge E. Hallyn's message of
+	"Fri, 28 Jan 2011 08:48:27 -0600")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,95 +18,55 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-While this fixes restoring pipes that were completely full, it actually
-corrects a potential issue with restoring any pipe buffers.  By using
-splice() to do this work when we are reading the image from another pipe,
-we depend on userspace setting up the buffers in the pipe perfectly
-such that the data to be restored is oriented in the pipe in the same
-way as it is expected (or required) to be in the restored pipe.  The
-"full" case is the hardest to get right, but userspace could break things
-if it loaded up the inbound pipe with lots of small buffers which would
-cause splice() to hit the PIPE_BUFFERS limit before having read the
-requested amount of data.
+"Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org> writes:
 
-Instead, drop the optimization and just read() and write() data into
-the pipe.
+> Hi,
+>
+> Now that we are allowing udev to run in containers, Daniel has
+> noticed that updates to sysfs uevent files will trigger a flurry
+> of activity in all containers on the host.  While not a problem
+> with just a few containers, this can severaly impact performance
+> with hundreds or more containers.
+>
+> (Daniel, would it be possible for you to get some measurements
+> on host and in a container versus # of active containers, with
+> and without udev?  Do you have a otehrwise unused machien you
+> could try that on?)
+>
+> Is there anything we can/should do about this?
+>
+> Two approaches, neither sufficiently thought out yet, would be
+> to generalize the directory tagging currently used for
+> /sys/class/net, and full-fledged implementation of a device
+> namespace.
+>
+> The directory tagging would probably only work if we can assign
+> multiple tags to a device, but we could for instance make
+> /sys/block tagged, and really no container probably needs to see
+> /sys/block/sda.
+>
+> The device namespace would be similar, except I suspect it
+> would not only hide certain devices from certain namespaces,
+> but it would actually virtualize the device major:minor
+> mapping, for checkpoint/restart, so that /dev/sda could be
+> redirected to another device more completely than simply
+> fudging the nodes under /dev.
+>
+> Comments?  Designs?  Plans?
 
-Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- fs/pipe.c |   49 ++++++++++++++++++++++++++++++++++++++++++++++---
- 1 files changed, 46 insertions(+), 3 deletions(-)
+To answer you earlier question: What did I expect the device namespace
+to look like.
 
-diff --git a/fs/pipe.c b/fs/pipe.c
-index 9664e4f..0da1e3a 100644
---- a/fs/pipe.c
-+++ b/fs/pipe.c
-@@ -926,17 +926,60 @@ static int pipe_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
- 	return ret;
- }
- 
-+static int restore_pipe_buffer(struct ckpt_ctx *ctx,
-+			       struct file *dest,
-+			       int len)
-+{
-+	char *buf;
-+	int ret;
-+	int nread;
-+	int nwrote;
-+	int nleft = len;
-+
-+	buf = kmalloc(PAGE_SIZE, GFP_KERNEL);
-+	if (!buf)
-+		return -ENOMEM;
-+
-+	for (nleft = len; nleft > 0; nleft -= nread) {
-+		int size = nleft < PAGE_SIZE ? nleft : PAGE_SIZE;
-+		loff_t pos;
-+
-+		pos = file_pos_read(ctx->file);
-+		nread = kernel_read(ctx->file, pos, buf, size);
-+		if (nread < 0) {
-+			ret = nread;
-+			goto out;
-+		}
-+		file_pos_write(ctx->file, pos + nread);
-+
-+		pos = file_pos_read(dest);
-+		nwrote = kernel_write(dest, pos, buf, nread);
-+		if (nwrote < 0) {
-+			ret = nwrote;
-+			goto out;
-+		}
-+		file_pos_write(dest, pos + nwrote);
-+
-+		if (nwrote != nread) {
-+			ret = -EPIPE;
-+			goto out;
-+		}
-+	}
-+	ret = len;
-+ out:
-+	kfree(buf);
-+	return ret;
-+}
-+
- static int restore_pipe(struct ckpt_ctx *ctx, struct file *file)
- {
--	struct pipe_inode_info *pipe;
- 	int len, ret;
- 
- 	len = _ckpt_read_obj_type(ctx, NULL, 0, CKPT_HDR_PIPE_BUF);
- 	if (len <= 0)
- 		return len;
- 
--	pipe = file->f_dentry->d_inode->i_pipe;
--	ret = do_splice_to(ctx->file, &ctx->file->f_pos, pipe, len, 0);
-+	ret = restore_pipe_buffer(ctx, file, len);
- 
- 	if (ret >= 0 && ret != len)
- 		ret = -EPIPE;  /* can occur due to an error in source file */
--- 
-1.7.2.2
+- Only purely virtual devices like  /dev/pts, /dev/null, /dev/nbd and /dev/loop0 present.
+- Fully virtualized major/minor look up preventing us from even talking
+  about devices in other namespaces.
+- Support from the user/security namespace so that mknod and mount are safe.
+
+I get a certain uncomfortable feeling about mknod and mount running free
+in a container without restrictions that make container without restrictions...
+
+Eric
