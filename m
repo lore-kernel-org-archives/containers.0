@@ -1,14 +1,12 @@
 From: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Subject: Re: device(s) namespace
-Date: Fri, 28 Jan 2011 08:33:04 -0600
-Message-ID: <20110128143304.GA4287@localhost>
-References: <4D404C0E.6040603@cs.columbia.edu>
+Subject: udev in containers
+Date: Fri, 28 Jan 2011 08:48:27 -0600
+Message-ID: <20110128144827.GA4981@localhost>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4D404C0E.6040603-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,34 +16,42 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Tej
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> Hi,
-> 
-> I vaguely recall some discussions/ideas about the possibility
-> of a devices namespace, its pros and cons, and alternative.
-> Related to that is also device viruatlization, and isolation
-> of devices in containers.
-> 
-> Any thoughts and or pointers to past/current discussions are
-> welcome :)
-> 
-> Thanks,
+Hi,
 
-What I find in my old containers folders when grepping for
-'device namespace' is mainly vague references to devicens as
-a more ideal solution to other patches being submitted (namely
-the device cgroup, the sysfs directory tagging, and ptyns).
+Now that we are allowing udev to run in containers, Daniel has
+noticed that updates to sysfs uevent files will trigger a flurry
+of activity in all containers on the host.  While not a problem
+with just a few containers, this can severaly impact performance
+with hundreds or more containers.
 
-A link which was referenced in one of those emails:
+(Daniel, would it be possible for you to get some measurements
+on host and in a container versus # of active containers, with
+and without udev?  Do you have a otehrwise unused machien you
+could try that on?)
 
-https://lists.linux-foundation.org/pipermail/containers/2008-April/010810.html
+Is there anything we can/should do about this?
 
-So while I'm pretty sure I have in the past seen discussions on what
-the device namespace would look like, they must have been on irc or
-in person.
+Two approaches, neither sufficiently thought out yet, would be
+to generalize the directory tagging currently used for
+/sys/class/net, and full-fledged implementation of a device
+namespace.
 
+The directory tagging would probably only work if we can assign
+multiple tags to a device, but we could for instance make
+/sys/block tagged, and really no container probably needs to see
+/sys/block/sda.
+
+The device namespace would be similar, except I suspect it
+would not only hide certain devices from certain namespaces,
+but it would actually virtualize the device major:minor
+mapping, for checkpoint/restart, so that /dev/sda could be
+redirected to another device more completely than simply
+fudging the nodes under /dev.
+
+Comments?  Designs?  Plans?
+
+thanks,
 -serge
