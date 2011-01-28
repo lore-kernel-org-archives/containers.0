@@ -1,19 +1,11 @@
-From: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] cgroup : remove the ns_cgroup
-Date: Fri, 28 Jan 2011 15:45:51 +0000
-Message-ID: <20110128154551.GM26309__43573.8097214655$1296229607$gmane$org@redhat.com>
-References: <1295948388-15108-1-git-send-email-daniel.lezcano@free.fr>
-	<20110126161837.43830756.akpm@linux-foundation.org>
-	<4D40C5A3.4070703@cn.fujitsu.com>
-	<20110126174513.c2a20fff.akpm@linux-foundation.org>
-	<4D4131DE.3080309@free.fr>
-Reply-To: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] Fix restoring pipes with full buffers
+Date: Fri, 28 Jan 2011 10:45:11 -0800
+Message-ID: <1296240311-5050-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4D4131DE.3080309-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,65 +15,95 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Cc: libvir-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Jan 27, 2011 at 09:50:38AM +0100, Daniel Lezcano wrote:
-> On 01/27/2011 02:45 AM, Andrew Morton wrote:
-> >On Thu, 27 Jan 2011 09:08:51 +0800 Li Zefan<lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>  wrote:
-> >
-> >>Andrew Morton wrote:
-> >>>On Tue, 25 Jan 2011 10:39:48 +0100
-> >>>Daniel Lezcano<daniel.lezcano-GANU6spQydw@public.gmane.org>  wrote:
-> >>>
-> >>>>This patch removes the ns_cgroup as suggested in the following thread:
-> >>>I had this patch queued up in September last year, but dropped it.  Why
-> >>>did I do that?
-> >>Because you wanted to wait for some time for users (if any) to notice this
-> >>coming change.
-> >>
-> >>Author: Daniel Lezcano<daniel.lezcano-GANU6spQydw@public.gmane.org>
-> >>Date:   Wed Oct 27 15:33:38 2010 -0700
-> >>
-> >>     cgroup: notify ns_cgroup deprecated
-> >>
-> >>     The ns_cgroup will be removed very soon.  Let's warn, for this version,
-> >>     ns_cgroup is deprecated.
-> >>
-> >>     Make ns_cgroup and clone_children exclusive.  If the clone_children is set
-> >>     and the ns_cgroup is mounted, let's fail with EINVAL when the ns_cgroup
-> >>     subsys is created (a printk will help the user to understand why the
-> >>     creation fails).
-> >>
-> >>     Update the feature remove schedule file with the deprecated ns_cgroup.
-> >>
-> >>     Signed-off-by: Daniel Lezcano<daniel.lezcano-GANU6spQydw@public.gmane.org>
-> >>     Acked-by: Paul Menage<menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-> >>     Signed-off-by: Andrew Morton<akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-> >>     Signed-off-by: Linus Torvalds<torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-> >ooh, that was clever of me.
-> >
-> >Here is the text which was missing from the changelog:
-> >
-> >   This is a userspace-visible change.  Commit 45531757b45c ("cgroup:
-> >   notify ns_cgroup deprecated") (merged into 2.6.27) caused the kernel
-> >   to emit a printk warning users that the feature is planned for
-> >   removal.  Since that time we have heard from XXX users who were
-> >   affected by this.
-> >
-> >Please provide XXX.
-> 
-> Ok, AFAIK nobody makes use of the ns_cgroup except the LXC userspace
-> tools which I maintain and where
-> the backward compatibility with the ns_cgroup and the clone_children
-> flag is already implemented.
-> Since today nobody seems to be affected by this.
-> 
-> I Cc'ed the libvirt mailing list.
+While this fixes restoring pipes that were completely full, it actually
+corrects a potential issue with restoring any pipe buffers.  By using
+splice() to do this work when we are reading the image from another pipe,
+we depend on userspace setting up the buffers in the pipe perfectly
+such that the data to be restored is oriented in the pipe in the same
+way as it is expected (or required) to be in the restored pipe.  The
+"full" case is the hardest to get right, but userspace could break things
+if it loaded up the inbound pipe with lots of small buffers which would
+cause splice() to hit the PIPE_BUFFERS limit before having read the
+requested amount of data.
 
-Removing 'ns_cgroup' won't impact libvirt's container
-support in any negative way, so fine by me.
+Instead, drop the optimization and just read() and write() data into
+the pipe.
 
-Regards,
-Daniel
+Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ fs/pipe.c |   49 ++++++++++++++++++++++++++++++++++++++++++++++---
+ 1 files changed, 46 insertions(+), 3 deletions(-)
+
+diff --git a/fs/pipe.c b/fs/pipe.c
+index 9664e4f..0da1e3a 100644
+--- a/fs/pipe.c
++++ b/fs/pipe.c
+@@ -926,17 +926,60 @@ static int pipe_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
+ 	return ret;
+ }
+ 
++static int restore_pipe_buffer(struct ckpt_ctx *ctx,
++			       struct file *dest,
++			       int len)
++{
++	char *buf;
++	int ret;
++	int nread;
++	int nwrote;
++	int nleft = len;
++
++	buf = kmalloc(PAGE_SIZE, GFP_KERNEL);
++	if (!buf)
++		return -ENOMEM;
++
++	for (nleft = len; nleft > 0; nleft -= nread) {
++		int size = nleft < PAGE_SIZE ? nleft : PAGE_SIZE;
++		loff_t pos;
++
++		pos = file_pos_read(ctx->file);
++		nread = kernel_read(ctx->file, pos, buf, size);
++		if (nread < 0) {
++			ret = nread;
++			goto out;
++		}
++		file_pos_write(ctx->file, pos + nread);
++
++		pos = file_pos_read(dest);
++		nwrote = kernel_write(dest, pos, buf, nread);
++		if (nwrote < 0) {
++			ret = nwrote;
++			goto out;
++		}
++		file_pos_write(dest, pos + nwrote);
++
++		if (nwrote != nread) {
++			ret = -EPIPE;
++			goto out;
++		}
++	}
++	ret = len;
++ out:
++	kfree(buf);
++	return ret;
++}
++
+ static int restore_pipe(struct ckpt_ctx *ctx, struct file *file)
+ {
+-	struct pipe_inode_info *pipe;
+ 	int len, ret;
+ 
+ 	len = _ckpt_read_obj_type(ctx, NULL, 0, CKPT_HDR_PIPE_BUF);
+ 	if (len <= 0)
+ 		return len;
+ 
+-	pipe = file->f_dentry->d_inode->i_pipe;
+-	ret = do_splice_to(ctx->file, &ctx->file->f_pos, pipe, len, 0);
++	ret = restore_pipe_buffer(ctx, file, len);
+ 
+ 	if (ret >= 0 && ret != len)
+ 		ret = -EPIPE;  /* can occur due to an error in source file */
+-- 
+1.7.2.2
