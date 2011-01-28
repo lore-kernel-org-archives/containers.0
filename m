@@ -1,12 +1,13 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH] Fix restoring pipes with full buffers
-Date: Fri, 28 Jan 2011 18:05:52 -0500
-Message-ID: <4D434BD0.5070809@cs.columbia.edu>
+Date: Fri, 28 Jan 2011 15:08:22 -0800
+Message-ID: <20110128230822.GE16432@count0.beaverton.ibm.com>
 References: <1296240311-5050-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 In-Reply-To: <1296240311-5050-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -21,16 +22,7 @@ To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Dan,
-
-Thanks for pointing this out and the patch.
-
-I think it would be simpler to use ckpt_kread(), no ?
-If so, I'll go ahead and fix then import.
-
-Oren.
-
-On 01/28/2011 01:45 PM, Dan Smith wrote:
+On Fri, Jan 28, 2011 at 10:45:11AM -0800, Dan Smith wrote:
 > While this fixes restoring pipes that were completely full, it actually
 > corrects a potential issue with restoring any pipe buffers.  By using
 > splice() to do this work when we are reading the image from another pipe,
@@ -44,6 +36,16 @@ On 01/28/2011 01:45 PM, Dan Smith wrote:
 > 
 > Instead, drop the optimization and just read() and write() data into
 > the pipe.
+
+Looks good:
+
+Reviewed-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
+
+While it seems like it should be possible to modify splice internals to
+handle this Oren's checkpoint/restart tree doesn't seem like the right
+place to attempt that work.
+
 > 
 > Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 > ---
@@ -57,7 +59,7 @@ On 01/28/2011 01:45 PM, Dan Smith wrote:
 > @@ -926,17 +926,60 @@ static int pipe_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
 >  	return ret;
 >  }
->  
+> 
 > +static int restore_pipe_buffer(struct ckpt_ctx *ctx,
 > +			       struct file *dest,
 > +			       int len)
@@ -102,19 +104,11 @@ On 01/28/2011 01:45 PM, Dan Smith wrote:
 > +	kfree(buf);
 > +	return ret;
 > +}
-> +
->  static int restore_pipe(struct ckpt_ctx *ctx, struct file *file)
->  {
-> -	struct pipe_inode_info *pipe;
->  	int len, ret;
->  
->  	len = _ckpt_read_obj_type(ctx, NULL, 0, CKPT_HDR_PIPE_BUF);
->  	if (len <= 0)
->  		return len;
->  
-> -	pipe = file->f_dentry->d_inode->i_pipe;
-> -	ret = do_splice_to(ctx->file, &ctx->file->f_pos, pipe, len, 0);
-> +	ret = restore_pipe_buffer(ctx, file, len);
->  
->  	if (ret >= 0 && ret != len)
->  		ret = -EPIPE;  /* can occur due to an error in source file */
+
+Could you make this more generic and just take a source struct file *
+as a parameter too (instead of the struct ckpt_ctx *)? Perhaps rename it
+copy_pipe_to_pipe(src_file, dest_file, len) or some such? Seems like a
+helper like this should already exist somewhere...
+
+Cheers,
+	-Matt Helsley
