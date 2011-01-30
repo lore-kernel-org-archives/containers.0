@@ -1,13 +1,13 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH] Fix restoring pipes with full buffers
-Date: Sat, 29 Jan 2011 00:45:58 -0500
-Message-ID: <4D43A996.3020202@cs.columbia.edu>
-References: <1296240311-5050-1-git-send-email-danms@us.ibm.com>
+From: "Kirill A. Shutsemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+Subject: [PATCH 2/2] cgroups: introduce timer slack subsystem
+Date: Sun, 30 Jan 2011 11:59:22 +0200
+Message-ID: <1296381562-14377-2-git-send-email-kirill__4983.53380612588$1296381692$gmane$org@shutemov.name>
+References: <1296381562-14377-1-git-send-email-kirill@shutemov.name>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1296240311-5050-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1296381562-14377-1-git-send-email-kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,160 +17,220 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+From: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 
-From 7d3f62995ed4e83bb43deafa362c78624099e495 Mon Sep 17 00:00:00 2001
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Date: Fri, 28 Jan 2011 19:23:17 -0500
-Subject: [PATCH] c/r: fix restoring pipes with full buffers
+Provides a way of tasks grouping by timer slack value. Introduces per
+cgroup timer slack value which will override the default timer slack
+value once a task is attached to a cgroup.
 
-Dan Smith pointed out a problem with the use of splice to restore a
-pipe's contents: since a pipe can have at most PIPE_BUFFERs buffers,
-if it happens that the input fed through the userspace feeder is split
-into more pieces, the splice will eventually block. This bad behavior
-is more likely to occur if the pipe buffer had been nearly full when
-checkpointed.
+It's useful in mobile devices where certain background apps are
+attached to a cgroup and minimum wakeups are desired.
 
-Dan's patch fixes the problem by dropping the optimization (we don't
-expect pipe buffers to be a dominant component of the image), but is
-inocorrect for cases when the read-end of the pipe was saved first
-during checkpoint. This version fixes that problem and makes use of
-c/r's ckpt_kread() helpers.
+Based on patch by Jacob Pan.
 
-Cc: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 ---
- fs/pipe.c                  |   49 +++++++++++++++++++++++++++----------------
- include/linux/checkpoint.h |    2 +
- kernel/checkpoint/sys.c    |    4 +-
- 3 files changed, 35 insertions(+), 20 deletions(-)
+ include/linux/cgroup_subsys.h |    6 ++
+ include/linux/init_task.h     |    4 +-
+ init/Kconfig                  |   10 ++++
+ kernel/Makefile               |    1 +
+ kernel/cgroup_timer_slack.c   |  115 +++++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 135 insertions(+), 1 deletions(-)
+ create mode 100644 kernel/cgroup_timer_slack.c
 
-diff --git a/fs/pipe.c b/fs/pipe.c
-index 9ca956d..0d049a3 100644
---- a/fs/pipe.c
-+++ b/fs/pipe.c
-@@ -928,20 +928,27 @@ static int pipe_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
+diff --git a/include/linux/cgroup_subsys.h b/include/linux/cgroup_subsys.h
+index ccefff0..e399228 100644
+--- a/include/linux/cgroup_subsys.h
++++ b/include/linux/cgroup_subsys.h
+@@ -66,3 +66,9 @@ SUBSYS(blkio)
+ #endif
  
- static int restore_pipe(struct ckpt_ctx *ctx, struct file *file)
- {
--	struct pipe_inode_info *pipe;
--	int len, ret;
-+	int n, len, ret;
- 
- 	len = _ckpt_read_obj_type(ctx, NULL, 0, CKPT_HDR_PIPE_BUF);
- 	if (len < 0)
- 		return len;
- 
--	pipe = file->f_dentry->d_inode->i_pipe;
--	ret = do_splice_to(ctx->file, &ctx->file->f_pos, pipe, len, 0);
--
--	if (ret >= 0 && ret != len)
--		ret = -EPIPE;  /* can occur due to an error in source file */
-+	while (len) {
-+		n = min(len, (int) PAGE_SIZE);
-+		ret = ckpt_kread(ctx, ctx->scratch_page, n);
-+		if (ret < 0)
-+			return ret;
-+		ret = _ckpt_kwrite(file, ctx->scratch_page, n);
-+		if (ret < 0)
-+			return ret;
-+		/* this should not happen normally ! */
-+		if (ret != n)
-+			return -EPIPE;
-+		len -= n;
-+	}
- 
--	return ret;
-+	return 0;
- }
- 
- struct file *pipe_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr)
-@@ -971,6 +978,14 @@ struct file *pipe_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr)
- 		if (ret < 0)
- 			return file;
- 
-+		/* use the "write" side to restore the pipe's contents */
-+		file = fget(fds[1]);
-+		if (!file)	/* this should _never_ happen ! */
-+			return ERR_PTR(-EBADF);
-+		ret = restore_pipe(ctx, file);
-+		if (ret < 0)
-+			goto out;
+ /* */
 +
- 		which = (ptr->f_flags & O_WRONLY ? 1 : 0);
- 		/*
- 		 * Below we return the file corersponding to one side
-@@ -978,25 +993,23 @@ struct file *pipe_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr)
- 		 * other side of the pipe to the hash, to be picked up
- 		 * when that side is restored.
- 		 */
--		file = fget(fds[1-which]);	/* the 'other' side */
--		if (!file)	/* this should _never_ happen ! */
--			return ERR_PTR(-EBADF);
-+		if (which == 1) {	/* the 'other' size */
-+			fput(file);
-+			file = fget(fds[0]);
-+			if (!file)	/* this should _never_ happen ! */
-+				return ERR_PTR(-EBADF);
-+		}
- 		ret = ckpt_obj_insert(ctx, file, h->pipe_objref, CKPT_OBJ_FILE);
- 		if (ret < 0)
- 			goto out;
++#ifdef CONFIG_CGROUP_TIMER_SLACK
++SUBSYS(timer_slack)
++#endif
++
++/* */
+diff --git a/include/linux/init_task.h b/include/linux/init_task.h
+index caa151f..48eca8f 100644
+--- a/include/linux/init_task.h
++++ b/include/linux/init_task.h
+@@ -124,6 +124,8 @@ extern struct cred init_cred;
+ # define INIT_PERF_EVENTS(tsk)
+ #endif
  
--		ret = restore_pipe(ctx, file);
--		fput(file);
--		if (ret < 0)
--			return ERR_PTR(ret);
--
- 		file = fget(fds[which]);	/* 'this' side */
- 		if (!file)	/* this should _never_ happen ! */
- 			return ERR_PTR(-EBADF);
++#define TIMER_SLACK_NS_DEFAULT 50000
++
+ /*
+  *  INIT_TASK is used to set up the first task table, touch at
+  * your own risk!. Base=0, limit=0x1fffff (=2MB)
+@@ -177,7 +179,7 @@ extern struct cred init_cred;
+ 	.cpu_timers	= INIT_CPU_TIMERS(tsk.cpu_timers),		\
+ 	.fs_excl	= ATOMIC_INIT(0),				\
+ 	.pi_lock	= __RAW_SPIN_LOCK_UNLOCKED(tsk.pi_lock),	\
+-	.timer_slack_ns = 50000, /* 50 usec default slack */		\
++	.timer_slack_ns = TIMER_SLACK_NS_DEFAULT,			\
+ 	.pids = {							\
+ 		[PIDTYPE_PID]  = INIT_PID_LINK(PIDTYPE_PID),		\
+ 		[PIDTYPE_PGID] = INIT_PID_LINK(PIDTYPE_PGID),		\
+diff --git a/init/Kconfig b/init/Kconfig
+index be788c0..f21b4ce 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -596,6 +596,16 @@ config CGROUP_FREEZER
+ 	  Provides a way to freeze and unfreeze all tasks in a
+ 	  cgroup.
  
- 		/* get rid of the file descriptors (caller sets that) */
--		sys_close(fds[which]);
--		sys_close(fds[1-which]);
-+		sys_close(fds[0]);
-+		sys_close(fds[1]);
- 	} else {
- 		return file;
- 	}
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index c015106..adaf6af 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -76,6 +76,8 @@ extern int walk_task_subtree(struct task_struct *task,
- 			     void *data);
- extern void exit_checkpoint(struct task_struct *tsk);
- 
-+extern ssize_t _ckpt_kwrite(struct file *file, void *buf, size_t count);
-+extern ssize_t _ckpt_kread(struct file *file, void *buf, size_t count);
- extern int ckpt_kwrite(struct ckpt_ctx *ctx, void *buf, size_t count);
- extern int ckpt_kread(struct ckpt_ctx *ctx, void *buf, size_t count);
- 
-diff --git a/kernel/checkpoint/sys.c b/kernel/checkpoint/sys.c
-index e9a377b..2383db9 100644
---- a/kernel/checkpoint/sys.c
-+++ b/kernel/checkpoint/sys.c
-@@ -51,7 +51,7 @@ int ckpt_unpriv_allowed = 1;	/* default: unpriv checkpoint not restart */
-  * and return 0, or negative error otherwise.
-  */
- 
--static ssize_t _ckpt_kwrite(struct file *file, void *addr, size_t count)
-+ssize_t _ckpt_kwrite(struct file *file, void *addr, size_t count)
- {
- 	loff_t pos;
- 	int ret;
-@@ -82,7 +82,7 @@ int ckpt_kwrite(struct ckpt_ctx *ctx, void *addr, size_t count)
- 	return 0;
- }
- 
--static ssize_t _ckpt_kread(struct file *file, void *addr, size_t count)
-+ssize_t _ckpt_kread(struct file *file, void *addr, size_t count)
- {
- 	loff_t pos;
- 	int ret;
++config CGROUP_TIMER_SLACK
++	tristate "Timer slack cgroup subsystem"
++	help
++	  Provides a way of tasks grouping by timer slack value.
++	  Introduces per cgroup timer slack value which will override
++	  the default timer slack value once a task is attached to a
++	  cgroup.
++	  It's useful in mobile devices where certain background apps
++	  are attached to a cgroup and minimum wakeups are desired.
++
+ config CGROUP_DEVICE
+ 	bool "Device controller for cgroups"
+ 	help
+diff --git a/kernel/Makefile b/kernel/Makefile
+index 353d3fe..0b60239 100644
+--- a/kernel/Makefile
++++ b/kernel/Makefile
+@@ -61,6 +61,7 @@ obj-$(CONFIG_BACKTRACE_SELF_TEST) += backtracetest.o
+ obj-$(CONFIG_COMPAT) += compat.o
+ obj-$(CONFIG_CGROUPS) += cgroup.o
+ obj-$(CONFIG_CGROUP_FREEZER) += cgroup_freezer.o
++obj-$(CONFIG_CGROUP_TIMER_SLACK) += cgroup_timer_slack.o
+ obj-$(CONFIG_CPUSETS) += cpuset.o
+ obj-$(CONFIG_CGROUP_NS) += ns_cgroup.o
+ obj-$(CONFIG_UTS_NS) += utsname.o
+diff --git a/kernel/cgroup_timer_slack.c b/kernel/cgroup_timer_slack.c
+new file mode 100644
+index 0000000..9f3c370
+--- /dev/null
++++ b/kernel/cgroup_timer_slack.c
+@@ -0,0 +1,115 @@
++#include <linux/cgroup.h>
++#include <linux/init_task.h>
++#include <linux/module.h>
++#include <linux/slab.h>
++
++static struct cgroup_subsys timer_slack_subsys;
++struct timer_slack_cgroup {
++	struct cgroup_subsys_state css;
++	unsigned long timer_slack_ns;
++};
++
++static struct timer_slack_cgroup *cgroup_to_tslack_cgroup(struct cgroup *cgroup)
++{
++	struct cgroup_subsys_state *css;
++
++	css = cgroup_subsys_state(cgroup, timer_slack_subsys.subsys_id);
++	return container_of(css, struct timer_slack_cgroup, css);
++}
++
++static struct cgroup_subsys_state *
++tslack_cgroup_create(struct cgroup_subsys *subsys, struct cgroup *cgroup)
++{
++	struct timer_slack_cgroup *tslack_cgroup;
++	struct cgroup *parent = cgroup->parent;
++
++	tslack_cgroup = kmalloc(sizeof(*tslack_cgroup), GFP_KERNEL);
++	if (!tslack_cgroup)
++		return ERR_PTR(-ENOMEM);
++
++	if (parent)
++		tslack_cgroup->timer_slack_ns =
++			cgroup_to_tslack_cgroup(parent)->timer_slack_ns;
++	else
++		tslack_cgroup->timer_slack_ns = TIMER_SLACK_NS_DEFAULT;
++
++	return &tslack_cgroup->css;
++}
++
++static void tslack_cgroup_destroy(struct cgroup_subsys *subsys,
++		struct cgroup *cgroup)
++{
++	kfree(cgroup_to_tslack_cgroup(cgroup));
++}
++
++static void tslack_cgroup_attach(struct cgroup_subsys *subsys,
++		struct cgroup *cgroup, struct cgroup *prev,
++		struct task_struct *tsk, bool threadgroup)
++{
++	struct timer_slack_cgroup *tslack_cgroup;
++
++	tslack_cgroup = cgroup_to_tslack_cgroup(cgroup);
++	task_lock(tsk);
++	tsk->timer_slack_ns = tslack_cgroup->timer_slack_ns;
++	task_unlock(tsk);
++}
++
++static u64 tslack_read_slack_ns(struct cgroup *cgroup, struct cftype *cft)
++{
++       return cgroup_to_tslack_cgroup(cgroup)->timer_slack_ns;
++}
++
++static int tslack_write_slack_ns(struct cgroup *cgroup, struct cftype *cft,
++		u64 val)
++{
++	struct cgroup_iter it;
++	struct task_struct *task;
++
++	if (!val)
++		return -EINVAL;
++
++	cgroup_to_tslack_cgroup(cgroup)->timer_slack_ns = val;
++
++	/* change timer slack value for all tasks in the cgroup */
++	cgroup_iter_start(cgroup, &it);
++	while ((task = cgroup_iter_next(cgroup, &it)))
++		task->timer_slack_ns = val;
++	cgroup_iter_end(cgroup, &it);
++
++	return 0;
++}
++
++static struct cftype cft_timer_slack = {
++	.name = "slack_ns",
++	.read_u64 = tslack_read_slack_ns,
++	.write_u64 = tslack_write_slack_ns,
++};
++
++static int tslack_cgroup_populate(struct cgroup_subsys *subsys,
++		struct cgroup *cgroup)
++{
++	return cgroup_add_file(cgroup, subsys, &cft_timer_slack);
++}
++
++static struct cgroup_subsys timer_slack_subsys = {
++	.name = "timer_slack",
++	.module = THIS_MODULE,
++	.create = tslack_cgroup_create,
++	.destroy = tslack_cgroup_destroy,
++	.attach = tslack_cgroup_attach,
++	.populate = tslack_cgroup_populate,
++};
++
++static int __init init_cgroup_timer_slack(void)
++{
++	return cgroup_load_subsys(&timer_slack_subsys);
++}
++
++static void __exit exit_cgroup_timer_slack(void)
++{
++	cgroup_unload_subsys(&timer_slack_subsys);
++}
++
++module_init(init_cgroup_timer_slack);
++module_exit(exit_cgroup_timer_slack);
++MODULE_LICENSE("GPL");
 -- 
-1.7.1
+1.7.3.5
