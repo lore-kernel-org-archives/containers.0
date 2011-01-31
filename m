@@ -1,17 +1,14 @@
 From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: [PATCH 2/4] pidns: Call pid_ns_prepare_proc
-	from	create_pid_namespace
-Date: Mon, 31 Jan 2011 15:21:16 +0100
-Message-ID: <4D46C55C.1050200__34488.045416265$1296483734$gmane$org@free.fr>
-References: <1296469525-30111-1-git-send-email-daniel.lezcano@free.fr>
-	<1296469525-30111-3-git-send-email-daniel.lezcano@free.fr>
-	<20110131132207.GA26995@redhat.com> <4D46BA25.8080201@free.fr>
-	<20110131140257.GA28827@redhat.com>
+Subject: Re: [PATCH 4/4] pidns: Use task_active_pid_ns where appropriate
+Date: Mon, 31 Jan 2011 15:47:58 +0100
+Message-ID: <4D46CB9E.1090802__43792.7830069841$1296485410$gmane$org@free.fr>
+References: <1296469525-30111-1-git-send-email-daniel.lezcano@free.fr>	<1296469525-30111-5-git-send-email-daniel.lezcano@free.fr>
+	<AANLkTikjcou-0b4NejpY66qXeZuzsC-M+oNTyHk=OE-Z@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110131140257.GA28827-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <AANLkTikjcou-0b4NejpY66qXeZuzsC-M+oNTyHk=OE-Z-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,39 +18,35 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 01/31/2011 03:02 PM, Oleg Nesterov wrote:
-> On 01/31, Daniel Lezcano wrote:
->> On 01/31/2011 02:22 PM, Oleg Nesterov wrote:
->>> On 01/31, Daniel Lezcano wrote:
->>>> @@ -96,6 +97,9 @@ static struct pid_namespace *create_pid_namespace(struct pid_namespace *parent_p
->>>>    	for (i = 1; i<   PIDMAP_ENTRIES; i++)
->>>>    		atomic_set(&ns->pidmap[i].nr_free, BITS_PER_PAGE);
->>>>
->>>> +	if (pid_ns_prepare_proc(ns))
->>>> +		goto out_free_map;
->>>> +
->>>>    	return ns;
->>> This is not right, afaics. I already sent the similar patches, but
->>> they were ignored ;)
->>>
->>> Please see http://marc.info/?l=linux-kernel&m=127697484000334
->>>
->>> If pid_ns_prepare_proc() fails we shouldn't blindly return ENOMEM
->>> and, more importantly, we need put_pid_ns(parent_ns).
->> Oh, ok. Right. Thanks for the pointer.
+On 01/31/2011 12:26 PM, Alexey Dobriyan wrote:
+> On Mon, Jan 31, 2011 at 12:25 PM, Daniel Lezcano<daniel.lezcano-GANU6spQydw@public.gmane.org>  wrote:
+>> The expressions tsk->nsproxy->pid_ns and task_active_pid_ns
+>> aka ns_of_pid(task_pid(tsk)) should have the same number of
+>> cache line misses with the practical difference that
+>> ns_of_pid(task_pid(tsk)) is released later in a processes life.
 >>
->> Are you ok if I replace the patch 2/4 with your patch ?
-> My patch depends on 1/4, http://marc.info/?l=linux-kernel&m=127697468632667
+>> Furthermore by using task_active_pid_ns it becomes trivial
+>> to write an unshare implementation for the the pid namespace.
+>>
+>> So I have used task_active_pid_ns everywhere I can.
+> Yet current->nsproxy->pid_ns is way clearer.
+> Because live current always has pid_ns.
 >
-> Your change looks very similar to 1/4 + 3/4. Just fix the problem
-> in create_pid_namespace(), no need to replace.
+> This task_active_pid_ns() is misnamed(?) because it does matter only
+> for dead tasks?
 
-Ok, will do.
+Actually this function is later used, for the unshare, to get the pid_ns 
+of a specific task, not the current one.
 
-Thanks Oleg.
+http://kerneltrap.org/mailarchive/linux-kernel/2010/6/20/4585095
 
-   -- Daniel
+Do you suggest task_pid_ns(struct task_struct *tsk) would be a better name ?
+
+>> -               current->nsproxy->pid_ns->last_pid);
+>> +               task_active_pid_ns(current)->last_pid);
+> I thought of doing exactly opposite patch :-)
+>
