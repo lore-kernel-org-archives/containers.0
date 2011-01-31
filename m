@@ -1,7 +1,7 @@
 From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: [PATCH 2/4] pidns: Call pid_ns_prepare_proc from create_pid_namespace
-Date: Mon, 31 Jan 2011 11:25:23 +0100
-Message-ID: <1296469525-30111-3-git-send-email-daniel.lezcano__26526.2202396572$1296469905$gmane$org@free.fr>
+Subject: [PATCH 1/4] pid: Remove the child_reaper special case in init/main.c
+Date: Mon, 31 Jan 2011 11:25:22 +0100
+Message-ID: <1296469525-30111-2-git-send-email-daniel.lezcano__44627.5124013939$1296470127$gmane$org@free.fr>
 References: <1296469525-30111-1-git-send-email-daniel.lezcano@free.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,101 +23,72 @@ List-Id: containers.vger.kernel.org
 
 From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-Reorganize proc_get_sb so it can be called before the struct pid
-of the first process is allocated.
+It turns out that the existing assignment in copy_process of
+the child_reaper can handle the initial assignment of child_reaper
+we just need to generalize the test in kernel/fork.c
 
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Signed-off-by: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
 ---
- fs/proc/root.c         |   25 +++++++------------------
- kernel/fork.c          |    6 ------
- kernel/pid_namespace.c |    4 ++++
- 3 files changed, 11 insertions(+), 24 deletions(-)
+ include/linux/pid.h |   11 +++++++++++
+ init/main.c         |    9 ---------
+ kernel/fork.c       |    2 +-
+ 3 files changed, 12 insertions(+), 10 deletions(-)
 
-diff --git a/fs/proc/root.c b/fs/proc/root.c
-index ef9fa8e..e5e2bfa 100644
---- a/fs/proc/root.c
-+++ b/fs/proc/root.c
-@@ -43,17 +43,6 @@ static struct dentry *proc_mount(struct file_system_type *fs_type,
- 	struct pid_namespace *ns;
- 	struct proc_inode *ei;
- 
--	if (proc_mnt) {
--		/* Seed the root directory with a pid so it doesn't need
--		 * to be special in base.c.  I would do this earlier but
--		 * the only task alive when /proc is mounted the first time
--		 * is the init_task and it doesn't have any pids.
--		 */
--		ei = PROC_I(proc_mnt->mnt_sb->s_root->d_inode);
--		if (!ei->pid)
--			ei->pid = find_get_pid(1);
--	}
--
- 	if (flags & MS_KERNMOUNT)
- 		ns = (struct pid_namespace *)data;
- 	else
-@@ -71,16 +60,16 @@ static struct dentry *proc_mount(struct file_system_type *fs_type,
- 			return ERR_PTR(err);
- 		}
- 
--		ei = PROC_I(sb->s_root->d_inode);
--		if (!ei->pid) {
--			rcu_read_lock();
--			ei->pid = get_pid(find_pid_ns(1, ns));
--			rcu_read_unlock();
--		}
--
- 		sb->s_flags |= MS_ACTIVE;
- 	}
- 
-+	ei = PROC_I(sb->s_root->d_inode);
-+	if (!ei->pid) {
-+		rcu_read_lock();
-+		ei->pid = get_pid(find_pid_ns(1, ns));
-+		rcu_read_unlock();
-+	}
-+
- 	return dget(sb->s_root);
+diff --git a/include/linux/pid.h b/include/linux/pid.h
+index 49f1c2f..efceda0 100644
+--- a/include/linux/pid.h
++++ b/include/linux/pid.h
+@@ -141,6 +141,17 @@ static inline struct pid_namespace *ns_of_pid(struct pid *pid)
  }
  
+ /*
++ * is_child_reaper returns true if the pid is the init process
++ * of the current namespace. As this one could be checked before
++ * pid_ns->child_reaper is assigned in copy_process, we check
++ * with the pid number.
++ */
++static inline bool is_child_reaper(struct pid *pid)
++{
++	return pid->numbers[pid->level].nr == 1;
++}
++
++/*
+  * the helpers to get the pid's id seen from different namespaces
+  *
+  * pid_nr()    : global id, i.e. the id seen from the init namespace;
+diff --git a/init/main.c b/init/main.c
+index 33c37c3..793ebfd 100644
+--- a/init/main.c
++++ b/init/main.c
+@@ -875,15 +875,6 @@ static int __init kernel_init(void * unused)
+ 	 * init can run on any cpu.
+ 	 */
+ 	set_cpus_allowed_ptr(current, cpu_all_mask);
+-	/*
+-	 * Tell the world that we're going to be the grim
+-	 * reaper of innocent orphaned children.
+-	 *
+-	 * We don't want people to have to make incorrect
+-	 * assumptions about where in the task array this
+-	 * can be found.
+-	 */
+-	init_pid_ns.child_reaper = current;
+ 
+ 	cad_pid = task_pid(current);
+ 
 diff --git a/kernel/fork.c b/kernel/fork.c
-index c9f0784..e7a5907 100644
+index 25e4291..c9f0784 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -1180,12 +1180,6 @@ static struct task_struct *copy_process(unsigned long clone_flags,
- 		pid = alloc_pid(p->nsproxy->pid_ns);
- 		if (!pid)
- 			goto bad_fork_cleanup_io;
--
--		if (clone_flags & CLONE_NEWPID) {
--			retval = pid_ns_prepare_proc(p->nsproxy->pid_ns);
--			if (retval < 0)
--				goto bad_fork_free_pid;
--		}
- 	}
+@@ -1289,7 +1289,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 		tracehook_finish_clone(p, clone_flags, trace);
  
- 	p->pid = pid_nr(pid);
-diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
-index a5aff94..b90e4ab 100644
---- a/kernel/pid_namespace.c
-+++ b/kernel/pid_namespace.c
-@@ -14,6 +14,7 @@
- #include <linux/err.h>
- #include <linux/acct.h>
- #include <linux/slab.h>
-+#include <linux/proc_fs.h>
+ 		if (thread_group_leader(p)) {
+-			if (clone_flags & CLONE_NEWPID)
++			if (is_child_reaper(pid))
+ 				p->nsproxy->pid_ns->child_reaper = p;
  
- #define BITS_PER_PAGE		(PAGE_SIZE*8)
- 
-@@ -96,6 +97,9 @@ static struct pid_namespace *create_pid_namespace(struct pid_namespace *parent_p
- 	for (i = 1; i < PIDMAP_ENTRIES; i++)
- 		atomic_set(&ns->pidmap[i].nr_free, BITS_PER_PAGE);
- 
-+	if (pid_ns_prepare_proc(ns))
-+		goto out_free_map;
-+
- 	return ns;
- 
- out_free_map:
+ 			p->signal->leader_pid = pid;
 -- 
 1.7.1
