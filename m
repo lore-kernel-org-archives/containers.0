@@ -1,7 +1,7 @@
-From: "Kirill A. Shutsemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Subject: [PATCH 1/2] cgroups: export cgroup_iter_{start,next,end}
-Date: Sun, 30 Jan 2011 11:59:21 +0200
-Message-ID: <1296381562-14377-1-git-send-email-kirill__42193.58810592$1296381921$gmane$org@shutemov.name>
+From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Subject: Prepare for the unshare support of the pid namespace
+Date: Mon, 31 Jan 2011 11:25:21 +0100
+Message-ID: <1296469525-30111-1-git-send-email-daniel.lezcano__36779.7265913852$1296469669$gmane$org@free.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,42 +15,19 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+This patchset is a cleanup and a preparation to unshare the pid
+namespace. These prerequisites prepares the next Eric's patchset
+to give a file descriptor to a namespace and join an existing
+namespace.
 
-Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
----
- kernel/cgroup.c |    3 +++
- 1 files changed, 3 insertions(+), 0 deletions(-)
+The initial authors of this patchset are Eric Biederman and Oleg
+Nesterov.
 
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index b24d702..e3be81a 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -2443,6 +2443,7 @@ void cgroup_iter_start(struct cgroup *cgrp, struct cgroup_iter *it)
- 	it->cg_link = &cgrp->css_sets;
- 	cgroup_advance_iter(cgrp, it);
- }
-+EXPORT_SYMBOL(cgroup_iter_start);
- 
- struct task_struct *cgroup_iter_next(struct cgroup *cgrp,
- 					struct cgroup_iter *it)
-@@ -2467,11 +2468,13 @@ struct task_struct *cgroup_iter_next(struct cgroup *cgrp,
- 	}
- 	return res;
- }
-+EXPORT_SYMBOL(cgroup_iter_next);
- 
- void cgroup_iter_end(struct cgroup *cgrp, struct cgroup_iter *it)
- {
- 	read_unlock(&css_set_lock);
- }
-+EXPORT_SYMBOL(cgroup_iter_end);
- 
- static inline int started_after_time(struct task_struct *t1,
- 				     struct timespec *time,
--- 
-1.7.3.5
+Changelog:
+	01/31/11 - Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+	* patch 1/4 : wrapped test in a function
+	* other patches : refreshed against linux-next
