@@ -1,7 +1,7 @@
 From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: [PATCH 1/4] pid: Remove the child_reaper special case in init/main.c
-Date: Mon, 31 Jan 2011 11:25:22 +0100
-Message-ID: <1296469525-30111-2-git-send-email-daniel.lezcano__44627.5124013939$1296470127$gmane$org@free.fr>
+Subject: [PATCH 3/4] procfs: kill the global proc_mnt variable
+Date: Mon, 31 Jan 2011 11:25:24 +0100
+Message-ID: <1296469525-30111-4-git-send-email-daniel.lezcano__45055.2267408513$1296470242$gmane$org@free.fr>
 References: <1296469525-30111-1-git-send-email-daniel.lezcano@free.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,74 +21,72 @@ To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-It turns out that the existing assignment in copy_process of
-the child_reaper can handle the initial assignment of child_reaper
-we just need to generalize the test in kernel/fork.c
+After the previous cleanup in proc_get_sb() the global proc_mnt has
+no reasons to exists, kill it.
 
+Signed-off-by: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Signed-off-by: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
 ---
- include/linux/pid.h |   11 +++++++++++
- init/main.c         |    9 ---------
- kernel/fork.c       |    2 +-
- 3 files changed, 12 insertions(+), 10 deletions(-)
+ fs/proc/inode.c    |    2 --
+ fs/proc/internal.h |    1 -
+ fs/proc/root.c     |    7 ++++---
+ 3 files changed, 4 insertions(+), 6 deletions(-)
 
-diff --git a/include/linux/pid.h b/include/linux/pid.h
-index 49f1c2f..efceda0 100644
---- a/include/linux/pid.h
-+++ b/include/linux/pid.h
-@@ -141,6 +141,17 @@ static inline struct pid_namespace *ns_of_pid(struct pid *pid)
+diff --git a/fs/proc/inode.c b/fs/proc/inode.c
+index 176ce4c..ee0f802 100644
+--- a/fs/proc/inode.c
++++ b/fs/proc/inode.c
+@@ -42,8 +42,6 @@ static void proc_evict_inode(struct inode *inode)
+ 		sysctl_head_put(PROC_I(inode)->sysctl);
  }
  
- /*
-+ * is_child_reaper returns true if the pid is the init process
-+ * of the current namespace. As this one could be checked before
-+ * pid_ns->child_reaper is assigned in copy_process, we check
-+ * with the pid number.
-+ */
-+static inline bool is_child_reaper(struct pid *pid)
-+{
-+	return pid->numbers[pid->level].nr == 1;
-+}
-+
-+/*
-  * the helpers to get the pid's id seen from different namespaces
-  *
-  * pid_nr()    : global id, i.e. the id seen from the init namespace;
-diff --git a/init/main.c b/init/main.c
-index 33c37c3..793ebfd 100644
---- a/init/main.c
-+++ b/init/main.c
-@@ -875,15 +875,6 @@ static int __init kernel_init(void * unused)
- 	 * init can run on any cpu.
- 	 */
- 	set_cpus_allowed_ptr(current, cpu_all_mask);
--	/*
--	 * Tell the world that we're going to be the grim
--	 * reaper of innocent orphaned children.
--	 *
--	 * We don't want people to have to make incorrect
--	 * assumptions about where in the task array this
--	 * can be found.
--	 */
--	init_pid_ns.child_reaper = current;
+-struct vfsmount *proc_mnt;
+-
+ static struct kmem_cache * proc_inode_cachep;
  
- 	cad_pid = task_pid(current);
+ static struct inode *proc_alloc_inode(struct super_block *sb)
+diff --git a/fs/proc/internal.h b/fs/proc/internal.h
+index 9ad561d..c03e8d3 100644
+--- a/fs/proc/internal.h
++++ b/fs/proc/internal.h
+@@ -107,7 +107,6 @@ static inline struct proc_dir_entry *pde_get(struct proc_dir_entry *pde)
+ }
+ void pde_put(struct proc_dir_entry *pde);
  
-diff --git a/kernel/fork.c b/kernel/fork.c
-index 25e4291..c9f0784 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -1289,7 +1289,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
- 		tracehook_finish_clone(p, clone_flags, trace);
+-extern struct vfsmount *proc_mnt;
+ int proc_fill_super(struct super_block *);
+ struct inode *proc_get_inode(struct super_block *, struct proc_dir_entry *);
  
- 		if (thread_group_leader(p)) {
--			if (clone_flags & CLONE_NEWPID)
-+			if (is_child_reaper(pid))
- 				p->nsproxy->pid_ns->child_reaper = p;
+diff --git a/fs/proc/root.c b/fs/proc/root.c
+index e5e2bfa..a9000e9 100644
+--- a/fs/proc/root.c
++++ b/fs/proc/root.c
+@@ -90,19 +90,20 @@ static struct file_system_type proc_fs_type = {
  
- 			p->signal->leader_pid = pid;
+ void __init proc_root_init(void)
+ {
++	struct vfsmount *mnt;
+ 	int err;
+ 
+ 	proc_init_inodecache();
+ 	err = register_filesystem(&proc_fs_type);
+ 	if (err)
+ 		return;
+-	proc_mnt = kern_mount_data(&proc_fs_type, &init_pid_ns);
+-	if (IS_ERR(proc_mnt)) {
++	mnt = kern_mount_data(&proc_fs_type, &init_pid_ns);
++	if (IS_ERR(mnt)) {
+ 		unregister_filesystem(&proc_fs_type);
+ 		return;
+ 	}
+ 
+-	init_pid_ns.proc_mnt = proc_mnt;
++	init_pid_ns.proc_mnt = mnt;
+ 	proc_symlink("mounts", NULL, "self/mounts");
+ 
+ 	proc_net_init();
 -- 
 1.7.1
