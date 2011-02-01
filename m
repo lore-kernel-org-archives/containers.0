@@ -1,13 +1,15 @@
-From: "Kirill A. Shutsemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Subject: [PATCH, v2 2/2] cgroups: introduce timer slack subsystem
-Date: Tue,  1 Feb 2011 12:13:16 +0200
-Message-ID: <1296555196-23088-2-git-send-email-kirill__12378.9512007081$1296555474$gmane$org@shutemov.name>
-References: <1296555196-23088-1-git-send-email-kirill@shutemov.name>
+From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+Subject: Re: [RFC PATCH 2/2] cgroup/freezer: add per freezer duty ratio control
+Date: Tue, 1 Feb 2011 16:23:01 +0200
+Message-ID: <20110201142301.GA23803__13398.7507936128$1296570324$gmane$org@shutemov.name>
+References: <1291230012-9536-1-git-send-email-jacob.jun.pan@linux.intel.com>
+	<1291230012-9536-3-git-send-email-jacob.jun.pan@linux.intel.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1296555196-23088-1-git-send-email-kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1291230012-9536-3-git-send-email-jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,227 +19,274 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org
+Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, container cgroup <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+On Wed, Dec 01, 2010 at 11:00:12AM -0800, jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org wrote:
+> From: Jacob Pan <jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
+> 
+> Freezer subsystem is used to manage batch jobs which can start
+> stop at the same time. However, sometime it is desirable to let
+> the kernel manage the freezer state automatically with a given
+> duty ratio.
+> For example, if we want to reduce the time that backgroup apps
+> are allowed to run we can put them into a freezer subsystem and
+> set the kernel to turn them THAWED/FROZEN at given duty ratio.
+> 
+> This patch introduces two file nodes
+> freezer.duty_ratio and freezer.period_ms
+> Usage example, set period to be 50 ms and frozen duty ratio 90%
+> [root@localhost aoa]# echo 90 > freezer.duty_ratio
+> [root@localhost aoa]# echo 50 > freezer.period_ms
+> 
+> Each freezer will be controlled by its own kernel thread which is
+> in sleep unless there is a state/parameter change.
+> 
+> Signed-off-by: Jacob Pan <jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
+> ---
+>  kernel/cgroup_freezer.c |  157 ++++++++++++++++++++++++++++++++++++++++++++++-
+>  1 files changed, 155 insertions(+), 2 deletions(-)
+> 
+> diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
+> index e7bebb7..07941fa 100644
+> --- a/kernel/cgroup_freezer.c
+> +++ b/kernel/cgroup_freezer.c
+> @@ -21,6 +21,7 @@
+>  #include <linux/uaccess.h>
+>  #include <linux/freezer.h>
+>  #include <linux/seq_file.h>
+> +#include <linux/kthread.h>
+>  
+>  enum freezer_state {
+>  	CGROUP_THAWED = 0,
+> @@ -28,12 +29,23 @@ enum freezer_state {
+>  	CGROUP_FROZEN,
+>  };
+>  
+> +struct freezer_duty {
+> +	u32 ratio; /* percentage of time allowed to run */
+> +	u32 period; /* period in seconds */
 
-Provides a way of tasks grouping by timer slack value. Introduces per
-cgroup timer slack value which will override the default timer slack
-value once a task is attached to a cgroup.
+miliseconds, I guess.
+And why do you use u32, not int?
 
-It's useful in mobile devices where certain background apps are
-attached to a cgroup and minimum wakeups are desired.
+> +};
+> +
+>  struct freezer {
+>  	struct cgroup_subsys_state css;
+>  	enum freezer_state state;
+> +	struct freezer_duty duty;
+> +	struct task_struct *fkh;
+>  	spinlock_t lock; /* protects _writes_ to state */
+>  };
+>  
+> +static struct task_struct *freezer_task;
+> +static int try_to_freeze_cgroup(struct cgroup *cgroup, struct freezer *freezer);
+> +static void unfreeze_cgroup(struct cgroup *cgroup, struct freezer *freezer);
+> +
+>  static inline struct freezer *cgroup_freezer(
+>  		struct cgroup *cgroup)
+>  {
+> @@ -63,6 +75,34 @@ int cgroup_freezing_or_frozen(struct task_struct *task)
+>  	return result;
+>  }
+>  
+> +static DECLARE_WAIT_QUEUE_HEAD(freezer_wait);
+> +
+> +static int freezer_kh(void *data)
+> +{
+> +	struct cgroup *cgroup = (struct cgroup *)data;
+> +	struct freezer *freezer = cgroup_freezer(cgroup);
+> +
+> +	do {
+> +		if (freezer->duty.ratio < 100 && freezer->duty.ratio >= 0 &&
+> +			freezer->duty.period) {
+> +			if (try_to_freeze_cgroup(cgroup, freezer))
+> +				pr_info("cannot freeze\n");
+> +			msleep(freezer->duty.period * freezer->duty.ratio);
+> +			unfreeze_cgroup(cgroup, freezer);
+> +			msleep(freezer->duty.period *
+> +				(100 - freezer->duty.ratio));
+> +		} else if (freezer->duty.ratio == 100) {
+> +			if (try_to_freeze_cgroup(cgroup, freezer))
+> +				pr_info("cannot freeze\n");
+> +			sleep_on(&freezer_wait);
+> +		} else {
+> +			sleep_on(&freezer_wait);
+> +			pr_debug("freezer thread wake up\n");
+> +		}
+> +	} while (!kthread_should_stop());
+> +	return 0;
+> +}
+> +
+>  /*
+>   * cgroups_write_string() limits the size of freezer state strings to
+>   * CGROUP_LOCAL_BUFFER_SIZE
+> @@ -150,7 +190,11 @@ static struct cgroup_subsys_state *freezer_create(struct cgroup_subsys *ss,
+>  static void freezer_destroy(struct cgroup_subsys *ss,
+>  			    struct cgroup *cgroup)
+>  {
+> -	kfree(cgroup_freezer(cgroup));
+> +	struct freezer *freezer;
+> +
+> +	freezer = cgroup_freezer(cgroup);
+> +	kthread_stop(freezer->fkh);
+> +	kfree(freezer);
+>  }
+>  
+>  /*
+> @@ -282,6 +326,51 @@ static int freezer_read(struct cgroup *cgroup, struct cftype *cft,
+>  	return 0;
+>  }
+>  
+> +static int freezer_read_duty_ratio(struct cgroup *cgroup, struct cftype *cft,
+> +				struct seq_file *m)
+> +{
+> +	struct freezer *freezer;
+> +	u32 duty_ratio;
+> +	char result[8];
+> +
+> +	if (!cgroup_lock_live_group(cgroup))
+> +		return -ENODEV;
+> +
+> +	freezer = cgroup_freezer(cgroup);
+> +	spin_lock_irq(&freezer->lock);
+> +	duty_ratio = freezer->duty.ratio;
+> +	spin_unlock_irq(&freezer->lock);
+> +	cgroup_unlock();
+> +
+> +	sprintf(result, "%d", duty_ratio);
+> +	seq_puts(m, result);
+> +	seq_putc(m, '\n');
+> +	return 0;
+> +}
+> +
+> +static int freezer_read_period(struct cgroup *cgroup, struct cftype *cft,
+> +				struct seq_file *m)
+> +{
+> +	struct freezer *freezer;
+> +	u32 period;
+> +	char result[8];
+> +
+> +	if (!cgroup_lock_live_group(cgroup))
+> +		return -ENODEV;
+> +
+> +	freezer = cgroup_freezer(cgroup);
+> +	spin_lock_irq(&freezer->lock);
+> +	period = freezer->duty.period;
+> +	spin_unlock_irq(&freezer->lock);
+> +	cgroup_unlock();
+> +
+> +	sprintf(result, "%d", period);
+> +	seq_puts(m, result);
+> +	seq_putc(m, '\n');
+> +
+> +	return 0;
+> +}
+> +
+>  static int try_to_freeze_cgroup(struct cgroup *cgroup, struct freezer *freezer)
+>  {
+>  	struct cgroup_iter it;
+> @@ -368,19 +457,83 @@ static int freezer_write(struct cgroup *cgroup,
+>  	return retval;
+>  }
+>  
+> +static int freezer_write_duty_ratio(struct cgroup *cgroup,
+> +			 struct cftype *cft,
+> +			 const char *buffer)
+> +{
+> +	struct freezer *freezer;
+> +	unsigned long ratio;
+> +
+> +	if (strict_strtoul(buffer, 10, &ratio) < 0)
+> +		return -EINVAL;
+> +
+> +	if (ratio > 100) {
+> +		pr_err("Out of range, ratio should be < 100\n");
+> +		return -EINVAL;
+> +	}
+> +
+> +	freezer = cgroup_freezer(cgroup);
+> +	spin_lock_irq(&freezer->lock);
+> +	freezer->duty.ratio = ratio;
+> +	spin_unlock_irq(&freezer->lock);
+> +	wake_up(&freezer_wait);
+> +
+> +	return 0;
+> +}
+> +
+> +static int freezer_write_period(struct cgroup *cgroup,
+> +			 struct cftype *cft,
+> +			 const char *buffer)
+> +{
+> +	struct freezer *freezer;
+> +
+> +	freezer = cgroup_freezer(cgroup);
+> +	spin_lock_irq(&freezer->lock);
+> +	if (strict_strtoul(buffer, 10, &freezer->duty.period) < 0)
+> +		return -EINVAL;
 
-Based on patch by Jacob Pan.
+spin_unlock_irq() is missed on error handling.
 
-Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
----
+> +	spin_unlock_irq(&freezer->lock);
+> +	wake_up(&freezer_wait);
+> +
+> +	return 0;
+> +}
+> +
+>  static struct cftype files[] = {
+>  	{
+>  		.name = "state",
+>  		.read_seq_string = freezer_read,
+>  		.write_string = freezer_write,
+>  	},
+> +	{
+> +		.name = "duty_ratio",
+> +		.read_seq_string = freezer_read_duty_ratio,
+> +		.write_string = freezer_write_duty_ratio,
+> +	},
+> +	{
+> +		.name = "period_ms",
+> +		.read_seq_string = freezer_read_period,
+> +		.write_string = freezer_write_period,
+> +	},
+>  };
+>  
+> +#define FREEZER_KH_PREFIX  "freezer_"
+>  static int freezer_populate(struct cgroup_subsys *ss, struct cgroup *cgroup)
+>  {
+> +	int ret = 0;
+> +	char thread_name[32];
+> +	struct freezer *freezer;
+> +
+>  	if (!cgroup->parent)
+>  		return 0;
+> -	return cgroup_add_files(cgroup, ss, files, ARRAY_SIZE(files));
+> +
+> +	freezer = cgroup_freezer(cgroup);
+> +	ret = cgroup_add_files(cgroup, ss, files, ARRAY_SIZE(files));
+> +
+> +	snprintf(thread_name, 32, "%s%s", FREEZER_KH_PREFIX,
+> +		cgroup->dentry->d_name.name);
+> +	freezer->fkh = kthread_run(freezer_kh, (void *)cgroup, thread_name);
+> +	if (!IS_ERR(freezer_task))
+> +		return 0;
+> +	return ret;
 
-Changelog:
-v2:
- - fixed with CONFIG_CGROUP_TIMER_SLACK=y
+Why do you create on freezer_populate, not on freezer_create?
+And error handling is broken here.
 
----
- include/linux/cgroup_subsys.h |    6 ++
- include/linux/init_task.h     |    4 +-
- init/Kconfig                  |   10 ++++
- kernel/Makefile               |    1 +
- kernel/cgroup_timer_slack.c   |  116 +++++++++++++++++++++++++++++++++++++++++
- 5 files changed, 136 insertions(+), 1 deletions(-)
- create mode 100644 kernel/cgroup_timer_slack.c
+>  }
+>  
+>  struct cgroup_subsys freezer_subsys = {
+> -- 
+> 1.7.0.4
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
 
-diff --git a/include/linux/cgroup_subsys.h b/include/linux/cgroup_subsys.h
-index ccefff0..e399228 100644
---- a/include/linux/cgroup_subsys.h
-+++ b/include/linux/cgroup_subsys.h
-@@ -66,3 +66,9 @@ SUBSYS(blkio)
- #endif
- 
- /* */
-+
-+#ifdef CONFIG_CGROUP_TIMER_SLACK
-+SUBSYS(timer_slack)
-+#endif
-+
-+/* */
-diff --git a/include/linux/init_task.h b/include/linux/init_task.h
-index caa151f..48eca8f 100644
---- a/include/linux/init_task.h
-+++ b/include/linux/init_task.h
-@@ -124,6 +124,8 @@ extern struct cred init_cred;
- # define INIT_PERF_EVENTS(tsk)
- #endif
- 
-+#define TIMER_SLACK_NS_DEFAULT 50000
-+
- /*
-  *  INIT_TASK is used to set up the first task table, touch at
-  * your own risk!. Base=0, limit=0x1fffff (=2MB)
-@@ -177,7 +179,7 @@ extern struct cred init_cred;
- 	.cpu_timers	= INIT_CPU_TIMERS(tsk.cpu_timers),		\
- 	.fs_excl	= ATOMIC_INIT(0),				\
- 	.pi_lock	= __RAW_SPIN_LOCK_UNLOCKED(tsk.pi_lock),	\
--	.timer_slack_ns = 50000, /* 50 usec default slack */		\
-+	.timer_slack_ns = TIMER_SLACK_NS_DEFAULT,			\
- 	.pids = {							\
- 		[PIDTYPE_PID]  = INIT_PID_LINK(PIDTYPE_PID),		\
- 		[PIDTYPE_PGID] = INIT_PID_LINK(PIDTYPE_PGID),		\
-diff --git a/init/Kconfig b/init/Kconfig
-index be788c0..f21b4ce 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -596,6 +596,16 @@ config CGROUP_FREEZER
- 	  Provides a way to freeze and unfreeze all tasks in a
- 	  cgroup.
- 
-+config CGROUP_TIMER_SLACK
-+	tristate "Timer slack cgroup subsystem"
-+	help
-+	  Provides a way of tasks grouping by timer slack value.
-+	  Introduces per cgroup timer slack value which will override
-+	  the default timer slack value once a task is attached to a
-+	  cgroup.
-+	  It's useful in mobile devices where certain background apps
-+	  are attached to a cgroup and minimum wakeups are desired.
-+
- config CGROUP_DEVICE
- 	bool "Device controller for cgroups"
- 	help
-diff --git a/kernel/Makefile b/kernel/Makefile
-index 353d3fe..0b60239 100644
---- a/kernel/Makefile
-+++ b/kernel/Makefile
-@@ -61,6 +61,7 @@ obj-$(CONFIG_BACKTRACE_SELF_TEST) += backtracetest.o
- obj-$(CONFIG_COMPAT) += compat.o
- obj-$(CONFIG_CGROUPS) += cgroup.o
- obj-$(CONFIG_CGROUP_FREEZER) += cgroup_freezer.o
-+obj-$(CONFIG_CGROUP_TIMER_SLACK) += cgroup_timer_slack.o
- obj-$(CONFIG_CPUSETS) += cpuset.o
- obj-$(CONFIG_CGROUP_NS) += ns_cgroup.o
- obj-$(CONFIG_UTS_NS) += utsname.o
-diff --git a/kernel/cgroup_timer_slack.c b/kernel/cgroup_timer_slack.c
-new file mode 100644
-index 0000000..daa452d
---- /dev/null
-+++ b/kernel/cgroup_timer_slack.c
-@@ -0,0 +1,116 @@
-+#include <linux/cgroup.h>
-+#include <linux/init_task.h>
-+#include <linux/module.h>
-+#include <linux/slab.h>
-+
-+struct cgroup_subsys timer_slack_subsys;
-+struct timer_slack_cgroup {
-+	struct cgroup_subsys_state css;
-+	unsigned long timer_slack_ns;
-+};
-+
-+static struct timer_slack_cgroup *cgroup_to_tslack_cgroup(struct cgroup *cgroup)
-+{
-+	struct cgroup_subsys_state *css;
-+
-+	css = cgroup_subsys_state(cgroup, timer_slack_subsys.subsys_id);
-+	return container_of(css, struct timer_slack_cgroup, css);
-+}
-+
-+static struct cgroup_subsys_state *
-+tslack_cgroup_create(struct cgroup_subsys *subsys, struct cgroup *cgroup)
-+{
-+	struct timer_slack_cgroup *tslack_cgroup;
-+	struct cgroup *parent = cgroup->parent;
-+
-+	tslack_cgroup = kmalloc(sizeof(*tslack_cgroup), GFP_KERNEL);
-+	if (!tslack_cgroup)
-+		return ERR_PTR(-ENOMEM);
-+
-+	if (parent)
-+		tslack_cgroup->timer_slack_ns =
-+			cgroup_to_tslack_cgroup(parent)->timer_slack_ns;
-+	else
-+		tslack_cgroup->timer_slack_ns = TIMER_SLACK_NS_DEFAULT;
-+
-+	return &tslack_cgroup->css;
-+}
-+
-+static void tslack_cgroup_destroy(struct cgroup_subsys *subsys,
-+		struct cgroup *cgroup)
-+{
-+	kfree(cgroup_to_tslack_cgroup(cgroup));
-+}
-+
-+static void tslack_cgroup_attach(struct cgroup_subsys *subsys,
-+		struct cgroup *cgroup, struct cgroup *prev,
-+		struct task_struct *tsk, bool threadgroup)
-+{
-+	struct timer_slack_cgroup *tslack_cgroup;
-+
-+	tslack_cgroup = cgroup_to_tslack_cgroup(cgroup);
-+	task_lock(tsk);
-+	tsk->timer_slack_ns = tslack_cgroup->timer_slack_ns;
-+	task_unlock(tsk);
-+}
-+
-+static u64 tslack_read_slack_ns(struct cgroup *cgroup, struct cftype *cft)
-+{
-+       return cgroup_to_tslack_cgroup(cgroup)->timer_slack_ns;
-+}
-+
-+static int tslack_write_slack_ns(struct cgroup *cgroup, struct cftype *cft,
-+		u64 val)
-+{
-+	struct cgroup_iter it;
-+	struct task_struct *task;
-+
-+	if (!val)
-+		return -EINVAL;
-+
-+	cgroup_to_tslack_cgroup(cgroup)->timer_slack_ns = val;
-+
-+	/* change timer slack value for all tasks in the cgroup */
-+	cgroup_iter_start(cgroup, &it);
-+	while ((task = cgroup_iter_next(cgroup, &it)))
-+		task->timer_slack_ns = val;
-+	cgroup_iter_end(cgroup, &it);
-+
-+	return 0;
-+}
-+
-+static struct cftype cft_timer_slack = {
-+	.name = "slack_ns",
-+	.read_u64 = tslack_read_slack_ns,
-+	.write_u64 = tslack_write_slack_ns,
-+};
-+
-+static int tslack_cgroup_populate(struct cgroup_subsys *subsys,
-+		struct cgroup *cgroup)
-+{
-+	return cgroup_add_file(cgroup, subsys, &cft_timer_slack);
-+}
-+
-+struct cgroup_subsys timer_slack_subsys = {
-+	.name = "timer_slack",
-+	.module = THIS_MODULE,
-+	.subsys_id = timer_slack_subsys_id,
-+	.create = tslack_cgroup_create,
-+	.destroy = tslack_cgroup_destroy,
-+	.attach = tslack_cgroup_attach,
-+	.populate = tslack_cgroup_populate,
-+};
-+
-+static int __init init_cgroup_timer_slack(void)
-+{
-+	return cgroup_load_subsys(&timer_slack_subsys);
-+}
-+
-+static void __exit exit_cgroup_timer_slack(void)
-+{
-+	cgroup_unload_subsys(&timer_slack_subsys);
-+}
-+
-+module_init(init_cgroup_timer_slack);
-+module_exit(exit_cgroup_timer_slack);
-+MODULE_LICENSE("GPL");
 -- 
-1.7.3.5
+ Kirill A. Shutemov
