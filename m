@@ -1,11 +1,16 @@
 From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] Fix restored pipe usage counts
-Date: Tue,  1 Feb 2011 10:47:12 -0800
-Message-ID: <1296586032-5658-1-git-send-email-danms@us.ibm.com>
+Subject: Re: [PATCH] Clear the objhash before completing restart,
+	but delay free (v2)
+Date: Tue, 01 Feb 2011 11:38:20 -0800
+Message-ID: <87pqrb5yvn.fsf@caffeine.danplanet.com>
+References: <1287496991-18207-1-git-send-email-danms@us.ibm.com>
+	<4D47544E.7080600@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <4D47544E.7080600-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> (Oren Laadan's message of
+	"Mon, 31 Jan 2011 19:31:10 -0500")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,53 +20,21 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, matthltc-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Oren's version of my patch leaks pipe objects due to the way the fget() and
-fput() operations are structured.  The intent was to avoid getting and putting
-references more than necessary, but the result was a more confusing (IMHO)
-pattern that resulted in keeping an extra reference in some situations.
+OL> Original patch posted by Dan Smith.
 
-This patch changes the pattern to something more easily understood and
-verified, and also allows several of my tests to pass again, as they did
-before the recent patch.
+Tested-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- fs/pipe.c |   12 ++++++------
- 1 files changed, 6 insertions(+), 6 deletions(-)
+With this and my pipe refcount fix, all my pipe tests pass, including
+the ones that were stuck before because the hash was getting free'd
+late.
 
-diff --git a/fs/pipe.c b/fs/pipe.c
-index 908b8bc..f9ad0f2 100644
---- a/fs/pipe.c
-+++ b/fs/pipe.c
-@@ -968,6 +968,7 @@ struct file *pipe_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr)
- 		if (!file)	/* this should _never_ happen ! */
- 			return ERR_PTR(-EBADF);
- 		ret = restore_pipe(ctx, file);
-+		fput(file);
- 		if (ret < 0)
- 			goto out;
- 
-@@ -978,13 +979,12 @@ struct file *pipe_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr)
- 		 * other side of the pipe to the hash, to be picked up
- 		 * when that side is restored.
- 		 */
--		if (which == 1) {	/* the 'other' size */
--			fput(file);
--			file = fget(fds[0]);
--			if (!file)	/* this should _never_ happen ! */
--				return ERR_PTR(-EBADF);
--		}
-+		file = fget(fds[1-which]);
-+		if (!file)	/* this should _never_ happen ! */
-+			return ERR_PTR(-EBADF);
-+
- 		ret = ckpt_obj_insert(ctx, file, h->pipe_objref, CKPT_OBJ_FILE);
-+		fput(file);
- 		if (ret < 0)
- 			goto out;
- 
+Thanks!
+
 -- 
-1.7.2.2
+Dan Smith
+IBM Linux Technology Center
+email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
