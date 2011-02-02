@@ -1,13 +1,15 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH] Fix restored pipe usage counts
-Date: Wed, 02 Feb 2011 09:56:06 -0500
-Message-ID: <4D497086.7050405@cs.columbia.edu>
-References: <1296586032-5658-1-git-send-email-danms@us.ibm.com>
+From: jacob pan <jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
+Subject: Re: [RFC PATCH 2/2] cgroup/freezer: add per freezer duty ratio control
+Date: Wed, 2 Feb 2011 11:32:53 -0800
+Message-ID: <20110202113253.789a2a85__30617.2567456544$1296675391$gmane$org@putvin>
+References: <1291230012-9536-1-git-send-email-jacob.jun.pan@linux.intel.com>
+	<1291230012-9536-3-git-send-email-jacob.jun.pan@linux.intel.com>
+	<20110201142301.GA23803@shutemov.name>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1296586032-5658-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20110201142301.GA23803-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,58 +19,45 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+Cc: container cgroup <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+On Tue, 1 Feb 2011 16:23:01 +0200
+"Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org> wrote:
 
-Thanks, pushed to v23-rc1.
-
-Oren
-
-On 02/01/2011 01:47 PM, Dan Smith wrote:
-> Oren's version of my patch leaks pipe objects due to the way the fget() and
-> fput() operations are structured.  The intent was to avoid getting and putting
-> references more than necessary, but the result was a more confusing (IMHO)
-> pattern that resulted in keeping an extra reference in some situations.
+Thanks for your review, I will fix the error handling. Please also see
+my comments on create vs populate.
+> On Wed, Dec 01, 2010 at 11:00:12AM -0800,
+> jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org wrote:
+> > From: Jacob Pan <jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
+>
+> > +#define FREEZER_KH_PREFIX  "freezer_"
+> >  static int freezer_populate(struct cgroup_subsys *ss, struct
+> > cgroup *cgroup) {
+> > +	int ret = 0;
+> > +	char thread_name[32];
+> > +	struct freezer *freezer;
+> > +
+> >  	if (!cgroup->parent)
+> >  		return 0;
+> > -	return cgroup_add_files(cgroup, ss, files,
+> > ARRAY_SIZE(files)); +
+> > +	freezer = cgroup_freezer(cgroup);
+> > +	ret = cgroup_add_files(cgroup, ss, files,
+> > ARRAY_SIZE(files)); +
+> > +	snprintf(thread_name, 32, "%s%s", FREEZER_KH_PREFIX,
+> > +		cgroup->dentry->d_name.name);
+> > +	freezer->fkh = kthread_run(freezer_kh, (void *)cgroup,
+> > thread_name);
+> > +	if (!IS_ERR(freezer_task))
+> > +		return 0;
+> > +	return ret;
 > 
-> This patch changes the pattern to something more easily understood and
-> verified, and also allows several of my tests to pass again, as they did
-> before the recent patch.
-> 
-> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  fs/pipe.c |   12 ++++++------
->  1 files changed, 6 insertions(+), 6 deletions(-)
-> 
-> diff --git a/fs/pipe.c b/fs/pipe.c
-> index 908b8bc..f9ad0f2 100644
-> --- a/fs/pipe.c
-> +++ b/fs/pipe.c
-> @@ -968,6 +968,7 @@ struct file *pipe_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr)
->  		if (!file)	/* this should _never_ happen ! */
->  			return ERR_PTR(-EBADF);
->  		ret = restore_pipe(ctx, file);
-> +		fput(file);
->  		if (ret < 0)
->  			goto out;
->  
-> @@ -978,13 +979,12 @@ struct file *pipe_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr)
->  		 * other side of the pipe to the hash, to be picked up
->  		 * when that side is restored.
->  		 */
-> -		if (which == 1) {	/* the 'other' size */
-> -			fput(file);
-> -			file = fget(fds[0]);
-> -			if (!file)	/* this should _never_ happen ! */
-> -				return ERR_PTR(-EBADF);
-> -		}
-> +		file = fget(fds[1-which]);
-> +		if (!file)	/* this should _never_ happen ! */
-> +			return ERR_PTR(-EBADF);
-> +
->  		ret = ckpt_obj_insert(ctx, file, h->pipe_objref, CKPT_OBJ_FILE);
-> +		fput(file);
->  		if (ret < 0)
->  			goto out;
->  
+> Why do you create on freezer_populate, not on freezer_create?
+I want to use the cgroup directory name for the kernel thread. If I do
+that in create() instead of populate, I would have to add more changes:
+1. pass dentry to the create function since that is called before
+  cgroup_create_dir()
+2. skip the dummy root as part of the initialization.
+So I chose to use populate, are there any issues with the functionality?
