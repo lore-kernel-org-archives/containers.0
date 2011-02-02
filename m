@@ -1,7 +1,7 @@
-From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH] cgroups: respect cgroup timer slack value in prctl
-Date: Wed, 2 Feb 2011 09:15:09 +0200
-Message-ID: <20110202071509.GB25262__25096.8325221494$1296631064$gmane$org@shutemov.name>
+Date: Tue, 1 Feb 2011 23:23:11 -0800
+Message-ID: <20110202072311.GP16432__29049.8314695016$1296631433$gmane$org@count0.beaverton.ibm.com>
 References: <1296600103-15726-1-git-send-email-jacob.jun.pan@linux.intel.com>
 	<20110202070743.GO16432@count0.beaverton.ibm.com>
 Mime-Version: 1.0
@@ -44,9 +44,12 @@ On Tue, Feb 01, 2011 at 11:07:43PM -0800, Matt Helsley wrote:
 > 
 > ) were not sent to containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org ?
 
-Hm.. 
+Oops, I didn't see the patches from Kirill A. Shutsemov that this
+apparently applies to, sorry. Odd, my mail client doesn't show a
+Cc for him on this thread... (added)
 
-https://lists.linux-foundation.org/pipermail/containers/2011-February/026415.html
+Cheers,
+	-Matt
 
 > 
 > >  kernel/sys.c                |   21 ++++++++++++++++++++-
@@ -143,12 +146,7 @@ https://lists.linux-foundation.org/pipermail/containers/2011-February/026415.htm
 > Incidentally, shouldn't that really be -EPERM since it's not an invalid
 > value -- just one that's not permitted due to restrictions imposed by
 > the cgroup subsystem?
-
-I guess better to add more functionality to the cgroup subsystem.
-I'm going to implement timer_slack.min_slack_ns and timer_slack.max_slack_ns.
-prctl(2) will be modified to check these limits.
-
-
+> 
 > >  				current->timer_slack_ns = arg2;
 > > +#endif
 > > +			}
@@ -162,6 +160,7 @@ prctl(2) will be modified to check these limits.
 > > Containers mailing list
 > > Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 > > https://lists.linux-foundation.org/mailman/listinfo/containers
-
--- 
- Kirill A. Shutemov
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
