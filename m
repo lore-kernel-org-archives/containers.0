@@ -1,15 +1,15 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH, v2 2/2] cgroups: introduce timer slack subsystem
-Date: Wed, 2 Feb 2011 01:18:29 -0800
-Message-ID: <20110202091829.GQ16432__38350.6378545009$1296638477$gmane$org@count0.beaverton.ibm.com>
-References: <1296555196-23088-1-git-send-email-kirill@shutemov.name>
-	<1296555196-23088-2-git-send-email-kirill@shutemov.name>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [PATCH] Clear the objhash before completing restart, but delay
+	free (v2)
+Date: Wed, 02 Feb 2011 09:55:53 -0500
+Message-ID: <4D497079.9040605@cs.columbia.edu>
+References: <1287496991-18207-1-git-send-email-danms@us.ibm.com>	<4D47544E.7080600@cs.columbia.edu>
+	<87pqrb5yvn.fsf@caffeine.danplanet.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1296555196-23088-2-git-send-email-kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+In-Reply-To: <87pqrb5yvn.fsf-FLMGYpZoEPULwtHQx/6qkW3U47Q5hpJU@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,255 +19,23 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Kirill A. Shutsemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Cc: jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, matthltc-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Feb 01, 2011 at 12:13:16PM +0200, Kirill A. Shutsemov wrote:
-> From: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+
+Thanks for testing - pushed both patches to v23-rc1.
+
+Oren.
+
+On 02/01/2011 02:38 PM, Dan Smith wrote:
+> OL> Original patch posted by Dan Smith.
 > 
-> Provides a way of tasks grouping by timer slack value. Introduces per
-> cgroup timer slack value which will override the default timer slack
-> value once a task is attached to a cgroup.
+> Tested-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 > 
-> It's useful in mobile devices where certain background apps are
-> attached to a cgroup and minimum wakeups are desired.
+> With this and my pipe refcount fix, all my pipe tests pass, including
+> the ones that were stuck before because the hash was getting free'd
+> late.
 > 
-> Based on patch by Jacob Pan.
+> Thanks!
 > 
-> Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-> ---
-> 
-> Changelog:
-> v2:
->  - fixed with CONFIG_CGROUP_TIMER_SLACK=y
-> 
-> ---
->  include/linux/cgroup_subsys.h |    6 ++
->  include/linux/init_task.h     |    4 +-
->  init/Kconfig                  |   10 ++++
->  kernel/Makefile               |    1 +
->  kernel/cgroup_timer_slack.c   |  116 +++++++++++++++++++++++++++++++++++++++++
->  5 files changed, 136 insertions(+), 1 deletions(-)
->  create mode 100644 kernel/cgroup_timer_slack.c
-> 
-> diff --git a/include/linux/cgroup_subsys.h b/include/linux/cgroup_subsys.h
-> index ccefff0..e399228 100644
-> --- a/include/linux/cgroup_subsys.h
-> +++ b/include/linux/cgroup_subsys.h
-> @@ -66,3 +66,9 @@ SUBSYS(blkio)
->  #endif
-> 
->  /* */
-> +
-> +#ifdef CONFIG_CGROUP_TIMER_SLACK
-> +SUBSYS(timer_slack)
-> +#endif
-> +
-> +/* */
-> diff --git a/include/linux/init_task.h b/include/linux/init_task.h
-> index caa151f..48eca8f 100644
-> --- a/include/linux/init_task.h
-> +++ b/include/linux/init_task.h
-> @@ -124,6 +124,8 @@ extern struct cred init_cred;
->  # define INIT_PERF_EVENTS(tsk)
->  #endif
-> 
-> +#define TIMER_SLACK_NS_DEFAULT 50000
-> +
->  /*
->   *  INIT_TASK is used to set up the first task table, touch at
->   * your own risk!. Base=0, limit=0x1fffff (=2MB)
-> @@ -177,7 +179,7 @@ extern struct cred init_cred;
->  	.cpu_timers	= INIT_CPU_TIMERS(tsk.cpu_timers),		\
->  	.fs_excl	= ATOMIC_INIT(0),				\
->  	.pi_lock	= __RAW_SPIN_LOCK_UNLOCKED(tsk.pi_lock),	\
-> -	.timer_slack_ns = 50000, /* 50 usec default slack */		\
-> +	.timer_slack_ns = TIMER_SLACK_NS_DEFAULT,			\
->  	.pids = {							\
->  		[PIDTYPE_PID]  = INIT_PID_LINK(PIDTYPE_PID),		\
->  		[PIDTYPE_PGID] = INIT_PID_LINK(PIDTYPE_PGID),		\
-> diff --git a/init/Kconfig b/init/Kconfig
-> index be788c0..f21b4ce 100644
-> --- a/init/Kconfig
-> +++ b/init/Kconfig
-> @@ -596,6 +596,16 @@ config CGROUP_FREEZER
->  	  Provides a way to freeze and unfreeze all tasks in a
->  	  cgroup.
-> 
-> +config CGROUP_TIMER_SLACK
-> +	tristate "Timer slack cgroup subsystem"
-> +	help
-> +	  Provides a way of tasks grouping by timer slack value.
-> +	  Introduces per cgroup timer slack value which will override
-> +	  the default timer slack value once a task is attached to a
-> +	  cgroup.
-> +	  It's useful in mobile devices where certain background apps
-> +	  are attached to a cgroup and minimum wakeups are desired.
-
-nit: perhaps s/minimum/combined/ ?
-
-> +
->  config CGROUP_DEVICE
->  	bool "Device controller for cgroups"
->  	help
-> diff --git a/kernel/Makefile b/kernel/Makefile
-> index 353d3fe..0b60239 100644
-> --- a/kernel/Makefile
-> +++ b/kernel/Makefile
-> @@ -61,6 +61,7 @@ obj-$(CONFIG_BACKTRACE_SELF_TEST) += backtracetest.o
->  obj-$(CONFIG_COMPAT) += compat.o
->  obj-$(CONFIG_CGROUPS) += cgroup.o
->  obj-$(CONFIG_CGROUP_FREEZER) += cgroup_freezer.o
-> +obj-$(CONFIG_CGROUP_TIMER_SLACK) += cgroup_timer_slack.o
->  obj-$(CONFIG_CPUSETS) += cpuset.o
->  obj-$(CONFIG_CGROUP_NS) += ns_cgroup.o
->  obj-$(CONFIG_UTS_NS) += utsname.o
-> diff --git a/kernel/cgroup_timer_slack.c b/kernel/cgroup_timer_slack.c
-> new file mode 100644
-> index 0000000..daa452d
-> --- /dev/null
-> +++ b/kernel/cgroup_timer_slack.c
-> @@ -0,0 +1,116 @@
-> +#include <linux/cgroup.h>
-> +#include <linux/init_task.h>
-> +#include <linux/module.h>
-> +#include <linux/slab.h>
-> +
-> +struct cgroup_subsys timer_slack_subsys;
-> +struct timer_slack_cgroup {
-> +	struct cgroup_subsys_state css;
-> +	unsigned long timer_slack_ns;
-
-rename to min_timer_slack_ns ?
-
-> +};
-> +
-> +static struct timer_slack_cgroup *cgroup_to_tslack_cgroup(struct cgroup *cgroup)
-> +{
-> +	struct cgroup_subsys_state *css;
-> +
-> +	css = cgroup_subsys_state(cgroup, timer_slack_subsys.subsys_id);
-> +	return container_of(css, struct timer_slack_cgroup, css);
-> +}
-> +
-> +static struct cgroup_subsys_state *
-> +tslack_cgroup_create(struct cgroup_subsys *subsys, struct cgroup *cgroup)
-> +{
-> +	struct timer_slack_cgroup *tslack_cgroup;
-> +	struct cgroup *parent = cgroup->parent;
-> +
-> +	tslack_cgroup = kmalloc(sizeof(*tslack_cgroup), GFP_KERNEL);
-> +	if (!tslack_cgroup)
-> +		return ERR_PTR(-ENOMEM);
-> +
-> +	if (parent)
-> +		tslack_cgroup->timer_slack_ns =
-> +			cgroup_to_tslack_cgroup(parent)->timer_slack_ns;
-> +	else
-> +		tslack_cgroup->timer_slack_ns = TIMER_SLACK_NS_DEFAULT;
-> +
-> +	return &tslack_cgroup->css;
-> +}
-> +
-> +static void tslack_cgroup_destroy(struct cgroup_subsys *subsys,
-> +		struct cgroup *cgroup)
-> +{
-> +	kfree(cgroup_to_tslack_cgroup(cgroup));
-> +}
-> +
-> +static void tslack_cgroup_attach(struct cgroup_subsys *subsys,
-> +		struct cgroup *cgroup, struct cgroup *prev,
-> +		struct task_struct *tsk, bool threadgroup)
-> +{
-> +	struct timer_slack_cgroup *tslack_cgroup;
-> +
-> +	tslack_cgroup = cgroup_to_tslack_cgroup(cgroup);
-> +	task_lock(tsk);
-> +	tsk->timer_slack_ns = tslack_cgroup->timer_slack_ns;
-> +	task_unlock(tsk);
-> +}
-> +
-> +static u64 tslack_read_slack_ns(struct cgroup *cgroup, struct cftype *cft)
-> +{
-> +       return cgroup_to_tslack_cgroup(cgroup)->timer_slack_ns;
-> +}
-> +
-> +static int tslack_write_slack_ns(struct cgroup *cgroup, struct cftype *cft,
-> +		u64 val)
-> +{
-> +	struct cgroup_iter it;
-> +	struct task_struct *task;
-> +
-> +	if (!val)
-> +		return -EINVAL;
-> +
-> +	cgroup_to_tslack_cgroup(cgroup)->timer_slack_ns = val;
-> +
-> +	/* change timer slack value for all tasks in the cgroup */
-> +	cgroup_iter_start(cgroup, &it);
-> +	while ((task = cgroup_iter_next(cgroup, &it)))
-> +		task->timer_slack_ns = val;
-
-If a task in the cgroup has a larger timer slack than timer_slack_ns
-is it really necessary to change it? If not, you could do:
-
-		task->timer_slack_ns = max(task->timer_slack_ns, val);
-
-and likely get fewer wakeups than otherwise.
-
-> +	cgroup_iter_end(cgroup, &it);
-
-So this is largely just an interface to write timer slack from outside
-a task, "in bulk", and only restrict what can be done via the prctl syscall.
-It does not enforce restrictions on timer slack set via the cgroups
-interface. If I have:
-
-	root@host:/# mount -t cgroup -o slack_ns none /parent
-	root@host:/# echo 100000 > /parent/timer_slack
-	root@host:/# mkdir /parent/child
-	root@host:/# chown me.me -R /parent/child
-
-Then user "me" can set any timer slack desired rather than only timer
-slack >= 100000ns:
-
-	me@host:~$ echo $$ > /parent/child/tasks
-	me@host:~$ echo 42 > /parent/child/timer_slack
-
-Thus the only tasks in this cgroup with restricted timer slack are the
-ones unaware of the "modern" interface.
-
-Would it be more useful (though way more complex cgroup code I suppose) to
-disallow child cgroups from using less timer slack than their parents?
-
-> +
-> +	return 0;
-> +}
-> +
-> +static struct cftype cft_timer_slack = {
-> +	.name = "slack_ns",
-
-A minor nit:
-
-Interesting that you appended _ns to the subsystem name rather than...
-
-> +	.read_u64 = tslack_read_slack_ns,
-> +	.write_u64 = tslack_write_slack_ns,
-> +};
-> +
-> +static int tslack_cgroup_populate(struct cgroup_subsys *subsys,
-> +		struct cgroup *cgroup)
-> +{
-> +	return cgroup_add_file(cgroup, subsys, &cft_timer_slack);
-> +}
-> +
-> +struct cgroup_subsys timer_slack_subsys = {
-> +	.name = "timer_slack",
-
-...to the file name. That's clever -- I almost didn't notice :). Yet I
-can't help but think that appending "_ns" to the timer_slack file
-itself would make proper use of the interface more obvious and
-thus improper use less likely.
-
-Cheers,
-	-Matt Helsley
