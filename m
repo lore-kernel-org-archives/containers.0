@@ -1,14 +1,11 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH, v3 2/2] cgroups: introduce timer slack subsystem
-Date: Wed, 2 Feb 2011 15:23:15 -0800
-Message-ID: <AANLkTikAbmFmQNGgYMYhTOS8L5nU39edcTjQXNpdxGy2__18521.8548671857$1296689162$gmane$org@mail.gmail.com>
-References: <1296679656-31163-1-git-send-email-kirill@shutemov.name>
-	<1296679656-31163-3-git-send-email-kirill@shutemov.name>
+From: jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org
+Subject: [PATCH v2] add cgroup freezer duty ratio control
+Date: Wed,  2 Feb 2011 16:42:19 -0800
+Message-ID: <1296693740-11537-1-git-send-email-jacob.jun.pan__1788.62181860513$1296693942$gmane$org@linux.intel.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1296679656-31163-3-git-send-email-kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,66 +15,21 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Kirill A. Shutsemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Cc: jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
+To: LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>, Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Jacob Pan <jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Feb 2, 2011 at 12:47 PM, Kirill A. Shutsemov
-<kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org> wrote:
-> From: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
->
-> Provides a way of tasks grouping by timer slack value. Introduces per
-> cgroup max and min timer slack value. When a task attaches to a cgroup,
-> its timer slack value adjusts (if needed) to fit min-max range.
->
-> It also provides a way to set timer slack value for all tasks in the
-> cgroup at once.
->
-> This functionality is useful in mobile devices where certain background
-> apps are attached to a cgroup and minimum wakeups are desired.
+From: Jacob Pan <jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
 
-If you really want to be able to make this modular, I'd be inclined to
-make the check_timer_slack hook just default to NULL, rather than
-introducing dummy_timer_slack_check()
+Changelog:
+v2:
+	- use read_u64/write_u64 instead of string read/write
+	- use period in second instead of ms
+	- renamed duty_ratio to duty_ratio_pct, be more specific
+	- removed locking around period and duty_ratio reads
 
+Jacob Pan (1):
+  cgroup/freezer: add per freezer duty ratio control
 
-> +
-> +static int tslack_write_range(struct cgroup *cgroup, struct cftype *cft,
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 u64 val)
-> +{
-> + =A0 =A0 =A0 struct timer_slack_cgroup *tslack_cgroup;
-> + =A0 =A0 =A0 struct cgroup_iter it;
-> + =A0 =A0 =A0 struct task_struct *task;
-> +
-> + =A0 =A0 =A0 if (!val)
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 return -EINVAL;
-> +
-> + =A0 =A0 =A0 tslack_cgroup =3D cgroup_to_tslack_cgroup(cgroup);
-> + =A0 =A0 =A0 switch (cft->private) {
-> + =A0 =A0 =A0 case TIMER_SLACK_MIN:
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (val > tslack_cgroup->max_slack_ns)
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 return -EINVAL;
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 tslack_cgroup->min_slack_ns =3D val;
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 break;
-> + =A0 =A0 =A0 case TIMER_SLACK_MAX:
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (val < tslack_cgroup->min_slack_ns)
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 return -EINVAL;
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 tslack_cgroup->max_slack_ns =3D val;
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 break;
-> + =A0 =A0 =A0 default:
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 BUG();
-> + =A0 =A0 =A0 }
-> +
-
-Don't we want to keep the min/max applied hierarchically as well? i.e.
-a child can't set its min/max outside the range of its parents?
-
-> +
-> +static int __init init_cgroup_timer_slack(void)
-> +{
-> + =A0 =A0 =A0 BUG_ON(timer_slack_check !=3D dummy_timer_slack_check);
-
-Better to make this just fail the initialization if someone else has
-already claimed the hook, rather than crashing.
-
-Paul
+ kernel/cgroup_freezer.c |  109 ++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 files changed, 107 insertions(+), 2 deletions(-)
