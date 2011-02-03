@@ -1,16 +1,16 @@
 From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 Subject: Re: [PATCH, v3 2/2] cgroups: introduce timer slack subsystem
-Date: Thu, 3 Feb 2011 11:22:29 +0200
-Message-ID: <20110203092229.GB1083__24739.7661478773$1296725089$gmane$org@shutemov.name>
+Date: Thu, 3 Feb 2011 11:28:55 +0200
+Message-ID: <20110203092855.GC1083__37102.3611551665$1296725468$gmane$org@shutemov.name>
 References: <1296679656-31163-1-git-send-email-kirill@shutemov.name>
 	<1296679656-31163-3-git-send-email-kirill@shutemov.name>
-	<20110202145605.6c9006fa@putvin>
+	<AANLkTikAbmFmQNGgYMYhTOS8L5nU39edcTjQXNpdxGy2@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20110202145605.6c9006fa@putvin>
+In-Reply-To: <AANLkTikAbmFmQNGgYMYhTOS8L5nU39edcTjQXNpdxGy2-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,89 +20,84 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: jacob pan <jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Feb 02, 2011 at 02:56:05PM -0800, jacob pan wrote:
-> On Wed,  2 Feb 2011 22:47:36 +0200
-> "Kirill A. Shutsemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org> wrote:
-> 
+On Wed, Feb 02, 2011 at 03:23:15PM -0800, Paul Menage wrote:
+> On Wed, Feb 2, 2011 at 12:47 PM, Kirill A. Shutsemov
+> <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org> wrote:
 > > From: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-> > 
+> >
 > > Provides a way of tasks grouping by timer slack value. Introduces per
-> > cgroup max and min timer slack value. When a task attaches to a
-> > cgroup, its timer slack value adjusts (if needed) to fit min-max
-> > range.
-> > 
+> > cgroup max and min timer slack value. When a task attaches to a cgroup,
+> > its timer slack value adjusts (if needed) to fit min-max range.
+> >
 > > It also provides a way to set timer slack value for all tasks in the
 > > cgroup at once.
-> > 
-> > This functionality is useful in mobile devices where certain
-> > background apps are attached to a cgroup and minimum wakeups are
-> > desired.
-> > 
-> > Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-> > Idea-by: Jacob Pan <jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
-> > ---
-> >  include/linux/cgroup_subsys.h |    6 +
-> >  include/linux/init_task.h     |    4 +-
-> >  init/Kconfig                  |   10 ++
-> >  kernel/Makefile               |    1 +
-> >  kernel/cgroup_timer_slack.c   |  242
-> > +++++++++++++++++++++++++++++++++++++++++
-> 
+> >
+> > This functionality is useful in mobile devices where certain background
+> > apps are attached to a cgroup and minimum wakeups are desired.
+> =
+
+> If you really want to be able to make this modular,
+
+Why not?
+
+> I'd be inclined to
+> make the check_timer_slack hook just default to NULL, rather than
+> introducing dummy_timer_slack_check()
+
+Good point.
+
 > > +
-> > +static int cgroup_timer_slack_check(struct task_struct *task,
-> > +		unsigned long slack_ns)
+> > +static int tslack_write_range(struct cgroup *cgroup, struct cftype *cf=
+t,
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 u64 val)
 > > +{
-> > +	struct cgroup_subsys_state *css;
-> > +	struct timer_slack_cgroup *tslack_cgroup;
+> > + =A0 =A0 =A0 struct timer_slack_cgroup *tslack_cgroup;
+> > + =A0 =A0 =A0 struct cgroup_iter it;
+> > + =A0 =A0 =A0 struct task_struct *task;
 > > +
-> 
-> use rcu_read_lock()/unlock?
-> lockdep complains unprotected rcu dereference check.
-
-Hmm.. I'm not sure, but it looks like lockdep false positive similar to
-cgroup_freezer's (see commit 8b46f88084).
-Paul, am I right?
-
-> > +	css = task_subsys_state(task, timer_slack_subsys.subsys_id);
-> > +	tslack_cgroup = container_of(css, struct timer_slack_cgroup,
-> > css); +
-> > +	if (slack_ns < tslack_cgroup->min_slack_ns)
-> > +		return -EPERM;
-> > +	if (slack_ns > tslack_cgroup->max_slack_ns)
-> > +		return -EPERM;
-> > +	return 0;
-> > +}
+> > + =A0 =A0 =A0 if (!val)
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 return -EINVAL;
 > > +
-> 
+> > + =A0 =A0 =A0 tslack_cgroup =3D cgroup_to_tslack_cgroup(cgroup);
+> > + =A0 =A0 =A0 switch (cft->private) {
+> > + =A0 =A0 =A0 case TIMER_SLACK_MIN:
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (val > tslack_cgroup->max_slack_ns)
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 return -EINVAL;
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 tslack_cgroup->min_slack_ns =3D val;
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 break;
+> > + =A0 =A0 =A0 case TIMER_SLACK_MAX:
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (val < tslack_cgroup->min_slack_ns)
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 return -EINVAL;
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 tslack_cgroup->max_slack_ns =3D val;
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 break;
+> > + =A0 =A0 =A0 default:
+> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 BUG();
+> > + =A0 =A0 =A0 }
 > > +
-> > +static struct cftype files[] = {
-> > +	{
-> > +		.name = "set_slack_ns",
-> > +		.write_u64 = tslack_write_set_slack_ns,
-> > +	},
-> should we also allow reading of the current slack_ns?
+> =
 
-There is no 'current slack_ns' for a cgroup since any process free to
-change it with prctl().
+> Don't we want to keep the min/max applied hierarchically as well? i.e.
+> a child can't set its min/max outside the range of its parents?
 
-> > +	{
-> > +		.name = "min_slack_ns",
-> > +		.private = TIMER_SLACK_MIN,
-> > +		.read_u64 = tslack_read_range,
-> > +		.write_u64 = tslack_write_range,
-> > +	},
-> > +	{
-> > +		.name = "max_slack_ns",
-> > +		.private = TIMER_SLACK_MAX,
-> > +		.read_u64 = tslack_read_range,
-> > +		.write_u64 = tslack_write_range,
-> > +	},
-> > +};
+Ok, I'll implement it.
+
 > > +
+> > +static int __init init_cgroup_timer_slack(void)
+> > +{
+> > + =A0 =A0 =A0 BUG_ON(timer_slack_check !=3D dummy_timer_slack_check);
+> =
 
--- 
+> Better to make this just fail the initialization if someone else has
+> already claimed the hook, rather than crashing.
+
+Ok.
+
+Thanks, for reviewing.
+
+-- =
+
  Kirill A. Shutemov
