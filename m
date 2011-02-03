@@ -1,14 +1,11 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH] Fix restored pipe usage counts
-Date: Thu, 03 Feb 2011 08:08:50 -0500
-Message-ID: <4D4AA8E2.6040403@cs.columbia.edu>
-References: <1296586032-5658-1-git-send-email-danms@us.ibm.com>
-	<20110203034756.GR16432@count0.beaverton.ibm.com>
+From: "Kirill A. Shutsemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+Subject: [PATCH, v4 0/2] Timer slack cgroup subsystem
+Date: Thu,  3 Feb 2011 16:34:12 +0200
+Message-ID: <1296743654-2984-1-git-send-email-kirill__17260.2911865853$1296743771$gmane$org@shutemov.name>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110203034756.GR16432-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,25 +15,39 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+From: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 
-[...]
+Changelog:
+v4:
+ - hierarchy support
+ - drop dummy_timer_slack_check()
+ - workaround lockdep false (?) positive
+ - allow 0 as timer slack value
+v3:
+ - rework interface
+ - s/EXPORT_SYMBOL/EXPORT_SYMBOL_GPL/
+v2:
+ - fixed with CONFIG_CGROUP_TIMER_SLACK=y
+v1:
+ - initial revision
 
->> +		file = fget(fds[1-which]);
->> +		if (!file)	/* this should _never_ happen ! */
-> 
-> If it should never happen then this should be:
-> 
-> 		BUG_ON(!file);
-> 
-> that way we see the bug as soon as it's detected rather than having to
-> dig through the stack and 'step' through the code to figure out the
-> source of EBADF. I noticed Oren applied this patch and the same never
-> assertion was made in a few other places so I've inlined a patch.
+Kirill A. Shutemov (2):
+  cgroups: export cgroup_iter_{start,next,end}
+  cgroups: introduce timer slack subsystem
 
-Ok. Queued for v23-rc2.
+ include/linux/cgroup_subsys.h |    6 +
+ include/linux/init_task.h     |    4 +-
+ init/Kconfig                  |   10 ++
+ kernel/Makefile               |    1 +
+ kernel/cgroup.c               |    3 +
+ kernel/cgroup_timer_slack.c   |  262 +++++++++++++++++++++++++++++++++++++++++
+ kernel/sys.c                  |   19 ++-
+ 7 files changed, 298 insertions(+), 7 deletions(-)
+ create mode 100644 kernel/cgroup_timer_slack.c
 
-Oren.
+-- 
+1.7.3.5
