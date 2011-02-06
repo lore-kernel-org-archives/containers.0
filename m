@@ -1,14 +1,17 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH][usercr]: Ghost tasks must be detached
-Date: Sat, 05 Feb 2011 17:33:15 -0500
-Message-ID: <4D4DD02B.7070504@cs.columbia.edu>
-References: <20101211033548.GA12584@us.ibm.com>	<4D2BB78A.9090701@cs.columbia.edu>	<4D4D9D1B.3000209@cs.columbia.edu>	<20110205214032.GA12944@us.ibm.com>
-	<4D4DC90B.3010103@cs.columbia.edu>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH, v3 2/2] cgroups: introduce timer slack subsystem
+Date: Sat, 5 Feb 2011 18:49:51 -0800
+Message-ID: <20110206024951.GB16432__10124.3108547807$1296960659$gmane$org@count0.beaverton.ibm.com>
+References: <1296679656-31163-1-git-send-email-kirill@shutemov.name>
+	<1296679656-31163-3-git-send-email-kirill@shutemov.name>
+	<20110203054616.GT16432@count0.beaverton.ibm.com>
+	<20110203094138.GD1083@shutemov.name>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4D4DC90B.3010103-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20110203094138.GD1083-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,89 +21,59 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+Cc: jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+On Thu, Feb 03, 2011 at 11:41:38AM +0200, Kirill A. Shutemov wrote:
+> On Wed, Feb 02, 2011 at 09:46:16PM -0800, Matt Helsley wrote:
+> > On Wed, Feb 02, 2011 at 10:47:36PM +0200, Kirill A. Shutsemov wrote:
+> > > From: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 
+<snip>
 
-On 02/05/2011 05:02 PM, Oren Laadan wrote:
-> 
-> 
-> On 02/05/2011 04:40 PM, Sukadev Bhattiprolu wrote:
->> Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
->> | Suka,
->> | 
->> | This patch - and the corresponding kernel patch - are wrong
->>
->> Ah, I see that now.
->>
->> But am not sure about the kernel part though. We were getting a crash
->> reliably (with older kernels) because of the ->exit_signal = -1 in
->> do_ghost_task().
-> 
-> Are we still getting it with 2.6.37 ?
->>
->> One fix I was watching for was Eric Biederman's 
->>
->> 	http://lkml.org/lkml/2010/7/12/213
->>
->> which AFAICT has not been merged yet.
-> 
-> If we need it and it isn't in mainline (any reason why ?) then
-> we can just add it to our linux-cr tree, as a preparatory patch.
-> 
->>
->> Was there another change to 2.6.37 that would prevent the crash ?
-> 
-> I don't know whether *that* crash still happens in 2.6.37 - 
-> because I still didn't test it with that kernel line back.
-> (Actually, I never experienced that crash here even with
-> earlier kernels).
-> 
->>
->> | (I should have noticed it in the review!). It turns out that
->> | ghost (and dead) tasks are _not_ auto-reaped anymore.
->> | 
->> | There are only two way for tasks to be auto-reaped: one is if
->> | their parent explicitly says so in its sighand information (but
->> | then it applies to all children). The other way is if they have
->> | ->exit_signal==-1. From userspace this happens only when cloning 
->> | with CLONE_THREAD. Using 0xFF for the @flags argument to clone()
->> | syscall instead results in ->exit_signal = 255 ...
->> | 
->> | The original motivation for this patch was:
->> | 
->> | > The downside of marking the task detached in do_ghost_task() is that
->> | > with current/older kernels container-init does not wait for detached
->> | > tasks.  See:
->> | > 
->> | > 	http://lkml.org/lkml/2010/6/16/272
->> | > 	http://lkml.org/lkml/2010/7/12/213
->> | > 
->> | > This can lead to a kernel crash if the container-init pre-deceases a
->> | > ghost task.
->> | 
->> | Is this still a problem in 2.6.37 ?
->>
->> Well, some inadvertent userspace changes seemed to cause the crash (or
->> an application hang on some machines) during restart. By making those changes,
->> I seem to be getting an application hang 5 out of 6 times even with 2.6.37,
->> but did not get a crash. I will investigate this new hang next week.
-> 
-> I'm currently chasing down a bug that causes restart to hang when
-> there are ghost/dead tasks. It may be the same one you are seeing.
-> So far I'm convinced it's userspace - working on it. Will post 
-> patches once solved.
+> > > diff --git a/kernel/cgroup_timer_slack.c b/kernel/cgroup_timer_slack.c
+> > > new file mode 100644
+> > > index 0000000..a343a50
+> > > --- /dev/null
+> > > +++ b/kernel/cgroup_timer_slack.c
 
-Actually - scratch that. The bug was related to the new pids-as-objs
-patches to user-cr. 
+<snip>
 
-Now, given the complexity of that patchset, I don't want to spend 
-time on picking fixes that require backporting to the current user-cr.
-So let's try to focus testing and debugging efforts on kernel/user 
-that includes those patches ?
+> > > +static int tslack_write_set_slack_ns(struct cgroup *cgroup, struct cftype *cft,
+> > > +		u64 val)
+> > > +{
+> > > +	struct timer_slack_cgroup *tslack_cgroup;
+> > > +	struct cgroup_iter it;
+> > > +	struct task_struct *task;
+> > > +
+> > > +	tslack_cgroup = cgroup_to_tslack_cgroup(cgroup);
+> > > +	if (!val || val < tslack_cgroup->min_slack_ns ||
+> > 
+> > Why is a val of 0 disallowed? I know having slack is good, but for
+> > an administrator or tool that doesn't care about number of wakeups
+> > and cares more about wringing out performance a slack of
+> > 0 seems acceptable. Is this just here to be consistent with the
+> > values passed in via prctl?
+> 
+> Yes, it's to consistent with the prctl(). I don't think that it's good
+> idea to allow to set timer_slack outside of range prctl() allows. It may
+> lead to interface abuse.
 
-Thanks,
+Hmm, I was just thinking that 0 timer slack might be useful. But I
+suppose you could just as easily set it to 1 and nobody would notice.
 
-Oren.
+> > > +			val > tslack_cgroup->max_slack_ns )
+> > > +		return -EINVAL;
+> > 
+> > Shouldn't it be EPERM and not EINVAL?
+> > 
+> > The write(2) man page says: "Other errors may occur, depending on the
+> > object connected to fd." So I think EPERM is fine and more descriptive.
+> 
+> What do you think about -EINVAL for (val == 0) and -EPERM for rest?
+
+OK, that makes sense to me given both of our points above.
+
+Cheers,
+	-Matt Helsley
