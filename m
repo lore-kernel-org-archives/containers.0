@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH 6/6] c/r: use pids objects for the pgrp/old_pgdp of ttys
-Date: Mon,  7 Feb 2011 12:18:08 -0500
-Message-ID: <1297099088-18683-7-git-send-email-orenl@cs.columbia.edu>
+Subject: [PATCH 4/6] c/r: introduce pids objects
+Date: Mon,  7 Feb 2011 12:18:06 -0500
+Message-ID: <1297099088-18683-5-git-send-email-orenl@cs.columbia.edu>
 References: <1297099088-18683-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -20,110 +20,131 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Make tty_old_pgrp and tty_pgrp use the shared pid instead of saving
-the actual pid number in {checkpoint,restore}_signal().
+Add the interface to handle pids as proper c/r shared objects.  This
+is the first step in converting the c/r code to hanlde pid as pids
+objects that are namespace aware. Also remote the unused field
+@root_pid from struct ckpt_ctx.
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- kernel/signal.c |   42 ++++++++++++++++++++++++++++++++----------
- 1 files changed, 32 insertions(+), 10 deletions(-)
+ include/linux/checkpoint_hdr.h   |    6 +++++-
+ include/linux/checkpoint_types.h |    1 -
+ kernel/checkpoint/checkpoint.c   |    2 --
+ kernel/checkpoint/restart.c      |    1 -
+ kernel/pid.c                     |   28 ++++++++++++++++++++++++++++
+ 5 files changed, 33 insertions(+), 5 deletions(-)
 
-diff --git a/kernel/signal.c b/kernel/signal.c
-index 718b940..5c174a9 100644
---- a/kernel/signal.c
-+++ b/kernel/signal.c
-@@ -3218,25 +3218,34 @@ static int checkpoint_signal(struct ckpt_ctx *ctx, struct task_struct *t)
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index b12d586..922eff0 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -245,6 +245,8 @@ struct ckpt_hdr_objref {
+ enum obj_type {
+ 	CKPT_OBJ_IGNORE = 0,
+ #define CKPT_OBJ_IGNORE CKPT_OBJ_IGNORE
++	CKPT_OBJ_PID,
++#define CKPT_OBJ_PID CKPT_OBJ_PID
+ 	CKPT_OBJ_INODE,
+ #define CKPT_OBJ_INODE CKPT_OBJ_INODE
+ 	CKPT_OBJ_FILE_TABLE,
+@@ -373,7 +375,9 @@ struct ckpt_pids {
+ } __attribute__((aligned(8)));
  
- 	/* tty */
- 	if (signal->leader) {
--		h->tty_old_pgrp = ckpt_pid_vnr(ctx, signal->tty_old_pgrp);
-+		h->tty_old_pgrp = ckpt_lookup_pid(ctx, signal->tty_old_pgrp);
- 		tty = tty_kref_get(signal->tty);
- 		if (tty) {
- 			/* irq is already disabled */
- 			spin_lock(&tty->ctrl_lock);
--			h->tty_pgrp = ckpt_pid_vnr(ctx, tty->pgrp);
-+			h->tty_pgrp = ckpt_lookup_pid(ctx, tty->pgrp);
- 			spin_unlock(&tty->ctrl_lock);
--			tty_kref_put(tty);
- 		}
- 	}
+ /* pids */
+-#define CKPT_PID_NULL  -1
++/* (negative but not valid error) */
++#define CKPT_PID_NULL  (-4096)  /* null pid pointer */
++#define CKPT_PID_ROOT  (-4097)  /* pid same as root task */
  
- 	unlock_task_sighand(t, &flags);
+ /* task data */
+ struct ckpt_hdr_task {
+diff --git a/include/linux/checkpoint_types.h b/include/linux/checkpoint_types.h
+index cf74d3e..87a569a 100644
+--- a/include/linux/checkpoint_types.h
++++ b/include/linux/checkpoint_types.h
+@@ -35,7 +35,6 @@ struct ckpt_ctx {
+ 	ktime_t ktime_begin;		/* operation start time */
  
- 	/*
-+	 * tty_pgrp must be in our namespace, since we are the
-+	 * session leader and could not have unshared pidns !
-+	 */
-+	if (tty && h->tty_pgrp == 0) {
-+		ckpt_err(ctx, -EBUSY, "%(T)tty_pgrp outside namespace\n");
-+		ret = -EBUSY;
-+		goto out;
-+	}
-+
-+	/*
- 	 * If the session is in an ancestor namespace, skip this tty
- 	 * and set tty_objref = 0. It will not be explicitly restored,
- 	 * but rather inherited from parent pid-ns at restart time.
+ 	int root_init;				/* [container] root init ? */
+-	pid_t root_pid;				/* [container] root pid */
+ 	struct task_struct *root_task;		/* [container] root task */
+ 	struct nsproxy *root_nsproxy;		/* [container] root nsproxy */
+ 	struct task_struct *root_freezer;	/* [container] root task */
+diff --git a/kernel/checkpoint/checkpoint.c b/kernel/checkpoint/checkpoint.c
+index 01653d7..a850423 100644
+--- a/kernel/checkpoint/checkpoint.c
++++ b/kernel/checkpoint/checkpoint.c
+@@ -628,8 +628,6 @@ static int init_checkpoint_ctx(struct ckpt_ctx *ctx, pid_t pid)
+ 	 * occurs then ckpt_ctx_free() is eventually called.
  	 */
--	if (tty && ckpt_pid_vnr(ctx, tty->session) > 0) {
-+	if (tty && ckpt_lookup_pid(ctx, tty->session) > 0) {
- 		h->tty_objref = checkpoint_obj(ctx, tty, CKPT_OBJ_TTY);
- 		if (h->tty_objref < 0)
- 			ret = h->tty_objref;
-@@ -3255,6 +3264,7 @@ static int checkpoint_signal(struct ckpt_ctx *ctx, struct task_struct *t)
- 	list_splice(&shared_pending.list, &signal->shared_pending.list);
- 	unlock_task_sighand(t, &flags);
-  out:
-+	tty_kref_put(tty);
- 	ckpt_hdr_put(ctx, h);
- 	return ret;
+ 
+-	ctx->root_pid = pid;
+-
+ 	/* root task */
+ 	rcu_read_lock();
+ 	task = find_task_by_vpid(pid);
+diff --git a/kernel/checkpoint/restart.c b/kernel/checkpoint/restart.c
+index 66b6625..9aaab4f 100644
+--- a/kernel/checkpoint/restart.c
++++ b/kernel/checkpoint/restart.c
+@@ -1178,7 +1178,6 @@ static struct task_struct *choose_root_task(struct ckpt_ctx *ctx, pid_t pid)
+ 	struct task_struct *task;
+ 
+ 	if (ctx->uflags & RESTART_TASKSELF) {
+-		ctx->root_pid = pid;
+ 		ctx->root_task = current;
+ 		get_task_struct(current);
+ 		return current;
+diff --git a/kernel/pid.c b/kernel/pid.c
+index f08f40a..0269991 100644
+--- a/kernel/pid.c
++++ b/kernel/pid.c
+@@ -36,6 +36,7 @@
+ #include <linux/pid_namespace.h>
+ #include <linux/init_task.h>
+ #include <linux/syscalls.h>
++#include <linux/checkpoint.h>
+ 
+ #define pid_hashfn(nr, ns)	\
+ 	hash_long((unsigned long)nr + (unsigned long)ns, pidhash_shift)
+@@ -571,6 +572,30 @@ struct pid *find_ge_pid(int nr, struct pid_namespace *ns)
+ 	return pid;
  }
-@@ -3339,6 +3349,10 @@ static int restore_signal(struct ckpt_ctx *ctx)
  
- 	/* tty - session */
- 	if (h->tty_objref) {
-+		/*
-+		 * should only get here if we are session leader, but
-+		 * we don't explicitly check: forced by calls below
-+		 */
- 		tty = ckpt_obj_fetch(ctx, h->tty_objref, CKPT_OBJ_TTY);
- 		if (IS_ERR(tty)) {
- 			ret = PTR_ERR(tty);
-@@ -3354,6 +3368,11 @@ static int restore_signal(struct ckpt_ctx *ctx)
- 			 * If tty_pgrp == CKPT_PID_NULL, below will
- 			 * fail, so no need for explicit test
- 			 */
-+			pgrp = ckpt_obj_fetch(ctx, h->tty_pgrp, CKPT_OBJ_PID);
-+			if (IS_ERR(pgrp)) {
-+				ret = PTR_ERR(pgrp);
-+				goto out;
-+			}
- 			ret = do_tiocspgrp(tty, tty_pair_get_tty(tty),
- 					   pid_vnr(pgrp));
- 			if (ret < 0)
-@@ -3382,13 +3401,16 @@ static int restore_signal(struct ckpt_ctx *ctx)
- 	do_setitimer(ITIMER_VIRTUAL, &itimer, NULL);
- 	do_setitimer(ITIMER_PROF, &itimer, NULL);
++#ifdef CONFIG_CHECKPOINT
++
++/* pid-related checkpoint objects */
++
++static int obj_pid_grab(void *ptr)
++{
++	get_pid((struct pid *) ptr);
++	return 0;
++}
++
++static void obj_pid_drop(void *ptr, int lastref)
++{
++	put_pid((struct pid *) ptr);
++}
++
++static const struct ckpt_obj_ops ckpt_obj_pid_ops = {
++	.obj_name = "PID",
++	.obj_type = CKPT_OBJ_PID,
++	.ref_drop = obj_pid_drop,
++	.ref_grab = obj_pid_grab,
++};
++
++#endif /* CONFIG_CHECKPOINT */
++
+ /*
+  * The pid hash table is scaled according to the amount of memory in the
+  * machine.  From a minimum of 16 slots up to 4096 slots at one gigabyte or
+@@ -605,4 +630,7 @@ void __init pidmap_init(void)
  
--	/* tty - tty_old_pgrp */
--	if (current->signal->leader && h->tty_old_pgrp != CKPT_PID_NULL) {
--		rcu_read_lock();
--		pgrp = NULL;  /* temp until next patch */
--		rcu_read_unlock();
--		if (!pgrp)
-+	/*
-+	 * tty - tty_old_pgrp: only for session leaders and for valid
-+	 * tty_old_pgrp, ie, within our namespace, and not CKPT_PID_NULL.
-+	 */
-+	if (current->signal->leader && h->tty_old_pgrp > 0) {
-+		pgrp = ckpt_obj_fetch(ctx, h->tty_old_pgrp, CKPT_OBJ_PID);
-+		if (IS_ERR(pgrp)) {
-+			ret = PTR_ERR(pgrp);
- 			goto out;
-+		}
- 	}
- 
- 	spin_lock_irq(&current->sighand->siglock);
+ 	init_pid_ns.pid_cachep = KMEM_CACHE(pid,
+ 			SLAB_HWCACHE_ALIGN | SLAB_PANIC);
++#ifdef CONFIG_CHECKPOINT
++	register_checkpoint_obj(&ckpt_obj_pid_ops);
++#endif
+ }
 -- 
 1.7.1
