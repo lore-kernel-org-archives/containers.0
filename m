@@ -1,8 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH 2/6] c/r: nit to avoid rcu lockdep complaint in
-	restore_obj_sighand()
-Date: Mon,  7 Feb 2011 12:18:04 -0500
-Message-ID: <1297099088-18683-3-git-send-email-orenl@cs.columbia.edu>
+Subject: [PATCH 3/6] c/r: introduce ckpt_obj_count() for the total number of
+	objects
+Date: Mon,  7 Feb 2011 12:18:05 -0500
+Message-ID: <1297099088-18683-4-git-send-email-orenl@cs.columbia.edu>
 References: <1297099088-18683-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,39 +21,48 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+This will be needed for pids-objects in container checkpoints.  In
+userspace we will rely on the pids objects inserted to the objash
+sequentially. For subtree checkpoint, the pids objects are the first
+to enter the objhash, therefore their tags will counting from 1.  In
+container checkpoint, other objects are inserted first, so we will
+need to know how many objects were inserted earlier - so we will alos
+save the count at that time.
+
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- kernel/signal.c |    7 +++++--
- 1 files changed, 5 insertions(+), 2 deletions(-)
+ include/linux/checkpoint.h  |    2 ++
+ kernel/checkpoint/objhash.c |    5 +++++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
 
-diff --git a/kernel/signal.c b/kernel/signal.c
-index dca40be..3842f5d 100644
---- a/kernel/signal.c
-+++ b/kernel/signal.c
-@@ -2871,7 +2871,7 @@ static void *restore_sighand(struct ckpt_ctx *ctx)
- int restore_obj_sighand(struct ckpt_ctx *ctx, int sighand_objref)
- {
- 	struct sighand_struct *sighand;
--	struct sighand_struct *old_sighand;
-+	struct sighand_struct *old_sighand = NULL;
- 
- 	sighand = ckpt_obj_fetch(ctx, sighand_objref, CKPT_OBJ_SIGHAND);
- 	if (IS_ERR(sighand))
-@@ -2884,11 +2884,14 @@ int restore_obj_sighand(struct ckpt_ctx *ctx, int sighand_objref)
- 
- 	/* manipulate tsk->sighand with tasklist lock write-held */
- 	write_lock_irq(&tasklist_lock);
--	old_sighand = rcu_dereference(current->sighand);
-+	old_sighand = rcu_dereference_check(current->sighand,
-+					    rcu_read_lock_held() ||
-+					    lockdep_is_held(&tasklist_lock));
- 	spin_lock(&old_sighand->siglock);
- 	rcu_assign_pointer(current->sighand, sighand);
- 	spin_unlock(&old_sighand->siglock);
- 	write_unlock_irq(&tasklist_lock);
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 21fc23e..65b6477 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -211,6 +211,8 @@ extern int ckpt_obj_insert(struct ckpt_ctx *ctx, void *ptr, int objref,
+ extern int ckpt_obj_reserve(struct ckpt_ctx *ctx);
+ extern int ckpt_obj_delete(struct ckpt_ctx *ctx, int objref,
+ 			   enum obj_type type);
++extern int ckpt_obj_count(struct ckpt_ctx *ctx);
 +
- 	__cleanup_sighand(old_sighand);
  
- 	return 0;
+ extern struct ckpt_ctx *ckpt_ctx_get(struct ckpt_ctx *ctx);
+ extern void ckpt_ctx_put(struct ckpt_ctx *ctx);
+diff --git a/kernel/checkpoint/objhash.c b/kernel/checkpoint/objhash.c
+index 40c2e9b..cbace7a 100644
+--- a/kernel/checkpoint/objhash.c
++++ b/kernel/checkpoint/objhash.c
+@@ -158,6 +158,11 @@ static inline int obj_alloc_objref(struct ckpt_ctx *ctx)
+ 	return ctx->obj_hash->next_free_objref++;
+ }
+ 
++int ckpt_obj_count(struct ckpt_ctx *ctx)
++{
++	return ctx->obj_hash->next_free_objref;
++}
++
+ /**
+  * ckpt_obj_new - add an object to the obj_hash
+  * @ctx: checkpoint context
 -- 
 1.7.1
