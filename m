@@ -1,8 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH 09/11] ckptinfo: s/ckpt_pids/ckpt_task_pids/ after kerenl
-	header update
-Date: Mon,  7 Feb 2011 12:21:30 -0500
-Message-ID: <1297099292-18772-10-git-send-email-orenl@cs.columbia.edu>
+Subject: [PATCH 05/11] restart: obtain pid_max from /proc/sys/kernel/pid_max
+Date: Mon,  7 Feb 2011 12:21:26 -0500
+Message-ID: <1297099292-18772-6-git-send-email-orenl@cs.columbia.edu>
 References: <1297099292-18772-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,30 +22,63 @@ List-Id: containers.vger.kernel.org
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- ckptinfo.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+ restart.c |   19 +++++++++++++++++--
+ 1 files changed, 17 insertions(+), 2 deletions(-)
 
-diff --git a/ckptinfo.c b/ckptinfo.c
-index d73b38c..1361c21 100644
---- a/ckptinfo.c
-+++ b/ckptinfo.c
-@@ -254,7 +254,7 @@ static int image_parse(int fd, struct args *args)
- static int image_parse_tree(struct ckpt_hdr *h, int fd, struct args *args)
+diff --git a/restart.c b/restart.c
+index a1af631..05d101b 100644
+--- a/restart.c
++++ b/restart.c
+@@ -158,6 +158,9 @@ struct ckpt_ctx {
+ 	struct cr_restart_args *args;
+ 
+ 	char *freezer;
++
++	/* system limits */
++	pid_t pid_max;
+ };
+ 
+ struct pid_swap {
+@@ -489,6 +492,9 @@ int process_args(struct cr_restart_args *args)
+ 
+ static void init_ctx(struct ckpt_ctx *ctx)
  {
- 	struct ckpt_hdr_tree *hh;
--	struct ckpt_pids *pp;
-+	struct ckpt_task_pids *pp;
- 	int nr_tasks;
- 	int i, ret;
++	FILE *file;
++	char buf[1024];
++
+ 	memset(ctx, 0, sizeof(*ctx));
  
-@@ -268,7 +268,7 @@ static int image_parse_tree(struct ckpt_hdr *h, int fd, struct args *args)
- 	if (ret <= 0)
- 		return -1;
+ 	/* mark all fds as unused */
+@@ -500,6 +506,15 @@ static void init_ctx(struct ckpt_ctx *ctx)
+ 	ctx->pipe_feed[1] = -1;
+ 	ctx->pipe_coord[0] = -1;
+ 	ctx->pipe_coord[1] = -1;
++
++	/* system limits */
++	ctx->pid_max = SHRT_MAX;  /* default */
++	file = fopen("/proc/sys/kernel/pid_max", "r");
++	if (file) {
++		if (fgets(buf, 1024, file))
++			ctx->pid_max = atoi(buf);
++		fclose(file);
++	}
+ }
  
--	pp =  (struct ckpt_pids *) h;
-+	pp =  (struct ckpt_task_pids *) h;
+ static void exit_ctx(struct ckpt_ctx *ctx)
+@@ -1223,12 +1238,12 @@ static int ckpt_alloc_pid(struct ckpt_ctx *ctx)
+ 	 * (this will become inefficient if pid-space is exhausted)
+ 	 */
+ 	do {
+-		if (ctx->tasks_pid == INT_MAX)
++		if (ctx->tasks_pid == ctx->pid_max)
+ 			ctx->tasks_pid = CKPT_RESERVED_PIDS;
+ 		else
+ 			ctx->tasks_pid++;
  
- 	if (args->show_task_tree) {
- 		for (i = 0; i < nr_tasks; i++) {
+-		if (n++ == INT_MAX) {	/* ohhh... */
++		if (n++ == ctx->pid_max) {	/* ohhh... */
+ 			ckpt_err("pid namsepace exhausted");
+ 			return -1;
+ 		}
 -- 
 1.7.1
