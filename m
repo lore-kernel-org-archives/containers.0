@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH 03/11] restart: make feeder a proper child instead of a thread
-Date: Mon,  7 Feb 2011 12:21:24 -0500
-Message-ID: <1297099292-18772-4-git-send-email-orenl@cs.columbia.edu>
+Subject: [PATCH 04/11] restart: improve success/failure reporting
+Date: Mon,  7 Feb 2011 12:21:25 -0500
+Message-ID: <1297099292-18772-5-git-send-email-orenl@cs.columbia.edu>
 References: <1297099292-18772-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -18,204 +18,198 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-As pointed out by Sukadev Bhattiprolu in this post:
-http://www.spinics.net/lists/linux-containers/msg22411.html
-it's not a good idea to have the coordinator and feeder share the same
-memory address space.
+This patch improves the final status report (success/fail) of restart
+by adding a new ctx->success variable. The motivation is twofold:
 
-The original idea was prevent the feeder from generating a SIGCHLD
-prematurely that will interrupt the restart. So we could use regular
-clone() without SIGCHLD. But then, if the feeder exits last then it
-will spit an aesthetic message _after_ the "succes" message from the
-coordiantor.
+1) Before, there was a confusion between who reports an error when (in
+--pidns) the root task isn't container init - in which case we add a
+dummy init. For this, we also improve how the dummy init communicates
+the status (success/fail) to the original restart task.
 
-This patch makes the feeder a proper child, but also makes the feeder
-wait for the coordinator before terinating, and makes the coordiantor
-collect the feeder.
+2) Even after restart succeeds, there may be errors (which may not
+affect the restarted task, but should be nevertheless reported).
 
-Cc: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- restart.c |   86 ++++++++++++++++++++++++++++++++++--------------------------
- 1 files changed, 49 insertions(+), 37 deletions(-)
+ restart.c |   81 ++++++++++++++++++++++++++++++++++--------------------------
+ 1 files changed, 46 insertions(+), 35 deletions(-)
 
 diff --git a/restart.c b/restart.c
-index 195a892..9535543 100644
+index 9535543..a1af631 100644
 --- a/restart.c
 +++ b/restart.c
-@@ -174,6 +174,7 @@ static int global_ulogfd;
- static int global_uerrfd;
- static int global_debug;
- static int global_verbose;
-+static pid_t global_feeder_pid;
- static pid_t global_child_pid;
- static int global_child_status;
- static int global_child_collected;
-@@ -205,7 +206,7 @@ static pid_t ckpt_fork_child(struct ckpt_ctx *ctx, struct task *child);
- static int ckpt_adjust_pids(struct ckpt_ctx *ctx);
+@@ -125,6 +125,7 @@ struct ckpt_ctx {
+ 	} whoami;
  
- static void ckpt_abort(struct ckpt_ctx *ctx, char *str);
--static int ckpt_do_feeder(void *data);
-+static int ckpt_do_feeder(struct ckpt_ctx *ctx);
- static int ckpt_fork_feeder(struct ckpt_ctx *ctx);
+ 	int error;
++	int success;
  
- static int ckpt_write(int fd, void *buf, int count);
-@@ -313,11 +314,17 @@ static void sigchld_handler(int sig)
- 			ckpt_dbg("SIGCHLD: child not ready\n");
- 			break;
- 		} else if (pid > 0) {
--			/* inform collection coordinator or root-task */
-+			/* inform collection of coordinator or root-task */
- 			if (pid == global_child_pid) {
- 				global_child_status = status;
- 				global_child_collected = 1;
--				report_exit_status(status, "SIGCHLD: ", 1);
-+				ckpt_dbg("collected coord/root task\n");
-+				report_exit_status(status, "SIGCHLD:", 1);
-+			}
-+			/* collect the feeder child */
-+			if (pid == global_feeder_pid) {
-+				ckpt_dbg("collected feeder process\n");
-+				report_exit_status(status, "SIGCHLD:", 1);
- 			}
- 			ckpt_dbg("SIGCHLD: collected child %d\n", pid);
- 			collected = 1;
-@@ -521,7 +528,7 @@ static void exit_ctx(struct ckpt_ctx *ctx)
- int cr_restart(struct cr_restart_args *args)
- {
- 	struct ckpt_ctx ctx;
--	int ret;
-+	int status, ret;
+ 	pid_t root_pid;
+ 	int pipe_in;
+@@ -677,9 +678,21 @@ int cr_restart(struct cr_restart_args *args)
+ 	if (global_feeder_pid)
+ 		waitpid(global_feeder_pid, NULL, 0);
  
- 	init_ctx(&ctx);
+-	if (ret < 0)
++	if (ctx.error)
+ 		errno = ctx.error;
  
-@@ -649,17 +656,30 @@ int cr_restart(struct cr_restart_args *args)
- 		ret = ckpt_coordinator(&ctx);
- 	}
- 
--	/*
--	 * On success, return pid of root of the restart process tree.
--	 */
--
- 	if (ret < 0)
- 		goto cleanup;
- 
-+	/* success: return pid of root of the restart process tree */
- 	ret = global_child_pid;
- 
-+	/* time to release feeder so he can peacefully retire now */
-+	status = 0;
-+	if (write(ctx.pipe_out, &status, sizeof(status)) != sizeof(status))
++	if (ctx.success) {
++		ckpt_dbg("c/r succeeded\n");
++		ckpt_verbose("Restart succeeded\n");
++		if (ctx.error)
++			ckpt_verbose("Post restart error: %d\n", ctx.error);
++	} else {
++		ckpt_dbg("c/r failed ?\n");
++		ckpt_perror("restart");
++		ckpt_verbose("Restart failed\n");
 +		ret = -1;
-+
-  cleanup:
- 	exit_ctx(&ctx);
-+
-+	/* feeder doesn't exit - to avoid SIGCHILD to coordinator */
-+	if (ret < 0 && global_feeder_pid)
-+		kill(global_feeder_pid, SIGKILL);
-+	/* wait for feeder child to terminate (ok of already gone) */
-+	if (global_feeder_pid)
-+		waitpid(global_feeder_pid, NULL, 0);
-+
-+	if (ret < 0)
-+		errno = ctx.error;
++	}
 +
  	return ret;
  }
  
-@@ -1906,38 +1926,30 @@ static pid_t ckpt_fork_child(struct ckpt_ctx *ctx, struct task *child)
-  */
- static int ckpt_fork_feeder(struct ckpt_ctx *ctx)
- {
--	genstack stk;
- 	pid_t pid;
-+	int ret;
- 
- 	if (pipe(ctx->pipe_feed)) {
- 		ckpt_perror("pipe");
--		return -1;
-+		return ctx_set_errno(ctx);
- 	}
- 
- 	if (pipe(ctx->pipe_child) < 0) {
- 		ckpt_perror("pipe");
--		return -1;
--	}
--
--	/*
--	 * Use clone() without SIGCHLD so that the when the feeder
--	 * terminates it does not notify the parent (coordinator), as
--	 * this may interfere with the restart.
--	 */
--
--	stk = genstack_alloc(PTHREAD_STACK_MIN);
--	if (!stk) {
--		ckpt_perror("ckpt_fork_feeder genstack_alloc");
--		return -1;
-+		return ctx_set_errno(ctx);
- 	}
- 
--	pid = clone(ckpt_do_feeder, genstack_sp(stk),
--		    CLONE_THREAD | CLONE_SIGHAND | CLONE_VM, ctx);
-+	pid = fork();
- 	if (pid < 0) {
- 		ckpt_perror("feeder thread");
--		return -1;
-+		return ctx_set_errno(ctx);
-+	} else if (pid == 0) {
-+		ret = ckpt_do_feeder(ctx);
-+		exit(ret);
- 	}
- 
-+	global_feeder_pid = pid;
-+
- 	/* children pipe: used for status reports from children */
- 	close(ctx->pipe_child[0]);
- 	ctx->pipe_out = ctx->pipe_child[1];
-@@ -2045,12 +2057,15 @@ ckpt_dbg("write len %d (%d)\n", len, ret);
-  * In '--no-pids' mode, transform the pids array (struct ckpt_pids)
-  * on the fly and feed the result to the "init" task of the restart
-  */
--static int ckpt_do_feeder(void *data)
-+static int ckpt_do_feeder(struct ckpt_ctx *ctx)
- {
--	struct ckpt_ctx *ctx = (struct ckpt_ctx *) data;
-+	int status;
- 
- 	ctx->whoami = CTX_FEEDER;  /* for sanity checks */
- 
-+	if (prctl(PR_SET_PDEATHSIG, SIGKILL, 0, 0, 0) < 0)
-+		ckpt_abort(ctx, "prctl");
-+
- 	/*
- 	 * feeder has a separate file descriptor table, so
- 	 * close/dup/open etc do not affect original caller
-@@ -2096,16 +2111,13 @@ static int ckpt_do_feeder(void *data)
- 	else
- 		ckpt_read_write_blind(ctx);
- 
--	/* All is well: feeder thread is done.  However, we must
--	 * invoke the exit system call directly. Otherwise, upon
--	 * return from this function, glibc's clone wrapper will call
--	 * _exit, which calls exit_group, which will terminate the
--	 * whole process, which is not what we want.
--	 */
--	syscall(SYS_exit, 0);
-+	/* wait for parent (coordinator) to confirm, to avoid
-+	   prematurely interrupting the restart with SIGCHLD */
-+	if (read(ctx->pipe_in, &status, sizeof(status)) != sizeof(status))
-+		ckpt_abort(ctx, "read coord status");
- 
--	/* not reached */
--	return 0;
-+	close(ctx->pipe_in);  /* no need to mark unused */
-+	return status;
+@@ -827,7 +840,7 @@ static int ckpt_pretend_reaper(struct ckpt_ctx *ctx)
+ 	return ckpt_parse_status(global_child_status, 1, 0);
  }
  
- /*
+-static int ckpt_probe_child(pid_t pid, char *str)
++static int ckpt_probe_child(struct ckpt_ctx *ctx, pid_t pid, char *str)
+ {
+ 	int status, ret;
+ 
+@@ -840,17 +853,16 @@ static int ckpt_probe_child(pid_t pid, char *str)
+ 	ret = waitpid(pid, &status, WNOHANG);
+ 	if (ret == pid) {
+ 		report_exit_status(status, str, 0);
+-		errno = ECHILD;
+-		return -1;
++		return ctx_ret_errno(ctx, ECHILD);
+ 	} else if (ret < 0 && errno == ECHILD) {
+ 		ckpt_err("WEIRD: %s exited without trace (%s)\n",
+ 			 str, strerror(errno));
+-		return -1;
++		return ctx_set_errno(ctx);
+ 	} else if (ret != 0) {
+ 		ckpt_err("waitpid for %s (%s)", str, strerror(errno));
+ 		if (ret > 0)
+ 			errno = ECHILD;
+-		return -1;
++		return ctx_set_errno(ctx);
+ 	}
+ 	return 0;
+ }
+@@ -900,30 +912,39 @@ static int __ckpt_coordinator(void *arg)
+ 	if (!ctx->args->wait)
+ 		close(ctx->pipe_coord[0]);
+ 
+-	return ckpt_coordinator(ctx);
++	/* set the exit status properly */
++	return ckpt_coordinator(ctx) >= 0 ? 0 : 1;
+ }
+ 
+ static int ckpt_coordinator_status(struct ckpt_ctx *ctx)
+ {
+-	int status = -1;
++	int status;
+ 	int ret;
+ 
+ 	close(ctx->pipe_coord[1]);
+ 	ctx->pipe_coord[1] = -1;  /* mark unused */
+ 
+ 	ret = read(ctx->pipe_coord[0], &status, sizeof(status));
+-	if (ret < 0)
+-		ckpt_perror("read coordinator status");
+-	else if (ret == 0) {
+-		/* coordinator failed to report */
+-		ckpt_dbg("Coordinator failed to report status.");
+-	} else
+-		status = 0;
+ 
+ 	close(ctx->pipe_coord[0]);
+ 	ctx->pipe_coord[0] = -1;  /* mark unused */
+ 
+-	return status;
++	if (ret < 0) {
++		ckpt_perror("read coordinator status");
++		return ctx_set_errno(ctx);
++	} else if (ret != sizeof(status)) {
++		/* coordinator failed to report */
++		ckpt_dbg("Coordinator failed to report status\n");
++		return ctx_ret_errno(ctx, EIO);
++	} else if (status != 0) {
++		/* coordinator reported failure */
++		ckpt_dbg("Coordinator reported error\n");
++		return ctx_ret_errno(ctx, status);
++	}
++
++	/* success ! */
++	ctx->success = 1;
++	return 0;
+ }
+ 
+ static int ckpt_coordinator_pidns(struct ckpt_ctx *ctx)
+@@ -977,8 +998,8 @@ static int ckpt_coordinator_pidns(struct ckpt_ctx *ctx)
+ 	 * The child (coordinator) may have already exited before the
+ 	 * signal handler was plugged; verify that it's still there.
+ 	 */
+-	if (ckpt_probe_child(coord_pid, "coordinator") < 0)
+-		return ctx_set_errno(ctx);
++	if (ckpt_probe_child(ctx, coord_pid, "coordinator") < 0)
++		return -1;
+ 
+ 	ctx->args->copy_status = copy;
+ 
+@@ -1017,8 +1038,8 @@ static int ckpt_coordinator(struct ckpt_ctx *ctx)
+ 	 * The child (root_task) may have already exited before the
+ 	 * signal handler was plugged; verify that it's still there.
+ 	 */
+-	if (ckpt_probe_child(root_pid, "root task") < 0)
+-		return ctx_set_errno(ctx);
++	if (ckpt_probe_child(ctx, root_pid, "root task") < 0)
++		return -1;
+ 
+ 	if (ctx->args->keep_frozen)
+ 		flags |= RESTART_FROZEN;
+@@ -1028,20 +1049,15 @@ static int ckpt_coordinator(struct ckpt_ctx *ctx)
+ 	ret = restart(root_pid, ctx->args->infd,
+ 		      flags, ctx->args->klogfd);
+ 
+-	if (ret < 0) {
+-		ckpt_perror("restart failed");
+-		ckpt_verbose("Failed\n");
+-		ckpt_dbg("restart failed ?\n");
+-		return ret;
++	if (ret >= 0) {
++		ctx->success = 1;  /* restart succeeded ! */
++		ret = 0;
+ 	}
+ 
+-	ckpt_verbose("Success\n");
+-	ckpt_dbg("restart succeeded\n");
+-
+-	ret = 0;
+-
+ 	if (ctx->args->pidns && ctx->tasks_arr[0].pid != 1) {
+ 		/* Report success/failure to the parent */
++		if (ret < 0)
++			ret = ctx->error;
+ 		if (write(ctx->pipe_coord[1], &ret, sizeof(ret)) < 0) {
+ 			ckpt_perror("failed to report status");
+ 			return ctx_set_errno(ctx);
+@@ -1068,11 +1084,6 @@ static int ckpt_coordinator(struct ckpt_ctx *ctx)
+ 		ret = ckpt_collect_child(ctx);
+ 	}
+ 
+-	if (ret < 0)
+-		ckpt_dbg("c/r failed ?\n");
+-	else
+-		ckpt_dbg("c/r succeeded\n");
+-
+ 	return ret;
+ }
+ 
 -- 
 1.7.1
