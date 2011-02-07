@@ -1,12 +1,11 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: if you use user namespaces
-Date: Mon, 7 Feb 2011 04:18:39 +0000
-Message-ID: <20110207041839.GA25871__44326.0125387043$1297052328$gmane$org@mail.hallyn.com>
+From: "Kirill A. Shutsemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+Subject: [PATCH, v5 0/2] Timer slack cgroup subsystem
+Date: Mon,  7 Feb 2011 11:46:00 +0200
+Message-ID: <1297071962-11654-1-git-send-email-kirill__39318.3533255526$1297072073$gmane$org@shutemov.name>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,27 +15,42 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, libvir-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Please let me know.  lxc does not use them right now.  Libvirt uses them
-for lxc containers f they are available, but I hope we can essentially
-have it stop for awhile.  In addition, there's tons of software out
-there that I don't know about, and fear of breaking their use of current
-user namespaces has been keeping me from pushing further userns patches.
+From: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 
-I've outlined how I see user namespaces developing at
-https://wiki.ubuntu.com/UserNamespace .  Note there is nothing new
-in there - some of it goes a year back, much of it more than two
-years.  Nothing actually new.
+Changelog:
+v5:
+ - -EBUSY on writing to timer_slack.min_slack_ns/max_slack_ns if a child has
+   wider min-max range
+v4:
+ - hierarchy support
+ - drop dummy_timer_slack_check()
+ - workaround lockdep false (?) positive
+ - allow 0 as timer slack value
+v3:
+ - rework interface
+ - s/EXPORT_SYMBOL/EXPORT_SYMBOL_GPL/
+v2:
+ - fixed with CONFIG_CGROUP_TIMER_SLACK=y
+v1:
+ - initial revision
 
-Currently user namespaces are not very useful, but they do provide
-separate uid accounting, and simply tossing CLONE_NEWUSER in with
-CLONE_NEWNS and friends has until now been safe to do.  As you can
-see, that is going to change.  So if that would cause you pain that
-you can't work around, please get back to me.  Otherwise, I'd like
-to get serious soon about expanding upon, and pushing upstream, the
-patches to make CLONE_NEWUSER more useful for sandboxing.
+Kirill A. Shutemov (2):
+  cgroups: export cgroup_iter_{start,next,end}
+  cgroups: introduce timer slack subsystem
 
-thanks,
--serge
+ include/linux/cgroup_subsys.h |    6 +
+ include/linux/init_task.h     |    4 +-
+ init/Kconfig                  |   10 ++
+ kernel/Makefile               |    1 +
+ kernel/cgroup.c               |    3 +
+ kernel/cgroup_timer_slack.c   |  281 +++++++++++++++++++++++++++++++++++++++++
+ kernel/sys.c                  |   19 ++-
+ 7 files changed, 317 insertions(+), 7 deletions(-)
+ create mode 100644 kernel/cgroup_timer_slack.c
+
+-- 
+1.7.4
