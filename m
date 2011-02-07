@@ -1,8 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [PATCH 3/6] c/r: introduce ckpt_obj_count() for the total number of
-	objects
-Date: Mon,  7 Feb 2011 12:18:05 -0500
-Message-ID: <1297099088-18683-4-git-send-email-orenl@cs.columbia.edu>
+Subject: [PATCH 6/6] c/r: use pids objects for the pgrp/old_pgdp of ttys
+Date: Mon,  7 Feb 2011 12:18:08 -0500
+Message-ID: <1297099088-18683-7-git-send-email-orenl@cs.columbia.edu>
 References: <1297099088-18683-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,48 +20,110 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This will be needed for pids-objects in container checkpoints.  In
-userspace we will rely on the pids objects inserted to the objash
-sequentially. For subtree checkpoint, the pids objects are the first
-to enter the objhash, therefore their tags will counting from 1.  In
-container checkpoint, other objects are inserted first, so we will
-need to know how many objects were inserted earlier - so we will alos
-save the count at that time.
+Make tty_old_pgrp and tty_pgrp use the shared pid instead of saving
+the actual pid number in {checkpoint,restore}_signal().
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- include/linux/checkpoint.h  |    2 ++
- kernel/checkpoint/objhash.c |    5 +++++
- 2 files changed, 7 insertions(+), 0 deletions(-)
+ kernel/signal.c |   42 ++++++++++++++++++++++++++++++++----------
+ 1 files changed, 32 insertions(+), 10 deletions(-)
 
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 21fc23e..65b6477 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -211,6 +211,8 @@ extern int ckpt_obj_insert(struct ckpt_ctx *ctx, void *ptr, int objref,
- extern int ckpt_obj_reserve(struct ckpt_ctx *ctx);
- extern int ckpt_obj_delete(struct ckpt_ctx *ctx, int objref,
- 			   enum obj_type type);
-+extern int ckpt_obj_count(struct ckpt_ctx *ctx);
-+
+diff --git a/kernel/signal.c b/kernel/signal.c
+index 718b940..5c174a9 100644
+--- a/kernel/signal.c
++++ b/kernel/signal.c
+@@ -3218,25 +3218,34 @@ static int checkpoint_signal(struct ckpt_ctx *ctx, struct task_struct *t)
  
- extern struct ckpt_ctx *ckpt_ctx_get(struct ckpt_ctx *ctx);
- extern void ckpt_ctx_put(struct ckpt_ctx *ctx);
-diff --git a/kernel/checkpoint/objhash.c b/kernel/checkpoint/objhash.c
-index 40c2e9b..cbace7a 100644
---- a/kernel/checkpoint/objhash.c
-+++ b/kernel/checkpoint/objhash.c
-@@ -158,6 +158,11 @@ static inline int obj_alloc_objref(struct ckpt_ctx *ctx)
- 	return ctx->obj_hash->next_free_objref++;
+ 	/* tty */
+ 	if (signal->leader) {
+-		h->tty_old_pgrp = ckpt_pid_vnr(ctx, signal->tty_old_pgrp);
++		h->tty_old_pgrp = ckpt_lookup_pid(ctx, signal->tty_old_pgrp);
+ 		tty = tty_kref_get(signal->tty);
+ 		if (tty) {
+ 			/* irq is already disabled */
+ 			spin_lock(&tty->ctrl_lock);
+-			h->tty_pgrp = ckpt_pid_vnr(ctx, tty->pgrp);
++			h->tty_pgrp = ckpt_lookup_pid(ctx, tty->pgrp);
+ 			spin_unlock(&tty->ctrl_lock);
+-			tty_kref_put(tty);
+ 		}
+ 	}
+ 
+ 	unlock_task_sighand(t, &flags);
+ 
+ 	/*
++	 * tty_pgrp must be in our namespace, since we are the
++	 * session leader and could not have unshared pidns !
++	 */
++	if (tty && h->tty_pgrp == 0) {
++		ckpt_err(ctx, -EBUSY, "%(T)tty_pgrp outside namespace\n");
++		ret = -EBUSY;
++		goto out;
++	}
++
++	/*
+ 	 * If the session is in an ancestor namespace, skip this tty
+ 	 * and set tty_objref = 0. It will not be explicitly restored,
+ 	 * but rather inherited from parent pid-ns at restart time.
+ 	 */
+-	if (tty && ckpt_pid_vnr(ctx, tty->session) > 0) {
++	if (tty && ckpt_lookup_pid(ctx, tty->session) > 0) {
+ 		h->tty_objref = checkpoint_obj(ctx, tty, CKPT_OBJ_TTY);
+ 		if (h->tty_objref < 0)
+ 			ret = h->tty_objref;
+@@ -3255,6 +3264,7 @@ static int checkpoint_signal(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	list_splice(&shared_pending.list, &signal->shared_pending.list);
+ 	unlock_task_sighand(t, &flags);
+  out:
++	tty_kref_put(tty);
+ 	ckpt_hdr_put(ctx, h);
+ 	return ret;
  }
+@@ -3339,6 +3349,10 @@ static int restore_signal(struct ckpt_ctx *ctx)
  
-+int ckpt_obj_count(struct ckpt_ctx *ctx)
-+{
-+	return ctx->obj_hash->next_free_objref;
-+}
-+
- /**
-  * ckpt_obj_new - add an object to the obj_hash
-  * @ctx: checkpoint context
+ 	/* tty - session */
+ 	if (h->tty_objref) {
++		/*
++		 * should only get here if we are session leader, but
++		 * we don't explicitly check: forced by calls below
++		 */
+ 		tty = ckpt_obj_fetch(ctx, h->tty_objref, CKPT_OBJ_TTY);
+ 		if (IS_ERR(tty)) {
+ 			ret = PTR_ERR(tty);
+@@ -3354,6 +3368,11 @@ static int restore_signal(struct ckpt_ctx *ctx)
+ 			 * If tty_pgrp == CKPT_PID_NULL, below will
+ 			 * fail, so no need for explicit test
+ 			 */
++			pgrp = ckpt_obj_fetch(ctx, h->tty_pgrp, CKPT_OBJ_PID);
++			if (IS_ERR(pgrp)) {
++				ret = PTR_ERR(pgrp);
++				goto out;
++			}
+ 			ret = do_tiocspgrp(tty, tty_pair_get_tty(tty),
+ 					   pid_vnr(pgrp));
+ 			if (ret < 0)
+@@ -3382,13 +3401,16 @@ static int restore_signal(struct ckpt_ctx *ctx)
+ 	do_setitimer(ITIMER_VIRTUAL, &itimer, NULL);
+ 	do_setitimer(ITIMER_PROF, &itimer, NULL);
+ 
+-	/* tty - tty_old_pgrp */
+-	if (current->signal->leader && h->tty_old_pgrp != CKPT_PID_NULL) {
+-		rcu_read_lock();
+-		pgrp = NULL;  /* temp until next patch */
+-		rcu_read_unlock();
+-		if (!pgrp)
++	/*
++	 * tty - tty_old_pgrp: only for session leaders and for valid
++	 * tty_old_pgrp, ie, within our namespace, and not CKPT_PID_NULL.
++	 */
++	if (current->signal->leader && h->tty_old_pgrp > 0) {
++		pgrp = ckpt_obj_fetch(ctx, h->tty_old_pgrp, CKPT_OBJ_PID);
++		if (IS_ERR(pgrp)) {
++			ret = PTR_ERR(pgrp);
+ 			goto out;
++		}
+ 	}
+ 
+ 	spin_lock_irq(&current->sighand->siglock);
 -- 
 1.7.1
