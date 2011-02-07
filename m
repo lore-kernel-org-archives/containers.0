@@ -1,15 +1,23 @@
 From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Subject: Re: [PATCH v3] cgroup/freezer: add per freezer duty ratio control
-Date: Mon, 7 Feb 2011 20:29:29 +0200
-Message-ID: <20110207182929.GA14038__4919.88725630126$1297105645$gmane$org@shutemov.name>
-References: <1297102383-2658-1-git-send-email-jacob.jun.pan@linux.intel.com>
-	<1297102383-2658-2-git-send-email-jacob.jun.pan@linux.intel.com>
+Subject: Re: [PATCH, v3 2/2] cgroups: introduce timer slack subsystem
+Date: Mon, 7 Feb 2011 20:32:24 +0200
+Message-ID: <20110207183224.GB14038__12996.8577916317$1297105665$gmane$org@shutemov.name>
+References: <1296679656-31163-3-git-send-email-kirill@shutemov.name>
+	<20110202145605.6c9006fa@putvin>
+	<20110203092229.GB1083@shutemov.name>
+	<20110203095117.76a568fc@putvin>
+	<AANLkTikvkUT8+U=bX6X2n7kMbnAt6evxTy1BqiX+TWpH@mail.gmail.com>
+	<20110203115743.1ef9a4c2@putvin>
+	<20110204133439.GA7181@shutemov.name>
+	<20110204092755.0bbfaa7a@putvin>
+	<20110207110603.GB11712@shutemov.name>
+	<20110207092040.2e5c899b@putvin>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1297102383-2658-2-git-send-email-jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
+In-Reply-To: <20110207092040.2e5c899b@putvin>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,252 +27,100 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org
-Cc: container cgroup <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, rdunlap-/UHa2rfvQTnk1uMJSBkQmQ@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Jacob Pan <jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Feb 07, 2011 at 10:13:03AM -0800, jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org wrote:
-> From: Jacob Pan <jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
+On Mon, Feb 07, 2011 at 09:20:40AM -0800, Jacob Pan wrote:
+> On Mon, 7 Feb 2011 13:06:03 +0200
+> "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org> wrote:
 > 
-> Freezer subsystem is used to manage batch jobs which can start
-> stop at the same time. However, sometime it is desirable to let
-> the kernel manage the freezer state automatically with a given
-> duty ratio.
-> For example, if we want to reduce the time that backgroup apps
-> are allowed to run we can put them into a freezer subsystem and
-> set the kernel to turn them THAWED/FROZEN at given duty ratio.
+> > On Fri, Feb 04, 2011 at 09:27:55AM -0800, Jacob Pan wrote:
+> > > On Fri, 4 Feb 2011 15:34:39 +0200
+> > > "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org> wrote:
+> > > > What's mean "original timer slack" if you are free to move a task
+> > > > between a lot of cgroups and process itself free to change it
+> > > > anytime?
+> > > > 
+> > > 
+> > > I need to manage tasks by a management software instead of letting
+> > > the task change timer_slack by itself. The goal is to make
+> > > management transparent and no modifications to the existing apps.
+> > > Therefore, it is desirable to automatically enforce timer_slack
+> > > when the apps are in the cgroup while automatically restore it when
+> > > it is no longer under cgroup management.
+> > 
+> > Tasks are always under cgroup management. Root cgroup is still cgroup.
+> > 
+> > > So the "original timer slack" can be the default 50us or whatever
+> > > value chosen by the task itself. But the app itself should not care
+> > > or even be aware of which cgroup it is in.
+> > > 
+> > > So here are two optoins i can think of
+> > > 1. add a new variable called cg_timer_slack_ns to struct
+> > > task_struct{} cg_timer_slack_ns will be set by cgroup timer_slack
+> > > subsystem, then we can retain the original per task value in
+> > > timer_slack_ns. timer code will pick max(cg_timer_slack_ns,
+> > > timer_slack_ns) if cg_timer_slack_ns is set.
+> > > 
+> > > 2. leave task_struct unchanged, add a current_timer_slack to the
+> > > cgroup. timer_slack cgroup does not modify per task timer_slack_ns.
+> > > similar to option #1, let timer code pick the timer_slack to use
+> > > based on whether the task is in timer_slack cgroup.
+> > > 
+> > > Any thoughts?
+> > 
+> > I think it's over-engineering.
+> > 
+> We do have a real use case that cannot be solved by the current logic,
+> I only want to find a solution.
+> > What about configuration like this:
+> > 
+> >  root_cgroup
+> >  |--timer_slack.min_slack_ns = 0
+> >  |--timer_slack.max_slack_ns = ULONG_MAX
+> >  |--50us
+> >  |  |--timer_slack.min_slack_ns = 50000
+> >  |  |--timer_slack.max_slack_ns = 50000
+> >  |--500us
+> >     |--timer_slack.min_slack_ns = 500000
+> >     |--timer_slack_max_slack_ns = ULONG_MAX
+> > 
+> > If you want a task allow to drive its timer_slack, just leave it in
+> > root_cgroup.
+> > 
+> > It you want to drive timer_slack of a task, move it between 50us and
+> > 500um based on your policy.
+> >  
+> I surely agree with the dummy root configuration. But when the
+> management software moves task among 50us or 500us cgroups, or back to
+> dummy root, the timer slack cannot be automatically changed.
 > 
-> This patch introduces two file nodes under cgroup
-> freezer.duty_ratio_pct and freezer.period_sec
-> 
-> Usage example: set period to be 5 seconds and frozen duty ratio 90%
-> [root@localhost aoa]# echo 90 > freezer.duty_ratio_pct
-> [root@localhost aoa]# echo 5 > freezer.period_sec
-> 
-> Signed-off-by: Jacob Pan <jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
-> ---
->  Documentation/cgroups/freezer-subsystem.txt |   23 ++++++
->  kernel/cgroup_freezer.c                     |  109 ++++++++++++++++++++++++++-
->  2 files changed, 130 insertions(+), 2 deletions(-)
-> 
-> diff --git a/Documentation/cgroups/freezer-subsystem.txt b/Documentation/cgroups/freezer-subsystem.txt
-> index 41f37fe..2bc1b98 100644
-> --- a/Documentation/cgroups/freezer-subsystem.txt
-> +++ b/Documentation/cgroups/freezer-subsystem.txt
-> @@ -100,3 +100,26 @@ things happens:
->  		and returns EINVAL)
->  	3) The tasks that blocked the cgroup from entering the "FROZEN"
->  		state disappear from the cgroup's set of tasks.
-> +
-> +In embedded systems, it is desirable to manage group of applications
-> +for power saving. E.g. tasks that are not in the foreground may be
-> +frozen unfrozen periodically to save power without affecting user
-> +experience. In this case, user/management software can attach tasks
-> +into freezer cgroup then specify duty ratio and period that the
-> +managed tasks are allowed to run.
-> +
-> +Usage example:
-> +Assuming freezer cgroup is already mounted, application being managed
-> +are included the "tasks" file node of the given freezer cgroup.
-> +To make the tasks frozen at 90% of the time every 5 seconds, do:
-> +
-> +[root@localhost ]# echo 90 > freezer.duty_ratio_pct
-> +[root@localhost ]# echo 5 > freezer.period_sec
-> +
-> +After that, the application in this freezer cgroup will only be
-> +allowed to run at the following pattern.
-> +     __                    __                    __
-> +    |  |<-- 90% frozen -->|  |                  |  |
-> +____|  |__________________|  |__________________|  |_____
-> +
-> +    |<---- 5 seconds ---->|
-> diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
-> index e7bebb7..928f2ab 100644
-> --- a/kernel/cgroup_freezer.c
-> +++ b/kernel/cgroup_freezer.c
-> @@ -21,6 +21,7 @@
->  #include <linux/uaccess.h>
->  #include <linux/freezer.h>
->  #include <linux/seq_file.h>
-> +#include <linux/kthread.h>
->  
->  enum freezer_state {
->  	CGROUP_THAWED = 0,
-> @@ -28,12 +29,23 @@ enum freezer_state {
->  	CGROUP_FROZEN,
->  };
->  
-> +struct freezer_duty {
-> +	u32 ratio; /* percentage of time frozen */
-> +	u32 period_pct_ms; /* one percent of the period in miliseconds */
-> +};
-> +
->  struct freezer {
->  	struct cgroup_subsys_state css;
->  	enum freezer_state state;
-> +	struct freezer_duty duty;
-> +	struct task_struct *fkh;
->  	spinlock_t lock; /* protects _writes_ to state */
->  };
->  
-> +static struct task_struct *freezer_task;
-> +static int try_to_freeze_cgroup(struct cgroup *cgroup, struct freezer *freezer);
-> +static void unfreeze_cgroup(struct cgroup *cgroup, struct freezer *freezer);
-> +
->  static inline struct freezer *cgroup_freezer(
->  		struct cgroup *cgroup)
->  {
-> @@ -63,6 +75,35 @@ int cgroup_freezing_or_frozen(struct task_struct *task)
->  	return result;
->  }
->  
-> +static DECLARE_WAIT_QUEUE_HEAD(freezer_wait);
-> +
-> +static int freezer_kh(void *data)
-> +{
-> +	struct cgroup *cgroup = (struct cgroup *)data;
-> +	struct freezer *freezer = cgroup_freezer(cgroup);
-> +
-> +	do {
-> +		if (freezer->duty.ratio < 100 && freezer->duty.ratio >= 0 &&
-> +			freezer->duty.period_pct_ms) {
-> +			if (try_to_freeze_cgroup(cgroup, freezer))
-> +				pr_info("cannot freeze\n");
-> +			msleep(freezer->duty.period_pct_ms *
-> +				freezer->duty.ratio);
-> +			unfreeze_cgroup(cgroup, freezer);
-> +			msleep(freezer->duty.period_pct_ms *
-> +				(100 - freezer->duty.ratio));
-> +		} else if (freezer->duty.ratio == 100) {
-> +			if (try_to_freeze_cgroup(cgroup, freezer))
-> +				pr_info("cannot freeze\n");
-> +			sleep_on(&freezer_wait);
-> +		} else {
-> +			sleep_on(&freezer_wait);
-> +			pr_debug("freezer thread wake up\n");
-> +		}
-> +	} while (!kthread_should_stop());
-> +	return 0;
-> +}
-> +
->  /*
->   * cgroups_write_string() limits the size of freezer state strings to
->   * CGROUP_LOCAL_BUFFER_SIZE
-> @@ -150,7 +191,11 @@ static struct cgroup_subsys_state *freezer_create(struct cgroup_subsys *ss,
->  static void freezer_destroy(struct cgroup_subsys *ss,
->  			    struct cgroup *cgroup)
->  {
-> -	kfree(cgroup_freezer(cgroup));
-> +	struct freezer *freezer;
-> +
-> +	freezer = cgroup_freezer(cgroup);
-> +	kthread_stop(freezer->fkh);
-> +	kfree(freezer);
->  }
->  
->  /*
-> @@ -282,6 +327,16 @@ static int freezer_read(struct cgroup *cgroup, struct cftype *cft,
->  	return 0;
->  }
->  
-> +static u64 freezer_read_duty_ratio(struct cgroup *cgroup, struct cftype *cft)
-> +{
-> +	return cgroup_freezer(cgroup)->duty.ratio;
-> +}
-> +
-> +static u64 freezer_read_period(struct cgroup *cgroup, struct cftype *cft)
-> +{
-> +	return cgroup_freezer(cgroup)->duty.period_pct_ms / 10;
-> +}
-> +
->  static int try_to_freeze_cgroup(struct cgroup *cgroup, struct freezer *freezer)
->  {
->  	struct cgroup_iter it;
-> @@ -368,19 +423,69 @@ static int freezer_write(struct cgroup *cgroup,
->  	return retval;
->  }
->  
-> +static int freezer_write_duty_ratio(struct cgroup *cgroup, struct cftype *cft,
-> +		u64 val)
-> +{
-> +	if (!cgroup_lock_live_group(cgroup))
-> +		return -ENODEV;
-> +	cgroup_freezer(cgroup)->duty.ratio = val;
-> +	cgroup_unlock();
-> +	wake_up(&freezer_wait);
-> +
-> +	return 0;
-> +}
-> +
-> +static int freezer_write_period(struct cgroup *cgroup, struct cftype *cft,
-> +		u64 val)
-> +{
-> +	if (!cgroup_lock_live_group(cgroup))
-> +		return -ENODEV;
-> +	cgroup_freezer(cgroup)->duty.period_pct_ms = val * 10;
+> consider the following scenarios.
+> 1. task_A has timer_slack = ts1 = 3us when it is running in the
+> foreground by window manager
+> 2. then it is moved to 50us cgroup because it is no longer in the
+> foreground, so now ts1 = 50us. 
+> 3. After a while, the system is running in the low power state, so
+> task_A is moved to 500us cgroup, ts1 = 500us. Then the user switch the
+> device into normal running state and put task_A in foreground again.
+> 4. Management software then moves task_A from 500us cgroup to dummy
+> root, but it will not be able to restore the 3us timer slack as needed
+> by task_A. Task can surely drive its timer_slack but it breaks the
+> cgroup-transparency desired by the management scheme.
 
-1 second == 1000 millisecond, I guess ;)
+Can you use 3us cgroup instead of moving to root cgroup? :)
 
-I think better to use milliseconds for the interface.
+I understand your use-case, but I can't provide sane interface to
+implement this.
 
-> +	cgroup_unlock();
-> +	wake_up(&freezer_wait);
-> +
-> +	return 0;
-> +}
-> +
->  static struct cftype files[] = {
->  	{
->  		.name = "state",
->  		.read_seq_string = freezer_read,
->  		.write_string = freezer_write,
->  	},
-> +	{
-> +		.name = "duty_ratio_pct",
-> +		.read_u64 = freezer_read_duty_ratio,
-> +		.write_u64 = freezer_write_duty_ratio,
-> +	},
-> +	{
-> +		.name = "period_sec",
-> +		.read_u64 = freezer_read_period,
-> +		.write_u64 = freezer_write_period,
-> +	},
-> +
->  };
->  
-> +#define FREEZER_KH_PREFIX  "freezer_"
->  static int freezer_populate(struct cgroup_subsys *ss, struct cgroup *cgroup)
->  {
-> +	int ret = 0;
-> +	char thread_name[32];
-> +	struct freezer *freezer;
-> +
->  	if (!cgroup->parent)
->  		return 0;
-> -	return cgroup_add_files(cgroup, ss, files, ARRAY_SIZE(files));
-> +
-> +	freezer = cgroup_freezer(cgroup);
-> +	ret = cgroup_add_files(cgroup, ss, files, ARRAY_SIZE(files));
-> +
-> +	snprintf(thread_name, 32, "%s%s", FREEZER_KH_PREFIX,
-> +		cgroup->dentry->d_name.name);
-> +	freezer->fkh = kthread_run(freezer_kh, (void *)cgroup, thread_name);
-> +	if (IS_ERR(freezer_task))
-> +		pr_debug("%s failed to create %s\n", __func__, thread_name);
-> +
-> +	return ret;
-
-Hm.. I think it's waste of resources creates one threads for every cgroup.
-In most cases auto freezing will not be enabled. Can we create a thread
-when it's really needed (ratio != 0 && period != 0)?
-Can we use delayed workqueues instead of separate thread?
-
->  }
->  
->  struct cgroup_subsys freezer_subsys = {
-> -- 
-> 1.7.0.4
+> The key is that tasks being managed are not aware of cgroup
+> involvement. The management software is the one that moves tasks
+> around, but we don't want the management software keeps track of very
+> timer slacks value of every tasks. 
 > 
+> Thanks,
+> Jacob
 
 -- 
  Kirill A. Shutemov
