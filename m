@@ -1,11 +1,14 @@
 From: "Kirill A. Shutemov" <kas-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH v3, RESEND 00/16] make rpc_pipefs be mountable multiple time
-Date: Tue,  8 Feb 2011 20:41:51 +0200
-Message-ID: <1297190527-19925-1-git-send-email-kas__45037.071457091$1297191022$gmane$org@openvz.org>
+Subject: [PATCH v3,
+	RESEND 03/16] sunrpc: push init_rpc_pipefs up to rpc_create() callers
+Date: Tue,  8 Feb 2011 20:41:54 +0200
+Message-ID: <1297190527-19925-4-git-send-email-kas__34425.4873846241$1297191140$gmane$org@openvz.org>
+References: <1297190527-19925-1-git-send-email-kas@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1297190527-19925-1-git-send-email-kas-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,73 +22,201 @@ To: Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>, "
 Cc: linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "Kirill A. Shutemov" <kas-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-v3:
- - rebase to the current Linus' tree (52cfd503ad)
- - rework get_rpc_pipefs() once again;
- - solve problem with rmmod sunrpc moudle;
- - free dns cache on killing rpc_pipefs superblock.
+Signed-off-by: Kirill A. Shutemov <kas-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Reviewed-by: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+---
+ fs/lockd/host.c             |    2 ++
+ fs/lockd/mon.c              |    2 ++
+ fs/nfs/client.c             |    2 ++
+ fs/nfs/mount_clnt.c         |    2 ++
+ fs/nfsd/nfs4callback.c      |    2 ++
+ include/linux/sunrpc/clnt.h |    1 +
+ net/sunrpc/clnt.c           |   11 +++++++----
+ net/sunrpc/rpcb_clnt.c      |    3 +++
+ 8 files changed, 21 insertions(+), 4 deletions(-)
 
-v2:
- - one of rpc_create() calls was missed initially, fixed;
- - change logic for get_rpc_pipefs(NULL);
- - export get_rpc_pipefs() to be able to use from modules (tnx J. Bruce Field);
- - change "From:" and "Signed-off-by:" addresses.
-
-v1:
- - initial revision of the patchset.
-
-Kirill A. Shutemov (16):
-  sunrpc: mount rpc_pipefs on initialization
-  sunrpc: introduce init_rpc_pipefs
-  sunrpc: push init_rpc_pipefs up to rpc_create() callers
-  sunrpc: tag svc_serv with rpc_pipefs mount point
-  sunrpc: get rpc_pipefs mount point for svc_serv from callers
-  lockd: get rpc_pipefs mount point from callers
-  sunrpc: get rpc_pipefs mount point for rpcb_create[_local] from
-    callers
-  sunrpc: tag pipefs field of cache_detail with rpc_pipefs mount point
-  sunrpc: introduce rpc_pipefs_add_destroy_cb()
-  nfs: per-rpc_pipefs dns cache
-  Export iterate_mounts symbol to be able to use from sunrpc module.
-  sunrpc: introduce get_rpc_pipefs()
-  nfs: introduce mount option 'rpcmount'
-  sunrpc: make rpc_pipefs be mountable multiple times
-  sunrpc: remove global init_rpc_pipefs
-  Rework get_rpc_pipefs() and introduce put_rpc_pipefs()
-
- fs/lockd/clntlock.c                |    8 +-
- fs/lockd/host.c                    |   15 ++-
- fs/lockd/mon.c                     |   13 ++-
- fs/lockd/svc.c                     |    4 +-
- fs/namespace.c                     |    1 +
- fs/nfs/cache_lib.c                 |   18 +--
- fs/nfs/cache_lib.h                 |    3 +-
- fs/nfs/callback.c                  |    7 +-
- fs/nfs/callback.h                  |    3 +-
- fs/nfs/client.c                    |   45 ++++++-
- fs/nfs/dns_resolve.c               |  137 ++++++++++++++++-----
- fs/nfs/dns_resolve.h               |   15 +--
- fs/nfs/inode.c                     |    9 +--
- fs/nfs/internal.h                  |   10 ++-
- fs/nfs/mount_clnt.c                |    1 +
- fs/nfs/namespace.c                 |    3 +-
- fs/nfs/nfs4namespace.c             |   20 ++--
- fs/nfs/super.c                     |   20 +++
- fs/nfsd/nfs4callback.c             |    5 +
- fs/nfsd/nfssvc.c                   |   20 +++-
- include/linux/lockd/bind.h         |    3 +-
- include/linux/lockd/lockd.h        |    4 +-
- include/linux/nfs_fs_sb.h          |    1 +
- include/linux/sunrpc/cache.h       |    9 +-
- include/linux/sunrpc/clnt.h        |    5 +-
- include/linux/sunrpc/rpc_pipe_fs.h |    7 +-
- include/linux/sunrpc/svc.h         |    9 +-
- net/sunrpc/cache.c                 |   16 ++-
- net/sunrpc/clnt.c                  |   19 ++--
- net/sunrpc/rpc_pipe.c              |  235 ++++++++++++++++++++++++++++++++----
- net/sunrpc/rpcb_clnt.c             |   19 ++-
- net/sunrpc/svc.c                   |   52 +++++---
- 32 files changed, 549 insertions(+), 187 deletions(-)
-
+diff --git a/fs/lockd/host.c b/fs/lockd/host.c
+index b7c99bf..45e973f 100644
+--- a/fs/lockd/host.c
++++ b/fs/lockd/host.c
+@@ -14,6 +14,7 @@
+ #include <linux/in6.h>
+ #include <linux/sunrpc/clnt.h>
+ #include <linux/sunrpc/svc.h>
++#include <linux/sunrpc/rpc_pipe_fs.h>
+ #include <linux/lockd/lockd.h>
+ #include <linux/mutex.h>
+ 
+@@ -463,6 +464,7 @@ nlm_bind_host(struct nlm_host *host)
+ 			.authflavor	= RPC_AUTH_UNIX,
+ 			.flags		= (RPC_CLNT_CREATE_NOPING |
+ 					   RPC_CLNT_CREATE_AUTOBIND),
++			.rpcmount	= init_rpc_pipefs,
+ 		};
+ 
+ 		/*
+diff --git a/fs/lockd/mon.c b/fs/lockd/mon.c
+index 23d7451..6219026 100644
+--- a/fs/lockd/mon.c
++++ b/fs/lockd/mon.c
+@@ -15,6 +15,7 @@
+ #include <linux/sunrpc/clnt.h>
+ #include <linux/sunrpc/xprtsock.h>
+ #include <linux/sunrpc/svc.h>
++#include <linux/sunrpc/rpc_pipe_fs.h>
+ #include <linux/lockd/lockd.h>
+ 
+ #include <asm/unaligned.h>
+@@ -78,6 +79,7 @@ static struct rpc_clnt *nsm_create(void)
+ 		.version		= NSM_VERSION,
+ 		.authflavor		= RPC_AUTH_NULL,
+ 		.flags			= RPC_CLNT_CREATE_NOPING,
++		.rpcmount		= init_rpc_pipefs,
+ 	};
+ 
+ 	return rpc_create(&args);
+diff --git a/fs/nfs/client.c b/fs/nfs/client.c
+index bd3ca32..0e0a952 100644
+--- a/fs/nfs/client.c
++++ b/fs/nfs/client.c
+@@ -25,6 +25,7 @@
+ #include <linux/sunrpc/metrics.h>
+ #include <linux/sunrpc/xprtsock.h>
+ #include <linux/sunrpc/xprtrdma.h>
++#include <linux/sunrpc/rpc_pipe_fs.h>
+ #include <linux/nfs_fs.h>
+ #include <linux/nfs_mount.h>
+ #include <linux/nfs4_mount.h>
+@@ -628,6 +629,7 @@ static int nfs_create_rpc_client(struct nfs_client *clp,
+ 		.program	= &nfs_program,
+ 		.version	= clp->rpc_ops->version,
+ 		.authflavor	= flavor,
++		.rpcmount	= init_rpc_pipefs,
+ 	};
+ 
+ 	if (discrtry)
+diff --git a/fs/nfs/mount_clnt.c b/fs/nfs/mount_clnt.c
+index d4c2d6b..6227875 100644
+--- a/fs/nfs/mount_clnt.c
++++ b/fs/nfs/mount_clnt.c
+@@ -13,6 +13,7 @@
+ #include <linux/in.h>
+ #include <linux/sunrpc/clnt.h>
+ #include <linux/sunrpc/sched.h>
++#include <linux/sunrpc/rpc_pipe_fs.h>
+ #include <linux/nfs_fs.h>
+ #include "internal.h"
+ 
+@@ -161,6 +162,7 @@ int nfs_mount(struct nfs_mount_request *info)
+ 		.program	= &mnt_program,
+ 		.version	= info->version,
+ 		.authflavor	= RPC_AUTH_UNIX,
++		.rpcmount	= init_rpc_pipefs,
+ 	};
+ 	struct rpc_clnt		*mnt_clnt;
+ 	int			status;
+diff --git a/fs/nfsd/nfs4callback.c b/fs/nfsd/nfs4callback.c
+index 3be975e..6636ab2 100644
+--- a/fs/nfsd/nfs4callback.c
++++ b/fs/nfsd/nfs4callback.c
+@@ -33,6 +33,7 @@
+ 
+ #include <linux/sunrpc/clnt.h>
+ #include <linux/sunrpc/svc_xprt.h>
++#include <linux/sunrpc/rpc_pipe_fs.h>
+ #include <linux/slab.h>
+ #include "nfsd.h"
+ #include "state.h"
+@@ -645,6 +646,7 @@ static int setup_callback_client(struct nfs4_client *clp, struct nfs4_cb_conn *c
+ 		.version	= 0,
+ 		.authflavor	= clp->cl_flavor,
+ 		.flags		= (RPC_CLNT_CREATE_NOPING | RPC_CLNT_CREATE_QUIET),
++		.rpcmount	= init_rpc_pipefs,
+ 	};
+ 	struct rpc_clnt *client;
+ 
+diff --git a/include/linux/sunrpc/clnt.h b/include/linux/sunrpc/clnt.h
+index ef9476a..dffaaaa 100644
+--- a/include/linux/sunrpc/clnt.h
++++ b/include/linux/sunrpc/clnt.h
+@@ -116,6 +116,7 @@ struct rpc_create_args {
+ 	unsigned long		flags;
+ 	char			*client_name;
+ 	struct svc_xprt		*bc_xprt;	/* NFSv4.1 backchannel */
++	struct vfsmount		*rpcmount;
+ };
+ 
+ /* Values for "flags" field */
+diff --git a/net/sunrpc/clnt.c b/net/sunrpc/clnt.c
+index f3812d0..6e1d923 100644
+--- a/net/sunrpc/clnt.c
++++ b/net/sunrpc/clnt.c
+@@ -96,7 +96,8 @@ static void rpc_unregister_client(struct rpc_clnt *clnt)
+ }
+ 
+ static int
+-rpc_setup_pipedir(struct rpc_clnt *clnt, char *dir_name)
++rpc_setup_pipedir(struct rpc_clnt *clnt, struct vfsmount *rpcmount,
++		char *dir_name)
+ {
+ 	static uint32_t clntid;
+ 	struct nameidata nd;
+@@ -112,7 +113,7 @@ rpc_setup_pipedir(struct rpc_clnt *clnt, char *dir_name)
+ 	if (dir_name == NULL)
+ 		return 0;
+ 
+-	path.mnt = mntget(init_rpc_pipefs);
++	path.mnt = mntget(rpcmount);
+ 	error = vfs_path_lookup(path.mnt->mnt_root, path.mnt, dir_name, 0, &nd);
+ 	if (error)
+ 		goto err;
+@@ -226,7 +227,8 @@ static struct rpc_clnt * rpc_new_client(const struct rpc_create_args *args, stru
+ 
+ 	atomic_set(&clnt->cl_count, 1);
+ 
+-	err = rpc_setup_pipedir(clnt, program->pipe_dir_name);
++	BUG_ON(!args->rpcmount);
++	err = rpc_setup_pipedir(clnt, args->rpcmount, program->pipe_dir_name);
+ 	if (err < 0)
+ 		goto out_no_path;
+ 
+@@ -390,7 +392,8 @@ rpc_clone_client(struct rpc_clnt *clnt)
+ 			goto out_no_principal;
+ 	}
+ 	atomic_set(&new->cl_count, 1);
+-	err = rpc_setup_pipedir(new, clnt->cl_program->pipe_dir_name);
++	err = rpc_setup_pipedir(new, clnt->cl_path.mnt,
++			clnt->cl_program->pipe_dir_name);
+ 	if (err != 0)
+ 		goto out_no_path;
+ 	if (new->cl_auth)
+diff --git a/net/sunrpc/rpcb_clnt.c b/net/sunrpc/rpcb_clnt.c
+index c652e4c..b059cbe 100644
+--- a/net/sunrpc/rpcb_clnt.c
++++ b/net/sunrpc/rpcb_clnt.c
+@@ -27,6 +27,7 @@
+ #include <linux/sunrpc/clnt.h>
+ #include <linux/sunrpc/sched.h>
+ #include <linux/sunrpc/xprtsock.h>
++#include <linux/sunrpc/rpc_pipe_fs.h>
+ 
+ #ifdef RPC_DEBUG
+ # define RPCDBG_FACILITY	RPCDBG_BIND
+@@ -182,6 +183,7 @@ static int rpcb_create_local(void)
+ 		.version	= RPCBVERS_2,
+ 		.authflavor	= RPC_AUTH_UNIX,
+ 		.flags		= RPC_CLNT_CREATE_NOPING,
++		.rpcmount	= init_rpc_pipefs,
+ 	};
+ 	struct rpc_clnt *clnt, *clnt4;
+ 	int result = 0;
+@@ -236,6 +238,7 @@ static struct rpc_clnt *rpcb_create(char *hostname, struct sockaddr *srvaddr,
+ 		.authflavor	= RPC_AUTH_UNIX,
+ 		.flags		= (RPC_CLNT_CREATE_NOPING |
+ 					RPC_CLNT_CREATE_NONPRIVPORT),
++		.rpcmount	= init_rpc_pipefs,
+ 	};
+ 
+ 	switch (srvaddr->sa_family) {
 -- 
 1.7.4
