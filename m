@@ -1,13 +1,14 @@
-From: "Kirill A. Shutemov" <kas-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH v3, RESEND 09/16] sunrpc: introduce rpc_pipefs_add_destroy_cb()
-Date: Tue,  8 Feb 2011 20:42:00 +0200
-Message-ID: <1297190527-19925-10-git-send-email-kas__33841.3239959211$1297191855$gmane$org@openvz.org>
-References: <1297190527-19925-1-git-send-email-kas@openvz.org>
+From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Subject: Re: [PATCH, v4 2/2] cgroups: introduce timer slack subsystem
+Date: Tue, 8 Feb 2011 15:08:35 -0800
+Message-ID: <20110208150835.42e184be.akpm__34401.9853779629$1297206662$gmane$org@linux-foundation.org>
+References: <1296743654-2984-1-git-send-email-kirill@shutemov.name>
+	<1296743654-2984-3-git-send-email-kirill@shutemov.name>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1297190527-19925-1-git-send-email-kas-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1296743654-2984-3-git-send-email-kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,113 +18,193 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>, "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>, Neil Brown <neilb-l3A5Bk7waGM@public.gmane.org>
-Cc: linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "Kirill A. Shutemov" <kas-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: "Kirill A. Shutsemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+Cc: jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Add facility to do some action on destroying of rpc_pipefs superblock.
+On Thu,  3 Feb 2011 16:34:14 +0200
+"Kirill A. Shutsemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org> wrote:
 
-Signed-off-by: Kirill A. Shutemov <kas-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Reviewed-by: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
----
- include/linux/sunrpc/rpc_pipe_fs.h |    3 ++
- net/sunrpc/rpc_pipe.c              |   51 ++++++++++++++++++++++++++++++++++-
- 2 files changed, 52 insertions(+), 2 deletions(-)
+> From: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+> 
+> Provides a way of tasks grouping by timer slack value. Introduces per
+> cgroup max and min timer slack value. When a task attaches to a cgroup,
+> its timer slack value adjusts (if needed) to fit min-max range.
+> 
+> It also provides a way to set timer slack value for all tasks in the
+> cgroup at once.
+> 
+> This functionality is useful in mobile devices where certain background
+> apps are attached to a cgroup and minimum wakeups are desired.
 
-diff --git a/include/linux/sunrpc/rpc_pipe_fs.h b/include/linux/sunrpc/rpc_pipe_fs.h
-index b09bfa5..f5216f1 100644
---- a/include/linux/sunrpc/rpc_pipe_fs.h
-+++ b/include/linux/sunrpc/rpc_pipe_fs.h
-@@ -46,6 +46,9 @@ RPC_I(struct inode *inode)
- 
- extern struct vfsmount *init_rpc_pipefs;
- 
-+extern int rpc_pipefs_add_destroy_cb(struct super_block *sb,
-+		void (*destroy_cb)(void *data), void *data);
-+
- extern int rpc_queue_upcall(struct inode *, struct rpc_pipe_msg *);
- 
- struct rpc_clnt;
-diff --git a/net/sunrpc/rpc_pipe.c b/net/sunrpc/rpc_pipe.c
-index 484c9a3..58312fa 100644
---- a/net/sunrpc/rpc_pipe.c
-+++ b/net/sunrpc/rpc_pipe.c
-@@ -939,6 +939,31 @@ static const struct super_operations s_ops = {
- 
- #define RPCAUTH_GSSMAGIC 0x67596969
- 
-+struct destroy_cb {
-+	struct list_head list;
-+	void (*callback)(void *data);
-+	void *data;
-+};
-+
-+int rpc_pipefs_add_destroy_cb(struct super_block *sb,
-+		void (*destroy_cb)(void *data), void *data)
-+{
-+	struct destroy_cb *dcb;
-+	struct list_head *destroy_cb_list = sb->s_fs_info;
-+
-+	dcb = kmalloc(sizeof(*dcb), GFP_KERNEL);
-+	if (!dcb)
-+		return -ENOMEM;
-+
-+	dcb->callback = destroy_cb;
-+	dcb->data = data;
-+	INIT_LIST_HEAD(&dcb->list);
-+	list_add(&dcb->list, destroy_cb_list);
-+
-+	return 0;
-+}
-+EXPORT_SYMBOL_GPL(rpc_pipefs_add_destroy_cb);
-+
- /*
-  * We have a single directory with 1 node in it.
-  */
-@@ -1004,8 +1029,16 @@ rpc_fill_super(struct super_block *sb, void *data, int silent)
- 		iput(inode);
- 		return -ENOMEM;
- 	}
--	if (rpc_populate(root, files, RPCAUTH_lockd, RPCAUTH_RootEOF, NULL))
-+	/* List of destroy callbacks */
-+	sb->s_fs_info = kmalloc(sizeof(struct list_head), GFP_KERNEL);
-+	if (!sb->s_fs_info)
-+		return -ENOMEM;
-+	INIT_LIST_HEAD((struct list_head*) sb->s_fs_info);
-+	if (rpc_populate(root, files, RPCAUTH_lockd, RPCAUTH_RootEOF, NULL)) {
-+		kfree(sb->s_fs_info);
- 		return -ENOMEM;
-+	}
-+
- 	return 0;
- }
- 
-@@ -1016,11 +1049,25 @@ rpc_mount(struct file_system_type *fs_type,
- 	return mount_single(fs_type, flags, data, rpc_fill_super);
- }
- 
-+static void rpc_kill_sb(struct super_block *sb)
-+{
-+	struct list_head *destroy_cb_list = sb->s_fs_info;
-+	struct destroy_cb *dcb, *tmp;
-+
-+	list_for_each_entry_safe(dcb, tmp, destroy_cb_list, list) {
-+		dcb->callback(dcb->data);
-+		list_del(&dcb->list);
-+		kfree(dcb);
-+	}
-+	kfree(destroy_cb_list);
-+	kill_litter_super(sb);
-+}
-+
- static struct file_system_type rpc_pipe_fs_type = {
- 	.owner		= THIS_MODULE,
- 	.name		= "rpc_pipefs",
- 	.mount		= rpc_mount,
--	.kill_sb	= kill_litter_super,
-+	.kill_sb	= rpc_kill_sb,
- };
- 
- static void
--- 
-1.7.4
+This description is quite scanty.  It doesn't explain what the benefit
+is, when one might want to use it, how to use it, etc.  A nice
+description under Documentation/cgroups/ would be appropriate.
+
+I read this and come away with no sense of how useful or desirable this
+code is.
+
+>
+> ...
+>
+> --- a/include/linux/init_task.h
+> +++ b/include/linux/init_task.h
+> @@ -124,6 +124,8 @@ extern struct cred init_cred;
+>  # define INIT_PERF_EVENTS(tsk)
+>  #endif
+>  
+> +#define TIMER_SLACK_NS_DEFAULT 50000
+
+Seems to be an unrelated cleanup.  And given that this #define is only
+used in a single place, its cleanliness is questionable.
+
+>  /*
+>   *  INIT_TASK is used to set up the first task table, touch at
+>   * your own risk!. Base=0, limit=0x1fffff (=2MB)
+> @@ -177,7 +179,7 @@ extern struct cred init_cred;
+>  	.cpu_timers	= INIT_CPU_TIMERS(tsk.cpu_timers),		\
+>  	.fs_excl	= ATOMIC_INIT(0),				\
+>  	.pi_lock	= __RAW_SPIN_LOCK_UNLOCKED(tsk.pi_lock),	\
+> -	.timer_slack_ns = 50000, /* 50 usec default slack */		\
+> +	.timer_slack_ns = TIMER_SLACK_NS_DEFAULT,			\
+>  	.pids = {							\
+>  		[PIDTYPE_PID]  = INIT_PID_LINK(PIDTYPE_PID),		\
+>  		[PIDTYPE_PGID] = INIT_PID_LINK(PIDTYPE_PGID),		\
+>
+> ...
+>
+> +extern int (*timer_slack_check)(struct task_struct *task,
+> +		unsigned long slack_ns);
+
+Nope.  Please put this in a header file so we can be sure that callers
+see the same prototype as does the definition.
+
+>
+> ...
+>
+> +/*
+> + * Adjust ->timer_slack_ns and ->default_max_slack_ns of the task to fit
+> + * limits of the cgroup.
+> + */
+> +static void tslack_adjust_task(struct timer_slack_cgroup *tslack_cgroup,
+> +		struct task_struct *tsk)
+> +{
+> +	if (tslack_cgroup->min_slack_ns > tsk->timer_slack_ns)
+> +		tsk->timer_slack_ns = tslack_cgroup->min_slack_ns;
+> +	else if (tslack_cgroup->max_slack_ns < tsk->timer_slack_ns)
+> +		tsk->timer_slack_ns = tslack_cgroup->max_slack_ns;
+> +
+> +	if (tslack_cgroup->min_slack_ns > tsk->default_timer_slack_ns)
+> +		tsk->default_timer_slack_ns = tslack_cgroup->min_slack_ns;
+> +	else if (tslack_cgroup->max_slack_ns < tsk->default_timer_slack_ns)
+> +		tsk->default_timer_slack_ns = tslack_cgroup->max_slack_ns;
+> +}
+> +
+> +static void tslack_cgroup_attach(struct cgroup_subsys *subsys,
+> +		struct cgroup *cgroup, struct cgroup *prev,
+> +		struct task_struct *tsk, bool threadgroup)
+> +{
+> +	tslack_adjust_task(cgroup_to_tslack_cgroup(cgroup), tsk);
+> +}
+> +
+> +static int tslack_write_set_slack_ns(struct cgroup *cgroup, struct cftype *cft,
+> +		u64 val)
+> +{
+> +	struct timer_slack_cgroup *tslack_cgroup;
+> +	struct cgroup_iter it;
+> +	struct task_struct *task;
+> +
+> +	tslack_cgroup = cgroup_to_tslack_cgroup(cgroup);
+> +	if (!is_timer_slack_allowed(cgroup_to_tslack_cgroup(cgroup), val))
+> +		return -EPERM;
+> +
+> +	/* Change timer slack value for all tasks in the cgroup */
+> +	cgroup_iter_start(cgroup, &it);
+> +	while ((task = cgroup_iter_next(cgroup, &it)))
+> +		task->timer_slack_ns = val;
+> +	cgroup_iter_end(cgroup, &it);
+> +
+> +	return 0;
+> +}
+> +
+> +static u64 tslack_read_range(struct cgroup *cgroup, struct cftype *cft)
+> +{
+> +	struct timer_slack_cgroup *tslack_cgroup;
+> +
+> +	tslack_cgroup = cgroup_to_tslack_cgroup(cgroup);
+> +	switch (cft->private) {
+> +	case TIMER_SLACK_MIN:
+> +		return tslack_cgroup->min_slack_ns;
+> +	case TIMER_SLACK_MAX:
+> +		return tslack_cgroup->max_slack_ns;
+> +	default:
+> +		BUG();
+> +	};
+
+Extraneous ";".
+
+> +}
+
+These proposed new userspace interfaces should be documented somewhere,
+please.  They are the most important part of the patch.
+
+>
+> ...
+>
+> +struct cgroup_subsys timer_slack_subsys = {
+> +	.name = "timer_slack",
+> +	.module = THIS_MODULE,
+> +#ifdef CONFIG_CGROUP_TIMER_SLACK
+
+Confused.  This file won't even be compiled if
+CONFIG_CGROUP_TIMER_SLACK=n?
+
+> +	.subsys_id = timer_slack_subsys_id,
+> +#endif
+> +	.create = tslack_cgroup_create,
+> +	.destroy = tslack_cgroup_destroy,
+> +	.attach = tslack_cgroup_attach,
+> +	.populate = tslack_cgroup_populate,
+> +};
+> +
+>
+> ...
+>
+> @@ -1694,12 +1698,15 @@ SYSCALL_DEFINE5(prctl, int, option, unsigned long, arg2, unsigned long, arg3,
+>  			error = current->timer_slack_ns;
+>  			break;
+>  		case PR_SET_TIMERSLACK:
+> -			if (arg2 <= 0)
+> -				current->timer_slack_ns =
+> -					current->default_timer_slack_ns;
+> -			else
+> -				current->timer_slack_ns = arg2;
+> -			error = 0;
+> +			if (arg2 <= 0) {
+> +				me->timer_slack_ns = me->default_timer_slack_ns;
+> +				break;
+> +			}
+> +
+> +			error = timer_slack_check ?
+> +				timer_slack_check(me, arg2) : 0;
+
+This is racy against init_cgroup_timer_slack().  And against
+exit_cgroup_timer_slack().
+
+This whole scheme of using a single hook to a single "check" function
+is rather grubby.  I guess that using a notifier_call_chain() would fix
+things: support multiple "check" functions and hopefully fix the races.
+
+> +			if (!error)
+> +				me->timer_slack_ns = arg2;
+>  			break;
+>  		case PR_MCE_KILL:
+>  			if (arg4 | arg5)
+
+I don't know whether PR_SET_TIMERSLACK is presently documented in the
+manpages.
+
+Please cc linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org on future versions of this work and
+ensure that the patch (via changelog, Documentation or code comments)
+has sufficient information for the manpages maintainers to be able to
+easily update the manpages.
