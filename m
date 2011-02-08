@@ -1,13 +1,11 @@
 From: "Kirill A. Shutemov" <kas-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH v3, RESEND 01/16] sunrpc: mount rpc_pipefs on initialization
-Date: Tue,  8 Feb 2011 20:41:52 +0200
-Message-ID: <1297190527-19925-2-git-send-email-kas__641.084000426595$1297190899$gmane$org@openvz.org>
-References: <1297190527-19925-1-git-send-email-kas@openvz.org>
+Subject: [PATCH v3, RESEND 00/16] make rpc_pipefs be mountable multiple time
+Date: Tue,  8 Feb 2011 20:41:51 +0200
+Message-ID: <1297190527-19925-1-git-send-email-kas__45037.071457091$1297191022$gmane$org@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1297190527-19925-1-git-send-email-kas-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,76 +19,73 @@ To: Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>, "
 Cc: linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "Kirill A. Shutemov" <kas-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Mount rpc_pipefs on register_rpc_pipefs() and replace
-rpc_get_mount()/rpc_put_mount() implementation with mntget()/mntput().
+v3:
+ - rebase to the current Linus' tree (52cfd503ad)
+ - rework get_rpc_pipefs() once again;
+ - solve problem with rmmod sunrpc moudle;
+ - free dns cache on killing rpc_pipefs superblock.
 
-This commit introduces temprorary regression: there is no way to
-remove the module. It will be fixed at the end of the patchset.
+v2:
+ - one of rpc_create() calls was missed initially, fixed;
+ - change logic for get_rpc_pipefs(NULL);
+ - export get_rpc_pipefs() to be able to use from modules (tnx J. Bruce Field);
+ - change "From:" and "Signed-off-by:" addresses.
 
-Signed-off-by: Kirill A. Shutemov <kas-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Reviewed-by: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
----
- net/sunrpc/rpc_pipe.c |   26 +++++++++++++++-----------
- 1 files changed, 15 insertions(+), 11 deletions(-)
+v1:
+ - initial revision of the patchset.
 
-diff --git a/net/sunrpc/rpc_pipe.c b/net/sunrpc/rpc_pipe.c
-index 72bc536..9ab9355 100644
---- a/net/sunrpc/rpc_pipe.c
-+++ b/net/sunrpc/rpc_pipe.c
-@@ -29,7 +29,6 @@
- #include <linux/sunrpc/cache.h>
- 
- static struct vfsmount *rpc_mnt __read_mostly;
--static int rpc_mount_count;
- 
- static struct file_system_type rpc_pipe_fs_type;
- 
-@@ -423,18 +422,13 @@ struct rpc_filelist {
- 
- struct vfsmount *rpc_get_mount(void)
- {
--	int err;
--
--	err = simple_pin_fs(&rpc_pipe_fs_type, &rpc_mnt, &rpc_mount_count);
--	if (err != 0)
--		return ERR_PTR(err);
--	return rpc_mnt;
-+	return mntget(rpc_mnt);
- }
- EXPORT_SYMBOL_GPL(rpc_get_mount);
- 
- void rpc_put_mount(void)
- {
--	simple_release_fs(&rpc_mnt, &rpc_mount_count);
-+	mntput(rpc_mnt);
- }
- EXPORT_SYMBOL_GPL(rpc_put_mount);
- 
-@@ -1071,12 +1065,22 @@ int register_rpc_pipefs(void)
- 	if (!rpc_inode_cachep)
- 		return -ENOMEM;
- 	err = register_filesystem(&rpc_pipe_fs_type);
--	if (err) {
--		kmem_cache_destroy(rpc_inode_cachep);
--		return err;
-+	if (err)
-+		goto destroy_cache;
-+
-+	rpc_mnt = kern_mount(&rpc_pipe_fs_type);
-+	if (IS_ERR(rpc_mnt)) {
-+		err = PTR_ERR(rpc_mnt);
-+		goto unregister_fs;
- 	}
- 
- 	return 0;
-+
-+unregister_fs:
-+	unregister_filesystem(&rpc_pipe_fs_type);
-+destroy_cache:
-+	kmem_cache_destroy(rpc_inode_cachep);
-+	return err;
- }
- 
- void unregister_rpc_pipefs(void)
+Kirill A. Shutemov (16):
+  sunrpc: mount rpc_pipefs on initialization
+  sunrpc: introduce init_rpc_pipefs
+  sunrpc: push init_rpc_pipefs up to rpc_create() callers
+  sunrpc: tag svc_serv with rpc_pipefs mount point
+  sunrpc: get rpc_pipefs mount point for svc_serv from callers
+  lockd: get rpc_pipefs mount point from callers
+  sunrpc: get rpc_pipefs mount point for rpcb_create[_local] from
+    callers
+  sunrpc: tag pipefs field of cache_detail with rpc_pipefs mount point
+  sunrpc: introduce rpc_pipefs_add_destroy_cb()
+  nfs: per-rpc_pipefs dns cache
+  Export iterate_mounts symbol to be able to use from sunrpc module.
+  sunrpc: introduce get_rpc_pipefs()
+  nfs: introduce mount option 'rpcmount'
+  sunrpc: make rpc_pipefs be mountable multiple times
+  sunrpc: remove global init_rpc_pipefs
+  Rework get_rpc_pipefs() and introduce put_rpc_pipefs()
+
+ fs/lockd/clntlock.c                |    8 +-
+ fs/lockd/host.c                    |   15 ++-
+ fs/lockd/mon.c                     |   13 ++-
+ fs/lockd/svc.c                     |    4 +-
+ fs/namespace.c                     |    1 +
+ fs/nfs/cache_lib.c                 |   18 +--
+ fs/nfs/cache_lib.h                 |    3 +-
+ fs/nfs/callback.c                  |    7 +-
+ fs/nfs/callback.h                  |    3 +-
+ fs/nfs/client.c                    |   45 ++++++-
+ fs/nfs/dns_resolve.c               |  137 ++++++++++++++++-----
+ fs/nfs/dns_resolve.h               |   15 +--
+ fs/nfs/inode.c                     |    9 +--
+ fs/nfs/internal.h                  |   10 ++-
+ fs/nfs/mount_clnt.c                |    1 +
+ fs/nfs/namespace.c                 |    3 +-
+ fs/nfs/nfs4namespace.c             |   20 ++--
+ fs/nfs/super.c                     |   20 +++
+ fs/nfsd/nfs4callback.c             |    5 +
+ fs/nfsd/nfssvc.c                   |   20 +++-
+ include/linux/lockd/bind.h         |    3 +-
+ include/linux/lockd/lockd.h        |    4 +-
+ include/linux/nfs_fs_sb.h          |    1 +
+ include/linux/sunrpc/cache.h       |    9 +-
+ include/linux/sunrpc/clnt.h        |    5 +-
+ include/linux/sunrpc/rpc_pipe_fs.h |    7 +-
+ include/linux/sunrpc/svc.h         |    9 +-
+ net/sunrpc/cache.c                 |   16 ++-
+ net/sunrpc/clnt.c                  |   19 ++--
+ net/sunrpc/rpc_pipe.c              |  235 ++++++++++++++++++++++++++++++++----
+ net/sunrpc/rpcb_clnt.c             |   19 ++-
+ net/sunrpc/svc.c                   |   52 +++++---
+ 32 files changed, 549 insertions(+), 187 deletions(-)
+
 -- 
 1.7.4
