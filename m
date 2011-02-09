@@ -1,20 +1,16 @@
-From: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH][usercr]: Ghost tasks must be detached
-Date: Wed, 9 Feb 2011 13:37:37 +0100
-Message-ID: <20110209123737.GH13323@hawkmoon.kerlabs.com>
-References: <20101211033548.GA12584@us.ibm.com>
-	<4D2BB78A.9090701@cs.columbia.edu>
-	<4D4D9D1B.3000209@cs.columbia.edu>
-	<20110205214032.GA12944@us.ibm.com>
-	<4D4DC90B.3010103@cs.columbia.edu>
-	<20110209020942.GA5339@us.ibm.com>
-	<20110209120100.GD13323@hawkmoon.kerlabs.com>
-	<4D528629.7030905@cs.columbia.edu>
-	<20110209123550.GG13323@hawkmoon.kerlabs.com>
+From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+Subject: Re: [PATCH, v4 2/2] cgroups: introduce timer slack subsystem
+Date: Wed, 9 Feb 2011 15:23:40 +0200
+Message-ID: <20110209132340.GA23704__9363.23473365537$1297257928$gmane$org@shutemov.name>
+References: <1296743654-2984-1-git-send-email-kirill@shutemov.name>
+	<1296743654-2984-3-git-send-email-kirill@shutemov.name>
+	<20110208150835.42e184be.akpm@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============4157270503505538875=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110209123550.GG13323-Hu8+6S1rdjywhHL9vcZdMVaTQe2KTcn/@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20110208150835.42e184be.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,174 +18,223 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Containers <containers@lists.l>
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
+On Tue, Feb 08, 2011 at 03:08:35PM -0800, Andrew Morton wrote:
+> On Thu,  3 Feb 2011 16:34:14 +0200
+> "Kirill A. Shutsemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org> wrote:
+> 
+> > From: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+> > 
+> > Provides a way of tasks grouping by timer slack value. Introduces per
+> > cgroup max and min timer slack value. When a task attaches to a cgroup,
+> > its timer slack value adjusts (if needed) to fit min-max range.
+> > 
+> > It also provides a way to set timer slack value for all tasks in the
+> > cgroup at once.
+> > 
+> > This functionality is useful in mobile devices where certain background
+> > apps are attached to a cgroup and minimum wakeups are desired.
+> 
+> This description is quite scanty.  It doesn't explain what the benefit
+> is, when one might want to use it, how to use it, etc.  A nice
+> description under Documentation/cgroups/ would be appropriate.
+> 
+> I read this and come away with no sense of how useful or desirable this
+> code is.
 
---===============4157270503505538875==
-Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-9763-1297254996-0001-2"
-Content-Disposition: inline
+Ok, I'll add file to Documentation/cgroups/ and extend description.
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
+> >
+> > ...
+> >
+> > --- a/include/linux/init_task.h
+> > +++ b/include/linux/init_task.h
+> > @@ -124,6 +124,8 @@ extern struct cred init_cred;
+> >  # define INIT_PERF_EVENTS(tsk)
+> >  #endif
+> >  
+> > +#define TIMER_SLACK_NS_DEFAULT 50000
+> 
+> Seems to be an unrelated cleanup.  And given that this #define is only
+> used in a single place, its cleanliness is questionable.
 
---=_bohort-9763-1297254996-0001-2
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+I used it in previous patch revision. I'll remove it.
 
-Oops, failed to add Eric properly in Cc...
+> >  /*
+> >   *  INIT_TASK is used to set up the first task table, touch at
+> >   * your own risk!. Base=0, limit=0x1fffff (=2MB)
+> > @@ -177,7 +179,7 @@ extern struct cred init_cred;
+> >  	.cpu_timers	= INIT_CPU_TIMERS(tsk.cpu_timers),		\
+> >  	.fs_excl	= ATOMIC_INIT(0),				\
+> >  	.pi_lock	= __RAW_SPIN_LOCK_UNLOCKED(tsk.pi_lock),	\
+> > -	.timer_slack_ns = 50000, /* 50 usec default slack */		\
+> > +	.timer_slack_ns = TIMER_SLACK_NS_DEFAULT,			\
+> >  	.pids = {							\
+> >  		[PIDTYPE_PID]  = INIT_PID_LINK(PIDTYPE_PID),		\
+> >  		[PIDTYPE_PGID] = INIT_PID_LINK(PIDTYPE_PGID),		\
+> >
+> > ...
+> >
+> > +extern int (*timer_slack_check)(struct task_struct *task,
+> > +		unsigned long slack_ns);
+> 
+> Nope.  Please put this in a header file so we can be sure that callers
+> see the same prototype as does the definition.
 
-Louis
+Ok.
 
-On 09/02/11 13:35 +0100, Louis Rilling wrote:
-> On 09/02/11  7:18 -0500, Oren Laadan wrote:
-> >=20
-> >=20
-> > On 02/09/2011 07:01 AM, Louis Rilling wrote:
-> > > On 08/02/11 18:09 -0800, Sukadev Bhattiprolu wrote:
-> > >> Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
-> > >> |=20
-> > >> |=20
-> > >> | On 02/05/2011 04:40 PM, Sukadev Bhattiprolu wrote:
-> > >> | > Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
-> > >> | > | Suka,
-> > >> | > |=20
-> > >> | > | This patch - and the corresponding kernel patch - are wrong
-> > >> | >=20
-> > >> | > Ah, I see that now.
-> > >> | >=20
-> > >> | > But am not sure about the kernel part though. We were getting a =
-crash
-> > >> | > reliably (with older kernels) because of the ->exit_signal =3D -=
-1 in
-> > >> | > do_ghost_task().
-> > >> |=20
-> > >> | Are we still getting it with 2.6.37 ?
-> > >>
-> > >> I am not currently getting the crash on 2.6.37 - I thought it was du=
-e to
-> > >> the following commit which removed the check for task_detached() in
-> > >> do_wait_thread().
-> > >>
-> > >> 	commit 9cd80bbb07fcd6d4d037fad4297496d3b132ac6b
-> > >> 	Author: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> > >> 	Date:   Thu Dec 17 15:27:15 2009 -0800
-> > >=20
-> > > I don't think that this introduced the bug. The bug triggers with EXI=
-T_DEAD
-> > > tasks, for which wait() must ignore (see below). So, the bug looks st=
-ill there
-> > > in 2.6.37.
-> > >=20
-> > >>
-> > >> But if that is true, I need to investigate why Louis Rilling was get=
-ting
-> > >> the crash in Jun 2010 - which he tried to fix here:
-> > >>
-> > >> 	http://lkml.org/lkml/2010/6/16/295
-> > >=20
-> > > I was getting the crash on Kerrighed, which heavily patches the 2.6.3=
-0 kernel.
-> > > I could reproduce it on vanilla Linux of the moment (2.6.35-rc3), but
-> > > only after introducing artificial delays in release_task().
-> > >=20
-> > > IIRC, what triggers the crash is some exiting detached task in the
-> > > pid_namespace, which goes EXIT_DEAD, and as such cannot be reaped by
-> > > zap_pid_ns_processes()->sys_wait4(). So with some odd timing, the det=
-ached
-> > > task can call proc_flush_task() after container init does, which trig=
-gers the
-> > > proc_mnt crash.
-> > >=20
-> > > Container init                           Some detached task in the ct=
-nr
-> > >                                          exit_notify()
-> > > 						->exit_state =3D EXIT_DEAD
-> > > exit_notify()
-> > >  forget_original_parent()
-> > >   find_new_reaper()
-> > >    zap_pid_ns_processes()
-> > >     sys_wait4()
-> > >      /* cannot reap EXIT_DEAD tasks */
-> > >  /* reparents EXIT_DEAD tasks to global init */
-> > >=20
-> > > Container reaper
-> > > release_task()
-> > >  proc_flush_task()
-> > >   pid_ns_release_proc()
-> > >                                          release_task()
-> > >                                           proc_flush_task()
-> > >                                            proc_flush_task_mnt()
-> > >                                             KABOOM
-> >=20
-> > Louis, thanks for the explanation, and two follow-up questions:
-> >=20
-> > 1) Is there a patch circulating for this ?  or even better, on the
-> > way to mainline ?
->=20
-> We finally agreed on a patch from Eric, but for some unknown reason, it h=
-as not
-> been finalized(?) and routed to mainline yet.
->=20
-> https://lkml.org/lkml/2010/7/12/213
->=20
-> >=20
-> > 2) Would it suffice if the c/r code ensures that the init never
-> > exits before any EXIT_DEAD tasks ?
->=20
-> That's what Eric's patch does: make zap_pid_ns_processes() wait until all=
- other
-> tasks (EXIT_DEAD or whatever) have passed
-> release_task()->__exit_signal()->__unhash_process().
->=20
-> Thanks,
->=20
-> Louis
->=20
-> --=20
-> Dr Louis Rilling			Kerlabs
-> Skype: louis.rilling			Batiment Germanium
-> Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
-> http://www.kerlabs.com/			35700 Rennes
+> >
+> > ...
+> >
+> > +/*
+> > + * Adjust ->timer_slack_ns and ->default_max_slack_ns of the task to fit
+> > + * limits of the cgroup.
+> > + */
+> > +static void tslack_adjust_task(struct timer_slack_cgroup *tslack_cgroup,
+> > +		struct task_struct *tsk)
+> > +{
+> > +	if (tslack_cgroup->min_slack_ns > tsk->timer_slack_ns)
+> > +		tsk->timer_slack_ns = tslack_cgroup->min_slack_ns;
+> > +	else if (tslack_cgroup->max_slack_ns < tsk->timer_slack_ns)
+> > +		tsk->timer_slack_ns = tslack_cgroup->max_slack_ns;
+> > +
+> > +	if (tslack_cgroup->min_slack_ns > tsk->default_timer_slack_ns)
+> > +		tsk->default_timer_slack_ns = tslack_cgroup->min_slack_ns;
+> > +	else if (tslack_cgroup->max_slack_ns < tsk->default_timer_slack_ns)
+> > +		tsk->default_timer_slack_ns = tslack_cgroup->max_slack_ns;
+> > +}
+> > +
+> > +static void tslack_cgroup_attach(struct cgroup_subsys *subsys,
+> > +		struct cgroup *cgroup, struct cgroup *prev,
+> > +		struct task_struct *tsk, bool threadgroup)
+> > +{
+> > +	tslack_adjust_task(cgroup_to_tslack_cgroup(cgroup), tsk);
+> > +}
+> > +
+> > +static int tslack_write_set_slack_ns(struct cgroup *cgroup, struct cftype *cft,
+> > +		u64 val)
+> > +{
+> > +	struct timer_slack_cgroup *tslack_cgroup;
+> > +	struct cgroup_iter it;
+> > +	struct task_struct *task;
+> > +
+> > +	tslack_cgroup = cgroup_to_tslack_cgroup(cgroup);
+> > +	if (!is_timer_slack_allowed(cgroup_to_tslack_cgroup(cgroup), val))
+> > +		return -EPERM;
+> > +
+> > +	/* Change timer slack value for all tasks in the cgroup */
+> > +	cgroup_iter_start(cgroup, &it);
+> > +	while ((task = cgroup_iter_next(cgroup, &it)))
+> > +		task->timer_slack_ns = val;
+> > +	cgroup_iter_end(cgroup, &it);
+> > +
+> > +	return 0;
+> > +}
+> > +
+> > +static u64 tslack_read_range(struct cgroup *cgroup, struct cftype *cft)
+> > +{
+> > +	struct timer_slack_cgroup *tslack_cgroup;
+> > +
+> > +	tslack_cgroup = cgroup_to_tslack_cgroup(cgroup);
+> > +	switch (cft->private) {
+> > +	case TIMER_SLACK_MIN:
+> > +		return tslack_cgroup->min_slack_ns;
+> > +	case TIMER_SLACK_MAX:
+> > +		return tslack_cgroup->max_slack_ns;
+> > +	default:
+> > +		BUG();
+> > +	};
+> 
+> Extraneous ";".
+> 
+> > +}
+> 
+> These proposed new userspace interfaces should be documented somewhere,
+> please.  They are the most important part of the patch.
+> 
+> >
+> > ...
+> >
+> > +struct cgroup_subsys timer_slack_subsys = {
+> > +	.name = "timer_slack",
+> > +	.module = THIS_MODULE,
+> > +#ifdef CONFIG_CGROUP_TIMER_SLACK
+> 
+> Confused.  This file won't even be compiled if
+> CONFIG_CGROUP_TIMER_SLACK=n?
 
+Timer slack cgroup subsystem can be compiled as module. In this case
+CONFIG_CGROUP_TIMER_SLACK_MODULE defined, not CONFIG_CGROUP_TIMER_SLACK.
+I'll replace it with
 
+#ifndef CONFIG_CGROUP_TIMER_SLACK_MODULE
 
---=20
-Dr Louis Rilling			Kerlabs
-Skype: louis.rilling			Batiment Germanium
-Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
-http://www.kerlabs.com/			35700 Rennes
+to avoid confusion.
 
---=_bohort-9763-1297254996-0001-2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Transfer-Encoding: 7bit
-Content-Description: Digital signature
-Content-Disposition: inline
+> > +	.subsys_id = timer_slack_subsys_id,
+> > +#endif
+> > +	.create = tslack_cgroup_create,
+> > +	.destroy = tslack_cgroup_destroy,
+> > +	.attach = tslack_cgroup_attach,
+> > +	.populate = tslack_cgroup_populate,
+> > +};
+> > +
+> >
+> > ...
+> >
+> > @@ -1694,12 +1698,15 @@ SYSCALL_DEFINE5(prctl, int, option, unsigned long, arg2, unsigned long, arg3,
+> >  			error = current->timer_slack_ns;
+> >  			break;
+> >  		case PR_SET_TIMERSLACK:
+> > -			if (arg2 <= 0)
+> > -				current->timer_slack_ns =
+> > -					current->default_timer_slack_ns;
+> > -			else
+> > -				current->timer_slack_ns = arg2;
+> > -			error = 0;
+> > +			if (arg2 <= 0) {
+> > +				me->timer_slack_ns = me->default_timer_slack_ns;
+> > +				break;
+> > +			}
+> > +
+> > +			error = timer_slack_check ?
+> > +				timer_slack_check(me, arg2) : 0;
+> 
+> This is racy against init_cgroup_timer_slack().  And against
+> exit_cgroup_timer_slack().
+> 
+> This whole scheme of using a single hook to a single "check" function
+> is rather grubby.  I guess that using a notifier_call_chain() would fix
+> things: support multiple "check" functions and hopefully fix the races.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
+Ok, I'll rewrite it using blocking_notifier_call_chain().
 
-iEYEARECAAYFAk1SipEACgkQVKcRuvQ9Q1Q0RACgwecSy2JxPtjWFsAdBZNqSICm
-I9cAoIm2QM+iAF2R7UgbxV1raOotatT+
-=Ao97
------END PGP SIGNATURE-----
+> > +			if (!error)
+> > +				me->timer_slack_ns = arg2;
+> >  			break;
+> >  		case PR_MCE_KILL:
+> >  			if (arg4 | arg5)
+> 
+> I don't know whether PR_SET_TIMERSLACK is presently documented in the
+> manpages.
 
---=_bohort-9763-1297254996-0001-2--
+It's in todo list:
 
---===============4157270503505538875==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+http://git.kernel.org/?p=docs/man-pages/man-pages.git;a=blob;f=man2/prctl.2#l42
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============4157270503505538875==--
+> Please cc linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org on future versions of this work and
+> ensure that the patch (via changelog, Documentation or code comments)
+> has sufficient information for the manpages maintainers to be able to
+> easily update the manpages.
+
+Ok.
+
+Thank you for reviewing.
+
+-- 
+ Kirill A. Shutemov
