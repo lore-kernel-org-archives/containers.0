@@ -1,16 +1,16 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 1/1, v6] cgroup/freezer: add per freezer duty ratio control
-Date: Thu, 10 Feb 2011 10:58:52 -0800
-Message-ID: <20110210185851.GH16432__3486.10347505218$1297364459$gmane$org@count0.beaverton.ibm.com>
+Date: Thu, 10 Feb 2011 11:11:17 -0800
+Message-ID: <20110210191117.GI16432__26240.4019864791$1297365209$gmane$org@count0.beaverton.ibm.com>
 References: <1297213541-18156-1-git-send-email-jacob.jun.pan@linux.intel.com>
 	<20110210030442.GG16432@count0.beaverton.ibm.com>
-	<20110210091522.GA28511@shutemov.name>
+	<4D535627.9090606@linux.intel.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20110210091522.GA28511-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+In-Reply-To: <4D535627.9090606-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,114 +20,54 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Cc: Cedric Le Goater <clg-DhXWPJtHtuFWk0Htik3J/w@public.gmane.org>, jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org, container cgroup <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Wysocki Rafael Wysocki <rjw-KKrjLPT3xs0@public.gmane.org>, rdunlap-/UHa2rfvQTnk1uMJSBkQmQ@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
+Cc: Cedric Le Goater <clg-DhXWPJtHtuFWk0Htik3J/w@public.gmane.org>, jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org, container cgroup <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Wysocki Rafael Wysocki <rjw-KKrjLPT3xs0@public.gmane.org>, rdunlap-/UHa2rfvQTnk1uMJSBkQmQ@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Feb 10, 2011 at 11:15:22AM +0200, Kirill A. Shutemov wrote:
-> On Wed, Feb 09, 2011 at 07:04:42PM -0800, Matt Helsley wrote:
-> > > +{
-> > > +	struct cgroup *cgroup = (struct cgroup *)data;
-> > > +	struct freezer *freezer = cgroup_freezer(cgroup);
-> > > +
-> > > +	do {
-> > > +		if (freezer->duty.ratio < 100 && freezer->duty.ratio > 0 &&
-> > > +			freezer->duty.period_pct_ms) {
-> > > +			if (try_to_freeze_cgroup(cgroup, freezer))
-> > > +				pr_info("cannot freeze\n");
-> > > +			msleep(freezer->duty.period_pct_ms *
-> > > +				freezer->duty.ratio);
-> > > +			unfreeze_cgroup(cgroup, freezer);
-> > > +			msleep(freezer->duty.period_pct_ms *
-> > > +				(100 - freezer->duty.ratio));
-> > > +		} else {
-> > > +			sleep_on(&freezer_wait);
-> > > +			pr_debug("freezer thread wake up\n");
-> > > +		}
-> > > +	} while (!kthread_should_stop());
-> > > +	return 0;
-> > > +}
-> > 
-> > Seems to me you could avoid the thread-per-cgroup overhead and the
-> > sleep-loop code by using one timer-per-cgroup. When the timer expires
-> > you freeze/thaw the cgroup associated with the timer, setup the next
-> > wakeup timer, and use only one kernel thread to do it all. If you
-> > use workqueues you might even avoid the single kernel thread.
-> > 
-> > Seems to me like that'd be a good fit for embedded devices.
+On Wed, Feb 09, 2011 at 07:06:15PM -0800, Arjan van de Ven wrote:
+> On 2/9/2011 7:04 PM, Matt Helsley wrote:
+> >On Tue, Feb 08, 2011 at 05:05:41PM -0800, jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org wrote:
+> >>From: Jacob Pan<jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
+> >>
+> >>Freezer subsystem is used to manage batch jobs which can start
+> >>stop at the same time. However, sometime it is desirable to let
+> >>the kernel manage the freezer state automatically with a given
+> >>duty ratio.
+> >>For example, if we want to reduce the time that backgroup apps
+> >>are allowed to run we can put them into a freezer subsystem and
+> >>set the kernel to turn them THAWED/FROZEN at given duty ratio.
+> >>
+> >>This patch introduces two file nodes under cgroup
+> >>freezer.duty_ratio_pct and freezer.period_sec
+> >>
+> >>Usage example: set period to be 5 seconds and frozen duty ratio 90%
+> >>[root@localhost aoa]# echo 90>  freezer.duty_ratio_pct
+> >>[root@localhost aoa]# echo 5000>  freezer.period_ms
+> >I kept wondering how this was useful when we've got the "cpu" subsystem
+> >because for some reason "duty cycle" made me think this was a scheduling
+> >policy knob. In fact, I'm pretty sure it is -- it just happens to
+> >sometimes reduce power consumption.
+> >
+> >Have you tried using the cpu cgroup subsystem's share to see if it can
+> >have a similar effect?
 > 
-> I proposed to use delayed workqueues (schedule_delayed_work()).
+> does the cpu cgroup system work on a 20 to 30 second time window?
 
-Even better.
+I don't think so -- it works directly with the scheduler IIRC.
 
-> 
-> > > +#define FREEZER_KH_PREFIX  "freezer_"
-> > > +static int freezer_write_param(struct cgroup *cgroup, struct cftype *cft,
-> > > +		u64 val)
-> > > +{
-> > > +	struct freezer *freezer;
-> > > +	char thread_name[32];
-> > > +	int ret = 0;
-> > > +
-> > > +	freezer = cgroup_freezer(cgroup);
-> > > +
-> > > +	if (!cgroup_lock_live_group(cgroup))
-> > > +		return -ENODEV;
-> > > +
-> > > +	switch (cft->private) {
-> > > +	case FREEZER_DUTY_RATIO:
-> > > +		if (val >= 100 || val < 0) {
-> > > +			ret = -EINVAL;
-> > > +			goto exit;
-> > > +		}
-> > > +		freezer->duty.ratio = val;
-> > 
-> > Why can't val == 100? At that point it's always THAWED and no kernel
-> > thread is necessary (just like at 0 it's always FROZEN and no kernel
-> > thread is necessary).
-> 
-> val == 100 is interface abuse, I think. I just turn off the feature, if
-> you want.
+> the objective is to have the CPU idle, without wakeups, for that long...
+> (to save power)
 
-And how is userspace supposed to do that at runtime if we can't disable
-it by writing to the state file (see below)? Then I don't see anyway
-to get rid of the duty cycling unless you clear out the cgroup and
-recreate it.
-
-Frankly, I think 0 and 100 percent aren't interface abuse. Anybody
-who knows it's a percent value will naturally try to put 0 or 100
-there.
-
-> > >  static struct cftype files[] = {
-> > >  	{
-> > >  		.name = "state",
-> > >  		.read_seq_string = freezer_read,
-> > >  		.write_string = freezer_write,
-> > 
-> > It's not clear what should happen when userspace writes the state
-> > file after writing a duty_ratio_pct.
-> 
-> It should return -EBUSY, I think.
-
-Ahh, that is another solution I hadn't considered. That further proves my
-point though :). It's not obvious what should happen and that's a red-flag
-that we're defining policy and should be careful which solution we select.
-
-> 
-> > >  	},
-> > > +	{
-> > > +		.name = "duty_ratio_pct",
-> > > +		.private = FREEZER_DUTY_RATIO,
-> > > +		.read_u64 = freezer_read_duty_ratio,
-> > > +		.write_u64 = freezer_write_param,
-> > > +	},
-> > 
-> > nit: Why use a u64 for a value that can only be 0-100? (or perhaps
-> > 0-1000 if you wanted sub-1% granularity...)
-> 
-> .read_u64/.write_64 is a standard cgroup's interface.
-
-Oops -- I was thinking there was a smaller variant of these.
+Hmm. Maybe these need some "scheduler slack" so that when they're
+runnable they'll either run with other scheduled entities that are
+keeping the cpu awake or wait until the slack runs out before doing
+a wakeup. Then you can toss this in the cgroup timer slack subsystem
+and rename it to the "wakeup slack" subsystem or something. That
+will probably get you better race-to-idle behavior, avoid/reduce 
+latencies added by duty cycles, and avoid shoehorning into the cgroup
+freezer subsystem. Of course it would require some scheduler hacking
+which will probably be much more controversial than modifying a cgroup
+subsystem :).
 
 Cheers,
 	-Matt Helsley
