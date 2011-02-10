@@ -1,15 +1,19 @@
-From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Subject: Re: [PATCH 1/1, v6] cgroup/freezer: add per freezer duty ratio control
-Date: Thu, 10 Feb 2011 11:15:22 +0200
-Message-ID: <20110210091522.GA28511__21974.8390176848$1297329483$gmane$org@shutemov.name>
-References: <1297213541-18156-1-git-send-email-jacob.jun.pan@linux.intel.com>
-	<20110210030442.GG16432@count0.beaverton.ibm.com>
+From: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [PATCH][usercr]: Ghost tasks must be detached
+Date: Thu, 10 Feb 2011 11:23:12 +0100
+Message-ID: <20110210102312.GC6360@hawkmoon.kerlabs.com>
+References: <20101211033548.GA12584@us.ibm.com>
+	<4D2BB78A.9090701@cs.columbia.edu>
+	<4D4D9D1B.3000209@cs.columbia.edu>
+	<20110205214032.GA12944@us.ibm.com>
+	<4D4DC90B.3010103@cs.columbia.edu>
+	<20110209020942.GA5339@us.ibm.com>
+	<20110209120100.GD13323@hawkmoon.kerlabs.com>
+	<20110209190216.GA17051@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============7989368327772939654=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20110210030442.GG16432-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
+In-Reply-To: <20110209190216.GA17051-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,95 +21,106 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Cedric Le Goater <clg-DhXWPJtHtuFWk0Htik3J/w@public.gmane.org>, jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org, container cgroup <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Wysocki Rafael Wysocki <rjw-KKrjLPT3xs0@public.gmane.org>, rdunlap-/UHa2rfvQTnk1uMJSBkQmQ@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Feb 09, 2011 at 07:04:42PM -0800, Matt Helsley wrote:
-> > +{
-> > +	struct cgroup *cgroup = (struct cgroup *)data;
-> > +	struct freezer *freezer = cgroup_freezer(cgroup);
-> > +
-> > +	do {
-> > +		if (freezer->duty.ratio < 100 && freezer->duty.ratio > 0 &&
-> > +			freezer->duty.period_pct_ms) {
-> > +			if (try_to_freeze_cgroup(cgroup, freezer))
-> > +				pr_info("cannot freeze\n");
-> > +			msleep(freezer->duty.period_pct_ms *
-> > +				freezer->duty.ratio);
-> > +			unfreeze_cgroup(cgroup, freezer);
-> > +			msleep(freezer->duty.period_pct_ms *
-> > +				(100 - freezer->duty.ratio));
-> > +		} else {
-> > +			sleep_on(&freezer_wait);
-> > +			pr_debug("freezer thread wake up\n");
-> > +		}
-> > +	} while (!kthread_should_stop());
-> > +	return 0;
-> > +}
-> 
-> Seems to me you could avoid the thread-per-cgroup overhead and the
-> sleep-loop code by using one timer-per-cgroup. When the timer expires
-> you freeze/thaw the cgroup associated with the timer, setup the next
-> wakeup timer, and use only one kernel thread to do it all. If you
-> use workqueues you might even avoid the single kernel thread.
-> 
-> Seems to me like that'd be a good fit for embedded devices.
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-I proposed to use delayed workqueues (schedule_delayed_work()).
+--===============7989368327772939654==
+Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-21952-1297333330-0001-2"
+Content-Disposition: inline
 
-> > +#define FREEZER_KH_PREFIX  "freezer_"
-> > +static int freezer_write_param(struct cgroup *cgroup, struct cftype *cft,
-> > +		u64 val)
-> > +{
-> > +	struct freezer *freezer;
-> > +	char thread_name[32];
-> > +	int ret = 0;
-> > +
-> > +	freezer = cgroup_freezer(cgroup);
-> > +
-> > +	if (!cgroup_lock_live_group(cgroup))
-> > +		return -ENODEV;
-> > +
-> > +	switch (cft->private) {
-> > +	case FREEZER_DUTY_RATIO:
-> > +		if (val >= 100 || val < 0) {
-> > +			ret = -EINVAL;
-> > +			goto exit;
-> > +		}
-> > +		freezer->duty.ratio = val;
-> 
-> Why can't val == 100? At that point it's always THAWED and no kernel
-> thread is necessary (just like at 0 it's always FROZEN and no kernel
-> thread is necessary).
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-val == 100 is interface abuse, I think. I just turn off the feature, if
-you want.
-> >  static struct cftype files[] = {
-> >  	{
-> >  		.name = "state",
-> >  		.read_seq_string = freezer_read,
-> >  		.write_string = freezer_write,
-> 
-> It's not clear what should happen when userspace writes the state
-> file after writing a duty_ratio_pct.
+--=_bohort-21952-1297333330-0001-2
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-It should return -EBUSY, I think.
+On 09/02/11 11:02 -0800, Sukadev Bhattiprolu wrote:
+> Louis Rilling [Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org] wrote:
+> | > | Are we still getting it with 2.6.37 ?
+> | >=20
+> | > I am not currently getting the crash on 2.6.37 - I thought it was due=
+ to
+> | > the following commit which removed the check for task_detached() in
+> | > do_wait_thread().
+> | >=20
+> | > 	commit 9cd80bbb07fcd6d4d037fad4297496d3b132ac6b
+> | > 	Author: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> | > 	Date:   Thu Dec 17 15:27:15 2009 -0800
+> |=20
+> | I don't think that this introduced the bug. The bug triggers with EXIT_=
+DEAD
+> | tasks, for which wait() must ignore (see below). So, the bug looks stil=
+l there
+> | in 2.6.37.
+>=20
+> Sorry, I did not mean to imply that the above commit caused the crash
+> you saw in Jun 2010.
+>=20
+> I can reproduce a crash with 2.6.32 - where if container-init terminates
+> before a detached child, we get a crash when the detached child calls
+> proc_flush_mnt(). I suspected it was because do_wait_thread() skipped
+> over detached tasks (in 2.6.32).
+>=20
+> The same test case does not crash on 2.6.37 - which includes the above co=
+mmit.
+> The removes the check for detached tasks, my initial guess is that the ab=
+ove
+> commit, may have contributed to _fixing_ the crash in 2.6.37.
 
-> >  	},
-> > +	{
-> > +		.name = "duty_ratio_pct",
-> > +		.private = FREEZER_DUTY_RATIO,
-> > +		.read_u64 = freezer_read_duty_ratio,
-> > +		.write_u64 = freezer_write_param,
-> > +	},
-> 
-> nit: Why use a u64 for a value that can only be 0-100? (or perhaps
-> 0-1000 if you wanted sub-1% granularity...)
+Hm, I don't see how this commit changed things for detached tasks, unless p=
+trace
+is involved. Detached tasks go atomically
+=66rom ->exit_state =3D=3D 0 to ->exit_state =3D=3D EXIT_DEAD in exit_notif=
+y(),
+because tracehook_notify_death() returns DEATH_REAP for all not ptraced det=
+ached
+tasks.
 
-.read_u64/.write_64 is a standard cgroup's interface.
+What do you think has changed precisely?
 
--- 
- Kirill A. Shutemov
+Thanks,
+
+Louis
+
+--=20
+Dr Louis Rilling			Kerlabs
+Skype: louis.rilling			Batiment Germanium
+Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
+http://www.kerlabs.com/			35700 Rennes
+
+--=_bohort-21952-1297333330-0001-2
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Transfer-Encoding: 7bit
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (GNU/Linux)
+
+iEYEARECAAYFAk1TvJAACgkQVKcRuvQ9Q1TF/gCeJoRe58ws1GthObqFGyJ8OdWi
+A3gAnj1KyBk79p6Kyrs0U4wJNLHGqiwg
+=zgPS
+-----END PGP SIGNATURE-----
+
+--=_bohort-21952-1297333330-0001-2--
+
+--===============7989368327772939654==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============7989368327772939654==--
