@@ -1,19 +1,22 @@
-From: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Subject: Re: [PATCH][usercr]: Ghost tasks must be detached
-Date: Thu, 10 Feb 2011 11:23:12 +0100
-Message-ID: <20110210102312.GC6360@hawkmoon.kerlabs.com>
+Date: Thu, 10 Feb 2011 09:56:28 -0500
+Message-ID: <4D53FC9C.1050405@cs.columbia.edu>
 References: <20101211033548.GA12584@us.ibm.com>
 	<4D2BB78A.9090701@cs.columbia.edu>
 	<4D4D9D1B.3000209@cs.columbia.edu>
 	<20110205214032.GA12944@us.ibm.com>
 	<4D4DC90B.3010103@cs.columbia.edu>
 	<20110209020942.GA5339@us.ibm.com>
-	<20110209120100.GD13323@hawkmoon.kerlabs.com>
-	<20110209190216.GA17051@us.ibm.com>
+	<4D520B78.9020300@cs.columbia.edu>
+	<20110210024430.GA23167@us.ibm.com>
+	<4D536154.8000900@cs.columbia.edu>
+	<20110210061730.GA25432@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============7989368327772939654=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110209190216.GA17051-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20110210061730.GA25432-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,106 +24,86 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
 
---===============7989368327772939654==
-Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-21952-1297333330-0001-2"
-Content-Disposition: inline
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
+On 02/10/2011 01:17 AM, Sukadev Bhattiprolu wrote:
+> Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
+> | 
+> | To address this, initially I thought that we could make ghosts take
+> | the tasklist_lock (write) when they change their ->exit_signal. 
+> | 
+> | But that's not enough because the parent may already be blocked in
+> | wait (so it's too late). Therefore, we also need to have ghosts 
+> | wake-up their parent through __wake_up_parent().
+> | 
+> | so something like:
+> | 
+> | void ghost_auto_reapable()
+> | {
+> | 	write_lock(&tasklist_lock);
+> | 	current->exit_signal = -1;
+> | 	__wake_up_sync_key(current, current->parent);
+> | 	write_unlock(&tasklist_lock);
+> 
+> You meant __wake_up_parent() here I guess.
 
---=_bohort-21952-1297333330-0001-2
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Yes...
 
-On 09/02/11 11:02 -0800, Sukadev Bhattiprolu wrote:
-> Louis Rilling [Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org] wrote:
-> | > | Are we still getting it with 2.6.37 ?
-> | >=20
-> | > I am not currently getting the crash on 2.6.37 - I thought it was due=
- to
-> | > the following commit which removed the check for task_detached() in
-> | > do_wait_thread().
-> | >=20
-> | > 	commit 9cd80bbb07fcd6d4d037fad4297496d3b132ac6b
-> | > 	Author: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> | > 	Date:   Thu Dec 17 15:27:15 2009 -0800
-> |=20
-> | I don't think that this introduced the bug. The bug triggers with EXIT_=
-DEAD
-> | tasks, for which wait() must ignore (see below). So, the bug looks stil=
-l there
-> | in 2.6.37.
->=20
-> Sorry, I did not mean to imply that the above commit caused the crash
-> you saw in Jun 2010.
->=20
-> I can reproduce a crash with 2.6.32 - where if container-init terminates
-> before a detached child, we get a crash when the detached child calls
-> proc_flush_mnt(). I suspected it was because do_wait_thread() skipped
-> over detached tasks (in 2.6.32).
->=20
-> The same test case does not crash on 2.6.37 - which includes the above co=
-mmit.
-> The removes the check for detached tasks, my initial guess is that the ab=
-ove
-> commit, may have contributed to _fixing_ the crash in 2.6.37.
+> 
+> But if we do this in do_ghost_task(), the parent could wakeup, find
+> that it still has a live child (this ghost) and go back to sleep before
+> the ghost becomes EXIT_DEAD right ?
 
-Hm, I don't see how this commit changed things for detached tasks, unless p=
-trace
-is involved. Detached tasks go atomically
-=66rom ->exit_state =3D=3D 0 to ->exit_state =3D=3D EXIT_DEAD in exit_notif=
-y(),
-because tracehook_notify_death() returns DEATH_REAP for all not ptraced det=
-ached
-tasks.
+You are right again...
 
-What do you think has changed precisely?
+> 
+> If so, we would still have the problem ?
+> 
+> i.e we must stop being a chld a of the cinit for it to not wait for us.
+> Or we might need to detect that the the pidns is going away, so signalling
+> the parent won't cause any harm.  But that is racy too :-(
 
-Thanks,
+So instead, we can call __wake_up_parent() from exit_checkpoint()
+if indeed we are already reaped there:
 
-Louis
+exit_checkpoint()
+{
+	...
+	if (current->flags & PF_RESTARTING) {
+		...
+		/* either zombie or reaped ghost/dead */
+		if (current->exit_state = EXIT_DEAD)
+			__wake_up_parent(...);	  /* probably need lock */
+		...
+	}
+	...
+}
 
---=20
-Dr Louis Rilling			Kerlabs
-Skype: louis.rilling			Batiment Germanium
-Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
-http://www.kerlabs.com/			35700 Rennes
+and to avoid userspace misuse, disallow non-thread-group-leader ghosts.
 
---=_bohort-21952-1297333330-0001-2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Transfer-Encoding: 7bit
-Content-Description: Digital signature
-Content-Disposition: inline
+?
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
+Oren.
 
-iEYEARECAAYFAk1TvJAACgkQVKcRuvQ9Q1TF/gCeJoRe58ws1GthObqFGyJ8OdWi
-A3gAnj1KyBk79p6Kyrs0U4wJNLHGqiwg
-=zgPS
------END PGP SIGNATURE-----
-
---=_bohort-21952-1297333330-0001-2--
-
---===============7989368327772939654==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============7989368327772939654==--
+> 
+> | }
+> | 
+> | If the parent wasn't at all waiting for us, no harm done...
+> | 
+> | > 
+> | > So you may ask how did the container-init have a ghost child. That was
+> | > due to a bug in usercr :-). 
+> | 
+> | You don't need a bug: the ghost flag is used for both ghost and dead
+> | tasks (the former used to instantiate specific pids, the latter to
+> | make other tasks orphans). So restarting a container that had orphan
+> | tasks is guaranteed to do this.
+> 
+> Ah, thats a good point.
+> 
