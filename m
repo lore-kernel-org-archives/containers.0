@@ -1,7 +1,7 @@
 From: jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org
-Subject: [PATCH 0/1, v7] cgroup/freezer: add per freezer duty ratio control
-Date: Fri, 11 Feb 2011 11:10:13 -0800
-Message-ID: <1297451413-15244-1-git-send-email-jacob.jun.pan__45889.7731885829$1297452304$gmane$org@linux.intel.com>
+Subject: [PATCH 0/1, v8] cgroup/freezer: add per freezer duty ratio control
+Date: Fri, 11 Feb 2011 12:22:25 -0800
+Message-ID: <1297455745-15841-1-git-send-email-jacob.jun.pan__37968.930663965$1297455916$gmane$org@linux.intel.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -24,6 +24,7 @@ From: Jacob Pan <jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
 Fixing subject in cover letter, should be v4 instead of v3
 
 Changelog:
+v8:	- minor clean up
 v7:	- use delayed workqueue instead of per cgroup kernel thread
 	  to manage toggling
 	- make freezer.state higher priority than duty ratio setting
