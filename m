@@ -1,7 +1,7 @@
 From: jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org
-Subject: [PATCH 1/1, v8] cgroup/freezer: add per freezer duty ratio control
-Date: Fri, 11 Feb 2011 12:22:41 -0800
-Message-ID: <1297455761-15875-1-git-send-email-jacob.jun.pan__39874.3697595366$1297455994$gmane$org@linux.intel.com>
+Subject: [PATCH 1/1, v7] cgroup/freezer: add per freezer duty ratio control
+Date: Fri, 11 Feb 2011 11:10:44 -0800
+Message-ID: <1297451444-15277-1-git-send-email-jacob.jun.pan__38275.5876672038$1297456019$gmane$org@linux.intel.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -39,8 +39,8 @@ Usage example: set period to be 5 seconds and frozen duty ratio 90%
 Signed-off-by: Jacob Pan <jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
 ---
  Documentation/cgroups/freezer-subsystem.txt |   23 ++++
- kernel/cgroup_freezer.c                     |  146 ++++++++++++++++++++++++++-
- 2 files changed, 167 insertions(+), 2 deletions(-)
+ kernel/cgroup_freezer.c                     |  153 ++++++++++++++++++++++++++-
+ 2 files changed, 174 insertions(+), 2 deletions(-)
 
 diff --git a/Documentation/cgroups/freezer-subsystem.txt b/Documentation/cgroups/freezer-subsystem.txt
 index 41f37fe..2022b32 100644
@@ -74,10 +74,18 @@ index 41f37fe..2022b32 100644
 +
 +    |<---- 5 seconds ---->|
 diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
-index e7bebb7..0024b89 100644
+index e7bebb7..aaa91ca 100644
 --- a/kernel/cgroup_freezer.c
 +++ b/kernel/cgroup_freezer.c
-@@ -28,12 +28,33 @@ enum freezer_state {
+@@ -21,6 +21,7 @@
+ #include <linux/uaccess.h>
+ #include <linux/freezer.h>
+ #include <linux/seq_file.h>
++#include <linux/kthread.h>
+ 
+ enum freezer_state {
+ 	CGROUP_THAWED = 0,
+@@ -28,12 +29,35 @@ enum freezer_state {
  	CGROUP_FROZEN,
  };
  
@@ -105,21 +113,26 @@ index e7bebb7..0024b89 100644
  	spinlock_t lock; /* protects _writes_ to state */
  };
  
++static int try_to_freeze_cgroup(struct cgroup *cgroup, struct freezer *freezer);
++static void unfreeze_cgroup(struct cgroup *cgroup, struct freezer *freezer);
 +static int freezer_change_state(struct cgroup *cgroup,
 +				enum freezer_state goal_state);
 +
  static inline struct freezer *cgroup_freezer(
  		struct cgroup *cgroup)
  {
-@@ -63,6 +84,38 @@ int cgroup_freezing_or_frozen(struct task_struct *task)
+@@ -63,6 +87,41 @@ int cgroup_freezing_or_frozen(struct task_struct *task)
  	return result;
  }
  
++static DECLARE_WAIT_QUEUE_HEAD(freezer_wait);
++
 +static void freezer_work_fn(struct work_struct *work)
 +{
 +	struct freezer *freezer;
 +	unsigned long delay_jiffies = 0;
 +	enum freezer_state goal_state;
++
 +
 +	freezer = container_of(work, struct freezer, freezer_work.work);
 +	/* toggle between THAWED and FROZEN state.
@@ -150,7 +163,7 @@ index e7bebb7..0024b89 100644
  /*
   * cgroups_write_string() limits the size of freezer state strings to
   * CGROUP_LOCAL_BUFFER_SIZE
-@@ -150,7 +203,12 @@ static struct cgroup_subsys_state *freezer_create(struct cgroup_subsys *ss,
+@@ -150,7 +209,12 @@ static struct cgroup_subsys_state *freezer_create(struct cgroup_subsys *ss,
  static void freezer_destroy(struct cgroup_subsys *ss,
  			    struct cgroup *cgroup)
  {
@@ -164,7 +177,7 @@ index e7bebb7..0024b89 100644
  }
  
  /*
-@@ -282,6 +340,16 @@ static int freezer_read(struct cgroup *cgroup, struct cftype *cft,
+@@ -282,6 +346,16 @@ static int freezer_read(struct cgroup *cgroup, struct cftype *cft,
  	return 0;
  }
  
@@ -181,7 +194,7 @@ index e7bebb7..0024b89 100644
  static int try_to_freeze_cgroup(struct cgroup *cgroup, struct freezer *freezer)
  {
  	struct cgroup_iter it;
-@@ -353,6 +421,7 @@ static int freezer_write(struct cgroup *cgroup,
+@@ -353,6 +427,7 @@ static int freezer_write(struct cgroup *cgroup,
  {
  	int retval;
  	enum freezer_state goal_state;
@@ -189,7 +202,7 @@ index e7bebb7..0024b89 100644
  
  	if (strcmp(buffer, freezer_state_strs[CGROUP_THAWED]) == 0)
  		goal_state = CGROUP_THAWED;
-@@ -360,7 +429,18 @@ static int freezer_write(struct cgroup *cgroup,
+@@ -360,7 +435,18 @@ static int freezer_write(struct cgroup *cgroup,
  		goal_state = CGROUP_FROZEN;
  	else
  		return -EINVAL;
@@ -209,10 +222,11 @@ index e7bebb7..0024b89 100644
  	if (!cgroup_lock_live_group(cgroup))
  		return -ENODEV;
  	retval = freezer_change_state(cgroup, goal_state);
-@@ -368,12 +448,74 @@ static int freezer_write(struct cgroup *cgroup,
+@@ -368,12 +454,75 @@ static int freezer_write(struct cgroup *cgroup,
  	return retval;
  }
  
++#define FREEZER_KH_PREFIX  "freezer_"
 +static int freezer_write_param(struct cgroup *cgroup, struct cftype *cft,
 +		u64 val)
 +{
