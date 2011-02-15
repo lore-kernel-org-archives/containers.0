@@ -1,15 +1,15 @@
-From: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Subject: Re: [PATCH 3/3] procfs: kill the global proc_mnt variable
-Date: Tue, 15 Feb 2011 12:50:02 -0600
-Message-ID: <20110215185002.GC16364__28609.944592654$1297870137$gmane$org@localhost>
-References: <1297710963-19843-1-git-send-email-daniel.lezcano@free.fr>
-	<1297710963-19843-4-git-send-email-daniel.lezcano@free.fr>
+From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 2/2] pidns: Support unsharing the pid namespace.
+Date: Tue, 15 Feb 2011 20:01:18 +0100
+Message-ID: <20110215190118.GA16707__26023.7603135922$1297870187$gmane$org@redhat.com>
+References: <1297788824-20534-1-git-send-email-daniel.lezcano@free.fr>
+	<1297788824-20534-2-git-send-email-daniel.lezcano@free.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1297710963-19843-4-git-send-email-daniel.lezcano-GANU6spQydw@public.gmane.org>
+In-Reply-To: <1297788824-20534-2-git-send-email-daniel.lezcano-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,84 +20,45 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
-> From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> 
-> After the previous cleanup in proc_get_sb() the global proc_mnt has
-> no reasons to exists, kill it.
-> 
-> Signed-off-by: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> Signed-off-by: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+On 02/15, Daniel Lezcano wrote:
+>
+> - Pass both nsproxy->pid_ns and task_active_pid_ns to copy_pid_ns
+>   As they can now be different.
 
-Acked-by: Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+But since they can be different we have to convert some users of
+current->nsproxy first? But that patch was dropped.
 
-> ---
->  fs/proc/inode.c    |    2 --
->  fs/proc/internal.h |    1 -
->  fs/proc/root.c     |    7 ++++---
->  3 files changed, 4 insertions(+), 6 deletions(-)
-> 
-> diff --git a/fs/proc/inode.c b/fs/proc/inode.c
-> index 176ce4c..ee0f802 100644
-> --- a/fs/proc/inode.c
-> +++ b/fs/proc/inode.c
-> @@ -42,8 +42,6 @@ static void proc_evict_inode(struct inode *inode)
->  		sysctl_head_put(PROC_I(inode)->sysctl);
->  }
->  
-> -struct vfsmount *proc_mnt;
-> -
->  static struct kmem_cache * proc_inode_cachep;
->  
->  static struct inode *proc_alloc_inode(struct super_block *sb)
-> diff --git a/fs/proc/internal.h b/fs/proc/internal.h
-> index 9ad561d..c03e8d3 100644
-> --- a/fs/proc/internal.h
-> +++ b/fs/proc/internal.h
-> @@ -107,7 +107,6 @@ static inline struct proc_dir_entry *pde_get(struct proc_dir_entry *pde)
->  }
->  void pde_put(struct proc_dir_entry *pde);
->  
-> -extern struct vfsmount *proc_mnt;
->  int proc_fill_super(struct super_block *);
->  struct inode *proc_get_inode(struct super_block *, struct proc_dir_entry *);
->  
-> diff --git a/fs/proc/root.c b/fs/proc/root.c
-> index e5e2bfa..a9000e9 100644
-> --- a/fs/proc/root.c
-> +++ b/fs/proc/root.c
-> @@ -90,19 +90,20 @@ static struct file_system_type proc_fs_type = {
->  
->  void __init proc_root_init(void)
->  {
-> +	struct vfsmount *mnt;
->  	int err;
->  
->  	proc_init_inodecache();
->  	err = register_filesystem(&proc_fs_type);
->  	if (err)
->  		return;
-> -	proc_mnt = kern_mount_data(&proc_fs_type, &init_pid_ns);
-> -	if (IS_ERR(proc_mnt)) {
-> +	mnt = kern_mount_data(&proc_fs_type, &init_pid_ns);
-> +	if (IS_ERR(mnt)) {
->  		unregister_filesystem(&proc_fs_type);
->  		return;
->  	}
->  
-> -	init_pid_ns.proc_mnt = proc_mnt;
-> +	init_pid_ns.proc_mnt = mnt;
->  	proc_symlink("mounts", NULL, "self/mounts");
->  
->  	proc_net_init();
-> -- 
-> 1.7.1
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+> Unsharing of the pid namespace unlike unsharing of other namespaces
+> does not take effect immediately.  Instead it affects the children
+> created with fork and clone.
+
+IOW, unshare(CLONE_NEWPID) implicitly affects the subsequent fork(),
+using the very subtle way.
+
+I have to admit, I can't say I like this very much. OK, if we need
+this, can't we just put something into, say, signal->flags so that
+copy_process can check and create the new namespace.
+
+Also. I remember, I already saw something like this and google found
+my questions. I didn't actually read the new version, perhaps my
+concerns were already answered...
+
+	But what if the task T does unshare(CLONE_NEWPID) and then, say,
+	pthread_create() ? Unless I missed something, the new thread won't
+	be able to see T ?
+
+	and, in this case the exiting sub-namespace init also kills its
+	parent?
+
+	OK, suppose it does fork() after unshare(), then another fork().
+	In this case the second child lives in the same namespace with
+	init created by the 1st fork, but it is not descendant ? This means
+	in particular that if the new init exits, zap_pid_ns_processes()->
+	do_wait() can't work.
+
+Or not?
+
+Oleg.
