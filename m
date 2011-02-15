@@ -1,16 +1,15 @@
 From: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Subject: Re: [PATCH 2/3] pidns: Call pid_ns_prepare_proc from
-	create_pid_namespace
-Date: Tue, 15 Feb 2011 12:47:21 -0600
-Message-ID: <20110215184720.GB16364__20030.3842234009$1297868231$gmane$org@localhost>
+Subject: Re: [PATCH 3/3] procfs: kill the global proc_mnt variable
+Date: Tue, 15 Feb 2011 12:50:02 -0600
+Message-ID: <20110215185002.GC16364__28609.944592654$1297870137$gmane$org@localhost>
 References: <1297710963-19843-1-git-send-email-daniel.lezcano@free.fr>
-	<1297710963-19843-3-git-send-email-daniel.lezcano@free.fr>
+	<1297710963-19843-4-git-send-email-daniel.lezcano@free.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1297710963-19843-3-git-send-email-daniel.lezcano-GANU6spQydw@public.gmane.org>
+In-Reply-To: <1297710963-19843-4-git-send-email-daniel.lezcano-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,128 +24,76 @@ Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXv
 List-Id: containers.vger.kernel.org
 
 Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
-> From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 > 
-> Reorganize proc_get_sb so it can be called before the struct pid
-> of the first process is allocated.
+> After the previous cleanup in proc_get_sb() the global proc_mnt has
+> no reasons to exists, kill it.
 > 
+> Signed-off-by: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 > Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 > Signed-off-by: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
 
 Acked-by: Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 
 > ---
->  fs/proc/root.c         |   25 +++++++------------------
->  kernel/fork.c          |    6 ------
->  kernel/pid_namespace.c |   11 +++++++++--
->  3 files changed, 16 insertions(+), 26 deletions(-)
+>  fs/proc/inode.c    |    2 --
+>  fs/proc/internal.h |    1 -
+>  fs/proc/root.c     |    7 ++++---
+>  3 files changed, 4 insertions(+), 6 deletions(-)
 > 
+> diff --git a/fs/proc/inode.c b/fs/proc/inode.c
+> index 176ce4c..ee0f802 100644
+> --- a/fs/proc/inode.c
+> +++ b/fs/proc/inode.c
+> @@ -42,8 +42,6 @@ static void proc_evict_inode(struct inode *inode)
+>  		sysctl_head_put(PROC_I(inode)->sysctl);
+>  }
+>  
+> -struct vfsmount *proc_mnt;
+> -
+>  static struct kmem_cache * proc_inode_cachep;
+>  
+>  static struct inode *proc_alloc_inode(struct super_block *sb)
+> diff --git a/fs/proc/internal.h b/fs/proc/internal.h
+> index 9ad561d..c03e8d3 100644
+> --- a/fs/proc/internal.h
+> +++ b/fs/proc/internal.h
+> @@ -107,7 +107,6 @@ static inline struct proc_dir_entry *pde_get(struct proc_dir_entry *pde)
+>  }
+>  void pde_put(struct proc_dir_entry *pde);
+>  
+> -extern struct vfsmount *proc_mnt;
+>  int proc_fill_super(struct super_block *);
+>  struct inode *proc_get_inode(struct super_block *, struct proc_dir_entry *);
+>  
 > diff --git a/fs/proc/root.c b/fs/proc/root.c
-> index ef9fa8e..e5e2bfa 100644
+> index e5e2bfa..a9000e9 100644
 > --- a/fs/proc/root.c
 > +++ b/fs/proc/root.c
-> @@ -43,17 +43,6 @@ static struct dentry *proc_mount(struct file_system_type *fs_type,
->  	struct pid_namespace *ns;
->  	struct proc_inode *ei;
+> @@ -90,19 +90,20 @@ static struct file_system_type proc_fs_type = {
 >  
-> -	if (proc_mnt) {
-> -		/* Seed the root directory with a pid so it doesn't need
-> -		 * to be special in base.c.  I would do this earlier but
-> -		 * the only task alive when /proc is mounted the first time
-> -		 * is the init_task and it doesn't have any pids.
-> -		 */
-> -		ei = PROC_I(proc_mnt->mnt_sb->s_root->d_inode);
-> -		if (!ei->pid)
-> -			ei->pid = find_get_pid(1);
-> -	}
-> -
->  	if (flags & MS_KERNMOUNT)
->  		ns = (struct pid_namespace *)data;
->  	else
-> @@ -71,16 +60,16 @@ static struct dentry *proc_mount(struct file_system_type *fs_type,
->  			return ERR_PTR(err);
->  		}
->  
-> -		ei = PROC_I(sb->s_root->d_inode);
-> -		if (!ei->pid) {
-> -			rcu_read_lock();
-> -			ei->pid = get_pid(find_pid_ns(1, ns));
-> -			rcu_read_unlock();
-> -		}
-> -
->  		sb->s_flags |= MS_ACTIVE;
->  	}
->  
-> +	ei = PROC_I(sb->s_root->d_inode);
-> +	if (!ei->pid) {
-> +		rcu_read_lock();
-> +		ei->pid = get_pid(find_pid_ns(1, ns));
-> +		rcu_read_unlock();
-> +	}
-> +
->  	return dget(sb->s_root);
->  }
->  
-> diff --git a/kernel/fork.c b/kernel/fork.c
-> index c9f0784..e7a5907 100644
-> --- a/kernel/fork.c
-> +++ b/kernel/fork.c
-> @@ -1180,12 +1180,6 @@ static struct task_struct *copy_process(unsigned long clone_flags,
->  		pid = alloc_pid(p->nsproxy->pid_ns);
->  		if (!pid)
->  			goto bad_fork_cleanup_io;
-> -
-> -		if (clone_flags & CLONE_NEWPID) {
-> -			retval = pid_ns_prepare_proc(p->nsproxy->pid_ns);
-> -			if (retval < 0)
-> -				goto bad_fork_free_pid;
-> -		}
->  	}
->  
->  	p->pid = pid_nr(pid);
-> diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
-> index a5aff94..e9c9adc 100644
-> --- a/kernel/pid_namespace.c
-> +++ b/kernel/pid_namespace.c
-> @@ -14,6 +14,7 @@
->  #include <linux/err.h>
->  #include <linux/acct.h>
->  #include <linux/slab.h>
-> +#include <linux/proc_fs.h>
->  
->  #define BITS_PER_PAGE		(PAGE_SIZE*8)
->  
-> @@ -72,7 +73,7 @@ static struct pid_namespace *create_pid_namespace(struct pid_namespace *parent_p
+>  void __init proc_root_init(void)
 >  {
->  	struct pid_namespace *ns;
->  	unsigned int level = parent_pid_ns->level + 1;
-> -	int i;
-> +	int i, err = -ENOMEM;
+> +	struct vfsmount *mnt;
+>  	int err;
 >  
->  	ns = kmem_cache_zalloc(pid_ns_cachep, GFP_KERNEL);
->  	if (ns == NULL)
-> @@ -96,14 +97,20 @@ static struct pid_namespace *create_pid_namespace(struct pid_namespace *parent_p
->  	for (i = 1; i < PIDMAP_ENTRIES; i++)
->  		atomic_set(&ns->pidmap[i].nr_free, BITS_PER_PAGE);
+>  	proc_init_inodecache();
+>  	err = register_filesystem(&proc_fs_type);
+>  	if (err)
+>  		return;
+> -	proc_mnt = kern_mount_data(&proc_fs_type, &init_pid_ns);
+> -	if (IS_ERR(proc_mnt)) {
+> +	mnt = kern_mount_data(&proc_fs_type, &init_pid_ns);
+> +	if (IS_ERR(mnt)) {
+>  		unregister_filesystem(&proc_fs_type);
+>  		return;
+>  	}
 >  
-> +	err = pid_ns_prepare_proc(ns);
-> +	if (err)
-> +		goto out_put_parent_pid_ns;
-> +
->  	return ns;
+> -	init_pid_ns.proc_mnt = proc_mnt;
+> +	init_pid_ns.proc_mnt = mnt;
+>  	proc_symlink("mounts", NULL, "self/mounts");
 >  
-> +out_put_parent_pid_ns:
-> +	put_pid_ns(parent_pid_ns);
->  out_free_map:
->  	kfree(ns->pidmap[0].page);
->  out_free:
->  	kmem_cache_free(pid_ns_cachep, ns);
->  out:
-> -	return ERR_PTR(-ENOMEM);
-> +	return ERR_PTR(err);
->  }
->  
->  static void destroy_pid_namespace(struct pid_namespace *ns)
+>  	proc_net_init();
 > -- 
 > 1.7.1
 > 
