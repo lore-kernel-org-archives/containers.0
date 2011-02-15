@@ -1,17 +1,17 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH, v6 3/3] cgroups: introduce timer slack controller
-Date: Mon, 14 Feb 2011 16:00:55 -0800
-Message-ID: <20110215000055.GR16432__41227.5622519248$1297796047$gmane$org@count0.beaverton.ibm.com>
-References: <1297688787-3592-1-git-send-email-kirill@shutemov.name>
-	<1297688787-3592-4-git-send-email-kirill@shutemov.name>
-	<20110214135926.GO16432@count0.beaverton.ibm.com>
-	<20110214225940.GB6230@shutemov.name>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 1/1, v7] cgroup/freezer: add per freezer duty ratio control
+Date: Tue, 15 Feb 2011 11:18:57 +0900
+Message-ID: <20110215111857.47907dc5.kamezawa.hiroyu__26698.5494214625$1297814800$gmane$org@jp.fujitsu.com>
+References: <1297451444-15277-1-git-send-email-jacob.jun.pan@linux.intel.com>
+	<20110212232907.GN16432@count0.beaverton.ibm.com>
+	<20110214094402.4eefe70d.kamezawa.hiroyu@jp.fujitsu.com>
+	<4D58A01E.9000203@linux.intel.com>
+	<20110214150730.058319a5.akpm@linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20110214225940.GB6230-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+In-Reply-To: <20110214150730.058319a5.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,76 +21,109 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Cc: jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Cedric Le Goater <clg-DhXWPJtHtuFWk0Htik3J/w@public.gmane.org>, jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org, container cgroup <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, rdunlap-/UHa2rfvQTnk1uMJSBkQmQ@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Feb 15, 2011 at 12:59:40AM +0200, Kirill A. Shutemov wrote:
-> On Mon, Feb 14, 2011 at 05:59:26AM -0800, Matt Helsley wrote:
-> > On Mon, Feb 14, 2011 at 03:06:27PM +0200, Kirill A. Shutsemov wrote:
-> > > From: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+On Mon, 14 Feb 2011 15:07:30 -0800
+Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> wrote:
 
-<snip>
-
-> > > +	list_for_each_entry(cur, &cgroup->children, sibling) {
-> > > +		child = cgroup_to_tslack_cgroup(cur);
-> > > +		if (type == TIMER_SLACK_MIN && val > child->min_slack_ns)
-> > > +			return -EBUSY;
-> > > +		if (type == TIMER_SLACK_MAX && val < child->max_slack_ns)
-> > > +			return -EBUSY;
-> > > +	}
+> On Sun, 13 Feb 2011 19:23:10 -0800
+> Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org> wrote:
+> 
+> > On 2/13/2011 4:44 PM, KAMEZAWA Hiroyuki wrote:
+> > > On Sat, 12 Feb 2011 15:29:07 -0800
+> > > Matt Helsley<matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>  wrote:
+> > >
+> > >> On Fri, Feb 11, 2011 at 11:10:44AM -0800, jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org wrote:
+> > >>> From: Jacob Pan<jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
+> > >>>
+> > >>> Freezer subsystem is used to manage batch jobs which can start
+> > >>> stop at the same time. However, sometime it is desirable to let
+> > >>> the kernel manage the freezer state automatically with a given
+> > >>> duty ratio.
+> > >>> For example, if we want to reduce the time that backgroup apps
+> > >>> are allowed to run we can put them into a freezer subsystem and
+> > >>> set the kernel to turn them THAWED/FROZEN at given duty ratio.
+> > >>>
+> > >>> This patch introduces two file nodes under cgroup
+> > >>> freezer.duty_ratio_pct and freezer.period_sec
+> > >> Again: I don't think this is the right approach in the long term.
+> > >> It would be better not to add this interface and instead enable the
+> > >> cpu cgroup subsystem for non-rt tasks using a similar duty ratio
+> > >> concept..
+> > >>
+> > >> Nevertheless, I've added some feedback on the code for you here :).
+> > >>
+> > > AFAIK, there was a work for bandwidth control in CFS.
+> > >
+> > > http://linux.derkeiler.com/Mailing-Lists/Kernel/2010-10/msg04335.html
+> > >
+> > > I tested this and worked fine. This schduler approach seems better for
+> > > my purpose to limit bandwidth of apprications rather than freezer.
 > > 
-> > This doesn't look right. Child cgroups should not constrain their
-> > parents. Instead you should allow the change and propagate the
-> > constraint to the children.
-> 
-> See discussion with Thomas.
-
-<OK, shifting this topic to that thread>
-<snip>
-
-> > > +static struct cftype files[] = {
-> > > +	{
-> > > +		.name = "set_slack_ns",
-> > > +		.write_u64 = tslack_write_set_slack_ns,
-> > > +	},
-> > > +	{
-> > > +		.name = "min_slack_ns",
-> > > +		.private = TIMER_SLACK_MIN,
-> > > +		.read_u64 = tslack_read_range,
-> > > +		.write_u64 = tslack_write_range,
-> > > +	},
-> > > +	{
-> > > +		.name = "max_slack_ns",
-> > > +		.private = TIMER_SLACK_MAX,
-> > > +		.read_u64 = tslack_read_range,
-> > > +		.write_u64 = tslack_write_range,
-> > > +	},
+> > for our purpose, it's not about bandwidth.
+> > it's about making sure the class of apps don't run for a long period 
+> > (30-second range) of time.
 > > 
-> > I didn't get a reply on how a max_slack_ns is useful. It seems
-> > prudent to add as little interface as possible and only when
-> > we clearly see the utility of it.
 > 
-> For example, you can create two groups (excluding root cgroup):
+> The discussion about this patchset seems to have been upside-down: lots
+> of talk about a particular implementation, with people walking back
+> from the implemetnation trying to work out what the requirements were,
+> then seeing if other implementations might suit those requirements. 
+> Whatever they were.
 > 
-> default - timer slack range 50000-50000
-> relaxed - timer slack range 500000-unlimited.
+> I think it would be helpful to start again, ignoring (for now) any
+> implementation.
 > 
-> Now you can drag tasks between these group without need to reset value on
-> relaxed -> default transition.
+> 
+> What are the requirements here, guys?  What effects are we actually
+> trying to achieve?  Once that is understood and agreed to, we can
+> think about implementations.
+> 
+> 
+> And maybe you people _are_ clear about the requirements.  But I'm not and
+> I'm sure many others aren't too.  A clear statement of them would help
+> things along and would doubtless lead to better code.  This is pretty
+> basic stuff!
+> 
 
-Perhaps you misunderstood my point.
+Ok, my(our) reuquirement is mostly 2 requirements.
 
-Yes, I can see that a maximum allows you to do counter-productive/pointless
-little tricks like "setting" the timer slack when you move the task. I
-just don't get the point of it. Why is setting a maximum timer slack useful?
-If anything it seems like it would be quite counterproductive or pointless
-*at best* because limiting the amount of timer slack would not improve
-the wakeup situation -- it could easily make it worse. Are there
-*any* negative consequences to allowing timer slacks as large as
-userspace requests -- perhaps even up to ULLONG_MAX? If there are none then
-why should we bother providing userspace a knob to set and enforce such a
-limit?
+- control batch jobs.
+- control kvm and limit usage of cpu.
 
-Cheers,
-	-Matt Helsley
+Considering kvm, we need to allow putting intaractive jobs and
+batch jobs onto a cpu. This will be difference in requirements.
+We need some latency sensitive control and static guarantee in peformance
+limit. For example, when a user limits a process to use 50% of cpu.
+Checks cpu usage by 'top -d 1', and should see almost '50%' value.
+
+
+IIUC, freezer is like a system to deliver SIGSTOP. set tasks as
+TASK_UNINTERRUPTIBLE and make them sleep. This check is done at
+places usual signal-check and some hooks in kernel threads.
+This means the subsystem checks all threads one by one and set flags,
+make them TASK_UNINTERRUPTIBLE finally when them wakes up.
+So, sleep/wakeup cost depeneds on the number of tasks and a task may
+not be freezable until it finds hooks of try_to_freeze().
+
+I hear when using FUSE, a task may never freeze if a process for FUSE operation
+is freezed before it freezes. This sounds freezer cgroup is not easy to use.
+
+CFS+bandwidh is a scheduler.
+It removes a sub scheduler entity from a tree when it exceeds allowed time
+slice. The cost of calculation of allowed time slice is involved in scheduler
+but I think it will not be too heavy. (Because MAINTAINERS will see what's
+going on and they are sensitive to the cost.)
+Tasks are all RUNNABLE. A task in group releases cpu when it see
+'reschedule' flag. We have plenty of hooks of cond_resched(). (And we know
+we tries to change spin_lock to mutex if spin_lock is huge cost)
+
+This will show a good result of perofmance even with 'top -d 1'. We'll not see
+TASK_RUNNING <-> TASK_INTERRUPTIBLE status change. And I think
+we can make period of time slice smaller than using freezer for better latency.
+
+
+Thanks,
+-Kame
