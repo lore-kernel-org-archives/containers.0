@@ -1,16 +1,18 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/1, v9] cgroup/freezer: add per freezer duty ratio control
-Date: Tue, 15 Feb 2011 19:23:21 -0800
-Message-ID: <20110216032321.GA14893__35922.7449670017$1297902634$gmane$org@count0.beaverton.ibm.com>
-References: <1297807750-28844-1-git-send-email-jacob.jun.pan@linux.intel.com>
-	<1297807750-28844-2-git-send-email-jacob.jun.pan@linux.intel.com>
-	<201102160100.15487.rjw@sisk.pl> <20110215163812.7fa020b5@putvin>
+From: Jacob Pan <jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
+Subject: Re: [PATCH 1/1, v7] cgroup/freezer: add per freezer duty ratio control
+Date: Wed, 16 Feb 2011 10:11:42 -0800
+Message-ID: <20110216101142.7f013455__39432.2821441621$1297928073$gmane$org@putvin>
+References: <1297451444-15277-1-git-send-email-jacob.jun.pan@linux.intel.com>
+	<20110212232907.GN16432@count0.beaverton.ibm.com>
+	<20110214094402.4eefe70d.kamezawa.hiroyu@jp.fujitsu.com>
+	<4D58A01E.9000203@linux.intel.com>
+	<20110214150730.058319a5.akpm@linux-foundation.org>
+	<20110215111857.47907dc5.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20110215163812.7fa020b5@putvin>
+In-Reply-To: <20110215111857.47907dc5.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,39 +22,119 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jacob Pan <jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
-Cc: Cedric Le Goater <clg-DhXWPJtHtuFWk0Htik3J/w@public.gmane.org>, container cgroup <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>, rdunlap-/UHa2rfvQTnk1uMJSBkQmQ@public.gmane.org, Linux PM mailing list <linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: Cedric Le Goater <clg-DhXWPJtHtuFWk0Htik3J/w@public.gmane.org>, container cgroup <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, rdunlap-/UHa2rfvQTnk1uMJSBkQmQ@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Feb 15, 2011 at 04:38:12PM -0800, Jacob Pan wrote:
-> On Wed, 16 Feb 2011 01:00:15 +0100
-> "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org> wrote:
+On Tue, 15 Feb 2011 11:18:57 +0900
+KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
 
-<snip>
-
-> > Well, quite frankly, I'm not going to take this patch unless it gets
-> > an ACK from the scheduler people (which I'm guessing is not going to
-> > happen before hell freezes over).
+> On Mon, 14 Feb 2011 15:07:30 -0800
+> Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> wrote:
+> 
+> > On Sun, 13 Feb 2011 19:23:10 -0800
+> > Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org> wrote:
 > > 
-> > IOW, please find a better way to address the issue at hand.
+> > > On 2/13/2011 4:44 PM, KAMEZAWA Hiroyuki wrote:
+> > > > On Sat, 12 Feb 2011 15:29:07 -0800
+> > > > Matt Helsley<matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>  wrote:
+> > > >
+> > > >> On Fri, Feb 11, 2011 at 11:10:44AM -0800,
+> > > >> jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org wrote:
+> > > >>> From: Jacob Pan<jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
+> > > >>>
+> > > >>> Freezer subsystem is used to manage batch jobs which can start
+> > > >>> stop at the same time. However, sometime it is desirable to
+> > > >>> let the kernel manage the freezer state automatically with a
+> > > >>> given duty ratio.
+> > > >>> For example, if we want to reduce the time that backgroup apps
+> > > >>> are allowed to run we can put them into a freezer subsystem
+> > > >>> and set the kernel to turn them THAWED/FROZEN at given duty
+> > > >>> ratio.
+> > > >>>
+> > > >>> This patch introduces two file nodes under cgroup
+> > > >>> freezer.duty_ratio_pct and freezer.period_sec
+> > > >> Again: I don't think this is the right approach in the long
+> > > >> term. It would be better not to add this interface and instead
+> > > >> enable the cpu cgroup subsystem for non-rt tasks using a
+> > > >> similar duty ratio concept..
+> > > >>
+> > > >> Nevertheless, I've added some feedback on the code for you
+> > > >> here :).
+> > > >>
+> > > > AFAIK, there was a work for bandwidth control in CFS.
+> > > >
+> > > > http://linux.derkeiler.com/Mailing-Lists/Kernel/2010-10/msg04335.html
+> > > >
+> > > > I tested this and worked fine. This schduler approach seems
+> > > > better for my purpose to limit bandwidth of apprications rather
+> > > > than freezer.
+> > > 
+> > > for our purpose, it's not about bandwidth.
+> > > it's about making sure the class of apps don't run for a long
+> > > period (30-second range) of time.
+> > > 
 > > 
-> We do have a real need that there is no exist feature in the kernel can
-> provide solution for. You want ACK from scheduler people because it has
-> impact on disabling irq? or you think scheduler should be the one that
-> provide the solution. I did try cpu subsystem, but it seems to be
-> limited to RT and certain scheduling policy e.g. RR and FIFO.
-
-I agree with Rafael. I think the scheduler should provide the solution
-and it can be done via modifications to the cpu cgroup subsystem. 
-Yes, it only has the shares and rt-related files *right now*. However,
-Kame replied earlier with a link to some patches for extending it
-that introduce files with similar (granted: not the same) semantics:
-
-http://linux.derkeiler.com/Mailing-Lists/Kernel/2010-10/msg04335.html
-
-I think you could build on that and help push those patches towards
-mainline along with your enhancements for reducing wakeups rather
-than modify the freezer cgroup subsystem.
-
-Cheers,
-	-Matt Helsley
+> > The discussion about this patchset seems to have been upside-down:
+> > lots of talk about a particular implementation, with people walking
+> > back from the implemetnation trying to work out what the
+> > requirements were, then seeing if other implementations might suit
+> > those requirements. Whatever they were.
+> > 
+> > I think it would be helpful to start again, ignoring (for now) any
+> > implementation.
+> > 
+> > 
+> > What are the requirements here, guys?  What effects are we actually
+> > trying to achieve?  Once that is understood and agreed to, we can
+> > think about implementations.
+> > 
+> > 
+> > And maybe you people _are_ clear about the requirements.  But I'm
+> > not and I'm sure many others aren't too.  A clear statement of them
+> > would help things along and would doubtless lead to better code.
+> > This is pretty basic stuff!
+> > 
+> 
+> Ok, my(our) reuquirement is mostly 2 requirements.
+> 
+> - control batch jobs.
+> - control kvm and limit usage of cpu.
+> 
+> Considering kvm, we need to allow putting intaractive jobs and
+> batch jobs onto a cpu. This will be difference in requirements.
+> We need some latency sensitive control and static guarantee in
+> peformance limit. For example, when a user limits a process to use
+> 50% of cpu. Checks cpu usage by 'top -d 1', and should see almost
+> '50%' value.
+> 
+> 
+> IIUC, freezer is like a system to deliver SIGSTOP. set tasks as
+> TASK_UNINTERRUPTIBLE and make them sleep. This check is done at
+> places usual signal-check and some hooks in kernel threads.
+> This means the subsystem checks all threads one by one and set flags,
+> make them TASK_UNINTERRUPTIBLE finally when them wakes up.
+> So, sleep/wakeup cost depeneds on the number of tasks and a task may
+> not be freezable until it finds hooks of try_to_freeze().
+> 
+> I hear when using FUSE, a task may never freeze if a process for FUSE
+> operation is freezed before it freezes. This sounds freezer cgroup is
+> not easy to use.
+> 
+> CFS+bandwidh is a scheduler.
+> It removes a sub scheduler entity from a tree when it exceeds allowed
+> time slice. The cost of calculation of allowed time slice is involved
+> in scheduler but I think it will not be too heavy. (Because
+> MAINTAINERS will see what's going on and they are sensitive to the
+> cost.) Tasks are all RUNNABLE. A task in group releases cpu when it
+> see 'reschedule' flag. We have plenty of hooks of cond_resched().
+> (And we know we tries to change spin_lock to mutex if spin_lock is
+> huge cost)
+> 
+> This will show a good result of perofmance even with 'top -d 1'.
+> We'll not see TASK_RUNNING <-> TASK_INTERRUPTIBLE status change. And
+> I think we can make period of time slice smaller than using freezer
+> for better latency.
+> 
+Thanks for the info. I will give it a try in my setup and get back to
+you all.
