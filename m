@@ -1,16 +1,15 @@
-From: Jacob Pan <jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
-Subject: Re: [PATCH 1/1, v9] cgroup/freezer: add per freezer duty ratio control
-Date: Wed, 16 Feb 2011 10:18:05 -0800
-Message-ID: <20110216101805.5ef41bf6__3570.04048205472$1297928135$gmane$org@putvin>
-References: <1297807750-28844-1-git-send-email-jacob.jun.pan@linux.intel.com>
-	<1297807750-28844-2-git-send-email-jacob.jun.pan@linux.intel.com>
-	<201102160100.15487.rjw@sisk.pl> <20110215163812.7fa020b5@putvin>
-	<20110216032321.GA14893@count0.beaverton.ibm.com>
+From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
+Subject: [PATCH v8 4/3] cgroups: use flex_array in attach_proc
+Date: Wed, 16 Feb 2011 14:22:00 -0500
+Message-ID: <20110216192200.GA11980__25397.3798863173$1297929312$gmane$org@ghc17.ghc.andrew.cmu.edu>
+References: <20110208013542.GC31569@ghc17.ghc.andrew.cmu.edu>
+	<20110208013950.GF31569@ghc17.ghc.andrew.cmu.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110216032321.GA14893-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20110208013950.GF31569-dJQ2lsn+DImqwBT9kiuFm8WGCVk0P7UB@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,45 +19,122 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Cedric Le Goater <clg-DhXWPJtHtuFWk0Htik3J/w@public.gmane.org>, container cgroup <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>, rdunlap-/UHa2rfvQTnk1uMJSBkQmQ@public.gmane.org, Linux PM mailing list <linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Miao Xie <miaox-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, 15 Feb 2011 19:23:21 -0800
-Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
+Convert cgroup_attach_proc to use flex_array.
 
-> On Tue, Feb 15, 2011 at 04:38:12PM -0800, Jacob Pan wrote:
-> > On Wed, 16 Feb 2011 01:00:15 +0100
-> > "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org> wrote:
-> 
-> <snip>
-> 
-> > > Well, quite frankly, I'm not going to take this patch unless it
-> > > gets an ACK from the scheduler people (which I'm guessing is not
-> > > going to happen before hell freezes over).
-> > > 
-> > > IOW, please find a better way to address the issue at hand.
-> > > 
-> > We do have a real need that there is no exist feature in the kernel
-> > can provide solution for. You want ACK from scheduler people
-> > because it has impact on disabling irq? or you think scheduler
-> > should be the one that provide the solution. I did try cpu
-> > subsystem, but it seems to be limited to RT and certain scheduling
-> > policy e.g. RR and FIFO.
-> 
-> I agree with Rafael. I think the scheduler should provide the solution
-> and it can be done via modifications to the cpu cgroup subsystem. 
-> Yes, it only has the shares and rt-related files *right now*. However,
-> Kame replied earlier with a link to some patches for extending it
-> that introduce files with similar (granted: not the same) semantics:
-> 
-> http://linux.derkeiler.com/Mailing-Lists/Kernel/2010-10/msg04335.html
-> 
-> I think you could build on that and help push those patches towards
-> mainline along with your enhancements for reducing wakeups rather
-> than modify the freezer cgroup subsystem.
->
-I will give CFS bandwidth control patches a try. See if I can be any
-help. Thanks.
+From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
 
-Jacob
+The cgroup_attach_proc implementation requires a pre-allocated array to store
+task pointers to atomically move a thread-group, but asking for a monolithic
+array with kmalloc() may be unreliable for very large groups. Using flex_array
+provides the same functionality with less risk of failure.
+
+This is a post-patch for cgroup-procs-write.patch.
+
+Signed-off-by: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
+---
+ kernel/cgroup.c |   37 ++++++++++++++++++++++++++++---------
+ 1 files changed, 28 insertions(+), 9 deletions(-)
+
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 58b364a..feba784 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -57,6 +57,7 @@
+ #include <linux/vmalloc.h> /* TODO: replace with more sophisticated array */
+ #include <linux/eventfd.h>
+ #include <linux/poll.h>
++#include <linux/flex_array.h> /* used in cgroup_attach_proc */
+ 
+ #include <asm/atomic.h>
+ 
+@@ -1985,7 +1986,7 @@ int cgroup_attach_proc(struct cgroup *cgrp, struct task_struct *leader)
+ 	struct cgroupfs_root *root = cgrp->root;
+ 	/* threadgroup list cursor and array */
+ 	struct task_struct *tsk;
+-	struct task_struct **group;
++	struct flex_array *group;
+ 	/*
+ 	 * we need to make sure we have css_sets for all the tasks we're
+ 	 * going to move -before- we actually start moving them, so that in
+@@ -2002,9 +2003,15 @@ int cgroup_attach_proc(struct cgroup *cgrp, struct task_struct *leader)
+ 	 * and if threads exit, this will just be an over-estimate.
+ 	 */
+ 	group_size = get_nr_threads(leader);
+-	group = kmalloc(group_size * sizeof(*group), GFP_KERNEL);
++	/* flex_array supports very large thread-groups better than kmalloc. */
++	group = flex_array_alloc(sizeof(struct task_struct *), group_size,
++				 GFP_KERNEL);
+ 	if (!group)
+ 		return -ENOMEM;
++	/* pre-allocate to guarantee space while iterating in rcu read-side. */
++	retval = flex_array_prealloc(group, 0, group_size - 1, GFP_KERNEL);
++	if (retval)
++		goto out_free_group_list;
+ 
+ 	/* prevent changes to the threadgroup list while we take a snapshot. */
+ 	rcu_read_lock();
+@@ -2027,7 +2034,12 @@ int cgroup_attach_proc(struct cgroup *cgrp, struct task_struct *leader)
+ 		/* as per above, nr_threads may decrease, but not increase. */
+ 		BUG_ON(i >= group_size);
+ 		get_task_struct(tsk);
+-		group[i] = tsk;
++		/*
++		 * saying GFP_ATOMIC has no effect here because we did prealloc
++		 * earlier, but it's good form to communicate our expectations.
++		 */
++		retval = flex_array_put_ptr(group, i, tsk, GFP_ATOMIC);
++		BUG_ON(retval != 0);
+ 		i++;
+ 	} while_each_thread(leader, tsk);
+ 	/* remember the number of threads in the array for later. */
+@@ -2050,7 +2062,9 @@ int cgroup_attach_proc(struct cgroup *cgrp, struct task_struct *leader)
+ 		if (ss->can_attach_task) {
+ 			/* run on each task in the threadgroup. */
+ 			for (i = 0; i < group_size; i++) {
+-				retval = ss->can_attach_task(cgrp, group[i]);
++				tsk = flex_array_get_ptr(group, i);
++				BUG_ON(tsk == NULL);
++				retval = ss->can_attach_task(cgrp, tsk);
+ 				if (retval) {
+ 					failed_ss = ss;
+ 					goto out_cancel_attach;
+@@ -2065,7 +2079,8 @@ int cgroup_attach_proc(struct cgroup *cgrp, struct task_struct *leader)
+ 	 */
+ 	INIT_LIST_HEAD(&newcg_list);
+ 	for (i = 0; i < group_size; i++) {
+-		tsk = group[i];
++		tsk = flex_array_get_ptr(group, i);
++		BUG_ON(tsk == NULL);
+ 		/* nothing to do if this task is already in the cgroup */
+ 		oldcgrp = task_cgroup_from_root(tsk, root);
+ 		if (cgrp == oldcgrp)
+@@ -2104,7 +2119,8 @@ int cgroup_attach_proc(struct cgroup *cgrp, struct task_struct *leader)
+ 			ss->pre_attach(cgrp);
+ 	}
+ 	for (i = 0; i < group_size; i++) {
+-		tsk = group[i];
++		tsk = flex_array_get_ptr(group, i);
++		BUG_ON(tsk == NULL);
+ 		/* leave current thread as it is if it's already there */
+ 		oldcgrp = task_cgroup_from_root(tsk, root);
+ 		if (cgrp == oldcgrp)
+@@ -2154,10 +2170,13 @@ out_cancel_attach:
+ 		}
+ 	}
+ 	/* clean up the array of referenced threads in the group. */
+-	for (i = 0; i < group_size; i++)
+-		put_task_struct(group[i]);
++	for (i = 0; i < group_size; i++) {
++		tsk = flex_array_get_ptr(group, i);
++		BUG_ON(tsk == NULL);
++		put_task_struct(tsk);
++	}
+ out_free_group_list:
+-	kfree(group);
++	flex_array_free(group);
+ 	return retval;
+ }
