@@ -1,16 +1,16 @@
-From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/2] pidns: Don't allow new pids after the namespace is
-	dead.
-Date: Thu, 17 Feb 2011 21:54:58 +0100
-Message-ID: <20110217205458.GB16076__44745.2149390758$1297976691$gmane$org@redhat.com>
+From: Greg Kurz <gkurz-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 2/2] pidns: Support unsharing the pid namespace.
+Date: Thu, 17 Feb 2011 23:35:59 +0100
+Message-ID: <4D5DA2CF.5010200__27541.1606686705$1297982303$gmane$org@fr.ibm.com>
 References: <1297788824-20534-1-git-send-email-daniel.lezcano@free.fr>
-	<20110215183028.GA15568@redhat.com> <4D5C5BE8.5020803@free.fr>
+	<1297788824-20534-2-git-send-email-daniel.lezcano@free.fr>
+	<20110215190118.GA16707@redhat.com> <4D5C6219.8060207@free.fr>
+	<20110217202959.GA16076@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4D5C5BE8.5020803-GANU6spQydw@public.gmane.org>
+In-Reply-To: <20110217202959.GA16076-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,61 +20,82 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 02/17, Daniel Lezcano wrote:
->
-> On 02/15/2011 07:30 PM, Oleg Nesterov wrote:
->> On 02/15, Daniel Lezcano wrote:
->>> In the case of unsharing or joining a pid namespace, it becomes
->>> possible to attempt to allocate a pid after zap_pid_namespace has
->>> killed everything in the namespace.  Close the hole for now by simply
->>> not allowing any of those pid allocations to succeed.
->> Daniel, please explain more. It seems, a long ago I knew the reason
->> for this patch, but now I can't recall and can't understand this change.
->
-> The idea behind unsharing the pid namespace is the current pid is not
-> mapped in the newly created pid namespace and appears as the pid 0.
-
-Well, not exactly afaics... but doesn't matter.
-
-> When
-> it forks, the child process becomes the init pid of the new pid
-> namespace.
-
-Yes, I see. And this is what I personally dislike. Because, iow,
-unshare(PID) changes current->nspory->pid_ns to affect the behaviour
-of copy_process() , this really looks like "action at a distance" to
-me. Too subtle and fragile. But, once again, this is just imho, feel
-free to ignore.
-
-> When this pid namespace dies because the init pid exited, the
-> parent process (aka pid 0) can no longer fork because the pid namespace
-> is flagged dead. This is what does this patch.
-
-OK, thanks. I seem to understand. May be ;)
-
-I'd suggest you to add this explanation to the changelog.
-
->>> --- a/include/linux/pid_namespace.h
->>> +++ b/include/linux/pid_namespace.h
->>> @@ -20,6 +20,7 @@ struct pid_namespace {
->>>   	struct kref kref;
->>>   	struct pidmap pidmap[PIDMAP_ENTRIES];
->>>   	int last_pid;
->>> +	atomic_t dead;
->> Why atomic_t? It is used as a plain boolean.
+On 02/17/2011 09:29 PM, Oleg Nesterov wrote:
+> On 02/17, Daniel Lezcano wrote:
 >>
->> And I can't unde
+>> On 02/15/2011 08:01 PM, Oleg Nesterov wrote:
+>>>
+>>> I have to admit, I can't say I like this very much. OK, if we need
+>>> this, can't we just put something into, say, signal->flags so that
+>>> copy_process can check and create the new namespace.
+>>>
+>>> Also. I remember, I already saw something like this and google found
+>>> my questions. I didn't actually read the new version, perhaps my
+>>> concerns were already answered...
+>>>
+>>> 	But what if the task T does unshare(CLONE_NEWPID) and then, say,
+>>> 	pthread_create() ? Unless I missed something, the new thread won't
+>>> 	be able to see T ?
+>>
+>> Right. Is it really a problem ? I mean it is a weird use case where we
+>> fall in a weird situation.
 >
-> I think Eric used an atomic because it is lockless with alloc_pid vs
-> zap_pid_ns_processes.
+> But this is really weird! How it is possible that the parent can't see
+> its own child? No matter which thread did fork(), the new process is
 
-Can't understand...
+Hmmm... I guess you mean the opposite. The way pid namespaces are 
+nested, parents always see their children. But indeed, the child thread 
+can't see its group leader and that's kind of unusual. Unshare a pid 
+namespace at your own risk. :)
 
-But anyway, I strongly believe atomic_t buys nothing in this patch.
-May be it is needed for the next changes, I dunno.
+> the child of any sub-thread. More precisely, it is the child of thread
+> group.
+>
+>> I suppose we can do the same weird combination with clone.
+>
+> No, or we have the bug. If nothing else, kill() or wait() should work
+> equally for any sub-thread. (OK, __WNOTHREAD hack is the only exception).
+>
+>>> 	and, in this case the exiting sub-namespace init also kills its
+>>> 	parent?
+>>
+>> I don't think so because the zap_pid_ns_processes does not hit the
+>> parent process when it browses the pidmap.
+>
+> OK... Honestly, right now I can't understand my own question, it was
+> written a long ago. Probably I missed something.... but I'll recheck ;)
+>
+>>> 	OK, suppose it does fork() after unshare(), then another fork().
+>>> 	In this case the second child lives in the same namespace with
+>>> 	init created by the 1st fork, but it is not descendant ? This means
+>>> 	in particular that if the new init exits, zap_pid_ns_processes()->
+>>> 	do_wait() can't work.
+>>
+>> Hmm, good question. IMO, we should prevent such case for now in the same
+>> way we added the flag 'dead', IOW adding a flag 'busy' for example.
+>
+> I dunno.
+>
+> As I said, I do not like this approach at all. But please feel free to
+> ignore, it is very easy to blaim somebody else's code without suggesting
+> the alternative ;)
+>
+> Oleg.
+>
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
 
-Oleg.
+
+-- 
+Gregory Kurz                                     gkurz-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org
+Software Engineer @ IBM/Meiosys                  http://www.ibm.com
+Tel +33 (0)534 638 479                           Fax +33 (0)561 400 420
+
+"Anarchy is about taking complete responsibility for yourself."
+         Alan Moore.
