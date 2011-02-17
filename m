@@ -1,21 +1,16 @@
-From: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH][usercr]: Ghost tasks must be detached
-Date: Thu, 17 Feb 2011 16:21:16 +0100
-Message-ID: <20110217152116.GM518@hawkmoon.kerlabs.com>
-References: <4D4D9D1B.3000209@cs.columbia.edu>
-	<20110205214032.GA12944@us.ibm.com>
-	<4D4DC90B.3010103@cs.columbia.edu>
-	<20110209020942.GA5339@us.ibm.com>
-	<4D520B78.9020300@cs.columbia.edu>
-	<20110210024430.GA23167@us.ibm.com>
-	<4D536154.8000900@cs.columbia.edu>
-	<20110210061730.GA25432@us.ibm.com>
-	<4D53FC9C.1050405@cs.columbia.edu>
-	<20110216201019.GA27698@us.ibm.com>
+From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 2/2] pidns: Support unsharing the pid namespace.
+Date: Thu, 17 Feb 2011 21:29:59 +0100
+Message-ID: <20110217202959.GA16076__12661.1331514598$1297975138$gmane$org@redhat.com>
+References: <1297788824-20534-1-git-send-email-daniel.lezcano@free.fr>
+	<1297788824-20534-2-git-send-email-daniel.lezcano@free.fr>
+	<20110215190118.GA16707@redhat.com> <4D5C6219.8060207@free.fr>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============2481064873704118538=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110216201019.GA27698-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4D5C6219.8060207-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,137 +18,63 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
+On 02/17, Daniel Lezcano wrote:
+>
+> On 02/15/2011 08:01 PM, Oleg Nesterov wrote:
+>>
+>> I have to admit, I can't say I like this very much. OK, if we need
+>> this, can't we just put something into, say, signal->flags so that
+>> copy_process can check and create the new namespace.
+>>
+>> Also. I remember, I already saw something like this and google found
+>> my questions. I didn't actually read the new version, perhaps my
+>> concerns were already answered...
+>>
+>> 	But what if the task T does unshare(CLONE_NEWPID) and then, say,
+>> 	pthread_create() ? Unless I missed something, the new thread won't
+>> 	be able to see T ?
+>
+> Right. Is it really a problem ? I mean it is a weird use case where we
+> fall in a weird situation.
 
---===============2481064873704118538==
-Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-20377-1297956013-0001-2"
-Content-Disposition: inline
+But this is really weird! How it is possible that the parent can't see
+its own child? No matter which thread did fork(), the new process is
+the child of any sub-thread. More precisely, it is the child of thread
+group.
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
+> I suppose we can do the same weird combination with clone.
 
---=_bohort-20377-1297956013-0001-2
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+No, or we have the bug. If nothing else, kill() or wait() should work
+equally for any sub-thread. (OK, __WNOTHREAD hack is the only exception).
 
-On 16/02/11 12:10 -0800, Sukadev Bhattiprolu wrote:
-> Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
-> | So instead, we can call __wake_up_parent() from exit_checkpoint()
-> | if indeed we are already reaped there:
-> |=20
-> | exit_checkpoint()
-> | {
-> | 	...
-> | 	if (current->flags & PF_RESTARTING) {
-> | 		...
-> | 		/* either zombie or reaped ghost/dead */
-> | 		if (current->exit_state =3D EXIT_DEAD)
-> | 			__wake_up_parent(...);	  /* probably need lock */
-> | 		...
-> | 	}
-> | 	...
-> | }
-> |=20
-> | and to avoid userspace misuse, disallow non-thread-group-leader ghosts.
-> |=20
-> | ?
->=20
-> Well, I don't see a problem as such, but notice one inconsistency.
->=20
-> By the time the ghost task calls exit_checkpoint() it would have
-> gone through release_task()/__exit_signal()/__unhash_process() so
-> it is no longer on the parent's ->children list. We will be accessing
-> the task's ->parent pointer after this.
->=20
-> I am looking to see if anything prevents the parent from itself going
-> through release_task(), after the child does the release_task() but before
-> the child does the exit_checkpoint().
->=20
-> In 2.6.38, I don't see specifically where a task's ->parent pointer is
-> invalidated.  The task->parent and task->parent->signal are freed in the
-> final __put_task_struct(). So its probably safe to access them, even if t=
-he
-> parent itself is exiting and has gone through release_task().
->=20
-> But in 2.6.32 i.e RHEL5, tsk->signal is set to NULL in __exit_signal().
-> So, I am trying to rule out the following scenario:
->=20
-> 	Child (may not be a ghost)			Parent
-> 	-------------------------                       ------
-> - exit_notify(): is EXIT_DEAD=20
-> - release_task():
-> 	 - drops task_list_lock
-> 	 					- itself proceeds to exit.
-> 						- enters release_task()
-> 						- sets own->signal =3D NULL
-> 						  (in 2.6.32, __exit_signal())
->=20
-> - enters exit_checkpoint()
-> - __wake_up_parent()
-> 	access parents->signal NULL ptr
->=20
-> Not sure if holding task_list_lock here is needed or will help.
+>> 	and, in this case the exiting sub-namespace init also kills its
+>> 	parent?
+>
+> I don't think so because the zap_pid_ns_processes does not hit the
+> parent process when it browses the pidmap.
 
-Giving my 2 cents since I've been Cc'ed.
+OK... Honestly, right now I can't understand my own question, it was
+written a long ago. Probably I missed something.... but I'll recheck ;)
 
-AFAICS, holding tasklist_lock prevents __exit_signal() from setting
-parent->signal to NULL in your back. So something like this should be safe:
+>> 	OK, suppose it does fork() after unshare(), then another fork().
+>> 	In this case the second child lives in the same namespace with
+>> 	init created by the 1st fork, but it is not descendant ? This means
+>> 	in particular that if the new init exits, zap_pid_ns_processes()->
+>> 	do_wait() can't work.
+>
+> Hmm, good question. IMO, we should prevent such case for now in the same
+> way we added the flag 'dead', IOW adding a flag 'busy' for example.
 
-	read_lock(&tasklist_lock);
-	if (current->parent->signal)
-		__wake_up_parent(...);
-	read_unlock(&tasklist_lock);
+I dunno.
 
-I haven't looked at the context, but of course this also requires that some
-get_task_struct() on current->parent has been done somewhere else before cu=
-rrent
-has passed __exit_signal().
+As I said, I do not like this approach at all. But please feel free to
+ignore, it is very easy to blaim somebody else's code without suggesting
+the alternative ;)
 
-By the way, instead of checking current->parent->signal,
-current->parent->exit_state would look cleaner to me. current->parent is not
-supposed to wait on ->wait_chldexit after calling do_exit(), right?
-
-Louis
-
---=20
-Dr Louis Rilling			Kerlabs
-Skype: louis.rilling			Batiment Germanium
-Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
-http://www.kerlabs.com/			35700 Rennes
-
---=_bohort-20377-1297956013-0001-2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Transfer-Encoding: 7bit
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
-
-iEYEARECAAYFAk1dPOwACgkQVKcRuvQ9Q1QkggCgl8j5pUA/d5ZWbQYCMsSwLz1R
-dY4An2WS3OwjJgt1PDhpZXaWyOIEIEjd
-=Grf1
------END PGP SIGNATURE-----
-
---=_bohort-20377-1297956013-0001-2--
-
---===============2481064873704118538==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============2481064873704118538==--
+Oleg.
