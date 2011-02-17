@@ -1,14 +1,21 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 8/9] user namespaces: convert several capable() calls
-Date: Thu, 17 Feb 2011 15:03:56 +0000
-Message-ID: <20110217150356.GH26395__5450.85785347528$1297956055$gmane$org@mail.hallyn.com>
-References: <20110217150224.GA26334@mail.hallyn.com>
+From: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [PATCH][usercr]: Ghost tasks must be detached
+Date: Thu, 17 Feb 2011 16:21:16 +0100
+Message-ID: <20110217152116.GM518@hawkmoon.kerlabs.com>
+References: <4D4D9D1B.3000209@cs.columbia.edu>
+	<20110205214032.GA12944@us.ibm.com>
+	<4D4DC90B.3010103@cs.columbia.edu>
+	<20110209020942.GA5339@us.ibm.com>
+	<4D520B78.9020300@cs.columbia.edu>
+	<20110210024430.GA23167@us.ibm.com>
+	<4D536154.8000900@cs.columbia.edu>
+	<20110210061730.GA25432@us.ibm.com>
+	<4D53FC9C.1050405@cs.columbia.edu>
+	<20110216201019.GA27698@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============2481064873704118538=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20110217150224.GA26334-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
+In-Reply-To: <20110216201019.GA27698-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,173 +23,137 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Kees Cook <kees.cook-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-CAP_IPC_OWNER and CAP_IPC_LOCK can be checked against current_user_ns(),
-because the resource comes from current's own ipc namespace.
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-setuid/setgid are to uids in own namespace, so again checks can be
-against current_user_ns().
+--===============2481064873704118538==
+Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-20377-1297956013-0001-2"
+Content-Disposition: inline
 
-Changelog:
-	Jan 11: Use task_ns_capable() in place of sched_capable().
-	Jan 11: Use nsown_capable() as suggested by Bastian Blank.
-	Jan 11: Clarify (hopefully) some logic in futex and sched.c
-	Feb 15: use ns_capable for ipc, not nsown_capable
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
----
- ipc/shm.c             |    2 +-
- ipc/util.c            |    5 +++--
- kernel/futex.c        |   11 ++++++++++-
- kernel/futex_compat.c |   11 ++++++++++-
- kernel/groups.c       |    2 +-
- kernel/sched.c        |    9 ++++++---
- kernel/uid16.c        |    2 +-
- 7 files changed, 32 insertions(+), 10 deletions(-)
+--=_bohort-20377-1297956013-0001-2
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-diff --git a/ipc/shm.c b/ipc/shm.c
-index 7d3bb22..e91e2e9 100644
---- a/ipc/shm.c
-+++ b/ipc/shm.c
-@@ -773,7 +773,7 @@ SYSCALL_DEFINE3(shmctl, int, shmid, int, cmd, struct shmid_ds __user *, buf)
- 
- 		audit_ipc_obj(&(shp->shm_perm));
- 
--		if (!capable(CAP_IPC_LOCK)) {
-+		if (!ns_capable(ns->user_ns, CAP_IPC_LOCK)) {
- 			uid_t euid = current_euid();
- 			err = -EPERM;
- 			if (euid != shp->shm_perm.uid &&
-diff --git a/ipc/util.c b/ipc/util.c
-index 69a0cc1..8e7ec6a 100644
---- a/ipc/util.c
-+++ b/ipc/util.c
-@@ -627,7 +627,7 @@ int ipcperms (struct kern_ipc_perm *ipcp, short flag)
- 		granted_mode >>= 3;
- 	/* is there some bit set in requested_mode but not in granted_mode? */
- 	if ((requested_mode & ~granted_mode & 0007) && 
--	    !capable(CAP_IPC_OWNER))
-+	    !ns_capable(current->nsproxy->ipc_ns->user_ns, CAP_IPC_OWNER))
- 		return -1;
- 
- 	return security_ipc_permission(ipcp, flag);
-@@ -800,7 +800,8 @@ struct kern_ipc_perm *ipcctl_pre_down(struct ipc_ids *ids, int id, int cmd,
- 
- 	euid = current_euid();
- 	if (euid == ipcp->cuid ||
--	    euid == ipcp->uid  || capable(CAP_SYS_ADMIN))
-+	    euid == ipcp->uid  ||
-+	    ns_capable(current->nsproxy->ipc_ns->user_ns, CAP_SYS_ADMIN))
- 		return ipcp;
- 
- 	err = -EPERM;
-diff --git a/kernel/futex.c b/kernel/futex.c
-index b766d28..1e876f1 100644
---- a/kernel/futex.c
-+++ b/kernel/futex.c
-@@ -2421,10 +2421,19 @@ SYSCALL_DEFINE3(get_robust_list, int, pid,
- 			goto err_unlock;
- 		ret = -EPERM;
- 		pcred = __task_cred(p);
-+		/* If victim is in different user_ns, then uids are not
-+		   comparable, so we must have CAP_SYS_PTRACE */
-+		if (cred->user->user_ns != pcred->user->user_ns) {
-+			if (!ns_capable(pcred->user->user_ns, CAP_SYS_PTRACE))
-+				goto err_unlock;
-+			goto ok;
-+		}
-+		/* If victim is in same user_ns, then uids are comparable */
- 		if (cred->euid != pcred->euid &&
- 		    cred->euid != pcred->uid &&
--		    !capable(CAP_SYS_PTRACE))
-+		    !ns_capable(pcred->user->user_ns, CAP_SYS_PTRACE))
- 			goto err_unlock;
-+ok:
- 		head = p->robust_list;
- 		rcu_read_unlock();
- 	}
-diff --git a/kernel/futex_compat.c b/kernel/futex_compat.c
-index a7934ac..5f9e689 100644
---- a/kernel/futex_compat.c
-+++ b/kernel/futex_compat.c
-@@ -153,10 +153,19 @@ compat_sys_get_robust_list(int pid, compat_uptr_t __user *head_ptr,
- 			goto err_unlock;
- 		ret = -EPERM;
- 		pcred = __task_cred(p);
-+		/* If victim is in different user_ns, then uids are not
-+		   comparable, so we must have CAP_SYS_PTRACE */
-+		if (cred->user->user_ns != pcred->user->user_ns) {
-+			if (!ns_capable(pcred->user->user_ns, CAP_SYS_PTRACE))
-+				goto err_unlock;
-+			goto ok;
-+		}
-+		/* If victim is in same user_ns, then uids are comparable */
- 		if (cred->euid != pcred->euid &&
- 		    cred->euid != pcred->uid &&
--		    !capable(CAP_SYS_PTRACE))
-+		    !ns_capable(pcred->user->user_ns, CAP_SYS_PTRACE))
- 			goto err_unlock;
-+ok:
- 		head = p->compat_robust_list;
- 		rcu_read_unlock();
- 	}
-diff --git a/kernel/groups.c b/kernel/groups.c
-index 253dc0f..1cc476d 100644
---- a/kernel/groups.c
-+++ b/kernel/groups.c
-@@ -233,7 +233,7 @@ SYSCALL_DEFINE2(setgroups, int, gidsetsize, gid_t __user *, grouplist)
- 	struct group_info *group_info;
- 	int retval;
- 
--	if (!capable(CAP_SETGID))
-+	if (!nsown_capable(CAP_SETGID))
- 		return -EPERM;
- 	if ((unsigned)gidsetsize > NGROUPS_MAX)
- 		return -EINVAL;
-diff --git a/kernel/sched.c b/kernel/sched.c
-index 18d38e4..dc12bc2 100644
---- a/kernel/sched.c
-+++ b/kernel/sched.c
-@@ -4761,8 +4761,11 @@ static bool check_same_owner(struct task_struct *p)
- 
- 	rcu_read_lock();
- 	pcred = __task_cred(p);
--	match = (cred->euid == pcred->euid ||
--		 cred->euid == pcred->uid);
-+	if (cred->user->user_ns == pcred->user->user_ns)
-+		match = (cred->euid == pcred->euid ||
-+			 cred->euid == pcred->uid);
-+	else
-+		match = false;
- 	rcu_read_unlock();
- 	return match;
- }
-@@ -5088,7 +5091,7 @@ long sched_setaffinity(pid_t pid, const struct cpumask *in_mask)
- 		goto out_free_cpus_allowed;
- 	}
- 	retval = -EPERM;
--	if (!check_same_owner(p) && !capable(CAP_SYS_NICE))
-+	if (!check_same_owner(p) && !task_ns_capable(p, CAP_SYS_NICE))
- 		goto out_unlock;
- 
- 	retval = security_task_setscheduler(p);
-diff --git a/kernel/uid16.c b/kernel/uid16.c
-index 4192098..51c6e89 100644
---- a/kernel/uid16.c
-+++ b/kernel/uid16.c
-@@ -189,7 +189,7 @@ SYSCALL_DEFINE2(setgroups16, int, gidsetsize, old_gid_t __user *, grouplist)
- 	struct group_info *group_info;
- 	int retval;
- 
--	if (!capable(CAP_SETGID))
-+	if (!nsown_capable(CAP_SETGID))
- 		return -EPERM;
- 	if ((unsigned)gidsetsize > NGROUPS_MAX)
- 		return -EINVAL;
--- 
-1.7.0.4
+On 16/02/11 12:10 -0800, Sukadev Bhattiprolu wrote:
+> Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
+> | So instead, we can call __wake_up_parent() from exit_checkpoint()
+> | if indeed we are already reaped there:
+> |=20
+> | exit_checkpoint()
+> | {
+> | 	...
+> | 	if (current->flags & PF_RESTARTING) {
+> | 		...
+> | 		/* either zombie or reaped ghost/dead */
+> | 		if (current->exit_state =3D EXIT_DEAD)
+> | 			__wake_up_parent(...);	  /* probably need lock */
+> | 		...
+> | 	}
+> | 	...
+> | }
+> |=20
+> | and to avoid userspace misuse, disallow non-thread-group-leader ghosts.
+> |=20
+> | ?
+>=20
+> Well, I don't see a problem as such, but notice one inconsistency.
+>=20
+> By the time the ghost task calls exit_checkpoint() it would have
+> gone through release_task()/__exit_signal()/__unhash_process() so
+> it is no longer on the parent's ->children list. We will be accessing
+> the task's ->parent pointer after this.
+>=20
+> I am looking to see if anything prevents the parent from itself going
+> through release_task(), after the child does the release_task() but before
+> the child does the exit_checkpoint().
+>=20
+> In 2.6.38, I don't see specifically where a task's ->parent pointer is
+> invalidated.  The task->parent and task->parent->signal are freed in the
+> final __put_task_struct(). So its probably safe to access them, even if t=
+he
+> parent itself is exiting and has gone through release_task().
+>=20
+> But in 2.6.32 i.e RHEL5, tsk->signal is set to NULL in __exit_signal().
+> So, I am trying to rule out the following scenario:
+>=20
+> 	Child (may not be a ghost)			Parent
+> 	-------------------------                       ------
+> - exit_notify(): is EXIT_DEAD=20
+> - release_task():
+> 	 - drops task_list_lock
+> 	 					- itself proceeds to exit.
+> 						- enters release_task()
+> 						- sets own->signal =3D NULL
+> 						  (in 2.6.32, __exit_signal())
+>=20
+> - enters exit_checkpoint()
+> - __wake_up_parent()
+> 	access parents->signal NULL ptr
+>=20
+> Not sure if holding task_list_lock here is needed or will help.
+
+Giving my 2 cents since I've been Cc'ed.
+
+AFAICS, holding tasklist_lock prevents __exit_signal() from setting
+parent->signal to NULL in your back. So something like this should be safe:
+
+	read_lock(&tasklist_lock);
+	if (current->parent->signal)
+		__wake_up_parent(...);
+	read_unlock(&tasklist_lock);
+
+I haven't looked at the context, but of course this also requires that some
+get_task_struct() on current->parent has been done somewhere else before cu=
+rrent
+has passed __exit_signal().
+
+By the way, instead of checking current->parent->signal,
+current->parent->exit_state would look cleaner to me. current->parent is not
+supposed to wait on ->wait_chldexit after calling do_exit(), right?
+
+Louis
+
+--=20
+Dr Louis Rilling			Kerlabs
+Skype: louis.rilling			Batiment Germanium
+Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
+http://www.kerlabs.com/			35700 Rennes
+
+--=_bohort-20377-1297956013-0001-2
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Transfer-Encoding: 7bit
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (GNU/Linux)
+
+iEYEARECAAYFAk1dPOwACgkQVKcRuvQ9Q1QkggCgl8j5pUA/d5ZWbQYCMsSwLz1R
+dY4An2WS3OwjJgt1PDhpZXaWyOIEIEjd
+=Grf1
+-----END PGP SIGNATURE-----
+
+--=_bohort-20377-1297956013-0001-2--
+
+--===============2481064873704118538==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============2481064873704118538==--
