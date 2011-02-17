@@ -1,15 +1,11 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: [PATCH 2/2] pidns: Support unsharing the pid namespace.
-Date: Thu, 17 Feb 2011 00:47:37 +0100
-Message-ID: <4D5C6219.8060207__23246.9682967805$1297936764$gmane$org@free.fr>
-References: <1297788824-20534-1-git-send-email-daniel.lezcano@free.fr>
-	<1297788824-20534-2-git-send-email-daniel.lezcano@free.fr>
-	<20110215190118.GA16707@redhat.com>
+From: Max Kellermann <mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] new cgroup controller "fork"
+Date: Thu, 17 Feb 2011 14:31:52 +0100
+Message-ID: <20110217133152.4043.94951.stgit@rabbit.intern.cm-ag>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110215190118.GA16707-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,90 +15,344 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 02/15/2011 08:01 PM, Oleg Nesterov wrote:
-> On 02/15, Daniel Lezcano wrote:
->> - Pass both nsproxy->pid_ns and task_active_pid_ns to copy_pid_ns
->>    As they can now be different.
-> But since they can be different we have to convert some users of
-> current->nsproxy first? But that patch was dropped.
->
->> Unsharing of the pid namespace unlike unsharing of other namespaces
->> does not take effect immediately.  Instead it affects the children
->> created with fork and clone.
-> IOW, unshare(CLONE_NEWPID) implicitly affects the subsequent fork(),
-> using the very subtle way.
->
-> I have to admit, I can't say I like this very much. OK, if we need
-> this, can't we just put something into, say, signal->flags so that
-> copy_process can check and create the new namespace.
->
-> Also. I remember, I already saw something like this and google found
-> my questions. I didn't actually read the new version, perhaps my
-> concerns were already answered...
->
-> 	But what if the task T does unshare(CLONE_NEWPID) and then, say,
-> 	pthread_create() ? Unless I missed something, the new thread won't
-> 	be able to see T ?
+Can limit the number of fork()/clone() calls in a cgroup.  It is
+useful as a safeguard against fork bombs.
 
-Right. Is it really a problem ? I mean it is a weird use case where we 
-fall in a weird situation.
-I suppose we can do the same weird combination with clone.
-IMHO, the userspace is responsible of how it uses the syscalls. Until 
-the system is safe, everything is ok, no ?
+Signed-off-by: Max Kellermann <mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org>
+---
+ Documentation/cgroups/fork.txt |   30 +++++++
+ include/linux/cgroup_fork.h    |   26 ++++++
+ include/linux/cgroup_subsys.h  |    6 +
+ init/Kconfig                   |    6 +
+ kernel/Makefile                |    1 
+ kernel/cgroup_fork.c           |  180 ++++++++++++++++++++++++++++++++++++++++
+ kernel/fork.c                  |    5 +
+ 7 files changed, 254 insertions(+), 0 deletions(-)
+ create mode 100644 Documentation/cgroups/fork.txt
+ create mode 100644 include/linux/cgroup_fork.h
+ create mode 100644 kernel/cgroup_fork.c
 
-> 	and, in this case the exiting sub-namespace init also kills its
-> 	parent?
-
-I don't think so because the zap_pid_ns_processes does not hit the 
-parent process when it browses the pidmap.
-
-I tried the following program without problem:
-
-#include <stdio.h>
-#define _GNU_SOURCE
-#include <sched.h>
-#include <pthread.h>
-
-void *routine(void *data)
-{
-         printf("pid %d!\n", getpid());
-         return NULL;
-}
-
-int main(int argc, char *argv[])
-{
-         char **aux = &argv[1];
-         pthread_t t;
-
-         if (unshare(CLONE_NEWPID)) {
-                 perror("unshare");
-                 return -1;
-         }
-
-         if (pthread_create(&t, NULL, routine, NULL)) {
-                 perror("pthread_create");
-                 return -1;
-         }
-
-         if (pthread_join(t, NULL)) {
-                 perror("pthread_join");
-                 return -1;
-         }
-
-         printf("joined\n");
-
-         return 0;
-}
-
-> 	OK, suppose it does fork() after unshare(), then another fork().
-> 	In this case the second child lives in the same namespace with
-> 	init created by the 1st fork, but it is not descendant ? This means
-> 	in particular that if the new init exits, zap_pid_ns_processes()->
-> 	do_wait() can't work.
-
-Hmm, good question. IMO, we should prevent such case for now in the same 
-way we added the flag 'dead', IOW adding a flag 'busy' for example.
+diff --git a/Documentation/cgroups/fork.txt b/Documentation/cgroups/fork.txt
+new file mode 100644
+index 0000000..dfbf291
+--- /dev/null
++++ b/Documentation/cgroups/fork.txt
+@@ -0,0 +1,30 @@
++The "fork" Controller
++---------------------
++
++The "fork" controller limits the number of times a new child process
++or thread can be created.  It maintains a per-group counter which gets
++decremented on each fork() / clone().  When the counter reaches zero,
++no process in the cgroup is allowed to create new child
++processes/threads, even if existing ones quit.
++
++This has been proven useful in a shared hosting environment.  A new
++temporary cgroup is created for each CGI process, and the maximum fork
++count is configured to a sensible value.  Since CGIs are expected to
++run for only a short time with predictable resource usage, this may be
++an appropriate tool to limit the damage that a freaked CGI can do.
++
++Initially, the counter is set to -1, which is a magic value for
++"disabled" - no limits are imposed on the processes in the group.  To
++set a new value, type (in the working directory of that control
++group):
++
++ echo 16 > fork.remaining
++
++This examples allows 16 forks in the control group.  0 means no
++further forks are allowed.  The limit may be lowered or increased or
++even disabled at any time by a process with write permissions to the
++attribute.
++
++To check if a fork is allowed, the controller walks the cgroup
++hierarchy up, and verifies all ancestors.  The counter of all
++ancestors is decreased.
+diff --git a/include/linux/cgroup_fork.h b/include/linux/cgroup_fork.h
+new file mode 100644
+index 0000000..4ac66b3
+--- /dev/null
++++ b/include/linux/cgroup_fork.h
+@@ -0,0 +1,26 @@
++#ifndef _LINUX_CGROUP_FORK_H
++#define _LINUX_CGROUP_FORK_H
++
++#ifdef CONFIG_CGROUP_FORK
++
++/**
++ * Checks if another fork is allowed.  Call this before creating a new
++ * child process.
++ *
++ * @return 0 on success, a negative errno value if forking should be
++ * denied
++ */
++int
++cgroup_fork_pre_fork(void);
++
++#else /* !CONFIG_CGROUP_FORK */
++
++static inline int
++cgroup_fork_pre_fork(void)
++{
++	return 0;
++}
++
++#endif /* !CONFIG_CGROUP_FORK */
++
++#endif /* !_LINUX_CGROUP_FORK_H */
+diff --git a/include/linux/cgroup_subsys.h b/include/linux/cgroup_subsys.h
+index ccefff0..8ead7f9 100644
+--- a/include/linux/cgroup_subsys.h
++++ b/include/linux/cgroup_subsys.h
+@@ -66,3 +66,9 @@ SUBSYS(blkio)
+ #endif
+ 
+ /* */
++
++#ifdef CONFIG_CGROUP_FORK
++SUBSYS(fork)
++#endif
++
++/* */
+diff --git a/init/Kconfig b/init/Kconfig
+index 17e2cfb..ef53a85 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -596,6 +596,12 @@ config CGROUP_FREEZER
+ 	  Provides a way to freeze and unfreeze all tasks in a
+ 	  cgroup.
+ 
++config CGROUP_FORK
++	bool "fork controller for cgroups"
++	help
++	  Limits the number of fork() calls in a cgroup.  An application
++	  for this is to make a cgroup safe against fork bombs.
++
+ config CGROUP_DEVICE
+ 	bool "Device controller for cgroups"
+ 	help
+diff --git a/kernel/Makefile b/kernel/Makefile
+index 353d3fe..b58cc01 100644
+--- a/kernel/Makefile
++++ b/kernel/Makefile
+@@ -61,6 +61,7 @@ obj-$(CONFIG_BACKTRACE_SELF_TEST) += backtracetest.o
+ obj-$(CONFIG_COMPAT) += compat.o
+ obj-$(CONFIG_CGROUPS) += cgroup.o
+ obj-$(CONFIG_CGROUP_FREEZER) += cgroup_freezer.o
++obj-$(CONFIG_CGROUP_FORK) += cgroup_fork.o
+ obj-$(CONFIG_CPUSETS) += cpuset.o
+ obj-$(CONFIG_CGROUP_NS) += ns_cgroup.o
+ obj-$(CONFIG_UTS_NS) += utsname.o
+diff --git a/kernel/cgroup_fork.c b/kernel/cgroup_fork.c
+new file mode 100644
+index 0000000..24c4b16
+--- /dev/null
++++ b/kernel/cgroup_fork.c
+@@ -0,0 +1,180 @@
++/*
++ *  A cgroup implementation which limits the number of fork() calls.
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ */
++
++#include <linux/cgroup.h>
++#include <linux/cgroup_fork.h>
++#include <linux/slab.h>
++
++struct cgroup_fork {
++	struct cgroup_subsys_state css;
++
++	/** protect the "remaining" attribute */
++	spinlock_t lock;
++
++	/**
++	 * The remaining number of forks allowed.  -1 is the magic
++	 * value for "unlimited".
++	 */
++	int remaining;
++};
++
++/**
++ * Get the #cgrou_fork instance of the specified #cgroup.
++ */
++static inline struct cgroup_fork *
++cgroup_fork_group(struct cgroup *cgroup)
++{
++	return container_of(cgroup_subsys_state(cgroup, fork_subsys_id),
++			    struct cgroup_fork, css);
++}
++
++/**
++ * Get the #cgroup_fork instance of the specified task.
++ */
++static inline struct cgroup_fork *
++cgroup_fork_task(struct task_struct *task)
++{
++	return container_of(task_subsys_state(current_task, fork_subsys_id),
++			    struct cgroup_fork, css);
++}
++
++/**
++ * Get the #cgroup_fork instance of the current task.
++ */
++static inline struct cgroup_fork *
++cgroup_fork_current(void)
++{
++	return cgroup_fork_task(current_task);
++}
++
++static struct cgroup_subsys_state *
++cgroup_fork_create(struct cgroup_subsys *ss, struct cgroup *cgroup)
++{
++	struct cgroup_fork *t = kzalloc(sizeof(*t), GFP_KERNEL);
++	if (!t)
++		return ERR_PTR(-ENOMEM);
++
++	spin_lock_init(&t->lock);
++
++	t->remaining = -1;
++
++	return &t->css;
++}
++
++static void
++cgroup_fork_destroy(struct cgroup_subsys *ss, struct cgroup *cgroup)
++{
++	struct cgroup_fork *t = cgroup_fork_group(cgroup);
++
++	kfree(t);
++}
++
++static void
++cgroup_fork_fork(struct cgroup_subsys *ss, struct task_struct *task)
++{
++	struct cgroup_fork *t;
++
++	rcu_read_lock();
++
++	/* decrement the counters in the cgroup and all of its
++	   ancestors (except for the root cgroup) */
++
++	t = cgroup_fork_current();
++	while (t->css.cgroup->parent != NULL) {
++		spin_lock_irq(&t->lock);
++		if (t->remaining > 0)
++			--t->remaining;
++		spin_unlock_irq(&t->lock);
++
++		t = cgroup_fork_group(t->css.cgroup->parent);
++	}
++
++	rcu_read_unlock();
++}
++
++static s64
++cgroup_fork_remaining_read(struct cgroup *cgroup, struct cftype *cft)
++{
++	struct cgroup_fork *t = cgroup_fork_group(cgroup);
++	int value;
++
++	spin_lock_irq(&t->lock);
++	value = t->remaining;
++	spin_unlock_irq(&t->lock);
++
++	return value;
++}
++
++static int
++cgroup_fork_remaining_write(struct cgroup *cgroup, struct cftype *cft,
++			    s64 value)
++{
++	struct cgroup_fork *t = cgroup_fork_group(cgroup);
++
++	if (value < -1 || value > (1L << 30))
++		return -EINVAL;
++
++	spin_lock_irq(&t->lock);
++	t->remaining = (int)value;
++	spin_unlock_irq(&t->lock);
++
++	return 0;
++}
++
++static const struct cftype cgroup_fork_files[] =  {
++	{
++		.name = "remaining",
++		.read_s64 = cgroup_fork_remaining_read,
++		.write_s64 = cgroup_fork_remaining_write,
++	},
++};
++
++static int
++cgroup_fork_populate(struct cgroup_subsys *ss, struct cgroup *cgroup)
++{
++	if (cgroup->parent == NULL)
++		/* cannot limit the root cgroup */
++		return 0;
++
++	return cgroup_add_files(cgroup, ss, cgroup_fork_files,
++				ARRAY_SIZE(cgroup_fork_files));
++}
++
++struct cgroup_subsys fork_subsys = {
++	.name = "fork",
++	.create = cgroup_fork_create,
++	.destroy = cgroup_fork_destroy,
++	.fork = cgroup_fork_fork,
++	.populate = cgroup_fork_populate,
++	.subsys_id = fork_subsys_id,
++};
++
++int
++cgroup_fork_pre_fork(void)
++{
++	struct cgroup_fork *t;
++	int err = 0;
++
++	rcu_read_lock();
++
++	t = cgroup_fork_current();
++	while (t->css.cgroup->parent != NULL && err == 0) {
++		spin_lock_irq(&t->lock);
++
++		if (t->remaining == 0)
++			err = -EPERM;
++
++		spin_unlock_irq(&t->lock);
++
++		t = cgroup_fork_group(t->css.cgroup->parent);
++	}
++
++	rcu_read_unlock();
++
++	return err;
++}
+diff --git a/kernel/fork.c b/kernel/fork.c
+index 25e4291..35836e6 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -32,6 +32,7 @@
+ #include <linux/capability.h>
+ #include <linux/cpu.h>
+ #include <linux/cgroup.h>
++#include <linux/cgroup_fork.h>
+ #include <linux/security.h>
+ #include <linux/hugetlb.h>
+ #include <linux/swap.h>
+@@ -1024,6 +1025,10 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 				current->signal->flags & SIGNAL_UNKILLABLE)
+ 		return ERR_PTR(-EINVAL);
+ 
++	retval = cgroup_fork_pre_fork();
++	if (retval)
++		goto fork_out;
++
+ 	retval = security_task_create(clone_flags);
+ 	if (retval)
+ 		goto fork_out;
