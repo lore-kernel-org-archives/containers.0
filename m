@@ -1,7 +1,7 @@
 From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 5/9] Allow ptrace from non-init user namespaces
-Date: Thu, 17 Feb 2011 15:03:33 +0000
-Message-ID: <20110217150333.GE26395__19019.1250098453$1297956047$gmane$org@mail.hallyn.com>
+Subject: [PATCH 8/9] user namespaces: convert several capable() calls
+Date: Thu, 17 Feb 2011 15:03:56 +0000
+Message-ID: <20110217150356.GH26395__5450.85785347528$1297956055$gmane$org@mail.hallyn.com>
 References: <20110217150224.GA26334@mail.hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,225 +22,167 @@ To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Kees Cook <kees.cook-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-ptrace is allowed to tasks in the same user namespace according to
-the usual rules (i.e. the same rules as for two tasks in the init
-user namespace).  ptrace is also allowed to a user namespace to
-which the current task the has CAP_SYS_PTRACE capability.
+CAP_IPC_OWNER and CAP_IPC_LOCK can be checked against current_user_ns(),
+because the resource comes from current's own ipc namespace.
+
+setuid/setgid are to uids in own namespace, so again checks can be
+against current_user_ns().
 
 Changelog:
-	Dec 31: Address feedback by Eric:
-		. Correct ptrace uid check
-		. Rename may_ptrace_ns to ptrace_capable
-		. Also fix the cap_ptrace checks.
-	Jan  1: Use const cred struct
-	Jan 11: use task_ns_capable() in place of ptrace_capable().
+	Jan 11: Use task_ns_capable() in place of sched_capable().
+	Jan 11: Use nsown_capable() as suggested by Bastian Blank.
+	Jan 11: Clarify (hopefully) some logic in futex and sched.c
+	Feb 15: use ns_capable for ipc, not nsown_capable
 
 Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 ---
- include/linux/capability.h     |    2 +
- include/linux/user_namespace.h |    9 +++++++
- kernel/ptrace.c                |   27 ++++++++++++----------
- kernel/user_namespace.c        |   16 +++++++++++++
- security/commoncap.c           |   48 +++++++++++++++++++++++++++++++++------
- 5 files changed, 82 insertions(+), 20 deletions(-)
+ ipc/shm.c             |    2 +-
+ ipc/util.c            |    5 +++--
+ kernel/futex.c        |   11 ++++++++++-
+ kernel/futex_compat.c |   11 ++++++++++-
+ kernel/groups.c       |    2 +-
+ kernel/sched.c        |    9 ++++++---
+ kernel/uid16.c        |    2 +-
+ 7 files changed, 32 insertions(+), 10 deletions(-)
 
-diff --git a/include/linux/capability.h b/include/linux/capability.h
-index cb3d2d9..bc0f262 100644
---- a/include/linux/capability.h
-+++ b/include/linux/capability.h
-@@ -546,6 +546,8 @@ extern const kernel_cap_t __cap_init_eff_set;
-  */
- #define has_capability(t, cap) (security_real_capable((t), &init_user_ns, (cap)) == 0)
+diff --git a/ipc/shm.c b/ipc/shm.c
+index 7d3bb22..e91e2e9 100644
+--- a/ipc/shm.c
++++ b/ipc/shm.c
+@@ -773,7 +773,7 @@ SYSCALL_DEFINE3(shmctl, int, shmid, int, cmd, struct shmid_ds __user *, buf)
  
-+#define has_ns_capability(t, ns, cap) (security_real_capable((t), (ns), (cap)) == 0)
-+
- /**
-  * has_capability_noaudit - Determine if a task has a superior capability available (unaudited)
-  * @t: The task in question
-diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-index faf4679..862fc59 100644
---- a/include/linux/user_namespace.h
-+++ b/include/linux/user_namespace.h
-@@ -39,6 +39,9 @@ static inline void put_user_ns(struct user_namespace *ns)
- uid_t user_ns_map_uid(struct user_namespace *to, const struct cred *cred, uid_t uid);
- gid_t user_ns_map_gid(struct user_namespace *to, const struct cred *cred, gid_t gid);
+ 		audit_ipc_obj(&(shp->shm_perm));
  
-+int same_or_ancestor_user_ns(struct task_struct *task,
-+	struct task_struct *victim);
-+
- #else
+-		if (!capable(CAP_IPC_LOCK)) {
++		if (!ns_capable(ns->user_ns, CAP_IPC_LOCK)) {
+ 			uid_t euid = current_euid();
+ 			err = -EPERM;
+ 			if (euid != shp->shm_perm.uid &&
+diff --git a/ipc/util.c b/ipc/util.c
+index 69a0cc1..8e7ec6a 100644
+--- a/ipc/util.c
++++ b/ipc/util.c
+@@ -627,7 +627,7 @@ int ipcperms (struct kern_ipc_perm *ipcp, short flag)
+ 		granted_mode >>= 3;
+ 	/* is there some bit set in requested_mode but not in granted_mode? */
+ 	if ((requested_mode & ~granted_mode & 0007) && 
+-	    !capable(CAP_IPC_OWNER))
++	    !ns_capable(current->nsproxy->ipc_ns->user_ns, CAP_IPC_OWNER))
+ 		return -1;
  
- static inline struct user_namespace *get_user_ns(struct user_namespace *ns)
-@@ -66,6 +69,12 @@ static inline gid_t user_ns_map_gid(struct user_namespace *to,
- 	return gid;
- }
+ 	return security_ipc_permission(ipcp, flag);
+@@ -800,7 +800,8 @@ struct kern_ipc_perm *ipcctl_pre_down(struct ipc_ids *ids, int id, int cmd,
  
-+static inline int same_or_ancestor_user_ns(struct task_struct *task,
-+	struct task_struct *victim)
-+{
-+	return 1;
-+}
-+
- #endif
+ 	euid = current_euid();
+ 	if (euid == ipcp->cuid ||
+-	    euid == ipcp->uid  || capable(CAP_SYS_ADMIN))
++	    euid == ipcp->uid  ||
++	    ns_capable(current->nsproxy->ipc_ns->user_ns, CAP_SYS_ADMIN))
+ 		return ipcp;
  
- #endif /* _LINUX_USER_H */
-diff --git a/kernel/ptrace.c b/kernel/ptrace.c
-index 1708b1e..cde4655 100644
---- a/kernel/ptrace.c
-+++ b/kernel/ptrace.c
-@@ -134,21 +134,24 @@ int __ptrace_may_access(struct task_struct *task, unsigned int mode)
- 		return 0;
- 	rcu_read_lock();
- 	tcred = __task_cred(task);
--	if ((cred->uid != tcred->euid ||
--	     cred->uid != tcred->suid ||
--	     cred->uid != tcred->uid  ||
--	     cred->gid != tcred->egid ||
--	     cred->gid != tcred->sgid ||
--	     cred->gid != tcred->gid) &&
--	    !capable(CAP_SYS_PTRACE)) {
--		rcu_read_unlock();
--		return -EPERM;
--	}
-+	if (cred->user->user_ns == tcred->user->user_ns &&
-+	    (cred->uid == tcred->euid &&
-+	     cred->uid == tcred->suid &&
-+	     cred->uid == tcred->uid  &&
-+	     cred->gid == tcred->egid &&
-+	     cred->gid == tcred->sgid &&
-+	     cred->gid == tcred->gid))
-+		goto ok;
-+	if (ns_capable(tcred->user->user_ns, CAP_SYS_PTRACE))
-+		goto ok;
-+	rcu_read_unlock();
-+	return -EPERM;
+ 	err = -EPERM;
+diff --git a/kernel/futex.c b/kernel/futex.c
+index b766d28..1e876f1 100644
+--- a/kernel/futex.c
++++ b/kernel/futex.c
+@@ -2421,10 +2421,19 @@ SYSCALL_DEFINE3(get_robust_list, int, pid,
+ 			goto err_unlock;
+ 		ret = -EPERM;
+ 		pcred = __task_cred(p);
++		/* If victim is in different user_ns, then uids are not
++		   comparable, so we must have CAP_SYS_PTRACE */
++		if (cred->user->user_ns != pcred->user->user_ns) {
++			if (!ns_capable(pcred->user->user_ns, CAP_SYS_PTRACE))
++				goto err_unlock;
++			goto ok;
++		}
++		/* If victim is in same user_ns, then uids are comparable */
+ 		if (cred->euid != pcred->euid &&
+ 		    cred->euid != pcred->uid &&
+-		    !capable(CAP_SYS_PTRACE))
++		    !ns_capable(pcred->user->user_ns, CAP_SYS_PTRACE))
+ 			goto err_unlock;
 +ok:
- 	rcu_read_unlock();
- 	smp_rmb();
- 	if (task->mm)
- 		dumpable = get_dumpable(task->mm);
--	if (!dumpable && !capable(CAP_SYS_PTRACE))
-+	if (!dumpable && !task_ns_capable(task, CAP_SYS_PTRACE))
+ 		head = p->robust_list;
+ 		rcu_read_unlock();
+ 	}
+diff --git a/kernel/futex_compat.c b/kernel/futex_compat.c
+index a7934ac..5f9e689 100644
+--- a/kernel/futex_compat.c
++++ b/kernel/futex_compat.c
+@@ -153,10 +153,19 @@ compat_sys_get_robust_list(int pid, compat_uptr_t __user *head_ptr,
+ 			goto err_unlock;
+ 		ret = -EPERM;
+ 		pcred = __task_cred(p);
++		/* If victim is in different user_ns, then uids are not
++		   comparable, so we must have CAP_SYS_PTRACE */
++		if (cred->user->user_ns != pcred->user->user_ns) {
++			if (!ns_capable(pcred->user->user_ns, CAP_SYS_PTRACE))
++				goto err_unlock;
++			goto ok;
++		}
++		/* If victim is in same user_ns, then uids are comparable */
+ 		if (cred->euid != pcred->euid &&
+ 		    cred->euid != pcred->uid &&
+-		    !capable(CAP_SYS_PTRACE))
++		    !ns_capable(pcred->user->user_ns, CAP_SYS_PTRACE))
+ 			goto err_unlock;
++ok:
+ 		head = p->compat_robust_list;
+ 		rcu_read_unlock();
+ 	}
+diff --git a/kernel/groups.c b/kernel/groups.c
+index 253dc0f..1cc476d 100644
+--- a/kernel/groups.c
++++ b/kernel/groups.c
+@@ -233,7 +233,7 @@ SYSCALL_DEFINE2(setgroups, int, gidsetsize, gid_t __user *, grouplist)
+ 	struct group_info *group_info;
+ 	int retval;
+ 
+-	if (!capable(CAP_SETGID))
++	if (!nsown_capable(CAP_SETGID))
  		return -EPERM;
- 
- 	return security_ptrace_access_check(task, mode);
-@@ -198,7 +201,7 @@ int ptrace_attach(struct task_struct *task)
- 		goto unlock_tasklist;
- 
- 	task->ptrace = PT_PTRACED;
--	if (capable(CAP_SYS_PTRACE))
-+	if (task_ns_capable(task, CAP_SYS_PTRACE))
- 		task->ptrace |= PT_PTRACE_CAP;
- 
- 	__ptrace_link(task, current);
-diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index 9da289c..0ef2258 100644
---- a/kernel/user_namespace.c
-+++ b/kernel/user_namespace.c
-@@ -129,6 +129,22 @@ gid_t user_ns_map_gid(struct user_namespace *to, const struct cred *cred, gid_t
- 	return overflowgid;
- }
- 
-+int same_or_ancestor_user_ns(struct task_struct *task,
-+	struct task_struct *victim)
-+{
-+	struct user_namespace *u1 = task_cred_xxx(task, user)->user_ns;
-+	struct user_namespace *u2 = task_cred_xxx(victim, user)->user_ns;
-+	for (;;) {
-+		if (u1 == u2)
-+			return 1;
-+		if (u1 == &init_user_ns)
-+			return 0;
-+		u1 = u1->creator->user_ns;
-+	}
-+	/* We never get here */
-+	return 0;
-+}
-+
- static __init int user_namespaces_init(void)
- {
- 	user_ns_cachep = KMEM_CACHE(user_namespace, SLAB_PANIC);
-diff --git a/security/commoncap.c b/security/commoncap.c
-index 51fa9ec..12ff65c 100644
---- a/security/commoncap.c
-+++ b/security/commoncap.c
-@@ -130,18 +130,34 @@ int cap_settime(struct timespec *ts, struct timezone *tz)
-  * @child: The process to be accessed
-  * @mode: The mode of attachment.
-  *
-+ * If we are in the same or an ancestor user_ns and have all the target
-+ * task's capabilities, then ptrace access is allowed.
-+ * If we have the ptrace capability to the target user_ns, then ptrace
-+ * access is allowed.
-+ * Else denied.
-+ *
-  * Determine whether a process may access another, returning 0 if permission
-  * granted, -ve if denied.
-  */
- int cap_ptrace_access_check(struct task_struct *child, unsigned int mode)
- {
- 	int ret = 0;
-+	const struct cred *cred, *tcred;
+ 	if ((unsigned)gidsetsize > NGROUPS_MAX)
+ 		return -EINVAL;
+diff --git a/kernel/sched.c b/kernel/sched.c
+index 18d38e4..dc12bc2 100644
+--- a/kernel/sched.c
++++ b/kernel/sched.c
+@@ -4761,8 +4761,11 @@ static bool check_same_owner(struct task_struct *p)
  
  	rcu_read_lock();
--	if (!cap_issubset(__task_cred(child)->cap_permitted,
--			  current_cred()->cap_permitted) &&
--	    !capable(CAP_SYS_PTRACE))
--		ret = -EPERM;
-+	cred = current_cred();
-+	tcred = __task_cred(child);
-+	/*
-+	 * The ancestor user_ns check may be gratuitous, as I think
-+	 * we've already guaranteed that in kernel/ptrace.c.
-+	 */
-+	if (same_or_ancestor_user_ns(current, child) &&
-+	    cap_issubset(tcred->cap_permitted, cred->cap_permitted))
-+		goto out;
-+	if (ns_capable(tcred->user->user_ns, CAP_SYS_PTRACE))
-+		goto out;
-+	ret = -EPERM;
-+out:
+ 	pcred = __task_cred(p);
+-	match = (cred->euid == pcred->euid ||
+-		 cred->euid == pcred->uid);
++	if (cred->user->user_ns == pcred->user->user_ns)
++		match = (cred->euid == pcred->euid ||
++			 cred->euid == pcred->uid);
++	else
++		match = false;
  	rcu_read_unlock();
- 	return ret;
+ 	return match;
  }
-@@ -150,18 +166,34 @@ int cap_ptrace_access_check(struct task_struct *child, unsigned int mode)
-  * cap_ptrace_traceme - Determine whether another process may trace the current
-  * @parent: The task proposed to be the tracer
-  *
-+ * If parent is in the same or an ancestor user_ns and has all current's
-+ * capabilities, then ptrace access is allowed.
-+ * If parent has the ptrace capability to current's user_ns, then ptrace
-+ * access is allowed.
-+ * Else denied.
-+ *
-  * Determine whether the nominated task is permitted to trace the current
-  * process, returning 0 if permission is granted, -ve if denied.
-  */
- int cap_ptrace_traceme(struct task_struct *parent)
- {
- 	int ret = 0;
-+	const struct cred *cred, *tcred;
+@@ -5088,7 +5091,7 @@ long sched_setaffinity(pid_t pid, const struct cpumask *in_mask)
+ 		goto out_free_cpus_allowed;
+ 	}
+ 	retval = -EPERM;
+-	if (!check_same_owner(p) && !capable(CAP_SYS_NICE))
++	if (!check_same_owner(p) && !task_ns_capable(p, CAP_SYS_NICE))
+ 		goto out_unlock;
  
- 	rcu_read_lock();
--	if (!cap_issubset(current_cred()->cap_permitted,
--			  __task_cred(parent)->cap_permitted) &&
--	    !has_capability(parent, CAP_SYS_PTRACE))
--		ret = -EPERM;
-+	cred = __task_cred(parent);
-+	tcred = current_cred();
-+	/*
-+	 * The ancestor user_ns check may be gratuitous, as I think
-+	 * we've already guaranteed that in kernel/ptrace.c.
-+	 */
-+	if (same_or_ancestor_user_ns(parent, current) &&
-+	    cap_issubset(tcred->cap_permitted, cred->cap_permitted))
-+		goto out;
-+	if (has_ns_capability(parent, tcred->user->user_ns, CAP_SYS_PTRACE))
-+		goto out;
-+	ret = -EPERM;
-+out:
- 	rcu_read_unlock();
- 	return ret;
- }
+ 	retval = security_task_setscheduler(p);
+diff --git a/kernel/uid16.c b/kernel/uid16.c
+index 4192098..51c6e89 100644
+--- a/kernel/uid16.c
++++ b/kernel/uid16.c
+@@ -189,7 +189,7 @@ SYSCALL_DEFINE2(setgroups16, int, gidsetsize, old_gid_t __user *, grouplist)
+ 	struct group_info *group_info;
+ 	int retval;
+ 
+-	if (!capable(CAP_SETGID))
++	if (!nsown_capable(CAP_SETGID))
+ 		return -EPERM;
+ 	if ((unsigned)gidsetsize > NGROUPS_MAX)
+ 		return -EINVAL;
 -- 
 1.7.0.4
