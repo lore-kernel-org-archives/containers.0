@@ -1,15 +1,15 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 4/9] allow killing tasks in your own or child userns
-Date: Thu, 17 Feb 2011 19:00:44 -0800
-Message-ID: <m162si9hcz.fsf__37736.6711305969$1297998174$gmane$org@fess.ebiederm.org>
+Subject: Re: [PATCH 3/9] allow sethostname in a container
+Date: Thu, 17 Feb 2011 19:05:21 -0800
+Message-ID: <m11v369h5a.fsf__37094.6642746732$1297998458$gmane$org@fess.ebiederm.org>
 References: <20110217150224.GA26334@mail.hallyn.com>
-	<20110217150325.GD26395@mail.hallyn.com>
+	<20110217150316.GC26395@mail.hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110217150325.GD26395-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org> (Serge E. Hallyn's
-	message of "Thu, 17 Feb 2011 15:03:25 +0000")
+In-Reply-To: <20110217150316.GC26395-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org> (Serge E. Hallyn's
+	message of "Thu, 17 Feb 2011 15:03:16 +0000")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,77 +25,24 @@ List-Id: containers.vger.kernel.org
 
 "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
 
-> Changelog:
-> 	Dec  8: Fixed bug in my check_kill_permission pointed out by
-> 	        Eric Biederman.
-> 	Dec 13: Apply Eric's suggestion to pass target task into kill_ok_by_cred()
-> 	        for clarity
-> 	Dec 31: address comment by Eric Biederman:
-> 		don't need cred/tcred in check_kill_permission.
-> 	Jan  1: use const cred struct.
-> 	Jan 11: Per Bastian Blank's advice, clean up kill_ok_by_cred().
-> 	Feb 16: kill_ok_by_cred: fix bad parentheses
-
 Acked-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
->
+
 > Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 > ---
->  kernel/signal.c |   30 ++++++++++++++++++++++--------
->  1 files changed, 22 insertions(+), 8 deletions(-)
+>  kernel/sys.c |    2 +-
+>  1 files changed, 1 insertions(+), 1 deletions(-)
 >
-> diff --git a/kernel/signal.c b/kernel/signal.c
-> index 4e3cff1..ffe4bdf 100644
-> --- a/kernel/signal.c
-> +++ b/kernel/signal.c
-> @@ -636,13 +636,33 @@ static inline bool si_fromuser(const struct siginfo *info)
->  }
+> diff --git a/kernel/sys.c b/kernel/sys.c
+> index 18da702..7a1bbad 100644
+> --- a/kernel/sys.c
+> +++ b/kernel/sys.c
+> @@ -1177,7 +1177,7 @@ SYSCALL_DEFINE2(sethostname, char __user *, name, int, len)
+>  	int errno;
+>  	char tmp[__NEW_UTS_LEN];
 >  
->  /*
-> + * called with RCU read lock from check_kill_permission()
-> + */
-> +static inline int kill_ok_by_cred(struct task_struct *t)
-> +{
-> +	const struct cred *cred = current_cred();
-> +	const struct cred *tcred = __task_cred(t);
-> +
-> +	if (cred->user->user_ns == tcred->user->user_ns &&
-> +	    (cred->euid == tcred->suid ||
-> +	     cred->euid == tcred->uid ||
-> +	     cred->uid  == tcred->suid ||
-> +	     cred->uid  == tcred->uid))
-> +		return 1;
-> +
-> +	if (ns_capable(tcred->user->user_ns, CAP_KILL))
-> +		return 1;
-> +
-> +	return 0;
-> +}
-> +
-> +/*
->   * Bad permissions for sending the signal
->   * - the caller must hold the RCU read lock
->   */
->  static int check_kill_permission(int sig, struct siginfo *info,
->  				 struct task_struct *t)
->  {
-> -	const struct cred *cred, *tcred;
->  	struct pid *sid;
->  	int error;
->  
-> @@ -656,14 +676,8 @@ static int check_kill_permission(int sig, struct siginfo *info,
->  	if (error)
->  		return error;
->  
-> -	cred = current_cred();
-> -	tcred = __task_cred(t);
->  	if (!same_thread_group(current, t) &&
-> -	    (cred->euid ^ tcred->suid) &&
-> -	    (cred->euid ^ tcred->uid) &&
-> -	    (cred->uid  ^ tcred->suid) &&
-> -	    (cred->uid  ^ tcred->uid) &&
-> -	    !capable(CAP_KILL)) {
-> +	    !kill_ok_by_cred(t)) {
->  		switch (sig) {
->  		case SIGCONT:
->  			sid = task_session(t);
+> -	if (!capable(CAP_SYS_ADMIN))
+> +	if (!ns_capable(current->nsproxy->uts_ns->user_ns, CAP_SYS_ADMIN))
+>  		return -EPERM;
+>  	if (len < 0 || len > __NEW_UTS_LEN)
+>  		return -EINVAL;
