@@ -1,16 +1,15 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 5/9] Allow ptrace from non-init user namespaces
-Date: Fri, 18 Feb 2011 04:36:02 +0000
-Message-ID: <20110218043601.GB9584__33425.5976522856$1298003887$gmane$org@mail.hallyn.com>
-References: <20110217150224.GA26334@mail.hallyn.com>
-	<20110217150333.GE26395@mail.hallyn.com>
-	<m1aahu9hea.fsf@fess.ebiederm.org>
+From: Max Kellermann <mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] new cgroup controller "fork"
+Date: Fri, 18 Feb 2011 10:26:52 +0100
+Message-ID: <20110218092652.GA5408__38149.380478035$1298021183$gmane$org@rabbit.intern.cm-ag>
+References: <20110217133152.4043.94951.stgit@rabbit.intern.cm-ag>
+	<AANLkTi=X7rHEy9yOngogs_OQ69FJeZeQRSwvFdgnbWxo@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <m1aahu9hea.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
+In-Reply-To: <AANLkTi=X7rHEy9yOngogs_OQ69FJeZeQRSwvFdgnbWxo-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,243 +19,391 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Kees Cook <kees.cook-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
-> 
-> > ptrace is allowed to tasks in the same user namespace according to
-> > the usual rules (i.e. the same rules as for two tasks in the init
-> > user namespace).  ptrace is also allowed to a user namespace to
-> > which the current task the has CAP_SYS_PTRACE capability.
-> 
-> 
-> I don't see how it can go wrong at the moment but
-> same_or_ancestore_user_ns is too permissive and potentially inefficient.
-> Can you please replace it with a simple user namespace equality check.
-> 
-> Eric
-> 
-> 
-> > Changelog:
-> > 	Dec 31: Address feedback by Eric:
-> > 		. Correct ptrace uid check
-> > 		. Rename may_ptrace_ns to ptrace_capable
-> > 		. Also fix the cap_ptrace checks.
-> > 	Jan  1: Use const cred struct
-> > 	Jan 11: use task_ns_capable() in place of ptrace_capable().
-> >
-> > Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-> > ---
-> >  include/linux/capability.h     |    2 +
-> >  include/linux/user_namespace.h |    9 +++++++
-> >  kernel/ptrace.c                |   27 ++++++++++++----------
-> >  kernel/user_namespace.c        |   16 +++++++++++++
-> >  security/commoncap.c           |   48 +++++++++++++++++++++++++++++++++------
-> >  5 files changed, 82 insertions(+), 20 deletions(-)
-> >
-> > diff --git a/include/linux/capability.h b/include/linux/capability.h
-> > index cb3d2d9..bc0f262 100644
-> > --- a/include/linux/capability.h
-> > +++ b/include/linux/capability.h
-> > @@ -546,6 +546,8 @@ extern const kernel_cap_t __cap_init_eff_set;
-> >   */
-> >  #define has_capability(t, cap) (security_real_capable((t), &init_user_ns, (cap)) == 0)
-> >  
-> > +#define has_ns_capability(t, ns, cap) (security_real_capable((t), (ns), (cap)) == 0)
-> > +
-> >  /**
-> >   * has_capability_noaudit - Determine if a task has a superior capability available (unaudited)
-> >   * @t: The task in question
-> > diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-> > index faf4679..862fc59 100644
-> > --- a/include/linux/user_namespace.h
-> > +++ b/include/linux/user_namespace.h
-> > @@ -39,6 +39,9 @@ static inline void put_user_ns(struct user_namespace *ns)
-> >  uid_t user_ns_map_uid(struct user_namespace *to, const struct cred *cred, uid_t uid);
-> >  gid_t user_ns_map_gid(struct user_namespace *to, const struct cred *cred, gid_t gid);
-> >  
-> > +int same_or_ancestor_user_ns(struct task_struct *task,
-> > +	struct task_struct *victim);
-> > +
-> >  #else
-> >  
-> >  static inline struct user_namespace *get_user_ns(struct user_namespace *ns)
-> > @@ -66,6 +69,12 @@ static inline gid_t user_ns_map_gid(struct user_namespace *to,
-> >  	return gid;
-> >  }
-> >  
-> > +static inline int same_or_ancestor_user_ns(struct task_struct *task,
-> > +	struct task_struct *victim)
-> > +{
-> > +	return 1;
-> > +}
-> > +
-> >  #endif
-> >  
-> >  #endif /* _LINUX_USER_H */
-> > diff --git a/kernel/ptrace.c b/kernel/ptrace.c
-> > index 1708b1e..cde4655 100644
-> > --- a/kernel/ptrace.c
-> > +++ b/kernel/ptrace.c
-> > @@ -134,21 +134,24 @@ int __ptrace_may_access(struct task_struct *task, unsigned int mode)
-> >  		return 0;
-> >  	rcu_read_lock();
-> >  	tcred = __task_cred(task);
-> > -	if ((cred->uid != tcred->euid ||
-> > -	     cred->uid != tcred->suid ||
-> > -	     cred->uid != tcred->uid  ||
-> > -	     cred->gid != tcred->egid ||
-> > -	     cred->gid != tcred->sgid ||
-> > -	     cred->gid != tcred->gid) &&
-> > -	    !capable(CAP_SYS_PTRACE)) {
-> > -		rcu_read_unlock();
-> > -		return -EPERM;
-> > -	}
-> > +	if (cred->user->user_ns == tcred->user->user_ns &&
-> > +	    (cred->uid == tcred->euid &&
-> > +	     cred->uid == tcred->suid &&
-> > +	     cred->uid == tcred->uid  &&
-> > +	     cred->gid == tcred->egid &&
-> > +	     cred->gid == tcred->sgid &&
-> > +	     cred->gid == tcred->gid))
-> > +		goto ok;
-> > +	if (ns_capable(tcred->user->user_ns, CAP_SYS_PTRACE))
-> > +		goto ok;
-> > +	rcu_read_unlock();
-> > +	return -EPERM;
-> > +ok:
-> >  	rcu_read_unlock();
-> >  	smp_rmb();
-> >  	if (task->mm)
-> >  		dumpable = get_dumpable(task->mm);
-> > -	if (!dumpable && !capable(CAP_SYS_PTRACE))
-> > +	if (!dumpable && !task_ns_capable(task, CAP_SYS_PTRACE))
-> >  		return -EPERM;
-> >  
-> >  	return security_ptrace_access_check(task, mode);
-> > @@ -198,7 +201,7 @@ int ptrace_attach(struct task_struct *task)
-> >  		goto unlock_tasklist;
-> >  
-> >  	task->ptrace = PT_PTRACED;
-> > -	if (capable(CAP_SYS_PTRACE))
-> > +	if (task_ns_capable(task, CAP_SYS_PTRACE))
-> >  		task->ptrace |= PT_PTRACE_CAP;
-> >  
-> >  	__ptrace_link(task, current);
-> > diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-> > index 9da289c..0ef2258 100644
-> > --- a/kernel/user_namespace.c
-> > +++ b/kernel/user_namespace.c
-> > @@ -129,6 +129,22 @@ gid_t user_ns_map_gid(struct user_namespace *to, const struct cred *cred, gid_t
-> >  	return overflowgid;
-> >  }
-> >  
-> > +int same_or_ancestor_user_ns(struct task_struct *task,
-> > +	struct task_struct *victim)
-> > +{
-> > +	struct user_namespace *u1 = task_cred_xxx(task, user)->user_ns;
-> > +	struct user_namespace *u2 = task_cred_xxx(victim, user)->user_ns;
-> > +	for (;;) {
-> > +		if (u1 == u2)
-> > +			return 1;
-> > +		if (u1 == &init_user_ns)
-> > +			return 0;
-> > +		u1 = u1->creator->user_ns;
-> > +	}
-> > +	/* We never get here */
-> > +	return 0;
-> > +}
-> > +
-> >  static __init int user_namespaces_init(void)
-> >  {
-> >  	user_ns_cachep = KMEM_CACHE(user_namespace, SLAB_PANIC);
-> > diff --git a/security/commoncap.c b/security/commoncap.c
-> > index 51fa9ec..12ff65c 100644
-> > --- a/security/commoncap.c
-> > +++ b/security/commoncap.c
-> > @@ -130,18 +130,34 @@ int cap_settime(struct timespec *ts, struct timezone *tz)
-> >   * @child: The process to be accessed
-> >   * @mode: The mode of attachment.
-> >   *
-> > + * If we are in the same or an ancestor user_ns and have all the target
-> > + * task's capabilities, then ptrace access is allowed.
-> > + * If we have the ptrace capability to the target user_ns, then ptrace
-> > + * access is allowed.
-> > + * Else denied.
-> > + *
-> >   * Determine whether a process may access another, returning 0 if permission
-> >   * granted, -ve if denied.
-> >   */
-> >  int cap_ptrace_access_check(struct task_struct *child, unsigned int mode)
-> >  {
-> >  	int ret = 0;
-> > +	const struct cred *cred, *tcred;
-> >  
-> >  	rcu_read_lock();
-> > -	if (!cap_issubset(__task_cred(child)->cap_permitted,
-> > -			  current_cred()->cap_permitted) &&
-> > -	    !capable(CAP_SYS_PTRACE))
-> > -		ret = -EPERM;
-> > +	cred = current_cred();
-> > +	tcred = __task_cred(child);
-> > +	/*
-> > +	 * The ancestor user_ns check may be gratuitous, as I think
-> > +	 * we've already guaranteed that in kernel/ptrace.c.
-> > +	 */
-> > +	if (same_or_ancestor_user_ns(current, child) &&
-> > +	    cap_issubset(tcred->cap_permitted, cred->cap_permitted))
-> > +		goto out;
-> 
-> I have commented on this before but I took a good hard look this time,
-> and can comment more intelligently.
+On 2011/02/18 01:59, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
+> I'd be inclined to simplify this a bit - avoid impacting the fork()
+> path twice, with cgroup_fork_pre_fork() and cgroup_fork_fork() and
+> just do the checks and decrements in a single pass. (In the event of
+> hitting a limit, you may need to make another partial pass up the tree
+> to restore the charged fork attempts)
 
-Thanks, Eric.
+I have implemented it, but I don't like your idea.  It actually
+complicates the code.  It tries to do two things at once, and running
+again until it hits the failed cgroup seems somewhat fragile.  I
+believe the overhead for doing two separate runs in case of success is
+negligible compared to the cost of sys_fork().
 
-> The cap_issubset check is for the case where we don't use the
-> CAP_SYS_PTRACE capability, as such is only valid in the same user
-> namespace.  Furthermore capabilities really are not comparable between
-> different user namespaces.  So can you please replace the
-> same_or_ancestor_user_ns with a simple namespace equality check.
-> Having the wrong logic in here will just be confusing in the future.
+(Documentation not adjusted yet in the new patch)
 
-I see.  You're right, what's there is conceptually not quite right.
-So I think we can just do:
+> Also, it would be slightly clearer to use fork_cgroup_* rather than
+> cgroup_fork_* - this makes it clearer that it's part of a cgroups
+> subsystem called "fork", rather than part of the cgroups core
+> framework.
 
-	if (current_user_ns() == tcred->user->userns) &&
-	    cap_issubset(child, current)
-		goto out;
-	if ns_capable(tcred->user->user_ns, CAP_SYS_PTRACE)
-		goto out;
+Changed, but I've preserved the file name cgroup_fork.c.  Do you want
+me to change that, too?  (What about cgroup_freezer.c and the config
+option names CONFIG_CGROUP_*?)
 
-This suffices since
-	root in an ancestor ns will have CAP_SYS_PTRACE
-	the user who created the user_ns will have CAP_SYS_PTRACE
+> I don't think that you need to make your spinlock IRQ-safe - AFAICS
+> nothing accesses it from the interrupt path.
 
-Any user in an ancestor ns who does not have CAP_SYS_PTRACE will
-be denied.
+Changed.
 
-> Also could you name tcred child_cread I think that would be clearer in
-> the test below.
+On 2011/02/17 14:50, KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
+> How about -EAGAIN here ? I think it's not good to add new error code
+> for system calls.
 
-Yes, will do, that'll be clearer.  Thanks.
+Changed that, but that got me a funny quirk while testing:
 
-> > +	if (ns_capable(tcred->user->user_ns, CAP_SYS_PTRACE))
-> > +		goto out;
-> > +	ret = -EPERM;
-> > +out:
-> >  	rcu_read_unlock();
-> >  	return ret;
-> 
-> I also find it strange that we allow CAP_SYS_PTRACE to allow us to
-> ptrace processes with more capabilities than ourselves.  But that is an
-> entirely different issue.
+ bear:~# ls
+ -bash: fork: retry: Resource temporarily unavailable
+ -bash: fork: retry: Resource temporarily unavailable
+ -bash: fork: retry: Resource temporarily unavailable
+ -bash: fork: retry: Resource temporarily unavailable
+ -bash: fork: Resource temporarily unavailable
+ bear:~# 
 
-I concur.  I'm pretty sure it must stay, but it does feel icky.
+Generally, I don't think EAGAIN is a good errno code for
+"adminstrative limit exceeded".  EAGAIN's meaning is "try again
+later".  Usually there is something like poll() to wait until the
+resource is available - but a process cannot wait for the adminstrator
+to raise the configured limits.  You could blame that quirk on bash,
+because it does not consider that divergent definition of EAGAIN for
+fork()..
 
-I'll send out a new version
+The changed patch follows for further discussion; I'll repost the
+complete patch with description again once we agree that it's
+finished.
 
-thanks
--serge
+Max
+
+
+diff --git a/Documentation/cgroups/fork.txt b/Documentation/cgroups/fork.txt
+new file mode 100644
+index 0000000..dfbf291
+--- /dev/null
++++ b/Documentation/cgroups/fork.txt
+@@ -0,0 +1,30 @@
++The "fork" Controller
++---------------------
++
++The "fork" controller limits the number of times a new child process
++or thread can be created.  It maintains a per-group counter which gets
++decremented on each fork() / clone().  When the counter reaches zero,
++no process in the cgroup is allowed to create new child
++processes/threads, even if existing ones quit.
++
++This has been proven useful in a shared hosting environment.  A new
++temporary cgroup is created for each CGI process, and the maximum fork
++count is configured to a sensible value.  Since CGIs are expected to
++run for only a short time with predictable resource usage, this may be
++an appropriate tool to limit the damage that a freaked CGI can do.
++
++Initially, the counter is set to -1, which is a magic value for
++"disabled" - no limits are imposed on the processes in the group.  To
++set a new value, type (in the working directory of that control
++group):
++
++ echo 16 > fork.remaining
++
++This examples allows 16 forks in the control group.  0 means no
++further forks are allowed.  The limit may be lowered or increased or
++even disabled at any time by a process with write permissions to the
++attribute.
++
++To check if a fork is allowed, the controller walks the cgroup
++hierarchy up, and verifies all ancestors.  The counter of all
++ancestors is decreased.
+diff --git a/include/linux/cgroup_fork.h b/include/linux/cgroup_fork.h
+new file mode 100644
+index 0000000..aef1dbd
+--- /dev/null
++++ b/include/linux/cgroup_fork.h
+@@ -0,0 +1,26 @@
++#ifndef _LINUX_CGROUP_FORK_H
++#define _LINUX_CGROUP_FORK_H
++
++#ifdef CONFIG_CGROUP_FORK
++
++/**
++ * Checks if another fork is allowed.  Call this before creating a new
++ * child process.
++ *
++ * @return 0 on success, a negative errno value if forking should be
++ * denied
++ */
++int
++fork_cgroup_pre_fork(void);
++
++#else /* !CONFIG_CGROUP_FORK */
++
++static inline int
++fork_cgroup_pre_fork(void)
++{
++	return 0;
++}
++
++#endif /* !CONFIG_CGROUP_FORK */
++
++#endif /* !_LINUX_CGROUP_FORK_H */
+diff --git a/include/linux/cgroup_subsys.h b/include/linux/cgroup_subsys.h
+index ccefff0..8ead7f9 100644
+--- a/include/linux/cgroup_subsys.h
++++ b/include/linux/cgroup_subsys.h
+@@ -66,3 +66,9 @@ SUBSYS(blkio)
+ #endif
+ 
+ /* */
++
++#ifdef CONFIG_CGROUP_FORK
++SUBSYS(fork)
++#endif
++
++/* */
+diff --git a/init/Kconfig b/init/Kconfig
+index 17e2cfb..ef53a85 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -596,6 +596,12 @@ config CGROUP_FREEZER
+ 	  Provides a way to freeze and unfreeze all tasks in a
+ 	  cgroup.
+ 
++config CGROUP_FORK
++	bool "fork controller for cgroups"
++	help
++	  Limits the number of fork() calls in a cgroup.  An application
++	  for this is to make a cgroup safe against fork bombs.
++
+ config CGROUP_DEVICE
+ 	bool "Device controller for cgroups"
+ 	help
+diff --git a/kernel/Makefile b/kernel/Makefile
+index 353d3fe..b58cc01 100644
+--- a/kernel/Makefile
++++ b/kernel/Makefile
+@@ -61,6 +61,7 @@ obj-$(CONFIG_BACKTRACE_SELF_TEST) += backtracetest.o
+ obj-$(CONFIG_COMPAT) += compat.o
+ obj-$(CONFIG_CGROUPS) += cgroup.o
+ obj-$(CONFIG_CGROUP_FREEZER) += cgroup_freezer.o
++obj-$(CONFIG_CGROUP_FORK) += cgroup_fork.o
+ obj-$(CONFIG_CPUSETS) += cpuset.o
+ obj-$(CONFIG_CGROUP_NS) += ns_cgroup.o
+ obj-$(CONFIG_UTS_NS) += utsname.o
+diff --git a/kernel/cgroup_fork.c b/kernel/cgroup_fork.c
+new file mode 100644
+index 0000000..e56b2c6
+--- /dev/null
++++ b/kernel/cgroup_fork.c
+@@ -0,0 +1,186 @@
++/*
++ *  A cgroup implementation which limits the number of fork() calls.
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ */
++
++#include <linux/cgroup.h>
++#include <linux/cgroup_fork.h>
++#include <linux/slab.h>
++
++struct cgroup_fork {
++	struct cgroup_subsys_state css;
++
++	/** protect the "remaining" attribute */
++	spinlock_t lock;
++
++	/**
++	 * The remaining number of forks allowed.  -1 is the magic
++	 * value for "unlimited".
++	 */
++	int remaining;
++};
++
++/**
++ * Get the #cgrou_fork instance of the specified #cgroup.
++ */
++static inline struct cgroup_fork *
++fork_cgroup_group(struct cgroup *cgroup)
++{
++	return container_of(cgroup_subsys_state(cgroup, fork_subsys_id),
++			    struct cgroup_fork, css);
++}
++
++/**
++ * Get the #cgroup_fork instance of the specified task.
++ */
++static inline struct cgroup_fork *
++fork_cgroup_task(struct task_struct *task)
++{
++	return container_of(task_subsys_state(current_task, fork_subsys_id),
++			    struct cgroup_fork, css);
++}
++
++/**
++ * Get the #cgroup_fork instance of the current task.
++ */
++static inline struct cgroup_fork *
++fork_cgroup_current(void)
++{
++	return fork_cgroup_task(current_task);
++}
++
++static struct cgroup_subsys_state *
++fork_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cgroup)
++{
++	struct cgroup_fork *t = kzalloc(sizeof(*t), GFP_KERNEL);
++	if (!t)
++		return ERR_PTR(-ENOMEM);
++
++	spin_lock_init(&t->lock);
++
++	t->remaining = -1;
++
++	return &t->css;
++}
++
++static void
++fork_cgroup_destroy(struct cgroup_subsys *ss, struct cgroup *cgroup)
++{
++	struct cgroup_fork *t = fork_cgroup_group(cgroup);
++
++	kfree(t);
++}
++
++static s64
++fork_cgroup_remaining_read(struct cgroup *cgroup, struct cftype *cft)
++{
++	struct cgroup_fork *t = fork_cgroup_group(cgroup);
++	int value;
++
++	spin_lock(&t->lock);
++	value = t->remaining;
++	spin_unlock(&t->lock);
++
++	return value;
++}
++
++static int
++fork_cgroup_remaining_write(struct cgroup *cgroup, struct cftype *cft,
++			    s64 value)
++{
++	struct cgroup_fork *t = fork_cgroup_group(cgroup);
++
++	if (value < -1 || value > (1L << 30))
++		return -EINVAL;
++
++	spin_lock(&t->lock);
++	t->remaining = (int)value;
++	spin_unlock(&t->lock);
++
++	return 0;
++}
++
++static const struct cftype fork_cgroup_files[] =  {
++	{
++		.name = "remaining",
++		.read_s64 = fork_cgroup_remaining_read,
++		.write_s64 = fork_cgroup_remaining_write,
++	},
++};
++
++static int
++fork_cgroup_populate(struct cgroup_subsys *ss, struct cgroup *cgroup)
++{
++	if (cgroup->parent == NULL)
++		/* cannot limit the root cgroup */
++		return 0;
++
++	return cgroup_add_files(cgroup, ss, fork_cgroup_files,
++				ARRAY_SIZE(fork_cgroup_files));
++}
++
++struct cgroup_subsys fork_subsys = {
++	.name = "fork",
++	.create = fork_cgroup_create,
++	.destroy = fork_cgroup_destroy,
++	.populate = fork_cgroup_populate,
++	.subsys_id = fork_subsys_id,
++};
++
++/**
++ * After a failure, restore the "remaining" counter in all cgroups
++ * from the task_current's one up to the failed one.
++ */
++static void
++fork_cgroup_restore(struct cgroup_fork *until_excluding)
++{
++	struct cgroup_fork *t;
++
++	for (t = fork_cgroup_current(); t != until_excluding;
++	     t = fork_cgroup_group(t->css.cgroup->parent)) {
++		spin_lock(&t->lock);
++
++		if (t->remaining >= 0)
++			++t->remaining;
++
++		spin_unlock(&t->lock);
++	}
++}
++
++int
++fork_cgroup_pre_fork(void)
++{
++	struct cgroup_fork *t;
++	int err = 0;
++
++	rcu_read_lock();
++
++	for (t = fork_cgroup_current(); t->css.cgroup->parent != NULL;
++	     t = fork_cgroup_group(t->css.cgroup->parent)) {
++		spin_lock(&t->lock);
++
++		if (t->remaining > 0)
++			/* decrement the counter */
++			--t->remaining;
++		else if (t->remaining == 0) {
++			/* fork manpage: "[...] RLIMIT_NPROC resource
++			   limit was encountered." - should be close
++			   enough to this condition */
++			spin_unlock(&t->lock);
++			err = -EAGAIN;
++
++			/* restore the decremented counters */
++			fork_cgroup_restore(t);
++			break;
++		}
++
++		spin_unlock(&t->lock);
++	}
++
++	rcu_read_unlock();
++
++	return err;
++}
+diff --git a/kernel/fork.c b/kernel/fork.c
+index 25e4291..0f06202 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -32,6 +32,7 @@
+ #include <linux/capability.h>
+ #include <linux/cpu.h>
+ #include <linux/cgroup.h>
++#include <linux/cgroup_fork.h>
+ #include <linux/security.h>
+ #include <linux/hugetlb.h>
+ #include <linux/swap.h>
+@@ -1024,6 +1025,10 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 				current->signal->flags & SIGNAL_UNKILLABLE)
+ 		return ERR_PTR(-EINVAL);
+ 
++	retval = fork_cgroup_pre_fork();
++	if (retval)
++		goto fork_out;
++
+ 	retval = security_task_create(clone_flags);
+ 	if (retval)
+ 		goto fork_out;
