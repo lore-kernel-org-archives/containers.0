@@ -1,15 +1,16 @@
 From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: userns: targeted capabilities v5
-Date: Fri, 18 Feb 2011 04:28:15 +0000
-Message-ID: <20110218042815.GA9584__814.540932378982$1298003344$gmane$org@mail.hallyn.com>
+Subject: Re: [PATCH 5/9] Allow ptrace from non-init user namespaces
+Date: Fri, 18 Feb 2011 04:36:02 +0000
+Message-ID: <20110218043601.GB9584__33425.5976522856$1298003887$gmane$org@mail.hallyn.com>
 References: <20110217150224.GA26334@mail.hallyn.com>
-	<20110217162146.1b8e45e0.akpm@linux-foundation.org>
+	<20110217150333.GE26395@mail.hallyn.com>
+	<m1aahu9hea.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20110217162146.1b8e45e0.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+In-Reply-To: <m1aahu9hea.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,54 +20,243 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Kees Cook <kees.cook-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Kees Cook <kees.cook-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Andrew Morton (akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org):
-> On Thu, 17 Feb 2011 15:02:24 +0000
-> "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
+Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
 > 
-> > Here is a repost of my previous user namespace patch, ported onto
-> > last night's git head.
-> > 
-> > It fixes several things I was doing wrong in the last (v4)
-> > posting, in particular:
-> > 
-> > 	1. don't set uts_ns->user_ns to current's when !CLONE_NEWUTS
-> > 	2. add a ipc_ns->user_ns which owns ipc_ns, and use that to
-> > 	   decide CAP_IPC_OWNER
-> > 	3. fix logic flaw caused by bad parantheses
-> > 	4. allow do_prlimit to current
-> > 	5. don't always give root full privs to init_user_ns
-> > 
-> > The expected course of development for user namespaces is laid out
-> > at https://wiki.ubuntu.com/UserNamespace.
+> > ptrace is allowed to tasks in the same user namespace according to
+> > the usual rules (i.e. the same rules as for two tasks in the init
+> > user namespace).  ptrace is also allowed to a user namespace to
+> > which the current task the has CAP_SYS_PTRACE capability.
 > 
-> Seems like a nice feature to be developing.
 > 
-> I worry about the maturity of it all at this stage.  How far along is
-> it *really*?
+> I don't see how it can go wrong at the moment but
+> same_or_ancestore_user_ns is too permissive and potentially inefficient.
+> Can you please replace it with a simple user namespace equality check.
 > 
-> Is anyone else working with you on developing and reviewing this work?
+> Eric
+> 
+> 
+> > Changelog:
+> > 	Dec 31: Address feedback by Eric:
+> > 		. Correct ptrace uid check
+> > 		. Rename may_ptrace_ns to ptrace_capable
+> > 		. Also fix the cap_ptrace checks.
+> > 	Jan  1: Use const cred struct
+> > 	Jan 11: use task_ns_capable() in place of ptrace_capable().
+> >
+> > Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+> > ---
+> >  include/linux/capability.h     |    2 +
+> >  include/linux/user_namespace.h |    9 +++++++
+> >  kernel/ptrace.c                |   27 ++++++++++++----------
+> >  kernel/user_namespace.c        |   16 +++++++++++++
+> >  security/commoncap.c           |   48 +++++++++++++++++++++++++++++++++------
+> >  5 files changed, 82 insertions(+), 20 deletions(-)
+> >
+> > diff --git a/include/linux/capability.h b/include/linux/capability.h
+> > index cb3d2d9..bc0f262 100644
+> > --- a/include/linux/capability.h
+> > +++ b/include/linux/capability.h
+> > @@ -546,6 +546,8 @@ extern const kernel_cap_t __cap_init_eff_set;
+> >   */
+> >  #define has_capability(t, cap) (security_real_capable((t), &init_user_ns, (cap)) == 0)
+> >  
+> > +#define has_ns_capability(t, ns, cap) (security_real_capable((t), (ns), (cap)) == 0)
+> > +
+> >  /**
+> >   * has_capability_noaudit - Determine if a task has a superior capability available (unaudited)
+> >   * @t: The task in question
+> > diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+> > index faf4679..862fc59 100644
+> > --- a/include/linux/user_namespace.h
+> > +++ b/include/linux/user_namespace.h
+> > @@ -39,6 +39,9 @@ static inline void put_user_ns(struct user_namespace *ns)
+> >  uid_t user_ns_map_uid(struct user_namespace *to, const struct cred *cred, uid_t uid);
+> >  gid_t user_ns_map_gid(struct user_namespace *to, const struct cred *cred, gid_t gid);
+> >  
+> > +int same_or_ancestor_user_ns(struct task_struct *task,
+> > +	struct task_struct *victim);
+> > +
+> >  #else
+> >  
+> >  static inline struct user_namespace *get_user_ns(struct user_namespace *ns)
+> > @@ -66,6 +69,12 @@ static inline gid_t user_ns_map_gid(struct user_namespace *to,
+> >  	return gid;
+> >  }
+> >  
+> > +static inline int same_or_ancestor_user_ns(struct task_struct *task,
+> > +	struct task_struct *victim)
+> > +{
+> > +	return 1;
+> > +}
+> > +
+> >  #endif
+> >  
+> >  #endif /* _LINUX_USER_H */
+> > diff --git a/kernel/ptrace.c b/kernel/ptrace.c
+> > index 1708b1e..cde4655 100644
+> > --- a/kernel/ptrace.c
+> > +++ b/kernel/ptrace.c
+> > @@ -134,21 +134,24 @@ int __ptrace_may_access(struct task_struct *task, unsigned int mode)
+> >  		return 0;
+> >  	rcu_read_lock();
+> >  	tcred = __task_cred(task);
+> > -	if ((cred->uid != tcred->euid ||
+> > -	     cred->uid != tcred->suid ||
+> > -	     cred->uid != tcred->uid  ||
+> > -	     cred->gid != tcred->egid ||
+> > -	     cred->gid != tcred->sgid ||
+> > -	     cred->gid != tcred->gid) &&
+> > -	    !capable(CAP_SYS_PTRACE)) {
+> > -		rcu_read_unlock();
+> > -		return -EPERM;
+> > -	}
+> > +	if (cred->user->user_ns == tcred->user->user_ns &&
+> > +	    (cred->uid == tcred->euid &&
+> > +	     cred->uid == tcred->suid &&
+> > +	     cred->uid == tcred->uid  &&
+> > +	     cred->gid == tcred->egid &&
+> > +	     cred->gid == tcred->sgid &&
+> > +	     cred->gid == tcred->gid))
+> > +		goto ok;
+> > +	if (ns_capable(tcred->user->user_ns, CAP_SYS_PTRACE))
+> > +		goto ok;
+> > +	rcu_read_unlock();
+> > +	return -EPERM;
+> > +ok:
+> >  	rcu_read_unlock();
+> >  	smp_rmb();
+> >  	if (task->mm)
+> >  		dumpable = get_dumpable(task->mm);
+> > -	if (!dumpable && !capable(CAP_SYS_PTRACE))
+> > +	if (!dumpable && !task_ns_capable(task, CAP_SYS_PTRACE))
+> >  		return -EPERM;
+> >  
+> >  	return security_ptrace_access_check(task, mode);
+> > @@ -198,7 +201,7 @@ int ptrace_attach(struct task_struct *task)
+> >  		goto unlock_tasklist;
+> >  
+> >  	task->ptrace = PT_PTRACED;
+> > -	if (capable(CAP_SYS_PTRACE))
+> > +	if (task_ns_capable(task, CAP_SYS_PTRACE))
+> >  		task->ptrace |= PT_PTRACE_CAP;
+> >  
+> >  	__ptrace_link(task, current);
+> > diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+> > index 9da289c..0ef2258 100644
+> > --- a/kernel/user_namespace.c
+> > +++ b/kernel/user_namespace.c
+> > @@ -129,6 +129,22 @@ gid_t user_ns_map_gid(struct user_namespace *to, const struct cred *cred, gid_t
+> >  	return overflowgid;
+> >  }
+> >  
+> > +int same_or_ancestor_user_ns(struct task_struct *task,
+> > +	struct task_struct *victim)
+> > +{
+> > +	struct user_namespace *u1 = task_cred_xxx(task, user)->user_ns;
+> > +	struct user_namespace *u2 = task_cred_xxx(victim, user)->user_ns;
+> > +	for (;;) {
+> > +		if (u1 == u2)
+> > +			return 1;
+> > +		if (u1 == &init_user_ns)
+> > +			return 0;
+> > +		u1 = u1->creator->user_ns;
+> > +	}
+> > +	/* We never get here */
+> > +	return 0;
+> > +}
+> > +
+> >  static __init int user_namespaces_init(void)
+> >  {
+> >  	user_ns_cachep = KMEM_CACHE(user_namespace, SLAB_PANIC);
+> > diff --git a/security/commoncap.c b/security/commoncap.c
+> > index 51fa9ec..12ff65c 100644
+> > --- a/security/commoncap.c
+> > +++ b/security/commoncap.c
+> > @@ -130,18 +130,34 @@ int cap_settime(struct timespec *ts, struct timezone *tz)
+> >   * @child: The process to be accessed
+> >   * @mode: The mode of attachment.
+> >   *
+> > + * If we are in the same or an ancestor user_ns and have all the target
+> > + * task's capabilities, then ptrace access is allowed.
+> > + * If we have the ptrace capability to the target user_ns, then ptrace
+> > + * access is allowed.
+> > + * Else denied.
+> > + *
+> >   * Determine whether a process may access another, returning 0 if permission
+> >   * granted, -ve if denied.
+> >   */
+> >  int cap_ptrace_access_check(struct task_struct *child, unsigned int mode)
+> >  {
+> >  	int ret = 0;
+> > +	const struct cred *cred, *tcred;
+> >  
+> >  	rcu_read_lock();
+> > -	if (!cap_issubset(__task_cred(child)->cap_permitted,
+> > -			  current_cred()->cap_permitted) &&
+> > -	    !capable(CAP_SYS_PTRACE))
+> > -		ret = -EPERM;
+> > +	cred = current_cred();
+> > +	tcred = __task_cred(child);
+> > +	/*
+> > +	 * The ancestor user_ns check may be gratuitous, as I think
+> > +	 * we've already guaranteed that in kernel/ptrace.c.
+> > +	 */
+> > +	if (same_or_ancestor_user_ns(current, child) &&
+> > +	    cap_issubset(tcred->cap_permitted, cred->cap_permitted))
+> > +		goto out;
+> 
+> I have commented on this before but I took a good hard look this time,
+> and can comment more intelligently.
 
-Thanks, Andrew.  I'm not sure what definition of 'maturity' you were
-looking for here.  If you meant completeness of the feature, it's
-definately not there.  Of the goals for user namespaces sandboxing
-will be the quickest to mature.  Completing that will largely be an
-exercise of running the breadth of the kernel looking for simple
-uid/gid comparisons and making them namespace aware.
+Thanks, Eric.
 
-The design has been meshed around (publicly) on and off for many
-years by eric and I.  This particular patchset has gotten some great
-reviews by Eric Biederman and Bastian Blank (to who, unfortunately,
-to this day I cannot send a direct email - they're always bounced).
+> The cap_issubset check is for the case where we don't use the
+> CAP_SYS_PTRACE capability, as such is only valid in the same user
+> namespace.  Furthermore capabilities really are not comparable between
+> different user namespaces.  So can you please replace the
+> same_or_ancestor_user_ns with a simple namespace equality check.
+> Having the wrong logic in here will just be confusing in the future.
 
-As Eric said, this feature will have to go in incrementally.
-Furthermore, each piece touches scary code so it's likely to go
-pretty slowly.  My hope is less than a year for sandboxing, and
-two years for containers.  It might go way faster, but experience
-tells me that's unlikely  :)
+I see.  You're right, what's there is conceptually not quite right.
+So I think we can just do:
 
-thanks,
+	if (current_user_ns() == tcred->user->userns) &&
+	    cap_issubset(child, current)
+		goto out;
+	if ns_capable(tcred->user->user_ns, CAP_SYS_PTRACE)
+		goto out;
+
+This suffices since
+	root in an ancestor ns will have CAP_SYS_PTRACE
+	the user who created the user_ns will have CAP_SYS_PTRACE
+
+Any user in an ancestor ns who does not have CAP_SYS_PTRACE will
+be denied.
+
+> Also could you name tcred child_cread I think that would be clearer in
+> the test below.
+
+Yes, will do, that'll be clearer.  Thanks.
+
+> > +	if (ns_capable(tcred->user->user_ns, CAP_SYS_PTRACE))
+> > +		goto out;
+> > +	ret = -EPERM;
+> > +out:
+> >  	rcu_read_unlock();
+> >  	return ret;
+> 
+> I also find it strange that we allow CAP_SYS_PTRACE to allow us to
+> ptrace processes with more capabilities than ourselves.  But that is an
+> entirely different issue.
+
+I concur.  I'm pretty sure it must stay, but it does feel icky.
+
+I'll send out a new version
+
+thanks
 -serge
