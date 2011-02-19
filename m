@@ -1,14 +1,14 @@
 From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: [PATCH 7/9] add a user namespace owner of ipc ns
-Date: Sat, 19 Feb 2011 18:57:25 +0100
-Message-ID: <4D600485.2030400__44990.7854003415$1298138377$gmane$org@free.fr>
+Subject: Re: [PATCH 8/9] user namespaces: convert several capable() calls
+Date: Sat, 19 Feb 2011 20:07:56 +0100
+Message-ID: <4D60150C.7040705__10619.6524495774$1298142634$gmane$org@free.fr>
 References: <20110217150224.GA26334@mail.hallyn.com>
-	<20110217150349.GG26395@mail.hallyn.com>
+	<20110217150356.GH26395@mail.hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110217150349.GG26395-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
+In-Reply-To: <20110217150356.GH26395-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,21 +23,19 @@ Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7
 List-Id: containers.vger.kernel.org
 
 On 02/17/2011 04:03 PM, Serge E. Hallyn wrote:
+> CAP_IPC_OWNER and CAP_IPC_LOCK can be checked against current_user_ns(),
+> because the resource comes from current's own ipc namespace.
+>
+> setuid/setgid are to uids in own namespace, so again checks can be
+> against current_user_ns().
+>
 > Changelog:
-> 	Feb 15: Don't set new ipc->user_ns if we didn't create a new
-> 		ipc_ns.
+> 	Jan 11: Use task_ns_capable() in place of sched_capable().
+> 	Jan 11: Use nsown_capable() as suggested by Bastian Blank.
+> 	Jan 11: Clarify (hopefully) some logic in futex and sched.c
+> 	Feb 15: use ns_capable for ipc, not nsown_capable
 >
 > Signed-off-by: Serge E. Hallyn<serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 > ---
 
 Acked-by: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-
-
-[ ... ]
-
-> +	ns->user_ns = old_ns->user_ns;
-> +	get_user_ns(ns->user_ns);
-
-A mindless change.
-
-ns->user_ns = get_user_ns(old_ns->user_ns);
