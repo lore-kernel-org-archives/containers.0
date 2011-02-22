@@ -1,15 +1,16 @@
 From: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 0/5] blk-throttle: writeback and swap IO control
-Date: Tue, 22 Feb 2011 23:41:41 +0100
-Message-ID: <20110222224141.GA23723__3052.30395538292$1298415006$gmane$org@linux.develer.com>
+Subject: Re: [PATCH 3/5] page_cgroup: make page tracking available for blkio
+Date: Wed, 23 Feb 2011 00:01:47 +0100
+Message-ID: <20110222230146.GB23723__15868.1304580115$1298415839$gmane$org@linux.develer.com>
 References: <1298394776-9957-1-git-send-email-arighi@develer.com>
-	<20110222193403.GG28269@redhat.com>
+	<1298394776-9957-4-git-send-email-arighi@develer.com>
+	<20110222130145.37cb151e@bike.lwn.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20110222193403.GG28269-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20110222130145.37cb151e-vw3g6Xz/EtPk1uMJSBkQmQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,115 +20,50 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Wu Fengguang <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Wu Fengguang <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Feb 22, 2011 at 02:34:03PM -0500, Vivek Goyal wrote:
-> On Tue, Feb 22, 2011 at 06:12:51PM +0100, Andrea Righi wrote:
-> > Currently the blkio.throttle controller only support synchronous IO requests.
-> > This means that we always look at the current task to identify the "owner" of
-> > each IO request.
+On Tue, Feb 22, 2011 at 01:01:45PM -0700, Jonathan Corbet wrote:
+> On Tue, 22 Feb 2011 18:12:54 +0100
+> Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org> wrote:
+> 
+> > The page_cgroup infrastructure, currently available only for the memory
+> > cgroup controller, can be used to store the owner of each page and
+> > opportunely track the writeback IO. This information is encoded in
+> > the upper 16-bits of the page_cgroup->flags.
 > > 
-> > However dirty pages in the page cache can be wrote to disk asynchronously by
-> > the per-bdi flusher kernel threads or by any other thread in the system,
-> > according to the writeback policy.
+> > A owner can be identified using a generic ID number and the following
+> > interfaces are provided to store a retrieve this information:
 > > 
-> > For this reason the real writes to the underlying block devices may
-> > occur in a different IO context respect to the task that originally
-> > generated the dirty pages involved in the IO operation. This makes the
-> > tracking and throttling of writeback IO more complicate respect to the
-> > synchronous IO from the blkio controller's perspective.
-> > 
-> > The same concept is also valid for anonymous pages involed in IO operations
-> > (swap).
-> > 
-> > This patch allow to track the cgroup that originally dirtied each page in page
-> > cache and each anonymous page and pass these informations to the blk-throttle
-> > controller. These informations can be used to provide a better service level
-> > differentiation of buffered writes swap IO between different cgroups.
-> > 
+> >   unsigned long page_cgroup_get_owner(struct page *page);
+> >   int page_cgroup_set_owner(struct page *page, unsigned long id);
+> >   int page_cgroup_copy_owner(struct page *npage, struct page *opage);
 > 
-> Hi Andrea,
-> 
-> Thanks for the patches. Before I look deeper into patches, had few
-> general queries/thoughts.
-> 
-> - So this requires memory controller to be enabled. Does it also require
->   these to be co-mounted?
-
-No and no. The blkio controller enables and uses the page_cgroup
-functionality, but it doesn't depend on the memory controller. It
-automatically selects CONFIG_MM_OWNER and CONFIG_PAGE_TRACKING (last
-one added in PATCH 3/5) and this is sufficient to make page_cgroup
-usable from any generic controller.
-
-> 
-> - Currently in throttling there is no limit on number of bios queued
->   per group. I think this is not necessarily a very good idea because
->   if throttling limits are low, we will build very long bio queues. So
->   some AIO process can queue up lots of bios, consume lots of memory
->   without getting blocked. I am sure there will be other side affects
->   too. One of the side affects I noticed is that if an AIO process
->   queues up too much of IO, and if I want to kill it now, it just hangs
->   there for a really-2 long time (waiting for all the throttled IO
->   to complete).
-> 
->   So I was thinking of implementing either per group limit or per io
->   context limit and after that process will be put to sleep. (something
->   like request descriptor mechanism).
-
-io context limit seems a better solution for now. We can also expect
-some help from the memory controller, if we'll have the dirty memory
-limit per cgroup in the future the max amount of bios queued will be
-automatically limited by this functionality.
-
-> 
->   If that's the case, then comes the question of what do to about kernel
->   threads. Should they be blocked or not. If these are blocked then a
->   fast group will also be indirectly throttled behind a slow group. If
->   they are not then we still have the problem of too many bios queued
->   in throttling layer.
-
-I think kernel threads should be never forced to sleep, to avoid the
-classic "priority inversion" problem and create potential DoS in the
-system.
-
-Also for this part the dirty memory limit per cgroup could help a lot,
-because a cgroup will never exceed its "quota" of dirty memory, so it
-will not be able to submit more than a certain amount of bios
-(corresponding to the dirty memory limit).
-
-> 
-> - What to do about other kernel thread like kjournald which is doing
->   IO on behalf of all the filesystem users. If data is also journalled
->   then I think again everything got serialized and a faster group got
->   backlogged behind a slower one.
-
-This is the most critical issue IMHO.
-
-The blkio controller should need some help from the filesystems to
-understand which IO request can be throttled and which cannot. At the
-moment critical IO requests (with critical I mean that are dependency
-for other requests) and non-critical requests are mixed together in a
-way that throttling a single request may stop a lot of other requests in
-the system, and at the block layer it's not possible to retrieve such
-informations.
-
-I don't have a solution for this right now. Except looking at each
-filesystem implementation and try to understand how to pass these
-informations to the block layer.
-
-> 
-> - Two processes doing IO to same file and slower group will throttle
->   IO for faster group also. (flushing is per inode). 
+> My immediate observation is that you're not really tracking the "owner"
+> here - you're tracking an opaque 16-bit token known only to the block
+> controller in a field which - if changed by anybody other than the block
+> controller - will lead to mayhem in the block controller.  I think it
+> might be clearer - and safer - to say "blkcg" or some such instead of
+> "owner" here.
 > 
 
-I think we should accept to have an inode granularity. We could redesign
-the writeback code to work per-cgroup / per-page, etc. but that would
-add a huge overhead. The limit of inode granularity could be an
-acceptable tradeoff, cgroups are supposed to work to different files
-usually, well.. except when databases come into play (ouch!).
+Basically the idea here was to be as generic as possible and make this
+feature potentially available also to other subsystems, so that cgroup
+subsystems may represent whatever they want with the 16-bit token.
+However, no more than a single subsystem may be able to use this feature
+at the same time.
+
+> I'm tempted to say it might be better to just add a pointer to your
+> throtl_grp structure into struct page_cgroup.  Or maybe replace the
+> mem_cgroup pointer with a single pointer to struct css_set.  Both of
+> those ideas, though, probably just add unwanted extra overhead now to gain
+> generality which may or may not be wanted in the future.
+
+The pointer to css_set sounds good, but it would add additional space to
+the page_cgroup struct. Now, page_cgroup is 40 bytes (in 64-bit arch)
+and all of them are allocated at boot time. Using unused bits in
+page_cgroup->flags is a choice with no overhead from this point of view.
 
 Thanks,
 -Andrea
