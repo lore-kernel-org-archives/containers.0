@@ -1,14 +1,11 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 0/5] blk-throttle: writeback and swap IO control
-Date: Tue, 22 Feb 2011 14:34:03 -0500
-Message-ID: <20110222193403.GG28269__41962.609292432$1298403467$gmane$org@redhat.com>
-References: <1298394776-9957-1-git-send-email-arighi@develer.com>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] Don't crash if we are self-checkpointing with a child
+Date: Tue, 22 Feb 2011 11:16:56 -0800
+Message-ID: <1298402216-3786-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1298394776-9957-1-git-send-email-arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,146 +15,43 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
-Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Wu Fengguang <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Feb 22, 2011 at 06:12:51PM +0100, Andrea Righi wrote:
-> Currently the blkio.throttle controller only support synchronous IO requests.
-> This means that we always look at the current task to identify the "owner" of
-> each IO request.
-> 
-> However dirty pages in the page cache can be wrote to disk asynchronously by
-> the per-bdi flusher kernel threads or by any other thread in the system,
-> according to the writeback policy.
-> 
-> For this reason the real writes to the underlying block devices may
-> occur in a different IO context respect to the task that originally
-> generated the dirty pages involved in the IO operation. This makes the
-> tracking and throttling of writeback IO more complicate respect to the
-> synchronous IO from the blkio controller's perspective.
-> 
-> The same concept is also valid for anonymous pages involed in IO operations
-> (swap).
-> 
-> This patch allow to track the cgroup that originally dirtied each page in page
-> cache and each anonymous page and pass these informations to the blk-throttle
-> controller. These informations can be used to provide a better service level
-> differentiation of buffered writes swap IO between different cgroups.
-> 
+If we are doing a self-checkpoint, we will not be frozen and the
+get_freezer_task() will return NULL.  If we have children, then
+may_checkpoint_task() will attempt to make sure that they are in the
+same cgroup as the freezer task, which will attempt to lock a NULL
+task pointer (and thus go boom).
 
-Hi Andrea,
+This patch just inserts a check before in_same_cgroup_freezer() call
+to make sure we have a freezer task.  The existing check is aimed to
+determine if a task is not frozen alongside the root, so this addition
+catches the case where it is impossible.
 
-Thanks for the patches. Before I look deeper into patches, had few
-general queries/thoughts.
+Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ kernel/checkpoint/checkpoint.c |    8 ++++++--
+ 1 files changed, 6 insertions(+), 2 deletions(-)
 
-- So this requires memory controller to be enabled. Does it also require
-  these to be co-mounted?
-
-- Currently in throttling there is no limit on number of bios queued
-  per group. I think this is not necessarily a very good idea because
-  if throttling limits are low, we will build very long bio queues. So
-  some AIO process can queue up lots of bios, consume lots of memory
-  without getting blocked. I am sure there will be other side affects
-  too. One of the side affects I noticed is that if an AIO process
-  queues up too much of IO, and if I want to kill it now, it just hangs
-  there for a really-2 long time (waiting for all the throttled IO
-  to complete).
-
-  So I was thinking of implementing either per group limit or per io
-  context limit and after that process will be put to sleep. (something
-  like request descriptor mechanism).
-
-  If that's the case, then comes the question of what do to about kernel
-  threads. Should they be blocked or not. If these are blocked then a
-  fast group will also be indirectly throttled behind a slow group. If
-  they are not then we still have the problem of too many bios queued
-  in throttling layer.
-
-- What to do about other kernel thread like kjournald which is doing
-  IO on behalf of all the filesystem users. If data is also journalled
-  then I think again everything got serialized and a faster group got
-  backlogged behind a slower one.
-
-- Two processes doing IO to same file and slower group will throttle
-  IO for faster group also. (flushing is per inode). 
-
-I am not sure what are other common operations by kernel threads which
-can make IO serialized.
-
-Thanks
-Vivek 
-  
-
-> Testcase
-> ========
-> - create a cgroup with 1MiB/s write limit:
->   # mount -t cgroup -o blkio none /mnt/cgroup
->   # mkdir /mnt/cgroup/foo
->   # echo 8:0 $((1024 * 1024)) > /mnt/cgroup/foo/blkio.throttle.write_bps_device
-> 
-> - move a task into the cgroup and run a dd to generate some writeback IO
-> 
-> Results:
->   - 2.6.38-rc6 vanilla:
->   $ cat /proc/$$/cgroup
->   1:blkio:/foo
->   $ dd if=/dev/zero of=zero bs=1M count=1024 &
->   $ dstat -df
->   --dsk/sda--
->    read  writ
->      0    19M
->      0    19M
->      0     0
->      0     0
->      0    19M
->   ...
-> 
->   - 2.6.38-rc6 + blk-throttle writeback IO control:
->   $ cat /proc/$$/cgroup
->   1:blkio:/foo
->   $ dd if=/dev/zero of=zero bs=1M count=1024 &
->   $ dstat -df
->   --dsk/sda--
->    read  writ
->      0  1024
->      0  1024
->      0  1024
->      0  1024
->      0  1024
->   ...
-> 
-> TODO
-> ====
->  - lots of testing
-> 
-> Any feedback is welcome.
-> -Andrea
-> 
-> [PATCH 1/5] blk-cgroup: move blk-cgroup.h in include/linux/blk-cgroup.h
-> [PATCH 2/5] blk-cgroup: introduce task_to_blkio_cgroup()
-> [PATCH 3/5] page_cgroup: make page tracking available for blkio
-> [PATCH 4/5] blk-throttle: track buffered and anonymous pages
-> [PATCH 5/5] blk-throttle: buffered and anonymous page tracking instrumentation
-> 
->  block/Kconfig               |    2 +
->  block/blk-cgroup.c          |   15 ++-
->  block/blk-cgroup.h          |  335 ------------------------------------------
->  block/blk-throttle.c        |   89 +++++++++++-
->  block/cfq.h                 |    2 +-
->  fs/buffer.c                 |    1 +
->  include/linux/blk-cgroup.h  |  341 +++++++++++++++++++++++++++++++++++++++++++
->  include/linux/blkdev.h      |   26 +++-
->  include/linux/memcontrol.h  |    6 +
->  include/linux/mmzone.h      |    4 +-
->  include/linux/page_cgroup.h |   33 ++++-
->  init/Kconfig                |    4 +
->  mm/Makefile                 |    3 +-
->  mm/bounce.c                 |    1 +
->  mm/filemap.c                |    1 +
->  mm/memcontrol.c             |    6 +
->  mm/memory.c                 |    5 +
->  mm/page-writeback.c         |    1 +
->  mm/page_cgroup.c            |  129 +++++++++++++++--
->  mm/swap_state.c             |    2 +
->  20 files changed, 649 insertions(+), 357 deletions(-)
+diff --git a/kernel/checkpoint/checkpoint.c b/kernel/checkpoint/checkpoint.c
+index 0f46acf..33f53e9 100644
+--- a/kernel/checkpoint/checkpoint.c
++++ b/kernel/checkpoint/checkpoint.c
+@@ -262,8 +262,12 @@ static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
+ 	if (t->exit_state)
+ 		return 0;
+ 
+-	/* verify that all tasks belongs to same freezer cgroup */
+-	if (t != current && !in_same_cgroup_freezer(t, ctx->root_freezer)) {
++	/*
++	 * verify that we have a freezer cgroup and that all tasks
++	 * belong to the same one
++	 */
++	if (t != current && (!ctx->root_freezer ||
++			     !in_same_cgroup_freezer(t, ctx->root_freezer))) {
+ 		_ckpt_err(ctx, -EBUSY, "%(T)Not frozen or wrong cgroup\n");
+ 		return -EBUSY;
+ 	}
+-- 
+1.7.2.2
