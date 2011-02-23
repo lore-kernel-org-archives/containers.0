@@ -1,19 +1,17 @@
-From: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 0/5] blk-throttle: writeback and swap IO control
-Date: Thu, 24 Feb 2011 00:14:11 +0100
-Message-ID: <20110223231410.GB1744__26323.6121544198$1298504089$gmane$org@linux.develer.com>
-References: <1298394776-9957-1-git-send-email-arighi@develer.com>
-	<20110222193403.GG28269@redhat.com>
-	<20110222224141.GA23723@linux.develer.com>
-	<20110223000358.GM28269@redhat.com>
-	<20110223083206.GA2174@linux.develer.com>
-	<20110223152354.GA2526@redhat.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH 1/9] Add a user_namespace as creator/owner of uts_namespace
+Date: Wed, 23 Feb 2011 15:54:12 -0800
+Message-ID: <m162sagvdn.fsf__35551.6659481966$1298505384$gmane$org@fess.ebiederm.org>
+References: <m1lj16ih0n.fsf@fess.ebiederm.org>
+	<20110217150257.GA26395@mail.hallyn.com>
+	<20110217150224.GA26334@mail.hallyn.com> <3139.1298481393@redhat.com>
+	<8559.1298503148@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20110223152354.GA2526-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <8559.1298503148-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> (David Howells's message of "Wed, 23
+	Feb 2011 23:19:08 +0000")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,101 +21,48 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Wu Fengguang <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Kees Cook <kees.cook-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Feb 23, 2011 at 10:23:54AM -0500, Vivek Goyal wrote:
-> > > Agreed. Granularity of per inode level might be accetable in many 
-> > > cases. Again, I am worried faster group getting stuck behind slower
-> > > group.
-> > > 
-> > > I am wondering if we are trying to solve the problem of ASYNC write throttling
-> > > at wrong layer. Should ASYNC IO be throttled before we allow task to write to
-> > > page cache. The way we throttle the process based on dirty ratio, can we
-> > > just check for throttle limits also there or something like that.(I think
-> > > that's what you had done in your initial throttling controller implementation?)
-> > 
-> > Right. This is exactly the same approach I've used in my old throttling
-> > controller: throttle sync READs and WRITEs at the block layer and async
-> > WRITEs when the task is dirtying memory pages.
-> > 
-> > This is probably the simplest way to resolve the problem of faster group
-> > getting blocked by slower group, but the controller will be a little bit
-> > more leaky, because the writeback IO will be never throttled and we'll
-> > see some limited IO spikes during the writeback.
-> 
-> Yes writeback will not be throttled. Not sure how big a problem that is.
-> 
-> - We have controlled the input rate. So that should help a bit.
-> - May be one can put some high limit on root cgroup to in blkio throttle
->   controller to limit overall WRITE rate of the system.
-> - For SATA disks, try to use CFQ which can try to minimize the impact of
->   WRITE.
-> 
-> It will atleast provide consistent bandwindth experience to application.
+David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
 
-Right.
+> Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+>
+>> > Which means that unless the uts_namespace belongs to our user_namespace, we
+>> > cannot change it.  Is that correct?
+>> 
+>> No.  If you are root in a parent namespace you can also change it.
+>
+> But surely, by definition, if you're a user in this namespace, you can't also
+> be root in a parent namespace...
 
-> 
-> >However, this is always
-> > a better solution IMHO respect to the current implementation that is
-> > affected by that kind of priority inversion problem.
-> > 
-> > I can try to add this logic to the current blk-throttle controller if
-> > you think it is worth to test it.
-> 
-> At this point of time I have few concerns with this approach.
-> 
-> - Configuration issues. Asking user to plan for SYNC ans ASYNC IO
->   separately is inconvenient. One has to know the nature of workload.
-> 
-> - Most likely we will come up with global limits (atleast to begin with),
->   and not per device limit. That can lead to contention on one single
->   lock and scalability issues on big systems.
-> 
-> Having said that, this approach should reduce the kernel complexity a lot.
-> So if we can do some intelligent locking to limit the overhead then it
-> will boil down to reduced complexity in kernel vs ease of use to user. I 
-> guess at this point of time I am inclined towards keeping it simple in
-> kernel.
-> 
+To be clear the case you looked at was:
 
-BTW, with this approach probably we can even get rid of the page
-tracking stuff for now. If we don't consider the swap IO, any other IO
-operation from our point of view will happen directly from process
-context (writes in memory + sync reads from the block device).
-
-However, I'm sure we'll need the page tracking also for the blkio
-controller soon or later. This is an important information and also the
-proportional bandwidth controller can take advantage of it.
-
+> -	if (!capable(CAP_SYS_ADMIN))
+> +	if (!ns_capable(current->nsproxy->uts_ns->user_ns, CAP_SYS_ADMIN))
 > 
-> Couple of people have asked me that we have backup jobs running at night
-> and we want to reduce the IO bandwidth of these jobs to limit the impact
-> on latency of other jobs, I guess this approach will definitely solve
-> that issue.
-> 
-> IMHO, it might be worth trying this approach and see how well does it work. It
-> might not solve all the problems but can be helpful in many situations.
+> what is it you're actually asking?  I presume it's 'does this user have
+> CAP_SYS_ADMIN capability over objects belonging to the uts_namespace's
+> user_namespace?'
 
-Agreed. This could be a good tradeoff for a lot of common cases.
+Here "current->nsproxy->uts_ns->user_ns" (the target_ns value) is only
+refers to the uts_ns we are talking about.
 
-> 
-> I feel that for proportional bandwidth division, implementing ASYNC
-> control at CFQ will make sense because even if things get serialized in
-> higher layers, consequences are not very bad as it is work conserving
-> algorithm. But for throttling serialization will lead to bad consequences.
+The user itself comes from current_user().
 
-Agreed.
+> For the case I worked through current_user() is a member of current_user_ns()
+> and can't also be a member of its parent, grandparent, etc. - or can
+> it?
 
-> 
-> May be one can think of new files in blkio controller to limit async IO
-> per group during page dirty time.
-> 
-> blkio.throttle.async.write_bps_limit
-> blkio.throttle.async.write_iops_limit
+Right now if you are looking at current_user() because of limitations in
+the creation ordering I think you are correct. 
 
-OK, I'll try to add the async throttling logic and use this interface.
+However in the near term pile of changes to merge, are the syscalls for
+joining an existing namespace.  At which point there is no reason in
+general to suppose the current limitations of creation apply.
 
--Andrea
+Although it is conceivable that unshare of namespaces can also get you
+to someplace similar to joining prexisting namespaces.
+
+Eric
