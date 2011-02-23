@@ -1,16 +1,20 @@
-From: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/9] Add a user_namespace as creator/owner of uts_namespace
-Date: Wed, 23 Feb 2011 23:19:08 +0000
-Message-ID: <8559.1298503148__24843.170741997$1298506096$gmane$org@redhat.com>
-References: <m1lj16ih0n.fsf@fess.ebiederm.org>
-	<20110217150257.GA26395@mail.hallyn.com>
-	<20110217150224.GA26334@mail.hallyn.com>
-	<3139.1298481393@redhat.com>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 3/5] page_cgroup: make page tracking available for blkio
+Date: Thu, 24 Feb 2011 08:58:05 +0900
+Message-ID: <20110224085805.14766e93.kamezawa.hiroyu__5716.33638251132$1298506244$gmane$org@jp.fujitsu.com>
+References: <1298394776-9957-1-git-send-email-arighi@develer.com>
+	<1298394776-9957-4-git-send-email-arighi@develer.com>
+	<20110222130145.37cb151e@bike.lwn.net>
+	<20110222230146.GB23723@linux.develer.com>
+	<20110222230630.GL28269@redhat.com>
+	<20110222233718.GF23723@linux.develer.com>
+	<20110223134910.abbdc931.kamezawa.hiroyu@jp.fujitsu.com>
+	<20110223085911.GC2174@linux.develer.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m1lj16ih0n.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
+In-Reply-To: <20110223085911.GC2174-fxUVXftIFDlZdMzt4l2sLQC/G2K4zDHf@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,21 +24,40 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Kees Cook <kees.cook-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Wu Fengguang <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+On Wed, 23 Feb 2011 09:59:11 +0100
+Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org> wrote:
 
-> > Which means that unless the uts_namespace belongs to our user_namespace, we
-> > cannot change it.  Is that correct?
+> > 
+> > I wonder I can make pc->mem_cgroup to be pc->memid(16bit), then, 
+> > ==
+> > static inline struct mem_cgroup *get_memcg_from_pc(struct page_cgroup *pc)
+> > {
+> >     struct cgroup_subsys_state *css = css_lookup(&mem_cgroup_subsys, pc->memid);
+> >     return container_of(css, struct mem_cgroup, css);
+> > }
+> > ==
+> > Overhead will be seen at updating file statistics and LRU management.
+> > 
+> > But, hmm, can't you do that tracking without page_cgroup ?
+> > Because the number of dirty/writeback pages are far smaller than total pages,
+> > chasing I/O with dynamic structure is not very bad..
+> > 
+> > prepareing [pfn -> blkio] record table and move that information to struct bio
+> > in dynamic way is very difficult ?
 > 
-> No.  If you are root in a parent namespace you can also change it.
+> This would be ok for dirty pages, but consider that we're also tracking
+> anonymous pages. So, if we want to control the swap IO we actually need
+> to save this information for a lot of pages and at the end I think we'll
+> basically duplicate the page_cgroup code.
+> 
 
-But surely, by definition, if you're a user in this namespace, you can't also
-be root in a parent namespace...
+swap io is always started with bio and the task/mm_struct.
+So, if we can record information in bio, no page tracking is required.
+You can record information to bio just by reading mm->owner.
 
-For the case I worked through current_user() is a member of current_user_ns()
-and can't also be a member of its parent, grandparent, etc. - or can it?
-
-David
+Thanks,
+-Kame
