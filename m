@@ -1,15 +1,14 @@
 From: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/9] security: Make capabilities relative to the user
-	namespace.
-Date: Wed, 23 Feb 2011 16:59:19 +0000
-Message-ID: <2761.1298480359__14607.0392606363$1298480547$gmane$org@redhat.com>
-References: <20110217150306.GB26395@mail.hallyn.com>
+Subject: Re: [PATCH 5/9] Allow ptrace from non-init user namespaces
+Date: Wed, 23 Feb 2011 17:05:41 +0000
+Message-ID: <2877.1298480741__1800.25539962134$1298480849$gmane$org@redhat.com>
+References: <20110217150333.GE26395@mail.hallyn.com>
 	<20110217150224.GA26334@mail.hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110217150306.GB26395-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
+In-Reply-To: <20110217150333.GE26395-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,13 +24,8 @@ List-Id: containers.vger.kernel.org
 
 Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
 
-> +		/* If you have the capability in a parent user ns you have it
-> +		 * in the over all children user namespaces as well, so see
-> +		 * if this process has the capability in the parent user
-> +		 * namespace.
-> +		 */
+> ptrace is allowed to tasks in the same user namespace according to
 
-"... in the over all children user namespaces ..." I think need a couple of
-words dropping.
+There's a verb missing after 'allowed to' - presumably 'trace'.
 
 David
