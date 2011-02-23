@@ -1,7 +1,7 @@
 From: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 5/9] Allow ptrace from non-init user namespaces
-Date: Wed, 23 Feb 2011 17:05:41 +0000
-Message-ID: <2877.1298480741__1800.25539962134$1298480849$gmane$org@redhat.com>
+Date: Wed, 23 Feb 2011 17:11:01 +0000
+Message-ID: <3016.1298481061__31261.3447815695$1298481110$gmane$org@redhat.com>
 References: <20110217150333.GE26395@mail.hallyn.com>
 	<20110217150224.GA26334@mail.hallyn.com>
 Mime-Version: 1.0
@@ -24,8 +24,14 @@ List-Id: containers.vger.kernel.org
 
 Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
 
-> ptrace is allowed to tasks in the same user namespace according to
+> +int same_or_ancestor_user_ns(struct task_struct *task,
+> +	struct task_struct *victim)
+> +{
+> +	struct user_namespace *u1 = task_cred_xxx(task, user)->user_ns;
+> +	struct user_namespace *u2 = task_cred_xxx(victim, user)->user_ns;
 
-There's a verb missing after 'allowed to' - presumably 'trace'.
+Hmmm.  task_cred_xxx() uses task->real_cred, which is correct for victim (the
+object), but normally you'd use task->cred for task (the subject).  However,
+in this case, I think it's probably okay.
 
 David
