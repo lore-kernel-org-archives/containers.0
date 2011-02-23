@@ -1,18 +1,16 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 0/5] blk-throttle: writeback and swap IO control
-Date: Wed, 23 Feb 2011 10:23:54 -0500
-Message-ID: <20110223152354.GA2526__47801.9236274578$1298475183$gmane$org@redhat.com>
-References: <1298394776-9957-1-git-send-email-arighi@develer.com>
-	<20110222193403.GG28269@redhat.com>
-	<20110222224141.GA23723@linux.develer.com>
-	<20110223000358.GM28269@redhat.com>
-	<20110223083206.GA2174@linux.develer.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: User namespaces and keys
+Date: Wed, 23 Feb 2011 07:45:49 -0800
+Message-ID: <m162sasqj6.fsf__18608.8538416245$1298476099$gmane$org@fess.ebiederm.org>
+References: <20110223135814.GA1859@mail.hallyn.com>
+	<20110217150224.GA26334@mail.hallyn.com> <29677.1298462729@redhat.com>
+	<890.1298473574@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20110223083206.GA2174-fxUVXftIFDlZdMzt4l2sLQC/G2K4zDHf@public.gmane.org>
+In-Reply-To: <890.1298473574-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> (David Howells's message of "Wed, 23
+	Feb 2011 15:06:14 +0000")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,79 +20,64 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
-Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Wu Fengguang <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Kees Cook <kees.cook-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-> > Agreed. Granularity of per inode level might be accetable in many 
-> > cases. Again, I am worried faster group getting stuck behind slower
-> > group.
-> > 
-> > I am wondering if we are trying to solve the problem of ASYNC write throttling
-> > at wrong layer. Should ASYNC IO be throttled before we allow task to write to
-> > page cache. The way we throttle the process based on dirty ratio, can we
-> > just check for throttle limits also there or something like that.(I think
-> > that's what you had done in your initial throttling controller implementation?)
-> 
-> Right. This is exactly the same approach I've used in my old throttling
-> controller: throttle sync READs and WRITEs at the block layer and async
-> WRITEs when the task is dirtying memory pages.
-> 
-> This is probably the simplest way to resolve the problem of faster group
-> getting blocked by slower group, but the controller will be a little bit
-> more leaky, because the writeback IO will be never throttled and we'll
-> see some limited IO spikes during the writeback.
+David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
 
-Yes writeback will not be throttled. Not sure how big a problem that is.
+> Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
+>
+>> > I guess we need to look at how to mix keys and namespaces again.
+>> 
+>> From strictly kernel pov, at the moment, keys are strictly usable only
+>> by the user in your own user namespace.
+>
+> I'm not sure that's currently completely true.  Key quota maintenance is
+> namespaced, and the key's owner UID/GID belong to that namespace, so that's
+> okay, but:
+>
+>  (*) key_task_permission() does not distinguish UIDs and GIDs from different
+>      namespaces.
+>
+>  (*) A key can be referred to by its serial number, no matter whose namespace
+>      it is in, and will yield up its given UID/GID, even if these aren't
+>      actually meaningful in your namespace.
+>
+>      This means request_key() can successfully upcall at the moment.
+>
+> I wonder if I should make the following changes:
+>
+>  (1) If the key and the accessor are in different user namespaces, then skip
+>      the UID and GID comparisons in key_task_permission().  That means that to
+>      be able to access the key you'd have to possess the key and the key would
+>      have to grant you Possessor access, or the key would have to grant you
+>      Other access.
+>
+>  (2) If the key and someone viewing the key description are in different
+>      namespaces, then indicate that the UID and the GID are -1, irrespective of
+>      the actual values.
+>
+>  (3) When an upcall is attempting to instantiate a key, it is allowed to access
+>      the keys of requestor using the requestor's credentials (UID, GID, groups,
+>      security label).  Ensure that this will be done in the requestor's user
+>      namespace.
+>
+>      Nothing should need to be done here, since search_process_keyrings()
+>      switches to the requestor's creds.
+>
+> Oh, and are security labels user-namespaced?
 
-- We have controlled the input rate. So that should help a bit.
-- May be one can put some high limit on root cgroup to in blkio throttle
-  controller to limit overall WRITE rate of the system.
-- For SATA disks, try to use CFQ which can try to minimize the impact of
-  WRITE.
+Not at this time.  The user namespace as currently merged is little more
+than a place holder for a proper implementation.  Serge is busily
+fleshing out that proper implementation.
 
-It will atleast provide consistent bandwindth experience to application.
+Until we reach the point where all checks that have historically been
+"if (uid1 == uid2)" become "if ((uidns1 == uidns2) && (uid1 == uid2))"
+there will be problems.
 
->However, this is always
-> a better solution IMHO respect to the current implementation that is
-> affected by that kind of priority inversion problem.
-> 
-> I can try to add this logic to the current blk-throttle controller if
-> you think it is worth to test it.
+The security labels and probably lsm's in general need to be per user
+namespace but we simply have not gotten that far.  For the short term I
+will be happy when we get a minimally usable user namespace.
 
-At this point of time I have few concerns with this approach.
-
-- Configuration issues. Asking user to plan for SYNC ans ASYNC IO
-  separately is inconvenient. One has to know the nature of workload.
-
-- Most likely we will come up with global limits (atleast to begin with),
-  and not per device limit. That can lead to contention on one single
-  lock and scalability issues on big systems.
-
-Having said that, this approach should reduce the kernel complexity a lot.
-So if we can do some intelligent locking to limit the overhead then it
-will boil down to reduced complexity in kernel vs ease of use to user. I 
-guess at this point of time I am inclined towards keeping it simple in
-kernel.
-
-Couple of people have asked me that we have backup jobs running at night
-and we want to reduce the IO bandwidth of these jobs to limit the impact
-on latency of other jobs, I guess this approach will definitely solve
-that issue.
-
-IMHO, it might be worth trying this approach and see how well does it work. It
-might not solve all the problems but can be helpful in many situations.
-
-I feel that for proportional bandwidth division, implementing ASYNC
-control at CFQ will make sense because even if things get serialized in
-higher layers, consequences are not very bad as it is work conserving
-algorithm. But for throttling serialization will lead to bad consequences.
-
-May be one can think of new files in blkio controller to limit async IO
-per group during page dirty time.
-
-blkio.throttle.async.write_bps_limit
-blkio.throttle.async.write_iops_limit
-
-Thanks
-Vivek
+Eric
