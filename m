@@ -1,20 +1,14 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 0/5] blk-throttle: writeback and swap IO control
-Date: Wed, 23 Feb 2011 19:10:33 -0500
-Message-ID: <20110224001033.GF2526__35458.7817717858$1298506579$gmane$org@redhat.com>
-References: <1298394776-9957-1-git-send-email-arighi@develer.com>
-	<20110222193403.GG28269@redhat.com>
-	<20110222224141.GA23723@linux.develer.com>
-	<20110223000358.GM28269@redhat.com>
-	<20110223083206.GA2174@linux.develer.com>
-	<20110223152354.GA2526@redhat.com>
-	<20110223231410.GB1744@linux.develer.com>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 1/4] userns: let clone_uts_ns() handle setting uts->user_ns
+Date: Thu, 24 Feb 2011 00:21:41 +0000
+Message-ID: <20110224002141.GA27640__19562.3574698859$1298507222$gmane$org@mail.hallyn.com>
+References: <20110221040156.GA12580@mail.hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20110223231410.GB1744-fxUVXftIFDlZdMzt4l2sLQC/G2K4zDHf@public.gmane.org>
+In-Reply-To: <20110221040156.GA12580-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,120 +18,117 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
-Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Wu Fengguang <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Kees Cook <kees.cook-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Feb 24, 2011 at 12:14:11AM +0100, Andrea Righi wrote:
-> On Wed, Feb 23, 2011 at 10:23:54AM -0500, Vivek Goyal wrote:
-> > > > Agreed. Granularity of per inode level might be accetable in many 
-> > > > cases. Again, I am worried faster group getting stuck behind slower
-> > > > group.
-> > > > 
-> > > > I am wondering if we are trying to solve the problem of ASYNC write throttling
-> > > > at wrong layer. Should ASYNC IO be throttled before we allow task to write to
-> > > > page cache. The way we throttle the process based on dirty ratio, can we
-> > > > just check for throttle limits also there or something like that.(I think
-> > > > that's what you had done in your initial throttling controller implementation?)
-> > > 
-> > > Right. This is exactly the same approach I've used in my old throttling
-> > > controller: throttle sync READs and WRITEs at the block layer and async
-> > > WRITEs when the task is dirtying memory pages.
-> > > 
-> > > This is probably the simplest way to resolve the problem of faster group
-> > > getting blocked by slower group, but the controller will be a little bit
-> > > more leaky, because the writeback IO will be never throttled and we'll
-> > > see some limited IO spikes during the writeback.
-> > 
-> > Yes writeback will not be throttled. Not sure how big a problem that is.
-> > 
-> > - We have controlled the input rate. So that should help a bit.
-> > - May be one can put some high limit on root cgroup to in blkio throttle
-> >   controller to limit overall WRITE rate of the system.
-> > - For SATA disks, try to use CFQ which can try to minimize the impact of
-> >   WRITE.
-> > 
-> > It will atleast provide consistent bandwindth experience to application.
-> 
-> Right.
-> 
-> > 
-> > >However, this is always
-> > > a better solution IMHO respect to the current implementation that is
-> > > affected by that kind of priority inversion problem.
-> > > 
-> > > I can try to add this logic to the current blk-throttle controller if
-> > > you think it is worth to test it.
-> > 
-> > At this point of time I have few concerns with this approach.
-> > 
-> > - Configuration issues. Asking user to plan for SYNC ans ASYNC IO
-> >   separately is inconvenient. One has to know the nature of workload.
-> > 
-> > - Most likely we will come up with global limits (atleast to begin with),
-> >   and not per device limit. That can lead to contention on one single
-> >   lock and scalability issues on big systems.
-> > 
-> > Having said that, this approach should reduce the kernel complexity a lot.
-> > So if we can do some intelligent locking to limit the overhead then it
-> > will boil down to reduced complexity in kernel vs ease of use to user. I 
-> > guess at this point of time I am inclined towards keeping it simple in
-> > kernel.
-> > 
-> 
-> BTW, with this approach probably we can even get rid of the page
-> tracking stuff for now.
+To do so we need to pass in the task_struct who'll get the utsname,
+so we can get its user_ns.
 
-Agreed.
+Changelog:
+	Feb 23: As per Oleg's coment, just pass in tsk.
 
-> If we don't consider the swap IO, any other IO
-> operation from our point of view will happen directly from process
-> context (writes in memory + sync reads from the block device).
+Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+---
+ include/linux/utsname.h |    6 +++---
+ kernel/nsproxy.c        |    7 +------
+ kernel/utsname.c        |   12 +++++++-----
+ 3 files changed, 11 insertions(+), 14 deletions(-)
 
-Why do we need to account for swap IO? Application never asked for swap
-IO. It is kernel's decision to move soem pages to swap to free up some
-memory. What's the point in charging those pages to application group
-and throttle accordingly?
-
-> 
-> However, I'm sure we'll need the page tracking also for the blkio
-> controller soon or later. This is an important information and also the
-> proportional bandwidth controller can take advantage of it.
-
-Yes page tracking will be needed for CFQ proportional bandwidth ASYNC
-write support. But until and unless we implement memory cgroup dirty
-ratio and figure a way out to make writeback logic cgroup aware, till
-then I think page tracking stuff is not really useful.
-
-> > 
-> > Couple of people have asked me that we have backup jobs running at night
-> > and we want to reduce the IO bandwidth of these jobs to limit the impact
-> > on latency of other jobs, I guess this approach will definitely solve
-> > that issue.
-> > 
-> > IMHO, it might be worth trying this approach and see how well does it work. It
-> > might not solve all the problems but can be helpful in many situations.
-> 
-> Agreed. This could be a good tradeoff for a lot of common cases.
-> 
-> > 
-> > I feel that for proportional bandwidth division, implementing ASYNC
-> > control at CFQ will make sense because even if things get serialized in
-> > higher layers, consequences are not very bad as it is work conserving
-> > algorithm. But for throttling serialization will lead to bad consequences.
-> 
-> Agreed.
-> 
-> > 
-> > May be one can think of new files in blkio controller to limit async IO
-> > per group during page dirty time.
-> > 
-> > blkio.throttle.async.write_bps_limit
-> > blkio.throttle.async.write_iops_limit
-> 
-> OK, I'll try to add the async throttling logic and use this interface.
-
-Cool, I would like to play with it a bit once patches are ready.
-
-Thanks
-Vivek
+diff --git a/include/linux/utsname.h b/include/linux/utsname.h
+index 85171be..21b4566 100644
+--- a/include/linux/utsname.h
++++ b/include/linux/utsname.h
+@@ -53,7 +53,7 @@ static inline void get_uts_ns(struct uts_namespace *ns)
+ }
+ 
+ extern struct uts_namespace *copy_utsname(unsigned long flags,
+-					struct uts_namespace *ns);
++					  struct task_struct *tsk);
+ extern void free_uts_ns(struct kref *kref);
+ 
+ static inline void put_uts_ns(struct uts_namespace *ns)
+@@ -70,12 +70,12 @@ static inline void put_uts_ns(struct uts_namespace *ns)
+ }
+ 
+ static inline struct uts_namespace *copy_utsname(unsigned long flags,
+-					struct uts_namespace *ns)
++						 struct task_struct *tsk)
+ {
+ 	if (flags & CLONE_NEWUTS)
+ 		return ERR_PTR(-EINVAL);
+ 
+-	return ns;
++	return tsk->nsproxy->uts_ns;
+ }
+ #endif
+ 
+diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+index b6dbff2..ac8a56e 100644
+--- a/kernel/nsproxy.c
++++ b/kernel/nsproxy.c
+@@ -69,16 +69,11 @@ static struct nsproxy *create_new_namespaces(unsigned long flags,
+ 		goto out_ns;
+ 	}
+ 
+-	new_nsp->uts_ns = copy_utsname(flags, tsk->nsproxy->uts_ns);
++	new_nsp->uts_ns = copy_utsname(flags, tsk);
+ 	if (IS_ERR(new_nsp->uts_ns)) {
+ 		err = PTR_ERR(new_nsp->uts_ns);
+ 		goto out_uts;
+ 	}
+-	if (new_nsp->uts_ns != tsk->nsproxy->uts_ns) {
+-		put_user_ns(new_nsp->uts_ns->user_ns);
+-		new_nsp->uts_ns->user_ns = task_cred_xxx(tsk, user)->user_ns;
+-		get_user_ns(new_nsp->uts_ns->user_ns);
+-	}
+ 
+ 	new_nsp->ipc_ns = copy_ipcs(flags, tsk->nsproxy->ipc_ns);
+ 	if (IS_ERR(new_nsp->ipc_ns)) {
+diff --git a/kernel/utsname.c b/kernel/utsname.c
+index a7b3a8d..4464617 100644
+--- a/kernel/utsname.c
++++ b/kernel/utsname.c
+@@ -31,7 +31,8 @@ static struct uts_namespace *create_uts_ns(void)
+  * @old_ns: namespace to clone
+  * Return NULL on error (failure to kmalloc), new ns otherwise
+  */
+-static struct uts_namespace *clone_uts_ns(struct uts_namespace *old_ns)
++static struct uts_namespace *clone_uts_ns(struct task_struct *tsk,
++					  struct uts_namespace *old_ns)
+ {
+ 	struct uts_namespace *ns;
+ 
+@@ -41,8 +42,7 @@ static struct uts_namespace *clone_uts_ns(struct uts_namespace *old_ns)
+ 
+ 	down_read(&uts_sem);
+ 	memcpy(&ns->name, &old_ns->name, sizeof(ns->name));
+-	ns->user_ns = old_ns->user_ns;
+-	get_user_ns(ns->user_ns);
++	ns->user_ns = get_user_ns(task_cred_xxx(tsk, user)->user_ns);
+ 	up_read(&uts_sem);
+ 	return ns;
+ }
+@@ -53,8 +53,10 @@ static struct uts_namespace *clone_uts_ns(struct uts_namespace *old_ns)
+  * utsname of this process won't be seen by parent, and vice
+  * versa.
+  */
+-struct uts_namespace *copy_utsname(unsigned long flags, struct uts_namespace *old_ns)
++struct uts_namespace *copy_utsname(unsigned long flags,
++				   struct task_struct *tsk)
+ {
++	struct uts_namespace *old_ns = tsk->nsproxy->uts_ns;
+ 	struct uts_namespace *new_ns;
+ 
+ 	BUG_ON(!old_ns);
+@@ -63,7 +65,7 @@ struct uts_namespace *copy_utsname(unsigned long flags, struct uts_namespace *ol
+ 	if (!(flags & CLONE_NEWUTS))
+ 		return old_ns;
+ 
+-	new_ns = clone_uts_ns(old_ns);
++	new_ns = clone_uts_ns(tsk, old_ns);
+ 
+ 	put_uts_ns(old_ns);
+ 	return new_ns;
+-- 
+1.7.0.4
