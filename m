@@ -1,14 +1,16 @@
-From: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 01/10] Add a user_namespace as creator/owner of
-	uts_namespace
-Date: Thu, 24 Feb 2011 17:03:11 +0000
-Message-ID: <27931.1298566991__39393.749778583$1298567032$gmane$org@redhat.com>
-References: <20110224150150.GA8262@mail.hallyn.com>
+From: jacob pan <jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
+Subject: Re: [PATCH 1/1, v9] cgroup/freezer: add per freezer duty ratio control
+Date: Thu, 24 Feb 2011 15:45:25 -0800
+Message-ID: <20110224154525.1b463723__41257.9473843381$1298591266$gmane$org@jacob-laptop>
+References: <1297807750-28844-1-git-send-email-jacob.jun.pan@linux.intel.com>
+	<1297807750-28844-2-git-send-email-jacob.jun.pan@linux.intel.com>
+	<201102160100.15487.rjw@sisk.pl> <20110215163812.7fa020b5@putvin>
+	<20110216032321.GA14893@count0.beaverton.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110224150150.GA8262-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
+In-Reply-To: <20110216032321.GA14893-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,12 +20,54 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dlezcano-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, oleg-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Cedric Le Goater <clg-DhXWPJtHtuFWk0Htik3J/w@public.gmane.org>, container cgroup <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>, rdunlap-/UHa2rfvQTnk1uMJSBkQmQ@public.gmane.org, Linux PM mailing list <linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+On Tue, 15 Feb 2011 19:23:21 -0800
+Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
 
-Feel free to add my Acked-by to these patches, give or take the correction to
-the change description of the 5th patch.
+> On Tue, Feb 15, 2011 at 04:38:12PM -0800, Jacob Pan wrote:
+> > On Wed, 16 Feb 2011 01:00:15 +0100
+> > "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org> wrote:
+> 
+> <snip>
+> 
+> > > Well, quite frankly, I'm not going to take this patch unless it
+> > > gets an ACK from the scheduler people (which I'm guessing is not
+> > > going to happen before hell freezes over).
+> > > 
+> > > IOW, please find a better way to address the issue at hand.
+> > > 
+> > We do have a real need that there is no exist feature in the kernel
+> > can provide solution for. You want ACK from scheduler people
+> > because it has impact on disabling irq? or you think scheduler
+> > should be the one that provide the solution. I did try cpu
+> > subsystem, but it seems to be limited to RT and certain scheduling
+> > policy e.g. RR and FIFO.
+> 
+> I agree with Rafael. I think the scheduler should provide the solution
+> and it can be done via modifications to the cpu cgroup subsystem. 
+> Yes, it only has the shares and rt-related files *right now*. However,
+> Kame replied earlier with a link to some patches for extending it
+> that introduce files with similar (granted: not the same) semantics:
+> 
+> http://linux.derkeiler.com/Mailing-Lists/Kernel/2010-10/msg04335.html
+> 
+> I think you could build on that and help push those patches towards
+> mainline along with your enhancements for reducing wakeups rather
+> than modify the freezer cgroup subsystem.
+> 
+I played with v3 and v4 of the CFS bandwidth patch. When the cpu
+cgroup exceeds its cfs_quota, it does have the same effect as this
+patch in terms of freeze/thaw at given period and allowed runtime. But
+when the cgroup cpu usage is below cfs_quota, it is not throttled.
+Therefore, it cannot reduce wakeups.
+I will continue look into the possibility of enhancing CFS BW patch for
+our needs, But again, the fundamental difference here is bandwidth vs
+idle time control. What we need for power saving is idle time not
+bandwidth.
 
-David
+Thanks,
+
+Jacob
