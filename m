@@ -1,19 +1,12 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: User namespaces and keys
-Date: Wed, 23 Feb 2011 22:56:01 -0800
-Message-ID: <m1vd09gbum.fsf__11951.4442784295$1298530676$gmane$org@fess.ebiederm.org>
-References: <20110223135814.GA1859@mail.hallyn.com>
-	<20110217150224.GA26334@mail.hallyn.com> <29677.1298462729@redhat.com>
-	<890.1298473574@redhat.com> <m162sasqj6.fsf@fess.ebiederm.org>
-	<20110223155328.GA21266@peq.hallyn.com>
-	<4D655EE4.6030707@schaufler-ca.com> <m1k4gqlbdm.fsf@fess.ebiederm.org>
-	<4D657E0C.3010102@schaufler-ca.com>
+From: "Suzanne Snider" <nzajas-dY08KVG/lbpWk0Htik3J/w@public.gmane.org>
+Subject: Furthering your eductaion…   cheapest business card
+Date: Wed, 23 Feb 2011 23:14:32 -0800
+Message-ID: <604260738.59127908691993@broadcom.com>
+Reply-To: nzajas-dY08KVG/lbpWk0Htik3J/w@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4D657E0C.3010102-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org> (Casey Schaufler's message of
-	"Wed, 23 Feb 2011 13:37:16 -0800")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,34 +16,32 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
-Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Kees Cook <kees.cook-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org> writes:
+   Touch hat to !
+   Containers
+                                                                              
+Add Bahcelors, Docotrate or Docotrate Dergees to your resume in just 4-6 weeks and open avenues to promotion and better jobs!
+                                                                                                   
+This is a rare chance to make a right move and receive your due benefits... if you are qualified but are lacking that piece of paper, Get one from us in a fraction of the time.
 
-> On 2/23/2011 12:55 PM, Eric W. Biederman wrote:
->> Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org> writes:
->>
->>> I confess that I remain less well educated on namespaces than
->>> I probably should be, but with what I do know it seems that the
->>> relationships between user namespaces and LSMs are bound to be
->>> strained from the beginning. Some LSMs (SELinux and Smack) are
->>> providing similar sandbox capabilities to what you get from user
->>> namespaces, but from different directions and with different
->>> use cases.
->> Casey I won't argue about the possibility of things being strained, but
->> I think if we focus on the semantics and not on the end goal of exactly
->> how the pieces are to be used there can be some reasonable dialog.
->
-> I'm sure that there will be cases where they will work together
-> like horses in a troika. Making sensible semantics for the interactions
-> is key, and it is entirely possible that in some cases a comparison
-> of semantics and behaviors will lead an end user to chose either an
-> LSM or namespaces over the combination. Just like I expect that even
-> when we allow multiple LSMs the SELinux and Smack combination will be
-> rare among the sane.
+Get your Dilpoma!. Earn as deserved. Get a Promotion.
 
-That sounds about right.
+CALL US TODAY AND GIVE YOUR WORK EXPERIENCE THE CHANCE TO EARN YOU THE HIGHER COMPENSATION YOU DESERVE!
 
-Eric
+************************************
+Give us a call NOW!
+
++ 1 - 646 - 537 - 1732
+Please leave us your:
+1) Your Name
+2) Your Country
+3) Phone No. with countrycode if outside USA
+                                                                                             
+We will get back to you ASAP
+************************************
+                                                           
+Do Not Reply to this Email.
+We do not reply to text inquiries, and our server will reject all response traffic.
+We apologize for any inconvenience this may have caused you.
