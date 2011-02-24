@@ -1,16 +1,20 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 5/9] Allow ptrace from non-init user namespaces
-Date: Thu, 24 Feb 2011 00:43:37 +0000
-Message-ID: <20110224004336.GA29373__30284.1651406654$1298508394$gmane$org@mail.hallyn.com>
-References: <20110217150224.GA26334@mail.hallyn.com>
-	<20110217150333.GE26395@mail.hallyn.com>
-	<20110218155925.f7d30a52.akpm@linux-foundation.org>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 0/5] blk-throttle: writeback and swap IO control
+Date: Thu, 24 Feb 2011 09:40:39 +0900
+Message-ID: <20110224094039.89c07bea.kamezawa.hiroyu__2067.33250893212$1298508578$gmane$org@jp.fujitsu.com>
+References: <1298394776-9957-1-git-send-email-arighi@develer.com>
+	<20110222193403.GG28269@redhat.com>
+	<20110222224141.GA23723@linux.develer.com>
+	<20110223000358.GM28269@redhat.com>
+	<20110223083206.GA2174@linux.develer.com>
+	<20110223152354.GA2526@redhat.com>
+	<20110223231410.GB1744@linux.develer.com>
+	<20110224001033.GF2526@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20110218155925.f7d30a52.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+In-Reply-To: <20110224001033.GF2526-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,125 +24,110 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Kees Cook <kees.cook-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Wu Fengguang <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Andrew Morton (akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org):
-> On Thu, 17 Feb 2011 15:03:33 +0000
-> "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
-> 
-> > ptrace is allowed to tasks in the same user namespace according to
-> > the usual rules (i.e. the same rules as for two tasks in the init
-> > user namespace).  ptrace is also allowed to a user namespace to
-> > which the current task the has CAP_SYS_PTRACE capability.
+On Wed, 23 Feb 2011 19:10:33 -0500
+Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+
+> On Thu, Feb 24, 2011 at 12:14:11AM +0100, Andrea Righi wrote:
+> > On Wed, Feb 23, 2011 at 10:23:54AM -0500, Vivek Goyal wrote:
+> > > > > Agreed. Granularity of per inode level might be accetable in many 
+> > > > > cases. Again, I am worried faster group getting stuck behind slower
+> > > > > group.
+> > > > > 
+> > > > > I am wondering if we are trying to solve the problem of ASYNC write throttling
+> > > > > at wrong layer. Should ASYNC IO be throttled before we allow task to write to
+> > > > > page cache. The way we throttle the process based on dirty ratio, can we
+> > > > > just check for throttle limits also there or something like that.(I think
+> > > > > that's what you had done in your initial throttling controller implementation?)
+> > > > 
+> > > > Right. This is exactly the same approach I've used in my old throttling
+> > > > controller: throttle sync READs and WRITEs at the block layer and async
+> > > > WRITEs when the task is dirtying memory pages.
+> > > > 
+> > > > This is probably the simplest way to resolve the problem of faster group
+> > > > getting blocked by slower group, but the controller will be a little bit
+> > > > more leaky, because the writeback IO will be never throttled and we'll
+> > > > see some limited IO spikes during the writeback.
+> > > 
+> > > Yes writeback will not be throttled. Not sure how big a problem that is.
+> > > 
+> > > - We have controlled the input rate. So that should help a bit.
+> > > - May be one can put some high limit on root cgroup to in blkio throttle
+> > >   controller to limit overall WRITE rate of the system.
+> > > - For SATA disks, try to use CFQ which can try to minimize the impact of
+> > >   WRITE.
+> > > 
+> > > It will atleast provide consistent bandwindth experience to application.
 > > 
-> >
-> > ...
-> >
-> > --- a/include/linux/capability.h
-> > +++ b/include/linux/capability.h
-> > @@ -546,6 +546,8 @@ extern const kernel_cap_t __cap_init_eff_set;
-> >   */
-> >  #define has_capability(t, cap) (security_real_capable((t), &init_user_ns, (cap)) == 0)
-> >  
-> > +#define has_ns_capability(t, ns, cap) (security_real_capable((t), (ns), (cap)) == 0)
+> > Right.
+> > 
+> > > 
+> > > >However, this is always
+> > > > a better solution IMHO respect to the current implementation that is
+> > > > affected by that kind of priority inversion problem.
+> > > > 
+> > > > I can try to add this logic to the current blk-throttle controller if
+> > > > you think it is worth to test it.
+> > > 
+> > > At this point of time I have few concerns with this approach.
+> > > 
+> > > - Configuration issues. Asking user to plan for SYNC ans ASYNC IO
+> > >   separately is inconvenient. One has to know the nature of workload.
+> > > 
+> > > - Most likely we will come up with global limits (atleast to begin with),
+> > >   and not per device limit. That can lead to contention on one single
+> > >   lock and scalability issues on big systems.
+> > > 
+> > > Having said that, this approach should reduce the kernel complexity a lot.
+> > > So if we can do some intelligent locking to limit the overhead then it
+> > > will boil down to reduced complexity in kernel vs ease of use to user. I 
+> > > guess at this point of time I am inclined towards keeping it simple in
+> > > kernel.
+> > > 
+> > 
+> > BTW, with this approach probably we can even get rid of the page
+> > tracking stuff for now.
 > 
-> macroitis.
+> Agreed.
+> 
+> > If we don't consider the swap IO, any other IO
+> > operation from our point of view will happen directly from process
+> > context (writes in memory + sync reads from the block device).
+> 
+> Why do we need to account for swap IO? Application never asked for swap
+> IO. It is kernel's decision to move soem pages to swap to free up some
+> memory. What's the point in charging those pages to application group
+> and throttle accordingly?
+> 
 
-Thanks for the review, Andrew.  Unfortunately this one is hard to turn
-into a function beecause it uses security_real_capable(), which is
-sometimes defined in security/security.c as a real function, and
-other times as a static inline in include/linux/security.h.  So
-I'd have to #include security.h in capability.h, but security.h
-already #includes capability.h.
+I think swap I/O should be controlled by memcg's dirty_ratio.
+But, IIRC, NEC guy had a requirement for this...
 
-All the other comments affect same_or_ancestor_user_ns(), which
-following Eric's feedback is going away.
+I think some enterprise cusotmer may want to throttle the whole speed of
+swapout I/O (not swapin)...so, they may be glad if they can limit throttle
+the I/O against a disk partition or all I/O tagged as 'swapio' rather than
+some cgroup name.
 
-> >  /**
-> >   * has_capability_noaudit - Determine if a task has a superior capability available (unaudited)
-> >   * @t: The task in question
-> > diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-> > index faf4679..862fc59 100644
-> > --- a/include/linux/user_namespace.h
-> > +++ b/include/linux/user_namespace.h
-> > @@ -39,6 +39,9 @@ static inline void put_user_ns(struct user_namespace *ns)
-> >  uid_t user_ns_map_uid(struct user_namespace *to, const struct cred *cred, uid_t uid);
-> >  gid_t user_ns_map_gid(struct user_namespace *to, const struct cred *cred, gid_t gid);
-> >  
-> > +int same_or_ancestor_user_ns(struct task_struct *task,
-> > +	struct task_struct *victim);
+But I'm afraid slow swapout may consume much dirty_ratio and make things
+worse ;)
+
+
+
+> > 
+> > However, I'm sure we'll need the page tracking also for the blkio
+> > controller soon or later. This is an important information and also the
+> > proportional bandwidth controller can take advantage of it.
 > 
-> bool.
+> Yes page tracking will be needed for CFQ proportional bandwidth ASYNC
+> write support. But until and unless we implement memory cgroup dirty
+> ratio and figure a way out to make writeback logic cgroup aware, till
+> then I think page tracking stuff is not really useful.
 > 
-> >  #else
-> >  
-> >  static inline struct user_namespace *get_user_ns(struct user_namespace *ns)
-> >
-> > ...
-> >
-> > --- a/kernel/user_namespace.c
-> > +++ b/kernel/user_namespace.c
-> > @@ -129,6 +129,22 @@ gid_t user_ns_map_gid(struct user_namespace *to, const struct cred *cred, gid_t
-> >  	return overflowgid;
-> >  }
-> >  
-> > +int same_or_ancestor_user_ns(struct task_struct *task,
-> > +	struct task_struct *victim)
-> > +{
-> > +	struct user_namespace *u1 = task_cred_xxx(task, user)->user_ns;
-> > +	struct user_namespace *u2 = task_cred_xxx(victim, user)->user_ns;
-> > +	for (;;) {
-> > +		if (u1 == u2)
-> > +			return 1;
-> > +		if (u1 == &init_user_ns)
-> > +			return 0;
-> > +		u1 = u1->creator->user_ns;
-> > +	}
-> > +	/* We never get here */
-> > +	return 0;
-> 
-> Remove?
-> 
-> > +}
-> > +
-> >  static __init int user_namespaces_init(void)
-> >  {
-> >  	user_ns_cachep = KMEM_CACHE(user_namespace, SLAB_PANIC);
-> >
-> > ...
-> >
-> >  int cap_ptrace_access_check(struct task_struct *child, unsigned int mode)
-> >  {
-> >  	int ret = 0;
-> > +	const struct cred *cred, *tcred;
-> >  
-> >  	rcu_read_lock();
-> > -	if (!cap_issubset(__task_cred(child)->cap_permitted,
-> > -			  current_cred()->cap_permitted) &&
-> > -	    !capable(CAP_SYS_PTRACE))
-> > -		ret = -EPERM;
-> > +	cred = current_cred();
-> > +	tcred = __task_cred(child);
-> > +	/*
-> > +	 * The ancestor user_ns check may be gratuitous, as I think
-> > +	 * we've already guaranteed that in kernel/ptrace.c.
-> > +	 */
-> 
-> ?
-> 
-> > +	if (same_or_ancestor_user_ns(current, child) &&
-> > +	    cap_issubset(tcred->cap_permitted, cred->cap_permitted))
-> > +		goto out;
-> > +	if (ns_capable(tcred->user->user_ns, CAP_SYS_PTRACE))
-> > +		goto out;
-> > +	ret = -EPERM;
-> > +out:
-> >  	rcu_read_unlock();
-> >  	return ret;
-> >  }
-> >
-> > ...
-> >
-> 
+
+I think Greg Thelen is now preparing patches for dirty_ratio.
+
+Thanks,
+-Kame
