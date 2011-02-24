@@ -1,14 +1,21 @@
-From: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [PATCH 2/2] pidns: Support unsharing the pid namespace.
-Date: Wed, 23 Feb 2011 19:12:46 -0600
-Message-ID: <4D65B08E.6070904__47957.1374635727$1298510262$gmane$org@parallels.com>
-References: <1297788824-20534-1-git-send-email-daniel.lezcano@free.fr>
-	<1297788824-20534-2-git-send-email-daniel.lezcano@free.fr>
+From: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 0/5] blk-throttle: writeback and swap IO control
+Date: Wed, 23 Feb 2011 18:01:22 -0800
+Message-ID: <AANLkTimka0euS_+Rp0Vrj4RrUx9CW_JJygNxYFdGsw2J__14680.5597156801$1298512964$gmane$org@mail.gmail.com>
+References: <1298394776-9957-1-git-send-email-arighi@develer.com>
+	<20110222193403.GG28269@redhat.com>
+	<20110222224141.GA23723@linux.develer.com>
+	<20110223000358.GM28269@redhat.com>
+	<20110223083206.GA2174@linux.develer.com>
+	<20110223152354.GA2526@redhat.com>
+	<20110223231410.GB1744@linux.develer.com>
+	<20110224001033.GF2526@redhat.com>
+	<20110224094039.89c07bea.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1297788824-20534-2-git-send-email-daniel.lezcano-GANU6spQydw@public.gmane.org>
+In-Reply-To: <20110224094039.89c07bea.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,118 +25,143 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Wu Fengguang <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 02/15/2011 10:53 AM, Daniel Lezcano wrote:
-> From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> 
-> - Allow CLONEW_NEWPID into unshare. - Pass both nsproxy->pid_ns and
-> task_active_pid_ns to copy_pid_ns As they can now be different.
-> 
-> Unsharing of the pid namespace unlike unsharing of other namespaces 
-> does not take effect immediately.  Instead it affects the children 
-> created with fork and clone.  The first of these children becomes the
-> init process of the new pid namespace, the rest become oddball
-> children of pid 0.  From the point of view of the new pid namespace
-> the process that created it is pid 0, as it's pid does not map.
-> 
-> A couple of different semantics were considered but this one was 
-> settled on because it is easy to implement and it is usable from pam
-> modules.  The core reasons for the existence of unshare.
+On Wed, Feb 23, 2011 at 4:40 PM, KAMEZAWA Hiroyuki
+<kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
+> On Wed, 23 Feb 2011 19:10:33 -0500
+> Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+>
+>> On Thu, Feb 24, 2011 at 12:14:11AM +0100, Andrea Righi wrote:
+>> > On Wed, Feb 23, 2011 at 10:23:54AM -0500, Vivek Goyal wrote:
+>> > > > > Agreed. Granularity of per inode level might be accetable in many
+>> > > > > cases. Again, I am worried faster group getting stuck behind slo=
+wer
+>> > > > > group.
+>> > > > >
+>> > > > > I am wondering if we are trying to solve the problem of ASYNC wr=
+ite throttling
+>> > > > > at wrong layer. Should ASYNC IO be throttled before we allow tas=
+k to write to
+>> > > > > page cache. The way we throttle the process based on dirty ratio=
+, can we
+>> > > > > just check for throttle limits also there or something like that=
+.(I think
+>> > > > > that's what you had done in your initial throttling controller i=
+mplementation?)
+>> > > >
+>> > > > Right. This is exactly the same approach I've used in my old throt=
+tling
+>> > > > controller: throttle sync READs and WRITEs at the block layer and =
+async
+>> > > > WRITEs when the task is dirtying memory pages.
+>> > > >
+>> > > > This is probably the simplest way to resolve the problem of faster=
+ group
+>> > > > getting blocked by slower group, but the controller will be a litt=
+le bit
+>> > > > more leaky, because the writeback IO will be never throttled and w=
+e'll
+>> > > > see some limited IO spikes during the writeback.
+>> > >
+>> > > Yes writeback will not be throttled. Not sure how big a problem that=
+ is.
+>> > >
+>> > > - We have controlled the input rate. So that should help a bit.
+>> > > - May be one can put some high limit on root cgroup to in blkio thro=
+ttle
+>> > > =A0 controller to limit overall WRITE rate of the system.
+>> > > - For SATA disks, try to use CFQ which can try to minimize the impac=
+t of
+>> > > =A0 WRITE.
+>> > >
+>> > > It will atleast provide consistent bandwindth experience to applicat=
+ion.
+>> >
+>> > Right.
+>> >
+>> > >
+>> > > >However, this is always
+>> > > > a better solution IMHO respect to the current implementation that =
+is
+>> > > > affected by that kind of priority inversion problem.
+>> > > >
+>> > > > I can try to add this logic to the current blk-throttle controller=
+ if
+>> > > > you think it is worth to test it.
+>> > >
+>> > > At this point of time I have few concerns with this approach.
+>> > >
+>> > > - Configuration issues. Asking user to plan for SYNC ans ASYNC IO
+>> > > =A0 separately is inconvenient. One has to know the nature of worklo=
+ad.
+>> > >
+>> > > - Most likely we will come up with global limits (atleast to begin w=
+ith),
+>> > > =A0 and not per device limit. That can lead to contention on one sin=
+gle
+>> > > =A0 lock and scalability issues on big systems.
+>> > >
+>> > > Having said that, this approach should reduce the kernel complexity =
+a lot.
+>> > > So if we can do some intelligent locking to limit the overhead then =
+it
+>> > > will boil down to reduced complexity in kernel vs ease of use to use=
+r. I
+>> > > guess at this point of time I am inclined towards keeping it simple =
+in
+>> > > kernel.
+>> > >
+>> >
+>> > BTW, with this approach probably we can even get rid of the page
+>> > tracking stuff for now.
+>>
+>> Agreed.
+>>
+>> > If we don't consider the swap IO, any other IO
+>> > operation from our point of view will happen directly from process
+>> > context (writes in memory + sync reads from the block device).
+>>
+>> Why do we need to account for swap IO? Application never asked for swap
+>> IO. It is kernel's decision to move soem pages to swap to free up some
+>> memory. What's the point in charging those pages to application group
+>> and throttle accordingly?
+>>
+>
+> I think swap I/O should be controlled by memcg's dirty_ratio.
+> But, IIRC, NEC guy had a requirement for this...
+>
+> I think some enterprise cusotmer may want to throttle the whole speed of
+> swapout I/O (not swapin)...so, they may be glad if they can limit throttle
+> the I/O against a disk partition or all I/O tagged as 'swapio' rather than
+> some cgroup name.
+>
+> But I'm afraid slow swapout may consume much dirty_ratio and make things
+> worse ;)
+>
+>
+>
+>> >
+>> > However, I'm sure we'll need the page tracking also for the blkio
+>> > controller soon or later. This is an important information and also the
+>> > proportional bandwidth controller can take advantage of it.
+>>
+>> Yes page tracking will be needed for CFQ proportional bandwidth ASYNC
+>> write support. But until and unless we implement memory cgroup dirty
+>> ratio and figure a way out to make writeback logic cgroup aware, till
+>> then I think page tracking stuff is not really useful.
+>>
+>
+> I think Greg Thelen is now preparing patches for dirty_ratio.
+>
+> Thanks,
+> -Kame
+>
+>
 
-Hmmm...
-
-The userspace semantics I expected were for unshare(CLONE_NEWPID) to:
-
-A) make the current process be PID 1 in the new namespace.
-
-B) reparent_to_init() any existing children as if the process that
-called unshare() had exited.  (Because those children are not in the new
-PID namespace.)
-
-Is there a reason to implement it in some way other than that?
-
-  if (!fork) {
-    unshare(CLONE_NEWUSER);
-    exec();
-  }
-
-> I took a survey of the callers of pam modules and the following 
-> appears to be a representative sample of their logic. { setup stuff
-> include pam child = fork(); if (!child) { setuid() exec /bin/bash } 
-> waitpid(child);
-> 
-> pam and other cleanup }
-
-And calling unshare() right before calling setuid() seems the logical
-thing to do there...?
-
-Currently unshare() works like chroot().  You're making it act like
-vfork() where the process that did this is in a strange halfway state
-until it creates new children at which point magic happens.  I don't
-understand why this is an improvement, especially since none of the
-other flags you can feed to unshare do that.
-
-> As you can see there is a fork to create the unprivileged user space
-> process.  Which means that the unprivileged user space process will
-> appear as pid 1 in the new pid namespace.
-
-Meaning the process that called unshare() becomes the idle task?  Or
-this process isn't actually in the new PID namespace?
-
-> Further most login processes do not cope with extraneous children
-> which means shifting the duty of reaping extraneous child process to 
-> the creator of those extraneous children makes the system more 
-> comprehensible.
-
-We already have reparent_to_init() happening when a process dies.  That
-can't be adapted/reused?
-
-> The practical reason for this set of pid namespace semantics is that
-> it is simple to implement and verify they work correctly. Whereas an
-> implementation that requires changing the struct pid on a process
-> comes with a lot more races and pain.  Not the least of which is that
-> glibc caches getpid().
-
-So unshare() in the libc needs to flush that cache.  Presumably a one
-line patch.
-
-> These semantics are implemented by having two notions of the pid
-> namespace of a process.  There is task_active_pid_ns which is the pid
-> namspace the process was created with and the pid namespace that all
-> pids are presented to that process in.  The task_active_pid_ns is
-> stored in the struct pid of the task.
-
-Having two PID namespaces for each process is the simple answer?
-
-> There is the pid namespace that will be used for children that pid
-> namespace is stored in task->nsproxy->pid_ns.
-> 
-> There is one really nasty corner case in all of this.  Which pid
-> namespace are you in if your parent unshared it's pid namespace and
-> then on clone you also unshare the pid namespace. To me there are
-> only two possible answers.  Either the cases is so bizarre and we
-> deny it completely.  or the new pid namespace is a descendent of our
-> parent's active pid namespace, and we ignore the
-> task->nsproxy->pid_ns.
-> 
-> To that end I have modified copy_pid_ns to take both of these pid
-> namespaces.  The active pid namespace and the default pid namespace
-> of children.  Allowing me to simply implement unsharing a pid
-> namespace in clone after already unsharing a pid namespace with
-> unshare.
-
-If clone creates a new namespace, and unshare() discard that namespace
-and creates another new one, presumably the first one's reference count
-will go to zero if no processes are in it?
-
-Also, when the PID 1 of a namespace leaves that namespace (generally by
-exiting), all the children get killed.
-
-I thought the one nasty corner case is that the parent of PID 1 isn't
-(ever) in the current PID namespace, so reference counting and list
-membership gets a little funky.  (I still need to read more about that...)
-
-Rob
+Correct.  I am working on the memcg dirty_ratio patches with latest
+mmotm memcg.  I am running some test cases which should be complete
+tomorrow.  Once testing is complete, I will sent  the patches for
+review.
