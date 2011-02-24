@@ -1,15 +1,19 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 0/5] blk-throttle: writeback and swap IO control
-Date: Thu, 24 Feb 2011 11:38:53 +0530
-Message-ID: <20110224060853.GN3379__6423.31133499301$1298528009$gmane$org@balbir.in.ibm.com>
-References: <1298394776-9957-1-git-send-email-arighi@develer.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: User namespaces and keys
+Date: Wed, 23 Feb 2011 22:56:01 -0800
+Message-ID: <m1vd09gbum.fsf__11951.4442784295$1298530676$gmane$org@fess.ebiederm.org>
+References: <20110223135814.GA1859@mail.hallyn.com>
+	<20110217150224.GA26334@mail.hallyn.com> <29677.1298462729@redhat.com>
+	<890.1298473574@redhat.com> <m162sasqj6.fsf@fess.ebiederm.org>
+	<20110223155328.GA21266@peq.hallyn.com>
+	<4D655EE4.6030707@schaufler-ca.com> <m1k4gqlbdm.fsf@fess.ebiederm.org>
+	<4D657E0C.3010102@schaufler-ca.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1298394776-9957-1-git-send-email-arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <4D657E0C.3010102-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org> (Casey Schaufler's message of
+	"Wed, 23 Feb 2011 13:37:16 -0800")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,75 +23,34 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
-Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Wu Fengguang <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
+Cc: xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Kees Cook <kees.cook-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-* Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org> [2011-02-22 18:12:51]:
+Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org> writes:
 
-> Currently the blkio.throttle controller only support synchronous IO requests.
-> This means that we always look at the current task to identify the "owner" of
-> each IO request.
-> 
-> However dirty pages in the page cache can be wrote to disk asynchronously by
-> the per-bdi flusher kernel threads or by any other thread in the system,
-> according to the writeback policy.
-> 
-> For this reason the real writes to the underlying block devices may
-> occur in a different IO context respect to the task that originally
-> generated the dirty pages involved in the IO operation. This makes the
-> tracking and throttling of writeback IO more complicate respect to the
-> synchronous IO from the blkio controller's perspective.
-> 
-> The same concept is also valid for anonymous pages involed in IO operations
-> (swap).
-> 
-> This patch allow to track the cgroup that originally dirtied each page in page
-> cache and each anonymous page and pass these informations to the blk-throttle
-> controller. These informations can be used to provide a better service level
-> differentiation of buffered writes swap IO between different cgroups.
-> 
-> Testcase
-> ========
-> - create a cgroup with 1MiB/s write limit:
->   # mount -t cgroup -o blkio none /mnt/cgroup
->   # mkdir /mnt/cgroup/foo
->   # echo 8:0 $((1024 * 1024)) > /mnt/cgroup/foo/blkio.throttle.write_bps_device
-> 
-> - move a task into the cgroup and run a dd to generate some writeback IO
-> 
-> Results:
->   - 2.6.38-rc6 vanilla:
->   $ cat /proc/$$/cgroup
->   1:blkio:/foo
->   $ dd if=/dev/zero of=zero bs=1M count=1024 &
->   $ dstat -df
->   --dsk/sda--
->    read  writ
->      0    19M
->      0    19M
->      0     0
->      0     0
->      0    19M
->   ...
-> 
->   - 2.6.38-rc6 + blk-throttle writeback IO control:
->   $ cat /proc/$$/cgroup
->   1:blkio:/foo
->   $ dd if=/dev/zero of=zero bs=1M count=1024 &
->   $ dstat -df
->   --dsk/sda--
->    read  writ
->      0  1024
->      0  1024
->      0  1024
->      0  1024
->      0  1024
->   ...
-> 
+> On 2/23/2011 12:55 PM, Eric W. Biederman wrote:
+>> Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org> writes:
+>>
+>>> I confess that I remain less well educated on namespaces than
+>>> I probably should be, but with what I do know it seems that the
+>>> relationships between user namespaces and LSMs are bound to be
+>>> strained from the beginning. Some LSMs (SELinux and Smack) are
+>>> providing similar sandbox capabilities to what you get from user
+>>> namespaces, but from different directions and with different
+>>> use cases.
+>> Casey I won't argue about the possibility of things being strained, but
+>> I think if we focus on the semantics and not on the end goal of exactly
+>> how the pieces are to be used there can be some reasonable dialog.
+>
+> I'm sure that there will be cases where they will work together
+> like horses in a troika. Making sensible semantics for the interactions
+> is key, and it is entirely possible that in some cases a comparison
+> of semantics and behaviors will lead an end user to chose either an
+> LSM or namespaces over the combination. Just like I expect that even
+> when we allow multiple LSMs the SELinux and Smack combination will be
+> rare among the sane.
 
-Thanks for looking into this, further review follows.
+That sounds about right.
 
--- 
-	Three Cheers,
-	Balbir
+Eric
