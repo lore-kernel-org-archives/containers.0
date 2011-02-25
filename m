@@ -1,13 +1,14 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH] Don't crash if we are self-checkpointing with a child
-Date: Fri, 25 Feb 2011 10:46:23 -0500
-Message-ID: <4D67CECF.1070608@cs.columbia.edu>
-References: <1298402216-3786-1-git-send-email-danms@us.ibm.com>
+Subject: Re: [PATCH][usercr]: Ghost tasks must be detached
+Date: Fri, 25 Feb 2011 10:46:52 -0500
+Message-ID: <4D67CEEC.5030805@cs.columbia.edu>
+References: <20101211033548.GA12584@us.ibm.com>
+	<20110225075808.GC24361@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1298402216-3786-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20110225075808.GC24361-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,48 +18,67 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
-Thanks -- queued for v23-rc2.
+Ok, queued for v23-rc2.
+
+Thanks,
 
 Oren.
 
-On 02/22/2011 02:16 PM, Dan Smith wrote:
-> If we are doing a self-checkpoint, we will not be frozen and the
-> get_freezer_task() will return NULL.  If we have children, then
-> may_checkpoint_task() will attempt to make sure that they are in the
-> same cgroup as the freezer task, which will attempt to lock a NULL
-> task pointer (and thus go boom).
+On 02/25/2011 02:58 AM, Sukadev Bhattiprolu wrote:
 > 
-> This patch just inserts a check before in_same_cgroup_freezer() call
-> to make sure we have a freezer task.  The existing check is aimed to
-> determine if a task is not frozen alongside the root, so this addition
-> catches the case where it is impossible.
+> Oren can you please revert this usercr patch, as we discussed earlier :-)
+> I have sent a separate kernel patch.
 > 
-> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  kernel/checkpoint/checkpoint.c |    8 ++++++--
->  1 files changed, 6 insertions(+), 2 deletions(-)
+> Sukadev
 > 
-> diff --git a/kernel/checkpoint/checkpoint.c b/kernel/checkpoint/checkpoint.c
-> index 0f46acf..33f53e9 100644
-> --- a/kernel/checkpoint/checkpoint.c
-> +++ b/kernel/checkpoint/checkpoint.c
-> @@ -262,8 +262,12 @@ static int may_checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
->  	if (t->exit_state)
->  		return 0;
->  
-> -	/* verify that all tasks belongs to same freezer cgroup */
-> -	if (t != current && !in_same_cgroup_freezer(t, ctx->root_freezer)) {
-> +	/*
-> +	 * verify that we have a freezer cgroup and that all tasks
-> +	 * belong to the same one
-> +	 */
-> +	if (t != current && (!ctx->root_freezer ||
-> +			     !in_same_cgroup_freezer(t, ctx->root_freezer))) {
->  		_ckpt_err(ctx, -EBUSY, "%(T)Not frozen or wrong cgroup\n");
->  		return -EBUSY;
->  	}
+> Sukadev Bhattiprolu [sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org] wrote:
+> | 
+> | From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> | Date: Fri, 10 Dec 2010 19:23:58 -0800
+> | Subject: [PATCH 1/1] Ghost tasks must be detached
+> | 
+> | Ghost processes are created only to help restore orphaned sessions/pgrps.
+> | As such once the session/pgrp is created the ghost must not send another
+> | SIGCHLD to the parent but exit silently.  So create such tasks as
+> | "detached".
+> | 
+> | See also:
+> | 
+> | https://lists.linux-foundation.org/pipermail/containers/2010-December/026076.html
+> | 
+> | Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> | ---
+> |  restart.c |    7 +++++++
+> |  1 files changed, 7 insertions(+), 0 deletions(-)
+> | 
+> | diff --git a/restart.c b/restart.c
+> | index 9fb5e9f..d7ba26b 100644
+> | --- a/restart.c
+> | +++ b/restart.c
+> | @@ -1744,6 +1744,13 @@ static pid_t ckpt_fork_child(struct ckpt_ctx *ctx, struct task *child)
+> |  		flags |= CLONE_THREAD | CLONE_SIGHAND | CLONE_VM;
+> |  	else if (child->flags & TASK_SIBLING)
+> |  		flags |= CLONE_PARENT;
+> | +	else if (child->flags & (TASK_GHOST|TASK_DEAD)) {
+> | +		/* 
+> | +		 * Ghosts must vanish silently (without signalling parent)
+> | +		 * when they are done.
+> | +		 */
+> | +		flags = 0xFF;
+> | +	}
+> | 
+> |  	memset(&clone_args, 0, sizeof(clone_args));
+> |  	clone_args.nr_pids = 1;
+> | -- 
+> | 1.6.0.4
+> | 
+> | _______________________________________________
+> | Containers mailing list
+> | Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> | https://lists.linux-foundation.org/mailman/listinfo/containers
+> 
