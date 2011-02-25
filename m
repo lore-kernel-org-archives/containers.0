@@ -1,96 +1,230 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH][cr]: Fix ghost task bug
-Date: Fri, 25 Feb 2011 11:01:32 -0800
-Message-ID: <20110225190132.GA31300@us.ibm.com>
-References: <20110225075552.GB24361@us.ibm.com>
-	<20110225115507.GD3915@hawkmoon.kerlabs.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20110225115507.GD3915-Hu8+6S1rdjywhHL9vcZdMVaTQe2KTcn/@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+From: Greg Thelen <gthelen@google.com>
+Subject: [PATCH v5 0/9] memcg: per cgroup dirty page accounting
+Date: Fri, 25 Feb 2011 13:35:51 -0800
+Message-ID: <1298669760-26344-1-git-send-email-gthelen@google.com>
+Return-path: <owner-linux-mm@kvack.org>
+Sender: owner-linux-mm@kvack.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Chad Talbott <ctalbott@google.com>, Justin TerAvest <teravest@google.com>, Vivek Goyal <vgoyal@redhat.com>, Greg Thelen <gthelen@google.com>
 List-Id: containers.vger.kernel.org
 
-Louis Rilling [Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org] wrote:
-| On 24/02/11 23:55 -0800, Sukadev Bhattiprolu wrote:
-| > 
-| > diff --git a/kernel/checkpoint/restart.c b/kernel/checkpoint/restart.c
-| > index b0ea8ec..8ecc052 100644
-| > --- a/kernel/checkpoint/restart.c
-| > +++ b/kernel/checkpoint/restart.c
-| > @@ -972,6 +972,7 @@ static int do_ghost_task(void)
-| >  	if (ret < 0)
-| >  		ckpt_err(ctx, ret, "ghost restart failed\n");
-| >  
-| > +	current->exit_signal = -1;
-| 
-| Setting ->exit_signal outside of tasklist_lock makes me nervous. All other
-| places that change ->exit_signal hold write_lock_irq(&tasklist_lock), and
-| eligibile_child() (for an instance of a reader being another task) holds
-| read_lock(&tasklist_lock). But maybe this does not matter for ghost tasks.
-| 
+Changes since v4:
+- Moved documentation changes to start of series to provide a better
+  introduction to the series.
+- Added support for hierarchical dirty limits.
+- Incorporated bug fixes previously found in v4.
+- Include a new patch "writeback: convert variables to unsigned" to provide a
+  clearer transition to the the new dirty_info structure (patch "writeback:
+  create dirty_info structure").
+- Within the new dirty_info structure, replaced nr_reclaimable with
+  nr_file_dirty and nr_unstable_nfs to give callers finer grain dirty usage
+  information also added dirty_info_reclaimable().
+- Rebased the series to mmotm-2011-02-10-16-26 with two pending mmotm patches:
+  memcg: break out event counters from other stats
+    https://lkml.org/lkml/2011/2/17/415
+  memcg: use native word page statistics counters
+    https://lkml.org/lkml/2011/2/17/413
 
-Yes, an earlier version had the write_lock(&tasklist_lock). Will add it
-back.
+Changes since v3:
+- Refactored balance_dirty_pages() dirtying checking to use new struct
+  dirty_info, which is used to compare both system and memcg dirty limits
+  against usage.
+- Disabled memcg dirty limits when memory.use_hierarchy=1.  An enhancement is
+  needed to check the chain of parents to ensure that no dirty limit is
+  exceeded.
+- Ported to mmotm-2010-10-22-16-36.
 
-| >  	restore_debug_exit(ctx);
-| >  	ckpt_ctx_put(ctx);
-| >  	do_exit(0);
-| > @@ -1465,7 +1466,22 @@ void exit_checkpoint(struct task_struct *tsk)
-| >  	/* restarting zombies will activate next task in restart */
-| >  	if (tsk->flags & PF_RESTARTING) {
-| >  		BUG_ON(ctx->active_pid == -1);
-| > +
-| > +		/*
-| > +		 * if we are a "ghost" task, that was terminated by the
-| > +		 * container-init (from zap_pid_ns_processes()), we should
-| > +		 * wake up the parent since we are now a detached process.
-| > +		 */
-| > +		read_lock_irq(&tasklist_lock);
-| 
-| read_lock() is enough. tasklist_lock is never taken for write from IRQs or
-| softIRQs.
-| 
-| > +                if (tsk->exit_state == EXIT_DEAD && !tsk->parent->exit_state) {
-| > +                        ckpt_debug("[%d, %s]: exit_checkpoint(): notifying "
-| > +					"parent\n", tsk->pid, tsk->comm);
-| > +                        __wake_up_parent(tsk, tsk->parent);
-| > +                }
-| > +		read_unlock_irq(&tasklist_lock);
-| 
-| Looking at this closer, I wonder if this wakeup logic should be called from
-| do_ghost_task(), right after setting ->exit_signal. This way there would be no
-| need for a tricky condition to recognize ghost tasks, and (I think) this is
-| closer to the other cases changing ->exit_signal (reparent_leader() and
-| exit_notify()).
+Changes since v2:
+- Rather than disabling softirq in lock_page_cgroup(), introduce a separate lock
+  to synchronize between memcg page accounting and migration.  This only affects
+  patch 4 of the series.  Patch 4 used to disable softirq, now it introduces the
+  new lock.
 
-Yes, we tried the following in the earlier version. 
+Changes since v1:
+- Renamed "nfs"/"total_nfs" to "nfs_unstable"/"total_nfs_unstable" in per cgroup
+  memory.stat to match /proc/meminfo.
+- Avoid lockdep warnings by using rcu_read_[un]lock() in
+  mem_cgroup_has_dirty_limit().
+- Fixed lockdep issue in mem_cgroup_read_stat() which is exposed by these
+  patches.
+- Remove redundant comments.
+- Rename (for clarity):
+  - mem_cgroup_write_page_stat_item -> mem_cgroup_page_stat_item
+  - mem_cgroup_read_page_stat_item -> mem_cgroup_nr_pages_item
+- Renamed newly created proc files:
+  - memory.dirty_bytes -> memory.dirty_limit_in_bytes
+  - memory.dirty_background_bytes -> memory.dirty_background_limit_in_bytes
+- Removed unnecessary get_ prefix from get_xxx() functions.
+- Allow [kKmMgG] suffixes for newly created dirty limit value cgroupfs files.
+- Disable softirq rather than hardirq in lock_page_cgroup()
+- Made mem_cgroup_move_account_page_stat() inline.
+- Ported patches to mmotm-2010-10-13-17-13.
 
-void ghost_auto_reapable()
-{
-        write_lock(&tasklist_lock);
-        current->exit_signal = -1;
-        __wake_up_parent(current, current->parent);
-        write_unlock(&tasklist_lock);
-}
+This patch set provides the ability for each cgroup to have independent dirty
+page limits.
 
-And called this from do_ghost_task(). But with this, the parent could
-wake up, find that it still has an eligible child (the ghost) to wait 
-for, and go back to waiting before the ghost enters the EXIT_DEAD state.
-And so we would lose the wake up.
+Limiting dirty memory is like fixing the max amount of dirty (hard to reclaim)
+page cache used by a cgroup.  So, in case of multiple cgroup writers, they will
+not be able to consume more than their designated share of dirty pages and will
+be throttled if they cross that limit.
 
-(zap_pid_ns_processes() passes the __WALL so the ghost would be considered
-an eligible child).
+Example use case:
+  #!/bin/bash
+  #
+  # Here is a test script that shows a situation where memcg dirty limits are
+  # beneficial.
+  #
+  # The script runs two programs:
+  # 1) a dirty page background antagonist (dd)
+  # 2) an interactive foreground process (tar).
+  #
+  # If the script's argument is false, then both processes are limited by the
+  # classic global dirty limits.  If the script is given a true argument, then a
+  # per-cgroup dirty limit is used to contain dd dirty page consumption.  The
+  # cgroup isolates the dd dirty memory consumption from the rest of the system
+  # processes (tar in this case).
+  #
+  # The time used by the tar process is printed (lower is better).
+  #
+  # When dd is run within a dirty limiting cgroup, the tar process had faster
+  # and more predictable performance.  memcg dirty ratios might be useful to
+  # serve different task classes (interactive vs batch).  A past discussion
+  # touched on this: http://lkml.org/lkml/2010/5/20/136
+  #
+  # When called with 'false' (using memcg without dirty isolation):
+  #   tar finished in 7.0s
+  #   dd reports 92 MB/s  
+  #
+  # When called with 'true' (using memcg for dirty isolation):
+  #   tar finished in 2.5s
+  #   dd reports 82 MB/s
 
-Sukadev
+  echo memcg_dirty_limits: $1
+  
+  # set system dirty limits.
+  echo $((1<<30)) > /proc/sys/vm/dirty_bytes
+  echo $((1<<29)) > /proc/sys/vm/dirty_background_bytes
+  
+  mkdir /dev/cgroup/memory/A
+  
+  if $1; then    # if using cgroup to contain 'dd'...
+    echo 100M > /dev/cgroup/memory/A/memory.dirty_limit_in_bytes
+  fi
+  
+  # run antagonist (dd) in cgroup A
+  (echo $BASHPID > /dev/cgroup/memory/A/tasks; \
+   dd if=/dev/zero of=/disk1/big.file count=10k bs=1M) &
+  
+  # let antagonist (dd) get warmed up
+  sleep 10
+  
+  # time interactive job
+  time tar -C /disk2 -xzf linux.tar.gz
+  
+  wait
+  sleep 10
+  rmdir /dev/cgroup/memory/A
+
+The patches are based on a series proposed by Andrea Righi in Mar 2010.
+
+Overview:
+- Add page_cgroup flags to record when pages are dirty, in writeback, or nfs
+  unstable.
+
+- Extend mem_cgroup to record the total number of pages in each of the 
+  interesting dirty states (dirty, writeback, unstable_nfs).  
+
+- Add dirty parameters similar to the system-wide /proc/sys/vm/dirty_* limits to
+  mem_cgroup.  The mem_cgroup dirty parameters are accessible via cgroupfs
+  control files.
+
+- Consider both system and per-memcg dirty limits in page writeback when
+  deciding to queue background writeback or throttle dirty memory production.
+
+Known shortcomings (see the patch 1 update to Documentation/cgroups/memory.txt
+for more details):
+- When a cgroup dirty limit is exceeded, then bdi writeback is employed to
+  writeback dirty inodes.  Bdi writeback considers inodes from any cgroup, not
+  just inodes contributing dirty pages to the cgroup exceeding its limit.  
+
+- A cgroup may exceed its dirty limit if the memory is dirtied by a process in a
+  different memcg.
+
+Performance data:
+- A page fault microbenchmark workload was used to measure performance, which
+  can be called in read or write mode:
+        f = open(foo. $cpu)
+        truncate(f, 4096)
+        alarm(60)
+        while (1) {
+                p = mmap(f, 4096)
+                if (write)
+			*p = 1
+		else
+			x = *p
+                munmap(p)
+        }
+
+- The workload was called for several points in the patch series in different
+  modes:
+  - s_read is a single threaded reader
+  - s_write is a single threaded writer
+  - p_read is a 16 thread reader, each operating on a different file
+  - p_write is a 16 thread writer, each operating on a different file
+
+- Measurements were collected on a 16 core non-numa system using "perf stat
+  --repeat 3".
+
+- All numbers are page fault rate (M/sec).  Higher is better.
+
+- To compare the performance of a kernel without memcg compare the first and
+  last rows - neither has memcg configured.  The first row does not include any
+  of these memcg dirty limit patches.
+
+- To compare the performance of using memcg dirty limits, compare the memcg
+  baseline (2nd row titled "mmotm w/ memcg") with the 3rd row (memcg enabled
+  with all patches).
+
+                          root_cgroup                     child_cgroup
+                 s_read s_write p_read p_write   s_read s_write p_read p_write
+mmotm w/o memcg   0.359  0.312   0.357  0.312
+mmotm w/ memcg    0.366  0.316   0.342  0.301     0.368  0.309   0.347  0.301
+all patches       0.347  0.322   0.327  0.303     0.342  0.323   0.327  0.305
+all patches       0.358  0.322   0.357  0.316
+  w/o memcg
+
+Greg Thelen (9):
+  memcg: document cgroup dirty memory interfaces
+  memcg: add page_cgroup flags for dirty page tracking
+  writeback: convert variables to unsigned
+  writeback: create dirty_info structure
+  memcg: add dirty page accounting infrastructure
+  memcg: add kernel calls for memcg dirty page stats
+  memcg: add dirty limits to mem_cgroup
+  memcg: add cgroupfs interface to memcg dirty limits
+  memcg: check memcg dirty limits in page writeback
+
+ Documentation/cgroups/memory.txt |   80 +++++++
+ fs/fs-writeback.c                |    7 +-
+ fs/nfs/write.c                   |    4 +
+ include/linux/memcontrol.h       |   33 +++-
+ include/linux/page_cgroup.h      |   23 ++
+ include/linux/writeback.h        |   18 ++-
+ mm/backing-dev.c                 |   18 +-
+ mm/filemap.c                     |    1 +
+ mm/memcontrol.c                  |  470 +++++++++++++++++++++++++++++++++++++-
+ mm/page-writeback.c              |  150 +++++++++----
+ mm/truncate.c                    |    1 +
+ mm/vmscan.c                      |    2 +-
+ mm/vmstat.c                      |    6 +-
+ 13 files changed, 742 insertions(+), 71 deletions(-)
+
+-- 
+1.7.3.1
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
