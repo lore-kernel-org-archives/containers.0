@@ -1,14 +1,17 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH][usercr]: Ghost tasks must be detached
-Date: Fri, 25 Feb 2011 10:46:52 -0500
-Message-ID: <4D67CEEC.5030805@cs.columbia.edu>
-References: <20101211033548.GA12584@us.ibm.com>
-	<20110225075808.GC24361@us.ibm.com>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/1, v9] cgroup/freezer: add per freezer duty ratio control
+Date: Fri, 25 Feb 2011 09:53:59 -0800
+Message-ID: <AANLkTinyhp29X8-atA=0DaHFuthTjVMJgBOitP52gwEX__14146.3185697377$1298656508$gmane$org@mail.gmail.com>
+References: <1297807750-28844-1-git-send-email-jacob.jun.pan@linux.intel.com>
+	<1297807750-28844-2-git-send-email-jacob.jun.pan@linux.intel.com>
+	<201102160100.15487.rjw@sisk.pl> <20110215163812.7fa020b5@putvin>
+	<20110216032321.GA14893@count0.beaverton.ibm.com>
+	<20110224154525.1b463723@jacob-laptop>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110225075808.GC24361-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20110224154525.1b463723@jacob-laptop>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,67 +21,21 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: jacob pan <jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
+Cc: Cedric Le Goater <clg-DhXWPJtHtuFWk0Htik3J/w@public.gmane.org>, container cgroup <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>, rdunlap-/UHa2rfvQTnk1uMJSBkQmQ@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>, Linux PM mailing list <linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+On Thu, Feb 24, 2011 at 3:45 PM, jacob pan
+<jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org> wrote:
+> I played with v3 and v4 of the CFS bandwidth patch. When the cpu
+> cgroup exceeds its cfs_quota, it does have the same effect as this
+> patch in terms of freeze/thaw at given period and allowed runtime. But
+> when the cgroup cpu usage is below cfs_quota, it is not throttled.
+> Therefore, it cannot reduce wakeups.
 
-Ok, queued for v23-rc2.
+How about a userspace daemon that periodically flips the CPU quota for
+the cgroup between zero and the group's runnable level? Wouldn't that
+achieve what you need pretty easily without having to introduce
+additional complexity and threads into the kernel?
 
-Thanks,
-
-Oren.
-
-On 02/25/2011 02:58 AM, Sukadev Bhattiprolu wrote:
-> 
-> Oren can you please revert this usercr patch, as we discussed earlier :-)
-> I have sent a separate kernel patch.
-> 
-> Sukadev
-> 
-> Sukadev Bhattiprolu [sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org] wrote:
-> | 
-> | From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> | Date: Fri, 10 Dec 2010 19:23:58 -0800
-> | Subject: [PATCH 1/1] Ghost tasks must be detached
-> | 
-> | Ghost processes are created only to help restore orphaned sessions/pgrps.
-> | As such once the session/pgrp is created the ghost must not send another
-> | SIGCHLD to the parent but exit silently.  So create such tasks as
-> | "detached".
-> | 
-> | See also:
-> | 
-> | https://lists.linux-foundation.org/pipermail/containers/2010-December/026076.html
-> | 
-> | Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> | ---
-> |  restart.c |    7 +++++++
-> |  1 files changed, 7 insertions(+), 0 deletions(-)
-> | 
-> | diff --git a/restart.c b/restart.c
-> | index 9fb5e9f..d7ba26b 100644
-> | --- a/restart.c
-> | +++ b/restart.c
-> | @@ -1744,6 +1744,13 @@ static pid_t ckpt_fork_child(struct ckpt_ctx *ctx, struct task *child)
-> |  		flags |= CLONE_THREAD | CLONE_SIGHAND | CLONE_VM;
-> |  	else if (child->flags & TASK_SIBLING)
-> |  		flags |= CLONE_PARENT;
-> | +	else if (child->flags & (TASK_GHOST|TASK_DEAD)) {
-> | +		/* 
-> | +		 * Ghosts must vanish silently (without signalling parent)
-> | +		 * when they are done.
-> | +		 */
-> | +		flags = 0xFF;
-> | +	}
-> | 
-> |  	memset(&clone_args, 0, sizeof(clone_args));
-> |  	clone_args.nr_pids = 1;
-> | -- 
-> | 1.6.0.4
-> | 
-> | _______________________________________________
-> | Containers mailing list
-> | Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> | https://lists.linux-foundation.org/mailman/listinfo/containers
-> 
+Paul
