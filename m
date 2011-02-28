@@ -1,18 +1,14 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH][cr]: Fix ghost task bug
-Date: Mon, 28 Feb 2011 17:10:32 -0500
-Message-ID: <4D6C1D58.5060400@cs.columbia.edu>
-References: <20110225075552.GB24361@us.ibm.com>
-	<20110225115507.GD3915@hawkmoon.kerlabs.com>
-	<20110225190132.GA31300@us.ibm.com>
-	<20110226135431.GA3251@kerlabs.com>
-	<4D6BB499.7050602@cs.columbia.edu>
-	<20110228150942.GD18970@hawkmoon.kerlabs.com>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 0/3] blk-throttle: async write throttling
+Date: Mon, 28 Feb 2011 18:01:14 -0500
+Message-ID: <20110228230114.GB20845__28224.1336456083$1298934256$gmane$org@redhat.com>
+References: <1298888105-3778-1-git-send-email-arighi@develer.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110228150942.GD18970-Hu8+6S1rdjywhHL9vcZdMVaTQe2KTcn/@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1298888105-3778-1-git-send-email-arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,184 +18,180 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Wu Fengguang <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-
-On 02/28/2011 10:09 AM, Louis Rilling wrote:
-> On 28/02/11  9:43 -0500, Oren Laadan wrote:
->>
->>
->> On 02/26/2011 08:54 AM, Louis Rilling wrote:
->>> On Fri, Feb 25, 2011 at 11:01:32AM -0800, Sukadev Bhattiprolu wrote:
->>>> Louis Rilling [Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org] wrote:
->>>> | On 24/02/11 23:55 -0800, Sukadev Bhattiprolu wrote:
->>>> | > 
->>>> | > diff --git a/kernel/checkpoint/restart.c b/kernel/checkpoint/restart.c
->>>> | > index b0ea8ec..8ecc052 100644
->>>> | > --- a/kernel/checkpoint/restart.c
->>>> | > +++ b/kernel/checkpoint/restart.c
->>>> | > @@ -972,6 +972,7 @@ static int do_ghost_task(void)
->>>> | >  	if (ret < 0)
->>>> | >  		ckpt_err(ctx, ret, "ghost restart failed\n");
->>>> | >  
->>>> | > +	current->exit_signal = -1;
->>>> | 
->>>> | Setting ->exit_signal outside of tasklist_lock makes me nervous. All other
->>>> | places that change ->exit_signal hold write_lock_irq(&tasklist_lock), and
->>>> | eligibile_child() (for an instance of a reader being another task) holds
->>>> | read_lock(&tasklist_lock). But maybe this does not matter for ghost tasks.
->>>> | 
->>>>
->>>> Yes, an earlier version had the write_lock(&tasklist_lock). Will add it
->>>> back.
->>>>
->>>> | >  	restore_debug_exit(ctx);
->>>> | >  	ckpt_ctx_put(ctx);
->>>> | >  	do_exit(0);
->>>> | > @@ -1465,7 +1466,22 @@ void exit_checkpoint(struct task_struct *tsk)
->>>> | >  	/* restarting zombies will activate next task in restart */
->>>> | >  	if (tsk->flags & PF_RESTARTING) {
->>>> | >  		BUG_ON(ctx->active_pid == -1);
->>>> | > +
->>>> | > +		/*
->>>> | > +		 * if we are a "ghost" task, that was terminated by the
->>>> | > +		 * container-init (from zap_pid_ns_processes()), we should
->>>> | > +		 * wake up the parent since we are now a detached process.
->>>> | > +		 */
->>>> | > +		read_lock_irq(&tasklist_lock);
->>>> | 
->>>> | read_lock() is enough. tasklist_lock is never taken for write from IRQs or
->>>> | softIRQs.
->>>> | 
->>>> | > +                if (tsk->exit_state == EXIT_DEAD && !tsk->parent->exit_state) {
->>>> | > +                        ckpt_debug("[%d, %s]: exit_checkpoint(): notifying "
->>>> | > +					"parent\n", tsk->pid, tsk->comm);
->>>> | > +                        __wake_up_parent(tsk, tsk->parent);
->>>> | > +                }
->>>> | > +		read_unlock_irq(&tasklist_lock);
->>>> | 
->>>> | Looking at this closer, I wonder if this wakeup logic should be called from
->>>> | do_ghost_task(), right after setting ->exit_signal. This way there would be no
->>>> | need for a tricky condition to recognize ghost tasks, and (I think) this is
->>>> | closer to the other cases changing ->exit_signal (reparent_leader() and
->>>> | exit_notify()).
->>>>
->>>> Yes, we tried the following in the earlier version. 
->>>>
->>>> void ghost_auto_reapable()
->>>> {
->>>>         write_lock(&tasklist_lock);
->>>>         current->exit_signal = -1;
->>>>         __wake_up_parent(current, current->parent);
->>>>         write_unlock(&tasklist_lock);
->>>> }
->>>>
->>>> And called this from do_ghost_task(). But with this, the parent could
->>>> wake up, find that it still has an eligible child (the ghost) to wait 
->>>> for, and go back to waiting before the ghost enters the EXIT_DEAD state.
->>>> And so we would lose the wake up.
->>>>
->>>> (zap_pid_ns_processes() passes the __WALL so the ghost would be considered
->>>> an eligible child).
->>>
->>> I think I see now. The point is that ->exit_signal = -1 is only meant to work
->>> correctly for sub-threads, which the parent does not need to wait for. IOW, the
->>> notion of detached task is only implemented for sub-threads.
->>>
->>> IIUC, setting ->exit_signal to -1 is only used here to let exit_notify() set
->>> ->exit_state to EXIT_DEAD, right? Otherwise, setting ->exit_signal to 0 and
->>> letting do_notify_parent() proceed for ghost tasks would have be sufficient I
->>> guess (provided that the confusion between ghost tasks and zombies could be
->>> easily avoided in do_notify_parent()).
->>>
->>> Then I agree that the proposed patch looks like a reasonably simple approach.
->>>
->>> Thanks for the explanation,
->>>
->>
->> Louis, Suka:
->>
->> One subtlety with the method is that if a process get reparented
->> (for whatever reason) then the ->exit_signal field is reset to 
->> SIGCHLD. Fortunately, that should not affect us because our ghost
->> tasks never become orphaned.
+On Mon, Feb 28, 2011 at 11:15:02AM +0100, Andrea Righi wrote:
+> Overview
+> ========
+> Currently the blkio.throttle controller only support synchronous IO requests.
+> This means that we always look at the current task to identify the "owner" of
+> each IO request.
 > 
-> AFAICS, this is not true for detached tasks: neither in reparent_leader(), nor
-> in exit_notify(). Unless I missed another place?
+> However dirty pages in the page cache can be wrote to disk asynchronously by
+> the per-bdi flusher kernel threads or by any other thread in the system,
+> according to the writeback policy.
+> 
+> For this reason the real writes to the underlying block devices may
+> occur in a different IO context respect to the task that originally
+> generated the dirty pages involved in the IO operation. This makes the
+> tracking and throttling of writeback IO more complicate respect to the
+> synchronous IO from the blkio controller's perspective.
+> 
+> Proposed solution
+> =================
+> In the previous patch set http://lwn.net/Articles/429292/ I proposed to resolve
+> the problem of the buffered writes limitation by tracking the ownership of all
+> the dirty pages in the system.
+> 
+> This would allow to always identify the owner of each IO operation at the block
+> layer and apply the appropriate throttling policy implemented by the
+> blkio.throttle controller.
+> 
+> This solution makes the blkio.throttle controller to work as expected also for
+> writeback IO, but it does not resolve the problem of faster cgroups getting
+> blocked by slower cgroups (that would expose a potential way to create DoS in
+> the system).
+> 
+> In fact, at the moment critical IO requests (that have dependency with other IO
+> requests made by other cgroups) and non-critical requests are mixed together at
+> the filesystem layer in a way that throttling a single write request may stop
+> also other requests in the system, and at the block layer it's not possible to
+> retrieve such informations to make the right decision.
+> 
+> A simple solution to this problem could be to just limit the rate of async
+> writes at the time a task is generating dirty pages in the page cache. The
+> big advantage of this approach is that it does not need the overhead of
+> tracking the ownership of the dirty pages, because in this way from the blkio
+> controller perspective all the IO operations will happen from the process
+> context: writes in memory and synchronous reads from the block device.
+> 
+> The drawback of this approach is that the blkio.throttle controller becomes a
+> little bit leaky, because with this solution the controller is still affected
+> by the IO spikes during the writeback of dirty pages executed by the kernel
+> threads.
+> 
+> Probably an even better approach would be to introduce the tracking of the
+> dirty page ownership to properly account the cost of each IO operation at the
+> block layer and apply the throttling of async writes in memory only when IO
+> limits are exceeded.
 
-Doh.. you are totally right, I missed that.
-Sometime it feels really good to be wrong :)
+Andrea, I am curious to know more about it third option. Can you give more
+details about accouting in block layer but throttling in memory. So say 
+a process starts IO, then it will still be in throttle limits at block
+layer (because no writeback has started), then the process will write
+bunch of pages in cache. By the time throttle limits are crossed at
+block layer, we already have lots of dirty data in page cache and
+throttling process now is already late?
 
 > 
->>
->> However, I can't avoid thinking that maybe there is a better way 
->> to do this altogether ?
->>
->> The requirement is simple: ghost tasks are temporary tasks whose
->> role is to keep certain pid's alive for the duration of the restart
->> and then exit without a trace before the restarted tasks resume
->> execution.
->>
->> The reason I opted for the ->exit_signal = -1 is because it makes
->> sure that the parent need not explicitly collect the child ghost.
->>
->> If I had set it to 0, then it would not send a signal, but still
->> would require a wait() to collect it (right ?).
+> To summarize, we can identify three possible solutions to properly throttle the
+> buffered writes:
 > 
-> Right.
+> 1) account & throttle everything at block IO layer (bad for "priority
+>    inversion" problems, needs page tracking for blkio)
 > 
->>
->> Can you think of a way to achieve this functionality without the 
->> subtleties that we have observed so far ?  even at the cost of a 
->> minor change to, say, wait() logic or what not ?
+> 2) account at block IO layer and throttle in memory (needs page tracking for
+>    blkio)
 > 
-> I wonder if things would be easier by providing a mean to distinguish ghost
-> tasks from truely restarted tasks in do_notify_parent().
+> 3) account & throttle in memory (affected by IO spikes, depending on
+>    dirty_ratio / dirty_background_ratio settings)
 > 
-> Assuming this, there might be a kernel-patch-free way, although I can't say if
-> this fits userspace restart constraints:
+> For now we start with the solution 3) that seems to be the simplest way to
+> proceed.
+
+Yes, IO spikes is the weakness of this 3rd solution. But it should be
+simple too. Also as you said problem can be reduced up to some extent
+by changing reducing dirty_ratio and background dirty ratio But that
+will have other trade offs, I guess.
+
+Thanks
+Vivek
+
 > 
-> Setting the signal handler of ghost tasks' parent to SIG_IGN, and ->exit_signal
-
-Yes, I thought about it. But those parent are part of the restart,
-and changing their signal handlers will is tricky and will require
-complex sync logic at the end of restart to ensure that all tasks
-restore their handlers after the ghosts are gone and released, but
-before any task gets to userspace ... I don't want to go there.
-
-> of ghost tasks to SIGCHLD, will make them autoreap. This requires that the
-> parent does not need to synchronize with other children until all ghost tasks
-> have exited, and that the parent remains alive too.
+> Testcase
+> ========
+> - create a cgroup with 4MiB/s write limit:
+>   # mount -t cgroup -o blkio none /mnt/cgroup
+>   # mkdir /mnt/cgroup/foo
+>   # echo 8:0 $((4 * 1024 * 1024)) > /mnt/cgroup/foo/blkio.throttle.write_bps_device
 > 
-> So, why not adding some flag PF_RESTART_GHOST or TIF_RESTART_GHOST?
-
-Actually, we already have a way to distinguish them:
-
-	if ((tsk->flags & PF_RESTARTING) && task_detached(tsk))
-
-One problem with this is that we only set exit_signal to -1 after
-the ghost was born, so if the parent is already waiting I think 
-that will be racy, as per suka's comment above.
-
-So looking at the code again, we could add one condition in exit.c
-at wait_consider_task(), after the test of p->exit_state == EXIT_DEAD,
-to also test:
-
-inline static bool is_ghost_task(p)
-{
-	return (p->flags & (PF_EXITING|PF_RESTARTING) ==
-		PF_EXITING|PF_RESTARTING) && task_detached(p)
-}
-
-	if (p->flags & is_ghost_task(p))
-		return 0;
-
-Or something along the lines (e.g. used EXIT_ZOMBIE comparison instead
-of PF_EXITING). While requiring a kernel patch, it is relatively short,
-clean and easy to review.
-
-Thoughts ?
-
-Oren.
+>   NOTE: async io is still limited per-device, as well as sync io
+> 
+> - move a task into the cgroup and run a dd to generate some writeback IO
+> 
+> Results:
+> 
+>   - 2.6.38-rc6 vanilla:
+> 
+>   $ cat /proc/$$/cgroup
+>   1:blkio:/foo
+>   $ dd if=/dev/zero of=zero bs=1M count=128 &
+>   $ dstat -df
+>   --dsk/sda--
+>    read  writ
+>    0     0
+>   ...
+>    0     0
+>    0    22M  <--- writeback starts here and is not limited at all
+>    0    43M
+>    0    45M
+>    0    18M
+>   ...
+> 
+>   - 2.6.38-rc6 + async write throttling:
+> 
+>   $ cat /proc/$$/cgroup
+>   1:blkio:/foo
+>   $ dd if=/dev/zero of=zero bs=1M count=128 &
+>   $ dstat -df
+>   --dsk/sda--
+>    read  writ
+>    0     0
+>    0     0
+>    0     0
+>    0     0
+>    0    22M  <--- we have some IO spikes but the overall writeback IO
+>    0     0        is controlled according to the blkio write limit
+>    0     0
+>    0     0
+>    0     0
+>    0    29M
+>    0     0
+>    0     0
+>    0     0
+>    0     0
+>    0    26M
+>    0     0
+>    0     0
+>    0     0
+>    0     0
+>    0    30M
+>    0     0
+>    0     0
+>    0     0
+>    0     0
+>    0    20M
+> 
+> TODO
+> ~~~~
+>  - Consider to add the following new files in the blkio controller to allow the
+>    user to explicitly limit async writes as well as sync writes:
+> 
+>    blkio.throttle.async.write_bps_limit
+>    blkio.throttle.async.write_iops_limit
+> 
+> Any feedback is welcome.
+> -Andrea
+> 
+> [PATCH 1/3] block: introduce REQ_DIRECT to track direct io bio
+> [PATCH 2/3] blkio-throttle: infrastructure to throttle async io
+> [PATCH 3/3] blkio-throttle: async write io instrumentation
+> 
+>  block/blk-throttle.c      |  106 ++++++++++++++++++++++++++++++---------------
+>  fs/direct-io.c            |    1 +
+>  include/linux/blk_types.h |    2 +
+>  include/linux/blkdev.h    |    6 +++
+>  mm/page-writeback.c       |   17 +++++++
+>  5 files changed, 97 insertions(+), 35 deletions(-)
