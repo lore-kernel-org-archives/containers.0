@@ -1,7 +1,7 @@
 From: ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org
-Subject: [PATCH 01/10] Make exec_mmap extern
-Date: Mon, 28 Feb 2011 17:40:23 -0600
-Message-ID: <1298936432-29607-2-git-send-email-ntl@pobox.com>
+Subject: [PATCH 02/10] Introduce mm_has_pending_aio() helper
+Date: Mon, 28 Feb 2011 17:40:24 -0600
+Message-ID: <1298936432-29607-3-git-send-email-ntl@pobox.com>
 References: <1298936432-29607-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,44 +23,76 @@ List-Id: containers.vger.kernel.org
 
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 
-Restoration of process state from a checkpoint image is similar to
-exec in that the calling task's mm is replaced.  Make exec_mmap
-available for this purpose.
+Support for AIO is on the to-do list, but until that is implemented,
+checkpoint will have to fail if a mm_struct has outstanding AIO
+contexts.  Add a mm_has_pending_aio() helper function for this
+purpose.
 
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-[ntl: extracted from Oren's "c/r: dump memory address space (private memory)"]
+Based on original "check_for_outstanding_aio" patch by Serge Hallyn.
+
+Signed-off-by: Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+[ntl: changed name and return type to clearly express semantics]
+[ntl: added kerneldoc]
 Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 ---
- fs/exec.c          |    2 +-
- include/linux/mm.h |    3 +++
- 2 files changed, 4 insertions(+), 1 deletions(-)
+ fs/aio.c            |   27 +++++++++++++++++++++++++++
+ include/linux/aio.h |    2 ++
+ 2 files changed, 29 insertions(+), 0 deletions(-)
 
-diff --git a/fs/exec.c b/fs/exec.c
-index c62efcb..9d8c27a 100644
---- a/fs/exec.c
-+++ b/fs/exec.c
-@@ -767,7 +767,7 @@ int kernel_read(struct file *file, loff_t offset,
- 
- EXPORT_SYMBOL(kernel_read);
- 
--static int exec_mmap(struct mm_struct *mm)
-+int exec_mmap(struct mm_struct *mm)
- {
- 	struct task_struct *tsk;
- 	struct mm_struct * old_mm, *active_mm;
-diff --git a/include/linux/mm.h b/include/linux/mm.h
-index 721f451..5397237 100644
---- a/include/linux/mm.h
-+++ b/include/linux/mm.h
-@@ -1321,6 +1321,9 @@ extern int do_munmap(struct mm_struct *, unsigned long, size_t);
- 
- extern unsigned long do_brk(unsigned long, unsigned long);
- 
-+/* fs/exec.c */
-+extern int exec_mmap(struct mm_struct *mm);
+diff --git a/fs/aio.c b/fs/aio.c
+index 8c8f6c5..1acbc99 100644
+--- a/fs/aio.c
++++ b/fs/aio.c
+@@ -1847,3 +1847,30 @@ SYSCALL_DEFINE5(io_getevents, aio_context_t, ctx_id,
+ 	asmlinkage_protect(5, ret, ctx_id, min_nr, nr, events, timeout);
+ 	return ret;
+ }
 +
- /* filemap.c */
- extern unsigned long page_unuse(struct page *);
- extern void truncate_inode_pages(struct address_space *, loff_t);
++/**
++ * mm_has_pending_aio() - check for outstanding AIO operations
++ * @mm:		The mm_struct to check.
++ *
++ * Returns true if there is at least one non-dead kioctx on
++ * @mm->ioctx_list.  Note that the result of this function is
++ * unreliable unless the caller has ensured that new requests cannot
++ * be submitted against @mm (e.g. through freezing the associated
++ * tasks).
++ */
++bool mm_has_pending_aio(struct mm_struct *mm)
++{
++	struct kioctx *ctx;
++	struct hlist_node *n;
++	bool has_aio = false;
++
++	rcu_read_lock();
++	hlist_for_each_entry_rcu(ctx, n, &mm->ioctx_list, list) {
++		if (!ctx->dead) {
++			has_aio = true;
++			break;
++		}
++	}
++	rcu_read_unlock();
++	return has_aio;
++}
+diff --git a/include/linux/aio.h b/include/linux/aio.h
+index 7a8db41..39d9936 100644
+--- a/include/linux/aio.h
++++ b/include/linux/aio.h
+@@ -214,6 +214,7 @@ struct mm_struct;
+ extern void exit_aio(struct mm_struct *mm);
+ extern long do_io_submit(aio_context_t ctx_id, long nr,
+ 			 struct iocb __user *__user *iocbpp, bool compat);
++extern bool mm_has_pending_aio(struct mm_struct *mm);
+ #else
+ static inline ssize_t wait_on_sync_kiocb(struct kiocb *iocb) { return 0; }
+ static inline int aio_put_req(struct kiocb *iocb) { return 0; }
+@@ -224,6 +225,7 @@ static inline void exit_aio(struct mm_struct *mm) { }
+ static inline long do_io_submit(aio_context_t ctx_id, long nr,
+ 				struct iocb __user * __user *iocbpp,
+ 				bool compat) { return 0; }
++static inline bool mm_has_pending_aio(struct mm_struct *mm) { return false; }
+ #endif /* CONFIG_AIO */
+ 
+ static inline struct kiocb *list_kiocb(struct list_head *h)
 -- 
 1.7.4
