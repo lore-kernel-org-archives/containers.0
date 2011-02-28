@@ -1,7 +1,7 @@
 From: ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org
-Subject: [PATCH 06/10] Checkpoint/restart mm support
-Date: Mon, 28 Feb 2011 17:40:28 -0600
-Message-ID: <1298936432-29607-7-git-send-email-ntl__3698.51315995238$1298937042$gmane$org@pobox.com>
+Subject: [PATCH 05/10] Core checkpoint/restart support code
+Date: Mon, 28 Feb 2011 17:40:27 -0600
+Message-ID: <1298936432-29607-6-git-send-email-ntl__26492.2804235995$1298937066$gmane$org@pobox.com>
 References: <1298936432-29607-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -18,102 +18,96 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 
-Add a checkpoint() method to vm_operations_struct; this is responsible
-for dumping the attributes and contents of a VMA.  For each vma, there
-is a 'struct ckpt_vma'; then comes the actual contents, a page at a
-time.
+Add a pair of system calls to save and restore the state of an
+isolated (via clone/unshare) set of tasks and resources:
 
-Normally the per-vma function will invoke generic_vma_checkpoint()
-which first writes the vma description, followed by the specific logic
-to dump the contents of the pages.
+long checkpoint(int fd, unsigned int flags);
+long restart(int fd, unsigned int flags);
 
-Restoring the memory address space begins with nuking the existing one
-of the current process, and then reading the vma state and contents.
-Call do_mmap_pgoffset() for each vma and then read in the data.
+Only a pid namespace init task - the child process produced by a call
+to clone(2) with CLONE_NEWPID - is allowed to call these.  The state
+of the calling task itself is not saved or altered by these system
+calls.  Checkpoint dumps the state (CPU registers, open files, memory
+map) of the tasks in the pid namespace to the supplied file
+descriptor.  Restart is intended to be called by a pidns init in an
+otherwise unpopulated pid namespace; it repopulates the caller's pidns
+from the stream supplied by the file descriptor argument.
 
-Based on original code by Oren Laadan.
+The flags argument to both syscalls must be zero at this time.  The
+file descriptor argument may refer to a pipe or socket, i.e. it need
+not be seekable.
 
+On success both checkpoint and restart return 0.
+
+Restart operations use the kthread API to restore tasks[1].  This
+necessarily involves some ugly stuff like messing with task->parent,
+real_parent, signal disposition etc. but provides a known consistent
+state to start with.
+
+This patch is based on original code written by Oren Laadan.
+
+NOTE: This version of the code supports C/R of a single task only.
+Pid 1 can call checkpoint while there is a single other task in its
+pidns.  Restart can restore just one task into the caller's pidns.
+
+[1] credit to A. Dobriyan for this technique; all bugs are ntl's
+
+Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-[ntl: remove page array chain code; dump/restore VMAs one page at a time]
-[ntl: move special_mapping_checkpoint/restore() to mm/checkpoint.c]
-[ntl: move filemap_checkpoint/restore() to mm/checkpoint.c]
-[ntl: do without custom __get_dirty_page API; use get_user_pages]
+[ntl: aggregated various C/R patches from Oren]
+[ntl: removed deferqueue]
+[ntl: clean up CKPT_VMA_NOT_SUPPORTED]
+[ntl: remove logfd argument from syscalls]
+[ntl: bugfix: correct locking when looking up task by pid]
+[ntl: remove superfluous #define CKPT_FOO CKPT_FOO]
+[ntl: decouple various objhash APIs from checkpoint context]
+[ntl: s/ckpt_err/ckpt_debug/]
+[ntl: remove ckpt_msg and associated APIs]
+[ntl: remove pid argument from syscalls]
+[ntl: make sys_restart freeze current's pidns]
+[ntl: make C/R constrained to containers/pidns]
+[ntl: implement task restore entirely in-kernel]
+[ntl: remove CONFIG_CHECKPOINT_DEBUG; just use #define DEBUG]
+[ntl: remove various non-essential APIs]
+[ntl: consolidate related headers into checkpoint.h]
+[ntl: remove various unneeded symbol exports]
 Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 ---
- include/linux/mm.h |   12 +
- mm/Makefile        |    1 +
- mm/checkpoint.c    |  906 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- mm/filemap.c       |    4 +
- mm/mmap.c          |    3 +
- 5 files changed, 926 insertions(+), 0 deletions(-)
- create mode 100644 mm/checkpoint.c
+ include/linux/checkpoint.h     |  347 +++++++++++++++++++++
+ include/linux/magic.h          |    3 +
+ init/Kconfig                   |    2 +
+ kernel/Makefile                |    1 +
+ kernel/checkpoint/Kconfig      |   15 +
+ kernel/checkpoint/Makefile     |    9 +
+ kernel/checkpoint/checkpoint.c |  437 +++++++++++++++++++++++++++
+ kernel/checkpoint/objhash.c    |  368 +++++++++++++++++++++++
+ kernel/checkpoint/restart.c    |  651 ++++++++++++++++++++++++++++++++++++++++
+ kernel/checkpoint/sys.c        |  208 +++++++++++++
+ kernel/sys_ni.c                |    4 +
+ 11 files changed, 2045 insertions(+), 0 deletions(-)
+ create mode 100644 include/linux/checkpoint.h
+ create mode 100644 kernel/checkpoint/Kconfig
+ create mode 100644 kernel/checkpoint/Makefile
+ create mode 100644 kernel/checkpoint/checkpoint.c
+ create mode 100644 kernel/checkpoint/objhash.c
+ create mode 100644 kernel/checkpoint/restart.c
+ create mode 100644 kernel/checkpoint/sys.c
 
-diff --git a/include/linux/mm.h b/include/linux/mm.h
-index 5397237..14ff613 100644
---- a/include/linux/mm.h
-+++ b/include/linux/mm.h
-@@ -20,6 +20,7 @@ struct anon_vma;
- struct file_ra_state;
- struct user_struct;
- struct writeback_control;
-+struct ckpt_ctx;
- 
- #ifndef CONFIG_DISCONTIGMEM          /* Don't use mapnrs, do it properly */
- extern unsigned long max_mapnr;
-@@ -229,6 +230,9 @@ struct vm_operations_struct {
- 	int (*migrate)(struct vm_area_struct *vma, const nodemask_t *from,
- 		const nodemask_t *to, unsigned long flags);
- #endif
-+#ifdef CONFIG_CHECKPOINT
-+	int (*checkpoint)(struct ckpt_ctx *ctx, struct vm_area_struct *vma);
-+#endif
- };
- 
- struct mmu_gather;
-@@ -1333,10 +1337,18 @@ extern void truncate_inode_pages_range(struct address_space *,
- /* generic vm_area_ops exported for stackable file systems */
- extern int filemap_fault(struct vm_area_struct *, struct vm_fault *);
- 
-+/* generic vm_area_ops exported for mapped files checkpoint */
-+extern int filemap_checkpoint(struct ckpt_ctx *, struct vm_area_struct *);
-+
- /* mm/page-writeback.c */
- int write_one_page(struct page *page, int wait);
- void task_dirty_inc(struct task_struct *tsk);
- 
-+
-+/* checkpoint/restart */
-+extern int special_mapping_checkpoint(struct ckpt_ctx *ctx,
-+				      struct vm_area_struct *vma);
-+
- /* readahead.c */
- #define VM_MAX_READAHEAD	128	/* kbytes */
- #define VM_MIN_READAHEAD	16	/* kbytes (includes current page) */
-diff --git a/mm/Makefile b/mm/Makefile
-index f73f75a..657a9e0 100644
---- a/mm/Makefile
-+++ b/mm/Makefile
-@@ -36,6 +36,7 @@ obj-$(CONFIG_FAILSLAB) += failslab.o
- obj-$(CONFIG_MEMORY_HOTPLUG) += memory_hotplug.o
- obj-$(CONFIG_FS_XIP) += filemap_xip.o
- obj-$(CONFIG_MIGRATION) += migrate.o
-+obj-$(CONFIG_CHECKPOINT) += checkpoint.o
- obj-$(CONFIG_QUICKLIST) += quicklist.o
- obj-$(CONFIG_CGROUP_MEM_RES_CTLR) += memcontrol.o page_cgroup.o
- obj-$(CONFIG_MEMORY_FAILURE) += memory-failure.o
-diff --git a/mm/checkpoint.c b/mm/checkpoint.c
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
 new file mode 100644
-index 0000000..f26c23d
+index 0000000..9129860
 --- /dev/null
-+++ b/mm/checkpoint.c
-@@ -0,0 +1,906 @@
++++ b/include/linux/checkpoint.h
+@@ -0,0 +1,347 @@
++#ifndef _LINUX_CHECKPOINT_H_
++#define _LINUX_CHECKPOINT_H_
 +/*
-+ *  Checkpoint/restart memory contents
++ *  Generic checkpoint-restart
 + *
 + *  Copyright (C) 2008-2009 Oren Laadan
 + *
@@ -122,937 +116,2113 @@ index 0000000..f26c23d
 + *  distribution for more details.
 + */
 +
-+#include <linux/kernel.h>
++#include <linux/list.h>
++#include <linux/path.h>
++#include <linux/sched.h>
++#include <linux/types.h>
++
++/*
++ * header format: 'struct ckpt_hdr' must prefix all other
++ * headers. Therefore when a header is passed around, the information
++ * about it (type, size) is readily available. Structs that include a
++ * struct ckpt_hdr are named struct ckpt_hdr_* by convention (usually
++ * the struct ckpt_hdr is the first member).
++ */
++struct ckpt_hdr {
++	__u32 type;
++	__u32 len;
++};
++
++/* header types */
++enum {
++	CKPT_HDR_HEADER = 1,
++	CKPT_HDR_HEADER_ARCH,
++	CKPT_HDR_BUFFER,
++	CKPT_HDR_STRING,
++	CKPT_HDR_OBJREF,
++
++	CKPT_HDR_TASK = 101,
++	CKPT_HDR_TASK_OBJS,
++	CKPT_HDR_THREAD,
++	CKPT_HDR_CPU,
++
++	/* 201-299: reserved for arch-dependent */
++
++	CKPT_HDR_FILE_TABLE = 301,
++	CKPT_HDR_FILE_DESC,
++	CKPT_HDR_FILE_NAME,
++	CKPT_HDR_FILE,
++
++	CKPT_HDR_MM = 401,
++	CKPT_HDR_VMA,
++	CKPT_HDR_MM_CONTEXT,
++	CKPT_HDR_PAGE,
++
++	CKPT_HDR_TAIL = 9001,
++};
++
++/* architecture */
++enum {
++	CKPT_ARCH_X86_32 = 1,
++};
++
++/* shared objrects (objref) */
++struct ckpt_hdr_objref {
++	struct ckpt_hdr h;
++	__u32 objtype;
++	__s32 objref;
++};
++
++/* shared objects types */
++enum obj_type {
++	CKPT_OBJ_IGNORE = 0,
++	CKPT_OBJ_FILE_TABLE,
++	CKPT_OBJ_FILE,
++	CKPT_OBJ_MM,
++	CKPT_OBJ_MAX
++};
++
++/* kernel constants */
++struct ckpt_const {
++	/* task */
++	__u16 task_comm_len;
++	/* mm */
++	__u16 at_vector_size;
++	/* uts */
++	__u16 uts_release_len;
++	__u16 uts_version_len;
++	__u16 uts_machine_len;
++};
++
++/* checkpoint image header */
++struct ckpt_hdr_header {
++	struct ckpt_hdr h;
++	__u64 magic;
++
++	__u16 arch_id;
++
++	__u16 major;
++	__u16 minor;
++	__u16 patch;
++
++	struct ckpt_const constants;
++
++	__u64 time;	/* when checkpoint taken */
++	__u64 uflags;	/* uflags from checkpoint */
++
++	/*
++	 * the header is followed by three strings:
++	 *   char release[const.uts_release_len];
++	 *   char version[const.uts_version_len];
++	 *   char machine[const.uts_machine_len];
++	 */
++};
++
++/* checkpoint image trailer */
++struct ckpt_hdr_tail {
++	struct ckpt_hdr h;
++	__u64 magic;
++};
++
++/* task data */
++struct ckpt_hdr_task {
++	struct ckpt_hdr h;
++	__u32 state;
++	__u32 exit_state;
++	__u32 exit_code;
++	__u32 exit_signal;
++
++	__u64 set_child_tid;
++	__u64 clear_child_tid;
++};
++
++/* task's shared resources */
++struct ckpt_hdr_task_objs {
++	struct ckpt_hdr h;
++	__s32 files_objref;
++	__s32 mm_objref;
++};
++
++/* file system */
++struct ckpt_hdr_file_table {
++	struct ckpt_hdr h;
++	__s32 fdt_nfds;
++};
++
++/* file descriptors */
++struct ckpt_hdr_file_desc {
++	struct ckpt_hdr h;
++	__s32 fd_objref;
++	__s32 fd_descriptor;
++	__u32 fd_close_on_exec;
++};
++
++enum file_type {
++	CKPT_FILE_IGNORE = 0,
++	CKPT_FILE_GENERIC,
++	CKPT_FILE_MAX
++};
++
++/* file objects */
++struct ckpt_hdr_file {
++	struct ckpt_hdr h;
++	__u32 f_type;
++	__u32 f_mode;
++	__u32 f_flags;
++	__u32 _padding;
++	__u64 f_pos;
++	__u64 f_version;
++};
++
++struct ckpt_hdr_file_generic {
++	struct ckpt_hdr_file common;
++};
++
++/* memory layout */
++struct ckpt_hdr_mm {
++	struct ckpt_hdr h;
++	__u32 map_count;
++	__s32 exe_objref;
++
++	__u64 def_flags;
++	__u64 flags;
++
++	__u64 start_code, end_code, start_data, end_data;
++	__u64 start_brk, brk, start_stack;
++	__u64 arg_start, arg_end, env_start, env_end;
++};
++
++/* vma subtypes - index into restore_vma_dispatch[] */
++enum vma_type {
++	CKPT_VMA_IGNORE = 0,
++	CKPT_VMA_VDSO,		/* special vdso vma */
++	CKPT_VMA_ANON,		/* private anonymous */
++	CKPT_VMA_FILE,		/* private mapped file */
++	CKPT_VMA_MAX
++};
++
++/* vma descriptor */
++struct ckpt_hdr_vma {
++	struct ckpt_hdr h;
++	__u32 vma_type;
++	__s32 vma_objref;	/* objref of backing file */
++
++	__u64 vm_start;
++	__u64 vm_end;
++	__u64 vm_page_prot;
++	__u64 vm_flags;
++	__u64 vm_pgoff;
++};
++
++/* page */
++struct ckpt_hdr_page {
++	struct ckpt_hdr hdr;
++#define CKPT_VMA_LAST_PAGE (~0UL)
++	__u64 vaddr;
++};
++
++struct ckpt_ctx {
++	struct ckpt_obj_hash *obj_hash; /* repository for shared objects */
++	struct task_struct *root_task;  /* pidns init and caller */
++	struct path root_fs_path;       /* container root */
++	struct task_struct *tsk;        /* checkpoint: current target task */
++	struct file *file;              /* input/output file */
++};
++
++extern int ckpt_kwrite(struct ckpt_ctx *ctx, void *buf, size_t count);
++extern int ckpt_kread(struct ckpt_ctx *ctx, void *buf, size_t count);
++
++extern void *ckpt_hdr_get_type(struct ckpt_ctx *ctx, int n, int type);
++
++extern int ckpt_write_obj(struct ckpt_ctx *ctx, struct ckpt_hdr *h);
++extern int ckpt_write_obj_type(struct ckpt_ctx *ctx,
++			       void *ptr, size_t len, int type);
++extern int ckpt_write_buffer(struct ckpt_ctx *ctx, void *ptr, size_t len);
++extern int ckpt_write_string(struct ckpt_ctx *ctx, char *str, size_t len);
++
++extern int _ckpt_read_obj_type(struct ckpt_ctx *ctx,
++			       void *ptr, size_t len, int type);
++extern int _ckpt_read_buffer(struct ckpt_ctx *ctx, void *ptr, size_t len);
++extern int _ckpt_read_string(struct ckpt_ctx *ctx, void *ptr, size_t len);
++extern void *ckpt_read_obj_type(struct ckpt_ctx *ctx, size_t len, int type);
++extern void *ckpt_read_buf_type(struct ckpt_ctx *ctx, size_t max, int type);
++extern int ckpt_read_payload(struct ckpt_ctx *ctx,
++			     void **ptr, size_t max, int type);
++extern char *ckpt_fill_fname(struct path *path, struct path *root,
++			     char *buf, int *len);
++
++/* obj_hash */
++extern void ckpt_obj_hash_free(struct ckpt_obj_hash *obj_hash);
++extern struct ckpt_obj_hash *ckpt_obj_hash_alloc(void);
++
++extern int restore_obj(struct ckpt_ctx *ctx, struct ckpt_hdr_objref *h);
++extern int checkpoint_obj(struct ckpt_ctx *ctx, void *ptr,
++			  enum obj_type type);
++extern int ckpt_obj_lookup_add(struct ckpt_ctx *ctx, void *ptr,
++			       enum obj_type type, int *first);
++extern void *ckpt_obj_try_fetch(struct ckpt_ctx *ctx, int objref,
++				enum obj_type type);
++extern void *ckpt_obj_fetch(struct ckpt_ctx *ctx, int objref,
++			    enum obj_type type);
++
++extern int do_checkpoint(struct ckpt_ctx *ctx);
++extern int do_restart(struct ckpt_ctx *ctx);
++
++/* arch hooks */
++extern int checkpoint_write_header_arch(struct ckpt_ctx *ctx);
++extern int checkpoint_thread(struct ckpt_ctx *ctx, struct task_struct *t);
++extern int checkpoint_cpu(struct ckpt_ctx *ctx, struct task_struct *t);
++extern int checkpoint_mm_context(struct ckpt_ctx *ctx, struct mm_struct *mm);
++
++extern int restore_read_header_arch(struct ckpt_ctx *ctx);
++extern int restore_thread(struct ckpt_ctx *ctx);
++extern int restore_cpu(struct ckpt_ctx *ctx, struct task_struct *t);
++extern int restore_mm_context(struct ckpt_ctx *ctx, struct mm_struct *mm);
++
++/* file table */
++extern int checkpoint_obj_file_table(struct ckpt_ctx *ctx,
++				     struct task_struct *t);
++extern int restore_obj_file_table(struct ckpt_ctx *ctx, int files_objref);
++
++/* files */
++extern int checkpoint_fname(struct ckpt_ctx *ctx,
++			    struct path *path, struct path *root);
++extern struct file *restore_open_fname(struct ckpt_ctx *ctx, int flags);
++
++extern int checkpoint_file_common(struct ckpt_ctx *ctx, struct file *file,
++				  struct ckpt_hdr_file *h);
++extern int restore_file_common(struct ckpt_ctx *ctx, struct file *file,
++			       struct ckpt_hdr_file *h);
++
++/* memory */
++struct vm_area_struct;
++extern int generic_vma_checkpoint(struct ckpt_ctx *ctx,
++				  struct vm_area_struct *vma,
++				  enum vma_type type,
++				  int vma_objref);
++
++extern int checkpoint_obj_mm(struct ckpt_ctx *ctx, struct task_struct *t);
++extern int restore_obj_mm(struct ckpt_ctx *ctx, int mm_objref);
++
++#define CKPT_VMA_NOT_SUPPORTED (		\
++		VM_HUGETLB |			\
++		VM_INSERTPAGE |			\
++		VM_IO |				\
++		VM_MAPPED_COPY |		\
++		VM_MAYSHARE |			\
++		VM_MIXEDMAP |			\
++		VM_NONLINEAR |			\
++		VM_NORESERVE |			\
++		VM_PFNMAP |			\
++		VM_RESERVED |			\
++		VM_SAO |			\
++		VM_SHARED |			\
++		0)
++
++#define __ckpt_debug(fmt, args...)					\
++	do {								\
++		pr_devel("[%d:%d:c/r:%s:%d] " fmt,			\
++			 current->pid,					\
++			 current->nsproxy ?				\
++			 task_pid_vnr(current) : -1,			\
++			 __func__, __LINE__, ## args);			\
++	} while (0)
++
++#define ckpt_debug(fmt, args...)  \
++	__ckpt_debug(fmt, ## args)
++
++/* object operations */
++struct ckpt_obj_ops {
++	char *obj_name;
++	int obj_type;
++	void (*ref_drop)(void *ptr, int lastref);
++	int (*ref_grab)(void *ptr);
++	int (*checkpoint)(struct ckpt_ctx *ctx, void *ptr);
++	void *(*restore)(struct ckpt_ctx *ctx);
++};
++
++#ifdef CONFIG_CHECKPOINT
++extern int register_checkpoint_obj(const struct ckpt_obj_ops *ops);
++#else /* CONFIG_CHECKPOINT */
++static inline int register_checkpoint_obj(const struct ckpt_obj_ops *ops)
++{
++	return 0;
++}
++#endif /* CONFIG_CHECKPOINT */
++
++#endif /* _LINUX_CHECKPOINT_H_ */
+diff --git a/include/linux/magic.h b/include/linux/magic.h
+index ff690d0..30cd986 100644
+--- a/include/linux/magic.h
++++ b/include/linux/magic.h
+@@ -59,4 +59,7 @@
+ #define SOCKFS_MAGIC		0x534F434B
+ #define V9FS_MAGIC		0x01021997
+ 
++#define CHECKPOINT_MAGIC_HEAD  0x00feed0cc0a2d200LL
++#define CHECKPOINT_MAGIC_TAIL  0x002d2a0cc0deef00LL
++
+ #endif /* __LINUX_MAGIC_H__ */
+diff --git a/init/Kconfig b/init/Kconfig
+index c972899..cf6ce1f 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -793,6 +793,8 @@ config RELAY
+ 
+ 	  If unsure, say N.
+ 
++source "kernel/checkpoint/Kconfig"
++
+ config BLK_DEV_INITRD
+ 	bool "Initial RAM filesystem and RAM disk (initramfs/initrd) support"
+ 	depends on BROKEN || !FRV
+diff --git a/kernel/Makefile b/kernel/Makefile
+index 0b5ff08..3f6238c 100644
+--- a/kernel/Makefile
++++ b/kernel/Makefile
+@@ -106,6 +106,7 @@ obj-$(CONFIG_PERF_EVENTS) += perf_event.o
+ obj-$(CONFIG_HAVE_HW_BREAKPOINT) += hw_breakpoint.o
+ obj-$(CONFIG_USER_RETURN_NOTIFIER) += user-return-notifier.o
+ obj-$(CONFIG_PADATA) += padata.o
++obj-$(CONFIG_CHECKPOINT) += checkpoint/
+ 
+ ifneq ($(CONFIG_SCHED_OMIT_FRAME_POINTER),y)
+ # According to Alan Modra <alan-HpYC8cTCicIJY7gZg3T8ig@public.gmane.org>, the -fno-omit-frame-pointer is
+diff --git a/kernel/checkpoint/Kconfig b/kernel/checkpoint/Kconfig
+new file mode 100644
+index 0000000..21fc86b
+--- /dev/null
++++ b/kernel/checkpoint/Kconfig
+@@ -0,0 +1,15 @@
++# Architectures should define CHECKPOINT_SUPPORT when they have
++# implemented the hooks for processor state etc. needed by the
++# core checkpoint/restart code.
++
++config CHECKPOINT
++	bool "Checkpoint/restart (EXPERIMENTAL)"
++	depends on CHECKPOINT_SUPPORT && EXPERIMENTAL
++	depends on CGROUP_FREEZER
++	help
++	  Application checkpoint/restart is the ability to save the
++	  state of a running application so that it can later resume
++	  its execution from the time at which it was checkpointed.
++
++	  Turning this option on will enable checkpoint and restart
++	  functionality in the kernel.
+diff --git a/kernel/checkpoint/Makefile b/kernel/checkpoint/Makefile
+new file mode 100644
+index 0000000..3431310
+--- /dev/null
++++ b/kernel/checkpoint/Makefile
+@@ -0,0 +1,9 @@
++#
++# Makefile for linux checkpoint/restart.
++#
++
++obj-$(CONFIG_CHECKPOINT) += \
++	sys.o \
++	objhash.o \
++	checkpoint.o \
++	restart.o
+diff --git a/kernel/checkpoint/checkpoint.c b/kernel/checkpoint/checkpoint.c
+new file mode 100644
+index 0000000..bef1d30
+--- /dev/null
++++ b/kernel/checkpoint/checkpoint.c
+@@ -0,0 +1,437 @@
++/*
++ *  Checkpoint logic and helpers
++ *
++ *  Copyright (C) 2008-2009 Oren Laadan
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ */
++
++#define DEBUG
++
++#include <linux/checkpoint.h>
++#include <linux/dcache.h>
++#include <linux/file.h>
++#include <linux/freezer.h>
++#include <linux/fs.h>
++#include <linux/fs_struct.h>
++#include <linux/magic.h>
++#include <linux/module.h>
++#include <linux/mount.h>
++#include <linux/pid_namespace.h>
++#include <linux/ptrace.h>
 +#include <linux/sched.h>
 +#include <linux/slab.h>
-+#include <linux/file.h>
-+#include <linux/aio.h>
-+#include <linux/highmem.h>
-+#include <linux/elf.h>
-+#include <linux/err.h>
-+#include <linux/mm.h>
-+#include <linux/mman.h>
-+#include <linux/pagemap.h>
-+#include <linux/mm_types.h>
-+#include <linux/proc_fs.h>
-+#include <linux/checkpoint.h>
++#include <linux/time.h>
++#include <linux/version.h>
++#include <linux/utsname.h>
 +
-+#include "internal.h" /* __get_user_pages */
-+
-+/**************************************************************************
-+ * Checkpoint
-+ *
-+ * Checkpoint is outside the context of the checkpointee, so one
-+ * cannot simply read pages from user-space. Instead, we scan the
-+ * address space of the target to cherry-pick pages of interest.  To
-+ * save their contents, each page is mapped to kernel memory and then
-+ * dumped to the file descriptor.
-+ */
-+
-+static int dump_page_header(struct ckpt_ctx *ctx, unsigned long addr)
-+{
-+	struct ckpt_hdr_page *hdr;
-+	int err;
-+
-+	hdr = ckpt_hdr_get_type(ctx, sizeof(*hdr), CKPT_HDR_PAGE);
-+	if (!hdr)
-+		return -ENOMEM;
-+
-+	hdr->vaddr = addr;
-+	err = ckpt_write_obj(ctx, &hdr->hdr);
-+	kfree(hdr);
-+
-+	return err;
-+}
-+
-+static int dump_page_contents(struct ckpt_ctx *ctx, struct page *page)
-+{
-+	void *ptr;
-+	int err;
-+
-+	ptr = kmap(page);
-+	err = ckpt_kwrite(ctx, ptr, PAGE_SIZE);
-+	kunmap(page);
-+
-+	return err;
-+}
-+
-+static int dump_vma_page_terminator(struct ckpt_ctx *ctx)
-+{
-+	return dump_page_header(ctx, CKPT_VMA_LAST_PAGE);
-+}
++#include <asm/checkpoint.h>
 +
 +/**
-+ * checkpoint_memory_contents - dump contents of a VMA with private memory
-+ * @ctx - checkpoint context
-+ * @vma - vma to scan
-+ *
-+ */
-+static int checkpoint_memory_contents(struct ckpt_ctx *ctx,
-+				      struct vm_area_struct *vma)
-+{
-+	unsigned long addr;
-+	int err = 0;
-+
-+	/* We don't hold mmap_sem - the mm's tasks are frozen. */
-+
-+	for (addr = vma->vm_start; addr < vma->vm_end; addr += PAGE_SIZE) {
-+		struct page *page;
-+		int nr_pages;
-+		int flags;
-+
-+		if (fatal_signal_pending(current)) {
-+			err = -EINTR;
-+			break;
-+		}
-+
-+		cond_resched();
-+
-+		nr_pages = 1;
-+		flags = FOLL_FORCE | FOLL_DUMP | FOLL_GET;
-+		nr_pages = __get_user_pages(ctx->tsk, vma->vm_mm, addr,
-+					    nr_pages, flags, &page, NULL);
-+		if (nr_pages == -EFAULT)
-+			continue;
-+
-+		if (nr_pages != 1) {
-+			WARN_ON_ONCE(nr_pages == 0);
-+			err = nr_pages;
-+			break;
-+		}
-+
-+		err = dump_page_header(ctx, addr);
-+		if (!err)
-+			err = dump_page_contents(ctx, page);
-+
-+		page_cache_release(page);
-+
-+		if (err)
-+			break;
-+	}
-+
-+	if (!err)
-+		err = dump_vma_page_terminator(ctx);
-+
-+	return err;
-+}
-+
-+/**
-+ * generic_vma_checkpoint - dump metadata of vma
++ * ckpt_write_obj - write an object
 + * @ctx: checkpoint context
-+ * @vma: vma object
-+ * @type: vma type
-+ * @vma_objref: vma objref
++ * @h: object descriptor
 + */
-+int generic_vma_checkpoint(struct ckpt_ctx *ctx, struct vm_area_struct *vma,
-+			   enum vma_type type, int vma_objref)
++int ckpt_write_obj(struct ckpt_ctx *ctx, struct ckpt_hdr *h)
 +{
-+	struct ckpt_hdr_vma *h;
++	ckpt_debug("type %d len %d\n", h->type, h->len);
++	return ckpt_kwrite(ctx, h, h->len);
++}
++
++/**
++ * ckpt_write_obj_type - write an object (from a pointer)
++ * @ctx: checkpoint context
++ * @ptr: buffer pointer
++ * @len: buffer size
++ * @type: desired type
++ *
++ * If @ptr is NULL, then write only the header (payload to follow)
++ */
++int ckpt_write_obj_type(struct ckpt_ctx *ctx, void *ptr, size_t len, int type)
++{
++	struct ckpt_hdr *h;
 +	int ret;
 +
-+	ckpt_debug("vma %#lx-%#lx flags %#lx type %d\n",
-+		 vma->vm_start, vma->vm_end, vma->vm_flags, type);
-+
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_VMA);
++	h = kzalloc(sizeof(*h), GFP_KERNEL);
 +	if (!h)
 +		return -ENOMEM;
 +
-+	h->vma_type = type;
-+	h->vma_objref = vma_objref;
-+	h->vm_start = vma->vm_start;
-+	h->vm_end = vma->vm_end;
-+	h->vm_page_prot = pgprot_val(vma->vm_page_prot);
-+	h->vm_flags = vma->vm_flags;
-+	h->vm_pgoff = vma->vm_pgoff;
++	h->type = type;
++	h->len = len + sizeof(*h);
++
++	ckpt_debug("type %d len %d\n", h->type, h->len);
++	ret = ckpt_kwrite(ctx, h, sizeof(*h));
++	if (ret < 0)
++		goto out;
++	if (ptr)
++		ret = ckpt_kwrite(ctx, ptr, len);
++ out:
++	kfree(h);
++	return ret;
++}
++
++/**
++ * ckpt_write_buffer - write an object of type buffer
++ * @ctx: checkpoint context
++ * @ptr: buffer pointer
++ * @len: buffer size
++ */
++int ckpt_write_buffer(struct ckpt_ctx *ctx, void *ptr, size_t len)
++{
++	return ckpt_write_obj_type(ctx, ptr, len, CKPT_HDR_BUFFER);
++}
++
++/**
++ * ckpt_write_string - write an object of type string
++ * @ctx: checkpoint context
++ * @str: string pointer
++ * @len: string length
++ */
++int ckpt_write_string(struct ckpt_ctx *ctx, char *str, size_t len)
++{
++	return ckpt_write_obj_type(ctx, str, len, CKPT_HDR_STRING);
++}
++
++/***********************************************************************
++ * Checkpoint
++ */
++
++static void fill_kernel_const(struct ckpt_const *h)
++{
++	struct task_struct *tsk;
++	struct new_utsname *uts;
++
++	/* task */
++	h->task_comm_len = sizeof(tsk->comm);
++	/* mm->saved_auxv size */
++	h->at_vector_size = AT_VECTOR_SIZE;
++	/* uts */
++	h->uts_release_len = sizeof(uts->release);
++	h->uts_version_len = sizeof(uts->version);
++	h->uts_machine_len = sizeof(uts->machine);
++}
++
++/* write the checkpoint header */
++static int checkpoint_write_header(struct ckpt_ctx *ctx)
++{
++	struct ckpt_hdr_header *h;
++	struct new_utsname *uts;
++	struct timeval ktv;
++	int ret;
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_HEADER);
++	if (!h)
++		return -ENOMEM;
++
++	do_gettimeofday(&ktv);
++	uts = utsname();
++
++	h->arch_id = cpu_to_le16(CKPT_ARCH_ID);
++
++	h->magic = CHECKPOINT_MAGIC_HEAD;
++	h->major = (LINUX_VERSION_CODE >> 16) & 0xff;
++	h->minor = (LINUX_VERSION_CODE >> 8) & 0xff;
++	h->patch = (LINUX_VERSION_CODE) & 0xff;
++
++	h->time = ktv.tv_sec;
++
++	fill_kernel_const(&h->constants);
 +
 +	ret = ckpt_write_obj(ctx, &h->h);
 +	kfree(h);
-+
-+	return ret;
-+}
-+
-+/**
-+ * private_vma_checkpoint - dump contents of private (anon, file) vma
-+ * @ctx: checkpoint context
-+ * @vma: vma object
-+ * @type: vma type
-+ * @vma_objref: vma objref
-+ */
-+static int private_vma_checkpoint(struct ckpt_ctx *ctx,
-+				  struct vm_area_struct *vma,
-+				  enum vma_type type, int vma_objref)
-+{
-+	int ret;
-+
-+	BUG_ON(vma->vm_flags & (VM_SHARED | VM_MAYSHARE));
-+
-+	ret = generic_vma_checkpoint(ctx, vma, type, vma_objref);
-+	if (ret < 0)
-+		goto out;
-+	ret = checkpoint_memory_contents(ctx, vma);
-+ out:
-+	return ret;
-+}
-+
-+int filemap_checkpoint(struct ckpt_ctx *ctx, struct vm_area_struct *vma)
-+{
-+	struct file *file = vma->vm_file;
-+	int vma_objref;
-+
-+	if (vma->vm_flags & CKPT_VMA_NOT_SUPPORTED) {
-+		pr_warning("c/r: unsupported VMA %#lx\n", vma->vm_flags);
-+		return -ENOSYS;
-+	}
-+
-+	BUG_ON(!file);
-+
-+	vma_objref = checkpoint_obj(ctx, file, CKPT_OBJ_FILE);
-+	if (vma_objref < 0)
-+		return vma_objref;
-+
-+	return private_vma_checkpoint(ctx, vma, CKPT_VMA_FILE, vma_objref);
-+}
-+
-+/*
-+ * FIX:
-+ *   - checkpoint vdso pages (once per distinct vdso is enough)
-+ *   - check for compatilibility between saved and current vdso
-+ *   - accommodate for dynamic kernel data in vdso page
-+ *
-+ * Current, we require COMPAT_VDSO which somewhat mitigates the issue
-+ */
-+int special_mapping_checkpoint(struct ckpt_ctx *ctx,
-+				      struct vm_area_struct *vma)
-+{
-+	const char *name;
-+
-+	/*
-+	 * FIX:
-+	 * Currently, we only handle VDSO/vsyscall special handling.
-+	 * Even that, is very basic - we just skip the contents and
-+	 * hope for the best in terms of compatilibity upon restart.
-+	 */
-+
-+	if (vma->vm_flags & CKPT_VMA_NOT_SUPPORTED)
-+		return -ENOSYS;
-+
-+	name = arch_vma_name(vma);
-+	if (!name || strcmp(name, "[vdso]"))
-+		return -ENOSYS;
-+
-+	return generic_vma_checkpoint(ctx, vma, CKPT_VMA_VDSO, 0);
-+}
-+
-+/**
-+ * anonymous_checkpoint - dump contents of private-anonymous vma
-+ * @ctx: checkpoint context
-+ * @vma: vma object
-+ */
-+static int anonymous_checkpoint(struct ckpt_ctx *ctx,
-+				struct vm_area_struct *vma)
-+{
-+	/* should be private anonymous ... verify that this is the case */
-+	BUG_ON(vma->vm_flags & VM_MAYSHARE);
-+	BUG_ON(vma->vm_file);
-+
-+	return private_vma_checkpoint(ctx, vma, CKPT_VMA_ANON, 0);
-+}
-+
-+static int checkpoint_vmas(struct ckpt_ctx *ctx, struct mm_struct *mm)
-+{
-+	struct vm_area_struct *vma, *next;
-+	int map_count = 0;
-+	int ret = 0;
-+
-+	vma = kzalloc(sizeof(*vma), GFP_KERNEL);
-+	if (!vma)
-+		return -ENOMEM;
-+
-+	/*
-+	 * Must not hold mm->mmap_sem when writing to image file, so
-+	 * can't simply traverse the vma list. Instead, use find_vma()
-+	 * to get the @next and make a local "copy" of it.
-+	 */
-+	while (1) {
-+		down_read(&mm->mmap_sem);
-+		next = find_vma(mm, vma->vm_end);
-+		if (!next) {
-+			up_read(&mm->mmap_sem);
-+			break;
-+		}
-+		if (vma->vm_file)
-+			fput(vma->vm_file);
-+		*vma = *next;
-+		if (vma->vm_file)
-+			get_file(vma->vm_file);
-+		up_read(&mm->mmap_sem);
-+
-+		map_count++;
-+
-+		ckpt_debug("vma %#lx-%#lx flags %#lx\n",
-+			 vma->vm_start, vma->vm_end, vma->vm_flags);
-+
-+		if (vma->vm_flags & CKPT_VMA_NOT_SUPPORTED) {
-+			ckpt_debug("vma: bad flags (%#lx)\n", vma->vm_flags);
-+			ret = -ENOSYS;
-+			break;
-+		}
-+
-+		if (!vma->vm_ops)
-+			ret = anonymous_checkpoint(ctx, vma);
-+		else if (vma->vm_ops->checkpoint)
-+			ret = (*vma->vm_ops->checkpoint)(ctx, vma);
-+		else
-+			ret = -ENOSYS;
-+		if (ret < 0) {
-+			ckpt_debug("vma checkpoint failed\n");
-+			break;
-+		}
-+	}
-+
-+	if (vma->vm_file)
-+		fput(vma->vm_file);
-+
-+	kfree(vma);
-+
-+	return ret < 0 ? ret : map_count;
-+}
-+
-+#define CKPT_AT_SZ (AT_VECTOR_SIZE * sizeof(u64))
-+/*
-+ * We always write saved_auxv out as an array of u64s, though it is
-+ * an array of u32s on 32-bit arch.
-+ */
-+static int ckpt_write_auxv(struct ckpt_ctx *ctx, struct mm_struct *mm)
-+{
-+	int i, ret;
-+	u64 *buf = kzalloc(CKPT_AT_SZ, GFP_KERNEL);
-+
-+	if (!buf)
-+		return -ENOMEM;
-+	for (i = 0; i < AT_VECTOR_SIZE; i++)
-+		buf[i] = mm->saved_auxv[i];
-+	ret = ckpt_write_buffer(ctx, buf, CKPT_AT_SZ);
-+	kfree(buf);
-+	return ret;
-+}
-+
-+static int checkpoint_mm(struct ckpt_ctx *ctx, void *ptr)
-+{
-+	struct mm_struct *mm = ptr;
-+	struct ckpt_hdr_mm *h;
-+	struct file *exe_file = NULL;
-+	int ret;
-+
-+	if (mm_has_pending_aio(mm)) {
-+		ckpt_debug("Outstanding aio\n");
-+		return -EBUSY;
-+	}
-+
-+	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_MM);
-+	if (!h)
-+		return -ENOMEM;
-+
-+	down_read(&mm->mmap_sem);
-+
-+	h->flags = mm->flags;
-+	h->def_flags = mm->def_flags;
-+
-+	h->start_code = mm->start_code;
-+	h->end_code = mm->end_code;
-+	h->start_data = mm->start_data;
-+	h->end_data = mm->end_data;
-+	h->start_brk = mm->start_brk;
-+	h->brk = mm->brk;
-+	h->start_stack = mm->start_stack;
-+	h->arg_start = mm->arg_start;
-+	h->arg_end = mm->arg_end;
-+	h->env_start = mm->env_start;
-+	h->env_end = mm->env_end;
-+
-+	h->map_count = mm->map_count;
-+
-+	if (mm->exe_file) {  /* checkpoint the ->exe_file */
-+		exe_file = mm->exe_file;
-+		get_file(exe_file);
-+	}
-+
-+	/*
-+	 * Drop mm->mmap_sem before writing data to checkpoint image
-+	 * to avoid reverse locking order (inode must come before mm).
-+	 */
-+	up_read(&mm->mmap_sem);
-+
-+	if (exe_file) {
-+		h->exe_objref = checkpoint_obj(ctx, exe_file, CKPT_OBJ_FILE);
-+		if (h->exe_objref < 0) {
-+			ret = h->exe_objref;
-+			goto out;
-+		}
-+	}
-+
-+	ret = ckpt_write_obj(ctx, &h->h);
-+	if (ret < 0)
-+		goto out;
-+
-+	ret = ckpt_write_auxv(ctx, mm);
 +	if (ret < 0)
 +		return ret;
 +
-+	ret = checkpoint_vmas(ctx, mm);
-+	if (ret != h->map_count && ret >= 0)
-+		ret = -EBUSY; /* checkpoint mm leak */
++	down_read(&uts_sem);
++	ret = ckpt_write_buffer(ctx, uts->release, sizeof(uts->release));
 +	if (ret < 0)
-+		goto out;
++		goto up;
++	ret = ckpt_write_buffer(ctx, uts->version, sizeof(uts->version));
++	if (ret < 0)
++		goto up;
++	ret = ckpt_write_buffer(ctx, uts->machine, sizeof(uts->machine));
++ up:
++	up_read(&uts_sem);
++	if (ret < 0)
++		return ret;
 +
-+	ret = checkpoint_mm_context(ctx, mm);
-+ out:
-+	if (exe_file)
-+		fput(exe_file);
++	return checkpoint_write_header_arch(ctx);
++}
++
++/* write the checkpoint trailer */
++static int checkpoint_write_tail(struct ckpt_ctx *ctx)
++{
++	struct ckpt_hdr_tail *h;
++	int ret;
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_TAIL);
++	if (!h)
++		return -ENOMEM;
++
++	h->magic = CHECKPOINT_MAGIC_TAIL;
++
++	ret = ckpt_write_obj(ctx, &h->h);
 +	kfree(h);
 +	return ret;
 +}
 +
-+int checkpoint_obj_mm(struct ckpt_ctx *ctx, struct task_struct *t)
++/* dump the task_struct of a given task */
++static int checkpoint_task_struct(struct ckpt_ctx *ctx, struct task_struct *t)
 +{
-+	struct mm_struct *mm;
++	struct ckpt_hdr_task *h;
++	int ret;
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_TASK);
++	if (!h)
++		return -ENOMEM;
++
++	h->state = t->state;
++	h->exit_state = t->exit_state;
++	h->exit_code = t->exit_code;
++	h->exit_signal = t->exit_signal;
++
++	h->set_child_tid = (unsigned long) t->set_child_tid;
++	h->clear_child_tid = (unsigned long) t->clear_child_tid;
++
++	/* FIXME: save remaining relevant task_struct fields */
++
++	ret = ckpt_write_obj(ctx, &h->h);
++	kfree(h);
++	if (ret < 0)
++		return ret;
++
++	return ckpt_write_string(ctx, t->comm, TASK_COMM_LEN);
++}
++
++/* dump the task_struct of a given task */
++static int checkpoint_task_objs(struct ckpt_ctx *ctx, struct task_struct *t)
++{
++	struct ckpt_hdr_task_objs *h;
++	int files_objref;
++	int mm_objref;
++	int ret;
++
++	files_objref = checkpoint_obj_file_table(ctx, t);
++	ckpt_debug("files: objref %d\n", files_objref);
++	if (files_objref < 0)
++		return files_objref;
++
++	mm_objref = checkpoint_obj_mm(ctx, t);
++	ckpt_debug("mm: objref %d\n", mm_objref);
++	if (mm_objref < 0)
++		return mm_objref;
++
++	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_TASK_OBJS);
++	if (!h)
++		return -ENOMEM;
++	h->files_objref = files_objref;
++	h->mm_objref = mm_objref;
++	ret = ckpt_write_obj(ctx, &h->h);
++	kfree(h);
++
++	return ret;
++}
++
++static bool task_is_descendant(struct task_struct *tsk)
++{
++	while (tsk != &init_task) {
++		if (tsk == current)
++			return true;
++		tsk = tsk->real_parent;
++	}
++	return false;
++}
++
++static bool task_checkpointable(struct task_struct *tsk)
++{
++	if (is_container_init(tsk)) {
++		pr_err("checkpoint of nested namespaces not supported\n");
++		return false;
++	}
++
++	if (!task_is_descendant(tsk)) {
++		pr_err("checkpoint of unrelated tasks not supported\n");
++		return false;
++	}
++
++	if (get_nr_threads(tsk) > 1) {
++		pr_err("checkpoint of multithreaded tasks not yet supported\n");
++		return false;
++	}
++
++	return true;
++}
++
++/* dump the entire state of a given task */
++static int checkpoint_task(struct ckpt_ctx *ctx, struct task_struct *t)
++{
++	int ret;
++
++	if (!task_checkpointable(t))
++		return -ENOSYS;
++
++	ctx->tsk = t;
++
++	ret = checkpoint_task_struct(ctx, t);
++	ckpt_debug("task %d\n", ret);
++	if (ret < 0)
++		goto out;
++	ret = checkpoint_thread(ctx, t);
++	ckpt_debug("thread %d\n", ret);
++	if (ret < 0)
++		goto out;
++	ret = checkpoint_task_objs(ctx, t);
++	ckpt_debug("objs %d\n", ret);
++	if (ret < 0)
++		goto out;
++	ret = checkpoint_cpu(ctx, t);
++	ckpt_debug("cpu %d\n", ret);
++ out:
++	ctx->tsk = NULL;
++	return ret;
++}
++
++/**
++ * freeze_pidns() - freeze all other tasks in current pid namespace
++ *
++ * Attempts to freeze all other tasks in the caller's pid namespace.
++ * Only the init process of the pid namespace is allowed to call this.
++ * Will busy-loop trying to freeze tasks unless interrupted by a
++ * signal.
++ *
++ * Returns 0 on success, -EINTR if interrupted.  In all cases, the
++ * caller must call thaw_pidns() to ensure that the current pid
++ * namespace is completely unfrozen.
++ */
++static int freeze_pidns(void)
++{
++	struct task_struct *t, *p;
++	bool try_again;
++	int rc = 0;
++
++	BUG_ON(!is_container_init(current));
++	ckpt_debug("\n");
++again:
++	cond_resched();
++	if (signal_pending(current))
++		return -EINTR;
++	try_again = false;
++
++	read_lock(&tasklist_lock);
++
++	do_each_thread(t, p) {
++		if (p == current)
++			continue;
++
++		if (!task_is_descendant(p))
++			continue;
++
++		freeze_task(p, true);
++		try_again |= !frozen(p);
++	} while_each_thread(t, p);
++
++	read_unlock(&tasklist_lock);
++
++	if (try_again)
++		goto again;
++
++	return rc;
++}
++
++/**
++ * thaw_pidns() - unfreeze all other tasks in the current pid namespace
++ *
++ * Unfreeze all other processes in caller's pid namespace.  Only the
++ * init process of the pid namespace is allowed to call this.
++ */
++static void thaw_pidns(void)
++{
++	struct task_struct *t, *p;
++
++	BUG_ON(!is_container_init(current));
++
++	read_lock(&tasklist_lock);
++
++	do_each_thread(t, p) {
++		if (p == current)
++			continue;
++
++		if (!task_is_descendant(p))
++			continue;
++
++		if (!frozen(p))
++			continue;
++
++		thaw_process(p);
++
++	} while_each_thread(t, p);
++
++	read_unlock(&tasklist_lock);
++}
++
++/**
++ * do_checkpoint() - checkpoint the caller's pid namespace
++ * @ctx: checkpoint context
++ *
++ * Freeze, checkpoint, and thaw the current pid namespace.  The
++ * checkpoint image is written to @ctx->file.  Only the init process
++ * of the pid namespace is allowed to call this.
++ */
++int do_checkpoint(struct ckpt_ctx *ctx)
++{
++	struct task_struct *target = NULL;
++	struct task_struct *child;
++	unsigned int nr;
++	int err;
++
++	if (!is_container_init(current))
++		return -EPERM;
++
++	err = freeze_pidns();
++	if (err)
++		goto thaw;
++
++	err = checkpoint_write_header(ctx);
++	if (err)
++		goto thaw;
++
++	nr = 0;
++	read_lock(&tasklist_lock);
++	list_for_each_entry(child, &current->children, sibling) {
++		nr++;
++		if (target) /* more than one process; abort */
++			break;
++		target = child;
++		get_task_struct(target);
++	}
++	read_unlock(&tasklist_lock);
++
++	if (nr == 0) {
++		err = -ESRCH;
++		goto thaw;
++	}
++
++	if (nr > 1) {
++		pr_err("checkpoint of >1 process not yet implemented\n");
++		err = -EBUSY;
++		goto thaw;
++	}
++
++	err = checkpoint_task(ctx, target);
++	if (err)
++		goto thaw;
++
++	err = checkpoint_write_tail(ctx);
++thaw:
++	/* Thaw regardless of status; some tasks could be frozen even
++	 * if freeze_pidns return error.
++	 */
++	thaw_pidns();
++
++	if (target)
++		put_task_struct(target);
++
++	return err;
++}
+diff --git a/kernel/checkpoint/objhash.c b/kernel/checkpoint/objhash.c
+new file mode 100644
+index 0000000..45d4e67
+--- /dev/null
++++ b/kernel/checkpoint/objhash.c
+@@ -0,0 +1,368 @@
++/*
++ *  Checkpoint-restart - object hash infrastructure to manage shared objects
++ *
++ *  Copyright (C) 2008-2009 Oren Laadan
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ */
++
++#define DEBUG
++
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/slab.h>
++#include <linux/hash.h>
++#include <linux/checkpoint.h>
++
++struct ckpt_obj {
 +	int objref;
++	int flags;
++	void *ptr;
++	const struct ckpt_obj_ops *ops;
++	struct hlist_node hash;
++};
 +
-+	mm = get_task_mm(t);
-+	objref = checkpoint_obj(ctx, mm, CKPT_OBJ_MM);
-+	mmput(mm);
++/* object internal flags */
++#define CKPT_OBJ_CHECKPOINTED		0x1   /* object already checkpointed */
 +
-+	return objref;
++struct ckpt_obj_hash {
++	struct hlist_head *head;
++	int next_free_objref;
++};
++
++/* ignored object */
++static const struct ckpt_obj_ops ckpt_obj_ignored_ops = {
++	.obj_name = "IGNORED",
++	.obj_type = CKPT_OBJ_IGNORE,
++	.ref_drop = NULL,
++	.ref_grab = NULL,
++};
++
++static const struct ckpt_obj_ops *ckpt_obj_ops[CKPT_OBJ_MAX] = {
++	[CKPT_OBJ_IGNORE] = &ckpt_obj_ignored_ops,
++};
++
++int register_checkpoint_obj(const struct ckpt_obj_ops *ops)
++{
++	if (ops->obj_type < 0 || ops->obj_type >= CKPT_OBJ_MAX)
++		return -EINVAL;
++	if (ckpt_obj_ops[ops->obj_type] != NULL)
++		return -EINVAL;
++	ckpt_obj_ops[ops->obj_type] = ops;
++	return 0;
++}
++
++#define CKPT_OBJ_HASH_NBITS  10
++#define CKPT_OBJ_HASH_TOTAL  (1UL << CKPT_OBJ_HASH_NBITS)
++
++static void obj_hash_clear(struct ckpt_obj_hash *obj_hash)
++{
++	struct hlist_head *h = obj_hash->head;
++	struct hlist_node *n, *t;
++	struct ckpt_obj *obj;
++	int i;
++
++	for (i = 0; i < CKPT_OBJ_HASH_TOTAL; i++) {
++		hlist_for_each_entry_safe(obj, n, t, &h[i], hash) {
++			if (obj->ops->ref_drop)
++				obj->ops->ref_drop(obj->ptr, 1);
++			kfree(obj);
++		}
++	}
++}
++
++void ckpt_obj_hash_free(struct ckpt_obj_hash *obj_hash)
++{
++	obj_hash_clear(obj_hash);
++	kfree(obj_hash->head);
++	kfree(obj_hash);
++}
++
++struct ckpt_obj_hash *ckpt_obj_hash_alloc(void)
++{
++	size_t size = CKPT_OBJ_HASH_TOTAL * sizeof(struct hlist_head);
++	struct ckpt_obj_hash *obj_hash;
++
++	obj_hash = kzalloc(sizeof(*obj_hash), GFP_KERNEL);
++	if (!obj_hash)
++		return NULL;
++
++	obj_hash->head = kzalloc(size, GFP_KERNEL);
++	if (!obj_hash->head) {
++		kfree(obj_hash);
++		obj_hash = NULL;
++	} else {
++		obj_hash->next_free_objref = 1;
++	}
++
++	return obj_hash;
++}
++
++static struct ckpt_obj *obj_find_by_ptr(const struct ckpt_obj_hash *obj_hash, void *ptr)
++{
++	struct hlist_head *h;
++	struct hlist_node *n;
++	struct ckpt_obj *obj;
++
++	h = &obj_hash->head[hash_ptr(ptr, CKPT_OBJ_HASH_NBITS)];
++	hlist_for_each_entry(obj, n, h, hash)
++		if (obj->ptr == ptr)
++			return obj;
++	return NULL;
++}
++
++static struct ckpt_obj *obj_find_by_objref(const struct ckpt_obj_hash *obj_hash, int objref)
++{
++	struct hlist_head *h;
++	struct hlist_node *n;
++	struct ckpt_obj *obj;
++
++	h = &obj_hash->head[hash_long((unsigned long)objref,
++					   CKPT_OBJ_HASH_NBITS)];
++	hlist_for_each_entry(obj, n, h, hash)
++		if (obj->objref == objref)
++			return obj;
++	return NULL;
++}
++
++static int obj_alloc_objref(struct ckpt_obj_hash *obj_hash)
++{
++	return obj_hash->next_free_objref++;
++}
++
++/**
++ * ckpt_obj_new - add an object to the obj_hash
++ * @ptr: pointer to object
++ * @objref: object unique id
++ * @ops: object operations
++ *
++ * Add the object to the obj_hash. If @objref is zero, assign a unique
++ * object id and use @ptr as a hash key [checkpoint]. Else use @objref
++ * as a key [restart].
++ */
++static struct ckpt_obj *obj_new(struct ckpt_obj_hash *obj_hash, void *ptr,
++				int objref, enum obj_type type)
++{
++	const struct ckpt_obj_ops *ops = ckpt_obj_ops[type];
++	struct ckpt_obj *obj;
++	int i, ret;
++
++	if (WARN_ON_ONCE(!ptr))
++		return ERR_PTR(-EINVAL);
++
++	/* make sure we don't change this accidentally */
++	if (WARN_ON_ONCE(ops->obj_type != type))
++		return ERR_PTR(-EINVAL);
++
++	obj = kzalloc(sizeof(*obj), GFP_KERNEL);
++	if (!obj)
++		return ERR_PTR(-ENOMEM);
++
++	obj->ptr = ptr;
++	obj->ops = ops;
++
++	if (!objref) {
++		/* use @obj->ptr to index, assign objref (checkpoint) */
++		obj->objref = obj_alloc_objref(obj_hash);
++		i = hash_ptr(ptr, CKPT_OBJ_HASH_NBITS);
++	} else {
++		/* use @obj->objref to index (restart) */
++		obj->objref = objref;
++		i = hash_long((unsigned long) objref, CKPT_OBJ_HASH_NBITS);
++	}
++
++	ret = ops->ref_grab ? ops->ref_grab(obj->ptr) : 0;
++	if (ret < 0) {
++		kfree(obj);
++		obj = ERR_PTR(ret);
++	} else {
++		hlist_add_head(&obj->hash, &obj_hash->head[i]);
++	}
++
++	return obj;
++}
++
++/**************************************************************************
++ * Checkpoint
++ */
++
++/**
++ * obj_lookup_add - lookup object and add if not in objhash
++ * @ptr: pointer to object
++ * @type: object type
++ * @first: [output] first encounter (added to table)
++ *
++ * Look up the object pointed to by @ptr in the hash table. If it isn't
++ * already found there, add the object, and allocate a unique object
++ * id. Grab a reference to every object that is added, and maintain the
++ * reference until the entire hash is freed.
++ */
++static struct ckpt_obj *obj_lookup_add(struct ckpt_obj_hash *obj_hash, void *ptr,
++				       enum obj_type type, int *first)
++{
++	struct ckpt_obj *obj;
++
++	obj = obj_find_by_ptr(obj_hash, ptr);
++	if (!obj) {
++		obj = obj_new(obj_hash, ptr, 0, type);
++		*first = 1;
++	} else {
++		BUG_ON(obj->ops->obj_type != type);
++		*first = 0;
++	}
++	return obj;
++}
++
++/**
++ * checkpoint_obj - if not already in hash, add object and checkpoint
++ * @ctx: checkpoint context
++ * @ptr: pointer to object
++ * @type: object type
++ *
++ * Use obj_lookup_add() to lookup (and possibly add) the object to the
++ * hash table. If the CKPT_OBJ_CHECKPOINTED flag isn't set, then also
++ * save the object's state using its ops->checkpoint().
++ *
++ * [This is used during checkpoint].
++ * Returns: objref
++ */
++int checkpoint_obj(struct ckpt_ctx *ctx, void *ptr, enum obj_type type)
++{
++	struct ckpt_hdr_objref *h;
++	struct ckpt_obj *obj;
++	int new, ret = 0;
++
++	obj = obj_lookup_add(ctx->obj_hash, ptr, type, &new);
++	if (IS_ERR(obj))
++		return PTR_ERR(obj);
++
++	if (!(obj->flags & CKPT_OBJ_CHECKPOINTED)) {
++		h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_OBJREF);
++		if (!h)
++			return -ENOMEM;
++
++		h->objtype = type;
++		h->objref = obj->objref;
++		ret = ckpt_write_obj(ctx, &h->h);
++		kfree(h);
++
++		if (ret < 0)
++			return ret;
++
++		/* invoke callback to actually dump the state */
++		if (obj->ops->checkpoint)
++			ret = obj->ops->checkpoint(ctx, ptr);
++
++		obj->flags |= CKPT_OBJ_CHECKPOINTED;
++	}
++	return (ret < 0 ? ret : obj->objref);
++}
++
++/**************************************************************************
++ * Restart
++ */
++
++/**
++ * restore_obj - read in and restore a (first seen) shared object
++ * @ctx: checkpoint context
++ * @h: ckpt_hdr of shared object
++ *
++ * Read in the header payload (struct ckpt_hdr_objref). Lookup the
++ * object to verify it isn't there.  Then restore the object's state
++ * and add it to the objash. No need to explicitly grab a reference -
++ * we hold the initial instance of this object. (Object maintained
++ * until the entire hash is free).
++ *
++ * [This is used during restart].
++ */
++int restore_obj(struct ckpt_ctx *ctx, struct ckpt_hdr_objref *h)
++{
++	const struct ckpt_obj_ops *ops;
++	struct ckpt_obj *obj;
++	void *ptr = ERR_PTR(-EINVAL);
++
++	ckpt_debug("len %d ref %d type %d\n", h->h.len, h->objref, h->objtype);
++	if (h->objtype >= CKPT_OBJ_MAX)
++		return -EINVAL;
++	if (h->objref <= 0)
++		return -EINVAL;
++
++	ops = ckpt_obj_ops[h->objtype];
++	if (!ops)
++		return -ENOSYS;
++
++	BUG_ON(ops->obj_type != h->objtype);
++
++	if (ops->restore)
++		ptr = ops->restore(ctx);
++	if (IS_ERR(ptr))
++		return PTR_ERR(ptr);
++
++	obj = obj_find_by_objref(ctx->obj_hash, h->objref);
++	if (!obj) {
++		obj = obj_new(ctx->obj_hash, ptr, h->objref, h->objtype);
++		/*
++		 * Drop an extra reference to the object returned by
++		 * ops->restore to balance the one taken by obj_new()
++		 */
++		if (!IS_ERR(obj) && ops->ref_drop)
++			ops->ref_drop(ptr, 0);
++	} else if ((obj->ptr != ptr) || (obj->ops->obj_type != h->objtype)) {
++		/* Normally, we expect an object to not already exist
++		 * in the hash.  However, for some special scenarios
++		 * where we're restoring sets of objects that must be
++		 * co-allocated (such, as veth netdev pairs) we need
++		 * to tolerate this case if the second restore returns
++		 * the correct type and pointer, as specified in the
++		 * existing object.  If either of those don't match,
++		 * we fail.
++		 */
++		obj = ERR_PTR(-EINVAL);
++	}
++
++	if (IS_ERR(obj)) {
++		/* This releases our final reference on the object
++		 * returned by ops->restore()
++		 */
++		if (ops->ref_drop)
++			ops->ref_drop(ptr, 1);
++		return PTR_ERR(obj);
++	}
++	return obj->objref;
++}
++
++/**
++ * ckpt_obj_try_fetch - fetch an object by its identifier
++ * @ctx: checkpoint context
++ * @objref: object id
++ * @type: object type
++ *
++ * Lookup the objref identifier by @objref in the hash table. Return
++ * an error not found.
++ *
++ * [This is used during restart].
++ */
++void *ckpt_obj_try_fetch(struct ckpt_ctx *ctx, int objref, enum obj_type type)
++{
++	struct ckpt_obj *obj;
++
++	obj = obj_find_by_objref(ctx->obj_hash, objref);
++	if (!obj)
++		return ERR_PTR(-EINVAL);
++	ckpt_debug("%s ref %d\n", obj->ops->obj_name, obj->objref);
++	if (obj->ops->obj_type == type)
++		return obj->ptr;
++	return ERR_PTR(-ENOMSG);
++}
++
++void *ckpt_obj_fetch(struct ckpt_ctx *ctx, int objref, enum obj_type type)
++{
++	void *ret = ckpt_obj_try_fetch(ctx, objref, type);
++
++	if (unlikely(IS_ERR(ret)))
++		ckpt_debug("objref=%d type=%u ret=%ld\n",
++			   objref, type, PTR_ERR(ret));
++	return ret;
++}
+diff --git a/kernel/checkpoint/restart.c b/kernel/checkpoint/restart.c
+new file mode 100644
+index 0000000..51f580f
+--- /dev/null
++++ b/kernel/checkpoint/restart.c
+@@ -0,0 +1,651 @@
++/*
++ *  Restart logic and helpers
++ *
++ *  Copyright (C) 2008-2009 Oren Laadan
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ */
++
++#define DEBUG
++
++#include <linux/checkpoint.h>
++#include <linux/completion.h>
++#include <linux/elf.h>
++#include <linux/err.h>
++#include <linux/file.h>
++#include <linux/kernel.h>
++#include <linux/kthread.h>
++#include <linux/magic.h>
++#include <linux/mm_types.h>
++#include <linux/mmu_context.h>
++#include <linux/module.h>
++#include <linux/nsproxy.h>
++#include <linux/pid.h>
++#include <linux/sched.h>
++#include <linux/slab.h>
++#include <linux/syscalls.h>
++#include <linux/utsname.h>
++#include <linux/version.h>
++
++#include <asm/checkpoint.h>
++#include <asm/mmu_context.h>
++#include <asm/syscall.h>
++
++/**
++ * _ckpt_read_objref - dispatch handling of a shared object
++ * @ctx: checkpoint context
++ * @hh: objrect descriptor
++ */
++static int _ckpt_read_objref(struct ckpt_ctx *ctx, struct ckpt_hdr *hh)
++{
++	struct ckpt_hdr *h;
++	int ret;
++
++	h = kzalloc(hh->len, GFP_KERNEL);
++	if (!h)
++		return -ENOMEM;
++
++	*h = *hh;	/* yay ! */
++
++	ckpt_debug("shared len %d type %d\n", h->len, h->type);
++	ret = ckpt_kread(ctx, (h + 1), hh->len - sizeof(struct ckpt_hdr));
++	if (ret < 0)
++		goto out;
++
++	ret = restore_obj(ctx, (struct ckpt_hdr_objref *) h);
++ out:
++	kfree(h);
++	return ret;
++}
++
++/**
++ * ckpt_read_obj_dispatch - dispatch ERRORs and OBJREFs; don't return them
++ * @ctx: checkpoint context
++ * @h: desired ckpt_hdr
++ */
++static int ckpt_read_obj_dispatch(struct ckpt_ctx *ctx, struct ckpt_hdr *h)
++{
++	int ret;
++
++	while (1) {
++		ret = ckpt_kread(ctx, h, sizeof(*h));
++		if (ret < 0)
++			return ret;
++		ckpt_debug("type %d len %d\n", h->type, h->len);
++		if (h->len < sizeof(*h))
++			return -EINVAL;
++
++		if (h->type == CKPT_HDR_OBJREF) {
++			ret = _ckpt_read_objref(ctx, h);
++			if (ret < 0)
++				return ret;
++		} else
++			return 0;
++	}
++}
++
++/**
++ * _ckpt_read_obj - read an object (ckpt_hdr followed by payload)
++ * @ctx: checkpoint context
++ * @h: desired ckpt_hdr
++ * @ptr: desired buffer
++ * @len: desired object length (if 0, flexible)
++ * @max: maximum object length (if 0, flexible)
++ *
++ * If @ptr is NULL, then read only the header (payload to follow)
++ */
++static int _ckpt_read_obj(struct ckpt_ctx *ctx, struct ckpt_hdr *h,
++			  void *ptr, int len, int max)
++{
++	int ret;
++
++	ret = ckpt_read_obj_dispatch(ctx, h);
++	if (ret < 0)
++		return ret;
++	ckpt_debug("type %d len %d(%d,%d)\n", h->type, h->len, len, max);
++
++	/* if len specified, enforce, else if maximum specified, enforce */
++	if ((len && h->len != len) || (!len && max && h->len > max))
++		return -EINVAL;
++
++	if (ptr)
++		ret = ckpt_kread(ctx, ptr, h->len - sizeof(struct ckpt_hdr));
++	return ret;
++}
++
++/**
++ * _ckpt_read_obj_type - read an object of some type
++ * @ctx: checkpoint context
++ * @ptr: provided buffer
++ * @len: buffer length
++ * @type: buffer type
++ *
++ * If @ptr is NULL, then read only the header (payload to follow).
++ * @len specifies the expected buffer length (ignored if set to 0).
++ * Returns: actual _payload_ length
++ */
++int _ckpt_read_obj_type(struct ckpt_ctx *ctx, void *ptr, size_t len, int type)
++{
++	struct ckpt_hdr h;
++	int ret;
++
++	if (len)
++		len += sizeof(struct ckpt_hdr);
++	ret = _ckpt_read_obj(ctx, &h, ptr, len, len);
++	if (ret < 0)
++		return ret;
++	if (h.type != type)
++		return -EINVAL;
++	return h.len - sizeof(h);
++}
++
++/**
++ * _ckpt_read_buffer - read an object of type buffer (set length)
++ * @ctx: checkpoint context
++ * @ptr: provided buffer
++ * @len: buffer length
++ *
++ * If @ptr is NULL, then read only the header (payload to follow).
++ * @len specifies the expected buffer length (ignored if set to 0).
++ * Returns: _payload_ length.
++ */
++int _ckpt_read_buffer(struct ckpt_ctx *ctx, void *ptr, size_t len)
++{
++	BUG_ON(!len);
++	return _ckpt_read_obj_type(ctx, ptr, len, CKPT_HDR_BUFFER);
++}
++
++/**
++ * _ckpt_read_string - read an object of type string (set length)
++ * @ctx: checkpoint context
++ * @ptr: provided buffer
++ * @len: string length (including '\0')
++ *
++ * If @ptr is NULL, then read only the header (payload to follow)
++ */
++int _ckpt_read_string(struct ckpt_ctx *ctx, void *ptr, size_t len)
++{
++	int ret;
++
++	BUG_ON(!len);
++	ret = _ckpt_read_obj_type(ctx, ptr, len, CKPT_HDR_STRING);
++	if (ret < 0)
++		return ret;
++	if (ptr)
++		((char *) ptr)[len - 1] = '\0';	/* always play it safe */
++	return 0;
++}
++
++/**
++ * ckpt_read_obj - allocate and read an object (ckpt_hdr followed by payload)
++ * @ctx: checkpoint context
++ * @h: object descriptor
++ * @len: desired total length (if 0, flexible)
++ * @max: maximum total length
++ *
++ * Return: new buffer allocated on success, error pointer otherwise
++ */
++static void *ckpt_read_obj(struct ckpt_ctx *ctx, int len, int max)
++{
++	struct ckpt_hdr hh;
++	struct ckpt_hdr *h;
++	int ret;
++
++	ret = ckpt_read_obj_dispatch(ctx, &hh);
++	if (ret < 0)
++		return ERR_PTR(ret);
++	ckpt_debug("type %d len %d(%d,%d)\n", hh.type, hh.len, len, max);
++
++	/* if len specified, enforce, else if maximum specified, enforce */
++	if ((len && hh.len != len) || (!len && max && hh.len > max))
++		return ERR_PTR(-EINVAL);
++
++	h = kzalloc(hh.len, GFP_KERNEL);
++	if (!h)
++		return ERR_PTR(-ENOMEM);
++
++	*h = hh;	/* yay ! */
++
++	ret = ckpt_kread(ctx, (h + 1), hh.len - sizeof(struct ckpt_hdr));
++	if (ret < 0) {
++		kfree(h);
++		h = ERR_PTR(ret);
++	}
++
++	return h;
++}
++
++/**
++ * ckpt_read_obj_type - allocate and read an object of some type
++ * @ctx: checkpoint context
++ * @len: desired object length
++ * @type: desired object type
++ *
++ * Return: new buffer allocated on success, error pointer otherwise
++ */
++void *ckpt_read_obj_type(struct ckpt_ctx *ctx, size_t len, int type)
++{
++	struct ckpt_hdr *h;
++
++	BUG_ON(!len);
++
++	h = ckpt_read_obj(ctx, len, len);
++	if (IS_ERR(h)) {
++		ckpt_debug("len=%d type=%d ret=%ld\n", len, type, PTR_ERR(h));
++		return h;
++	}
++
++	if (h->type != type) {
++		kfree(h);
++		ckpt_debug("expected type %d but got %d\n", h->type, type);
++		h = ERR_PTR(-EINVAL);
++	}
++
++	return h;
++}
++
++/**
++ * ckpt_read_buf_type - allocate and read an object of some type (flxible)
++ * @ctx: checkpoint context
++ * @max: maximum payload length
++ * @type: desired object type
++ *
++ * This differs from ckpt_read_obj_type() in that the length of the
++ * incoming object is flexible (up to the maximum specified by @max;
++ * unlimited if @max is 0), as determined by the ckpt_hdr data.
++ *
++ * NOTE: for symmetry with checkpoint, @max is the maximum _payload_
++ * size, excluding the header.
++ *
++ * Return: new buffer allocated on success, error pointer otherwise
++ */
++void *ckpt_read_buf_type(struct ckpt_ctx *ctx, size_t max, int type)
++{
++	struct ckpt_hdr *h;
++
++	if (max)
++		max += sizeof(struct ckpt_hdr);
++
++	h = ckpt_read_obj(ctx, 0, max);
++	if (IS_ERR(h))
++		return h;
++
++	if (h->type != type) {
++		kfree(h);
++		h = ERR_PTR(-EINVAL);
++	}
++
++	return h;
++}
++
++/**
++ * ckpt_read_payload - allocate and read the payload of an object
++ * @ctx: checkpoint context
++ * @max: maximum payload length
++ * @str: pointer to buffer to be allocated (caller must free)
++ * @type: desired object type
++ *
++ * This can be used to read a variable-length _payload_ from the checkpoint
++ * stream. @max limits the size of the resulting buffer.
++ *
++ * Return: actual _payload_ length
++ */
++int ckpt_read_payload(struct ckpt_ctx *ctx, void **ptr, size_t max, int type)
++{
++	int len, ret;
++
++	len = _ckpt_read_obj_type(ctx, NULL, 0, type);
++	if (len < 0)
++		return len;
++	else if (len > max)
++		return -EINVAL;
++
++	*ptr = kmalloc(len, GFP_KERNEL);
++	if (!*ptr)
++		return -ENOMEM;
++
++	ret = ckpt_kread(ctx, *ptr, len);
++	if (ret < 0) {
++		kfree(*ptr);
++		return ret;
++	}
++
++	return len;
 +}
 +
 +/***********************************************************************
 + * Restart
-+ *
-+ * Unlike checkpoint, restart is executed in the context of each restarting
-+ * process: vma regions are restored via a call to mmap(), and the data is
-+ * read into the address space of the current process.
 + */
 +
-+static int restore_page(struct ckpt_ctx *ctx, unsigned long addr)
++static int check_kernel_const(struct ckpt_const *h)
 +{
-+	struct page *page;
-+	void *ptr;
-+	int err;
++	struct task_struct *tsk;
++	struct new_utsname *uts;
 +
-+	down_read(&current->mm->mmap_sem);
-+
-+	err = get_user_pages(current, current->mm, addr, 1, 1, 1, &page, NULL);
-+	if (err != 1) {
-+		if (WARN_ON_ONCE(err >= 0))
-+			err = -EFAULT;
-+		goto out_unlock;
-+	}
-+
-+	ptr = kmap(page);
-+	err = ckpt_kread(ctx, ptr, PAGE_SIZE);
-+	kunmap(page);
-+
-+	page_cache_release(page);
-+
-+out_unlock:
-+	up_read(&current->mm->mmap_sem);
-+
-+	return err;
-+}
-+
-+/**
-+ * restore_memory_contents - restore contents of a VMA with private memory
-+ * @ctx - restart context
-+ */
-+static int restore_memory_contents(struct ckpt_ctx *ctx)
-+{
-+	int err = 0;
-+
-+	while (true) {
-+		struct ckpt_hdr_page *hdr;
-+		unsigned long addr;
-+
-+		if (fatal_signal_pending(current)) {
-+			err = -EINTR;
-+			break;
-+		}
-+
-+		cond_resched();
-+
-+		hdr = ckpt_read_obj_type(ctx, sizeof(*hdr), CKPT_HDR_PAGE);
-+		if (IS_ERR(hdr)) {
-+			err = PTR_ERR(hdr);
-+			break;
-+		}
-+
-+		addr = hdr->vaddr;
-+		kfree(hdr);
-+
-+		if (addr == CKPT_VMA_LAST_PAGE)
-+			break;
-+
-+		err = restore_page(ctx, addr);
-+		if (err)
-+			break;
-+	}
-+
-+	return err;
-+}
-+
-+/**
-+ * calc_map_prot_bits - convert vm_flags to mmap protection
-+ * orig_vm_flags: source vm_flags
-+ */
-+static unsigned long calc_map_prot_bits(unsigned long orig_vm_flags)
-+{
-+	unsigned long vm_prot = 0;
-+
-+	if (orig_vm_flags & VM_READ)
-+		vm_prot |= PROT_READ;
-+	if (orig_vm_flags & VM_WRITE)
-+		vm_prot |= PROT_WRITE;
-+	if (orig_vm_flags & VM_EXEC)
-+		vm_prot |= PROT_EXEC;
-+	if (orig_vm_flags & PROT_SEM)   /* only (?) with IPC-SHM  */
-+		vm_prot |= PROT_SEM;
-+
-+	return vm_prot;
-+}
-+
-+/**
-+ * calc_map_flags_bits - convert vm_flags to mmap flags
-+ * orig_vm_flags: source vm_flags
-+ */
-+static unsigned long calc_map_flags_bits(unsigned long orig_vm_flags)
-+{
-+	unsigned long vm_flags = 0;
-+
-+	vm_flags = MAP_FIXED;
-+	if (orig_vm_flags & VM_GROWSDOWN)
-+		vm_flags |= MAP_GROWSDOWN;
-+	if (orig_vm_flags & VM_DENYWRITE)
-+		vm_flags |= MAP_DENYWRITE;
-+	if (orig_vm_flags & VM_EXECUTABLE)
-+		vm_flags |= MAP_EXECUTABLE;
-+	if (orig_vm_flags & VM_MAYSHARE)
-+		vm_flags |= MAP_SHARED;
-+	else
-+		vm_flags |= MAP_PRIVATE;
-+
-+	return vm_flags;
-+}
-+
-+/**
-+ * generic_vma_restore - restore a vma
-+ * @mm - address space
-+ * @file - file to map (NULL for anonymous)
-+ * @h - vma header data
-+ */
-+static unsigned long generic_vma_restore(struct mm_struct *mm,
-+					 struct file *file,
-+					 struct ckpt_hdr_vma *h)
-+{
-+	unsigned long vm_size, vm_start, vm_flags, vm_prot, vm_pgoff;
-+	unsigned long addr;
-+
-+	if (h->vm_end < h->vm_start)
++	/* task */
++	if (h->task_comm_len != sizeof(tsk->comm))
 +		return -EINVAL;
-+	if (h->vma_objref < 0)
++	/* mm->saved_auxv size */
++	if (h->at_vector_size != AT_VECTOR_SIZE)
++		return -EINVAL;
++	/* uts */
++	if (h->uts_release_len != sizeof(uts->release))
++		return -EINVAL;
++	if (h->uts_version_len != sizeof(uts->version))
++		return -EINVAL;
++	if (h->uts_machine_len != sizeof(uts->machine))
 +		return -EINVAL;
 +
-+	vm_start = h->vm_start;
-+	vm_pgoff = h->vm_pgoff;
-+	vm_size = h->vm_end - h->vm_start;
-+	vm_prot = calc_map_prot_bits(h->vm_flags);
-+	vm_flags = calc_map_flags_bits(h->vm_flags);
-+
-+	down_write(&mm->mmap_sem);
-+	addr = do_mmap_pgoff(file, vm_start, vm_size,
-+			     vm_prot, vm_flags, vm_pgoff);
-+	up_write(&mm->mmap_sem);
-+	ckpt_debug("size %#lx prot %#lx flag %#lx pgoff %#lx => %#lx\n",
-+		 vm_size, vm_prot, vm_flags, vm_pgoff, addr);
-+
-+	return addr;
++	return 0;
 +}
 +
-+/**
-+ * private_vma_restore - read vma data, recreate it and read contents
-+ * @ctx: checkpoint context
-+ * @mm: memory address space
-+ * @file: file to use for mapping
-+ * @h - vma header data
-+ */
-+static int private_vma_restore(struct ckpt_ctx *ctx, struct mm_struct *mm,
-+			       struct file *file, struct ckpt_hdr_vma *h)
++/* read the checkpoint header */
++static int restore_read_header(struct ckpt_ctx *ctx)
 +{
-+	unsigned long addr;
-+
-+	if (h->vm_flags & (VM_SHARED | VM_MAYSHARE))
-+		return -EINVAL;
-+
-+	addr = generic_vma_restore(mm, file, h);
-+	if (IS_ERR((void *) addr))
-+		return PTR_ERR((void *) addr);
-+
-+	return restore_memory_contents(ctx);
-+}
-+
-+/**
-+ * anon_private_restore - read vma data, recreate it and read contents
-+ * @ctx: checkpoint context
-+ * @mm: memory address space
-+ * @h - vma header data
-+ */
-+static int anon_private_restore(struct ckpt_ctx *ctx,
-+				     struct mm_struct *mm,
-+				     struct ckpt_hdr_vma *h)
-+{
-+	/*
-+	 * vm_pgoff for anonymous mapping is the "global" page
-+	 * offset (namely from addr 0x0), so we force a zero
-+	 */
-+	h->vm_pgoff = 0;
-+
-+	return private_vma_restore(ctx, mm, NULL, h);
-+}
-+
-+static int filemap_restore(struct ckpt_ctx *ctx,
-+		    struct mm_struct *mm,
-+		    struct ckpt_hdr_vma *h)
-+{
-+	struct file *file;
++	struct ckpt_hdr_header *h;
++	struct new_utsname *uts = NULL;
 +	int ret;
 +
-+	if (h->vma_type == CKPT_VMA_FILE &&
-+	    (h->vm_flags & (VM_SHARED | VM_MAYSHARE)))
-+		return -EINVAL;
-+
-+	file = ckpt_obj_fetch(ctx, h->vma_objref, CKPT_OBJ_FILE);
-+	if (IS_ERR(file))
-+		return PTR_ERR(file);
-+
-+	ret = private_vma_restore(ctx, mm, file, h);
-+	return ret;
-+}
-+
-+#ifndef arch_restore_vdso
-+#define arch_restore_vdso arch_restore_vdso
-+#warn "arch_restore_vdso not implemented"
-+static inline int arch_restore_vdso(unsigned long addr)
-+{
-+	return -ENOSYS;
-+}
-+#endif
-+
-+static int special_mapping_restore(struct ckpt_ctx *ctx,
-+				   struct mm_struct *mm,
-+				   struct ckpt_hdr_vma *h)
-+{
-+	BUG_ON(h->vma_type != CKPT_VMA_VDSO);
-+
-+	return arch_restore_vdso(h->vm_start);
-+}
-+
-+/* callbacks to restore vma per its type: */
-+struct restore_vma_ops {
-+	char *vma_name;
-+	enum vma_type vma_type;
-+	int (*restore) (struct ckpt_ctx *ctx,
-+			struct mm_struct *mm,
-+			struct ckpt_hdr_vma *ptr);
-+};
-+
-+static struct restore_vma_ops restore_vma_ops[] = {
-+	/* ignored vma */
-+	{
-+		.vma_name = "IGNORE",
-+		.vma_type = CKPT_VMA_IGNORE,
-+		.restore = NULL,
-+	},
-+	/* special mapping (vdso) */
-+	{
-+		.vma_name = "VDSO",
-+		.vma_type = CKPT_VMA_VDSO,
-+		.restore = special_mapping_restore,
-+	},
-+	/* anonymous private */
-+	{
-+		.vma_name = "ANON PRIVATE",
-+		.vma_type = CKPT_VMA_ANON,
-+		.restore = anon_private_restore,
-+	},
-+	/* file-mapped private */
-+	{
-+		.vma_name = "FILE PRIVATE",
-+		.vma_type = CKPT_VMA_FILE,
-+		.restore = filemap_restore,
-+	},
-+};
-+
-+/**
-+ * restore_vma - read vma data, recreate it and read contents
-+ * @ctx: checkpoint context
-+ * @mm: memory address space
-+ */
-+static int restore_vma(struct ckpt_ctx *ctx, struct mm_struct *mm)
-+{
-+	struct ckpt_hdr_vma *h;
-+	struct restore_vma_ops *ops;
-+	int ret;
-+
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_VMA);
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_HEADER);
 +	if (IS_ERR(h))
 +		return PTR_ERR(h);
 +
-+	ckpt_debug("vma %#lx-%#lx flags %#lx type %d vmaref %d\n",
-+		   (unsigned long) h->vm_start, (unsigned long) h->vm_end,
-+		   (unsigned long) h->vm_flags, (int) h->vma_type,
-+		   (int) h->vma_objref);
-+
 +	ret = -EINVAL;
-+	if (h->vm_end < h->vm_start)
++	if (le16_to_cpu(h->arch_id) != CKPT_ARCH_ID) {
++		ckpt_debug("incompatible architecture id");
 +		goto out;
-+	if (h->vma_objref < 0)
-+		goto out;
-+	if (h->vma_type >= CKPT_VMA_MAX)
-+		goto out;
-+	if (h->vm_flags & CKPT_VMA_NOT_SUPPORTED)
-+		return -ENOSYS;
-+
-+	ops = &restore_vma_ops[h->vma_type];
-+
-+	/* make sure we don't change this accidentally */
-+	BUG_ON(ops->vma_type != h->vma_type);
-+
-+	if (ops->restore) {
-+		ckpt_debug("vma type %s\n", ops->vma_name);
-+		ret = ops->restore(ctx, mm, h);
-+	} else {
-+		ckpt_debug("vma ignored\n");
-+		ret = 0;
 +	}
++	if (h->magic != CHECKPOINT_MAGIC_HEAD ||
++	    h->major != ((LINUX_VERSION_CODE >> 16) & 0xff) ||
++	    h->minor != ((LINUX_VERSION_CODE >> 8) & 0xff) ||
++	    h->patch != ((LINUX_VERSION_CODE) & 0xff)) {
++		ckpt_debug("incompatible kernel version");
++		goto out;
++	}
++	if (h->uflags) {
++		ckpt_debug("incompatible restart user flags");
++		goto out;
++	}
++
++	ret = check_kernel_const(&h->constants);
++	if (ret < 0) {
++		ckpt_debug("incompatible kernel constants");
++		goto out;
++	}
++
++	ret = -ENOMEM;
++	uts = kmalloc(sizeof(*uts), GFP_KERNEL);
++	if (!uts)
++		goto out;
++
++	ret = _ckpt_read_buffer(ctx, uts->release, sizeof(uts->release));
++	if (ret < 0)
++		goto out;
++	ret = _ckpt_read_buffer(ctx, uts->version, sizeof(uts->version));
++	if (ret < 0)
++		goto out;
++	ret = _ckpt_read_buffer(ctx, uts->machine, sizeof(uts->machine));
++	if (ret < 0)
++		goto out;
++
++	ret = restore_read_header_arch(ctx);
 + out:
++	kfree(uts);
 +	kfree(h);
 +	return ret;
 +}
 +
-+static int ckpt_read_auxv(struct ckpt_ctx *ctx, struct mm_struct *mm)
++/* read the checkpoint trailer */
++static int restore_read_tail(struct ckpt_ctx *ctx)
 +{
-+	int i, ret;
-+	u64 *buf = kmalloc(CKPT_AT_SZ, GFP_KERNEL);
++	struct ckpt_hdr_tail *h;
++	int ret = 0;
 +
-+	if (!buf)
-+		return -ENOMEM;
-+	ret = _ckpt_read_buffer(ctx, buf, CKPT_AT_SZ);
-+	if (ret < 0)
-+		goto out;
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_TAIL);
++	if (IS_ERR(h))
++		return PTR_ERR(h);
 +
-+	ret = -E2BIG;
-+	for (i = 0; i < AT_VECTOR_SIZE; i++)
-+		if (buf[i] > (u64) ULONG_MAX)
-+			goto out;
++	if (h->magic != CHECKPOINT_MAGIC_TAIL)
++		ret = -EINVAL;
 +
-+	for (i = 0; i < AT_VECTOR_SIZE - 1; i++)
-+		mm->saved_auxv[i] = buf[i];
-+	/* sanitize the input: force AT_NULL in last entry  */
-+	mm->saved_auxv[AT_VECTOR_SIZE - 1] = AT_NULL;
-+
-+	ret = 0;
-+ out:
-+	kfree(buf);
++	kfree(h);
 +	return ret;
 +}
 +
-+static int destroy_mm(struct mm_struct *mm)
++/* setup restart-specific parts of ctx */
++static int init_restart_ctx(struct ckpt_ctx *ctx)
 +{
-+	struct vm_area_struct *vmnext = mm->mmap;
-+	struct vm_area_struct *vma;
-+	int ret;
-+
-+	while (vmnext) {
-+		vma = vmnext;
-+		vmnext = vmnext->vm_next;
-+		ret = do_munmap(mm, vma->vm_start,
-+				vma->vm_end - vma->vm_start);
-+		if (ret < 0) {
-+			pr_warning("%s: failed munmap (%d)\n", __func__, ret);
-+			return ret;
-+		}
-+	}
++	ctx->root_task = current;
 +	return 0;
 +}
 +
-+static void *restore_mm(struct ckpt_ctx *ctx)
++/* read the task_struct into the current task */
++static int restore_task_struct(struct ckpt_ctx *ctx)
 +{
-+	struct ckpt_hdr_mm *h;
-+	struct mm_struct *mm = NULL;
-+	struct file *file;
-+	unsigned int nr;
++	struct ckpt_hdr_task *h;
++	struct task_struct *t = current;
 +	int ret;
 +
-+	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_MM);
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_TASK);
 +	if (IS_ERR(h))
-+		return (void *) h;
++		return PTR_ERR(h);
 +
-+	ckpt_debug("map_count %d\n", h->map_count);
-+
-+	ret = -EINVAL;
-+	if ((h->start_code > h->end_code) ||
-+	    (h->start_data > h->end_data))
-+		goto out;
-+	if (h->exe_objref < 0)
-+		goto out;
-+	if (h->def_flags & ~VM_LOCKED)
-+		goto out;
-+	if (h->flags & ~(MMF_DUMP_FILTER_MASK |
-+			 ((1 << MMF_DUMP_FILTER_BITS) - 1)))
++	memset(t->comm, 0, TASK_COMM_LEN);
++	ret = _ckpt_read_string(ctx, t->comm, TASK_COMM_LEN);
++	if (ret < 0)
 +		goto out;
 +
-+	mm = current->mm;
-+
-+	/* point of no return -- destruct current mm */
-+	down_write(&mm->mmap_sem);
-+	ret = destroy_mm(mm);
-+	if (ret < 0) {
-+		up_write(&mm->mmap_sem);
-+		goto out;
-+	}
-+
-+	mm->flags = h->flags;
-+	mm->def_flags = h->def_flags;
-+
-+	mm->start_code = h->start_code;
-+	mm->end_code = h->end_code;
-+	mm->start_data = h->start_data;
-+	mm->end_data = h->end_data;
-+	mm->start_brk = h->start_brk;
-+	mm->brk = h->brk;
-+	mm->start_stack = h->start_stack;
-+	mm->arg_start = h->arg_start;
-+	mm->arg_end = h->arg_end;
-+	mm->env_start = h->env_start;
-+	mm->env_end = h->env_end;
-+
-+	/* restore the ->exe_file */
-+	if (h->exe_objref) {
-+		file = ckpt_obj_fetch(ctx, h->exe_objref, CKPT_OBJ_FILE);
-+		if (IS_ERR(file)) {
-+			up_write(&mm->mmap_sem);
-+			ret = PTR_ERR(file);
-+			goto out;
-+		}
-+		set_mm_exe_file(mm, file);
-+	}
-+	up_write(&mm->mmap_sem);
-+
-+	ret = ckpt_read_auxv(ctx, mm);
-+	if (ret < 0) {
-+		ckpt_debug("Error restoring auxv (%d)\n", ret);
-+		goto out;
-+	}
-+
-+	for (nr = h->map_count; nr; nr--) {
-+		ret = restore_vma(ctx, mm);
-+		if (ret < 0)
-+			goto out;
-+	}
-+
-+	ret = restore_mm_context(ctx, mm);
++	t->set_child_tid = (int __user *) (unsigned long) h->set_child_tid;
++	t->clear_child_tid = (int __user *) (unsigned long) h->clear_child_tid;
++	/* return 1 for zombie, 0 otherwise */
++	ret = (h->state == TASK_DEAD ? 1 : 0);
 + out:
 +	kfree(h);
-+	if (ret < 0)
-+		return ERR_PTR(ret);
-+	/* restore_obj() expect an extra reference */
-+	atomic_inc(&mm->mm_users);
-+	return (void *)mm;
++	return ret;
 +}
 +
-+int restore_obj_mm(struct ckpt_ctx *ctx, int mm_objref)
++static int restore_task_objs(struct ckpt_ctx *ctx)
 +{
-+	struct mm_struct *mm;
++	struct ckpt_hdr_task_objs *h;
 +	int ret;
 +
-+	mm = ckpt_obj_fetch(ctx, mm_objref, CKPT_OBJ_MM);
-+	if (IS_ERR(mm))
-+		return PTR_ERR(mm);
++	h = ckpt_read_obj_type(ctx, sizeof(*h), CKPT_HDR_TASK_OBJS);
++	if (IS_ERR(h))
++		return PTR_ERR(h);
 +
-+	if (mm == current->mm)
-+		return 0;
++	ret = restore_obj_file_table(ctx, h->files_objref);
++	ckpt_debug("file_table: ret %d (%p)\n", ret, current->files);
 +
-+	ret = exec_mmap(mm);
++	ret = restore_obj_mm(ctx, h->mm_objref);
++	ckpt_debug("mm: ret %d (%p)\n", ret, current->mm);
++
++	kfree(h);
++	return ret;
++}
++
++/* read the entire state of the current task */
++static int restore_task(struct ckpt_ctx *ctx)
++{
++	int ret;
++
++	ret = restore_task_struct(ctx);
++	ckpt_debug("task %d\n", ret);
++	if (ret < 0)
++		goto out;
++	ret = restore_thread(ctx);
++	ckpt_debug("thread %d\n", ret);
++	if (ret < 0)
++		goto out;
++	ret = restore_task_objs(ctx);
++	ckpt_debug("objs %d\n", ret);
++ out:
++	return ret;
++}
++
++struct task_restart_info {
++	struct ckpt_ctx *ctx;
++	struct completion completion;
++	int status;
++};
++
++static void task_restart_info_init(struct task_restart_info *info, struct ckpt_ctx *ctx)
++{
++	info->ctx = ctx;
++	init_completion(&info->completion);
++	info->status = 0;
++}
++
++static int restore_task_fn(void *work)
++{
++	struct task_restart_info *info;
++	struct mm_struct *prev_mm;
++	struct mm_struct *new_mm;
++	struct ckpt_ctx *ctx;
++
++	info = work;
++	ctx = info->ctx;
++
++	/* FIXME: Move this stuff into a helper in kernel/fork.c so we
++	 * can correctly handle errors (free_mm, mm_free_pgd).
++	 */
++	BUG_ON(!(current->flags & PF_KTHREAD));
++	BUG_ON(current->mm);
++
++	info->status = sys_unshare(CLONE_FILES | CLONE_FS);
++	if (info->status)
++		return info->status;
++
++	current->flags &= ~(PF_KTHREAD | PF_NOFREEZE | PF_FREEZER_NOSIG);
++
++	info->status = -ENOMEM;
++	new_mm = mm_alloc();
++	if (!new_mm)
++		return info->status;
++
++	prev_mm = current->active_mm;
++	current->mm = new_mm;
++	current->active_mm = new_mm;
++
++	/* activate_mm/switch_mm need to execute atomically */
++	preempt_disable();
++	activate_mm(prev_mm, new_mm);
++	preempt_enable();
++
++	arch_pick_mmap_layout(new_mm);
++
++	if (init_new_context(current, new_mm))
++		goto err_out;
++
++	info->status = restore_task(ctx);
++	if (info->status < 0)
++		pr_err("restore task failed (%i)\n", info->status);
++
++	spin_lock_irq(&current->sighand->siglock);
++	flush_signal_handlers(current, 1);
++	spin_unlock_irq(&current->sighand->siglock);
++
++	__set_current_state(TASK_UNINTERRUPTIBLE);
++	info->status = 0;
++	complete(&info->completion);
++
++	/* vfork_done points to stack data which will no longer be valid;
++	 * see kthread.c:kthread().
++	 */
++	current->vfork_done = NULL;
++
++	schedule();
++	WARN_ON(true);
++	return info->status;
++err_out:
++	WARN_ONCE(true, "Leaking mm, sorry");
++	return info->status;
++}
++
++static int restore_task_tree(struct ckpt_ctx *ctx)
++{
++	struct task_restart_info *info;
++	struct task_struct *tsk;
++	struct pid *pid;
++	int err;
++
++	err = -ENOMEM;
++	info = kmalloc(sizeof(*info), GFP_KERNEL);
++	if (!info)
++		goto err_out;
++
++	task_restart_info_init(info, ctx);
++
++	tsk = kthread_run(restore_task_fn, info, "krestart");
++	if (IS_ERR(tsk))
++		goto err_out;
++
++	wait_for_completion(&info->completion);
++	wait_task_inactive(tsk, 0);
++	err = info->status;
++	if (err != 0) {
++		kthread_stop(tsk);
++		goto err_out;
++	}
++	err = restore_cpu(ctx, tsk);
++	ckpt_debug("cpu %d\n", err);
++	if (WARN_ON_ONCE(err < 0)) {
++		/* FIXME: kicking the task at this point is not a good
++		 * idea as its register state may have been changed.
++		 */
++		/* kthread_stop(); */
++		goto err_out;
++	}
++	write_lock_irq(&tasklist_lock);
++	tsk->parent = tsk->real_parent = ctx->root_task; /* this is current */
++	list_move_tail(&tsk->sibling, &tsk->parent->children);
++	write_unlock_irq(&tasklist_lock);
++#ifdef CONFIG_PREEMPT
++	task_thread_info(tsk)->preempt_count--;
++#endif
++	get_nsproxy(current->nsproxy);
++	switch_task_namespaces(tsk, current->nsproxy);
++	pid = alloc_pid(tsk->nsproxy->pid_ns);
++	if (WARN_ON_ONCE(!pid))
++		goto err_out;
++	ckpt_debug("new pid: level=%u, nr=%d, vnr=%d\n", pid->level,
++		   pid_nr(pid), pid_vnr(pid));
++	tsk->pid = pid_nr(pid);
++	tsk->tgid = tsk->pid;
++	detach_pid(tsk, PIDTYPE_PID);
++	attach_pid(tsk, PIDTYPE_PID, pid);
++	wake_up_process(tsk);
++err_out:
++	kfree(info);
++	return err;
++}
++
++/**
++ * do_restart() - restore the caller's pid namespace
++ * @ctx: checkpoint context
++ *
++ * The checkpoint image is read from @ctx->file.  Only the init
++ * process of the pid namespace is allowed to call this, and only when
++ * the caller is the sole task in the pid namespace.
++ */
++int do_restart(struct ckpt_ctx *ctx)
++{
++	int ret;
++
++	ret = init_restart_ctx(ctx);
 +	if (ret < 0)
 +		return ret;
 +
-+	atomic_inc(&mm->mm_users);
++	ret = restore_read_header(ctx);
++	if (ret < 0)
++		return ret;
++
++	ret = restore_task_tree(ctx);
++	if (ret < 0)
++		return ret;
++
++	ret = restore_read_tail(ctx);
++
++	return ret;
++}
+diff --git a/kernel/checkpoint/sys.c b/kernel/checkpoint/sys.c
+new file mode 100644
+index 0000000..11ed6fd
+--- /dev/null
++++ b/kernel/checkpoint/sys.c
+@@ -0,0 +1,208 @@
++/*
++ *  Generic container checkpoint-restart
++ *
++ *  Copyright (C) 2008-2009 Oren Laadan
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ */
++
++
++#include <linux/sched.h>
++#include <linux/module.h>
++#include <linux/nsproxy.h>
++#include <linux/kernel.h>
++#include <linux/cgroup.h>
++#include <linux/syscalls.h>
++#include <linux/slab.h>
++#include <linux/fs.h>
++#include <linux/file.h>
++#include <linux/uaccess.h>
++#include <linux/capability.h>
++#include <linux/checkpoint.h>
++
++/*
++ * Helpers to write(read) from(to) kernel space to(from) the checkpoint
++ * image file descriptor (similar to how a core-dump is performed).
++ *
++ *   _ckpt_kwrite() - write a kernel-space buffer to a file
++ *   _ckpt_kread() - read from a file to a kernel-space buffer
++ *
++ *   ckpt_kread() - read from the checkpoint image to a kernel-space buffer
++ *   ckpt_kwrite() - write a kernel-space buffer to the checkpoint image
++ *
++ * They latter two succeed only if the entire read or write succeeds,
++ * and return 0, or negative error otherwise.
++ */
++
++static ssize_t _ckpt_kwrite(struct file *file, void *addr, size_t count)
++{
++	mm_segment_t old_fs;
++	ssize_t ret;
++
++	old_fs = get_fs();
++	set_fs(KERNEL_DS);
++	ret = vfs_write(file, (void __user *)addr, count, &file->f_pos);
++	set_fs(old_fs);
++
++	/* Catch unhandled short writes */
++	if (WARN_ON_ONCE(ret >= 0 && ret < count))
++		ret = -EIO;
++
++	return ret;
++}
++
++/* returns 0 on success */
++int ckpt_kwrite(struct ckpt_ctx *ctx, void *addr, size_t count)
++{
++	int ret;
++
++	ret = _ckpt_kwrite(ctx->file, addr, count);
++	if (ret < 0)
++		return ret;
++
 +	return 0;
++}
++
++static ssize_t _ckpt_kread(struct file *file, void *addr, size_t count)
++{
++	mm_segment_t old_fs;
++	ssize_t ret;
++
++	old_fs = get_fs();
++	set_fs(KERNEL_DS);
++	ret = vfs_read(file, (void __user *)addr, count, &file->f_pos);
++	set_fs(old_fs);
++
++	return ret;
++}
++
++/* returns 0 on success */
++int ckpt_kread(struct ckpt_ctx *ctx, void *addr, size_t count)
++{
++	int ret;
++
++	ret = _ckpt_kread(ctx->file, addr, count);
++	if (ret < 0)
++		return ret;
++	if (ret != count)
++		return -EPIPE;
++
++	return 0;
++}
++
++/**
++ * ckpt_hdr_get_type - get a hdr of certain size
++ * @ctx: checkpoint context
++ * @len: number of bytes to reserve
++ *
++ * Returns pointer to reserved space on hbuf
++ */
++void *ckpt_hdr_get_type(struct ckpt_ctx *ctx, int len, int type)
++{
++	struct ckpt_hdr *h;
++
++	h = kzalloc(len, GFP_KERNEL);
++	if (!h)
++		return NULL;
++
++	h->type = type;
++	h->len = len;
++	return h;
 +}
 +
 +/*
-+ * mm-related checkpoint objects
++ * Helpers to manage c/r contexts: allocated for each checkpoint and/or
++ * restart operation, and persists until the operation is completed.
 + */
 +
-+static int obj_mm_grab(void *ptr)
++static void ckpt_ctx_free(struct ckpt_ctx *ctx)
 +{
-+	atomic_inc(&((struct mm_struct *) ptr)->mm_users);
-+	return 0;
++	if (ctx->file)
++		fput(ctx->file);
++
++	if (ctx->obj_hash)
++		ckpt_obj_hash_free(ctx->obj_hash);
++
++	path_put(&ctx->root_fs_path);
++
++	kfree(ctx);
 +}
 +
-+static void obj_mm_drop(void *ptr, int lastref)
++static struct ckpt_ctx *ckpt_ctx_alloc(int fd)
 +{
-+	mmput((struct mm_struct *) ptr);
++	struct ckpt_ctx *ctx;
++	int err;
++
++	ctx = kzalloc(sizeof(*ctx), GFP_KERNEL);
++	if (!ctx)
++		return ERR_PTR(-ENOMEM);
++
++	err = -EBADF;
++	ctx->file = fget(fd);
++	if (!ctx->file)
++		goto err;
++
++	err = -ENOMEM;
++	ctx->obj_hash = ckpt_obj_hash_alloc();
++	if (!ctx->obj_hash)
++		goto err;
++
++	return ctx;
++ err:
++	ckpt_ctx_free(ctx);
++	return ERR_PTR(err);
 +}
 +
-+/* mm object */
-+static const struct ckpt_obj_ops ckpt_obj_mm_ops = {
-+	.obj_name = "MM",
-+	.obj_type = CKPT_OBJ_MM,
-+	.ref_drop = obj_mm_drop,
-+	.ref_grab = obj_mm_grab,
-+	.checkpoint = checkpoint_mm,
-+	.restore = restore_mm,
-+};
-+
-+static int __init checkpoint_register_mm(void)
++/**
++ * sys_checkpoint - checkpoint the caller's pidns and associated resources
++ * @fd: destination for the checkpoint image; need not be seekable
++ * @flags: checkpoint operation flags (no flags defined yet)
++ *
++ * Returns 0 on success, negated errno value otherwise.
++ */
++SYSCALL_DEFINE2(checkpoint, int, fd, unsigned int, flags)
 +{
-+	return register_checkpoint_obj(&ckpt_obj_mm_ops);
++	struct ckpt_ctx *ctx;
++	int err;
++
++	if (flags)
++		return -EINVAL;
++
++	ctx = ckpt_ctx_alloc(fd);
++	if (IS_ERR(ctx))
++		return PTR_ERR(ctx);
++
++	err = do_checkpoint(ctx);
++
++	ckpt_ctx_free(ctx);
++
++	return err;
 +}
-+late_initcall(checkpoint_register_mm);
-diff --git a/mm/filemap.c b/mm/filemap.c
-index 6b9aee2..410b4fc 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -34,6 +34,7 @@
- #include <linux/hardirq.h> /* for BUG_ON(!in_atomic()) only */
- #include <linux/memcontrol.h>
- #include <linux/mm_inline.h> /* for page_is_file_cache() */
-+#include <linux/checkpoint.h>
- #include "internal.h"
- 
- /*
-@@ -1651,6 +1652,9 @@ EXPORT_SYMBOL(filemap_fault);
- 
- const struct vm_operations_struct generic_file_vm_ops = {
- 	.fault		= filemap_fault,
-+#ifdef CONFIG_CHECKPOINT
-+	.checkpoint	= filemap_checkpoint,
-+#endif
- };
- 
- /* This is used for a general mmap of a disk file */
-diff --git a/mm/mmap.c b/mm/mmap.c
-index 50a4aa0..cb47b58 100644
---- a/mm/mmap.c
-+++ b/mm/mmap.c
-@@ -2447,6 +2447,9 @@ static void special_mapping_close(struct vm_area_struct *vma)
- static const struct vm_operations_struct special_mapping_vmops = {
- 	.close = special_mapping_close,
- 	.fault = special_mapping_fault,
-+#ifdef CONFIG_CHECKPOINT
-+	.checkpoint = special_mapping_checkpoint,
-+#endif
- };
- 
- /*
++
++/**
++ * sys_restart - restore a pidns from a checkpoint image
++ * @fd: source for checkpoint image; need not be seekable
++ * @flags: restart operation flags (no flags defined yet)
++ *
++ * Returns 0 on success, negated errno value otherwise.
++ */
++SYSCALL_DEFINE2(restart, int, fd, unsigned int, flags)
++{
++	struct ckpt_ctx *ctx;
++	int err;
++
++	if (flags)
++		return -EINVAL;
++
++	ctx = ckpt_ctx_alloc(fd);
++	if (IS_ERR(ctx))
++		return PTR_ERR(ctx);
++
++	err = do_restart(ctx);
++
++	ckpt_ctx_free(ctx);
++
++	return err;
++}
+diff --git a/kernel/sys_ni.c b/kernel/sys_ni.c
+index c782fe9..b73a106 100644
+--- a/kernel/sys_ni.c
++++ b/kernel/sys_ni.c
+@@ -186,3 +186,7 @@ cond_syscall(sys_perf_event_open);
+ /* fanotify! */
+ cond_syscall(sys_fanotify_init);
+ cond_syscall(sys_fanotify_mark);
++
++/* checkpoint/restart */
++cond_syscall(sys_checkpoint);
++cond_syscall(sys_restart);
 -- 
 1.7.4
