@@ -1,143 +1,86 @@
-From: ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org
-Subject: [PATCH 08/10] Add generic '->checkpoint' f_op to ext filesystems
-Date: Mon, 28 Feb 2011 17:40:30 -0600
-Message-ID: <1298936432-29607-9-git-send-email-ntl__46917.0724660673$1298937096$gmane$org@pobox.com>
-References: <1298936432-29607-1-git-send-email-ntl@pobox.com>
+From: Greg Thelen <gthelen@google.com>
+Subject: Re: [PATCH v5 3/9] writeback: convert variables to unsigned
+Date: Mon, 28 Feb 2011 15:52:53 -0800
+Message-ID: <AANLkTik7LfGfYpteufr68AqEe3wUriJKgAMkmT8pJSzZ@mail.gmail.com>
+References: <1298669760-26344-1-git-send-email-gthelen@google.com>
+ <1298669760-26344-4-git-send-email-gthelen@google.com> <20110227160721.GB3226@barrios-desktop>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1298936432-29607-1-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <20110227160721.GB3226@barrios-desktop>
+Sender: owner-linux-mm@kvack.org
+To: Minchan Kim <minchan.kim@gmail.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Chad Talbott <ctalbott@google.com>, Justin TerAvest <teravest@google.com>, Vivek Goyal <vgoyal@redhat.com>
 List-Id: containers.vger.kernel.org
 
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+On Sun, Feb 27, 2011 at 8:07 AM, Minchan Kim <minchan.kim@gmail.com> wrote:
+> On Fri, Feb 25, 2011 at 01:35:54PM -0800, Greg Thelen wrote:
+>> Convert two balance_dirty_pages() page counter variables (nr_reclaimable
+>> and nr_writeback) from 'long' to 'unsigned long'.
+>>
+>> These two variables are used to store results from global_page_state().
+>> global_page_state() returns unsigned long and carefully sums per-cpu
+>> counters explicitly avoiding returning a negative value.
+>>
+>> Signed-off-by: Greg Thelen <gthelen@google.com>
+> Reviewed-by: Minchan Kim <minchan.kim@gmail.com>
+>
+>> ---
+>> Changelog since v4:
+>> - Created this patch for clarity. =A0Previously this patch was integrate=
+d within
+>> =A0 the "writeback: create dirty_info structure" patch.
+>>
+>> =A0mm/page-writeback.c | =A0 =A06 ++++--
+>> =A01 files changed, 4 insertions(+), 2 deletions(-)
+>>
+>> diff --git a/mm/page-writeback.c b/mm/page-writeback.c
+>> index 2cb01f6..4408e54 100644
+>> --- a/mm/page-writeback.c
+>> +++ b/mm/page-writeback.c
+>> @@ -478,8 +478,10 @@ unsigned long bdi_dirty_limit(struct backing_dev_in=
+fo *bdi, unsigned long dirty)
+>> =A0static void balance_dirty_pages(struct address_space *mapping,
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 unsigned lon=
+g write_chunk)
+>> =A0{
+>> - =A0 =A0 long nr_reclaimable, bdi_nr_reclaimable;
+>> - =A0 =A0 long nr_writeback, bdi_nr_writeback;
+>> + =A0 =A0 unsigned long nr_reclaimable;
+>> + =A0 =A0 long bdi_nr_reclaimable;
+>> + =A0 =A0 unsigned long nr_writeback;
+>> + =A0 =A0 long bdi_nr_writeback;
+>> =A0 =A0 =A0 unsigned long background_thresh;
+>> =A0 =A0 =A0 unsigned long dirty_thresh;
+>> =A0 =A0 =A0 unsigned long bdi_thresh;
+>> --
+>> 1.7.3.1
+>>
+> bdi_nr_[reclaimable|writeback] can return negative value?
+> When I just look through bdi_stat_sum, it uses *percpu_counter_sum_positi=
+ve*.
+> So I guess it always returns positive value.
+> If it is right, could you change it, too?
 
-This marks ext[234] as being checkpointable.
+Yes, I think we can also change bdi_nr_[reclaimable|writeback] to unsigned =
+long.
 
-Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
----
- fs/ext2/dir.c  |    3 +++
- fs/ext2/file.c |    6 ++++++
- fs/ext3/dir.c  |    3 +++
- fs/ext3/file.c |    3 +++
- fs/ext4/dir.c  |    3 +++
- fs/ext4/file.c |    6 ++++++
- 6 files changed, 24 insertions(+), 0 deletions(-)
+bdi_stat_sum() and bdi_stat() both call percpu_counter_sum_positive(),
+which return a positive number.  bdi_stat[_sum]() return s64.  Should
+we also change bdi_stat[_sum]() to return unsigned long rather than
+s64?  I would like the return value type to match the type of the
+corresponding local variables in balance_dirty_pages().  All current
+callers appear to expect bdi_stat[_sum]() to return unsigned long.
 
-diff --git a/fs/ext2/dir.c b/fs/ext2/dir.c
-index 2709b34..7aefb74 100644
---- a/fs/ext2/dir.c
-+++ b/fs/ext2/dir.c
-@@ -721,4 +721,7 @@ const struct file_operations ext2_dir_operations = {
- 	.compat_ioctl	= ext2_compat_ioctl,
- #endif
- 	.fsync		= ext2_fsync,
-+#ifdef CONFIG_CHECKPOINT
-+	.checkpoint	= generic_file_checkpoint,
-+#endif
- };
-diff --git a/fs/ext2/file.c b/fs/ext2/file.c
-index 49eec94..c8991c8 100644
---- a/fs/ext2/file.c
-+++ b/fs/ext2/file.c
-@@ -76,6 +76,9 @@ const struct file_operations ext2_file_operations = {
- 	.fsync		= ext2_fsync,
- 	.splice_read	= generic_file_splice_read,
- 	.splice_write	= generic_file_splice_write,
-+#ifdef CONFIG_CHECKPOINT
-+	.checkpoint	= generic_file_checkpoint,
-+#endif /* CONFIG_CHECKPOINT */
- };
- 
- #ifdef CONFIG_EXT2_FS_XIP
-@@ -91,6 +94,9 @@ const struct file_operations ext2_xip_file_operations = {
- 	.open		= dquot_file_open,
- 	.release	= ext2_release_file,
- 	.fsync		= ext2_fsync,
-+#ifdef CONFIG_CHECKPOINT
-+	.checkpoint	= generic_file_checkpoint,
-+#endif /* CONFIG_CHECKPOINT */
- };
- #endif
- 
-diff --git a/fs/ext3/dir.c b/fs/ext3/dir.c
-index e2e72c3..e2f5948 100644
---- a/fs/ext3/dir.c
-+++ b/fs/ext3/dir.c
-@@ -48,6 +48,9 @@ const struct file_operations ext3_dir_operations = {
- #endif
- 	.fsync		= ext3_sync_file,	/* BKL held */
- 	.release	= ext3_release_dir,
-+#ifdef CONFIG_CHECKPOINT
-+	.checkpoint	= generic_file_checkpoint,
-+#endif
- };
- 
- 
-diff --git a/fs/ext3/file.c b/fs/ext3/file.c
-index f55df0e..2cf4ef2 100644
---- a/fs/ext3/file.c
-+++ b/fs/ext3/file.c
-@@ -68,6 +68,9 @@ const struct file_operations ext3_file_operations = {
- 	.fsync		= ext3_sync_file,
- 	.splice_read	= generic_file_splice_read,
- 	.splice_write	= generic_file_splice_write,
-+#ifdef CONFIG_CHECKPOINT
-+	.checkpoint	= generic_file_checkpoint,
-+#endif
- };
- 
- const struct inode_operations ext3_file_inode_operations = {
-diff --git a/fs/ext4/dir.c b/fs/ext4/dir.c
-index ece76fb..0101873 100644
---- a/fs/ext4/dir.c
-+++ b/fs/ext4/dir.c
-@@ -48,6 +48,9 @@ const struct file_operations ext4_dir_operations = {
- #endif
- 	.fsync		= ext4_sync_file,
- 	.release	= ext4_release_dir,
-+#ifdef CONFIG_CHECKPOINT
-+	.checkpoint	= generic_file_checkpoint,
-+#endif
- };
- 
- 
-diff --git a/fs/ext4/file.c b/fs/ext4/file.c
-index 5a5c55d..142dde6 100644
---- a/fs/ext4/file.c
-+++ b/fs/ext4/file.c
-@@ -86,6 +86,9 @@ ext4_file_write(struct kiocb *iocb, const struct iovec *iov,
- static const struct vm_operations_struct ext4_file_vm_ops = {
- 	.fault		= filemap_fault,
- 	.page_mkwrite   = ext4_page_mkwrite,
-+#ifdef CONFIG_CHECKPOINT
-+	.checkpoint	= filemap_checkpoint,
-+#endif
- };
- 
- static int ext4_file_mmap(struct file *file, struct vm_area_struct *vma)
-@@ -188,6 +191,9 @@ const struct file_operations ext4_file_operations = {
- 	.fsync		= ext4_sync_file,
- 	.splice_read	= generic_file_splice_read,
- 	.splice_write	= generic_file_splice_write,
-+#ifdef CONFIG_CHECKPOINT
-+	.checkpoint	= generic_file_checkpoint,
-+#endif
- };
- 
- const struct inode_operations ext4_file_inode_operations = {
--- 
-1.7.4
+> --
+> Kind regards,
+> Minchan Kim
+>
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
