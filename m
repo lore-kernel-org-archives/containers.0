@@ -1,15 +1,15 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 0/3] blk-throttle: async write throttling
-Date: Tue, 1 Mar 2011 16:40:12 -0500
-Message-ID: <20110301214012.GD2539__45522.87157062$1299015833$gmane$org@redhat.com>
-References: <1298888105-3778-1-git-send-email-arighi@develer.com>
-	<20110301162753.GB2539@redhat.com>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 09/10] userns: check user namespace for task->file uid
+	equivalence checks
+Date: Tue, 01 Mar 2011 16:24:41 -0600
+Message-ID: <1299018281.461.16.camel__12577.2222564139$1299018425$gmane$org@tp-t61>
+References: <20110224150150.GA8262@mail.hallyn.com>
+	<20110224150315.GI8262@mail.hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20110301162753.GB2539-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20110224150315.GI8262-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,82 +19,25 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
-Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Moyer Jeff Moyer <jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Wu Fengguang <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Mar 01, 2011 at 11:27:53AM -0500, Vivek Goyal wrote:
-> On Mon, Feb 28, 2011 at 11:15:02AM +0100, Andrea Righi wrote:
-> 
-> [..]
-> > TODO
-> > ~~~~
-> >  - Consider to add the following new files in the blkio controller to allow the
-> >    user to explicitly limit async writes as well as sync writes:
-> > 
-> >    blkio.throttle.async.write_bps_limit
-> >    blkio.throttle.async.write_iops_limit
-> 
-> I am kind of split on this.
-> 
-> - One way of thinking is that blkio.throttle.read/write_limits represent
->   the limits on requeuest queue of the IO which is actually passing
->   through queue now. So we should not mix the two and keep async limits
->   separately. This will also tell the customer explicitly that async
->   throttling does not mean the same thing as throttling happens before
->   entering the page cache and there can be/will be IO spikes later
->   at the request queue.
-> 
->   Also creating the separate files leaves the door open for future
->   extension of implementing async control when async IO is actually
->   submitted to request queue. (Though I think that will be hard as
->   making sure all the filesystems, writeback logic, device mapper
->   drivers are aware of throttling and will take steps to ensure faster
->   groups are not stuck behind slower groups).
-> 
->  So keeping async accounting separate will help differentiating that
->  async control is not same as sync control. There are fundamental
->  differences.
-> 
-> 
-> - On the other hand, it makes life a bit simple for user as they don't
->   have to specify the async limits separately and there is one aggregate
->   limit for sync and async (assuming we fix the throttling state issues
->   so that throttling logic can handle both bio and task throttling out
->   of single limit).
-> 
-> Any thoughts?
+On Thu, 2011-02-24 at 15:03 +0000, Serge E. Hallyn wrote:
+> --- a/include/linux/fs.h
+> +++ b/include/linux/fs.h
+> @@ -1446,8 +1446,13 @@ enum {
+>  #define put_fs_excl() atomic_dec(&current->fs_excl)
+>  #define has_fs_excl() atomic_read(&current->fs_excl)
+>  
+> -#define is_owner_or_cap(inode)	\
+> -	((current_fsuid() == (inode)->i_uid) || capable(CAP_FOWNER))
+> +/*
+> + * until VFS tracks user namespaces for inodes, just make all files
+> + * belong to init_user_ns
+> + */
+> +extern struct user_namespace init_user_ns;
 
-Thinking more about it.
-
-Was chatting with Jeff Moyer about this  and he mentioned that 
-applications might not like this frequent blocking in buffered write
-path. Which is a valid concern but I don't know how to address that.
-dirty_ratio, dity_bytes and dirty_background_ratio will not be enough
-to throttle the overall WRITE rate from application.
-
-I am kind of now little inclined towards creating separate files for
-async writeout and not mix these throttling at device level for 
-following reasons.
-
-- It is a different thorttling functionality at different layer and it is
-  not same as throttling sync IO at device level when IO is submitted to
-  device. We are just making use of existing throttling infrastructure to
-  account for writting rates in page cache. So having separate file and
-  separate async throttle state per group in blkio makes sense to me.
-
-- There will be these unintutive side affects of frequent blocking
-  and keeping it separate atleast allows us to disable this functionality.
-
-- And we might come up with throttling async IO at device level and 
-  keeping it separate helps us at that point of time.
-
-So to me throttling the async rate while writting to page cache is
-a different functionality and let it be controlled by separate blkio
-files. The bigger question is that in what cases this kind of functionality
-is really useful given that it can still produce IO spikes and given the fact
-that application will be put to sleep freqently depending on throttling rate
-configured.
-
-Thanks
-Vivek
+init_user_ns gets declared in fs.h in this patch, utsname.h in patch #1,
+capability.h in #2, ipc_namespace.h in #7.  Could this declaration be
+kept to a single header?
