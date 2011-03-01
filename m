@@ -1,11 +1,13 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 00/10] Checkpoint/restart of open, unlinked files
-Date: Mon, 28 Feb 2011 20:05:06 -0800
-Message-ID: <1298952316-15763-1-git-send-email-matthltc@us.ibm.com>
+Subject: [PATCH 01/10] Create the .relink file_operation
+Date: Mon, 28 Feb 2011 20:05:07 -0800
+Message-ID: <a6df3726c48b6f9e2422e9c12a32c4991bc53a25.1298952288.git.matthltc@us.ibm.com>
+References: <1298952316-15763-1-git-send-email-matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1298952316-15763-1-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,81 +21,55 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This patch set implements the relink file operation and uses it to support
-checkpoint and restart of open, unlinked files. During checkpoint,
-sys_checkpoint relinks the files and returns. Userspace then checkpoints the
-filesystem contents using any backup-like method prior to thawing. That
-backup is then made available for use during an optional migration followed
-by restore and sys_restart. In the case of network and cluster/distributed
-filesystems copying the filesystem contents explicitly for migration may not
-be necessary at all -- it would be part of normal file writes. For
-non-migration uses of checkpoint/restart filesystems like btrfs a snapshot
-could simply be taken during checkpoint and mounted during restart -- again
-without requiring IO proportional to the aggregate size of filesystem
-contents being checkpointed.
+Not all filesystems will necessarily be able to support relinking an
+orphan inode back into the filesystem. Some offlist feedback suggested
+that instead of overloading .link that relinking should be a separate
+file operation for this reason.
 
-These IO savings are critical to the use of checkpoint/restart as a
-fault mitigation solution in HPC environments where the probability of
-component failure is very high simply due to the number of system
-components. Incurring substantial IO for checkpoint/restart interferes
-with the IO requirements of HPC jobs and thus reduces the frequency of
-checkpoint/restart. That in turn means more processing time is lost
-as a consequence of a fault -- the longer period between checkpoints
-plus the IO required to re-establish hardlinks are simply not acceptable
-for these environments.
+Since .relink is a superset of .link make the VFS call .relink where
+possible and .link otherwise.
 
-Without relinking we would need to walk the entire filesystem to find out
-that "b" is a path to the same inode (another variation on this case: "b"
-would also have been unlinked). We'd need to do this for every
-unlinked file that remains open in every task to checkpoint. Even then
-there is no guarantee such a "b" exists for every unlinked file -- the
-inodes could be "orphans" -- and we'd need to preserve their contents
-some other way.
+The next commit will change ext3/4 to enable this operation.
 
-I considered a couple alternatives to preserving unlinked file contents:
-copying and file handles. Each has significant drawbacks.
+Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>
+Cc: Andreas Dilger <adilger.kernel-m1MBpc4rdrD3fQ9qLvQP4Q@public.gmane.org>
+Cc: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-ext4-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+---
+ fs/namei.c         |    5 ++++-
+ include/linux/fs.h |    1 +
+ 2 files changed, 5 insertions(+), 1 deletions(-)
 
-First I attempted to copy the file contents into the image and then
-recreate and unlink the file during restart. Using a simple version of
-that method the write above would not reach "b". One fix would be to search
-the filesystem for a file with the same inode number (inode of "b") and
-either open it or hardlink it to "a". Another would be to record the inode
-number. This either shifts the search from checkpoint time to restart time
-or has all the drawbacks of the second method I considered: file handles.
-
-Instead of copying contents or recording inodes I also considered using
-file handles. We'd need to ensure that the filehandles persist in storage,
-can be snapshotted/backed up, and can be migrated. Can handlefs or any
-generic file handle system do this? My _guess_ is "no" but folks are
-welcome to tell me I'm wrong.
-
-In contrast, linking the file from a_fd back into its filesystem can avoid
-these complexities. Relinking avoids the search for matching inodes and
-copying large quantities of data from storage only to write it back (in
-fact a non-linking solution requires that the data be read-and-written
-twice -- once for checkpoint and once for restart). Like file handles it does
-require changes to the filesystem code. Unlike file handles, enabling
-relinking does not require every filesystem to support a new kind of
-filesystem "object" -- only an operation that is quite similar to one that
-already exists: link.
-
-[PATCH 01/10] Create the .relink file_operation
-[PATCH 02/10] ext3/4: Allow relinking to unlinked files
-[PATCH 03/10] Split do_linkat() out of sys_linkat
-[PATCH 04/10] Checkpoint/restart unlinked files
-[PATCH 05/10] Enable c/r of unlinked fifos
-[PATCH 06/10] Support relinking unlinked files in btrfs
-[PATCH 07/10] Add relink_dir superblock field
-[PATCH 08/10] Parse the relink=%s mount option
-[PATCH 09/10] Enabling checkpoint relink of unlinked files inside containers
-[PATCH 10/10] [RFC] Use call_usermodehelper to cleanup after failure
-
-BUGS:
-
-	There's a memory leak (Reported-by: "Jose R. Santos"
-<jrs-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>) that I haven't tracked down completely yet.
-It seems to be in the "relink=" mount option parsing code -- I feel like I
-must be missing some code path related to vfsmount handling.
-
-Cheers,
-	-Matt Helsley
+diff --git a/fs/namei.c b/fs/namei.c
+index 4ff7ca5..b6b7359 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -2430,7 +2430,10 @@ int vfs_link(struct dentry *old_dentry, struct inode *dir, struct dentry *new_de
+ 		return error;
+ 
+ 	mutex_lock(&inode->i_mutex);
+-	error = dir->i_op->link(old_dentry, dir, new_dentry);
++	if (dir->i_op->relink)
++		error = dir->i_op->relink(old_dentry, dir, new_dentry);
++	else
++		error = dir->i_op->link(old_dentry, dir, new_dentry);
+ 	mutex_unlock(&inode->i_mutex);
+ 	if (!error)
+ 		fsnotify_link(dir, inode, new_dentry);
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 3d8bf75..af1cb0e 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1562,6 +1562,7 @@ struct inode_operations {
+ 	int (*create) (struct inode *,struct dentry *,int, struct nameidata *);
+ 	struct dentry * (*lookup) (struct inode *,struct dentry *, struct nameidata *);
+ 	int (*link) (struct dentry *,struct inode *,struct dentry *);
++	int (*relink) (struct dentry *,struct inode *,struct dentry *);
+ 	int (*unlink) (struct inode *,struct dentry *);
+ 	int (*symlink) (struct inode *,struct dentry *,const char *);
+ 	int (*mkdir) (struct inode *,struct dentry *,int);
+-- 
+1.6.3.3
