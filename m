@@ -1,14 +1,16 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 00/10] Checkpoint/restart of open, unlinked files
-Date: Mon, 28 Feb 2011 21:05:20 -0800
-Message-ID: <20110301050520.GJ14893@count0.beaverton.ibm.com>
-References: <1298952316-15763-1-git-send-email-matthltc@us.ibm.com>
+From: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Subject: Re: [PATCH 01/10] Add a user_namespace as creator/owner of
+	uts_namespace
+Date: Mon, 28 Feb 2011 23:37:01 -0600
+Message-ID: <20110301053638.GA10988__18517.7375366495$1298957878$gmane$org@peq.hallyn.com>
+References: <20110224150150.GA8262@mail.hallyn.com>
+	<20110228162830.35a051a8.akpm@linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1298952316-15763-1-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20110228162830.35a051a8.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,107 +20,95 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dlezcano-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org, kernel list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, oleg-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Argh, always seem to forget some important details!
-This series is based on Oren's ckpt-v23-rc1 tree plus:
+Quoting Andrew Morton (akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org):
+> On Thu, 24 Feb 2011 15:01:51 +0000
+> "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
+> 
+> > Cc: oleg-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org, dlezcano-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org
+> 
+> I don't think those addresses do what you think they do.
 
-1. sys-wrappers
-	This patch set from Namhyung Kim wraps "various syscalls
-	that were used in init code." These wrappers are also useful
-	for the c/r patchset.
+!*&$(*&*(7!
 
-2. setns
-	Because we're often checkpointing files in an namespace
-	other than that occupied by the task calling sys_checkpoint()
-	relink fails with EXDEV _unless_ we change to the appropriate
-	mount namespace first. This dependency affects patch 9 of the
-	series.
+> > copy_process() handles CLONE_NEWUSER before the rest of the
+> > namespaces.  So in the case of clone(CLONE_NEWUSER|CLONE_NEWUTS)
+> > the new uts namespace will have the new user namespace as its
+> > owner.  That is what we want, since we want root in that new
+> > userns to be able to have privilege over it.
+> > 
+> 
+> Well this sucks.  Anyone who is reading this patch series really won't
+> have a clue what any of it is for.  There's no context provided.
+> 
+> A useful way of thinking about this is to ask yourself "what will Linus
+> think when this stuff hits his inbox".  If the answer is "he'll say
+> wtf" then we're doing it wrong.
+> 
+> Sigh.
+> 
+> I shall (again) paste in the below text, which I snarfed from the wiki.
+> Please check that it is complete, accurate and adequate.  If not,
+> please send along replacement text.
 
-Cheers,
-	-Matt Helsley
+Sorry.  Yes, that's good.
 
-On Mon, Feb 28, 2011 at 08:05:06PM -0800, Matt Helsley wrote:
-> This patch set implements the relink file operation and uses it to support
-> checkpoint and restart of open, unlinked files. During checkpoint,
-> sys_checkpoint relinks the files and returns. Userspace then checkpoints the
-> filesystem contents using any backup-like method prior to thawing. That
-> backup is then made available for use during an optional migration followed
-> by restore and sys_restart. In the case of network and cluster/distributed
-> filesystems copying the filesystem contents explicitly for migration may not
-> be necessary at all -- it would be part of normal file writes. For
-> non-migration uses of checkpoint/restart filesystems like btrfs a snapshot
-> could simply be taken during checkpoint and mounted during restart -- again
-> without requiring IO proportional to the aggregate size of filesystem
-> contents being checkpointed.
+thanks,
+-serge
+
+> : The expected course of development for user namespaces targeted
+> : capabilities is laid out at https://wiki.ubuntu.com/UserNamespace.
+> : 
+> : Goals:
+> : 
+> : - Make it safe for an unprivileged user to unshare namespaces.  They
+> :   will be privileged with respect to the new namespace, but this should
+> :   only include resources which the unprivileged user already owns.
+> : 
+> : - Provide separate limits and accounting for userids in different
+> :   namespaces.  
+> : 
+> : Status:
+> : 
+> :   Currently (as of 2.6.38) you can clone with the CLONE_NEWUSER flag to
+> :   get a new user namespace if you have the CAP_SYS_ADMIN, CAP_SETUID, and
+> :   CAP_SETGID capabilities.  What this gets you is a whole new set of
+> :   userids, meaning that user 500 will have a different 'struct user' in
+> :   your namespace than in other namespaces.  So any accounting information
+> :   stored in struct user will be unique to your namespace.
+> : 
+> :   However, throughout the kernel there are checks which
+> : 
+> :   - simply check for a capability.  Since root in a child namespace
+> :     has all capabilities, this means that a child namespace is not
+> :     constrained.
+> : 
+> :   - simply compare uid1 == uid2.  Since these are the integer uids,
+> :     uid 500 in namespace 1 will be said to be equal to uid 500 in
+> :     namespace 2.  
+> : 
+> :   As a result, the lxc implementation at lxc.sf.net does not use user
+> :   namespaces.  This is actually helpful because it leaves us free to
+> :   develop user namespaces in such a way that, for some time, user
+> :   namespaces may be unuseful.  
+> : 
+> : 
+> : Bugs aside, this patchset is supposed to not at all affect systems which
+> : are not actively using user namespaces, and only restrict what tasks in
+> : child user namespace can do.  They begin to limit privilege to a user
+> : namespace, so that root in a container cannot kill or ptrace tasks in the
+> : parent user namespace, and can only get world access rights to files. 
+> : Since all files currently belong to the initila user namespace, that means
+> : that child user namespaces can only get world access rights to *all*
+> : files.  While this temporarily makes user namespaces bad for system
+> : containers, it starts to get useful for some sandboxing.
+> : 
+> : I've run the 'runltplite.sh' with and without this patchset and found no
+> : difference.
 > 
-> These IO savings are critical to the use of checkpoint/restart as a
-> fault mitigation solution in HPC environments where the probability of
-> component failure is very high simply due to the number of system
-> components. Incurring substantial IO for checkpoint/restart interferes
-> with the IO requirements of HPC jobs and thus reduces the frequency of
-> checkpoint/restart. That in turn means more processing time is lost
-> as a consequence of a fault -- the longer period between checkpoints
-> plus the IO required to re-establish hardlinks are simply not acceptable
-> for these environments.
-> 
-> Without relinking we would need to walk the entire filesystem to find out
-> that "b" is a path to the same inode (another variation on this case: "b"
-> would also have been unlinked). We'd need to do this for every
-> unlinked file that remains open in every task to checkpoint. Even then
-> there is no guarantee such a "b" exists for every unlinked file -- the
-> inodes could be "orphans" -- and we'd need to preserve their contents
-> some other way.
-> 
-> I considered a couple alternatives to preserving unlinked file contents:
-> copying and file handles. Each has significant drawbacks.
-> 
-> First I attempted to copy the file contents into the image and then
-> recreate and unlink the file during restart. Using a simple version of
-> that method the write above would not reach "b". One fix would be to search
-> the filesystem for a file with the same inode number (inode of "b") and
-> either open it or hardlink it to "a". Another would be to record the inode
-> number. This either shifts the search from checkpoint time to restart time
-> or has all the drawbacks of the second method I considered: file handles.
-> 
-> Instead of copying contents or recording inodes I also considered using
-> file handles. We'd need to ensure that the filehandles persist in storage,
-> can be snapshotted/backed up, and can be migrated. Can handlefs or any
-> generic file handle system do this? My _guess_ is "no" but folks are
-> welcome to tell me I'm wrong.
-> 
-> In contrast, linking the file from a_fd back into its filesystem can avoid
-> these complexities. Relinking avoids the search for matching inodes and
-> copying large quantities of data from storage only to write it back (in
-> fact a non-linking solution requires that the data be read-and-written
-> twice -- once for checkpoint and once for restart). Like file handles it does
-> require changes to the filesystem code. Unlike file handles, enabling
-> relinking does not require every filesystem to support a new kind of
-> filesystem "object" -- only an operation that is quite similar to one that
-> already exists: link.
-> 
-> [PATCH 01/10] Create the .relink file_operation
-> [PATCH 02/10] ext3/4: Allow relinking to unlinked files
-> [PATCH 03/10] Split do_linkat() out of sys_linkat
-> [PATCH 04/10] Checkpoint/restart unlinked files
-> [PATCH 05/10] Enable c/r of unlinked fifos
-> [PATCH 06/10] Support relinking unlinked files in btrfs
-> [PATCH 07/10] Add relink_dir superblock field
-> [PATCH 08/10] Parse the relink=%s mount option
-> [PATCH 09/10] Enabling checkpoint relink of unlinked files inside containers
-> [PATCH 10/10] [RFC] Use call_usermodehelper to cleanup after failure
-> 
-> BUGS:
-> 
-> 	There's a memory leak (Reported-by: "Jose R. Santos"
-> <jrs-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>) that I haven't tracked down completely yet.
-> It seems to be in the "relink=" mount option parsing code -- I feel like I
-> must be missing some code path related to vfsmount handling.
-> 
-> Cheers,
-> 	-Matt Helsley
 > _______________________________________________
 > Containers mailing list
 > Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
