@@ -1,102 +1,125 @@
-From: Minchan Kim <minchan.kim@gmail.com>
-Subject: Re: [PATCH v5 3/9] writeback: convert variables to unsigned
-Date: Tue, 1 Mar 2011 13:50:25 +0900
-Message-ID: <20110301045025.GC2107@barrios-desktop>
-References: <1298669760-26344-1-git-send-email-gthelen@google.com>
- <1298669760-26344-4-git-send-email-gthelen@google.com>
- <20110227160721.GB3226@barrios-desktop>
- <AANLkTik7LfGfYpteufr68AqEe3wUriJKgAMkmT8pJSzZ@mail.gmail.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 00/10] Checkpoint/restart of open, unlinked files
+Date: Mon, 28 Feb 2011 21:05:20 -0800
+Message-ID: <20110301050520.GJ14893@count0.beaverton.ibm.com>
+References: <1298952316-15763-1-git-send-email-matthltc@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Transfer-Encoding: quoted-printable
-Return-path: <owner-linux-mm@kvack.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <AANLkTik7LfGfYpteufr68AqEe3wUriJKgAMkmT8pJSzZ@mail.gmail.com>
-Sender: owner-linux-mm@kvack.org
-To: Greg Thelen <gthelen@google.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Chad Talbott <ctalbott@google.com>, Justin TerAvest <teravest@google.com>, Vivek Goyal <vgoyal@redhat.com>
+In-Reply-To: <1298952316-15763-1-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, Feb 28, 2011 at 03:52:53PM -0800, Greg Thelen wrote:
-> On Sun, Feb 27, 2011 at 8:07 AM, Minchan Kim <minchan.kim@gmail.com> wr=
-ote:
-> > On Fri, Feb 25, 2011 at 01:35:54PM -0800, Greg Thelen wrote:
-> >> Convert two balance_dirty_pages() page counter variables (nr_reclaim=
-able
-> >> and nr_writeback) from 'long' to 'unsigned long'.
-> >>
-> >> These two variables are used to store results from global_page_state=
-().
-> >> global_page_state() returns unsigned long and carefully sums per-cpu
-> >> counters explicitly avoiding returning a negative value.
-> >>
-> >> Signed-off-by: Greg Thelen <gthelen@google.com>
-> > Reviewed-by: Minchan Kim <minchan.kim@gmail.com>
-> >
-> >> ---
-> >> Changelog since v4:
-> >> - Created this patch for clarity. =A0Previously this patch was integ=
-rated within
-> >> =A0 the "writeback: create dirty_info structure" patch.
-> >>
-> >> =A0mm/page-writeback.c | =A0 =A06 ++++--
-> >> =A01 files changed, 4 insertions(+), 2 deletions(-)
-> >>
-> >> diff --git a/mm/page-writeback.c b/mm/page-writeback.c
-> >> index 2cb01f6..4408e54 100644
-> >> --- a/mm/page-writeback.c
-> >> +++ b/mm/page-writeback.c
-> >> @@ -478,8 +478,10 @@ unsigned long bdi_dirty_limit(struct backing_de=
-v_info *bdi, unsigned long dirty)
-> >> =A0static void balance_dirty_pages(struct address_space *mapping,
-> >> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 unsigned=
- long write_chunk)
-> >> =A0{
-> >> - =A0 =A0 long nr_reclaimable, bdi_nr_reclaimable;
-> >> - =A0 =A0 long nr_writeback, bdi_nr_writeback;
-> >> + =A0 =A0 unsigned long nr_reclaimable;
-> >> + =A0 =A0 long bdi_nr_reclaimable;
-> >> + =A0 =A0 unsigned long nr_writeback;
-> >> + =A0 =A0 long bdi_nr_writeback;
-> >> =A0 =A0 =A0 unsigned long background_thresh;
-> >> =A0 =A0 =A0 unsigned long dirty_thresh;
-> >> =A0 =A0 =A0 unsigned long bdi_thresh;
-> >> --
-> >> 1.7.3.1
-> >>
-> > bdi_nr_[reclaimable|writeback] can return negative value?
-> > When I just look through bdi_stat_sum, it uses *percpu_counter_sum_po=
-sitive*.
-> > So I guess it always returns positive value.
-> > If it is right, could you change it, too?
->=20
-> Yes, I think we can also change bdi_nr_[reclaimable|writeback] to unsig=
-ned long.
->=20
-> bdi_stat_sum() and bdi_stat() both call percpu_counter_sum_positive(),
-> which return a positive number.  bdi_stat[_sum]() return s64.  Should
-> we also change bdi_stat[_sum]() to return unsigned long rather than
-> s64?  I would like the return value type to match the type of the
-> corresponding local variables in balance_dirty_pages().  All current
-> callers appear to expect bdi_stat[_sum]() to return unsigned long.
+Argh, always seem to forget some important details!
+This series is based on Oren's ckpt-v23-rc1 tree plus:
 
-Please, clear them, too.
-But this patch could be orthogonal with your series so it's up to you. :)
+1. sys-wrappers
+	This patch set from Namhyung Kim wraps "various syscalls
+	that were used in init code." These wrappers are also useful
+	for the c/r patchset.
 
->=20
-> > --
-> > Kind regards,
-> > Minchan Kim
-> >
+2. setns
+	Because we're often checkpointing files in an namespace
+	other than that occupied by the task calling sys_checkpoint()
+	relink fails with EXDEV _unless_ we change to the appropriate
+	mount namespace first. This dependency affects patch 9 of the
+	series.
 
---=20
-Kind regards,
-Minchan Kim
+Cheers,
+	-Matt Helsley
 
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter=
-.ca/
-Don't email: <a href=3Dmailto:"dont@kvack.org"> email@kvack.org </a>
+On Mon, Feb 28, 2011 at 08:05:06PM -0800, Matt Helsley wrote:
+> This patch set implements the relink file operation and uses it to support
+> checkpoint and restart of open, unlinked files. During checkpoint,
+> sys_checkpoint relinks the files and returns. Userspace then checkpoints the
+> filesystem contents using any backup-like method prior to thawing. That
+> backup is then made available for use during an optional migration followed
+> by restore and sys_restart. In the case of network and cluster/distributed
+> filesystems copying the filesystem contents explicitly for migration may not
+> be necessary at all -- it would be part of normal file writes. For
+> non-migration uses of checkpoint/restart filesystems like btrfs a snapshot
+> could simply be taken during checkpoint and mounted during restart -- again
+> without requiring IO proportional to the aggregate size of filesystem
+> contents being checkpointed.
+> 
+> These IO savings are critical to the use of checkpoint/restart as a
+> fault mitigation solution in HPC environments where the probability of
+> component failure is very high simply due to the number of system
+> components. Incurring substantial IO for checkpoint/restart interferes
+> with the IO requirements of HPC jobs and thus reduces the frequency of
+> checkpoint/restart. That in turn means more processing time is lost
+> as a consequence of a fault -- the longer period between checkpoints
+> plus the IO required to re-establish hardlinks are simply not acceptable
+> for these environments.
+> 
+> Without relinking we would need to walk the entire filesystem to find out
+> that "b" is a path to the same inode (another variation on this case: "b"
+> would also have been unlinked). We'd need to do this for every
+> unlinked file that remains open in every task to checkpoint. Even then
+> there is no guarantee such a "b" exists for every unlinked file -- the
+> inodes could be "orphans" -- and we'd need to preserve their contents
+> some other way.
+> 
+> I considered a couple alternatives to preserving unlinked file contents:
+> copying and file handles. Each has significant drawbacks.
+> 
+> First I attempted to copy the file contents into the image and then
+> recreate and unlink the file during restart. Using a simple version of
+> that method the write above would not reach "b". One fix would be to search
+> the filesystem for a file with the same inode number (inode of "b") and
+> either open it or hardlink it to "a". Another would be to record the inode
+> number. This either shifts the search from checkpoint time to restart time
+> or has all the drawbacks of the second method I considered: file handles.
+> 
+> Instead of copying contents or recording inodes I also considered using
+> file handles. We'd need to ensure that the filehandles persist in storage,
+> can be snapshotted/backed up, and can be migrated. Can handlefs or any
+> generic file handle system do this? My _guess_ is "no" but folks are
+> welcome to tell me I'm wrong.
+> 
+> In contrast, linking the file from a_fd back into its filesystem can avoid
+> these complexities. Relinking avoids the search for matching inodes and
+> copying large quantities of data from storage only to write it back (in
+> fact a non-linking solution requires that the data be read-and-written
+> twice -- once for checkpoint and once for restart). Like file handles it does
+> require changes to the filesystem code. Unlike file handles, enabling
+> relinking does not require every filesystem to support a new kind of
+> filesystem "object" -- only an operation that is quite similar to one that
+> already exists: link.
+> 
+> [PATCH 01/10] Create the .relink file_operation
+> [PATCH 02/10] ext3/4: Allow relinking to unlinked files
+> [PATCH 03/10] Split do_linkat() out of sys_linkat
+> [PATCH 04/10] Checkpoint/restart unlinked files
+> [PATCH 05/10] Enable c/r of unlinked fifos
+> [PATCH 06/10] Support relinking unlinked files in btrfs
+> [PATCH 07/10] Add relink_dir superblock field
+> [PATCH 08/10] Parse the relink=%s mount option
+> [PATCH 09/10] Enabling checkpoint relink of unlinked files inside containers
+> [PATCH 10/10] [RFC] Use call_usermodehelper to cleanup after failure
+> 
+> BUGS:
+> 
+> 	There's a memory leak (Reported-by: "Jose R. Santos"
+> <jrs-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>) that I haven't tracked down completely yet.
+> It seems to be in the "relink=" mount option parsing code -- I feel like I
+> must be missing some code path related to vfsmount handling.
+> 
+> Cheers,
+> 	-Matt Helsley
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
