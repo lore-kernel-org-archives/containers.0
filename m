@@ -1,88 +1,206 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 10/10] [RFC] Use call_usermodehelper to cleanup after failure
-Date: Mon, 28 Feb 2011 20:05:16 -0800
-Message-ID: <dc988b4723a10df05bf6889df851db2e5b228461.1298952288.git.matthltc@us.ibm.com>
-References: <1298952316-15763-1-git-send-email-matthltc@us.ibm.com>
-	<a6df3726c48b6f9e2422e9c12a32c4991bc53a25.1298952288.git.matthltc@us.ibm.com>
-	<cbc5f629ca02554497bcb385039a2a300ef897f0.1298952288.git.matthltc@us.ibm.com>
-	<6f547f7b0dd12d409f993dba3fbc899dc52f2a78.1298952288.git.matthltc@us.ibm.com>
-	<1a7a344ddd1d68ac862ec2248be77f2dd9f138c8.1298952288.git.matthltc@us.ibm.com>
-	<dbe36642be44152833a63e8173e8f0490dc1573f.1298952288.git.matthltc@us.ibm.com>
-	<ac2a9431a97bbb45bdecf2ccd011f70ee99f2731.1298952288.git.matthltc@us.ibm.com>
-	<24a5e0d9179d6e3c29ec0197a3251963ff2a4dbd.1298952288.git.matthltc@us.ibm.com>
-	<3d0a3c702e5986a45676987a4f3a6607d28725e7.1298952288.git.matthltc@us.ibm.com>
-	<7c6e1ebb39ca920c0c4c572e1f455250b2fbba4b.1298952288.git.matthltc@us.ibm.com>
+From: Minchan Kim <minchan.kim@gmail.com>
+Subject: Re: [PATCH v5 9/9] memcg: check memcg dirty limits in page
+ writeback
+Date: Tue, 1 Mar 2011 13:44:55 +0900
+Message-ID: <20110301044455.GB2107@barrios-desktop>
+References: <1298669760-26344-1-git-send-email-gthelen@google.com>
+ <1298669760-26344-10-git-send-email-gthelen@google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <7c6e1ebb39ca920c0c4c572e1f455250b2fbba4b.1298952288.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-In-Reply-To: <a6df3726c48b6f9e2422e9c12a32c4991bc53a25.1298952288.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-References: <a6df3726c48b6f9e2422e9c12a32c4991bc53a25.1298952288.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <owner-linux-mm@kvack.org>
+Content-Disposition: inline
+In-Reply-To: <1298669760-26344-10-git-send-email-gthelen@google.com>
+Sender: owner-linux-mm@kvack.org
+To: Greg Thelen <gthelen@google.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Chad Talbott <ctalbott@google.com>, Justin TerAvest <teravest@google.com>, Vivek Goyal <vgoyal@redhat.com>
 List-Id: containers.vger.kernel.org
 
-Without this sys_checkpoint may fail yet still leave files relinked
-in <mnt>/lost+found/checkpoint-N/. This patch uses call_usermodehelper()
-to clean up those files if sys_checkpoint has failed.
+On Fri, Feb 25, 2011 at 01:36:00PM -0800, Greg Thelen wrote:
+> If the current process is in a non-root memcg, then
+> balance_dirty_pages() will consider the memcg dirty limits as well as
+> the system-wide limits.  This allows different cgroups to have distinct
+> dirty limits which trigger direct and background writeback at different
+> levels.
+> 
+> If called with a mem_cgroup, then throttle_vm_writeout() should query
+> the given cgroup for its dirty memory usage limits.
+> 
+> Signed-off-by: Andrea Righi <arighi@develer.com>
+> Signed-off-by: Greg Thelen <gthelen@google.com>
+> Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+> Acked-by: Wu Fengguang <fengguang.wu@intel.com>
+> ---
+  
+<snip>
 
-It is possible to do this from userspace instead but due to the
-need to parse the image and/or traverse all mount namespaces and mounts
-the complexity of the code will be much higher there. That said, this
-is an "rm -rf" invoked by the kernel -- not something we want to stuff in
-the kernel without considerable forethought. So I've made ths an RFC and,
-until this patch gets accepted, we can plan on cleaning up from userspace.
+>  /*
+> @@ -477,12 +502,14 @@ unsigned long bdi_dirty_limit(struct backing_dev_info *bdi, unsigned long dirty)
+>   * data.  It looks at the number of dirty pages in the machine and will force
+>   * the caller to perform writeback if the system is over `vm_dirty_ratio'.
+>   * If we're over `background_thresh' then the writeback threads are woken to
+> - * perform some writeout.
+> + * perform some writeout.  The current task may have per-memcg dirty
+> + * limits, which are also checked.
+>   */
+>  static void balance_dirty_pages(struct address_space *mapping,
+>  				unsigned long write_chunk)
+>  {
+>  	struct dirty_info sys_info;
+> +	struct dirty_info memcg_info;
+>  	long bdi_nr_reclaimable;
+>  	long bdi_nr_writeback;
+>  	unsigned long bdi_thresh;
+> @@ -500,18 +527,27 @@ static void balance_dirty_pages(struct address_space *mapping,
+>  		};
+>  
+>  		global_dirty_info(&sys_info);
+> +		if (!memcg_dirty_info(NULL, &memcg_info))
+> +			memcg_info = sys_info;
 
-Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- fs/namei.c |   18 ++++++++++++++++++
- 1 files changed, 18 insertions(+), 0 deletions(-)
 
-diff --git a/fs/namei.c b/fs/namei.c
-index f6361f8..0084ceb 100644
---- a/fs/namei.c
-+++ b/fs/namei.c
-@@ -2599,6 +2599,21 @@ static void mkdirname(char *path, char **delim_p)
- 	}
- }
- 
-+static int checkpoint_rm_relink_collection(void *dq_data)
-+{
-+	char *argv[4], *envp[2];
-+
-+	argv[0] = "rm";
-+	argv[1] = "-rf";
-+	argv[2] = dq_data;
-+	argv[3] = NULL;
-+
-+	envp[0] = "PATH=/sbin:/bin:/usr/sbin:/usr/bin";
-+	envp[1] = NULL;
-+
-+	return call_usermodehelper(argv[0], argv, envp, UMH_WAIT_EXEC);
-+}
-+
- /*
-  * Make the directory used to collect all of the links in. Remove it
-  * if checkpoint fails.
-@@ -2614,6 +2629,9 @@ static int checkpoint_make_relink_collection(struct ckpt_ctx *ctx,
- 	if (!delim || (strlen(new_path) < 2)) /* Need a non-empty dirname */
- 		return -ENOENT;
- 	ret = kernel_sys_mkdir(new_path, S_IRWXU & ~current_umask());
-+	if (!ret)
-+		deferqueue_add(ctx->err_deferq, new_path, delim - new_path + 1,
-+			       checkpoint_rm_relink_collection, NULL);
- 	if (delim)
- 		*delim = '/';
- 	if (ret == -EEXIST) /* already created the collection dir */
+Sigh.
+
+I don't like dobule check in case of no-memcg configuration or root memcgroup.
+"Dobule check" means 1) sys_info check and 2) memcg_info check but it's same so
+second check is redundant. 
+In addition, we always need same logic between global and memcg.
+It adds binary bloating.
+
+>  
+>  		/*
+>  		 * Throttle it only when the background writeback cannot
+>  		 * catch-up. This avoids (excessively) small writeouts
+>  		 * when the bdi limits are ramping up.
+>  		 */
+> -		if (dirty_info_reclaimable(&sys_info) + sys_info.nr_writeback <=
+> +		if ((dirty_info_reclaimable(&sys_info) +
+> +		     sys_info.nr_writeback <=
+>  				(sys_info.background_thresh +
+> -				 sys_info.dirty_thresh) / 2)
+> +				 sys_info.dirty_thresh) / 2) &&
+> +		    (dirty_info_reclaimable(&memcg_info) +
+> +		     memcg_info.nr_writeback <=
+> +				(memcg_info.background_thresh +
+> +				 memcg_info.dirty_thresh) / 2))
+>  			break;
+>  
+> -		bdi_thresh = bdi_dirty_limit(bdi, sys_info.dirty_thresh);
+> +		bdi_thresh = bdi_dirty_limit(bdi,
+> +				min(sys_info.dirty_thresh,
+> +				    memcg_info.dirty_thresh));
+>  		bdi_thresh = task_dirty_limit(current, bdi_thresh);
+>  
+>  		/*
+> @@ -541,7 +577,9 @@ static void balance_dirty_pages(struct address_space *mapping,
+>  		dirty_exceeded =
+>  			(bdi_nr_reclaimable + bdi_nr_writeback > bdi_thresh)
+>  			|| (dirty_info_reclaimable(&sys_info) +
+> -			     sys_info.nr_writeback > sys_info.dirty_thresh);
+> +			    sys_info.nr_writeback > sys_info.dirty_thresh)
+> +			|| (dirty_info_reclaimable(&memcg_info) +
+> +			    memcg_info.nr_writeback > memcg_info.dirty_thresh);
+>  
+>  		if (!dirty_exceeded)
+>  			break;
+> @@ -559,7 +597,9 @@ static void balance_dirty_pages(struct address_space *mapping,
+>  		 * up.
+>  		 */
+>  		trace_wbc_balance_dirty_start(&wbc, bdi);
+> -		if (bdi_nr_reclaimable > bdi_thresh) {
+> +		if ((bdi_nr_reclaimable > bdi_thresh) ||
+> +		    (dirty_info_reclaimable(&memcg_info) >
+> +		     memcg_info.dirty_thresh)) {
+
+Why does memcg need this check?
+I guess bdi_thresh is the f(x), x = dirty_thresh and dirty_thresh is already memcg's one.
+So isn't it enough?
+I don't know the logic well but as I look at the comment, at least you change the behavior.
+Please write down why you need it and if you need it, please change comment, too.
+
+"
+ * Only move pages to writeback if this bdi is over its
+ * threshold otherwise wait until the disk writes catch
+ * up.
+"
+
+>  			writeback_inodes_wb(&bdi->wb, &wbc);
+>  			pages_written += write_chunk - wbc.nr_to_write;
+>  			trace_wbc_balance_dirty_written(&wbc, bdi);
+> @@ -594,8 +634,10 @@ static void balance_dirty_pages(struct address_space *mapping,
+>  	 * background_thresh, to keep the amount of dirty memory low.
+>  	 */
+>  	if ((laptop_mode && pages_written) ||
+> -	    (!laptop_mode && (dirty_info_reclaimable(&sys_info) >
+> -			      sys_info.background_thresh)))
+> +	    (!laptop_mode && ((dirty_info_reclaimable(&sys_info) >
+> +			       sys_info.background_thresh) ||
+> +			      (dirty_info_reclaimable(&memcg_info) >
+> +			       memcg_info.background_thresh))))
+>  		bdi_start_background_writeback(bdi);
+>  }
+>  
+> @@ -653,12 +695,20 @@ void balance_dirty_pages_ratelimited_nr(struct address_space *mapping,
+>  }
+>  EXPORT_SYMBOL(balance_dirty_pages_ratelimited_nr);
+>  
+> -void throttle_vm_writeout(gfp_t gfp_mask)
+> +/*
+> + * Throttle the current task if it is near dirty memory usage limits.
+> + * If @mem_cgroup is NULL or the root_cgroup, then use global dirty memory
+> + * information; otherwise use the per-memcg dirty limits.
+> + */
+> +void throttle_vm_writeout(gfp_t gfp_mask, struct mem_cgroup *mem_cgroup)
+>  {
+>  	struct dirty_info sys_info;
+> +	struct dirty_info memcg_info;
+>  
+>          for ( ; ; ) {
+>  		global_dirty_info(&sys_info);
+> +		if (!memcg_dirty_info(mem_cgroup, &memcg_info))
+> +			memcg_info = sys_info;
+>  
+>                  /*
+>                   * Boost the allowable dirty threshold a bit for page
+> @@ -666,9 +716,13 @@ void throttle_vm_writeout(gfp_t gfp_mask)
+>                   */
+>  		sys_info.dirty_thresh +=
+>  			sys_info.dirty_thresh / 10;      /* wheeee... */
+> +		memcg_info.dirty_thresh +=
+> +			memcg_info.dirty_thresh / 10;    /* wheeee... */
+>  
+> -		if (sys_info.nr_unstable_nfs +
+> -		    sys_info.nr_writeback <= sys_info.dirty_thresh)
+> +		if ((sys_info.nr_unstable_nfs +
+> +		     sys_info.nr_writeback <= sys_info.dirty_thresh) &&
+> +		    (memcg_info.nr_unstable_nfs +
+> +		     memcg_info.nr_writeback <= memcg_info.dirty_thresh))
+>  			break;
+>                  congestion_wait(BLK_RW_ASYNC, HZ/10);
+>  
+> diff --git a/mm/vmscan.c b/mm/vmscan.c
+> index ba11e28..f723242 100644
+> --- a/mm/vmscan.c
+> +++ b/mm/vmscan.c
+> @@ -1927,7 +1927,7 @@ restart:
+>  					sc->nr_scanned - nr_scanned, sc))
+>  		goto restart;
+>  
+> -	throttle_vm_writeout(sc->gfp_mask);
+> +	throttle_vm_writeout(sc->gfp_mask, sc->mem_cgroup);
+>  }
+>  
+>  /*
+> -- 
+> 1.7.3.1
+> 
+
 -- 
-1.6.3.3
+Kind regards,
+Minchan Kim
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
