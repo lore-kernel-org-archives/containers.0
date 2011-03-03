@@ -1,75 +1,57 @@
-From: Greg Thelen <gthelen@google.com>
-Subject: Re: [PATCH v5 9/9] memcg: check memcg dirty limits in page writeback
-Date: Thu, 3 Mar 2011 16:30:23 -0800
-Message-ID: <AANLkTinSrmH-XGuFMBve9SczdXsmKzJbFN4cZ234=z9A@mail.gmail.com>
-References: <1298669760-26344-1-git-send-email-gthelen@google.com>
- <1298669760-26344-10-git-send-email-gthelen@google.com> <20110302231727.GG2547@redhat.com>
+From: Philip Rhoades <phil-8eKeQ+h1VH4pAS55Wn97og@public.gmane.org>
+Subject: Getting started - Error message
+Date: Fri, 04 Mar 2011 05:55:30 +1100
+Message-ID: <4D6FE422.1040807@pricom.com.au>
+Reply-To: phil-8eKeQ+h1VH4pAS55Wn97og@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: QUOTED-PRINTABLE
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20110302231727.GG2547@redhat.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Vivek Goyal <vgoyal@redhat.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Chad Talbott <ctalbott@google.com>, Justin TerAvest <teravest@google.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Mar 2, 2011 at 3:17 PM, Vivek Goyal <vgoyal@redhat.com> wrote:
-> On Fri, Feb 25, 2011 at 01:36:00PM -0800, Greg Thelen wrote:
->
-> [..]
->> @@ -500,18 +527,27 @@ static void balance_dirty_pages(struct address=
-_space *mapping,
->> =A0 =A0 =A0 =A0 =A0 =A0 =A0 };
->>
->> =A0 =A0 =A0 =A0 =A0 =A0 =A0 global_dirty_info(&sys_info);
->> + =A0 =A0 =A0 =A0 =A0 =A0 if (!memcg_dirty_info(NULL, &memcg_info))
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 memcg_info =3D sys_info;
->>
->> =A0 =A0 =A0 =A0 =A0 =A0 =A0 /*
->> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0* Throttle it only when the backgroun=
-d writeback cannot
->> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0* catch-up. This avoids (excessively)=
- small writeouts
->> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0* when the bdi limits are ramping up.
->> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0*/
->> - =A0 =A0 =A0 =A0 =A0 =A0 if (dirty_info_reclaimable(&sys_info) + sy=
-s_info.nr_writeback <=3D
->> + =A0 =A0 =A0 =A0 =A0 =A0 if ((dirty_info_reclaimable(&sys_info) +
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0sys_info.nr_writeback <=3D
->> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 (sys_inf=
-o.background_thresh +
->> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0sys_inf=
-o.dirty_thresh) / 2)
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0sys_inf=
-o.dirty_thresh) / 2) &&
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 (dirty_info_reclaimable(&memcg_inf=
-o) +
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0memcg_info.nr_writeback <=3D
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 (memcg_inf=
-o.background_thresh +
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0memcg_i=
-nfo.dirty_thresh) / 2))
->> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 break;
->>
->> - =A0 =A0 =A0 =A0 =A0 =A0 bdi_thresh =3D bdi_dirty_limit(bdi, sys_in=
-fo.dirty_thresh);
->> + =A0 =A0 =A0 =A0 =A0 =A0 bdi_thresh =3D bdi_dirty_limit(bdi,
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 min(sys_in=
-fo.dirty_thresh,
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 me=
-mcg_info.dirty_thresh));
->> =A0 =A0 =A0 =A0 =A0 =A0 =A0 bdi_thresh =3D task_dirty_limit(current,=
- bdi_thresh);
->
-> Greg, so currently we seem to have per_bdi/per_task dirty limits and
-> now with this patch it will sort of become per_cgroup/per_bdi/per_tas=
-k
-> dirty limits? I think that kind of makes sense to me.
->
-> Thanks
-> Vivek
->
+People,
 
-Vivek,  you are correct.  This patch adds per_cgroup limits to the
-existing system, bdi, and system dirty memory limits.
+I used this info to get started on Fedora 14 x86_64:
+
+http://www.techrepublic.com/blog/opensource/introducing-linux-virtual-containers-with-lxc/1289
+
+and everything seems happy when doing the setup stuff but when I try to run:
+
+/usr/bin/lxc-execute -n test -f /etc/lxc/lxc-test.conf /bin/bash
+
+I get:
+
+lxc-execute: network is not created for 'lxc.network.link' = 'br0 
+lxc.network.hwaddr = 4a:49:43:49:79:bd' option
+
+lxc-execute: failed to process 'lxc.network.link = br0 
+lxc.network.hwaddr = 4a:49:43:49:79:bd
+'
+lxc-execute: failed to read configuration file
+
+but the conf file is readable:
+
+-rw-r--r-- 1 root root 215 Mar  4 05:29 /etc/lxc/lxc-test.conf
+
+Suggestions?
+
+Thanks,
+
+Phil.
+-- 
+Philip Rhoades
+
+GPO Box 3411
+Sydney NSW	2001
+Australia
+E-mail:  phil-8eKeQ+h1VH4pAS55Wn97og@public.gmane.org
