@@ -1,62 +1,41 @@
-From: Vivek Goyal <vgoyal@redhat.com>
-Subject: Re: [PATCH v5 9/9] memcg: check memcg dirty limits in page writeback
-Date: Wed, 2 Mar 2011 18:17:27 -0500
-Message-ID: <20110302231727.GG2547@redhat.com>
-References: <1298669760-26344-1-git-send-email-gthelen@google.com>
- <1298669760-26344-10-git-send-email-gthelen@google.com>
+From: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC] Payloads and transient filesystem support for user-cr
+Date: Wed, 02 Mar 2011 16:23:17 -0800
+Message-ID: <877hch6oi2.fsf@caffeine.danplanet.com>
+References: <1299101725-17603-1-git-send-email-danms@us.ibm.com>
+	<4D6EBF24.4000601@free.fr>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <owner-linux-mm@kvack.org>
-Content-Disposition: inline
-In-Reply-To: <1298669760-26344-10-git-send-email-gthelen@google.com>
-Sender: owner-linux-mm@kvack.org
-To: Greg Thelen <gthelen@google.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Chad Talbott <ctalbott@google.com>, Justin TerAvest <teravest@google.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Feb 25, 2011 at 01:36:00PM -0800, Greg Thelen wrote:
+DL> The posix semaphore use the mapped deleted hardlinked files.
 
-[..]
-> @@ -500,18 +527,27 @@ static void balance_dirty_pages(struct address_space *mapping,
->  		};
->  
->  		global_dirty_info(&sys_info);
-> +		if (!memcg_dirty_info(NULL, &memcg_info))
-> +			memcg_info = sys_info;
->  
->  		/*
->  		 * Throttle it only when the background writeback cannot
->  		 * catch-up. This avoids (excessively) small writeouts
->  		 * when the bdi limits are ramping up.
->  		 */
-> -		if (dirty_info_reclaimable(&sys_info) + sys_info.nr_writeback <=
-> +		if ((dirty_info_reclaimable(&sys_info) +
-> +		     sys_info.nr_writeback <=
->  				(sys_info.background_thresh +
-> -				 sys_info.dirty_thresh) / 2)
-> +				 sys_info.dirty_thresh) / 2) &&
-> +		    (dirty_info_reclaimable(&memcg_info) +
-> +		     memcg_info.nr_writeback <=
-> +				(memcg_info.background_thresh +
-> +				 memcg_info.dirty_thresh) / 2))
->  			break;
->  
-> -		bdi_thresh = bdi_dirty_limit(bdi, sys_info.dirty_thresh);
-> +		bdi_thresh = bdi_dirty_limit(bdi,
-> +				min(sys_info.dirty_thresh,
-> +				    memcg_info.dirty_thresh));
->  		bdi_thresh = task_dirty_limit(current, bdi_thresh);
+DL> AFAIK, the current implementation do not support that, no ?
+DL> How is it possible to CR programs using sem_* operations in this case ?
 
-Greg, so currently we seem to have per_bdi/per_task dirty limits and
-now with this patch it will sort of become per_cgroup/per_bdi/per_task
-dirty limits? I think that kind of makes sense to me.
+You're right.  This addresses the problem of /dev/shm/sem.foo going away
+when the container's /dev/shm mount is destroyed.  It does not address
+the fact that the mmap()'d unlinked file is restored as an anonymous
+region and therefore becomes disjoint with the one on-disk.  I expect
+the evolution of the unlinked files patches will resolve that.
 
-Thanks
-Vivek
+Our naive tests are not discriminating enough to make this distinction
+at the moment, which certainly needs to be resolved :)
 
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+-- 
+Dan Smith
+IBM Linux Technology Center
+email: danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
