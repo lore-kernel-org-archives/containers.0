@@ -1,65 +1,64 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: cgroup memory, blkio and the lovely swapping
-Date: Fri, 4 Mar 2011 17:24:30 +0900
-Message-ID: <20110304172430.19a3824a.kamezawa.hiroyu__19058.7615631104$1299227493$gmane$org@jp.fujitsu.com>
-References: <20110304083944.22fb612f@sol>
-	<20110304165455.d438342a.kamezawa.hiroyu@jp.fujitsu.com>
-	<20110304091132.6de2ed94@sol>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+Subject: Re: [Bugme-new] [Bug 30432] New: rmdir on cgroup can cause hang
+ tasks
+Date: Fri, 4 Mar 2011 17:28:15 +0900
+Message-ID: <20110304172815.9d9e3672.kamezawa.hiroyu@jp.fujitsu.com>
+References: <bug-30432-10286@https.bugzilla.kernel.org/>
+	<20110304000355.4f68bab1.akpm@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110304091132.6de2ed94@sol>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Poelzleithner <poelzi-j3Gp85GwYS0dnm+yROfE0A@public.gmane.org>
-Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <20110304000355.4f68bab1.akpm@linux-foundation.org>
+Sender: owner-linux-mm@kvack.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: containers@lists.osdl.org, bugzilla-daemon@bugzilla.kernel.org, bugme-daemon@bugzilla.kernel.org, linux-mm@kvack.org, Paul Menage <menage@google.com>, Daniel Poelzleithner <poelzi@poelzi.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, 4 Mar 2011 09:11:32 +0100
-Daniel Poelzleithner <poelzi-j3Gp85GwYS0dnm+yROfE0A@public.gmane.org> wrote:
+On Fri, 4 Mar 2011 00:03:55 -0800
+Andrew Morton <akpm@linux-foundation.org> wrote:
 
-> On Fri, 4 Mar 2011 16:54:55 +0900
-> KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
-> 
-> > Now, blkio cgroup does work only with synchronous I/O(direct I/O)
-> > and never work with swap I/O. And I don't think swap-i/o limit
-> > is a blkio matter.
-> 
-> I'm totally unsure about what subsystem it really belongs to. It is
-> memory for sure, but disk access, which it actually affects, belongs to
-> the blkio subsystem. Is there a technical reason why swap I/O is not run
-> through the blkio system ?
-> 
-
-Now, blkio cgroup has no tags on each page. Then, it works only when
-it can detect a thread which starts I/O in block layer.
-But there is an activity to fix that.
-
-http://marc.info/?l=linux-mm&m=129888823027871&w=2
-
-I think you can discuss swap io handling in this thread.
-
-> 
-> > Memory cgroup is now developping dirty_ratio for memory cgroup.
-> > By that, you can control the number of pages in writeback, in memory
-> > cgroup. I think it will work for you.
-> 
-> I'm not sure that fixes the fairness problem on swapio. Just having a
-> larger buffer before a writeback happens will reduce seeks, but not
-> give fair share of io in swap in. It's good to control over it on
-> cgroup level, but i doubt it will fix the problem.
+> > [ 5066.149853] Call Trace:
+> > [ 5066.149853]  [<ffffffff8158e4d5>] schedule_timeout+0x215/0x2f0
+> > [ 5066.149853]  [<ffffffff8104e4fd>] ? task_rq_lock+0x5d/0xa0
+> > [ 5066.149853]  [<ffffffff81059c93>] ? try_to_wake_up+0xc3/0x410
+> > [ 5066.149853]  [<ffffffff8158e0cb>] wait_for_common+0xdb/0x180
+> > [ 5066.149853]  [<ffffffff81059fe0>] ? default_wake_function+0x0/0x20
+> > [ 5066.244366]  [<ffffffff8158e24d>] wait_for_completion+0x1d/0x20
+> > [ 5066.244366]  [<ffffffff810d44f5>] synchronize_sched+0x55/0x60
+> > [ 5066.244366]  [<ffffffff81080b00>] ? wakeme_after_rcu+0x0/0x20
+> > [ 5066.244366]  [<ffffffff811526a3>] mem_cgroup_start_move+0x93/0xa0
+> > [ 5066.244366]  [<ffffffff8115739b>] mem_cgroup_force_empty+0xdb/0x640
+> > [ 5066.244366]  [<ffffffff81157914>] mem_cgroup_pre_destroy+0x14/0x20
+> > [ 5066.244366]  [<ffffffff810ae681>] cgroup_rmdir+0xc1/0x560
+> > [ 5066.244366]  [<ffffffff81083d70>] ? autoremove_wake_function+0x0/0x40
+> > [ 5066.244366]  [<ffffffff81167cc4>] vfs_rmdir+0xb4/0x110
+> > [ 5066.244366]  [<ffffffff81169d13>] do_rmdir+0x133/0x140
+> > [ 5066.244366]  [<ffffffff810d3c85>] ? call_rcu_sched+0x15/0x20
+> > [ 5066.244366]  [<ffffffff810bf6ff>] ? audit_syscall_entry+0x1df/0x280
+> > [ 5066.244366]  [<ffffffff81169d76>] sys_rmdir+0x16/0x20
+> > [ 5066.244366]  [<ffffffff8100c042>] system_call_fastpath+0x16/0x1b
 > 
 
-swap-in is out-of-control from memcg's view and have no plans.
-IHMO, the number of swap-in will be blkio cgroup matter.
+This seems....
+==
+static void mem_cgroup_start_move(struct mem_cgroup *mem)
+{
+.....
+	put_online_cpus();
 
-Thanks,
--Kame 
+        synchronize_rcu();   <---------(*)
+}
+==
+
+Waiting on above synchronize_rcu().
+
+Hmm...
+-Kame
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
