@@ -1,8 +1,8 @@
-From: Philip Rhoades <phil-8eKeQ+h1VH4pAS55Wn97og@public.gmane.org>
-Subject: Getting started - Error message
-Date: Fri, 04 Mar 2011 05:55:30 +1100
-Message-ID: <4D6FE422.1040807@pricom.com.au>
-Reply-To: phil-8eKeQ+h1VH4pAS55Wn97og@public.gmane.org
+From: Daniel Poelzleithner <poelzi-j3Gp85GwYS0dnm+yROfE0A@public.gmane.org>
+Subject: cgroup memory, blkio and the lovely swapping
+Date: Fri, 4 Mar 2011 08:39:44 +0100
+Message-ID: <20110304083944.22fb612f__30282.847924582$1299224449$gmane$org@sol>
+Reply-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -16,42 +16,31 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-People,
+Hi,
 
-I used this info to get started on Fedora 14 x86_64:
+currently when one process causes heavy swapping, the responsiveness of
+the hole system suffers greatly. With the small memleak [1] test tool I
+wrote, the effect can be experienced very easily, depending on the
+delay the lag can become quite large. If I ensure that 10% of the RAM
+stay free for free memory and cache, the system never swaps to death.
+That works very well, but if accesses to the swap are very heavy, the
+system still lags on all other processes, not only the swapping one.
+Putting the swapping process into a blkio cgroup with little weight does
+not affect the io or swap io from other processes with larger weight in
+their group.
 
-http://www.techrepublic.com/blog/opensource/introducing-linux-virtual-containers-with-lxc/1289
+Maybe I'm mistaken, but wouldn't it be the easiest way to get fair
+swapping and control to let the pagein respect the blkio.weight value
+or even better add a second weight value for swapping io ?
 
-and everything seems happy when doing the setup stuff but when I try to run:
 
-/usr/bin/lxc-execute -n test -f /etc/lxc/lxc-test.conf /bin/bash
 
-I get:
+kind regards
+  Daniel
 
-lxc-execute: network is not created for 'lxc.network.link' = 'br0 
-lxc.network.hwaddr = 4a:49:43:49:79:bd' option
 
-lxc-execute: failed to process 'lxc.network.link = br0 
-lxc.network.hwaddr = 4a:49:43:49:79:bd
-'
-lxc-execute: failed to read configuration file
-
-but the conf file is readable:
-
--rw-r--r-- 1 root root 215 Mar  4 05:29 /etc/lxc/lxc-test.conf
-
-Suggestions?
-
-Thanks,
-
-Phil.
--- 
-Philip Rhoades
-
-GPO Box 3411
-Sydney NSW	2001
-Australia
-E-mail:  phil-8eKeQ+h1VH4pAS55Wn97og@public.gmane.org
+[1] https://github.com/poelzi/ulatencyd/blob/master/tests/memleak.c
