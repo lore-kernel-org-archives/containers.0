@@ -1,13 +1,14 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: Getting started - Error message
-Date: Fri, 04 Mar 2011 09:08:57 +0100
-Message-ID: <4D709E19.2090704@free.fr>
-References: <4D6FE422.1040807@pricom.com.au>
+From: Daniel Poelzleithner <poelzi-j3Gp85GwYS0dnm+yROfE0A@public.gmane.org>
+Subject: Re: cgroup memory, blkio and the lovely swapping
+Date: Fri, 4 Mar 2011 09:11:32 +0100
+Message-ID: <20110304091132.6de2ed94__32066.3688741208$1299226385$gmane$org@sol>
+References: <20110304083944.22fb612f@sol>
+	<20110304165455.d438342a.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4D6FE422.1040807-8eKeQ+h1VH4pAS55Wn97og@public.gmane.org>
+In-Reply-To: <20110304165455.d438342a.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,51 +18,33 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: phil-8eKeQ+h1VH4pAS55Wn97og@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 03/03/2011 07:55 PM, Philip Rhoades wrote:
-> People,
->
-> I used this info to get started on Fedora 14 x86_64:
->
-> http://www.techrepublic.com/blog/opensource/introducing-linux-virtual-containers-with-lxc/1289
->
-> and everything seems happy when doing the setup stuff but when I try to run:
->
-> /usr/bin/lxc-execute -n test -f /etc/lxc/lxc-test.conf /bin/bash
->
-> I get:
->
-> lxc-execute: network is not created for 'lxc.network.link' = 'br0
-> lxc.network.hwaddr = 4a:49:43:49:79:bd' option
->
-> lxc-execute: failed to process 'lxc.network.link = br0
-> lxc.network.hwaddr = 4a:49:43:49:79:bd
-> '
-> lxc-execute: failed to read configuration file
->
-> but the conf file is readable:
->
-> -rw-r--r-- 1 root root 215 Mar  4 05:29 /etc/lxc/lxc-test.conf
+On Fri, 4 Mar 2011 16:54:55 +0900
+KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
 
-The blog shows something like that:
+> Now, blkio cgroup does work only with synchronous I/O(direct I/O)
+> and never work with swap I/O. And I don't think swap-i/o limit
+> is a blkio matter.
 
-"lxc.utsname = test lxc.network.type = veth lxc.network.flags = up 
-lxc.network.link = br0 lxc.network.hwaddr = 4a:49:43:49:79:bd 
-lxc.network.ipv4 = 192.168.250.150 lxc.network.ipv6 = 
-2003:db8:1:0:214:1234:fe0b:3596"
+I'm totally unsure about what subsystem it really belongs to. It is
+memory for sure, but disk access, which it actually affects, belongs to
+the blkio subsystem. Is there a technical reason why swap I/O is not run
+through the blkio system ?
 
-The configuration file should be in this format:
 
-lxc.utsname = test
-lxc.network.type = veth
-lxc.network.flags = up
-lxc.network.link = br0
-lxc.network.hwaddr = 4a:49:43:49:79:bd
-lxc.network.ipv4 = 192.168.250.150
-lxc.network.ipv6 = 2003:db8:1:0:214:1234:fe0b:3596
+> Memory cgroup is now developping dirty_ratio for memory cgroup.
+> By that, you can control the number of pages in writeback, in memory
+> cgroup. I think it will work for you.
 
-Thanks
-   -- Daniel
+I'm not sure that fixes the fairness problem on swapio. Just having a
+larger buffer before a writeback happens will reduce seeks, but not
+give fair share of io in swap in. It's good to control over it on
+cgroup level, but i doubt it will fix the problem.
+
+
+
+kind regards
+ Daniel
