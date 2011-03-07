@@ -1,19 +1,19 @@
-From: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
+From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Subject: Re: [PATCH 0/3] blk-throttle: async write throttling
-Date: Mon, 7 Mar 2011 12:34:11 +0100
-Message-ID: <20110307113411.GA4485__49758.5060111762$1299497714$gmane$org@linux.develer.com>
+Date: Mon, 07 Mar 2011 19:44:49 +0800
+Message-ID: <4D74C531.7070305__41396.926114294$1299498368$gmane$org@cn.fujitsu.com>
 References: <1298888105-3778-1-git-send-email-arighi@develer.com>
 	<20110228230114.GB20845@redhat.com>
 	<20110302132830.GB2061@linux.develer.com>
 	<20110302214705.GD2547@redhat.com>
 	<20110306155247.GA1687@linux.develer.com>
 	<4D7489BF.9030808@cn.fujitsu.com>
+	<20110307113411.GA4485@linux.develer.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4D7489BF.9030808-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20110307113411.GA4485-fxUVXftIFDlZdMzt4l2sLQC/G2K4zDHf@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,141 +23,134 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+To: Andrea Righi <arighi-vWjgImWzx8FBDgjK7y7TUQ@public.gmane.org>
 Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Wu Fengguang <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Mar 07, 2011 at 03:31:11PM +0800, Gui Jianfeng wrote:
-> Andrea Righi wrote:
-> > On Wed, Mar 02, 2011 at 04:47:05PM -0500, Vivek Goyal wrote:
-> >> On Wed, Mar 02, 2011 at 02:28:30PM +0100, Andrea Righi wrote:
-> >>> On Mon, Feb 28, 2011 at 06:01:14PM -0500, Vivek Goyal wrote:
-> >>>> On Mon, Feb 28, 2011 at 11:15:02AM +0100, Andrea Righi wrote:
-> >>>>> Overview
-> >>>>> ========
-> >>>>> Currently the blkio.throttle controller only support synchronous IO requests.
-> >>>>> This means that we always look at the current task to identify the "owner" of
-> >>>>> each IO request.
-> >>>>>
-> >>>>> However dirty pages in the page cache can be wrote to disk asynchronously by
-> >>>>> the per-bdi flusher kernel threads or by any other thread in the system,
-> >>>>> according to the writeback policy.
-> >>>>>
-> >>>>> For this reason the real writes to the underlying block devices may
-> >>>>> occur in a different IO context respect to the task that originally
-> >>>>> generated the dirty pages involved in the IO operation. This makes the
-> >>>>> tracking and throttling of writeback IO more complicate respect to the
-> >>>>> synchronous IO from the blkio controller's perspective.
-> >>>>>
-> >>>>> Proposed solution
-> >>>>> =================
-> >>>>> In the previous patch set http://lwn.net/Articles/429292/ I proposed to resolve
-> >>>>> the problem of the buffered writes limitation by tracking the ownership of all
-> >>>>> the dirty pages in the system.
-> >>>>>
-> >>>>> This would allow to always identify the owner of each IO operation at the block
-> >>>>> layer and apply the appropriate throttling policy implemented by the
-> >>>>> blkio.throttle controller.
-> >>>>>
-> >>>>> This solution makes the blkio.throttle controller to work as expected also for
-> >>>>> writeback IO, but it does not resolve the problem of faster cgroups getting
-> >>>>> blocked by slower cgroups (that would expose a potential way to create DoS in
-> >>>>> the system).
-> >>>>>
-> >>>>> In fact, at the moment critical IO requests (that have dependency with other IO
-> >>>>> requests made by other cgroups) and non-critical requests are mixed together at
-> >>>>> the filesystem layer in a way that throttling a single write request may stop
-> >>>>> also other requests in the system, and at the block layer it's not possible to
-> >>>>> retrieve such informations to make the right decision.
-> >>>>>
-> >>>>> A simple solution to this problem could be to just limit the rate of async
-> >>>>> writes at the time a task is generating dirty pages in the page cache. The
-> >>>>> big advantage of this approach is that it does not need the overhead of
-> >>>>> tracking the ownership of the dirty pages, because in this way from the blkio
-> >>>>> controller perspective all the IO operations will happen from the process
-> >>>>> context: writes in memory and synchronous reads from the block device.
-> >>>>>
-> >>>>> The drawback of this approach is that the blkio.throttle controller becomes a
-> >>>>> little bit leaky, because with this solution the controller is still affected
-> >>>>> by the IO spikes during the writeback of dirty pages executed by the kernel
-> >>>>> threads.
-> >>>>>
-> >>>>> Probably an even better approach would be to introduce the tracking of the
-> >>>>> dirty page ownership to properly account the cost of each IO operation at the
-> >>>>> block layer and apply the throttling of async writes in memory only when IO
-> >>>>> limits are exceeded.
-> >>>> Andrea, I am curious to know more about it third option. Can you give more
-> >>>> details about accouting in block layer but throttling in memory. So say 
-> >>>> a process starts IO, then it will still be in throttle limits at block
-> >>>> layer (because no writeback has started), then the process will write
-> >>>> bunch of pages in cache. By the time throttle limits are crossed at
-> >>>> block layer, we already have lots of dirty data in page cache and
-> >>>> throttling process now is already late?
-> >>> Charging the cost of each IO operation at the block layer would allow
-> >>> tasks to write in memory at the maximum speed. Instead, with the 3rd
-> >>> approach, tasks are forced to write in memory at the rate defined by the
-> >>> blkio.throttle.write_*_device (or blkio.throttle.async.write_*_device).
-> >>>
-> >>> When we'll have the per-cgroup dirty memory accounting and limiting
-> >>> feature, with this approach each cgroup could write to its dirty memory
-> >>> quota at the maximum rate.
-> >> Ok, so this is option 3 which you have already implemented in this
-> >> patchset. 
-> >>
-> >> I guess then I am confused with option 2. Can you elaborate a little
-> >> more there.
-> > 
-> > With option 3, we can just limit the rate at which dirty pages are
-> > generated in memory. And this can be done introducing the files
-> > blkio.throttle.async.write_bps/iops_device.
-> > 
-> > At the moment in blk_throtl_bio() we charge the dispatched bytes/iops
-> > _and_ we check if the bio can be dispatched. These two distinct
-> > operations are now done by the same function.
-> > 
-> > With option 2, I'm proposing to split these two operations and place
-> > throtl_charge_io() at the block layer in __generic_make_request() and an
-> > equivalent of tg_may_dispatch_bio() (maybe a better name would be
-> > blk_is_throttled()) at the page cache layer, in
-> > balance_dirty_pages_ratelimited_nr():
-> > 
-> > A prototype for blk_is_throttled() could be the following:
-> > 
-> > bool blk_is_throttled(void);
-> > 
-> > This means in balance_dirty_pages_ratelimited_nr() we won't charge any
-> > bytes/iops to the cgroup, but we'll just check if the limits are
-> > exceeded. And stop it in that case, so that no more dirty pages can be
-> > generated by this cgroup.
-> > 
-> > Instead at the block layer WRITEs will be always dispatched in
-> > blk_throtl_bio() (tg_may_dispatch_bio() will always return true), but
-> > the throtl_charge_io() would charge the cost of the IO operation to the
-> > right cgroup.
-> > 
-> > To summarize:
-> > 
-> > __generic_make_request():
-> > 	blk_throtl_bio(q, &bio);
-> > 
-> > balance_dirty_pages_ratelimited_nr():
-> > 	if (blk_is_throttled())
-> > 		// add the current task into a per-group wait queue and
-> > 		// wake up once this cgroup meets its quota
-> > 
-> > What do you think?
-> 
-> Hi Andrea,
-> 
-> This means when you throttle writes, the reads issued by this task are also throttled?
-> 
-> Thanks,
-> Gui
-
-Exactly, we're treating the throttling of READs and WRITEs in two
-different ways.
-
-READs will be always throttled synchronously in the
-__generic_make_request() -> blk_throtl_bio() path.
-
--Andrea
+QW5kcmVhIFJpZ2hpIHdyb3RlOgo+IE9uIE1vbiwgTWFyIDA3LCAyMDExIGF0IDAzOjMxOjExUE0g
+KzA4MDAsIEd1aSBKaWFuZmVuZyB3cm90ZToKPj4gQW5kcmVhIFJpZ2hpIHdyb3RlOgo+Pj4gT24g
+V2VkLCBNYXIgMDIsIDIwMTEgYXQgMDQ6NDc6MDVQTSAtMDUwMCwgVml2ZWsgR295YWwgd3JvdGU6
+Cj4+Pj4gT24gV2VkLCBNYXIgMDIsIDIwMTEgYXQgMDI6Mjg6MzBQTSArMDEwMCwgQW5kcmVhIFJp
+Z2hpIHdyb3RlOgo+Pj4+PiBPbiBNb24sIEZlYiAyOCwgMjAxMSBhdCAwNjowMToxNFBNIC0wNTAw
+LCBWaXZlayBHb3lhbCB3cm90ZToKPj4+Pj4+IE9uIE1vbiwgRmViIDI4LCAyMDExIGF0IDExOjE1
+OjAyQU0gKzAxMDAsIEFuZHJlYSBSaWdoaSB3cm90ZToKPj4+Pj4+PiBPdmVydmlldwo+Pj4+Pj4+
+ID09PT09PT09Cj4+Pj4+Pj4gQ3VycmVudGx5IHRoZSBibGtpby50aHJvdHRsZSBjb250cm9sbGVy
+IG9ubHkgc3VwcG9ydCBzeW5jaHJvbm91cyBJTyByZXF1ZXN0cy4KPj4+Pj4+PiBUaGlzIG1lYW5z
+IHRoYXQgd2UgYWx3YXlzIGxvb2sgYXQgdGhlIGN1cnJlbnQgdGFzayB0byBpZGVudGlmeSB0aGUg
+Im93bmVyIiBvZgo+Pj4+Pj4+IGVhY2ggSU8gcmVxdWVzdC4KPj4+Pj4+Pgo+Pj4+Pj4+IEhvd2V2
+ZXIgZGlydHkgcGFnZXMgaW4gdGhlIHBhZ2UgY2FjaGUgY2FuIGJlIHdyb3RlIHRvIGRpc2sgYXN5
+bmNocm9ub3VzbHkgYnkKPj4+Pj4+PiB0aGUgcGVyLWJkaSBmbHVzaGVyIGtlcm5lbCB0aHJlYWRz
+IG9yIGJ5IGFueSBvdGhlciB0aHJlYWQgaW4gdGhlIHN5c3RlbSwKPj4+Pj4+PiBhY2NvcmRpbmcg
+dG8gdGhlIHdyaXRlYmFjayBwb2xpY3kuCj4+Pj4+Pj4KPj4+Pj4+PiBGb3IgdGhpcyByZWFzb24g
+dGhlIHJlYWwgd3JpdGVzIHRvIHRoZSB1bmRlcmx5aW5nIGJsb2NrIGRldmljZXMgbWF5Cj4+Pj4+
+Pj4gb2NjdXIgaW4gYSBkaWZmZXJlbnQgSU8gY29udGV4dCByZXNwZWN0IHRvIHRoZSB0YXNrIHRo
+YXQgb3JpZ2luYWxseQo+Pj4+Pj4+IGdlbmVyYXRlZCB0aGUgZGlydHkgcGFnZXMgaW52b2x2ZWQg
+aW4gdGhlIElPIG9wZXJhdGlvbi4gVGhpcyBtYWtlcyB0aGUKPj4+Pj4+PiB0cmFja2luZyBhbmQg
+dGhyb3R0bGluZyBvZiB3cml0ZWJhY2sgSU8gbW9yZSBjb21wbGljYXRlIHJlc3BlY3QgdG8gdGhl
+Cj4+Pj4+Pj4gc3luY2hyb25vdXMgSU8gZnJvbSB0aGUgYmxraW8gY29udHJvbGxlcidzIHBlcnNw
+ZWN0aXZlLgo+Pj4+Pj4+Cj4+Pj4+Pj4gUHJvcG9zZWQgc29sdXRpb24KPj4+Pj4+PiA9PT09PT09
+PT09PT09PT09PQo+Pj4+Pj4+IEluIHRoZSBwcmV2aW91cyBwYXRjaCBzZXQgaHR0cDovL2x3bi5u
+ZXQvQXJ0aWNsZXMvNDI5MjkyLyBJIHByb3Bvc2VkIHRvIHJlc29sdmUKPj4+Pj4+PiB0aGUgcHJv
+YmxlbSBvZiB0aGUgYnVmZmVyZWQgd3JpdGVzIGxpbWl0YXRpb24gYnkgdHJhY2tpbmcgdGhlIG93
+bmVyc2hpcCBvZiBhbGwKPj4+Pj4+PiB0aGUgZGlydHkgcGFnZXMgaW4gdGhlIHN5c3RlbS4KPj4+
+Pj4+Pgo+Pj4+Pj4+IFRoaXMgd291bGQgYWxsb3cgdG8gYWx3YXlzIGlkZW50aWZ5IHRoZSBvd25l
+ciBvZiBlYWNoIElPIG9wZXJhdGlvbiBhdCB0aGUgYmxvY2sKPj4+Pj4+PiBsYXllciBhbmQgYXBw
+bHkgdGhlIGFwcHJvcHJpYXRlIHRocm90dGxpbmcgcG9saWN5IGltcGxlbWVudGVkIGJ5IHRoZQo+
+Pj4+Pj4+IGJsa2lvLnRocm90dGxlIGNvbnRyb2xsZXIuCj4+Pj4+Pj4KPj4+Pj4+PiBUaGlzIHNv
+bHV0aW9uIG1ha2VzIHRoZSBibGtpby50aHJvdHRsZSBjb250cm9sbGVyIHRvIHdvcmsgYXMgZXhw
+ZWN0ZWQgYWxzbyBmb3IKPj4+Pj4+PiB3cml0ZWJhY2sgSU8sIGJ1dCBpdCBkb2VzIG5vdCByZXNv
+bHZlIHRoZSBwcm9ibGVtIG9mIGZhc3RlciBjZ3JvdXBzIGdldHRpbmcKPj4+Pj4+PiBibG9ja2Vk
+IGJ5IHNsb3dlciBjZ3JvdXBzICh0aGF0IHdvdWxkIGV4cG9zZSBhIHBvdGVudGlhbCB3YXkgdG8g
+Y3JlYXRlIERvUyBpbgo+Pj4+Pj4+IHRoZSBzeXN0ZW0pLgo+Pj4+Pj4+Cj4+Pj4+Pj4gSW4gZmFj
+dCwgYXQgdGhlIG1vbWVudCBjcml0aWNhbCBJTyByZXF1ZXN0cyAodGhhdCBoYXZlIGRlcGVuZGVu
+Y3kgd2l0aCBvdGhlciBJTwo+Pj4+Pj4+IHJlcXVlc3RzIG1hZGUgYnkgb3RoZXIgY2dyb3Vwcykg
+YW5kIG5vbi1jcml0aWNhbCByZXF1ZXN0cyBhcmUgbWl4ZWQgdG9nZXRoZXIgYXQKPj4+Pj4+PiB0
+aGUgZmlsZXN5c3RlbSBsYXllciBpbiBhIHdheSB0aGF0IHRocm90dGxpbmcgYSBzaW5nbGUgd3Jp
+dGUgcmVxdWVzdCBtYXkgc3RvcAo+Pj4+Pj4+IGFsc28gb3RoZXIgcmVxdWVzdHMgaW4gdGhlIHN5
+c3RlbSwgYW5kIGF0IHRoZSBibG9jayBsYXllciBpdCdzIG5vdCBwb3NzaWJsZSB0bwo+Pj4+Pj4+
+IHJldHJpZXZlIHN1Y2ggaW5mb3JtYXRpb25zIHRvIG1ha2UgdGhlIHJpZ2h0IGRlY2lzaW9uLgo+
+Pj4+Pj4+Cj4+Pj4+Pj4gQSBzaW1wbGUgc29sdXRpb24gdG8gdGhpcyBwcm9ibGVtIGNvdWxkIGJl
+IHRvIGp1c3QgbGltaXQgdGhlIHJhdGUgb2YgYXN5bmMKPj4+Pj4+PiB3cml0ZXMgYXQgdGhlIHRp
+bWUgYSB0YXNrIGlzIGdlbmVyYXRpbmcgZGlydHkgcGFnZXMgaW4gdGhlIHBhZ2UgY2FjaGUuIFRo
+ZQo+Pj4+Pj4+IGJpZyBhZHZhbnRhZ2Ugb2YgdGhpcyBhcHByb2FjaCBpcyB0aGF0IGl0IGRvZXMg
+bm90IG5lZWQgdGhlIG92ZXJoZWFkIG9mCj4+Pj4+Pj4gdHJhY2tpbmcgdGhlIG93bmVyc2hpcCBv
+ZiB0aGUgZGlydHkgcGFnZXMsIGJlY2F1c2UgaW4gdGhpcyB3YXkgZnJvbSB0aGUgYmxraW8KPj4+
+Pj4+PiBjb250cm9sbGVyIHBlcnNwZWN0aXZlIGFsbCB0aGUgSU8gb3BlcmF0aW9ucyB3aWxsIGhh
+cHBlbiBmcm9tIHRoZSBwcm9jZXNzCj4+Pj4+Pj4gY29udGV4dDogd3JpdGVzIGluIG1lbW9yeSBh
+bmQgc3luY2hyb25vdXMgcmVhZHMgZnJvbSB0aGUgYmxvY2sgZGV2aWNlLgo+Pj4+Pj4+Cj4+Pj4+
+Pj4gVGhlIGRyYXdiYWNrIG9mIHRoaXMgYXBwcm9hY2ggaXMgdGhhdCB0aGUgYmxraW8udGhyb3R0
+bGUgY29udHJvbGxlciBiZWNvbWVzIGEKPj4+Pj4+PiBsaXR0bGUgYml0IGxlYWt5LCBiZWNhdXNl
+IHdpdGggdGhpcyBzb2x1dGlvbiB0aGUgY29udHJvbGxlciBpcyBzdGlsbCBhZmZlY3RlZAo+Pj4+
+Pj4+IGJ5IHRoZSBJTyBzcGlrZXMgZHVyaW5nIHRoZSB3cml0ZWJhY2sgb2YgZGlydHkgcGFnZXMg
+ZXhlY3V0ZWQgYnkgdGhlIGtlcm5lbAo+Pj4+Pj4+IHRocmVhZHMuCj4+Pj4+Pj4KPj4+Pj4+PiBQ
+cm9iYWJseSBhbiBldmVuIGJldHRlciBhcHByb2FjaCB3b3VsZCBiZSB0byBpbnRyb2R1Y2UgdGhl
+IHRyYWNraW5nIG9mIHRoZQo+Pj4+Pj4+IGRpcnR5IHBhZ2Ugb3duZXJzaGlwIHRvIHByb3Blcmx5
+IGFjY291bnQgdGhlIGNvc3Qgb2YgZWFjaCBJTyBvcGVyYXRpb24gYXQgdGhlCj4+Pj4+Pj4gYmxv
+Y2sgbGF5ZXIgYW5kIGFwcGx5IHRoZSB0aHJvdHRsaW5nIG9mIGFzeW5jIHdyaXRlcyBpbiBtZW1v
+cnkgb25seSB3aGVuIElPCj4+Pj4+Pj4gbGltaXRzIGFyZSBleGNlZWRlZC4KPj4+Pj4+IEFuZHJl
+YSwgSSBhbSBjdXJpb3VzIHRvIGtub3cgbW9yZSBhYm91dCBpdCB0aGlyZCBvcHRpb24uIENhbiB5
+b3UgZ2l2ZSBtb3JlCj4+Pj4+PiBkZXRhaWxzIGFib3V0IGFjY291dGluZyBpbiBibG9jayBsYXll
+ciBidXQgdGhyb3R0bGluZyBpbiBtZW1vcnkuIFNvIHNheSAKPj4+Pj4+IGEgcHJvY2VzcyBzdGFy
+dHMgSU8sIHRoZW4gaXQgd2lsbCBzdGlsbCBiZSBpbiB0aHJvdHRsZSBsaW1pdHMgYXQgYmxvY2sK
+Pj4+Pj4+IGxheWVyIChiZWNhdXNlIG5vIHdyaXRlYmFjayBoYXMgc3RhcnRlZCksIHRoZW4gdGhl
+IHByb2Nlc3Mgd2lsbCB3cml0ZQo+Pj4+Pj4gYnVuY2ggb2YgcGFnZXMgaW4gY2FjaGUuIEJ5IHRo
+ZSB0aW1lIHRocm90dGxlIGxpbWl0cyBhcmUgY3Jvc3NlZCBhdAo+Pj4+Pj4gYmxvY2sgbGF5ZXIs
+IHdlIGFscmVhZHkgaGF2ZSBsb3RzIG9mIGRpcnR5IGRhdGEgaW4gcGFnZSBjYWNoZSBhbmQKPj4+
+Pj4+IHRocm90dGxpbmcgcHJvY2VzcyBub3cgaXMgYWxyZWFkeSBsYXRlPwo+Pj4+PiBDaGFyZ2lu
+ZyB0aGUgY29zdCBvZiBlYWNoIElPIG9wZXJhdGlvbiBhdCB0aGUgYmxvY2sgbGF5ZXIgd291bGQg
+YWxsb3cKPj4+Pj4gdGFza3MgdG8gd3JpdGUgaW4gbWVtb3J5IGF0IHRoZSBtYXhpbXVtIHNwZWVk
+LiBJbnN0ZWFkLCB3aXRoIHRoZSAzcmQKPj4+Pj4gYXBwcm9hY2gsIHRhc2tzIGFyZSBmb3JjZWQg
+dG8gd3JpdGUgaW4gbWVtb3J5IGF0IHRoZSByYXRlIGRlZmluZWQgYnkgdGhlCj4+Pj4+IGJsa2lv
+LnRocm90dGxlLndyaXRlXypfZGV2aWNlIChvciBibGtpby50aHJvdHRsZS5hc3luYy53cml0ZV8q
+X2RldmljZSkuCj4+Pj4+Cj4+Pj4+IFdoZW4gd2UnbGwgaGF2ZSB0aGUgcGVyLWNncm91cCBkaXJ0
+eSBtZW1vcnkgYWNjb3VudGluZyBhbmQgbGltaXRpbmcKPj4+Pj4gZmVhdHVyZSwgd2l0aCB0aGlz
+IGFwcHJvYWNoIGVhY2ggY2dyb3VwIGNvdWxkIHdyaXRlIHRvIGl0cyBkaXJ0eSBtZW1vcnkKPj4+
+Pj4gcXVvdGEgYXQgdGhlIG1heGltdW0gcmF0ZS4KPj4+PiBPaywgc28gdGhpcyBpcyBvcHRpb24g
+MyB3aGljaCB5b3UgaGF2ZSBhbHJlYWR5IGltcGxlbWVudGVkIGluIHRoaXMKPj4+PiBwYXRjaHNl
+dC4gCj4+Pj4KPj4+PiBJIGd1ZXNzIHRoZW4gSSBhbSBjb25mdXNlZCB3aXRoIG9wdGlvbiAyLiBD
+YW4geW91IGVsYWJvcmF0ZSBhIGxpdHRsZQo+Pj4+IG1vcmUgdGhlcmUuCj4+PiBXaXRoIG9wdGlv
+biAzLCB3ZSBjYW4ganVzdCBsaW1pdCB0aGUgcmF0ZSBhdCB3aGljaCBkaXJ0eSBwYWdlcyBhcmUK
+Pj4+IGdlbmVyYXRlZCBpbiBtZW1vcnkuIEFuZCB0aGlzIGNhbiBiZSBkb25lIGludHJvZHVjaW5n
+IHRoZSBmaWxlcwo+Pj4gYmxraW8udGhyb3R0bGUuYXN5bmMud3JpdGVfYnBzL2lvcHNfZGV2aWNl
+Lgo+Pj4KPj4+IEF0IHRoZSBtb21lbnQgaW4gYmxrX3Rocm90bF9iaW8oKSB3ZSBjaGFyZ2UgdGhl
+IGRpc3BhdGNoZWQgYnl0ZXMvaW9wcwo+Pj4gX2FuZF8gd2UgY2hlY2sgaWYgdGhlIGJpbyBjYW4g
+YmUgZGlzcGF0Y2hlZC4gVGhlc2UgdHdvIGRpc3RpbmN0Cj4+PiBvcGVyYXRpb25zIGFyZSBub3cg
+ZG9uZSBieSB0aGUgc2FtZSBmdW5jdGlvbi4KPj4+Cj4+PiBXaXRoIG9wdGlvbiAyLCBJJ20gcHJv
+cG9zaW5nIHRvIHNwbGl0IHRoZXNlIHR3byBvcGVyYXRpb25zIGFuZCBwbGFjZQo+Pj4gdGhyb3Rs
+X2NoYXJnZV9pbygpIGF0IHRoZSBibG9jayBsYXllciBpbiBfX2dlbmVyaWNfbWFrZV9yZXF1ZXN0
+KCkgYW5kIGFuCj4+PiBlcXVpdmFsZW50IG9mIHRnX21heV9kaXNwYXRjaF9iaW8oKSAobWF5YmUg
+YSBiZXR0ZXIgbmFtZSB3b3VsZCBiZQo+Pj4gYmxrX2lzX3Rocm90dGxlZCgpKSBhdCB0aGUgcGFn
+ZSBjYWNoZSBsYXllciwgaW4KPj4+IGJhbGFuY2VfZGlydHlfcGFnZXNfcmF0ZWxpbWl0ZWRfbnIo
+KToKPj4+Cj4+PiBBIHByb3RvdHlwZSBmb3IgYmxrX2lzX3Rocm90dGxlZCgpIGNvdWxkIGJlIHRo
+ZSBmb2xsb3dpbmc6Cj4+Pgo+Pj4gYm9vbCBibGtfaXNfdGhyb3R0bGVkKHZvaWQpOwo+Pj4KPj4+
+IFRoaXMgbWVhbnMgaW4gYmFsYW5jZV9kaXJ0eV9wYWdlc19yYXRlbGltaXRlZF9ucigpIHdlIHdv
+bid0IGNoYXJnZSBhbnkKPj4+IGJ5dGVzL2lvcHMgdG8gdGhlIGNncm91cCwgYnV0IHdlJ2xsIGp1
+c3QgY2hlY2sgaWYgdGhlIGxpbWl0cyBhcmUKPj4+IGV4Y2VlZGVkLiBBbmQgc3RvcCBpdCBpbiB0
+aGF0IGNhc2UsIHNvIHRoYXQgbm8gbW9yZSBkaXJ0eSBwYWdlcyBjYW4gYmUKPj4+IGdlbmVyYXRl
+ZCBieSB0aGlzIGNncm91cC4KPj4+Cj4+PiBJbnN0ZWFkIGF0IHRoZSBibG9jayBsYXllciBXUklU
+RXMgd2lsbCBiZSBhbHdheXMgZGlzcGF0Y2hlZCBpbgo+Pj4gYmxrX3Rocm90bF9iaW8oKSAodGdf
+bWF5X2Rpc3BhdGNoX2JpbygpIHdpbGwgYWx3YXlzIHJldHVybiB0cnVlKSwgYnV0Cj4+PiB0aGUg
+dGhyb3RsX2NoYXJnZV9pbygpIHdvdWxkIGNoYXJnZSB0aGUgY29zdCBvZiB0aGUgSU8gb3BlcmF0
+aW9uIHRvIHRoZQo+Pj4gcmlnaHQgY2dyb3VwLgo+Pj4KPj4+IFRvIHN1bW1hcml6ZToKPj4+Cj4+
+PiBfX2dlbmVyaWNfbWFrZV9yZXF1ZXN0KCk6Cj4+PiAJYmxrX3Rocm90bF9iaW8ocSwgJmJpbyk7
+Cj4+Pgo+Pj4gYmFsYW5jZV9kaXJ0eV9wYWdlc19yYXRlbGltaXRlZF9ucigpOgo+Pj4gCWlmIChi
+bGtfaXNfdGhyb3R0bGVkKCkpCj4+PiAJCS8vIGFkZCB0aGUgY3VycmVudCB0YXNrIGludG8gYSBw
+ZXItZ3JvdXAgd2FpdCBxdWV1ZSBhbmQKPj4+IAkJLy8gd2FrZSB1cCBvbmNlIHRoaXMgY2dyb3Vw
+IG1lZXRzIGl0cyBxdW90YQo+Pj4KPj4+IFdoYXQgZG8geW91IHRoaW5rPwo+PiBIaSBBbmRyZWEs
+Cj4+Cj4+IFRoaXMgbWVhbnMgd2hlbiB5b3UgdGhyb3R0bGUgd3JpdGVzLCB0aGUgcmVhZHMgaXNz
+dWVkIGJ5IHRoaXMgdGFzayBhcmUgYWxzbyB0aHJvdHRsZWQ/Cj4+Cj4+IFRoYW5rcywKPj4gR3Vp
+Cj4gCj4gRXhhY3RseSwgd2UncmUgdHJlYXRpbmcgdGhlIHRocm90dGxpbmcgb2YgUkVBRHMgYW5k
+IFdSSVRFcyBpbiB0d28KPiBkaWZmZXJlbnQgd2F5cy4KPiAKPiBSRUFEcyB3aWxsIGJlIGFsd2F5
+cyB0aHJvdHRsZWQgc3luY2hyb25vdXNseSBpbiB0aGUKPiBfX2dlbmVyaWNfbWFrZV9yZXF1ZXN0
+KCkgLT4gYmxrX3Rocm90bF9iaW8oKSBwYXRoLgoKQW5kcmVh77yMCgpJIG1lYW5zIElmIHRoZSB0
+YXNrIGV4Y2VlZHMgd3JpdGUgbGltaXQsIHRoaXMgdGFzayB3aWxsIGJlIHB1dCB0byBzbGVlcCwg
+cmlnaHQ/ClNvIEl0IGRvZXNuJ3QgZ2V0IGEgY2hhbmNlIHRvIGlzc3VlIHJlYWQgcmVxdWVzdHMu
+CgpHdWkKCj4gCj4gLUFuZHJlYQo+IC0tCj4gVG8gdW5zdWJzY3JpYmUgZnJvbSB0aGlzIGxpc3Q6
+IHNlbmQgdGhlIGxpbmUgInVuc3Vic2NyaWJlIGxpbnV4LWtlcm5lbCIgaW4KPiB0aGUgYm9keSBv
+ZiBhIG1lc3NhZ2UgdG8gbWFqb3Jkb21vQHZnZXIua2VybmVsLm9yZwo+IE1vcmUgbWFqb3Jkb21v
+IGluZm8gYXQgIGh0dHA6Ly92Z2VyLmtlcm5lbC5vcmcvbWFqb3Jkb21vLWluZm8uaHRtbAo+IFBs
+ZWFzZSByZWFkIHRoZSBGQVEgYXQgIGh0dHA6Ly93d3cudHV4Lm9yZy9sa21sLwo+IAoKLS0gClJl
+Z2FyZHMKR3VpIEppYW5mZW5nCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgt
+Zm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFu
+L2xpc3RpbmZvL2NvbnRhaW5lcnM=
