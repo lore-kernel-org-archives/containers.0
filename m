@@ -1,14 +1,12 @@
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Re: [PATCH, v8 3/3] cgroups: introduce timer slack controller
-Date: Mon, 7 Mar 2011 15:19:32 -0800
-Message-ID: <20110307151932.4d73c3ff.akpm__8543.73565312034$1299540225$gmane$org@linux-foundation.org>
-References: <1299161947-9903-1-git-send-email-kirill@shutemov.name>
-	<1299161947-9903-4-git-send-email-kirill@shutemov.name>
+From: Eric B Munson <emunson-CVBTeua0HjReoWH0uzbU5w@public.gmane.org>
+Subject: [PATCH] Documentation: cgroups: Add notes on removing PIDs from tasks
+	and cgroups requiring setup
+Date: Wed,  9 Mar 2011 16:09:29 -0500
+Message-ID: <1299704969-4485-1-git-send-email-emunson__47539.9290015504$1299705264$gmane$org@mgebm.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1299161947-9903-4-git-send-email-kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,42 +16,44 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Kirill A. Shutsemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Cc: jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Eric B Munson <emunson-CVBTeua0HjReoWH0uzbU5w@public.gmane.org>, rdunlap-/UHa2rfvQTnk1uMJSBkQmQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu,  3 Mar 2011 16:19:07 +0200
-"Kirill A. Shutsemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org> wrote:
+The cgroup documentation does not specify how a process can be removed from a
+particular group.  This patch adds a note at the end of the simple example
+about how this is done.  Also, some cgroups (like cpusets) require user input
+before a new group can be used.  This is noted in the patch as well.
 
-> --- /dev/null
-> +++ b/Documentation/cgroups/timer_slack.txt
-> @@ -0,0 +1,64 @@
-> +Timer Slack Controller
-> +=====================
-> +
-> +Overview
-> +--------
-> +
-> +Every task_struct has timer_slack_ns value. This value uses to round up
-> +poll() and select() timeout values. This feature can be useful in
-> +mobile environment where combined wakeups are desired.
-> +
-> +cgroup subsys "timer_slack" implements timer slack controller. It
-> +provides a way to set minimal timer slack value for a group of tasks.
-> +If a task belongs to a cgroup with minimal timer slack value higher than
-> +task's value, cgroup's value will be applied.
+Signed-off-by: Eric B Munson <emunson-CVBTeua0HjReoWH0uzbU5w@public.gmane.org>
+---
+ Documentation/cgroups/cgroups.txt |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
 
-All I'm seeing here is a bunch of code, but no reason has been provided
-for merging any of it.
-
-Why do we need a cgroup for this as opposed to (say) inheritance over
-fork(), or a system-wide knob, or a per-process/threadgroup knob, or
-just leaving the existing code as-is?  Presumably you felt that a
-cgroup approach is better for manageability, but you didn't tell us
-about this and you didn't explore alternative ways of solving the
-problem-which-you-didn't-describe.
-
-
-Carefully describing the proposed feature and the overall value which
-it brings does help to grease the wheels and is worth spending some
-time over, please.  Don't expect the entire audience to be mind-readers!
+diff --git a/Documentation/cgroups/cgroups.txt b/Documentation/cgroups/cgroups.txt
+index 44b8b7a..6c975a1 100644
+--- a/Documentation/cgroups/cgroups.txt
++++ b/Documentation/cgroups/cgroups.txt
+@@ -349,6 +349,10 @@ To mount a cgroup hierarchy with all available subsystems, type:
+ The "xxx" is not interpreted by the cgroup code, but will appear in
+ /proc/mounts so may be any useful identifying string that you like.
+ 
++Note: Some subsystems do not work without some user input first.  For instance,
++if cpusets are enabled the user will have to populate the cpus and mems files
++for each new cgroup created before that group can be used.
++
+ To mount a cgroup hierarchy with just the cpuset and memory
+ subsystems, type:
+ # mount -t cgroup -o cpuset,memory hier1 /dev/cgroup
+@@ -426,6 +430,9 @@ You can attach the current shell task by echoing 0:
+ 
+ # echo 0 > tasks
+ 
++Note: To remove a task from a cgroup you must write its PID to the root
++tasks file.
++
+ 2.3 Mounting hierarchies by name
+ --------------------------------
+ 
+-- 
+1.7.1
