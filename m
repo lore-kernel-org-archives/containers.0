@@ -1,47 +1,65 @@
-From: Mike Heffner <mike-RdfvBDnrOixBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH] Documentation: cgroups: Add notes on removing PIDs from
-	tasks and cgroups requiring setup
-Date: Thu, 10 Mar 2011 09:44:59 -0500
-Message-ID: <4D78E3EB.8080207__30901.5352897861$1299768514$gmane$org@librato.com>
-References: <1299704969-4485-1-git-send-email-emunson@mgebm.net>
-	<AANLkTinW99M1FBp5gRA=+SsjUWSJBwByurqrsjXKgQ4=@mail.gmail.com>
+From: Greg Thelen <gthelen@google.com>
+Subject: Re: [PATCH v5 6/9] memcg: add kernel calls for memcg dirty page stats
+Date: Thu, 10 Mar 2011 08:18:33 -0800
+Message-ID: <AANLkTimuHeGMY0ELXgsn+BmAibvV34x3RvphF+3SODqw@mail.gmail.com>
+References: <1298669760-26344-1-git-send-email-gthelen@google.com>
+ <1298669760-26344-7-git-send-email-gthelen@google.com> <20110227170143.GE3226@barrios-desktop>
+ <20110228114018.390ce291.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <AANLkTinW99M1FBp5gRA=+SsjUWSJBwByurqrsjXKgQ4=@mail.gmail.com>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, rdunlap-/UHa2rfvQTnk1uMJSBkQmQ@public.gmane.org, linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Eric B Munson <emunson-CVBTeua0HjReoWH0uzbU5w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <20110228114018.390ce291.kamezawa.hiroyu@jp.fujitsu.com>
+Sender: owner-linux-mm@kvack.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Chad Talbott <ctalbott@google.com>, Justin TerAvest <teravest@google.com>, Vivek Goyal <vgoyal@redhat.com>
 List-Id: containers.vger.kernel.org
 
-On 03/09/2011 06:13 PM, Paul Menage wrote:
-> On Wed, Mar 9, 2011 at 1:09 PM, Eric B Munson<emunson-CVBTeua0HjReoWH0uzbU5w@public.gmane.org>  wrote:
+On Sun, Feb 27, 2011 at 6:40 PM, KAMEZAWA Hiroyuki
+<kamezawa.hiroyu@jp.fujitsu.com> wrote:
+> On Mon, 28 Feb 2011 02:01:43 +0900
+> Minchan Kim <minchan.kim@gmail.com> wrote:
+>
+>> On Fri, Feb 25, 2011 at 01:35:57PM -0800, Greg Thelen wrote:
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0spin_unlock_irqrestore(&mapping->tree_lock=
+, flags);
+>> > =A0 =A0 } else {
+>> > @@ -1365,6 +1368,7 @@ int test_set_page_writeback(struct page *page)
+>> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =
+=A0 =A0 =A0 =A0 =A0 PAGECACHE_TAG_WRITEBACK);
+>> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (bdi_cap_account_writeback(=
+bdi))
+>> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 __inc_bdi_stat=
+(bdi, BDI_WRITEBACK);
+>> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 mem_cgroup_inc_page_stat(page, M=
+EMCG_NR_FILE_WRITEBACK);
 >>
->> +Note: To remove a task from a cgroup you must write its PID to the root
->> +tasks file.
->> +
+>> Question:
+>> Why should we care of BDI_CAP_NO_WRITEBACK?
+>>
+> Hmm, should we do ..
+> =3D=3D
+> =A0 =A0 =A0 =A0if (!ret) {
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0account_page_writeback(page);
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 mem_cgroup_inc_page_stat(page, MEMCG_NR_FIL=
+E_WRITEBACL);
+> =A0 =A0 =A0 =A0}
+> =3D=3D
+
+Yes, I agree with Minchan that this is an issue.  I think Kame's fix
+is good.  I will apply Kame's fix to test_set_page_writeback().  I
+also found that test_clear_page_writeback() has the same issue and it
+will also be fixed.  I will be posting v6 shortly (hopefully today)
+with these fixes.
+
+> Thanks,
+> -Kame
 >
-> This isn't really accurate - the root cgroup is a cgroup like all the
-> others. More accurate would be something like:
 >
-> Since every task is always a member of exactly one cgroup in each
-> mounted hierarchy, to remove a task from its current cgroup you must
-> move it into a new cgroup (possibly the root cgroup) by writing to the
-> new cgroup's tasks file.
 
-
-If we are updating this documentation, can we include a blurb that 
-mentions if the 'ns' cgroup is mounted in the hierarchy, moving a 
-process to a new cgroup can fail?
-
-
-Mike
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
