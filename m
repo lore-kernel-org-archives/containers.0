@@ -1,39 +1,47 @@
-From: Balbir Singh <balbir@linux.vnet.ibm.com>
-Subject: Re: [PATCH v5 1/9] memcg: document cgroup dirty memory interfaces
-Date: Fri, 11 Mar 2011 15:49:51 +0530
-Message-ID: <20110311101951.GX2868@balbir.in.ibm.com>
-References: <1298669760-26344-1-git-send-email-gthelen@google.com>
- <1298669760-26344-2-git-send-email-gthelen@google.com>
-Reply-To: balbir@linux.vnet.ibm.com
+From: erkan yanar <erkan.yanar-z+G3R6qIeCAZId6A0yLOdQ@public.gmane.org>
+Subject: Re: 2011 LXC development mini-conf?
+Date: Fri, 11 Mar 2011 12:56:44 +0100
+Message-ID: <1Py0xZ-00056Y-17@linsenraum.de>
+References: <20110310163035.GA15508@peq.hallyn.com>
+	<AANLkTikVn=26ci7gxp=yO3DYMALSHy9tFzspjkbvGpqP@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Return-path: <owner-linux-mm@kvack.org>
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1298669760-26344-2-git-send-email-gthelen@google.com>
-Sender: owner-linux-mm@kvack.org
-To: Greg Thelen <gthelen@google.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, Andrea Righi <arighi@develer.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Chad Talbott <ctalbott@google.com>, Justin TerAvest <teravest@google.com>, Vivek Goyal <vgoyal@redhat.com>
+In-Reply-To: <AANLkTikVn=26ci7gxp=yO3DYMALSHy9tFzspjkbvGpqP-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dhaval Giani <dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Serge E. Hallyn" <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, zulcss-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Dave Walker <davewalker-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, "Trent W. Buck" <twb-3AaVwj9c10wJYc8buCWFOBCuuivNXqWP@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-* Greg Thelen <gthelen@google.com> [2011-02-25 13:35:52]:
+Moinsen,
 
-> Document cgroup dirty memory interfaces and statistics.
-> 
-> Signed-off-by: Andrea Righi <arighi@develer.com>
-> Signed-off-by: Greg Thelen <gthelen@google.com>
-> ---
+On Thu, Mar 10, 2011 at 06:37:44PM +0100, Dhaval Giani wrote:
+> =
 
+> Couple of other alternatives,
+> =
 
-Acked-by: Balbir Singh <balbir@linux.vnet.ibm.com>
- 
+> 1. Linuxtag (its from may 11-14 at Berlin)
+Afaik they don't provide developer rooms.
 
--- 
-	Three Cheers,
-	Balbir
+> =
 
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+> could also be possibilities. (of course quite selfishly i won't be
+> able to attend conferences in europe in august, so I am suggesting
+> other alternatives :-) )
+
+Hehe:)
+
+-- =
+
+=FCber den grenzen mu=DF die freiheit wohl wolkenlos sein =
