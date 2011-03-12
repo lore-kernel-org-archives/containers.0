@@ -1,59 +1,52 @@
-From: Andrew Morton <akpm@linux-foundation.org>
-Subject: Re: [PATCH v6 0/9] memcg: per cgroup dirty page accounting
-Date: Fri, 11 Mar 2011 17:10:06 -0800
-Message-ID: <20110311171006.ec0d9c37.akpm@linux-foundation.org>
-References: <1299869011-26152-1-git-send-email-gthelen@google.com>
+From: "Serge E. Hallyn" <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: 2011 LXC development mini-conf?
+Date: Fri, 11 Mar 2011 21:27:02 -0600
+Message-ID: <20110312032702.GA16205@peq.hallyn.com>
+References: <20110310163035.GA15508@peq.hallyn.com>
+	<AANLkTikVn=26ci7gxp=yO3DYMALSHy9tFzspjkbvGpqP@mail.gmail.com>
+	<1Py0xZ-00056Y-17@linsenraum.de>
+	<AANLkTin94cjqT1c-2_EK-V5i+DGVBFnWsw-Q45_nJ5z6@mail.gmail.com>
+	<4D7A1CCC.10303@ubuntu.com> <20110311082509.71f9795d@canonical.com>
+	<20110311140941.GA31430@peq.hallyn.com>
+	<20110311142812.GA10924@peq.hallyn.com> <4D7A3353.40905@fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <1299869011-26152-1-git-send-email-gthelen@google.com>
-Sender: owner-linux-mm@kvack.org
-To: Greg Thelen <gthelen@google.com>
-Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Johannes Weiner <hannes@cmpxchg.org>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Chad Talbott <ctalbott@google.com>, Justin TerAvest <teravest@google.com>, Vivek Goyal <vgoyal@redhat.com>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4D7A3353.40905-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: Cedric Le Goater <clg-DhXWPJtHtuFWk0Htik3J/w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Serge E. Hallyn" <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, erkan yanar <erkan.yanar-z+G3R6qIeCAZId6A0yLOdQ@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Dhaval Giani <dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dave Walker <DaveWalker-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, "Trent W. Buck" <twb-3AaVwj9c10wJYc8buCWFOBCuuivNXqWP@public.gmane.org>, stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, Chuck Short <chuck.short-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, 11 Mar 2011 10:43:22 -0800
-Greg Thelen <gthelen@google.com> wrote:
-
->
-> ...
+Quoting Daniel Lezcano (dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org):
+> On 03/11/2011 03:28 PM, Serge E. Hallyn wrote:
+> >Quoting Serge E. Hallyn (serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org):
+> >>So I think we have 3 serious contenders:
+> >>
+> >>	linuxcon in august
+> >>	plumber's in august
+> >>	froscon in august
+> >
+> >Dude.
+> >
+> >http://lbw2011.wordpress.com/
+> >
 > 
-> This patch set provides the ability for each cgroup to have independent dirty
-> page limits.
-
-Here, it would be helpful to describe the current kernel behaviour. 
-And to explain what is wrong with it and why the patch set improves
-things!
-
+> Another one at Strasbourg (France) in July 9-14
 > 
-> ...
->
-> Known shortcomings (see the patch 1/9 update to Documentation/cgroups/memory.txt
-> for more details):
-> - When a cgroup dirty limit is exceeded, then bdi writeback is employed to
->   writeback dirty inodes.  Bdi writeback considers inodes from any cgroup, not
->   just inodes contributing dirty pages to the cgroup exceeding its limit.  
+> http://2011.rmll.info/appel.html
 
-This is a pretty large shortcoming, I suspect.  Will it be addressed?
+Do they actually have space for mini-confs?  I get the sense it is mainly
+for paper presentations.
 
-There's a risk that a poorly (or maliciously) configured memcg could
-have a pretty large affect upon overall system behaviour.  Would
-elevated premissions be needed to do this?
-
-We could just crawl the memcg's page LRU and bring things under control
-that way, couldn't we?  That would fix it.  What were the reasons for
-not doing this?
-
-> - A cgroup may exceed its dirty limit if the memory is dirtied by a process in a
->   different memcg.
-
-Please describe this scenario in (a lot) more detail?
-
-
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+-serge
