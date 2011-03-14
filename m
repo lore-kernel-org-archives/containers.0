@@ -1,201 +1,188 @@
-From: Vivek Goyal <vgoyal@redhat.com>
-Subject: Re: [PATCH v6 8/9] memcg: check memcg dirty limits in page writeback
-Date: Mon, 14 Mar 2011 13:59:43 -0400
-Message-ID: <20110314175943.GF31120@redhat.com>
-References: <1299869011-26152-1-git-send-email-gthelen@google.com>
- <1299869011-26152-9-git-send-email-gthelen@google.com>
- <20110314175408.GE31120@redhat.com>
+From: Greg Thelen <gthelen@google.com>
+Subject: Re: [PATCH v6 0/9] memcg: per cgroup dirty page accounting
+Date: Mon, 14 Mar 2011 11:29:17 -0700
+Message-ID: <AANLkTimT-kRMQW3JKcJAZP4oD3EXuE-Bk3dqumH_10Oe@mail.gmail.com>
+References: <1299869011-26152-1-git-send-email-gthelen@google.com> <20110311171006.ec0d9c37.akpm@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1
 Return-path: <owner-linux-mm@kvack.org>
-Content-Disposition: inline
-In-Reply-To: <20110314175408.GE31120@redhat.com>
+In-Reply-To: <20110311171006.ec0d9c37.akpm@linux-foundation.org>
 Sender: owner-linux-mm@kvack.org
-To: Greg Thelen <gthelen@google.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Johannes Weiner <hannes@cmpxchg.org>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Chad Talbott <ctalbott@google.com>, Justin TerAvest <teravest@google.com>, Jan Kara <jack@suse.cz>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Johannes Weiner <hannes@cmpxchg.org>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Chad Talbott <ctalbott@google.com>, Justin TerAvest <teravest@google.com>, Vivek Goyal <vgoyal@redhat.com>
 List-Id: containers.vger.kernel.org
 
-On Mon, Mar 14, 2011 at 01:54:08PM -0400, Vivek Goyal wrote:
-> On Fri, Mar 11, 2011 at 10:43:30AM -0800, Greg Thelen wrote:
-> > If the current process is in a non-root memcg, then
-> > balance_dirty_pages() will consider the memcg dirty limits as well as
-> > the system-wide limits.  This allows different cgroups to have distinct
-> > dirty limits which trigger direct and background writeback at different
-> > levels.
-> > 
-> > If called with a mem_cgroup, then throttle_vm_writeout() queries the
-> > given cgroup for its dirty memory usage limits.
-> > 
-> > Signed-off-by: Andrea Righi <arighi@develer.com>
-> > Signed-off-by: Greg Thelen <gthelen@google.com>
-> > Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-> > Acked-by: Wu Fengguang <fengguang.wu@intel.com>
-> > ---
-> > Changelog since v5:
-> > - Simplified this change by using mem_cgroup_balance_dirty_pages() rather than
-> >   cramming the somewhat different logic into balance_dirty_pages().  This means
-> >   the global (non-memcg) dirty limits are not passed around in the
-> >   struct dirty_info, so there's less change to existing code.
-> 
-> Yes there is less change to existing code but now we also have a separate
-> throttlig logic for cgroups. 
-> 
-> I thought that we are moving in the direction of IO less throttling
-> where bdi threads always do the IO and Jan Kara also implemented the
-> logic to distribute the finished IO pages uniformly across the waiting
-> threads.
-> 
-> Keeping it separate for cgroups, reduces the complexity but also forks
-> off the balancing logic for root and other cgroups. So if Jan Kara's
-> changes go in, it automatically does not get used for memory cgroups.
-> 
-> Not sure how good a idea it is to use a separate throttling logic for
-> for non-root cgroups. 
+On Fri, Mar 11, 2011 at 5:10 PM, Andrew Morton
+<akpm@linux-foundation.org> wrote:
+> On Fri, 11 Mar 2011 10:43:22 -0800
+> Greg Thelen <gthelen@google.com> wrote:
+>
+>>
+>> ...
+>>
+>> This patch set provides the ability for each cgroup to have independent dirty
+>> page limits.
+>
+> Here, it would be helpful to describe the current kernel behaviour.
+> And to explain what is wrong with it and why the patch set improves
+> things!
 
-One more disadvantage seems to be that new logic does not take into
-account the dirty ratio of each task. So a fast writer in a non-root
-cgroup might consume most of the quota of that cgroup and starve
-the other task in same cgroup.
+Good question.
 
-So keeping a separate logic for cgroup throttling does simplify the
-logic and achieves immediate goal of limiting the memory usage of
-a cgroup but I suspect down the line root cgroup and non-root cgroup
-logic will keep on drifting far apart.
+The memcg dirty limits offer similar value to a cgroup as the global dirty
+limits offer to the system.
 
-Thanks
-Vivek
+Prior to this patch series, memcg had neither dirty limits nor background
+reclaim.  So when a memcg hit its limit_in_bytes it would enter memcg direct
+reclaim.  If the memcg memory was mostly dirty, then direct reclaim would be
+slow, so page allocation latency would stink.  By placing limits on the portion
+of cgroup memory that can be dirty, page allocation latencies are improved.
+These patches provide more performance guarantees for page allocations.  Another
+value is the ability to put a heavy dirtier in a small dirty memory jail which
+is less than system dirty memory.
 
-> 
-> Thanks
-> Vivek 
-> 
-> > 
-> > Changelog since v4:
-> > - Added missing 'struct mem_cgroup' forward declaration in writeback.h.
-> > - Made throttle_vm_writeout() memcg aware.
-> > - Removed previously added dirty_writeback_pages() which is no longer needed.
-> > - Added logic to balance_dirty_pages() to throttle if over foreground memcg
-> >   limit.
-> > 
-> > Changelog since v3:
-> > - Leave determine_dirtyable_memory() static.  v3 made is non-static.
-> > - balance_dirty_pages() now considers both system and memcg dirty limits and
-> >   usage data.  This data is retrieved with global_dirty_info() and
-> >   memcg_dirty_info().  
-> > 
-> >  include/linux/writeback.h |    3 ++-
-> >  mm/page-writeback.c       |   34 ++++++++++++++++++++++++++++------
-> >  mm/vmscan.c               |    2 +-
-> >  3 files changed, 31 insertions(+), 8 deletions(-)
-> > 
-> > diff --git a/include/linux/writeback.h b/include/linux/writeback.h
-> > index 0ead399..a45d895 100644
-> > --- a/include/linux/writeback.h
-> > +++ b/include/linux/writeback.h
-> > @@ -8,6 +8,7 @@
-> >  #include <linux/fs.h>
-> >  
-> >  struct backing_dev_info;
-> > +struct mem_cgroup;
-> >  
-> >  extern spinlock_t inode_lock;
-> >  
-> > @@ -92,7 +93,7 @@ void laptop_mode_timer_fn(unsigned long data);
-> >  #else
-> >  static inline void laptop_sync_completion(void) { }
-> >  #endif
-> > -void throttle_vm_writeout(gfp_t gfp_mask);
-> > +void throttle_vm_writeout(gfp_t gfp_mask, struct mem_cgroup *mem_cgroup);
-> >  
-> >  /* These are exported to sysctl. */
-> >  extern int dirty_background_ratio;
-> > diff --git a/mm/page-writeback.c b/mm/page-writeback.c
-> > index d8005b0..f6a8dd6 100644
-> > --- a/mm/page-writeback.c
-> > +++ b/mm/page-writeback.c
-> > @@ -473,7 +473,8 @@ unsigned long bdi_dirty_limit(struct backing_dev_info *bdi, unsigned long dirty)
-> >   * data.  It looks at the number of dirty pages in the machine and will force
-> >   * the caller to perform writeback if the system is over `vm_dirty_ratio'.
-> >   * If we're over `background_thresh' then the writeback threads are woken to
-> > - * perform some writeout.
-> > + * perform some writeout.  The current task may have per-memcg dirty
-> > + * limits, which are also checked.
-> >   */
-> >  static void balance_dirty_pages(struct address_space *mapping,
-> >  				unsigned long write_chunk)
-> > @@ -488,6 +489,8 @@ static void balance_dirty_pages(struct address_space *mapping,
-> >  	bool dirty_exceeded = false;
-> >  	struct backing_dev_info *bdi = mapping->backing_dev_info;
-> >  
-> > +	mem_cgroup_balance_dirty_pages(mapping, write_chunk);
-> > +
->  
-> >  	for (;;) {
-> >  		struct writeback_control wbc = {
-> >  			.sync_mode	= WB_SYNC_NONE,
-> > @@ -651,23 +654,42 @@ void balance_dirty_pages_ratelimited_nr(struct address_space *mapping,
-> >  }
-> >  EXPORT_SYMBOL(balance_dirty_pages_ratelimited_nr);
-> >  
-> > -void throttle_vm_writeout(gfp_t gfp_mask)
-> > +/*
-> > + * Throttle the current task if it is near dirty memory usage limits.  Both
-> > + * global dirty memory limits and (if @mem_cgroup is given) per-cgroup dirty
-> > + * memory limits are checked.
-> > + *
-> > + * If near limits, then wait for usage to drop.  Dirty usage should drop because
-> > + * dirty producers should have used balance_dirty_pages(), which would have
-> > + * scheduled writeback.
-> > + */
-> > +void throttle_vm_writeout(gfp_t gfp_mask, struct mem_cgroup *mem_cgroup)
-> >  {
-> >  	unsigned long background_thresh;
-> >  	unsigned long dirty_thresh;
-> > +	struct dirty_info memcg_info;
-> > +	bool do_memcg;
-> >  
-> >          for ( ; ; ) {
-> >  		global_dirty_limits(&background_thresh, &dirty_thresh);
-> > +		do_memcg = mem_cgroup && mem_cgroup_hierarchical_dirty_info(
-> > +			determine_dirtyable_memory(), true, mem_cgroup,
-> > +			&memcg_info);
-> >  
-> >                  /*
-> >                   * Boost the allowable dirty threshold a bit for page
-> >                   * allocators so they don't get DoS'ed by heavy writers
-> >                   */
-> >                  dirty_thresh += dirty_thresh / 10;      /* wheeee... */
-> > -
-> > -                if (global_page_state(NR_UNSTABLE_NFS) +
-> > -			global_page_state(NR_WRITEBACK) <= dirty_thresh)
-> > -                        	break;
-> > +		if (do_memcg)
-> > +			memcg_info.dirty_thresh += memcg_info.dirty_thresh / 10;
-> > +
-> > +		if ((global_page_state(NR_UNSTABLE_NFS) +
-> > +		     global_page_state(NR_WRITEBACK) <= dirty_thresh) &&
-> > +		    (!do_memcg ||
-> > +		     (memcg_info.nr_unstable_nfs +
-> > +		      memcg_info.nr_writeback <= memcg_info.dirty_thresh)))
-> > +			break;
-> >                  congestion_wait(BLK_RW_ASYNC, HZ/10);
-> >  
-> >  		/*
-> > diff --git a/mm/vmscan.c b/mm/vmscan.c
-> > index 060e4c1..035d2ea 100644
-> > --- a/mm/vmscan.c
-> > +++ b/mm/vmscan.c
-> > @@ -1939,7 +1939,7 @@ restart:
-> >  					sc->nr_scanned - nr_scanned, sc))
-> >  		goto restart;
-> >  
-> > -	throttle_vm_writeout(sc->gfp_mask);
-> > +	throttle_vm_writeout(sc->gfp_mask, sc->mem_cgroup);
-> >  }
-> >  
-> >  /*
-> > -- 
-> > 1.7.3.1
+ dd if=/dev/zero of=/data/input bs=1M count=50
+ sync
+ echo 3 > /proc/sys/vm/drop_caches
+ mkdir /dev/cgroup/memory/A
+ echo $$ > /dev/cgroup/memory/A/tasks
+ echo 100M > /dev/cgroup/memory/A/memory.dirty_limit_in_bytes
+ echo 200M > /dev/cgroup/memory/A/memory.limit_in_bytes
+ dd if=/dev/zero of=/data/output bs=1M &
+ dd if=/data/input of=/dev/null bs=1M
+
+If the setting of memory.dirty_limit_in_bytes is omitted (as if this patch
+series was not available), then the dd writer is able to fill the cgroup with
+dirty memory increasing the page allocation latency for the dd reader.
+
+With this sample, the dd reader sees a difference of 2x (6.5 MB/s vs 4.5 MB/s if
+setting A/memory.dirty_limit_in_bytes is omitted).
+
+>>
+>> ...
+>>
+>> Known shortcomings (see the patch 1/9 update to Documentation/cgroups/memory.txt
+>> for more details):
+>> - When a cgroup dirty limit is exceeded, then bdi writeback is employed to
+>>   writeback dirty inodes.  Bdi writeback considers inodes from any cgroup, not
+>>   just inodes contributing dirty pages to the cgroup exceeding its limit.
+>
+> This is a pretty large shortcoming, I suspect.  Will it be addressed?
+
+Yes.  The two issues in this email are my next priorities for memcg dirty
+limits.
+
+> There's a risk that a poorly (or maliciously) configured memcg could
+> have a pretty large affect upon overall system behaviour.  Would
+> elevated premissions be needed to do this?
+
+Such an affect is possible.  But root permissions are required to create it
+because the new memory.dirty* limit files are 0644, this is similar to
+/proc/sys/vm/dirty*.  I suspect it would be easier to trash system performance
+with sync().
+
+> We could just crawl the memcg's page LRU and bring things under control
+> that way, couldn't we?  That would fix it.  What were the reasons for
+> not doing this?
+
+My rational for pursuing bdi writeback was I/O locality.  I have heard that
+per-page I/O has bad locality.  Per inode bdi-style writeback should have better
+locality.
+
+My hunch is the best solution is a hybrid which uses a) bdi writeback with a
+target memcg filter and b) using the memcg lru as a fallback to identify the bdi
+that needed writeback.  I think the part a) memcg filtering is likely something
+like:
+ http://marc.info/?l=linux-kernel&m=129910424431837
+
+The part b) bdi selection should not be too hard assuming that page-to-mapping
+locking is doable.
+
+An alternative approach is to bind each inode to exactly one cgroup (possibly
+the root cgroup).  Both the cache page allocations and dirtying charges would be
+accounted to the i_cgroup.  With this approach there is no foreign dirtier issue
+because all pages are in a single cgroup.  I find this undesirable because the
+first memcg to touch an inode is charged for all pages later cached even by
+other memcg.
+
+>> - A cgroup may exceed its dirty limit if the memory is dirtied by a process in a
+>>   different memcg.
+>
+> Please describe this scenario in (a lot) more detail?
+
+The documentation in patch 1/9 discusses this issue somewhat:
+ A cgroup may contain more dirty memory than its dirty limit.  This is possible
+ because of the principle that the first cgroup to touch a page is charged for
+ it.  Subsequent page counting events (dirty, writeback, nfs_unstable) are also
+ counted to the originally charged cgroup.  Example: If page is allocated by a
+ cgroup A task, then the page is charged to cgroup A.  If the page is later
+ dirtied by a task in cgroup B, then the cgroup A dirty count will be
+ incremented.  If cgroup A is over its dirty limit but cgroup B is not, then
+ dirtying a cgroup A page from a cgroup B task may push cgroup A over its dirty
+ limit without throttling the dirtying cgroup B task.
+
+Here are some additional thoughts on this foreign dirtier issue:
+
+When a page is allocated it is charged to the current task's memcg.  When a
+memcg page is later marked dirty the dirty charge is billed to the memcg from
+the original page allocation.  The billed memcg may be different than the
+dirtying task's memcg.
+
+After a rate limited number of file backed pages have been dirtied,
+balance_dirty_pages() is called to enforce dirty limits by a) throttling
+production of more dirty pages by current and b) queuing background writeback to
+the current bdi.
+
+balance_dirty_pages() receives a mapping and page count, which indicate what may
+have been dirtied and the max number of pages that may have been dirtied.  Due
+to per cpu rate limiting and batching (when nr_pages_dirtied > 0),
+balance_dirty_pages() does not know which memcg were charged for recently dirty
+pages.
+
+I think both bdi and system limits have the same issue in that a bdi may be
+pushed over its dirty limit but not immediately checked due to rate limits.  If
+future dirtied pages are backed by different bdi, then future
+balance_dirty_page() calls will check the second, compliant bdi ignoring the
+first, over-limit bdi.  The safety net is that the system wide limits are also
+checked in balance_dirty_pages.  However, per bdi writeback is employed in this
+situation.
+
+Note: This memcg foreign dirtier issue does not make it any more likely that a
+memcg is pushed above its usage limit (limit_in_bytes).  The only limit with
+this weak contract is the dirty limit.
+
+For reference, this issue was touch on in
+http://marc.info/?l=linux-mm&m=128840780125261
+
+There are ways to handle this issue (my preferred option is option #1).
+
+1) keep a (global?) foreign_dirtied_memcg list of memcg that were recently
+  charged for dirty pages by tasks outside of memcg.  When a memcg dirty page
+  count is elevated, the page's memcg would be queued to the list if current's
+  memcg does not match the pages cgroup.  mem_cgroup_balance_dirty_pages()
+  would balance the current memcg and each memcg it dequeues from this list.
+  This should be a straightforward fix.
+
+2) When pages are dirtied, migrate them to the current task's memcg.
+  mem_cgroup_balance_dirty_pages would then have a better chance at seeing all
+  pages dirtied by the current operation.  This is still not perfect solution
+  due to rate limiting.  This also is bad because such a migration would
+  involve charging and possibly memcg direct reclaim because the destination
+  memcg may be at its memory usage limit.  Doing all of this in
+  account_page_dirtied() seems like trouble, so I do not like this approach.
+
+3) Pass in some context which is represents a set of pages recently dirtied into
+  [mem_cgroup]_balance_dirty_pages.  What would be a good context to collect
+  the set of memcg that should be balanced?
+  - an extra passed in parameter - yuck.
+  - address_space extension - does not feel quite right because address space
+    is not a io context object, I presume it can be shared by concurrent
+    threads.
+  - something hanging on current.  Are there cases where pages become dirty
+    that are not followed by a call to balance dirty pages Note: this option
+    (3) is not a good idea because rate limiting make dirty limit enforcement
+    an inexact science.  There is no guarantee that a caller will have context
+    describing the pages (or bdis) recently dirtied.
 
 --
 To unsubscribe, send a message with 'unsubscribe linux-mm' in
