@@ -1,85 +1,62 @@
-From: Jan Kara <jack@suse.cz>
-Subject: Re: [PATCH v6 8/9] memcg: check memcg dirty limits in page
- writeback
-Date: Mon, 14 Mar 2011 22:10:03 +0100
-Message-ID: <20110314211002.GD4998@quack.suse.cz>
-References: <1299869011-26152-1-git-send-email-gthelen@google.com>
- <1299869011-26152-9-git-send-email-gthelen@google.com>
- <20110314175408.GE31120@redhat.com>
+From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Subject: Re: [PATCH, v9 3/3] cgroups: introduce timer slack controller
+Date: Mon, 14 Mar 2011 16:46:52 -0700
+Message-ID: <20110314164652.5b44fb9e.akpm__31769.7275001139$1300146797$gmane$org@linux-foundation.org>
+References: <1300111524-5666-1-git-send-email-kirill@shutemov.name>
+	<1300111524-5666-4-git-send-email-kirill@shutemov.name>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <owner-linux-mm@kvack.org>
-Content-Disposition: inline
-In-Reply-To: <20110314175408.GE31120@redhat.com>
-Sender: owner-linux-mm@kvack.org
-To: Vivek Goyal <vgoyal@redhat.com>
-Cc: Greg Thelen <gthelen@google.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Johannes Weiner <hannes@cmpxchg.org>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Chad Talbott <ctalbott@google.com>, Justin TerAvest <teravest@google.com>, Jan Kara <jack@suse.cz>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1300111524-5666-4-git-send-email-kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+Cc: jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon 14-03-11 13:54:08, Vivek Goyal wrote:
-> On Fri, Mar 11, 2011 at 10:43:30AM -0800, Greg Thelen wrote:
-> > If the current process is in a non-root memcg, then
-> > balance_dirty_pages() will consider the memcg dirty limits as well as
-> > the system-wide limits.  This allows different cgroups to have distinct
-> > dirty limits which trigger direct and background writeback at different
-> > levels.
-> > 
-> > If called with a mem_cgroup, then throttle_vm_writeout() queries the
-> > given cgroup for its dirty memory usage limits.
-> > 
-> > Signed-off-by: Andrea Righi <arighi@develer.com>
-> > Signed-off-by: Greg Thelen <gthelen@google.com>
-> > Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-> > Acked-by: Wu Fengguang <fengguang.wu@intel.com>
-> > ---
-> > Changelog since v5:
-> > - Simplified this change by using mem_cgroup_balance_dirty_pages() rather than
-> >   cramming the somewhat different logic into balance_dirty_pages().  This means
-> >   the global (non-memcg) dirty limits are not passed around in the
-> >   struct dirty_info, so there's less change to existing code.
-> 
-> Yes there is less change to existing code but now we also have a separate
-> throttlig logic for cgroups. 
-> 
-> I thought that we are moving in the direction of IO less throttling
-> where bdi threads always do the IO and Jan Kara also implemented the
-> logic to distribute the finished IO pages uniformly across the waiting
-> threads.
-  Yes, we'd like to avoid doing IO from balance_dirty_pages(). But if the
-logic in cgroups specific part won't get too fancy (which it doesn't seem
-to be the case currently), it shouldn't be too hard to convert it to the new
-approach.
+On Mon, 14 Mar 2011 16:05:24 +0200
+Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org> wrote:
 
-We can talk about it at LSF but at least with my approach to IO-less
-balance_dirty_pages() it would be easy to convert cgroups throttling to
-the new way. With Fengguang's approach it might be a bit harder since he
-computes a throughput and from that necessary delay for a throttled task
-but with cgroups that is impossible to compute so he'd have to add some
-looping if we didn't write enough pages from the cgroup yet. But still it
-would be reasonable doable AFAICT.
+> +Overview
+> +--------
+> +
+> +Every task_struct has timer_slack_ns value. This value uses to round up
+> +poll() and select() timeout values. This feature can be useful in
+> +mobile environment where combined wakeups are desired.
+> +
+> +Originally, prctl() was the only way to change timer slack value of
+> +a process. So you was not able change timer slack value of another
+> +process.
+> +
+> +cgroup subsys "timer_slack" implements timer slack controller. It
+> +provides a way to set minimal timer slack value for a group of tasks.
+> +If a task belongs to a cgroup with minimal timer slack value higher than
+> +task's value, cgroup's value will be applied.
+> +
+> +Timer slack controller allows to implement setting timer slack value of
+> +a process based on a policy. For example, you can create foreground and
+> +background cgroups and move tasks between them based on system state.
 
-> Keeping it separate for cgroups, reduces the complexity but also forks
-> off the balancing logic for root and other cgroups. So if Jan Kara's
-> changes go in, it automatically does not get used for memory cgroups.
-> 
-> Not sure how good a idea it is to use a separate throttling logic for
-> for non-root cgroups. 
-  Yeah, it looks a bit odd. I'd think that we could just cap
-task_dirty_limit() by a value computed from a cgroup limit and be done
-with that but I probably miss something... Sure there is also a different
-background limit but that's broken anyway because a flusher thread will
-quickly stop doing writeback if global background limit is not exceeded.
-But that's a separate topic so I'll reply with this to a more appropriate
-email ;)
+(quoting myself from last time)
 
-								Honza
--- 
-Jan Kara <jack@suse.cz>
-SUSE Labs, CR
+Why do we need a cgroup for this as opposed to (say) inheritance over
+fork(), or a system-wide knob, or a per-process/threadgroup knob, or
+just leaving the existing code as-is?  Presumably you felt that a
+cgroup approach is better for manageability, but you didn't tell us
+about this and you didn't explore alternative ways of solving the
+problem-which-you-didn't-describe.
 
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+
+
+
+I'm still having trouble seeing why we should merge this.  Who will use
+it, and for what reason and what benefits will they see?  Quantified
+benefits, if possible!
