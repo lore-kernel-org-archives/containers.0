@@ -1,16 +1,12 @@
-From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Subject: Re: [PATCH, v9 3/3] cgroups: introduce timer slack controller
-Date: Tue, 15 Mar 2011 11:11:00 +0200
-Message-ID: <20110315091100.GA10165__49774.8333997608$1300180370$gmane$org@shutemov.name>
-References: <1300111524-5666-1-git-send-email-kirill@shutemov.name>
-	<1300111524-5666-4-git-send-email-kirill@shutemov.name>
-	<20110314164652.5b44fb9e.akpm@linux-foundation.org>
+From: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: [PATCH 0/17] rcu: covert call_rcu(simple_kfree_callbck) to kfree_rcu()
+	(PART 1)
+Date: Tue, 15 Mar 2011 17:49:04 +0800
+Message-ID: <4D7F3610.6000809@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20110314164652.5b44fb9e.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,61 +16,10 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
+To: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Mar 14, 2011 at 04:46:52PM -0700, Andrew Morton wrote:
-> On Mon, 14 Mar 2011 16:05:24 +0200
-> Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org> wrote:
-> 
-> > +Overview
-> > +--------
-> > +
-> > +Every task_struct has timer_slack_ns value. This value uses to round up
-> > +poll() and select() timeout values. This feature can be useful in
-> > +mobile environment where combined wakeups are desired.
-> > +
-> > +Originally, prctl() was the only way to change timer slack value of
-> > +a process. So you was not able change timer slack value of another
-> > +process.
-> > +
-> > +cgroup subsys "timer_slack" implements timer slack controller. It
-> > +provides a way to set minimal timer slack value for a group of tasks.
-> > +If a task belongs to a cgroup with minimal timer slack value higher than
-> > +task's value, cgroup's value will be applied.
-> > +
-> > +Timer slack controller allows to implement setting timer slack value of
-> > +a process based on a policy. For example, you can create foreground and
-> > +background cgroups and move tasks between them based on system state.
-> 
-> (quoting myself from last time)
-> 
-> Why do we need a cgroup for this as opposed to (say) inheritance over
-> fork(), or a system-wide knob, or a per-process/threadgroup knob, or
-> just leaving the existing code as-is?  Presumably you felt that a
-> cgroup approach is better for manageability, but you didn't tell us
-> about this and you didn't explore alternative ways of solving the
-> problem-which-you-didn't-describe.
+There are many simple_kfree_callback() instances that just does
+	kfree(containerof(head,struct whatever_struct,rcu_member));
 
-The main goal is reducing wakeups without affecting user experience.
-Only userspace knows which tasks are important for UX. So we needed a
-mechanism to define a policy in userspace.
-
-Currently timer slack value inheritance over fork().
-
-System-wide/threadgroup knob doesn't allow to change timer slack value of
-a particular process. It's needed for foreground/background use-case.
-
-With per-process know we have to reinvent grouping of tasks in userspace.
-
-cgroups is a good solution for it, from my point of view.
-
-> 
-> I'm still having trouble seeing why we should merge this.  Who will use
-> it, and for what reason and what benefits will they see?  Quantified
-> benefits, if possible!
-> 
-
--- 
- Kirill A. Shutemov
+We convert them to kfree_rcu().
