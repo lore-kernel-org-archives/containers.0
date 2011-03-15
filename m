@@ -1,98 +1,42 @@
-From: Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>
-Subject: Re: [PATCH v6 4/9] memcg: add kernel calls for memcg dirty page
- stats
-Date: Tue, 15 Mar 2011 22:50:51 +0900 (JST)
-Message-ID: <20110315.225051.1663021277549367617.konishi.ryusuke@gmail.com>
-References: <1299869011-26152-5-git-send-email-gthelen@google.com>
-	<20110314151023.GF11699@barrios-desktop>
-	<AANLkTinnfM6_ZhzEq6SAG1H2jDfKdVS2=fe_USi8ArNA@mail.gmail.com>
+From: Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+Subject: Re: [PATCH 0/2] suck some poison out of cgroups' linked lists
+Date: Tue, 15 Mar 2011 09:51:37 -0400
+Message-ID: <20110315135137.GA27545__7681.37748023054$1300197177$gmane$org@infradead.org>
+References: <1300194523-19325-1-git-send-email-ext-phil.2.carmody@nokia.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=iso-8859-1
-Content-Transfer-Encoding: quoted-printable
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <AANLkTinnfM6_ZhzEq6SAG1H2jDfKdVS2=fe_USi8ArNA@mail.gmail.com>
-Sender: owner-linux-mm@kvack.org
-To: gthelen@google.com
-Cc: minchan.kim@gmail.com, akpm@linux-foundation.org, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, arighi@develer.com, balbir@linux.vnet.ibm.com, kamezawa.hiroyu@jp.fujitsu.com, nishimura@mxp.nes.nec.co.jp, hannes@cmpxchg.org, ciju@linux.vnet.ibm.com, rientjes@google.com, fengguang.wu@intel.com, ctalbott@google.com, teravest@google.com, vgoyal@redhat.com, konishi.ryusuke@lab.ntt.co.jp
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1300194523-19325-1-git-send-email-ext-phil.2.carmody-xNZwKgViW5gAvxtiuMwx3w@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Phil Carmody <ext-phil.2.carmody-xNZwKgViW5gAvxtiuMwx3w@public.gmane.org>
+Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, 14 Mar 2011 23:32:38 -0700, Greg Thelen wrote:
-> On Mon, Mar 14, 2011 at 8:10 AM, Minchan Kim <minchan.kim@gmail.com> =
-wrote:
->> On Fri, Mar 11, 2011 at 10:43:26AM -0800, Greg Thelen wrote:
->>> Add calls into memcg dirty page accounting. =A0Notify memcg when pa=
-ges
->>> transition between clean, file dirty, writeback, and unstable nfs.
->>> This allows the memory controller to maintain an accurate view of
->>> the amount of its memory that is dirty.
->>>
->>> Signed-off-by: Greg Thelen <gthelen@google.com>
->>> Signed-off-by: Andrea Righi <arighi@develer.com>
->>> Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
->>> Reviewed-by: Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
-<snip>
->>
->> At least in mainline, NR_WRITEBACK handling codes are following as.
->>
->> 1) increase
->>
->> * account_page_writeback
->>
->> 2) decrease
->>
->>  * test_clear_page_writeback
->>  * __nilfs_end_page_io
->>
->> I think account_page_writeback name is good to add your account func=
-tion into that.
->> The problem is decreasement. Normall we can handle decreasement in t=
-est_clear_page_writeback.
->> But I am not sure it's okay in __nilfs_end_page_io.
->> I think if __nilfs_end_page_io is right, __nilfs_end_page_io should =
-call
->> mem_cgroup_dec_page_stat(page, MEMCG_NR_FILE_WRITEBACK).
->>
->> What do you think about it?
->>
->>
->>
->> --
->> Kind regards,
->> Minchan Kim
->>
-> =
+On Tue, Mar 15, 2011 at 03:08:41PM +0200, Phil Carmody wrote:
+> Apparently, whether nodes are on a list is being checked with list_empty(),
+> and if they're on a list, they're list_del()ed. According to a subsequent 
+> list_empty() check, they're still on a list, as list_del() doesn't turn
+> the nodes into singleton lists, it simply poisons both its pointers, and
+> merry poison dereferencing may ensue. Oops.
+> 
+> There are at least 2 to address this matter, I've gone for the latter:
+> 
+> 1) Do not use list_empty() to check if a node is on a list or not. Have
+> an additional new function that checks to see whether the node is either
+> a singleton or is poisoned. Something like list_node_{on,off}_list()?
+> 
+> 2) Ensure that you never leave poison anywhere where you might want
+> to use list_empty().
 
-> I would like to not have any special cases that avoid certain memory.=
-
-> So I think your suggestion is good.
-> However, nilfs memcg dirty page accounting was skipped in a previous
-> memcg dirty limit effort due to complexity.  See 'clone_page'
-> reference in:
->   http://lkml.indiana.edu/hypermail/linux/kernel/1003.0/02997.html
-> =
-
-> I admit that I don't follow all of the nilfs code path, but it looks
-> like some of the nilfs pages are allocated but not charged to memcg.
-> There is code in mem_cgroup_update_page_stat() to gracefully handle
-> pages not associated with a memcg.  So perhaps nilfs clone pages dirt=
-y
-> [un]charge could be attempted.  I have not succeeded in testing in
-> exercising these code paths in nilfs.
-
-Sorry for this matter.  The clone_page code paths in nilfs is
-exercised only when mmapped pages are written back.
-
-I think the private page allocation used for the current clone_page
-code should be altered to eliminate the root cause of these issues.
-I would like to try to find some sort of alternative way.
-
-
-Regards,
-Ryusuke Konishi
-
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+The correct way is to use list_del_init() if you want to do list_empty
+checks later on.
