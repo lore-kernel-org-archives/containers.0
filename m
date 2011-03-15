@@ -1,14 +1,14 @@
 From: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-Subject: Re: [PATCH 07/17] net,rcu: convert
-	call_rcu(inet6_ifa_finish_destroy_rcu) to kfree_rcu()
-Date: Tue, 15 Mar 2011 14:03:33 -0700 (PDT)
-Message-ID: <20110315.140333.112590317.davem__46213.9381598265$1300223126$gmane$org@davemloft.net>
-References: <4D7F3610.6000809@cn.fujitsu.com> <4D7F38AE.7060708@cn.fujitsu.com>
+Subject: Re: [PATCH 08/17] net,rcu: convert call_rcu(listeners_free_rcu) to
+	kfree_rcu()
+Date: Tue, 15 Mar 2011 14:03:44 -0700 (PDT)
+Message-ID: <20110315.140344.183052861.davem@davemloft.net>
+References: <4D7F3610.6000809@cn.fujitsu.com> <4D7F3906.3090107@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4D7F38AE.7060708-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <4D7F3906.3090107-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,12 +23,12 @@ Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, linux-decnet-user-5NWG
 List-Id: containers.vger.kernel.org
 
 From: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Date: Tue, 15 Mar 2011 18:00:14 +0800
+Date: Tue, 15 Mar 2011 18:01:42 +0800
 
 > 
 > 
-> The rcu callback inet6_ifa_finish_destroy_rcu() just calls a kfree(),
-> so we use kfree_rcu() instead of the call_rcu(inet6_ifa_finish_destroy_rcu).
+> The rcu callback listeners_free_rcu() just calls a kfree(),
+> so we use kfree_rcu() instead of the call_rcu(listeners_free_rcu).
 > 
 > Signed-off-by: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 
