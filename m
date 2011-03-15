@@ -1,8 +1,8 @@
 From: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH 06/17] net,rcu: convert call_rcu(in6_dev_finish_destroy_rcu)
+Subject: [PATCH 07/17] net, rcu: convert call_rcu(inet6_ifa_finish_destroy_rcu)
 	to kfree_rcu()
-Date: Tue, 15 Mar 2011 17:59:14 +0800
-Message-ID: <4D7F3872.6090305@cn.fujitsu.com>
+Date: Tue, 15 Mar 2011 18:00:14 +0800
+Message-ID: <4D7F38AE.7060708@cn.fujitsu.com>
 References: <4D7F3610.6000809@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,8 +23,8 @@ List-Id: containers.vger.kernel.org
 
 
 
-The rcu callback in6_dev_finish_destroy_rcu() just calls a kfree(),
-so we use kfree_rcu() instead of the call_rcu(in6_dev_finish_destroy_rcu).
+The rcu callback inet6_ifa_finish_destroy_rcu() just calls a kfree(),
+so we use kfree_rcu() instead of the call_rcu(inet6_ifa_finish_destroy_rcu).
 
 Signed-off-by: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
@@ -32,30 +32,30 @@ Signed-off-by: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
  1 files changed, 1 insertions(+), 7 deletions(-)
 
 diff --git a/net/ipv6/addrconf.c b/net/ipv6/addrconf.c
-index fd6782e..f8c1a4c 100644
+index f8c1a4c..14ab6e8 100644
 --- a/net/ipv6/addrconf.c
 +++ b/net/ipv6/addrconf.c
-@@ -317,12 +317,6 @@ static void snmp6_free_dev(struct inet6_dev *idev)
+@@ -529,12 +529,6 @@ static int addrconf_fixup_forwarding(struct ctl_table *table, int *p, int old)
+ }
+ #endif
  
- /* Nobody refers to this device, we may destroy it. */
- 
--static void in6_dev_finish_destroy_rcu(struct rcu_head *head)
+-static void inet6_ifa_finish_destroy_rcu(struct rcu_head *head)
 -{
--	struct inet6_dev *idev = container_of(head, struct inet6_dev, rcu);
--	kfree(idev);
+-	struct inet6_ifaddr *ifp = container_of(head, struct inet6_ifaddr, rcu);
+-	kfree(ifp);
 -}
 -
- void in6_dev_finish_destroy(struct inet6_dev *idev)
+ /* Nobody refers to this ifaddr, destroy it */
+ void inet6_ifa_finish_destroy(struct inet6_ifaddr *ifp)
  {
- 	struct net_device *dev = idev->dev;
-@@ -339,7 +333,7 @@ void in6_dev_finish_destroy(struct inet6_dev *idev)
- 		return;
+@@ -555,7 +549,7 @@ void inet6_ifa_finish_destroy(struct inet6_ifaddr *ifp)
  	}
- 	snmp6_free_dev(idev);
--	call_rcu(&idev->rcu, in6_dev_finish_destroy_rcu);
-+	kfree_rcu(idev, rcu);
+ 	dst_release(&ifp->rt->dst);
+ 
+-	call_rcu(&ifp->rcu, inet6_ifa_finish_destroy_rcu);
++	kfree_rcu(ifp, rcu);
  }
  
- EXPORT_SYMBOL(in6_dev_finish_destroy);
+ static void
 -- 
 1.7.4
