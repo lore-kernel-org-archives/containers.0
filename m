@@ -1,8 +1,8 @@
 From: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH 07/17] net, rcu: convert call_rcu(inet6_ifa_finish_destroy_rcu)
-	to kfree_rcu()
-Date: Tue, 15 Mar 2011 18:00:14 +0800
-Message-ID: <4D7F38AE.7060708@cn.fujitsu.com>
+Subject: [PATCH 08/17] net,
+	rcu: convert call_rcu(listeners_free_rcu) to kfree_rcu()
+Date: Tue, 15 Mar 2011 18:01:42 +0800
+Message-ID: <4D7F3906.3090107@cn.fujitsu.com>
 References: <4D7F3610.6000809@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,39 +23,39 @@ List-Id: containers.vger.kernel.org
 
 
 
-The rcu callback inet6_ifa_finish_destroy_rcu() just calls a kfree(),
-so we use kfree_rcu() instead of the call_rcu(inet6_ifa_finish_destroy_rcu).
+The rcu callback listeners_free_rcu() just calls a kfree(),
+so we use kfree_rcu() instead of the call_rcu(listeners_free_rcu).
 
 Signed-off-by: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- net/ipv6/addrconf.c |    8 +-------
+ net/netlink/af_netlink.c |    8 +-------
  1 files changed, 1 insertions(+), 7 deletions(-)
 
-diff --git a/net/ipv6/addrconf.c b/net/ipv6/addrconf.c
-index f8c1a4c..14ab6e8 100644
---- a/net/ipv6/addrconf.c
-+++ b/net/ipv6/addrconf.c
-@@ -529,12 +529,6 @@ static int addrconf_fixup_forwarding(struct ctl_table *table, int *p, int old)
+diff --git a/net/netlink/af_netlink.c b/net/netlink/af_netlink.c
+index 1f92459..7c7fd8b 100644
+--- a/net/netlink/af_netlink.c
++++ b/net/netlink/af_netlink.c
+@@ -1575,12 +1575,6 @@ netlink_kernel_release(struct sock *sk)
  }
- #endif
+ EXPORT_SYMBOL(netlink_kernel_release);
  
--static void inet6_ifa_finish_destroy_rcu(struct rcu_head *head)
+-
+-static void listeners_free_rcu(struct rcu_head *head)
 -{
--	struct inet6_ifaddr *ifp = container_of(head, struct inet6_ifaddr, rcu);
--	kfree(ifp);
+-	kfree(container_of(head, struct listeners, rcu));
 -}
 -
- /* Nobody refers to this ifaddr, destroy it */
- void inet6_ifa_finish_destroy(struct inet6_ifaddr *ifp)
+ int __netlink_change_ngroups(struct sock *sk, unsigned int groups)
  {
-@@ -555,7 +549,7 @@ void inet6_ifa_finish_destroy(struct inet6_ifaddr *ifp)
+ 	struct listeners *new, *old;
+@@ -1597,7 +1591,7 @@ int __netlink_change_ngroups(struct sock *sk, unsigned int groups)
+ 		memcpy(new->masks, old->masks, NLGRPSZ(tbl->groups));
+ 		rcu_assign_pointer(tbl->listeners, new);
+ 
+-		call_rcu(&old->rcu, listeners_free_rcu);
++		kfree_rcu(old, rcu);
  	}
- 	dst_release(&ifp->rt->dst);
+ 	tbl->groups = groups;
  
--	call_rcu(&ifp->rcu, inet6_ifa_finish_destroy_rcu);
-+	kfree_rcu(ifp, rcu);
- }
- 
- static void
 -- 
 1.7.4
