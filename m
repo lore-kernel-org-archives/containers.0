@@ -1,14 +1,13 @@
 From: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-Subject: Re: [PATCH 16/17] net,rcu: convert call_rcu(dn_dev_free_ifa_rcu)
-	to kfree_rcu()
-Date: Tue, 15 Mar 2011 14:04:39 -0700 (PDT)
-Message-ID: <20110315.140439.115938708.davem__3335.90386803753$1300223449$gmane$org@davemloft.net>
-References: <4D7F3610.6000809@cn.fujitsu.com> <4D7F3B04.9080504@cn.fujitsu.com>
+Subject: Re: [PATCH 17/17] net,act_police,rcu: remove rcu_barrier()
+Date: Tue, 15 Mar 2011 14:04:52 -0700 (PDT)
+Message-ID: <20110315.140452.48500353.davem__9660.67549675262$1300223449$gmane$org@davemloft.net>
+References: <4D7F3610.6000809@cn.fujitsu.com> <4D7F3B62.6000005@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4D7F3B04.9080504-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <4D7F3B62.6000005-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,11 +22,12 @@ Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, linux-decnet-user-5NWG
 List-Id: containers.vger.kernel.org
 
 From: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Date: Tue, 15 Mar 2011 18:10:12 +0800
+Date: Tue, 15 Mar 2011 18:11:46 +0800
 
 > 
-> The rcu callback dn_dev_free_ifa_rcu() just calls a kfree(),
-> so we use kfree_rcu() instead of the call_rcu(dn_dev_free_ifa_rcu).
+> 
+> There is no callback of this module maybe queued
+> since we use kfree_rcu(), we can safely remove the rcu_barrier().
 > 
 > Signed-off-by: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 
