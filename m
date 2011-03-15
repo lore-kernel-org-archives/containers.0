@@ -1,36 +1,95 @@
-From: ext Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
-Subject: Re: [PATCH 0/2] suck some poison out of cgroups' linked lists
-Date: Tue, 15 Mar 2011 10:12:29 -0400
-Message-ID: <20110315141229.GA12017__45367.8639642478$1300198472$gmane$org@infradead.org>
-References: <1300194523-19325-1-git-send-email-ext-phil.2.carmody@nokia.com>
-	<20110315135137.GA27545@infradead.org>
-	<20110315140153.GD18664@esdhcp04044.research.nokia.com>
+From: Vivek Goyal <vgoyal@redhat.com>
+Subject: Re: [PATCH v6 8/9] memcg: check memcg dirty limits in page writeback
+Date: Tue, 15 Mar 2011 12:20:07 -0400
+Message-ID: <20110315162007.GB2587@redhat.com>
+References: <1299869011-26152-1-git-send-email-gthelen@google.com>
+ <1299869011-26152-9-git-send-email-gthelen@google.com>
+ <20110314175408.GE31120@redhat.com>
+ <20110314211002.GD4998@quack.suse.cz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <owner-linux-mm@kvack.org>
 Content-Disposition: inline
-In-Reply-To: <20110315140153.GD18664-etG4378wJBqvwb7GHCYM64wBHEhOmDVPtqGf+n4yE6E@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Phil Carmody <ext-phil.2.carmody-xNZwKgViW5gAvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ext Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+In-Reply-To: <20110314211002.GD4998@quack.suse.cz>
+Sender: owner-linux-mm@kvack.org
+To: Jan Kara <jack@suse.cz>
+Cc: Greg Thelen <gthelen@google.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Johannes Weiner <hannes@cmpxchg.org>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Chad Talbott <ctalbott@google.com>, Justin TerAvest <teravest@google.com>
 List-Id: containers.vger.kernel.org
 
-On Tue, Mar 15, 2011 at 04:01:53PM +0200, Phil Carmody wrote:
-> > > 2) Ensure that you never leave poison anywhere where you might want
-> > > to use list_empty().
+On Mon, Mar 14, 2011 at 10:10:03PM +0100, Jan Kara wrote:
+> On Mon 14-03-11 13:54:08, Vivek Goyal wrote:
+> > On Fri, Mar 11, 2011 at 10:43:30AM -0800, Greg Thelen wrote:
+> > > If the current process is in a non-root memcg, then
+> > > balance_dirty_pages() will consider the memcg dirty limits as well as
+> > > the system-wide limits.  This allows different cgroups to have distinct
+> > > dirty limits which trigger direct and background writeback at different
+> > > levels.
+> > > 
+> > > If called with a mem_cgroup, then throttle_vm_writeout() queries the
+> > > given cgroup for its dirty memory usage limits.
+> > > 
+> > > Signed-off-by: Andrea Righi <arighi@develer.com>
+> > > Signed-off-by: Greg Thelen <gthelen@google.com>
+> > > Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+> > > Acked-by: Wu Fengguang <fengguang.wu@intel.com>
+> > > ---
+> > > Changelog since v5:
+> > > - Simplified this change by using mem_cgroup_balance_dirty_pages() rather than
+> > >   cramming the somewhat different logic into balance_dirty_pages().  This means
+> > >   the global (non-memcg) dirty limits are not passed around in the
+> > >   struct dirty_info, so there's less change to existing code.
 > > 
-> > The correct way is to use list_del_init() if you want to do list_empty
-> > checks later on.
+> > Yes there is less change to existing code but now we also have a separate
+> > throttlig logic for cgroups. 
+> > 
+> > I thought that we are moving in the direction of IO less throttling
+> > where bdi threads always do the IO and Jan Kara also implemented the
+> > logic to distribute the finished IO pages uniformly across the waiting
+> > threads.
+>   Yes, we'd like to avoid doing IO from balance_dirty_pages(). But if the
+> logic in cgroups specific part won't get too fancy (which it doesn't seem
+> to be the case currently), it shouldn't be too hard to convert it to the new
+> approach.
 > 
-> I.e. (2). Glad I chose that one.
+> We can talk about it at LSF but at least with my approach to IO-less
+> balance_dirty_pages() it would be easy to convert cgroups throttling to
+> the new way. With Fengguang's approach it might be a bit harder since he
+> computes a throughput and from that necessary delay for a throttled task
+> but with cgroups that is impossible to compute so he'd have to add some
+> looping if we didn't write enough pages from the cgroup yet. But still it
+> would be reasonable doable AFAICT.
+> 
+> > Keeping it separate for cgroups, reduces the complexity but also forks
+> > off the balancing logic for root and other cgroups. So if Jan Kara's
+> > changes go in, it automatically does not get used for memory cgroups.
+> > 
+> > Not sure how good a idea it is to use a separate throttling logic for
+> > for non-root cgroups. 
+>   Yeah, it looks a bit odd. I'd think that we could just cap
+> task_dirty_limit() by a value computed from a cgroup limit and be done
+> with that but I probably miss something...
 
-Yes - sorry didn't see the actual patches before.
+I think previous implementation did something similar. Currently dirty
+limit is per_bdi/per_task. They made it per_cgroup/per_bdi/per_task. This
+new version tries to simplify the things by keeping mem cgroup throttling
+logic separate.
+
+> Sure there is also a different
+> background limit but that's broken anyway because a flusher thread will
+> quickly stop doing writeback if global background limit is not exceeded.
+> But that's a separate topic so I'll reply with this to a more appropriate
+> email ;)
+
+I think last patch in the series (patch 9) takes care of that. In case of
+mem_cgroup writeback, it forces flusher thread to write till we are
+below the background ratio of cgroup (and not global background ratio).
+
+Thanks
+Vivek
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
