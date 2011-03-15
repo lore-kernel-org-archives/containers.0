@@ -1,8 +1,8 @@
 From: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH 03/17] cgroup,
-	rcu: convert call_rcu(__free_css_id_cb) to kfree_rcu()
-Date: Tue, 15 Mar 2011 17:56:10 +0800
-Message-ID: <4D7F37BA.5000308@cn.fujitsu.com>
+Subject: [PATCH 04/17] net,
+	rcu: convert call_rcu(tcf_common_free_rcu) to kfree_rcu()
+Date: Tue, 15 Mar 2011 17:57:04 +0800
+Message-ID: <4D7F37F0.1050801@cn.fujitsu.com>
 References: <4D7F3610.6000809@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,41 +23,38 @@ List-Id: containers.vger.kernel.org
 
 
 
-The rcu callback __free_css_id_cb() just calls a kfree(),
-so we use kfree_rcu() instead of the call_rcu(__free_css_id_cb).
+The rcu callback tcf_common_free_rcu() just calls a kfree(),
+so we use kfree_rcu() instead of the call_rcu(tcf_common_free_rcu).
 
 Signed-off-by: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- kernel/cgroup.c |   10 +---------
- 1 files changed, 1 insertions(+), 9 deletions(-)
+ net/sched/act_api.c |    7 +------
+ 1 files changed, 1 insertions(+), 6 deletions(-)
 
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 5c83c91..b7d3f6d 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -4612,14 +4612,6 @@ bool css_is_ancestor(struct cgroup_subsys_state *child,
- 	return ret;
- }
+diff --git a/net/sched/act_api.c b/net/sched/act_api.c
+index 23b25f8..c8e7390 100644
+--- a/net/sched/act_api.c
++++ b/net/sched/act_api.c
+@@ -26,11 +26,6 @@
+ #include <net/act_api.h>
+ #include <net/netlink.h>
  
--static void __free_css_id_cb(struct rcu_head *head)
+-static void tcf_common_free_rcu(struct rcu_head *head)
 -{
--	struct css_id *id;
--
--	id = container_of(head, struct css_id, rcu_head);
--	kfree(id);
+-	kfree(container_of(head, struct tcf_common, tcfc_rcu));
 -}
 -
- void free_css_id(struct cgroup_subsys *ss, struct cgroup_subsys_state *css)
+ void tcf_hash_destroy(struct tcf_common *p, struct tcf_hashinfo *hinfo)
  {
- 	struct css_id *id = css->id;
-@@ -4634,7 +4626,7 @@ void free_css_id(struct cgroup_subsys *ss, struct cgroup_subsys_state *css)
- 	spin_lock(&ss->id_lock);
- 	idr_remove(&ss->idr, id->id);
- 	spin_unlock(&ss->id_lock);
--	call_rcu(&id->rcu_head, __free_css_id_cb);
-+	kfree_rcu(id, rcu_head);
- }
- EXPORT_SYMBOL_GPL(free_css_id);
- 
+ 	unsigned int h = tcf_hash(p->tcfc_index, hinfo->hmask);
+@@ -47,7 +42,7 @@ void tcf_hash_destroy(struct tcf_common *p, struct tcf_hashinfo *hinfo)
+ 			 * gen_estimator est_timer() might access p->tcfc_lock
+ 			 * or bstats, wait a RCU grace period before freeing p
+ 			 */
+-			call_rcu(&p->tcfc_rcu, tcf_common_free_rcu);
++			kfree_rcu(p, tcfc_rcu);
+ 			return;
+ 		}
+ 	}
 -- 
 1.7.4
