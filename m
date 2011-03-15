@@ -1,8 +1,8 @@
 From: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH 13/17] nfs, rcu: convert call_rcu(nfs_free_delegation_callback)
+Subject: [PATCH 14/17] security,rcu: convert call_rcu(whitelist_item_free)
 	to kfree_rcu()
-Date: Tue, 15 Mar 2011 18:07:01 +0800
-Message-ID: <4D7F3A45.8060601@cn.fujitsu.com>
+Date: Tue, 15 Mar 2011 18:07:57 +0800
+Message-ID: <4D7F3A7D.2080503@cn.fujitsu.com>
 References: <4D7F3610.6000809@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,44 +23,41 @@ List-Id: containers.vger.kernel.org
 
 
 
-The rcu callback nfs_free_delegation_callback() just calls a kfree(),
-so we use kfree_rcu() instead of the call_rcu(nfs_free_delegation_callback).
+The rcu callback whitelist_item_free() just calls a kfree(),
+so we use kfree_rcu() instead of the call_rcu(whitelist_item_free).
 
 Signed-off-by: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- fs/nfs/delegation.c |   14 +-------------
- 1 files changed, 1 insertions(+), 13 deletions(-)
+ security/device_cgroup.c |   10 +---------
+ 1 files changed, 1 insertions(+), 9 deletions(-)
 
-diff --git a/fs/nfs/delegation.c b/fs/nfs/delegation.c
-index bbbc6bf..dd25c2a 100644
---- a/fs/nfs/delegation.c
-+++ b/fs/nfs/delegation.c
-@@ -21,25 +21,13 @@
- #include "delegation.h"
- #include "internal.h"
- 
--static void nfs_do_free_delegation(struct nfs_delegation *delegation)
--{
--	kfree(delegation);
--}
--
--static void nfs_free_delegation_callback(struct rcu_head *head)
--{
--	struct nfs_delegation *delegation = container_of(head, struct nfs_delegation, rcu);
--
--	nfs_do_free_delegation(delegation);
--}
--
- static void nfs_free_delegation(struct nfs_delegation *delegation)
- {
- 	if (delegation->cred) {
- 		put_rpccred(delegation->cred);
- 		delegation->cred = NULL;
- 	}
--	call_rcu(&delegation->rcu, nfs_free_delegation_callback);
-+	kfree_rcu(delegation, rcu);
+diff --git a/security/device_cgroup.c b/security/device_cgroup.c
+index 8d9c48f..e886ab5 100644
+--- a/security/device_cgroup.c
++++ b/security/device_cgroup.c
+@@ -126,14 +126,6 @@ static int dev_whitelist_add(struct dev_cgroup *dev_cgroup,
+ 	return 0;
  }
  
- /**
+-static void whitelist_item_free(struct rcu_head *rcu)
+-{
+-	struct dev_whitelist_item *item;
+-
+-	item = container_of(rcu, struct dev_whitelist_item, rcu);
+-	kfree(item);
+-}
+-
+ /*
+  * called under devcgroup_mutex
+  */
+@@ -156,7 +148,7 @@ remove:
+ 		walk->access &= ~wh->access;
+ 		if (!walk->access) {
+ 			list_del_rcu(&walk->list);
+-			call_rcu(&walk->rcu, whitelist_item_free);
++			kfree_rcu(walk, rcu);
+ 		}
+ 	}
+ }
 -- 
 1.7.4
