@@ -1,8 +1,8 @@
 From: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH 01/17] cgroup,
-	rcu: convert call_rcu(free_css_set_rcu) to kfree_rcu()
-Date: Tue, 15 Mar 2011 17:53:46 +0800
-Message-ID: <4D7F372A.6050407@cn.fujitsu.com>
+Subject: [PATCH 02/17] cgroup,
+	rcu: convert call_rcu(free_cgroup_rcu) to kfree_rcu()
+Date: Tue, 15 Mar 2011 17:55:16 +0800
+Message-ID: <4D7F3784.6090307@cn.fujitsu.com>
 References: <4D7F3610.6000809@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,39 +22,40 @@ To: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, "Paul E. McKenney" <paulmc
 List-Id: containers.vger.kernel.org
 
 
-The rcu callback free_css_set_rcu() just calls a kfree(),
-so we use kfree_rcu() instead of the call_rcu(free_css_set_rcu).
+The rcu callback free_cgroup_rcu() just calls a kfree(),
+so we use kfree_rcu() instead of the call_rcu(free_cgroup_rcu).
 
 Signed-off-by: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- kernel/cgroup.c |    8 +-------
- 1 files changed, 1 insertions(+), 7 deletions(-)
+ kernel/cgroup.c |    9 +--------
+ 1 files changed, 1 insertions(+), 8 deletions(-)
 
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 95362d1..ad485d4 100644
+index ad485d4..5c83c91 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -326,12 +326,6 @@ static struct hlist_head *css_set_hash(struct cgroup_subsys_state *css[])
- 	return &css_set_table[index];
+@@ -806,13 +806,6 @@ static int cgroup_call_pre_destroy(struct cgroup *cgrp)
+ 	return ret;
  }
  
--static void free_css_set_rcu(struct rcu_head *obj)
+-static void free_cgroup_rcu(struct rcu_head *obj)
 -{
--	struct css_set *cg = container_of(obj, struct css_set, rcu_head);
--	kfree(cg);
+-	struct cgroup *cgrp = container_of(obj, struct cgroup, rcu_head);
+-
+-	kfree(cgrp);
 -}
 -
- /* We don't maintain the lists running through each css_set to its
-  * task until after the first call to cgroup_iter_start(). This
-  * reduces the fork()/exit() overhead for people who have cgroups
-@@ -375,7 +369,7 @@ static void __put_css_set(struct css_set *cg, int taskexit)
+ static void cgroup_diput(struct dentry *dentry, struct inode *inode)
+ {
+ 	/* is dentry a directory ? if so, kfree() associated cgroup */
+@@ -850,7 +843,7 @@ static void cgroup_diput(struct dentry *dentry, struct inode *inode)
+ 		 */
+ 		BUG_ON(!list_empty(&cgrp->pidlists));
+ 
+-		call_rcu(&cgrp->rcu_head, free_cgroup_rcu);
++		kfree_rcu(cgrp, rcu_head);
  	}
- 
- 	write_unlock(&css_set_lock);
--	call_rcu(&cg->rcu_head, free_css_set_rcu);
-+	kfree_rcu(cg, rcu_head);
+ 	iput(inode);
  }
- 
- /*
 -- 
 1.7.4
