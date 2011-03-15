@@ -1,8 +1,8 @@
 From: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH 12/17] block,
-	rcu: convert call_rcu(cfq_cfqd_free) to kfree_rcu()
-Date: Tue, 15 Mar 2011 18:06:07 +0800
-Message-ID: <4D7F3A0F.1050403@cn.fujitsu.com>
+Subject: [PATCH 13/17] nfs, rcu: convert call_rcu(nfs_free_delegation_callback)
+	to kfree_rcu()
+Date: Tue, 15 Mar 2011 18:07:01 +0800
+Message-ID: <4D7F3A45.8060601@cn.fujitsu.com>
 References: <4D7F3610.6000809@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,38 +23,44 @@ List-Id: containers.vger.kernel.org
 
 
 
-The rcu callback cfq_cfqd_free() just calls a kfree(),
-so we use kfree_rcu() instead of the call_rcu(cfq_cfqd_free).
+The rcu callback nfs_free_delegation_callback() just calls a kfree(),
+so we use kfree_rcu() instead of the call_rcu(nfs_free_delegation_callback).
 
 Signed-off-by: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- block/cfq-iosched.c |    7 +------
- 1 files changed, 1 insertions(+), 6 deletions(-)
+ fs/nfs/delegation.c |   14 +-------------
+ 1 files changed, 1 insertions(+), 13 deletions(-)
 
-diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
-index ea83a4f..32fe43e 100644
---- a/block/cfq-iosched.c
-+++ b/block/cfq-iosched.c
-@@ -3812,11 +3812,6 @@ static void cfq_put_async_queues(struct cfq_data *cfqd)
- 		cfq_put_queue(cfqd->async_idle_cfqq);
- }
+diff --git a/fs/nfs/delegation.c b/fs/nfs/delegation.c
+index bbbc6bf..dd25c2a 100644
+--- a/fs/nfs/delegation.c
++++ b/fs/nfs/delegation.c
+@@ -21,25 +21,13 @@
+ #include "delegation.h"
+ #include "internal.h"
  
--static void cfq_cfqd_free(struct rcu_head *head)
+-static void nfs_do_free_delegation(struct nfs_delegation *delegation)
 -{
--	kfree(container_of(head, struct cfq_data, rcu));
+-	kfree(delegation);
 -}
 -
- static void cfq_exit_queue(struct elevator_queue *e)
+-static void nfs_free_delegation_callback(struct rcu_head *head)
+-{
+-	struct nfs_delegation *delegation = container_of(head, struct nfs_delegation, rcu);
+-
+-	nfs_do_free_delegation(delegation);
+-}
+-
+ static void nfs_free_delegation(struct nfs_delegation *delegation)
  {
- 	struct cfq_data *cfqd = e->elevator_data;
-@@ -3850,7 +3845,7 @@ static void cfq_exit_queue(struct elevator_queue *e)
- 	spin_unlock(&cic_index_lock);
- 
- 	/* Wait for cfqg->blkg->key accessors to exit their grace periods. */
--	call_rcu(&cfqd->rcu, cfq_cfqd_free);
-+	kfree_rcu(cfqd, rcu);
+ 	if (delegation->cred) {
+ 		put_rpccred(delegation->cred);
+ 		delegation->cred = NULL;
+ 	}
+-	call_rcu(&delegation->rcu, nfs_free_delegation_callback);
++	kfree_rcu(delegation, rcu);
  }
  
- static int cfq_alloc_cic_index(void)
+ /**
 -- 
 1.7.4
