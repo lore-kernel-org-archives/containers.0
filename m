@@ -1,8 +1,7 @@
 From: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH 16/17] net,
-	rcu: convert call_rcu(dn_dev_free_ifa_rcu) to kfree_rcu()
-Date: Tue, 15 Mar 2011 18:10:12 +0800
-Message-ID: <4D7F3B04.9080504@cn.fujitsu.com>
+Subject: [PATCH 17/17] net,act_police,rcu: remove rcu_barrier()
+Date: Tue, 15 Mar 2011 18:11:46 +0800
+Message-ID: <4D7F3B62.6000005@cn.fujitsu.com>
 References: <4D7F3610.6000809@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,33 +21,26 @@ To: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, "Paul E. McKenney" <paulmc
 List-Id: containers.vger.kernel.org
 
 
-The rcu callback dn_dev_free_ifa_rcu() just calls a kfree(),
-so we use kfree_rcu() instead of the call_rcu(dn_dev_free_ifa_rcu).
+
+There is no callback of this module maybe queued
+since we use kfree_rcu(), we can safely remove the rcu_barrier().
 
 Signed-off-by: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- net/decnet/dn_dev.c |    7 +------
- 1 files changed, 1 insertions(+), 6 deletions(-)
+ net/sched/act_police.c |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
 
-diff --git a/net/decnet/dn_dev.c b/net/decnet/dn_dev.c
-index 0dcaa90..4c27615 100644
---- a/net/decnet/dn_dev.c
-+++ b/net/decnet/dn_dev.c
-@@ -332,14 +332,9 @@ static struct dn_ifaddr *dn_dev_alloc_ifa(void)
- 	return ifa;
- }
- 
--static void dn_dev_free_ifa_rcu(struct rcu_head *head)
--{
--	kfree(container_of(head, struct dn_ifaddr, rcu));
--}
--
- static void dn_dev_free_ifa(struct dn_ifaddr *ifa)
+diff --git a/net/sched/act_police.c b/net/sched/act_police.c
+index 083b091..22e3f9b 100644
+--- a/net/sched/act_police.c
++++ b/net/sched/act_police.c
+@@ -397,7 +397,6 @@ static void __exit
+ police_cleanup_module(void)
  {
--	call_rcu(&ifa->rcu, dn_dev_free_ifa_rcu);
-+	kfree_rcu(ifa, rcu);
+ 	tcf_unregister_action(&act_police_ops);
+-	rcu_barrier(); /* Wait for completion of call_rcu()'s (tcf_police_free_rcu) */
  }
  
- static void dn_dev_del_ifa(struct dn_dev *dn_db, struct dn_ifaddr __rcu **ifap, int destroy)
+ module_init(police_init_module);
 -- 
 1.7.4
