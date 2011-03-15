@@ -1,8 +1,8 @@
 From: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH 02/17] cgroup,
-	rcu: convert call_rcu(free_cgroup_rcu) to kfree_rcu()
-Date: Tue, 15 Mar 2011 17:55:16 +0800
-Message-ID: <4D7F3784.6090307@cn.fujitsu.com>
+Subject: [PATCH 03/17] cgroup,
+	rcu: convert call_rcu(__free_css_id_cb) to kfree_rcu()
+Date: Tue, 15 Mar 2011 17:56:10 +0800
+Message-ID: <4D7F37BA.5000308@cn.fujitsu.com>
 References: <4D7F3610.6000809@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,40 +22,42 @@ To: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, "Paul E. McKenney" <paulmc
 List-Id: containers.vger.kernel.org
 
 
-The rcu callback free_cgroup_rcu() just calls a kfree(),
-so we use kfree_rcu() instead of the call_rcu(free_cgroup_rcu).
+
+The rcu callback __free_css_id_cb() just calls a kfree(),
+so we use kfree_rcu() instead of the call_rcu(__free_css_id_cb).
 
 Signed-off-by: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- kernel/cgroup.c |    9 +--------
- 1 files changed, 1 insertions(+), 8 deletions(-)
+ kernel/cgroup.c |   10 +---------
+ 1 files changed, 1 insertions(+), 9 deletions(-)
 
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index ad485d4..5c83c91 100644
+index 5c83c91..b7d3f6d 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -806,13 +806,6 @@ static int cgroup_call_pre_destroy(struct cgroup *cgrp)
+@@ -4612,14 +4612,6 @@ bool css_is_ancestor(struct cgroup_subsys_state *child,
  	return ret;
  }
  
--static void free_cgroup_rcu(struct rcu_head *obj)
+-static void __free_css_id_cb(struct rcu_head *head)
 -{
--	struct cgroup *cgrp = container_of(obj, struct cgroup, rcu_head);
+-	struct css_id *id;
 -
--	kfree(cgrp);
+-	id = container_of(head, struct css_id, rcu_head);
+-	kfree(id);
 -}
 -
- static void cgroup_diput(struct dentry *dentry, struct inode *inode)
+ void free_css_id(struct cgroup_subsys *ss, struct cgroup_subsys_state *css)
  {
- 	/* is dentry a directory ? if so, kfree() associated cgroup */
-@@ -850,7 +843,7 @@ static void cgroup_diput(struct dentry *dentry, struct inode *inode)
- 		 */
- 		BUG_ON(!list_empty(&cgrp->pidlists));
- 
--		call_rcu(&cgrp->rcu_head, free_cgroup_rcu);
-+		kfree_rcu(cgrp, rcu_head);
- 	}
- 	iput(inode);
+ 	struct css_id *id = css->id;
+@@ -4634,7 +4626,7 @@ void free_css_id(struct cgroup_subsys *ss, struct cgroup_subsys_state *css)
+ 	spin_lock(&ss->id_lock);
+ 	idr_remove(&ss->idr, id->id);
+ 	spin_unlock(&ss->id_lock);
+-	call_rcu(&id->rcu_head, __free_css_id_cb);
++	kfree_rcu(id, rcu_head);
  }
+ EXPORT_SYMBOL_GPL(free_css_id);
+ 
 -- 
 1.7.4
