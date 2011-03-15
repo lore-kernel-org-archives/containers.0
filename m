@@ -1,14 +1,14 @@
 From: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-Subject: Re: [PATCH 11/17] net,rcu: convert call_rcu(sctp_local_addr_free)
-	to kfree_rcu()
-Date: Tue, 15 Mar 2011 14:03:59 -0700 (PDT)
-Message-ID: <20110315.140359.39186121.davem__19946.2986005985$1300223329$gmane$org@davemloft.net>
-References: <4D7F3610.6000809@cn.fujitsu.com> <4D7F39CE.80403@cn.fujitsu.com>
+Subject: Re: [PATCH 15/17] net,rcu: convert call_rcu(ha_rcu_free) to
+	kfree_rcu()
+Date: Tue, 15 Mar 2011 14:04:22 -0700 (PDT)
+Message-ID: <20110315.140422.59684684.davem__42655.9120802723$1300223403$gmane$org@davemloft.net>
+References: <4D7F3610.6000809@cn.fujitsu.com> <4D7F3ABA.7020709@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4D7F39CE.80403-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <4D7F3ABA.7020709-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,12 +23,12 @@ Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, linux-decnet-user-5NWG
 List-Id: containers.vger.kernel.org
 
 From: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Date: Tue, 15 Mar 2011 18:05:02 +0800
+Date: Tue, 15 Mar 2011 18:08:58 +0800
 
 > 
 > 
-> The rcu callback sctp_local_addr_free() just calls a kfree(),
-> so we use kfree_rcu() instead of the call_rcu(sctp_local_addr_free).
+> The rcu callback ha_rcu_free() just calls a kfree(),
+> so we use kfree_rcu() instead of the call_rcu(ha_rcu_free).
 > 
 > Signed-off-by: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 
