@@ -1,94 +1,108 @@
-From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
-Subject: Re: [PATCH v8 3/3] cgroups: make procs file writable
-Date: Tue, 15 Mar 2011 17:13:53 -0400
-Message-ID: <20110315211353.GA9992@ghc17.ghc.andrew.cmu.edu>
-References: <20110208013542.GC31569@ghc17.ghc.andrew.cmu.edu>
-	<20110208013950.GF31569@ghc17.ghc.andrew.cmu.edu>
-	<AANLkTinEnNsu8=PEktXL_EECzGYqsgdf+uogGxe7k4W+@mail.gmail.com>
-	<20110310061831.GA23736@ghc17.ghc.andrew.cmu.edu>
-	<AANLkTikkmfwk0nV0p=omz2ddrw+ZqWF1Lx3EfO6dTjEQ@mail.gmail.com>
+From: Vivek Goyal <vgoyal@redhat.com>
+Subject: Re: [PATCH v6 0/9] memcg: per cgroup dirty page accounting
+Date: Tue, 15 Mar 2011 17:23:39 -0400
+Message-ID: <20110315212339.GC5740@redhat.com>
+References: <1299869011-26152-1-git-send-email-gthelen@google.com>
+ <20110311171006.ec0d9c37.akpm@linux-foundation.org>
+ <AANLkTimT-kRMQW3JKcJAZP4oD3EXuE-Bk3dqumH_10Oe@mail.gmail.com>
+ <20110314202324.GG31120@redhat.com>
+ <AANLkTinDNOLMdU7EEMPFkC_f9edCx7ZFc7=qLRNAEmBM@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=iso-8859-1
+Content-Transfer-Encoding: quoted-printable
+Return-path: <owner-linux-mm@kvack.org>
 Content-Disposition: inline
-In-Reply-To: <AANLkTikkmfwk0nV0p=omz2ddrw+ZqWF1Lx3EfO6dTjEQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, Miao Xie <miaox-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+In-Reply-To: <AANLkTinDNOLMdU7EEMPFkC_f9edCx7ZFc7=qLRNAEmBM@mail.gmail.com>
+Sender: owner-linux-mm@kvack.org
+To: Greg Thelen <gthelen@google.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Johannes Weiner <hannes@cmpxchg.org>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Chad Talbott <ctalbott@google.com>, Justin TerAvest <teravest@google.com>
 List-Id: containers.vger.kernel.org
 
-On Thu, Mar 10, 2011 at 12:01:29PM -0800, Paul Menage wrote:
-> On Wed, Mar 9, 2011 at 10:18 PM, Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org> wrote:
-> >> This BUG_ON() seems unnecessary, given the i++ directly above it.
+On Mon, Mar 14, 2011 at 07:41:13PM -0700, Greg Thelen wrote:
+> On Mon, Mar 14, 2011 at 1:23 PM, Vivek Goyal <vgoyal@redhat.com> wrote:
+> > On Mon, Mar 14, 2011 at 11:29:17AM -0700, Greg Thelen wrote:
 > >
-> > It's meant to communicate that the loop must go through at least once,
-> > so that 'struct cgroup *oldcgrp' will be initialised within a loop later
-> > (setting it to NULL in the beginning is just to shut up the compiler.)
-> 
-> Right, but it's a do {} while() loop with no break in it - it's
-> impossible to not go through at least once...
-
-OK; I guess it can go.
-
-> > Although if the deal is that cancel_attach reverts
-> > the things that can_attach does (and can_attach_task is separate) (is
-> > this the case? it should probably go in the documentation), then passing
-> > a can_attach and failing a can_attach_task should cause cancel_attach to
-> > get called for that subsystem, which in this code it doesn't. Something
-> > like:
-> >
-> > ? ?retval = ss->can_attach();
-> > ? ?if (retval) {
-> > ? ? ? ?failed_ss = ss;
-> > ? ? ? ?goto out_cancel_attach;
-> > ? ?}
-> > ? ?retval = ss->can_attach_task();
-> > ? ?if (retval) {
-> > ? ? ? ?failed_ss = ss;
-> > ? ? ? ?cancel_extra_ss = true;
-> > ? ? ? ?goto out_cancel_attach;
-> > ? ?}
-> 
-> Yes, but maybe call the flag cancel_failed_ss? Slightly more obvious,
-> to me at least.
-
-Sounds good.
-
-> >> > + ? ? ? ? ? ? ? ? ? ? ? BUG_ON(!thread_group_leader(tsk));
+> > [..]
+> >> > We could just crawl the memcg's page LRU and bring things under co=
+ntrol
+> >> > that way, couldn't we? =A0That would fix it. =A0What were the reas=
+ons for
+> >> > not doing this?
 > >>
-> >> Can this race with an exiting/execing group leader?
+> >> My rational for pursuing bdi writeback was I/O locality. =A0I have h=
+eard that
+> >> per-page I/O has bad locality. =A0Per inode bdi-style writeback shou=
+ld have better
+> >> locality.
+> >>
+> >> My hunch is the best solution is a hybrid which uses a) bdi writebac=
+k with a
+> >> target memcg filter and b) using the memcg lru as a fallback to iden=
+tify the bdi
+> >> that needed writeback. =A0I think the part a) memcg filtering is lik=
+ely something
+> >> like:
+> >> =A0http://marc.info/?l=3Dlinux-kernel&m=3D129910424431837
+> >>
+> >> The part b) bdi selection should not be too hard assuming that page-=
+to-mapping
+> >> locking is doable.
 > >
-> > No, rcu_read_lock() is held.
+> > Greg,
 > >
-> 
-> But rcu_read_lock() doesn't stop any actions - it just stops the data
-> structures from going away. Can't leadership change during an
-> execve()?
+> > IIUC, option b) seems to be going through pages of particular memcg a=
+nd
+> > mapping page to inode and start writeback on particular inode?
+>=20
+> Yes.
+>=20
+> > If yes, this might be reasonably good. In the case when cgroups are n=
+ot
+> > sharing inodes then it automatically maps one inode to one cgroup and
+> > once cgroup is over limit, it starts writebacks of its own inode.
+> >
+> > In case inode is shared, then we get the case of one cgroup writting
+> > back the pages of other cgroup. Well I guess that also can be handele=
+d
+> > by flusher thread where a bunch or group of pages can be compared wit=
+h
+> > the cgroup passed in writeback structure. I guess that might hurt us
+> > more than benefit us.
+>=20
+> Agreed.  For now just writing the entire inode is probably fine.
+>=20
+> > IIUC how option b) works then we don't even need option a) where an N=
+ level
+> > deep cache is maintained?
+>=20
+> Originally I was thinking that bdi-wide writeback with memcg filter
+> was a good idea.  But this may be unnecessarily complex.  Now I am
+> agreeing with you that option (a) may not be needed.  Memcg could
+> queue per-inode writeback using the memcg lru to locate inodes
+> (lru->page->inode) with something like this in
+> [mem_cgroup_]balance_dirty_pages():
+>=20
+>   while (memcg_usage() >=3D memcg_fg_limit) {
+>     inode =3D memcg_dirty_inode(cg);  /* scan lru for a dirty page, the=
+n
+> grab mapping & inode */
+>     sync_inode(inode, &wbc);
+>   }
 
-Hmm, you may be right; my understanding of RCU is not complete. But
-actually I think the BUG_ON should just be removed, since we're about to
-drop locks before handing off to cgroup_attach_proc anyway (so at no
-important part is the assertion guaranteed), which will detect and
-EAGAIN if such a race happened.
+Is it possible to pass mem_cgroup in writeback_control structure or in
+work structure which in turn will be set in writeback_control.  And
+modify writeback_inodes_wb() which will look that ->mem_cgroup is
+set. So instead of calling queue_io() it can call memcg_queue_io()
+and then memory cgroup can look at lru list and take its own decision
+on which inodes needs to be pushed for IO?
 
-> > (However, I did try to test it, and it looks like if a leader calls
-> > sys_exit() then the whole group goes away; is this actually guaranteed?)
-> 
-> I think so, but maybe not instantaneously.
-> 
-> Paul
-> 
+Thanks
+Vivek
 
-Hmm, well, should I make this assumption, then? The code would not be
-more complicated either way, really. I kind of prefer it as it is...
-
--- Ben
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter=
+.ca/
+Don't email: <a href=3Dmailto:"dont@kvack.org"> email@kvack.org </a>
