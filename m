@@ -1,125 +1,36 @@
-From: Vivek Goyal <vgoyal@redhat.com>
-Subject: Re: [PATCH v6 0/9] memcg: per cgroup dirty page accounting
-Date: Tue, 15 Mar 2011 14:48:39 -0400
-Message-ID: <20110315184839.GB5740@redhat.com>
-References: <1299869011-26152-1-git-send-email-gthelen@google.com>
- <20110311171006.ec0d9c37.akpm@linux-foundation.org>
- <AANLkTimT-kRMQW3JKcJAZP4oD3EXuE-Bk3dqumH_10Oe@mail.gmail.com>
- <20110314202324.GG31120@redhat.com>
- <AANLkTinDNOLMdU7EEMPFkC_f9edCx7ZFc7=qLRNAEmBM@mail.gmail.com>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 01/17] cgroup,
+	rcu: convert call_rcu(free_css_set_rcu) to kfree_rcu()
+Date: Tue, 15 Mar 2011 13:03:39 -0700
+Message-ID: <AANLkTink63LmMabe4_MzeHbFRSpqgkajUreKCOp004Sn@mail.gmail.com>
+References: <4D7F3610.6000809@cn.fujitsu.com> <4D7F372A.6050407@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Transfer-Encoding: quoted-printable
-Return-path: <owner-linux-mm@kvack.org>
-Content-Disposition: inline
-In-Reply-To: <AANLkTinDNOLMdU7EEMPFkC_f9edCx7ZFc7=qLRNAEmBM@mail.gmail.com>
-Sender: owner-linux-mm@kvack.org
-To: Greg Thelen <gthelen@google.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Johannes Weiner <hannes@cmpxchg.org>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Chad Talbott <ctalbott@google.com>, Justin TerAvest <teravest@google.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <4D7F372A.6050407-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Randy Dunlap <randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, linux-decnet-user-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>, linux-sctp-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, "Pekka Savola (ipv6)" <pekkas-UjJjq++bwZ7HOG6cAo2yLw@public.gmane.org>, Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, =?ISO-8859-1?Q?Uwe_Kleine=2DK=F6nig?= <u.kleine-koenig-bIcnvbaLZ9MEGnE8C9+IrQ@public.gmane.org>, Alexey Kuznetsov <kuznet-v/Mj1YrvjDBInbfyfbPRSQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Sridhar Samudrala <sri-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Vlad Yasevich <vladislav.yasevich-VXdhtT5mjnY@public.gmane.org>, Hagen Paul Pfeifer <hagen-GvnIQ6b/HdU@public.gmane.org>, "John W. Linville" <linville-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jiri Pirko <jpirko-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Hideaki YOSHIFUJI <yoshfu>
 List-Id: containers.vger.kernel.org
 
-On Mon, Mar 14, 2011 at 07:41:13PM -0700, Greg Thelen wrote:
-> On Mon, Mar 14, 2011 at 1:23 PM, Vivek Goyal <vgoyal@redhat.com> wrote:
-> > On Mon, Mar 14, 2011 at 11:29:17AM -0700, Greg Thelen wrote:
-> >
-> > [..]
-> >> > We could just crawl the memcg's page LRU and bring things under co=
-ntrol
-> >> > that way, couldn't we? =A0That would fix it. =A0What were the reas=
-ons for
-> >> > not doing this?
-> >>
-> >> My rational for pursuing bdi writeback was I/O locality. =A0I have h=
-eard that
-> >> per-page I/O has bad locality. =A0Per inode bdi-style writeback shou=
-ld have better
-> >> locality.
-> >>
-> >> My hunch is the best solution is a hybrid which uses a) bdi writebac=
-k with a
-> >> target memcg filter and b) using the memcg lru as a fallback to iden=
-tify the bdi
-> >> that needed writeback. =A0I think the part a) memcg filtering is lik=
-ely something
-> >> like:
-> >> =A0http://marc.info/?l=3Dlinux-kernel&m=3D129910424431837
-> >>
-> >> The part b) bdi selection should not be too hard assuming that page-=
-to-mapping
-> >> locking is doable.
-> >
-> > Greg,
-> >
-> > IIUC, option b) seems to be going through pages of particular memcg a=
-nd
-> > mapping page to inode and start writeback on particular inode?
->=20
-> Yes.
->=20
-> > If yes, this might be reasonably good. In the case when cgroups are n=
-ot
-> > sharing inodes then it automatically maps one inode to one cgroup and
-> > once cgroup is over limit, it starts writebacks of its own inode.
-> >
-> > In case inode is shared, then we get the case of one cgroup writting
-> > back the pages of other cgroup. Well I guess that also can be handele=
-d
-> > by flusher thread where a bunch or group of pages can be compared wit=
-h
-> > the cgroup passed in writeback structure. I guess that might hurt us
-> > more than benefit us.
->=20
-> Agreed.  For now just writing the entire inode is probably fine.
->=20
-> > IIUC how option b) works then we don't even need option a) where an N=
- level
-> > deep cache is maintained?
->=20
-> Originally I was thinking that bdi-wide writeback with memcg filter
-> was a good idea.  But this may be unnecessarily complex.  Now I am
-> agreeing with you that option (a) may not be needed.  Memcg could
-> queue per-inode writeback using the memcg lru to locate inodes
-> (lru->page->inode) with something like this in
-> [mem_cgroup_]balance_dirty_pages():
->=20
->   while (memcg_usage() >=3D memcg_fg_limit) {
->     inode =3D memcg_dirty_inode(cg);  /* scan lru for a dirty page, the=
-n
-> grab mapping & inode */
->     sync_inode(inode, &wbc);
->   }
->=20
->   if (memcg_usage() >=3D memcg_bg_limit) {
->     queue per-memcg bg flush work item
->   }
+2011/3/15 Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>:
+>
+> The rcu callback free_css_set_rcu() just calls a kfree(),
+> so we use kfree_rcu() instead of the call_rcu(free_css_set_rcu).
+>
+> Signed-off-by: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 
-I think even for background we shall have to implement some kind of logic
-where inodes are selected by traversing memcg->lru list so that for
-background write we don't end up writting too many inodes from other
-root group in an attempt to meet the low background ratio of memcg.
+Acked-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 
-So to me it boils down to coming up a new inode selection logic for
-memcg which can be used both for background as well as foreground
-writes. This will make sure we don't end up writting pages from the
-inodes we don't want to.
+Looks fine, assuming the main kfree_rcu() changes go through.
 
-Though we also shall have to come up with some approximation so that
-if there are multiple inodes in the cgroup, we don't end up writting
-same inodes all the time and some inodes don't get written back at
-all. May be skipping random amount of pages from the beginning of list
-before we select an inode.
-
-This has the disadvantage that we are using a different logic for non
-root cgroup but until we figure out how to retrieve inodes belonging
-to a memory cgroup, it might not be a bad idea.
-
-Thanks
-Vivek
-
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter=
-.ca/
-Don't email: <a href=3Dmailto:"dont@kvack.org"> email@kvack.org </a>
+Paul
