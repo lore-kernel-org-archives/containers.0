@@ -1,13 +1,15 @@
-From: Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 17/17] net,act_police,rcu: remove rcu_barrier()
-Date: Tue, 15 Mar 2011 12:04:12 +0100
-Message-ID: <1300187052.10062.12.camel@edumazet-laptop>
-References: <4D7F3610.6000809@cn.fujitsu.com> <4D7F3B62.6000005@cn.fujitsu.com>
+From: Phil Carmody <ext-phil.2.carmody-xNZwKgViW5gAvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH 2/2] cgroup: if you list_empty() a head then don't list_del()
+	it
+Date: Tue, 15 Mar 2011 15:08:43 +0200
+Message-ID: <1300194523-19325-3-git-send-email-ext-phil.2.carmody__8186.45488839156$1300194961$gmane$org@nokia.com>
+References: <1300194523-19325-1-git-send-email-ext-phil.2.carmody@nokia.com>
+	<1300194523-19325-2-git-send-email-ext-phil.2.carmody@nokia.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4D7F3B62.6000005-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <1300194523-19325-2-git-send-email-ext-phil.2.carmody-xNZwKgViW5gAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,25 +19,75 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Randy Dunlap <randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, linux-decnet-user-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>, linux-sctp-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, "Pekka Savola (ipv6)" <pekkas-UjJjq++bwZ7HOG6cAo2yLw@public.gmane.org>, Uwe =?ISO-8859-1?Q?Kleine-K=F6nig?= <u.kleine-koenig-bIcnvbaLZ9MEGnE8C9+IrQ@public.gmane.org>, Alexey Kuznetsov <kuznet-v/Mj1YrvjDBInbfyfbPRSQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Sridhar Samudrala <sri-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Vlad Yasevich <vladislav.yasevich-VXdhtT5mjnY@public.gmane.org>, Hagen Paul Pfeifer <hagen-GvnIQ6b/HdU@public.gmane.org>, "John W. Linville" <linville-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Johannes Berg <johannes-cdvu00un1VgdHxzADdlk8Q@public.gmane.org>, Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jiri Pirko <jpirko-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Hideaki
+To: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ext-phil.2.carmody-xNZwKgViW5gAvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-TGUgbWFyZGkgMTUgbWFycyAyMDExIMOgIDE4OjExICswODAwLCBMYWkgSmlhbmdzaGFuIGEgw6lj
-cml0IDoKPiAKPiBUaGVyZSBpcyBubyBjYWxsYmFjayBvZiB0aGlzIG1vZHVsZSBtYXliZSBxdWV1
-ZWQKPiBzaW5jZSB3ZSB1c2Uga2ZyZWVfcmN1KCksIHdlIGNhbiBzYWZlbHkgcmVtb3ZlIHRoZSBy
-Y3VfYmFycmllcigpLgo+IAo+IFNpZ25lZC1vZmYtYnk6IExhaSBKaWFuZ3NoYW4gPGxhaWpzQGNu
-LmZ1aml0c3UuY29tPgo+IC0tLQo+ICBuZXQvc2NoZWQvYWN0X3BvbGljZS5jIHwgICAgMSAtCj4g
-IDEgZmlsZXMgY2hhbmdlZCwgMCBpbnNlcnRpb25zKCspLCAxIGRlbGV0aW9ucygtKQo+IAo+IGRp
-ZmYgLS1naXQgYS9uZXQvc2NoZWQvYWN0X3BvbGljZS5jIGIvbmV0L3NjaGVkL2FjdF9wb2xpY2Uu
-Ywo+IGluZGV4IDA4M2IwOTEuLjIyZTNmOWIgMTAwNjQ0Cj4gLS0tIGEvbmV0L3NjaGVkL2FjdF9w
-b2xpY2UuYwo+ICsrKyBiL25ldC9zY2hlZC9hY3RfcG9saWNlLmMKPiBAQCAtMzk3LDcgKzM5Nyw2
-IEBAIHN0YXRpYyB2b2lkIF9fZXhpdAo+ICBwb2xpY2VfY2xlYW51cF9tb2R1bGUodm9pZCkKPiAg
-ewo+ICAJdGNmX3VucmVnaXN0ZXJfYWN0aW9uKCZhY3RfcG9saWNlX29wcyk7Cj4gLQlyY3VfYmFy
-cmllcigpOyAvKiBXYWl0IGZvciBjb21wbGV0aW9uIG9mIGNhbGxfcmN1KCkncyAodGNmX3BvbGlj
-ZV9mcmVlX3JjdSkgKi8KPiAgfQo+ICAKPiAgbW9kdWxlX2luaXQocG9saWNlX2luaXRfbW9kdWxl
-KTsKCgpXaHkgaXMgaXQgYSBzZXBhcmF0ZSBwYXRjaCwgYW5kIG5vdCBpbmNsdWRlZCBpbiBwYXRj
-aCA1LzE3ID8KCgoKCgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5k
-YXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0
-aW5mby9jb250YWluZXJz
+list_del() leaves poison in the prev and next pointers. The next
+list_empty() will compare those poisons, and say the list isn't empty.
+Any list operations that assume the node is on a list because of such a
+check will be fooled into dereferencing poison. One needs to INIT the
+node after the del, and fortunately there's already a wrapper for that -
+list_del_init().
+
+Some of the dels are followed by deallocations, so can be ignored,
+and one can be merged with an add to make a move. Apart from that, I
+erred on the side of caution in making nodes list_empty()-queriable.
+
+Signed-off-by: Phil Carmody <ext-phil.2.carmody-xNZwKgViW5gAvxtiuMwx3w@public.gmane.org>
+---
+ kernel/cgroup.c |   14 ++++++--------
+ 1 files changed, 6 insertions(+), 8 deletions(-)
+
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index b24d702..bcc7336 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -1813,10 +1813,8 @@ int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *tsk)
+ 
+ 	/* Update the css_set linked lists if we're using them */
+ 	write_lock(&css_set_lock);
+-	if (!list_empty(&tsk->cg_list)) {
+-		list_del(&tsk->cg_list);
+-		list_add(&tsk->cg_list, &newcg->tasks);
+-	}
++	if (!list_empty(&tsk->cg_list))
++		list_move(&tsk->cg_list, &newcg->tasks);
+ 	write_unlock(&css_set_lock);
+ 
+ 	for_each_subsys(root, ss) {
+@@ -3655,12 +3653,12 @@ again:
+ 	spin_lock(&release_list_lock);
+ 	set_bit(CGRP_REMOVED, &cgrp->flags);
+ 	if (!list_empty(&cgrp->release_list))
+-		list_del(&cgrp->release_list);
++		list_del_init(&cgrp->release_list);
+ 	spin_unlock(&release_list_lock);
+ 
+ 	cgroup_lock_hierarchy(cgrp->root);
+ 	/* delete this cgroup from parent->children */
+-	list_del(&cgrp->sibling);
++	list_del_init(&cgrp->sibling);
+ 	cgroup_unlock_hierarchy(cgrp->root);
+ 
+ 	d = dget(cgrp->dentry);
+@@ -3879,7 +3877,7 @@ void cgroup_unload_subsys(struct cgroup_subsys *ss)
+ 	subsys[ss->subsys_id] = NULL;
+ 
+ 	/* remove subsystem from rootnode's list of subsystems */
+-	list_del(&ss->sibling);
++	list_del_init(&ss->sibling);
+ 
+ 	/*
+ 	 * disentangle the css from all css_sets attached to the dummytop. as
+@@ -4253,7 +4251,7 @@ void cgroup_exit(struct task_struct *tsk, int run_callbacks)
+ 	if (!list_empty(&tsk->cg_list)) {
+ 		write_lock(&css_set_lock);
+ 		if (!list_empty(&tsk->cg_list))
+-			list_del(&tsk->cg_list);
++			list_del_init(&tsk->cg_list);
+ 		write_unlock(&css_set_lock);
+ 	}
+ 
+-- 
+1.7.2.rc1.37.gf8c40
