@@ -1,138 +1,137 @@
 From: Vivek Goyal <vgoyal@redhat.com>
-Subject: Re: [PATCH v6 9/9] memcg: make background writeback memcg aware
-Date: Tue, 15 Mar 2011 18:54:09 -0400
-Message-ID: <20110315225409.GD5740@redhat.com>
+Subject: Re: [PATCH v6 0/9] memcg: per cgroup dirty page accounting
+Date: Tue, 15 Mar 2011 19:11:39 -0400
+Message-ID: <20110315231139.GE5740@redhat.com>
 References: <1299869011-26152-1-git-send-email-gthelen@google.com>
- <1299869011-26152-10-git-send-email-gthelen@google.com>
+ <20110311171006.ec0d9c37.akpm@linux-foundation.org>
+ <AANLkTimT-kRMQW3JKcJAZP4oD3EXuE-Bk3dqumH_10Oe@mail.gmail.com>
+ <20110314202324.GG31120@redhat.com>
+ <AANLkTinDNOLMdU7EEMPFkC_f9edCx7ZFc7=qLRNAEmBM@mail.gmail.com>
+ <20110315212339.GC5740@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=iso-8859-1
+Content-Transfer-Encoding: quoted-printable
 Return-path: <owner-linux-mm@kvack.org>
 Content-Disposition: inline
-In-Reply-To: <1299869011-26152-10-git-send-email-gthelen@google.com>
+In-Reply-To: <20110315212339.GC5740@redhat.com>
 Sender: owner-linux-mm@kvack.org
 To: Greg Thelen <gthelen@google.com>
 Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Johannes Weiner <hannes@cmpxchg.org>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Chad Talbott <ctalbott@google.com>, Justin TerAvest <teravest@google.com>
 List-Id: containers.vger.kernel.org
 
-On Fri, Mar 11, 2011 at 10:43:31AM -0800, Greg Thelen wrote:
-> Add an memcg parameter to bdi_start_background_writeback().  If a memcg
-> is specified then the resulting background writeback call to
-> wb_writeback() will run until the memcg dirty memory usage drops below
-> the memcg background limit.  This is used when balancing memcg dirty
-> memory with mem_cgroup_balance_dirty_pages().
-> 
-> If the memcg parameter is not specified, then background writeback runs
-> globally system dirty memory usage falls below the system background
-> limit.
-> 
-> Signed-off-by: Greg Thelen <gthelen@google.com>
-> ---
+On Tue, Mar 15, 2011 at 05:23:39PM -0400, Vivek Goyal wrote:
+> On Mon, Mar 14, 2011 at 07:41:13PM -0700, Greg Thelen wrote:
+> > On Mon, Mar 14, 2011 at 1:23 PM, Vivek Goyal <vgoyal@redhat.com> wrot=
+e:
+> > > On Mon, Mar 14, 2011 at 11:29:17AM -0700, Greg Thelen wrote:
+> > >
+> > > [..]
+> > >> > We could just crawl the memcg's page LRU and bring things under =
+control
+> > >> > that way, couldn't we? =A0That would fix it. =A0What were the re=
+asons for
+> > >> > not doing this?
+> > >>
+> > >> My rational for pursuing bdi writeback was I/O locality. =A0I have=
+ heard that
+> > >> per-page I/O has bad locality. =A0Per inode bdi-style writeback sh=
+ould have better
+> > >> locality.
+> > >>
+> > >> My hunch is the best solution is a hybrid which uses a) bdi writeb=
+ack with a
+> > >> target memcg filter and b) using the memcg lru as a fallback to id=
+entify the bdi
+> > >> that needed writeback. =A0I think the part a) memcg filtering is l=
+ikely something
+> > >> like:
+> > >> =A0http://marc.info/?l=3Dlinux-kernel&m=3D129910424431837
+> > >>
+> > >> The part b) bdi selection should not be too hard assuming that pag=
+e-to-mapping
+> > >> locking is doable.
+> > >
+> > > Greg,
+> > >
+> > > IIUC, option b) seems to be going through pages of particular memcg=
+ and
+> > > mapping page to inode and start writeback on particular inode?
+> >=20
+> > Yes.
+> >=20
+> > > If yes, this might be reasonably good. In the case when cgroups are=
+ not
+> > > sharing inodes then it automatically maps one inode to one cgroup a=
+nd
+> > > once cgroup is over limit, it starts writebacks of its own inode.
+> > >
+> > > In case inode is shared, then we get the case of one cgroup writtin=
+g
+> > > back the pages of other cgroup. Well I guess that also can be hande=
+led
+> > > by flusher thread where a bunch or group of pages can be compared w=
+ith
+> > > the cgroup passed in writeback structure. I guess that might hurt u=
+s
+> > > more than benefit us.
+> >=20
+> > Agreed.  For now just writing the entire inode is probably fine.
+> >=20
+> > > IIUC how option b) works then we don't even need option a) where an=
+ N level
+> > > deep cache is maintained?
+> >=20
+> > Originally I was thinking that bdi-wide writeback with memcg filter
+> > was a good idea.  But this may be unnecessarily complex.  Now I am
+> > agreeing with you that option (a) may not be needed.  Memcg could
+> > queue per-inode writeback using the memcg lru to locate inodes
+> > (lru->page->inode) with something like this in
+> > [mem_cgroup_]balance_dirty_pages():
+> >=20
+> >   while (memcg_usage() >=3D memcg_fg_limit) {
+> >     inode =3D memcg_dirty_inode(cg);  /* scan lru for a dirty page, t=
+hen
+> > grab mapping & inode */
+> >     sync_inode(inode, &wbc);
+> >   }
+>=20
+> Is it possible to pass mem_cgroup in writeback_control structure or in
+> work structure which in turn will be set in writeback_control.  And
+> modify writeback_inodes_wb() which will look that ->mem_cgroup is
+> set. So instead of calling queue_io() it can call memcg_queue_io()
+> and then memory cgroup can look at lru list and take its own decision
+> on which inodes needs to be pushed for IO?
 
-[..]
-> -static inline bool over_bground_thresh(void)
-> +static inline bool over_bground_thresh(struct mem_cgroup *mem_cgroup)
->  {
->  	unsigned long background_thresh, dirty_thresh;
->  
-> +	if (mem_cgroup) {
-> +		struct dirty_info info;
-> +
-> +		if (!mem_cgroup_hierarchical_dirty_info(
-> +			    determine_dirtyable_memory(), false,
-> +			    mem_cgroup, &info))
-> +			return false;
-> +
-> +		return info.nr_file_dirty +
-> +			info.nr_unstable_nfs > info.background_thresh;
-> +	}
-> +
->  	global_dirty_limits(&background_thresh, &dirty_thresh);
->  
->  	return (global_page_state(NR_FILE_DIRTY) +
-> @@ -683,7 +694,8 @@ static long wb_writeback(struct bdi_writeback *wb,
->  		 * For background writeout, stop when we are below the
->  		 * background dirty threshold
->  		 */
-> -		if (work->for_background && !over_bground_thresh())
-> +		if (work->for_background &&
-> +		    !over_bground_thresh(work->mem_cgroup))
->  			break;
->  
->  		wbc.more_io = 0;
-> @@ -761,23 +773,6 @@ static unsigned long get_nr_dirty_pages(void)
->  		get_nr_dirty_inodes();
->  }
->  
-> -static long wb_check_background_flush(struct bdi_writeback *wb)
-> -{
-> -	if (over_bground_thresh()) {
-> -
-> -		struct wb_writeback_work work = {
-> -			.nr_pages	= LONG_MAX,
-> -			.sync_mode	= WB_SYNC_NONE,
-> -			.for_background	= 1,
-> -			.range_cyclic	= 1,
-> -		};
-> -
-> -		return wb_writeback(wb, &work);
-> -	}
-> -
-> -	return 0;
-> -}
-> -
->  static long wb_check_old_data_flush(struct bdi_writeback *wb)
->  {
->  	unsigned long expired;
-> @@ -839,15 +834,17 @@ long wb_do_writeback(struct bdi_writeback *wb, int force_wait)
->  		 */
->  		if (work->done)
->  			complete(work->done);
-> -		else
-> +		else {
-> +			if (work->mem_cgroup)
-> +				mem_cgroup_bg_writeback_done(work->mem_cgroup);
->  			kfree(work);
-> +		}
->  	}
->  
->  	/*
->  	 * Check for periodic writeback, kupdated() style
->  	 */
->  	wrote += wb_check_old_data_flush(wb);
-> -	wrote += wb_check_background_flush(wb);
+Thinking more about it, for foreground work probably your solution of
+sync_inode() and writting actively in the context of dirtier is also
+good. It has the disadvantage of that it does not take into account
+IO less throttling but if forground IO is submitted in the context
+of memcg process and we can do per process submitted IO accounting
+and move nr_requests out of request queue.=20
 
-Hi Greg,
+using memcg_queue_io() has one disadvantage that it will take memcg's
+dirty inodes from ->b_dirty list and put on ->b_io list. That is
+equivalent to prioritizing writeback of memcg inodes and it can starve
+root cgroup inode's starvation.
 
-So in the past we will leave the background work unfinished and try
-to finish queued work first.
+May be we can use memcg_queue_io() for background writeout and
+sync_inode() for foreground writeout. And design memcg in such a way
+so that it moves one of its own inode on io_list and at the same it
+moves one more inode which does not belong to it. That might help
+in mitigating the issue of starving root cgroup and also help making
+sure that we don't end up writting lot of other inodes before the
+dirty background ratio of a cgroup is under control.
 
-I see following line in wb_writeback().
-
-                /*
-                 * Background writeout and kupdate-style writeback may
-                 * run forever. Stop them if there is other work to do
-                 * so that e.g. sync can proceed. They'll be restarted
-                 * after the other works are all done.
-                 */
-                if ((work->for_background || work->for_kupdate) &&
-                    !list_empty(&wb->bdi->work_list))
-                        break;
-
-Now you seem to have converted background writeout also as queued 
-work item. So it sounds wb_writebac() will finish that background
-work early and never take it up and finish other queued items. So
-we might finish queued items still flusher thread might exit
-without bringing down the background ratio of either root or memcg
-depending on the ->mem_cgroup pointer.
-
-May be requeuing the background work at the end of list might help.
+Also need to check how it is going to interact with IO less throttling.
+My head is spinning now. It is complicated. Will read more code tomorrow.
 
 Thanks
-Vivek 
+Vivek
 
 --
 To unsubscribe, send a message with 'unsubscribe linux-mm' in
 the body to majordomo@kvack.org.  For more info on Linux MM,
 see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter=
+.ca/
+Don't email: <a href=3Dmailto:"dont@kvack.org"> email@kvack.org </a>
