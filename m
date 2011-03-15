@@ -1,8 +1,7 @@
 From: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH 14/17] security,rcu: convert call_rcu(whitelist_item_free)
-	to kfree_rcu()
-Date: Tue, 15 Mar 2011 18:07:57 +0800
-Message-ID: <4D7F3A7D.2080503@cn.fujitsu.com>
+Subject: [PATCH 15/17] net,rcu: convert call_rcu(ha_rcu_free) to kfree_rcu()
+Date: Tue, 15 Mar 2011 18:08:58 +0800
+Message-ID: <4D7F3ABA.7020709@cn.fujitsu.com>
 References: <4D7F3610.6000809@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,41 +22,50 @@ List-Id: containers.vger.kernel.org
 
 
 
-The rcu callback whitelist_item_free() just calls a kfree(),
-so we use kfree_rcu() instead of the call_rcu(whitelist_item_free).
+The rcu callback ha_rcu_free() just calls a kfree(),
+so we use kfree_rcu() instead of the call_rcu(ha_rcu_free).
 
 Signed-off-by: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- security/device_cgroup.c |   10 +---------
- 1 files changed, 1 insertions(+), 9 deletions(-)
+ net/core/dev_addr_lists.c |   12 ++----------
+ 1 files changed, 2 insertions(+), 10 deletions(-)
 
-diff --git a/security/device_cgroup.c b/security/device_cgroup.c
-index 8d9c48f..e886ab5 100644
---- a/security/device_cgroup.c
-+++ b/security/device_cgroup.c
-@@ -126,14 +126,6 @@ static int dev_whitelist_add(struct dev_cgroup *dev_cgroup,
- 	return 0;
+diff --git a/net/core/dev_addr_lists.c b/net/core/dev_addr_lists.c
+index 133fd22..4062355 100644
+--- a/net/core/dev_addr_lists.c
++++ b/net/core/dev_addr_lists.c
+@@ -68,14 +68,6 @@ static int __hw_addr_add(struct netdev_hw_addr_list *list, unsigned char *addr,
+ 	return __hw_addr_add_ex(list, addr, addr_len, addr_type, false);
  }
  
--static void whitelist_item_free(struct rcu_head *rcu)
+-static void ha_rcu_free(struct rcu_head *head)
 -{
--	struct dev_whitelist_item *item;
+-	struct netdev_hw_addr *ha;
 -
--	item = container_of(rcu, struct dev_whitelist_item, rcu);
--	kfree(item);
+-	ha = container_of(head, struct netdev_hw_addr, rcu_head);
+-	kfree(ha);
 -}
 -
- /*
-  * called under devcgroup_mutex
-  */
-@@ -156,7 +148,7 @@ remove:
- 		walk->access &= ~wh->access;
- 		if (!walk->access) {
- 			list_del_rcu(&walk->list);
--			call_rcu(&walk->rcu, whitelist_item_free);
-+			kfree_rcu(walk, rcu);
+ static int __hw_addr_del_ex(struct netdev_hw_addr_list *list,
+ 			    unsigned char *addr, int addr_len,
+ 			    unsigned char addr_type, bool global)
+@@ -94,7 +86,7 @@ static int __hw_addr_del_ex(struct netdev_hw_addr_list *list,
+ 			if (--ha->refcount)
+ 				return 0;
+ 			list_del_rcu(&ha->list);
+-			call_rcu(&ha->rcu_head, ha_rcu_free);
++			kfree_rcu(ha, rcu_head);
+ 			list->count--;
+ 			return 0;
  		}
+@@ -197,7 +189,7 @@ void __hw_addr_flush(struct netdev_hw_addr_list *list)
+ 
+ 	list_for_each_entry_safe(ha, tmp, &list->list, list) {
+ 		list_del_rcu(&ha->list);
+-		call_rcu(&ha->rcu_head, ha_rcu_free);
++		kfree_rcu(ha, rcu_head);
  	}
+ 	list->count = 0;
  }
 -- 
 1.7.4
