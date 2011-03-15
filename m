@@ -1,124 +1,200 @@
 From: Greg Thelen <gthelen@google.com>
-Subject: Re: [PATCH v6 8/9] memcg: check memcg dirty limits in page writeback
-Date: Mon, 14 Mar 2011 20:27:33 -0700
-Message-ID: <AANLkTikCt90o2qRV=0cJijtnA_W44dcUCBOmZ53Biv07@mail.gmail.com>
+Subject: Re: [PATCH v6 4/9] memcg: add kernel calls for memcg dirty page stats
+Date: Mon, 14 Mar 2011 23:32:38 -0700
+Message-ID: <AANLkTinnfM6_ZhzEq6SAG1H2jDfKdVS2=fe_USi8ArNA@mail.gmail.com>
 References: <1299869011-26152-1-git-send-email-gthelen@google.com>
- <1299869011-26152-9-git-send-email-gthelen@google.com> <20110314175408.GE31120@redhat.com>
- <20110314211002.GD4998@quack.suse.cz>
+ <1299869011-26152-5-git-send-email-gthelen@google.com> <20110314151023.GF11699@barrios-desktop>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: QUOTED-PRINTABLE
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20110314211002.GD4998@quack.suse.cz>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Jan Kara <jack@suse.cz>
-Cc: Vivek Goyal <vgoyal@redhat.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Johannes Weiner <hannes@cmpxchg.org>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Chad Talbott <ctalbott@google.com>, Justin TerAvest <teravest@google.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <20110314151023.GF11699@barrios-desktop>
+Sender: linux-fsdevel-owner@vger.kernel.org
+To: Minchan Kim <minchan.kim@gmail.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Johannes Weiner <hannes@cmpxchg.org>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Chad Talbott <ctalbott@google.com>, Justin TerAvest <teravest@google.com>, Vivek Goyal <vgoyal@redhat.com>, KONISHI Ryusuke <konishi.ryusuke@lab.ntt.co.jp>
 List-Id: containers.vger.kernel.org
 
-On Mon, Mar 14, 2011 at 2:10 PM, Jan Kara <jack@suse.cz> wrote:
-> On Mon 14-03-11 13:54:08, Vivek Goyal wrote:
->> On Fri, Mar 11, 2011 at 10:43:30AM -0800, Greg Thelen wrote:
->> > If the current process is in a non-root memcg, then
->> > balance_dirty_pages() will consider the memcg dirty limits as well=
- as
->> > the system-wide limits. =A0This allows different cgroups to have d=
-istinct
->> > dirty limits which trigger direct and background writeback at diff=
-erent
->> > levels.
->> >
->> > If called with a mem_cgroup, then throttle_vm_writeout() queries t=
-he
->> > given cgroup for its dirty memory usage limits.
->> >
->> > Signed-off-by: Andrea Righi <arighi@develer.com>
->> > Signed-off-by: Greg Thelen <gthelen@google.com>
->> > Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
->> > Acked-by: Wu Fengguang <fengguang.wu@intel.com>
->> > ---
->> > Changelog since v5:
->> > - Simplified this change by using mem_cgroup_balance_dirty_pages()=
- rather than
->> > =A0 cramming the somewhat different logic into balance_dirty_pages=
-(). =A0This means
->> > =A0 the global (non-memcg) dirty limits are not passed around in t=
-he
->> > =A0 struct dirty_info, so there's less change to existing code.
+On Mon, Mar 14, 2011 at 8:10 AM, Minchan Kim <minchan.kim@gmail.com> wr=
+ote:
+> On Fri, Mar 11, 2011 at 10:43:26AM -0800, Greg Thelen wrote:
+>> Add calls into memcg dirty page accounting. =A0Notify memcg when pag=
+es
+>> transition between clean, file dirty, writeback, and unstable nfs.
+>> This allows the memory controller to maintain an accurate view of
+>> the amount of its memory that is dirty.
 >>
->> Yes there is less change to existing code but now we also have a sep=
-arate
->> throttlig logic for cgroups.
+>> Signed-off-by: Greg Thelen <gthelen@google.com>
+>> Signed-off-by: Andrea Righi <arighi@develer.com>
+>> Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+>> Reviewed-by: Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>
+>> ---
+>> Changelog since v5:
+>> - moved accounting site in test_clear_page_writeback() and
+>> =A0 test_set_page_writeback().
 >>
->> I thought that we are moving in the direction of IO less throttling
->> where bdi threads always do the IO and Jan Kara also implemented the
->> logic to distribute the finished IO pages uniformly across the waiti=
-ng
->> threads.
-> =A0Yes, we'd like to avoid doing IO from balance_dirty_pages(). But i=
-f the
-> logic in cgroups specific part won't get too fancy (which it doesn't =
-seem
-> to be the case currently), it shouldn't be too hard to convert it to =
-the new
-> approach.
-
-Handling memcg hierarchy was something that was not trivial to implemen=
-t in
-mem_cgroup_balance_dirty_pages.
-
-> We can talk about it at LSF but at least with my approach to IO-less
-> balance_dirty_pages() it would be easy to convert cgroups throttling =
-to
-> the new way. With Fengguang's approach it might be a bit harder since=
- he
-> computes a throughput and from that necessary delay for a throttled t=
-ask
-> but with cgroups that is impossible to compute so he'd have to add so=
-me
-> looping if we didn't write enough pages from the cgroup yet. But stil=
-l it
-> would be reasonable doable AFAICT.
-
-I am definitely interested in finding a way to merge these feature
-cleanly together.
-
->> Keeping it separate for cgroups, reduces the complexity but also for=
-ks
->> off the balancing logic for root and other cgroups. So if Jan Kara's
->> changes go in, it automatically does not get used for memory cgroups=
-=2E
+>> =A0fs/nfs/write.c =A0 =A0 =A0| =A0 =A04 ++++
+>> =A0mm/filemap.c =A0 =A0 =A0 =A0| =A0 =A01 +
+>> =A0mm/page-writeback.c | =A0 10 ++++++++--
+>> =A0mm/truncate.c =A0 =A0 =A0 | =A0 =A01 +
+>> =A04 files changed, 14 insertions(+), 2 deletions(-)
 >>
->> Not sure how good a idea it is to use a separate throttling logic fo=
-r
->> for non-root cgroups.
-> =A0Yeah, it looks a bit odd. I'd think that we could just cap
-> task_dirty_limit() by a value computed from a cgroup limit and be don=
-e
-> with that but I probably miss something...
-
-That is an interesting idea.  When looking at upstream balance_dirty_pa=
-ges(),
-the result of task_dirty_limit() is compared per bdi_nr_reclaimable and
-bdi_nr_writeback.  I think we should be comparing memcg usage to memcg =
-limits
-to catch cases where memcg usage is above memcg limits.
-Or am I missing something in your apporach?
-
-> Sure there is also a different
-> background limit but that's broken anyway because a flusher thread wi=
-ll
-> quickly stop doing writeback if global background limit is not exceed=
-ed.
-> But that's a separate topic so I'll reply with this to a more appropr=
-iate
-> email ;)
-
-;)  I am also interested in the this bg issue, but I should also try
-to stay on topic.
-
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
- =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0Honza
-> --
-> Jan Kara <jack@suse.cz>
-> SUSE Labs, CR
+>> diff --git a/fs/nfs/write.c b/fs/nfs/write.c
+>> index 42b92d7..7863777 100644
+>> --- a/fs/nfs/write.c
+>> +++ b/fs/nfs/write.c
+>> @@ -451,6 +451,7 @@ nfs_mark_request_commit(struct nfs_page *req)
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 NFS_PAGE_TAG_COMMIT);
+>> =A0 =A0 =A0 nfsi->ncommit++;
+>> =A0 =A0 =A0 spin_unlock(&inode->i_lock);
+>> + =A0 =A0 mem_cgroup_inc_page_stat(req->wb_page, MEMCG_NR_FILE_UNSTA=
+BLE_NFS);
+>> =A0 =A0 =A0 inc_zone_page_state(req->wb_page, NR_UNSTABLE_NFS);
+>> =A0 =A0 =A0 inc_bdi_stat(req->wb_page->mapping->backing_dev_info, BD=
+I_RECLAIMABLE);
+>> =A0 =A0 =A0 __mark_inode_dirty(inode, I_DIRTY_DATASYNC);
+>> @@ -462,6 +463,7 @@ nfs_clear_request_commit(struct nfs_page *req)
+>> =A0 =A0 =A0 struct page *page =3D req->wb_page;
+>>
+>> =A0 =A0 =A0 if (test_and_clear_bit(PG_CLEAN, &(req)->wb_flags)) {
+>> + =A0 =A0 =A0 =A0 =A0 =A0 mem_cgroup_dec_page_stat(page, MEMCG_NR_FI=
+LE_UNSTABLE_NFS);
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 dec_zone_page_state(page, NR_UNSTABLE_NF=
+S);
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 dec_bdi_stat(page->mapping->backing_dev_=
+info, BDI_RECLAIMABLE);
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 return 1;
+>> @@ -1319,6 +1321,8 @@ nfs_commit_list(struct inode *inode, struct li=
+st_head *head, int how)
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 req =3D nfs_list_entry(head->next);
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 nfs_list_remove_request(req);
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 nfs_mark_request_commit(req);
+>> + =A0 =A0 =A0 =A0 =A0 =A0 mem_cgroup_dec_page_stat(req->wb_page,
+>> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
+ =A0 =A0MEMCG_NR_FILE_UNSTABLE_NFS);
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 dec_zone_page_state(req->wb_page, NR_UNS=
+TABLE_NFS);
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 dec_bdi_stat(req->wb_page->mapping->back=
+ing_dev_info,
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 BDI_RECL=
+AIMABLE);
+>> diff --git a/mm/filemap.c b/mm/filemap.c
+>> index a6cfecf..7e751fe 100644
+>> --- a/mm/filemap.c
+>> +++ b/mm/filemap.c
+>> @@ -143,6 +143,7 @@ void __delete_from_page_cache(struct page *page)
+>> =A0 =A0 =A0 =A0* having removed the page entirely.
+>> =A0 =A0 =A0 =A0*/
+>> =A0 =A0 =A0 if (PageDirty(page) && mapping_cap_account_dirty(mapping=
+)) {
+>> + =A0 =A0 =A0 =A0 =A0 =A0 mem_cgroup_dec_page_stat(page, MEMCG_NR_FI=
+LE_DIRTY);
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 dec_zone_page_state(page, NR_FILE_DIRTY)=
+;
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 dec_bdi_stat(mapping->backing_dev_info, =
+BDI_RECLAIMABLE);
+>> =A0 =A0 =A0 }
+>> diff --git a/mm/page-writeback.c b/mm/page-writeback.c
+>> index 632b464..d8005b0 100644
+>> --- a/mm/page-writeback.c
+>> +++ b/mm/page-writeback.c
+>> @@ -1118,6 +1118,7 @@ int __set_page_dirty_no_writeback(struct page =
+*page)
+>> =A0void account_page_dirtied(struct page *page, struct address_space=
+ *mapping)
+>> =A0{
+>> =A0 =A0 =A0 if (mapping_cap_account_dirty(mapping)) {
+>> + =A0 =A0 =A0 =A0 =A0 =A0 mem_cgroup_inc_page_stat(page, MEMCG_NR_FI=
+LE_DIRTY);
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 __inc_zone_page_state(page, NR_FILE_DIRT=
+Y);
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 __inc_zone_page_state(page, NR_DIRTIED);
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 __inc_bdi_stat(mapping->backing_dev_info=
+, BDI_RECLAIMABLE);
+>> @@ -1317,6 +1318,7 @@ int clear_page_dirty_for_io(struct page *page)
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0* for more comments.
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0*/
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (TestClearPageDirty(page)) {
+>> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 mem_cgroup_dec_page_stat(p=
+age, MEMCG_NR_FILE_DIRTY);
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 dec_zone_page_state(page=
+, NR_FILE_DIRTY);
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 dec_bdi_stat(mapping->ba=
+cking_dev_info,
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =
+=A0 =A0 BDI_RECLAIMABLE);
+>> @@ -1352,8 +1354,10 @@ int test_clear_page_writeback(struct page *pa=
+ge)
+>> =A0 =A0 =A0 } else {
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 ret =3D TestClearPageWriteback(page);
+>> =A0 =A0 =A0 }
+>> - =A0 =A0 if (ret)
+>> + =A0 =A0 if (ret) {
+>> + =A0 =A0 =A0 =A0 =A0 =A0 mem_cgroup_dec_page_stat(page, MEMCG_NR_FI=
+LE_WRITEBACK);
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 dec_zone_page_state(page, NR_WRITEBACK);
+>> + =A0 =A0 }
+>> =A0 =A0 =A0 return ret;
+>> =A0}
+>>
+>> @@ -1386,8 +1390,10 @@ int test_set_page_writeback(struct page *page=
+)
+>> =A0 =A0 =A0 } else {
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 ret =3D TestSetPageWriteback(page);
+>> =A0 =A0 =A0 }
+>> - =A0 =A0 if (!ret)
+>> + =A0 =A0 if (!ret) {
+>> + =A0 =A0 =A0 =A0 =A0 =A0 mem_cgroup_inc_page_stat(page, MEMCG_NR_FI=
+LE_WRITEBACK);
+>> =A0 =A0 =A0 =A0 =A0 =A0 =A0 account_page_writeback(page);
+>> + =A0 =A0 }
+>> =A0 =A0 =A0 return ret;
+>>
+>> =A0}
 >
+> At least in mainline, NR_WRITEBACK handling codes are following as.
+>
+> 1) increase
+>
+> =A0* account_page_writeback
+>
+> 2) decrease
+>
+> =A0* test_clear_page_writeback
+> =A0* __nilfs_end_page_io
+>
+> I think account_page_writeback name is good to add your account funct=
+ion into that.
+> The problem is decreasement. Normall we can handle decreasement in te=
+st_clear_page_writeback.
+> But I am not sure it's okay in __nilfs_end_page_io.
+> I think if __nilfs_end_page_io is right, __nilfs_end_page_io should c=
+all
+> mem_cgroup_dec_page_stat(page, MEMCG_NR_FILE_WRITEBACK).
+>
+> What do you think about it?
+>
+>
+>
+> --
+> Kind regards,
+> Minchan Kim
+>
+
+I would like to not have any special cases that avoid certain memory.
+So I think your suggestion is good.
+However, nilfs memcg dirty page accounting was skipped in a previous
+memcg dirty limit effort due to complexity.  See 'clone_page'
+reference in:
+  http://lkml.indiana.edu/hypermail/linux/kernel/1003.0/02997.html
+
+I admit that I don't follow all of the nilfs code path, but it looks
+like some of the nilfs pages are allocated but not charged to memcg.
+There is code in mem_cgroup_update_page_stat() to gracefully handle
+pages not associated with a memcg.  So perhaps nilfs clone pages dirty
+[un]charge could be attempted.  I have not succeeded in testing in
+exercising these code paths in nilfs.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-fsdevel=
+" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
