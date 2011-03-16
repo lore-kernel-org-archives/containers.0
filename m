@@ -1,15 +1,15 @@
-From: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 17/17] net,act_police,rcu: remove rcu_barrier()
-Date: Wed, 16 Mar 2011 11:13:11 +0800
-Message-ID: <4D802AC7.8040801@cn.fujitsu.com>
-References: <4D7F3610.6000809@cn.fujitsu.com>	
-	<4D7F3B62.6000005@cn.fujitsu.com>
-	<1300187052.10062.12.camel@edumazet-laptop>
+From: jacob pan <jacob.jun.pan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
+Subject: Re: [PATCH, v9 3/3] cgroups: introduce timer slack controller
+Date: Wed, 16 Mar 2011 04:35:45 -0700
+Message-ID: <20110316043545.493c7b36__45389.2064084814$1300275499$gmane$org@jacob-laptop>
+References: <1300111524-5666-1-git-send-email-kirill@shutemov.name>
+	<1300111524-5666-4-git-send-email-kirill@shutemov.name>
+	<20110314164652.5b44fb9e.akpm@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1300187052.10062.12.camel@edumazet-laptop>
+In-Reply-To: <20110314164652.5b44fb9e.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,30 +19,59 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Randy Dunlap <randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, linux-decnet-user-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>, linux-sctp-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, "Pekka Savola (ipv6)" <pekkas-UjJjq++bwZ7HOG6cAo2yLw@public.gmane.org>, =?UTF-8?B?VXdlIEtsZWluZS1Lw7ZuaWc=?= <u.kleine-koenig-bIcnvbaLZ9MEGnE8C9+IrQ@public.gmane.org>, Alexey Kuznetsov <kuznet-v/Mj1YrvjDBInbfyfbPRSQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Sridhar Samudrala <sri-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Vlad Yasevich <vladislav.yasevich-VXdhtT5mjnY@public.gmane.org>, Hagen Paul Pfeifer <hagen-GvnIQ6b/HdU@public.gmane.org>, "John W. Linville" <linville-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Johannes Berg <johannes-cdvu00un1VgdHxzADdlk8Q@public.gmane.org>, Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jiri Pirko <jpirko-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Hideaki
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Arjan van de Ven <arjan-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gMDMvMTUvMjAxMSAwNzowNCBQTSwgRXJpYyBEdW1hemV0IHdyb3RlOgo+IExlIG1hcmRpIDE1
-IG1hcnMgMjAxMSDDoCAxODoxMSArMDgwMCwgTGFpIEppYW5nc2hhbiBhIMOpY3JpdCA6Cj4+Cj4+
-IFRoZXJlIGlzIG5vIGNhbGxiYWNrIG9mIHRoaXMgbW9kdWxlIG1heWJlIHF1ZXVlZAo+PiBzaW5j
-ZSB3ZSB1c2Uga2ZyZWVfcmN1KCksIHdlIGNhbiBzYWZlbHkgcmVtb3ZlIHRoZSByY3VfYmFycmll
-cigpLgo+Pgo+PiBTaWduZWQtb2ZmLWJ5OiBMYWkgSmlhbmdzaGFuIDxsYWlqc0Bjbi5mdWppdHN1
-LmNvbT4KPj4gLS0tCj4+ICBuZXQvc2NoZWQvYWN0X3BvbGljZS5jIHwgICAgMSAtCj4+ICAxIGZp
-bGVzIGNoYW5nZWQsIDAgaW5zZXJ0aW9ucygrKSwgMSBkZWxldGlvbnMoLSkKPj4KPj4gZGlmZiAt
-LWdpdCBhL25ldC9zY2hlZC9hY3RfcG9saWNlLmMgYi9uZXQvc2NoZWQvYWN0X3BvbGljZS5jCj4+
-IGluZGV4IDA4M2IwOTEuLjIyZTNmOWIgMTAwNjQ0Cj4+IC0tLSBhL25ldC9zY2hlZC9hY3RfcG9s
-aWNlLmMKPj4gKysrIGIvbmV0L3NjaGVkL2FjdF9wb2xpY2UuYwo+PiBAQCAtMzk3LDcgKzM5Nyw2
-IEBAIHN0YXRpYyB2b2lkIF9fZXhpdAo+PiAgcG9saWNlX2NsZWFudXBfbW9kdWxlKHZvaWQpCj4+
-ICB7Cj4+ICAJdGNmX3VucmVnaXN0ZXJfYWN0aW9uKCZhY3RfcG9saWNlX29wcyk7Cj4+IC0JcmN1
-X2JhcnJpZXIoKTsgLyogV2FpdCBmb3IgY29tcGxldGlvbiBvZiBjYWxsX3JjdSgpJ3MgKHRjZl9w
-b2xpY2VfZnJlZV9yY3UpICovCj4+ICB9Cj4+ICAKPj4gIG1vZHVsZV9pbml0KHBvbGljZV9pbml0
-X21vZHVsZSk7Cj4gCj4gCj4gV2h5IGlzIGl0IGEgc2VwYXJhdGUgcGF0Y2gsIGFuZCBub3QgaW5j
-bHVkZWQgaW4gcGF0Y2ggNS8xNyA/Cj4gCgpBIHNpbXBsZV9rZnJlZV9jYWxsYmFjaygpIGEgcGF0
-Y2gsIGlmIGEgbW9kdWxlIGhhcyBtdWx0aXBsZSBzaW1wbGVfa2ZyZWVfY2FsbGJhY2soKXMsCiJy
-Y3VfYmFycmllcigpIiBpbiBtb2R1bGVfZXhpdCBmdW5jdGlvbiBzaG91bGQgb25seSBiZSByZW1v
-dmVkIGFmdGVyIGFsbApjYWxsYmFjaygpcyBhcmUgY29udmVydGVkIHRvIGtmcmVlX3JjdSgpLiBT
-ZXBhcmF0ZSBwYXRjaGVzIG1ha2VzIHRoaW5ncwpjbGVhcmVyLgpfX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250
-YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXgtZm91
-bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+On Mon, 14 Mar 2011 16:46:52 -0700
+Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> wrote:
+
+> On Mon, 14 Mar 2011 16:05:24 +0200
+> Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org> wrote:
+> 
+> > +Overview
+> > +--------
+> > +
+> > +Every task_struct has timer_slack_ns value. This value uses to
+> > round up +poll() and select() timeout values. This feature can be
+> > useful in +mobile environment where combined wakeups are desired.
+> > +
+> > +Originally, prctl() was the only way to change timer slack value of
+> > +a process. So you was not able change timer slack value of another
+> > +process.
+> > +
+> > +cgroup subsys "timer_slack" implements timer slack controller. It
+> > +provides a way to set minimal timer slack value for a group of
+> > tasks. +If a task belongs to a cgroup with minimal timer slack
+> > value higher than +task's value, cgroup's value will be applied.
+> > +
+> > +Timer slack controller allows to implement setting timer slack
+> > value of +a process based on a policy. For example, you can create
+> > foreground and +background cgroups and move tasks between them
+> > based on system state.
+> 
+> (quoting myself from last time)
+> 
+> Why do we need a cgroup for this as opposed to (say) inheritance over
+> fork(), or a system-wide knob, or a per-process/threadgroup knob, or
+> just leaving the existing code as-is?  Presumably you felt that a
+> cgroup approach is better for manageability, but you didn't tell us
+> about this and you didn't explore alternative ways of solving the
+> problem-which-you-didn't-describe.
+> 
+> 
+> 
+> 
+> I'm still having trouble seeing why we should merge this.  Who will
+> use it, and for what reason and what benefits will they see?
+> Quantified benefits, if possible!
+> 
+I am planning to use it for doing resource management for a mobile
+device where we classify applications by groups based on priority and
+trust level. Then at runtime, I plan to use timer slack as one of the
+knobs to penalize/manage them at different degree to reduce power
+consumption (via reduction of #wake-ups in this case).
+
+Thanks,
+
+Jacob
