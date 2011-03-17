@@ -1,7 +1,7 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 14/18] user-cr: nleft should always be 0 on success
-Date: Thu, 17 Mar 2011 10:27:46 -0700
-Message-ID: <27ba6a5c70b7e4e3aba2f42641b322f7a7bef7ba.1300382276.git.matthltc@us.ibm.com>
+Subject: [PATCH 13/18] user-cr: Handle EINTR and fix EAGAIN
+Date: Thu, 17 Mar 2011 10:27:45 -0700
+Message-ID: <4e4459e8d18102996eedb18a216b45b93dc473c2.1300382276.git.matthltc@us.ibm.com>
 References: <1300382870-28486-1-git-send-email-matthltc@us.ibm.com>
 	<beb6aa37e82e8ca96766438cae2c93c7168eedaa.1300382276.git.matthltc@us.ibm.com>
 	<1525d5365ced342871277f7a94a42bcd960c04a9.1300382276.git.matthltc@us.ibm.com>
@@ -15,12 +15,11 @@ References: <1300382870-28486-1-git-send-email-matthltc@us.ibm.com>
 	<65466a734e085f916c776de153dfddf1c60aea7b.1300382276.git.matthltc@us.ibm.com>
 	<c0d1aeb2aa40cecab3182ce686833b964cd8c07f.1300382276.git.matthltc@us.ibm.com>
 	<79950217f2c66153c2b4b5bfb55bd5f1759b7933.1300382276.git.matthltc@us.ibm.com>
-	<4e4459e8d18102996eedb18a216b45b93dc473c2.1300382276.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4e4459e8d18102996eedb18a216b45b93dc473c2.1300382276.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <79950217f2c66153c2b4b5bfb55bd5f1759b7933.1300382276.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 In-Reply-To: <beb6aa37e82e8ca96766438cae2c93c7168eedaa.1300382276.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 References: <beb6aa37e82e8ca96766438cae2c93c7168eedaa.1300382276.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
@@ -36,25 +35,30 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-nleft == len also signifies that we did not read the expected information.
+Negative errno values are internal to the kernel so we need to get
+rid of the negation before EAGAIN. Also, while we're here, handle EINTR
+gracefully.
 
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- ckptinfo.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ ckptinfo.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
 
 diff --git a/ckptinfo.c b/ckptinfo.c
-index eafc2a7..78fc279 100644
+index 23db9fb..eafc2a7 100644
 --- a/ckptinfo.c
 +++ b/ckptinfo.c
-@@ -176,7 +176,7 @@ static int __image_read(int fd, void *buf, int len)
- 		return -1;
- 	}
+@@ -162,8 +162,10 @@ static int __image_read(int fd, void *buf, int len)
  
--	if (nleft && nleft != len) {
-+	if (nleft) {
- 		fprintf(stderr, "unexpected end of file (read %d of %d)\n",
- 			len - nleft, len);
- 		return -1;
+ 	for (nleft = len; nleft; nleft -= nread) {
+ 		nread = read(fd, buf, nleft);
+-		if (nread < 0 && errno == -EAGAIN)
++		if (nread < 0 && ((errno == EAGAIN) || (errno == EINTR))) {
++			nread = 0;
+ 			continue;
++		}
+ 		if (nread <= 0)
+ 			break;
+ 		buf += nread;
 -- 
 1.6.3.3
