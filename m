@@ -1,40 +1,110 @@
-From: Gonzaga Postmaster <postmaster-RlxKfCpL9r+Vc3sceRu5cw@public.gmane.org>
-Subject: Undeliverable - Address has changed
-Date: Wed, 16 Mar 2011 23:02:38 -0700
-Message-ID: <201103170602.p2H62c6d011720@barney.gonzaga.edu>
-References: <N4CLEbZn.4959917@host8.webnethost.net>
+From: Johannes Weiner <hannes@cmpxchg.org>
+Subject: Re: [PATCH v6 0/9] memcg: per cgroup dirty page accounting
+Date: Thu, 17 Mar 2011 13:43:50 +0100
+Message-ID: <20110317124350.GQ2140@cmpxchg.org>
+References: <1299869011-26152-1-git-send-email-gthelen@google.com>
+ <20110311171006.ec0d9c37.akpm@linux-foundation.org>
+ <AANLkTimT-kRMQW3JKcJAZP4oD3EXuE-Bk3dqumH_10Oe@mail.gmail.com>
+ <20110314202324.GG31120@redhat.com>
+ <AANLkTinDNOLMdU7EEMPFkC_f9edCx7ZFc7=qLRNAEmBM@mail.gmail.com>
+ <20110315184839.GB5740@redhat.com>
+ <20110316131324.GM2140@cmpxchg.org>
+ <AANLkTim7q3cLGjxnyBS7SDdpJsGi-z34bpPT=MJSka+C@mail.gmail.com>
+ <20110316215214.GO2140@cmpxchg.org>
+ <AANLkTinCErw+0QGpXJ4+JyZ1O96BC7SJAyXaP4t5v17c@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <N4CLEbZn.4959917-xWH6pzS5G0xFHlB5qwr4AuTW4wlIGRCZ@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <AANLkTinCErw+0QGpXJ4+JyZ1O96BC7SJAyXaP4t5v17c@mail.gmail.com>
+Sender: linux-fsdevel-owner@vger.kernel.org
+To: Greg Thelen <gthelen@google.com>
+Cc: Jan Kara <jack@suse.cz>, Vivek Goyal <vgoyal@redhat.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Chad Talbott <ctalbott@google.com>, Justin TerAvest <teravest@google.com>, Curt Wohlgemuth <curtw@google.com>
 List-Id: containers.vger.kernel.org
 
- 
-The e-mail address you have attempted to send to is no longer valid as of 12/31/10. This
-e-mail account has been migrated to a new system which required a change to the e-mail
-address. It is very likely that you will be able to reach the intended recipient at the new
-address provided below.
- 
-Original message information:
- 
- Sender   : containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
- Recipient: nkimura-RlxKfCpL9r+Vc3sceRu5cw@public.gmane.org
- Subject  : Order_738278
- 
-Updated address information:
- 
- New Address: nkimura-0NMwO7XNjCdGXEp8Kkv2v5Vzexx5G7lz@public.gmane.org
- 
-This message was generated automatically. For more information, you may contact the Gonzaga
-IT Support Center at helpdesk-RlxKfCpL9r+Vc3sceRu5cw@public.gmane.org or 509-313-5550.
+On Wed, Mar 16, 2011 at 09:41:48PM -0700, Greg Thelen wrote:
+> In '[PATCH v6 8/9] memcg: check memcg dirty limits in page writeback' Jan and
+> Vivek have had some discussion around how memcg and writeback mesh.
+> In my mind, the
+> discussions in 8/9 are starting to blend with this thread.
+> 
+> I have been thinking about Johannes' struct memcg_mapping.  I think the idea
+> may address several of the issues being discussed, especially
+> interaction between
+> IO-less balance_dirty_pages() and memcg writeback.
+> 
+> Here is my thinking.  Feedback is most welcome!
+> 
+> The data structures:
+> - struct memcg_mapping {
+>        struct address_space *mapping;
+>        struct mem_cgroup *memcg;
+>        int refcnt;
+>   };
+> - each memcg contains a (radix, hash_table, etc.) mapping from bdi to memcg_bdi.
+> - each memcg_bdi contains a mapping from inode to memcg_mapping.  This may be a
+>   very large set representing many cached inodes.
+> - each memcg_mapping represents all pages within an bdi,inode,memcg.  All
+>   corresponding cached inode pages point to the same memcg_mapping via
+>   pc->mapping.  I assume that all pages of inode belong to no more than one bdi.
+> - manage a global list of memcg that are over their respective background dirty
+>   limit.
+> - i_mapping continues to point to a traditional non-memcg mapping (no change
+>   here).
+> - none of these memcg_* structures affect root cgroup or kernels with memcg
+>   configured out.
+
+So structures roughly like this:
+
+struct mem_cgroup {
+	...
+	/* key is struct backing_dev_info * */
+	struct rb_root memcg_bdis;
+};
+
+struct memcg_bdi {
+	/* key is struct address_space * */
+	struct rb_root memcg_mappings;
+	struct rb_node node;
+};
+
+struct memcg_mapping {
+	struct address_space *mapping;
+	struct mem_cgroup *memcg;
+	struct rb_node node;
+	atomic_t count;
+};
+
+struct page_cgroup {
+	...
+	struct memcg_mapping *memcg_mapping;
+};
+
+> The routines under discussion:
+> - memcg charging a new inode page to a memcg: will use inode->mapping and inode
+>   to walk memcg -> memcg_bdi -> memcg_mapping and lazily allocating missing
+>   levels in data structure.
+> 
+> - Uncharging a inode page from a memcg: will use pc->mapping->memcg to locate
+>   memcg.  If refcnt drops to zero, then remove memcg_mapping from the memcg_bdi.
+>   Also delete memcg_bdi if last memcg_mapping is removed.
+> 
+> - account_page_dirtied(): nothing new here, continue to set the per-page flags
+>   and increment the memcg per-cpu dirty page counter.  Same goes for routines
+>   that mark pages in writeback and clean states.
+
+We may want to remember the dirty memcg_mappings so that on writeback
+we don't have to go through every single one that the memcg refers to?
+
+> - mem_cgroup_balance_dirty_pages(): if memcg dirty memory usage if above
+>   background limit, then add memcg to global memcg_over_bg_limit list and use
+>   memcg's set of memcg_bdi to wakeup each(?) corresponding bdi flusher.  If over
+>   fg limit, then use IO-less style foreground throttling with per-memcg per-bdi
+>   (aka memcg_bdi) accounting structure.
+
+I wonder if we could just schedule a for_background work manually in
+the memcg case that writes back the corresponding memcg_bdi set (and
+e.g. having it continue until either the memcg is below bg thresh OR
+the global bg thresh is exceeded OR there is other work scheduled)?
+Then we would get away without the extra list, and it doesn't sound
+overly complex to implement.
