@@ -1,60 +1,94 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 11/18] user-cr: Adapt to eclone syscall numbers from kernel
-	source
-Date: Thu, 17 Mar 2011 10:27:43 -0700
-Message-ID: <c0d1aeb2aa40cecab3182ce686833b964cd8c07f.1300382276.git.matthltc@us.ibm.com>
-References: <1300382870-28486-1-git-send-email-matthltc@us.ibm.com>
-	<beb6aa37e82e8ca96766438cae2c93c7168eedaa.1300382276.git.matthltc@us.ibm.com>
-	<1525d5365ced342871277f7a94a42bcd960c04a9.1300382276.git.matthltc@us.ibm.com>
-	<ccf68c276e54e7cb9dce0df9b8fec8391dd0e349.1300382276.git.matthltc@us.ibm.com>
-	<143894c882d1339322b36ea459531a7debec7f29.1300382276.git.matthltc@us.ibm.com>
-	<c9471f79da9f1ddbbbc9d8f565951c2bc5fd5ee7.1300382276.git.matthltc@us.ibm.com>
-	<5a316654b4cc0a18ae05f012ab69b86dbc4b21dd.1300382276.git.matthltc@us.ibm.com>
-	<4fa9581395e8ce3b7317a221321e15321b01f534.1300382276.git.matthltc@us.ibm.com>
-	<da8b6651fb9271826e35ba47d9e41883b63bfee0.1300382276.git.matthltc@us.ibm.com>
-	<4b6b9f5cc66c1675d6249622455709d6c5d586c9.1300382276.git.matthltc@us.ibm.com>
-	<65466a734e085f916c776de153dfddf1c60aea7b.1300382276.git.matthltc@us.ibm.com>
+From: Vivek Goyal <vgoyal@redhat.com>
+Subject: Re: [PATCH v6 0/9] memcg: per cgroup dirty page accounting
+Date: Thu, 17 Mar 2011 14:15:43 -0400
+Message-ID: <20110317181543.GA10482@redhat.com>
+References: <20110314202324.GG31120@redhat.com>
+ <AANLkTinDNOLMdU7EEMPFkC_f9edCx7ZFc7=qLRNAEmBM@mail.gmail.com>
+ <20110315184839.GB5740@redhat.com>
+ <20110316131324.GM2140@cmpxchg.org>
+ <AANLkTim7q3cLGjxnyBS7SDdpJsGi-z34bpPT=MJSka+C@mail.gmail.com>
+ <20110316215214.GO2140@cmpxchg.org>
+ <AANLkTinCErw+0QGpXJ4+JyZ1O96BC7SJAyXaP4t5v17c@mail.gmail.com>
+ <20110317144641.GC4116@quack.suse.cz>
+ <20110317171219.GD32392@redhat.com>
+ <20110317175908.GH4116@quack.suse.cz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <65466a734e085f916c776de153dfddf1c60aea7b.1300382276.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-In-Reply-To: <beb6aa37e82e8ca96766438cae2c93c7168eedaa.1300382276.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-References: <beb6aa37e82e8ca96766438cae2c93c7168eedaa.1300382276.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <owner-linux-mm@kvack.org>
+Content-Disposition: inline
+In-Reply-To: <20110317175908.GH4116@quack.suse.cz>
+Sender: owner-linux-mm@kvack.org
+To: Jan Kara <jack@suse.cz>
+Cc: Greg Thelen <gthelen@google.com>, Johannes Weiner <hannes@cmpxchg.org>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Chad Talbott <ctalbott@google.com>, Justin TerAvest <teravest@google.com>, Curt Wohlgemuth <curtw@google.com>
 List-Id: containers.vger.kernel.org
 
-The static numbers in libeclone are not getting updated. Instead
-of doing so by hand -- which frequently trips up testing -- allow
-using the extract headers script to help us out.
+On Thu, Mar 17, 2011 at 06:59:08PM +0100, Jan Kara wrote:
+> On Thu 17-03-11 13:12:19, Vivek Goyal wrote:
+> > On Thu, Mar 17, 2011 at 03:46:41PM +0100, Jan Kara wrote:
+> > [..]
+> > > > - bdi writeback: will revert some of the mmotm memcg dirty limit changes to
+> > > >   fs-writeback.c so that wb_do_writeback() will return to checking
+> > > >   wb_check_background_flush() to check background limits and being
+> > > > interruptible if
+> > > >   sync flush occurs.  wb_check_background_flush() will check the global
+> > > >   memcg_over_bg_limit list for memcg that are over their dirty limit.
+> > > >   wb_writeback() will either (I am not sure):
+> > > >   a) scan memcg's bdi_memcg list of inodes (only some of them are dirty)
+> > > >   b) scan bdi dirty inode list (only some of them in memcg) using
+> > > >      inode_in_memcg() to identify inodes to write.  inode_in_memcg(inode,memcg),
+> > > >      would walk memcg- -> memcg_bdi -> memcg_mapping to determine if the memcg
+> > > >      is caching pages from the inode.
+> > > Hmm, both has its problems. With a) we could queue all the dirty inodes
+> > > from the memcg for writeback but then we'd essentially write all dirty data
+> > > for a memcg, not only enough data to get below bg limit. And if we started
+> > > skipping inodes when memcg(s) inode belongs to get below bg limit, we'd
+> > > risk copying inodes there and back without reason, cases where some inodes
+> > > never get written because they always end up skipped etc. Also the question
+> > > whether some of the memcgs inode belongs to is still over limit is the
+> > > hardest part of solution b) so we wouldn't help ourselves much.
+> > 
+> > May be I am missing something but can't we just start traversing
+> > through list of memcg_over_bg_list and take option a) to traverse
+> > through list of inodes and write them till we are below limit of
+> > that group. We of course skip inodes which are not dirty.
+> > 
+> > This is assuming that root group is also part of that list so that
+> > inodes in root group do not starve writeback.
+> > 
+> > We still continue to have all the inodes on bdi wb structure and
+> > memcg will just give us pointers to those inodes. So for background
+> > write, instead of going serially through dirty inodes list, we
+> > will first pick the cgroup to write and then inode to write. As
+> > we will be doing round robin among cgroup list, it will make sure
+> > that none of the cgroups (including root) as well as inode are not
+> > starved.
+>   I was considering this as well and didn't quite like it but on a second
+> thought it need not be that bad. If we wrote MAX_WRITEBACK_PAGES from one
+> memcg, then switched to another one while keeping pointers to per-memcg inode
+> list (for the time when we return to this memcg), it could work just fine.
 
-Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- scripts/extract-headers.sh |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+Yes, we can write MAX_WRITEBACK_PAGES from each memcg and then move on to
+next one. In fact memcg_bdi should have list of memcg_mapping. So once we
+select the inode (memcg_mapping) from cgroup for writeout (move inode
+on ->b_io list), we can also shuffle the position of memcg_mapping with-in
+memory cgroup so that inodes with-in a cgroup get fair share of writeout in
+a round robin manner.
 
-diff --git a/scripts/extract-headers.sh b/scripts/extract-headers.sh
-index 696c379..e752e1b 100755
---- a/scripts/extract-headers.sh
-+++ b/scripts/extract-headers.sh
-@@ -155,7 +155,7 @@ ARM_SYSCALL_BASE="#	define __NR_OABI_SYSCALL_BASE 0x900000\n\
- # Get the regular expression for the current architecture
- function get_unistd_regex()
- {
--	local SYS_NR_DEF_REGEX='[[:space:]]*#[[:space:]]*define[[:space:]]*__NR_(checkpoint|restart)[[:space:]]+'
-+	local SYS_NR_DEF_REGEX='[[:space:]]*#[[:space:]]*define[[:space:]]*__NR_(checkpoint|restart|eclone)[[:space:]]+'
- 
- 	case "$1" in
- 	arm)	echo -n "${SYS_NR_DEF_REGEX}"
--- 
-1.6.3.3
+As you said in other mail, we probably will keep MEMCG_BDI_WRITTEN count
+so that IO less throttling can distribute the pages completed to right
+cgroup. 
+
+Down the line we can probably also maintain MEMCG_BDI_WRITEBACK to keep track
+how many pages are already under writeout from a cgroup and skip that cgroup
+if too many pages are already in-flight. This might help us push more
+WRITES for higher weight IO cgroup as compared to lower weight IO cgroup.
+
+Thanks
+Vivek
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
