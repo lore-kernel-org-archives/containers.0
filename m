@@ -1,87 +1,75 @@
-From: Curt Wohlgemuth <curtw@google.com>
+From: Vivek Goyal <vgoyal@redhat.com>
 Subject: Re: [PATCH v6 0/9] memcg: per cgroup dirty page accounting
-Date: Thu, 17 Mar 2011 08:42:28 -0700
-Message-ID: <AANLkTikfNv9FNgxRTAerb-kXJZsU4ofhH2MdnOwi+hV7@mail.gmail.com>
+Date: Thu, 17 Mar 2011 13:12:19 -0400
+Message-ID: <20110317171219.GD32392@redhat.com>
 References: <20110311171006.ec0d9c37.akpm@linux-foundation.org>
-	<AANLkTimT-kRMQW3JKcJAZP4oD3EXuE-Bk3dqumH_10Oe@mail.gmail.com>
-	<20110314202324.GG31120@redhat.com>
-	<AANLkTinDNOLMdU7EEMPFkC_f9edCx7ZFc7=qLRNAEmBM@mail.gmail.com>
-	<20110315184839.GB5740@redhat.com>
-	<20110316131324.GM2140@cmpxchg.org>
-	<AANLkTim7q3cLGjxnyBS7SDdpJsGi-z34bpPT=MJSka+C@mail.gmail.com>
-	<20110316215214.GO2140@cmpxchg.org>
-	<AANLkTinCErw+0QGpXJ4+JyZ1O96BC7SJAyXaP4t5v17c@mail.gmail.com>
-	<20110317124350.GQ2140@cmpxchg.org>
-	<20110317145301.GD4116@quack.suse.cz>
+ <AANLkTimT-kRMQW3JKcJAZP4oD3EXuE-Bk3dqumH_10Oe@mail.gmail.com>
+ <20110314202324.GG31120@redhat.com>
+ <AANLkTinDNOLMdU7EEMPFkC_f9edCx7ZFc7=qLRNAEmBM@mail.gmail.com>
+ <20110315184839.GB5740@redhat.com>
+ <20110316131324.GM2140@cmpxchg.org>
+ <AANLkTim7q3cLGjxnyBS7SDdpJsGi-z34bpPT=MJSka+C@mail.gmail.com>
+ <20110316215214.GO2140@cmpxchg.org>
+ <AANLkTinCErw+0QGpXJ4+JyZ1O96BC7SJAyXaP4t5v17c@mail.gmail.com>
+ <20110317144641.GC4116@quack.suse.cz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: QUOTED-PRINTABLE
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20110317145301.GD4116@quack.suse.cz>
-Sender: linux-fsdevel-owner@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <owner-linux-mm@kvack.org>
+Content-Disposition: inline
+In-Reply-To: <20110317144641.GC4116@quack.suse.cz>
+Sender: owner-linux-mm@kvack.org
 To: Jan Kara <jack@suse.cz>
-Cc: Johannes Weiner <hannes@cmpxchg.org>, Greg Thelen <gthelen@google.com>, Vivek Goyal <vgoyal@redhat.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Chad Talbott <ctalbott@google.com>, Justin TerAvest <teravest@google.com>
+Cc: Greg Thelen <gthelen@google.com>, Johannes Weiner <hannes@cmpxchg.org>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Chad Talbott <ctalbott@google.com>, Justin TerAvest <teravest@google.com>, Curt Wohlgemuth <curtw@google.com>
 List-Id: containers.vger.kernel.org
 
-On Thu, Mar 17, 2011 at 7:53 AM, Jan Kara <jack@suse.cz> wrote:
-> On Thu 17-03-11 13:43:50, Johannes Weiner wrote:
->> > - mem_cgroup_balance_dirty_pages(): if memcg dirty memory usage if=
- above
->> > =A0 background limit, then add memcg to global memcg_over_bg_limit=
- list and use
->> > =A0 memcg's set of memcg_bdi to wakeup each(?) corresponding bdi f=
-lusher. =A0If over
->> > =A0 fg limit, then use IO-less style foreground throttling with pe=
-r-memcg per-bdi
->> > =A0 (aka memcg_bdi) accounting structure.
->>
->> I wonder if we could just schedule a for_background work manually in
->> the memcg case that writes back the corresponding memcg_bdi set (and
->> e.g. having it continue until either the memcg is below bg thresh OR
->> the global bg thresh is exceeded OR there is other work scheduled)?
->> Then we would get away without the extra list, and it doesn't sound
->> overly complex to implement.
-> =A0But then when you stop background writeback because of other work,=
- you
-> have to know you should restart it after that other work is done. For=
- this
-> you basically need the list. With this approach of one-work-per-memcg
-> you also get into problems that one cgroup can livelock the flusher t=
-hread
-> and thus other memcgs won't get writeback. So you have to switch betw=
-een
-> memcgs once in a while.
+On Thu, Mar 17, 2011 at 03:46:41PM +0100, Jan Kara wrote:
 
-In pre-2.6.38 kernels (when background writeback enqueued work items,
-and we didn't break the loop in wb_writeback() with for_background for
-other work items), we experimented with this issue.  One solution we
-came up with was enqueuing a background work item for a given memory
-cgroup, but limiting nr_pages to something like 2048 instead of
-LONG_MAX, to avoid livelock.  Writeback would only operate on inodes
-with dirty pages from this memory cgroup.
+[..]
+> > - bdi writeback: will revert some of the mmotm memcg dirty limit changes to
+> >   fs-writeback.c so that wb_do_writeback() will return to checking
+> >   wb_check_background_flush() to check background limits and being
+> > interruptible if
+> >   sync flush occurs.  wb_check_background_flush() will check the global
+> >   memcg_over_bg_limit list for memcg that are over their dirty limit.
+> >   wb_writeback() will either (I am not sure):
+> >   a) scan memcg's bdi_memcg list of inodes (only some of them are dirty)
+> >   b) scan bdi dirty inode list (only some of them in memcg) using
+> >      inode_in_memcg() to identify inodes to write.  inode_in_memcg(inode,memcg),
+> >      would walk memcg- -> memcg_bdi -> memcg_mapping to determine if the memcg
+> >      is caching pages from the inode.
+> Hmm, both has its problems. With a) we could queue all the dirty inodes
+> from the memcg for writeback but then we'd essentially write all dirty data
+> for a memcg, not only enough data to get below bg limit. And if we started
+> skipping inodes when memcg(s) inode belongs to get below bg limit, we'd
+> risk copying inodes there and back without reason, cases where some inodes
+> never get written because they always end up skipped etc. Also the question
+> whether some of the memcgs inode belongs to is still over limit is the
+> hardest part of solution b) so we wouldn't help ourselves much.
 
-If BG writeback takes place for all memcgs that are over their BG
-limts, it seems that simply asking if each inode is "related" somehow
-to the a of dirty memcgs is the simplest way to go.  Assuming of
-course that efficient data structures are built to answer this
-question.
+May be I am missing something but can't we just start traversing
+through list of memcg_over_bg_list and take option a) to traverse
+through list of inodes and write them till we are below limit of
+that group. We of course skip inodes which are not dirty.
 
-Thanks,
-Curt
+This is assuming that root group is also part of that list so that
+inodes in root group do not starve writeback.
 
-> We've tried several approaches with global background writeback befor=
-e we
-> arrived at what we have now and what seems to work at least reasonabl=
-y...
->
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
- =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0Honza
-> --
-> Jan Kara <jack@suse.cz>
-> SUSE Labs, CR
->
+We still continue to have all the inodes on bdi wb structure and
+memcg will just give us pointers to those inodes. So for background
+write, instead of going serially through dirty inodes list, we
+will first pick the cgroup to write and then inode to write. As
+we will be doing round robin among cgroup list, it will make sure
+that none of the cgroups (including root) as well as inode are not
+starved.
+
+What am I missing?
+
+Thanks
+Vivek 
+
 --
-To unsubscribe from this list: send the line "unsubscribe linux-fsdevel=
-" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
