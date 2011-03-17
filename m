@@ -1,18 +1,13 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 04/18] user-cr: cross-compile: Enable proper cross compilation
-Date: Thu, 17 Mar 2011 10:27:36 -0700
-Message-ID: <143894c882d1339322b36ea459531a7debec7f29.1300382276.git.matthltc@us.ibm.com>
+Subject: [PATCH 01/18] user-cr: Fix s390x build of ckptinfo
+Date: Thu, 17 Mar 2011 10:27:33 -0700
+Message-ID: <beb6aa37e82e8ca96766438cae2c93c7168eedaa.1300382276.git.matthltc@us.ibm.com>
 References: <1300382870-28486-1-git-send-email-matthltc@us.ibm.com>
-	<beb6aa37e82e8ca96766438cae2c93c7168eedaa.1300382276.git.matthltc@us.ibm.com>
-	<1525d5365ced342871277f7a94a42bcd960c04a9.1300382276.git.matthltc@us.ibm.com>
-	<ccf68c276e54e7cb9dce0df9b8fec8391dd0e349.1300382276.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <ccf68c276e54e7cb9dce0df9b8fec8391dd0e349.1300382276.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-In-Reply-To: <beb6aa37e82e8ca96766438cae2c93c7168eedaa.1300382276.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-References: <beb6aa37e82e8ca96766438cae2c93c7168eedaa.1300382276.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1300382870-28486-1-git-send-email-matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,43 +18,78 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Cc: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- Makefile      |    7 +++++++
- test/Makefile |    2 ++
- 2 files changed, 9 insertions(+), 0 deletions(-)
+Building ckptinfo on s390x fails:
 
-diff --git a/Makefile b/Makefile
-index 0932519..d4558be 100644
---- a/Makefile
-+++ b/Makefile
-@@ -8,6 +8,13 @@
+$ make -k
+cc -g -Wall -Wstrict-prototypes -Wno-trigraphs -I./include
+-DCHECKPOINT_DEBUG   -c -o ckptinfo_types.o ckptinfo_types.c
+In file included from ./include/linux/checkpoint_hdr.h:19,
+                 from ckptinfo_types.c:7:
+/usr/include/sys/types.h:46: error: conflicting types for 'loff_t'
+/usr/include/linux/types.h:30: error: previous declaration of 'loff_t'
+was here
+/usr/include/sys/types.h:50: error: conflicting types for 'ino_t'
+/usr/include/linux/types.h:14: error: previous declaration of 'ino_t'
+was here
+/usr/include/sys/types.h:62: error: conflicting types for 'dev_t'
+/usr/include/linux/types.h:13: error: previous declaration of 'dev_t'
+was here
+/usr/include/sys/types.h:77: error: conflicting types for 'nlink_t'
+/usr/include/linux/types.h:16: error: previous declaration of 'nlink_t'
+was here
+In file included from /usr/include/sys/types.h:133,
+                 from ./include/linux/checkpoint_hdr.h:19,
+                 from ckptinfo_types.c:7:
+/usr/include/time.h:105: error: conflicting types for 'timer_t'
+/usr/include/linux/types.h:22: error: previous declaration of 'timer_t'
+was here
+In file included from /usr/include/sys/types.h:220,
+                 from ./include/linux/checkpoint_hdr.h:19,
+                 from ckptinfo_types.c:7:
+/usr/include/sys/select.h:78: error: conflicting types for 'fd_set'
+/usr/include/linux/types.h:12: error: previous declaration of 'fd_set'
+was here
+In file included from ./include/linux/checkpoint_hdr.h:19,
+                 from ckptinfo_types.c:7:
+/usr/include/sys/types.h:235: error: conflicting types for 'blkcnt_t'
+/usr/include/linux/types.h:124: error: previous declaration of
+'blkcnt_t' was here
+make: *** [ckptinfo_types.o] Error 1
+
+One way to fix this seems to be to include a file that will indirectly
+choose definitions for loff_t and the like -- unistd.h.
+
+The alternative seems to be to add this include to checkpoint_hdr.h.
+That has a couple problems
+	Adding userspace-specific bits in the kernel source OR
+	 modifying scripts/extract-headers.sh.
+
+	What happens if we want to switch the definitions of the
+	 posix (_t) types? checkpoint_hdr.h has already chosen for us.
+
+This solution leaves it up to the code outside the checkpoint headers
+as to what basic definitions to use.
+
+Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ ckptinfo.py |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/ckptinfo.py b/ckptinfo.py
+index 1c98569..bea1b5d 100755
+--- a/ckptinfo.py
++++ b/ckptinfo.py
+@@ -78,6 +78,7 @@ print """
+  * This file is auto-generated by ckptinfo.py
+  */
  
- KERNELSRC ?= ../linux
++#include <unistd.h>
+ #include <linux/checkpoint_hdr.h>
+ """
  
-+# Prefix CC, AS, LD, AR for cross compilation
-+CROSS_COMPILE ?=
-+CC := $(CROSS_COMPILE)gcc
-+LD := $(CROSS_COMPILE)ld
-+AS := $(CROSS_COMPILE)as
-+AR := $(CROSS_COMPILE)ar
-+
- CKPT_INCLUDE = -I./include
- CKPT_HEADERS = include/linux/checkpoint.h \
- 		include/linux/checkpoint_hdr.h \
-diff --git a/test/Makefile b/test/Makefile
-index 898e426..92482f2 100644
---- a/test/Makefile
-+++ b/test/Makefile
-@@ -1,4 +1,6 @@
- # handle cross-compilation
-+# Prefix CC, AS, LD, AR for cross compilation
-+CROSS_COMPILE ?=
- AR  := ${CROSS_COMPILE}ar
- AS  := ${CROSS_COMPILE}as
- CC  := ${CROSS_COMPILE}gcc
 -- 
 1.6.3.3
