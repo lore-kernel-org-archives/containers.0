@@ -1,83 +1,65 @@
-From: Namhyung Kim <namhyung-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 3/3] memcg: move page-freeing code outside of lock
-Date: Fri, 18 Mar 2011 21:54:15 +0900
-Message-ID: <1300452855-10194-3-git-send-email-namhyung__6186.55629591576$1300453268$gmane$org@gmail.com>
-References: <1300452855-10194-1-git-send-email-namhyung@gmail.com>
+From: Vivek Goyal <vgoyal@redhat.com>
+Subject: Re: [PATCH v6 0/9] memcg: per cgroup dirty page accounting
+Date: Fri, 18 Mar 2011 10:29:50 -0400
+Message-ID: <20110318142949.GA19859@redhat.com>
+References: <20110311171006.ec0d9c37.akpm@linux-foundation.org>
+ <AANLkTimT-kRMQW3JKcJAZP4oD3EXuE-Bk3dqumH_10Oe@mail.gmail.com>
+ <20110314202324.GG31120@redhat.com>
+ <AANLkTinDNOLMdU7EEMPFkC_f9edCx7ZFc7=qLRNAEmBM@mail.gmail.com>
+ <20110315184839.GB5740@redhat.com>
+ <20110316131324.GM2140@cmpxchg.org>
+ <AANLkTim7q3cLGjxnyBS7SDdpJsGi-z34bpPT=MJSka+C@mail.gmail.com>
+ <20110316215214.GO2140@cmpxchg.org>
+ <AANLkTinCErw+0QGpXJ4+JyZ1O96BC7SJAyXaP4t5v17c@mail.gmail.com>
+ <20110317124350.GQ2140@cmpxchg.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1300452855-10194-1-git-send-email-namhyung-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <owner-linux-mm@kvack.org>
+Content-Disposition: inline
+In-Reply-To: <20110317124350.GQ2140@cmpxchg.org>
+Sender: owner-linux-mm@kvack.org
+To: Johannes Weiner <hannes@cmpxchg.org>
+Cc: Greg Thelen <gthelen@google.com>, Jan Kara <jack@suse.cz>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Chad Talbott <ctalbott@google.com>, Justin TerAvest <teravest@google.com>, Curt Wohlgemuth <curtw@google.com>
 List-Id: containers.vger.kernel.org
 
-Signed-off-by: Namhyung Kim <namhyung-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
----
- mm/page_cgroup.c |   22 +++++++++++++---------
- 1 files changed, 13 insertions(+), 9 deletions(-)
+On Thu, Mar 17, 2011 at 01:43:50PM +0100, Johannes Weiner wrote:
 
-diff --git a/mm/page_cgroup.c b/mm/page_cgroup.c
-index 29951abc852e..17eb5eb95bab 100644
---- a/mm/page_cgroup.c
-+++ b/mm/page_cgroup.c
-@@ -463,8 +463,8 @@ int swap_cgroup_swapon(int type, unsigned long max_pages)
- 		/* memory shortage */
- 		ctrl->map = NULL;
- 		ctrl->length = 0;
--		vfree(array);
- 		mutex_unlock(&swap_cgroup_mutex);
-+		vfree(array);
- 		goto nomem;
- 	}
- 	mutex_unlock(&swap_cgroup_mutex);
-@@ -479,7 +479,8 @@ nomem:
- 
- void swap_cgroup_swapoff(int type)
- {
--	int i;
-+	struct page **map;
-+	unsigned long i, length;
- 	struct swap_cgroup_ctrl *ctrl;
- 
- 	if (!do_swap_account)
-@@ -487,17 +488,20 @@ void swap_cgroup_swapoff(int type)
- 
- 	mutex_lock(&swap_cgroup_mutex);
- 	ctrl = &swap_cgroup_ctrl[type];
--	if (ctrl->map) {
--		for (i = 0; i < ctrl->length; i++) {
--			struct page *page = ctrl->map[i];
-+	map = ctrl->map;
-+	length = ctrl->length;
-+	ctrl->map = NULL;
-+	ctrl->length = 0;
-+	mutex_unlock(&swap_cgroup_mutex);
-+
-+	if (map) {
-+		for (i = 0; i < length; i++) {
-+			struct page *page = map[i];
- 			if (page)
- 				__free_page(page);
- 		}
--		vfree(ctrl->map);
--		ctrl->map = NULL;
--		ctrl->length = 0;
-+		vfree(map);
- 	}
--	mutex_unlock(&swap_cgroup_mutex);
- }
- 
- #endif
--- 
-1.7.4
+[..]
+> So structures roughly like this:
+> 
+> struct mem_cgroup {
+> 	...
+> 	/* key is struct backing_dev_info * */
+> 	struct rb_root memcg_bdis;
+> };
+> 
+> struct memcg_bdi {
+> 	/* key is struct address_space * */
+> 	struct rb_root memcg_mappings;
+> 	struct rb_node node;
+> };
+> 
+> struct memcg_mapping {
+> 	struct address_space *mapping;
+> 	struct mem_cgroup *memcg;
+> 	struct rb_node node;
+> 	atomic_t count;
+> };
+> 
+> struct page_cgroup {
+> 	...
+> 	struct memcg_mapping *memcg_mapping;
+> };
+
+Johannes, didn't you want page->mapping to point to memcg_mapping instead
+of increasing the size of page_cgroup?
+
+Thanks
+Vivek
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
