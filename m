@@ -1,134 +1,46 @@
-From: Vivek Goyal <vgoyal@redhat.com>
-Subject: Re: [PATCH v6 0/9] memcg: per cgroup dirty page accounting
-Date: Fri, 18 Mar 2011 10:50:03 -0400
-Message-ID: <20110318145003.GB19859@redhat.com>
-References: <AANLkTimT-kRMQW3JKcJAZP4oD3EXuE-Bk3dqumH_10Oe@mail.gmail.com>
- <20110314202324.GG31120@redhat.com>
- <AANLkTinDNOLMdU7EEMPFkC_f9edCx7ZFc7=qLRNAEmBM@mail.gmail.com>
- <20110315184839.GB5740@redhat.com>
- <20110316131324.GM2140@cmpxchg.org>
- <AANLkTim7q3cLGjxnyBS7SDdpJsGi-z34bpPT=MJSka+C@mail.gmail.com>
- <20110316215214.GO2140@cmpxchg.org>
- <AANLkTinCErw+0QGpXJ4+JyZ1O96BC7SJAyXaP4t5v17c@mail.gmail.com>
- <20110317124350.GQ2140@cmpxchg.org>
- <AANLkTinPsfz1-2O9HNXE_ej-oUa+N5YOdN+cQQimOCBP@mail.gmail.com>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH v8 3/3] cgroups: make procs file writable
+Date: Fri, 18 Mar 2011 09:54:33 -0700
+Message-ID: <AANLkTim4z_x_UQE__f5t73Dimja8PTTXTKKgj2phv6FY__40284.7218364061$1300467409$gmane$org@mail.gmail.com>
+References: <20110208013542.GC31569@ghc17.ghc.andrew.cmu.edu>
+	<20110208013950.GF31569@ghc17.ghc.andrew.cmu.edu>
+	<AANLkTinEnNsu8=PEktXL_EECzGYqsgdf+uogGxe7k4W+@mail.gmail.com>
+	<20110310061831.GA23736@ghc17.ghc.andrew.cmu.edu>
+	<AANLkTikkmfwk0nV0p=omz2ddrw+ZqWF1Lx3EfO6dTjEQ@mail.gmail.com>
+	<20110315211353.GA9992@ghc17.ghc.andrew.cmu.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <owner-linux-mm@kvack.org>
-Content-Disposition: inline
-In-Reply-To: <AANLkTinPsfz1-2O9HNXE_ej-oUa+N5YOdN+cQQimOCBP@mail.gmail.com>
-Sender: owner-linux-mm@kvack.org
-To: Greg Thelen <gthelen@google.com>
-Cc: Johannes Weiner <hannes@cmpxchg.org>, Jan Kara <jack@suse.cz>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Chad Talbott <ctalbott@google.com>, Justin TerAvest <teravest@google.com>, Curt Wohlgemuth <curtw@google.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20110315211353.GA9992-dJQ2lsn+DImqwBT9kiuFm8WGCVk0P7UB@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Miao Xie <miaox-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Mar 18, 2011 at 12:57:09AM -0700, Greg Thelen wrote:
+On Tue, Mar 15, 2011 at 2:13 PM, Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org> wrote:
+>
+> Hmm, you may be right; my understanding of RCU is not complete. But
+> actually I think the BUG_ON should just be removed, since we're about to
+> drop locks before handing off to cgroup_attach_proc anyway (so at no
+> important part is the assertion guaranteed), which will detect and
+> EAGAIN if such a race happened.
 
-[..]
-> I think this is a good idea to allow per memcg per bdi list of dirty mappings.
-> 
-> It feels like some of this is starting to gel.  I've been sketching
-> some of the code to see how the memcg locking will work out.  The
-> basic structures I see are:
-> 
-> struct mem_cgroup {
->         ...
->         /*
->          * For all file pages cached by this memcg sort by bdi.
->          * key is struct backing_dev_info *; value is struct memcg_bdi *
->          * Protected by bdis_lock.
->          */
->         struct rb_root bdis;
->         spinlock_t bdis_lock;  /* or use rcu structure, memcg:bdi set
-> could be fairly static */
-> };
-> 
-> struct memcg_bdi {
->         struct backing_dev_info *bdi;
->         /*
->          * key is struct address_space *; value is struct
-> memcg_mapping *
->          * memcg_mappings live within either mappings or
-> dirty_mappings set.
->          */
->         struct rb_root mappings;
->         struct rb_root dirty_mappings;
->         struct rb_node node;
->         spinlock_t lock; /* protect [dirty_]mappings */
-> };
-> 
-> struct memcg_mapping {
->         struct address_space *mapping;
->         struct memcg_bdi *memcg_bdi;
->         struct rb_node node;
->         atomic_t nr_pages;
->         atomic_t nr_dirty;
-> };
-> 
-> struct page_cgroup {
->         ...
->         struct memcg_mapping *memcg_mapping;
-> };
-> 
-> - each memcg contains a mapping from bdi to memcg_bdi.
-> - each memcg_bdi contains two mappings:
->   mappings: from address_space to memcg_mapping for clean pages
->   dirty_mappings: from address_space to memcg_mapping when there are
-> some dirty pages
+Sounds good.
 
-Keeping dirty_mappings separate sounds like a good idea. To me this is
-equivalent of wb->b_dirty and down the line we might want to also
-maintain equivalent of ->b_io and ->b_more_io. But that's for later.
+>
+> Hmm, well, should I make this assumption, then? The code would not be
+> more complicated either way, really. I kind of prefer it as it is...
+>
 
-> - each memcg_mapping represents a set of cached pages within an
-> bdi,inode,memcg.  All
->  corresponding cached inode pages point to the same memcg_mapping via
->  pc->mapping.  I assume that all pages of inode belong to no more than one bdi.
-> - manage a global list of memcg that are over their respective background dirty
->  limit.
-> - i_mapping continues to point to a traditional non-memcg mapping (no change
->  here).
-> - none of these memcg_* structures affect root cgroup or kernels with memcg
->  configured out.
+OK, I guess either way is OK until we can prove otherwise :-)
 
-So there will not be any memcg structure for root cgroup? Then how would
-we make sure that flusher thread does not starve either root cgroup inodes
-or memory cgroup inodes. I thought if everything is on a single list
-(including root group), then we could just select cgroups to writeback in
-round robin manner. Now with root cgroup not being on that list, how
-would you make sure that root group's inodes don't starve writeback. 
-
-> 
-> The routines under discussion:
-> - memcg charging a new inode page to a memcg: will use inode->mapping and inode
->  to walk memcg -> memcg_bdi -> mappings and lazily allocating missing
->  levels in data structure.
-> 
-> - Uncharging a inode page from a memcg: will use pc->mapping->memcg to locate
->  memcg.  If refcnt drops to zero, then remove memcg_mapping from the
-> memcg_bdi.[dirty_]mappings.
->  Also delete memcg_bdi if last memcg_mapping is removed.
-> 
-> - account_page_dirtied(): increment nr_dirty.  If first dirty page,
-> then move memcg_mapping from memcg_bdi.mappings to
-> memcg_bdi.dirty_mappings page counter.  When marking page clean, do
-> the opposite.
-> 
-> - mem_cgroup_balance_dirty_pages(): if memcg dirty memory usage if above
->  background limit, then add memcg to global memcg_over_bg_limit list and use
->  memcg's set of memcg_bdi to wakeup each(?) corresponding bdi flusher.  If over
->  fg limit, then use IO-less style foreground throttling with per-memcg per-bdi
->  (aka memcg_bdi) accounting structure.
-
-In other mail Jan mentioned that mem_cgroup_balance_dirty_pages() is per bdi
-so we have to wake up only corresponding bdi flusher thread only.
-
-Thanks
-Vivek
-
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+Paul
