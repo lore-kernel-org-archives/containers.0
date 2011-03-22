@@ -1,16 +1,14 @@
 From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 3/3] memcg: move page-freeing code outside of lock
-Date: Tue, 22 Mar 2011 08:39:35 +0530
-Message-ID: <AANLkTik7r3naRV6gFfN7+sLAbgAoiMkXwKUwY6nV5FH+__43576.6630260789$1300763471$gmane$org@mail.gmail.com>
+Subject: Re: [PATCH 1/3] memcg: mark init_section_page_cgroup() properly
+Date: Tue, 22 Mar 2011 08:40:51 +0530
+Message-ID: <AANLkTikN4j2EJr+HGXtPeRDph+rB6XXNNq13dYTDMhJU__34416.3961861797$1300763651$gmane$org@mail.gmail.com>
 References: <1300452855-10194-1-git-send-email-namhyung@gmail.com>
-	<1300452855-10194-3-git-send-email-namhyung@gmail.com>
-	<20110322085938.0691f7f4.kamezawa.hiroyu@jp.fujitsu.com>
-	<1300763079.1483.21.camel@leonhard>
+	<20110322085755.c4193fc1.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1300763079.1483.21.camel@leonhard>
+In-Reply-To: <20110322085755.c4193fc1.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,23 +18,22 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Namhyung Kim <namhyung-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Namhyung Kim <namhyung-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gVHVlLCBNYXIgMjIsIDIwMTEgYXQgODozNCBBTSwgTmFtaHl1bmcgS2ltIDxuYW1oeXVuZ0Bn
-bWFpbC5jb20+IHdyb3RlOgo+Cj4gMjAxMS0wMy0yMiAo7ZmUKSwgMDg6NTkgKzA5MDAsIEtBTUVa
-QVdBIEhpcm95dWtpOgo+ID4gT24gRnJpLCAxOCBNYXIgMjAxMSAyMTo1NDoxNSArMDkwMAo+ID4g
-TmFtaHl1bmcgS2ltIDxuYW1oeXVuZ0BnbWFpbC5jb20+IHdyb3RlOgo+ID4KPiA+ID4gU2lnbmVk
-LW9mZi1ieTogTmFtaHl1bmcgS2ltIDxuYW1oeXVuZ0BnbWFpbC5jb20+Cj4gPiA+IENjOiBLQU1F
-WkFXQSBIaXJveXVraSA8a2FtZXphd2EuaGlyb3l1QGpwLmZ1aml0c3UuY29tPgo+ID4KPiA+IFdo
-YXQgaXMgdGhlIGJlbmVmaXQgb2YgdGhpcyBwYXRjaCA/Cj4gPgo+ID4gLUthbWUKPiA+Cj4KPiBP
-aCwgSSBqdXN0IHRob3VnaHQgZ2VuZXJhbGx5IGl0J2QgYmV0dGVyIGNhbGwgc3VjaCBhIChwb3Rl
-bnRpYWxseSkKPiBjb3N0bHkgZnVuY3Rpb24gb3V0c2lkZSBvZiBsb2NrcyBhbmQgaXQgY291bGQg
-cmVkdWNlIGZldyBvZiB0aGVvcmV0aWNhbAo+IGNvbnRlbnRpb25zIGJldHdlZW4gc3dhcG9ucyBh
-bmQvb3Igb2Zmcy4gSWYgaXQgZG9lc24ndCBoZWxwIGFueQo+IHJlYWxpc3RpYyBjYXNlcyBJIGRv
-bid0IG1pbmQgZGlzY2FyZGluZyBpdC4KCnN3YXBvZmYgaXMgYSByYXJlIHBhdGgsIEkgd291bGQg
-bm90IHdvcnJ5IGFib3V0IGl0IHRvbyBtdWNoIGF0IGFsbC4KCkJhbGJpcgpfX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlz
-dApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGlu
-dXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+On Tue, Mar 22, 2011 at 5:27 AM, KAMEZAWA Hiroyuki
+<kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
+> On Fri, 18 Mar 2011 21:54:13 +0900
+> Namhyung Kim <namhyung-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+>
+>> The commit ca371c0d7e23 ("memcg: fix page_cgroup fatal error
+>> in FLATMEM") removes call to alloc_bootmem() in the function
+>> so that it can be marked as __meminit to reduce memory usage
+>> when MEMORY_HOTPLUG=n.
+>>
+>> Signed-off-by: Namhyung Kim <namhyung-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+>> Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+> Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+
+Acked-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
