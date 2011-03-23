@@ -1,16 +1,18 @@
-From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Subject: Re: [PATCH 1/2] list.h: add debug version of list_empty
-Date: Tue, 22 Mar 2011 12:18:01 +0200
-Message-ID: <20110322101801.GA1733__9237.9038841047$1300789208$gmane$org@shutemov.name>
-References: <1300194523-19325-1-git-send-email-ext-phil.2.carmody@nokia.com>
-	<1300194523-19325-2-git-send-email-ext-phil.2.carmody@nokia.com>
-	<20110321165206.1deaf0ab.akpm@linux-foundation.org>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 3/3] memcg: move page-freeing code outside of lock
+Date: Wed, 23 Mar 2011 13:36:14 +0900
+Message-ID: <20110323133614.95553de8.kamezawa.hiroyu__7882.08630770004$1300855476$gmane$org@jp.fujitsu.com>
+References: <1300452855-10194-1-git-send-email-namhyung@gmail.com>
+	<1300452855-10194-3-git-send-email-namhyung@gmail.com>
+	<20110322085938.0691f7f4.kamezawa.hiroyu@jp.fujitsu.com>
+	<1300763079.1483.21.camel@leonhard>
+	<20110322135619.90593f5d.kamezawa.hiroyu@jp.fujitsu.com>
+	<1300788417.1492.2.camel@leonhard>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20110321165206.1deaf0ab.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+In-Reply-To: <1300788417.1492.2.camel@leonhard>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,59 +22,34 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Phil Carmody <ext-phil.2.carmody-xNZwKgViW5gAvxtiuMwx3w@public.gmane.org>
-Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Namhyung Kim <namhyung-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, Mar 21, 2011 at 04:52:06PM -0700, Andrew Morton wrote:
-> On Tue, 15 Mar 2011 15:08:42 +0200
-> Phil Carmody <ext-phil.2.carmody-xNZwKgViW5gAvxtiuMwx3w@public.gmane.org> wrote:
-> 
-> > Heed the notice in list_del: "Note: list_empty() on entry does not
-> > return true after this, the entry is in an undefined state.", and
-> > check for precisely that condition.
-> > 
-> > There are currently a few instances in the code of this sequence:
-> >     if(!list_empty(pnode))
-> >         list_del(pnode);
-> > which seems to be useless or dangerous if intended to protect from
-> > repeated del's. And given that I've seen an oops pointing to a
-> > dereference of poison in such a list_empty, I'm veering towards
-> > dangerous. This patch would make such errors obvious.
-> > 
-> > Nothing is changed in the non-DEBUG_LIST build.
-> > 
-> > ...
-> >
-> > +
-> > +/**
-> > + * list_empty - tests whether a list is empty
-> > + * @head: the list to test.
-> > + */
-> > +int list_empty(const struct list_head *head)
-> > +{
-> > +	if ((head->prev == LIST_POISON2) || (head->prev == LIST_POISON1))
-> > +		WARN(1, "list_empty performed on a node "
-> > +		     "at %p removed from a list.\n", head);
-> > +	else
-> > +		WARN((head->prev == head) != (head->next == head),
-> > +		     "list_empty corruption. %p<-%p->%p is half-empty.\n",
-> > +		     head->prev, head, head->next);
-> > +
-> > +	return head->next == head;
-> > +}
-> > +EXPORT_SYMBOL(list_empty);
-> 
-> The second warning here is triggering maybe a hundred times from all
-> over the place just when booting the kernel.
-> 
-> Here's the first two:
-> 
-> 
-> [   64.295941] WARNING: at lib/list_debug.c:89 list_empty+0x79/0x85()
-> [   64.296129] list_empty corruption. ffff880255bcb788<-ffff880255bcb788->ffff88024c3a3c20 is half-empty.
-
-It looks like a race between __list_del() and list_empty().
-
--- 
- Kirill A. Shutemov
+T24gVHVlLCAyMiBNYXIgMjAxMSAxOTowNjo1NyArMDkwMApOYW1oeXVuZyBLaW0gPG5hbWh5dW5n
+QGdtYWlsLmNvbT4gd3JvdGU6Cgo+IDIwMTEtMDMtMjIgKO2ZlCksIDEzOjU2ICswOTAwLCBLQU1F
+WkFXQSBIaXJveXVraToKPiA+IE9uIFR1ZSwgMjIgTWFyIDIwMTEgMTI6MDQ6MzkgKzA5MDAKPiA+
+IE5hbWh5dW5nIEtpbSA8bmFtaHl1bmdAZ21haWwuY29tPiB3cm90ZToKPiA+IAo+ID4gPiAyMDEx
+LTAzLTIyICjtmZQpLCAwODo1OSArMDkwMCwgS0FNRVpBV0EgSGlyb3l1a2k6Cj4gPiA+ID4gT24g
+RnJpLCAxOCBNYXIgMjAxMSAyMTo1NDoxNSArMDkwMAo+ID4gPiA+IE5hbWh5dW5nIEtpbSA8bmFt
+aHl1bmdAZ21haWwuY29tPiB3cm90ZToKPiA+ID4gPiAKPiA+ID4gPiA+IFNpZ25lZC1vZmYtYnk6
+IE5hbWh5dW5nIEtpbSA8bmFtaHl1bmdAZ21haWwuY29tPgo+ID4gPiA+ID4gQ2M6IEtBTUVaQVdB
+IEhpcm95dWtpIDxrYW1lemF3YS5oaXJveXVAanAuZnVqaXRzdS5jb20+Cj4gPiA+ID4gCj4gPiA+
+ID4gV2hhdCBpcyB0aGUgYmVuZWZpdCBvZiB0aGlzIHBhdGNoID8KPiA+ID4gPiAKPiA+ID4gPiAt
+S2FtZQo+ID4gPiA+IAo+ID4gPiAKPiA+ID4gT2gsIEkganVzdCB0aG91Z2h0IGdlbmVyYWxseSBp
+dCdkIGJldHRlciBjYWxsIHN1Y2ggYSAocG90ZW50aWFsbHkpCj4gPiA+IGNvc3RseSBmdW5jdGlv
+biBvdXRzaWRlIG9mIGxvY2tzIGFuZCBpdCBjb3VsZCByZWR1Y2UgZmV3IG9mIHRoZW9yZXRpY2Fs
+Cj4gPiA+IGNvbnRlbnRpb25zIGJldHdlZW4gc3dhcG9ucyBhbmQvb3Igb2Zmcy4gSWYgaXQgZG9l
+c24ndCBoZWxwIGFueQo+ID4gPiByZWFsaXN0aWMgY2FzZXMgSSBkb24ndCBtaW5kIGRpc2NhcmRp
+bmcgaXQuCj4gPiA+IAo+ID4gCj4gPiBNeSBwb2ludCBpcywgcGxlYXNlIHdyaXRlIHBhdGNoIGRl
+c2NyaXB0aW9uIHdoaWNoIHNob3dzIGZvciB3aGF0IHRoaXMgcGF0YyBpcy4KPiA+IEFsbCBjbGVh
+bnVwIGFyZSBva2F5IHRvIG1lIGlmIGl0IHJlYXNvbmFibGUuIEJ1dCB3aXRob3V0IHBhdGNoIGRl
+c2NyaXB0aW9uIGFzCj4gPiAidGhpcyBpcyBqdXN0IGEgY2xlYW51cCwgbm8gZnVuY3Rpb25hbCBj
+aGFuZ2UsIGFuZCB0aGUgcmVhc29uIGlzLi4uLiIKPiA+IHdlIGNhbm5vdCBtYWludGFpbiBwYXRj
+aGVzLgo+ID4gCj4gPiBUaGFua3MsCj4gPiAtS2FtZQo+ID4gCj4gCj4gT0ssIEkgd2lsbCBkbyB0
+aGF0IGluIHRoZSBmdXR1cmUuIEFueXdheSwgZG8geW91IHdhbnQgbWUgdG8gcmVzZW5kIHRoZQo+
+IHBhdGNoIHdpdGggbmV3IGRlc2NyaXB0aW9uPwo+IAoKcGxlYXNlLiBJJ2xsIG5ldmVyIGFjayBh
+IHBhdGNoIHdpdGhvdXQgZGVzY3JpcHRpb24uCgpUaGFua3MsCi1LYW1lCgpfX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlz
+dApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGlu
+dXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
