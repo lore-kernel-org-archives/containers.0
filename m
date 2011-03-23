@@ -1,18 +1,14 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 3/3] memcg: move page-freeing code outside of lock
-Date: Wed, 23 Mar 2011 13:36:14 +0900
-Message-ID: <20110323133614.95553de8.kamezawa.hiroyu__7882.08630770004$1300855476$gmane$org@jp.fujitsu.com>
-References: <1300452855-10194-1-git-send-email-namhyung@gmail.com>
-	<1300452855-10194-3-git-send-email-namhyung@gmail.com>
-	<20110322085938.0691f7f4.kamezawa.hiroyu@jp.fujitsu.com>
-	<1300763079.1483.21.camel@leonhard>
-	<20110322135619.90593f5d.kamezawa.hiroyu@jp.fujitsu.com>
-	<1300788417.1492.2.camel@leonhard>
+From: Jaswinder Singh <jaswinderlinux-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: Tests for cpusets and cgroup performance measurement
+Date: Wed, 23 Mar 2011 11:12:41 +0530
+Message-ID: <AANLkTimPWxVeax3RcVBefPeV5+P8G6cHhdU-g82_s5s3__42579.0866873742$1300859008$gmane$org@mail.gmail.com>
+References: <AANLkTinmjGaK9ZSbKYTm5g-wuQ-K1hQaJBA+gSN5ERJ=@mail.gmail.com>
+	<AANLkTikHqJR=JgZzKc1G-m8z82hBFmD-w1bLn5aENTcr@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1300788417.1492.2.camel@leonhard>
+In-Reply-To: <AANLkTikHqJR=JgZzKc1G-m8z82hBFmD-w1bLn5aENTcr-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,34 +18,47 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Namhyung Kim <namhyung-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gVHVlLCAyMiBNYXIgMjAxMSAxOTowNjo1NyArMDkwMApOYW1oeXVuZyBLaW0gPG5hbWh5dW5n
-QGdtYWlsLmNvbT4gd3JvdGU6Cgo+IDIwMTEtMDMtMjIgKO2ZlCksIDEzOjU2ICswOTAwLCBLQU1F
-WkFXQSBIaXJveXVraToKPiA+IE9uIFR1ZSwgMjIgTWFyIDIwMTEgMTI6MDQ6MzkgKzA5MDAKPiA+
-IE5hbWh5dW5nIEtpbSA8bmFtaHl1bmdAZ21haWwuY29tPiB3cm90ZToKPiA+IAo+ID4gPiAyMDEx
-LTAzLTIyICjtmZQpLCAwODo1OSArMDkwMCwgS0FNRVpBV0EgSGlyb3l1a2k6Cj4gPiA+ID4gT24g
-RnJpLCAxOCBNYXIgMjAxMSAyMTo1NDoxNSArMDkwMAo+ID4gPiA+IE5hbWh5dW5nIEtpbSA8bmFt
-aHl1bmdAZ21haWwuY29tPiB3cm90ZToKPiA+ID4gPiAKPiA+ID4gPiA+IFNpZ25lZC1vZmYtYnk6
-IE5hbWh5dW5nIEtpbSA8bmFtaHl1bmdAZ21haWwuY29tPgo+ID4gPiA+ID4gQ2M6IEtBTUVaQVdB
-IEhpcm95dWtpIDxrYW1lemF3YS5oaXJveXVAanAuZnVqaXRzdS5jb20+Cj4gPiA+ID4gCj4gPiA+
-ID4gV2hhdCBpcyB0aGUgYmVuZWZpdCBvZiB0aGlzIHBhdGNoID8KPiA+ID4gPiAKPiA+ID4gPiAt
-S2FtZQo+ID4gPiA+IAo+ID4gPiAKPiA+ID4gT2gsIEkganVzdCB0aG91Z2h0IGdlbmVyYWxseSBp
-dCdkIGJldHRlciBjYWxsIHN1Y2ggYSAocG90ZW50aWFsbHkpCj4gPiA+IGNvc3RseSBmdW5jdGlv
-biBvdXRzaWRlIG9mIGxvY2tzIGFuZCBpdCBjb3VsZCByZWR1Y2UgZmV3IG9mIHRoZW9yZXRpY2Fs
-Cj4gPiA+IGNvbnRlbnRpb25zIGJldHdlZW4gc3dhcG9ucyBhbmQvb3Igb2Zmcy4gSWYgaXQgZG9l
-c24ndCBoZWxwIGFueQo+ID4gPiByZWFsaXN0aWMgY2FzZXMgSSBkb24ndCBtaW5kIGRpc2NhcmRp
-bmcgaXQuCj4gPiA+IAo+ID4gCj4gPiBNeSBwb2ludCBpcywgcGxlYXNlIHdyaXRlIHBhdGNoIGRl
-c2NyaXB0aW9uIHdoaWNoIHNob3dzIGZvciB3aGF0IHRoaXMgcGF0YyBpcy4KPiA+IEFsbCBjbGVh
-bnVwIGFyZSBva2F5IHRvIG1lIGlmIGl0IHJlYXNvbmFibGUuIEJ1dCB3aXRob3V0IHBhdGNoIGRl
-c2NyaXB0aW9uIGFzCj4gPiAidGhpcyBpcyBqdXN0IGEgY2xlYW51cCwgbm8gZnVuY3Rpb25hbCBj
-aGFuZ2UsIGFuZCB0aGUgcmVhc29uIGlzLi4uLiIKPiA+IHdlIGNhbm5vdCBtYWludGFpbiBwYXRj
-aGVzLgo+ID4gCj4gPiBUaGFua3MsCj4gPiAtS2FtZQo+ID4gCj4gCj4gT0ssIEkgd2lsbCBkbyB0
-aGF0IGluIHRoZSBmdXR1cmUuIEFueXdheSwgZG8geW91IHdhbnQgbWUgdG8gcmVzZW5kIHRoZQo+
-IHBhdGNoIHdpdGggbmV3IGRlc2NyaXB0aW9uPwo+IAoKcGxlYXNlLiBJJ2xsIG5ldmVyIGFjayBh
-IHBhdGNoIHdpdGhvdXQgZGVzY3JpcHRpb24uCgpUaGFua3MsCi1LYW1lCgpfX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlz
-dApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGlu
-dXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+Hello Paul,
+
+On Mon, Mar 21, 2011 at 11:03 PM, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
+> On Mon, Mar 21, 2011 at 3:42 AM, Jaswinder Singh
+> <jaswinderlinux-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+>>
+>> Can you please suggest some simple tests to measure the performance
+>> enhancement by using cpusets/cgroups.
+>
+> The cgroups framework is simply a way of grouping processes together
+> and allowing subsystems (memory, CPU, disk I/O, etc) to associate
+> state objects with each group. Generally this is for improving
+> isolation rather than improving performance - sticking extra machinery
+> and scheduling in will typically reduce overall throughput, but make
+> it more practical to share resources safely between multiple groups of
+> processes.
+>
+> Your question is pretty open-ended - what's your ultimate goal? You
+> should probably be focusing on some particular problem that you're
+> trying to measure/improve via resource isolation/scheduling.
+>
+
+As per http://www.clusterresources.com/torquedocs21/3.5linuxcpusets.shtml :
+
+Under section 3.5.4 Cpuset advantages / disadvantages
+
+"Jobs on larger NUMA systems may see a performance boost if jobs can be
+intelligently assigned to specific CPUs. Jobs may perform better if
+striped across physical processors, or contained within the fewest
+number of memory controllers."
+
+
+I am curious and want to try some simple tests so that I can see the
+performance improvement by using cpusets on my PCs.
+
+Can you suggest some tests so that I can study them.
+
+Thank you,
+--
+Jaswinder Singh.
