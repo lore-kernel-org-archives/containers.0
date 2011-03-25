@@ -1,7 +1,8 @@
 From: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: [PATCH] NFSv2/3 containerization: add network context to nfs_client
-Date: Fri, 25 Mar 2011 11:39:12 -0500
-Message-ID: <4D8CC530.9050107__37666.7151148014$1301071264$gmane$org@parallels.com>
+Subject: [RFC PATCH] Teach auth_unix cache to check network namespace in
+	comparisons
+Date: Fri, 25 Mar 2011 12:00:24 -0500
+Message-ID: <4D8CCA28.7040001__26571.5563823052$1301072557$gmane$org@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,228 +16,121 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Tim Spriggs <tims-DAzCR1AAk2Rg9hUCZPvPmw@public.gmane.org>, Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>, Pavel
+To: linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
+
+This patch samples current->nsproxy->net_ns in ip_map_parse().
+As far as I can tell this function is currently only called from
+cache_write_procfs() and cache_write_pipefs() (via cache_write()
+and cache_downcall()), meaning we should always have a relevant
+process context.  (The buf argument is __user annotated through
+cache_do_downcall()).
+
+Does this sound like the right way to do it, or should I try to
+add a struct net * argument to cache_parse(), or...?
+
+Here's the patch I have.
 
 From: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 
-Add struct net *cl_net to struct nfs_client, intialize it from mount
-process context, copy it through nfs_client_initdata and similar, replace
-existing &init_net uses, add net_eq() checks to nfs_match_client() and
-nfs_compare_super_address().
-
-Remount copies the existing network namespace instead of the new mount
-process.  get_net() and put_net() follow the nfs_client object lifetime.
-NFSv4 is still using init_net.
-
-Some more detailed notes here: http://landley.livejournal.com/55727.html
-
-This replaces http://www.spinics.net/lists/linux-nfs/msg20076.html
-with something that only samples process context once, and tries to
-address superblock merging.
+Teach the auth_unix cache to check network namespace when comparing addresses.
 
 Signed-off-by: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 ---
 
- fs/nfs/client.c           |   13 ++++++++++++-
- fs/nfs/internal.h         |    2 ++
- fs/nfs/mount_clnt.c       |    4 ++--
- fs/nfs/super.c            |   15 +++++++++++++++
- include/linux/nfs_fs_sb.h |    1 +
- 5 files changed, 32 insertions(+), 3 deletions(-)
+ net/sunrpc/svcauth_unix.c |   21 ++++++++++++++-------
+ 1 file changed, 14 insertions(+), 7 deletions(-)
 
-diff --git a/fs/nfs/client.c b/fs/nfs/client.c
-index 139be96..99bfaa6 100644
---- a/fs/nfs/client.c
-+++ b/fs/nfs/client.c
-@@ -130,6 +130,7 @@ struct rpc_program		nfsacl_program = {
- 
- struct nfs_client_initdata {
- 	const char *hostname;
-+	struct net *net;
- 	const struct sockaddr *addr;
- 	size_t addrlen;
- 	const struct nfs_rpc_ops *rpc_ops;
-@@ -157,6 +158,7 @@ static struct nfs_client *nfs_alloc_client(const struct nfs_client_initdata *cl_
- 	atomic_set(&clp->cl_count, 1);
- 	clp->cl_cons_state = NFS_CS_INITING;
- 
-+	clp->cl_net = get_net(cl_init->net);
- 	memcpy(&clp->cl_addr, cl_init->addr, cl_init->addrlen);
- 	clp->cl_addrlen = cl_init->addrlen;
- 
-@@ -196,6 +198,7 @@ static struct nfs_client *nfs_alloc_client(const struct nfs_client_initdata *cl_
- 	return clp;
- 
- error_cleanup:
-+	put_net(clp->cl_net);
- 	kfree(clp);
- error_0:
- 	return ERR_PTR(err);
-@@ -290,6 +293,9 @@ static void nfs_free_client(struct nfs_client *clp)
- 	if (clp->cl_machine_cred != NULL)
- 		put_rpccred(clp->cl_machine_cred);
- 
-+	if (clp->cl_net)
-+		put_net(clp->cl_net);
-+
- 	kfree(clp->cl_hostname);
- 	kfree(clp);
- 
-@@ -473,6 +479,8 @@ static struct nfs_client *nfs_match_client(const struct nfs_client_initdata *dat
- 		if (clp->cl_minorversion != data->minorversion)
- 			continue;
- 		/* Match the full socket address */
-+		if (!net_eq(clp->cl_net, data->net))
-+			continue;
- 		if (!nfs_sockaddr_cmp(sap, clap))
- 			continue;
- 
-@@ -636,7 +644,7 @@ static int nfs_create_rpc_client(struct nfs_client *clp,
- {
- 	struct rpc_clnt		*clnt = NULL;
- 	struct rpc_create_args args = {
--		.net		= &init_net,
-+		.net		= clp->cl_net,
- 		.protocol	= clp->cl_proto,
- 		.address	= (struct sockaddr *)&clp->cl_addr,
- 		.addrsize	= clp->cl_addrlen,
-@@ -821,6 +829,7 @@ static int nfs_init_server(struct nfs_server *server,
- {
- 	struct nfs_client_initdata cl_init = {
- 		.hostname = data->nfs_server.hostname,
-+		.net = data->net,
- 		.addr = (const struct sockaddr *)&data->nfs_server.address,
- 		.addrlen = data->nfs_server.addrlen,
- 		.rpc_ops = &nfs_v2_clientops,
-@@ -1386,6 +1395,7 @@ static int nfs4_set_client(struct nfs_server *server,
- {
- 	struct nfs_client_initdata cl_init = {
- 		.hostname = hostname,
-+		.net = &init_net,
- 		.addr = addr,
- 		.addrlen = addrlen,
- 		.rpc_ops = &nfs_v4_clientops,
-@@ -1438,6 +1448,7 @@ struct nfs_client *nfs4_set_ds_client(struct nfs_client* mds_clp,
- {
- 	struct nfs_client_initdata cl_init = {
- 		.addr = ds_addr,
-+		.net = &init_net,
- 		.addrlen = ds_addrlen,
- 		.rpc_ops = &nfs_v4_clientops,
- 		.proto = ds_proto,
-diff --git a/fs/nfs/internal.h b/fs/nfs/internal.h
-index 72e0bdd..006ab1a 100644
---- a/fs/nfs/internal.h
-+++ b/fs/nfs/internal.h
-@@ -86,6 +86,7 @@ struct nfs_parsed_mount_data {
- 	unsigned int		version;
- 	unsigned int		minorversion;
- 	char			*fscache_uniq;
-+	struct net		*net;
- 
- 	struct {
- 		struct sockaddr_storage	address;
-@@ -111,6 +112,7 @@ struct nfs_parsed_mount_data {
- /* mount_clnt.c */
- struct nfs_mount_request {
- 	struct sockaddr		*sap;
-+	struct net		*net;
- 	size_t			salen;
- 	char			*hostname;
- 	char			*dirpath;
-diff --git a/fs/nfs/mount_clnt.c b/fs/nfs/mount_clnt.c
-index d4c2d6b..4fbe3a8 100644
---- a/fs/nfs/mount_clnt.c
-+++ b/fs/nfs/mount_clnt.c
-@@ -153,7 +153,7 @@ int nfs_mount(struct nfs_mount_request *info)
- 		.rpc_resp	= &result,
- 	};
- 	struct rpc_create_args args = {
--		.net		= &init_net,
-+		.net		= info->net,
- 		.protocol	= info->protocol,
- 		.address	= info->sap,
- 		.addrsize	= info->salen,
-@@ -225,7 +225,7 @@ void nfs_umount(const struct nfs_mount_request *info)
- 		.to_retries = 2,
- 	};
- 	struct rpc_create_args args = {
--		.net		= &init_net,
-+		.net		= info->net,
- 		.protocol	= IPPROTO_UDP,
- 		.address	= info->sap,
- 		.addrsize	= info->salen,
-diff --git a/fs/nfs/super.c b/fs/nfs/super.c
-index 2b8e9a5..b0d869f 100644
---- a/fs/nfs/super.c
-+++ b/fs/nfs/super.c
-@@ -53,6 +53,7 @@
- #include <linux/nfs_xdr.h>
- #include <linux/magic.h>
- #include <linux/parser.h>
+diff --git a/net/sunrpc/svcauth_unix.c b/net/sunrpc/svcauth_unix.c
+index 30916b0..63a2fa7 100644
+--- a/net/sunrpc/svcauth_unix.c
++++ b/net/sunrpc/svcauth_unix.c
+@@ -14,6 +14,7 @@
+ #include <net/sock.h>
+ #include <net/ipv6.h>
+ #include <linux/kernel.h>
 +#include <linux/user_namespace.h>
+ #define RPCDBG_FACILITY	RPCDBG_AUTH
  
- #include <asm/system.h>
- #include <asm/uaccess.h>
-@@ -1572,6 +1573,7 @@ static int nfs_try_mount(struct nfs_parsed_mount_data *args,
- 	struct nfs_mount_request request = {
- 		.sap		= (struct sockaddr *)
- 						&args->mount_server.address,
-+		.net		= args->net,
- 		.dirpath	= args->nfs_server.export_path,
- 		.protocol	= args->mount_server.protocol,
- 		.fh		= root_fh,
-@@ -1726,6 +1728,11 @@ static int nfs_validate_mount_data(void *options,
- 	if (data == NULL)
- 		goto out_no_data;
+ #include <linux/sunrpc/clnt.h>
+@@ -94,6 +95,7 @@ struct ip_map {
+ 	struct cache_head	h;
+ 	char			m_class[8]; /* e.g. "nfsd" */
+ 	struct in6_addr		m_addr;
++	struct net		*m_net;
+ 	struct unix_domain	*m_client;
+ #ifdef CONFIG_NFSD_DEPRECATED
+ 	int			m_add_change;
+@@ -134,6 +136,7 @@ static int ip_map_match(struct cache_head *corig, struct cache_head *cnew)
+ 	struct ip_map *orig = container_of(corig, struct ip_map, h);
+ 	struct ip_map *new = container_of(cnew, struct ip_map, h);
+ 	return strcmp(orig->m_class, new->m_class) == 0 &&
++	       net_eq(orig->m_net, new->m_net) &&
+ 	       ipv6_addr_equal(&orig->m_addr, &new->m_addr);
+ }
+ static void ip_map_init(struct cache_head *cnew, struct cache_head *citem)
+@@ -142,6 +145,7 @@ static void ip_map_init(struct cache_head *cnew, struct cache_head *citem)
+ 	struct ip_map *item = container_of(citem, struct ip_map, h);
  
-+	/* Grab network context from mount process. We'll increment the
-+	   reference count when we copy it to nfs_client->cl_net. */
-+
-+	args->net = current->nsproxy->net_ns;
-+
- 	switch (data->version) {
- 	case 1:
- 		data->namlen = 0;
-@@ -1971,6 +1978,9 @@ nfs_remount(struct super_block *sb, int *flags, char *raw_data)
- 	memcpy(&data->nfs_server.address, &nfss->nfs_client->cl_addr,
- 		data->nfs_server.addrlen);
+ 	strcpy(new->m_class, item->m_class);
++	new->m_net = item->m_net;
+ 	ipv6_addr_copy(&new->m_addr, &item->m_addr);
+ }
+ static void update(struct cache_head *cnew, struct cache_head *citem)
+@@ -186,7 +190,7 @@ static int ip_map_upcall(struct cache_detail *cd, struct cache_head *h)
+ 	return sunrpc_cache_pipe_upcall(cd, h, ip_map_request);
+ }
  
-+	/* Use original mount's network context, not remount process's */
-+	data->net = nfss->nfs_client->cl_net;
-+
- 	/* overwrite those values with any that were specified */
- 	error = nfs_parse_mount_options((char *)options, data);
- 	if (error < 0)
-@@ -2119,6 +2129,9 @@ static int nfs_compare_super_address(struct nfs_server *server1,
- 	if (sap1->sa_family != sap2->sa_family)
- 		return 0;
+-static struct ip_map *__ip_map_lookup(struct cache_detail *cd, char *class, struct in6_addr *addr);
++static struct ip_map *__ip_map_lookup(struct cache_detail *cd, struct net *net, char *class, struct in6_addr *addr);
+ static int __ip_map_update(struct cache_detail *cd, struct ip_map *ipm, struct unix_domain *udom, time_t expiry);
  
-+	if (!net_eq(server1->nfs_client->cl_net, server2->nfs_client->cl_net))
-+		return 0;
-+
- 	switch (sap1->sa_family) {
- 	case AF_INET: {
- 		struct sockaddr_in *sin1 = (struct sockaddr_in *)sap1;
-@@ -2478,6 +2491,8 @@ static int nfs4_validate_mount_data(void *options,
- 	if (data == NULL)
- 		goto out_no_data;
+ static int ip_map_parse(struct cache_detail *cd,
+@@ -256,7 +260,8 @@ static int ip_map_parse(struct cache_detail *cd,
+ 		dom = NULL;
  
-+	args->net = &init_net;
-+
- 	switch (data->version) {
- 	case 1:
- 		if (data->host_addrlen > sizeof(args->nfs_server.address))
-diff --git a/include/linux/nfs_fs_sb.h b/include/linux/nfs_fs_sb.h
-index 216cea5..45286dc 100644
---- a/include/linux/nfs_fs_sb.h
-+++ b/include/linux/nfs_fs_sb.h
-@@ -33,6 +33,7 @@ struct nfs_client {
- #define NFS_CS_STOP_RENEW	4		/* no more state to renew */
- #define NFS_CS_CHECK_LEASE_TIME	5		/* need to check lease time */
- 	struct sockaddr_storage	cl_addr;	/* server identifier */
-+	struct net *		cl_net;		/* network context */
- 	size_t			cl_addrlen;
- 	char *			cl_hostname;	/* hostname of server */
- 	struct list_head	cl_share_link;	/* link in global client list */
+ 	/* IPv6 scope IDs are ignored for now */
+-	ipmp = __ip_map_lookup(cd, class, &sin6.sin6_addr);
++	ipmp = __ip_map_lookup(cd, current->nsproxy->net_ns, class,
++			       &sin6.sin6_addr);
+ 	if (ipmp) {
+ 		err = __ip_map_update(cd, ipmp,
+ 			     container_of(dom, struct unix_domain, h),
+@@ -301,13 +306,14 @@ static int ip_map_show(struct seq_file *m,
+ }
+ 
+ 
+-static struct ip_map *__ip_map_lookup(struct cache_detail *cd, char *class,
+-		struct in6_addr *addr)
++static struct ip_map *__ip_map_lookup(struct cache_detail *cd, struct net *net,
++		char *class, struct in6_addr *addr)
+ {
+ 	struct ip_map ip;
+ 	struct cache_head *ch;
+ 
+ 	strcpy(ip.m_class, class);
++	ip.m_net = net;
+ 	ipv6_addr_copy(&ip.m_addr, addr);
+ 	ch = sunrpc_cache_lookup(cd, &ip.h,
+ 				 hash_str(class, IP_HASHBITS) ^
+@@ -325,7 +331,7 @@ static inline struct ip_map *ip_map_lookup(struct net *net, char *class,
+ 	struct sunrpc_net *sn;
+ 
+ 	sn = net_generic(net, sunrpc_net_id);
+-	return __ip_map_lookup(sn->ip_map_cache, class, addr);
++	return __ip_map_lookup(sn->ip_map_cache, net, class, addr);
+ }
+ 
+ static int __ip_map_update(struct cache_detail *cd, struct ip_map *ipm,
+@@ -748,8 +754,9 @@ svcauth_unix_set_client(struct svc_rqst *rqstp)
+ 
+ 	ipm = ip_map_cached_get(xprt);
+ 	if (ipm == NULL)
+-		ipm = __ip_map_lookup(sn->ip_map_cache, rqstp->rq_server->sv_program->pg_class,
+-				    &sin6->sin6_addr);
++		ipm = __ip_map_lookup(sn->ip_map_cache, net,
++				      rqstp->rq_server->sv_program->pg_class,
++				      &sin6->sin6_addr);
+ 
+ 	if (ipm == NULL)
+ 		return SVC_DENIED;
