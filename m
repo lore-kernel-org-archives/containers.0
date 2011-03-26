@@ -1,12 +1,13 @@
-From: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: [RFC PATCH] Teach auth_unix cache to check network namespace in
-	comparisons
-Date: Fri, 25 Mar 2011 12:00:24 -0500
-Message-ID: <4D8CCA28.7040001__26571.5563823052$1301072557$gmane$org@parallels.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [linux-cr PATCH 1/1] update x86-64 eclone and cr syscall numbers
+Date: Fri, 25 Mar 2011 22:06:14 -0400
+Message-ID: <4D8D4A16.3080908@cs.columbia.edu>
+References: <20110214164644.GA16802@localhost>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20110214164644.GA16802@localhost>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,121 +17,35 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>
+To: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This patch samples current->nsproxy->net_ns in ip_map_parse().
-As far as I can tell this function is currently only called from
-cache_write_procfs() and cache_write_pipefs() (via cache_write()
-and cache_downcall()), meaning we should always have a relevant
-process context.  (The buf argument is __user annotated through
-cache_do_downcall()).
+Pulled for v23-rc2... thanks.
 
-Does this sound like the right way to do it, or should I try to
-add a struct net * argument to cache_parse(), or...?
+Oren.
 
-Here's the patch I have.
-
-From: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-
-Teach the auth_unix cache to check network namespace when comparing addresses.
-
-Signed-off-by: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
----
-
- net/sunrpc/svcauth_unix.c |   21 ++++++++++++++-------
- 1 file changed, 14 insertions(+), 7 deletions(-)
-
-diff --git a/net/sunrpc/svcauth_unix.c b/net/sunrpc/svcauth_unix.c
-index 30916b0..63a2fa7 100644
---- a/net/sunrpc/svcauth_unix.c
-+++ b/net/sunrpc/svcauth_unix.c
-@@ -14,6 +14,7 @@
- #include <net/sock.h>
- #include <net/ipv6.h>
- #include <linux/kernel.h>
-+#include <linux/user_namespace.h>
- #define RPCDBG_FACILITY	RPCDBG_AUTH
- 
- #include <linux/sunrpc/clnt.h>
-@@ -94,6 +95,7 @@ struct ip_map {
- 	struct cache_head	h;
- 	char			m_class[8]; /* e.g. "nfsd" */
- 	struct in6_addr		m_addr;
-+	struct net		*m_net;
- 	struct unix_domain	*m_client;
- #ifdef CONFIG_NFSD_DEPRECATED
- 	int			m_add_change;
-@@ -134,6 +136,7 @@ static int ip_map_match(struct cache_head *corig, struct cache_head *cnew)
- 	struct ip_map *orig = container_of(corig, struct ip_map, h);
- 	struct ip_map *new = container_of(cnew, struct ip_map, h);
- 	return strcmp(orig->m_class, new->m_class) == 0 &&
-+	       net_eq(orig->m_net, new->m_net) &&
- 	       ipv6_addr_equal(&orig->m_addr, &new->m_addr);
- }
- static void ip_map_init(struct cache_head *cnew, struct cache_head *citem)
-@@ -142,6 +145,7 @@ static void ip_map_init(struct cache_head *cnew, struct cache_head *citem)
- 	struct ip_map *item = container_of(citem, struct ip_map, h);
- 
- 	strcpy(new->m_class, item->m_class);
-+	new->m_net = item->m_net;
- 	ipv6_addr_copy(&new->m_addr, &item->m_addr);
- }
- static void update(struct cache_head *cnew, struct cache_head *citem)
-@@ -186,7 +190,7 @@ static int ip_map_upcall(struct cache_detail *cd, struct cache_head *h)
- 	return sunrpc_cache_pipe_upcall(cd, h, ip_map_request);
- }
- 
--static struct ip_map *__ip_map_lookup(struct cache_detail *cd, char *class, struct in6_addr *addr);
-+static struct ip_map *__ip_map_lookup(struct cache_detail *cd, struct net *net, char *class, struct in6_addr *addr);
- static int __ip_map_update(struct cache_detail *cd, struct ip_map *ipm, struct unix_domain *udom, time_t expiry);
- 
- static int ip_map_parse(struct cache_detail *cd,
-@@ -256,7 +260,8 @@ static int ip_map_parse(struct cache_detail *cd,
- 		dom = NULL;
- 
- 	/* IPv6 scope IDs are ignored for now */
--	ipmp = __ip_map_lookup(cd, class, &sin6.sin6_addr);
-+	ipmp = __ip_map_lookup(cd, current->nsproxy->net_ns, class,
-+			       &sin6.sin6_addr);
- 	if (ipmp) {
- 		err = __ip_map_update(cd, ipmp,
- 			     container_of(dom, struct unix_domain, h),
-@@ -301,13 +306,14 @@ static int ip_map_show(struct seq_file *m,
- }
- 
- 
--static struct ip_map *__ip_map_lookup(struct cache_detail *cd, char *class,
--		struct in6_addr *addr)
-+static struct ip_map *__ip_map_lookup(struct cache_detail *cd, struct net *net,
-+		char *class, struct in6_addr *addr)
- {
- 	struct ip_map ip;
- 	struct cache_head *ch;
- 
- 	strcpy(ip.m_class, class);
-+	ip.m_net = net;
- 	ipv6_addr_copy(&ip.m_addr, addr);
- 	ch = sunrpc_cache_lookup(cd, &ip.h,
- 				 hash_str(class, IP_HASHBITS) ^
-@@ -325,7 +331,7 @@ static inline struct ip_map *ip_map_lookup(struct net *net, char *class,
- 	struct sunrpc_net *sn;
- 
- 	sn = net_generic(net, sunrpc_net_id);
--	return __ip_map_lookup(sn->ip_map_cache, class, addr);
-+	return __ip_map_lookup(sn->ip_map_cache, net, class, addr);
- }
- 
- static int __ip_map_update(struct cache_detail *cd, struct ip_map *ipm,
-@@ -748,8 +754,9 @@ svcauth_unix_set_client(struct svc_rqst *rqstp)
- 
- 	ipm = ip_map_cached_get(xprt);
- 	if (ipm == NULL)
--		ipm = __ip_map_lookup(sn->ip_map_cache, rqstp->rq_server->sv_program->pg_class,
--				    &sin6->sin6_addr);
-+		ipm = __ip_map_lookup(sn->ip_map_cache, net,
-+				      rqstp->rq_server->sv_program->pg_class,
-+				      &sin6->sin6_addr);
- 
- 	if (ipm == NULL)
- 		return SVC_DENIED;
+On 02/14/2011 11:46 AM, Serge E. Hallyn wrote:
+> (for ckpt-v23-rc1-pids branch)
+> 
+> Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+> ---
+>  arch/x86/include/asm/unistd_64.h |    4 ++--
+>  1 files changed, 2 insertions(+), 2 deletions(-)
+> 
+> diff --git a/arch/x86/include/asm/unistd_64.h b/arch/x86/include/asm/unistd_64.h
+> index 706d90a..f5d1b9e 100644
+> --- a/arch/x86/include/asm/unistd_64.h
+> +++ b/arch/x86/include/asm/unistd_64.h
+> @@ -671,9 +671,9 @@ __SYSCALL(__NR_fanotify_mark, sys_fanotify_mark)
+>  __SYSCALL(__NR_prlimit64, sys_prlimit64)
+>  #define __NR_eclone				303
+>  __SYSCALL(__NR_eclone, stub_eclone)
+> -#define __NR_checkpoint				301
+> +#define __NR_checkpoint				304
+>  __SYSCALL(__NR_checkpoint, stub_checkpoint)
+> -#define __NR_restart				302
+> +#define __NR_restart				305
+>  __SYSCALL(__NR_restart, stub_restart)
+>  
+>  #ifndef __NO_STUBS
