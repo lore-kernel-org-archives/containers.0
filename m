@@ -1,14 +1,13 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH] powerpc: Remove remaining debugreg bits from forward
-	port of v22-dev patches
-Date: Fri, 25 Mar 2011 22:09:54 -0400
-Message-ID: <4D8D4AF2.6040909@cs.columbia.edu>
-References: <cd26e0322da9081a888336f40ea2057dad70cea2.1296134526.git.matthltc@us.ibm.com>
+Subject: Re: [PATCH 1/2] c/r: Do not crash if socket has no peercred
+Date: Fri, 25 Mar 2011 22:08:15 -0400
+Message-ID: <4D8D4A8F.5060003@cs.columbia.edu>
+References: <1297096979-23145-1-git-send-email-danms@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <cd26e0322da9081a888336f40ea2057dad70cea2.1296134526.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1297096979-23145-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,49 +17,91 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Matt/Nathan:
 
-I lost track with the ppc patches - and I wouldn't be able to test
-the code anyway. Any chance you could resend an updated ppc-c/r set ?
-
-Thanks ...
+Pulled for ckpt-v23-rc2.
 
 Oren.
 
-
-On 01/27/2011 08:22 AM, Matt Helsley wrote:
-> The commit 'powerpc: provide APIs for validating and updating DABR'
-> from ckpt-v22-dev can be dropped for v23-rc1 but other patches in
-> the v22-dev series for powerpc use the debugreg functions introduced
-> there. They can be rebased and merged with this patch and the
-> debugreg code can be pushed as a later, independent patch.
+On 02/07/2011 11:42 AM, Dan Smith wrote:
+> Unconnected sockets don't have a valid sk_peercred yet.  If we checkpoint
+> them, we'll segv on the NULL pointer.
 > 
-> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Cc: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 > ---
->  arch/powerpc/kernel/checkpoint.c |    8 --------
->  1 files changed, 0 insertions(+), 8 deletions(-)
+>  net/unix/checkpoint.c |   52 +++++++++++++++++++++++++++---------------------
+>  1 files changed, 29 insertions(+), 23 deletions(-)
 > 
-> diff --git a/arch/powerpc/kernel/checkpoint.c b/arch/powerpc/kernel/checkpoint.c
-> index 9aeab89..00fc2bb 100644
-> --- a/arch/powerpc/kernel/checkpoint.c
-> +++ b/arch/powerpc/kernel/checkpoint.c
-> @@ -350,14 +350,6 @@ static int restore_dabr(const struct ckpt_hdr_cpu *cpu_hdr,
+> diff --git a/net/unix/checkpoint.c b/net/unix/checkpoint.c
+> index 708df40..25464cc 100644
+> --- a/net/unix/checkpoint.c
+> +++ b/net/unix/checkpoint.c
+> @@ -159,16 +159,19 @@ int unix_checkpoint(struct ckpt_ctx *ctx, struct socket *sock)
 >  		goto out;
+>  	}
 >  
->  	rc = -EINVAL;
-> -	if (!debugreg_valid(cpu_hdr->dabr, 0))
+> -	/*
+> -	 * intentionally drop 'const' qualifier for checkpoint_obj() to
+> -	 * increment the usage count - it does not alter the credentials.
+> -	 */
+> -	cred = (struct cred *) get_cred(sock->sk->sk_peer_cred);
+> -	un->peercred = checkpoint_obj(ctx, cred, CKPT_OBJ_CRED);
+> -	put_cred(cred);
+> -	if (un->peercred < 0) {
+> -		ret = un->peercred;
 > -		goto out;
+> +	if (sock->sk->sk_peer_cred) {
+> +		/*
+> +		 * intentionally drop 'const' qualifier for
+> +		 * checkpoint_obj() to increment the usage count - it
+> +		 * does not alter the credentials.
+> +		 */
+> +		cred = (struct cred *) get_cred(sock->sk->sk_peer_cred);
+> +		un->peercred = checkpoint_obj(ctx, cred, CKPT_OBJ_CRED);
+> +		put_cred(cred);
+> +		if (un->peercred < 0) {
+> +			ret = un->peercred;
+> +			goto out;
+> +		}
+>  	}
+>  
+>  	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) un);
+> @@ -438,19 +441,22 @@ static int unix_restore_connected(struct ckpt_ctx *ctx,
+>  		addrlen = un->laddr_len;
+>  	}
+>  
+> -	cred = ckpt_obj_fetch(ctx, un->peercred, CKPT_OBJ_CRED);
+> -	if (!cred) {
+> -		ckpt_err(ctx, -EINVAL, "%(O)Bad peer cred\n", un->peercred);
+> -		return -EINVAL;
+> -	}
 > -
-> -	rc = 0;
-> -	if (!update)
-> -		goto out;
-> -
-> -	debugreg_update(task, cpu_hdr->dabr, 0);
->  out:
->  	return rc;
->  }
+> -	if (may_setuid(ctx->realcred->user->user_ns, cred->uid) &&
+> -	    may_setgid(cred->gid)) {
+> -		set_peercred(sk, task_tgid(current), cred);
+> -	} else {
+> -		ckpt_err(ctx, -EPERM, "peercred %i:%i would require setuid",
+> -			 cred->uid, cred->gid);
+> -		return -EPERM;
+> +	if (un->peercred) {
+> +		cred = ckpt_obj_fetch(ctx, un->peercred, CKPT_OBJ_CRED);
+> +		if (!cred) {
+> +			ckpt_err(ctx, -EINVAL,
+> +				 "%(O)Bad peer cred\n", un->peercred);
+> +			return -EINVAL;
+> +		}
+> +		if (may_setuid(ctx->realcred->user->user_ns, cred->uid) &&
+> +		    may_setgid(cred->gid)) {
+> +			set_peercred(sk, task_tgid(current), cred);
+> +		} else {
+> +			ckpt_err(ctx, -EPERM,
+> +				 "peercred %i:%i would require setuid",
+> +				 cred->uid, cred->gid);
+> +			return -EPERM;
+> +		}
+>  	}
+>  
+>  	if (!dead && (un->peer > 0)) {
