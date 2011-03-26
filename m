@@ -1,13 +1,13 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [PATCH 1/2] c/r: Do not crash if socket has no peercred
-Date: Fri, 25 Mar 2011 22:08:15 -0400
-Message-ID: <4D8D4A8F.5060003@cs.columbia.edu>
-References: <1297096979-23145-1-git-send-email-danms@us.ibm.com>
+Subject: Re: [PATCH] Remove update_freezer_state()
+Date: Fri, 25 Mar 2011 22:10:03 -0400
+Message-ID: <4D8D4AFB.6030704@cs.columbia.edu>
+References: <bcd897d608bc2de8867fb3a031e5affc352fb559.1296134057.git.matthltc@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1297096979-23145-1-git-send-email-danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <bcd897d608bc2de8867fb3a031e5affc352fb559.1296134057.git.matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,91 +17,72 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
-Pulled for ckpt-v23-rc2.
+Pulled for v23-rc2.
 
 Oren.
 
-On 02/07/2011 11:42 AM, Dan Smith wrote:
-> Unconnected sockets don't have a valid sk_peercred yet.  If we checkpoint
-> them, we'll segv on the NULL pointer.
+On 01/27/2011 08:14 AM, Matt Helsley wrote:
+> update_freezer_state() was renamed to update_if_frozen(). Use the
+> newly name of the function and remove the old copy.
 > 
-> Signed-off-by: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 > ---
->  net/unix/checkpoint.c |   52 +++++++++++++++++++++++++++---------------------
->  1 files changed, 29 insertions(+), 23 deletions(-)
+>  kernel/cgroup_freezer.c |   33 +--------------------------------
+>  1 files changed, 1 insertions(+), 32 deletions(-)
 > 
-> diff --git a/net/unix/checkpoint.c b/net/unix/checkpoint.c
-> index 708df40..25464cc 100644
-> --- a/net/unix/checkpoint.c
-> +++ b/net/unix/checkpoint.c
-> @@ -159,16 +159,19 @@ int unix_checkpoint(struct ckpt_ctx *ctx, struct socket *sock)
->  		goto out;
->  	}
+> diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
+> index 507cb43..2691bd8 100644
+> --- a/kernel/cgroup_freezer.c
+> +++ b/kernel/cgroup_freezer.c
+> @@ -72,37 +72,6 @@ static bool is_task_frozen_enough(struct task_struct *task)
+>  }
 >  
-> -	/*
-> -	 * intentionally drop 'const' qualifier for checkpoint_obj() to
-> -	 * increment the usage count - it does not alter the credentials.
-> -	 */
-> -	cred = (struct cred *) get_cred(sock->sk->sk_peer_cred);
-> -	un->peercred = checkpoint_obj(ctx, cred, CKPT_OBJ_CRED);
-> -	put_cred(cred);
-> -	if (un->peercred < 0) {
-> -		ret = un->peercred;
-> -		goto out;
-> +	if (sock->sk->sk_peer_cred) {
-> +		/*
-> +		 * intentionally drop 'const' qualifier for
-> +		 * checkpoint_obj() to increment the usage count - it
-> +		 * does not alter the credentials.
-> +		 */
-> +		cred = (struct cred *) get_cred(sock->sk->sk_peer_cred);
-> +		un->peercred = checkpoint_obj(ctx, cred, CKPT_OBJ_CRED);
-> +		put_cred(cred);
-> +		if (un->peercred < 0) {
-> +			ret = un->peercred;
-> +			goto out;
-> +		}
->  	}
->  
->  	ret = ckpt_write_obj(ctx, (struct ckpt_hdr *) un);
-> @@ -438,19 +441,22 @@ static int unix_restore_connected(struct ckpt_ctx *ctx,
->  		addrlen = un->laddr_len;
->  	}
->  
-> -	cred = ckpt_obj_fetch(ctx, un->peercred, CKPT_OBJ_CRED);
-> -	if (!cred) {
-> -		ckpt_err(ctx, -EINVAL, "%(O)Bad peer cred\n", un->peercred);
-> -		return -EINVAL;
+>  /*
+> - * caller must hold freezer->lock
+> - */
+> -static void update_freezer_state(struct cgroup *cgroup,
+> -				 struct freezer *freezer)
+> -{
+> -	struct cgroup_iter it;
+> -	struct task_struct *task;
+> -	unsigned int nfrozen = 0, ntotal = 0;
+> -
+> -	cgroup_iter_start(cgroup, &it);
+> -	while ((task = cgroup_iter_next(cgroup, &it))) {
+> -		ntotal++;
+> -		if (is_task_frozen_enough(task))
+> -			nfrozen++;
 > -	}
 > -
-> -	if (may_setuid(ctx->realcred->user->user_ns, cred->uid) &&
-> -	    may_setgid(cred->gid)) {
-> -		set_peercred(sk, task_tgid(current), cred);
-> -	} else {
-> -		ckpt_err(ctx, -EPERM, "peercred %i:%i would require setuid",
-> -			 cred->uid, cred->gid);
-> -		return -EPERM;
-> +	if (un->peercred) {
-> +		cred = ckpt_obj_fetch(ctx, un->peercred, CKPT_OBJ_CRED);
-> +		if (!cred) {
-> +			ckpt_err(ctx, -EINVAL,
-> +				 "%(O)Bad peer cred\n", un->peercred);
-> +			return -EINVAL;
-> +		}
-> +		if (may_setuid(ctx->realcred->user->user_ns, cred->uid) &&
-> +		    may_setgid(cred->gid)) {
-> +			set_peercred(sk, task_tgid(current), cred);
-> +		} else {
-> +			ckpt_err(ctx, -EPERM,
-> +				 "peercred %i:%i would require setuid",
-> +				 cred->uid, cred->gid);
-> +			return -EPERM;
-> +		}
->  	}
->  
->  	if (!dead && (un->peer > 0)) {
+> -	/*
+> -	 * Transition to FROZEN when no new tasks can be added ensures
+> -	 * that we never exist in the FROZEN state while there are unfrozen
+> -	 * tasks.
+> -	 */
+> -	if (nfrozen == ntotal)
+> -		freezer->state = CGROUP_FROZEN;
+> -	else if (nfrozen > 0)
+> -		freezer->state = CGROUP_FREEZING;
+> -	else
+> -		freezer->state = CGROUP_THAWED;
+> -	cgroup_iter_end(cgroup, &it);
+> -}
+> -
+> -/*
+>   * cgroups_write_string() limits the size of freezer state strings to
+>   * CGROUP_LOCAL_BUFFER_SIZE
+>   */
+> @@ -485,7 +454,7 @@ static int freezer_checkpointing(struct task_struct *task,
+>  		/* May be in middle of a lazy FREEZING -> FROZEN transition */
+>  		if (cgroup_lock_live_group(css->cgroup)) {
+>  			spin_lock_irq(&freezer->lock);
+> -			update_freezer_state(css->cgroup, freezer);
+> +			update_if_frozen(css->cgroup, freezer);
+>  			spin_unlock_irq(&freezer->lock);
+>  			cgroup_unlock();
+>  		}
