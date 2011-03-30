@@ -1,15 +1,16 @@
-From: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+From: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
 Subject: Re: 2.6.38 containers bug: Infinite loop in
 	/proc/sys/net/ipv6/neigh/neigh/neigh...
-Date: Wed, 30 Mar 2011 05:16:19 -0500
-Message-ID: <4D9302F3.6080206__7444.14125006205$1301480246$gmane$org@parallels.com>
+Date: Wed, 30 Mar 2011 03:35:29 -0700 (PDT)
+Message-ID: <20110330.033529.71582712.davem__27579.3888293721$1301481417$gmane$org@davemloft.net>
 References: <4D92E9DC.3070405@parallels.com>
 	<20110330.020120.02272125.davem@davemloft.net>
+	<4D9302F3.6080206@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110330.020120.02272125.davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+In-Reply-To: <4D9302F3.6080206-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,54 +20,16 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+To: rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org
 Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, stable-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 03/30/2011 04:01 AM, David Miller wrote:
-> From: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-> Date: Wed, 30 Mar 2011 03:29:16 -0500
-> 
->> In the host context a find on /proc completes, but inside an lxc
->> container a find on /proc never completes, due to the endless loop in
->> the title.  (It's not a symlink, it seems to be a cross linked directory.)
->>
->> This is vanilla 2.6.38, I can attach my .config if you think it'd help.
->>  (The container's the lxc debian sid template but that's probably not
->> relevant.)
-> 
-> Please CC: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org when a bug might be related to
-> networking, as is obviously the case here.
-> 
-> This bug should be fixed by the following patch:
-> 
-> --------------------
-> commit 9d2a8fa96a44ba242de3a6f56acaef7a40a97b97
-> Author: Eric W. Biederman <ebiederm-BGArkANP9klv6pq1l3V1OdBPR1lH4CV8@public.gmane.org>
-> Date:   Mon Mar 21 18:23:34 2011 -0700
-> 
->     net ipv6: Fix duplicate /proc/sys/net/ipv6/neigh directory entries.
->     
->     When I was fixing issues with unregisgtering tables under /proc/sys/net/ipv6/neigh
->     by adding a mount point it appears I missed a critical ordering issue, in the
->     ipv6 initialization.  I had not realized that ipv6_sysctl_register is called
->     at the very end of the ipv6 initialization and in particular after we call
->     neigh_sysctl_register from ndisc_init.
->     
->     "neigh" needs to be initialized in ipv6_static_sysctl_register which is
->     the first ipv6 table to initialized, and definitely before ndisc_init.
->     This removes the weirdness of duplicate tables while still providing a
->     "neigh" mount point which prevents races in sysctl unregistering.
->     
->     This was initially reported at https://bugzilla.kernel.org/show_bug.cgi?id=31232
->     Reported-by: sunkan-Q0DX0+l8+Is@public.gmane.org
->     Signed-off-by: Eric W. Biederman <ebiederm-BGArkANP9klv6pq1l3V1OdBPR1lH4CV8@public.gmane.org>
->     Signed-off-by: David S. Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+From: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Date: Wed, 30 Mar 2011 05:16:19 -0500
 
+> Pinging the stable guys to make sure this goes in a dot release.
 
-Yes, that fixed it.  Pinging the stable guys to make sure this goes in a
-dot release.
+Please do not do this.
 
-Thanks,
-
-Rob
+I let fixes soak in Linus's tree for a week or even more before I submit
+them to -stable.
