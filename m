@@ -1,14 +1,11 @@
-From: "Jose R. Santos" <jrs-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH] c/r: Initialize msg_msg security pointer at restart.
-Date: Wed, 30 Mar 2011 23:24:35 -0500
-Message-ID: <20110330232435.21bdafc8@gara>
-References: <1301512246-32114-1-git-send-email-jrs@linux.vnet.ibm.com>
-	<20110331032954.GA8747@peq.hallyn.com>
+From: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: [PATCH 0/3] Fix NFSv3 to work with network namespaces.
+Date: Thu, 31 Mar 2011 02:46:44 -0500
+Message-ID: <4D943164.40800__4076.56256943501$1301557672$gmane$org@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110331032954.GA8747-BtbdaCaBcfOTUehee3IRJA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,57 +15,40 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, 30 Mar 2011 22:29:54 -0500
-"Serge E. Hallyn" <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> wrote:
+This patch series makes NFSv3 work inside an lxc container that uses a
+different network namespace than the host.
 
-> Quoting Jose R. Santos (jrs-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> > This small oversight was causing either crashes on free_msg() or
-> > restart failures under some message queue workloads.
-> > 
-> > Signed-off-by: Jose R. Santos <jrs-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> 
-> What kernel is this?
+The series contains three patches.  The first adds network namespace
+information to the NFSv3 code under fs/nfs (copying the network context
+from the mount process during options parsing, saving it with
+appropriate reference counting in the persistent nfs_client struct, and
+supplying it to the RPC functions).  The second and third patches add
+additional network namespace information to the sunrpc code under
+net/sunrpc (which already had partial support for network namespaces).
 
-ckpt-v23-rc1
+1) Add network context to struct nfs_client and make NFSv3 use it.
+2) Supply network namespace to rpcbind.
+3) Compare network namespace in auth_unix cache address checks.
 
-> Starting with the last line in your context, there is:
-> 
-> 	/* set default MAC attributes */
-> 	ret = security_msg_msg_alloc(msg);
-> 	if (ret < 0)
-> 		goto out;
-> 
-> which should take care of that.  I don't know of an LSM which
-> doesn't define msg_msg_alloc() but does define msg_msg_free().
-> Do you have a stack trace to show where it was getting
-> freed?
+My containers test environment setup is described at:
 
-Sorry, should have put more details in the patch description.  The
-problem here is that msg_msg_alloc() in not allocating anything and
-thus the msg->security just happens to have what ever random data
-that happens to be there after kmalloc was called for this msg. So the
-way this usually manifested was during the a second checkpoint/restart.
-For example:
+  http://landley.net/lxc
 
-run ./mq_test
-checkpoint:
-	Saving the msg with SECURITY_NONE
-restart:
-	Restores the msg content but with msg->security set to
-	something random (or 0x5a pattern if using DEBUG_SLAB)
-second checkpoint:
-	msg->security not NULL so we proceed in
-	security_checkpoint_obj() to call security_msg_msg_checkpoint()
-second restart:
-	All sorts of very weird, very different, hard to debug stuff
-	happens afterwards. :)
+I exported the NFS share from the "Laptop" layer using knfsd with the
+/etc/exports line:
 
-Also, If you look at load_msg() in msgutil.c, the msg->security is also
-initialized to NULL _before_ calling security_msg_msg_alloc().  Hope
-this explains this fix better.
+  /home/landley/nfs 192.168.254.2(rw,no_root_squash,insecure)
 
--JRS
+And the mount command I ran in the container is:
+
+  mount -t nfs -o nfsvers=3 10.0.2.2:/home/landley/nfs nfstest
+
+(You don't need the -o if you haven't compiled NFSv4 support into your
+kernel.)
+
+I've tested NFSv2 and NFSv3 with UDP and TCP transports.  This series
+does not address using NFSv4, pNFS, or knfsd from container context.
+I haven't fixed lockd or kerberos authentication yet.
