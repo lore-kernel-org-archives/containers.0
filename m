@@ -1,12 +1,16 @@
-From: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: [PATCH 3/3] Compare namespaces when comparing addresses in auth_unix
-	cache.
-Date: Thu, 31 Mar 2011 02:48:03 -0500
-Message-ID: <4D9431B3.2070305__46835.3587006733$1301557727$gmane$org@parallels.com>
+From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Subject: Re: [PATCH] c/r: Initialize msg_msg security pointer at restart.
+Date: Thu, 31 Mar 2011 08:08:29 -0500
+Message-ID: <20110331130829.GA14360@hallyn.com>
+References: <1301512246-32114-1-git-send-email-jrs@linux.vnet.ibm.com>
+	<20110331032954.GA8747@peq.hallyn.com>
+	<20110330232435.21bdafc8@gara>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20110330232435.21bdafc8@gara>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,111 +20,69 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>
+To: "Jose R. Santos" <jrs-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Serge E. Hallyn" <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Quoting Jose R. Santos (jrs-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+> On Wed, 30 Mar 2011 22:29:54 -0500
+> "Serge E. Hallyn" <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> wrote:
+> 
+> > Quoting Jose R. Santos (jrs-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+> > > This small oversight was causing either crashes on free_msg() or
+> > > restart failures under some message queue workloads.
+> > > 
+> > > Signed-off-by: Jose R. Santos <jrs-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> > 
+> > What kernel is this?
+> 
+> ckpt-v23-rc1
+> 
+> > Starting with the last line in your context, there is:
+> > 
+> > 	/* set default MAC attributes */
+> > 	ret = security_msg_msg_alloc(msg);
+> > 	if (ret < 0)
+> > 		goto out;
+> > 
+> > which should take care of that.  I don't know of an LSM which
+> > doesn't define msg_msg_alloc() but does define msg_msg_free().
+> > Do you have a stack trace to show where it was getting
+> > freed?
+> 
+> Sorry, should have put more details in the patch description.  The
+> problem here is that msg_msg_alloc() in not allocating anything and
+> thus the msg->security just happens to have what ever random data
+> that happens to be there after kmalloc was called for this msg. So the
+> way this usually manifested was during the a second checkpoint/restart.
+> For example:
+> 
+> run ./mq_test
+> checkpoint:
+> 	Saving the msg with SECURITY_NONE
+> restart:
+> 	Restores the msg content but with msg->security set to
+> 	something random (or 0x5a pattern if using DEBUG_SLAB)
+> second checkpoint:
+> 	msg->security not NULL so we proceed in
+> 	security_checkpoint_obj() to call security_msg_msg_checkpoint()
+> second restart:
+> 	All sorts of very weird, very different, hard to debug stuff
+> 	happens afterwards. :)
+> 
+> Also, If you look at load_msg() in msgutil.c, the msg->security is also
+> initialized to NULL _before_ calling security_msg_msg_alloc().  Hope
+> this explains this fix better.
+> 
+> -JRS
 
-The auth_unix cache needs to check network namespace when comparing
-addresses. Add field to struct ip_map and extra argument to
-__ip_map_lookup() so it has the information to do so, and add test.
+I see - thanks for the explanation.
 
-Signed-off-by: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
----
+Part of me would prefer to see the security hooks make sure that they
+set it, but that might thwart the people currently playing with LSM
+stacking, so your way is probably best.
 
- net/sunrpc/svcauth_unix.c |   21 ++++++++++++++-------
- 1 file changed, 14 insertions(+), 7 deletions(-)
+Acked-by: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 
-diff --git a/net/sunrpc/svcauth_unix.c b/net/sunrpc/svcauth_unix.c
-index 30916b0..63a2fa7 100644
---- a/net/sunrpc/svcauth_unix.c
-+++ b/net/sunrpc/svcauth_unix.c
-@@ -14,6 +14,7 @@
- #include <net/sock.h>
- #include <net/ipv6.h>
- #include <linux/kernel.h>
-+#include <linux/user_namespace.h>
- #define RPCDBG_FACILITY	RPCDBG_AUTH
- 
- #include <linux/sunrpc/clnt.h>
-@@ -94,6 +95,7 @@ struct ip_map {
- 	struct cache_head	h;
- 	char			m_class[8]; /* e.g. "nfsd" */
- 	struct in6_addr		m_addr;
-+	struct net		*m_net;
- 	struct unix_domain	*m_client;
- #ifdef CONFIG_NFSD_DEPRECATED
- 	int			m_add_change;
-@@ -134,6 +136,7 @@ static int ip_map_match(struct cache_head *corig, struct cache_head *cnew)
- 	struct ip_map *orig = container_of(corig, struct ip_map, h);
- 	struct ip_map *new = container_of(cnew, struct ip_map, h);
- 	return strcmp(orig->m_class, new->m_class) == 0 &&
-+	       net_eq(orig->m_net, new->m_net) &&
- 	       ipv6_addr_equal(&orig->m_addr, &new->m_addr);
- }
- static void ip_map_init(struct cache_head *cnew, struct cache_head *citem)
-@@ -142,6 +145,7 @@ static void ip_map_init(struct cache_head *cnew, struct cache_head *citem)
- 	struct ip_map *item = container_of(citem, struct ip_map, h);
- 
- 	strcpy(new->m_class, item->m_class);
-+	new->m_net = item->m_net;
- 	ipv6_addr_copy(&new->m_addr, &item->m_addr);
- }
- static void update(struct cache_head *cnew, struct cache_head *citem)
-@@ -186,7 +190,7 @@ static int ip_map_upcall(struct cache_detail *cd, struct cache_head *h)
- 	return sunrpc_cache_pipe_upcall(cd, h, ip_map_request);
- }
- 
--static struct ip_map *__ip_map_lookup(struct cache_detail *cd, char *class, struct in6_addr *addr);
-+static struct ip_map *__ip_map_lookup(struct cache_detail *cd, struct net *net, char *class, struct in6_addr *addr);
- static int __ip_map_update(struct cache_detail *cd, struct ip_map *ipm, struct unix_domain *udom, time_t expiry);
- 
- static int ip_map_parse(struct cache_detail *cd,
-@@ -256,7 +260,8 @@ static int ip_map_parse(struct cache_detail *cd,
- 		dom = NULL;
- 
- 	/* IPv6 scope IDs are ignored for now */
--	ipmp = __ip_map_lookup(cd, class, &sin6.sin6_addr);
-+	ipmp = __ip_map_lookup(cd, current->nsproxy->net_ns, class,
-+			       &sin6.sin6_addr);
- 	if (ipmp) {
- 		err = __ip_map_update(cd, ipmp,
- 			     container_of(dom, struct unix_domain, h),
-@@ -301,13 +306,14 @@ static int ip_map_show(struct seq_file *m,
- }
- 
- 
--static struct ip_map *__ip_map_lookup(struct cache_detail *cd, char *class,
--		struct in6_addr *addr)
-+static struct ip_map *__ip_map_lookup(struct cache_detail *cd, struct net *net,
-+		char *class, struct in6_addr *addr)
- {
- 	struct ip_map ip;
- 	struct cache_head *ch;
- 
- 	strcpy(ip.m_class, class);
-+	ip.m_net = net;
- 	ipv6_addr_copy(&ip.m_addr, addr);
- 	ch = sunrpc_cache_lookup(cd, &ip.h,
- 				 hash_str(class, IP_HASHBITS) ^
-@@ -325,7 +331,7 @@ static inline struct ip_map *ip_map_lookup(struct net *net, char *class,
- 	struct sunrpc_net *sn;
- 
- 	sn = net_generic(net, sunrpc_net_id);
--	return __ip_map_lookup(sn->ip_map_cache, class, addr);
-+	return __ip_map_lookup(sn->ip_map_cache, net, class, addr);
- }
- 
- static int __ip_map_update(struct cache_detail *cd, struct ip_map *ipm,
-@@ -748,8 +754,9 @@ svcauth_unix_set_client(struct svc_rqst *rqstp)
- 
- 	ipm = ip_map_cached_get(xprt);
- 	if (ipm == NULL)
--		ipm = __ip_map_lookup(sn->ip_map_cache, rqstp->rq_server->sv_program->pg_class,
--				    &sin6->sin6_addr);
-+		ipm = __ip_map_lookup(sn->ip_map_cache, net,
-+				      rqstp->rq_server->sv_program->pg_class,
-+				      &sin6->sin6_addr);
- 
- 	if (ipm == NULL)
- 		return SVC_DENIED;
+thanks,
+-serge
