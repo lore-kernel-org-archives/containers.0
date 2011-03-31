@@ -1,7 +1,8 @@
 From: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: [PATCH 0/3] Fix NFSv3 to work with network namespaces.
-Date: Thu, 31 Mar 2011 02:46:44 -0500
-Message-ID: <4D943164.40800__4076.56256943501$1301557672$gmane$org@parallels.com>
+Subject: [PATCH 1/3] Add network context to struct nfs_client and make NFSv3
+	use it.
+Date: Thu, 31 Mar 2011 02:47:22 -0500
+Message-ID: <4D94318A.5050202__33899.9316715219$1301557687$gmane$org@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,37 +19,223 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This patch series makes NFSv3 work inside an lxc container that uses a
-different network namespace than the host.
+From: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 
-The series contains three patches.  The first adds network namespace
-information to the NFSv3 code under fs/nfs (copying the network context
-from the mount process during options parsing, saving it with
-appropriate reference counting in the persistent nfs_client struct, and
-supplying it to the RPC functions).  The second and third patches add
-additional network namespace information to the sunrpc code under
-net/sunrpc (which already had partial support for network namespaces).
+This patch:
 
-1) Add network context to struct nfs_client and make NFSv3 use it.
-2) Supply network namespace to rpcbind.
-3) Compare network namespace in auth_unix cache address checks.
+  Adds struct net *cl_net to struct nfs_client.
+  Intializes it from mount process context.
+  Copies it down through nfs_client_initdata and similar.
+  Replaces existing init_net uses with cl_net.
+  Adds net_eq() checks to nfs_match_client() and nfs_compare_super_address().
 
-My containers test environment setup is described at:
+Remount copies the existing network context rather than any associated with
+the new mount process.  NFSv4 is still using init_net.  Reference counting
+for struct net follows the struct nfs_client object lifetimes (pinned by
+task context outside of that).
 
-  http://landley.net/lxc
+Signed-off-by: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+---
 
-I exported the NFS share from the "Laptop" layer using knfsd with the
-/etc/exports line:
+ fs/nfs/client.c           |   13 ++++++++++++-
+ fs/nfs/internal.h         |    2 ++
+ fs/nfs/mount_clnt.c       |    4 ++--
+ fs/nfs/super.c            |   15 +++++++++++++++
+ include/linux/nfs_fs_sb.h |    1 +
+ 5 files changed, 32 insertions(+), 3 deletions(-)
 
-  /home/landley/nfs 192.168.254.2(rw,no_root_squash,insecure)
-
-And the mount command I ran in the container is:
-
-  mount -t nfs -o nfsvers=3 10.0.2.2:/home/landley/nfs nfstest
-
-(You don't need the -o if you haven't compiled NFSv4 support into your
-kernel.)
-
-I've tested NFSv2 and NFSv3 with UDP and TCP transports.  This series
-does not address using NFSv4, pNFS, or knfsd from container context.
-I haven't fixed lockd or kerberos authentication yet.
+diff --git a/fs/nfs/client.c b/fs/nfs/client.c
+index 139be96..99bfaa6 100644
+--- a/fs/nfs/client.c
++++ b/fs/nfs/client.c
+@@ -130,6 +130,7 @@ struct rpc_program		nfsacl_program = {
+ 
+ struct nfs_client_initdata {
+ 	const char *hostname;
++	struct net *net;
+ 	const struct sockaddr *addr;
+ 	size_t addrlen;
+ 	const struct nfs_rpc_ops *rpc_ops;
+@@ -157,6 +158,7 @@ static struct nfs_client *nfs_alloc_client(const struct nfs_client_initdata *cl_
+ 	atomic_set(&clp->cl_count, 1);
+ 	clp->cl_cons_state = NFS_CS_INITING;
+ 
++	clp->cl_net = get_net(cl_init->net);
+ 	memcpy(&clp->cl_addr, cl_init->addr, cl_init->addrlen);
+ 	clp->cl_addrlen = cl_init->addrlen;
+ 
+@@ -196,6 +198,7 @@ static struct nfs_client *nfs_alloc_client(const struct nfs_client_initdata *cl_
+ 	return clp;
+ 
+ error_cleanup:
++	put_net(clp->cl_net);
+ 	kfree(clp);
+ error_0:
+ 	return ERR_PTR(err);
+@@ -290,6 +293,9 @@ static void nfs_free_client(struct nfs_client *clp)
+ 	if (clp->cl_machine_cred != NULL)
+ 		put_rpccred(clp->cl_machine_cred);
+ 
++	if (clp->cl_net)
++		put_net(clp->cl_net);
++
+ 	kfree(clp->cl_hostname);
+ 	kfree(clp);
+ 
+@@ -473,6 +479,8 @@ static struct nfs_client *nfs_match_client(const struct nfs_client_initdata *dat
+ 		if (clp->cl_minorversion != data->minorversion)
+ 			continue;
+ 		/* Match the full socket address */
++		if (!net_eq(clp->cl_net, data->net))
++			continue;
+ 		if (!nfs_sockaddr_cmp(sap, clap))
+ 			continue;
+ 
+@@ -636,7 +644,7 @@ static int nfs_create_rpc_client(struct nfs_client *clp,
+ {
+ 	struct rpc_clnt		*clnt = NULL;
+ 	struct rpc_create_args args = {
+-		.net		= &init_net,
++		.net		= clp->cl_net,
+ 		.protocol	= clp->cl_proto,
+ 		.address	= (struct sockaddr *)&clp->cl_addr,
+ 		.addrsize	= clp->cl_addrlen,
+@@ -821,6 +829,7 @@ static int nfs_init_server(struct nfs_server *server,
+ {
+ 	struct nfs_client_initdata cl_init = {
+ 		.hostname = data->nfs_server.hostname,
++		.net = data->net,
+ 		.addr = (const struct sockaddr *)&data->nfs_server.address,
+ 		.addrlen = data->nfs_server.addrlen,
+ 		.rpc_ops = &nfs_v2_clientops,
+@@ -1386,6 +1395,7 @@ static int nfs4_set_client(struct nfs_server *server,
+ {
+ 	struct nfs_client_initdata cl_init = {
+ 		.hostname = hostname,
++		.net = &init_net,
+ 		.addr = addr,
+ 		.addrlen = addrlen,
+ 		.rpc_ops = &nfs_v4_clientops,
+@@ -1438,6 +1448,7 @@ struct nfs_client *nfs4_set_ds_client(struct nfs_client* mds_clp,
+ {
+ 	struct nfs_client_initdata cl_init = {
+ 		.addr = ds_addr,
++		.net = &init_net,
+ 		.addrlen = ds_addrlen,
+ 		.rpc_ops = &nfs_v4_clientops,
+ 		.proto = ds_proto,
+diff --git a/fs/nfs/internal.h b/fs/nfs/internal.h
+index 72e0bdd..006ab1a 100644
+--- a/fs/nfs/internal.h
++++ b/fs/nfs/internal.h
+@@ -86,6 +86,7 @@ struct nfs_parsed_mount_data {
+ 	unsigned int		version;
+ 	unsigned int		minorversion;
+ 	char			*fscache_uniq;
++	struct net		*net;
+ 
+ 	struct {
+ 		struct sockaddr_storage	address;
+@@ -111,6 +112,7 @@ struct nfs_parsed_mount_data {
+ /* mount_clnt.c */
+ struct nfs_mount_request {
+ 	struct sockaddr		*sap;
++	struct net		*net;
+ 	size_t			salen;
+ 	char			*hostname;
+ 	char			*dirpath;
+diff --git a/fs/nfs/mount_clnt.c b/fs/nfs/mount_clnt.c
+index d4c2d6b..4fbe3a8 100644
+--- a/fs/nfs/mount_clnt.c
++++ b/fs/nfs/mount_clnt.c
+@@ -153,7 +153,7 @@ int nfs_mount(struct nfs_mount_request *info)
+ 		.rpc_resp	= &result,
+ 	};
+ 	struct rpc_create_args args = {
+-		.net		= &init_net,
++		.net		= info->net,
+ 		.protocol	= info->protocol,
+ 		.address	= info->sap,
+ 		.addrsize	= info->salen,
+@@ -225,7 +225,7 @@ void nfs_umount(const struct nfs_mount_request *info)
+ 		.to_retries = 2,
+ 	};
+ 	struct rpc_create_args args = {
+-		.net		= &init_net,
++		.net		= info->net,
+ 		.protocol	= IPPROTO_UDP,
+ 		.address	= info->sap,
+ 		.addrsize	= info->salen,
+diff --git a/fs/nfs/super.c b/fs/nfs/super.c
+index 2b8e9a5..b0d869f 100644
+--- a/fs/nfs/super.c
++++ b/fs/nfs/super.c
+@@ -53,6 +53,7 @@
+ #include <linux/nfs_xdr.h>
+ #include <linux/magic.h>
+ #include <linux/parser.h>
++#include <linux/user_namespace.h>
+ 
+ #include <asm/system.h>
+ #include <asm/uaccess.h>
+@@ -1572,6 +1573,7 @@ static int nfs_try_mount(struct nfs_parsed_mount_data *args,
+ 	struct nfs_mount_request request = {
+ 		.sap		= (struct sockaddr *)
+ 						&args->mount_server.address,
++		.net		= args->net,
+ 		.dirpath	= args->nfs_server.export_path,
+ 		.protocol	= args->mount_server.protocol,
+ 		.fh		= root_fh,
+@@ -1726,6 +1728,11 @@ static int nfs_validate_mount_data(void *options,
+ 	if (data == NULL)
+ 		goto out_no_data;
+ 
++	/* Grab network context from mount process. We'll increment the
++	   reference count when we copy it to nfs_client->cl_net. */
++
++	args->net = current->nsproxy->net_ns;
++
+ 	switch (data->version) {
+ 	case 1:
+ 		data->namlen = 0;
+@@ -1971,6 +1978,9 @@ nfs_remount(struct super_block *sb, int *flags, char *raw_data)
+ 	memcpy(&data->nfs_server.address, &nfss->nfs_client->cl_addr,
+ 		data->nfs_server.addrlen);
+ 
++	/* Use original mount's network context, not remount process's */
++	data->net = nfss->nfs_client->cl_net;
++
+ 	/* overwrite those values with any that were specified */
+ 	error = nfs_parse_mount_options((char *)options, data);
+ 	if (error < 0)
+@@ -2119,6 +2129,9 @@ static int nfs_compare_super_address(struct nfs_server *server1,
+ 	if (sap1->sa_family != sap2->sa_family)
+ 		return 0;
+ 
++	if (!net_eq(server1->nfs_client->cl_net, server2->nfs_client->cl_net))
++		return 0;
++
+ 	switch (sap1->sa_family) {
+ 	case AF_INET: {
+ 		struct sockaddr_in *sin1 = (struct sockaddr_in *)sap1;
+@@ -2478,6 +2491,8 @@ static int nfs4_validate_mount_data(void *options,
+ 	if (data == NULL)
+ 		goto out_no_data;
+ 
++	args->net = &init_net;
++
+ 	switch (data->version) {
+ 	case 1:
+ 		if (data->host_addrlen > sizeof(args->nfs_server.address))
+diff --git a/include/linux/nfs_fs_sb.h b/include/linux/nfs_fs_sb.h
+index 216cea5..45286dc 100644
+--- a/include/linux/nfs_fs_sb.h
++++ b/include/linux/nfs_fs_sb.h
+@@ -33,6 +33,7 @@ struct nfs_client {
+ #define NFS_CS_STOP_RENEW	4		/* no more state to renew */
+ #define NFS_CS_CHECK_LEASE_TIME	5		/* need to check lease time */
+ 	struct sockaddr_storage	cl_addr;	/* server identifier */
++	struct net *		cl_net;		/* network context */
+ 	size_t			cl_addrlen;
+ 	char *			cl_hostname;	/* hostname of server */
+ 	struct list_head	cl_share_link;	/* link in global client list */
