@@ -1,16 +1,13 @@
-From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Subject: Re: [PATCH] c/r: Initialize msg_msg security pointer at restart.
-Date: Thu, 31 Mar 2011 08:08:29 -0500
-Message-ID: <20110331130829.GA14360@hallyn.com>
-References: <1301512246-32114-1-git-send-email-jrs@linux.vnet.ibm.com>
-	<20110331032954.GA8747@peq.hallyn.com>
-	<20110330232435.21bdafc8@gara>
+From: Namhyung Kim <namhyung-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 1/3] memcg: mark init_section_page_cgroup() properly
+Date: Fri, 01 Apr 2011 10:18:56 +0900
+Message-ID: <1301620736.1496.9.camel__29503.05209165$1301620798$gmane$org@leonhard>
+References: <1300452855-10194-1-git-send-email-namhyung@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20110330232435.21bdafc8@gara>
+In-Reply-To: <1300452855-10194-1-git-send-email-namhyung-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,69 +17,32 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Jose R. Santos" <jrs-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Serge E. Hallyn" <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Jose R. Santos (jrs-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> On Wed, 30 Mar 2011 22:29:54 -0500
-> "Serge E. Hallyn" <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> wrote:
-> 
-> > Quoting Jose R. Santos (jrs-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> > > This small oversight was causing either crashes on free_msg() or
-> > > restart failures under some message queue workloads.
-> > > 
-> > > Signed-off-by: Jose R. Santos <jrs-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> > 
-> > What kernel is this?
-> 
-> ckpt-v23-rc1
-> 
-> > Starting with the last line in your context, there is:
-> > 
-> > 	/* set default MAC attributes */
-> > 	ret = security_msg_msg_alloc(msg);
-> > 	if (ret < 0)
-> > 		goto out;
-> > 
-> > which should take care of that.  I don't know of an LSM which
-> > doesn't define msg_msg_alloc() but does define msg_msg_free().
-> > Do you have a stack trace to show where it was getting
-> > freed?
-> 
-> Sorry, should have put more details in the patch description.  The
-> problem here is that msg_msg_alloc() in not allocating anything and
-> thus the msg->security just happens to have what ever random data
-> that happens to be there after kmalloc was called for this msg. So the
-> way this usually manifested was during the a second checkpoint/restart.
-> For example:
-> 
-> run ./mq_test
-> checkpoint:
-> 	Saving the msg with SECURITY_NONE
-> restart:
-> 	Restores the msg content but with msg->security set to
-> 	something random (or 0x5a pattern if using DEBUG_SLAB)
-> second checkpoint:
-> 	msg->security not NULL so we proceed in
-> 	security_checkpoint_obj() to call security_msg_msg_checkpoint()
-> second restart:
-> 	All sorts of very weird, very different, hard to debug stuff
-> 	happens afterwards. :)
-> 
-> Also, If you look at load_msg() in msgutil.c, the msg->security is also
-> initialized to NULL _before_ calling security_msg_msg_alloc().  Hope
-> this explains this fix better.
-> 
-> -JRS
-
-I see - thanks for the explanation.
-
-Part of me would prefer to see the security hooks make sure that they
-set it, but that might thwart the people currently playing with LSM
-stacking, so your way is probably best.
-
-Acked-by: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-
-thanks,
--serge
+MjAxMS0wMy0xOCAo6riIKSwgMjE6NTQgKzA5MDAsIE5hbWh5dW5nIEtpbToKPiBUaGUgY29tbWl0
+IGNhMzcxYzBkN2UyMyAoIm1lbWNnOiBmaXggcGFnZV9jZ3JvdXAgZmF0YWwgZXJyb3IKPiBpbiBG
+TEFUTUVNIikgcmVtb3ZlcyBjYWxsIHRvIGFsbG9jX2Jvb3RtZW0oKSBpbiB0aGUgZnVuY3Rpb24K
+PiBzbyB0aGF0IGl0IGNhbiBiZSBtYXJrZWQgYXMgX19tZW1pbml0IHRvIHJlZHVjZSBtZW1vcnkg
+dXNhZ2UKPiB3aGVuIE1FTU9SWV9IT1RQTFVHPW4uCj4gCj4gU2lnbmVkLW9mZi1ieTogTmFtaHl1
+bmcgS2ltIDxuYW1oeXVuZ0BnbWFpbC5jb20+Cj4gQ2M6IEtBTUVaQVdBIEhpcm95dWtpIDxrYW1l
+emF3YS5oaXJveXVAanAuZnVqaXRzdS5jb20+Cj4gLS0tCj4gIG1tL3BhZ2VfY2dyb3VwLmMgfCAg
+ICAzICstLQo+ICAxIGZpbGVzIGNoYW5nZWQsIDEgaW5zZXJ0aW9ucygrKSwgMiBkZWxldGlvbnMo
+LSkKPiAKPiBkaWZmIC0tZ2l0IGEvbW0vcGFnZV9jZ3JvdXAuYyBiL21tL3BhZ2VfY2dyb3VwLmMK
+PiBpbmRleCA1YmZmYWRhN2NkZTEuLjJkMWEwZmEwMWQ3YiAxMDA2NDQKPiAtLS0gYS9tbS9wYWdl
+X2Nncm91cC5jCj4gKysrIGIvbW0vcGFnZV9jZ3JvdXAuYwo+IEBAIC0xMDUsOCArMTA1LDcgQEAg
+c3RydWN0IHBhZ2VfY2dyb3VwICpsb29rdXBfcGFnZV9jZ3JvdXAoc3RydWN0IHBhZ2UgKnBhZ2Up
+Cj4gIAlyZXR1cm4gc2VjdGlvbi0+cGFnZV9jZ3JvdXAgKyBwZm47Cj4gIH0KPiAgCj4gLS8qIF9f
+YWxsb2NfYm9vdG1lbS4uLigpIGlzIHByb3RlY3RlZCBieSAhc2xhYl9hdmFpbGFibGUoKSAqLwo+
+IC1zdGF0aWMgaW50IF9faW5pdF9yZWZvayBpbml0X3NlY3Rpb25fcGFnZV9jZ3JvdXAodW5zaWdu
+ZWQgbG9uZyBwZm4pCj4gK3N0YXRpYyBpbnQgX19tZW1pbml0IGluaXRfc2VjdGlvbl9wYWdlX2Nn
+cm91cCh1bnNpZ25lZCBsb25nIHBmbikKPiAgewo+ICAJc3RydWN0IG1lbV9zZWN0aW9uICpzZWN0
+aW9uID0gX19wZm5fdG9fc2VjdGlvbihwZm4pOwo+ICAJc3RydWN0IHBhZ2VfY2dyb3VwICpiYXNl
+LCAqcGM7CgpBbmRyZXcsIGNvdWxkIHlvdSBwbGVhc2UgaGF2ZSBhIGxvb2sgdGhlc2UgcGF0Y2hl
+cyB0b28gYW5kIGNvbnNpZGVyCmFwcGx5aW5nIHRoZW0gaW4geW91ciB0cmVlPyBJIGNhbiByZXNl
+bmQgdGhlbSAod2l0aCBnaXZlbiBBY2tlZC1ieQpsaW5lcykgaWYgeW91IHdhbnQuCgpUaGFua3Mu
+CgoKLS0gClJlZ2FyZHMsCk5hbWh5dW5nIEtpbQoKCl9fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNA
+bGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9u
+Lm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
