@@ -1,15 +1,15 @@
 From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 01/10] Make exec_mmap extern
-Date: Sun, 3 Apr 2011 11:56:09 -0500
-Message-ID: <20110403165609.GA15044__6385.02549049935$1301849888$gmane$org@hallyn.com>
+Subject: Re: [PATCH 03/10] Introduce has_locks_with_owner() helper
+Date: Sun, 3 Apr 2011 13:55:29 -0500
+Message-ID: <20110403185529.GB15044__17728.6484315575$1301856985$gmane$org@hallyn.com>
 References: <1298936432-29607-1-git-send-email-ntl@pobox.com>
-	<1298936432-29607-2-git-send-email-ntl@pobox.com>
+	<1298936432-29607-4-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1298936432-29607-2-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1298936432-29607-4-git-send-email-ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,48 +26,92 @@ List-Id: containers.vger.kernel.org
 Quoting ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
 > From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 > 
-> Restoration of process state from a checkpoint image is similar to
-> exec in that the calling task's mm is replaced.  Make exec_mmap
-> available for this purpose.
+> Support for file locks is in the works, but until that is done
+> checkpoint needs to fail when an open file has locks.
 > 
-> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-> [ntl: extracted from Oren's "c/r: dump memory address space (private memory)"]
+> Based on original "find_locks_with_owner" patch by Dave Hansen.
+> 
+> Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> [ntl: changed name and return type to clearly express semantics]
 > Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
 
 Acked-by: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 
 > ---
->  fs/exec.c          |    2 +-
->  include/linux/mm.h |    3 +++
->  2 files changed, 4 insertions(+), 1 deletions(-)
+>  fs/locks.c         |   35 +++++++++++++++++++++++++++++++++++
+>  include/linux/fs.h |    6 ++++++
+>  2 files changed, 41 insertions(+), 0 deletions(-)
 > 
-> diff --git a/fs/exec.c b/fs/exec.c
-> index c62efcb..9d8c27a 100644
-> --- a/fs/exec.c
-> +++ b/fs/exec.c
-> @@ -767,7 +767,7 @@ int kernel_read(struct file *file, loff_t offset,
+> diff --git a/fs/locks.c b/fs/locks.c
+> index 8729347..961e17f 100644
+> --- a/fs/locks.c
+> +++ b/fs/locks.c
+> @@ -2037,6 +2037,41 @@ void locks_remove_posix(struct file *filp, fl_owner_t owner)
 >  
->  EXPORT_SYMBOL(kernel_read);
+>  EXPORT_SYMBOL(locks_remove_posix);
 >  
-> -static int exec_mmap(struct mm_struct *mm)
-> +int exec_mmap(struct mm_struct *mm)
->  {
->  	struct task_struct *tsk;
->  	struct mm_struct * old_mm, *active_mm;
-> diff --git a/include/linux/mm.h b/include/linux/mm.h
-> index 721f451..5397237 100644
-> --- a/include/linux/mm.h
-> +++ b/include/linux/mm.h
-> @@ -1321,6 +1321,9 @@ extern int do_munmap(struct mm_struct *, unsigned long, size_t);
->  
->  extern unsigned long do_brk(unsigned long, unsigned long);
->  
-> +/* fs/exec.c */
-> +extern int exec_mmap(struct mm_struct *mm);
+> +bool has_locks_with_owner(struct file *filp, fl_owner_t owner)
+> +{
+> +	struct inode *inode = filp->f_path.dentry->d_inode;
+> +	struct file_lock **inode_fl;
+> +	bool ret = false;
 > +
->  /* filemap.c */
->  extern unsigned long page_unuse(struct page *);
->  extern void truncate_inode_pages(struct address_space *, loff_t);
+> +	lock_flocks();
+> +	for_each_lock(inode, inode_fl) {
+> +		struct file_lock *fl = *inode_fl;
+> +		/*
+> +		 * We could use posix_same_owner() along with a 'fake'
+> +		 * file_lock.  But, the fake file will never have the
+> +		 * same fl_lmops as the fl that we are looking for and
+> +		 * posix_same_owner() would just fall back to this
+> +		 * check anyway.
+> +		 */
+> +		if (IS_POSIX(fl)) {
+> +			if (fl->fl_owner == owner) {
+> +				ret = true;
+> +				break;
+> +			}
+> +		} else if (IS_FLOCK(fl) || IS_LEASE(fl)) {
+> +			if (fl->fl_file == filp) {
+> +				ret = true;
+> +				break;
+> +			}
+> +		} else {
+> +			WARN(1, "unknown file lock type, fl_flags: %x",
+> +				fl->fl_flags);
+> +		}
+> +	}
+> +	unlock_flocks();
+> +	return ret;
+> +}
+> +
+>  /*
+>   * This function is called on the last close of an open file.
+>   */
+> diff --git a/include/linux/fs.h b/include/linux/fs.h
+> index 090f0ea..315ded4 100644
+> --- a/include/linux/fs.h
+> +++ b/include/linux/fs.h
+> @@ -1138,6 +1138,7 @@ extern void locks_remove_posix(struct file *, fl_owner_t);
+>  extern void locks_remove_flock(struct file *);
+>  extern void locks_release_private(struct file_lock *);
+>  extern void posix_test_lock(struct file *, struct file_lock *);
+> +extern bool has_locks_with_owner(struct file *filp, fl_owner_t owner);
+>  extern int posix_lock_file(struct file *, struct file_lock *, struct file_lock *);
+>  extern int posix_lock_file_wait(struct file *, struct file_lock *);
+>  extern int posix_unblock_lock(struct file *, struct file_lock *);
+> @@ -1208,6 +1209,11 @@ static inline void locks_remove_posix(struct file *filp, fl_owner_t owner)
+>  	return;
+>  }
+>  
+> +static inline bool has_locks_with_owner(struct file *filp, fl_owner_t owner)
+> +{
+> +	return false;
+> +}
+> +
+>  static inline void locks_remove_flock(struct file *filp)
+>  {
+>  	return;
 > -- 
 > 1.7.4
 > 
