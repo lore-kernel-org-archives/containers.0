@@ -1,14 +1,13 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: v m <prabhuvmk-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: c/r support on FUSE filesystems.
-Date: Fri, 1 Apr 2011 15:00:21 -0700
-Message-ID: <20110401220021.GO22601@count0.beaverton.ibm.com>
+Date: Sun, 3 Apr 2011 10:15:58 +0530
+Message-ID: <BANLkTikpOjXs3WL+xzsueVY9x9Tc5gJZPw@mail.gmail.com>
 References: <AANLkTikPaUYrX8cKQMehNCL6bCjPBVkNa4G1Fs_Fu4XV@mail.gmail.com>
+	<20110401220021.GO22601@count0.beaverton.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary=00151748e7a6bd92be049ffc5149
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <AANLkTikPaUYrX8cKQMehNCL6bCjPBVkNa4G1Fs_Fu4XV-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20110401220021.GO22601-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,548 +17,158 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vishnumurthy Prabhu <prabhuvishnumurthy-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Apr 01, 2011 at 11:30:24AM +0530, Vishnumurthy Prabhu wrote:
-> hi,
-> I just worked with implementation of of CR support for FUSE filesystems. I
-> have attached two files here that support FUSE-cr. fuse_kcr.h/c belongs to
-> fs/fuse dir. What I found is that similar approach as that of generic file
-> checkpoint can be used in fuse also and it works fine. In fact I did
-> separate implementation just because if there is any need for extra
-> functionalities, we can add that in these, so I kept it separate.  I want
-> know any problems or issues in this implementation.
+--00151748e7a6bd92be049ffc5149
+Content-Type: text/plain; charset=ISO-8859-1
 
-This is definitely something we're interested in seeing.
+Hi,
 
-My guess is since there are a lot of "Only in " lines that you didn't do the
-manual diff correctly. That's making this posting hard to review.
+patch re-submitted!!!
+I will make necessary changes with respect to unlinked files and update you
+soon.
 
-We use the LKML patch review/submission process here too. Please have a look
-at what LKML patch submissions are supposed to look like. At least read
-Documentation/SubmittingPatches and Documentation/CodingStyle.
+regards,
+Vishnumurthy Prabhu
 
-It seems like you generated the patch by hand and then concatenated some
-source files by hand without mentioning their paths/names. I don't think
-any tools will apply this patch correctly (most people use tools
-which won't recognize this). Please consider using patch-generating tools
-like git, mercurial, or quilt for example. git and mercurial have other big
-advantages too -- you won't have to keep a mental list of modified files
-or you won't have to wait a long time for diff to compare two huge kernel
-source trees.
+--00151748e7a6bd92be049ffc5149
+Content-Type: text/x-patch; charset=US-ASCII; name="fuse-cr.patch"
+Content-Disposition: attachment; filename="fuse-cr.patch"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_gm0rrv4v0
 
-Can you tell us about the testing you've done with this? What kind of
-additions/changes does this make to the FUSE userspace API? Can you
-please describe how it's supposed to work with FUSE userspace code?
+ZGlmZiAtLWdpdCBhL2ZzL2NoZWNrcG9pbnQuYyBiL2ZzL2NoZWNrcG9pbnQuYwppbmRleCA4N2Q3
+YzZlLi40YjRiODNkIDEwMDY0NAotLS0gYS9mcy9jaGVja3BvaW50LmMKKysrIGIvZnMvY2hlY2tw
+b2ludC5jCkBAIC03MTEsNiArNzExLDggQEAgc3RydWN0IHJlc3RvcmVfZmlsZV9vcHMgewogCQkJ
+CSAgc3RydWN0IGNrcHRfaGRyX2ZpbGUgKnB0cik7CiB9OwogCitleHRlcm4gc3RydWN0IGZpbGUg
+KmZ1c2VfZmlsZV9yZXN0b3JlKHN0cnVjdCBja3B0X2N0eCAqY3R4LCBzdHJ1Y3QgY2twdF9oZHJf
+ZmlsZSAqcHRyKTsKKwogc3RhdGljIHN0cnVjdCByZXN0b3JlX2ZpbGVfb3BzIHJlc3RvcmVfZmls
+ZV9vcHNbXSA9IHsKIAkvKiBpZ25vcmVkIGZpbGUgKi8KIAl7CkBAIC03NjAsNiArNzYyLDExIEBA
+IHN0YXRpYyBzdHJ1Y3QgcmVzdG9yZV9maWxlX29wcyByZXN0b3JlX2ZpbGVfb3BzW10gPSB7CiAJ
+CS5maWxlX3R5cGUgPSBDS1BUX0ZJTEVfRVZFTlRGRCwKIAkJLnJlc3RvcmUgPSBldmVudGZkX3Jl
+c3RvcmUsCiAJfSwKKwl7CisJCS5maWxlX25hbWUgPSAiRlVTRSIsCisJCS5maWxlX3R5cGUgPSBD
+S1BUX0ZJTEVfRlVTRSwKKwkJLnJlc3RvcmUgPSBmdXNlX2ZpbGVfcmVzdG9yZSwKKwl9LAkKIH07
+CiAKIHN0YXRpYyB2b2lkICpyZXN0b3JlX2ZpbGUoc3RydWN0IGNrcHRfY3R4ICpjdHgpCmRpZmYg
+LS1naXQgYS9mcy9mdXNlL01ha2VmaWxlIGIvZnMvZnVzZS9NYWtlZmlsZQppbmRleCBlOTVlZWI0
+Li42YTI1NDA3IDEwMDY0NAotLS0gYS9mcy9mdXNlL01ha2VmaWxlCisrKyBiL2ZzL2Z1c2UvTWFr
+ZWZpbGUKQEAgLTUsNCArNSw0IEBACiBvYmotJChDT05GSUdfRlVTRV9GUykgKz0gZnVzZS5vCiBv
+YmotJChDT05GSUdfQ1VTRSkgKz0gY3VzZS5vCiAKLWZ1c2Utb2JqcyA6PSBkZXYubyBkaXIubyBm
+aWxlLm8gaW5vZGUubyBjb250cm9sLm8KK2Z1c2Utb2JqcyA6PSBkZXYubyBkaXIubyBmaWxlLm8g
+aW5vZGUubyBjb250cm9sLm8gZnVzZV9rY3IubwpkaWZmIC0tZ2l0IGEvZnMvZnVzZS9maWxlLmMg
+Yi9mcy9mdXNlL2ZpbGUuYwppbmRleCBhOWY1ZTEzLi44MTE1ZTYwIDEwMDY0NAotLS0gYS9mcy9m
+dXNlL2ZpbGUuYworKysgYi9mcy9mdXNlL2ZpbGUuYwpAQCAtMTk5MSw2ICsxOTkxLDkgQEAgc3Rh
+dGljIGNvbnN0IHN0cnVjdCBmaWxlX29wZXJhdGlvbnMgZnVzZV9maWxlX29wZXJhdGlvbnMgPSB7
+CiAJLnVubG9ja2VkX2lvY3RsCT0gZnVzZV9maWxlX2lvY3RsLAogCS5jb21wYXRfaW9jdGwJPSBm
+dXNlX2ZpbGVfY29tcGF0X2lvY3RsLAogCS5wb2xsCQk9IGZ1c2VfZmlsZV9wb2xsLAorI2lmZGVm
+IENPTkZJR19DSEVDS1BPSU5UCisJLmNoZWNrcG9pbnQJPSBmdXNlX2ZpbGVfY2hlY2twb2ludCwK
+KyNlbmRpZgogfTsKIAogc3RhdGljIGNvbnN0IHN0cnVjdCBmaWxlX29wZXJhdGlvbnMgZnVzZV9k
+aXJlY3RfaW9fZmlsZV9vcGVyYXRpb25zID0gewpAQCAtMjAwNyw2ICsyMDEwLDkgQEAgc3RhdGlj
+IGNvbnN0IHN0cnVjdCBmaWxlX29wZXJhdGlvbnMgZnVzZV9kaXJlY3RfaW9fZmlsZV9vcGVyYXRp
+b25zID0gewogCS51bmxvY2tlZF9pb2N0bAk9IGZ1c2VfZmlsZV9pb2N0bCwKIAkuY29tcGF0X2lv
+Y3RsCT0gZnVzZV9maWxlX2NvbXBhdF9pb2N0bCwKIAkucG9sbAkJPSBmdXNlX2ZpbGVfcG9sbCwK
+KyNpZmRlZiBDT05GSUdfQ0hFQ0tQT0lOVAorCS5jaGVja3BvaW50CT0gZnVzZV9maWxlX2NoZWNr
+cG9pbnQsCisjZW5kaWYJCiAJLyogbm8gc3BsaWNlX3JlYWQgKi8KIH07CiAKZGlmZiAtLWdpdCBh
+L2luY2x1ZGUvbGludXgvY2hlY2twb2ludF9oZHIuaCBiL2luY2x1ZGUvbGludXgvY2hlY2twb2lu
+dF9oZHIuaAppbmRleCBmNGY5NTc3Li4wZWFjZTZlIDEwMDY0NAotLS0gYS9pbmNsdWRlL2xpbnV4
+L2NoZWNrcG9pbnRfaGRyLmgKKysrIGIvaW5jbHVkZS9saW51eC9jaGVja3BvaW50X2hkci5oCkBA
+IC01NjEsNiArNTYxLDggQEAgZW51bSBmaWxlX3R5cGUgewogI2RlZmluZSBDS1BUX0ZJTEVfRVBP
+TEwgQ0tQVF9GSUxFX0VQT0xMCiAJQ0tQVF9GSUxFX0VWRU5URkQsCiAjZGVmaW5lIENLUFRfRklM
+RV9FVkVOVEZEIENLUFRfRklMRV9FVkVOVEZECisJQ0tQVF9GSUxFX0ZVU0UsCisjZGVmaW5lIENL
+UFRfRklMRV9GVVNFIENLUFRfRklMRV9GVVNFCiAJQ0tQVF9GSUxFX01BWAogI2RlZmluZSBDS1BU
+X0ZJTEVfTUFYIENLUFRfRklMRV9NQVgKIH07CkBAIC01ODEsNiArNTgzLDExIEBAIHN0cnVjdCBj
+a3B0X2hkcl9maWxlX2dlbmVyaWMgewogCXN0cnVjdCBja3B0X2hkcl9maWxlIGNvbW1vbjsKIH0g
+X19hdHRyaWJ1dGVfXygoYWxpZ25lZCg4KSkpOwogCitzdHJ1Y3QgY2twdF9oZHJfZmlsZV9mdXNl
+IHsKKwlzdHJ1Y3QgY2twdF9oZHJfZmlsZSBjb21tb247CisJCit9IF9fYXR0cmlidXRlX18oKGFs
+aWduZWQoOCkpKTsKKwogc3RydWN0IGNrcHRfaGRyX2ZpbGVfcGlwZSB7CiAJc3RydWN0IGNrcHRf
+aGRyX2ZpbGUgY29tbW9uOwogCV9fczMyIHBpcGVfb2JqcmVmOwpkaWZmIC0tZ2l0IGEvaW5jbHVk
+ZS9saW51eC9mdXNlLmggYi9pbmNsdWRlL2xpbnV4L2Z1c2UuaAppbmRleCAzZTI5MjVhLi4xMDRj
+NjdkIDEwMDY0NAotLS0gYS9pbmNsdWRlL2xpbnV4L2Z1c2UuaAorKysgYi9pbmNsdWRlL2xpbnV4
+L2Z1c2UuaApAQCAtMjQ5LDYgKzI0OSwxMCBAQCBlbnVtIGZ1c2Vfb3Bjb2RlIHsKIAlGVVNFX0lP
+Q1RMICAgICAgICAgPSAzOSwKIAlGVVNFX1BPTEwgICAgICAgICAgPSA0MCwKIAorI2lmZGVmIENP
+TkZJR19DSEVDS1BPSU5UCisJRlVTRV9DSEVDS1BPSU5UICAgID0gMTAyNCwKKyNlbmRpZiAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAvKkNPTkZJR19DSEVDS1BPSU5UKi8KKwkKIAkv
+KiBDVVNFIHNwZWNpZmljIG9wZXJhdGlvbnMgKi8KIAlDVVNFX0lOSVQgICAgICAgICAgPSA0MDk2
+LAogfTsKQEAgLTU2NSw0ICs1NjksMTYgQEAgc3RydWN0IGZ1c2Vfbm90aWZ5X2ludmFsX2VudHJ5
+X291dCB7CiAJX191MzIJcGFkZGluZzsKIH07CiAKKyNpZmRlZiBDT05GSUdfQ0hFQ0tQT0lOVAor
+CXN0cnVjdCBmdXNlX2NoZWNrcG9pbnRfaW57CisJX191NjQJZmg7CisJX191MzIJZmxhZ3M7CisJ
+X191MzIJcGFkZGluZzsKKyAgICAgICAgfTsKKworICAgICAgICBzdHJ1Y3QgZnVzZV9jaGVja3Bv
+aW50X291dHsKKyAgICAgICAgX191MzIgc3RhdHVzOworICAgICAgICB9OworI2VuZGlmICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAvKkNPTkZJR19DSEVD
+S1BPSU5UKi8KKwogI2VuZGlmIC8qIF9MSU5VWF9GVVNFX0ggKi8K
+--00151748e7a6bd92be049ffc5149
+Content-Type: text/x-chdr; charset=US-ASCII; name="fuse_kcr.h"
+Content-Disposition: attachment; filename="fuse_kcr.h"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_gm0rusyx1
 
-Thanks!
+I2lmZGVmIENPTkZJR19DSEVDS1BPSU5UCiNpZm5kZWYgX0ZVU0VfS0NSX0hfCiNkZWZpbmUgX0ZV
+U0VfS0NSX0hfCgojaW5jbHVkZSA8bGludXgvZnVzZS5oPgojaW5jbHVkZSA8bGludXgvY2hlY2tw
+b2ludC5oPgojaW5jbHVkZSAiZnVzZV9pLmgiCgppbnQgZnVzZV9maWxlX2NoZWNrcG9pbnQoc3Ry
+dWN0IGNrcHRfY3R4ICpjdHgsIHN0cnVjdCBmaWxlICpmaWxlKTsKc3RydWN0IGZpbGUgKmZ1c2Vf
+ZmlsZV9yZXN0b3JlKHN0cnVjdCBja3B0X2N0eCAqY3R4LCBzdHJ1Y3QgY2twdF9oZHJfZmlsZSAq
+cHRyKTsKI2VuZGlmCiNlbmRpZgo=
+--00151748e7a6bd92be049ffc5149
+Content-Type: text/x-csrc; charset=US-ASCII; name="fuse_kcr.c"
+Content-Disposition: attachment; filename="fuse_kcr.c"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_gm0rwawl2
 
-> 
-> 
-> Thank you
-> regards,
-> Vishnumurthy P
+LyoKZnVzZV9jcjogQ2hlY2twb2ludC1SZXN0YXJ0IGltcGxlbWVudGF0aW9uIGZvciBGVVNFIGZp
+bGVzeXN0ZW0ga2VybmVsIG1vZHVsZS4KCkF1dGhvcnM6IE1hbm9qIEt1bWFyIGFuZCBWaXNobnVt
+dXJ0aHkgUHJhYmh1IAogICAgICAgICBOSVRLIFN1cmF0aGthbAoqLwoKI2luY2x1ZGUgPGxpbnV4
+L2ZpbGUuaD4KI2luY2x1ZGUgImZ1c2Vfa2NyLmgiCgppbnQgZnVzZV9maWxlX2NrcHRfc2VuZChz
+dHJ1Y3QgZmlsZSAqZmlsZSkKewogICAgc3RydWN0IGlub2RlICppbm9kZSAgPSBmaWxlLT5mX3Bh
+dGguZGVudHJ5LT5kX2lub2RlOwoJc3RydWN0IGZ1c2VfY29ubiAqZmMgPSBnZXRfZnVzZV9jb25u
+KGlub2RlKTsKCXN0cnVjdCBmdXNlX3JlcSAqcmVxOwoJc3RydWN0IGZ1c2VfY2hlY2twb2ludF9p
+biBpbmFyZzsKCXN0cnVjdCBmdXNlX2NoZWNrcG9pbnRfb3V0IG91dGFyZzsKCV9fdTY0IG5vZGVp
+ZDsKCWludCBlcnI7CglzdHJ1Y3QgZnVzZV9maWxlICpmZjsKCiAgICBmZiA9IGZpbGUtPnByaXZh
+dGVfZGF0YTsKCWlmIChpc19iYWRfaW5vZGUoaW5vZGUpKQoJCXJldHVybiAtRUlPOwoKICAgIG5v
+ZGVpZCA9IGdldF9ub2RlX2lkKGlub2RlKTsKCXJlcSA9IGZ1c2VfZ2V0X3JlcShmYyk7CgltZW1z
+ZXQoJmluYXJnLCAwLCBzaXplb2YoaW5hcmcpKTsKLy8gaW5hcmdzIG11c3QgYmUgc3VwcGxpZWQu
+CQogICAgaW5hcmcuZmggPSBmZi0+Zmg7CiAgICBpbmFyZy5mbGFncyAmPSB+KDApOwovL2luYXJn
+cyB0byBiZSBzdXBwbGllZCAgICAKICAgIAogICAgcmVxLT5pbi5oLm9wY29kZSA9IEZVU0VfQ0hF
+Q0tQT0lOVDsKCXJlcS0+aW4uaC5ub2RlaWQgPSBub2RlaWQ7CglyZXEtPmluLm51bWFyZ3MgPSAx
+OwoJcmVxLT5pbi5hcmdzWzBdLnNpemUgPSBzaXplb2YoaW5hcmcpOwoJcmVxLT5pbi5hcmdzWzBd
+LnZhbHVlID0gJmluYXJnOwoJcmVxLT5vdXQubnVtYXJncyA9IDE7CglyZXEtPm91dC5hcmdzWzBd
+LnNpemUgPSBzaXplb2Yob3V0YXJnKTsKCXJlcS0+b3V0LmFyZ3NbMF0udmFsdWUgPSAmb3V0YXJn
+OwoKLy9hYm91ZSBpcyBzYW1wbGUgaW5hcmdzIG5lZWQgdG8gYmUgY2hhbmdlZC4uLgoJZnVzZV9y
+ZXF1ZXN0X3NlbmQoZmMsIHJlcSk7CgllcnIgPSByZXEtPm91dC5oLmVycm9yOwoJZnVzZV9wdXRf
+cmVxdWVzdChmYywgcmVxKTsKCWlmIChlcnIgPT0gLUVOT1NZUykgewoJCWZjLT5ub19mbHVzaCA9
+IDE7CgkJZXJyID0gMDsKCX0KCXJldHVybiBvdXRhcmcuc3RhdHVzOwp9CgppbnQgZnVzZV9maWxl
+X2NoZWNrcG9pbnQoc3RydWN0IGNrcHRfY3R4ICpjdHgsIHN0cnVjdCBmaWxlICpmaWxlKQp7CiAg
+IGludCByZXQ7CiAgIHN0cnVjdCBja3B0X2hkcl9maWxlX2Z1c2UgKmg7CiAgIAoJaWYgKGRfdW5s
+aW5rZWQoZmlsZS0+Zl9kZW50cnkpKSB7CgkJY2twdF9lcnIoY3R4LCAtRUJBREYsICIlKFQpJShQ
+KVVubGlua2VkIGZpbGVzIHVuc3VwcG9ydGVkXG4iLAoJCQkgZmlsZSk7CgkJcmV0dXJuIC1FQkFE
+RjsKCX0KCgloID0gY2twdF9oZHJfZ2V0X3R5cGUoY3R4LCBzaXplb2YoKmgpLCBDS1BUX0hEUl9G
+SUxFKTsKCWlmICghaCkKCQlyZXR1cm4gLUVOT01FTTsKCgloLT5jb21tb24uZl90eXBlID0gQ0tQ
+VF9GSUxFX0ZVU0U7ICAgCiAgIAoJcmV0ID0gY2hlY2twb2ludF9maWxlX2NvbW1vbihjdHgsIGZp
+bGUsICZoLT5jb21tb24pOwoJaWYgKHJldCA8IDApCgkJZ290byBvdXQ7CglyZXQgPSBja3B0X3dy
+aXRlX29iaihjdHgsICZoLT5jb21tb24uaCk7CglpZiAocmV0IDwgMCkKCQlnb3RvIG91dDsKCXJl
+dCA9IGNoZWNrcG9pbnRfZm5hbWUoY3R4LCAmZmlsZS0+Zl9wYXRoLCAmY3R4LT5yb290X2ZzX3Bh
+dGgpOwoJICAgCi8vICAgcmV0ID0gZnVzZV9maWxlX2NrcHRfc2VuZChmaWxlKTsKICAgIG91dDoK
+CSAgY2twdF9oZHJfcHV0KGN0eCwgaCk7CgkgIHJldHVybiByZXQ7CQoKfQpFWFBPUlRfU1lNQk9M
+KGZ1c2VfZmlsZV9jaGVja3BvaW50KTsKCi8qKioqKioqKioqKioqKioqKioqKioqKioqKioqKioq
+KioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioq
+KioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioq
+KioqKioKUmVzdGFydAoqLwoKc3RydWN0IGZpbGUgKmZ1c2VfZmlsZV9yZXN0b3JlKHN0cnVjdCBj
+a3B0X2N0eCAqY3R4LCBzdHJ1Y3QgY2twdF9oZHJfZmlsZSAqcHRyKQp7CiAgICBzdHJ1Y3QgZmls
+ZSAqZmlsZTsKCWludCByZXQ7CgoJaWYgKHB0ci0+aC50eXBlICE9IENLUFRfSERSX0ZJTEUgIHx8
+CgkgICAgcHRyLT5oLmxlbiAhPSBzaXplb2YoKnB0cikgfHwgcHRyLT5mX3R5cGUgIT0gQ0tQVF9G
+SUxFX0ZVU0UpCgkJcmV0dXJuIEVSUl9QVFIoLUVJTlZBTCk7CgoJZmlsZSA9IHJlc3RvcmVfb3Bl
+bl9mbmFtZShjdHgsIHB0ci0+Zl9mbGFncyk7CglpZiAoSVNfRVJSKGZpbGUpKQoJCXJldHVybiBm
+aWxlOwoKCXJldCA9IHJlc3RvcmVfZmlsZV9jb21tb24oY3R4LCBmaWxlLCBwdHIpOwoJaWYgKHJl
+dCA8IDApIHsKCQlmcHV0KGZpbGUpOwoJCWZpbGUgPSBFUlJfUFRSKHJldCk7Cgl9CglyZXR1cm4g
+ZmlsZTsKfQoK
+--00151748e7a6bd92be049ffc5149
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-> Only in linux-cr: .config
-> Only in linux-cr/drivers/gpu/drm/radeon: r100_reg_safe.h
-> Only in linux-cr/drivers/gpu/drm/radeon: r200_reg_safe.h
-> Only in linux-cr/drivers/gpu/drm/radeon: r300_reg_safe.h
-> Only in linux-cr/drivers/gpu/drm/radeon: r420_reg_safe.h
-> Only in linux-cr/drivers/gpu/drm/radeon: r600_reg_safe.h
-> Only in linux-cr/drivers/gpu/drm/radeon: rn50_reg_safe.h
-> Only in linux-cr/drivers/gpu/drm/radeon: rs600_reg_safe.h
-> Only in linux-cr/drivers/gpu/drm/radeon: rv515_reg_safe.h
-
-For example, I can't imagine that you modified these files when you
-wrote FUSE c/r support. I suspect you're diff'ing two different kernel
-versions.
-
-> diff -crB linux-cr1/fs/checkpoint.c linux-cr/fs/checkpoint.c
-
-If you continue diff'ing by hand could you please make it a unified context
-diff (-u) with functions (-p) instead of a plain context diff (-c)?
-
-> *** linux-cr1/fs/checkpoint.c	2010-09-14 06:59:05.026511080 +0530
-> --- linux-cr/fs/checkpoint.c	2011-03-30 21:14:15.260306880 +0530
-> ***************
-> *** 711,716 ****
-> --- 711,718 ----
->   				  struct ckpt_hdr_file *ptr);
->   };
->   
-> + extern struct file *fuse_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr);
-> + 
->   static struct restore_file_ops restore_file_ops[] = {
->   	/* ignored file */
->   	{
-> ***************
-> *** 760,765 ****
-> --- 762,773 ----
->   		.file_type = CKPT_FILE_EVENTFD,
->   		.restore = eventfd_restore,
->   	},
-> + 	/*FUSE filesystem .It needs special handling*/
-> + 	{
-> + 		.file_name = "FUSE",
-> + 		.file_type = CKPT_FILE_FUSE,
-> + 		.restore = fuse_file_restore,
-> + 	},	
->   };
->   
->   static void *restore_file(struct ckpt_ctx *ctx)
-> diff -crB linux-cr1/fs/fuse/dev.c linux-cr/fs/fuse/dev.c
-> *** linux-cr1/fs/fuse/dev.c	2010-09-14 06:59:05.114511787 +0530
-> --- linux-cr/fs/fuse/dev.c	2011-03-28 21:59:53.786456000 +0530
-> ***************
-> *** 35,41 ****
->   	memset(req, 0, sizeof(*req));
->   	INIT_LIST_HEAD(&req->list);
->   	INIT_LIST_HEAD(&req->intr_entry);
-> ! 	init_waitqueue_head(&req->waitq);
->   	atomic_set(&req->count, 1);
->   }
->   
-> --- 34,41 ----
->   	memset(req, 0, sizeof(*req));
->   	INIT_LIST_HEAD(&req->list);
->   	INIT_LIST_HEAD(&req->intr_entry);
-> ! 	init_waitqueue_head(&req->waitq); //used to initialize a wait queue head variable that was allocated dynamically
-
-Kernel folks tend to prefer seeing old-style C comments and not C++.
-You might run a corrected patch through scripts/checkpatch.pl to see if there
-are any other style points to address -- I'm not going to call them out
-right now.
-
-> ! 
->   	atomic_set(&req->count, 1);
->   }
->   
-> ***************
-> *** 102,108 ****
->   
->   	atomic_inc(&fc->num_waiting);
->   	block_sigs(&oldset);
-> ! 	intr = wait_event_interruptible(fc->blocked_waitq, !fc->blocked);
->   	restore_sigs(&oldset);
->   	err = -EINTR;
->   	if (intr)
-> --- 102,108 ----
->   
->   	atomic_inc(&fc->num_waiting);
->   	block_sigs(&oldset);
-> ! 	intr = wait_event_interruptible(fc->blocked_waitq, !fc->blocked);  //waits on fc->blocked_waitq until fc->blocked becomes 0.
-
-I don't think these comments are relevant to the patch...
-
->   	restore_sigs(&oldset);
->   	err = -EINTR;
->   	if (intr)
-> diff -crB linux-cr1/fs/fuse/dir.c linux-cr/fs/fuse/dir.c
-> *** linux-cr1/fs/fuse/dir.c	2010-09-14 06:59:05.114511787 +0530
-> --- linux-cr/fs/fuse/dir.c	2011-03-28 21:59:53.802473000 +0530
-> ***************
-> *** 1576,1581 ****
-> --- 1576,1584 ----
->   	.open		= fuse_dir_open,
->   	.release	= fuse_dir_release,
->   	.fsync		= fuse_dir_fsync,
-> +  //#ifdef CONFIG_CHECKPOINT
-> + 	//.checkpoint	= fuse_dir_checkpoint,
-> +  //#endif
->   };
->   
->   static const struct inode_operations fuse_common_inode_operations = {
-> diff -crB linux-cr1/fs/fuse/file.c linux-cr/fs/fuse/file.c
-> *** linux-cr1/fs/fuse/file.c	2010-09-14 06:59:05.114511787 +0530
-> --- linux-cr/fs/fuse/file.c	2011-03-28 21:59:53.737442000 +0530
-> ***************
-> *** 7,12 ****
-> --- 7,13 ----
->   */
->   
->   #include "fuse_i.h"
-> + #include "fuse_kcr.h"
->   
->   #include <linux/pagemap.h>
->   #include <linux/slab.h>
-> ***************
-> *** 1991,1996 ****
-> --- 1992,2000 ----
->   	.unlocked_ioctl	= fuse_file_ioctl,
->   	.compat_ioctl	= fuse_file_compat_ioctl,
->   	.poll		= fuse_file_poll,
-> + //#ifdef CONFIG_CHECKPOINT
-> + 	.checkpoint	= fuse_file_checkpoint,
-> + //#endif
-
-Why are these cpp lines commented out?
-
->   };
->   
->   static const struct file_operations fuse_direct_io_file_operations = {
-> ***************
-> *** 2007,2012 ****
-> --- 2011,2019 ----
->   	.unlocked_ioctl	= fuse_file_ioctl,
->   	.compat_ioctl	= fuse_file_compat_ioctl,
->   	.poll		= fuse_file_poll,
-> + //#ifdef CONFIG_CHECKPOINT
-> + 	.checkpoint	= fuse_file_checkpoint,
-> + //#endif
->   	/* no splice_read */
->   };
->   
-> Only in linux-cr/fs/fuse: fuse_kcr.c
-> Only in linux-cr/fs/fuse: fuse_kcr.h
-
-This is the core change introduced by your patchset and it looks like
-it's missing...
-
-> diff -crB linux-cr1/fs/fuse/inode.c linux-cr/fs/fuse/inode.c
-> *** linux-cr1/fs/fuse/inode.c	2010-09-14 06:59:05.118512015 +0530
-> --- linux-cr/fs/fuse/inode.c	2011-03-28 21:59:53.805496000 +0530
-> ***************
-> *** 1200,1206 ****
->   
->   	printk(KERN_INFO "fuse init (API version %i.%i)\n",
->   	       FUSE_KERNEL_VERSION, FUSE_KERNEL_MINOR_VERSION);
-> ! 
->   	INIT_LIST_HEAD(&fuse_conn_list);
->   	res = fuse_fs_init();
->   	if (res)
-> --- 1200,1208 ----
->   
->   	printk(KERN_INFO "fuse init (API version %i.%i)\n",
->   	       FUSE_KERNEL_VERSION, FUSE_KERNEL_MINOR_VERSION);
-> !     printk("#######################################\n");
-> !     printk("#FUSE kernel module is initializing...#\n");
-> !     printk("#######################################\n");
-
-Remove
-
->   	INIT_LIST_HEAD(&fuse_conn_list);
->   	res = fuse_fs_init();
->   	if (res)
-> ***************
-> *** 1235,1240 ****
-> --- 1237,1245 ----
->   
->   static void __exit fuse_exit(void)
->   {
-> +     printk("##################################\n");
-> +     printk("#FUSE kernel module is exiting...#\n");
-> +     printk("##################################\n");
-
-Remove
-
->   	printk(KERN_DEBUG "fuse exit\n");
->   
->   	fuse_ctl_cleanup();
-> diff -crB linux-cr1/fs/fuse/Makefile linux-cr/fs/fuse/Makefile
-> *** linux-cr1/fs/fuse/Makefile	2010-09-14 06:59:05.114511787 +0530
-> --- linux-cr/fs/fuse/Makefile	2011-03-22 20:23:18.427370000 +0530
-> ***************
-> *** 5,8 ****
->   obj-$(CONFIG_FUSE_FS) += fuse.o
->   obj-$(CONFIG_CUSE) += cuse.o
->   
-> ! fuse-objs := dev.o dir.o file.o inode.o control.o
-> --- 5,8 ----
->   obj-$(CONFIG_FUSE_FS) += fuse.o
->   obj-$(CONFIG_CUSE) += cuse.o
->   
-> ! fuse-objs := dev.o dir.o file.o inode.o control.o fuse_kcr.o
-> Only in linux-cr/include: config
-> Only in linux-cr/include: generated
-> diff -crB linux-cr1/include/linux/checkpoint_hdr.h linux-cr/include/linux/checkpoint_hdr.h
-> *** linux-cr1/include/linux/checkpoint_hdr.h	2010-09-14 06:59:05.515511078 +0530
-> --- linux-cr/include/linux/checkpoint_hdr.h	2011-03-28 21:59:53.913441000 +0530
-> ***************
-> *** 561,567 ****
->   #define CKPT_FILE_EPOLL CKPT_FILE_EPOLL
->   	CKPT_FILE_EVENTFD,
->   #define CKPT_FILE_EVENTFD CKPT_FILE_EVENTFD
-> ! 	CKPT_FILE_MAX
->   #define CKPT_FILE_MAX CKPT_FILE_MAX
->   };
->   
-> --- 561,569 ----
->   #define CKPT_FILE_EPOLL CKPT_FILE_EPOLL
->   	CKPT_FILE_EVENTFD,
->   #define CKPT_FILE_EVENTFD CKPT_FILE_EVENTFD
-> ! 	CKPT_FILE_FUSE,
-> ! #define CKPT_FILE_FUSE CKPT_FILE_FUSE
-> ! 	CKPT_FILE_MAX,
->   #define CKPT_FILE_MAX CKPT_FILE_MAX
->   };
->   
-> diff -crB linux-cr1/include/linux/fuse.h linux-cr/include/linux/fuse.h
-> *** linux-cr1/include/linux/fuse.h	2010-09-14 06:59:05.543512193 +0530
-> --- linux-cr/include/linux/fuse.h	2011-03-28 21:59:53.846445000 +0530
-> ***************
-> *** 249,254 ****
-> --- 249,258 ----
->   	FUSE_IOCTL         = 39,
->   	FUSE_POLL          = 40,
->   
-> + #ifdef CONFIG_CHECKPOINT
-> + 	FUSE_CHECKPOINT    = 1024,
-> + #endif                                  /*CONFIG_CHECKPOINT*/
-
-This looks like it will be part of an ABI with userspace. That means it
-should always be defined/reserved for checkpointing.
-
-> + 
->   	/* CUSE specific operations */
->   	CUSE_INIT          = 4096,
->   };
-> ***************
-> *** 565,568 ****
-> --- 568,583 ----
->   	__u32	padding;
->   };
->   
-> + #ifdef CONFIG_CHECKPOINT
-> + 	struct fuse_checkpoint_in{
-> + 	__u64	fh;
-> + 	__u32	flags;
-> + 	__u32	padding;
-> +         };
-> + 
-> +         struct fuse_checkpoint_out{
-> +         __u32 status;
-> +         };
-> + #endif                                                  /*CONFIG_CHECKPOINT*/
-> + 
->   #endif /* _LINUX_FUSE_H */
-> Only in linux-cr/include/linux: version.h
-> Only in linux-cr/scripts/basic: docproc
-> Only in linux-cr/scripts/basic: fixdep
-> Only in linux-cr/scripts/basic: hash
-> Only in linux-cr/scripts: conmakehash
-> Only in linux-cr/scripts/genksyms: genksyms
-> Only in linux-cr/scripts/genksyms: keywords.c
-> Only in linux-cr/scripts/genksyms: lex.c
-> Only in linux-cr/scripts/genksyms: parse.c
-> Only in linux-cr/scripts/genksyms: parse.h
-> Only in linux-cr/scripts: kallsyms
-> Only in linux-cr/scripts/kconfig: conf
-> Only in linux-cr/scripts/kconfig: lex.zconf.c
-> Only in linux-cr/scripts/kconfig: mconf
-> Only in linux-cr/scripts/kconfig: zconf.hash.c
-> Only in linux-cr/scripts/kconfig: zconf.tab.c
-> Only in linux-cr/scripts/mod: elfconfig.h
-> Only in linux-cr/scripts/mod: mk_elfconfig
-> Only in linux-cr/scripts/mod: modpost
-> Only in linux-cr/scripts/selinux/genheaders: genheaders
-> Only in linux-cr/scripts/selinux/mdp: mdp
-> Only in linux-cr/security/selinux: av_permissions.h
-> Only in linux-cr: .version
-
-The above also looks irrelevant to the kernel patch.
-
-
-Is the content below the missing pair of files?
-
-> /*
-> fuse_cr: Checkpoint-Restart implementation for FUSE filesystem kernel module.
-> 
-> Authors: Manoj Kumar and Vishnumurthy Prabhu 
->          NITK Surathkal
-> 
-> */
-> 
-> #include "fuse_kcr.h"
-> #include <linux/file.h>
-
-swap header inclusion order -- "local" headers and less-generic kernel
-headers go after.
-
-> /*
-> 	FUSE filesystem .It needs special handling
-> 	{
-> 		.file_name = "FUSE",
-> 		.file_type = CKPT_FILE_FUSE,
-> 		.restore = fuse_file_restore,
-> 	},	
-> */
-
-Huh? What's this comment supposed to tell us?
-
-> 
-> struct ckpt_hdr_file_fuse {
-> 	struct ckpt_hdr_file common;
-> 	
-> } __attribute__((aligned(8)));
-
-This should be in include/linux/checkpoint_hdr.h *except* since it
-doesn't need anything besides the ckpt_hdr_file I don't see why you
-don't just use that struct instead.
-
-> 
-> //extern int generic_file_checkpoint(struct ckpt_ctx *ctx, struct file *file);
-> 
-> int fuse_file_ckpt_send(struct file *file)
-> {
->     struct inode *inode  = file->f_path.dentry->d_inode;
-> 	struct fuse_conn *fc = get_fuse_conn(inode);
-> //	struct fuse_file *ff = file->private_data;
-
-Leftover garbage?
-
-> 	struct fuse_req *req;
-> 	struct fuse_checkpoint_in inarg;
-> 	struct fuse_checkpoint_out outarg;
-> 	__u64 nodeid;
-> 	int err;
-> 	struct fuse_file *ff;
-> 
->     ff = file->private_data;
-> 	if (is_bad_inode(inode))
-
-CodingStyle whitespace issues. Please try checkpatch.pl
-
-> 		return -EIO;
-> 
->     nodeid = get_node_id(inode);
-> 	req = fuse_get_req(fc);
-
-I'm not familiar enough with FUSE internals. Shouldn't you check
-if req is NULL or an ERR_PTR() before using it below?
-
-> 	memset(&inarg, 0, sizeof(inarg));
-> // inargs must be supplied.	
->     inarg.fh = ff->fh;
->     inarg.flags &= ~(0);
-> //inargs to be supplied    
->     
->     req->in.h.opcode = FUSE_CHECKPOINT;
-> 	req->in.h.nodeid = nodeid;
-> 	req->in.numargs = 1;
-> 	req->in.args[0].size = sizeof(inarg);
-> 	req->in.args[0].value = &inarg;
-> 	req->out.numargs = 1;
-> 	req->out.args[0].size = sizeof(outarg);
-> 	req->out.args[0].value = &outarg;
-> 
-> //aboue is sample inargs need to be changed...
-> 	fuse_request_send(fc, req);
-> 	err = req->out.h.error;
-> 	fuse_put_request(fc, req);
-
-IMPORTANT:
-
-We need to make sure the task(s) responsible for handling the request in
-userspace aren't frozen. As best I can tell that's a very real
-possibility.
-
-> 	if (err == -ENOSYS) {
-> 		fc->no_flush = 1;
-> 		err = 0;
-> 	}
-> 	return outarg.status;
-> }
-> 
-> int fuse_file_checkpoint(struct ckpt_ctx *ctx, struct file *file)
-> {
->    int ret;
->    struct ckpt_hdr_file_fuse *h;
->    
-> 	if (d_unlinked(file->f_dentry)) {
-> 		ckpt_err(ctx, -EBADF, "%(T)%(P)Unlinked files unsupported\n",
-> 			 file);
-> 		return -EBADF;
-
-Unlinked files are important too. Have you had a chance to review my
-recent patches for unlinked files?
-
-> 	}
-> 
-> 	h = ckpt_hdr_get_type(ctx, sizeof(*h), CKPT_HDR_FILE);
-> 	if (!h)
-> 		return -ENOMEM;
-> 
-> 	h->common.f_type = CKPT_FILE_FUSE;   
->    
-> 	ret = checkpoint_file_common(ctx, file, &h->common);
-> 	if (ret < 0)
-> 		goto out;
-> 	ret = ckpt_write_obj(ctx, &h->common.h);
-> 	if (ret < 0)
-> 		goto out;
-> 	ret = checkpoint_fname(ctx, &file->f_path, &ctx->root_fs_path);
-> 	   
-> //   ret = fuse_file_ckpt_send(file);
-
-This looks like the only real difference from generic_file_checkpoint() yet
-it's commented out. What's going on? Have you compiled this code?
-Tested it?
-
->     out:
-> 	  ckpt_hdr_put(ctx, h);
->     printk("**************************fuse_file_checkpoint is working fine\n");
-
-Remove printk
-
-> 	  return ret;	
-> 
-> }
-> EXPORT_SYMBOL(fuse_file_checkpoint);
-> 
-> /******************************************************************************************************************************************************
-> Restart
-> */
-> 
-> struct file *fuse_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr)
-> {
->     struct file *file;
-> 	int ret;
-> 
-> 	if (ptr->h.type != CKPT_HDR_FILE  ||
-> 	    ptr->h.len != sizeof(*ptr) || ptr->f_type != CKPT_FILE_FUSE)
-> 		return ERR_PTR(-EINVAL);
-> 
-> 	file = restore_open_fname(ctx, ptr->f_flags);
-> 	if (IS_ERR(file))
-> 		return file;
-> 
-> 	ret = restore_file_common(ctx, file, ptr);
-> 	if (ret < 0) {
-> 		fput(file);
-> 		file = ERR_PTR(ret);
-> 	}
->     printk("**************************fuse_file_restore is working fine\n");
-
-Remove this printk too. At most you'd want to use ckpt_debug() here and
-ckpt_err() above when you encounter errors.
-
-> 	return file;
-> }
-> 
-
-> #ifdef CONFIG_CHECKPOINT
-Is this a separate file from the previous code?
-
-I don't think the #ifdef above should wrap the whole file. Actually,
-my guess is these function declarations should go elsewhere within
-the existing fuse headers.
-
-> #ifndef _FUSE_KCR_H_
-> #define _FUSE_KCR_H_
-> 
-> #include <linux/fuse.h>
-> #include <linux/checkpoint.h>
-> #include "fuse_i.h"
-> 
-> int fuse_file_checkpoint(struct ckpt_ctx *ctx, struct file *file);
-> struct file *fuse_file_restore(struct ckpt_ctx *ctx, struct ckpt_hdr_file *ptr);
-> #endif
-> #endif
-
-Needs alot more work but it seems like a start. I hope you'll continue
-to add to and refine it and repost. Thanks!
-
-Cheers,
-	-Matt Helsley
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--00151748e7a6bd92be049ffc5149--
