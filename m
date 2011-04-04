@@ -1,7 +1,7 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Subject: Re: [PATCH 05/10] Core checkpoint/restart support code
-Date: Mon, 04 Apr 2011 13:32:33 -0400
-Message-ID: <4D9A00B1.2080002@cs.columbia.edu>
+Date: Mon, 4 Apr 2011 10:41:19 -0700
+Message-ID: <20110404104119.78189678.akpm__31233.6173643873$1301939914$gmane$org@linux-foundation.org>
 References: <1298936432-29607-1-git-send-email-ntl@pobox.com>
 	<1298936432-29607-6-git-send-email-ntl@pobox.com>
 	<20110403190324.GD15044@hallyn.com>
@@ -27,68 +27,14 @@ To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+On Mon, 4 Apr 2011 11:27:53 -0500 "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
 
+> Andrew (Cc:d), did you see this thread go by, and it did it look
+> in any way more palatable to you?  Have you had any thoughts on
+> checkpoint/restart in the last few months?  Or did that horse quietly
+> die over winter?
 
-On 04/04/2011 12:27 PM, Serge E. Hallyn wrote:
-> Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
->> On Mon, 2011-04-04 at 10:10 -0500, Serge E. Hallyn wrote:
->>> Quoting Nathan Lynch (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
->>>> On Sun, 2011-04-03 at 14:03 -0500, Serge E. Hallyn wrote:
->>>>> Quoting ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org (ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org):
->>>>>> Only a pid namespace init task - the child process produced by a call
->>>>>> to clone(2) with CLONE_NEWPID - is allowed to call these.  The state
->>>>>
->>>>> So you make this useful for your cases by only using this with
->>>>> application containers - created using lxc-execute, or, more precisely,
->>>>> using lxc-init as the container's init.  So a container running a stock
->>>>> distro can't be checkpointed.
->>>>
->>>> Correct, a conventional distro init won't work, and application
->>>> containers are my focus for now, at least.
->>>>
->>>>
->>>>> Is this just to keep the patch simple for now, or is there some reason
->>>>> to keep this limitation in place?
->>>>
->>>> I guess you're asking whether non-pid-init processes could be allowed to
->>>> use the syscalls?
->>>
->>> No.  I'm asking whether you are intending to later on change the checkpoint
->>> API to allow an external task to checkpoint a pid-init process, rather than
->>> the pid-init process having to initiate it itself.
->>
->> No, that is not the intention.  I can see how that would be problematic
->> for those wanting to run minimally-modified distro containers, but I
->> think running a patched pid-init is a reasonable tradeoff to ask users
->> to make in order to get c/r.  And there's nothing to keep the standard
->> distro inits from growing c/r capability.
-> 
-> It's not necessarily a dealbreaker, since presumably I can hack the
-> needed support into upstart, triggered by a boot option so it isn't
-> activated on a host.  But especially given the lack of interest in
-> this thread so far, I don't see a point in pushing this, an API-incompatible
-> less-capable version of the linux-cr tree.  If it can gain traction
-> better than linux-cr, that'd be one thing.  But given the amount of
-> review and testing the other tree has gotten - and I realize you're
-> able to piggy-back on much of that - and, again, the lack of responses
-> so far, I just don't see this as worth pushing for.
+argh, it was the victim of LIFO.
 
-First, thanks to Nathan for cleaning up and re-producing a "minimal"
-patchest for review.
-
-From the technical point of view it *is* a big problem:  there are
-very good reasons why we chose a certain design. 
-
-If Natahan is suggesting in-kernel tree creation as a temporary thing
-to simplify the code for review - then, given that this patch handles
-a single process, doing so add lots of unnecessary code, all of which
-in the kernel.
-
-If this is the beginning of a permanent approach, then it is totally
-incompatible with what we have done so far, and severely restricts 
-the kind of use--cases of the project, potentially making it too
-unattractive for many natural adaptors, like HPC users. Sorry, nack.
-
-Thanks,
-
-Oren.
+All I can say at this stage is that I'll be interested next time it
+comes past, sorry.
