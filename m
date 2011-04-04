@@ -1,7 +1,7 @@
-From: "Serge E. Hallyn" <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 05/10] Core checkpoint/restart support code
-Date: Mon, 4 Apr 2011 15:29:09 -0500
-Message-ID: <20110404202909.GA7873__44686.074081301$1301954636$gmane$org@peq.hallyn.com>
+Date: Mon, 4 Apr 2011 17:11:21 -0500
+Message-ID: <20110404221121.GA30213__43542.6264106811$1301955218$gmane$org@hallyn.com>
 References: <1298936432-29607-1-git-send-email-ntl@pobox.com>
 	<1298936432-29607-6-git-send-email-ntl@pobox.com>
 	<20110403190324.GD15044@hallyn.com>
@@ -32,23 +32,6 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Se
 List-Id: containers.vger.kernel.org
 
 Quoting Andrew Morton (akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org):
-> On Mon, 4 Apr 2011 13:51:20 -0500 "Serge E. Hallyn" <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> wrote:
-> 
-> > Quoting Andrew Morton (akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org):
-> > > On Mon, 4 Apr 2011 11:27:53 -0500 "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
-> > > 
-> > > > Andrew (Cc:d), did you see this thread go by, and it did it look
-> > > > in any way more palatable to you?  Have you had any thoughts on
-> > > > checkpoint/restart in the last few months?  Or did that horse quietly
-> > > > die over winter?
-> > > 
-> > > argh, it was the victim of LIFO.
-> > > 
-> > > All I can say at this stage is that I'll be interested next time it
-> > > comes past, sorry.
-> > 
-> > Thanks, that's good to know.
-> > 
 > > As you know, we started with a minimal patchset, then grew it over time
 > > to answer the "but how will you (xyz) without uglifying the kernel".
 > > Would you recommend we go back to keeping a separate minimal patchset,
@@ -58,19 +41,9 @@ Quoting Andrew Morton (akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org):
 > 
 > The minimal patchset is too minimal for Oren's use and the maximal
 > patchset seems to have run aground on general kernel sentiment.  So I
-> guess you either take the minimal patchset and make it less minimal or
-> take the maximal patchset and make it less maximal, ending up with the
-> same thing.  How's that for hand-waving useless obviousnesses :)
 
-Perfect, thanks :)
+Sorry, when you say 'minimal patchset', are you referring to Nathan's tree?
+Or a truly minimal patchset like what we originally started with?
 
-> One obvious approach is to merge the minimal patchset then, over time,
-> sneak more stuff into it so we end up with the maximal patchset which
-> people didn't like.  Don't do that :)
-
-Hoping that "which people didn't like" is purely conjecture.
-
-Ok, I'll advocate for proceeding with the full patch-set as long as we
-can.  Thanks, Andrew.
-
+thanks,
 -serge
