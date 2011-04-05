@@ -1,15 +1,20 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 3/3] Compare namespaces when comparing addresses in
-	auth_unix cache.
-Date: Mon, 4 Apr 2011 22:46:41 -0500
-Message-ID: <20110405034641.GC6764__28722.4381034777$1301975342$gmane$org@hallyn.com>
-References: <4D9431B3.2070305@parallels.com>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 05/10] Core checkpoint/restart support code
+Date: Tue, 05 Apr 2011 14:18:46 -0500
+Message-ID: <1302031126.6424.8.camel__6060.65350953049$1302031488$gmane$org@tp-t61>
+References: <1298936432-29607-6-git-send-email-ntl@pobox.com>
+	<20110403190324.GD15044@hallyn.com> <1301929228.31531.39.camel@tp-t61>
+	<20110404151017.GA4857@hallyn.com> <1301931608.31531.49.camel@tp-t61>
+	<20110404162753.GA3456@hallyn.com> <4D9A00B1.2080002@cs.columbia.edu>
+	<1301953409.31531.130.camel@tp-t61>
+	<20110404220309.GA10229@peq.hallyn.com>
+	<87vcyt4m93.fsf@caffeine.danplanet.com>
+	<20110405021716.GA16672@hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4D9431B3.2070305-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+In-Reply-To: <20110405021716.GA16672-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,125 +24,20 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: Kir Kolyshkin <kir-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Tim Spriggs <tims-DAzCR1AAk2Rg9hUCZPvPmw@public.gmane.org>, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>, linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, "Serge E. Hallyn" <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Rob Landley (rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org):
-> From: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+On Mon, 2011-04-04 at 21:17 -0500, Serge E. Hallyn wrote:
+> Quoting Dan Smith (danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> > SH> The API for starting a checkpoint, that I'm not on the fence on.
+> > 
+> > Is that just because it requires a C/R aware container init or for some
 > 
-> The auth_unix cache needs to check network namespace when comparing
-> addresses. Add field to struct ip_map and extra argument to
-> __ip_map_lookup() so it has the information to do so, and add test.
+> Yup, that's it.
 > 
-> Signed-off-by: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-> ---
-> 
->  net/sunrpc/svcauth_unix.c |   21 ++++++++++++++-------
->  1 file changed, 14 insertions(+), 7 deletions(-)
-> 
-> diff --git a/net/sunrpc/svcauth_unix.c b/net/sunrpc/svcauth_unix.c
-> index 30916b0..63a2fa7 100644
-> --- a/net/sunrpc/svcauth_unix.c
-> +++ b/net/sunrpc/svcauth_unix.c
-> @@ -14,6 +14,7 @@
->  #include <net/sock.h>
->  #include <net/ipv6.h>
->  #include <linux/kernel.h>
-> +#include <linux/user_namespace.h>
->  #define RPCDBG_FACILITY	RPCDBG_AUTH
->  
->  #include <linux/sunrpc/clnt.h>
-> @@ -94,6 +95,7 @@ struct ip_map {
->  	struct cache_head	h;
->  	char			m_class[8]; /* e.g. "nfsd" */
->  	struct in6_addr		m_addr;
-> +	struct net		*m_net;
->  	struct unix_domain	*m_client;
->  #ifdef CONFIG_NFSD_DEPRECATED
->  	int			m_add_change;
-> @@ -134,6 +136,7 @@ static int ip_map_match(struct cache_head *corig, struct cache_head *cnew)
->  	struct ip_map *orig = container_of(corig, struct ip_map, h);
->  	struct ip_map *new = container_of(cnew, struct ip_map, h);
->  	return strcmp(orig->m_class, new->m_class) == 0 &&
-> +	       net_eq(orig->m_net, new->m_net) &&
->  	       ipv6_addr_equal(&orig->m_addr, &new->m_addr);
->  }
->  static void ip_map_init(struct cache_head *cnew, struct cache_head *citem)
-> @@ -142,6 +145,7 @@ static void ip_map_init(struct cache_head *cnew, struct cache_head *citem)
->  	struct ip_map *item = container_of(citem, struct ip_map, h);
->  
->  	strcpy(new->m_class, item->m_class);
-> +	new->m_net = item->m_net;
+> Which is why I'd be fine with it as a short-term workaround, if it might
+> actually help with upstreaming.
 
-Does this need to take a reference?  Or is there no way for an
-entry to outlive its netns?  It sort of looks like
-svcauth_unix_info_release will ensure that doesn't happen, but
-I'm not convinced because other parts of the kernel can get
-to ip_map_init through the struct cache_detail.
-
->  	ipv6_addr_copy(&new->m_addr, &item->m_addr);
->  }
->  static void update(struct cache_head *cnew, struct cache_head *citem)
-> @@ -186,7 +190,7 @@ static int ip_map_upcall(struct cache_detail *cd, struct cache_head *h)
->  	return sunrpc_cache_pipe_upcall(cd, h, ip_map_request);
->  }
->  
-> -static struct ip_map *__ip_map_lookup(struct cache_detail *cd, char *class, struct in6_addr *addr);
-> +static struct ip_map *__ip_map_lookup(struct cache_detail *cd, struct net *net, char *class, struct in6_addr *addr);
->  static int __ip_map_update(struct cache_detail *cd, struct ip_map *ipm, struct unix_domain *udom, time_t expiry);
->  
->  static int ip_map_parse(struct cache_detail *cd,
-> @@ -256,7 +260,8 @@ static int ip_map_parse(struct cache_detail *cd,
->  		dom = NULL;
->  
->  	/* IPv6 scope IDs are ignored for now */
-> -	ipmp = __ip_map_lookup(cd, class, &sin6.sin6_addr);
-> +	ipmp = __ip_map_lookup(cd, current->nsproxy->net_ns, class,
-> +			       &sin6.sin6_addr);
->  	if (ipmp) {
->  		err = __ip_map_update(cd, ipmp,
->  			     container_of(dom, struct unix_domain, h),
-> @@ -301,13 +306,14 @@ static int ip_map_show(struct seq_file *m,
->  }
->  
->  
-> -static struct ip_map *__ip_map_lookup(struct cache_detail *cd, char *class,
-> -		struct in6_addr *addr)
-> +static struct ip_map *__ip_map_lookup(struct cache_detail *cd, struct net *net,
-> +		char *class, struct in6_addr *addr)
->  {
->  	struct ip_map ip;
->  	struct cache_head *ch;
->  
->  	strcpy(ip.m_class, class);
-> +	ip.m_net = net;
->  	ipv6_addr_copy(&ip.m_addr, addr);
->  	ch = sunrpc_cache_lookup(cd, &ip.h,
->  				 hash_str(class, IP_HASHBITS) ^
-> @@ -325,7 +331,7 @@ static inline struct ip_map *ip_map_lookup(struct net *net, char *class,
->  	struct sunrpc_net *sn;
->  
->  	sn = net_generic(net, sunrpc_net_id);
-> -	return __ip_map_lookup(sn->ip_map_cache, class, addr);
-> +	return __ip_map_lookup(sn->ip_map_cache, net, class, addr);
->  }
->  
->  static int __ip_map_update(struct cache_detail *cd, struct ip_map *ipm,
-> @@ -748,8 +754,9 @@ svcauth_unix_set_client(struct svc_rqst *rqstp)
->  
->  	ipm = ip_map_cached_get(xprt);
->  	if (ipm == NULL)
-> -		ipm = __ip_map_lookup(sn->ip_map_cache, rqstp->rq_server->sv_program->pg_class,
-> -				    &sin6->sin6_addr);
-> +		ipm = __ip_map_lookup(sn->ip_map_cache, net,
-> +				      rqstp->rq_server->sv_program->pg_class,
-> +				      &sin6->sin6_addr);
->  
->  	if (ipm == NULL)
->  		return SVC_DENIED;
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/
+Okay, I'll look at making unmodified init work.  One possibility is to
+run the distro init as a child of the c/r-aware init, I suppose.
