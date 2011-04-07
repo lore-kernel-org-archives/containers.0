@@ -1,11 +1,14 @@
-From: Peter Dolding <oiaohm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: OOM and Cgroups. How Cgroups could help OOM Killer do its job better.
-Date: Thu, 7 Apr 2011 10:36:40 +1000
-Message-ID: <BANLkTiniMkJkQWk4EK=mGh43aHvyKdgaEQ@mail.gmail.com>
+From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC] tracing: Adding cgroup aware tracing functionality
+Date: Thu, 7 Apr 2011 03:33:53 +0200
+Message-ID: <20110407013349.GH1867__14814.2790225849$1302140085$gmane$org@nowhere>
+References: <BANLkTik_jtjWTsOueUzfdQXRx17OcgyDgA@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <BANLkTik_jtjWTsOueUzfdQXRx17OcgyDgA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,70 +18,46 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Vaibhav Nagarnaik <vnagarnaik-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>, Stephane Eranian <eranian-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-I don't have the skill to implement this.    But I have been thinking about
-the problem.  I have come up with a plan that could remove lot of the issues
-OOM can cause and how  CGROUPS can stop it.  To me it makes sense.
+On Wed, Apr 06, 2011 at 11:50:21AM -0700, Vaibhav Nagarnaik wrote:
+> All
+> The cgroup functionality is being used widely in different scenarios. It also
+> is being integrated with other parts of kernel to take advantage of its
+> features. One of the areas that is not yet aware of cgroup functionality is
+> the ftrace framework.
+> 
+> Although ftrace provides a way to filter based on PIDs of tasks to be traced,
+> it is restricted to specific tracers, like function tracer. Also it becomes
+> difficult to keep track of all PIDs in a dynamic environment with processes
+> being created and destroyed in a short amount of time.
+> 
+> An application that creates many processes/tasks is convenient to track and
+> control with cgroups, but it is difficult to track these processes for the
+> purposes of tracing. And if child processes are moved to another cgroup, it
+> makes sense to trace only the original cgroup.
+> 
+> This proposal is to create a file in the tracing directory called
+> set_trace_cgroup to which a user can write the path of an active cgroup, one
+> at a time. If no cgroups are specified, no filtering is done and all tasks are
+> traced. When a cgroup path is added in, it sets a boolean tracing_enabled for
+> the enabled cgroup in all the hierarchies, which enables tracing for all the
+> assigned tasks under the specified cgroup.
+> 
+> Though creating a new file in the directory is not desirable, but this
+> interface seems the most appropriate change required to implement the new
+> feature.
+> 
+> This tracing_enabled flag is also exported in the cgroupfs directory structure
+> which can be turned on/off for a specific hierarchy/cgroup combination. This
+> gives control to enable/disable tracing over a cgroup in a specific hierarchy
+> only.
+> 
+> This gives more fine-grained control over the tasks being traced. I would like
+> to know your thoughts on this interface and the approach to make tracing
+> cgroup aware.
 
-Memory.oom_control provides
-oom_kill_disable
-and under_oom already.
-
-Problem is these are really not what you call fine grained enough.
-
-I have not looked at oom_kill_disable but I would hope this would limit
-applications using oom_kill_disable only to be able to allocate as much
-memory as the computer has.  If not this could be a nasty bug.  Over commit
-and a process that cannot be killed by OOM is a really bad thing.
-
-Really oom_control needs a oom selection order.
-
-Basic description
-memory.oom_order
-This is the order of preference this cgroup will see the oom killer.  0
-being default and last to be oom killed.    Highest numbers first.   So a
-cgroup marked 2 will be have applications terminated before a cgroup marked
-1  and 1 applications will be terminated before those marked 0.   Also I
-would restrict oom disable setting only to oom_order number 0.  This allows
-users and distributions to have full control over what order application
-groups disappear.  This also removes the random shot gun like effect OOM
-killer can have without requiring per application tweaking or basically
-blocking the OOM Killer from being able to work.  Since less critical
-processes should go first less risk of system issues.
-
-Yes I find it strange applications have a preference order to be killed
-assigned but cgroup does not have one at this stage.
-
- Also I would consider making everything at oom_order 0 unable to
-over-commit memory since it is what should work no matter what.  This would
-be a change from past but no different to if system admin had turned
-over-commit off system wide.   So allowing over-commit to be turned on
-selectively group by group by raising the groups order.  Effect also putting
-the applications using over-commit up to be taken out by the oom killer
-first to save the applications that did not over-commit that are critical to
-system operations.
-
-This way adding this flag does not cause any backwards compatibility issues
-since not changing it the system acts exactly how it use to.
-
-Next is oom termination style. under_oom might be able to take these flags.
-
-Some cases inside a cgroup you will not want the oom cherry picking.  Since
-by cherry picking a task oom kills may be just restarted so returning you to
-another oom event.  So a flag to say to the oom killer if you need memory
-terminate everything in this cgroup at once.  This maybe able to speed up
-oom killer getting back memory as well.  That a cgroup has been terminated
-this way a message would have to remain for systemd and the like to know
-why.  So an attempt at restarting the cgroup is not done while resources are
-low.
-
-At this stage as far I know you cannot assign a decanted swapfile to a
-cgroup so having the option to suspend a cgroup to disk in case of large
-memory pressure or cpu pressure automatically could not be done.
-
-These setting combined with systemd should be able to make unplanned OOM
-events less common.  Hopefully a never event.
-
-Peter Dolding
+So I have to ask, why can't you use perf events to do tracing limited on cgroups?
+It has this cgroup context awareness.
