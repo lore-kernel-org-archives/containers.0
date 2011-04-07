@@ -1,16 +1,16 @@
-From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: David Sharp <dhsharp-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [RFC] tracing: Adding cgroup aware tracing functionality
-Date: Thu, 7 Apr 2011 14:06:11 +0200
-Message-ID: <20110407120608.GB1798__40630.1843737767$1302178123$gmane$org@nowhere>
+Date: Thu, 7 Apr 2011 13:22:30 -0700
+Message-ID: <BANLkTim70Ef0gy+W+4h76PABn32wDRvTtw__5186.82375918633$1302207831$gmane$org@mail.gmail.com>
 References: <BANLkTik_jtjWTsOueUzfdQXRx17OcgyDgA@mail.gmail.com>
 	<20110407013349.GH1867@nowhere>
 	<BANLkTinKsYqkEEUu98t+Gn9ciPn_bmsMFQ@mail.gmail.com>
+	<20110407120608.GB1798@nowhere>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <BANLkTinKsYqkEEUu98t+Gn9ciPn_bmsMFQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20110407120608.GB1798@nowhere>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,112 +20,119 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vaibhav Nagarnaik <vnagarnaik-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Michael Rubin <mrubin-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, David Sharp <dhsharp-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>, Ken Chen <kenchen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Stephane Eranian <eranian-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Michael Rubin <mrubin-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>, Ken Chen <kenchen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Stephane Eranian <eranian-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vaibhav Nagarnaik <vnagarnaik-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Apr 06, 2011 at 08:17:33PM -0700, Vaibhav Nagarnaik wrote:
-> On Wed, Apr 6, 2011 at 6:33 PM, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
-> > On Wed, Apr 06, 2011 at 11:50:21AM -0700, Vaibhav Nagarnaik wrote:
-> >> All
-> >> The cgroup functionality is being used widely in different scenarios. It also
-> >> is being integrated with other parts of kernel to take advantage of its
-> >> features. One of the areas that is not yet aware of cgroup functionality is
-> >> the ftrace framework.
-> >>
-> >> Although ftrace provides a way to filter based on PIDs of tasks to be traced,
-> >> it is restricted to specific tracers, like function tracer. Also it becomes
-> >> difficult to keep track of all PIDs in a dynamic environment with processes
-> >> being created and destroyed in a short amount of time.
-> >>
-> >> An application that creates many processes/tasks is convenient to track and
-> >> control with cgroups, but it is difficult to track these processes for the
-> >> purposes of tracing. And if child processes are moved to another cgroup, it
-> >> makes sense to trace only the original cgroup.
-> >>
-> >> This proposal is to create a file in the tracing directory called
-> >> set_trace_cgroup to which a user can write the path of an active cgroup, one
-> >> at a time. If no cgroups are specified, no filtering is done and all tasks are
-> >> traced. When a cgroup path is added in, it sets a boolean tracing_enabled for
-> >> the enabled cgroup in all the hierarchies, which enables tracing for all the
-> >> assigned tasks under the specified cgroup.
-> >>
-> >> Though creating a new file in the directory is not desirable, but this
-> >> interface seems the most appropriate change required to implement the new
-> >> feature.
-> >>
-> >> This tracing_enabled flag is also exported in the cgroupfs directory structure
-> >> which can be turned on/off for a specific hierarchy/cgroup combination. This
-> >> gives control to enable/disable tracing over a cgroup in a specific hierarchy
-> >> only.
-> >>
-> >> This gives more fine-grained control over the tasks being traced. I would like
-> >> to know your thoughts on this interface and the approach to make tracing
-> >> cgroup aware.
-> >
-> > So I have to ask, why can't you use perf events to do tracing limited on cgroups?
-> > It has this cgroup context awareness.
-> >
-> 
-> The perf event cgroup awareness comes from creating a different hierarchy for
-> perf events. When the events and the current task's cgroup match, the events
-> are logged. So the changes are pretty specific to the perf events.
-> 
-> Even in the case where changes are made to handle trace events, the interface
-> files are still needed. The interface used to specify perf events uses the
-> perf_event syscall which isn't available to specify trace events.
-> 
-> This is based on my limited understanding of the perf_events cgroup awareness
-> patch. Please correct me if I am missing anything.
-
-
-Ah but perf events can do much more than counting and sampling
-hardware events. Trace events can be used as perf events too.
-
-List the events:
-
-	perf list -e tracepoints
-
-List of pre-defined events (to be used in -e):
-
-  skb:kfree_skb                              [Tracepoint event]
-  skb:consume_skb                            [Tracepoint event]
-  skb:skb_copy_datagram_iovec                [Tracepoint event]
-  net:net_dev_xmit                           [Tracepoint event]
-  net:net_dev_queue                          [Tracepoint event]
-  net:netif_receive_skb                      [Tracepoint event]
-  net:netif_rx                               [Tracepoint event]
-  napi:napi_poll                             [Tracepoint event]
-  scsi:scsi_dispatch_cmd_start               [Tracepoint event]
-  scsi:scsi_dispatch_cmd_error               [Tracepoint event]
-  scsi:scsi_dispatch_cmd_done                [Tracepoint event]
-  scsi:scsi_dispatch_cmd_timeout             [Tracepoint event]
-  scsi:scsi_eh_wakeup                        [Tracepoint event]
-  drm:drm_vblank_event                       [Tracepoint event]
-  drm:drm_vblank_event_queued                [Tracepoint event]
-  drm:drm_vblank_event_delivered             [Tracepoint event]
-  block:block_rq_abort                       [Tracepoint event]
-  block:block_rq_requeue                     [Tracepoint event]
-  block:block_rq_complete                    [Tracepoint event]
-  block:block_rq_insert                      [Tracepoint event]
-  etc...
-
-
-Trace sched switch events:
-
-	perf record -e sched:sched_switch -a
-	^C
-
-
-Print them:
-
-	perf script
-
-         swapper     0 [000]  1132.964598: sched_switch: prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=R ==> next_comm
-     kworker/0:1  4358 [000]  1132.964641: sched_switch: prev_comm=kworker/0:1 prev_pid=4358 prev_prio=120 prev_state=S ==> ne
-         syslogd  2703 [000]  1132.964720: sched_switch: prev_comm=syslogd prev_pid=2703 prev_prio=120 prev_state=D ==> next_c
-         swapper     0 [000]  1132.965100: sched_switch: prev_comm=swapper prev_pid=0 prev_prio=120 prev_state=R ==> next_comm
-            perf  4725 [001]  1132.965178: sched_switch: prev_comm=perf prev_pid=4725 prev_prio=120 prev_state=D ==> next_comm
-         swapper     0 [001]  1132.965227: sched_switch: prev_comm=kworker/0:0 prev_pid=0 prev_prio=120 prev_state=R ==> next_
-            perf  4725 [001]  1132.965246: sched_switch: prev_comm=perf prev_pid=4725 prev_prio=120 prev_state=D ==> next_comm
-	etc...
+T24gVGh1LCBBcHIgNywgMjAxMSBhdCA1OjA2IEFNLCBGcmVkZXJpYyBXZWlzYmVja2VyIDxmd2Vp
+c2JlY0BnbWFpbC5jb20+IHdyb3RlOgo+IE9uIFdlZCwgQXByIDA2LCAyMDExIGF0IDA4OjE3OjMz
+UE0gLTA3MDAsIFZhaWJoYXYgTmFnYXJuYWlrIHdyb3RlOgo+PiBPbiBXZWQsIEFwciA2LCAyMDEx
+IGF0IDY6MzMgUE0sIEZyZWRlcmljIFdlaXNiZWNrZXIgPGZ3ZWlzYmVjQGdtYWlsLmNvbT4gd3Jv
+dGU6Cj4+ID4gT24gV2VkLCBBcHIgMDYsIDIwMTEgYXQgMTE6NTA6MjFBTSAtMDcwMCwgVmFpYmhh
+diBOYWdhcm5haWsgd3JvdGU6Cj4+ID4+IEFsbAo+PiA+PiBUaGUgY2dyb3VwIGZ1bmN0aW9uYWxp
+dHkgaXMgYmVpbmcgdXNlZCB3aWRlbHkgaW4gZGlmZmVyZW50IHNjZW5hcmlvcy4gSXQgYWxzbwo+
+PiA+PiBpcyBiZWluZyBpbnRlZ3JhdGVkIHdpdGggb3RoZXIgcGFydHMgb2Yga2VybmVsIHRvIHRh
+a2UgYWR2YW50YWdlIG9mIGl0cwo+PiA+PiBmZWF0dXJlcy4gT25lIG9mIHRoZSBhcmVhcyB0aGF0
+IGlzIG5vdCB5ZXQgYXdhcmUgb2YgY2dyb3VwIGZ1bmN0aW9uYWxpdHkgaXMKPj4gPj4gdGhlIGZ0
+cmFjZSBmcmFtZXdvcmsuCj4+ID4+Cj4+ID4+IEFsdGhvdWdoIGZ0cmFjZSBwcm92aWRlcyBhIHdh
+eSB0byBmaWx0ZXIgYmFzZWQgb24gUElEcyBvZiB0YXNrcyB0byBiZSB0cmFjZWQsCj4+ID4+IGl0
+IGlzIHJlc3RyaWN0ZWQgdG8gc3BlY2lmaWMgdHJhY2VycywgbGlrZSBmdW5jdGlvbiB0cmFjZXIu
+IEFsc28gaXQgYmVjb21lcwo+PiA+PiBkaWZmaWN1bHQgdG8ga2VlcCB0cmFjayBvZiBhbGwgUElE
+cyBpbiBhIGR5bmFtaWMgZW52aXJvbm1lbnQgd2l0aCBwcm9jZXNzZXMKPj4gPj4gYmVpbmcgY3Jl
+YXRlZCBhbmQgZGVzdHJveWVkIGluIGEgc2hvcnQgYW1vdW50IG9mIHRpbWUuCj4+ID4+Cj4+ID4+
+IEFuIGFwcGxpY2F0aW9uIHRoYXQgY3JlYXRlcyBtYW55IHByb2Nlc3Nlcy90YXNrcyBpcyBjb252
+ZW5pZW50IHRvIHRyYWNrIGFuZAo+PiA+PiBjb250cm9sIHdpdGggY2dyb3VwcywgYnV0IGl0IGlz
+IGRpZmZpY3VsdCB0byB0cmFjayB0aGVzZSBwcm9jZXNzZXMgZm9yIHRoZQo+PiA+PiBwdXJwb3Nl
+cyBvZiB0cmFjaW5nLiBBbmQgaWYgY2hpbGQgcHJvY2Vzc2VzIGFyZSBtb3ZlZCB0byBhbm90aGVy
+IGNncm91cCwgaXQKPj4gPj4gbWFrZXMgc2Vuc2UgdG8gdHJhY2Ugb25seSB0aGUgb3JpZ2luYWwg
+Y2dyb3VwLgo+PiA+Pgo+PiA+PiBUaGlzIHByb3Bvc2FsIGlzIHRvIGNyZWF0ZSBhIGZpbGUgaW4g
+dGhlIHRyYWNpbmcgZGlyZWN0b3J5IGNhbGxlZAo+PiA+PiBzZXRfdHJhY2VfY2dyb3VwIHRvIHdo
+aWNoIGEgdXNlciBjYW4gd3JpdGUgdGhlIHBhdGggb2YgYW4gYWN0aXZlIGNncm91cCwgb25lCj4+
+ID4+IGF0IGEgdGltZS4gSWYgbm8gY2dyb3VwcyBhcmUgc3BlY2lmaWVkLCBubyBmaWx0ZXJpbmcg
+aXMgZG9uZSBhbmQgYWxsIHRhc2tzIGFyZQo+PiA+PiB0cmFjZWQuIFdoZW4gYSBjZ3JvdXAgcGF0
+aCBpcyBhZGRlZCBpbiwgaXQgc2V0cyBhIGJvb2xlYW4gdHJhY2luZ19lbmFibGVkIGZvcgo+PiA+
+PiB0aGUgZW5hYmxlZCBjZ3JvdXAgaW4gYWxsIHRoZSBoaWVyYXJjaGllcywgd2hpY2ggZW5hYmxl
+cyB0cmFjaW5nIGZvciBhbGwgdGhlCj4+ID4+IGFzc2lnbmVkIHRhc2tzIHVuZGVyIHRoZSBzcGVj
+aWZpZWQgY2dyb3VwLgo+PiA+Pgo+PiA+PiBUaG91Z2ggY3JlYXRpbmcgYSBuZXcgZmlsZSBpbiB0
+aGUgZGlyZWN0b3J5IGlzIG5vdCBkZXNpcmFibGUsIGJ1dCB0aGlzCj4+ID4+IGludGVyZmFjZSBz
+ZWVtcyB0aGUgbW9zdCBhcHByb3ByaWF0ZSBjaGFuZ2UgcmVxdWlyZWQgdG8gaW1wbGVtZW50IHRo
+ZSBuZXcKPj4gPj4gZmVhdHVyZS4KPj4gPj4KPj4gPj4gVGhpcyB0cmFjaW5nX2VuYWJsZWQgZmxh
+ZyBpcyBhbHNvIGV4cG9ydGVkIGluIHRoZSBjZ3JvdXBmcyBkaXJlY3Rvcnkgc3RydWN0dXJlCj4+
+ID4+IHdoaWNoIGNhbiBiZSB0dXJuZWQgb24vb2ZmIGZvciBhIHNwZWNpZmljIGhpZXJhcmNoeS9j
+Z3JvdXAgY29tYmluYXRpb24uIFRoaXMKPj4gPj4gZ2l2ZXMgY29udHJvbCB0byBlbmFibGUvZGlz
+YWJsZSB0cmFjaW5nIG92ZXIgYSBjZ3JvdXAgaW4gYSBzcGVjaWZpYyBoaWVyYXJjaHkKPj4gPj4g
+b25seS4KPj4gPj4KPj4gPj4gVGhpcyBnaXZlcyBtb3JlIGZpbmUtZ3JhaW5lZCBjb250cm9sIG92
+ZXIgdGhlIHRhc2tzIGJlaW5nIHRyYWNlZC4gSSB3b3VsZCBsaWtlCj4+ID4+IHRvIGtub3cgeW91
+ciB0aG91Z2h0cyBvbiB0aGlzIGludGVyZmFjZSBhbmQgdGhlIGFwcHJvYWNoIHRvIG1ha2UgdHJh
+Y2luZwo+PiA+PiBjZ3JvdXAgYXdhcmUuCj4+ID4KPj4gPiBTbyBJIGhhdmUgdG8gYXNrLCB3aHkg
+Y2FuJ3QgeW91IHVzZSBwZXJmIGV2ZW50cyB0byBkbyB0cmFjaW5nIGxpbWl0ZWQgb24gY2dyb3Vw
+cz8KPj4gPiBJdCBoYXMgdGhpcyBjZ3JvdXAgY29udGV4dCBhd2FyZW5lc3MuCgpQZXJmIGRvZXNu
+J3QgaGF2ZSB0aGUgc2FtZSBsYXRlbmN5IGNoYXJhY3RlcmlzdGljcyBhcyBmdHJhY2UuIEl0IGNv
+c3RzCmEgZnVsbCBtaWNyb3NlY29uZCBmb3IgZXZlcnkgdHJhY2UgZXZlbnQuCgpodHRwczovL2xr
+bWwub3JnL2xrbWwvMjAxMC8xMC8yOC8yNjEKCkl0J3MgcG9zc2libGUgdGhlc2UgcmVzdWx0cyBu
+ZWVkIHRvIGJlIHVwZGF0ZWQuIEhhcyBhbnkgZWZmb3J0IGJlZW4KbWFkZSB0byBpbXByb3ZlIHRo
+ZSB0cmFjaW5nIGxhdGVuY3kgb2YgcGVyZj8KCj4+IFRoZSBwZXJmIGV2ZW50IGNncm91cCBhd2Fy
+ZW5lc3MgY29tZXMgZnJvbSBjcmVhdGluZyBhIGRpZmZlcmVudCBoaWVyYXJjaHkgZm9yCj4+IHBl
+cmYgZXZlbnRzLiBXaGVuIHRoZSBldmVudHMgYW5kIHRoZSBjdXJyZW50IHRhc2sncyBjZ3JvdXAg
+bWF0Y2gsIHRoZSBldmVudHMKPj4gYXJlIGxvZ2dlZC4gU28gdGhlIGNoYW5nZXMgYXJlIHByZXR0
+eSBzcGVjaWZpYyB0byB0aGUgcGVyZiBldmVudHMuCj4+Cj4+IEV2ZW4gaW4gdGhlIGNhc2Ugd2hl
+cmUgY2hhbmdlcyBhcmUgbWFkZSB0byBoYW5kbGUgdHJhY2UgZXZlbnRzLCB0aGUgaW50ZXJmYWNl
+Cj4+IGZpbGVzIGFyZSBzdGlsbCBuZWVkZWQuIFRoZSBpbnRlcmZhY2UgdXNlZCB0byBzcGVjaWZ5
+IHBlcmYgZXZlbnRzIHVzZXMgdGhlCj4+IHBlcmZfZXZlbnQgc3lzY2FsbCB3aGljaCBpc24ndCBh
+dmFpbGFibGUgdG8gc3BlY2lmeSB0cmFjZSBldmVudHMuCj4+Cj4+IFRoaXMgaXMgYmFzZWQgb24g
+bXkgbGltaXRlZCB1bmRlcnN0YW5kaW5nIG9mIHRoZSBwZXJmX2V2ZW50cyBjZ3JvdXAgYXdhcmVu
+ZXNzCj4+IHBhdGNoLiBQbGVhc2UgY29ycmVjdCBtZSBpZiBJIGFtIG1pc3NpbmcgYW55dGhpbmcu
+Cj4KPgo+IEFoIGJ1dCBwZXJmIGV2ZW50cyBjYW4gZG8gbXVjaCBtb3JlIHRoYW4gY291bnRpbmcg
+YW5kIHNhbXBsaW5nCj4gaGFyZHdhcmUgZXZlbnRzLiBUcmFjZSBldmVudHMgY2FuIGJlIHVzZWQg
+YXMgcGVyZiBldmVudHMgdG9vLgo+Cj4gTGlzdCB0aGUgZXZlbnRzOgo+Cj4gwqAgwqAgwqAgwqBw
+ZXJmIGxpc3QgLWUgdHJhY2Vwb2ludHMKPgo+IExpc3Qgb2YgcHJlLWRlZmluZWQgZXZlbnRzICh0
+byBiZSB1c2VkIGluIC1lKToKPgo+IMKgc2tiOmtmcmVlX3NrYiDCoCDCoCDCoCDCoCDCoCDCoCDC
+oCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoFtUcmFjZXBvaW50IGV2ZW50XQo+IMKgc2tiOmNvbnN1
+bWVfc2tiIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgW1RyYWNlcG9p
+bnQgZXZlbnRdCj4gwqBza2I6c2tiX2NvcHlfZGF0YWdyYW1faW92ZWMgwqAgwqAgwqAgwqAgwqAg
+wqAgwqAgwqBbVHJhY2Vwb2ludCBldmVudF0KPiDCoG5ldDpuZXRfZGV2X3htaXQgwqAgwqAgwqAg
+wqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgW1RyYWNlcG9pbnQgZXZlbnRdCj4gwqBuZXQ6
+bmV0X2Rldl9xdWV1ZSDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoFtUcmFj
+ZXBvaW50IGV2ZW50XQo+IMKgbmV0Om5ldGlmX3JlY2VpdmVfc2tiIMKgIMKgIMKgIMKgIMKgIMKg
+IMKgIMKgIMKgIMKgIMKgW1RyYWNlcG9pbnQgZXZlbnRdCj4gwqBuZXQ6bmV0aWZfcnggwqAgwqAg
+wqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgW1RyYWNlcG9pbnQgZXZlbnRd
+Cj4gwqBuYXBpOm5hcGlfcG9sbCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDC
+oCDCoCBbVHJhY2Vwb2ludCBldmVudF0KPiDCoHNjc2k6c2NzaV9kaXNwYXRjaF9jbWRfc3RhcnQg
+wqAgwqAgwqAgwqAgwqAgwqAgwqAgW1RyYWNlcG9pbnQgZXZlbnRdCj4gwqBzY3NpOnNjc2lfZGlz
+cGF0Y2hfY21kX2Vycm9yIMKgIMKgIMKgIMKgIMKgIMKgIMKgIFtUcmFjZXBvaW50IGV2ZW50XQo+
+IMKgc2NzaTpzY3NpX2Rpc3BhdGNoX2NtZF9kb25lIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgW1Ry
+YWNlcG9pbnQgZXZlbnRdCj4gwqBzY3NpOnNjc2lfZGlzcGF0Y2hfY21kX3RpbWVvdXQgwqAgwqAg
+wqAgwqAgwqAgwqAgW1RyYWNlcG9pbnQgZXZlbnRdCj4gwqBzY3NpOnNjc2lfZWhfd2FrZXVwIMKg
+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgW1RyYWNlcG9pbnQgZXZlbnRdCj4gwqBk
+cm06ZHJtX3ZibGFua19ldmVudCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCBbVHJh
+Y2Vwb2ludCBldmVudF0KPiDCoGRybTpkcm1fdmJsYW5rX2V2ZW50X3F1ZXVlZCDCoCDCoCDCoCDC
+oCDCoCDCoCDCoCDCoFtUcmFjZXBvaW50IGV2ZW50XQo+IMKgZHJtOmRybV92YmxhbmtfZXZlbnRf
+ZGVsaXZlcmVkIMKgIMKgIMKgIMKgIMKgIMKgIFtUcmFjZXBvaW50IGV2ZW50XQo+IMKgYmxvY2s6
+YmxvY2tfcnFfYWJvcnQgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgW1RyYWNlcG9p
+bnQgZXZlbnRdCj4gwqBibG9jazpibG9ja19ycV9yZXF1ZXVlIMKgIMKgIMKgIMKgIMKgIMKgIMKg
+IMKgIMKgIMKgIFtUcmFjZXBvaW50IGV2ZW50XQo+IMKgYmxvY2s6YmxvY2tfcnFfY29tcGxldGUg
+wqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqBbVHJhY2Vwb2ludCBldmVudF0KPiDCoGJsb2Nr
+OmJsb2NrX3JxX2luc2VydCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoFtUcmFjZXBv
+aW50IGV2ZW50XQo+IMKgZXRjLi4uCj4KPgo+IFRyYWNlIHNjaGVkIHN3aXRjaCBldmVudHM6Cj4K
+PiDCoCDCoCDCoCDCoHBlcmYgcmVjb3JkIC1lIHNjaGVkOnNjaGVkX3N3aXRjaCAtYQo+IMKgIMKg
+IMKgIMKgXkMKPgo+Cj4gUHJpbnQgdGhlbToKPgo+IMKgIMKgIMKgIMKgcGVyZiBzY3JpcHQKPgo+
+IMKgIMKgIMKgIMKgIHN3YXBwZXIgwqAgwqAgMCBbMDAwXSDCoDExMzIuOTY0NTk4OiBzY2hlZF9z
+d2l0Y2g6IHByZXZfY29tbT1zd2FwcGVyIHByZXZfcGlkPTAgcHJldl9wcmlvPTEyMCBwcmV2X3N0
+YXRlPVIgPT0+IG5leHRfY29tbQo+IMKgIMKgIGt3b3JrZXIvMDoxIMKgNDM1OCBbMDAwXSDCoDEx
+MzIuOTY0NjQxOiBzY2hlZF9zd2l0Y2g6IHByZXZfY29tbT1rd29ya2VyLzA6MSBwcmV2X3BpZD00
+MzU4IHByZXZfcHJpbz0xMjAgcHJldl9zdGF0ZT1TID09PiBuZQo+IMKgIMKgIMKgIMKgIHN5c2xv
+Z2QgwqAyNzAzIFswMDBdIMKgMTEzMi45NjQ3MjA6IHNjaGVkX3N3aXRjaDogcHJldl9jb21tPXN5
+c2xvZ2QgcHJldl9waWQ9MjcwMyBwcmV2X3ByaW89MTIwIHByZXZfc3RhdGU9RCA9PT4gbmV4dF9j
+Cj4gwqAgwqAgwqAgwqAgc3dhcHBlciDCoCDCoCAwIFswMDBdIMKgMTEzMi45NjUxMDA6IHNjaGVk
+X3N3aXRjaDogcHJldl9jb21tPXN3YXBwZXIgcHJldl9waWQ9MCBwcmV2X3ByaW89MTIwIHByZXZf
+c3RhdGU9UiA9PT4gbmV4dF9jb21tCj4gwqAgwqAgwqAgwqAgwqAgwqBwZXJmIMKgNDcyNSBbMDAx
+XSDCoDExMzIuOTY1MTc4OiBzY2hlZF9zd2l0Y2g6IHByZXZfY29tbT1wZXJmIHByZXZfcGlkPTQ3
+MjUgcHJldl9wcmlvPTEyMCBwcmV2X3N0YXRlPUQgPT0+IG5leHRfY29tbQo+IMKgIMKgIMKgIMKg
+IHN3YXBwZXIgwqAgwqAgMCBbMDAxXSDCoDExMzIuOTY1MjI3OiBzY2hlZF9zd2l0Y2g6IHByZXZf
+Y29tbT1rd29ya2VyLzA6MCBwcmV2X3BpZD0wIHByZXZfcHJpbz0xMjAgcHJldl9zdGF0ZT1SID09
+PiBuZXh0Xwo+IMKgIMKgIMKgIMKgIMKgIMKgcGVyZiDCoDQ3MjUgWzAwMV0gwqAxMTMyLjk2NTI0
+Njogc2NoZWRfc3dpdGNoOiBwcmV2X2NvbW09cGVyZiBwcmV2X3BpZD00NzI1IHByZXZfcHJpbz0x
+MjAgcHJldl9zdGF0ZT1EID09PiBuZXh0X2NvbW0KPiDCoCDCoCDCoCDCoGV0Yy4uLgo+Cj4KX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBt
+YWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczov
+L2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
