@@ -1,7 +1,7 @@
-From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: David Sharp <dhsharp-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [RFC] tracing: Adding cgroup aware tracing functionality
-Date: Fri, 8 Apr 2011 22:38:29 +0200
-Message-ID: <20110408203827.GA26667__14303.9799215787$1302295156$gmane$org@nowhere>
+Date: Fri, 8 Apr 2011 14:41:43 -0700
+Message-ID: <BANLkTikg+RE5YqxmnYY5-L6tZ=aMY+6HSw__43700.3858307891$1302299060$gmane$org@mail.gmail.com>
 References: <BANLkTik_jtjWTsOueUzfdQXRx17OcgyDgA@mail.gmail.com>
 	<20110407013349.GH1867@nowhere>
 	<BANLkTinKsYqkEEUu98t+Gn9ciPn_bmsMFQ@mail.gmail.com>
@@ -10,13 +10,12 @@ References: <BANLkTik_jtjWTsOueUzfdQXRx17OcgyDgA@mail.gmail.com>
 	<20110407213208.GE1798@nowhere>
 	<BANLkTimOvWYgiRc6cviB6iiUt9MH-Au1qw@mail.gmail.com>
 	<20110408002812.GG1798@nowhere> <1302248268.21026.18.camel@frodo>
-	<20110408190052.GC1967@nowhere>
+	<20110408190052.GC1967@nowhere> <20110408203827.GA26667@nowhere>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20110408190052.GC1967@nowhere>
+In-Reply-To: <20110408203827.GA26667@nowhere>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,26 +25,59 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>
-Cc: Michael Rubin <mrubin-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, David Sharp <dhsharp-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Stephane Eranian <eranian-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Arnaldo Carvalho de Melo <acme-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Ken Chen <kenchen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Vaibhav Nagarnaik <vnagarnaik-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Michael Rubin <mrubin-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Stephane Eranian <eranian-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Arnaldo Carvalho de Melo <acme-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Ken Chen <kenchen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Vaibhav Nagarnaik <vnagarnaik-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, Apr 08, 2011 at 09:00:56PM +0200, Frederic Weisbecker wrote:
-> On Fri, Apr 08, 2011 at 03:37:48AM -0400, Steven Rostedt wrote:
-> > I actually agree, as perf is more focused on per process (or group) than
-> > ftrace. But that said, I guess the issue is also, if they have a simple
-> > solution that is not invasive and suits their needs, what's the harm in
-> > accepting it?
-> 
-> What about a kind of cgroup_of(path) operator that we can use on
-> filters?
-> 
-> 	common_pid cgroup_of(path)
-> or
-> 	common_pid __cgroup_of__ path
-> 
-> That way you don't bloat the tracing fast path?
-
-Note in this example, we would simply ignore the common_pid
-value and assume that pid is the one of current. This economizes
-a step to pid -> task resolution.
+T24gRnJpLCBBcHIgOCwgMjAxMSBhdCAxOjM4IFBNLCBGcmVkZXJpYyBXZWlzYmVja2VyIDxmd2Vp
+c2JlY0BnbWFpbC5jb20+IHdyb3RlOgo+IE9uIEZyaSwgQXByIDA4LCAyMDExIGF0IDA5OjAwOjU2
+UE0gKzAyMDAsIEZyZWRlcmljIFdlaXNiZWNrZXIgd3JvdGU6Cj4+IE9uIEZyaSwgQXByIDA4LCAy
+MDExIGF0IDAzOjM3OjQ4QU0gLTA0MDAsIFN0ZXZlbiBSb3N0ZWR0IHdyb3RlOgo+PiA+IEkgYWN0
+dWFsbHkgYWdyZWUsIGFzIHBlcmYgaXMgbW9yZSBmb2N1c2VkIG9uIHBlciBwcm9jZXNzIChvciBn
+cm91cCkgdGhhbgo+PiA+IGZ0cmFjZS4gQnV0IHRoYXQgc2FpZCwgSSBndWVzcyB0aGUgaXNzdWUg
+aXMgYWxzbywgaWYgdGhleSBoYXZlIGEgc2ltcGxlCj4+ID4gc29sdXRpb24gdGhhdCBpcyBub3Qg
+aW52YXNpdmUgYW5kIHN1aXRzIHRoZWlyIG5lZWRzLCB3aGF0J3MgdGhlIGhhcm0gaW4KPj4gPiBh
+Y2NlcHRpbmcgaXQ/Cj4+Cj4+IFdoYXQgYWJvdXQgYSBraW5kIG9mIGNncm91cF9vZihwYXRoKSBv
+cGVyYXRvciB0aGF0IHdlIGNhbiB1c2Ugb24KPj4gZmlsdGVycz8KPj4KPj4gwqAgwqAgwqAgY29t
+bW9uX3BpZCBjZ3JvdXBfb2YocGF0aCkKPj4gb3IKPj4gwqAgwqAgwqAgY29tbW9uX3BpZCBfX2Nn
+cm91cF9vZl9fIHBhdGgKPj4KPj4gVGhhdCB3YXkgeW91IGRvbid0IGJsb2F0IHRoZSB0cmFjaW5n
+IGZhc3QgcGF0aD8KPgo+IE5vdGUgaW4gdGhpcyBleGFtcGxlLCB3ZSB3b3VsZCBzaW1wbHkgaWdu
+b3JlIHRoZSBjb21tb25fcGlkCj4gdmFsdWUgYW5kIGFzc3VtZSB0aGF0IHBpZCBpcyB0aGUgb25l
+IG9mIGN1cnJlbnQuIFRoaXMgZWNvbm9taXplcwo+IGEgc3RlcCB0byBwaWQgLT4gdGFzayByZXNv
+bHV0aW9uLgo+CgpUaGlzIGlzIGEgZGVjZW50IGlkZWEsIGJ1dCBJJ20gd29ycmllZCBhYm91dCB0
+aGUgY29tcGxleGl0eSBvZiB1c2luZwpmaWx0ZXJzIGxpa2UgdGhpcy4gRmlsdGVycyBhcmUgd3Jp
+dHRlbiB0byAqZXZlcnkqIGV2ZW50IHRoYXQgeW91IHdhbnQKdGhlIGZpbHRlciB0byBhcHBseSB0
+byAoaWYgeW91IHNldCB0aGUgdG9wLWxldmVsIGZpbHRlciwgaXQganVzdApjb3BpZXMgdGhlIGZp
+bHRlciB0byBhbGwgYXBwbGljYWJsZSBldmVudHMpLCBhbmQgdGhpcyBpcyBhIGZpbHRlciB5b3UK
+d291bGQgbW9zdGx5IG9ubHkgd2FudCB0byBhcHBseSB0byAqYWxsKiBldmVudHMgYXQgb25jZS4g
+RnVydGhlcm1vcmUsCmZpbHRlcnMgd29yayBieSBkaXNjYXJkaW5nIHRoZSBldmVudCAqYWZ0ZXIq
+IHRoZSBldmVudCBoYXMgYWxyZWFkeQpiZWVuIHdyaXR0ZW4sIHNvIGFsbCB0YXNrcyB3aWxsIGJl
+IGluY3VycmluZyBmdWxsIHRyYWNpbmcgb3ZlcmhlYWQuCldpdGggY2dyb3VwIGZpbHRlcmluZyB1
+cCBmcm9udCwgd2UgY2FuIGF2b2lkIH45MCUgWzBdIG9mIHRoZSBvdmVyaGVhZApmb3IgdW50cmFj
+ZWQgY2dyb3Vwcy4KCkknbSBhbHNvIHRoaW5raW5nIHRoYXQgY2dyb3VwcyBjb3VsZCBiZSBhIHdh
+eSB0byBleHBvc2UgdHJhY2luZyB0bwpub24tcm9vdCB1c2Vycy4gTWFraW5nIGl0IGEgZmlsdGVy
+IGRvZXNuJ3Qgd29yayBmb3IgdGhhdC4KCgpIbW0uLiBNYXliZSBmdHJhY2UgbmVlZHMgYSAiZ2xv
+YmFsIGZpbHRlcnMiIGZlYXR1cmUuIGNncm91cCBhbmQgcGlkCndvdWxkIGJlIHByaW1lIGNhbmRp
+ZGF0ZXMgZm9yIHRoaXMsIHBlcmhhcHMgdGhlcmUgYXJlIG90aGVycy4gVGhlc2UKd291bGQgYmUg
+YW4gb3B0aW9uYWwgbGlzdCBvZiBmaWx0ZXJzIGFwcGxpZWQgKmJlZm9yZSogd3JpdGluZyB0aGUK
+ZXZlbnQgb3IgcmVzZXJ2aW5nIGJ1ZmZlciBzcGFjZSwgc28gdGhleSBjb3VsZCBub3QgdXNlIHRo
+ZSBldmVudApmaWVsZHMuIE1vc3RseSBJJ20gdGhpbmtpbmcgdGhleSB3b3VsZCB1c2UgdGhpbmdz
+IGFjY2Vzc2libGUgZnJvbSB0aGUKY3VycmVudCB0YXNrX3N0cnVjdC4KCgpJZiB3ZSBjb3VsZCB3
+b3JrIGFsbCB0aGF0IG91dCwgdGhlbiBJIHdvdWxkIGNoYW5nZSBhIGNvdXBsZSB0aGluZ3M6Cm9u
+ZSBvZiBteSBncmFuZCBwbGFucyBmb3IgdHJhY2luZyBpcyB0byByZW1vdmUgcGlkIGZyb20gZXZl
+cnkgZXZlbnQsCmFuZCByZXBsYWNlIGl0IHdpdGggYSB0aW55ICJwaWRfY2hhbmdlZCIgZXZlbnQg
+KHVubGVzcyAic2NoZWRfc3dpdGNoIgpldCBhbCBpcyBlbmFibGVkKS4gU28gSSB3b3VsZG4ndCB3
+YW50IHRvIGF0dGFjaCBpdCB0byBjb21tb25fcGlkIGF0CmFsbC4gSW5zdGVhZCwgSSB3b3VsZCBt
+YWtlIGl0IGEgdW5hcnkgb3BlcmF0b3IuCgpJdCBhbHNvIGRvZXNuJ3Qgd29yayB3aXRoIG11bHRp
+cGxlIGhpZXJhbmNoaWVzLiBXaGVuIHlvdSByZWZlciB0byBhCmNncm91cCBwYXRoIG9mICIvYXBw
+cy9jb250YWluZXJfMyIsIGFyZSB3ZSB0YWxraW5nIGFib3V0IHRoZSBjZ3JvdXAKZm9yIGNwdSwg
+b3IgbWVtLCBvciBibGtpbywgb3IgYWxsLCBvciBhIHN1YnNldD8gVGhpcyBpcyB3aGF0IHRoZQoi
+dHJhY2luZ19lbmFibGVkIiBmaWxlcyBpbiB0aGUgY2dyb3VwIGZpbGVzeXN0ZW0gaW4gVmFpYmhh
+didzIHByb3Bvc2FsCndlcmUgZm9yLiBNYXliZSB0aGlzIGNvdWxkIGJlIGFuIG9wdGlvbmFsIGFy
+Z3VtZW50IHRvIHRoZSB1bmFyeQpvcGVyYXRvci4KClNvLCB0aGUgb3BlcmF0b3IgYmVjb21lczoK
+Y2dyb3VwX29mKC9wYXRoKSAgbWVhbnMgYW55IHN1YnN5c3RlbSwKY2dyb3VwX29mKC9wYXRoLCBj
+cHUsIG1lbSkgbWVhbnMgY3B1IG9yIG1lbS4KCmQjCgpbMF0gVGhpcyBmaWd1cmUgaXMgbWFkZSB1
+cC4gTGlrZSBtb3N0IHN0YXRpc3RpY3MuIDspCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlz
+dHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9uLm9y
+Zy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
