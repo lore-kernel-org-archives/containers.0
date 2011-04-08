@@ -1,7 +1,7 @@
-From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
 Subject: Re: [RFC] tracing: Adding cgroup aware tracing functionality
-Date: Fri, 8 Apr 2011 15:45:42 +0200
-Message-ID: <20110408134537.GA1967__31808.2492486157$1302270484$gmane$org@nowhere>
+Date: Fri, 08 Apr 2011 16:07:50 +0200
+Message-ID: <1302271670.9086.154.camel__13470.6722376452$1302271840$gmane$org@twins>
 References: <BANLkTik_jtjWTsOueUzfdQXRx17OcgyDgA@mail.gmail.com>
 	<20110407013349.GH1867@nowhere>
 	<BANLkTinKsYqkEEUu98t+Gn9ciPn_bmsMFQ@mail.gmail.com>
@@ -9,12 +9,11 @@ References: <BANLkTik_jtjWTsOueUzfdQXRx17OcgyDgA@mail.gmail.com>
 	<BANLkTim70Ef0gy+W+4h76PABn32wDRvTtw@mail.gmail.com>
 	<20110407213208.GE1798@nowhere>
 	<BANLkTimOvWYgiRc6cviB6iiUt9MH-Au1qw@mail.gmail.com>
-	<20110408002812.GG1798@nowhere> <1302248268.21026.18.camel@frodo>
+	<20110408002812.GG1798@nowhere>  <1302248268.21026.18.camel@frodo>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 In-Reply-To: <1302248268.21026.18.camel@frodo>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -26,138 +25,32 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>
-Cc: Michael Rubin <mrubin-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, David Sharp <dhsharp-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Stephane Eranian <eranian-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Arnaldo Carvalho de Melo <acme-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Ken Chen <kenchen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Vaibhav Nagarnaik <vnagarnaik-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Michael Rubin <mrubin-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, David Sharp <dhsharp-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Stephane Eranian <eranian-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Arnaldo Carvalho de Melo <acme-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Ken Chen <kenchen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vaibhav Nagarnaik <vnagarnaik-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, Apr 08, 2011 at 03:37:48AM -0400, Steven Rostedt wrote:
-> On Fri, 2011-04-08 at 02:28 +0200, Frederic Weisbecker wrote:
-> 
-> > > This is all very interesting, but doesn't really help us. I'd prefer
-> > > to focus on the proposal itself than discuss the merits of perf and
-> > > ftrace. We're using ftrace for the foreseeable future, and afaik, it's
-> > > still a maintained part of the kernel. If perf improves its
-> > > performance for tracing, then we can consider switching to it. We
-> > > could invest time improving perf, and that might be worthwhile, but
-> > > ftrace is here now.
-> > 
-> > You are investing upstream for your tracing needs. And that's really
-> > a nice step that I appreciate, as IIRC, Google had its own internal tracing
-> > (ktrace?) before. Nonetheless you can't be such a significant
-> > user/developer of the upstream kernel tracing and at the same time ignore some
-> > key problems of the actual big picture of it.
-> > 
-> > You need to be aware that we are not going anywhere if we duplicate
-> > every features between perf and ftrace. We want to merge the common
-> > pieces, keep the best of them and not expand the two tier tracing of today.
-> 
-> 
-> I agree that it would be great if we can start to merge the two. But
-> until we have a road map that we can all agree upon, I don't see that
-> happening in the near future. But I may be wrong ;)
-
-Nah, I don't think it's necessary to have a roadmap, just a kind
-of general direction. Other than that everything can be done piecewise
-without thinking too far for every single patches.
-
-If we were to create a buffer abstraction, something we can create with an
-fd, we can have a shared buffer implementation. And this buffer may be
-able to accept different modes in the future.
-
-Then one could attach the fd to a perf event, which would override the
-default perf event buffer settings.
-
-And ftrace can use that same buffer internally.
-
-I bet this idea is not controversial. What has yet to be solved is
-the debate on the writers that can run in overwriting mode at the same
-time we have readers. Which comes along debates on using subbuffers, etc..
-
-But I guess we can solve that along the way?
-
-There are many other things we want to do to unify even more: have the
-function tracers usable as trace events, same for trace_printk, etc...
-Those parts are pretty uncontroversial.
-
-I don't consider the tracing merge as a one block thing, it's actually
-many standalone pieces that require incremental changes.
- 
-> > 
-> > I wish people stop thinking about perf and ftrace as
-> > competitors.
-> 
+On Fri, 2011-04-08 at 03:37 -0400, Steven Rostedt wrote:
 > I don't think this is about perf and ftrace as competitors, but they are
 > currently two different infrastructures that are existing in the kernel.
 > They are currently optimized for different purposes. ftrace is optimized
 > for system tracing (persistent buffers and such) where as perf is
-> optimized for user tracing. But the two can do both but the other
+> optimized for user tracing. 
+
+That's complete nonsense, perf isn't build for tracing at all, its just
+that tracing is a special case of the larger problem set of
+sampling/profiling it is build for.
+
+Nor is perf in any way shape or form better suited for user than for
+kernel space, it really doesn't care, if we'd only be interested in user
+crap we'd never have done NMI sampling for instance.
+
+> But the two can do both but the other
 > feature is not as efficient as the other tool.
 
-But that's an accidental two tier optimization. At least yeah ftrace
-goal is deemed for per cpu tracing, thus it is optimized this way.
-But perf should work well on both cases.
+Well, neither can do user-space-tracing at all, simply because we don't
+have hooks into userspace, although the uprobes stuff looks to cure some
+of that.
 
 > As you said perf has a lot of overhead due to data that it saves per
-> event. How easy is it to modify that without breaking the ABI?
+> event. 
 
-It doesn't need to break the ABI. We can add a field in the perf event
-attr to drop the ftrace headers. We can even remove the support for these
-headers in the pretty long term.
-
-> >  Probably developers could start having a sane view
-> > once both will have close performances and then we can start
-> > thinking about a common backend (a buffer abstraction, which development
-> > can be iterated incrementally, usable with a syscall) and eliminate the
-> > overlapping pieces.
-> 
-> I wouldn't say eliminate, but at least merge the overlapping pieces. I'm
-> still totally against stripping out the debugfs code, and as tools have
-> been made to depend on it, I'm not sure we can rip it out. But I do not
-> see any harm in supporting both a debugfs feature along with a syscall
-> interface. I'm willing to do the leg work here to keep it.
-
-I have no strong problem with that either. We can keep the debugfs interface
-or part of it, while merging the overlapping pieces.
-
-I think it's actually not even in question currently. We are far from a state
-where we can remove the debugfs interface. 
-
-> > 
-> > I'm not asking you to unify the kernel tracing all alone. But you need to
-> > start to enlarge your view.
-> 
-> You might want to be a bit more specific by what you mean here.
-
-I was just grumpy :)
-
-But instead of moaning against others I guess I should rather try to
-start to work on it.
-
-> > 
-> > I tend to think perf is more suitable for finegrained context definition
-> > in general.
-> 
-> I actually agree, as perf is more focused on per process (or group) than
-> ftrace. But that said, I guess the issue is also, if they have a simple
-> solution that is not invasive and suits their needs, what's the harm in
-> accepting it?
-
-To enter more details, perf and ftrace have different ways of dealing
-with contexts of tracing.
-
-ftrace would have a check on every exclusion point in the fast path
-(pid, cgroups, etc...) while perf would actually schedule events on
-top of these criterias. So that there should be only one check to know
-if we are running in the fast path.
-
-In practice we have much more checks from the fast path, but that again
-waits for more optimizations.
-
-So that's the reason why I think perf is more suitable when it's about
-dealing with contexts. Adding a cgroup check in the ftrace fastpath
-is automatically going to be invasive, this is one more check in any
-trace event fast path. As you said ftrace is more optimized for global
-tracing, which makes it the wrong place for that IMHO.
-
-I won't oppose, and may be they even have a non-invasive solution to
-propose that I haven't thought about. Until then I think they are
-investing the wrong place.
+Someday you should actually read the perf code before you say something.
