@@ -1,7 +1,7 @@
-From: Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>
+From: Michael Rubin <mrubin-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [RFC] tracing: Adding cgroup aware tracing functionality
-Date: Fri, 08 Apr 2011 13:02:10 -0400
-Message-ID: <1302282130.21026.45.camel__43459.4751605347$1302282254$gmane$org@frodo>
+Date: Fri, 8 Apr 2011 11:32:53 -0700
+Message-ID: <BANLkTikOi1Y_5RH1juPmchWHjW8f=ynuRA__9432.43559818274$1302287648$gmane$org@mail.gmail.com>
 References: <BANLkTik_jtjWTsOueUzfdQXRx17OcgyDgA@mail.gmail.com>
 	<20110407013349.GH1867@nowhere>
 	<BANLkTinKsYqkEEUu98t+Gn9ciPn_bmsMFQ@mail.gmail.com>
@@ -9,13 +9,13 @@ References: <BANLkTik_jtjWTsOueUzfdQXRx17OcgyDgA@mail.gmail.com>
 	<BANLkTim70Ef0gy+W+4h76PABn32wDRvTtw@mail.gmail.com>
 	<20110407213208.GE1798@nowhere>
 	<BANLkTimOvWYgiRc6cviB6iiUt9MH-Au1qw@mail.gmail.com>
-	<20110408002812.GG1798@nowhere>  <1302248268.21026.18.camel@frodo>
-	<1302271670.9086.154.camel@twins>
+	<20110408002812.GG1798@nowhere> <1302248268.21026.18.camel@frodo>
+	<20110408134537.GA1967@nowhere> <1302271672.9086.155.camel@twins>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1302271670.9086.154.camel@twins>
+In-Reply-To: <1302271672.9086.155.camel@twins>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,70 +26,43 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
-Cc: Michael Rubin <mrubin-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, David Sharp <dhsharp-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Stephane Eranian <eranian-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Arnaldo Carvalho de Melo <acme-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Ken Chen <kenchen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vaibhav Nagarnaik <vnagarnaik-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, David Sharp <dhsharp-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>, Arnaldo Carvalho de Melo <acme-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Ken Chen <kenchen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Stephane Eranian <eranian-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vaibhav Nagarnaik <vnagarnaik-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, 2011-04-08 at 16:07 +0200, Peter Zijlstra wrote:
+Minor history, Google wrote ktrace which we started to push upstream
+and then jumped on the ftrace train. ftrace was a very good drop in
+replacement for us. ftrace has a lot of features ktrace did not. We
+use perf also in other contexts.
 
-> > As you said perf has a lot of overhead due to data that it saves per
-> > event. 
-> 
-> Someday you should actually read the perf code before you say something.
+We have devoted a lot of time and energy from many engineers outside
+of kernel to use ftrace. It's not just the kernel code, but we have
+built a lot of sw on ftrace as we examine systems in the cloud. It was
+not easy to make this migration since it had a lot of user impact. It
+was less the low level API but the fact that the tracepoints semantics
+had changed. Google is in the process of no longer using ktrace.
 
-I have looked at the code although not as much recently, but I do plan
-on looking at it again in much more detail. But you are correct that I
-did not make this comment on the code itself, but on looking at the
-data:
+Requirements for tracing for us seem to be:
+1) Around 250ns latencies when enabled
+2) Small events - We have worked on shrinking the ftrace event size.
+Since we are constrained on the amount of memory we can use in the
+ring buffer, every byte counts. A nice sized event is on the order of
+<= 8 bytes. Some of the 2.6.34 ftrace events like irq_enter and exit
+were too big around 20 bytes. sched_switch is around 60 bytes.
 
-I ran:
+I am not sure that perf meets these requirements. We need to use
+ftrace for tracing _now_.  Google also needs to focus on improving
+ftrace upstream so we can contribute our changes to the community. We
+are submitting patches and working with upstream to improve ftrace.
+Currently we depend on ftrace and being around for a long time.
 
-# perf record -a -e sched:sched_switch sleep 10
-# mv perf.data perf.data.10
-# perf record -a -e sched:sched_switch sleep 20
-# mv perf.data perf.data.20
-# ls -l perf.data.*
--rw-------. 1 root root 4480655 2011-04-08 12:36 perf.data.10
--rw-------. 1 root root 5532431 2011-04-08 12:37 perf.data.20
-# perf script -i perf.data.10 | wc -l
-9909
-# perf script -i perf.data.20 | wc -l
-18675
+Fredric wrote:" Nonetheless you can't be such a significant
+user/developer of the upstream kernel tracing and at the same time
+ignore some key problems of the actual big picture of it."
 
-Then I did some deltas to figure out he size per event:
+I see less of a big picture issue and more of an awkward two pictures.
+From my view it's a question of whether ftrace should continue to be
+supported and improved or whether perf will do everything as well and
+when. We depend on ftrace today and as such we have invested our time
+there.
 
-5532431-4480655 = 1051776
-18675-9909 = 8766
-1051776/8766 = 119
-
-Which shows that the sched switch event takes up 119 bytes per event.
-
-Then I looked at what ftrace does:
-
-# trace-cmd record -e sched_switch -o trace.dat.10 sleep 10
-# trace-cmd record -e sched_switch -o trace.dat.20 sleep 20
-# trace-cmd report trace.dat.10 | wc -l
-38856
-# trace-cmd report trace.dat.20 | wc -l
-77124
-# ls -l trace.dat.*
--rw-r--r--. 1 root root 5832704 2011-04-08 12:41 trace.dat.10
--rw-r--r--. 1 root root 8790016 2011-04-08 12:41 trace.dat.20
-
-8790016-5832704 = 2957312
-77124-38856 = 38268
-2957312/38268 = 77
-
-As you stated, I need to look more into the perf code (which I plan on
-doing), but it seems that perf adds 42 bytes more per event. Perhaps
-this is something we can fix. I'd love to make both perf and ftrace be
-able to limit its header. There's no reason to record the pid for every
-event if we don't need to. As well as the preempt count and interrupt
-status. But these are legacy from the latency tracer code from -rt.
-
-I think there's a lot of work that we can do make tracing in perf more
-compatible with the tracing features of ftrace. I did say the ugly word
-"roadmap" but perhaps it's just direction that we need. I feel we are
-all a bunch of cooks with their own taste, and we don't all like the
-spices used by each other.
-
--- Steve
+mrubin
