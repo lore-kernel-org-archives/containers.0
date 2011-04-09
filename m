@@ -1,7 +1,7 @@
-From: David Sharp <dhsharp-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+From: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
 Subject: Re: [RFC] tracing: Adding cgroup aware tracing functionality
-Date: Fri, 8 Apr 2011 14:41:43 -0700
-Message-ID: <BANLkTikg+RE5YqxmnYY5-L6tZ=aMY+6HSw__43700.3858307891$1302299060$gmane$org@mail.gmail.com>
+Date: Sat, 09 Apr 2011 13:08:35 +0200
+Message-ID: <1302347315.9086.1246.camel__31978.424875024$1302347383$gmane$org@twins>
 References: <BANLkTik_jtjWTsOueUzfdQXRx17OcgyDgA@mail.gmail.com>
 	<20110407013349.GH1867@nowhere>
 	<BANLkTinKsYqkEEUu98t+Gn9ciPn_bmsMFQ@mail.gmail.com>
@@ -9,13 +9,13 @@ References: <BANLkTik_jtjWTsOueUzfdQXRx17OcgyDgA@mail.gmail.com>
 	<BANLkTim70Ef0gy+W+4h76PABn32wDRvTtw@mail.gmail.com>
 	<20110407213208.GE1798@nowhere>
 	<BANLkTimOvWYgiRc6cviB6iiUt9MH-Au1qw@mail.gmail.com>
-	<20110408002812.GG1798@nowhere> <1302248268.21026.18.camel@frodo>
-	<20110408190052.GC1967@nowhere> <20110408203827.GA26667@nowhere>
+	<20110408002812.GG1798@nowhere>  <1302248268.21026.18.camel@frodo>
+	<1302271670.9086.154.camel@twins>  <1302282130.21026.45.camel@frodo>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110408203827.GA26667@nowhere>
+In-Reply-To: <1302282130.21026.45.camel@frodo>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,59 +25,51 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Michael Rubin <mrubin-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Stephane Eranian <eranian-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Arnaldo Carvalho de Melo <acme-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Ken Chen <kenchen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Vaibhav Nagarnaik <vnagarnaik-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>
+Cc: Michael Rubin <mrubin-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, David Sharp <dhsharp-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Stephane Eranian <eranian-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Arnaldo Carvalho de Melo <acme-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Ken Chen <kenchen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vaibhav Nagarnaik <vnagarnaik-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gRnJpLCBBcHIgOCwgMjAxMSBhdCAxOjM4IFBNLCBGcmVkZXJpYyBXZWlzYmVja2VyIDxmd2Vp
-c2JlY0BnbWFpbC5jb20+IHdyb3RlOgo+IE9uIEZyaSwgQXByIDA4LCAyMDExIGF0IDA5OjAwOjU2
-UE0gKzAyMDAsIEZyZWRlcmljIFdlaXNiZWNrZXIgd3JvdGU6Cj4+IE9uIEZyaSwgQXByIDA4LCAy
-MDExIGF0IDAzOjM3OjQ4QU0gLTA0MDAsIFN0ZXZlbiBSb3N0ZWR0IHdyb3RlOgo+PiA+IEkgYWN0
-dWFsbHkgYWdyZWUsIGFzIHBlcmYgaXMgbW9yZSBmb2N1c2VkIG9uIHBlciBwcm9jZXNzIChvciBn
-cm91cCkgdGhhbgo+PiA+IGZ0cmFjZS4gQnV0IHRoYXQgc2FpZCwgSSBndWVzcyB0aGUgaXNzdWUg
-aXMgYWxzbywgaWYgdGhleSBoYXZlIGEgc2ltcGxlCj4+ID4gc29sdXRpb24gdGhhdCBpcyBub3Qg
-aW52YXNpdmUgYW5kIHN1aXRzIHRoZWlyIG5lZWRzLCB3aGF0J3MgdGhlIGhhcm0gaW4KPj4gPiBh
-Y2NlcHRpbmcgaXQ/Cj4+Cj4+IFdoYXQgYWJvdXQgYSBraW5kIG9mIGNncm91cF9vZihwYXRoKSBv
-cGVyYXRvciB0aGF0IHdlIGNhbiB1c2Ugb24KPj4gZmlsdGVycz8KPj4KPj4gwqAgwqAgwqAgY29t
-bW9uX3BpZCBjZ3JvdXBfb2YocGF0aCkKPj4gb3IKPj4gwqAgwqAgwqAgY29tbW9uX3BpZCBfX2Nn
-cm91cF9vZl9fIHBhdGgKPj4KPj4gVGhhdCB3YXkgeW91IGRvbid0IGJsb2F0IHRoZSB0cmFjaW5n
-IGZhc3QgcGF0aD8KPgo+IE5vdGUgaW4gdGhpcyBleGFtcGxlLCB3ZSB3b3VsZCBzaW1wbHkgaWdu
-b3JlIHRoZSBjb21tb25fcGlkCj4gdmFsdWUgYW5kIGFzc3VtZSB0aGF0IHBpZCBpcyB0aGUgb25l
-IG9mIGN1cnJlbnQuIFRoaXMgZWNvbm9taXplcwo+IGEgc3RlcCB0byBwaWQgLT4gdGFzayByZXNv
-bHV0aW9uLgo+CgpUaGlzIGlzIGEgZGVjZW50IGlkZWEsIGJ1dCBJJ20gd29ycmllZCBhYm91dCB0
-aGUgY29tcGxleGl0eSBvZiB1c2luZwpmaWx0ZXJzIGxpa2UgdGhpcy4gRmlsdGVycyBhcmUgd3Jp
-dHRlbiB0byAqZXZlcnkqIGV2ZW50IHRoYXQgeW91IHdhbnQKdGhlIGZpbHRlciB0byBhcHBseSB0
-byAoaWYgeW91IHNldCB0aGUgdG9wLWxldmVsIGZpbHRlciwgaXQganVzdApjb3BpZXMgdGhlIGZp
-bHRlciB0byBhbGwgYXBwbGljYWJsZSBldmVudHMpLCBhbmQgdGhpcyBpcyBhIGZpbHRlciB5b3UK
-d291bGQgbW9zdGx5IG9ubHkgd2FudCB0byBhcHBseSB0byAqYWxsKiBldmVudHMgYXQgb25jZS4g
-RnVydGhlcm1vcmUsCmZpbHRlcnMgd29yayBieSBkaXNjYXJkaW5nIHRoZSBldmVudCAqYWZ0ZXIq
-IHRoZSBldmVudCBoYXMgYWxyZWFkeQpiZWVuIHdyaXR0ZW4sIHNvIGFsbCB0YXNrcyB3aWxsIGJl
-IGluY3VycmluZyBmdWxsIHRyYWNpbmcgb3ZlcmhlYWQuCldpdGggY2dyb3VwIGZpbHRlcmluZyB1
-cCBmcm9udCwgd2UgY2FuIGF2b2lkIH45MCUgWzBdIG9mIHRoZSBvdmVyaGVhZApmb3IgdW50cmFj
-ZWQgY2dyb3Vwcy4KCkknbSBhbHNvIHRoaW5raW5nIHRoYXQgY2dyb3VwcyBjb3VsZCBiZSBhIHdh
-eSB0byBleHBvc2UgdHJhY2luZyB0bwpub24tcm9vdCB1c2Vycy4gTWFraW5nIGl0IGEgZmlsdGVy
-IGRvZXNuJ3Qgd29yayBmb3IgdGhhdC4KCgpIbW0uLiBNYXliZSBmdHJhY2UgbmVlZHMgYSAiZ2xv
-YmFsIGZpbHRlcnMiIGZlYXR1cmUuIGNncm91cCBhbmQgcGlkCndvdWxkIGJlIHByaW1lIGNhbmRp
-ZGF0ZXMgZm9yIHRoaXMsIHBlcmhhcHMgdGhlcmUgYXJlIG90aGVycy4gVGhlc2UKd291bGQgYmUg
-YW4gb3B0aW9uYWwgbGlzdCBvZiBmaWx0ZXJzIGFwcGxpZWQgKmJlZm9yZSogd3JpdGluZyB0aGUK
-ZXZlbnQgb3IgcmVzZXJ2aW5nIGJ1ZmZlciBzcGFjZSwgc28gdGhleSBjb3VsZCBub3QgdXNlIHRo
-ZSBldmVudApmaWVsZHMuIE1vc3RseSBJJ20gdGhpbmtpbmcgdGhleSB3b3VsZCB1c2UgdGhpbmdz
-IGFjY2Vzc2libGUgZnJvbSB0aGUKY3VycmVudCB0YXNrX3N0cnVjdC4KCgpJZiB3ZSBjb3VsZCB3
-b3JrIGFsbCB0aGF0IG91dCwgdGhlbiBJIHdvdWxkIGNoYW5nZSBhIGNvdXBsZSB0aGluZ3M6Cm9u
-ZSBvZiBteSBncmFuZCBwbGFucyBmb3IgdHJhY2luZyBpcyB0byByZW1vdmUgcGlkIGZyb20gZXZl
-cnkgZXZlbnQsCmFuZCByZXBsYWNlIGl0IHdpdGggYSB0aW55ICJwaWRfY2hhbmdlZCIgZXZlbnQg
-KHVubGVzcyAic2NoZWRfc3dpdGNoIgpldCBhbCBpcyBlbmFibGVkKS4gU28gSSB3b3VsZG4ndCB3
-YW50IHRvIGF0dGFjaCBpdCB0byBjb21tb25fcGlkIGF0CmFsbC4gSW5zdGVhZCwgSSB3b3VsZCBt
-YWtlIGl0IGEgdW5hcnkgb3BlcmF0b3IuCgpJdCBhbHNvIGRvZXNuJ3Qgd29yayB3aXRoIG11bHRp
-cGxlIGhpZXJhbmNoaWVzLiBXaGVuIHlvdSByZWZlciB0byBhCmNncm91cCBwYXRoIG9mICIvYXBw
-cy9jb250YWluZXJfMyIsIGFyZSB3ZSB0YWxraW5nIGFib3V0IHRoZSBjZ3JvdXAKZm9yIGNwdSwg
-b3IgbWVtLCBvciBibGtpbywgb3IgYWxsLCBvciBhIHN1YnNldD8gVGhpcyBpcyB3aGF0IHRoZQoi
-dHJhY2luZ19lbmFibGVkIiBmaWxlcyBpbiB0aGUgY2dyb3VwIGZpbGVzeXN0ZW0gaW4gVmFpYmhh
-didzIHByb3Bvc2FsCndlcmUgZm9yLiBNYXliZSB0aGlzIGNvdWxkIGJlIGFuIG9wdGlvbmFsIGFy
-Z3VtZW50IHRvIHRoZSB1bmFyeQpvcGVyYXRvci4KClNvLCB0aGUgb3BlcmF0b3IgYmVjb21lczoK
-Y2dyb3VwX29mKC9wYXRoKSAgbWVhbnMgYW55IHN1YnN5c3RlbSwKY2dyb3VwX29mKC9wYXRoLCBj
-cHUsIG1lbSkgbWVhbnMgY3B1IG9yIG1lbS4KCmQjCgpbMF0gVGhpcyBmaWd1cmUgaXMgbWFkZSB1
-cC4gTGlrZSBtb3N0IHN0YXRpc3RpY3MuIDspCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlz
-dHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9uLm9y
-Zy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+On Fri, 2011-04-08 at 13:02 -0400, Steven Rostedt wrote:
+> On Fri, 2011-04-08 at 16:07 +0200, Peter Zijlstra wrote:
+> 
+> > > As you said perf has a lot of overhead due to data that it saves per
+> > > event. 
+> > 
+> > Someday you should actually read the perf code before you say something.
+> 
+> I have looked at the code although not as much recently, but I do plan
+> on looking at it again in much more detail. But you are correct that I
+> did not make this comment on the code itself, but on looking at the
+> data:
+
+> 1051776/8766 = 119
+
+> 2957312/38268 = 77
+> 
+> As you stated, I need to look more into the perf code (which I plan on
+> doing), but it seems that perf adds 42 bytes more per event. Perhaps
+> this is something we can fix. 
+
+Aside from the 8 byte header everything else is configurable with
+PERF_SAMPLE_flags and probably has some overlap with stuff we also have
+in the tracepoint data we then get through PERF_SAMPLE_RAW
+
+> I'd love to make both perf and ftrace be
+> able to limit its header. There's no reason to record the pid for every
+> event if we don't need to. As well as the preempt count and interrupt
+> status. But these are legacy from the latency tracer code from -rt.
+
+Right.
+
+> I think there's a lot of work that we can do make tracing in perf more
+> compatible with the tracing features of ftrace. I did say the ugly word
+> "roadmap" but perhaps it's just direction that we need. I feel we are
+> all a bunch of cooks with their own taste, and we don't all like the
+> spices used by each other.
+
+Partly yeah, but there's also real functional differences, the last time
+I profiled perf with perf (yay for recursion) we spend a lot of time in
+conditionals. Due to the fact that perf is mainly sampling based (and
+tracing being samples with period==1) and all that output
+configurability there's a true forest of if statements to pass through
+and I'm fairly sure we totally trash the branch predictor on that.
