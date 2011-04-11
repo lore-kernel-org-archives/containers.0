@@ -1,11 +1,15 @@
-From: "Erin Carver" <Browningsvhfegxvwhh-VYg9swd11AhjitOJ6T5g7Lyq0pUa53/3@public.gmane.org>
-Subject: opt-in data for sale: businesses, professionals, medical etc..
-Date: Sat, 9 Apr 2011 16:50:52 -0700
-Message-ID: <201104092350.p39NoqvS004963@smtp1.linux-foundation.org>
+From: Rob Landley <rlandley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: Re: [PATCH 3/3] Compare namespaces when comparing addresses in
+	auth_unix cache.
+Date: Mon, 11 Apr 2011 08:29:06 -0500
+Message-ID: <4DA30222.5040902__47234.0635526509$1302528702$gmane$org@parallels.com>
+References: <4D9431B3.2070305@parallels.com> <20110405034641.GC6764@hallyn.com>
+	<4D9F24F2.9020603@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <4D9F24F2.9020603-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,24 +19,37 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: seeucf-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Cc: rpetrin-Odq/cTe47yXYtjvyW6yDsg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kristian.kai-JfRxm+UD6oNMBLFdQT0NmYPmsTKSUN6M@public.gmane.org, ruth.erachtens-H5jKLDrO7WlO9uS2lhmkbe8uFQJZWOEF@public.gmane.org, jane-maxima-34XXs0nbH93EITBZQ9thRXnhMCiq3JZZ@public.gmane.org, idtheftdvd-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, webmaster-na8aGId72cDk1uMJSBkQmQ@public.gmane.org
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: Kir Kolyshkin <kir-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Tim Spriggs <tims-DAzCR1AAk2Rg9hUCZPvPmw@public.gmane.org>, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>, linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Only for this week we have some of the lowest package deals we've ever offered. 
+On 04/08/2011 10:08 AM, Rob Landley wrote:
+> On 04/04/2011 10:46 PM, Serge E. Hallyn wrote:
+>> Does this need to take a reference?  Or is there no way for an
+>> entry to outlive its netns?  It sort of looks like
+>> svcauth_unix_info_release will ensure that doesn't happen, but
+>> I'm not convinced because other parts of the kernel can get
+>> to ip_map_init through the struct cache_detail.
+> 
+> When I wrote this I thought the transport's get_net() and put_net()
+> would pin it, but after re-reading, the sunrpc code is disgustingly
+> convoluted enough that I can't easily reconstruct my earlier reasoning.
+>  I'll add a get_net() and put_net() just to not have to worry about it.
 
- * HEALTHCARE - 20 complete lists in total being sold for only $395! (some of these lists cost $500 each!)
+Ah-ha!
 
+Stanislav Kinsbursky helped me reconstruct some of the reasoning: we
+don't need to take a reference because we never actually dereference the
+struct net *, all we do is feed them to net_eq() which just compares the
+pointers for equality.  (The inline function exists so it can compile to
+a constant "return 1" when configured out.)
 
- * BUSINESS/PROFESSIONALS LISTS - 14 complete lists in total sold for just $295! (10M total emails here)
+So if the network context did go away (which still shouldn't happen
+between the rpc_xprt and the struct nfs_client having references to it)
+we still wouldn't have a use-after-free problem because we're not
+looking at the memory, just the pointer.
 
+So I shouldn't need to add get_net() and put_net() to the cache.  Sound
+about right?
 
- * CONSUMER LISTS -  3 huge lists totalling 4.4 million emails, all optin complete with IP stamp - $195!
-
-
-
-I will be more than happy to give you a breakdown of all lists in every category and sample excel spreadsheets 
-for every list. Send an email to this address: janine.jamieson-0UDz38MK/Mo@public.gmane.org
-
-
-Send email to managesubscription-0UDz38MK/Mo@public.gmane.org to ensure no further communication
+Rob
