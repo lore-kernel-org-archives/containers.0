@@ -1,15 +1,11 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH v8.75 0/4] cgroups: implement moving a threadgroup's
-	threads atomically with cgroup.procs
-Date: Wed, 13 Apr 2011 10:07:58 +0800
-Message-ID: <4DA5057E.5000706__39713.404098484$1302660349$gmane$org@cn.fujitsu.com>
-References: <20110208013542.GC31569@ghc17.ghc.andrew.cmu.edu>	<20110406194420.GC10792@ghc17.ghc.andrew.cmu.edu>
-	<20110412162516.4120c441.akpm@linux-foundation.org>
+From: "Dwight Dennison" <millerjp-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>
+Subject: Ero-empowers
+Date: Sat, 16 Apr 2011 23:01:50 +0200
+Message-ID: <01cbfc8a$44ca8300$df3803bc@millerjp>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110412162516.4120c441.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,42 +15,57 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Miao Xie <miaox-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Andrew Morton wrote:
-> On Wed, 6 Apr 2011 15:44:20 -0400
-> Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org> wrote:
-> 
->> Same as before; using flex_array in attach_proc (thanks Kame).
->>
->> -- Ben
->>
->> ---
->>  Documentation/cgroups/cgroups.txt |   39 ++-
->>  block/blk-cgroup.c                |   18 -
->>  include/linux/cgroup.h            |   10 
->>  include/linux/init_task.h         |    9 
->>  include/linux/sched.h             |   36 ++
->>  kernel/cgroup.c                   |  489 +++++++++++++++++++++++++++++++++-----
->>  kernel/cgroup_freezer.c           |   26 --
->>  kernel/cpuset.c                   |   96 +++----
->>  kernel/fork.c                     |   10 
->>  kernel/sched.c                    |   38 --
->>  mm/memcontrol.c                   |   18 -
->>  security/device_cgroup.c          |    3 
->>  12 files changed, 594 insertions(+), 198 deletions(-)
-> 
-> So where are we up to with all this.
-> 
-> I'm surprised that none of the patches had anyone's Acked-by: or
-> Reviewed-by:.  Were they really that mean to you, or have you not been
-> tracking these?
-> 
-> 
+   When impotence suddenly comes into your life you=92d better be prepared =
+to meet it!
+                                                                        =
 
-Paul reviewed the patchset and explicitly gave his reviewed-by tag for all
-the 3 pathces.
+   Dear containers,
+                                                                           =
+                     =
 
-And I'm going to do some testing for it.
+Even if your sex life is already rich and fulfilling... Imagine you had a l=
+ittle more energy... if your erections stayed harder... or you could go jus=
+t a little longer...
+Or maybe you worry, when you climb under the covers, that you=92re starting=
+ something you can=92t finish?
+Well, now advancements in natural medicine are making it easier than ever t=
+o promote a strong libido, firm, natural erections and enhanced desire.
+     =
+
+Now thanks to this exciting natural breakthrough, you could get an erection=
+ =93on demand=94 and when you do, sustain it long enough =96 and keep firm =
+enough =97 to fully satisfy your wife in bed. Even if you=92re in your 50s,=
+ 60s, 70s, 80s or older!
+                                                         =
+
+As a doctor, I=92ve learned something over the years that may surprise you =
+=97 age has very little to do with sex. There are men out there having the =
+best sex of their lives well into their 80th year and beyond.
+                                 =
+
+And those men have three key things in common that their sex starved friend=
+s don=92t:
+Hard, recurring erections...
+Heightened desire and stamina...
+And a reproductive system that could be functioning at the top of its game.=
+..
+               =
+
+   Lucky? You bet.
+                                  =
+
+But you too could give your body the nutrients it needs to support your ent=
+ire sexual health.
+                                                      =
+
+   We cannot solve all your problems but we can help you conquer erectile d=
+ysfunction.
+***********************************************
+
+>>>     www.Day30pills.ru     <<<
+
+***********************************************
+                                                      =
