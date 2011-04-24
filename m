@@ -1,16 +1,14 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: c/r failure
-Date: Sun, 24 Apr 2011 05:33:30 -0400
-Message-ID: <4DB3EE6A.501@cs.columbia.edu>
-References: <20110307193503.GA16777@hallyn.com>
-	<20110324005230.GD22601@count0.beaverton.ibm.com>
-	<20110324013452.GA14481@hallyn.com>
-	<20110324021137.GE22601@count0.beaverton.ibm.com>
+Subject: Re: linux-cr:  ckpt-v23-rc2 pushed
+Date: Sun, 24 Apr 2011 05:34:31 -0400
+Message-ID: <4DB3EEA7.6000108@cs.columbia.edu>
+References: <4DAA3B61.10504@cs.columbia.edu>	<20110418181803.GA3740@count0.beaverton.ibm.com>
+	<4DB3BD53.40102@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110324021137.GE22601-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
+In-Reply-To: <4DB3BD53.40102-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,67 +19,27 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Serge,
 
-Do you still get this problem with rc2 ?
 
-Oren.
-
-On 03/23/2011 10:11 PM, Matt Helsley wrote:
-> On Wed, Mar 23, 2011 at 08:34:52PM -0500, Serge E. Hallyn wrote:
->> Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
->>> 	Unfortunately ckptinfo is broken. My most recent series of 18 patches
->>> to user-cr fixes it. I've attached the output using an earlier version
->>
->> Egads.
+On 04/24/2011 02:04 AM, Oren Laadan wrote:
 > 
-> Incidentally, those patches don't change checkpoint or restart -- just
-> the build and ckptinfo. So unless you want to patch your own ckptinfo
-> or have some quirky old "boxes" like me, you don't need them.
-> 
->>
->>> beginning. This was masked by some troubles with ckpt_err() which I still
->>> haven't been able to figure out -- the "error" reported in dmesg above
->>> is -512 but really should be -32 (EPIPE). You rewrote that code, didn't you? ;)
->>
->> Eeeeyeee know nothink.  Nothink!
->>
->>> Anyhow, today I managed to bisect my user-cr troubles down to:
+> On 04/18/2011 02:18 PM, Matt Helsley wrote:
+>> On Sat, Apr 16, 2011 at 08:59:13PM -0400, Oren Laadan wrote:
+>>> Hi,
 >>>
->>> 5b97422c4c1342a128df508cda7c4639ecb24a36
->>>
->>> Revert was not clean and the resolved conflicts on top of the revert did
->>> not seem to fix the problem, soo... :/ all I can recommend at the moment is
->>> sticking to the earlier branches.
+>>> I finally merged all the recent patches and bug fixes, including hugetlb
+>>> and pids-as-objects. I pushed it as ckpt-v23-rc2 - both linux-cr and user-cr.
+>>> It applies on top of 2.6.37.
 >>
->>
->>> Hope that helps. Again, sorry for the delay.
->>
->> Thanks, Matt.  It'll be at least a week before I have a chance to play with
->> it again, but I'll give earlier versions a shot.  Is there any particular
->> matching version for kernel+user-dr which you'd recomment at this point?
+>> Given that there have already been 3 -stable releases I was thinking it
+>> seems reasonable to move on to 2.6.38 for -rc3. What do you think?
 > 
-> So far the closest thing I have to a working combination is this commit
-> found via bisect:
-> 
-> v23-rc1 + user-cr @ f1d427d4ce1df44432fccd2e08c60992c8169b8c
-> "Ghost tasks must be detached"
-> 
-> (which just follows: f0fdd38cb0a53594eec9d4e19671d0c33036517c
-> "headers: regenerate for ckpt-v23-rc1 [x86_32]" -- nice to know it's
-> about the right spot)
-> 
-> Watch out for non-matching syscall numbers. The clone_*.* source files
-> will use old "default" values _very_ _quietly_ if they aren't found via
-> the updated headers in ./include/linux . Syscall numbers in those files
-> tend to get updated much less frequently.
-> 
-> I am testing on x86-32 in KVM at the moment and haven't run everything
-> so YMMV.
-> 
-> Cheers,
-> 	-Matt Helsley
-> 
+> Too late for rc3, will do that for rc4.
+
+Wah .... too much jetlag :(
+Will definitely do for rc3 !
+
+Oren
