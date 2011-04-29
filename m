@@ -1,16 +1,11 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: CLONE_NEWNET + unix domain sockets
-Date: Thu, 28 Apr 2011 13:03:46 -0700
-Message-ID: <m1ei4mdty5.fsf@fess.ebiederm.org>
-References: <6E3DBEA16997DE780A11C637@Ximines.local>
-	<20110425183459.GA29536@wavehammer.waldi.eu.org>
-	<E5092261EC5F5ABA2AE6E7EE@Ximines.local>
+From: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+Subject: [C/R PATCH] reject checkpoint of fd subject to F_SETSIG
+Date: Fri, 29 Apr 2011 16:27:34 -0500
+Message-ID: <1304112454-24641-1-git-send-email-ntl@pobox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <E5092261EC5F5ABA2AE6E7EE-F+tRR8lnwRmNj9Bq2fkWzw@public.gmane.org> (Alex Bligh's message of
-	"Mon, 25 Apr 2011 19:54:10 +0100")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,31 +15,43 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alex Bligh <alex-rWA27mgs/Jz10XsdtD+oqA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Bastian Blank <bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Alex Bligh <alex-rWA27mgs/Jz10XsdtD+oqA@public.gmane.org> writes:
+Similar to our handling of fds that have been subject to F_SETOWN,
+detect when an fd has had its f_owner->signum changed from the
+default.
 
-> --On 25 April 2011 20:35:00 +0200 Bastian Blank <bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org> 
-> wrote:
->
->> On Mon, Apr 25, 2011 at 02:56:25PM +0100, Alex Bligh wrote:
->>> but I don't understand why, or what the semantics are for interaction
->>> between unshare(CLONE_NEWNET) and unix domain sockets. Any ideas?
->>
->> AFAIK sharing unix sockets between network namespaces is supported since
->> 2.6.36 or so.
->
-> I'm using 2.6.32-28-generic, and I'm doing
-> 	fork()
-> 	listen()
-> 	unshare(CLONE_NEWNET)
-> 	...
-> 	accept()
->
-> and it seems to be working. Is that forward compatible?
+Signed-off-by: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+---
+ fs/checkpoint.c |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
 
-Yes.
-
-Eric
+diff --git a/fs/checkpoint.c b/fs/checkpoint.c
+index fd539c5..bf4d2d4 100644
+--- a/fs/checkpoint.c
++++ b/fs/checkpoint.c
+@@ -265,6 +265,7 @@ static int checkpoint_file_desc(struct ckpt_ctx *ctx,
+ 	struct file *file = NULL;
+ 	struct fdtable *fdt;
+ 	int objref, ret;
++	int signum;
+ 	int coe = 0;	/* avoid gcc warning */
+ 	pid_t pid;
+ 
+@@ -311,6 +312,13 @@ static int checkpoint_file_desc(struct ckpt_ctx *ctx,
+ 		goto out;
+ 	}
+ 
++	signum = ACCESS_ONCE(file->f_owner.signum);
++	if (signum != 0) {
++		ret = -EBUSY;
++		ckpt_err(ctx, ret, "%(T)fd %d has a signal set (%d)\n", fd, signum);
++		goto out;
++	}
++
+ 	/*
+ 	 * if seen first time, this will add 'file' to the objhash, keep
+ 	 * a reference to it, dump its state while at it.
+-- 
+1.7.4.4
