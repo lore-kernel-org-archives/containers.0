@@ -1,38 +1,37 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: [PATCH 1/1] templates: don't put devpts in
-	$confdir/container/fstab
-Date: Sat, 07 May 2011 01:36:35 +0200
-Message-ID: <4DC48603.10605@free.fr>
-References: <20110506170516.GA20670@mail.hallyn.com>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: [PATCH 0/7] Network namespace manipulation with file descriptors
+Date: Fri, 06 May 2011 19:23:29 -0700
+Message-ID: <m1tyd7p7tq.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110506170516.GA20670-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-arch-owner@vger.kernel.org>
+Sender: linux-arch-owner@vger.kernel.org
+To: linux-arch@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, netdev@vger.kernel.org, linux-fsdevel@vger.kernel.org, jamal <hadi@cyberus.ca>, Daniel Lezcano <daniel.lezcano@free.fr>, Linux Containers <containers@lists.osdl.org>, Renato Westphal <renatowestphal@gmail.com>
 List-Id: containers.vger.kernel.org
 
-On 05/06/2011 07:05 PM, Serge E. Hallyn wrote:
-> src/lxc/conf.c will explicitly mount it anyway.  Furthermore, the fstab
-> entry, which is getting processed first, did not specify -o newinstance.
-> This can cause the host's devpts entry mount options to change, as in
-> https://bugs.launchpad.net/ubuntu/+source/libvirt/+bug/607636.
->
-> I believe the lenny, fedora, and debian templates also will need an
-> update.
->
-Applied and update debian and fedora templates.
 
-Thanks Serge
+Today there are something things you can use namespaces to implement but
+the userspace code is unnecessarily complex and fragile because of
+limitations of the kernel interfaces.
 
-   -- Daniel
+This patchset addresses the user interface limitations by introducing
+proc files you can open to get file descriptors that keep alive and
+refer to your a tasks namespaces.  Those file descriptors can be passed
+to the new setns system call or the NET_NS_FD argument in netlink
+messages.
+
+This patchset is sufficient to implement linux support for named network
+namespaces in iproute allowing vpns to be isolated in a network
+namespace where you don't have to worry about them conflicting with the
+rest of your network.
+
+This patchset is almost sufficient to remove the need for a daemon in a
+container to allow you to log in.  Unfortunately a few of the namespaces
+are not ready to merge yet so I have left them out.
+
+Arch maintainers could you look over patch 7 and verify I have wired
+up this new system call correctly.
+
+These changes are also available at:
+git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/linux-2.6-nsfd.git
