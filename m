@@ -1,20 +1,27 @@
-From: David Miller <davem@davemloft.net>
-Subject: Re: [PATCH 0/7] Network namespace manipulation with file
- descriptors
-Date: Mon, 09 May 2011 12:04:08 -0700 (PDT)
-Message-ID: <20110509.120408.48494155.davem@davemloft.net>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [PATCH 0/7] Network namespace manipulation with file descriptors
+Date: Mon, 09 May 2011 12:59:55 -0700
+Message-ID: <m1oc3btzk4.fsf@fess.ebiederm.org>
 References: <m1tyd7p7tq.fsf@fess.ebiederm.org>
+	<20110509.120408.48494155.davem@davemloft.net>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-arch-owner@vger.kernel.org>
-In-Reply-To: <m1tyd7p7tq.fsf@fess.ebiederm.org>
-Sender: linux-arch-owner@vger.kernel.org
-To: ebiederm@xmission.com
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <20110509.120408.48494155.davem@davemloft.net> (David Miller's
+	message of "Mon, 09 May 2011 12:04:08 -0700 (PDT)")
+Sender: linux-kernel-owner@vger.kernel.org
+To: David Miller <davem@davemloft.net>
 Cc: linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, netdev@vger.kernel.org, linux-fsdevel@vger.kernel.org, hadi@cyberus.ca, daniel.lezcano@free.fr, containers@lists.osdl.org, renatowestphal@gmail.com
 List-Id: containers.vger.kernel.org
 
+David Miller <davem@davemloft.net> writes:
 
-The networking bits look OK to me:
+> The networking bits look OK to me:
+>
+> Acked-by: David S. Miller <davem@davemloft.net>
 
-Acked-by: David S. Miller <davem@davemloft.net>
+Are you merging sendmmsg through the netdev tree?
+
+The conflicts on syscall syscall numbers are an unfortunate pain.
+
+Eric
