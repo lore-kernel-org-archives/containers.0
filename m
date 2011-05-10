@@ -1,28 +1,34 @@
-From: David Miller <davem@davemloft.net>
-Subject: Re: [PATCH 0/7] Network namespace manipulation with file
- descriptors
-Date: Mon, 09 May 2011 13:55:32 -0700 (PDT)
-Message-ID: <20110509.135532.200362374.davem@davemloft.net>
-References: <m1oc3btzk4.fsf@fess.ebiederm.org>
-	<20110509.134007.116389415.davem@davemloft.net>
-	<m1bozbtx0y.fsf@fess.ebiederm.org>
+From: "Luck, Tony" <tony.luck@intel.com>
+Subject: RE: [PATCH 0/7] Network namespace manipulation with file descriptors
+Date: Tue, 10 May 2011 14:56:25 -0700
+Message-ID: <987664A83D2D224EAE907B061CE93D5301CCC622F4@orsmsx505.amr.corp.intel.com>
+References: <m1tyd7p7tq.fsf@fess.ebiederm.org>
+	<20110509.120408.48494155.davem@davemloft.net>
+	<m1oc3btzk4.fsf@fess.ebiederm.org>
+ <20110509.134007.116389415.davem@davemloft.net>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 8BIT
 Return-path: <linux-arch-owner@vger.kernel.org>
-In-Reply-To: <m1bozbtx0y.fsf@fess.ebiederm.org>
+In-Reply-To: <20110509.134007.116389415.davem@davemloft.net>
+Content-Language: en-US
 Sender: linux-arch-owner@vger.kernel.org
-To: ebiederm@xmission.com
-Cc: linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, netdev@vger.kernel.org, linux-fsdevel@vger.kernel.org, hadi@cyberus.ca, daniel.lezcano@free.fr, containers@lists.osdl.org, renatowestphal@gmail.com
+To: David Miller <davem@davemloft.net>, "ebiederm@xmission.com" <ebiederm@xmission.com>
+Cc: "linux-arch@vger.kernel.org" <linux-arch@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "netdev@vger.kernel.org" <netdev@vger.kernel.org>, "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>, "hadi@cyberus.ca" <hadi@cyberus.ca>, "daniel.lezcano@free.fr" <daniel.lezcano@free.fr>, "containers@lists.osdl.org" <containers@lists.osdl.org>, "renatowestphal@gmail.com" <renatowestphal@gmail.com>
 List-Id: containers.vger.kernel.org
 
-From: ebiederm@xmission.com (Eric W. Biederman)
-Date: Mon, 09 May 2011 13:54:37 -0700
+>> The conflicts on syscall syscall numbers are an unfortunate pain.
+>
+> The way we've solved this before is the tree that cares pulls in
+> the net-next-2.6 tree to resolve the conflict.
 
-> Do you know if there are any plans to support sendmmsg on parisc for
-> 2.6.40?  That could get sticky as the parisc tree has a bunch of syscall
-> catchup support they are doing now.
+Actually it seems more common that new syscalls are only added to
+x86 (plus one or more other architectures that the author cares
+about). Then arch maintainers throw in a "wire up new syscalls"
+patch during the merge window when they see these new bits show up.
 
-If you would like, you could send me a patch for net-next-2.6 that adds
-the sendmmsg syscall entries and hooks for all the platforms not taken
-care of right now.
+-Tony
+
+Oh - ia64 wiring looks good.
+
+Acked-by: Tony Luck <tony.luck@intel.com>
