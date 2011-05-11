@@ -1,122 +1,104 @@
 From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH 2/7] ns: Introduce the setns syscall
-Date: Wed, 11 May 2011 13:33:48 -0700
-Message-ID: <m1fwolnfir.fsf@fess.ebiederm.org>
+Subject: Re: [PATCH 3/7] ns proc: Add support for the network namespace.
+Date: Wed, 11 May 2011 14:34:37 -0700
+Message-ID: <m139kkncpe.fsf@fess.ebiederm.org>
 References: <m1tyd7p7tq.fsf@fess.ebiederm.org>
 	<1304735101-1824-1-git-send-email-ebiederm@xmission.com>
-	<1304735101-1824-2-git-send-email-ebiederm@xmission.com>
-	<1305141681.1236.48.camel@orca.stoopid.dyndns.org>
+	<1304735101-1824-3-git-send-email-ebiederm@xmission.com>
+	<1305141705.1236.49.camel@orca.stoopid.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <1305141681.1236.48.camel@orca.stoopid.dyndns.org> (Nathan
-	Lynch's message of "Wed, 11 May 2011 14:21:14 -0500")
-Sender: linux-fsdevel-owner@vger.kernel.org
+Return-path: <linux-arch-owner@vger.kernel.org>
+In-Reply-To: <1305141705.1236.49.camel@orca.stoopid.dyndns.org> (Nathan
+	Lynch's message of "Wed, 11 May 2011 14:21:34 -0500")
+Sender: linux-arch-owner@vger.kernel.org
 To: Nathan Lynch <ntl@pobox.com>
-Cc: linux-arch@vger.kernel.org, netdev@vger.kernel.org, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, linux-fsdevel@vger.kernel.org
+Cc: linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, netdev@vger.kernel.org, linux-fsdevel@vger.kernel.org, jamal <hadi@cyberus.ca>, Daniel Lezcano <daniel.lezcano@free.fr>, Linux Containers <containers@lists.osdl.org>, Renato Westphal <renatowestphal@gmail.com>
 List-Id: containers.vger.kernel.org
 
 Nathan Lynch <ntl@pobox.com> writes:
 
-> Hi Eric,
->
 > On Fri, 2011-05-06 at 19:24 -0700, Eric W. Biederman wrote:
->> With the networking stack today there is demand to handle
->> multiple network stacks at a time.  Not in the context
->> of containers but in the context of people doing interesting
->> things with routing.
->> 
->> There is also demand in the context of containers to have
->> an efficient way to execute some code in the container itself.
->> If nothing else it is very useful ad a debugging technique.
->> 
->> Both problems can be solved by starting some form of login
->> daemon in the namespaces people want access to, or you
->> can play games by ptracing a process and getting the
->> traced process to do things you want it to do. However
->> it turns out that a login daemon or a ptrace puppet
->> controller are more code, they are more prone to
->> failure, and generally they are less efficient than
->> simply changing the namespace of a process to a
->> specified one.
->> 
->> Pieces of this puzzle can also be solved by instead of
->> coming up with a general purpose system call coming up
->> with targed system calls perhaps socketat that solve
->> a subset of the larger problem.  Overall that appears
->> to be more work for less reward.
->> 
->> int setns(int fd, int nstype);
->> 
->> The fd argument is a file descriptor referring to a proc
->> file of the namespace you want to switch the process to.
->> 
->> In the setns system call the nstype is 0 or specifies
->> an clone flag of the namespace you intend to change
->> to prevent changing a namespace unintentionally.
->
-> I don't understand exactly what the nstype argument buys us - why would
-> correct code ever need to specify a value other than 0?  And reusing the
-> CLONE_NEW* values in this interface is kind of ugly when setns is
-> precisely _not_ creating new namespaces.
-
-No but it is setting a new namespace.  I do agree it is a bit ugly.  But
-the worst case at this point is I introduce a new set of beautiful
-defines with the same values.
-
-> Is there some fundamental reason it couldn't be
->
-> int setns(int fd);
->
-> or is there a use case I'm missing?
-
-When someone else opens the file descriptor and passes it to us
-and we don't completely trust them.  Or equally when someone
-else does the bind mount into the filesystem namespace and we
-don't completely trust them.
-
-Plus having a flags field is useful in general.
-
->> +SYSCALL_DEFINE2(setns, int, fd, int, nstype)
+>> diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
+>> index 3f86026..bf7707e 100644
+>> --- a/net/core/net_namespace.c
+>> +++ b/net/core/net_namespace.c
+>> @@ -573,3 +573,34 @@ void unregister_pernet_device(struct pernet_operations *ops)
+>>  	mutex_unlock(&net_mutex);
+>>  }
+>>  EXPORT_SYMBOL_GPL(unregister_pernet_device);
+>> +
+>> +#ifdef CONFIG_NET_NS
+>> +static void *netns_get(struct task_struct *task)
 >> +{
->> +	const struct proc_ns_operations *ops;
->> +	struct task_struct *tsk = current;
->> +	struct nsproxy *new_nsproxy;
->> +	struct proc_inode *ei;
->> +	struct file *file;
->> +	int err;
->> +
->> +	if (!capable(CAP_SYS_ADMIN))
->> +		return -EPERM;
->> +
->> +	file = proc_ns_fget(fd);
->> +	if (IS_ERR(file))
->> +		return PTR_ERR(file);
->> +
->> +	err = -EINVAL;
->> +	ei = PROC_I(file->f_dentry->d_inode);
->> +	ops = ei->ns_ops;
->> +	if (nstype && (ops->type != nstype))
->> +		goto out;
->> +
->> +	new_nsproxy = create_new_namespaces(0, tsk, tsk->fs);
+>> +	struct net *net;
+>> +	rcu_read_lock();
+>> +	net = get_net(task->nsproxy->net_ns);
 >
-> create_new_namespaces() can fail; shouldn't this be checked?
+> This should use task_nsproxy() and check the result before grabbing the
+> net_ns, but I think you fix that in a later patch.
+>
+> Regardless, it looks as if all the proc_ns_ops->get() implementations
+> really just want the nsproxy, so maybe the get() methods should take
+> that instead of the task_struct, and proc_ns_instantiate() should do
+> something like:
+>
+> struct nsproxy *nsproxy;
+> ...
+>
+> ei->ns_ops = ns_ops;
+> error = -ESRCH;
+> rcu_read_lock();
+> nsproxy = task_nsproxy(task);
+> rcu_read_unlock();
+> if (!nsproxy)
+> 	got out;
+> ei->ns = ns_ops->get(nsproxy);
+>
+>
+> So then the zombie check is consolidated in one place instead of having
+> to do it in every get() method.
 
-Yes.  This was pointed out a little earlier and has been fixed
-in my tree.
+For the pid namespace at least I want the task not the nsproxy,
+so I can use task_active_pid_namespace().
 
+I admit that is a little asymmetrical with the install, but at
+least until the details of getting the pid namespace working in
+this context are worked out I don't want to reconsider the
+current design.
 
->> +	err = ops->install(new_nsproxy, ei->ns);
->> +	if (err) {
->> +		free_nsproxy(new_nsproxy);
->> +		goto out;
->> +	}
->> +	switch_task_namespaces(tsk, new_nsproxy);
->> +out:
->> +	fput(file);
->> +	return err;
+There is also the user namespace that does not even exist in
+nsproxy to consider.  I will worry about that namespace when
+it happens.
+
+Ultimately nsproxy is an space/time optimization that not all
+namespaces use so forcing it in the design is probably not
+what we want.
+
+>> +	rcu_read_unlock();
+>> +	return net;
 >> +}
 >> +
+>> +static void netns_put(void *ns)
+>> +{
+>> +	put_net(ns);
+>> +}
+>> +
+>> +static int netns_install(struct nsproxy *nsproxy, void *ns)
+>> +{
+>> +	put_net(nsproxy->net_ns);
+>> +	nsproxy->net_ns = get_net(ns);
+>> +	return 0;
+>> +}
+>
+> This introduces a window where, potentially, nsproxy->net_ns is stale
+> before it is updated with the namespace which is being attached, no? 
+> (Same concern applies to other install methods in the patch set).  It
+> seems possible to oops the kernel in this window by looking up
+> /proc/$PID/ns/net while $PID is in the midst of setns().
+
+Except the nsproxy being referred to is a brand new nsproxy, with an
+extra reference count on every namespace.  current->nsproxy still
+contains the reference counts of the current process.
 
 Eric
