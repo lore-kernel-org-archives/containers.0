@@ -1,109 +1,115 @@
-From: Nathan Lynch <ntl@pobox.com>
-Subject: Re: [PATCH 3/7] ns proc: Add support for the network namespace.
-Date: Wed, 11 May 2011 16:42:33 -0500
-Message-ID: <1305150164.1236.51.camel@orca.stoopid.dyndns.org>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [PATCH 1/7] ns: proc files for namespace naming policy.
+Date: Wed, 11 May 2011 15:52:35 -0700
+Message-ID: <m1oc38luj0.fsf@fess.ebiederm.org>
 References: <m1tyd7p7tq.fsf@fess.ebiederm.org>
- <1304735101-1824-1-git-send-email-ebiederm@xmission.com>
- <1304735101-1824-3-git-send-email-ebiederm@xmission.com>
- <1305141705.1236.49.camel@orca.stoopid.dyndns.org>
- <m139kkncpe.fsf@fess.ebiederm.org>
+	<1304735101-1824-1-git-send-email-ebiederm@xmission.com>
+	<1305141667.1236.47.camel@orca.stoopid.dyndns.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-arch-owner@vger.kernel.org>
-In-Reply-To: <m139kkncpe.fsf@fess.ebiederm.org>
-Sender: linux-arch-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <1305141667.1236.47.camel@orca.stoopid.dyndns.org> (Nathan
+	Lynch's message of "Wed, 11 May 2011 14:20:48 -0500")
+Sender: linux-kernel-owner@vger.kernel.org
+To: Nathan Lynch <ntl@pobox.com>
 Cc: linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, netdev@vger.kernel.org, linux-fsdevel@vger.kernel.org, jamal <hadi@cyberus.ca>, Daniel Lezcano <daniel.lezcano@free.fr>, Linux Containers <containers@lists.osdl.org>, Renato Westphal <renatowestphal@gmail.com>
 List-Id: containers.vger.kernel.org
 
-On Wed, 2011-05-11 at 14:34 -0700, Eric W. Biederman wrote:
-> Nathan Lynch <ntl@pobox.com> writes:
-> 
-> > On Fri, 2011-05-06 at 19:24 -0700, Eric W. Biederman wrote:
-> >> diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
-> >> index 3f86026..bf7707e 100644
-> >> --- a/net/core/net_namespace.c
-> >> +++ b/net/core/net_namespace.c
-> >> @@ -573,3 +573,34 @@ void unregister_pernet_device(struct pernet_operations *ops)
-> >>  	mutex_unlock(&net_mutex);
-> >>  }
-> >>  EXPORT_SYMBOL_GPL(unregister_pernet_device);
-> >> +
-> >> +#ifdef CONFIG_NET_NS
-> >> +static void *netns_get(struct task_struct *task)
-> >> +{
-> >> +	struct net *net;
-> >> +	rcu_read_lock();
-> >> +	net = get_net(task->nsproxy->net_ns);
-> >
-> > This should use task_nsproxy() and check the result before grabbing the
-> > net_ns, but I think you fix that in a later patch.
-> >
-> > Regardless, it looks as if all the proc_ns_ops->get() implementations
-> > really just want the nsproxy, so maybe the get() methods should take
-> > that instead of the task_struct, and proc_ns_instantiate() should do
-> > something like:
-> >
-> > struct nsproxy *nsproxy;
-> > ...
-> >
-> > ei->ns_ops = ns_ops;
-> > error = -ESRCH;
-> > rcu_read_lock();
-> > nsproxy = task_nsproxy(task);
-> > rcu_read_unlock();
-> > if (!nsproxy)
-> > 	got out;
-> > ei->ns = ns_ops->get(nsproxy);
-> >
-> >
-> > So then the zombie check is consolidated in one place instead of having
-> > to do it in every get() method.
-> 
-> For the pid namespace at least I want the task not the nsproxy,
-> so I can use task_active_pid_namespace().
-> 
-> I admit that is a little asymmetrical with the install, but at
-> least until the details of getting the pid namespace working in
-> this context are worked out I don't want to reconsider the
-> current design.
-> 
-> There is also the user namespace that does not even exist in
-> nsproxy to consider.  I will worry about that namespace when
-> it happens.
-> 
-> Ultimately nsproxy is an space/time optimization that not all
-> namespaces use so forcing it in the design is probably not
-> what we want.
+Nathan Lynch <ntl@pobox.com> writes:
 
-Okay.
+> Hi Eric,
+>
+> A few comments on your patch set.
+>
+>
+> On Fri, 2011-05-06 at 19:24 -0700, Eric W. Biederman wrote:
+>> diff --git a/fs/proc/inode.c b/fs/proc/inode.c
+>> index d15aa1b..74b48cf 100644
+>> --- a/fs/proc/inode.c
+>> +++ b/fs/proc/inode.c
+>> @@ -28,6 +28,7 @@ static void proc_evict_inode(struct inode *inode)
+>>  {
+>>  	struct proc_dir_entry *de;
+>>  	struct ctl_table_header *head;
+>> +	const struct proc_ns_operations *ns_ops;
+>>  
+>>  	truncate_inode_pages(&inode->i_data, 0);
+>>  	end_writeback(inode);
+>> @@ -44,6 +45,10 @@ static void proc_evict_inode(struct inode *inode)
+>>  		rcu_assign_pointer(PROC_I(inode)->sysctl, NULL);
+>>  		sysctl_head_put(head);
+>>  	}
+>> +	/* Release any associated namespace */
+>> +	ns_ops = PROC_I(inode)->ns_ops;
+>> +	if (ns_ops && ns_ops->put)
+>> +		ns_ops->put(PROC_I(inode)->ns);
+>
+> Is it ever valid for ns_ops->put to be null?  If not, I suggest removing
+> the check.
+>
+>
+>> diff --git a/fs/proc/namespaces.c b/fs/proc/namespaces.c
+>> new file mode 100644
+>> index 0000000..6ae9f07
+>> --- /dev/null
+>> +++ b/fs/proc/namespaces.c
+>
+> ...
+>
+>> +static struct dentry *proc_ns_dir_lookup(struct inode *dir,
+>> +				struct dentry *dentry, struct nameidata *nd)
+>> +{
+>> +	struct dentry *error;
+>> +	struct task_struct *task = get_proc_task(dir);
+>> +	const struct proc_ns_operations **entry, **last;
+>> +	unsigned int len = dentry->d_name.len;
+>> +
+>> +	error = ERR_PTR(-ENOENT);
+>> +
+>> +	if (!task)
+>> +		goto out_no_task;
+>> +
+>> +	error = ERR_PTR(-EPERM);
+>> +	if (!ptrace_may_access(task, PTRACE_MODE_READ))
+>> +		goto out;
+>> +
+>> +	last = &ns_entries[ARRAY_SIZE(ns_entries) - 1];
+>> +	for (entry = ns_entries; entry <= last; entry++) {
+>> +		if (strlen((*entry)->name) != len)
+>> +			continue;
+>> +		if (!memcmp(dentry->d_name.name, (*entry)->name, len))
+>> +			break;
+>> +	}
+>> +	if (entry > last)
+>> +		goto out;
+>
+> This returns EPERM when it should return ENOENT?
 
+Good catch.
 
-> >> +	rcu_read_unlock();
-> >> +	return net;
-> >> +}
-> >> +
-> >> +static void netns_put(void *ns)
-> >> +{
-> >> +	put_net(ns);
-> >> +}
-> >> +
-> >> +static int netns_install(struct nsproxy *nsproxy, void *ns)
-> >> +{
-> >> +	put_net(nsproxy->net_ns);
-> >> +	nsproxy->net_ns = get_net(ns);
-> >> +	return 0;
-> >> +}
-> >
-> > This introduces a window where, potentially, nsproxy->net_ns is stale
-> > before it is updated with the namespace which is being attached, no? 
-> > (Same concern applies to other install methods in the patch set).  It
-> > seems possible to oops the kernel in this window by looking up
-> > /proc/$PID/ns/net while $PID is in the midst of setns().
-> 
-> Except the nsproxy being referred to is a brand new nsproxy, with an
-> extra reference count on every namespace.  current->nsproxy still
-> contains the reference counts of the current process.
+And fixed now.
 
-Ahh, yeah.  Got it.  Thanks.
+>>  union proc_op {
+>>  	int (*proc_get_link)(struct inode *, struct path *);
+>>  	int (*proc_read)(struct task_struct *task, char *page);
+>> @@ -268,6 +284,8 @@ struct proc_inode {
+>>  	struct proc_dir_entry *pde;
+>>  	struct ctl_table_header *sysctl;
+>>  	struct ctl_table *sysctl_entry;
+>> +	void *ns;
+>> +	const struct proc_ns_operations *ns_ops;
+>>  	struct inode vfs_inode;
+>>  };
+>
+> Not that I have any better ideas, but it seems a bit undesirable to
+> increase the size of proc_inode for this one purpose.
+
+Of the options I could think of this was the cleanest, and proc_inode
+is just a caching data structure which means that the effect should be
+comparatively minimal.
+
+That said I won't oppose a change at some point to reduce the
+proc_inode, there are a lot of fields that are not used for most proc
+entries.
+
+Eric
