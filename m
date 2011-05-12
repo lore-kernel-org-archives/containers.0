@@ -1,115 +1,41 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH 1/7] ns: proc files for namespace naming policy.
-Date: Wed, 11 May 2011 15:52:35 -0700
-Message-ID: <m1oc38luj0.fsf@fess.ebiederm.org>
-References: <m1tyd7p7tq.fsf@fess.ebiederm.org>
-	<1304735101-1824-1-git-send-email-ebiederm@xmission.com>
-	<1305141667.1236.47.camel@orca.stoopid.dyndns.org>
+From: Raghu D K <dk.raghu-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Testing Linux-CR
+Date: Thu, 12 May 2011 11:11:15 +0530
+Message-ID: <BANLkTimLScFNe0POGBoQ8xD1OK=0OBiesA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <1305141667.1236.47.camel@orca.stoopid.dyndns.org> (Nathan
-	Lynch's message of "Wed, 11 May 2011 14:20:48 -0500")
-Sender: linux-kernel-owner@vger.kernel.org
-To: Nathan Lynch <ntl@pobox.com>
-Cc: linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, netdev@vger.kernel.org, linux-fsdevel@vger.kernel.org, jamal <hadi@cyberus.ca>, Daniel Lezcano <daniel.lezcano@free.fr>, Linux Containers <containers@lists.osdl.org>, Renato Westphal <renatowestphal@gmail.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Nathan Lynch <ntl@pobox.com> writes:
+Dear All,
 
-> Hi Eric,
->
-> A few comments on your patch set.
->
->
-> On Fri, 2011-05-06 at 19:24 -0700, Eric W. Biederman wrote:
->> diff --git a/fs/proc/inode.c b/fs/proc/inode.c
->> index d15aa1b..74b48cf 100644
->> --- a/fs/proc/inode.c
->> +++ b/fs/proc/inode.c
->> @@ -28,6 +28,7 @@ static void proc_evict_inode(struct inode *inode)
->>  {
->>  	struct proc_dir_entry *de;
->>  	struct ctl_table_header *head;
->> +	const struct proc_ns_operations *ns_ops;
->>  
->>  	truncate_inode_pages(&inode->i_data, 0);
->>  	end_writeback(inode);
->> @@ -44,6 +45,10 @@ static void proc_evict_inode(struct inode *inode)
->>  		rcu_assign_pointer(PROC_I(inode)->sysctl, NULL);
->>  		sysctl_head_put(head);
->>  	}
->> +	/* Release any associated namespace */
->> +	ns_ops = PROC_I(inode)->ns_ops;
->> +	if (ns_ops && ns_ops->put)
->> +		ns_ops->put(PROC_I(inode)->ns);
->
-> Is it ever valid for ns_ops->put to be null?  If not, I suggest removing
-> the check.
->
->
->> diff --git a/fs/proc/namespaces.c b/fs/proc/namespaces.c
->> new file mode 100644
->> index 0000000..6ae9f07
->> --- /dev/null
->> +++ b/fs/proc/namespaces.c
->
-> ...
->
->> +static struct dentry *proc_ns_dir_lookup(struct inode *dir,
->> +				struct dentry *dentry, struct nameidata *nd)
->> +{
->> +	struct dentry *error;
->> +	struct task_struct *task = get_proc_task(dir);
->> +	const struct proc_ns_operations **entry, **last;
->> +	unsigned int len = dentry->d_name.len;
->> +
->> +	error = ERR_PTR(-ENOENT);
->> +
->> +	if (!task)
->> +		goto out_no_task;
->> +
->> +	error = ERR_PTR(-EPERM);
->> +	if (!ptrace_may_access(task, PTRACE_MODE_READ))
->> +		goto out;
->> +
->> +	last = &ns_entries[ARRAY_SIZE(ns_entries) - 1];
->> +	for (entry = ns_entries; entry <= last; entry++) {
->> +		if (strlen((*entry)->name) != len)
->> +			continue;
->> +		if (!memcmp(dentry->d_name.name, (*entry)->name, len))
->> +			break;
->> +	}
->> +	if (entry > last)
->> +		goto out;
->
-> This returns EPERM when it should return ENOENT?
+I have cloned the following projects:
+linux-cr.git
+tests-cr.git
+user-cr.git
 
-Good catch.
+I have been successfully able to compile and boot of the Linux-2.6.37
+kernel. I am also able to build the library and test tools under the
+"tests-cr" and "user-cr" projects.
 
-And fixed now.
+However when I run the "ckpt" application from "/tests-cr/simple"
+folder I get an error in "/tmp/cr-test.out" stating checkpoint
+function not implemented.
 
->>  union proc_op {
->>  	int (*proc_get_link)(struct inode *, struct path *);
->>  	int (*proc_read)(struct task_struct *task, char *page);
->> @@ -268,6 +284,8 @@ struct proc_inode {
->>  	struct proc_dir_entry *pde;
->>  	struct ctl_table_header *sysctl;
->>  	struct ctl_table *sysctl_entry;
->> +	void *ns;
->> +	const struct proc_ns_operations *ns_ops;
->>  	struct inode vfs_inode;
->>  };
->
-> Not that I have any better ideas, but it seems a bit undesirable to
-> increase the size of proc_inode for this one purpose.
+I am not sure if the "__NR_checkpoint" syscall has been implemented. 	
 
-Of the options I could think of this was the cleanest, and proc_inode
-is just a caching data structure which means that the effect should be
-comparatively minimal.
+Is there any documentation to refer or any clues to test this.
 
-That said I won't oppose a change at some point to reduce the
-proc_inode, there are a lot of fields that are not used for most proc
-entries.
-
-Eric
+Warm Regards,
+Raghu
