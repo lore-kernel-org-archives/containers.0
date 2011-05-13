@@ -1,15 +1,11 @@
-From: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Re: acl_permission_check: disgusting performance
-Date: Thu, 12 May 2011 21:26:28 -0700
-Message-ID: <BANLkTim3cy8Jf3URYTW+cbr3nrdWVbsmGw__18779.3802041144$1305261395$gmane$org@mail.gmail.com>
-References: <BANLkTi=nc3WGaASQm1Pc9byshLOmLf2bXQ@mail.gmail.com>
-	<20110513025013.GA13209@mail.hallyn.com>
-	<20110513040214.GA25270@mail.hallyn.com>
+From: Raghu D K <dk.raghu-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Testing Linux-CR -- Some Documentation
+Date: Fri, 13 May 2011 10:39:15 +0530
+Message-ID: <BANLkTimjvdKGr_ZKpoozV5JzdbJeSE7PEA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110513040214.GA25270-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,50 +15,108 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, May 12, 2011 at 9:02 PM, Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
->
-> I wonder how much this would help: =A0(only compile-tested)
+Hello All,
 
-So it should help a lot, but it breaks when CONFIG_USER_NS isn't even
-set (the case that Eric fixed.
+Further to some checking out the sources ( linux-cr, user-cr and
+test-cr ), I was able to make some progress after reading the
+"linux/Documentation/checkpoint".
+I just wanted to summarize the steps I did for reaching what I see. I
+have a Ubuntu 10.10 64-bit machine ( however I have installed only a
+32-bit ) Ubuntu version.
 
-So instead, do this:
+Checking out Source Code:
 
- (a) get rid of the "_current_user_ns()" thing. There is no reason to
-have it, if it's directly off "current->cred", then it's cheaper to
-inline it than have a function just for two pointer indirections.
+1. $ mkdir test-linux-cr
+2. $ git clone git://www.linux-cr.org/pub/git/linux-cr
+3. $ git clone git://www.linux-cr.org/pub/git/user-cr
+4. $ git clone git://www.linux-cr.org/pub/git/tests-cr
 
- (b) do
+I am behind a firewall so I had to configure my proxy setting since
+GIT server port "9418" was not open, this is well documented in the
+community. However for completeness.
 
-  #ifdef CONFIG_USER_NS
-    #define current_user_ns() (&init_user_ns)
-  #else
-    #define current_user_ns() (current_cred_xxx(user_ns))
-  #endif
+Setting Proxy:
 
- (c) and then the rest of your patch (to actually initialize and set
-"cred->user_ns") should be fine. But don't touch
-acl_permission_check() at all - once you've fixed current_user_ns() to
-DTRT, acl_permission_check will be ok.
+$ apt-get install socat
 
-Ok?
+Create a file "gitproxy.sh" and give it execute permission.
 
-Then the compiler will do the right thing: in acl_permission_check()
-it will see that current_user_ns() and "current_fsuid()" share 90% of
-the code, and will CSE the "current_cred()" part (or, if
-CONFIG_USER_NS isn't set, it will see a constant comparison of
-&init_user_ns with itself, and generate no code for hat case). There's
-no reason for you to do it for it, and when  you do it by hand you get
-the !CONFIG_USER_NS case wrong.
+#!/bin/bash
+_proxy=<your proxy ip>
+_proxyport=<your port>
 
-Hmm? That should fix all the horrible code generation issues in
-acl_permission_check. When CONFIG_USER_NS isn't set, it will generate
-no code at all, and when it _is_ set, it will just generate two loads
-from current->cred (one for user_ns, one for fsuid), which is about as
-good as it gets.
+exec socat STDIO PROXY:$_proxy:$1:$2,proxyport=$_proxyport
 
-                              Linus
+Edit ".bashrc" or ".profile" file and add
+
+$ export GIT_PROXY_COMMAND=$(HOME)/gitproxy.sh
+
+Compiling and Building Linux Kernel:
+
+1. Since I have a Ubuntu 10.10 running, I used the kernel
+configuration file "config-2.6.35-28-generic" from "/boot" folder
+
+$ cp /boot/config-2.6.35-28-generic ~test-linux-cr/linux-cr/.config
+
+Ensure the following tokens are enabled in the ".config" file.
+CONFIG_CHECKPOINT_SUPPORT=y
+CONFIG_SYSVIPC_CHECKPOINT=y
+CONFIG_CHECKPOINT=y
+CONFIG_NETNS_CHECKPOINT=y
+CONFIG_CHECKPOINT_DEBUG=y
+CONFIG_CGROUPS=y
+CONFIG_CGROUP_FREEZER=y
+CONFIG_NAMESPACES=y
+CONFIG_CGROUP_NS=y
+CONFIG_UTS_NS=y
+CONFIG_IPC_NS=y
+CONFIG_USER_NS=y
+CONFIG_PID_NS=y
+CONFIG_NET_NS=y
+CONFIG_FREEZER=y
+
+$ sudo fakeroot make-kpkg --intrd --append-to-version=-cr kernel_image
+kernel_headers
+
+On a successful build we'll have two ".deb" packages for "kernel" and
+"headers" and they can be installed with
+
+$ sudo dpkg -i linux-image-2.6.37-cr.Custom_i386.deb
+$ sudo dpkg -i linux-headers-2.6.37-cr.Custom_i386.deb
+
+On the Ubuntu 10.10 the GRUB2 is automatically updated when the
+package is successfully installed. Reboot and you are in
+"Checkpoint/Reset" capable kernel :-)
+
+Building "user-cr" and "tests-cr":
+$ cd ~/test-linux-cr/user-cr
+$ cd scripts
+$ bash ./extract-headers.sh --kernel-src=< path to Linux kernel>
+$ cd ..
+$ make all
+
+$ cd ~/test-linux-cr/tests-cr
+$ bash ./rewrite-cr-header.sh --- This will create a "cr.h" header
+file with appropriate macro defines for "__NR_checkpoint" and
+"__NR_restart"
+$ make all
+$ cd simple
+$ ./ckpt
+$ cat /tmp/cr-test.out
+Invoking checkpoint syscall... PASSED.
+ret = 1
+
+$ restart < /tmp/out
+Invoking checkpoint syscall... PASSED.
+ret = 0
+
+However I was not able to run the test scripts ( runall.sh ) as it
+gave some errors. Also analyzing the "out" file using "ckptinfo"
+results in EOF error.
+Any additional help on this is appreciated.
+
+Warm Regards,
+Raghu
