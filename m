@@ -1,55 +1,35 @@
 From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Subject: Re: [RFC][PATCH v7 03/14] memcg: add mem_cgroup_mark_inode_dirty()
-Date: Fri, 13 May 2011 18:31:34 +0900
-Message-ID: <20110513183134.3dfae7f8.kamezawa.hiroyu@jp.fujitsu.com>
+Subject: Re: [RFC][PATCH v7 04/14] memcg: add dirty page accounting
+ infrastructure
+Date: Fri, 13 May 2011 18:33:08 +0900
+Message-ID: <20110513183308.0c34201d.kamezawa.hiroyu@jp.fujitsu.com>
 References: <1305276473-14780-1-git-send-email-gthelen@google.com>
-	<1305276473-14780-4-git-send-email-gthelen@google.com>
+	<1305276473-14780-5-git-send-email-gthelen@google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <1305276473-14780-4-git-send-email-gthelen@google.com>
-Sender: owner-linux-mm@kvack.org
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <1305276473-14780-5-git-send-email-gthelen@google.com>
+Sender: linux-fsdevel-owner@vger.kernel.org
 To: Greg Thelen <gthelen@google.com>
 Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Johannes Weiner <hannes@cmpxchg.org>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Vivek Goyal <vgoyal@redhat.com>, Dave Chinner <david@fromorbit.com>
 List-Id: containers.vger.kernel.org
 
-On Fri, 13 May 2011 01:47:42 -0700
+On Fri, 13 May 2011 01:47:43 -0700
 Greg Thelen <gthelen@google.com> wrote:
 
-> Create the mem_cgroup_mark_inode_dirty() routine, which is called when
-> an inode is marked dirty.  In kernels without memcg, this is an inline
-> no-op.
+> Add memcg routines to count dirty, writeback, and unstable_NFS pages.
+> These routines are not yet used by the kernel to count such pages.  A
+> later change adds kernel calls to these new routines.
 > 
-> Add i_memcg field to struct address_space.  When an inode is marked
-> dirty with mem_cgroup_mark_inode_dirty(), the css_id of current memcg is
-> recorded in i_memcg.  Per-memcg writeback (introduced in a latter
-> change) uses this field to isolate inodes associated with a particular
-> memcg.
-> 
-> The type of i_memcg is an 'unsigned short' because it stores the css_id
-> of the memcg.  Using a struct mem_cgroup pointer would be larger and
-> also create a reference on the memcg which would hang memcg rmdir
-> deletion.  Usage of a css_id is not a reference so cgroup deletion is
-> not affected.  The memcg can be deleted without cleaning up the i_memcg
-> field.  When a memcg is deleted its pages are recharged to the cgroup
-> parent, and the related inode(s) are marked as shared thus
-> disassociating the inodes from the deleted cgroup.
-> 
-> A mem_cgroup_mark_inode_dirty() tracepoint is also included to allow for
-> easier understanding of memcg writeback operation.
+> As inode pages are marked dirty, if the dirtied page's cgroup differs
+> from the inode's cgroup, then mark the inode shared across several
+> cgroup.
 > 
 > Signed-off-by: Greg Thelen <gthelen@google.com>
+> Signed-off-by: Andrea Righi <arighi@develer.com>
 
-
-Seems simple and handy enough.
 
 Reviewed-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
 
 
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
