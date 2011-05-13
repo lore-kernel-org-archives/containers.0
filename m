@@ -1,122 +1,121 @@
-From: Raghu D K <dk.raghu-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Testing Linux-CR -- Some Documentation
-Date: Fri, 13 May 2011 10:39:15 +0530
-Message-ID: <BANLkTimjvdKGr_ZKpoozV5JzdbJeSE7PEA@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+From: Greg Thelen <gthelen@google.com>
+Subject: [RFC][PATCH v7 00/14] memcg: per cgroup dirty page accounting
+Date: Fri, 13 May 2011 01:47:39 -0700
+Message-ID: <1305276473-14780-1-git-send-email-gthelen@google.com>
+Return-path: <owner-linux-mm@kvack.org>
+Sender: owner-linux-mm@kvack.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Johannes Weiner <hannes@cmpxchg.org>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Vivek Goyal <vgoyal@redhat.com>, Dave Chinner <david@fromorbit.com>, Greg Thelen <gthelen@google.com>
 List-Id: containers.vger.kernel.org
 
-Hello All,
+This patch series provides the ability for each cgroup to have independent dirty
+page usage limits.  Limiting dirty memory fixes the max amount of dirty (hard to
+reclaim) page cache used by a cgroup.  This allows for better per cgroup memory
+isolation and fewer ooms within a single cgroup.
 
-Further to some checking out the sources ( linux-cr, user-cr and
-test-cr ), I was able to make some progress after reading the
-"linux/Documentation/checkpoint".
-I just wanted to summarize the steps I did for reaching what I see. I
-have a Ubuntu 10.10 64-bit machine ( however I have installed only a
-32-bit ) Ubuntu version.
+Having per cgroup dirty memory limits is not very interesting unless writeback
+is cgroup aware.  There is not much isolation if cgroups have to writeback data
+from other cgroups to get below their dirty memory threshold.
 
-Checking out Source Code:
+Per-memcg dirty limits are provided to support isolation and thus cross cgroup
+inode sharing is not a priority.  This allows the code be simpler.
 
-1. $ mkdir test-linux-cr
-2. $ git clone git://www.linux-cr.org/pub/git/linux-cr
-3. $ git clone git://www.linux-cr.org/pub/git/user-cr
-4. $ git clone git://www.linux-cr.org/pub/git/tests-cr
+To add cgroup awareness to writeback, this series adds a memcg field to the
+inode to allow writeback to isolate inodes for a particular cgroup.  When an
+inode is marked dirty, i_memcg is set to the current cgroup.  When inode pages
+are marked dirty the i_memcg field compared against the page's cgroup.  If they
+differ, then the inode is marked as shared by setting i_memcg to a special
+shared value (zero).
 
-I am behind a firewall so I had to configure my proxy setting since
-GIT server port "9418" was not open, this is well documented in the
-community. However for completeness.
+Previous discussions suggested that a per-bdi per-memcg b_dirty list was a good
+way to assoicate inodes with a cgroup without having to add a field to struct
+inode.  I prototyped this approach but found that it involved more complex
+writeback changes and had at least one major shortcoming: detection of when an
+inode becomes shared by multiple cgroups.  While such sharing is not expected to
+be common, the system should gracefully handle it.
 
-Setting Proxy:
+balance_dirty_pages() calls mem_cgroup_balance_dirty_pages(), which checks the
+dirty usage vs dirty thresholds for the current cgroup and its parents.  If any
+over-limit cgroups are found, they are marked in a global over-limit bitmap
+(indexed by cgroup id) and the bdi flusher is awoke.
 
-$ apt-get install socat
+The bdi flusher uses wb_check_background_flush() to check for any memcg over
+their dirty limit.  When performing per-memcg background writeback,
+move_expired_inodes() walks per bdi b_dirty list using each inode's i_memcg and
+the global over-limit memcg bitmap to determine if the inode should be written.
 
-Create a file "gitproxy.sh" and give it execute permission.
+If mem_cgroup_balance_dirty_pages() is unable to get below the dirty page
+threshold writing per-memcg inodes, then downshifts to also writing shared
+inodes (i_memcg=0).
 
-#!/bin/bash
-_proxy=<your proxy ip>
-_proxyport=<your port>
+I know that there is some significant writeback changes associated with the
+IO-less balance_dirty_pages() effort.  I am not trying to derail that, so this
+patch series is merely an RFC to get feedback on the design.  There are probably
+some subtle races in these patches.  I have done moderate functional testing of
+the newly proposed features.
 
-exec socat STDIO PROXY:$_proxy:$1:$2,proxyport=$_proxyport
+Here is an example of the memcg-oom that is avoided with this patch series:
+	# mkdir /dev/cgroup/memory/x
+	# echo 100M > /dev/cgroup/memory/x/memory.limit_in_bytes
+	# echo $$ > /dev/cgroup/memory/x/tasks
+	# dd if=/dev/zero of=/data/f1 bs=1k count=1M &
+        # dd if=/dev/zero of=/data/f2 bs=1k count=1M &
+        # wait
+	[1]-  Killed                  dd if=/dev/zero of=/data/f1 bs=1M count=1k
+	[2]+  Killed                  dd if=/dev/zero of=/data/f1 bs=1M count=1k
 
-Edit ".bashrc" or ".profile" file and add
+Known limitations:
+	If a dirty limit is lowered a cgroup may be over its limit.
 
-$ export GIT_PROXY_COMMAND=$(HOME)/gitproxy.sh
+Changes since -v6:
+- memcg aware writeback.
 
-Compiling and Building Linux Kernel:
+Single patch that can be applied to mmotm-2011-05-06-16-39:
+  http://www.kernel.org/pub/linux/kernel/people/gthelen/memcg/memcg-dirty-limits-v7-on-mmotm-2011-05-06-16-39.patch
 
-1. Since I have a Ubuntu 10.10 running, I used the kernel
-configuration file "config-2.6.35-28-generic" from "/boot" folder
+Patches are based on mmotm-2011-05-06-16-39.
 
-$ cp /boot/config-2.6.35-28-generic ~test-linux-cr/linux-cr/.config
+Greg Thelen (14):
+  memcg: document cgroup dirty memory interfaces
+  memcg: add page_cgroup flags for dirty page tracking
+  memcg: add mem_cgroup_mark_inode_dirty()
+  memcg: add dirty page accounting infrastructure
+  memcg: add kernel calls for memcg dirty page stats
+  memcg: add dirty limits to mem_cgroup
+  memcg: add cgroupfs interface to memcg dirty limits
+  writeback: add memcg fields to writeback_control
+  cgroup: move CSS_ID_MAX to cgroup.h
+  memcg: dirty page accounting support routines
+  memcg: create support routines for writeback
+  memcg: create support routines for page-writeback
+  writeback: make background writeback cgroup aware
+  memcg: check memcg dirty limits in page writeback
 
-Ensure the following tokens are enabled in the ".config" file.
-CONFIG_CHECKPOINT_SUPPORT=y
-CONFIG_SYSVIPC_CHECKPOINT=y
-CONFIG_CHECKPOINT=y
-CONFIG_NETNS_CHECKPOINT=y
-CONFIG_CHECKPOINT_DEBUG=y
-CONFIG_CGROUPS=y
-CONFIG_CGROUP_FREEZER=y
-CONFIG_NAMESPACES=y
-CONFIG_CGROUP_NS=y
-CONFIG_UTS_NS=y
-CONFIG_IPC_NS=y
-CONFIG_USER_NS=y
-CONFIG_PID_NS=y
-CONFIG_NET_NS=y
-CONFIG_FREEZER=y
+ Documentation/cgroups/memory.txt  |   70 ++++
+ fs/fs-writeback.c                 |   33 ++-
+ fs/inode.c                        |    3 +
+ fs/nfs/write.c                    |    4 +
+ include/linux/cgroup.h            |    1 +
+ include/linux/fs.h                |    9 +
+ include/linux/memcontrol.h        |   64 ++++-
+ include/linux/page_cgroup.h       |   23 ++
+ include/linux/writeback.h         |    5 +-
+ include/trace/events/memcontrol.h |  198 +++++++++++
+ kernel/cgroup.c                   |    1 -
+ mm/filemap.c                      |    1 +
+ mm/memcontrol.c                   |  705 ++++++++++++++++++++++++++++++++++++-
+ mm/page-writeback.c               |   42 ++-
+ mm/truncate.c                     |    1 +
+ mm/vmscan.c                       |    2 +-
+ 16 files changed, 1134 insertions(+), 28 deletions(-)
+ create mode 100644 include/trace/events/memcontrol.h
 
-$ sudo fakeroot make-kpkg --intrd --append-to-version=-cr kernel_image
-kernel_headers
+-- 
+1.7.3.1
 
-On a successful build we'll have two ".deb" packages for "kernel" and
-"headers" and they can be installed with
-
-$ sudo dpkg -i linux-image-2.6.37-cr.Custom_i386.deb
-$ sudo dpkg -i linux-headers-2.6.37-cr.Custom_i386.deb
-
-On the Ubuntu 10.10 the GRUB2 is automatically updated when the
-package is successfully installed. Reboot and you are in
-"Checkpoint/Reset" capable kernel :-)
-
-Building "user-cr" and "tests-cr":
-$ cd ~/test-linux-cr/user-cr
-$ cd scripts
-$ bash ./extract-headers.sh --kernel-src=< path to Linux kernel>
-$ cd ..
-$ make all
-
-$ cd ~/test-linux-cr/tests-cr
-$ bash ./rewrite-cr-header.sh --- This will create a "cr.h" header
-file with appropriate macro defines for "__NR_checkpoint" and
-"__NR_restart"
-$ make all
-$ cd simple
-$ ./ckpt
-$ cat /tmp/cr-test.out
-Invoking checkpoint syscall... PASSED.
-ret = 1
-
-$ restart < /tmp/out
-Invoking checkpoint syscall... PASSED.
-ret = 0
-
-However I was not able to run the test scripts ( runall.sh ) as it
-gave some errors. Also analyzing the "out" file using "ckptinfo"
-results in EOF error.
-Any additional help on this is appreciated.
-
-Warm Regards,
-Raghu
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
