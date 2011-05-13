@@ -1,15 +1,17 @@
-From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Subject: Re: Testing Linux-CR -- Some Documentation
-Date: Fri, 13 May 2011 09:51:40 -0500
-Message-ID: <20110513145140.GA23848@mail.hallyn.com>
-References: <BANLkTimjvdKGr_ZKpoozV5JzdbJeSE7PEA@mail.gmail.com>
-	<20110513114245.GA4121@mail.hallyn.com> <4DCD3B3E.1040704@hp.com>
+From: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Subject: Re: acl_permission_check: disgusting performance
+Date: Fri, 13 May 2011 09:16:40 -0700
+Message-ID: <BANLkTi=yyoMXNqGtVX9KxHjVaDVGW9uzdA__2754.59164190597$1305303582$gmane$org@mail.gmail.com>
+References: <BANLkTi=nc3WGaASQm1Pc9byshLOmLf2bXQ@mail.gmail.com>
+	<20110513025013.GA13209@mail.hallyn.com>
+	<20110513040214.GA25270@mail.hallyn.com>
+	<BANLkTim3cy8Jf3URYTW+cbr3nrdWVbsmGw@mail.gmail.com>
+	<20110513131904.GA2519@mail.hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4DCD3B3E.1040704-VXdhtT5mjnY@public.gmane.org>
+In-Reply-To: <20110513131904.GA2519-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,31 +21,17 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Brian Haley <brian.haley-VXdhtT5mjnY@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Brian Haley (brian.haley-VXdhtT5mjnY@public.gmane.org):
-> On 05/13/2011 07:42 AM, Serge E. Hallyn wrote:
-> > Quoting Raghu D K (dk.raghu-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> >> However I was not able to run the test scripts ( runall.sh ) as it
-> >> gave some errors. Also analyzing the "out" file using "ckptinfo"
-> >> results in EOF error.
-> >> Any additional help on this is appreciated.
-> > 
-> > Since you're on Ubuntu, sh points to dah, so many cr_tests will break
-> > because they expect sh to point to bash.  You can fix that by going
-> > through all the scripts and changing that.  I haven't had a chance to do
-> > so yet, and definately won't today.  If you go through the effort,
-> > please feel free to send a patch to Oren or myself.
-> 
-> Or you can run:
-> 
-> # sudo dpkg-reconfigure dash
-> 
-> and choose "No", which will make /bin/sh point to bash.
+On Fri, May 13, 2011 at 6:19 AM, Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
+>
+> Compile-tested with and without CONFIG_USERNS.
 
-Good point :)
+Looks ok to me. And generates good code for acl_permission_check
+without CONFIG_USER_NS.
 
-I should still fix the testcases when I have time, but this'll get
-you running more easily :)
+I'll see how much that function drops on the kernel profiles..
+
+                       Linus
