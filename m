@@ -1,55 +1,31 @@
 From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Subject: Re: [RFC][PATCH v7 08/14] writeback: add memcg fields to
- writeback_control
-Date: Fri, 13 May 2011 18:41:20 +0900
-Message-ID: <20110513184120.0f9444bc.kamezawa.hiroyu@jp.fujitsu.com>
+Subject: Re: [RFC][PATCH v7 09/14] cgroup: move CSS_ID_MAX to cgroup.h
+Date: Fri, 13 May 2011 18:51:52 +0900
+Message-ID: <20110513185152.56c41483.kamezawa.hiroyu@jp.fujitsu.com>
 References: <1305276473-14780-1-git-send-email-gthelen@google.com>
-	<1305276473-14780-9-git-send-email-gthelen@google.com>
+	<1305276473-14780-10-git-send-email-gthelen@google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
 Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <1305276473-14780-9-git-send-email-gthelen@google.com>
+In-Reply-To: <1305276473-14780-10-git-send-email-gthelen@google.com>
 Sender: owner-linux-mm@kvack.org
 To: Greg Thelen <gthelen@google.com>
 Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Johannes Weiner <hannes@cmpxchg.org>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Vivek Goyal <vgoyal@redhat.com>, Dave Chinner <david@fromorbit.com>
 List-Id: containers.vger.kernel.org
 
-On Fri, 13 May 2011 01:47:47 -0700
+On Fri, 13 May 2011 01:47:48 -0700
 Greg Thelen <gthelen@google.com> wrote:
 
-> Add writeback_control fields to differentiate between bdi-wide and
-> per-cgroup writeback.  Cgroup writeback is also able to differentiate
-> between writing inodes isolated to a particular cgroup and inodes shared
-> by multiple cgroups.
+> This allows users of css_id() to know the largest possible css_id value.
+> This knowledge can be used to build per-cgroup bitmaps.
 > 
 > Signed-off-by: Greg Thelen <gthelen@google.com>
 
-Personally, I want to see new flags with their usage in a patch...
+Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
 
+Hmm, I think this can be merged to following bitmap patch.
 
-> ---
->  include/linux/writeback.h |    2 ++
->  1 files changed, 2 insertions(+), 0 deletions(-)
-> 
-> diff --git a/include/linux/writeback.h b/include/linux/writeback.h
-> index d10d133..4f5c0d2 100644
-> --- a/include/linux/writeback.h
-> +++ b/include/linux/writeback.h
-> @@ -47,6 +47,8 @@ struct writeback_control {
->  	unsigned for_reclaim:1;		/* Invoked from the page allocator */
->  	unsigned range_cyclic:1;	/* range_start is cyclic */
->  	unsigned more_io:1;		/* more io to be dispatched */
-> +	unsigned for_cgroup:1;		/* enable cgroup writeback */
-> +	unsigned shared_inodes:1;	/* write inodes spanning cgroups */
->  };
-
-
-If shared_inode is really rare case...we don't need to have this shared_inodes
-flag and do writeback shared_inode always.....No ?
-
-Thanks,
--Kame
 
 --
 To unsubscribe, send a message with 'unsubscribe linux-mm' in
