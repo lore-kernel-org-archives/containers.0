@@ -1,17 +1,14 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Testing Linux-CR -- Some Documentation
-Date: Mon, 16 May 2011 08:27:34 -0500
-Message-ID: <20110516132734.GA26650@mail.hallyn.com>
-References: <BANLkTimjvdKGr_ZKpoozV5JzdbJeSE7PEA@mail.gmail.com>
-	<20110513114245.GA4121@mail.hallyn.com> <4DCD3B3E.1040704@hp.com>
-	<20110513145140.GA23848@mail.hallyn.com>
-	<BANLkTimSFKU8ibjSpQqQ4vHSFoptJorPFQ@mail.gmail.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: Testing Linux-CR
+Date: Mon, 16 May 2011 14:05:23 -0400
+Message-ID: <4DD16763.2040603@cs.columbia.edu>
+References: <BANLkTimLScFNe0POGBoQ8xD1OK=0OBiesA@mail.gmail.com>	<20110512221554.GA17723@mail.hallyn.com>
+	<4DCDB2B1.9020608@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <BANLkTimSFKU8ibjSpQqQ4vHSFoptJorPFQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <4DCDB2B1.9020608-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,81 +18,57 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Raghu D K <dk.raghu-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Raghu D K (dk.raghu-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> Hello All,
-> 
-> I moved  the "#!/bin/sh" to point to "bash" however I still see issues
-> in used the "git://www.linux-cr.org/pub/git/tests-cr" scripts.
-> Probably I am missing something with my wrong understanding, I am a
-> little confused with the usage of user space application "checkpoint"
-> and "restart" and the applications in the "test-cr" folder.
-> 
-> I wrote a sample shell script "my-test.sh" and tried the following
-> without much success.
-> 
-> #!/bin/sh
-> #
-> #
-> #***********************************************************************************
-> 
-> echo "Incrementing variable ..."
-> COUNT=$1
-> X=0
-> while [ $X -le $COUNT ];
-> do
->         X=$(( $X + 1 ))
->         echo "Value of X =" $X
->         sleep 1
-> done
-> 
-> 
-> $ cd ~/user-cr
-> $ mount -tcgroup -o freezer cgroup /cgroup
-> $ mkdir -p /cgroup/1
-> $ nsexec -z5000 my-test.sh 100 &
-> $ echo 5000 > /cgroup/1/tasks
-> $ echo FROZEN > /cgroup/1/freezer.state
-> 
-> $ checkpoint 5000 > ckpt.image
-> 
-> This generated a "ckpt.image" file of size 2594550 bytes
-> 
-> $ ckptinfo -epv ckpt.image
-> info: [@8] object   1 HDR_HEADER len 72
-> info: [@80] object   4 HDR_BUFFER len 73
-> info: [@153] object   4 HDR_BUFFER len 73
-> info: [@226] object   4 HDR_BUFFER len 73
-> ...
-> unexpected end of file (read 0 of 8)
-> 
-> $ kill -9 5000
-> $ echo THAWED > /cgroup/1/freezer.state
-> $ ./restart < ckpt.image
-> 
-> This one shows error "Bad file discriptor", what I am missing ?
 
-First, you can find more information about what went wrong in a
-few ways:
 
-  1. add '-l logfile' arguments to checkpoint and restart commands,
-     to put more debug messages into 'logfile'  (which must not yet
-     exist)
-  2. add '-v' argument to checkpoint and restart for debugging
-  3. look at /var/log/syslog for lots of error messages, assuming
-     you have CONFIG_CHECKPOINT_DEBUG (or whatever that is called)
-     set in your kernel
-  4. after doing checkpoint, use 'ckptinfo', which came with the
-     user-cr programs, to analyze the checkpoint image
+On 05/13/2011 06:37 PM, Oren Laadan wrote:
+> 
+> 
+> On 05/12/2011 06:15 PM, Serge E. Hallyn wrote:
+>> Quoting Raghu D K (dk.raghu-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
+>>> Dear All,
+>>>
+>>> I have cloned the following projects:
+>>> linux-cr.git
+>>> tests-cr.git
+>>> user-cr.git
+>>
+>> Hi Raghu, glad you're giving it a shot.
+>>
+>> Oren, linux-cr.org doesn't show these trees any more?
+> 
+> It was broken for a bit.
+> But the correct link is: http://www.linux-cr.org/git
+> 
+>>
+>>> I have been successfully able to compile and boot of the Linux-2.6.37
+>>> kernel. I am also able to build the library and test tools under the
+>>> "tests-cr" and "user-cr" projects.
+>>>
+>>> However when I run the "ckpt" application from "/tests-cr/simple"
+>>> folder I get an error in "/tmp/cr-test.out" stating checkpoint
+>>> function not implemented.
+>>>
+>>> I am not sure if the "__NR_checkpoint" syscall has been implemented. 	
+>>>
+>>> Is there any documentation to refer or any clues to test this.
+>>
+>> You'll need to do 'make menuconfig', and make sure to set
+>> CONFIG_CHECKPOINT=y.  See documentation under
+>> linux-cr/Documentation/checkpoint as well.
+> 
+> I suspect it is because the cr.h header in tests-cr has not been
+> updated in the past year (I manually fixed it here...). I'll send
+> a patch promptly.
 
-I suspect what happened to you, though, is that you left file
-descriptors open.  If you look at counterloop/crcounter.c in
-the tests, it does 'for i in (1..100) close(i)'.  The problem
-with not doing this is that the program you are checkpointing has
-inherited file descriptors from its parent task, and, at restart,
-it has no way to recreate those.
+Actually, in the meanwhile you can do (in tests-cr):
 
--serge
+./rewrite-cr-headers.sh -s PATH_TO_LINUX-CR > cr.h
+make clean; make
+
+I'll push a fix soon.
+
+Oren.
