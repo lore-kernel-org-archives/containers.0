@@ -1,19 +1,17 @@
-From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Subject: Re: Testing Linux-CR -- Some Documentation
-Date: Wed, 18 May 2011 08:42:26 -0500
-Message-ID: <20110518134226.GB7028@mail.hallyn.com>
-References: <BANLkTimjvdKGr_ZKpoozV5JzdbJeSE7PEA@mail.gmail.com>
-	<20110513114245.GA4121@mail.hallyn.com> <4DCD3B3E.1040704@hp.com>
-	<20110513145140.GA23848@mail.hallyn.com>
-	<BANLkTimSFKU8ibjSpQqQ4vHSFoptJorPFQ@mail.gmail.com>
-	<20110516132734.GA26650@mail.hallyn.com>
-	<BANLkTinQhntbVEvNUmdtFQvr04imEvxm9w@mail.gmail.com>
+From: David Lamparter <equinox-cEeocvCgqOOsTnJN9+BGXg@public.gmane.org>
+Subject: Re: Identifying network namespaces (was: Network namespace
+	manipulation with file descriptors)
+Date: Wed, 18 May 2011 15:33:52 +0200
+Message-ID: <20110518133352.GE3762520@jupiter.n2.diac24.net>
+References: <m1tyd7p7tq.fsf@fess.ebiederm.org>
+	<20110518124307.GD3762520@jupiter.n2.diac24.net>
+	<BANLkTikmrC86hk=W84UBwhJLe_uGAN4w9w@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <BANLkTinQhntbVEvNUmdtFQvr04imEvxm9w-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <BANLkTikmrC86hk=W84UBwhJLe_uGAN4w9w-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,55 +21,51 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Raghu D K <dk.raghu-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Lamparter <equinox-cEeocvCgqOOsTnJN9+BGXg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Raghu D K (dk.raghu-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> Hi,
-> 
-> >  1. add '-l logfile' arguments to checkpoint and restart commands,
-> >     to put more debug messages into 'logfile'  (which must not yet
-> >     exist)
-> >  2. add '-v' argument to checkpoint and restart for debugging
-> >  3. look at /var/log/syslog for lots of error messages, assuming
-> >     you have CONFIG_CHECKPOINT_DEBUG (or whatever that is called)
-> >     set in your kernel
-> >  4. after doing checkpoint, use 'ckptinfo', which came with the
-> >     user-cr programs, to analyze the checkpoint image
-> 
-> I have done all of these and tried even the "ckptinfo", which every
-> reports the error of "unexpected end of file".
-
-If 'cpktinfo -ve' is not showing info, then presumably checkpoint
-failed early.  Check the syslog right after checkpoint to start
-investigating where it stopped.
-
-> > I suspect what happened to you, though, is that you left file
-> > descriptors open.  If you look at counterloop/crcounter.c in
-> > the tests, it does 'for i in (1..100) close(i)'.  The problem
-> > with not doing this is that the program you are checkpointing has
-> > inherited file descriptors from its parent task, and, at restart,
-> > it has no way to recreate those.
-> 
-> I am not testing the sample scripts, I just wrote a sample one as I am
-> not able to understand
-> how the Linux CR is supposed to work.
-> 1. Is it mandatory to have the "mount -tcgroup -o freezer cgroup
-> /cgroup" mounted ?
-
-Yes.  And you must freeze the task before checkpointing.
-
-> 2. Do we have to launch programs using "nsexec" to be able to
-> checkpoint and restart them ?
-
-They should be in their own namespaces, nsexec is an easy way to
-accomplish that.
-
-If you look at 
-https://code.launchpad.net/~serge-hallyn/+junk/crdemo
-It has some scripts including 'start_job.sh' which starts an
-isolated job so that the 'container' (not an lxc container)
-is checkpointable.
-
--serge
+T24gV2VkLCBNYXkgMTgsIDIwMTEgYXQgMDQ6MDM6MDNQTSArMDMwMCwgQWxleGV5IERvYnJpeWFu
+IHdyb3RlOgo+IE9uIFdlZCwgTWF5IDE4LCAyMDExIGF0IDM6NDMgUE0sIERhdmlkIExhbXBhcnRl
+ciA8ZXF1aW5veEBkaWFjMjQubmV0PiB3cm90ZToKPiA+IC0gwqAgcHJvY2Vzc2VzIGNhbm5vdCBl
+YXNpbHkgYmUgY3Jvc3MgcmVmZXJlbmNlZCB3aXRoIGVhY2ggb3RoZXIKPiA+Cj4gPiDCoGluIHRo
+ZSBjYXNlIG9mIHVzZXIgc3BhY2Ugc3R1ZmYgcnVubmluZyBhc3RyYXkgLSBsaWtlIG1hbmFnZW1l
+bnQKPiA+IMKgc29mdHdhcmUgY3Jhc2hpbmcsIHJvdXRpbmcgZGFlbW9ucyBzY3Jld2luZyB1cCwg
+ZXRjLiAtIGl0IGJlY29tZXMKPiA+IMKgZmFpcmx5IGRpZmZpY3VsdCB0byBzaHV0IGRvd24gYSBu
+ZXR3b3JrIG5hbWVzcGFjZSAob3IgZXZlbiByZWFxdWlyZQo+ID4gwqBwaHlzaWNhbCBkZXZpY2Vz
+IHRoYXQgaGF2ZSBiZWVuIHJlYXNzaWduZWQpCj4gCj4gSXQgc2h1dGRvd25zIGl0c2VsZiB3aGVu
+IGxhc3QgcHJvY2VzcyB1c2luZyBuZXRucyBkaXNhcHBlYXJlcywKPiBzbyBpZiB5b3Uga2lsbCB5
+b3VyIHJvdXRpbmcgZGFlbW9ucyB5b3Ugc2hvdWxkIGJlIGZpbmUuCj4gUGh5c2ljYWwgbmV0ZGV2
+aWNlcyBhcmUgbW92ZWQgdG8gaW5pdF9uZXQuCgpOb3cgYXNzdW1lIEknbSBydW5uaW5nIHBwdHBk
+LCB3aGljaCBmb3JrcyBhIG5ldyBwcHBkIGZvciBlYWNoCmNvbm5lY3Rpb24uIEV2ZW4gaWYgSSBr
+aWxsIHBwdHBkLCB0aGUgcHBwZCBrZWVwcyBydW5uaW5nLi4uIG5vdyBob3cgZG8gSQpmaW5kIHRo
+ZSBwcHBkcyB0aGF0IGJlbG9uZyB0byB0aGF0IG9uZSBuYW1lc3BhY2UgdGhhdCBJJ20gdHJ5aW5n
+IHRvCmdldCByaWQgb2Y/Cgo+ID4gLSDCoCBuYW1lc3BhY2VzIGNhbm5vdCBhZGVxdWF0ZWx5IGJl
+IGlkZW50aWZpZWQgdG8gdGhlIHVzZXIKPiA+Cj4gPiDCoGZvciBkZWJ1Z2dpbmcsIHNvbWUga2Vy
+bmVsIG1lc3NhZ2VzIGJlY29tZSB1c2VsZXNzLiBtb3N0IHByb21pbmVudGx5LAo+ID4gwqAidW5y
+ZWdpc3Rlcl9uZXRkZXZpY2U6IHdhaXRpbmcgZm9yIGxvIHRvIGJlY29tZSBmcmVlLiBVc2FnZSBj
+b3VudCA9IDEyMyIKPiA+IMKgY291bGQgY2VydGFpbmx5IHVzZSBzb21lIGNsYXJpZmljYXRpb24s
+ICp3aGljaCogbG8gaXMgbWVhbnQuLi4KPiAKPiBUaGVyZSBpcyBubyAibmV0bnMgJXAiIG9yIHNv
+bWV0aGluZywgYmVjYXVzZSByaWdodCBub3cgdGhlIG9ubHkgdW5pcXVlCj4gbmV0bnMgaWRlbnRp
+ZmllciBpcyBrZXJuZWwgcG9pbnRlciAod2hpY2ggYmV0dGVyIG5vdCBiZSBleHBvc2VkIHRvIHVz
+ZXJzcGFjZSkuCj4gUHJpbnRpbmcgc3VjaCB0aGluZyB3b3VsZCBiZSBxdWl0ZSB1c2VsZXNzIHNp
+bmNlIGl0J3Mgbm90IHByaW50ZWQKPiBhdCBuZXRucyBjcmVhdGlvbi4KCkkgYWdyZWUgcHJpbnRp
+bmcgdGhlIGtlcm5lbCBwb2ludGVyIGlzIHBvaW50LWxlc3MuCgo+ID4gU28sIGNvbnNpZGVyaW5n
+IHRoaXMgc2V0IG9mIHByZW1pc2VzIChmZWVkYmFjayB3ZWxjb21lKSBJIGxvb2tlZCBmb3IKPiA+
+IHNvbWUgc3VpdGFibGUgbWVhbnMgb2YgaWRlbnRpZmljYXRpb24uIEkgZGlzY2FyZGVkIGdvaW5n
+IGZvciBhbnkgcHJvY2Vzcwo+ID4gaWRlbnRpZmllcnMgc2luY2UgRXJpYydzIHBhdGNoZXMgYWxs
+b3cgZm9yIG5ldHdvcmsgbmFtZXNwYWNlcyB3aXRob3V0Cj4gPiBhbnkgcHJvY2VzcyBob2xkaW5n
+IGEgcmVmZXJlbmNlLCB1c2luZyBiaW5kIG1vdW50cyBpbnN0ZWFkLgo+IAo+IElmIGFueXRoaW5n
+IGl0IHNob3VsZCBiZSBuZXRucy0+aWQsIC9wcm9jLyovbmV0bnMgb3V0cHV0dGluZyBpZAo+IHdo
+ZXJlIGlkIGlzIG5vdCBkZXJpdmVkIGZyb20ga2VybmVsIHBvaW50ZXIuCj4gCj4gPiBTb2x1dGlv
+bj8KPiA+IFsgdXNpbmcgbG8gaW50ZXJmYWNlIGluZGV4IF0KPiAKPiBXaGF0IGEgaGFjayEgOi0p
+CgpXZWxsLCB5b3UgY291bGQgY3JlYXRlIGFub3RoZXIgY291bnRlciBhbmQgY291bnQgaXQgdXAg
+b24gbmFtZXNwYWNlCmNyZWF0aW9uLiBCdXQgdGhlIGludGVyZmFjZSBpbmRleCBpcyByZWFkaWx5
+IGF2YWlsYWJsZSB0byB1c2Vyc3BhY2UgYXMKaXMsIGFuZCBpdCB1bmlxdWVseSBpZGVudGlmaWVz
+IHRoZSBuZXR3b3JrIG5hbWVzcGFjZS4KCihTdHVwaWRlc3QgdGhpbmcgeW91IGNhbiBkbyB0byBi
+cmVhayB0aGlzIGlzIHJlbmFtaW5nIHRoZSBsb29wYmFjawpkZXZpY2U7IGJ1dCBldmVuIGlmIHlv
+dSBkbyB0aGF0IHVzZXJzcGFjZSBjYW4gc3RpbGwgbG9vayBhdCB0aGUgTE9PUEJBQ0sKZmxhZy4p
+CgoKLURhdmlkCgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+XwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRp
+b24ub3JnCmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5m
+by9jb250YWluZXJz
