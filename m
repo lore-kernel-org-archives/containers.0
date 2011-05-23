@@ -1,55 +1,58 @@
-From: Ingo Molnar <mingo@elte.hu>
-Subject: Re: [GIT PULL] Namespace file descriptors for 2.6.40
-Date: Sun, 22 May 2011 10:42:24 +0200
-Message-ID: <20110522084224.GA12279@elte.hu>
-References: <m11uzrvd26.fsf@fess.ebiederm.org>
- <BANLkTim4q5dK6nOb=pVKbk1c8b-Nh_hBfA@mail.gmail.com>
- <m1boyvpo9r.fsf@fess.ebiederm.org>
- <1306048393.4092.8.camel@mulgrave.site>
+From: David Lamparter <equinox@diac24.net>
+Subject: Re: [PATCH] netns: add /proc/*/net/id symlink
+Date: Mon, 23 May 2011 03:43:03 +0200
+Message-ID: <20110523014303.GA2351982@jupiter.n2.diac24.net>
+References: <20110521093936.GA3015@p183>
+ <m11uzsxdty.fsf@fess.ebiederm.org>
+ <20110521223054.GA3198@p183>
+ <m1vcx3r3o5.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Return-path: <netdev-owner@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <1306048393.4092.8.camel@mulgrave.site>
-Sender: linux-kernel-owner@vger.kernel.org
-To: James Bottomley <James.Bottomley@HansenPartnership.com>
-Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Linus Torvalds <torvalds@linux-foundation.org>, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>
+In-Reply-To: <m1vcx3r3o5.fsf@fess.ebiederm.org>
+Sender: netdev-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Alexey Dobriyan <adobriyan@gmail.com>, davem@davemloft.net, netdev@vger.kernel.org, equinox@diac24.net, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
+> ... Eric W. Biederman wrote:
+> Now it probably needs to be better documented that /proc/*/net/*
+> have the same inode number if the network namespace is the
+> same, as everyone including myself overlooked this very handy
+> existing property.
 
-* James Bottomley <James.Bottomley@HansenPartnership.com> wrote:
+Eh, so did I. But, yes, very nice.
 
-> Traditionally, the arch trees tend to go a bit later because they wait to see 
-> if there's any fallout from x86; [...]
+On Sat, May 21, 2011 at 05:15:38PM -0700, Eric W. Biederman wrote:
+> Additionally that solution will work for comparing network namespaces
+> that don't happen to have any processes in them at the moment.  Because
+> fstat works on file descriptors.
 
-Not really - most of the arch trees 'traditionally' went late even when the x86 
-tree itself was monolithic and was itself sent late in the merge window (with 
-the notable exception of the powerpc tree).
+Hm. I have a peeve here. Assume I am a... rogue admin, whatever. I have
+root on a router. I create a new network namespace, put a macvlan of
+eth0 in it and a macvlan of eth1. I enable ip_forward.
 
-> [...] but this time, I think it looks OK, [...]
+Then I make a mount namespace, bind-mount the net namespace, bind mount
+the mount namespace and terminate all processes that reference it (yes
+this does work, i just checked [!]).
 
-That's not really a surprise, there hasn't been a serious 'problem' with the 
-x86 tree for a long time, roughly since we switched to the finegrained Git 
-topical split-up maintenance model about two years ago.
+Now I can use it to bypass all firewall rules, IDS, whatever.
 
-[ That split-up also means that there is no 'x86 tree' anymore as such: if you 
-  check lkml we send roughly 20-30 independent trees in the merge window and 
-  have done that for the past ~10 kernel cycles. ]
+How is any normal admin, monitoring script or whatever else able to
+detect this?
 
-In fact exactly *because* there's few problems with the x86 topic trees can we 
-push them so soon: if problems were frequent then 1) we would not be able to be 
-ready on time and 2) i suspect we'd be pulled in later in the window as well as 
-a maintainer generally wants to pull low risk items first, high risk items 
-last, to maximize the utilization of testing capacity.
+> With the /proc/<pid>/ns/net file and bind mounts I have solved the
+> deeper problem of how do we get userspace policy into the naming of
+> namespaces.  With those files and the setns system call I have solved
+> the other problem of what is a good way to refer to namespaces without
+> assuming a global name.  So once those changes are merged I expect there
+> to be much less pressure to misuse any kind of identifier we can have.
+> 
+> And if we only make the guarantee about inode consistency for the
+> /proc/<pid>/ns/FILE files I don't expect it will make maintenance
+> of procfs any harder than it already is.
 
-I agree with Linus's notion in this thread though, a core kernel change should 
-generally not worry about hooking up rare-arch system calls (concentrate on the 
-architectures that get tested most) - those are better enabled gradually 
-anyway.
 
-Also, system call table conflicts are trivial to resolve. Merging in net-next 
-to avoid such a conflict is like cracking a nut with a sledgehammer.
+-David
 
-Thanks,
-
-	Ingo
