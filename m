@@ -1,132 +1,62 @@
 From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: [GIT PULL] Namespace file descriptors for 2.6.40
-Date: Mon, 23 May 2011 14:05:57 -0700
-Message-ID: <m1wrhh3z62.fsf@fess.ebiederm.org>
+Subject: Re: [GIT PULL] Namespace file descriptors for 2.6.40
+Date: Tue, 24 May 2011 00:03:37 -0700
+Message-ID: <m1k4dgr35i.fsf@fess.ebiederm.org>
+References: <m11uzrvd26.fsf@fess.ebiederm.org>
+	<BANLkTim4q5dK6nOb=pVKbk1c8b-Nh_hBfA@mail.gmail.com>
+	<m1boyvpo9r.fsf@fess.ebiederm.org>
+	<1306048393.4092.8.camel@mulgrave.site>
+	<20110522084224.GA12279@elte.hu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner@vger.kernel.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, James Bottomley <James.Bottomley@HansenPartnership.com>, Geert Uytterhoeven <geert@linux-m68k.org>
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <20110522084224.GA12279@elte.hu> (Ingo Molnar's message of "Sun,
+	22 May 2011 10:42:24 +0200")
+Sender: netdev-owner@vger.kernel.org
+To: Ingo Molnar <mingo@elte.hu>
+Cc: James Bottomley <James.Bottomley@HansenPartnership.com>, Linus Torvalds <torvalds@linux-foundation.org>, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>
 List-Id: containers.vger.kernel.org
 
+Ingo Molnar <mingo@elte.hu> writes:
 
-Please pull the namespace file descriptor git tree from:
+> I agree with Linus's notion in this thread though, a core kernel change should 
+> generally not worry about hooking up rare-arch system calls (concentrate on the 
+> architectures that get tested most) - those are better enabled gradually 
+> anyway.
 
-   git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/linux-2.6-nsfd.git
+The way I read it he was complaining about my having parisc bits and
+asking for my branch to be merged before the parisc bits had been
+merged.  Which I credit as a fair complaint.  If I am going to depend on
+other peoples trees I should wait.
 
-Because other syscall work has happened in other trees there
-are conflicts on alpha and m68k.
+At the same time when I am busy looking for every possible source of
+trouble and putting code into net-next to detect pending conflicts,
+and when maintainers complain when I ask for review that my patches
+conflict with their patches.  Being a contentious developer I am
+inclined to do something.
 
-For alpha all that is needed is a simple incrementing of the syscall
-number in my tree and adding of my syscall to the end of the list.
+Now that the reality has sunk in that it means waiting for other peoples
+code to be merged before I request for my changes to be merged I don't
+think I will structure a tree that way again while I remember.
 
-For m68k please just delete all of the syscall entries the conflict will
-add to arch/m68k/kernel/entry_mm.S.  The m68k tree has consolidated
-everything in arch/m68k/kernel/syscalltable.S
+> Also, system call table conflicts are trivial to resolve. Merging in net-next 
+> to avoid such a conflict is like cracking a nut with a sledgehammer.
 
-
-This tree adds the files /proc/<pid>/ns/net, /proc/<pid>/ns/ipc,
-/proc/<pid>/ns/uts that can be opened to refer to the namespaces of a
-process at the time those files are opened, and can be bind mounted to
-keep the specified namespace alive without a process.
-
-This tree adds the setns system call that can be used to change the
-specified namespace of a process to the namespace specified by a system
+Well I still have trauma from how nasty it was to test with syscall
+numbers continuing to change when I was working on the kexec_load system
 call.
 
-This tree adds a new rtnetlink attribute that allows for moving a
-network device into a network namespace specified by a file descriptor.
+As far as I can tell any one system call conflict on any one
+architecture is easy to resolve.  Resolving a conflict on all
+architectures would amount to at least 50 files that need to be resolved
+that feels a bit more than trivial.
 
-Support for the other namespaces is planned but is not ready for 2.6.40.
+My gut feel says we should really implement an
+include/asm-generic/unistd-common.h to include all new system calls.
 
-These changes dramatically simplify what a userspace process has to do
-to keep a namespace alive, and to execute system calls in it.
+That way there would be only one file to touch instead of 50.
+Certainly it works for include/asm-generic/unistd.h for the
+architectures that use it.  And all we really need is just a little
+abstraction on that concept.
 
-The shortlog:
-
-Stephen Rothwell (1):
-      net: fix get_net_ns_by_fd for !CONFIG_NET_NS
-
-Eric W. Biederman (11):
-      ns: proc files for namespace naming policy.
-      ns: Introduce the setns syscall
-      ns proc: Add support for the network namespace.
-      ns proc: Add support for the uts namespace
-      ns proc: Add support for the ipc namespace
-      net: Allow setting the network namespace by fd
-      Merge commit '2e7bad5f34b5beed47542490c760ed26574e38ba' into HEAD
-      Merge commit '7143b7d41218d4fc2ea33e6056c73609527ae687' into HEAD
-      ns: Wire up the setns system call
-      ns: Declare sys_setns in syscalls.h
-      ns proc: Return -ENOENT for a nonexistent /proc/self/ns/ entry.
-
-The diffstat:
-
- arch/alpha/include/asm/unistd.h        |    3 +-
- arch/alpha/kernel/systbls.S            |    1 +
- arch/arm/include/asm/unistd.h          |    1 +
- arch/arm/kernel/calls.S                |    1 +
- arch/avr32/include/asm/unistd.h        |    3 +-
- arch/avr32/kernel/syscall_table.S      |    1 +
- arch/blackfin/include/asm/unistd.h     |    3 +-
- arch/blackfin/mach-common/entry.S      |    1 +
- arch/cris/arch-v10/kernel/entry.S      |    1 +
- arch/cris/arch-v32/kernel/entry.S      |    1 +
- arch/cris/include/asm/unistd.h         |    3 +-
- arch/frv/include/asm/unistd.h          |    3 +-
- arch/frv/kernel/entry.S                |    1 +
- arch/h8300/include/asm/unistd.h        |    3 +-
- arch/h8300/kernel/syscalls.S           |    1 +
- arch/ia64/include/asm/unistd.h         |    3 +-
- arch/ia64/kernel/entry.S               |    1 +
- arch/m32r/include/asm/unistd.h         |    3 +-
- arch/m32r/kernel/syscall_table.S       |    1 +
- arch/m68k/include/asm/unistd.h         |    3 +-
- arch/m68k/kernel/syscalltable.S        |    1 +
- arch/microblaze/include/asm/unistd.h   |    3 +-
- arch/microblaze/kernel/syscall_table.S |    1 +
- arch/mips/include/asm/unistd.h         |   15 ++-
- arch/mips/kernel/scall32-o32.S         |    1 +
- arch/mips/kernel/scall64-64.S          |    1 +
- arch/mips/kernel/scall64-n32.S         |    1 +
- arch/mips/kernel/scall64-o32.S         |    1 +
- arch/mn10300/include/asm/unistd.h      |    3 +-
- arch/mn10300/kernel/entry.S            |    1 +
- arch/parisc/include/asm/unistd.h       |    4 +-
- arch/parisc/kernel/syscall_table.S     |    1 +
- arch/powerpc/include/asm/systbl.h      |    1 +
- arch/powerpc/include/asm/unistd.h      |    3 +-
- arch/s390/include/asm/unistd.h         |    3 +-
- arch/s390/kernel/syscalls.S            |    1 +
- arch/sh/include/asm/unistd_32.h        |    3 +-
- arch/sh/include/asm/unistd_64.h        |    3 +-
- arch/sh/kernel/syscalls_32.S           |    1 +
- arch/sh/kernel/syscalls_64.S           |    1 +
- arch/sparc/include/asm/unistd.h        |    3 +-
- arch/sparc/kernel/systbls_32.S         |    2 +-
- arch/sparc/kernel/systbls_64.S         |    4 +-
- arch/x86/ia32/ia32entry.S              |    1 +
- arch/x86/include/asm/unistd_32.h       |    3 +-
- arch/x86/include/asm/unistd_64.h       |    2 +
- arch/x86/kernel/syscall_table_32.S     |    1 +
- arch/xtensa/include/asm/unistd.h       |    4 +-
- fs/proc/Makefile                       |    1 +
- fs/proc/base.c                         |   20 ++--
- fs/proc/inode.c                        |    7 +
- fs/proc/internal.h                     |   18 +++
- fs/proc/namespaces.c                   |  198 ++++++++++++++++++++++++++++++++
- include/asm-generic/unistd.h           |    4 +-
- include/linux/if_link.h                |    1 +
- include/linux/proc_fs.h                |   21 ++++
- include/linux/syscalls.h               |    1 +
- include/net/net_namespace.h            |    1 +
- ipc/namespace.c                        |   37 ++++++
- kernel/nsproxy.c                       |   42 +++++++
- kernel/utsname.c                       |   39 ++++++
- net/core/net_namespace.c               |   65 +++++++++++
- net/core/rtnetlink.c                   |    5 +-
- 63 files changed, 525 insertions(+), 42 deletions(-)
-
-Thanks,
 Eric
