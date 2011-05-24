@@ -1,55 +1,53 @@
-From: Ingo Molnar <mingo@elte.hu>
+From: James Bottomley <James.Bottomley@HansenPartnership.com>
 Subject: Re: [GIT PULL] Namespace file descriptors for 2.6.40
-Date: Tue, 24 May 2011 09:16:28 +0200
-Message-ID: <20110524071628.GA31612@elte.hu>
+Date: Tue, 24 May 2011 11:26:21 +0400
+Message-ID: <1306221981.10201.8.camel@mulgrave.site>
 References: <m11uzrvd26.fsf@fess.ebiederm.org>
- <BANLkTim4q5dK6nOb=pVKbk1c8b-Nh_hBfA@mail.gmail.com>
- <m1boyvpo9r.fsf@fess.ebiederm.org>
- <1306048393.4092.8.camel@mulgrave.site>
- <20110522084224.GA12279@elte.hu>
- <m1k4dgr35i.fsf@fess.ebiederm.org>
+	 <BANLkTim4q5dK6nOb=pVKbk1c8b-Nh_hBfA@mail.gmail.com>
+	 <m1boyvpo9r.fsf@fess.ebiederm.org> <1306048393.4092.8.camel@mulgrave.site>
+	 <20110522084224.GA12279@elte.hu>  <m1k4dgr35i.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
-Content-Disposition: inline
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner@vger.kernel.org>
 In-Reply-To: <m1k4dgr35i.fsf@fess.ebiederm.org>
-Sender: netdev-owner@vger.kernel.org
+Sender: linux-kernel-owner@vger.kernel.org
 To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: James Bottomley <James.Bottomley@HansenPartnership.com>, Linus Torvalds <torvalds@linux-foundation.org>, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Ingo Molnar <mingo@elte.hu>, netdev@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>, Linux Containers <containers@lists.osdl.org>, Linus Torvalds <torvalds@linux-foundation.org>
 List-Id: containers.vger.kernel.org
 
-
-* Eric W. Biederman <ebiederm@xmission.com> wrote:
-
-> > Also, system call table conflicts are trivial to resolve. Merging in 
-> > net-next to avoid such a conflict is like cracking a nut with a 
-> > sledgehammer.
+On Tue, 2011-05-24 at 00:03 -0700, Eric W. Biederman wrote:
+> Ingo Molnar <mingo@elte.hu> writes:
 > 
-> Well I still have trauma from how nasty it was to test with syscall numbers 
-> continuing to change when I was working on the kexec_load system call.
+> > I agree with Linus's notion in this thread though, a core kernel change should 
+> > generally not worry about hooking up rare-arch system calls (concentrate on the 
+> > architectures that get tested most) - those are better enabled gradually 
+> > anyway.
 > 
-> As far as I can tell any one system call conflict on any one
-> architecture is easy to resolve.  Resolving a conflict on all
-> architectures would amount to at least 50 files that need to be resolved
-> that feels a bit more than trivial.
-
-Of course - and the straightforward solution is to not do it but concentrate on 
-the 2-3 archs you find to be the primary target of your patches. How many 
-parisc systems are there on the planet, which in the future will be upgraded to 
-both kernel and user-space running your new syscall for real? Less than 10? How 
-many ARM and x86 systems?
-
-> My gut feel says we should really implement an 
-> include/asm-generic/unistd-common.h to include all new system calls.
+> The way I read it he was complaining about my having parisc bits and
+> asking for my branch to be merged before the parisc bits had been
+> merged.  Which I credit as a fair complaint.  If I am going to depend on
+> other peoples trees I should wait.
 > 
-> That way there would be only one file to touch instead of 50. Certainly it 
-> works for include/asm-generic/unistd.h for the architectures that use it.  
-> And all we really need is just a little abstraction on that concept.
+> At the same time when I am busy looking for every possible source of
+> trouble and putting code into net-next to detect pending conflicts,
+> and when maintainers complain when I ask for review that my patches
+> conflict with their patches.  Being a contentious developer I am
+> inclined to do something.
 
-I suppose that could be tried, although in practice it would probably be 
-somewhat complex due to the various compat syscall handling differences.
-So i guess this is one of the 'lets see how ugly/fragile it becomes' patches.
+Right ... and the problem is that someone has to care, because the
+conflict will show up in linux-next.  I think Stephen Rothwell would
+appreciate us making his life easier rather than leaving it to him to
+sort out the problems.
 
-Thanks,
+> Now that the reality has sunk in that it means waiting for other peoples
+> code to be merged before I request for my changes to be merged I don't
+> think I will structure a tree that way again while I remember.
 
-	Ingo
+Right.   This is quite a common occurrence in SCSI (mostly changes
+entangled with block or libata).  If you don't feel comfortable running
+a postmerge tree, just send me the bits and I'll do it (after all it
+works either way around: I can pull in the syscalls and depend on your
+tree rather than vice versa).
+
+James
