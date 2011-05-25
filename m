@@ -1,72 +1,48 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
+From: C Anthony Risinger <anthony@xtfx.me>
 Subject: Re: [GIT PULL] Namespace file descriptors for 2.6.40
-Date: Wed, 25 May 2011 17:22:39 +0200
-Message-ID: <BANLkTinPJSJrr2LPVyCt_7ci7pSu-sDdRQ@mail.gmail.com>
-References: <m1boyvpo9r.fsf@fess.ebiederm.org>
-	<1306048393.4092.8.camel@mulgrave.site>
-	<20110522084224.GA12279@elte.hu>
-	<m1k4dgr35i.fsf@fess.ebiederm.org>
-	<20110524071628.GA31612@elte.hu>
-	<4508.1306283693@localhost>
-	<20110525082514.GE21552@elte.hu>
-	<BANLkTikVDrU7Nx6143gPuB=1vwqkMFiRiQ@mail.gmail.com>
-	<20110525124741.GC29300@elte.hu>
-	<BANLkTimQcyX9XSY__9Bpg3tg7-P7gtOTkw@mail.gmail.com>
-	<20110525131746.GA19118@elte.hu>
+Date: Wed, 25 May 2011 16:05:39 -0500
+Message-ID: <BANLkTikW4vJbC8kcLSKuemUBbu36SO6hwg@mail.gmail.com>
+References: <m1wrhh3z62.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20110525131746.GA19118@elte.hu>
+In-Reply-To: <m1wrhh3z62.fsf@fess.ebiederm.org>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Ingo Molnar <mingo@elte.hu>
-Cc: Valdis.Kletnieks@vt.edu, "Eric W. Biederman" <ebiederm@xmission.com>, James Bottomley <James.Bottomley@hansenpartnership.com>, Linus Torvalds <torvalds@linux-foundation.org>, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-On Wed, May 25, 2011 at 15:17, Ingo Molnar <mingo@elte.hu> wrote:
-> * Geert Uytterhoeven <geert@linux-m68k.org> wrote:
->> On Wed, May 25, 2011 at 14:47, Ingo Molnar <mingo@elte.hu> wrote:
->> > * Geert Uytterhoeven <geert@linux-m68k.org> wrote:
->> >
->> >> > But at least the primary, 'native' syscall table of every arch
->> >> > could be kept rather fresh via generic enumeration.
->> >>
->> >> So we can start all over at offset 501 (alpha just started using
->> >> 500) with a unified, clean, and compressed list of syscalls? Or d=
-o
->> >> we have some more other-os-compat syscalls around in this range?
->> >
->> > No, that would leave a big hole in the syscall table of most
->> > architectures.
->>
->> Sure, but we could (a) optimize for the case where the syscall numbe=
-r is
->> larger than 500 and/or (b) drop support for syscall numbers smaller =
-than
->> 501, depending on a config option.
+On Mon, May 23, 2011 at 4:05 PM, Eric W. Biederman
+<ebiederm@xmission.com> wrote:
 >
-> Dunno why there is so much desire to complicate and break
-> well-working ABIs while we have a 14+ MLOC kernel with so much code
-> in it that is in dire need to be improved! :-)
+> This tree adds the files /proc/<pid>/ns/net, /proc/<pid>/ns/ipc,
+> /proc/<pid>/ns/uts that can be opened to refer to the namespaces of a
+> process at the time those files are opened, and can be bind mounted to
+> keep the specified namespace alive without a process.
+>
+> This tree adds the setns system call that can be used to change the
+> specified namespace of a process to the namespace specified by a system
+> call.
 
-Because we (think we) need less active brain cells to write emails that=
- to code.
-So when we're not "active" enough to hack, we tend to respond to long w=
-inding
-getting off-topic email threads...
+i just have a quick question regarding these, apologies if wrong place
+to respond -- i trimmed to lists only.
 
-Gr{oetje,eeting}s,
+if i understand correctly, mount namespaces (for example), allow one
+to build such constructs as "private /tmp" and similar that even
+`root` cannot access ... and there are many reasons `root` does not
+deserve to completely know/interact with user processes (FUSE makes a
+good example ... just because i [user] have SSH access to a machine,
+why should `root`?)
 
-=C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=
-=A0 =C2=A0 Geert
+would these /proc additions break such guarantees?  IOW, would it now
+become possible for `root` to inject stuff into my private namespaces,
+and/or has these guarantees never existed and i am mistaken?  is there
+any kind of ACL mechanism that endows the origin process (or similar)
+with the ability to dictate who can hold and/or interact with these
+references?
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-=
-m68k.org
+Thanks for your time,
 
-In personal conversations with technical people, I call myself a hacker=
-=2E But
-when I'm talking to journalists I just say "programmer" or something li=
-ke that.
-=C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=
-=A0 =C2=A0 =C2=A0 =C2=A0=C2=A0 =C2=A0=C2=A0 -- Linus Torvalds
+-- 
+
+C Anthony
