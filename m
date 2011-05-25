@@ -1,48 +1,81 @@
-From: C Anthony Risinger <anthony@xtfx.me>
-Subject: Re: [GIT PULL] Namespace file descriptors for 2.6.40
-Date: Wed, 25 May 2011 16:05:39 -0500
-Message-ID: <BANLkTikW4vJbC8kcLSKuemUBbu36SO6hwg@mail.gmail.com>
-References: <m1wrhh3z62.fsf@fess.ebiederm.org>
+From: Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] cgroupfs: use init_cred when populating new cgroupfs mount
+Date: Wed, 25 May 2011 17:35:34 -0400
+Message-ID: <20110525213534.28016.33058.stgit@paris.rdu.redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <m1wrhh3z62.fsf@fess.ebiederm.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, selinux-+05T5uksL2qpZYMLLGbcSA@public.gmane.org
+Cc: sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rhel6-cc-external-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, May 23, 2011 at 4:05 PM, Eric W. Biederman
-<ebiederm@xmission.com> wrote:
->
-> This tree adds the files /proc/<pid>/ns/net, /proc/<pid>/ns/ipc,
-> /proc/<pid>/ns/uts that can be opened to refer to the namespaces of a
-> process at the time those files are opened, and can be bind mounted to
-> keep the specified namespace alive without a process.
->
-> This tree adds the setns system call that can be used to change the
-> specified namespace of a process to the namespace specified by a system
-> call.
+We recently found that in some configurations SELinux was blocking the ability
+for cgroupfs to be mounted.  The reason for this is because cgroupfs creates
+files and directories during the get_sb() call and also uses lookup_one_len()
+during that same get_sb() call.  This is a problem since the security
+subsystem cannot initialize the superblock and the inodes in that filesystem
+until after the get_sb() call returns.  Thus we leave the inodes in
+an unitialized state during get_sb().  For the vast majority of filesystems
+this is not an issue, but since cgroupfs uses lookup_on_len() it does
+search permission checks on the directories in the path it walks.  Since the
+inode security state is not set up SELinux does these checks as if the inodes
+were 'unlabeled.'
 
-i just have a quick question regarding these, apologies if wrong place
-to respond -- i trimmed to lists only.
+Many 'normal' userspace process do not have permission to interact with
+unlabeled inodes.  The solution presented here is to do the permission checks
+of path walk and inode creation as the kernel rather than as the task that
+called mount.  Since the kernel has permission to read/write/create
+unlabeled inodes the get_sb() call will complete successfully and the SELinux
+code will be able to initialize the superblock and those inodes created during
+the get_sb() call.
 
-if i understand correctly, mount namespaces (for example), allow one
-to build such constructs as "private /tmp" and similar that even
-`root` cannot access ... and there are many reasons `root` does not
-deserve to completely know/interact with user processes (FUSE makes a
-good example ... just because i [user] have SSH access to a machine,
-why should `root`?)
+Signed-off-by: Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
 
-would these /proc additions break such guarantees?  IOW, would it now
-become possible for `root` to inject stuff into my private namespaces,
-and/or has these guarantees never existed and i am mistaken?  is there
-any kind of ACL mechanism that endows the origin process (or similar)
-with the ability to dictate who can hold and/or interact with these
-references?
+ kernel/cgroup.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
 
-Thanks for your time,
-
--- 
-
-C Anthony
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 909a355..38b32dd 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -27,9 +27,11 @@
+  */
+ 
+ #include <linux/cgroup.h>
++#include <linux/cred.h>
+ #include <linux/ctype.h>
+ #include <linux/errno.h>
+ #include <linux/fs.h>
++#include <linux/init_task.h>
+ #include <linux/kernel.h>
+ #include <linux/list.h>
+ #include <linux/mm.h>
+@@ -1513,6 +1515,7 @@ static struct dentry *cgroup_mount(struct file_system_type *fs_type,
+ 		struct cgroup *root_cgrp = &root->top_cgroup;
+ 		struct inode *inode;
+ 		struct cgroupfs_root *existing_root;
++		const struct cred *cred;
+ 		int i;
+ 
+ 		BUG_ON(sb->s_root != NULL);
+@@ -1592,7 +1595,9 @@ static struct dentry *cgroup_mount(struct file_system_type *fs_type,
+ 		BUG_ON(!list_empty(&root_cgrp->children));
+ 		BUG_ON(root->number_of_cgroups != 1);
+ 
++		cred = override_creds(&init_cred);
+ 		cgroup_populate_dir(root_cgrp);
++		revert_creds(cred);
+ 		mutex_unlock(&cgroup_mutex);
+ 		mutex_unlock(&inode->i_mutex);
+ 	} else {
