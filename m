@@ -1,75 +1,53 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
+From: Valdis.Kletnieks@vt.edu
 Subject: Re: [GIT PULL] Namespace file descriptors for 2.6.40
-Date: Tue, 24 May 2011 01:11:19 -0700
-Message-ID: <m1aaeco6vs.fsf@fess.ebiederm.org>
-References: <m11uzrvd26.fsf@fess.ebiederm.org>
-	<BANLkTim4q5dK6nOb=pVKbk1c8b-Nh_hBfA@mail.gmail.com>
-	<m1boyvpo9r.fsf@fess.ebiederm.org>
-	<1306048393.4092.8.camel@mulgrave.site>
-	<20110522084224.GA12279@elte.hu> <m1k4dgr35i.fsf@fess.ebiederm.org>
-	<1306221981.10201.8.camel@mulgrave.site>
+Date: Tue, 24 May 2011 20:34:53 -0400
+Message-ID: <4508.1306283693@localhost>
+References: <m11uzrvd26.fsf@fess.ebiederm.org> <BANLkTim4q5dK6nOb=pVKbk1c8b-Nh_hBfA@mail.gmail.com> <m1boyvpo9r.fsf@fess.ebiederm.org> <1306048393.4092.8.camel@mulgrave.site> <20110522084224.GA12279@elte.hu> <m1k4dgr35i.fsf@fess.ebiederm.org>
+            <20110524071628.GA31612@elte.hu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: multipart/signed; boundary="==_Exmh_1306283693_2629P";
+	 micalg=pgp-sha1; protocol="application/pgp-signature"
+Content-Transfer-Encoding: 7bit
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <1306221981.10201.8.camel@mulgrave.site> (James Bottomley's
-	message of "Tue, 24 May 2011 11:26:21 +0400")
+In-Reply-To: Your message of "Tue, 24 May 2011 09:16:28 +0200."
+             <20110524071628.GA31612@elte.hu>
 Sender: linux-kernel-owner@vger.kernel.org
-To: James Bottomley <James.Bottomley@HansenPartnership.com>
-Cc: Ingo Molnar <mingo@elte.hu>, netdev@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>, Linux Containers <containers@lists.osdl.org>, Linus Torvalds <torvalds@linux-foundation.org>
+To: Ingo Molnar <mingo@elte.hu>
+Cc: "Eric W. Biederman" <ebiederm@xmission.com>, James Bottomley <James.Bottomley@HansenPartnership.com>, Linus Torvalds <torvalds@linux-foundation.org>, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>
 List-Id: containers.vger.kernel.org
 
-James Bottomley <James.Bottomley@HansenPartnership.com> writes:
+--==_Exmh_1306283693_2629P
+Content-Type: text/plain; charset=us-ascii
 
-> On Tue, 2011-05-24 at 00:03 -0700, Eric W. Biederman wrote:
->> Ingo Molnar <mingo@elte.hu> writes:
->> 
->> > I agree with Linus's notion in this thread though, a core kernel change should 
->> > generally not worry about hooking up rare-arch system calls (concentrate on the 
->> > architectures that get tested most) - those are better enabled gradually 
->> > anyway.
->> 
->> The way I read it he was complaining about my having parisc bits and
->> asking for my branch to be merged before the parisc bits had been
->> merged.  Which I credit as a fair complaint.  If I am going to depend on
->> other peoples trees I should wait.
->> 
->> At the same time when I am busy looking for every possible source of
->> trouble and putting code into net-next to detect pending conflicts,
->> and when maintainers complain when I ask for review that my patches
->> conflict with their patches.  Being a contentious developer I am
-                                         ^^^^^^^^^^^ conscientious
-I didn't realize it was possible to make that typo.
-
->> inclined to do something.
+On Tue, 24 May 2011 09:16:28 +0200, Ingo Molnar said:
+> * Eric W. Biederman <ebiederm@xmission.com> wrote:
+> > My gut feel says we should really implement an
+> > include/asm-generic/unistd-common.h to include all new system calls.
+> >
+> > That way there would be only one file to touch instead of 50. Certainly it
+> > works for include/asm-generic/unistd.h for the architectures that use it. 
+> > And all we really need is just a little abstraction on that concept.
 >
-> Right ... and the problem is that someone has to care, because the
-> conflict will show up in linux-next.  I think Stephen Rothwell would
-> appreciate us making his life easier rather than leaving it to him to
-> sort out the problems.
->
->> Now that the reality has sunk in that it means waiting for other peoples
->> code to be merged before I request for my changes to be merged I don't
->> think I will structure a tree that way again while I remember.
->
-> Right.   This is quite a common occurrence in SCSI (mostly changes
-> entangled with block or libata).  If you don't feel comfortable running
-> a postmerge tree, just send me the bits and I'll do it (after all it
-> works either way around: I can pull in the syscalls and depend on your
-> tree rather than vice versa).
+> I suppose that could be tried, although in practice it would probably be
+> somewhat complex due to the various compat syscall handling differences.
 
-Well for the moment I don't see too many problems.  I sent another pull
-request to Linus earlier today now that your changes are in.  So I am
-hoping either Linus will pull my tree or someone will educate me on what
-he will Linus will accept.
+Can somebody fill us newcomers in on the arch-aeology of why some syscalls have
+different numbers on different archs? I know it's partially because some simply
+didn't implement some syscalls so there were numbering mismatches, but would it
+have been *that* hard to wire all of those skipped syscalls up to one stub
+'return -ENOSYS'?
 
-Right now my tree is tested and in a good state.  Heck I'm running it
-to send this email.  So I am reluctant to change anything without clear
-feedback.
 
-James when you refer to a postmerge tree what are the dynamics/semantics
-usually associated with that?  Is this a tree that gets pulled a couple
-of times?  Once with the non-conflicting bits.  Another time when the
-bits it depends on have been merged?  Or is this a tree that gets pulled
-after the merge window entirely?
+--==_Exmh_1306283693_2629P
+Content-Type: application/pgp-signature
 
-Eric
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+Comment: Exmh version 2.5 07/13/2001
+
+iD8DBQFN3E6tcC3lWbTT17ARAoUzAKDkLdqvlB6vCeoSImcc2cdgyprBtgCeLf6P
+rJQ+3GeD0kVUaVPYr2AFv2w=
+=8lZN
+-----END PGP SIGNATURE-----
+
+--==_Exmh_1306283693_2629P--
