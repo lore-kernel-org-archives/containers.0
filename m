@@ -1,121 +1,80 @@
-From: C Anthony Risinger <anthony@xtfx.me>
-Subject: Re: [GIT PULL] Namespace file descriptors for 2.6.40
-Date: Fri, 27 May 2011 15:18:45 -0500
-Message-ID: <BANLkTimXMaYe9OYNhqPCiNnG2CqaQOt-yw@mail.gmail.com>
-References: <m1wrhh3z62.fsf@fess.ebiederm.org> <BANLkTikW4vJbC8kcLSKuemUBbu36SO6hwg@mail.gmail.com>
- <20110525213806.GA4590@mail.hallyn.com> <BANLkTinbw6pZjhMscfXFMArd=XU=VC=+eQ@mail.gmail.com>
- <m17h9e1h9e.fsf@fess.ebiederm.org>
+From: Joe Perches <joe-6d6DIl74uiNBDgjK7y7TUQ@public.gmane.org>
+Subject: [TRIVIAL PATCH next 00/15] treewide: Convert vmalloc/memset to vzalloc
+Date: Sat, 28 May 2011 10:36:20 -0700
+Message-ID: <cover.1306603968.git.joe__3196.09680814228$1306604281$gmane$org@perches.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: QUOTED-PRINTABLE
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <m17h9e1h9e.fsf@fess.ebiederm.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: "Serge E. Hallyn" <serge@hallyn.com>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: linux-atm-general-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, drbd-user-cunTk1MwBs8qoQakbn7OcQ@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-raid-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mtd-IAPFreCvJWM7uuMidbF8XcXa4x6EXUF0@public.gmane.org
+Cc: devel-gWbeCf7V1WCQmaza687I9mD2FQJk+8+b@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, xfs-VZNHf3L845pBDgjK7y7TUQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-media-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, May 25, 2011 at 6:40 PM, Eric W. Biederman
-<ebiederm@xmission.com> wrote:
-> C Anthony Risinger <anthony@xtfx.me> writes:
->
->> On Wed, May 25, 2011 at 4:38 PM, Serge E. Hallyn <serge@hallyn.com> =
-wrote:
->>> Quoting C Anthony Risinger (anthony@xtfx.me):
->>>> On Mon, May 23, 2011 at 4:05 PM, Eric W. Biederman
->>>> <ebiederm@xmission.com> wrote:
->>>> >
->>>> > This tree adds the files /proc/<pid>/ns/net, /proc/<pid>/ns/ipc,
->>>> > /proc/<pid>/ns/uts that can be opened to refer to the namespaces=
- of a
->>>> > process at the time those files are opened, and can be bind moun=
-ted to
->>>> > keep the specified namespace alive without a process.
->>>> >
->>>> > This tree adds the setns system call that can be used to change =
-the
->>>> > specified namespace of a process to the namespace specified by a=
- system
->>>> > call.
->>>>
->>>> i just have a quick question regarding these, apologies if wrong p=
-lace
->>>> to respond -- i trimmed to lists only.
->>>>
->>>> if i understand correctly, mount namespaces (for example), allow o=
-ne
->>>> to build such constructs as "private /tmp" and similar that even
->>>> `root` cannot access ... and there are many reasons `root` does no=
-t
->>>> deserve to completely know/interact with user processes (FUSE make=
-s a
->>>> good example ... just because i [user] have SSH access to a machin=
-e,
->>>> why should `root`?)
->>>>
->>>> would these /proc additions break such guarantees? =C2=A0IOW, woul=
-d it now
->>>> become possible for `root` to inject stuff into my private namespa=
-ces,
->>>> and/or has these guarantees never existed and i am mistaken? =C2=A0=
-is there
->>>> any kind of ACL mechanism that endows the origin process (or simil=
-ar)
->>>> with the ability to dictate who can hold and/or interact with thes=
-e
->>>> references?
->>>
->>> If for instance you have a file open in your private /tmp, then roo=
-t
->>> in another mounts ns can open the file through /proc/$$/fd/N anyway=
-=2E
->>> If it's a directory, he can now traverse the whole fs.
->>
->> aaah right :-( ... there's always another way isn't there ... curse
->> you Linux for being so flexible! (just kidding baby i love you)
->
-> Even more significant the access to the new files is guarded by the
-> ptrace access checks. =C2=A0And if root can ptrace your process root
-> can remote control your process.
->
->> this seems like a more fundamental issue then? =C2=A0or should i not=
- expect
->> to be able to achieve separation like this? =C2=A0i ask in the conte=
-xt of
->> OS virt via cgroups + namespaces, eg. LXC et al, because i'm about t=
-o
->> perform a massive overhaul to our crusty sub-2.6.18 infrastructure a=
-nd
->> i've used/followed these technologies for couple years now ... and
->> it's starting to feel like "the right time".
->
-> I don't think anything really new is allowed, but we haven't designed
-> anything that radically reduces the power of root either.
->
-> At some point we may have the user namespace done and that should
-> give you a root like user with vastly reduced powers, but we aren't
-> there yet.
+Resubmittal of patches from November 2010 and a few new ones.
 
-ok -- i knew there was some user namespace work still left for a
-namespaced root -- i was specifically thinking of the root user in the
-host.  i was under the impression that namespaces could achieve
-separation even from the host (save the kernel itself) ... but it
-seems i was mistaken ... still much to learn about Linux i suppose,
-even though i use it everyday for years and years :-)  it kind of
-makes sense i guess, since maybe the host needs supervisory powers
-over the guests?  could be some merit for real separation in the
-future (not only malevolent root host user, but say an attacker/script
-that manages to break thru container?), though how possible i dont
-know.  i wouldnt expect the root user to be prevented from killing/etc
-the container, but maybe only prevented from snooping, eg. the
-container looks like a black box that he may only resource control or
-kill completely.  either way, what we have is just fine for my (and
-likely many other's) uses.
+Joe Perches (15):
+  s390: Convert vmalloc/memset to vzalloc
+  x86: Convert vmalloc/memset to vzalloc
+  atm: Convert vmalloc/memset to vzalloc
+  drbd: Convert vmalloc/memset to vzalloc
+  char: Convert vmalloc/memset to vzalloc
+  isdn: Convert vmalloc/memset to vzalloc
+  md: Convert vmalloc/memset to vzalloc
+  media: Convert vmalloc/memset to vzalloc
+  mtd: Convert vmalloc/memset to vzalloc
+  scsi: Convert vmalloc/memset to vzalloc
+  staging: Convert vmalloc/memset to vzalloc
+  video: Convert vmalloc/memset to vzalloc
+  fs: Convert vmalloc/memset to vzalloc
+  mm: Convert vmalloc/memset to vzalloc
+  net: Convert vmalloc/memset to vzalloc
 
-anyways, thanks for all the answers and all the work on
-namespacing/cgroups ... very useful constructs for a wide array of
-problems.
+ arch/s390/hypfs/hypfs_diag.c           |    3 +--
+ arch/x86/mm/pageattr-test.c            |    3 +--
+ drivers/atm/idt77252.c                 |   11 ++++++-----
+ drivers/atm/lanai.c                    |    3 +--
+ drivers/block/drbd/drbd_bitmap.c       |    5 ++---
+ drivers/char/agp/backend.c             |    3 +--
+ drivers/char/raw.c                     |    3 +--
+ drivers/isdn/i4l/isdn_common.c         |    4 ++--
+ drivers/isdn/mISDN/dsp_core.c          |    3 +--
+ drivers/isdn/mISDN/l1oip_codec.c       |    6 ++----
+ drivers/md/dm-log.c                    |    3 +--
+ drivers/md/dm-snap-persistent.c        |    3 +--
+ drivers/md/dm-table.c                  |    4 +---
+ drivers/media/video/videobuf2-dma-sg.c |    8 ++------
+ drivers/mtd/mtdswap.c                  |    3 +--
+ drivers/s390/cio/blacklist.c           |    3 +--
+ drivers/scsi/bfa/bfad.c                |    3 +--
+ drivers/scsi/bfa/bfad_debugfs.c        |    8 ++------
+ drivers/scsi/cxgbi/libcxgbi.h          |    6 ++----
+ drivers/scsi/qla2xxx/qla_attr.c        |    6 ++----
+ drivers/scsi/qla2xxx/qla_bsg.c         |    3 +--
+ drivers/scsi/scsi_debug.c              |    7 ++-----
+ drivers/staging/rts_pstor/ms.c         |    3 +--
+ drivers/staging/rts_pstor/rtsx_chip.c  |    6 ++----
+ drivers/video/arcfb.c                  |    5 ++---
+ drivers/video/broadsheetfb.c           |    4 +---
+ drivers/video/hecubafb.c               |    5 ++---
+ drivers/video/metronomefb.c            |    4 +---
+ drivers/video/xen-fbfront.c            |    3 +--
+ fs/coda/coda_linux.h                   |    5 ++---
+ fs/reiserfs/journal.c                  |    9 +++------
+ fs/reiserfs/resize.c                   |    4 +---
+ fs/xfs/linux-2.6/kmem.h                |    7 +------
+ mm/page_cgroup.c                       |    3 +--
+ net/netfilter/x_tables.c               |    5 ++---
+ net/rds/ib_cm.c                        |    6 ++----
+ 36 files changed, 57 insertions(+), 113 deletions(-)
 
---=20
-
-C Anthony
+-- 
+1.7.5.rc3.dirty
