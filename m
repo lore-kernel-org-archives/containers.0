@@ -1,129 +1,143 @@
 From: Greg Thelen <gthelen@google.com>
-Subject: [PATCH v8 01/12] memcg: document cgroup dirty memory interfaces
-Date: Fri,  3 Jun 2011 09:12:07 -0700
-Message-ID: <1307117538-14317-2-git-send-email-gthelen@google.com>
-References: <1307117538-14317-1-git-send-email-gthelen@google.com>
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <1307117538-14317-1-git-send-email-gthelen@google.com>
-Sender: owner-linux-mm@kvack.org
+Subject: [PATCH v8 00/12] memcg: per cgroup dirty page accounting
+Date: Fri,  3 Jun 2011 09:12:06 -0700
+Message-ID: <1307117538-14317-1-git-send-email-gthelen@google.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+Sender: linux-kernel-owner@vger.kernel.org
 To: Andrew Morton <akpm@linux-foundation.org>
 Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Johannes Weiner <hannes@cmpxchg.org>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Vivek Goyal <vgoyal@redhat.com>, Dave Chinner <david@fromorbit.com>, Greg Thelen <gthelen@google.com>
 List-Id: containers.vger.kernel.org
 
-Document cgroup dirty memory interfaces and statistics.
+This patch series provides the ability for each cgroup to have independent dirty
+page usage limits.  Limiting dirty memory fixes the max amount of dirty (hard to
+reclaim) page cache used by a cgroup.  This allows for better per cgroup memory
+isolation and fewer ooms within a single cgroup.
 
-The implementation for these new interfaces routines comes in a series
-of following patches.
+Having per cgroup dirty memory limits is not very interesting unless writeback
+is cgroup aware.  There is not much isolation if cgroups have to writeback data
+from other cgroups to get below their dirty memory threshold.
 
-Signed-off-by: Andrea Righi <arighi@develer.com>
-Signed-off-by: Greg Thelen <gthelen@google.com>
-Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Acked-by: Balbir Singh <balbir@linux.vnet.ibm.com>
----
- Documentation/cgroups/memory.txt |   70 ++++++++++++++++++++++++++++++++++++++
- 1 files changed, 70 insertions(+), 0 deletions(-)
+Per-memcg dirty limits are provided to support isolation and thus cross cgroup
+inode sharing is not a priority.  This allows the code be simpler.
 
-diff --git a/Documentation/cgroups/memory.txt b/Documentation/cgroups/memory.txt
-index 43b9e46..15019a3 100644
---- a/Documentation/cgroups/memory.txt
-+++ b/Documentation/cgroups/memory.txt
-@@ -395,6 +395,10 @@ soft_direct_steal- # of pages reclaimed in global hierarchical reclaim from
- 		direct reclaim
- soft_direct_scan- # of pages scanned in global hierarchical reclaim from
- 		direct reclaim
-+dirty		- # of bytes that are waiting to get written back to the disk.
-+writeback	- # of bytes that are actively being written back to the disk.
-+nfs_unstable	- # of bytes sent to the NFS server, but not yet committed to
-+		the actual storage.
- inactive_anon	- # of bytes of anonymous memory and swap cache memory on
- 		LRU list.
- active_anon	- # of bytes of anonymous and swap cache memory on active
-@@ -420,6 +424,9 @@ total_soft_kswapd_steal	- sum of all children's "soft_kswapd_steal"
- total_soft_kswapd_scan	- sum of all children's "soft_kswapd_scan"
- total_soft_direct_steal	- sum of all children's "soft_direct_steal"
- total_soft_direct_scan	- sum of all children's "soft_direct_scan"
-+total_dirty		- sum of all children's "dirty"
-+total_writeback		- sum of all children's "writeback"
-+total_nfs_unstable	- sum of all children's "nfs_unstable"
- total_inactive_anon	- sum of all children's "inactive_anon"
- total_active_anon	- sum of all children's "active_anon"
- total_inactive_file	- sum of all children's "inactive_file"
-@@ -476,6 +483,69 @@ value for efficient access. (Of course, when necessary, it's synchronized.)
- If you want to know more exact memory usage, you should use RSS+CACHE(+SWAP)
- value in memory.stat(see 5.2).
- 
-+5.6 dirty memory
-+
-+Control the maximum amount of dirty pages a cgroup can have at any given time.
-+
-+Limiting dirty memory is like fixing the max amount of dirty (hard to reclaim)
-+page cache used by a cgroup.  So, in case of multiple cgroup writers, they will
-+not be able to consume more than their designated share of dirty pages and will
-+be throttled if they cross that limit.  System-wide dirty limits are also
-+consulted.  Dirty memory consumption is checked against both system-wide and
-+per-cgroup dirty limits.
-+
-+The interface is similar to the procfs interface: /proc/sys/vm/dirty_*.  It is
-+possible to configure a limit to trigger throttling of a dirtier or queue
-+background writeback.  The root cgroup memory.dirty_* control files are
-+read-only and match the contents of the /proc/sys/vm/dirty_* files.
-+
-+Per-cgroup dirty limits can be set using the following files in the cgroupfs:
-+
-+- memory.dirty_ratio: the amount of dirty memory (expressed as a percentage of
-+  cgroup memory) at which a process generating dirty pages will be throttled.
-+  The default value is the system-wide dirty ratio, /proc/sys/vm/dirty_ratio.
-+
-+- memory.dirty_limit_in_bytes: the amount of dirty memory (expressed in bytes)
-+  in the cgroup at which a process generating dirty pages will be throttled.
-+  Suffix (k, K, m, M, g, or G) can be used to indicate that value is kilo, mega
-+  or gigabytes.  The default value is the system-wide dirty limit,
-+  /proc/sys/vm/dirty_bytes.
-+
-+  Note: memory.dirty_limit_in_bytes is the counterpart of memory.dirty_ratio.
-+  Only one may be specified at a time.  When one is written it is immediately
-+  taken into account to evaluate the dirty memory limits and the other appears
-+  as 0 when read.
-+
-+- memory.dirty_background_ratio: the amount of dirty memory of the cgroup
-+  (expressed as a percentage of cgroup memory) at which background writeback
-+  kernel threads will start writing out dirty data.  The default value is the
-+  system-wide background dirty ratio, /proc/sys/vm/dirty_background_ratio.
-+
-+- memory.dirty_background_limit_in_bytes: the amount of dirty memory (expressed
-+  in bytes) in the cgroup at which background writeback kernel threads will
-+  start writing out dirty data.  Suffix (k, K, m, M, g, or G) can be used to
-+  indicate that value is kilo, mega or gigabytes.  The default value is the
-+  system-wide dirty background limit, /proc/sys/vm/dirty_background_bytes.
-+
-+  Note: memory.dirty_background_limit_in_bytes is the counterpart of
-+  memory.dirty_background_ratio.  Only one may be specified at a time.  When one
-+  is written it is immediately taken into account to evaluate the dirty memory
-+  limits and the other appears as 0 when read.
-+
-+A cgroup may contain more dirty memory than its dirty limit.  This is possible
-+because of the principle that the first cgroup to touch a page is charged for
-+it.  Subsequent page counting events (dirty, writeback, nfs_unstable) are also
-+counted to the originally charged cgroup.  Example: If page is allocated by a
-+cgroup A task, then the page is charged to cgroup A.  If the page is later
-+dirtied by a task in cgroup B, then the cgroup A dirty count will be
-+incremented.  If cgroup A is over its dirty limit but cgroup B is not, then
-+dirtying a cgroup A page from a cgroup B task may push cgroup A over its dirty
-+limit without throttling the dirtying cgroup B task.
-+
-+When use_hierarchy=0, each cgroup has independent dirty memory usage and limits.
-+When use_hierarchy=1 the dirty limits of parent cgroups are also checked to
-+ensure that no dirty limit is exceeded.
-+
- 6. Hierarchy support
- 
- The memory controller supports a deep hierarchy and hierarchical accounting.
+To add cgroup awareness to writeback, this series adds a memcg field to the
+inode to allow writeback to isolate inodes for a particular cgroup.  When an
+inode is marked dirty, i_memcg is set to the current cgroup.  When inode pages
+are marked dirty the i_memcg field compared against the page's cgroup.  If they
+differ, then the inode is marked as shared by setting i_memcg to a special
+shared value (zero).
+
+Previous discussions suggested that a per-bdi per-memcg b_dirty list was a good
+way to assoicate inodes with a cgroup without having to add a field to struct
+inode.  I prototyped this approach but found that it involved more complex
+writeback changes and had at least one major shortcoming: detection of when an
+inode becomes shared by multiple cgroups.  While such sharing is not expected to
+be common, the system should gracefully handle it.
+
+balance_dirty_pages() calls mem_cgroup_balance_dirty_pages(), which checks the
+dirty usage vs dirty thresholds for the current cgroup and its parents.  If any
+over-limit cgroups are found, they are marked in a global over-limit bitmap
+(indexed by cgroup id) and the bdi flusher is awoke.
+
+The bdi flusher uses wb_check_background_flush() to check for any memcg over
+their dirty limit.  When performing per-memcg background writeback,
+move_expired_inodes() walks per bdi b_dirty list using each inode's i_memcg and
+the global over-limit memcg bitmap to determine if the inode should be written.
+
+If mem_cgroup_balance_dirty_pages() is unable to get below the dirty page
+threshold writing per-memcg inodes, then downshifts to also writing shared
+inodes (i_memcg=0).
+
+I know that there is some significant writeback changes associated with the
+IO-less balance_dirty_pages() effort.  I am not trying to derail that, so this
+patch series is merely an RFC to get feedback on the design.  There are probably
+some subtle races in these patches.  I have done moderate functional testing of
+the newly proposed features.
+
+Here is an example of the memcg-oom that is avoided with this patch series:
+	# mkdir /dev/cgroup/memory/x
+	# echo 100M > /dev/cgroup/memory/x/memory.limit_in_bytes
+	# echo $$ > /dev/cgroup/memory/x/tasks
+	# dd if=/dev/zero of=/data/f1 bs=1k count=1M &
+        # dd if=/dev/zero of=/data/f2 bs=1k count=1M &
+        # wait
+	[1]-  Killed                  dd if=/dev/zero of=/data/f1 bs=1M count=1k
+	[2]+  Killed                  dd if=/dev/zero of=/data/f1 bs=1M count=1k
+
+Known limitations:
+	If a dirty limit is lowered a cgroup may be over its limit.
+
+Changes since -v7:
+- Merged -v7 09/14 'cgroup: move CSS_ID_MAX to cgroup.h' into
+  -v8 09/13 'memcg: create support routines for writeback'
+
+- Merged -v7 08/14 'writeback: add memcg fields to writeback_control'
+  into -v8 09/13 'memcg: create support routines for writeback' and
+  -v8 10/13 'memcg: create support routines for page-writeback'.  This
+  moves the declaration of new fields with the first usage of the
+  respective fields.
+
+- mem_cgroup_writeback_done() now clears corresponding bit for cgroup that
+  cannot be referenced.  Such a bit would represent a cgroup previously over
+  dirty limit, but that has been deleted before writeback cleaned all pages.  By
+  clearing bit, writeback will not continually try to writeback the deleted
+  cgroup.
+
+- Previously mem_cgroup_writeback_done() would only finish writeback when the
+  cgroup's dirty memory usage dropped below the dirty limit.  This was the wrong
+  limit to check.  This now correctly checks usage against the background dirty
+  limit.
+
+- over_bground_thresh() now sets shared_inodes=1.  In -v7 per memcg
+  background writeback did not, so it did not write pages of shared
+  inodes in background writeback.  In the (potentially common) case
+  where the system dirty memory usage is below the system background
+  dirty threshold but at least one cgroup is over its background dirty
+  limit, then per memcg background writeback is queued for any
+  over-background-threshold cgroups.  Background writeback should be
+  allowed to writeback shared inodes.  The hope is that writing such
+  inodes has good chance of cleaning the inodes so they can transition
+  from shared to non-shared.  Such a transition is good because then the
+  inode will remain unshared until it is written by multiple cgroup.
+  Non-shared inodes offer better isolation.
+
+Single patch that can be applied to mmotm-2011-05-12-15-52:
+  http://www.kernel.org/pub/linux/kernel/people/gthelen/memcg/memcg-dirty-limits-v8-on-mmotm-2011-05-12-15-52.patch
+
+Patches are based on mmotm-2011-05-12-15-52.
+
+Greg Thelen (12):
+  memcg: document cgroup dirty memory interfaces
+  memcg: add page_cgroup flags for dirty page tracking
+  memcg: add mem_cgroup_mark_inode_dirty()
+  memcg: add dirty page accounting infrastructure
+  memcg: add kernel calls for memcg dirty page stats
+  memcg: add dirty limits to mem_cgroup
+  memcg: add cgroupfs interface to memcg dirty limits
+  memcg: dirty page accounting support routines
+  memcg: create support routines for writeback
+  memcg: create support routines for page-writeback
+  writeback: make background writeback cgroup aware
+  memcg: check memcg dirty limits in page writeback
+
+ Documentation/cgroups/memory.txt  |   70 ++++
+ fs/fs-writeback.c                 |   34 ++-
+ fs/inode.c                        |    3 +
+ fs/nfs/write.c                    |    4 +
+ include/linux/cgroup.h            |    1 +
+ include/linux/fs.h                |    9 +
+ include/linux/memcontrol.h        |   63 ++++-
+ include/linux/page_cgroup.h       |   23 ++
+ include/linux/writeback.h         |    5 +-
+ include/trace/events/memcontrol.h |  198 +++++++++++
+ kernel/cgroup.c                   |    1 -
+ mm/filemap.c                      |    1 +
+ mm/memcontrol.c                   |  708 ++++++++++++++++++++++++++++++++++++-
+ mm/page-writeback.c               |   42 ++-
+ mm/truncate.c                     |    1 +
+ mm/vmscan.c                       |    2 +-
+ 16 files changed, 1138 insertions(+), 27 deletions(-)
+ create mode 100644 include/trace/events/memcontrol.h
+
 -- 
 1.7.3.1
-
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
