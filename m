@@ -1,144 +1,160 @@
-From: Greg Thelen <gthelen@google.com>
-Subject: [PATCH v8 12/12] memcg: check memcg dirty limits in page writeback
-Date: Fri,  3 Jun 2011 09:16:37 -0700
-Message-ID: <1307117797-747-1-git-send-email-gthelen@google.com>
-Return-path: <owner-linux-mm@kvack.org>
-Sender: owner-linux-mm@kvack.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Johannes Weiner <hannes@cmpxchg.org>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Vivek Goyal <vgoyal@redhat.com>, Dave Chinner <david@fromorbit.com>, Greg Thelen <gthelen@google.com>
+From: =?GB2312?B?uN+8tsPYyunW+sDtus3Q0NX+yMvUsby8xNzM4bjf0bXBt9Oq?=
+	<burtjesxra-YYSg24PYQUdBDgjK7y7TUQ@public.gmane.org>
+Subject: =?GB2312?B?uN+8tsPYyumhotb6wO26zdDQ1f7Iy9SxvLzE3MzhuN/RtcG306o=?=
+Date: Sat, 4 Jun 2011 01:36:00 +0800
+Message-ID: <201106031736.p53HaMgT007005@smtp1.linux-foundation.org>
+Mime-Version: 1.0
+Content-Type: multipart/mixed; boundary="===============1531413584963770263=="
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-If the current process is in a non-root memcg, then
-balance_dirty_pages() will consider the memcg dirty limits as well as
-the system-wide limits.  This allows different cgroups to have distinct
-dirty limits which trigger direct and background writeback at different
-levels.
+--===============1531413584963770263==
+Content-Type: text/plain;charset="GB2312"
+Content-Transfer-Encoding: base64
+X-MIME-Autoconverted: from 8bit to base64 by smtp1.linux-foundation.org id p53HaSd4007019
 
-If called with a mem_cgroup, then throttle_vm_writeout() queries the
-given cgroup for its dirty memory usage limits.
+ICAgICAgICANCiAgICAgICAgICAgICC437y2w9jK6aGi1vrA7brN0NDV/sjL1LG8vMTczOG4
+39G1wbfTqg0KDQqhvtb3sOy1pc67ob/Wx9S0xeDRtSh3d3cuemhpeXVhbnB4LmNvbSkNCg0K
+ob7Ksbzktdi146G/NtTCMTEtMTLI1cnu29ogICAgDQogICAgICAgICAgICA21MIxOC0xOcjV
+yc+6oyAgICAgDQogICAgICAgICAgICA21MIyNS0yNsjVsbG+qQ0KDQqhvsrVt9Gx6te8ob8y
+NjAwL8jLo6iw/MCo18rBz7fRoaLO57LNvLDJz8/Czuey6LXjtcijqQ0KDQqhvsXg0bW21M/z
+ob/G89K1uN+y47ncwO3Iy9SxoaLG89K1uPeyv8PFvq3A7aGi0rXO8b6twO2hokhS1vrA7bXI
+o7sNCg0Kob6xqMP7tee7sKG/DQrJz7qjo7owMjEgLS0gNTEwOSAzMjgwICDW3NChveMgICAg
+x67PyMn6DQrJ7tvao7owNzU1IC0gNjEyOCA2NzUxICDS18/IyfogICAgzfXQob3jDQoNClFJ
+Q1GjujI1OTczMTM5ICA3MDk0MjMwOTOjqL/JvNNRUcv3yKG9/DLUwr/Os8ywssXFo6kNCg0K
+sajD+7Sr1eajujAyMSAtLSA1MTA5IDMyNjAgIDA3NTUgLSA2MTI4IDY3MzENCg0Kzcu2qdPK
+vP7H67eiy83WwaO6MjU5NzMxMzlAcXEuY29tKMfr16LD9zrJvrP908rP5Ckou/LL98ihvfwy
+1MK/zrPMsLLFxSkNCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA0KzsLcsMzh
+yr6jurG+v86zzL/JzqrG89K1zOG5qcnPw8XE2tG1t/7O8aOsu7bTrcC0tefXydGvo6ENCi0t
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tDQrE+srHt/HT9rW91eLR+cfpv/ajug0KMS7U2tDQ
+1f65pNf31tDDu9PQyty1vbn9z7XNs9G1wbejrM7et6i009W9wtTQ1Mirt73Ou73HtsjIz9aq
+0NDV/rncwO25pNf3DQoyLtTay/m008rCtcTQ0NX+udzA7bmk1/fW0LjQvvXIsbemwO3C29an
+s9YNCjMuuNC+9bmk1/fW0Nfcysexu7av0NDKwqOssrvE3Nb3tq/Vxs7VuaTX973a1+ANCjQu
+0NDKubbUzeK958nnu+G1xLncwO3WsMTcyrHDu9PQuNC+9bW909C63LbgysLO77XEobC62ra0
+obHSqszht8ANCjUuz+u4+Lmry7692sqht9HTw6OstavItLK71qq007rOtKbPwsrWo6zI57rO
+vdrKoQ0KNi621NDQ1f65pNf3tcS498/userXvLK7x+Wz/g0KNy7U2rmry761xNawzru12M67
+srvA7c/ro6zT67j3sr/Dxbm1zaiyu8uzs6kNCjgu0qq4ybXEysLH6cyrtuCjrMnnu+HXytS0
+0rLT0LrctuCjrLWrsrvWqsjnus7A+9PDyee74dfK1LQNCjkuttTT2sjnus653MDtuavLvrXE
+z7XNs9DU1fvM5dDQ1f7Kws7x0MTW0MO7tdcNCjEwLs/rz7XNs9Gnz7CjrMzhuN/Q0NX+udzA
+7by8xNyjrLWrw7vT0LrPysq1xLSrytq+rdHpv86zzKOsv9XT0MDtwtvWqsq2DQoNCr/Os8yx
+s76wo7oNCiAgICDL5tfFxvPStbncwO3Lrsa9tcTSqsfzsru2z8zhyf2jrLbU0NDV/rncwO3I
+y9SxtcTXqNK1y9jWytKqx/PUvcC01L2436GjIA0Kvq2zo8z9tb3Su9CpxvPStbjfsuOxp9S5
+ytbPwrXE0NDV/rncwO3V37u51rvKx9K7uPahsLjfvLbH2tTTuaShsbXEvcfJq6OsDQq+rbOj
+wvHNt7SmwO3Su9Cpy/bL6bXEysLO8aOstau008O709DPtc2ztdjIq7e9zru0psDt0NDV/rnc
+wO25pNf3o7vNrMqx0rINCtPQsrvJ2bXE0NDV/rncwO3Iy8q/uNC/rqOs19S8utX7zOXDprXD
+zOy76LXYsLWjrMi0sru1q7XDsru1vcDPsOWhos2sysK1xA0Kv8+2qLywyM/NrKOsu7mzo7Oj
+0vK80NTaudzA7bLjvLC7+bLjtvixu822y9+horGn1LmjrLK71qq1wLjDyOe6ztPQ0KfCyrXY
+DQq0psDt0NDV/srCzvGjrLb4x9K40L710rLDu9PQ16jDxbXExeDRtcC01Pa809fUvLrP4NOm
+tcTXqNK1vLzE3KGjzqrBy8q50NANCtX+udzA7cjL1LHT0Lv6u+G/7MvZtdjIq7e9zrvM4cn9
+16jStcuuxr2jrMzYtdi/qreiwcvV4rj2uaTX97e7o6zP4NDFuPfOuw0K1NrWsNDQ1f653MDt
+uaTX97XEyMvKv9PQ0ru49sirt73Ou7XEyM/WqqOssqK007bguPa9x7bIzOHJ/dfUvLq1xNeo
+0rXLrsa9oaMNCg0K0afPsMrV0uajug0Koe/M4bjfu/nQ0NX+uaTX98TcwaajrNbwsr2zyc6q
+us+48bXExvPStbncwO2y4w0Koe/Vxs7V0NDV/rncwO3W0LXEuPfW1ry8x8mjrMzhyf3Q0NX+
+t+fP1bncwO28vMTcDQqh79TL08PXqNK1tcSy4sbAuaS+36Oswcu94tfUvLq1xNDQzqq357jx
+sqLVxs7V1eu21NDUtcS4xMnGt723qA0Koe/Rp7vhv+zL2cXQts/G5Mv8yMvQ0M6qt+e48bKi
+0+vWrtPQ0Ke5tc2otcS8vMfJo6zM4cn9sOzKwtCnwsoNCi0tLS0tLS0tLS0tLS0tLS0tLS0t
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+LS0tLS0tDQq/zrPMxNrI3ToNCrWl1KrSu6GiIMPYyukv1vrA7bXEvcfJq8jP1qoNCjEuw9jK
+6S/W+sDt1rDE3A0KMi6z9by2w9jK6S/W+sDto7rKws7x0NTOxNSxDQozLtbQvLbD2MrpL9b6
+wO2jusrCzvHQ1M7E1LGjq7io1vq53MDtDQo0LrjfvLbD2MrpL9b6wO2jurbAwaK53MDto6vK
+ws7xtKbA7Q0KNS7U9dH5x+XO+tfUvLq1xLjazrvWsNTwqESoRNGnu+Gx4NC0uNrOu8u1w/fK
+6Q0KNi7TxdDjw9jK6dPr0ruw48PYyum1xMTcwaay7tLsDQo3LsPYyunW+sDttcTWsNK10M7P
+86Gqoaq6z9LLtcTXsLDnvLDXy8ysvtnWuQ0KOC7D2MrpL9b6wO21xNaw0rXJ+tHEuea7rg0K
+OS652Lz8tcTI/bj2udvE7teqseShqqGqz/rK29LiyrahorL6xre7r6Giz7i92g0KDQq1pdSq
+tv6hoiDM4cn9w9jK6S/W+sDttcS5tc2ovLzHyQ0KMS7Az7DlL82sysLQxMS/1tDX+LHqz7Wo
+RKhEyrLDtMrHzuXQx7y2w9jK6S/W+sDtL9DQ1f7Iy9SxDQoyLrm1zai1xLG+1sq6zbn9s8zK
+x8qyw7QNCjMuzqrKssO019zKx9PQubXNqNXPsK2hqqGqubXNqLXEx8e5/sDvytO0sLrNubXN
+qMKptrcNCjQuyM/KtsTjtcS5tc2ottTP86GqoapQRFC8vMr1us1OTFC8vMr1DQo1LtGnu+G5
+3MDtxOO1xMnPy76hqqGqy8TP7s/eus01VzFIuaS+37XEyrnTww0KNi7QodPOz7ejusz9tq6+
+rcDttcS7sMHLwvCjvw0KNy64+snPvLa5tc2otcTUrdTyDQo4Lsjnus7U2szYyuLH6b/2z8K2
+1MnPvLC21M/CubXNqKGqoaqz5c27oaLQobGouOahotS9vLbWuLvToaLMuMXQtcgNCg0KtaXU
+qsj9oaIgsOy5q8rStcQ1U7ncwO0NCjEuNVO1xLqt0uUNCjIu1PXR+df2usOw7LmrytK1xNX7
+wO25pNf3DQozLtT10fnX9rrDsOy5q8rStcTV+7bZuaTX9w0KNC7U9dH51/a6w7DsuavK0rXE
+x+W94Lmk1/cNCjUu1PXR+df2usOw7LmrytK1xMflyai5pNf3DQo2Ls3Gtq+x5LjvtcTXotLi
+ysLP7rrNstnX97e9t6gNCg0KtaXUqsvEoaK74dLpudzA7Q0KMS6zybmmu+HS6bXENbj2zNi1
+4w0KMi674dLpudzA7bXEwb249qGwyP3I/cj9obG3qNTyDQozLrvh0unKsbzksLLFxbXEvLzH
+yQ0KNC674cew17yxuKGqoaq74dLp0unM4rXEytW8r7rNsLLFxQ0KNS674dbQ0K3W+qGqoarI
+57rO1vez1rvh0umjur+qs6Gw16Giu+HW0NLss6PH6b/2tcTB6bvu06a21A0KNi674brz1fvA
+7aGqoarI57rO1/a74dLpvM3Sqrywu+HS6b720um1xLj6vfi5pNf3DQo3LsG3z7Cjusjnus7X
+6dav0ruzoczWwtu74dLpDQoNCrWl1KrO5aGiyrG85LncwO26zbzGu6653MDtDQoxLsqxvOS5
+3MDttcTO5bj21K3U8rrNyP249rmkvt8NCjIuUERDQbmkvt/U2tbGtqi8xruuyrG1xMHpu+7K
+udPDDQozLsi3tqhTTUFDtcTEv7Hqo6zWxraouaTX97zGu64NCjQu1PXR+df2xOq2yC/UwrbI
+L9bctsi5pNf3vMa7rqOszOG5qdH5se0NCjUus/ay7sjVs8y1xLCyxcWhqqGqsLjA/bfWz+2j
+urn6xNqz9rLuvLC5+s3is/ay7rXEyNWzzLCyxcUNCg0KtaXUqsH5oaLKws7v0NTP7sS/0NS5
+pNf3tcTX6davudzA7Q0KMS7Kws7xuaTX99PQxMTQqQ0KMi7Rp7vhwdDKws7xx+W1pQ0KMy7J
+s8XM0d3Bt6O61PXR+dfp1q/Su7Oh1tzE6sfsteS087vhDQo0LtPDz+7Ev8rWsuG53MDtuaTX
+9w0KNS7Kws7x0NTP7sS/uaTX99fp1q+1xDEy19a/2r73DQo2LtbG1/fP7sS/ytay4bXEt723
+qA0KNy6wuMD9t9bP7Q0KOC7ExNCpz9a0+ruvtcSw7LmryO28/sTj0qrK7MG3yrnTww0KDQq1
+pdSqxt+hos7EtbW53MDtDQoxLs7EtbW53MDtserXvLnmt7YNCjIuzsS1tbfWwOC1xLmk1/e5
+5re2DQozLs7EtbW05rSitcS5pNf3uea3tg0KNC7OxLW1sunUxLXEuaTX97nmt7YNCjUuzsS1
+tbfW17C1xLmk1/e55re2DQo2Ls7EtbXP+rvZtcS5pNf3uea3tg0KNy7OxLW1saPD3LXEuaTX
+97nmt7YNCg0KtaXUqrDLoaLG89K1w9jK6dPr1vrA7cDx0sezo8q2DQoxLr3TtP3A8dLHDQoy
+LrDsuavK0tLHwPENCjMutee7sMDx0sfT69OmttS8vMfJDQoNCrWl1Kq+xaGiyczO8bmrzsTQ
+tNf3DQoxLsnMzvG5q87E0LTX97XEuMXE7rywuavOxLXE0qrL2A0KMi65q87E0LTX97XEsr3W
+6A0KICDIt7aoxL+x6g0KICDIt7aozsTVwrXE1f3KvbPMtsgNCiAgvva2qM7E1cK1xLfnuPEN
+CiAg0aHU8c7E1cK1xLLjtM694bm5DQogIMHQtPO42aGqoaqwuMD9t9bP7bywwbfPsKO6zajW
+qi+xqLjmL9fcveHI/dbWvt/M5c7EzOW1xLTzuNnI57rO0LQNCiAg16vQtLP1uOUNCjMus6PT
+w7mrzsTQtNf3vLC5q87EuPHKvdKqy9i3tsD9DQogIM2o1qoNCiAgsai45g0KICDH68q+DQog
+IMX6uLQNCiAgu+HS6bzN0qoNCiAg0fvH69DFDQogINfcveENCi0tLS0tLS0tLS0tLS0tLS0t
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+LS0tLS0tLS0tDQq9ssqmvenJ3KO6DQogICAgwda298Wuyr+jrNb4w/vIy8Gm18rUtLncwO3X
+qLzSoaLF4NG116i80qGjuN+8tsXg0bXKpqOs07XT0MquxOrWsNK1xeANCtG1yrXO8b6t0emj
+rNT4yM6/57n6vK/NxdbQufrH+LXE1tC3vcXg0bW+rcDtoaK5+sTaxLO159fTNce/xvPStbrN
+ysC95zUwMA0Kx7/WrtK7tcTG+7O11sbU7Mbz0rW1xMjLwabXytS0uN+8tr6twO2jrNT4z8i6
+886qy7O1wsPAzb/Kv6Gi0NzDqLXn19OhotbQDQq5+rXn0MWhotbQufrN+M2ooaLW0Ln6warN
+qKGiz+O427ar0PHNv8HPuavLvqGiueO2q8qhuavCt72oyei5q8u+tci8uMquvNINCsbz0rXX
+9rn918nRr7rNxNrRtaGjy/nK2r/Os8yjutLUvKjQp86qtbzP8rXEv7y6y9bGtsiholRUVL2y
+yqbF4NG1oaLIy8GmDQrXytS0udzA7bLfwtShosS/seqhoteo0rXD2MrpL9b6wO26zdDQ1f7I
+y9SxvLzE3Lei1bmhosnMzvHOxMrp0LTX96Git8fIyw0KwabXytS01ve53LrNyMvBptfK1LTF
+4NG1oaK437yo0KfW97nc0bXBt6Gi1LG5pL3M0/3F4NG10+u3otW5vMa7rqGi1LG5pNXQDQrE
+vKGiw+bMuNPr1efRoby8x8mhotC9s+q4o8D70+u9sb3wudzA7bXIo6yyzrzTuf3B1sDPyqax
+vr/Os8y1xNGn1LHAtNfU09qjug0KueO2q9HF2bu7r9exxrehotbQ0MW2yLzZtOW+xrXqoaLL
+s7XCy7PN/rXnxvehotbQufrN+M2ooaLW0Ln6warNqKGixbW7+dHHoaINCrart+fI1bL6s8vT
+w7O1uavLvqGiv7W087yvzcWhor/Jv9q/ycDWoaLGvbCysaPP1aGiu/nDwLXn19OjqMvV1t2j
+qdPQz965qw0Ky76holRDTKGiz8PQwrXn19Ohorq90MK159fToaK7qsHotefG96GizfK6zbXn
+xvehorqjtvu158b3oaLDwLXEvK/NxaGisNcNCtTGtefG96GiuujWx7Xnxvehosa9sLKxo8/V
+oaLIy8rZsaPP1aGivajJ6NL40NChotbQufrS+NDQtcihow0KLS0tLS0tLS0tLS0tLS0tLS0t
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+LS0tLS0tLS0NCiAgICAgICAgICAgICAgICAgICAgICAgsagtLS3D+y0tLbvYLS0t1rQtLS2x
+7Q0KDQogICDO0rWlzru5sl9fX19fyMvIt7aosajD+7LOvNMgMjAxMcTqX19fINTCX19fXyDI
+1dTaIF9fX19fIL7ZsOy1xA0KICAgICAgICAgICAgICC/zszio7q437y2w9jK6aGi1vrA7brN
+0NDV/sjL1LG8vMTczOG439G1wbfTqg0KDQogICC72Na0x+u3orW9o7oyNTk3MzEzOUBxcS5j
+b2278rSr1ebWwTowMjEtNTEwOTMyNjC78jA3NTUtNjEyODY3MzENCg0Kss674bWlzrvD+7PG
+o7pfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19FbWFpbKO6X19fX19fX19fX19f
+X19fX1+hoQ0KIA0KwarPtcjLo7pfX19fX19fX19fX19fX19fX7Xnu7Cjul9fX19fX19fX19f
+X19fX1+0q9Xmo7pfX19fX19fX19fX19fX19fX18NCiChoQ0Kss6809Gn1LGjul9fX19fX19f
+X19fX19fX9awzvGjul9fX19fX19fX19fX19fX1/K1rv6o7pfX19fX19fX19fX19fX19fX18N
+Cg0Kss6809Gn1LGjul9fX19fX19fX19fX19fX9awzvGjul9fX19fX19fX19fX19fX1/K1rv6
+o7pfX19fX19fX19fX19fX19fX18NCg0Kss6809Gn1LGjul9fX19fX19fX19fX19fX9awzvGj
+ul9fX19fX19fX19fX19fX1/K1rv6o7pfX19fX19fX19fX19fX19fX18NCiAgICAgIA0KuLa/
+7re9yr2juqH1z9a98KGhICChoSCh9deq1cogICAgDQogIA0K1KS2qL7GteqjusuryMu3v19f
+X7zko7u1pcjLt79fX1+85KOs16HL3sqxvOSjul9fX1/UwiBfX19f1sFfX19fyNUNCiiyu9PD
+1KS2qMfrwfS/1SkNCg0KyMvK/aO6X19fX19fyMsgICCyzrvht9HTw6O6ubK8xqO6X19fX19f
+1KogDQqxuNeiDQoxLsrVtb2588u+sajD+9DFz6K686OsztLDx72rtdrSu8qxvOS6zbnzy76y
+zrvhwarPtcjLvfjQ0Mi3yM+juw0KMi7U2r+qv87HsNK71tyjrM7Sw8fT0NeoyMu4+Lnzy763
+osvNss6808Xg0bW1xMi3yM+6r6Osyc/D5tPQxeDRtbGotb3WuNL9o6wNCtLUvLDP6s+4tcTJ
+z7/OtdjWt7rNwrfP3828o7sNCjMutMu/zrPM0rK/ydLUsLLFxcbz0rXE2tG1o6y7ttOtwLS1
+59fJ0a+8sMnqx+vFxcbao7sNCjQuyOe21LTLv86zzNPQyM66ztLJzsqjrLu2062yprTytee7
+sM/yztLDx9fJ0a+how0K
+--===============1531413584963770263==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Disposition: inline
+Content-Transfer-Encoding: 7bit
 
-Signed-off-by: Andrea Righi <arighi@develer.com>
-Signed-off-by: Greg Thelen <gthelen@google.com>
-Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Acked-by: Wu Fengguang <fengguang.wu@intel.com>
----
- include/linux/writeback.h |    3 ++-
- mm/page-writeback.c       |   35 +++++++++++++++++++++++++++++------
- mm/vmscan.c               |    2 +-
- 3 files changed, 32 insertions(+), 8 deletions(-)
-
-diff --git a/include/linux/writeback.h b/include/linux/writeback.h
-index 4f5c0d2..0b4b851 100644
---- a/include/linux/writeback.h
-+++ b/include/linux/writeback.h
-@@ -8,6 +8,7 @@
- #include <linux/fs.h>
- 
- struct backing_dev_info;
-+struct mem_cgroup;
- 
- /*
-  * fs/fs-writeback.c
-@@ -91,7 +92,7 @@ void laptop_mode_timer_fn(unsigned long data);
- #else
- static inline void laptop_sync_completion(void) { }
- #endif
--void throttle_vm_writeout(gfp_t gfp_mask);
-+void throttle_vm_writeout(gfp_t gfp_mask, struct mem_cgroup *mem_cgroup);
- 
- /* These are exported to sysctl. */
- extern int dirty_background_ratio;
-diff --git a/mm/page-writeback.c b/mm/page-writeback.c
-index 62fcf3d..30c265b 100644
---- a/mm/page-writeback.c
-+++ b/mm/page-writeback.c
-@@ -473,7 +473,8 @@ unsigned long bdi_dirty_limit(struct backing_dev_info *bdi, unsigned long dirty)
-  * data.  It looks at the number of dirty pages in the machine and will force
-  * the caller to perform writeback if the system is over `vm_dirty_ratio'.
-  * If we're over `background_thresh' then the writeback threads are woken to
-- * perform some writeout.
-+ * perform some writeout.  The current task may belong to a cgroup with
-+ * dirty limits, which are also checked.
-  */
- static void balance_dirty_pages(struct address_space *mapping,
- 				unsigned long write_chunk)
-@@ -488,6 +489,8 @@ static void balance_dirty_pages(struct address_space *mapping,
- 	bool dirty_exceeded = false;
- 	struct backing_dev_info *bdi = mapping->backing_dev_info;
- 
-+	mem_cgroup_balance_dirty_pages(mapping, write_chunk);
-+
- 	for (;;) {
- 		struct writeback_control wbc = {
- 			.sync_mode	= WB_SYNC_NONE,
-@@ -651,23 +654,43 @@ void balance_dirty_pages_ratelimited_nr(struct address_space *mapping,
- }
- EXPORT_SYMBOL(balance_dirty_pages_ratelimited_nr);
- 
--void throttle_vm_writeout(gfp_t gfp_mask)
-+/*
-+ * Throttle the current task if it is near dirty memory usage limits.  Both
-+ * global dirty memory limits and (if @mem_cgroup is given) per-cgroup dirty
-+ * memory limits are checked.
-+ *
-+ * If near limits, then wait for usage to drop.  Dirty usage should drop because
-+ * dirty producers should have used balance_dirty_pages(), which would have
-+ * scheduled writeback.
-+ */
-+void throttle_vm_writeout(gfp_t gfp_mask, struct mem_cgroup *mem_cgroup)
- {
- 	unsigned long background_thresh;
- 	unsigned long dirty_thresh;
-+	struct dirty_info memcg_info;
-+	bool do_memcg;
- 
-         for ( ; ; ) {
- 		global_dirty_limits(&background_thresh, &dirty_thresh);
-+		do_memcg = mem_cgroup &&
-+			mem_cgroup_hierarchical_dirty_info(
-+				determine_dirtyable_memory(), mem_cgroup,
-+				&memcg_info);
- 
-                 /*
-                  * Boost the allowable dirty threshold a bit for page
-                  * allocators so they don't get DoS'ed by heavy writers
-                  */
-                 dirty_thresh += dirty_thresh / 10;      /* wheeee... */
--
--                if (global_page_state(NR_UNSTABLE_NFS) +
--			global_page_state(NR_WRITEBACK) <= dirty_thresh)
--                        	break;
-+		if (do_memcg)
-+			memcg_info.dirty_thresh += memcg_info.dirty_thresh / 10;
-+
-+		if ((global_page_state(NR_UNSTABLE_NFS) +
-+		     global_page_state(NR_WRITEBACK) <= dirty_thresh) &&
-+		    (!do_memcg ||
-+		     (memcg_info.nr_unstable_nfs +
-+		      memcg_info.nr_writeback <= memcg_info.dirty_thresh)))
-+			break;
-                 congestion_wait(BLK_RW_ASYNC, HZ/10);
- 
- 		/*
-diff --git a/mm/vmscan.c b/mm/vmscan.c
-index 292582c..66324a4 100644
---- a/mm/vmscan.c
-+++ b/mm/vmscan.c
-@@ -1953,7 +1953,7 @@ restart:
- 					sc->nr_scanned - nr_scanned, sc))
- 		goto restart;
- 
--	throttle_vm_writeout(sc->gfp_mask);
-+	throttle_vm_writeout(sc->gfp_mask, sc->mem_cgroup);
- }
- 
- /*
--- 
-1.7.3.1
-
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============1531413584963770263==--
