@@ -1,91 +1,129 @@
-From: Hiroyuki Kamezawa <kamezawa.hiroyuki-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH] memcg: do not expose uninitialized mem_cgroup_per_node to
-	world
-Date: Fri, 3 Jun 2011 22:00:47 +0900
-Message-ID: <BANLkTinMamg_qesEffGxKu3QkT=zyQ2MRQ__38382.2449403398$1307106096$gmane$org@mail.gmail.com>
-References: <1306925044-2828-1-git-send-email-imammedo@redhat.com>
-	<20110601123913.GC4266@tiehlicka.suse.cz>
-	<4DE6399C.8070802@redhat.com>
-	<20110601134149.GD4266@tiehlicka.suse.cz>
-	<4DE64F0C.3050203@redhat.com>
-	<20110601152039.GG4266@tiehlicka.suse.cz>
-	<4DE66BEB.7040502@redhat.com>
-	<BANLkTimbqHPeUdue=_Z31KVdPwcXtbLpeg@mail.gmail.com>
-	<4DE8D50F.1090406@redhat.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4DE8D50F.1090406-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Igor Mammedov <imammedo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Greg Thelen <gthelen@google.com>
+Subject: [PATCH v8 01/12] memcg: document cgroup dirty memory interfaces
+Date: Fri,  3 Jun 2011 09:12:07 -0700
+Message-ID: <1307117538-14317-2-git-send-email-gthelen@google.com>
+References: <1307117538-14317-1-git-send-email-gthelen@google.com>
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <1307117538-14317-1-git-send-email-gthelen@google.com>
+Sender: owner-linux-mm@kvack.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Johannes Weiner <hannes@cmpxchg.org>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Vivek Goyal <vgoyal@redhat.com>, Dave Chinner <david@fromorbit.com>, Greg Thelen <gthelen@google.com>
 List-Id: containers.vger.kernel.org
 
-2011/6/3 Igor Mammedov <imammedo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>:
-> On 06/02/2011 01:10 AM, Hiroyuki Kamezawa wrote:
->>>
->>> pc =3D list_entry(list->prev, struct page_cgroup, lru);
->>
->> Hmm, I disagree your patch is a fix for mainline. At least, a cgroup
->> before completion of
->> create() is not populated to userland and you never be able to rmdir()
->> it because you can't
->> find it.
->>
->>
->> =A0>26: =A0 e8 7d 12 30 00 =A0 =A0 =A0 =A0 =A0call =A0 0x3012a8
->> =A0>2b:* =A08b 73 08 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0mov =A0 =A00x8(%ebx)=
-,%esi<-- trapping
->> instruction
->> =A0>2e: =A0 8b 7c 24 24 =A0 =A0 =A0 =A0 =A0 =A0 mov =A0 =A00x24(%esp),%e=
-di
->> =A0>32: =A0 8b 07 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 mov =A0 =A0(%edi),=
-%eax
->>
->> Hm, what is the call 0x3012a8 ?
->>
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0pc =3D list_entry(list->prev, struct page_=
-cgroup, lru);
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0if (busy =3D=3D pc) {
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0list_move(&pc->lru, list);
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0busy =3D 0;
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0spin_unlock_irqrestore(&zo=
-ne->lru_lock, flags);
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0continue;
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0}
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0spin_unlock_irqrestore(&zone->lru_lock, fl=
-ags); <---- is
-> =A0call 0x3012a8
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0ret =3D mem_cgroup_move_parent(pc, mem, GF=
-P_KERNEL);
->
-> and =A0mov 0x8(%ebx),%esi
-> is dereferencing of 'pc' in inlined mem_cgroup_move_parent
->
-Ah, thank you for input..then panicd at accessing pc->page and "pc"
-was 0xfffffff4.
-it means list->prev was NULL.
+Document cgroup dirty memory interfaces and statistics.
 
-> I've looked at vmcore once more and indeed there isn't any parallel task
-> that touches cgroups code path.
-> Will investigate if it is xen to blame for incorrect data in place.
->
-> Thanks very much for your opinion.
+The implementation for these new interfaces routines comes in a series
+of following patches.
 
-What curious to me is that the fact "list->prev" is NULL.
-I can see why you doubt the initialization code ....the list pointer never
-contains NULL once it's used....
-it smells like memory corruption or some to me. If you have vmcore,
-what the problematic mem_cgroup_per_zone(node) contains ?
+Signed-off-by: Andrea Righi <arighi@develer.com>
+Signed-off-by: Greg Thelen <gthelen@google.com>
+Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+Acked-by: Balbir Singh <balbir@linux.vnet.ibm.com>
+---
+ Documentation/cgroups/memory.txt |   70 ++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 70 insertions(+), 0 deletions(-)
 
-Thanks,
--Kame
+diff --git a/Documentation/cgroups/memory.txt b/Documentation/cgroups/memory.txt
+index 43b9e46..15019a3 100644
+--- a/Documentation/cgroups/memory.txt
++++ b/Documentation/cgroups/memory.txt
+@@ -395,6 +395,10 @@ soft_direct_steal- # of pages reclaimed in global hierarchical reclaim from
+ 		direct reclaim
+ soft_direct_scan- # of pages scanned in global hierarchical reclaim from
+ 		direct reclaim
++dirty		- # of bytes that are waiting to get written back to the disk.
++writeback	- # of bytes that are actively being written back to the disk.
++nfs_unstable	- # of bytes sent to the NFS server, but not yet committed to
++		the actual storage.
+ inactive_anon	- # of bytes of anonymous memory and swap cache memory on
+ 		LRU list.
+ active_anon	- # of bytes of anonymous and swap cache memory on active
+@@ -420,6 +424,9 @@ total_soft_kswapd_steal	- sum of all children's "soft_kswapd_steal"
+ total_soft_kswapd_scan	- sum of all children's "soft_kswapd_scan"
+ total_soft_direct_steal	- sum of all children's "soft_direct_steal"
+ total_soft_direct_scan	- sum of all children's "soft_direct_scan"
++total_dirty		- sum of all children's "dirty"
++total_writeback		- sum of all children's "writeback"
++total_nfs_unstable	- sum of all children's "nfs_unstable"
+ total_inactive_anon	- sum of all children's "inactive_anon"
+ total_active_anon	- sum of all children's "active_anon"
+ total_inactive_file	- sum of all children's "inactive_file"
+@@ -476,6 +483,69 @@ value for efficient access. (Of course, when necessary, it's synchronized.)
+ If you want to know more exact memory usage, you should use RSS+CACHE(+SWAP)
+ value in memory.stat(see 5.2).
+ 
++5.6 dirty memory
++
++Control the maximum amount of dirty pages a cgroup can have at any given time.
++
++Limiting dirty memory is like fixing the max amount of dirty (hard to reclaim)
++page cache used by a cgroup.  So, in case of multiple cgroup writers, they will
++not be able to consume more than their designated share of dirty pages and will
++be throttled if they cross that limit.  System-wide dirty limits are also
++consulted.  Dirty memory consumption is checked against both system-wide and
++per-cgroup dirty limits.
++
++The interface is similar to the procfs interface: /proc/sys/vm/dirty_*.  It is
++possible to configure a limit to trigger throttling of a dirtier or queue
++background writeback.  The root cgroup memory.dirty_* control files are
++read-only and match the contents of the /proc/sys/vm/dirty_* files.
++
++Per-cgroup dirty limits can be set using the following files in the cgroupfs:
++
++- memory.dirty_ratio: the amount of dirty memory (expressed as a percentage of
++  cgroup memory) at which a process generating dirty pages will be throttled.
++  The default value is the system-wide dirty ratio, /proc/sys/vm/dirty_ratio.
++
++- memory.dirty_limit_in_bytes: the amount of dirty memory (expressed in bytes)
++  in the cgroup at which a process generating dirty pages will be throttled.
++  Suffix (k, K, m, M, g, or G) can be used to indicate that value is kilo, mega
++  or gigabytes.  The default value is the system-wide dirty limit,
++  /proc/sys/vm/dirty_bytes.
++
++  Note: memory.dirty_limit_in_bytes is the counterpart of memory.dirty_ratio.
++  Only one may be specified at a time.  When one is written it is immediately
++  taken into account to evaluate the dirty memory limits and the other appears
++  as 0 when read.
++
++- memory.dirty_background_ratio: the amount of dirty memory of the cgroup
++  (expressed as a percentage of cgroup memory) at which background writeback
++  kernel threads will start writing out dirty data.  The default value is the
++  system-wide background dirty ratio, /proc/sys/vm/dirty_background_ratio.
++
++- memory.dirty_background_limit_in_bytes: the amount of dirty memory (expressed
++  in bytes) in the cgroup at which background writeback kernel threads will
++  start writing out dirty data.  Suffix (k, K, m, M, g, or G) can be used to
++  indicate that value is kilo, mega or gigabytes.  The default value is the
++  system-wide dirty background limit, /proc/sys/vm/dirty_background_bytes.
++
++  Note: memory.dirty_background_limit_in_bytes is the counterpart of
++  memory.dirty_background_ratio.  Only one may be specified at a time.  When one
++  is written it is immediately taken into account to evaluate the dirty memory
++  limits and the other appears as 0 when read.
++
++A cgroup may contain more dirty memory than its dirty limit.  This is possible
++because of the principle that the first cgroup to touch a page is charged for
++it.  Subsequent page counting events (dirty, writeback, nfs_unstable) are also
++counted to the originally charged cgroup.  Example: If page is allocated by a
++cgroup A task, then the page is charged to cgroup A.  If the page is later
++dirtied by a task in cgroup B, then the cgroup A dirty count will be
++incremented.  If cgroup A is over its dirty limit but cgroup B is not, then
++dirtying a cgroup A page from a cgroup B task may push cgroup A over its dirty
++limit without throttling the dirtying cgroup B task.
++
++When use_hierarchy=0, each cgroup has independent dirty memory usage and limits.
++When use_hierarchy=1 the dirty limits of parent cgroups are also checked to
++ensure that no dirty limit is exceeded.
++
+ 6. Hierarchy support
+ 
+ The memory controller supports a deep hierarchy and hierarchical accounting.
+-- 
+1.7.3.1
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
