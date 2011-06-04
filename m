@@ -1,27 +1,32 @@
 From: Minchan Kim <minchan.kim@gmail.com>
-Subject: Re: [PATCH v8 02/12] memcg: add page_cgroup flags for dirty page
- tracking
-Date: Sat, 4 Jun 2011 18:56:28 +0900
-Message-ID: <20110604095628.GB4731@barrios-laptop>
+Subject: Re: [PATCH v8 04/12] memcg: add dirty page accounting
+ infrastructure
+Date: Sat, 4 Jun 2011 19:11:01 +0900
+Message-ID: <20110604101100.GC4731@barrios-laptop>
 References: <1307117538-14317-1-git-send-email-gthelen@google.com>
- <1307117538-14317-3-git-send-email-gthelen@google.com>
+ <1307117538-14317-5-git-send-email-gthelen@google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <owner-linux-mm@kvack.org>
 Content-Disposition: inline
-In-Reply-To: <1307117538-14317-3-git-send-email-gthelen@google.com>
+In-Reply-To: <1307117538-14317-5-git-send-email-gthelen@google.com>
 Sender: owner-linux-mm@kvack.org
 To: Greg Thelen <gthelen@google.com>
 Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Johannes Weiner <hannes@cmpxchg.org>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Vivek Goyal <vgoyal@redhat.com>, Dave Chinner <david@fromorbit.com>
 List-Id: containers.vger.kernel.org
 
-On Fri, Jun 03, 2011 at 09:12:08AM -0700, Greg Thelen wrote:
-> Add additional flags to page_cgroup to track dirty pages
-> within a mem_cgroup.
+On Fri, Jun 03, 2011 at 09:12:10AM -0700, Greg Thelen wrote:
+> Add memcg routines to count dirty, writeback, and unstable_NFS pages.
+> These routines are not yet used by the kernel to count such pages.  A
+> later change adds kernel calls to these new routines.
 > 
-> Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-> Signed-off-by: Andrea Righi <arighi@develer.com>
+> As inode pages are marked dirty, if the dirtied page's cgroup differs
+> from the inode's cgroup, then mark the inode shared across several
+> cgroup.
+> 
 > Signed-off-by: Greg Thelen <gthelen@google.com>
+> Signed-off-by: Andrea Righi <arighi@develer.com>
+> Reviewed-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
 Reviewed-by: Minchan Kim <minchan.kim@gmail.com>
 
 -- 
