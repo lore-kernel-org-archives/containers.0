@@ -1,81 +1,52 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [RFC] breakage in sysfs_readdir() and s_instances abuse in sysfs
-Date: Mon, 06 Jun 2011 12:03:52 -0700
-Message-ID: <m1k4cy6auf.fsf@fess.ebiederm.org>
-References: <20110604001518.GT11521@ZenIV.linux.org.uk>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+Subject: Re: [PATCH v8 03/12] memcg: add mem_cgroup_mark_inode_dirty()
+Date: Tue, 7 Jun 2011 16:27:10 +0900
+Message-ID: <20110607162710.0913759e.kamezawa.hiroyu@jp.fujitsu.com>
+References: <1307117538-14317-1-git-send-email-gthelen@google.com>
+	<1307117538-14317-4-git-send-email-gthelen@google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20110604001518.GT11521@ZenIV.linux.org.uk> (Al Viro's message of
-	"Sat, 4 Jun 2011 01:15:19 +0100")
-Sender: linux-fsdevel-owner@vger.kernel.org
-To: Al Viro <viro@ZenIV.linux.org.uk>
-Cc: linux-fsdevel@vger.kernel.org, Linus Torvalds <torvalds@linux-foundation.org>, netdev@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <1307117538-14317-4-git-send-email-gthelen@google.com>
+Sender: owner-linux-mm@kvack.org
+To: Greg Thelen <gthelen@google.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Johannes Weiner <hannes@cmpxchg.org>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Vivek Goyal <vgoyal@redhat.com>, Dave Chinner <david@fromorbit.com>
 List-Id: containers.vger.kernel.org
 
+On Fri,  3 Jun 2011 09:12:09 -0700
+Greg Thelen <gthelen@google.com> wrote:
 
-Al Viro <viro@ZenIV.linux.org.uk> writes:
+> Create the mem_cgroup_mark_inode_dirty() routine, which is called when
+> an inode is marked dirty.  In kernels without memcg, this is an inline
+> no-op.
+> 
+> Add i_memcg field to struct address_space.  When an inode is marked
+> dirty with mem_cgroup_mark_inode_dirty(), the css_id of current memcg is
+> recorded in i_memcg.  Per-memcg writeback (introduced in a latter
+> change) uses this field to isolate inodes associated with a particular
+> memcg.
+> 
+> The type of i_memcg is an 'unsigned short' because it stores the css_id
+> of the memcg.  Using a struct mem_cgroup pointer would be larger and
+> also create a reference on the memcg which would hang memcg rmdir
+> deletion.  Usage of a css_id is not a reference so cgroup deletion is
+> not affected.  The memcg can be deleted without cleaning up the i_memcg
+> field.  When a memcg is deleted its pages are recharged to the cgroup
+> parent, and the related inode(s) are marked as shared thus
+> disassociating the inodes from the deleted cgroup.
+> 
+> A mem_cgroup_mark_inode_dirty() tracepoint is also included to allow for
+> easier understanding of memcg writeback operation.
+> 
+> Signed-off-by: Greg Thelen <gthelen@google.com>
+> Reviewed-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
 
-> What I'm planning to do (for unrelated reasons - ubifs needs it) is to add
-> an analog of iterate_supers() that would go over the superblocks of given
-> type and call a function on them.  I would like to convert sysfs_exit_ns()
-> to it and kill the last abuser of s_instances (and one of the last sb_lock
-> ones), but that really depends on what kind of locking is needed for
-> readdir() and friends - as it is, the damn thing looks *wrong*.
+Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
 
-Answering your primary question first, what locking is needed in
-sysfs_exit_ns().
-
-Wrapping my head around this code again, to the best of my memory
-the intent was.
-
-For consistency "info->type[ns]" is an atomic value (void *) so
-it can be safely read and written without relying on locks.  For
-things like lookup 
-
-The assumption is that is primarily an atomic value and so it can
-be safely read by things like sysfs_readdir() and get a valid value
-without relying on the locks. 
-
-sysfs_mutex is needed in things like sysfs_lookup if we want the
-value to not change.
-
-There is indeed a small race in sysfs_readdir.
-
-As for sysfs_lookup it looks like my code to handle untagged members in
-directories where everything else is tagged, such as
-"/sys/class/net/bonding_masters" introduced an overloading of what NULL
-means in the context of sysfs_readdir and sysfs_lookup.   ns == NULL can
-either mean that we have type == KOBJ_NS_TYPE_NONE, or ns == NULL can
-mean that the namespace has gone away beneath us.  I looks like I need
-to fix that.
-
-To sysfs_exit_ns() we have the call chain:
-cleanup_net()
-  ops_exit_list()
-     net_kobj_ns_exit()
-        sysfs_exit_ns()
-
-Which makes the locking order needed for that call path.
-net_mutex()
-   rtnl_lock()
-   sysfs_mutex()
-
-Now somewhere I was also careful that mount did not cause problems,
-with sysfs_exit_ns() but I forget where.
-
-You were asking about kobj_ns_current.
-kboj_ns_current()
-  net_current_ns()
-     current->nsproxy->net_ns
-
-And current has a reference on it's network namespace.
-
-Other pieces of information that should be helpful to know.
-- All sysfs directory entries for a network namespace should be
-  removed from sysfs by the time sysfs_exit_ns is called.
-
-Al hopefully that is enough to get you going and I will what I can
-do with the rest of the sysfs ugliness.
-
-Eric
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
