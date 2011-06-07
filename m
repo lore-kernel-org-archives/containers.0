@@ -1,119 +1,436 @@
-From: Igor Mammedov <imammedo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] memcg: do not expose uninitialized mem_cgroup_per_node
-	to world
-Date: Tue, 07 Jun 2011 15:25:59 +0200
-Message-ID: <4DEE26E7.2060201__6023.68303011662$1307453483$gmane$org@redhat.com>
-References: <1306925044-2828-1-git-send-email-imammedo@redhat.com>	<20110601123913.GC4266@tiehlicka.suse.cz>	<4DE6399C.8070802@redhat.com>	<20110601134149.GD4266@tiehlicka.suse.cz>	<4DE64F0C.3050203@redhat.com>	<20110601152039.GG4266@tiehlicka.suse.cz>	<4DE66BEB.7040502@redhat.com>	<BANLkTimbqHPeUdue=_Z31KVdPwcXtbLpeg@mail.gmail.com>	<4DE8D50F.1090406@redhat.com>
-	<BANLkTinMamg_qesEffGxKu3QkT=zyQ2MRQ@mail.gmail.com>
+From: Greg Thelen <gthelen@google.com>
+Subject: Re: [PATCH v8 10/12] memcg: create support routines for page-writeback
+Date: Tue, 07 Jun 2011 08:58:16 -0700
+Message-ID: <xr93tyc1ws4n.fsf@gthelen.mtv.corp.google.com>
+References: <1307117538-14317-1-git-send-email-gthelen@google.com>
+	<1307117538-14317-11-git-send-email-gthelen@google.com>
+	<20110607175056.83619c5f.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <BANLkTinMamg_qesEffGxKu3QkT=zyQ2MRQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Hiroyuki Kamezawa <kamezawa.hiroyuki-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <20110607175056.83619c5f.kamezawa.hiroyu@jp.fujitsu.com>
+	(KAMEZAWA Hiroyuki's message of "Tue, 7 Jun 2011 17:50:56 +0900")
+Sender: owner-linux-mm@kvack.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Andrea Righi <arighi@develer.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Johannes Weiner <hannes@cmpxchg.org>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Wu Fengguang <fengguang.wu@intel.com>, Vivek Goyal <vgoyal@redhat.com>, Dave Chinner <david@fromorbit.com>
 List-Id: containers.vger.kernel.org
 
-Sorry for late reply,
+KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com> writes:
 
-On 06/03/2011 03:00 PM, Hiroyuki Kamezawa wrote:
-> 2011/6/3 Igor Mammedov<imammedo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>:
->> On 06/02/2011 01:10 AM, Hiroyuki Kamezawa wrote:
->>>> pc = list_entry(list->prev, struct page_cgroup, lru);
->>> Hmm, I disagree your patch is a fix for mainline. At least, a cgroup
->>> before completion of
->>> create() is not populated to userland and you never be able to rmdir()
->>> it because you can't
->>> find it.
->>>
->>>
->>>   >26:   e8 7d 12 30 00          call   0x3012a8
->>>   >2b:*  8b 73 08                mov    0x8(%ebx),%esi<-- trapping
->>> instruction
->>>   >2e:   8b 7c 24 24             mov    0x24(%esp),%edi
->>>   >32:   8b 07                   mov    (%edi),%eax
->>>
->>> Hm, what is the call 0x3012a8 ?
->>>
->>                 pc = list_entry(list->prev, struct page_cgroup, lru);
->>                 if (busy == pc) {
->>                         list_move(&pc->lru, list);
->>                         busy = 0;
->>                         spin_unlock_irqrestore(&zone->lru_lock, flags);
->>                         continue;
->>                 }
->>                 spin_unlock_irqrestore(&zone->lru_lock, flags);<---- is
->>   call 0x3012a8
->>                 ret = mem_cgroup_move_parent(pc, mem, GFP_KERNEL);
->>
->> and  mov 0x8(%ebx),%esi
->> is dereferencing of 'pc' in inlined mem_cgroup_move_parent
->>
-> Ah, thank you for input..then panicd at accessing pc->page and "pc"
-> was 0xfffffff4.
-> it means list->prev was NULL.
+> On Fri,  3 Jun 2011 09:12:16 -0700
+> Greg Thelen <gthelen@google.com> wrote:
 >
-yes, that's the case.
->> I've looked at vmcore once more and indeed there isn't any parallel task
->> that touches cgroups code path.
->> Will investigate if it is xen to blame for incorrect data in place.
->>
->> Thanks very much for your opinion.
-> What curious to me is that the fact "list->prev" is NULL.
-> I can see why you doubt the initialization code ....the list pointer never
-> contains NULL once it's used....
-> it smells like memory corruption or some to me. If you have vmcore,
-> what the problematic mem_cgroup_per_zone(node) contains ?
-
-it has all zeros except for last field:
-
-crash> rd f3446a00 62
-f3446a00:  00000000 00000000 00000000 00000000   ................
-f3446a10:  00000000 00000000 00000000 00000000   ................
-f3446a20:  00000000 00000000 00000000 00000000   ................
-f3446a30:  00000000 00000000 00000000 00000000   ................
-f3446a40:  00000000 00000000 00000000 00000000   ................
-f3446a50:  00000000 00000000 00000000 00000000   ................
-f3446a60:  00000000 00000000 00000000 00000000   ................
-f3446a70:  00000000 00000000 f36ef800 f3446a7c   ..........n.|jD.
-f3446a80:  f3446a7c f3446a84 f3446a84 f3446a8c   |jD..jD..jD..jD.
-f3446a90:  f3446a8c f3446a94 f3446a94 f3446a9c   .jD..jD..jD..jD.
-f3446aa0:  f3446a9c 00000000 00000000 00000000   .jD.............
-f3446ab0:  00000000 00000000 00000000 00000000   ................
-f3446ac0:  00000000 00000000 00000000 00000000   ................
-f3446ad0:  00000000 00000000 00000000 00000000   ................
-f3446ae0:  00000000 00000000 00000000 00000000   ................
-f3446af0:  00000000 f36ef800
-
-crash> struct mem_cgroup f36ef800
-struct mem_cgroup {
-...
-info = {
-     nodeinfo = {0xf3446a00}
-   },
-...
-
-It looks like a very targeted corruption of the first zone except of
-the last field, while the second zone and the rest are perfectly
-normal (i.e. have empty initialized lists).
-
-
-PS:
-It most easily reproduced only on xen hvm 32bit guest under heavy
-vcpus contention for real cpus resources (i.e. I had to overcommit
-cpus and run several cpu hog tasks on host to make guest crash on
-reboot cycle).
-And from last experiments, crash happens only on on hosts that
-doesn't have hap feature or if hap is disabled in hypervisor.
-
+>> Introduce memcg routines to assist in per-memcg dirty page management:
+>> 
+>> - mem_cgroup_balance_dirty_pages() walks a memcg hierarchy comparing
+>>   dirty memory usage against memcg foreground and background thresholds.
+>>   If an over-background-threshold memcg is found, then per-memcg
+>>   background writeback is queued.  Per-memcg writeback differs from
+>>   classic, non-memcg, per bdi writeback by setting the new
+>>   writeback_control.for_cgroup bit.
+>> 
+>>   If an over-foreground-threshold memcg is found, then foreground
+>>   writeout occurs.  When performing foreground writeout, first consider
+>>   inodes exclusive to the memcg.  If unable to make enough progress,
+>>   then consider inodes shared between memcg.  Such cross-memcg inode
+>>   sharing likely to be rare in situations that use per-cgroup memory
+>>   isolation.  The approach tries to handle the common (non-shared)
+>>   case well without punishing well behaved (non-sharing) cgroups.
+>>   As a last resort writeback shared inodes.
+>> 
+>>   This routine is used by balance_dirty_pages() in a later change.
+>> 
+>> - mem_cgroup_hierarchical_dirty_info() returns the dirty memory usage
+>>   and limits of the memcg closest to (or over) its dirty limit.  This
+>>   will be used by throttle_vm_writeout() in a latter change.
+>> 
+>> Signed-off-by: Greg Thelen <gthelen@google.com>
+>> ---
+>> Changelog since v7:
+>> - Add more detail to commit description.
+>> 
+>> - Declare the new writeback_control for_cgroup bit in this change, the
+>>   first patch that uses the new field is first used.  In -v7 the field
+>>   was declared in a separate patch.
+>> 
+>>  include/linux/memcontrol.h        |   18 +++++
+>>  include/linux/writeback.h         |    1 +
+>>  include/trace/events/memcontrol.h |   83 ++++++++++++++++++++
+>>  mm/memcontrol.c                   |  150 +++++++++++++++++++++++++++++++++++++
+>>  4 files changed, 252 insertions(+), 0 deletions(-)
+>> 
+>> diff --git a/include/linux/memcontrol.h b/include/linux/memcontrol.h
+>> index 3d72e09..0d0363e 100644
+>> --- a/include/linux/memcontrol.h
+>> +++ b/include/linux/memcontrol.h
+>> @@ -167,6 +167,11 @@ bool should_writeback_mem_cgroup_inode(struct inode *inode,
+>>  				       struct writeback_control *wbc);
+>>  bool mem_cgroups_over_bground_dirty_thresh(void);
+>>  void mem_cgroup_writeback_done(void);
+>> +bool mem_cgroup_hierarchical_dirty_info(unsigned long sys_available_mem,
+>> +					struct mem_cgroup *mem,
+>> +					struct dirty_info *info);
+>> +void mem_cgroup_balance_dirty_pages(struct address_space *mapping,
+>> +				    unsigned long write_chunk);
+>>  
+>>  unsigned long mem_cgroup_soft_limit_reclaim(struct zone *zone, int order,
+>>  						gfp_t gfp_mask,
+>> @@ -383,6 +388,19 @@ static inline void mem_cgroup_writeback_done(void)
+>>  {
+>>  }
+>>  
+>> +static inline void mem_cgroup_balance_dirty_pages(struct address_space *mapping,
+>> +						  unsigned long write_chunk)
+>> +{
+>> +}
+>> +
+>> +static inline bool
+>> +mem_cgroup_hierarchical_dirty_info(unsigned long sys_available_mem,
+>> +				   struct mem_cgroup *mem,
+>> +				   struct dirty_info *info)
+>> +{
+>> +	return false;
+>> +}
+>> +
+>>  static inline
+>>  unsigned long mem_cgroup_soft_limit_reclaim(struct zone *zone, int order,
+>>  					    gfp_t gfp_mask,
+>> diff --git a/include/linux/writeback.h b/include/linux/writeback.h
+>> index 66ec339..4f5c0d2 100644
+>> --- a/include/linux/writeback.h
+>> +++ b/include/linux/writeback.h
+>> @@ -47,6 +47,7 @@ struct writeback_control {
+>>  	unsigned for_reclaim:1;		/* Invoked from the page allocator */
+>>  	unsigned range_cyclic:1;	/* range_start is cyclic */
+>>  	unsigned more_io:1;		/* more io to be dispatched */
+>> +	unsigned for_cgroup:1;		/* enable cgroup writeback */
+>>  	unsigned shared_inodes:1;	/* write inodes spanning cgroups */
+>>  };
+>>  
+>> diff --git a/include/trace/events/memcontrol.h b/include/trace/events/memcontrol.h
+>> index 326a66b..b42dae1 100644
+>> --- a/include/trace/events/memcontrol.h
+>> +++ b/include/trace/events/memcontrol.h
+>> @@ -109,6 +109,89 @@ TRACE_EVENT(mem_cgroups_over_bground_dirty_thresh,
+>>  		  __entry->first_id)
+>>  )
+>>  
+>> +DECLARE_EVENT_CLASS(mem_cgroup_consider_writeback,
+>> +	TP_PROTO(unsigned short css_id,
+>> +		 struct backing_dev_info *bdi,
+>> +		 unsigned long nr_reclaimable,
+>> +		 unsigned long thresh,
+>> +		 bool over_limit),
+>> +
+>> +	TP_ARGS(css_id, bdi, nr_reclaimable, thresh, over_limit),
+>> +
+>> +	TP_STRUCT__entry(
+>> +		__field(unsigned short, css_id)
+>> +		__field(struct backing_dev_info *, bdi)
+>> +		__field(unsigned long, nr_reclaimable)
+>> +		__field(unsigned long, thresh)
+>> +		__field(bool, over_limit)
+>> +	),
+>> +
+>> +	TP_fast_assign(
+>> +		__entry->css_id = css_id;
+>> +		__entry->bdi = bdi;
+>> +		__entry->nr_reclaimable = nr_reclaimable;
+>> +		__entry->thresh = thresh;
+>> +		__entry->over_limit = over_limit;
+>> +	),
+>> +
+>> +	TP_printk("css_id=%d bdi=%p nr_reclaimable=%ld thresh=%ld "
+>> +		  "over_limit=%d", __entry->css_id, __entry->bdi,
+>> +		  __entry->nr_reclaimable, __entry->thresh, __entry->over_limit)
+>> +)
+>> +
+>> +#define DEFINE_MEM_CGROUP_CONSIDER_WRITEBACK_EVENT(name) \
+>> +DEFINE_EVENT(mem_cgroup_consider_writeback, name, \
+>> +	TP_PROTO(unsigned short id, \
+>> +		 struct backing_dev_info *bdi, \
+>> +		 unsigned long nr_reclaimable, \
+>> +		 unsigned long thresh, \
+>> +		 bool over_limit), \
+>> +	TP_ARGS(id, bdi, nr_reclaimable, thresh, over_limit) \
+>> +)
+>> +
+>> +DEFINE_MEM_CGROUP_CONSIDER_WRITEBACK_EVENT(mem_cgroup_consider_bg_writeback);
+>> +DEFINE_MEM_CGROUP_CONSIDER_WRITEBACK_EVENT(mem_cgroup_consider_fg_writeback);
+>> +
+>> +TRACE_EVENT(mem_cgroup_fg_writeback,
+>> +	TP_PROTO(unsigned long write_chunk,
+>> +		 struct writeback_control *wbc),
+>> +
+>> +	TP_ARGS(write_chunk, wbc),
+>> +
+>> +	TP_STRUCT__entry(
+>> +		__field(unsigned long, write_chunk)
+>> +		__field(long, wbc_to_write)
+>> +		__field(bool, shared_inodes)
+>> +	),
+>> +
+>> +	TP_fast_assign(
+>> +		__entry->write_chunk = write_chunk;
+>> +		__entry->wbc_to_write = wbc->nr_to_write;
+>> +		__entry->shared_inodes = wbc->shared_inodes;
+>> +	),
+>> +
+>> +	TP_printk("write_chunk=%ld nr_to_write=%ld shared_inodes=%d",
+>> +		  __entry->write_chunk,
+>> +		  __entry->wbc_to_write,
+>> +		  __entry->shared_inodes)
+>> +)
+>> +
+>> +TRACE_EVENT(mem_cgroup_enable_shared_writeback,
+>> +	TP_PROTO(unsigned short css_id),
+>> +
+>> +	TP_ARGS(css_id),
+>> +
+>> +	TP_STRUCT__entry(
+>> +		__field(unsigned short, css_id)
+>> +		),
+>> +
+>> +	TP_fast_assign(
+>> +		__entry->css_id = css_id;
+>> +		),
+>> +
+>> +	TP_printk("enabling shared writeback for memcg %d", __entry->css_id)
+>> +)
+>> +
+>>  #endif /* _TRACE_MEMCONTROL_H */
+>>  
+>>  /* This part must be outside protection */
+>> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+>> index a5b1794..17cb888 100644
+>> --- a/mm/memcontrol.c
+>> +++ b/mm/memcontrol.c
+>> @@ -1622,6 +1622,156 @@ void mem_cgroup_writeback_done(void)
+>>  	}
+>>  }
+>>  
+>> +/*
+>> + * This routine must be called by processes which are generating dirty pages.
+>> + * It considers the dirty pages usage and thresholds of the current cgroup and
+>> + * (depending if hierarchical accounting is enabled) ancestral memcg.  If any of
+>> + * the considered memcg are over their background dirty limit, then background
+>> + * writeback is queued.  If any are over the foreground dirty limit then
+>> + * throttle the dirtying task while writing dirty data.  The per-memcg dirty
+>> + * limits check by this routine are distinct from either the per-system,
+>> + * per-bdi, or per-task limits considered by balance_dirty_pages().
+>> + */
+>> +void mem_cgroup_balance_dirty_pages(struct address_space *mapping,
+>> +				    unsigned long write_chunk)
+>> +{
+>> +	struct backing_dev_info *bdi = mapping->backing_dev_info;
+>> +	struct mem_cgroup *mem;
+>> +	struct mem_cgroup *ref_mem;
+>> +	struct dirty_info info;
+>> +	unsigned long nr_reclaimable;
+>> +	unsigned long sys_available_mem;
+>> +	unsigned long pause = 1;
+>> +	unsigned short id;
+>> +	bool over;
+>> +	bool shared_inodes;
+>> +
+>> +	if (mem_cgroup_disabled())
+>> +		return;
+>> +
+>> +	sys_available_mem = determine_dirtyable_memory();
+>> +
+>> +	/* reference the memcg so it is not deleted during this routine */
+>> +	rcu_read_lock();
+>> +	mem = mem_cgroup_from_task(current);
+>> +	if (mem && mem_cgroup_is_root(mem))
+>> +		mem = NULL;
+>> +	if (mem)
+>> +		css_get(&mem->css);
+>> +	rcu_read_unlock();
+>> +	ref_mem = mem;
+>> +
+>> +	/* balance entire ancestry of current's mem. */
+>> +	for (; mem_cgroup_has_dirty_limit(mem); mem = parent_mem_cgroup(mem)) {
+>> +		id = css_id(&mem->css);
+>> +
+>
+> Hmm, this sounds natural...but...don't we need to restart checking from ref_mem's
+> dirty_ratio once we find an ancestor is over dirty_ratio and we slept ?
+>
+> Even if parent's dirty ratio comes to be clean state, children's may not.
+> So, I think some "restart loop" jump after io_schedule_timeout().
+>
 > Thanks,
 > -Kame
+
+I do not think that we need to restart, but maybe you have a case in
+mind that I am not considering.
+
+Example hierarchy:
+              root
+         A            B
+     A1      A2
+  A11 A12  A21 A22
+
+Assume that mem_cgroup_balance_dirty_pages(A11), so ref_mem=A11.
+
+We start at A11 and walk up towards the root.  If A11 is over limit,
+then write A11 until under limit.  Next check A1, if over limit then
+write A1,A11,A12.  Then check A.  If A is over A limit, then we invoke
+writeback on A* until A is under A limit.  Are you concerned that while
+performing writeback on A* that other tasks may push A1 over the A1
+limit?  Such other task writers would also be calling
+mem_cgroup_balance_dirty_pages() later.
+
+>> +		/*
+>> +		 * keep throttling and writing inode data so long as mem is over
+>> +		 * its dirty limit.
+>> +		 */
+>> +		for (shared_inodes = false; ; ) {
+>> +			struct writeback_control wbc = {
+>> +				.sync_mode	= WB_SYNC_NONE,
+>> +				.older_than_this = NULL,
+>> +				.range_cyclic	= 1,
+>> +				.for_cgroup	= 1,
+>> +				.nr_to_write	= write_chunk,
+>> +				.shared_inodes	= shared_inodes,
+>> +			};
+>> +
+>> +			/*
+>> +			 * if mem is under dirty limit, then break from
+>> +			 * throttling loop.
+>> +			 */
+>> +			mem_cgroup_dirty_info(sys_available_mem, mem, &info);
+>> +			nr_reclaimable = dirty_info_reclaimable(&info);
+>> +			over = nr_reclaimable > info.dirty_thresh;
+>> +			trace_mem_cgroup_consider_fg_writeback(
+>> +				id, bdi, nr_reclaimable, info.dirty_thresh,
+>> +				over);
+>> +			if (!over)
+>> +				break;
+>> +
+>> +			mem_cgroup_mark_over_bg_thresh(mem);
+>> +			writeback_inodes_wb(&bdi->wb, &wbc);
+>> +			trace_mem_cgroup_fg_writeback(write_chunk, &wbc);
+>> +			/* if no progress, then consider shared inodes */
+>> +			if ((wbc.nr_to_write == write_chunk) &&
+>> +			    !shared_inodes) {
+>> +				trace_mem_cgroup_enable_shared_writeback(id);
+>> +				shared_inodes = true;
+>> +			}
+>> +
+>> +			/*
+>> +			 * Sleep up to 100ms to throttle writer and wait for
+>> +			 * queued background I/O to complete.
+>> +			 */
+>> +			__set_current_state(TASK_UNINTERRUPTIBLE);
+>> +			io_schedule_timeout(pause);
+>> +			pause <<= 1;
+>> +			if (pause > HZ / 10)
+>> +				pause = HZ / 10;
+>
+> Hmm, is this exponential back off "pause" is from mm/page-writeback.c ?
+
+Yes.  This is from mm/page-writeback.c:balance_dirty_pages().
+
+> I'm happy if we can have a shared code. (But ok if it adds some messy.)
+
+Sounds good (will include in -v9).  The refactored the shared code will
+look like:
+
+/*
+ * Sleep up to 100ms to throttle writer and wait for queued background
+ * I/O to complete.
+ */
+unsigned long balance_dirty_pages_pause(unsigned long pause)
+{
+	__set_current_state(TASK_UNINTERRUPTIBLE);
+	io_schedule_timeout(pause);
+	pause <<= 1;
+	if (pause > HZ / 10)
+		pause = HZ / 10;
+	return pause;
+}
+
+void [mem_cgroup_]balance_dirty_pages(...)
+{
+	unsigned long pause = 1;
+	for (;;) {
+		...
+		pause = balance_dirty_pages_pause(pause)
+	}
+}
+
+>> +		}
+>> +
+>> +		/* if mem is over background limit, then queue bg writeback */
+>> +		over = nr_reclaimable >= info.background_thresh;
+>> +		trace_mem_cgroup_consider_bg_writeback(
+>> +			id, bdi, nr_reclaimable, info.background_thresh,
+>> +			over);
+>> +		if (over)
+>> +			mem_cgroup_queue_bg_writeback(mem, bdi);
+>> +	}
+>> +
+>> +	if (ref_mem)
+>> +		css_put(&ref_mem->css);
+>> +}
+>> +
+>> +/*
+>> + * Return the dirty thresholds and usage for the mem (within the ancestral chain
+>> + * of @mem) closest to its dirty limit or the first memcg over its limit.
+>> + *
+>> + * The check is not stable because the usage and limits can change asynchronous
+>> + * to this routine.
+>> + */
+>> +bool mem_cgroup_hierarchical_dirty_info(unsigned long sys_available_mem,
+>> +					struct mem_cgroup *mem,
+>> +					struct dirty_info *info)
+>> +{
+>> +	unsigned long usage;
+>> +	struct dirty_info uninitialized_var(cur_info);
+>> +
+>> +	if (mem_cgroup_disabled())
+>> +		return false;
+>> +
+>> +	info->nr_writeback = ULONG_MAX;  /* invalid initial value */
+>> +
+>> +	/* walk up hierarchy enabled parents */
+>> +	for (; mem_cgroup_has_dirty_limit(mem); mem = parent_mem_cgroup(mem)) {
+>> +		mem_cgroup_dirty_info(sys_available_mem, mem, &cur_info);
+>> +		usage = dirty_info_reclaimable(&cur_info) +
+>> +			cur_info.nr_writeback;
+>> +
+>> +		/* if over limit, stop searching */
+>> +		if (usage >= cur_info.dirty_thresh) {
+>> +			*info = cur_info;
+>> +			break;
+>> +		}
+>> +
+>> +		/*
+>> +		 * Save dirty usage of mem closest to its limit if either:
+>> +		 *     - mem is the first mem considered
+>> +		 *     - mem dirty margin is smaller than last recorded one
+>> +		 */
+>> +		if ((info->nr_writeback == ULONG_MAX) ||
+>> +		    (cur_info.dirty_thresh - usage) <
+>> +		    (info->dirty_thresh -
+>> +		     (dirty_info_reclaimable(info) + info->nr_writeback)))
+>> +			*info = cur_info;
+>> +	}
+>> +
+>> +	return info->nr_writeback != ULONG_MAX;
+>> +}
+>> +
+>>  static void mem_cgroup_start_move(struct mem_cgroup *mem)
+>>  {
+>>  	int cpu;
+>> -- 
+>> 1.7.3.1
+>> 
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
