@@ -1,68 +1,48 @@
-From: =?utf-8?B?4piF4piFIDIwMTHooYzkuJrph43ngrnlsZXkvJog4piF4piF?=
-	<shfwb-bFBd53INBX3M1kAEIRd3EQ@public.gmane.org>
-Subject: =?utf-8?B?4piFICBDSUJFMjAxMSDnrKzlha3lsYrkuK3lm73lm73pmYXorr4=?=
-	=?utf-8?B?5Y2a5LyaIO+8iENJREYyMDEx77yJIOOAiumCgOivt+WHveOAiyA=?=
-	=?utf-8?B?ICDvvIjnlLXor53vvJoxMzEtMjY2Mi01MjA277yb?=
-	=?utf-8?B?IOWuouacjVFR77yaMTI4MDkzOTXvvIk=?=
-Date: Sun, 12 Jun 2011 16:34:48 +0800
-Message-ID: <37C282F6223BE9030819C12146728853@let>
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Subject: Re: [RFC] breakage in sysfs_readdir() and s_instances abuse in sysfs
+Date: Sun, 12 Jun 2011 10:59:42 -0700
+Message-ID: <BANLkTi=AfYH1eg_O1N2M9BfcF=UmBFPy6w@mail.gmail.com>
+References: <20110604001518.GT11521@ZenIV.linux.org.uk> <m1k4cy6auf.fsf@fess.ebiederm.org>
+ <20110607215834.GR11521@ZenIV.linux.org.uk> <20110607225902.GS11521@ZenIV.linux.org.uk>
+ <20110609012646.GV11521@ZenIV.linux.org.uk> <m1y617wmeb.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="----------=_1307867929-12044-170"
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: contactmonierchina-mb1P9REBEc7QT0dZR+AlfA@public.gmane.org, contact_hb-ED36ZO7urQ9wnKjBYKA5KA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, contamericano-/E1597aS9LQAvxtiuMwx3w@public.gmane.org, contant-QuqLTb3ccv5a4t1NWSe2Bg@public.gmane.org, contato@g0
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: QUOTED-PRINTABLE
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <m1y617wmeb.fsf@fess.ebiederm.org>
+Sender: linux-fsdevel-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Al Viro <viro@zeniv.linux.org.uk>, linux-fsdevel@vger.kernel.org, netdev@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format...
+On Sun, Jun 12, 2011 at 12:15 AM, Eric W. Biederman
+<ebiederm@xmission.com> wrote:
+>
+> I honestly hate the pattern that is being used here. =A0Holding a
+> reference count because we can't be bothered to free things reliably
+> when we actually stop using them.
 
-------------=_1307867929-12044-170
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+WHAT?
 
+That's what a reference count *is*. It's all about "free things
+reliably when we actually stop using them".
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
+Your comment makes zero sense.
 
-------------=_1307867929-12044-170
-Content-Type: text/plain; name="SpamAssassinReport.txt"
-Content-Disposition: inline; filename="SpamAssassinReport.txt"
-Content-Transfer-Encoding: 7bit
-MIME-Version: 1.0
-X-Mailer: MIME-tools 5.425 (Entity 5.425)
+EVERY SINGLE kernel data structure should be reference counted. Read
+Documentation/CodingStyle, or look at any of the good code in the
+kernel (ie core process or VFS code). A non-refcounted data structure
+that is used by more than one entity IS A BUG!
 
-Spam detection software, running on the system "daredevil.linux-foundation.org", has
-identified this incoming email as possible spam.  The original message
-has been attached to this so you can view it (if it isn't spam) or label
-similar future email.  If you have any questions, see
-the administrator of that system for details.
+Quite frankly, your objection sounds moronic. If there is more than
+one user, then a reference count is _always_ the right thing. Nothing
+else ever works, and trust me, people have tried. They've tried
+locking, they've tried luck, they've tried crazy things. Nothing but
+refcounts works.
 
-Content preview:  Containers mailing list Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-   https://lists.linux-foundation.org/mailman/listinfo/containers [...] 
-
-Content analysis details:   (7.1 points, 5.0 required)
-
- pts rule name              description
----- ---------------------- --------------------------------------------------
- 0.3 SARE_SUB_OBFU_Q0       FVGT - subject contains odd letter combination
- 1.9 SUBJ_ALL_CAPS          Subject is all capitals
- 2.3 SUSPICIOUS_RECIPS      Similar addresses in recipient list
- 0.0 BAYES_50               BODY: Bayesian spam probability is 40 to 60%
-                            [score: 0.5000]
- 2.3 TVD_SPACE_RATIO        BODY: TVD_SPACE_RATIO
- 0.1 RDNS_NONE              Delivered to trusted network by a host with no rDNS
- 0.2 SARE_SUB_ENC_UTF8      Message uses character set often used in spam
-
-
-
-------------=_1307867929-12044-170--
+                           Linus
+--
+To unsubscribe from this list: send the line "unsubscribe linux-fsdevel=
+" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
