@@ -1,51 +1,27 @@
 From: Oleg Nesterov <oleg@redhat.com>
 Subject: Re: [PATCH] Introduce ActivePid: in /proc/self/status (v2, was
 	Vpid:)
-Date: Thu, 16 Jun 2011 15:06:13 +0200
-Message-ID: <20110616130613.GC19312@redhat.com>
-References: <20110615145527.4016.70157.stgit@bahia.local> <20110615190302.GA16440@redhat.com> <1308223158.8230.66.camel@bahia.local> <4DF9F657.7030605@fr.ibm.com>
+Date: Thu, 16 Jun 2011 15:18:21 +0200
+Message-ID: <20110616131821.GA21230@redhat.com>
+References: <20110615145527.4016.70157.stgit@bahia.local> <20110615184625.GA15573@redhat.com> <1308222107.8230.49.camel@bahia.local> <20110616123554.GA7230@hawkmoon.kerlabs.com> <1308229251.8230.77.camel@bahia.local>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <linux-kernel-owner@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <4DF9F657.7030605@fr.ibm.com>
+In-Reply-To: <1308229251.8230.77.camel@bahia.local>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Cedric Le Goater <clg@fr.ibm.com>
-Cc: Greg Kurz <gkurz@fr.ibm.com>, linux-kernel@vger.kernel.org, ebiederm@xmission.com, containers@lists.osdl.org, akpm@linux-foundation.org, xemul@openvz.org
+To: Greg Kurz <gkurz@fr.ibm.com>
+Cc: Louis Rilling <Louis.Rilling@kerlabs.com>, linux-kernel@vger.kernel.org, ebiederm@xmission.com, containers@lists.osdl.org, akpm@linux-foundation.org, xemul@openvz.org
 List-Id: containers.vger.kernel.org
 
-On 06/16, Cedric Le Goater wrote:
+On 06/16, Greg Kurz wrote:
 >
-> We have a case where a task in a parent pid namespace needs to kill
-> another task in a sub pid namespace only knowing its internal pid.
-> the latter has been communicated to the parent task through a file or
-> a unix socket.
+> Ok. You're right, the RCU grace period is just what I need to ensure I
+> won't dereference a stale pointer. So I don't even have to bother with
+> ->siglock and just check pid_alive() before peeking into pid->numbers.
 
-OK, thanks, this partly answers my question... But if they communicate
-anyway, it is not clear why the signal is needed.
-
-> This 'ActivePid' information in /proc is not sufficient to identity
-> the task, you also need the list of the tasks which are living in
-> the pid namespace.
-
-Yes, I see.
-
-> a new kill syscall could be the solution:
->
->     int pidns_kill(pid_t init_pid, pid_t some_pid);
->
-> where 'init_pid' identifies the namespace and 'some_pid' identifies
-> a task in this namespace. this is very specific but why not.
-
-Yes, I also thought about this. Should be trivial.
-
-Or int sys_tell_me_its_pid(pid_t init_pid, pid_t some_pid).
-
-
-
-
-Just in case.... This is hack, yes, but in fact you do not need the
-kernel changes to send a signal inside the namespace. You could
-ptrace sub_init, and execute the necessary code "inside" the namespace.
+Yes, but you don't really need pid_alive(). Just read ->pids[].pid and
+check it is !NULL before dereferencing. Also, we already have 2 pid_alive()
+checks, this is ugly. You can consolidate this code.
 
 Oleg.
