@@ -1,59 +1,43 @@
 From: Greg Kurz <gkurz@fr.ibm.com>
 Subject: Re: [PATCH] Introduce ActivePid: in /proc/self/status (v2, was
  Vpid:)
-Date: Thu, 16 Jun 2011 13:01:47 +0200
-Message-ID: <1308222107.8230.49.camel@bahia.local>
+Date: Thu, 16 Jun 2011 13:19:18 +0200
+Message-ID: <1308223158.8230.66.camel@bahia.local>
 References: <20110615145527.4016.70157.stgit@bahia.local>
-	 <20110615184625.GA15573@redhat.com>
+	 <20110615190302.GA16440@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 7bit
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20110615184625.GA15573@redhat.com>
+In-Reply-To: <20110615190302.GA16440@redhat.com>
 Sender: linux-kernel-owner@vger.kernel.org
 To: Oleg Nesterov <oleg@redhat.com>
 Cc: akpm@linux-foundation.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org, serge@hallyn.com, daniel.lezcano@free.fr, ebiederm@xmission.com, xemul@openvz.org
 List-Id: containers.vger.kernel.org
 
-On Wed, 2011-06-15 at 20:46 +0200, Oleg Nesterov wrote:
+On Wed, 2011-06-15 at 21:03 +0200, Oleg Nesterov wrote:
+> Forgot to ask,
+> 
 > On 06/15, Greg Kurz wrote:
 > >
-> > @@ -176,6 +177,17 @@ static inline void task_state(struct seq_file *m, struct pid_namespace *ns,
-> >  		if (tracer)
-> >  			tpid = task_pid_nr_ns(tracer, ns);
-> >  	}
-> > +	actpid = 0;
-> > +	sighand = rcu_dereference(p->sighand);
-> > +	if (sighand) {
-> > +		struct pid_namespace *pid_ns;
-> > +		unsigned long flags;
-> > +		spin_lock_irqsave(&sighand->siglock, flags);
+> > The need arises in the LXC community when one wants to send a signal from
+> > the host (aka. init_pid_ns context) to a container process for which one
+> > only knows the pid inside the container.
 > 
-> Well. This is not exactly right. We have lock_task_sighand() for this.
+> I am just curious, why do you need this?
 > 
 
-I see... ->sighand could change so we need the for(;;) loop in
-__lock_task_sighand() to be sure we have the right pointer, correct ?
-By the way, if we use lock_task_sighand() we'll end up with nested
-rcu_read_lock(): it will work but I don't know how it may affect
-performance...
+Because some LXC users run partially isolated containers (AKA.
+application containers started with the lxc-execute command). Some of
+the user code runs outside the container and some inside. Since
+lxc-execute uses CLONE_NEWPID, it's difficult for the external code to
+relate a pid generated inside the container with a task. There are
+regular requests on lxc-users@ about this.
 
-> But. Why do you need ->siglock? Why rcu_read_lock() is not enough?
-> 
+-- 
+Gregory Kurz                                     gkurz@fr.ibm.com
+Software Engineer @ IBM/Meiosys                  http://www.ibm.com
+Tel +33 (0)534 638 479                           Fax +33 (0)561 400 420
 
-Because there's a race with
-__exit_signal()->__unhash_process()->detach_pid() that can break
-task_active_pid_ns() and rcu won't help here (unless *perhaps* by
-modifying __exit_signal() but I don't want to mess with such a critical
-path).
-
-> Hmm. You don't even need pid_ns afaics, you could simply look at
-> pid->numbers[pid->level].
-> 
-
-True but I will have the same problem: detach_pid() nullifies the pid.
-
-Thanks for your comments.
-
---
-Greg
+"Anarchy is about taking complete responsibility for yourself."
+        Alan Moore.
