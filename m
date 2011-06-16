@@ -1,97 +1,72 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH] Introduce ActivePid: in /proc/self/status (v2, was Vpid:)
-Date: Thu, 16 Jun 2011 08:07:17 -0700
-Message-ID: <m1y611bysa.fsf@fess.ebiederm.org>
-References: <20110615145527.4016.70157.stgit@bahia.local>
-	<20110615190302.GA16440@redhat.com>
-	<1308223158.8230.66.camel@bahia.local> <4DF9F657.7030605@fr.ibm.com>
+From: Louis Rilling <Louis.Rilling@kerlabs.com>
+Subject: Re: [PATCH] Introduce ActivePid: in /proc/self/status (v2, was
+	Vpid:)
+Date: Thu, 16 Jun 2011 17:08:12 +0200
+Message-ID: <20110616150811.GA15328@hawkmoon.kerlabs.com>
+References: <20110615145527.4016.70157.stgit@bahia.local> <20110615184625.GA15573@redhat.com> <1308222107.8230.49.camel@bahia.local> <20110616123554.GA7230@hawkmoon.kerlabs.com> <1308229251.8230.77.camel@bahia.local> <20110616132551.GB7230@hawkmoon.kerlabs.com> <20110616145044.GA25379@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-26591-1308236803-0001-2"
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <4DF9F657.7030605@fr.ibm.com> (Cedric Le Goater's message of
-	"Thu, 16 Jun 2011 14:25:59 +0200")
+Content-Disposition: inline
+In-Reply-To: <20110616145044.GA25379@redhat.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Cedric Le Goater <clg@fr.ibm.com>
-Cc: Greg Kurz <gkurz@fr.ibm.com>, Oleg Nesterov <oleg@redhat.com>, linux-kernel@vger.kernel.org, containers@lists.osdl.org, akpm@linux-foundation.org, xemul@openvz.org
+To: Oleg Nesterov <oleg@redhat.com>
+Cc: Greg Kurz <gkurz@fr.ibm.com>, linux-kernel@vger.kernel.org, ebiederm@xmission.com, containers@lists.osdl.org, akpm@linux-foundation.org, xemul@openvz.org
 List-Id: containers.vger.kernel.org
 
-Cedric Le Goater <clg@fr.ibm.com> writes:
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-> On 06/16/2011 01:19 PM, Greg Kurz wrote:
->> On Wed, 2011-06-15 at 21:03 +0200, Oleg Nesterov wrote:
->>> Forgot to ask,
->>>
->>> On 06/15, Greg Kurz wrote:
->>>>
->>>> The need arises in the LXC community when one wants to send a signal from
->>>> the host (aka. init_pid_ns context) to a container process for which one
->>>> only knows the pid inside the container.
->>>
->>> I am just curious, why do you need this?
->>>
->> 
->> Because some LXC users run partially isolated containers (AKA.
->> application containers started with the lxc-execute command). Some of
->> the user code runs outside the container and some inside. Since
->> lxc-execute uses CLONE_NEWPID, it's difficult for the external code to
->> relate a pid generated inside the container with a task. There are
->> regular requests on lxc-users@ about this.
->
-> It's simply not possible. There's no support for it.
->
-> We have a case where a task in a parent pid namespace needs to kill 
-> another task in a sub pid namespace only knowing its internal pid.
-> the latter has been communicated to the parent task through a file or 
-> a unix socket.
+--=_bohort-26591-1308236803-0001-2
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-If you are using a unix domain sockets you can get them to translate
-the pid for you, with SCM_CREDS.  Unix domain sockets have to do that
-or it is a security problem.
+On 16/06/11 16:51 +0200, Oleg Nesterov wrote:
+> On 06/16, Louis Rilling wrote:
+> >
+> > On 16/06/11 15:00 +0200, Greg Kurz wrote:
+> > > peeking into pid->numbers.
+> >
+> > It ends like open-coding an optimized version of task_pid_vnr(). If the
+> > optimization is really important (I guess this depends on the depth of =
+recursive
+> > pid namespaces), it would be better to re-write task_pid_vnr().
+>=20
+> No, task_pid_vnr(p) is different, it should use the caller's namespace.
 
-> This 'ActivePid' information in /proc is not sufficient to identity 
-> the task, you also need the list of the tasks which are living in 
-> the pid namespace.
->
->
-> We could have used the setns syscall and attach a kill command to 
-> a pid namespace. But, this is borderline as you might ended up 
-> killing all the tasks in the namespace you've attached to. Anyhow, 
-> setns doesn't support pid namespaces yet and it feels safer to send 
-> the signal for outside.
->
-> a new kill syscall could be the solution:
->
->     int pidns_kill(pid_t init_pid, pid_t some_pid);
->
-> where 'init_pid' identifies the namespace and 'some_pid' identifies
-> a task in this namespace. this is very specific but why not.
+Damned, I read __task_pid_nr_ns() too quickly. Thanks for correcting me.
 
-Ugh.  
+>=20
+> Just in case, I agree there is no need to optimize this code. The simpler
+> the better. I mentioned pid->numbers[pid->level] just to point that all
+> we need is task_pid() itself, there are no subtle races which need the
+> locking.
 
-So I took a quick look at things and while setns support is tricky
-from a technical perspective for pid namespaces, supporting the
-namespace files is not.
+Agreed.
 
-We can plan on having pid, mnt, and user namespace namespace proc files
-in 3.1.  Along with the small changes needed to have inode numbers on
-the namespace files that are useful for comparing namespaces for
-equality.   I will see about getting those patches out for review
-shortly.
+Thanks,
 
-> Finally, we thought that the 'ActivePid' information was interesting 
-> enough to be exposed in /proc and was solving the case we're facing 
-> rather easily with some framework (cgroups) in user space.
+Louis
 
-The pid number by which a process knows itself doesn't seem
-unreasonable.  I'm not totally 
+--=20
+Dr Louis Rilling			Kerlabs
+Skype: louis.rilling			Batiment Germanium
+Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
+http://www.kerlabs.com/			35700 Rennes
 
-After having a second look at the code in proc we already have
-a reference to the struct pid we want to print.  So simply
-printing
-pid->numbers[pid->level].nr
-seems reasonable, and race free.
+--=_bohort-26591-1308236803-0001-2
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Transfer-Encoding: 7bit
+Content-Description: Digital signature
+Content-Disposition: inline
 
-Alternatively that could be written.
-pid_nr_ns(pid, ns_of_pid(pid));
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (GNU/Linux)
 
-Eric
+iEYEARECAAYFAk36HFsACgkQVKcRuvQ9Q1RkcACfaBKcZTofy/85sHd8OtyR9Xj9
+KQEAmwTqFHbfHIyumGIC1Cu2tTHtl6YY
+=eXhP
+-----END PGP SIGNATURE-----
+
+--=_bohort-26591-1308236803-0001-2--
