@@ -1,67 +1,115 @@
-From: Cedric Le Goater <clg@fr.ibm.com>
-Subject: Re: [PATCH] Introduce ActivePid: in /proc/self/status (v2, was Vpid:)
-Date: Thu, 16 Jun 2011 14:25:59 +0200
-Message-ID: <4DF9F657.7030605@fr.ibm.com>
-References: <20110615145527.4016.70157.stgit@bahia.local>	<20110615190302.GA16440@redhat.com> <1308223158.8230.66.camel@bahia.local>
+From: Louis Rilling <Louis.Rilling@kerlabs.com>
+Subject: Re: [PATCH] Introduce ActivePid: in /proc/self/status (v2, was
+	Vpid:)
+Date: Thu, 16 Jun 2011 14:35:55 +0200
+Message-ID: <20110616123554.GA7230@hawkmoon.kerlabs.com>
+References: <20110615145527.4016.70157.stgit@bahia.local> <20110615184625.GA15573@redhat.com> <1308222107.8230.49.camel@bahia.local>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-23791-1308227667-0001-2"
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <1308223158.8230.66.camel@bahia.local>
+Content-Disposition: inline
+In-Reply-To: <1308222107.8230.49.camel@bahia.local>
 Sender: linux-kernel-owner@vger.kernel.org
 To: Greg Kurz <gkurz@fr.ibm.com>
 Cc: Oleg Nesterov <oleg@redhat.com>, linux-kernel@vger.kernel.org, ebiederm@xmission.com, containers@lists.osdl.org, akpm@linux-foundation.org, xemul@openvz.org
 List-Id: containers.vger.kernel.org
 
-On 06/16/2011 01:19 PM, Greg Kurz wrote:
-> On Wed, 2011-06-15 at 21:03 +0200, Oleg Nesterov wrote:
->> Forgot to ask,
->>
->> On 06/15, Greg Kurz wrote:
->>>
->>> The need arises in the LXC community when one wants to send a signal from
->>> the host (aka. init_pid_ns context) to a container process for which one
->>> only knows the pid inside the container.
->>
->> I am just curious, why do you need this?
->>
-> 
-> Because some LXC users run partially isolated containers (AKA.
-> application containers started with the lxc-execute command). Some of
-> the user code runs outside the container and some inside. Since
-> lxc-execute uses CLONE_NEWPID, it's difficult for the external code to
-> relate a pid generated inside the container with a task. There are
-> regular requests on lxc-users@ about this.
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-It's simply not possible. There's no support for it.
+--=_bohort-23791-1308227667-0001-2
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-We have a case where a task in a parent pid namespace needs to kill 
-another task in a sub pid namespace only knowing its internal pid.
-the latter has been communicated to the parent task through a file or 
-a unix socket.
+On 16/06/11 13:01 +0200, Greg Kurz wrote:
+> On Wed, 2011-06-15 at 20:46 +0200, Oleg Nesterov wrote:
+> > On 06/15, Greg Kurz wrote:
+> > >
+> > > @@ -176,6 +177,17 @@ static inline void task_state(struct seq_file *m=
+, struct pid_namespace *ns,
+> > >  		if (tracer)
+> > >  			tpid =3D task_pid_nr_ns(tracer, ns);
+> > >  	}
+> > > +	actpid =3D 0;
+> > > +	sighand =3D rcu_dereference(p->sighand);
+> > > +	if (sighand) {
+> > > +		struct pid_namespace *pid_ns;
+> > > +		unsigned long flags;
+> > > +		spin_lock_irqsave(&sighand->siglock, flags);
+> >=20
+> > Well. This is not exactly right. We have lock_task_sighand() for this.
+> >=20
+>=20
+> I see... ->sighand could change so we need the for(;;) loop in
+> __lock_task_sighand() to be sure we have the right pointer, correct ?
+> By the way, if we use lock_task_sighand() we'll end up with nested
+> rcu_read_lock(): it will work but I don't know how it may affect
+> performance...
 
-This 'ActivePid' information in /proc is not sufficient to identity 
-the task, you also need the list of the tasks which are living in 
-the pid namespace.
+rcu_read_lock() is very cheap.
 
+>=20
+> > But. Why do you need ->siglock? Why rcu_read_lock() is not enough?
+> >=20
+>=20
+> Because there's a race with
+> __exit_signal()->__unhash_process()->detach_pid() that can break
+> task_active_pid_ns() and rcu won't help here (unless *perhaps* by
+> modifying __exit_signal() but I don't want to mess with such a critical
+> path).
 
-We could have used the setns syscall and attach a kill command to 
-a pid namespace. But, this is borderline as you might ended up 
-killing all the tasks in the namespace you've attached to. Anyhow, 
-setns doesn't support pid namespaces yet and it feels safer to send 
-the signal for outside.
+In case of race, the only risk is that task_active_pid_ns() returns NULL.
+Otherwise, RCU guarantees that the pid_ns will stay alive (see below).
 
-a new kill syscall could be the solution:
+>=20
+> > Hmm. You don't even need pid_ns afaics, you could simply look at
+> > pid->numbers[pid->level].
+> >=20
+>=20
+> True but I will have the same problem: detach_pid() nullifies the pid.
 
-    int pidns_kill(pid_t init_pid, pid_t some_pid);
+But the pid won't be freed until an RCU grace period expires. See free_pid(=
+). So
+the non-determinism here is when /proc/<pid>/status is read at the same as
+threaded execve() or task's exit(), in which case a stale pid (execve()) or
+no pid (exit after __unhash_process()) can be accessed. This does not look =
+like
+a big deal...
 
-where 'init_pid' identifies the namespace and 'some_pid' identifies
-a task in this namespace. this is very specific but why not.
+Thanks,
 
-Finally, we thought that the 'ActivePid' information was interesting 
-enough to be exposed in /proc and was solving the case we're facing 
-rather easily with some framework (cgroups) in user space.
+Louis
 
-Best,
+>=20
+> Thanks for your comments.
+>=20
+> --
+> Greg
+>=20
+> _______________________________________________
+> Containers mailing list
+> Containers@lists.linux-foundation.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
 
-C.
+--=20
+Dr Louis Rilling			Kerlabs
+Skype: louis.rilling			Batiment Germanium
+Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
+http://www.kerlabs.com/			35700 Rennes
+
+--=_bohort-23791-1308227667-0001-2
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Transfer-Encoding: 7bit
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (GNU/Linux)
+
+iEYEARECAAYFAk35+KoACgkQVKcRuvQ9Q1QJOwCfV4wz61ec6uOjRYtDGDfQHB3b
+EEIAoMjwn6rtvDkgNsNBd3a4BgY9nfUl
+=KK+P
+-----END PGP SIGNATURE-----
+
+--=_bohort-23791-1308227667-0001-2--
