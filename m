@@ -1,89 +1,66 @@
-From: Louis Rilling <Louis.Rilling@kerlabs.com>
+From: Greg Kurz <gkurz@fr.ibm.com>
 Subject: Re: [PATCH] Introduce ActivePid: in /proc/self/status (v2, was
-	Vpid:)
-Date: Thu, 16 Jun 2011 17:27:33 +0200
-Message-ID: <20110616152733.GB15328@hawkmoon.kerlabs.com>
-References: <20110615145527.4016.70157.stgit@bahia.local> <20110615184625.GA15573@redhat.com> <1308222107.8230.49.camel@bahia.local> <20110616123554.GA7230@hawkmoon.kerlabs.com> <1308229251.8230.77.camel@bahia.local> <20110616132551.GB7230@hawkmoon.kerlabs.com> <1308236499.8230.89.camel@bahia.local>
+ Vpid:)
+Date: Thu, 16 Jun 2011 17:33:32 +0200
+Message-ID: <1308238412.8230.95.camel@bahia.local>
+References: <20110615145527.4016.70157.stgit@bahia.local>
+	 <20110615190302.GA16440@redhat.com>	<1308223158.8230.66.camel@bahia.local>
+	 <4DF9F657.7030605@fr.ibm.com>  <m1y611bysa.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-27127-1308237968-0001-2"
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 7bit
 Return-path: <linux-kernel-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <1308236499.8230.89.camel@bahia.local>
+In-Reply-To: <m1y611bysa.fsf@fess.ebiederm.org>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Greg Kurz <gkurz@fr.ibm.com>
-Cc: Oleg Nesterov <oleg@redhat.com>, linux-kernel@vger.kernel.org, ebiederm@xmission.com, containers@lists.osdl.org, akpm@linux-foundation.org, xemul@openvz.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Cedric Le Goater <clg@vnet.ibm.com>, Oleg Nesterov <oleg@redhat.com>, linux-kernel@vger.kernel.org, containers@lists.osdl.org, akpm@linux-foundation.org, xemul@openvz.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
+On Thu, 2011-06-16 at 08:07 -0700, Eric W. Biederman wrote:
+> > Finally, we thought that the 'ActivePid' information was interesting 
+> > enough to be exposed in /proc and was solving the case we're facing 
+> > rather easily with some framework (cgroups) in user space.
+> 
+> The pid number by which a process knows itself doesn't seem
+> unreasonable.  I'm not totally 
+> 
+> After having a second look at the code in proc we already have
+> a reference to the struct pid we want to print.  So simply
+> printing
+> pid->numbers[pid->level].nr
+> seems reasonable, and race free.
+> 
+> Alternatively that could be written.
+> pid_nr_ns(pid, ns_of_pid(pid));
+> 
+> Eric
 
---=_bohort-27127-1308237968-0001-2
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+So we end up with the following, since pid is valid:
 
-On 16/06/11 17:01 +0200, Greg Kurz wrote:
-> On Thu, 2011-06-16 at 15:25 +0200, Louis Rilling wrote:
-> > > Ok. You're right, the RCU grace period is just what I need to ensure
-> > I
-> > > won't dereference a stale pointer. So I don't even have to bother
-> > with
-> > > ->siglock and just check pid_alive() before peeking into
-> > pid->numbers.
-> >=20
-> > It ends like open-coding an optimized version of task_pid_vnr(). If
-> > the
-> > optimization is really important (I guess this depends on the depth of
-> > recursive
-> > pid namespaces), it would be better to re-write task_pid_vnr().
-> > Otherwise, just
-> > use task_pid_vnr() as it is.
-> >=20
-> > Thanks,
-> >=20
-> > Louis
-> >=20
-> Hmm, sorry Louis but I'm looking for the pid number from the task active
-> pid_ns (AKA. the return value of getpid() if called by this task), so
-> task_pid_vnr() doesn't fit.
+diff --git a/fs/proc/array.c b/fs/proc/array.c
+index 5e4f776..b7316cc 100644
+--- a/fs/proc/array.c
++++ b/fs/proc/array.c
+@@ -183,12 +183,14 @@ static inline void task_state(struct seq_file *m,
+struct pid_namespace *ns,
+ 		"Pid:\t%d\n"
+ 		"PPid:\t%d\n"
+ 		"TracerPid:\t%d\n"
++		"ActivePid:\t%d\n"
+ 		"Uid:\t%d\t%d\t%d\t%d\n"
+ 		"Gid:\t%d\t%d\t%d\t%d\n",
+ 		get_task_state(p),
+ 		task_tgid_nr_ns(p, ns),
+ 		pid_nr_ns(pid, ns),
+ 		ppid, tpid,
++		pid_nr_ns(pid, ns_of_pid(pid)),
+ 		cred->uid, cred->euid, cred->suid, cred->fsuid,
+ 		cred->gid, cred->egid, cred->sgid, cred->fsgid);
 
-Yup, I should have somewhat recalled that _vnr() means "in the caller's pid
-namespace". Sorry for the wrong argument.
+-- 
+Gregory Kurz                                     gkurz@fr.ibm.com
+Software Engineer @ IBM/Meiosys                  http://www.ibm.com
+Tel +33 (0)534 638 479                           Fax +33 (0)561 400 420
 
->=20
-> About the open-coding argument, that's why I used task_pid_nr_ns() and
-> task_active_pid_ns() at first...
-
-Sure. I still think that if you end accessing pid->numbers[pid->level].nr, =
-then
-you're close to coding some (optimized) task_active_pid_nr() that could als=
-o be
-used by getpid(), using some task_active_tgid_nr() instead of task_tgid_vnr=
-().
-Anyway, optimization is not a relevant point here AFAICS.
-
-Thanks,
-
-Louis
-
---=20
-Dr Louis Rilling			Kerlabs
-Skype: louis.rilling			Batiment Germanium
-Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
-http://www.kerlabs.com/			35700 Rennes
-
---=_bohort-27127-1308237968-0001-2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Transfer-Encoding: 7bit
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (GNU/Linux)
-
-iEYEARECAAYFAk36IOUACgkQVKcRuvQ9Q1QipgCeKhrkBcIpPtTwvxVkbxLNr4DQ
-Ut4Anj1AyloYA+R4oRjivRBvcBb+zPv1
-=Ay+q
------END PGP SIGNATURE-----
-
---=_bohort-27127-1308237968-0001-2--
+"Anarchy is about taking complete responsibility for yourself."
+        Alan Moore.
