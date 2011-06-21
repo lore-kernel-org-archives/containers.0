@@ -1,62 +1,77 @@
 From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH] Introduce ActivePid: in /proc/self/status (v2, was Vpid:)
-Date: Mon, 20 Jun 2011 15:44:57 -0700
-Message-ID: <m1ei2o9l7a.fsf@fess.ebiederm.org>
-References: <20110615145527.4016.70157.stgit@bahia.local>
-	<BANLkTimSC_OSrbekhM=wd2Gie4np3Q4F5A@mail.gmail.com>
-	<1308570316.8230.140.camel@bahia.local>
-	<BANLkTiknqo0iKry7mjq+mc4iOWj_A_mrrw@mail.gmail.com>
+Subject: [GIT PULL] nsfd fixes
+Date: Tue, 21 Jun 2011 15:07:02 -0700
+Message-ID: <m162nyn8jd.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <BANLkTiknqo0iKry7mjq+mc4iOWj_A_mrrw@mail.gmail.com> (Bryan
-	Donlan's message of "Mon, 20 Jun 2011 13:37:24 -0400")
 Sender: linux-kernel-owner@vger.kernel.org
-To: Bryan Donlan <bdonlan@gmail.com>
-Cc: Greg Kurz <gkurz@fr.ibm.com>, akpm@linux-foundation.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org, serge@hallyn.com, daniel.lezcano@free.fr, oleg@redhat.com, xemul@openvz.org, Cedric Le Goater <clg@vnet.ibm.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-Bryan Donlan <bdonlan@gmail.com> writes:
 
-> On Mon, Jun 20, 2011 at 07:45, Greg Kurz <gkurz@fr.ibm.com> wrote:
->> On Thu, 2011-06-16 at 13:54 -0400, Bryan Donlan wrote:
->
->>> Although getting the in-namespace PID is a useful thing, wouldn't a
->>> truly race-free API be preferable? Any access by PID has the race
->>> condition in which the target process could die, and its PID get
->>> recycled between retrieving the PID and doing something with it.
->>
->> Well the PID is a racy construct when used by another task than the
->> parent... fortunately, most userland code can cope with it ! :)
->
-> That doesn't mean we shouldn't try to fix the race! :)
->
->>> Perhaps a file-descriptor API would be better, such as something like
->>> this:
->>>
->>> int openpid(int id, int flags);
->>> int rt_sigqueueinfo_fd(int process_fd, int sig, siginfo_t *info);
->>> int sigqueue_fd(int process_fd, int sig, const union sigval value); //
->>> glibc wrapper
->>>
->>
->> The race still exists: openpid() is being passed a PID... Only the
->> parent can legitimately know that this PID identifies a specific
->> unwaited child.
->
-> Yes, the idea would be either the parent process, or the target
-> process itself would open the PID, then pass the resulting file
-> descriptor to whatever process is actually doing the killing.
-> Alternately, one could add additional calls to help identify whether
-> the right process was opened (perhaps a call to get a directory handle
-> to the corresponding /proc directory?)
+Linus,
 
-fd = open("/proc/self/", O_DIRECTORY);
-?
+When looking over my namespace file descriptor code I realized I goofed
+in the implementation.  I missed the addition of d_set_d_op, and
+painfully I badly placed the ptrace_may_read permission checks with the
+result that the dcache could cache things and bypass the checks.
 
-Doing something based on proc files seems like a reasonable direction to
-head if we are working on a race free api.
+The fixes are available at.
+git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/linux-2.6-nsfd.git
 
-I suspect all we need is a sigqueue file.
 
-Eric
+Eric W. Biederman (2):
+      proc: Use d_set_d_op in the namespace file descriptor code
+      proc: Fix the proc access checks to namespace files.
+
+ fs/proc/inode.c      |    6 +-
+ fs/proc/namespaces.c |  160 +++++++++++++++++++++++++++++++++++++++++++-------
+ 2 files changed, 142 insertions(+), 24 deletions(-)
+
+
+commit 7e05c935c50ab5c9ee488c411252076825ec2919
+Author: Eric W. Biederman <ebiederm@xmission.com>
+Date:   Sat Jun 18 17:48:18 2011 -0700
+
+    proc: Fix the proc access checks to namespace files.
+    
+    Access to namespace files needs to be restricted with
+    ptrace_may_read in proc to avoid unecessary information leaks
+    about processes and to avoid processes that could not otherwise
+    extend the lifetime of a namespace from opening a namespace file
+    and extending that lifetime.
+    
+    Add magic symlinks to the namespace files, so that we won't cache
+    the dentries for the namespace files in a way that can bypass the
+    ptrace_may_access checks.
+    
+    Remove the accident of the initial implementation that made
+    namespace files depend on pids and tasks, and change the
+    namespace files to be their own entities with their own dentry
+    and inode operations. The new namespace dentry operations
+    specify a policy of not caching namespace dentries when not in
+    use.  Not caching unused namespace dentries makes it easy to
+    verify the dcache won't keep namespaces alive longer than
+    necessary.
+    
+    Change the owner of namespace files to root as derving the
+    ownership of namespace files from a process is no longer possible
+    as namespace files are no longer implemented as per process
+    entities.  Namespace files being read only as root is safe and
+    changes nothing in practice as the kernel interfaces that take
+    namespace file descriptors require root capabilities.
+    
+    Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
+
+commit b20c223833c931700f88ec53a54e2f95d0e01052
+Author: Eric W. Biederman <ebiederm@xmission.com>
+Date:   Sat Jun 18 23:34:09 2011 -0700
+
+    proc: Use d_set_d_op in the namespace file descriptor code
+    
+    Without this none of the pid_dentry_operations methods will
+    be called and we can slowly leak namespace file descriptors.
+    
+    Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
