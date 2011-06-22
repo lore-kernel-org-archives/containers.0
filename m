@@ -1,31 +1,68 @@
-From: Linus Torvalds <torvalds@linux-foundation.org>
-Subject: Re: [GIT PULL] nsfd fixes
-Date: Tue, 21 Jun 2011 18:50:04 -0700
-Message-ID: <BANLkTin-2x3csO_OHbyNhyZn4eURpYEoDQ@mail.gmail.com>
-References: <m162nyn8jd.fsf@fess.ebiederm.org> <BANLkTikq0XRkvkX6O5C2yKf6rRvMWciZpA@mail.gmail.com>
- <BANLkTikkHsd4kLnHdtS7D8QGBQyFuYhFBg@mail.gmail.com>
+From: Greg Kurz <gkurz@fr.ibm.com>
+Subject: Re: [PATCH] Introduce ActivePid: in /proc/self/status (v2, was
+ Vpid:)
+Date: Wed, 22 Jun 2011 17:00:37 +0200
+Message-ID: <1308754837.2959.58.camel@bahia.local>
+References: <20110615145527.4016.70157.stgit@bahia.local>
+	 <BANLkTimSC_OSrbekhM=wd2Gie4np3Q4F5A@mail.gmail.com>
+	 <1308570316.8230.140.camel@bahia.local>
+	 <BANLkTiknqo0iKry7mjq+mc4iOWj_A_mrrw@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 7bit
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <BANLkTikkHsd4kLnHdtS7D8QGBQyFuYhFBg@mail.gmail.com>
+In-Reply-To: <BANLkTiknqo0iKry7mjq+mc4iOWj_A_mrrw@mail.gmail.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Mike Snitzer <snitzer@gmail.com>
-Cc: "Eric W. Biederman" <ebiederm@xmission.com>, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
+To: Bryan Donlan <bdonlan@gmail.com>
+Cc: akpm@linux-foundation.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org, serge@hallyn.com, daniel.lezcano@free.fr, ebiederm@xmission.com, oleg@redhat.com, xemul@openvz.org, Cedric Le Goater <clg@vnet.ibm.com>
 List-Id: containers.vger.kernel.org
 
-On Tue, Jun 21, 2011 at 6:29 PM, Mike Snitzer <snitzer@gmail.com> wrote:
->
-> I had to read it a couple times too: nSFd not nFSd.
->
-> As in Name Space File Descriptors.
+On Mon, 2011-06-20 at 13:37 -0400, Bryan Donlan wrote:
+> On Mon, Jun 20, 2011 at 07:45, Greg Kurz <gkurz@fr.ibm.com> wrote:
+> > On Thu, 2011-06-16 at 13:54 -0400, Bryan Donlan wrote:
+> 
+> >> Although getting the in-namespace PID is a useful thing, wouldn't a
+> >> truly race-free API be preferable? Any access by PID has the race
+> >> condition in which the target process could die, and its PID get
+> >> recycled between retrieving the PID and doing something with it.
+> >
+> > Well the PID is a racy construct when used by another task than the
+> > parent... fortunately, most userland code can cope with it ! :)
+> 
+> That doesn't mean we shouldn't try to fix the race! :)
+> 
+> >> Perhaps a file-descriptor API would be better, such as something like
+> >> this:
+> >>
+> >> int openpid(int id, int flags);
+> >> int rt_sigqueueinfo_fd(int process_fd, int sig, siginfo_t *info);
+> >> int sigqueue_fd(int process_fd, int sig, const union sigval value); //
+> >> glibc wrapper
+> >>
+> >
+> > The race still exists: openpid() is being passed a PID... Only the
+> > parent can legitimately know that this PID identifies a specific
+> > unwaited child.
+> 
+> Yes, the idea would be either the parent process, or the target
+> process itself would open the PID, then pass the resulting file
+> descriptor to whatever process is actually doing the killing.
 
-Ok, that's just even crazier.
+Agreed. Such an API would be useful in a scenario where the task to be
+killed and the killing task can share a file descriptor: same thread
+group or inherited with clone() or connected with an AF_UNIX socket.
+My point was just that the racy pid based API will still be needed to
+handle all the other scenarios. But maybe it's fine to have two sets of
+process handling calls.
 
-Eric, stop making up random letter combinations that make sense to
-NOBODY but you. Ok?
+> Alternately, one could add additional calls to help identify whether
+> the right process was opened (perhaps a call to get a directory handle
+> to the corresponding /proc directory?)
 
-If you can't be bothered to write a few more letters and make things
-readable, why would you expect anybody else to bother spending the
-time looking at your emails?
+-- 
+Gregory Kurz                                     gkurz@fr.ibm.com
+Software Engineer @ IBM/Meiosys                  http://www.ibm.com
+Tel +33 (0)534 638 479                           Fax +33 (0)561 400 420
 
-                       Linus
+"Anarchy is about taking complete responsibility for yourself."
+        Alan Moore.
