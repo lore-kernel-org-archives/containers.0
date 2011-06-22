@@ -1,75 +1,72 @@
 From: Greg Kurz <gkurz@fr.ibm.com>
-Subject: Re: [PATCH] Introduce ActivePid: in /proc/self/status (v2, was
- Vpid:)
-Date: Wed, 22 Jun 2011 17:29:25 +0200
-Message-ID: <1308756565.2959.65.camel@bahia.local>
-References: <20110615145527.4016.70157.stgit@bahia.local>
-	 <BANLkTimSC_OSrbekhM=wd2Gie4np3Q4F5A@mail.gmail.com>
-	 <1308570316.8230.140.camel@bahia.local>
-	 <BANLkTiknqo0iKry7mjq+mc4iOWj_A_mrrw@mail.gmail.com>
-	 <m1ei2o9l7a.fsf@fess.ebiederm.org>
+Subject: [PATCH] Introduce ActivePid: in /proc/self/status (v3)
+Date: Wed, 22 Jun 2011 17:44:46 +0200
+Message-ID: <20110622154445.20926.21422.stgit@bahia.local>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <m1ei2o9l7a.fsf@fess.ebiederm.org>
 Sender: linux-kernel-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Bryan Donlan <bdonlan@gmail.com>, akpm@linux-foundation.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org, serge@hallyn.com, daniel.lezcano@free.fr, oleg@redhat.com, xemul@openvz.org, Cedric Le Goater <clg@vnet.ibm.com>
+To: akpm@linux-foundation.org
+Cc: containers@lists.osdl.org, linux-kernel@vger.kernel.org, serge@hallyn.com, daniel.lezcano@free.fr, ebiederm@xmission.com, oleg@redhat.com, xemul@openvz.org, clg@fr.ibm.com
 List-Id: containers.vger.kernel.org
 
-On Mon, 2011-06-20 at 15:44 -0700, Eric W. Biederman wrote:
-> Bryan Donlan <bdonlan@gmail.com> writes:
-> 
-> > On Mon, Jun 20, 2011 at 07:45, Greg Kurz <gkurz@fr.ibm.com> wrote:
-> >> On Thu, 2011-06-16 at 13:54 -0400, Bryan Donlan wrote:
-> >
-> >>> Although getting the in-namespace PID is a useful thing, wouldn't a
-> >>> truly race-free API be preferable? Any access by PID has the race
-> >>> condition in which the target process could die, and its PID get
-> >>> recycled between retrieving the PID and doing something with it.
-> >>
-> >> Well the PID is a racy construct when used by another task than the
-> >> parent... fortunately, most userland code can cope with it ! :)
-> >
-> > That doesn't mean we shouldn't try to fix the race! :)
-> >
-> >>> Perhaps a file-descriptor API would be better, such as something like
-> >>> this:
-> >>>
-> >>> int openpid(int id, int flags);
-> >>> int rt_sigqueueinfo_fd(int process_fd, int sig, siginfo_t *info);
-> >>> int sigqueue_fd(int process_fd, int sig, const union sigval value); //
-> >>> glibc wrapper
-> >>>
-> >>
-> >> The race still exists: openpid() is being passed a PID... Only the
-> >> parent can legitimately know that this PID identifies a specific
-> >> unwaited child.
-> >
-> > Yes, the idea would be either the parent process, or the target
-> > process itself would open the PID, then pass the resulting file
-> > descriptor to whatever process is actually doing the killing.
-> > Alternately, one could add additional calls to help identify whether
-> > the right process was opened (perhaps a call to get a directory handle
-> > to the corresponding /proc directory?)
-> 
-> fd = open("/proc/self/", O_DIRECTORY);
-> ?
-> 
-> Doing something based on proc files seems like a reasonable direction to
-> head if we are working on a race free api.
-> 
-> I suspect all we need is a sigqueue file.
-> 
+Since pid namespaces were introduced, there's a recurring demand: how one
+can correlate a pid from a child pid ns with a pid from a parent pid ns ?
+The need arises in the LXC community when one wants to send a signal from
+the host (aka. init_pid_ns context) to a container process for which one
+only knows the pid inside the container.
 
-Are you referring to Bryan's rt_sigqueueinfo_fd() syscall or to a
-new /proc/self/sigqueue file ?
+In the future, this should be achievable thanks to Eric Biederman's setns()
+syscall but there's still some work to be done to support pid namespaces:
 
--- 
-Gregory Kurz                                     gkurz@fr.ibm.com
-Software Engineer @ IBM/Meiosys                  http://www.ibm.com
-Tel +33 (0)534 638 479                           Fax +33 (0)561 400 420
+https://lkml.org/lkml/2011/5/21/162
 
-"Anarchy is about taking complete responsibility for yourself."
-        Alan Moore.
+As stated by Serge Hallyn in:
+
+http://sourceforge.net/mailarchive/message.php?msg_id=27424447
+
+"There is nothing that gives you a 100% guaranteed correct race-free
+correspondence right now.  You can look under /proc/<pid>/root/proc/ to
+see the pids valid in the container, and you can relate output of
+lxc-ps --forest to ps --forest output.  But nothing under /proc that I
+know of tells you "this task is the same as that task".  You can't
+even look at /proc/<pid> inode numbers since they are different
+filesystems for each proc mount."
+
+This patch adds a single line to /proc/self/status. Provided one has kept
+track of its container tasks (with a cgroup like liblxc does for example),
+he may correlate global pids and container pids. This is still racy but
+definitely easier than what we have today.
+
+ChangeLog:
+	v2: - changed Vpid: to ActivePid:
+	    - lock ->sighand before calling task_active_pid_ns()
+	v3: - use pid arg passed to task_state()
+
+Signed-off-by: Greg Kurz <gkurz@fr.ibm.com>
+Signed-off-by: Cedric Le Goater <clg@fr.ibm.com>
+---
+
+ fs/proc/array.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/fs/proc/array.c b/fs/proc/array.c
+index 5e4f776..b7316cc 100644
+--- a/fs/proc/array.c
++++ b/fs/proc/array.c
+@@ -183,12 +183,14 @@ static inline void task_state(struct seq_file *m, struct pid_namespace *ns,
+ 		"Pid:\t%d\n"
+ 		"PPid:\t%d\n"
+ 		"TracerPid:\t%d\n"
++		"ActivePid:\t%d\n"
+ 		"Uid:\t%d\t%d\t%d\t%d\n"
+ 		"Gid:\t%d\t%d\t%d\t%d\n",
+ 		get_task_state(p),
+ 		task_tgid_nr_ns(p, ns),
+ 		pid_nr_ns(pid, ns),
+ 		ppid, tpid,
++		pid_nr_ns(pid, ns_of_pid(pid)),
+ 		cred->uid, cred->euid, cred->suid, cred->fsuid,
+ 		cred->gid, cred->egid, cred->sgid, cred->fsgid);
+ 
