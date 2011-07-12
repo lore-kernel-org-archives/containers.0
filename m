@@ -1,7 +1,8 @@
 From: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC PATCH 05/14] userns: clamp down users of cap_raised
-Date: Tue, 12 Jul 2011 23:30:43 +0000
-Message-ID: <1310513452-13397-6-git-send-email-serge@hallyn.com>
+Subject: [RFC PATCH 06/14] user namespace: make each net (net_ns) belong to a
+	user_ns
+Date: Tue, 12 Jul 2011 23:30:44 +0000
+Message-ID: <1310513452-13397-7-git-send-email-serge@hallyn.com>
 References: <1310513452-13397-1-git-send-email-serge@hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,76 +24,80 @@ List-Id: containers.vger.kernel.org
 
 From: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 
-A few modules are using cap_raised(current_cap(), cap) to authorize
-actions, but the privilege should be applicable against the initial
-user namespace.  Refuse privilege if the caller is not in init_user_ns.
+This way we can target capabilites at the user_ns which created the
+net ns.
+
+Changelog:
+   jul 8: nsproxy: don't assign netns->userns if not cloning.
 
 Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Cc: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- drivers/block/drbd/drbd_nl.c           |    5 +++++
- drivers/md/dm-log-userspace-transfer.c |    3 +++
- drivers/staging/pohmelfs/config.c      |    3 +++
- drivers/video/uvesafb.c                |    3 +++
- 4 files changed, 14 insertions(+), 0 deletions(-)
+ include/net/net_namespace.h |    2 ++
+ kernel/nsproxy.c            |    2 ++
+ net/core/net_namespace.c    |    3 +++
+ 3 files changed, 7 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/block/drbd/drbd_nl.c b/drivers/block/drbd/drbd_nl.c
-index 515bcd9..7717f8a 100644
---- a/drivers/block/drbd/drbd_nl.c
-+++ b/drivers/block/drbd/drbd_nl.c
-@@ -2297,6 +2297,11 @@ static void drbd_connector_callback(struct cn_msg *req, struct netlink_skb_parms
- 		return;
+diff --git a/include/net/net_namespace.h b/include/net/net_namespace.h
+index aef430d..0664fff 100644
+--- a/include/net/net_namespace.h
++++ b/include/net/net_namespace.h
+@@ -29,6 +29,7 @@ struct ctl_table_header;
+ struct net_generic;
+ struct sock;
+ struct netns_ipvs;
++struct user_namespace;
+ 
+ 
+ #define NETDEV_HASHBITS    8
+@@ -100,6 +101,7 @@ struct net {
+ 	struct netns_xfrm	xfrm;
+ #endif
+ 	struct netns_ipvs	*ipvs;
++	struct user_namespace	*user_ns;
+ };
+ 
+ 
+diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+index a687405..d3e5b7e 100644
+--- a/kernel/nsproxy.c
++++ b/kernel/nsproxy.c
+@@ -95,6 +95,8 @@ static struct nsproxy *create_new_namespaces(unsigned long flags,
+ 		err = PTR_ERR(new_nsp->net_ns);
+ 		goto out_net;
  	}
++	if (flags & CLONE_NEWNET)
++		new_nsp->net_ns->user_ns = get_user_ns(task_cred_xxx(tsk, user_ns));
  
-+	if (current_user_ns() != &init_user_ns) {
-+		retcode = ERR_PERM;
-+		goto fail;
-+	}
-+
- 	if (!cap_raised(current_cap(), CAP_SYS_ADMIN)) {
- 		retcode = ERR_PERM;
- 		goto fail;
-diff --git a/drivers/md/dm-log-userspace-transfer.c b/drivers/md/dm-log-userspace-transfer.c
-index 1f23e04..140ca81 100644
---- a/drivers/md/dm-log-userspace-transfer.c
-+++ b/drivers/md/dm-log-userspace-transfer.c
-@@ -134,6 +134,9 @@ static void cn_ulog_callback(struct cn_msg *msg, struct netlink_skb_parms *nsp)
- {
- 	struct dm_ulog_request *tfr = (struct dm_ulog_request *)(msg + 1);
+ 	return new_nsp;
  
-+	if (current_user_ns() != &init_user_ns)
-+		return;
-+
- 	if (!cap_raised(current_cap(), CAP_SYS_ADMIN))
- 		return;
+diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
+index ea489db..2b5a4cb 100644
+--- a/net/core/net_namespace.c
++++ b/net/core/net_namespace.c
+@@ -10,6 +10,7 @@
+ #include <linux/nsproxy.h>
+ #include <linux/proc_fs.h>
+ #include <linux/file.h>
++#include <linux/user_namespace.h>
+ #include <net/net_namespace.h>
+ #include <net/netns/generic.h>
  
-diff --git a/drivers/staging/pohmelfs/config.c b/drivers/staging/pohmelfs/config.c
-index b6c42cb..cd259d0 100644
---- a/drivers/staging/pohmelfs/config.c
-+++ b/drivers/staging/pohmelfs/config.c
-@@ -525,6 +525,9 @@ static void pohmelfs_cn_callback(struct cn_msg *msg, struct netlink_skb_parms *n
- {
- 	int err;
+@@ -208,6 +209,7 @@ static void net_free(struct net *net)
+ 	}
+ #endif
+ 	kfree(net->gen);
++	put_user_ns(net->user_ns);
+ 	kmem_cache_free(net_cachep, net);
+ }
  
-+	if (current_user_ns() != &init_user_ns)
-+		return;
-+
- 	if (!cap_raised(current_cap(), CAP_SYS_ADMIN))
- 		return;
+@@ -388,6 +390,7 @@ static int __init net_ns_init(void)
+ 	rcu_assign_pointer(init_net.gen, ng);
  
-diff --git a/drivers/video/uvesafb.c b/drivers/video/uvesafb.c
-index 7f8472c..71dab8e 100644
---- a/drivers/video/uvesafb.c
-+++ b/drivers/video/uvesafb.c
-@@ -73,6 +73,9 @@ static void uvesafb_cn_callback(struct cn_msg *msg, struct netlink_skb_parms *ns
- 	struct uvesafb_task *utask;
- 	struct uvesafb_ktask *task;
- 
-+	if (current_user_ns() != &init_user_ns)
-+		return;
-+
- 	if (!cap_raised(current_cap(), CAP_SYS_ADMIN))
- 		return;
+ 	mutex_lock(&net_mutex);
++	init_net.user_ns = &init_user_ns;
+ 	if (setup_net(&init_net))
+ 		panic("Could not setup the initial network namespace");
  
 -- 
 1.7.4.1
