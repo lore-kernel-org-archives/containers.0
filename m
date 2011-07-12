@@ -1,8 +1,7 @@
 From: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC PATCH 10/14] net/core/scm.c: target capable() calls to user_ns
-	owning the net_ns
-Date: Tue, 12 Jul 2011 23:30:48 +0000
-Message-ID: <1310513452-13397-11-git-send-email-serge__6596.9074647457$1310514079$gmane$org@hallyn.com>
+Subject: [RFC PATCH 11/14] userns: make some net-sysfs capable calls targeted
+Date: Tue, 12 Jul 2011 23:30:49 +0000
+Message-ID: <1310513452-13397-12-git-send-email-serge__28531.7514594228$1310514192$gmane$org@hallyn.com>
 References: <1310513452-13397-1-git-send-email-serge@hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,78 +23,35 @@ List-Id: containers.vger.kernel.org
 
 From: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 
-The uid/gid comparisons don't have to be pulled out.  This just seemed
-more easily proved correct.
+Changelog: jul 1: fix compilation errors (net_device != net)
 
 Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Cc: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- net/core/scm.c |   41 ++++++++++++++++++++++++++++++++++-------
- 1 files changed, 34 insertions(+), 7 deletions(-)
+ net/core/net-sysfs.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/net/core/scm.c b/net/core/scm.c
-index 4c1ef02..21b5d0b 100644
---- a/net/core/scm.c
-+++ b/net/core/scm.c
-@@ -43,17 +43,44 @@
-  *	setu(g)id.
-  */
+diff --git a/net/core/net-sysfs.c b/net/core/net-sysfs.c
+index 33d2a1f..b651baf 100644
+--- a/net/core/net-sysfs.c
++++ b/net/core/net-sysfs.c
+@@ -76,7 +76,7 @@ static ssize_t netdev_store(struct device *dev, struct device_attribute *attr,
+ 	unsigned long new;
+ 	int ret = -EINVAL;
  
--static __inline__ int scm_check_creds(struct ucred *creds)
-+static __inline__ bool uidequiv(struct cred *src, struct ucred *tgt,
-+			       struct user_namespace *ns)
-+{
-+	if (src->user_ns != ns)
-+		goto check_capable;
-+	if (src->uid == tgt->uid || src->euid == tgt->uid ||
-+	    src->suid == tgt->uid)
-+		return true;
-+check_capable:
-+	if (ns_capable(ns, CAP_SETUID))
-+		return true;
-+	return false;
-+}
-+
-+static __inline__ bool gidequiv(struct cred *src, struct ucred *tgt,
-+			       struct user_namespace *ns)
-+{
-+	if (src->user_ns != ns)
-+		goto check_capable;
-+	if (src->gid == tgt->gid || src->egid == tgt->gid ||
-+	    src->sgid == tgt->gid)
-+		return true;
-+check_capable:
-+	if (ns_capable(ns, CAP_SETGID))
-+		return true;
-+	return false;
-+}
-+
-+static __inline__ int scm_check_creds(struct ucred *creds, struct socket *sock)
- {
- 	const struct cred *cred = current_cred();
-+	struct user_namespace *ns = sock_net(sock->sk)->user_ns;
+-	if (!capable(CAP_NET_ADMIN))
++	if (!ns_capable(dev_net(net)->user_ns, CAP_NET_ADMIN))
+ 		return -EPERM;
  
--	if ((creds->pid == task_tgid_vnr(current) || capable(CAP_SYS_ADMIN)) &&
--	    ((creds->uid == cred->uid   || creds->uid == cred->euid ||
--	      creds->uid == cred->suid) || capable(CAP_SETUID)) &&
--	    ((creds->gid == cred->gid   || creds->gid == cred->egid ||
--	      creds->gid == cred->sgid) || capable(CAP_SETGID))) {
-+	if ((creds->pid == task_tgid_vnr(current) || ns_capable(ns, CAP_SYS_ADMIN)) &&
-+	     uidequiv(cred, creds, ns) && gidequiv(cred, creds, ns)) {
- 	       return 0;
- 	}
-+
- 	return -EPERM;
- }
+ 	new = simple_strtoul(buf, &endp, 0);
+@@ -262,7 +262,7 @@ static ssize_t store_ifalias(struct device *dev, struct device_attribute *attr,
+ 	size_t count = len;
+ 	ssize_t ret;
  
-@@ -169,7 +196,7 @@ int __scm_send(struct socket *sock, struct msghdr *msg, struct scm_cookie *p)
- 			if (cmsg->cmsg_len != CMSG_LEN(sizeof(struct ucred)))
- 				goto error;
- 			memcpy(&p->creds, CMSG_DATA(cmsg), sizeof(struct ucred));
--			err = scm_check_creds(&p->creds);
-+			err = scm_check_creds(&p->creds, sock);
- 			if (err)
- 				goto error;
+-	if (!capable(CAP_NET_ADMIN))
++	if (!ns_capable(dev_net(netdev)->user_ns, CAP_NET_ADMIN))
+ 		return -EPERM;
  
+ 	/* ignore trailing newline */
 -- 
 1.7.4.1
