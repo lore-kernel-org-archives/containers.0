@@ -1,7 +1,7 @@
 From: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC PATCH 02/14] allow root in container to copy namespaces
-Date: Tue, 12 Jul 2011 23:30:40 +0000
-Message-ID: <1310513452-13397-3-git-send-email-serge@hallyn.com>
+Subject: [RFC PATCH 05/14] userns: clamp down users of cap_raised
+Date: Tue, 12 Jul 2011 23:30:43 +0000
+Message-ID: <1310513452-13397-6-git-send-email-serge@hallyn.com>
 References: <1310513452-13397-1-git-send-email-serge@hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,68 +23,76 @@ List-Id: containers.vger.kernel.org
 
 From: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 
-Othewise nested containers with user namespaces won't be possible.
-
-It's true that user namespaces are not yet fully isolated, but for
-that same reason there are far worse things that root in a child
-user ns can do.  Spawning a child user ns is not in itself bad.
-
-This patch also allows setns for root in a container:
-@Eric Biederman: are there gotchas in allowing setns from child
-userns?
+A few modules are using cap_raised(current_cap(), cap) to authorize
+actions, but the privilege should be applicable against the initial
+user namespace.  Refuse privilege if the caller is not in init_user_ns.
 
 Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Cc: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- kernel/fork.c    |    4 ++--
- kernel/nsproxy.c |    6 +++---
- 2 files changed, 5 insertions(+), 5 deletions(-)
+ drivers/block/drbd/drbd_nl.c           |    5 +++++
+ drivers/md/dm-log-userspace-transfer.c |    3 +++
+ drivers/staging/pohmelfs/config.c      |    3 +++
+ drivers/video/uvesafb.c                |    3 +++
+ 4 files changed, 14 insertions(+), 0 deletions(-)
 
-diff --git a/kernel/fork.c b/kernel/fork.c
-index 0276c30..01d7564 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -1475,8 +1475,8 @@ long do_fork(unsigned long clone_flags,
- 		/* hopefully this check will go away when userns support is
- 		 * complete
- 		 */
--		if (!capable(CAP_SYS_ADMIN) || !capable(CAP_SETUID) ||
--				!capable(CAP_SETGID))
-+		if (!nsown_capable(CAP_SYS_ADMIN) || !nsown_capable(CAP_SETUID) ||
-+				!nsown_capable(CAP_SETGID))
- 			return -EPERM;
+diff --git a/drivers/block/drbd/drbd_nl.c b/drivers/block/drbd/drbd_nl.c
+index 515bcd9..7717f8a 100644
+--- a/drivers/block/drbd/drbd_nl.c
++++ b/drivers/block/drbd/drbd_nl.c
+@@ -2297,6 +2297,11 @@ static void drbd_connector_callback(struct cn_msg *req, struct netlink_skb_parms
+ 		return;
  	}
  
-diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
-index d6a00f3..a687405 100644
---- a/kernel/nsproxy.c
-+++ b/kernel/nsproxy.c
-@@ -134,7 +134,7 @@ int copy_namespaces(unsigned long flags, struct task_struct *tsk)
- 				CLONE_NEWPID | CLONE_NEWNET)))
- 		return 0;
++	if (current_user_ns() != &init_user_ns) {
++		retcode = ERR_PERM;
++		goto fail;
++	}
++
+ 	if (!cap_raised(current_cap(), CAP_SYS_ADMIN)) {
+ 		retcode = ERR_PERM;
+ 		goto fail;
+diff --git a/drivers/md/dm-log-userspace-transfer.c b/drivers/md/dm-log-userspace-transfer.c
+index 1f23e04..140ca81 100644
+--- a/drivers/md/dm-log-userspace-transfer.c
++++ b/drivers/md/dm-log-userspace-transfer.c
+@@ -134,6 +134,9 @@ static void cn_ulog_callback(struct cn_msg *msg, struct netlink_skb_parms *nsp)
+ {
+ 	struct dm_ulog_request *tfr = (struct dm_ulog_request *)(msg + 1);
  
--	if (!capable(CAP_SYS_ADMIN)) {
-+	if (!nsown_capable(CAP_SYS_ADMIN)) {
- 		err = -EPERM;
- 		goto out;
- 	}
-@@ -191,7 +191,7 @@ int unshare_nsproxy_namespaces(unsigned long unshare_flags,
- 			       CLONE_NEWNET)))
- 		return 0;
++	if (current_user_ns() != &init_user_ns)
++		return;
++
+ 	if (!cap_raised(current_cap(), CAP_SYS_ADMIN))
+ 		return;
  
--	if (!capable(CAP_SYS_ADMIN))
-+	if (!nsown_capable(CAP_SYS_ADMIN))
- 		return -EPERM;
- 
- 	*new_nsp = create_new_namespaces(unshare_flags, current,
-@@ -241,7 +241,7 @@ SYSCALL_DEFINE2(setns, int, fd, int, nstype)
- 	struct file *file;
+diff --git a/drivers/staging/pohmelfs/config.c b/drivers/staging/pohmelfs/config.c
+index b6c42cb..cd259d0 100644
+--- a/drivers/staging/pohmelfs/config.c
++++ b/drivers/staging/pohmelfs/config.c
+@@ -525,6 +525,9 @@ static void pohmelfs_cn_callback(struct cn_msg *msg, struct netlink_skb_parms *n
+ {
  	int err;
  
--	if (!capable(CAP_SYS_ADMIN))
-+	if (!nsown_capable(CAP_SYS_ADMIN))
- 		return -EPERM;
++	if (current_user_ns() != &init_user_ns)
++		return;
++
+ 	if (!cap_raised(current_cap(), CAP_SYS_ADMIN))
+ 		return;
  
- 	file = proc_ns_fget(fd);
+diff --git a/drivers/video/uvesafb.c b/drivers/video/uvesafb.c
+index 7f8472c..71dab8e 100644
+--- a/drivers/video/uvesafb.c
++++ b/drivers/video/uvesafb.c
+@@ -73,6 +73,9 @@ static void uvesafb_cn_callback(struct cn_msg *msg, struct netlink_skb_parms *ns
+ 	struct uvesafb_task *utask;
+ 	struct uvesafb_ktask *task;
+ 
++	if (current_user_ns() != &init_user_ns)
++		return;
++
+ 	if (!cap_raised(current_cap(), CAP_SYS_ADMIN))
+ 		return;
+ 
 -- 
 1.7.4.1
