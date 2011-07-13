@@ -1,14 +1,16 @@
-From: Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [RFC PATCH 08/14] af_netlink.c: make netlink_capable userns-aware
-Date: Wed, 13 Jul 2011 03:33:39 +0200
-Message-ID: <1310520819.2634.6.camel__22939.7407886156$1310520888$gmane$org@edumazet-laptop>
+Date: Wed, 13 Jul 2011 02:02:23 +0000
+Message-ID: <20110713020223.GA14187__33018.4911647395$1310522586$gmane$org@hallyn.com>
 References: <1310513452-13397-1-git-send-email-serge@hallyn.com>
 	<1310513452-13397-9-git-send-email-serge@hallyn.com>
+	<1310520819.2634.6.camel@edumazet-laptop>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1310513452-13397-9-git-send-email-serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1310520819.2634.6.camel@edumazet-laptop>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,30 +20,54 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+To: Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Cc: dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-TGUgbWFyZGkgMTIganVpbGxldCAyMDExIMOgIDIzOjMwICswMDAwLCBTZXJnZSBIYWxseW4gYSDD
-qWNyaXQgOgo+IEZyb206IFNlcmdlIEUuIEhhbGx5biA8c2VyZ2UuaGFsbHluQGNhbm9uaWNhbC5j
-b20+Cj4gCj4gbmV0bGlua19jYXBhYmxlIHNob3VsZCBjaGVjayBmb3IgcGVybWlzc2lvbnMgYWdh
-aW5zdCB0aGUgdXNlcgo+IG5hbWVzcGFjZSBvd25pbmcgdGhlIHNvY2tldCBpbiBxdWVzdGlvbi4K
-PiAKPiBTaWduZWQtb2ZmLWJ5OiBTZXJnZSBFLiBIYWxseW4gPHNlcmdlLmhhbGx5bkBjYW5vbmlj
-YWwuY29tPgo+IENjOiBFcmljIFcuIEJpZWRlcm1hbiA8ZWJpZWRlcm1AeG1pc3Npb24uY29tPgo+
-IC0tLQo+ICBuZXQvbmV0bGluay9hZl9uZXRsaW5rLmMgfCAgIDExICsrKysrKysrKy0tCj4gIDEg
-ZmlsZXMgY2hhbmdlZCwgOSBpbnNlcnRpb25zKCspLCAyIGRlbGV0aW9ucygtKQo+IAo+IGRpZmYg
-LS1naXQgYS9uZXQvbmV0bGluay9hZl9uZXRsaW5rLmMgYi9uZXQvbmV0bGluay9hZl9uZXRsaW5r
-LmMKPiBpbmRleCA2ZWY2NGFkLi44MWMxMDk5IDEwMDY0NAo+IC0tLSBhL25ldC9uZXRsaW5rL2Fm
-X25ldGxpbmsuYwo+ICsrKyBiL25ldC9uZXRsaW5rL2FmX25ldGxpbmsuYwo+IEBAIC01ODAsOCAr
-NTgwLDE1IEBAIHJldHJ5Ogo+ICAKPiAgc3RhdGljIGlubGluZSBpbnQgbmV0bGlua19jYXBhYmxl
-KHN0cnVjdCBzb2NrZXQgKnNvY2ssIHVuc2lnbmVkIGludCBmbGFnKQo+ICB7Cj4gLQlyZXR1cm4g
-KG5sX3RhYmxlW3NvY2stPnNrLT5za19wcm90b2NvbF0ubmxfbm9ucm9vdCAmIGZsYWcpIHx8Cj4g
-LQkgICAgICAgY2FwYWJsZShDQVBfTkVUX0FETUlOKTsKPiArCXN0cnVjdCBuZXQgKm5ldDsKPiAr
-CWlmIChubF90YWJsZVtzb2NrLT5zay0+c2tfcHJvdG9jb2xdLm5sX25vbnJvb3QgJiBmbGFnKQo+
-ICsJCXJldHVybiAxOwo+ICsjaWZkZWYgQ09ORklHX05FVF9OUwo+ICsJbmV0ID0gc29jay0+c2st
-PnNrX25ldDsKPiArI2Vsc2UKPiArCW5ldCA9ICZpbml0X25ldDsKPiArI2VuZGlmCgpUaGlzIGlz
-IHJlYWxseSB1Z2x5LCBwbGVhc2UgdXNlIDoKCgluZXQgPSBzb2NrX25ldChzayk7CgpBbmQgbm8g
-bW9yZSAjaWZkZWYKCgoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3Vu
-ZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlz
-dGluZm8vY29udGFpbmVycw==
+Quoting Eric Dumazet (eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
+> Le mardi 12 juillet 2011 =E0 23:30 +0000, Serge Hallyn a =E9crit :
+> > From: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+> > =
+
+> > netlink_capable should check for permissions against the user
+> > namespace owning the socket in question.
+> > =
+
+> > Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+> > Cc: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> > ---
+> >  net/netlink/af_netlink.c |   11 +++++++++--
+> >  1 files changed, 9 insertions(+), 2 deletions(-)
+> > =
+
+> > diff --git a/net/netlink/af_netlink.c b/net/netlink/af_netlink.c
+> > index 6ef64ad..81c1099 100644
+> > --- a/net/netlink/af_netlink.c
+> > +++ b/net/netlink/af_netlink.c
+> > @@ -580,8 +580,15 @@ retry:
+> >  =
+
+> >  static inline int netlink_capable(struct socket *sock, unsigned int fl=
+ag)
+> >  {
+> > -	return (nl_table[sock->sk->sk_protocol].nl_nonroot & flag) ||
+> > -	       capable(CAP_NET_ADMIN);
+> > +	struct net *net;
+> > +	if (nl_table[sock->sk->sk_protocol].nl_nonroot & flag)
+> > +		return 1;
+> > +#ifdef CONFIG_NET_NS
+> > +	net =3D sock->sk->sk_net;
+> > +#else
+> > +	net =3D &init_net;
+> > +#endif
+> =
+
+> This is really ugly, please use :
+> =
+
+> 	net =3D sock_net(sk);
+> =
+
+> And no more #ifdef
+
+thanks, will do!
