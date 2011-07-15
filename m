@@ -1,7 +1,7 @@
 From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: [PATCH 3/7] proc: Introduce the Children: line in /proc/<pid>/status
-Date: Fri, 15 Jul 2011 17:46:43 +0400
-Message-ID: <4E2044C3.7050506@parallels.com>
+Subject: [PATCH 2/7] vfs: Introduce the fd closing helper
+Date: Fri, 15 Jul 2011 17:46:15 +0400
+Message-ID: <4E2044A7.4030103@parallels.com>
 References: <4E204466.8010204@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,46 +21,87 @@ To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Oren Laadan <ore
 Cc: Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Although we can get the pids of some task's issue, this is just 
-more convenient to have them this way.
+This is nothing but making is possible to call the sys_close from the kernel.
 
-Signed-off-by: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>.
+Signed-off-by: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 
 ---
- fs/proc/array.c |   14 ++++++++++++++
- 1 files changed, 14 insertions(+), 0 deletions(-)
+ fs/open.c          |   32 ++++++++++++++++++++------------
+ include/linux/fs.h |    1 +
+ 2 files changed, 21 insertions(+), 12 deletions(-)
 
-diff --git a/fs/proc/array.c b/fs/proc/array.c
-index 5e4f776..f01f480 100644
---- a/fs/proc/array.c
-+++ b/fs/proc/array.c
-@@ -158,6 +158,18 @@ static inline const char *get_task_state(struct task_struct *tsk)
- 	return *p;
- }
+diff --git a/fs/open.c b/fs/open.c
+index b52cf01..126aa8b 100644
+--- a/fs/open.c
++++ b/fs/open.c
+@@ -1078,17 +1078,11 @@ int filp_close(struct file *filp, fl_owner_t id)
  
-+static void task_children(struct seq_file *m, struct task_struct *p, struct pid_namespace *ns)
-+{
-+	struct task_struct *c;
-+
-+	seq_printf(m, "Children:");
-+	read_lock(&tasklist_lock);
-+	list_for_each_entry(c, &p->children, sibling)
-+		seq_printf(m, " %d", pid_nr_ns(task_pid(c), ns));
-+	read_unlock(&tasklist_lock);
-+	seq_putc(m, '\n');
-+}
-+
- static inline void task_state(struct seq_file *m, struct pid_namespace *ns,
- 				struct pid *pid, struct task_struct *p)
+ EXPORT_SYMBOL(filp_close);
+ 
+-/*
+- * Careful here! We test whether the file pointer is NULL before
+- * releasing the fd. This ensures that one clone task can't release
+- * an fd while another clone is opening it.
+- */
+-SYSCALL_DEFINE1(close, unsigned int, fd)
++int do_close(unsigned int fd)
  {
-@@ -192,6 +204,8 @@ static inline void task_state(struct seq_file *m, struct pid_namespace *ns,
- 		cred->uid, cred->euid, cred->suid, cred->fsuid,
- 		cred->gid, cred->egid, cred->sgid, cred->fsgid);
+ 	struct file * filp;
+ 	struct files_struct *files = current->files;
+ 	struct fdtable *fdt;
+-	int retval;
  
-+	task_children(m, p, ns);
+ 	spin_lock(&files->file_lock);
+ 	fdt = files_fdtable(files);
+@@ -1101,7 +1095,25 @@ SYSCALL_DEFINE1(close, unsigned int, fd)
+ 	FD_CLR(fd, fdt->close_on_exec);
+ 	__put_unused_fd(files, fd);
+ 	spin_unlock(&files->file_lock);
+-	retval = filp_close(filp, files);
 +
- 	task_lock(p);
- 	if (p->files)
- 		fdt = files_fdtable(p->files);
++	return filp_close(filp, files);
++
++out_unlock:
++	spin_unlock(&files->file_lock);
++	return -EBADF;
++}
++EXPORT_SYMBOL_GPL(do_close);
++
++/*
++ * Careful here! We test whether the file pointer is NULL before
++ * releasing the fd. This ensures that one clone task can't release
++ * an fd while another clone is opening it.
++ */
++SYSCALL_DEFINE1(close, unsigned int, fd)
++{
++	int retval;
++
++	retval = do_close(fd);
+ 
+ 	/* can't restart close syscall because file table entry was cleared */
+ 	if (unlikely(retval == -ERESTARTSYS ||
+@@ -1111,10 +1123,6 @@ SYSCALL_DEFINE1(close, unsigned int, fd)
+ 		retval = -EINTR;
+ 
+ 	return retval;
+-
+-out_unlock:
+-	spin_unlock(&files->file_lock);
+-	return -EBADF;
+ }
+ EXPORT_SYMBOL(sys_close);
+ 
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index cdf9495..77a5d3e 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1991,6 +1991,7 @@ extern struct file *file_open_root(struct dentry *, struct vfsmount *,
+ extern struct file * dentry_open(struct dentry *, struct vfsmount *, int,
+ 				 const struct cred *);
+ extern int filp_close(struct file *, fl_owner_t id);
++extern int do_close(unsigned int fd);
+ extern char * getname(const char __user *);
+ 
+ /* fs/ioctl.c */
 -- 
 1.5.5.6
