@@ -1,7 +1,7 @@
 From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: [PATCH 5/7] clone: Introduce the CLONE_CHILD_USEPID functionality
-Date: Fri, 15 Jul 2011 17:47:23 +0400
-Message-ID: <4E2044EB.20001@parallels.com>
+Subject: [PATCH 6/7] proc: Introduce the /proc/<pid>/dump file
+Date: Fri, 15 Jul 2011 17:47:44 +0400
+Message-ID: <4E204500.6040800@parallels.com>
 References: <4E204466.8010204@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,179 +21,573 @@ To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Oren Laadan <ore
 Cc: Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-The respective flag for clone() makes the latter to take the desired
-pid of a new process from the child_tidptr. The given pid is used as
-the pid for the pid namespace the parent is currently running in.
+An image read from file contains task's registers and information
+about its VM. Later this image can be execve-ed causing recreation
+of the previously read task state.
 
-Needed badly for restoring a process.
+The file format is my own, very simple. Introduced to make the code
+as simple as possible. Better file format (if any) is to be discussed.
 
 Signed-off-by: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 
 ---
- include/linux/pid.h   |    2 +-
- include/linux/sched.h |    1 +
- kernel/fork.c         |   10 ++++++-
- kernel/pid.c          |   70 +++++++++++++++++++++++++++++++++++-------------
- 4 files changed, 62 insertions(+), 21 deletions(-)
+ fs/proc/Kconfig            |    8 +
+ fs/proc/Makefile           |    1 +
+ fs/proc/base.c             |    3 +
+ fs/proc/img_dump.c         |  397 ++++++++++++++++++++++++++++++++++++++++++++
+ include/linux/binfmt_img.h |   87 ++++++++++
+ include/linux/proc_fs.h    |    2 +
+ 6 files changed, 498 insertions(+), 0 deletions(-)
+ create mode 100644 fs/proc/img_dump.c
+ create mode 100644 include/linux/binfmt_img.h
 
-diff --git a/include/linux/pid.h b/include/linux/pid.h
-index cdced84..de772ab 100644
---- a/include/linux/pid.h
-+++ b/include/linux/pid.h
-@@ -119,7 +119,7 @@ extern struct pid *find_get_pid(int nr);
- extern struct pid *find_ge_pid(int nr, struct pid_namespace *);
- int next_pidmap(struct pid_namespace *pid_ns, unsigned int last);
- 
--extern struct pid *alloc_pid(struct pid_namespace *ns);
-+extern struct pid *alloc_pid(struct pid_namespace *ns, int pid);
- extern void free_pid(struct pid *pid);
- 
- /*
-diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 781abd1..5b6c1e2 100644
---- a/include/linux/sched.h
-+++ b/include/linux/sched.h
-@@ -23,6 +23,7 @@
- #define CLONE_CHILD_SETTID	0x01000000	/* set the TID in the child */
- /* 0x02000000 was previously the unused CLONE_STOPPED (Start in stopped state)
-    and is now available for re-use. */
-+#define CLONE_CHILD_USEPID	0x02000000	/* use the given pid */
- #define CLONE_NEWUTS		0x04000000	/* New utsname group? */
- #define CLONE_NEWIPC		0x08000000	/* New ipcs */
- #define CLONE_NEWUSER		0x10000000	/* New user namespace */
-diff --git a/kernel/fork.c b/kernel/fork.c
-index e7548de..f30fbdb 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -1183,8 +1183,16 @@ static struct task_struct *copy_process(unsigned long clone_flags,
- 		goto bad_fork_cleanup_io;
- 
- 	if (pid != &init_struct_pid) {
-+		int want_pid = 0;
+diff --git a/fs/proc/Kconfig b/fs/proc/Kconfig
+index 15af622..c64bf75 100644
+--- a/fs/proc/Kconfig
++++ b/fs/proc/Kconfig
+@@ -67,3 +67,11 @@ config PROC_PAGE_MONITOR
+ 	  /proc/pid/smaps, /proc/pid/clear_refs, /proc/pid/pagemap,
+ 	  /proc/kpagecount, and /proc/kpageflags. Disabling these
+           interfaces will reduce the size of the kernel by approximately 4kb.
 +
-+		if (clone_flags & CLONE_CHILD_USEPID) {
-+			retval = get_user(want_pid, child_tidptr);
-+			if (retval)
-+				goto bad_fork_cleanup_io;
-+		}
++config PROC_IMG
++	default y
++	depends on PROC_FS
++	bool "Enable /proc/<pid>/dump file"
++	help
++	  Say Y here if you want to be able to produce checkpoint-restore images
++	  for tasks via proc
+diff --git a/fs/proc/Makefile b/fs/proc/Makefile
+index df434c5..3a59cb1 100644
+--- a/fs/proc/Makefile
++++ b/fs/proc/Makefile
+@@ -27,3 +27,4 @@ proc-$(CONFIG_PROC_VMCORE)	+= vmcore.o
+ proc-$(CONFIG_PROC_DEVICETREE)	+= proc_devtree.o
+ proc-$(CONFIG_PRINTK)	+= kmsg.o
+ proc-$(CONFIG_PROC_PAGE_MONITOR)	+= page.o
++proc-$(CONFIG_PROC_IMG) += img_dump.o
+diff --git a/fs/proc/base.c b/fs/proc/base.c
+index 633af12..c01438f 100644
+--- a/fs/proc/base.c
++++ b/fs/proc/base.c
+@@ -3044,6 +3044,9 @@ static const struct pid_entry tgid_base_stuff[] = {
+ #endif
+ 	INF("cmdline",    S_IRUGO, proc_pid_cmdline),
+ 	ONE("stat",       S_IRUGO, proc_tgid_stat),
++#ifdef CONFIG_PROC_IMG
++	REG("dump",	  S_IRUSR|S_IWUSR, proc_pid_dump_operations),
++#endif
+ 	ONE("statm",      S_IRUGO, proc_pid_statm),
+ 	REG("maps",       S_IRUGO, proc_maps_operations),
+ #ifdef CONFIG_NUMA
+diff --git a/fs/proc/img_dump.c b/fs/proc/img_dump.c
+new file mode 100644
+index 0000000..7fa52ef
+--- /dev/null
++++ b/fs/proc/img_dump.c
+@@ -0,0 +1,397 @@
++#include <linux/proc_fs.h>
++#include <linux/sched.h>
++#include <linux/uaccess.h>
++#include <linux/binfmt_img.h>
++#include <linux/mm.h>
++#include <linux/mman.h>
++#include <linux/highmem.h>
++#include <linux/types.h>
++#include "internal.h"
 +
- 		retval = -ENOMEM;
--		pid = alloc_pid(p->nsproxy->pid_ns);
-+		pid = alloc_pid(p->nsproxy->pid_ns, want_pid);
- 		if (!pid)
- 			goto bad_fork_cleanup_io;
- 	}
-diff --git a/kernel/pid.c b/kernel/pid.c
-index 57a8346..69ae1be 100644
---- a/kernel/pid.c
-+++ b/kernel/pid.c
-@@ -159,11 +159,55 @@ static void set_last_pid(struct pid_namespace *pid_ns, int base, int pid)
- 	} while ((prev != last_write) && (pid_before(base, last_write, pid)));
- }
- 
--static int alloc_pidmap(struct pid_namespace *pid_ns)
-+static int alloc_pidmap_page(struct pidmap *map)
++static int img_dump_buffer(char __user *ubuf, size_t size, void *buf, int len, int pos)
 +{
-+	if (unlikely(!map->page)) {
-+		void *page = kzalloc(PAGE_SIZE, GFP_KERNEL);
-+		/*
-+		 * Free the page if someone raced with us
-+		 * installing it:
-+		 */
-+		spin_lock_irq(&pidmap_lock);
-+		if (!map->page) {
-+			map->page = page;
-+			page = NULL;
-+		}
-+		spin_unlock_irq(&pidmap_lock);
-+		kfree(page);
-+		if (unlikely(!map->page))
-+			return -ENOMEM;
++	int ret;
++	static size_t dumped = 0;
++
++	len -= pos;
++	if (len > size)
++		len = size;
++
++	ret = copy_to_user(ubuf, buf + pos, len);
++	if (ret)
++		return -EFAULT;
++
++	dumped += len;
++	return len;
++}
++
++static int img_dump_header(char __user *buf, size_t size, int pos)
++{
++	struct binfmt_img_header hdr;
++
++	hdr.magic = BINFMT_IMG_MAGIC;
++	hdr.version = BINFMT_IMG_VERS_0;
++
++	return img_dump_buffer(buf, size, &hdr, sizeof(hdr), pos);
++}
++
++static __u16 encode_segment(unsigned short seg)
++{
++	if (seg == 0)
++		return CKPT_X86_SEG_NULL;
++	BUG_ON((seg & 3) != 3);
++
++	if (seg == __USER_CS)
++		return CKPT_X86_SEG_USER64_CS;
++	if (seg == __USER_DS)
++		return CKPT_X86_SEG_USER64_DS;
++#ifdef CONFIG_COMPAT
++	if (seg == __USER32_CS)
++		return CKPT_X86_SEG_USER32_CS;
++	if (seg == __USER32_DS)
++		return CKPT_X86_SEG_USER32_DS;
++#endif
++
++	if (seg & 4)
++		return CKPT_X86_SEG_LDT | (seg >> 3);
++
++	seg >>= 3;
++	if (GDT_ENTRY_TLS_MIN <= seg && seg <= GDT_ENTRY_TLS_MAX)
++		return CKPT_X86_SEG_TLS | (seg - GDT_ENTRY_TLS_MIN);
++
++	printk(KERN_ERR "c/r: (decode) bad segment %#hx\n", seg);
++	BUG();
++}
++
++static __u64 encode_tls(struct desc_struct *d)
++{
++	return ((__u64)d->a << 32) + d->b;
++}
++
++static int img_dump_regs(struct task_struct *p, char __user *buf, size_t size, int pos)
++{
++	struct binfmt_regs_image regi;
++	struct pt_regs *regs;
++	int i;
++
++	regs = task_pt_regs(p);
++
++	regi.r15 = regs->r15;
++	regi.r14 = regs->r14;
++	regi.r13 = regs->r13;
++	regi.r12 = regs->r12;
++	regi.r11 = regs->r11;
++	regi.r10 = regs->r10;
++	regi.r9 = regs->r9;
++	regi.r8 = regs->r8;
++	regi.ax = regs->ax;
++	regi.orig_ax = regs->orig_ax;
++	regi.bx = regs->bx;
++	regi.cx = regs->cx;
++	regi.dx = regs->dx;
++	regi.si = regs->si;
++	regi.di = regs->di;
++	regi.ip = regs->ip;
++	regi.flags = regs->flags;
++	regi.bp = regs->bp;
++	regi.sp = regs->sp;
++
++	/* segments */
++	regi.gsindex = encode_segment(p->thread.gsindex);
++	regi.fsindex = encode_segment(p->thread.fsindex);
++	regi.cs = encode_segment(regs->cs);
++	regi.ss = encode_segment(regs->ss);
++	regi.ds = encode_segment(p->thread.ds);
++	regi.es = encode_segment(p->thread.es);
++
++	BUILD_BUG_ON(GDT_ENTRY_TLS_ENTRIES != CKPT_TLS_ENTRIES);
++	for (i = 0; i < GDT_ENTRY_TLS_ENTRIES; i++)
++		regi.tls[i] = encode_tls(&p->thread.tls_array[i]);
++
++	if (p->thread.gsindex)
++		regi.gs = 0;
++	else
++		regi.gs = p->thread.gs;
++
++	if (p->thread.fsindex)
++		regi.fs = 0;
++	else
++		regi.fs = p->thread.fs;
++
++	return img_dump_buffer(buf, size, &regi, sizeof(regi), pos);
++}
++
++static int img_dump_mm(struct mm_struct *mm, char __user *buf, size_t size, int pos)
++{
++	struct binfmt_mm_image mmi;
++
++	mmi.flags = mm->flags;
++	mmi.def_flags = mm->def_flags;
++	mmi.start_code = mm->start_code;
++	mmi.end_code = mm->end_code;
++	mmi.start_data = mm->start_data;
++	mmi.end_data = mm->end_data;
++	mmi.start_brk = mm->start_brk;
++	mmi.brk = mm->brk;
++	mmi.start_stack = mm->start_stack;
++	mmi.arg_start = mm->arg_start;
++	mmi.arg_end = mm->arg_end;
++	mmi.env_start = mm->env_start;
++	mmi.env_end = mm->env_end;
++	mmi.exe_fd = 0;
++
++	return img_dump_buffer(buf, size, &mmi, sizeof(mmi), pos);
++}
++
++static int img_dump_vma(struct vm_area_struct *vma, char __user *buf, size_t size, int pos)
++{
++	struct binfmt_vma_image vmai;
++
++	if (vma == NULL) {
++		memset(&vmai, 0, sizeof(vmai));
++		goto dumpit;
 +	}
 +
++	printk("Dumping vma %016lx-%016lx %p/%p\n", vma->vm_start, vma->vm_end, vma, vma->vm_mm);
++
++	vmai.fd = 0;
++	vmai.prot = 0;
++	if (vma->vm_flags & VM_READ)
++		vmai.prot |= PROT_READ;
++	if (vma->vm_flags & VM_WRITE)
++		vmai.prot |= PROT_WRITE;
++	if (vma->vm_flags & VM_EXEC)
++		vmai.prot |= PROT_EXEC;
++
++	vmai.flags = 0;
++	if (vma->vm_file == NULL)
++		vmai.flags |= MAP_ANONYMOUS;
++	if (vma->vm_flags & VM_MAYSHARE)
++		vmai.flags |= MAP_SHARED;
++	else
++		vmai.flags |= MAP_PRIVATE;
++
++	vmai.start = vma->vm_start;
++	vmai.end = vma->vm_end;
++	vmai.pgoff = vma->vm_pgoff;
++
++dumpit:
++	return img_dump_buffer(buf, size, &vmai, sizeof(vmai), pos);
++}
++
++static int img_dump_page(unsigned long addr, void *data, char __user *buf, size_t size, int pos)
++{
++	struct binfmt_page_image pgi;
++	int ret = 0, tmp;
++
++	pgi.vaddr = addr;
++
++	if (pos < sizeof(pgi)) {
++		tmp = img_dump_buffer(buf, size, &pgi, sizeof(pgi), pos);
++		if (tmp < 0)
++			return tmp;
++
++		ret = tmp;
++		if (size <= ret)
++			return ret;
++
++		buf += ret;
++		size -= ret;
++		pos = 0;
++	} else
++		pos -= sizeof(pgi);
++
++	tmp = img_dump_buffer(buf, size, data, PAGE_SIZE, pos);
++	if (tmp < 0)
++		return tmp;
++
++	return ret + tmp;
++}
++
++static inline int is_private_vma(struct vm_area_struct *vma)
++{
++	if (vma->vm_file == NULL)
++		return 1;
++	if (!(vma->vm_flags & VM_SHARED))
++		return 1;
 +	return 0;
 +}
 +
-+static int set_pidmap(struct pid_namespace *pid_ns, int pid)
++static ssize_t do_produce_dump(struct task_struct *p, char __user *buf,
++		size_t size, loff_t *ppos)
 +{
-+	int offset;
-+	struct pidmap *map;
++	size_t img_pos = 0, img_ppos;
++	size_t produced = 0;
++	int len;
++	loff_t pos = *ppos;
++	struct mm_struct *mm;
++	struct vm_area_struct *vma;
 +
-+	offset = pid & BITS_PER_PAGE_MASK;
-+	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
++#define move_pos();	do {	\
++		buf += len;	\
++		produced += len;\
++		size -= len;	\
++		pos += len;	\
++	} while (0)
 +
-+	if (alloc_pidmap_page(map) < 0)
-+		return -ENOMEM;
++#define seek_pos(__size);	do {	\
++		img_ppos = img_pos;	\
++		img_pos += (__size);	\
++	} while (0)
 +
-+	if (!test_and_set_bit(offset, map->page)) {
-+		atomic_dec(&map->nr_free);
-+		return pid;
++	/* header */
++	seek_pos(sizeof(struct binfmt_img_header));
++	if (pos < img_pos) {
++		len = img_dump_header(buf, size, pos - img_ppos);
++		if (len < 0)
++			goto err;
++
++		move_pos();
++		if (size == 0)
++			goto out;
 +	}
 +
-+	return -EBUSY;
-+}
++	/* registers */
++	seek_pos(sizeof(struct binfmt_regs_image));
++	if (pos < img_pos) {
++		len = img_dump_regs(p, buf, size, pos - img_ppos);
++		if (len < 0)
++			goto err;
 +
-+static int alloc_pidmap(struct pid_namespace *pid_ns, int desired_pid)
- {
- 	int i, offset, max_scan, pid, last = pid_ns->last_pid;
- 	struct pidmap *map;
- 
-+	if (desired_pid)
-+		return set_pidmap(pid_ns, desired_pid);
++		move_pos();
++		if (size == 0)
++			goto out;
++	}
 +
- 	pid = last + 1;
- 	if (pid >= pid_max)
- 		pid = RESERVED_PIDS;
-@@ -176,22 +220,9 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
- 	 */
- 	max_scan = DIV_ROUND_UP(pid_max, BITS_PER_PAGE) - !offset;
- 	for (i = 0; i <= max_scan; ++i) {
--		if (unlikely(!map->page)) {
--			void *page = kzalloc(PAGE_SIZE, GFP_KERNEL);
--			/*
--			 * Free the page if someone raced with us
--			 * installing it:
--			 */
--			spin_lock_irq(&pidmap_lock);
--			if (!map->page) {
--				map->page = page;
--				page = NULL;
--			}
--			spin_unlock_irq(&pidmap_lock);
--			kfree(page);
--			if (unlikely(!map->page))
--				break;
--		}
-+		if (alloc_pidmap_page(map) < 0)
++	/* memory */
++	mm = get_task_mm(p);
++	if (mm == NULL)
++		return -EACCES;
++
++	down_read(&mm->mmap_sem);
++
++	seek_pos(sizeof(struct binfmt_mm_image));
++	if (pos < img_pos) {
++		len = img_dump_mm(mm, buf, size, pos - img_ppos);
++		if (len < 0)
++			goto err_mm;
++
++		move_pos();
++		if (size == 0)
++			goto out_mm;
++	}
++
++	vma = mm->mmap;
++	while (1) {
++		seek_pos(sizeof(struct binfmt_vma_image));
++		if (pos < img_pos) {
++			len = img_dump_vma(vma, buf, size, pos - img_ppos);
++			if (len < 0)
++				goto err_mm;
++
++			move_pos();
++			if (size == 0)
++				goto out_mm;
++		}
++
++		if (vma == NULL)
 +			break;
 +
- 		if (likely(atomic_read(&map->nr_free))) {
- 			do {
- 				if (!test_and_set_bit(offset, map->page)) {
-@@ -277,7 +308,7 @@ void free_pid(struct pid *pid)
- 	call_rcu(&pid->rcu, delayed_put_pid);
- }
++		vma = vma->vm_next;
++	}
++
++	for (vma = mm->mmap; vma != NULL; vma = vma->vm_next) {
++		/* slow and stupid */
++		unsigned long addr;
++		struct page *page;
++		void *pg_data;
++
++		if (!is_private_vma(vma))
++			continue;
++
++		for (addr = vma->vm_start; addr < vma->vm_end; addr += PAGE_SIZE) {
++			page = follow_page(vma, addr, FOLL_FORCE | FOLL_DUMP | FOLL_GET);
++			if (page == NULL)
++				continue;
++			if (IS_ERR(page)) /* huh? */
++				continue;
++
++			seek_pos(sizeof(struct binfmt_page_image) + PAGE_SIZE);
++			if (pos < img_pos) {
++				pg_data = kmap(page);
++				len = img_dump_page(addr, pg_data, buf, size, pos - img_ppos);
++				kunmap(page);
++
++				if (len < 0) {
++					put_page(page);
++					goto err_mm;
++				}
++
++				move_pos();
++				if (size == 0) {
++					put_page(page);
++					goto out_mm;
++				}
++			}
++
++			put_page(page);
++		}
++	}
++
++	seek_pos(sizeof(struct binfmt_page_image));
++	if (pos < img_pos) {
++		struct binfmt_page_image zero;
++
++		memset(&zero, 0, sizeof(zero));
++		len = img_dump_buffer(buf, size, &zero, sizeof(zero), pos - img_ppos);
++		if (len < 0)
++			goto err;
++
++		move_pos();
++	}
++
++out_mm:
++	up_read(&mm->mmap_sem);
++	mmput(mm);
++out:
++	*ppos = pos;
++	return produced;
++
++err_mm:
++	up_read(&mm->mmap_sem);
++	mmput(mm);
++err:
++	return len;
++}
++
++static ssize_t img_dump_read(struct file *file, char __user *buf, size_t size, loff_t *ppos)
++{
++	struct task_struct *p;
++
++	p = get_proc_task(file->f_dentry->d_inode);
++	if (p == NULL)
++		return -ESRCH;
++
++	if (!(p->state & TASK_STOPPED)) {
++		put_task_struct(p);
++		return -EINVAL;
++	}
++
++	return do_produce_dump(p, buf, size, ppos);
++}
++
++static int img_dump_open(struct inode *inode, struct file *filp)
++{
++	return 0;
++}
++
++static int img_dump_release(struct inode *inode, struct file *filp)
++{
++	return 0;
++}
++
++const struct file_operations proc_pid_dump_operations = {
++	.open		= img_dump_open,
++	.read		= img_dump_read,
++	.release	= img_dump_release,
++};
+diff --git a/include/linux/binfmt_img.h b/include/linux/binfmt_img.h
+new file mode 100644
+index 0000000..a4293af
+--- /dev/null
++++ b/include/linux/binfmt_img.h
+@@ -0,0 +1,87 @@
++#ifndef __BINFMT_IMG_H__
++#define __BINFMT_IMG_H__
++
++#include <linux/types.h>
++
++struct binfmt_img_header {
++	__u32	magic;
++	__u32	version;
++};
++
++#define CKPT_TLS_ENTRIES	3
++
++struct binfmt_regs_image {
++	__u64 r15;
++	__u64 r14;
++	__u64 r13;
++	__u64 r12;
++	__u64 r11;
++	__u64 r10;
++	__u64 r9;
++	__u64 r8;
++	__u64 ax;
++	__u64 orig_ax;
++	__u64 bx;
++	__u64 cx;
++	__u64 dx;
++	__u64 si;
++	__u64 di;
++	__u64 ip;
++	__u64 flags;
++	__u64 bp;
++	__u64 sp;
++
++	__u64 gs;
++	__u64 fs;
++	__u64 tls[CKPT_TLS_ENTRIES];
++	__u16 gsindex;
++	__u16 fsindex;
++	__u16 cs;
++	__u16 ss;
++	__u16 ds;
++	__u16 es;
++};
++
++#define CKPT_X86_SEG_NULL       0
++#define CKPT_X86_SEG_USER32_CS  1
++#define CKPT_X86_SEG_USER32_DS  2
++#define CKPT_X86_SEG_USER64_CS  3
++#define CKPT_X86_SEG_USER64_DS  4
++#define CKPT_X86_SEG_TLS        0x4000
++#define CKPT_X86_SEG_LDT        0x8000
++
++struct binfmt_mm_image {
++	__u64	flags;
++	__u64	def_flags;
++	__u64	start_code;
++	__u64	end_code;
++	__u64	start_data;
++	__u64	end_data;
++	__u64	start_brk;
++	__u64	brk;
++	__u64	start_stack;
++	__u64	arg_start;
++	__u64	arg_end;
++	__u64	env_start;
++	__u64	env_end;
++	__u32	exe_fd;
++};
++
++struct binfmt_vma_image {
++	__u32	prot;
++	__u32	flags;
++	__u32	pad;
++	__u32	fd;
++	__u64	start;
++	__u64	end;
++	__u64	pgoff;
++};
++
++struct binfmt_page_image {
++	__u64	vaddr;
++};
++
++#define BINFMT_IMG_MAGIC	0xa75b8d43
++#define BINFMT_IMG_VERS_0	0x00000100
++
++#endif
+diff --git a/include/linux/proc_fs.h b/include/linux/proc_fs.h
+index c779c74..686b374 100644
+--- a/include/linux/proc_fs.h
++++ b/include/linux/proc_fs.h
+@@ -102,6 +102,8 @@ struct vmcore {
  
--struct pid *alloc_pid(struct pid_namespace *ns)
-+struct pid *alloc_pid(struct pid_namespace *ns, int this_ns_pid)
- {
- 	struct pid *pid;
- 	enum pid_type type;
-@@ -291,13 +322,14 @@ struct pid *alloc_pid(struct pid_namespace *ns)
+ #ifdef CONFIG_PROC_FS
  
- 	tmp = ns;
- 	for (i = ns->level; i >= 0; i--) {
--		nr = alloc_pidmap(tmp);
-+		nr = alloc_pidmap(tmp, this_ns_pid);
- 		if (nr < 0)
- 			goto out_free;
++extern const struct file_operations proc_pid_dump_operations;
++
+ extern void proc_root_init(void);
  
- 		pid->numbers[i].nr = nr;
- 		pid->numbers[i].ns = tmp;
- 		tmp = tmp->parent;
-+		this_ns_pid = 0;
- 	}
- 
- 	get_pid_ns(ns);
+ void proc_flush_task(struct task_struct *task);
 -- 
 1.5.5.6
