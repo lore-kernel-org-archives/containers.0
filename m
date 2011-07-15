@@ -1,7 +1,7 @@
 From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: [PATCH 6/7] proc: Introduce the /proc/<pid>/dump file
-Date: Fri, 15 Jul 2011 17:47:44 +0400
-Message-ID: <4E204500.6040800@parallels.com>
+Subject: [PATCH 7/7] binfmt: Introduce the binfmt_img exec handler
+Date: Fri, 15 Jul 2011 17:48:09 +0400
+Message-ID: <4E204519.3040804@parallels.com>
 References: <4E204466.8010204@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,573 +21,378 @@ To: Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Oren Laadan <ore
 Cc: Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-An image read from file contains task's registers and information
-about its VM. Later this image can be execve-ed causing recreation
-of the previously read task state.
+When being execve-ed the handler reads registers, mappings and provided
+memory pages from image and just assigns this state on current task. This
+simple functionality can be used to restore a task, whose state whas read
+from e.g. /proc/<pid>/dump file before.
 
-The file format is my own, very simple. Introduced to make the code
-as simple as possible. Better file format (if any) is to be discussed.
+As I said before, the mentioned proc file format is designed to be as
+simple as possible. Can (and should) be redesigned (ELF?).
 
 Signed-off-by: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 
 ---
- fs/proc/Kconfig            |    8 +
- fs/proc/Makefile           |    1 +
- fs/proc/base.c             |    3 +
- fs/proc/img_dump.c         |  397 ++++++++++++++++++++++++++++++++++++++++++++
- include/linux/binfmt_img.h |   87 ++++++++++
- include/linux/proc_fs.h    |    2 +
- 6 files changed, 498 insertions(+), 0 deletions(-)
- create mode 100644 fs/proc/img_dump.c
- create mode 100644 include/linux/binfmt_img.h
+ fs/Kconfig.binfmt |    6 +
+ fs/Makefile       |    1 +
+ fs/binfmt_img.c   |  324 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 331 insertions(+), 0 deletions(-)
+ create mode 100644 fs/binfmt_img.c
 
-diff --git a/fs/proc/Kconfig b/fs/proc/Kconfig
-index 15af622..c64bf75 100644
---- a/fs/proc/Kconfig
-+++ b/fs/proc/Kconfig
-@@ -67,3 +67,11 @@ config PROC_PAGE_MONITOR
- 	  /proc/pid/smaps, /proc/pid/clear_refs, /proc/pid/pagemap,
- 	  /proc/kpagecount, and /proc/kpageflags. Disabling these
-           interfaces will reduce the size of the kernel by approximately 4kb.
+diff --git a/fs/Kconfig.binfmt b/fs/Kconfig.binfmt
+index 79e2ca7..0b2f48e 100644
+--- a/fs/Kconfig.binfmt
++++ b/fs/Kconfig.binfmt
+@@ -161,3 +161,9 @@ config BINFMT_MISC
+ 	  You may say M here for module support and later load the module when
+ 	  you have use for it; the module is called binfmt_misc. If you
+ 	  don't know what to answer at this point, say Y.
 +
-+config PROC_IMG
-+	default y
-+	depends on PROC_FS
-+	bool "Enable /proc/<pid>/dump file"
++config BINFMT_IMG
++	tristate "Kernel support for IMG binaries"
++	depends on X86
 +	help
-+	  Say Y here if you want to be able to produce checkpoint-restore images
-+	  for tasks via proc
-diff --git a/fs/proc/Makefile b/fs/proc/Makefile
-index df434c5..3a59cb1 100644
---- a/fs/proc/Makefile
-+++ b/fs/proc/Makefile
-@@ -27,3 +27,4 @@ proc-$(CONFIG_PROC_VMCORE)	+= vmcore.o
- proc-$(CONFIG_PROC_DEVICETREE)	+= proc_devtree.o
- proc-$(CONFIG_PRINTK)	+= kmsg.o
- proc-$(CONFIG_PROC_PAGE_MONITOR)	+= page.o
-+proc-$(CONFIG_PROC_IMG) += img_dump.o
-diff --git a/fs/proc/base.c b/fs/proc/base.c
-index 633af12..c01438f 100644
---- a/fs/proc/base.c
-+++ b/fs/proc/base.c
-@@ -3044,6 +3044,9 @@ static const struct pid_entry tgid_base_stuff[] = {
- #endif
- 	INF("cmdline",    S_IRUGO, proc_pid_cmdline),
- 	ONE("stat",       S_IRUGO, proc_tgid_stat),
-+#ifdef CONFIG_PROC_IMG
-+	REG("dump",	  S_IRUSR|S_IWUSR, proc_pid_dump_operations),
-+#endif
- 	ONE("statm",      S_IRUGO, proc_pid_statm),
- 	REG("maps",       S_IRUGO, proc_maps_operations),
- #ifdef CONFIG_NUMA
-diff --git a/fs/proc/img_dump.c b/fs/proc/img_dump.c
++	  Say M/Y here to enable support for checkpoint-restore images execution
+diff --git a/fs/Makefile b/fs/Makefile
+index fb68c2b..8221719 100644
+--- a/fs/Makefile
++++ b/fs/Makefile
+@@ -33,6 +33,7 @@ obj-$(CONFIG_NFSD_DEPRECATED)	+= nfsctl.o
+ obj-$(CONFIG_BINFMT_AOUT)	+= binfmt_aout.o
+ obj-$(CONFIG_BINFMT_EM86)	+= binfmt_em86.o
+ obj-$(CONFIG_BINFMT_MISC)	+= binfmt_misc.o
++obj-$(CONFIG_BINFMT_IMG)	+= binfmt_img.o
+ 
+ # binfmt_script is always there
+ obj-y				+= binfmt_script.o
+diff --git a/fs/binfmt_img.c b/fs/binfmt_img.c
 new file mode 100644
-index 0000000..7fa52ef
+index 0000000..9b09797
 --- /dev/null
-+++ b/fs/proc/img_dump.c
-@@ -0,0 +1,397 @@
-+#include <linux/proc_fs.h>
-+#include <linux/sched.h>
-+#include <linux/uaccess.h>
++++ b/fs/binfmt_img.c
+@@ -0,0 +1,324 @@
 +#include <linux/binfmt_img.h>
++#include <linux/module.h>
++#include <linux/binfmts.h>
++#include <linux/sched.h>
++#include <linux/fs.h>
++#include <linux/file.h>
 +#include <linux/mm.h>
 +#include <linux/mman.h>
 +#include <linux/highmem.h>
-+#include <linux/types.h>
-+#include "internal.h"
++#include <asm/tlbflush.h>
++#include <asm/desc.h>
 +
-+static int img_dump_buffer(char __user *ubuf, size_t size, void *buf, int len, int pos)
++/*
++ * The binary handler to save and restore a single task state
++ */
++
++static int img_check_header(void *buf)
 +{
-+	int ret;
-+	static size_t dumped = 0;
++	struct binfmt_img_header *hdr = buf;
 +
-+	len -= pos;
-+	if (len > size)
-+		len = size;
++	if (hdr->magic != BINFMT_IMG_MAGIC)
++		return -ENOEXEC;
 +
-+	ret = copy_to_user(ubuf, buf + pos, len);
-+	if (ret)
-+		return -EFAULT;
++	if (hdr->version != BINFMT_IMG_VERS_0)
++		return -EINVAL;
 +
-+	dumped += len;
-+	return len;
++	return sizeof(*hdr);
 +}
 +
-+static int img_dump_header(char __user *buf, size_t size, int pos)
++static unsigned short decode_segment(__u16 seg)
 +{
-+	struct binfmt_img_header hdr;
++	if (seg == CKPT_X86_SEG_NULL)
++		return 0;
 +
-+	hdr.magic = BINFMT_IMG_MAGIC;
-+	hdr.version = BINFMT_IMG_VERS_0;
-+
-+	return img_dump_buffer(buf, size, &hdr, sizeof(hdr), pos);
-+}
-+
-+static __u16 encode_segment(unsigned short seg)
-+{
-+	if (seg == 0)
-+		return CKPT_X86_SEG_NULL;
-+	BUG_ON((seg & 3) != 3);
-+
-+	if (seg == __USER_CS)
-+		return CKPT_X86_SEG_USER64_CS;
-+	if (seg == __USER_DS)
-+		return CKPT_X86_SEG_USER64_DS;
-+#ifdef CONFIG_COMPAT
-+	if (seg == __USER32_CS)
-+		return CKPT_X86_SEG_USER32_CS;
-+	if (seg == __USER32_DS)
-+		return CKPT_X86_SEG_USER32_DS;
++	if (seg == CKPT_X86_SEG_USER64_CS)
++		return __USER_CS;
++	if (seg == CKPT_X86_SEG_USER64_DS)
++		return __USER_DS;
++#ifdef CONFIG_COMPAT 
++	if (seg == CKPT_X86_SEG_USER32_CS)
++		return __USER32_CS;
++	if (seg == CKPT_X86_SEG_USER32_DS)
++		return __USER32_DS;
 +#endif
 +
-+	if (seg & 4)
-+		return CKPT_X86_SEG_LDT | (seg >> 3);
-+
-+	seg >>= 3;
-+	if (GDT_ENTRY_TLS_MIN <= seg && seg <= GDT_ENTRY_TLS_MAX)
-+		return CKPT_X86_SEG_TLS | (seg - GDT_ENTRY_TLS_MIN);
-+
-+	printk(KERN_ERR "c/r: (decode) bad segment %#hx\n", seg);
++	if (seg & CKPT_X86_SEG_TLS) {
++		seg &= ~CKPT_X86_SEG_TLS;
++		return ((GDT_ENTRY_TLS_MIN + seg) << 3) | 3;
++	}
++	if (seg & CKPT_X86_SEG_LDT) {
++		seg &= ~CKPT_X86_SEG_LDT;
++		return (seg << 3) | 7;
++	}
 +	BUG();
 +}
 +
-+static __u64 encode_tls(struct desc_struct *d)
++static void decode_tls(struct desc_struct *d, __u64 val)
 +{
-+	return ((__u64)d->a << 32) + d->b;
++	d->a = (unsigned int)(val >> 32);
++	d->b = (unsigned int)(val & 0xFFFFFFFF);
 +}
 +
-+static int img_dump_regs(struct task_struct *p, char __user *buf, size_t size, int pos)
++static int img_restore_regs(struct linux_binprm *bprm, loff_t off, struct pt_regs *regs)
 +{
++	int ret, i;
 +	struct binfmt_regs_image regi;
-+	struct pt_regs *regs;
-+	int i;
++	struct thread_struct *th = &current->thread;
++	unsigned short seg;
 +
-+	regs = task_pt_regs(p);
++	ret = kernel_read(bprm->file, off, (char *)&regi, sizeof(regi));
++	if (ret != sizeof(regi))
++		return -EIO;
 +
-+	regi.r15 = regs->r15;
-+	regi.r14 = regs->r14;
-+	regi.r13 = regs->r13;
-+	regi.r12 = regs->r12;
-+	regi.r11 = regs->r11;
-+	regi.r10 = regs->r10;
-+	regi.r9 = regs->r9;
-+	regi.r8 = regs->r8;
-+	regi.ax = regs->ax;
-+	regi.orig_ax = regs->orig_ax;
-+	regi.bx = regs->bx;
-+	regi.cx = regs->cx;
-+	regi.dx = regs->dx;
-+	regi.si = regs->si;
-+	regi.di = regs->di;
-+	regi.ip = regs->ip;
-+	regi.flags = regs->flags;
-+	regi.bp = regs->bp;
-+	regi.sp = regs->sp;
++	regs->r15 = regi.r15;
++	regs->r14 = regi.r14;
++	regs->r13 = regi.r13;
++	regs->r12 = regi.r12;
++	regs->r11 = regi.r11;
++	regs->r10 = regi.r10;
++	regs->r9 = regi.r9;
++	regs->r8 = regi.r8;
++	regs->ax = regi.ax;
++	regs->orig_ax = regi.orig_ax;
++	regs->bx = regi.bx;
++	regs->cx = regi.cx;
++	regs->dx = regi.dx;
++	regs->si = regi.si;
++	regs->di = regi.di;
++	regs->ip = regi.ip;
++	regs->flags = regi.flags;
++	regs->bp = regi.bp;
++	regs->sp = regi.sp;
 +
-+	/* segments */
-+	regi.gsindex = encode_segment(p->thread.gsindex);
-+	regi.fsindex = encode_segment(p->thread.fsindex);
-+	regi.cs = encode_segment(regs->cs);
-+	regi.ss = encode_segment(regs->ss);
-+	regi.ds = encode_segment(p->thread.ds);
-+	regi.es = encode_segment(p->thread.es);
++	regs->cs = decode_segment(regi.cs);
++	regs->ss = decode_segment(regi.ss);
++
++	th->usersp = regi.sp;
++	th->ds = decode_segment(regi.ds);
++	th->es = decode_segment(regi.es);
++	th->fsindex = decode_segment(regi.fsindex);
++	th->gsindex = decode_segment(regi.gsindex);
++
++	th->fs = regi.fs;
++	th->gs = regi.gs;
 +
 +	BUILD_BUG_ON(GDT_ENTRY_TLS_ENTRIES != CKPT_TLS_ENTRIES);
 +	for (i = 0; i < GDT_ENTRY_TLS_ENTRIES; i++)
-+		regi.tls[i] = encode_tls(&p->thread.tls_array[i]);
++		decode_tls(&th->tls_array[i], regi.tls[i]);
 +
-+	if (p->thread.gsindex)
-+		regi.gs = 0;
-+	else
-+		regi.gs = p->thread.gs;
++	load_TLS(th, smp_processor_id());
 +
-+	if (p->thread.fsindex)
-+		regi.fs = 0;
-+	else
-+		regi.fs = p->thread.fs;
++	seg = th->fsindex;
++	loadsegment(fs, seg);
++	savesegment(fs, seg);
++	if (seg != th->fsindex) {
++		printk("ERROR saving fs selector want %x, has %x\n",
++				(unsigned int)th->fsindex, (unsigned int)seg);
++		return -EFAULT;
++	}
 +
-+	return img_dump_buffer(buf, size, &regi, sizeof(regi), pos);
++	if (th->fs)
++		wrmsrl(MSR_FS_BASE, th->fs);
++	load_gs_index(th->gsindex);
++	if (th->gs)
++		wrmsrl(MSR_KERNEL_GS_BASE, th->gs);
++
++	return sizeof(regi);
 +}
 +
-+static int img_dump_mm(struct mm_struct *mm, char __user *buf, size_t size, int pos)
++static int img_restore_mm(struct linux_binprm *bprm, loff_t off)
 +{
++	int ret;
 +	struct binfmt_mm_image mmi;
++	struct mm_struct *mm = current->mm;
 +
-+	mmi.flags = mm->flags;
-+	mmi.def_flags = mm->def_flags;
-+	mmi.start_code = mm->start_code;
-+	mmi.end_code = mm->end_code;
-+	mmi.start_data = mm->start_data;
-+	mmi.end_data = mm->end_data;
-+	mmi.start_brk = mm->start_brk;
-+	mmi.brk = mm->brk;
-+	mmi.start_stack = mm->start_stack;
-+	mmi.arg_start = mm->arg_start;
-+	mmi.arg_end = mm->arg_end;
-+	mmi.env_start = mm->env_start;
-+	mmi.env_end = mm->env_end;
-+	mmi.exe_fd = 0;
++	ret = kernel_read(bprm->file, off, (char *)&mmi, sizeof(mmi));
++	if (ret != sizeof(mmi))
++		return -EIO;
 +
-+	return img_dump_buffer(buf, size, &mmi, sizeof(mmi), pos);
-+}
++	mm->flags = mmi.flags;
++	mm->def_flags = mmi.def_flags;
++	mm->start_code = mmi.start_code;
++	mm->end_code = mmi.end_code;
++	mm->start_data = mmi.start_data;
++	mm->end_data = mmi.end_data;
++	mm->start_brk = mmi.start_brk;
++	mm->brk = mmi.brk;
++	mm->start_stack = mmi.start_stack;
++	mm->arg_start = mmi.arg_start;
++	mm->arg_end = mmi.arg_end;
++	mm->env_start = mmi.env_start;
++	mm->env_end = mmi.env_end;
 +
-+static int img_dump_vma(struct vm_area_struct *vma, char __user *buf, size_t size, int pos)
-+{
-+	struct binfmt_vma_image vmai;
++	if (mmi.exe_fd != 0) {
++		struct file *f;
 +
-+	if (vma == NULL) {
-+		memset(&vmai, 0, sizeof(vmai));
-+		goto dumpit;
++		f = fget(mmi.exe_fd);
++		if (f == NULL)
++			return -EBADF;
++
++		fput(mm->exe_file);
++		mm->exe_file = f;
 +	}
 +
-+	printk("Dumping vma %016lx-%016lx %p/%p\n", vma->vm_start, vma->vm_end, vma, vma->vm_mm);
-+
-+	vmai.fd = 0;
-+	vmai.prot = 0;
-+	if (vma->vm_flags & VM_READ)
-+		vmai.prot |= PROT_READ;
-+	if (vma->vm_flags & VM_WRITE)
-+		vmai.prot |= PROT_WRITE;
-+	if (vma->vm_flags & VM_EXEC)
-+		vmai.prot |= PROT_EXEC;
-+
-+	vmai.flags = 0;
-+	if (vma->vm_file == NULL)
-+		vmai.flags |= MAP_ANONYMOUS;
-+	if (vma->vm_flags & VM_MAYSHARE)
-+		vmai.flags |= MAP_SHARED;
-+	else
-+		vmai.flags |= MAP_PRIVATE;
-+
-+	vmai.start = vma->vm_start;
-+	vmai.end = vma->vm_end;
-+	vmai.pgoff = vma->vm_pgoff;
-+
-+dumpit:
-+	return img_dump_buffer(buf, size, &vmai, sizeof(vmai), pos);
++	return sizeof(mmi);
 +}
 +
-+static int img_dump_page(unsigned long addr, void *data, char __user *buf, size_t size, int pos)
++static int img_restore_vmas(struct linux_binprm *bprm, loff_t off)
 +{
-+	struct binfmt_page_image pgi;
-+	int ret = 0, tmp;
++	int ret;
++	struct mm_struct *mm = current->mm;
++	int len = 0;
 +
-+	pgi.vaddr = addr;
++	do_munmap(mm, 0, TASK_SIZE);
 +
-+	if (pos < sizeof(pgi)) {
-+		tmp = img_dump_buffer(buf, size, &pgi, sizeof(pgi), pos);
-+		if (tmp < 0)
-+			return tmp;
-+
-+		ret = tmp;
-+		if (size <= ret)
-+			return ret;
-+
-+		buf += ret;
-+		size -= ret;
-+		pos = 0;
-+	} else
-+		pos -= sizeof(pgi);
-+
-+	tmp = img_dump_buffer(buf, size, data, PAGE_SIZE, pos);
-+	if (tmp < 0)
-+		return tmp;
-+
-+	return ret + tmp;
-+}
-+
-+static inline int is_private_vma(struct vm_area_struct *vma)
-+{
-+	if (vma->vm_file == NULL)
-+		return 1;
-+	if (!(vma->vm_flags & VM_SHARED))
-+		return 1;
-+	return 0;
-+}
-+
-+static ssize_t do_produce_dump(struct task_struct *p, char __user *buf,
-+		size_t size, loff_t *ppos)
-+{
-+	size_t img_pos = 0, img_ppos;
-+	size_t produced = 0;
-+	int len;
-+	loff_t pos = *ppos;
-+	struct mm_struct *mm;
-+	struct vm_area_struct *vma;
-+
-+#define move_pos();	do {	\
-+		buf += len;	\
-+		produced += len;\
-+		size -= len;	\
-+		pos += len;	\
-+	} while (0)
-+
-+#define seek_pos(__size);	do {	\
-+		img_ppos = img_pos;	\
-+		img_pos += (__size);	\
-+	} while (0)
-+
-+	/* header */
-+	seek_pos(sizeof(struct binfmt_img_header));
-+	if (pos < img_pos) {
-+		len = img_dump_header(buf, size, pos - img_ppos);
-+		if (len < 0)
-+			goto err;
-+
-+		move_pos();
-+		if (size == 0)
-+			goto out;
-+	}
-+
-+	/* registers */
-+	seek_pos(sizeof(struct binfmt_regs_image));
-+	if (pos < img_pos) {
-+		len = img_dump_regs(p, buf, size, pos - img_ppos);
-+		if (len < 0)
-+			goto err;
-+
-+		move_pos();
-+		if (size == 0)
-+			goto out;
-+	}
-+
-+	/* memory */
-+	mm = get_task_mm(p);
-+	if (mm == NULL)
-+		return -EACCES;
-+
-+	down_read(&mm->mmap_sem);
-+
-+	seek_pos(sizeof(struct binfmt_mm_image));
-+	if (pos < img_pos) {
-+		len = img_dump_mm(mm, buf, size, pos - img_ppos);
-+		if (len < 0)
-+			goto err_mm;
-+
-+		move_pos();
-+		if (size == 0)
-+			goto out_mm;
-+	}
-+
-+	vma = mm->mmap;
 +	while (1) {
-+		seek_pos(sizeof(struct binfmt_vma_image));
-+		if (pos < img_pos) {
-+			len = img_dump_vma(vma, buf, size, pos - img_ppos);
-+			if (len < 0)
-+				goto err_mm;
++		struct binfmt_vma_image vmai;
++		unsigned long addr;
++		struct file *file = NULL;
 +
-+			move_pos();
-+			if (size == 0)
-+				goto out_mm;
-+		}
++		len += sizeof(vmai);
 +
-+		if (vma == NULL)
++		ret = kernel_read(bprm->file, off, (char *)&vmai, sizeof(vmai));
++		if (ret != sizeof(vmai))
++			return -EIO;
++
++		if (vmai.start == 0 && vmai.end == 0)
 +			break;
 +
-+		vma = vma->vm_next;
-+	}
++		if (vmai.fd != 0) {
++			file = fget(vmai.fd);
++			if (file == NULL)
++				return -EBADF;
++		} else
++			vmai.flags |= MAP_ANONYMOUS;
 +
-+	for (vma = mm->mmap; vma != NULL; vma = vma->vm_next) {
-+		/* slow and stupid */
-+		unsigned long addr;
-+		struct page *page;
-+		void *pg_data;
++		if (vmai.start <= mm->start_stack && vmai.end >= mm->start_stack)
++			vmai.flags |= MAP_GROWSDOWN;
 +
-+		if (!is_private_vma(vma))
-+			continue;
++		addr = do_mmap_pgoff(file, vmai.start, vmai.end - vmai.start,
++				vmai.prot, vmai.flags | MAP_FIXED, vmai.pgoff);
 +
-+		for (addr = vma->vm_start; addr < vma->vm_end; addr += PAGE_SIZE) {
-+			page = follow_page(vma, addr, FOLL_FORCE | FOLL_DUMP | FOLL_GET);
-+			if (page == NULL)
-+				continue;
-+			if (IS_ERR(page)) /* huh? */
-+				continue;
-+
-+			seek_pos(sizeof(struct binfmt_page_image) + PAGE_SIZE);
-+			if (pos < img_pos) {
-+				pg_data = kmap(page);
-+				len = img_dump_page(addr, pg_data, buf, size, pos - img_ppos);
-+				kunmap(page);
-+
-+				if (len < 0) {
-+					put_page(page);
-+					goto err_mm;
-+				}
-+
-+				move_pos();
-+				if (size == 0) {
-+					put_page(page);
-+					goto out_mm;
-+				}
-+			}
-+
-+			put_page(page);
++		if (vmai.fd) {
++			fput(file);
++			do_close(vmai.fd);
 +		}
++
++		if ((long)addr < 0 || (addr != vmai.start))
++			return -ENXIO;
++
++		off += sizeof(vmai);
 +	}
 +
-+	seek_pos(sizeof(struct binfmt_page_image));
-+	if (pos < img_pos) {
-+		struct binfmt_page_image zero;
-+
-+		memset(&zero, 0, sizeof(zero));
-+		len = img_dump_buffer(buf, size, &zero, sizeof(zero), pos - img_ppos);
-+		if (len < 0)
-+			goto err;
-+
-+		move_pos();
-+	}
-+
-+out_mm:
-+	up_read(&mm->mmap_sem);
-+	mmput(mm);
-+out:
-+	*ppos = pos;
-+	return produced;
-+
-+err_mm:
-+	up_read(&mm->mmap_sem);
-+	mmput(mm);
-+err:
 +	return len;
 +}
 +
-+static ssize_t img_dump_read(struct file *file, char __user *buf, size_t size, loff_t *ppos)
++static int img_restore_pages(struct linux_binprm *bprm, loff_t off)
 +{
-+	struct task_struct *p;
++	int ret;
++	struct mm_struct *mm = current->mm;
++	int len = 0;
 +
-+	p = get_proc_task(file->f_dentry->d_inode);
-+	if (p == NULL)
-+		return -ESRCH;
++	while (1) {
++		struct binfmt_page_image pgi;
++		struct vm_area_struct *vma;
++		struct page *page;
++		void *pg_data;
 +
-+	if (!(p->state & TASK_STOPPED)) {
-+		put_task_struct(p);
-+		return -EINVAL;
++		ret = kernel_read(bprm->file, off, (char *)&pgi, sizeof(pgi));
++		if (ret != sizeof(pgi))
++			return -EIO;
++
++		len += sizeof(pgi);
++		if (pgi.vaddr == 0)
++			break;
++
++		vma = find_vma(mm, pgi.vaddr);
++		if (vma == NULL)
++			return -ESRCH;
++
++		ret = get_user_pages(current, current->mm, (unsigned long)pgi.vaddr,
++				1, 1, 1, &page, NULL);
++		if (ret != 1)
++			return -EFAULT;
++
++		pg_data = kmap(page);
++		ret = kernel_read(bprm->file, off + sizeof(pgi), pg_data, PAGE_SIZE);
++		kunmap(page);
++		put_page(page);
++
++		if (ret != PAGE_SIZE)
++			return -EFAULT;
++
++		len += PAGE_SIZE;
++		off += sizeof(pgi) + PAGE_SIZE;
 +	}
 +
-+	return do_produce_dump(p, buf, size, ppos);
++	return len;
 +}
 +
-+static int img_dump_open(struct inode *inode, struct file *filp)
++static int img_restore_mem(struct linux_binprm *bprm, loff_t off)
 +{
++	int ret;
++	loff_t len = off;
++
++	ret = img_restore_mm(bprm, len);
++	if (ret < 0)
++		return ret;
++
++	len += ret;
++	ret = img_restore_vmas(bprm, len);
++	if (ret < 0)
++		return ret;
++
++	len += ret;
++	ret = img_restore_pages(bprm, len);
++	if (ret < 0)
++		return ret;
++
++	len += ret;
++	return len;
++
++}
++
++static int img_load_binary(struct linux_binprm * bprm, struct pt_regs * regs)
++{
++	int ret;
++	loff_t len = 0;
++
++	ret = img_check_header(bprm->buf);
++	if (ret < 0)
++		return ret;
++
++	len += ret;
++	ret = img_restore_regs(bprm, len, regs);
++	if (ret < 0)
++		return ret;
++
++	len += ret;
++	ret = img_restore_mem(bprm, len);
++	if (ret < 0)
++		return ret;
++
 +	return 0;
 +}
 +
-+static int img_dump_release(struct inode *inode, struct file *filp)
++static struct linux_binfmt img_binfmt = {
++	.module = THIS_MODULE,
++	.load_binary = img_load_binary,
++};
++
++static __init int img_binfmt_init(void)
 +{
-+	return 0;
++	return register_binfmt(&img_binfmt);
 +}
 +
-+const struct file_operations proc_pid_dump_operations = {
-+	.open		= img_dump_open,
-+	.read		= img_dump_read,
-+	.release	= img_dump_release,
-+};
-diff --git a/include/linux/binfmt_img.h b/include/linux/binfmt_img.h
-new file mode 100644
-index 0000000..a4293af
---- /dev/null
-+++ b/include/linux/binfmt_img.h
-@@ -0,0 +1,87 @@
-+#ifndef __BINFMT_IMG_H__
-+#define __BINFMT_IMG_H__
++static __exit void img_binfmt_exit(void)
++{
++	unregister_binfmt(&img_binfmt);
++}
 +
-+#include <linux/types.h>
-+
-+struct binfmt_img_header {
-+	__u32	magic;
-+	__u32	version;
-+};
-+
-+#define CKPT_TLS_ENTRIES	3
-+
-+struct binfmt_regs_image {
-+	__u64 r15;
-+	__u64 r14;
-+	__u64 r13;
-+	__u64 r12;
-+	__u64 r11;
-+	__u64 r10;
-+	__u64 r9;
-+	__u64 r8;
-+	__u64 ax;
-+	__u64 orig_ax;
-+	__u64 bx;
-+	__u64 cx;
-+	__u64 dx;
-+	__u64 si;
-+	__u64 di;
-+	__u64 ip;
-+	__u64 flags;
-+	__u64 bp;
-+	__u64 sp;
-+
-+	__u64 gs;
-+	__u64 fs;
-+	__u64 tls[CKPT_TLS_ENTRIES];
-+	__u16 gsindex;
-+	__u16 fsindex;
-+	__u16 cs;
-+	__u16 ss;
-+	__u16 ds;
-+	__u16 es;
-+};
-+
-+#define CKPT_X86_SEG_NULL       0
-+#define CKPT_X86_SEG_USER32_CS  1
-+#define CKPT_X86_SEG_USER32_DS  2
-+#define CKPT_X86_SEG_USER64_CS  3
-+#define CKPT_X86_SEG_USER64_DS  4
-+#define CKPT_X86_SEG_TLS        0x4000
-+#define CKPT_X86_SEG_LDT        0x8000
-+
-+struct binfmt_mm_image {
-+	__u64	flags;
-+	__u64	def_flags;
-+	__u64	start_code;
-+	__u64	end_code;
-+	__u64	start_data;
-+	__u64	end_data;
-+	__u64	start_brk;
-+	__u64	brk;
-+	__u64	start_stack;
-+	__u64	arg_start;
-+	__u64	arg_end;
-+	__u64	env_start;
-+	__u64	env_end;
-+	__u32	exe_fd;
-+};
-+
-+struct binfmt_vma_image {
-+	__u32	prot;
-+	__u32	flags;
-+	__u32	pad;
-+	__u32	fd;
-+	__u64	start;
-+	__u64	end;
-+	__u64	pgoff;
-+};
-+
-+struct binfmt_page_image {
-+	__u64	vaddr;
-+};
-+
-+#define BINFMT_IMG_MAGIC	0xa75b8d43
-+#define BINFMT_IMG_VERS_0	0x00000100
-+
-+#endif
-diff --git a/include/linux/proc_fs.h b/include/linux/proc_fs.h
-index c779c74..686b374 100644
---- a/include/linux/proc_fs.h
-+++ b/include/linux/proc_fs.h
-@@ -102,6 +102,8 @@ struct vmcore {
- 
- #ifdef CONFIG_PROC_FS
- 
-+extern const struct file_operations proc_pid_dump_operations;
-+
- extern void proc_root_init(void);
- 
- void proc_flush_task(struct task_struct *task);
++module_init(img_binfmt_init);
++module_exit(img_binfmt_exit);
++MODULE_LICENSE("GPL");
 -- 
 1.5.5.6
