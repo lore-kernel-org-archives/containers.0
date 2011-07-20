@@ -1,18 +1,19 @@
-From: Lennart Poettering <mzerqung@0pointer.de>
+From: Vivek Goyal <vgoyal@redhat.com>
 Subject: Re: new cg-manager gui tool for managin cgroups
-Date: Wed, 20 Jul 2011 23:11:36 +0200
-Message-ID: <20110720211135.GB14218@tango.0pointer.de>
+Date: Wed, 20 Jul 2011 17:26:19 -0400
+Message-ID: <20110720212619.GH10079@redhat.com>
 References: <20110720192029.GD2482@redhat.com>
 	<20110720202831.GA11395@tango.0pointer.de>
-	<20110720205959.GG10079@redhat.com>
+	<20110720204240.GF10079@redhat.com>
+	<20110720210714.GA14218@tango.0pointer.de>
 Reply-To: Development discussions related to Fedora
 	<devel@lists.fedoraproject.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <devel-bounces@lists.fedoraproject.org>
 Content-Disposition: inline
-In-Reply-To: <20110720205959.GG10079@redhat.com>
+In-Reply-To: <20110720210714.GA14218@tango.0pointer.de>
 List-Unsubscribe: <https://admin.fedoraproject.org/mailman/listinfo/devel>,
 	<mailto:devel-request@lists.fedoraproject.org?subject=unsubscribe>
 List-Archive: <http://lists.fedoraproject.org/pipermail/devel>
@@ -22,45 +23,41 @@ List-Subscribe: <https://admin.fedoraproject.org/mailman/listinfo/devel>,
 	<mailto:devel-request@lists.fedoraproject.org?subject=subscribe>
 Sender: devel-bounces@lists.fedoraproject.org
 Errors-To: devel-bounces@lists.fedoraproject.org
-To: Vivek Goyal <vgoyal@redhat.com>
-Cc: fedora-devel-list@redhat.com, containers@lists.osdl.org, duffy@redhat.com, cg-manager-developers@lists.fedorahosted.org
+To: Jason Baron <jbaron@redhat.com>, fedora-devel-list@redhat.com, containers@lists.osdl.org, cg-manager-developers@lists.fedorahosted.org, duffy@redhat.com
 List-Id: containers.vger.kernel.org
 
-On Wed, 20.07.11 16:59, Vivek Goyal (vgoyal@redhat.com) wrote:
-
-> 
-> On Wed, Jul 20, 2011 at 10:28:32PM +0200, Lennart Poettering wrote:
-> 
-> [..]
-> > systemd is and will always have to maintain its own hierarchy
-> > independently of everybody else.
-> 
-> In the presentation today, you mentioned that you would like to create
-> cgroups for users by default in cpu hierarchy (once RT time allocation
-> issue is resolved). I am wondering what happens if an admin wants to
-> change the policy a bit. Say give higher cpu shares to a specific
-> user.
-
-He can just go and do that. systemd assume to be the exclusive owner of
-/sys/fs/cgroup/systemd, but the other hierarchies can be manipulated by
-others too. That means that if people want to create a hierarchy there,
-then they can do that. If people want systemd to stop mucking with the
-cpu hierarchy for all users then this can be configured in a simple
-config file.
-
-> How is one supposed to do that. As it looks like that part of the
-> control lies with systemd (as it is the one creates user group under
-> cpu) and part of the control lies with GUItool/cgconfig.
-
-Right now, systemd has few controls to actually make use of
-controllers. It assumes that the limits on hte controllers are already
-configured by something else.
-
-Lennart
-
--- 
-Lennart Poettering - Red Hat, Inc.
--- 
-devel mailing list
-devel@lists.fedoraproject.org
-https://admin.fedoraproject.org/mailman/listinfo/devel
+T24gV2VkLCBKdWwgMjAsIDIwMTEgYXQgMTE6MDc6MTRQTSArMDIwMCwgTGVubmFydCBQb2V0dGVy
+aW5nIHdyb3RlOgo+IE9uIFdlZCwgMjAuMDcuMTEgMTY6NDIsIFZpdmVrIEdveWFsICh2Z295YWxA
+cmVkaGF0LmNvbSkgd3JvdGU6Cj4gCj4gPiAKPiA+IE9uIFdlZCwgSnVsIDIwLCAyMDExIGF0IDEw
+OjI4OjMyUE0gKzAyMDAsIExlbm5hcnQgUG9ldHRlcmluZyB3cm90ZToKPiA+IAo+ID4gWy4uXQo+
+ID4gPiAKPiA+ID4gPiBSaWdodCBub3csIHRoZSBndWkgYXNzdW1lcyB0aGF0IHRoZSB2YXJpb3Vz
+IGhpZXJhcmNoaWVzIGFyZSBtb3VudGVkIHNlcGFyYXRlbHksCj4gPiA+ID4gYnV0IHRoYXQgdGhl
+IGNwdSBhbmQgY3B1YWNjdCBhcmUgY28tbW91bnRlZC4gSXRzIG15IHVuZGVyc3RhbmRpbmcgdGhh
+dCB0aGlzCj4gPiA+ID4gaXMgY29uc2lzdGVudCB3aXRoIGhvdyBzeXN0ZW1kIGlzIGRvaW5nIHRo
+aW5ncy4gU28gdGhhdCdzIGdyZWF0Lgo+ID4gPiAKPiA+ID4gSW4gRjE1IHdlIG1vdW50IGFsbCBj
+b250cm9sbGVycyBlbmFibGVkIGluIHRoZSBrZXJuZWwgc2VwYXJhdGVseS4gSW4gRjE2Cj4gPiA+
+IHdlJ2xsIG9wdGlvbmFsbHkgbW91bnQgc29tZSBvZiB0aGVtIHRvZ2V0aGVyLCBhbmQgd2UnbGwg
+cHJvYmFibHkgc2hpcCBhCj4gPiA+IGRlZmF1bHQgb2YgbW91bnRpbmcgY3B1IGFuZCBjcHVhY2N0
+IHRvZ2V0aGVyIGlmIHRoZXkgYXJlIGJvdGggZW5hYmxlZC4KPiA+IAo+ID4gTGFzdCB0aW1lIHdl
+IHRhbGtlZCBhYm91dCBwb3NzaWJpbGl0eSBvZiBjby1tb3VudGluZyBtZW1vcnkgYW5kIElPIGF0
+IHNvbWUKPiA+IHBvaW50IG9mIHRpbWUgYW5kIHlvdSBzYWlkIGl0IGlzIGEgYmFkIGlkZWEgZnJv
+bSBhcHBsaWNhdGlvbnMgcHJvZ3JhbW1pbmcKPiA+IHBvaW50IG9mIHZpZXcuICBIYXMgdGhhdCBj
+aGFuZ2VkIG5vdz8KPiAKPiBXZWxsLCBubywgYnV0IHllcy4KPiAKPiBBZnRlciBkaXNjdXNzaW5n
+IHRoaXMgRGhhdmFsIHRoZSBzY2hlbWUgd2UgY2FtZSB1cCB3aXRoIGlzIHRvIGFkZAo+IHN5bWxp
+bmtzIHRvIC9zeXMvZnMvY2dyb3VwLyBzbyB0aGF0IGV2ZW4gd2hlbiBzb21lIGNvbnRyb2xsZXJz
+IGFyZQo+IG1vdW50ZWQgdG9nZXRoZXIgdGhleSBhcmUgc3RpbGwgYXZhaWxhYmxlIGF0IHRoZSB0
+aGUgc2VwYXJhdGUKPiBkaXJlY3Rvcmllcy4gRXhhbXBsZSwgaWYgd2UgbW91bnQgY3B1K2NwdWFj
+Y3QgdG9nZXRoZXIgdGhpbmdzIHdpbGwgbG9vawo+IGxpa2UgdGhpczoKPiAKPiAvc3lzL2ZzL2Nn
+cm91cC9jcHUrY3B1YWNjdCBpcyB0aGUgam9pbnQgbW91bnQgcG9pbnQuCj4gCj4gL3N5cy9mcy9j
+Z3JvdXAvY3B1IOKGkiAvc3lzL2ZzL2Nncm91cC9jcHUrY3B1YWNjdCBpcyBhIHN5bWxpbmsuCj4g
+Cj4gL3N5cy9mcy9jZ3JvdXAvY3B1YWNjdCDihpIgL3N5cy9mcy9jZ3JvdXAvY3B1K2NwdWFjY3Qg
+aXMgYSBzeW1saW5rLgo+IAo+IFRoYXQgd2F5IHRvIG1vc3QgYXBwbGljYXRpb25zIGl0IHdpbGwg
+YmUgdmVyeSBlYXN5IHRvIHN1cHBvcnQgdGhpczogdGhleQo+IGNhbiBzaW1wbHkgYXNzdW1lIHRo
+YXQgdGhlIGNvbnRyb2xsZXIgImZvb2JhciIgaXMgYXZhaWxhYmxlIHVuZGVyCj4gL3N5cy9mcy9j
+Z3JvdXAvZm9vYmFyLCBhbmQgdGhhdCdzIGl0LgoKSSBndWVzcyB0aGlzIHdpbGwgYmUgcmVhc29u
+YWJsZS4gSnVzdCB0aGF0IGFwcGxpY2F0aW9uIG5lZWQgdG8gaGFuZGxlCnRoZSBjYXNlIHRoYXQg
+ZGlyZWN0b3J5IHRoZXkgYXJlIGFib3V0IHRvIGNyZWF0ZSBtaWdodCBhbHJlYWR5IGJlIHByZXNl
+bnQKdGhlcmUuCgpTbyBkb3duIHRoZSB3ZSBzaG91bGQgYmUgYWJsZSB0byBjby1tb3VudCBtZW1v
+cnkgYW5kIElPIHRvZ2V0aGVyIHdpdGgKYWRkaXRpb25hbCBzeW1saW5rcz8KClRoYW5rcwpWaXZl
+awotLSAKZGV2ZWwgbWFpbGluZyBsaXN0CmRldmVsQGxpc3RzLmZlZG9yYXByb2plY3Qub3JnCmh0
+dHBzOi8vYWRtaW4uZmVkb3JhcHJvamVjdC5vcmcvbWFpbG1hbi9saXN0aW5mby9kZXZlbA==
