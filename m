@@ -1,7 +1,7 @@
 From: Vivek Goyal <vgoyal@redhat.com>
 Subject: Re: new cg-manager gui tool for managin cgroups
-Date: Wed, 20 Jul 2011 16:42:40 -0400
-Message-ID: <20110720204240.GF10079@redhat.com>
+Date: Wed, 20 Jul 2011 16:59:59 -0400
+Message-ID: <20110720205959.GG10079@redhat.com>
 References: <20110720192029.GD2482@redhat.com>
 	<20110720202831.GA11395@tango.0pointer.de>
 Reply-To: Development discussions related to Fedora
@@ -28,18 +28,22 @@ List-Id: containers.vger.kernel.org
 On Wed, Jul 20, 2011 at 10:28:32PM +0200, Lennart Poettering wrote:
 
 [..]
-> 
-> > Right now, the gui assumes that the various hierarchies are mounted separately,
-> > but that the cpu and cpuacct are co-mounted. Its my understanding that this
-> > is consistent with how systemd is doing things. So that's great.
-> 
-> In F15 we mount all controllers enabled in the kernel separately. In F16
-> we'll optionally mount some of them together, and we'll probably ship a
-> default of mounting cpu and cpuacct together if they are both enabled.
+> systemd is and will always have to maintain its own hierarchy
+> independently of everybody else.
 
-Last time we talked about possibility of co-mounting memory and IO at some
-point of time and you said it is a bad idea from applications programming
-point of view.  Has that changed now?
+In the presentation today, you mentioned that you would like to create
+cgroups for users by default in cpu hierarchy (once RT time allocation
+issue is resolved). I am wondering what happens if an admin wants to
+change the policy a bit. Say give higher cpu shares to a specific
+user.
+
+Generally one should have been able to do this with the help of GUI
+tool. Show the system view and allow to change the parameters (which
+are persistent across reboot).
+
+How is one supposed to do that. As it looks like that part of the
+control lies with systemd (as it is the one creates user group under
+cpu) and part of the control lies with GUItool/cgconfig.
 
 Thanks
 Vivek
