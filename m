@@ -1,18 +1,18 @@
 From: Lennart Poettering <mzerqung@0pointer.de>
 Subject: Re: new cg-manager gui tool for managin cgroups
-Date: Wed, 20 Jul 2011 23:07:14 +0200
-Message-ID: <20110720210714.GA14218@tango.0pointer.de>
+Date: Wed, 20 Jul 2011 23:11:36 +0200
+Message-ID: <20110720211135.GB14218@tango.0pointer.de>
 References: <20110720192029.GD2482@redhat.com>
 	<20110720202831.GA11395@tango.0pointer.de>
-	<20110720204240.GF10079@redhat.com>
+	<20110720205959.GG10079@redhat.com>
 Reply-To: Development discussions related to Fedora
 	<devel@lists.fedoraproject.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <devel-bounces@lists.fedoraproject.org>
 Content-Disposition: inline
-In-Reply-To: <20110720204240.GF10079@redhat.com>
+In-Reply-To: <20110720205959.GG10079@redhat.com>
 List-Unsubscribe: <https://admin.fedoraproject.org/mailman/listinfo/devel>,
 	<mailto:devel-request@lists.fedoraproject.org?subject=unsubscribe>
 List-Archive: <http://lists.fedoraproject.org/pipermail/devel>
@@ -26,32 +26,41 @@ To: Vivek Goyal <vgoyal@redhat.com>
 Cc: fedora-devel-list@redhat.com, containers@lists.osdl.org, duffy@redhat.com, cg-manager-developers@lists.fedorahosted.org
 List-Id: containers.vger.kernel.org
 
-T24gV2VkLCAyMC4wNy4xMSAxNjo0MiwgVml2ZWsgR295YWwgKHZnb3lhbEByZWRoYXQuY29tKSB3
-cm90ZToKCj4gCj4gT24gV2VkLCBKdWwgMjAsIDIwMTEgYXQgMTA6Mjg6MzJQTSArMDIwMCwgTGVu
-bmFydCBQb2V0dGVyaW5nIHdyb3RlOgo+IAo+IFsuLl0KPiA+IAo+ID4gPiBSaWdodCBub3csIHRo
-ZSBndWkgYXNzdW1lcyB0aGF0IHRoZSB2YXJpb3VzIGhpZXJhcmNoaWVzIGFyZSBtb3VudGVkIHNl
-cGFyYXRlbHksCj4gPiA+IGJ1dCB0aGF0IHRoZSBjcHUgYW5kIGNwdWFjY3QgYXJlIGNvLW1vdW50
-ZWQuIEl0cyBteSB1bmRlcnN0YW5kaW5nIHRoYXQgdGhpcwo+ID4gPiBpcyBjb25zaXN0ZW50IHdp
-dGggaG93IHN5c3RlbWQgaXMgZG9pbmcgdGhpbmdzLiBTbyB0aGF0J3MgZ3JlYXQuCj4gPiAKPiA+
-IEluIEYxNSB3ZSBtb3VudCBhbGwgY29udHJvbGxlcnMgZW5hYmxlZCBpbiB0aGUga2VybmVsIHNl
-cGFyYXRlbHkuIEluIEYxNgo+ID4gd2UnbGwgb3B0aW9uYWxseSBtb3VudCBzb21lIG9mIHRoZW0g
-dG9nZXRoZXIsIGFuZCB3ZSdsbCBwcm9iYWJseSBzaGlwIGEKPiA+IGRlZmF1bHQgb2YgbW91bnRp
-bmcgY3B1IGFuZCBjcHVhY2N0IHRvZ2V0aGVyIGlmIHRoZXkgYXJlIGJvdGggZW5hYmxlZC4KPiAK
-PiBMYXN0IHRpbWUgd2UgdGFsa2VkIGFib3V0IHBvc3NpYmlsaXR5IG9mIGNvLW1vdW50aW5nIG1l
-bW9yeSBhbmQgSU8gYXQgc29tZQo+IHBvaW50IG9mIHRpbWUgYW5kIHlvdSBzYWlkIGl0IGlzIGEg
-YmFkIGlkZWEgZnJvbSBhcHBsaWNhdGlvbnMgcHJvZ3JhbW1pbmcKPiBwb2ludCBvZiB2aWV3LiAg
-SGFzIHRoYXQgY2hhbmdlZCBub3c/CgpXZWxsLCBubywgYnV0IHllcy4KCkFmdGVyIGRpc2N1c3Np
-bmcgdGhpcyBEaGF2YWwgdGhlIHNjaGVtZSB3ZSBjYW1lIHVwIHdpdGggaXMgdG8gYWRkCnN5bWxp
-bmtzIHRvIC9zeXMvZnMvY2dyb3VwLyBzbyB0aGF0IGV2ZW4gd2hlbiBzb21lIGNvbnRyb2xsZXJz
-IGFyZQptb3VudGVkIHRvZ2V0aGVyIHRoZXkgYXJlIHN0aWxsIGF2YWlsYWJsZSBhdCB0aGUgdGhl
-IHNlcGFyYXRlCmRpcmVjdG9yaWVzLiBFeGFtcGxlLCBpZiB3ZSBtb3VudCBjcHUrY3B1YWNjdCB0
-b2dldGhlciB0aGluZ3Mgd2lsbCBsb29rCmxpa2UgdGhpczoKCi9zeXMvZnMvY2dyb3VwL2NwdStj
-cHVhY2N0IGlzIHRoZSBqb2ludCBtb3VudCBwb2ludC4KCi9zeXMvZnMvY2dyb3VwL2NwdSDihpIg
-L3N5cy9mcy9jZ3JvdXAvY3B1K2NwdWFjY3QgaXMgYSBzeW1saW5rLgoKL3N5cy9mcy9jZ3JvdXAv
-Y3B1YWNjdCDihpIgL3N5cy9mcy9jZ3JvdXAvY3B1K2NwdWFjY3QgaXMgYSBzeW1saW5rLgoKVGhh
-dCB3YXkgdG8gbW9zdCBhcHBsaWNhdGlvbnMgaXQgd2lsbCBiZSB2ZXJ5IGVhc3kgdG8gc3VwcG9y
-dCB0aGlzOiB0aGV5CmNhbiBzaW1wbHkgYXNzdW1lIHRoYXQgdGhlIGNvbnRyb2xsZXIgImZvb2Jh
-ciIgaXMgYXZhaWxhYmxlIHVuZGVyCi9zeXMvZnMvY2dyb3VwL2Zvb2JhciwgYW5kIHRoYXQncyBp
-dC4KCkxlbm5hcnQKCi0tIApMZW5uYXJ0IFBvZXR0ZXJpbmcgLSBSZWQgSGF0LCBJbmMuCi0tIApk
-ZXZlbCBtYWlsaW5nIGxpc3QKZGV2ZWxAbGlzdHMuZmVkb3JhcHJvamVjdC5vcmcKaHR0cHM6Ly9h
-ZG1pbi5mZWRvcmFwcm9qZWN0Lm9yZy9tYWlsbWFuL2xpc3RpbmZvL2RldmVs
+On Wed, 20.07.11 16:59, Vivek Goyal (vgoyal@redhat.com) wrote:
+
+> 
+> On Wed, Jul 20, 2011 at 10:28:32PM +0200, Lennart Poettering wrote:
+> 
+> [..]
+> > systemd is and will always have to maintain its own hierarchy
+> > independently of everybody else.
+> 
+> In the presentation today, you mentioned that you would like to create
+> cgroups for users by default in cpu hierarchy (once RT time allocation
+> issue is resolved). I am wondering what happens if an admin wants to
+> change the policy a bit. Say give higher cpu shares to a specific
+> user.
+
+He can just go and do that. systemd assume to be the exclusive owner of
+/sys/fs/cgroup/systemd, but the other hierarchies can be manipulated by
+others too. That means that if people want to create a hierarchy there,
+then they can do that. If people want systemd to stop mucking with the
+cpu hierarchy for all users then this can be configured in a simple
+config file.
+
+> How is one supposed to do that. As it looks like that part of the
+> control lies with systemd (as it is the one creates user group under
+> cpu) and part of the control lies with GUItool/cgconfig.
+
+Right now, systemd has few controls to actually make use of
+controllers. It assumes that the limits on hte controllers are already
+configured by something else.
+
+Lennart
+
+-- 
+Lennart Poettering - Red Hat, Inc.
+-- 
+devel mailing list
+devel@lists.fedoraproject.org
+https://admin.fedoraproject.org/mailman/listinfo/devel
