@@ -1,82 +1,77 @@
-From: Jason Baron <jbaron@redhat.com>
+From: Lennart Poettering <mzerqung-uLTowLwuiw4b1SvskN2V4Q@public.gmane.org>
 Subject: Re: new cg-manager gui tool for managin cgroups
-Date: Thu, 21 Jul 2011 10:36:23 -0400
-Message-ID: <20110721143622.GB2454@redhat.com>
+Date: Thu, 21 Jul 2011 19:55:00 +0200
+Message-ID: <20110721175500.GA14575@tango.0pointer.de>
 References: <20110720192029.GD2482@redhat.com>
-	<1311202891.5681.5.camel@planemask>
-Reply-To: Development discussions related to Fedora
-	<devel@lists.fedoraproject.org>
+	<20110720202831.GA11395@tango.0pointer.de>
+	<20110721142053.GA2454@redhat.com>
+	<1311268987.6273.18.camel@vespa.frost.loc>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <devel-bounces@lists.fedoraproject.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1311202891.5681.5.camel@planemask>
-List-Unsubscribe: <https://admin.fedoraproject.org/mailman/listinfo/devel>,
-	<mailto:devel-request@lists.fedoraproject.org?subject=unsubscribe>
-List-Archive: <http://lists.fedoraproject.org/pipermail/devel>
-List-Post: <mailto:devel@lists.fedoraproject.org>
-List-Help: <mailto:devel-request@lists.fedoraproject.org?subject=help>
-List-Subscribe: <https://admin.fedoraproject.org/mailman/listinfo/devel>,
-	<mailto:devel-request@lists.fedoraproject.org?subject=subscribe>
-Sender: devel-bounces@lists.fedoraproject.org
-Errors-To: devel-bounces@lists.fedoraproject.org
-To: mclasen@redhat.co
-Cc: fedora-devel-list@redhat.com, cg-manager-developers@lists.fedorahosted.org, lwang@redhat.com, duffy@redhat.com, containers@lists.osdl.org
+In-Reply-To: <1311268987.6273.18.camel-ToA8MW0H8sPg+ylLNZCgDw@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Tomas Mraz <tmraz-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Development discussions related to Fedora <devel-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org>, fedora-devel-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, cg-manager-developers-TuqUDEhatI7GMZAyRF5v151Ccm5ICvs9@public.gmane.org, dwalsh-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, duffy-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi,
+On Thu, 21.07.11 19:23, Tomas Mraz (tmraz-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org) wrote:
 
-On Wed, Jul 20, 2011 at 07:01:30PM -0400, Matthias Clasen wrote:
-> On Wed, 2011-07-20 at 15:20 -0400, Jason Baron wrote:
+> 
+> On Thu, 2011-07-21 at 10:20 -0400, Jason Baron wrote: 
 > > Hi,
 > > 
-> > I've been working on a new gui tool for managing and monitoring cgroups, called
-> > 'cg-manager'. I'm hoping to get people interested in contributing to this
-> > project, as well as to add to the conversation about how cgroups should
-> > be configured and incorporated into distros.
+> > On Wed, Jul 20, 2011 at 10:28:32PM +0200, Lennart Poettering wrote:
+> > > On Wed, 20.07.11 15:20, Jason Baron (jbaron-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org) wrote:
+> > > 
+> > > Heya,
+> > > 
+> > > > The memory and cpu share controllers are currently supported (I simply haven't
+> > > > gotten to supporting other controllers yet). One can add/delete cgroups, change
+> > > > configuration parameters, and see which processes are currently associated
+> > > > with each cgroup. There is also a 'usage' view, which displays graphically the
+> > > > real-time usage statistics. The cgroup configuration can then be saved
+> > > > into /etc/cgconfig.conf using the 'save' menubar button.
+> > > 
+> > > How does it write that file? Does the UI run as root? That's not really
+> > > desirable. It's not secure and it is cumbersome to mix applications
+> > > running as differnt users on the same session and one the same X
+> > > screen (since they cannot communicate with dbus, and so on).
 > > 
+> > Right, as Dan Walsh, mentioned I need to separate this into two parts -
+> > the front end UI and a backend communicating via DBUS. This is had been
+> > a todo item.
 > 
-> As a high-level comment, I don't think 'cgroup management' is a very
-> compelling rationale for an end-user graphical tool.
+> Note that in case the services that the backend provides for the GUI are
+> really powerful there is no real security benefit in separating the GUI
+> and backend. 
 > 
-> For most people it will be much better to expose cgroup information in
-> the normal process monitor. For people who want to use the specific
-> cgroup functionality of systemd, it will be better to have that
-> functionality available in a new service management frontend.
-
-I've thought that displaying at least the cgroup that a process is part of would
-be nice in the system monitor as well.
-
-I think its a question of do we want to make users go to a bunch of
-different front end tools, which don't communicate with each other to
-configure the system? I think it makes sense to have libvirt or
-virt-manager and systemd front-end be able to configure cgroups, but I
-think it would be also nice if they could know when the step on each
-other. I think it would also be nice if there was a way to help better
-understand how the various system components are making use of cgroups
-and interacting. I liked to see an integrated desktop approach - not one
-where separate components aren't communicating with each other. 
-
-
+> I am not sure that a cgroup manager would be such case though.
 > 
-> The only role I could see for this kind of dedicated cgroup UI would be
-> as a cgroup debugging aid, but is that really worth the effort,
-> considering most cgroup developers probably prefer to use cmdline tools
-> for the that purpose ?
-> 
-> 
+> For example if the backend service is "interface to enable and configure
+> various network based authentication services" as it would be in case of
+> authconfig if it was split into GUI and backend, then you can easily
+> instruct the backend to authenticate against a network service that will
+> give you root user with no password. So we would have to trust the user
+> X session that is the authconfig frontend running in anyway.
 
-The reason I started looking at this was b/c there were requests to be
-able to use a GUI to configure cgroups. Correct me if I'm wrong, but  the answer
-is go to the virt-manager gui, then the systemd front end, and then hand edit
-cgrules.conf for custom rules. And then hope you don't start services in
-the wrong order.
+There's quite a substantial security benefit here. If you use stuff like
+PK you can ensure that UIs only ask for and get very specific privileges
+when interacting with the mechanism. That means even if you cannot trust
+your UI it will be able to do very few bad things only. If you entire UI
+runs as roo however, it can do pretty much everything it wants.
 
-thanks,
+Lennart
 
--Jason
 -- 
-devel mailing list
-devel@lists.fedoraproject.org
-https://admin.fedoraproject.org/mailman/listinfo/devel
+Lennart Poettering - Red Hat, Inc.
