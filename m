@@ -1,67 +1,99 @@
-From: Vivek Goyal <vgoyal@redhat.com>
+From: Lennart Poettering <mzerqung-uLTowLwuiw4b1SvskN2V4Q@public.gmane.org>
 Subject: Re: new cg-manager gui tool for managin cgroups
-Date: Thu, 21 Jul 2011 11:08:04 -0400
-Message-ID: <20110721150804.GC12373@redhat.com>
+Date: Thu, 21 Jul 2011 18:36:55 +0200
+Message-ID: <20110721163654.GE19140@tango.0pointer.de>
 References: <20110720192029.GD2482@redhat.com>
-	<20110720202831.GA11395@tango.0pointer.de>
-	<20110721142053.GA2454@redhat.com>
-Reply-To: Development discussions related to Fedora
-	<devel@lists.fedoraproject.org>
+	<1311202891.5681.5.camel@planemask>
+	<20110721143622.GB2454@redhat.com>
+	<20110721145202.GL17632@redhat.com>
+	<20110721152845.GD12373@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <devel-bounces@lists.fedoraproject.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20110721142053.GA2454@redhat.com>
-List-Unsubscribe: <https://admin.fedoraproject.org/mailman/listinfo/devel>,
-	<mailto:devel-request@lists.fedoraproject.org?subject=unsubscribe>
-List-Archive: <http://lists.fedoraproject.org/pipermail/devel>
-List-Post: <mailto:devel@lists.fedoraproject.org>
-List-Help: <mailto:devel-request@lists.fedoraproject.org?subject=help>
-List-Subscribe: <https://admin.fedoraproject.org/mailman/listinfo/devel>,
-	<mailto:devel-request@lists.fedoraproject.org?subject=subscribe>
-Sender: devel-bounces@lists.fedoraproject.org
-Errors-To: devel-bounces@lists.fedoraproject.org
-To: Jason Baron <jbaron@redhat.com>
-Cc: fedora-devel-list@redhat.com, cg-manager-developers@lists.fedorahosted.org, dwalsh@redhat.com, duffy@redhat.com, containers@lists.osdl.org
+In-Reply-To: <20110721152845.GD12373-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: fedora-devel-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, mclasen-H+wXaHxf7aJhl2p70BpVqQ@public.gmane.org, cg-manager-developers-TuqUDEhatI7GMZAyRF5v151Ccm5ICvs9@public.gmane.org, lwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, duffy-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Jul 21, 2011 at 10:20:54AM -0400, Jason Baron wrote:
+On Thu, 21.07.11 11:28, Vivek Goyal (vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org) wrote:
 
-[..]
-> > Quite frankly, I think cgrulesd is a really bad idea, since it applies
-> > control group limits after a process is already running. This is
-> > necessarily racy (and adds quite a burden too, since you ask for
-> > notifications on each exec()). I'd claim that cgrulesd is broken by
-> > design and cannot be fixed.
+> > It is already possible for different applications to use cgroups
+> > without stepping on each other, and without requiring every app
+> > to communicate with each other.
+> > 
+> > As an example, when it starts libvirt will look at what cgroup
+> > it has been placed in, and create the VM cgroups below this point.
+> > So systemd can put libvirtd in an arbitrary location and set an
+> > overall limits for the virtualization service, and it will cap
+> > all VMs. No direct communication between systemd & libvirt is
+> > required.
+> > 
+> > If applications similarly take care to honour the location in
+> > which they were started, rather than just creating stuff directly
+> > in the root cgroup, they too will interoperate nicely.
+> > 
+> > This is one of the nice aspects to the cgroups hierarchy, and
+> > why having tools/daemons which try to arbitrarily re-arrange
+> > cgroups systemwide are not very desirable IMHO.
 > 
-> I'm not going to claim that cgrulesd is perfect, but in the case where
-> you have untrusted users, you can start their login session in a
-> cgroup, and they can't break out of it. I agree it can be racy in the
-> case where you want to then further limit that user at run-time (fork
-> vs. re-assignment race). Another point, is that the current situation
-> can be no worse then the current unconstrained (no cgroup) case,
-> especially when you take into account the fact that system services or
-> 'trusted services' are going to be properly assigned. Perhaps, the
-> authors of cgrulesd can further comment on this issue... 
+> This will work as long as somebody has done the top level setup and
+> planning. For example, if somebody is running bunch of virtual machines
+> and hosting some native applications and services also on the machine,
+> then he might decide that all the virt machines can only use 8 out of
+> 10 cpus and keep 2 cpus free for native services.
+> 
+> In that case an admin ought to be able to do this top level planning
+> before handing out control of sub-hierarchies to respective applications.
+> Does systemd allow that as of today?
 
-Agreed that cgrulesd reacts after the event and can be racy. It is a
-best effort kind of situation. A more fool proof way is to launch the
-task in right cgroup to begin with and that can be done with various
-other mechianisms available.
+Right now, systemd only offers you to place services in the cgroups of
+your choice, it will not configure any settings on those cgroups. (This
+is very likely to change soon though as there is a patch pending that
+makes a number of popular controls available as native config options in
+systemd.)
 
-	- pam plugin to put users in right cgroup upon login
-	- cgexec command line tool to launch tasks in right cgroup
-	- Applications make use of libcgroup API to launch/fork tasks in
-	  desired cgroup. 
+For the controllers like "cpuset" or the RT part of "cpu" where you
+assign resources from a limited pool we currently have no solution at
+all to deal with conflicts. Neither in libcgroup and friends, not in
+systemd, not in libvirt.
 
-If none of the above is being used, then cgrulesengd works in the
-background as best effort to enforce the rules and can easily be turned
-off, if need be.
+However, I do think that figuring out the conflicts here is something to
+fix at the UI level -- and systemd itself (or libvirt) should not have to
+deal with this at all. The UIs should figure that out between
+themselves. I think it should be possible to come up with really simple
+schemes to deal with this however. For example, have every UI drop in
+some dir /var/lib or so a file encoding which resources have been taken
+and should not available in the other UIs anymore, maybe with a
+descriptive stirng, so that those UIs can show who took it away.
 
-Thanks
-Vivek
+However, I believe that adding something like that should be the last
+step to care for in a UI. So far systemd doesn't have any comprehensive
+UI. How to deal with conflicts between resource assignments is not a
+central problem that would justify moving all the consumers of cgroups
+on some additional middleware.
+
+> To allow that I think systemd should either provide native configuration
+> capability or build on top of existing libcgroups constructs like
+> cgconfig, cgrules.conf to decide how an admin has planned the resource
+> management and in what cgroups services have to be launched, IMHO.
+
+For the systemd case I'd assume that a UI which wants to enable the
+admin to control cgroup limits would just place a unit file for the
+respective service in /etc/systemd/system, use ".include" to pull in the
+original unit file, and set the setting it wants to set.
+
+Lennart
+
 -- 
-devel mailing list
-devel@lists.fedoraproject.org
-https://admin.fedoraproject.org/mailman/listinfo/devel
+Lennart Poettering - Red Hat, Inc.
