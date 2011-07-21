@@ -1,14 +1,15 @@
-From: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Subject: Re: [PATCH 2/7] vfs: Introduce the fd closing helper
-Date: Thu, 21 Jul 2011 10:47:48 -0500
-Message-ID: <20110721154748.GA19012@mail.hallyn.com>
-References: <4E204466.8010204@parallels.com> <4E2044A7.4030103@parallels.com>
+From: Tomas Mraz <tmraz-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: new cg-manager gui tool for managin cgroups
+Date: Thu, 21 Jul 2011 19:23:07 +0200
+Message-ID: <1311268987.6273.18.camel@vespa.frost.loc>
+References: <20110720192029.GD2482@redhat.com>
+	<20110720202831.GA11395@tango.0pointer.de>
+	<20110721142053.GA2454@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4E2044A7.4030103-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+In-Reply-To: <20110721142053.GA2454-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,101 +19,48 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+To: Development discussions related to Fedora <devel-TuqUDEhatI4ANWPb/1PvSmm0pvjS0E/A@public.gmane.org>
+Cc: fedora-devel-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, cg-manager-developers-TuqUDEhatI7GMZAyRF5v151Ccm5ICvs9@public.gmane.org, dwalsh-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, duffy-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, mzerqung-uLTowLwuiw4b1SvskN2V4Q@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Pavel Emelyanov (xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org):
-> This is nothing but making is possible to call the sys_close from the kernel.
+On Thu, 2011-07-21 at 10:20 -0400, Jason Baron wrote: 
+> Hi,
 > 
-> Signed-off-by: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-
-I see no problems here, thanks.
-
-Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-
+> On Wed, Jul 20, 2011 at 10:28:32PM +0200, Lennart Poettering wrote:
+> > On Wed, 20.07.11 15:20, Jason Baron (jbaron-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org) wrote:
+> > 
+> > Heya,
+> > 
+> > > The memory and cpu share controllers are currently supported (I simply haven't
+> > > gotten to supporting other controllers yet). One can add/delete cgroups, change
+> > > configuration parameters, and see which processes are currently associated
+> > > with each cgroup. There is also a 'usage' view, which displays graphically the
+> > > real-time usage statistics. The cgroup configuration can then be saved
+> > > into /etc/cgconfig.conf using the 'save' menubar button.
+> > 
+> > How does it write that file? Does the UI run as root? That's not really
+> > desirable. It's not secure and it is cumbersome to mix applications
+> > running as differnt users on the same session and one the same X
+> > screen (since they cannot communicate with dbus, and so on).
 > 
-> ---
->  fs/open.c          |   32 ++++++++++++++++++++------------
->  include/linux/fs.h |    1 +
->  2 files changed, 21 insertions(+), 12 deletions(-)
-> 
-> diff --git a/fs/open.c b/fs/open.c
-> index b52cf01..126aa8b 100644
-> --- a/fs/open.c
-> +++ b/fs/open.c
-> @@ -1078,17 +1078,11 @@ int filp_close(struct file *filp, fl_owner_t id)
->  
->  EXPORT_SYMBOL(filp_close);
->  
-> -/*
-> - * Careful here! We test whether the file pointer is NULL before
-> - * releasing the fd. This ensures that one clone task can't release
-> - * an fd while another clone is opening it.
-> - */
-> -SYSCALL_DEFINE1(close, unsigned int, fd)
-> +int do_close(unsigned int fd)
->  {
->  	struct file * filp;
->  	struct files_struct *files = current->files;
->  	struct fdtable *fdt;
-> -	int retval;
->  
->  	spin_lock(&files->file_lock);
->  	fdt = files_fdtable(files);
-> @@ -1101,7 +1095,25 @@ SYSCALL_DEFINE1(close, unsigned int, fd)
->  	FD_CLR(fd, fdt->close_on_exec);
->  	__put_unused_fd(files, fd);
->  	spin_unlock(&files->file_lock);
-> -	retval = filp_close(filp, files);
-> +
-> +	return filp_close(filp, files);
-> +
-> +out_unlock:
-> +	spin_unlock(&files->file_lock);
-> +	return -EBADF;
-> +}
-> +EXPORT_SYMBOL_GPL(do_close);
-> +
-> +/*
-> + * Careful here! We test whether the file pointer is NULL before
-> + * releasing the fd. This ensures that one clone task can't release
-> + * an fd while another clone is opening it.
-> + */
-> +SYSCALL_DEFINE1(close, unsigned int, fd)
-> +{
-> +	int retval;
-> +
-> +	retval = do_close(fd);
->  
->  	/* can't restart close syscall because file table entry was cleared */
->  	if (unlikely(retval == -ERESTARTSYS ||
-> @@ -1111,10 +1123,6 @@ SYSCALL_DEFINE1(close, unsigned int, fd)
->  		retval = -EINTR;
->  
->  	return retval;
-> -
-> -out_unlock:
-> -	spin_unlock(&files->file_lock);
-> -	return -EBADF;
->  }
->  EXPORT_SYMBOL(sys_close);
->  
-> diff --git a/include/linux/fs.h b/include/linux/fs.h
-> index cdf9495..77a5d3e 100644
-> --- a/include/linux/fs.h
-> +++ b/include/linux/fs.h
-> @@ -1991,6 +1991,7 @@ extern struct file *file_open_root(struct dentry *, struct vfsmount *,
->  extern struct file * dentry_open(struct dentry *, struct vfsmount *, int,
->  				 const struct cred *);
->  extern int filp_close(struct file *, fl_owner_t id);
-> +extern int do_close(unsigned int fd);
->  extern char * getname(const char __user *);
->  
->  /* fs/ioctl.c */
-> -- 
-> 1.5.5.6
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+> Right, as Dan Walsh, mentioned I need to separate this into two parts -
+> the front end UI and a backend communicating via DBUS. This is had been
+> a todo item.
+
+Note that in case the services that the backend provides for the GUI are
+really powerful there is no real security benefit in separating the GUI
+and backend. 
+
+I am not sure that a cgroup manager would be such case though.
+
+For example if the backend service is "interface to enable and configure
+various network based authentication services" as it would be in case of
+authconfig if it was split into GUI and backend, then you can easily
+instruct the backend to authenticate against a network service that will
+give you root user with no password. So we would have to trust the user
+X session that is the authconfig frontend running in anyway.
+
+-- 
+Tomas Mraz
+No matter how far down the wrong road you've gone, turn back.
+                                              Turkish proverb
