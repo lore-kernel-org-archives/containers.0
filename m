@@ -1,14 +1,15 @@
 From: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Subject: Re: [PATCH 4/7] vfs: Add ->statfs callback for pipefs
-Date: Thu, 21 Jul 2011 10:59:25 -0500
-Message-ID: <20110721155925.GC19012@mail.hallyn.com>
-References: <4E204466.8010204@parallels.com> <4E2044D6.3060205@parallels.com>
+Subject: Re: [PATCH 3/7] proc: Introduce the Children: line in
+	/proc/<pid>/status
+Date: Thu, 21 Jul 2011 10:54:11 -0500
+Message-ID: <20110721155411.GB19012@mail.hallyn.com>
+References: <4E204466.8010204@parallels.com> <4E2044C3.7050506@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4E2044D6.3060205-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+In-Reply-To: <4E2044C3.7050506-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,30 +24,53 @@ Cc: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Cyrill Gorc
 List-Id: containers.vger.kernel.org
 
 Quoting Pavel Emelyanov (xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org):
-> This is done to make it possible to distinguish pipes from fifos
-> when opening one via /proc/<pid>/fd/ link.
+> Although we can get the pids of some task's issue, this is just 
+> more convenient to have them this way.
 > 
-> Signed-off-by: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+> Signed-off-by: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>.
+
+Mind you status is getting long :)  But I see no problem with the
+patch technically, and it seems useful if we're going to go the
+user-space-checkpoint route.
 
 Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 
-> 
 > ---
->  fs/pipe.c |    1 +
->  1 files changed, 1 insertions(+), 0 deletions(-)
+>  fs/proc/array.c |   14 ++++++++++++++
+>  1 files changed, 14 insertions(+), 0 deletions(-)
 > 
-> diff --git a/fs/pipe.c b/fs/pipe.c
-> index da42f7d..5de15de 100644
-> --- a/fs/pipe.c
-> +++ b/fs/pipe.c
-> @@ -1254,6 +1254,7 @@ out:
+> diff --git a/fs/proc/array.c b/fs/proc/array.c
+> index 5e4f776..f01f480 100644
+> --- a/fs/proc/array.c
+> +++ b/fs/proc/array.c
+> @@ -158,6 +158,18 @@ static inline const char *get_task_state(struct task_struct *tsk)
+>  	return *p;
+>  }
 >  
->  static const struct super_operations pipefs_ops = {
->  	.destroy_inode = free_inode_nonrcu,
-> +	.statfs = simple_statfs,
->  };
+> +static void task_children(struct seq_file *m, struct task_struct *p, struct pid_namespace *ns)
+> +{
+> +	struct task_struct *c;
+> +
+> +	seq_printf(m, "Children:");
+> +	read_lock(&tasklist_lock);
+> +	list_for_each_entry(c, &p->children, sibling)
+> +		seq_printf(m, " %d", pid_nr_ns(task_pid(c), ns));
+> +	read_unlock(&tasklist_lock);
+> +	seq_putc(m, '\n');
+> +}
+> +
+>  static inline void task_state(struct seq_file *m, struct pid_namespace *ns,
+>  				struct pid *pid, struct task_struct *p)
+>  {
+> @@ -192,6 +204,8 @@ static inline void task_state(struct seq_file *m, struct pid_namespace *ns,
+>  		cred->uid, cred->euid, cred->suid, cred->fsuid,
+>  		cred->gid, cred->egid, cred->sgid, cred->fsgid);
 >  
->  /*
+> +	task_children(m, p, ns);
+> +
+>  	task_lock(p);
+>  	if (p->files)
+>  		fdt = files_fdtable(p->files);
 > -- 
 > 1.5.5.6
 > _______________________________________________
