@@ -1,78 +1,118 @@
-From: "Daniel P. Berrange" <berrange@redhat.com>
-Subject: Re: new cg-manager gui tool for managin cgroups
-Date: Thu, 21 Jul 2011 11:03:08 +0100
-Message-ID: <20110721100308.GC17632@redhat.com>
-References: <20110720192029.GD2482@redhat.com>
-	<1311202891.5681.5.camel@planemask>
-Reply-To: "Daniel P. Berrange" <berrange@redhat.com>,
-	Development discussions related to Fedora
-	<devel@lists.fedoraproject.org>
+From: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Subject: Re: [PATCH 2/7] vfs: Introduce the fd closing helper
+Date: Thu, 21 Jul 2011 10:47:48 -0500
+Message-ID: <20110721154748.GA19012@mail.hallyn.com>
+References: <4E204466.8010204@parallels.com> <4E2044A7.4030103@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <devel-bounces@lists.fedoraproject.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1311202891.5681.5.camel@planemask>
-List-Unsubscribe: <https://admin.fedoraproject.org/mailman/listinfo/devel>,
-	<mailto:devel-request@lists.fedoraproject.org?subject=unsubscribe>
-List-Archive: <http://lists.fedoraproject.org/pipermail/devel>
-List-Post: <mailto:devel@lists.fedoraproject.org>
-List-Help: <mailto:devel-request@lists.fedoraproject.org?subject=help>
-List-Subscribe: <https://admin.fedoraproject.org/mailman/listinfo/devel>,
-	<mailto:devel-request@lists.fedoraproject.org?subject=subscribe>
-Sender: devel-bounces@lists.fedoraproject.org
-Errors-To: devel-bounces@lists.fedoraproject.org
-To: Development discussions related to Fedora <devel@lists.fedoraproject.org>
-Cc: fedora-devel-list@redhat.com, containers@lists.osdl.org, cg-manager-developers@lists.fedorahosted.org, duffy@redhat.com
+In-Reply-To: <4E2044A7.4030103-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Jul 20, 2011 at 07:01:30PM -0400, Matthias Clasen wrote:
-> On Wed, 2011-07-20 at 15:20 -0400, Jason Baron wrote:
-> > Hi,
-> > 
-> > I've been working on a new gui tool for managing and monitoring cgroups, called
-> > 'cg-manager'. I'm hoping to get people interested in contributing to this
-> > project, as well as to add to the conversation about how cgroups should
-> > be configured and incorporated into distros.
-> > 
+Quoting Pavel Emelyanov (xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org):
+> This is nothing but making is possible to call the sys_close from the kernel.
 > 
-> As a high-level comment, I don't think 'cgroup management' is a very
-> compelling rationale for an end-user graphical tool.
+> Signed-off-by: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+
+I see no problems here, thanks.
+
+Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+
 > 
-> For most people it will be much better to expose cgroup information in
-> the normal process monitor. For people who want to use the specific
-> cgroup functionality of systemd, it will be better to have that
-> functionality available in a new service management frontend.
+> ---
+>  fs/open.c          |   32 ++++++++++++++++++++------------
+>  include/linux/fs.h |    1 +
+>  2 files changed, 21 insertions(+), 12 deletions(-)
 > 
-> The only role I could see for this kind of dedicated cgroup UI would be
-> as a cgroup debugging aid, but is that really worth the effort,
-> considering most cgroup developers probably prefer to use cmdline tools
-> for the that purpose ?
-
-I tend to agree. CGroups is really just a low level piece of infrastructure
-to be used as a building block by higher level services like systemd or
-libvirt. End users shouldn't know or care about cgroups directly, but
-instead work off higher level concepts like
-
-  "Allow this virtual machine a max 30% of total CPU time"
-
-This kind of policy is best expressed in the virtualization management
-tool, or in the system services configuration tool, or another high
-level application.
-
-An end user tool for directly managing low level cgroups is not only an
-inappropriate level of abstraction for users, but it will make it trivial
-for users to totally screw up the use cgroups by things like systemd /
-libvirt by moving groups/processes to unexpected places.
-
-Regards,
-Daniel
--- 
-|: http://berrange.com      -o-    http://www.flickr.com/photos/dberrange/ :|
-|: http://libvirt.org              -o-             http://virt-manager.org :|
-|: http://autobuild.org       -o-         http://search.cpan.org/~danberr/ :|
-|: http://entangle-photo.org       -o-       http://live.gnome.org/gtk-vnc :|
--- 
-devel mailing list
-devel@lists.fedoraproject.org
-https://admin.fedoraproject.org/mailman/listinfo/devel
+> diff --git a/fs/open.c b/fs/open.c
+> index b52cf01..126aa8b 100644
+> --- a/fs/open.c
+> +++ b/fs/open.c
+> @@ -1078,17 +1078,11 @@ int filp_close(struct file *filp, fl_owner_t id)
+>  
+>  EXPORT_SYMBOL(filp_close);
+>  
+> -/*
+> - * Careful here! We test whether the file pointer is NULL before
+> - * releasing the fd. This ensures that one clone task can't release
+> - * an fd while another clone is opening it.
+> - */
+> -SYSCALL_DEFINE1(close, unsigned int, fd)
+> +int do_close(unsigned int fd)
+>  {
+>  	struct file * filp;
+>  	struct files_struct *files = current->files;
+>  	struct fdtable *fdt;
+> -	int retval;
+>  
+>  	spin_lock(&files->file_lock);
+>  	fdt = files_fdtable(files);
+> @@ -1101,7 +1095,25 @@ SYSCALL_DEFINE1(close, unsigned int, fd)
+>  	FD_CLR(fd, fdt->close_on_exec);
+>  	__put_unused_fd(files, fd);
+>  	spin_unlock(&files->file_lock);
+> -	retval = filp_close(filp, files);
+> +
+> +	return filp_close(filp, files);
+> +
+> +out_unlock:
+> +	spin_unlock(&files->file_lock);
+> +	return -EBADF;
+> +}
+> +EXPORT_SYMBOL_GPL(do_close);
+> +
+> +/*
+> + * Careful here! We test whether the file pointer is NULL before
+> + * releasing the fd. This ensures that one clone task can't release
+> + * an fd while another clone is opening it.
+> + */
+> +SYSCALL_DEFINE1(close, unsigned int, fd)
+> +{
+> +	int retval;
+> +
+> +	retval = do_close(fd);
+>  
+>  	/* can't restart close syscall because file table entry was cleared */
+>  	if (unlikely(retval == -ERESTARTSYS ||
+> @@ -1111,10 +1123,6 @@ SYSCALL_DEFINE1(close, unsigned int, fd)
+>  		retval = -EINTR;
+>  
+>  	return retval;
+> -
+> -out_unlock:
+> -	spin_unlock(&files->file_lock);
+> -	return -EBADF;
+>  }
+>  EXPORT_SYMBOL(sys_close);
+>  
+> diff --git a/include/linux/fs.h b/include/linux/fs.h
+> index cdf9495..77a5d3e 100644
+> --- a/include/linux/fs.h
+> +++ b/include/linux/fs.h
+> @@ -1991,6 +1991,7 @@ extern struct file *file_open_root(struct dentry *, struct vfsmount *,
+>  extern struct file * dentry_open(struct dentry *, struct vfsmount *, int,
+>  				 const struct cred *);
+>  extern int filp_close(struct file *, fl_owner_t id);
+> +extern int do_close(unsigned int fd);
+>  extern char * getname(const char __user *);
+>  
+>  /* fs/ioctl.c */
+> -- 
+> 1.5.5.6
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
