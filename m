@@ -1,79 +1,69 @@
-From: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Subject: Re: [PATCH 3/7] proc: Introduce the Children: line in
-	/proc/<pid>/status
-Date: Thu, 21 Jul 2011 10:54:11 -0500
-Message-ID: <20110721155411.GB19012@mail.hallyn.com>
-References: <4E204466.8010204@parallels.com> <4E2044C3.7050506@parallels.com>
+From: Jason Baron <jbaron@redhat.com>
+Subject: Re: new cg-manager gui tool for managin cgroups
+Date: Thu, 21 Jul 2011 16:15:46 -0400
+Message-ID: <20110721201546.GD2454@redhat.com>
+References: <20110720192029.GD2482@redhat.com>
+	<1311202891.5681.5.camel@planemask>
+	<20110721143622.GB2454@redhat.com>
+	<20110721145202.GL17632@redhat.com>
+	<20110721152845.GD12373@redhat.com>
+	<20110721153620.GO17632@redhat.com>
+	<20110721155312.GA19140@tango.0pointer.de>
+Reply-To: Development discussions related to Fedora
+	<devel@lists.fedoraproject.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Return-path: <devel-bounces@lists.fedoraproject.org>
 Content-Disposition: inline
-In-Reply-To: <4E2044C3.7050506-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20110721155312.GA19140@tango.0pointer.de>
+List-Unsubscribe: <https://admin.fedoraproject.org/mailman/listinfo/devel>,
+	<mailto:devel-request@lists.fedoraproject.org?subject=unsubscribe>
+List-Archive: <http://lists.fedoraproject.org/pipermail/devel>
+List-Post: <mailto:devel@lists.fedoraproject.org>
+List-Help: <mailto:devel-request@lists.fedoraproject.org?subject=help>
+List-Subscribe: <https://admin.fedoraproject.org/mailman/listinfo/devel>,
+	<mailto:devel-request@lists.fedoraproject.org?subject=subscribe>
+Sender: devel-bounces@lists.fedoraproject.org
+Errors-To: devel-bounces@lists.fedoraproject.org
+To: mzerqung@0pointer.de
+Cc: fedora-devel-list@redhat.com, mclasen@redhat.co, cg-manager-developers@lists.fedorahosted.org, lwang@redhat.com, duffy@redhat.com, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-Quoting Pavel Emelyanov (xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org):
-> Although we can get the pids of some task's issue, this is just 
-> more convenient to have them this way.
+On Thu, Jul 21, 2011 at 05:53:13PM +0200, Lennart Poettering wrote:
+> On Thu, 21.07.11 16:36, Daniel P. Berrange (berrange@redhat.com) wrote:
 > 
-> Signed-off-by: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>.
-
-Mind you status is getting long :)  But I see no problem with the
-patch technically, and it seems useful if we're going to go the
-user-space-checkpoint route.
-
-Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-
-> ---
->  fs/proc/array.c |   14 ++++++++++++++
->  1 files changed, 14 insertions(+), 0 deletions(-)
+> > IIRC, you can already set cgroups configuration in the service's
+> > systemd unit file, using something like:
+> > 
+> >  ControlGroup="cpu:/foo/bar mem:/wizz"
+> > 
+> > though I can't find the manpage right now.
 > 
-> diff --git a/fs/proc/array.c b/fs/proc/array.c
-> index 5e4f776..f01f480 100644
-> --- a/fs/proc/array.c
-> +++ b/fs/proc/array.c
-> @@ -158,6 +158,18 @@ static inline const char *get_task_state(struct task_struct *tsk)
->  	return *p;
->  }
->  
-> +static void task_children(struct seq_file *m, struct task_struct *p, struct pid_namespace *ns)
-> +{
-> +	struct task_struct *c;
-> +
-> +	seq_printf(m, "Children:");
-> +	read_lock(&tasklist_lock);
-> +	list_for_each_entry(c, &p->children, sibling)
-> +		seq_printf(m, " %d", pid_nr_ns(task_pid(c), ns));
-> +	read_unlock(&tasklist_lock);
-> +	seq_putc(m, '\n');
-> +}
-> +
->  static inline void task_state(struct seq_file *m, struct pid_namespace *ns,
->  				struct pid *pid, struct task_struct *p)
->  {
-> @@ -192,6 +204,8 @@ static inline void task_state(struct seq_file *m, struct pid_namespace *ns,
->  		cred->uid, cred->euid, cred->suid, cred->fsuid,
->  		cred->gid, cred->egid, cred->sgid, cred->fsgid);
->  
-> +	task_children(m, p, ns);
-> +
->  	task_lock(p);
->  	if (p->files)
->  		fdt = files_fdtable(p->files);
-> -- 
-> 1.5.5.6
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+> Yes, this is supported in systemd (though without the "").
+> 
+> It's (tersely) documented in systemd.exec(5).
+> 
+> My guess is that we'll cover about 90% or so of the usecases of cgroups
+> if we make it easy to assign cgroup-based limits to VMs, to system
+> services and to users, like we can do with libvirt and systemd. There's
+> still a big chunk of the 10% who want more complex setups with more
+> arbitrary groupings, but I have my doubts the folks doing that are the
+> ones who need a UI for that.
+> 
+
+Ok, if systemd is planning to add all these knobs and buttons to cover all of
+these cgroups use cases, then yes, we probably don't need another management
+layer nor the UI. I guess we could worry about the more complex setups when
+we better understand what they are, once systemd has added more cgroup
+support. (I only recently understood that systemd was adding all this
+cgroups support). In fact, at that point we probably don't need
+libcgroup either.
+
+thanks,
+
+-Jason
+-- 
+devel mailing list
+devel@lists.fedoraproject.org
+https://admin.fedoraproject.org/mailman/listinfo/devel
