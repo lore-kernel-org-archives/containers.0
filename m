@@ -1,15 +1,15 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 7/7] binfmt: Introduce the binfmt_img exec handler
-Date: Fri, 22 Jul 2011 15:46:17 -0700
-Message-ID: <20110722224617.GA16940@count0.beaverton.ibm.com>
-References: <4E204466.8010204@parallels.com> <4E204519.3040804@parallels.com>
-	<20110721065127.GS3455@htj.dyndns.org>
+Subject: Re: [PATCH 5/7] clone: Introduce the CLONE_CHILD_USEPID functionality
+Date: Fri, 22 Jul 2011 16:08:48 -0700
+Message-ID: <20110722230848.GB16940@count0.beaverton.ibm.com>
+References: <4E204466.8010204@parallels.com> <4E2044EB.20001@parallels.com>
+	<20110721160459.GD19012@mail.hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20110721065127.GS3455-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
+In-Reply-To: <20110721160459.GD19012-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,70 +19,234 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+To: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Cc: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Jul 21, 2011 at 08:51:27AM +0200, Tejun Heo wrote:
-> On Fri, Jul 15, 2011 at 05:48:09PM +0400, Pavel Emelyanov wrote:
-> > When being execve-ed the handler reads registers, mappings and provided
-> > memory pages from image and just assigns this state on current task. This
-> > simple functionality can be used to restore a task, whose state whas read
-> > from e.g. /proc/<pid>/dump file before.
+On Thu, Jul 21, 2011 at 11:04:59AM -0500, Serge E. Hallyn wrote:
+> Quoting Pavel Emelyanov (xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org):
+> > The respective flag for clone() makes the latter to take the desired
+> > pid of a new process from the child_tidptr. The given pid is used as
+> > the pid for the pid namespace the parent is currently running in.
+> > 
+> > Needed badly for restoring a process.
+> > 
+> > Signed-off-by: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 > 
-> Ummm... iff the process is single threaded. :(
+> How do you intend to eventually support multiple pid namespaces?
+> I don't mind not supporting them now, but if the interface does
+> cannot be extended to support it, I think that's a simple NACK.
 > 
-> Much more complex machinery is needed to restore full process anyway
-> which would require some kernel facilities but definitely a lot more
+> IIRC Eric Biederman (explicity cc:d) in the past has advocated using
+> /proc/sys/pid_max games to specify a pid.  That is actually
+> usable cross-namespace, though only serially.  Do you think that
+> will be too cumbersome?
 
-Agreed,
+Didn't that already get NACK'd by others?
 
-> logic in userland.  I really can't see much point in having
+Regardless, I'm not a fan of that method. If we're going to add
+an interface to enable doing something then it's best if we can
+do it simply and directly -- not play games with some apparent
+tunable in order to "covertly" get the pids we want.
 
-I disagree (surprise! ;)).
+> 
+> There is also the clone_with_pid() syscall from Suka.  It
+> accompanied the in-kernel checkpoint/restart patchset, but should
+> be perfectly usable without it.  Is there a good reason not to
+> pursue that?
 
-> dumper/restorer in kernel.  The simplistic dumper/restorer proposed
-> here isn't really useful - among other things, it's single threaded
-> only and there's no mechanism to freeze the task being dumped.  It is
+aka eclone. It enabled extending the clone flags in the future. Suka
+did substantial work making sure it worked for multiple architectures
+(clone is rather special that way). It's already been tested.
 
-To be fair Pavel used signals to stop/resume the task. It's not
-a good solution but it's a start (more below).
+Furthermore, Oren's user-cr code already creates a tree of
+multiple processes with correct pids, pid namespaces, session ids,
+and process group ids in userspace using only eclone. So we know eclone
+can handle all of that today because there's code to do it.
 
-> almost trivially implementable from userland using existing
-> facilities.  I wonder what the point is.
-
-No, I think that ultimately an addition to the cgroup freezer will
-be needed.
-
-The problem is that another task (perhaps a shell or debugger)
-could come in and wake up the tasks. In theory the same problem could
-happen with the cgroup freezer -- only the fact that today code
-is rarely written to deal with it allows it to be more reliable than
-SIGSTOP and SIGCONT.
-
-The task doing the checkpoint *at least* needs to know if the frozen
-tasks have been thawed ("notification"). That allows it to report
-a warning or an error to the effect that the checkpoint may be
-unreliable. Notification alone produces the possibility of indefinite
-postponement however.
-
-So it needs some assurance that frozen tasks will not be thawed until
-checkpoint is complete. Oren's patches used a new freezer state
-for this purpose. That's an in-kernel solution -- we need something
-somewhat more elaborate for userspace because we then have to worry
-about abuse of a new freezer interface.
-
-We could add the ability to "lock" the freezer in its current state
-to userspace. Only the task that set the lock can release it. Of
-course if the task died then the lock would need to be released. It
-might also be wise to add a timeout...
-
-So we almost want to be able to use a mandatory file lock on the
-freezer.state. Or perhaps we can add a freezer.lock file to the
-cgroup freezer.
-
-But for now, using the cgroup freezer would be an improvement
-over SIGSTOP/SIGCONT.
+So I think it would be better to incorporate the eclone patch set
+unless, as you say, Pavel can see a good reason not to.
 
 Cheers,
 	-Matt Helsley
+
+> 
+> thanks,
+> -serge
+> 
+> > ---
+> >  include/linux/pid.h   |    2 +-
+> >  include/linux/sched.h |    1 +
+> >  kernel/fork.c         |   10 ++++++-
+> >  kernel/pid.c          |   70 +++++++++++++++++++++++++++++++++++-------------
+> >  4 files changed, 62 insertions(+), 21 deletions(-)
+> > 
+> > diff --git a/include/linux/pid.h b/include/linux/pid.h
+> > index cdced84..de772ab 100644
+> > --- a/include/linux/pid.h
+> > +++ b/include/linux/pid.h
+> > @@ -119,7 +119,7 @@ extern struct pid *find_get_pid(int nr);
+> >  extern struct pid *find_ge_pid(int nr, struct pid_namespace *);
+> >  int next_pidmap(struct pid_namespace *pid_ns, unsigned int last);
+> >  
+> > -extern struct pid *alloc_pid(struct pid_namespace *ns);
+> > +extern struct pid *alloc_pid(struct pid_namespace *ns, int pid);
+> >  extern void free_pid(struct pid *pid);
+> >  
+> >  /*
+> > diff --git a/include/linux/sched.h b/include/linux/sched.h
+> > index 781abd1..5b6c1e2 100644
+> > --- a/include/linux/sched.h
+> > +++ b/include/linux/sched.h
+> > @@ -23,6 +23,7 @@
+> >  #define CLONE_CHILD_SETTID	0x01000000	/* set the TID in the child */
+> >  /* 0x02000000 was previously the unused CLONE_STOPPED (Start in stopped state)
+> >     and is now available for re-use. */
+> > +#define CLONE_CHILD_USEPID	0x02000000	/* use the given pid */
+> >  #define CLONE_NEWUTS		0x04000000	/* New utsname group? */
+> >  #define CLONE_NEWIPC		0x08000000	/* New ipcs */
+> >  #define CLONE_NEWUSER		0x10000000	/* New user namespace */
+> > diff --git a/kernel/fork.c b/kernel/fork.c
+> > index e7548de..f30fbdb 100644
+> > --- a/kernel/fork.c
+> > +++ b/kernel/fork.c
+> > @@ -1183,8 +1183,16 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+> >  		goto bad_fork_cleanup_io;
+> >  
+> >  	if (pid != &init_struct_pid) {
+> > +		int want_pid = 0;
+> > +
+> > +		if (clone_flags & CLONE_CHILD_USEPID) {
+> > +			retval = get_user(want_pid, child_tidptr);
+> > +			if (retval)
+> > +				goto bad_fork_cleanup_io;
+> > +		}
+> > +
+> >  		retval = -ENOMEM;
+> > -		pid = alloc_pid(p->nsproxy->pid_ns);
+> > +		pid = alloc_pid(p->nsproxy->pid_ns, want_pid);
+> >  		if (!pid)
+> >  			goto bad_fork_cleanup_io;
+> >  	}
+> > diff --git a/kernel/pid.c b/kernel/pid.c
+> > index 57a8346..69ae1be 100644
+> > --- a/kernel/pid.c
+> > +++ b/kernel/pid.c
+> > @@ -159,11 +159,55 @@ static void set_last_pid(struct pid_namespace *pid_ns, int base, int pid)
+> >  	} while ((prev != last_write) && (pid_before(base, last_write, pid)));
+> >  }
+> >  
+> > -static int alloc_pidmap(struct pid_namespace *pid_ns)
+> > +static int alloc_pidmap_page(struct pidmap *map)
+> > +{
+> > +	if (unlikely(!map->page)) {
+> > +		void *page = kzalloc(PAGE_SIZE, GFP_KERNEL);
+> > +		/*
+> > +		 * Free the page if someone raced with us
+> > +		 * installing it:
+> > +		 */
+> > +		spin_lock_irq(&pidmap_lock);
+> > +		if (!map->page) {
+> > +			map->page = page;
+> > +			page = NULL;
+> > +		}
+> > +		spin_unlock_irq(&pidmap_lock);
+> > +		kfree(page);
+> > +		if (unlikely(!map->page))
+> > +			return -ENOMEM;
+> > +	}
+> > +
+> > +	return 0;
+> > +}
+> > +
+> > +static int set_pidmap(struct pid_namespace *pid_ns, int pid)
+> > +{
+> > +	int offset;
+> > +	struct pidmap *map;
+> > +
+> > +	offset = pid & BITS_PER_PAGE_MASK;
+> > +	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
+> > +
+> > +	if (alloc_pidmap_page(map) < 0)
+> > +		return -ENOMEM;
+> > +
+> > +	if (!test_and_set_bit(offset, map->page)) {
+> > +		atomic_dec(&map->nr_free);
+> > +		return pid;
+> > +	}
+> > +
+> > +	return -EBUSY;
+> > +}
+> > +
+> > +static int alloc_pidmap(struct pid_namespace *pid_ns, int desired_pid)
+> >  {
+> >  	int i, offset, max_scan, pid, last = pid_ns->last_pid;
+> >  	struct pidmap *map;
+> >  
+> > +	if (desired_pid)
+> > +		return set_pidmap(pid_ns, desired_pid);
+> > +
+> >  	pid = last + 1;
+> >  	if (pid >= pid_max)
+> >  		pid = RESERVED_PIDS;
+> > @@ -176,22 +220,9 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
+> >  	 */
+> >  	max_scan = DIV_ROUND_UP(pid_max, BITS_PER_PAGE) - !offset;
+> >  	for (i = 0; i <= max_scan; ++i) {
+> > -		if (unlikely(!map->page)) {
+> > -			void *page = kzalloc(PAGE_SIZE, GFP_KERNEL);
+> > -			/*
+> > -			 * Free the page if someone raced with us
+> > -			 * installing it:
+> > -			 */
+> > -			spin_lock_irq(&pidmap_lock);
+> > -			if (!map->page) {
+> > -				map->page = page;
+> > -				page = NULL;
+> > -			}
+> > -			spin_unlock_irq(&pidmap_lock);
+> > -			kfree(page);
+> > -			if (unlikely(!map->page))
+> > -				break;
+> > -		}
+> > +		if (alloc_pidmap_page(map) < 0)
+> > +			break;
+> > +
+> >  		if (likely(atomic_read(&map->nr_free))) {
+> >  			do {
+> >  				if (!test_and_set_bit(offset, map->page)) {
+> > @@ -277,7 +308,7 @@ void free_pid(struct pid *pid)
+> >  	call_rcu(&pid->rcu, delayed_put_pid);
+> >  }
+> >  
+> > -struct pid *alloc_pid(struct pid_namespace *ns)
+> > +struct pid *alloc_pid(struct pid_namespace *ns, int this_ns_pid)
+> >  {
+> >  	struct pid *pid;
+> >  	enum pid_type type;
+> > @@ -291,13 +322,14 @@ struct pid *alloc_pid(struct pid_namespace *ns)
+> >  
+> >  	tmp = ns;
+> >  	for (i = ns->level; i >= 0; i--) {
+> > -		nr = alloc_pidmap(tmp);
+> > +		nr = alloc_pidmap(tmp, this_ns_pid);
+> >  		if (nr < 0)
+> >  			goto out_free;
+> >  
+> >  		pid->numbers[i].nr = nr;
+> >  		pid->numbers[i].ns = tmp;
+> >  		tmp = tmp->parent;
+> > +		this_ns_pid = 0;
+> >  	}
+> >  
+> >  	get_pid_ns(ns);
+> > -- 
+> > 1.5.5.6
+> > _______________________________________________
+> > Containers mailing list
+> > Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> > https://lists.linux-foundation.org/mailman/listinfo/containers
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
