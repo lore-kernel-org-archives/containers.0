@@ -1,252 +1,132 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 5/7] clone: Introduce the CLONE_CHILD_USEPID functionality
-Date: Fri, 22 Jul 2011 16:08:48 -0700
-Message-ID: <20110722230848.GB16940@count0.beaverton.ibm.com>
-References: <4E204466.8010204@parallels.com> <4E2044EB.20001@parallels.com>
-	<20110721160459.GD19012@mail.hallyn.com>
+From: Matt Helsley <matthltc@us.ibm.com>
+Subject: Re: [EXAMPLE CODE] Parasite thread injection using PTRACE_SEIZE and
+ friends
+Date: Fri, 22 Jul 2011 16:19:53 -0700
+Message-ID: <20110722231953.GC16940@count0.beaverton.ibm.com>
+References: <20110720140037.GM3455@htj.dyndns.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <20110721160459.GD19012-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Cc: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20110720140037.GM3455@htj.dyndns.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Tejun Heo <tj@kernel.org>
+Cc: Pavel Emelyanov <xemul@parallels.com>, Nathan Lynch <ntl@pobox.com>, Oren Laadan <orenl@cs.columbia.edu>, Daniel Lezcano <dlezcano@fr.ibm.com>, Serge Hallyn <serue@us.ibm.com>, Cyrill Gorcunov <gorcunov@gmail.com>, Glauber Costa <glommer@parallels.com>, Oleg Nesterov <oleg@redhat.com>, Andrew Morton <akpm@linux-foundation.org>, Linux Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Jul 21, 2011 at 11:04:59AM -0500, Serge E. Hallyn wrote:
-> Quoting Pavel Emelyanov (xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org):
-> > The respective flag for clone() makes the latter to take the desired
-> > pid of a new process from the child_tidptr. The given pid is used as
-> > the pid for the pid namespace the parent is currently running in.
-> > 
-> > Needed badly for restoring a process.
-> > 
-> > Signed-off-by: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+On Wed, Jul 20, 2011 at 04:00:37PM +0200, Tejun Heo wrote:
+> Hello,
 > 
-> How do you intend to eventually support multiple pid namespaces?
-> I don't mind not supporting them now, but if the interface does
-> cannot be extended to support it, I think that's a simple NACK.
+> This has taken much longer than expected (which BTW is usually
+> expected) but ptrace fixes and new features are mostly complete now.
+> They're sitting in Oleg's ptrace branch waiting for merge window.
 > 
-> IIRC Eric Biederman (explicity cc:d) in the past has advocated using
-> /proc/sys/pid_max games to specify a pid.  That is actually
-> usable cross-namespace, though only serially.  Do you think that
-> will be too cumbersome?
-
-Didn't that already get NACK'd by others?
-
-Regardless, I'm not a fan of that method. If we're going to add
-an interface to enable doing something then it's best if we can
-do it simply and directly -- not play games with some apparent
-tunable in order to "covertly" get the pids we want.
-
+>   http://git.kernel.org/?p=linux/kernel/git/oleg/misc.git;a=shortlog;h=refs/heads/ptrace
+>   git://git.kernel.org/pub/scm/linux/kernel/git/oleg/misc.git ptrace
 > 
-> There is also the clone_with_pid() syscall from Suka.  It
-> accompanied the in-kernel checkpoint/restart patchset, but should
-> be perfectly usable without it.  Is there a good reason not to
-> pursue that?
+> With new ptrace requests, a process can be captured and manipulated
+> practically transparently.  Other than syscall retry or -EINTR failure
+> in special cases and timing difference, everything including job
+> control stop state stays transparent across ptrace operations.
+> 
+> One of the concerns raised about using ptrace for CR was that it
+> doesn't have access to states which are visible only to the process
+> being checkpointed and exporting every such information outside would
+> be too laborious.  The attached ptrace-parasite example code
+> demonstrates how this can be solved.  Using new ptrace requests, it
+> inserts a parasite thread to the host process transparently.  The code
+> is also available in the following git branch (the first link is code
+> brwser, second git branch you can clone from).
+> 
+>   http://code.google.com/p/ptrace-parasite/source/browse/
+>   https://code.google.com/p/ptrace-parasite/ ptrace-parasite
+> 
+> It only works on x86-64 and requires Oleg's ptrace branch.  'make'
+> produces two binaries - simple-host and parasite.  If you run
+> simple-host in a terminal and run parasite with the pid (thread 00's
+> tid) of the simple-host in another terminal, you should see something
+> like the following.
+> 
+>   # ./simple-host
+>   thread 01(4580): alive
+>   thread 02(4581): alive
+>   thread 03(4582): alive
+>   thread 04(4583): alive
+>   thread 00(4579): alive
+>   hello, world!
+>   parasite: hello, world!
+>   parasite: tid / time = 4629 / 1311169280
+>   thread 03(4582): alive
+>   thread 02(4581): alive
+>   thread 01(4580): alive
+>   thread 04(4583): alive
+>   thread 00(4579): alive
+>   ...
+> 
+>   # ./parasite 4579
+>   Seizing 4579
+>   Seizing 4580
+>   Seizing 4581
+>   Seizing 4582
+>   Seizing 4583
+>   executing test blob
+>   blocking all signals = 0, prev_sigmask 0
+>   executing mmap blob = 0x7fc4eca35000
+>   executing clone blob = 4629
+>   executing parasite
+>   executing munmap blob = 0
+>   restoring sigmask = 0, prev_sigmask 0xfffffffffffbfeef
+> 
+> The first "hello, world!" is printed by the infected host thread which
+> is then directed to block all signals, mmap an area and clone parasite
+> thread.  The lines which start with "parasite: " are printed by the
+> new parasite thread.  While the parasite is running, all host threads
+> are ptrace trapped and when they're resumed they have no way to find
+> out what happened to their precious process.  Note that host can be
+> any program.
+> 
+> The implementation is naive and simplicistic, especially the part
+> which seizes all threads belonging to the target process but it should
+> be enough to demonstrate how this can be done.
+> 
+> I'm sure there still are a lot of things missing for reasonable
+> userland CR but I think this should at least provide the core process
+> capturing part of it and make the whole thing more feasible.
+> 
+> One missing piece is that it can't operate on a process which is
+> already being ptraced.  Adding nested ptrace would solve some part of
+> it but it leads to a lot of complexity, most of it stemming from the
+> fact that it diversifies the places target processes may be trapped
+> at.  Determining which exact point isn't that difficult but rolling
+> back from and restoring to some of those debug traps can be difficult
+> or even impossible.  For debugger checkpointing, probably more
+> cooperative approach would make more sense.  Anyways, I don't think
+> this is too big a deal at this point.
+> 
+> Thank you.
 
-aka eclone. It enabled extending the clone flags in the future. Suka
-did substantial work making sure it worked for multiple architectures
-(clone is rather special that way). It's already been tested.
+parasitism is fine for a slow-but-sure debugger but is not suitable
+for checkpoint/restart.
 
-Furthermore, Oren's user-cr code already creates a tree of
-multiple processes with correct pids, pid namespaces, session ids,
-and process group ids in userspace using only eclone. So we know eclone
-can handle all of that today because there's code to do it.
+The difficulty of checkpoint/restart is not that the task has
+more information than the kernel. Quite the contrary. Most of
+the "information" the task has that the kernel is not explicitly
+aware of is encoded in the task's memory. So long as the kernel
+faithfully restores memory and registers the task can know little 
+the kernel doesn't already know.
 
-So I think it would be better to incorporate the eclone patch set
-unless, as you say, Pavel can see a good reason not to.
+One example of something the task knows that the kernel does not is
+which pids it cares about. However, a parasitic thread capable
+of checkpointing arbitrary processes won't know about these pids
+either -- it would have to be designed to checkpoint *only* the
+process it was injected into.
+
+Furthermore, the kernel has information necessary for checkpoint/restart
+that the task does not. The composition of an epoll set is one
+example.
+
+So ptrace is just the wrong interface to base checkpoint/restart on.
+Pavel's approach, though I believe it is subtly flawed, is better.
 
 Cheers,
 	-Matt Helsley
-
-> 
-> thanks,
-> -serge
-> 
-> > ---
-> >  include/linux/pid.h   |    2 +-
-> >  include/linux/sched.h |    1 +
-> >  kernel/fork.c         |   10 ++++++-
-> >  kernel/pid.c          |   70 +++++++++++++++++++++++++++++++++++-------------
-> >  4 files changed, 62 insertions(+), 21 deletions(-)
-> > 
-> > diff --git a/include/linux/pid.h b/include/linux/pid.h
-> > index cdced84..de772ab 100644
-> > --- a/include/linux/pid.h
-> > +++ b/include/linux/pid.h
-> > @@ -119,7 +119,7 @@ extern struct pid *find_get_pid(int nr);
-> >  extern struct pid *find_ge_pid(int nr, struct pid_namespace *);
-> >  int next_pidmap(struct pid_namespace *pid_ns, unsigned int last);
-> >  
-> > -extern struct pid *alloc_pid(struct pid_namespace *ns);
-> > +extern struct pid *alloc_pid(struct pid_namespace *ns, int pid);
-> >  extern void free_pid(struct pid *pid);
-> >  
-> >  /*
-> > diff --git a/include/linux/sched.h b/include/linux/sched.h
-> > index 781abd1..5b6c1e2 100644
-> > --- a/include/linux/sched.h
-> > +++ b/include/linux/sched.h
-> > @@ -23,6 +23,7 @@
-> >  #define CLONE_CHILD_SETTID	0x01000000	/* set the TID in the child */
-> >  /* 0x02000000 was previously the unused CLONE_STOPPED (Start in stopped state)
-> >     and is now available for re-use. */
-> > +#define CLONE_CHILD_USEPID	0x02000000	/* use the given pid */
-> >  #define CLONE_NEWUTS		0x04000000	/* New utsname group? */
-> >  #define CLONE_NEWIPC		0x08000000	/* New ipcs */
-> >  #define CLONE_NEWUSER		0x10000000	/* New user namespace */
-> > diff --git a/kernel/fork.c b/kernel/fork.c
-> > index e7548de..f30fbdb 100644
-> > --- a/kernel/fork.c
-> > +++ b/kernel/fork.c
-> > @@ -1183,8 +1183,16 @@ static struct task_struct *copy_process(unsigned long clone_flags,
-> >  		goto bad_fork_cleanup_io;
-> >  
-> >  	if (pid != &init_struct_pid) {
-> > +		int want_pid = 0;
-> > +
-> > +		if (clone_flags & CLONE_CHILD_USEPID) {
-> > +			retval = get_user(want_pid, child_tidptr);
-> > +			if (retval)
-> > +				goto bad_fork_cleanup_io;
-> > +		}
-> > +
-> >  		retval = -ENOMEM;
-> > -		pid = alloc_pid(p->nsproxy->pid_ns);
-> > +		pid = alloc_pid(p->nsproxy->pid_ns, want_pid);
-> >  		if (!pid)
-> >  			goto bad_fork_cleanup_io;
-> >  	}
-> > diff --git a/kernel/pid.c b/kernel/pid.c
-> > index 57a8346..69ae1be 100644
-> > --- a/kernel/pid.c
-> > +++ b/kernel/pid.c
-> > @@ -159,11 +159,55 @@ static void set_last_pid(struct pid_namespace *pid_ns, int base, int pid)
-> >  	} while ((prev != last_write) && (pid_before(base, last_write, pid)));
-> >  }
-> >  
-> > -static int alloc_pidmap(struct pid_namespace *pid_ns)
-> > +static int alloc_pidmap_page(struct pidmap *map)
-> > +{
-> > +	if (unlikely(!map->page)) {
-> > +		void *page = kzalloc(PAGE_SIZE, GFP_KERNEL);
-> > +		/*
-> > +		 * Free the page if someone raced with us
-> > +		 * installing it:
-> > +		 */
-> > +		spin_lock_irq(&pidmap_lock);
-> > +		if (!map->page) {
-> > +			map->page = page;
-> > +			page = NULL;
-> > +		}
-> > +		spin_unlock_irq(&pidmap_lock);
-> > +		kfree(page);
-> > +		if (unlikely(!map->page))
-> > +			return -ENOMEM;
-> > +	}
-> > +
-> > +	return 0;
-> > +}
-> > +
-> > +static int set_pidmap(struct pid_namespace *pid_ns, int pid)
-> > +{
-> > +	int offset;
-> > +	struct pidmap *map;
-> > +
-> > +	offset = pid & BITS_PER_PAGE_MASK;
-> > +	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
-> > +
-> > +	if (alloc_pidmap_page(map) < 0)
-> > +		return -ENOMEM;
-> > +
-> > +	if (!test_and_set_bit(offset, map->page)) {
-> > +		atomic_dec(&map->nr_free);
-> > +		return pid;
-> > +	}
-> > +
-> > +	return -EBUSY;
-> > +}
-> > +
-> > +static int alloc_pidmap(struct pid_namespace *pid_ns, int desired_pid)
-> >  {
-> >  	int i, offset, max_scan, pid, last = pid_ns->last_pid;
-> >  	struct pidmap *map;
-> >  
-> > +	if (desired_pid)
-> > +		return set_pidmap(pid_ns, desired_pid);
-> > +
-> >  	pid = last + 1;
-> >  	if (pid >= pid_max)
-> >  		pid = RESERVED_PIDS;
-> > @@ -176,22 +220,9 @@ static int alloc_pidmap(struct pid_namespace *pid_ns)
-> >  	 */
-> >  	max_scan = DIV_ROUND_UP(pid_max, BITS_PER_PAGE) - !offset;
-> >  	for (i = 0; i <= max_scan; ++i) {
-> > -		if (unlikely(!map->page)) {
-> > -			void *page = kzalloc(PAGE_SIZE, GFP_KERNEL);
-> > -			/*
-> > -			 * Free the page if someone raced with us
-> > -			 * installing it:
-> > -			 */
-> > -			spin_lock_irq(&pidmap_lock);
-> > -			if (!map->page) {
-> > -				map->page = page;
-> > -				page = NULL;
-> > -			}
-> > -			spin_unlock_irq(&pidmap_lock);
-> > -			kfree(page);
-> > -			if (unlikely(!map->page))
-> > -				break;
-> > -		}
-> > +		if (alloc_pidmap_page(map) < 0)
-> > +			break;
-> > +
-> >  		if (likely(atomic_read(&map->nr_free))) {
-> >  			do {
-> >  				if (!test_and_set_bit(offset, map->page)) {
-> > @@ -277,7 +308,7 @@ void free_pid(struct pid *pid)
-> >  	call_rcu(&pid->rcu, delayed_put_pid);
-> >  }
-> >  
-> > -struct pid *alloc_pid(struct pid_namespace *ns)
-> > +struct pid *alloc_pid(struct pid_namespace *ns, int this_ns_pid)
-> >  {
-> >  	struct pid *pid;
-> >  	enum pid_type type;
-> > @@ -291,13 +322,14 @@ struct pid *alloc_pid(struct pid_namespace *ns)
-> >  
-> >  	tmp = ns;
-> >  	for (i = ns->level; i >= 0; i--) {
-> > -		nr = alloc_pidmap(tmp);
-> > +		nr = alloc_pidmap(tmp, this_ns_pid);
-> >  		if (nr < 0)
-> >  			goto out_free;
-> >  
-> >  		pid->numbers[i].nr = nr;
-> >  		pid->numbers[i].ns = tmp;
-> >  		tmp = tmp->parent;
-> > +		this_ns_pid = 0;
-> >  	}
-> >  
-> >  	get_pid_ns(ns);
-> > -- 
-> > 1.5.5.6
-> > _______________________________________________
-> > Containers mailing list
-> > Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> > https://lists.linux-foundation.org/mailman/listinfo/containers
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
