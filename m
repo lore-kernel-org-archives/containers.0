@@ -1,14 +1,17 @@
-From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [RFC][PATCH 0/7 + tools] Checkpoint/restore mostly in the
-	userspace
-Date: Sat, 23 Jul 2011 12:43:08 +0400
-Message-ID: <4E2A899C.8090909@parallels.com>
-References: <20110718132759.GB8127@mail.hallyn.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH 7/7] binfmt: Introduce the binfmt_img exec handler
+Date: Sat, 23 Jul 2011 10:45:29 +0200
+Message-ID: <20110723084529.GH21089@mtj.dyndns.org>
+References: <4E204466.8010204@parallels.com> <4E204519.3040804@parallels.com>
+	<20110721065127.GS3455@htj.dyndns.org>
+	<20110722224617.GA16940@count0.beaverton.ibm.com>
+	<4E2A83AC.6090504@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110718132759.GB8127-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4E2A83AC.6090504-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,37 +21,32 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+To: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 07/18/2011 11:04 PM, Serge E. Hallyn wrote:
-> (sorry, just realized postfix has been messing up my email, hope this
-> comes through ok)
-> 
-> Thanks, Pavel.  I will take a look at this when I get a chance.  I'm
-> a little worried about security implications - this approach should
-> lend itself (especially with the binfmt handler) to clean handling
-> of security issues, but given the issues we've had with /proc things
-> that already exist, I'm worried about the dump files.  If you have
-> any preemptive comments on that, please do share :)
+Hello, Pavel.
 
-As far as the security is concerned - yes, this is very tricky question.
-Before we find out and fix all the possible security implications, I'd
-suggest adding the
-  if (!capable(CAP_SYS_ADMIN))
-	return -EPERM
-check into the execve handler. :)
-
-And I understand your worry about the dump files in /proc. I do not like
-this thing either and looking forward for your suggestions. I've asked this
-question to Tejun, hopefully we'll work out the good solution.
-
-> We did briefly try a binfmt handler at the very end of our foray into
-> the ptrace checkpoint/restart approach, but your overall set here seems
-> very nice.
+On Sat, Jul 23, 2011 at 12:17:48PM +0400, Pavel Emelyanov wrote:
+> The basic idea is very simple - you have to create a process with a defined
+> values in registers and defined set of memory mappings (with the memory
+> contents). This creation is obviously done by some (maybe another) process.
 > 
-> thanks,
-> -serge
-> .
+> Thus we have two ways to go - either we transform the restoring task into
+> the target one or we freeze the target one and repopulate it "remotely".
 > 
+> The 1st approach seemed to be more elegant to me, and with this one we do
+> already have an API for turning one VM+regs into another - the execve.
+> 
+> If you can suggest another way - I'm open for discussion.
+
+Just restore it using the usual system calls - clone, mmap, open....
+There is no reason for the kernel to do it and kernel can't even do it
+properly without going way outside of the existing exec(2) conventions
+unless you're planning to make exec(2) create multi-threaded process
+and I don't think that's a wise direction.
+
+Thanks.
+
+-- 
+tejun
