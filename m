@@ -1,16 +1,15 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [RFC][PATCH 0/7 + tools] Checkpoint/restore mostly in the
-	userspace
-Date: Sat, 23 Jul 2011 07:10:05 +0200
-Message-ID: <20110723051005.GE21089@mtj.dyndns.org>
-References: <4E204466.8010204@parallels.com>
-	<20110723002558.GE16940@count0.beaverton.ibm.com>
+From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: Re: [PATCH 3/7] proc: Introduce the Children: line in
+	/proc/<pid>/status
+Date: Sat, 23 Jul 2011 12:06:46 +0400
+Message-ID: <4E2A8116.1040309@parallels.com>
+References: <4E204466.8010204@parallels.com> <4E2044C3.7050506@parallels.com>
+	<20110721065436.GT3455@htj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20110723002558.GE16940-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
+In-Reply-To: <20110721065436.GT3455-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,52 +19,29 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hello,
+On 07/21/2011 10:54 AM, Tejun Heo wrote:
+> On Fri, Jul 15, 2011 at 05:46:43PM +0400, Pavel Emelyanov wrote:
+>> Although we can get the pids of some task's issue, this is just 
+>> more convenient to have them this way.
+>>
+>> Signed-off-by: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>.
+> 
+> Umm... The primary aim is dumping whole namespaces, right?  
 
-On Fri, Jul 22, 2011 at 05:25:58PM -0700, Matt Helsley wrote:
-> Finally, I think there's substantial room here for quiet and subtle
-> races to corrupt checkpoint images. If we add /proc interfaces only to
-> find they're racy will we need to add yet more /proc interfaces to
-> maintain backward compatibility yet fix the races? To get the locking
-> that ensures a consistent subset of information with this /proc-based
-> approach I think we'll frequently need to change the contents of
-> existing /proc files.
+No. The aim is to dump an arbitrary set of tasks.
 
-The target processes need to be frozen to remove race conditions (be
-it SIGSOTP, cgroup freeze or PTRACE trap).  If there are exceptions in
-the boundaries between frozen domain and the rest of the system,
-they'll need to be dealt with and those need to be dealt with whether
-the thing is in kernel or not.
+> The dumper would have to build full process tree anyway so I don't 
+> see much point in providing backlink from kernel.
 
-> Imagine trusting the output of top to exactly represent the state of
-> your system's cpu usage. That's the sort of thing a piecemeal /proc
-> interface gets us. You're asking us to trust that frequent checkpoints
-> (say once every five minutes) of large, multiprocess, month-long
-> program runs won't quietly get corrupted and will leave plenty of
-> performance to not interfere with the throughput of the work.
+Hm... Why would a dumper need to build the whole tree? Maybe you're
+right with this, so can you elaborate?
 
-This is rather bogus.  If you freeze the processes, most of the
-information in /proc (the ones which would show up in top anyway)
-doesn't change.  What race condition?
+This particular patch just helps with collecting a subtree without
+scanning the whole /proc/ directory.
 
-> A kernel syscall interface has a better chance of allowing us to fix
-> races without changing the interface. We've fixed a few races with
-> Oren's tree and none of them required us to change the output format.
-
-Sure, that was completely embedded in the kernel and things can be
-implemented and fixed with much less consideration.  I can see how
-that would be easier for the specific use case, but that EXACTLY is
-why it can't go upstream.  I just can't see it happening and think it
-would be far more productive spending the time and energy looking for
-and implementing solutions which actually can go mainline.  If you
-don't care about mainlining, that's great too, but then there's no
-point in talking about it either.
-
-Thanks.
-
--- 
-tejun
+> Thanks.
+> 
