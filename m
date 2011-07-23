@@ -1,17 +1,16 @@
 From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [PATCH 3/7] proc: Introduce the Children: line in
-	/proc/<pid>/status
-Date: Sat, 23 Jul 2011 12:45:02 +0400
-Message-ID: <4E2A8A0E.5030208@parallels.com>
-References: <4E204466.8010204@parallels.com> <4E2044C3.7050506@parallels.com>
-	<20110721065436.GT3455@htj.dyndns.org>
-	<4E2A8116.1040309@parallels.com>
-	<20110723084110.GG21089@mtj.dyndns.org>
+Subject: Re: [PATCH 6/7] proc: Introduce the /proc/<pid>/dump file
+Date: Sat, 23 Jul 2011 12:49:22 +0400
+Message-ID: <4E2A8B12.4010709@parallels.com>
+References: <4E204466.8010204@parallels.com> <4E204500.6040800@parallels.com>
+	<20110721064408.GR3455@htj.dyndns.org>
+	<4E2A8239.5060908@parallels.com>
+	<20110723083711.GF21089@mtj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110723084110.GG21089-9pTldWuhBndy/B6EtB590w@public.gmane.org>
+In-Reply-To: <20110723083711.GF21089-9pTldWuhBndy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,27 +24,44 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 07/23/2011 12:41 PM, Tejun Heo wrote:
+On 07/23/2011 12:37 PM, Tejun Heo wrote:
 > Hello,
 > 
-> On Sat, Jul 23, 2011 at 12:06:46PM +0400, Pavel Emelyanov wrote:
->>> The dumper would have to build full process tree anyway so I don't 
->>> see much point in providing backlink from kernel.
+> On Sat, Jul 23, 2011 at 12:11:37PM +0400, Pavel Emelyanov wrote:
+>> On 07/21/2011 10:44 AM, Tejun Heo wrote:
+>>> Most of information dumped here is already available
+>>> through /proc and ptrace and we can add the missing pieces like the
+>>> suggested proc vma fds.
 >>
->> Hm... Why would a dumper need to build the whole tree? Maybe you're
->> right with this, so can you elaborate?
+>> Let's start with the simplest things. Can you suggest the best (from you pov)
+>> way for dumping all the registers, tls and the anonymous pages through the 
+>> existing interfaces?
 > 
-> It depends on what you want to dump.  Dumping arbitrary task has
-> issues even at the most basic level due to relationships among family
-> of processes, which I assume is why the in-kernel CR was primarily
-> focused on dumping and restoring full namespaces.  If you're doing
-> that, there is no avoiding walking process tree anyway (which
-> apparently can even be per-NS using uprocfs).
+> Just use ptrace.  Seizing all threads in a process, gather file and
+> memory map info from /proc, inject a parasite to dump memory pages and
+> do whatever else.  There's nothing special about TLS, fs/gs base is
+> already included in ptrace register dump in x86_64.  Dunno how it's
+> handled in 32bit but if it's not available exporting it isn't a big
+> deal.  Rebuilding the process image from the captured information
+> shouldn't be too hard.
 
-OK I see. Then my answer is - typically a container looks like an init task
-with everybody else growing from that point. Having a machine with 1000 of
-containers building the whole /proc tree in memory to dump a single container
-would be MUCH more expensive that having this small like in proc.
+You're talking about your recent set for ptrace? Can you propose a quick scratch
+of how you propose to dump and restore registers and memory with this?
+
+> There is simply is no need to put CR into kernel at all.  
+
+I don't want to! I propose to use small set of APIs for it and the execve handler
+is just the way to replace VM+regs of a task with another set.
+
+> Just add the
+> missing pieces to export the necessary information and missing APIs
+> which are required to restore it (e.g. setting TID like you did in
+> this patchset).  Approaching it that way would make things useful for
+> other use cases && is highly more likely to get merged.  There doesn't
+> even need to be one big merge day.  You can just improve things
+> piecewise until it works.
+
+Totally agree.
 
 > Thanks.
 > 
