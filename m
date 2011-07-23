@@ -1,18 +1,19 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 6/7] proc: Introduce the /proc/<pid>/dump file
-Date: Sat, 23 Jul 2011 10:58:40 +0200
-Message-ID: <20110723085840.GJ21089@mtj.dyndns.org>
-References: <4E204466.8010204@parallels.com> <4E204500.6040800@parallels.com>
-	<20110721064408.GR3455@htj.dyndns.org>
-	<4E2A8239.5060908@parallels.com>
-	<20110723083711.GF21089@mtj.dyndns.org>
-	<4E2A8B12.4010709@parallels.com>
+Subject: Re: [PATCH 7/7] binfmt: Introduce the binfmt_img exec handler
+Date: Sat, 23 Jul 2011 11:04:50 +0200
+Message-ID: <20110723090450.GK21089@mtj.dyndns.org>
+References: <4E204466.8010204@parallels.com> <4E204519.3040804@parallels.com>
+	<20110721065127.GS3455@htj.dyndns.org>
+	<20110722224617.GA16940@count0.beaverton.ibm.com>
+	<4E2A83AC.6090504@parallels.com>
+	<20110723084529.GH21089@mtj.dyndns.org>
+	<4E2A8B7D.8010807@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4E2A8B12.4010709-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+In-Reply-To: <4E2A8B7D.8010807-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -28,34 +29,21 @@ List-Id: containers.vger.kernel.org
 
 Hello,
 
-On Sat, Jul 23, 2011 at 12:49:22PM +0400, Pavel Emelyanov wrote:
-> On 07/23/2011 12:37 PM, Tejun Heo wrote:
-> > Just use ptrace.  Seizing all threads in a process, gather file and
-> > memory map info from /proc, inject a parasite to dump memory pages and
-> > do whatever else.  There's nothing special about TLS, fs/gs base is
-> > already included in ptrace register dump in x86_64.  Dunno how it's
-> > handled in 32bit but if it's not available exporting it isn't a big
-> > deal.  Rebuilding the process image from the captured information
-> > shouldn't be too hard.
+On Sat, Jul 23, 2011 at 12:51:09PM +0400, Pavel Emelyanov wrote:
+> On 07/23/2011 12:45 PM, Tejun Heo wrote:
+> > Just restore it using the usual system calls - clone, mmap, open....
 > 
-> You're talking about your recent set for ptrace? Can you propose a
-> quick scratch of how you propose to dump and restore registers and
-> memory with this?
+> I can't clone/mmap/open registers (yet, unless we decide to have /proc/pid/regs
+> file, do we?). Neither can I do it for anonymous private mappings :(
 
-Hmmm... I thought I just did that writing the above paragraph, so even
-without the parasite treak, ptrace has access to full memory space and
-registers of the tracee, so the basic stuff is already dumpable &&
-restorable - at its simplest, dumper can PEEKDATA for each mapped
-memory area (as indicated by /proc/PID/maps), use GETREGS and
-GETFPREGS to acquire register states, save them.  To restore, launch a
-process, attach to it, let it mmap all the recorded areas and fill it
-from the saved data and SETREGS/SETFPREGS to restore the register
-states and let go.
+Hmmm?  When restoring a task, the task is started under restorer's
+control.  The restorer can use ptrace to restore registers or feed it
+assemblies to restore register states (ie. series of movq's to set
+each register to the stored value followed by jmp to the stored RIP).
 
-This of course is over-simplified but this should work.  There are
-some missing things like finding out which signals are pending and
-with what siginfo but those can be solved with small additions to
-/proc.
+I don't understand your concern about anonymous private mappings.
+What's different about them?  Can't the process being restored mmap
+anonymous private mappings and fill it with the saved data?
 
 Thanks.
 
