@@ -1,20 +1,18 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Subject: Re: [RFC][PATCH 0/7 + tools] Checkpoint/restore mostly in the
 	userspace
-Date: Tue, 26 Jul 2011 16:07:16 -0700
-Message-ID: <20110726230716.GG14808@count0.beaverton.ibm.com>
+Date: Wed, 27 Jul 2011 01:46:57 +0200
+Message-ID: <20110726234657.GD28497@mtj.dyndns.org>
 References: <4E204466.8010204@parallels.com>
 	<20110723002558.GE16940@count0.beaverton.ibm.com>
-	<20110723032945.GD21563@count0.beaverton.ibm.com>
-	<20110723045842.GD21089@mtj.dyndns.org>
-	<20110726181128.GD14808@count0.beaverton.ibm.com>
-	<20110726224525.GC28497@mtj.dyndns.org>
+	<CAOS58YPqLSYi2xECUk4O5GG3s6aokT=VykmkL6UnAOzyHXNAgQ@mail.gmail.com>
+	<20110726225911.GF14808@count0.beaverton.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20110726224525.GC28497-9pTldWuhBndy/B6EtB590w@public.gmane.org>
+In-Reply-To: <20110726225911.GF14808-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,50 +22,103 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Jul 27, 2011 at 12:45:25AM +0200, Tejun Heo wrote:
-> Hello,
+Hello,
+
+On Tue, Jul 26, 2011 at 03:59:11PM -0700, Matt Helsley wrote:
+> > /proc/PID/fd already provides access to deleted files perfectly well
+> > as most avid p0rn watchers would know (you can run mplayer on flash's
+> > deleted temp files). ;)
 > 
-> On Tue, Jul 26, 2011 at 11:11:28AM -0700, Matt Helsley wrote:
-> > No, you can't use the fd from the epoll item to look it up in the
-> > task's fd table. It may look trivially correct but it is not and that's
-> > why I mentioned it.
-> > 
-> > This is an example of where the information we already have in /proc
-> > looks like it should be re-used but should not.
-> > 
-> > EPOLL_CTL_ADD uses the fd to add it to the epoll items as an (fd,file)
-> > pair. Then another thread could change the fd table to close that fd.
-> > close does not update all the epoll sets the fd is a part of. So in order
-> > to remove the epoll item userspace must use the same "fd" it used during
-> > EPOLL_CTL_ADD -- even though that fd no longer refers to anything.
-> > That's why you can't just use the epoll item's fd to do a lookup in the
-> > fd table -- you'll get the wrong struct *file. Unfortunately, most of the
-> > time it will probably appear to work. You need a proper testcase to
-> > demonstrate it.
-> > 
-> > At least that's what I recall of the code.
+> Yup, access to the unlinked file contents. This is an example where
+> things appear simple and complete in /proc yet it is insufficient.
+> Here's what you'll need:
 > 
-> Ummm... I'm a bit confused, are you saying that EPOLL_CTL_DEL may take
-> fd which is already closed?  I can't see how that would be possible.
-> epoll uses fget() for fd -> file mapping like everyone else.  If fd is
+> The string "(deleted)" in a file name is, strictly speaking, ambiguous --
+> it does not mean the file is unlinked. You also can't infer that it is
+> unlinked by stat()'ing that path since a different file could have
+> been created in the same spot. For something unambiguous you'll
+> have to add that information to /proc somewhere. fdinfo doesn't seem
+> to be the right place since fds aren't unlinked -- files are. 
 
-Argh, you're right! I thought it just did an fget() on the epoll fd
-itself then looked up the target fd in the epoll set..
+Hmm... but wouldn't fstat() after open reveal the original inode?  ie.
 
-> closed, the mapping doesn't exist.
-> 
-> I think what's confusing here is that, if multiple fd points to the
-> same file, epoll 'may' report events on an already closed or resued fd
-> because whole thing is anchored on struct file which doesn't go away
-> until the last fd is closed, but I don't think that's something we
-> need to worry about.  It's dangling events on dead fds which is
-> explicitly described as 'may' happen in the documentation.
+  $ cat fstat.c
+  #include <sys/types.h>
+  #include <sys/stat.h>
+  #include <unistd.h>
+  #include <stdio.h>
+  #include <fcntl.h>
+  #include <assert.h>
 
-Yup.
+  int main(int argc, char **argv)
+  {
+	  int fd;
+	  struct stat st = {};
 
-Cheers,
-	-Matt
+	  assert((fd = open(argv[1], O_RDONLY)) >= 0);
+	  assert(!fstat(fd, &st));
+	  printf("ino=%lu nlink=%lu\n",
+		 (unsigned long)st.st_ino, (unsigned long)st.st_nlink);
+	  return 0;
+  }
+  $ gcc -Wall -o fstat fstat.c
+  $ cat > asdf &
+  [7] 31908
+  $ ./fstat asdf
+  ino=9180912 nlink=1
+  $ ./fstat /proc/31908/fd/1
+  ino=9180912 nlink=1
+  $ rm -f asdf
+  $ ./fstat /proc/31908/fd/1
+  ino=9180912 nlink=0
+  $ touch asdf
+  $ $ ./fstat asdf
+  ino=9180915 nlink=1
+
+I don't think anything is ambiguous.
+
+> Then you've got to detect when they're the same unlinked file and share
+> the copy upon restart. Or they could be different unlinked files
+> with the same path in which case you should not share the copy. I suppose
+> you'll have to check the device and inode and then see if any other task
+> being checkpointed has it open... once for each of potentially thousands
+> of fds being checkpointed.
+
+Just build a hash table w/ fstat results.  It's O(nr_open_files)
+whether you do that or not.
+
+> Then there's the case where you've got one unlinked dentry for the
+> file but a hardlink elsewhere. The /proc/PID/fd path won't point to the
+> hardlinked location. So in order for those to be the same file upon
+> restart you need to find the file somehow during checkpoint and/or
+> restart.
+
+You can determine whether search for another hardlink is necessary by
+looking at nlink.  Hmm... I wonder whether open_by_handle_at() can be
+used for this instead of scanning filesystem for matching inode
+number.  Screening by nlink should eliminate most cases but if
+open_by_handle_at() can deal with actual cases, it would be much
+better.
+
+> Finally these files often can be huge. Copying them elsewhere is a huge IO
+> burden compared to careful relinking of the file. IO that could be better
+> spent doing actual work.
+>
+> We solved all that with "relinking". It's possible to make a relink()
+> syscall. The code I posted some time ago to containers@ can be easily
+> adapted for that -- I did so for my testing of those patches. I'm not
+> exactly sure how it would be done from userspace but I suspect it could
+> be done.
+
+Yeah, something like flink (like fstat for stat) should do it.  FS
+methods operate on dentries anyway so it can be added in the vfs layer
+proper if necessary.
+
+Thanks.
+
+-- 
+tejun
