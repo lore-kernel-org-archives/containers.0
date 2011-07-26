@@ -1,7 +1,7 @@
 From: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 03/14] keyctl: check capabilities against key's user_ns
-Date: Tue, 26 Jul 2011 18:58:26 +0000
-Message-ID: <1311706717-7398-4-git-send-email-serge__21960.2911886343$1311706871$gmane$org@hallyn.com>
+Subject: [PATCH 02/14] allow root in container to copy namespaces
+Date: Tue, 26 Jul 2011 18:58:25 +0000
+Message-ID: <1311706717-7398-3-git-send-email-serge__20634.7630628899$1311706877$gmane$org@hallyn.com>
 References: <1311706717-7398-1-git-send-email-serge@hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,42 +23,68 @@ List-Id: containers.vger.kernel.org
 
 From: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 
-ATM, task should only be able to get his own user_ns's keys
-anyway, so nsown_capable should also work, but there is no
-advantage to doing that, while using key's user_ns is clearer.
+Othewise nested containers with user namespaces won't be possible.
 
-changelog: jun 6:
-	compile fix: keyctl.c (key_user, not key has user_ns)
+It's true that user namespaces are not yet fully isolated, but for
+that same reason there are far worse things that root in a child
+user ns can do.  Spawning a child user ns is not in itself bad.
+
+This patch also allows setns for root in a container:
+@Eric Biederman: are there gotchas in allowing setns from child
+userns?
 
 Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Acked-by: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- security/keys/keyctl.c |    5 +++--
- 1 files changed, 3 insertions(+), 2 deletions(-)
+ kernel/fork.c    |    4 ++--
+ kernel/nsproxy.c |    6 +++---
+ 2 files changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/security/keys/keyctl.c b/security/keys/keyctl.c
-index eca5191..fa7d420 100644
---- a/security/keys/keyctl.c
-+++ b/security/keys/keyctl.c
-@@ -745,7 +745,7 @@ long keyctl_chown_key(key_serial_t id, uid_t uid, gid_t gid)
- 	ret = -EACCES;
- 	down_write(&key->sem);
+diff --git a/kernel/fork.c b/kernel/fork.c
+index 17bf7c8..22d0cf0 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -1473,8 +1473,8 @@ long do_fork(unsigned long clone_flags,
+ 		/* hopefully this check will go away when userns support is
+ 		 * complete
+ 		 */
+-		if (!capable(CAP_SYS_ADMIN) || !capable(CAP_SETUID) ||
+-				!capable(CAP_SETGID))
++		if (!nsown_capable(CAP_SYS_ADMIN) || !nsown_capable(CAP_SETUID) ||
++				!nsown_capable(CAP_SETGID))
+ 			return -EPERM;
+ 	}
+ 
+diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+index 9aeab4b..f50542d 100644
+--- a/kernel/nsproxy.c
++++ b/kernel/nsproxy.c
+@@ -134,7 +134,7 @@ int copy_namespaces(unsigned long flags, struct task_struct *tsk)
+ 				CLONE_NEWPID | CLONE_NEWNET)))
+ 		return 0;
  
 -	if (!capable(CAP_SYS_ADMIN)) {
-+	if (!ns_capable(key->user->user_ns, CAP_SYS_ADMIN)) {
- 		/* only the sysadmin can chown a key to some other UID */
- 		if (uid != (uid_t) -1 && key->uid != uid)
- 			goto error_put;
-@@ -852,7 +852,8 @@ long keyctl_setperm_key(key_serial_t id, key_perm_t perm)
- 	down_write(&key->sem);
- 
- 	/* if we're not the sysadmin, we can only change a key that we own */
--	if (capable(CAP_SYS_ADMIN) || key->uid == current_fsuid()) {
-+	if (ns_capable(key->user->user_ns, CAP_SYS_ADMIN) ||
-+	    key->uid == current_fsuid()) {
- 		key->perm = perm;
- 		ret = 0;
++	if (!nsown_capable(CAP_SYS_ADMIN)) {
+ 		err = -EPERM;
+ 		goto out;
  	}
+@@ -191,7 +191,7 @@ int unshare_nsproxy_namespaces(unsigned long unshare_flags,
+ 			       CLONE_NEWNET)))
+ 		return 0;
+ 
+-	if (!capable(CAP_SYS_ADMIN))
++	if (!nsown_capable(CAP_SYS_ADMIN))
+ 		return -EPERM;
+ 
+ 	*new_nsp = create_new_namespaces(unshare_flags, current,
+@@ -241,7 +241,7 @@ SYSCALL_DEFINE2(setns, int, fd, int, nstype)
+ 	struct file *file;
+ 	int err;
+ 
+-	if (!capable(CAP_SYS_ADMIN))
++	if (!nsown_capable(CAP_SYS_ADMIN))
+ 		return -EPERM;
+ 
+ 	file = proc_ns_fget(fd);
 -- 
 1.7.4.1
