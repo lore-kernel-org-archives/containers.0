@@ -1,7 +1,7 @@
 From: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 09/14] user ns: convert ipv6 to targeted capabilities
-Date: Tue, 26 Jul 2011 18:58:32 +0000
-Message-ID: <1311706717-7398-10-git-send-email-serge__21033.256679266$1311707496$gmane$org@hallyn.com>
+Subject: [PATCH 14/14] net: pass user_ns to cap_netlink_recv()
+Date: Tue, 26 Jul 2011 18:58:37 +0000
+Message-ID: <1311706717-7398-15-git-send-email-serge__14951.9427017824$1311707565$gmane$org@hallyn.com>
 References: <1311706717-7398-1-git-send-email-serge@hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,340 +23,273 @@ List-Id: containers.vger.kernel.org
 
 From: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 
+and make cap_netlink_recv() userns-aware
+
+cap_netlink_recv() was granting privilege if a capability is in
+current_cap(), regardless of the user namespace.  Fix that by
+targeting the capability check against the user namespace which
+owns the skb.
+
+Because sock_net is static inline defined in net/sock.h, which we
+don't want to #include at the cap_netlink_recv function (commoncap.h).
+
 Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Cc: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- net/ipv6/addrconf.c             |    4 ++--
- net/ipv6/af_inet6.c             |    6 ++++--
- net/ipv6/datagram.c             |    6 +++---
- net/ipv6/ip6_flowlabel.c        |   24 ++++++++++++++----------
- net/ipv6/ip6_tunnel.c           |    4 ++--
- net/ipv6/ip6mr.c                |    2 +-
- net/ipv6/ipv6_sockglue.c        |    7 ++++---
- net/ipv6/netfilter/ip6_tables.c |    8 ++++----
- net/ipv6/route.c                |    2 +-
- net/ipv6/sit.c                  |   10 +++++-----
- 10 files changed, 40 insertions(+), 33 deletions(-)
+ drivers/scsi/scsi_netlink.c     |    3 ++-
+ include/linux/security.h        |   14 +++++++++-----
+ kernel/audit.c                  |    6 ++++--
+ net/core/rtnetlink.c            |    3 ++-
+ net/decnet/netfilter/dn_rtmsg.c |    3 ++-
+ net/ipv4/netfilter/ip_queue.c   |    3 ++-
+ net/ipv6/netfilter/ip6_queue.c  |    3 ++-
+ net/netfilter/nfnetlink.c       |    2 +-
+ net/netlink/genetlink.c         |    2 +-
+ net/xfrm/xfrm_user.c            |    2 +-
+ security/commoncap.c            |    6 ++----
+ security/security.c             |    4 ++--
+ security/selinux/hooks.c        |    5 +++--
+ 13 files changed, 33 insertions(+), 23 deletions(-)
 
-diff --git a/net/ipv6/addrconf.c b/net/ipv6/addrconf.c
-index a06c53c..6b93e3b 100644
---- a/net/ipv6/addrconf.c
-+++ b/net/ipv6/addrconf.c
-@@ -2228,7 +2228,7 @@ int addrconf_add_ifaddr(struct net *net, void __user *arg)
- 	struct in6_ifreq ireq;
- 	int err;
+diff --git a/drivers/scsi/scsi_netlink.c b/drivers/scsi/scsi_netlink.c
+index 26a8a45..0aa2e57 100644
+--- a/drivers/scsi/scsi_netlink.c
++++ b/drivers/scsi/scsi_netlink.c
+@@ -111,7 +111,8 @@ scsi_nl_rcv_msg(struct sk_buff *skb)
+ 			goto next_msg;
+ 		}
  
--	if (!capable(CAP_NET_ADMIN))
-+	if (!ns_capable(net->user_ns, CAP_NET_ADMIN))
- 		return -EPERM;
+-		if (security_netlink_recv(skb, CAP_SYS_ADMIN)) {
++		if (security_netlink_recv(skb, CAP_SYS_ADMIN,
++					  sock_net(skb->sk)->user_ns)) {
+ 			err = -EPERM;
+ 			goto next_msg;
+ 		}
+diff --git a/include/linux/security.h b/include/linux/security.h
+index ebd2a53..cfa1f47 100644
+--- a/include/linux/security.h
++++ b/include/linux/security.h
+@@ -95,7 +95,8 @@ struct xfrm_user_sec_ctx;
+ struct seq_file;
  
- 	if (copy_from_user(&ireq, arg, sizeof(struct in6_ifreq)))
-@@ -2247,7 +2247,7 @@ int addrconf_del_ifaddr(struct net *net, void __user *arg)
- 	struct in6_ifreq ireq;
- 	int err;
+ extern int cap_netlink_send(struct sock *sk, struct sk_buff *skb);
+-extern int cap_netlink_recv(struct sk_buff *skb, int cap);
++extern int cap_netlink_recv(struct sk_buff *skb, int cap,
++			    struct user_namespace *ns);
  
--	if (!capable(CAP_NET_ADMIN))
-+	if (!ns_capable(net->user_ns, CAP_NET_ADMIN))
- 		return -EPERM;
+ void reset_security_ops(void);
  
- 	if (copy_from_user(&ireq, arg, sizeof(struct in6_ifreq)))
-diff --git a/net/ipv6/af_inet6.c b/net/ipv6/af_inet6.c
-index 3b5669a..1854ffe 100644
---- a/net/ipv6/af_inet6.c
-+++ b/net/ipv6/af_inet6.c
-@@ -160,7 +160,8 @@ lookup_protocol:
- 	}
+@@ -797,6 +798,7 @@ static inline void security_free_mnt_opts(struct security_mnt_opts *opts)
+  *	@skb.
+  *	@skb contains the sk_buff structure for the netlink message.
+  *	@cap indicates the capability required
++ *	@ns is the user namespace which owns skb
+  *	Return 0 if permission is granted.
+  *
+  * Security hooks for Unix domain networking.
+@@ -1557,7 +1559,8 @@ struct security_operations {
+ 			  struct sembuf *sops, unsigned nsops, int alter);
  
- 	err = -EPERM;
--	if (sock->type == SOCK_RAW && !kern && !capable(CAP_NET_RAW))
-+	if (sock->type == SOCK_RAW && !kern &&
-+	    !ns_capable(net->user_ns, CAP_NET_RAW))
- 		goto out_rcu_unlock;
+ 	int (*netlink_send) (struct sock *sk, struct sk_buff *skb);
+-	int (*netlink_recv) (struct sk_buff *skb, int cap);
++	int (*netlink_recv) (struct sk_buff *skb, int cap,
++			     struct user_namespace *ns);
  
- 	sock->ops = answer->ops;
-@@ -281,7 +282,8 @@ int inet6_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len)
- 		return -EINVAL;
+ 	void (*d_instantiate) (struct dentry *dentry, struct inode *inode);
  
- 	snum = ntohs(addr->sin6_port);
--	if (snum && snum < PROT_SOCK && !capable(CAP_NET_BIND_SERVICE))
-+	if (snum && snum < PROT_SOCK &&
-+	    !ns_capable(sock_net(sk)->user_ns, CAP_NET_BIND_SERVICE))
- 		return -EACCES;
- 
- 	lock_sock(sk);
-diff --git a/net/ipv6/datagram.c b/net/ipv6/datagram.c
-index 1656033..7e38d8f 100644
---- a/net/ipv6/datagram.c
-+++ b/net/ipv6/datagram.c
-@@ -694,7 +694,7 @@ int datagram_send_ctl(struct net *net,
- 				err = -EINVAL;
- 				goto exit_f;
- 			}
--			if (!capable(CAP_NET_RAW)) {
-+			if (!ns_capable(net->user_ns, CAP_NET_RAW)) {
- 				err = -EPERM;
- 				goto exit_f;
- 			}
-@@ -714,7 +714,7 @@ int datagram_send_ctl(struct net *net,
- 				err = -EINVAL;
- 				goto exit_f;
- 			}
--			if (!capable(CAP_NET_RAW)) {
-+			if (!ns_capable(net->user_ns, CAP_NET_RAW)) {
- 				err = -EPERM;
- 				goto exit_f;
- 			}
-@@ -739,7 +739,7 @@ int datagram_send_ctl(struct net *net,
- 				err = -EINVAL;
- 				goto exit_f;
- 			}
--			if (!capable(CAP_NET_RAW)) {
-+			if (!ns_capable(net->user_ns, CAP_NET_RAW)) {
- 				err = -EPERM;
- 				goto exit_f;
- 			}
-diff --git a/net/ipv6/ip6_flowlabel.c b/net/ipv6/ip6_flowlabel.c
-index f3caf1b..4726c02 100644
---- a/net/ipv6/ip6_flowlabel.c
-+++ b/net/ipv6/ip6_flowlabel.c
-@@ -294,21 +294,22 @@ struct ipv6_txoptions *fl6_merge_options(struct ipv6_txoptions * opt_space,
- 	return opt_space;
+@@ -1806,7 +1809,7 @@ void security_d_instantiate(struct dentry *dentry, struct inode *inode);
+ int security_getprocattr(struct task_struct *p, char *name, char **value);
+ int security_setprocattr(struct task_struct *p, char *name, void *value, size_t size);
+ int security_netlink_send(struct sock *sk, struct sk_buff *skb);
+-int security_netlink_recv(struct sk_buff *skb, int cap);
++int security_netlink_recv(struct sk_buff *skb, int cap, struct user_namespace *ns);
+ int security_secid_to_secctx(u32 secid, char **secdata, u32 *seclen);
+ int security_secctx_to_secid(const char *secdata, u32 seclen, u32 *secid);
+ void security_release_secctx(char *secdata, u32 seclen);
+@@ -2498,9 +2501,10 @@ static inline int security_netlink_send(struct sock *sk, struct sk_buff *skb)
+ 	return cap_netlink_send(sk, skb);
  }
  
--static unsigned long check_linger(unsigned long ttl)
-+static unsigned long check_linger(unsigned long ttl, struct user_namespace *ns)
+-static inline int security_netlink_recv(struct sk_buff *skb, int cap)
++static inline int security_netlink_recv(struct sk_buff *skb, int cap,
++					struct user_namespace *ns)
  {
- 	if (ttl < FL_MIN_LINGER)
- 		return FL_MIN_LINGER*HZ;
--	if (ttl > FL_MAX_LINGER && !capable(CAP_NET_ADMIN))
-+	if (ttl > FL_MAX_LINGER && !ns_capable(ns, CAP_NET_ADMIN))
- 		return 0;
- 	return ttl*HZ;
+-	return cap_netlink_recv(skb, cap);
++	return cap_netlink_recv(skb, cap, ns);
  }
  
--static int fl6_renew(struct ip6_flowlabel *fl, unsigned long linger, unsigned long expires)
-+static int fl6_renew(struct ip6_flowlabel *fl, unsigned long linger,
-+		     unsigned long expires, struct user_namespace *ns)
- {
--	linger = check_linger(linger);
-+	linger = check_linger(linger, ns);
- 	if (!linger)
- 		return -EPERM;
--	expires = check_linger(expires);
-+	expires = check_linger(expires, ns);
- 	if (!expires)
- 		return -EPERM;
- 	fl->lastuse = jiffies;
-@@ -375,7 +376,7 @@ fl_create(struct net *net, struct in6_flowlabel_req *freq, char __user *optval,
+ static inline int security_secid_to_secctx(u32 secid, char **secdata, u32 *seclen)
+diff --git a/kernel/audit.c b/kernel/audit.c
+index 52501b5..bed1c50 100644
+--- a/kernel/audit.c
++++ b/kernel/audit.c
+@@ -601,13 +601,15 @@ static int audit_netlink_ok(struct sk_buff *skb, u16 msg_type)
+ 	case AUDIT_TTY_SET:
+ 	case AUDIT_TRIM:
+ 	case AUDIT_MAKE_EQUIV:
+-		if (security_netlink_recv(skb, CAP_AUDIT_CONTROL))
++		if (security_netlink_recv(skb, CAP_AUDIT_CONTROL,
++					  sock_net(skb->sk)->user_ns))
+ 			err = -EPERM;
+ 		break;
+ 	case AUDIT_USER:
+ 	case AUDIT_FIRST_USER_MSG ... AUDIT_LAST_USER_MSG:
+ 	case AUDIT_FIRST_USER_MSG2 ... AUDIT_LAST_USER_MSG2:
+-		if (security_netlink_recv(skb, CAP_AUDIT_WRITE))
++		if (security_netlink_recv(skb, CAP_AUDIT_WRITE,
++					  sock_net(skb->sk)->user_ns))
+ 			err = -EPERM;
+ 		break;
+ 	default:  /* bad msg */
+diff --git a/net/core/rtnetlink.c b/net/core/rtnetlink.c
+index 99d9e95..4a444de 100644
+--- a/net/core/rtnetlink.c
++++ b/net/core/rtnetlink.c
+@@ -1931,7 +1931,8 @@ static int rtnetlink_rcv_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+ 	sz_idx = type>>2;
+ 	kind = type&3;
  
- 	fl->fl_net = hold_net(net);
- 	fl->expires = jiffies;
--	err = fl6_renew(fl, freq->flr_linger, freq->flr_expires);
-+	err = fl6_renew(fl, freq->flr_linger, freq->flr_expires, net->user_ns);
- 	if (err)
- 		goto done;
- 	fl->share = freq->flr_share;
-@@ -425,7 +426,7 @@ static int mem_check(struct sock *sk)
- 	if (room <= 0 ||
- 	    ((count >= FL_MAX_PER_SOCK ||
- 	      (count > 0 && room < FL_MAX_SIZE/2) || room < FL_MAX_SIZE/4) &&
--	     !capable(CAP_NET_ADMIN)))
-+	     !ns_capable(sock_net(sk)->user_ns, CAP_NET_ADMIN)))
- 		return -ENOBUFS;
+-	if (kind != 2 && security_netlink_recv(skb, CAP_NET_ADMIN))
++	if (kind != 2 && security_netlink_recv(skb, CAP_NET_ADMIN,
++					       net->user_ns))
+ 		return -EPERM;
  
+ 	if (kind == 2 && nlh->nlmsg_flags&NLM_F_DUMP) {
+diff --git a/net/decnet/netfilter/dn_rtmsg.c b/net/decnet/netfilter/dn_rtmsg.c
+index 69975e0..2d052ab 100644
+--- a/net/decnet/netfilter/dn_rtmsg.c
++++ b/net/decnet/netfilter/dn_rtmsg.c
+@@ -108,7 +108,8 @@ static inline void dnrmg_receive_user_skb(struct sk_buff *skb)
+ 	if (nlh->nlmsg_len < sizeof(*nlh) || skb->len < nlh->nlmsg_len)
+ 		return;
+ 
+-	if (security_netlink_recv(skb, CAP_NET_ADMIN))
++	if (security_netlink_recv(skb, CAP_NET_ADMIN,
++	    sock_net(skb->sk)->user_ns))
+ 		RCV_SKB_FAIL(-EPERM);
+ 
+ 	/* Eventually we might send routing messages too */
+diff --git a/net/ipv4/netfilter/ip_queue.c b/net/ipv4/netfilter/ip_queue.c
+index 5c9b9d9..51d7c52 100644
+--- a/net/ipv4/netfilter/ip_queue.c
++++ b/net/ipv4/netfilter/ip_queue.c
+@@ -432,7 +432,8 @@ __ipq_rcv_skb(struct sk_buff *skb)
+ 	if (type <= IPQM_BASE)
+ 		return;
+ 
+-	if (security_netlink_recv(skb, CAP_NET_ADMIN))
++	if (security_netlink_recv(skb, CAP_NET_ADMIN,
++				  sock_net(skb->sk)->user_ns))
+ 		RCV_SKB_FAIL(-EPERM);
+ 
+ 	spin_lock_bh(&queue_lock);
+diff --git a/net/ipv6/netfilter/ip6_queue.c b/net/ipv6/netfilter/ip6_queue.c
+index 2493948..8206bf3 100644
+--- a/net/ipv6/netfilter/ip6_queue.c
++++ b/net/ipv6/netfilter/ip6_queue.c
+@@ -433,7 +433,8 @@ __ipq_rcv_skb(struct sk_buff *skb)
+ 	if (type <= IPQM_BASE)
+ 		return;
+ 
+-	if (security_netlink_recv(skb, CAP_NET_ADMIN))
++	if (security_netlink_recv(skb, CAP_NET_ADMIN,
++				  sock_net(skb->sk)->user_ns))
+ 		RCV_SKB_FAIL(-EPERM);
+ 
+ 	spin_lock_bh(&queue_lock);
+diff --git a/net/netfilter/nfnetlink.c b/net/netfilter/nfnetlink.c
+index 1905976..bcaff9d 100644
+--- a/net/netfilter/nfnetlink.c
++++ b/net/netfilter/nfnetlink.c
+@@ -130,7 +130,7 @@ static int nfnetlink_rcv_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+ 	const struct nfnetlink_subsystem *ss;
+ 	int type, err;
+ 
+-	if (security_netlink_recv(skb, CAP_NET_ADMIN))
++	if (security_netlink_recv(skb, CAP_NET_ADMIN, net->user_ns))
+ 		return -EPERM;
+ 
+ 	/* All the messages must at least contain nfgenmsg */
+diff --git a/net/netlink/genetlink.c b/net/netlink/genetlink.c
+index 482fa57..00a101c 100644
+--- a/net/netlink/genetlink.c
++++ b/net/netlink/genetlink.c
+@@ -516,7 +516,7 @@ static int genl_rcv_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+ 		return -EOPNOTSUPP;
+ 
+ 	if ((ops->flags & GENL_ADMIN_PERM) &&
+-	    security_netlink_recv(skb, CAP_NET_ADMIN))
++	    security_netlink_recv(skb, CAP_NET_ADMIN, net->user_ns))
+ 		return -EPERM;
+ 
+ 	if (nlh->nlmsg_flags & NLM_F_DUMP) {
+diff --git a/net/xfrm/xfrm_user.c b/net/xfrm/xfrm_user.c
+index 0256b8a..1808e1e 100644
+--- a/net/xfrm/xfrm_user.c
++++ b/net/xfrm/xfrm_user.c
+@@ -2290,7 +2290,7 @@ static int xfrm_user_rcv_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+ 	link = &xfrm_dispatch[type];
+ 
+ 	/* All operations require privileges, even GET */
+-	if (security_netlink_recv(skb, CAP_NET_ADMIN))
++	if (security_netlink_recv(skb, CAP_NET_ADMIN, net->user_ns))
+ 		return -EPERM;
+ 
+ 	if ((type == (XFRM_MSG_GETSA - XFRM_MSG_BASE) ||
+diff --git a/security/commoncap.c b/security/commoncap.c
+index a93b3b7..1e48e6a 100644
+--- a/security/commoncap.c
++++ b/security/commoncap.c
+@@ -56,11 +56,9 @@ int cap_netlink_send(struct sock *sk, struct sk_buff *skb)
  	return 0;
-@@ -507,17 +508,20 @@ int ipv6_flowlabel_opt(struct sock *sk, char __user *optval, int optlen)
- 		read_lock_bh(&ip6_sk_fl_lock);
- 		for (sfl = np->ipv6_fl_list; sfl; sfl = sfl->next) {
- 			if (sfl->fl->label == freq.flr_label) {
--				err = fl6_renew(sfl->fl, freq.flr_linger, freq.flr_expires);
-+				err = fl6_renew(sfl->fl, freq.flr_linger, freq.flr_expires,
-+						net->user_ns);
- 				read_unlock_bh(&ip6_sk_fl_lock);
- 				return err;
- 			}
- 		}
- 		read_unlock_bh(&ip6_sk_fl_lock);
+ }
  
--		if (freq.flr_share == IPV6_FL_S_NONE && capable(CAP_NET_ADMIN)) {
-+		if (freq.flr_share == IPV6_FL_S_NONE &&
-+		    ns_capable(net->user_ns, CAP_NET_ADMIN)) {
- 			fl = fl_lookup(net, freq.flr_label);
- 			if (fl) {
--				err = fl6_renew(fl, freq.flr_linger, freq.flr_expires);
-+				err = fl6_renew(fl, freq.flr_linger, freq.flr_expires,
-+						net->user_ns);
- 				fl_release(fl);
- 				return err;
- 			}
-diff --git a/net/ipv6/ip6_tunnel.c b/net/ipv6/ip6_tunnel.c
-index 36c2842..1a98c23 100644
---- a/net/ipv6/ip6_tunnel.c
-+++ b/net/ipv6/ip6_tunnel.c
-@@ -1269,7 +1269,7 @@ ip6_tnl_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
- 	case SIOCADDTUNNEL:
- 	case SIOCCHGTUNNEL:
- 		err = -EPERM;
--		if (!capable(CAP_NET_ADMIN))
-+		if (!ns_capable(dev_net(dev)->user_ns, CAP_NET_ADMIN))
- 			break;
- 		err = -EFAULT;
- 		if (copy_from_user(&p, ifr->ifr_ifru.ifru_data, sizeof (p)))
-@@ -1304,7 +1304,7 @@ ip6_tnl_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
- 		break;
- 	case SIOCDELTUNNEL:
- 		err = -EPERM;
--		if (!capable(CAP_NET_ADMIN))
-+		if (!ns_capable(dev_net(dev)->user_ns, CAP_NET_ADMIN))
- 			break;
- 
- 		if (dev == ip6n->fb_tnl_dev) {
-diff --git a/net/ipv6/ip6mr.c b/net/ipv6/ip6mr.c
-index 705c828..1649ccd 100644
---- a/net/ipv6/ip6mr.c
-+++ b/net/ipv6/ip6mr.c
-@@ -1582,7 +1582,7 @@ int ip6_mroute_setsockopt(struct sock *sk, int optname, char __user *optval, uns
- 		return -ENOENT;
- 
- 	if (optname != MRT6_INIT) {
--		if (sk != mrt->mroute6_sk && !capable(CAP_NET_ADMIN))
-+		if (sk != mrt->mroute6_sk && !ns_capable(net->user_ns, CAP_NET_ADMIN))
- 			return -EACCES;
- 	}
- 
-diff --git a/net/ipv6/ipv6_sockglue.c b/net/ipv6/ipv6_sockglue.c
-index 9cb191e..196b099 100644
---- a/net/ipv6/ipv6_sockglue.c
-+++ b/net/ipv6/ipv6_sockglue.c
-@@ -343,7 +343,7 @@ static int do_ipv6_setsockopt(struct sock *sk, int level, int optname,
- 		break;
- 
- 	case IPV6_TRANSPARENT:
--		if (!capable(CAP_NET_ADMIN)) {
-+		if (!ns_capable(net->user_ns, CAP_NET_ADMIN)) {
- 			retv = -EPERM;
- 			break;
- 		}
-@@ -381,7 +381,8 @@ static int do_ipv6_setsockopt(struct sock *sk, int level, int optname,
- 
- 		/* hop-by-hop / destination options are privileged option */
- 		retv = -EPERM;
--		if (optname != IPV6_RTHDR && !capable(CAP_NET_RAW))
-+		if (optname != IPV6_RTHDR &&
-+		    !ns_capable(net->user_ns, CAP_NET_RAW))
- 			break;
- 
- 		opt = ipv6_renew_options(sk, np->opt, optname,
-@@ -725,7 +726,7 @@ done:
- 	case IPV6_IPSEC_POLICY:
- 	case IPV6_XFRM_POLICY:
- 		retv = -EPERM;
--		if (!capable(CAP_NET_ADMIN))
-+		if (!ns_capable(net->user_ns, CAP_NET_ADMIN))
- 			break;
- 		retv = xfrm_user_policy(sk, optname, optval, optlen);
- 		break;
-diff --git a/net/ipv6/netfilter/ip6_tables.c b/net/ipv6/netfilter/ip6_tables.c
-index 94874b0..7fce7d8 100644
---- a/net/ipv6/netfilter/ip6_tables.c
-+++ b/net/ipv6/netfilter/ip6_tables.c
-@@ -1869,7 +1869,7 @@ compat_do_ip6t_set_ctl(struct sock *sk, int cmd, void __user *user,
+-int cap_netlink_recv(struct sk_buff *skb, int cap)
++int cap_netlink_recv(struct sk_buff *skb, int cap, struct user_namespace *ns)
  {
- 	int ret;
+-	if (!cap_raised(current_cap(), cap))
+-		return -EPERM;
+-	return 0;
++	return security_capable(ns, current_cred(), cap);
+ }
+ EXPORT_SYMBOL(cap_netlink_recv);
  
--	if (!capable(CAP_NET_ADMIN))
-+	if (!ns_capable(sock_net(sk)->user_ns, CAP_NET_ADMIN))
- 		return -EPERM;
+diff --git a/security/security.c b/security/security.c
+index 0e4fccf..0a1453e 100644
+--- a/security/security.c
++++ b/security/security.c
+@@ -941,9 +941,9 @@ int security_netlink_send(struct sock *sk, struct sk_buff *skb)
+ 	return security_ops->netlink_send(sk, skb);
+ }
  
- 	switch (cmd) {
-@@ -1984,7 +1984,7 @@ compat_do_ip6t_get_ctl(struct sock *sk, int cmd, void __user *user, int *len)
+-int security_netlink_recv(struct sk_buff *skb, int cap)
++int security_netlink_recv(struct sk_buff *skb, int cap, struct user_namespace *ns)
  {
- 	int ret;
+-	return security_ops->netlink_recv(skb, cap);
++	return security_ops->netlink_recv(skb, cap, ns);
+ }
+ EXPORT_SYMBOL(security_netlink_recv);
  
--	if (!capable(CAP_NET_ADMIN))
-+	if (!ns_capable(sock_net(sk)->user_ns, CAP_NET_ADMIN))
- 		return -EPERM;
+diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
+index 9f4c77d..c80a063 100644
+--- a/security/selinux/hooks.c
++++ b/security/selinux/hooks.c
+@@ -4723,13 +4723,14 @@ static int selinux_netlink_send(struct sock *sk, struct sk_buff *skb)
+ 	return selinux_nlmsg_perm(sk, skb);
+ }
  
- 	switch (cmd) {
-@@ -2006,7 +2006,7 @@ do_ip6t_set_ctl(struct sock *sk, int cmd, void __user *user, unsigned int len)
+-static int selinux_netlink_recv(struct sk_buff *skb, int capability)
++static int selinux_netlink_recv(struct sk_buff *skb, int capability,
++				struct user_namespace *ns)
  {
- 	int ret;
+ 	int err;
+ 	struct common_audit_data ad;
+ 	u32 sid;
  
--	if (!capable(CAP_NET_ADMIN))
-+	if (!ns_capable(sock_net(sk)->user_ns, CAP_NET_ADMIN))
- 		return -EPERM;
+-	err = cap_netlink_recv(skb, capability);
++	err = cap_netlink_recv(skb, capability, ns);
+ 	if (err)
+ 		return err;
  
- 	switch (cmd) {
-@@ -2031,7 +2031,7 @@ do_ip6t_get_ctl(struct sock *sk, int cmd, void __user *user, int *len)
- {
- 	int ret;
- 
--	if (!capable(CAP_NET_ADMIN))
-+	if (!ns_capable(sock_net(sk)->user_ns, CAP_NET_ADMIN))
- 		return -EPERM;
- 
- 	switch (cmd) {
-diff --git a/net/ipv6/route.c b/net/ipv6/route.c
-index e8987da..2a64c67 100644
---- a/net/ipv6/route.c
-+++ b/net/ipv6/route.c
-@@ -1929,7 +1929,7 @@ int ipv6_route_ioctl(struct net *net, unsigned int cmd, void __user *arg)
- 	switch(cmd) {
- 	case SIOCADDRT:		/* Add a route */
- 	case SIOCDELRT:		/* Delete a route */
--		if (!capable(CAP_NET_ADMIN))
-+		if (!ns_capable(net->user_ns, CAP_NET_ADMIN))
- 			return -EPERM;
- 		err = copy_from_user(&rtmsg, arg,
- 				     sizeof(struct in6_rtmsg));
-diff --git a/net/ipv6/sit.c b/net/ipv6/sit.c
-index 07bf108..402e2a5 100644
---- a/net/ipv6/sit.c
-+++ b/net/ipv6/sit.c
-@@ -308,7 +308,7 @@ static int ipip6_tunnel_get_prl(struct ip_tunnel *t,
- 	/* For simple GET or for root users,
- 	 * we try harder to allocate.
- 	 */
--	kp = (cmax <= 1 || capable(CAP_NET_ADMIN)) ?
-+	kp = (cmax <= 1 || ns_capable(dev_net(t->dev)->user_ns, CAP_NET_ADMIN)) ?
- 		kcalloc(cmax, sizeof(*kp), GFP_KERNEL) :
- 		NULL;
- 
-@@ -926,7 +926,7 @@ ipip6_tunnel_ioctl (struct net_device *dev, struct ifreq *ifr, int cmd)
- 	case SIOCADDTUNNEL:
- 	case SIOCCHGTUNNEL:
- 		err = -EPERM;
--		if (!capable(CAP_NET_ADMIN))
-+		if (!ns_capable(dev_net(dev)->user_ns, CAP_NET_ADMIN))
- 			goto done;
- 
- 		err = -EFAULT;
-@@ -985,7 +985,7 @@ ipip6_tunnel_ioctl (struct net_device *dev, struct ifreq *ifr, int cmd)
- 
- 	case SIOCDELTUNNEL:
- 		err = -EPERM;
--		if (!capable(CAP_NET_ADMIN))
-+		if (!ns_capable(dev_net(dev)->user_ns, CAP_NET_ADMIN))
- 			goto done;
- 
- 		if (dev == sitn->fb_tunnel_dev) {
-@@ -1018,7 +1018,7 @@ ipip6_tunnel_ioctl (struct net_device *dev, struct ifreq *ifr, int cmd)
- 	case SIOCDELPRL:
- 	case SIOCCHGPRL:
- 		err = -EPERM;
--		if (!capable(CAP_NET_ADMIN))
-+		if (!ns_capable(dev_net(dev)->user_ns, CAP_NET_ADMIN))
- 			goto done;
- 		err = -EINVAL;
- 		if (dev == sitn->fb_tunnel_dev)
-@@ -1047,7 +1047,7 @@ ipip6_tunnel_ioctl (struct net_device *dev, struct ifreq *ifr, int cmd)
- 	case SIOCCHG6RD:
- 	case SIOCDEL6RD:
- 		err = -EPERM;
--		if (!capable(CAP_NET_ADMIN))
-+		if (!ns_capable(dev_net(dev)->user_ns, CAP_NET_ADMIN))
- 			goto done;
- 
- 		err = -EFAULT;
 -- 
 1.7.4.1
