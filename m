@@ -1,18 +1,13 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH 0/7 + tools] Checkpoint/restore mostly in the
-	userspace
-Date: Tue, 26 Jul 2011 11:11:28 -0700
-Message-ID: <20110726181128.GD14808@count0.beaverton.ibm.com>
-References: <4E204466.8010204@parallels.com>
-	<20110723002558.GE16940@count0.beaverton.ibm.com>
-	<20110723032945.GD21563@count0.beaverton.ibm.com>
-	<20110723045842.GD21089@mtj.dyndns.org>
+From: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 03/14] keyctl: check capabilities against key's user_ns
+Date: Tue, 26 Jul 2011 18:58:26 +0000
+Message-ID: <1311706717-7398-4-git-send-email-serge__21960.2911886343$1311706871$gmane$org@hallyn.com>
+References: <1311706717-7398-1-git-send-email-serge@hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20110723045842.GD21089-9pTldWuhBndy/B6EtB590w@public.gmane.org>
+In-Reply-To: <1311706717-7398-1-git-send-email-serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,40 +17,48 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Sat, Jul 23, 2011 at 06:58:42AM +0200, Tejun Heo wrote:
-> On Fri, Jul 22, 2011 at 08:29:45PM -0700, Matt Helsley wrote:
-> > On Fri, Jul 22, 2011 at 05:25:58PM -0700, Matt Helsley wrote:
-> > You'd have to output the fd number for each epoll item plus the path to
-> > the file. The fd,file pair in the item is not strictly tied to
-> > the contents of the processes' fd table yet the item fd has to be output
-> > since it's the number userspace will supply to epoll_ctl(EPOLL_CTL_DEL...).
-> 
-> I haven't really looked at it but if @fd is key, @fd should be enough.
-> You can determine what @fd is and it attributes from /proc/PID/fd/ and
-> /proc/PID/fdinfo/.  No reason to list them again.
+From: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 
-No, you can't use the fd from the epoll item to look it up in the
-task's fd table. It may look trivially correct but it is not and that's
-why I mentioned it.
+ATM, task should only be able to get his own user_ns's keys
+anyway, so nsown_capable should also work, but there is no
+advantage to doing that, while using key's user_ns is clearer.
 
-This is an example of where the information we already have in /proc
-looks like it should be re-used but should not.
+changelog: jun 6:
+	compile fix: keyctl.c (key_user, not key has user_ns)
 
-EPOLL_CTL_ADD uses the fd to add it to the epoll items as an (fd,file)
-pair. Then another thread could change the fd table to close that fd.
-close does not update all the epoll sets the fd is a part of. So in order
-to remove the epoll item userspace must use the same "fd" it used during
-EPOLL_CTL_ADD -- even though that fd no longer refers to anything.
-That's why you can't just use the epoll item's fd to do a lookup in the
-fd table -- you'll get the wrong struct *file. Unfortunately, most of the
-time it will probably appear to work. You need a proper testcase to
-demonstrate it.
+Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Acked-by: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+---
+ security/keys/keyctl.c |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
 
-At least that's what I recall of the code.
-
-Cheers,
-	-Matt Helsley
+diff --git a/security/keys/keyctl.c b/security/keys/keyctl.c
+index eca5191..fa7d420 100644
+--- a/security/keys/keyctl.c
++++ b/security/keys/keyctl.c
+@@ -745,7 +745,7 @@ long keyctl_chown_key(key_serial_t id, uid_t uid, gid_t gid)
+ 	ret = -EACCES;
+ 	down_write(&key->sem);
+ 
+-	if (!capable(CAP_SYS_ADMIN)) {
++	if (!ns_capable(key->user->user_ns, CAP_SYS_ADMIN)) {
+ 		/* only the sysadmin can chown a key to some other UID */
+ 		if (uid != (uid_t) -1 && key->uid != uid)
+ 			goto error_put;
+@@ -852,7 +852,8 @@ long keyctl_setperm_key(key_serial_t id, key_perm_t perm)
+ 	down_write(&key->sem);
+ 
+ 	/* if we're not the sysadmin, we can only change a key that we own */
+-	if (capable(CAP_SYS_ADMIN) || key->uid == current_fsuid()) {
++	if (ns_capable(key->user->user_ns, CAP_SYS_ADMIN) ||
++	    key->uid == current_fsuid()) {
+ 		key->perm = perm;
+ 		ret = 0;
+ 	}
+-- 
+1.7.4.1
