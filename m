@@ -1,7 +1,7 @@
 From: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 11/14] userns: make some net-sysfs capable calls targeted
-Date: Tue, 26 Jul 2011 18:58:34 +0000
-Message-ID: <1311706717-7398-12-git-send-email-serge__4011.25842840901$1311708196$gmane$org@hallyn.com>
+Subject: [PATCH 12/14] user_ns: target af_key capability check
+Date: Tue, 26 Jul 2011 18:58:35 +0000
+Message-ID: <1311706717-7398-13-git-send-email-serge__32356.159159872$1311708206$gmane$org@hallyn.com>
 References: <1311706717-7398-1-git-send-email-serge@hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,35 +23,27 @@ List-Id: containers.vger.kernel.org
 
 From: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 
-Changelog: jul 1: fix compilation errors (net_device != net)
+This presumes that it really is complete wrt network namespaces.  Looking
+at the code it appears to be.
 
 Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Cc: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- net/core/net-sysfs.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+ net/key/af_key.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/net/core/net-sysfs.c b/net/core/net-sysfs.c
-index 1683e5d..876915b 100644
---- a/net/core/net-sysfs.c
-+++ b/net/core/net-sysfs.c
-@@ -76,7 +76,7 @@ static ssize_t netdev_store(struct device *dev, struct device_attribute *attr,
- 	unsigned long new;
- 	int ret = -EINVAL;
+diff --git a/net/key/af_key.c b/net/key/af_key.c
+index 1e733e9..1f90f4e 100644
+--- a/net/key/af_key.c
++++ b/net/key/af_key.c
+@@ -141,7 +141,7 @@ static int pfkey_create(struct net *net, struct socket *sock, int protocol,
+ 	struct sock *sk;
+ 	int err;
  
 -	if (!capable(CAP_NET_ADMIN))
-+	if (!ns_capable(dev_net(net)->user_ns, CAP_NET_ADMIN))
++	if (!ns_capable(net->user_ns, CAP_NET_ADMIN))
  		return -EPERM;
- 
- 	new = simple_strtoul(buf, &endp, 0);
-@@ -261,7 +261,7 @@ static ssize_t store_ifalias(struct device *dev, struct device_attribute *attr,
- 	size_t count = len;
- 	ssize_t ret;
- 
--	if (!capable(CAP_NET_ADMIN))
-+	if (!ns_capable(dev_net(netdev)->user_ns, CAP_NET_ADMIN))
- 		return -EPERM;
- 
- 	/* ignore trailing newline */
+ 	if (sock->type != SOCK_RAW)
+ 		return -ESOCKTNOSUPPORT;
 -- 
 1.7.4.1
