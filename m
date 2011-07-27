@@ -1,20 +1,15 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [RFC][PATCH 0/7 + tools] Checkpoint/restore mostly in the
-	userspace
-Date: Wed, 27 Jul 2011 14:01:14 +0200
-Message-ID: <20110727120114.GZ2622@htj.dyndns.org>
-References: <4E204466.8010204@parallels.com>
-	<20110723002558.GE16940@count0.beaverton.ibm.com>
-	<20110723051005.GE21089@mtj.dyndns.org>
-	<20110726220215.GE14808@count0.beaverton.ibm.com>
-	<20110726222109.GB28497@mtj.dyndns.org>
-	<20110727000651.GA15501@count0.beaverton.ibm.com>
+From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
+Subject: Re: Possible race between cgroup_attach_proc and de_thread, and
+	questionable code in de_thread.
+Date: Wed, 27 Jul 2011 11:07:10 -0400
+Message-ID: <20110727150710.GB5242@unix33.andrew.cmu.edu>
+References: <20110727171101.5e32d8eb@notabene.brown>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20110727000651.GA15501-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
+In-Reply-To: <20110727171101.5e32d8eb-wvvUuzkyo1EYVZTmpyfIwg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,83 +19,131 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+To: NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>
+Cc: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "Paul E.McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hello, Matt.
-
-On Tue, Jul 26, 2011 at 05:06:51PM -0700, Matt Helsley wrote:
-> On Wed, Jul 27, 2011 at 12:21:09AM +0200, Tejun Heo wrote:
-> > On Tue, Jul 26, 2011 at 03:02:15PM -0700, Matt Helsley wrote:
-> > > > Sure, that was completely embedded in the kernel and things can be
-> > > > implemented and fixed with much less consideration.  I can see how
-> > > > that would be easier for the specific use case, but that EXACTLY is
-> > > > why it can't go upstream.  I just can't see it happening and think it
-> > > 
-> > > It can't go upstream because it's too easy to implement and fix?
-> > > It can't go upstream because it has a specific use case?
-> > > Is there something that says every interface added to the kernel *must*
-> > > be useful for something besides the purpose that originally inspired it?
-> > 
-> > You really don't understand what I'm trying to say at all?
+On Wed, Jul 27, 2011 at 05:11:01PM +1000, NeilBrown wrote:
 > 
-> That's not what I said. I know you're arguing we shouldn't have an
-> in-kernel implementation.
+> Hi,
+>   I've been exploring the use of RCU in the kernel, particularly looking for
+>   things that don't quite look right.  I found cgroup_attach_proc which was
+>   added a few months ago.
+
+Awesome, thanks! :)
+
 > 
-> Your statement above did not seem to support your argument at all --
-> you seemed to be conceding that an in-kernel implementation ("embedded
-> in the kernel") would be easier to implement and fix (nit: would've
-> been nice for you to include a bit more context..).
+>  It contains:
+> 
+> 	rcu_read_lock();
+> 	if (!thread_group_leader(leader)) {
+> 		/*
+> 		 * a race with de_thread from another thread's exec() may strip
+> 		 * us of our leadership, making while_each_thread unsafe to use
+> 		 * on this task. if this happens, there is no choice but to
+> 		 * throw this task away and try again (from cgroup_procs_write);
+> 		 * this is "double-double-toil-and-trouble-check locking".
+> 		 */
+> 		rcu_read_unlock();
+> 		retval = -EAGAIN;
+> 		goto out_free_group_list;
+> 	}
+> 
+>  (and having the comment helps a lot!)
+> 
+>  The comment acknowledges a race with de_thread but seems to assume that
+>  rcu_read_lock() will protect against that race.  It won't.
+>  It could possibly protect if the racy code in de_thread() contained a call
+>  to synchronize_rcu(), but it doesn't so there is no obvious exclusion
+>  between the two.
+>  I note that some other locks are held and maybe some other lock provides
+>  the required exclusion - I haven't explored that too deeply - but if that is
+>  the case, then the use of rcu_read_lock() here is pointless - it isn't
+>  needed just to call thread_group_leader().
 
-I see.  Probably I was too indirect, so let me try again.  The reason
-why in-kernel implementation seems easier for CR itself is because it
-has unlimited access to all the internal data structures, locking and
-everything, which waivers a lot of efforts.  There's no layering to
-consider and no userland visible API to worry about.
+I wrote this code, and I admit to not having a full understanding of RCU
+myself. The code was once more complicated (before the patches went in,
+mind you), and had a series of checks like that leading up to a
+list_for_each_entry over the ->thread_group list (in "step 3", instead
+of iterating over the flex_array), and had read_lock(&tasklist_lock)
+around it. (...)
 
-Unfortunately, those benefits don't come free.  It ends up adding a
-lot of side-way accesses to different subsystems including another
-locking vector, which add complexity to all the subsystems.  In short,
-it makes CR easier by making everything else more complex.
+(The other locks held are just cgroup_mutex and threadgroup_fork_lock,
+which wouldn't provide the exclusion.)
 
-Analogies are often misleading but in-kernel web server seems useful
-to explain the point I'm trying to make (at least some part of it).
-If the kernel lacks proper support API, hooking deeply into page
-cache, network stack, scheduler and whatnot would make building high
-performance web server much easier than trying to devise and implement
-proper APIs to support high performance web server, and as a prototype
-or probing project, in-kernel implementation sure would have a lot of
-usefulness, but that's not how the end result should turn out.  It
-makes maintaining and improving kernel subsystems unnecessarily
-difficult for quite limited usefulness.
+> 
+>  The race as I understand it is with this code:
+> 
+> 
+> 		list_replace_rcu(&leader->tasks, &tsk->tasks);
+> 		list_replace_init(&leader->sibling, &tsk->sibling);
+> 
+> 		tsk->group_leader = tsk;
+> 		leader->group_leader = tsk;
+> 
+> 
+>  which seems to be called with only tasklist_lock held, which doesn't seem to
+>  be held in the cgroup code.
+> 
+>  If the "thread_group_leader(leader)" call in cgroup_attach_proc() runs before
+>  this chunk is run with the same value for 'leader', but the
+>  while_each_thread is run after, then the while_read_thread() might loop
+>  forever.  rcu_read_lock doesn't prevent this from happening.
 
-Again, I'm not saying CR is exactly the same and POV can vary greatly
-depending on how one perceives various parameters, but I think it at
-least illustrates my point clear.
+Somehow I was under the impression that holding tasklist_lock (for
+writing) provided exclusion from code that holds rcu_read_lock -
+probably because there are other points in the kernel which do
+while_each_thread with only RCU-read held (and not tasklist):
 
-> I know you think we should make use of lots of changes in a variety
-> of places such as ptrace, new bits in /proc, etc. to avoid an in-kernel
-> implementation. That's certainly an enticingly simple (non-complex) idea.
-> However I still question whether the idea will work well for
-> checkpoint/restart.
+- kernel/hung_task.c, check_hung_uninterruptible_tasks()
+- kernel/posix-cpu-timers.c, thread_group_cputime()
+- fs/ioprio.c, ioprio_set() and ioprio_get()
 
-I think the difference in opinions originates from two major factors.
-One being scope or completeness and the other perceived difficulties
-of doing it from userland.  I think I've already said enough about the
-former in another reply.
+(There are also places, like kernel/signal.c, where code does
+while_each_thread with only sighand->siglock held. this also seems
+sketchy, since de_thread only takes that lock after the code quoted
+above. there's a big comment in fs/exec.c where this is also done, but I
+don't quite understand it.)
 
-For the latter, I still can't see what would be so difficult.  We have
-properly working ptrace now (and can even transparently inject worker
-thread into the target process) so the core functionality is easily
-(it takes effort but isn't technically difficult) achievable.  The
-specific issues you've raised in this thread don't seem all that
-daunting to tackle.  To me, the crux of most issues seems already
-half-solved.  Maybe I'm overly optimistic but I don't really see any
-missing chunk which is too big or especially difficult.  If you can
-think of some, please bring them up.  Let's talk about them.
+You seem to imply that rcu_read_lock() doesn't exclude against
+write_lock(&tasklist_lock). If that's true, then we can fix the cgroup
+code simply by replacing rcu_read_lock/rcu_read_unlock with
+read_lock and read_unlocck on tasklist_lock. (I can hurry a bugfix patch
+for this together if so.)
 
-Thanks.
+Wouldn't this mean that the three places listed above are also wrong?
 
--- 
-tejun
+> 
+>  The code in de_thread() is actually questionable by itself.
+>  "list_replace_rcu" cannot really be used on the head of a list - it is only
+>  meant to be used on a member of a list.
+>  To move a list from one head to another you should be using
+>  list_splice_init_rcu().
+>  The ->tasks list doesn't seem to have a clearly distinguished 'head' but
+>  whatever is passed as 'g' to while_each_thread() is effectively a head and
+>  removing it from a list can cause a loop using while_each_thread() can not
+>  find the head and so never complete.
+> 
+>  I' not sure how best to fix this, though possibly changing
+>  while_each_thead to:
+> 
+>    while ((t = next_task(t)) != g && !thread_group_leader(t))
+> 
+>  might be part of it.  We would also need to move 
+>     tsk->group_leader = tsk;
+>  in the above up to the top, and probably add some memory barrier.
+>  However I don't know enough about how the list is used to be sure.
+> 
+> Comments?
+> 
+> Thanks,
+> NeilBrown
+> 
+> 
+
+I barely understand de_thread() from the reader's perspective, let alone
+from the author's perspective, so I can't speak for that one.
+
+Thanks for pointing this out!
+
+-- Ben
