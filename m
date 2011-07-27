@@ -1,16 +1,15 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [TOOLS] To make use of the patches
-Date: Wed, 27 Jul 2011 16:00:03 -0700
-Message-ID: <20110727230003.GE15501@count0.beaverton.ibm.com>
-References: <4E204466.8010204@parallels.com> <4E204554.6040901@parallels.com>
-	<20110722234558.GD16940@count0.beaverton.ibm.com>
-	<4E2A8704.3030306@parallels.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH 02/14] allow root in container to copy namespaces
+Date: Wed, 27 Jul 2011 16:14:30 -0700
+Message-ID: <m1hb67fh9l.fsf__17712.0641376407$1311808515$gmane$org@fess.ebiederm.org>
+References: <1311706717-7398-1-git-send-email-serge@hallyn.com>
+	<1311706717-7398-3-git-send-email-serge@hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4E2A8704.3030306-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+In-Reply-To: <1311706717-7398-3-git-send-email-serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> (Serge
+	Hallyn's message of "Tue, 26 Jul 2011 18:58:25 +0000")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,26 +19,82 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+To: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Sat, Jul 23, 2011 at 12:32:04PM +0400, Pavel Emelyanov wrote:
+Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
 
-<snip>
+> From: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+>
+> Othewise nested containers with user namespaces won't be possible.
+>
+> It's true that user namespaces are not yet fully isolated, but for
+> that same reason there are far worse things that root in a child
+> user ns can do.  Spawning a child user ns is not in itself bad.
+>
+> This patch also allows setns for root in a container:
+> @Eric Biederman: are there gotchas in allowing setns from child
+> userns?
 
-> > For any subsequent postings could you split this up into multiple
-> > emails -- perhaps one per file? 
-> 
-> OK, will do this.
-> 
-> > Or perhaps make them patches to the kernel's tools directory?
-> 
-> Hm... I didn't think about having these tools be the part of the kernel source tree.
-> 
-> Maybe it would be better if I publish the tools in git repo, what do you think?
+Yes.  We need to ensure that the target namespaces are namespaces
+that have been created in from user_namespace or from a child of this
+user_namespace.
 
-I honestly don't know which is more appropriate.
+Aka we need to ensure that we have CAP_SYS_ADMIN for the new namespace.
 
-Cheers,
-	-Matt Helsley
+Eric
+
+> Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+> Cc: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> ---
+>  kernel/fork.c    |    4 ++--
+>  kernel/nsproxy.c |    6 +++---
+>  2 files changed, 5 insertions(+), 5 deletions(-)
+>
+> diff --git a/kernel/fork.c b/kernel/fork.c
+> index 17bf7c8..22d0cf0 100644
+> --- a/kernel/fork.c
+> +++ b/kernel/fork.c
+> @@ -1473,8 +1473,8 @@ long do_fork(unsigned long clone_flags,
+>  		/* hopefully this check will go away when userns support is
+>  		 * complete
+>  		 */
+> -		if (!capable(CAP_SYS_ADMIN) || !capable(CAP_SETUID) ||
+> -				!capable(CAP_SETGID))
+> +		if (!nsown_capable(CAP_SYS_ADMIN) || !nsown_capable(CAP_SETUID) ||
+> +				!nsown_capable(CAP_SETGID))
+>  			return -EPERM;
+>  	}
+>  
+> diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+> index 9aeab4b..f50542d 100644
+> --- a/kernel/nsproxy.c
+> +++ b/kernel/nsproxy.c
+> @@ -134,7 +134,7 @@ int copy_namespaces(unsigned long flags, struct task_struct *tsk)
+>  				CLONE_NEWPID | CLONE_NEWNET)))
+>  		return 0;
+>  
+> -	if (!capable(CAP_SYS_ADMIN)) {
+> +	if (!nsown_capable(CAP_SYS_ADMIN)) {
+>  		err = -EPERM;
+>  		goto out;
+>  	}
+> @@ -191,7 +191,7 @@ int unshare_nsproxy_namespaces(unsigned long unshare_flags,
+>  			       CLONE_NEWNET)))
+>  		return 0;
+>  
+> -	if (!capable(CAP_SYS_ADMIN))
+> +	if (!nsown_capable(CAP_SYS_ADMIN))
+>  		return -EPERM;
+>  
+>  	*new_nsp = create_new_namespaces(unshare_flags, current,
+> @@ -241,7 +241,7 @@ SYSCALL_DEFINE2(setns, int, fd, int, nstype)
+>  	struct file *file;
+>  	int err;
+>  
+> -	if (!capable(CAP_SYS_ADMIN))
+> +	if (!nsown_capable(CAP_SYS_ADMIN))
+>  		return -EPERM;
+>  
+>  	file = proc_ns_fget(fd);
