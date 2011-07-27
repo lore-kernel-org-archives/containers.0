@@ -1,20 +1,12 @@
-From: Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>
-Subject: [PATCH v3 RESEND] cgroup/kmemcheck: Annotate alloc_page() for
-	cgroup allocations
-Date: Tue, 26 Jul 2011 22:10:44 -0400
-Message-ID: <1311732644.21143.5.camel__32691.0701617182$1311732808$gmane$org@gandalf.stny.rr.com>
-References: <1311699911.3526.87.camel@gandalf.stny.rr.com>
-	<20110726173816.GA26597@tiehlicka.suse.cz>
-	<1311702110.3526.98.camel@gandalf.stny.rr.com>
-	<1311702244.3526.100.camel@gandalf.stny.rr.com>
-	<1311704249.3526.106.camel@gandalf.stny.rr.com>
-	<20110726184342.GB26597@tiehlicka.suse.cz>
-	<1311707088.21143.0.camel@gandalf.stny.rr.com>
+From: NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>
+Subject: Possible race between cgroup_attach_proc and de_thread, and
+	questionable code in de_thread.
+Date: Wed, 27 Jul 2011 17:11:01 +1000
+Message-ID: <20110727171101.5e32d8eb@notabene.brown>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1311707088.21143.0.camel-f9ZlEuEWxVcI6MkJdU+c8EEOCMrvLtNR@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,69 +16,83 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: Catalin Marinas <catalin.marinas-5wv7dgnIgG8@public.gmane.org>, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Randy Dunlap <rdunlap-/UHa2rfvQTnk1uMJSBkQmQ@public.gmane.org>, Minchan Kim <minchan.kim-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Paul E.McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-[ Resending with CGROUP maintainers Cc'd this time ]
 
-When the cgroup base was allocated with kmalloc, it was necessary to
-annotate the variable with kmemcheck_not_leak(). But because it has
-recently been changed to be allocated with alloc_page() (which skips
-kmemleak checks) causes a warning on boot up.
+Hi,
+  I've been exploring the use of RCU in the kernel, particularly looking for
+  things that don't quite look right.  I found cgroup_attach_proc which was
+  added a few months ago.
 
-I was triggering this output:
+ It contains:
 
-allocated 8388608 bytes of page_cgroup
-please try 'cgroup_disable=memory' option if you don't want memory cgroups
-kmemleak: Trying to color unknown object at 0xf5840000 as Grey
-Pid: 0, comm: swapper Not tainted 3.0.0-test #12
-Call Trace:
- [<c17e34e6>] ? printk+0x1d/0x1f^M
- [<c10e2941>] paint_ptr+0x4f/0x78
- [<c178ab57>] kmemleak_not_leak+0x58/0x7d
- [<c108ae9f>] ? __rcu_read_unlock+0x9/0x7d
- [<c1cdb462>] kmemleak_init+0x19d/0x1e9
- [<c1cbf771>] start_kernel+0x346/0x3ec
- [<c1cbf1b4>] ? loglevel+0x18/0x18
- [<c1cbf0aa>] i386_start_kernel+0xaa/0xb0
+	rcu_read_lock();
+	if (!thread_group_leader(leader)) {
+		/*
+		 * a race with de_thread from another thread's exec() may strip
+		 * us of our leadership, making while_each_thread unsafe to use
+		 * on this task. if this happens, there is no choice but to
+		 * throw this task away and try again (from cgroup_procs_write);
+		 * this is "double-double-toil-and-trouble-check locking".
+		 */
+		rcu_read_unlock();
+		retval = -EAGAIN;
+		goto out_free_group_list;
+	}
 
-After a bit of debugging I tracked the object 0xf840000 (and others)
-down to the cgroup code. The change from allocating base with kmalloc to
-alloc_page() has the base not calling kmemleak_alloc() which adds the
-pointer to the object_tree_root, but kmemleak_not_leak() adds it to the
-crt_early_log[] table. On kmemleak_init(), the entry is found in the
-early_log[] but not the object_tree_root, and this error message is
-displayed.
+ (and having the comment helps a lot!)
 
-If alloc_page() fails then it defaults back to vmalloc() which still
-uses the kmemleak_alloc() which makes us still need the
-kmemleak_not_leak() call. The solution is to call the kmemleak_alloc()
-directly if the alloc_page() succeeds.
+ The comment acknowledges a race with de_thread but seems to assume that
+ rcu_read_lock() will protect against that race.  It won't.
+ It could possibly protect if the racy code in de_thread() contained a call
+ to synchronize_rcu(), but it doesn't so there is no obvious exclusion
+ between the two.
+ I note that some other locks are held and maybe some other lock provides
+ the required exclusion - I haven't explored that too deeply - but if that is
+ the case, then the use of rcu_read_lock() here is pointless - it isn't
+ needed just to call thread_group_leader().
 
-Reviewed-by: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Reviewed-by: Minchan Kim <minchan.kim-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Acked-by: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
-Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Signed-off-by: Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>
+ The race as I understand it is with this code:
 
-diff --git a/mm/page_cgroup.c b/mm/page_cgroup.c
-index 53bffc6..1eb534a 100644
---- a/mm/page_cgroup.c
-+++ b/mm/page_cgroup.c
-@@ -133,10 +133,13 @@ struct page *lookup_cgroup_page(struct page_cgroup *pc)
- static void *__meminit alloc_page_cgroup(size_t size, int nid)
- {
- 	void *addr = NULL;
-+	gfp_t flags = GFP_KERNEL | __GFP_NOWARN;
- 
--	addr = alloc_pages_exact_nid(nid, size, GFP_KERNEL | __GFP_NOWARN);
--	if (addr)
-+	addr = alloc_pages_exact_nid(nid, size, flags);
-+	if (addr) {
-+		kmemleak_alloc(addr, size, 1, flags);
- 		return addr;
-+	}
- 
- 	if (node_state(nid, N_HIGH_MEMORY))
- 		addr = vmalloc_node(size, nid);
+
+		list_replace_rcu(&leader->tasks, &tsk->tasks);
+		list_replace_init(&leader->sibling, &tsk->sibling);
+
+		tsk->group_leader = tsk;
+		leader->group_leader = tsk;
+
+
+ which seems to be called with only tasklist_lock held, which doesn't seem to
+ be held in the cgroup code.
+
+ If the "thread_group_leader(leader)" call in cgroup_attach_proc() runs before
+ this chunk is run with the same value for 'leader', but the
+ while_each_thread is run after, then the while_read_thread() might loop
+ forever.  rcu_read_lock doesn't prevent this from happening.
+
+ The code in de_thread() is actually questionable by itself.
+ "list_replace_rcu" cannot really be used on the head of a list - it is only
+ meant to be used on a member of a list.
+ To move a list from one head to another you should be using
+ list_splice_init_rcu().
+ The ->tasks list doesn't seem to have a clearly distinguished 'head' but
+ whatever is passed as 'g' to while_each_thread() is effectively a head and
+ removing it from a list can cause a loop using while_each_thread() can not
+ find the head and so never complete.
+
+ I' not sure how best to fix this, though possibly changing
+ while_each_thead to:
+
+   while ((t = next_task(t)) != g && !thread_group_leader(t))
+
+ might be part of it.  We would also need to move 
+    tsk->group_leader = tsk;
+ in the above up to the top, and probably add some memory barrier.
+ However I don't know enough about how the list is used to be sure.
+
+Comments?
+
+Thanks,
+NeilBrown
