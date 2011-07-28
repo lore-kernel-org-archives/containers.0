@@ -1,18 +1,24 @@
 From: James Bottomley <jbottomley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [TOOLS] To make use of the patches
-Date: Thu, 28 Jul 2011 08:23:59 +0000
-Message-ID: <1311841438.30253.20.camel@mulgrave>
-References: <4E204466.8010204@parallels.com> <4E204554.6040901@parallels.com>
-	<20110722234558.GD16940@count0.beaverton.ibm.com>
-	<4E2A8704.3030306@parallels.com>
-	<20110727230003.GE15501@count0.beaverton.ibm.com>
+Subject: Re: [RFC][PATCH 0/7 + tools] Checkpoint/restore mostly in the
+	userspace
+Date: Thu, 28 Jul 2011 08:37:59 +0000
+Message-ID: <1311842275.30253.27.camel@mulgrave>
+References: <4E204466.8010204@parallels.com>
+	<20110723002558.GE16940@count0.beaverton.ibm.com>
+	<20110723051005.GE21089@mtj.dyndns.org>
+	<20110726220215.GE14808@count0.beaverton.ibm.com>
+	<20110726222109.GB28497@mtj.dyndns.org>
+	<20110727000651.GA15501@count0.beaverton.ibm.com>
+	<20110727120114.GZ2622@htj.dyndns.org>
+	<20110727213510.GC15501@count0.beaverton.ibm.com>
+	<20110728072141.GB2622@htj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110727230003.GE15501-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
+In-Reply-To: <20110728072141.GB2622-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
 Content-Language: en-US
-Content-ID: <1AEA053E1B2579478E7B5C4B79637E58-ruSsrxOD6xDby3iVrkZq2A@public.gmane.org>
+Content-ID: <3B234AE17038294E9AE0BE990C026359-ruSsrxOD6xDby3iVrkZq2A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,31 +28,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Pavel Emelianov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Pavel Emelianov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Lars Marowsky-Bree <lmb-l3A5Bk7waGM@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, 2011-07-27 at 16:00 -0700, Matt Helsley wrote:
-> On Sat, Jul 23, 2011 at 12:32:04PM +0400, Pavel Emelyanov wrote:
+On Thu, 2011-07-28 at 09:21 +0200, Tejun Heo wrote:
+> Hello, Matt.
 > 
-> <snip>
+> On Wed, Jul 27, 2011 at 02:35:10PM -0700, Matt Helsley wrote:
+> > The closest part of your analogy involved the networking code
+> > and made me wonder how you think network sockets and connections
+> > could best be checkpointed and restarted from userspace.
 > 
-> > > For any subsequent postings could you split this up into multiple
-> > > emails -- perhaps one per file? 
-> > 
-> > OK, will do this.
-> > 
-> > > Or perhaps make them patches to the kernel's tools directory?
-> > 
-> > Hm... I didn't think about having these tools be the part of the kernel source tree.
-> > 
-> > Maybe it would be better if I publish the tools in git repo, what do you think?
-> 
-> I honestly don't know which is more appropriate.
+> My knowledge of the networking stack is rather basic so it probably
+> would require more research to be complete enough but I have something
+> on mind.  I'll try to hack up an example code (and many combine it
+> with the parasite so that it can hijack a socket) this weekend (or
+> next week :)
 
-The decision has largely been made for us.  We now use the kernel
-repository tools directory for any tools which are specific to (and
-bound to) kernel infrastructure.  Checkpoint/Restore seems to fall into
-this category.
+So, this is actually a good example of why we don't want this
+specifically bound to C/R in the kernel.  I think an individual network
+socket can be checkpointed and restored separately specifically by
+exporting some of its internal state (basically the current sequence
+number and some of the window state).
+
+The benefit to us of finding what this state is and making it available
+is not only that we can now save and restore the socket as part of the
+checkpoint, its that the High Availability people can use this feature
+for individual sockets to build fault tolerant network service failover
+on top of.  Thus by making the feature granular and available to
+userspace, we've expanded the number of use cases (and hence the amount
+of testing) we get for the feature.
 
 James
