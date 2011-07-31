@@ -1,15 +1,15 @@
 From: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
-Subject: Re: [PATCH 2/4] limit nr_dentries per superblock
-Date: Sun, 31 Jul 2011 11:15:31 +1000
-Message-ID: <20110731011531.GL5404__23233.9710150429$1312075061$gmane$org@dastard>
+Subject: Re: [PATCH 4/4] parse options in the vfs level
+Date: Sun, 31 Jul 2011 11:34:56 +1000
+Message-ID: <20110731013456.GM5404__35200.1890344129$1312076140$gmane$org@dastard>
 References: <1311947059-17209-1-git-send-email-glommer@parallels.com>
-	<1311947059-17209-3-git-send-email-glommer@parallels.com>
+	<1311947059-17209-5-git-send-email-glommer@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1311947059-17209-3-git-send-email-glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+In-Reply-To: <1311947059-17209-5-git-send-email-glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,121 +23,142 @@ To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 Cc: Andrea Arcangeli <aarcange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Nick Piggin <npiggin-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James Bottomley <JBottomley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Jul 29, 2011 at 05:44:17PM +0400, Glauber Costa wrote:
-> This patch lays the foundation for us to limit the dcache size.
-> Each super block can have only a maximum amount of dentries under its
-> sub-tree. Allocation fails if we we're over limit and the cache
-> can't be pruned to free up space for the newcomers.
+On Fri, Jul 29, 2011 at 05:44:19PM +0400, Glauber Costa wrote:
+> This patch introduces a simple generic vfs option parser.
+> Right now, the only option we have is to limit the size of the dcache.
 > 
+> So any user that wants to have a dcache entries limit, can specify:
+> 
+>   mount -o whatever_options,vfs_dcache_size=XXX <dev> <mntpoint>
+> 
+> It is supposed to work well with remounts, allowing it to change
+> multiple over the course of the filesystem's lifecycle.
+> 
+> I find mount a natural interface for handling filesystem options,
+> so that's what I've choosen. Feel free to yell at it at will if
+> you disagree.
+
+IMO, the whole point of having a configurable cache size maximum is
+that is can be changed at runtime. Tying it to mount options is a
+painful way to acheive that because the only way to change it would
+be via a remount command.
+
+I'm not sure what the best API is, but I'd prefer something that is
+specific to a superblock, not a vfs mount. Perhaps something in
+/sys/fs?
+
 > Signed-off-by: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 > CC: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
 > ---
->  fs/dcache.c        |   45 +++++++++++++++++++++++++++++++++++++--------
->  fs/super.c         |    1 +
->  include/linux/fs.h |    1 +
->  3 files changed, 39 insertions(+), 8 deletions(-)
+>  fs/namespace.c |   89 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  1 files changed, 89 insertions(+), 0 deletions(-)
 > 
-> diff --git a/fs/dcache.c b/fs/dcache.c
-> index 9cb6395..3bdb106 100644
-> --- a/fs/dcache.c
-> +++ b/fs/dcache.c
-> @@ -663,7 +663,7 @@ EXPORT_SYMBOL(d_prune_aliases);
->   *
->   * This may fail if locks cannot be acquired no problem, just try again.
->   */
-> -static void try_prune_one_dentry(struct dentry *dentry)
-> +static int try_prune_one_dentry(struct dentry *dentry)
->  	__releases(dentry->d_lock)
->  {
->  	struct dentry *parent;
-
-Comment explaining the return value?
-
-[...]
-> @@ -740,7 +744,7 @@ static void shrink_dentry_list(struct list_head *list)
->   *
->   * If flags contains DCACHE_REFERENCED reference dentries will not be pruned.
->   */
-> -static void __shrink_dcache_sb(struct super_block *sb, int count, int flags)
-> +static int __shrink_dcache_sb(struct super_block *sb, int count, int flags)
->  {
->  	struct dentry *dentry;
->  	LIST_HEAD(referenced);
-
-What's the new return value do?
-
-> @@ -781,7 +785,7 @@ relock:
->  		list_splice(&referenced, &sb->s_dentry_lru);
->  	spin_unlock(&dcache_lru_lock);
->  
-> -	shrink_dentry_list(&tmp);
-> +	return shrink_dentry_list(&tmp);
+> diff --git a/fs/namespace.c b/fs/namespace.c
+> index 22bfe82..11ce45d 100644
+> --- a/fs/namespace.c
+> +++ b/fs/namespace.c
+> @@ -31,6 +31,7 @@
+>  #include <linux/idr.h>
+>  #include <linux/fs_struct.h>
+>  #include <linux/fsnotify.h>
+> +#include <linux/parser.h>
+>  #include <asm/uaccess.h>
+>  #include <asm/unistd.h>
+>  #include "pnode.h"
+> @@ -2271,6 +2272,82 @@ int copy_mount_string(const void __user *data, char **where)
+>  	return 0;
 >  }
 >  
->  /**
-> @@ -1176,6 +1180,28 @@ void shrink_dcache_parent(struct dentry * parent)
->  }
->  EXPORT_SYMBOL(shrink_dcache_parent);
->  
-> +static int dcache_mem_check(struct super_block *sb)
-> +{
-> +	int nr_dentry;
-> +	int count;
+> +static const match_table_t tokens = {
+> +	{1, "vfs_dcache_size=%u"},
+> +};
 > +
-> +	if (percpu_counter_read_positive(&sb->s_nr_dentry) <=
-> +						sb->s_nr_dentry_max)
+> +struct vfs_options {
+> +	unsigned long vfs_dcache_size;
+> +};
+> +
+> +/**
+> + * Generic option parsing for the VFS.
+> + *
+> + * Since most of the filesystems already do their own option parsing, and with
+> + * very few code shared between them, this function strips out any options that
+> + * we succeed in parsing ourselves. Passing them forward would just give the
+> + * underlying fs an option it does not expect, leading it to fail.
+> + *
+> + * We don't yet have a pointer to the super block as well, since this is
+> + * pre-mount. We accumulate in struct vfs_options whatever data we collected,
+> + * and act on it later.
+> + */
+> +static int vfs_parse_options(char *options, struct vfs_options *ops)
+> +{
+> +	substring_t args[MAX_OPT_ARGS];
+> +	unsigned int option;
+> +	char *p;
+> +	char *opt;
+> +	char *start = NULL;
+> +	int ret;
+> +	
+> +	if (!options)
 > +		return 0;
 > +
-> +	do {
-> +		nr_dentry = percpu_counter_sum_positive(&sb->s_nr_dentry);
+> +	opt = kstrdup(options, GFP_KERNEL);
+> +	if (!opt)
+> +		return 1;
+> +	
+> +	ret = 1;
 > +
-> +		if (nr_dentry < sb->s_nr_dentry_max)
-> +			return 0;
+> +	start = opt;
+> +	while ((p = strsep(&opt, ",")) != NULL) {
+> +		int token;
+> +		if (!*p)
+> +			continue;
 > +
-> +		count = (nr_dentry - sb->s_nr_dentry_max) << 1;
+> +		/*
+> +		 * Initialize args struct so we know whether arg was
+> +		 * found; some options take optional arguments.
+> +		 */
+> +		args[0].to = args[0].from = 0;
+> +		token = match_token(p, tokens, args);
+> +		switch (token) {
+> +		case 1:
+> +			if (!args[0].from)
+> +				break;
 > +
-> +	} while (__shrink_dcache_sb(sb, count, DCACHE_REFERENCED) > 0);
+> +			if (match_int(&args[0], &option))
+> +				break;
+> +			else
+
+No need fo the else.
+
+> +				ops->vfs_dcache_size = option;
+
+Bounds checking? What are valid values? e.g. setting it to a
+negative number would be bad, as would a number that is too small
+(e.g. 1)....
+
 > +
-> +	return -ENOMEM;
-> +}
+> +			ret = 0;
+> +			if (!opt) /* it is the last option listed */
+> +				*(options + (p - start)) = '\0';
+> +			else
+> +				strcpy(options + (p - start), opt);
 
+What's this for? I don't see any of the other mount option code
+doing this sort of thing...
 
-I don't like the idea of trying to be exact on how many we shrink.
-percpu_counter_read_positive() will always have an error in it:
-+/-(N cpus * 31) by default. Statistically speaking 50% of the cases
-it passes will then get rejected on the expensive sum operation. And
-then we shrink only 2x the difference between the counter and the
-max value, which will leave it inside the error margin of the
-counter anyway. Hence once we hit the threshold, we'll continually
-take expensive sum operations, many for no reason.  There needs to
-be some hysteresis here to avoid simply hammering the percpu counter
-on every single __d_alloc call. Perhaps per-cpu counters are not
-suited for this purpose?
+> @@ -2350,6 +2434,11 @@ long do_mount(char *dev_name, char *dir_name, char *type_page,
+>  	else
+>  		retval = do_new_mount(&path, type_page, flags, mnt_flags,
+>  				      dev_name, data_page);
+> +
+> +	if (!retval)
+> +		vfs_set_dcache_size(path.mnt->mnt_sb,
+> +				    vfs_options.vfs_dcache_size);
+> +			
 
-Indeed, what happens if one caller saw the read and sum over the
-limit, then starts shrinking but other callers don't see the read
-over the limit but keep allocating dentries and hence keeping the
-shrinking caller's sum over the limit and hence forever shrinking?
-That seems like a unprivileged random process DOS, yes?
-
-So at minimum, the loop should not recalculate how much to shrink -
-calculate the amount to shrink, the run a loop to shrink that much
-and only that much. If there are other concurrent callers, then
-they'll also do a shrink, but nothing will get stuck in a loop.
-
-Hmmm, what happens when the size of the cache and/or the max value
-are less than the error margin of the counter?
-
-Also, this doesn't address the problem I originally commented on -
-it only shrinks the dcache, not the inode or filesystem caches that
-hold all the memory.  I mentioned the new per-sb shrinkers for a
-reason - you should be calling them, not __shrink_dcache_sb(). i.e.
-building a scan_control structure and calling
-sb->shrinker.shrink(&sb->shrinker, &sc);
-
-I'm seriously starting to think that this needs to share an
-implementation with the mm shrinker code, because it already
-solves most of these problems...
+Hmmmm -  doesn't that mean bind mounts will override the value for
+the original, underlying filesytem mount? Isn't that a bad thing to
+do? i.e. the limiting is supposed to be per-sb, not per-vfsmnt?
 
 Cheers,
 
