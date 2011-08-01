@@ -1,20 +1,16 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH][BUGFIX] cgroups: more safe tasklist locking in
-	cgroup_attach_proc
-Date: Mon, 1 Aug 2011 12:31:59 -0700
-Message-ID: <CAJniumX+L5bXoXNXTppcDTtG5gHee=_Vk=h5EuOUBnpLQYDY2Q__10042.5064018511$1312227273$gmane$org@mail.gmail.com>
-References: <20110727171101.5e32d8eb@notabene.brown>
-	<20110727150710.GB5242@unix33.andrew.cmu.edu>
-	<20110727234235.GA2318@linux.vnet.ibm.com>
-	<20110728110813.7ff84b13@notabene.brown>
-	<20110728062616.GC15204@unix33.andrew.cmu.edu>
-	<20110728171345.67d3797d@notabene.brown>
-	<20110729142842.GA8462@unix33.andrew.cmu.edu>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH 02/14] allow root in container to copy namespaces (v3)
+Date: Mon, 01 Aug 2011 15:25:46 -0700
+Message-ID: <m1ei146a6t.fsf__37107.9157143415$1312237617$gmane$org@fess.ebiederm.org>
+References: <1311706717-7398-1-git-send-email-serge@hallyn.com>
+	<1311706717-7398-3-git-send-email-serge@hallyn.com>
+	<m1hb67fh9l.fsf@fess.ebiederm.org> <20110729172748.GB18935@hallyn.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110729142842.GA8462-japSPQJXeIlCM1neWV3AGuCmf2DRS9x2@public.gmane.org>
+In-Reply-To: <20110729172748.GB18935-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
+	"Fri, 29 Jul 2011 17:27:48 +0000")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,65 +20,164 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
-Cc: NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>, "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Cc: dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Jul 29, 2011 at 7:28 AM, Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org> wrote:
-> Fix unstable tasklist locking in cgroup_attach_proc.
->
-> From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
->
-> According to this thread - https://lkml.org/lkml/2011/7/27/243 - RCU is
-> not sufficient to guarantee the tasklist is stable w.r.t. de_thread and
-> exit. Taking tasklist_lock for reading, instead of rcu_read_lock,
-> ensures proper exclusion.
->
-> Signed-off-by: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
+"Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
 
-Acked-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+> Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+>> Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
+>> 
+>> > From: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+>> >
+>> > Othewise nested containers with user namespaces won't be possible.
+>> >
+>> > It's true that user namespaces are not yet fully isolated, but for
+>> > that same reason there are far worse things that root in a child
+>> > user ns can do.  Spawning a child user ns is not in itself bad.
+>> >
+>> > This patch also allows setns for root in a container:
+>> > @Eric Biederman: are there gotchas in allowing setns from child
+>> > userns?
+>> 
+>> Yes.  We need to ensure that the target namespaces are namespaces
+>> that have been created in from user_namespace or from a child of this
+>> user_namespace.
+>> 
+>> Aka we need to ensure that we have CAP_SYS_ADMIN for the new namespace.
+>
+> [New patch below]
+>
+> Othewise nested containers with user namespaces won't be possible.
+>
+> It's true that user namespaces are not yet fully isolated, but for
+> that same reason there are far worse things that root in a child
+> user ns can do.  Spawning a child user ns is not in itself bad.
+>
+> This patch also allows setns for root in a container:
+> @Eric Biederman: are there gotchas in allowing setns from child
+> userns?
 
-Thanks,
-Paul
+The dangers of changing the namespace of a process remain the same,
+confused suid programs.  I don't believe there are any unique new
+dangers. 
 
+Not allowing joining namespaces you already have a copy of is just
+a matter of making it hard to get things wrong.
+
+I would feel more a bit more comfortable if the way we did this was
+to move all of the capable calls into the per namespace methods
+and then changed them one namespace at a time.  I don't think
+there are any fundmanetal dangers of allowing unshare without
+the global CAP_SYS_ADMIN, but it would be good to be able to audit
+and make or revoke the decision one namespace at a time.
+
+Eric
+
+
+> Changelog:
+>   Jul 29: setns: target capability check for setns
+>           When changing to another namespace, make sure that we have
+>           the CAP_SYS_ADMIN capability targeted at the user namespace
+>           owning the new ns.
+>
+> Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+> Cc: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 > ---
-> =A0kernel/cgroup.c | =A0 =A06 +++---
-> =A01 file changed, 3 insertions(+), 3 deletions(-)
+>  ipc/namespace.c          |    3 +++
+>  kernel/fork.c            |    4 ++--
+>  kernel/nsproxy.c         |    7 ++-----
+>  kernel/utsname.c         |    3 +++
+>  net/core/net_namespace.c |    3 +++
+>  5 files changed, 13 insertions(+), 7 deletions(-)
 >
-> diff a/kernel/cgroup.c b/kernel/cgroup.c
-> --- a/kernel/cgroup.c =A0 2011-07-21 19:17:23.000000000 -0700
-> +++ b/kernel/cgroup.c =A0 2011-07-29 06:17:47.000000000 -0700
-> @@ -2024,7 +2024,7 @@
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0goto out_free_group_list;
->
-> =A0 =A0 =A0 =A0/* prevent changes to the threadgroup list while we take a=
- snapshot. */
-> - =A0 =A0 =A0 rcu_read_lock();
-> + =A0 =A0 =A0 read_lock(&tasklist_lock);
-> =A0 =A0 =A0 =A0if (!thread_group_leader(leader)) {
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0/*
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 * a race with de_thread from another thre=
-ad's exec() may strip
-> @@ -2033,7 +2033,7 @@
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 * throw this task away and try again (fro=
-m cgroup_procs_write);
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 * this is "double-double-toil-and-trouble=
--check locking".
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 */
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 rcu_read_unlock();
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 read_unlock(&tasklist_lock);
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0retval =3D -EAGAIN;
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0goto out_free_group_list;
-> =A0 =A0 =A0 =A0}
-> @@ -2054,7 +2054,7 @@
-> =A0 =A0 =A0 =A0} while_each_thread(leader, tsk);
-> =A0 =A0 =A0 =A0/* remember the number of threads in the array for later. =
-*/
-> =A0 =A0 =A0 =A0group_size =3D i;
-> - =A0 =A0 =A0 rcu_read_unlock();
-> + =A0 =A0 =A0 read_unlock(&tasklist_lock);
->
-> =A0 =A0 =A0 =A0/*
-> =A0 =A0 =A0 =A0 * step 1: check that we can legitimately attach to the cg=
-roup.
->
+> diff --git a/ipc/namespace.c b/ipc/namespace.c
+> index ce0a647..f527e49 100644
+> --- a/ipc/namespace.c
+> +++ b/ipc/namespace.c
+> @@ -163,6 +163,9 @@ static void ipcns_put(void *ns)
+>  
+>  static int ipcns_install(struct nsproxy *nsproxy, void *ns)
+>  {
+> +	struct ipc_namespace *newns = ns;
+> +	if (!ns_capable(newns->user_ns, CAP_SYS_ADMIN))
+> +		return -1;
+>  	/* Ditch state from the old ipc namespace */
+>  	exit_sem(current);
+>  	put_ipc_ns(nsproxy->ipc_ns);
+> diff --git a/kernel/fork.c b/kernel/fork.c
+> index e7ceaca..f9fac70 100644
+> --- a/kernel/fork.c
+> +++ b/kernel/fork.c
+> @@ -1488,8 +1488,8 @@ long do_fork(unsigned long clone_flags,
+>  		/* hopefully this check will go away when userns support is
+>  		 * complete
+>  		 */
+> -		if (!capable(CAP_SYS_ADMIN) || !capable(CAP_SETUID) ||
+> -				!capable(CAP_SETGID))
+> +		if (!nsown_capable(CAP_SYS_ADMIN) || !nsown_capable(CAP_SETUID) ||
+> +				!nsown_capable(CAP_SETGID))
+>  			return -EPERM;
+>  	}
+>  
+> diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+> index 9aeab4b..cadcee0 100644
+> --- a/kernel/nsproxy.c
+> +++ b/kernel/nsproxy.c
+> @@ -134,7 +134,7 @@ int copy_namespaces(unsigned long flags, struct task_struct *tsk)
+>  				CLONE_NEWPID | CLONE_NEWNET)))
+>  		return 0;
+>  
+> -	if (!capable(CAP_SYS_ADMIN)) {
+> +	if (!nsown_capable(CAP_SYS_ADMIN)) {
+>  		err = -EPERM;
+>  		goto out;
+>  	}
+> @@ -191,7 +191,7 @@ int unshare_nsproxy_namespaces(unsigned long unshare_flags,
+>  			       CLONE_NEWNET)))
+>  		return 0;
+>  
+> -	if (!capable(CAP_SYS_ADMIN))
+> +	if (!nsown_capable(CAP_SYS_ADMIN))
+>  		return -EPERM;
+>  
+>  	*new_nsp = create_new_namespaces(unshare_flags, current,
+> @@ -241,9 +241,6 @@ SYSCALL_DEFINE2(setns, int, fd, int, nstype)
+>  	struct file *file;
+>  	int err;
+>  
+> -	if (!capable(CAP_SYS_ADMIN))
+> -		return -EPERM;
+> -
+>  	file = proc_ns_fget(fd);
+>  	if (IS_ERR(file))
+>  		return PTR_ERR(file);
+> diff --git a/kernel/utsname.c b/kernel/utsname.c
+> index bff131b..8f648cc 100644
+> --- a/kernel/utsname.c
+> +++ b/kernel/utsname.c
+> @@ -104,6 +104,9 @@ static void utsns_put(void *ns)
+>  
+>  static int utsns_install(struct nsproxy *nsproxy, void *ns)
+>  {
+> +	struct uts_namespace *newns = ns;
+> +	if (!ns_capable(newns->user_ns, CAP_SYS_ADMIN))
+> +		return -1;
+>  	get_uts_ns(ns);
+>  	put_uts_ns(nsproxy->uts_ns);
+>  	nsproxy->uts_ns = ns;
+> diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
+> index 5bbdbf0..90c97f6 100644
+> --- a/net/core/net_namespace.c
+> +++ b/net/core/net_namespace.c
+> @@ -620,6 +620,9 @@ static void netns_put(void *ns)
+>  
+>  static int netns_install(struct nsproxy *nsproxy, void *ns)
+>  {
+> +	struct net *net = ns;
+> +	if (!ns_capable(net->user_ns, CAP_SYS_ADMIN))
+> +		return -1;
+>  	put_net(nsproxy->net_ns);
+>  	nsproxy->net_ns = get_net(ns);
+>  	return 0;
