@@ -1,10 +1,20 @@
-From: Mail Delivery Subsystem <MAILER-DAEMON-/VKlDWClwY+clPbXGyQIKw@public.gmane.org>
-Subject: Returned mail: see transcript for details
-Date: Thu, 4 Aug 2011 23:44:38 +0200
-Message-ID: <201108042144.p74Lice2001281@web8.place24.com>
+From: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Subject: Re: [PATCH 02/14] allow root in container to copy namespaces (v3)
+Date: Thu, 4 Aug 2011 17:01:15 -0500
+Message-ID: <20110804220115.GA28300__2516.61369479752$1312495338$gmane$org@sergelap>
+References: <1311706717-7398-1-git-send-email-serge@hallyn.com>
+	<1311706717-7398-3-git-send-email-serge@hallyn.com>
+	<m1hb67fh9l.fsf@fess.ebiederm.org>
+	<20110729172748.GB18935@hallyn.com>
+	<m1ei146a6t.fsf@fess.ebiederm.org>
+	<20110802140832.GA26646@sergelap>
+	<m1oc074gkb.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============3934542387319058087=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <m1oc074gkb.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -12,101 +22,168 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message
+Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org> writes:
+> 
+> > Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> >> The dangers of changing the namespace of a process remain the same,
+> >> confused suid programs.  I don't believe there are any unique new
+> >> dangers. 
+> >> 
+> >> Not allowing joining namespaces you already have a copy of is just
+> >> a matter of making it hard to get things wrong.
+> >> 
+> >> I would feel more a bit more comfortable if the way we did this was
+> >> to move all of the capable calls into the per namespace methods
+> >> and then changed them one namespace at a time.  I don't think
+> >
+> > The patch belows moves them into the per namespace methods, for
+> > what it's worth.  If you like I can change them, for now, to
+> > 'capable(CAP_SYS_ADMIN)' targeted at init_user_ns, but if we're
+> > targetting at the userns owning the destination namespace, it
+> > seems this must be sufficient...
+> 
+> I like the was this was done.  I was mostly thinking of the non
+> setns case when I was talking about moving the calls.
 
---===============3934542387319058087==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="p74Lice2001281.1312494278/web8.place24.com"
+Oh, you mean unshare and copy namespaces?
 
-This is a MIME-encapsulated message
+(The flow on those paths is scary to touch :)
 
---p74Lice2001281.1312494278/web8.place24.com
+> >> there are any fundmanetal dangers of allowing unshare without
+> >> the global CAP_SYS_ADMIN, but it would be good to be able to audit
+> >
+> > If you have suspicions that there may in fact be dangers, then
+> > perhaps this whole patch should be delayed, and copy_namespaces()
+> > and unshare_nsproxy_namespaces() should continue to check global
+> > CAP_SYS_ADMIN?  The only part which would remain would be the
+> > moving of the setns capable check into the per-ns ->install
+> > method, but it would check the global CAP_SYS_ADMIN?
+> 
+> Yes.  I am in favor of delaying this and making the changes one
+> namespace at a time.  I don't think there are real dangers but I do
+> think we should try and think through the possible dangers.
 
-The original message was received at Thu, 4 Aug 2011 23:44:36 +0200
-from s15437600.onlinehome-server.info [212.227.53.37]
+Ok, so for now here is a patch to fold into the previous one
+which I think sets us at a reasonable point.
 
-   ----- The following addresses had permanent fatal errors -----
-<koch-bYzQzztUHLLk7+2FdBfRIA@public.gmane.org>
-    (reason: Can't create output)
+From 78e1a4efa464086e8df95fc3ffd35c385e363957 Mon Sep 17 00:00:00 2001
+From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Date: Thu, 4 Aug 2011 22:10:12 +0100
+Subject: [PATCH 1/2] fold up - dont yet target the capable checks for
+ namespace manipulation
 
-   ----- Transcript of session follows -----
-procmail: Program failure (1) of "/usr/sbin/vsgate"
-procmail: Rescue of unfiltered data succeeded
-procmail: Quota exceeded while writing "/var/spool/mail/etvolley_at_mailbox1"
-550 5.0.0 <koch-bYzQzztUHLLk7+2FdBfRIA@public.gmane.org>... Can't create output
+Signed-off-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+---
+ ipc/namespace.c          |    4 ++++
+ kernel/fork.c            |    5 +++++
+ kernel/nsproxy.c         |    8 ++++++++
+ kernel/utsname.c         |    4 ++++
+ net/core/net_namespace.c |    4 ++++
+ 5 files changed, 25 insertions(+), 0 deletions(-)
 
---p74Lice2001281.1312494278/web8.place24.com
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; web8.place24.com
-Received-From-MTA: DNS; s15437600.onlinehome-server.info
-Arrival-Date: Thu, 4 Aug 2011 23:44:36 +0200
-
-Final-Recipient: RFC822; koch-bYzQzztUHLLk7+2FdBfRIA@public.gmane.org
-X-Actual-Recipient: RFC822; etvolley_at_mailbox1-/VKlDWClwY+clPbXGyQIKw@public.gmane.org
-Action: failed
-Status: 5.3.0
-Diagnostic-Code: X-Unix; 73
-Last-Attempt-Date: Thu, 4 Aug 2011 23:44:38 +0200
-
---p74Lice2001281.1312494278/web8.place24.com
-Content-Type: message/rfc822
-
-X-Envelope-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Envelope-Helo: server.informaticagalega.net
-X-Envelope-Host: s15437600.onlinehome-server.info [212.227.53.37]
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from server.informaticagalega.net (s15437600.onlinehome-server.info [212.227.53.37])
-	by web8.place24.com (8.13.8/8.13.8/SuSE Linux 0.8) with ESMTP id p74LiWe2001250;
-	Thu, 4 Aug 2011 23:44:36 +0200
-Received: from [212.227.53.37] by server.informaticagalega.net id 5Vwh1yslgTsV with SMTP; Thu, 04 Aug 2011 23:47:24 +0200
-Date: Thu, 04 Aug 2011 23:47:24 +0200
-From: "robo" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.7.2.3) Home
-X-Priority: 3 (Normal)
-Message-ID: <353603471.32882581468953-DosMRbfdDAJaP0f+8Gpiu67AtFUGQio65NbjCUgZEJk@public.gmane.org>
-To: <itterq-bYzQzztUHLLk7+2FdBfRIA@public.gmane.org>
-Subject: Order.
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
-Content-Transfer-Encoding: 8bit
-
-
-
-
-Dear, Customer
-Thank you for the order, 
-Your order has been accepted.
-Your order reference is 97530.
-
-Terms of delivery and the date can be found with the auto-generated msword file
-located at:
-http://thebigcomputer.com.au/order/Order008032011.zip?DocUser=itterq-bYzQzztUHLLk7+2FdBfRIA@public.gmane.org
-
-==
-Best regards, ticket service.
- Tel./Fax.: (111) 392 81 499.
-
-
-
---p74Lice2001281.1312494278/web8.place24.com--
-
-
---===============3934542387319058087==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============3934542387319058087==--
+diff --git a/ipc/namespace.c b/ipc/namespace.c
+index f527e49..a0a7609 100644
+--- a/ipc/namespace.c
++++ b/ipc/namespace.c
+@@ -163,8 +163,12 @@ static void ipcns_put(void *ns)
+ 
+ static int ipcns_install(struct nsproxy *nsproxy, void *ns)
+ {
++#if 0
+ 	struct ipc_namespace *newns = ns;
+ 	if (!ns_capable(newns->user_ns, CAP_SYS_ADMIN))
++#else
++	if (!capable(CAP_SYS_ADMIN))
++#endif
+ 		return -1;
+ 	/* Ditch state from the old ipc namespace */
+ 	exit_sem(current);
+diff --git a/kernel/fork.c b/kernel/fork.c
+index f9fac70..a25343c 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -1488,8 +1488,13 @@ long do_fork(unsigned long clone_flags,
+ 		/* hopefully this check will go away when userns support is
+ 		 * complete
+ 		 */
++#if 0
+ 		if (!nsown_capable(CAP_SYS_ADMIN) || !nsown_capable(CAP_SETUID) ||
+ 				!nsown_capable(CAP_SETGID))
++#else
++		if (!capable(CAP_SYS_ADMIN) || !capable(CAP_SETUID) ||
++				!capable(CAP_SETGID))
++#endif
+ 			return -EPERM;
+ 	}
+ 
+diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+index 62a995d..752b477 100644
+--- a/kernel/nsproxy.c
++++ b/kernel/nsproxy.c
+@@ -136,7 +136,11 @@ int copy_namespaces(unsigned long flags, struct task_struct *tsk)
+ 				CLONE_NEWPID | CLONE_NEWNET)))
+ 		return 0;
+ 
++#if 0
+ 	if (!nsown_capable(CAP_SYS_ADMIN)) {
++#else
++	if (!capable(CAP_SYS_ADMIN)) {
++#endif
+ 		err = -EPERM;
+ 		goto out;
+ 	}
+@@ -193,7 +197,11 @@ int unshare_nsproxy_namespaces(unsigned long unshare_flags,
+ 			       CLONE_NEWNET)))
+ 		return 0;
+ 
++#if 0
+ 	if (!nsown_capable(CAP_SYS_ADMIN))
++#else
++	if (!capable(CAP_SYS_ADMIN))
++#endif
+ 		return -EPERM;
+ 
+ 	*new_nsp = create_new_namespaces(unshare_flags, current,
+diff --git a/kernel/utsname.c b/kernel/utsname.c
+index 8f648cc..4638a54 100644
+--- a/kernel/utsname.c
++++ b/kernel/utsname.c
+@@ -104,8 +104,12 @@ static void utsns_put(void *ns)
+ 
+ static int utsns_install(struct nsproxy *nsproxy, void *ns)
+ {
++#if 0
+ 	struct uts_namespace *newns = ns;
+ 	if (!ns_capable(newns->user_ns, CAP_SYS_ADMIN))
++#else
++	if (!capable(CAP_SYS_ADMIN))
++#endif
+ 		return -1;
+ 	get_uts_ns(ns);
+ 	put_uts_ns(nsproxy->uts_ns);
+diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
+index 8778a0a..5ca95cc 100644
+--- a/net/core/net_namespace.c
++++ b/net/core/net_namespace.c
+@@ -623,8 +623,12 @@ static void netns_put(void *ns)
+ 
+ static int netns_install(struct nsproxy *nsproxy, void *ns)
+ {
++#if 0
+ 	struct net *net = ns;
+ 	if (!ns_capable(net->user_ns, CAP_SYS_ADMIN))
++#else
++	if (capable(CAP_SYS_ADMIN))
++#endif
+ 		return -1;
+ 	put_net(nsproxy->net_ns);
+ 	nsproxy->net_ns = get_net(ns);
+-- 
+1.7.5.4
