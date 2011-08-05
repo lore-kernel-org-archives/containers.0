@@ -1,7 +1,7 @@
 From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: [PATCH v2 1/4] factor out single-shrinker code
-Date: Fri,  5 Aug 2011 04:35:41 +0400
-Message-ID: <1312504544-1108-2-git-send-email-glommer__1492.59698014266$1312504652$gmane$org@parallels.com>
+Subject: [PATCH v2 4/4] parse options in the vfs level
+Date: Fri,  5 Aug 2011 04:35:44 +0400
+Message-ID: <1312504544-1108-5-git-send-email-glommer__13760.5533040643$1312504653$gmane$org@parallels.com>
 References: <1312504544-1108-1-git-send-email-glommer@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,241 +21,211 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: Andrea Arcangeli <aarcange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Nick Piggin <npiggin-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, David Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, James Bottomley <JBottomley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-While shrinking our caches, vmscan.c passes through all
-registered shrinkers, trying to free objects as it goes.
+This patch introduces a simple generic vfs option parser.
+Right now, the only option we have is to limit the size of the dcache.
 
-We would like to do that individually for some caches,
-like the dcache, when certain conditions apply (for
-example, when we reach a soon-to-exist maximum allowed size)
+So any user that wants to have a dcache entries limit, can specify:
 
-To avoid re-writing the same logic at more than one place,
-this patch factors out the shrink logic at shrink_one_shrinker(),
-that we can call from other places of the kernel.
+  mount -o whatever_options,vfs_dcache_size=XXX <dev> <mntpoint>
+
+It is supposed to work well with remounts, allowing it to change
+multiple over the course of the filesystem's lifecycle.
+
+I find mount a natural interface for handling filesystem options,
+so that's what I've choosen. Feel free to yell at it at will if
+you disagree.
 
 Signed-off-by: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 CC: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
 ---
- include/linux/shrinker.h |    6 ++
- mm/vmscan.c              |  185 ++++++++++++++++++++++++----------------------
- 2 files changed, 104 insertions(+), 87 deletions(-)
+ fs/dcache.c            |    7 +++
+ fs/namespace.c         |  105 ++++++++++++++++++++++++++++++++++++++++++++++++
+ include/linux/dcache.h |    4 ++
+ 3 files changed, 116 insertions(+), 0 deletions(-)
 
-diff --git a/include/linux/shrinker.h b/include/linux/shrinker.h
-index 790651b..c5db650 100644
---- a/include/linux/shrinker.h
-+++ b/include/linux/shrinker.h
-@@ -39,4 +39,10 @@ struct shrinker {
- #define DEFAULT_SEEKS 2 /* A good number if you don't know better. */
- extern void register_shrinker(struct shrinker *);
- extern void unregister_shrinker(struct shrinker *);
-+
-+unsigned long shrink_one_shrinker(struct shrinker *shrinker,
-+				  struct shrink_control *shrink,
-+				  unsigned long nr_pages_scanned,                      
-+				  unsigned long lru_pages);
-+
- #endif
-diff --git a/mm/vmscan.c b/mm/vmscan.c
-index 7ef6912..50dfc61 100644
---- a/mm/vmscan.c
-+++ b/mm/vmscan.c
-@@ -211,6 +211,102 @@ static inline int do_shrinker_shrink(struct shrinker *shrinker,
+diff --git a/fs/dcache.c b/fs/dcache.c
+index 52a0faf..ace5670 100644
+--- a/fs/dcache.c
++++ b/fs/dcache.c
+@@ -1202,6 +1202,13 @@ static int dcache_mem_check(struct super_block *sb)
+ 	return -ENOMEM;
  }
  
- #define SHRINK_BATCH 128
-+unsigned long shrink_one_shrinker(struct shrinker *shrinker,
-+				  struct shrink_control *shrink,
-+				  unsigned long nr_pages_scanned,
-+				  unsigned long lru_pages)
++int vfs_set_dcache_size(struct super_block *sb, int size)
 +{
-+	unsigned long ret = 0;
-+	unsigned long long delta;
-+	unsigned long total_scan;
-+	unsigned long max_pass;
-+	int shrink_ret = 0;
-+	long nr;
-+	long new_nr;
-+	long batch_size = shrinker->batch ? shrinker->batch
-+					  : SHRINK_BATCH;
++	sb->s_nr_dentry_max = size;
 +
-+	/*
-+	 * copy the current shrinker scan count into a local variable
-+	 * and zero it so that other concurrent shrinker invocations
-+	 * don't also do this scanning work.
-+	 */
-+	do {
-+		nr = shrinker->nr;
-+	} while (cmpxchg(&shrinker->nr, nr, 0) != nr);
++	return dcache_mem_check(sb);
++}
 +
-+	total_scan = nr;
-+	max_pass = do_shrinker_shrink(shrinker, shrink, 0);
-+	delta = (4 * nr_pages_scanned) / shrinker->seeks;
-+	delta *= max_pass;
-+	do_div(delta, lru_pages + 1);
-+	total_scan += delta;
-+	if (total_scan < 0) {
-+		printk(KERN_ERR "shrink_slab: %pF negative objects to "
-+		       "delete nr=%ld\n",
-+		       shrinker->shrink, total_scan);
-+		total_scan = max_pass;
+ /**
+  * __d_alloc	-	allocate a dcache entry
+  * @sb: filesystem it will belong to
+diff --git a/fs/namespace.c b/fs/namespace.c
+index 22bfe82..43b2cdb 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -31,6 +31,7 @@
+ #include <linux/idr.h>
+ #include <linux/fs_struct.h>
+ #include <linux/fsnotify.h>
++#include <linux/parser.h>
+ #include <asm/uaccess.h>
+ #include <asm/unistd.h>
+ #include "pnode.h"
+@@ -958,6 +959,9 @@ static int show_sb_opts(struct seq_file *m, struct super_block *sb)
+ 	};
+ 	const struct proc_fs_info *fs_infop;
+ 
++	if (sb->s_nr_dentry_max != INT_MAX)
++		seq_printf(m, ",vfs_dcache_size=%d",sb->s_nr_dentry_max);
++
+ 	for (fs_infop = fs_info; fs_infop->flag; fs_infop++) {
+ 		if (sb->s_flags & fs_infop->flag)
+ 			seq_puts(m, fs_infop->str);
+@@ -2271,6 +2275,94 @@ int copy_mount_string(const void __user *data, char **where)
+ 	return 0;
+ }
+ 
++static const match_table_t tokens = {
++	{1, "vfs_dcache_size=%u"},
++};
++
++struct vfs_options {
++	unsigned long vfs_dcache_size;
++};
++
++/**
++ * Generic option parsing for the VFS.
++ *
++ * Since most of the filesystems already do their own option parsing, and with
++ * very few code shared between them, this function strips out any options that
++ * we succeed in parsing ourselves. Passing them forward would just give the
++ * underlying fs an option it does not expect, leading it to fail.
++ *
++ * We don't yet have a pointer to the super block as well, since this is
++ * pre-mount. We accumulate in struct vfs_options whatever data we collected,
++ * and act on it later.
++ */
++static int vfs_parse_options(char *options, struct vfs_options *ops)
++{
++	substring_t args[MAX_OPT_ARGS];
++	int option;
++	char *p;
++	char *opt;
++	char *start = NULL;
++	int ret;
++	
++	if (!options)
++		return 0;
++
++	opt = kstrdup(options, GFP_KERNEL);
++	if (!opt)
++		return 1;
++	
++	ret = 1;
++
++	start = opt;
++	while ((p = strsep(&opt, ",")) != NULL) {
++		int token;
++		if (!*p)
++			continue;
++
++		/*
++		 * Initialize args struct so we know whether arg was
++		 * found; some options take optional arguments.
++		 */
++		args[0].to = args[0].from = 0;
++		token = match_token(p, tokens, args);
++		switch (token) {
++		case 1:
++			if (!args[0].from)
++				break;
++
++			if (match_int(&args[0], &option))
++				break;
++
++			if (option < DCACHE_MIN_SIZE) {
++				printk(KERN_INFO "dcache size %d smaller than "
++				       "minimum (%d)\n", option, DCACHE_MIN_SIZE);
++				option = DCACHE_MIN_SIZE;
++			}
++
++			ops->vfs_dcache_size = option;
++
++			/*
++			 * The actual filesystems don't expect any option
++			 * they don't understand to be received in the option
++			 * string. So we strip off anything we processed, and
++			 * give them a clean options string.
++			 */
++			ret = 0;
++			if (!opt) /* it is the last option listed */
++				*(options + (p - start)) = '\0';
++			else
++				strcpy(options + (p - start), opt);
++			break;
++		default:
++			ret = 0;
++			break;
++		}
 +	}
 +
-+	/*
-+	 * We need to avoid excessive windup on filesystem shrinkers
-+	 * due to large numbers of GFP_NOFS allocations causing the
-+	 * shrinkers to return -1 all the time. This results in a large
-+	 * nr being built up so when a shrink that can do some work
-+	 * comes along it empties the entire cache due to nr >>>
-+	 * max_pass.  This is bad for sustaining a working set in
-+	 * memory.
-+	 *
-+	 * Hence only allow the shrinker to scan the entire cache when
-+	 * a large delta change is calculated directly.
-+	 */
-+	if (delta < max_pass / 4)
-+		total_scan = min(total_scan, max_pass / 2);
-+
-+	/*
-+	 * Avoid risking looping forever due to too large nr value:
-+	 * never try to free more than twice the estimate number of
-+	 * freeable entries.
-+	 */
-+	if (total_scan > max_pass * 2)
-+		total_scan = max_pass * 2;
-+
-+	trace_mm_shrink_slab_start(shrinker, shrink, nr,
-+				nr_pages_scanned, lru_pages,
-+				max_pass, delta, total_scan);
-+
-+	while (total_scan >= batch_size) {
-+		int nr_before;
-+
-+		nr_before = do_shrinker_shrink(shrinker, shrink, 0);
-+		shrink_ret = do_shrinker_shrink(shrinker, shrink,
-+						batch_size);
-+		if (shrink_ret == -1)
-+			break;
-+		if (shrink_ret < nr_before)
-+			ret += nr_before - shrink_ret;
-+		count_vm_events(SLABS_SCANNED, batch_size);
-+		total_scan -= batch_size;
-+
-+		cond_resched();
-+	}
-+
-+	/*
-+	 * move the unused scan count back into the shrinker in a
-+	 * manner that handles concurrent updates. If we exhausted the
-+	 * scan, there is no need to do an update.
-+	 */
-+	do {
-+		nr = shrinker->nr;
-+		new_nr = total_scan + nr;
-+		if (total_scan <= 0)
-+			break;
-+	} while (cmpxchg(&shrinker->nr, nr, new_nr) != nr);
-+
-+	trace_mm_shrink_slab_end(shrinker, shrink_ret, nr, new_nr);
++	kfree(start);
 +	return ret;
 +}
 +
  /*
-  * Call the shrink functions to age shrinkable caches
-  *
-@@ -247,93 +343,8 @@ unsigned long shrink_slab(struct shrink_control *shrink,
- 	}
+  * Flags is a 32-bit value that allows up to 31 non-fs dependent flags to
+  * be given to the mount() call (ie: read-only, no-dev, no-suid etc).
+@@ -2291,6 +2383,7 @@ long do_mount(char *dev_name, char *dir_name, char *type_page,
+ 	struct path path;
+ 	int retval = 0;
+ 	int mnt_flags = 0;
++	struct vfs_options vfs_options;
  
- 	list_for_each_entry(shrinker, &shrinker_list, list) {
--		unsigned long long delta;
--		unsigned long total_scan;
--		unsigned long max_pass;
--		int shrink_ret = 0;
--		long nr;
--		long new_nr;
--		long batch_size = shrinker->batch ? shrinker->batch
--						  : SHRINK_BATCH;
--
--		/*
--		 * copy the current shrinker scan count into a local variable
--		 * and zero it so that other concurrent shrinker invocations
--		 * don't also do this scanning work.
--		 */
--		do {
--			nr = shrinker->nr;
--		} while (cmpxchg(&shrinker->nr, nr, 0) != nr);
--
--		total_scan = nr;
--		max_pass = do_shrinker_shrink(shrinker, shrink, 0);
--		delta = (4 * nr_pages_scanned) / shrinker->seeks;
--		delta *= max_pass;
--		do_div(delta, lru_pages + 1);
--		total_scan += delta;
--		if (total_scan < 0) {
--			printk(KERN_ERR "shrink_slab: %pF negative objects to "
--			       "delete nr=%ld\n",
--			       shrinker->shrink, total_scan);
--			total_scan = max_pass;
--		}
--
--		/*
--		 * We need to avoid excessive windup on filesystem shrinkers
--		 * due to large numbers of GFP_NOFS allocations causing the
--		 * shrinkers to return -1 all the time. This results in a large
--		 * nr being built up so when a shrink that can do some work
--		 * comes along it empties the entire cache due to nr >>>
--		 * max_pass.  This is bad for sustaining a working set in
--		 * memory.
--		 *
--		 * Hence only allow the shrinker to scan the entire cache when
--		 * a large delta change is calculated directly.
--		 */
--		if (delta < max_pass / 4)
--			total_scan = min(total_scan, max_pass / 2);
--
--		/*
--		 * Avoid risking looping forever due to too large nr value:
--		 * never try to free more than twice the estimate number of
--		 * freeable entries.
--		 */
--		if (total_scan > max_pass * 2)
--			total_scan = max_pass * 2;
--
--		trace_mm_shrink_slab_start(shrinker, shrink, nr,
--					nr_pages_scanned, lru_pages,
--					max_pass, delta, total_scan);
--
--		while (total_scan >= batch_size) {
--			int nr_before;
--
--			nr_before = do_shrinker_shrink(shrinker, shrink, 0);
--			shrink_ret = do_shrinker_shrink(shrinker, shrink,
--							batch_size);
--			if (shrink_ret == -1)
--				break;
--			if (shrink_ret < nr_before)
--				ret += nr_before - shrink_ret;
--			count_vm_events(SLABS_SCANNED, batch_size);
--			total_scan -= batch_size;
--
--			cond_resched();
--		}
--
--		/*
--		 * move the unused scan count back into the shrinker in a
--		 * manner that handles concurrent updates. If we exhausted the
--		 * scan, there is no need to do an update.
--		 */
--		do {
--			nr = shrinker->nr;
--			new_nr = total_scan + nr;
--			if (total_scan <= 0)
--				break;
--		} while (cmpxchg(&shrinker->nr, nr, new_nr) != nr);
--
--		trace_mm_shrink_slab_end(shrinker, shrink_ret, nr, new_nr);
-+		ret += shrink_one_shrinker(shrinker, shrink,
-+					   nr_pages_scanned, lru_pages);
- 	}
- 	up_read(&shrinker_rwsem);
- out:
+ 	/* Discard magic */
+ 	if ((flags & MS_MGC_MSK) == MS_MGC_VAL)
+@@ -2318,6 +2411,12 @@ long do_mount(char *dev_name, char *dir_name, char *type_page,
+ 	if (!(flags & MS_NOATIME))
+ 		mnt_flags |= MNT_RELATIME;
+ 
++
++	vfs_options.vfs_dcache_size = INT_MAX;
++	retval = vfs_parse_options(data_page, &vfs_options);
++	if (retval)
++		goto dput_out;
++
+ 	/* Separate the per-mountpoint flags */
+ 	if (flags & MS_NOSUID)
+ 		mnt_flags |= MNT_NOSUID;
+@@ -2350,6 +2449,12 @@ long do_mount(char *dev_name, char *dir_name, char *type_page,
+ 	else
+ 		retval = do_new_mount(&path, type_page, flags, mnt_flags,
+ 				      dev_name, data_page);
++
++	/* bind mounts get to respect their parents decision */
++	if (!retval && !(flags & MS_BIND))
++		vfs_set_dcache_size(path.mnt->mnt_sb,
++				    vfs_options.vfs_dcache_size);
++			
+ dput_out:
+ 	path_put(&path);
+ 	return retval;
+diff --git a/include/linux/dcache.h b/include/linux/dcache.h
+index d37d2a7..1a309f3 100644
+--- a/include/linux/dcache.h
++++ b/include/linux/dcache.h
+@@ -251,6 +251,10 @@ extern int d_invalidate(struct dentry *);
+ 
+ /* only used at mount-time */
+ extern struct dentry * d_alloc_root(struct inode *);
++extern int vfs_set_dcache_size(struct super_block *sb, int size);
++
++#define DCACHE_MIN_SIZE 1024
++extern int vfs_set_dcache_size(struct super_block *sb, int size);
+ 
+ /* <clickety>-<click> the ramfs-type tree */
+ extern void d_genocide(struct dentry *);
 -- 
 1.7.6
