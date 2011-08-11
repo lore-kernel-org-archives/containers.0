@@ -1,14 +1,15 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: [lxc-devel] [RFC] catching sys_reboot syscall
-Date: Thu, 11 Aug 2011 20:10:20 +0200
-Message-ID: <4E441B0C.4060707__536.202899138694$1313086277$gmane$org@free.fr>
+From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Subject: Re: [RFC] catching sys_reboot syscall
+Date: Thu, 11 Aug 2011 13:10:23 -0500
+Message-ID: <20110811181022.GA12307__35161.7513843395$1313086288$gmane$org@peqn>
 References: <4E4051A0.8030009@free.fr> <20110810221028.2e0c8590@neptune.home>
 	<4E42EEE3.9050608@free.fr> <20110811183027.49275b2d@neptune.home>
 	<4E44082F.6040606@free.fr> <20110811190456.77ff9280@neptune.home>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 In-Reply-To: <20110811190456.77ff9280-hY15tx4IgV39zxVx7UNMDg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,86 +20,124 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: =?UTF-8?B?QnJ1bm8gUHLDqW1vbnQ=?= <bonbons-ud5FBsm0p/xEiooADzr8i9i2O/JbrIOy@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LXC-dWG1iWG7dc3n3/1RN0WBY0OOYPqWDYfEMm0uRHvK7Nw@public.gmane.org, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Development <Lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
+To: Bruno =?iso-8859-1?Q?Pr=E9mont?= <bonbons-ud5FBsm0p/xEiooADzr8i9i2O/JbrIOy@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LXC Development <Lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gMDgvMTEvMjAxMSAwNzowNCBQTSwgQnJ1bm8gUHLDqW1vbnQgd3JvdGU6Cj4gT24gVGh1LCAx
-MSBBdWd1c3QgMjAxMSBEYW5pZWwgTGV6Y2FubyA8ZGFuaWVsLmxlemNhbm9AZnJlZS5mcj4gd3Jv
-dGU6Cj4+IE9uIDA4LzExLzIwMTEgMDY6MzAgUE0sIEJydW5vIFByw6ltb250IHdyb3RlOgo+Pj4g
-T24gV2VkLCAxMCBBdWd1c3QgMjAxMSBEYW5pZWwgTGV6Y2FubyA8ZGFuaWVsLmxlemNhbm9AZnJl
-ZS5mcj4gd3JvdGU6Cj4+Pj4gT24gMDgvMTAvMjAxMSAxMDoxMCBQTSwgQnJ1bm8gUHLDqW1vbnQg
-d3JvdGU6Cj4+Pj4+IEhpIERhbmllbCwKPj4+Pj4KPj4+Pj4gW0knbSBhZGRpbmcgY29udGFpbmVy
-cyBtbCBhcyB3ZSBoYWQgYSBkaXNjdXNzaW9uIHRoZXJlIHNvbWUgdGltZSBhZ28KPj4+Pj4gIGZv
-ciB0aGlzIGZlYXR1cmVdCj4+Pj4gWyAuLi4gXQo+Pj4+Cj4+Pj4+PiArICAgIGlmIChjbWQgPT0g
-TElOVVhfUkVCT09UX0NNRF9SRVNUQVJUMikKPj4+Pj4+ICsgICAgICAgIGlmIChzdHJuY3B5X2Zy
-b21fdXNlcigmYnVmZmVyWzBdLCBhcmcsIHNpemVvZihidWZmZXIpIC0gMSkgPCAwKQo+Pj4+Pj4g
-KyAgICAgICAgICAgIHJldHVybiAtRUZBVUxUOwo+Pj4+Pj4gKwo+Pj4+Pj4gKyAgICAvKiBJZiB3
-ZSBhcmUgbm90IGluIHRoZSBpbml0aWFsIHBpZCBuYW1lc3BhY2UsIHdlIHNlbmQgYSBzaWduYWwK
-Pj4+Pj4+ICsgICAgICogdG8gdGhlIHBhcmVudCBvZiB0aGlzIGluaXQgcGlkIG5hbWVzcGFjZSwg
-bm90aWZ5aW5nIGEgc2h1dGRvd24KPj4+Pj4+ICsgICAgICogb2NjdXJlZCAqLwo+Pj4+Pj4gKyAg
-ICBpZiAocGlkX25zICE9ICZpbml0X3BpZF9ucykKPj4+Pj4+ICsgICAgICAgIHBpZF9uYW1lc3Bh
-Y2VfcmVib290KHBpZF9ucywgY21kLCBidWZmZXIpOwo+Pj4+PiBTaG91bGQgdGhlcmUgYmUgYSBy
-ZXR1cm4gaGVyZT8KPj4+Pj4gT3IgZG9lcyBwaWRfbmFtZXNwYWNlX3JlYm9vdCgpIG5ldmVyIHJl
-dHVybiBieSBzdWJtaXR0aW5nIHNpZ25hbCB0bwo+Pj4+PiBwYXJlbnQ/Cj4+Pj4gWWVzLCBpdCBk
-b2VzIG5vdCByZXR1cm4gYSB2YWx1ZSwgbGlrZSAnZG9fbm90aWZ5X3BhcmVudF9jbGRzdG9wJwo+
-Pj4gU28gZXhlY3V0aW9uIGZsb3cgY29udGludWVzIHJlYWNoaW5nIHRoZSB3aG9sZSAiaG9zdCBy
-ZWJvb3QgY29kZSI/Cj4+Pgo+Pj4gVGhhdCdzIG5vdCBzbyBnb29kIGFzIGl0IHRoZW4gcHJldmVu
-dHMgdXNpbmcgQ0FQX1NZU19CT09UIGluc2lkZSBQSUQgbmFtZXNwYWNlCj4+PiB0byBsaW1pdCBh
-Y2Nlc3MgdG8gcmVib290aW5nIHRoZSBjb250YWluZXIgZnJvbSBpbnNpZGUgYXMgZ2l2aW5nIGEg
-cHJvY2Vzcwo+Pj4gaW5zaWRlIGNvbnRhaW5lciBDQVBfU1lTX0JPT1Qgd291bGQgY2F1c2UgaG9z
-dCB0byByZWJvb3QgKGFuZCB3aGVuIG5vdCBnaXZlbgo+Pj4gcHJvY2VzcyBpbnNpZGUgY29udGFp
-bmVyIHdvdWxkIGdldCAtRVBFUk0gaW4gYWxsIGNhc2VzKS4KPj4+Cj4+PiBXb3VsZG4ndCB0aGUg
-Zm9sbG93aW5nIGJlIGJldHRlcj86Cj4+PiAuLi4KPj4+ICsKPj4+ICsgICAgLyogV2Ugb25seSB0
-cnVzdCB0aGUgc3VwZXJ1c2VyIHdpdGggcmVib290aW5nIHRoZSBzeXN0ZW0uICovCj4+PiArICAg
-IGlmICghY2FwYWJsZShDQVBfU1lTX0JPT1QpKQo+Pj4gKyAgICAgICAgcmV0dXJuIC1FUEVSTTsK
-Pj4+ICsKPj4+ICsgICAgLyogSWYgd2UgYXJlIG5vdCBpbiB0aGUgaW5pdGlhbCBwaWQgbmFtZXNw
-YWNlLCB3ZSBzZW5kIGEgc2lnbmFsCj4+PiArICAgICAqIHRvIHRoZSBwYXJlbnQgb2YgdGhpcyBp
-bml0IHBpZCBuYW1lc3BhY2UsIG5vdGlmeWluZyBhIHNodXRkb3duCj4+PiArICAgICAqIG9jY3Vy
-ZWQgKi8KPj4+ICsgICAgaWYgKHBpZF9ucyAhPSAmaW5pdF9waWRfbnMpIHsKPj4+ICsgICAgICAg
-IHBpZF9uYW1lc3BhY2VfcmVib290KHBpZF9ucywgY21kLCBidWZmZXIpOwo+Pj4gKyAgICAgICAg
-cmV0dXJuIDA7Cj4+PiArICAgIH0KPj4+ICsKPj4+ICAgICAgbXV0ZXhfbG9jaygmcmVib290X211
-dGV4KTsKPj4+ICAgICAgc3dpdGNoIChjbWQpIHsKPj4+IC4uLgo+Pj4KPj4+Cj4+PiBJZiBJIG1p
-c3VuZGVyc3Rvb2QsIHBsZWFzZSBjb3JyZWN0IG1lLgo+Pgo+PiBZZXAsIHRoaXMgaXMgd2hhdCBJ
-IGRpZCBhdCB0aGUgYmVnaW5uaW5nIGJ1dCBJIHJlYWxpemVkIEkgd2FzIGNsb3NpbmcKPj4gdGhl
-IGRvb3IgZm9yIGZ1dHVyZSBhcHBsaWNhdGlvbnMgdXNpbmcgdGhlIHBpZCBuYW1lc3BhY2VzLiBU
-aGUgcGlkCj4+IG5hbWVzcGFjZSBjb3VsZCBiZSB1c2VkIGJ5IGFub3RoZXIga2luZCBvZiBhcHBs
-aWNhdGlvbiwgbm90IGEgY29udGFpbmVyLAo+PiBydW5uaW5nIHNvbWUgYWRtaW5pc3RyYXRpdmUg
-dGFza3Mgc28gdGhleSBtYXkgd2FudCB0byBzaHV0ZG93biB0aGUgaG9zdAo+PiBmcm9tIGEgZGlm
-ZmVyZW50IHBpZCBuYW1lc3BhY2UuCj4+Cj4+IEZvciB0aGlzIHJlYXNvbiwgdG8gcHJldmVudCB0
-aGlzIGV4ZWN1dGlvbiBmbG93LCB0aGUgY29udGFpbmVyIGhhcyB0bwo+PiBkcm9wIHRoZSBDQVBf
-U1lTX0JPT1QgaW4gYWRkaXRpb24gb2YgdGFraW5nIGNhcmUgb2YgdGhlIFNJR0NITEQgc2lnbmFs
-Cj4+IHdpdGggQ0xEUkVCT09ULgo+IAo+IE9rLCB0aG91Z2ggZm9yIGxhdGVyIHNvdXJjZSBjb2Rl
-IHJlYWRlcnMgdG8ga25vdyBhZGRpbmcvZXh0ZW5kaW5nIGNvbW1lbnQKPiB3b3VsZCBiZSBuaWNl
-Lgo+IE1heWJlIHNvbWV0aGluZyBsaWtlCj4gCj4gKyAgICAvKiBJZiB3ZSBhcmUgbm90IGluIHRo
-ZSBpbml0aWFsIHBpZCBuYW1lc3BhY2UsIHdlIHNlbmQgYSBzaWduYWwKPiArICAgICAqIHRvIHRo
-ZSBwYXJlbnQgb2YgdGhpcyBpbml0IHBpZCBuYW1lc3BhY2UsIG5vdGlmeWluZyBhIHNodXRkb3du
-Cj4gKyAgICAgKiBvY2N1cmVkCj4gKyAgICAgKiBOT1RFOiBpZiBwcm9jZXNzIGhhcyBDQVBfU1lT
-X0JPT1QgaXQgd2lsbCBhZGRpdGlvbmFsbHkgaGF2ZSB0aGUKPiArICAgICAqIHNhbWUgZWZmZWN0
-IGFzIGlmIGl0IHdhcyBub3QgbmFtZXNwYWNlZCAqLwo+IAo+IAo+IEhvdyB3b3VsZCBhbGwgb2Yg
-dGhpcyBpbnRlZ3JhdGUgd2l0aCB0aGUgb25nb2luZyB3b3JrIG9uIHVzZXIgbmFtZXNwYWNlcz8K
-PiBNYXliZSB0aGF0IG9uZSBzaG91bGQgbGF0ZXIgYmUgdGhlIGRpZmZlcmVudGlhdG9yIGZvciB3
-aG8gbWF5IG9yIG1heSBub3QKPiB0cmlnZ2VyIHRoZSBob3N0IHJlYm9vdC4KCkkgdGhpbmsgaWYg
-eW91IGFyZSBpbiBhIGRpZmZlcmVudCB1c2VyIG5hbWVzcGFjZSB0aGFuIHRoZSBpbml0IG9uZSwg
-dGhlCnByb2Nlc3Mgd29uJ3QgYmUgYWJsZSB0byByZWJvb3QuCkkgdGFsa2VkIHdpdGggU2VyZ2Ug
-YWJvdXQgdGhhdCBhbmQgaGUgc2hvdWxkIGV4ZWN1dGUgdGhlCnBpZF9uYW1lc3BhY2VfcmVib290
-IGlmIGl0IGlzICduc19jYXBhYmxlJyBvZiByZWJvb3RpbmcgdGhlIGhvc3QuCgpCdXQgSSB0aGlu
-ayB0aGF0IGRvZXMgbm90IGNvbGxpZGUgYWZ0ZXIgYWxsLgoKCj4gSW4gYWRkaXRpb24gc2VuZGlu
-ZyB0aGUgc2lnbmFsIHRvIHBhcmVudCBwcm9jZXNzIHNlZW1zIG1vb3QgYXMgY2hhbmNlcyBhcmUK
-PiB0aGF0IHBhcmVudCBwcm9jZXNzIHdpbGwgbmV2ZXIgaGF2ZSB0aGUgb3Bwb3J0dW5pdHkgdG8g
-c2VlIHRoZSBzaWduYWwgd2hlbgo+IHRoZSBob3N0IGlzIGJlaW5nIHJlYm9vdGVkLgoKUmlnaHQu
-Cgo+IFRoZW4gYSBjb25zdHJ1Y3QgbGlrZSB0aGUgZm9sbG93aW5nIHdvdWxkIGdpdmUgYSBiZXR0
-ZXIgaGludCB0byB0aGUgcmVhZGVyOgo+IC4uLgo+ICsKPiArICAgIC8qIFdlIG9ubHkgdHJ1c3Qg
-dGhlIHN1cGVydXNlciB3aXRoIHJlYm9vdGluZyB0aGUgc3lzdGVtLiAqLwo+ICsgICAgaWYgKCFj
-YXBhYmxlKENBUF9TWVNfQk9PVCkpIHsKPiArICAgICAgICAvKiBJZiB3ZSBhcmUgbm90IGluIHRo
-ZSBpbml0aWFsIHBpZCBuYW1lc3BhY2UsIHdlIHNlbmQgYSBzaWduYWwKPiArICAgICAgICAgKiB0
-byB0aGUgcGFyZW50IG9mIHRoaXMgaW5pdCBwaWQgbmFtZXNwYWNlLCBub3RpZnlpbmcgYSBzaHV0
-ZG93bgo+ICsgICAgICAgICAqIG9jY3VyZWQgKi8KPiArICAgICAgICBpZiAocGlkX25zICE9ICZp
-bml0X3BpZF9ucykKPiArICAgICAgICAgICAgcGlkX25hbWVzcGFjZV9yZWJvb3QocGlkX25zLCBj
-bWQsIGJ1ZmZlcik7Cj4gKwo+ICsgICAgICAgIHJldHVybiAtRVBFUk07Cj4gKyAgICB9CgpPaywg
-bGV0IG1lIHJlc3BpbiB0aGUgcGF0Y2hzZXQgYW5kIGNoYW5nZSB0aGF0LiBJIHdpbGwgc3VibWl0
-IHRoZSBwYXRjaAp0byBha3BtIGFuZCBsa21sLiBMZXQncyBzZWUgd2hhdCB0aGV5IHRoaW5rIGFi
-b3V0IHRoaXMgYXBwcm9hY2guCgpUaGFua3MKICAtLSBEYW5pZWwKX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29u
-dGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZv
-dW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+Quoting Bruno Pr=E9mont (bonbons-ud5FBsm0p/xEiooADzr8i9i2O/JbrIOy@public.gmane.org):
+> On Thu, 11 August 2011 Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org> wrote:
+> > On 08/11/2011 06:30 PM, Bruno Pr=E9mont wrote:
+> > > On Wed, 10 August 2011 Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org> wrote:
+> > >> On 08/10/2011 10:10 PM, Bruno Pr=E9mont wrote:
+> > >>> Hi Daniel,
+> > >>>
+> > >>> [I'm adding containers ml as we had a discussion there some time ago
+> > >>>  for this feature]
+> > >> [ ... ]
+> > >>
+> > >>>> +    if (cmd =3D=3D LINUX_REBOOT_CMD_RESTART2)
+> > >>>> +        if (strncpy_from_user(&buffer[0], arg, sizeof(buffer) - 1=
+) < 0)
+> > >>>> +            return -EFAULT;
+> > >>>> +
+> > >>>> +    /* If we are not in the initial pid namespace, we send a sign=
+al
+> > >>>> +     * to the parent of this init pid namespace, notifying a shut=
+down
+> > >>>> +     * occured */
+> > >>>> +    if (pid_ns !=3D &init_pid_ns)
+> > >>>> +        pid_namespace_reboot(pid_ns, cmd, buffer);
+> > >>> Should there be a return here?
+> > >>> Or does pid_namespace_reboot() never return by submitting signal to
+> > >>> parent?
+> > >> Yes, it does not return a value, like 'do_notify_parent_cldstop'
+> > > So execution flow continues reaching the whole "host reboot code"?
+> > >
+> > > That's not so good as it then prevents using CAP_SYS_BOOT inside PID =
+namespace
+> > > to limit access to rebooting the container from inside as giving a pr=
+ocess
+> > > inside container CAP_SYS_BOOT would cause host to reboot (and when no=
+t given
+> > > process inside container would get -EPERM in all cases).
+> > >
+> > > Wouldn't the following be better?:
+> > > ...
+> > > +
+> > > +    /* We only trust the superuser with rebooting the system. */
+> > > +    if (!capable(CAP_SYS_BOOT))
+> > > +        return -EPERM;
+> > > +
+> > > +    /* If we are not in the initial pid namespace, we send a signal
+> > > +     * to the parent of this init pid namespace, notifying a shutdown
+> > > +     * occured */
+> > > +    if (pid_ns !=3D &init_pid_ns) {
+> > > +        pid_namespace_reboot(pid_ns, cmd, buffer);
+> > > +        return 0;
+> > > +    }
+> > > +
+> > >      mutex_lock(&reboot_mutex);
+> > >      switch (cmd) {
+> > > ...
+> > >
+> > >
+> > > If I misunderstood, please correct me.
+> > =
+
+> > Yep, this is what I did at the beginning but I realized I was closing
+> > the door for future applications using the pid namespaces. The pid
+> > namespace could be used by another kind of application, not a container,
+> > running some administrative tasks so they may want to shutdown the host
+> > from a different pid namespace.
+> > =
+
+> > For this reason, to prevent this execution flow, the container has to
+> > drop the CAP_SYS_BOOT in addition of taking care of the SIGCHLD signal
+> > with CLDREBOOT.
+> =
+
+> Ok, though for later source code readers to know adding/extending comment
+> would be nice.
+> Maybe something like
+> =
+
+> +    /* If we are not in the initial pid namespace, we send a signal
+> +     * to the parent of this init pid namespace, notifying a shutdown
+> +     * occured
+> +     * NOTE: if process has CAP_SYS_BOOT it will additionally have the
+> +     * same effect as if it was not namespaced */
+> =
+
+> =
+
+> How would all of this integrate with the ongoing work on user namespaces?
+> Maybe that one should later be the differentiator for who may or may not
+> trigger the host reboot.
+
+Right, then you'll be able to do:
+
+	if (ns_capable(current_pid_ns()->user_ns, CAP_SYS_BOOT)) {
+		// do container reboot stuff
+	}
+
+	if (!capable(CAP_SYS_BOOT)
+		return;
+
+	// do host reboot stuff
+
+The first checks whether the task has privilege against the user ns
+which owns his pid_ns.
+
+The second one is a synonym for
+
+	if (!ns_capable(&init_user_ns, CAP_SYS_BOOT))
+
+where init_user_ns is the owner of all physical resources.
+
+Right now pid_ns doesn't yet have a user_ns owner (except in my patch over
+here: http://kernel.ubuntu.com/git?p=3Dserge/linux-syslogns.git;a=3Dcommit;=
+h=3D63556e9a39bcd75ec4a88333425800905013c73e )
+and, if it did, well you can't yet do enough in a user namespace to run
+a container.  But that'll be the ideal.  Hopefully soon...
+
+-serge
