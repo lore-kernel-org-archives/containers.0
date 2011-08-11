@@ -1,13 +1,14 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+From: Bruno =?UTF-8?B?UHLDqW1vbnQ=?= <bonbons-ud5FBsm0p/xEiooADzr8i9i2O/JbrIOy@public.gmane.org>
 Subject: Re: [RFC] catching sys_reboot syscall
-Date: Wed, 10 Aug 2011 22:49:39 +0200
-Message-ID: <4E42EEE3.9050608__32878.9816391238$1313009424$gmane$org@free.fr>
+Date: Thu, 11 Aug 2011 18:30:27 +0200
+Message-ID: <20110811183027.49275b2d__8758.3074383021$1313080412$gmane$org@neptune.home>
 References: <4E4051A0.8030009@free.fr> <20110810221028.2e0c8590@neptune.home>
+	<4E42EEE3.9050608@free.fr>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110810221028.2e0c8590-hY15tx4IgV39zxVx7UNMDg@public.gmane.org>
+In-Reply-To: <4E42EEE3.9050608-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,32 +18,42 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: =?ISO-8859-1?Q?Bruno_Pr=E9mont?= <bonbons-ud5FBsm0p/xEiooADzr8i9i2O/JbrIOy@public.gmane.org>
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LXC Development <Lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 08/10/2011 10:10 PM, Bruno Pr=E9mont wrote:
-> Hi Daniel,
->
-> [I'm adding containers ml as we had a discussion there some time ago
->  for this feature]
-
-[ ... ]
-
->> +    if (cmd =3D=3D LINUX_REBOOT_CMD_RESTART2)
->> +        if (strncpy_from_user(&buffer[0], arg, sizeof(buffer) - 1) < 0)
->> +            return -EFAULT;
->> +
->> +    /* If we are not in the initial pid namespace, we send a signal
->> +     * to the parent of this init pid namespace, notifying a shutdown
->> +     * occured */
->> +    if (pid_ns !=3D &init_pid_ns)
->> +        pid_namespace_reboot(pid_ns, cmd, buffer);
-> Should there be a return here?
-> Or does pid_namespace_reboot() never return by submitting signal to
-> parent?
-
-Yes, it does not return a value, like 'do_notify_parent_cldstop'
-
-Thanks
-   -- Daniel
+T24gV2VkLCAxMCBBdWd1c3QgMjAxMSBEYW5pZWwgTGV6Y2FubyA8ZGFuaWVsLmxlemNhbm9AZnJl
+ZS5mcj4gd3JvdGU6Cj4gT24gMDgvMTAvMjAxMSAxMDoxMCBQTSwgQnJ1bm8gUHLDqW1vbnQgd3Jv
+dGU6Cj4gPiBIaSBEYW5pZWwsCj4gPgo+ID4gW0knbSBhZGRpbmcgY29udGFpbmVycyBtbCBhcyB3
+ZSBoYWQgYSBkaXNjdXNzaW9uIHRoZXJlIHNvbWUgdGltZSBhZ28KPiA+ICBmb3IgdGhpcyBmZWF0
+dXJlXQo+IAo+IFsgLi4uIF0KPiAKPiA+PiArICAgIGlmIChjbWQgPT0gTElOVVhfUkVCT09UX0NN
+RF9SRVNUQVJUMikKPiA+PiArICAgICAgICBpZiAoc3RybmNweV9mcm9tX3VzZXIoJmJ1ZmZlclsw
+XSwgYXJnLCBzaXplb2YoYnVmZmVyKSAtIDEpIDwgMCkKPiA+PiArICAgICAgICAgICAgcmV0dXJu
+IC1FRkFVTFQ7Cj4gPj4gKwo+ID4+ICsgICAgLyogSWYgd2UgYXJlIG5vdCBpbiB0aGUgaW5pdGlh
+bCBwaWQgbmFtZXNwYWNlLCB3ZSBzZW5kIGEgc2lnbmFsCj4gPj4gKyAgICAgKiB0byB0aGUgcGFy
+ZW50IG9mIHRoaXMgaW5pdCBwaWQgbmFtZXNwYWNlLCBub3RpZnlpbmcgYSBzaHV0ZG93bgo+ID4+
+ICsgICAgICogb2NjdXJlZCAqLwo+ID4+ICsgICAgaWYgKHBpZF9ucyAhPSAmaW5pdF9waWRfbnMp
+Cj4gPj4gKyAgICAgICAgcGlkX25hbWVzcGFjZV9yZWJvb3QocGlkX25zLCBjbWQsIGJ1ZmZlcik7
+Cj4gPiBTaG91bGQgdGhlcmUgYmUgYSByZXR1cm4gaGVyZT8KPiA+IE9yIGRvZXMgcGlkX25hbWVz
+cGFjZV9yZWJvb3QoKSBuZXZlciByZXR1cm4gYnkgc3VibWl0dGluZyBzaWduYWwgdG8KPiA+IHBh
+cmVudD8KPiAKPiBZZXMsIGl0IGRvZXMgbm90IHJldHVybiBhIHZhbHVlLCBsaWtlICdkb19ub3Rp
+ZnlfcGFyZW50X2NsZHN0b3AnCgpTbyBleGVjdXRpb24gZmxvdyBjb250aW51ZXMgcmVhY2hpbmcg
+dGhlIHdob2xlICJob3N0IHJlYm9vdCBjb2RlIj8KClRoYXQncyBub3Qgc28gZ29vZCBhcyBpdCB0
+aGVuIHByZXZlbnRzIHVzaW5nIENBUF9TWVNfQk9PVCBpbnNpZGUgUElEIG5hbWVzcGFjZQp0byBs
+aW1pdCBhY2Nlc3MgdG8gcmVib290aW5nIHRoZSBjb250YWluZXIgZnJvbSBpbnNpZGUgYXMgZ2l2
+aW5nIGEgcHJvY2VzcwppbnNpZGUgY29udGFpbmVyIENBUF9TWVNfQk9PVCB3b3VsZCBjYXVzZSBo
+b3N0IHRvIHJlYm9vdCAoYW5kIHdoZW4gbm90IGdpdmVuCnByb2Nlc3MgaW5zaWRlIGNvbnRhaW5l
+ciB3b3VsZCBnZXQgLUVQRVJNIGluIGFsbCBjYXNlcykuCgpXb3VsZG4ndCB0aGUgZm9sbG93aW5n
+IGJlIGJldHRlcj86Ci4uLgorCisgICAgLyogV2Ugb25seSB0cnVzdCB0aGUgc3VwZXJ1c2VyIHdp
+dGggcmVib290aW5nIHRoZSBzeXN0ZW0uICovCisgICAgaWYgKCFjYXBhYmxlKENBUF9TWVNfQk9P
+VCkpCisgICAgICAgIHJldHVybiAtRVBFUk07CisKKyAgICAvKiBJZiB3ZSBhcmUgbm90IGluIHRo
+ZSBpbml0aWFsIHBpZCBuYW1lc3BhY2UsIHdlIHNlbmQgYSBzaWduYWwKKyAgICAgKiB0byB0aGUg
+cGFyZW50IG9mIHRoaXMgaW5pdCBwaWQgbmFtZXNwYWNlLCBub3RpZnlpbmcgYSBzaHV0ZG93bgor
+ICAgICAqIG9jY3VyZWQgKi8KKyAgICBpZiAocGlkX25zICE9ICZpbml0X3BpZF9ucykgeworICAg
+ICAgICBwaWRfbmFtZXNwYWNlX3JlYm9vdChwaWRfbnMsIGNtZCwgYnVmZmVyKTsKKyAgICAgICAg
+cmV0dXJuIDA7CisgICAgfQorCiAgICAgbXV0ZXhfbG9jaygmcmVib290X211dGV4KTsKICAgICBz
+d2l0Y2ggKGNtZCkgewouLi4KCgpJZiBJIG1pc3VuZGVyc3Rvb2QsIHBsZWFzZSBjb3JyZWN0IG1l
+LgoKVGhhbmtzLApCcnVubwpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZv
+dW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9s
+aXN0aW5mby9jb250YWluZXJz
