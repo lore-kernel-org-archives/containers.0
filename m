@@ -1,16 +1,17 @@
 From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Subject: Re: [RFC] catching sys_reboot syscall
-Date: Thu, 11 Aug 2011 13:10:23 -0500
-Message-ID: <20110811181022.GA12307__35161.7513843395$1313086288$gmane$org@peqn>
+Subject: [PATCH] add pid->user_ns
+Date: Thu, 11 Aug 2011 13:40:17 -0500
+Message-ID: <20110811184017.GA13356__25691.5811951787$1313088067$gmane$org@peqn>
 References: <4E4051A0.8030009@free.fr> <20110810221028.2e0c8590@neptune.home>
 	<4E42EEE3.9050608@free.fr> <20110811183027.49275b2d@neptune.home>
 	<4E44082F.6040606@free.fr> <20110811190456.77ff9280@neptune.home>
+	<20110811181022.GA12307@peqn>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20110811190456.77ff9280-hY15tx4IgV39zxVx7UNMDg@public.gmane.org>
+In-Reply-To: <20110811181022.GA12307@peqn>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,123 +22,146 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Bruno =?iso-8859-1?Q?Pr=E9mont?= <bonbons-ud5FBsm0p/xEiooADzr8i9i2O/JbrIOy@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LXC Development <Lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: daniel@peqn, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, eric@peqn, LXC Development <Lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Bruno Pr=E9mont (bonbons-ud5FBsm0p/xEiooADzr8i9i2O/JbrIOy@public.gmane.org):
-> On Thu, 11 August 2011 Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org> wrote:
-> > On 08/11/2011 06:30 PM, Bruno Pr=E9mont wrote:
-> > > On Wed, 10 August 2011 Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org> wrote:
-> > >> On 08/10/2011 10:10 PM, Bruno Pr=E9mont wrote:
-> > >>> Hi Daniel,
-> > >>>
-> > >>> [I'm adding containers ml as we had a discussion there some time ago
-> > >>>  for this feature]
-> > >> [ ... ]
-> > >>
-> > >>>> +    if (cmd =3D=3D LINUX_REBOOT_CMD_RESTART2)
-> > >>>> +        if (strncpy_from_user(&buffer[0], arg, sizeof(buffer) - 1=
-) < 0)
-> > >>>> +            return -EFAULT;
-> > >>>> +
-> > >>>> +    /* If we are not in the initial pid namespace, we send a sign=
-al
-> > >>>> +     * to the parent of this init pid namespace, notifying a shut=
-down
-> > >>>> +     * occured */
-> > >>>> +    if (pid_ns !=3D &init_pid_ns)
-> > >>>> +        pid_namespace_reboot(pid_ns, cmd, buffer);
-> > >>> Should there be a return here?
-> > >>> Or does pid_namespace_reboot() never return by submitting signal to
-> > >>> parent?
-> > >> Yes, it does not return a value, like 'do_notify_parent_cldstop'
-> > > So execution flow continues reaching the whole "host reboot code"?
-> > >
-> > > That's not so good as it then prevents using CAP_SYS_BOOT inside PID =
-namespace
-> > > to limit access to rebooting the container from inside as giving a pr=
-ocess
-> > > inside container CAP_SYS_BOOT would cause host to reboot (and when no=
-t given
-> > > process inside container would get -EPERM in all cases).
-> > >
-> > > Wouldn't the following be better?:
-> > > ...
-> > > +
-> > > +    /* We only trust the superuser with rebooting the system. */
-> > > +    if (!capable(CAP_SYS_BOOT))
-> > > +        return -EPERM;
-> > > +
-> > > +    /* If we are not in the initial pid namespace, we send a signal
-> > > +     * to the parent of this init pid namespace, notifying a shutdown
-> > > +     * occured */
-> > > +    if (pid_ns !=3D &init_pid_ns) {
-> > > +        pid_namespace_reboot(pid_ns, cmd, buffer);
-> > > +        return 0;
-> > > +    }
-> > > +
-> > >      mutex_lock(&reboot_mutex);
-> > >      switch (cmd) {
-> > > ...
-> > >
-> > >
-> > > If I misunderstood, please correct me.
-> > =
+[ Here is the patch which you'd need to be able to add the boot
+check against pid_ns ]
 
-> > Yep, this is what I did at the beginning but I realized I was closing
-> > the door for future applications using the pid namespaces. The pid
-> > namespace could be used by another kind of application, not a container,
-> > running some administrative tasks so they may want to shutdown the host
-> > from a different pid namespace.
-> > =
+This will allow us to check whether a task has privilege over the
+pid namespace.
 
-> > For this reason, to prevent this execution flow, the container has to
-> > drop the CAP_SYS_BOOT in addition of taking care of the SIGCHLD signal
-> > with CLDREBOOT.
-> =
+Signed-off-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+---
+ include/linux/pid_namespace.h |    9 +++++++--
+ kernel/nsproxy.c              |    2 +-
+ kernel/pid.c                  |    1 +
+ kernel/pid_namespace.c        |   13 ++++++++++---
+ 4 files changed, 19 insertions(+), 6 deletions(-)
 
-> Ok, though for later source code readers to know adding/extending comment
-> would be nice.
-> Maybe something like
-> =
-
-> +    /* If we are not in the initial pid namespace, we send a signal
-> +     * to the parent of this init pid namespace, notifying a shutdown
-> +     * occured
-> +     * NOTE: if process has CAP_SYS_BOOT it will additionally have the
-> +     * same effect as if it was not namespaced */
-> =
-
-> =
-
-> How would all of this integrate with the ongoing work on user namespaces?
-> Maybe that one should later be the differentiator for who may or may not
-> trigger the host reboot.
-
-Right, then you'll be able to do:
-
-	if (ns_capable(current_pid_ns()->user_ns, CAP_SYS_BOOT)) {
-		// do container reboot stuff
-	}
-
-	if (!capable(CAP_SYS_BOOT)
-		return;
-
-	// do host reboot stuff
-
-The first checks whether the task has privilege against the user ns
-which owns his pid_ns.
-
-The second one is a synonym for
-
-	if (!ns_capable(&init_user_ns, CAP_SYS_BOOT))
-
-where init_user_ns is the owner of all physical resources.
-
-Right now pid_ns doesn't yet have a user_ns owner (except in my patch over
-here: http://kernel.ubuntu.com/git?p=3Dserge/linux-syslogns.git;a=3Dcommit;=
-h=3D63556e9a39bcd75ec4a88333425800905013c73e )
-and, if it did, well you can't yet do enough in a user namespace to run
-a container.  But that'll be the ideal.  Hopefully soon...
-
--serge
+diff --git a/include/linux/pid_namespace.h b/include/linux/pid_namespace.h
+index 38d1032..c1b5a48 100644
+--- a/include/linux/pid_namespace.h
++++ b/include/linux/pid_namespace.h
+@@ -7,6 +7,9 @@
+ #include <linux/nsproxy.h>
+ #include <linux/kref.h>
+ 
++struct user_namespace;
++extern struct user_namespace init_user_ns;
++
+ struct pidmap {
+        atomic_t nr_free;
+        void *page;
+@@ -30,6 +33,7 @@ struct pid_namespace {
+ #ifdef CONFIG_BSD_PROCESS_ACCT
+ 	struct bsd_acct_struct *bacct;
+ #endif
++	struct user_namespace *user_ns;
+ };
+ 
+ extern struct pid_namespace init_pid_ns;
+@@ -42,7 +46,7 @@ static inline struct pid_namespace *get_pid_ns(struct pid_namespace *ns)
+ 	return ns;
+ }
+ 
+-extern struct pid_namespace *copy_pid_ns(unsigned long flags, struct pid_namespace *ns);
++extern struct pid_namespace *copy_pid_ns(unsigned long flags, struct task_struct *tsk);
+ extern void free_pid_ns(struct kref *kref);
+ extern void zap_pid_ns_processes(struct pid_namespace *pid_ns);
+ 
+@@ -61,8 +65,9 @@ static inline struct pid_namespace *get_pid_ns(struct pid_namespace *ns)
+ }
+ 
+ static inline struct pid_namespace *
+-copy_pid_ns(unsigned long flags, struct pid_namespace *ns)
++copy_pid_ns(unsigned long flags, struct task_struct *tsk)
+ {
++	struct pid_namespace *ns = task_active_pid_ns(tsk);
+ 	if (flags & CLONE_NEWPID)
+ 		ns = ERR_PTR(-EINVAL);
+ 	return ns;
+diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+index 9aeab4b..97e21ea 100644
+--- a/kernel/nsproxy.c
++++ b/kernel/nsproxy.c
+@@ -84,7 +84,7 @@ static struct nsproxy *create_new_namespaces(unsigned long flags,
+ 		goto out_ipc;
+ 	}
+ 
+-	new_nsp->pid_ns = copy_pid_ns(flags, task_active_pid_ns(tsk));
++	new_nsp->pid_ns = copy_pid_ns(flags, tsk);
+ 	if (IS_ERR(new_nsp->pid_ns)) {
+ 		err = PTR_ERR(new_nsp->pid_ns);
+ 		goto out_pid;
+diff --git a/kernel/pid.c b/kernel/pid.c
+index e432057..4a1e66f 100644
+--- a/kernel/pid.c
++++ b/kernel/pid.c
+@@ -78,6 +78,7 @@ struct pid_namespace init_pid_ns = {
+ 	.last_pid = 0,
+ 	.level = 0,
+ 	.child_reaper = &init_task,
++	.user_ns = &init_user_ns,
+ };
+ EXPORT_SYMBOL_GPL(init_pid_ns);
+ 
+diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
+index e9c9adc..6818ea5 100644
+--- a/kernel/pid_namespace.c
++++ b/kernel/pid_namespace.c
+@@ -10,6 +10,7 @@
+ 
+ #include <linux/pid.h>
+ #include <linux/pid_namespace.h>
++#include <linux/user_namespace.h>
+ #include <linux/syscalls.h>
+ #include <linux/err.h>
+ #include <linux/acct.h>
+@@ -69,7 +70,8 @@ err_alloc:
+ 	return NULL;
+ }
+ 
+-static struct pid_namespace *create_pid_namespace(struct pid_namespace *parent_pid_ns)
++static struct pid_namespace *create_pid_namespace(struct task_struct *tsk,
++			struct pid_namespace *parent_pid_ns)
+ {
+ 	struct pid_namespace *ns;
+ 	unsigned int level = parent_pid_ns->level + 1;
+@@ -97,6 +99,8 @@ static struct pid_namespace *create_pid_namespace(struct pid_namespace *parent_p
+ 	for (i = 1; i < PIDMAP_ENTRIES; i++)
+ 		atomic_set(&ns->pidmap[i].nr_free, BITS_PER_PAGE);
+ 
++	ns->user_ns = get_user_ns(task_cred_xxx(tsk, user)->user_ns);
++
+ 	err = pid_ns_prepare_proc(ns);
+ 	if (err)
+ 		goto out_put_parent_pid_ns;
+@@ -122,13 +126,15 @@ static void destroy_pid_namespace(struct pid_namespace *ns)
+ 	kmem_cache_free(pid_ns_cachep, ns);
+ }
+ 
+-struct pid_namespace *copy_pid_ns(unsigned long flags, struct pid_namespace *old_ns)
++struct pid_namespace *copy_pid_ns(unsigned long flags, struct task_struct *tsk)
+ {
++	struct pid_namespace *old_ns = task_active_pid_ns(tsk);
++
+ 	if (!(flags & CLONE_NEWPID))
+ 		return get_pid_ns(old_ns);
+ 	if (flags & (CLONE_THREAD|CLONE_PARENT))
+ 		return ERR_PTR(-EINVAL);
+-	return create_pid_namespace(old_ns);
++	return create_pid_namespace(tsk, old_ns);
+ }
+ 
+ void free_pid_ns(struct kref *kref)
+@@ -139,6 +145,7 @@ void free_pid_ns(struct kref *kref)
+ 
+ 	parent = ns->parent;
+ 	destroy_pid_namespace(ns);
++	put_user_ns(ns->user_ns);
+ 
+ 	if (parent != NULL)
+ 		put_pid_ns(parent);
+-- 
+1.7.5.4
