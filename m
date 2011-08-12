@@ -1,15 +1,16 @@
-From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [PATCH v2 3/4] limit nr_dentries per superblock
-Date: Fri, 12 Aug 2011 16:20:01 -0300
-Message-ID: <4E457CE1.7040102__6614.07009833983$1313177073$gmane$org@parallels.com>
-References: <1312504544-1108-1-git-send-email-glommer@parallels.com>
-	<1312504544-1108-4-git-send-email-glommer@parallels.com>
-	<1313157412.2354.19.camel@edumazet-HP-Compaq-6005-Pro-SFF-PC>
+From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Subject: Re: [PATCH 2/2] Notify container-init parent a 'reboot' occured
+Date: Fri, 12 Aug 2011 22:42:55 +0200
+Message-ID: <4E45904F.60904__28566.391793038$1313181903$gmane$org@free.fr>
+References: <1313094241-3674-1-git-send-email-daniel.lezcano@free.fr>
+	<1313094241-3674-3-git-send-email-daniel.lezcano@free.fr>
+	<20110811210951.GA17349@peqn> <4E444A04.3070403@free.fr>
+	<20110812162908.GA9304@peqn>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1313157412.2354.19.camel@edumazet-HP-Compaq-6005-Pro-SFF-PC>
+In-Reply-To: <20110812162908.GA9304@peqn>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,46 +20,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Andrea Arcangeli <aarcange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Nick Piggin <npiggin-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, David Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James Bottomley <JBottomley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, bonbons-ud5FBsm0p/xEiooADzr8i9i2O/JbrIOy@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gMDgvMTIvMjAxMSAxMDo1NiBBTSwgRXJpYyBEdW1hemV0IHdyb3RlOgo+IExlIHZlbmRyZWRp
-IDA1IGFvw7t0IDIwMTEgw6AgMDQ6MzUgKzA0MDAsIEdsYXViZXIgQ29zdGEgYSDDqWNyaXQgOgo+
-PiBUaGlzIHBhdGNoIGxheXMgdGhlIGZvdW5kYXRpb24gZm9yIHVzIHRvIGxpbWl0IHRoZSBkY2Fj
-aGUgc2l6ZS4KPj4gRWFjaCBzdXBlciBibG9jayBjYW4gaGF2ZSBvbmx5IGEgbWF4aW11bSBhbW91
-bnQgb2YgZGVudHJpZXMgdW5kZXIgaXRzCj4+IHN1Yi10cmVlLiBBbGxvY2F0aW9uIGZhaWxzIGlm
-IHdlIHdlJ3JlIG92ZXIgbGltaXQgYW5kIHRoZSBjYWNoZQo+PiBjYW4ndCBiZSBwcnVuZWQgdG8g
-ZnJlZSB1cCBzcGFjZSBmb3IgdGhlIG5ld2NvbWVycy4KPj4KPj4gU2lnbmVkLW9mZi1ieTogR2xh
-dWJlciBDb3N0YTxnbG9tbWVyQHBhcmFsbGVscy5jb20+Cj4+IENDOiBEYXZlIENoaW5uZXI8ZGF2
-aWRAZnJvbW9yYml0LmNvbT4KPj4gLS0tCj4+ICAgZnMvZGNhY2hlLmMgICAgICAgIHwgICAyNSAr
-KysrKysrKysrKysrKysrKysrKysrKysrCj4+ICAgZnMvc3VwZXIuYyAgICAgICAgIHwgICAgMSAr
-Cj4+ICAgaW5jbHVkZS9saW51eC9mcy5oIHwgICAgMSArCj4+ICAgMyBmaWxlcyBjaGFuZ2VkLCAy
-NyBpbnNlcnRpb25zKCspLCAwIGRlbGV0aW9ucygtKQo+Pgo+PiBkaWZmIC0tZ2l0IGEvZnMvZGNh
-Y2hlLmMgYi9mcy9kY2FjaGUuYwo+PiBpbmRleCBhYzE5ZDI0Li41MmEwZmFmIDEwMDY0NAo+PiAt
-LS0gYS9mcy9kY2FjaGUuYwo+PiArKysgYi9mcy9kY2FjaGUuYwo+PiBAQCAtMTE4MCw2ICsxMTgw
-LDI4IEBAIHZvaWQgc2hyaW5rX2RjYWNoZV9wYXJlbnQoc3RydWN0IGRlbnRyeSAqIHBhcmVudCkK
-Pj4gICB9Cj4+ICAgRVhQT1JUX1NZTUJPTChzaHJpbmtfZGNhY2hlX3BhcmVudCk7Cj4+Cj4+ICtz
-dGF0aWMgaW50IGRjYWNoZV9tZW1fY2hlY2soc3RydWN0IHN1cGVyX2Jsb2NrICpzYikKPj4gK3sK
-Pj4gKwlpbnQgaTsKPj4gKwlpbnQgbnJfZGVudHJ5Owo+PiArCXN0cnVjdCBzaHJpbmtfY29udHJv
-bCBzYyA9IHsKPj4gKwkJLmdmcF9tYXNrID0gR0ZQX0tFUk5FTCwKPj4gKwl9Owo+PiArCj4+ICsJ
-ZG8gewo+PiArCQlucl9kZW50cnkgPSAwOwo+PiArCQlmb3JfZWFjaF9wb3NzaWJsZV9jcHUoaSkK
-Pj4gKwkJCW5yX2RlbnRyeSArPSBwZXJfY3B1KCpzYi0+c19ucl9kZW50cnksIGkpOwo+Cj4gWW91
-IHNlcmlvdXNseSB3YW50IHRvIGNhbGwgdGhpcyBmb3IgZXZlcnkgX19kX2FsbG9jKCkgaW52b2Nh
-dGlvbiwKPiBldmVuIGlmIHNfbnJfZGVudHJ5X21heCBpcyB0aGUgZGVmYXVsdCB2YWx1ZSAoSU5U
-X01BWCkgPwoKV2VsbCwgSSBndWVzcyB0aGF0IHNwZWNpYWwtY2FzaW5nIElOVF9NQVggaXMgYSBn
-b29kIHRoaW5nLgpJIGNhbiBpbmNsdWRlIGl0IGluIHRoZSBuZXh0IHN1Ym1pc3Npb24sIEkgbGlr
-ZSBpdC4gVGhhbmtzLgoKPiBPbiBhIDQwOTYgY3B1IG1hY2hpbmUsIGl0IHdpbGwgYmUgX3Zlcnlf
-IHNsb3cuCj4KPiBBIHBlcmNwdV9jb3VudGVyIHdvdWxkIGJlIHRoZSB0aGluZyB0byBjb25zaWRl
-ciwgc2luY2UgeW91IGNhbiBhdm9pZCB0aGUKPiBmb3JfZWFjaF9wb3NzaWJsZV9jcHUoaSkgbG9v
-cCBpZiBwZXJjcHVfY291bnRlcl9yZWFkKCkgaXMgc21hbGxlciB0aGFuCj4gc2ItPnNfbnJfZGVu
-dHJ5X21heC4KPgo+IENoZWNrIGhvdyBpdHMgZG9uZSBpbiBpbmNsdWRlL25ldC90Y3AuaCwgdGNw
-X3Rvb19tYW55X29ycGhhbnMoKQoKWWVhaCwgSSBndWVzcyBJIGNvdWxkIGRvIHRoYXQuIEluIGZh
-Y3QsIG15IGZpcnN0IHNlcmllcyB1c2VkIApwZXJjcHVfY291bnRlcnMsIGFuZCB0aGVuIEkgc3dp
-dGNoZWQuIEJ1dCBsb29raW5nIGJhY2ssIHBlcmNwdV9jb3VudGVycwphcmUgaW5kZWVkIG1vcmUg
-c3VpdGFibGUuIFRoZSBnb2FsIGJhY2sgdGhlbiB3YXMgdHJ5aW5nIHRvIGF2b2lkIApwZXJjcHVf
-Y291bnRlcl9hZGQsIGJ1dCBhcyBpdCBpcyByaWdodCBub3csIHdlIHRyYWRlIGl0IGZvciBhbiBl
-dmVuIAp3b3JzZSB0aGluZy4KClRoYW5rIHlvdSBmb3IgeW91ciBjb21tZW50cy4KX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5n
-IGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3Rz
-LmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+On 08/12/2011 06:29 PM, Serge Hallyn wrote:
+> Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
+> ...
+>>> Doesn't this mean that an unprivileged task in a container can shut
+>>> down the container?
+>> Ha ha ! Right, good catch :)
+>>
+>> Yes, rethinking about it, we can do what initially proposed Bruno by
+>> just preventing to reboot when we are not in the init_pid_ns. Actually, 
+>> the sys_reboot occurs after the services shutdown and "kill -1 SIGTERM"
+>> and "kill -1 SIGKILL", and would not make sense to do that in a child
+>> pid namespace, except if we are in a container where we don't want to
+>> reboot :)
+>>
+>> So IMO, it is safe to do:
+>>
+>> 	if (!ns_capable(current_pid_ns()->user_ns, CAP_SYS_BOOT))
+>>  		return -EPERM;
+>> 	
+>> 	if (pid_ns != &init_pid_ns)
+>> 		return pid_namespace_reboot(pid_ns, cmd, buffer);
+> So I don't know if you want to prepend
+> http://kernel.ubuntu.com/git?p=serge/linux-syslogns.git;a=commit;h=63556e9a39bcd75ec4a88333425800905013c73e
+> to your patchset, or just check nsown_capable(CAP_SYS_BOOT) for now,
+> but as soon as you resend with that I'll happily, nay,
+> ecstatically ack.
+
+Ok, in order to not mix the functionnalities, I will send in a separate
+patch the nsown_capable change.
