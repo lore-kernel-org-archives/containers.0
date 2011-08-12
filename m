@@ -1,13 +1,14 @@
-From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [PATCH v2 0/4] Per-container dcache size limitation
-Date: Fri, 12 Aug 2011 07:52:41 -0300
-Message-ID: <4E4505F9.1040609__25670.2325343669$1313146454$gmane$org@parallels.com>
+From: Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH v2 2/4] Keep nr_dentry per super block
+Date: Fri, 12 Aug 2011 15:51:19 +0200
+Message-ID: <1313157079.2354.14.camel__1840.07054563171$1313157145$gmane$org@edumazet-HP-Compaq-6005-Pro-SFF-PC>
 References: <1312504544-1108-1-git-send-email-glommer@parallels.com>
+	<1312504544-1108-3-git-send-email-glommer@parallels.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1312504544-1108-1-git-send-email-glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+In-Reply-To: <1312504544-1108-3-git-send-email-glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,39 +22,49 @@ To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 Cc: Andrea Arcangeli <aarcange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Nick Piggin <npiggin-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, David Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James Bottomley <JBottomley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 08/04/2011 09:35 PM, Glauber Costa wrote:
-> Hi,
->
-> Since v1, there is not too much new here.
-> I'm incorporating David's suggestion of calling the sb
-> shrinker, which will, in effect, prune the icache and
-> other sb related objects as well.
->
-> I am also keeping the mount based interface, since I
-> still believe it is the way to go. But I'm obviously
-> still open for suggestions. Some small corrections
-> were also made to it since v1. Specifically, bind
-> mounts are not allowed to alter the original sb dcache
-> size.
->
-> Glauber Costa (4):
->    factor out single-shrinker code
->    Keep nr_dentry per super block
->    limit nr_dentries per superblock
->    parse options in the vfs level
->
->   fs/dcache.c              |   44 +++++++++++-
->   fs/namespace.c           |  105 ++++++++++++++++++++++++++
->   fs/super.c               |   16 ++++-
->   include/linux/dcache.h   |    4 +
->   include/linux/fs.h       |    3 +
->   include/linux/shrinker.h |    6 ++
->   mm/vmscan.c              |  185 ++++++++++++++++++++++++----------------------
->   7 files changed, 274 insertions(+), 89 deletions(-)
->
-People,
-
-Any comments on this? I think I addressed all the comments previously
-made, and if there are no further requests, I think this is ready for
-getting in. In case there are issues, please let me know so I can 
-address them.
+TGUgdmVuZHJlZGkgMDUgYW/Du3QgMjAxMSDDoCAwNDozNSArMDQwMCwgR2xhdWJlciBDb3N0YSBh
+IMOpY3JpdCA6Cj4gTm93IHRoYXQgd2UgaGF2ZSBwZXItc2Igc2hyaW5rZXJzLCBpdCBtYWtlcyBz
+ZW5zZSB0byBoYXZlIG5yX2RlbnRyaWVzCj4gc3RvcmVkIHBlciBzYiBhcyB3ZWxsLiBXZSB0dXJu
+IHRoZW0gaW50byBwZXItY3B1IGNvdW50ZXJzIHNvIHdlIGNhbgo+IGtlZXAgYWNlc3NpbmcgdGhl
+bSB3aXRob3V0IGxvY2tpbmcuCj4gCj4gU2lnbmVkLW9mZi1ieTogR2xhdWJlciBDb3N0YSA8Z2xv
+bW1lckBwYXJhbGxlbHMuY29tPgo+IENDOiBEYXZlIENoaW5uZXIgPGRhdmlkQGZyb21vcmJpdC5j
+b20+Cj4gLS0tCj4gIGZzL2RjYWNoZS5jICAgICAgICB8ICAgMTIgKysrKysrKysrKystCj4gIGZz
+L3N1cGVyLmMgICAgICAgICB8ICAgMTUgKysrKysrKysrKysrKystCj4gIGluY2x1ZGUvbGludXgv
+ZnMuaCB8ICAgIDIgKysKPiAgMyBmaWxlcyBjaGFuZ2VkLCAyNyBpbnNlcnRpb25zKCspLCAyIGRl
+bGV0aW9ucygtKQo+IAo+IGRpZmYgLS1naXQgYS9mcy9kY2FjaGUuYyBiL2ZzL2RjYWNoZS5jCj4g
+aW5kZXggYjA1YWFjMy4uYWMxOWQyNCAxMDA2NDQKPiAtLS0gYS9mcy9kY2FjaGUuYwo+ICsrKyBi
+L2ZzL2RjYWNoZS5jCj4gQEAgLTE1MSw3ICsxNTEsMTMgQEAgc3RhdGljIHZvaWQgX19kX2ZyZWUo
+c3RydWN0IHJjdV9oZWFkICpoZWFkKQo+ICBzdGF0aWMgdm9pZCBkX2ZyZWUoc3RydWN0IGRlbnRy
+eSAqZGVudHJ5KQo+ICB7Cj4gIAlCVUdfT04oZGVudHJ5LT5kX2NvdW50KTsKPiArCS8qCj4gKwkg
+KiBJdCBpcyBjaGVhcGVyIHRvIGtlZXAgYSBnbG9iYWwgY291bnRlciBzZXBhcmF0ZQo+ICsJICog
+dGhlbiB0byBzY2FuIHRocm91Z2ggYWxsIHN1cGVyYmxvY2tzIHdoZW4gbmVlZGVkCgoidGhlbiB0
+byBzY2FuIiBvciAidGhhbiBzY2FubmluZyIgPwoKPiArCSAqLwo+ICAJdGhpc19jcHVfZGVjKG5y
+X2RlbnRyeSk7Cj4gKwl0aGlzX2NwdV9kZWMoKmRlbnRyeS0+ZF9zYi0+c19ucl9kZW50cnkpOwo+
+ICsKPiAgCWlmIChkZW50cnktPmRfb3AgJiYgZGVudHJ5LT5kX29wLT5kX3JlbGVhc2UpCj4gIAkJ
+ZGVudHJ5LT5kX29wLT5kX3JlbGVhc2UoZGVudHJ5KTsKPiAgCj4gQEAgLTEyMjQsNyArMTIzMCwx
+MSBAQCBzdHJ1Y3QgZGVudHJ5ICpfX2RfYWxsb2Moc3RydWN0IHN1cGVyX2Jsb2NrICpzYiwgY29u
+c3Qgc3RydWN0IHFzdHIgKm5hbWUpCj4gIAlJTklUX0xJU1RfSEVBRCgmZGVudHJ5LT5kX2FsaWFz
+KTsKPiAgCUlOSVRfTElTVF9IRUFEKCZkZW50cnktPmRfdS5kX2NoaWxkKTsKPiAgCWRfc2V0X2Rf
+b3AoZGVudHJ5LCBkZW50cnktPmRfc2ItPnNfZF9vcCk7Cj4gLQo+ICsJLyoKPiArCSAqIEl0IGlz
+IGNoZWFwZXIgdG8ga2VlcCBhIGdsb2JhbCBjb3VudGVyIHNlcGFyYXRlCj4gKwkgKiB0aGVuIHRv
+IHNjYW4gdGhyb3VnaCBhbGwgc3VwZXJibG9ja3Mgd2hlbiBuZWVkZWQKPiArCSAqLwo+ICsJdGhp
+c19jcHVfaW5jKCpkZW50cnktPmRfc2ItPnNfbnJfZGVudHJ5KTsKPiAgCXRoaXNfY3B1X2luYyhu
+cl9kZW50cnkpOwo+ICAKPiAgCXJldHVybiBkZW50cnk7Cj4gZGlmZiAtLWdpdCBhL2ZzL3N1cGVy
+LmMgYi9mcy9zdXBlci5jCj4gaW5kZXggM2Y1NmEyNi4uOTM0NTM4NSAxMDA2NDQKPiAtLS0gYS9m
+cy9zdXBlci5jCj4gKysrIGIvZnMvc3VwZXIuYwo+IEBAIC0xMTIsNiArMTEyLDcgQEAgc3RhdGlj
+IHN0cnVjdCBzdXBlcl9ibG9jayAqYWxsb2Nfc3VwZXIoc3RydWN0IGZpbGVfc3lzdGVtX3R5cGUg
+KnR5cGUpCj4gIHsKPiAgCXN0cnVjdCBzdXBlcl9ibG9jayAqcyA9IGt6YWxsb2Moc2l6ZW9mKHN0
+cnVjdCBzdXBlcl9ibG9jayksICBHRlBfVVNFUik7Cj4gIAlzdGF0aWMgY29uc3Qgc3RydWN0IHN1
+cGVyX29wZXJhdGlvbnMgZGVmYXVsdF9vcDsKPiArCWludCBpOwo+ICAKPiAgCWlmIChzKSB7Cj4g
+IAkJaWYgKHNlY3VyaXR5X3NiX2FsbG9jKHMpKSB7Cj4gQEAgLTExOSwxNSArMTIwLDI2IEBAIHN0
+YXRpYyBzdHJ1Y3Qgc3VwZXJfYmxvY2sgKmFsbG9jX3N1cGVyKHN0cnVjdCBmaWxlX3N5c3RlbV90
+eXBlICp0eXBlKQo+ICAJCQlzID0gTlVMTDsKPiAgCQkJZ290byBvdXQ7Cj4gIAkJfQo+ICsKPiAr
+CQlzLT5zX25yX2RlbnRyeSA9IGFsbG9jX3BlcmNwdShpbnQpOwo+ICsJCWlmICghcy0+c19ucl9k
+ZW50cnkpIHsKPiArCQkJc2VjdXJpdHlfc2JfZnJlZShzKTsKPiArCQkJa2ZyZWUocyk7Cj4gKwkJ
+CXMgPSBOVUxMOwo+ICsJCQlnb3RvIG91dDsKPiArCQl9CgoKCj4gKwkJZm9yX2VhY2hfcG9zc2li
+bGVfY3B1KGkpCj4gKwkJCSpwZXJfY3B1X3B0cihzLT5zX25yX2RlbnRyeSwgaSkgPSAwOwoKVGhp
+cyBsb29wIGlzIG5vdCBuZWVkZWQsIGFsbG9jX3BlcmNwdSgpIGdpdmVzIHplcm9lZCBkYXRhCgpX
+aHkgZG9udCB5b3UgdXNlIGEgcGVyY3B1X2NvdW50ZXIgPwoKCl9fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRh
+aW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3Vu
+ZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
