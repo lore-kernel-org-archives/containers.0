@@ -1,17 +1,15 @@
-From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 2/2] Notify container-init parent a 'reboot' occured
-Date: Fri, 12 Aug 2011 16:13:53 -0500
-Message-ID: <20110812211353.GA19030__8044.07422333515$1313183789$gmane$org@peqn>
+Date: Fri, 12 Aug 2011 17:19:59 -0700
+Message-ID: <20110813001959.GB5777__1813.4368503981$1313194874$gmane$org@count0.beaverton.ibm.com>
 References: <1313094241-3674-1-git-send-email-daniel.lezcano@free.fr>
 	<1313094241-3674-3-git-send-email-daniel.lezcano@free.fr>
-	<20110811210951.GA17349@peqn> <4E444A04.3070403@free.fr>
-	<20110812162908.GA9304@peqn> <4E45904F.60904@free.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4E45904F.60904-GANU6spQydw@public.gmane.org>
+In-Reply-To: <1313094241-3674-3-git-send-email-daniel.lezcano-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,48 +23,100 @@ To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
 Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, bonbons-ud5FBsm0p/xEiooADzr8i9i2O/JbrIOy@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
-> On 08/12/2011 06:29 PM, Serge Hallyn wrote:
-> > Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
-> > ...
-> >>> Doesn't this mean that an unprivileged task in a container can shut
-> >>> down the container?
-> >> Ha ha ! Right, good catch :)
-> >>
-> >> Yes, rethinking about it, we can do what initially proposed Bruno by
-> >> just preventing to reboot when we are not in the init_pid_ns. Actually, 
-> >> the sys_reboot occurs after the services shutdown and "kill -1 SIGTERM"
-> >> and "kill -1 SIGKILL", and would not make sense to do that in a child
-> >> pid namespace, except if we are in a container where we don't want to
-> >> reboot :)
-> >>
-> >> So IMO, it is safe to do:
-> >>
-> >> 	if (!ns_capable(current_pid_ns()->user_ns, CAP_SYS_BOOT))
-> >>  		return -EPERM;
-> >> 	
-> >> 	if (pid_ns != &init_pid_ns)
-> >> 		return pid_namespace_reboot(pid_ns, cmd, buffer);
-> > So I don't know if you want to prepend
-> > http://kernel.ubuntu.com/git?p=serge/linux-syslogns.git;a=commit;h=63556e9a39bcd75ec4a88333425800905013c73e
-> > to your patchset, or just check nsown_capable(CAP_SYS_BOOT) for now,
-> > but as soon as you resend with that I'll happily, nay,
-> > ecstatically ack.
+On Thu, Aug 11, 2011 at 10:24:01PM +0200, Daniel Lezcano wrote:
+> When the reboot syscall is called and the pid namespace where the calling
+> process belongs to is not from the init pidns, we send a SIGCHLD with CLD_REBOOTED
+> to the parent of this pid namespace.
+
+Shouldn't we honor the exit_signal set via clone() here rather than
+hardcode SIGCHLD? More below...
+
 > 
-> Ok, in order to not mix the functionnalities, I will send in a separate
-> patch the nsown_capable change.
+> Signed-off-by: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+> ---
+>  include/asm-generic/siginfo.h |    3 ++-
+>  include/linux/sched.h         |    1 +
+>  kernel/signal.c               |   40 ++++++++++++++++++++++++++++++++++++++++
+>  kernel/sys.c                  |   20 ++++++++++++++++++--
+>  4 files changed, 61 insertions(+), 3 deletions(-)
+> 
+> diff --git a/include/asm-generic/siginfo.h b/include/asm-generic/siginfo.h
+> index 0dd4e87..9bff4a2 100644
+> --- a/include/asm-generic/siginfo.h
+> +++ b/include/asm-generic/siginfo.h
+> @@ -218,7 +218,8 @@ typedef struct siginfo {
+>  #define CLD_TRAPPED	(__SI_CHLD|4)	/* traced child has trapped */
+>  #define CLD_STOPPED	(__SI_CHLD|5)	/* child has stopped */
+>  #define CLD_CONTINUED	(__SI_CHLD|6)	/* stopped child has continued */
+> -#define NSIGCHLD	6
+> +#define CLD_REBOOTED    (__SI_CHLD|7)   /* process was killed by a reboot */
+> +#define NSIGCHLD	7
+> 
+>  /*
+>   * SIGPOLL si_codes
+> diff --git a/include/linux/sched.h b/include/linux/sched.h
+> index 20b03bf..c62dc9e 100644
+> --- a/include/linux/sched.h
+> +++ b/include/linux/sched.h
+> @@ -2170,6 +2170,7 @@ extern int kill_pgrp(struct pid *pid, int sig, int priv);
+>  extern int kill_pid(struct pid *pid, int sig, int priv);
+>  extern int kill_proc_info(int, struct siginfo *, pid_t);
+>  extern __must_check bool do_notify_parent(struct task_struct *, int);
+> +extern void do_notify_parent_cldreboot(struct task_struct *, int, char *);
+>  extern void __wake_up_parent(struct task_struct *p, struct task_struct *parent);
+>  extern void force_sig(int, struct task_struct *);
+>  extern int send_sig(int, struct task_struct *, int);
+> diff --git a/kernel/signal.c b/kernel/signal.c
+> index 291c970..7d3d44c 100644
+> --- a/kernel/signal.c
+> +++ b/kernel/signal.c
+> @@ -1668,6 +1668,46 @@ bool do_notify_parent(struct task_struct *tsk, int sig)
+>  	return autoreap;
+>  }
+> 
+> +void do_notify_parent_cldreboot(struct task_struct *tsk, int why, char *buffer)
+> +{
+> +	struct siginfo info = { };
+> +	struct task_struct *parent;
+> +	struct sighand_struct *sighand;
+> +	unsigned long flags;
+> +
+> +	if (tsk->ptrace)
+> +		parent = tsk->parent;
+> +	else {
+> +		tsk = tsk->group_leader;
+> +		parent = tsk->real_parent;
+> +	}
+> +
+> +	info.si_signo = SIGCHLD;
 
-Actually the nsown_capable was a temp hack fix anyway, for a problem
-we don't actually have.
+should this be:
 
-I forgot you are not using user namespaces yet anyway.  So you can just
-leave it as
+info.si_signo = tsk->exit_signal == -1 ? SIGCHLD : tsk->exit_signal;
 
-	if (!capable(CAP_SYS_BOOT))
-		return -EPERM;
+?
 
-for now.  Since you're root in the init user namespace, that'll pass
-(as soon as you don't drop it from bounding set of course)
+> +	info.si_errno = 0;
+> +	info.si_status = why;
+> +
+> +	rcu_read_lock();
+> +	info.si_pid = task_pid_nr_ns(tsk, parent->nsproxy->pid_ns);
+> +	info.si_uid = __task_cred(tsk)->uid;
+> +	rcu_read_unlock();
+> +
+> +	info.si_utime = cputime_to_clock_t(tsk->utime);
+> +	info.si_stime = cputime_to_clock_t(tsk->stime);
+> +
+> +	info.si_code = CLD_REBOOTED;
+> +
+> +	sighand = parent->sighand;
+> +	spin_lock_irqsave(&sighand->siglock, flags);
+> +	if (sighand->action[SIGCHLD-1].sa.sa_handler != SIG_IGN &&
+> +	    sighand->action[SIGCHLD-1].sa.sa_flags & SA_CLDREBOOT)
+> +		__group_send_sig_info(SIGCHLD, &info, parent);
 
-thanks,
--serge
+(with corresponding changes above...)
+
+> +	/*
+> +	 * Even if SIGCHLD is not generated, we must wake up wait4 calls.
+> +	 */
