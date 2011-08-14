@@ -1,19 +1,16 @@
-From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Possible race between cgroup_attach_proc and de_thread, and
-	questionable code in de_thread.
-Date: Sun, 14 Aug 2011 19:51:19 +0200
-Message-ID: <20110814175119.GC2381__35472.744369372$1313344517$gmane$org@redhat.com>
-References: <20110727171101.5e32d8eb@notabene.brown>
-	<20110727150710.GB5242@unix33.andrew.cmu.edu>
-	<20110727234235.GA2318@linux.vnet.ibm.com>
-	<20110728110813.7ff84b13@notabene.brown>
-	<20110728121741.GB2427@linux.vnet.ibm.com>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 0/2] Send a SIGCHLD to the init's pid namespace parent
+	when reboot
+Date: Sun, 14 Aug 2011 21:36:42 +0000
+Message-ID: <20110814213642.GB13799__8330.64183029837$1313357840$gmane$org@hallyn.com>
+References: <1313094241-3674-1-git-send-email-daniel.lezcano@free.fr>
+	<20110814161707.GB30846@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20110728121741.GB2427-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <20110814161707.GB30846-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,28 +20,24 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, bonbons-ud5FBsm0p/xEiooADzr8i9i2O/JbrIOy@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 07/28, Paul E. McKenney wrote:
->
-> On Thu, Jul 28, 2011 at 11:08:13AM +1000, NeilBrown wrote:
+Quoting Oleg Nesterov (oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
+> On 08/11, Daniel Lezcano wrote:
 > >
-> > I disagree.  It also requires - by virtue of the use of while_each_thread() -
-> > that 'g' remains on the list that 't' is walking along.
->
-> Doesn't the following code in the loop body deal with this possibilty?
->
-> 	/* Exit if t or g was unhashed during refresh. */
-> 	if (t->state == TASK_DEAD || g->state == TASK_DEAD)
-> 		goto unlock;
+> > In the case of a VPS, when we shutdown/halt/reboot the container, the
+> > reboot utility will invoke the sys_reboot syscall which has the bad
+> > effect to reboot the host.
+> 
+> Stupid question. Can't sys_reboot() simply kill init (and thus the whole
+> pid_ns) in this case?
 
-This code is completely wrong even if while_each_thread() was fine.
+The goal is to be able to distinguish a request for reboot from shutdown.
+If we just kill the init, then the parent of init (the container monitor)
+cannot restart the container to emulate reboot.
 
-I sent the patch but it was ignored.
+[ sorry if I misunderstand what you're asking ]
 
-	[PATCH] fix the racy check_hung_uninterruptible_tasks()->rcu_lock_break()
-	http://marc.info/?l=linux-kernel&m=127688790019041
-
-Oleg.
+-serge
