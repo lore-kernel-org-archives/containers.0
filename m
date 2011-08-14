@@ -1,7 +1,7 @@
 From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: [PATCH v3 3/4] limit nr_dentries per superblock
-Date: Sun, 14 Aug 2011 19:13:51 +0400
-Message-ID: <1313334832-1150-4-git-send-email-glommer@parallels.com>
+Subject: [PATCH v3 4/4] parse options in the vfs level
+Date: Sun, 14 Aug 2011 19:13:52 +0400
+Message-ID: <1313334832-1150-5-git-send-email-glommer@parallels.com>
 References: <1313334832-1150-1-git-send-email-glommer@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,89 +21,212 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: Andrea Arcangeli <aarcange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Nick Piggin <npiggin-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, David Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, James Bottomley <JBottomley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This patch lays the foundation for us to limit the dcache size.
-Each super block can have only a maximum amount of dentries under its
-sub-tree. Allocation fails if we we're over limit and the cache
-can't be pruned to free up space for the newcomers.
+This patch introduces a simple generic vfs option parser.
+Right now, the only option we have is to limit the size of the dcache.
+
+So any user that wants to have a dcache entries limit, can specify:
+
+  mount -o whatever_options,vfs_dcache_size=XXX <dev> <mntpoint>
+
+It is supposed to work well with remounts, allowing it to change
+multiple over the course of the filesystem's lifecycle.
+
+I find mount a natural interface for handling filesystem options,
+so that's what I've choosen. Feel free to yell at it at will if
+you disagree.
 
 Signed-off-by: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 CC: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
 CC: Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- fs/dcache.c        |   28 ++++++++++++++++++++++++++++
- fs/super.c         |    1 +
- include/linux/fs.h |    1 +
- 3 files changed, 30 insertions(+), 0 deletions(-)
+ fs/dcache.c            |    7 +++
+ fs/namespace.c         |  105 ++++++++++++++++++++++++++++++++++++++++++++++++
+ include/linux/dcache.h |    4 ++
+ 3 files changed, 116 insertions(+), 0 deletions(-)
 
 diff --git a/fs/dcache.c b/fs/dcache.c
-index 815d9fd..ddd02a2 100644
+index ddd02a2..0551305 100644
 --- a/fs/dcache.c
 +++ b/fs/dcache.c
-@@ -1180,6 +1180,31 @@ void shrink_dcache_parent(struct dentry * parent)
+@@ -1205,6 +1205,13 @@ static inline int dcache_mem_check(struct super_block *sb)
+ 	return -ENOMEM;
  }
- EXPORT_SYMBOL(shrink_dcache_parent);
  
-+static inline int dcache_mem_check(struct super_block *sb)
++int vfs_set_dcache_size(struct super_block *sb, int size)
 +{
-+	struct shrink_control sc = {
-+		.gfp_mask = GFP_KERNEL,
-+	};
++	sb->s_nr_dentry_max = size;
 +
-+	if (sb->s_nr_dentry_max == INT_MAX)
-+		return 0;
-+
-+	do {
-+		int nr_dentry;
-+
-+		nr_dentry = percpu_counter_read_positive(&sb->s_nr_dentry);
-+		if (nr_dentry > sb->s_nr_dentry_max)
-+			nr_dentry =
-+				percpu_counter_sum_positive(&sb->s_nr_dentry);
-+		if (nr_dentry < sb->s_nr_dentry_max)
-+			return 0;
-+
-+	/* nr_pages = 1, lru_pages = 0 should get delta ~ 2 */
-+	} while (shrink_one_shrinker(&sb->s_shrink, &sc, 1, 0));
-+
-+	return -ENOMEM;
++	return dcache_mem_check(sb);
 +}
 +
  /**
   * __d_alloc	-	allocate a dcache entry
   * @sb: filesystem it will belong to
-@@ -1195,6 +1220,9 @@ struct dentry *__d_alloc(struct super_block *sb, const struct qstr *name)
- 	struct dentry *dentry;
- 	char *dname;
+diff --git a/fs/namespace.c b/fs/namespace.c
+index 22bfe82..43b2cdb 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -31,6 +31,7 @@
+ #include <linux/idr.h>
+ #include <linux/fs_struct.h>
+ #include <linux/fsnotify.h>
++#include <linux/parser.h>
+ #include <asm/uaccess.h>
+ #include <asm/unistd.h>
+ #include "pnode.h"
+@@ -958,6 +959,9 @@ static int show_sb_opts(struct seq_file *m, struct super_block *sb)
+ 	};
+ 	const struct proc_fs_info *fs_infop;
  
-+	if (dcache_mem_check(sb))
-+		return NULL;
++	if (sb->s_nr_dentry_max != INT_MAX)
++		seq_printf(m, ",vfs_dcache_size=%d",sb->s_nr_dentry_max);
 +
- 	dentry = kmem_cache_alloc(dentry_cache, GFP_KERNEL);
- 	if (!dentry)
- 		return NULL;
-diff --git a/fs/super.c b/fs/super.c
-index e95ac4f..3db40fb 100644
---- a/fs/super.c
-+++ b/fs/super.c
-@@ -121,6 +121,7 @@ static struct super_block *alloc_super(struct file_system_type *type)
- 		}
+ 	for (fs_infop = fs_info; fs_infop->flag; fs_infop++) {
+ 		if (sb->s_flags & fs_infop->flag)
+ 			seq_puts(m, fs_infop->str);
+@@ -2271,6 +2275,94 @@ int copy_mount_string(const void __user *data, char **where)
+ 	return 0;
+ }
  
- 		percpu_counter_init(&s->s_nr_dentry, 0);
-+		s->s_nr_dentry_max = INT_MAX;
++static const match_table_t tokens = {
++	{1, "vfs_dcache_size=%u"},
++};
++
++struct vfs_options {
++	unsigned long vfs_dcache_size;
++};
++
++/**
++ * Generic option parsing for the VFS.
++ *
++ * Since most of the filesystems already do their own option parsing, and with
++ * very few code shared between them, this function strips out any options that
++ * we succeed in parsing ourselves. Passing them forward would just give the
++ * underlying fs an option it does not expect, leading it to fail.
++ *
++ * We don't yet have a pointer to the super block as well, since this is
++ * pre-mount. We accumulate in struct vfs_options whatever data we collected,
++ * and act on it later.
++ */
++static int vfs_parse_options(char *options, struct vfs_options *ops)
++{
++	substring_t args[MAX_OPT_ARGS];
++	int option;
++	char *p;
++	char *opt;
++	char *start = NULL;
++	int ret;
++	
++	if (!options)
++		return 0;
++
++	opt = kstrdup(options, GFP_KERNEL);
++	if (!opt)
++		return 1;
++	
++	ret = 1;
++
++	start = opt;
++	while ((p = strsep(&opt, ",")) != NULL) {
++		int token;
++		if (!*p)
++			continue;
++
++		/*
++		 * Initialize args struct so we know whether arg was
++		 * found; some options take optional arguments.
++		 */
++		args[0].to = args[0].from = 0;
++		token = match_token(p, tokens, args);
++		switch (token) {
++		case 1:
++			if (!args[0].from)
++				break;
++
++			if (match_int(&args[0], &option))
++				break;
++
++			if (option < DCACHE_MIN_SIZE) {
++				printk(KERN_INFO "dcache size %d smaller than "
++				       "minimum (%d)\n", option, DCACHE_MIN_SIZE);
++				option = DCACHE_MIN_SIZE;
++			}
++
++			ops->vfs_dcache_size = option;
++
++			/*
++			 * The actual filesystems don't expect any option
++			 * they don't understand to be received in the option
++			 * string. So we strip off anything we processed, and
++			 * give them a clean options string.
++			 */
++			ret = 0;
++			if (!opt) /* it is the last option listed */
++				*(options + (p - start)) = '\0';
++			else
++				strcpy(options + (p - start), opt);
++			break;
++		default:
++			ret = 0;
++			break;
++		}
++	}
++
++	kfree(start);
++	return ret;
++}
++
+ /*
+  * Flags is a 32-bit value that allows up to 31 non-fs dependent flags to
+  * be given to the mount() call (ie: read-only, no-dev, no-suid etc).
+@@ -2291,6 +2383,7 @@ long do_mount(char *dev_name, char *dir_name, char *type_page,
+ 	struct path path;
+ 	int retval = 0;
+ 	int mnt_flags = 0;
++	struct vfs_options vfs_options;
  
- #ifdef CONFIG_SMP
- 		s->s_files = alloc_percpu(struct list_head);
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 8150f52..bc773c3 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -1400,6 +1400,7 @@ struct super_block {
- 	int			s_nr_dentry_unused;	/* # of dentry on lru */
+ 	/* Discard magic */
+ 	if ((flags & MS_MGC_MSK) == MS_MGC_VAL)
+@@ -2318,6 +2411,12 @@ long do_mount(char *dev_name, char *dir_name, char *type_page,
+ 	if (!(flags & MS_NOATIME))
+ 		mnt_flags |= MNT_RELATIME;
  
- 	struct percpu_counter 	s_nr_dentry;		/* # of dentry on this sb */
-+	int 			s_nr_dentry_max;	/* max # of dentry on this sb*/
++
++	vfs_options.vfs_dcache_size = INT_MAX;
++	retval = vfs_parse_options(data_page, &vfs_options);
++	if (retval)
++		goto dput_out;
++
+ 	/* Separate the per-mountpoint flags */
+ 	if (flags & MS_NOSUID)
+ 		mnt_flags |= MNT_NOSUID;
+@@ -2350,6 +2449,12 @@ long do_mount(char *dev_name, char *dir_name, char *type_page,
+ 	else
+ 		retval = do_new_mount(&path, type_page, flags, mnt_flags,
+ 				      dev_name, data_page);
++
++	/* bind mounts get to respect their parents decision */
++	if (!retval && !(flags & MS_BIND))
++		vfs_set_dcache_size(path.mnt->mnt_sb,
++				    vfs_options.vfs_dcache_size);
++			
+ dput_out:
+ 	path_put(&path);
+ 	return retval;
+diff --git a/include/linux/dcache.h b/include/linux/dcache.h
+index d37d2a7..1a309f3 100644
+--- a/include/linux/dcache.h
++++ b/include/linux/dcache.h
+@@ -251,6 +251,10 @@ extern int d_invalidate(struct dentry *);
  
- 	/* s_inode_lru_lock protects s_inode_lru and s_nr_inodes_unused */
- 	spinlock_t		s_inode_lru_lock ____cacheline_aligned_in_smp;
+ /* only used at mount-time */
+ extern struct dentry * d_alloc_root(struct inode *);
++extern int vfs_set_dcache_size(struct super_block *sb, int size);
++
++#define DCACHE_MIN_SIZE 1024
++extern int vfs_set_dcache_size(struct super_block *sb, int size);
+ 
+ /* <clickety>-<click> the ramfs-type tree */
+ extern void d_genocide(struct dentry *);
 -- 
 1.7.6
