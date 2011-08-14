@@ -1,15 +1,18 @@
 From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: Possible race between cgroup_attach_proc and de_thread, and
 	questionable code in de_thread.
-Date: Sun, 14 Aug 2011 19:40:00 +0200
-Message-ID: <20110814174000.GA2381__19879.5056240217$1313343813$gmane$org@redhat.com>
+Date: Sun, 14 Aug 2011 19:45:16 +0200
+Message-ID: <20110814174516.GB2381__678.053338970308$1313344126$gmane$org@redhat.com>
 References: <20110727171101.5e32d8eb@notabene.brown>
+	<20110727150710.GB5242@unix33.andrew.cmu.edu>
+	<20110727234235.GA2318@linux.vnet.ibm.com>
+	<20110728110813.7ff84b13@notabene.brown>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20110727171101.5e32d8eb-wvvUuzkyo1EYVZTmpyfIwg@public.gmane.org>
+In-Reply-To: <20110728110813.7ff84b13-wvvUuzkyo1EYVZTmpyfIwg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,51 +23,34 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>
-Cc: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "Paul E.McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Sorry for delay, just noticed this thread...
-
-On 07/27, NeilBrown wrote:
+On 07/28, NeilBrown wrote:
 >
->  The race as I understand it is with this code:
->
->
-> 		list_replace_rcu(&leader->tasks, &tsk->tasks);
-> 		list_replace_init(&leader->sibling, &tsk->sibling);
->
-> 		tsk->group_leader = tsk;
-> 		leader->group_leader = tsk;
->
->
->  which seems to be called with only tasklist_lock held, which doesn't seem to
->  be held in the cgroup code.
->
->  If the "thread_group_leader(leader)" call in cgroup_attach_proc() runs before
->  this chunk is run with the same value for 'leader', but the
->  while_each_thread is run after, then the while_read_thread() might loop
->  forever.  rcu_read_lock doesn't prevent this from happening.
+> +/* Thread group leader can change, so stop loop when we see one
+> + * even if it isn't 'g' */
+>  #define while_each_thread(g, t) \
+> -	while ((t = next_thread(t)) != g)
+> +	while ((t = next_thread(t)) != g && !thread_group_leader(t))
 
-Yes. This was already discussed. See http://marc.info/?t=127688987300002
+This assumes that while_each_thread(g, t) always uses g == group_leader.
 
-Damn. I forgot about this completely.
+> @@ -70,8 +70,13 @@ static void __unhash_process(struct task_struct *p, bool group_dead)
+>  		list_del_rcu(&p->tasks);
+>  		list_del_init(&p->sibling);
+>  		__this_cpu_dec(process_counts);
+> -	}
+> -	list_del_rcu(&p->thread_group);
+> +	} else
+> +		/* only remove members from the thread group.
+> +		 * The thread group leader must stay so that
+> +		 * while_each_thread() uses can see the end of
+> +		 * the list and stop.
+> +		 */
+> +		list_del_rcu(&p->thread_group);
 
->  The code in de_thread() is actually questionable by itself.
->  "list_replace_rcu" cannot really be used on the head of a list - it is only
->  meant to be used on a member of a list.
->  To move a list from one head to another you should be using
->  list_splice_init_rcu().
-
-Hmm... can't understand this part.
-
-And just in case... list_replace_rcu() looks fine afaics. The real problem
-is release_task(old_leader) which does list_del_rcu(old_leader->thread_group),
-this is what breaks while_each_thread().
-
->  The ->tasks list doesn't seem to have a clearly distinguished 'head'
-
-Exactly. This is the problem.
-
-But: you seem to confused ->tasks and ->thread_group ;)
+Hmm... this looks obvously wrong. This leaves the dead thread on
+the list.
 
 Oleg.
