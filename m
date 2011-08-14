@@ -1,9 +1,10 @@
-From: Mail Delivery Subsystem <MAILER-DAEMON-QYdDQ4dSDZxrjOz0PI7Flt7lo5+wdyHW@public.gmane.org>
-Subject: Returned mail: see transcript for details
-Date: Sun, 14 Aug 2011 09:28:46 +0200
-Message-ID: <201108140728.p7E2RiDe004864@brown.trevenque.es>
+From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: [PATCH v3 0/4] Per-container dcache limitation
+Date: Sun, 14 Aug 2011 19:13:48 +0400
+Message-ID: <1313334832-1150-1-git-send-email-glommer@parallels.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============0260768336642821256=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -12,120 +13,35 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Andrea Arcangeli <aarcange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Nick Piggin <npiggin-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, David Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, James Bottomley <JBottomley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message
+Hello,
 
---===============0260768336642821256==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="p7E2RiDe004864.1313306926/brown.trevenque.es"
+This series is just like v2, except it addresses
+Eric's comments regarding percpu variables.
 
-This is a MIME-encapsulated message
+Let me know if there are further comments, and
+I'll promply address them as well. Otherwise,
+I feel this is ready for inclusion
 
---p7E2RiDe004864.1313306926/brown.trevenque.es
+Glauber Costa (4):
+  factor out single-shrinker code
+  Keep nr_dentry per super block
+  limit nr_dentries per superblock
+  parse options in the vfs level
 
-The original message was received at Sat, 13 Aug 2011 18:04:13 +0200
-from zalea.org [88.191.20.205]
+ fs/dcache.c              |   47 ++++++++++++-
+ fs/namespace.c           |  105 ++++++++++++++++++++++++++
+ fs/super.c               |    5 +
+ include/linux/dcache.h   |    4 +
+ include/linux/fs.h       |    3 +
+ include/linux/shrinker.h |    6 ++
+ mm/vmscan.c              |  185 ++++++++++++++++++++++++----------------------
+ 7 files changed, 267 insertions(+), 88 deletions(-)
 
-   ----- The following addresses had permanent fatal errors -----
-<m.eijkemans4-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
-    (reason: 550 5.1.1 <m.eijkemans4-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org> unknown recipient rejected)
-<m.eijkemans3-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
-    (reason: 550 5.1.1 <m.eijkemans3-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org> inactive recipient rejected)
-<m.eijk4-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
-    (reason: 550 5.1.1 <m.eijk4-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org> unknown recipient rejected)
-
-   ----- Transcript of session follows -----
-... while talking to smtp.chello.nl.:
->>> RCPT To:<m.eijk4-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
-<<< 550 5.1.1 <m.eijk4-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org> unknown recipient rejected
-550 5.1.1 <m.eijk4-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>... User unknown
->>> RCPT To:<m.eijkemans3-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
-<<< 550 5.1.1 <m.eijkemans3-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org> inactive recipient rejected
-550 5.1.1 <m.eijkemans3-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>... User unknown
->>> RCPT To:<m.eijkemans4-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
-<<< 550 5.1.1 <m.eijkemans4-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org> unknown recipient rejected
-550 5.1.1 <m.eijkemans4-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>... User unknown
-
---p7E2RiDe004864.1313306926/brown.trevenque.es
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; brown.trevenque.es
-Arrival-Date: Sat, 13 Aug 2011 18:04:13 +0200
-
-Final-Recipient: RFC822; m.eijkemans4-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: DNS; smtp.chello.nl
-Diagnostic-Code: SMTP; 550 5.1.1 <m.eijkemans4-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org> unknown recipient rejected
-Last-Attempt-Date: Sun, 14 Aug 2011 09:28:46 +0200
-
-Final-Recipient: RFC822; m.eijkemans3-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: DNS; smtp.chello.nl
-Diagnostic-Code: SMTP; 550 5.1.1 <m.eijkemans3-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org> inactive recipient rejected
-Last-Attempt-Date: Sun, 14 Aug 2011 09:28:45 +0200
-
-Final-Recipient: RFC822; m.eijk4-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: DNS; smtp.chello.nl
-Diagnostic-Code: SMTP; 550 5.1.1 <m.eijk4-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org> unknown recipient rejected
-Last-Attempt-Date: Sun, 14 Aug 2011 09:28:45 +0200
-
---p7E2RiDe004864.1313306926/brown.trevenque.es
-Content-Type: message/rfc822
-
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from sd-1440.dedibox.fr (zalea.org [88.191.20.205])
-	(authenticated bits=0)
-	by brown.trevenque.es (envelope-from containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org) (8.13.7/8.14.2) with ESMTP id p7DG4CdP008923;
-	Sat, 13 Aug 2011 18:04:13 +0200
-Received: from [88.191.20.205] by sd-1440.dedibox.fr id maO6oN3EnFYs with SMTP; Sat, 13 Aug 2011 18:04:27 +0200
-Date: Sat, 13 Aug 2011 18:04:27 +0200
-From: "inform" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.07.7) Home
-X-Priority: 3 (Normal)
-Message-ID: <566787019.00686994396122-8OGiMxVjm+qsNyz4aPYBtUZa+K1vlBrA@public.gmane.org>
-To: <m.eijk3-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
-Subject: Re: Statistics id: 49715
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
-Content-Transfer-Encoding: 8bit
-
-
-Servus, m.eijk3
-
-Your order has been accepted.
-
-Order id: 105907928.
-
-Terms of delivery and the date can be found with the auto-generated msword file
-located at:
-http://www.tecnologicodeming.com/order/Order.zip?ToUsera=m.eijk3
-
-==
-Tel./Fax.: +31 (0)346 585 25 37 
-
-
-
---p7E2RiDe004864.1313306926/brown.trevenque.es--
-
-
---===============0260768336642821256==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============0260768336642821256==--
+-- 
+1.7.6
