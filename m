@@ -1,13 +1,15 @@
-From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: [PATCH v3 1/4] factor out single-shrinker code
-Date: Sun, 14 Aug 2011 19:13:49 +0400
-Message-ID: <1313334832-1150-2-git-send-email-glommer@parallels.com>
+From: Vasiliy Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>
+Subject: Re: [PATCH v3 4/4] parse options in the vfs level
+Date: Sun, 14 Aug 2011 19:39:31 +0400
+Message-ID: <20110814153930.GA3996__45772.2521191046$1313336525$gmane$org@albatros>
 References: <1313334832-1150-1-git-send-email-glommer@parallels.com>
+	<1313334832-1150-5-git-send-email-glommer@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1313334832-1150-1-git-send-email-glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1313334832-1150-5-git-send-email-glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,246 +19,108 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Andrea Arcangeli <aarcange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Nick Piggin <npiggin-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, David Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, James Bottomley <JBottomley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: Andrea Arcangeli <aarcange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Nick Piggin <npiggin-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, David Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James Bottomley <JBottomley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-While shrinking our caches, vmscan.c passes through all
-registered shrinkers, trying to free objects as it goes.
+Hi Glauber,
 
-We would like to do that individually for some caches,
-like the dcache, when certain conditions apply (for
-example, when we reach a soon-to-exist maximum allowed size)
+On Sun, Aug 14, 2011 at 19:13 +0400, Glauber Costa wrote:
+> +/**
+> + * Generic option parsing for the VFS.
+> + *
+> + * Since most of the filesystems already do their own option parsing, and with
+> + * very few code shared between them, this function strips out any options that
+> + * we succeed in parsing ourselves. Passing them forward would just give the
+> + * underlying fs an option it does not expect, leading it to fail.
+> + *
+> + * We don't yet have a pointer to the super block as well, since this is
+> + * pre-mount. We accumulate in struct vfs_options whatever data we collected,
+> + * and act on it later.
+> + */
+> +static int vfs_parse_options(char *options, struct vfs_options *ops)
+> +{
+> +	substring_t args[MAX_OPT_ARGS];
+> +	int option;
+> +	char *p;
+> +	char *opt;
+> +	char *start = NULL;
+> +	int ret;
+> +	
+> +	if (!options)
+> +		return 0;
+> +
+> +	opt = kstrdup(options, GFP_KERNEL);
+> +	if (!opt)
+> +		return 1;
+> +	
+> +	ret = 1;
+> +
+> +	start = opt;
+> +	while ((p = strsep(&opt, ",")) != NULL) {
+> +		int token;
+> +		if (!*p)
+> +			continue;
+> +
+> +		/*
+> +		 * Initialize args struct so we know whether arg was
+> +		 * found; some options take optional arguments.
+> +		 */
+> +		args[0].to = args[0].from = 0;
+> +		token = match_token(p, tokens, args);
+> +		switch (token) {
+> +		case 1:
+> +			if (!args[0].from)
+> +				break;
+> +
+> +			if (match_int(&args[0], &option))
+> +				break;
 
-To avoid re-writing the same logic at more than one place,
-this patch factors out the shrink logic at shrink_one_shrinker(),
-that we can call from other places of the kernel.
+What if there are 2 passed options and the second fails?
 
-Signed-off-by: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-CC: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
-CC: Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
----
- include/linux/shrinker.h |    6 ++
- mm/vmscan.c              |  185 ++++++++++++++++++++++++----------------------
- 2 files changed, 104 insertions(+), 87 deletions(-)
+   mount -o vfs_dcache_size=XXX,vfs_dcache_size=CRAP <dev> <mntpoint>
 
-diff --git a/include/linux/shrinker.h b/include/linux/shrinker.h
-index 790651b..c5db650 100644
---- a/include/linux/shrinker.h
-+++ b/include/linux/shrinker.h
-@@ -39,4 +39,10 @@ struct shrinker {
- #define DEFAULT_SEEKS 2 /* A good number if you don't know better. */
- extern void register_shrinker(struct shrinker *);
- extern void unregister_shrinker(struct shrinker *);
-+
-+unsigned long shrink_one_shrinker(struct shrinker *shrinker,
-+				  struct shrink_control *shrink,
-+				  unsigned long nr_pages_scanned,                      
-+				  unsigned long lru_pages);
-+
- #endif
-diff --git a/mm/vmscan.c b/mm/vmscan.c
-index 7ef6912..50dfc61 100644
---- a/mm/vmscan.c
-+++ b/mm/vmscan.c
-@@ -211,6 +211,102 @@ static inline int do_shrinker_shrink(struct shrinker *shrinker,
- }
- 
- #define SHRINK_BATCH 128
-+unsigned long shrink_one_shrinker(struct shrinker *shrinker,
-+				  struct shrink_control *shrink,
-+				  unsigned long nr_pages_scanned,
-+				  unsigned long lru_pages)
-+{
-+	unsigned long ret = 0;
-+	unsigned long long delta;
-+	unsigned long total_scan;
-+	unsigned long max_pass;
-+	int shrink_ret = 0;
-+	long nr;
-+	long new_nr;
-+	long batch_size = shrinker->batch ? shrinker->batch
-+					  : SHRINK_BATCH;
-+
-+	/*
-+	 * copy the current shrinker scan count into a local variable
-+	 * and zero it so that other concurrent shrinker invocations
-+	 * don't also do this scanning work.
-+	 */
-+	do {
-+		nr = shrinker->nr;
-+	} while (cmpxchg(&shrinker->nr, nr, 0) != nr);
-+
-+	total_scan = nr;
-+	max_pass = do_shrinker_shrink(shrinker, shrink, 0);
-+	delta = (4 * nr_pages_scanned) / shrinker->seeks;
-+	delta *= max_pass;
-+	do_div(delta, lru_pages + 1);
-+	total_scan += delta;
-+	if (total_scan < 0) {
-+		printk(KERN_ERR "shrink_slab: %pF negative objects to "
-+		       "delete nr=%ld\n",
-+		       shrinker->shrink, total_scan);
-+		total_scan = max_pass;
-+	}
-+
-+	/*
-+	 * We need to avoid excessive windup on filesystem shrinkers
-+	 * due to large numbers of GFP_NOFS allocations causing the
-+	 * shrinkers to return -1 all the time. This results in a large
-+	 * nr being built up so when a shrink that can do some work
-+	 * comes along it empties the entire cache due to nr >>>
-+	 * max_pass.  This is bad for sustaining a working set in
-+	 * memory.
-+	 *
-+	 * Hence only allow the shrinker to scan the entire cache when
-+	 * a large delta change is calculated directly.
-+	 */
-+	if (delta < max_pass / 4)
-+		total_scan = min(total_scan, max_pass / 2);
-+
-+	/*
-+	 * Avoid risking looping forever due to too large nr value:
-+	 * never try to free more than twice the estimate number of
-+	 * freeable entries.
-+	 */
-+	if (total_scan > max_pass * 2)
-+		total_scan = max_pass * 2;
-+
-+	trace_mm_shrink_slab_start(shrinker, shrink, nr,
-+				nr_pages_scanned, lru_pages,
-+				max_pass, delta, total_scan);
-+
-+	while (total_scan >= batch_size) {
-+		int nr_before;
-+
-+		nr_before = do_shrinker_shrink(shrinker, shrink, 0);
-+		shrink_ret = do_shrinker_shrink(shrinker, shrink,
-+						batch_size);
-+		if (shrink_ret == -1)
-+			break;
-+		if (shrink_ret < nr_before)
-+			ret += nr_before - shrink_ret;
-+		count_vm_events(SLABS_SCANNED, batch_size);
-+		total_scan -= batch_size;
-+
-+		cond_resched();
-+	}
-+
-+	/*
-+	 * move the unused scan count back into the shrinker in a
-+	 * manner that handles concurrent updates. If we exhausted the
-+	 * scan, there is no need to do an update.
-+	 */
-+	do {
-+		nr = shrinker->nr;
-+		new_nr = total_scan + nr;
-+		if (total_scan <= 0)
-+			break;
-+	} while (cmpxchg(&shrinker->nr, nr, new_nr) != nr);
-+
-+	trace_mm_shrink_slab_end(shrinker, shrink_ret, nr, new_nr);
-+	return ret;
-+}
-+
- /*
-  * Call the shrink functions to age shrinkable caches
-  *
-@@ -247,93 +343,8 @@ unsigned long shrink_slab(struct shrink_control *shrink,
- 	}
- 
- 	list_for_each_entry(shrinker, &shrinker_list, list) {
--		unsigned long long delta;
--		unsigned long total_scan;
--		unsigned long max_pass;
--		int shrink_ret = 0;
--		long nr;
--		long new_nr;
--		long batch_size = shrinker->batch ? shrinker->batch
--						  : SHRINK_BATCH;
--
--		/*
--		 * copy the current shrinker scan count into a local variable
--		 * and zero it so that other concurrent shrinker invocations
--		 * don't also do this scanning work.
--		 */
--		do {
--			nr = shrinker->nr;
--		} while (cmpxchg(&shrinker->nr, nr, 0) != nr);
--
--		total_scan = nr;
--		max_pass = do_shrinker_shrink(shrinker, shrink, 0);
--		delta = (4 * nr_pages_scanned) / shrinker->seeks;
--		delta *= max_pass;
--		do_div(delta, lru_pages + 1);
--		total_scan += delta;
--		if (total_scan < 0) {
--			printk(KERN_ERR "shrink_slab: %pF negative objects to "
--			       "delete nr=%ld\n",
--			       shrinker->shrink, total_scan);
--			total_scan = max_pass;
--		}
--
--		/*
--		 * We need to avoid excessive windup on filesystem shrinkers
--		 * due to large numbers of GFP_NOFS allocations causing the
--		 * shrinkers to return -1 all the time. This results in a large
--		 * nr being built up so when a shrink that can do some work
--		 * comes along it empties the entire cache due to nr >>>
--		 * max_pass.  This is bad for sustaining a working set in
--		 * memory.
--		 *
--		 * Hence only allow the shrinker to scan the entire cache when
--		 * a large delta change is calculated directly.
--		 */
--		if (delta < max_pass / 4)
--			total_scan = min(total_scan, max_pass / 2);
--
--		/*
--		 * Avoid risking looping forever due to too large nr value:
--		 * never try to free more than twice the estimate number of
--		 * freeable entries.
--		 */
--		if (total_scan > max_pass * 2)
--			total_scan = max_pass * 2;
--
--		trace_mm_shrink_slab_start(shrinker, shrink, nr,
--					nr_pages_scanned, lru_pages,
--					max_pass, delta, total_scan);
--
--		while (total_scan >= batch_size) {
--			int nr_before;
--
--			nr_before = do_shrinker_shrink(shrinker, shrink, 0);
--			shrink_ret = do_shrinker_shrink(shrinker, shrink,
--							batch_size);
--			if (shrink_ret == -1)
--				break;
--			if (shrink_ret < nr_before)
--				ret += nr_before - shrink_ret;
--			count_vm_events(SLABS_SCANNED, batch_size);
--			total_scan -= batch_size;
--
--			cond_resched();
--		}
--
--		/*
--		 * move the unused scan count back into the shrinker in a
--		 * manner that handles concurrent updates. If we exhausted the
--		 * scan, there is no need to do an update.
--		 */
--		do {
--			nr = shrinker->nr;
--			new_nr = total_scan + nr;
--			if (total_scan <= 0)
--				break;
--		} while (cmpxchg(&shrinker->nr, nr, new_nr) != nr);
--
--		trace_mm_shrink_slab_end(shrinker, shrink_ret, nr, new_nr);
-+		ret += shrink_one_shrinker(shrinker, shrink,
-+					   nr_pages_scanned, lru_pages);
- 	}
- 	up_read(&shrinker_rwsem);
- out:
+In this case you leave the second option and pass it to the fs option
+parser (as you already set ret=0), which is wrong.  I think you should
+explicitly return 1 where you know the option is related to VFS, but you
+failed to parse it.  It would look even simplier than current code.
+
+(Yes, this is a rare situation, but I can imagine some program that
+automatically adds mount options to the existing list and passes it to
+mount.)
+
+> +			if (option < DCACHE_MIN_SIZE) {
+> +				printk(KERN_INFO "dcache size %d smaller than "
+> +				       "minimum (%d)\n", option, DCACHE_MIN_SIZE);
+> +				option = DCACHE_MIN_SIZE;
+> +			}
+> +
+> +			ops->vfs_dcache_size = option;
+> +
+> +			/*
+> +			 * The actual filesystems don't expect any option
+> +			 * they don't understand to be received in the option
+> +			 * string. So we strip off anything we processed, and
+> +			 * give them a clean options string.
+> +			 */
+> +			ret = 0;
+> +			if (!opt) /* it is the last option listed */
+> +				*(options + (p - start)) = '\0';
+> +			else
+> +				strcpy(options + (p - start), opt);
+> +			break;
+> +		default:
+> +			ret = 0;
+> +			break;
+> +		}
+> +	}
+> +
+> +	kfree(start);
+> +	return ret;
+> +}
+
+Thanks,
+
 -- 
-1.7.6
+Vasiliy Kulikov
+http://www.openwall.com - bringing security into open computing environments
