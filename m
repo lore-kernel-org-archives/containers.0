@@ -1,15 +1,15 @@
-From: NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>
-Subject: Re: Possible race between cgroup_attach_proc and de_thread, and
-	questionable code in de_thread.
-Date: Mon, 15 Aug 2011 10:11:44 +1000
-Message-ID: <20110815101144.39812e9f__37488.2819633514$1313367209$gmane$org@notabene.brown>
-References: <20110727171101.5e32d8eb@notabene.brown>
-	<20110814174000.GA2381@redhat.com>
+From: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
+Subject: Re: [PATCH v3 1/4] factor out single-shrinker code
+Date: Mon, 15 Aug 2011 16:43:59 +1000
+Message-ID: <20110815064359.GD26978__41794.0878928222$1313390779$gmane$org@dastard>
+References: <1313334832-1150-1-git-send-email-glommer@parallels.com>
+	<1313334832-1150-2-git-send-email-glommer@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110814174000.GA2381-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1313334832-1150-2-git-send-email-glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,67 +19,151 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "Paul  E.McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: Andrea Arcangeli <aarcange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Nick Piggin <npiggin-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James Bottomley <JBottomley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Sun, 14 Aug 2011 19:40:00 +0200 Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+On Sun, Aug 14, 2011 at 07:13:49PM +0400, Glauber Costa wrote:
+> While shrinking our caches, vmscan.c passes through all
+> registered shrinkers, trying to free objects as it goes.
+> 
+> We would like to do that individually for some caches,
+> like the dcache, when certain conditions apply (for
+> example, when we reach a soon-to-exist maximum allowed size)
+> 
+> To avoid re-writing the same logic at more than one place,
+> this patch factors out the shrink logic at shrink_one_shrinker(),
+> that we can call from other places of the kernel.
+> 
+> Signed-off-by: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+> CC: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
+> CC: Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> ---
+>  include/linux/shrinker.h |    6 ++
+>  mm/vmscan.c              |  185 ++++++++++++++++++++++++----------------------
+>  2 files changed, 104 insertions(+), 87 deletions(-)
+> 
+> diff --git a/include/linux/shrinker.h b/include/linux/shrinker.h
+> index 790651b..c5db650 100644
+> --- a/include/linux/shrinker.h
+> +++ b/include/linux/shrinker.h
+> @@ -39,4 +39,10 @@ struct shrinker {
+>  #define DEFAULT_SEEKS 2 /* A good number if you don't know better. */
+>  extern void register_shrinker(struct shrinker *);
+>  extern void unregister_shrinker(struct shrinker *);
+> +
+> +unsigned long shrink_one_shrinker(struct shrinker *shrinker,
+> +				  struct shrink_control *shrink,
+> +				  unsigned long nr_pages_scanned,                      
+> +				  unsigned long lru_pages);
+> +
+>  #endif
+> diff --git a/mm/vmscan.c b/mm/vmscan.c
+> index 7ef6912..50dfc61 100644
+> --- a/mm/vmscan.c
+> +++ b/mm/vmscan.c
+> @@ -211,6 +211,102 @@ static inline int do_shrinker_shrink(struct shrinker *shrinker,
+>  }
+>  
+>  #define SHRINK_BATCH 128
+> +unsigned long shrink_one_shrinker(struct shrinker *shrinker,
+> +				  struct shrink_control *shrink,
+> +				  unsigned long nr_pages_scanned,
+> +				  unsigned long lru_pages)
+> +{
 
-> Sorry for delay, just noticed this thread...
-> 
-> On 07/27, NeilBrown wrote:
-> >
-> >  The race as I understand it is with this code:
-> >
-> >
-> > 		list_replace_rcu(&leader->tasks, &tsk->tasks);
-> > 		list_replace_init(&leader->sibling, &tsk->sibling);
-> >
-> > 		tsk->group_leader = tsk;
-> > 		leader->group_leader = tsk;
-> >
-> >
-> >  which seems to be called with only tasklist_lock held, which doesn't seem to
-> >  be held in the cgroup code.
-> >
-> >  If the "thread_group_leader(leader)" call in cgroup_attach_proc() runs before
-> >  this chunk is run with the same value for 'leader', but the
-> >  while_each_thread is run after, then the while_read_thread() might loop
-> >  forever.  rcu_read_lock doesn't prevent this from happening.
-> 
-> Yes. This was already discussed. See http://marc.info/?t=127688987300002
-> 
-> Damn. I forgot about this completely.
-> 
-> >  The code in de_thread() is actually questionable by itself.
-> >  "list_replace_rcu" cannot really be used on the head of a list - it is only
-> >  meant to be used on a member of a list.
-> >  To move a list from one head to another you should be using
-> >  list_splice_init_rcu().
-> 
-> Hmm... can't understand this part.
-> 
-> And just in case... list_replace_rcu() looks fine afaics. The real problem
-> is release_task(old_leader) which does list_del_rcu(old_leader->thread_group),
-> this is what breaks while_each_thread().
-> 
-> >  The ->tasks list doesn't seem to have a clearly distinguished 'head'
-> 
-> Exactly. This is the problem.
-> 
-> But: you seem to confused ->tasks and ->thread_group ;)
-> 
+This isn't the right place to cut the code apart. The act of
+shrinking a cache is separate to the act of calculating how much to
+shrink. you're taking the vmscan interface and trying to hack around
+that when direct calls to a single shrinker is needed.....
 
-That last point is certainly correct.  I caught myself confusing the two
-several time and wouldn't be at all surprised if I did it without catching
-myself.
+> +	unsigned long ret = 0;
+> +	unsigned long long delta;
+> +	unsigned long total_scan;
+> +	unsigned long max_pass;
+> +	int shrink_ret = 0;
+> +	long nr;
+> +	long new_nr;
+> +	long batch_size = shrinker->batch ? shrinker->batch
+> +					  : SHRINK_BATCH;
+> +
+> +	/*
+> +	 * copy the current shrinker scan count into a local variable
+> +	 * and zero it so that other concurrent shrinker invocations
+> +	 * don't also do this scanning work.
+> +	 */
+> +	do {
+> +		nr = shrinker->nr;
+> +	} while (cmpxchg(&shrinker->nr, nr, 0) != nr);
+> +
+> +	total_scan = nr;
+> +	max_pass = do_shrinker_shrink(shrinker, shrink, 0);
+> +	delta = (4 * nr_pages_scanned) / shrinker->seeks;
+> +	delta *= max_pass;
+> +	do_div(delta, lru_pages + 1);
+> +	total_scan += delta;
+> +	if (total_scan < 0) {
+> +		printk(KERN_ERR "shrink_slab: %pF negative objects to "
+> +		       "delete nr=%ld\n",
+> +		       shrinker->shrink, total_scan);
+> +		total_scan = max_pass;
+> +	}
+> +
+> +	/*
+> +	 * We need to avoid excessive windup on filesystem shrinkers
+> +	 * due to large numbers of GFP_NOFS allocations causing the
+> +	 * shrinkers to return -1 all the time. This results in a large
+> +	 * nr being built up so when a shrink that can do some work
+> +	 * comes along it empties the entire cache due to nr >>>
+> +	 * max_pass.  This is bad for sustaining a working set in
+> +	 * memory.
+> +	 *
+> +	 * Hence only allow the shrinker to scan the entire cache when
+> +	 * a large delta change is calculated directly.
+> +	 */
+> +	if (delta < max_pass / 4)
+> +		total_scan = min(total_scan, max_pass / 2);
+> +
+> +	/*
+> +	 * Avoid risking looping forever due to too large nr value:
+> +	 * never try to free more than twice the estimate number of
+> +	 * freeable entries.
+> +	 */
+> +	if (total_scan > max_pass * 2)
+> +		total_scan = max_pass * 2;
+> +
+> +	trace_mm_shrink_slab_start(shrinker, shrink, nr,
+> +				nr_pages_scanned, lru_pages,
+> +				max_pass, delta, total_scan);
+> +
 
-de_thread can change the group_leader of a thread_group, and release_task can
-remove a non-leader while leaving the rest of the thread_group intact.  So
-any while_each_thread() loop needs some extra care to ensure that it doesn't
-loop infinitely, because the "head" that it is looking for might not be there
-any more.
-Maybe there are other rules that ensure this can never happen, but they sure
-aren't obvious to me (i.e. if you know them - please tell ;-)
+This bit from here:
 
-NeilBrown
+> +	while (total_scan >= batch_size) {
+> +		int nr_before;
+> +
+> +		nr_before = do_shrinker_shrink(shrinker, shrink, 0);
+> +		shrink_ret = do_shrinker_shrink(shrinker, shrink,
+> +						batch_size);
+> +		if (shrink_ret == -1)
+> +			break;
+> +		if (shrink_ret < nr_before)
+> +			ret += nr_before - shrink_ret;
+> +		count_vm_events(SLABS_SCANNED, batch_size);
+> +		total_scan -= batch_size;
+> +
+> +		cond_resched();
+> +	}
+
+to here is the only common code. It takes a locked shrinker and a
+set up scan_control structure. As it is, I've got a set of patches
+that I'm working on that fix the garbage srhinker API and abstract
+this section of the code correctly for external users. I'll try to
+get that finished for review later this week.
+
+Cheers,
+
+Dave.
+-- 
+Dave Chinner
+david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org
