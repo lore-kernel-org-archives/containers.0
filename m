@@ -1,21 +1,17 @@
 From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH][BUGFIX] cgroups: more safe tasklist locking in
-	cgroup_attach_proc
-Date: Mon, 15 Aug 2011 20:49:57 +0200
-Message-ID: <20110815184957.GA16588__36363.1161548712$1313434553$gmane$org@redhat.com>
+Subject: Re: Possible race between cgroup_attach_proc and de_thread, and
+	questionable code in de_thread.
+Date: Mon, 15 Aug 2011 21:09:35 +0200
+Message-ID: <20110815190935.GA17589__24674.8164100156$1313435684$gmane$org@redhat.com>
 References: <20110727171101.5e32d8eb@notabene.brown>
-	<20110727150710.GB5242@unix33.andrew.cmu.edu>
-	<20110727234235.GA2318@linux.vnet.ibm.com>
-	<20110728110813.7ff84b13@notabene.brown>
-	<20110728062616.GC15204@unix33.andrew.cmu.edu>
-	<20110728171345.67d3797d@notabene.brown>
-	<20110729142842.GA8462@unix33.andrew.cmu.edu>
+	<20110814174000.GA2381@redhat.com>
+	<20110815101144.39812e9f@notabene.brown>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20110729142842.GA8462-japSPQJXeIlCM1neWV3AGuCmf2DRS9x2@public.gmane.org>
+In-Reply-To: <20110815101144.39812e9f-wvvUuzkyo1EYVZTmpyfIwg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,93 +21,28 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
-Cc: NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>
+Cc: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "Paul  E.McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 07/29, Ben Blum wrote:
+On 08/15, NeilBrown wrote:
 >
-> According to this thread - https://lkml.org/lkml/2011/7/27/243 - RCU is
-> not sufficient to guarantee the tasklist is stable w.r.t. de_thread and
-> exit. Taking tasklist_lock for reading, instead of rcu_read_lock,
-> ensures proper exclusion.
+> de_thread can change the group_leader of a thread_group, and release_task can
+> remove a non-leader while leaving the rest of the thread_group intact.  So
+> any while_each_thread() loop needs some extra care to ensure that it doesn't
+> loop infinitely, because the "head" that it is looking for might not be there
+> any more.
+> Maybe there are other rules that ensure this can never happen, but they sure
+> aren't obvious to me (i.e. if you know them - please tell ;-)
 
-Yes.
+No, I don't know ;)
 
-So far I still think we should fix while_each_thread() so that it works
-under rcu_read_lock() "as exepected", I'll try to think more.
+And note also that if g != leader, then while_each_thread(g, t) can hang
+simply because g exits. I am still trying to invent something simple to
+fix while_each_thread-under-rcu.
 
-But whatever we do with while_each_thread(), this can't help
-cgroup_attach_proc(), it needs the locking.
-
-> -	rcu_read_lock();
-> +	read_lock(&tasklist_lock);
->  	if (!thread_group_leader(leader)) {
-
-Agreed, this should work.
-
-But can't we avoid the global list? thread_group_leader() or not, we do
-not really care. We only need to ensure we can safely find all threads.
-
-How about the patch below?
-
-
-With or without this/your patch this leader can die right after we
-drop the lock. ss->can_attach(leader) and ss->attach(leader) look
-suspicious. If a sub-thread execs, this task_struct has nothing to
-do with the threadgroup.
-
-
-
-Also. This is off-topic, but... Why cgroup_attach_proc() and
-cgroup_attach_task() do ->attach_task() + cgroup_task_migrate()
-in the different order? cgroup_attach_proc() looks wrong even
-if currently doesn't matter.
-
+This looks possible, but I am starting to think that, say, zap_threads()
+needs locking anyway. With any fix I can imagine, it can miss a thread
+we should care about.
 
 Oleg.
-
---- x/kernel/cgroup.c
-+++ x/kernel/cgroup.c
-@@ -2000,6 +2000,7 @@ int cgroup_attach_proc(struct cgroup *cg
- 	/* threadgroup list cursor and array */
- 	struct task_struct *tsk;
- 	struct flex_array *group;
-+	unsigned long flags;
- 	/*
- 	 * we need to make sure we have css_sets for all the tasks we're
- 	 * going to move -before- we actually start moving them, so that in
-@@ -2027,19 +2028,10 @@ int cgroup_attach_proc(struct cgroup *cg
- 		goto out_free_group_list;
- 
- 	/* prevent changes to the threadgroup list while we take a snapshot. */
--	rcu_read_lock();
--	if (!thread_group_leader(leader)) {
--		/*
--		 * a race with de_thread from another thread's exec() may strip
--		 * us of our leadership, making while_each_thread unsafe to use
--		 * on this task. if this happens, there is no choice but to
--		 * throw this task away and try again (from cgroup_procs_write);
--		 * this is "double-double-toil-and-trouble-check locking".
--		 */
--		rcu_read_unlock();
--		retval = -EAGAIN;
-+	retval = -EAGAIN;
-+	if (!lock_task_sighand(leader, &flags))
- 		goto out_free_group_list;
--	}
-+
- 	/* take a reference on each task in the group to go in the array. */
- 	tsk = leader;
- 	i = 0;
-@@ -2055,9 +2047,9 @@ int cgroup_attach_proc(struct cgroup *cg
- 		BUG_ON(retval != 0);
- 		i++;
- 	} while_each_thread(leader, tsk);
-+	unlock_task_sighand(leader, &flags);
- 	/* remember the number of threads in the array for later. */
- 	group_size = i;
--	rcu_read_unlock();
- 
- 	/*
- 	 * step 1: check that we can legitimately attach to the cgroup.
