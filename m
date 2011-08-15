@@ -1,15 +1,15 @@
 From: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
-Subject: Re: [PATCH v3 1/4] factor out single-shrinker code
-Date: Mon, 15 Aug 2011 16:43:59 +1000
-Message-ID: <20110815064359.GD26978__41794.0878928222$1313390779$gmane$org@dastard>
+Subject: Re: [PATCH v3 3/4] limit nr_dentries per superblock
+Date: Mon, 15 Aug 2011 17:03:51 +1000
+Message-ID: <20110815070350.GE26978__48241.0046541647$1313391870$gmane$org@dastard>
 References: <1313334832-1150-1-git-send-email-glommer@parallels.com>
-	<1313334832-1150-2-git-send-email-glommer@parallels.com>
+	<1313334832-1150-4-git-send-email-glommer@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1313334832-1150-2-git-send-email-glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+In-Reply-To: <1313334832-1150-4-git-send-email-glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,143 +23,85 @@ To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 Cc: Andrea Arcangeli <aarcange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Nick Piggin <npiggin-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James Bottomley <JBottomley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Sun, Aug 14, 2011 at 07:13:49PM +0400, Glauber Costa wrote:
-> While shrinking our caches, vmscan.c passes through all
-> registered shrinkers, trying to free objects as it goes.
-> 
-> We would like to do that individually for some caches,
-> like the dcache, when certain conditions apply (for
-> example, when we reach a soon-to-exist maximum allowed size)
-> 
-> To avoid re-writing the same logic at more than one place,
-> this patch factors out the shrink logic at shrink_one_shrinker(),
-> that we can call from other places of the kernel.
+On Sun, Aug 14, 2011 at 07:13:51PM +0400, Glauber Costa wrote:
+> This patch lays the foundation for us to limit the dcache size.
+> Each super block can have only a maximum amount of dentries under its
+> sub-tree. Allocation fails if we we're over limit and the cache
+> can't be pruned to free up space for the newcomers.
 > 
 > Signed-off-by: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 > CC: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
 > CC: Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 > ---
->  include/linux/shrinker.h |    6 ++
->  mm/vmscan.c              |  185 ++++++++++++++++++++++++----------------------
->  2 files changed, 104 insertions(+), 87 deletions(-)
+>  fs/dcache.c        |   28 ++++++++++++++++++++++++++++
+>  fs/super.c         |    1 +
+>  include/linux/fs.h |    1 +
+>  3 files changed, 30 insertions(+), 0 deletions(-)
 > 
-> diff --git a/include/linux/shrinker.h b/include/linux/shrinker.h
-> index 790651b..c5db650 100644
-> --- a/include/linux/shrinker.h
-> +++ b/include/linux/shrinker.h
-> @@ -39,4 +39,10 @@ struct shrinker {
->  #define DEFAULT_SEEKS 2 /* A good number if you don't know better. */
->  extern void register_shrinker(struct shrinker *);
->  extern void unregister_shrinker(struct shrinker *);
-> +
-> +unsigned long shrink_one_shrinker(struct shrinker *shrinker,
-> +				  struct shrink_control *shrink,
-> +				  unsigned long nr_pages_scanned,                      
-> +				  unsigned long lru_pages);
-> +
->  #endif
-> diff --git a/mm/vmscan.c b/mm/vmscan.c
-> index 7ef6912..50dfc61 100644
-> --- a/mm/vmscan.c
-> +++ b/mm/vmscan.c
-> @@ -211,6 +211,102 @@ static inline int do_shrinker_shrink(struct shrinker *shrinker,
+> diff --git a/fs/dcache.c b/fs/dcache.c
+> index 815d9fd..ddd02a2 100644
+> --- a/fs/dcache.c
+> +++ b/fs/dcache.c
+> @@ -1180,6 +1180,31 @@ void shrink_dcache_parent(struct dentry * parent)
 >  }
+>  EXPORT_SYMBOL(shrink_dcache_parent);
 >  
->  #define SHRINK_BATCH 128
-> +unsigned long shrink_one_shrinker(struct shrinker *shrinker,
-> +				  struct shrink_control *shrink,
-> +				  unsigned long nr_pages_scanned,
-> +				  unsigned long lru_pages)
+> +static inline int dcache_mem_check(struct super_block *sb)
 > +{
-
-This isn't the right place to cut the code apart. The act of
-shrinking a cache is separate to the act of calculating how much to
-shrink. you're taking the vmscan interface and trying to hack around
-that when direct calls to a single shrinker is needed.....
-
-> +	unsigned long ret = 0;
-> +	unsigned long long delta;
-> +	unsigned long total_scan;
-> +	unsigned long max_pass;
-> +	int shrink_ret = 0;
-> +	long nr;
-> +	long new_nr;
-> +	long batch_size = shrinker->batch ? shrinker->batch
-> +					  : SHRINK_BATCH;
+> +	struct shrink_control sc = {
+> +		.gfp_mask = GFP_KERNEL,
+> +	};
 > +
-> +	/*
-> +	 * copy the current shrinker scan count into a local variable
-> +	 * and zero it so that other concurrent shrinker invocations
-> +	 * don't also do this scanning work.
-> +	 */
+> +	if (sb->s_nr_dentry_max == INT_MAX)
+> +		return 0;
+> +
 > +	do {
-> +		nr = shrinker->nr;
-> +	} while (cmpxchg(&shrinker->nr, nr, 0) != nr);
+> +		int nr_dentry;
 > +
-> +	total_scan = nr;
-> +	max_pass = do_shrinker_shrink(shrinker, shrink, 0);
-> +	delta = (4 * nr_pages_scanned) / shrinker->seeks;
-> +	delta *= max_pass;
-> +	do_div(delta, lru_pages + 1);
-> +	total_scan += delta;
-> +	if (total_scan < 0) {
-> +		printk(KERN_ERR "shrink_slab: %pF negative objects to "
-> +		       "delete nr=%ld\n",
-> +		       shrinker->shrink, total_scan);
-> +		total_scan = max_pass;
-> +	}
+> +		nr_dentry = percpu_counter_read_positive(&sb->s_nr_dentry);
+> +		if (nr_dentry > sb->s_nr_dentry_max)
+> +			nr_dentry =
+> +				percpu_counter_sum_positive(&sb->s_nr_dentry);
+> +		if (nr_dentry < sb->s_nr_dentry_max)
+> +			return 0;
 > +
-> +	/*
-> +	 * We need to avoid excessive windup on filesystem shrinkers
-> +	 * due to large numbers of GFP_NOFS allocations causing the
-> +	 * shrinkers to return -1 all the time. This results in a large
-> +	 * nr being built up so when a shrink that can do some work
-> +	 * comes along it empties the entire cache due to nr >>>
-> +	 * max_pass.  This is bad for sustaining a working set in
-> +	 * memory.
-> +	 *
-> +	 * Hence only allow the shrinker to scan the entire cache when
-> +	 * a large delta change is calculated directly.
-> +	 */
-> +	if (delta < max_pass / 4)
-> +		total_scan = min(total_scan, max_pass / 2);
+> +	/* nr_pages = 1, lru_pages = 0 should get delta ~ 2 */
+> +	} while (shrink_one_shrinker(&sb->s_shrink, &sc, 1, 0));
 > +
-> +	/*
-> +	 * Avoid risking looping forever due to too large nr value:
-> +	 * never try to free more than twice the estimate number of
-> +	 * freeable entries.
-> +	 */
-> +	if (total_scan > max_pass * 2)
-> +		total_scan = max_pass * 2;
-> +
-> +	trace_mm_shrink_slab_start(shrinker, shrink, nr,
-> +				nr_pages_scanned, lru_pages,
-> +				max_pass, delta, total_scan);
-> +
+> +	return -ENOMEM;
+> +}
 
-This bit from here:
+The changes here don't address the comments I made previously about
+the error range of the per-cpu counter and update frequency of the
+the global counter. w.r.t to small delta changes of the counted
+amount.
 
-> +	while (total_scan >= batch_size) {
-> +		int nr_before;
-> +
-> +		nr_before = do_shrinker_shrink(shrinker, shrink, 0);
-> +		shrink_ret = do_shrinker_shrink(shrinker, shrink,
-> +						batch_size);
-> +		if (shrink_ret == -1)
-> +			break;
-> +		if (shrink_ret < nr_before)
-> +			ret += nr_before - shrink_ret;
-> +		count_vm_events(SLABS_SCANNED, batch_size);
-> +		total_scan -= batch_size;
-> +
-> +		cond_resched();
-> +	}
+That is, you cannot expect percpu_counter_read_positive() to change
+when you decrement a counter by 2 counts (assuming both objects are
+freed), and there's no guarantee that percpu_counter_sum_positive()
+will drop below the threshold either while
+percpu_counter_read_positive() is returning numbers above the
+threshold. That makes this a very expensive and oft-repeated loop.
 
-to here is the only common code. It takes a locked shrinker and a
-set up scan_control structure. As it is, I've got a set of patches
-that I'm working on that fix the garbage srhinker API and abstract
-this section of the code correctly for external users. I'll try to
-get that finished for review later this week.
+Indeed, that even assumes that 2 objects that are freed are
+dentries. If there are more inodes that dentries in memory, the the
+dentries won't even be trimmed, and you'll get stuck in the horribly
+expensive loop trimming the cache 2 inodes at a time until the
+caches start to balance. Shrinking must be done in large batches to
+be effective, not one object at a time.
+
+Further, the shrinker may not make progress freeing items, which
+will result in this code returning ENOMEM when the shrinker may
+simply have been passing over referenced (i.e. cache hot) dentries.
+That will return spurious ENOMEM results back to d_alloc, resulting
+in spurious failures that will be impossible to track down...
+
+This also demonstrates my comment about where you factored
+shrink_one_shrinker() to be the wrong place. You've already got a
+shrink-control structure, so adding a value to .nr_to_scan to the
+initialisation gets around the entire need to do all that guess work
+of running through the vmscan specific algorithms to get 2 objects
+freed.
 
 Cheers,
 
