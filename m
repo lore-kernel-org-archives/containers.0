@@ -1,14 +1,17 @@
-From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [PATCH v3 3/4] limit nr_dentries per superblock
-Date: Mon, 15 Aug 2011 16:37:04 +0400
-Message-ID: <4E4912F0.8030705__31288.8045715683$1313411908$gmane$org@parallels.com>
-References: <1313334832-1150-1-git-send-email-glommer@parallels.com>	<1313334832-1150-4-git-send-email-glommer@parallels.com>	<CAOJsxLFYD9DkEU5R+9fZr-uaznteP8-BUC_Ti+FnNFqtbOCHSw@mail.gmail.com>	<20110815104656.GG26978@dastard>	<CAOJsxLGFJmqO-W=itQbO4Mh4DxSD4wrHOC8gQ5bWL5aE1YYeQw@mail.gmail.com>	<4E48FD8A.90401@parallels.com>	<CAOJsxLFjZffC9i5kQsBWjGy3eWdj3VMB5awz=yPcwgeKb5BG0Q@mail.gmail.com>	<4E4903C1.9050207@parallels.com>	<CAOJsxLErFcxuuqnWkRbOAHEFbeGrKp3YMZ-144=m16oBXCHJ2g@mail.gmail.com>	<4E490D47.8050105@parallels.com>
-	<CAOJsxLEVfGrzUQv0fOpOyw3AaOLOHcWbvLJL1NdrHS6M2j5o1g@mail.gmail.com>
+From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 0/2] Send a SIGCHLD to the init's pid namespace parent
+	when reboot
+Date: Mon, 15 Aug 2011 16:47:44 +0200
+Message-ID: <20110815144744.GA9660__2045.57081820003$1313420009$gmane$org@redhat.com>
+References: <1313094241-3674-1-git-send-email-daniel.lezcano@free.fr>
+	<20110814161707.GB30846@redhat.com>
+	<20110814213642.GB13799@hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAOJsxLEVfGrzUQv0fOpOyw3AaOLOHcWbvLJL1NdrHS6M2j5o1g-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20110814213642.GB13799-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,20 +21,57 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pekka Enberg <penberg-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Andrea Arcangeli <aarcange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Nick Piggin <npiggin-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, James Bottomley <jbottomley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Christoph Lameter <cl-vYTEC60ixJUAvxtiuMwx3w@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, bonbons-ud5FBsm0p/xEiooADzr8i9i2O/JbrIOy@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
->> Yes, this patchset does only the API part. The full idea is implemented (with poor API though) here:
->> http://lwn.net/Articles/441164/
-> 
-> OK. I suppose it's best to keep it separate of the slab code for now
-> then. Maybe you're able to come with something more generic that we
-> could make part of slab APIs later.
+On 08/14, Serge E. Hallyn wrote:
+>
+> Quoting Oleg Nesterov (oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
+> > On 08/11, Daniel Lezcano wrote:
+> > >
+> > > In the case of a VPS, when we shutdown/halt/reboot the container, the
+> > > reboot utility will invoke the sys_reboot syscall which has the bad
+> > > effect to reboot the host.
+> >
+> > Stupid question. Can't sys_reboot() simply kill init (and thus the whole
+> > pid_ns) in this case?
+>
+> The goal is to be able to distinguish a request for reboot from shutdown.
+> If we just kill the init, then the parent of init (the container monitor)
+> cannot restart the container to emulate reboot.
 
-Yup! We also have plans for having control over the kernel memory usage by containers, so
-we'll certainly get back to it :)
+OK, thanks.
 
->                             Pekka
-> .
-> 
+What if init reports the reason it was killed?
+
+Ignoring LINUX_REBOOT_CMD_CAD_/etc, I mean, roughly,
+
+	- add "int reboot_cmd" into struct pid_namespace
+
+	- sys_reboot(cmd) does
+
+		if (!global_namespace) {
+			task_active_pid_ns(current)->reboot_cmd = cmd;
+			sigkill_my_init();
+		}
+
+	- change zap_pid_ns_processes() to do
+
+		if (pid_ns->reboot_cmd)	// approximately
+			current->exit_state = pid_ns->reboot_cmd;
+
+Then its parent can look at status after wait(&status).
+
+
+Not that I think this is very nice, but signals are not reliable.
+And once again, SIGCHLD doesn't queue. And, perhaps this doesn't
+matter, but sys_reboot() sends SIGCHLD and returns -EPERM, this
+can confuse the container.
+
+
+In any case. If you want to send a signal, please do not introduce
+SA_CLDREBOOT. Please do not play with ptrace or __wake_up_parent, this
+is meaningless. Just fill siginfo and send SIGCHLD unconditionally.
+
+Oleg.
