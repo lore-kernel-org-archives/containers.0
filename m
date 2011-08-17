@@ -1,141 +1,109 @@
-From: Greg Thelen <gthelen@google.com>
-Subject: [PATCH v9 13/13] memcg: check memcg dirty limits in page writeback
-Date: Wed, 17 Aug 2011 09:15:05 -0700
-Message-ID: <1313597705-6093-14-git-send-email-gthelen@google.com>
-References: <1313597705-6093-1-git-send-email-gthelen@google.com>
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <1313597705-6093-1-git-send-email-gthelen@google.com>
-Sender: owner-linux-mm@kvack.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Balbir Singh <bsingharora@gmail.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Johannes Weiner <hannes@cmpxchg.org>, Wu Fengguang <fengguang.wu@intel.com>, Dave Chinner <david@fromorbit.com>, Vivek Goyal <vgoyal@redhat.com>, Andrea Righi <andrea@betterlinux.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Greg Thelen <gthelen@google.com>
+From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: Re: [PATCH v3 0/4] Per-container dcache limitation
+Date: Wed, 17 Aug 2011 11:44:53 -0700
+Message-ID: <4E4C0C25.3__679.408750920807$1313606794$gmane$org@parallels.com>
+References: <1313334832-1150-1-git-send-email-glommer@parallels.com>
+	<20110817054343.GM26978@dastard>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20110817054343.GM26978@dastard>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
+Cc: Andrea Arcangeli <aarcange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Nick Piggin <npiggin-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James Bottomley <JBottomley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-If the current process is in a non-root memcg, then
-balance_dirty_pages() will consider the memcg dirty limits as well as
-the system-wide limits.  This allows different cgroups to have distinct
-dirty limits which trigger direct and background writeback at different
-levels.
+On 08/16/2011 10:43 PM, Dave Chinner wrote:
+> On Sun, Aug 14, 2011 at 07:13:48PM +0400, Glauber Costa wrote:
+>> Hello,
+>>
+>> This series is just like v2, except it addresses
+>> Eric's comments regarding percpu variables.
+>>
+>> Let me know if there are further comments, and
+>> I'll promply address them as well. Otherwise,
+>> I feel this is ready for inclusion
 
-If called with a mem_cgroup, then throttle_vm_writeout() queries the
-given cgroup for its dirty memory usage limits.
+Hi David,
 
-Signed-off-by: Andrea Righi <andrea@betterlinux.com>
-Signed-off-by: Greg Thelen <gthelen@google.com>
----
-Changelog since v8:
+I am not answering everything now, since I'm travelling, but let me get 
+to this one:
 
-- Use 'memcg' rather than 'mem' for local variables and parameters.
-  This is consistent with other memory controller code.
+> Just out of couriousity, one thing I've noticed about dentries is
+> that in general at any given point in time most dentries are unused.
+> Under the workloads I'm testing, even when I have a million cached
+> dentries, I only have roughly 7,000 accounted as used.  That is, most
+> of the dentries in the system are on a LRU and accounted in
+> sb->s_nr_dentry_unused of their owner superblock.
+>
+> So rather than introduce a bunch of new infrastructure to track the
+> number of dentries allocated, why not simply limit the number of
+> dentries allowed on the LRU? We already track that, and the shrinker
+> already operates on the LRU, so we don't really need any new
+> infrastructure.
+Because this only works well for cooperative workloads. And we can't 
+really assume that in the virtualization world. One container can come 
+up with a bogus workload - not even hard to write - that has the sole 
+purpose of punishing every resource sharer of him.
 
- include/linux/writeback.h |    2 +-
- mm/page-writeback.c       |   35 +++++++++++++++++++++++++++++------
- mm/vmscan.c               |    2 +-
- 3 files changed, 31 insertions(+), 8 deletions(-)
+That's why we're putting limits on pinnable kernel memory. Normal
+workloads won't do.
 
-diff --git a/include/linux/writeback.h b/include/linux/writeback.h
-index e6790e8..0f809e3 100644
---- a/include/linux/writeback.h
-+++ b/include/linux/writeback.h
-@@ -116,7 +116,7 @@ void laptop_mode_timer_fn(unsigned long data);
- #else
- static inline void laptop_sync_completion(void) { }
- #endif
--void throttle_vm_writeout(gfp_t gfp_mask);
-+void throttle_vm_writeout(gfp_t gfp_mask, struct mem_cgroup *memcg);
- 
- extern unsigned long global_dirty_limit;
- 
-diff --git a/mm/page-writeback.c b/mm/page-writeback.c
-index 64de98c..9ce199d 100644
---- a/mm/page-writeback.c
-+++ b/mm/page-writeback.c
-@@ -645,7 +645,8 @@ static void bdi_update_bandwidth(struct backing_dev_info *bdi,
-  * data.  It looks at the number of dirty pages in the machine and will force
-  * the caller to perform writeback if the system is over `vm_dirty_ratio'.
-  * If we're over `background_thresh' then the writeback threads are woken to
-- * perform some writeout.
-+ * perform some writeout.  The current task may belong to a cgroup with
-+ * dirty limits, which are also checked.
-  */
- static void balance_dirty_pages(struct address_space *mapping,
- 				unsigned long write_chunk)
-@@ -665,6 +666,8 @@ static void balance_dirty_pages(struct address_space *mapping,
- 	struct backing_dev_info *bdi = mapping->backing_dev_info;
- 	unsigned long start_time = jiffies;
- 
-+	mem_cgroup_balance_dirty_pages(mapping, write_chunk);
-+
- 	for (;;) {
- 		nr_reclaimable = global_page_state(NR_FILE_DIRTY) +
- 					global_page_state(NR_UNSTABLE_NFS);
-@@ -856,23 +859,43 @@ void balance_dirty_pages_ratelimited_nr(struct address_space *mapping,
- }
- EXPORT_SYMBOL(balance_dirty_pages_ratelimited_nr);
- 
--void throttle_vm_writeout(gfp_t gfp_mask)
-+/*
-+ * Throttle the current task if it is near dirty memory usage limits.  Both
-+ * global dirty memory limits and (if @memcg is given) per-cgroup dirty memory
-+ * limits are checked.
-+ *
-+ * If near limits, then wait for usage to drop.  Dirty usage should drop because
-+ * dirty producers should have used balance_dirty_pages(), which would have
-+ * scheduled writeback.
-+ */
-+void throttle_vm_writeout(gfp_t gfp_mask, struct mem_cgroup *memcg)
- {
- 	unsigned long background_thresh;
- 	unsigned long dirty_thresh;
-+	struct dirty_info memcg_info;
-+	bool do_memcg;
- 
-         for ( ; ; ) {
- 		global_dirty_limits(&background_thresh, &dirty_thresh);
-+		do_memcg = memcg &&
-+			mem_cgroup_hierarchical_dirty_info(
-+				determine_dirtyable_memory(), memcg,
-+				&memcg_info);
- 
-                 /*
-                  * Boost the allowable dirty threshold a bit for page
-                  * allocators so they don't get DoS'ed by heavy writers
-                  */
-                 dirty_thresh += dirty_thresh / 10;      /* wheeee... */
--
--                if (global_page_state(NR_UNSTABLE_NFS) +
--			global_page_state(NR_WRITEBACK) <= dirty_thresh)
--                        	break;
-+		if (do_memcg)
-+			memcg_info.dirty_thresh += memcg_info.dirty_thresh / 10;
-+
-+		if ((global_page_state(NR_UNSTABLE_NFS) +
-+		     global_page_state(NR_WRITEBACK) <= dirty_thresh) &&
-+		    (!do_memcg ||
-+		     (memcg_info.nr_unstable_nfs +
-+		      memcg_info.nr_writeback <= memcg_info.dirty_thresh)))
-+			break;
-                 congestion_wait(BLK_RW_ASYNC, HZ/10);
- 
- 		/*
-diff --git a/mm/vmscan.c b/mm/vmscan.c
-index fb0ae99..3c57788 100644
---- a/mm/vmscan.c
-+++ b/mm/vmscan.c
-@@ -2068,7 +2068,7 @@ restart:
- 					sc->nr_scanned - nr_scanned, sc))
- 		goto restart;
- 
--	throttle_vm_writeout(sc->gfp_mask);
-+	throttle_vm_writeout(sc->gfp_mask, sc->mem_cgroup);
- }
- 
- /*
--- 
-1.7.3.1
+>
+> The limiting can be lazily - we don't need to limit the growth of
+> dentries until we start to run out of memory. If the superblock
+> shrinker is aware of the limits, then when it gets called by memory
+> reclaim it can do all the work of reducing the number of items on
+> the LRU down to the threshold at that time.
 
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+Well, this idea itself can be considered, independent of which path 
+we're taking. We can, if we want, allow the dentry cache to grow 
+indefinitely if we're out of memory pressure. But it kinda defies the
+purpose of a hard limit...
+
+If we allow the dcache to grow over the hard cap just because memory is 
+plentiful, then when it is *not* plentiful, we might be full of pinned 
+entries that we can't release - and screw up somebody else's container, 
+that behaved well all the time.
+
+>
+> IOWs, the limit has no impact on performance until memory is scarce,
+> at which time memory reclaim enforces the limits on LRU size and
+> clean up happens automatically.
+>
+> This also avoids all the problems of setting a limit lower than the
+> number of active dentries required for the workload (i.e. avoids
+> spurious ENOMEM errors trying to allocate dentries), allows
+> overcommitment when memory is plentiful (which will benefit
+> performance) but it brings the caches back to defined limits when
+> memory is not plentiful (which solves the problem you are having).
+No, this is not really the problem we're having.
+See above.
+
+About ENOMEM, I don't really see what's wrong with them here. For a 
+container, running out of his assigned kernel memory, should be exactly 
+the same as running out of real physical memory. I do agree that it 
+changes the feeling of the system a little bit, because it then happens 
+more often. But it is still right in principle.
+
+>
+> That seems like a much better solution to me, because it doesn't
+> impact the normal working of workloads in the containers and avoids
+> having to work out what the correct minimum size of the cache for
+> each workload is. It's much easier to work out how many extra cached
+> dentries you want the container to be able to have when memory is
+> scarce...
+>
+> What do you think?
+
+I think that for the reasons I went through above, dcache limiting and 
+LRU size capping are really not equivalent in terms of solving this problem.
