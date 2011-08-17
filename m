@@ -1,20 +1,14 @@
 From: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
-Subject: Re: [PATCH v3 3/4] limit nr_dentries per superblock
-Date: Tue, 16 Aug 2011 12:11:54 +1000
-Message-ID: <20110816021154.GI26978__10798.9780408845$1313460947$gmane$org@dastard>
+Subject: Re: [PATCH v3 0/4] Per-container dcache limitation
+Date: Wed, 17 Aug 2011 15:43:43 +1000
+Message-ID: <20110817054343.GM26978__9316.50470379299$1313560007$gmane$org@dastard>
 References: <1313334832-1150-1-git-send-email-glommer@parallels.com>
-	<1313334832-1150-4-git-send-email-glommer@parallels.com>
-	<CAOJsxLFYD9DkEU5R+9fZr-uaznteP8-BUC_Ti+FnNFqtbOCHSw@mail.gmail.com>
-	<20110815104656.GG26978@dastard>
-	<CAOJsxLGFJmqO-W=itQbO4Mh4DxSD4wrHOC8gQ5bWL5aE1YYeQw@mail.gmail.com>
-	<4E48FD8A.90401@parallels.com>
-	<CAOJsxLFjZffC9i5kQsBWjGy3eWdj3VMB5awz=yPcwgeKb5BG0Q@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <CAOJsxLFjZffC9i5kQsBWjGy3eWdj3VMB5awz=yPcwgeKb5BG0Q-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <1313334832-1150-1-git-send-email-glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,88 +18,63 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pekka Enberg <penberg-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Andrea Arcangeli <aarcange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Nick Piggin <npiggin-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, James Bottomley <jbottomley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Christoph Lameter <cl-vYTEC60ixJUAvxtiuMwx3w@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: Andrea Arcangeli <aarcange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Nick Piggin <npiggin-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James Bottomley <JBottomley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, Aug 15, 2011 at 02:14:39PM +0300, Pekka Enberg wrote:
-> Hi Pavel,
+On Sun, Aug 14, 2011 at 07:13:48PM +0400, Glauber Costa wrote:
+> Hello,
 > 
-> On Mon, Aug 15, 2011 at 2:05 PM, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org> wrote:
-> > This will make sense, since the kernel memory management per-cgroup is one of the
-> > things we'd live to have, but this particular idea will definitely not work in case
-> > we keep the containers' files on one partition keeping each container in its own
-> > chroot environment.
+> This series is just like v2, except it addresses
+> Eric's comments regarding percpu variables.
 > 
-> And you want a per-container dcache limit? Will the containers share
-> the same superblock?
+> Let me know if there are further comments, and
+> I'll promply address them as well. Otherwise,
+> I feel this is ready for inclusion
 
-Yes, and that's one of the problems with the "arbitrary container"
-approach to controlling the dentry cache size. Arbitrary containers
-don't map easily to predictable and scalable LRU and reclaim
-implementations. Hence right now the container scope is limited to
-per-superblock.
+Just out of couriousity, one thing I've noticed about dentries is
+that in general at any given point in time most dentries are unused.
+Under the workloads I'm testing, even when I have a million cached
+dentries, I only have roughly 7,000 accounted as used.  That is, most
+of the dentries in the system are on a LRU and accounted in
+sb->s_nr_dentry_unused of their owner superblock.
 
-> Couldn't you simply do per-container "struct
-> kmem_accounted_cache" in struct superblock?
+So rather than introduce a bunch of new infrastructure to track the
+number of dentries allocated, why not simply limit the number of
+dentries allowed on the LRU? We already track that, and the shrinker
+already operates on the LRU, so we don't really need any new
+infrastructure.
 
-Probably could do it that way, but it's still not really and
-integrated solution. What we'll end up with is this LRU structure:
+The limiting can be lazily - we don't need to limit the growth of
+dentries until we start to run out of memory. If the superblock
+shrinker is aware of the limits, then when it gets called by memory
+reclaim it can do all the work of reducing the number of items on
+the LRU down to the threshold at that time.
 
-struct lru_node {
-	struct list_head		lru;
-	spinlock_t			lock;
-	long				nr_items;
-} ____cacheline_aligned_in_smp;
+IOWs, the limit has no impact on performance until memory is scarce,
+at which time memory reclaim enforces the limits on LRU size and
+clean up happens automatically.
 
-struct lru {
-	struct kmem_accounted_cache	*cache;
-	struct lru_node			lru_node[MAX_NUMNODES];
-	nodemask_t			active_nodes;
-	int (*isolate_item)(struct list_head *item);
-	int (*dispose)(struct list_head *list);
-}
+This also avoids all the problems of setting a limit lower than the
+number of active dentries required for the workload (i.e. avoids
+spurious ENOMEM errors trying to allocate dentries), allows
+overcommitment when memory is plentiful (which will benefit
+performance) but it brings the caches back to defined limits when
+memory is not plentiful (which solves the problem you are having).
 
-Where the only thing that the lru->cache is used for is getting the
-number of items allocated to the cache. Seems relatively pointless
-to make that statistic abstraction for just a single value that we
-can get via a simple per-cpu counter...
+That seems like a much better solution to me, because it doesn't
+impact the normal working of workloads in the containers and avoids
+having to work out what the correct minimum size of the cache for
+each workload is. It's much easier to work out how many extra cached
+dentries you want the container to be able to have when memory is
+scarce...
 
-Then, when you consider SLUB has this structure for every individual
-slab cache:
-
-struct kmem_cache_node {
-        spinlock_t list_lock;   /* Protect partial list and nr_partial */
-        unsigned long nr_partial;
-        struct list_head partial;
-#ifdef CONFIG_SLUB_DEBUG
-        atomic_long_t nr_slabs;
-        atomic_long_t total_objects;
-        struct list_head full;
-#endif
-};
-
-you can see why tight integration of the per-node LRU infrastructure
-is appealing - there's no unnecessary duplication and the accounting
-is done in the right spot. It also means there is only one shrinker
-implmentation for all slabs, with a couple of simple per-slab
-callbacks for isolating objects for disposal and then to dispose of
-them. This would mean that most slab caches that use shrinkers would
-no longer need to implement their own LRU, get LRU scalability and
-node-aware reclaim for free, have built in size limits, etc.
-
-And FWIW, integrating the LRU shrinker mechanism into the slab cache
-also provides the mechanisms needed for capping the size of the
-cache as well as slab defragmentation.  Much smarter things can be
-done when you know both the age and the locality of objects. e.g.
-there's no point preventing allocation from a slab due to maximum
-object count limitations if there are partial pages in the slab
-cache because the allocation can be done without increasing memory
-footprint.....
+What do you think?
 
 Cheers,
 
 Dave.
+
 -- 
 Dave Chinner
 david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org
