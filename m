@@ -1,80 +1,130 @@
-From: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
-Subject: Re: [PATCH v3 0/4] Per-container dcache limitation
-Date: Wed, 17 Aug 2011 15:43:43 +1000
-Message-ID: <20110817054343.GM26978__9316.50470379299$1313560007$gmane$org@dastard>
-References: <1313334832-1150-1-git-send-email-glommer@parallels.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1313334832-1150-1-git-send-email-glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: Andrea Arcangeli <aarcange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Nick Piggin <npiggin-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James Bottomley <JBottomley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+From: Greg Thelen <gthelen@google.com>
+Subject: [PATCH v9 01/13] memcg: document cgroup dirty memory interfaces
+Date: Wed, 17 Aug 2011 09:14:53 -0700
+Message-ID: <1313597705-6093-2-git-send-email-gthelen@google.com>
+References: <1313597705-6093-1-git-send-email-gthelen@google.com>
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <1313597705-6093-1-git-send-email-gthelen@google.com>
+Sender: owner-linux-mm@kvack.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Balbir Singh <bsingharora@gmail.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Johannes Weiner <hannes@cmpxchg.org>, Wu Fengguang <fengguang.wu@intel.com>, Dave Chinner <david@fromorbit.com>, Vivek Goyal <vgoyal@redhat.com>, Andrea Righi <andrea@betterlinux.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Greg Thelen <gthelen@google.com>
 List-Id: containers.vger.kernel.org
 
-On Sun, Aug 14, 2011 at 07:13:48PM +0400, Glauber Costa wrote:
-> Hello,
-> 
-> This series is just like v2, except it addresses
-> Eric's comments regarding percpu variables.
-> 
-> Let me know if there are further comments, and
-> I'll promply address them as well. Otherwise,
-> I feel this is ready for inclusion
+Document cgroup dirty memory interfaces and statistics.
 
-Just out of couriousity, one thing I've noticed about dentries is
-that in general at any given point in time most dentries are unused.
-Under the workloads I'm testing, even when I have a million cached
-dentries, I only have roughly 7,000 accounted as used.  That is, most
-of the dentries in the system are on a LRU and accounted in
-sb->s_nr_dentry_unused of their owner superblock.
+The implementation for these new interfaces routines comes in a series
+of following patches.
 
-So rather than introduce a bunch of new infrastructure to track the
-number of dentries allocated, why not simply limit the number of
-dentries allowed on the LRU? We already track that, and the shrinker
-already operates on the LRU, so we don't really need any new
-infrastructure.
+Signed-off-by: Andrea Righi <andrea@betterlinux.com>
+Signed-off-by: Greg Thelen <gthelen@google.com>
+Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+Acked-by: Balbir Singh <balbir@linux.vnet.ibm.com>
+Reviewed-by: Minchan Kim <minchan.kim@gmail.com>
+---
+ Documentation/cgroups/memory.txt |   70 ++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 70 insertions(+), 0 deletions(-)
 
-The limiting can be lazily - we don't need to limit the growth of
-dentries until we start to run out of memory. If the superblock
-shrinker is aware of the limits, then when it gets called by memory
-reclaim it can do all the work of reducing the number of items on
-the LRU down to the threshold at that time.
-
-IOWs, the limit has no impact on performance until memory is scarce,
-at which time memory reclaim enforces the limits on LRU size and
-clean up happens automatically.
-
-This also avoids all the problems of setting a limit lower than the
-number of active dentries required for the workload (i.e. avoids
-spurious ENOMEM errors trying to allocate dentries), allows
-overcommitment when memory is plentiful (which will benefit
-performance) but it brings the caches back to defined limits when
-memory is not plentiful (which solves the problem you are having).
-
-That seems like a much better solution to me, because it doesn't
-impact the normal working of workloads in the containers and avoids
-having to work out what the correct minimum size of the cache for
-each workload is. It's much easier to work out how many extra cached
-dentries you want the container to be able to have when memory is
-scarce...
-
-What do you think?
-
-Cheers,
-
-Dave.
-
+diff --git a/Documentation/cgroups/memory.txt b/Documentation/cgroups/memory.txt
+index 6f3c598..5fd6ab8 100644
+--- a/Documentation/cgroups/memory.txt
++++ b/Documentation/cgroups/memory.txt
+@@ -389,6 +389,10 @@ mapped_file	- # of bytes of mapped file (includes tmpfs/shmem)
+ pgpgin		- # of pages paged in (equivalent to # of charging events).
+ pgpgout		- # of pages paged out (equivalent to # of uncharging events).
+ swap		- # of bytes of swap usage
++dirty		- # of bytes that are waiting to get written back to the disk.
++writeback	- # of bytes that are actively being written back to the disk.
++nfs_unstable	- # of bytes sent to the NFS server, but not yet committed to
++		the actual storage.
+ inactive_anon	- # of bytes of anonymous memory and swap cache memory on
+ 		LRU list.
+ active_anon	- # of bytes of anonymous and swap cache memory on active
+@@ -410,6 +414,9 @@ total_mapped_file	- sum of all children's "cache"
+ total_pgpgin		- sum of all children's "pgpgin"
+ total_pgpgout		- sum of all children's "pgpgout"
+ total_swap		- sum of all children's "swap"
++total_dirty		- sum of all children's "dirty"
++total_writeback		- sum of all children's "writeback"
++total_nfs_unstable	- sum of all children's "nfs_unstable"
+ total_inactive_anon	- sum of all children's "inactive_anon"
+ total_active_anon	- sum of all children's "active_anon"
+ total_inactive_file	- sum of all children's "inactive_file"
+@@ -567,6 +574,69 @@ unevictable=<total anon pages> N0=<node 0 pages> N1=<node 1 pages> ...
+ 
+ And we have total = file + anon + unevictable.
+ 
++5.7 dirty memory
++
++Control the maximum amount of dirty pages a cgroup can have at any given time.
++
++Limiting dirty memory is like fixing the max amount of dirty (hard to reclaim)
++page cache used by a cgroup.  So, in case of multiple cgroup writers, they will
++not be able to consume more than their designated share of dirty pages and will
++be throttled if they cross that limit.  System-wide dirty limits are also
++consulted.  Dirty memory consumption is checked against both system-wide and
++per-cgroup dirty limits.
++
++The interface is similar to the procfs interface: /proc/sys/vm/dirty_*.  It is
++possible to configure a limit to trigger throttling of a dirtier or queue
++background writeback.  The root cgroup memory.dirty_* control files are
++read-only and match the contents of the /proc/sys/vm/dirty_* files.
++
++Per-cgroup dirty limits can be set using the following files in the cgroupfs:
++
++- memory.dirty_ratio: the amount of dirty memory (expressed as a percentage of
++  cgroup memory) at which a process generating dirty pages will be throttled.
++  The default value is the system-wide dirty ratio, /proc/sys/vm/dirty_ratio.
++
++- memory.dirty_limit_in_bytes: the amount of dirty memory (expressed in bytes)
++  in the cgroup at which a process generating dirty pages will be throttled.
++  Suffix (k, K, m, M, g, or G) can be used to indicate that value is kilo, mega
++  or gigabytes.  The default value is the system-wide dirty limit,
++  /proc/sys/vm/dirty_bytes.
++
++  Note: memory.dirty_limit_in_bytes is the counterpart of memory.dirty_ratio.
++  Only one may be specified at a time.  When one is written it is immediately
++  taken into account to evaluate the dirty memory limits and the other appears
++  as 0 when read.
++
++- memory.dirty_background_ratio: the amount of dirty memory of the cgroup
++  (expressed as a percentage of cgroup memory) at which background writeback
++  kernel threads will start writing out dirty data.  The default value is the
++  system-wide background dirty ratio, /proc/sys/vm/dirty_background_ratio.
++
++- memory.dirty_background_limit_in_bytes: the amount of dirty memory (expressed
++  in bytes) in the cgroup at which background writeback kernel threads will
++  start writing out dirty data.  Suffix (k, K, m, M, g, or G) can be used to
++  indicate that value is kilo, mega or gigabytes.  The default value is the
++  system-wide dirty background limit, /proc/sys/vm/dirty_background_bytes.
++
++  Note: memory.dirty_background_limit_in_bytes is the counterpart of
++  memory.dirty_background_ratio.  Only one may be specified at a time.  When one
++  is written it is immediately taken into account to evaluate the dirty memory
++  limits and the other appears as 0 when read.
++
++A cgroup may contain more dirty memory than its dirty limit.  This is possible
++because of the principle that the first cgroup to touch a page is charged for
++it.  Subsequent page counting events (dirty, writeback, nfs_unstable) are also
++counted to the originally charged cgroup.  Example: If page is allocated by a
++cgroup A task, then the page is charged to cgroup A.  If the page is later
++dirtied by a task in cgroup B, then the cgroup A dirty count will be
++incremented.  If cgroup A is over its dirty limit but cgroup B is not, then
++dirtying a cgroup A page from a cgroup B task may push cgroup A over its dirty
++limit without throttling the dirtying cgroup B task.
++
++When use_hierarchy=0, each cgroup has independent dirty memory usage and limits.
++When use_hierarchy=1 the dirty limits of parent cgroups are also checked to
++ensure that no dirty limit is exceeded.
++
+ 6. Hierarchy support
+ 
+ The memory controller supports a deep hierarchy and hierarchical accounting.
 -- 
-Dave Chinner
-david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org
+1.7.3.1
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
