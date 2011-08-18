@@ -1,56 +1,152 @@
-From: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
-Subject: Re: [PATCH] cgroups: update documentation on task moving restriction
-Date: Thu, 18 Aug 2011 00:44:35 -0700
-Message-ID: <CALdu-PC5_J2-Ss6se8LnoWDf5Ltt3Y9__RXKyTZUXvgBmv60Tg__34154.6013871723$1313653652$gmane$org@mail.gmail.com>
-References: <4E4C7E16.9090905@cn.fujitsu.com>
+From: Jan Kara <jack@suse.cz>
+Subject: Re: [PATCH v9 12/13] memcg: create support routines for page
+ writeback
+Date: Thu, 18 Aug 2011 12:12:48 +0200
+Message-ID: <20110818101248.GA12426@quack.suse.cz>
+References: <1313597705-6093-1-git-send-email-gthelen@google.com>
+ <1313597705-6093-13-git-send-email-gthelen@google.com>
+ <20110818103803.c2617804.kamezawa.hiroyu@jp.fujitsu.com>
+ <20110818023610.GA12514@localhost>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4E4C7E16.9090905-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: container cgroup <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Randy Dunlap <rdunlap-/UHa2rfvQTnk1uMJSBkQmQ@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <owner-linux-mm@kvack.org>
+Content-Disposition: inline
+In-Reply-To: <20110818023610.GA12514@localhost>
+Sender: owner-linux-mm@kvack.org
+To: Wu Fengguang <fengguang.wu@intel.com>
+Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Jan Kara <jack@suse.cz>, Greg Thelen <gthelen@google.com>, Andrew Morton <akpm@linux-foundation.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linux-mm@kvack.org" <linux-mm@kvack.org>, "containers@lists.osdl.org" <containers@lists.osdl.org>, "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>, Balbir Singh <bsingharora@gmail.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Johannes Weiner <hannes@cmpxchg.org>, Dave Chinner <david@fromorbit.com>, Vivek Goyal <vgoyal@redhat.com>, Andrea Righi <andrea@betterlinux.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>, Li Shaohua <shaohua.li@intel.com>, "Shi, Alex" <alex.shi@intel.com>, "Chen, Tim C" <tim.c.chen@intel.com>
 List-Id: containers.vger.kernel.org
 
-On Wed, Aug 17, 2011 at 7:51 PM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
-> - ns cgroup has been removed.
-> - it's true moving a task to another cgroup can fail.
->
-> Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-
-Acked-by: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
-
-
+On Thu 18-08-11 10:36:10, Wu Fengguang wrote:
+> Subject: squeeze max-pause area and drop pass-good area
+> Date: Tue Aug 16 13:37:14 CST 2011
+> 
+> Remove the pass-good area introduced in ffd1f609ab10 ("writeback:
+> introduce max-pause and pass-good dirty limits") and make the
+> max-pause area smaller and safe.
+> 
+> This fixes ~30% performance regression in the ext3 data=writeback
+> fio_mmap_randwrite_64k/fio_mmap_randrw_64k test cases, where there are
+> 12 JBOD disks, on each disk runs 8 concurrent tasks doing reads+writes.
+> 
+> Using deadline scheduler also has a regression, but not that big as
+> CFQ, so this suggests we have some write starvation.
+> 
+> The test logs show that
+> 
+> - the disks are sometimes under utilized
+> 
+> - global dirty pages sometimes rush high to the pass-good area for
+>   several hundred seconds, while in the mean time some bdi dirty pages
+>   drop to very low value (bdi_dirty << bdi_thresh).
+>   Then suddenly the global dirty pages dropped under global dirty
+>   threshold and bdi_dirty rush very high (for example, 2 times higher
+>   than bdi_thresh). During which time balance_dirty_pages() is not
+>   called at all.
+> 
+> So the problems are
+> 
+> 1) The random writes progress so slow that they break the assumption of
+> the max-pause logic that "8 pages per 200ms is typically more than
+> enough to curb heavy dirtiers".
+> 
+> 2) The max-pause logic ignored task_bdi_thresh and thus opens the
+>    possibility for some bdi's to over dirty pages, leading to
+>    (bdi_dirty >> bdi_thresh) and then (bdi_thresh >> bdi_dirty) for others.
+> 
+> 3) The higher max-pause/pass-good thresholds somehow leads to some bad
+>    swing of dirty pages.
+> 
+> The fix is to allow the task to slightly dirty over task_bdi_thresh, but
+> no way to exceed bdi_dirty and/or global dirty_thresh.
+> 
+> Tests show that it fixed the JBOD regression completely (both behavior
+> and performance), while still being able to cut down large pause times
+> in balance_dirty_pages() for single-disk cases.
+> 
+> Reported-by: Li Shaohua <shaohua.li@intel.com>
+> Tested-by: Li Shaohua <shaohua.li@intel.com>
+> Signed-off-by: Wu Fengguang <fengguang.wu@intel.com>
 > ---
-> =A0Documentation/cgroups/cgroups.txt | =A0 =A04 ++--
-> =A01 files changed, 2 insertions(+), 2 deletions(-)
->
-> diff --git a/Documentation/cgroups/cgroups.txt b/Documentation/cgroups/cg=
-roups.txt
-> index cd67e90..9c452ef 100644
-> --- a/Documentation/cgroups/cgroups.txt
-> +++ b/Documentation/cgroups/cgroups.txt
-> @@ -454,8 +454,8 @@ mounted hierarchy, to remove a task from its current =
-cgroup you must
-> =A0move it into a new cgroup (possibly the root cgroup) by writing to the
-> =A0new cgroup's tasks file.
->
-> -Note: If the ns cgroup is active, moving a process to another cgroup can
-> -fail.
-> +Note: Due to some restrictions enforced by some cgroup subsystems, moving
-> +a process to another cgroup can fail.
->
-> =A02.3 Mounting hierarchies by name
-> =A0--------------------------------
-> --
-> 1.7.3.1
->
+>  include/linux/writeback.h |   11 -----------
+>  mm/page-writeback.c       |   15 ++-------------
+>  2 files changed, 2 insertions(+), 24 deletions(-)
+> 
+> --- linux.orig/mm/page-writeback.c	2011-08-18 09:52:59.000000000 +0800
+> +++ linux/mm/page-writeback.c	2011-08-18 10:28:57.000000000 +0800
+> @@ -786,21 +786,10 @@ static void balance_dirty_pages(struct a
+>  		 * 200ms is typically more than enough to curb heavy dirtiers;
+>  		 * (b) the pause time limit makes the dirtiers more responsive.
+>  		 */
+> -		if (nr_dirty < dirty_thresh +
+> -			       dirty_thresh / DIRTY_MAXPAUSE_AREA &&
+> +		if (nr_dirty < dirty_thresh &&
+> +		    bdi_dirty < (task_bdi_thresh + bdi_thresh) / 2 &&
+>  		    time_after(jiffies, start_time + MAX_PAUSE))
+>  			break;
+  This looks definitely much safer than the original patch since we now
+always observe global dirty limit. I just wonder: We have throttled the
+task because bdi_nr_reclaimable > task_bdi_thresh. Now in practice there
+should be some pages under writeback and this task should have submitted
+even more just a while ago. So the condition
+  bdi_dirty < (task_bdi_thresh + bdi_thresh) / 2
+looks still relatively weak. Shouldn't there be
+  bdi_nr_reclaimable < (task_bdi_thresh + bdi_thresh) / 2?
+Since bdi_nr_reclaimable is really the number we want to limit...
+Alternatively, I could see also a reason for
+  bdi_dirty < task_bdi_thresh
+which leaves the task pages under writeback as the pausing area. But since
+these are not really well limited, I'd prefer my first suggestion.
+
+								Honza
+> -		/*
+> -		 * pass-good area. When some bdi gets blocked (eg. NFS server
+> -		 * not responding), or write bandwidth dropped dramatically due
+> -		 * to concurrent reads, or dirty threshold suddenly dropped and
+> -		 * the dirty pages cannot be brought down anytime soon (eg. on
+> -		 * slow USB stick), at least let go of the good bdi's.
+> -		 */
+> -		if (nr_dirty < dirty_thresh +
+> -			       dirty_thresh / DIRTY_PASSGOOD_AREA &&
+> -		    bdi_dirty < bdi_thresh)
+> -			break;
+>  
+>  		/*
+>  		 * Increase the delay for each loop, up to our previous
+> --- linux.orig/include/linux/writeback.h	2011-08-16 23:34:27.000000000 +0800
+> +++ linux/include/linux/writeback.h	2011-08-18 09:53:03.000000000 +0800
+> @@ -12,15 +12,6 @@
+>   *
+>   *	(thresh - thresh/DIRTY_FULL_SCOPE, thresh)
+>   *
+> - * The 1/16 region above the global dirty limit will be put to maximum pauses:
+> - *
+> - *	(limit, limit + limit/DIRTY_MAXPAUSE_AREA)
+> - *
+> - * The 1/16 region above the max-pause region, dirty exceeded bdi's will be put
+> - * to loops:
+> - *
+> - *	(limit + limit/DIRTY_MAXPAUSE_AREA, limit + limit/DIRTY_PASSGOOD_AREA)
+> - *
+>   * Further beyond, all dirtier tasks will enter a loop waiting (possibly long
+>   * time) for the dirty pages to drop, unless written enough pages.
+>   *
+> @@ -31,8 +22,6 @@
+>   */
+>  #define DIRTY_SCOPE		8
+>  #define DIRTY_FULL_SCOPE	(DIRTY_SCOPE / 2)
+> -#define DIRTY_MAXPAUSE_AREA		16
+> -#define DIRTY_PASSGOOD_AREA		8
+>  
+>  /*
+>   * 4MB minimal write chunk size
+-- 
+Jan Kara <jack@suse.cz>
+SUSE Labs, CR
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
