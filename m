@@ -1,46 +1,78 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH] cgroups: update documentation on task moving restriction
-Date: Thu, 18 Aug 2011 10:51:02 +0800
-Message-ID: <4E4C7E16.9090905__35950.4109052525$1313636031$gmane$org@cn.fujitsu.com>
+From: Greg Thelen <gthelen@google.com>
+Subject: Re: [PATCH v9 03/13] memcg: add dirty page accounting infrastructure
+Date: Wed, 17 Aug 2011 23:07:29 -0700
+Message-ID: <xr93bovnuuam.fsf@gthelen.mtv.corp.google.com>
+References: <1313597705-6093-1-git-send-email-gthelen@google.com>
+	<1313597705-6093-4-git-send-email-gthelen@google.com>
+	<20110818093959.cdf501ae.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Randy Dunlap <rdunlap-/UHa2rfvQTnk1uMJSBkQmQ@public.gmane.org>
-Cc: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>, container cgroup <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <20110818093959.cdf501ae.kamezawa.hiroyu@jp.fujitsu.com>
+	(KAMEZAWA Hiroyuki's message of "Thu, 18 Aug 2011 09:39:59 +0900")
+Sender: owner-linux-mm@kvack.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Balbir Singh <bsingharora@gmail.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Johannes Weiner <hannes@cmpxchg.org>, Wu Fengguang <fengguang.wu@intel.com>, Dave Chinner <david@fromorbit.com>, Vivek Goyal <vgoyal@redhat.com>, Andrea Righi <andrea@betterlinux.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>
 List-Id: containers.vger.kernel.org
 
-- ns cgroup has been removed.
-- it's true moving a task to another cgroup can fail.
+KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com> writes:
 
-Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
----
- Documentation/cgroups/cgroups.txt |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+> On Wed, 17 Aug 2011 09:14:55 -0700
+> Greg Thelen <gthelen@google.com> wrote:
+>
+>> Add memcg routines to count dirty, writeback, and unstable_NFS pages.
+>> These routines are not yet used by the kernel to count such pages.  A
+>> later change adds kernel calls to these new routines.
+>> 
+>> As inode pages are marked dirty, if the dirtied page's cgroup differs
+>> from the inode's cgroup, then mark the inode shared across several
+>> cgroup.
+>> 
+>> Signed-off-by: Greg Thelen <gthelen@google.com>
+>> Signed-off-by: Andrea Righi <andrea@betterlinux.com>
+>
+> Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+>
+> A nitpick..
+>
+>
+>
+>> +static inline
+>> +void mem_cgroup_move_account_page_stat(struct mem_cgroup *from,
+>> +				       struct mem_cgroup *to,
+>> +				       enum mem_cgroup_stat_index idx)
+>> +{
+>> +	preempt_disable();
+>> +	__this_cpu_dec(from->stat->count[idx]);
+>> +	__this_cpu_inc(to->stat->count[idx]);
+>> +	preempt_enable();
+>> +}
+>> +
+>
+> this_cpu_dec()
+> this_cpu_inc()
+>
+> without preempt_disable/enable will work. CPU change between dec/inc will
+> not be problem.
+>
+> Thanks,
+> -Kame
 
-diff --git a/Documentation/cgroups/cgroups.txt b/Documentation/cgroups/cgroups.txt
-index cd67e90..9c452ef 100644
---- a/Documentation/cgroups/cgroups.txt
-+++ b/Documentation/cgroups/cgroups.txt
-@@ -454,8 +454,8 @@ mounted hierarchy, to remove a task from its current cgroup you must
- move it into a new cgroup (possibly the root cgroup) by writing to the
- new cgroup's tasks file.
- 
--Note: If the ns cgroup is active, moving a process to another cgroup can
--fail.
-+Note: Due to some restrictions enforced by some cgroup subsystems, moving
-+a process to another cgroup can fail.
- 
- 2.3 Mounting hierarchies by name
- --------------------------------
--- 
-1.7.3.1
+I agree, but this fix is general cleanup, which seems independent of
+memcg dirty accounting.  This preemption disable/enable pattern exists
+before this patch series in both mem_cgroup_charge_statistics() and
+mem_cgroup_move_account().  For consistency we should change both.  To
+keep the dirty page accounting series simple, I would like to make these
+changes outside of this series.  On x86 usage of this_cpu_dec/inc looks
+equivalent to __this_cpu_inc(), so I assume the only trade off is that
+preemptible non-x86 using generic this_this_cpu() will internally
+disable/enable preemption in this_cpu_*() operations.
+
+I'll submit a cleanup patch outside of the dirty limit patches for this.
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
