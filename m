@@ -1,109 +1,165 @@
-From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [PATCH v3 0/4] Per-container dcache limitation
-Date: Wed, 17 Aug 2011 11:44:53 -0700
-Message-ID: <4E4C0C25.3__679.408750920807$1313606794$gmane$org@parallels.com>
-References: <1313334832-1150-1-git-send-email-glommer@parallels.com>
-	<20110817054343.GM26978@dastard>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+Subject: Re: [PATCH v9 00/13] memcg: per cgroup dirty page limiting
+Date: Thu, 18 Aug 2011 09:35:57 +0900
+Message-ID: <20110818093557.7994e309.kamezawa.hiroyu@jp.fujitsu.com>
+References: <1313597705-6093-1-git-send-email-gthelen@google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110817054343.GM26978@dastard>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
-Cc: Andrea Arcangeli <aarcange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Nick Piggin <npiggin-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James Bottomley <JBottomley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <1313597705-6093-1-git-send-email-gthelen@google.com>
+Sender: owner-linux-mm@kvack.org
+To: Greg Thelen <gthelen@google.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Balbir Singh <bsingharora@gmail.com>, Daisuke Nishimura <nishimura@mxp.nes.nec.co.jp>, Minchan Kim <minchan.kim@gmail.com>, Johannes Weiner <hannes@cmpxchg.org>, Wu Fengguang <fengguang.wu@intel.com>, Dave Chinner <david@fromorbit.com>, Vivek Goyal <vgoyal@redhat.com>, Andrea Righi <andrea@betterlinux.com>, Ciju Rajan K <ciju@linux.vnet.ibm.com>, David Rientjes <rientjes@google.com>
 List-Id: containers.vger.kernel.org
 
-On 08/16/2011 10:43 PM, Dave Chinner wrote:
-> On Sun, Aug 14, 2011 at 07:13:48PM +0400, Glauber Costa wrote:
->> Hello,
->>
->> This series is just like v2, except it addresses
->> Eric's comments regarding percpu variables.
->>
->> Let me know if there are further comments, and
->> I'll promply address them as well. Otherwise,
->> I feel this is ready for inclusion
+On Wed, 17 Aug 2011 09:14:52 -0700
+Greg Thelen <gthelen@google.com> wrote:
 
-Hi David,
+> This patch series provides the ability for each cgroup to have independent dirty
+> page usage limits.  Limiting dirty memory fixes the max amount of dirty (hard to
+> reclaim) page cache used by a cgroup.  This allows for better per cgroup memory
+> isolation and fewer memcg OOMs.
+> 
 
-I am not answering everything now, since I'm travelling, but let me get 
-to this one:
+Thank you for your patient work!. I really want this feature.
+(Hopefully before we tune vmscan)
 
-> Just out of couriousity, one thing I've noticed about dentries is
-> that in general at any given point in time most dentries are unused.
-> Under the workloads I'm testing, even when I have a million cached
-> dentries, I only have roughly 7,000 accounted as used.  That is, most
-> of the dentries in the system are on a LRU and accounted in
-> sb->s_nr_dentry_unused of their owner superblock.
->
-> So rather than introduce a bunch of new infrastructure to track the
-> number of dentries allocated, why not simply limit the number of
-> dentries allowed on the LRU? We already track that, and the shrinker
-> already operates on the LRU, so we don't really need any new
-> infrastructure.
-Because this only works well for cooperative workloads. And we can't 
-really assume that in the virtualization world. One container can come 
-up with a bogus workload - not even hard to write - that has the sole 
-purpose of punishing every resource sharer of him.
+I hope this patch will not have heavy HUNKs..
 
-That's why we're putting limits on pinnable kernel memory. Normal
-workloads won't do.
+Thanks,
+-Kame
 
->
-> The limiting can be lazily - we don't need to limit the growth of
-> dentries until we start to run out of memory. If the superblock
-> shrinker is aware of the limits, then when it gets called by memory
-> reclaim it can do all the work of reducing the number of items on
-> the LRU down to the threshold at that time.
 
-Well, this idea itself can be considered, independent of which path 
-we're taking. We can, if we want, allow the dentry cache to grow 
-indefinitely if we're out of memory pressure. But it kinda defies the
-purpose of a hard limit...
+> Three features are included in this patch series:
+>   1. memcg dirty page accounting
+>   2. memcg writeback
+>   3. memcg dirty page limiting
+> 
+> 
+> 1. memcg dirty page accounting
+> 
+> Each memcg maintains a dirty page count and dirty page limit.  Previous
+> iterations of this patch series have refined this logic.  The interface is
+> similar to the procfs interface: /proc/sys/vm/dirty_*.  It is possible to
+> configure a limit to trigger throttling of a dirtier or queue background
+> writeback.  The root cgroup memory.dirty_* control files are read-only and match
+> the contents of the /proc/sys/vm/dirty_* files.
+> 
+> 
+> 2. memcg writeback
+> 
+> Having per cgroup dirty memory limits is not very interesting unless writeback
+> is also cgroup aware.  There is not much isolation if cgroups have to writeback data
+> from outside the affected cgroup to get below the cgroup dirty memory threshold.
+> 
+> Per-memcg dirty limits are provided to support isolation and thus cross cgroup
+> inode sharing is not a priority.  This allows the code be simpler.
+> 
+> To add cgroup awareness to writeback, this series adds an i_memcg field to
+> struct address_space to allow writeback to isolate inodes for a particular
+> cgroup.  When an inode is marked dirty, i_memcg is set to the current cgroup.
+> When inode pages are marked dirty the i_memcg field is compared against the
+> page's cgroup.  If they differ, then the inode is marked as shared by setting
+> i_memcg to a special shared value (zero).
+> 
+> When performing per-memcg writeback, move_expired_inodes() scans the per bdi
+> b_dirty list using each inode's i_memcg and the global over-limit memcg bitmap
+> to determine if the inode should be written.  This inode scan may involve
+> skipping many unrelated inodes from other cgroup.  To test the scanning
+> overhead, I created two cgroups (cgroup_A with 100,000 dirty inodes under A's
+> dirty limit, cgroup_B with 1 inode over B's dirty limit).  The writeback code
+> then had to skip 100,000 inodes when balancing cgroup_B to find the one inode
+> that needed writing.  This scanning took 58 msec to skip 100,000 foreign inodes.
+> 
+> 
+> 3. memcg dirty page limiting
+> 
+> balance_dirty_pages() calls mem_cgroup_balance_dirty_pages(), which checks the
+> dirty usage vs dirty thresholds for the current cgroup and its parents.  As
+> cgroups exceed their background limit, they are marked in a global over-limit
+> bitmap (indexed by cgroup id) and the bdi flusher is awoke.  As a cgroup hits is
+> foreground limit, the task is throttled while performing foreground writeback on
+> inodes owned by the over-limit cgroup.  If mem_cgroup_balance_dirty_pages() is
+> unable to get below the dirty page threshold writing per-memcg inodes, then
+> downshifts to also writing shared inodes (i_memcg=0).
+> 
+> I know that there is some significant IO-less balance_dirty_pages() changes.  I
+> am not trying to derail that effort.  I have done moderate functional testing of
+> the newly proposed features.
+> 
+> The memcg aspects of this patch are pretty mature.  The writeback aspects are
+> still fairly new and need feedback from the writeback community.  These features
+> are linked, so it's not clear which branch to send the changes to (the writeback
+> development branch or mmotm).
+> 
+> Here is an example of the memcg OOM that is avoided with this patch series:
+> 	# mkdir /dev/cgroup/memory/x
+> 	# echo 100M > /dev/cgroup/memory/x/memory.limit_in_bytes
+> 	# echo $$ > /dev/cgroup/memory/x/tasks
+> 	# dd if=/dev/zero of=/data/f1 bs=1k count=1M &
+>         # dd if=/dev/zero of=/data/f2 bs=1k count=1M &
+>         # wait
+> 	[1]-  Killed                  dd if=/dev/zero of=/data/f1 bs=1M count=1k
+> 	[2]+  Killed                  dd if=/dev/zero of=/data/f1 bs=1M count=1k
+> 
+> Changes since -v8:
+> - Reordered patches for better more readability.
+> 
+> - No longer passing struct writeback_control into memcontrol functions.  Instead
+>   the needed attributes (memcg_id, etc.) are explicitly passed in.  Therefore no
+>   more field additions to struct writeback_control.
+> 
+> - Replaced 'Andrea Righi <arighi@develer.com>' with 
+>   'Andrea Righi <andrea@betterlinux.com>' in commit descriptions.
+> 
+> - Rebased to mmotm-2011-08-02-16-19
+> 
+> Greg Thelen (13):
+>   memcg: document cgroup dirty memory interfaces
+>   memcg: add page_cgroup flags for dirty page tracking
+>   memcg: add dirty page accounting infrastructure
+>   memcg: add kernel calls for memcg dirty page stats
+>   memcg: add mem_cgroup_mark_inode_dirty()
+>   memcg: add dirty limits to mem_cgroup
+>   memcg: add cgroupfs interface to memcg dirty limits
+>   memcg: dirty page accounting support routines
+>   memcg: create support routines for writeback
+>   writeback: pass wb_writeback_work into move_expired_inodes()
+>   writeback: make background writeback cgroup aware
+>   memcg: create support routines for page writeback
+>   memcg: check memcg dirty limits in page writeback
+> 
+>  Documentation/cgroups/memory.txt  |   70 ++++
+>  fs/buffer.c                       |    2 +-
+>  fs/fs-writeback.c                 |  113 ++++--
+>  fs/inode.c                        |    3 +
+>  fs/nfs/write.c                    |    4 +
+>  fs/sync.c                         |    2 +-
+>  include/linux/cgroup.h            |    1 +
+>  include/linux/fs.h                |    9 +
+>  include/linux/memcontrol.h        |   64 +++-
+>  include/linux/page_cgroup.h       |   23 ++
+>  include/linux/writeback.h         |    9 +-
+>  include/trace/events/memcontrol.h |  207 ++++++++++
+>  kernel/cgroup.c                   |    1 -
+>  mm/backing-dev.c                  |    3 +-
+>  mm/filemap.c                      |    1 +
+>  mm/memcontrol.c                   |  760 ++++++++++++++++++++++++++++++++++++-
+>  mm/page-writeback.c               |   44 ++-
+>  mm/truncate.c                     |    1 +
+>  mm/vmscan.c                       |    5 +-
+>  19 files changed, 1265 insertions(+), 57 deletions(-)
+>  create mode 100644 include/trace/events/memcontrol.h
+> 
+> -- 
+> 1.7.3.1
+> 
+> 
 
-If we allow the dcache to grow over the hard cap just because memory is 
-plentiful, then when it is *not* plentiful, we might be full of pinned 
-entries that we can't release - and screw up somebody else's container, 
-that behaved well all the time.
-
->
-> IOWs, the limit has no impact on performance until memory is scarce,
-> at which time memory reclaim enforces the limits on LRU size and
-> clean up happens automatically.
->
-> This also avoids all the problems of setting a limit lower than the
-> number of active dentries required for the workload (i.e. avoids
-> spurious ENOMEM errors trying to allocate dentries), allows
-> overcommitment when memory is plentiful (which will benefit
-> performance) but it brings the caches back to defined limits when
-> memory is not plentiful (which solves the problem you are having).
-No, this is not really the problem we're having.
-See above.
-
-About ENOMEM, I don't really see what's wrong with them here. For a 
-container, running out of his assigned kernel memory, should be exactly 
-the same as running out of real physical memory. I do agree that it 
-changes the feeling of the system a little bit, because it then happens 
-more often. But it is still right in principle.
-
->
-> That seems like a much better solution to me, because it doesn't
-> impact the normal working of workloads in the containers and avoids
-> having to work out what the correct minimum size of the cache for
-> each workload is. It's much easier to work out how many extra cached
-> dentries you want the container to be able to have when memory is
-> scarce...
->
-> What do you think?
-
-I think that for the reasons I went through above, dcache limiting and 
-LRU size capping are really not equivalent in terms of solving this problem.
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
