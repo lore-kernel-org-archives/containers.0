@@ -1,35 +1,44 @@
-From: Balbir Singh <bsingharora-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: cgrulesengd behavior
-Date: Fri, 19 Aug 2011 13:32:25 +0530
-Message-ID: <CAKTCnzm8Kav4XytFPkEN=v6jCJzNwRqYviGBKZF2B_pZ9eT_MA@mail.gmail.com>
-References: <20110819004213.GU70485@stat.berkeley.edu>
-	<20110819034203.GA18659@sergelap>
-	<20110819074246.GA5214@stat.berkeley.edu>
+From: Milan Broz <mbroz@redhat.com>
+Subject: Re: [dm-devel] clone() with CLONE_NEWNET breaks kobject_uevent_env()
+Date: Fri, 19 Aug 2011 12:22:19 +0200
+Message-ID: <4E4E395B.7070106@redhat.com>
+References: <4E4CDF44.5080109@redhat.com> <m17h69sr03.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110819074246.GA5214-ClWH9YILRl0b0cFwG/AQJIdd74u8MsAO@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ryan Lovett <ryan-ClWH9YILRl0b0cFwG/AQJIdd74u8MsAO@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <m17h69sr03.fsf@fess.ebiederm.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: device-mapper development <dm-devel@redhat.com>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Kay Sievers <kay.sievers@vrfy.org>, "David S. Miller" <davem@davemloft.net>, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Aug 19, 2011 at 1:12 PM, Ryan Lovett <ryan-ClWH9YILRl0b0cFwG/AQJIdd74u8MsAO@public.gmane.org> wrote:
-> On Thu, Aug 18, 2011 at 10:42:03PM -0500, Serge E. Hallyn wrote:
->> cgrulesengd is part of libcg, over at http://sourceforge.net/projects/libcg/
->> There is no libcg-users email list, so the libcg-dev seems most appropriate.
->
-> Thanks for the pointer, I'll make my way over there.
 
-Please feel free to ask here
+On 08/19/2011 11:13 AM, Eric W. Biederman wrote:
+> Milan Broz <mbroz@redhat.com> writes:
+> 
+> I think the proper fix is to remove the error return from
+> kobject_uevent_env and kobject_uevent, and make it harder to get calling
+> of this function wrong.  Possibly in conjunction with that tag all of
+> the memory allocations of kobject_uevent_env with GFP_NOFAIL or
+> something so the memory allocator knows that this path is totally
+> not able to deal with failure.
+> 
+> Is kobject_uevent_env anything except an asynchronous best effort
+> notification to user-space that a device has come or gone?
 
-Balbir
+Unfortunately it is for device-mapper. libdevmapper
+depends on information that uevent was sent because udev rules uses
+semaphore to inform that some action was taken.
+So if dm-ioctl returns flag that uevent was not sent, it fallback
+to different error path (otherwise it waits for completion forever).
+(TBH I am more and more convinced this was not quite clever concept.)
+
+But the whole concept "send event to the list of namespaces, maybe someone listen"
+seems also not quite clever to me :-)
+
+How much time consuming is that? If you create thousand(s) of cloned namespaces,
+how it will perform with uevent notification performance?
+(IOW first event is sent through netlink and 999+ reports failure... strange.)
+
+Milan
