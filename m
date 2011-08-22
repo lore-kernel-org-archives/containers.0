@@ -1,8 +1,8 @@
-From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: Bruno =?UTF-8?B?UHLDqW1vbnQ=?= <bonbons-ud5FBsm0p/xEiooADzr8i9i2O/JbrIOy@public.gmane.org>
 Subject: Re: [PATCH 0/2] Send a SIGCHLD to the init's pid namespace parent
 	when reboot
-Date: Mon, 22 Aug 2011 19:39:49 +0200
-Message-ID: <20110822173949.GA13242__18185.7439959005$1314035023$gmane$org@redhat.com>
+Date: Mon, 22 Aug 2011 21:17:16 +0200
+Message-ID: <20110822211716.7c141d5c__39073.1105035686$1314040875$gmane$org@neptune.home>
 References: <1313094241-3674-1-git-send-email-daniel.lezcano@free.fr>
 	<20110814161707.GB30846@redhat.com>
 	<20110814213642.GB13799@hallyn.com>
@@ -10,12 +10,12 @@ References: <1313094241-3674-1-git-send-email-daniel.lezcano@free.fr>
 	<20110819152416.GA17034@redhat.com> <4E524B73.3050704@free.fr>
 	<20110822154448.GA8527@redhat.com>
 	<20110822183134.10390b46@neptune.home>
+	<20110822173949.GA13242@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20110822183134.10390b46-hY15tx4IgV39zxVx7UNMDg@public.gmane.org>
+In-Reply-To: <20110822173949.GA13242-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,77 +25,76 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Bruno =?iso-8859-1?Q?Pr=E9mont?= <bonbons-ud5FBsm0p/xEiooADzr8i9i2O/JbrIOy@public.gmane.org>
+To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 08/22, Bruno Pr=E9mont wrote:
->
-> On Mon, 22 August 2011 Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> > On 08/22, Daniel Lezcano wrote:
-> > >
-> > > If we pass the reason to the exit_code of the init process, that will=
- be
-> > > a bit weird as the process is signaled and did not exited  no ?
-> >
-> > Just in case, you shouldn't change ->exit_code blindly. We should only
-> > change it if init was a) SIGKILL'ed and b) pid_ns->reboot_cmd is set.
-> > In this case we can assume that it was killed by sys_reboot.
-> >
-> > Now. I didn't really mean exit_state should be equal to sys_reboot's
-> > cmd arg. I thought about something like
-> >
-> > 	swicth (reboot_cmd) {
-> > 	case LINUX_REBOOT_CMD_RESTART:
-> > 		code =3D SIGHUP;
-> > 		break;
-> > 	case LINUX_REBOOT_CMD_HALT:
-> > 		code =3D SIGINT;	// doesn't really matter what we report
-> > 		...
-> > 	}
->
-> Isn't it possible to add the two cases to si_code possible values, e.g.
-> CDL_RESTART, CDL_HALT (or CDL_SYS_RESTART, CDL_SYS_HALT
-
-How? You should change do_wait() paths then. Even if we could, personally
-I'd strongly object ;) Look, you have the very specific problem. The kernel
-can't do everything to make everyone happy. There is tradeoff.
-
-But if you really meant siginfo->si_code, I do not understand at all what
-you actually mean. This info is not preserved when the task exits.
-
-> to avoid possible
-> confusion with CDL_STOPPED)?
-
-How it is possible to confuse this with CDL_STOPPED?
-
-> Then on sys_reboot() flag container init and kill it (this way sys_reboot=
-()
-> preserves its "will not return on success for restart/halt" scematic)?
-
-This is what I suggested...
-
-> Then container init would see CLD_KILLED replaced with matching reboot
-> reason.
-
-For what? its parent need this info, not container init. I guess I got
-lost completely.
-
-> Playing with the exit code is probably more problematic
-
-OK, then please do something else. I do not pretend I really understand
-what do you really need to solve your problem. But please do not forget
-the kernel is already very complex and full of misc hacks ;)
-
-> > And, iiuc, the point was to "fix" sys_reboot() so that we do not need
-> > to mofify the distro/userspace?
->
-> That's definitely the goal (not modify distro/userspace running inside
-> container).
-
-In this case I do not understand how prctl() can help.
-
-
-But please do not try to convince me, this is simply unnecessary ;)
-
-Oleg.
+T24gTW9uLCAyMiBBdWd1c3QgMjAxMSBPbGVnIE5lc3Rlcm92IHdyb3RlOgo+IE9uIDA4LzIyLCBC
+cnVubyBQcsOpbW9udCB3cm90ZToKPiA+Cj4gPiBPbiBNb24sIDIyIEF1Z3VzdCAyMDExIE9sZWcg
+TmVzdGVyb3YgPG9sZWdAcmVkaGF0LmNvbT4gd3JvdGU6Cj4gPiA+IE9uIDA4LzIyLCBEYW5pZWwg
+TGV6Y2FubyB3cm90ZToKPiA+ID4gPgo+ID4gPiA+IElmIHdlIHBhc3MgdGhlIHJlYXNvbiB0byB0
+aGUgZXhpdF9jb2RlIG9mIHRoZSBpbml0IHByb2Nlc3MsIHRoYXQgd2lsbCBiZQo+ID4gPiA+IGEg
+Yml0IHdlaXJkIGFzIHRoZSBwcm9jZXNzIGlzIHNpZ25hbGVkIGFuZCBkaWQgbm90IGV4aXRlZCAg
+bm8gPwo+ID4gPgo+ID4gPiBKdXN0IGluIGNhc2UsIHlvdSBzaG91bGRuJ3QgY2hhbmdlIC0+ZXhp
+dF9jb2RlIGJsaW5kbHkuIFdlIHNob3VsZCBvbmx5Cj4gPiA+IGNoYW5nZSBpdCBpZiBpbml0IHdh
+cyBhKSBTSUdLSUxMJ2VkIGFuZCBiKSBwaWRfbnMtPnJlYm9vdF9jbWQgaXMgc2V0Lgo+ID4gPiBJ
+biB0aGlzIGNhc2Ugd2UgY2FuIGFzc3VtZSB0aGF0IGl0IHdhcyBraWxsZWQgYnkgc3lzX3JlYm9v
+dC4KPiA+ID4KPiA+ID4gTm93LiBJIGRpZG4ndCByZWFsbHkgbWVhbiBleGl0X3N0YXRlIHNob3Vs
+ZCBiZSBlcXVhbCB0byBzeXNfcmVib290J3MKPiA+ID4gY21kIGFyZy4gSSB0aG91Z2h0IGFib3V0
+IHNvbWV0aGluZyBsaWtlCj4gPiA+Cj4gPiA+IAlzd2ljdGggKHJlYm9vdF9jbWQpIHsKPiA+ID4g
+CWNhc2UgTElOVVhfUkVCT09UX0NNRF9SRVNUQVJUOgo+ID4gPiAJCWNvZGUgPSBTSUdIVVA7Cj4g
+PiA+IAkJYnJlYWs7Cj4gPiA+IAljYXNlIExJTlVYX1JFQk9PVF9DTURfSEFMVDoKPiA+ID4gCQlj
+b2RlID0gU0lHSU5UOwkvLyBkb2Vzbid0IHJlYWxseSBtYXR0ZXIgd2hhdCB3ZSByZXBvcnQKPiA+
+ID4gCQkuLi4KPiA+ID4gCX0KPiA+Cj4gPiBJc24ndCBpdCBwb3NzaWJsZSB0byBhZGQgdGhlIHR3
+byBjYXNlcyB0byBzaV9jb2RlIHBvc3NpYmxlIHZhbHVlcywgZS5nLgo+ID4gQ0RMX1JFU1RBUlQs
+IENETF9IQUxUIChvciBDRExfU1lTX1JFU1RBUlQsIENETF9TWVNfSEFMVAo+IAo+IEhvdz8gWW91
+IHNob3VsZCBjaGFuZ2UgZG9fd2FpdCgpIHBhdGhzIHRoZW4uIEV2ZW4gaWYgd2UgY291bGQsIHBl
+cnNvbmFsbHkKPiBJJ2Qgc3Ryb25nbHkgb2JqZWN0IDspIExvb2ssIHlvdSBoYXZlIHRoZSB2ZXJ5
+IHNwZWNpZmljIHByb2JsZW0uIFRoZSBrZXJuZWwKPiBjYW4ndCBkbyBldmVyeXRoaW5nIHRvIG1h
+a2UgZXZlcnlvbmUgaGFwcHkuIFRoZXJlIGlzIHRyYWRlb2ZmLgo+IAo+IEJ1dCBpZiB5b3UgcmVh
+bGx5IG1lYW50IHNpZ2luZm8tPnNpX2NvZGUsIEkgZG8gbm90IHVuZGVyc3RhbmQgYXQgYWxsIHdo
+YXQKPiB5b3UgYWN0dWFsbHkgbWVhbi4gVGhpcyBpbmZvIGlzIG5vdCBwcmVzZXJ2ZWQgd2hlbiB0
+aGUgdGFzayBleGl0cy4KCkkndmUgYmVlbiByZWFkaW5nIGRvX3dhaXQoKSBjb2RlIGEgYml0LCBp
+dCBkZWNpZGVzIGJldHdlZW4gQ0xEX0tJTExFRCBhbmQKQ0xEX0RVTVBFRCBiYXNlZCBvbiBhIGJp
+dCBvZiAoc3RydWN0IHRhc2tfc3RydWN0KS5leGl0X2NvZGUuClNvIHN0cnVjdF90YXNrIElTIHN0
+aWxsIGF2YWlsYWJsZSAoaG93IGFib3V0IGl0J3MgbmFtZXNwYWNlIHJlZmVyZW5jZXM/IElmCnRo
+ZSBuYW1lc3BhY2VzIGFyZSBub3QgdGhlIHJlYm9vdCByZWFzb24gd291bGQgbmVlZCB0byBiZSBz
+dG9yZWQgc29tZXdoZXJlCmluc2lkZSBvZiBzdHJ1Y3QgdGFzayB3aGljaCBtaWdodCBiZSBzb21l
+IG92ZXJoZWFkIHRvbyBtdWNoKQoKU28gYXMgbG9uZyBhcyBjb250YWluZXIgaW5pdCdzIHRhc2tf
+c3RydWN0IGV4aXN0cyB0aGUgcmVib290IHJlYXNvbiBjb3VsZApiZSBwcmVzZXJ2ZWQgYW5kIHVz
+ZWQgdG8gcmVwbGFjZSBDTERfRFVNUEVEL0NMRF9LSUxMRUQgc2lnaW5mby0+c2lfY29kZS4KClNv
+IHllcywgdHJhZGVvZmYgdGhlbiBpcyB3aGVyZSB0byBhZGp1c3QgY29kZSBpbiBvcmRlciB0byBn
+ZXQgdGhlIGluZm9ybWF0aW9uCmFsb25nLgoKPiA+IHRvIGF2b2lkIHBvc3NpYmxlCj4gPiBjb25m
+dXNpb24gd2l0aCBDRExfU1RPUFBFRCk/Cj4gCj4gSG93IGl0IGlzIHBvc3NpYmxlIHRvIGNvbmZ1
+c2UgdGhpcyB3aXRoIENETF9TVE9QUEVEPwoKQ29uZnVzaW9uIGlzIHVzdWFsbHkgcmVhZGluZyB0
+b28gcXVpY2tseSEgKGUuZy4gc2tpcHBpbmcsIG92ZXJzZWVpbmcsCm5vdCByZWFsaXppbmcgdGhl
+IGRldGFpbHMpCgo+ID4gVGhlbiBvbiBzeXNfcmVib290KCkgZmxhZyBjb250YWluZXIgaW5pdCBh
+bmQga2lsbCBpdCAodGhpcyB3YXkgc3lzX3JlYm9vdCgpCj4gPiBwcmVzZXJ2ZXMgaXRzICJ3aWxs
+IG5vdCByZXR1cm4gb24gc3VjY2VzcyBmb3IgcmVzdGFydC9oYWx0IiBzY2VtYXRpYyk/Cj4gCj4g
+VGhpcyBpcyB3aGF0IEkgc3VnZ2VzdGVkLi4uCj4gCj4gPiBUaGVuIGNvbnRhaW5lciBpbml0IHdv
+dWxkIHNlZSBDTERfS0lMTEVEIHJlcGxhY2VkIHdpdGggbWF0Y2hpbmcgcmVib290Cj4gPiByZWFz
+b24uCj4gCj4gRm9yIHdoYXQ/IGl0cyBwYXJlbnQgbmVlZCB0aGlzIGluZm8sIG5vdCBjb250YWlu
+ZXIgaW5pdC4gSSBndWVzcyBJIGdvdAo+IGxvc3QgY29tcGxldGVseS4KCkkgbWVhbnQgQ0xEX0tJ
+TExFRCBhcyB2aXNpYmxlIHRvIHBhcmVudCBpbiBzaWdpbmZvLgpTdXJlLCBhcyBjb250YWluZXIn
+cyBpbml0IGdldHMga2lsbGVkIGl0IGRvZXNuJ3Qgc2VlIGFueXRoaW5nIGl0c2VsZi4KCj4gPiBQ
+bGF5aW5nIHdpdGggdGhlIGV4aXQgY29kZSBpcyBwcm9iYWJseSBtb3JlIHByb2JsZW1hdGljCj4g
+Cj4gT0ssIHRoZW4gcGxlYXNlIGRvIHNvbWV0aGluZyBlbHNlLiBJIGRvIG5vdCBwcmV0ZW5kIEkg
+cmVhbGx5IHVuZGVyc3RhbmQKPiB3aGF0IGRvIHlvdSByZWFsbHkgbmVlZCB0byBzb2x2ZSB5b3Vy
+IHByb2JsZW0uIEJ1dCBwbGVhc2UgZG8gbm90IGZvcmdldAo+IHRoZSBrZXJuZWwgaXMgYWxyZWFk
+eSB2ZXJ5IGNvbXBsZXggYW5kIGZ1bGwgb2YgbWlzYyBoYWNrcyA7KQo+IAo+ID4gPiBBbmQsIGlp
+dWMsIHRoZSBwb2ludCB3YXMgdG8gImZpeCIgc3lzX3JlYm9vdCgpIHNvIHRoYXQgd2UgZG8gbm90
+IG5lZWQKPiA+ID4gdG8gbW9maWZ5IHRoZSBkaXN0cm8vdXNlcnNwYWNlPwo+ID4KPiA+IFRoYXQn
+cyBkZWZpbml0ZWx5IHRoZSBnb2FsIChub3QgbW9kaWZ5IGRpc3Ryby91c2Vyc3BhY2UgcnVubmlu
+ZyBpbnNpZGUKPiA+IGNvbnRhaW5lcikuCj4gCj4gSW4gdGhpcyBjYXNlIEkgZG8gbm90IHVuZGVy
+c3RhbmQgaG93IHByY3RsKCkgY2FuIGhlbHAuCgpJJ20gbm90IHRhbGtpbmcgYWJvdXQgcHJjdGwo
+KSAtIGFzIEkgdW5kZXJzdGFuZCBEYW5pZWwgdGhlIHByY3RsKCkgcGFydCBpcwpmb3IgdGhlIHBy
+b2Nlc3Mgb3V0c2lkZSBvZiB0aGUgY29udGFpbmVyLCBub3QgdGhlIG9uZSBpbnNpZGUuClNvIGZv
+ciBjb250YWluZXIgaHlwZXJ2aXNvciB0byBzYXkgaWYgaXQgd2FudHMgdG8gZ2V0IGluZm9ybWVk
+IG9yIG5vdC4KCj4gQnV0IHBsZWFzZSBkbyBub3QgdHJ5IHRvIGNvbnZpbmNlIG1lLCB0aGlzIGlz
+IHNpbXBseSB1bm5lY2Vzc2FyeSA7KQoKTm8sIHRyeWluZyB0byBrbm93IHdoYXQncyByZWFzb25h
+Ymx5IHBvc3NpYmxlIHdpdGhvdXQgaGF2aW5nIHRvIGRvIGEgc2Vjb25kCml0ZXJhdGlvbiB3aGVu
+IGEgbmV3IChmb3Jlc2VlYWJsZSkgZmVhdHVyZXMgYXJyaXZlcy4KQW5kIGFsc28gaG9wZWZ1bGx5
+IGhhdmluZyB0aGUgc2FtZSB1bmRlcnN0YW5kaW5nIG9mIHRoZSBpc3N1ZS4KCkJydW5vCl9fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFp
+bGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9s
+aXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
