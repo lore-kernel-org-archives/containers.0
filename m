@@ -1,50 +1,27 @@
-From: Cyrill Gorcunov <gorcunov@gmail.com>
+From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 Subject: Re: [PATCH resend] vfs: Add ->statfs callback for pipefs
-Date: Wed, 24 Aug 2011 12:30:50 +0400
-Message-ID: <20110824083050.GI29452@sun>
+Date: Wed, 24 Aug 2011 12:33:17 +0400
+Message-ID: <4E54B74D.7070407@parallels.com>
 References: <20110824080924.GG29452@sun>
- <20110824012328.f7bfc68a.akpm@linux-foundation.org>
+	<20110824012328.f7bfc68a.akpm@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20110824012328.f7bfc68a.akpm@linux-foundation.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Al Viro <viro@ZenIV.linux.org.uk>, James Bottomley <jbottomley@parallels.com>, Tejun Heo <tj@kernel.org>, Glauber Costa <glommer@parallels.com>, containers@lists.osdl.org, linux-kernel@vger.kernel.org, Pavel Emelyanov <xemul@parallels.com>, Serge Hallyn <serge.hallyn@canonical.com>, Nathan Lynch <ntl@pobox.com>, Oren Laadan <orenl@cs.columbia.edu>, Daniel Lezcano <dlezcano@fr.ibm.com>, LINUXFS-ML <linux-fsdevel@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20110824012328.f7bfc68a.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, James Bottomley <jbottomley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, LINUXFS-ML <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Aug 24, 2011 at 01:23:28AM -0700, Andrew Morton wrote:
-> On Wed, 24 Aug 2011 12:09:24 +0400 Cyrill Gorcunov <gorcunov@gmail.com> wrote:
-> 
-> > From: Pavel Emelyanov <xemul@parallels.com>
-> > 
-> > This is done to make it possible to distinguish pipes
-> > from fifos when opening one via /proc/<pid>/fd/ link.
-> > 
-> > Signed-off-by: Pavel Emelyanov <xemul@parallels.com>
-> > Reviewed-by: Tejun Heo <tj@kernel.org>
-> > Acked-by: Serge Hallyn <serge.hallyn@canonical.com>
-> > Signed-off-by: Cyrill Gorcunov <gorcunov@openvz.org>
-> > ---
-> >  fs/pipe.c |    1 +
-> >  1 file changed, 1 insertion(+)
-> > 
-> > Any objections to this one? It was a part of a patchset
-> > but can be treated independently so I'm re-sending it alone.
-> > 
-> > Index: linux-2.6.git/fs/pipe.c
-> > ===================================================================
-> > --- linux-2.6.git.orig/fs/pipe.c
-> > +++ linux-2.6.git/fs/pipe.c
-> > @@ -1254,6 +1254,7 @@ out:
-> >  
-> >  static const struct super_operations pipefs_ops = {
-> >  	.destroy_inode = free_inode_nonrcu,
-> > +	.statfs = simple_statfs,
-> >  };
-> >  
-> >  /*
 > 
 > OK, I give up - how does it work?
 > 
@@ -55,16 +32,21 @@ On Wed, Aug 24, 2011 at 01:23:28AM -0700, Andrew Morton wrote:
 > f_type.  Yes?  I will fix your changelog by adding a description along these
 > lines.
 
-Yes, it allows to distinguish pipes from anything else. Initially this patch was
-a part of early rfc on checkpoint/restore facility (mostly implemented in
-userspace). So we need to distinguish somehow pipes when we dump data from
-/proc/pid/fd. That's the main reason. BUT since this patch can be used without
-any other c/r bits and can be treated separately I've sent it alone without
-any mention of c/r at all.
+Yes, the primary intention is to get the f_type.
 
-> 
 > And I'll ask you to fix it further by telling us why we want to do
 > this?  The kernel has had this issue for a long time - why does it now
 > matter?
 
-	Cyrill
+This is required by checkpoint-restart in the userspace to make it
+possible to distinguish pipes from fifos. In more details:
+
+When we dump information about task's open files we use the /proc/pid/fd
+directoy's symlinks and the fact that opening any of them gives us exactly
+the same dentry->inode pair as the original process has. Now if a task 
+we're dumping has opened pipe and fifo we need to detect this and act
+accordingly. Knowing that an fd with type S_ISFIFO resides on a pipefs
+is the most precise way.
+
+Thanks,
+Pavel
