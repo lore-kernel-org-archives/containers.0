@@ -1,16 +1,16 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 1/6] cgroup: subsys->attach_task() should be called after
-	migration
-Date: Wed, 24 Aug 2011 09:31:19 +0800
-Message-ID: <4E545467.9070202__32801.7447297045$1314149527$gmane$org@cn.fujitsu.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 4/6] cgroup: don't use subsys->can_attach_task() or
+	->attach_task()
+Date: Tue, 23 Aug 2011 18:57:39 -0700
+Message-ID: <20110824015739.GE28444__11878.8619096906$1314151176$gmane$org@count0.beaverton.ibm.com>
 References: <1314138000-2049-1-git-send-email-tj@kernel.org>
-	<1314138000-2049-2-git-send-email-tj@kernel.org>
-	<20110824003234.GB23979@somewhere>
+	<1314138000-2049-5-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110824003234.GB23979@somewhere>
+Content-Disposition: inline
+In-Reply-To: <1314138000-2049-5-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,18 +20,20 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-> There have been a patch posted recently:
-> 
->         "[PATCH][BUGFIX] cgroups: fix ordering of calls in cgroup_attach_proc"
-> 
-> that not only fixes that ordering but also only attach the task if the
-> migration happened correctly (task not exited).
-> 
-> Can somebody queue it for 3.2 ?
-> 
+On Wed, Aug 24, 2011 at 12:19:58AM +0200, Tejun Heo wrote:
 
-cgroup patches normally go through -mm tree.
+<snip>
+
+> * In cgroup_freezer, remove unnecessary NULL assignments to unused
+>   methods.  It's useless and very prone to get out of sync, which
+>   already happened.
+
+You could post this part independently -- that might be best since
+I guess the taskset bits will need more discussion.
+
+Cheers,
+	-Matt Helsley
