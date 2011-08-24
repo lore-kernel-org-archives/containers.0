@@ -1,17 +1,13 @@
-From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCHSET] cgroup: introduce cgroup_taskset and consolidate
-	subsys methods
-Date: Wed, 24 Aug 2011 15:53:22 +0200
-Message-ID: <20110824135317.GD23979__46207.1944181391$1314194294$gmane$org@somewhere>
-References: <1314138000-2049-1-git-send-email-tj@kernel.org>
-	<20110824011428.GC23979@somewhere>
-	<20110824074959.GA14170@htj.dyndns.org>
+From: Zan Lynx <zlynx-HInyCGIudOg@public.gmane.org>
+Subject: Re: [RFC] fs, proc: Introduce the /proc/<pid>/map_files/ directory v2
+Date: Wed, 24 Aug 2011 09:05:21 -0600
+Message-ID: <4E551331.1010709@acm.org>
+References: <20110824085329.GL29452@sun>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20110824074959.GA14170-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
+In-Reply-To: <20110824085329.GL29452@sun>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,59 +17,28 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org
+To: Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James Bottomley <jbottomley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, LINUXFS-ML <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Aug 24, 2011 at 09:49:59AM +0200, Tejun Heo wrote:
-> Hello, Frederic.
+On 8/24/2011 2:53 AM, Cyrill Gorcunov wrote:
+> From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 > 
-> On Wed, Aug 24, 2011 at 03:14:30AM +0200, Frederic Weisbecker wrote:
-> > >  0001-cgroup-subsys-attach_task-should-be-called-after-mig.patch
-> > >  0002-cgroup-improve-old-cgroup-handling-in-cgroup_attach_.patch
-> > >  0003-cgroup-introduce-cgroup_taskset-and-use-it-in-subsys.patch
-> > >  0004-cgroup-don-t-use-subsys-can_attach_task-or-attach_ta.patch
-> > >  0005-cgroup-cpuset-don-t-use-ss-pre_attach.patch
-> > >  0006-cgroup-kill-subsys-can_attach_task-pre_attach-and-at.patch
-> > 
-> > I don't understand the point on patches 3,4,5,6
-> > 
-> > Why pushing the task iterations down to the subsystems?
+> This one behaves similarly to the /proc/<pid>/fd/ one - it contains symlinks
+> one for each mapping with file, the name of a symlink is vma->vm_start, the
+> target is the file. Opening a symlink results in a file that point exactly
+> to the same inode as them vma's one.
 > 
-> I'll try again.
+> This thing is aimed to help checkpointing processes.
 > 
-> It seems like methods were added to serve the immediate need of the
-> particular user at the time and that in turn led to addition of
-> callbacks which were both superflous and incomplete (the bullet points
-> in the original message list them).  This seems to have happened
-> because extra interface was added without trying to make the existing
-> interface complete.
+> For example the ls -l of some arbitrary /proc/<pid>/map_files/
 > 
-> The interface is complicated and cumbersome to use - are
-> [can_]attach() called first or [can_]attach_task()?  What about
-> cancelation?  What if a subsys wants to perform operations across
-> multiple tasks atomically?
-> 
-> In general, iteration-by-callback is painful to use.  Establishing
-> common context (be it synchronization domain or shared variables)
-> becomes very cumbersome and implementation becomes fragmented and
-> difficult to follow.  For example, imagine how it would be like to use
-> list if we had call_for_each_list_entry(func, list_head) instead of
-> the control-loop style iterators we have know.
-> 
-> So, using iterators enables making all relevant information to each
-> stage of attach so that only one callback is required for each step -
-> the way it should be.  In addition, it makes it far easier for
-> subsystems to implement more involved logic in their methods.
-> 
-> I tried to make cgroup_freezer behave better which requires better
-> synchronization against the freezer and, with the current interface,
-> it's extremely ugly and painful.  The new interface is complete, easy
-> to understand and use with far less subtleties.
+>  | lr-x------ 1 cyrill cyrill 64 Aug  9 15:25 0x3d73a00000 -> /lib64/ld-2.5.so
+[snip]
 
-Yeah it's true that the order between [can]attach/[can]attach_task plus
-the added mess with pre_attach was not entirely sane. The fact we have
-foo and foo_task is already a problem.
+Just curious: How do these symlinks work when the process reading a
+/proc file is in a chroot or a different namespace?
 
-I guess we indeed need to sacrifice the iteration from the cgroup core
-for that.
+For example, a chroot environment might have independent copies of
+/lib64/ld-2.5.so and a bind mount of /proc. Does the symlink then point
+to the wrong file?
