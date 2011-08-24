@@ -1,44 +1,41 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: After lxc-execute command terminal hangs
-Date: Wed, 24 Aug 2011 10:00:25 +0200
-Message-ID: <4E54AF99.9080506@free.fr>
-References: <CAHnfO6wpNqO=PuiSJTu=9B3p1XQdgs_SV=0owK0yxxSYk__VVw@mail.gmail.com>
+From: Cyrill Gorcunov <gorcunov@gmail.com>
+Subject: [PATCH resend] vfs: Add ->statfs callback for pipefs
+Date: Wed, 24 Aug 2011 12:09:24 +0400
+Message-ID: <20110824080924.GG29452@sun>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAHnfO6wpNqO=PuiSJTu=9B3p1XQdgs_SV=0owK0yxxSYk__VVw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: nishant mungse <nishantmungse-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner@vger.kernel.org>
+Content-Disposition: inline
+Sender: linux-kernel-owner@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>, Al Viro <viro@ZenIV.linux.org.uk>
+Cc: James Bottomley <jbottomley@parallels.com>, Tejun Heo <tj@kernel.org>, Glauber Costa <glommer@parallels.com>, containers@lists.osdl.org, linux-kernel@vger.kernel.org, Pavel Emelyanov <xemul@parallels.com>, Serge Hallyn <serge.hallyn@canonical.com>, Nathan Lynch <ntl@pobox.com>, Oren Laadan <orenl@cs.columbia.edu>, Daniel Lezcano <dlezcano@fr.ibm.com>, LINUXFS-ML <linux-fsdevel@vger.kernel.org>
 List-Id: containers.vger.kernel.org
 
-On 08/24/2011 09:08 AM, nishant mungse wrote:
-> Hii all
->
-> I am using lxc for creating containers.
->
->  But when i create lxc container using "lxc-create -n abc" it creates a abc
-> container and when i do lxc-info -n abc its show "abc is stopped" and when i
-> perform "lxc-start -n abc [-f conf file ]" the terminal hangs and if do
-> "lxc-execute -n abc [-f conf file ] \bin\bash" terminal hangs.
->
-> It is not even working for  "/usr/bin/lxc-execute -n foo -f
-> /usr/share/doc/lxc/examples/lxc-macvlan.conf /bin/bash".
->
-> I am using UBUNTU 10.10.
->
-> Plz help me ASAP.
+From: Pavel Emelyanov <xemul@parallels.com>
 
-Wrong mailing list. Please use lxc-users-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+This is done to make it possible to distinguish pipes
+from fifos when opening one via /proc/<pid>/fd/ link.
 
-Thanks
-  -- Daniel
+Signed-off-by: Pavel Emelyanov <xemul@parallels.com>
+Reviewed-by: Tejun Heo <tj@kernel.org>
+Acked-by: Serge Hallyn <serge.hallyn@canonical.com>
+Signed-off-by: Cyrill Gorcunov <gorcunov@openvz.org>
+---
+ fs/pipe.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+Any objections to this one? It was a part of a patchset
+but can be treated independently so I'm re-sending it alone.
+
+Index: linux-2.6.git/fs/pipe.c
+===================================================================
+--- linux-2.6.git.orig/fs/pipe.c
++++ linux-2.6.git/fs/pipe.c
+@@ -1254,6 +1254,7 @@ out:
+ 
+ static const struct super_operations pipefs_ops = {
+ 	.destroy_inode = free_inode_nonrcu,
++	.statfs = simple_statfs,
+ };
+ 
+ /*
