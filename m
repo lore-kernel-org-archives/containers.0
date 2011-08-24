@@ -1,15 +1,16 @@
-From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCHSET] cgroup: introduce cgroup_taskset and consolidate
-	subsys methods
-Date: Wed, 24 Aug 2011 03:14:30 +0200
-Message-ID: <20110824011428.GC23979__22331.2274822549$1314148524$gmane$org@somewhere>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 1/6] cgroup: subsys->attach_task() should be called after
+	migration
+Date: Wed, 24 Aug 2011 09:31:19 +0800
+Message-ID: <4E545467.9070202__32801.7447297045$1314149527$gmane$org@cn.fujitsu.com>
 References: <1314138000-2049-1-git-send-email-tj@kernel.org>
+	<1314138000-2049-2-git-send-email-tj@kernel.org>
+	<20110824003234.GB23979@somewhere>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1314138000-2049-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <20110824003234.GB23979@somewhere>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,48 +20,18 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org
+To: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Aug 24, 2011 at 12:19:54AM +0200, Tejun Heo wrote:
-> Hello,
+> There have been a patch posted recently:
 > 
-> cgroup has grown quite some number of subsys methods.  Some of them
-> are overlapping, inconsistent with each other and called under
-> different conditions depending on whether they're called for a single
-> task or whole process.  Unfortunately, these callbacks are complicated
-> and incomplete at the same time.
+>         "[PATCH][BUGFIX] cgroups: fix ordering of calls in cgroup_attach_proc"
 > 
-> * ->attach_task() is called after migration for task attach but before
->   for process.
+> that not only fixes that ordering but also only attach the task if the
+> migration happened correctly (task not exited).
 > 
-> * Ditto for ->pre_attach().
+> Can somebody queue it for 3.2 ?
 > 
-> * ->can_attach_task() is called for every task in the thread group but
->   ->attach_task() skips the ones which don't actually change cgroups.
-> 
-> * Task attach becomes noop if the task isn't actually moving.  Process
->   attach is always performed.
-> 
-> * ->attach_task() doesn't (or at least aren't supposed to) have access
->   to the old cgroup.
-> 
-> * During cancel, there's no way to access the affected tasks.
-> 
-> This patchset introduces cgroup_taskset along with some accessors and
-> iterator, updates methods to use it, consolidates usages and drops
-> superflous methods.
-> 
-> It contains the following six patches.
-> 
->  0001-cgroup-subsys-attach_task-should-be-called-after-mig.patch
->  0002-cgroup-improve-old-cgroup-handling-in-cgroup_attach_.patch
->  0003-cgroup-introduce-cgroup_taskset-and-use-it-in-subsys.patch
->  0004-cgroup-don-t-use-subsys-can_attach_task-or-attach_ta.patch
->  0005-cgroup-cpuset-don-t-use-ss-pre_attach.patch
->  0006-cgroup-kill-subsys-can_attach_task-pre_attach-and-at.patch
 
-I don't understand the point on patches 3,4,5,6
-
-Why pushing the task iterations down to the subsystems?
+cgroup patches normally go through -mm tree.
