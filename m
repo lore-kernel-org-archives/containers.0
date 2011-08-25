@@ -1,18 +1,19 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Subject: Re: [PATCH 3/6] cgroup: introduce cgroup_taskset and use it in
 	subsys->can_attach(), cancel_attach() and attach()
-Date: Thu, 25 Aug 2011 10:40:06 +0200
-Message-ID: <CAOS58YPM=cuWjAF+VJ4QJ8bnRcVtaDCVXBJCpdWg+2=2GmnKrA__7161.12802406332$1314261695$gmane$org@mail.gmail.com>
+Date: Thu, 25 Aug 2011 17:37:50 +0900
+Message-ID: <20110825173750.4959360f.kamezawa.hiroyu__35277.7292406701$1314261958$gmane$org@jp.fujitsu.com>
 References: <1314138000-2049-1-git-send-email-tj@kernel.org>
 	<1314138000-2049-4-git-send-email-tj@kernel.org>
 	<20110825093958.75b95bd8.kamezawa.hiroyu@jp.fujitsu.com>
 	<20110825082049.GC3286@htj.dyndns.org>
 	<20110825172140.eb34809f.kamezawa.hiroyu@jp.fujitsu.com>
+	<CAOS58YPM=cuWjAF+VJ4QJ8bnRcVtaDCVXBJCpdWg+2=2GmnKrA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110825172140.eb34809f.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <CAOS58YPM=cuWjAF+VJ4QJ8bnRcVtaDCVXBJCpdWg+2=2GmnKrA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,48 +23,42 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello,
-
-On Thu, Aug 25, 2011 at 10:21 AM, KAMEZAWA Hiroyuki
-<kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
->> Hmmm... the above is basically identity transformation of the existing
->> code. =A0If the above is broken, the current code is broken too. =A0Is i=
-t?
->>
-> Current code is not broken.
-
-Trust me.  If the posted code is broken, the current code is too. It
-is an IDENTITY transformation.
-
-> mem_cgroup_can_attach(....., task) need to do real job only when task->mm=
-->owner
-> =3D=3D task. In this modification, you pass a set of task at once.
-
-Before the change, cgroup would migrate multiple tasks all the same
-but memcg wouldn't have noticed it unless it opted in explicitly using
-[can_]attach_task(). When multiple tasks were moving, [can_]attach()
-would only be called with the leader whether the leader actually is
-changing cgroup or not. The interface sucked and it wasn't properly
-documented but that's what was happening. The interface change is just
-making the breakage obvious - +1 for the new interface. :)
-
-> So, mem_cgroup_can_attach() need to check _all_ tasks in tset rather than=
- a
-> first task in tset. please scan and find mm->owner.
->
-> Anyway, if you merge this onto mm-tree first, I think I can have time to
-> write a fix up if complicated.
-
-As for specific merging order, it shouldn't matter all that much but
-if you wanna backport fixes for -stable, maybe it would make more
-sense to sequence the fix before this change.
-
-Thank you.
-
--- =
-
-tejun
+T24gVGh1LCAyNSBBdWcgMjAxMSAxMDo0MDowNiArMDIwMApUZWp1biBIZW8gPHRqQGtlcm5lbC5v
+cmc+IHdyb3RlOgoKPiBIZWxsbywKPiAKPiBPbiBUaHUsIEF1ZyAyNSwgMjAxMSBhdCAxMDoyMSBB
+TSwgS0FNRVpBV0EgSGlyb3l1a2kKPiA8a2FtZXphd2EuaGlyb3l1QGpwLmZ1aml0c3UuY29tPiB3
+cm90ZToKPiA+PiBIbW1tLi4uIHRoZSBhYm92ZSBpcyBiYXNpY2FsbHkgaWRlbnRpdHkgdHJhbnNm
+b3JtYXRpb24gb2YgdGhlIGV4aXN0aW5nCj4gPj4gY29kZS4gwqBJZiB0aGUgYWJvdmUgaXMgYnJv
+a2VuLCB0aGUgY3VycmVudCBjb2RlIGlzIGJyb2tlbiB0b28uIMKgSXMgaXQ/Cj4gPj4KPiA+IEN1
+cnJlbnQgY29kZSBpcyBub3QgYnJva2VuLgo+IAo+IFRydXN0IG1lLiAgSWYgdGhlIHBvc3RlZCBj
+b2RlIGlzIGJyb2tlbiwgdGhlIGN1cnJlbnQgY29kZSBpcyB0b28uIEl0Cj4gaXMgYW4gSURFTlRJ
+VFkgdHJhbnNmb3JtYXRpb24uCj4gCj4gPiBtZW1fY2dyb3VwX2Nhbl9hdHRhY2goLi4uLi4sIHRh
+c2spIG5lZWQgdG8gZG8gcmVhbCBqb2Igb25seSB3aGVuIHRhc2stPm1tLT5vd25lcgo+ID4gPT0g
+dGFzay4gSW4gdGhpcyBtb2RpZmljYXRpb24sIHlvdSBwYXNzIGEgc2V0IG9mIHRhc2sgYXQgb25j
+ZS4KPiAKPiBCZWZvcmUgdGhlIGNoYW5nZSwgY2dyb3VwIHdvdWxkIG1pZ3JhdGUgbXVsdGlwbGUg
+dGFza3MgYWxsIHRoZSBzYW1lCj4gYnV0IG1lbWNnIHdvdWxkbid0IGhhdmUgbm90aWNlZCBpdCB1
+bmxlc3MgaXQgb3B0ZWQgaW4gZXhwbGljaXRseSB1c2luZwo+IFtjYW5fXWF0dGFjaF90YXNrKCku
+IFdoZW4gbXVsdGlwbGUgdGFza3Mgd2VyZSBtb3ZpbmcsIFtjYW5fXWF0dGFjaCgpCj4gd291bGQg
+b25seSBiZSBjYWxsZWQgd2l0aCB0aGUgbGVhZGVyIHdoZXRoZXIgdGhlIGxlYWRlciBhY3R1YWxs
+eSBpcwo+IGNoYW5naW5nIGNncm91cCBvciBub3QuIFRoZSBpbnRlcmZhY2Ugc3Vja2VkIGFuZCBp
+dCB3YXNuJ3QgcHJvcGVybHkKPiBkb2N1bWVudGVkIGJ1dCB0aGF0J3Mgd2hhdCB3YXMgaGFwcGVu
+aW5nLiBUaGUgaW50ZXJmYWNlIGNoYW5nZSBpcyBqdXN0Cj4gbWFraW5nIHRoZSBicmVha2FnZSBv
+YnZpb3VzIC0gKzEgZm9yIHRoZSBuZXcgaW50ZXJmYWNlLiA6KQo+IApUaGFuayB5b3UgZm9yIGNs
+YXJpZmljYXRpb24uIE9rLCBjdXJyZW50IGNvZGUgaXMgYnJva2VuLgoKCj4gPiBTbywgbWVtX2Nn
+cm91cF9jYW5fYXR0YWNoKCkgbmVlZCB0byBjaGVjayBfYWxsXyB0YXNrcyBpbiB0c2V0IHJhdGhl
+ciB0aGFuIGEKPiA+IGZpcnN0IHRhc2sgaW4gdHNldC4gcGxlYXNlIHNjYW4gYW5kIGZpbmQgbW0t
+Pm93bmVyLgo+ID4KPiA+IEFueXdheSwgaWYgeW91IG1lcmdlIHRoaXMgb250byBtbS10cmVlIGZp
+cnN0LCBJIHRoaW5rIEkgY2FuIGhhdmUgdGltZSB0bwo+ID4gd3JpdGUgYSBmaXggdXAgaWYgY29t
+cGxpY2F0ZWQuCj4gCj4gQXMgZm9yIHNwZWNpZmljIG1lcmdpbmcgb3JkZXIsIGl0IHNob3VsZG4n
+dCBtYXR0ZXIgYWxsIHRoYXQgbXVjaCBidXQKPiBpZiB5b3Ugd2FubmEgYmFja3BvcnQgZml4ZXMg
+Zm9yIC1zdGFibGUsIG1heWJlIGl0IHdvdWxkIG1ha2UgbW9yZQo+IHNlbnNlIHRvIHNlcXVlbmNl
+IHRoZSBmaXggYmVmb3JlIHRoaXMgY2hhbmdlLgo+IAo+IFRoYW5rIHlvdS4KClN1cmUuIElJVUMs
+IHRoZSBjYXNlIHRocmVhZF9sZWFkZXIgIT0gbW0tPm93bmVyIGlzIHVuY29tbW9uLiAKSSdsbCBj
+b25zaWRlciBhIGZpeCBvbnRvIHlvdXIgZml4LCBmaXJzdC4KCkknbGwgY29zaW5kZXIgYSBmaXgg
+Zm9yIHN0YWJsZSB0cmVlIGlmIHNvbWVvbmUgcmVxdWVzdHMuCgpUaGFua3MsCi1LYW1lCgpfX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1h
+aWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8v
+bGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
