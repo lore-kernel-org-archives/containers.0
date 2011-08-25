@@ -1,47 +1,91 @@
-From: Vasiliy Kulikov <segoon@openwall.com>
-Subject: Re: [RFC] fs, proc: Introduce the /proc/<pid>/map_files/ directory
- v2
-Date: Thu, 25 Aug 2011 21:54:38 +0400
-Message-ID: <20110825175438.GA3739@albatros>
-References: <20110824085329.GL29452@sun>
- <20110824111806.GA7191@albatros>
- <20110825082944.GH10030@sun>
- <20110825173642.GA3288@albatros>
- <20110825173953.GE6387@sun>
+From: Glauber Costa <glommer@parallels.com>
+Subject: Re: [RFC] per-containers tcp buffer limitation
+Date: Thu, 25 Aug 2011 15:02:04 -0300
+Message-ID: <4E568E1C.3020308@parallels.com>
+References: <4E558137.5020900@parallels.com> <m1k4a2qqew.fsf@fess.ebiederm.org> <4E55A55B.8090608@parallels.com> <20110825104956.41c4b60e.kamezawa.hiroyu@jp.fujitsu.com> <m14o16qlq1.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20110825173953.GE6387@sun>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Cyrill Gorcunov <gorcunov@gmail.com>
-Cc: Nathan Lynch <ntl@pobox.com>, Oren Laadan <orenl@cs.columbia.edu>, Daniel Lezcano <dlezcano@fr.ibm.com>, Tejun Heo <tj@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Pavel Emelyanov <xemul@parallels.com>, linux-kernel@vger.kernel.org, James Bottomley <jbottomley@parallels.com>, LINUXFS-ML <linux-fsdevel@vger.kernel.org>, containers@lists.osdl.org, Zan Lynx <zlynx@acm.org>, Andi Kleen <andi@firstfloor.org>
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+Content-Transfer-Encoding: 7bit
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <m14o16qlq1.fsf@fess.ebiederm.org>
+Sender: netdev-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, David Miller <davem@davemloft.net>, Pavel Emelyanov <xemul@parallels.com>
 List-Id: containers.vger.kernel.org
 
-On Thu, Aug 25, 2011 at 21:39 +0400, Cyrill Gorcunov wrote:
-> On Thu, Aug 25, 2011 at 09:36:42PM +0400, Vasiliy Kulikov wrote:
-> ...
-> > > +
-> > > +	result = ERR_PTR(-EPERM);
-> > > +	if (!ptrace_may_access(task, PTRACE_MODE_READ));
-> > > +		goto out_no_mm;
-> > 
-> > Probably
-> > 
-> >     result = ERR_PTR(-ENOENT);
-> > 
-> > belongs here?
-> > 
-> 
-> Don't think so, it should point that permission failed
-> rather no such entry. Or this might break some tools?
+On 08/24/2011 11:16 PM, Eric W. Biederman wrote:
+> KAMEZAWA Hiroyuki<kamezawa.hiroyu@jp.fujitsu.com>  writes:
+>
+>> On Wed, 24 Aug 2011 22:28:59 -0300
+>> Glauber Costa<glommer@parallels.com>  wrote:
+>>
+>>> On 08/24/2011 09:35 PM, Eric W. Biederman wrote:
+>>>> Glauber Costa<glommer@parallels.com>   writes:
+>>> Hi Eric,
+>>>
+>>> Thanks for your attention.
+>>>
+>>> So, this that you propose was my first implementation. I ended up
+>>> throwing it away after playing with it for a while.
+>>>
+>>> One of the first problems that arise from that, is that the sysctls are
+>>> a tunable visible from inside the container. Those limits, however, are
+>>> to be set from the outside world. The code is not much better than that
+>>> either, and instead of creating new cgroup structures and linking them
+>>> to the protocol, we end up doing it for net ns. We end up increasing
+>>> structures just the same...
+>
+> You don't need to add a netns member to sockets.
+But then you have to grow the netns structure itself somehow.
+>
+> But I do agree that there are odd permission issues with using the
+> existing sysctls and making them per namespace.
+>
+> However almost everything I have seen with memory limits I have found
+> very strange.  They all seem like a very bad version of disabling memory
+> over commits.
 
-I mean the place exactly where I've put it to indicate simple_strtoul(),
-get_task_mm(), or find_exact_vma() error.  EPERM for ptrace_may_access()
-is OK.
+More or less. At least from our perspective, the only thing we're really 
+interested in capping are non-swappable resources. So you could not 
+overcommit anyway.
 
-Thanks,
+For the sockets/tcp case, it is an even easier case. The code as it is 
+today already allow you to define soft and hard memory limits: I am just 
+making it container-wide, instead of system-wide.
 
--- 
-Vasiliy Kulikov
-http://www.openwall.com - bringing security into open computing environments
+>>> Also, since we're doing resource control, it seems more natural to use
+>>> cgroups. Now, the fact that there are no correlation whatsoever between
+>>> cgroups and namespaces does bother me. But that's another story, much
+>>> more broader and general than this patch.
+>>>
+>>
+>> I think using cgroup makes sense. A question in mind is whehter it is
+>> better to integrate this kind of 'memory usage' controls to memcg or
+>> not.
+>
+> Maybe.  When sockets start getting a cgroup member I start wondering,
+> how many cgroup members will sockets potentially belong to.
+>
+>> How do you think ? IMHO, having cgroup per class of object is messy.
+>> ...
+>> How about adding
+>> 	memory.tcp_mem
+>> to memcg ?
+>>
+>> Or, adding kmem cgroup ?
+>>
+>>> About overhead, since this is the first RFC, I did not care about
+>>> measuring. However, it seems trivial to me to guarantee that at least
+>>> that it won't impose a significant performance penalty when it is
+>>> compiled out. If we're moving forward with this implementation, I will
+>>> include data in the next release so we can discuss in this basis.
+>>>
+>>
+>> IMHO, you should show performance number even if RFC. Then, people will
+>> see patch with more interests.
+>
+> And also compiled out doesn't really count.  Cgroups are something you
+> want people to compile into distributions for the common case, and you
+> don't want to impose a noticeable performance penalty for the common
+> case.
+Absolutely agreed.
