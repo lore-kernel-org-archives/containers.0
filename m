@@ -1,15 +1,15 @@
 From: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
-Subject: Re: [PATCH 3/6] cgroup: introduce cgroup_taskset and use it in
-	subsys->can_attach(), cancel_attach() and attach()
-Date: Thu, 25 Aug 2011 02:32:59 -0700
-Message-ID: <CALdu-PAPO7L0yW1ZfZUPuPLjVmW_euO24P-gd3tCY5zFq0FD2g__49239.5489513457$1314264893$gmane$org@mail.gmail.com>
+Subject: Re: [PATCH 2/6] cgroup: improve old cgroup handling in
+	cgroup_attach_proc()
+Date: Thu, 25 Aug 2011 02:42:46 -0700
+Message-ID: <CALdu-PBr-tu1qzScvncr-N4EpPaQ7sTdHf28GhEv_MZLbo1eSg__5801.18437433175$1314265499$gmane$org@mail.gmail.com>
 References: <1314138000-2049-1-git-send-email-tj@kernel.org>
-	<1314138000-2049-4-git-send-email-tj@kernel.org>
+	<1314138000-2049-3-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1314138000-2049-4-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1314138000-2049-3-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,24 +20,34 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: rjw-KKrjLPT3xs0@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 On Tue, Aug 23, 2011 at 3:19 PM, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org> wrote:
-> +Called prior to moving one or more tasks into a cgroup; if the
-> +subsystem returns an error, this will abort the attach operation.
-> +@tset contains the tasks to be attached and is guaranteed to have at
-> +least one task in it. If there are multiple, it's guaranteed that all
-> +are from the same thread group, @tset contains all tasks from the
-> +group whether they're actually switching cgroup or not, and the first
-> +task is the leader.
-
-I'd reformat this a bit for clarity:
-
-If there are multiple tasks in the taskset, then:
-  - it's guaranteed that all are from the same thread group
-  - @tset contains all tasks from the thread group whether or not
-they're switching cgroup
-  - the first task is the leader
+> cgroup_attach_proc() behaves differently from cgroup_attach_task() in
+> the following aspects.
+>
+> * All hooks are invoked even if no task is actually being moved.
+>
+> * ->can_attach_task() is called for all tasks in the group whether the
+> =A0new cgrp is different from the current cgrp or not; however,
+> =A0->attach_task() is skipped if new equals new. =A0This makes the calls
+> =A0asymmetric.
+>
+> This patch improves old cgroup handling in cgroup_attach_proc() by
+> looking up the current cgroup at the head, recording it in the flex
+> array along with the task itself, and using it to remove the above two
+> differences. =A0This will also ease further changes.
+>
+> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 
 Acked-by: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+
+With the later cgroup_taskset changes making use of the same flex
+array, I guess I agree that leaving all the tasks in the array makes
+sense.
+
+> + =A0 =A0 =A0 int retval, i, group_size, nr_todo;
+
+I'd be inclined to call "nr_todo" something like "nr_migrating_tasks"
+for clarity.
