@@ -1,15 +1,16 @@
-From: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
-Subject: Re: [PATCH 6/6] cgroup: kill subsys->can_attach_task(), pre_attach()
-	and attach_task()
-Date: Thu, 25 Aug 2011 02:45:24 -0700
-Message-ID: <CALdu-PBU+1YqNkY9T8hu-Co+4ru776YYt4DKH0nGaE2se59=4g__15975.2706451856$1314266069$gmane$org@mail.gmail.com>
-References: <1314138000-2049-1-git-send-email-tj@kernel.org>
-	<1314138000-2049-7-git-send-email-tj@kernel.org>
+From: Daniel Wagner <wagi-kQCPcA+X3s7YtjvyW6yDsg@public.gmane.org>
+Subject: Re: [RFC] per-containers tcp buffer limitation
+Date: Thu, 25 Aug 2011 14:55:39 +0200
+Message-ID: <4E56464B.4070304@monom.org>
+References: <4E558137.5020900@parallels.com> <m1k4a2qqew.fsf@fess.ebiederm.org>
+	<4E55A55B.8090608@parallels.com>
+	<20110825104956.41c4b60e.kamezawa.hiroyu@jp.fujitsu.com>
+	<m14o16qlq1.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1314138000-2049-7-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <m14o16qlq1.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,207 +20,68 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: rjw-KKrjLPT3xs0@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Aug 23, 2011 at 3:20 PM, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org> wrote:
-> These three methods are no longer used. =A0Kill them.
->
-> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Hi
 
-Acked-by: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+On 08/25/2011 04:16 AM, Eric W. Biederman wrote:
+> KAMEZAWA Hiroyuki<kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>  writes:
+>
+>> On Wed, 24 Aug 2011 22:28:59 -0300
+>> Glauber Costa<glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>  wrote:
+>>
+>>> On 08/24/2011 09:35 PM, Eric W. Biederman wrote:
+>>>> Glauber Costa<glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>   writes:
+>>> Hi Eric,
+>>>
+>>> Thanks for your attention.
+>>>
+>>> So, this that you propose was my first implementation. I ended up
+>>> throwing it away after playing with it for a while.
+>>>
+>>> One of the first problems that arise from that, is that the sysctls are
+>>> a tunable visible from inside the container. Those limits, however, are
+>>> to be set from the outside world. The code is not much better than that
+>>> either, and instead of creating new cgroup structures and linking them
+>>> to the protocol, we end up doing it for net ns. We end up increasing
+>>> structures just the same...
+>
+> You don't need to add a netns member to sockets.
+>
+> But I do agree that there are odd permission issues with using the
+> existing sysctls and making them per namespace.
+>
+> However almost everything I have seen with memory limits I have found
+> very strange.  They all seem like a very bad version of disabling memory
+> over commits.
 
-Overall, I think this patch set is a great improvement in code
-simplicity and clarity.
+Please apply the same rules for not cursing my family no further then 
+the 3rd generation for my idea:
 
-Thanks,
-Paul
+I'd like to solve a use case where it is necessary to count all bytes 
+transmitted and received by an application [1]. So far I have found two 
+unsatisfying solution for it. The first one is to hook into libc and 
+count the bytes there. I don't think I have to say I don't like this.
 
-> Cc: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
-> Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> ---
-> =A0include/linux/cgroup.h | =A0 =A03 --
-> =A0kernel/cgroup.c =A0 =A0 =A0 =A0| =A0 53 ++++--------------------------=
------------------
-> =A02 files changed, 5 insertions(+), 51 deletions(-)
->
-> diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-> index 2470c8e..5659d37 100644
-> --- a/include/linux/cgroup.h
-> +++ b/include/linux/cgroup.h
-> @@ -490,11 +490,8 @@ struct cgroup_subsys {
-> =A0 =A0 =A0 =A0void (*destroy)(struct cgroup_subsys *ss, struct cgroup *c=
-grp);
-> =A0 =A0 =A0 =A0int (*can_attach)(struct cgroup_subsys *ss, struct cgroup =
-*cgrp,
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0struct cgroup_taskset =
-*tset);
-> - =A0 =A0 =A0 int (*can_attach_task)(struct cgroup *cgrp, struct task_str=
-uct *tsk);
-> =A0 =A0 =A0 =A0void (*cancel_attach)(struct cgroup_subsys *ss, struct cgr=
-oup *cgrp,
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0struct cgroup_=
-taskset *tset);
-> - =A0 =A0 =A0 void (*pre_attach)(struct cgroup *cgrp);
-> - =A0 =A0 =A0 void (*attach_task)(struct cgroup *cgrp, struct task_struct=
- *tsk);
-> =A0 =A0 =A0 =A0void (*attach)(struct cgroup_subsys *ss, struct cgroup *cg=
-rp,
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 struct cgroup_taskset *tset);
-> =A0 =A0 =A0 =A0void (*fork)(struct cgroup_subsys *ss, struct task_struct =
-*task);
-> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-> index 474674b..374a4cb 100644
-> --- a/kernel/cgroup.c
-> +++ b/kernel/cgroup.c
-> @@ -1926,13 +1926,6 @@ int cgroup_attach_task(struct cgroup *cgrp, struct=
- task_struct *tsk)
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0goto out;
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0}
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0}
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (ss->can_attach_task) {
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 retval =3D ss->can_attach_t=
-ask(cgrp, tsk);
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (retval) {
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 failed_ss =
-=3D ss;
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 goto out;
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 }
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 }
-> =A0 =A0 =A0 =A0}
->
-> =A0 =A0 =A0 =A0retval =3D cgroup_task_migrate(cgrp, oldcgrp, tsk, false);
-> @@ -1940,10 +1933,6 @@ int cgroup_attach_task(struct cgroup *cgrp, struct=
- task_struct *tsk)
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0goto out;
->
-> =A0 =A0 =A0 =A0for_each_subsys(root, ss) {
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (ss->pre_attach)
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 ss->pre_attach(cgrp);
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (ss->attach_task)
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 ss->attach_task(cgrp, tsk);
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0if (ss->attach)
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0ss->attach(ss, cgrp, &tset=
-);
-> =A0 =A0 =A0 =A0}
-> @@ -2075,7 +2064,6 @@ int cgroup_attach_proc(struct cgroup *cgrp, struct =
-task_struct *leader)
-> =A0{
-> =A0 =A0 =A0 =A0int retval, i, group_size, nr_todo;
-> =A0 =A0 =A0 =A0struct cgroup_subsys *ss, *failed_ss =3D NULL;
-> - =A0 =A0 =A0 bool cancel_failed_ss =3D false;
-> =A0 =A0 =A0 =A0/* guaranteed to be initialized later, but the compiler ne=
-eds this */
-> =A0 =A0 =A0 =A0struct css_set *oldcg;
-> =A0 =A0 =A0 =A0struct cgroupfs_root *root =3D cgrp->root;
-> @@ -2166,21 +2154,6 @@ int cgroup_attach_proc(struct cgroup *cgrp, struct=
- task_struct *leader)
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0goto out_c=
-ancel_attach;
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0}
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0}
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 /* a callback to be run on every thread in =
-the threadgroup. */
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (ss->can_attach_task) {
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 /* run on each task in the =
-threadgroup. */
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 for (i =3D 0; i < group_siz=
-e; i++) {
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 tc =3D flex=
-_array_get(group, i);
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (tc->cgr=
-p =3D=3D cgrp)
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
- =A0 continue;
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 retval =3D =
-ss->can_attach_task(cgrp, tc->task);
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (retval)=
- {
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
- =A0 failed_ss =3D ss;
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
- =A0 cancel_failed_ss =3D true;
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
- =A0 goto out_cancel_attach;
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 }
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 }
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 }
-> =A0 =A0 =A0 =A0}
->
-> =A0 =A0 =A0 =A0/*
-> @@ -2217,15 +2190,10 @@ int cgroup_attach_proc(struct cgroup *cgrp, struc=
-t task_struct *leader)
-> =A0 =A0 =A0 =A0}
->
-> =A0 =A0 =A0 =A0/*
-> - =A0 =A0 =A0 =A0* step 3: now that we're guaranteed success wrt the css_=
-sets, proceed
-> - =A0 =A0 =A0 =A0* to move all tasks to the new cgroup, calling ss->attac=
-h_task for each
-> - =A0 =A0 =A0 =A0* one along the way. there are no failure cases after he=
-re, so this is
-> - =A0 =A0 =A0 =A0* the commit point.
-> + =A0 =A0 =A0 =A0* step 3: now that we're guaranteed success wrt the css_=
-sets,
-> + =A0 =A0 =A0 =A0* proceed to move all tasks to the new cgroup. =A0There =
-are no
-> + =A0 =A0 =A0 =A0* failure cases after here, so this is the commit point.
-> =A0 =A0 =A0 =A0 */
-> - =A0 =A0 =A0 for_each_subsys(root, ss) {
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (ss->pre_attach)
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 ss->pre_attach(cgrp);
-> - =A0 =A0 =A0 }
-> =A0 =A0 =A0 =A0for (i =3D 0; i < group_size; i++) {
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0tc =3D flex_array_get(group, i);
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0/* leave current thread as it is if it's a=
-lready there */
-> @@ -2235,19 +2203,11 @@ int cgroup_attach_proc(struct cgroup *cgrp, struc=
-t task_struct *leader)
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0/* if the thread is PF_EXITING, it can jus=
-t get skipped. */
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0retval =3D cgroup_task_migrate(cgrp, tc->c=
-grp, tc->task, true);
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0BUG_ON(retval !=3D 0 && retval !=3D -ESRCH=
-);
-> -
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 /* attach each task to each subsystem */
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 for_each_subsys(root, ss) {
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (ss->attach_task)
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 ss->attach_=
-task(cgrp, tc->task);
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 }
-> =A0 =A0 =A0 =A0}
-> =A0 =A0 =A0 =A0/* nothing is sensitive to fork() after this point. */
->
-> =A0 =A0 =A0 =A0/*
-> - =A0 =A0 =A0 =A0* step 4: do expensive, non-thread-specific subsystem ca=
-llbacks.
-> - =A0 =A0 =A0 =A0* TODO: if ever a subsystem needs to know the oldcgrp fo=
-r each task
-> - =A0 =A0 =A0 =A0* being moved, this call will need to be reworked to com=
-municate that.
-> + =A0 =A0 =A0 =A0* step 4: do subsystem attach callbacks.
-> =A0 =A0 =A0 =A0 */
-> =A0 =A0 =A0 =A0for_each_subsys(root, ss) {
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0if (ss->attach)
-> @@ -2271,11 +2231,8 @@ out_cancel_attach:
-> =A0 =A0 =A0 =A0/* same deal as in cgroup_attach_task */
-> =A0 =A0 =A0 =A0if (retval) {
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0for_each_subsys(root, ss) {
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (ss =3D=3D failed_ss) {
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (cancel_=
-failed_ss && ss->cancel_attach)
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
- =A0 ss->cancel_attach(ss, cgrp, &tset);
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (ss =3D=3D failed_ss)
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0break;
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 }
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0if (ss->cancel_attach)
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0ss->cancel=
-_attach(ss, cgrp, &tset);
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0}
-> --
-> 1.7.6
->
->
+The second idea was to use the trick Google has used for Android [2]. 
+They add a hook into __sock_sendmsg and __sock_recvmsg and then count 
+the bytes per UID. To get this working all application have to use an 
+unique UID. So not very nice either.
+
+After reading a bit up on cgroup I think that would be the right place 
+to count the traffic. Unfortunately, with net_cls I can count the 
+outgoing traffic but not the incoming one. If I understood Glauber 
+approach correctly adding some statistic counters would be easy to do. 
+Of course I don't know the impact of this.
+
+thanks,
+daniel
+
+
+[1] 
+http://lists.freedesktop.org/archives/systemd-devel/2011-August/003093.html
+
+[2] 
+http://xf.iksaif.net/dev/android/android-2.6.29-to-2.6.32/0083-uidstat-Adding-uid-stat-driver-to-collect-network-st.patch
