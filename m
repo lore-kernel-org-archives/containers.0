@@ -1,7 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 5/6] cgroup, cpuset: don't use ss->pre_attach()
-Date: Fri, 26 Aug 2011 00:43:11 +0200
-Message-ID: <1314312192-26885-6-git-send-email-tj__44850.7357658402$1314312862$gmane$org@kernel.org>
+Subject: [PATCH 6/6] cgroup: kill subsys->can_attach_task(),
+	pre_attach() and attach_task()
+Date: Fri, 26 Aug 2011 00:43:12 +0200
+Message-ID: <1314312192-26885-7-git-send-email-tj__37813.4692939513$1314312864$gmane$org@kernel.org>
 References: <1314312192-26885-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,82 +22,189 @@ To: rjw-KKrjLPT3xs0@public.gmane.org, paul-inf54ven1CmVyaH7bEyXVA@public.gmane.o
 Cc: fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-->pre_attach() is supposed to be called before migration, which is
-observed during process migration but task migration does it the other
-way around.  The only ->pre_attach() user is cpuset which can do the
-same operaitons in ->can_attach().  Collapse cpuset_pre_attach() into
-cpuset_can_attach().
-
--v2: Patch contamination from later patch removed.  Spotted by Paul
-     Menage.
+These three methods are no longer used.  Kill them.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Acked-by: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
 Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- kernel/cpuset.c |   29 ++++++++++++-----------------
- 1 files changed, 12 insertions(+), 17 deletions(-)
+ Documentation/cgroups/cgroups.txt |   20 --------------
+ include/linux/cgroup.h            |    3 --
+ kernel/cgroup.c                   |   53 +++---------------------------------
+ 3 files changed, 5 insertions(+), 71 deletions(-)
 
-diff --git a/kernel/cpuset.c b/kernel/cpuset.c
-index 472ddd6..f0b8df3 100644
---- a/kernel/cpuset.c
-+++ b/kernel/cpuset.c
-@@ -1367,6 +1367,15 @@ static int fmeter_getrate(struct fmeter *fmp)
- 	return val;
- }
+diff --git a/Documentation/cgroups/cgroups.txt b/Documentation/cgroups/cgroups.txt
+index bf5d6c9..eb1b609 100644
+--- a/Documentation/cgroups/cgroups.txt
++++ b/Documentation/cgroups/cgroups.txt
+@@ -615,13 +615,6 @@ fork. If this method returns 0 (success) then this should remain valid
+ while the caller holds cgroup_mutex and it is ensured that either
+ attach() or cancel_attach() will be called in future.
  
-+/*
-+ * Protected by cgroup_lock. The nodemasks must be stored globally because
-+ * dynamically allocating them is not allowed in can_attach, and they must
-+ * persist until attach.
-+ */
-+static cpumask_var_t cpus_attach;
-+static nodemask_t cpuset_attach_nodemask_from;
-+static nodemask_t cpuset_attach_nodemask_to;
-+
- /* Called by cgroups to determine if a cpuset is usable; cgroup_mutex held */
- static int cpuset_can_attach(struct cgroup_subsys *ss, struct cgroup *cgrp,
- 			     struct cgroup_taskset *tset)
-@@ -1393,29 +1402,16 @@ static int cpuset_can_attach(struct cgroup_subsys *ss, struct cgroup *cgrp,
- 		if ((ret = security_task_setscheduler(task)))
- 			return ret;
+-int can_attach_task(struct cgroup *cgrp, struct task_struct *tsk);
+-(cgroup_mutex held by caller)
+-
+-As can_attach, but for operations that must be run once per task to be
+-attached (possibly many when using cgroup_attach_proc). Called after
+-can_attach.
+-
+ void cancel_attach(struct cgroup_subsys *ss, struct cgroup *cgrp,
+ 		   struct cgroup_taskset *tset)
+ (cgroup_mutex held by caller)
+@@ -632,12 +625,6 @@ function, so that the subsystem can implement a rollback. If not, not necessary.
+ This will be called only about subsystems whose can_attach() operation have
+ succeeded. The parameters are identical to can_attach().
+ 
+-void pre_attach(struct cgroup *cgrp);
+-(cgroup_mutex held by caller)
+-
+-For any non-per-thread attachment work that needs to happen before
+-attach_task. Needed by cpuset.
+-
+ void attach(struct cgroup_subsys *ss, struct cgroup *cgrp,
+ 	    struct cgroup_taskset *tset)
+ (cgroup_mutex held by caller)
+@@ -646,13 +633,6 @@ Called after the task has been attached to the cgroup, to allow any
+ post-attachment activity that requires memory allocations or blocking.
+ The parameters are identical to can_attach().
+ 
+-void attach_task(struct cgroup *cgrp, struct task_struct *tsk);
+-(cgroup_mutex held by caller)
+-
+-As attach, but for operations that must be run once per task to be attached,
+-like can_attach_task. Called before attach. Currently does not support any
+-subsystem that might need the old_cgrp for every thread in the group.
+-
+ void fork(struct cgroup_subsy *ss, struct task_struct *task)
+ 
+ Called when a task is forked into a cgroup.
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index 2470c8e..5659d37 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -490,11 +490,8 @@ struct cgroup_subsys {
+ 	void (*destroy)(struct cgroup_subsys *ss, struct cgroup *cgrp);
+ 	int (*can_attach)(struct cgroup_subsys *ss, struct cgroup *cgrp,
+ 			  struct cgroup_taskset *tset);
+-	int (*can_attach_task)(struct cgroup *cgrp, struct task_struct *tsk);
+ 	void (*cancel_attach)(struct cgroup_subsys *ss, struct cgroup *cgrp,
+ 			      struct cgroup_taskset *tset);
+-	void (*pre_attach)(struct cgroup *cgrp);
+-	void (*attach_task)(struct cgroup *cgrp, struct task_struct *tsk);
+ 	void (*attach)(struct cgroup_subsys *ss, struct cgroup *cgrp,
+ 		       struct cgroup_taskset *tset);
+ 	void (*fork)(struct cgroup_subsys *ss, struct task_struct *task);
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index f3c7f7a..ce765ec 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -1926,13 +1926,6 @@ int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *tsk)
+ 				goto out;
+ 			}
+ 		}
+-		if (ss->can_attach_task) {
+-			retval = ss->can_attach_task(cgrp, tsk);
+-			if (retval) {
+-				failed_ss = ss;
+-				goto out;
+-			}
+-		}
  	}
--	return 0;
--}
+ 
+ 	retval = cgroup_task_migrate(cgrp, oldcgrp, tsk, false);
+@@ -1940,10 +1933,6 @@ int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *tsk)
+ 		goto out;
+ 
+ 	for_each_subsys(root, ss) {
+-		if (ss->pre_attach)
+-			ss->pre_attach(cgrp);
+-		if (ss->attach_task)
+-			ss->attach_task(cgrp, tsk);
+ 		if (ss->attach)
+ 			ss->attach(ss, cgrp, &tset);
+ 	}
+@@ -2075,7 +2064,6 @@ int cgroup_attach_proc(struct cgroup *cgrp, struct task_struct *leader)
+ {
+ 	int retval, i, group_size, nr_migrating_tasks;
+ 	struct cgroup_subsys *ss, *failed_ss = NULL;
+-	bool cancel_failed_ss = false;
+ 	/* guaranteed to be initialized later, but the compiler needs this */
+ 	struct css_set *oldcg;
+ 	struct cgroupfs_root *root = cgrp->root;
+@@ -2166,21 +2154,6 @@ int cgroup_attach_proc(struct cgroup *cgrp, struct task_struct *leader)
+ 				goto out_cancel_attach;
+ 			}
+ 		}
+-		/* a callback to be run on every thread in the threadgroup. */
+-		if (ss->can_attach_task) {
+-			/* run on each task in the threadgroup. */
+-			for (i = 0; i < group_size; i++) {
+-				tc = flex_array_get(group, i);
+-				if (tc->cgrp == cgrp)
+-					continue;
+-				retval = ss->can_attach_task(cgrp, tc->task);
+-				if (retval) {
+-					failed_ss = ss;
+-					cancel_failed_ss = true;
+-					goto out_cancel_attach;
+-				}
+-			}
+-		}
+ 	}
+ 
+ 	/*
+@@ -2217,15 +2190,10 @@ int cgroup_attach_proc(struct cgroup *cgrp, struct task_struct *leader)
+ 	}
+ 
+ 	/*
+-	 * step 3: now that we're guaranteed success wrt the css_sets, proceed
+-	 * to move all tasks to the new cgroup, calling ss->attach_task for each
+-	 * one along the way. there are no failure cases after here, so this is
+-	 * the commit point.
++	 * step 3: now that we're guaranteed success wrt the css_sets,
++	 * proceed to move all tasks to the new cgroup.  There are no
++	 * failure cases after here, so this is the commit point.
+ 	 */
+-	for_each_subsys(root, ss) {
+-		if (ss->pre_attach)
+-			ss->pre_attach(cgrp);
+-	}
+ 	for (i = 0; i < group_size; i++) {
+ 		tc = flex_array_get(group, i);
+ 		/* leave current thread as it is if it's already there */
+@@ -2235,19 +2203,11 @@ int cgroup_attach_proc(struct cgroup *cgrp, struct task_struct *leader)
+ 		/* if the thread is PF_EXITING, it can just get skipped. */
+ 		retval = cgroup_task_migrate(cgrp, tc->cgrp, tc->task, true);
+ 		BUG_ON(retval != 0 && retval != -ESRCH);
 -
--/*
-- * Protected by cgroup_lock. The nodemasks must be stored globally because
-- * dynamically allocating them is not allowed in pre_attach, and they must
-- * persist among pre_attach, and attach.
-- */
--static cpumask_var_t cpus_attach;
--static nodemask_t cpuset_attach_nodemask_from;
--static nodemask_t cpuset_attach_nodemask_to;
--
--/* Set-up work for before attaching each task. */
--static void cpuset_pre_attach(struct cgroup *cont)
--{
--	struct cpuset *cs = cgroup_cs(cont);
+-		/* attach each task to each subsystem */
+-		for_each_subsys(root, ss) {
+-			if (ss->attach_task)
+-				ss->attach_task(cgrp, tc->task);
+-		}
+ 	}
+ 	/* nothing is sensitive to fork() after this point. */
  
-+	/* prepare for attach */
- 	if (cs == &top_cpuset)
- 		cpumask_copy(cpus_attach, cpu_possible_mask);
- 	else
- 		guarantee_online_cpus(cs, cpus_attach);
- 
- 	guarantee_online_mems(cs, &cpuset_attach_nodemask_to);
-+
-+	return 0;
- }
- 
- static void cpuset_attach(struct cgroup_subsys *ss, struct cgroup *cgrp,
-@@ -1901,7 +1897,6 @@ struct cgroup_subsys cpuset_subsys = {
- 	.create = cpuset_create,
- 	.destroy = cpuset_destroy,
- 	.can_attach = cpuset_can_attach,
--	.pre_attach = cpuset_pre_attach,
- 	.attach = cpuset_attach,
- 	.populate = cpuset_populate,
- 	.post_clone = cpuset_post_clone,
+ 	/*
+-	 * step 4: do expensive, non-thread-specific subsystem callbacks.
+-	 * TODO: if ever a subsystem needs to know the oldcgrp for each task
+-	 * being moved, this call will need to be reworked to communicate that.
++	 * step 4: do subsystem attach callbacks.
+ 	 */
+ 	for_each_subsys(root, ss) {
+ 		if (ss->attach)
+@@ -2271,11 +2231,8 @@ out_cancel_attach:
+ 	/* same deal as in cgroup_attach_task */
+ 	if (retval) {
+ 		for_each_subsys(root, ss) {
+-			if (ss == failed_ss) {
+-				if (cancel_failed_ss && ss->cancel_attach)
+-					ss->cancel_attach(ss, cgrp, &tset);
++			if (ss == failed_ss)
+ 				break;
+-			}
+ 			if (ss->cancel_attach)
+ 				ss->cancel_attach(ss, cgrp, &tset);
+ 		}
 -- 
 1.7.6
