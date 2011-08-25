@@ -1,19 +1,15 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 3/6] cgroup: introduce cgroup_taskset and use it in
-	subsys->can_attach(), cancel_attach() and attach()
-Date: Thu, 25 Aug 2011 17:37:50 +0900
-Message-ID: <20110825173750.4959360f.kamezawa.hiroyu__35277.7292406701$1314261958$gmane$org@jp.fujitsu.com>
+From: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+Subject: Re: [PATCH 2/6] cgroup: improve old cgroup handling in
+	cgroup_attach_proc()
+Date: Thu, 25 Aug 2011 01:51:39 -0700
+Message-ID: <CALdu-PAj1ZUmB2ixxA6yeppB8MerBGk1cSeQadobH0H4cRSe7Q__38186.3385708586$1314262352$gmane$org@mail.gmail.com>
 References: <1314138000-2049-1-git-send-email-tj@kernel.org>
-	<1314138000-2049-4-git-send-email-tj@kernel.org>
-	<20110825093958.75b95bd8.kamezawa.hiroyu@jp.fujitsu.com>
-	<20110825082049.GC3286@htj.dyndns.org>
-	<20110825172140.eb34809f.kamezawa.hiroyu@jp.fujitsu.com>
-	<CAOS58YPM=cuWjAF+VJ4QJ8bnRcVtaDCVXBJCpdWg+2=2GmnKrA@mail.gmail.com>
+	<1314138000-2049-3-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAOS58YPM=cuWjAF+VJ4QJ8bnRcVtaDCVXBJCpdWg+2=2GmnKrA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <1314138000-2049-3-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,41 +20,31 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org
+Cc: rjw-KKrjLPT3xs0@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gVGh1LCAyNSBBdWcgMjAxMSAxMDo0MDowNiArMDIwMApUZWp1biBIZW8gPHRqQGtlcm5lbC5v
-cmc+IHdyb3RlOgoKPiBIZWxsbywKPiAKPiBPbiBUaHUsIEF1ZyAyNSwgMjAxMSBhdCAxMDoyMSBB
-TSwgS0FNRVpBV0EgSGlyb3l1a2kKPiA8a2FtZXphd2EuaGlyb3l1QGpwLmZ1aml0c3UuY29tPiB3
-cm90ZToKPiA+PiBIbW1tLi4uIHRoZSBhYm92ZSBpcyBiYXNpY2FsbHkgaWRlbnRpdHkgdHJhbnNm
-b3JtYXRpb24gb2YgdGhlIGV4aXN0aW5nCj4gPj4gY29kZS4gwqBJZiB0aGUgYWJvdmUgaXMgYnJv
-a2VuLCB0aGUgY3VycmVudCBjb2RlIGlzIGJyb2tlbiB0b28uIMKgSXMgaXQ/Cj4gPj4KPiA+IEN1
-cnJlbnQgY29kZSBpcyBub3QgYnJva2VuLgo+IAo+IFRydXN0IG1lLiAgSWYgdGhlIHBvc3RlZCBj
-b2RlIGlzIGJyb2tlbiwgdGhlIGN1cnJlbnQgY29kZSBpcyB0b28uIEl0Cj4gaXMgYW4gSURFTlRJ
-VFkgdHJhbnNmb3JtYXRpb24uCj4gCj4gPiBtZW1fY2dyb3VwX2Nhbl9hdHRhY2goLi4uLi4sIHRh
-c2spIG5lZWQgdG8gZG8gcmVhbCBqb2Igb25seSB3aGVuIHRhc2stPm1tLT5vd25lcgo+ID4gPT0g
-dGFzay4gSW4gdGhpcyBtb2RpZmljYXRpb24sIHlvdSBwYXNzIGEgc2V0IG9mIHRhc2sgYXQgb25j
-ZS4KPiAKPiBCZWZvcmUgdGhlIGNoYW5nZSwgY2dyb3VwIHdvdWxkIG1pZ3JhdGUgbXVsdGlwbGUg
-dGFza3MgYWxsIHRoZSBzYW1lCj4gYnV0IG1lbWNnIHdvdWxkbid0IGhhdmUgbm90aWNlZCBpdCB1
-bmxlc3MgaXQgb3B0ZWQgaW4gZXhwbGljaXRseSB1c2luZwo+IFtjYW5fXWF0dGFjaF90YXNrKCku
-IFdoZW4gbXVsdGlwbGUgdGFza3Mgd2VyZSBtb3ZpbmcsIFtjYW5fXWF0dGFjaCgpCj4gd291bGQg
-b25seSBiZSBjYWxsZWQgd2l0aCB0aGUgbGVhZGVyIHdoZXRoZXIgdGhlIGxlYWRlciBhY3R1YWxs
-eSBpcwo+IGNoYW5naW5nIGNncm91cCBvciBub3QuIFRoZSBpbnRlcmZhY2Ugc3Vja2VkIGFuZCBp
-dCB3YXNuJ3QgcHJvcGVybHkKPiBkb2N1bWVudGVkIGJ1dCB0aGF0J3Mgd2hhdCB3YXMgaGFwcGVu
-aW5nLiBUaGUgaW50ZXJmYWNlIGNoYW5nZSBpcyBqdXN0Cj4gbWFraW5nIHRoZSBicmVha2FnZSBv
-YnZpb3VzIC0gKzEgZm9yIHRoZSBuZXcgaW50ZXJmYWNlLiA6KQo+IApUaGFuayB5b3UgZm9yIGNs
-YXJpZmljYXRpb24uIE9rLCBjdXJyZW50IGNvZGUgaXMgYnJva2VuLgoKCj4gPiBTbywgbWVtX2Nn
-cm91cF9jYW5fYXR0YWNoKCkgbmVlZCB0byBjaGVjayBfYWxsXyB0YXNrcyBpbiB0c2V0IHJhdGhl
-ciB0aGFuIGEKPiA+IGZpcnN0IHRhc2sgaW4gdHNldC4gcGxlYXNlIHNjYW4gYW5kIGZpbmQgbW0t
-Pm93bmVyLgo+ID4KPiA+IEFueXdheSwgaWYgeW91IG1lcmdlIHRoaXMgb250byBtbS10cmVlIGZp
-cnN0LCBJIHRoaW5rIEkgY2FuIGhhdmUgdGltZSB0bwo+ID4gd3JpdGUgYSBmaXggdXAgaWYgY29t
-cGxpY2F0ZWQuCj4gCj4gQXMgZm9yIHNwZWNpZmljIG1lcmdpbmcgb3JkZXIsIGl0IHNob3VsZG4n
-dCBtYXR0ZXIgYWxsIHRoYXQgbXVjaCBidXQKPiBpZiB5b3Ugd2FubmEgYmFja3BvcnQgZml4ZXMg
-Zm9yIC1zdGFibGUsIG1heWJlIGl0IHdvdWxkIG1ha2UgbW9yZQo+IHNlbnNlIHRvIHNlcXVlbmNl
-IHRoZSBmaXggYmVmb3JlIHRoaXMgY2hhbmdlLgo+IAo+IFRoYW5rIHlvdS4KClN1cmUuIElJVUMs
-IHRoZSBjYXNlIHRocmVhZF9sZWFkZXIgIT0gbW0tPm93bmVyIGlzIHVuY29tbW9uLiAKSSdsbCBj
-b25zaWRlciBhIGZpeCBvbnRvIHlvdXIgZml4LCBmaXJzdC4KCkknbGwgY29zaW5kZXIgYSBmaXgg
-Zm9yIHN0YWJsZSB0cmVlIGlmIHNvbWVvbmUgcmVxdWVzdHMuCgpUaGFua3MsCi1LYW1lCgpfX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1h
-aWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8v
-bGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+On Tue, Aug 23, 2011 at 3:19 PM, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org> wrote:
+> cgroup_attach_proc() behaves differently from cgroup_attach_task() in
+> the following aspects.
+>
+> * All hooks are invoked even if no task is actually being moved.
+>
+> * ->can_attach_task() is called for all tasks in the group whether the
+> =A0new cgrp is different from the current cgrp or not; however,
+> =A0->attach_task() is skipped if new equals new. =A0This makes the calls
+> =A0asymmetric.
+>
+> This patch improves old cgroup handling in cgroup_attach_proc() by
+> looking up the current cgroup at the head, recording it in the flex
+> array along with the task itself, and using it to remove the above two
+> differences. =A0This will also ease further changes.
+
+While I'm all in favour of making things more consistent, do we need
+such a big change?
+
+In particular, making the group flex-array entries contain both a task
+and a cgroup appears to be only necessary in order to skip tasks where
+new_cgroup =3D=3D old_cgroup. Can't we get the same effect by simply
+leaving all such tasks out of the flex-array in the first place?
+
+Paul
