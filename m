@@ -1,36 +1,41 @@
-From: Cyrill Gorcunov <gorcunov@gmail.com>
-Subject: Re: [RFC] fs, proc: Introduce the /proc/<pid>/map_files/ directory v2
-Date: Thu, 25 Aug 2011 22:13:31 +0400
-Message-ID: <20110825181331.GG6387@sun>
-References: <20110824085329.GL29452@sun>
- <20110824111806.GA7191@albatros>
- <20110825082944.GH10030@sun>
- <20110825173642.GA3288@albatros>
- <20110825173953.GE6387@sun>
- <20110825175438.GA3739@albatros>
+From: Daniel Wagner <wagi@monom.org>
+Subject: Re: [RFC] per-containers tcp buffer limitation
+Date: Thu, 25 Aug 2011 20:27:54 +0200
+Message-ID: <4E56942A.3080905@monom.org>
+References: <4E558137.5020900@parallels.com> <m1k4a2qqew.fsf@fess.ebiederm.org> <4E55A55B.8090608@parallels.com> <20110825104956.41c4b60e.kamezawa.hiroyu@jp.fujitsu.com> <m14o16qlq1.fsf@fess.ebiederm.org> <4E56464B.4070304@monom.org> <4E5664B5.6000806@genband.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20110825175438.GA3739@albatros>
-Sender: linux-fsdevel-owner@vger.kernel.org
-To: Vasiliy Kulikov <segoon@openwall.com>
-Cc: Nathan Lynch <ntl@pobox.com>, Oren Laadan <orenl@cs.columbia.edu>, Daniel Lezcano <dlezcano@fr.ibm.com>, Tejun Heo <tj@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Pavel Emelyanov <xemul@parallels.com>, linux-kernel@vger.kernel.org, James Bottomley <jbottomley@parallels.com>, LINUXFS-ML <linux-fsdevel@vger.kernel.org>, containers@lists.osdl.org, Zan Lynx <zlynx@acm.org>, Andi Kleen <andi@firstfloor.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <4E5664B5.6000806@genband.com>
+Sender: netdev-owner@vger.kernel.org
+To: Chris Friesen <chris.friesen@genband.com>
+Cc: "Eric W. Biederman" <ebiederm@xmission.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Glauber Costa <glommer@parallels.com>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, David Miller <davem@davemloft.net>, Pavel Emelyanov <xemul@parallels.com>
 List-Id: containers.vger.kernel.org
 
-On Thu, Aug 25, 2011 at 09:54:38PM +0400, Vasiliy Kulikov wrote:
-...
-> > > 
-> > 
-> > Don't think so, it should point that permission failed
-> > rather no such entry. Or this might break some tools?
-> 
-> I mean the place exactly where I've put it to indicate simple_strtoul(),
-> get_task_mm(), or find_exact_vma() error.  EPERM for ptrace_may_access()
-> is OK.
-> 
+Hi Chris,
 
-Ah, yeah! ENOENT is really would be correct option here, will fix in next
-iteration, thanks a huge for spotting it!
+On 08/25/2011 05:05 PM, Chris Friesen wrote:
+> On 08/25/2011 06:55 AM, Daniel Wagner wrote:
+> 
+>> I'd like to solve a use case where it is necessary to count all bytes
+>> transmitted and received by an application [1]. So far I have found two
+>> unsatisfying solution for it. The first one is to hook into libc and
+>> count the bytes there. I don't think I have to say I don't like this.
+> 
+> Is there any particular reason you can't use LD_PRELOAD to interpose a
+> library to do the statistics monitoring?
 
-	Cyrill
+This is certainly possible to do for any dynamic linked application. I
+think it wouldn't work for static linked ones. Currently I don't know if
+I have to face such application on the project I am on. The reason why I
+am not so a big fan is that using the LD_PRELOAD trick seems very
+hackish to me.
+
+As Glauber has argumented in this thread, there are properly quite a few
+people who want to control or monitor sockets. It seems I am one of
+those. Having this kind of support in cgroups seems like a very neat
+solution to me.
+
+thanks,
+daniel
