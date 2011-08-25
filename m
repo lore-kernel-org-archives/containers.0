@@ -1,45 +1,36 @@
-From: Glauber Costa <glommer@parallels.com>
-Subject: Re: [RFC] per-containers tcp buffer limitation
-Date: Thu, 25 Aug 2011 15:11:37 -0300
-Message-ID: <4E569059.1020606@parallels.com>
-References: <4E558137.5020900@parallels.com> <m1k4a2qqew.fsf@fess.ebiederm.org> <4E55A55B.8090608@parallels.com> <20110825104956.41c4b60e.kamezawa.hiroyu@jp.fujitsu.com> <m14o16qlq1.fsf@fess.ebiederm.org> <4E56464B.4070304@monom.org> <4E5664B5.6000806@genband.com> <20110825084415.3c3094e8@nehalam.ftrdhcpuser.net>
+From: Cyrill Gorcunov <gorcunov@gmail.com>
+Subject: Re: [RFC] fs, proc: Introduce the /proc/<pid>/map_files/ directory v2
+Date: Thu, 25 Aug 2011 22:13:31 +0400
+Message-ID: <20110825181331.GG6387@sun>
+References: <20110824085329.GL29452@sun>
+ <20110824111806.GA7191@albatros>
+ <20110825082944.GH10030@sun>
+ <20110825173642.GA3288@albatros>
+ <20110825173953.GE6387@sun>
+ <20110825175438.GA3739@albatros>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
-Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <20110825084415.3c3094e8@nehalam.ftrdhcpuser.net>
-Sender: netdev-owner@vger.kernel.org
-To: Stephen Hemminger <shemminger@vyatta.com>
-Cc: Chris Friesen <chris.friesen@genband.com>, Daniel Wagner <wagi@monom.org>, "Eric W. Biederman" <ebiederm@xmission.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, David Miller <davem@davemloft.net>, Pavel Emelyanov <xemul@parallels.com>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <20110825175438.GA3739@albatros>
+Sender: linux-fsdevel-owner@vger.kernel.org
+To: Vasiliy Kulikov <segoon@openwall.com>
+Cc: Nathan Lynch <ntl@pobox.com>, Oren Laadan <orenl@cs.columbia.edu>, Daniel Lezcano <dlezcano@fr.ibm.com>, Tejun Heo <tj@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Pavel Emelyanov <xemul@parallels.com>, linux-kernel@vger.kernel.org, James Bottomley <jbottomley@parallels.com>, LINUXFS-ML <linux-fsdevel@vger.kernel.org>, containers@lists.osdl.org, Zan Lynx <zlynx@acm.org>, Andi Kleen <andi@firstfloor.org>
 List-Id: containers.vger.kernel.org
 
-On 08/25/2011 12:44 PM, Stephen Hemminger wrote:
-> You seem to have forgotten the work of your forefathers. When appealing
-> to history you must understand it first.
->
-> What about using netfilter (with extensions)? We already have iptables
-> module to match on uid or gid. It wouldn't be hard to extend this to
-> other bits of meta data like originating and target containers.
->
-> You could also use this to restrict access to ports and hosts on
-> a per container basis.
->
+On Thu, Aug 25, 2011 at 09:54:38PM +0400, Vasiliy Kulikov wrote:
+...
+> > > 
+> > 
+> > Don't think so, it should point that permission failed
+> > rather no such entry. Or this might break some tools?
+> 
+> I mean the place exactly where I've put it to indicate simple_strtoul(),
+> get_task_mm(), or find_exact_vma() error.  EPERM for ptrace_may_access()
+> is OK.
+> 
 
-Hello Stephen,
+Ah, yeah! ENOENT is really would be correct option here, will fix in next
+iteration, thanks a huge for spotting it!
 
-I am pretty sure netfilter can provide us with amazing functionality 
-that will help our containers implementation a lot.
-
-I don't think, however, that memory limitation belongs in there. First 
-of all, IIRC, we are not dropping packets, re-routing, dealing with any
-low level characteristic, etc. We're just controlling buffer size. This 
-seems orthogonal to the work of netfilter.
-
-Think for instance, in the soft limit: When we hit it, we enter a memory 
-pressure scenario. How would netfilter handle that?
-
-So I guess cgroup is still better suited for this very specific task we 
-have in mind here. For most of the others, I have no doubt that 
-netfilter would come handy.
-
-Thanks for your time!
+	Cyrill
