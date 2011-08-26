@@ -1,77 +1,48 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 3/6] cgroup: introduce cgroup_taskset and use it in
-	subsys->can_attach(), cancel_attach() and attach()
-Date: Fri, 26 Aug 2011 08:40:11 +0200
-Message-ID: <20110826064011.GA2632__17953.3848925077$1314340931$gmane$org@htj.dyndns.org>
-References: <1314312192-26885-1-git-send-email-tj@kernel.org>
-	<1314312192-26885-4-git-send-email-tj@kernel.org>
-	<20110826023818.GC3457@count0.beaverton.ibm.com>
+From: Cyrill Gorcunov <gorcunov@gmail.com>
+Subject: Re: [RFC] fs, proc: Introduce the /proc/<pid>/map_files/ directory v2
+Date: Fri, 26 Aug 2011 10:58:57 +0400
+Message-ID: <20110826065857.GC3903@sun>
+References: <20110824085329.GL29452@sun>
+ <20110824111806.GA7191@albatros>
+ <20110825082944.GH10030@sun>
+ <20110825170147.GM2803@mtj.dyndns.org>
+ <20110825170705.GA6387@sun>
+ <20110825205426.GO2803@mtj.dyndns.org>
+ <20110825211213.GP2803@mtj.dyndns.org>
+ <20110825213459.GA1929@sun>
+ <20110825213931.GR2803@mtj.dyndns.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <20110826023818.GC3457-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org
+In-Reply-To: <20110825213931.GR2803@mtj.dyndns.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Tejun Heo <tj@kernel.org>
+Cc: Vasiliy Kulikov <segoon@openwall.com>, Nathan Lynch <ntl@pobox.com>, Oren Laadan <orenl@cs.columbia.edu>, Daniel Lezcano <dlezcano@fr.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Pavel Emelyanov <xemul@parallels.com>, linux-kernel@vger.kernel.org, James Bottomley <jbottomley@parallels.com>, LINUXFS-ML <linux-fsdevel@vger.kernel.org>, containers@lists.osdl.org, Zan Lynx <zlynx@acm.org>, Andi Kleen <andi@firstfloor.org>
 List-Id: containers.vger.kernel.org
 
-Hello, Matt.
-
-On Thu, Aug 25, 2011 at 07:38:18PM -0700, Matt Helsley wrote:
-> On Fri, Aug 26, 2011 at 12:43:09AM +0200, Tejun Heo wrote:
-> > Currently, there's no way to pass multiple tasks to cgroup_subsys
-> > methods necessitating the need for separate per-process and per-task
-> > methods.  This patch introduces cgroup_taskset which can be used to
-> > pass multiple tasks and their associated cgroups to cgroup_subsys
-> > methods.
+On Thu, Aug 25, 2011 at 11:39:31PM +0200, Tejun Heo wrote:
+> Hello,
 > 
-> This will be the third iterator-ish pattern in the cgroup code.
-> It's not your fault but it does seem a bit much to have:
-...
-> Is there a sane way to merge all this?
-
-If merging isn't complicated and simplifies the code and its users,
-definitely but I don't think that will be the case here.  If there are
-different targets to iterate, having matching iterators isn't a weird
-thing after all.  I personally am not too enthusiastic about mixing
-locking with iterator (the implied read_lock in the cgroup iterator)
-or iteration-by-callback but that's a different issue.
-
-> Perhaps we could drop the iterator interfaces in 1) and 2) and replace
-> it with:
+> On Fri, Aug 26, 2011 at 01:34:59AM +0400, Cyrill Gorcunov wrote:
+> > > Unfortunately, not quite as easy as I expected.  The information still
+> > > seems redundant but it seems we'll need to change
+> > > proc_inode->get_link() to take dentry instead of inode before doing
+> > > away with proc_inode->fd, but, at any rate, I don't think this is a
+> > > big deal one way or the other.
+> > 
+> > Hohum... picking up an additional reference to dentry might be dangerous
+> > I think. How exactly you imagine we would do that? (without this problem
+> > I guess we indeed may drop or rather not change proc-inode).
 > 
-> 		tset cgroup_taskset_from_cgroup(cgroup)
+> Why would you need an extra reference?  All these data structures are
+> created dynamically on access and dentry is always available while any
+> operation on the inode is in progress so it's guaranteed to be
+> available and there's no reason to diddle with reference count.
+> Anyways, we can deal with this optimization later, I think.
 > 
-> which would grab the css set lock to construct the tset from the given
-> cgroup -- essentially inlining the current iterator code into a single
-> function.
 
-* It doesn't need to walk the whole cgroup.
+Hi Tejun, yeah, I somehow missed that you propose to lift up
+proc_get_link a bit. Letme try such approach indeed. Thanks!
 
-* It requires stable set of tasks (ie. atomicity w.r.t. the thread
-  group) with sleepable context which is currently achieved by a rwsem
-  in the task to protect against fork and getting an extra reference
-  to the tasks in the set.
-
-I don't think widening the scope would achieve much (why do we want to
-pass in unrelated tasks to subsystems as a single bundle?) while
-introducing unnecessary scalability limitation (moving out a single
-process ends up being an operation on the whole cgroup).
-
-I don't see how it would be better but, if you do, please go ahead.
-Consolidating stuff is (almost) always a good idea. :)
-
-Thanks.
-
--- 
-tejun
+	Cyrill
