@@ -1,29 +1,62 @@
-From: David Miller <davem@davemloft.net>
-Subject: Re: [RFC] per-containers tcp buffer limitation
-Date: Sun, 28 Aug 2011 02:09:05 -0400 (EDT)
-Message-ID: <20110828.020905.835790029923646089.davem@davemloft.net>
-References: <4E5664B5.6000806@genband.com>
-	<4E56942A.3080905@monom.org>
-	<CA+RrjuXe8kcU+rWT5v88x3u_CMwsdnEAFj7mjDU22p57HCeHhA@mail.gmail.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [PATCH pm-freezer 1/4] cgroup_freezer: fix freezer->state setting
+	bug in freezer_change_state()
+Date: Mon, 29 Aug 2011 16:04:18 +0200
+Message-ID: <20110829140418.GB18871__21436.0925405801$1314626810$gmane$org@mtj.dyndns.org>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <CA+RrjuXe8kcU+rWT5v88x3u_CMwsdnEAFj7mjDU22p57HCeHhA@mail.gmail.com>
-Sender: netdev-owner@vger.kernel.org
-To: matt.helsley@gmail.com
-Cc: wagi@monom.org, chris.friesen@genband.com, xemul@parallels.com, netdev@vger.kernel.org, ebiederm@xmission.com, containers@lists.osdl.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: Matthew Helsley <matt.helsley@gmail.com>
-Date: Sat, 27 Aug 2011 16:39:11 -0700
+d02f52811d0e "cgroup_freezer: prepare for removal of TIF_FREEZE" moved
+setting of freezer->state into freezer_change_state(); unfortunately,
+while doing so, when it's beginning to freeze tasks, it sets the state
+to CGROUP_FROZEN instead of CGROUP_FREEZING ending up skipping the
+whole freezing state.  Fix it.
 
-> LD_PRELOAD is widely regarded as a debugging and tracing method -- it's not
-> usually suitable for implementing features. Why? Because there's nothing
-> stopping an application from resetting LD_PRELOAD and re-exec'ing to escape
-> the measurements and limitations such a preload implements. Plus naive use
-> of LD_PRELOAD could easily interfere with other things that use it. For
-> example what if you want to use DMTCP with this?
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Reported-by: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+Cc: "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>
+---
+Rafael, these four patches fix the issues spotted by Oleg during
+review of the freezer patchset.  Please apply them on pm-freezer once
+Oleg acks them.  Thanks.
 
-LD_PRELOAD is also terrible as a "normal" facility because it breaks
-prelinking.
+ kernel/cgroup_freezer.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+Index: work/kernel/cgroup_freezer.c
+===================================================================
+--- work.orig/kernel/cgroup_freezer.c
++++ work/kernel/cgroup_freezer.c
+@@ -311,14 +311,14 @@ static int freezer_change_state(struct c
+ 	if (goal_state == freezer->state)
+ 		goto out;
+ 
+-	freezer->state = goal_state;
+-
+ 	switch (goal_state) {
+ 	case CGROUP_THAWED:
++		freezer->state = CGROUP_THAWED;
+ 		atomic_dec(&system_freezing_cnt);
+ 		unfreeze_cgroup(cgroup, freezer);
+ 		break;
+ 	case CGROUP_FROZEN:
++		freezer->state = CGROUP_FREEZING;
+ 		atomic_inc(&system_freezing_cnt);
+ 		retval = try_to_freeze_cgroup(cgroup, freezer);
+ 		break;
