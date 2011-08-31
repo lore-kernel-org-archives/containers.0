@@ -1,8 +1,8 @@
 From: Andrew Morton <akpm@linux-foundation.org>
 Subject: Re: [patch 2/2] fs, proc: Introduce the /proc/<pid>/map_files/
  directory v6
-Date: Wed, 31 Aug 2011 15:10:23 -0700
-Message-ID: <20110831151023.5b7e12da.akpm@linux-foundation.org>
+Date: Wed, 31 Aug 2011 15:50:18 -0700
+Message-ID: <20110831155018.fba63834.akpm@linux-foundation.org>
 References: <20110831075814.003575573@openvz.org>
 	<20110831080229.100652529@openvz.org>
 	<20110831090612.GA3253@albatros>
@@ -22,20 +22,6 @@ List-Id: containers.vger.kernel.org
 On Wed, 31 Aug 2011 18:26:22 +0400
 Cyrill Gorcunov <gorcunov@gmail.com> wrote:
 
-> On Wed, Aug 31, 2011 at 05:04:16PM +0300, Kirill A. Shutemov wrote:
-> ...
-> > > 
-> > > OK, here is an updated one. Thanks for feedback. Hope this time
-> > > all nits are addressed. Still reviews/complains are *very* appreciated.
-> > 
-> > Please run checkpatch. It points several warnings and one dangerous error.
-> > 
-> 
-> This one passes checkpatch without error (thanks again Kirill for spotting
-> the parasite semicolon there!).
-> 
-> 	Cyrill
-> ---
 > fs, proc: Introduce the /proc/<pid>/map_files/ directory v8
 > 
 > From: Pavel Emelyanov <xemul@parallels.com>
@@ -66,23 +52,21 @@ Cyrill Gorcunov <gorcunov@gmail.com> wrote:
 >    the memory by the 1st one and then open its /proc/pid/map_files/address file and
 >    map it by the 2nd task.
 
-I'm reluctant to merge something like this unless/until it has real
-use-cases.
+I'm reluctant to merge large hunks c/r infrastructure before knowing
+that it will actually be useful and used.
 
-What is the status of your c/r effort?
+What it the state of your c/r effort?
 
-What additional kernel patches are required to bring that effort to a
-usable state and where are those patches?
+What additional kernel patches will be needed to enable it?
 
-IOW, before starting to merge things I'd like to get an understanding
-of what *all* the patches look like and of what level of c/r
-functionality they provide.
+Where are those patches?
 
 
-This particular patch introduces a distressing amount of duplication of
-/proc/pid/maps.  The changelog should provide a really good
-justification for doing this: why is /proc/pid/maps (and smaps!)
-unsuitable and why cannot maps/smaps be fixed to be suitable?
+
+This particular patch is distressingly similar to /proc/pid/maps and
+smaps.  To justify a merge the changelog should clearly describe why
+maps/smaps are unsuitable for this application and why they are
+unfixable.
 
 >
 > ...
@@ -102,12 +86,13 @@ unsuitable and why cannot maps/smaps be fixed to be suitable?
 > +	return vma;
 > +}
 
-This function would benefit from a code comment.
+This function would be better with a little documentation.
 
-Given that it's pretty generic (indeed there might be open-coded code
-which already does this elsewhere), perhaps it should be in mm/mmap.c
-as a kernel-wide utility function.  That will add a little overhead to
-CONFIG_PROC_FS=n builds, which doesn't seem terribly important.
+It is quite generic and it may be the case that other parts of the
+kernel are already doing this in an open-coded fashion.  Perhaps it
+should be placed in mm/mmap.c along with the other vma manipulation
+library code.  This would add a small amount of dead code to
+CONFIG_PROC_FS=n builds.
 
 > +static int map_name_to_addr(const unsigned char *name, unsigned long *start, unsigned long *end)
 > +{
@@ -130,11 +115,11 @@ CONFIG_PROC_FS=n builds, which doesn't seem terribly important.
 > +	return ret;
 > +}
 
-Again, a little bit of interface documentation would be nice.  Explain
-what the parsed input format is, at least.
+Again, documentation would improve this code.  At least describe the
+parsed input format.
 
-simple_strtoul() is obsolete - use kstrto*().  A checkpatch rule for
-this is queued.
+simple_strtoul() is obsolete.  Use kstrto*().  There is a new
+checkpatch rule pending for this.
 
 > +static int map_files_d_revalidate(struct dentry *dentry, struct nameidata *nd)
 > +{
@@ -162,9 +147,9 @@ this is queued.
 > +		down_read(&mm->mmap_sem);
 > +		vma = find_exact_vma(mm, vm_start, vm_end);
 
-OK, this is nasty.  We have a local variable which points to a vma but
-then we release the locks and refcounts which protect that vma.  So we
-have a pointer which we cannot dereference.  That's dangerous.
+This is nasty.  We have a pointer to a vma, but we drop the locks and
+refcounts which protect that vma.  So we have a local pointer which we
+cannot dereference.  It's a bit of a hand-grenade.
 
 > +		up_read(&mm->mmap_sem);
 > +	}
@@ -184,15 +169,15 @@ have a pointer which we cannot dereference.  That's dangerous.
 > +		}
 > +		security_task_to_inode(task, inode);
 > +		return 1;
-> +	}
 
-And we don't actually dereference it - at present.  We use it as a bool.
+And indeed it was not dereferenced (yet).  It is treated as a bool.
 
-Would it not be nicer, safer and clearer to turn this pointer-as-a-bool
+Would it not be nicer, safer and clearer to turn the pointer-as-a-bool
 into a bool?
 
-	bool matching_vma_exists = !!find_exact_vma(mm, vm_start, vm_end);
+	bool matching_vma_found = !!find_exact_vma(mm, vm_start, vm_end);
 
+> +	}
 > +out:
 > +	d_drop(dentry);
 > +	return 0;
@@ -223,7 +208,7 @@ into a bool?
 > +	inode->i_size	= 64;
 > +	inode->i_mode	= S_IFLNK;
 
-The fancy indenting is not a thing we usually do in the kernel.
+The fancy indenting is atypical for kernel code.
 
 > +	if (file->f_mode & FMODE_READ)
 > +		inode->i_mode |= S_IRUSR | S_IXUSR;
@@ -323,14 +308,12 @@ static
 > +		 *  1) Collect vmas of mapped files with mmap_sem taken
 > +		 *  2) Release mmap_sem and instantiate entries
 > +		 * othrewise we get lockdep complains since filldir
-
-typo
-
 > +		 * might sleep.
+
+Why would a sleep-inside-mmap_sem cause a lockdep warning?
+
 > +		 */
-
-Why would lockdep complain about sleep-inside-mmap_sem?
-
+> +
 > +		for (vma = mm->mmap; vma; vma = vma->vm_next) {
 > +			if (vma->vm_file)
 > +				nr_files++;
@@ -339,23 +322,24 @@ Why would lockdep complain about sleep-inside-mmap_sem?
 > +		if (nr_files) {
 > +			info = kmalloc(nr_files * sizeof(*info), GFP_KERNEL);
 
-I figure sizeof(*info) = 50 bytes.  nr_files can easily be >1000.
+I calculate sizeof(*info) to be 50 bytes.  nr_files can easily be in
+the thousands.
 
-On large some applications the kmalloc attempt will be too large.  This
-is a must-fix.  Using vmalloc() would be very lame.
+So this kmalloc will be far too large on large applications.  This is a
+must-fix.  Fixing it with vmalloc() is lame.
 
 > +			if (!info)
 > +				ret = -ENOMEM;
 > +			for (vma = mm->mmap, vmai = 2; vma && info; vma = vma->vm_next) {
-> +				if (!vma->vm_file)
-> +					continue;
-> +				vmai++;
 
-What is "vmai"?  "vma index"?  If so, please call it vma_index.  If
-not, please call it something better anyway.
+What does "vmai" mean?  "vma index"?  If so, call it vma_index.  If
+not, call it something else which is meaningful.
 
 vmai/vma_index could be made local to this code block.
 
+> +				if (!vma->vm_file)
+> +					continue;
+> +				vmai++;
 > +				if (vmai <= filp->f_pos)
 > +					continue;
 > +
@@ -385,8 +369,7 @@ vmai/vma_index could be made local to this code block.
 > +		for (i = 0; i < used; i++)
 > +			put_filp(info[i].file);
 
-Why not do the put_filp() in the previous loop and avoid some cache
-misses?
+Why not do the put_filp() in the previous loop and avoid some cache misses?
 
 > +		kfree(info);
 > +		mmput(mm);
@@ -398,6 +381,12 @@ misses?
 > +out_no_task:
 > +	return ret;
 > +}
+> +
+> +static const struct file_operations proc_map_files_operations = {
+> +	.read		= generic_read_dir,
+> +	.readdir	= proc_map_files_readdir,
+> +	.llseek		= default_llseek,
+> +};
 >
 > ...
 >
