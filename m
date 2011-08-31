@@ -1,17 +1,18 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH pm-freezer 4/4] freezer: use lock_task_sighand() in
-	fake_signal_wake_up()
-Date: Wed, 31 Aug 2011 12:22:37 +0200
-Message-ID: <20110831102237.GD2828__11725.895459722$1314910676$gmane$org@mtj.dyndns.org>
-References: <20110831102100.GA2828@mtj.dyndns.org>
-	<20110831102143.GB2828@mtj.dyndns.org>
-	<20110831102210.GC2828@mtj.dyndns.org>
+From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 6/6] cgroup: kill subsys->can_attach_task(), pre_attach()
+	and attach_task()
+Date: Wed, 31 Aug 2011 15:42:24 +0200
+Message-ID: <20110831134220.GB20598__17127.9094451622$1314913472$gmane$org@somewhere>
+References: <1314312192-26885-1-git-send-email-tj@kernel.org>
+	<1314312192-26885-7-git-send-email-tj@kernel.org>
+	<20110830201030.GC15953@somewhere.redhat.com>
+	<20110831070313.GA29179@mtj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20110831102210.GC2828-9pTldWuhBndy/B6EtB590w@public.gmane.org>
+In-Reply-To: <20110831070313.GA29179-9pTldWuhBndy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,38 +22,30 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-cgroup_freezer calls freeze_task() without holding tasklist_lock and,
-if the task is exiting, its ->sighand may be gone by the time
-fake_signal_wake_up() is called.  Use lock_task_sighand() instead of
-accessing ->sighand directly.
+On Wed, Aug 31, 2011 at 09:03:13AM +0200, Tejun Heo wrote:
+> Hello, Frederic.
+> 
+> On Tue, Aug 30, 2011 at 10:10:32PM +0200, Frederic Weisbecker wrote:
+> > In order to keep the fix queued in -mm (https://lkml.org/lkml/2011/8/26/262)
+> > the tasks that have failed to migrate should be removed from the iterator
+> > so that they are not included in the batch in ->attach().
+> 
+> I don't think that's a good approach.  It breaks the symmetry when
+> calling different callbacks.  What if ->can_attach() allocates
+> per-task resources and the task exits in the middle?  I think we
+> better lock down fork/exit/exec.  I'll send patches but I'm currently
+> moving / traveling w/ limited access to my toys so it might take some
+> time.
 
-Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Reported-by: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>
-Cc: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
----
- kernel/freezer.c |    7 ++++---
- 1 file changed, 4 insertions(+), 3 deletions(-)
+My task counter subsystem patchset brings a cancel_attach_task() callback
+that cancels can_attach_task() effects.
 
-Index: work/kernel/freezer.c
-===================================================================
---- work.orig/kernel/freezer.c
-+++ work/kernel/freezer.c
-@@ -95,9 +95,10 @@ static void fake_signal_wake_up(struct t
- {
- 	unsigned long flags;
- 
--	spin_lock_irqsave(&p->sighand->siglock, flags);
--	signal_wake_up(p, 0);
--	spin_unlock_irqrestore(&p->sighand->siglock, flags);
-+	if (lock_task_sighand(p, &flags)) {
-+		signal_wake_up(p, 0);
-+		unlock_task_sighand(p, &flags);
-+	}
- }
- 
- /**
+I thought that rebased on top of your patch it's going to be merged inside
+cancel_attach() but OTOH we can't cancel the effect of failed migration
+on a thread that way.
+
+May be we need to keep a cancel_attach_task() just for that purpose?
