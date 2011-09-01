@@ -1,81 +1,85 @@
-From: Kyle Moffett <kyle@moffetthome.net>
-Subject: Re: [patch 2/2] fs, proc: Introduce the /proc/<pid>/map_files/
- directory v6
-Date: Wed, 31 Aug 2011 23:07:05 -0400
-Message-ID: <CAGZ=bqLE8uJj+m-LZM1OX093M+0aE6+zxJF0o5DPHOnYX3iA5A@mail.gmail.com>
-References: <20110831075814.003575573@openvz.org> <20110831080229.100652529@openvz.org>
- <20110831090612.GA3253@albatros> <20110831112642.GI25465@sun>
- <20110831140416.GA17626@shutemov.name> <20110831142622.GB30615@sun> <20110831151023.5b7e12da.akpm@linux-foundation.org>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+Subject: Re: [RFMC] per-container tcp buffer limitation
+Date: Thu, 1 Sep 2011 15:48:10 +0900
+Message-ID: <20110901154810.cdda1d94.kamezawa.hiroyu@jp.fujitsu.com>
+References: <4E5EF14F.3040300@parallels.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: QUOTED-PRINTABLE
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20110831151023.5b7e12da.akpm@linux-foundation.org>
-Sender: linux-fsdevel-owner@vger.kernel.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Cyrill Gorcunov <gorcunov@gmail.com>, "Kirill A. Shutemov" <kirill@shutemov.name>, Vasiliy Kulikov <segoon@openwall.com>, containers@lists.osdl.org, linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, Nathan Lynch <ntl@pobox.com>, Oren Laadan <orenl@cs.columbia.edu>, Daniel Lezcano <dlezcano@fr.ibm.com>, Glauber Costa <glommer@parallels.com>, James Bottomley <jbottomley@parallels.com>, Tejun Heo <tj@kernel.org>, Alexey Dobriyan <adobriyan@gmail.com>, Al Viro <viro@zeniv.linux.org.uk>, Pavel Emelyanov <xemul@parallels.com>
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <4E5EF14F.3040300@parallels.com>
+Sender: owner-linux-mm@kvack.org
+To: Glauber Costa <glommer@parallels.com>
+Cc: netdev@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, linux-mm@kvack.org, Pavel Emelyanov <xemul@parallels.com>, "Eric W. Biederman" <ebiederm@xmission.com>, David Miller <davem@davemloft.net>, Stephen Hemminger <shemminger@vyatta.com>, penberg@kernel.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Aug 31, 2011 at 18:10, Andrew Morton <akpm@linux-foundation.org=
-> wrote:
-> On Wed, 31 Aug 2011 18:26:22 +0400  Cyrill Gorcunov <gorcunov@gmail.c=
-om> wrote:
->> This one behaves similarly to the /proc/<pid>/fd/ one - it contains =
-symlinks
->> one for each mapping with file, the name of a symlink is "vma->vm_st=
-art-vma->vm_end",
->> the target is the file. Opening a symlink results in a file that poi=
-nt exactly
->> to the same inode as them vma's one.
->>
->> For example the ls -l of some arbitrary /proc/<pid>/map_files/
->>
->> =C2=A0| lr-x------ 1 root root 64 Aug 26 06:40 7f8f80403000-7f8f8040=
-4000 -> /lib64/libc-2.5.so
->> =C2=A0| lr-x------ 1 root root 64 Aug 26 06:40 7f8f8061e000-7f8f8062=
-0000 -> /lib64/libselinux.so.1
->> =C2=A0| lr-x------ 1 root root 64 Aug 26 06:40 7f8f80826000-7f8f8082=
-7000 -> /lib64/libacl.so.1.1.0
->> =C2=A0| lr-x------ 1 root root 64 Aug 26 06:40 7f8f80a2f000-7f8f80a3=
-0000 -> /lib64/librt-2.5.so
->> =C2=A0| lr-x------ 1 root root 64 Aug 26 06:40 7f8f80a30000-7f8f80a4=
-c000 -> /lib64/ld-2.5.so
->
-> This particular patch introduces a distressing amount of duplication =
-of
-> /proc/pid/maps. =C2=A0The changelog should provide a really good
-> justification for doing this: why is /proc/pid/maps (and smaps!)
-> unsuitable and why cannot maps/smaps be fixed to be suitable?
+On Wed, 31 Aug 2011 23:43:27 -0300
+Glauber Costa <glommer@parallels.com> wrote:
 
-Andrew,
+> Hello People,
+> 
+> [ For the ones in linux-mm that are receiving this for the first time,
+>    this is a follow up of
+>    http://thread.gmane.org/gmane.linux.kernel.containers/21295 ]
+> 
+> Here is a new, a bit more mature version of my previous RFC. Now I 
+> Request For More Comments from you guys in this new version of the patch.
+> 
+> Highlights:
+> 
+> * Although I do intend to experiment with more scenarios (suggestions 
+> welcome), there does not seem to be a (huge) performance hit with this 
+> patch applied, at least in a basic latency benchmark. That indicates 
+> that even if we can demonstrate a performance hit, it won't be too hard 
+> to optimize it away (famous last words?)
+> 
+> Since the patch touches both rcv and snd sides, I benchmarked it with 
+> netperf against localhost. Command line: netperf -t TCP_RR -H localhost.
+> 
+> Without the patch
+> =================
+> 
+> Socket Size   Request  Resp.   Elapsed  Trans.
+> Send   Recv   Size     Size    Time     Rate
+> bytes  Bytes  bytes    bytes   secs.    per sec
+> 
+> 16384  87380  1        1       10.00    26996.35
+> 16384  87380
+> 
+> With the patch
+> ===============
+> 
+> Local /Remote
+> Socket Size   Request  Resp.   Elapsed  Trans.
+> Send   Recv   Size     Size    Time     Rate
+> bytes  Bytes  bytes    bytes   secs.    per sec
+> 
+> 16384  87380  1        1       10.00    27291.86
+> 16384  87380
+> 
+> 
+> As you can see, rate is a bit higher, but still under an one percent 
+> range, meaning it is basically unchanged. I will benchmark it with 
+> various levels of cgroup nesting on my next submission so we can have a 
+> better idea of the impact of it when enabled.
+> 
+seems nice.
 
-This is way more useful than /proc/$PID/maps, because this allows you
-to reliably obtain an FD to an arbitrary mapped memory segment.
+> * As nicely pointed out by Kamezawa, I dropped the sockets cgroup, and 
+> introduced a kmem cgroup. After careful consideration, I decided not to 
+> reuse the memcg. Basically, my impression is that memcg is concerned 
+> with user objects, with page granularity and its swap attributes. 
+> Because kernel objects are entirely different, I prefer to group them here.
+> 
 
-EG:
-  $ cp /bin/sleep ~/my-sleep
-  $ ~/my-sleep 1000 & kid=3D$!
-  $ rm ~/my-sleep
-  $ mkdir ~/mapped_files
-  $ for file in /proc/$kid/map_files/*; do cp "$file" ~/mapped_files/; =
-done
+I myself has no objection to this direction. Other guys ?
 
-This trivially gets me copies of every mapped file, including the delet=
-ed
-"my-sleep" binary, it also trivially handles lazy-unmounted filesystems=
-,
-chroots, namespaces, and all sorts of similar kernel cleverness.
+Thanks,
+-Kame
 
-It's exactly the same kind of utility that /proc/$PID/fd/* has, but for
-mmap().
-
-With /proc/$kid/maps you simply can't work around some of those
-kinds of issues (IE: deleted files, etc).
-
-Cheers,
-Kyle Moffett
 --
-To unsubscribe from this list: send the line "unsubscribe linux-fsdevel=
-" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
