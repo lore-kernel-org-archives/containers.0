@@ -1,8 +1,7 @@
 From: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 10/15] net/core/scm.c: target capable() calls to user_ns
-	owning the net_ns
-Date: Fri,  2 Sep 2011 19:56:35 +0000
-Message-ID: <1314993400-6910-13-git-send-email-serge__34812.7361540266$1314993872$gmane$org@hallyn.com>
+Subject: [PATCH 08/15] af_netlink.c: make netlink_capable userns-aware
+Date: Fri,  2 Sep 2011 19:56:33 +0000
+Message-ID: <1314993400-6910-11-git-send-email-serge__32892.0262902558$1314993873$gmane$org@hallyn.com>
 References: <1314993400-6910-1-git-send-email-serge@hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -19,85 +18,39 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: akpm-3NddpPZAyC0@public.gmane.org, segooon-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+Cc: Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 From: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 
-The uid/gid comparisons don't have to be pulled out.  This just seemed
-more easily proved correct.
+netlink_capable should check for permissions against the user
+namespace owning the socket in question.
 
 Changelog:
-   mark struct cred arg const
+  Per Eric Dumazet advice, use sock_net(sk) instead of #ifdef.
 
 Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Cc: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- net/core/scm.c |   41 ++++++++++++++++++++++++++++++++++-------
- 1 files changed, 34 insertions(+), 7 deletions(-)
+ net/netlink/af_netlink.c |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/net/core/scm.c b/net/core/scm.c
-index 811b53f..4f376bf 100644
---- a/net/core/scm.c
-+++ b/net/core/scm.c
-@@ -43,17 +43,44 @@
-  *	setu(g)id.
-  */
+diff --git a/net/netlink/af_netlink.c b/net/netlink/af_netlink.c
+index 0a4db02..3cc0bbe 100644
+--- a/net/netlink/af_netlink.c
++++ b/net/netlink/af_netlink.c
+@@ -580,8 +580,9 @@ retry:
  
--static __inline__ int scm_check_creds(struct ucred *creds)
-+static __inline__ bool uidequiv(const struct cred *src, struct ucred *tgt,
-+			       struct user_namespace *ns)
-+{
-+	if (src->user_ns != ns)
-+		goto check_capable;
-+	if (src->uid == tgt->uid || src->euid == tgt->uid ||
-+	    src->suid == tgt->uid)
-+		return true;
-+check_capable:
-+	if (ns_capable(ns, CAP_SETUID))
-+		return true;
-+	return false;
-+}
-+
-+static __inline__ bool gidequiv(const struct cred *src, struct ucred *tgt,
-+			       struct user_namespace *ns)
-+{
-+	if (src->user_ns != ns)
-+		goto check_capable;
-+	if (src->gid == tgt->gid || src->egid == tgt->gid ||
-+	    src->sgid == tgt->gid)
-+		return true;
-+check_capable:
-+	if (ns_capable(ns, CAP_SETGID))
-+		return true;
-+	return false;
-+}
-+
-+static __inline__ int scm_check_creds(struct ucred *creds, struct socket *sock)
+ static inline int netlink_capable(struct socket *sock, unsigned int flag)
  {
- 	const struct cred *cred = current_cred();
-+	struct user_namespace *ns = sock_net(sock->sk)->user_ns;
- 
--	if ((creds->pid == task_tgid_vnr(current) || capable(CAP_SYS_ADMIN)) &&
--	    ((creds->uid == cred->uid   || creds->uid == cred->euid ||
--	      creds->uid == cred->suid) || capable(CAP_SETUID)) &&
--	    ((creds->gid == cred->gid   || creds->gid == cred->egid ||
--	      creds->gid == cred->sgid) || capable(CAP_SETGID))) {
-+	if ((creds->pid == task_tgid_vnr(current) || ns_capable(ns, CAP_SYS_ADMIN)) &&
-+	     uidequiv(cred, creds, ns) && gidequiv(cred, creds, ns)) {
- 	       return 0;
- 	}
-+
- 	return -EPERM;
+-	return (nl_table[sock->sk->sk_protocol].nl_nonroot & flag) ||
+-	       capable(CAP_NET_ADMIN);
++	if (nl_table[sock->sk->sk_protocol].nl_nonroot & flag)
++		return 1;
++	return ns_capable(sock_net(sock->sk)->user_ns, CAP_NET_ADMIN);
  }
  
-@@ -169,7 +196,7 @@ int __scm_send(struct socket *sock, struct msghdr *msg, struct scm_cookie *p)
- 			if (cmsg->cmsg_len != CMSG_LEN(sizeof(struct ucred)))
- 				goto error;
- 			memcpy(&p->creds, CMSG_DATA(cmsg), sizeof(struct ucred));
--			err = scm_check_creds(&p->creds);
-+			err = scm_check_creds(&p->creds, sock);
- 			if (err)
- 				goto error;
- 
+ static void
 -- 
 1.7.5.4
