@@ -1,28 +1,39 @@
-From: alva roltd <alvaroltd1-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Order
-Date: Thu, 1 Sep 2011 07:35:06 -0700
-Message-ID: <CAHxn-CS7ePMvVi8LAnSZSV9MNdS6n-dh3kpGWvGvCSwRf-7mRQ@mail.gmail.com>
+From: Tejun Heo <tj@kernel.org>
+Subject: Re: [patch 2/2] fs, proc: Introduce the /proc/<pid>/map_files/
+ directory v6
+Date: Fri, 2 Sep 2011 11:29:57 +0900
+Message-ID: <20110902022957.GH2752@htj.dyndns.org>
+References: <20110831075814.003575573@openvz.org>
+ <20110831080229.100652529@openvz.org>
+ <4E603758.6050003@gmail.com>
+ <20110902015807.GG2752@htj.dyndns.org>
+ <4E6039BA.1010805@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <4E6039BA.1010805@gmail.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Nicholas Miell <nmiell@gmail.com>
+Cc: Cyrill Gorcunov <gorcunov@openvz.org>, containers@lists.osdl.org, linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, Nathan Lynch <ntl@pobox.com>, Oren Laadan <orenl@cs.columbia.edu>, Daniel Lezcano <dlezcano@fr.ibm.com>, Glauber Costa <glommer@parallels.com>, James Bottomley <jbottomley@parallels.com>, Vasiliy Kulikov <segoon@openwall.com>, "Kirill A. Shutemov" <kirill@shutemov.name>, Alexey Dobriyan <adobriyan@gmail.com>, Al Viro <viro@ZenIV.linux.org.uk>, Andrew Morton <akpm@linux-foundation.org>, Pavel Emelyanov <xemul@parallels.com>
 List-Id: containers.vger.kernel.org
 
-Hello Saller /Owner
+Hello,
 
-Am Bale and will like to know if you sell containers or can make same order
-for me .I would like to know the types you have with it price range also if
-you accept credit as method of payment
+On Thu, Sep 01, 2011 at 07:04:42PM -0700, Nicholas Miell wrote:
+> So are the filenames in /proc/$PID/map_files/ guaranteed to be identical
+> to the first field (first two fields? the part before the first space)
+> in /proc/$PID/maps?
 
-Best regard
-Bale
+Yeap, naturally.
+
+> When I open a file in /proc/$PID/map_files/, is offset 0 the start of
+> the file on disk or is it the first byte of the mapping?
+
+It shows the same backing file so of course uses the same offset as
+the file on disk.
+
+Thanks.
+
+-- 
+tejun
