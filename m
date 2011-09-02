@@ -1,70 +1,102 @@
-From: Matt Helsley <matthltc@us.ibm.com>
-Subject: Re: [patch 2/2] fs, proc: Introduce the /proc/<pid>/map_files/
- directory v6
-Date: Fri, 2 Sep 2011 12:15:10 -0700
-Message-ID: <20110902191510.GB27179@count0.beaverton.ibm.com>
-References: <20110831080229.100652529@openvz.org>
- <20110831090612.GA3253@albatros>
- <20110831112642.GI25465@sun>
- <20110831140416.GA17626@shutemov.name>
- <20110831142622.GB30615@sun>
- <20110831151023.5b7e12da.akpm@linux-foundation.org>
- <4E5F3B25.9030701@parallels.com>
- <20110901115006.GB2752@htj.dyndns.org>
- <4E5F7702.2070808@parallels.com>
- <20110901171355.GC2752@htj.dyndns.org>
+From: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 06/15] user namespace: make each net (net_ns) belong to a
+	user_ns
+Date: Fri,  2 Sep 2011 19:56:31 +0000
+Message-ID: <1314993400-6910-9-git-send-email-serge@hallyn.com>
+References: <1314993400-6910-1-git-send-email-serge@hallyn.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20110901171355.GC2752@htj.dyndns.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Tejun Heo <tj@kernel.org>
-Cc: Pavel Emelyanov <xemul@parallels.com>, Daniel Lezcano <dlezcano@fr.ibm.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, James Bottomley <jbottomley@parallels.com>, Cyrill Gorcunov <gorcunov@gmail.com>, "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>, Nathan Lynch <ntl@pobox.com>, Alexey Dobriyan <adobriyan@gmail.com>, "containers@lists.osdl.org" <containers@lists.osdl.org>, Andrew Morton <akpm@linux-foundation.org>, Vasiliy Kulikov <segoon@openwall.com>, Al Viro <viro@ZenIV.linux.org.uk>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1314993400-6910-1-git-send-email-serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: akpm-3NddpPZAyC0@public.gmane.org, segooon-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Sep 02, 2011 at 02:13:55AM +0900, Tejun Heo wrote:
-> Hello,
-> 
-> On Thu, Sep 01, 2011 at 04:13:54PM +0400, Pavel Emelyanov wrote:
-> > Because with the handler restore process looks very natural and simple - each
-> > task does the following steps
-> > 
-> > 1. restore task resources (open files, set IDs, restore connections, wire back timers, etc.)
-> > 2. call execve() to jump into new memory+registers context which is
-> >    a. unmap all the user memory
-> >    b. map required mappings
-> >    c. populate them with data
-> >    d. restore registers
-> >    e. restore IP
-> 
-> But what about multiple threads?  exec is already scary enough as it
-> is and I don't think it would be wise to overload it for this.
-> 
-> I don't really think binfmt handler would be able to achieve
-> completeness without ending up with full de-serializer in kernel.
+From: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 
-Yeah, I think you'd have to remove the de_thread()-based assumptions 
-in exec to avoid this. And then there's the can of worms opened by
-non-pthread threads where files, signals, etc. may or may not be shared..
+This way we can target capabilites at the user_ns which created the
+net ns.
 
-> There are a lot of states which already have API to manipulate from
-> the userland thread itself and they all will need to be replicated in
-> the binfmt handler.  It really has to be full de-serializer if it
+Changelog:
+   jul 8: nsproxy: don't assign netns->userns if not cloning.
 
-Re-creating all possible states from userspace is not necessarily going
-to be any prettier. I'd really like to see SEIZE used to restart threaded
-tasks before I'll be convinced it's any more or less pretty than a binfmt
-handler.
+Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Cc: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+---
+ include/net/net_namespace.h |    2 ++
+ kernel/nsproxy.c            |    2 ++
+ net/core/net_namespace.c    |    3 +++
+ 3 files changed, 7 insertions(+), 0 deletions(-)
 
-> wants to function like you described.
-> 
-> And if we're gonna have interventions anyway, I can't see much point
-> in implementing something which seems simpler - it's not gonna be
-> actually simpler.
-
-You may have lost me here -- I have no idea whether this is a summary
-or some new point you're trying to make.
-
-Cheers,
-	-Matt Helsley
+diff --git a/include/net/net_namespace.h b/include/net/net_namespace.h
+index 3bb6fa0..d91fe5f 100644
+--- a/include/net/net_namespace.h
++++ b/include/net/net_namespace.h
+@@ -29,6 +29,7 @@ struct ctl_table_header;
+ struct net_generic;
+ struct sock;
+ struct netns_ipvs;
++struct user_namespace;
+ 
+ 
+ #define NETDEV_HASHBITS    8
+@@ -101,6 +102,7 @@ struct net {
+ 	struct netns_xfrm	xfrm;
+ #endif
+ 	struct netns_ipvs	*ipvs;
++	struct user_namespace	*user_ns;
+ };
+ 
+ 
+diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+index e274577..752b477 100644
+--- a/kernel/nsproxy.c
++++ b/kernel/nsproxy.c
+@@ -95,6 +95,8 @@ static struct nsproxy *create_new_namespaces(unsigned long flags,
+ 		err = PTR_ERR(new_nsp->net_ns);
+ 		goto out_net;
+ 	}
++	if (flags & CLONE_NEWNET)
++		new_nsp->net_ns->user_ns = get_user_ns(task_cred_xxx(tsk, user_ns));
+ 
+ 	return new_nsp;
+ 
+diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
+index 6f6698d..5ca95cc 100644
+--- a/net/core/net_namespace.c
++++ b/net/core/net_namespace.c
+@@ -10,6 +10,7 @@
+ #include <linux/nsproxy.h>
+ #include <linux/proc_fs.h>
+ #include <linux/file.h>
++#include <linux/user_namespace.h>
+ #include <net/net_namespace.h>
+ #include <net/netns/generic.h>
+ 
+@@ -209,6 +210,7 @@ static void net_free(struct net *net)
+ 	}
+ #endif
+ 	kfree(net->gen);
++	put_user_ns(net->user_ns);
+ 	kmem_cache_free(net_cachep, net);
+ }
+ 
+@@ -389,6 +391,7 @@ static int __init net_ns_init(void)
+ 	rcu_assign_pointer(init_net.gen, ng);
+ 
+ 	mutex_lock(&net_mutex);
++	init_net.user_ns = &init_user_ns;
+ 	if (setup_net(&init_net))
+ 		panic("Could not setup the initial network namespace");
+ 
+-- 
+1.7.5.4
