@@ -1,19 +1,18 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH pm-freezer 1/4] cgroup_freezer: fix freezer->state
 	setting bug in freezer_change_state()
-Date: Sat, 3 Sep 2011 02:31:27 +0900
-Message-ID: <20110902173127.GA3083__44336.4465180368$1314984781$gmane$org@htj.dyndns.org>
+Date: Fri, 2 Sep 2011 19:30:39 +0200
+Message-ID: <20110902173039.GA9039@redhat.com>
 References: <20110831102100.GA2828@mtj.dyndns.org>
 	<20110902004231.GF1919@count0.beaverton.ibm.com>
 	<20110902165839.GA7478@redhat.com>
 	<20110902170844.GJ2752@htj.dyndns.org>
-	<20110902171517.GA8247@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20110902171517.GA8247-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20110902170844.GJ2752-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,43 +22,56 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hello,
+On 09/03, Tejun Heo wrote:
+>
+> Can you please wait a bit?
 
-On Fri, Sep 02, 2011 at 07:15:17PM +0200, Oleg Nesterov wrote:
-> > I guess it depends on the viewpoint.  A simple analogy would be using
-> > WARN_ON_ONCE() instead of BUG_ON() so that the mode of failure is
-> > softer.  This change isn't likely to make bugs significantly more
-> > difficult to discover so why not?
-> 
-> I agree either way.
-> 
-> Personally I prefer your current patch. Because it is not clear why
-> do we call try_to_freeze_cgroup() if it was already called. And, the
-> 2nd call can silently hide the problem if we have some bug.
-> 
-> But of course, this is up to you and Matt.
+Sure. But just in case, I mean the simple patch below.
 
-I'm okay either way too.  It would make a bug in that area a bit less
-annoying and thus may decrease the chance of bug report, but it means
-that we ship with built-in easy work around (if it doesn't work at the
-first kick, kick again), which can be beneficial in practice.
+Feel free to incorporate into 4/4, or I can resend it later.
 
-> > > But I agree either way. Rafael, I think 1-4 are fine, but I think
-> > > we need the simple 5/4, will send in a minute...
-> >
-> > Can you please wait a bit?  The second one was broken (missing unlock)
-> 
-> Yes, I just noticed the small problem too, hopefully we mean the same
-> bug ;)
+Oleg.
 
-Yeap, the same one.  I thought it was the second patch instead of the
-third. :)
+------------------------------------------------------------------------------
+[PATCH] freezer: remove the pointless/unsafe __thaw_task()->recalc_sigpending_and_wake()
 
-Thanks.
+Remove __thaw_task()->recalc_sigpending_and_wake(). It was copied from
+cancel_freezing() recently, but it was always wrong.
 
--- 
-tejun
+It is pointless, contary to the comment it can't clear TIF_SIGPENDING.
+Not to mention, we must never do this with !current task, this is wrong.
+
+The usage of ->sighand is not safe if the caller is cgroup_freezer, we
+can racw with exit.
+
+Signed-off-by: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+---
+
+ kernel/freezer.c |   10 +---------
+ 1 file changed, 1 insertion(+), 9 deletions(-)
+
+--- 3.1/kernel/freezer.c~kill_rspaw	2011-09-02 18:52:46.000000000 +0200
++++ 3.1/kernel/freezer.c	2011-09-02 19:03:30.000000000 +0200
+@@ -150,18 +150,10 @@ void __thaw_task(struct task_struct *p)
+ 	 * be visible to @p as waking up implies wmb.  Waking up inside
+ 	 * freezer_lock also prevents wakeups from leaking outside
+ 	 * refrigerator.
+-	 *
+-	 * If !FROZEN, @p hasn't reached refrigerator, recalc sigpending to
+-	 * avoid leaving dangling TIF_SIGPENDING behind.
+ 	 */
+ 	spin_lock_irqsave(&freezer_lock, flags);
+-	if (frozen(p)) {
++	if (frozen(p))
+ 		wake_up_process(p);
+-	} else {
+-		spin_lock(&p->sighand->siglock);
+-		recalc_sigpending_and_wake(p);
+-		spin_unlock(&p->sighand->siglock);
+-	}
+ 	spin_unlock_irqrestore(&freezer_lock, flags);
+ }
