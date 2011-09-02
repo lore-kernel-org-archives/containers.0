@@ -1,84 +1,64 @@
-From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH][BUGFIX] cgroups: more safe tasklist locking in
-	cgroup_attach_proc
-Date: Fri, 2 Sep 2011 14:32:51 +0200
-Message-ID: <20110902123251.GA26764__38970.5601883636$1314967048$gmane$org@redhat.com>
-References: <20110727171101.5e32d8eb@notabene.brown>
-	<20110727150710.GB5242@unix33.andrew.cmu.edu>
-	<20110727234235.GA2318@linux.vnet.ibm.com>
-	<20110728110813.7ff84b13@notabene.brown>
-	<20110728062616.GC15204@unix33.andrew.cmu.edu>
-	<20110728171345.67d3797d@notabene.brown>
-	<20110729142842.GA8462@unix33.andrew.cmu.edu>
-	<20110815184957.GA16588@redhat.com>
-	<20110901214643.GD10401@unix33.andrew.cmu.edu>
+From: Vasiliy Kulikov <segoon@openwall.com>
+Subject: Re: [patch 2/2] fs, proc: Introduce the /proc/<pid>/map_files/
+ directory v6
+Date: Fri, 2 Sep 2011 20:37:11 +0400
+Message-ID: <20110902163711.GA3124@albatros>
+References: <20110831075814.003575573@openvz.org>
+ <20110831080229.100652529@openvz.org>
+ <20110831090612.GA3253@albatros>
+ <20110831112642.GI25465@sun>
+ <20110831140416.GA17626@shutemov.name>
+ <20110831142622.GB30615@sun>
+ <20110831151023.5b7e12da.akpm@linux-foundation.org>
+ <20110901080508.GF30615@sun>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <20110901214643.GD10401-japSPQJXeIlCM1neWV3AGuCmf2DRS9x2@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
-Cc: NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+In-Reply-To: <20110901080508.GF30615@sun>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Cyrill Gorcunov <gorcunov@gmail.com>, Andrew Morton <akpm@linux-foundation.org>
+Cc: "Kirill A. Shutemov" <kirill@shutemov.name>, containers@lists.osdl.org, linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, Nathan Lynch <ntl@pobox.com>, kernel-hardening@lists.openwall.com, Oren Laadan <orenl@cs.columbia.edu>, Daniel Lezcano <dlezcano@fr.ibm.com>, Glauber Costa <glommer@parallels.com>, James Bottomley <jbottomley@parallels.com>, Tejun Heo <tj@kernel.org>, Alexey Dobriyan <adobriyan@gmail.com>, Al Viro <viro@ZenIV.linux.org.uk>, Pavel Emelyanov <xemul@parallels.com>
 List-Id: containers.vger.kernel.org
 
-On 09/01, Ben Blum wrote:
->
-> On Mon, Aug 15, 2011 at 08:49:57PM +0200, Oleg Nesterov wrote:
-> >
-> > But can't we avoid the global list? thread_group_leader() or not, we do
-> > not really care. We only need to ensure we can safely find all threads.
-> >
-> > How about the patch below?
->
-> I was content with the tasklist_lock because cgroup_attach_proc is
-> already a pretty heavyweight operation, and probably pretty rare that a
-> user would want to do multiple of them at once quickly.
+Hi,
 
-Perhaps. But this is the global lock, no matter what. Why do you prefer
-to take it instead of per-process ->siglock?
+On Thu, Sep 01, 2011 at 12:05 +0400, Cyrill Gorcunov wrote:
+> ...
+> > > +/*
+> > > + * NOTE: The getattr/setattr for both /proc/$pid/map_files and
+> > > + * /proc/$pid/fd seems to have share the code, so need to be
+> > > + * unified and code duplication eliminated!
+> > 
+> > Why not do this now?
+> 
+> There are a couple of reasons. Yesterday I was talking to
+> Vasiliy Kulikov about this snippet, so he seems about to send
+> you patches related to /proc/$pid/fd update, and after those
+> patches will be merged we are to drop code duplication.
+> Vasiliy, what the status of the update?
 
-> I asked Andrew
-> to take the simple tasklist_lock patch just now, since it does fix the
-> bug at least.
+It looks like protecting directories with sensible contents is a nasty
+thing.  The problem here is that if the dentry is present in the cache,
+->lookup() is not called at all and the permissions can be checked in
+fop/dop/iop specific handler (getattr(), readlink(), etc.).  However, it
+would be much simplier to hook ->lookup() only.  Otherwise, we have to
+define procfs handlers for all operations, which don't call
+->d_revalidate().
 
-I disagree.
+Is it possible to disable caching dentry for specific files?  It is not
+performace critical thing in fd and map_files and it would much simplify
+the task.  Creating handlers for all these op handler bloats procfs.
 
-> Anyway, looking at this, hmm. I am not sure if this protects adequately?
-> In de_thread, the sighand lock is held only around the first half
-> (around zap_other_threads),
+Also I'm not sure what other handlers might reveal dentry presence.
+Besides ->getattr() I could find only one thing - ->link() (Cyrill,
+AFAICS ->setattr() doesn't reveal files' presence).  Someone more
+familiar with vfs than me - please, help to identify all infoleak
+sources!
 
-We only need this lock to find all threads,
 
-> and not around the following section where
-> leadership is transferred (esp. around the list_replace calls).
-> tasklist_lock is held here, though, so it seems like the right lock to
-> hold.
+Thank you,
 
-This doesn't matter at all, I think. The code under while_each_thread()
-doesn't need the stable ->group_leader, and it can be changed right after
-you drop tasklist. list_replace() calls do not play with ->thread_group
-list.
-
-How can tasklist make any difference?
-
-> > With or without this/your patch this leader can die right after we
-> > drop the lock. ss->can_attach(leader) and ss->attach(leader) look
-> > suspicious. If a sub-thread execs, this task_struct has nothing to
-> > do with the threadgroup.
->
-> hmm. I thought I had this case covered, but it's been so long since I
-> actually wrote the code that if I did I can't remember how.
-
-This all doesn't look right... Hopefully addressed by Tejun patches.
-
-Oleg.
+-- 
+Vasiliy Kulikov
+http://www.openwall.com - bringing security into open computing environments
