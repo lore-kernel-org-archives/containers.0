@@ -1,64 +1,70 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH pm-freezer 1/4] cgroup_freezer: fix freezer->state
-	setting bug in freezer_change_state()
-Date: Fri, 2 Sep 2011 11:31:38 -0700
-Message-ID: <20110902183138.GA27179__39288.8205046349$1314988442$gmane$org@count0.beaverton.ibm.com>
-References: <20110831102100.GA2828@mtj.dyndns.org>
-	<20110902004231.GF1919@count0.beaverton.ibm.com>
-	<20110902165839.GA7478@redhat.com>
+From: Matt Helsley <matthltc@us.ibm.com>
+Subject: Re: [patch 2/2] fs, proc: Introduce the /proc/<pid>/map_files/
+ directory v6
+Date: Fri, 2 Sep 2011 12:15:10 -0700
+Message-ID: <20110902191510.GB27179@count0.beaverton.ibm.com>
+References: <20110831080229.100652529@openvz.org>
+ <20110831090612.GA3253@albatros>
+ <20110831112642.GI25465@sun>
+ <20110831140416.GA17626@shutemov.name>
+ <20110831142622.GB30615@sun>
+ <20110831151023.5b7e12da.akpm@linux-foundation.org>
+ <4E5F3B25.9030701@parallels.com>
+ <20110901115006.GB2752@htj.dyndns.org>
+ <4E5F7702.2070808@parallels.com>
+ <20110901171355.GC2752@htj.dyndns.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <20110902165839.GA7478-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+In-Reply-To: <20110901171355.GC2752@htj.dyndns.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Tejun Heo <tj@kernel.org>
+Cc: Pavel Emelyanov <xemul@parallels.com>, Daniel Lezcano <dlezcano@fr.ibm.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, James Bottomley <jbottomley@parallels.com>, Cyrill Gorcunov <gorcunov@gmail.com>, "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>, Nathan Lynch <ntl@pobox.com>, Alexey Dobriyan <adobriyan@gmail.com>, "containers@lists.osdl.org" <containers@lists.osdl.org>, Andrew Morton <akpm@linux-foundation.org>, Vasiliy Kulikov <segoon@openwall.com>, Al Viro <viro@ZenIV.linux.org.uk>
 List-Id: containers.vger.kernel.org
 
-On Fri, Sep 02, 2011 at 06:58:39PM +0200, Oleg Nesterov wrote:
-> On 09/01, Matt Helsley wrote:
-> >
-> > On Wed, Aug 31, 2011 at 12:21:07PM +0200, Tejun Heo wrote:
-> > >  	case CGROUP_FROZEN:
-> > > -		atomic_inc(&system_freezing_cnt);
-> > > -		retval = try_to_freeze_cgroup(cgroup, freezer);
-> > > +		if (freezer->state == CGROUP_THAWED) {
-> > > +			freezer->state = CGROUP_FREEZING;
-> > > +			atomic_inc(&system_freezing_cnt);
-> > > +			retval = try_to_freeze_cgroup(cgroup, freezer);
-> >
-> > This still doesn't look quite right. If the cgroup is FREEZING it should
-> > also call try_to_freeze_cgroup(). I think this is what's needed:
-> >
-> > 		if (freezer->state == CGROUP_THAWED)
-> > 			atomic_inc(&system_freezing_cnt);
-> > 		freezer->state = CGROUP_FREEZING;
-> > 		retval = try_to_freeze_cgroup(cgroup, freezer);
+On Fri, Sep 02, 2011 at 02:13:55AM +0900, Tejun Heo wrote:
+> Hello,
 > 
-> This is what I mentioned before, to me this looks like a win.
+> On Thu, Sep 01, 2011 at 04:13:54PM +0400, Pavel Emelyanov wrote:
+> > Because with the handler restore process looks very natural and simple - each
+> > task does the following steps
+> > 
+> > 1. restore task resources (open files, set IDs, restore connections, wire back timers, etc.)
+> > 2. call execve() to jump into new memory+registers context which is
+> >    a. unmap all the user memory
+> >    b. map required mappings
+> >    c. populate them with data
+> >    d. restore registers
+> >    e. restore IP
 > 
-> Why do we need try_to_freeze_cgroup() in this case? "for safety"
-> could actually mean "hide the bug" ;)
+> But what about multiple threads?  exec is already scary enough as it
+> is and I don't think it would be wise to overload it for this.
+> 
+> I don't really think binfmt handler would be able to achieve
+> completeness without ending up with full de-serializer in kernel.
 
-Well, I need to check Tejun's latest freezer bits to see if this is
-still the case but it was possible to get to the FREEZING state and
-not enter FROZEN before returning to userspace. So you could come back
-into the state change function in the FREEZING state with FROZEN as
-the goal state. Note that for the cgroup freezer the FREEZING state is
-optional -- so skipping it is fine so long was we guarantee that by the
-time we exit to userspace with a FROZEN state all the tasks in the cgroup
-are actually frozen (in the refrigerator loop) or frozen enough (about to
-enter the refrigerator loop without causing more IO -- e.g. stopped).
+Yeah, I think you'd have to remove the de_thread()-based assumptions 
+in exec to avoid this. And then there's the can of worms opened by
+non-pthread threads where files, signals, etc. may or may not be shared..
+
+> There are a lot of states which already have API to manipulate from
+> the userland thread itself and they all will need to be replicated in
+> the binfmt handler.  It really has to be full de-serializer if it
+
+Re-creating all possible states from userspace is not necessarily going
+to be any prettier. I'd really like to see SEIZE used to restart threaded
+tasks before I'll be convinced it's any more or less pretty than a binfmt
+handler.
+
+> wants to function like you described.
+> 
+> And if we're gonna have interventions anyway, I can't see much point
+> in implementing something which seems simpler - it's not gonna be
+> actually simpler.
+
+You may have lost me here -- I have no idea whether this is a summary
+or some new point you're trying to make.
 
 Cheers,
-	-Matt
+	-Matt Helsley
