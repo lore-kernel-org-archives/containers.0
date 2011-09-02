@@ -1,64 +1,55 @@
-From: Vasiliy Kulikov <segoon@openwall.com>
-Subject: Re: [patch 2/2] fs, proc: Introduce the /proc/<pid>/map_files/
- directory v6
-Date: Fri, 2 Sep 2011 20:37:11 +0400
-Message-ID: <20110902163711.GA3124@albatros>
-References: <20110831075814.003575573@openvz.org>
- <20110831080229.100652529@openvz.org>
- <20110831090612.GA3253@albatros>
- <20110831112642.GI25465@sun>
- <20110831140416.GA17626@shutemov.name>
- <20110831142622.GB30615@sun>
- <20110831151023.5b7e12da.akpm@linux-foundation.org>
- <20110901080508.GF30615@sun>
+From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH pm-freezer 1/4] cgroup_freezer: fix freezer->state
+	setting bug in freezer_change_state()
+Date: Fri, 2 Sep 2011 18:58:39 +0200
+Message-ID: <20110902165839.GA7478@redhat.com>
+References: <20110831102100.GA2828@mtj.dyndns.org>
+	<20110902004231.GF1919@count0.beaverton.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20110901080508.GF30615@sun>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Cyrill Gorcunov <gorcunov@gmail.com>, Andrew Morton <akpm@linux-foundation.org>
-Cc: "Kirill A. Shutemov" <kirill@shutemov.name>, containers@lists.osdl.org, linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, Nathan Lynch <ntl@pobox.com>, kernel-hardening@lists.openwall.com, Oren Laadan <orenl@cs.columbia.edu>, Daniel Lezcano <dlezcano@fr.ibm.com>, Glauber Costa <glommer@parallels.com>, James Bottomley <jbottomley@parallels.com>, Tejun Heo <tj@kernel.org>, Alexey Dobriyan <adobriyan@gmail.com>, Al Viro <viro@ZenIV.linux.org.uk>, Pavel Emelyanov <xemul@parallels.com>
+In-Reply-To: <20110902004231.GF1919-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi,
+On 09/01, Matt Helsley wrote:
+>
+> On Wed, Aug 31, 2011 at 12:21:07PM +0200, Tejun Heo wrote:
+> >  	case CGROUP_FROZEN:
+> > -		atomic_inc(&system_freezing_cnt);
+> > -		retval = try_to_freeze_cgroup(cgroup, freezer);
+> > +		if (freezer->state == CGROUP_THAWED) {
+> > +			freezer->state = CGROUP_FREEZING;
+> > +			atomic_inc(&system_freezing_cnt);
+> > +			retval = try_to_freeze_cgroup(cgroup, freezer);
+>
+> This still doesn't look quite right. If the cgroup is FREEZING it should
+> also call try_to_freeze_cgroup(). I think this is what's needed:
+>
+> 		if (freezer->state == CGROUP_THAWED)
+> 			atomic_inc(&system_freezing_cnt);
+> 		freezer->state = CGROUP_FREEZING;
+> 		retval = try_to_freeze_cgroup(cgroup, freezer);
 
-On Thu, Sep 01, 2011 at 12:05 +0400, Cyrill Gorcunov wrote:
-> ...
-> > > +/*
-> > > + * NOTE: The getattr/setattr for both /proc/$pid/map_files and
-> > > + * /proc/$pid/fd seems to have share the code, so need to be
-> > > + * unified and code duplication eliminated!
-> > 
-> > Why not do this now?
-> 
-> There are a couple of reasons. Yesterday I was talking to
-> Vasiliy Kulikov about this snippet, so he seems about to send
-> you patches related to /proc/$pid/fd update, and after those
-> patches will be merged we are to drop code duplication.
-> Vasiliy, what the status of the update?
+This is what I mentioned before, to me this looks like a win.
 
-It looks like protecting directories with sensible contents is a nasty
-thing.  The problem here is that if the dentry is present in the cache,
-->lookup() is not called at all and the permissions can be checked in
-fop/dop/iop specific handler (getattr(), readlink(), etc.).  However, it
-would be much simplier to hook ->lookup() only.  Otherwise, we have to
-define procfs handlers for all operations, which don't call
-->d_revalidate().
-
-Is it possible to disable caching dentry for specific files?  It is not
-performace critical thing in fd and map_files and it would much simplify
-the task.  Creating handlers for all these op handler bloats procfs.
-
-Also I'm not sure what other handlers might reveal dentry presence.
-Besides ->getattr() I could find only one thing - ->link() (Cyrill,
-AFAICS ->setattr() doesn't reveal files' presence).  Someone more
-familiar with vfs than me - please, help to identify all infoleak
-sources!
+Why do we need try_to_freeze_cgroup() in this case? "for safety"
+could actually mean "hide the bug" ;)
 
 
-Thank you,
+But I agree either way. Rafael, I think 1-4 are fine, but I think
+we need the simple 5/4, will send in a minute...
 
--- 
-Vasiliy Kulikov
-http://www.openwall.com - bringing security into open computing environments
+Oleg.
