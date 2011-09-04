@@ -1,16 +1,11 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 02/15] user ns: setns: move capable checks into per-ns
-	attach helper
-Date: Sat, 3 Sep 2011 18:51:40 -0700
-Message-ID: <20110904015140.GB32295__7538.93744336001$1315101186$gmane$org@count0.beaverton.ibm.com>
-References: <1314993400-6910-1-git-send-email-serge@hallyn.com>
-	<1314993400-6910-5-git-send-email-serge@hallyn.com>
+From: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCHSET cgroup] extend threadgroup locking
+Date: Mon,  5 Sep 2011 03:01:16 +0900
+Message-ID: <1315159280-25032-1-git-send-email-htejun__18684.5467113473$1315159425$gmane$org@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1314993400-6910-5-git-send-email-serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,50 +15,47 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, rdunlap-/UHa2rfvQTnk1uMJSBkQmQ@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+To: rjw-KKrjLPT3xs0@public.gmane.org, paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org, lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org
+Cc: fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Sep 02, 2011 at 07:56:27PM +0000, Serge Hallyn wrote:
-> From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Hello,
 
-I was confused about this patch until I realized that you're not
-simply "moving" the capability checks but "distributing" them. Then
-you're showing that you'll soon change some to nsown_capable() or
-ns_capable() using the strange cpp pattern in the snippet below.
+cgroup currently only blocks new threads from joining the target
+threadgroup during migration, and on-going migration could race
+against exec and exit leading to interesting problems - the symmetry
+between various attach methods, task exiting during method execution,
+->exit() racing against attach methods, migrating task switching basic
+properties during exec and so on.
 
-At least I think that's what you intended. A commit message would
-help :).
+This patchset extends threadgroup locking such that it covers all
+operations which can alter the threadgroup - fork, exit and exec, and
+update cgroup to take advantage of it.  rwsem read ops are added to
+exit path but exec is excluded by grabbing the existing
+cred_guard_mutex from threadgroup locking helper.
 
-Cheers,
-	-Matt Helsley
+This makes threadgroup locking complete and resolves cgroup issues
+stemming from the target taskset being unstable.
 
-> 
-> Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-> Cc: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> ---
->  ipc/namespace.c          |    7 +++++++
->  kernel/fork.c            |    5 +++++
->  kernel/nsproxy.c         |   11 ++++++++---
->  kernel/utsname.c         |    7 +++++++
->  net/core/net_namespace.c |    7 +++++++
->  5 files changed, 34 insertions(+), 3 deletions(-)
-> 
-> diff --git a/ipc/namespace.c b/ipc/namespace.c
-> index ce0a647..a0a7609 100644
-> --- a/ipc/namespace.c
-> +++ b/ipc/namespace.c
-> @@ -163,6 +163,13 @@ static void ipcns_put(void *ns)
-> 
->  static int ipcns_install(struct nsproxy *nsproxy, void *ns)
->  {
-> +#if 0
-> +	struct ipc_namespace *newns = ns;
-> +	if (!ns_capable(newns->user_ns, CAP_SYS_ADMIN))
-> +#else
-> +	if (!capable(CAP_SYS_ADMIN))
-> +#endif
-> +		return -1;
->  	/* Ditch state from the old ipc namespace */
->  	exit_sem(current);
->  	put_ipc_ns(nsproxy->ipc_ns);
+This patchset is on top of the current pm-freezer + "freezer: fixes &
+simplifications" patchset and contains the following four patches.
+Patch list and diffstat follow.
+
+Thanks.
+
+ [PATCH 1/4] cgroup: change locking order in attach_task_by_pid()
+ [PATCH 2/4] threadgroup: rename signal->threadgroup_fork_lock to
+ [PATCH 3/4] threadgroup: extend threadgroup_lock() to cover exit and
+ [PATCH 4/4] cgroup: always lock threadgroup during migration
+
+ include/linux/init_task.h |    9 ++----
+ include/linux/sched.h     |   58 ++++++++++++++++++++++++++++---------------
+ kernel/cgroup.c           |   62 +++++++++++++++++++++-------------------------
+ kernel/exit.c             |   16 ++++++++---
+ kernel/fork.c             |    8 ++---
+ 5 files changed, 88 insertions(+), 65 deletions(-)
+
+--
+tejun
+
+[1] http://thread.gmane.org/gmane.linux.kernel/1187553
