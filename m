@@ -1,8 +1,8 @@
 From: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 3/4] threadgroup: extend threadgroup_lock() to cover exit and
-	exec
-Date: Mon,  5 Sep 2011 03:01:19 +0900
-Message-ID: <1315159280-25032-4-git-send-email-htejun__38083.0388436609$1315159431$gmane$org@gmail.com>
+Subject: [PATCH 2/4] threadgroup: rename signal->threadgroup_fork_lock to
+	->group_rwsem
+Date: Mon,  5 Sep 2011 03:01:18 +0900
+Message-ID: <1315159280-25032-3-git-send-email-htejun__4016.28015465594$1315159435$gmane$org@gmail.com>
 References: <1315159280-25032-1-git-send-email-htejun@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,26 +24,16 @@ List-Id: containers.vger.kernel.org
 
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 
-threadgroup_lock() protected only protected against new addition to
-the threadgroup, which was inherently somewhat incomplete and
-problematic for its only user cgroup.  On-going migration could race
-against exec and exit leading to interesting problems - the symmetry
-between various attach methods, task exiting during method execution,
-->exit() racing against attach methods, migrating task switching basic
-properties during exec and so on.
+Make the following renames to prepare for extension of threadgroup
+locking.
 
-This patch extends threadgroup_lock() such that it protects against
-all three threadgroup altering operations - fork, exit and exec.  For
-exit, threadgroup_change_begin/end() calls are added to exit path.
-For exec, threadgroup_[un]lock() are updated to also grab and release
-cred_guard_mutex.
+* s/signal->threadgroup_fork_lock/signal->group_rwsem/
+* s/threadgroup_fork_read_lock()/threadgroup_change_begin()/
+* s/threadgroup_fork_read_unlock()/threadgroup_change_done()/
+* s/threadgroup_fork_write_lock()/threadgroup_lock()/
+* s/threadgroup_fork_write_unlock()/threadgroup_unlock()/
 
-With this change, threadgroup_lock() guarantees that the target
-threadgroup will remain stable - no new task will be added, no new
-PF_EXITING will be set and exec won't happen.
-
-The next patch will update cgroup so that it can take full advantage
-of this change.
+This patch doesn't cause any behavior change.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
@@ -51,114 +41,186 @@ Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- include/linux/sched.h |   32 ++++++++++++++++++++++++++------
- kernel/exit.c         |   16 ++++++++++++----
- 2 files changed, 38 insertions(+), 10 deletions(-)
+ include/linux/init_task.h |    9 ++++-----
+ include/linux/sched.h     |   30 +++++++++++++++---------------
+ kernel/cgroup.c           |   12 ++++++------
+ kernel/fork.c             |    8 ++++----
+ 4 files changed, 29 insertions(+), 30 deletions(-)
 
+diff --git a/include/linux/init_task.h b/include/linux/init_task.h
+index d14e058..3a0d9f2 100644
+--- a/include/linux/init_task.h
++++ b/include/linux/init_task.h
+@@ -23,11 +23,10 @@ extern struct files_struct init_files;
+ extern struct fs_struct init_fs;
+ 
+ #ifdef CONFIG_CGROUPS
+-#define INIT_THREADGROUP_FORK_LOCK(sig)					\
+-	.threadgroup_fork_lock =					\
+-		__RWSEM_INITIALIZER(sig.threadgroup_fork_lock),
++#define INIT_GROUP_RWSEM(sig)						\
++	.group_rwsem = __RWSEM_INITIALIZER(sig.group_rwsem),
+ #else
+-#define INIT_THREADGROUP_FORK_LOCK(sig)
++#define INIT_GROUP_RWSEM(sig)
+ #endif
+ 
+ #define INIT_SIGNALS(sig) {						\
+@@ -46,7 +45,7 @@ extern struct fs_struct init_fs;
+ 	},								\
+ 	.cred_guard_mutex =						\
+ 		 __MUTEX_INITIALIZER(sig.cred_guard_mutex),		\
+-	INIT_THREADGROUP_FORK_LOCK(sig)					\
++	INIT_GROUP_RWSEM(sig)						\
+ }
+ 
+ extern struct nsproxy init_nsproxy;
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index da74d6f..179cbdc 100644
+index 6d45ce7..da74d6f 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -635,11 +635,12 @@ struct signal_struct {
+@@ -635,13 +635,13 @@ struct signal_struct {
  #endif
  #ifdef CONFIG_CGROUPS
  	/*
--	 * The group_rwsem prevents threads from forking with
--	 * CLONE_THREAD while held for writing. Use this for fork-sensitive
--	 * threadgroup-wide operations. It's taken for reading in fork.c in
--	 * copy_process().
--	 * Currently only needed write-side by cgroups.
-+	 * group_rwsem prevents new tasks from entering the threadgroup and
-+	 * member tasks from exiting.  fork and exit paths are protected
-+	 * with this rwsem using threadgroup_change_begin/end().  Users
-+	 * which require threadgroup to remain stable should use
-+	 * threadgroup_[un]lock() which also takes care of exec path.
-+	 * Currently, cgroup is the only user.
+-	 * The threadgroup_fork_lock prevents threads from forking with
++	 * The group_rwsem prevents threads from forking with
+ 	 * CLONE_THREAD while held for writing. Use this for fork-sensitive
+ 	 * threadgroup-wide operations. It's taken for reading in fork.c in
+ 	 * copy_process().
+ 	 * Currently only needed write-side by cgroups.
  	 */
- 	struct rw_semaphore group_rwsem;
+-	struct rw_semaphore threadgroup_fork_lock;
++	struct rw_semaphore group_rwsem;
  #endif
-@@ -2364,7 +2365,6 @@ static inline void unlock_task_sighand(struct task_struct *tsk,
+ 
+ 	int oom_adj;		/* OOM kill score adjustment (bit shift) */
+@@ -2364,29 +2364,29 @@ static inline void unlock_task_sighand(struct task_struct *tsk,
  	spin_unlock_irqrestore(&tsk->sighand->siglock, *flags);
  }
  
--/* See the declaration of group_rwsem in signal_struct. */
+-/* See the declaration of threadgroup_fork_lock in signal_struct. */
++/* See the declaration of group_rwsem in signal_struct. */
  #ifdef CONFIG_CGROUPS
- static inline void threadgroup_change_begin(struct task_struct *tsk)
+-static inline void threadgroup_fork_read_lock(struct task_struct *tsk)
++static inline void threadgroup_change_begin(struct task_struct *tsk)
  {
-@@ -2374,13 +2374,33 @@ static inline void threadgroup_change_done(struct task_struct *tsk)
- {
- 	up_read(&tsk->signal->group_rwsem);
+-	down_read(&tsk->signal->threadgroup_fork_lock);
++	down_read(&tsk->signal->group_rwsem);
  }
-+
-+/**
-+ * threadgroup_lock - lock threadgroup
-+ * @tsk: member task of the threadgroup to lock
-+ *
-+ * Lock the threadgroup @tsk belongs to.  No new task is allowed to enter
-+ * and member tasks aren't allowed to exit (as indicated by PF_EXITING) or
-+ * perform exec.  This is useful for cases where the threadgroup needs to
-+ * stay stable across blockable operations.
-+ */
- static inline void threadgroup_lock(struct task_struct *tsk)
+-static inline void threadgroup_fork_read_unlock(struct task_struct *tsk)
++static inline void threadgroup_change_done(struct task_struct *tsk)
  {
-+	/* exec uses exit for de-threading, grab cred_guard_mutex first */
-+	mutex_lock(&tsk->signal->cred_guard_mutex);
- 	down_write(&tsk->signal->group_rwsem);
+-	up_read(&tsk->signal->threadgroup_fork_lock);
++	up_read(&tsk->signal->group_rwsem);
  }
-+
-+/**
-+ * threadgroup_unlock - unlock threadgroup
-+ * @tsk: member task of the threadgroup to unlock
-+ *
-+ * Reverse threadgroup_lock().
-+ */
- static inline void threadgroup_unlock(struct task_struct *tsk)
+-static inline void threadgroup_fork_write_lock(struct task_struct *tsk)
++static inline void threadgroup_lock(struct task_struct *tsk)
  {
- 	up_write(&tsk->signal->group_rwsem);
-+	mutex_unlock(&tsk->signal->cred_guard_mutex);
+-	down_write(&tsk->signal->threadgroup_fork_lock);
++	down_write(&tsk->signal->group_rwsem);
+ }
+-static inline void threadgroup_fork_write_unlock(struct task_struct *tsk)
++static inline void threadgroup_unlock(struct task_struct *tsk)
+ {
+-	up_write(&tsk->signal->threadgroup_fork_lock);
++	up_write(&tsk->signal->group_rwsem);
  }
  #else
- static inline void threadgroup_change_begin(struct task_struct *tsk) {}
-diff --git a/kernel/exit.c b/kernel/exit.c
-index 7b6c4fa..a5b40b3 100644
---- a/kernel/exit.c
-+++ b/kernel/exit.c
-@@ -936,6 +936,12 @@ NORET_TYPE void do_exit(long code)
- 		schedule();
+-static inline void threadgroup_fork_read_lock(struct task_struct *tsk) {}
+-static inline void threadgroup_fork_read_unlock(struct task_struct *tsk) {}
+-static inline void threadgroup_fork_write_lock(struct task_struct *tsk) {}
+-static inline void threadgroup_fork_write_unlock(struct task_struct *tsk) {}
++static inline void threadgroup_change_begin(struct task_struct *tsk) {}
++static inline void threadgroup_change_done(struct task_struct *tsk) {}
++static inline void threadgroup_lock(struct task_struct *tsk) {}
++static inline void threadgroup_unlock(struct task_struct *tsk) {}
+ #endif
+ 
+ #ifndef __HAVE_THREAD_FUNCTIONS
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index bd1fb5f..e81f403 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -1985,8 +1985,8 @@ static int css_set_prefetch(struct cgroup *cgrp, struct css_set *cg,
+  * @cgrp: the cgroup to attach to
+  * @leader: the threadgroup leader task_struct of the group to be attached
+  *
+- * Call holding cgroup_mutex and the threadgroup_fork_lock of the leader. Will
+- * take task_lock of each thread in leader's threadgroup individually in turn.
++ * Call holding cgroup_mutex and the group_rwsem of the leader. Will take
++ * task_lock of each thread in leader's threadgroup individually in turn.
+  */
+ int cgroup_attach_proc(struct cgroup *cgrp, struct task_struct *leader)
+ {
+@@ -2012,8 +2012,8 @@ int cgroup_attach_proc(struct cgroup *cgrp, struct task_struct *leader)
+ 	 * step 0: in order to do expensive, possibly blocking operations for
+ 	 * every thread, we cannot iterate the thread group list, since it needs
+ 	 * rcu or tasklist locked. instead, build an array of all threads in the
+-	 * group - threadgroup_fork_lock prevents new threads from appearing,
+-	 * and if threads exit, this will just be an over-estimate.
++	 * group - group_rwsem prevents new threads from appearing, and if
++	 * threads exit, this will just be an over-estimate.
+ 	 */
+ 	group_size = get_nr_threads(leader);
+ 	/* flex_array supports very large thread-groups better than kmalloc. */
+@@ -2246,7 +2246,7 @@ static int attach_task_by_pid(struct cgroup *cgrp, u64 pid, bool threadgroup)
  	}
  
-+	/*
-+	 * @tsk's threadgroup is going through changes - lock out users
-+	 * which expect stable threadgroup.
-+	 */
-+	threadgroup_change_begin(tsk);
-+
- 	exit_irq_thread();
+ 	if (threadgroup)
+-		threadgroup_fork_write_lock(tsk);
++		threadgroup_lock(tsk);
+ 	ret = -ENODEV;
+ 	if (cgroup_lock_live_group(cgrp)) {
+ 		if (threadgroup)
+@@ -2256,7 +2256,7 @@ static int attach_task_by_pid(struct cgroup *cgrp, u64 pid, bool threadgroup)
+ 		cgroup_unlock();
+ 	}
+ 	if (threadgroup)
+-		threadgroup_fork_write_unlock(tsk);
++		threadgroup_unlock(tsk);
+ 	put_task_struct(tsk);
+ 	return ret;
+ }
+diff --git a/kernel/fork.c b/kernel/fork.c
+index fa7beb3..f0e2e56 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -980,7 +980,7 @@ static int copy_signal(unsigned long clone_flags, struct task_struct *tsk)
+ 	sched_autogroup_fork(sig);
  
- 	exit_signals(tsk);  /* sets PF_EXITING */
-@@ -1018,10 +1024,6 @@ NORET_TYPE void do_exit(long code)
- 		kfree(current->pi_state_cache);
+ #ifdef CONFIG_CGROUPS
+-	init_rwsem(&sig->threadgroup_fork_lock);
++	init_rwsem(&sig->group_rwsem);
  #endif
- 	/*
--	 * Make sure we are holding no locks:
--	 */
--	debug_check_no_locks_held(tsk);
--	/*
- 	 * We can do this unlocked here. The futex code uses this flag
- 	 * just to verify whether the pi state cleanup has been done
- 	 * or not. In the worst case it loops once more.
-@@ -1039,6 +1041,12 @@ NORET_TYPE void do_exit(long code)
- 	preempt_disable();
- 	exit_rcu();
  
-+	/*
-+	 * Release threadgroup and make sure we are holding no locks.
-+	 */
-+	threadgroup_change_done(tsk);
-+	debug_check_no_locks_held(tsk);
-+
- 	/* this task is now dead and freezer should ignore it */
- 	current->flags |= PF_NOFREEZE;
+ 	sig->oom_adj = current->signal->oom_adj;
+@@ -1165,7 +1165,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 	p->io_context = NULL;
+ 	p->audit_context = NULL;
+ 	if (clone_flags & CLONE_THREAD)
+-		threadgroup_fork_read_lock(current);
++		threadgroup_change_begin(current);
+ 	cgroup_fork(p);
+ #ifdef CONFIG_NUMA
+ 	p->mempolicy = mpol_dup(p->mempolicy);
+@@ -1377,7 +1377,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 	proc_fork_connector(p);
+ 	cgroup_post_fork(p);
+ 	if (clone_flags & CLONE_THREAD)
+-		threadgroup_fork_read_unlock(current);
++		threadgroup_change_done(current);
+ 	perf_event_fork(p);
+ 	return p;
  
+@@ -1417,7 +1417,7 @@ bad_fork_cleanup_policy:
+ bad_fork_cleanup_cgroup:
+ #endif
+ 	if (clone_flags & CLONE_THREAD)
+-		threadgroup_fork_read_unlock(current);
++		threadgroup_change_done(current);
+ 	cgroup_exit(p, cgroup_callbacks_done);
+ 	delayacct_tsk_free(p);
+ 	module_put(task_thread_info(p)->exec_domain->module);
 -- 
 1.7.6
