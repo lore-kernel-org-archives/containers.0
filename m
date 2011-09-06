@@ -1,90 +1,84 @@
-From: Vasiliy Kulikov <segoon@openwall.com>
-Subject: Re: [patch 2/2] fs, proc: Introduce the /proc/<pid>/map_files/
- directory v6
-Date: Tue, 6 Sep 2011 14:15:18 +0400
-Message-ID: <20110906101518.GA4799@albatros>
-References: <20110831112642.GI25465@sun>
- <20110831140416.GA17626@shutemov.name>
- <20110831142622.GB30615@sun>
- <20110831151023.5b7e12da.akpm@linux-foundation.org>
- <20110901080508.GF30615@sun>
- <20110902163711.GA3124@albatros>
- <20110905185358.GA2103@albatros>
- <20110905192009.GJ761@sun>
- <20110905194908.GA2690@albatros>
- <20110905203627.GL761@sun>
+From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 6/6] freezer: kill unused set_freezable_with_signal()
+Date: Tue, 6 Sep 2011 17:18:36 +0200
+Message-ID: <20110906151836.GA15568__42370.1212894686$1315322576$gmane$org@redhat.com>
+References: <1314988070-12244-1-git-send-email-tj@kernel.org>
+	<1314988070-12244-7-git-send-email-tj@kernel.org>
+	<20110904184626.GA30101@redhat.com>
+	<20110905023315.GB9807@htj.dyndns.org>
+	<20110905162012.GA4445@redhat.com>
+	<20110906032846.GA18425@mtj.dyndns.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20110905203627.GL761@sun>
-Sender: linux-fsdevel-owner@vger.kernel.org
-To: Cyrill Gorcunov <gorcunov@gmail.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, "Kirill A. Shutemov" <kirill@shutemov.name>, containers@lists.osdl.org, linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, Nathan Lynch <ntl@pobox.com>, kernel-hardening@lists.openwall.com, Oren Laadan <orenl@cs.columbia.edu>, Daniel Lezcano <dlezcano@fr.ibm.com>, Glauber Costa <glommer@parallels.com>, James Bottomley <jbottomley@parallels.com>, Tejun Heo <tj@kernel.org>, Alexey Dobriyan <adobriyan@gmail.com>, Al Viro <viro@ZenIV.linux.org.uk>, Pavel Emelyanov <xemul@parallels.com>
+In-Reply-To: <20110906032846.GA18425-9pTldWuhBndy/B6EtB590w@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Sep 06, 2011 at 00:36 +0400, Cyrill Gorcunov wrote:
-> > But I still see one very nasty issue - one may trigger this ptrace check,
-> > trigger d_drop() and then look at /proc/slabinfo at "dentry" row.  If
-> > the number has changed, then the interested dentry existed before the
-> > revalidate call.  This infoleak is tricky to fix without any race.
-> > 
-> > Probably it's time to close /proc/slabinfo infoleak? 
-> > 
-> 
-> Actually I miss to see how exactly this infoleak can be used by attacker
-> or whoever. So, Vasiliy, what the security issue there?
+Hi,
 
-The security model of procfs is: /proc/PID/fd/ is available to users
-that may ptrace PID only.  Particularly, the number of opened file
-descriptors is a private information.  If other task that may not ptrace
-PID is able to get this information, this is an issue.  Keeping opened
-file descriptor of /proc/PID/fd/ and exec'ing some setxid binary as PID
-might lead to the infoleak.  It can be used in certain rare cases when
-the knowledge of whether specific fd is opened/closed gains some
-important information, e.g. whether some security check has
-failed/succeeded (which is indirectly signaled by the kept fd).  As for
-map_files/ it may reveal ASLR offsets (but only some bits, not all of
-them, I guess).
+On 09/06, Tejun Heo wrote:
+>
+> Hello,
+>
+> On Mon, Sep 05, 2011 at 06:20:12PM +0200, Oleg Nesterov wrote:
+> > Perhaps it is correct... Just I do not understand what it should do.
+> > I thought it is "wait_for_event && do_not_block_freezer". And at first
+> > glance the code looks as if it tries to do this. Say, in the "likely"
+> > case we restart wait_event_interruptible() after refrigerator().
+> >
+> > But this looks racy. Suppose that freezing() is already false when
+> > try_to_freeze() or __refrigerator() is called. Say, cgroup_freezer does
+> > freeze_task() + __thaw_task(). Why it returns -ERESTARTSYS in this case?
+>
+> It may return -ERESTARTSYS when not strictly necessary but given that
+> it's supposed to trigger restart anyway I don't think it's actually
+> broken (it doesn't break the contract of the wait).
 
-Without dropping denries it can be identified by calling stat() or
-link() against dentries existing in the cache.  In more details:
+OK, but still this doesn't look right.
 
-1) an attacker has a task with pid=PID with many opened fds.
+> Another thing to
+> note is that kthread freezing via cgroup is almost fundamentally
+> broken.
 
-2) Other task (PID2) opens /proc/PID/fd/ and fills the dentry cache.
-Now dcache contains procfs entries for file descriptors of PID.
+OK, let it be freeze_processes()+thaw_tasks(). Of course this is mostly
+theoretical.
 
-3) PID execve's setxid binary.  (From this point PID2 should not get
-_any_ information about /proc/PID/fd/, but this rule is violated in (4).)
+> > And if it can be used by the userspace thread, then we should probably
+> > do recalc_sigpending() somewhere, otherwise wait_event_freezable() will
+> > always return -ERESTARTSYS after __refrigerator().
+>
+> Thankfully, currently, all the few users are kthreads.  I don't think
+> it makes sense for userland tasks at all.
 
-4) PID2 does something to learn whether any fd of PID is opened/closed.
+Yes, agreed. In this case I think it should be
 
-  a) before "proc: fix races against execve() of /proc/PID/fd**" patch
-     PID2 could simply do getdents() against kept file descriptor of
-     /proc/PID/fd and get the list of opened fds.
+	#define wait_event_freezable(wq, condition)				\
+	({									\
+		int __retval;							\
+		for (;;) {							\
+			__retval = wait_event_interruptible(wq, 		\
+					(condition) || freezing(current));	\
+			if (__retval || (condition))				\
+				break;						\
+			try_to_freeze();					\
+		}								\
+		__retval;							\
+	})
 
-  b) Without dentry dropping on each access PID2 could use link(2) to
-     read /proc/PID/fd/* dentries from dcache.  As they are in the
-     dcache since (2), ptrace check from ->lookup() is not applied.
+__retval/ERESTARTSYS is only needed for kthreads which play with allow_signal(),
+probably nobody should do this.
 
-  c) If dentry is lazily dropped on each access attempt (or each illegal
-     access) then PID2 can:
-
-     i) read dentry line of /proc/slabinfo
-     ii) call link(2) against /proc/PID/fd, which invalidates the
-         specific dentry
-     iii) re-read dentry line of /proc/slabinfo.  If it has decreased by
-         one, the dentry existed before (ii).
-
-
-Is it possible to either allocate already dropped dentry or to force
-->lookup() without invalidating dentry?  The latter would potentially
-pollute the dchache, though.
-
-
-Thanks,
-
--- 
-Vasiliy Kulikov
-http://www.openwall.com - bringing security into open computing environments
+Oleg.
