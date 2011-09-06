@@ -1,18 +1,13 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 6/6] freezer: kill unused set_freezable_with_signal()
-Date: Tue, 6 Sep 2011 12:28:55 +0900
-Message-ID: <20110906032846.GA18425__45151.7472196885$1315279814$gmane$org@mtj.dyndns.org>
-References: <1314988070-12244-1-git-send-email-tj@kernel.org>
-	<1314988070-12244-7-git-send-email-tj@kernel.org>
-	<20110904184626.GA30101@redhat.com>
-	<20110905023315.GB9807@htj.dyndns.org>
-	<20110905162012.GA4445@redhat.com>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCHSET cgroup] extend threadgroup locking
+Date: Tue, 06 Sep 2011 17:00:34 +0800
+Message-ID: <4E65E132.9090201__27141.9422039346$1315299695$gmane$org@cn.fujitsu.com>
+References: <1315159280-25032-1-git-send-email-htejun@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20110905162012.GA4445-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1315159280-25032-1-git-send-email-htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,42 +17,54 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org
+To: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello,
-
-On Mon, Sep 05, 2011 at 06:20:12PM +0200, Oleg Nesterov wrote:
-> Perhaps it is correct... Just I do not understand what it should do.
-> I thought it is "wait_for_event && do_not_block_freezer". And at first
-> glance the code looks as if it tries to do this. Say, in the "likely"
-> case we restart wait_event_interruptible() after refrigerator().
+Tejun Heo wrote:
+> Hello,
 > 
-> But this looks racy. Suppose that freezing() is already false when
-> try_to_freeze() or __refrigerator() is called. Say, cgroup_freezer does
-> freeze_task() + __thaw_task(). Why it returns -ERESTARTSYS in this case?
+> cgroup currently only blocks new threads from joining the target
+> threadgroup during migration, and on-going migration could race
+> against exec and exit leading to interesting problems - the symmetry
+> between various attach methods, task exiting during method execution,
+> ->exit() racing against attach methods, migrating task switching basic
+> properties during exec and so on.
+> 
+> This patchset extends threadgroup locking such that it covers all
+> operations which can alter the threadgroup - fork, exit and exec, and
+> update cgroup to take advantage of it.  rwsem read ops are added to
+> exit path but exec is excluded by grabbing the existing
+> cred_guard_mutex from threadgroup locking helper.
+> 
+> This makes threadgroup locking complete and resolves cgroup issues
+> stemming from the target taskset being unstable.
+> 
+> This patchset is on top of the current pm-freezer + "freezer: fixes &
+> simplifications" patchset and contains the following four patches.
+> Patch list and diffstat follow.
+> 
+> Thanks.
+> 
+>  [PATCH 1/4] cgroup: change locking order in attach_task_by_pid()
+>  [PATCH 2/4] threadgroup: rename signal->threadgroup_fork_lock to
+>  [PATCH 3/4] threadgroup: extend threadgroup_lock() to cover exit and
+>  [PATCH 4/4] cgroup: always lock threadgroup during migration
+> 
 
-It may return -ERESTARTSYS when not strictly necessary but given that
-it's supposed to trigger restart anyway I don't think it's actually
-broken (it doesn't break the contract of the wait).  Another thing to
-note is that kthread freezing via cgroup is almost fundamentally
-broken.  With the removal of freezable_with_signal, this shouldn't be
-an issue anymore although cgroup_freezer still needs to be fixed to
-account for kthreads for xstate transitions (it currently triggers
-BUG_ON).
+I've read through the whole patchset, and it looks good to me.
 
-> And if it can be used by the userspace thread, then we should probably
-> do recalc_sigpending() somewhere, otherwise wait_event_freezable() will
-> always return -ERESTARTSYS after __refrigerator().
+Acked-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 
-Thankfully, currently, all the few users are kthreads.  I don't think
-it makes sense for userland tasks at all.  Interruptible sleeps for
-userland tasks necessiate the ability to return to signal delivery
-path and restart or abort the current operation.  There's no point in
-using wait_event_freezable() instead of wait_event_interruptible().
-
-Thanks.
-
--- 
-tejun
+>  include/linux/init_task.h |    9 ++----
+>  include/linux/sched.h     |   58 ++++++++++++++++++++++++++++---------------
+>  kernel/cgroup.c           |   62 +++++++++++++++++++++-------------------------
+>  kernel/exit.c             |   16 ++++++++---
+>  kernel/fork.c             |    8 ++---
+>  5 files changed, 88 insertions(+), 65 deletions(-)
+> 
+> --
+> tejun
+> 
+> [1] http://thread.gmane.org/gmane.linux.kernel/1187553
+> 
