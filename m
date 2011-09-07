@@ -1,52 +1,115 @@
-From: Eric Dumazet <eric.dumazet@gmail.com>
-Subject: Re: [PATCH] per-cgroup tcp buffer limitation
-Date: Wed, 07 Sep 2011 04:38:40 +0200
-Message-ID: <1315363120.3400.54.camel@edumazet-laptop>
-References: <1315276556-10970-1-git-send-email-glommer@parallels.com>
-	 <CAHH2K0aJxjinSu0Ek6jzsZ5dBmm5mEU-typuwYWYWEudF2F3Qg@mail.gmail.com>
-	 <4E664766.40200@parallels.com>
-	 <CAHH2K0YJA7vZZ3QNAf63TZOnWhsRUwfuZYfntBL4muZ0G_Vt2w@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+From: Glauber Costa <glommer@parallels.com>
+Subject: [PATCH v2 0/9] per-cgroup tcp buffers limitation
+Date: Wed,  7 Sep 2011 01:23:10 -0300
+Message-ID: <1315369399-3073-1-git-send-email-glommer@parallels.com>
 Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <CAHH2K0YJA7vZZ3QNAf63TZOnWhsRUwfuZYfntBL4muZ0G_Vt2w@mail.gmail.com>
 Sender: owner-linux-mm@kvack.org
-To: Greg Thelen <gthelen@google.com>
-Cc: Glauber Costa <glommer@parallels.com>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, netdev@vger.kernel.org, xemul@parallels.com, "David S. Miller" <davem@davemloft.net>, Hiroyouki Kamezawa <kamezawa.hiroyu@jp.fujitsu.com>, "Eric W. Biederman" <ebiederm@xmission.com>
+To: linux-kernel@vger.kernel.org
+Cc: linux-mm@kvack.org, containers@lists.osdl.org, netdev@vger.kernel.org, xemul@parallels.com, Glauber Costa <glommer@parallels.com>
 List-Id: containers.vger.kernel.org
 
-Le mardi 06 septembre 2011 =C3=A0 15:12 -0700, Greg Thelen a =C3=A9crit :
+This patch introduces per-cgroup tcp buffers limitation. This allows
+sysadmins to specify a maximum amount of kernel memory that
+tcp connections can use at any point in time. TCP is the main interest
+in this work, but extending it to other protocols would be easy.
 
-> >>> +#define sk_sockets_allocated(sk)                               \
-> >>> +({                                                             \
-> >>> +       struct percpu_counter *__p;                             \
-> >>> +       __p =3D (sk)->sk_prot->sockets_allocated(sk->sk_cgrp);    \
-> >>> +       __p;                                                    \
-> >>> +})
->=20
-> Could this be simplified as (same applies to following few macros):
->=20
-> static inline struct percpu_counter *sk_sockets_allocated(struct sock *=
-sk)
-> {
->         return sk->sk_prot->sockets_allocated(sk->sk_cgrp);
-> }
->=20
+For this to work, I am introducing kmem_cgroup, a cgroup targetted
+at tracking and controlling objects in kernel memory. Since they
+are usually not found in page granularity, and are fundamentally
+different from userspace memory (not swappable, can't overcommit),
+I am proposing those objects live in its own cgroup rather than
+in the memory controller.
 
-Please Greg, dont copy/paste huge sequence of code if you dont have
-anymore comments.
+It piggybacks in the memory control mechanism already present in
+/proc/sys/net/ipv4/tcp_mem. There is a soft limit, and a hard limit,
+that will suppress allocation when reached. For each cgroup, however,
+the file kmem.tcp_maxmem will be used to cap those values.
 
-Right before sending your mail, remove all parts that we already got in
-previous mails.
+The usage I have in mind here is containers. Each container will
+define its own values for soft and hard limits, but none of them will
+be possibly bigger than the value the box' sysadmin specified from
+the outside.
 
-Thanks
+To test for any performance impacts of this patch, I used netperf's
+TCP_RR benchmark on localhost, so we can have both recv and snd in action.
 
+Command line used was ./src/netperf -t TCP_RR -H localhost, and the
+results:
+
+Without the patch
+=================
+
+Socket Size   Request  Resp.   Elapsed  Trans.
+Send   Recv   Size     Size    Time     Rate
+bytes  Bytes  bytes    bytes   secs.    per sec
+
+16384  87380  1        1       10.00    26996.35
+16384  87380
+
+With the patch
+===============
+
+Local /Remote
+Socket Size   Request  Resp.   Elapsed  Trans.
+Send   Recv   Size     Size    Time     Rate
+bytes  Bytes  bytes    bytes   secs.    per sec
+
+16384  87380  1        1       10.00    27291.86
+16384  87380
+
+The difference is within a one-percent range.
+
+Nesting cgroups doesn't seem to be the dominating factor as well,
+with nestings up to 10 levels not showing a significant performance
+difference.
+
+Glauber Costa (9):
+  per-netns ipv4 sysctl_tcp_mem
+  Kernel Memory cgroup
+  socket: initial cgroup code.
+  function wrappers for upcoming socket
+  foundations of per-cgroup memory pressure controlling.
+  per-cgroup tcp buffers control
+  tcp buffer limitation: per-cgroup limit
+  Display current tcp memory allocation in kmem cgroup
+  Add documentation about kmem_cgroup
+
+ Documentation/cgroups/kmem_cgroups.txt |   27 +++++
+ crypto/af_alg.c                        |    7 +-
+ include/linux/cgroup_subsys.h          |    4 +
+ include/linux/kmem_cgroup.h            |  194 ++++++++++++++++++++++++++++++++
+ include/net/netns/ipv4.h               |    1 +
+ include/net/sock.h                     |   37 +++++-
+ include/net/tcp.h                      |   13 ++-
+ include/net/udp.h                      |    3 +-
+ include/trace/events/sock.h            |   10 +-
+ init/Kconfig                           |   11 ++
+ mm/Makefile                            |    1 +
+ mm/kmem_cgroup.c                       |   61 ++++++++++
+ net/core/sock.c                        |   88 ++++++++++-----
+ net/decnet/af_decnet.c                 |   21 +++-
+ net/ipv4/proc.c                        |    7 +-
+ net/ipv4/sysctl_net_ipv4.c             |   59 +++++++++-
+ net/ipv4/tcp.c                         |  181 ++++++++++++++++++++++++++----
+ net/ipv4/tcp_input.c                   |   12 +-
+ net/ipv4/tcp_ipv4.c                    |   15 ++-
+ net/ipv4/tcp_output.c                  |    2 +-
+ net/ipv4/tcp_timer.c                   |    2 +-
+ net/ipv4/udp.c                         |   20 +++-
+ net/ipv6/tcp_ipv6.c                    |   10 +-
+ net/ipv6/udp.c                         |    4 +-
+ net/sctp/socket.c                      |   35 +++++--
+ 25 files changed, 710 insertions(+), 115 deletions(-)
+ create mode 100644 Documentation/cgroups/kmem_cgroups.txt
+ create mode 100644 include/linux/kmem_cgroup.h
+ create mode 100644 mm/kmem_cgroup.c
+
+-- 
+1.7.6
 
 --
 To unsubscribe, send a message with 'unsubscribe linux-mm' in
 the body to majordomo@kvack.org.  For more info on Linux MM,
 see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter=
-.ca/
-Don't email: <a href=3Dmailto:"dont@kvack.org"> email@kvack.org </a>
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
