@@ -1,34 +1,52 @@
-From: Glauber Costa <glommer@parallels.com>
+From: Eric Dumazet <eric.dumazet@gmail.com>
 Subject: Re: [PATCH] per-cgroup tcp buffer limitation
-Date: Tue, 6 Sep 2011 22:32:22 -0300
-Message-ID: <4E66C9A6.8080804@parallels.com>
-References: <1315276556-10970-1-git-send-email-glommer@parallels.com> <CALdu-PDoPPdcX0bAkVpaP9R-z1yKin=JOjjT3rMuoSHJaywSCg@mail.gmail.com> <4E66C45A.8060706@parallels.com> <CALdu-PDZC3FTuR31d5+P+=U=0UFVUZD_KDEgPHBeD-MyQ4PuSQ@mail.gmail.com>
+Date: Wed, 07 Sep 2011 04:38:40 +0200
+Message-ID: <1315363120.3400.54.camel@edumazet-laptop>
+References: <1315276556-10970-1-git-send-email-glommer@parallels.com>
+	 <CAHH2K0aJxjinSu0Ek6jzsZ5dBmm5mEU-typuwYWYWEudF2F3Qg@mail.gmail.com>
+	 <4E664766.40200@parallels.com>
+	 <CAHH2K0YJA7vZZ3QNAf63TZOnWhsRUwfuZYfntBL4muZ0G_Vt2w@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <CALdu-PDZC3FTuR31d5+P+=U=0UFVUZD_KDEgPHBeD-MyQ4PuSQ@mail.gmail.com>
+In-Reply-To: <CAHH2K0YJA7vZZ3QNAf63TZOnWhsRUwfuZYfntBL4muZ0G_Vt2w@mail.gmail.com>
 Sender: owner-linux-mm@kvack.org
-To: Paul Menage <paul@paulmenage.org>
-Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, netdev@vger.kernel.org, xemul@parallels.com, "David S. Miller" <davem@davemloft.net>, Hiroyouki Kamezawa <kamezawa.hiroyu@jp.fujitsu.com>, "Eric W. Biederman" <ebiederm@xmission.com>
+To: Greg Thelen <gthelen@google.com>
+Cc: Glauber Costa <glommer@parallels.com>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, netdev@vger.kernel.org, xemul@parallels.com, "David S. Miller" <davem@davemloft.net>, Hiroyouki Kamezawa <kamezawa.hiroyu@jp.fujitsu.com>, "Eric W. Biederman" <ebiederm@xmission.com>
 List-Id: containers.vger.kernel.org
 
-On 09/06/2011 10:29 PM, Paul Menage wrote:
-> On Tue, Sep 6, 2011 at 6:09 PM, Glauber Costa<glommer@parallels.com>  wrote:
->>
->> Can you be more specific?
->
-> Maybe if you include the source to kmem_cgroup.c :-)
-Yeah, *facepalm*.
+Le mardi 06 septembre 2011 =C3=A0 15:12 -0700, Greg Thelen a =C3=A9crit :
 
-I am about to send another version, just finishing writing up the docs.
-But it is really simple right now, and only cares about the socket 
-stuff. No reporting, nothing else. My idea is we use it as a seed and 
-grow it.
+> >>> +#define sk_sockets_allocated(sk)                               \
+> >>> +({                                                             \
+> >>> +       struct percpu_counter *__p;                             \
+> >>> +       __p =3D (sk)->sk_prot->sockets_allocated(sk->sk_cgrp);    \
+> >>> +       __p;                                                    \
+> >>> +})
+>=20
+> Could this be simplified as (same applies to following few macros):
+>=20
+> static inline struct percpu_counter *sk_sockets_allocated(struct sock *=
+sk)
+> {
+>         return sk->sk_prot->sockets_allocated(sk->sk_cgrp);
+> }
+>=20
+
+Please Greg, dont copy/paste huge sequence of code if you dont have
+anymore comments.
+
+Right before sending your mail, remove all parts that we already got in
+previous mails.
+
+Thanks
+
 
 --
 To unsubscribe, send a message with 'unsubscribe linux-mm' in
 the body to majordomo@kvack.org.  For more info on Linux MM,
 see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter=
+.ca/
+Don't email: <a href=3Dmailto:"dont@kvack.org"> email@kvack.org </a>
