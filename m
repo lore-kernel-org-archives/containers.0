@@ -1,113 +1,56 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: [PATCH v2 6/9] per-cgroup tcp buffers control
-Date: Wed, 07 Sep 2011 15:32:47 +0800
-Message-ID: <4E671E1F.4040804@cn.fujitsu.com>
-References: <1315369399-3073-1-git-send-email-glommer@parallels.com> <1315369399-3073-7-git-send-email-glommer@parallels.com>
+From: Vasiliy Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>
+Subject: Re: [patch 2/2] fs, proc: Introduce the /proc/<pid>/map_files/
+	directory v6
+Date: Wed, 7 Sep 2011 15:23:01 +0400
+Message-ID: <20110907112301.GA12157@albatros>
+References: <20110901080508.GF30615@sun> <20110902163711.GA3124@albatros>
+	<20110905185358.GA2103@albatros> <20110905192009.GJ761@sun>
+	<20110905194908.GA2690@albatros> <20110905203627.GL761@sun>
+	<20110906101518.GA4799@albatros>
+	<20110906165144.GJ18425@mtj.dyndns.org>
+	<20110906172952.GA28055@albatros>
+	<20110906173341.GM18425@mtj.dyndns.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <1315369399-3073-7-git-send-email-glommer@parallels.com>
-Sender: owner-linux-mm@kvack.org
-To: Glauber Costa <glommer@parallels.com>
-Cc: linux-kernel@vger.kernel.org, xemul@parallels.com, netdev@vger.kernel.org, linux-mm@kvack.org, "Eric W. Biederman" <ebiederm@xmission.com>, containers@lists.osdl.org, "David S. Miller" <davem@davemloft.net>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20110906173341.GM18425-9pTldWuhBndy/B6EtB590w@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: kernel-hardening-ZwoEplunGu1jrUoiu81ncdBPR1lH4CV8@public.gmane.org, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James Bottomley <jbottomley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-> +#ifdef CONFIG_INET
-> +#include <net/sock.h>
-> +static inline void sock_update_kmem_cgrp(struct sock *sk)
-> +{
-> +#ifdef CONFIG_CGROUP_KMEM
-> +	sk->sk_cgrp = kcg_from_task(current);
-> +
-> +	/*
-> +	 * We don't need to protect against anything task-related, because
-> +	 * we are basically stuck with the sock pointer that won't change,
-> +	 * even if the task that originated the socket changes cgroups.
-> +	 *
-> +	 * What we do have to guarantee, is that the chain leading us to
-> +	 * the top level won't change under our noses. Incrementing the
-> +	 * reference count via cgroup_exclude_rmdir guarantees that.
-> +	 */
-> +	cgroup_exclude_rmdir(&sk->sk_cgrp->css);
-> +#endif
+Hi,
 
-must be protected by rcu_read_lock.
+On Wed, Sep 07, 2011 at 02:33 +0900, Tejun Heo wrote:
+> On Tue, Sep 06, 2011 at 09:29:52PM +0400, Vasiliy Kulikov wrote:
+> > I agree with you.  I don't think that showing system-global debug
+> > information to all users by default is the right thing.  But some people
+> > doesn't agree with this point of view:
+> > 
+> > http://thread.gmane.org/gmane.linux.kernel/1108378
+> 
+> Yeap, I know there are two sides of the discussion but if one takes
+> the position that hiding such global debug info is more harmful, it's
+> only crazier to hide such information from each individual users of
+> the said global facility.  So, let's just forget about information
+> leak via freeing or not freeing here.  It's the wrong battle field.
 
-> +}
-> +
-> +static inline void sock_release_kmem_cgrp(struct sock *sk)
-> +{
-> +#ifdef CONFIG_CGROUP_KMEM
-> +	cgroup_release_and_wakeup_rmdir(&sk->sk_cgrp->css);
-> +#endif
-> +}
+Andrew, are you OK with closing the hole with pid_no_revalidate()
+and 0600 /proc/slabinfo?  If so, I feel I have to start this discussion
+with people participating in the discussion above: Theodore, Dan, Linus, etc.
 
-Ugly. Just use the way you define kcg_from_task().
+Thanks,
 
-> +
-> +#endif /* CONFIG_INET */
->  #endif /* _LINUX_KMEM_CGROUP_H */
->  
-> diff --git a/include/net/sock.h b/include/net/sock.h
-> index 8e4062f..709382f 100644
-> --- a/include/net/sock.h
-> +++ b/include/net/sock.h
-> @@ -228,6 +228,7 @@ struct sock_common {
->    *	@sk_security: used by security modules
->    *	@sk_mark: generic packet mark
->    *	@sk_classid: this socket's cgroup classid
-> +  *	@sk_cgrp: this socket's kernel memory (kmem) cgroup 
->    *	@sk_write_pending: a write to stream socket waits to start
->    *	@sk_state_change: callback to indicate change in the state of the sock
->    *	@sk_data_ready: callback to indicate there is data to be processed
-> @@ -339,6 +340,7 @@ struct sock {
->  #endif
->  	__u32			sk_mark;
->  	u32			sk_classid;
-> +	struct kmem_cgroup	*sk_cgrp;
->  	void			(*sk_state_change)(struct sock *sk);
->  	void			(*sk_data_ready)(struct sock *sk, int bytes);
->  	void			(*sk_write_space)(struct sock *sk);
-> diff --git a/net/core/sock.c b/net/core/sock.c
-> index 3449df8..7109864 100644
-> --- a/net/core/sock.c
-> +++ b/net/core/sock.c
-> @@ -1139,6 +1139,7 @@ struct sock *sk_alloc(struct net *net, int family, gfp_t priority,
->  		atomic_set(&sk->sk_wmem_alloc, 1);
->  
->  		sock_update_classid(sk);
-> +		sock_update_kmem_cgrp(sk);
->  	}
->  
->  	return sk;
-> @@ -1170,6 +1171,7 @@ static void __sk_free(struct sock *sk)
->  		put_cred(sk->sk_peer_cred);
->  	put_pid(sk->sk_peer_pid);
->  	put_net(sock_net(sk));
-> +	sock_release_kmem_cgrp(sk);
->  	sk_prot_free(sk->sk_prot_creator, sk);
->  }
->  
-> @@ -2252,9 +2254,6 @@ void sk_common_release(struct sock *sk)
->  }
->  EXPORT_SYMBOL(sk_common_release);
->  
-> -static DEFINE_RWLOCK(proto_list_lock);
-> -static LIST_HEAD(proto_list);
-> -
-
-compile error.
-
-you should do compile test after each single patch.
-
->  #ifdef CONFIG_PROC_FS
->  #define PROTO_INUSE_NR	64	/* should be enough for the first time */
->  struct prot_inuse {
-
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+-- 
+Vasiliy Kulikov
+http://www.openwall.com - bringing security into open computing environments
