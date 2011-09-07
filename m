@@ -1,119 +1,56 @@
-From: Greg Thelen <gthelen@google.com>
-Subject: Re: [PATCH] per-cgroup tcp buffer limitation
-Date: Wed, 7 Sep 2011 14:35:17 -0700
-Message-ID: <CAHH2K0aq4s1_H-yY0kA3LhM00CCNNbJZyvyBoDD6rHC+qo_gNg@mail.gmail.com>
-References: <1315276556-10970-1-git-send-email-glommer@parallels.com>
- <CAHH2K0aJxjinSu0Ek6jzsZ5dBmm5mEU-typuwYWYWEudF2F3Qg@mail.gmail.com>
- <4E664766.40200@parallels.com> <CAHH2K0YJA7vZZ3QNAf63TZOnWhsRUwfuZYfntBL4muZ0G_Vt2w@mail.gmail.com>
- <4E66A0A9.3060403@parallels.com>
+From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Subject: Re: Kernel oops on 2.6.38 on destroying a container
+Date: Wed, 07 Sep 2011 23:40:01 +0200
+Message-ID: <4E67E4B1.6050101@free.fr>
+References: <88648D2CBB3136EB9A6EFE7B@nimrod.local>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <4E66A0A9.3060403@parallels.com>
-Sender: owner-linux-mm@kvack.org
-To: Glauber Costa <glommer@parallels.com>
-Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, netdev@vger.kernel.org, xemul@parallels.com, "David S. Miller" <davem@davemloft.net>, Hiroyouki Kamezawa <kamezawa.hiroyu@jp.fujitsu.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Suleiman Souhlal <suleiman@google.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <88648D2CBB3136EB9A6EFE7B-PdXK6nMiYlGE+EvaaNYduQ@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Alex Bligh <alex-rWA27mgs/Jz10XsdtD+oqA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Sep 6, 2011 at 3:37 PM, Glauber Costa <glommer@parallels.com> wrote=
-:
-> I think memcg's usage is really all you need here. In the end of the day,=
- it
-> tells you how many pages your container has available. The whole
-> point of kmem cgroup is not any kind of reservation or accounting.
-
-The memcg does not reserve memory.  It provides upper bound limits on
-memory usage.  A careful admin can configure soft_limit_in_bytes as an
-approximation of a memory reservation.  But the soft limit is really
-more like a reclaim target when there is global memory pressure.
-
-> Once a container (or cgroup) reaches a number of objects *pinned* in memo=
-ry
-> (therefore, non-reclaimable), you won't be able to grab anything from it.
+On 09/07/2011 09:21 PM, Alex Bligh wrote:
+> We are seeing oops like this from 2.6.38-11 Ubuntu on deleting containers.
 >
->> So
->> far my use cases involve a single memory limit which includes both
->> kernel and user memory. =A0So I would need a user space agent to poll
->> {memcg,kmem}.usage_in_bytes to apply pressure to memcg if kmem grows
->> and visa versa.
+> This one was somewhat complicated (but we grabbed the oops).
+> The trace below happened destroying a container. I believe the iptables
+> rules including conntrack rules would have been deleted immediately
+> before the container process exited; devices evrrXXXX and evrlXXXX
+> are veth pairs that would also just have been destroyed)
 >
-> Maybe not.
-> If userspace memory works for you today (supposing it does), why change?
-
-Good question.  Current upstream memcg user space memory limit does
-not work for me today.  I should have made that more obvious (sorry).
-See below for details.
-
-> Right now you assign X bytes of user memory to a container, and the kerne=
-l
-> memory is shared among all of them. If this works for you, kmem_cgroup wo=
-n't
-> change that. It just will impose limits over which
-> your kernel objects can't grow.
+> My colleague can replicate this on different hardware (his desktop) using
+>   lxc-create -n foo
+>   lxc-start -n foo
+> Send a ^C - entire system crashes. No exciting container activity
+> at all.
 >
-> So you don't *need* a userspace agent doing this calculation, because
-> fundamentally, nothing changed: I am not unbilling memory in memcg to bil=
-l
-> it back in kmem_cg. Of course, once it is in, you will be able to do it i=
-n
-> such a fine grained fashion if you decide to do so.
->
->> Do you foresee instantiation of multiple kmem cgroups, so that a
->> process could be added into kmem/K1 or kmem/K2? =A0If so do you plan on
->> supporting migration between cgroups and/or migration of kmem charge
->> between K1 to K2?
->
-> Yes, each container should have its own cgroup, so at least in the use
-> cases I am concerned, we will have a lot of them. But the usual lifecycle=
-,
-> is create, execute and die. Mobility between them
-> is not something I am overly concerned right now.
->
->
->>>> Do you foresee the kmem cgroup growing to include reclaimable slab,
->>>> where freeing one type of memory allows for reclaim of the other?
->>>
->>> Yes, absolutely.
+> I haven't seen this on 2.6.32. Any ideas what it might be? We are
+> trying to get this to work on a slightly more modern kernel with longterm
+> support, so "fixed in Linus's current tree" is not quite what I need!
 
-Now I see that you're using kmem to limit the amount of unreclaimable
-kernel memory.
+IMO you should fill a bug at :
 
-We have a work-in-progress patch series that adds kernel memory accounting =
-to
-memcg.  These patches allow an admin to specify a single memory limit
-for a cgroup which encompasses both user memory (as upstream memcg
-does) and also includes many kernel memory allocations (especially
-slab, page-tables).  When kernel memory grows it puts pressure on user
-memory; when user memory grows it puts pressure on reclaimable kernel
-memory using registered shrinkers.  We are in the process of cleaning
-up these memcg slab accounting patches.
+https://bugs.launchpad.net/ubuntu/+source/linux/
 
-In my uses cases there is a single memory limit that applies to both
-kernel and user memory.  If a separate kmem cgroup is introduced to
-manage kernel memory outside of memcg with a distinct limit, then I
-would need a user space daemon which balances memory between the kmem
-and memcg subsystems.  As kmem grows, this daemon would apply pressure
-to memcg, and as memcg grows pressure would be applied to kmem.  As
-you stated kernel memory is not necessarily reclaimable.  So such
-reclaim may fail.  My resistance to this approach is that with a
-single memory cgroup admins can do a better job packing a machine.  If
-balancing daemons are employed then more memory would need to be
-reserved and more user space cpu time would be needed to apply VM
-pressure between the types of memory.
+and/or ask kernel-team-nLRlyDuq1AZFpShjVBNYrg@public.gmane.org
 
-While there are people (like me) who want a combined memory usage
-limit there are also people (like you) who want separate user and
-kernel limiting.  I have toyed with the idea of having a per cgroup
-flag that determines if kernel and user memory should be combined
-charged against a single limit or if they should have separate limits.
- I have also wondered if there was a way to wire the usage of two
-subsystems together, then it would also meet meet my needs.  But I am
-not sure how to do that.
+They will be able to identify the fix in the mainstream, backport it and
+release a new kernel.
 
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+An oops is critical enough to have them to pay attention to this problem.
+
+Hope that helps
+
+  -- Daniel
