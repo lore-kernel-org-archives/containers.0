@@ -1,122 +1,57 @@
-From: Glauber Costa <glommer@parallels.com>
-Subject: Re: [PATCH v2 6/9] per-cgroup tcp buffers control
-Date: Wed, 7 Sep 2011 10:02:52 -0300
-Message-ID: <4E676B7C.4030904@parallels.com>
-References: <1315369399-3073-1-git-send-email-glommer@parallels.com> <1315369399-3073-7-git-send-email-glommer@parallels.com> <4E671E1F.4040804@cn.fujitsu.com>
+From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 0/1] freezer: fix wait_event_freezable/__thaw_task races
+Date: Wed, 7 Sep 2011 20:21:56 +0200
+Message-ID: <20110907182156.GA13909__19327.1669130356$1315420045$gmane$org@redhat.com>
+References: <1314988070-12244-1-git-send-email-tj@kernel.org>
+	<1314988070-12244-7-git-send-email-tj@kernel.org>
+	<20110904184626.GA30101@redhat.com>
+	<20110905023315.GB9807@htj.dyndns.org>
+	<20110905162012.GA4445@redhat.com>
+	<20110906032846.GA18425@mtj.dyndns.org>
+	<20110906151836.GA15568@redhat.com>
+	<20110906152539.GA16899@redhat.com>
+	<20110906155332.GF18425@mtj.dyndns.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <4E671E1F.4040804@cn.fujitsu.com>
-Sender: owner-linux-mm@kvack.org
-To: Li Zefan <lizf@cn.fujitsu.com>
-Cc: linux-kernel@vger.kernel.org, xemul@parallels.com, netdev@vger.kernel.org, linux-mm@kvack.org, "Eric W. Biederman" <ebiederm@xmission.com>, containers@lists.osdl.org, "David S. Miller" <davem@davemloft.net>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20110906155332.GF18425-9pTldWuhBndy/B6EtB590w@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 09/07/2011 04:32 AM, Li Zefan wrote:
->> +#ifdef CONFIG_INET
->> +#include<net/sock.h>
->> +static inline void sock_update_kmem_cgrp(struct sock *sk)
->> +{
->> +#ifdef CONFIG_CGROUP_KMEM
->> +	sk->sk_cgrp = kcg_from_task(current);
->> +
->> +	/*
->> +	 * We don't need to protect against anything task-related, because
->> +	 * we are basically stuck with the sock pointer that won't change,
->> +	 * even if the task that originated the socket changes cgroups.
->> +	 *
->> +	 * What we do have to guarantee, is that the chain leading us to
->> +	 * the top level won't change under our noses. Incrementing the
->> +	 * reference count via cgroup_exclude_rmdir guarantees that.
->> +	 */
->> +	cgroup_exclude_rmdir(&sk->sk_cgrp->css);
->> +#endif
->
-> must be protected by rcu_read_lock.
+Hi,
 
-Ok.
-
->> +}
->> +
->> +static inline void sock_release_kmem_cgrp(struct sock *sk)
->> +{
->> +#ifdef CONFIG_CGROUP_KMEM
->> +	cgroup_release_and_wakeup_rmdir(&sk->sk_cgrp->css);
->> +#endif
->> +}
+On 09/07, Tejun Heo wrote:
+> >
+> > I meant, unless the caller plays with allow_signal(), it has all rights to do
+> >
+> > 	if (wait_event_freezable(...))
+> > 		BUG();
+> >
+> > This becomes correct with the code above.
 >
-> Ugly. Just use the way you define kcg_from_task().
-Disagree.
-This releases the pointer from the socket, not the task.
-Actually, one of the assumptions I am making here, is that the cgroup
-of the socket won't change, even if the task do change cgroups. Getting
-the pointer from the task, breaks this. Without this, the code would
-be much more complicated, since we'd have to unbill the memory accounted
-every time we migrate tasks, and bill again to the new cgroup.
+> Yeap, sure, w/ freezable_with_signal gone, the above should work fine.
+> Care to create a patch?
 
+Sure.
 
->
->> +
->> +#endif /* CONFIG_INET */
->>   #endif /* _LINUX_KMEM_CGROUP_H */
->>
->> diff --git a/include/net/sock.h b/include/net/sock.h
->> index 8e4062f..709382f 100644
->> --- a/include/net/sock.h
->> +++ b/include/net/sock.h
->> @@ -228,6 +228,7 @@ struct sock_common {
->>     *	@sk_security: used by security modules
->>     *	@sk_mark: generic packet mark
->>     *	@sk_classid: this socket's cgroup classid
->> +  *	@sk_cgrp: this socket's kernel memory (kmem) cgroup
->>     *	@sk_write_pending: a write to stream socket waits to start
->>     *	@sk_state_change: callback to indicate change in the state of the sock
->>     *	@sk_data_ready: callback to indicate there is data to be processed
->> @@ -339,6 +340,7 @@ struct sock {
->>   #endif
->>   	__u32			sk_mark;
->>   	u32			sk_classid;
->> +	struct kmem_cgroup	*sk_cgrp;
->>   	void			(*sk_state_change)(struct sock *sk);
->>   	void			(*sk_data_ready)(struct sock *sk, int bytes);
->>   	void			(*sk_write_space)(struct sock *sk);
->> diff --git a/net/core/sock.c b/net/core/sock.c
->> index 3449df8..7109864 100644
->> --- a/net/core/sock.c
->> +++ b/net/core/sock.c
->> @@ -1139,6 +1139,7 @@ struct sock *sk_alloc(struct net *net, int family, gfp_t priority,
->>   		atomic_set(&sk->sk_wmem_alloc, 1);
->>
->>   		sock_update_classid(sk);
->> +		sock_update_kmem_cgrp(sk);
->>   	}
->>
->>   	return sk;
->> @@ -1170,6 +1171,7 @@ static void __sk_free(struct sock *sk)
->>   		put_cred(sk->sk_peer_cred);
->>   	put_pid(sk->sk_peer_pid);
->>   	put_net(sock_net(sk));
->> +	sock_release_kmem_cgrp(sk);
->>   	sk_prot_free(sk->sk_prot_creator, sk);
->>   }
->>
->> @@ -2252,9 +2254,6 @@ void sk_common_release(struct sock *sk)
->>   }
->>   EXPORT_SYMBOL(sk_common_release);
->>
->> -static DEFINE_RWLOCK(proto_list_lock);
->> -static LIST_HEAD(proto_list);
->> -
->
-> compile error.
->
-> you should do compile test after each single patch.
-Oops, thanks for spotting.
+But. Tejun, Rafael, I have to rely on your review. I have no idea how
+can I test this change. Hopfully it is simple enough, though.
 
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+And. wait_event_freezable_timeout() obviously has another problem,
+although I hope this is fine. The caller can spend a lot of time in
+refrigerator, shouldn't we update "timeout" in this case? I hope we
+shouldn't.
+
+Oleg.
