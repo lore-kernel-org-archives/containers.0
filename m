@@ -1,52 +1,98 @@
-From: Alex Bligh <alex-rWA27mgs/Jz10XsdtD+oqA@public.gmane.org>
-Subject: Re: Kernel oops on 2.6.38 on destroying a container
-Date: Wed, 07 Sep 2011 23:17:50 +0100
-Message-ID: <0EA203C5B2BC7A3F8AF5BE57@nimrod.local>
-References: <88648D2CBB3136EB9A6EFE7B@nimrod.local> <4E67E4B1.6050101@free.fr>
-Reply-To: Alex Bligh <alex-rWA27mgs/Jz10XsdtD+oqA@public.gmane.org>
+From: Cyrill Gorcunov <gorcunov@gmail.com>
+Subject: Re: [patch 2/2] fs, proc: Introduce the /proc/<pid>/map_files/
+ directory v6
+Date: Thu, 8 Sep 2011 02:42:34 +0400
+Message-ID: <20110907224234.GD28162@sun>
+References: <20110905192009.GJ761@sun>
+ <20110905194908.GA2690@albatros>
+ <20110905203627.GL761@sun>
+ <20110906101518.GA4799@albatros>
+ <20110906165144.GJ18425@mtj.dyndns.org>
+ <20110906172952.GA28055@albatros>
+ <20110906173341.GM18425@mtj.dyndns.org>
+ <20110907112301.GA12157@albatros>
+ <20110907215329.GB28162@sun>
+ <20110907151323.613e62e7.akpm@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4E67E4B1.6050101-GANU6spQydw@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner@vger.kernel.org>
 Content-Disposition: inline
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+In-Reply-To: <20110907151323.613e62e7.akpm@linux-foundation.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Vasiliy Kulikov <segoon@openwall.com>, Tejun Heo <tj@kernel.org>, "Kirill A. Shutemov" <kirill@shutemov.name>, containers@lists.osdl.org, linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, Nathan Lynch <ntl@pobox.com>, kernel-hardening@lists.openwall.com, Oren Laadan <orenl@cs.columbia.edu>, Daniel Lezcano <dlezcano@fr.ibm.com>, Glauber Costa <glommer@parallels.com>, James Bottomley <jbottomley@parallels.com>, Alexey Dobriyan <adobriyan@gmail.com>, Al Viro <viro@ZenIV.linux.org.uk>, Pavel Emelyanov <xemul@parallels.com>
 List-Id: containers.vger.kernel.org
 
-Daniel,
+On Wed, Sep 07, 2011 at 03:13:23PM -0700, Andrew Morton wrote:
+...
+> > > 
+> > > Andrew, are you OK with closing the hole with pid_no_revalidate()
+> > > and 0600 /proc/slabinfo?  If so, I feel I have to start this discussion
+> > > with people participating in the discussion above: Theodore, Dan, Linus, etc.
+> 
+> I fell asleep a long time ago and don't know what pid_no_revalidate()
+> and slabinfo permissions have to do with this.  Perhaps summarising the
+> issues in the changelog would be appropriate, dunno.
 
---On 7 September 2011 23:40:01 +0200 Daniel Lezcano 
-<daniel.lezcano-GANU6spQydw@public.gmane.org> wrote:
+Well, time to poke Vasiliy ;)
 
-> IMO you should fill a bug at :
->
-> https://bugs.launchpad.net/ubuntu/+source/linux/
->
-> and/or ask kernel-team-nLRlyDuq1AZFpShjVBNYrg@public.gmane.org
->
-> They will be able to identify the fix in the mainstream, backport it and
-> release a new kernel.
->
-> An oops is critical enough to have them to pay attention to this problem.
+...
+> > 
+> > I fear we still need to use two passes in proc_map_files_readdir, I found no way
+> > to escape lockdep complains when doing all work in one pass with mmap_sem taken.
+> > The /maps does the same thing -- ie it fills maps file with mmap_sem taken to produce
+> > robust data.
+> 
+> The code's using three passes.
 
-I have:
- 
-https://bugs.launchpad.net/ubuntu/+source/linux-lts-backport-natty/+bug/843892
+Yes, and I didn't find thy way to escape it (actually if there would not
+be filldir+might_fault tuple I would create this all under mmap_sem and
+would not need this flex_array or any temporary storage at all and code
+would be a way simplier).
 
-No one has responded just yet - I think they are all at the kernel
-plumbers summit.
+> 
+> > And I'm not really sure what you mean with problematic put_filp?
+> 
+> I was thinking fput(), which can do a hell of a lot of stuff if it's
+> the final put on the inode.
 
-I was hoping someone might know why it does it.
+Ouch, somehow missed it, thanks!
 
--- 
-Alex Bligh
+> > +err:
+> > +		up_read(&mm->mmap_sem);
+> > +
+> > +		for (i = 0; i < used && !ret; i++) {
+> 
+> The "&& !ret" is unneeded?
+
+No, it's needed, since it makes sure that if "impossible"
+scenario happens and flex-arrays fails with preallocated
+data so we will reach this point with used > 0 and ret = -ENOMEM
+and thus will not call for proc_map_files_instantiate as needed.
+
+> 
+> > +			p = flex_array_get(fa, i);
+> > +			ret = proc_fill_cache(filp, dirent, filldir,
+> > +					      p->name, p->len,
+> > +					      proc_map_files_instantiate,
+> > +					      task, p->file);
+> > +			if (ret)
+> > +				break;
+
+1: Say we failed here
+
+> > +			filp->f_pos++;
+> > +			put_filp(p->file);
+> > +		}
+> > +
+> > +		for (; i < used; i++) {
+> > +			p = flex_array_get(fa, i);
+> > +			put_filp(p->file);
+> > +		}
+> 
+> Still unclear why we need the third loop.
+
+Due to (1) -- so we will have a number of files reference
+taken and need to put them back.
+
+	Cyrill
