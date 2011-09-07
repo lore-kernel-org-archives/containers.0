@@ -1,96 +1,52 @@
-From: "Kirill A. Shutemov" <kirill@shutemov.name>
-Subject: Re: [PATCH v2 3/9] socket: initial cgroup code.
-Date: Thu, 8 Sep 2011 01:17:10 +0300
-Message-ID: <20110907221710.GA7845@shutemov.name>
-References: <1315369399-3073-1-git-send-email-glommer@parallels.com>
- <1315369399-3073-4-git-send-email-glommer@parallels.com>
+From: Alex Bligh <alex-rWA27mgs/Jz10XsdtD+oqA@public.gmane.org>
+Subject: Re: Kernel oops on 2.6.38 on destroying a container
+Date: Wed, 07 Sep 2011 23:17:50 +0100
+Message-ID: <0EA203C5B2BC7A3F8AF5BE57@nimrod.local>
+References: <88648D2CBB3136EB9A6EFE7B@nimrod.local> <4E67E4B1.6050101@free.fr>
+Reply-To: Alex Bligh <alex-rWA27mgs/Jz10XsdtD+oqA@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <owner-linux-mm@kvack.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <4E67E4B1.6050101-GANU6spQydw@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1315369399-3073-4-git-send-email-glommer@parallels.com>
-Sender: owner-linux-mm@kvack.org
-To: Glauber Costa <glommer@parallels.com>
-Cc: linux-kernel@vger.kernel.org, xemul@parallels.com, netdev@vger.kernel.org, linux-mm@kvack.org, "Eric W. Biederman" <ebiederm@xmission.com>, containers@lists.osdl.org, "David S. Miller" <davem@davemloft.net>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Sep 07, 2011 at 01:23:13AM -0300, Glauber Costa wrote:
-> We aim to control the amount of kernel memory pinned at any
-> time by tcp sockets. To lay the foundations for this work,
-> this patch adds a pointer to the kmem_cgroup to the socket
-> structure.
-> 
-> Signed-off-by: Glauber Costa <glommer@parallels.com>
-> CC: David S. Miller <davem@davemloft.net>
-> CC: Hiroyouki Kamezawa <kamezawa.hiroyu@jp.fujitsu.com>
-> CC: Eric W. Biederman <ebiederm@xmission.com>
-> ---
->  include/linux/kmem_cgroup.h |   29 +++++++++++++++++++++++++++++
->  include/net/sock.h          |    2 ++
->  net/core/sock.c             |    5 ++---
->  3 files changed, 33 insertions(+), 3 deletions(-)
-> 
-> diff --git a/include/linux/kmem_cgroup.h b/include/linux/kmem_cgroup.h
-> index 0e4a74b..77076d8 100644
-> --- a/include/linux/kmem_cgroup.h
-> +++ b/include/linux/kmem_cgroup.h
-> @@ -49,5 +49,34 @@ static inline struct kmem_cgroup *kcg_from_task(struct task_struct *tsk)
->  	return NULL;
->  }
->  #endif /* CONFIG_CGROUP_KMEM */
-> +
-> +#ifdef CONFIG_INET
+Daniel,
 
-Will it break something if you define the helpers even if CONFIG_INET
-is not defined?
-It will be much cleaner. You can reuse ifdef CONFIG_CGROUP_KMEM in this
-case.
+--On 7 September 2011 23:40:01 +0200 Daniel Lezcano 
+<daniel.lezcano-GANU6spQydw@public.gmane.org> wrote:
 
-> +#include <net/sock.h>
-> +static inline void sock_update_kmem_cgrp(struct sock *sk)
-> +{
-> +#ifdef CONFIG_CGROUP_KMEM
-> +	sk->sk_cgrp = kcg_from_task(current);
-> +
-> +	/*
-> +	 * We don't need to protect against anything task-related, because
-> +	 * we are basically stuck with the sock pointer that won't change,
-> +	 * even if the task that originated the socket changes cgroups.
-> +	 *
-> +	 * What we do have to guarantee, is that the chain leading us to
-> +	 * the top level won't change under our noses. Incrementing the
-> +	 * reference count via cgroup_exclude_rmdir guarantees that.
-> +	 */
-> +	cgroup_exclude_rmdir(&sk->sk_cgrp->css);
-> +#endif
-> +}
-> +
-> +static inline void sock_release_kmem_cgrp(struct sock *sk)
-> +{
-> +#ifdef CONFIG_CGROUP_KMEM
-> +	cgroup_release_and_wakeup_rmdir(&sk->sk_cgrp->css);
-> +#endif
-> +}
-> +
-> +#endif /* CONFIG_INET */
->  #endif /* _LINUX_KMEM_CGROUP_H */
+> IMO you should fill a bug at :
+>
+> https://bugs.launchpad.net/ubuntu/+source/linux/
+>
+> and/or ask kernel-team-nLRlyDuq1AZFpShjVBNYrg@public.gmane.org
+>
+> They will be able to identify the fix in the mainstream, backport it and
+> release a new kernel.
+>
+> An oops is critical enough to have them to pay attention to this problem.
 
-> @@ -2252,9 +2254,6 @@ void sk_common_release(struct sock *sk)
->  }
->  EXPORT_SYMBOL(sk_common_release);
->  
-> -static DEFINE_RWLOCK(proto_list_lock);
-> -static LIST_HEAD(proto_list);
-> -
+I have:
+ 
+https://bugs.launchpad.net/ubuntu/+source/linux-lts-backport-natty/+bug/843892
 
-Wrong patch?
+No one has responded just yet - I think they are all at the kernel
+plumbers summit.
+
+I was hoping someone might know why it does it.
 
 -- 
- Kirill A. Shutemov
-
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+Alex Bligh
