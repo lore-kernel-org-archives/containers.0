@@ -1,38 +1,34 @@
-From: Glauber Costa <glommer@parallels.com>
+From: Paul Menage <paul@paulmenage.org>
 Subject: Re: [PATCH] per-cgroup tcp buffer limitation
-Date: Tue, 6 Sep 2011 22:09:46 -0300
-Message-ID: <4E66C45A.8060706@parallels.com>
-References: <1315276556-10970-1-git-send-email-glommer@parallels.com> <CALdu-PDoPPdcX0bAkVpaP9R-z1yKin=JOjjT3rMuoSHJaywSCg@mail.gmail.com>
+Date: Tue, 6 Sep 2011 18:29:55 -0700
+Message-ID: <CALdu-PDZC3FTuR31d5+P+=U=0UFVUZD_KDEgPHBeD-MyQ4PuSQ@mail.gmail.com>
+References: <1315276556-10970-1-git-send-email-glommer@parallels.com>
+ <CALdu-PDoPPdcX0bAkVpaP9R-z1yKin=JOjjT3rMuoSHJaywSCg@mail.gmail.com> <4E66C45A.8060706@parallels.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
-Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <CALdu-PDoPPdcX0bAkVpaP9R-z1yKin=JOjjT3rMuoSHJaywSCg@mail.gmail.com>
-Sender: netdev-owner@vger.kernel.org
-To: Paul Menage <paul@paulmenage.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <4E66C45A.8060706@parallels.com>
+Sender: owner-linux-mm@kvack.org
+To: Glauber Costa <glommer@parallels.com>
 Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, netdev@vger.kernel.org, xemul@parallels.com, "David S. Miller" <davem@davemloft.net>, Hiroyouki Kamezawa <kamezawa.hiroyu@jp.fujitsu.com>, "Eric W. Biederman" <ebiederm@xmission.com>
 List-Id: containers.vger.kernel.org
 
-On 09/06/2011 10:08 PM, Paul Menage wrote:
-> On Mon, Sep 5, 2011 at 7:35 PM, Glauber Costa<glommer@parallels.com>  wrote:
->> This patch introduces per-cgroup tcp buffers limitation. This allows
->> sysadmins to specify a maximum amount of kernel memory that
->> tcp connections can use at any point in time. TCP is the main interest
->> in this work, but extending it to other protocols would be easy.
-
-Hi Paul,
-
-
-> The general idea of limiting total socket buffer memory consumed by a
-> cgroup is a fine idea, but I think it needs to be integrated more
-> closely with the existing kernel memory cgroup tracking efforts,
-> especially if you're trying to use as generic a name as "kmem" for it.
-Can you be more specific?
-
-The generic part of kmem cgroup in this patch is quite simple. I think 
-any other patchset would have a very easy time merging things into it.
-90 % is sockets.
-
+On Tue, Sep 6, 2011 at 6:09 PM, Glauber Costa <glommer@parallels.com> wrote:
 >
-> I agree with Kamezawa's comments that you need a lot more documentation.
-Working on it right now.
+> Can you be more specific?
+
+Maybe if you include the source to kmem_cgroup.c :-)
+
+Things like the reporting of stats to user space, configuring limits,
+etc, ought to be common with the other kernel memory tracking. (Sadly,
+I've lost track of the status of the other kernel memory effort -
+Kamezawa or the OpenVZ folks probably have a better handle on that).
+
+Paul
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
