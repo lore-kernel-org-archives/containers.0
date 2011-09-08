@@ -1,125 +1,141 @@
-From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
-Subject: Re: [PATCH][BUGFIX] cgroups: more safe tasklist locking in
-	cgroup_attach_proc
-Date: Wed, 7 Sep 2011 22:11:42 -0400
-Message-ID: <20110908021141.GB22545__19522.5451178432$1315447972$gmane$org@unix33.andrew.cmu.edu>
-References: <20110727171101.5e32d8eb@notabene.brown>
-	<20110727150710.GB5242@unix33.andrew.cmu.edu>
-	<20110727234235.GA2318@linux.vnet.ibm.com>
-	<20110728110813.7ff84b13@notabene.brown>
-	<20110728062616.GC15204@unix33.andrew.cmu.edu>
-	<20110728171345.67d3797d@notabene.brown>
-	<20110729142842.GA8462@unix33.andrew.cmu.edu>
-	<20110815184957.GA16588@redhat.com>
-	<20110901214643.GD10401@unix33.andrew.cmu.edu>
-	<20110902123251.GA26764@redhat.com>
+From: Glauber Costa <glommer@parallels.com>
+Subject: Re: [PATCH] per-cgroup tcp buffer limitation
+Date: Thu, 8 Sep 2011 01:44:58 -0300
+Message-ID: <4E68484A.4000201@parallels.com>
+References: <1315276556-10970-1-git-send-email-glommer@parallels.com> <CAHH2K0aJxjinSu0Ek6jzsZ5dBmm5mEU-typuwYWYWEudF2F3Qg@mail.gmail.com> <4E664766.40200@parallels.com> <CAHH2K0YJA7vZZ3QNAf63TZOnWhsRUwfuZYfntBL4muZ0G_Vt2w@mail.gmail.com> <4E66A0A9.3060403@parallels.com> <CAHH2K0aq4s1_H-yY0kA3LhM00CCNNbJZyvyBoDD6rHC+qo_gNg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20110902123251.GA26764-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <CAHH2K0aq4s1_H-yY0kA3LhM00CCNNbJZyvyBoDD6rHC+qo_gNg@mail.gmail.com>
+Sender: owner-linux-mm@kvack.org
+To: Greg Thelen <gthelen@google.com>
+Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, netdev@vger.kernel.org, xemul@parallels.com, "David S. Miller" <davem@davemloft.net>, Hiroyouki Kamezawa <kamezawa.hiroyu@jp.fujitsu.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Suleiman Souhlal <suleiman@google.com>
 List-Id: containers.vger.kernel.org
 
-On Fri, Sep 02, 2011 at 02:32:51PM +0200, Oleg Nesterov wrote:
-> On 09/01, Ben Blum wrote:
-> >
-> > On Mon, Aug 15, 2011 at 08:49:57PM +0200, Oleg Nesterov wrote:
-> > >
-> > > But can't we avoid the global list? thread_group_leader() or not, we do
-> > > not really care. We only need to ensure we can safely find all threads.
-> > >
-> > > How about the patch below?
-> >
-> > I was content with the tasklist_lock because cgroup_attach_proc is
-> > already a pretty heavyweight operation, and probably pretty rare that a
-> > user would want to do multiple of them at once quickly.
-> 
-> Perhaps. But this is the global lock, no matter what. Why do you prefer
-> to take it instead of per-process ->siglock?
+On 09/07/2011 06:35 PM, Greg Thelen wrote:
+> On Tue, Sep 6, 2011 at 3:37 PM, Glauber Costa<glommer@parallels.com>  wrote:
+>> I think memcg's usage is really all you need here. In the end of the day, it
+>> tells you how many pages your container has available. The whole
+>> point of kmem cgroup is not any kind of reservation or accounting.
+>
+> The memcg does not reserve memory.  It provides upper bound limits on
+> memory usage.  A careful admin can configure soft_limit_in_bytes as an
+> approximation of a memory reservation.  But the soft limit is really
+> more like a reclaim target when there is global memory pressure.
+>
+>> Once a container (or cgroup) reaches a number of objects *pinned* in memory
+>> (therefore, non-reclaimable), you won't be able to grab anything from it.
+>>
+>>> So
+>>> far my use cases involve a single memory limit which includes both
+>>> kernel and user memory.  So I would need a user space agent to poll
+>>> {memcg,kmem}.usage_in_bytes to apply pressure to memcg if kmem grows
+>>> and visa versa.
+>>
+>> Maybe not.
+>> If userspace memory works for you today (supposing it does), why change?
+>
+> Good question.  Current upstream memcg user space memory limit does
+> not work for me today.  I should have made that more obvious (sorry).
+> See below for details.
+>
+>> Right now you assign X bytes of user memory to a container, and the kernel
+>> memory is shared among all of them. If this works for you, kmem_cgroup won't
+>> change that. It just will impose limits over which
+>> your kernel objects can't grow.
+>>
+>> So you don't *need* a userspace agent doing this calculation, because
+>> fundamentally, nothing changed: I am not unbilling memory in memcg to bill
+>> it back in kmem_cg. Of course, once it is in, you will be able to do it in
+>> such a fine grained fashion if you decide to do so.
+>>
+>>> Do you foresee instantiation of multiple kmem cgroups, so that a
+>>> process could be added into kmem/K1 or kmem/K2?  If so do you plan on
+>>> supporting migration between cgroups and/or migration of kmem charge
+>>> between K1 to K2?
+>>
+>> Yes, each container should have its own cgroup, so at least in the use
+>> cases I am concerned, we will have a lot of them. But the usual lifecycle,
+>> is create, execute and die. Mobility between them
+>> is not something I am overly concerned right now.
+>>
+>>
+>>>>> Do you foresee the kmem cgroup growing to include reclaimable slab,
+>>>>> where freeing one type of memory allows for reclaim of the other?
+>>>>
+>>>> Yes, absolutely.
+>
+> Now I see that you're using kmem to limit the amount of unreclaimable
+> kernel memory.
+>
+> We have a work-in-progress patch series that adds kernel memory accounting to
+> memcg.  These patches allow an admin to specify a single memory limit
+> for a cgroup which encompasses both user memory (as upstream memcg
+> does) and also includes many kernel memory allocations (especially
+> slab, page-tables).  When kernel memory grows it puts pressure on user
+> memory; when user memory grows it puts pressure on reclaimable kernel
+> memory using registered shrinkers.  We are in the process of cleaning
+> up these memcg slab accounting patches.
+ >
+> In my uses cases there is a single memory limit that applies to both
+> kernel and user memory.  If a separate kmem cgroup is introduced to
+> manage kernel memory outside of memcg with a distinct limit, then I
+> would need a user space daemon which balances memory between the kmem
+> and memcg subsystems.  As kmem grows, this daemon would apply pressure
+> to memcg, and as memcg grows pressure would be applied to kmem.  As
+> you stated kernel memory is not necessarily reclaimable.  So such
+> reclaim may fail.  My resistance to this approach is that with a
+> single memory cgroup admins can do a better job packing a machine.  If
+> balancing daemons are employed then more memory would need to be
+> reserved and more user space cpu time would be needed to apply VM
+> pressure between the types of memory.
+Well, it is a way to see this. The other way to see this, is that you're
+proposing to move to the kernel, something that really belongs in 
+userspace. That's because:
 
-Basically just because I wanted to find the simplest race-free
-implementation - at that point I was just shooting to have a complete
-set of patches, and didn't judge the global lock to be bad enough to
-think about replacing. I could yet be convinced that siglock is better.
+With the information you provided me, I have no reason to believe that 
+the kernel has more condition to do this work. Do the kernel have access 
+to any information that userspace do not, and can't be exported? If not, 
+userspace is traditionally where this sort of stuff has been done.
 
-> 
-> > I asked Andrew
-> > to take the simple tasklist_lock patch just now, since it does fix the
-> > bug at least.
-> 
-> I disagree.
-> 
-> > Anyway, looking at this, hmm. I am not sure if this protects adequately?
-> > In de_thread, the sighand lock is held only around the first half
-> > (around zap_other_threads),
-> 
-> We only need this lock to find all threads,
-> 
-> > and not around the following section where
-> > leadership is transferred (esp. around the list_replace calls).
-> > tasklist_lock is held here, though, so it seems like the right lock to
-> > hold.
-> 
-> This doesn't matter at all, I think. The code under while_each_thread()
-> doesn't need the stable ->group_leader, and it can be changed right after
-> you drop tasklist. list_replace() calls do not play with ->thread_group
-> list.
-> 
-> How can tasklist make any difference?
+Using userspace CPU is no different from using kernel cpu in this 
+particular case. It is all overhead, regardless where it comes from. 
+Moreover, you end up setting up a policy, instead of a mechanism. What 
+should be this proportion?  Do we reclaim everything with the same 
+frequency? Should we be more tolerant with a specific container?
 
-Oops. I misread the list_replace calls as being on ->thread_group,
-instead of on ->tasks as they actually are. Hm, and I see __exit_signal
-takes the sighand lock around the call to __unhash_process.
+Also, If you want to allow any flexibility in this scheme, like: "Should 
+this network container be able to stress the network more, pinning more 
+memory, but not other subsystems?", you end up having to touch all 
+individual files anyway - probably with a userspace daemon.
 
-OK, I believe it will work. Oh, and I guess the sighand lock also
-subsumes the group_leader check that you were objecting to in the other
-thread.
+Also, as you noticed yourself, kernel memory is fundamentally different 
+from userspace memory. You can't just set reclaim limits, since you have 
+no guarantees it will work. User memory is not a scarce resource.
+Kernel memory is.
 
-Sorry for the delay. Any way this change goes through, though, the
-commenting should be clear on how de_thread interacts with it. Something
-like:
+>
+> While there are people (like me) who want a combined memory usage
+> limit there are also people (like you) who want separate user and
+> kernel limiting.
 
-/* If the leader exits, its links on the thread_group list become
- * invalid. One way this can happen is if a sub-thread does exec() when
- * de_thread() calls release_task(leader) (and leader->sighand gets set
- * to NULL, in which case lock_task_sighand will fail). Since in that
- * case the threadgroup is still around, cgroup_procs_write should try
- * again (finding the new leader), which EAGAIN indicates here. This is
- * "double-double-toil-and-trouble-check locking". */
+Combined excludes separate. Separate does not exclude combined.
 
-(I rather like the phrase "double-double-..." to describe the overall
-approach, and would prefer if it stayed in the comment.)
+> I have toyed with the idea of having a per cgroup
+> flag that determines if kernel and user memory should be combined
+> charged against a single limit or if they should have separate limits.
 
-> 
-> > > With or without this/your patch this leader can die right after we
-> > > drop the lock. ss->can_attach(leader) and ss->attach(leader) look
-> > > suspicious. If a sub-thread execs, this task_struct has nothing to
-> > > do with the threadgroup.
-> >
-> > hmm. I thought I had this case covered, but it's been so long since I
-> > actually wrote the code that if I did I can't remember how.
-> 
-> This all doesn't look right... Hopefully addressed by Tejun patches.
-> 
+And then every other kind of mechanism one may think of involves a 
+kernel patch, instead of a potentially simple userspace change.
 
-Will look into those separately.
+>   I have also wondered if there was a way to wire the usage of two
+> subsystems together, then it would also meet meet my needs.  But I am
+> not sure how to do that.
 
-Thanks,
-Ben
-
-> 
-> Oleg.
-> 
-> 
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
