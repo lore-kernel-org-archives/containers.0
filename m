@@ -1,69 +1,85 @@
-From: Glauber Costa <glommer@parallels.com>
-Subject: Re: [PATCH v2 3/9] socket: initial cgroup code.
-Date: Thu, 8 Sep 2011 09:41:37 -0300
-Message-ID: <4E68B801.8000207@parallels.com>
-References: <1315369399-3073-1-git-send-email-glommer@parallels.com> <1315369399-3073-4-git-send-email-glommer@parallels.com> <20110907221710.GA7845@shutemov.name> <4E684A6B.6030205@parallels.com> <20110908053558.GA9464@shutemov.name>
+From: Randy Dunlap <rdunlap@xenotime.net>
+Subject: Re: [PATCH v2 9/9] Add documentation about kmem_cgroup
+Date: Thu, 08 Sep 2011 10:46:24 -0700
+Message-ID: <4E68FF70.1010709@xenotime.net>
+References: <1315369399-3073-1-git-send-email-glommer@parallels.com> <1315369399-3073-10-git-send-email-glommer@parallels.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <20110908053558.GA9464@shutemov.name>
+In-Reply-To: <1315369399-3073-10-git-send-email-glommer@parallels.com>
 Sender: owner-linux-mm@kvack.org
-To: "Kirill A. Shutemov" <kirill@shutemov.name>
-Cc: linux-kernel@vger.kernel.org, xemul@parallels.com, netdev@vger.kernel.org, linux-mm@kvack.org, "Eric W. Biederman" <ebiederm@xmission.com>, containers@lists.osdl.org, "David S. Miller" <davem@davemloft.net>
+To: Glauber Costa <glommer@parallels.com>
+Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, netdev@vger.kernel.org, xemul@parallels.com, "David S. Miller" <davem@davemloft.net>, Hiroyouki Kamezawa <kamezawa.hiroyu@jp.fujitsu.com>, "Eric W. Biederman" <ebiederm@xmission.com>
 List-Id: containers.vger.kernel.org
 
-On 09/08/2011 02:35 AM, Kirill A. Shutemov wrote:
-> On Thu, Sep 08, 2011 at 01:54:03AM -0300, Glauber Costa wrote:
->> On 09/07/2011 07:17 PM, Kirill A. Shutemov wrote:
->>> On Wed, Sep 07, 2011 at 01:23:13AM -0300, Glauber Costa wrote:
->>>> We aim to control the amount of kernel memory pinned at any
->>>> time by tcp sockets. To lay the foundations for this work,
->>>> this patch adds a pointer to the kmem_cgroup to the socket
->>>> structure.
->>>>
->>>> Signed-off-by: Glauber Costa<glommer@parallels.com>
->>>> CC: David S. Miller<davem@davemloft.net>
->>>> CC: Hiroyouki Kamezawa<kamezawa.hiroyu@jp.fujitsu.com>
->>>> CC: Eric W. Biederman<ebiederm@xmission.com>
->>>> ---
->>>>    include/linux/kmem_cgroup.h |   29 +++++++++++++++++++++++++++++
->>>>    include/net/sock.h          |    2 ++
->>>>    net/core/sock.c             |    5 ++---
->>>>    3 files changed, 33 insertions(+), 3 deletions(-)
->>>>
->>>> diff --git a/include/linux/kmem_cgroup.h b/include/linux/kmem_cgroup.h
->>>> index 0e4a74b..77076d8 100644
->>>> --- a/include/linux/kmem_cgroup.h
->>>> +++ b/include/linux/kmem_cgroup.h
->>>> @@ -49,5 +49,34 @@ static inline struct kmem_cgroup *kcg_from_task(struct task_struct *tsk)
->>>>    	return NULL;
->>>>    }
->>>>    #endif /* CONFIG_CGROUP_KMEM */
->>>> +
->>>> +#ifdef CONFIG_INET
->>>
->>> Will it break something if you define the helpers even if CONFIG_INET
->>> is not defined?
->>> It will be much cleaner. You can reuse ifdef CONFIG_CGROUP_KMEM in this
->>> case.
->>
->> The helpers inside CONFIG_INET are needed for the network code,
->> regardless of kmem cgroup is defined or not, not the other way around.
->>
->> So I could remove CONFIG_INET, but I can't possibly move it inside
->> CONFIG_CGROUP_KMEM. So this buy us nothing.
->
-> You can define empty under CONFIG_CGROUP_KMEM's #else, can't you?
-> Like with kcg_from_cgroup()/kcg_from_task().
->
-Do you really think it is cleaner?
+On 09/06/11 21:23, Glauber Costa wrote:
+> Signed-off-by: Glauber Costa <glommer@parallels.com>
+> CC: David S. Miller <davem@davemloft.net>
+> CC: Hiroyouki Kamezawa <kamezawa.hiroyu@jp.fujitsu.com>
+> CC: Eric W. Biederman <ebiederm@xmission.com>
+> CC: Randy Dunlap <rdunlap@xenotime.net>
+> ---
+>  Documentation/cgroups/kmem_cgroups.txt |   27 +++++++++++++++++++++++++++
+>  1 files changed, 27 insertions(+), 0 deletions(-)
+>  create mode 100644 Documentation/cgroups/kmem_cgroups.txt
+> 
+> diff --git a/Documentation/cgroups/kmem_cgroups.txt b/Documentation/cgroups/kmem_cgroups.txt
+> new file mode 100644
+> index 0000000..930e069
+> --- /dev/null
+> +++ b/Documentation/cgroups/kmem_cgroups.txt
+> @@ -0,0 +1,27 @@
+> +Kernel Memory Cgroup
+> +====================
+> +
+> +This document briefly describes the kernel memory cgroup, or "kmem cgroup".
+> +Unlike user memory, kernel memory cannot be swapped. This effectively means
+> +that rogue processes can start operations that pin kernel objects permanently
+> +into memory, exhausting resources of all other processes in the system.
+> +
+> +kmem_cgroup main goal is to control the amount of memory a group of processes
 
-Why would I define empty something that is not empty at all?
-Look again. Most of those helpers would be the exact same with or 
-without CONFIG_CGROUP_KMEM . The others, very few differences. If 
-CONFIG_INET bothers you, I can remove it altogether, making it 
-unconditional. But moving it inside CONFIG_CGROUP_KMEM makes no sense.
+   kmem_cgroup's main goal
+
+> +can pin at any given point in time. Other uses of this infrastructure are
+> +expected to come up with time. Right now, the only resource effectively limited
+
+                                                      resources
+
+> +are tcp send and receive buffers.
+
+or:
+                                             the only resource effectively limited
+  is TCP network buffers.
+
+> +
+> +TCP network buffers
+> +===================
+> +
+> +TCP network buffers, both on the send and receive sides, can be controlled
+> +by the kmem cgroup. Once a socket is created, it is attached to the cgroup of
+> +the controller process, where it stays until the end of its lifetime.
+> +
+> +Files
+> +=====
+> +	kmem.tcp_maxmem: control the maximum amount in bytes that can be used by
+
+	                 controls the maximum amount of memory in bytes ...
+
+
+> +	tcp sockets inside the cgroup. 
+> +
+> +	kmem.tcp_current_memory: current amount in bytes used by all sockets in
+
+	                         current amount of memory in bytes ...
+
+> +	this cgroup
+
+
+-- 
+~Randy
+*** Remember to use Documentation/SubmitChecklist when testing your code ***
 
 --
 To unsubscribe, send a message with 'unsubscribe linux-mm' in
