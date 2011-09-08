@@ -1,21 +1,23 @@
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Re: [patch 2/2] fs, proc: Introduce the /proc/<pid>/map_files/
-	directory v6
-Date: Wed, 7 Sep 2011 15:53:32 -0700
-Message-ID: <20110907155332.beda7d3d.akpm@linux-foundation.org>
-References: <20110905192009.GJ761@sun> <20110905194908.GA2690@albatros>
-	<20110905203627.GL761@sun> <20110906101518.GA4799@albatros>
-	<20110906165144.GJ18425@mtj.dyndns.org>
-	<20110906172952.GA28055@albatros>
-	<20110906173341.GM18425@mtj.dyndns.org>
-	<20110907112301.GA12157@albatros> <20110907215329.GB28162@sun>
-	<20110907151323.613e62e7.akpm@linux-foundation.org>
-	<20110907224234.GD28162@sun>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH 1/1] freezer: fix wait_event_freezable/__thaw_task races
+Date: Thu, 8 Sep 2011 10:05:30 +0900
+Message-ID: <20110908010530.GD3987@mtj.dyndns.org>
+References: <1314988070-12244-7-git-send-email-tj@kernel.org>
+	<20110904184626.GA30101@redhat.com>
+	<20110905023315.GB9807@htj.dyndns.org>
+	<20110905162012.GA4445@redhat.com>
+	<20110906032846.GA18425@mtj.dyndns.org>
+	<20110906151836.GA15568@redhat.com>
+	<20110906152539.GA16899@redhat.com>
+	<20110906155332.GF18425@mtj.dyndns.org>
+	<20110907182156.GA13909@redhat.com>
+	<20110907182217.GB13909@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110907224234.GD28162@sun>
+Content-Disposition: inline
+In-Reply-To: <20110907182217.GB13909-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,24 +27,38 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: kernel-hardening-ZwoEplunGu1jrUoiu81ncdBPR1lH4CV8@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James Bottomley <jbottomley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Vasiliy Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, 8 Sep 2011 02:42:34 +0400
-Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+Hello,
 
-> > > +err:
-> > > +		up_read(&mm->mmap_sem);
-> > > +
-> > > +		for (i = 0; i < used && !ret; i++) {
-> > 
-> > The "&& !ret" is unneeded?
+On Wed, Sep 07, 2011 at 08:22:17PM +0200, Oleg Nesterov wrote:
+> wait_event_freezable() and wait_event_freezable_timeout() stop
+> the waiting if try_to_freeze() fails. This is not right, we can
+> race with __thaw_task() and in this case
 > 
-> No, it's needed, since it makes sure that if "impossible"
-> scenario happens and flex-arrays fails with preallocated
-> data so we will reach this point with used > 0 and ret = -ENOMEM
-> and thus will not call for proc_map_files_instantiate as needed.
+> 	- wait_event_freezable() returns the wrong ERESTARTSYS
+> 
+> 	- wait_event_freezable_timeout() can return the positive
+> 	  value while condition == F
 
-Well, it doesn't need to be tested on each pass around the loop - that's
-misleading and inefficient (unless the compiler is being particularly clever).
+Indeed, nice catch.  This one actually is pretty dangerous.  We
+probably want to make a separate fix for this and backport it to
+-stable?
+
+> Change the code to always check __retval/condition before return.
+> 
+> Note: with or without this patch the timeout logic looks strange,
+> probably we should recalc timeout if try_to_freeze() returns T.
+> 
+> Signed-off-by: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+
+Yeap, with freezable_with_signal gone, this looks correct & simpler to
+me but it would be nice if you can sprinkle some documentation while
+at it. :)
+
+Thanks.
+
+-- 
+tejun
