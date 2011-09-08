@@ -1,23 +1,24 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 1/1] freezer: fix wait_event_freezable/__thaw_task races
-Date: Thu, 8 Sep 2011 10:05:30 +0900
-Message-ID: <20110908010530.GD3987@mtj.dyndns.org>
-References: <1314988070-12244-7-git-send-email-tj@kernel.org>
-	<20110904184626.GA30101@redhat.com>
-	<20110905023315.GB9807@htj.dyndns.org>
-	<20110905162012.GA4445@redhat.com>
-	<20110906032846.GA18425@mtj.dyndns.org>
-	<20110906151836.GA15568@redhat.com>
-	<20110906152539.GA16899@redhat.com>
-	<20110906155332.GF18425@mtj.dyndns.org>
-	<20110907182156.GA13909@redhat.com>
-	<20110907182217.GB13909@redhat.com>
+From: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>
+Subject: Re: [PATCH][BUGFIX] cgroups: more safe tasklist locking in
+	cgroup_attach_proc
+Date: Wed, 7 Sep 2011 22:11:42 -0400
+Message-ID: <20110908021141.GB22545__19522.5451178432$1315447972$gmane$org@unix33.andrew.cmu.edu>
+References: <20110727171101.5e32d8eb@notabene.brown>
+	<20110727150710.GB5242@unix33.andrew.cmu.edu>
+	<20110727234235.GA2318@linux.vnet.ibm.com>
+	<20110728110813.7ff84b13@notabene.brown>
+	<20110728062616.GC15204@unix33.andrew.cmu.edu>
+	<20110728171345.67d3797d@notabene.brown>
+	<20110729142842.GA8462@unix33.andrew.cmu.edu>
+	<20110815184957.GA16588@redhat.com>
+	<20110901214643.GD10401@unix33.andrew.cmu.edu>
+	<20110902123251.GA26764@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20110907182217.GB13909-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20110902123251.GA26764-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -28,37 +29,97 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org
+Cc: Ben Blum <bblum-OM76b2Iv3yLQjUSlxSEPGw@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello,
-
-On Wed, Sep 07, 2011 at 08:22:17PM +0200, Oleg Nesterov wrote:
-> wait_event_freezable() and wait_event_freezable_timeout() stop
-> the waiting if try_to_freeze() fails. This is not right, we can
-> race with __thaw_task() and in this case
+On Fri, Sep 02, 2011 at 02:32:51PM +0200, Oleg Nesterov wrote:
+> On 09/01, Ben Blum wrote:
+> >
+> > On Mon, Aug 15, 2011 at 08:49:57PM +0200, Oleg Nesterov wrote:
+> > >
+> > > But can't we avoid the global list? thread_group_leader() or not, we do
+> > > not really care. We only need to ensure we can safely find all threads.
+> > >
+> > > How about the patch below?
+> >
+> > I was content with the tasklist_lock because cgroup_attach_proc is
+> > already a pretty heavyweight operation, and probably pretty rare that a
+> > user would want to do multiple of them at once quickly.
 > 
-> 	- wait_event_freezable() returns the wrong ERESTARTSYS
+> Perhaps. But this is the global lock, no matter what. Why do you prefer
+> to take it instead of per-process ->siglock?
+
+Basically just because I wanted to find the simplest race-free
+implementation - at that point I was just shooting to have a complete
+set of patches, and didn't judge the global lock to be bad enough to
+think about replacing. I could yet be convinced that siglock is better.
+
 > 
-> 	- wait_event_freezable_timeout() can return the positive
-> 	  value while condition == F
-
-Indeed, nice catch.  This one actually is pretty dangerous.  We
-probably want to make a separate fix for this and backport it to
--stable?
-
-> Change the code to always check __retval/condition before return.
+> > I asked Andrew
+> > to take the simple tasklist_lock patch just now, since it does fix the
+> > bug at least.
 > 
-> Note: with or without this patch the timeout logic looks strange,
-> probably we should recalc timeout if try_to_freeze() returns T.
+> I disagree.
 > 
-> Signed-off-by: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> > Anyway, looking at this, hmm. I am not sure if this protects adequately?
+> > In de_thread, the sighand lock is held only around the first half
+> > (around zap_other_threads),
+> 
+> We only need this lock to find all threads,
+> 
+> > and not around the following section where
+> > leadership is transferred (esp. around the list_replace calls).
+> > tasklist_lock is held here, though, so it seems like the right lock to
+> > hold.
+> 
+> This doesn't matter at all, I think. The code under while_each_thread()
+> doesn't need the stable ->group_leader, and it can be changed right after
+> you drop tasklist. list_replace() calls do not play with ->thread_group
+> list.
+> 
+> How can tasklist make any difference?
 
-Yeap, with freezable_with_signal gone, this looks correct & simpler to
-me but it would be nice if you can sprinkle some documentation while
-at it. :)
+Oops. I misread the list_replace calls as being on ->thread_group,
+instead of on ->tasks as they actually are. Hm, and I see __exit_signal
+takes the sighand lock around the call to __unhash_process.
 
-Thanks.
+OK, I believe it will work. Oh, and I guess the sighand lock also
+subsumes the group_leader check that you were objecting to in the other
+thread.
 
--- 
-tejun
+Sorry for the delay. Any way this change goes through, though, the
+commenting should be clear on how de_thread interacts with it. Something
+like:
+
+/* If the leader exits, its links on the thread_group list become
+ * invalid. One way this can happen is if a sub-thread does exec() when
+ * de_thread() calls release_task(leader) (and leader->sighand gets set
+ * to NULL, in which case lock_task_sighand will fail). Since in that
+ * case the threadgroup is still around, cgroup_procs_write should try
+ * again (finding the new leader), which EAGAIN indicates here. This is
+ * "double-double-toil-and-trouble-check locking". */
+
+(I rather like the phrase "double-double-..." to describe the overall
+approach, and would prefer if it stayed in the comment.)
+
+> 
+> > > With or without this/your patch this leader can die right after we
+> > > drop the lock. ss->can_attach(leader) and ss->attach(leader) look
+> > > suspicious. If a sub-thread execs, this task_struct has nothing to
+> > > do with the threadgroup.
+> >
+> > hmm. I thought I had this case covered, but it's been so long since I
+> > actually wrote the code that if I did I can't remember how.
+> 
+> This all doesn't look right... Hopefully addressed by Tejun patches.
+> 
+
+Will look into those separately.
+
+Thanks,
+Ben
+
+> 
+> Oleg.
+> 
+> 
