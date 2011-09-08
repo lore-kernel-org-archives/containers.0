@@ -1,158 +1,141 @@
-From: Greg Thelen <gthelen@google.com>
-Subject: Re: [PATCH] per-cgroup tcp buffer limitation
-Date: Thu, 8 Sep 2011 14:53:22 -0700
-Message-ID: <CAHH2K0YcXMUfd1Zr=f5a4=X9cPPp8NZiuichFXaOo=kVp5rRJA@mail.gmail.com>
-References: <1315276556-10970-1-git-send-email-glommer@parallels.com>
- <CAHH2K0aJxjinSu0Ek6jzsZ5dBmm5mEU-typuwYWYWEudF2F3Qg@mail.gmail.com>
- <4E664766.40200@parallels.com> <CAHH2K0YJA7vZZ3QNAf63TZOnWhsRUwfuZYfntBL4muZ0G_Vt2w@mail.gmail.com>
- <4E66A0A9.3060403@parallels.com> <CAHH2K0aq4s1_H-yY0kA3LhM00CCNNbJZyvyBoDD6rHC+qo_gNg@mail.gmail.com>
- <4E68484A.4000201@parallels.com>
+From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Subject: Re: [patch 2/2] fs, proc: Introduce the /proc/<pid>/map_files/
+	directory v6
+Date: Thu, 8 Sep 2011 16:52:01 -0700
+Message-ID: <20110908165201.59e82c71.akpm@linux-foundation.org>
+References: <20110906165144.GJ18425@mtj.dyndns.org>
+	<20110906172952.GA28055@albatros>
+	<20110906173341.GM18425@mtj.dyndns.org>
+	<20110907112301.GA12157@albatros> <20110907215329.GB28162@sun>
+	<20110907151323.613e62e7.akpm@linux-foundation.org>
+	<20110907224234.GD28162@sun>
+	<20110907155332.beda7d3d.akpm@linux-foundation.org>
+	<20110908054826.GF28162@sun> <20110908055025.GG28162@sun>
+	<20110908060405.GH28162@sun>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <4E68484A.4000201@parallels.com>
-Sender: owner-linux-mm@kvack.org
-To: Glauber Costa <glommer@parallels.com>
-Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, netdev@vger.kernel.org, xemul@parallels.com, "David S. Miller" <davem@davemloft.net>, Hiroyouki Kamezawa <kamezawa.hiroyu@jp.fujitsu.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Suleiman Souhlal <suleiman@google.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20110908060405.GH28162@sun>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: kernel-hardening-ZwoEplunGu1jrUoiu81ncdBPR1lH4CV8@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James Bottomley <jbottomley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Vasiliy Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Sep 7, 2011 at 9:44 PM, Glauber Costa <glommer@parallels.com> wrote=
-:
+On Thu, 8 Sep 2011 10:04:05 +0400
+Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
 
-Thanks for your ideas and patience.
+> fs, proc: Introduce the /proc/<pid>/map_files/ directory v11
 
-> Well, it is a way to see this. The other way to see this, is that you're
-> proposing to move to the kernel, something that really belongs in userspa=
-ce.
-> That's because:
+Ho hum, I've pretty much run out of excuses to avoid merging this.
+
+except...
+
+We don't really want to bloat fs/proc/base.o by 4k until all the other
+things which support c/r are mergeable and we know that the whole
+project is actually useful.  When will we be at this stage?
+
+<looks at the warning>
+
+fs/proc/base.c: In function 'proc_map_files_instantiate':
+fs/proc/base.c:2348: warning: assignment from incompatible pointer type
+
+err, that code will crash at runtime and it isn't trivial to fix. 
+How could this happen?
+
 >
-> With the information you provided me, I have no reason to believe that th=
-e
-> kernel has more condition to do this work. Do the kernel have access to a=
-ny
-> information that userspace do not, and can't be exported? If not, userspa=
-ce
-> is traditionally where this sort of stuff has been done.
-
-I think direct reclaim is a pain if user space is required to participate i=
-n
-memory balancing decisions.  One thing a single memory limit solution has i=
-s the
-ability to reclaim user memory to satisfy growing kernel memory needs (and =
-vise
-versa).  If a container must fit within 100M, then a single limit solution
-would set the limit to 100M and never change it.  In a split limit solution=
- a
-user daemon (e.g. uswapd) would need to monitor the usage and the amount of
-active memory vs inactive user memory and unreferenced kernel memory to
-determine where to apply pressure.  With some more knobs such a uswapd coul=
-d
-attempt to keep ahead of demand.  But eventually direct reclaim would
-be needed to satisfy rapid growth spikes.  Example: If the 100M container
-starts with limits of 20M kmem and 80M user memory but later its kernel
-memory needs grow to 70M.  With separate user and kernel memory
-limits the kernel memory allocation could fail despite there being
-reclaimable user pages available.  The job should have a way to
-transition to memory limits to 70M+ kernel and 30M- of user.
-
-I suppose a GFP_WAIT slab kernel page allocation could wakeup user space to
-perform user-assisted direct reclaim.  User space would then lower the user
-limit thereby causing the kernel to direct reclaim user pages, then
-the user daemon would raise the kernel limit allowing the slab allocation t=
-o
-succeed.  My hunch is that this would be prone to deadlocks (what prevents
-uswapd from needing more even more kmem?)  I'll defer to more
-experienced minds to know if user assisted direct memory reclaim has
-other pitfalls.  It scares me.
-
-Fundamentally I have no problem putting an upper bound on a cgroup's resour=
-ce
-usage.  This serves to contain the damage a job can do to the system and ot=
-her
-jobs.  My concern is about limiting the kernel's ability to trade one type =
-of
-memory for another by using different cgroups for different types of memory=
-.
-
-If kmem expands to include reclaimable kernel memory (e.g. dentry) then I
-presume the kernel would have no way to exchange unused user pages for dent=
-ry
-pages even if the user memory in the container is well below its limit.  Th=
-is is
-motivation for the above user assisted direct reclaim.
-
-Do you feel the need to segregate user and kernel memory into different cgr=
-oups
-with independent limits?  Or is this this just a way to create a new clean
-cgroup with a simple purpose?
-
-In some resource sharing shops customers purchase a certain amount of memor=
-y,
-cpu, network, etc.  Such customers don't define how the memory is used and =
-the
-user/kernel mixture may change over time.  Can a user space reclaim daemon =
-stay
-ahead of the workloads needs?
-
-> Using userspace CPU is no different from using kernel cpu in this particu=
-lar
-> case. It is all overhead, regardless where it comes from. Moreover, you e=
-nd
-> up setting up a policy, instead of a mechanism. What should be this
-> proportion? =A0Do we reclaim everything with the same frequency? Should w=
-e be
-> more tolerant with a specific container?
-
-I assume that this implies that a generic kmem cgroup usage is inferior to
-separate limits for each kernel memory type to allow user space the flexibi=
-lity
-to choose between kernel types (udp vs tcp vs ext4 vs page_tables vs ...)? =
- Do
-you foresee a way to provide a limit on the total amount of kmem usage by a=
-ll
-such types?  If a container wants to dedicate 4M for all network protocol
-buffers (tcp, udp, etc.) would that require a user space daemon to balance
-memory limits b/w the protocols?
-
-> Also, If you want to allow any flexibility in this scheme, like: "Should
-> this network container be able to stress the network more, pinning more
-> memory, but not other subsystems?", you end up having to touch all
-> individual files anyway - probably with a userspace daemon.
+> ...
 >
-> Also, as you noticed yourself, kernel memory is fundamentally different f=
-rom
-> userspace memory. You can't just set reclaim limits, since you have no
-> guarantees it will work. User memory is not a scarce resource.
-> Kernel memory is.
-
-I agree that kernel memory is somewhat different.  In some (I argue most)
-situations containers want the ability to exchange job kmem and job umem.
-Either split or combined accounting protects the system and isolates other
-containers from kmem allocations of a bad job.  To me it seems natural to
-indicate that job X gets Y MB of memory.  I have more trouble dividing the
-Y MB of memory into dedicated slices for different types of memory.
-
->> While there are people (like me) who want a combined memory usage
->> limit there are also people (like you) who want separate user and
->> kernel limiting.
+> +				if (fa)
+> +					flex_array_free(fa);
 >
-> Combined excludes separate. Separate does not exclude combined.
+> ...
+>
+> +		if (fa)
+> +			flex_array_free(fa);
 
-I agree.  I have no problem with separate accounting and separate
-user-accessible pressure knobs to allow for complex policies.  My concern i=
-s
-about limiting the kernel's ability to reclaim one type of memory to
-fulfill the needs of another memory type (e.g. I think reclaiming clean fil=
-e
-pages should be possible to make room for user slab needs).  I think
-memcg aware slab accounting does a good job of limiting a job's
-memory allocations.
-Would such slab accounting meet your needs?
+I think I'll do this:
 
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+
+Lots of callers are avoiding passing NULL into flex_array_free().  Move
+the check into flex_array_free() in the usual fashion.
+
+Cc: Stephen Smalley <sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>
+Cc: James Morris <jmorris-gx6/JNMH7DfYtjvyW6yDsg@public.gmane.org>
+Cc: Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Signed-off-by: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+---
+
+ fs/proc/base.c                 |    6 ++----
+ lib/flex_array.c               |    2 ++
+ security/selinux/ss/policydb.c |    9 +++------
+ 3 files changed, 7 insertions(+), 10 deletions(-)
+
+diff -puN lib/flex_array.c~lib-flex_arrayc-accept-null-arg-to-flex_array_free lib/flex_array.c
+--- a/lib/flex_array.c~lib-flex_arrayc-accept-null-arg-to-flex_array_free
++++ a/lib/flex_array.c
+@@ -142,6 +142,8 @@ EXPORT_SYMBOL(flex_array_free_parts);
+ 
+ void flex_array_free(struct flex_array *fa)
+ {
++	if (!fa)
++		return;
+ 	flex_array_free_parts(fa);
+ 	kfree(fa);
+ }
+diff -puN fs/proc/base.c~lib-flex_arrayc-accept-null-arg-to-flex_array_free fs/proc/base.c
+--- a/fs/proc/base.c~lib-flex_arrayc-accept-null-arg-to-flex_array_free
++++ a/fs/proc/base.c
+@@ -2514,8 +2514,7 @@ static int proc_map_files_readdir(struct
+ 			fa = flex_array_alloc(sizeof(info), nr_files, GFP_KERNEL);
+ 			if (!fa || flex_array_prealloc(fa, 0, nr_files, GFP_KERNEL)) {
+ 				ret = -ENOMEM;
+-				if (fa)
+-					flex_array_free(fa);
++				flex_array_free(fa);
+ 				up_read(&mm->mmap_sem);
+ 				mmput(mm);
+ 				goto out;
+@@ -2556,8 +2555,7 @@ static int proc_map_files_readdir(struct
+ 			p = flex_array_get(fa, i);
+ 			fput(p->file);
+ 		}
+-		if (fa)
+-			flex_array_free(fa);
++		flex_array_free(fa);
+ 		mmput(mm);
+ 	}
+ 	}
+diff -puN security/selinux/ss/policydb.c~lib-flex_arrayc-accept-null-arg-to-flex_array_free security/selinux/ss/policydb.c
+--- a/security/selinux/ss/policydb.c~lib-flex_arrayc-accept-null-arg-to-flex_array_free
++++ a/security/selinux/ss/policydb.c
+@@ -769,16 +769,13 @@ void policydb_destroy(struct policydb *p
+ 		hashtab_destroy(p->symtab[i].table);
+ 	}
+ 
+-	for (i = 0; i < SYM_NUM; i++) {
+-		if (p->sym_val_to_name[i])
+-			flex_array_free(p->sym_val_to_name[i]);
+-	}
++	for (i = 0; i < SYM_NUM; i++)
++		flex_array_free(p->sym_val_to_name[i]);
+ 
+ 	kfree(p->class_val_to_struct);
+ 	kfree(p->role_val_to_struct);
+ 	kfree(p->user_val_to_struct);
+-	if (p->type_val_to_struct_array)
+-		flex_array_free(p->type_val_to_struct_array);
++	flex_array_free(p->type_val_to_struct_array);
+ 
+ 	avtab_destroy(&p->te_avtab);
+ 
+_
