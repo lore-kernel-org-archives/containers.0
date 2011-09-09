@@ -1,13 +1,16 @@
-From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: Alex Bligh <alex-rWA27mgs/Jz10XsdtD+oqA@public.gmane.org>
 Subject: Re: Repeatable OOPS with containers and netfilter
-Date: Fri, 9 Sep 2011 19:16:41 +0300
-Message-ID: <CACVxJT8rK9941N0MYOC8RQFSEXpPHL5XoTLJC2JU8269jkEbMQ@mail.gmail.com>
+Date: Fri, 09 Sep 2011 17:39:21 +0100
+Message-ID: <741FE3C10A343399D6F2A8BB@nimrod.local>
 References: <72F3F43BCA987119E04694FA@nimrod.local>
+	<CACVxJT8rK9941N0MYOC8RQFSEXpPHL5XoTLJC2JU8269jkEbMQ@mail.gmail.com>
+Reply-To: Alex Bligh <alex-rWA27mgs/Jz10XsdtD+oqA@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <72F3F43BCA987119E04694FA-PdXK6nMiYlGE+EvaaNYduQ@public.gmane.org>
+In-Reply-To: <CACVxJT8rK9941N0MYOC8RQFSEXpPHL5XoTLJC2JU8269jkEbMQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,44 +20,47 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alex Bligh <alex-rWA27mgs/Jz10XsdtD+oqA@public.gmane.org>
+To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-net->nfnl =3D NULL
-
-On Fri, Sep 9, 2011 at 6:33 PM, Alex Bligh <alex-rWA27mgs/Jz10XsdtD+oqA@public.gmane.org> wrote:
-> We are seeing a repeatable kernel oops (quite a deadly one) when destroyi=
-ng
-> containers which are or have been passing forwarded IPv4 traffic and have
-> (or have had) a netfilter conntrack rule installed.
->
-> To repeat, you need to have
-> a) a container
-> b) which is forwarding IPv4 traffic from one interface in the container to
-> =A0another (2 veth interfaces in this case) - one ping packet per second
-> =A0will do
-> c) iptables with an IP conntrack rule.
-> d) delete the container (it doesn't matter if you delete the iptables
-> =A0rule first and sleep for a couple of seconds).
->
-> An OOPS like the one below results.
->
-> This one is from Ubuntu kernel
-> 3.0.0-10-server #16-Ubuntu SMP Fri Sep 2 18:51:05 UTC 2011 x86_64 GNU/Lin=
-ux
-
-> RIP: 0010:[<ffffffff81511959>] =A0[<ffffffff81511959>] netlink_has_listen=
-ers+0x9/0x50
-> [<ffffffffa048f145>] nfnetlink_has_listeners+0x15/0x20 [nfnetlink]
-> [<ffffffffa049943b>] ctnetlink_conntrack_event+0x5cb/0x890 [nf_conntrack_=
-netlink]
-> [<ffffffff814e34d0>] ? net_drop_ns+0x50/0x50
-> [<ffffffffa04062d8>] death_by_timeout+0xc8/0x1c0 [nf_conntrack]
-> [<ffffffffa0405270>] ? nf_conntrack_attach+0x50/0x50 [nf_conntrack]
-> [<ffffffffa0406448>] nf_ct_iterate_cleanup+0x78/0x90 [nf_conntrack]
-> [<ffffffffa0406491>] nf_conntrack_cleanup_net+0x31/0x100 [nf_conntrack]
-> [<ffffffffa0407f97>] nf_conntrack_cleanup+0x27/0x60 [nf_conntrack]
-> [<ffffffffa04081f0>] nf_conntrack_net_exit+0x60/0x80 [nf_conntrack]
-> [<ffffffff814e2d28>] ops_exit_list.isra.1+0x38/0x60
-> [<ffffffff814e35e2>] cleanup_net+0x112/0x1b0
+QWxleGV5LAoKLS1PbiA5IFNlcHRlbWJlciAyMDExIDE5OjE2OjQxICswMzAwIEFsZXhleSBEb2Jy
+aXlhbiA8YWRvYnJpeWFuQGdtYWlsLmNvbT4gCndyb3RlOgoKPiBuZXQtPm5mbmwgPSBOVUxMCgpJ
+cyB0aGlzIGFzIHNpbXBsZSBhcyBpbiBjdG5ldGxpbmtfY29ubnRyYWNrX2V2ZW50LAoKICAgICAg
+ICBuZXQgPSBuZl9jdF9uZXQoY3QpOwogICAgICAgIGlmICghaXRlbS0+cmVwb3J0ICYmICFuZm5l
+dGxpbmtfaGFzX2xpc3RlbmVycyhuZXQsIGdyb3VwKSkKICAgICAgICAgICAgICAgIHJldHVybiAw
+OwoKdGhlIGlmIHNob3VsZCBhbHNvIGNoZWNrIG5ldC0+bmZubCBpcyBub24tTlVMTD8KCk9yIGRv
+ZXMgaXQgaW5kaWNhdGUgc29tZXRoaW5nIHdpZGVyIHdyb25nPwoKQWxleAoKPiBPbiBGcmksIFNl
+cCA5LCAyMDExIGF0IDY6MzMgUE0sIEFsZXggQmxpZ2ggPGFsZXhAYWxleC5vcmcudWs+IHdyb3Rl
+Ogo+PiBXZSBhcmUgc2VlaW5nIGEgcmVwZWF0YWJsZSBrZXJuZWwgb29wcyAocXVpdGUgYSBkZWFk
+bHkgb25lKSB3aGVuCj4+IGRlc3Ryb3lpbmcgY29udGFpbmVycyB3aGljaCBhcmUgb3IgaGF2ZSBi
+ZWVuIHBhc3NpbmcgZm9yd2FyZGVkIElQdjQKPj4gdHJhZmZpYyBhbmQgaGF2ZSAob3IgaGF2ZSBo
+YWQpIGEgbmV0ZmlsdGVyIGNvbm50cmFjayBydWxlIGluc3RhbGxlZC4KPj4KPj4gVG8gcmVwZWF0
+LCB5b3UgbmVlZCB0byBoYXZlCj4+IGEpIGEgY29udGFpbmVyCj4+IGIpIHdoaWNoIGlzIGZvcndh
+cmRpbmcgSVB2NCB0cmFmZmljIGZyb20gb25lIGludGVyZmFjZSBpbiB0aGUgY29udGFpbmVyCj4+
+IHRvIMKgYW5vdGhlciAoMiB2ZXRoIGludGVyZmFjZXMgaW4gdGhpcyBjYXNlKSAtIG9uZSBwaW5n
+IHBhY2tldCBwZXIKPj4gc2Vjb25kIMKgd2lsbCBkbwo+PiBjKSBpcHRhYmxlcyB3aXRoIGFuIElQ
+IGNvbm50cmFjayBydWxlLgo+PiBkKSBkZWxldGUgdGhlIGNvbnRhaW5lciAoaXQgZG9lc24ndCBt
+YXR0ZXIgaWYgeW91IGRlbGV0ZSB0aGUgaXB0YWJsZXMKPj4gwqBydWxlIGZpcnN0IGFuZCBzbGVl
+cCBmb3IgYSBjb3VwbGUgb2Ygc2Vjb25kcykuCj4+Cj4+IEFuIE9PUFMgbGlrZSB0aGUgb25lIGJl
+bG93IHJlc3VsdHMuCj4+Cj4+IFRoaXMgb25lIGlzIGZyb20gVWJ1bnR1IGtlcm5lbAo+PiAzLjAu
+MC0xMC1zZXJ2ZXIgIzE2LVVidW50dSBTTVAgRnJpIFNlcCAyIDE4OjUxOjA1IFVUQyAyMDExIHg4
+Nl82NAo+PiBHTlUvTGludXgKPgo+PiBSSVA6IDAwMTA6WzxmZmZmZmZmZjgxNTExOTU5Pl0gwqBb
+PGZmZmZmZmZmODE1MTE5NTk+XQo+PiBuZXRsaW5rX2hhc19saXN0ZW5lcnMrMHg5LzB4NTAgWzxm
+ZmZmZmZmZmEwNDhmMTQ1Pl0KPj4gbmZuZXRsaW5rX2hhc19saXN0ZW5lcnMrMHgxNS8weDIwIFtu
+Zm5ldGxpbmtdIFs8ZmZmZmZmZmZhMDQ5OTQzYj5dCj4+IGN0bmV0bGlua19jb25udHJhY2tfZXZl
+bnQrMHg1Y2IvMHg4OTAgW25mX2Nvbm50cmFja19uZXRsaW5rXQo+PiBbPGZmZmZmZmZmODE0ZTM0
+ZDA+XSA/IG5ldF9kcm9wX25zKzB4NTAvMHg1MAo+PiBbPGZmZmZmZmZmYTA0MDYyZDg+XSBkZWF0
+aF9ieV90aW1lb3V0KzB4YzgvMHgxYzAgW25mX2Nvbm50cmFja10KPj4gWzxmZmZmZmZmZmEwNDA1
+MjcwPl0gPyBuZl9jb25udHJhY2tfYXR0YWNoKzB4NTAvMHg1MCBbbmZfY29ubnRyYWNrXQo+PiBb
+PGZmZmZmZmZmYTA0MDY0NDg+XSBuZl9jdF9pdGVyYXRlX2NsZWFudXArMHg3OC8weDkwIFtuZl9j
+b25udHJhY2tdCj4+IFs8ZmZmZmZmZmZhMDQwNjQ5MT5dIG5mX2Nvbm50cmFja19jbGVhbnVwX25l
+dCsweDMxLzB4MTAwIFtuZl9jb25udHJhY2tdCj4+IFs8ZmZmZmZmZmZhMDQwN2Y5Nz5dIG5mX2Nv
+bm50cmFja19jbGVhbnVwKzB4MjcvMHg2MCBbbmZfY29ubnRyYWNrXQo+PiBbPGZmZmZmZmZmYTA0
+MDgxZjA+XSBuZl9jb25udHJhY2tfbmV0X2V4aXQrMHg2MC8weDgwIFtuZl9jb25udHJhY2tdCj4+
+IFs8ZmZmZmZmZmY4MTRlMmQyOD5dIG9wc19leGl0X2xpc3QuaXNyYS4xKzB4MzgvMHg2MAo+PiBb
+PGZmZmZmZmZmODE0ZTM1ZTI+XSBjbGVhbnVwX25ldCsweDExMi8weDFiMAo+Cj4KCgoKLS0gCkFs
+ZXggQmxpZ2gKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18K
+Q29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9u
+Lm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8v
+Y29udGFpbmVycw==
