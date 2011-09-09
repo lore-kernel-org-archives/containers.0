@@ -1,43 +1,72 @@
-From: Glauber Costa <glommer@parallels.com>
-Subject: Re: [PATCH v2 6/9] per-cgroup tcp buffers control
-Date: Fri, 9 Sep 2011 09:01:32 -0300
-Message-ID: <4E6A001C.2040600@parallels.com>
-References: <1315369399-3073-1-git-send-email-glommer@parallels.com> <1315369399-3073-7-git-send-email-glommer@parallels.com> <20110909121206.e1d628d1.kamezawa.hiroyu@jp.fujitsu.com>
+From: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Subject: Re: [PATCH 01/15] add Documentation/namespaces/user_namespace.txt (v3)
+Date: Fri, 9 Sep 2011 08:10:45 -0500
+Message-ID: <20110909131045.GB3476__33872.2695749768$1315573965$gmane$org@sergelap>
+References: <1314993400-6910-1-git-send-email-serge@hallyn.com>
+	<1314993400-6910-4-git-send-email-serge@hallyn.com>
+	<20110907155024.42e3fe27.akpm@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <20110909121206.e1d628d1.kamezawa.hiroyu@jp.fujitsu.com>
-Sender: owner-linux-mm@kvack.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, netdev@vger.kernel.org, xemul@parallels.com, "David S. Miller" <davem@davemloft.net>, "Eric W. Biederman" <ebiederm@xmission.com>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20110907155024.42e3fe27.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, rdunlap-/UHa2rfvQTnk1uMJSBkQmQ@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 09/09/2011 12:12 AM, KAMEZAWA Hiroyuki wrote:
-> On Wed,  7 Sep 2011 01:23:16 -0300
-> Glauber Costa<glommer@parallels.com>  wrote:
->
->> With all the infrastructure in place, this patch implements
->> per-cgroup control for tcp memory pressure handling.
->>
->> Signed-off-by: Glauber Costa<glommer@parallels.com>
->> CC: David S. Miller<davem@davemloft.net>
->> CC: Hiroyouki Kamezawa<kamezawa.hiroyu@jp.fujitsu.com>
->> CC: Eric W. Biederman<ebiederm@xmission.com>
->
-> Hmm, then, kmem_cgroup.c is just a caller of plugins implemented
-> by other components ?
+Quoting Andrew Morton (akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org):
+> On Fri,  2 Sep 2011 19:56:26 +0000
+> Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
+> 
+> > +Note that this userid mapping for the VFS is not yet implemented, though the
+> > +lkml and containers mailing list archives will show several previous
+> > +prototypes.  In the end, those got hung up waiting on the concept of targeted
+> > +capabilities to be developed, which, thanks to the insight of Eric Biederman,
+> > +they finally did.
+> 
+> not-yet-implemented things worry me.  When can we expect this to
+> happen, and how big and ugly will it be?
 
-Kame,
+Hi Andrew,
 
-Refer to my discussion with Greg. How would you feel about it being 
-accounted to a single "kernel memory" limit in memcg?
+We did a proof of concept of the simplest version of this in early August
+(see git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/linux-userns-devel.git)
+which actually was very un-scary.  So technically we could push it at the
+same time as this set, but I thought that might just be too much for
+review in one cycle.  That set (Eric's) is the very simplest approach
+which tags an entire filesystem with a user namespace.
 
-Thanks!
+We would also want to pursue the more baroque approach, where filesystems
+themselves are user-namespace aware.  I did an approach like that in
+2008, see
+https://lists.linux-foundation.org/pipermail/containers/2008-August/012679.html
+It again is very do-able without being ugly, but, importantly, user
+namespaces are usable for containers without that.  For starters, we only
+need /proc and /sys to be user namespace aware (since they must allow
+access from multiple namespaces), and that is simple as they are not
+persistent.
 
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+So I believe that this is the last scary patchset, and that user
+namespaces could actually be usable by the end of the year!
+
+> I'm not seeing many (any) reviewed-by's on these patches.  I could get
+> down and stare at them myself, but that wouldn't be very useful.  This
+> work goes pretty deep and is quite security-affecting.  And network-afecting.
+> Can you round up some suitable people and get the reviewing and testing happening
+> please?
+
+Will try.  Unfortunately I missed my chance to beg and bribe people in
+person at plumbers :(
+
+thanks,
+-serge
