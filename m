@@ -1,141 +1,103 @@
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Re: [patch 2/2] fs, proc: Introduce the /proc/<pid>/map_files/
-	directory v6
-Date: Thu, 8 Sep 2011 16:52:01 -0700
-Message-ID: <20110908165201.59e82c71.akpm@linux-foundation.org>
-References: <20110906165144.GJ18425@mtj.dyndns.org>
-	<20110906172952.GA28055@albatros>
-	<20110906173341.GM18425@mtj.dyndns.org>
-	<20110907112301.GA12157@albatros> <20110907215329.GB28162@sun>
-	<20110907151323.613e62e7.akpm@linux-foundation.org>
-	<20110907224234.GD28162@sun>
-	<20110907155332.beda7d3d.akpm@linux-foundation.org>
-	<20110908054826.GF28162@sun> <20110908055025.GG28162@sun>
-	<20110908060405.GH28162@sun>
+From: Rick Jones <rick.jones2@hp.com>
+Subject: Re: [PATCH] per-cgroup tcp buffer limitation
+Date: Thu, 08 Sep 2011 17:18:05 -0700
+Message-ID: <4E695B3D.7060804@hp.com>
+References: <1315276556-10970-1-git-send-email-glommer@parallels.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20110908060405.GH28162@sun>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: kernel-hardening-ZwoEplunGu1jrUoiu81ncdBPR1lH4CV8@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James Bottomley <jbottomley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Vasiliy Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <1315276556-10970-1-git-send-email-glommer@parallels.com>
+Sender: owner-linux-mm@kvack.org
+To: Glauber Costa <glommer@parallels.com>
+Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, netdev@vger.kernel.org, xemul@parallels.com, "David S. Miller" <davem@davemloft.net>, Hiroyouki Kamezawa <kamezawa.hiroyu@jp.fujitsu.com>, "Eric W. Biederman" <ebiederm@xmission.com>
 List-Id: containers.vger.kernel.org
 
-On Thu, 8 Sep 2011 10:04:05 +0400
-Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
-
-> fs, proc: Introduce the /proc/<pid>/map_files/ directory v11
-
-Ho hum, I've pretty much run out of excuses to avoid merging this.
-
-except...
-
-We don't really want to bloat fs/proc/base.o by 4k until all the other
-things which support c/r are mergeable and we know that the whole
-project is actually useful.  When will we be at this stage?
-
-<looks at the warning>
-
-fs/proc/base.c: In function 'proc_map_files_instantiate':
-fs/proc/base.c:2348: warning: assignment from incompatible pointer type
-
-err, that code will crash at runtime and it isn't trivial to fix. 
-How could this happen?
-
+On 09/05/2011 07:35 PM, Glauber Costa wrote:
+> To test for any performance impacts of this patch, I used netperf's
+> TCP_RR benchmark on localhost, so we can have both recv and snd in action.
 >
-> ...
+> Command line used was ./src/netperf -t TCP_RR -H localhost, and the
+> results:
 >
-> +				if (fa)
-> +					flex_array_free(fa);
+> Without the patch
+> =================
 >
-> ...
+> Socket Size   Request  Resp.   Elapsed  Trans.
+> Send   Recv   Size     Size    Time     Rate
+> bytes  Bytes  bytes    bytes   secs.    per sec
 >
-> +		if (fa)
-> +			flex_array_free(fa);
+> 16384  87380  1        1       10.00    26996.35
+> 16384  87380
+>
+> With the patch
+> ===============
+>
+> Local /Remote
+> Socket Size   Request  Resp.   Elapsed  Trans.
+> Send   Recv   Size     Size    Time     Rate
+> bytes  Bytes  bytes    bytes   secs.    per sec
+>
+> 16384  87380  1        1       10.00    27291.86
+> 16384  87380
 
-I think I'll do this:
+Comment about netperf TCP_RR - it can often have > 1% variability, so it 
+would be a Good Idea (tm) to either run it multiple times in a row, or 
+rely on the confidence intervals functionality.  Here, for example, is 
+an invoking of netperf using confidence intervals and the recently 
+added, related output selectors.  The options request that netperf be 
+99% confident that the width of the confidence interval is 1%, and it 
+should run at least 3 but no more than 30 (those are both the high and 
+low limits respectively) iterations of the test.
 
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 
-Lots of callers are avoiding passing NULL into flex_array_free().  Move
-the check into flex_array_free() in the usual fashion.
+raj@tardy:~/netperf2_trunk$ src/netperf -t TCP_RR -i 30,3 -I 99,1 -- -k 
+throughput,confidence_level,confidence_interval,confidence_iteration,throughput_confid
+MIGRATED TCP REQUEST/RESPONSE TEST from 0.0.0.0 (0.0.0.0) port 0 AF_INET 
+to localhost.localdomain (127.0.0.1) port 0 AF_INET : +/-0.500% @ 99% 
+conf.  : histogram : first burst 0
+THROUGHPUT=55555.94
+CONFIDENCE_LEVEL=99
+CONFIDENCE_INTERVAL=1.000000
+CONFIDENCE_ITERATION=26
+THROUGHPUT_CONFID=0.984
 
-Cc: Stephen Smalley <sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>
-Cc: James Morris <jmorris-gx6/JNMH7DfYtjvyW6yDsg@public.gmane.org>
-Cc: Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Signed-off-by: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
----
+it took 26 iterations for netperf to be 99% confident the interval width 
+was < 1% .  Here is a "several times in a row" for the sake of completeness:
 
- fs/proc/base.c                 |    6 ++----
- lib/flex_array.c               |    2 ++
- security/selinux/ss/policydb.c |    9 +++------
- 3 files changed, 7 insertions(+), 10 deletions(-)
+raj@tardy:~/netperf2_trunk$ HDR="-P 1";for i in `seq 1 10`; do netperf 
+-t TCP_RR $HDR -B "iteration $i" -- -o result_brand,throughput; HDR="-P 
+0"; done
+MIGRATED TCP REQUEST/RESPONSE TEST from 0.0.0.0 (0.0.0.0) port 0 AF_INET 
+to localhost.localdomain (127.0.0.1) port 0 AF_INET : first burst 0
+Result Tag,Throughput
+"iteration 1",55768.37
+"iteration 2",55949.97
+"iteration 3",55653.36
+"iteration 4",55994.65
+"iteration 5",54712.42
+"iteration 6",55285.27
+"iteration 7",55638.65
+"iteration 8",55135.56
+"iteration 9",56275.87
+"iteration 10",55607.66
 
-diff -puN lib/flex_array.c~lib-flex_arrayc-accept-null-arg-to-flex_array_free lib/flex_array.c
---- a/lib/flex_array.c~lib-flex_arrayc-accept-null-arg-to-flex_array_free
-+++ a/lib/flex_array.c
-@@ -142,6 +142,8 @@ EXPORT_SYMBOL(flex_array_free_parts);
- 
- void flex_array_free(struct flex_array *fa)
- {
-+	if (!fa)
-+		return;
- 	flex_array_free_parts(fa);
- 	kfree(fa);
- }
-diff -puN fs/proc/base.c~lib-flex_arrayc-accept-null-arg-to-flex_array_free fs/proc/base.c
---- a/fs/proc/base.c~lib-flex_arrayc-accept-null-arg-to-flex_array_free
-+++ a/fs/proc/base.c
-@@ -2514,8 +2514,7 @@ static int proc_map_files_readdir(struct
- 			fa = flex_array_alloc(sizeof(info), nr_files, GFP_KERNEL);
- 			if (!fa || flex_array_prealloc(fa, 0, nr_files, GFP_KERNEL)) {
- 				ret = -ENOMEM;
--				if (fa)
--					flex_array_free(fa);
-+				flex_array_free(fa);
- 				up_read(&mm->mmap_sem);
- 				mmput(mm);
- 				goto out;
-@@ -2556,8 +2555,7 @@ static int proc_map_files_readdir(struct
- 			p = flex_array_get(fa, i);
- 			fput(p->file);
- 		}
--		if (fa)
--			flex_array_free(fa);
-+		flex_array_free(fa);
- 		mmput(mm);
- 	}
- 	}
-diff -puN security/selinux/ss/policydb.c~lib-flex_arrayc-accept-null-arg-to-flex_array_free security/selinux/ss/policydb.c
---- a/security/selinux/ss/policydb.c~lib-flex_arrayc-accept-null-arg-to-flex_array_free
-+++ a/security/selinux/ss/policydb.c
-@@ -769,16 +769,13 @@ void policydb_destroy(struct policydb *p
- 		hashtab_destroy(p->symtab[i].table);
- 	}
- 
--	for (i = 0; i < SYM_NUM; i++) {
--		if (p->sym_val_to_name[i])
--			flex_array_free(p->sym_val_to_name[i]);
--	}
-+	for (i = 0; i < SYM_NUM; i++)
-+		flex_array_free(p->sym_val_to_name[i]);
- 
- 	kfree(p->class_val_to_struct);
- 	kfree(p->role_val_to_struct);
- 	kfree(p->user_val_to_struct);
--	if (p->type_val_to_struct_array)
--		flex_array_free(p->type_val_to_struct_array);
-+	flex_array_free(p->type_val_to_struct_array);
- 
- 	avtab_destroy(&p->te_avtab);
- 
-_
+That way one can have greater confidence that one isn't accidentally 
+comparing the trough of one configuration with the peak of another.
+
+happy benchmarking,
+
+rick jones
+
+PS - while it may not really matter for loopback testing, where 
+presumably 99 times out of 10 a single core will run at saturation, when 
+running TCP_RR over a "real" network, including CPU utilization to get 
+the differences in service demand is another Good Idea (tm) - 
+particularly in the face of interrupt coalescing.
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
