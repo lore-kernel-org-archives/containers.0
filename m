@@ -1,380 +1,250 @@
-From: Alex Bligh <alex@alex.org.uk>
-Subject: Re: Repeatable OOPS with containers and netfilter
-Date: Fri, 09 Sep 2011 19:30:04 +0100
-Message-ID: <0FA4A38E757D595D3B04B8EE@nimrod.local>
-References: <72F3F43BCA987119E04694FA@nimrod.local>
-Reply-To: Alex Bligh <alex@alex.org.uk>
+From: Greg Thelen <gthelen@google.com>
+Subject: Re: [PATCH] per-cgroup tcp buffer limitation
+Date: Fri, 9 Sep 2011 16:38:26 -0700
+Message-ID: <CAHH2K0YbmE_tt-LQSB=4L0oYc+CwNAjMQr0YViPn9=M-epST7A@mail.gmail.com>
+References: <1315276556-10970-1-git-send-email-glommer@parallels.com>
+ <CAHH2K0aJxjinSu0Ek6jzsZ5dBmm5mEU-typuwYWYWEudF2F3Qg@mail.gmail.com>
+ <4E664766.40200@parallels.com> <CAHH2K0YJA7vZZ3QNAf63TZOnWhsRUwfuZYfntBL4muZ0G_Vt2w@mail.gmail.com>
+ <4E66A0A9.3060403@parallels.com> <CAHH2K0aq4s1_H-yY0kA3LhM00CCNNbJZyvyBoDD6rHC+qo_gNg@mail.gmail.com>
+ <4E68484A.4000201@parallels.com> <CAHH2K0YcXMUfd1Zr=f5a4=X9cPPp8NZiuichFXaOo=kVp5rRJA@mail.gmail.com>
+ <4E699341.9010606@parallels.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; format=flowed
-Content-Transfer-Encoding: 7bit
-Return-path: <netfilter-devel-owner@vger.kernel.org>
-In-Reply-To: <72F3F43BCA987119E04694FA@nimrod.local>
-Content-Disposition: inline
-Sender: netfilter-devel-owner@vger.kernel.org
-To: linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, Mail List - Netfilter <netfilter@vger.kernel.org>, netfilter-devel@vger.kern
-Cc: Alex Bligh <alex@alex.org.uk>
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <4E699341.9010606@parallels.com>
+Sender: owner-linux-mm@kvack.org
+To: Glauber Costa <glommer@parallels.com>
+Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, netdev@vger.kernel.org, xemul@parallels.com, "David S. Miller" <davem@davemloft.net>, Hiroyouki Kamezawa <kamezawa.hiroyu@jp.fujitsu.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Suleiman Souhlal <suleiman@google.com>
 List-Id: containers.vger.kernel.org
 
-
-
---On 9 September 2011 16:33:01 +0100 Alex Bligh <alex@alex.org.uk> wrote:
-
-> We are seeing a repeatable kernel oops (quite a deadly one) when
-> destroying
-> containers which are or have been passing forwarded IPv4 traffic and have
-> (or have had) a netfilter conntrack rule installed.
+On Thu, Sep 8, 2011 at 9:17 PM, Glauber Costa <glommer@parallels.com> wrote=
+:
+> On 09/08/2011 06:53 PM, Greg Thelen wrote:
+>>
+>> If a container must fit within 100M, then a single limit solution
+>> would set the limit to 100M and never change it. =A0In a split limit
+>> solution a
+>> user daemon (e.g. uswapd) would need to monitor the usage and the amount
+>> of
+>> active memory vs inactive user memory and unreferenced kernel memory to
+>> determine where to apply pressure.
 >
-> To repeat, you need to have
-> a) a container
-> b) which is forwarding IPv4 traffic from one interface in the container to
->    another (2 veth interfaces in this case) - one ping packet per second
->    will do
-> c) iptables with an IP conntrack rule.
-> d) delete the container (it doesn't matter if you delete the iptables
->    rule first and sleep for a couple of seconds).
+> Or it can just define some parameters and let the kernel do the
+> rest. Like for instance, a maximum proportion allowed, a maximum
+> proportion desired, etc.
+
+Agreed.
+
+>> With some more knobs such a uswapd could
+>> attempt to keep ahead of demand. =A0But eventually direct reclaim would
+>> be needed to satisfy rapid growth spikes. =A0Example: If the 100M contai=
+ner
+>> starts with limits of 20M kmem and 80M user memory but later its kernel
+>> memory needs grow to 70M. =A0With separate user and kernel memory
+>> limits the kernel memory allocation could fail despite there being
+>> reclaimable user pages available.
 >
-> An OOPS like the one below results.
-
-I've done a little further investigation of this (code reading only - on a 
-plane where it was difficult to update my out of date linux kernel source 
-so apologies if I've got the wrong end of the stick).
-
-The oops is called from cleanup_net when the namespace is destroyed. 
-conntrack iterates through outstanding events and calls death_by_timeout on 
-each of them, which in turn produces a call to ctnetlink_conntrack_event. 
-This calls nf_netlink_has_listeners, which oopses because net->nfnl is NULL.
-
-I made the container through (essentially) 'unshare -n'; I didn't 
-explicitly set up netlink, but I presume it was set up else net->nfnl would 
-have been NULL earlier (i.e. when an earlier connection timed out). This 
-would thus suggest that net->nfnl is made NULL during the destruction of 
-the container, which I think is done by nfnetlink_net_exit_batch.
-
-I can see that the various subsystems are deinitialised in the opposite 
-order to which the relevant register_pernet_subsys calls are called, and 
-both nf_conntrack and nfnetlink_net_ops register their relevant subsystems. 
-If nfnetlink_net_ops registered later than nfconntrack, then its exit 
-routine would have been called first, which would cause the oops described. 
-I am not sure what ensures this does not happen in a container environment? 
-Is it dictated by module load order outside the container?
-
-Whilst there's perhaps a more complex problem revolving around ordering of 
-subsystem deinit, it seems to me that missing a netlink event on a 
-container that is dying is not a disaster. Would an early check for 
-net->nfnl being non-NULL in ctnetlink_conntrack_event be sufficient to fix 
-this? Or is there a potential race condition if it becomes NULL immediately 
-after being checked (I am not sure any lock is held at this point or how 
-synchronisation for subsystem deinitialization works).
-
--- 
-Alex Bligh
-
+> No no, this is a ratio, not a *limit*. A limit is something you
+> should not be allowed to go over. A good limit of kernel memory for
+> a 100 Mb container could be something like... 100 mb. But there is
+> more to that.
 >
-> This one is from Ubuntu kernel
->  3.0.0-10-server #16-Ubuntu SMP Fri Sep 2 18:51:05 UTC 2011 x86_64
-> GNU/Linux
-> which I believe is (confusingly) 3.0.4 stable, however we have also seen
-> this on 2.6.38-10-server.
->
-> --
-> Alex Bligh
->
-> root@node-10-157-128-100:~# uname -a
-> Linux node-10-157-128-100 3.0.0-10-server #16-Ubuntu SMP Fri Sep 2
-> 18:51:05 UTC 2011 x86_64 GNU/Linux
->
->
-> Sep  9 14:30:56 node-10-157-128-100 kernel: [79418.880263] IN=evrr-000000
-> OUT= MAC=33:33:00:00:00:01:00:15:17:a6:cd:49:86:dd
-> SRC=fe80:0000:0000:0000:0215:17ff:fea6:cd
-> 49 DST=ff02:0000:0000:0000:0000:0000:0000:0001 LEN=72 TC=0 HOPLIMIT=1
-> FLOWLBL=0 PROTO=ICMPv6 TYPE=130 CODE=0
-> Sep  9 14:30:56 node-10-157-128-100 kernel: [79418.880332] IN=evrr-000008
-> OUT= MAC=33:33:00:00:00:01:0e:f1:9d:53:b5:1e:86:dd
-> SRC=fe80:0000:0000:0000:58e8:01ff:fe0b:0d
-> b2 DST=ff02:0000:0000:0000:0000:0000:0000:0001 LEN=72 TC=0 HOPLIMIT=1
-> FLOWLBL=0 PROTO=ICMPv6 TYPE=130 CODE=0
-> Sep  9 14:33:01 node-10-157-128-100 kernel: [79544.160335] IN=evrr-000000
-> OUT= MAC=33:33:00:00:00:01:00:15:17:a6:cd:49:86:dd
-> SRC=fe80:0000:0000:0000:0215:17ff:fea6:cd
-> 49 DST=ff02:0000:0000:0000:0000:0000:0000:0001 LEN=72 TC=0 HOPLIMIT=1
-> FLOWLBL=0 PROTO=ICMPv6 TYPE=130 CODE=0
-> Sep  9 14:33:01 node-10-157-128-100 kernel: [79544.160417] IN=evrr-000008
-> OUT= MAC=33:33:00:00:00:01:0e:f1:9d:53:b5:1e:86:dd
-> SRC=fe80:0000:0000:0000:58e8:01ff:fe0b:0d
-> b2 DST=ff02:0000:0000:0000:0000:0000:0000:0001 LEN=72 TC=0 HOPLIMIT=1
-> FLOWLBL=0 PROTO=ICMPv6 TYPE=130 CODE=0
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.780106] BUG: unable to
-> handle kernel NULL pointer dereference at 0000000000000274
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.780274] IP:
-> [<ffffffff81511959>] netlink_has_listeners+0x9/0x50
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.780398] PGD 0
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.780441] Oops: 0000
-> [#1] SMP
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.780515] CPU 7
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.780547] Modules linked
-> in: ipt_REJECT nf_conntrack_netlink nfnetlink dm_round_robin dm_multipath
-> veth ip6t_LOG nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_filter ip6_tables
-> ipt_LOG xt_limit xt_state xt_tcpudp iptable_filter ipt_MASQUERADE
-> iptable_nat nf_nat nf_conntrack_ipv4 nf_conntrack nf_defrag_ipv4
-> iptable_mangle ip_tables ebt_ip ebtable_filter ebtables x_tables ib_iser
-> rdma_cm ib_cm iw_cm ib_sa ib_mad ib_core ib_addr iscsi_tcp libiscsi_tcp
-> libiscsi scsi_transport_iscsi bonding usb_storage uas joydev usbhid hid
-> radeon ttm ses enclosure drm_kms_helper drm kvm_amd psmouse kvm
-> amd64_edac_mod dcdbas serio_raw e1000e megaraid_sas edac_core
-> i2c_algo_bit k8temp edac_mce_amd pata_serverworks shpchp i2c_piix4 bridge
-> 8021q garp stp ixgbe dca mdio [last unloaded: multipath]
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.786143]
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033] Pid: 25711,
-> comm: kworker/u:2 Not tainted 3.0.0-10-server #16-Ubuntu Dell Inc.
-> PowerEdge 6950/0GK775
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033] RIP:
-> 0010:[<ffffffff81511959>]  [<ffffffff81511959>]
-> netlink_has_listeners+0x9/0x50
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033] RSP:
-> 0018:ffff880801109c00  EFLAGS: 00010246
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033] RAX:
-> 0000000000000004 RBX: ffff880c0f796af8 RCX: 000000000000ffff
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033] RDX:
-> ffff8803f1700000 RSI: 0000000000000003 RDI: 0000000000000000
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033] RBP:
-> ffff880801109c00 R08: ffff880801108000 R09: 0000000000000000
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033] R10:
-> 0000000000000001 R11: dead000000200200 R12: ffff880801109cb0
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033] R13:
-> ffff880c0f796af8 R14: ffff880c0f796af8 R15: 0000000000000004
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033] FS:
-> 00007fe2d2d57710(0000) GS:ffff881027d00000(0000) knlGS:0000000000000000
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033] CS:  0010 DS:
-> 0000 ES: 0000 CR0: 000000008005003b
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033] CR2:
-> 0000000000000274 CR3: 0000000001c03000 CR4: 00000000000006e0
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033] DR0:
-> 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033] DR3:
-> 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033] Process
-> kworker/u:2 (pid: 25711, threadinfo ffff880801108000, task
-> ffff88080f5f9720)
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033]
-> ffff880801109c10 ffffffffa048f145 ffff880801109c90 ffffffffa049943b
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033]
-> ffff880801109c70 7fffffffffffffff ffff8803f1700000 0000000300000004
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033]
-> ffff880800000000 ffffffff00000002 ffff880c0fc80000 ffff880c0f796b98
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033] Call Trace:
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033]
-> [<ffffffffa048f145>] nfnetlink_has_listeners+0x15/0x20 [nfnetlink]
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033]
-> [<ffffffffa049943b>] ctnetlink_conntrack_event+0x5cb/0x890
-> [nf_conntrack_netlink]
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033]
-> [<ffffffff814e34d0>] ? net_drop_ns+0x50/0x50
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033]
-> [<ffffffffa04062d8>] death_by_timeout+0xc8/0x1c0 [nf_conntrack]
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033]
-> [<ffffffffa0405270>] ? nf_conntrack_attach+0x50/0x50 [nf_conntrack]
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033]
-> [<ffffffffa0406448>] nf_ct_iterate_cleanup+0x78/0x90 [nf_conntrack]
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033]
-> [<ffffffffa0406491>] nf_conntrack_cleanup_net+0x31/0x100 [nf_conntrack]
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033]
-> [<ffffffffa0407f97>] nf_conntrack_cleanup+0x27/0x60 [nf_conntrack]
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033]
-> [<ffffffffa04081f0>] nf_conntrack_net_exit+0x60/0x80 [nf_conntrack]
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033]
-> [<ffffffff814e2d28>] ops_exit_list.isra.1+0x38/0x60
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033]
-> [<ffffffff814e35e2>] cleanup_net+0x112/0x1b0
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033]
-> [<ffffffff8107bb0a>] process_one_work+0x11a/0x480
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033]
-> [<ffffffff8107c7d5>] worker_thread+0x165/0x370
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033]
-> [<ffffffff8107c670>] ? manage_workers.isra.30+0x130/0x130
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.790033]
-> [<ffffffff81080c1c>] kthread+0x8c/0xa0
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.950699]
-> [<ffffffff81607c24>] kernel_thread_helper+0x4/0x10
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.950699]
-> [<ffffffff81080b90>] ? flush_kthread_worker+0xa0/0xa0
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.950699]
-> [<ffffffff81607c20>] ? gs_change+0x13/0x13
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.950699] Code: 00 00 48
-> 85 f6 74 0c 48 83 ee 01 48 89 df e8 cf f6 ff ff 48 8b 5d f0 4c 8b 65 f8
-> c9 c3 0f 1f 44 00 00 55 48 89 e5 66 66 66 66 90 <f6> 87 74 02 00 00 01 74
-> 30 0f b6 87 21 01 00 00 4c 8b 05 38 8d
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.950699] RIP
-> [<ffffffff81511959>] netlink_has_listeners+0x9/0x50
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.950699]  RSP
-> <ffff880801109c00>
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.950699] CR2:
-> 0000000000000274
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.954892] ---[ end trace
-> 73540474560834fd ]---
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.954941] BUG: unable to
-> handle kernel paging request at fffffffffffffff8
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.954945] IP:
-> [<ffffffff810810b1>] kthread_data+0x11/0x20
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.954950] PGD 1c05067
-> PUD 1c06067 PMD 0
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.954954] Oops: 0000
-> [#2] SMP
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.954957] CPU 7
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.954959] Modules linked
-> in: ipt_REJECT nf_conntrack_netlink nfnetlink dm_round_robin dm_multipath
-> veth ip6t_LOG nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_filter ip6_tables
-> ipt_LOG xt_limit xt_state xt_tcpudp iptable_filter ipt_MASQUERADE
-> iptable_nat nf_nat nf_conntrack_ipv4 nf_conntrack nf_defrag_ipv4
-> iptable_mangle ip_tables ebt_ip ebtable_filter ebtables x_tables ib_iser
-> rdma_cm ib_cm iw_cm ib_sa ib_mad ib_core ib_addr iscsi_tcp libiscsi_tcp
-> libiscsi scsi_transport_iscsi bonding usb_storage uas joydev usbhid hid
-> radeon ttm ses enclosure drm_kms_helper drm kvm_amd psmouse kvm
-> amd64_edac_mod dcdbas serio_raw e1000e megaraid_sas edac_core
-> i2c_algo_bit k8temp edac_mce_amd pata_serverworks shpchp i2c_piix4 bridge
-> 8021q garp stp ixgbe dca mdio [last unloaded: multipath]
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955032]
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955034] Pid: 25711,
-> comm: kworker/u:2 Tainted: G      D     3.0.0-10-server #16-Ubuntu Dell
-> Inc. PowerEdge 6950/0GK775
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955040] RIP:
-> 0010:[<ffffffff810810b1>]  [<ffffffff810810b1>] kthread_data+0x11/0x20
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955046] RSP:
-> 0018:ffff880801109870  EFLAGS: 00010096
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955048] RAX:
-> 0000000000000000 RBX: 0000000000000007 RCX: 0000000000000007
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955051] RDX:
-> 0000000000000007 RSI: 0000000000000007 RDI: ffff88080f5f9720
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955054] RBP:
-> ffff880801109888 R08: 0000000000989680 R09: 0000000000000001
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955057] R10:
-> 0000000000000400 R11: ffff88080f65c118 R12: 0000000000000007
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955060] R13:
-> ffff88080f5f9ae8 R14: 0000000000000000 R15: 0000000000000246
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955064] FS:
-> 00007fe2d2d57710(0000) GS:ffff881027d00000(0000) knlGS:0000000000000000
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955067] CS:  0010 DS:
-> 0000 ES: 0000 CR0: 000000008005003b
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955070] CR2:
-> fffffffffffffff8 CR3: 0000000001c03000 CR4: 00000000000006e0
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955073] DR0:
-> 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955076] DR3:
-> 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955079] Process
-> kworker/u:2 (pid: 25711, threadinfo ffff880801108000, task
-> ffff88080f5f9720)
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955082] Stack:
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955083]
-> ffffffff8107cd25 ffff880801109888 ffff881027d12a40 ffff880801109908
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955089]
-> ffffffff815fc737 ffff88080f5f9720 0000000000000000 ffff880801109fd8
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955094]
-> ffff880801109fd8 ffff880801109fd8 0000000000012a40 0000000000000011
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955100] Call Trace:
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955103]
-> [<ffffffff8107cd25>] ? wq_worker_sleeping+0x15/0xa0
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955108]
-> [<ffffffff815fc737>] schedule+0x637/0x770
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955114]
-> [<ffffffff81063053>] do_exit+0x273/0x440
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955119]
-> [<ffffffff815ffbd0>] oops_end+0xb0/0xf0
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955124]
-> [<ffffffff815e7104>] no_context+0x145/0x152
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955128]
-> [<ffffffff815e729f>] __bad_area_nosemaphore+0x18e/0x1b1
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955133]
-> [<ffffffff815e72d5>] bad_area_nosemaphore+0x13/0x15
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955138]
-> [<ffffffff816024fd>] do_page_fault+0x43d/0x530
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955144]
-> [<ffffffff8100969a>] ? __switch_to+0xca/0x310
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955148]
-> [<ffffffff815fe73e>] ? _raw_spin_lock+0xe/0x20
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955154]
-> [<ffffffff8104e749>] ? finish_task_switch+0x49/0xf0
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955158]
-> [<ffffffff815fef15>] page_fault+0x25/0x30
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955162]
-> [<ffffffff81511959>] ? netlink_has_listeners+0x9/0x50
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955167]
-> [<ffffffffa048f145>] nfnetlink_has_listeners+0x15/0x20 [nfnetlink]
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955172]
-> [<ffffffffa049943b>] ctnetlink_conntrack_event+0x5cb/0x890
-> [nf_conntrack_netlink]
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955177]
-> [<ffffffff814e34d0>] ? net_drop_ns+0x50/0x50
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955183]
-> [<ffffffffa04062d8>] death_by_timeout+0xc8/0x1c0 [nf_conntrack]
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955189]
-> [<ffffffffa0405270>] ? nf_conntrack_attach+0x50/0x50 [nf_conntrack]
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955195]
-> [<ffffffffa0406448>] nf_ct_iterate_cleanup+0x78/0x90 [nf_conntrack]
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955202]
-> [<ffffffffa0406491>] nf_conntrack_cleanup_net+0x31/0x100 [nf_conntrack]
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955209]
-> [<ffffffffa0407f97>] nf_conntrack_cleanup+0x27/0x60 [nf_conntrack]
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955215]
-> [<ffffffffa04081f0>] nf_conntrack_net_exit+0x60/0x80 [nf_conntrack]
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955220]
-> [<ffffffff814e2d28>] ops_exit_list.isra.1+0x38/0x60
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955224]
-> [<ffffffff814e35e2>] cleanup_net+0x112/0x1b0
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955229]
-> [<ffffffff8107bb0a>] process_one_work+0x11a/0x480
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955233]
-> [<ffffffff8107c7d5>] worker_thread+0x165/0x370
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955237]
-> [<ffffffff8107c670>] ? manage_workers.isra.30+0x130/0x130
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955241]
-> [<ffffffff81080c1c>] kthread+0x8c/0xa0
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955245]
-> [<ffffffff81607c24>] kernel_thread_helper+0x4/0x10
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955250]
-> [<ffffffff81080b90>] ? flush_kthread_worker+0xa0/0xa0
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955254]
-> [<ffffffff81607c20>] ? gs_change+0x13/0x13
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955256] Code: 41 5f 5d
-> c3 be 3e 01 00 00 48 c7 c7 88 90 9e 81 e8 b5 d7 fd ff e9 74 fe ff ff 55
-> 48 89 e5 66 66 66 66 90 48 8b 87 70 03 00 00 5d
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955311] RIP
-> [<ffffffff810810b1>] kthread_data+0x11/0x20
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955315]  RSP
-> <ffff880801109870>
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955317] CR2:
-> fffffffffffffff8
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955319] ---[ end trace
-> 73540474560834fe ]---
-> Sep  9 14:34:00 node-10-157-128-100 kernel: [79602.955322] Fixing
-> recursive fault but reboot is needed!
-> Sep  9 14:35:00 node-10-157-128-100 kernel: [79663.120046] INFO:
-> rcu_sched_state detected stalls on CPUs/tasks: { 1 7} (detected by 6,
-> t=6002 jiffies)
-> Sep  9 14:35:05 node-10-157-128-100 kernel: [79667.970047] INFO:
-> rcu_bh_state detected stalls on CPUs/tasks: { 1 7} (detected by 6, t=6002
-> jiffies)
-> Sep  9 14:38:00 node-10-157-128-100 kernel: [79843.440048] INFO:
-> rcu_sched_state detected stalls on CPUs/tasks: { 1 7} (detected by 6,
-> t=24034 jiffies)
-> Sep  9 14:38:05 node-10-157-128-100 kernel: [79848.290046] INFO:
-> rcu_bh_state detected stalls on CPUs/tasks: { 1 7} (detected by 6,
-> t=24034 jiffies)
-> Sep  9 14:41:00 node-10-157-128-100 kernel: [80023.760051] INFO:
-> rcu_sched_state detected stalls on CPUs/tasks: { 1 7} (detected by 6,
-> t=42066 jiffies)
-> Sep  9 14:41:05 node-10-157-128-100 kernel: [80028.610044] INFO:
-> rcu_bh_state detected stalls on CPUs/tasks: { 1 7} (detected by 6,
-> t=42066 jiffies)
-> Sep  9 14:44:01 node-10-157-128-100 kernel: [80204.080047] INFO:
-> rcu_sched_state detected stalls on CPUs/tasks: { 1 7} (detected by 6,
-> t=60098 jiffies)
-> Sep  9 14:44:06 node-10-157-128-100 kernel: [80208.930045] INFO:
-> rcu_bh_state detected stalls on CPUs/tasks: { 1 7} (detected by 6,
-> t=60098 jiffies)
-> Sep  9 14:44:44 node-10-157-128-100 kernel: Kernel logging (proc) stopped.
+> Risking being a bit polemic here, I think that when we do
+> containers, we have to view the kernel a little bit like a shared resourc=
+e
+> that is not accounted to anybody. It is easy to account things like tcp
+> buffer, but who do you account page tables for shared pages to? Or pinned
+> dentries for shared filesystems ?
 
+This is a tough challenge.  If you don't account page tables, then
+fork bombs can grab lots of kernel memory.  Containing such pigs is
+good.  We are working on some patches that charge page tables to the
+memcg they are allocated from.  This charge is checked against the
+memcg's limit and thus the page table allocation may fail due if over
+limit.
 
+I suggest charging dentries to the cgroup that allocated the dentry.
+If containers are used for isolation, then it seems that containers
+should typically not share files.  That would break isolation.  Of
+course there are shared files (/bin/bash, etc), but at least those are
+read-only.
 
--- 
-Alex Bligh
+> Being the shared table under everybody, the kernel is more or less
+> like buffers inside a physical hdd, or cache lines. You know it is
+> there, you know it has a size, but provided you have some sane
+> protections, you don't really care - because in most cases you can't
+> - who is using it.
+
+I agree that it makes sense to not bother charging fixed sized
+resources (struct page, etc.) to containers; they are part of the
+platform.  But the set of resources that a process can allocate are
+ideally charged to a cgroup to limit container memory usage (i.e.
+prevent DoS attacks, isolate performance).
+
+>> The job should have a way to
+>> transition to memory limits to 70M+ kernel and 30M- of user.
+>
+> Yes, and I don't see how what I propose prevents that.
+
+I don't think your current proposal prevents that.  I was thinking
+about the future of the proposed kmem cgroup.  I want to make sure the
+kernel has a way to apply reclaim pressure bidirectionally between
+cgroup kernel memory and cgroup user memory.
+
+>> I suppose a GFP_WAIT slab kernel page allocation could wakeup user space
+>> to
+>> perform user-assisted direct reclaim. =A0User space would then lower the
+>> user
+>> limit thereby causing the kernel to direct reclaim user pages, then
+>> the user daemon would raise the kernel limit allowing the slab allocatio=
+n
+>> to
+>> succeed. =A0My hunch is that this would be prone to deadlocks (what prev=
+ents
+>> uswapd from needing more even more kmem?) =A0I'll defer to more
+>> experienced minds to know if user assisted direct memory reclaim has
+>> other pitfalls. =A0It scares me.
+>
+> Good that it scares you, it should. OTOH, userspace being
+> able to set parameters to it, has nothing scary at all. A daemon in
+> userspace can detect that you need more kernel space memory , and
+> then - according to a policy you abide to - write to a file allowing
+> it more, or maybe not - according to that same policy. It is very
+> far away from "userspace driven reclaim".
+
+Agreed.  I have no problem with user space policy being used to
+updating kernel control files that alter reclaim.
+
+>> If kmem expands to include reclaimable kernel memory (e.g. dentry) then =
+I
+>> presume the kernel would have no way to exchange unused user pages for
+>> dentry
+>> pages even if the user memory in the container is well below its limit.
+>> =A0This is
+>> motivation for the above user assisted direct reclaim.
+>
+> Dentry is not always reclaimable. If it is pinned, it is non
+> reclaimable. Speaking of it, Would you take a look at
+> https://lkml.org/lkml/2011/8/14/110 ?
+>
+> I am targetting dentry as well. But since it is hard to assign a
+> dentry to a process all the time, going through a different path. I
+> however, haven't entirely given up of doing it cgroups based, so any
+> ideas are welcome =3D)
+
+My hope is that dentry consumption can be effectively limited by
+limiting the memory needed to allocate the dentries.  IOW: with a
+memcg aware slab allocator which, when possible, charges the calling
+process' cgroup.
+
+> Well, I am giving this an extra thought... Having separate knobs
+> adds flexibility, but - as usual - also complexity. For the goals I
+> have in mind, "kernel memory" would work just as fine.
+>
+> If you look carefully at the other patches in the series besides
+> this one, you'll see that it is just a matter of billing from kernel
+> memory instead of tcp-memory, and then all the rest is the same.
+>
+> Do you think that a single kernel-memory knob would be better for
+> your needs? I am willing to give it a try.
+
+Regarding the tcp buffers we're discussing, how does an application
+consume lots of buffer memory?  IOW, what would a malicious app do to
+cause a grows of tcp buffer usage?  Or is this the kind of resource
+that is difficult to directly exploit?
+
+Also, how does the pressure get applied.  I see you have a
+per-protocol, per-cgroup pressure pressure setting.  Once set, how
+does this pressure cause memory to be freed?  It looks like the
+pressure is set when allocating memory and later when packets are
+freed the associated memory _might_ be freed if pressure was
+previously detected.  Did I get this right?
+
+For me the primary concern is that both user and kernel memory are
+eventually charged to the same counter with an associated limit.
+Per-container memory pressure is based on this composite limit.  So I
+don't have a strong opinion as to how many kernel memory counters
+there are so long as they also feed into container memory usage
+counter.
+
+>> I agree that kernel memory is somewhat different. =A0In some (I argue mo=
+st)
+>> situations containers want the ability to exchange job kmem and job umem=
+.
+>> Either split or combined accounting protects the system and isolates oth=
+er
+>> containers from kmem allocations of a bad job. =A0To me it seems natural=
+ to
+>> indicate that job X gets Y MB of memory. =A0I have more trouble dividing=
+ the
+>> Y MB of memory into dedicated slices for different types of memory.
+>
+> I understand. And I don't think anyone doing containers
+> should be mandated to define a division. But a limit...
+
+SGTM, so long as it is an optional kernel memory limit (see below).
+
+>> I think
+>> memcg aware slab accounting does a good job of limiting a job's
+>> memory allocations.
+>> Would such slab accounting meet your needs?
+>
+> Well, the slab alone, no. There are other objects - like tcp buffers
+> - that aren't covered by the slab. Others are usually shared among
+> many cgroups, and others don't really belong to anybody in
+> particular.igh
+
+Sorry, I am dumb wrt. networking.  I thought that these tcp buffers
+were allocated using slab with __alloc_skb().  Are they done in
+container process context or arbitrary context?
+
+> How do you think then, about turning this into 2 files inside memcg:
+>
+> =A0- kernel_memory_hard_limit.
+> =A0- kernel_memory_soft_limit.
+>
+> tcp memory would be the one defined in /proc, except if it is
+> greater than any of the limits. Instead of testing for memory
+> allocation against kmem.tcp_allocated_memory, we'd test it against
+> memcg.kmem_pinned_memory.
+
+memcg control files currently include:
+  memory.limit_in_bytes
+  memory.soft_limit_in_bytes
+  memory.usage_in_bytes
+
+If you want a kernel memory limit, then we can introduce two new memcg APIs=
+:
+  memory.kernel_limit_in_bytes
+  memory.kernel_soft_limit_in_bytes
+  memory.kernel_usage_in_bytes
+
+Any memory charged to memory.kernel_limit_in_bytes would also be
+charged to memory.limit_in_bytes.  IOW, memory.limit_in_bytes would
+include both user pages (as it does today) and some kernel pages.
+
+With these new files there are two cgroup memory limits: total and
+kernel.  The total limit is a combination of user and some kinds of
+kernel memory.
+
+Kernel page reclaim would occur if memory.kernel_usage_in_bytes
+exceeds memory.kernel_limit_in_bytes.  There would be no need to
+reclaim user pages in this situation.  If kernel usage exceeds
+kernel_soft_limit_in_bytes, then the protocol pressure flags would be
+set.
+
+Memcg-wide page reclaim would occur if memory.usage_in_bytes exceeds
+memory.limit_in_bytes.  This reclaim would consider either container
+kernel memory or user pages associated with the container.
+
+This would be a behavioral memcg change which would need to be
+carefully considered.  Today the limit_in_bytes is just a user byte
+count that does not include kernel memory.
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
