@@ -1,262 +1,86 @@
-From: Glauber Costa <glommer@parallels.com>
-Subject: Re: [PATCH v2 1/9] per-netns ipv4 sysctl_tcp_mem
-Date: Fri, 9 Sep 2011 01:19:08 -0300
-Message-ID: <4E6993BC.5030004@parallels.com>
-References: <1315369399-3073-1-git-send-email-glommer@parallels.com> <1315369399-3073-2-git-send-email-glommer@parallels.com> <20110909114720.f050c520.kamezawa.hiroyu@jp.fujitsu.com>
+From: Cyrill Gorcunov <gorcunov@gmail.com>
+Subject: Re: [patch 2/2] fs, proc: Introduce the /proc/<pid>/map_files/
+ directory v6
+Date: Fri, 9 Sep 2011 09:48:19 +0400
+Message-ID: <20110909054819.GN28162@sun>
+References: <20110906173341.GM18425@mtj.dyndns.org>
+ <20110907112301.GA12157@albatros>
+ <20110907215329.GB28162@sun>
+ <20110907151323.613e62e7.akpm@linux-foundation.org>
+ <20110907224234.GD28162@sun>
+ <20110907155332.beda7d3d.akpm@linux-foundation.org>
+ <20110908054826.GF28162@sun>
+ <20110908055025.GG28162@sun>
+ <20110908060405.GH28162@sun>
+ <20110908165201.59e82c71.akpm@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
-Content-Transfer-Encoding: 7bit
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <20110909114720.f050c520.kamezawa.hiroyu@jp.fujitsu.com>
-Sender: owner-linux-mm@kvack.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, netdev@vger.kernel.org, xemul@parallels.com, "David S. Miller" <davem@davemloft.net>, "Eric W. Biederman" <ebiederm@xmission.com>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <20110908165201.59e82c71.akpm@linux-foundation.org>
+Sender: linux-fsdevel-owner@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Vasiliy Kulikov <segoon@openwall.com>, Tejun Heo <tj@kernel.org>, "Kirill A. Shutemov" <kirill@shutemov.name>, containers@lists.osdl.org, linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, Nathan Lynch <ntl@pobox.com>, kernel-hardening@lists.openwall.com, Oren Laadan <orenl@cs.columbia.edu>, Daniel Lezcano <dlezcano@fr.ibm.com>, Glauber Costa <glommer@parallels.com>, James Bottomley <jbottomley@parallels.com>, Alexey Dobriyan <adobriyan@gmail.com>, Al Viro <viro@ZenIV.linux.org.uk>, Pavel Emelyanov <xemul@parallels.com>
 List-Id: containers.vger.kernel.org
 
-On 09/08/2011 11:47 PM, KAMEZAWA Hiroyuki wrote:
-> On Wed,  7 Sep 2011 01:23:11 -0300
-> Glauber Costa<glommer@parallels.com>  wrote:
->
->> This patch allows each namespace to independently set up
->> its levels for tcp memory pressure thresholds. This patch
->> alone does not buy much: we need to make this values
->> per group of process somehow. This is achieved in the
->> patches that follows in this patchset.
->>
->> Signed-off-by: Glauber Costa<glommer@parallels.com>
->> CC: David S. Miller<davem@davemloft.net>
->> CC: Hiroyouki Kamezawa<kamezawa.hiroyu@jp.fujitsu.com>
->> CC: Eric W. Biederman<ebiederm@xmission.com>
->
->
-> Hmm, it may be better to post this patch as independent one.
+On Thu, Sep 08, 2011 at 04:52:01PM -0700, Andrew Morton wrote:
+> On Thu, 8 Sep 2011 10:04:05 +0400
+> Cyrill Gorcunov <gorcunov@gmail.com> wrote:
+> 
+> > fs, proc: Introduce the /proc/<pid>/map_files/ directory v11
+> 
+> Ho hum, I've pretty much run out of excuses to avoid merging this.
+> 
+> except...
+> 
+> We don't really want to bloat fs/proc/base.o by 4k until all the other
+> things which support c/r are mergeable and we know that the whole
+> project is actually useful.  When will we be at this stage?
 
+I hope we will bring in a final set in a couple of weeks.
 
-Maybe we can search acks from eric about this one
-specifically prior to merging, but I'd still like it to be part of
-the whole. It will put us in a weird state if this is merged, and
-the rest is not.
+> 
+> <looks at the warning>
+> 
+> fs/proc/base.c: In function 'proc_map_files_instantiate':
+> fs/proc/base.c:2348: warning: assignment from incompatible pointer type
+> 
+> err, that code will crash at runtime and it isn't trivial to fix. 
+> How could this happen?
+> 
 
-> I'm not familiar with this area...but try review ;)
-Thank you!
+Hmm. I never saw this warning. (Andrew, I'm still unable to fetch
+your current -mm tree, is there some place other than kernel.org?
+So the patch is done on top of 3.1-rc3). I guess this warrning is
+from p = flex_array_get(fa, i); ? (since I don't have any warning
+at all).
 
->
->> ---
->>   include/net/netns/ipv4.h   |    1 +
->>   include/net/tcp.h          |    1 -
->>   net/ipv4/sysctl_net_ipv4.c |   51 +++++++++++++++++++++++++++++++++++++------
->>   net/ipv4/tcp.c             |   13 +++-------
->>   4 files changed, 49 insertions(+), 17 deletions(-)
->>
->> diff --git a/include/net/netns/ipv4.h b/include/net/netns/ipv4.h
->> index d786b4f..bbd023a 100644
->> --- a/include/net/netns/ipv4.h
->> +++ b/include/net/netns/ipv4.h
->> @@ -55,6 +55,7 @@ struct netns_ipv4 {
->>   	int current_rt_cache_rebuild_count;
->>
->>   	unsigned int sysctl_ping_group_range[2];
->> +	long sysctl_tcp_mem[3];
->>
->>   	atomic_t rt_genid;
->>   	atomic_t dev_addr_genid;
->
-> Hmm, in original placement, sysctl_tcp_mem[] was on __read_mostly
-> area. Doesn't this placement cause many cache invalidations ?
->
-Yes, you are right. I will move back to the old way of doing it.
+> >
+> > ...
+> >
+> > +				if (fa)
+> > +					flex_array_free(fa);
+> >
+> > ...
+> >
+> > +		if (fa)
+> > +			flex_array_free(fa);
+> 
+> I think I'll do this:
+> 
+> From: Andrew Morton <akpm@linux-foundation.org>
+> 
+> Lots of callers are avoiding passing NULL into flex_array_free().  Move
+> the check into flex_array_free() in the usual fashion.
+> 
+> Cc: Stephen Smalley <sds@tycho.nsa.gov>
+> Cc: James Morris <jmorris@namei.org>
+> Cc: Cyrill Gorcunov <gorcunov@gmail.com>
+> Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+> ---
 
->
->> diff --git a/include/net/tcp.h b/include/net/tcp.h
->> index 149a415..6bfdd9b 100644
->> --- a/include/net/tcp.h
->> +++ b/include/net/tcp.h
->> @@ -230,7 +230,6 @@ extern int sysctl_tcp_fack;
->>   extern int sysctl_tcp_reordering;
->>   extern int sysctl_tcp_ecn;
->>   extern int sysctl_tcp_dsack;
->> -extern long sysctl_tcp_mem[3];
->>   extern int sysctl_tcp_wmem[3];
->>   extern int sysctl_tcp_rmem[3];
->>   extern int sysctl_tcp_app_win;
->> diff --git a/net/ipv4/sysctl_net_ipv4.c b/net/ipv4/sysctl_net_ipv4.c
->> index 69fd720..0d74b9d 100644
->> --- a/net/ipv4/sysctl_net_ipv4.c
->> +++ b/net/ipv4/sysctl_net_ipv4.c
->> @@ -14,6 +14,7 @@
->>   #include<linux/init.h>
->>   #include<linux/slab.h>
->>   #include<linux/nsproxy.h>
->> +#include<linux/swap.h>
->>   #include<net/snmp.h>
->>   #include<net/icmp.h>
->>   #include<net/ip.h>
->> @@ -174,6 +175,36 @@ static int proc_allowed_congestion_control(ctl_table *ctl,
->>   	return ret;
->>   }
->>
->> +static int ipv4_tcp_mem(ctl_table *ctl, int write,
->> +			   void __user *buffer, size_t *lenp,
->> +			   loff_t *ppos)
->> +{
->> +	int ret;
->> +	unsigned long vec[3];
->> +	struct net *net = current->nsproxy->net_ns;
->> +	int i;
->> +
->> +	ctl_table tmp = {
->> +		.data =&vec,
->> +		.maxlen = sizeof(vec),
->> +		.mode = ctl->mode,
->> +	};
->> +
->> +	if (!write) {
->> +		ctl->data =&net->ipv4.sysctl_tcp_mem;
->> +		return proc_doulongvec_minmax(ctl, write, buffer, lenp, ppos);
->> +	}
->> +
->> +	ret = proc_doulongvec_minmax(&tmp, write, buffer, lenp, ppos);
->> +	if (ret)
->> +		return ret;
->> +
->> +	for (i = 0; i<  3; i++)
->> +		net->ipv4.sysctl_tcp_mem[i] = vec[i];
->> +
->> +	return 0;
->> +}
->> +
->>   static struct ctl_table ipv4_table[] = {
->>   	{
->>   		.procname	= "tcp_timestamps",
->> @@ -433,13 +464,6 @@ static struct ctl_table ipv4_table[] = {
->>   		.proc_handler	= proc_dointvec
->>   	},
->>   	{
->> -		.procname	= "tcp_mem",
->> -		.data		=&sysctl_tcp_mem,
->> -		.maxlen		= sizeof(sysctl_tcp_mem),
->> -		.mode		= 0644,
->> -		.proc_handler	= proc_doulongvec_minmax
->> -	},
->> -	{
->>   		.procname	= "tcp_wmem",
->>   		.data		=&sysctl_tcp_wmem,
->>   		.maxlen		= sizeof(sysctl_tcp_wmem),
->> @@ -721,6 +745,12 @@ static struct ctl_table ipv4_net_table[] = {
->>   		.mode		= 0644,
->>   		.proc_handler	= ipv4_ping_group_range,
->>   	},
->> +	{
->> +		.procname	= "tcp_mem",
->> +		.maxlen		= sizeof(init_net.ipv4.sysctl_tcp_mem),
->> +		.mode		= 0644,
->> +		.proc_handler	= ipv4_tcp_mem,
->> +	},
->>   	{ }
->>   };
->>
->
->
->
->
->> @@ -734,6 +764,7 @@ EXPORT_SYMBOL_GPL(net_ipv4_ctl_path);
->>   static __net_init int ipv4_sysctl_init_net(struct net *net)
->>   {
->>   	struct ctl_table *table;
->> +	unsigned long limit;
->>
->>   	table = ipv4_net_table;
->>   	if (!net_eq(net,&init_net)) {
->> @@ -769,6 +800,12 @@ static __net_init int ipv4_sysctl_init_net(struct net *net)
->>
->>   	net->ipv4.sysctl_rt_cache_rebuild_count = 4;
->>
->> +	limit = nr_free_buffer_pages() / 8;
->> +	limit = max(limit, 128UL);
->> +	net->ipv4.sysctl_tcp_mem[0] = limit / 4 * 3;
->> +	net->ipv4.sysctl_tcp_mem[1] = limit;
->> +	net->ipv4.sysctl_tcp_mem[2] = net->ipv4.sysctl_tcp_mem[0] * 2;
->> +
->>   	net->ipv4.ipv4_hdr = register_net_sysctl_table(net,
->>   			net_ipv4_ctl_path, table);
->>   	if (net->ipv4.ipv4_hdr == NULL)
->> diff --git a/net/ipv4/tcp.c b/net/ipv4/tcp.c
->> index 46febca..f06df24 100644
->> --- a/net/ipv4/tcp.c
->> +++ b/net/ipv4/tcp.c
->> @@ -266,6 +266,7 @@
->>   #include<linux/crypto.h>
->>   #include<linux/time.h>
->>   #include<linux/slab.h>
->> +#include<linux/nsproxy.h>
->>
->>   #include<net/icmp.h>
->>   #include<net/tcp.h>
->> @@ -282,11 +283,9 @@ int sysctl_tcp_fin_timeout __read_mostly = TCP_FIN_TIMEOUT;
->>   struct percpu_counter tcp_orphan_count;
->>   EXPORT_SYMBOL_GPL(tcp_orphan_count);
->>
->> -long sysctl_tcp_mem[3] __read_mostly;
->>   int sysctl_tcp_wmem[3] __read_mostly;
->>   int sysctl_tcp_rmem[3] __read_mostly;
->>
->> -EXPORT_SYMBOL(sysctl_tcp_mem);
->>   EXPORT_SYMBOL(sysctl_tcp_rmem);
->>   EXPORT_SYMBOL(sysctl_tcp_wmem);
->>
->> @@ -3277,14 +3276,10 @@ void __init tcp_init(void)
->>   	sysctl_tcp_max_orphans = cnt / 2;
->>   	sysctl_max_syn_backlog = max(128, cnt / 256);
->>
->> -	limit = nr_free_buffer_pages() / 8;
->> -	limit = max(limit, 128UL);
->> -	sysctl_tcp_mem[0] = limit / 4 * 3;
->> -	sysctl_tcp_mem[1] = limit;
->> -	sysctl_tcp_mem[2] = sysctl_tcp_mem[0] * 2;
->> -
->>   	/* Set per-socket limits to no more than 1/128 the pressure threshold */
->> -	limit = ((unsigned long)sysctl_tcp_mem[1])<<  (PAGE_SHIFT - 7);
->> +	limit = (unsigned long)init_net.ipv4.sysctl_tcp_mem[1];
->> +	limit<<= (PAGE_SHIFT - 7);
->> +
->
-> I'm not sure but...why defined as 'long'  ?
->
+Yeah, great. Moreover, flex_array_free calls for kfree which
+support NULL argument so it's natural to make this one NULL
+capable as well.
 
-It is part of the "it was there
-before" bundle.
-
-It is defined as long not only for tcp, but for all of the
-equivalents sysctl as well. So no reason to touch it, at least not
-in this series =)
-
->
-> BTW, when I grep,
->
-> tcp_input.c:        atomic_long_read(&tcp_memory_allocated)<  sysctl_tcp_mem[0])
-> tcp_input.c:    if (atomic_long_read(&tcp_memory_allocated)>= sysctl_tcp_mem[0])
->
-> Don't you need to change this ?
-
-It ended up being changed in another patch, and I missed the right
-split.
-
-Thank you, I will reorder it so it gets changed correctly.
->
->
-> Thanks,
-> -Kame
->
->
->
->
->
->
->
-
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+	Cyrill
