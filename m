@@ -1,68 +1,76 @@
-From: Alex Bligh <alex@alex.org.uk>
-Subject: Re: [PATCH] Fix repeatable Oops on container destroy with conntrack
-Date: Mon, 12 Sep 2011 20:06:25 +0100
-Message-ID: <87A32B21CA99D62CE1AB7A4B@Ximines.local>
-References: <2184C0CE5A5EDC94CDDA5053@Ximines.local> <20110912072524.GA2996@p183.telecom.by> <20110912093749.GE2194@1984> <E0902A9541FD5D118EA02B31@Ximines.local> <20110912183357.GC3641@1984>
-Reply-To: Alex Bligh <alex@alex.org.uk>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; format=flowed
-Content-Transfer-Encoding: 7bit
-Return-path: <netfilter-devel-owner@vger.kernel.org>
-In-Reply-To: <20110912183357.GC3641@1984>
-Content-Disposition: inline
-Sender: netfilter-devel-owner@vger.kernel.org
-To: Pablo Neira Ayuso <pablo@netfilter.org>
-Cc: Alexey Dobriyan <adobriyan@gmail.com>, netfilter-devel@vger.kernel.org, netfilter@vger.kernel.org, coreteam@netfilter.org, linux-kernel@vger.kernel.org, containers@lists.linux-foundation.org, Linux Containers <containers@lists.osdl.org>, Alex Bligh <alex@alex.org.uk>
+From: Frederic Weisbecker <fweisbec@gmail.com>
+Subject: [PATCH 02/11] cgroups: New resource counter inheritance API
+Date: Tue, 13 Sep 2011 01:11:22 +0200
+Message-ID: <1315869091-18933-3-git-send-email-fweisbec@gmail.com>
+References: <1315869091-18933-1-git-send-email-fweisbec@gmail.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <1315869091-18933-1-git-send-email-fweisbec@gmail.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Frederic Weisbecker <fweisbec@gmail.com>, Containers <containers@lists.osdl.org>, Paul Menage <paul@paulmenage.org>, Li Zefan <lizf@cn.fujitsu.com>, Johannes Weiner <hannes@cmpxchg.org>, Aditya Kali <adityakali@google.com>, Oleg Nesterov <oleg@redhat.com>, Kay Sievers <kay.sievers@vrfy.org>, Tim Hockin <thockin@hockin.org>, Tejun Heo <tj@kernel.org>
 List-Id: containers.vger.kernel.org
 
-Pablo,
+Provide an API to inherit a counter value from a parent.
+This can be useful to implement cgroup.clone_children on
+a resource counter.
 
---On 12 September 2011 20:33:57 +0200 Pablo Neira Ayuso <pablo@netfilter.org> wrote:
+Still the resources of the children are limited by those
+of the parent, so this is only to provide a default setting
+behaviour when clone_children is set.
 
-> Yes, this is what Alexey was pointing out in the previous email and
-> why he suggested to move it to nfnetlink_has_listeners (to cover the
-> expectation case).
->
-> But you're right, we cannot move it to nfnetlink_has_listeners because
-> of the item->report case. Please, include the expectation part and
-> resend the patch.
-
-Thanks - see below
-
--- 
-Alex Bligh
-
-Signed-off-by: Alex Bligh <alex@alex.org.uk>
+Signed-off-by: Frederic Weisbecker <fweisbec@gmail.com>
+Cc: Paul Menage <paul@paulmenage.org>
+Cc: Li Zefan <lizf@cn.fujitsu.com>
+Cc: Johannes Weiner <hannes@cmpxchg.org>
+Cc: Aditya Kali <adityakali@google.com>
+Cc: Oleg Nesterov <oleg@redhat.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Kay Sievers <kay.sievers@vrfy.org>
+Cc: Tim Hockin <thockin@hockin.org>
+Cc: Tejun Heo <tj@kernel.org>
 ---
- net/netfilter/nf_conntrack_netlink.c |    9 +++++++++
- 1 files changed, 9 insertions(+), 0 deletions(-)
+ include/linux/res_counter.h |    2 ++
+ kernel/res_counter.c        |   18 ++++++++++++++++++
+ 2 files changed, 20 insertions(+), 0 deletions(-)
 
-diff --git a/net/netfilter/nf_conntrack_netlink.c b/net/netfilter/nf_conntrack_netlink.c
-index 482e90c..f44d571 100644
---- a/net/netfilter/nf_conntrack_netlink.c
-+++ b/net/netfilter/nf_conntrack_netlink.c
-@@ -570,6 +570,11 @@ ctnetlink_conntrack_event(unsigned int events, struct nf_ct_event *item)
-                return 0;
-
-        net = nf_ct_net(ct);
+diff --git a/include/linux/res_counter.h b/include/linux/res_counter.h
+index 1b3fe05..109d118 100644
+--- a/include/linux/res_counter.h
++++ b/include/linux/res_counter.h
+@@ -84,6 +84,8 @@ int res_counter_write(struct res_counter *counter, int member,
+ 
+ void res_counter_write_u64(struct res_counter *counter, int member, u64 val);
+ 
++void res_counter_inherit(struct res_counter *counter, int member);
 +
-+       /* container deinit, netlink may have died before death_by_timeout */
-+       if (!net->nfnl)
-+               return 0;
+ /*
+  * the field descriptors. one for each member of res_counter
+  */
+diff --git a/kernel/res_counter.c b/kernel/res_counter.c
+index 0faafcc..37abf4e 100644
+--- a/kernel/res_counter.c
++++ b/kernel/res_counter.c
+@@ -202,3 +202,21 @@ int res_counter_write(struct res_counter *counter, int member,
+ 
+ 	return 0;
+ }
 +
-        if (!item->report && !nfnetlink_has_listeners(net, group))
-                return 0;
-
-@@ -1723,6 +1728,10 @@ ctnetlink_expect_event(unsigned int events, struct nf_exp_event *item)
-        } else
-                return 0;
-
-+       /* container deinit, netlink may have died before death_by_timeout */
-+       if (!net->nfnl)
-+               return 0;
++/*
++ * Simple inheritance implementation to get the same value
++ * than a parent. However this doesn't enforce the child value
++ * to be always below the one of the parent. But the child is
++ * subject to its parent limitation anyway.
++ */
++void res_counter_inherit(struct res_counter *counter, int member)
++{
++	struct res_counter *parent;
++	unsigned long long val;
 +
-        if (!item->report && !nfnetlink_has_listeners(net, group))
-                return 0;
-
++	parent = counter->parent;
++	if (parent) {
++		val = res_counter_read_u64(parent, member);
++		res_counter_write_u64(counter, member, val);
++	}
++}
 -- 
 1.7.5.4
