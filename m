@@ -1,76 +1,64 @@
 From: Frederic Weisbecker <fweisbec@gmail.com>
-Subject: [PATCH 02/11] cgroups: New resource counter inheritance API
-Date: Tue, 13 Sep 2011 01:11:22 +0200
-Message-ID: <1315869091-18933-3-git-send-email-fweisbec@gmail.com>
-References: <1315869091-18933-1-git-send-email-fweisbec@gmail.com>
+Subject: [PATCH 00/11 v5] cgroups: Task counter subsystem
+Date: Tue, 13 Sep 2011 01:11:20 +0200
+Message-ID: <1315869091-18933-1-git-send-email-fweisbec@gmail.com>
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <1315869091-18933-1-git-send-email-fweisbec@gmail.com>
 Sender: linux-kernel-owner@vger.kernel.org
 To: Andrew Morton <akpm@linux-foundation.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Frederic Weisbecker <fweisbec@gmail.com>, Containers <containers@lists.osdl.org>, Paul Menage <paul@paulmenage.org>, Li Zefan <lizf@cn.fujitsu.com>, Johannes Weiner <hannes@cmpxchg.org>, Aditya Kali <adityakali@google.com>, Oleg Nesterov <oleg@redhat.com>, Kay Sievers <kay.sievers@vrfy.org>, Tim Hockin <thockin@hockin.org>, Tejun Heo <tj@kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Frederic Weisbecker <fweisbec@gmail.com>, Paul Menage <paul@paulmenage.org>, Li Zefan <lizf@cn.fujitsu.com>, Johannes Weiner <hannes@cmpxchg.org>, Aditya Kali <adityakali@google.com>, Oleg Nesterov <oleg@redhat.com>, Kay Sievers <kay.sievers@vrfy.org>, Tim Hockin <thockin@hockin.org>, Tejun Heo <tj@kernel.org>, Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-Provide an API to inherit a counter value from a parent.
-This can be useful to implement cgroup.clone_children on
-a resource counter.
+No functional changes. Only documentation and comments added.
+Checkpatch.pl fixes, etc...
 
-Still the resources of the children are limited by those
-of the parent, so this is only to provide a default setting
-behaviour when clone_children is set.
+This mostly addresses Andrew's reviews on v4.
 
-Signed-off-by: Frederic Weisbecker <fweisbec@gmail.com>
-Cc: Paul Menage <paul@paulmenage.org>
-Cc: Li Zefan <lizf@cn.fujitsu.com>
-Cc: Johannes Weiner <hannes@cmpxchg.org>
-Cc: Aditya Kali <adityakali@google.com>
-Cc: Oleg Nesterov <oleg@redhat.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>
-Cc: Kay Sievers <kay.sievers@vrfy.org>
-Cc: Tim Hockin <thockin@hockin.org>
-Cc: Tejun Heo <tj@kernel.org>
----
- include/linux/res_counter.h |    2 ++
- kernel/res_counter.c        |   18 ++++++++++++++++++
- 2 files changed, 20 insertions(+), 0 deletions(-)
+Changes in v5:
 
-diff --git a/include/linux/res_counter.h b/include/linux/res_counter.h
-index 1b3fe05..109d118 100644
---- a/include/linux/res_counter.h
-+++ b/include/linux/res_counter.h
-@@ -84,6 +84,8 @@ int res_counter_write(struct res_counter *counter, int member,
- 
- void res_counter_write_u64(struct res_counter *counter, int member, u64 val);
- 
-+void res_counter_inherit(struct res_counter *counter, int member);
-+
- /*
-  * the field descriptors. one for each member of res_counter
-  */
-diff --git a/kernel/res_counter.c b/kernel/res_counter.c
-index 0faafcc..37abf4e 100644
---- a/kernel/res_counter.c
-+++ b/kernel/res_counter.c
-@@ -202,3 +202,21 @@ int res_counter_write(struct res_counter *counter, int member,
- 
- 	return 0;
- }
-+
-+/*
-+ * Simple inheritance implementation to get the same value
-+ * than a parent. However this doesn't enforce the child value
-+ * to be always below the one of the parent. But the child is
-+ * subject to its parent limitation anyway.
-+ */
-+void res_counter_inherit(struct res_counter *counter, int member)
-+{
-+	struct res_counter *parent;
-+	unsigned long long val;
-+
-+	parent = counter->parent;
-+	if (parent) {
-+		val = res_counter_read_u64(parent, member);
-+		res_counter_write_u64(counter, member, val);
-+	}
-+}
+- commented res_counter_common_ancestor (patch 6)
+- commented res_counter_inherit (patch 2)
+- merged documentation and task counter subsystem patch (patch 9)
+- rename cgroup_task_counter_res in cgroup_task_res_counter (patch 9)
+- more comments/ fix comments in cgroup_task_counter.c (patch 9)
+- document res_counter_charge return value (patch 8)
+- document res_counter_charge_until (patch 5)
+- more comment in kconfig help (patch 9)
+- fix various checkpatch reported issues
+
+Frederic Weisbecker (11):
+  cgroups: Add res_counter_write_u64() API
+  cgroups: New resource counter inheritance API
+  cgroups: Add previous cgroup in can_attach_task/attach_task callbacks
+  cgroups: New cancel_attach_task subsystem callback
+  cgroups: Ability to stop res charge propagation on bounded ancestor
+  cgroups: Add res counter common ancestor searching
+  res_counter: Allow charge failure pointer to be null
+  cgroups: Pull up res counter charge failure interpretation to caller
+  cgroups: Add a task counter subsystem
+  cgroups: Allow subsystems to cancel a fork
+  cgroups: Convert task counter to use the subsys fork callback
+
+ Documentation/cgroups/cgroups.txt          |   13 ++-
+ Documentation/cgroups/resource_counter.txt |   20 +++-
+ Documentation/cgroups/task_counter.txt     |  126 +++++++++++++++
+ block/blk-cgroup.c                         |   12 +-
+ include/linux/cgroup.h                     |   22 ++-
+ include/linux/cgroup_subsys.h              |    8 +
+ include/linux/res_counter.h                |   27 +++-
+ init/Kconfig                               |    9 +
+ kernel/Makefile                            |    1 +
+ kernel/cgroup.c                            |   58 ++++++--
+ kernel/cgroup_freezer.c                    |    9 +-
+ kernel/cgroup_task_counter.c               |  239 ++++++++++++++++++++++++++++
+ kernel/cpuset.c                            |    6 +-
+ kernel/events/core.c                       |    5 +-
+ kernel/exit.c                              |    2 +-
+ kernel/fork.c                              |    7 +-
+ kernel/res_counter.c                       |   86 +++++++++--
+ kernel/sched.c                             |    6 +-
+ 18 files changed, 601 insertions(+), 55 deletions(-)
+ create mode 100644 Documentation/cgroups/task_counter.txt
+ create mode 100644 kernel/cgroup_task_counter.c
+
 -- 
 1.7.5.4
