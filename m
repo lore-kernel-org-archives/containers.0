@@ -1,47 +1,91 @@
-From: Frederic Weisbecker <fweisbec@gmail.com>
-Subject: Re: [PATCH 00/11 v5] cgroups: Task counter subsystem
-Date: Tue, 13 Sep 2011 17:21:56 +0200
-Message-ID: <20110913152153.GD23424@somewhere>
-References: <1315869091-18933-1-git-send-email-fweisbec@gmail.com>
+From: Paul Menage <paul@paulmenage.org>
+Subject: Re: [PATCH] per-cgroup tcp buffer limitation
+Date: Tue, 13 Sep 2011 11:09:03 -0700
+Message-ID: <CALdu-PC7ESSUHuF4vfVoRFFfkaBt1V28rGW3-O5pT3WtegAh4g@mail.gmail.com>
+References: <1315276556-10970-1-git-send-email-glommer@parallels.com>
+ <CAHH2K0aJxjinSu0Ek6jzsZ5dBmm5mEU-typuwYWYWEudF2F3Qg@mail.gmail.com>
+ <4E664766.40200@parallels.com> <CAHH2K0YJA7vZZ3QNAf63TZOnWhsRUwfuZYfntBL4muZ0G_Vt2w@mail.gmail.com>
+ <4E66A0A9.3060403@parallels.com> <CAHH2K0aq4s1_H-yY0kA3LhM00CCNNbJZyvyBoDD6rHC+qo_gNg@mail.gmail.com>
+ <4E68484A.4000201@parallels.com> <CAHH2K0YcXMUfd1Zr=f5a4=X9cPPp8NZiuichFXaOo=kVp5rRJA@mail.gmail.com>
+ <4E699341.9010606@parallels.com> <CALdu-PCrYPZx38o44ZyFrbQ6H39-vNPKey_Tpm4HRUNHNFMpyA@mail.gmail.com>
+ <4E6E39DD.2040102@parallels.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <1315869091-18933-1-git-send-email-fweisbec@gmail.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Paul Menage <paul@paulmenage.org>, Li Zefan <lizf@cn.fujitsu.com>, Johannes Weiner <hannes@cmpxchg.org>, Aditya Kali <adityakali@google.com>, Oleg Nesterov <oleg@redhat.com>, Kay Sievers <kay.sievers@vrfy.org>, Tim Hockin <thockin@hockin.org>, Tejun Heo <tj@kernel.org>, Containers <containers@lists.osdl.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <4E6E39DD.2040102@parallels.com>
+Sender: owner-linux-mm@kvack.org
+To: Glauber Costa <glommer@parallels.com>
+Cc: Greg Thelen <gthelen@google.com>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, netdev@vger.kernel.org, xemul@parallels.com, "David S. Miller" <davem@davemloft.net>, Hiroyouki Kamezawa <kamezawa.hiroyu@jp.fujitsu.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Suleiman Souhlal <suleiman@google.com>, Lennart Poettering <lennart@poettering.net>
 List-Id: containers.vger.kernel.org
 
-On Tue, Sep 13, 2011 at 01:11:20AM +0200, Frederic Weisbecker wrote:
-> No functional changes. Only documentation and comments added.
-> Checkpatch.pl fixes, etc...
-> 
-> This mostly addresses Andrew's reviews on v4.
-> 
-> Changes in v5:
-> 
-> - commented res_counter_common_ancestor (patch 6)
-> - commented res_counter_inherit (patch 2)
-> - merged documentation and task counter subsystem patch (patch 9)
-> - rename cgroup_task_counter_res in cgroup_task_res_counter (patch 9)
-> - more comments/ fix comments in cgroup_task_counter.c (patch 9)
-> - document res_counter_charge return value (patch 8)
-> - document res_counter_charge_until (patch 5)
-> - more comment in kconfig help (patch 9)
-> - fix various checkpatch reported issues
+On Mon, Sep 12, 2011 at 9:57 AM, Glauber Costa <glommer@parallels.com> wrot=
+e:
+>
+> I think at this point there is at least consensus that this could very we=
+ll
+> live in memcg, right ?
 
-There is a test tool that you can download there:
+Yes, it looks that way.
 
-https://tglx.de/~fweisbec/task_counter_test.tar.gz
+>> This is definitely an improvement, but I'd say it's not enough. I
+>> think we should consider something like:
+>
+> One step at a time =3D)
 
-It tests various things to ensure the subsystem behaves
-as expected:
+Yes, as far as design and initial implementation goes - but the full
+plan has to be figured out before anything gets committed to mainline,
+given the stability guarantees that implies.
 
-- correct tasks.usage value when tasks are moved around
-- correct fork and cgroup migration rejects if limit
-is reached
-- correct propagation of limit to parents
-- correct protection against forkbombs
-- test killing of tasks in a cgroup
-- ...
+>> - the 'active' control determines whether (all) child cgroups will
+>> have =A0memory.{limit,usage}_in_bytes files, or
+>> memory.{kernel,user}_{limit,usage}_in_bytes files
+>> - kernel memory will be charged either against 'kernel' or 'total'
+>> depending on the value of unified
+>
+> You mean for display/pressure purposes, right? Internally, I think once w=
+e
+> have kernel memory, we always charge it to kernel memory, regardless of
+> anything else. The value in unified field will only take place when we ne=
+ed
+> to grab this value.
+>
+> I don't personally see a reason for not having all files present at all
+> times.
+
+There's pretty much only one reason - avoiding the overhead of
+maintaining multiple counters.
+
+Each set of counters (user, kernel, total) will have its own locks,
+contention and other overheads to keep up to date. If userspace
+doesn't care about one or two of the three, then that's mostly wasted.
+
+Now it might be that the accounting of all three can be done with
+little more overhead than that required to update just a split view or
+just a unified view, in which case there's much less argument against
+simplifying and tracking/charging/limiting all three.
+
+>
+> It is overly flexible if we're exposing these counters and expecting the
+> user to do anything with them. It is perfectly fine if a single file, whe=
+n
+> read, displays this information as statistics.
+>
+
+When I proposed this, I guess I was envisioning that most of the
+counters (e.g. things like TCP buffers or general network buffers)
+would be primarily for stats, since the admin probably only cares
+about total memory usage.
+
+The main point of this was to allow people who want to do something
+like tracking/limiting TCP buffer usage specifically per-cgroup to do
+so, without having any performance impact on the regular users.
+
+Paul
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
