@@ -1,43 +1,93 @@
-From: Glauber Costa <glommer@parallels.com>
-Subject: Re: [PATCH] per-cgroup tcp buffer limitation
-Date: Tue, 13 Sep 2011 16:08:11 -0300
-Message-ID: <4E6FAA1B.5020102@parallels.com>
-References: <1315276556-10970-1-git-send-email-glommer@parallels.com> <CAHH2K0aJxjinSu0Ek6jzsZ5dBmm5mEU-typuwYWYWEudF2F3Qg@mail.gmail.com> <4E664766.40200@parallels.com> <CAHH2K0YJA7vZZ3QNAf63TZOnWhsRUwfuZYfntBL4muZ0G_Vt2w@mail.gmail.com> <4E66A0A9.3060403@parallels.com> <CAHH2K0aq4s1_H-yY0kA3LhM00CCNNbJZyvyBoDD6rHC+qo_gNg@mail.gmail.com> <4E68484A.4000201@parallels.com> <CAHH2K0YcXMUfd1Zr=f5a4=X9cPPp8NZiuichFXaOo=kVp5rRJA@mail.gmail.com> <4E699341.9010606@parallels.com> <CALdu-PCrYPZx38o44ZyFrbQ6H39-vNPKey_Tpm4HRUNHNFMpyA@mail.gmail.com> <4E6E39DD.2040102@parallels.com> <CALdu-PC7ESSUHuF4vfVoRFFfkaBt1V28rGW3-O5pT3WtegAh4g@mail.gmail.com> <4E6F9CC4.2000601@parallels.com> <CALdu-PDGpBnVHW7E5NobAwtXop5c03NTmijkk8oB7u-a5LEXww@mail.gmail.com>
+From: Alex Bligh <alex@alex.org.uk>
+Subject: Re: [PATCH] Fix repeatable Oops on container destroy with conntrack
+Date: Tue, 13 Sep 2011 21:44:38 +0100
+Message-ID: <7631498AC7E7C0EAD641AC7D@nimrod.local>
+References: <2184C0CE5A5EDC94CDDA5053@Ximines.local>
+ <20110912072524.GA2996@p183.telecom.by> <20110912093749.GE2194@1984>
+ <E0902A9541FD5D118EA02B31@Ximines.local> <20110912183357.GC3641@1984>
+ <87A32B21CA99D62CE1AB7A4B@Ximines.local>
+Reply-To: Alex Bligh <alex@alex.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
+Content-Type: text/plain; charset=us-ascii; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <CALdu-PDGpBnVHW7E5NobAwtXop5c03NTmijkk8oB7u-a5LEXww@mail.gmail.com>
-Sender: owner-linux-mm@kvack.org
-To: Paul Menage <paul@paulmenage.org>
-Cc: Greg Thelen <gthelen@google.com>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, netdev@vger.kernel.org, xemul@parallels.com, "David S. Miller" <davem@davemloft.net>, Hiroyouki Kamezawa <kamezawa.hiroyu@jp.fujitsu.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Suleiman Souhlal <suleiman@google.com>, Lennart Poettering <lennart@poettering.net>
+Return-path: <netfilter-devel-owner@vger.kernel.org>
+In-Reply-To: <87A32B21CA99D62CE1AB7A4B@Ximines.local>
+Content-Disposition: inline
+Sender: netfilter-devel-owner@vger.kernel.org
+To: Pablo Neira Ayuso <pablo@netfilter.org>
+Cc: Alexey Dobriyan <adobriyan@gmail.com>, netfilter-devel@vger.kernel.org, netfilter@vger.kernel.org, coreteam@netfilter.org, linux-kernel@vger.kernel.org, containers@lists.linux-foundation.org, Linux Containers <containers@lists.osdl.org>, Alex Bligh <alex@alex.org.uk>
 List-Id: containers.vger.kernel.org
 
-On 09/13/2011 03:46 PM, Paul Menage wrote:
-> On Tue, Sep 13, 2011 at 11:11 AM, Glauber Costa<glommer@parallels.com>  wrote:
+Alexey / Pablo,
+
+--On 12 September 2011 20:06:25 +0100 Alex Bligh <alex@alex.org.uk> wrote:
+
+> Pablo,
+>
+> --On 12 September 2011 20:33:57 +0200 Pablo Neira Ayuso
+> <pablo@netfilter.org> wrote:
+>
+>> Yes, this is what Alexey was pointing out in the previous email and
+>> why he suggested to move it to nfnetlink_has_listeners (to cover the
+>> expectation case).
 >>
->> What if they are all updated under the same lock ?
+>> But you're right, we cannot move it to nfnetlink_has_listeners because
+>> of the item->report case. Please, include the expectation part and
+>> resend the patch.
 >
-> Right, that would be the kind of optimization that would remove the
-> need for worrying about whether or not to account it. It would
-> probably mean creating some memcg-specific structures like
-> res-counters that could handle multiple values, since you'd need to
-> update both the kernel charge and the total charge, in this cgroup
-> *and* its ancestors.
+> Thanks - see below
+
+Is this new version OK? I am happy to adjust if not.
+
+I think we ought to get /something/ in, because without anything it's
+very simple to cause an oops and a resultant machine hang.
+
+-- 
+Alex Bligh
+
+> Signed-off-by: Alex Bligh <alex@alex.org.uk>
+> ---
+>  net/netfilter/nf_conntrack_netlink.c |    9 +++++++++
+>  1 files changed, 9 insertions(+), 0 deletions(-)
 >
-> Paul
-If we do that, we may have to commit to an intermediary user interface - 
-with controls to to determine if kernel memory is billed to kernel or 
-total, a enable/disable file, just to later render it pointless by a new 
-optimization - that we seem to agree that seems possible.
+> diff --git a/net/netfilter/nf_conntrack_netlink.c
+> b/net/netfilter/nf_conntrack_netlink.c
+> index 482e90c..f44d571 100644
+> --- a/net/netfilter/nf_conntrack_netlink.c
+> +++ b/net/netfilter/nf_conntrack_netlink.c
+> @@ -570,6 +570,11 @@ ctnetlink_conntrack_event(unsigned int events,
+> struct nf_ct_event *item)
+>                 return 0;
+>
+>         net = nf_ct_net(ct);
+> +
+> +       /* container deinit, netlink may have died before
+> death_by_timeout */
+> +       if (!net->nfnl)
+> +               return 0;
+> +
+>         if (!item->report && !nfnetlink_has_listeners(net, group))
+>                 return 0;
+>
+> @@ -1723,6 +1728,10 @@ ctnetlink_expect_event(unsigned int events, struct
+> nf_exp_event *item)
+>         } else
+>                 return 0;
+>
+> +       /* container deinit, netlink may have died before
+> death_by_timeout */
+> +       if (!net->nfnl)
+> +               return 0;
+> +
+>         if (!item->report && !nfnetlink_has_listeners(net, group))
+>                 return 0;
+>
+> --
+> 1.7.5.4
+>
+>
 
-I think it is preferred to always assume kernel memory is accounted to 
-the kernel, and when we optimize it, no changes are made to what's 
-exposed to userspace.
 
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+
+-- 
+Alex Bligh
