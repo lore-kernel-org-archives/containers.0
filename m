@@ -1,31 +1,36 @@
-From: Glauber Costa <glommer@parallels.com>
+From: Paul Menage <paul@paulmenage.org>
 Subject: Re: [PATCH] per-cgroup tcp buffer limitation
-Date: Tue, 13 Sep 2011 15:11:16 -0300
-Message-ID: <4E6F9CC4.2000601@parallels.com>
-References: <1315276556-10970-1-git-send-email-glommer@parallels.com> <CAHH2K0aJxjinSu0Ek6jzsZ5dBmm5mEU-typuwYWYWEudF2F3Qg@mail.gmail.com> <4E664766.40200@parallels.com> <CAHH2K0YJA7vZZ3QNAf63TZOnWhsRUwfuZYfntBL4muZ0G_Vt2w@mail.gmail.com> <4E66A0A9.3060403@parallels.com> <CAHH2K0aq4s1_H-yY0kA3LhM00CCNNbJZyvyBoDD6rHC+qo_gNg@mail.gmail.com> <4E68484A.4000201@parallels.com> <CAHH2K0YcXMUfd1Zr=f5a4=X9cPPp8NZiuichFXaOo=kVp5rRJA@mail.gmail.com> <4E699341.9010606@parallels.com> <CALdu-PCrYPZx38o44ZyFrbQ6H39-vNPKey_Tpm4HRUNHNFMpyA@mail.gmail.com> <4E6E39DD.2040102@parallels.com> <CALdu-PC7ESSUHuF4vfVoRFFfkaBt1V28rGW3-O5pT3WtegAh4g@mail.gmail.com>
+Date: Tue, 13 Sep 2011 11:46:29 -0700
+Message-ID: <CALdu-PDGpBnVHW7E5NobAwtXop5c03NTmijkk8oB7u-a5LEXww@mail.gmail.com>
+References: <1315276556-10970-1-git-send-email-glommer@parallels.com>
+ <CAHH2K0aJxjinSu0Ek6jzsZ5dBmm5mEU-typuwYWYWEudF2F3Qg@mail.gmail.com>
+ <4E664766.40200@parallels.com> <CAHH2K0YJA7vZZ3QNAf63TZOnWhsRUwfuZYfntBL4muZ0G_Vt2w@mail.gmail.com>
+ <4E66A0A9.3060403@parallels.com> <CAHH2K0aq4s1_H-yY0kA3LhM00CCNNbJZyvyBoDD6rHC+qo_gNg@mail.gmail.com>
+ <4E68484A.4000201@parallels.com> <CAHH2K0YcXMUfd1Zr=f5a4=X9cPPp8NZiuichFXaOo=kVp5rRJA@mail.gmail.com>
+ <4E699341.9010606@parallels.com> <CALdu-PCrYPZx38o44ZyFrbQ6H39-vNPKey_Tpm4HRUNHNFMpyA@mail.gmail.com>
+ <4E6E39DD.2040102@parallels.com> <CALdu-PC7ESSUHuF4vfVoRFFfkaBt1V28rGW3-O5pT3WtegAh4g@mail.gmail.com>
+ <4E6F9CC4.2000601@parallels.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=ISO-8859-1
 Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <CALdu-PC7ESSUHuF4vfVoRFFfkaBt1V28rGW3-O5pT3WtegAh4g@mail.gmail.com>
+In-Reply-To: <4E6F9CC4.2000601@parallels.com>
 Sender: owner-linux-mm@kvack.org
-To: Paul Menage <paul@paulmenage.org>
+To: Glauber Costa <glommer@parallels.com>
 Cc: Greg Thelen <gthelen@google.com>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, netdev@vger.kernel.org, xemul@parallels.com, "David S. Miller" <davem@davemloft.net>, Hiroyouki Kamezawa <kamezawa.hiroyu@jp.fujitsu.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Suleiman Souhlal <suleiman@google.com>, Lennart Poettering <lennart@poettering.net>
 List-Id: containers.vger.kernel.org
 
-On 09/13/2011 03:09 PM, Paul Menage wrote:
-> Each set of counters (user, kernel, total) will have its own locks,
-> contention and other overheads to keep up to date. If userspace
-> doesn't care about one or two of the three, then that's mostly wasted.
+On Tue, Sep 13, 2011 at 11:11 AM, Glauber Costa <glommer@parallels.com> wrote:
 >
-> Now it might be that the accounting of all three can be done with
-> little more overhead than that required to update just a split view or
-> just a unified view, in which case there's much less argument against
-> simplifying and tracking/charging/limiting all three.
-What if they are all updated under the same lock ?
-The lock argument is very well valid for accounting vs not accounting 
-kernel memory. But once it is accounted, which counter we account to, I 
-think, is less of a problem.
+> What if they are all updated under the same lock ?
+
+Right, that would be the kind of optimization that would remove the
+need for worrying about whether or not to account it. It would
+probably mean creating some memcg-specific structures like
+res-counters that could handle multiple values, since you'd need to
+update both the kernel charge and the total charge, in this cgroup
+*and* its ancestors.
+
+Paul
 
 --
 To unsubscribe, send a message with 'unsubscribe linux-mm' in
