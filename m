@@ -1,8 +1,8 @@
-From: Vasiliy Kulikov <segoon@openwall.com>
+From: Cyrill Gorcunov <gorcunov@gmail.com>
 Subject: Re: [patch 2/2] fs, proc: Introduce the /proc/<pid>/map_files/
  directory v12
-Date: Wed, 14 Sep 2011 18:57:46 +0400
-Message-ID: <20110914145746.GA9074@albatros>
+Date: Wed, 14 Sep 2011 20:00:19 +0400
+Message-ID: <20110914160018.GW25367@sun>
 References: <20110913211359.674453213@openvz.org>
  <20110913212447.918816776@openvz.org>
  <20110913235222.043927b3.akpm@linux-foundation.org>
@@ -17,12 +17,12 @@ Return-path: <linux-kernel-owner@vger.kernel.org>
 Content-Disposition: inline
 In-Reply-To: <20110914144841.GA7906@albatros>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Cyrill Gorcunov <gorcunov@gmail.com>
+To: Vasiliy Kulikov <segoon@openwall.com>
 Cc: Pavel Machek <pavel@ucw.cz>, Andrew Morton <akpm00@gmail.com>, linux-kernel@vger.kernel.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Kirill Shutemov <kirill@shutemov.name>, Pavel Emelyanov <xemul@parallels.com>, James Bottomley <jbottomley@parallels.com>, Nathan Lynch <ntl@pobox.com>, Zan Lynx <zlynx@acm.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, Tejun Heo <tj@kernel.org>, Alexey Dobriyan <adobriyan@gmail.com>, Al Viro <viro@ZenIV.linux.org.uk>, Andrew Morton <akpm@linux-foundation.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Sep 14, 2011 at 18:48 +0400, Vasiliy Kulikov wrote:
-> > So, there is no *new* hole.
+On Wed, Sep 14, 2011 at 06:48:41PM +0400, Vasiliy Kulikov wrote:
+...
 > 
 > Actually now I see the difference between having something mapped and
 > having an _fd_ of this something.
@@ -44,12 +44,12 @@ On Wed, Sep 14, 2011 at 18:48 +0400, Vasiliy Kulikov wrote:
 > 
 > If you have a write mmap area, but no fd, you may not trunc a file; with
 > map_files/ you may get an fd and ftrunc it.
+> 
 
-Also it unconditionally adds +x, but I don't think it breaks any
-security assumption as (1) there is no +s and (2) fd is not a directory.
+This stands for anonymous memory, and if you have enough rights to
+access the task this ftruncate is the last problem (since having ptrace
+access to the task I _aready_ can trash various stuff inside, i dont need
+even bother to look into map_files/ or whatever). So I don't see how
+ftruncate migh harm you here?
 
-Thanks,
-
--- 
-Vasiliy Kulikov
-http://www.openwall.com - bringing security into open computing environments
+	Cyrill
