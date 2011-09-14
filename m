@@ -1,26 +1,45 @@
-From: Andrew Morton <akpm00@gmail.com>
-Subject: Re: [patch 2/2] fs, proc: Introduce the /proc/<pid>/map_files/
- directory v12
-Date: Tue, 13 Sep 2011 23:52:22 -0700
-Message-ID: <20110913235222.043927b3.akpm@linux-foundation.org>
-References: <20110913211359.674453213@openvz.org>
-	<20110913212447.918816776@openvz.org>
+From: Alex Bligh <alex@alex.org.uk>
+Subject: Re: [PATCH] Fix repeatable Oops on container destroy with conntrack
+Date: Wed, 14 Sep 2011 09:01:34 +0100
+Message-ID: <A51A04647674405AF6C39A4F@nimrod.local>
+References: <2184C0CE5A5EDC94CDDA5053@Ximines.local>
+ <20110912072524.GA2996@p183.telecom.by> <20110912093749.GE2194@1984>
+ <E0902A9541FD5D118EA02B31@Ximines.local> <20110912183357.GC3641@1984>
+ <87A32B21CA99D62CE1AB7A4B@Ximines.local>
+ <7631498AC7E7C0EAD641AC7D@nimrod.local> <20110914013500.GB17051@1984>
+Reply-To: Alex Bligh <alex@alex.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=us-ascii; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20110913212447.918816776@openvz.org>
-Sender: linux-fsdevel-owner@vger.kernel.org
-To: Cyrill Gorcunov <gorcunov@openvz.org>
-Cc: linux-kernel@vger.kernel.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Kirill Shutemov <kirill@shutemov.name>, Pavel Emelyanov <xemul@parallels.com>, James Bottomley <jbottomley@parallels.com>, Nathan Lynch <ntl@pobox.com>, Zan Lynx <zlynx@acm.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, Vasiliy Kulikov <segoon@openwall.com>, Tejun Heo <tj@kernel.org>, Alexey Dobriyan <adobriyan@gmail.com>, Al Viro <viro@ZenIV.linux.org.uk>, Andrew Morton <akpm@linux-foundation.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <20110914013500.GB17051@1984>
+Content-Disposition: inline
+Sender: linux-kernel-owner@vger.kernel.org
+To: Pablo Neira Ayuso <pablo@netfilter.org>
+Cc: Alexey Dobriyan <adobriyan@gmail.com>, netfilter-devel@vger.kernel.org, netfilter@vger.kernel.org, coreteam@netfilter.org, linux-kernel@vger.kernel.org, containers@lists.linux-foundation.org, Linux Containers <containers@lists.osdl.org>, Alex Bligh <alex@alex.org.uk>
 List-Id: containers.vger.kernel.org
 
-On Wed, 14 Sep 2011 01:14:01 +0400 Cyrill Gorcunov <gorcunov@openvz.org> wrote:
 
-> This one behaves similarly to the /proc/<pid>/fd/ one - it contains symlinks
-> one for each mapping with file, the name of a symlink is "vma->vm_start-vma->vm_end",
-> the target is the file. Opening a symlink results in a file that point exactly
-> to the same inode as them vma's one.
 
-We should fully work through Pavel Machek's comments, please.  For some
-reason I'm a bit paranoid about security lately :(
+--On 14 September 2011 03:35:00 +0200 Pablo Neira Ayuso 
+<pablo@netfilter.org> wrote:
+
+>> Is this new version OK? I am happy to adjust if not.
+>
+> Hm, I still think that this is a workaround.
+
+It is a bit of a workaround, that is true. But it is a workaround
+that will fix the bug in every kernel since 2.6.32 (and perhaps
+before - I haven't looked). It's thus reasonably easily applicable
+to stable kernel series.
+
+I'm not clued-up enough on Netfilter to know what the right fix is,
+but is applying the workaround in a commit which could be easily
+backported, then applying the 'right fix' (assuming that is different)
+a reasonable strategy?
+
+As you can probably tell, my interest here is to get something that
+doesn't oops into stable kernels.
+
+-- 
+Alex Bligh
