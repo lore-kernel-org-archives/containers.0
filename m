@@ -1,10 +1,9 @@
-From: Cyrill Gorcunov <gorcunov@gmail.com>
+From: Vasiliy Kulikov <segoon@openwall.com>
 Subject: Re: [patch 2/2] fs, proc: Introduce the /proc/<pid>/map_files/
  directory v12
-Date: Fri, 16 Sep 2011 22:07:32 +0400
-Message-ID: <20110916180731.GB8599@sun>
-References: <20110914134405.GV25367@sun>
- <20110914144841.GA7906@albatros>
+Date: Fri, 16 Sep 2011 22:11:46 +0400
+Message-ID: <20110916181146.GA20801@albatros>
+References: <20110914144841.GA7906@albatros>
  <20110914160018.GW25367@sun>
  <20110914160724.GA10612@albatros>
  <20110915091417.GA27755@sun>
@@ -13,59 +12,41 @@ References: <20110914134405.GV25367@sun>
  <20110915105651.GA17575@albatros>
  <20110915201939.GE12040@sun>
  <20110916175618.GA20046@albatros>
+ <20110916180731.GB8599@sun>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <linux-kernel-owner@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <20110916175618.GA20046@albatros>
+In-Reply-To: <20110916180731.GB8599@sun>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Vasiliy Kulikov <segoon@openwall.com>
+To: Cyrill Gorcunov <gorcunov@gmail.com>
 Cc: Pavel Machek <pavel@ucw.cz>, Andrew Morton <akpm00@gmail.com>, linux-kernel@vger.kernel.org, containers@lists.osdl.org, linux-fsdevel@vger.kernel.org, Kirill Shutemov <kirill@shutemov.name>, Pavel Emelyanov <xemul@parallels.com>, James Bottomley <jbottomley@parallels.com>, Nathan Lynch <ntl@pobox.com>, Zan Lynx <zlynx@acm.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, Tejun Heo <tj@kernel.org>, Alexey Dobriyan <adobriyan@gmail.com>, Al Viro <viro@ZenIV.linux.org.uk>, Andrew Morton <akpm@linux-foundation.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, Sep 16, 2011 at 09:56:18PM +0400, Vasiliy Kulikov wrote:
-...
+On Fri, Sep 16, 2011 at 22:07 +0400, Cyrill Gorcunov wrote:
+> > BTW, not a big deal, but probably you should return -EACCES on
+> > !capable() as file presence is not an issue in this case.
 > > 
-> > v14: (by Vasiliy Kulikov)
-> >  - for security reason map_files/ entries are allowed for
-> >    readers with CAP_SYS_ADMIN credentials granted only
+> >     if (!ptrace_may_access(task, PTRACE_MODE_READ))
+> >         goto out_notask;
+> > 
+> >     status = -EACCES;
+> >     if (!capable(CAP_SYS_ADMIN))
+> >         goto out_notask;
+> > 
+> >     status = 0;
+> > 
+> > 
 > 
-> This changelog is currently much longer than the commit description text ;)
+> That's not a proble to fix it actually. So can I fix it and
+> put some tage here (Reviewed or something?).
 
-Yes, I know ;) I would like to keep it (to appreciate everyone who spent time
-in review and feedback).
-...
-> 
-> > +
-> > + inode = dentry->d_inode;
-> > + task = get_proc_task(inode);
-> > + if (!task)
-> > +         goto out_notask;
-> > +
-> > + if (!ptrace_may_access(task, PTRACE_MODE_READ))
-> > +         goto out;
-> 
-> While this is not needed with capable() check, it's OK to keep it for
-> the future more finegranted access checks.
+Yep, with CAP_SYS_ADMIN check there should be no issues here.
 
-yeah
+Reviewed-by: Vasiliy Kulikov <segoon@openwall.com>
 
-> 
-> BTW, not a big deal, but probably you should return -EACCES on
-> !capable() as file presence is not an issue in this case.
-> 
->     if (!ptrace_may_access(task, PTRACE_MODE_READ))
->         goto out_notask;
-> 
->     status = -EACCES;
->     if (!capable(CAP_SYS_ADMIN))
->         goto out_notask;
-> 
->     status = 0;
-> 
-> 
+Thanks,
 
-That's not a proble to fix it actually. So can I fix it and
-put some tage here (Reviewed or something?).
-
-	Cyrill
+-- 
+Vasiliy Kulikov
+http://www.openwall.com - bringing security into open computing environments
