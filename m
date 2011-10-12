@@ -1,61 +1,73 @@
-From: Kyle Moffett <kyle@moffetthome.net>
+From: "J. Bruce Fields" <bfields@fieldses.org>
 Subject: Re: Detecting if you are running in a container
-Date: Wed, 12 Oct 2011 14:25:04 -0400
-Message-ID: <CAGZ=bqJxadNqaPCW3HufrMmQ57x082=pCDa6-mWLsdtfxHgdPw@mail.gmail.com>
-References: <20111007160113.GB14201@tango.0pointer.de> <m17h4g2jqy.fsf@fess.ebiederm.org>
- <20111010163140.GA22191@tango.0pointer.de> <m1mxd8lg0x.fsf_-_@fess.ebiederm.org>
- <20111011013201.GA7948@thunk.org> <20111011020530.GG16723@count0.beaverton.ibm.com>
- <20111011032523.GB7948@thunk.org> <m1ty7ghvvn.fsf@fess.ebiederm.org>
- <203BBB0D-293D-4BFB-A57B-41C56F58F9B3@mit.edu> <m17h4bfcuv.fsf@fess.ebiederm.org>
+Date: Wed, 12 Oct 2011 15:04:52 -0400
+Message-ID: <20111012190452.GA23845@fieldses.org>
+References: <20111010163140.GA22191@tango.0pointer.de>
+ <m1mxd8lg0x.fsf_-_@fess.ebiederm.org>
+ <20111011013201.GA7948@thunk.org>
+ <20111011020530.GG16723@count0.beaverton.ibm.com>
+ <20111011032523.GB7948@thunk.org>
+ <m1ty7ghvvn.fsf@fess.ebiederm.org>
+ <203BBB0D-293D-4BFB-A57B-41C56F58F9B3@mit.edu>
+ <m17h4bfcuv.fsf@fess.ebiederm.org>
  <20111012175702.GA23231@fieldses.org>
+ <CAGZ=bqJxadNqaPCW3HufrMmQ57x082=pCDa6-mWLsdtfxHgdPw@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=utf-8
 Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20111012175702.GA23231@fieldses.org>
+Content-Disposition: inline
+In-Reply-To: <CAGZ=bqJxadNqaPCW3HufrMmQ57x082=pCDa6-mWLsdtfxHgdPw@mail.gmail.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: "J. Bruce Fields" <bfields@fieldses.org>
+To: Kyle Moffett <kyle@moffetthome.net>
 Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Theodore Tso <tytso@mit.edu>, Matt Helsley <matthltc@us.ibm.com>, Lennart Poettering <mzxreary@0pointer.de>, Kay Sievers <kay.sievers@vrfy.org>, linux-kernel@vger.kernel.org, harald@redhat.com, david@fubar.dk, greg@kroah.com, Linux Containers <containers@lists.osdl.org>, Linux Containers <lxc-devel@lists.sourceforge.net>, "Serge E. Hallyn" <serge@hallyn.com>, Daniel Lezcano <daniel.lezcano@free.fr>, Paul Menage <paul@paulmenage.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Oct 12, 2011 at 13:57, J. Bruce Fields <bfields@fieldses.org> w=
-rote:
-> On Tue, Oct 11, 2011 at 02:16:24PM -0700, Eric W. Biederman wrote:
->> Where all of this winds up interesting in the field of oncoming kern=
-el
->> work is that uids are persistent and are stored in file systems. =C2=
+On Wed, Oct 12, 2011 at 02:25:04PM -0400, Kyle Moffett wrote:
+> On Wed, Oct 12, 2011 at 13:57, J. Bruce Fields <bfields@fieldses.org>=
+ wrote:
+> > On Tue, Oct 11, 2011 at 02:16:24PM -0700, Eric W. Biederman wrote:
+> >> Where all of this winds up interesting in the field of oncoming ke=
+rnel
+> >> work is that uids are persistent and are stored in file systems. =C2=
 =A0So
->> once we have all of the permission checks in the kernel tweaked to c=
-are
->> about user namespaces we next look at the filesystems. =C2=A0 The ea=
-sy
->> initial implementation is going to be just associating a user namesp=
-ace
->> with a super block. =C2=A0But farther out being able to store uids f=
-rom
->> different user namespaces on the same filesystem becomes an interest=
-ing
->> problem.
->
-> Yipes. =C2=A0Why would anyone want to do that?
+> >> once we have all of the permission checks in the kernel tweaked to=
+ care
+> >> about user namespaces we next look at the filesystems. =C2=A0 The =
+easy
+> >> initial implementation is going to be just associating a user name=
+space
+> >> with a super block. =C2=A0But farther out being able to store uids=
+ from
+> >> different user namespaces on the same filesystem becomes an intere=
+sting
+> >> problem.
+> >
+> > Yipes. =C2=A0Why would anyone want to do that?
+>=20
+> Consider an NFS file server providing collaborative access to multipl=
+e
+> independently managed domains (EG: several different universities),
+> each with their own LDAP userid database and Kerberos services.
+>=20
+> The common server is in its own realm and allows cross-realm
+> authentication to the other university realms, using the origin realm
+> to decide what namespace to map each user into.
+>=20
+> If you are just doing read-only operations then you don't need any
+> kind of namespace persistence on the NFS server's storage.  On the
+> other hand, if you want to allow users to collaborate and create ACLs
+> then you need something dramatically more involved.
 
-Consider an NFS file server providing collaborative access to multiple
-independently managed domains (EG: several different universities),
-each with their own LDAP userid database and Kerberos services.
+Yeah, OK, I suppose I'd imagined mapping into the server's id space
+somehow for that case, but I suppose this would be cleaner.  Still,
+seems like a big pain....
 
-The common server is in its own realm and allows cross-realm
-authentication to the other university realms, using the origin realm
-to decide what namespace to map each user into.
+> On the wire, the kerberos server would simply identify each NFSv4 ACL
+> entry with a particular realm ID, but in the backend it would need
+> some filesystem-level disambiguation (possibly the recently-proposed
+> RichACL features?)
 
-If you are just doing read-only operations then you don't need any
-kind of namespace persistence on the NFS server's storage.  On the
-other hand, if you want to allow users to collaborate and create ACLs
-then you need something dramatically more involved.
+That doesn't help with owner and group.
 
-On the wire, the kerberos server would simply identify each NFSv4 ACL
-entry with a particular realm ID, but in the backend it would need
-some filesystem-level disambiguation (possibly the recently-proposed
-RichACL features?)
-
-Cheers,
-Kyle Moffett
+--b.
