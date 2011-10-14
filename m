@@ -1,200 +1,58 @@
-From: Cyrill Gorcunov <gorcunov@openvz.org>
-Subject: [PATCH] clone: Introduce the CLONE_CHILD_USEPID functionality
-Date: Thu, 13 Oct 2011 18:02:16 +0400
-Message-ID: <20111013140216.GD11230@moon>
+From: Ted Ts'o <tytso@mit.edu>
+Subject: Re: Detecting if you are running in a container
+Date: Fri, 14 Oct 2011 11:54:06 -0400
+Message-ID: <20111014155406.GC13119@thunk.org>
+References: <20111011013201.GA7948@thunk.org>
+ <20111011020530.GG16723@count0.beaverton.ibm.com>
+ <20111011032523.GB7948@thunk.org>
+ <m1ty7ghvvn.fsf@fess.ebiederm.org>
+ <203BBB0D-293D-4BFB-A57B-41C56F58F9B3@mit.edu>
+ <m17h4bfcuv.fsf@fess.ebiederm.org>
+ <20111012175702.GA23231@fieldses.org>
+ <CAGZ=bqJxadNqaPCW3HufrMmQ57x082=pCDa6-mWLsdtfxHgdPw@mail.gmail.com>
+ <20111012190452.GA23845@fieldses.org>
+ <CAGZ=bqJjgmtBfyXJ2eK1C0PfzkgBVWFTjkTYkC211ZT+-5f-UQ@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <linux-kernel-owner@vger.kernel.org>
 Content-Disposition: inline
+In-Reply-To: <CAGZ=bqJjgmtBfyXJ2eK1C0PfzkgBVWFTjkTYkC211ZT+-5f-UQ@mail.gmail.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: LKML <linux-kernel@vger.kernel.org>, Nathan Lynch <ntl@pobox.com>, Oren Laadan <orenl@cs.columbia.edu>, Daniel Lezcano <dlezcano@fr.ibm.com>, Serge Hallyn <serue@us.ibm.com>, Tejun
-Cc: Pavel Emelyanov <xemul@parallels.com>, Glauber Costa <glommer@parallels.com>, Linux Containers <containers@lists.osdl.org>, James Bottomley <jbottomley@parallels.com>
+To: Kyle Moffett <kyle@moffetthome.net>
+Cc: "J. Bruce Fields" <bfields@fieldses.org>, "Eric W. Biederman" <ebiederm@xmission.com>, Matt Helsley <matthltc@us.ibm.com>, Lennart Poettering <mzxreary@0pointer.de>, Kay Sievers <kay.sievers@vrfy.org>, linux-kernel@vger.kernel.org, harald@redhat.com, david@fubar.dk, greg@kroah.com, Linux Containers <containers@lists.osdl.org>, Linux Containers <lxc-devel@lists.sourceforge.net>, "Serge E. Hallyn" <serge@hallyn.com>, Daniel Lezcano <daniel.lezcano@free.fr>, Paul Menage <paul@paulmenage.org>
 List-Id: containers.vger.kernel.org
 
-At previous review session seems no final conclusion was made so this is
-a second attempt to step forward.
+On Wed, Oct 12, 2011 at 03:12:34PM -0400, Kyle Moffett wrote:
+> Well, you're going to need to introduce a bunch of new xattrs to
+> handle the namespacing anyways.
+> 
+> As I understand it you can use RichACLs to grant all the same
+> privileges as owner and group, so you can simply map the real
+> namespaced owner and group into RichACLs (or another xattr) and force
+> the inode uid/gid to be root/root (or maybe nobody/nogroup or
+> something).
 
----
-From: Pavel Emelyanov <xemul@openvz.org>
-Subject: [PATCH] clone: Introduce the CLONE_CHILD_USEPID functionality
+It's going to be all about mapping tables, and whether the mapping is
+done in userspace or kernel space.  For example, you might want to
+take a Kerberos principal name, and mapping it to a 128bit identifier
+(64 bit realm id + 64 bit user id), and that in turn might require
+mapping to some 32-bit Linux uid namespace.
 
-When restoring a task (or a set of tasks) we need to recreate them with
-exactly the same pid as they had before. Thus we need the ability to create
-a task with specified pid.
+If people want to support multiple 32-bit Linux uid namespaces, then
+it's a question of how you name these uid name spaces, and how to
+manage the mapping tables outside of kernel, and how the mapping
+tables get loaded into the kernel.
 
-The proposal is to reuse the already free CLONE_STOPPED clone flag.
+> I am of course making it sound a million times easier than it's
+> actually likely to be, but I do think it's possible without too many
+> odd corner cases.
 
-About the security implication - this can create some problems with pids
-wraparound and similar, so this approach can be restricted with the "don't
-allow for CLONE_CHILD_USEPID when the current pid namespace has ever done
-real pid allocation". This will work perfectly for checkpoint-restore and
-will not give anyone chances for screwing pids up on a living system.
+It's not the corner cases, it's all of the different name spaces that
+different system administrators and their sites are going to want to
+use, and how to support them all....
 
-Signed-off-by: Pavel Emelyanov <xemul@openvz.org>
-Signed-off-by: Cyrill Gorcunov <gorcunov@openvz.org>
----
- include/linux/pid.h   |    2 -
- include/linux/sched.h |    1 
- kernel/fork.c         |   10 ++++++-
- kernel/pid.c          |   70 ++++++++++++++++++++++++++++++++++++--------------
- 4 files changed, 62 insertions(+), 21 deletions(-)
+And of course, once we start naming uid name spaces, eventually
+someone will want to virtualize containers, and then we will have
+namespaces for namespaces.  (It's turtles all the way down!  :-)
 
-Index: linux-2.6.git/include/linux/pid.h
-===================================================================
---- linux-2.6.git.orig/include/linux/pid.h
-+++ linux-2.6.git/include/linux/pid.h
-@@ -119,7 +119,7 @@ extern struct pid *find_get_pid(int nr);
- extern struct pid *find_ge_pid(int nr, struct pid_namespace *);
- int next_pidmap(struct pid_namespace *pid_ns, unsigned int last);
- 
--extern struct pid *alloc_pid(struct pid_namespace *ns);
-+extern struct pid *alloc_pid(struct pid_namespace *ns, int pid);
- extern void free_pid(struct pid *pid);
- 
- /*
-Index: linux-2.6.git/include/linux/sched.h
-===================================================================
---- linux-2.6.git.orig/include/linux/sched.h
-+++ linux-2.6.git/include/linux/sched.h
-@@ -23,6 +23,7 @@
- #define CLONE_CHILD_SETTID	0x01000000	/* set the TID in the child */
- /* 0x02000000 was previously the unused CLONE_STOPPED (Start in stopped state)
-    and is now available for re-use. */
-+#define CLONE_CHILD_USEPID	0x02000000	/* use the given pid */
- #define CLONE_NEWUTS		0x04000000	/* New utsname group? */
- #define CLONE_NEWIPC		0x08000000	/* New ipcs */
- #define CLONE_NEWUSER		0x10000000	/* New user namespace */
-Index: linux-2.6.git/kernel/fork.c
-===================================================================
---- linux-2.6.git.orig/kernel/fork.c
-+++ linux-2.6.git/kernel/fork.c
-@@ -1239,8 +1239,16 @@ static struct task_struct *copy_process(
- 		goto bad_fork_cleanup_io;
- 
- 	if (pid != &init_struct_pid) {
-+		int want_pid = 0;
-+
-+		if (clone_flags & CLONE_CHILD_USEPID) {
-+			retval = get_user(want_pid, child_tidptr);
-+			if (retval)
-+				goto bad_fork_cleanup_io;
-+		}
-+
- 		retval = -ENOMEM;
--		pid = alloc_pid(p->nsproxy->pid_ns);
-+		pid = alloc_pid(p->nsproxy->pid_ns, want_pid);
- 		if (!pid)
- 			goto bad_fork_cleanup_io;
- 	}
-Index: linux-2.6.git/kernel/pid.c
-===================================================================
---- linux-2.6.git.orig/kernel/pid.c
-+++ linux-2.6.git/kernel/pid.c
-@@ -159,11 +159,55 @@ static void set_last_pid(struct pid_name
- 	} while ((prev != last_write) && (pid_before(base, last_write, pid)));
- }
- 
--static int alloc_pidmap(struct pid_namespace *pid_ns)
-+static int alloc_pidmap_page(struct pidmap *map)
-+{
-+	if (unlikely(!map->page)) {
-+		void *page = kzalloc(PAGE_SIZE, GFP_KERNEL);
-+		/*
-+		 * Free the page if someone raced with us
-+		 * installing it:
-+		 */
-+		spin_lock_irq(&pidmap_lock);
-+		if (!map->page) {
-+			map->page = page;
-+			page = NULL;
-+		}
-+		spin_unlock_irq(&pidmap_lock);
-+		kfree(page);
-+		if (unlikely(!map->page))
-+			return -ENOMEM;
-+	}
-+
-+	return 0;
-+}
-+
-+static int set_pidmap(struct pid_namespace *pid_ns, int pid)
-+{
-+	int offset;
-+	struct pidmap *map;
-+
-+	offset = pid & BITS_PER_PAGE_MASK;
-+	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
-+
-+	if (alloc_pidmap_page(map) < 0)
-+		return -ENOMEM;
-+
-+	if (!test_and_set_bit(offset, map->page)) {
-+		atomic_dec(&map->nr_free);
-+		return pid;
-+	}
-+
-+	return -EBUSY;
-+}
-+
-+static int alloc_pidmap(struct pid_namespace *pid_ns, int desired_pid)
- {
- 	int i, offset, max_scan, pid, last = pid_ns->last_pid;
- 	struct pidmap *map;
- 
-+	if (desired_pid)
-+		return set_pidmap(pid_ns, desired_pid);
-+
- 	pid = last + 1;
- 	if (pid >= pid_max)
- 		pid = RESERVED_PIDS;
-@@ -176,22 +220,9 @@ static int alloc_pidmap(struct pid_names
- 	 */
- 	max_scan = DIV_ROUND_UP(pid_max, BITS_PER_PAGE) - !offset;
- 	for (i = 0; i <= max_scan; ++i) {
--		if (unlikely(!map->page)) {
--			void *page = kzalloc(PAGE_SIZE, GFP_KERNEL);
--			/*
--			 * Free the page if someone raced with us
--			 * installing it:
--			 */
--			spin_lock_irq(&pidmap_lock);
--			if (!map->page) {
--				map->page = page;
--				page = NULL;
--			}
--			spin_unlock_irq(&pidmap_lock);
--			kfree(page);
--			if (unlikely(!map->page))
--				break;
--		}
-+		if (alloc_pidmap_page(map) < 0)
-+			break;
-+
- 		if (likely(atomic_read(&map->nr_free))) {
- 			do {
- 				if (!test_and_set_bit(offset, map->page)) {
-@@ -277,7 +308,7 @@ void free_pid(struct pid *pid)
- 	call_rcu(&pid->rcu, delayed_put_pid);
- }
- 
--struct pid *alloc_pid(struct pid_namespace *ns)
-+struct pid *alloc_pid(struct pid_namespace *ns, int this_ns_pid)
- {
- 	struct pid *pid;
- 	enum pid_type type;
-@@ -291,13 +322,14 @@ struct pid *alloc_pid(struct pid_namespa
- 
- 	tmp = ns;
- 	for (i = ns->level; i >= 0; i--) {
--		nr = alloc_pidmap(tmp);
-+		nr = alloc_pidmap(tmp, this_ns_pid);
- 		if (nr < 0)
- 			goto out_free;
- 
- 		pid->numbers[i].nr = nr;
- 		pid->numbers[i].ns = tmp;
- 		tmp = tmp->parent;
-+		this_ns_pid = 0;
- 	}
- 
- 	get_pid_ns(ns);
+						- Ted
