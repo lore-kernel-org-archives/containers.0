@@ -1,7 +1,7 @@
-From: Mail Delivery System <Mailer-Daemon-+iHs+rKbtdSr7Veytb0i+d7lo5+wdyHW@public.gmane.org>
+From: Mail Delivery System <Mailer-Daemon-nIBObKlswewuBmXUFg550EzBxXZzB6G6AL8bYrjMMd8@public.gmane.org>
 Subject: Mail delivery failed: returning message to sender
-Date: Mon, 24 Oct 2011 23:30:38 +0200
-Message-ID: <E1RIS6Q-0006lQ-3E@hospedajeglobal.es>
+Date: Tue, 25 Oct 2011 17:39:02 +1100
+Message-ID: <E1RIafW-0001Q1-Id@server.aussieguyschat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -23,23 +23,25 @@ This message was created automatically by mail delivery software.
 A message that you sent could not be delivered to one or more of its
 recipients. This is a permanent error. The following address(es) failed:
 
-  eecam2-dN8eL3zHfKdBDgjK7y7TUQ@public.gmane.org
-    The mail server could not deliver mail to eecam2-dN8eL3zHfKfowKkBSvOlow@public.gmane.org  The account or domain may not exist, they may be blacklisted, or missing the proper dns entries.
+  tuscanydd-ZBadwT4OvJO6c6uEtOJ/EA@public.gmane.org
+    The mail server could not deliver mail to tuscanydd-ZBadwT4OvJP5c4y/nN6+SQ@public.gmane.org  The account or domain may not exist, they may be blacklisted, or missing the proper dns entries.
 
 ------ This is a copy of the message, including all the headers. ------
 
 Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from [68.233.247.19] (helo=server.aussieguyschat.com)
-	by hospedajeglobal.es with esmtpa (Exim 4.69)
+Received: from localhost ([127.0.0.1] helo=server.aussieguyschat.com)
+	by server.aussieguyschat.com with esmtp (Exim 4.69)
 	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
-	id 1RIS6O-0006ku-11
-	for eecam2-dN8eL3zHfKdBDgjK7y7TUQ@public.gmane.org; Mon, 24 Oct 2011 23:30:36 +0200
-Received: from [68.233.247.19] by server.aussieguyschat.com id ccxvrFwVHqCZ; Tue, 25 Oct 2011 08:30:14 +1100
-Message-ID: <000201cc9294$2a560f80$14000a0a-nIBObKlswewuBmXUFg550EzBxXZzB6G6AL8bYrjMMd8@public.gmane.org>
+	id 1RIafW-0001Pw-8Y
+	for tuscanydd-ZBadwT4OvJO6c6uEtOJ/EA@public.gmane.org; Tue, 25 Oct 2011 17:39:02 +1100
+Received: from [68.233.247.19] by server.aussieguyschat.com id BFRG9uAxYf6L with SMTP; Tue, 25 Oct 2011 17:39:01 +1100
+Date: Tue, 25 Oct 2011 17:39:01 +1100
 From: "Lena" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <eecam2-dN8eL3zHfKdBDgjK7y7TUQ@public.gmane.org>
-Subject: Hi my new friend.
-Date: Tue, 25 Oct 2011 08:30:14 +1100
+X-Mailer: The Bat! (v3.3.11.8) Educational
+X-Priority: 3 (Normal)
+Message-ID: <50832137.73896227137708-nIBObKlswewuBmXUFg550EzBxXZzB6G6AL8bYrjMMd8@public.gmane.org>
+To: <tuscanydd-ZBadwT4OvJO6c6uEtOJ/EA@public.gmane.org>
+Subject: Hi my new friend
 MIME-Version: 1.0
 Content-Type: multipart/mixed;
  boundary="----------7E10602BE770E6"
