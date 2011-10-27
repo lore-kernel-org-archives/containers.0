@@ -1,12 +1,14 @@
-From: Adrian Reber <adrian-5+Cda9B46AM@public.gmane.org>
-Subject: linux-cr ported to 3.1
-Date: Thu, 27 Oct 2011 16:27:31 +0200
-Message-ID: <20111027142731.GT20908@lisas.de>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: linux-cr ported to 3.1
+Date: Thu, 27 Oct 2011 14:41:25 +0000
+Message-ID: <20111027144125.GA14452@hallyn.com>
+References: <20111027142731.GT20908@lisas.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <20111027142731.GT20908-5+Cda9B46AM@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,24 +18,48 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>
+To: Adrian Reber <adrian-5+Cda9B46AM@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nathan Lynch <ntl-e+AXbWqSrlAAvxtiuMwx3w@public.gmane.org>, Dan Smith <danms-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Quoting Adrian Reber (adrian-5+Cda9B46AM@public.gmane.org):
+> 
+> I  have ported the linux-cr patches from www.linux-cr.org/pub/git/linux-cr.git
+> to the latest kernel (3.1). What I have tested so far it still seems to work.
 
-I  have ported the linux-cr patches from www.linux-cr.org/pub/git/linux-cr.git
-to the latest kernel (3.1). What I have tested so far it still seems to work.
+Wow, that's great!
 
-Can anybody tell me what the latest state of these patches was?
-Development seemed to have stopped after 2.6.37 and with the wiki[1] being
-down I do not know if anybody is still working on these patches. What
-was the latest status about those patches being integrated into
-mainline? Is someone still trying to get it included?
+Since you went to the trouble of doing this, can we assume you have a pretty
+strong interest in this set? :)  If so, 
 
-Here is my git tree with all the patches on top of 3.1.
+> Can anybody tell me what the latest state of these patches was?
+> Development seemed to have stopped after 2.6.37 and with the wiki[1] being
+> down I do not know if anybody is still working on these patches. What
 
-http://lisas.de/~adrian/linux-cr.git
+Matt and Dan, if there is outside interest, are you able to help out at
+all?  Are you still using this set at all?
 
-		Adrian
+Oren, what's your status?
 
-[1] http://ckpt.wiki.kernel.org/
+> was the latest status about those patches being integrated into
+> mainline? Is someone still trying to get it included?
+
+There is a new upstream effort based around pushing smaller debugging-style
+patches, which rather than adding a 'sys_checkpoint' syscall, allow userspace
+to get the information they need to reconstruct a process set.  Several people,
+Daniel (Cc:d) included, seem to prefer this approach.  See
+http://lwn.net/Articles/452184/ for instance.
+
+You might peruse the recent lkml threads (and the above article).  If you are
+ok with that approach, you might consider joining them.  AFAICS they've not
+done much in the last few months, though I may just have missed it.
+
+> Here is my git tree with all the patches on top of 3.1.
+> 
+> http://lisas.de/~adrian/linux-cr.git
+> 
+> 		Adrian
+> 
+> [1] http://ckpt.wiki.kernel.org/
+
+-serge
