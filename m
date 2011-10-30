@@ -1,61 +1,52 @@
-From: Glauber Costa <glommer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 00/10] cgroups: Task counter subsystem v6
-Date: Sat, 29 Oct 2011 11:38:25 +0200
-Message-ID: <CAA6-i6o0SPfZJDx4SRR1hY-He0L6zHuv0saH6EaE7Mrc2HF6PA@mail.gmail.com>
-References: <1317668832-10784-1-git-send-email-fweisbec@gmail.com>
-	<20111004150111.e9337268.akpm00@gmail.com>
-	<CAAAKZwu67VMiZgdpp=i5p7zyGbOHGHXwF_iprufGPzTLkkUF2A@mail.gmail.com>
-	<20111028163021.1ce61f8a.akpm@linux-foundation.org>
+From: "H. Peter Anvin" <hpa@zytor.com>
+Subject: Re: Detecting if you are running in a container
+Date: Sun, 30 Oct 2011 13:11:21 -0700
+Message-ID: <4EADAF69.80008@zytor.com>
+References: <20111011013201.GA7948@thunk.org> <20111011020530.GG16723@count0.beaverton.ibm.com> <20111011032523.GB7948@thunk.org> <m1ty7ghvvn.fsf@fess.ebiederm.org> <203BBB0D-293D-4BFB-A57B-41C56F58F9B3@mit.edu> <m17h4bfcuv.fsf@fess.ebiederm.org> <20111012175702.GA23231@fieldses.org> <CAGZ=bqJxadNqaPCW3HufrMmQ57x082=pCDa6-mWLsdtfxHgdPw@mail.gmail.com> <20111012190452.GA23845@fieldses.org> <CAGZ=bqJjgmtBfyXJ2eK1C0PfzkgBVWFTjkTYkC211ZT+-5f-UQ@mail.gmail.com> <20111014155406.GC13119@thunk.org> <m17h478n5k.fsf@fess.ebiederm.org> <4E98B088.5030400@zytor.com> <m1ipnpl1c9.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20111028163021.1ce61f8a.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <m1ipnpl1c9.fsf@fess.ebiederm.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Ted Ts'o <tytso@mit.edu>, Kyle Moffett <kyle@moffetthome.net>, "J. Bruce Fields" <bfields@fieldses.org>, Matt Helsley <matthltc@us.ibm.com>, Lennart Poettering <mzxreary@0pointer.de>, Kay Sievers <kay.sievers@vrfy.org>, linux-kernel@vger.kernel.org, harald@redhat.com, david@fubar.dk, greg@kroah.com, Linux Containers <containers@lists.osdl.org>, "Serge E. Hallyn" <serge@hallyn.com>, Daniel Lezcano <daniel.lezcano@free.fr>, Paul Menage <paul@paulmenage.org>
 List-Id: containers.vger.kernel.org
 
-T24gU2F0LCBPY3QgMjksIDIwMTEgYXQgMTozMCBBTSwgQW5kcmV3IE1vcnRvbgo8YWtwbUBsaW51
-eC1mb3VuZGF0aW9uLm9yZz4gd3JvdGU6Cj4gT24gVHVlLCAyNSBPY3QgMjAxMSAxMzowNjozNSAt
-MDcwMAo+IFRpbSBIb2NraW4gPHRob2NraW5AaG9ja2luLm9yZz4gd3JvdGU6Cj4KPj4gT24gVHVl
-LCBPY3QgNCwgMjAxMSBhdCAzOjAxIFBNLCBBbmRyZXcgTW9ydG9uIDxha3BtMDBAZ21haWwuY29t
-PiB3cm90ZToKPj4gPiBPbiBNb24sIF9fMyBPY3QgMjAxMSAyMTowNzowMiArMDIwMAo+PiA+IEZy
-ZWRlcmljIFdlaXNiZWNrZXIgPGZ3ZWlzYmVjQGdtYWlsLmNvbT4gd3JvdGU6Cj4+ID4KPj4gPj4g
-SGkgQW5kcmV3LAo+PiA+Pgo+PiA+PiBUaGlzIGNvbnRhaW5zIG1pbm9yIGNoYW5nZXMsIG1vc3Rs
-eSBkb2N1bWVudGF0aW9uIGFuZCBjaGFuZ2Vsb2cKPj4gPj4gdXBkYXRlcywgb2ZmLWNhc2UgYnVp
-bGQgZml4LCBhbmQgYSBjb2RlIG9wdGltaXphdGlvbiBpbgo+PiA+PiByZXNfY291bnRlcl9jb21t
-b25fYW5jZXN0b3IoKS4KPj4gPgo+PiA+IEknZCBub3JtYWxseSBkdWNrIGEgcGF0Y2ggc2VyaWVz
-IGxpa2UgdGhpcyB3aGVuIHdlJ3JlIGF0IC1yYzggYW5kIGFzawo+PiA+IGZvciBpdCB0byBiZSBy
-ZXNlbnQgbGF0ZSBpbiAtcmMxLiBfX0J1dCBJIHdhcyBmZWVsaW5nIGZyaXNreSBzbyBJCj4+ID4g
-Z3JhYmJlZCB0aGlzIGxvdCBmb3IgYSBiaXQgb2YgdGVzdGluZyBhbmQgd2lsbCBzaXQgb24gaXQg
-dW50aWwgLXJjMS4KPj4gPgo+PiA+IEknbSBzdGlsbCBub3QgY29udmluY2VkIHRoYXQgdGhlIGtl
-cm5lbCBoYXMgYSBidXJuaW5nIG5lZWQgZm9yIGEgInRhc2sKPj4gPiBjb3VudGVyIHN1YnN5c3Rl
-bSIuIF9fU29tZW9uZSBjb252aW5jZSBtZSB0aGF0IHdlIHNob3VsZCBtZXJnZSB0aGlzIQo+Pgo+
-PiBXZSBoYXZlIHJlYWwgKGFjY2lkZW50YWwpIERvUyBzaXR1YXRpb25zIHdoaWNoIGhhcHBlbiBi
-ZWNhdXNlIHdlIGRvbid0Cj4+IGhhdmUgdGhpcy4gwqBJdCB1c3VhbGx5IHRha2VzIHRoZSBmb3Jt
-IG9mIHNvbWUgbGlicmFyeSBubyByZS1qb2luaW5nCj4+IHRocmVhZHMuIMKgV2UgZW5kIHVwIGRl
-cGxveWluZyBhIGZldyBhcHBzIGxpbmtlZCBhZ2FpbnN0IHRoaXMgbGlicmFyeSwKPj4gYW5kIHN1
-ZGRlbmx5IHdlJ3JlIGluIHRyb3VibGUgb24gYSBtYWNoaW5lLiDCoEV4Y2VwdCwgdGhpcyBiZWlu
-Zwo+PiBHb29nbGUsIHdlJ3JlIGluIHRyb3VibGUgb24gYSBsb3Qgb2YgbWFjaGluZXMuCj4KPiBU
-aGlzIGlzIGEgYml0IGZvZ2d5LiDCoEkgdGhpbmsgeW91IG1lYW4gdGhhdCBtYWNoaW5lcyBhcmUg
-ZXhwZXJpZW5jaW5nCj4gYWNjaWRlbnRhbCBmb3JrYm9tYnM/Cj4KPj4gVGhlcmUgbWF5IGJlIG90
-aGVyIHdheXMgdG8gY29iYmxlIHRoaXMgc29ydCBvZiBzYWZldHkgdG9nZXRoZXIsIGJ1dAo+PiB0
-aGV5IGFyZSBsZXNzIGFwcGVhbGluZyBmb3IgdmFyaW91cyByZWFzb25zLiDCoGNncm91cHMgYXJl
-IGhvdyB3ZQo+PiBjb250cm9sIGdyb3VwcyBvZiByZWxhdGVkIHBpZHMuCj4+CgpJbiB0aGUgZW5k
-IG9mIHRoZSBkYXksIGFsbCBjZ3JvdXBzIGFyZSBqdXN0IGEgZ3JvdXAgb2YgdGFza3MuIFNvIEkg
-ZG9uJ3QgcmVhbGx5CmdldCB0aGUgbmVlZCB0byBoYXZlIGEgY2dyb3VwIHRvIGNvbnRyb2wgdGhl
-IG51bWJlciBvZiB0YXNrcyBpbiB0aGUgc3lzdGVtLgoKV2h5IGRvbid0IHdlIGp1c3QgYWxsb3cg
-YWxsIGNncm91cHMgdG8gaGF2ZSBhIGxpbWl0IG9uIHRoZSBudW1iZXIgb2YKdGFza3MgaXQgY2Fu
-IGhvbGQ/CgoKCgotLSAKU2VudCBmcm9tIG15IEF0YXJpLgpfX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWlu
-ZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0
-aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+On 10/16/2011 02:42 AM, Eric W. Biederman wrote:
+>>
+>> Something based on UUIDs, perhaps?
+>>
+>> UUIDs are kind of exactly this, after all... a single namespace designed
+>> to be large and random enough to be globally unique without a central
+>> registration authority.
+> 
+> mount --bind /proc/self/ns/net /var/run/netns/<name>
+> 
+> When we want to refer to the namespace in syscalls we pass a file
+> descriptor we received from opening the namespace reference object.
+> 
+> That moves the entire naming problem into the file namespace.
+> 
+
+That doesn't solve what I think of as the *real* problem.
+
+The real problem is just another instance of what I sometimes refer to
+as the "alien metadata problem": the alien metadata problem (which crops
+up in *all kinds* of contexts, including containers, namespaces, virtual
+machines, building distribution disk images, and backups) is the fact
+that you would like to be able to store, manipulate and preserve, on
+disk and in a mounted filesystem, a set of metadata which may not be the
+"currently active" metadata.
+
+There are two forms of "solutions" to this: one where the filesystem
+still only contains one set of metadata, but it is not currently active,
+and one where the filesystem contains multiple sets of metadata for the
+same files at the same time, any one of which can be active (and
+different ones may be active for different namespaces.)
+
+	-hpa
+
+-- 
+H. Peter Anvin, Intel Open Source Technology Center
+I work for Intel.  I don't speak on their behalf.
