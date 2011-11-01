@@ -1,8 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 03/10] threadgroup: extend threadgroup_lock() to cover exit
-	and exec
-Date: Tue,  1 Nov 2011 16:46:26 -0700
-Message-ID: <1320191193-8110-4-git-send-email-tj__15217.9022822112$1320191236$gmane$org@kernel.org>
+Subject: [PATCH 04/10] cgroup: always lock threadgroup during migration
+Date: Tue,  1 Nov 2011 16:46:27 -0700
+Message-ID: <1320191193-8110-5-git-send-email-tj__31708.9031021625$1320191247$gmane$org@kernel.org>
 References: <1320191193-8110-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,26 +21,34 @@ To: paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.o
 Cc: fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-threadgroup_lock() protected only protected against new addition to
-the threadgroup, which was inherently somewhat incomplete and
-problematic for its only user cgroup.  On-going migration could race
-against exec and exit leading to interesting problems - the symmetry
-between various attach methods, task exiting during method execution,
-->exit() racing against attach methods, migrating task switching basic
-properties during exec and so on.
+Update cgroup to take advantage of the fack that threadgroup_lock()
+guarantees stable threadgroup.
 
-This patch extends threadgroup_lock() such that it protects against
-all three threadgroup altering operations - fork, exit and exec.  For
-exit, threadgroup_change_begin/end() calls are added to exit path.
-For exec, threadgroup_[un]lock() are updated to also grab and release
-cred_guard_mutex.
+* Lock threadgroup even if the target is a single task.  This
+  guarantees that when the target tasks stay stable during migration
+  regardless of the target type.
 
-With this change, threadgroup_lock() guarantees that the target
-threadgroup will remain stable - no new task will be added, no new
-PF_EXITING will be set and exec won't happen.
+* Remove PF_EXITING early exit optimization from attach_task_by_pid()
+  and check it in cgroup_task_migrate() instead.  The optimization was
+  for rather cold path to begin with and PF_EXITING state can be
+  trusted throughout migration by checking it after locking
+  threadgroup.
 
-The next patch will update cgroup so that it can take full advantage
-of this change.
+* Don't add PF_EXITING tasks to target task array in
+  cgroup_attach_proc().  This ensures that task migration is performed
+  only for live tasks.
+
+* Remove -ESRCH failure path from cgroup_task_migrate().  With the
+  above changes, it's guaranteed to be called only for live tasks.
+
+After the changes, only live tasks are migrated and they're guaranteed
+to stay alive until migration is complete.  This removes problems
+caused by exec and exit racing against cgroup migration including
+symmetry among cgroup attach methods and different cgroup methods
+racing each other.
+
+v2: Oleg pointed out that one more PF_EXITING check can be removed
+    from cgroup_attach_proc().  Removed.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
@@ -49,119 +56,137 @@ Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
 Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- include/linux/sched.h |   36 ++++++++++++++++++++++++++++++------
- kernel/exit.c         |   17 +++++++++++++----
- 2 files changed, 43 insertions(+), 10 deletions(-)
+ kernel/cgroup.c |   51 +++++++++++++++++++++++----------------------------
+ 1 files changed, 23 insertions(+), 28 deletions(-)
 
-diff --git a/include/linux/sched.h b/include/linux/sched.h
-index aa47d0f..6fb546e 100644
---- a/include/linux/sched.h
-+++ b/include/linux/sched.h
-@@ -635,11 +635,12 @@ struct signal_struct {
- #endif
- #ifdef CONFIG_CGROUPS
- 	/*
--	 * The group_rwsem prevents threads from forking with
--	 * CLONE_THREAD while held for writing. Use this for fork-sensitive
--	 * threadgroup-wide operations. It's taken for reading in fork.c in
--	 * copy_process().
--	 * Currently only needed write-side by cgroups.
-+	 * group_rwsem prevents new tasks from entering the threadgroup and
-+	 * member tasks from exiting.  fork and exit paths are protected
-+	 * with this rwsem using threadgroup_change_begin/end().  Users
-+	 * which require threadgroup to remain stable should use
-+	 * threadgroup_[un]lock() which also takes care of exec path.
-+	 * Currently, cgroup is the only user.
- 	 */
- 	struct rw_semaphore group_rwsem;
- #endif
-@@ -2367,7 +2368,6 @@ static inline void unlock_task_sighand(struct task_struct *tsk,
- 	spin_unlock_irqrestore(&tsk->sighand->siglock, *flags);
- }
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index f0e099f..83e10f9 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -1762,7 +1762,7 @@ EXPORT_SYMBOL_GPL(cgroup_path);
+  *
+  * 'guarantee' is set if the caller promises that a new css_set for the task
+  * will already exist. If not set, this function might sleep, and can fail with
+- * -ENOMEM. Otherwise, it can only fail with -ESRCH.
++ * -ENOMEM. Must be called with cgroup_mutex and threadgroup locked.
+  */
+ static int cgroup_task_migrate(struct cgroup *cgrp, struct cgroup *oldcgrp,
+ 			       struct task_struct *tsk, bool guarantee)
+@@ -1800,13 +1800,9 @@ static int cgroup_task_migrate(struct cgroup *cgrp, struct cgroup *oldcgrp,
+ 	}
+ 	put_css_set(oldcg);
  
--/* See the declaration of group_rwsem in signal_struct. */
- #ifdef CONFIG_CGROUPS
- static inline void threadgroup_change_begin(struct task_struct *tsk)
+-	/* if PF_EXITING is set, the tsk->cgroups pointer is no longer safe. */
++	/* @tsk can't exit as its threadgroup is locked */
+ 	task_lock(tsk);
+-	if (tsk->flags & PF_EXITING) {
+-		task_unlock(tsk);
+-		put_css_set(newcg);
+-		return -ESRCH;
+-	}
++	WARN_ON_ONCE(tsk->flags & PF_EXITING);
+ 	rcu_assign_pointer(tsk->cgroups, newcg);
+ 	task_unlock(tsk);
+ 
+@@ -1832,8 +1828,8 @@ static int cgroup_task_migrate(struct cgroup *cgrp, struct cgroup *oldcgrp,
+  * @cgrp: the cgroup the task is attaching to
+  * @tsk: the task to be attached
+  *
+- * Call holding cgroup_mutex. May take task_lock of
+- * the task 'tsk' during call.
++ * Call with cgroup_mutex and threadgroup locked. May take task_lock of
++ * @tsk during call.
+  */
+ int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *tsk)
  {
-@@ -2377,13 +2377,37 @@ static inline void threadgroup_change_done(struct task_struct *tsk)
- {
- 	up_read(&tsk->signal->group_rwsem);
- }
+@@ -1842,6 +1838,10 @@ int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *tsk)
+ 	struct cgroup *oldcgrp;
+ 	struct cgroupfs_root *root = cgrp->root;
+ 
++	/* @tsk either already exited or can't exit until the end */
++	if (tsk->flags & PF_EXITING)
++		return -ESRCH;
 +
-+/**
-+ * threadgroup_lock - lock threadgroup
-+ * @tsk: member task of the threadgroup to lock
-+ *
-+ * Lock the threadgroup @tsk belongs to.  No new task is allowed to enter
-+ * and member tasks aren't allowed to exit (as indicated by PF_EXITING) or
-+ * perform exec.  This is useful for cases where the threadgroup needs to
-+ * stay stable across blockable operations.
-+ *
-+ * fork and exit explicitly call threadgroup_change_{begin|end}() for
-+ * synchronization.  exec is already synchronized with cread_guard_mutex
-+ * which we grab here.
-+ */
- static inline void threadgroup_lock(struct task_struct *tsk)
- {
-+	/* exec uses exit for de-threading, grab cred_guard_mutex first */
-+	mutex_lock(&tsk->signal->cred_guard_mutex);
- 	down_write(&tsk->signal->group_rwsem);
- }
+ 	/* Nothing to do if the task is already in that cgroup */
+ 	oldcgrp = task_cgroup_from_root(tsk, root);
+ 	if (cgrp == oldcgrp)
+@@ -2062,6 +2062,10 @@ int cgroup_attach_proc(struct cgroup *cgrp, struct task_struct *leader)
+ 	tsk = leader;
+ 	i = 0;
+ 	do {
++		/* @tsk either already exited or can't exit until the end */
++		if (tsk->flags & PF_EXITING)
++			continue;
 +
-+/**
-+ * threadgroup_unlock - unlock threadgroup
-+ * @tsk: member task of the threadgroup to unlock
-+ *
-+ * Reverse threadgroup_lock().
-+ */
- static inline void threadgroup_unlock(struct task_struct *tsk)
+ 		/* as per above, nr_threads may decrease, but not increase. */
+ 		BUG_ON(i >= group_size);
+ 		get_task_struct(tsk);
+@@ -2116,11 +2120,6 @@ int cgroup_attach_proc(struct cgroup *cgrp, struct task_struct *leader)
+ 			continue;
+ 		/* get old css_set pointer */
+ 		task_lock(tsk);
+-		if (tsk->flags & PF_EXITING) {
+-			/* ignore this task if it's going away */
+-			task_unlock(tsk);
+-			continue;
+-		}
+ 		oldcg = tsk->cgroups;
+ 		get_css_set(oldcg);
+ 		task_unlock(tsk);
+@@ -2158,9 +2157,8 @@ int cgroup_attach_proc(struct cgroup *cgrp, struct task_struct *leader)
+ 			if (ss->attach_task)
+ 				ss->attach_task(cgrp, tsk);
+ 		}
+-		/* if the thread is PF_EXITING, it can just get skipped. */
+ 		retval = cgroup_task_migrate(cgrp, oldcgrp, tsk, true);
+-		BUG_ON(retval != 0 && retval != -ESRCH);
++		BUG_ON(retval != 0);
+ 	}
+ 	/* nothing is sensitive to fork() after this point. */
+ 
+@@ -2212,8 +2210,8 @@ out_free_group_list:
+ 
+ /*
+  * Find the task_struct of the task to attach by vpid and pass it along to the
+- * function to attach either it or all tasks in its threadgroup. Will take
+- * cgroup_mutex; may take task_lock of task.
++ * function to attach either it or all tasks in its threadgroup. Will lock
++ * cgroup_mutex and threadgroup; may take task_lock of task.
+  */
+ static int attach_task_by_pid(struct cgroup *cgrp, u64 pid, bool threadgroup)
  {
- 	up_write(&tsk->signal->group_rwsem);
-+	mutex_unlock(&tsk->signal->cred_guard_mutex);
- }
- #else
- static inline void threadgroup_change_begin(struct task_struct *tsk) {}
-diff --git a/kernel/exit.c b/kernel/exit.c
-index 2913b35..3565f00 100644
---- a/kernel/exit.c
-+++ b/kernel/exit.c
-@@ -938,6 +938,12 @@ NORET_TYPE void do_exit(long code)
- 		schedule();
+@@ -2240,11 +2238,6 @@ static int attach_task_by_pid(struct cgroup *cgrp, u64 pid, bool threadgroup)
+ 			 * detect it later.
+ 			 */
+ 			tsk = tsk->group_leader;
+-		} else if (tsk->flags & PF_EXITING) {
+-			/* optimization for the single-task-only case */
+-			rcu_read_unlock();
+-			cgroup_unlock();
+-			return -ESRCH;
+ 		}
+ 		/*
+ 		 * even if we're attaching all tasks in the thread group, we
+@@ -2268,13 +2261,15 @@ static int attach_task_by_pid(struct cgroup *cgrp, u64 pid, bool threadgroup)
+ 		get_task_struct(tsk);
  	}
  
-+	/*
-+	 * @tsk's threadgroup is going through changes - lock out users
-+	 * which expect stable threadgroup.
-+	 */
-+	threadgroup_change_begin(tsk);
+-	if (threadgroup) {
+-		threadgroup_lock(tsk);
++	threadgroup_lock(tsk);
 +
- 	exit_irq_thread();
- 
- 	exit_signals(tsk);  /* sets PF_EXITING */
-@@ -1020,10 +1026,6 @@ NORET_TYPE void do_exit(long code)
- 		kfree(current->pi_state_cache);
- #endif
- 	/*
--	 * Make sure we are holding no locks:
--	 */
--	debug_check_no_locks_held(tsk);
--	/*
- 	 * We can do this unlocked here. The futex code uses this flag
- 	 * just to verify whether the pi state cleanup has been done
- 	 * or not. In the worst case it loops once more.
-@@ -1040,6 +1042,13 @@ NORET_TYPE void do_exit(long code)
- 
- 	preempt_disable();
- 	exit_rcu();
++	if (threadgroup)
+ 		ret = cgroup_attach_proc(cgrp, tsk);
+-		threadgroup_unlock(tsk);
+-	} else {
++	else
+ 		ret = cgroup_attach_task(cgrp, tsk);
+-	}
 +
-+	/*
-+	 * Release threadgroup and make sure we are holding no locks.
-+	 */
-+	threadgroup_change_done(tsk);
-+	debug_check_no_locks_held(tsk);
++	threadgroup_unlock(tsk);
 +
- 	/* causes final put_task_struct in finish_task_switch(). */
- 	tsk->state = TASK_DEAD;
- 	schedule();
+ 	put_task_struct(tsk);
+ 	cgroup_unlock();
+ 	return ret;
 -- 
 1.7.3.1
