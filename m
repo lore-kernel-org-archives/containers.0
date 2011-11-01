@@ -1,7 +1,7 @@
 From: Mail Delivery System <Mailer-Daemon-cEiuRt+XddTQDDnZmwnUJjUZDU+1vuVT@public.gmane.org>
 Subject: Mail delivery failed: returning message to sender
-Date: Tue, 01 Nov 2011 14:08:12 +0100
-Message-ID: <E1RLE4a-0004YJ-Mv@server3.netshine.it>
+Date: Tue, 01 Nov 2011 14:29:34 +0100
+Message-ID: <E1RLEPG-00056p-UY@server3.netshine.it>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -23,10 +23,18 @@ This message was created automatically by mail delivery software.
 A message that you sent could not be delivered to one or more of its
 recipients. This is a permanent error. The following address(es) failed:
 
-  r.dalessandrol-RLVU9NYld4GonA0d6jMUrA@public.gmane.org
-    SMTP error from remote mail server after RCPT TO:<r.dalessandrol-RLVU9NYld4GonA0d6jMUrA@public.gmane.org>:
-    host parmail1.fr.publicisgroupe.net [81.200.177.122]:
-    550 #5.1.0 Address rejected r.dalessandrol-RLVU9NYld4GonA0d6jMUrA@public.gmane.org
+  r.dalessandronn-K01FsFCdC51eoWH0uzbU5w@public.gmane.org
+    SMTP error from remote mail server after RCPT TO:<r.dalessandronn-K01FsFCdC51eoWH0uzbU5w@public.gmane.org>:
+    host mail.aliseo.it [80.247.64.152]: 550 5.1.1 <r.dalessandronn-K01FsFCdC51eoWH0uzbU5w@public.gmane.org>:
+    Recipient address rejected: User unknown in relay recipient table
+  r.dalessandron-K01FsFCdC51eoWH0uzbU5w@public.gmane.org
+    SMTP error from remote mail server after RCPT TO:<r.dalessandron-K01FsFCdC51eoWH0uzbU5w@public.gmane.org>:
+    host mail.aliseo.it [80.247.64.152]: 550 5.1.1 <r.dalessandron-K01FsFCdC51eoWH0uzbU5w@public.gmane.org>:
+    Recipient address rejected: User unknown in relay recipient table
+  r.dalessandroi-K01FsFCdC51eoWH0uzbU5w@public.gmane.org
+    SMTP error from remote mail server after RCPT TO:<r.dalessandroi-K01FsFCdC51eoWH0uzbU5w@public.gmane.org>:
+    host mail.aliseo.it [80.247.64.152]: 550 5.1.1 <r.dalessandroi-K01FsFCdC51eoWH0uzbU5w@public.gmane.org>:
+    Recipient address rejected: User unknown in relay recipient table
 
 ------ This is a copy of the message, including all the headers. ------
 
