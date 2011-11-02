@@ -1,7 +1,7 @@
-From: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
-Subject: New list cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Date: Wed, 02 Nov 2011 12:29:49 +0400
-Message-ID: <1320222589.3091.43.camel@dabdike>
+From: Mail Delivery System <Mailer-Daemon-cEiuRt+XddTQDDnZmwnUJjUZDU+1vuVT@public.gmane.org>
+Subject: Warning: message 1RLE3k-0004Xk-Iz delayed 24 hours
+Date: Wed, 02 Nov 2011 14:16:22 +0100
+Message-ID: <E1RLag2-0000kS-4y@server3.netshine.it>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,20 +18,19 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-One of the requests I got at the kernel summit was a request for an easy
-to find list for everything cgroup related, so I did:
+This message was created automatically by mail delivery software.
+A message that you sent has not yet been delivered to one or more of its
+recipients after more than 24 hours on the queue on server3.netshine.it.
 
-cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+The message identifier is:     1RLE3k-0004Xk-Iz
+The subject of the message is: Il vostro ordine No 6542113 - eInc
+The date of the message is:    Tue, 01 Nov 2011 15:03:36 +0000
 
-I did say that this containers list was supposed to be it, but they felt
-that the name wasn't generic enough, it was too hard to find at the
-Linux Foundation and it was at that time not working because of the hack
-related outage.
+The address to which the message has not yet been delivered is:
 
-Since the object of this cgroups@vger list is to get more kernel people
-to pay attention to cgroup (and namespace) related issues, could I ask
-that you cc it when you post to the containers list?
+  r.dalessandroe-HT78rvEoTLKMVPazPUTyfzUZDU+1vuVT@public.gmane.org
 
-Thanks,
-
-James
+No action is required on your part. Delivery attempts will continue for
+some time, and this warning may be repeated at intervals if the message
+remains undelivered. Eventually the mail delivery software will give up,
+and when that happens, the message will be returned to you.
