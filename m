@@ -1,17 +1,17 @@
-From: Max Kellermann <max-hDT0AjmEH7RAfugRpC6u6w@public.gmane.org>
+From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 Subject: Re: [PATCH] new cgroup controller "fork"
-Date: Thu, 3 Nov 2011 19:51:08 +0100
-Message-ID: <20111103185108.GA5153@Debian-60-squeeze-64-minimal>
+Date: Thu, 3 Nov 2011 16:56:38 -0200
+Message-ID: <4EB2E3E6.6070401@parallels.com>
 References: <20111103162238.27609.11515.stgit@rabbit.intern.cm-ag>
 	<4EB2C4A5.6000406@parallels.com>
 	<20111103165903.GA4755@Debian-60-squeeze-64-minimal>
 	<20111103182101.5037c1e5@lxorguk.ukuu.org.uk>
+	<20111103185108.GA5153@Debian-60-squeeze-64-minimal>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20111103182101.5037c1e5-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>
+In-Reply-To: <20111103185108.GA5153@Debian-60-squeeze-64-minimal>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,39 +21,50 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>
-Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 2011/11/03 19:21, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org> wrote:
-> > After little discussion, nobody seemed to be interested in it, and
-> > nobody merged it.  I reposted it today, not knowing somebody else had
-> > come up with a similar idea meanwhile.
-> 
-> I don't really see a meaningful use case for this. Why should millions of
-> users have this stuff in their kernel. What's the general purpose use
-> case we should all be excited about ?
+On 11/03/2011 04:51 PM, Max Kellermann wrote:
+> On 2011/11/03 19:21, Alan Cox<alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>  wrote:
+>>> After little discussion, nobody seemed to be interested in it, and
+>>> nobody merged it.  I reposted it today, not knowing somebody else had
+>>> come up with a similar idea meanwhile.
+>>
+>> I don't really see a meaningful use case for this. Why should millions of
+>> users have this stuff in their kernel. What's the general purpose use
+>> case we should all be excited about ?
+>
+> Putting a reasonable limit on jobs that are expected to run only for a
+> limited amount of time, with a limited amount of total resources.  For
+> example: CGI, cron jobs, backup, munin plugins, virus scanners and
+> other email filters, procmail, ... - when the job is done, the group
+> can be deleted, and new instances will run in a new group.
+>
+> With just RLIMIT_NPROC or task_counter, you can limit the total number
+> of processes, but it will not stop a fork bomb - it will only slow it
+> down.  The fork bomb will still bounce between 1 and the limit, and
+> consume lots of resources for forking and exiting.
+>
+> (Glauber: the above should answer your last email, too)
 
-Putting a reasonable limit on jobs that are expected to run only for a
-limited amount of time, with a limited amount of total resources.  For
-example: CGI, cron jobs, backup, munin plugins, virus scanners and
-other email filters, procmail, ... - when the job is done, the group
-can be deleted, and new instances will run in a new group.
+Yet, the damage a fork bomb can pose into the system this way is 
+severely limited. Combined with the cpu controller to guarantee that 
+this group of process will never take the whole cpu for themselves,
+you have almost everything you need, if not everything.
 
-With just RLIMIT_NPROC or task_counter, you can limit the total number
-of processes, but it will not stop a fork bomb - it will only slow it
-down.  The fork bomb will still bounce between 1 and the limit, and
-consume lots of resources for forking and exiting.
+> Similar existing feature: RLIMIT_CPU.  Millions of users have it in
+> their kernels, but nobody uses it nowadays.  And it's not even
+> optional.
+>
+> Btw. I have no problem with maintaining this patch (and a whole bunch
+> of others) in my proprietary git repository at work forever.  They're
+> very useful for my employer.  I'm just trying to be a good citizen by
+> sharing them.
 
-(Glauber: the above should answer your last email, too)
+Well, one alternative is to try to rebase your work on top of -mm, 
+taking Frederic's work into account. What we really don't need, is 
+another cgroup for that. So if you manage to convince people that this 
+is really a win - haven't convinced me so far - the way to go is 
+enhancing the existing fork cgroup.
 
-Similar existing feature: RLIMIT_CPU.  Millions of users have it in
-their kernels, but nobody uses it nowadays.  And it's not even
-optional.
-
-Btw. I have no problem with maintaining this patch (and a whole bunch
-of others) in my proprietary git repository at work forever.  They're
-very useful for my employer.  I'm just trying to be a good citizen by
-sharing them.
-
-Max
+> Max
