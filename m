@@ -1,13 +1,12 @@
-From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 Subject: Re: [PATCH] new cgroup controller "fork"
-Date: Thu, 3 Nov 2011 17:43:07 +0100
-Message-ID: <20111103164302.GE8198@somewhere.redhat.com>
+Date: Thu, 3 Nov 2011 14:43:17 -0200
+Message-ID: <4EB2C4A5.6000406@parallels.com>
 References: <20111103162238.27609.11515.stgit@rabbit.intern.cm-ag>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 In-Reply-To: <20111103162238.27609.11515.stgit-Rjmu19FXx3rR8JxBgnUBv+rzNCUFrscg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,46 +17,33 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Max Kellermann <mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: max-hDT0AjmEH7RAfugRpC6u6w@public.gmane.org, Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: Max Kellermann <mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org>
+Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, max-hDT0AjmEH7RAfugRpC6u6w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Nov 03, 2011 at 05:22:38PM +0100, Max Kellermann wrote:
+On 11/03/2011 02:22 PM, Max Kellermann wrote:
 > Can limit the number of fork()/clone() calls in a cgroup.  It is
 > useful as a safeguard against fork bombs.
-> =
 
-> Signed-off-by: Max Kellermann <mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org>
+I do have a couple of questions about this, but the most important one 
+is: Is this a competing implementation, or a cooperative effort with 
+Frederic's ?
 
-Please have a look at the task counter subsystem: https://lwn.net/Articles/=
-461462/
-
-It's in the -mm tree. I'm glad to hear about another user who wants
-this feature in cgroups. We need to hear about you and whether this
-meets your requirements in order to get it merged upstream.
-
-Thanks.
-
-	Fr=E9d=E9ric.
-
+> Signed-off-by: Max Kellermann<mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org>
 > ---
->  Documentation/cgroups/fork.txt |   30 ++++++
->  include/linux/cgroup_fork.h    |   26 +++++
->  include/linux/cgroup_subsys.h  |    6 +
->  init/Kconfig                   |    6 +
->  kernel/Makefile                |    1 =
-
->  kernel/cgroup_fork.c           |  197 ++++++++++++++++++++++++++++++++++=
-++++++
->  kernel/fork.c                  |    5 +
->  7 files changed, 271 insertions(+), 0 deletions(-)
->  create mode 100644 Documentation/cgroups/fork.txt
->  create mode 100644 include/linux/cgroup_fork.h
->  create mode 100644 kernel/cgroup_fork.c
-> =
-
-> diff --git a/Documentation/cgroups/fork.txt b/Documentation/cgroups/fork.=
-txt
+>   Documentation/cgroups/fork.txt |   30 ++++++
+>   include/linux/cgroup_fork.h    |   26 +++++
+>   include/linux/cgroup_subsys.h  |    6 +
+>   init/Kconfig                   |    6 +
+>   kernel/Makefile                |    1
+>   kernel/cgroup_fork.c           |  197 ++++++++++++++++++++++++++++++++++++++++
+>   kernel/fork.c                  |    5 +
+>   7 files changed, 271 insertions(+), 0 deletions(-)
+>   create mode 100644 Documentation/cgroups/fork.txt
+>   create mode 100644 include/linux/cgroup_fork.h
+>   create mode 100644 kernel/cgroup_fork.c
+>
+> diff --git a/Documentation/cgroups/fork.txt b/Documentation/cgroups/fork.txt
 > new file mode 100644
 > index 0000000..dfbf291
 > --- /dev/null
@@ -83,7 +69,7 @@ txt
 > +set a new value, type (in the working directory of that control
 > +group):
 > +
-> + echo 16 > fork.remaining
+> + echo 16>  fork.remaining
 > +
 > +This examples allows 16 forks in the control group.  0 means no
 > +further forks are allowed.  The limit may be lowered or increased or
@@ -130,10 +116,9 @@ txt
 > --- a/include/linux/cgroup_subsys.h
 > +++ b/include/linux/cgroup_subsys.h
 > @@ -64,3 +64,9 @@ SUBSYS(perf)
->  #endif
->  =
-
->  /* */
+>   #endif
+>
+>   /* */
 > +
 > +#ifdef CONFIG_CGROUP_FORK
 > +SUBSYS(fork)
@@ -145,31 +130,30 @@ txt
 > --- a/init/Kconfig
 > +++ b/init/Kconfig
 > @@ -603,6 +603,12 @@ config CGROUP_FREEZER
->  	  Provides a way to freeze and unfreeze all tasks in a
->  	  cgroup.
->  =
-
+>   	  Provides a way to freeze and unfreeze all tasks in a
+>   	  cgroup.
+>
 > +config CGROUP_FORK
 > +	bool "fork controller for cgroups"
 > +	help
 > +	  Limits the number of fork() calls in a cgroup.  An application
 > +	  for this is to make a cgroup safe against fork bombs.
 > +
->  config CGROUP_DEVICE
->  	bool "Device controller for cgroups"
->  	help
+>   config CGROUP_DEVICE
+>   	bool "Device controller for cgroups"
+>   	help
 > diff --git a/kernel/Makefile b/kernel/Makefile
 > index e898c5b..2aab192 100644
 > --- a/kernel/Makefile
 > +++ b/kernel/Makefile
-> @@ -60,6 +60,7 @@ obj-$(CONFIG_BACKTRACE_SELF_TEST) +=3D backtracetest.o
->  obj-$(CONFIG_COMPAT) +=3D compat.o
->  obj-$(CONFIG_CGROUPS) +=3D cgroup.o
->  obj-$(CONFIG_CGROUP_FREEZER) +=3D cgroup_freezer.o
-> +obj-$(CONFIG_CGROUP_FORK) +=3D cgroup_fork.o
->  obj-$(CONFIG_CPUSETS) +=3D cpuset.o
->  obj-$(CONFIG_UTS_NS) +=3D utsname.o
->  obj-$(CONFIG_USER_NS) +=3D user_namespace.o
+> @@ -60,6 +60,7 @@ obj-$(CONFIG_BACKTRACE_SELF_TEST) += backtracetest.o
+>   obj-$(CONFIG_COMPAT) += compat.o
+>   obj-$(CONFIG_CGROUPS) += cgroup.o
+>   obj-$(CONFIG_CGROUP_FREEZER) += cgroup_freezer.o
+> +obj-$(CONFIG_CGROUP_FORK) += cgroup_fork.o
+>   obj-$(CONFIG_CPUSETS) += cpuset.o
+>   obj-$(CONFIG_UTS_NS) += utsname.o
+>   obj-$(CONFIG_USER_NS) += user_namespace.o
 > diff --git a/kernel/cgroup_fork.c b/kernel/cgroup_fork.c
 > new file mode 100644
 > index 0000000..e9aa650
@@ -181,16 +165,16 @@ txt
 > + * See Documentation/cgroups/fork.txt for more information.
 > + *
 > + * Copyright 2011 Content Management AG
-> + * Author: Max Kellermann <mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org>
+> + * Author: Max Kellermann<mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org>
 > + *
 > + * This file is subject to the terms and conditions of the GNU General
 > + * Public License.  See the file COPYING in the main directory of the
 > + * Linux distribution for more details.
 > + */
 > +
-> +#include <linux/cgroup.h>
-> +#include <linux/cgroup_fork.h>
-> +#include <linux/slab.h>
+> +#include<linux/cgroup.h>
+> +#include<linux/cgroup_fork.h>
+> +#include<linux/slab.h>
 > +
 > +struct cgroup_fork {
 > +	struct cgroup_subsys_state css;
@@ -240,7 +224,7 @@ txt
 > +	unsigned remaining;
 > +
 > +	spin_lock(&t->lock);
-> +	remaining =3D t->remaining;
+> +	remaining = t->remaining;
 > +	spin_unlock(&t->lock);
 > +
 > +	return remaining;
@@ -249,21 +233,21 @@ txt
 > +static struct cgroup_subsys_state *
 > +cgroup_fork_create(struct cgroup_subsys *ss, struct cgroup *cgroup)
 > +{
-> +	struct cgroup_fork *t =3D kzalloc(sizeof(*t), GFP_KERNEL);
+> +	struct cgroup_fork *t = kzalloc(sizeof(*t), GFP_KERNEL);
 > +	if (!t)
 > +		return ERR_PTR(-ENOMEM);
 > +
 > +	spin_lock_init(&t->lock);
 > +
-> +	t->remaining =3D -1;
+> +	t->remaining = -1;
 > +
-> +	return &t->css;
+> +	return&t->css;
 > +}
 > +
 > +static void
 > +cgroup_fork_destroy(struct cgroup_subsys *ss, struct cgroup *cgroup)
 > +{
-> +	struct cgroup_fork *t =3D cgroup_fork_group(cgroup);
+> +	struct cgroup_fork *t = cgroup_fork_group(cgroup);
 > +
 > +	kfree(t);
 > +}
@@ -278,14 +262,14 @@ txt
 > +	/* decrement the counters in the cgroup and all of its
 > +	   ancestors (except for the root cgroup) */
 > +
-> +	t =3D cgroup_fork_current();
-> +	while (t->css.cgroup->parent !=3D NULL) {
+> +	t = cgroup_fork_current();
+> +	while (t->css.cgroup->parent != NULL) {
 > +		spin_lock(&t->lock);
-> +		if (t->remaining > 0)
+> +		if (t->remaining>  0)
 > +			--t->remaining;
 > +		spin_unlock(&t->lock);
 > +
-> +		t =3D cgroup_fork_group(t->css.cgroup->parent);
+> +		t = cgroup_fork_group(t->css.cgroup->parent);
 > +	}
 > +
 > +	rcu_read_unlock();
@@ -294,7 +278,7 @@ txt
 > +static s64
 > +cgroup_fork_remaining_read(struct cgroup *cgroup, struct cftype *cft)
 > +{
-> +	struct cgroup_fork *t =3D cgroup_fork_group(cgroup);
+> +	struct cgroup_fork *t = cgroup_fork_group(cgroup);
 > +
 > +	return cgroup_fork_lock_get_remaining(t);
 > +}
@@ -303,30 +287,30 @@ txt
 > +cgroup_fork_remaining_write(struct cgroup *cgroup, struct cftype *cft,
 > +			    s64 value)
 > +{
-> +	struct cgroup_fork *t =3D cgroup_fork_group(cgroup);
+> +	struct cgroup_fork *t = cgroup_fork_group(cgroup);
 > +
-> +	if (value < -1 || value > (1L << 30))
+> +	if (value<  -1 || value>  (1L<<  30))
 > +		return -EINVAL;
 > +
 > +	spin_lock(&t->lock);
-> +	t->remaining =3D (int)value;
+> +	t->remaining = (int)value;
 > +	spin_unlock(&t->lock);
 > +
 > +	return 0;
 > +}
 > +
-> +static const struct cftype cgroup_fork_files[] =3D  {
+> +static const struct cftype cgroup_fork_files[] =  {
 > +	{
-> +		.name =3D "remaining",
-> +		.read_s64 =3D cgroup_fork_remaining_read,
-> +		.write_s64 =3D cgroup_fork_remaining_write,
+> +		.name = "remaining",
+> +		.read_s64 = cgroup_fork_remaining_read,
+> +		.write_s64 = cgroup_fork_remaining_write,
 > +	},
 > +};
 > +
 > +static int
 > +cgroup_fork_populate(struct cgroup_subsys *ss, struct cgroup *cgroup)
 > +{
-> +	if (cgroup->parent =3D=3D NULL)
+> +	if (cgroup->parent == NULL)
 > +		/* cannot limit the root cgroup */
 > +		return 0;
 > +
@@ -334,39 +318,39 @@ txt
 > +				ARRAY_SIZE(cgroup_fork_files));
 > +}
 > +
-> +struct cgroup_subsys fork_subsys =3D {
-> +	.name =3D "fork",
-> +	.create =3D cgroup_fork_create,
-> +	.destroy =3D cgroup_fork_destroy,
-> +	.fork =3D cgroup_fork_fork,
-> +	.populate =3D cgroup_fork_populate,
-> +	.subsys_id =3D fork_subsys_id,
+> +struct cgroup_subsys fork_subsys = {
+> +	.name = "fork",
+> +	.create = cgroup_fork_create,
+> +	.destroy = cgroup_fork_destroy,
+> +	.fork = cgroup_fork_fork,
+> +	.populate = cgroup_fork_populate,
+> +	.subsys_id = fork_subsys_id,
 > +};
 > +
 > +int
 > +cgroup_fork_pre_fork(void)
 > +{
 > +	struct cgroup_fork *t;
-> +	int err =3D 0;
+> +	int err = 0;
 > +
-> +	if (unlikely(current =3D=3D &init_task))
+> +	if (unlikely(current ==&init_task))
 > +		/* ignore the kernel's fork request while booting; the
 > +		   cgroup subsystem doesn't get initialized by
 > +		   INIT_TASK(), so we need this check */
 > +		return err;
 > +
-> +	BUG_ON(current->cgroups =3D=3D NULL);
+> +	BUG_ON(current->cgroups == NULL);
 > +
 > +	rcu_read_lock();
 > +
-> +	t =3D cgroup_fork_current();
-> +	while (t->css.cgroup->parent !=3D NULL && err =3D=3D 0) {
-> +		if (unlikely(cgroup_fork_lock_get_remaining(t) =3D=3D 0)) {
-> +			err =3D -EPERM;
+> +	t = cgroup_fork_current();
+> +	while (t->css.cgroup->parent != NULL&&  err == 0) {
+> +		if (unlikely(cgroup_fork_lock_get_remaining(t) == 0)) {
+> +			err = -EPERM;
 > +			break;
 > +		}
 > +
-> +		t =3D cgroup_fork_group(t->css.cgroup->parent);
+> +		t = cgroup_fork_group(t->css.cgroup->parent);
 > +	}
 > +
 > +	rcu_read_unlock();
@@ -378,30 +362,26 @@ txt
 > --- a/kernel/fork.c
 > +++ b/kernel/fork.c
 > @@ -32,6 +32,7 @@
->  #include <linux/capability.h>
->  #include <linux/cpu.h>
->  #include <linux/cgroup.h>
-> +#include <linux/cgroup_fork.h>
->  #include <linux/security.h>
->  #include <linux/hugetlb.h>
->  #include <linux/swap.h>
-> @@ -1084,6 +1085,10 @@ static struct task_struct *copy_process(unsigned l=
-ong clone_flags,
->  				current->signal->flags & SIGNAL_UNKILLABLE)
->  		return ERR_PTR(-EINVAL);
->  =
-
-> +	retval =3D cgroup_fork_pre_fork();
+>   #include<linux/capability.h>
+>   #include<linux/cpu.h>
+>   #include<linux/cgroup.h>
+> +#include<linux/cgroup_fork.h>
+>   #include<linux/security.h>
+>   #include<linux/hugetlb.h>
+>   #include<linux/swap.h>
+> @@ -1084,6 +1085,10 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+>   				current->signal->flags&  SIGNAL_UNKILLABLE)
+>   		return ERR_PTR(-EINVAL);
+>
+> +	retval = cgroup_fork_pre_fork();
 > +	if (retval)
 > +		goto fork_out;
 > +
->  	retval =3D security_task_create(clone_flags);
->  	if (retval)
->  		goto fork_out;
-> =
-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/
+>   	retval = security_task_create(clone_flags);
+>   	if (retval)
+>   		goto fork_out;
+>
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linuxfoundation.org/mailman/listinfo/containers
