@@ -1,14 +1,15 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: [PATCH] add new cgroup list to CC notice
-Date: Fri, 04 Nov 2011 14:17:45 +0100
-Message-ID: <4EB3E5F9.80308__40659.0531616986$1320413299$gmane$org@free.fr>
-References: <20111104094030.cf8d5860.kamezawa.hiroyu@jp.fujitsu.com>
-	<4EB3495B.8080700@free.fr> <1320382250.3108.4.camel@dabdike>
+From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: Re: [PATCH] new cgroup controller "fork"
+Date: Fri, 4 Nov 2011 11:11:26 -0200
+Message-ID: <4EB3E47E.2080003__13180.0027601004$1320414086$gmane$org@parallels.com>
+References: <20111103162238.27609.11515.stgit@rabbit.intern.cm-ag>	<4EB2C4A5.6000406@parallels.com>	<20111103165903.GA4755@Debian-60-squeeze-64-minimal>	<20111103182101.5037c1e5@lxorguk.ukuu.org.uk>	<20111103185108.GA5153@Debian-60-squeeze-64-minimal>	<20111103190330.02590426@lxorguk.ukuu.org.uk>	<20111103192039.GA5300@Debian-60-squeeze-64-minimal>	<4EB2EA93.2050206@parallels.com>
+	<4EB2F5CF.5010604@aljex.com> <4EB30DAF.4090704@parallels.com>
+	<4EB3560D.7000002@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"; Format="flowed"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1320382250.3108.4.camel@dabdike>
+In-Reply-To: <4EB3560D.7000002-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,34 +19,75 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
-Cc: mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org, fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, "hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org" <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, max-hDT0AjmEH7RAfugRpC6u6w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 11/04/2011 05:50 AM, James Bottomley wrote:
-> On Fri, 2011-11-04 at 03:09 +0100, Daniel Lezcano wrote:
->> On 11/04/2011 01:40 AM, KAMEZAWA Hiroyuki wrote:
->>> As discussed at Kernel Summit(2011), new cgroups mailing list is opened by
->>> James. This list is for discussing general cgroup design and patches
->>> including all subsystems and for getting more attentions to cgroups/namespaces
->>> related issues by developpers.
->>>
->>> Signed-off-by: KAMEZAWA Hiroyuki<kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
->>> ---
->> I don't see the point to unilaterally change the mailing list to
->> vger.kernel.org as the discussions will be  the same as the actual
->> mailing list containers@.
-> It's not a unilateral list change.  We will still have containers@lf.
->
-> The problem is that not all cgroup related stuff goes over it ...
-> particularly the currently active controller discussions tend not to be
-> cc'd there.  With systemd (and things like the I/O controllers for
-> xen/kvm), cgroups is seen as being wider than containers.
->
-> The desire was for a single list where someone could go to get an
-> overall view of what's going on in cgroups ... particularly if you're a
-> confused subsystem maintainer who just had a request to put a controller
-> in your subsystem ...
-
-Ok, thanks for the clarification. May I suggest to create also a 
-namespace@ mailing list ?
+T24gMTEvMDQvMjAxMSAwMTowMyBBTSwgTGkgWmVmYW4gd3JvdGU6Cj4g5LqOIDIwMTHlubQxMeac
+iDA05pelIDA1OjU0LCBHbGF1YmVyIENvc3RhIOWGmemBkzoKPj4gT24gMTEvMDMvMjAxMSAwNjox
+MyBQTSwgQnJpYW4gSy4gV2hpdGUgd3JvdGU6Cj4+PiBPbiAxMS8zLzIwMTEgMzoyNSBQTSwgR2xh
+dWJlciBDb3N0YSB3cm90ZToKPj4+PiBPbiAxMS8wMy8yMDExIDA1OjIwIFBNLCBNYXggS2VsbGVy
+bWFubiB3cm90ZToKPj4+Pj4gT24gMjAxMS8xMS8wMyAyMDowMywgQWxhbiBDb3g8YWxhbkBseG9y
+Z3VrLnVrdXUub3JnLnVrPiAgd3JvdGU6Cj4+Pj4+PiBTdXJlIC0gSSdtIGp1c3Qgbm90IHNlZWlu
+ZyB0aGF0IGEgd2hvbGUgc2VwYXJhdGUgY2dyb3VwIGZvciBpdCBpcwo+Pj4+Pj4gYXBwcm9wcmlh
+dGUgb3IgYSBnb29kIHBsYW4uIEFueW9uZSBkb2luZyByZWFsIHJlc291cmNlIG1hbmFnZW1lbnQg
+bmVlZHMKPj4+Pj4+IHRoZSByZXN0IG9mIHRoZSBzdHVmZiBhbnl3YXkuCj4+Pj4+Cj4+Pj4+IFJp
+Z2h0LiBXaGVuIEkgc2F3IEZyZWRlcmljJ3MgY29udHJvbGxlciB0b2RheSwgbXkgZmlyc3QgdGhv
+dWdodCB3YXMKPj4+Pj4gdGhhdCBvbmUgY291bGQgbW92ZSB0aGUgZm9yayBsaW1pdCBjb2RlIG92
+ZXIgaW50byB0aGF0IGNvbnRyb2xsZXIuIElmCj4+Pj4+IHdlIHJlYWNoIGEgY29uc2Vuc3VzIHRo
+YXQgdGhpcyB3b3VsZCBiZSBhIGdvb2QgaWRlYSwgYW5kIHdvdWxkIGhhdmUKPj4+Pj4gY2hhbmNl
+cyB0byBnZXQgbWVyZ2VkLCBJIGNvdWxkIHByb2JhYmx5IHRha2Ugc29tZSB0aW1lIHRvIHJlZmFj
+dG9yIG15Cj4+Pj4+IGNvZGUuCj4+Pj4+Cj4+Pj4+IE1heAo+Pj4+IEknZCBhZHZpc2UgeW91IHRv
+IHRha2UgYSBzdGVwIGJhY2sgYW5kIHRoaW5rIGlmIHRoaXMgaXMgcmVhbGx5IG5lZWRlZC4KPj4+
+PiBBcyBBbGFuIHBvaW50ZWQgb3V0LCB0aGUgcmVhbGx5IGV4cGVuc2l2ZSByZXNvdXJjZSBoZXJl
+IGlzIGFscmVhZHkgYmVpbmcKPj4+PiBjb25zdHJhaW5lZCBieSBGcmVkZXJpYydzIGNvbnRyb2xs
+ZXIuCj4+Pgo+Pj4gSSB0aGluayB0aGlzIHJlYWxseSBpcyBhIGRpZmZlcmVudCBrbm9iIHRoYXQg
+aXMgbmljZSB0byBoYXZlIGFzIGxvbmcgYXMKPj4+IGl0IGRvZXNuJ3QgY29zdCBtdWNoLiBJdCdz
+IGEgd2F5IHRvIHNldCBhIG1heCBsaWZlc3BhbiBpbiBhIHdheSB0aGF0Cj4+PiBpc24ndCByZWFs
+bHkgYWRkcmVzc2VkIGJ5IHRoZSBvdGhlciBjb250cm9scy4gKEkgY291bGQgYWJzb2x1dGVseSBi
+ZQo+Pj4gbWlzc2luZyBzb21ldGhpbmcuKQo+Pj4KPj4+IEkgdGhpbmsgTWF4IGV4cGxhaW5lZCB0
+aGUgaXNzdWUgY2xlYXJseSBlbm91Z2guCj4+Cj4+IEhlIGRpZCwgaW5kZWVkLgo+Pgo+Pj4gSXQg
+ZG9lc24ndCBtYXR0ZXIgdGhhdCB0aGUgZm9yayBpdHNlbGYgaXMgc3VwcG9zZWRseSBzbyBjaGVh
+cC4KPj4+Cj4+PiBJdCdzIHN0aWxsIG5pY2UgdG8gaGF2ZSBhIHdheSB0byBzYXksIHlvdSBtYXkg
+bm90IGZvcmsvZGllL2ZvcmsvZGllL2ZvcmsKPj4+IGluIGEgcmFjZS4KPj4+Cj4+PiBXaGF0J3Mg
+c28gdW5pbWFnaW5hYmxlIGFib3V0IGhhdmluZyBhIHByb2Nlc3MgdGhhdCB5b3Uga25vdyBuZWVk
+cyBhIGxvdAo+Pj4gb2YgY3B1IGFuZCByYW0gb3Igb3RoZXIgcmVzb3VyY2VzIHRvIGRvIGl0J3Mg
+am9iLCBhbmQgeW91IGV4cHJlc3NseSB3YW50Cj4+PiB0byBhbGxvdyBpdCB0byB0YWtlIGFzIG11
+Y2ggb2YgdGhvc2UgcmVzb3VyY2VzIGFzIGl0IGNhbiwgYnV0IHlvdSBrbm93Cj4+PiBpdCBoYXMg
+bm8gbmVlZCB0byBmb3JrLCBzbyBpZiBpdCBmb3JrcywgX3RoYXRfIGlzIHRoZSBvbmx5IGluZGlj
+YXRpb24gb2YKPj4+IGEgcHJvYmxlbSwgc28geW91IG1heSBvbmx5IHdhbnQgdG8gYmxvY2sgaXQg
+YmFzZWQgb24gdGhhdC4KPj4+Cj4+PiBTdXJlIG1hbnkgb3RoZXIgcHJvY2Vzc2VzIHdvdWxkIGxl
+Z2l0aW1hdGVseSBmb3JrL2RpZS9mb3JrL2RpZSBhIGxvdAo+Pj4gd2hpbGUgbmV2ZXIgZXhjZWVk
+aW5nIGEgZmV3IHRvdGFsIGNvbmN1cnJlbnQgdGFza3MsIGFuZCBmb3IgdGhlbSB5b3UKPj4+IHdv
+dWxkIG5vdCB3YW50IHRvIHNldCBhbnkgc3VjaCBmb3JrIGxpbWl0LiBTbyB3aGF0Pwo+Pj4KPj4g
+QXMgSSBzYWlkIHByZXZpb3VzbHksIGhlIGtub3dzIGhpcyB1c2UgY2FzZXMgYmV0dGVyIHRoYW4g
+YW55b25lIGVsc2UuCj4+IElmIGEgdXNlIGNhc2UgY2FuIGJlIGZvdW5kIGluIHdoaWNoIHRoZSBz
+dW1tYXRpb24gb2YgY3B1K3Rhc2sgY29udHJvbGxlcnMgaXMgbm90IGVub3VnaCwgYW5kIGlmIHRo
+aXMgaXMgaW1wbGVtZW50ZWQgYXMgYW4gb3B0aW9uIHRvIHRoZSB0YXNrIGNvbnRyb2xsZXIsIGFu
+ZCBkb2VzIG5vdCBtYWtlIGl0Ogo+PiAxKSBjb25mdXNpbmcsCj4+IDIpIG1vcmUgZXhwZW5zaXZl
+LAo+Pgo+PiB0aGVuIEkgZG9uJ3Qgc2VlIHdoeSBub3Qgd2Ugc2hvdWxkbid0IHRha2UgaXQuCj4K
+PiBRdW90ZWQgZnJvbSBMZW5uYXJ0J3MgcmVwbHkgaW4gYW5vdGhlciBtYWlsIHRocmVhZDoKPgo+
+ICJHaXZlbiB0aGF0IHNodXR0aW5nIGRvd24gc29tZSBzZXJ2aWNlcyBtaWdodCBpbnZvbHZlIGZv
+cmtpbmcgb2ZmIGEgZmV3Cj4gdGhpbmdzICh0aGluazogYSBzaGVsbCBzY3JpcHQgaGFuZGxpbmcg
+c2h1dGRvd24gd2hpY2ggZm9ya3Mgb2ZmIGEgY291cGxlCj4gb2Ygc2hlbGwgdXRpbGl0aWVzKSB3
+ZSdkIHdhbnQgc29tZXRoaW5nIHRoYXQgaXMgYmV0d2VlbiAiZnJvbSBub3cgb24gbm8KPiBmb3Jr
+aW5nIGF0IGFsbCIgYW5kICJ1bmxpbWl0ZWQgZm9ya2luZyIuIFRoaXMgY291bGQgYmUgZG9uZSBp
+biBtYW55Cj4gZGlmZmVyZW50IHdheXM6IHdlJ2QgYmUgaGFwcHkgaWYgd2UgY291bGQgZG8gdGlt
+ZS1iYXNlZCByYXRlIGxpbWl0aW5nLAo+IGJ1dCB3ZSdkIGFsc28gYmUgZmluZSB3aXRoIGRlZmlu
+aW5nIGEgY2VydGFpbiBidWRnZXQgb2YgYWRkaXRpb25hbCBmb3Jrcwo+IGEgY2dyb3VwIGNhbiBk
+byAoaS5lLiAiZnJvbSBub3cgb24geW91IGNhbiBkbyA1MCBtb3JlIGZvcmtzLCB0aGVuIHlvdSds
+bAo+IGdldCBFUEVSTSkuIgo+Cj4gKGh0dHA6Ly9sa21sLm9yZy9sa21sLzIwMTEvMTAvMTkvNDY4
+KQo+Cj4gVGhlIGxhc3Qgc2VudGVuY2Ugc3VnZ2VzdHMgaGUgbWlnaHQgbGlrZSB0aGlzIGZvcmsg
+Y29udHJvbGxlci4KCldlbGwsIElmIEkgdW5kZXJzdGFuZCBGcmVkZXJpYydzIHdvcmsgd2VsbCBl
+bm91Z2gsIHRoaXMgY2FuIGJlIGFjaGlldmVkIApieSBzZXR0aW5nIHRoZSB0YXNrIGxpbWl0IHRv
+IDAgaW4gaGlzIGNvbnRyb2xsZXIuIE5vPwoKQmVjYXVzZSBiZWluZyBsb3dlciB0aGFuIHlvdXIg
+bGltaXQgd29uJ3Qga2ljayB0YXNrcyBvdXQsIHRoZSBwcmFjdGljYWwgCmVmZmVjdCBpcyB0aGF0
+IG5vIGZvcmtzIHdpbGwgYmUgYWxsb3dlZCBpbiB0aGUgZ3JvdXAgd2l0aCB0aGlzIHNldHRpbmcu
+CgpTbyBmb3IgdGltZS1iYXNlZCByYXRlIGxpbWl0aW5nLCBpdCBpcyB0cml2aWFsIHRvIGp1c3Qg
+c2V0IGl0IHRvIDAgYWZ0ZXIgCnggc2Vjb25kcy4KCkZvciBvdGhlciB1c2VzLCB3ZSBjYW4gd2F0
+Y2ggdGhlIHRhc2sgY291bnRlciBpbmNyZWFzZSB1bnRpbCBhIGNlcnRhaW4gCnZhbHVlLCBhbmQg
+dGhlbiBzZXQgdGhlIGxpbWl0IHRvIDAuCgpNYXgsIHdvdWxkbid0IGl0IGJlIGVub3VnaCBmb3Ig
+eW91ciB1c2U/Cl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+CkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlv
+bi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8v
+Y29udGFpbmVycw==
