@@ -1,14 +1,21 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Subject: Re: [PATCH] new cgroup controller "fork"
-Date: Fri, 04 Nov 2011 11:03:41 +0800
-Message-ID: <4EB3560D.7000002@cn.fujitsu.com>
-References: <20111103162238.27609.11515.stgit@rabbit.intern.cm-ag>	<4EB2C4A5.6000406@parallels.com>	<20111103165903.GA4755@Debian-60-squeeze-64-minimal>	<20111103182101.5037c1e5@lxorguk.ukuu.org.uk>	<20111103185108.GA5153@Debian-60-squeeze-64-minimal>	<20111103190330.02590426@lxorguk.ukuu.org.uk>	<20111103192039.GA5300@Debian-60-squeeze-64-minimal>	<4EB2EA93.2050206@parallels.com>
-	<4EB2F5CF.5010604@aljex.com> <4EB30DAF.4090704@parallels.com>
+Date: Fri, 4 Nov 2011 13:37:20 +0900
+Message-ID: <20111104133720.44042a5c.kamezawa.hiroyu@jp.fujitsu.com>
+References: <20111103162238.27609.11515.stgit@rabbit.intern.cm-ag>
+	<4EB2C4A5.6000406@parallels.com>
+	<20111103165903.GA4755@Debian-60-squeeze-64-minimal>
+	<20111103182101.5037c1e5@lxorguk.ukuu.org.uk>
+	<20111103185108.GA5153@Debian-60-squeeze-64-minimal>
+	<20111103190330.02590426@lxorguk.ukuu.org.uk>
+	<20111103192039.GA5300@Debian-60-squeeze-64-minimal>
+	<4EB2EA93.2050206@parallels.com> <4EB2F5CF.5010604@aljex.com>
+	<4EB30DAF.4090704@parallels.com> <4EB3560D.7000002@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="iso-2022-jp"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4EB30DAF.4090704-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+In-Reply-To: <4EB3560D.7000002-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,64 +25,88 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-5LqOIDIwMTHlubQxMeaciDA05pelIDA1OjU0LCBHbGF1YmVyIENvc3RhIOWGmemBkzoKPiBPbiAx
-MS8wMy8yMDExIDA2OjEzIFBNLCBCcmlhbiBLLiBXaGl0ZSB3cm90ZToKPj4gT24gMTEvMy8yMDEx
-IDM6MjUgUE0sIEdsYXViZXIgQ29zdGEgd3JvdGU6Cj4+PiBPbiAxMS8wMy8yMDExIDA1OjIwIFBN
-LCBNYXggS2VsbGVybWFubiB3cm90ZToKPj4+PiBPbiAyMDExLzExLzAzIDIwOjAzLCBBbGFuIENv
-eDxhbGFuQGx4b3JndWsudWt1dS5vcmcudWs+IHdyb3RlOgo+Pj4+PiBTdXJlIC0gSSdtIGp1c3Qg
-bm90IHNlZWluZyB0aGF0IGEgd2hvbGUgc2VwYXJhdGUgY2dyb3VwIGZvciBpdCBpcwo+Pj4+PiBh
-cHByb3ByaWF0ZSBvciBhIGdvb2QgcGxhbi4gQW55b25lIGRvaW5nIHJlYWwgcmVzb3VyY2UgbWFu
-YWdlbWVudCBuZWVkcwo+Pj4+PiB0aGUgcmVzdCBvZiB0aGUgc3R1ZmYgYW55d2F5Lgo+Pj4+Cj4+
-Pj4gUmlnaHQuIFdoZW4gSSBzYXcgRnJlZGVyaWMncyBjb250cm9sbGVyIHRvZGF5LCBteSBmaXJz
-dCB0aG91Z2h0IHdhcwo+Pj4+IHRoYXQgb25lIGNvdWxkIG1vdmUgdGhlIGZvcmsgbGltaXQgY29k
-ZSBvdmVyIGludG8gdGhhdCBjb250cm9sbGVyLiBJZgo+Pj4+IHdlIHJlYWNoIGEgY29uc2Vuc3Vz
-IHRoYXQgdGhpcyB3b3VsZCBiZSBhIGdvb2QgaWRlYSwgYW5kIHdvdWxkIGhhdmUKPj4+PiBjaGFu
-Y2VzIHRvIGdldCBtZXJnZWQsIEkgY291bGQgcHJvYmFibHkgdGFrZSBzb21lIHRpbWUgdG8gcmVm
-YWN0b3IgbXkKPj4+PiBjb2RlLgo+Pj4+Cj4+Pj4gTWF4Cj4+PiBJJ2QgYWR2aXNlIHlvdSB0byB0
-YWtlIGEgc3RlcCBiYWNrIGFuZCB0aGluayBpZiB0aGlzIGlzIHJlYWxseSBuZWVkZWQuCj4+PiBB
-cyBBbGFuIHBvaW50ZWQgb3V0LCB0aGUgcmVhbGx5IGV4cGVuc2l2ZSByZXNvdXJjZSBoZXJlIGlz
-IGFscmVhZHkgYmVpbmcKPj4+IGNvbnN0cmFpbmVkIGJ5IEZyZWRlcmljJ3MgY29udHJvbGxlci4K
-Pj4KPj4gSSB0aGluayB0aGlzIHJlYWxseSBpcyBhIGRpZmZlcmVudCBrbm9iIHRoYXQgaXMgbmlj
-ZSB0byBoYXZlIGFzIGxvbmcgYXMKPj4gaXQgZG9lc24ndCBjb3N0IG11Y2guIEl0J3MgYSB3YXkg
-dG8gc2V0IGEgbWF4IGxpZmVzcGFuIGluIGEgd2F5IHRoYXQKPj4gaXNuJ3QgcmVhbGx5IGFkZHJl
-c3NlZCBieSB0aGUgb3RoZXIgY29udHJvbHMuIChJIGNvdWxkIGFic29sdXRlbHkgYmUKPj4gbWlz
-c2luZyBzb21ldGhpbmcuKQo+Pgo+PiBJIHRoaW5rIE1heCBleHBsYWluZWQgdGhlIGlzc3VlIGNs
-ZWFybHkgZW5vdWdoLgo+IAo+IEhlIGRpZCwgaW5kZWVkLgo+IAo+PiBJdCBkb2Vzbid0IG1hdHRl
-ciB0aGF0IHRoZSBmb3JrIGl0c2VsZiBpcyBzdXBwb3NlZGx5IHNvIGNoZWFwLgo+Pgo+PiBJdCdz
-IHN0aWxsIG5pY2UgdG8gaGF2ZSBhIHdheSB0byBzYXksIHlvdSBtYXkgbm90IGZvcmsvZGllL2Zv
-cmsvZGllL2ZvcmsKPj4gaW4gYSByYWNlLgo+Pgo+PiBXaGF0J3Mgc28gdW5pbWFnaW5hYmxlIGFi
-b3V0IGhhdmluZyBhIHByb2Nlc3MgdGhhdCB5b3Uga25vdyBuZWVkcyBhIGxvdAo+PiBvZiBjcHUg
-YW5kIHJhbSBvciBvdGhlciByZXNvdXJjZXMgdG8gZG8gaXQncyBqb2IsIGFuZCB5b3UgZXhwcmVz
-c2x5IHdhbnQKPj4gdG8gYWxsb3cgaXQgdG8gdGFrZSBhcyBtdWNoIG9mIHRob3NlIHJlc291cmNl
-cyBhcyBpdCBjYW4sIGJ1dCB5b3Uga25vdwo+PiBpdCBoYXMgbm8gbmVlZCB0byBmb3JrLCBzbyBp
-ZiBpdCBmb3JrcywgX3RoYXRfIGlzIHRoZSBvbmx5IGluZGljYXRpb24gb2YKPj4gYSBwcm9ibGVt
-LCBzbyB5b3UgbWF5IG9ubHkgd2FudCB0byBibG9jayBpdCBiYXNlZCBvbiB0aGF0Lgo+Pgo+PiBT
-dXJlIG1hbnkgb3RoZXIgcHJvY2Vzc2VzIHdvdWxkIGxlZ2l0aW1hdGVseSBmb3JrL2RpZS9mb3Jr
-L2RpZSBhIGxvdAo+PiB3aGlsZSBuZXZlciBleGNlZWRpbmcgYSBmZXcgdG90YWwgY29uY3VycmVu
-dCB0YXNrcywgYW5kIGZvciB0aGVtIHlvdQo+PiB3b3VsZCBub3Qgd2FudCB0byBzZXQgYW55IHN1
-Y2ggZm9yayBsaW1pdC4gU28gd2hhdD8KPj4KPiBBcyBJIHNhaWQgcHJldmlvdXNseSwgaGUga25v
-d3MgaGlzIHVzZSBjYXNlcyBiZXR0ZXIgdGhhbiBhbnlvbmUgZWxzZS4KPiBJZiBhIHVzZSBjYXNl
-IGNhbiBiZSBmb3VuZCBpbiB3aGljaCB0aGUgc3VtbWF0aW9uIG9mIGNwdSt0YXNrIGNvbnRyb2xs
-ZXJzIGlzIG5vdCBlbm91Z2gsIGFuZCBpZiB0aGlzIGlzIGltcGxlbWVudGVkIGFzIGFuIG9wdGlv
-biB0byB0aGUgdGFzayBjb250cm9sbGVyLCBhbmQgZG9lcyBub3QgbWFrZSBpdDoKPiAxKSBjb25m
-dXNpbmcsCj4gMikgbW9yZSBleHBlbnNpdmUsCj4gCj4gdGhlbiBJIGRvbid0IHNlZSB3aHkgbm90
-IHdlIHNob3VsZG4ndCB0YWtlIGl0LgoKUXVvdGVkIGZyb20gTGVubmFydCdzIHJlcGx5IGluIGFu
-b3RoZXIgbWFpbCB0aHJlYWQ6CgoiR2l2ZW4gdGhhdCBzaHV0dGluZyBkb3duIHNvbWUgc2Vydmlj
-ZXMgbWlnaHQgaW52b2x2ZSBmb3JraW5nIG9mZiBhIGZldwp0aGluZ3MgKHRoaW5rOiBhIHNoZWxs
-IHNjcmlwdCBoYW5kbGluZyBzaHV0ZG93biB3aGljaCBmb3JrcyBvZmYgYSBjb3VwbGUKb2Ygc2hl
-bGwgdXRpbGl0aWVzKSB3ZSdkIHdhbnQgc29tZXRoaW5nIHRoYXQgaXMgYmV0d2VlbiAiZnJvbSBu
-b3cgb24gbm8KZm9ya2luZyBhdCBhbGwiIGFuZCAidW5saW1pdGVkIGZvcmtpbmciLiBUaGlzIGNv
-dWxkIGJlIGRvbmUgaW4gbWFueQpkaWZmZXJlbnQgd2F5czogd2UnZCBiZSBoYXBweSBpZiB3ZSBj
-b3VsZCBkbyB0aW1lLWJhc2VkIHJhdGUgbGltaXRpbmcsCmJ1dCB3ZSdkIGFsc28gYmUgZmluZSB3
-aXRoIGRlZmluaW5nIGEgY2VydGFpbiBidWRnZXQgb2YgYWRkaXRpb25hbCBmb3JrcwphIGNncm91
-cCBjYW4gZG8gKGkuZS4gImZyb20gbm93IG9uIHlvdSBjYW4gZG8gNTAgbW9yZSBmb3JrcywgdGhl
-biB5b3UnbGwKZ2V0IEVQRVJNKS4iCgooaHR0cDovL2xrbWwub3JnL2xrbWwvMjAxMS8xMC8xOS80
-NjgpCgpUaGUgbGFzdCBzZW50ZW5jZSBzdWdnZXN0cyBoZSBtaWdodCBsaWtlIHRoaXMgZm9yayBj
-b250cm9sbGVyLgoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0
-aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5m
-by9jb250YWluZXJz
+On Fri, 04 Nov 2011 11:03:41 +0800
+Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+
+> 于 2011年11月04日 05:54, Glauber Costa 写道:
+> > On 11/03/2011 06:13 PM, Brian K. White wrote:
+> >> On 11/3/2011 3:25 PM, Glauber Costa wrote:
+> >>> On 11/03/2011 05:20 PM, Max Kellermann wrote:
+> >>>> On 2011/11/03 20:03, Alan Cox<alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org> wrote:
+> >>>>> Sure - I'm just not seeing that a whole separate cgroup for it is
+> >>>>> appropriate or a good plan. Anyone doing real resource management needs
+> >>>>> the rest of the stuff anyway.
+> >>>>
+> >>>> Right. When I saw Frederic's controller today, my first thought was
+> >>>> that one could move the fork limit code over into that controller. If
+> >>>> we reach a consensus that this would be a good idea, and would have
+> >>>> chances to get merged, I could probably take some time to refactor my
+> >>>> code.
+> >>>>
+> >>>> Max
+> >>> I'd advise you to take a step back and think if this is really needed.
+> >>> As Alan pointed out, the really expensive resource here is already being
+> >>> constrained by Frederic's controller.
+> >>
+> >> I think this really is a different knob that is nice to have as long as
+> >> it doesn't cost much. It's a way to set a max lifespan in a way that
+> >> isn't really addressed by the other controls. (I could absolutely be
+> >> missing something.)
+> >>
+> >> I think Max explained the issue clearly enough.
+> > 
+> > He did, indeed.
+> > 
+> >> It doesn't matter that the fork itself is supposedly so cheap.
+> >>
+> >> It's still nice to have a way to say, you may not fork/die/fork/die/fork
+> >> in a race.
+> >>
+> >> What's so unimaginable about having a process that you know needs a lot
+> >> of cpu and ram or other resources to do it's job, and you expressly want
+> >> to allow it to take as much of those resources as it can, but you know
+> >> it has no need to fork, so if it forks, _that_ is the only indication of
+> >> a problem, so you may only want to block it based on that.
+> >>
+> >> Sure many other processes would legitimately fork/die/fork/die a lot
+> >> while never exceeding a few total concurrent tasks, and for them you
+> >> would not want to set any such fork limit. So what?
+> >>
+> > As I said previously, he knows his use cases better than anyone else.
+> > If a use case can be found in which the summation of cpu+task controllers is not enough, and if this is implemented as an option to the task controller, and does not make it:
+> > 1) confusing,
+> > 2) more expensive,
+> > 
+> > then I don't see why not we shouldn't take it.
+> 
+> Quoted from Lennart's reply in another mail thread:
+> 
+> "Given that shutting down some services might involve forking off a few
+> things (think: a shell script handling shutdown which forks off a couple
+> of shell utilities) we'd want something that is between "from now on no
+> forking at all" and "unlimited forking". This could be done in many
+> different ways: we'd be happy if we could do time-based rate limiting,
+> but we'd also be fine with defining a certain budget of additional forks
+> a cgroup can do (i.e. "from now on you can do 50 more forks, then you'll
+> get EPERM)."
+> 
+> (http://lkml.org/lkml/2011/10/19/468)
+> 
+> The last sentence suggests he might like this fork controller.
+> 
+
+Hmm, IMHO, this feature may have some use case. But I don't like to have
+both of fork/task controller at the same time and need to mount 2 of them.
+
+How about accounting the number of fork or fork-speed in 'task'
+controller and  add 'notifier' as memcg's memory usage notification ?
+(Or fork-limit in task controller.)
+
+BTW, what is performance impact to add lock/counter in fork/die path ?
+
+Thanks,
+-Kame
