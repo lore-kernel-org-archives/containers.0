@@ -1,11 +1,14 @@
 From: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: user namespaces: fix some uid/privilege leaks
-Date: Fri,  4 Nov 2011 22:24:36 +0000
-Message-ID: <1320445482-8459-1-git-send-email-serge@hallyn.com>
+Subject: [PATCH 2/6] User namespace: don't allow sysctl in non-init user ns
+	(v2)
+Date: Fri,  4 Nov 2011 22:24:38 +0000
+Message-ID: <1320445482-8459-3-git-send-email-serge@hallyn.com>
+References: <1320445482-8459-1-git-send-email-serge@hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1320445482-8459-1-git-send-email-serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,46 +19,56 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: richard-/L3Ra7n9ekc@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Cc: Miquel van Smoorenburg <mikevs-qWit8jRvyhWsTnJN9+BGXg@public.gmane.org>, richard-/L3Ra7n9ekc@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Vasiliy Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-The previous submission of these patches, and review comments, can be
-seen in the thread starting here: https://lkml.org/lkml/2011/10/18/463 .
-Since then, patches 
-0001-pid_ns-ensure-pid-is-not-freed-during-kill_pid_info_.patch
-and
-0002-user-namespace-usb-make-usb-urbs-user-namespace-awar.patch
-have gone upstream, and I've reverted
-0009-make-net-core-scm.c-uid-comparisons-user-namespace-a.patch
-because it relaxes checks, and right now we want to focus on
-fixing leaks.
+From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 
-The set includes:
+sysctl.c has its own custom uid check, which is not user namespace
+aware.  As discovered by Richard, that allows root in a container
+privileged access to set all sysctls.
 
-0001-user-namespace-make-signal.c-respect-user-namespaces.patch
-	This convers the uid for the task sending a signal to the
-	user namespace of the receiver.  It is somewhat analogous
-	to what is done with the sender's pid.
-	Waiting on feedback from Oleg, but I believe this patch is
-	ready.
+To fix that, don't compare uid or groups if current is not in the
+initial user namespace.  We may at some point want to relax that check
+so that some sysctls are allowed - for instance dmesg_restrict when
+syslog is containerized.
 
-0002-User-namespace-don-t-allow-sysctl-in-non-init-user-n.patch
-	This prevents root in a child user namespace from man-handling
-	sysctls.  With this patch, a task in a child user namespace
-	will only get the world access rights to sysctls.
+Changelog:
+Sep 22: As Miquel van Smoorenburg pointed out, rather than always
+	refusing access if not in initial user_ns, we should allow
+	world access rights to sysctl files.  We just want to prevent
+	a task in a non-init user namespace from getting the root user
+	or group access rights.
 
-0003-user-namespace-clamp-down-users-of-cap_raised.patch
-	This clamps down on cases where privilege to your own user
-	namespace were checked for access to the initial user namespace.
+Signed-off-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Vasiliy Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>
+Cc: richard-/L3Ra7n9ekc@public.gmane.org
+Cc: Miquel van Smoorenburg <mikevs-qWit8jRvyhWsTnJN9+BGXg@public.gmane.org>
+---
+ kernel/sysctl.c |   10 ++++++----
+ 1 files changed, 6 insertions(+), 4 deletions(-)
 
-0004-Add-Documentation-namespaces-user_namespace.txt-v3.patch
-	Documentation.
-
-0005-user-namespace-make-each-net-net_ns-belong-to-a-user.patch
-	This adds a struct user_namespace pointer to the net_ns for use
-	by later patches.
-
-0006-protect-cap_netlink_recv-from-user-namespaces.patch
-	Now that net_ns is owned by a user_ns, cap_netlink_recv() can
-	target privilege checks to the user_ns owning the resource.  The
-	current check against current_cap() is unsafe.
+diff --git a/kernel/sysctl.c b/kernel/sysctl.c
+index ae27196..473df41 100644
+--- a/kernel/sysctl.c
++++ b/kernel/sysctl.c
+@@ -1708,10 +1708,12 @@ void register_sysctl_root(struct ctl_table_root *root)
+ 
+ static int test_perm(int mode, int op)
+ {
+-	if (!current_euid())
+-		mode >>= 6;
+-	else if (in_egroup_p(0))
+-		mode >>= 3;
++	if (current_user_ns() == &init_user_ns) {
++		if (!current_euid())
++			mode >>= 6;
++		else if (in_egroup_p(0))
++			mode >>= 3;
++	}
+ 	if ((op & ~mode & (MAY_READ|MAY_WRITE|MAY_EXEC)) == 0)
+ 		return 0;
+ 	return -EACCES;
+-- 
+1.7.0.4
