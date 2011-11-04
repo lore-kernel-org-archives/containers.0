@@ -1,14 +1,15 @@
-From: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
-Subject: Re: [PATCH] add new cgroup list to CC notice
-Date: Fri, 04 Nov 2011 08:50:49 +0400
-Message-ID: <1320382250.3108.4.camel@dabdike>
-References: <20111104094030.cf8d5860.kamezawa.hiroyu@jp.fujitsu.com>
-	<4EB3495B.8080700@free.fr>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 03/10] threadgroup: extend threadgroup_lock() to cover
+	exit and exec
+Date: Fri, 4 Nov 2011 17:45:34 +0900
+Message-ID: <20111104174534.8950f403.kamezawa.hiroyu__2799.2297932089$1320396562$gmane$org@jp.fujitsu.com>
+References: <1320191193-8110-1-git-send-email-tj@kernel.org>
+	<1320191193-8110-4-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4EB3495B.8080700-GANU6spQydw@public.gmane.org>
+In-Reply-To: <1320191193-8110-4-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,44 +19,39 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Cc: mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org, fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, "hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org" <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, 2011-11-04 at 03:09 +0100, Daniel Lezcano wrote:
-> On 11/04/2011 01:40 AM, KAMEZAWA Hiroyuki wrote:
-> > As discussed at Kernel Summit(2011), new cgroups mailing list is opened by
-> > James. This list is for discussing general cgroup design and patches
-> > including all subsystems and for getting more attentions to cgroups/namespaces
-> > related issues by developpers.
-> >
-> > Signed-off-by: KAMEZAWA Hiroyuki<kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-> > ---
+On Tue,  1 Nov 2011 16:46:26 -0700
+Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org> wrote:
+
+> threadgroup_lock() protected only protected against new addition to
+> the threadgroup, which was inherently somewhat incomplete and
+> problematic for its only user cgroup.  On-going migration could race
+> against exec and exit leading to interesting problems - the symmetry
+> between various attach methods, task exiting during method execution,
+> ->exit() racing against attach methods, migrating task switching basic
+> properties during exec and so on.
 > 
-> I don't see the point to unilaterally change the mailing list to 
-> vger.kernel.org as the discussions will be  the same as the actual 
-> mailing list containers@.
-
-It's not a unilateral list change.  We will still have containers@lf.
-
-The problem is that not all cgroup related stuff goes over it ...
-particularly the currently active controller discussions tend not to be
-cc'd there.  With systemd (and things like the I/O controllers for
-xen/kvm), cgroups is seen as being wider than containers.
-
-The desire was for a single list where someone could go to get an
-overall view of what's going on in cgroups ... particularly if you're a
-confused subsystem maintainer who just had a request to put a controller
-in your subsystem ...
-
-James
-
->  May be there is a good reason to do that but I 
-> don't see it, can someone enlight me please ?
+> This patch extends threadgroup_lock() such that it protects against
+> all three threadgroup altering operations - fork, exit and exec.  For
+> exit, threadgroup_change_begin/end() calls are added to exit path.
+> For exec, threadgroup_[un]lock() are updated to also grab and release
+> cred_guard_mutex.
 > 
+> With this change, threadgroup_lock() guarantees that the target
+> threadgroup will remain stable - no new task will be added, no new
+> PF_EXITING will be set and exec won't happen.
 > 
+> The next patch will update cgroup so that it can take full advantage
+> of this change.
 > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe cgroups" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+> Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+> Cc: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+> Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+
+
+Reviewed-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
