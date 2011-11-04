@@ -1,7 +1,7 @@
 From: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 3/6] user namespace: clamp down users of cap_raised
-Date: Fri,  4 Nov 2011 22:24:39 +0000
-Message-ID: <1320445482-8459-4-git-send-email-serge@hallyn.com>
+Subject: [PATCH 1/6] user namespace: make signal.c respect user namespaces (v4)
+Date: Fri,  4 Nov 2011 22:24:37 +0000
+Message-ID: <1320445482-8459-2-git-send-email-serge@hallyn.com>
 References: <1320445482-8459-1-git-send-email-serge@hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -18,105 +18,158 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: richard-/L3Ra7n9ekc@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Vasiliy Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>, Andrew Morgan <morgan-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: richard-/L3Ra7n9ekc@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 
-A few modules are using cap_raised(current_cap(), cap) to authorize
-actions.  This means that tasks which are privileged in non-initial
-user namespaces will be deemed privileged.  The privilege should only
-be granted if the task is in the initial user namespace.
+ipc/mqueue.c: for __SI_MESQ, convert the uid being sent to recipient's
+user namespace. (new, thanks Oleg)
 
-Switching the calls to capable() would change the behavior - it would
-cause the LSM capable hooks to be called, and set PF_SUPERPRIV if
-the capability was used.  So instead, put in an explicit check and
-refuse privilege if the caller is not in init_user_ns.
+__send_signal: convert current's uid to the recipient's user namespace
+for any siginfo which is not SI_FROMKERNEL (patch from Oleg, thanks
+again :)
+
+do_notify_parent and do_notify_parent_cldstop: map task's uid to parent's
+user namespace
+
+ptrace_signal maps parent's uid into current's user namespace before
+including in signal to current.  IIUC Oleg has argued that this shouldn't
+matter as the debugger will play with it, but it seems like not converting
+the value currently being set is misleading.
 
 Changelog:
-Oct 23: Use a nice macro to make the code shorter and easier to read,
-	per advice from Andrew Morgan and David Howells.
+Sep 20: Inspired by Oleg's suggestion, define map_cred_ns() helper to
+	simplify callers and help make clear what we are translating
+        (which uid into which namespace).  Passing the target task would
+	make callers even easier to read, but we pass in user_ns because
+	current_user_ns() != task_cred_xxx(current, user_ns).
+Sep 20: As recommended by Oleg, also put task_pid_vnr() under rcu_read_lock
+	in ptrace_signal().
+Sep 23: In send_signal(), detect when (user) signal is coming from an
+	ancestor or unrelated user namespace.  Pass that on to __send_signal,
+	which sets si_uid to 0 or overflowuid if needed.
+Oct 12: Base on Oleg's fixup_uid() patch.  On top of that, handle all
+	SI_FROMKERNEL cases at callers, because we can't assume sender is
+	current in those cases.
 
-Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Cc: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Andrew Morgan <morgan-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Vasiliy Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>
-Cc: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 ---
- drivers/block/drbd/drbd_nl.c           |    2 +-
- drivers/md/dm-log-userspace-transfer.c |    2 +-
- drivers/staging/pohmelfs/config.c      |    2 +-
- drivers/video/uvesafb.c                |    2 +-
- include/linux/cred.h                   |    2 ++
- 5 files changed, 6 insertions(+), 4 deletions(-)
+ ipc/mqueue.c    |    7 ++++++-
+ kernel/signal.c |   38 +++++++++++++++++++++++++++++++++++---
+ 2 files changed, 41 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/block/drbd/drbd_nl.c b/drivers/block/drbd/drbd_nl.c
-index af2a250..b7b19b8 100644
---- a/drivers/block/drbd/drbd_nl.c
-+++ b/drivers/block/drbd/drbd_nl.c
-@@ -2297,7 +2297,7 @@ static void drbd_connector_callback(struct cn_msg *req, struct netlink_skb_parms
- 		return;
+diff --git a/ipc/mqueue.c b/ipc/mqueue.c
+index 2e0ecfc..4dbf3cb 100644
+--- a/ipc/mqueue.c
++++ b/ipc/mqueue.c
+@@ -32,6 +32,7 @@
+ #include <linux/nsproxy.h>
+ #include <linux/pid.h>
+ #include <linux/ipc_namespace.h>
++#include <linux/user_namespace.h>
+ #include <linux/slab.h>
+ 
+ #include <net/sock.h>
+@@ -543,9 +544,13 @@ static void __do_notify(struct mqueue_inode_info *info)
+ 			sig_i.si_errno = 0;
+ 			sig_i.si_code = SI_MESGQ;
+ 			sig_i.si_value = info->notify.sigev_value;
++			/* map current pid/uid into info->owner's namespaces */
++			rcu_read_lock();
+ 			sig_i.si_pid = task_tgid_nr_ns(current,
+ 						ns_of_pid(info->notify_owner));
+-			sig_i.si_uid = current_uid();
++			sig_i.si_uid = user_ns_map_uid(info->user->user_ns,
++						current_cred(), current_uid());
++			rcu_read_lock();
+ 
+ 			kill_pid_info(info->notify.sigev_signo,
+ 				      &sig_i, info->notify_owner);
+diff --git a/kernel/signal.c b/kernel/signal.c
+index d252be2..6a6c2f4 100644
+--- a/kernel/signal.c
++++ b/kernel/signal.c
+@@ -28,6 +28,7 @@
+ #include <linux/freezer.h>
+ #include <linux/pid_namespace.h>
+ #include <linux/nsproxy.h>
++#include <linux/user_namespace.h>
+ #define CREATE_TRACE_POINTS
+ #include <trace/events/signal.h>
+ 
+@@ -1019,6 +1020,29 @@ static inline int legacy_queue(struct sigpending *signals, int sig)
+ 	return (sig < SIGRTMIN) && sigismember(&signals->signal, sig);
+ }
+ 
++/*
++ * map the uid in struct cred into user namespace *ns
++ */
++static inline uid_t map_cred_ns(const struct cred *cred,
++				struct user_namespace *ns)
++{
++	return user_ns_map_uid(ns, cred, cred->uid);
++}
++
++static inline void fixup_uid(struct siginfo *info, struct task_struct *t)
++{
++#ifdef CONFIG_USER_NS
++	if (current_user_ns() == task_cred_xxx(t, user_ns))
++#endif
++		return;
++
++	if (SI_FROMKERNEL(info))
++		return;
++
++	info->si_uid = user_ns_map_uid(task_cred_xxx(t, user_ns),
++					current_cred(), info->si_uid);
++}
++
+ static int __send_signal(int sig, struct siginfo *info, struct task_struct *t,
+ 			int group, int from_ancestor_ns)
+ {
+@@ -1088,6 +1112,9 @@ static int __send_signal(int sig, struct siginfo *info, struct task_struct *t,
+ 				q->info.si_pid = 0;
+ 			break;
+ 		}
++
++		fixup_uid(info, t);
++
+ 	} else if (!is_si_special(info)) {
+ 		if (sig >= SIGRTMIN && info->si_code != SI_USER) {
+ 			/*
+@@ -1626,7 +1653,8 @@ bool do_notify_parent(struct task_struct *tsk, int sig)
+ 	 */
+ 	rcu_read_lock();
+ 	info.si_pid = task_pid_nr_ns(tsk, tsk->parent->nsproxy->pid_ns);
+-	info.si_uid = __task_cred(tsk)->uid;
++	info.si_uid = map_cred_ns(__task_cred(tsk),
++			task_cred_xxx(tsk->parent, user_ns));
+ 	rcu_read_unlock();
+ 
+ 	info.si_utime = cputime_to_clock_t(cputime_add(tsk->utime,
+@@ -1711,7 +1739,8 @@ static void do_notify_parent_cldstop(struct task_struct *tsk,
+ 	 */
+ 	rcu_read_lock();
+ 	info.si_pid = task_pid_nr_ns(tsk, parent->nsproxy->pid_ns);
+-	info.si_uid = __task_cred(tsk)->uid;
++	info.si_uid = map_cred_ns(__task_cred(tsk),
++			task_cred_xxx(parent, user_ns));
+ 	rcu_read_unlock();
+ 
+ 	info.si_utime = cputime_to_clock_t(tsk->utime);
+@@ -2129,8 +2158,11 @@ static int ptrace_signal(int signr, siginfo_t *info,
+ 		info->si_signo = signr;
+ 		info->si_errno = 0;
+ 		info->si_code = SI_USER;
++		rcu_read_lock();
+ 		info->si_pid = task_pid_vnr(current->parent);
+-		info->si_uid = task_uid(current->parent);
++		info->si_uid = map_cred_ns(__task_cred(current->parent),
++				current_user_ns());
++		rcu_read_unlock();
  	}
  
--	if (!cap_raised(current_cap(), CAP_SYS_ADMIN)) {
-+	if (!IN_ROOT_USER_NS() || !cap_raised(current_cap(), CAP_SYS_ADMIN)) {
- 		retcode = ERR_PERM;
- 		goto fail;
- 	}
-diff --git a/drivers/md/dm-log-userspace-transfer.c b/drivers/md/dm-log-userspace-transfer.c
-index 1f23e04..126a79b 100644
---- a/drivers/md/dm-log-userspace-transfer.c
-+++ b/drivers/md/dm-log-userspace-transfer.c
-@@ -134,7 +134,7 @@ static void cn_ulog_callback(struct cn_msg *msg, struct netlink_skb_parms *nsp)
- {
- 	struct dm_ulog_request *tfr = (struct dm_ulog_request *)(msg + 1);
- 
--	if (!cap_raised(current_cap(), CAP_SYS_ADMIN))
-+	if (!IN_ROOT_USER_NS() || !cap_raised(current_cap(), CAP_SYS_ADMIN))
- 		return;
- 
- 	spin_lock(&receiving_list_lock);
-diff --git a/drivers/staging/pohmelfs/config.c b/drivers/staging/pohmelfs/config.c
-index b6c42cb..327c047 100644
---- a/drivers/staging/pohmelfs/config.c
-+++ b/drivers/staging/pohmelfs/config.c
-@@ -525,7 +525,7 @@ static void pohmelfs_cn_callback(struct cn_msg *msg, struct netlink_skb_parms *n
- {
- 	int err;
- 
--	if (!cap_raised(current_cap(), CAP_SYS_ADMIN))
-+	if (!IN_ROOT_USER_NS() || !cap_raised(current_cap(), CAP_SYS_ADMIN))
- 		return;
- 
- 	switch (msg->flags) {
-diff --git a/drivers/video/uvesafb.c b/drivers/video/uvesafb.c
-index 7f8472c..94e0e9d 100644
---- a/drivers/video/uvesafb.c
-+++ b/drivers/video/uvesafb.c
-@@ -73,7 +73,7 @@ static void uvesafb_cn_callback(struct cn_msg *msg, struct netlink_skb_parms *ns
- 	struct uvesafb_task *utask;
- 	struct uvesafb_ktask *task;
- 
--	if (!cap_raised(current_cap(), CAP_SYS_ADMIN))
-+	if (!IN_ROOT_USER_NS() || !cap_raised(current_cap(), CAP_SYS_ADMIN))
- 		return;
- 
- 	if (msg->seq >= UVESAFB_TASKS_MAX)
-diff --git a/include/linux/cred.h b/include/linux/cred.h
-index 4030896..2f75da7 100644
---- a/include/linux/cred.h
-+++ b/include/linux/cred.h
-@@ -359,9 +359,11 @@ static inline void put_cred(const struct cred *_cred)
- 
- #ifdef CONFIG_USER_NS
- #define current_user_ns() (current_cred_xxx(user_ns))
-+#define IN_ROOT_USER_NS() (current_user_ns() == &init_user_ns)
- #else
- extern struct user_namespace init_user_ns;
- #define current_user_ns() (&init_user_ns)
-+#define IN_ROOT_USER_NS() (1)
- #endif
- 
- 
+ 	/* If the (new) signal is now blocked, requeue it.  */
 -- 
 1.7.0.4
