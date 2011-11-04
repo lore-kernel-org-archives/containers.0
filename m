@@ -1,17 +1,14 @@
 From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 00/10] cgroups: Task counter subsystem v6
-Date: Fri, 04 Nov 2011 10:57:33 +0800
-Message-ID: <4EB3549D.5090404@cn.fujitsu.com>
-References: <1317668832-10784-1-git-send-email-fweisbec@gmail.com>
-	<20111004150111.e9337268.akpm00@gmail.com>
-	<CAAAKZwu67VMiZgdpp=i5p7zyGbOHGHXwF_iprufGPzTLkkUF2A@mail.gmail.com>
-	<20111028163021.1ce61f8a.akpm@linux-foundation.org>
-	<20111103170038.GG8198@somewhere.redhat.com>
+Subject: Re: [PATCH] new cgroup controller "fork"
+Date: Fri, 04 Nov 2011 11:03:41 +0800
+Message-ID: <4EB3560D.7000002@cn.fujitsu.com>
+References: <20111103162238.27609.11515.stgit@rabbit.intern.cm-ag>	<4EB2C4A5.6000406@parallels.com>	<20111103165903.GA4755@Debian-60-squeeze-64-minimal>	<20111103182101.5037c1e5@lxorguk.ukuu.org.uk>	<20111103185108.GA5153@Debian-60-squeeze-64-minimal>	<20111103190330.02590426@lxorguk.ukuu.org.uk>	<20111103192039.GA5300@Debian-60-squeeze-64-minimal>	<4EB2EA93.2050206@parallels.com>
+	<4EB2F5CF.5010604@aljex.com> <4EB30DAF.4090704@parallels.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20111103170038.GG8198-oHC15RC7JGTpAmv0O++HtFaTQe2KTcn/@public.gmane.org>
+In-Reply-To: <4EB30DAF.4090704-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,32 +18,64 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
->>> There may be other ways to cobble this sort of safety together, but
->>> they are less appealing for various reasons.  cgroups are how we
->>> control groups of related pids.
->>>
->>> I'd really love to be able to use this.
->>
->> Has it been confirmed that this implementation actually solves the
->> problem?  ie: tested a bit?
->>
->> btw, Frederic told me that this version of the patchset had some
->> serious problem so it's on hold pending an upgrade, regardless of other
->> matters.
-> 
-> Yep. The particular issue is https://lkml.org/lkml/2011/10/13/532
-> 
-> Li Zefan proposed a fix (https://lkml.org/lkml/2011/10/17/26) which I'm
-> currently reworking.
-> 
-
-We really need to coordinate cgroup patches. I mean, the patchset+fix conflict
-with Tejun's work, and the conflict is not trivial.
-
-> But then I'd love it if you can test this subsystem to see if it really matches
-> your needs, Tim.
-> 
+5LqOIDIwMTHlubQxMeaciDA05pelIDA1OjU0LCBHbGF1YmVyIENvc3RhIOWGmemBkzoKPiBPbiAx
+MS8wMy8yMDExIDA2OjEzIFBNLCBCcmlhbiBLLiBXaGl0ZSB3cm90ZToKPj4gT24gMTEvMy8yMDEx
+IDM6MjUgUE0sIEdsYXViZXIgQ29zdGEgd3JvdGU6Cj4+PiBPbiAxMS8wMy8yMDExIDA1OjIwIFBN
+LCBNYXggS2VsbGVybWFubiB3cm90ZToKPj4+PiBPbiAyMDExLzExLzAzIDIwOjAzLCBBbGFuIENv
+eDxhbGFuQGx4b3JndWsudWt1dS5vcmcudWs+IHdyb3RlOgo+Pj4+PiBTdXJlIC0gSSdtIGp1c3Qg
+bm90IHNlZWluZyB0aGF0IGEgd2hvbGUgc2VwYXJhdGUgY2dyb3VwIGZvciBpdCBpcwo+Pj4+PiBh
+cHByb3ByaWF0ZSBvciBhIGdvb2QgcGxhbi4gQW55b25lIGRvaW5nIHJlYWwgcmVzb3VyY2UgbWFu
+YWdlbWVudCBuZWVkcwo+Pj4+PiB0aGUgcmVzdCBvZiB0aGUgc3R1ZmYgYW55d2F5Lgo+Pj4+Cj4+
+Pj4gUmlnaHQuIFdoZW4gSSBzYXcgRnJlZGVyaWMncyBjb250cm9sbGVyIHRvZGF5LCBteSBmaXJz
+dCB0aG91Z2h0IHdhcwo+Pj4+IHRoYXQgb25lIGNvdWxkIG1vdmUgdGhlIGZvcmsgbGltaXQgY29k
+ZSBvdmVyIGludG8gdGhhdCBjb250cm9sbGVyLiBJZgo+Pj4+IHdlIHJlYWNoIGEgY29uc2Vuc3Vz
+IHRoYXQgdGhpcyB3b3VsZCBiZSBhIGdvb2QgaWRlYSwgYW5kIHdvdWxkIGhhdmUKPj4+PiBjaGFu
+Y2VzIHRvIGdldCBtZXJnZWQsIEkgY291bGQgcHJvYmFibHkgdGFrZSBzb21lIHRpbWUgdG8gcmVm
+YWN0b3IgbXkKPj4+PiBjb2RlLgo+Pj4+Cj4+Pj4gTWF4Cj4+PiBJJ2QgYWR2aXNlIHlvdSB0byB0
+YWtlIGEgc3RlcCBiYWNrIGFuZCB0aGluayBpZiB0aGlzIGlzIHJlYWxseSBuZWVkZWQuCj4+PiBB
+cyBBbGFuIHBvaW50ZWQgb3V0LCB0aGUgcmVhbGx5IGV4cGVuc2l2ZSByZXNvdXJjZSBoZXJlIGlz
+IGFscmVhZHkgYmVpbmcKPj4+IGNvbnN0cmFpbmVkIGJ5IEZyZWRlcmljJ3MgY29udHJvbGxlci4K
+Pj4KPj4gSSB0aGluayB0aGlzIHJlYWxseSBpcyBhIGRpZmZlcmVudCBrbm9iIHRoYXQgaXMgbmlj
+ZSB0byBoYXZlIGFzIGxvbmcgYXMKPj4gaXQgZG9lc24ndCBjb3N0IG11Y2guIEl0J3MgYSB3YXkg
+dG8gc2V0IGEgbWF4IGxpZmVzcGFuIGluIGEgd2F5IHRoYXQKPj4gaXNuJ3QgcmVhbGx5IGFkZHJl
+c3NlZCBieSB0aGUgb3RoZXIgY29udHJvbHMuIChJIGNvdWxkIGFic29sdXRlbHkgYmUKPj4gbWlz
+c2luZyBzb21ldGhpbmcuKQo+Pgo+PiBJIHRoaW5rIE1heCBleHBsYWluZWQgdGhlIGlzc3VlIGNs
+ZWFybHkgZW5vdWdoLgo+IAo+IEhlIGRpZCwgaW5kZWVkLgo+IAo+PiBJdCBkb2Vzbid0IG1hdHRl
+ciB0aGF0IHRoZSBmb3JrIGl0c2VsZiBpcyBzdXBwb3NlZGx5IHNvIGNoZWFwLgo+Pgo+PiBJdCdz
+IHN0aWxsIG5pY2UgdG8gaGF2ZSBhIHdheSB0byBzYXksIHlvdSBtYXkgbm90IGZvcmsvZGllL2Zv
+cmsvZGllL2ZvcmsKPj4gaW4gYSByYWNlLgo+Pgo+PiBXaGF0J3Mgc28gdW5pbWFnaW5hYmxlIGFi
+b3V0IGhhdmluZyBhIHByb2Nlc3MgdGhhdCB5b3Uga25vdyBuZWVkcyBhIGxvdAo+PiBvZiBjcHUg
+YW5kIHJhbSBvciBvdGhlciByZXNvdXJjZXMgdG8gZG8gaXQncyBqb2IsIGFuZCB5b3UgZXhwcmVz
+c2x5IHdhbnQKPj4gdG8gYWxsb3cgaXQgdG8gdGFrZSBhcyBtdWNoIG9mIHRob3NlIHJlc291cmNl
+cyBhcyBpdCBjYW4sIGJ1dCB5b3Uga25vdwo+PiBpdCBoYXMgbm8gbmVlZCB0byBmb3JrLCBzbyBp
+ZiBpdCBmb3JrcywgX3RoYXRfIGlzIHRoZSBvbmx5IGluZGljYXRpb24gb2YKPj4gYSBwcm9ibGVt
+LCBzbyB5b3UgbWF5IG9ubHkgd2FudCB0byBibG9jayBpdCBiYXNlZCBvbiB0aGF0Lgo+Pgo+PiBT
+dXJlIG1hbnkgb3RoZXIgcHJvY2Vzc2VzIHdvdWxkIGxlZ2l0aW1hdGVseSBmb3JrL2RpZS9mb3Jr
+L2RpZSBhIGxvdAo+PiB3aGlsZSBuZXZlciBleGNlZWRpbmcgYSBmZXcgdG90YWwgY29uY3VycmVu
+dCB0YXNrcywgYW5kIGZvciB0aGVtIHlvdQo+PiB3b3VsZCBub3Qgd2FudCB0byBzZXQgYW55IHN1
+Y2ggZm9yayBsaW1pdC4gU28gd2hhdD8KPj4KPiBBcyBJIHNhaWQgcHJldmlvdXNseSwgaGUga25v
+d3MgaGlzIHVzZSBjYXNlcyBiZXR0ZXIgdGhhbiBhbnlvbmUgZWxzZS4KPiBJZiBhIHVzZSBjYXNl
+IGNhbiBiZSBmb3VuZCBpbiB3aGljaCB0aGUgc3VtbWF0aW9uIG9mIGNwdSt0YXNrIGNvbnRyb2xs
+ZXJzIGlzIG5vdCBlbm91Z2gsIGFuZCBpZiB0aGlzIGlzIGltcGxlbWVudGVkIGFzIGFuIG9wdGlv
+biB0byB0aGUgdGFzayBjb250cm9sbGVyLCBhbmQgZG9lcyBub3QgbWFrZSBpdDoKPiAxKSBjb25m
+dXNpbmcsCj4gMikgbW9yZSBleHBlbnNpdmUsCj4gCj4gdGhlbiBJIGRvbid0IHNlZSB3aHkgbm90
+IHdlIHNob3VsZG4ndCB0YWtlIGl0LgoKUXVvdGVkIGZyb20gTGVubmFydCdzIHJlcGx5IGluIGFu
+b3RoZXIgbWFpbCB0aHJlYWQ6CgoiR2l2ZW4gdGhhdCBzaHV0dGluZyBkb3duIHNvbWUgc2Vydmlj
+ZXMgbWlnaHQgaW52b2x2ZSBmb3JraW5nIG9mZiBhIGZldwp0aGluZ3MgKHRoaW5rOiBhIHNoZWxs
+IHNjcmlwdCBoYW5kbGluZyBzaHV0ZG93biB3aGljaCBmb3JrcyBvZmYgYSBjb3VwbGUKb2Ygc2hl
+bGwgdXRpbGl0aWVzKSB3ZSdkIHdhbnQgc29tZXRoaW5nIHRoYXQgaXMgYmV0d2VlbiAiZnJvbSBu
+b3cgb24gbm8KZm9ya2luZyBhdCBhbGwiIGFuZCAidW5saW1pdGVkIGZvcmtpbmciLiBUaGlzIGNv
+dWxkIGJlIGRvbmUgaW4gbWFueQpkaWZmZXJlbnQgd2F5czogd2UnZCBiZSBoYXBweSBpZiB3ZSBj
+b3VsZCBkbyB0aW1lLWJhc2VkIHJhdGUgbGltaXRpbmcsCmJ1dCB3ZSdkIGFsc28gYmUgZmluZSB3
+aXRoIGRlZmluaW5nIGEgY2VydGFpbiBidWRnZXQgb2YgYWRkaXRpb25hbCBmb3JrcwphIGNncm91
+cCBjYW4gZG8gKGkuZS4gImZyb20gbm93IG9uIHlvdSBjYW4gZG8gNTAgbW9yZSBmb3JrcywgdGhl
+biB5b3UnbGwKZ2V0IEVQRVJNKS4iCgooaHR0cDovL2xrbWwub3JnL2xrbWwvMjAxMS8xMC8xOS80
+NjgpCgpUaGUgbGFzdCBzZW50ZW5jZSBzdWdnZXN0cyBoZSBtaWdodCBsaWtlIHRoaXMgZm9yayBj
+b250cm9sbGVyLgoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0
+aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5m
+by9jb250YWluZXJz
