@@ -1,14 +1,17 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH] add new cgroup list to CC notice
-Date: Fri, 4 Nov 2011 11:36:46 +0900
-Message-ID: <20111104113646.5c0e9be6.kamezawa.hiroyu@jp.fujitsu.com>
-References: <20111104094030.cf8d5860.kamezawa.hiroyu@jp.fujitsu.com>
-	<4EB3495B.8080700@free.fr>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 00/10] cgroups: Task counter subsystem v6
+Date: Fri, 04 Nov 2011 10:57:33 +0800
+Message-ID: <4EB3549D.5090404@cn.fujitsu.com>
+References: <1317668832-10784-1-git-send-email-fweisbec@gmail.com>
+	<20111004150111.e9337268.akpm00@gmail.com>
+	<CAAAKZwu67VMiZgdpp=i5p7zyGbOHGHXwF_iprufGPzTLkkUF2A@mail.gmail.com>
+	<20111028163021.1ce61f8a.akpm@linux-foundation.org>
+	<20111103170038.GG8198@somewhere.redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4EB3495B.8080700-GANU6spQydw@public.gmane.org>
+In-Reply-To: <20111103170038.GG8198-oHC15RC7JGTpAmv0O++HtFaTQe2KTcn/@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,37 +21,32 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Cc: mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org, fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, "hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org" <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org
+To: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, 04 Nov 2011 03:09:31 +0100
-Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org> wrote:
-
-> On 11/04/2011 01:40 AM, KAMEZAWA Hiroyuki wrote:
-> > As discussed at Kernel Summit(2011), new cgroups mailing list is opened by
-> > James. This list is for discussing general cgroup design and patches
-> > including all subsystems and for getting more attentions to cgroups/namespaces
-> > related issues by developpers.
-> >
-> > Signed-off-by: KAMEZAWA Hiroyuki<kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-> > ---
+>>> There may be other ways to cobble this sort of safety together, but
+>>> they are less appealing for various reasons.  cgroups are how we
+>>> control groups of related pids.
+>>>
+>>> I'd really love to be able to use this.
+>>
+>> Has it been confirmed that this implementation actually solves the
+>> problem?  ie: tested a bit?
+>>
+>> btw, Frederic told me that this version of the patchset had some
+>> serious problem so it's on hold pending an upgrade, regardless of other
+>> matters.
 > 
-> I don't see the point to unilaterally change the mailing list to 
-> vger.kernel.org as the discussions will be  the same as the actual 
-> mailing list containers@. May be there is a good reason to do that but I 
-> don't see it, can someone enlight me please ?
+> Yep. The particular issue is https://lkml.org/lkml/2011/10/13/532
 > 
-I know containers@ and subscribing it.
+> Li Zefan proposed a fix (https://lkml.org/lkml/2011/10/17/26) which I'm
+> currently reworking.
+> 
 
-Maybe this article is good.
-http://lwn.net/Articles/464288/
+We really need to coordinate cgroup patches. I mean, the patchset+fix conflict
+with Tejun's work, and the conflict is not trivial.
 
-I think there are cgroups not-for-container but total view/interaction
-are required. someones may use cgroup just as resource controller (as libvirt,
-systemd) and not be intereted in container itself.
-
-I personally think cgroups@ is a straightforward name to kernel developpers. 
-
-Thanks,
--Kame
+> But then I'd love it if you can test this subsystem to see if it really matches
+> your needs, Tim.
+> 
