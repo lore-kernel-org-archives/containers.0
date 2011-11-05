@@ -1,15 +1,11 @@
-From: "Louis" <guanjunaa62pai-uAjRD0nVeow@public.gmane.org>
-Subject: =?GB2312?B?QW5pbWF0ZWQgTW92aWUvVFYgU2VyaWVzIA==?=
-	=?GB2312?B?LSBDYXJ0b29uIE1vdmllL1RWIFNlcmllcw==?=
-	=?GB2312?B?IC0gM0QvMkQgQW5pbWF0aW9uIFNlcnZpYw==?= =?GB2312?B?ZXM=?=
-Date: Sat, 5 Nov 2011 16:10:18 +0800
-Message-ID: <SENPHONIE108oNEGlPN00016438@vanamail.com>
-Reply-To: animationwork-9Onoh4P/yGk@public.gmane.org
+From: info-KIcinzdJMidWk0Htik3J/w@public.gmane.org
+Subject: Gajotres world of web development
+Date: 5 Nov 2011 14:25:27 +0100
+Message-ID: <20111105132508.CB648355@mail.linuxfoundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,53 +15,33 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-You are receiving this email because we wish you to use our 3D/2D Animated Movie/TV Series Services.
- 
-We are a China based Animated Movie/TV Series Studio. with the technical, our studio is a animation studio with the technical, creative and production capabilities to create a new generation of animated feature films, merchandise and other related products. Our objective is to combine proprietary technology and world-class creative talent to develop computer-animated feature films with memorable characters and heartwarming stories that appeal to audiences of all ages. We utilize the finest equipment available in the industry, offer efficient data delivery and unrivaled quality and work until the client is fully satisfied with the end product. 
- 
-Core Offerings
-2D Animation
-3D Animation
-4D Animation
-Cell Animation
-Cartoon Animation
-Animated Movies 
-Animated TV Series
-Architecture Visualization 
-Character Animation 
-Animated Commercial 
-Animated Presentation 
-Walkthrough Animation 
-Flash Presentation 
-Logo Animation 
-Animated Wallpapers 
-Animated Graphics 
- 
-We are also looking for agents who can represent us in USA and Europe in order to gain more Animated Movie orders.
- 
-Best regards,
-Louis
-Lausasonmaian Animation Services
-Contact: ibanicontact-Mj/0Miq2reM@public.gmane.org
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Pls send address to koremoveideitw-Mj/0Miq2reM@public.gmane.org  for remove
+ICAgWzFdQ3JlYXRlIGEgc3RpY2t5IHNpZGViYXIgb3IgYm94IC0ganNjcmlwdCBtYWdpYyBbMl1J
+biBteSBsYXN0IHBvc3QsIEkKICAgZGVzY3JpYmVkIEZhaWwgVHJhY2tlcsOvwr/CvXMgc2ltcGxl
+IHJlcG9zaXRvcnkgbW9kZWwgZm9yIGFic3RyYWN0aW5nIExJTlEKICAgdG8gTkhpYmVybmF0ZSwg
+d2hpY2ggaXMgdXNlZCBmb3IgYWxsIGRhdGEgYWNjZXNzIGluIEZhaWwgVHJhY2tlci4gT25lCiAg
+IHJlYXNvbiBJIGNob3NlIHRvIGltcGxlbWVudCBhbiBhYnN0cmFjdGlvbiBhcm91bmQgTkhpYmVy
+bmF0ZcOvwr/CvXMKICAgSVNlc3Npb24gaW50ZXJmYWNlIHdhcyB0byBmYWNpbGl0YXRlIFRlc3Qg
+RHJpdmVuIERldmVsb3BtZW50LCBhCiAgIHByYWN0aWNlIHRoYXQgd2FzbsOvwr/CvXQgcmVhbGx5
+IGZlYXNpYmxlIGdpdmVuIGhvdyBMSU5RIHRvIE5IaWJlcm5hdGUgaXMKICAgaW1wbGVtZW50ZWQg
+YXMgYW4gdW5tb2NrYWJsZSBleHRlbnNpb24gbWV0aG9kCiAgICAgWzNdR29vZ2xlIFJlZGlyZWN0
+IFZpcnVzIFJlbW92YWwgVG9vbCAtIEh1Z2UgRGVtYW5kCiAgICAgWzRdV3AgU3F1ZWV6ZSBQYWdl
+IFBsdWdpbgogICAgIFs1XUlwYWQgVmlkZW8gTGVzc29ucyAtIEhvdCAmIEh1bmdyeSBOZXcgTWFy
+a2V0IQogICAgIFs2XVdwc3Vic2NyaWJlcnMgLSBUaGUgUHJlbWl1bSBXb3JkcHJlc3MgU3Vic2Ny
+aXB0aW9uIFBsdWdpbgogICAgIFs3XUFjbWUgV29yZHByZXNzIFRoZW1lCiAgICAgWzhdVGhlIFVs
+dGltYXRlIEd1aWRlIFRvIFBhc3dvcmQgUmVjb3ZlcnkgQW5kIE1hbmFnZW1lbnQKICAgICBbOV1V
+bnN1YnNjcmliZSBvbiBwYWdlCgpSZWZlcmVuY2VzCgogICAxLiBodHRwOi8vd3d3Lmdham90cmVz
+LmNvbS9wb3N0LzIwMTEvMTEvMDQvQ3JlYXRlLWEtc3RpY2t5LXNpZGViYXItb3ItYm94LWpzY3Jp
+cHQtbWFnaWMuYXNweAogICAyLiBodHRwOi8vd3d3Lmdham90cmVzLmNvbS8KICAgMy4gaHR0cDov
+LzIwMDMyZmNxZTNnLWR4dDk2eGg1ZGtod2RuZy5ob3AuY2xpY2tiYW5rLm5ldC8KICAgNC4gaHR0
+cDovLzZkYjUyMGw2MW94ZHh2YW4zM2k4Zm0zd2FjLmhvcC5jbGlja2JhbmsubmV0LwogICA1LiBo
+dHRwOi8vNWQ5NmNhZjgtbXkyNHMzOHh3bWhqYmdlMXkuaG9wLmNsaWNrYmFuay5uZXQvCiAgIDYu
+IGh0dHA6Ly85ZTI1ZjFxYjJsNDB5czVpdGM0YS0xczRyZC5ob3AuY2xpY2tiYW5rLm5ldC8KICAg
+Ny4gaHR0cDovLzdhYTc4ZG9kd2Q0MnZ1ZHhvOGZqbDNvMTBiLmhvcC5jbGlja2JhbmsubmV0Lwog
+ICA4LiBodHRwOi8vZTZhYjllZTQtcHY2NXE4anFkdm1sNDlyY24uaG9wLmNsaWNrYmFuay5uZXQv
+CiAgIDkuIGh0dHA6Ly93d3cuZ2Fqb3RyZXMuY29tLwpfX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJz
+QGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9u
+Lm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
