@@ -1,15 +1,18 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: cgroup memory limit problems
-Date: Thu, 10 Nov 2011 09:10:12 +0900
-Message-ID: <20111110091012.0ce7d719.kamezawa.hiroyu@jp.fujitsu.com>
-References: <201111092157.06819.arekm@maven.pl>
-	<CAKTCnzmHk1U6fP+jrw2Rq3dLwU30gyocRBp2QpQVHAbU=x5uSA@mail.gmail.com>
-	<201111092358.58079.arekm@maven.pl>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/6] user namespace: make signal.c respect user
+	namespaces (v4)
+Date: Wed, 9 Nov 2011 17:41:14 -0800
+Message-ID: <20111110014114.GB26567@count0.beaverton.ibm.com>
+References: <1320445482-8459-1-git-send-email-serge@hallyn.com>
+	<1320445482-8459-2-git-send-email-serge@hallyn.com>
+	<20111108162216.1ffb3e9a.akpm@linux-foundation.org>
+	<20111109141853.GB4010@sergelap>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <201111092358.58079.arekm-evZBlRFTdvA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20111109141853.GB4010@sergelap>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,66 +22,28 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Arkadiusz =?UTF-8?B?TWnFm2tpZXdpY3o=?= <arekm-evZBlRFTdvA@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Cc: richard-/L3Ra7n9ekc@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gV2VkLCA5IE5vdiAyMDExIDIzOjU4OjU3ICswMTAwCkFya2FkaXVzeiBNacWba2lld2ljeiA8
-YXJla21AbWF2ZW4ucGw+IHdyb3RlOgoKPiBPbiBXZWRuZXNkYXkgMDkgb2YgTm92ZW1iZXIgMjAx
-MSwgQmFsYmlyIFNpbmdoIHdyb3RlOgo+ID4gMjAxMS8xMS8xMCBBcmthZGl1c3ogTWnFm2tpZXdp
-Y3ogPGFyZWttQG1hdmVuLnBsPjoKPiA+ID4gSGksCj4gPiA+IAo+ID4gPiBJIGhhdmUgYSBtYWNo
-aW5lIHdpdGggNkdCIG9mIHJhbSBhbmQgYSBjZ3JvdXAgZm9yIGFwYWNoZSBwcm9jZXNzZXMKPiA+
-ID4gbGltaXRlZCB0byBtZW1vcnkubGltaXRfaW5fYnl0ZXMgPSAiNTEwME0iOwo+ID4gPiAgICAg
-ICAgICAgICAgICBtZW1vcnkuc29mdF9saW1pdF9pbl9ieXRlcyA9ICI1MDAwTSI7Cj4gPiAKPiA+
-IENhbiB5b3UgcGxlYXNlIHNlbmQgdGhlIG91dHB1dCBvZiBtZW1vcnkuc3RhdD8KPiAKPiBSaWdo
-dCBub3cgdGhlcmUgaXMgc21hbGwgbnVtYmVyIG9mIHVzZXJzIHVzaW5nIHRoaXMgc2VydmVyIChu
-aWdodCBoZXJlKSBzbzoKPiAKPiAjIGNhdCAvZGV2L2Nncm91cC9tZW1vcnkvc29tZWNncm91cC9o
-dHRwZC9tZW1vcnkuc3RhdAo+IGNhY2hlIDUxMTQyNjU2MAo+IHJzcyAyNjM3Nzk1MzI4Cj4gbWFw
-cGVkX2ZpbGUgMjEyOTkyMAo+IHBncGdpbiAzMjIzMzc1NQo+IHBncGdvdXQgMzE1MDk4NzAKPiBp
-bmFjdGl2ZV9hbm9uIDcyMDg5Ngo+IGFjdGl2ZV9hbm9uIDI2MzcyNzEwNDAKPiBpbmFjdGl2ZV9m
-aWxlIDI1NTk1OTA0MAo+IGFjdGl2ZV9maWxlIDI1NTIzNDA0OAo+IHVuZXZpY3RhYmxlIDAKPiBo
-aWVyYXJjaGljYWxfbWVtb3J5X2xpbWl0IDUzNDc3Mzc2MDAKPiB0b3RhbF9jYWNoZSA1MTE0MjY1
-NjAKPiB0b3RhbF9yc3MgMjYzNzc5NTMyOAo+IHRvdGFsX21hcHBlZF9maWxlIDIxMjk5MjAKPiB0
-b3RhbF9wZ3BnaW4gMzIyMzM3NTUKPiB0b3RhbF9wZ3Bnb3V0IDMxNTA5ODcwCj4gdG90YWxfaW5h
-Y3RpdmVfYW5vbiA3MjA4OTYKPiB0b3RhbF9hY3RpdmVfYW5vbiAyNjM3MjcxMDQwCj4gdG90YWxf
-aW5hY3RpdmVfZmlsZSAyNTU5NTkwNDAKPiB0b3RhbF9hY3RpdmVfZmlsZSAyNTUyMzQwNDgKPiB0
-b3RhbF91bmV2aWN0YWJsZSAwCj4gCj4gPiAKPiA+ID4gVW5mb3J0dW5hdGVseSB3aGVuIGFwYWNo
-ZSBwcm9jZXNzZXMgYXRlIGFsbCByYW0gYXNzaWduZWQgdG8gdGhlaXIgY2dyb3VwCj4gPiA+IGxv
-YWQgb24gd2hvbGUgbWFjaGluZSBqdW1wcyB0aGUgcm9vZi4KPiA+ID4gCj4gPiA+IGNncm91cCBh
-d2FyZSBPT00ga2lja3MgaW4sIGtpbGxzIG9uZSBwcm9jZXNzIGFuZCB0aGF0IGRvZXNuJ3QgaGVs
-cC4KPiA+ID4gCj4gPiA+IElmIEknbSBmYXN0IGVub3VnaCBJIG5vdGljZSBhbmQgdGhlbiBhcGFj
-aGUgcHJvY2Vzc2VzIHJlcXVpcmUgdG9ucyBvZgo+ID4gPiBraWxsIC05IChJJ20gZG9pbmcgImtp
-bGxhbGwgLTkgYXBhY2hlIiBpbiBhIHdoaWxlICh0cnVlKSBsb29wIGZvcgo+ID4gPiAyMC0zMHMp
-IHRvIGdldCBraWxsZWQgKGFuZCB0aGF0IG5vdCBhbHdheXMgc3VjY2VlZHMgLSBzb21ldGltZXMg
-SSdtCj4gPiA+IHVuYWJsZSB0byBraWxsIHRoZXNlIGFuZCBJJ20ganVzdCBkb2luZyBzeXNycSB1
-LCBzLCBiIGFmdGVyIGZldwo+ID4gPiBtaW51dGVzLi4gaWYgSSdtIGx1Y2t5LiBTb21ldGltZXMg
-SSBjYW5ub3QgZG8gYW55IGNvbW1hbmQpLgo+ID4gPiAKPiA+ID4gVGhpcyBhbGwgaGFwcGVucyBv
-biAyLjYuMzguOCBrZXJuZWwuCj4gPiA+IGh0dHA6Ly9peGlvbi5wbGQtbGludXgub3JnL35hcmVr
-bS9jZ3JvdXAtZWF0ZW4tbWVtb3J5LWZhaWx1cmUtMS50eHQKPiA+ID4gZm9yIGtlcm5lbCBsb2cu
-IEl0IGVuZHMgd2l0aCByZWJvb3Qgb2YgdGhlIG1hY2hpbmUuCj4gPiAKPiA+IEZyb20gdGhlIGxv
-Z3MKPiA+IAo+ID4gIk5vdiAgOSAyMDo0ODo1MyB0bTIga2VybmVsOiBbMTgzMDAuMzQ5MTA2XSBU
-YXNrIGluIC9zb21lY2dyb3VwL2h0dHBkCj4gPiBraWxsZWQgYXMgYSByZXN1bHQgb2YgbGltaXQg
-b2YgL3NvbWVjZ3JvdXAvaHR0cGQKPiA+IE5vdiAgOSAyMDo0ODo1MyB0bTIga2VybmVsOiBbMTgz
-MDAuMzQ5MTEwXSBtZW1vcnk6IHVzYWdlIDUyMjI0MDBrQiwKPiA+IGxpbWl0IDUyMjI0MDBrQiwg
-ZmFpbGNudCAyODI4NjkKPiA+IE5vdiAgOSAyMDo0ODo1MyB0bTIga2VybmVsOiBbMTgzMDAuMzQ5
-MTEzXSBtZW1vcnkrc3dhcDogdXNhZ2UgMGtCLAo+ID4gbGltaXQgOTAwNzE5OTI1NDc0MDk5MWtC
-LCBmYWlsY250IDAiCj4gPiAKPiA+IEl0IHNlZW1zIGxpa2UgeW91J3ZlIGRpc2FibGVkIHN3YXAs
-IGlzIHRoYXQgY29ycmVjdD8KPiAKPiBZZXMsIHRoaXMgbWFjaGluZSBoYXMgbm8gc3dhcCBidXQg
-dGhlIGtlcm5lbCBoYXMgCj4gCj4gIyB6Y2F0IC9wcm9jL2NvbmZpZy5neiB8Z3JlcCBDR1JPVVBf
-TUVNCj4gQ09ORklHX0NHUk9VUF9NRU1fUkVTX0NUTFI9eQo+IENPTkZJR19DR1JPVVBfTUVNX1JF
-U19DVExSX1NXQVA9eQo+ICMgQ09ORklHX0NHUk9VUF9NRU1fUkVTX0NUTFJfU1dBUF9FTkFCTEVE
-IGlzIG5vdCBzZXQKPiAKPiArIGN0bHIgc3dhcCB3YXNuJ3QgZW5hYmxlZCBhdCBib290Lgo+IAo+
-ID4gQmFsYmlyCj4gCj4gcHMuIHZnZXIua2VybmVsLm9yZyBkb2Vzbid0IGxpa2UgbXkgYWRkcmVz
-cyAobm8gaWRlYSB3aHkgYW5kIHBvc3RtYXN0ZXJAIGlzIAo+IHNpbGVudCksIHNvIGxpa2VseSBt
-eSByZXBseSB3b24ndCByZWFjaCBjZ3JvdXBACgpJZiB5b3UgY2FuLCBwbGVhc2UgdHJ5IHRoZSBs
-YXRlc3Qga2VybmVscy4KCnJlY2VudCAyIGNvbW1pdHMKCmNvbW1pdCA3OWRmZGFjY2QxZDViNDBm
-ZjdjZjRhMzVhMGU2MzY5NmViYjc4YjRkCiIgbWVtY2c6IG1ha2Ugb29tX2xvY2sgMCBhbmQgMSBi
-YXNlZCByYXRoZXIgdGhhbiBjb3VudGVyICIKY29tbWl0IDFkNjVmODZkYjE0ODA2Y2Y3YjEyMThj
-N2I0ZWNiOGI0ZGI1YWYyN2QKIiAgbW06IHByZWFsbG9jYXRlIHBhZ2UgYmVmb3JlIGxvY2tfcGFn
-ZSgpIGF0IGZpbGVtYXAgQ09XIgoKYXJlIHdvcmtzIHdlbGwgYWdhaW5zdCBmb3JrLWJvbWIgdW5k
-ZXIgbWVtY2cuIEluIG15IHRlc3QsIG1ha2UgLWogdW5kZXIKc3dhcGxlc3MgbWVtY2cgaGFuZ3Mg
-KG9yIHRha2VzIGxvbmcgdGltZSkgdG8gYmUgb29tLWtpbGxlZC4KClRoYW5rcywKLUthbWUKCgoK
-CgoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFp
-bmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpo
-dHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWlu
-ZXJz
+On Wed, Nov 09, 2011 at 08:18:53AM -0600, Serge E. Hallyn wrote:
+> Quoting Andrew Morton (akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org):
+> > On Fri,  4 Nov 2011 22:24:37 +0000
+> > Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
+> > 
+> > > +static inline void fixup_uid(struct siginfo *info, struct task_struct *t)
+
+nit: Seems like the function name itself needs a fixup. I can imagine a
+user-ns-unaware kernel developer thinking this when they see code calling
+this function:
+
+<naive>
+Gosh, why is the uid broken? I have no idea what this does or when it
+would be needed. Why hasn't it been splatted all over the kernel? Who broke
+it?
+</naive>
+
+You can't even tell from the name that it's for user namespaces.
+
+Cheers,
+	-Matt
