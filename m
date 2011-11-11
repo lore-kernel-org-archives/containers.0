@@ -1,13 +1,14 @@
-From: Sandra Hamm <Hamm_1970-mUPtmtn3MYIgsBAKwltoeQ@public.gmane.org>
-Subject: Wire Transfer was not accepted by Interstate Bank of Oak Forest
-Date: Thu, 10 Nov 2011 19:52:13 +0000
-Message-ID: <809143003348422231585145332671897508155337865452778890735671762344925890983915841577427654.42392667474.532@mta900.em.linkedin.com>
-Reply-To: LinkedIn
-	<support-075408479585238659641075626025460857466229213841105592740858052483704622343927108390455604-9VL0RDUAymA8CkZ2R5u6Dw@public.gmane.org>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: user namespaces: fix some uid/privilege leaks
+Date: Fri, 11 Nov 2011 04:13:16 +0000
+Message-ID: <20111111041316.GA21010__44585.9122708955$1320985363$gmane$org@hallyn.com>
+References: <1320445482-8459-1-git-send-email-serge@hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1320445482-8459-1-git-send-email-serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,13 +18,16 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: richard-/L3Ra7n9ekc@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Dear Madam / Sir,
-I regret to inform you that Wire Transfer sent by you or on your behalf was not accepted by Interstate Bank of Oak Forest.
-Transaction ID: 1705997169305
-Current status of transaction: declined
-Please review transaction details as soon as possible.
-Sandra Hamm
-Treasury ManagementInterstate Bank of Oak Forest
+For what it's worth, and for anyone interested in taking a look, a
+tree with feedback addressed is at
+
+http://kernel.ubuntu.com/git?p=serge/linux-2.6.git;a=shortlog;h=refs/heads/userns.9
+
+I'll re-test with and without userns next week, then resend.
+
+thanks,
+-serge
