@@ -1,17 +1,15 @@
 From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 03/10] threadgroup: extend threadgroup_lock() to cover
-	exit and exec
-Date: Mon, 14 Nov 2011 14:54:08 +0100
-Message-ID: <20111114135404.GD9446@somewhere>
+Subject: Re: [PATCH 04/10] cgroup: always lock threadgroup during migration
+Date: Mon, 14 Nov 2011 19:46:34 +0100
+Message-ID: <20111114184630.GE9446@somewhere>
 References: <1320191193-8110-1-git-send-email-tj@kernel.org>
-	<1320191193-8110-4-git-send-email-tj@kernel.org>
-	<20111113164426.GB9446@somewhere>
+	<1320191193-8110-5-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20111113164426.GB9446@somewhere>
+In-Reply-To: <1320191193-8110-5-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -25,53 +23,81 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Sun, Nov 13, 2011 at 05:44:32PM +0100, Frederic Weisbecker wrote:
-> On Tue, Nov 01, 2011 at 04:46:26PM -0700, Tejun Heo wrote:
-> > threadgroup_lock() protected only protected against new addition to
-> > the threadgroup, which was inherently somewhat incomplete and
-> > problematic for its only user cgroup.  On-going migration could race
-> > against exec and exit leading to interesting problems - the symmetry
-> > between various attach methods, task exiting during method execution,
-> > ->exit() racing against attach methods, migrating task switching basic
-> > properties during exec and so on.
-> > 
-> > This patch extends threadgroup_lock() such that it protects against
-> > all three threadgroup altering operations - fork, exit and exec.  For
-> > exit, threadgroup_change_begin/end() calls are added to exit path.
-> > For exec, threadgroup_[un]lock() are updated to also grab and release
-> > cred_guard_mutex.
-> > 
-> > With this change, threadgroup_lock() guarantees that the target
-> > threadgroup will remain stable - no new task will be added, no new
-> > PF_EXITING will be set and exec won't happen.
-> > 
-> > The next patch will update cgroup so that it can take full advantage
-> > of this change.
+On Tue, Nov 01, 2011 at 04:46:27PM -0700, Tejun Heo wrote:
+> Update cgroup to take advantage of the fack that threadgroup_lock()
+> guarantees stable threadgroup.
 > 
-> I don't want to nitpick really, but IMHO the races involved in exit and exec
-> are too different, specific and complicated on their own to be solved in a
-> single one patch. This should be split in two things.
+> * Lock threadgroup even if the target is a single task.  This
+>   guarantees that when the target tasks stay stable during migration
+>   regardless of the target type.
 > 
-> The specific problems and their fix need to be described more in detail
-> in the changelog because the issues are very tricky.
+> * Remove PF_EXITING early exit optimization from attach_task_by_pid()
+>   and check it in cgroup_task_migrate() instead.  The optimization was
+>   for rather cold path to begin with and PF_EXITING state can be
+>   trusted throughout migration by checking it after locking
+>   threadgroup.
 > 
-> The exec case:
+> * Don't add PF_EXITING tasks to target task array in
+>   cgroup_attach_proc().  This ensures that task migration is performed
+>   only for live tasks.
 > 
-> IIUC, the race in exec is about the group leader that can be changed
-> to become the exec'ing thread, making while_each_thread() unsafe.
-> We also have other things happening there like all the other threads
-> in the group that get killed, but that should be handled by the threadgroup_change_begin()
-> you put in the exit path.
-> The old leader is also killed but release_task() -> __unhash_process() is called
-> for it manually from the exec path. However this thread too should be covered by your
-> synchronisation in exit().
+> * Remove -ESRCH failure path from cgroup_task_migrate().  With the
+>   above changes, it's guaranteed to be called only for live tasks.
 > 
-> So after your protection in the exit path, the only thing to protect against in exec
-> is that group_leader that can change concurrently. But I may be missing something in the picture.
-> Also note this is currently protected by the tasklist readlock. Cred guard mutex is
-> certainly better, I just don't remember if you remove the tasklist lock in a
-> further patch.
+> After the changes, only live tasks are migrated and they're guaranteed
+> to stay alive until migration is complete.  This removes problems
+> caused by exec and exit racing against cgroup migration including
+> symmetry among cgroup attach methods and different cgroup methods
+> racing each other.
+> 
+> v2: Oleg pointed out that one more PF_EXITING check can be removed
+>     from cgroup_attach_proc().  Removed.
+> 
+> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+> Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+> Cc: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+> Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 
-Ah recalling what Ben Blum said, we also need the leader to stay stable because it
-is excpected to be passed in ->can_attach(), ->attach(), ->cancel_attach(), ...
-Although that's going to change after your patches that pass a flex array.
+Reviewed-by: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+
+Just a little thing:
+
+> ---
+>  kernel/cgroup.c |   51 +++++++++++++++++++++++----------------------------
+>  1 files changed, 23 insertions(+), 28 deletions(-)
+> 
+> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+> index f0e099f..83e10f9 100644
+> --- a/kernel/cgroup.c
+> +++ b/kernel/cgroup.c
+> @@ -1762,7 +1762,7 @@ EXPORT_SYMBOL_GPL(cgroup_path);
+>   *
+>   * 'guarantee' is set if the caller promises that a new css_set for the task
+>   * will already exist. If not set, this function might sleep, and can fail with
+> - * -ENOMEM. Otherwise, it can only fail with -ESRCH.
+> + * -ENOMEM. Must be called with cgroup_mutex and threadgroup locked.
+>   */
+>  static int cgroup_task_migrate(struct cgroup *cgrp, struct cgroup *oldcgrp,
+>  			       struct task_struct *tsk, bool guarantee)
+> @@ -1800,13 +1800,9 @@ static int cgroup_task_migrate(struct cgroup *cgrp, struct cgroup *oldcgrp,
+>  	}
+>  	put_css_set(oldcg);
+>  
+> -	/* if PF_EXITING is set, the tsk->cgroups pointer is no longer safe. */
+> +	/* @tsk can't exit as its threadgroup is locked */
+>  	task_lock(tsk);
+> -	if (tsk->flags & PF_EXITING) {
+> -		task_unlock(tsk);
+> -		put_css_set(newcg);
+> -		return -ESRCH;
+> -	}
+> +	WARN_ON_ONCE(tsk->flags & PF_EXITING);
+
+I have the feeling the task_lock is now useless given that we are synchronized
+against cgroup_exit() with the threadgroup_lock.
+
+It's probably also useless in cgroup_exit(). But that's something for a further
+patch...
+
+Thanks.
