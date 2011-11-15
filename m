@@ -1,7 +1,7 @@
 From: MAILER-DAEMON-bwrW3fdOxkU2Xm367WfyawC/G2K4zDHf@public.gmane.org
 Subject: failure notice
-Date: 15 Nov 2011 07:26:10 -0000
-Message-ID: <20111115074913.D4AD43E9@mail.linuxfoundation.org>
+Date: 15 Nov 2011 07:26:16 -0000
+Message-ID: <20111115074919.1E31E3EF@mail.linuxfoundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -29,8 +29,8 @@ Remote host said: 550 5.7.1 Message rejected due to content restrictions
 --- Below this line is a copy of the message.
 
 Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: (qmail 20031 invoked by uid 506); 15 Nov 2011 07:26:00 -0000
-Delivered-To: trainer-sen1-2fLTkaO3VqoywOUPvP7URdSbz7FZpwkQ@public.gmane.org
+Received: (qmail 21750 invoked by uid 506); 15 Nov 2011 07:26:06 -0000
+Delivered-To: tc-2fLTkaO3VqoywOUPvP7URdSbz7FZpwkQ@public.gmane.org
 Received: (qmail 19603 invoked from network); 15 Nov 2011 07:25:54 -0000
 Received: from unknown (HELO myoroclean.domain.de) ([46.4.74.99])
   by 62.212.150.28 with SMTP; 15 Nov 2011 07:25:54 -0000
