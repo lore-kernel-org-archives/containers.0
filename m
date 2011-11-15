@@ -1,7 +1,7 @@
 From: MAILER-DAEMON-gxXIIAwuly3k4mdvcnHjz1R5wHoBV41A@public.gmane.org
 Subject: failure notice
 Date: 15 Nov 2011 17:13:06 -0000
-Message-ID: <20111115171828.9D79D39D@mail.linuxfoundation.org>
+Message-ID: <20111115171828.C88803EA@mail.linuxfoundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -31,8 +31,8 @@ procmail: Program failure (77) of "deliverquota"
 --- Below this line is a copy of the message.
 
 Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: (qmail 64113 invoked by uid 89); 15 Nov 2011 17:13:06 -0000
-Delivered-To: alex.renes-oHIUcid/KDjz+pZb47iToQ@public.gmane.org
+Received: (qmail 64115 invoked by uid 89); 15 Nov 2011 17:13:06 -0000
+Delivered-To: annemarijn.vandererven-oHIUcid/KDjz+pZb47iToQ@public.gmane.org
 Received: (qmail 64091 invoked by uid 89); 15 Nov 2011 17:13:06 -0000
 Received: from [194.165.34.147] (HELO node6.mailshover.nl) (194.165.34.147)
     by mx1-3.argewebhosting.nl (qpsmtpd/0.33-dev) with ESMTP; Tue, 15 Nov 2011 18:13:06 +0100
