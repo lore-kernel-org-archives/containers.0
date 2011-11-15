@@ -1,11 +1,14 @@
-From: Mail Delivery System <Mailer-Daemon-QHT31ff7oBgJ6fTLyRp1Vlc0O+juaISAQQ4Iyu8u01E@public.gmane.org>
-Subject: Mail delivery failed: returning message to sender
-Date: Tue, 15 Nov 2011 00:54:31 +0000
-Message-ID: <E1RQ7IF-0000NM-6d@uspro545.startdedicated.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH] Replace Paul Menage with Tejun Heo as cgroups maintainer
+Date: Mon, 14 Nov 2011 17:36:55 -0800
+Message-ID: <20111115013655.GH30922@google.com>
+References: <1321320612-57855-1-git-send-email-paul@paulmenage.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1321320612-57855-1-git-send-email-paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,47 +18,54 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This message was created automatically by mail delivery software.
+(cc'ing akpm, Ingo and Frederic)
 
-A message that you sent could not be delivered to one or more of its
-recipients. This is a permanent error. The following address(es) failed:
+On Mon, Nov 14, 2011 at 05:30:12PM -0800, Paul Menage wrote:
+> As is probably painfully obvious, I don't have time to be a cgroups
+> maintainer.  Rather than have me continue to hope that I'll magically
+> find more spare time, instead Tejun has kindly agreed to take over the
+> role, along with Li Zefan.
+> 
+> Signed-off-by: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+> ---
+> 
+> Tejun, Li - can I get your acks before I send this on to mainline?
 
-  a.b.cole-m/+Vqhgu07urNZ0VOdzbuA@public.gmane.org
-    The mail server could not deliver mail to a.b.cole-m/+Vqhgu07vU5s+9Q1imKw@public.gmane.org  The account or domain may not exist, they may be blacklisted, or missing the proper dns entries.
+Sure,
 
------- This is a copy of the message, including all the headers. ------
+ Acked-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 
-Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from localhost ([127.0.0.1] helo=uspro545.startdedicated.com)
-	by uspro545.startdedicated.com with esmtp (Exim 4.69)
-	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
-	id 1RQ7IF-0000NJ-1D
-	for a.b.cole-m/+Vqhgu07urNZ0VOdzbuA@public.gmane.org; Tue, 15 Nov 2011 00:54:31 +0000
-Received: from [173.224.125.98] by uspro545.startdedicated.com id kddKVydNXlHQ with SMTP; Tue, 15 Nov 2011 00:54:30 +0000
-Date: Tue, 15 Nov 2011 00:54:30 +0000
-From: "inform" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.7.23.1) Business
-X-Priority: 3 (Normal)
-Message-ID: <073029726.53010369005839-QHT31ff7oBgJ6fTLyRp1Vlc0O+juaISAQQ4Iyu8u01E@public.gmane.org>
-To: <a.b.cole-m/+Vqhgu07urNZ0VOdzbuA@public.gmane.org>
-Subject: Factuur - 737808-387360
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
-Content-Transfer-Encoding: 8bit
+I'll set up cgroup korg git tree and do standard for-next / for-fixes
+branch management.  I won't be committing patches unless co-acked by
+Li Zefan.
 
+If anyone objects / has better ideas, please speak up.
 
+Thank you.
 
+>  MAINTAINERS |    2 +-
+>  1 files changed, 1 insertions(+), 1 deletions(-)
+> 
+> diff --git a/MAINTAINERS b/MAINTAINERS
+> index 4808256..055b7f6 100644
+> --- a/MAINTAINERS
+> +++ b/MAINTAINERS
+> @@ -1926,7 +1926,7 @@ S:	Maintained
+>  F:	drivers/connector/
+>  
+>  CONTROL GROUPS (CGROUPS)
+> -M:	Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+> +M:	Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+>  M:	Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+>  L:	containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+>  S:	Maintained
+> -- 
+> 1.7.5.4
+> 
 
-Dear, 
-
-Sorry voor de vertraging.
-Wij sturen de bestelling beloofd.
-http://neregtenis.nymburk-info.cz/clientedown/Info.zip?id:3073443Generation_user=a.b.cole-m/+Vqhgu07urNZ0VOdzbuA@public.gmane.org
-
-==
-Best regards, 
-ticket service.
+-- 
+tejun
