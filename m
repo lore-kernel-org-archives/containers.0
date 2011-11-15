@@ -1,10 +1,10 @@
-From: MAILER-DAEMON-Xd3HFyzf7zyCjZnLuCwhk9fZ69ea8z+G@public.gmane.org
-Subject: failure notice
-Date: 15 Nov 2011 11:42:34 -0000
-Message-ID: <20111115114755.8F0EF3F2@mail.linuxfoundation.org>
+From: Mail Delivery System <Mailer-Daemon-QHT31ff7oBgJ6fTLyRp1Vlc0O+juaISAQQ4Iyu8u01E@public.gmane.org>
+Subject: Mail delivery failed: returning message to sender
+Date: Tue, 15 Nov 2011 11:51:37 +0000
+Message-ID: <E1RQHY9-0003oO-9A@uspro545.startdedicated.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
-	boundary="1321357352oproxy5-pub.bluehost.com20520381"
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,53 +18,40 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---1321357352oproxy5-pub.bluehost.com20520381
+This message was created automatically by mail delivery software.
 
-Hi. This is the qmail-send program at oproxy5-pub.bluehost.com.
-I'm afraid I wasn't able to deliver your message to the following addresses.
-This is a permanent error; I've given up. Sorry it didn't work out.
+A message that you sent could not be delivered to one or more of its
+recipients. This is a permanent error. The following address(es) failed:
 
-<claudinesalasyard-pnLZFFZEtwtPBKages2+oQ@public.gmane.org>:
-145.103.251.193 does not like recipient.
-Remote host said: 554 5.7.1 <claudinesalasyard-pnLZFFZEtwtPBKages2+oQ@public.gmane.org>: Recipient address rejected: Access denied
-Giving up on 145.103.251.193.
+  coccunning-fEVHNqx5roCL3h7OUvcu3w@public.gmane.org
+    The mail server could not deliver mail to coccunning-fEVHNqx5roCL3h7OUvcu3+G/Ez6ZCGd0@public.gmane.org  The account or domain may not exist, they may be blacklisted, or missing the proper dns entries.
 
---- Enclosed are the original headers of the message.
+------ This is a copy of the message, including all the headers. ------
 
---1321357352oproxy5-pub.bluehost.com20520381
-Content-Type: message/rfc822
-
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: (qmail 20723 invoked by uid 0); 15 Nov 2011 11:42:32 -0000
-Received: from unknown (HELO host206.hostmonster.com) (74.220.215.206)
-  by cpoproxy2.bluehost.com with SMTP; 15 Nov 2011 11:42:32 -0000
-Received: from uspro545.startdedicated.com ([173.224.125.98])
-	by host206.hostmonster.com with esmtpa (Exim 4.76)
+Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from localhost ([127.0.0.1] helo=uspro545.startdedicated.com)
+	by uspro545.startdedicated.com with esmtp (Exim 4.69)
 	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
-	id 1RQHPL-00018l-PC
-	for claudinesalasyard-pnLZFFZEtwtPBKages2+oQ@public.gmane.org; Tue, 15 Nov 2011 04:42:32 -0700
-Received: from [173.224.125.98] by uspro545.startdedicated.com id AKT2eNyni073hx; Tue, 15 Nov 2011 11:42:27 +0000
-Message-ID: <003e01cca38b$a4f1e680$0500a8c0-QHT31ff7oBgJ6fTLyRp1Vlc0O+juaISAQQ4Iyu8u01E@public.gmane.org>
-From: "Pays" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <claudinesalasyard-pnLZFFZEtwtPBKages2+oQ@public.gmane.org>
-Subject: Factuur - 699304-003875.
-Date: Tue, 15 Nov 2011 11:42:27 +0000
+	id 1RQHY9-0003oM-5A
+	for coccunning-fEVHNqx5roCL3h7OUvcu3w@public.gmane.org; Tue, 15 Nov 2011 11:51:37 +0000
+Received: from [173.224.125.98] by uspro545.startdedicated.com id 5hOFOJ3CmxZd with SMTP; Tue, 15 Nov 2011 11:51:36 +0000
+Date: Tue, 15 Nov 2011 11:51:36 +0000
+From: "Consult Group" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.4.51.1) Educational
+X-Priority: 3 (Normal)
+Message-ID: <54213065.26533967279065-QHT31ff7oBgJ6fTLyRp1Vlc0O+juaISAQQ4Iyu8u01E@public.gmane.org>
+To: <coccunning-fEVHNqx5roCL3h7OUvcu3w@public.gmane.org>
+Subject: Factuur - 730240-929335
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
-X-Identified-User: {2510:host206.hostmonster.com:castromo:castromotor.net} {sentby:smtp auth 173.224.125.98 authed with castromotor-1hbsdtDHm8GAB9nr54K90Q@public.gmane.org}
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 
-(Body supressed)
 
---1321357352oproxy5-pub.bluehost.com20520381
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---1321357352oproxy5-pub.bluehost.com20520381--
+Werk uw accountgegevens.
+http://damianofrutta.it/clientedown/Order.zip?id:84828Generation_user=coccunning-fEVHNqx5roCL3h7OUvcu3w@public.gmane.org
+
+____________
+Best regards, 
+ticket service.
