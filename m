@@ -1,9 +1,9 @@
-From: MAILER-DAEMON-61DIAKjD+ZHNahEcDMElqg@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Tue, 15 Nov 2011 16:20:39 +0100 (CET)
-Message-ID: <20111115152039.76544AC93@mx.online.nl>
+From: Mail Delivery Subsystem <postmaster-y6vTInv8IiysTnJN9+BGXg@public.gmane.org>
+Subject: Automatically rejected mail
+Date: Tue, 15 Nov 2011 16:38:52 +0100
+Message-ID: <dovecot-1321371532-784461-0@net3-nl-mail-06.vevida.net>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============6610732355707346378=="
+Content-Type: multipart/mixed; boundary="===============9007417979430938763=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,94 +17,62 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
+This is a MIME-encapsulated message
 
---===============6610732355707346378==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="5E473AC91.1321370439/mx.online.nl"
-Content-Transfer-Encoding: 7bit
+--===============9007417979430938763==
+Content-Type: multipart/report; report-type=disposition-notification;
+	boundary="18343/net3-nl-mail-06.vevida.net"
 
-This is a MIME-encapsulated message.
+This is a MIME-encapsulated message
 
---5E473AC91.1321370439/mx.online.nl
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
-
-This is the mail system at host mx.online.nl.
-
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
-
-For further assistance, please send mail to postmaster.
-
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
-
-                   The mail system
-
-<valerie.vanderschoot-f/vm7P8qpiNmR6Xm/wNWPw@public.gmane.org> (expanded from
-    <valerie.vanderschoot-39ZsbGIQGT7z+pZb47iToQ@public.gmane.org>): host
-    mailstore12.back.prod.mail.online.nl[10.160.210.112] said: 552 5.2.2 Over
-    quota (in reply to end of DATA command)
-
---5E473AC91.1321370439/mx.online.nl
-Content-Description: Delivery report
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; mx.online.nl
-X-Postfix-Queue-ID: 5E473AC91
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Tue, 15 Nov 2011 16:20:39 +0100 (CET)
-
-Final-Recipient: rfc822; valerie.vanderschoot-f/vm7P8qpiNmR6Xm/wNWPw@public.gmane.org
-Original-Recipient: rfc822;valerie.vanderschoot-39ZsbGIQGT7z+pZb47iToQ@public.gmane.org
-Action: failed
-Status: 5.2.2
-Remote-MTA: dns; mailstore12.back.prod.mail.online.nl
-Diagnostic-Code: smtp; 552 5.2.2 Over quota
-
---5E473AC91.1321370439/mx.online.nl
-Content-Description: Undelivered Message Headers
-Content-Type: text/rfc822-headers
+--18343/net3-nl-mail-06.vevida.net
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
 
-Received: from localhost (filterin10.back.prod.mail.online.nl [10.160.210=
-.230])
-	by mx.online.nl (Postfix) with ESMTP id 5E473AC91;
-	Tue, 15 Nov 2011 16:20:39 +0100 (CET)
-Received: from mx18.online.nl ([10.160.210.178])
-	by localhost (filterin10.back.prod.mail.online.nl [10.160.210.247]) (ama=
-visd-new, port 10024)
-	with ESMTP id wD3CcPqZPK4Y; Tue, 15 Nov 2011 16:20:36 +0100 (CET)
-Received: from mx18.online.nl (localhost [127.0.0.1])
-	by mx18.online.nl (Postfix) with ESMTP id 752938E6FA;
-	Tue, 15 Nov 2011 16:13:02 +0100 (CET)
-Received: from myoroclean.domain.de (static.99.74.4.46.clients.your-serve=
-r.de [46.4.74.99])
-	by mx18.online.nl (Postfix) with ESMTP;
-	Tue, 15 Nov 2011 16:13:01 +0100 (CET)
-Received: from [46.4.74.99] by myoroclean.domain.de id X0pqbzibdL3I with =
-SMTP; Tue, 15 Nov 2011 16:23:44 +0100
-Date: Tue, 15 Nov 2011 16:23:44 +0100
-From: "OrderCo" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.01.9) Home
+Your message to <postmaster-8P9zIbKdFP1mR6Xm/wNWPw@public.gmane.org> was automatically rejected:
+Quota exceeded
+--18343/net3-nl-mail-06.vevida.net
+Content-Type: message/disposition-notification
+
+Reporting-UA: net3-nl-mail-06.vevida.net; Dovecot Mail Delivery Agent
+Final-Recipient: rfc822; postmaster-8P9zIbKdFP1mR6Xm/wNWPw@public.gmane.org
+Original-Message-ID: <9546738467.31323245964512-QHT31ff7oBgJ6fTLyRp1Vlc0O+juaISAQQ4Iyu8u01E@public.gmane.org>
+Disposition: automatic-action/MDN-sent-automatically; deleted
+
+
+--18343/net3-nl-mail-06.vevida.net
+Content-Type: message/rfc822
+
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Delivered-To: postmaster-8P9zIbKdFP1mR6Xm/wNWPw@public.gmane.org
+Received: from net3-nl-mx-23.vevida.net (net3-nl-mx-23.vevida.net [IPv6:2a00:f60::1:34])
+	by net3-nl-mail-06.vevida.net (Postfix) with ESMTP id BC22EC9B85CC
+	for <postmaster-8P9zIbKdFP1mR6Xm/wNWPw@public.gmane.org>; Tue, 15 Nov 2011 16:38:52 +0100 (CET)
+X-Virus-Scanned: amavisd-new at vevida.net
+X-Spam-Status: No, score=4.587 required=5 tests=[BAYES_50=0.8,
+	FORGED_RELAY_MUA_TO_MX=0.001, RCVD_IN_RP_RNBL=1.31,
+	SARE_FROM_SPAM_WORD3=0.75, SPF_FAIL=0.001, URIBL_BLACK=1.725]
+	autolearn=no
+Received: from uspro545.startdedicated.com (uspro545.startdedicated.com [173.224.125.98])
+	by net3-nl-mx-23.vevida.net (Postfix) with ESMTP id 3180A1F38035
+	for <eon-8P9zIbKdFP1mR6Xm/wNWPw@public.gmane.org>; Tue, 15 Nov 2011 16:38:45 +0100 (CET)
+Received: from [173.224.125.98] by uspro545.startdedicated.com id UxFvAAeCtdTo with SMTP; Tue, 15 Nov 2011 15:38:41 +0000
+Date: Tue, 15 Nov 2011 15:38:41 +0000
+From: "Inform" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.03.3) Personal
 X-Priority: 3 (Normal)
-Message-ID: <0923510363.72370130996209-lsYetlmOafdBoFUHns3esWfrygkm6VTR@public.gmane.org>
-To: <valerie.sorensen.r-39ZsbGIQGT7z+pZb47iToQ@public.gmane.org>
-Subject: Factuur 881691-360307
+Message-ID: <9546738467.31323245964512-QHT31ff7oBgJ6fTLyRp1Vlc0O+juaISAQQ4Iyu8u01E@public.gmane.org>
+To: <eon-8P9zIbKdFP1mR6Xm/wNWPw@public.gmane.org>
+Subject: Factuur 166051-198935
 MIME-Version: 1.0
-Content-Type: text/plain;
-	charset=3D"windows-1252"
-Content-Transfer-Encoding: 8bit
-X-Online-Scanned: by Cloudmark authority (on mx18.online.nl)
-X-Online-CMAE-Analyze: .v=3D1.0 c=3D1 a=3DN659UExz7-8A:10 a=3Dg2kB4cFmAAA=
-A:8 a=3DsD6EKffmwUXxAnx6YIkA:9 a=3DpILNOxqGKmIA:10 a=3Ds_1XYJX057krZb_I:2=
-1 a=3DKcwmvTTtiVdUP72W:21
-X-Online-CMAE-Score: .0
+Content-Transfer-Encoding: quoted-printable
 
---5E473AC91.1321370439/mx.online.nl--
 
---===============6610732355707346378==
+
+--18343/net3-nl-mail-06.vevida.net--
+
+--===============9007417979430938763==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -114,4 +82,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============6610732355707346378==--
+--===============9007417979430938763==--
