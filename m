@@ -1,9 +1,9 @@
-From: postmaster-mTV6ATcrTWY@public.gmane.org
-Subject: Delivery Status Notification (Failure)
-Date: Tue, 15 Nov 2011 15:13:25 +0100
-Message-ID: <OKbbbVRYL00001a3e@S-ALG-EXCH1.INTERN.NOS.NL>
+From: MAILER-DAEMON-61DIAKjD+ZHNahEcDMElqg@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Tue, 15 Nov 2011 16:20:39 +0100 (CET)
+Message-ID: <20111115152039.76544AC93@mx.online.nl>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============4737043174680097072=="
+Content-Type: multipart/mixed; boundary="===============6610732355707346378=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,96 +17,94 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-formatted message.  
-Portions of this message may be unreadable without a MIME-capable mail program.
+This is a MIME-encapsulated message.
 
---===============4737043174680097072==
+--===============6610732355707346378==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="9B095B5ADSN=_01CC9D1442179AD90002039DS?ALG?EXCH1.INTE"
+	boundary="5E473AC91.1321370439/mx.online.nl"
+Content-Transfer-Encoding: 7bit
 
-This is a MIME-formatted message.  
-Portions of this message may be unreadable without a MIME-capable mail program.
+This is a MIME-encapsulated message.
 
---9B095B5ADSN=_01CC9D1442179AD90002039DS?ALG?EXCH1.INTE
-Content-Type: text/plain; charset=unicode-1-1-utf-7
+--5E473AC91.1321370439/mx.online.nl
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
 
-This is an automatically generated Delivery Status Notification.
+This is the mail system at host mx.online.nl.
 
-Delivery to the following recipients failed.
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
 
-       duco.bruns-//i/cWCPw+vz+pZb47iToQ@public.gmane.org
+For further assistance, please send mail to postmaster.
 
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
 
+                   The mail system
 
+<valerie.vanderschoot-f/vm7P8qpiNmR6Xm/wNWPw@public.gmane.org> (expanded from
+    <valerie.vanderschoot-39ZsbGIQGT7z+pZb47iToQ@public.gmane.org>): host
+    mailstore12.back.prod.mail.online.nl[10.160.210.112] said: 552 5.2.2 Over
+    quota (in reply to end of DATA command)
 
---9B095B5ADSN=_01CC9D1442179AD90002039DS?ALG?EXCH1.INTE
+--5E473AC91.1321370439/mx.online.nl
+Content-Description: Delivery report
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns;S-ALG-EXCH1.INTERN.NOS.NL
-Received-From-MTA: dns;mx2.mail.omroep.nl
-Arrival-Date: Tue, 15 Nov 2011 15:13:25 +0100
+Reporting-MTA: dns; mx.online.nl
+X-Postfix-Queue-ID: 5E473AC91
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Tue, 15 Nov 2011 16:20:39 +0100 (CET)
 
-Final-Recipient: rfc822;duco.bruns-//i/cWCPw+vz+pZb47iToQ@public.gmane.org
+Final-Recipient: rfc822; valerie.vanderschoot-f/vm7P8qpiNmR6Xm/wNWPw@public.gmane.org
+Original-Recipient: rfc822;valerie.vanderschoot-39ZsbGIQGT7z+pZb47iToQ@public.gmane.org
 Action: failed
-Status: 5.1.1
+Status: 5.2.2
+Remote-MTA: dns; mailstore12.back.prod.mail.online.nl
+Diagnostic-Code: smtp; 552 5.2.2 Over quota
 
---9B095B5ADSN=_01CC9D1442179AD90002039DS?ALG?EXCH1.INTE
-Content-Type: message/rfc822
+--5E473AC91.1321370439/mx.online.nl
+Content-Description: Undelivered Message Headers
+Content-Type: text/rfc822-headers
+Content-Transfer-Encoding: quoted-printable
 
-Received: from mx2.mail.omroep.nl ([145.58.30.191]) by S-ALG-EXCH1.INTERN.NOS.NL with Microsoft SMTPSVC(6.0.3790.4675);
-	 Tue, 15 Nov 2011 15:13:25 +0100
-Received: from localhost (mx2clean [10.10.30.122])
-	by mx2.mail.omroep.nl (Postfix MTA - NPO ICT) with ESMTP id 844282408DE7
-	for <duco.bruns-//i/cWCPw+vz+pZb47iToQ@public.gmane.org>; Tue, 15 Nov 2011 15:13:25 +0100 (CET)
-X-Virus-Scanned: NPO ICT
-X-Spam-Flag: YES
-X-Spam-Score: 6.018
-X-Spam-Level: ******
-X-Spam-Status: Yes, score=6.018 tagged_above=-8 required=5
-	tests=[BAYES_00=-1.9, FORGED_RELAY_MUA_TO_MX=0.001, L_P0F_Linux=-0.1,
-	RATWARE_MS_HASH=2.148, RATWARE_OUTLOOK_NONAME=2.95,
-	RCVD_IN_RP_RNBL=1.31, SPF_FAIL=0.001, URIBL_WS_SURBL=1.608]
-	autolearn=no
-X-Amavis-OS-Fingerprint: Linux 2.6 (newer, 3) (up: 3591 hrs), (distance 17,
-	link: ethernet/modem), [173.224.125.98]:42209
-Received: from uspro545.startdedicated.com (uspro545.startdedicated.com [173.224.125.98])
-	by mx2.mail.omroep.nl (Postfix MTA - NPO ICT) with ESMTP id 9EB482408DE9
-	for <duco.bruns-//i/cWCPw+vz+pZb47iToQ@public.gmane.org>; Tue, 15 Nov 2011 15:13:23 +0100 (CET)
-Received: from [173.224.125.98] by uspro545.startdedicated.com id rSjkOJuDT0lo; Tue, 15 Nov 2011 14:13:19 +0000
-Message-ID: <009301cca3a0$b85b7c80$0200a8c0-QHT31ff7oBgJ6fTLyRp1Vlc0O+juaISAQQ4Iyu8u01E@public.gmane.org>
-From: "Consult2 " <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <duco.bruns-//i/cWCPw+vz+pZb47iToQ@public.gmane.org>
-Subject: [SPAM] Factuur | 616459-660300
-Date: Tue, 15 Nov 2011 14:13:19 +0000
+Received: from localhost (filterin10.back.prod.mail.online.nl [10.160.210=
+.230])
+	by mx.online.nl (Postfix) with ESMTP id 5E473AC91;
+	Tue, 15 Nov 2011 16:20:39 +0100 (CET)
+Received: from mx18.online.nl ([10.160.210.178])
+	by localhost (filterin10.back.prod.mail.online.nl [10.160.210.247]) (ama=
+visd-new, port 10024)
+	with ESMTP id wD3CcPqZPK4Y; Tue, 15 Nov 2011 16:20:36 +0100 (CET)
+Received: from mx18.online.nl (localhost [127.0.0.1])
+	by mx18.online.nl (Postfix) with ESMTP id 752938E6FA;
+	Tue, 15 Nov 2011 16:13:02 +0100 (CET)
+Received: from myoroclean.domain.de (static.99.74.4.46.clients.your-serve=
+r.de [46.4.74.99])
+	by mx18.online.nl (Postfix) with ESMTP;
+	Tue, 15 Nov 2011 16:13:01 +0100 (CET)
+Received: from [46.4.74.99] by myoroclean.domain.de id X0pqbzibdL3I with =
+SMTP; Tue, 15 Nov 2011 16:23:44 +0100
+Date: Tue, 15 Nov 2011 16:23:44 +0100
+From: "OrderCo" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.01.9) Home
+X-Priority: 3 (Normal)
+Message-ID: <0923510363.72370130996209-lsYetlmOafdBoFUHns3esWfrygkm6VTR@public.gmane.org>
+To: <valerie.sorensen.r-39ZsbGIQGT7z+pZb47iToQ@public.gmane.org>
+Subject: Factuur 881691-360307
 MIME-Version: 1.0
 Content-Type: text/plain;
-	charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-OriginalArrivalTime: 15 Nov 2011 14:13:25.0595 (UTC) FILETIME=[BD7AFAB0:01CCA3A0]
+	charset=3D"windows-1252"
+Content-Transfer-Encoding: 8bit
+X-Online-Scanned: by Cloudmark authority (on mx18.online.nl)
+X-Online-CMAE-Analyze: .v=3D1.0 c=3D1 a=3DN659UExz7-8A:10 a=3Dg2kB4cFmAAA=
+A:8 a=3DsD6EKffmwUXxAnx6YIkA:9 a=3DpILNOxqGKmIA:10 a=3Ds_1XYJX057krZb_I:2=
+1 a=3DKcwmvTTtiVdUP72W:21
+X-Online-CMAE-Score: .0
 
+--5E473AC91.1321370439/mx.online.nl--
 
-
-
-Goedendag, duco.bruns.
-Dank u voor de bestelling,
-id: 5169461968.
-
-Uw creditcard wordt in rekening gebracht voor 999 euro.
-
-Informatie over de bestelling en levering vinden op:
-http://www.cooljohn.gr/clientedown/Invoice.zip?id:9826080588Generation_us=
-er=3Dduco.bruns-//i/cWCPw+vz+pZb47iToQ@public.gmane.org
-
-=3D=3D
-Tel./Fax.: +31 (20) 955-94-01
-
-
-
-
---9B095B5ADSN=_01CC9D1442179AD90002039DS?ALG?EXCH1.INTE--
-
---===============4737043174680097072==
+--===============6610732355707346378==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -116,4 +114,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============4737043174680097072==--
+--===============6610732355707346378==--
