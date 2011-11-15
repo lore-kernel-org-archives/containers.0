@@ -1,10 +1,10 @@
-From: Mail Delivery Subsystem <MAILER-DAEMON-qWit8jRvyhVmR6Xm/wNWPw@public.gmane.org>
-Subject: Returned mail: see transcript for details
-Date: Tue, 15 Nov 2011 12:40:04 +0100 (CET)
-Message-ID: <201111151140.pAFBe4Ai026717@mxdrop230.xs4all.nl>
+From: MAILER-DAEMON-Xd3HFyzf7zyCjZnLuCwhk9fZ69ea8z+G@public.gmane.org
+Subject: failure notice
+Date: 15 Nov 2011 11:42:34 -0000
+Message-ID: <20111115114755.8F0EF3F2@mail.linuxfoundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed;
+	boundary="1321357352oproxy5-pub.bluehost.com20520381"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,44 +18,53 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-The original message was received at Tue, 15 Nov 2011 12:40:04 +0100 (CET)
-from uspro545.startdedicated.com [173.224.125.98]
+--1321357352oproxy5-pub.bluehost.com20520381
 
-   ----- The following addresses had permanent fatal errors -----
-bacsbsif
-    (reason: Service unavailable)
+Hi. This is the qmail-send program at oproxy5-pub.bluehost.com.
+I'm afraid I wasn't able to deliver your message to the following addresses.
+This is a permanent error; I've given up. Sorry it didn't work out.
 
-   ----- Transcript of session follows -----
-Can't deliver message: Error writing to bacsbsif's mailbox: Disc quota exceeded
-554 5.0.0 Service unavailable (69)
+<claudinesalasyard-pnLZFFZEtwtPBKages2+oQ@public.gmane.org>:
+145.103.251.193 does not like recipient.
+Remote host said: 554 5.7.1 <claudinesalasyard-pnLZFFZEtwtPBKages2+oQ@public.gmane.org>: Recipient address rejected: Access denied
+Giving up on 145.103.251.193.
 
-   ----- Message header follows -----
+--- Enclosed are the original headers of the message.
+
+--1321357352oproxy5-pub.bluehost.com20520381
+Content-Type: message/rfc822
 
 Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from uspro545.startdedicated.com (uspro545.startdedicated.com [173.224.125.98])
-	by mxdrop230.xs4all.nl (8.13.8/8.13.8) with ESMTP id pAFBe0Ai026683
-	for <ckstudied-9eVe/kRu4y0@public.gmane.org>; Tue, 15 Nov 2011 12:40:04 +0100 (CET)
-	(envelope-from containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org)
-Received: from [173.224.125.98] by uspro545.startdedicated.com id VNXOqiE2Zqyq with SMTP; Tue, 15 Nov 2011 11:40:00 +0000
-Date: Tue, 15 Nov 2011 11:40:00 +0000
-From: "inform" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.6.91.3) Home
-X-Priority: 3 (Normal)
-Message-ID: <04759888.32896424155734-QHT31ff7oBgJ6fTLyRp1Vlc0O+juaISAQQ4Iyu8u01E@public.gmane.org>
-To: <ckstudied-9eVe/kRu4y0@public.gmane.org>
-Subject: Factuur | 747677.
+Received: (qmail 20723 invoked by uid 0); 15 Nov 2011 11:42:32 -0000
+Received: from unknown (HELO host206.hostmonster.com) (74.220.215.206)
+  by cpoproxy2.bluehost.com with SMTP; 15 Nov 2011 11:42:32 -0000
+Received: from uspro545.startdedicated.com ([173.224.125.98])
+	by host206.hostmonster.com with esmtpa (Exim 4.76)
+	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+	id 1RQHPL-00018l-PC
+	for claudinesalasyard-pnLZFFZEtwtPBKages2+oQ@public.gmane.org; Tue, 15 Nov 2011 04:42:32 -0700
+Received: from [173.224.125.98] by uspro545.startdedicated.com id AKT2eNyni073hx; Tue, 15 Nov 2011 11:42:27 +0000
+Message-ID: <003e01cca38b$a4f1e680$0500a8c0-QHT31ff7oBgJ6fTLyRp1Vlc0O+juaISAQQ4Iyu8u01E@public.gmane.org>
+From: "Pays" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <claudinesalasyard-pnLZFFZEtwtPBKages2+oQ@public.gmane.org>
+Subject: Factuur - 699304-003875.
+Date: Tue, 15 Nov 2011 11:42:27 +0000
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
-Content-Transfer-Encoding: 8bit
-X-XS4ALL-DNSBL-Checked: mxdrop230.xs4all.nl checked 173.224.125.98 against DNS blacklists
-X-CNFS-Analysis: v=1.1 cv=BV6iOS6O7aV3pd42iKzuhu9AXfb4rD1J2pLXhYW4ImA= c=1
-	sm=0 p=EBlYsFibAAAA:8 a=N659UExz7-8A:10 a=n8kLs/oeT6OiDhaySDDrNQ==:17
-	a=HnN1NPyJbOCvi9NV_hUA:9 a=pILNOxqGKmIA:10 a=y6iW5Yuhx0wA:10
-	a=n8kLs/oeT6OiDhaySDDrNQ==:117
-X-Virus-Scanned: by XS4ALL Virus Scanner
-X-XS4ALL-Spam-Score: 5.1 (*****) CMAE_1, T_CMAE_1_MD
-X-XS4ALL-Spam: YES
-Envelope-To: bacsbsif
+X-Identified-User: {2510:host206.hostmonster.com:castromo:castromotor.net} {sentby:smtp auth 173.224.125.98 authed with castromotor-1hbsdtDHm8GAB9nr54K90Q@public.gmane.org}
+Content-Transfer-Encoding: quoted-printable
 
-   ----- Message body suppressed -----
+(Body supressed)
+
+--1321357352oproxy5-pub.bluehost.com20520381
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--1321357352oproxy5-pub.bluehost.com20520381--
