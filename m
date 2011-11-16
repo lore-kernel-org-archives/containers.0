@@ -1,7 +1,7 @@
-From: MAILER-DAEMON-PCMWATibDmpFKHX/5f8+YWZHpeb/A1Y/@public.gmane.org
+From: MAILER-DAEMON-8W0XR9BG+x5FKHX/5f8+YWZHpeb/A1Y/@public.gmane.org
 Subject: failure notice
-Date: 16 Nov 2011 03:28:24 -0000
-Message-ID: <20111116032749.13B5A403@mail.linuxfoundation.org>
+Date: 16 Nov 2011 03:28:28 -0000
+Message-ID: <20111116032754.7E55E3FE@mail.linuxfoundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,7 +18,7 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi. This is the qmail-send program at qmail19.zonnet.nl.
+Hi. This is the qmail-send program at qmail21.zonnet.nl.
 I'm afraid I wasn't able to deliver your message to the following addresses.
 This is a permanent error; I've given up. Sorry it didn't work out.
 ---------------------------------------------------------------------
@@ -38,18 +38,18 @@ accepted.
 - the e-mailmessage was in queue and couldn't be delivered in the past 3 days.
 ---------------------------------------------------------------------
 
-<peter.bargon-RSh1/+X/PmFmR6Xm/wNWPw@public.gmane.org>:
+<peter.braamskamp-RSh1/+X/PmFmR6Xm/wNWPw@public.gmane.org>:
 The users mailfolder is over the allowed quota (size).
 
 --- Below this line is a copy of the message.
 
 Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: (qmail 5813 invoked by uid 0); 16 Nov 2011 03:28:24 -0000
+Received: (qmail 28400 invoked by uid 0); 16 Nov 2011 03:28:24 -0000
 Received: from unknown ([10.170.1.116])
           (envelope-sender <>)
-          by qmail19.zonnet.nl (qmail-ldap-1.03) with QMQP
+          by qmail21.zonnet.nl (qmail-ldap-1.03) with QMQP
           for < >; 16 Nov 2011 03:28:24 -0000
-Delivered-To: CLUSTERHOST mail1.versatel.nl peter.bargon-RSh1/+X/PmFmR6Xm/wNWPw@public.gmane.org
+Delivered-To: CLUSTERHOST mail1.versatel.nl peter.braamskamp-RSh1/+X/PmFmR6Xm/wNWPw@public.gmane.org
 Received: (qmail 18573 invoked by uid 0); 16 Nov 2011 03:27:14 -0000
 Received: from static.99.74.4.46.clients.your-server.de (HELO myoroclean.domain.de) ([46.4.74.99])
           (envelope-sender <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
