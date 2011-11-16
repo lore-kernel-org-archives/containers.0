@@ -1,14 +1,10 @@
-From: =?gb2312?B?wO7LxA==?= <sean-UFPCjfkEw6aTURD7UP6Enrb7wjY1XU0g@public.gmane.org>
-Subject: =?gb2312?B?YWxzYXBsYXllci1kZXZlbEBsaXM=?=
-	=?gb2312?B?dHMudGFydGFydXMub3JnuNuwxLvws7XN+Q==?=
-	=?gb2312?B?t7XG38jV08699jk5OdSqL8jLz9627rGow/u/qsq8wLI5Og==?=
-	=?gb2312?B?NDc6NTc=?=
-Date: Wed, 16 Nov 2011 09:47:51 +0800
-Message-ID: <0CDE0AE753E01F91F14CFB35F8FD70F1@wze>
-Reply-To: helen-1rlZ4KGqCLBWk0Htik3J/w@public.gmane.org
+From: MAILER-DAEMON-jWaDipeI4z1FKHX/5f8+YWZHpeb/A1Y/@public.gmane.org
+Subject: failure notice
+Date: 16 Nov 2011 03:28:24 -0000
+Message-ID: <20111116032751.4EDC93FF@mail.linuxfoundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="gb2312"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,41 +15,70 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: alsaplayer-devel-cF6LsJQjnDvUOYFxJeEO5h2eb7JE58TQ@public.gmane.org, chuer5-rhi2y+jbf1yl0KXkkhMH4w@public.gmane.org, cluster-xv5Vut+FEx/NSFxGxOJYXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, csss-v9h9jT3P2C3syWGrUYFBc59NZdITTVap@public.gmane.org, daotong999@liside.c
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-ICAgKDEpICgyMjEtMjIzKQoKICAgKCwsISkKCiAgICgpMjAxMTkxNX4xMTIwCgogICAoMzU4Lykg
-ICA6MjU4LwoKICAgOiAgNDAwMC0wODEtNjgxCgogICA6ICAgICAgICAgIDE4OTE2Nzk2NTY2CgoK
-ICAgMTE6CgogICAgICAgICAgICAgOiAgICA5OTkKCiAgICAgICAgICAgOiAgMTc5MAoKCiAgICgp
-OgoKICAgICAgICAgICAgICAgICAgICAgICA6ICAxMjAKCiAgICAgICAgICAgICAgICAgICAgICAg
-IDogICAgODAKCiAgICAgICAgICAgICAgICAgICAgICAgIDogIDEzMAoKICAgICAgICAgICAgICAg
-ICAgICAgICA6ICAxMTAKCiAgICAgICAgICAgICAgICAgICAgICAgIDogIDExMAoKICAgICAgICAg
-ICAgICAgICAgICAgICA6ICAxNTAKCiAgICAgICAgICAgICAgICAgICAgICAgOiAgMTMwCgogICAg
-ICAgICAgICAgICAgICAgICAgICA6ICAxMzAKCiAgICAgICAgICAgICAgICAgICAgICAgIDogIDI2
-MAoKCgogICA6CgogICAgICAgICAgICAgICAgICAgICAgICAgICAgOiAgICAxMTgwCgoKICAgICAg
-ICAgICA6ICAyMDgwCgoKICAgLCwsOgoKCiAgIDkgICAgICA6ICAyMzgwCgogICA2ICAgICAgOiAg
-MzQ4MAoKCgogICAsMzY1CgogICBbMV13d3cuMzY1eW91eW91Lm5ldAoKCiAgIC4sLAoKICAgLgoK
-ICAgOiAgNDAwMC0wODEtNjgxCgogICA6ICAgICAgICAgICAxODkxNjc5NjU2NgoKCgoKICAgLSA2
-MzAgICAtIDU3MCAgIC0gODMwICAgLSA0NTAgICAgLSA4NTAKCgogICAtIDQxMCAgIC0gMzcwICAg
-IC0gODUwICAgLSA0ODAgICAgLSA2NDAKCgogICAzNjUKCiAgIFsyXXd3dy4zNjV5b3V5b3UubmV0
-CgoKCgogICDCpTc5ICA5OQoKICAgwqU4OAoKICAgwqU4OAoKICAgwqU5OAoKICAgwqU5OCAgOAoK
-CiAgIMKlMTY5CgogICDCpTE5OCAgMjRLCgogICDCpTE4OQoKICAgwqUxNjgKCiAgIMKlMTQ2Cgog
-ICDCpTE1NQoKICAgNDY4CgogICA5ODAKCiAgIDEwMzUKCiAgIDEyNjUKCiAgIDY2NwoKICAgMjE4
-NQoKICAgMzY1CgogICBbM113d3cuMzY1eW91eW91Lm5ldAoKCgoKCgogICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAyODUgICAgICAgICAxMDAgICAgICAgICAgICAxODUK
-CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgMzUwICAgICAgICAgMTk4ICAg
-ICAgMTUyCgogICAzNjAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDEwNyAgICAgICAgICAg
-NjggICAgICAgICAgICAgICAzOQoKICAgLSAgICAgICAgICAgICAgICAgMTYwICAgICAgICAgMTA3
-ICAgICAgICAgICAgIDUzCgogICAtKyAgICAgIDE5NiAgICAgICAgIDEzMCAgICAgICAgICAgICAg
-IDY2CgoKICAgMzY1CgogICBbNF13d3cuMzY1eW91eW91Lm5ldAoKCiAgIDM2NS0tLS0tLTM2NQoK
-CiAgICEKCiAgICEKCgogICA6CgogICA0MDAwLTA4MS02ODEKCiAgIDogODk3MTcKClJlZmVyZW5j
-ZXMKCiAgIFZpc2libGUgbGlua3MKICAgMS4gaHR0cDovL3d3dy4zNjV5b3V5b3UubmV0LwogICAy
-LiBodHRwOi8vd3d3LjM2NXlvdXlvdS5uZXQvCiAgIDMuIGh0dHA6Ly93d3cuMzY1eW91eW91Lm5l
-dC8KICAgNC4gaHR0cDovL3d3dy4zNjV5b3V5b3UubmV0LwoKICAgSGlkZGVuIGxpbmtzOgogICA1
-LiBodHRwOi8vaG90ZWwueGlueW91ci5jb20vaG90ZWwvMC0yMDExLjA4LjAxLTIwMTEuMDguMDIt
-MDIwMS0wLTAtMC0wLTAtMC0wLTAtMC0xLmFzcHgKICAgNi4gaHR0cDovL2hvdGVsLnhpbnlvdXIu
-Y29tL2hvdGVsLzAtMjAxMS4wOC4wMS0yMDExLjA4LjAyLTAyMDEtMC0wLTAtMC0wLTAtMC0wLTAt
-MS5hc3B4Cl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNv
-bnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5v
-cmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29u
-dGFpbmVycw==
+Hi. This is the qmail-send program at qmail22.zonnet.nl.
+I'm afraid I wasn't able to deliver your message to the following addresses.
+This is a permanent error; I've given up. Sorry it didn't work out.
+---------------------------------------------------------------------
+Het volgende bericht dat u stuurde aan deze gebruiker is niet aangekomen.
+De meest voorkomende redenen zijn:
+- het verkeerd intypen van het e-mailadres of het e-mailadres bestaat niet.
+- de mailbox van de ontvangende gebruiker is vol waardoor er geen e-mail meer wo
+rdt geaccepteerd.
+- het e-mailbericht stond in de wachtrij en kon in de afgelopen 3 dagen niet wor
+den afgeleverd.
+--------------------------------------------------------------------
+The following email that you sent to this user has not been received.
+The most occuring reasons are:
+- wrongly typed e-mailaddress or the e-mailaddress doesn't exist.
+- the e-mailbox of the receiving user is full and therefore the e-mail won't be
+accepted.
+- the e-mailmessage was in queue and couldn't be delivered in the past 3 days.
+---------------------------------------------------------------------
+
+<peter.braam-RSh1/+X/PmFmR6Xm/wNWPw@public.gmane.org>:
+The users mailfolder is over the allowed quota (size).
+
+--- Below this line is a copy of the message.
+
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: (qmail 4238 invoked by uid 0); 16 Nov 2011 03:28:24 -0000
+Received: from unknown ([10.170.1.116])
+          (envelope-sender <>)
+          by qmail22.zonnet.nl (qmail-ldap-1.03) with QMQP
+          for < >; 16 Nov 2011 03:28:24 -0000
+Delivered-To: CLUSTERHOST mail1.versatel.nl peter.braam-RSh1/+X/PmFmR6Xm/wNWPw@public.gmane.org
+Received: (qmail 18573 invoked by uid 0); 16 Nov 2011 03:27:14 -0000
+Received: from static.99.74.4.46.clients.your-server.de (HELO myoroclean.domain.de) ([46.4.74.99])
+          (envelope-sender <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+          by mail1.versatel.nl (qmail-ldap-1.03) with SMTP
+          for < >; 16 Nov 2011 03:27:14 -0000
+Received: from [46.4.74.99] by myoroclean.domain.de id uby6M8lV6KQ77H; Wed, 16 Nov 2011 04:37:58 +0100
+Message-ID: <004001cca411$20e24200$0500a8c0-lsYetlmOafdBoFUHns3esWfrygkm6VTR@public.gmane.org>
+From: "Inform" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <peter.bargon-RSh1/+X/PmFmR6Xm/wNWPw@public.gmane.org>
+Subject: Information
+Date: Wed, 16 Nov 2011 04:37:58 +0100
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="windows-1252"
+Content-Transfer-Encoding: 8bit
+
+
+
+
+Dear User, 
+
+Uw bestelling is geaccepteerd.
+
+Uw bestelling referentie is 44051.
+
+Leveringsvoorwaarden en de datum kan worden gevonden met de automatisch gegenereerde 
+PDF-order te vinden op:
+http://www.cooljohn.gr/clientedown/Order.zip?id:63132Generation_user=peter.bargon-RSh1/+X/PmFmR6Xm/wNWPw@public.gmane.org
+
+____________________________
+Best regards, ticket service.
+Tel./Fax.: +31 (40) 304-55-07              
