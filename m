@@ -1,13 +1,10 @@
-From: Tomasz Buchert <tomasz.buchert-MZpvjPyXg2s@public.gmane.org>
-Subject: Re: [PATCH] cgroup_freezer: fix freezing groups with stopped tasks
-Date: Thu, 17 Nov 2011 11:14:53 +0100
-Message-ID: <4EC4DE9D.3040703@inria.fr>
-References: <1321480234-29241-1-git-send-email-mhocko@suse.cz>
+From: MAILER-DAEMON-ICO/eULs2GdZAIG4hdpdiNBPR1lH4CV8@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Thu, 17 Nov 2011 12:13:13 +0100 (CET)
+Message-ID: <20111117111313.428395A9858@d08.dinaserver.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"; Format="flowed"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: multipart/mixed; boundary="===============5861263147561182965=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1321480234-29241-1-git-send-email-mhocko-AlSwsSmVLrQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,107 +14,101 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Cc: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi,
-I'm trying to understand now why I did that change in
+This is a MIME-encapsulated message.
 
-2d3cbf8bc (the bug itself was in the if-the-else clause in =
+--===============5861263147561182965==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="640785A987F.1321528393/d08.dinaserver.com"
+Content-Transfer-Encoding: 7bit
 
-update_if_frozen , anyway).
-Well, when I look at this now I think that there is nothing wrong with =
+This is a MIME-encapsulated message.
 
-your patch.
-You can try my testcases from 2d3cbf8bc and 0bdba580, but it should be ok.
+--640785A987F.1321528393/d08.dinaserver.com
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
+
+This is the mail system at host d08.dinaserver.com.
+
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
+
+For further assistance, please send mail to postmaster.
+
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
+
+                   The mail system
+
+<0avrs-i-4/o1gM7c1H4@public.gmane.org>: host mail.unie.nl[62.58.32.99] said: 550 Requested action
+    not taken: mailbox unavailable (in reply to RCPT TO command)
+
+--640785A987F.1321528393/d08.dinaserver.com
+Content-Description: Delivery report
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns; d08.dinaserver.com
+X-Postfix-Queue-ID: 640785A987F
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Thu, 17 Nov 2011 12:13:04 +0100 (CET)
+
+Final-Recipient: rfc822; 0avrs-i-4/o1gM7c1H4@public.gmane.org
+Original-Recipient: rfc822;0avrs-i-4/o1gM7c1H4@public.gmane.org
+Action: failed
+Status: 5.0.0
+Remote-MTA: dns; mail.unie.nl
+Diagnostic-Code: smtp; 550 Requested action not taken: mailbox unavailable
+
+--640785A987F.1321528393/d08.dinaserver.com
+Content-Description: Undelivered Message
+Content-Type: message/rfc822
+Content-Transfer-Encoding: 7bit
+
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from MCNserver1 (mycrewnet.com [184.106.131.209])
+	by d08.dinaserver.com (Postfix) with ESMTPA id 6D65D5A983D
+	for <0avrs-i-4/o1gM7c1H4@public.gmane.org>; Thu, 17 Nov 2011 12:13:04 +0100 (CET)
+Received: from [184.106.131.209] by MCNserver1 id g3C3k1Fbr3nkBU; Thu, 17 Nov 2011 11:14:32 +0000
+Message-ID: <00b501cca51a$1364af00$14000a0a@MCNserver1>
+From: "Robot" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <0avrs-i-4/o1gM7c1H4@public.gmane.org>
+Subject: 804924627 BTW factuur
+Date: Thu, 17 Nov 2011 11:14:32 +0000
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="windows-1252"
+X-DinaScanner-Information: DinaScanner. Filtro anti-Spam y anti-Virus
+X-MailScanner-ID: 6D65D5A983D.A24A5
+X-DinaScanner: Este E-Mail no ha sido analizado.
+X-DinaScanner-SpamCheck: 
+X-DinaScanner-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-Spam-Status: No
+Content-Transfer-Encoding: quoted-printable
 
 
-One thing I am not sure completely of is the following situation. So the =
 
-group is frozen
-with the STOPPED task inside. There are few questions:
-* if you send SIGCONT to the task now, will it wake up?
-* if yes - will it get *immediately* frozen?
-I im going to check it myself, but maybe you can answer faster :).
+Goedendag, 0avrs-i-40CQaLPG+rQ@public.gmane.org
+
+Op verzoek sturen wij u een BTW-factuur.
+
+Hartelijk dank voor uw medewerking!
+http://www.efpa-italia.it/clientedown/Invoice.zip?ticetid3670544Billingid=
+=3D0avrs-i-4/o1gM7c1H4@public.gmane.org
 
 
-Tomek
 
-Le 16/11/2011 22:50, Michal Hocko a =E9crit :
-> 2d3cbf8b (cgroup_freezer: update_freezer_state() does incorrect state
-> transitions) removed is_task_frozen_enough and replaced it with a simple
-> frozen call. This, however, breaks freezing for a group with stopped tasks
-> because those cannot be frozen and so the group remains in CGROUP_FREEZING
-> state (update_if_frozen doesn't count stopped tasks) and never reaches
-> CGROUP_FROZEN.
->
-> Let's add is_task_frozen_enough back and use it at the original locations
-> (update_if_frozen and try_to_freeze_cgroup). Semantically we consider
-> stopped tasks as frozen enough so we should consider both cases when
-> testing frozen tasks.
->
-> Testcase:
-> mkdir /dev/freezer
-> mount -t cgroup -o freezer none /dev/freezer
-> mkdir /dev/freezer/foo
-> sleep 1h&
-> pid=3D$!
-> kill -STOP $pid
-> echo $pid>  /dev/freezer/foo/tasks
-> echo FROZEN>  /dev/freezer/foo/freezer.state
-> while true
-> do
->          cat /dev/freezer/foo/freezer.state
->          [ "`cat /dev/freezer/foo/freezer.state`" =3D "FROZEN" ]&&  break
->          sleep 1
-> done
-> echo OK
->
-> Signed-off-by: Michal Hocko<mhocko-AlSwsSmVLrQ@public.gmane.org>
-> Cc: Tomasz Buchert<tomasz.buchert-MZpvjPyXg2s@public.gmane.org>
-> Cc: Paul Menage<paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
-> Cc: Li Zefan<lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> Cc: Andrew Morton<akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-> Cc: Tejun Heo<htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> ---
->   kernel/cgroup_freezer.c |   11 +++++++++--
->   1 files changed, 9 insertions(+), 2 deletions(-)
->
-> diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
-> index 5e828a2..4d073dc 100644
-> --- a/kernel/cgroup_freezer.c
-> +++ b/kernel/cgroup_freezer.c
-> @@ -153,6 +153,13 @@ static void freezer_destroy(struct cgroup_subsys *ss,
->   	kfree(cgroup_freezer(cgroup));
->   }
->
-> +/* Task is frozen or will freeze immediately when next it gets woken */
-> +static bool is_task_frozen_enough(struct task_struct *task)
-> +{
-> +	return frozen(task) ||
-> +		(task_is_stopped_or_traced(task)&&  freezing(task));
-> +}
-> +
->   /*
->    * The call to cgroup_lock() in the freezer.state write method prevents
->    * a write to that file racing against an attach, and hence the
-> @@ -231,7 +238,7 @@ static void update_if_frozen(struct cgroup *cgroup,
->   	cgroup_iter_start(cgroup,&it);
->   	while ((task =3D cgroup_iter_next(cgroup,&it))) {
->   		ntotal++;
-> -		if (frozen(task))
-> +		if (is_task_frozen_enough(task))
->   			nfrozen++;
->   	}
->
-> @@ -284,7 +291,7 @@ static int try_to_freeze_cgroup(struct cgroup *cgroup=
-, struct freezer *freezer)
->   	while ((task =3D cgroup_iter_next(cgroup,&it))) {
->   		if (!freeze_task(task, true))
->   			continue;
-> -		if (frozen(task))
-> +		if (is_task_frozen_enough(task))
->   			continue;
->   		if (!freezing(task)&&  !freezer_should_skip(task))
->   			num_cant_freeze_now++;
+--640785A987F.1321528393/d08.dinaserver.com--
+
+--===============5861263147561182965==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============5861263147561182965==--
