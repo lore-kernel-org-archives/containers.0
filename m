@@ -1,10 +1,13 @@
-From: postmaster-EsMd/MeLYiF8uUxBSJOaYoYkZiVZrdSR2LY78lusg7I@public.gmane.org
-Subject: Delivery Status Notification (Failure)
-Date: Thu, 17 Nov 2011 05:47:40 +0100
-Message-ID: <Hl6Yiompb0000629b@ES1NL090V071.is.essent.local>
+From: Tomasz Buchert <tomasz.buchert-MZpvjPyXg2s@public.gmane.org>
+Subject: Re: [PATCH] cgroup_freezer: fix freezing groups with stopped tasks
+Date: Thu, 17 Nov 2011 11:14:53 +0100
+Message-ID: <4EC4DE9D.3040703@inria.fr>
+References: <1321480234-29241-1-git-send-email-mhocko@suse.cz>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============6394415110765671028=="
+Content-Type: text/plain; charset="iso-8859-1"; Format="flowed"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1321480234-29241-1-git-send-email-mhocko-AlSwsSmVLrQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -14,110 +17,107 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+Cc: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a MIME-formatted message.  
-Portions of this message may be unreadable without a MIME-capable mail program.
+Hi,
+I'm trying to understand now why I did that change in
 
---===============6394415110765671028==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="9B095B5ADSN=_01CCA41CE6BAB29700002DF7ES1NL090V071.is."
+2d3cbf8bc (the bug itself was in the if-the-else clause in =
 
-This is a MIME-formatted message.  
-Portions of this message may be unreadable without a MIME-capable mail program.
+update_if_frozen , anyway).
+Well, when I look at this now I think that there is nothing wrong with =
 
---9B095B5ADSN=_01CCA41CE6BAB29700002DF7ES1NL090V071.is.
-Content-Type: text/plain; charset=unicode-1-1-utf-7
-
-This is an automatically generated Delivery Status Notification.
-
-Delivery to the following recipients failed.
-
-       messagelabs-bulA9WBj4C9mR6Xm/wNWPw@public.gmane.org
+your patch.
+You can try my testcases from 2d3cbf8bc and 0bdba580, but it should be ok.
 
 
+One thing I am not sure completely of is the following situation. So the =
+
+group is frozen
+with the STOPPED task inside. There are few questions:
+* if you send SIGCONT to the task now, will it wake up?
+* if yes - will it get *immediately* frozen?
+I im going to check it myself, but maybe you can answer faster :).
 
 
---9B095B5ADSN=_01CCA41CE6BAB29700002DF7ES1NL090V071.is.
-Content-Type: message/delivery-status
+Tomek
 
-Reporting-MTA: dns;ES1NL090V071.is.essent.local
-Received-From-MTA: dns;ES1NL090V072.is.essent.local
-Arrival-Date: Thu, 17 Nov 2011 05:47:40 +0100
-
-Original-Recipient: rfc822;messagelabs-bulA9WBj4C9mR6Xm/wNWPw@public.gmane.org
-Final-Recipient: rfc822;messagelabs-bulA9WBj4C9mR6Xm/wNWPw@public.gmane.org
-Action: failed
-Status: 5.2.2
-X-Display-Name: MessageLabs
-
-
---9B095B5ADSN=_01CCA41CE6BAB29700002DF7ES1NL090V071.is.
-Content-Type: message/rfc822
-
-Received: from ES1NL090V072.is.essent.local ([10.1.35.93]) by ES1NL090V071.is.essent.local with Microsoft SMTPSVC(6.0.3790.4675);
-	 Thu, 17 Nov 2011 05:47:40 +0100
-Received: from es1nl112w033.is.essent.local ([10.100.10.216]) by ES1NL090V072.is.essent.local with Microsoft SMTPSVC(6.0.3790.4675);
-	 Thu, 17 Nov 2011 05:47:37 +0100
-Received: from es1nl090w138.essent.nl ([145.46.220.72]) by es1nl112w033.is.essent.local with Microsoft SMTPSVC(6.0.3790.4675);
-	 Thu, 17 Nov 2011 05:47:39 +0100
-Received: from mail6.bemta5.messagelabs.com (unverified) by es1nl090w138.is.essent.local
- (Clearswift SMTPRS 5.4.0) with ESMTP id <Ta0bc798598912edc4813ac-n9GecZKBtqWnIxmyYYPQAqX2gFl/uDIJhPhL2mjWHbk@public.gmane.org> for <messagelabs-bulA9WBj4C9mR6Xm/wNWPw@public.gmane.org>;
- Thu, 17 Nov 2011 05:47:28 +0100
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from [85.158.136.51:41308] by server-12.bemta-5.messagelabs.com id 09/7D-09635-F9194CE4; Thu, 17 Nov 2011 04:46:23 +0000
-X-Env-Sender: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-Msg-Ref: server-12.tower-49.messagelabs.com!1321505182!4305406!1
-X-Originating-IP: [184.106.131.209]
-X-Spam-Flag: YES
-X-SpamInfo: spam detected heuristically
-X-SpamOriginallyTo: willem.matapere-bulA9WBj4C9mR6Xm/wNWPw@public.gmane.org
-X-SpamOriginallyTo: willem.meijer-bulA9WBj4C9mR6Xm/wNWPw@public.gmane.org
-X-SpamOriginallyTo: willem.mugge-bulA9WBj4C9mR6Xm/wNWPw@public.gmane.org
-X-SpamOriginallyTo: willem.paas-bulA9WBj4C9mR6Xm/wNWPw@public.gmane.org
-X-SpamOriginallyTo: willem.ritterbeeks-bulA9WBj4C9mR6Xm/wNWPw@public.gmane.org
-X-SpamReason: Yes, hits=50.0 required=7.0 tests=surbl: [Y3JkZC5pdA==\n],
-  URL signature (RT): Y3JkZC5pdA==
-X-StarScan-Version: 6.3.6; banners=-,-,-
-Received: (qmail 28026 invoked from network); 17 Nov 2011 04:46:23 -0000
-Received: from mycrewnet.com (HELO MCNserver1) (184.106.131.209)
-  by server-12.tower-49.messagelabs.com with SMTP; 17 Nov 2011 04:46:23 -0000
-Received: from [184.106.131.209] by MCNserver1 id XmEeVzrjpmTe9Ggc; Thu, 17 Nov 2011 04:47:51 +0000
-Message-ID: <004001cca4e4$0e850880$14000a0a@MCNserver1>
-From: "Billing" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <willem.matapere-bulA9WBj4C9mR6Xm/wNWPw@public.gmane.org>
-Subject: BTW factuur #695363
-Date: Thu, 17 Nov 2011 04:47:51 +0000
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
-X-OriginalArrivalTime: 17 Nov 2011 04:47:39.0880 (UTC) FILETIME=[09156E80:01CCA4E4]
-Content-Transfer-Encoding: quoted-printable
-
-
-
-Goedendag, willem.matapere-bulA9WBj4C94mq39ihy3YQ@public.gmane.org
-
-Op verzoek sturen wij u een BTW-factuur.
-
-Hartelijk dank voor uw medewerking!
-http://www.crdd.it/clientedown/Info.zip?ticetid40467965Billingid=3Dwillem=
-.matapere-bulA9WBj4C9mR6Xm/wNWPw@public.gmane.org
-
-
-
-
---9B095B5ADSN=_01CCA41CE6BAB29700002DF7ES1NL090V071.is.--
-
---===============6394415110765671028==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============6394415110765671028==--
+Le 16/11/2011 22:50, Michal Hocko a =E9crit :
+> 2d3cbf8b (cgroup_freezer: update_freezer_state() does incorrect state
+> transitions) removed is_task_frozen_enough and replaced it with a simple
+> frozen call. This, however, breaks freezing for a group with stopped tasks
+> because those cannot be frozen and so the group remains in CGROUP_FREEZING
+> state (update_if_frozen doesn't count stopped tasks) and never reaches
+> CGROUP_FROZEN.
+>
+> Let's add is_task_frozen_enough back and use it at the original locations
+> (update_if_frozen and try_to_freeze_cgroup). Semantically we consider
+> stopped tasks as frozen enough so we should consider both cases when
+> testing frozen tasks.
+>
+> Testcase:
+> mkdir /dev/freezer
+> mount -t cgroup -o freezer none /dev/freezer
+> mkdir /dev/freezer/foo
+> sleep 1h&
+> pid=3D$!
+> kill -STOP $pid
+> echo $pid>  /dev/freezer/foo/tasks
+> echo FROZEN>  /dev/freezer/foo/freezer.state
+> while true
+> do
+>          cat /dev/freezer/foo/freezer.state
+>          [ "`cat /dev/freezer/foo/freezer.state`" =3D "FROZEN" ]&&  break
+>          sleep 1
+> done
+> echo OK
+>
+> Signed-off-by: Michal Hocko<mhocko-AlSwsSmVLrQ@public.gmane.org>
+> Cc: Tomasz Buchert<tomasz.buchert-MZpvjPyXg2s@public.gmane.org>
+> Cc: Paul Menage<paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+> Cc: Li Zefan<lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+> Cc: Andrew Morton<akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+> Cc: Tejun Heo<htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> ---
+>   kernel/cgroup_freezer.c |   11 +++++++++--
+>   1 files changed, 9 insertions(+), 2 deletions(-)
+>
+> diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
+> index 5e828a2..4d073dc 100644
+> --- a/kernel/cgroup_freezer.c
+> +++ b/kernel/cgroup_freezer.c
+> @@ -153,6 +153,13 @@ static void freezer_destroy(struct cgroup_subsys *ss,
+>   	kfree(cgroup_freezer(cgroup));
+>   }
+>
+> +/* Task is frozen or will freeze immediately when next it gets woken */
+> +static bool is_task_frozen_enough(struct task_struct *task)
+> +{
+> +	return frozen(task) ||
+> +		(task_is_stopped_or_traced(task)&&  freezing(task));
+> +}
+> +
+>   /*
+>    * The call to cgroup_lock() in the freezer.state write method prevents
+>    * a write to that file racing against an attach, and hence the
+> @@ -231,7 +238,7 @@ static void update_if_frozen(struct cgroup *cgroup,
+>   	cgroup_iter_start(cgroup,&it);
+>   	while ((task =3D cgroup_iter_next(cgroup,&it))) {
+>   		ntotal++;
+> -		if (frozen(task))
+> +		if (is_task_frozen_enough(task))
+>   			nfrozen++;
+>   	}
+>
+> @@ -284,7 +291,7 @@ static int try_to_freeze_cgroup(struct cgroup *cgroup=
+, struct freezer *freezer)
+>   	while ((task =3D cgroup_iter_next(cgroup,&it))) {
+>   		if (!freeze_task(task, true))
+>   			continue;
+> -		if (frozen(task))
+> +		if (is_task_frozen_enough(task))
+>   			continue;
+>   		if (!freezing(task)&&  !freezer_should_skip(task))
+>   			num_cant_freeze_now++;
