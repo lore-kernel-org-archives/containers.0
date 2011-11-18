@@ -1,9 +1,9 @@
 From: "Mail Delivery System" <MAILER-DAEMON-BTwWsrLItMCsTnJN9+BGXg@public.gmane.org>
 Subject: Delivery Status Notification (Failure)
 Date: 18 Nov 2011 21:10:29 +0100
-Message-ID: <1b603b$7ah3a1@iron6.routit.net>
+Message-ID: <1b603b$7ah3a2@iron6.routit.net>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1663073898423612371=="
+Content-Type: multipart/mixed; boundary="===============5758142142848961411=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,30 +17,30 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============1663073898423612371==
-Content-Type: multipart/report; report-type=delivery-status; boundary="Eg8qZ.4iWVjkWV5.NbSlf.2NFvt+f"
+--===============5758142142848961411==
+Content-Type: multipart/report; report-type=delivery-status; boundary="Eg8qZ.4iWVjkXJw.8ZhTZ.DF02HW8"
 
---Eg8qZ.4iWVjkWV5.NbSlf.2NFvt+f
+--Eg8qZ.4iWVjkXJw.8ZhTZ.DF02HW8
 content-type: text/plain;
     charset="windows-1252"
 Content-Transfer-Encoding: quoted-printable
 
-The following message to <abbey_siris-KeIyapyUy7n3sZAhJhHK82ZHpeb/A1Y/@public.gmane.org> was undeliverable.
+The following message to <bachan-KeIyapyUy7n3sZAhJhHK82ZHpeb/A1Y/@public.gmane.org> was undeliverable.
 The reason for the problem:
 5.1.0 - Unknown address error 550-'5.1.1 User unknown'
 
---Eg8qZ.4iWVjkWV5.NbSlf.2NFvt+f
+--Eg8qZ.4iWVjkXJw.8ZhTZ.DF02HW8
 content-type: message/delivery-status
 
 Reporting-MTA: dns; iron6.routit.net
 
-Final-Recipient: rfc822;abbey_siris-KeIyapyUy7n3sZAhJhHK82ZHpeb/A1Y/@public.gmane.org
+Final-Recipient: rfc822;bachan-KeIyapyUy7n3sZAhJhHK82ZHpeb/A1Y/@public.gmane.org
 Action: failed
 Status: 5.0.0 (permanent failure)
 Remote-MTA: dns; [89.146.48.125]
 Diagnostic-Code: smtp; 5.1.0 - Unknown address error 550-'5.1.1 User unknown' (delivery attempts: 0)
 
---Eg8qZ.4iWVjkWV5.NbSlf.2NFvt+f
+--Eg8qZ.4iWVjkXJw.8ZhTZ.DF02HW8
 content-type: message/rfc822
 
 X-SenderBaseSpam: 3.3
@@ -96,11 +96,11 @@ Tel./Fax.: +31 (70) 538-78-76
 
 
 
---Eg8qZ.4iWVjkWV5.NbSlf.2NFvt+f--
+--Eg8qZ.4iWVjkXJw.8ZhTZ.DF02HW8--
 
 
 
---===============1663073898423612371==
+--===============5758142142848961411==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -110,4 +110,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============1663073898423612371==--
+--===============5758142142848961411==--
