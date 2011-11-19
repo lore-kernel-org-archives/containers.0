@@ -1,7 +1,8 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [GIT PULL cgroup] Update maintainership
-Date: Fri, 18 Nov 2011 14:46:06 -0800
-Message-ID: <20111118224606.GB27152__48413.028199184$1321656396$gmane$org@google.com>
+From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Subject: [PATCH 1/1] __send_signal: pass q->info, not info, to
+	userns_fixup_signal_uid (v2)
+Date: Fri, 18 Nov 2011 18:41:48 -0600
+Message-ID: <20111119004148.GA16259@sergelap>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -16,51 +17,36 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Turner <pjt-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: richard-/L3Ra7n9ekc@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello, Linus.
+Eric Biederman pointed out that passing info is a bug and could lead
+to a NULL pointer deref to boot.
 
-Paul doesn't have enough time to maintain cgroup and we agreed that I
-take over as one of the maintainers and maintain git tree.  I would be
-doing standard for-next/fixes branch management.  At least until
-things settle down, I wouldn't be committing any patch w/o Li Zefan's
-co-ack.
+A collection of signal, securebits, filecaps, cap_bounds, and a few other ltp
+tests passed with this kernel.
 
-At the moment, there are a few conflicting patchsets floating around
-and sorting them out for the next merge window would be the first
-priority.
+Changelog:
+    Nov 18: previous patch missed a leading '&'
 
-Please pull from the following git branch to receive MAINTAINERS update.
+Signed-off-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+---
+ kernel/signal.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git for-3.2-fixes
-
-Thank you.
-
-Paul Menage (1):
-      cgroup: Replace Paul Menage with Tejun Heo as cgroups maintainer
-
- MAINTAINERS |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
-
-diff --git a/MAINTAINERS b/MAINTAINERS
-index 7f6bc29..78751bb 100644
---- a/MAINTAINERS
-+++ b/MAINTAINERS
-@@ -1927,10 +1927,11 @@ S:	Maintained
- F:	drivers/connector/
+diff --git a/kernel/signal.c b/kernel/signal.c
+index c0f0782..170586b 100644
+--- a/kernel/signal.c
++++ b/kernel/signal.c
+@@ -1118,7 +1118,7 @@ static int __send_signal(int sig, struct siginfo *info, struct task_struct *t,
+ 			break;
+ 		}
  
- CONTROL GROUPS (CGROUPS)
--M:	Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
-+M:	Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
- M:	Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
- L:	containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
- L:	cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-+T:	git git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git
- S:	Maintained
- F:	include/linux/cgroup*
- F:	kernel/cgroup*
-
---
-tejun
+-		userns_fixup_signal_uid(info, t);
++		userns_fixup_signal_uid(&q->info, t);
+ 
+ 	} else if (!is_si_special(info)) {
+ 		if (sig >= SIGRTMIN && info->si_code != SI_USER) {
+-- 
+1.7.5.4
