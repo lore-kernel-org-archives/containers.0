@@ -1,10 +1,19 @@
-From: "Mail Delivery System" <MAILER-DAEMON-wyn4ziNbpvpYHipMvtAfQQC/G2K4zDHf@public.gmane.org>
-Subject: Fallo en la entrega del mensaje
-Date: 19 Nov 2011 23:20:53 +0100
-Message-ID: <838ac0$k2fe@mail5.barrait.com>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 6/6] protect cap_netlink_recv from user namespaces
+Date: Sat, 19 Nov 2011 23:25:37 +0000
+Message-ID: <20111119232537.GB13312@hallyn.com>
+References: <1320445482-8459-1-git-send-email-serge@hallyn.com>
+	<1320445482-8459-7-git-send-email-serge@hallyn.com>
+	<1320694510.10093.23.camel@localhost>
+	<20111108032902.GA29433@hallyn.com>
+	<1320848342.10093.57.camel@localhost>
+	<m11ut41nqy.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============6898333122557665087=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <m11ut41nqy.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -14,86 +23,69 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: richard-/L3Ra7n9ekc@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============6898333122557665087==
-Content-Type: multipart/report; report-type=delivery-status; boundary="2Wdj.4iXtTtzWH.6NzK.98EvOSt"
+Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+> 
+> > On Tue, 2011-11-08 at 03:29 +0000, Serge E. Hallyn wrote:
+> >> Quoting Eric Paris (eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
+> >
+> >> But, regardless, your point is valid in that I'm not tightening down as
+> >> much as I could.  So how about I don't change the security_netlink_recv()
+> >> and callers yet, and instead I change cap_netlink_recv() to do:
+> >> 
+> >> 	if (!IN_ROOT_USER_NS && !cap_raised(current_cap(), cap))
+> >
+> > Actually better thought.  Remove the LSM hook altogether and just use
+> > capable() in the callers.  This hook, being used this way, was
+> > introduced in c7bdb545 back when we took the effective perms from the
+> > skb.  We don't use the skb any more since netlink is synchronous.  This
+> > is functionally equivalent except the capabilities code checks against
+> > the init_user_ns (something we want) and it will now set PF_PRIV (which
+> > also seems like a good thing) Something like:
+> >
+> > security: remove the security_netlink_recv hook as it is equivalent to capable()
+> >     
+> > Once upon a time netlink was not sync and we had to get the effective
+> > capabilities from the skb that was being received.  Today we instead get
+> > the capabilities from the current task.  This has rendered the entire
+> > purpose of the hook moot as it is now functionally equivalent to the
+> > capable() call.
+> >
+> > Signed-off-by: Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> 
+> Acked-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> 
+> Darn.  I missed this one went it went past the first time.  Let's do
+> this.
+> 
+> As Serge pointed out checking against the user namespace of the network
+> namespace happens to be safe because the subsystems that are brittle
+> really have problems don't support multiple network namespaces.
+> 
+> Still I like the idea of erring on the conservative side here and
+> making everything safe.  We can open relax the restrictions later
+> by using ns_capable.  I want to get to a point where it is safe
+> for an unprivileged user to create their own user namespace,
+> and most of that is just getting the capable calls correct.
+> 
+> Eric
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
 
---2Wdj.4iXtTtzWH.6NzK.98EvOSt
-content-type: text/plain;
-    charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+Ok.  Oh!  This was a part of my new 6-patch set I was going to send, but
+when you pursuaded me that some were not worth it if you're rethinking the
+nature of uids, I only sent patch 1.
 
-The following message to <jpakbier-CmkmPbn3yAE@public.gmane.org> was undeliverable.
-The reason for the problem:
-5.1.0 - Unknown address error 550-'Unrouteable address'
+I did queue up the patch at http://kernel.ubuntu.com/git?p=serge/linux-2.6.git;a=commit;h=b97c54cb518160466095db8f8d2ecf5bd4f81ce2
+and tested it a bit in ltp (with userns both on and off).
 
---2Wdj.4iXtTtzWH.6NzK.98EvOSt
-content-type: message/delivery-status
+Eric Paris, would you like to resend it separately (with Eric's and my
+ack's, as above and at http://lkml.org/lkml/2011/11/9/195), or would you
+like me to do so?
 
-Reporting-MTA: dns; mail5.barrait.com
-
-Final-Recipient: rfc822;jpakbier-CmkmPbn3yAE@public.gmane.org
-Action: failed
-Status: 5.0.0 (permanent failure)
-Remote-MTA: dns; [212.54.34.8]
-Diagnostic-Code: smtp; 5.1.0 - Unknown address error 550-'Unrouteable address' (delivery attempts: 0)
-
---2Wdj.4iXtTtzWH.6NzK.98EvOSt
-content-type: message/rfc822
-
-X-IronPort-AV: E=Sophos;i="4.69,540,1315173600";
-   d="scan'208";a="657901"
-Received: from unknown (HELO diana2.punt--it.com) ([172.16.69.3])
-  by mail5.barrait.lcl with ESMTP; 19 Nov 2011 23:20:47 +0100
-Received: from [173.203.205.227] by diana2.barrait.com (GMS
- 12.01.3461/KX5893.00.779038df) with ESMTP id qoffwcaa for jpakbier-CmkmPbn3yAE@public.gmane.org;
- Sat, 19 Nov 2011 23:20:43 +0100
-Received: from [173.203.205.227] by cg2 id bVKl8jprDb9; Sat, 19 Nov 2011 22:20:45 +0000
-Message-ID: <00bd01cca709$79fbef80$0500a8c0@cg2>
-From: "NLFCU" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <jpakbier-CmkmPbn3yAE@public.gmane.org>
-Subject: IBAN transaction canceled.
-Date: Sat, 19 Nov 2011 22:20:45 +0000
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
-X-AuthenticatedSender: agalatas.oninet.com-6o1MODBJ0+JWk0Htik3J/w@public.gmane.org
-X-AntiSpam: Checked for restricted content by Gordano's AntiSpam Software
-Content-Transfer-Encoding: quoted-printable
-
-
-
-The IBAN transaction, recently sent from your bank account (by you or any=
- other person),=20
-was rejected by the Electronic Payments Association.
-
-Canceled transaction
-Transaction ID: 800771770249 Rejection Reason See details in the report b=
-elow Transaction Report=20
-http://www.semcor3.com/clientedown/Info.zip?IBAN_Delivery_jpakbier@home.n=
-l_HashCrypt=3DGucaglKWcX7m
-
-69938 Sunrise Valley Drive, Suite 150
-Herndon, VA 67534
-
-2011 NLFCU - The Electronic Payments Association.
-
-
-
---2Wdj.4iXtTtzWH.6NzK.98EvOSt--
-
-
-
---===============6898333122557665087==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============6898333122557665087==--
+thanks,
+-serge
