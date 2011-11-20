@@ -1,19 +1,10 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 6/6] protect cap_netlink_recv from user namespaces
-Date: Sat, 19 Nov 2011 23:25:37 +0000
-Message-ID: <20111119232537.GB13312@hallyn.com>
-References: <1320445482-8459-1-git-send-email-serge@hallyn.com>
-	<1320445482-8459-7-git-send-email-serge@hallyn.com>
-	<1320694510.10093.23.camel@localhost>
-	<20111108032902.GA29433@hallyn.com>
-	<1320848342.10093.57.camel@localhost>
-	<m11ut41nqy.fsf@fess.ebiederm.org>
+From: MAILER-DAEMON-eyp1y8i62T5F0xd1D/1pJWZHpeb/A1Y/@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Sun, 20 Nov 2011 11:21:51 +0100 (CET)
+Message-ID: <20111120102151.C8AA624DE30@relay1.transip.nl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============5787754264667841688=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <m11ut41nqy.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,69 +14,85 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: richard-/L3Ra7n9ekc@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
-> 
-> > On Tue, 2011-11-08 at 03:29 +0000, Serge E. Hallyn wrote:
-> >> Quoting Eric Paris (eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
-> >
-> >> But, regardless, your point is valid in that I'm not tightening down as
-> >> much as I could.  So how about I don't change the security_netlink_recv()
-> >> and callers yet, and instead I change cap_netlink_recv() to do:
-> >> 
-> >> 	if (!IN_ROOT_USER_NS && !cap_raised(current_cap(), cap))
-> >
-> > Actually better thought.  Remove the LSM hook altogether and just use
-> > capable() in the callers.  This hook, being used this way, was
-> > introduced in c7bdb545 back when we took the effective perms from the
-> > skb.  We don't use the skb any more since netlink is synchronous.  This
-> > is functionally equivalent except the capabilities code checks against
-> > the init_user_ns (something we want) and it will now set PF_PRIV (which
-> > also seems like a good thing) Something like:
-> >
-> > security: remove the security_netlink_recv hook as it is equivalent to capable()
-> >     
-> > Once upon a time netlink was not sync and we had to get the effective
-> > capabilities from the skb that was being received.  Today we instead get
-> > the capabilities from the current task.  This has rendered the entire
-> > purpose of the hook moot as it is now functionally equivalent to the
-> > capable() call.
-> >
-> > Signed-off-by: Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> 
-> Acked-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> 
-> Darn.  I missed this one went it went past the first time.  Let's do
-> this.
-> 
-> As Serge pointed out checking against the user namespace of the network
-> namespace happens to be safe because the subsystems that are brittle
-> really have problems don't support multiple network namespaces.
-> 
-> Still I like the idea of erring on the conservative side here and
-> making everything safe.  We can open relax the restrictions later
-> by using ns_capable.  I want to get to a point where it is safe
-> for an unprivileged user to create their own user namespace,
-> and most of that is just getting the capable calls correct.
-> 
-> Eric
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+This is a MIME-encapsulated message.
 
-Ok.  Oh!  This was a part of my new 6-patch set I was going to send, but
-when you pursuaded me that some were not worth it if you're rethinking the
-nature of uids, I only sent patch 1.
+--===============5787754264667841688==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="281AC24BA90.1321784511/relay1.transip.nl"
+Content-Transfer-Encoding: 7bit
 
-I did queue up the patch at http://kernel.ubuntu.com/git?p=serge/linux-2.6.git;a=commit;h=b97c54cb518160466095db8f8d2ecf5bd4f81ce2
-and tested it a bit in ltp (with userns both on and off).
+This is a MIME-encapsulated message.
 
-Eric Paris, would you like to resend it separately (with Eric's and my
-ack's, as above and at http://lkml.org/lkml/2011/11/9/195), or would you
-like me to do so?
+--281AC24BA90.1321784511/relay1.transip.nl
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
 
-thanks,
--serge
+This is the mail system at host relay1.transip.nl.
+
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
+
+For further assistance, please send mail to postmaster.
+
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
+
+                   The mail system
+
+<bpittsyl-HXy0w7z9BhOQ7b5D24/PpA@public.gmane.org>: delivery temporarily suspended: unable to find
+    primary relay for bicsolutions.nl
+
+--281AC24BA90.1321784511/relay1.transip.nl
+Content-Description: Delivery report
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns; relay1.transip.nl
+X-Postfix-Queue-ID: 281AC24BA90
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Tue, 15 Nov 2011 11:00:05 +0100 (CET)
+
+Final-Recipient: rfc822; bpittsyl-HXy0w7z9BhOQ7b5D24/PpA@public.gmane.org
+Original-Recipient: rfc822;bpittsyl-HXy0w7z9BhOQ7b5D24/PpA@public.gmane.org
+Action: failed
+Status: 4.4.4
+Diagnostic-Code: X-Postfix; delivery temporarily suspended: unable to find
+    primary relay for bicsolutions.nl
+
+--281AC24BA90.1321784511/relay1.transip.nl
+Content-Description: Undelivered Message Headers
+Content-Type: text/rfc822-headers
+Content-Transfer-Encoding: quoted-printable
+
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from uspro545.startdedicated.com (uspro545.startdedicated.com [=
+173.224.125.98])
+	by relay1.transip.nl (Postfix) with ESMTP id 281AC24BA90
+	for <bpittsyl-HXy0w7z9BhOQ7b5D24/PpA@public.gmane.org>; Tue, 15 Nov 2011 11:00:05 +0100 (CET)
+Received: from [173.224.125.98] by uspro545.startdedicated.com id kH9tImT=
+smc7Q; Tue, 15 Nov 2011 10:00:02 +0000
+Message-ID: <008f01cca37d$563d5000$14000a0a-QHT31ff7oBgJ6fTLyRp1Vlc0O+juaISAQQ4Iyu8u01E@public.gmane.org>
+From: "robo" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <bpittsyl-HXy0w7z9BhOQ7b5D24/PpA@public.gmane.org>
+Subject: Factuur - 325809-937596
+Date: Tue, 15 Nov 2011 10:00:02 +0000
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset=3D"windows-1252"
+Content-Transfer-Encoding: 8bit
+
+--281AC24BA90.1321784511/relay1.transip.nl--
+
+--===============5787754264667841688==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============5787754264667841688==--
