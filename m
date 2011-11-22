@@ -1,15 +1,14 @@
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Re: [PATCH 1/1] __send_signal: pass q->info, not info, to
-	userns_fixup_signal_uid (v2)
-Date: Mon, 21 Nov 2011 16:45:35 -0800
-Message-ID: <20111121164535.6877e112.akpm@linux-foundation.org>
-References: <20111119004148.GA16259@sergelap>
-	<4EC7D419.1090404@gmail.com>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH] cgroup_freezer: fix freezing groups with stopped tasks
+Date: Tue, 22 Nov 2011 10:20:02 +0800
+Message-ID: <4ECB06D2.6060106@cn.fujitsu.com>
+References: <1321480234-29241-1-git-send-email-mhocko@suse.cz>
+	<20111121230709.GR25776@google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4EC7D419.1090404-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <20111121230709.GR25776-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,24 +18,35 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jiri Slaby <jirislaby-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: richard-/L3Ra7n9ekc@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Tomasz Buchert <tomasz.buchert-MZpvjPyXg2s@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Sat, 19 Nov 2011 17:06:49 +0100
-Jiri Slaby <jirislaby-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
-
-> On 11/19/2011 01:41 AM, Serge Hallyn wrote:
-> > Eric Biederman pointed out that passing info is a bug and could lead
-> > to a NULL pointer deref to boot.
+Tejun Heo wrote:
+> Hello, Michal.
 > 
-> It would be great if you could describe what bug you are fixing in fact
-> in the commit log. "Something that could lead to a bug" is not helpful
-> at all.
+> On Wed, Nov 16, 2011 at 10:50:34PM +0100, Michal Hocko wrote:
+>> +/* Task is frozen or will freeze immediately when next it gets woken */
+>> +static bool is_task_frozen_enough(struct task_struct *task)
+>> +{
+>> +	return frozen(task) ||
+>> +		(task_is_stopped_or_traced(task) && freezing(task));
+>> +}
 > 
-> A link to the thread where Eric pointed *that* out would be enough.
+> Hmmm... w/ pending freezer updates, the above would always return
+> %true if there's freezing in progress, which can't be right.  Maybe
 
-What Serge is secretly hiding from everyone is that this patch is a
-fixup against his earlier "user namespace: make signal.c respect user
-namespaces v5".  So the fix isn't very interesting for people who
-aren't running that patch.
+Only if the task is stopped/trace.
+
+If we try to freeze a stopped task, it will be kept in freezing state.
+
+> just test stopped/traced?
+> 
+
+This can trigger a BUG_ON in update_if_frozen(), because we always count a
+stopped task as frozen.
+
+>   http://git.kernel.org/?p=linux/kernel/git/tj/misc.git;a=shortlog;h=refs/heads/pm-freezer
+> 
+> Thanks.
+> 
