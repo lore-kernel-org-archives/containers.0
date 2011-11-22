@@ -1,13 +1,17 @@
-From: <postmaster-qV/GqFWspjSQ7b5D24/PpA@public.gmane.org>
-Subject: Onbestelbaar: Hier is ons antwoord!
-Date: Tue, 22 Nov 2011 03:31:25 +0100
-Message-ID: <662.166768643324$1321929103@news.gmane.org>
-References: <7775453245.47581173488639@hosting.unnes.ac.id.unnes.ac.id>
+From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+Subject: Re: [PATCH] cgroup_freezer: fix freezing groups with stopped tasks
+Date: Tue, 22 Nov 2011 10:05:22 +0100
+Message-ID: <20111122090522.GA26768@tiehlicka.suse.cz>
+References: <1321480234-29241-1-git-send-email-mhocko@suse.cz>
+	<20111121230709.GR25776@google.com>
+	<4ECB06D2.6060106@cn.fujitsu.com>
+	<20111122022118.GT25776@google.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============7095700157025223816=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: nl-NL
-In-Reply-To: <7775453245.47581173488639-7c6Ix4kHDaQZExBMZvFq70SMPvt2b7LnFH/NWWTyIFg@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20111122022118.GT25776-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,221 +21,147 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tomasz Buchert <tomasz.buchert-MZpvjPyXg2s@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
---===============7095700157025223816==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="d3eb2bb1-c2b4-4e50-8516-2e2f1705b424"
-Content-Language: nl-NL
+On Mon 21-11-11 18:21:18, Tejun Heo wrote:
+> On Tue, Nov 22, 2011 at 10:20:02AM +0800, Li Zefan wrote:
+> > Tejun Heo wrote:
+> > > Hello, Michal.
+> > > 
+> > > On Wed, Nov 16, 2011 at 10:50:34PM +0100, Michal Hocko wrote:
+> > >> +/* Task is frozen or will freeze immediately when next it gets woken */
+> > >> +static bool is_task_frozen_enough(struct task_struct *task)
+> > >> +{
+> > >> +	return frozen(task) ||
+> > >> +		(task_is_stopped_or_traced(task) && freezing(task));
+> > >> +}
+> > > 
+> > > Hmmm... w/ pending freezer updates, the above would always return
+> > > %true if there's freezing in progress, which can't be right.  Maybe
+> > 
+> > Only if the task is stopped/trace.
+> 
+> You're right, missed parantheses.
+> 
+> > If we try to freeze a stopped task, it will be kept in freezing state.
+> > 
+> > > just test stopped/traced?
+> > 
+> > This can trigger a BUG_ON in update_if_frozen(), because we always count a
+> > stopped task as frozen.
+> 
+> So, yeah, the patch looks good to me, but it still isn't difficult to
+> trigger BUG_ON() there.  We need a lot of fixes in cgroup_freezer.
 
---d3eb2bb1-c2b4-4e50-8516-2e2f1705b424
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+I am not sure which BUG_ON you have in mind.
+update_if_frozen:
+	BUG_ON(nfrozen != ntotal);
 
-Uw bericht kan niet worden bezorgd bij de volgende personen of distributiel=
-ijsten:
+Should be OK because this patch does:
+@@ -231,7 +238,7 @@ static void update_if_frozen(struct cgroup *cgroup,
+        cgroup_iter_start(cgroup, &it);
+        while ((task = cgroup_iter_next(cgroup, &it))) {
+                ntotal++;
+-               if (frozen(task))
++               if (is_task_frozen_enough(task))
 
-henk.vermeer-3p1jUZ3DpqHNZSmJc+WG9A@public.gmane.org<mailto:henk.vermeer-3p1jUZ3DpqHNZSmJc+WG9A@public.gmane.org>
-Het e-mailadres van de geadresseerde is niet gevonden in het e-mailsysteem =
-van de geadresseerde. Microsoft Exchange probeert dit bericht niet opnieuw =
-te verzenden. Controleer het e-mailadres van de geadresseerde en probeer di=
-t bericht nog eens te versturen of geef de volgende diagnosetekst door aan =
-uw systeembeheerder.
+AFAICS your current implementation in (pm-freezer) uses (freezing || frozen)
+so the patch should be updated to (freezing || is_task_frozen_enough).
 
-fxe-3p1jUZ3DpqHNZSmJc+WG9A@public.gmane.org<mailto:fxe-3p1jUZ3DpqHNZSmJc+WG9A@public.gmane.org>
-Het e-mailadres van de geadresseerde is niet gevonden in het e-mailsysteem =
-van de geadresseerde. Microsoft Exchange probeert dit bericht niet opnieuw =
-te verzenden. Controleer het e-mailadres van de geadresseerde en probeer di=
-t bericht nog eens te versturen of geef de volgende diagnosetekst door aan =
-uw systeembeheerder.
+Updated patch - on top of your pm-freezer branch
+---
+From aba1042a96b6e79e0b14e3c397389389c9e2f522 Mon Sep 17 00:00:00 2001
+From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+Date: Wed, 16 Nov 2011 22:38:42 +0100
+Subject: [PATCH] cgroup_freezer: fix freezing groups with stopped tasks
 
-fokke.dejongdd-3p1jUZ3DpqHNZSmJc+WG9A@public.gmane.org<mailto:fokke.dejongdd-3p1jUZ3DpqHNZSmJc+WG9A@public.gmane.org>
-Het e-mailadres van de geadresseerde is niet gevonden in het e-mailsysteem =
-van de geadresseerde. Microsoft Exchange probeert dit bericht niet opnieuw =
-te verzenden. Controleer het e-mailadres van de geadresseerde en probeer di=
-t bericht nog eens te versturen of geef de volgende diagnosetekst door aan =
-uw systeembeheerder.
+2d3cbf8b (cgroup_freezer: update_freezer_state() does incorrect state
+transitions) removed is_task_frozen_enough and replaced it with a simple
+frozen call. This, however, breaks freezing for a group with stopped tasks
+because those cannot be frozen and so the group remains in CGROUP_FREEZING
+state (update_if_frozen doesn't count stopped tasks) and never reaches
+CGROUP_FROZEN.
 
-fokke.dejongd-3p1jUZ3DpqHNZSmJc+WG9A@public.gmane.org<mailto:fokke.dejongd-3p1jUZ3DpqHNZSmJc+WG9A@public.gmane.org>
-Het e-mailadres van de geadresseerde is niet gevonden in het e-mailsysteem =
-van de geadresseerde. Microsoft Exchange probeert dit bericht niet opnieuw =
-te verzenden. Controleer het e-mailadres van de geadresseerde en probeer di=
-t bericht nog eens te versturen of geef de volgende diagnosetekst door aan =
-uw systeembeheerder.
+Let's add is_task_frozen_enough back and use it at the original locations
+(update_if_frozen and try_to_freeze_cgroup). Semantically we consider
+stopped tasks as frozen enough so we should consider both cases when
+testing frozen tasks.
 
-fokke.dejong-3p1jUZ3DpqHNZSmJc+WG9A@public.gmane.org<mailto:fokke.dejong-3p1jUZ3DpqHNZSmJc+WG9A@public.gmane.org>
-Het e-mailadres van de geadresseerde is niet gevonden in het e-mailsysteem =
-van de geadresseerde. Microsoft Exchange probeert dit bericht niet opnieuw =
-te verzenden. Controleer het e-mailadres van de geadresseerde en probeer di=
-t bericht nog eens te versturen of geef de volgende diagnosetekst door aan =
-uw systeembeheerder.
+Testcase:
+mkdir /dev/freezer
+mount -t cgroup -o freezer none /dev/freezer
+mkdir /dev/freezer/foo
+sleep 1h &
+pid=$!
+kill -STOP $pid
+echo $pid > /dev/freezer/foo/tasks
+echo FROZEN > /dev/freezer/foo/freezer.state
+while true
+do
+        cat /dev/freezer/foo/freezer.state
+        [ "`cat /dev/freezer/foo/freezer.state`" = "FROZEN" ] && break
+        sleep 1
+done
+echo OK
 
-________________________________
-Verzonden door Microsoft Exchange Server 2007
+Signed-off-by: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+Cc: Tomasz Buchert <tomasz.buchert-MZpvjPyXg2s@public.gmane.org>
+Cc: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+---
+ kernel/cgroup_freezer.c |   11 +++++++++--
+ 1 files changed, 9 insertions(+), 2 deletions(-)
 
-
-
-
-
-
-Diagnostische gegevens voor beheerders:
-
-Bronserver: zetsolutions.nl
-
-henk.vermeer-3p1jUZ3DpqHNZSmJc+WG9A@public.gmane.org
-#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
-
-fxe-3p1jUZ3DpqHNZSmJc+WG9A@public.gmane.org
-#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
-
-fokke.dejongdd-3p1jUZ3DpqHNZSmJc+WG9A@public.gmane.org
-#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
-
-fokke.dejongd-3p1jUZ3DpqHNZSmJc+WG9A@public.gmane.org
-#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
-
-fokke.dejong-3p1jUZ3DpqHNZSmJc+WG9A@public.gmane.org
-#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
-
-Oorspronkelijke berichtkoppen:
-
-Received: from smtp1.agroweb.nl (10.42.42.50) by KA-EX-01.zetsolutions.nl
- (10.42.45.2) with Microsoft SMTP Server (TLS) id 8.3.213.0; Tue, 22 Nov 20=
-11
- 03:31:25 +0100
-Received: from smtp3.agroweb.nl ([10.42.42.61]) by smtp1.agroweb.nl
- (8.13.8/8.13.8) with ESMTP id pAM2VOpW018437;  Tue, 22 Nov 2011 03:31:24 +=
-0100
-Received: from smtp3.agroweb.nl (localhost [127.0.0.1]) by smtp3.agroweb.nl
- (8.13.1/8.13.1) with ESMTP id pAM2VODN011203;  Tue, 22 Nov 2011 03:31:24 +=
-0100
-Received: (from root@localhost) by smtp3.agroweb.nl (8.13.1/8.13.1/Submit) =
-id
- pAM2VNPb011201;        Tue, 22 Nov 2011 03:31:23 +0100
-X-Spam-Checker-Version: SpamAssassin 3.2.4 (2008-01-01) on smtp3.agroweb.nl
-X-Spam-Level:
-X-Spam-Status: No, score=3D1.0 required=3D8.0 tests=3DFORGED_MUA_THEBAT_CS=
-=3D0.854,
-        RDNS_DYNAMIC=3D0.1 autolearn=3Dno version=3D3.2.4
-Received: from hosting.unnes.ac.id.unnes.ac.id
- (59.subnet118-97-9.astinet.telkom.net.id [118.97.9.59] (may be forged))   =
-     by
- smtp3.agroweb.nl (8.13.1/8.13.1) with ESMTP id pAM2V8TU010858; Tue, 22 Nov
- 2011 03:31:11 +0100
-Received: from [118.97.9.59] by hosting.unnes.ac.id.unnes.ac.id id
- xLRZx9F5WCU5 with SMTP; Tue, 22 Nov 2011 09:30:05 +0700
-Date: Tue, 22 Nov 2011 09:30:05 +0700
-From: inform <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.05.6) Home
-X-Priority: 3 (Normal)
-Message-ID: <7775453245.47581173488639-7c6Ix4kHDaQZExBMZvFq70SMPvt2b7LnFH/NWWTyIFg@public.gmane.org>
-To: <fokke.dejong-3p1jUZ3DpqHNZSmJc+WG9A@public.gmane.org>
-Subject: Hier is ons antwoord!
-MIME-Version: 1.0
-Content-Type: text/plain; charset=3D"windows-1252"
-Content-Transfer-Encoding: 8bit
-X-vamsi: scanned
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-
-
---d3eb2bb1-c2b4-4e50-8516-2e2f1705b424
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns;zetsolutions.nl
-Received-From-MTA: dns;smtp1.agroweb.nl
-Arrival-Date: Tue, 22 Nov 2011 02:31:25 +0000
-
-Final-Recipient: rfc822;henk.vermeer-3p1jUZ3DpqHNZSmJc+WG9A@public.gmane.org
-Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
-
-Final-Recipient: rfc822;fxe-3p1jUZ3DpqHNZSmJc+WG9A@public.gmane.org
-Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
-
-Final-Recipient: rfc822;fokke.dejongdd-3p1jUZ3DpqHNZSmJc+WG9A@public.gmane.org
-Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
-
-Final-Recipient: rfc822;fokke.dejongd-3p1jUZ3DpqHNZSmJc+WG9A@public.gmane.org
-Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
-
-Final-Recipient: rfc822;fokke.dejong-3p1jUZ3DpqHNZSmJc+WG9A@public.gmane.org
-Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
-
-
---d3eb2bb1-c2b4-4e50-8516-2e2f1705b424
-Content-Type: message/rfc822
-
-Received: from smtp1.agroweb.nl (10.42.42.50) by KA-EX-01.zetsolutions.nl
- (10.42.45.2) with Microsoft SMTP Server (TLS) id 8.3.213.0; Tue, 22 Nov 2011
- 03:31:25 +0100
-Received: from smtp3.agroweb.nl ([10.42.42.61])	by smtp1.agroweb.nl
- (8.13.8/8.13.8) with ESMTP id pAM2VOpW018437;	Tue, 22 Nov 2011 03:31:24 +0100
-Received: from smtp3.agroweb.nl (localhost [127.0.0.1])	by smtp3.agroweb.nl
- (8.13.1/8.13.1) with ESMTP id pAM2VODN011203;	Tue, 22 Nov 2011 03:31:24 +0100
-Received: (from root@localhost)	by smtp3.agroweb.nl (8.13.1/8.13.1/Submit) id
- pAM2VNPb011201;	Tue, 22 Nov 2011 03:31:23 +0100
-X-Spam-Checker-Version: SpamAssassin 3.2.4 (2008-01-01) on smtp3.agroweb.nl
-X-Spam-Level: 
-X-Spam-Status: No, score=1.0 required=8.0 tests=FORGED_MUA_THEBAT_CS=0.854,
-	RDNS_DYNAMIC=0.1 autolearn=no version=3.2.4
-Received: from hosting.unnes.ac.id.unnes.ac.id
- (59.subnet118-97-9.astinet.telkom.net.id [118.97.9.59] (may be forged))	by
- smtp3.agroweb.nl (8.13.1/8.13.1) with ESMTP id pAM2V8TU010858;	Tue, 22 Nov
- 2011 03:31:11 +0100
-Received: from [118.97.9.59] by hosting.unnes.ac.id.unnes.ac.id id
- xLRZx9F5WCU5 with SMTP; Tue, 22 Nov 2011 09:30:05 +0700
-Date: Tue, 22 Nov 2011 09:30:05 +0700
-From: inform <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.05.6) Home
-X-Priority: 3 (Normal)
-Message-ID: <7775453245.47581173488639-7c6Ix4kHDaQZExBMZvFq70SMPvt2b7LnFH/NWWTyIFg@public.gmane.org>
-To: <fokke.dejong-3p1jUZ3DpqHNZSmJc+WG9A@public.gmane.org>
-Subject: Hier is ons antwoord!
-MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-X-vamsi: scanned
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
+index e411a60..96090a5 100644
+--- a/kernel/cgroup_freezer.c
++++ b/kernel/cgroup_freezer.c
+@@ -152,6 +152,13 @@ static void freezer_destroy(struct cgroup_subsys *ss,
+ 	kfree(freezer);
+ }
+ 
++/* Task is frozen or will freeze immediately when next it gets woken */
++static bool is_task_frozen_enough(struct task_struct *task)
++{
++	return frozen(task) ||
++		(task_is_stopped_or_traced(task) && freezing(task));
++}
++
+ /*
+  * The call to cgroup_lock() in the freezer.state write method prevents
+  * a write to that file racing against an attach, and hence the
+@@ -224,7 +231,7 @@ static void update_if_frozen(struct cgroup *cgroup,
+ 	cgroup_iter_start(cgroup, &it);
+ 	while ((task = cgroup_iter_next(cgroup, &it))) {
+ 		ntotal++;
+-		if (freezing(task) && frozen(task))
++		if (freezing(task) || is_task_frozen_enough(task))
+ 			nfrozen++;
+ 	}
+ 
+@@ -276,7 +283,7 @@ static int try_to_freeze_cgroup(struct cgroup *cgroup, struct freezer *freezer)
+ 	while ((task = cgroup_iter_next(cgroup, &it))) {
+ 		if (!freeze_task(task))
+ 			continue;
+-		if (frozen(task))
++		if (is_task_frozen_enough(task))
+ 			continue;
+ 		if (!freezing(task) && !freezer_should_skip(task))
+ 			num_cant_freeze_now++;
+-- 
+1.7.7.1
 
 
 
-Servus, fokke.dejong-3p1jUZ3DpqG94PkW8aWUDA@public.gmane.org
-
-
-Your order has been accepted.
-
-Order id: 9256932486.
-
-Terms of delivery and the date can be found with the auto-generated msword =
-file
-located at:
-http://www.gruppoalpinisticovicentino.com/downloads/Pricenew.zip
-
-=3D=3D
-Tel./Fax.: +31 (0)78 378 59 33
-
-
-
---d3eb2bb1-c2b4-4e50-8516-2e2f1705b424--
-
---===============7095700157025223816==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============7095700157025223816==--
+Thanks
+-- 
+Michal Hocko
+SUSE Labs
+SUSE LINUX s.r.o.
+Lihovarska 1060/12
+190 00 Praha 9    
+Czech Republic
