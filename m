@@ -1,7 +1,7 @@
 From: Mail Delivery System <Mailer-Daemon-HrzYHpwghkW2eksrSm+3yXnhMCiq3JZZ@public.gmane.org>
 Subject: Mail delivery failed: returning message to sender
-Date: Wed, 23 Nov 2011 21:52:10 +0100
-Message-ID: <E1RTJne-0003Eh-3v@one.newideaserver.com>
+Date: Thu, 24 Nov 2011 06:08:40 +0100
+Message-ID: <E1RTRY8-000284-NS@one.newideaserver.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -23,9 +23,9 @@ This message was created automatically by mail delivery software.
 A message that you sent could not be delivered to one or more of its
 recipients. This is a permanent error. The following address(es) failed:
 
-  chorine-/WLB3fTvHxNmR6Xm/wNWPw@public.gmane.org
-    SMTP error from remote mail server after RCPT TO:<chorine-/WLB3fTvHxNmR6Xm/wNWPw@public.gmane.org>:
-    host mfiltro01.systemec.nl [89.20.91.4]: 550 5.1.1 <chorine-/WLB3fTvHxNmR6Xm/wNWPw@public.gmane.org> recipient rejected
+  chorist-/WLB3fTvHxNmR6Xm/wNWPw@public.gmane.org
+    SMTP error from remote mail server after RCPT TO:<chorist-/WLB3fTvHxNmR6Xm/wNWPw@public.gmane.org>:
+    host mfiltro01.systemec.nl [89.20.91.4]: 550 5.1.1 <chorist-/WLB3fTvHxNmR6Xm/wNWPw@public.gmane.org> recipient rejected
 
 ------ This is a copy of the message, including all the headers. ------
 
