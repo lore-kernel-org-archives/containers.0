@@ -1,15 +1,11 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCHSET] cgroup: stable threadgroup during attach & subsys
-	methods consolidation
-Date: Thu, 24 Nov 2011 14:51:41 -0800
-Message-ID: <20111124225141.GB14828__5077.57484815574$1322175121$gmane$org@google.com>
-References: <1320191193-8110-1-git-send-email-tj@kernel.org>
+From: Mail Delivery System <Mailer-Daemon-HrzYHpwghkW2eksrSm+3yXnhMCiq3JZZ@public.gmane.org>
+Subject: Warning: message 1RTJnG-00039U-5c delayed 24 hours
+Date: Fri, 25 Nov 2011 03:07:40 +0100
+Message-ID: <E1RTlCW-0006Jy-1H@one.newideaserver.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1320191193-8110-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,14 +15,31 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org
-Cc: fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Series committed to cgroup/for-3.3 with updated patch and pushed out
-to linux-next.
+This message was created automatically by mail delivery software.
+A message that you sent has not yet been delivered to one or more of its
+recipients after more than 24 hours on the queue on one.newideaserver.com.
 
-Thank you.
+The message identifier is:     1RTJnG-00039U-5c
+The date of the message is:    Wed, 23 Nov 2011 21:53:30 +0100
+The subject of the message is: Your order reference is 798118090.
 
--- 
-tejun
+The addresses to which the message has not yet been delivered are:
+
+  chose-/WLB3fTvHxNmR6Xm/wNWPw@public.gmane.org
+    Delay reason: SMTP error from remote mail server after RCPT TO:<chose-/WLB3fTvHxNmR6Xm/wNWPw@public.gmane.org>:
+    host smtp.dsl.systemec.nl [89.20.64.132]: 450 4.1.1 <chose-/WLB3fTvHxNmR6Xm/wNWPw@public.gmane.org>:
+    Recipient address rejected: undeliverable address:
+    host mfiltro01.systemec.nl[89.20.91.4] said: 550 5.1.1 <chose-/WLB3fTvHxNmR6Xm/wNWPw@public.gmane.org> recipient rejected (in reply to RCPT TO command)
+  chorti-/WLB3fTvHxNmR6Xm/wNWPw@public.gmane.org
+    Delay reason: SMTP error from remote mail server after RCPT TO:<chorti-/WLB3fTvHxNmR6Xm/wNWPw@public.gmane.org>:
+    host smtp.dsl.systemec.nl [89.20.64.132]: 450 4.1.1 <chorti-/WLB3fTvHxNmR6Xm/wNWPw@public.gmane.org>:
+    Recipient address rejected: undeliverable address:
+    host mfiltro01.systemec.nl[89.20.91.4] said: 550 5.1.1 <chorti-/WLB3fTvHxNmR6Xm/wNWPw@public.gmane.org> recipient rejected (in reply to RCPT TO command)
+
+No action is required on your part. Delivery attempts will continue for
+some time, and this warning may be repeated at intervals if the message
+remains undelivered. Eventually the mail delivery software will give up,
+and when that happens, the message will be returned to you.
