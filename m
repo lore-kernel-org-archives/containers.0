@@ -1,7 +1,7 @@
 From: Mail Delivery System <Mailer-Daemon-reQhXJjB5K7a0zdThrCdH9DNttlWmFW8VpNB7YpNyf8@public.gmane.org>
 Subject: Mail delivery failed: returning message to sender
-Date: Sat, 26 Nov 2011 08:40:24 +0100
-Message-ID: <E1RUCs4-0000qF-4z@cent4.hospedajeydominios.com>
+Date: Sat, 26 Nov 2011 10:11:28 +0100
+Message-ID: <E1RUEIC-0001V7-W0@cent4.hospedajeydominios.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -23,20 +23,10 @@ This message was created automatically by mail delivery software.
 A message that you sent could not be delivered to one or more of its
 recipients. This is a permanent error. The following address(es) failed:
 
-  communiteamdd-am9WrWR5gta9FHfhHBbuYA@public.gmane.org
-    SMTP error from remote mail server after RCPT TO:<communiteamdd-am9WrWR5gta9FHfhHBbuYA@public.gmane.org>:
+  communitek-am9WrWR5gta9FHfhHBbuYA@public.gmane.org
+    SMTP error from remote mail server after RCPT TO:<communitek-am9WrWR5gta9FHfhHBbuYA@public.gmane.org>:
     host spamwall.netcomuk.co.uk [216.55.101.75]:
-    550 <communiteamdd-am9WrWR5gta9FHfhHBbuYA@public.gmane.org>: Recipient address rejected:
-    User unknown
-  communiteamd-am9WrWR5gta9FHfhHBbuYA@public.gmane.org
-    SMTP error from remote mail server after RCPT TO:<communiteamd-am9WrWR5gta9FHfhHBbuYA@public.gmane.org>:
-    host spamwall.netcomuk.co.uk [216.55.101.75]:
-    550 <communiteamd-am9WrWR5gta9FHfhHBbuYA@public.gmane.org>: Recipient address rejected:
-    User unknown
-  communiteam-am9WrWR5gta9FHfhHBbuYA@public.gmane.org
-    SMTP error from remote mail server after RCPT TO:<communiteam-am9WrWR5gta9FHfhHBbuYA@public.gmane.org>:
-    host spamwall.netcomuk.co.uk [216.55.101.75]:
-    550 <communiteam-am9WrWR5gta9FHfhHBbuYA@public.gmane.org>: Recipient address rejected:
+    550 <communitek-am9WrWR5gta9FHfhHBbuYA@public.gmane.org>: Recipient address rejected:
     User unknown
 
 ------ This is a copy of the message, including all the headers. ------
