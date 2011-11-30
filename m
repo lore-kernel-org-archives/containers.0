@@ -1,9 +1,9 @@
-From: MAILER-DAEMON-n2LpIuEbe7tHOSrDEvhpxA@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Wed, 30 Nov 2011 23:39:14 +0100 (CET)
-Message-ID: <20111130223914.05E847B955@vs1.remotion.nl>
+From: Mail Delivery Service <postmaster-gH+WsCr1+wQ1GQ1Ptb7lUw@public.gmane.org>
+Subject: Delivery Status Notification
+Date: Thu, 1 Dec 2011 00:27:17 +0100
+Message-ID: <4EC1232D004BE796@fep-mail-smtpout-l1b.virgilio.net>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============2123481954456322390=="
+Content-Type: multipart/mixed; boundary="===============0219055434213023382=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,108 +17,67 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
+This multi-part MIME message contains a Delivery Status Notification.
+If you can see this text, your mail client may not be able to understand MIME
+formatted messages or DSNs (see RFC 2045 through 2049 for general MIME
+information and RFC 1891 through 1894 for DSN specific information).
 
---===============2123481954456322390==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="AA784C0D73.1322692754/vs1.remotion.nl"
-Content-Transfer-Encoding: 7bit
+--===============0219055434213023382==
+Content-Type: Multipart/Report; report-type=delivery-status; boundary="========/4EC1232D004BE720/fep-mail-smtpout-l1b.virgilio.net"
 
-This is a MIME-encapsulated message.
+This multi-part MIME message contains a Delivery Status Notification.
+If you can see this text, your mail client may not be able to understand MIME
+formatted messages or DSNs (see RFC 2045 through 2049 for general MIME
+information and RFC 1891 through 1894 for DSN specific information).
 
---AA784C0D73.1322692754/vs1.remotion.nl
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
+--========/4EC1232D004BE720/fep-mail-smtpout-l1b.virgilio.net
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-This is the mail system at host vs1.remotion.nl.
+ - These recipients of your message have been processed by the mail serve=
+r:
+abkofof-EIBgga6/0yRmR6Xm/wNWPw@public.gmane.org; Failed; 5.1.1 (bad destination mailbox address)
 
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
+    Remote MTA mailin.planet.nl: SMTP diagnostic: 550 5.1.2 Recipient rej=
+ected.
 
-For further assistance, please send mail to postmaster.
 
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
 
-                   The mail system
+--========/4EC1232D004BE720/fep-mail-smtpout-l1b.virgilio.net
+Content-Type: Message/Delivery-Status
 
-<069838675.90628606626155-Edmwl0KJvzQ@public.gmane.org>: Host or domain name not found. Name service
-    error for name=wws.nl type=A: Host not found
+Reporting-MTA: dns; fep-mail-smtpout-l1b.virgilio.net
+Received-from-MTA: dns; cg2 (173.203.205.227)
+Arrival-Date: Thu, 1 Dec 2011 00:26:57 +0100
 
---AA784C0D73.1322692754/vs1.remotion.nl
-Content-Description: Delivery report
-Content-Type: message/delivery-status
+Final-Recipient: rfc822; abkofof-EIBgga6/0yRmR6Xm/wNWPw@public.gmane.org
+Action: Failed
+Status: 5.1.1 (bad destination mailbox address)
+Remote-MTA: dns; mailin.planet.nl
+Diagnostic-Code: smtp; 550 5.1.2 Recipient rejected.
 
-Reporting-MTA: dns; vs1.remotion.nl
-X-Postfix-Queue-ID: AA784C0D73
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Wed, 30 Nov 2011 05:38:50 +0100 (CET)
+--========/4EC1232D004BE720/fep-mail-smtpout-l1b.virgilio.net
+Content-Type: Text/RFC822-headers
 
-Final-Recipient: rfc822; 069838675.90628606626155-Edmwl0KJvzQ@public.gmane.org
-Original-Recipient: rfc822;069838675.90628606626155-Edmwl0KJvzQ@public.gmane.org
-Action: failed
-Status: 5.4.4
-Diagnostic-Code: X-Postfix; Host or domain name not found. Name service error
-    for name=wws.nl type=A: Host not found
-
---AA784C0D73.1322692754/vs1.remotion.nl
-Content-Description: Undelivered Message
-Content-Type: message/rfc822
-Content-Transfer-Encoding: 7bit
-
-Received: from localhost (localhost [127.0.0.1])
-	by vs1.remotion.nl (Postfix) with ESMTP id AA784C0D73
-	for <069838675.90628606626155-Edmwl0KJvzQ@public.gmane.org>; Wed, 30 Nov 2011 05:38:50 +0100 (CET)
-X-Virus-Scanned: by AMaViS (vs1.remotion.nl) at vs1.remotion.nl 
-X-Spam-Flag: NO
-X-Spam-Score: 2.355
-X-Spam-Level: **
-X-Spam-Status: No, score=2.355 tagged_above=-9999 required=8
-	tests=[FORGED_MUA_THEBAT_CS=0.854, RCVD_IN_PBL=0.509, SPF_FAIL=0.992]
-	autolearn=no
-Received: from vs1.remotion.nl ([127.0.0.1])
-	by localhost (vs1.remotion.nl [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id kRWyDfKUhtwm for <069838675.90628606626155-Edmwl0KJvzQ@public.gmane.org>;
-	Wed, 30 Nov 2011 05:38:48 +0100 (CET)
-Received: from cg2 (173-203-205-227.static.cloud-ips.com [173.203.205.227])
-	by vs1.remotion.nl (Postfix) with ESMTP id 28B2CC0D6A
-	for <069838675.90628606626155-Edmwl0KJvzQ@public.gmane.org>; Wed, 30 Nov 2011 05:38:47 +0100 (CET)
-Received: from [173.203.205.227] by cg2 id 2Lhwf1e7AlYA with SMTP; Wed, 30 Nov 2011 04:38:47 +0000
-Date: Wed, 30 Nov 2011 04:38:47 +0000
-From: "INCo Group" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v2.06.6) Home
-X-Priority: 3 (Normal)
-Message-ID: <46974285.16376746342560@cg2>
-To: <069838675.90628606626155-Edmwl0KJvzQ@public.gmane.org>
-Subject: Re: adviser  id: 22989235.
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from cg2 (173.203.205.227) by fep-mail-smtpout-l1b.virgilio.net (8.6.023.02) (authenticated as erolsa55-gH+WsCr1+wQ1GQ1Ptb7lUw@public.gmane.org)
+        id 4EC1232D004BE720 for abkofof-EIBgga6/0yRmR6Xm/wNWPw@public.gmane.org; Thu, 1 Dec 2011 00:26:57 +0100
+Received: from [173.203.205.227] by cg2 id MwqpxnYRn; Wed, 30 Nov 2011 23:26:55 +0000
+Message-ID: <005401ccafb7$8ad51c80$01000a0a@cg2>
+From: "devnull" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <abkofof-EIBgga6/0yRmR6Xm/wNWPw@public.gmane.org>
+Subject: Order N8396861
+Date: Wed, 30 Nov 2011 23:26:55 +0000
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 
 
-
-Gruss Gott 069838675.90628606626155
-
-
-Your order has been accepted.
-
-Order id: 959480.
-
-Terms of delivery and the date can be found with the auto-generated mswor=
-d file
-located at:
-http://scooternos.net/docdown/CommercialInfo.zip?idinvoice=3D8892437Firma=
-=3D069838675.90628606626155-Edmwl0KJvzQ@public.gmane.org
-
-=3D=3D
-Tel./Fax.: +31 (0)78 379 02 91.
+--========/4EC1232D004BE720/fep-mail-smtpout-l1b.virgilio.net--
 
 
-
---AA784C0D73.1322692754/vs1.remotion.nl--
-
---===============2123481954456322390==
+--===============0219055434213023382==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -128,4 +87,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============2123481954456322390==--
+--===============0219055434213023382==--
