@@ -1,10 +1,19 @@
-From: Mail Delivery Subsystem <MAILER-DAEMON-ePPrnh4iZ+hKhJfLfFznbVqwmsT3e0BC8/qWW+O4k6E@public.gmane.org>
-Subject: Returned mail: see transcript for details
-Date: Fri, 2 Dec 2011 07:40:04 +0100
-Message-ID: <201112020640.pB26e4i20300@webserver.bedrijfsuitje.nl>
+From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH UPDATED 03/10] threadgroup: extend threadgroup_lock() to
+	cover exit and exec
+Date: Fri, 2 Dec 2011 17:28:03 +0100
+Message-ID: <20111202162753.GA19752__27475.731218192$1322843304$gmane$org@somewhere.redhat.com>
+References: <1320191193-8110-1-git-send-email-tj@kernel.org>
+	<1320191193-8110-4-git-send-email-tj@kernel.org>
+	<20111124225054.GA14828@google.com>
+	<20111125140136.GC23307@somewhere.redhat.com>
+	<20111127193001.GC4266@google.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============5940586856945753875=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20111127193001.GC4266-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -14,103 +23,40 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message
+On Sun, Nov 27, 2011 at 11:30:01AM -0800, Tejun Heo wrote:
+> Hello, Frederic.
+> 
+> On Fri, Nov 25, 2011 at 03:01:39PM +0100, Frederic Weisbecker wrote:
+> > > +	/*
+> > > +	 * @tsk's threadgroup is going through changes - lock out users
+> > > +	 * which expect stable threadgroup.  Do this before actually
+> > > +	 * starting tearing down @tsk so that locked threadgroup has either
+> > > +	 * alive or dead tasks, not something inbetween.
+> > > +	 */
+> > > +	threadgroup_change_begin(tsk);
+> > > +
+> > 
+> > I still wonder why there is a so big coverage of this lock. I mean
+> > why is it called right before exit_irq_thread() and released so late.
+> > All we want is to lock cgroup_exit() I think, after which tasks can't be
+> > migrated.
+> 
+> That way, cgroup plugins never see tasks in the process of
+> deconstruction.  Its ->mm, ->sighand, ->signal and so on either don't
+> exist or continue to exist across all cgroup callbacks.  It's simpler
+> and safer (especially as bugs in this area would only be visible when
+> migration and exit race), and if we're gonna synchronize exit path at
+> all, there isn't anything to lose by excluding the whole thing.
 
---===============5940586856945753875==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="pB26e4i20300.1322808004/webserver.bedrijfsuitje.nl"
+Fine.
 
-This is a MIME-encapsulated message
+But I don't think it's very useful to protect against irq_exit_thread(),
+what happens there is purely of internal irq interest.
 
---pB26e4i20300.1322808004/webserver.bedrijfsuitje.nl
-
-The original message was received at Fri, 2 Dec 2011 07:38:12 +0100
-from 83-36.141.95.serverdedicati.seflow.it [95.141.36.83] (may be forged)
-
-   ----- The following addresses had permanent fatal errors -----
-<info-gtbV07bkn/EoImZJPxvrMUehBk4z3K+j@public.gmane.org>
-    (reason: can't create (user) output file)
-<meta-gtbV07bkn/EoImZJPxvrMUehBk4z3K+j@public.gmane.org>
-    (reason: can't create (user) output file)
-
-   ----- Transcript of session follows -----
-procmail: Lock failure on "/home/.sites/45/site47/.users/103/party2/mbox.lock"
-procmail: Quota exceeded while writing "/home/.sites/45/site47/.users/103/party2/mbox"
-550 5.0.0 <info-gtbV07bkn/EoImZJPxvrMUehBk4z3K+j@public.gmane.org>... Can't create output
-procmail: Lock failure on "/home/.sites/45/site47/.users/110/party1/mbox.lock"
-procmail: Quota exceeded while writing "/home/.sites/45/site47/.users/110/party1/mbox"
-550 5.0.0 <meta-gtbV07bkn/EoImZJPxvrMUehBk4z3K+j@public.gmane.org>... Can't create output
-
---pB26e4i20300.1322808004/webserver.bedrijfsuitje.nl
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; webserver.bedrijfsuitje.nl
-Received-From-MTA: DNS; 83-36.141.95.serverdedicati.seflow.it
-Arrival-Date: Fri, 2 Dec 2011 07:38:12 +0100
-
-Final-Recipient: RFC822; info-gtbV07bkn/EoImZJPxvrMUehBk4z3K+j@public.gmane.org
-Action: failed
-Status: 5.3.0
-Diagnostic-Code: X-Unix; 73
-Last-Attempt-Date: Fri, 2 Dec 2011 07:39:08 +0100
-
-Final-Recipient: RFC822; meta-gtbV07bkn/EoImZJPxvrMUehBk4z3K+j@public.gmane.org
-Action: failed
-Status: 5.3.0
-Diagnostic-Code: X-Unix; 73
-Last-Attempt-Date: Fri, 2 Dec 2011 07:40:04 +0100
-
---pB26e4i20300.1322808004/webserver.bedrijfsuitje.nl
-Content-Type: message/rfc822
-
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from radiobytenetwork.it (83-36.141.95.serverdedicati.seflow.it [95.141.36.83] (may be forged))
-	by webserver.bedrijfsuitje.nl (8.11.6/8.11.6) with ESMTP id pB26cAi20299;
-	Fri, 2 Dec 2011 07:38:12 +0100
-Received: from [95.141.36.83] by radiobytenetwork.it id PJVxftSEuLDi with SMTP; Fri, 02 Dec 2011 16:11:06 +0100
-Date: Fri, 02 Dec 2011 16:11:06 +0100
-From: "Info" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.7.55.8) Business
-X-Priority: 3 (Normal)
-Message-ID: <388490680.04539408927244-2kRSJbaDU6WO2/wZUiRoQzUZDU+1vuVT@public.gmane.org>
-To: <info-gtbV07bkn/EoImZJPxvrMUehBk4z3K+j@public.gmane.org>
-Subject: Your order reference is 952725600
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-
-
-
-
-Dear client,=20
-
-Thank you for the order,=20
-your credit card will be charged for 183 dollars.
-For more information, please visit our web site:
-http://coloriamoilnostrofuturo.eu/docdown/CommercialInfo.zip?id:284638Gen=
-eration_user=3Dinfo-gtbV07bkn/EoImZJPxvrMUehBk4z3K+j@public.gmane.org
-
-=3D=3D
-Best regards,=20
-ticket service.
-
-
-
---pB26e4i20300.1322808004/webserver.bedrijfsuitje.nl--
-
-
---===============5940586856945753875==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============5940586856945753875==--
+Then right after, PF_EXITING is set before any interesting change.
+Isn't it possible to simply lock this flag setting? IIRC, as soon
+as the PF_EXITING flag is set, you ignore the task for attachment.
