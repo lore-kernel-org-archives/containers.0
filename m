@@ -1,52 +1,74 @@
-From: Glauber Costa <glommer@parallels.com>
-Subject: How to draw values for /proc/stat
-Date: Mon, 5 Dec 2011 07:32:33 -0200
-Message-ID: <4EDC8FB1.60407@parallels.com>
+From: =?iso-8859-1?Q?Istv=E1n_Kir=E1ly_-_LaKing?= <d250-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [Lxc-users] how to make changes in conf file
+Date: Mon, 5 Dec 2011 08:03:01 -0800 (PST)
+Message-ID: <1323100981.74975.YahooMailNeo@web126109.mail.ne1.yahoo.com>
+References: <CAHnfO6ymmvTi1bPZ3G4NAU87gCe0e+uk-E_8VfzRAWFtCs8Fag@mail.gmail.com>
+Reply-To: =?iso-8859-1?Q?Istv=E1n_Kir=E1ly_-_LaKing?= <LaKing-86wdkw7il2A@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner@vger.kernel.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Paul Turner <pjt@google.com>, Peter Zijlstra <a.p.zijlstra@chello.nl>, cgroups@vger.kernel.org, linux-kernel <linux-kernel@vger.kernel.org>, devel@openvz.org, Linux Containers <containers@lists.osdl.org>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Balbir Singh <bsingharora@gmail.com>, Serge Hallyn <serge.hallyn@canonical.com>, Frederic Weisbecker <fweisbec@gmail.com>
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <CAHnfO6ymmvTi1bPZ3G4NAU87gCe0e+uk-E_8VfzRAWFtCs8Fag-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: nishant mungse <nishantmungse-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, lxc-users-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+I think, you might want to look at libvirt.
+
+Libvirt creates virbr0, and that has only one static address, while the res=
+t is a dhcp territory. You can edit the xml file, free a range in the dhcp =
+pool, or set it to static.=A0LaKing-86wdkw7il2A@public.gmane.org
+
+
+D250 Laboratories
+www.D250.hu
+
+
+________________________________
+ Von: nishant mungse <nishantmungse-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+An: lxc-users-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org =
+
+Gesendet: 6:36 Montag, 5.Dezember 2011
+Betreff: [Lxc-users] how to make changes in conf file
+ =
+
+
 Hi,
+>
+>I
+ want the ip address to be assigned in order as the containers are =
 
-Specially Peter and Paul, but all the others:
+started and not assigned by DHCP. For example :: container1:: 193.163.195.0=
+1,container2:: 193.163.195.02 like wise if there is container30 :: 193.163.=
+195.30, this should be its ip address.
+>=A0
+>What are changes that are to done in conf file of lxc so as to get this ki=
+nd of address?
+>
+>Plz help me ASAP.
+>
+>Regards,
+>Nishant Mungse
+>
+---------------------------------------------------------------------------=
+---
+All the data continuously generated in your IT infrastructure =
 
-As you can see in https://lkml.org/lkml/2011/12/4/178, and in my answer 
-to that, there is a question - one I've asked before but without that 
-much of an audience - of whether /proc files read from process living on 
-cgroups should display global or per-cgroup resources.
+contains a definitive record of customers, application performance, =
 
-In the past, I was arguing for a knob to control that, but I recently 
-started to believe that a knob here will only overcomplicate matters:
-if you live in a cgroup, you should display only the resources you can 
-possibly use. Global is for whoever is in the main cgroup.
+security threats, fraudulent activity, and more. Splunk takes this =
 
-Now, it comes two questions:
-1) Do you agree with that, for files like /proc/stat ? I think the most 
-important part is to be consistent inside the system, regardless of what 
-is done
-
-2) Will cpuacct stay? I think if it does, that becomes almost mandatory 
-(at least the bind mount idea is pretty much over here), because drawing 
-value for /proc/stat becomes quite complex.
-The cpuacct cgroup can provide user, sys, etc values. But we also have:
-
-* nr_context_switches,
-* jiffies since boot,
-* total_forks,
-* nr_running,
-* nr_iowait,
-
-Now I doubt any of us want to see /proc/stat extended to accommodate 
-things like nr_context_switches, or even worse, nr_running. The way I 
-see it, there are two options here:
-
-  a) moving everything to cpu cgroup so we keep all values being drawn
-     from the same place
-  b) Collect that info from multiple places in a transparent way. ctx,
-     nr_running and nr_iowait will probably come from cpu. jiffies can
-     come from wherever, and maybe we can even draw total_forks
-     from Frederic's and avoid counting it twice.
+data and makes sense of it. IT sense. And common sense.
+http://p.sf.net/sfu/splunk-novd2d
+_______________________________________________
+Lxc-users mailing list
+Lxc-users-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+https://lists.sourceforge.net/lists/listinfo/lxc-users
