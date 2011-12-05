@@ -1,7 +1,7 @@
 From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
 Subject: Re: [PATCH 1/1][V3] Add reboot_pid_ns to handle the reboot syscall
-Date: Mon, 05 Dec 2011 22:16:11 +0100
-Message-ID: <4EDD349B.2030806@free.fr>
+Date: Mon, 05 Dec 2011 22:17:34 +0100
+Message-ID: <4EDD34EE.90704@free.fr>
 References: <1323030290-22216-1-git-send-email-daniel.lezcano@free.fr>
 	<1323030290-22216-2-git-send-email-daniel.lezcano@free.fr>
 	<20111205204238.GA7422@redhat.com>
@@ -19,8 +19,8 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 On 12/05/2011 09:42 PM, Oleg Nesterov wrote:
@@ -42,7 +42,7 @@ On 12/05/2011 09:42 PM, Oleg Nesterov wrote:
 >>  3 files changed, 43 insertions(+), 1 deletions(-)
 > Signed-off-by: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-Looks like our emails crossed by the wire :)
-Thanks again Oleg for your comments and your help.
+Andrew, do you think it's possible to take this patch upstream ?
 
+Thanks
   -- Daniel
