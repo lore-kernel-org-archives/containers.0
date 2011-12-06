@@ -1,9 +1,9 @@
-From: MAILER-DAEMON-Kt01AF/nmC7/RGn5IV3Q3CfB54ukrb+0krMC8CRSr7TQT0dZR+AlfA@public.gmane.org (Mail Delivery System)
+From: MAILER-DAEMON-Kt01AF/nmC5BHGudGdlE7yfB54ukrb+0krMC8CRSr7TQT0dZR+AlfA@public.gmane.org (Mail Delivery System)
 Subject: Undelivered Mail Returned to Sender
-Date: Tue,  6 Dec 2011 15:54:02 +0100 (CET)
-Message-ID: <20111206145402.0116133D2F3@relayfvout01-dsp.dns-servicios.com>
+Date: Tue,  6 Dec 2011 15:54:03 +0100 (CET)
+Message-ID: <20111206145403.12F5C4D595B@relayfvout02-dsp.dns-servicios.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============6785093040413443771=="
+Content-Type: multipart/mixed; boundary="===============8492795848234600975=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,18 +19,18 @@ List-Id: containers.vger.kernel.org
 
 This is a MIME-encapsulated message.
 
---===============6785093040413443771==
+--===============8492795848234600975==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="5852E33D2E9.1323183242/relayfvout01-dsp.dns-servicios.com"
+	boundary="A68014D5816.1323183243/relayfvout02-dsp.dns-servicios.com"
 Content-Transfer-Encoding: 7bit
 
 This is a MIME-encapsulated message.
 
---5852E33D2E9.1323183242/relayfvout01-dsp.dns-servicios.com
+--A68014D5816.1323183243/relayfvout02-dsp.dns-servicios.com
 Content-Description: Notification
 Content-Type: text/plain; charset=us-ascii
 
-This is the mail system at host relayfvout01-dsp.dns-servicios.com.
+This is the mail system at host relayfvout02-dsp.dns-servicios.com.
 
 I'm sorry to have to inform you that your message could not
 be delivered to one or more recipients. It's attached below.
@@ -42,33 +42,35 @@ delete your own text from the attached returned message.
 
                    The mail system
 
-<r.vanhuit-t6D4VvotBMlmR6Xm/wNWPw@public.gmane.org>: host mail-mx-00.tiscali.nl[195.241.79.130] said: 550
-    Mailbox unavailable. (in reply to RCPT TO command)
+<r.vanderbij-t6D4VvotBMlmR6Xm/wNWPw@public.gmane.org>: host mail-mx-00.tiscali.nl[195.241.79.130] said: 550
+    This message contains malware (Sanesecurity.Malware.18623.UNOFFICIAL) (in
+    reply to end of DATA command)
 
---5852E33D2E9.1323183242/relayfvout01-dsp.dns-servicios.com
+--A68014D5816.1323183243/relayfvout02-dsp.dns-servicios.com
 Content-Description: Delivery report
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns; relayfvout01-dsp.dns-servicios.com
-X-Postfix-Queue-ID: 5852E33D2E9
+Reporting-MTA: dns; relayfvout02-dsp.dns-servicios.com
+X-Postfix-Queue-ID: A68014D5816
 X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Arrival-Date: Tue,  6 Dec 2011 15:53:50 +0100 (CET)
 
-Final-Recipient: rfc822; r.vanhuit-t6D4VvotBMlmR6Xm/wNWPw@public.gmane.org
-Original-Recipient: rfc822;r.vanhuit-t6D4VvotBMlmR6Xm/wNWPw@public.gmane.org
+Final-Recipient: rfc822; r.vanderbij-t6D4VvotBMlmR6Xm/wNWPw@public.gmane.org
+Original-Recipient: rfc822;r.vanderbij-t6D4VvotBMlmR6Xm/wNWPw@public.gmane.org
 Action: failed
 Status: 5.0.0
 Remote-MTA: dns; mail-mx-00.tiscali.nl
-Diagnostic-Code: smtp; 550 Mailbox unavailable.
+Diagnostic-Code: smtp; 550 This message contains malware
+    (Sanesecurity.Malware.18623.UNOFFICIAL)
 
---5852E33D2E9.1323183242/relayfvout01-dsp.dns-servicios.com
+--A68014D5816.1323183243/relayfvout02-dsp.dns-servicios.com
 Content-Description: Undelivered Message
 Content-Type: message/rfc822
 Content-Transfer-Encoding: 7bit
 
 Received: from zm4.veloxia.com (zm4.veloxia.com [213.149.227.6])
-	by relayfvout01-dsp.dns-servicios.com (Postfix) with SMTP id 1E99433D3C9
-	for <r.vanhuit-t6D4VvotBMlmR6Xm/wNWPw@public.gmane.org>; Tue,  6 Dec 2011 15:53:50 +0100 (CET)
+	by relayfvout02-dsp.dns-servicios.com (Postfix) with SMTP id 14B624D59BA
+	for <r.vanderbij-t6D4VvotBMlmR6Xm/wNWPw@public.gmane.org>; Tue,  6 Dec 2011 15:53:50 +0100 (CET)
 Received: (qmail 22247 invoked by uid 0); 6 Dec 2011 14:53:51 -0000
 Received: from unknown (HELO helios1.orcutt-schools.net) (aq8208-WUAueBf0tE6YvPMNWEaBaQ@public.gmane.org)
  by 213.149.227.6 with SMTP; Tue, 06 Dec 2011 14:53:51 +0000
@@ -83,13 +85,13 @@ Subject: Invoice #882644464
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
-X-RelayFVOut-Information: AntiSPAM and AntiVIRUS on relayfvout01
-X-RelayFVOut-MsgID: 1E99433D3C9.A6338
+X-RelayFVOut-Information: AntiSPAM and AntiVIRUS on relayfvout02
+X-RelayFVOut-MsgID: 14B624D59BA.A534D
 X-RelayFVOut: Not scanned: please contact with your ISP for details
-X-RelayFVOut-SpamCheck: no es spam, SpamAssassin (almacenado, puntaje=0,
+X-RelayFVOut-SpamCheck: no es spam, SpamAssassin (no almacenado, puntaje=0,
 	requerido 3)
 X-RelayFVOut-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-RelayFVOut-Watermark: 1323788031.66133@QtzlnRKvzCLK49DVJUY0dg
+X-RelayFVOut-Watermark: 1323788031.29206@BAtR4B1yNrYY1mfZfXdltg
 X-Spam-Status: No
 Content-Transfer-Encoding: quoted-printable
 
@@ -107,9 +109,9 @@ r.vanderbij-t6D4VvotBMlmR6Xm/wNWPw@public.gmane.org
 
 
 
---5852E33D2E9.1323183242/relayfvout01-dsp.dns-servicios.com--
+--A68014D5816.1323183243/relayfvout02-dsp.dns-servicios.com--
 
---===============6785093040413443771==
+--===============8492795848234600975==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -119,4 +121,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============6785093040413443771==--
+--===============8492795848234600975==--
