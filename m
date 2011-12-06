@@ -1,9 +1,9 @@
 From: MAILER-DAEMON-Kt01AF/nmC7/RGn5IV3Q3CfB54ukrb+0krMC8CRSr7TQT0dZR+AlfA@public.gmane.org (Mail Delivery System)
 Subject: Undelivered Mail Returned to Sender
 Date: Tue,  6 Dec 2011 15:54:02 +0100 (CET)
-Message-ID: <20111206145402.01FA233D4A5@relayfvout01-dsp.dns-servicios.com>
+Message-ID: <20111206145402.0116133D2F3@relayfvout01-dsp.dns-servicios.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1997237148757837822=="
+Content-Type: multipart/mixed; boundary="===============6785093040413443771=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,14 +19,14 @@ List-Id: containers.vger.kernel.org
 
 This is a MIME-encapsulated message.
 
---===============1997237148757837822==
+--===============6785093040413443771==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="C1C2533D499.1323183242/relayfvout01-dsp.dns-servicios.com"
+	boundary="5852E33D2E9.1323183242/relayfvout01-dsp.dns-servicios.com"
 Content-Transfer-Encoding: 7bit
 
 This is a MIME-encapsulated message.
 
---C1C2533D499.1323183242/relayfvout01-dsp.dns-servicios.com
+--5852E33D2E9.1323183242/relayfvout01-dsp.dns-servicios.com
 Content-Description: Notification
 Content-Type: text/plain; charset=us-ascii
 
@@ -42,33 +42,33 @@ delete your own text from the attached returned message.
 
                    The mail system
 
-<r.vandijl-t6D4VvotBMlmR6Xm/wNWPw@public.gmane.org>: host mail-mx-00.tiscali.nl[195.241.79.130] said: 550
+<r.vanhuit-t6D4VvotBMlmR6Xm/wNWPw@public.gmane.org>: host mail-mx-00.tiscali.nl[195.241.79.130] said: 550
     Mailbox unavailable. (in reply to RCPT TO command)
 
---C1C2533D499.1323183242/relayfvout01-dsp.dns-servicios.com
+--5852E33D2E9.1323183242/relayfvout01-dsp.dns-servicios.com
 Content-Description: Delivery report
 Content-Type: message/delivery-status
 
 Reporting-MTA: dns; relayfvout01-dsp.dns-servicios.com
-X-Postfix-Queue-ID: C1C2533D499
+X-Postfix-Queue-ID: 5852E33D2E9
 X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Arrival-Date: Tue,  6 Dec 2011 15:53:50 +0100 (CET)
 
-Final-Recipient: rfc822; r.vandijl-t6D4VvotBMlmR6Xm/wNWPw@public.gmane.org
-Original-Recipient: rfc822;r.vandijl-t6D4VvotBMlmR6Xm/wNWPw@public.gmane.org
+Final-Recipient: rfc822; r.vanhuit-t6D4VvotBMlmR6Xm/wNWPw@public.gmane.org
+Original-Recipient: rfc822;r.vanhuit-t6D4VvotBMlmR6Xm/wNWPw@public.gmane.org
 Action: failed
 Status: 5.0.0
 Remote-MTA: dns; mail-mx-00.tiscali.nl
 Diagnostic-Code: smtp; 550 Mailbox unavailable.
 
---C1C2533D499.1323183242/relayfvout01-dsp.dns-servicios.com
+--5852E33D2E9.1323183242/relayfvout01-dsp.dns-servicios.com
 Content-Description: Undelivered Message
 Content-Type: message/rfc822
 Content-Transfer-Encoding: 7bit
 
 Received: from zm4.veloxia.com (zm4.veloxia.com [213.149.227.6])
-	by relayfvout01-dsp.dns-servicios.com (Postfix) with SMTP id 1B60333D2E9
-	for <r.vandijl-t6D4VvotBMlmR6Xm/wNWPw@public.gmane.org>; Tue,  6 Dec 2011 15:53:50 +0100 (CET)
+	by relayfvout01-dsp.dns-servicios.com (Postfix) with SMTP id 1E99433D3C9
+	for <r.vanhuit-t6D4VvotBMlmR6Xm/wNWPw@public.gmane.org>; Tue,  6 Dec 2011 15:53:50 +0100 (CET)
 Received: (qmail 22247 invoked by uid 0); 6 Dec 2011 14:53:51 -0000
 Received: from unknown (HELO helios1.orcutt-schools.net) (aq8208-WUAueBf0tE6YvPMNWEaBaQ@public.gmane.org)
  by 213.149.227.6 with SMTP; Tue, 06 Dec 2011 14:53:51 +0000
@@ -84,12 +84,12 @@ MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
 X-RelayFVOut-Information: AntiSPAM and AntiVIRUS on relayfvout01
-X-RelayFVOut-MsgID: 1B60333D2E9.A62A0
+X-RelayFVOut-MsgID: 1E99433D3C9.A6338
 X-RelayFVOut: Not scanned: please contact with your ISP for details
-X-RelayFVOut-SpamCheck: no es spam, SpamAssassin (no almacenado, puntaje=0,
+X-RelayFVOut-SpamCheck: no es spam, SpamAssassin (almacenado, puntaje=0,
 	requerido 3)
 X-RelayFVOut-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-RelayFVOut-Watermark: 1323788031.66293@BWb60Rz8OhQ736cq6hRo7g
+X-RelayFVOut-Watermark: 1323788031.66133@QtzlnRKvzCLK49DVJUY0dg
 X-Spam-Status: No
 Content-Transfer-Encoding: quoted-printable
 
@@ -107,9 +107,9 @@ r.vanderbij-t6D4VvotBMlmR6Xm/wNWPw@public.gmane.org
 
 
 
---C1C2533D499.1323183242/relayfvout01-dsp.dns-servicios.com--
+--5852E33D2E9.1323183242/relayfvout01-dsp.dns-servicios.com--
 
---===============1997237148757837822==
+--===============6785093040413443771==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -119,4 +119,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============1997237148757837822==--
+--===============6785093040413443771==--
