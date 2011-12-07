@@ -1,10 +1,14 @@
-From: MAILER-DAEMON-Kt01AF/nmC5BHGudGdlE7yfB54ukrb+0krMC8CRSr7TQT0dZR+AlfA@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Tue,  6 Dec 2011 15:54:03 +0100 (CET)
-Message-ID: <20111206145403.0EBCD4D58B4@relayfvout02-dsp.dns-servicios.com>
+From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Subject: Re: [PATCH 1/1][V3] Add reboot_pid_ns to handle the reboot syscall
+Date: Tue, 6 Dec 2011 17:16:17 -0800
+Message-ID: <20111206171617.e31bc3a6.akpm@linux-foundation.org>
+References: <1323030290-22216-1-git-send-email-daniel.lezcano@free.fr>
+	<1323030290-22216-2-git-send-email-daniel.lezcano@free.fr>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1103781702414985719=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1323030290-22216-2-git-send-email-daniel.lezcano-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -14,111 +18,77 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Ulrich Drepper <drepper-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
+On Sun,  4 Dec 2011 21:24:50 +0100
+Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org> wrote:
 
---===============1103781702414985719==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="1A7354D59BA.1323183243/relayfvout02-dsp.dns-servicios.com"
-Content-Transfer-Encoding: 7bit
+> In the case of a child pid namespace, rebooting the system does not
+> really makes sense. When the pid namespace is used in conjunction
+> with the other namespaces in order to create a linux container, the
+> reboot syscall leads to some problems.
+> 
+> A container can reboot the host. That can be fixed by dropping
+> the sys_reboot capability but we are unable to correctly to poweroff/
+> halt/reboot a container and the container stays stuck at the shutdown
+> time with the container's init process waiting indefinitively.
+> 
+> After several attempts, no solution from userspace was found to reliabily
+> handle the shutdown from a container.
+> 
+> This patch propose to store the reboot value in the 16 upper bits of the
+> exit code from the processes belonging to a pid namespace which has
+> rebooted. When the reboot syscall is called and we are not in the initial
+> pid namespace, we kill the pid namespace.
+> 
+> By this way the parent process of the child pid namespace to know if
+> it rebooted or not and take the right decision.
 
-This is a MIME-encapsulated message.
+hm, modifying the exit code in this manner is a strange interface.  I
+didn't see that coming.  Perhaps some additional justification for this
+idea should be added to the changelog, along with discussion of
+alternative schemes.  I don't immediately see any problems with it,
+but, odd...  I wonder what potential it has to upset existing
+userspace.
 
---1A7354D59BA.1323183243/relayfvout02-dsp.dns-servicios.com
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
+Also, do we need to reserve all upper 16 bits of the exit code?  It
+would be better to formally leave some free for future use.
 
-This is the mail system at host relayfvout02-dsp.dns-servicios.com.
+Also, this alters the interface of wait4() and friends, yes?  If so,
+that should be documented in the manpages.  Please Cc Michael on such
+changes.
 
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
+Also, this affects the data delivered by taskstats, I believe.  Please
+check this, test it, document it in the changelog and update
+getdelays.c appropriately.
 
-For further assistance, please send mail to postmaster.
+Also, glibc might be affected.  For symmetry we might want to add a
+WIFREBOOT() or something.  And we now expect waitid() to fill in extra
+bits in siginfo_t.si_status, which assumes that glibc (and other
+libc's!) aren't using a u8 in there somewhere.  etcetera.  This all
+should be tested, and reviewed by Uli (please).
 
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
+>
+> ...
+>
+> --- a/kernel/sys.c
+> +++ b/kernel/sys.c
+> @@ -444,6 +444,9 @@ SYSCALL_DEFINE4(reboot, int, magic1, int, magic2, unsigned int, cmd,
+>  	                magic2 != LINUX_REBOOT_MAGIC2C))
+>  		return -EINVAL;
+>  
+> +	if (task_active_pid_ns(current) != &init_pid_ns)
+> +		return reboot_pid_ns(task_active_pid_ns(current), cmd);
 
-                   The mail system
+This adds a bunch of useless code if CONFIG_PID_NS=n.  It would be
+better to do
 
-<r.vanhillegersberg-t6D4VvotBMlmR6Xm/wNWPw@public.gmane.org>: host mail-mx-00.tiscali.nl[195.241.79.130]
-    said: 550 This message contains malware
-    (Sanesecurity.Malware.18623.UNOFFICIAL) (in reply to end of DATA command)
-
---1A7354D59BA.1323183243/relayfvout02-dsp.dns-servicios.com
-Content-Description: Delivery report
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; relayfvout02-dsp.dns-servicios.com
-X-Postfix-Queue-ID: 1A7354D59BA
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Tue,  6 Dec 2011 15:53:50 +0100 (CET)
-
-Final-Recipient: rfc822; r.vanhillegersberg-t6D4VvotBMlmR6Xm/wNWPw@public.gmane.org
-Original-Recipient: rfc822;r.vanhillegersberg-t6D4VvotBMlmR6Xm/wNWPw@public.gmane.org
-Action: failed
-Status: 5.0.0
-Remote-MTA: dns; mail-mx-00.tiscali.nl
-Diagnostic-Code: smtp; 550 This message contains malware
-    (Sanesecurity.Malware.18623.UNOFFICIAL)
-
---1A7354D59BA.1323183243/relayfvout02-dsp.dns-servicios.com
-Content-Description: Undelivered Message
-Content-Type: message/rfc822
-Content-Transfer-Encoding: 7bit
-
-Received: from zm4.veloxia.com (zm4.veloxia.com [213.149.227.6])
-	by relayfvout02-dsp.dns-servicios.com (Postfix) with SMTP id 139B24D595B
-	for <r.vanhillegersberg-t6D4VvotBMlmR6Xm/wNWPw@public.gmane.org>; Tue,  6 Dec 2011 15:53:50 +0100 (CET)
-Received: (qmail 22247 invoked by uid 0); 6 Dec 2011 14:53:51 -0000
-Received: from unknown (HELO helios1.orcutt-schools.net) (aq8208-WUAueBf0tE6YvPMNWEaBaQ@public.gmane.org)
- by 213.149.227.6 with SMTP; Tue, 06 Dec 2011 14:53:51 +0000
-Received: from [10.9.211.1] by helios1.orcutt-schools.net id f7nXwE6pKl1a with SMTP; Tue, 06 Dec 2011 06:40:22 -0800
-Date: Tue, 06 Dec 2011 06:40:22 -0800
-From: "OrderCo" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.5.18.6) Home
-X-Priority: 3 (Normal)
-Message-ID: <5182021307.14699610448403-kXaSvKNQzF/g3+Wz1882mSaHrdCOuQkorE5yTffgRl4@public.gmane.org>
-To: <r.vanderbij-t6D4VvotBMlmR6Xm/wNWPw@public.gmane.org>
-Subject: Invoice #882644464
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
-X-RelayFVOut-Information: AntiSPAM and AntiVIRUS on relayfvout02
-X-RelayFVOut-MsgID: 139B24D595B.A5593
-X-RelayFVOut: Not scanned: please contact with your ISP for details
-X-RelayFVOut-SpamCheck: no es spam, SpamAssassin (almacenado, puntaje=0,
-	requerido 3)
-X-RelayFVOut-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-RelayFVOut-Watermark: 1323788031.29327@jCklsEbrSXXg1AkxLZKdsA
-X-Spam-Status: No
-Content-Transfer-Encoding: quoted-printable
-
-
-
-
-Dear User,=20
-
-Wij vestigen uw aandacht op het feit dat u een onbetaalde rekening hebben=
-.
-
-Details:
-http://www.yasbir.org/docdown/Invoice.zip?idinvoice=3D8539008969014Firma=3D=
-r.vanderbij-t6D4VvotBMlmR6Xm/wNWPw@public.gmane.org
-
-
-
---1A7354D59BA.1323183243/relayfvout02-dsp.dns-servicios.com--
-
---===============1103781702414985719==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============1103781702414985719==--
+#ifdef CONFIG_PID_NS
+extern void pidns_handle_reboot(int cmd);
+#else
+static inline void pidns_handle_reboot(int cmd)
+{
+}
+#endif
