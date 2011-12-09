@@ -1,10 +1,24 @@
-From: MAILER-DAEMON-EVvWnxma1eZQZUjPuIdselfDdNONojaH@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Fri,  9 Dec 2011 20:39:10 +0100 (CET)
-Message-ID: <20111209193910.3B098208243@mx2.trefnet.infracom.nl>
+From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH UPDATED AGAIN 03/10] threadgroup: extend
+	threadgroup_lock() to cover exit and exec
+Date: Sat, 10 Dec 2011 00:42:53 +0100
+Message-ID: <20111209234246.GC27173@somewhere>
+References: <1320191193-8110-1-git-send-email-tj@kernel.org>
+	<1320191193-8110-4-git-send-email-tj@kernel.org>
+	<20111124225054.GA14828@google.com>
+	<20111125140136.GC23307@somewhere.redhat.com>
+	<20111127193001.GC4266@google.com>
+	<20111202162753.GA19752@somewhere.redhat.com>
+	<20111205184315.GJ627@google.com>
+	<20111207153046.GC13252@somewhere.redhat.com>
+	<20111207182214.GA7610@google.com>
+	<20111208205055.GB12108@google.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1650056994337410821=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20111208205055.GB12108-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -14,147 +28,68 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
+On Thu, Dec 08, 2011 at 12:50:55PM -0800, Tejun Heo wrote:
+> (Note for Linus at the bottom)
+> 
+> threadgroup_lock() protected only protected against new addition to
+> the threadgroup, which was inherently somewhat incomplete and
+> problematic for its only user cgroup.  On-going migration could race
+> against exec and exit leading to interesting problems - the symmetry
+> between various attach methods, task exiting during method execution,
+> ->exit() racing against attach methods, migrating task switching basic
+> properties during exec and so on.
+> 
+> This patch extends threadgroup_lock() such that it protects against
+> all three threadgroup altering operations - fork, exit and exec.  For
+> exit, threadgroup_change_begin/end() calls are added to exit_signals
+> around assertion of PF_EXITING.  For exec, threadgroup_[un]lock() are
+> updated to also grab and release cred_guard_mutex.
+> 
+> With this change, threadgroup_lock() guarantees that the target
+> threadgroup will remain stable - no new task will be added, no new
+> PF_EXITING will be set and exec won't happen.
+> 
+> The next patch will update cgroup so that it can take full advantage
+> of this change.
+> 
+> -v2: beefed up comment as suggested by Frederic.
+> 
+> -v3: narrowed scope of protection in exit path as suggested by
+>      Frederic.
+> 
+> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+> Reviewed-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+> Acked-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+> Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+> Cc: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+> Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> Cc: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+> ---
+> Okay, narrowed exit path protection down to setting of PF_EXITING
+> itself.  ->exit() on dangling tasks is a bit weird but I don't think
+> it's too bad.  Frederic, are you okay with this version?
 
---===============1650056994337410821==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="DEAC22081C2.1323459550/mx2.trefnet.infracom.nl"
-Content-Transfer-Encoding: 7bit
+Yeah that new scheme that only protects PF_EXITING may look a bit
+strange. But I think we are fine. With rcu list traversal, it should
+be safe even if a group member is concurrently dropped from the list (in that
+case all we check if its PF_EXITING then we give up). And we may
+have a concurrent ->exit() but that should be fine too.
 
-This is a MIME-encapsulated message.
+Thanks!
 
---DEAC22081C2.1323459550/mx2.trefnet.infracom.nl
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
+Acked-by: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-This is the mail system at host mx2.trefnet.infracom.nl.
-
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
-
-For further assistance, please send mail to <postmaster>
-
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
-
-                   The mail system
-
-<barrie793-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: host mx1.jkalkmaar.nl[212.104.212.10] said: 550 5.1.1
-    <barrie793-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: Recipient address rejected: User unknown in
-    virtual mailbox table (in reply to RCPT TO command)
-
-<beaudurut-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: host mx1.jkalkmaar.nl[212.104.212.10] said: 550 5.1.1
-    <beaudurut-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: Recipient address rejected: User unknown in
-    virtual mailbox table (in reply to RCPT TO command)
-
-<beejay280-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: host mx1.jkalkmaar.nl[212.104.212.10] said: 550 5.1.1
-    <beejay280-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: Recipient address rejected: User unknown in
-    virtual mailbox table (in reply to RCPT TO command)
-
-<benjamin200-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: host mx1.jkalkmaar.nl[212.104.212.10] said: 550
-    5.1.1 <benjamin200-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: Recipient address rejected: User unknown
-    in virtual mailbox table (in reply to RCPT TO command)
-
-<bertanroscoe-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: host mx1.jkalkmaar.nl[212.104.212.10] said: 550
-    5.1.1 <bertanroscoe-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: Recipient address rejected: User unknown
-    in virtual mailbox table (in reply to RCPT TO command)
-
---DEAC22081C2.1323459550/mx2.trefnet.infracom.nl
-Content-Description: Delivery report
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; mx2.trefnet.infracom.nl
-X-Postfix-Queue-ID: DEAC22081C2
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Fri,  9 Dec 2011 20:39:08 +0100 (CET)
-
-Final-Recipient: rfc822; barrie793-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org
-Original-Recipient: rfc822;barrie793-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: dns; mx1.jkalkmaar.nl
-Diagnostic-Code: smtp; 550 5.1.1 <barrie793-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: Recipient address
-    rejected: User unknown in virtual mailbox table
-
-Final-Recipient: rfc822; beaudurut-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org
-Original-Recipient: rfc822;beaudurut-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: dns; mx1.jkalkmaar.nl
-Diagnostic-Code: smtp; 550 5.1.1 <beaudurut-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: Recipient address
-    rejected: User unknown in virtual mailbox table
-
-Final-Recipient: rfc822; beejay280-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org
-Original-Recipient: rfc822;beejay280-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: dns; mx1.jkalkmaar.nl
-Diagnostic-Code: smtp; 550 5.1.1 <beejay280-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: Recipient address
-    rejected: User unknown in virtual mailbox table
-
-Final-Recipient: rfc822; benjamin200-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org
-Original-Recipient: rfc822;benjamin200-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: dns; mx1.jkalkmaar.nl
-Diagnostic-Code: smtp; 550 5.1.1 <benjamin200-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: Recipient address
-    rejected: User unknown in virtual mailbox table
-
-Final-Recipient: rfc822; bertanroscoe-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org
-Original-Recipient: rfc822;bertanroscoe-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: dns; mx1.jkalkmaar.nl
-Diagnostic-Code: smtp; 550 5.1.1 <bertanroscoe-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: Recipient address
-    rejected: User unknown in virtual mailbox table
-
---DEAC22081C2.1323459550/mx2.trefnet.infracom.nl
-Content-Description: Undelivered Message
-Content-Type: message/rfc822
-Content-Transfer-Encoding: 7bit
-
-Received: from helios1.orcutt-schools.net (unknown [72.55.11.27])
-	by mx2.trefnet.infracom.nl (Postfix) with ESMTP id DEAC22081C2;
-	Fri,  9 Dec 2011 20:39:08 +0100 (CET)
-Received: from [10.9.211.1] by helios1.orcutt-schools.net id it3pD6qSuRyq with SMTP; Fri, 09 Dec 2011 11:25:37 -0800
-Date: Fri, 09 Dec 2011 11:25:37 -0800
-From: "Index" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v3.4.93.2) Personal
-X-Priority: 3 (Normal)
-Message-ID: <5879776977.34842051445439-kXaSvKNQzF/g3+Wz1882mSaHrdCOuQkorE5yTffgRl4@public.gmane.org>
-To: <barrie793-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>
-Subject: Betaling
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-
-
-
-
-Hallo, barrie793.
-
-Wij vestigen uw aandacht op het feit dat u een onbetaalde rekening hebben=
-.
-Details
-http://www.kreso.it/docdown/CommercialInfo.zip?idinvoice=3D43130118716Fir=
-ma=3Dbarrie793-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org
-
-
-
---DEAC22081C2.1323459550/mx2.trefnet.infracom.nl--
-
---===============1650056994337410821==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============1650056994337410821==--
+> 
+> Linus, if Frederic is okay with it, I'm gonna rebase the series on top
+> of freezer changes in pm tree to avoid conflicts in cgroup_freezer,
+> which sits between cgroup and freezer, both of which are going through
+> non-trivial changes, push the branch to linux-next and put pending
+> cgroup patches on top.  Please scream if you're mighty unhappy with it
+> or have a better idea.
+> 
+> Thank you.
