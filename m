@@ -1,184 +1,95 @@
-From: nishant mungse <nishantmungse-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [Lxc-users] How to start the network services so as to get the IP
-	address using lxc-execute???
-Date: Fri, 9 Dec 2011 11:03:12 +0530
-Message-ID: <CAHnfO6yTvEjADomKqoqW+_jw-AVzarjjiuB7XuF5WLS_yFJLSg@mail.gmail.com>
-References: <CAHnfO6xppccpXCKQgNh32qiD69Qz4BTmjKM_dm9tk8hagKUsAA@mail.gmail.com>
-	<1323344375.29258.147.camel@bahia.local>
-	<CAHnfO6y1PDeq0JgkwRWvAKpaLv=j2Z+ePcr=LqTu4jKOm5LKPA@mail.gmail.com>
-	<4257021D-20D5-4401-9052-65B2242548F7@gmail.com>
-	<CAEyk9GjyWBjJJrkS8hNAorr_tmGEzgW-AfMH3Kmz-tvGt5WcuQ@mail.gmail.com>
-	<CAHnfO6yU2XKSkP_hrDUJ-msPALv4CjB=Hq973szzry3yxDvQFQ@mail.gmail.com>
+From: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
+Subject: Re: How to draw values for /proc/stat
+Date: Fri, 09 Dec 2011 15:03:31 +0100
+Message-ID: <1323439411.17673.65.camel@twins>
+References: <4EDC8FB1.60407@parallels.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAHnfO6yU2XKSkP_hrDUJ-msPALv4CjB=Hq973szzry3yxDvQFQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Geordy Korte <gkorte-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "lxc-users-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org" <lxc-users-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
+Return-path: <cgroups-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <4EDC8FB1.60407-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Sender: cgroups-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: Paul Turner <pjt-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, Balbir Singh <bsingharora-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi Geordy,
-
-You said that your script gets the IP from running container, but i dont
-want to use lxc-start I just want the IP address and use lxc-execute to
-start network services.
-
-
-Regards,
-Nishant
-
-On Fri, Dec 9, 2011 at 11:00 AM, nishant mungse <nishantmungse-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>wrote:
-
+On Mon, 2011-12-05 at 07:32 -0200, Glauber Costa wrote:
 > Hi,
->
->
-> Thanks 4 script.
->
-> Regards,
-> Nishant
->
->
-> On Fri, Dec 9, 2011 at 12:18 AM, Geordy Korte <gkorte-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
->
->> Ok, got out of the hellish traffic jam.  Attached the Script I use to
->> check the IP number of a running machine.
->>
->>
->>
->>
->> On Thu, Dec 8, 2011 at 5:48 PM, Geordy Korte <gkorte-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
->>
->>> I have a script that gets the from a running container, if that is what
->>> you need i post it tommorrow morning. If i forget ST me via the ibm network.
->>>
->>> Mvg
->>>
->>> Geordy Korte
->>> (Sent via iphone so shorter then normal)
->>>
->>>
->>> On 8 dec. 2011, at 13:59, nishant mungse <nishantmungse-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
->>> wrote:
->>>
->>>
->>> Hi Greg,
->>>
->>> Thanks 4 reply.
->>>
->>> I just want the IP addresses of the containers. And one more thing can I
->>> get the IP address of containers in sequence for eg. container1 ::
->>> 198.208.168.1 container 2 :: 198.208.168.2 and like this.
->>>
->>> Please help me ASAP.
->>>
->>> Regards,
->>> Nishant
->>>
->>> On Thu, Dec 8, 2011 at 5:09 PM, Greg Kurz <gkurz-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> wrote:
->>>
->>>> On Thu, 2011-12-08 at 16:03 +0530, nishant mungse wrote:
->>>> > Hi,
->>>> >
->>>> > I want to manually invoke a networking setup to start the network
->>>> > service to get the IP address of container , But the problem is i
->>>> > don't want to start the container and want to use lxc-execute.
->>>> >
->>>> > When I tried these things happened::
->>>> >
->>>> > command :: lxc-execute -n base
->>>> > -f /home/nishant/ubuntu.conf
->>>> /var/lib/lxc/base1/rootfs/etc/init.d/networking start
->>>>
->>>> Ok... this can't work. lxc-execute is for application containers only:
->>>> it runs lxc-init instead of standard /sbin/init. The networking script
->>>> you invoke needs upstart to be already running in the container... You
->>>> seem to have a system container here, it _MUST_ be started with
->>>> lxc-start.
->>>>
->>>> >
->>>> > O/P
->>>> >
->>>> > Rather than invoking init scripts through /etc/init.d, use the
->>>> > service(8)
->>>> > utility, e.g. service networking start
->>>> >
->>>> > Since the script you are attempting to invoke has been converted to an
->>>> > Upstart job, you may also use the start(8) utility, e.g. start
->>>> > networking
->>>> > start: Unable to connect to Upstart: Failed to connect to
->>>> > socket /com/ubuntu/upstart: Connection refused
->>>> >
->>>> >
->>>> > How to start the network services so as to get the IP addresses of
->>>> > containers?
->>>> >
->>>>
->>>> What's your true need here ? Controlling the containers network services
->>>> from the host or just knowing the addresses used by the containers ? I
->>>> guess both are doable in a variety of ways.
->>>>
->>>> Cheers.
->>>>
->>>> >
->>>> > Regards,
->>>> > Nishant
->>>> >
->>>> >
->>>> >
->>>> >
->>>> ------------------------------------------------------------------------------
->>>> > Cloud Services Checklist: Pricing and Packaging Optimization
->>>> > This white paper is intended to serve as a reference, checklist and
->>>> point of
->>>> > discussion for anyone considering optimizing the pricing and
->>>> packaging model
->>>> > of a cloud services business. Read Now!
->>>> > http://www.accelacomm.com/jaw/sfnl/114/51491232/
->>>> > _______________________________________________ Lxc-users mailing
->>>> list Lxc-users-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
->>>> https://lists.sourceforge.net/lists/listinfo/lxc-users
->>>>
->>>> --
->>>> Gregory Kurz                                     gkurz-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org
->>>> Software Engineer @ IBM/Meiosys                  http://www.ibm.com
->>>> Tel +33 (0)534 638 479                           Fax +33 (0)561 400 420
->>>>
->>>> "Anarchy is about taking complete responsibility for yourself."
->>>>        Alan Moore.
->>>>
->>>>
->>>
->>> ------------------------------------------------------------------------------
->>> Cloud Services Checklist: Pricing and Packaging Optimization
->>> This white paper is intended to serve as a reference, checklist and
->>> point of
->>> discussion for anyone considering optimizing the pricing and packaging
->>> model
->>> of a cloud services business. Read Now!
->>> http://www.accelacomm.com/jaw/sfnl/114/51491232/
->>>
->>> _______________________________________________
->>> Lxc-users mailing list
->>> Lxc-users-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
->>> https://lists.sourceforge.net/lists/listinfo/lxc-users
->>>
->>>
->>
->>
->> --
->> ==============
->> Geordy Korte
->> MSN geordy-g7HIL0voYUVmR6Xm/wNWPw@public.gmane.org
->>
->
->
+> 
+> Specially Peter and Paul, but all the others:
+> 
+> As you can see in https://lkml.org/lkml/2011/12/4/178, and in my answer 
+> to that, there is a question - one I've asked before but without that 
+> much of an audience - of whether /proc files read from process living on 
+> cgroups should display global or per-cgroup resources.
+> 
+> In the past, I was arguing for a knob to control that, but I recently 
+> started to believe that a knob here will only overcomplicate matters:
+> if you live in a cgroup, you should display only the resources you can 
+> possibly use. Global is for whoever is in the main cgroup.
+> 
+> Now, it comes two questions:
+> 1) Do you agree with that, for files like /proc/stat ? I think the most 
+> important part is to be consistent inside the system, regardless of what 
+> is done
+
+Personally I don't give a rats arse about (/proc vs) cgroups :-)
+Currently /proc is unaffected by whatever cgroup you happen to be in and
+that seems to make some sort of sense.
+
+Namespaces seem to be about limiting visibility, cgroups about
+controlling resources.
+
+The two things are hopelessly disjoint atm, but I believe someone was
+looking at this mess.
+
+IOW a /proc namespace coupled to cgroup scope would do what you want.
+Now my head hurts..
+
+> 2) Will cpuacct stay? 
+
+I really want to kill it. Balbir seems to want to retain a control-less
+accounting capability, but I really don't see the point in that. Nor is
+anybody selling it convincingly.
+
+So I think I'll simply deprecate it and schedule it for removal and
+anybody wanting something like this is free to send patches to implement
+what they want in the cpu controller and convince me its worth the pain.
+
+> I think if it does, that becomes almost mandatory 
+
+You're referring to #1 here, right?
+
+> (at least the bind mount idea is pretty much over here), because drawing 
+> value for /proc/stat becomes quite complex.
+> The cpuacct cgroup can provide user, sys, etc values. But we also have:
+> 
+> * nr_context_switches,
+> * jiffies since boot,
+> * total_forks,
+> * nr_running,
+> * nr_iowait,
+> 
+> Now I doubt any of us want to see /proc/stat extended to accommodate 
+> things like nr_context_switches, or even worse, nr_running. The way I 
+> see it, there are two options here:
+
+Why would we want to display all those anyway?
+
+>   a) moving everything to cpu cgroup so we keep all values being drawn
+>      from the same place
+
+This is /cgroup/$controller.stat, right?
+
+>   b) Collect that info from multiple places in a transparent way. ctx,
+>      nr_running and nr_iowait will probably come from cpu. jiffies can
+>      come from wherever, and maybe we can even draw total_forks
+>      from Frederic's and avoid counting it twice.
+
+trouble with that is 'drawing from someplace' is a total nightmare, what
+happens if that fork muck from Frederic isn't co-mounted with the cpu
+controller?
+--
+To unsubscribe from this list: send the line "unsubscribe cgroups" in
+the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
