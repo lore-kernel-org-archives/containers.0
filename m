@@ -1,138 +1,160 @@
-From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: How to draw values for /proc/stat
-Date: Fri, 9 Dec 2011 12:55:53 -0200
-Message-ID: <4EE22179.5090106@parallels.com>
-References: <4EDC8FB1.60407@parallels.com> <1323439411.17673.65.camel@twins>
+From: MAILER-DAEMON-EVvWnxma1eZQZUjPuIdselfDdNONojaH@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Fri,  9 Dec 2011 20:39:10 +0100 (CET)
+Message-ID: <20111209193910.3B098208243@mx2.trefnet.infracom.nl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"; format=flowed
-Content-Transfer-Encoding: 7bit
-Return-path: <cgroups-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <1323439411.17673.65.camel@twins>
-Sender: cgroups-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-To: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
-Cc: Paul Turner <pjt-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, Balbir Singh <bsingharora-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Content-Type: multipart/mixed; boundary="===============1650056994337410821=="
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 12/09/2011 12:03 PM, Peter Zijlstra wrote:
-> On Mon, 2011-12-05 at 07:32 -0200, Glauber Costa wrote:
->> Hi,
->>
->> Specially Peter and Paul, but all the others:
->>
->> As you can see in https://lkml.org/lkml/2011/12/4/178, and in my answer
->> to that, there is a question - one I've asked before but without that
->> much of an audience - of whether /proc files read from process living on
->> cgroups should display global or per-cgroup resources.
->>
->> In the past, I was arguing for a knob to control that, but I recently
->> started to believe that a knob here will only overcomplicate matters:
->> if you live in a cgroup, you should display only the resources you can
->> possibly use. Global is for whoever is in the main cgroup.
->>
->> Now, it comes two questions:
->> 1) Do you agree with that, for files like /proc/stat ? I think the most
->> important part is to be consistent inside the system, regardless of what
->> is done
->
-> Personally I don't give a rats arse about (/proc vs) cgroups :-)
-> Currently /proc is unaffected by whatever cgroup you happen to be in and
-> that seems to make some sort of sense.
->
-> Namespaces seem to be about limiting visibility, cgroups about
-> controlling resources.
->
-> The two things are hopelessly disjoint atm, but I believe someone was
-> looking at this mess.
+This is a MIME-encapsulated message.
 
-I did take a look at this (if anyone else was, I'd like to know so we 
-can share some ideas), but I am not convinced we should do anything to 
-join them anymore. We virtualization people are to the best of my 
-knowledge the only ones doing namespaces. Cgroups, OTOH, got a lot bigger.
+--===============1650056994337410821==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="DEAC22081C2.1323459550/mx2.trefnet.infracom.nl"
+Content-Transfer-Encoding: 7bit
 
-What I am mostly concerned about now, is how consistent they will be.
-/proc always being always global indeed does make sense, but my question 
-still stands: if you live in a resource-controlled world, why should you 
-even see resources you will never own ?
+This is a MIME-encapsulated message.
 
+--DEAC22081C2.1323459550/mx2.trefnet.infracom.nl
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
 
-> IOW a /proc namespace coupled to cgroup scope would do what you want.
-> Now my head hurts..
+This is the mail system at host mx2.trefnet.infracom.nl.
 
-Mine too. The idea is good, but too broad. Boils down to: How do you 
-couple them? And none of the methods I thought about seemed to make any 
-sense.
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
 
-If we really want to have the values in /proc being opted-in, I think 
-Kamezawa's idea of a mount option is the winner so far.
+For further assistance, please send mail to <postmaster>
 
->> 2) Will cpuacct stay?
->
-> I really want to kill it. Balbir seems to want to retain a control-less
-> accounting capability, but I really don't see the point in that. Nor is
-> anybody selling it convincingly.
->
-> So I think I'll simply deprecate it and schedule it for removal and
-> anybody wanting something like this is free to send patches to implement
-> what they want in the cpu controller and convince me its worth the pain.
->
->> I think if it does, that becomes almost mandatory
->
-> You're referring to #1 here, right?
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
 
-Yes. But that was before Kame suggested a mount option. That would do 
-just fine in this use case as well/
+                   The mail system
 
->> (at least the bind mount idea is pretty much over here), because drawing
->> value for /proc/stat becomes quite complex.
->> The cpuacct cgroup can provide user, sys, etc values. But we also have:
->>
->> * nr_context_switches,
->> * jiffies since boot,
->> * total_forks,
->> * nr_running,
->> * nr_iowait,
->>
->> Now I doubt any of us want to see /proc/stat extended to accommodate
->> things like nr_context_switches, or even worse, nr_running. The way I
->> see it, there are two options here:
->
-> Why would we want to display all those anyway?
+<barrie793-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: host mx1.jkalkmaar.nl[212.104.212.10] said: 550 5.1.1
+    <barrie793-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: Recipient address rejected: User unknown in
+    virtual mailbox table (in reply to RCPT TO command)
 
-Because we care about isolation. Our users (and more importantly, their 
-tools), need to feel they own the box. That's the whole point of it.
+<beaudurut-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: host mx1.jkalkmaar.nl[212.104.212.10] said: 550 5.1.1
+    <beaudurut-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: Recipient address rejected: User unknown in
+    virtual mailbox table (in reply to RCPT TO command)
 
-Whatever is displayed to the users, need to be (with a switch/mount opt, 
-if my initial point is really defeated) related to the resources he is 
-entitled to, not to some global entity he'll never own.
->
->>    a) moving everything to cpu cgroup so we keep all values being drawn
->>       from the same place
->
-> This is /cgroup/$controller.stat, right?
+<beejay280-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: host mx1.jkalkmaar.nl[212.104.212.10] said: 550 5.1.1
+    <beejay280-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: Recipient address rejected: User unknown in
+    virtual mailbox table (in reply to RCPT TO command)
 
-Sorry?
+<benjamin200-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: host mx1.jkalkmaar.nl[212.104.212.10] said: 550
+    5.1.1 <benjamin200-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: Recipient address rejected: User unknown
+    in virtual mailbox table (in reply to RCPT TO command)
 
-(I just noticed I wasn't that clear myself) I referred more to the act 
-of collecting values, and where from, than how to.
+<bertanroscoe-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: host mx1.jkalkmaar.nl[212.104.212.10] said: 550
+    5.1.1 <bertanroscoe-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: Recipient address rejected: User unknown
+    in virtual mailbox table (in reply to RCPT TO command)
 
->
->>    b) Collect that info from multiple places in a transparent way. ctx,
->>       nr_running and nr_iowait will probably come from cpu. jiffies can
->>       come from wherever, and maybe we can even draw total_forks
->>       from Frederic's and avoid counting it twice.
->
-> trouble with that is 'drawing from someplace' is a total nightmare, what
-> happens if that fork muck from Frederic isn't co-mounted with the cpu
-> controller?
+--DEAC22081C2.1323459550/mx2.trefnet.infracom.nl
+Content-Description: Delivery report
+Content-Type: message/delivery-status
 
-If it is not co-mounted, we draw the global value. If you don't mount 
-it, I someone does not mount it, I can assure you he doesn't care about 
-it. We for sure will.
+Reporting-MTA: dns; mx2.trefnet.infracom.nl
+X-Postfix-Queue-ID: DEAC22081C2
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Fri,  9 Dec 2011 20:39:08 +0100 (CET)
 
+Final-Recipient: rfc822; barrie793-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org
+Original-Recipient: rfc822;barrie793-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org
+Action: failed
+Status: 5.1.1
+Remote-MTA: dns; mx1.jkalkmaar.nl
+Diagnostic-Code: smtp; 550 5.1.1 <barrie793-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: Recipient address
+    rejected: User unknown in virtual mailbox table
+
+Final-Recipient: rfc822; beaudurut-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org
+Original-Recipient: rfc822;beaudurut-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org
+Action: failed
+Status: 5.1.1
+Remote-MTA: dns; mx1.jkalkmaar.nl
+Diagnostic-Code: smtp; 550 5.1.1 <beaudurut-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: Recipient address
+    rejected: User unknown in virtual mailbox table
+
+Final-Recipient: rfc822; beejay280-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org
+Original-Recipient: rfc822;beejay280-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org
+Action: failed
+Status: 5.1.1
+Remote-MTA: dns; mx1.jkalkmaar.nl
+Diagnostic-Code: smtp; 550 5.1.1 <beejay280-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: Recipient address
+    rejected: User unknown in virtual mailbox table
+
+Final-Recipient: rfc822; benjamin200-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org
+Original-Recipient: rfc822;benjamin200-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org
+Action: failed
+Status: 5.1.1
+Remote-MTA: dns; mx1.jkalkmaar.nl
+Diagnostic-Code: smtp; 550 5.1.1 <benjamin200-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: Recipient address
+    rejected: User unknown in virtual mailbox table
+
+Final-Recipient: rfc822; bertanroscoe-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org
+Original-Recipient: rfc822;bertanroscoe-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org
+Action: failed
+Status: 5.1.1
+Remote-MTA: dns; mx1.jkalkmaar.nl
+Diagnostic-Code: smtp; 550 5.1.1 <bertanroscoe-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>: Recipient address
+    rejected: User unknown in virtual mailbox table
+
+--DEAC22081C2.1323459550/mx2.trefnet.infracom.nl
+Content-Description: Undelivered Message
+Content-Type: message/rfc822
+Content-Transfer-Encoding: 7bit
+
+Received: from helios1.orcutt-schools.net (unknown [72.55.11.27])
+	by mx2.trefnet.infracom.nl (Postfix) with ESMTP id DEAC22081C2;
+	Fri,  9 Dec 2011 20:39:08 +0100 (CET)
+Received: from [10.9.211.1] by helios1.orcutt-schools.net id it3pD6qSuRyq with SMTP; Fri, 09 Dec 2011 11:25:37 -0800
+Date: Fri, 09 Dec 2011 11:25:37 -0800
+From: "Index" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v3.4.93.2) Personal
+X-Priority: 3 (Normal)
+Message-ID: <5879776977.34842051445439-kXaSvKNQzF/g3+Wz1882mSaHrdCOuQkorE5yTffgRl4@public.gmane.org>
+To: <barrie793-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org>
+Subject: Betaling
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
 
 
 
---
-To unsubscribe from this list: send the line "unsubscribe cgroups" in
-the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+Hallo, barrie793.
+
+Wij vestigen uw aandacht op het feit dat u een onbetaalde rekening hebben=
+.
+Details
+http://www.kreso.it/docdown/CommercialInfo.zip?idinvoice=3D43130118716Fir=
+ma=3Dbarrie793-t1WbOiPSgI/FYolcc7OVNg@public.gmane.org
+
+
+
+--DEAC22081C2.1323459550/mx2.trefnet.infracom.nl--
+
+--===============1650056994337410821==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============1650056994337410821==--
