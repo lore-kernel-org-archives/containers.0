@@ -1,7 +1,7 @@
-From: MAILER-DAEMON-r3CGuj2FHONFKHX/5f8+YWZHpeb/A1Y/@public.gmane.org
+From: MAILER-DAEMON-obL6ULwEZqpFKHX/5f8+YWZHpeb/A1Y/@public.gmane.org
 Subject: failure notice
 Date: 11 Dec 2011 03:25:19 -0000
-Message-ID: <20111211032432.6CF0F364@mail.linuxfoundation.org>
+Message-ID: <20111211032432.9B2F6367@mail.linuxfoundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,7 +18,7 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi. This is the qmail-send program at qmail27.zonnet.nl.
+Hi. This is the qmail-send program at qmail28.zonnet.nl.
 I'm afraid I wasn't able to deliver your message to the following addresses.
 This is a permanent error; I've given up. Sorry it didn't work out.
 ---------------------------------------------------------------------
@@ -38,18 +38,18 @@ accepted.
 - the e-mailmessage was in queue and couldn't be delivered in the past 3 days.
 ---------------------------------------------------------------------
 
-<ed.vuurst-RSh1/+X/PmFmR6Xm/wNWPw@public.gmane.org>:
+<ed.veer-RSh1/+X/PmFmR6Xm/wNWPw@public.gmane.org>:
 The users mailfolder is over the allowed quota (size).
 
 --- Below this line is a copy of the message.
 
 Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: (qmail 24824 invoked by uid 0); 11 Dec 2011 03:25:18 -0000
+Received: (qmail 362 invoked by uid 0); 11 Dec 2011 03:25:18 -0000
 Received: from unknown ([10.170.1.116])
           (envelope-sender <>)
-          by qmail27.zonnet.nl (qmail-ldap-1.03) with QMQP
+          by qmail28.zonnet.nl (qmail-ldap-1.03) with QMQP
           for < >; 11 Dec 2011 03:25:18 -0000
-Delivered-To: CLUSTERHOST mail1.versatel.nl ed.vuurst-RSh1/+X/PmFmR6Xm/wNWPw@public.gmane.org
+Delivered-To: CLUSTERHOST mail1.versatel.nl ed.veer-RSh1/+X/PmFmR6Xm/wNWPw@public.gmane.org
 Received: (qmail 24565 invoked by uid 0); 11 Dec 2011 03:25:17 -0000
 Received: from mail1.unnes.ac.id ([118.97.9.60])
           (envelope-sender <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
