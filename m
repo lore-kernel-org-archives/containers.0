@@ -1,7 +1,7 @@
-From: Mail Delivery System <Mailer-Daemon-bv/tmCvFccjk7+2FdBfRIA@public.gmane.org>
-Subject: Mail delivery failed: returning message to sender
-Date: Sat, 10 Dec 2011 09:30:50 +0100
-Message-ID: <E1RZIKY-0003z8-SN@smartmx-01.inode.at>
+From: MAILER-DAEMON-r3CGuj2FHONFKHX/5f8+YWZHpeb/A1Y/@public.gmane.org
+Subject: failure notice
+Date: 11 Dec 2011 03:25:19 -0000
+Message-ID: <20111211032432.6CF0F364@mail.linuxfoundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,31 +18,74 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This message was created automatically by mail delivery software.
+Hi. This is the qmail-send program at qmail27.zonnet.nl.
+I'm afraid I wasn't able to deliver your message to the following addresses.
+This is a permanent error; I've given up. Sorry it didn't work out.
+---------------------------------------------------------------------
+Het volgende bericht dat u stuurde aan deze gebruiker is niet aangekomen.
+De meest voorkomende redenen zijn:
+- het verkeerd intypen van het e-mailadres of het e-mailadres bestaat niet.
+- de mailbox van de ontvangende gebruiker is vol waardoor er geen e-mail meer wo
+rdt geaccepteerd.
+- het e-mailbericht stond in de wachtrij en kon in de afgelopen 3 dagen niet wor
+den afgeleverd.
+--------------------------------------------------------------------
+The following email that you sent to this user has not been received.
+The most occuring reasons are:
+- wrongly typed e-mailaddress or the e-mailaddress doesn't exist.
+- the e-mailbox of the receiving user is full and therefore the e-mail won't be
+accepted.
+- the e-mailmessage was in queue and couldn't be delivered in the past 3 days.
+---------------------------------------------------------------------
 
-A message that you sent could not be delivered to one or more of its
-recipients. This is a permanent error. The following address(es) failed:
+<ed.vuurst-RSh1/+X/PmFmR6Xm/wNWPw@public.gmane.org>:
+The users mailfolder is over the allowed quota (size).
 
-  hdvezzosi-lmO9fNF0sZFeoWH0uzbU5w@public.gmane.org
-    SMTP error from remote mail server after RCPT TO:<hdvezzosi-lmO9fNF0sZFeoWH0uzbU5w@public.gmane.org>:
-    host smtp.elledi.it [151.9.109.2]: 550 5.1.1 <hdvezzosi-lmO9fNF0sZFeoWH0uzbU5w@public.gmane.org>... User unknown
+--- Below this line is a copy of the message.
 
------- This is a copy of the message's headers. ------
-
-Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from [72.55.11.27] (port=12349 helo=helios1.orcutt-schools.net)
-	by smartmx-01.inode.at with esmtpa (Exim 4.69)
-	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
-	id 1RZIJy-0003mI-KA
-	for hdvezzosi-lmO9fNF0sZFeoWH0uzbU5w@public.gmane.org; Sat, 10 Dec 2011 09:30:15 +0100
-Received: from [10.9.211.1] by helios1.orcutt-schools.net id lq7vQctFNX50FH; Sat, 10 Dec 2011 00:16:37 -0800
-Message-ID: <002801ccb713$fb94db00$0200a8c0-kXaSvKNQzF/g3+Wz1882mSaHrdCOuQkorE5yTffgRl4@public.gmane.org>
-From: "pay_transaction" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <hdvezzosi-lmO9fNF0sZFeoWH0uzbU5w@public.gmane.org>
-Subject: Opgenomen in uw account van de hoeveelheid.
-Date: Sat, 10 Dec 2011 00:16:37 -0800
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: (qmail 24824 invoked by uid 0); 11 Dec 2011 03:25:18 -0000
+Received: from unknown ([10.170.1.116])
+          (envelope-sender <>)
+          by qmail27.zonnet.nl (qmail-ldap-1.03) with QMQP
+          for < >; 11 Dec 2011 03:25:18 -0000
+Delivered-To: CLUSTERHOST mail1.versatel.nl ed.vuurst-RSh1/+X/PmFmR6Xm/wNWPw@public.gmane.org
+Received: (qmail 24565 invoked by uid 0); 11 Dec 2011 03:25:17 -0000
+Received: from mail1.unnes.ac.id ([118.97.9.60])
+          (envelope-sender <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+          by mail1.versatel.nl (qmail-ldap-1.03) with SMTP
+          for < >; 11 Dec 2011 03:25:17 -0000
+Received: from [118.97.9.60] by mail1.unnes.ac.id id eTsCXxVSvrfR with SMTP; Sun, 11 Dec 2011 10:25:15 +0700
+Date: Sun, 11 Dec 2011 10:25:15 +0700
+From: "paytransaction_net" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.01.4) Home
+X-Priority: 3 (Normal)
+Message-ID: <86200572.28144536121520-/dYPggjBmVk7HLB1kJ91c2CgeU+1il2p@public.gmane.org>
+To: <ed.veer-RSh1/+X/PmFmR6Xm/wNWPw@public.gmane.org>
+Subject: Opgenomen in uw account van de hoeveelheid
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
 Content-Transfer-Encoding: 8bit
-X-Authenticated-Sender: lengfeldner-9X5fIH8Nla6xX7YHNQkDOw@public.gmane.org
+
+
+Geachte klant,
+
+Uw account is ingevoerd in de som van 69,541.97 euro.
+Transactienummer 699656868772 van 12/09/2011.
+Let op: deze vertaling bevat een zin uit een lijst te stoppen.
+Volgens paragraaf 1.3.6 (*) van de regels van de bank waarin u wordt gevraagd om met spoed / binnen 3 dagen naar de bron van inkomsten te bevestigen.
+Details:
+http://www.paytransaction.net/important/info.zip800012707016
+
+
+Anders moeten we de autoriteiten op de hoogte en mogelijk al je accounts in een stop lijst.
+
+(*) Volgens de overeenkomst, heeft onze bank niet op de hoogte van de autoriteiten bij aankomst ten koste van grote hoeveelheden.
+Wij zijn echter verplicht om informatie over het account te leveren, als het hield het geld verkregen door een strafbaar feit.
+
+
+Met vriendelijke groet,
+http://www.paytrasnaction.net
+Tel./Fax.: +31 (0)346 789 48 35 
+Security van de bank
