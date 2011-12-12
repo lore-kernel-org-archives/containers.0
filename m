@@ -1,14 +1,20 @@
-From: =?gb2312?Q?=D3=D0=D0=A7=B9=FB=D4=D9=B8=B6=BF=EE?=
-	<test-BIfAkZ9RKxteeK8sW/1tRNsOkFPyHkhm@public.gmane.org>
-Subject: =?gb2312?Q?2011=C7=EF=BC=BE=B9=E3=BD=BB=BB=E1=C2=F2=BC=D2=A1=A2=C8=BA=B7=A2=C8=ED=BC=FE+=BA=A3=B9=D8=CA=FD=BE=DD+=C2=F2=BC=D2=CB=D1=CB=F7=BB=FA,
-	=D1=AF=C5=CC=C2=F2=BC=D2600=CD=F2=A3=AC=BD=F610=D4=AA=A1=A3?=
-Date: Mon, 12 Dec 2011 00:44:58 +0000 (UTC)
-Message-ID: <e2025624-fbc4-48fb-abaa-b8742b0a8ade@server.cooperandturner.asia>
+From: nishant mungse <nishantmungse-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [Lxc-users] How to start the network services so as to get the IP
+	address using lxc-execute???
+Date: Mon, 12 Dec 2011 11:54:26 +0530
+Message-ID: <CAHnfO6yRmr4qB9dqHJiu0+YEodLgpaw4xLwqAHXAL_FaypdO2A@mail.gmail.com>
+References: <CAHnfO6xppccpXCKQgNh32qiD69Qz4BTmjKM_dm9tk8hagKUsAA@mail.gmail.com>
+	<1323344375.29258.147.camel@bahia.local>
+	<CAHnfO6y1PDeq0JgkwRWvAKpaLv=j2Z+ePcr=LqTu4jKOm5LKPA@mail.gmail.com>
+	<4257021D-20D5-4401-9052-65B2242548F7@gmail.com>
+	<CAEyk9GjyWBjJJrkS8hNAorr_tmGEzgW-AfMH3Kmz-tvGt5WcuQ@mail.gmail.com>
+	<CAHnfO6yU2XKSkP_hrDUJ-msPALv4CjB=Hq973szzry3yxDvQFQ@mail.gmail.com>
+	<CAHnfO6yTvEjADomKqoqW+_jw-AVzarjjiuB7XuF5WLS_yFJLSg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="gb2312"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Date: Tue, 11 Dec 2018 08:33:02 +0800
+In-Reply-To: <CAHnfO6yTvEjADomKqoqW+_jw-AVzarjjiuB7XuF5WLS_yFJLSg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,36 +24,189 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "=?gb2312?Q?containers@3riverspkg=2Ecom?=" <containers-HwPNWD3IIdrzQnqvAiSWbQ@public.gmane.org>, "=?gb2312?Q?containers@bigpond=2Ecom?=" <containers-bzGI/hKkdgRBDgjK7y7TUQ@public.gmane.org>, "=?gb2312?Q?containers@lists=2Elinux-foundation=2Eorg?=" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "=?gb2312?Q?containers@sanshui=2Egd=2Ecn?=" <containers-lTvVUEpviP9rVUyDSKoQHw@public.gmane.org>, "=?gb2312?Q?containers4africa@ymail=2Ecom?=" <containers4africa-DaQTI0RpDDMAvxtiuMwx3w@public.gmane.org>, "=?gb2312?Q?dsfz@263=2Enet?=" <dsfz-Y9sIeH5OGRo@public.gmane.org>, "=?gb2312?Q?dsfzh@dsfzh=2Ecom?=" <dsfzh-odg2fMY6W8cAvxtiuMwx3w@public.gmane.org>, "=?gb2312?Q?dsfzjj@public=2Etz=2Ejs=2Ecn?=" <dsfzjj-Rb0Jf8poU2zMmZFWJFyxbA@public.gmane.org>, "=?gb2312?Q?dsfzjx@163=2Ecom?=" <dsfzjx-9Onoh4P/yGk@public.gmane.org>, "=?gb2312?Q?dsfztc@hotmail=2Ecom?=" <dsfztc-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org>
+To: Geordy Korte <gkorte-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Greg Kurz <gkurz-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "lxc-users-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org" <lxc-users-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-CtK7oaI2MDDN8sLyvNLXytS0o7rU+cvNtcQ2MDDN8sLyvNLXytS0v+KjrLj80MKhoyAKtv6horOs
-vLa6o83iwvK80kVtYWlsy9HL97v6o7rDv8zsxNzL0cv3Nc3y0tTJz8LyvNLV5sq108rWt6Oss8m1
-pcLKuN+hoyAKyP2hosi6t6LI7bz+o7q5psTcx7+086OszerIq8Sjt8LIy7mkt6LLzcSjyr2jrLW9
-tO/CyryruN+hoyAKCtT5y83K/b7dKNK7ubI4uPaw/CkKMaOsMjAxMcfvvL4rtLq8vrnjvbu74cLy
-vNLK/b7dv+LQws/Ks/bCr6Oss6y8ttDCz8rC8rzSo6zQws/Kyv2+3aOsyN3S17PJtaWjoSAKMqOs
-1+7Qwsirx/LC8rzSv+IsubI0NTE2NjDM9cr9vt2hoyAKM6OsMjAwOMTqLDIwMDnE6iwyMDEwxOog
-tLq8vivH77y+ueO9u7vhwvK80sP7wryjrDEwMyAxMDQgMTA1IDEwNiAxMDcgMTA4ILmywfm97CC5
-sjEyMC42zfLK/b7doaMKNKOsMjAxMMTqufq8yrTZz/rQrbvho6hQUEFJo6mzydSxw/u1pSBQUEFJ
-IE1lbWJlcnMgRGlyZWN0b3J5o6y3x7Oj1tjSqrXEtPPC8rzSoaMKNaOsMjAxMMTqtb3P47jbssm5
-urXEufrN4r/NyMvD+8K8KM/juNvDs7eivtbM4bmpKaOsubI3LjLN8sr9vt2jrLOsvLbW2NKqtcTC
-8rzSoaMKNqOsNjAuOM3yzPXX7tDCufrN4kIyQsLyvNLRr8XMoaMKN6OsMjAwOcTquqO52MzhtaXK
-/b7dcGllcnOw5sr9vt0gMcenzfKhowo4o6zIureiyO28/qOsyLq3osjtvP61xLK/yvDT67Cy17Ch
-owoK0qq1xNelvfTBqs+1UVE6IDQ2NzY0Mzk3NSAgILvy1d/Bory0u9i4tNPKz+Q6IDQ2NzY0Mzk3
-NUBxcS5jb20K0qq1xNelvfTBqs+1UVE6IDQ2NzY0Mzk3NSAgILvy1d/Bory0u9i4tNPKz+Q6IDQ2
-NzY0Mzk3NUBxcS5jb20K0qq1xNelvfTBqs+1UVE6IDQ2NzY0Mzk3NSAgILvy1d/Bory0u9i4tNPK
-z+Q6IDQ2NzY0Mzk3NUBxcS5jb20KCrPP0MXOqrG+o6y/ydLU19/M1LGmvbvS1yzK1bv10enWpLrz
-1Nm4tr/uLNXiyse21MT61+66w7XEsaPVz8HLoaMgCgoKueO9u7vhwvK80rC0svrGt8DgsfC31sDg
-o6y31s6q0tTPwry4wOCjugoxILDsuavJ6LG4CjIgseDWr7ywzNnM+rmk0tXGtwozILKjwacKNCCy
-zbP408O+3wo1ILO1wb4KNiC089DNu/rQtbywyeixuAo3ILXn19O158b4CjggtefX08/7t9HGtwo5
-ILfE1q8KMTAgt/7XsAoxMSC49sjLu6TA7QoxMiC5pLPMu/rQtQoxMyC5pL7fCjE0ILuvuaQKMTUg
-vMbL47v6vLDNqNG2CjE2ILzSvtPTw8a3CjE3ILzSvtPXsMrOCjE4ILzSvt8KMTkgvNLTw7XnxvcK
-MjAgvajW/ryw17DKzrLEwc8KMjEgvdrI1dPDxrcKMjIgwPHGt7yw1PnGtwoyMyDEps3Qs7UKMjQg
-xvuztcXkvP4KMjUgyrPGtwoyNiDM1bTJCjI3IMz6yq8KMjggzea+3woyOSDOwNShCjMwIM7lvfAK
-MzEg0KHQzbv60LUKMzIg0KwKMzMg0N3P0NPDxrcKMzQg0r3BxgozNSDUocrSsvrGtwozNiDUsMHW
-CjM3INXVw/ey+sa3CjM4INbTse3R2761CjM5INfU0NCztQo0MCCw/AoKCrGj1qTDv8zstrzT0MLy
-vNK72Li0oaMKsaPWpMO/zOy2vNPQwvK80rvYuLShowqxo9akw7/M7La809DC8rzSu9i4tKGjCrGj
-1qTDv8zstrzT0MLyvNK72Li0oaMKsaPWpMO/zOy2vNPQwvK80rvYuLShowoKX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxp
-c3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxp
-bnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+Hi Geordy,
+
+This script gives the IP address of running system, but what I want is to
+get the IP address of the containers that are not started using lxc-start,
+lxc-start will call /sbin/init to init all the system, but I want to use
+lxc-execute that will no init the system.
+
+
+Hey Greg you said that, it is possible to get the IP address without
+starting the containers how can we do this????
+
+And one more question how to start the network services using lxc-execute
+
+
+Please help me ASAP.
+
+
+Regards,
+Nishant
+
+On Fri, Dec 9, 2011 at 11:03 AM, nishant mungse <nishantmungse-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>wrote:
+
+> Hi Geordy,
+>
+> You said that your script gets the IP from running container, but i dont
+> want to use lxc-start I just want the IP address and use lxc-execute to
+> start network services.
+>
+>
+> Regards,
+> Nishant
+>
+>
+> On Fri, Dec 9, 2011 at 11:00 AM, nishant mungse <nishantmungse-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>wrote:
+>
+>> Hi,
+>>
+>>
+>> Thanks 4 script.
+>>
+>> Regards,
+>> Nishant
+>>
+>>
+>> On Fri, Dec 9, 2011 at 12:18 AM, Geordy Korte <gkorte-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+>>
+>>> Ok, got out of the hellish traffic jam.  Attached the Script I use to
+>>> check the IP number of a running machine.
+>>>
+>>>
+>>>
+>>>
+>>> On Thu, Dec 8, 2011 at 5:48 PM, Geordy Korte <gkorte-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+>>>
+>>>> I have a script that gets the from a running container, if that is what
+>>>> you need i post it tommorrow morning. If i forget ST me via the ibm network.
+>>>>
+>>>> Mvg
+>>>>
+>>>> Geordy Korte
+>>>> (Sent via iphone so shorter then normal)
+>>>>
+>>>>
+>>>> On 8 dec. 2011, at 13:59, nishant mungse <nishantmungse-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+>>>> wrote:
+>>>>
+>>>>
+>>>> Hi Greg,
+>>>>
+>>>> Thanks 4 reply.
+>>>>
+>>>> I just want the IP addresses of the containers. And one more thing can
+>>>> I get the IP address of containers in sequence for eg. container1 ::
+>>>> 198.208.168.1 container 2 :: 198.208.168.2 and like this.
+>>>>
+>>>> Please help me ASAP.
+>>>>
+>>>> Regards,
+>>>> Nishant
+>>>>
+>>>> On Thu, Dec 8, 2011 at 5:09 PM, Greg Kurz <gkurz-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> wrote:
+>>>>
+>>>>> On Thu, 2011-12-08 at 16:03 +0530, nishant mungse wrote:
+>>>>> > Hi,
+>>>>> >
+>>>>> > I want to manually invoke a networking setup to start the network
+>>>>> > service to get the IP address of container , But the problem is i
+>>>>> > don't want to start the container and want to use lxc-execute.
+>>>>> >
+>>>>> > When I tried these things happened::
+>>>>> >
+>>>>> > command :: lxc-execute -n base
+>>>>> > -f /home/nishant/ubuntu.conf
+>>>>> /var/lib/lxc/base1/rootfs/etc/init.d/networking start
+>>>>>
+>>>>> Ok... this can't work. lxc-execute is for application containers only:
+>>>>> it runs lxc-init instead of standard /sbin/init. The networking script
+>>>>> you invoke needs upstart to be already running in the container... You
+>>>>> seem to have a system container here, it _MUST_ be started with
+>>>>> lxc-start.
+>>>>>
+>>>>> >
+>>>>> > O/P
+>>>>> >
+>>>>> > Rather than invoking init scripts through /etc/init.d, use the
+>>>>> > service(8)
+>>>>> > utility, e.g. service networking start
+>>>>> >
+>>>>> > Since the script you are attempting to invoke has been converted to
+>>>>> an
+>>>>> > Upstart job, you may also use the start(8) utility, e.g. start
+>>>>> > networking
+>>>>> > start: Unable to connect to Upstart: Failed to connect to
+>>>>> > socket /com/ubuntu/upstart: Connection refused
+>>>>> >
+>>>>> >
+>>>>> > How to start the network services so as to get the IP addresses of
+>>>>> > containers?
+>>>>> >
+>>>>>
+>>>>> What's your true need here ? Controlling the containers network
+>>>>> services
+>>>>> from the host or just knowing the addresses used by the containers ? I
+>>>>> guess both are doable in a variety of ways.
+>>>>>
+>>>>> Cheers.
+>>>>>
+>>>>> >
+>>>>> > Regards,
+>>>>> > Nishant
+>>>>> >
+>>>>> >
+>>>>> >
+>>>>> >
+>>>>> ------------------------------------------------------------------------------
+>>>>> > Cloud Services Checklist: Pricing and Packaging Optimization
+>>>>> > This white paper is intended to serve as a reference, checklist and
+>>>>> point of
+>>>>> > discussion for anyone considering optimizing the pricing and
+>>>>> packaging model
+>>>>> > of a cloud services business. Read Now!
+>>>>> > http://www.accelacomm.com/jaw/sfnl/114/51491232/
+>>>>> > _______________________________________________ Lxc-users mailing
+>>>>> list Lxc-users-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+>>>>> https://lists.sourceforge.net/lists/listinfo/lxc-users
+>>>>>
+>>>>> --
+>>>>> Gregory Kurz                                     gkurz-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org
+>>>>> Software Engineer @ IBM/Meiosys                  http://www.ibm.com
+>>>>> Tel +33 (0)534 638 479                           Fax +33 (0)561 400
+>>>>> 420
+>>>>>
+>>>>> "Anarchy is about taking complete responsibility for yourself."
+>>>>>        Alan Moore.
+>>>>>
+>>>>>
+>>>>
+>>>> ------------------------------------------------------------------------------
+>>>> Cloud Services Checklist: Pricing and Packaging Optimization
+>>>> This white paper is intended to serve as a reference, checklist and
+>>>> point of
+>>>> discussion for anyone considering optimizing the pricing and packaging
+>>>> model
+>>>> of a cloud services business. Read Now!
+>>>> http://www.accelacomm.com/jaw/sfnl/114/51491232/
+>>>>
+>>>> _______________________________________________
+>>>> Lxc-users mailing list
+>>>> Lxc-users-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+>>>> https://lists.sourceforge.net/lists/listinfo/lxc-users
+>>>>
+>>>>
+>>>
+>>>
+>>> --
+>>> ==============
+>>> Geordy Korte
+>>> MSN geordy-g7HIL0voYUVmR6Xm/wNWPw@public.gmane.org
+>>>
+>>
+>>
+>
