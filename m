@@ -1,17 +1,16 @@
-From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 00/10] cgroups: Task counter subsystem v6
-Date: Wed, 14 Dec 2011 16:07:56 +0100
-Message-ID: <20111214150752.GB10791@somewhere.redhat.com>
-References: <1317668832-10784-1-git-send-email-fweisbec@gmail.com>
-	<20111213155848.GI25802@google.com>
-	<20111213190642.GB2421@somewhere.redhat.com>
-	<20111213204918.GK25802@google.com>
+From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH][V4] Add reboot_pid_ns to handle the reboot syscall
+Date: Wed, 14 Dec 2011 20:17:39 +0100
+Message-ID: <20111214191739.GA14693@redhat.com>
+References: <1323649064-7960-1-git-send-email-daniel.lezcano@free.fr>
+	<1323649064-7960-2-git-send-email-daniel.lezcano@free.fr>
+	<20111213162242.1ab3cb1a.akpm@linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20111213204918.GK25802-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20111213162242.1ab3cb1a.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,46 +20,61 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Dec 13, 2011 at 12:49:18PM -0800, Tejun Heo wrote:
-> Hello,
-> 
-> On Tue, Dec 13, 2011 at 08:06:46PM +0100, Frederic Weisbecker wrote:
-> > On Tue, Dec 13, 2011 at 07:58:48AM -0800, Tejun Heo wrote:
-> > > Can you please rebase the patchset on top of cgroup/for-3.3?
-> > 
-> > Sure. But please note its fate is still under discussion. Whether
-> > we want it upstream is still a running debate. But I certainly
-> > need to rebase against your tree.
-> 
-> I see.
-> 
-> > > I primarily like the idea of being able to track process usage w/ cgroup
-> > > and enforce limits on it but hope that it could somehow integrate w/
-> > > cgroup freezer.  ie. trigger freezer if it goes over limit and let the
-> > > userland tool / administrator deal with the frozen cgroup.  I'm
-> > > planning on extending cgroup freezer such that it supports recursive
-> > > freezing and killing of frozen tasks.  If we can fit task counters
-> > > into that, we'll have general method of handling problematic cgroups -
-> > > freeze, notify userland and let it deal with it.
-> > 
-> > Hmm, so you suggest a kernel trigger that freeze the cgroup when the
-> > task limit is reached?
-> 
-> Yeah, something like that.  I'm not really sure about how it would
-> actually work tho.
-> 
-> > What about rather implementing register_event() for the tasks.usage such
-> > that the user can be notified using eventfd when the limit is reached.
-> > Then it would be up to the user to decide to freeze or any other thing.
-> > Sounds like a more generic solution.
-> 
-> Maybe, the problem would be how to ensure that the userland manager
-> can respond fast enough (whatever that means...).
+On 12/13, Andrew Morton wrote:
+>
+> > --- a/kernel/sys.c
+> > +++ b/kernel/sys.c
+> > @@ -444,6 +444,9 @@ SYSCALL_DEFINE4(reboot, int, magic1, int, magic2, unsigned int, cmd,
+> >  	                magic2 != LINUX_REBOOT_MAGIC2C))
+> >  		return -EINVAL;
+> >
+> > +	if (task_active_pid_ns(current) != &init_pid_ns)
+> > +		return reboot_pid_ns(task_active_pid_ns(current), cmd);
+> > +
+> >  	/* Instead of trying to make the power_off code look like
+> > 	 * halt when pm_power_off is not set do it the easy way.
+> > 	 */
+>
+> I'll repeat my cruelly-ignored review comment for v3:
+>
+> This adds a bunch of useless code if CONFIG_PID_NS=n.
 
-Yeah that's part of the goal of the task counter: limit the spreading
-of the forkbomb soon enough such that the machine stays responsive and
-the admin can react accordingly.
+Agreed.
+
+> It would be
+> better to do
+>
+> #ifdef CONFIG_PID_NS
+> extern void pidns_handle_reboot(int cmd);
+> #else
+> static inline void pidns_handle_reboot(int cmd)
+> {
+> }
+> #endif
+
+Can't resist.
+
+Why the kernel always prefers to do it this way, adding the ugly
+do-nothing inlines?
+
+Isn't it better to simply call pidns_handle_reboot(cmd) under
+CONFIG_PID_NS in sys_reboot() ?
+
+	#ifdef CONFIG_PID_NS
+	if (task_active_pid_ns(current) != &init_pid_ns)
+		return reboot_pid_ns(cmd);
+	#endif
+
+This way, if you look at sys_reboot() you can immediately see what
+happens, no need to inspect the !CONFIG_PID_NS definition. Plus this
+doesn't add the "unnecesary" entry into tag file.
+
+OK, </flame> ;)
+
+Otherwise,
+
+Reviewed-by: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
