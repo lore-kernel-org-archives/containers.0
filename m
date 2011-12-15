@@ -1,16 +1,12 @@
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Re: [PATCH][V4] Add reboot_pid_ns to handle the reboot syscall
-Date: Thu, 15 Dec 2011 14:00:28 -0800
-Message-ID: <20111215140028.e1b8a6a7.akpm@linux-foundation.org>
-References: <1323649064-7960-1-git-send-email-daniel.lezcano@free.fr>
-	<1323649064-7960-2-git-send-email-daniel.lezcano@free.fr>
-	<20111213162242.1ab3cb1a.akpm@linux-foundation.org>
-	<20111214191739.GA14693@redhat.com>
+From: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+Subject: [PATCH] cgroups: remove redundant get/put of css_set from
+	css_set_check_fetched()
+Date: Thu, 15 Dec 2011 14:21:26 -0800
+Message-ID: <1323987686-17968-1-git-send-email-msb@chromium.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20111214191739.GA14693-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,36 +16,51 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, 14 Dec 2011 20:17:39 +0100
-Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+We already have a reference to all elements in newcg_list.
 
-> > It would be
-> > better to do
-> >
-> > #ifdef CONFIG_PID_NS
-> > extern void pidns_handle_reboot(int cmd);
-> > #else
-> > static inline void pidns_handle_reboot(int cmd)
-> > {
-> > }
-> > #endif
-> 
-> Can't resist.
-> 
-> Why the kernel always prefers to do it this way, adding the ugly
-> do-nothing inlines?
-> 
-> Isn't it better to simply call pidns_handle_reboot(cmd) under
-> CONFIG_PID_NS in sys_reboot() ?
-> 
-> 	#ifdef CONFIG_PID_NS
-> 	if (task_active_pid_ns(current) != &init_pid_ns)
-> 		return reboot_pid_ns(cmd);
-> 	#endif
+Signed-off-by: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+---
+ kernel/cgroup.c |   10 ++--------
+ 1 files changed, 2 insertions(+), 8 deletions(-)
 
-Imagine what the code would look like if we took all the existing empty
-inline stubs and replaced them with #if/#else/#endif.
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index d9d5648..a7e00b9 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -1935,23 +1935,17 @@ static bool css_set_check_fetched(struct cgroup *cgrp,
+ 
+ 	read_lock(&css_set_lock);
+ 	newcg = find_existing_css_set(cg, cgrp, template);
+-	if (newcg)
+-		get_css_set(newcg);
+ 	read_unlock(&css_set_lock);
+ 
+ 	/* doesn't exist at all? */
+ 	if (!newcg)
+ 		return false;
+ 	/* see if it's already in the list */
+-	list_for_each_entry(cg_entry, newcg_list, links) {
+-		if (cg_entry->cg == newcg) {
+-			put_css_set(newcg);
++	list_for_each_entry(cg_entry, newcg_list, links)
++		if (cg_entry->cg == newcg)
+ 			return true;
+-		}
+-	}
+ 
+ 	/* not found */
+-	put_css_set(newcg);
+ 	return false;
+ }
+ 
+-- 
+1.7.3.1
