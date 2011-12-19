@@ -1,14 +1,10 @@
-From: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-Subject: [PATCH v2] cgroup: remove redundate get/put of old css_set from
-	migrate
-Date: Mon, 19 Dec 2011 10:44:34 -0800
-Message-ID: <1324320274-18485-1-git-send-email-msb__34882.7063026421$1324320308$gmane$org@chromium.org>
-References: <20111219172027.GJ24519@google.com>
+From: MAILER-DAEMON-MIq3pKQJ3XGcGo6dH0LEGSSTZJN7z1WI@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Mon, 19 Dec 2011 20:10:46 +0100 (CET)
+Message-ID: <20111219191046.2F7036BC11BB@rent64.csv-networks.nl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============0953282655804917912=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20111219172027.GJ24519-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,107 +14,127 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Changes in V2:
-* Updated commit message as per Tejun's feedback:
-  * https://lkml.org/lkml/2011/12/19/289
+This is a MIME-encapsulated message.
 
--- >8 -- (snip)
+--===============0953282655804917912==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="071E66BC11B3.1324321846/rent64.csv-networks.nl"
+Content-Transfer-Encoding: 7bit
 
-We can now assume that the css_set reference held by the task
-will not go away for an exiting task. PF_EXITING state can be
-trusted throughout migration by checking it after locking
-threadgroup.
+This is a MIME-encapsulated message.
 
-While at it, renamed css_set_check_fetched to css_set_fetched.
-!css_set_fetched() seems to read better than
-!css_set_check_fetched().
+--071E66BC11B3.1324321846/rent64.csv-networks.nl
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
 
-This patch depends on:
+This is the mail system at host rent64.csv-networks.nl.
 
-commit cd3d095275374220921fcf0d4e0c16584b26ddbc
-Author: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Date:   Mon Dec 12 18:12:21 2011 -0800
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
 
-    cgroup: always lock threadgroup during migration
+For further assistance, please send mail to <postmaster>
 
-Signed-off-by: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
----
- kernel/cgroup.c |   25 ++++++-------------------
- 1 files changed, 6 insertions(+), 19 deletions(-)
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
 
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 1b3b841..eb95e32 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -1856,7 +1856,6 @@ static int cgroup_task_migrate(struct cgroup *cgrp, struct cgroup *oldcgrp,
- 	 */
- 	task_lock(tsk);
- 	oldcg = tsk->cgroups;
--	get_css_set(oldcg);
- 	task_unlock(tsk);
- 
- 	/* locate or allocate a new css_set for this task. */
-@@ -1872,12 +1871,9 @@ static int cgroup_task_migrate(struct cgroup *cgrp, struct cgroup *oldcgrp,
- 		might_sleep();
- 		/* find_css_set will give us newcg already referenced. */
- 		newcg = find_css_set(oldcg, cgrp);
--		if (!newcg) {
--			put_css_set(oldcg);
-+		if (!newcg)
- 			return -ENOMEM;
--		}
- 	}
--	put_css_set(oldcg);
- 
- 	/* @tsk can't exit as its threadgroup is locked */
- 	task_lock(tsk);
-@@ -2015,9 +2011,8 @@ struct cg_list_entry {
- 	struct list_head links;
- };
- 
--static bool css_set_check_fetched(struct cgroup *cgrp,
--				  struct task_struct *tsk, struct css_set *cg,
--				  struct list_head *newcg_list)
-+static bool css_set_fetched(struct cgroup *cgrp, struct task_struct *tsk,
-+			    struct css_set *cg, struct list_head *newcg_list)
- {
- 	struct css_set *newcg;
- 	struct cg_list_entry *cg_entry;
-@@ -2191,19 +2186,11 @@ int cgroup_attach_proc(struct cgroup *cgrp, struct task_struct *leader)
- 		/* get old css_set pointer */
- 		task_lock(tc->task);
- 		oldcg = tc->task->cgroups;
--		get_css_set(oldcg);
- 		task_unlock(tc->task);
--		/* see if the new one for us is already in the list? */
--		if (css_set_check_fetched(cgrp, tc->task, oldcg, &newcg_list)) {
--			/* was already there, nothing to do. */
--			put_css_set(oldcg);
--		} else {
--			/* we don't already have it. get new one. */
--			retval = css_set_prefetch(cgrp, oldcg, &newcg_list);
--			put_css_set(oldcg);
--			if (retval)
-+		/* if we don't already have it in the list get a new one */
-+		if (!css_set_fetched(cgrp, tc->task, oldcg, &newcg_list))
-+			if (css_set_prefetch(cgrp, oldcg, &newcg_list))
- 				goto out_list_teardown;
--		}
- 	}
- 
- 	/*
--- 
-1.7.3.1
+                   The mail system
+
+<turnnl1-MIq3pKQJ3XGcGo6dH0LEGSSTZJN7z1WI@public.gmane.org>: cannot update mailbox /var/mail/turnnl1 for
+    user turnnl1. error writing message: File too large
+
+<turnnlfw-MIq3pKQJ3XGcGo6dH0LEGSSTZJN7z1WI@public.gmane.org>: unknown user: "turnnlfw"
+
+<turnnlfw-MIq3pKQJ3XGcGo6dH0LEGSSTZJN7z1WI@public.gmane.org>: unknown user: "turnnlfw"
+
+<turnnlfw-MIq3pKQJ3XGcGo6dH0LEGSSTZJN7z1WI@public.gmane.org>: unknown user: "turnnlfw"
+
+<turnnlfw-MIq3pKQJ3XGcGo6dH0LEGSSTZJN7z1WI@public.gmane.org>: unknown user: "turnnlfw"
+
+--071E66BC11B3.1324321846/rent64.csv-networks.nl
+Content-Description: Delivery report
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns; rent64.csv-networks.nl
+X-Postfix-Queue-ID: 071E66BC11B3
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Mon, 19 Dec 2011 20:10:44 +0100 (CET)
+
+Final-Recipient: rfc822; turnnl1-MIq3pKQJ3XGcGo6dH0LEGSSTZJN7z1WI@public.gmane.org
+Original-Recipient: rfc822;dvaneijs-65ON2Zzpq/c@public.gmane.org
+Action: failed
+Status: 5.2.2
+Diagnostic-Code: x-unix; input/output error
+
+Final-Recipient: rfc822; turnnlfw-MIq3pKQJ3XGcGo6dH0LEGSSTZJN7z1WI@public.gmane.org
+Original-Recipient: rfc822;cboi-65ON2Zzpq/c@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: X-Postfix; unknown user: "turnnlfw"
+
+Final-Recipient: rfc822; turnnlfw-MIq3pKQJ3XGcGo6dH0LEGSSTZJN7z1WI@public.gmane.org
+Original-Recipient: rfc822;dftt-65ON2Zzpq/c@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: X-Postfix; unknown user: "turnnlfw"
+
+Final-Recipient: rfc822; turnnlfw-MIq3pKQJ3XGcGo6dH0LEGSSTZJN7z1WI@public.gmane.org
+Original-Recipient: rfc822;ekrucz-65ON2Zzpq/c@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: X-Postfix; unknown user: "turnnlfw"
+
+Final-Recipient: rfc822; turnnlfw-MIq3pKQJ3XGcGo6dH0LEGSSTZJN7z1WI@public.gmane.org
+Original-Recipient: rfc822;dsykfv-65ON2Zzpq/c@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: X-Postfix; unknown user: "turnnlfw"
+
+--071E66BC11B3.1324321846/rent64.csv-networks.nl
+Content-Description: Undelivered Message
+Content-Type: message/rfc822
+Content-Transfer-Encoding: 7bit
+
+Received: from localhost (rent64.csv-networks.nl [127.0.0.1])
+	by rent64.csv-networks.nl (Postfix) with ESMTP id 071E66BC11B3;
+	Mon, 19 Dec 2011 20:10:44 +0100 (CET)
+Received: from rent64.csv-networks.nl ([127.0.0.1])
+	by localhost (rent64.csv-networks.nl [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id 8elILIQ6rSMh; Mon, 19 Dec 2011 20:10:43 +0100 (CET)
+Received: from helios1.orcutt-schools.net (unknown [72.55.11.27])
+	by rent64.csv-networks.nl (Postfix) with ESMTP id 8CD366BC11B8;
+	Mon, 19 Dec 2011 20:10:42 +0100 (CET)
+Received: from [10.9.211.1] by helios1.orcutt-schools.net id YpYfmms3QADp with SMTP; Mon, 19 Dec 2011 10:56:12 -0800
+Date: Mon, 19 Dec 2011 10:56:12 -0800
+From: "Inform" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v2.09.8) Business
+X-Priority: 3 (Normal)
+Message-ID: <857396562.26774242032554-kXaSvKNQzF/g3+Wz1882mSaHrdCOuQkorE5yTffgRl4@public.gmane.org>
+To: <cboi-65ON2Zzpq/c@public.gmane.org>
+Subject: Factuur - 753592-661317
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+
+
+Het antwoord op uw vraag over ons bedrijf, overwogen en uitgevoerd.
+Met het resultaat is hier te vinden: Tel./Fax.: +31 (40) 912-55-75.
+
+
+
+--071E66BC11B3.1324321846/rent64.csv-networks.nl--
+
+--===============0953282655804917912==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============0953282655804917912==--
