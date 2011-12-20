@@ -1,8 +1,7 @@
 From: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-Subject: [PATCH 5/5] cgroup: separate out cgroup_attach_proc error handling
-	code
-Date: Tue, 20 Dec 2011 15:14:33 -0800
-Message-ID: <1324422873-31001-6-git-send-email-msb@chromium.org>
+Subject: [PATCH 2/5] cgroup: remove redundant get/put of task struct
+Date: Tue, 20 Dec 2011 15:14:30 -0800
+Message-ID: <1324422873-31001-3-git-send-email-msb@chromium.org>
 References: <1324422873-31001-1-git-send-email-msb@chromium.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,12 +21,9 @@ To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, LKML <linux-kernel-
 Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Makes it easier to read the non-error path.
-
-While at it, move the retval=0 assignment inside the !group_size
-check. This way the comment describe this check is directly
-above it(we also avoid an extra assignment not needed in the
-normal path). Also return 0 directly instead of using retval.
+threadgroup_lock() guarantees that the target threadgroup will
+remain stable - no new task will be added, no new PF_EXITING
+will be set and exec won't happen.
 
 Signed-off-by: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
 Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
@@ -40,54 +36,65 @@ Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
 ---
- kernel/cgroup.c |   21 +++++++++++----------
- 1 files changed, 11 insertions(+), 10 deletions(-)
+ kernel/cgroup.c |   12 +-----------
+ 1 files changed, 1 insertions(+), 11 deletions(-)
 
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 2ac9eee..9ce0872 100644
+index 4166066..6649529 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -2067,9 +2067,10 @@ int cgroup_attach_proc(struct cgroup *cgrp, struct task_struct *leader)
- 	read_unlock(&tasklist_lock);
+@@ -2130,7 +2130,6 @@ int cgroup_attach_proc(struct cgroup *cgrp, struct task_struct *leader)
  
+ 		/* as per above, nr_threads may decrease, but not increase. */
+ 		BUG_ON(i >= group_size);
+-		get_task_struct(tsk);
+ 		/*
+ 		 * saying GFP_ATOMIC has no effect here because we did prealloc
+ 		 * earlier, but it's good form to communicate our expectations.
+@@ -2152,7 +2151,7 @@ int cgroup_attach_proc(struct cgroup *cgrp, struct task_struct *leader)
  	/* methods shouldn't be called if no task is actually migrating */
--	retval = 0;
--	if (!group_size)
-+	if (!group_size) {
-+		retval = 0;
- 		goto out_free_group_list;
-+	}
+ 	retval = 0;
+ 	if (!nr_migrating_tasks)
+-		goto out_put_tasks;
++		goto out_free_group_list;
  
  	/*
  	 * step 1: check that we can legitimately attach to the cgroup.
-@@ -2126,20 +2127,20 @@ int cgroup_attach_proc(struct cgroup *cgrp, struct task_struct *leader)
- 	 */
- 	synchronize_rcu();
- 	cgroup_wakeup_rmdir_waiter(cgrp);
--	retval = 0;
-+	flex_array_free(group);
-+	return 0;
-+
- out_list_teardown:
- 	for (i = 0; i < css_set_refs; i++) {
- 		tc = flex_array_get(group, i);
- 		put_css_set(tc->cg);
+@@ -2233,12 +2232,6 @@ out_cancel_attach:
+ 				ss->cancel_attach(ss, cgrp, &tset);
+ 		}
  	}
- out_cancel_attach:
--	if (retval) {
--		for_each_subsys(root, ss) {
--			if (ss == failed_ss)
--				break;
--			if (ss->cancel_attach)
--				ss->cancel_attach(ss, cgrp, &tset);
--		}
-+	for_each_subsys(root, ss) {
-+		if (ss == failed_ss)
-+			break;
-+		if (ss->cancel_attach)
-+			ss->cancel_attach(ss, cgrp, &tset);
- 	}
+-out_put_tasks:
+-	/* clean up the array of referenced threads in the group. */
+-	for (i = 0; i < group_size; i++) {
+-		tc = flex_array_get(group, i);
+-		put_task_struct(tc->task);
+-	}
  out_free_group_list:
  	flex_array_free(group);
+ 	return retval;
+@@ -2287,14 +2280,12 @@ static int attach_task_by_pid(struct cgroup *cgrp, u64 pid, bool threadgroup)
+ 			cgroup_unlock();
+ 			return -EACCES;
+ 		}
+-		get_task_struct(tsk);
+ 		rcu_read_unlock();
+ 	} else {
+ 		if (threadgroup)
+ 			tsk = current->group_leader;
+ 		else
+ 			tsk = current;
+-		get_task_struct(tsk);
+ 	}
+ 
+ 	threadgroup_lock(tsk);
+@@ -2306,7 +2297,6 @@ static int attach_task_by_pid(struct cgroup *cgrp, u64 pid, bool threadgroup)
+ 
+ 	threadgroup_unlock(tsk);
+ 
+-	put_task_struct(tsk);
+ 	cgroup_unlock();
+ 	return ret;
+ }
 -- 
 1.7.3.1
