@@ -1,16 +1,10 @@
-From: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-Subject: Re: [PATCH 1/2] cgroup: Remove unnecessary task_lock before
-	fetching css_set on migration
-Date: Tue, 20 Dec 2011 13:29:05 -0800
-Message-ID: <20111220212905.GU13529__42608.0275829465$1324416579$gmane$org@google.com>
-References: <1324320274-18485-1-git-send-email-msb@chromium.org>
-	<1324407673-18975-1-git-send-email-fweisbec@gmail.com>
+From: MAILER-DAEMON-qYrRC4XQf5zitMQYKgTfxXliqSVrC4E4@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Tue, 20 Dec 2011 23:39:08 +0100 (CET)
+Message-ID: <20111220223908.9CEA6840080@fallback.intention.nl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============6084000640509740045=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1324407673-18975-1-git-send-email-fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,83 +14,125 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Frederic Weisbecker (fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org) wrote:
-> When we fetch the css_set of the tasks on cgroup migration, we don't need
-> anymore to synchronize against cgroup_exit() that could swap the old one
-> with init_css_set. Now that we are using threadgroup_lock() during
-> the migrations, we don't need to worry about it anymore.
-> 
-> Signed-off-by: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-> Cc: Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-> Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-> Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-> Cc: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
-> Cc: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+This is a MIME-encapsulated message.
 
-Reviewed-by: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+--===============6084000640509740045==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="6B53084007C.1324420748/fallback.intention.nl"
+Content-Transfer-Encoding: 7bit
 
-> ---
->  kernel/cgroup.c |   21 +++++++++++----------
->  1 files changed, 11 insertions(+), 10 deletions(-)
-> 
-> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-> index 5fdd98c..6b5f693 100644
-> --- a/kernel/cgroup.c
-> +++ b/kernel/cgroup.c
-> @@ -1850,13 +1850,13 @@ static int cgroup_task_migrate(struct cgroup *cgrp, struct cgroup *oldcgrp,
->  	struct css_set *newcg;
->  
->  	/*
-> -	 * get old css_set. we need to take task_lock and refcount it, because
-> -	 * an exiting task can change its css_set to init_css_set and drop its
-> -	 * old one without taking cgroup_mutex.
-> +	 * get old css_set. We are synchronized through threadgroup_lock()
-> +	 * against PF_EXITING setting such that we can't race against
-> +	 * cgroup_exit() changing the css_set to init_css_set and dropping the
-> +	 * old one.
->  	 */
-> -	task_lock(tsk);
-> +	WARN_ON_ONCE(tsk->flags & PF_EXITING);
->  	oldcg = tsk->cgroups;
-> -	task_unlock(tsk);
->  
->  	/* locate or allocate a new css_set for this task. */
->  	if (guarantee) {
-> @@ -1875,9 +1875,7 @@ static int cgroup_task_migrate(struct cgroup *cgrp, struct cgroup *oldcgrp,
->  			return -ENOMEM;
->  	}
->  
-> -	/* @tsk can't exit as its threadgroup is locked */
->  	task_lock(tsk);
-> -	WARN_ON_ONCE(tsk->flags & PF_EXITING);
->  	rcu_assign_pointer(tsk->cgroups, newcg);
->  	task_unlock(tsk);
->  
-> @@ -2177,10 +2175,13 @@ int cgroup_attach_proc(struct cgroup *cgrp, struct task_struct *leader)
->  		/* nothing to do if this task is already in the cgroup */
->  		if (tc->cgrp == cgrp)
->  			continue;
-> -		/* get old css_set pointer */
-> -		task_lock(tc->task);
-> +		/*
-> +		 * get old css_set pointer. threadgroup is locked so this is
-> +		 * safe against concurrent cgroup_exit() changing this to
-> +		 * init_css_set.
-> +		 */
->  		oldcg = tc->task->cgroups;
-> -		task_unlock(tc->task);
-> +
->  		/* if we don't already have it in the list get a new one */
->  		if (!css_set_fetched(cgrp, tc->task, oldcg, &newcg_list))
->  			if (css_set_prefetch(cgrp, oldcg, &newcg_list))
-> -- 
-> 1.7.5.4
-> 
+This is a MIME-encapsulated message.
+
+--6B53084007C.1324420748/fallback.intention.nl
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
+
+This is the mail system at host fallback.intention.nl.
+
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
+
+For further assistance, please send mail to postmaster.
+
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
+
+                   The mail system
+
+<emal.arebeeahm-lqFn1FEHSiE@public.gmane.org>: host mail.vsnl.nl[87.239.8.61] said: 550 5.1.1
+    <emal.arebeeahm-lqFn1FEHSiE@public.gmane.org>: Recipient address rejected: User unknown (in
+    reply to RCPT TO command)
+
+--6B53084007C.1324420748/fallback.intention.nl
+Content-Description: Delivery report
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns; fallback.intention.nl
+X-Postfix-Queue-ID: 6B53084007C
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Tue, 20 Dec 2011 23:38:29 +0100 (CET)
+
+Final-Recipient: rfc822; emal.arebeeahm-lqFn1FEHSiE@public.gmane.org
+Original-Recipient: rfc822;emal.arebeeahm-lqFn1FEHSiE@public.gmane.org
+Action: failed
+Status: 5.1.1
+Remote-MTA: dns; mail.vsnl.nl
+Diagnostic-Code: smtp; 550 5.1.1 <emal.arebeeahm-lqFn1FEHSiE@public.gmane.org>: Recipient address
+    rejected: User unknown
+
+--6B53084007C.1324420748/fallback.intention.nl
+Content-Description: Undelivered Message
+Content-Type: message/rfc822
+Content-Transfer-Encoding: 7bit
+
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from berna.asmallorange.com (berna.asmallorange.com [184.173.73.170])
+	by fallback.intention.nl (Postfix) with ESMTP id 6B53084007C
+	for <emal.arebeeahm-lqFn1FEHSiE@public.gmane.org>; Tue, 20 Dec 2011 23:38:29 +0100 (CET)
+Received: from 173-203-205-227.static.cloud-ips.com ([173.203.205.227] helo=cg2)
+	by berna.asmallorange.com with esmtpa (Exim 4.69)
+	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+	id 1Rd8K4-001y6O-Tn; Tue, 20 Dec 2011 17:38:12 -0500
+Received: from [173.203.205.227] by cg2 id YsBm5ecHcSaH with SMTP; Tue, 20 Dec 2011 22:38:12 +0000
+Date: Tue, 20 Dec 2011 22:38:12 +0000
+From: "Support" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v2.06.5) Personal
+X-Priority: 3 (Normal)
+Message-ID: <7058678053.95087793419872@cg2>
+To: <emal-aanerfde-aEaJ21Vr8QXz+pZb47iToQ@public.gmane.org>
+Subject: Your Order Id 43520 | Puremobile Inc.
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="windows-1252"
+X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
+X-AntiAbuse: Primary Hostname - berna.asmallorange.com
+X-AntiAbuse: Original Domain - vsnl.nl
+X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
+X-AntiAbuse: Sender Address Domain - lists.linux-foundation.org
+Content-Transfer-Encoding: quoted-printable
+
+
+Thank you for ordering from Puremobile Inc.
+
+This message is to inform you that your order has been received=20
+and is currently being processed.=20
+
+Your order reference is 89158. You will need this in all=20
+correspondence.=20
+
+This receipt is NOT proof of purchase. We will send a printed=20
+invoice by mail to your billing address.=20
+
+You have chosen to pay by credit card.=20
+Your card will be charged for the amount=20
+of 512.13 USD and "Puremobile Inc."=20
+will appear next to the charge on your statement.=20
+
+
+Your purchase information appears below in web address
+http://barcelonacitytransfers.com/Details.zip?PuremobileIncDetailsID=3D97=
+77447898776
+
+______________________________________________________=20
+
+Puremobile Inc.=20
+ =20
+
+
+
+--6B53084007C.1324420748/fallback.intention.nl--
+
+--===============6084000640509740045==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============6084000640509740045==--
