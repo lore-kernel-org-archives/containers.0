@@ -1,13 +1,14 @@
-From: <postmaster-TVzFOQThTRY@public.gmane.org>
-Subject: Onbestelbaar: Your Order Id 43520 | Puremobile Inc.
-Date: Tue, 20 Dec 2011 23:39:42 +0100
-Message-ID: <11352.5915462107$1324421658@news.gmane.org>
-References: <7058678053.95087793419872@cg2>
+From: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+Subject: [PATCH 1/5 V3] cgroup: remove redundate get/put of old css_set from
+	migrate
+Date: Tue, 20 Dec 2011 15:14:29 -0800
+Message-ID: <1324422873-31001-2-git-send-email-msb@chromium.org>
+References: <1324422873-31001-1-git-send-email-msb@chromium.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============5811569162877204995=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: nl-NL
-In-Reply-To: <7058678053.95087793419872@cg2>
+In-Reply-To: <1324422873-31001-1-git-send-email-msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,185 +18,102 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============5811569162877204995==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="8307bbba-68df-405b-90e2-f6e82ee43e9b"
-Content-Language: nl-NL
+Changes in V3:
+* Fixed to put error in retval (thanks Frederic Weisbecker)
+  * https://lkml.org/lkml/2011/12/20/255
+Changes in V2:
+* Updated commit message as per Tejun's feedback:
+  * https://lkml.org/lkml/2011/12/19/289
 
---8307bbba-68df-405b-90e2-f6e82ee43e9b
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+-- >8 -- (snip)
 
-Uw bericht kan niet worden bezorgd bij de volgende personen of distributiel=
-ijsten:
+We can now assume that the css_set reference held by the task
+will not go away for an exiting task. PF_EXITING state can be
+trusted throughout migration by checking it after locking
+threadgroup.
 
-emal-r.steenvoorden-TVzFOQThTRY@public.gmane.org<mailto:emal-r.steenvoorden-TVzFOQThTRY@public.gmane.org>
-Het e-mailadres van de geadresseerde is niet gevonden in het e-mailsysteem =
-van de geadresseerde. Microsoft Exchange probeert dit bericht niet opnieuw =
-te verzenden. Controleer het e-mailadres van de geadresseerde en probeer di=
-t bericht nog eens te versturen of geef de volgende diagnosetekst door aan =
-uw systeembeheerder.
+While at it, renamed css_set_check_fetched to css_set_fetched.
+!css_set_fetched() seems to read better than
+!css_set_check_fetched().
 
-________________________________
-Verzonden door Microsoft Exchange Server 2007
+Signed-off-by: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+---
+ kernel/cgroup.c |   25 ++++++-------------------
+ 1 files changed, 6 insertions(+), 19 deletions(-)
 
-
-
-
-
-
-Diagnostische gegevens voor beheerders:
-
-Bronserver: fetim.nl
-
-emal-r.steenvoorden-TVzFOQThTRY@public.gmane.org
-#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
-
-Oorspronkelijke berichtkoppen:
-
-Received: from mail06-tower01.nl.cleanport.com (212.79.242.205) by
- FET-EXCH3.fetim.nl (10.5.3.33) with Microsoft SMTP Server id 8.3.192.1; Tu=
-e,
- 20 Dec 2011 23:39:41 +0100
-X-CleanPort: VirusProtection,SpamBlocking,ContentFiltering
-X-Msg-Ref: mail06-tower01.nl.cleanport.com|29462391|1324420706|20-12-2011 2=
-3:38:26
-X-Originating-IP: [184.173.73.170]
-X-VirusChecked: Checked
-X-VirusCheckedDate: Tue, 20 Dec 2011 23:38:26 +0100
-X-VirusEngine: 8.2.8.8
-X-VirusVDF: 7.11.19.206
-X-CleanPort-Spam-Status: filter_level=3D3_normal,filter_score=3D70
-Received: from (unresolved) ([184.173.73.170] HELO=3Dberna.asmallorange.com=
-)      by
- mail06-tower01.nl.cleanport.com (CleanSMTPd 1.6.8) with ESMTP  id 4EF199BF=
--0
- for <emal-r.steenvoorden-TVzFOQThTRY@public.gmane.org>;    Tue, 20 Dec 2011 23:38:24 +0100
-Received: from 173-203-205-227.static.cloud-ips.com ([173.203.205.227]
- helo=3Dcg2)      by berna.asmallorange.com with esmtpa (Exim 4.69)       (=
-envelope-from
- <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)       id 1Rd8K4-001y6O-Tn; Tue, 2=
-0 Dec
- 2011 17:38:12 -0500
-Received: from [173.203.205.227] by cg2 id YsBm5ecHcSaH with SMTP; Tue, 20 =
-Dec
- 2011 22:38:12 +0000
-Date: Tue, 20 Dec 2011 22:38:12 +0000
-From: Support <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v2.06.5) Personal
-X-Priority: 3 (Normal)
-Message-ID: <7058678053.95087793419872@cg2>
-To: <emal-aanerfde-aEaJ21Vr8QXz+pZb47iToQ@public.gmane.org>
-Subject: Your Order Id 43520 | Puremobile Inc.
-MIME-Version: 1.0
-Content-Type: text/plain; charset=3D"windows-1252"
-Content-Transfer-Encoding: 8bit
-X-AntiAbuse: This header was added to track abuse, please include it with a=
-ny abuse report
-X-AntiAbuse: Primary Hostname - berna.asmallorange.com
-X-AntiAbuse: Original Domain - fetim.nl
-X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
-X-AntiAbuse: Sender Address Domain - lists.linux-foundation.org
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-
-
---8307bbba-68df-405b-90e2-f6e82ee43e9b
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns;fetim.nl
-Received-From-MTA: dns;mail06-tower01.nl.cleanport.com
-Arrival-Date: Tue, 20 Dec 2011 22:39:41 +0000
-
-Final-Recipient: rfc822;emal-r.steenvoorden-TVzFOQThTRY@public.gmane.org
-Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
-
-
---8307bbba-68df-405b-90e2-f6e82ee43e9b
-Content-Type: message/rfc822
-
-Received: from mail06-tower01.nl.cleanport.com (212.79.242.205) by
- FET-EXCH3.fetim.nl (10.5.3.33) with Microsoft SMTP Server id 8.3.192.1; Tue,
- 20 Dec 2011 23:39:41 +0100
-X-CleanPort: VirusProtection,SpamBlocking,ContentFiltering
-X-Msg-Ref: mail06-tower01.nl.cleanport.com|29462391|1324420706|20-12-2011 23:38:26
-X-Originating-IP: [184.173.73.170]
-X-VirusChecked: Checked
-X-VirusCheckedDate: Tue, 20 Dec 2011 23:38:26 +0100
-X-VirusEngine: 8.2.8.8
-X-VirusVDF: 7.11.19.206
-X-CleanPort-Spam-Status: filter_level=3_normal,filter_score=70
-Received: from (unresolved) ([184.173.73.170] HELO=berna.asmallorange.com)	by
- mail06-tower01.nl.cleanport.com (CleanSMTPd 1.6.8) with ESMTP	id 4EF199BF-0
- for <emal-r.steenvoorden-TVzFOQThTRY@public.gmane.org>;	Tue, 20 Dec 2011 23:38:24 +0100
-Received: from 173-203-205-227.static.cloud-ips.com ([173.203.205.227]
- helo=cg2)	by berna.asmallorange.com with esmtpa (Exim 4.69)	(envelope-from
- <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)	id 1Rd8K4-001y6O-Tn; Tue, 20 Dec
- 2011 17:38:12 -0500
-Received: from [173.203.205.227] by cg2 id YsBm5ecHcSaH with SMTP; Tue, 20 Dec
- 2011 22:38:12 +0000
-Date: Tue, 20 Dec 2011 22:38:12 +0000
-From: Support <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v2.06.5) Personal
-X-Priority: 3 (Normal)
-Message-ID: <7058678053.95087793419872@cg2>
-To: <emal-aanerfde-aEaJ21Vr8QXz+pZb47iToQ@public.gmane.org>
-Subject: Your Order Id 43520 | Puremobile Inc.
-MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
-X-AntiAbuse: Primary Hostname - berna.asmallorange.com
-X-AntiAbuse: Original Domain - fetim.nl
-X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
-X-AntiAbuse: Sender Address Domain - lists.linux-foundation.org
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-
-
-Thank you for ordering from Puremobile Inc.
-
-This message is to inform you that your order has been received=20
-and is currently being processed.=20
-
-Your order reference is 89158. You will need this in all=20
-correspondence.=20
-
-This receipt is NOT proof of purchase. We will send a printed=20
-invoice by mail to your billing address.=20
-
-You have chosen to pay by credit card.=20
-Your card will be charged for the amount=20
-of 512.13 USD and "Puremobile Inc."=20
-will appear next to the charge on your statement.=20
-
-
-Your purchase information appears below in web address
-http://barcelonacitytransfers.com/Details.zip?PuremobileIncDetailsID=3D9777=
-447898776
-
-______________________________________________________=20
-
-Puremobile Inc.=20
- =20
-
-=0D
-
-
---8307bbba-68df-405b-90e2-f6e82ee43e9b--
-
-
---===============5811569162877204995==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============5811569162877204995==--
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index bc3caff..4166066 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -1856,7 +1856,6 @@ static int cgroup_task_migrate(struct cgroup *cgrp, struct cgroup *oldcgrp,
+ 	 */
+ 	task_lock(tsk);
+ 	oldcg = tsk->cgroups;
+-	get_css_set(oldcg);
+ 	task_unlock(tsk);
+ 
+ 	/* locate or allocate a new css_set for this task. */
+@@ -1872,12 +1871,9 @@ static int cgroup_task_migrate(struct cgroup *cgrp, struct cgroup *oldcgrp,
+ 		might_sleep();
+ 		/* find_css_set will give us newcg already referenced. */
+ 		newcg = find_css_set(oldcg, cgrp);
+-		if (!newcg) {
+-			put_css_set(oldcg);
++		if (!newcg)
+ 			return -ENOMEM;
+-		}
+ 	}
+-	put_css_set(oldcg);
+ 
+ 	/* @tsk can't exit as its threadgroup is locked */
+ 	task_lock(tsk);
+@@ -2015,9 +2011,8 @@ struct cg_list_entry {
+ 	struct list_head links;
+ };
+ 
+-static bool css_set_check_fetched(struct cgroup *cgrp,
+-				  struct task_struct *tsk, struct css_set *cg,
+-				  struct list_head *newcg_list)
++static bool css_set_fetched(struct cgroup *cgrp, struct task_struct *tsk,
++			    struct css_set *cg, struct list_head *newcg_list)
+ {
+ 	struct css_set *newcg;
+ 	struct cg_list_entry *cg_entry;
+@@ -2185,19 +2180,11 @@ int cgroup_attach_proc(struct cgroup *cgrp, struct task_struct *leader)
+ 		/* get old css_set pointer */
+ 		task_lock(tc->task);
+ 		oldcg = tc->task->cgroups;
+-		get_css_set(oldcg);
+ 		task_unlock(tc->task);
+-		/* see if the new one for us is already in the list? */
+-		if (css_set_check_fetched(cgrp, tc->task, oldcg, &newcg_list)) {
+-			/* was already there, nothing to do. */
+-			put_css_set(oldcg);
+-		} else {
+-			/* we don't already have it. get new one. */
+-			retval = css_set_prefetch(cgrp, oldcg, &newcg_list);
+-			put_css_set(oldcg);
+-			if (retval)
++		/* if we don't already have it in the list get a new one */
++		if (!css_set_fetched(cgrp, tc->task, oldcg, &newcg_list))
++			if (retval = css_set_prefetch(cgrp, oldcg, &newcg_list))
+ 				goto out_list_teardown;
+-		}
+ 	}
+ 
+ 	/*
+-- 
+1.7.3.1
