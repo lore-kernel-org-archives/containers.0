@@ -1,13 +1,15 @@
-From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 2/2] cgroup: Drop task_lock(parent) on cgroup_fork()
-Date: Tue, 20 Dec 2011 20:01:13 +0100
-Message-ID: <1324407673-18975-2-git-send-email-fweisbec@gmail.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH 1/2] cgroup: Remove unnecessary task_lock before
+	fetching css_set on migration
+Date: Tue, 20 Dec 2011 11:14:43 -0800
+Message-ID: <20111220191443.GE10752@google.com>
 References: <1324320274-18485-1-git-send-email-msb@chromium.org>
 	<1324407673-18975-1-git-send-email-fweisbec@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 In-Reply-To: <1324407673-18975-1-git-send-email-fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,63 +20,35 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+To: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-We don't need to hold the parent task_lock() on the
-parent in cgroup_fork() because we are already synchronized
-against the two places that may change the parent css_set
-concurrently:
+Hello, Frederic.
 
-- cgroup_exit(), but the parent obviously can't exit concurrently
-- cgroup migration: we are synchronized against threadgroup_lock()
+On Tue, Dec 20, 2011 at 08:01:12PM +0100, Frederic Weisbecker wrote:
+> When we fetch the css_set of the tasks on cgroup migration, we don't need
+> anymore to synchronize against cgroup_exit() that could swap the old one
+> with init_css_set. Now that we are using threadgroup_lock() during
+> the migrations, we don't need to worry about it anymore.
+> 
+> Signed-off-by: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+> Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+> Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+> Cc: Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+> Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+> Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+> Cc: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+> Cc: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
 
-So we can safely remove the task_lock() there.
+I like this but it doesn't apply on top of cgroup/for-3.3.  It
+collides with Mandeep's patch.  Can you please rebase?
 
-Signed-off-by: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Cc: Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
-Cc: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
----
- kernel/cgroup.c |   10 +++++++---
- 1 files changed, 7 insertions(+), 3 deletions(-)
+Li, can you please ack?
 
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 6b5f693..a1e87a4 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -4544,7 +4544,7 @@ static const struct file_operations proc_cgroupstats_operations = {
-  *
-  * A pointer to the shared css_set was automatically copied in
-  * fork.c by dup_task_struct().  However, we ignore that copy, since
-- * it was not made under the protection of RCU or cgroup_mutex, so
-+ * it was not made under the protection of threadgroup_change_begin(), so
-  * might no longer be a valid cgroup pointer.  cgroup_attach_task() might
-  * have already changed current->cgroups, allowing the previously
-  * referenced cgroup group to be removed and freed.
-@@ -4554,10 +4554,14 @@ static const struct file_operations proc_cgroupstats_operations = {
-  */
- void cgroup_fork(struct task_struct *child)
- {
--	task_lock(current);
-+	/*
-+	 * We don't need to task_lock() current because current->cgroups
-+	 * can't be changed concurrently here. The parent obviously hasn't
-+	 * exited and called cgroup_exit(), and we are synchronized against
-+	 * cgroup migration through threadgroup_change_begin().
-+	 */
- 	child->cgroups = current->cgroups;
- 	get_css_set(child->cgroups);
--	task_unlock(current);
- 	INIT_LIST_HEAD(&child->cg_list);
- }
- 
+Thanks.
+
 -- 
-1.7.5.4
+tejun
