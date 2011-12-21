@@ -1,16 +1,16 @@
 From: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-Subject: Re: [PATCH 4/5] cgroup: remove extra calls to find_existing_css_set
-Date: Tue, 20 Dec 2011 15:47:22 -0800
-Message-ID: <20111220234722.GW13529__32979.594791732$1324424867$gmane$org@google.com>
+Subject: Re: [PATCH 2/5] cgroup: remove redundant get/put of task struct
+Date: Tue, 20 Dec 2011 16:04:18 -0800
+Message-ID: <20111221000418.GY13529__7681.97982474721$1324426357$gmane$org@google.com>
 References: <1324422873-31001-1-git-send-email-msb@chromium.org>
-	<1324422873-31001-5-git-send-email-msb@chromium.org>
-	<20111220233050.GM10752@google.com>
+	<1324422873-31001-3-git-send-email-msb@chromium.org>
+	<20111220232326.GL10752@google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20111220233050.GM10752-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20111220232326.GL10752-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,51 +27,20 @@ List-Id: containers.vger.kernel.org
 Tejun Heo (tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org) wrote:
 > Hello,
 > 
-> On Tue, Dec 20, 2011 at 03:14:32PM -0800, Mandeep Singh Baines wrote:
-> > @@ -1942,9 +1917,17 @@ int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *tsk)
+> On Tue, Dec 20, 2011 at 03:14:30PM -0800, Mandeep Singh Baines wrote:
+> > @@ -2287,14 +2280,12 @@ static int attach_task_by_pid(struct cgroup *cgrp, u64 pid, bool threadgroup)
+> >  			cgroup_unlock();
+> >  			return -EACCES;
 > >  		}
-> >  	}
-> >  
-> > -	retval = cgroup_task_migrate(cgrp, oldcgrp, tsk, false);
-> > -	if (retval)
-> > +	task_lock(tsk);
-> > +	oldcg = tsk->cgroups;
-> > +	task_unlock(tsk);
+> > -		get_task_struct(tsk);
+> >  		rcu_read_unlock();
 > 
-> Probably this is patch order issue w/ Frederic's patch but we don't
-> need task_lock here, right?
+> This is before threadgroup is locked.  What guarantees @tsk doesn't go
+> away once rcu is unlocked?
 > 
 
-Yeah, avoided removing the locks because Frederic's patch already did that.
-Once his changes get in, I'll rebase and resend.
-
-> > @@ -2171,17 +2088,18 @@ int cgroup_attach_proc(struct cgroup *cgrp, struct task_struct *leader)
-> >  	 * step 2: make sure css_sets exist for all threads to be migrated.
-> >  	 * we use find_css_set, which allocates a new one if necessary.
-> >  	 */
-> > -	INIT_LIST_HEAD(&newcg_list);
-> >  	for (i = 0; i < group_size; i++) {
-> >  		tc = flex_array_get(group, i);
-> >  		/* get old css_set pointer */
-> >  		task_lock(tc->task);
-> >  		oldcg = tc->task->cgroups;
-> >  		task_unlock(tc->task);
-> > -		/* if we don't already have it in the list get a new one */
-> > -		if (!css_set_fetched(cgrp, tc->task, oldcg, &newcg_list))
-> > -			if (retval = css_set_prefetch(cgrp, oldcg, &newcg_list))
-> > -				goto out_list_teardown;
-> > +		tc->cg = find_css_set(oldcg, cgrp);
-> > +		if (!tc->cg) {
-> > +			retval = -ENOMEM;
-> > +			css_set_refs = i + 1;
-> > +			goto out_list_teardown;
-> > +		}
-> 
-> Nice cleanup, but can't the above be merged into the loop which builds
-> the flex array?
-> 
-
-Good idea. That would remove a for loop. Will fix in next version.
+Nothing. D'oh. I'll remove the changes to attach_task_by_id and leave
+the others.
 
 > Thanks.
 > 
