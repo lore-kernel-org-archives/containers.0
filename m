@@ -1,7 +1,7 @@
-From: Mail Delivery System <Mailer-Daemon-uzvRp3LgeZYyKqsSKbxzDM/zPHvMGnVg@public.gmane.org>
+From: Mail Delivery System <Mailer-Daemon-mkBZxBW0zIgyKqsSKbxzDM/zPHvMGnVg@public.gmane.org>
 Subject: Mail delivery failed: returning message to sender
-Date: Wed, 21 Dec 2011 02:21:00 +0100
-Message-ID: <E1RdArc-0005fD-OE@se09.mail.pcextreme.nl>
+Date: Wed, 21 Dec 2011 02:21:01 +0100
+Message-ID: <E1RdArd-0003nr-JP@se11.mail.pcextreme.nl>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -23,18 +23,20 @@ This message was created automatically by mail delivery software.
 A message that you sent could not be delivered to one or more of its
 recipients. This is a permanent error. The following address(es) failed:
 
-  fvwv-XRpzo5TWato@public.gmane.org
-    all relevant MX records point to non-existent hosts
+  fvwverbatim-7PBc3+d+VYdmR6Xm/wNWPw@public.gmane.org
+    SMTP error from remote mail server after RCPT TO:<fvwverbatim-7PBc3+d+VYdmR6Xm/wNWPw@public.gmane.org>:
+    host mail1.cleanport.nl [212.79.242.245]: 550 Recipient address rejected:
+    Relaying denied
 
 ------ This is a copy of the message, including all the headers. ------
 
 Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Received: from reseller10.pcextreme.nl ([85.92.147.51])
-	by se09.mail.pcextreme.nl with esmtpsa (TLSv1:AES256-SHA:256)
+	by se11.mail.pcextreme.nl with esmtpsa (TLSv1:AES256-SHA:256)
 	(Exim 4.76)
 	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
-	id 1RdArX-0005eQ-IM
-	for fvwv-XRpzo5TWato@public.gmane.org; Wed, 21 Dec 2011 02:21:00 +0100
+	id 1RdArY-0003nc-Aa
+	for fvwverbatim-7PBc3+d+VYdmR6Xm/wNWPw@public.gmane.org; Wed, 21 Dec 2011 02:21:01 +0100
 Received: from 173-203-205-227.static.cloud-ips.com ([173.203.205.227] helo=cg2)
 	by reseller10.pcextreme.nl with esmtpa (Exim 4.72)
 	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
@@ -53,17 +55,17 @@ Content-Type: text/plain;
 Content-Transfer-Encoding: 8bit
 X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
 X-AntiAbuse: Primary Hostname - reseller10.pcextreme.nl
-X-AntiAbuse: Original Domain - adres.nl
+X-AntiAbuse: Original Domain - domdom.nl
 X-AntiAbuse: Authenticated User - info-QAyWkBK2DyBUecB6AVeNQA@public.gmane.org
 X-AntiAbuse: Sender Address Domain - lists.linux-foundation.org
 X-Filter-ID: XtLePq6GTMn8G68F0EmQvUy1TURgLZGtBlbqxVOMnQqc4b7EDSoutnKmFnlPKsIWoQfc5HpZrgOD
- EEgYVScsdlQW70n9oKSh0gu+5OcZDweZKtNlZbb4pIQmFiqunBjjiu92HwJPz6astWpFgR4bIw0u
- dfMaVyNNhAM3L5nFf2CtqJ1UaDYBeFi+aftd/MTdEICbXezjEOCpBUKla6rTjJQ7nN5zTOhDyujJ
- cyVYsJM/KiaRqQVtLXT7g3BSm8YgNa3BeaVTBhKXDZKF4paa8T/NlinsDXshxFmN8sOfGEfwTbGx
- xtgvd1dYjM+HMdzq9R/2gMGq0KWAzmMf+ibVDquVA8xjeul+8ShXa7ndeF5OGoPoP2zyf8tMmvUN
- sF9eMa+8SDMokXR6q1rrHLP17s3gxfr52jrCdnpFGZQ3/JKDwIE7VKe+bqpcdCns72R1TuU2Sgdt
- 6FGbv77Ujcy5VlUnPw/5MhZXP5Q5L2KpHPABIkUL/j1Y48GvmeURQjjEuVFHfotQrtBAotJCGsEu
- MeLIyhykkL5PA75GJDarR3/1d72IdWYYM3fLoIgqAKrIrFHOwsmRBgksbGxA19jWIA==
+ EEgYVScsdlQW70n9oKSh0gu+5OcZDwdXDpshanqhJQyQxMPzS8uRquFRURny8ccki808iDD4wW71
+ 7olIv0ebfopGkXcsPwCgHmfX0qbAbaxaORxfm5Ol9xXIczJ0I2Dh+Yyv5j+SecltTtcyhsDZLyzw
+ YyQgKM6cbCB+vG38NK63P454HJYs7q480KlQ3SBptDIEwmzNDVz1pRXWhjh9fdbl44I0Df1uD9af
+ HkjdhaGheIRPTYxYrMq7aHdv7KUpIjT8dzKRgGmnM7mr+dBLltnqI9klMrOPgui2v9YMcrbpcvzC
+ KwodgyzODJ5zHb1O8MeAPPricFZ9OZSgl518nHM1Da1zondvW4mgwZHN7ojaIqdQkGXMAyBLvoVE
+ qB3hwx/UcUB+YkigSbjg1I0R1YTlFZPbVcGRuCxVKQD96GCURoTzK+3IkKduCKVQHNzu37mu+6He
+ wlDMYu+r4RQ9k+dirQvPOKzo/7Jb46TkM829aqSnfH1lNsgChKXttWauyMGEzBr4ZQ==
 X-Originating-IP: 85.92.147.51
 Authentication-Results: mail.pcextreme.nl;
  auth=pass (login) smtp.auth=reseller10
