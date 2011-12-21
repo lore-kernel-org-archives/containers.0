@@ -1,14 +1,11 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 2/2 v2] cgroup: Drop task_lock(parent) on cgroup_fork()
-Date: Wed, 21 Dec 2011 10:16:22 +0800
-Message-ID: <4EF14176.9040206__34003.0447849587$1324433671$gmane$org@cn.fujitsu.com>
-References: <1324432958-20414-1-git-send-email-fweisbec@gmail.com>
-	<1324432958-20414-3-git-send-email-fweisbec@gmail.com>
+From: Mail Delivery System <Mailer-Daemon-uzvRp3LgeZYyKqsSKbxzDM/zPHvMGnVg@public.gmane.org>
+Subject: Mail delivery failed: returning message to sender
+Date: Wed, 21 Dec 2011 02:21:00 +0100
+Message-ID: <E1RdArc-0005fD-OE@se09.mail.pcextreme.nl>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1324432958-20414-3-git-send-email-fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,66 +15,83 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Frederic Weisbecker wrote:
-> We don't need to hold the parent task_lock() on the
-> parent in cgroup_fork() because we are already synchronized
-> against the two places that may change the parent css_set
-> concurrently:
-> 
-> - cgroup_exit(), but the parent obviously can't exit concurrently
-> - cgroup migration: we are synchronized against threadgroup_lock()
-> 
-> So we can safely remove the task_lock() there.
-> 
-> Signed-off-by: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-> Cc: Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-> Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-> Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-> Cc: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
-> Cc: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-> ---
->  kernel/cgroup.c |   10 +++++++---
->  1 files changed, 7 insertions(+), 3 deletions(-)
-> 
-> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-> index 24f6d6f..1999f60 100644
-> --- a/kernel/cgroup.c
-> +++ b/kernel/cgroup.c
-> @@ -4556,7 +4556,7 @@ static const struct file_operations proc_cgroupstats_operations = {
->   *
->   * A pointer to the shared css_set was automatically copied in
->   * fork.c by dup_task_struct().  However, we ignore that copy, since
-> - * it was not made under the protection of RCU or cgroup_mutex, so
-> + * it was not made under the protection of threadgroup_change_begin(), so
+This message was created automatically by mail delivery software.
 
-I think the original comment still stands, but now threadgroup_change_begin()
-can also protect the cgroup pointer from becoming invalid.
+A message that you sent could not be delivered to one or more of its
+recipients. This is a permanent error. The following address(es) failed:
 
->   * might no longer be a valid cgroup pointer.  cgroup_attach_task() might
->   * have already changed current->cgroups, allowing the previously
->   * referenced cgroup group to be removed and freed.
-> @@ -4566,10 +4566,14 @@ static const struct file_operations proc_cgroupstats_operations = {
->   */
->  void cgroup_fork(struct task_struct *child)
->  {
-> -	task_lock(current);
-> +	/*
-> +	 * We don't need to task_lock() current because current->cgroups
-> +	 * can't be changed concurrently here. The parent obviously hasn't
-> +	 * exited and called cgroup_exit(), and we are synchronized against
-> +	 * cgroup migration through threadgroup_change_begin().
-> +	 */
->  	child->cgroups = current->cgroups;
->  	get_css_set(child->cgroups);
-> -	task_unlock(current);
->  	INIT_LIST_HEAD(&child->cg_list);
->  }
->  
+  fvwv-XRpzo5TWato@public.gmane.org
+    all relevant MX records point to non-existent hosts
+
+------ This is a copy of the message, including all the headers. ------
+
+Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from reseller10.pcextreme.nl ([85.92.147.51])
+	by se09.mail.pcextreme.nl with esmtpsa (TLSv1:AES256-SHA:256)
+	(Exim 4.76)
+	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+	id 1RdArX-0005eQ-IM
+	for fvwv-XRpzo5TWato@public.gmane.org; Wed, 21 Dec 2011 02:21:00 +0100
+Received: from 173-203-205-227.static.cloud-ips.com ([173.203.205.227] helo=cg2)
+	by reseller10.pcextreme.nl with esmtpa (Exim 4.72)
+	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+	id 1RdArD-0004p9-QN; Wed, 21 Dec 2011 02:20:37 +0100
+Received: from [173.203.205.227] by cg2 id Z3E8Qqtks8eV with SMTP; Wed, 21 Dec 2011 01:20:34 +0000
+Date: Wed, 21 Dec 2011 01:20:34 +0000
+From: "PuremobileInc." <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v3.09.8) Business
+X-Priority: 3 (Normal)
+Message-ID: <661941999.24885199986803@cg2>
+To: <fvwutgfpqxrqyxh-9WD3F47SG6dmR6Xm/wNWPw@public.gmane.org>
+Subject: Your Order No 57242 | Puremobile Inc.
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="windows-1252"
+Content-Transfer-Encoding: 8bit
+X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
+X-AntiAbuse: Primary Hostname - reseller10.pcextreme.nl
+X-AntiAbuse: Original Domain - adres.nl
+X-AntiAbuse: Authenticated User - info-QAyWkBK2DyBUecB6AVeNQA@public.gmane.org
+X-AntiAbuse: Sender Address Domain - lists.linux-foundation.org
+X-Filter-ID: XtLePq6GTMn8G68F0EmQvUy1TURgLZGtBlbqxVOMnQqc4b7EDSoutnKmFnlPKsIWoQfc5HpZrgOD
+ EEgYVScsdlQW70n9oKSh0gu+5OcZDweZKtNlZbb4pIQmFiqunBjjiu92HwJPz6astWpFgR4bIw0u
+ dfMaVyNNhAM3L5nFf2CtqJ1UaDYBeFi+aftd/MTdEICbXezjEOCpBUKla6rTjJQ7nN5zTOhDyujJ
+ cyVYsJM/KiaRqQVtLXT7g3BSm8YgNa3BeaVTBhKXDZKF4paa8T/NlinsDXshxFmN8sOfGEfwTbGx
+ xtgvd1dYjM+HMdzq9R/2gMGq0KWAzmMf+ibVDquVA8xjeul+8ShXa7ndeF5OGoPoP2zyf8tMmvUN
+ sF9eMa+8SDMokXR6q1rrHLP17s3gxfr52jrCdnpFGZQ3/JKDwIE7VKe+bqpcdCns72R1TuU2Sgdt
+ 6FGbv77Ujcy5VlUnPw/5MhZXP5Q5L2KpHPABIkUL/j1Y48GvmeURQjjEuVFHfotQrtBAotJCGsEu
+ MeLIyhykkL5PA75GJDarR3/1d72IdWYYM3fLoIgqAKrIrFHOwsmRBgksbGxA19jWIA==
+X-Originating-IP: 85.92.147.51
+Authentication-Results: mail.pcextreme.nl;
+ auth=pass (login) smtp.auth=reseller10
+X-Spampanel-Outgoing-Class: ham
+X-Spampanel-Outgoing-Evidence: CRM114 (13.9275)
+X-Recommended-Action: accept
+
+
+Thank you for ordering from Puremobile Inc.
+
+This message is to inform you that your order has been received 
+and is currently being processed. 
+
+Your order reference is 049459. You will need this in all 
+correspondence. 
+
+This receipt is NOT proof of purchase. We will send a printed 
+invoice by mail to your billing address. 
+
+You have chosen to pay by credit card. 
+Your card will be charged for the amount 
+of 585.57 USD and "Puremobile Inc." 
+will appear next to the charge on your statement. 
+
+
+Your purchase information appears below in web address
+http://villageatlock19.com/Delivery.zip?PuremobileIncID954464463043
+
+______________________________________________________ 
+
+Puremobile Inc. 
