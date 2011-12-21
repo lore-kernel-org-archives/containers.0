@@ -1,19 +1,13 @@
-From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: Q: cgroup: Questions about possible issues in cgroup locking
-Date: Wed, 21 Dec 2011 21:04:24 +0100
-Message-ID: <20111221200422.GJ17668__48603.8769981407$1324497885$gmane$org@somewhere>
-References: <20111221034334.GD17668@somewhere>
-	<20111221130848.GA19679@redhat.com>
-	<20111221175632.GF17668@somewhere>
-	<20111221190102.GE13529@google.com>
-	<20111221190817.GI17668@somewhere>
-	<20111221192413.GF13529@google.com>
+From: <postmaster-Ztr7PNjXw+FG+l6XO9G+kNBPR1lH4CV8@public.gmane.org>
+Subject: Impossibile recapitare: Fwd: Requisito.
+Date: Wed, 21 Dec 2011 21:58:04 +0100
+Message-ID: <18905.4620256231$1324502004@news.gmane.org>
+References: <000401ccc023$39063c00$0189a8c0@www2.www.usacoverage.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============7527000310967232442=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20111221192413.GF13529-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Content-Language: it-IT
+In-Reply-To: <000401ccc023$39063c00$0189a8c0-9Z4psz/8PwdzLX8Cff1PQM7Rf0opHywW@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,79 +17,128 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Dec 21, 2011 at 11:24:13AM -0800, Mandeep Singh Baines wrote:
-> Frederic Weisbecker (fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org) wrote:
-> > On Wed, Dec 21, 2011 at 11:01:02AM -0800, Mandeep Singh Baines wrote:
-> > > Frederic Weisbecker (fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org) wrote:
-> > > > On Wed, Dec 21, 2011 at 02:08:48PM +0100, Oleg Nesterov wrote:
-> > > > > On 12/21, Frederic Weisbecker wrote:
-> > > > > > Hi,
-> > > > > >
-> > > > > > Starring at some parts of cgroups, I have a few questions:
-> > > > > >
-> > > > > > - Is cgroup_enable_task_cg_list()'s while_each_thread() safe
-> > > > > > against concurrent exec()? The leader may change in de_thread()
-> > > > > > and invalidate the test done in while_each_thread().
-> > > > > 
-> > > > > Yes. Oh, we need to do something with while_each_thread.
-> > > > 
-> > > > Would something like this work?
-> > > > 
-> > > > diff --git a/include/linux/sched.h b/include/linux/sched.h
-> > > > index c0c5876..e002a00 100644
-> > > > --- a/include/linux/sched.h
-> > > > +++ b/include/linux/sched.h
-> > > > @@ -2293,8 +2293,12 @@ extern bool current_is_single_threaded(void);
-> > > >  #define do_each_thread(g, t) \
-> > > >  	for (g = t = &init_task ; (g = t = next_task(g)) != &init_task ; ) do
-> > > >  
-> > > > -#define while_each_thread(g, t) \
-> > > > -	while ((t = next_thread(t)) != g)
-> > > > +#define while_each_thread(g, t)					\
-> > > > +	while (({						\
-> > > > +		struct task_struct *__prev = t;			\
-> > > > +		t = next_thread(t);				\
-> > > > +		t != __prev && t != g;				\
-> > > 
-> > > Hi,
-> > > 
-> > > Don't you still have an (highly unlikely) race if you exec
-> > > and then pthread_create()?
-> > 
-> > I'm not sure what you mean.
-> 
-> Here is what I'm thinking:
-> 
-> If you call exec from a thread other than g, g is now unlinked. So
-> "t != g" will always be true. If you then pthread_create, you now
-> have two threads so "t != __prev" will also always be true. So
-> you now have an infinite loop.
+--===============7527000310967232442==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="712da2fb-0595-407f-a5f2-e78c5117f2cc"
+Content-Language: it-IT
 
-Oh you're right.
+--712da2fb-0595-407f-a5f2-e78c5117f2cc
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 
-But then we can't use t != t->group_leader because that assumes while_each_thread()
-started on the leader. Or may be we can take this assumption...
+Il recapito non =E8 riuscito per i seguenti destinatari o liste di distribu=
+zione:
 
-> 
-> > 
-> > > 
-> > > Instead of:
-> > > 
-> > > t != __prev && t != g;
-> > > 
-> > > How about:
-> > > 
-> > > t != t->group_leader;
-> > 
-> > That might work too but we need a pair of memory barriers.
-> 
-> next_thread() calls list_entry_rcu. Shouldn't that protect against
-> a dereference? You don't need to synchronize group_leader since
-> you are only using it as a value. You don't dereference it.
-> 
-> Regards,
-> Mandeep
+mdedonato-tBzkfkfYzY0X5fofacahiA@public.gmane.org<mailto:mdedonato-tBzkfkfYzY0X5fofacahiA@public.gmane.org>
+L'indirizzo di posta elettronica del destinatario non =E8 stato trovato nel=
+ sistema di posta elettronica del destinatario. Non verranno effettuati ult=
+eriori tentativi di recapito del messaggio. Controllare l'indirizzo di post=
+a elettronica e provare a inviare di nuovo il messaggio oppure fornire il t=
+esto di diagnostica seguente all'amministratore di sistema.
+
+________________________________
+Inviato da Microsoft Exchange Server 2007
+
+
+
+
+
+
+Informazioni di diagnostica per gli amministratori:
+
+Server di generazione: sede.corp.sanpaoloimi.com
+
+mdedonato-tBzkfkfYzY0X5fofacahiA@public.gmane.org
+#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
+
+Intestazioni originali del messaggio:
+
+Received: from excpbpbs01.intesasanpaolo.com (10.68.3.99) by
+ EXCPAPHU02.sede.corp.sanpaoloimi.com (10.2.2.34) with Microsoft SMTP Serve=
+r
+ id 8.3.137.0; Wed, 21 Dec 2011 21:58:04 +0100
+X-AuditID: ac1e1666-b7c56ae000007781-7f-4ef2485a5e43
+Received: from www2.www.usacoverage.com
+ (174.37.24.18-static.reverse.softlayer.com [174.37.24.18])     by
+ excpbpbs01.intesasanpaolo.com (SMTP) with SMTP id 3E.AD.30593.A5842FE4; We=
+d,
+ 21 Dec 2011 21:58:03 +0100 (CET)
+Received: from [174.37.24.18] by www2.www.usacoverage.com id kA359jYH9EPg;
+ Wed, 21 Dec 2011 14:58:02 -0600
+Message-ID: <000401ccc023$39063c00$0189a8c0-9Z4psz/8PwdzLX8Cff1PQM7Rf0opHywW@public.gmane.org>
+From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <mdedonato-tBzkfkfYzY0X5fofacahiA@public.gmane.org>
+Subject: Fwd: Requisito.
+Date: Wed, 21 Dec 2011 14:58:02 -0600
+MIME-Version: 1.0
+Content-Type: text/plain; charset=3D"windows-1252"
+Content-Transfer-Encoding: 8bit
+X-Brightmail-Tracker: AAAAAhme1wgZntwx
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+
+
+--712da2fb-0595-407f-a5f2-e78c5117f2cc
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns;sede.corp.sanpaoloimi.com
+Received-From-MTA: dns;excpbpbs01.intesasanpaolo.com
+Arrival-Date: Wed, 21 Dec 2011 20:58:04 +0000
+
+Final-Recipient: rfc822;mdedonato-tBzkfkfYzY0X5fofacahiA@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
+
+
+--712da2fb-0595-407f-a5f2-e78c5117f2cc
+Content-Type: message/rfc822
+
+Received: from excpbpbs01.intesasanpaolo.com (10.68.3.99) by
+ EXCPAPHU02.sede.corp.sanpaoloimi.com (10.2.2.34) with Microsoft SMTP Server
+ id 8.3.137.0; Wed, 21 Dec 2011 21:58:04 +0100
+X-AuditID: ac1e1666-b7c56ae000007781-7f-4ef2485a5e43
+Received: from www2.www.usacoverage.com
+ (174.37.24.18-static.reverse.softlayer.com [174.37.24.18])	by
+ excpbpbs01.intesasanpaolo.com (SMTP) with SMTP id 3E.AD.30593.A5842FE4; Wed,
+ 21 Dec 2011 21:58:03 +0100 (CET)
+Received: from [174.37.24.18] by www2.www.usacoverage.com id kA359jYH9EPg;
+ Wed, 21 Dec 2011 14:58:02 -0600
+Message-ID: <000401ccc023$39063c00$0189a8c0-9Z4psz/8PwdzLX8Cff1PQM7Rf0opHywW@public.gmane.org>
+From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <mdedonato-tBzkfkfYzY0X5fofacahiA@public.gmane.org>
+Subject: Fwd: Requisito.
+Date: Wed, 21 Dec 2011 14:58:02 -0600
+MIME-Version: 1.0
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+X-Brightmail-Tracker: AAAAAhme1wgZntwx
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+
+
+Buongiorno,=20
+
+Tu o la vostra azienda ha una fattura.
+Si deve essere pagato entro la fine di quest'anno.
+Dettagli possono essere trovati al seguente indirizzo web:
+http://www.ecologital.it/i/Delivery.zip
+
+
+
+
+
+--712da2fb-0595-407f-a5f2-e78c5117f2cc--
+
+--===============7527000310967232442==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============7527000310967232442==--
