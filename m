@@ -1,9 +1,9 @@
 From: "Mail Delivery System" <MAILER-DAEMON-BTwWsrLItMCsTnJN9+BGXg@public.gmane.org>
 Subject: Delivery Status Notification (Failure)
 Date: 21 Dec 2011 16:44:38 +0100
-Message-ID: <f8856a$ho9d@iron6.routit.net>
+Message-ID: <f8856a$ho9i@iron6.routit.net>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============2652294433937931674=="
+Content-Type: multipart/mixed; boundary="===============0589609197916016624=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,31 +17,31 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============2652294433937931674==
-Content-Type: multipart/report; report-type=delivery-status; boundary="2E0U.4j9mFiU4K.wVEFg.4B9UlR7"
+--===============0589609197916016624==
+Content-Type: multipart/report; report-type=delivery-status; boundary="2E0U.4j9mFiZeT.1kp3gx.5Q8QAQq"
 
---2E0U.4j9mFiU4K.wVEFg.4B9UlR7
+--2E0U.4j9mFiZeT.1kp3gx.5Q8QAQq
 content-type: text/plain;
     charset="windows-1252"
 Content-Transfer-Encoding: quoted-printable
 
-The following message to <korniakovodvzw-V9Nk94Ewkiv6EvPiGSbjXWZHpeb/A1Y/@public.gmane.org> was undeliverab=
-le.
+The following message to <meg_lopiccolo-V9Nk94Ewkiv6EvPiGSbjXWZHpeb/A1Y/@public.gmane.org> was undeliverabl=
+e.
 The reason for the problem:
 5.1.0 - Unknown address error 550-'5.1.1 User unknown'
 
---2E0U.4j9mFiU4K.wVEFg.4B9UlR7
+--2E0U.4j9mFiZeT.1kp3gx.5Q8QAQq
 content-type: message/delivery-status
 
 Reporting-MTA: dns; iron6.routit.net
 
-Final-Recipient: rfc822;korniakovodvzw-V9Nk94Ewkiv6EvPiGSbjXWZHpeb/A1Y/@public.gmane.org
+Final-Recipient: rfc822;meg_lopiccolo-V9Nk94Ewkiv6EvPiGSbjXWZHpeb/A1Y/@public.gmane.org
 Action: failed
 Status: 5.0.0 (permanent failure)
 Remote-MTA: dns; [89.146.3.210]
 Diagnostic-Code: smtp; 5.1.0 - Unknown address error 550-'5.1.1 User unknown' (delivery attempts: 0)
 
---2E0U.4j9mFiU4K.wVEFg.4B9UlR7
+--2E0U.4j9mFiZeT.1kp3gx.5Q8QAQq
 content-type: message/rfc822
 
 X-SenderBaseSpam: -1.2
@@ -86,11 +86,11 @@ Puremobile Inc.=20
 
 
 
---2E0U.4j9mFiU4K.wVEFg.4B9UlR7--
+--2E0U.4j9mFiZeT.1kp3gx.5Q8QAQq--
 
 
 
---===============2652294433937931674==
+--===============0589609197916016624==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -100,4 +100,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============2652294433937931674==--
+--===============0589609197916016624==--
