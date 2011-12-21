@@ -1,13 +1,17 @@
 From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 2/2 v3] cgroup: Drop task_lock(parent) on cgroup_fork()
-Date: Wed, 21 Dec 2011 20:03:19 +0100
-Message-ID: <1324494199-23928-3-git-send-email-fweisbec@gmail.com>
-References: <1324494199-23928-1-git-send-email-fweisbec@gmail.com>
+Subject: Re: Q: cgroup: Questions about possible issues in cgroup locking
+Date: Wed, 21 Dec 2011 20:08:20 +0100
+Message-ID: <20111221190817.GI17668@somewhere>
+References: <20111221034334.GD17668@somewhere>
+	<20111221130848.GA19679@redhat.com>
+	<20111221175632.GF17668@somewhere>
+	<20111221190102.GE13529@google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1324494199-23928-1-git-send-email-fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20111221190102.GE13529-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,75 +21,56 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+To: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-We don't need to hold the parent task_lock() on the
-parent in cgroup_fork() because we are already synchronized
-against the two places that may change the parent css_set
-concurrently:
+On Wed, Dec 21, 2011 at 11:01:02AM -0800, Mandeep Singh Baines wrote:
+> Frederic Weisbecker (fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org) wrote:
+> > On Wed, Dec 21, 2011 at 02:08:48PM +0100, Oleg Nesterov wrote:
+> > > On 12/21, Frederic Weisbecker wrote:
+> > > > Hi,
+> > > >
+> > > > Starring at some parts of cgroups, I have a few questions:
+> > > >
+> > > > - Is cgroup_enable_task_cg_list()'s while_each_thread() safe
+> > > > against concurrent exec()? The leader may change in de_thread()
+> > > > and invalidate the test done in while_each_thread().
+> > > 
+> > > Yes. Oh, we need to do something with while_each_thread.
+> > 
+> > Would something like this work?
+> > 
+> > diff --git a/include/linux/sched.h b/include/linux/sched.h
+> > index c0c5876..e002a00 100644
+> > --- a/include/linux/sched.h
+> > +++ b/include/linux/sched.h
+> > @@ -2293,8 +2293,12 @@ extern bool current_is_single_threaded(void);
+> >  #define do_each_thread(g, t) \
+> >  	for (g = t = &init_task ; (g = t = next_task(g)) != &init_task ; ) do
+> >  
+> > -#define while_each_thread(g, t) \
+> > -	while ((t = next_thread(t)) != g)
+> > +#define while_each_thread(g, t)					\
+> > +	while (({						\
+> > +		struct task_struct *__prev = t;			\
+> > +		t = next_thread(t);				\
+> > +		t != __prev && t != g;				\
+> 
+> Hi,
+> 
+> Don't you still have an (highly unlikely) race if you exec
+> and then pthread_create()?
 
-- cgroup_exit(), but the parent obviously can't exit concurrently
-- cgroup migration: we are synchronized against threadgroup_lock()
+I'm not sure what you mean.
 
-So we can safely remove the task_lock() there.
+> 
+> Instead of:
+> 
+> t != __prev && t != g;
+> 
+> How about:
+> 
+> t != t->group_leader;
 
-Signed-off-by: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Cc: Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
-Cc: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
----
- kernel/cgroup.c |   23 +++++++++++++++++------
- 1 files changed, 17 insertions(+), 6 deletions(-)
-
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 24f6d6f..4936d88 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -4556,20 +4556,31 @@ static const struct file_operations proc_cgroupstats_operations = {
-  *
-  * A pointer to the shared css_set was automatically copied in
-  * fork.c by dup_task_struct().  However, we ignore that copy, since
-- * it was not made under the protection of RCU or cgroup_mutex, so
-- * might no longer be a valid cgroup pointer.  cgroup_attach_task() might
-- * have already changed current->cgroups, allowing the previously
-- * referenced cgroup group to be removed and freed.
-+ * it was not made under the protection of RCU, cgroup_mutex or
-+ * threadgroup_change_begin(), so it might no longer be a valid
-+ * cgroup pointer.  cgroup_attach_task() might have already changed
-+ * current->cgroups, allowing the previously referenced cgroup
-+ * group to be removed and freed.
-+ *
-+ * Outside the pointer validity we also need to process the css_set
-+ * inheritance between threadgoup_change_begin() and
-+ * threadgoup_change_end(), this way there is no leak in any process
-+ * wide migration performed by cgroup_attach_proc() that could otherwise
-+ * miss a thread because it is too early or too late in the fork stage.
-  *
-  * At the point that cgroup_fork() is called, 'current' is the parent
-  * task, and the passed argument 'child' points to the child task.
-  */
- void cgroup_fork(struct task_struct *child)
- {
--	task_lock(current);
-+	/*
-+	 * We don't need to task_lock() current because current->cgroups
-+	 * can't be changed concurrently here. The parent obviously hasn't
-+	 * exited and called cgroup_exit(), and we are synchronized against
-+	 * cgroup migration through threadgroup_change_begin().
-+	 */
- 	child->cgroups = current->cgroups;
- 	get_css_set(child->cgroups);
--	task_unlock(current);
- 	INIT_LIST_HEAD(&child->cg_list);
- }
- 
--- 
-1.7.5.4
+That might work too but we need a pair of memory barriers.
