@@ -1,15 +1,16 @@
 From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC PATCH] cgroup: Remove task_lock() from cgroup_post_fork()
-Date: Thu, 22 Dec 2011 10:33:54 +0100
-Message-ID: <20111222093351.GN17668@somewhere>
-References: <1324516711-26913-1-git-send-email-fweisbec@gmail.com>
-	<4EF2F095.90207@cn.fujitsu.com>
+Subject: Re: [PATCH 4/4] cgroup: remove extra calls to find_existing_css_set
+Date: Thu, 22 Dec 2011 10:44:39 +0100
+Message-ID: <20111222094437.GO17668__18449.9187548228$1324547100$gmane$org@somewhere>
+References: <1324527518-24461-1-git-send-email-msb@chromium.org>
+	<1324527518-24461-4-git-send-email-msb@chromium.org>
+	<4EF2C536.7070408@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4EF2F095.90207-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <4EF2C536.7070408-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,80 +21,42 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Dec 22, 2011 at 04:55:49PM +0800, Li Zefan wrote:
-> Frederic Weisbecker wrote:
-> > cgroup_post_fork() is protected between threadgroup_change_begin()
-> > and threadgroup_change_end() against concurrent changes of the
-> > child's css_set in cgroup_task_migrate(). Also the child can't
-> > exit and call cgroup_exit() at this stage, this means it's css_set
-> > can't be changed with init_css_set concurrently.
-> > 
-> > For these reasons, we don't need to hold task_lock() on the child
-> > because it's css_set can only remain stable in this place.
-> > 
-> > Let's remove the lock there.
-> > 
-> > NOTE: We could do something else: move threadgroup_change_end()
-> > before cgroup_post_fork() and keep the task_lock() which, combined
-> > with the css_set_lock, would be enough to synchronize against
-> > cgroup_task_migrate()'s change on child->cgroup and its cglist.
-> > Because outside that, the threadgroup lock doesn't appear to be
-> > needed on cgroup_post_fork().
-> > 
+On Thu, Dec 22, 2011 at 01:50:46PM +0800, Li Zefan wrote:
+> > @@ -2091,6 +2010,10 @@ int cgroup_attach_proc(struct cgroup *cgrp, struct task_struct *leader)
+> >  	 * rcu or tasklist locked. instead, build an array of all threads in the
+> >  	 * group - group_rwsem prevents new threads from appearing, and if
+> >  	 * threads exit, this will just be an over-estimate.
+> > +	 *
+> > +	 * While creating the list, also make sure css_sets exist for all
+> > +	 * threads to be migrated. we use find_css_set, which allocates a new
+> > +	 * one if necessary.
+> >  	 */
+> >  	group_size = get_nr_threads(leader);
+> >  	/* flex_array supports very large thread-groups better than kmalloc. */
+> > @@ -2137,6 +2060,12 @@ int cgroup_attach_proc(struct cgroup *cgrp, struct task_struct *leader)
+> >  		/* nothing to do if this task is already in the cgroup */
+> >  		if (ent.cgrp == cgrp)
+> >  			continue;
+> > +		ent.cg = find_css_set(tsk->cgroups, cgrp);
 > 
-> To narrow the scope of the threadgroup lock? I think it's preferable to keep
-> cgroup_post_fork() inside the lock, to make things simpler and we have
-> the same lock rule for both cgroup_fork() and cgroup_post_fork().
+> unfortunately This won't work, because we are holding tasklist_lock.
 
-Ok!
+I believe we can remove tasklist_lock now (in a seperate patch).
+
+It was there in order to protect while_each_thread() against exec but
+now we have threadgroup_lock().
+
+I think we only need to use rcu_read_lock() to protect against concurrent
+removal in exit.
  
-> > Let's debate!
-> > 
-> > Signed-off-by: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> > Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> > Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> > Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-> > Cc: Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-> > Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-> > Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> > Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-> > Cc: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
-> > Cc: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-> > ---
-> >  kernel/cgroup.c |   11 ++++++++---
-> >  1 files changed, 8 insertions(+), 3 deletions(-)
-> > 
-> > diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-> > index 4936d88..d0dbf72 100644
-> > --- a/kernel/cgroup.c
-> > +++ b/kernel/cgroup.c
-> > @@ -4622,10 +4622,15 @@ void cgroup_post_fork(struct task_struct *child)
-> >  {
-> >  	if (use_task_css_set_links) {
-> >  		write_lock(&css_set_lock);
-> > -		task_lock(child);
-> > -		if (list_empty(&child->cg_list))
-> > +		if (list_empty(&child->cg_list)) {
-> > +			/*
-> > +			 * It's safe to use child->cgroups without task_lock()
-> > +			 * here because we are protected through
-> > +			 * threadgroup_change_begin() against concurrent
-> > +			 * css_set change in cgroup_task_migrate()
-> > +			 */
-> 
-> Also explain why it won't race with cgroup_exit()? You were not quite confident
-> about that before Oleg's explanation. ;)
-
-hehe indeed :)
-
-Will update, thanks!
-
-> >  			list_add(&child->cg_list, &child->cgroups->tasks);
-> > -		task_unlock(child);
+> > +		if (!ent.cg) {
+> > +			retval = -ENOMEM;
+> > +			group_size = i;
+> > +			goto out_list_teardown;
 > > +		}
-> >  		write_unlock(&css_set_lock);
-> >  	}
-> >  }
+> >  		retval = flex_array_put(group, i, &ent, GFP_ATOMIC);
+> >  		BUG_ON(retval != 0);
+> >  		i++;
