@@ -1,14 +1,15 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 1/2] cgroup: remove tasklist_lock from cgroup_attach_proc
-Date: Thu, 22 Dec 2011 14:51:02 -0800
-Message-ID: <20111222225102.GM17084__11826.545224949$1324594281$gmane$org@google.com>
+Subject: Re: [PATCH 2/2] cgroup: remove extra calls to find_existing_css_set
+Date: Thu, 22 Dec 2011 15:12:03 -0800
+Message-ID: <20111222231203.GO17084__11683.0703140751$1324595540$gmane$org@google.com>
 References: <1324592816-13792-1-git-send-email-msb@chromium.org>
+	<1324592816-13792-2-git-send-email-msb@chromium.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1324592816-13792-1-git-send-email-msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+In-Reply-To: <1324592816-13792-2-git-send-email-msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,32 +23,16 @@ To: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
 Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hello,
-
-On Thu, Dec 22, 2011 at 02:26:55PM -0800, Mandeep Singh Baines wrote:
-> @@ -2283,14 +2261,26 @@ static int attach_task_by_pid(struct cgroup *cgrp, u64 pid, bool threadgroup)
->  
->  	threadgroup_lock(tsk);
->  
-> -	if (threadgroup)
-> +	if (threadgroup) {
-> +		if (!thread_group_leader(tsk)) {
-> +			/*
-> +			 * a race with de_thread from another thread's exec()
-> +			 * may strip us of our leadership, if this happens,
-> +			 * there is no choice but to throw this task away and
-> +			 * try again (from cgroup_procs_write); this is
-> +			 * "double-double-toil-and-trouble-check locking".
-> +			 */
-> +			ret = -EAGAIN;
-> +			goto out_unlock_threadgroup;
+On Thu, Dec 22, 2011 at 02:26:56PM -0800, Mandeep Singh Baines wrote:
+> +out_list_teardown:
+> +	if (retval) {
+> +		for (i = 0; i < group_size; i++) {
+> +			tc = flex_array_get(group, i);
+> +			put_css_set(tc->cg);
 > +		}
->  		ret = cgroup_attach_proc(cgrp, tsk);
+> +	}
 
-Ummm... can't we just do tsk = tsk->leader after locking threadgroup?
-Why do we need to retry from the beginning?
-
-Thanks.
+Don't we need to put them even after success?
 
 -- 
 tejun
