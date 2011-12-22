@@ -1,14 +1,14 @@
 From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 1/4] cgroup: remove redundant get/put of old css_set from
-	migrate
-Date: Thu, 22 Dec 2011 13:11:56 +0800
-Message-ID: <4EF2BC1C.90208__8128.78442598066$1324530608$gmane$org@cn.fujitsu.com>
+Subject: Re: [PATCH 2/4] cgroup: remove redundant get/put of task struct
+Date: Thu, 22 Dec 2011 13:36:11 +0800
+Message-ID: <4EF2C1CB.4030103__6994.62200650505$1324532056$gmane$org@cn.fujitsu.com>
 References: <1324527518-24461-1-git-send-email-msb@chromium.org>
+	<1324527518-24461-2-git-send-email-msb@chromium.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1324527518-24461-1-git-send-email-msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+In-Reply-To: <1324527518-24461-2-git-send-email-msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,31 +23,19 @@ Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, cont
 List-Id: containers.vger.kernel.org
 
 Mandeep Singh Baines wrote:
-> We can now assume that the css_set reference held by the task
-> will not go away for an exiting task. PF_EXITING state can be
-> trusted throughout migration by checking it after locking
-> threadgroup.
+> threadgroup_lock() guarantees that the target threadgroup will
+> remain stable - no new task will be added, no new PF_EXITING
+> will be set and exec won't happen.
 > 
-> While at it, renamed css_set_check_fetched to css_set_fetched.
-> !css_set_fetched() seems to read better than
-> !css_set_check_fetched().
-> 
-> Changes in V4:
-> * https://lkml.org/lkml/2011/12/20/368 (Tejun Heo)
->   * Fix typo in commit message
->   * Undid the rename of css_set_check_fetched
-> * https://lkml.org/lkml/2011/12/20/427 (Li Zefan)
->   * Fix comment in cgroup_task_migrate()
-> Changes in V3:
-> * https://lkml.org/lkml/2011/12/20/255 (Frederic Weisbecker)
->   * Fixed to put error in retval
 > Changes in V2:
-> * https://lkml.org/lkml/2011/12/19/289 (Tejun Heo)
->   * Updated commit message
+> * https://lkml.org/lkml/2011/12/20/369 (Tejun Heo)
+>   * Undo incorrect removal of get/put from attach_task_by_pid()
+> * Author
+>   * Remove a comment which is made stale by this change
 > 
 > Signed-off-by: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
 
-Reviewed-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Acked-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 
 > Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 > Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
@@ -59,5 +47,5 @@ Reviewed-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 > Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 > Cc: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
 > ---
->  kernel/cgroup.c |   28 ++++++++--------------------
->  1 files changed, 8 insertions(+), 20 deletions(-)
+>  kernel/cgroup.c |   11 ++---------
+>  1 files changed, 2 insertions(+), 9 deletions(-)
