@@ -1,13 +1,11 @@
 From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Subject: [PATCH 5/6] memcg: fix broken boolen expression
-Date: Sat, 24 Dec 2011 05:00:18 +0200
-Message-ID: <1324695619-5537-5-git-send-email-kirill__255.071177571331$1324696228$gmane$org@shutemov.name>
-References: <1324695619-5537-1-git-send-email-kirill@shutemov.name>
+Subject: [PATCH 1/6] memcg: fix unused variable warning
+Date: Sat, 24 Dec 2011 05:00:14 +0200
+Message-ID: <1324695619-5537-1-git-send-email-kirill__24830.3739041605$1324696231$gmane$org@shutemov.name>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1324695619-5537-1-git-send-email-kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,27 +19,27 @@ To: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5
 Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-
-action != CPU_DEAD || action != CPU_DEAD_FROZEN is always true.
-
-Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
----
- mm/memcontrol.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index b27ce0f..3833a7b 100644
---- a/mm/memcontrol.c
-+++ b/mm/memcontrol.c
-@@ -2100,7 +2100,7 @@ static int __cpuinit memcg_cpu_hotplug_callback(struct notifier_block *nb,
- 		return NOTIFY_OK;
- 	}
- 
--	if ((action != CPU_DEAD) || action != CPU_DEAD_FROZEN)
-+	if (action != CPU_DEAD && action != CPU_DEAD_FROZEN)
- 		return NOTIFY_OK;
- 
- 	for_each_mem_cgroup(iter)
--- 
-1.7.7.3
+RnJvbTogIktpcmlsbCBBLiBTaHV0ZW1vdiIgPGtpcmlsbEBzaHV0ZW1vdi5uYW1lPgoKbW0vbWVt
+Y29udHJvbC5jOiBJbiBmdW5jdGlvbiDigJhtZW1jZ19jaGVja19ldmVudHPigJk6Cm1tL21lbWNv
+bnRyb2wuYzo3ODQ6MjI6IHdhcm5pbmc6IHVudXNlZCB2YXJpYWJsZSDigJhkb19udW1haW5mb+KA
+mSBbLVd1bnVzZWQtdmFyaWFibGVdCgpTaWduZWQtb2ZmLWJ5OiBLaXJpbGwgQS4gU2h1dGVtb3Yg
+PGtpcmlsbEBzaHV0ZW1vdi5uYW1lPgotLS0KIG1tL21lbWNvbnRyb2wuYyB8ICAgIDcgKysrKy0t
+LQogMSBmaWxlcyBjaGFuZ2VkLCA0IGluc2VydGlvbnMoKyksIDMgZGVsZXRpb25zKC0pCgpkaWZm
+IC0tZ2l0IGEvbW0vbWVtY29udHJvbC5jIGIvbW0vbWVtY29udHJvbC5jCmluZGV4IGQ2NDNiZDYu
+LmE1ZTkyYmQgMTAwNjQ0Ci0tLSBhL21tL21lbWNvbnRyb2wuYworKysgYi9tbS9tZW1jb250cm9s
+LmMKQEAgLTc4MSwxNCArNzgxLDE1IEBAIHN0YXRpYyB2b2lkIG1lbWNnX2NoZWNrX2V2ZW50cyhz
+dHJ1Y3QgbWVtX2Nncm91cCAqbWVtY2csIHN0cnVjdCBwYWdlICpwYWdlKQogCS8qIHRocmVzaG9s
+ZCBldmVudCBpcyB0cmlnZ2VyZWQgaW4gZmluZXIgZ3JhaW4gdGhhbiBzb2Z0IGxpbWl0ICovCiAJ
+aWYgKHVubGlrZWx5KG1lbV9jZ3JvdXBfZXZlbnRfcmF0ZWxpbWl0KG1lbWNnLAogCQkJCQkJTUVN
+X0NHUk9VUF9UQVJHRVRfVEhSRVNIKSkpIHsKLQkJYm9vbCBkb19zb2Z0bGltaXQsIGRvX251bWFp
+bmZvOworCQlib29sIGRvX3NvZnRsaW1pdDsKIAotCQlkb19zb2Z0bGltaXQgPSBtZW1fY2dyb3Vw
+X2V2ZW50X3JhdGVsaW1pdChtZW1jZywKLQkJCQkJCU1FTV9DR1JPVVBfVEFSR0VUX1NPRlRMSU1J
+VCk7CiAjaWYgTUFYX05VTU5PREVTID4gMQorCQlib29sIGRvX251bWFpbmZvOwogCQlkb19udW1h
+aW5mbyA9IG1lbV9jZ3JvdXBfZXZlbnRfcmF0ZWxpbWl0KG1lbWNnLAogCQkJCQkJTUVNX0NHUk9V
+UF9UQVJHRVRfTlVNQUlORk8pOwogI2VuZGlmCisJCWRvX3NvZnRsaW1pdCA9IG1lbV9jZ3JvdXBf
+ZXZlbnRfcmF0ZWxpbWl0KG1lbWNnLAorCQkJCQkJTUVNX0NHUk9VUF9UQVJHRVRfU09GVExJTUlU
+KTsKIAkJcHJlZW1wdF9lbmFibGUoKTsKIAogCQltZW1fY2dyb3VwX3RocmVzaG9sZChtZW1jZyk7
+Ci0tIAoxLjcuNy4zCgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5k
+YXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3Rp
+bmZvL2NvbnRhaW5lcnM=
