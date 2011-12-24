@@ -1,7 +1,7 @@
 From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Subject: [PATCH 4/6] memcg: mark stat field of mem_cgroup struct as __percpu
-Date: Sat, 24 Dec 2011 05:00:17 +0200
-Message-ID: <1324695619-5537-4-git-send-email-kirill__29151.1791329414$1324696233$gmane$org@shutemov.name>
+Subject: [PATCH 2/6] memcg: mark more functions/variables as static
+Date: Sat, 24 Dec 2011 05:00:15 +0200
+Message-ID: <1324695619-5537-2-git-send-email-kirill__9359.42209694094$1324696238$gmane$org@shutemov.name>
 References: <1324695619-5537-1-git-send-email-kirill@shutemov.name>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,25 +23,70 @@ List-Id: containers.vger.kernel.org
 
 From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 
-It fixes a lot of sparse warnings.
+Based on sparse output.
 
 Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 ---
- mm/memcontrol.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ mm/memcontrol.c |   12 ++++++------
+ 1 files changed, 6 insertions(+), 6 deletions(-)
 
 diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index 627c19e..b27ce0f 100644
+index a5e92bd..4bac3a2 100644
 --- a/mm/memcontrol.c
 +++ b/mm/memcontrol.c
-@@ -291,7 +291,7 @@ struct mem_cgroup {
- 	/*
- 	 * percpu counter.
- 	 */
--	struct mem_cgroup_stat_cpu *stat;
-+	struct mem_cgroup_stat_cpu __percpu *stat;
- 	/*
- 	 * used when a cpu is offlined or other synchronizations
- 	 * See mem_cgroup_read_stat().
+@@ -59,7 +59,7 @@
+ 
+ struct cgroup_subsys mem_cgroup_subsys __read_mostly;
+ #define MEM_CGROUP_RECLAIM_RETRIES	5
+-struct mem_cgroup *root_mem_cgroup __read_mostly;
++static struct mem_cgroup *root_mem_cgroup __read_mostly;
+ 
+ #ifdef CONFIG_CGROUP_MEM_RES_CTLR_SWAP
+ /* Turned on only when memory cgroup is enabled && really_do_swap_account = 1 */
+@@ -1573,7 +1573,7 @@ int mem_cgroup_select_victim_node(struct mem_cgroup *memcg)
+  * unused nodes. But scan_nodes is lazily updated and may not cotain
+  * enough new information. We need to do double check.
+  */
+-bool mem_cgroup_reclaimable(struct mem_cgroup *memcg, bool noswap)
++static bool mem_cgroup_reclaimable(struct mem_cgroup *memcg, bool noswap)
+ {
+ 	int nid;
+ 
+@@ -1608,7 +1608,7 @@ int mem_cgroup_select_victim_node(struct mem_cgroup *memcg)
+ 	return 0;
+ }
+ 
+-bool mem_cgroup_reclaimable(struct mem_cgroup *memcg, bool noswap)
++static bool mem_cgroup_reclaimable(struct mem_cgroup *memcg, bool noswap)
+ {
+ 	return test_mem_cgroup_node_reclaimable(memcg, 0, noswap);
+ }
+@@ -1782,7 +1782,7 @@ static void memcg_oom_recover(struct mem_cgroup *memcg)
+ /*
+  * try to call OOM killer. returns false if we should exit memory-reclaim loop.
+  */
+-bool mem_cgroup_handle_oom(struct mem_cgroup *memcg, gfp_t mask)
++static bool mem_cgroup_handle_oom(struct mem_cgroup *memcg, gfp_t mask)
+ {
+ 	struct oom_wait_info owait;
+ 	bool locked, need_to_kill;
+@@ -3765,7 +3765,7 @@ try_to_free:
+ 	goto move_account;
+ }
+ 
+-int mem_cgroup_force_empty_write(struct cgroup *cont, unsigned int event)
++static int mem_cgroup_force_empty_write(struct cgroup *cont, unsigned int event)
+ {
+ 	return mem_cgroup_force_empty(mem_cgroup_from_cont(cont), true);
+ }
+@@ -4044,7 +4044,7 @@ struct mcs_total_stat {
+ 	s64 stat[NR_MCS_STAT];
+ };
+ 
+-struct {
++static struct {
+ 	char *local_name;
+ 	char *total_name;
+ } memcg_stat_strings[NR_MCS_STAT] = {
 -- 
 1.7.7.3
