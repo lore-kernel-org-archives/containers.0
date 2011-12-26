@@ -1,15 +1,14 @@
-From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Subject: Re: [PATCH 1/6] memcg: fix unused variable warning
-Date: Mon, 26 Dec 2011 08:36:52 +0200
-Message-ID: <20111226063652.GA13273__49911.7597858005$1324881427$gmane$org@shutemov.name>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 6/6] memcg: drop redundant brackets
+Date: Mon, 26 Dec 2011 15:40:51 +0900
+Message-ID: <20111226154051.e0dad825.kamezawa.hiroyu__25726.6713808805$1324881739$gmane$org@jp.fujitsu.com>
 References: <1324695619-5537-1-git-send-email-kirill@shutemov.name>
-	<20111226152531.e0335ec4.kamezawa.hiroyu@jp.fujitsu.com>
+	<1324695619-5537-6-git-send-email-kirill@shutemov.name>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20111226152531.e0335ec4.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <1324695619-5537-6-git-send-email-kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,47 +18,17 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+To: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gTW9uLCBEZWMgMjYsIDIwMTEgYXQgMDM6MjU6MzFQTSArMDkwMCwgS0FNRVpBV0EgSGlyb3l1
-a2kgd3JvdGU6Cj4gT24gU2F0LCAyNCBEZWMgMjAxMSAwNTowMDoxNCArMDIwMAo+ICJLaXJpbGwg
-QS4gU2h1dGVtb3YiIDxraXJpbGxAc2h1dGVtb3YubmFtZT4gd3JvdGU6Cj4gCj4gPiBGcm9tOiAi
-S2lyaWxsIEEuIFNodXRlbW92IiA8a2lyaWxsQHNodXRlbW92Lm5hbWU+Cj4gPiAKPiA+IG1tL21l
-bWNvbnRyb2wuYzogSW4gZnVuY3Rpb24g4oCYbWVtY2dfY2hlY2tfZXZlbnRz4oCZOgo+ID4gbW0v
-bWVtY29udHJvbC5jOjc4NDoyMjogd2FybmluZzogdW51c2VkIHZhcmlhYmxlIOKAmGRvX251bWFp
-bmZv4oCZIFstV3VudXNlZC12YXJpYWJsZV0KPiA+IAo+ID4gU2lnbmVkLW9mZi1ieTogS2lyaWxs
-IEEuIFNodXRlbW92IDxraXJpbGxAc2h1dGVtb3YubmFtZT4KPiAKPiBIbW0gPyBEb2Vzbid0IHRo
-aXMgZml4IGNhdXNlIGEgbmV3IFdhcm5pbmcgPwo+IAo+IG1tL21lbWNvbnRyb2wuYzogSW4gZnVu
-Y3Rpb24gP21lbWNnX2NoZWNrX2V2ZW50cz86Cj4gbW0vbWVtY29udHJvbC5jOjc4OTogd2Fybmlu
-ZzogSVNPIEM5MCBmb3JiaWRzIG1peGVkIGRlY2xhcmF0aW9ucyBhbmQgY29kZQoKSSBkb24ndCBz
-ZWUgaG93LiBUaGUgcmVzdWx0IGNvZGUgaXM6CgoJaWYgKHVubGlrZWx5KG1lbV9jZ3JvdXBfZXZl
-bnRfcmF0ZWxpbWl0KG1lbWNnLAoJCQkJCQlNRU1fQ0dST1VQX1RBUkdFVF9USFJFU0gpKSkgewoJ
-CWJvb2wgZG9fc29mdGxpbWl0OwoKI2lmIE1BWF9OVU1OT0RFUyA+IDEKCQlib29sIGRvX251bWFp
-bmZvOwoJCWRvX251bWFpbmZvID0gbWVtX2Nncm91cF9ldmVudF9yYXRlbGltaXQobWVtY2csCgkJ
-CQkJCU1FTV9DR1JPVVBfVEFSR0VUX05VTUFJTkZPKTsKI2VuZGlmCgkJZG9fc29mdGxpbWl0ID0g
-bWVtX2Nncm91cF9ldmVudF9yYXRlbGltaXQobWVtY2csCgkJCQkJCU1FTV9DR1JPVVBfVEFSR0VU
-X1NPRlRMSU1JVCk7CgkJcHJlZW1wdF9lbmFibGUoKTsKCgkJbWVtX2Nncm91cF90aHJlc2hvbGQo
-bWVtY2cpOwoKCj4gCj4gVGhhbmtzLAo+IC1LYW1lCj4gPiAtLS0KPiA+ICBtbS9tZW1jb250cm9s
-LmMgfCAgICA3ICsrKystLS0KPiA+ICAxIGZpbGVzIGNoYW5nZWQsIDQgaW5zZXJ0aW9ucygrKSwg
-MyBkZWxldGlvbnMoLSkKPiA+IAo+ID4gZGlmZiAtLWdpdCBhL21tL21lbWNvbnRyb2wuYyBiL21t
-L21lbWNvbnRyb2wuYwo+ID4gaW5kZXggZDY0M2JkNi4uYTVlOTJiZCAxMDA2NDQKPiA+IC0tLSBh
-L21tL21lbWNvbnRyb2wuYwo+ID4gKysrIGIvbW0vbWVtY29udHJvbC5jCj4gPiBAQCAtNzgxLDE0
-ICs3ODEsMTUgQEAgc3RhdGljIHZvaWQgbWVtY2dfY2hlY2tfZXZlbnRzKHN0cnVjdCBtZW1fY2dy
-b3VwICptZW1jZywgc3RydWN0IHBhZ2UgKnBhZ2UpCj4gPiAgCS8qIHRocmVzaG9sZCBldmVudCBp
-cyB0cmlnZ2VyZWQgaW4gZmluZXIgZ3JhaW4gdGhhbiBzb2Z0IGxpbWl0ICovCj4gPiAgCWlmICh1
-bmxpa2VseShtZW1fY2dyb3VwX2V2ZW50X3JhdGVsaW1pdChtZW1jZywKPiA+ICAJCQkJCQlNRU1f
-Q0dST1VQX1RBUkdFVF9USFJFU0gpKSkgewo+ID4gLQkJYm9vbCBkb19zb2Z0bGltaXQsIGRvX251
-bWFpbmZvOwo+ID4gKwkJYm9vbCBkb19zb2Z0bGltaXQ7Cj4gPiAgCj4gPiAtCQlkb19zb2Z0bGlt
-aXQgPSBtZW1fY2dyb3VwX2V2ZW50X3JhdGVsaW1pdChtZW1jZywKPiA+IC0JCQkJCQlNRU1fQ0dS
-T1VQX1RBUkdFVF9TT0ZUTElNSVQpOwo+ID4gICNpZiBNQVhfTlVNTk9ERVMgPiAxCj4gPiArCQli
-b29sIGRvX251bWFpbmZvOwo+ID4gIAkJZG9fbnVtYWluZm8gPSBtZW1fY2dyb3VwX2V2ZW50X3Jh
-dGVsaW1pdChtZW1jZywKPiA+ICAJCQkJCQlNRU1fQ0dST1VQX1RBUkdFVF9OVU1BSU5GTyk7Cj4g
-PiAgI2VuZGlmCj4gPiArCQlkb19zb2Z0bGltaXQgPSBtZW1fY2dyb3VwX2V2ZW50X3JhdGVsaW1p
-dChtZW1jZywKPiA+ICsJCQkJCQlNRU1fQ0dST1VQX1RBUkdFVF9TT0ZUTElNSVQpOwo+ID4gIAkJ
-cHJlZW1wdF9lbmFibGUoKTsKPiA+ICAKPiA+ICAJCW1lbV9jZ3JvdXBfdGhyZXNob2xkKG1lbWNn
-KTsKPiA+IC0tIAo+ID4gMS43LjcuMwo+ID4gCj4gCgotLSAKIEtpcmlsbCBBLiBTaHV0ZW1vdgpf
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJz
-IG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBz
-Oi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+On Sat, 24 Dec 2011 05:00:19 +0200
+"Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org> wrote:
+
+> From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+> 
+> Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+
+Maybe I tend to add too many braces at using macro.
+
+Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
