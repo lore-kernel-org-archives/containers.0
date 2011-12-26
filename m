@@ -1,17 +1,17 @@
-From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Subject: Re: [PATCH 1/6] memcg: fix unused variable warning
-Date: Mon, 26 Dec 2011 08:47:34 +0200
-Message-ID: <20111226064734.GA13355__36384.2475381263$1324882068$gmane$org@shutemov.name>
+Date: Mon, 26 Dec 2011 15:50:08 +0900
+Message-ID: <20111226155008.9ab21c6f.kamezawa.hiroyu__14780.4408487447$1324882291$gmane$org@jp.fujitsu.com>
 References: <1324695619-5537-1-git-send-email-kirill@shutemov.name>
 	<20111226152531.e0335ec4.kamezawa.hiroyu@jp.fujitsu.com>
 	<20111226063652.GA13273@shutemov.name>
 	<20111226154252.d3621532.kamezawa.hiroyu@jp.fujitsu.com>
+	<20111226064734.GA13355@shutemov.name>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="iso-2022-jp"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20111226154252.d3621532.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20111226064734.GA13355-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,37 +21,55 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+To: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gTW9uLCBEZWMgMjYsIDIwMTEgYXQgMDM6NDI6NTJQTSArMDkwMCwgS0FNRVpBV0EgSGlyb3l1
-a2kgd3JvdGU6Cj4gT24gTW9uLCAyNiBEZWMgMjAxMSAwODozNjo1MiArMDIwMAo+ICJLaXJpbGwg
-QS4gU2h1dGVtb3YiIDxraXJpbGxAc2h1dGVtb3YubmFtZT4gd3JvdGU6Cj4gCj4gPiBPbiBNb24s
-IERlYyAyNiwgMjAxMSBhdCAwMzoyNTozMVBNICswOTAwLCBLQU1FWkFXQSBIaXJveXVraSB3cm90
-ZToKPiA+ID4gT24gU2F0LCAyNCBEZWMgMjAxMSAwNTowMDoxNCArMDIwMAo+ID4gPiAiS2lyaWxs
-IEEuIFNodXRlbW92IiA8a2lyaWxsQHNodXRlbW92Lm5hbWU+IHdyb3RlOgo+ID4gPiAKPiA+ID4g
-PiBGcm9tOiAiS2lyaWxsIEEuIFNodXRlbW92IiA8a2lyaWxsQHNodXRlbW92Lm5hbWU+Cj4gPiA+
-ID4gCj4gPiA+ID4gbW0vbWVtY29udHJvbC5jOiBJbiBmdW5jdGlvbiDigJhtZW1jZ19jaGVja19l
-dmVudHPigJk6Cj4gPiA+ID4gbW0vbWVtY29udHJvbC5jOjc4NDoyMjogd2FybmluZzogdW51c2Vk
-IHZhcmlhYmxlIOKAmGRvX251bWFpbmZv4oCZIFstV3VudXNlZC12YXJpYWJsZV0KPiA+ID4gPiAK
-PiA+ID4gPiBTaWduZWQtb2ZmLWJ5OiBLaXJpbGwgQS4gU2h1dGVtb3YgPGtpcmlsbEBzaHV0ZW1v
-di5uYW1lPgo+ID4gPiAKPiA+ID4gSG1tID8gRG9lc24ndCB0aGlzIGZpeCBjYXVzZSBhIG5ldyBX
-YXJuaW5nID8KPiA+ID4gCj4gPiA+IG1tL21lbWNvbnRyb2wuYzogSW4gZnVuY3Rpb24gP21lbWNn
-X2NoZWNrX2V2ZW50cz86Cj4gPiA+IG1tL21lbWNvbnRyb2wuYzo3ODk6IHdhcm5pbmc6IElTTyBD
-OTAgZm9yYmlkcyBtaXhlZCBkZWNsYXJhdGlvbnMgYW5kIGNvZGUKPiA+IAo+ID4gSSBkb24ndCBz
-ZWUgaG93LiBUaGUgcmVzdWx0IGNvZGUgaXM6Cj4gPiAKPiA+IAlpZiAodW5saWtlbHkobWVtX2Nn
-cm91cF9ldmVudF9yYXRlbGltaXQobWVtY2csCj4gPiAJCQkJCQlNRU1fQ0dST1VQX1RBUkdFVF9U
-SFJFU0gpKSkgewo+ID4gCQlib29sIGRvX3NvZnRsaW1pdDsKPiA+IAo+ID4gI2lmIE1BWF9OVU1O
-T0RFUyA+IDEKPiA+IAkJYm9vbCBkb19udW1haW5mbzsKPiA+IAkJZG9fbnVtYWluZm8gPSBtZW1f
-Y2dyb3VwX2V2ZW50X3JhdGVsaW1pdChtZW1jZywKPiA+IAkJCQkJCU1FTV9DR1JPVVBfVEFSR0VU
-X05VTUFJTkZPKTsKPiA+ICNlbmRpZgo+ID4gCQlkb19zb2Z0bGltaXQgPSBtZW1fY2dyb3VwX2V2
-ZW50X3JhdGVsaW1pdChtZW1jZywKPiA+IAkJCQkJCU1FTV9DR1JPVVBfVEFSR0VUX1NPRlRMSU1J
-VCk7Cj4gPiAJCXByZWVtcHRfZW5hYmxlKCk7Cj4gPiAKPiA+IAkJbWVtX2Nncm91cF90aHJlc2hv
-bGQobWVtY2cpOwo+ID4gCj4gCj4gQWguIHBsZWFzZSBzZWUgbGludXgtbmV4dCBhbmQgcmViYXNl
-IG9udG8gdGhhdC4KClRoZSBwYXRjaHNldCBpcyBvbiB0b3Agb2YgbmV4dC0yMDExMTIyMi4gSGF2
-ZSBJIG1pc3NlZCBzb21ldGhpbmc/Cgo+IAo+IFRoYW5rcywKPiAtS2FtZQo+IAoKLS0gCiBLaXJp
-bGwgQS4gU2h1dGVtb3YKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3Vu
-ZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0
-aW5mby9jb250YWluZXJz
+On Mon, 26 Dec 2011 08:47:34 +0200
+"Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org> wrote:
+
+> On Mon, Dec 26, 2011 at 03:42:52PM +0900, KAMEZAWA Hiroyuki wrote:
+> > On Mon, 26 Dec 2011 08:36:52 +0200
+> > "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org> wrote:
+> > 
+> > > On Mon, Dec 26, 2011 at 03:25:31PM +0900, KAMEZAWA Hiroyuki wrote:
+> > > > On Sat, 24 Dec 2011 05:00:14 +0200
+> > > > "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org> wrote:
+> > > > 
+> > > > > From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+> > > > > 
+> > > > > mm/memcontrol.c: In function ‘memcg_check_events’:
+> > > > > mm/memcontrol.c:784:22: warning: unused variable ‘do_numainfo’ [-Wunused-variable]
+> > > > > 
+> > > > > Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+> > > > 
+> > > > Hmm ? Doesn't this fix cause a new Warning ?
+> > > > 
+> > > > mm/memcontrol.c: In function ?memcg_check_events?:
+> > > > mm/memcontrol.c:789: warning: ISO C90 forbids mixed declarations and code
+> > > 
+> > > I don't see how. The result code is:
+> > > 
+> > > 	if (unlikely(mem_cgroup_event_ratelimit(memcg,
+> > > 						MEM_CGROUP_TARGET_THRESH))) {
+> > > 		bool do_softlimit;
+> > > 
+> > > #if MAX_NUMNODES > 1
+> > > 		bool do_numainfo;
+> > > 		do_numainfo = mem_cgroup_event_ratelimit(memcg,
+> > > 						MEM_CGROUP_TARGET_NUMAINFO);
+> > > #endif
+> > > 		do_softlimit = mem_cgroup_event_ratelimit(memcg,
+> > > 						MEM_CGROUP_TARGET_SOFTLIMIT);
+> > > 		preempt_enable();
+> > > 
+> > > 		mem_cgroup_threshold(memcg);
+> > > 
+> > 
+> > Ah. please see linux-next and rebase onto that.
+> 
+> The patchset is on top of next-20111222. Have I missed something?
+> 
+Ah, ok. my mistake. Sorry.
+
+Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
