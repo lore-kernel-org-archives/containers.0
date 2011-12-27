@@ -1,15 +1,15 @@
 From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Subject: [PATCH] Makefiles: Disable unused-variable warning (was: Re: [PATCH
-	1/6] memcg: fix unused variable warning)
-Date: Tue, 27 Dec 2011 14:57:52 +0100
-Message-ID: <20111227135752.GK5344__3268.56356482512$1324994293$gmane$org@tiehlicka.suse.cz>
+Subject: Re: [PATCH 2/6] memcg: mark more functions/variables as static
+Date: Tue, 27 Dec 2011 15:05:15 +0100
+Message-ID: <20111227140515.GL5344__36608.2788714722$1324994728$gmane$org@tiehlicka.suse.cz>
 References: <1324695619-5537-1-git-send-email-kirill@shutemov.name>
+	<1324695619-5537-2-git-send-email-kirill@shutemov.name>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1324695619-5537-1-git-send-email-kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+In-Reply-To: <1324695619-5537-2-git-send-email-kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,55 +20,90 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Cc: Michal Marek <mmarek-AlSwsSmVLrQ@public.gmane.org>, linux-kbuild-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gU2F0IDI0LTEyLTExIDA1OjAwOjE0LCBLaXJpbGwgQS4gU2h1dGVtb3Ygd3JvdGU6Cj4gRnJv
-bTogIktpcmlsbCBBLiBTaHV0ZW1vdiIgPGtpcmlsbEBzaHV0ZW1vdi5uYW1lPgo+IAo+IG1tL21l
-bWNvbnRyb2wuYzogSW4gZnVuY3Rpb24g4oCYbWVtY2dfY2hlY2tfZXZlbnRz4oCZOgo+IG1tL21l
-bWNvbnRyb2wuYzo3ODQ6MjI6IHdhcm5pbmc6IHVudXNlZCB2YXJpYWJsZSDigJhkb19udW1haW5m
-b+KAmSBbLVd1bnVzZWQtdmFyaWFibGVdCj4gCj4gU2lnbmVkLW9mZi1ieTogS2lyaWxsIEEuIFNo
-dXRlbW92IDxraXJpbGxAc2h1dGVtb3YubmFtZT4KPiAtLS0KPiAgbW0vbWVtY29udHJvbC5jIHwg
-ICAgNyArKysrLS0tCj4gIDEgZmlsZXMgY2hhbmdlZCwgNCBpbnNlcnRpb25zKCspLCAzIGRlbGV0
-aW9ucygtKQo+IAo+IGRpZmYgLS1naXQgYS9tbS9tZW1jb250cm9sLmMgYi9tbS9tZW1jb250cm9s
-LmMKPiBpbmRleCBkNjQzYmQ2Li5hNWU5MmJkIDEwMDY0NAo+IC0tLSBhL21tL21lbWNvbnRyb2wu
-Ywo+ICsrKyBiL21tL21lbWNvbnRyb2wuYwo+IEBAIC03ODEsMTQgKzc4MSwxNSBAQCBzdGF0aWMg
-dm9pZCBtZW1jZ19jaGVja19ldmVudHMoc3RydWN0IG1lbV9jZ3JvdXAgKm1lbWNnLCBzdHJ1Y3Qg
-cGFnZSAqcGFnZSkKPiAgCS8qIHRocmVzaG9sZCBldmVudCBpcyB0cmlnZ2VyZWQgaW4gZmluZXIg
-Z3JhaW4gdGhhbiBzb2Z0IGxpbWl0ICovCj4gIAlpZiAodW5saWtlbHkobWVtX2Nncm91cF9ldmVu
-dF9yYXRlbGltaXQobWVtY2csCj4gIAkJCQkJCU1FTV9DR1JPVVBfVEFSR0VUX1RIUkVTSCkpKSB7
-Cj4gLQkJYm9vbCBkb19zb2Z0bGltaXQsIGRvX251bWFpbmZvOwo+ICsJCWJvb2wgZG9fc29mdGxp
-bWl0Owo+ICAKPiAtCQlkb19zb2Z0bGltaXQgPSBtZW1fY2dyb3VwX2V2ZW50X3JhdGVsaW1pdCht
-ZW1jZywKPiAtCQkJCQkJTUVNX0NHUk9VUF9UQVJHRVRfU09GVExJTUlUKTsKPiAgI2lmIE1BWF9O
-VU1OT0RFUyA+IDEKPiArCQlib29sIGRvX251bWFpbmZvOwo+ICAJCWRvX251bWFpbmZvID0gbWVt
-X2Nncm91cF9ldmVudF9yYXRlbGltaXQobWVtY2csCj4gIAkJCQkJCU1FTV9DR1JPVVBfVEFSR0VU
-X05VTUFJTkZPKTsKPiAgI2VuZGlmCj4gKwkJZG9fc29mdGxpbWl0ID0gbWVtX2Nncm91cF9ldmVu
-dF9yYXRlbGltaXQobWVtY2csCj4gKwkJCQkJCU1FTV9DR1JPVVBfVEFSR0VUX1NPRlRMSU1JVCk7
-CgpJIGRvbid0IGxpa2UgdGhpcyB2ZXJ5IG11Y2guIE1heWJlIHdlIHNob3VsZCBnZXQgcmlkIG9m
-IGJvdGggZG9fKiBhbmQKZG8gaXQgd2l0aCBmbGFncz8gQnV0IG1heWJlIGl0IGlzIG5vdCB3b3J0
-aCB0aGUgYWRkaXRpb25hbCBjb2RlIGF0CmFsbC4uLgoKQW55d2F5LCBJIGFtIHdvbmRlcmluZyB3
-aHkgdW51c2VkLWJ1dC1zZXQtdmFyaWFibGUgaXMgZGlzYWJsZWQgd2hpbGUKdW51c2VkLXZhcmlh
-YmxlIGlzIGVuYWJsZWQuIFNob3VsZG4ndCB3ZSBqdXN0IGRpc2FibGUgaXQgYXMgd2VsbCByYXRo
-ZXIKdGhhbiB3b3JrYXJvdW5kIHRoaXMgaW4gdGhlIGNvZGU/IFRoZSB3YXJuaW5nIGlzIGp1c3Qg
-cHVyZSBub2lzZSBpbiB0aGlzCmNhc2UuCldoYXQgYWJvdXQgc29tZXRoaW5nIGxpa2U6Ci0tLQpG
-cm9tIGUxMTM2ODkxZmU4NmVhY2Y5MjEyYjIxNDRmODBmZjZiNzViMTAxOTQgTW9uIFNlcCAxNyAw
-MDowMDowMCAyMDAxCkZyb206IE1pY2hhbCBIb2NrbyA8bWhvY2tvQHN1c2UuY3o+CkRhdGU6IFR1
-ZSwgMjcgRGVjIDIwMTEgMTQ6NTM6MDYgKzAxMDAKU3ViamVjdDogW1BBVENIXSBNYWtlZmlsZXM6
-IERpc2FibGUgdW51c2VkLXZhcmlhYmxlIHdhcm5pbmcKCldlIGFyZSBhbHJlYWR5IGRpc2FibGlu
-ZyB1bnVzZWQtYnV0LXNldC12YXJpYWJsZSBhbmQgV3VudXNlZC12YXJpYWJsZQpwcm9kdWNlcyBz
-b21lIG5vaXNlIGFzIHdlbGwuCgpTaWduZWQtb2ZmLWJ5OiBNaWNoYWwgSG9ja28gPG1ob2Nrb0Bz
-dXNlLmN6PgotLS0KIE1ha2VmaWxlIHwgICAgMSArCiAxIGZpbGVzIGNoYW5nZWQsIDEgaW5zZXJ0
-aW9ucygrKSwgMCBkZWxldGlvbnMoLSkKCmRpZmYgLS1naXQgYS9NYWtlZmlsZSBiL01ha2VmaWxl
-CmluZGV4IGVhNTEwODEuLjI1Yzc2ZjMgMTAwNjQ0Ci0tLSBhL01ha2VmaWxlCisrKyBiL01ha2Vm
-aWxlCkBAIC01NzgsNiArNTc4LDcgQEAgZW5kaWYKICMgVGhpcyB3YXJuaW5nIGdlbmVyYXRlZCB0
-b28gbXVjaCBub2lzZSBpbiBhIHJlZ3VsYXIgYnVpbGQuCiAjIFVzZSBtYWtlIFc9MSB0byBlbmFi
-bGUgdGhpcyB3YXJuaW5nIChzZWUgc2NyaXB0cy9NYWtlZmlsZS5idWlsZCkKIEtCVUlMRF9DRkxB
-R1MgKz0gJChjYWxsIGNjLWRpc2FibGUtd2FybmluZywgdW51c2VkLWJ1dC1zZXQtdmFyaWFibGUp
-CitLQlVJTERfQ0ZMQUdTICs9ICQoY2FsbCBjYy1kaXNhYmxlLXdhcm5pbmcsIHVudXNlZC12YXJp
-YWJsZSkKIAogaWZkZWYgQ09ORklHX0ZSQU1FX1BPSU5URVIKIEtCVUlMRF9DRkxBR1MJKz0gLWZu
-by1vbWl0LWZyYW1lLXBvaW50ZXIgLWZuby1vcHRpbWl6ZS1zaWJsaW5nLWNhbGxzCi0tIAoxLjcu
-Ny4zCgoKCi0tIApNaWNoYWwgSG9ja28KU1VTRSBMYWJzClNVU0UgTElOVVggcy5yLm8uCkxpaG92
-YXJza2EgMTA2MC8xMgoxOTAgMDAgUHJhaGEgOSAgICAKQ3plY2ggUmVwdWJsaWMKX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5n
-IGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3Rz
-LmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+On Sat 24-12-11 05:00:15, Kirill A. Shutemov wrote:
+> From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+> 
+> Based on sparse output.
+> 
+> Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+
+Looks good.
+Acked-by: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+
+Thanks
+> ---
+>  mm/memcontrol.c |   12 ++++++------
+>  1 files changed, 6 insertions(+), 6 deletions(-)
+> 
+> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+> index a5e92bd..4bac3a2 100644
+> --- a/mm/memcontrol.c
+> +++ b/mm/memcontrol.c
+> @@ -59,7 +59,7 @@
+>  
+>  struct cgroup_subsys mem_cgroup_subsys __read_mostly;
+>  #define MEM_CGROUP_RECLAIM_RETRIES	5
+> -struct mem_cgroup *root_mem_cgroup __read_mostly;
+> +static struct mem_cgroup *root_mem_cgroup __read_mostly;
+>  
+>  #ifdef CONFIG_CGROUP_MEM_RES_CTLR_SWAP
+>  /* Turned on only when memory cgroup is enabled && really_do_swap_account = 1 */
+> @@ -1573,7 +1573,7 @@ int mem_cgroup_select_victim_node(struct mem_cgroup *memcg)
+>   * unused nodes. But scan_nodes is lazily updated and may not cotain
+>   * enough new information. We need to do double check.
+>   */
+> -bool mem_cgroup_reclaimable(struct mem_cgroup *memcg, bool noswap)
+> +static bool mem_cgroup_reclaimable(struct mem_cgroup *memcg, bool noswap)
+>  {
+>  	int nid;
+>  
+> @@ -1608,7 +1608,7 @@ int mem_cgroup_select_victim_node(struct mem_cgroup *memcg)
+>  	return 0;
+>  }
+>  
+> -bool mem_cgroup_reclaimable(struct mem_cgroup *memcg, bool noswap)
+> +static bool mem_cgroup_reclaimable(struct mem_cgroup *memcg, bool noswap)
+>  {
+>  	return test_mem_cgroup_node_reclaimable(memcg, 0, noswap);
+>  }
+> @@ -1782,7 +1782,7 @@ static void memcg_oom_recover(struct mem_cgroup *memcg)
+>  /*
+>   * try to call OOM killer. returns false if we should exit memory-reclaim loop.
+>   */
+> -bool mem_cgroup_handle_oom(struct mem_cgroup *memcg, gfp_t mask)
+> +static bool mem_cgroup_handle_oom(struct mem_cgroup *memcg, gfp_t mask)
+>  {
+>  	struct oom_wait_info owait;
+>  	bool locked, need_to_kill;
+> @@ -3765,7 +3765,7 @@ try_to_free:
+>  	goto move_account;
+>  }
+>  
+> -int mem_cgroup_force_empty_write(struct cgroup *cont, unsigned int event)
+> +static int mem_cgroup_force_empty_write(struct cgroup *cont, unsigned int event)
+>  {
+>  	return mem_cgroup_force_empty(mem_cgroup_from_cont(cont), true);
+>  }
+> @@ -4044,7 +4044,7 @@ struct mcs_total_stat {
+>  	s64 stat[NR_MCS_STAT];
+>  };
+>  
+> -struct {
+> +static struct {
+>  	char *local_name;
+>  	char *total_name;
+>  } memcg_stat_strings[NR_MCS_STAT] = {
+> -- 
+> 1.7.7.3
+> 
+
+-- 
+Michal Hocko
+SUSE Labs
+SUSE LINUX s.r.o.
+Lihovarska 1060/12
+190 00 Praha 9    
+Czech Republic
