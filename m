@@ -1,12 +1,16 @@
-From: "Janssen, Anne-Marie" <A.Janssen-8Yr+K/5qK1U7fdAI/WhNUg@public.gmane.org>
-Subject: Automatisch antwoord bij afwezigheid: schande.
-Date: Tue, 27 Dec 2011 16:50:30 +0100
-Message-ID: <26B450ABE3518140A0E19AAD37A8DBBB21AE0E@RVDK10MS002.rvdk.minjus.nl>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH 2/2] cgroup: add sparse annotation to
+	cgroup_iter_start() and cgroup_iter_end()
+Date: Tue, 27 Dec 2011 08:52:48 -0800
+Message-ID: <20111227165248.GB17712__43665.7657417983$1325004784$gmane$org@google.com>
+References: <1324964786-19052-1-git-send-email-kirill@shutemov.name>
+	<1324964786-19052-2-git-send-email-kirill@shutemov.name>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-class: urn:content-classes:message
+Content-Disposition: inline
+In-Reply-To: <1324964786-19052-2-git-send-email-kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,26 +20,16 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Greta <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-In verband met mijn vakantie ben ik tot en met 2 januari 2012 afwezig. =
+On Tue, Dec 27, 2011 at 07:46:26AM +0200, Kirill A. Shutemov wrote:
+> From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+> 
+> Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 
-Op dinsdag 3 januari 2012 ben ik weer in de gelegenheid uw mail te lezen. =
+Applied 1-2 to cgroup/for-3.3.  Thank you.
 
-Voor dringende zaken kunt u bellen naar 040-2329319 en vragen naar een coll=
-ega co=F6rdinator taakstraffen.
-
-Met vriendelijke groet,
-Anne-Marie Janssen
---------------------------------------------------------
-
-Dit bericht kan informatie bevatten die niet voor u is bestemd. Indien u ni=
-et de geadresseerde bent of dit bericht abusievelijk aan u is toegezonden, =
-wordt u verzocht dat aan de afzender te melden en het bericht te verwijdere=
-n. =
-
-De Staat aanvaardt geen aansprakelijkheid voor schade, van welke aard ook, =
-die verband houdt met risico's verbonden aan het elektronisch verzenden van=
- berichten.
---------------------------------------------------------
+-- 
+tejun
