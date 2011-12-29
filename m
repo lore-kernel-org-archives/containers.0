@@ -1,19 +1,11 @@
-From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Subject: Re: [PATCH] Makefiles: Disable unused-variable warning (was: Re:
-	[PATCH 1/6] memcg: fix unused variable warning)
-Date: Thu, 29 Dec 2011 12:16:29 +0100
-Message-ID: <20111229111629.GB20854__7936.24003786153$1325157408$gmane$org@tiehlicka.suse.cz>
-References: <1324695619-5537-1-git-send-email-kirill@shutemov.name>
-	<20111227135752.GK5344@tiehlicka.suse.cz>
-	<20111227182613.GA21840@shutemov.name>
-	<20111229104230.GA20854@tiehlicka.suse.cz>
-	<20111229110850.GA5680@shutemov.name>
+From: Mail Delivery System <Mailer-Daemon-8FnkeWJihA52jzVuIryXOTDo+kiZkl5S/bq+mt7q2xM@public.gmane.org>
+Subject: Mail delivery failed: returning message to sender
+Date: Thu, 29 Dec 2011 17:08:25 +0100
+Message-ID: <E1RgIWn-0000xl-QW@vw01mail02asd2.mail.vuurwerk.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20111229110850.GA5680-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,121 +15,50 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Cc: Michal Marek <mmarek-AlSwsSmVLrQ@public.gmane.org>, linux-kbuild-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gVGh1IDI5LTEyLTExIDEzOjA4OjUwLCBLaXJpbGwgQS4gU2h1dGVtb3Ygd3JvdGU6Cj4gT24g
-VGh1LCBEZWMgMjksIDIwMTEgYXQgMTE6NDI6MzBBTSArMDEwMCwgTWljaGFsIEhvY2tvIHdyb3Rl
-Ogo+ID4gT24gVHVlIDI3LTEyLTExIDIwOjI2OjEzLCBLaXJpbGwgQS4gU2h1dGVtb3Ygd3JvdGU6
-Cj4gPiA+IE9uIFR1ZSwgRGVjIDI3LCAyMDExIGF0IDAyOjU3OjUyUE0gKzAxMDAsIE1pY2hhbCBI
-b2NrbyB3cm90ZToKPiA+ID4gPiBPbiBTYXQgMjQtMTItMTEgMDU6MDA6MTQsIEtpcmlsbCBBLiBT
-aHV0ZW1vdiB3cm90ZToKPiA+ID4gPiA+IEZyb206ICJLaXJpbGwgQS4gU2h1dGVtb3YiIDxraXJp
-bGxAc2h1dGVtb3YubmFtZT4KPiA+ID4gPiA+IAo+ID4gPiA+ID4gbW0vbWVtY29udHJvbC5jOiBJ
-biBmdW5jdGlvbiDigJhtZW1jZ19jaGVja19ldmVudHPigJk6Cj4gPiA+ID4gPiBtbS9tZW1jb250
-cm9sLmM6Nzg0OjIyOiB3YXJuaW5nOiB1bnVzZWQgdmFyaWFibGUg4oCYZG9fbnVtYWluZm/igJkg
-Wy1XdW51c2VkLXZhcmlhYmxlXQo+ID4gPiA+ID4gCj4gPiA+ID4gPiBTaWduZWQtb2ZmLWJ5OiBL
-aXJpbGwgQS4gU2h1dGVtb3YgPGtpcmlsbEBzaHV0ZW1vdi5uYW1lPgo+ID4gPiA+ID4gLS0tCj4g
-PiA+ID4gPiAgbW0vbWVtY29udHJvbC5jIHwgICAgNyArKysrLS0tCj4gPiA+ID4gPiAgMSBmaWxl
-cyBjaGFuZ2VkLCA0IGluc2VydGlvbnMoKyksIDMgZGVsZXRpb25zKC0pCj4gPiA+ID4gPiAKPiA+
-ID4gPiA+IGRpZmYgLS1naXQgYS9tbS9tZW1jb250cm9sLmMgYi9tbS9tZW1jb250cm9sLmMKPiA+
-ID4gPiA+IGluZGV4IGQ2NDNiZDYuLmE1ZTkyYmQgMTAwNjQ0Cj4gPiA+ID4gPiAtLS0gYS9tbS9t
-ZW1jb250cm9sLmMKPiA+ID4gPiA+ICsrKyBiL21tL21lbWNvbnRyb2wuYwo+ID4gPiA+ID4gQEAg
-LTc4MSwxNCArNzgxLDE1IEBAIHN0YXRpYyB2b2lkIG1lbWNnX2NoZWNrX2V2ZW50cyhzdHJ1Y3Qg
-bWVtX2Nncm91cCAqbWVtY2csIHN0cnVjdCBwYWdlICpwYWdlKQo+ID4gPiA+ID4gIAkvKiB0aHJl
-c2hvbGQgZXZlbnQgaXMgdHJpZ2dlcmVkIGluIGZpbmVyIGdyYWluIHRoYW4gc29mdCBsaW1pdCAq
-Lwo+ID4gPiA+ID4gIAlpZiAodW5saWtlbHkobWVtX2Nncm91cF9ldmVudF9yYXRlbGltaXQobWVt
-Y2csCj4gPiA+ID4gPiAgCQkJCQkJTUVNX0NHUk9VUF9UQVJHRVRfVEhSRVNIKSkpIHsKPiA+ID4g
-PiA+IC0JCWJvb2wgZG9fc29mdGxpbWl0LCBkb19udW1haW5mbzsKPiA+ID4gPiA+ICsJCWJvb2wg
-ZG9fc29mdGxpbWl0Owo+ID4gPiA+ID4gIAo+ID4gPiA+ID4gLQkJZG9fc29mdGxpbWl0ID0gbWVt
-X2Nncm91cF9ldmVudF9yYXRlbGltaXQobWVtY2csCj4gPiA+ID4gPiAtCQkJCQkJTUVNX0NHUk9V
-UF9UQVJHRVRfU09GVExJTUlUKTsKPiA+ID4gPiA+ICAjaWYgTUFYX05VTU5PREVTID4gMQo+ID4g
-PiA+ID4gKwkJYm9vbCBkb19udW1haW5mbzsKPiA+ID4gPiA+ICAJCWRvX251bWFpbmZvID0gbWVt
-X2Nncm91cF9ldmVudF9yYXRlbGltaXQobWVtY2csCj4gPiA+ID4gPiAgCQkJCQkJTUVNX0NHUk9V
-UF9UQVJHRVRfTlVNQUlORk8pOwo+ID4gPiA+ID4gICNlbmRpZgo+ID4gPiA+ID4gKwkJZG9fc29m
-dGxpbWl0ID0gbWVtX2Nncm91cF9ldmVudF9yYXRlbGltaXQobWVtY2csCj4gPiA+ID4gPiArCQkJ
-CQkJTUVNX0NHUk9VUF9UQVJHRVRfU09GVExJTUlUKTsKPiA+ID4gPiAKPiA+ID4gPiBJIGRvbid0
-IGxpa2UgdGhpcyB2ZXJ5IG11Y2guIE1heWJlIHdlIHNob3VsZCBnZXQgcmlkIG9mIGJvdGggZG9f
-KiBhbmQKPiA+ID4gPiBkbyBpdCB3aXRoIGZsYWdzPyBCdXQgbWF5YmUgaXQgaXMgbm90IHdvcnRo
-IHRoZSBhZGRpdGlvbmFsIGNvZGUgYXQKPiA+ID4gPiBhbGwuLi4KPiA+ID4gCj4gPiA+IFNvbWV0
-aGluZyBsaWtlIHRoaXMgKHVudGVzdGVkKToKPiA+ID4gPT09PQo+ID4gPiBGcm9tIGY1N2UxYTJl
-MWFhYWExNjdjNzViOTYzZDViZjEyZmNiZGQzMzMxYjggTW9uIFNlcCAxNyAwMDowMDowMCAyMDAx
-Cj4gPiA+IEZyb206ICJLaXJpbGwgQS4gU2h1dGVtb3YiIDxraXJpbGxAc2h1dGVtb3YubmFtZT4K
-PiA+ID4gRGF0ZTogVHVlLCAyNyBEZWMgMjAxMSAyMDoxNzoxMyArMDIwMAo+ID4gPiBTdWJqZWN0
-OiBbUEFUQ0hdIG1lbWNnOiBjbGVhbnVwIG1lbWNnX2NoZWNrX2V2ZW50cygpCj4gPiA+IAo+ID4g
-PiBTaWduZWQtb2ZmLWJ5OiBLaXJpbGwgQS4gU2h1dGVtb3YgPGtpcmlsbEBzaHV0ZW1vdi5uYW1l
-Pgo+ID4gCj4gPiBUaGUgcGF0Y2ggbG9va3MgY29ycmVjdCBidXQgSSBhbSBzdGlsbCBub3Qgc3Vy
-ZSB0aGlzIGlzIHdvcnRoIGZpeGluZyBpbgo+ID4gdGhlIGNvZGUgcmF0aGVyIHRoYW4gZGlzYWJs
-aW5nIFd1bnVzZWQtdmFyaWFibGUuCj4gCj4gRG9lcyBpdCBsb29rIGJldHRlciB0aGVuIG9yaWdp
-bmFsIGNvZGUgZnJvbSB5b3VyIFBPVj8KPiAKPiBJdCdzIGEgYml0IGNsZWFuZXIsIEkgdGhpbmsu
-CgpZZXMgaXQgaXMgbGVzcyBoYWtpc2ggdGhhbiB0aGUgcHJldmlvdXMgb25lIHdoaWNoIHJlbGll
-ZCBvbiBoYXZpbmcKI2lmZGVmIGJsb2NrIGJlZm9yZSBhbnkgb3RoZXIgY29kZSBpbiB0aGUgYmxv
-Y2suCgo+IAo+ID4gCj4gPiA+IC0tLQo+ID4gPiAgbW0vbWVtY29udHJvbC5jIHwgICA0MiArKysr
-KysrKysrKysrKysrKysrKysrKystLS0tLS0tLS0tLS0tLS0tLS0KPiA+ID4gIDEgZmlsZXMgY2hh
-bmdlZCwgMjQgaW5zZXJ0aW9ucygrKSwgMTggZGVsZXRpb25zKC0pCj4gPiA+IAo+ID4gPiBkaWZm
-IC0tZ2l0IGEvbW0vbWVtY29udHJvbC5jIGIvbW0vbWVtY29udHJvbC5jCj4gPiA+IGluZGV4IGQ2
-NDNiZDYuLjQwYzIyMzYgMTAwNjQ0Cj4gPiA+IC0tLSBhL21tL21lbWNvbnRyb2wuYwo+ID4gPiAr
-KysgYi9tbS9tZW1jb250cm9sLmMKPiA+ID4gQEAgLTEwOCwxMSArMTA4LDEyIEBAIGVudW0gbWVt
-X2Nncm91cF9ldmVudHNfaW5kZXggewo+ID4gPiAgICogdGhhbiB1c2luZyBqaWZmaWVzIGV0Yy4g
-dG8gaGFuZGxlIHBlcmlvZGljIG1lbWNnIGV2ZW50Lgo+ID4gPiAgICovCj4gPiA+ICBlbnVtIG1l
-bV9jZ3JvdXBfZXZlbnRzX3RhcmdldCB7Cj4gPiA+IC0JTUVNX0NHUk9VUF9UQVJHRVRfVEhSRVNI
-LAo+ID4gPiAtCU1FTV9DR1JPVVBfVEFSR0VUX1NPRlRMSU1JVCwKPiA+ID4gLQlNRU1fQ0dST1VQ
-X1RBUkdFVF9OVU1BSU5GTywKPiA+ID4gLQlNRU1fQ0dST1VQX05UQVJHRVRTLAo+ID4gPiArCU1F
-TV9DR1JPVVBfVEFSR0VUX1RIUkVTSAk9IEJJVCgxKSwKPiA+ID4gKwlNRU1fQ0dST1VQX1RBUkdF
-VF9TT0ZUTElNSVQJPSBCSVQoMiksCj4gPiA+ICsJTUVNX0NHUk9VUF9UQVJHRVRfTlVNQUlORk8J
-PSBCSVQoMyksCj4gPiA+ICB9Owo+ID4gPiArI2RlZmluZSBNRU1fQ0dST1VQX05UQVJHRVRTIDMK
-PiA+ID4gKwo+ID4gPiAgI2RlZmluZSBUSFJFU0hPTERTX0VWRU5UU19UQVJHRVQgKDEyOCkKPiA+
-ID4gICNkZWZpbmUgU09GVExJTUlUX0VWRU5UU19UQVJHRVQgKDEwMjQpCj4gPiA+ICAjZGVmaW5l
-IE5VTUFJTkZPX0VWRU5UU19UQVJHRVQJKDEwMjQpCj4gPiA+IEBAIC03NDMsNyArNzQ0LDcgQEAg
-c3RhdGljIHVuc2lnbmVkIGxvbmcgbWVtX2Nncm91cF9ucl9scnVfcGFnZXMoc3RydWN0IG1lbV9j
-Z3JvdXAgKm1lbWNnLAo+ID4gPiAgCXJldHVybiB0b3RhbDsKPiA+ID4gIH0KPiA+ID4gIAo+ID4g
-PiAtc3RhdGljIGJvb2wgbWVtX2Nncm91cF9ldmVudF9yYXRlbGltaXQoc3RydWN0IG1lbV9jZ3Jv
-dXAgKm1lbWNnLAo+ID4gPiArc3RhdGljIGludCBtZW1fY2dyb3VwX2V2ZW50X3JhdGVsaW1pdChz
-dHJ1Y3QgbWVtX2Nncm91cCAqbWVtY2csCj4gPiA+ICAJCQkJICAgICAgIGVudW0gbWVtX2Nncm91
-cF9ldmVudHNfdGFyZ2V0IHRhcmdldCkKPiA+ID4gIHsKPiA+ID4gIAl1bnNpZ25lZCBsb25nIHZh
-bCwgbmV4dDsKPiA+ID4gQEAgLTc2Niw5ICs3NjcsOSBAQCBzdGF0aWMgYm9vbCBtZW1fY2dyb3Vw
-X2V2ZW50X3JhdGVsaW1pdChzdHJ1Y3QgbWVtX2Nncm91cCAqbWVtY2csCj4gPiA+ICAJCQlicmVh
-azsKPiA+ID4gIAkJfQo+ID4gPiAgCQlfX3RoaXNfY3B1X3dyaXRlKG1lbWNnLT5zdGF0LT50YXJn
-ZXRzW3RhcmdldF0sIG5leHQpOwo+ID4gPiAtCQlyZXR1cm4gdHJ1ZTsKPiA+ID4gKwkJcmV0dXJu
-IHRhcmdldDsKPiA+ID4gIAl9Cj4gPiA+IC0JcmV0dXJuIGZhbHNlOwo+ID4gPiArCXJldHVybiAw
-Owo+ID4gPiAgfQo+ID4gPiAgCj4gPiA+ICAvKgo+ID4gPiBAQCAtNzc3LDI5ICs3NzgsMzQgQEAg
-c3RhdGljIGJvb2wgbWVtX2Nncm91cF9ldmVudF9yYXRlbGltaXQoc3RydWN0IG1lbV9jZ3JvdXAg
-Km1lbWNnLAo+ID4gPiAgICovCj4gPiA+ICBzdGF0aWMgdm9pZCBtZW1jZ19jaGVja19ldmVudHMo
-c3RydWN0IG1lbV9jZ3JvdXAgKm1lbWNnLCBzdHJ1Y3QgcGFnZSAqcGFnZSkKPiA+ID4gIHsKPiA+
-ID4gKwlpbnQgZmxhZ3M7Cj4gPiA+ICsKPiA+ID4gIAlwcmVlbXB0X2Rpc2FibGUoKTsKPiA+ID4g
-LQkvKiB0aHJlc2hvbGQgZXZlbnQgaXMgdHJpZ2dlcmVkIGluIGZpbmVyIGdyYWluIHRoYW4gc29m
-dCBsaW1pdCAqLwo+ID4gPiAtCWlmICh1bmxpa2VseShtZW1fY2dyb3VwX2V2ZW50X3JhdGVsaW1p
-dChtZW1jZywKPiA+ID4gLQkJCQkJCU1FTV9DR1JPVVBfVEFSR0VUX1RIUkVTSCkpKSB7Cj4gPiA+
-IC0JCWJvb2wgZG9fc29mdGxpbWl0LCBkb19udW1haW5mbzsKPiA+ID4gKwlmbGFncyA9IG1lbV9j
-Z3JvdXBfZXZlbnRfcmF0ZWxpbWl0KG1lbWNnLCBNRU1fQ0dST1VQX1RBUkdFVF9USFJFU0gpOwo+
-ID4gPiAgCj4gPiA+IC0JCWRvX3NvZnRsaW1pdCA9IG1lbV9jZ3JvdXBfZXZlbnRfcmF0ZWxpbWl0
-KG1lbWNnLAo+ID4gPiArCS8qCj4gPiA+ICsJICogVGhyZXNob2xkIGV2ZW50IGlzIHRyaWdnZXJl
-ZCBpbiBmaW5lciBncmFpbiB0aGFuIHNvZnQgbGltaXQKPiA+ID4gKwkgKiBhbmQgbnVtYWluZm8K
-PiA+ID4gKwkgKi8KPiA+ID4gKwlpZiAodW5saWtlbHkoZmxhZ3MpKSB7Cj4gPiA+ICsJCWZsYWdz
-IHw9IG1lbV9jZ3JvdXBfZXZlbnRfcmF0ZWxpbWl0KG1lbWNnLAo+ID4gPiAgCQkJCQkJTUVNX0NH
-Uk9VUF9UQVJHRVRfU09GVExJTUlUKTsKPiA+ID4gICNpZiBNQVhfTlVNTk9ERVMgPiAxCj4gPiA+
-IC0JCWRvX251bWFpbmZvID0gbWVtX2Nncm91cF9ldmVudF9yYXRlbGltaXQobWVtY2csCj4gPiA+
-ICsJCWZsYWdzIHw9IG1lbV9jZ3JvdXBfZXZlbnRfcmF0ZWxpbWl0KG1lbWNnLAo+ID4gPiAgCQkJ
-CQkJTUVNX0NHUk9VUF9UQVJHRVRfTlVNQUlORk8pOwo+ID4gPiAgI2VuZGlmCj4gPiA+IC0JCXBy
-ZWVtcHRfZW5hYmxlKCk7Cj4gPiA+ICsJfQo+ID4gPiArCXByZWVtcHRfZW5hYmxlKCk7Cj4gPiA+
-ICAKPiA+ID4gKwlpZiAodW5saWtlbHkoZmxhZ3MpKSB7Cj4gPiA+ICAJCW1lbV9jZ3JvdXBfdGhy
-ZXNob2xkKG1lbWNnKTsKPiA+ID4gLQkJaWYgKHVubGlrZWx5KGRvX3NvZnRsaW1pdCkpCj4gPiA+
-ICsJCWlmICh1bmxpa2VseShmbGFncyAmIE1FTV9DR1JPVVBfVEFSR0VUX1NPRlRMSU1JVCkpCj4g
-PiA+ICAJCQltZW1fY2dyb3VwX3VwZGF0ZV90cmVlKG1lbWNnLCBwYWdlKTsKPiA+ID4gICNpZiBN
-QVhfTlVNTk9ERVMgPiAxCj4gPiA+IC0JCWlmICh1bmxpa2VseShkb19udW1haW5mbykpCj4gPiA+
-ICsJCWlmICh1bmxpa2VseShmbGFncyAmIE1FTV9DR1JPVVBfVEFSR0VUX05VTUFJTkZPKSkKPiA+
-ID4gIAkJCWF0b21pY19pbmMoJm1lbWNnLT5udW1haW5mb19ldmVudHMpOwo+ID4gPiAgI2VuZGlm
-Cj4gPiA+IC0JfSBlbHNlCj4gPiA+IC0JCXByZWVtcHRfZW5hYmxlKCk7Cj4gPiA+ICsJfQo+ID4g
-PiAgfQo+ID4gPiAgCj4gPiA+ICBzdHJ1Y3QgbWVtX2Nncm91cCAqbWVtX2Nncm91cF9mcm9tX2Nv
-bnQoc3RydWN0IGNncm91cCAqY29udCkKPiA+ID4gLS0gCj4gPiA+IDEuNy43LjMKPiA+IAo+ID4g
-LS0gCj4gPiBNaWNoYWwgSG9ja28KPiA+IFNVU0UgTGFicwo+ID4gU1VTRSBMSU5VWCBzLnIuby4K
-PiA+IExpaG92YXJza2EgMTA2MC8xMgo+ID4gMTkwIDAwIFByYWhhIDkgICAgCj4gPiBDemVjaCBS
-ZXB1YmxpYwo+IAo+IC0tIAo+ICBLaXJpbGwgQS4gU2h1dGVtb3YKPiAtLQo+IFRvIHVuc3Vic2Ny
-aWJlIGZyb20gdGhpcyBsaXN0OiBzZW5kIHRoZSBsaW5lICJ1bnN1YnNjcmliZSBjZ3JvdXBzIiBp
-bgo+IHRoZSBib2R5IG9mIGEgbWVzc2FnZSB0byBtYWpvcmRvbW9Admdlci5rZXJuZWwub3JnCj4g
-TW9yZSBtYWpvcmRvbW8gaW5mbyBhdCAgaHR0cDovL3ZnZXIua2VybmVsLm9yZy9tYWpvcmRvbW8t
-aW5mby5odG1sCgotLSAKTWljaGFsIEhvY2tvClNVU0UgTGFicwpTVVNFIExJTlVYIHMuci5vLgpM
-aWhvdmFyc2thIDEwNjAvMTIKMTkwIDAwIFByYWhhIDkgICAgCkN6ZWNoIFJlcHVibGljCl9fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFp
-bGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9s
-aXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+This message was created automatically by mail delivery software.
+
+A message that you sent could not be delivered to one or more of its
+recipients. This is a permanent error. The following address(es) failed:
+
+  alfacl-DZ8jPGPE2FOEVqv0pETR8A@public.gmane.org
+    Unrouteable address
+
+------ This is a copy of the message, including all the headers. ------
+
+Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from [10.0.155.147] (helo=as-1.mail.vuurwerk.net)
+	by vw01mail02asd2.mail.vuurwerk.net with esmtp (Exim 4.72)
+	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+	id 1RgIWn-0000xi-Pl
+	for alfacl-DZ8jPGPE2FOEVqv0pETR8A@public.gmane.org; Thu, 29 Dec 2011 17:08:25 +0100
+Received: from mail.jdi.nl ([94.124.141.7])
+	by as-1.mail.vuurwerk.net with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.63)
+	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+	id 1RgIWn-0000ao-NY
+	for alfacl-DZ8jPGPE2FOEVqv0pETR8A@public.gmane.org; Thu, 29 Dec 2011 17:08:25 +0100
+Received: from 10.0.1.220 (demo.amsi.ae [213.42.30.102])
+	(authenticated bits=0)
+	by mail.jdi.nl (8.13.8/8.13.8) with ESMTP id pBTG8OLx020077
+	for <alfacl-DZ8jPGPE2FOEVqv0pETR8A@public.gmane.org>; Thu, 29 Dec 2011 17:08:25 +0100
+Received: from [10.0.1.220] by 10.0.1.220 id 0t5tg3PQJ9jM with SMTP; Thu, 29 Dec 2011 19:20:23 +0400
+Date: Thu, 29 Dec 2011 19:20:23 +0400
+From: "Jermentrod" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v2.02.6) Home
+X-Priority: 3 (Normal)
+Message-ID: <2584334347.88779640083167-60x1kTqCWHVgJAXftmDEsQ@public.gmane.org>
+To: <alfacl-DZ8jPGPE2FOEVqv0pETR8A@public.gmane.org>
+Subject: Zie hoe je schande afgelopen weekend
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="windows-1252"
+Content-Transfer-Encoding: 8bit
+X-TELE2-Spam-DNSBL: NO
+X-TELE2-Spam-DNSBL-Info: Mail filtered by TELE2 DNSBL system
+
+
+ Zie hoe je schande afgelopen weekend
+http://www.viareggioeuropacinema.com/photo/
