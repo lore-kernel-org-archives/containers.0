@@ -1,12 +1,17 @@
-From: Mail Delivery System
-	<Mailer-Daemon-j/FFCeehh6rm0v4AZEt1KkYbvjQ9bXFmBWoJtpySea+EtopBp6msUg@public.gmane.org>
-Subject: Mail delivery failed: returning message to sender
-Date: Tue, 03 Jan 2012 01:12:17 +0100
-Message-ID: <E1RhrzF-0006ul-5a@server1102.maartens-automatisering.nl>
+From: Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 5/6] memcg: fix broken boolen expression
+Date: Tue, 3 Jan 2012 12:54:28 -0800
+Message-ID: <20120103205428.GB17131@kroah.com>
+References: <1324695619-5537-1-git-send-email-kirill@shutemov.name>
+	<1324695619-5537-5-git-send-email-kirill@shutemov.name>
+	<20111226153138.0376bd66.kamezawa.hiroyu@jp.fujitsu.com>
+	<20111226065724.GA13459@shutemov.name>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20111226065724.GA13459-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,39 +21,29 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This message was created automatically by mail delivery software.
+On Mon, Dec 26, 2011 at 08:57:24AM +0200, Kirill A. Shutemov wrote:
+> On Mon, Dec 26, 2011 at 03:31:38PM +0900, KAMEZAWA Hiroyuki wrote:
+> > On Sat, 24 Dec 2011 05:00:18 +0200
+> > "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org> wrote:
+> > 
+> > > From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+> > > 
+> > > action != CPU_DEAD || action != CPU_DEAD_FROZEN is always true.
+> > > 
+> > > Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+> > 
+> > maybe this should go stable..
+> 
+> CC stable@
 
-A message that you sent could not be delivered to one or more of its
-recipients. This is a permanent error. The following address(es) failed:
+<formletter>
 
-  evruitenbeek-42P/b7yZOt0@public.gmane.org
-    SMTP error from remote mail server after RCPT TO:<evruitenbeek-42P/b7yZOt0@public.gmane.org>:
-    host mailin.planet.nl [213.75.3.30]: 550 5.1.0 Recipient rejected.
+This is not the correct way to submit patches for inclusion in the
+stable kernel tree.  Please read Documentation/stable_kernel_rules.txt
+for how to do this properly.
 
------- This is a copy of the message, including all the headers. ------
-
-Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from beta.almawakeb.sch.ae ([213.42.30.102] helo=10.0.1.220)
-	by server1102.maartens-automatisering.nl with esmtpa (Exim 4.73)
-	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
-	id 1Rhryu-0006sZ-Lo
-	for evruitenbeek-42P/b7yZOt0@public.gmane.org; Tue, 03 Jan 2012 01:11:56 +0100
-Received: from [10.0.1.220] by 10.0.1.220 id MYIfYI9mWiKV with SMTP; Tue, 03 Jan 2012 03:30:53 +0400
-Date: Tue, 03 Jan 2012 03:30:53 +0400
-From: "Vik" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v2.07.9) Personal
-X-Priority: 3 (Normal)
-Message-ID: <5623125107.11574227402137-60x1kTqCWHVgJAXftmDEsQ@public.gmane.org>
-To: <evruitenbeek-42P/b7yZOt0@public.gmane.org>
-Subject: Zie hoe je schande afgelopen weekend.
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
-Content-Transfer-Encoding: 8bit
-
-
-Zie hoe je schande  afgelopen weekend.
-http://www.arturdesign.it/photo/
+</formletter>
