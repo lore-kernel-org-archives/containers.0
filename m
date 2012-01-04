@@ -1,13 +1,10 @@
-From: Greg KH <gregkh-l3A5Bk7waGM@public.gmane.org>
-Subject: [32/75] cgroups: fix a css_set not found bug in cgroup_attach_proc
-Date: Tue, 03 Jan 2012 14:33:05 -0800
-Message-ID: <20120103223323.694649857@clark.kroah.org>
-References: <20120103223332.GA4112@kroah.com>
+From: MAILER-DAEMON-ZzrDNgULGyGqZbmYRLRqqA@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Wed,  4 Jan 2012 01:28:58 +0100 (CET)
+Message-ID: <20120104002858.892336E0FC6@s04.comprise.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============9182098055007517167=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20120103223332.GA4112-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,75 +14,98 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Olof Johansson <olofj-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-3.1-stable review patch.  If anyone has any objections, please let me know.
+This is a MIME-encapsulated message.
 
-------------------
+--===============9182098055007517167==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="E59CE6E0754.1325636938/s04.comprise.com"
+Content-Transfer-Encoding: 7bit
 
-From: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+This is a MIME-encapsulated message.
 
-commit e0197aae59e55c06db172bfbe1a1cdb8c0e1cab3 upstream.
+--E59CE6E0754.1325636938/s04.comprise.com
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
 
-There is a BUG when migrating a PF_EXITING proc. Since css_set_prefetch()
-is not called for the PF_EXITING case, find_existing_css_set() will return
-NULL inside cgroup_task_migrate() causing a BUG.
+This is the mail system at host s04.comprise.com.
 
-This bug is easy to reproduce. Create a zombie and echo its pid to
-cgroup.procs.
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
 
-$ cat zombie.c
-\#include <unistd.h>
+For further assistance, please send mail to <postmaster>
 
-int main()
-{
-  if (fork())
-      pause();
-  return 0;
-}
-$
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
 
-We are hitting this bug pretty regularly on ChromeOS.
+                   The mail system
 
-This bug is already fixed by Tejun Heo's cgroup patchset which is
-targetted for the next merge window:
+<"[bounce]"@s04.comprise.com> (expanded from <gow2-Fz7/c9miYjE@public.gmane.org>): unknown user:
+    "[bounce]"
 
-https://lkml.org/lkml/2011/11/1/356
+<"[bounce]"@s04.comprise.com> (expanded from <gow3-Fz7/c9miYjE@public.gmane.org>): unknown user:
+    "[bounce]"
 
-I've create a smaller patch here which just fixes this bug so that a
-fix can be merged into the current release and stable.
+--E59CE6E0754.1325636938/s04.comprise.com
+Content-Description: Delivery report
+Content-Type: message/delivery-status
 
-Signed-off-by: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-Downstream-Bug-Report: http://crosbug.com/23953
-Reviewed-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
-Cc: Olof Johansson <olofj-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-Signed-off-by: Greg Kroah-Hartman <gregkh-l3A5Bk7waGM@public.gmane.org>
+Reporting-MTA: dns; s04.comprise.com
+X-Postfix-Queue-ID: E59CE6E0754
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Wed,  4 Jan 2012 01:28:56 +0100 (CET)
 
----
- kernel/cgroup.c |    5 -----
- 1 file changed, 5 deletions(-)
+Final-Recipient: rfc822; "[bounce]"@s04.comprise.com
+Original-Recipient: rfc822;gow2-Fz7/c9miYjE@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: X-Postfix; unknown user: "[bounce]"
 
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -2098,11 +2098,6 @@ int cgroup_attach_proc(struct cgroup *cg
- 			continue;
- 		/* get old css_set pointer */
- 		task_lock(tsk);
--		if (tsk->flags & PF_EXITING) {
--			/* ignore this task if it's going away */
--			task_unlock(tsk);
--			continue;
--		}
- 		oldcg = tsk->cgroups;
- 		get_css_set(oldcg);
- 		task_unlock(tsk);
+Final-Recipient: rfc822; "[bounce]"@s04.comprise.com
+Original-Recipient: rfc822;gow3-Fz7/c9miYjE@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: X-Postfix; unknown user: "[bounce]"
+
+--E59CE6E0754.1325636938/s04.comprise.com
+Content-Description: Undelivered Message
+Content-Type: message/rfc822
+Content-Transfer-Encoding: 7bit
+
+Received: from 10.0.1.220 (portal.iconnect.ae [213.42.30.102])
+	by s04.comprise.com (Postfix) with ESMTP id E59CE6E0754;
+	Wed,  4 Jan 2012 01:28:56 +0100 (CET)
+Received: from [10.0.1.220] by 10.0.1.220 id IJ0sqVEJTNh4 with SMTP; Wed, 04 Jan 2012 03:40:42 +0400
+Date: Wed, 04 Jan 2012 03:40:42 +0400
+From: "Annalis" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.06.1) Personal
+X-Priority: 3 (Normal)
+Message-ID: <524421683.24157145679106-60x1kTqCWHVgJAXftmDEsQ@public.gmane.org>
+To: <gow2-Fz7/c9miYjE@public.gmane.org>
+Subject: Zie hoe je schande afgelopen weekend.
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+
+
+Zie hoe je schande
+http://www.tkiservice.it/photo/
+
+
+
+--E59CE6E0754.1325636938/s04.comprise.com--
+
+--===============9182098055007517167==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============9182098055007517167==--
