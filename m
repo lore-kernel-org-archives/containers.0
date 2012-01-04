@@ -1,15 +1,11 @@
-From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 2/3] cgroup: replace tasklist_lock with rcu_read_lock
-Date: Wed, 4 Jan 2012 11:38:18 +0100
-Message-ID: <20120104103810.GA1143@somewhere>
-References: <1325654312-32477-1-git-send-email-msb@chromium.org>
-	<1325654312-32477-2-git-send-email-msb@chromium.org>
+From: Mail Delivery System <Mailer-Daemon-OATvj6BpxSI2wjyUMbqzzp8P8UcWk/zy@public.gmane.org>
+Subject: Mail delivery failed: returning message to sender
+Date: Wed, 04 Jan 2012 11:44:54 +0100
+Message-ID: <E1RiOL0-0005ey-Ag@shared001.alothosting.nl>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1325654312-32477-2-git-send-email-msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,38 +15,40 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Jan 03, 2012 at 09:18:31PM -0800, Mandeep Singh Baines wrote:
-> We can replace the tasklist_lock in cgroup_attach_proc with an
-> rcu_read_lock.
-> 
-> Changes in V4:
-> * https://lkml.org/lkml/2011/12/23/284 (Frederic Weisbecker)
->   * Minimize size of rcu_read_lock critical section
->   * Add comment
-> * https://lkml.org/lkml/2011/12/26/136 (Li Zefan)
->   * Split into two patches
-> Changes in V3:
-> * https://lkml.org/lkml/2011/12/22/419 (Frederic Weisbecker)
->   * Add an rcu_read_lock to protect against exit
-> Changes in V2:
-> * https://lkml.org/lkml/2011/12/22/86 (Tejun Heo)
->   * Use a goto instead of returning -EAGAIN
-> 
-> Suggested-by: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> Signed-off-by: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-> Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-> Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-> Cc: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+This message was created automatically by mail delivery software.
 
-Acked-by: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+A message that you sent could not be delivered to one or more of its
+recipients. This is a permanent error. The following address(es) failed:
 
-Thanks!
+  hcoppensdd-CmkmPbn3yAE@public.gmane.org
+    SMTP error from remote mail server after RCPT TO:<hcoppensdd-CmkmPbn3yAE@public.gmane.org>:
+    host mx.tb.mail.iss.as9143.net [212.54.42.8]:
+    550 hcoppensdd-CmkmPbn3yAE@public.gmane.org bestaat niet / does not exist
+
+------ This is a copy of the message, including all the headers. ------
+
+Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from portal.isas.sch.ae ([213.42.30.102] helo=10.0.1.220)
+	by shared001.alothosting.nl with esmtpa (Exim 4.72)
+	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+	id 1RiOKu-0005ep-B7
+	for hcoppensdd-CmkmPbn3yAE@public.gmane.org; Wed, 04 Jan 2012 11:44:48 +0100
+Received: from [10.0.1.220] by 10.0.1.220 id 9RYvPEC2ZNhq with SMTP; Wed, 04 Jan 2012 13:56:31 +0400
+Date: Wed, 04 Jan 2012 13:56:31 +0400
+From: "Margrezje" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v2.09.7) Business
+X-Priority: 3 (Normal)
+Message-ID: <031654797.72487971291738-60x1kTqCWHVgJAXftmDEsQ@public.gmane.org>
+To: <hcoppensdd-CmkmPbn3yAE@public.gmane.org>
+Subject: Zie hoe je schande afgelopen weekend
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="windows-1252"
+Content-Transfer-Encoding: 8bit
+
+
+Zie hoe je schande
+http://www.itczanon.it/photo/
