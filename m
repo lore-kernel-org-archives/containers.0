@@ -1,12 +1,11 @@
 From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Subject: [RESEND,
-	PATCH 3/6] memcg: mark stat field of mem_cgroup struct as __percpu
-Date: Fri,  6 Jan 2012 22:57:49 +0200
-Message-ID: <1325883472-5614-3-git-send-email-kirill__16209.2942548499$1325884000$gmane$org@shutemov.name>
+Subject: [RESEND, PATCH 2/6] memcg: remove unused variable
+Date: Fri,  6 Jan 2012 22:57:48 +0200
+Message-ID: <1325883472-5614-2-git-send-email-kirill__18402.741282671$1325884000$gmane$org@shutemov.name>
 References: <1325883472-5614-1-git-send-email-kirill@shutemov.name>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 In-Reply-To: <1325883472-5614-1-git-send-email-kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
@@ -22,29 +21,26 @@ To: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5
 Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-
-It fixes a lot of sparse warnings.
-
-Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Acked-by: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
----
- mm/memcontrol.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index 39c3d60..831cdc4 100644
---- a/mm/memcontrol.c
-+++ b/mm/memcontrol.c
-@@ -282,7 +282,7 @@ struct mem_cgroup {
- 	/*
- 	 * percpu counter.
- 	 */
--	struct mem_cgroup_stat_cpu *stat;
-+	struct mem_cgroup_stat_cpu __percpu *stat;
- 	/*
- 	 * used when a cpu is offlined or other synchronizations
- 	 * See mem_cgroup_read_stat().
--- 
-1.7.8.2
+RnJvbTogIktpcmlsbCBBLiBTaHV0ZW1vdiIgPGtpcmlsbEBzaHV0ZW1vdi5uYW1lPgoKbW0vbWVt
+Y29udHJvbC5jOiBJbiBmdW5jdGlvbiDigJhtY19oYW5kbGVfZmlsZV9wdGXigJk6Cm1tL21lbWNv
+bnRyb2wuYzo1MjA2OjE2OiB3YXJuaW5nOiB2YXJpYWJsZSDigJhpbm9kZeKAmSBzZXQgYnV0IG5v
+dCB1c2VkIFstV3VudXNlZC1idXQtc2V0LXZhcmlhYmxlXQoKU2lnbmVkLW9mZi1ieTogS2lyaWxs
+IEEuIFNodXRlbW92IDxraXJpbGxAc2h1dGVtb3YubmFtZT4KQWNrZWQtYnk6IEtBTUVaQVdBIEhp
+cm95dWtpIDxrYW1lemF3YS5oaXJveXVAanAuZnVqaXRzdS5jb20+CkFja2VkLWJ5OiBNaWNoYWwg
+SG9ja28gPG1ob2Nrb0BzdXNlLmN6PgotLS0KIG1tL21lbWNvbnRyb2wuYyB8ICAgIDIgLS0KIDEg
+ZmlsZXMgY2hhbmdlZCwgMCBpbnNlcnRpb25zKCspLCAyIGRlbGV0aW9ucygtKQoKZGlmZiAtLWdp
+dCBhL21tL21lbWNvbnRyb2wuYyBiL21tL21lbWNvbnRyb2wuYwppbmRleCA3M2YwYzNlLi4zOWMz
+ZDYwIDEwMDY0NAotLS0gYS9tbS9tZW1jb250cm9sLmMKKysrIGIvbW0vbWVtY29udHJvbC5jCkBA
+IC01MTIxLDcgKzUxMjEsNiBAQCBzdGF0aWMgc3RydWN0IHBhZ2UgKm1jX2hhbmRsZV9maWxlX3B0
+ZShzdHJ1Y3Qgdm1fYXJlYV9zdHJ1Y3QgKnZtYSwKIAkJCXVuc2lnbmVkIGxvbmcgYWRkciwgcHRl
+X3QgcHRlbnQsIHN3cF9lbnRyeV90ICplbnRyeSkKIHsKIAlzdHJ1Y3QgcGFnZSAqcGFnZSA9IE5V
+TEw7Ci0Jc3RydWN0IGlub2RlICppbm9kZTsKIAlzdHJ1Y3QgYWRkcmVzc19zcGFjZSAqbWFwcGlu
+ZzsKIAlwZ29mZl90IHBnb2ZmOwogCkBAIC01MTMwLDcgKzUxMjksNiBAQCBzdGF0aWMgc3RydWN0
+IHBhZ2UgKm1jX2hhbmRsZV9maWxlX3B0ZShzdHJ1Y3Qgdm1fYXJlYV9zdHJ1Y3QgKnZtYSwKIAlp
+ZiAoIW1vdmVfZmlsZSgpKQogCQlyZXR1cm4gTlVMTDsKIAotCWlub2RlID0gdm1hLT52bV9maWxl
+LT5mX3BhdGguZGVudHJ5LT5kX2lub2RlOwogCW1hcHBpbmcgPSB2bWEtPnZtX2ZpbGUtPmZfbWFw
+cGluZzsKIAlpZiAocHRlX25vbmUocHRlbnQpKQogCQlwZ29mZiA9IGxpbmVhcl9wYWdlX2luZGV4
+KHZtYSwgYWRkcik7Ci0tIAoxLjcuOC4yCgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3Rz
+LmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9t
+YWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
