@@ -1,23 +1,10 @@
-From: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-Subject: Re: Q: cgroup: Questions about possible issues in cgroup locking
-Date: Fri, 6 Jan 2012 10:25:35 -0800
-Message-ID: <20120106182535.GJ9511__45628.8680121817$1325874368$gmane$org@google.com>
-References: <20111221034334.GD17668@somewhere>
-	<20111221130848.GA19679@redhat.com>
-	<20111221175632.GF17668@somewhere>
-	<20111221190102.GE13529@google.com>
-	<20111221190817.GI17668@somewhere>
-	<20111221192413.GF13529@google.com>
-	<20111221200422.GJ17668@somewhere>
-	<20111222153004.GA30522@redhat.com>
-	<20120104193614.GF9511@google.com>
-	<20120106152356.GA23995@redhat.com>
+From: MAILER-DAEMON-fbPI3YlSeArxkRnwtC7nsxvVK+yQ3ZXh@public.gmane.org (Mail Delivery System)
+Subject: Rueckgabe nicht zustellbarer Nachricht an Absender
+Date: Fri,  6 Jan 2012 19:45:09 +0100 (CET)
+Message-ID: <20120106184509.6C156A502A1@mail.rb-media-s4.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============3874624057996549990=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20120106152356.GA23995-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,79 +14,114 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Oleg Nesterov (oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org) wrote:
-> On 01/04, Mandeep Singh Baines wrote:
-> >
-> > Oleg Nesterov (oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org) wrote:
-> > > On 12/21, Frederic Weisbecker wrote:
-> > > >
-> > > > On Wed, Dec 21, 2011 at 11:24:13AM -0800, Mandeep Singh Baines wrote:
-> > > > >
-> > > > > If you call exec from a thread other than g, g is now unlinked. So
-> > > > > "t != g" will always be true. If you then pthread_create, you now
-> > > > > have two threads so "t != __prev" will also always be true. So
-> > > > > you now have an infinite loop.
-> > > >
-> > > > Oh you're right.
-> > > >
-> > > > But then we can't use t != t->group_leader because that assumes while_each_thread()
-> > > > started on the leader.
-> > >
-> > > Yes, this can't work.
-> > >
-> > > Besides, we need more burriers to rely on the ->group_leader check.
-> > >
-> > > See http://marc.info/?t=127688987300002
-> > >
-> >
-> > I went through the thread. Were there any other concerns other than
-> > requiring that you start with the group_leader and the barrier?
-> >
-> > You could modify zap_other_threads to start with the group leader by
-> > skipping p:
-> >
-> > if (p == t)
-> >    continue;
-> 
-> Yes, we can but there are other while_each_thread(nonleader) users.
-> Yes we can fix them too but this looks a bit ugly and we need to
-> change while_each_thread() anyway. And I do not see why this change
-> will be simpler if we restrict it to group_leader.
-> 
-> And note that zap_other_threads() is fine in any case, it is called
-> under ->siglock.
-> 
-> > > in particular, http://marc.info/?l=linux-kernel&m=127714242731448
-> > > I think this should work, but then we should do something with the
-> > > users like zap_threads().
-> > >
-> >
-> > With that patch, won't you potentially miss the exec thread if an exec
-> > occurs while you're iterating over the list? Is that OK?
-> 
-> Of course it is not OK ;) Note the "we should do something with" above.
-> 
+This is a MIME-encapsulated message.
 
-So requirements should be something like this:
+--===============3874624057996549990==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="53203A501D9.1325875509/mail.rb-media-s4.de"
+Content-Transfer-Encoding: 7bit
 
-* Any task alive for the duration of the iteration MUST be visited
-* No task should be visited more than once
-* Any task born or exiting after starting the iteration MAY be skipped
-* You can start at any task in the thread group
+This is a MIME-encapsulated message.
 
-Would something like this work:
+--53203A501D9.1325875509/mail.rb-media-s4.de
+Content-Description: Notification
+Content-Type: text/plain; charset=iso-8859-1
 
-#define while_each_thread(g, t, o) \
-	while (t->group_leader == o && (t = next_thread(t)) != g)
+Dies ist eine automatisch generierte Nachricht des Postfix E-Mail-Dienstes.
+Dieser Dienst wird auf dem Server mail.rb-media-s4.de betrieben und teilt Ihnen
+folgendes mit:
 
-Where o should have the value of g->group_leader.
 
-Regards,
-Mandeep
+    Ihre Nachricht konnte an einen oder mehrere Empfaenger nicht zugestellt
+    werden. Ein Problem-Bericht, sowie Ihre uspruengliche Nachricht wurden an
+    das Ende dieser Nachricht angehaengt.
 
-> Oleg.
-> 
+
+Fuer weitere Hilfe kontaktieren Sie bitte den fuer Sie zustaendigen
+<postmaster>.
+
+Senden Sie dazu den an diese E-Mail angefuegten Problem-Bericht mit.
+Den Inhalt Ihrer urspruenglichen Nachricht koennen Sie - zum Schutz Ihrer
+Privatsphaere - entfernen; er ist fuer eine Fehler-Diagnose nicht zwingend
+notwendig.
+
+                   Der Postfix E-Mail-Dienst
+
+                        INTERNATIONAL VERSION
+
+This is the Postfix program at host mail.rb-media-s4.de.
+
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
+
+For further assistance, please send mail to <postmaster>
+
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
+
+
+<jkjbutton-GUcTPua13Ms@public.gmane.org>: host dsp1.rb-mailgate.de[91.211.115.6] said: 553 Access
+    denied: 553 (V4.3-RULE-0106) Your emailaddress
+    containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org looks like a fake. (in reply to RCPT
+    TO command)
+
+--53203A501D9.1325875509/mail.rb-media-s4.de
+Content-Description: Delivery report
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns; mail.rb-media-s4.de
+X-Postfix-Queue-ID: 53203A501D9
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Fri,  6 Jan 2012 19:45:06 +0100 (CET)
+
+Final-Recipient: rfc822; jkjbutton-GUcTPua13Ms@public.gmane.org
+Original-Recipient: rfc822;jkjbutton-GUcTPua13Ms@public.gmane.org
+Action: failed
+Status: 5.0.0
+Remote-MTA: dns; dsp1.rb-mailgate.de
+Diagnostic-Code: smtp; 553 Access denied: 553 (V4.3-RULE-0106) Your
+    emailaddress containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org looks like a fake.
+
+--53203A501D9.1325875509/mail.rb-media-s4.de
+Content-Description: Undelivered Message
+Content-Type: message/rfc822
+Content-Transfer-Encoding: 7bit
+
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from 10.0.1.220 (n4b.isas.sch.ae [213.42.30.102])
+	by mail.rb-media-s4.de (Postfix) with ESMTPA id 53203A501D9
+	for <jkjbutton-GUcTPua13Ms@public.gmane.org>; Fri,  6 Jan 2012 19:45:06 +0100 (CET)
+Received: from [10.0.1.220] by 10.0.1.220 id ujvPB5K34WkF with SMTP; Fri, 06 Jan 2012 21:56:42 +0400
+Date: Fri, 06 Jan 2012 21:56:42 +0400
+From: "Irmhild" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.9.27.5) Home
+X-Priority: 3 (Normal)
+Message-ID: <14569671.62159091122189-60x1kTqCWHVgJAXftmDEsQ@public.gmane.org>
+To: <jkjbutton-GUcTPua13Ms@public.gmane.org>
+Subject: Zie hoe je schande gisteren
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+
+Zie hoe je schande  gisteren.
+http://www.icsupino.it/photo/
+
+
+
+--53203A501D9.1325875509/mail.rb-media-s4.de--
+
+--===============3874624057996549990==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============3874624057996549990==--
