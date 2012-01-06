@@ -1,15 +1,22 @@
-From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Subject: Re: [PATCH 1/1][V5] Add reboot_pid_ns to handle the reboot syscall
-Date: Thu, 5 Jan 2012 13:29:54 -0600
-Message-ID: <20120105192954.GA16083@sergelap>
-References: <1325754410-32600-1-git-send-email-daniel.lezcano@free.fr>
-	<1325754410-32600-2-git-send-email-daniel.lezcano@free.fr>
+From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Q: cgroup: Questions about possible issues in cgroup locking
+Date: Fri, 6 Jan 2012 16:23:56 +0100
+Message-ID: <20120106152356.GA23995@redhat.com>
+References: <20111221034334.GD17668@somewhere>
+	<20111221130848.GA19679@redhat.com>
+	<20111221175632.GF17668@somewhere>
+	<20111221190102.GE13529@google.com>
+	<20111221190817.GI17668@somewhere>
+	<20111221192413.GF13529@google.com>
+	<20111221200422.GJ17668@somewhere>
+	<20111222153004.GA30522@redhat.com>
+	<20120104193614.GF9511@google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1325754410-32600-2-git-send-email-daniel.lezcano-GANU6spQydw@public.gmane.org>
+In-Reply-To: <20120104193614.GF9511-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,169 +26,59 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
-> In the case of a child pid namespace, rebooting the system does not
-> really makes sense. When the pid namespace is used in conjunction
-> with the other namespaces in order to create a linux container, the
-> reboot syscall leads to some problems.
-> 
-> A container can reboot the host. That can be fixed by dropping
-> the sys_reboot capability but we are unable to correctly to poweroff/
-> halt/reboot a container and the container stays stuck at the shutdown
-> time with the container's init process waiting indefinitively.
-> 
-> After several attempts, no solution from userspace was found to reliabily
-> handle the shutdown from a container.
-> 
-> This patch propose to make the init process of the child pid namespace to
-> exit with a signal status set to : SIGINT if the child pid namespace called
-> "halt/poweroff" and SIGHUP if the child pid namespace called "reboot".
-> When the reboot syscall is called and we are not in the initial
-> pid namespace, we kill the pid namespace for "HALT", "POWEROFF", "RESTART",
-> and "RESTART2". Otherwise we return EINVAL.
-> 
-> Returning EINVAL is also an easy way to check if this feature is supported
-> by the kernel when invoking another 'reboot' option like CAD.
-> 
-> By this way the parent process of the child pid namespace knows if
-> it rebooted or not and can take the right decision.
-> 
-> Signed-off-by: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-> Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-> Reviewed-by: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+On 01/04, Mandeep Singh Baines wrote:
+>
+> Oleg Nesterov (oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org) wrote:
+> > On 12/21, Frederic Weisbecker wrote:
+> > >
+> > > On Wed, Dec 21, 2011 at 11:24:13AM -0800, Mandeep Singh Baines wrote:
+> > > >
+> > > > If you call exec from a thread other than g, g is now unlinked. So
+> > > > "t != g" will always be true. If you then pthread_create, you now
+> > > > have two threads so "t != __prev" will also always be true. So
+> > > > you now have an infinite loop.
+> > >
+> > > Oh you're right.
+> > >
+> > > But then we can't use t != t->group_leader because that assumes while_each_thread()
+> > > started on the leader.
+> >
+> > Yes, this can't work.
+> >
+> > Besides, we need more burriers to rely on the ->group_leader check.
+> >
+> > See http://marc.info/?t=127688987300002
+> >
+>
+> I went through the thread. Were there any other concerns other than
+> requiring that you start with the group_leader and the barrier?
+>
+> You could modify zap_other_threads to start with the group leader by
+> skipping p:
+>
+> if (p == t)
+>    continue;
 
-The testcase in [PATCH 0/1] passed for me, and reboot from init_pid_ns
-works as usual.
+Yes, we can but there are other while_each_thread(nonleader) users.
+Yes we can fix them too but this looks a bit ugly and we need to
+change while_each_thread() anyway. And I do not see why this change
+will be simpler if we restrict it to group_leader.
 
-Tested-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+And note that zap_other_threads() is fine in any case, it is called
+under ->siglock.
 
-thanks,
--serge
+> > in particular, http://marc.info/?l=linux-kernel&m=127714242731448
+> > I think this should work, but then we should do something with the
+> > users like zap_threads().
+> >
+>
+> With that patch, won't you potentially miss the exec thread if an exec
+> occurs while you're iterating over the list? Is that OK?
 
-> ---
->  include/linux/pid_namespace.h |    8 +++++++-
->  kernel/pid_namespace.c        |   33 +++++++++++++++++++++++++++++++++
->  kernel/sys.c                  |    8 ++++++++
->  3 files changed, 48 insertions(+), 1 deletions(-)
-> 
-> diff --git a/include/linux/pid_namespace.h b/include/linux/pid_namespace.h
-> index e7cf666..b90c798 100644
-> --- a/include/linux/pid_namespace.h
-> +++ b/include/linux/pid_namespace.h
-> @@ -32,6 +32,7 @@ struct pid_namespace {
->  #endif
->  	gid_t pid_gid;
->  	int hide_pid;
-> +	int reboot;
->  };
->  
->  extern struct pid_namespace init_pid_ns;
-> @@ -47,6 +48,7 @@ static inline struct pid_namespace *get_pid_ns(struct pid_namespace *ns)
->  extern struct pid_namespace *copy_pid_ns(unsigned long flags, struct pid_namespace *ns);
->  extern void free_pid_ns(struct kref *kref);
->  extern void zap_pid_ns_processes(struct pid_namespace *pid_ns);
-> +extern int reboot_pid_ns(struct pid_namespace *pid_ns, int cmd);
->  
->  static inline void put_pid_ns(struct pid_namespace *ns)
->  {
-> @@ -74,11 +76,15 @@ static inline void put_pid_ns(struct pid_namespace *ns)
->  {
->  }
->  
-> -
->  static inline void zap_pid_ns_processes(struct pid_namespace *ns)
->  {
->  	BUG();
->  }
-> +
-> +static inline int reboot_pid_ns(struct pid_namespace *pid_ns, int cmd)
-> +{
-> +	return 0;
-> +}
->  #endif /* CONFIG_PID_NS */
->  
->  extern struct pid_namespace *task_active_pid_ns(struct task_struct *tsk);
-> diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
-> index a896839..0d355e8 100644
-> --- a/kernel/pid_namespace.c
-> +++ b/kernel/pid_namespace.c
-> @@ -15,6 +15,7 @@
->  #include <linux/acct.h>
->  #include <linux/slab.h>
->  #include <linux/proc_fs.h>
-> +#include <linux/reboot.h>
->  
->  #define BITS_PER_PAGE		(PAGE_SIZE*8)
->  
-> @@ -187,6 +188,9 @@ void zap_pid_ns_processes(struct pid_namespace *pid_ns)
->  		rc = sys_wait4(-1, NULL, __WALL, NULL);
->  	} while (rc != -ECHILD);
->  
-> +	if (pid_ns->reboot)
-> +		current->signal->group_exit_code = pid_ns->reboot;
-> +
->  	acct_exit_ns(pid_ns);
->  	return;
->  }
-> @@ -221,6 +225,35 @@ static struct ctl_table pid_ns_ctl_table[] = {
->  
->  static struct ctl_path kern_path[] = { { .procname = "kernel", }, { } };
->  
-> +int reboot_pid_ns(struct pid_namespace *pid_ns, int cmd)
-> +{
-> +	if (pid_ns == &init_pid_ns)
-> +		return 0;
-> +
-> +	switch(cmd) {
-> +	case LINUX_REBOOT_CMD_RESTART2:
-> +	case LINUX_REBOOT_CMD_RESTART:
-> +		pid_ns->reboot = SIGHUP;
-> +		break;
-> +
-> +	case LINUX_REBOOT_CMD_POWER_OFF:
-> +	case LINUX_REBOOT_CMD_HALT:
-> +		pid_ns->reboot = SIGINT;
-> +		break;
-> +	default:
-> +		return -EINVAL;
-> +	}
-> +
-> +	read_lock(&tasklist_lock);
-> +	force_sig(SIGKILL, pid_ns->child_reaper);
-> +	read_unlock(&tasklist_lock);
-> +
-> +	do_exit(0);
-> +
-> +	/* Not reached */
-> +	return 0;
-> +}
-> +
->  static __init int pid_namespaces_init(void)
->  {
->  	pid_ns_cachep = KMEM_CACHE(pid_namespace, SLAB_PANIC);
-> diff --git a/kernel/sys.c b/kernel/sys.c
-> index 4070153..bd924fa 100644
-> --- a/kernel/sys.c
-> +++ b/kernel/sys.c
-> @@ -444,6 +444,14 @@ SYSCALL_DEFINE4(reboot, int, magic1, int, magic2, unsigned int, cmd,
->  	                magic2 != LINUX_REBOOT_MAGIC2C))
->  		return -EINVAL;
->  
-> +	/* In case the pid namespaces are enabled, the current task is in a
-> +	 * child pid_namespace and the command is handled by 'reboot_pid_ns',
-> +	 * this one will invoke 'do_exit'.
-> +	 */
-> +	ret = reboot_pid_ns(task_active_pid_ns(current), cmd);
-> +	if (ret)
-> +		return ret;
-> +
->  	/* Instead of trying to make the power_off code look like
->  	 * halt when pm_power_off is not set do it the easy way.
->  	 */
-> -- 
-> 1.7.5.4
-> 
+Of course it is not OK ;) Note the "we should do something with" above.
+
+Oleg.
