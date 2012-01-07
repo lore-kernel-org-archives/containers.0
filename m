@@ -1,13 +1,13 @@
-From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Subject: [RESEND, PATCH 2/6] memcg: remove unused variable
-Date: Fri,  6 Jan 2012 22:57:48 +0200
-Message-ID: <1325883472-5614-2-git-send-email-kirill__18402.741282671$1325884000$gmane$org@shutemov.name>
-References: <1325883472-5614-1-git-send-email-kirill@shutemov.name>
+From: <postmaster-sTJmMBuhI0eNj9Bq2fkWzw@public.gmane.org>
+Subject: Onbestelbaar: Zie hoe je schande afgelopen weekend
+Date: Sat, 7 Jan 2012 02:49:52 +0100
+Message-ID: <9451016c-4e6f-458e-9958-1aa39e72cb19@asciweb.local>
+References: <009301ccccd6$c3fb5d80$0200a8c0@10.0.1.220>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: multipart/mixed; boundary="===============4299353670951663671=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1325883472-5614-1-git-send-email-kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+Content-Language: nl-NL
+In-Reply-To: <009301ccccd6$c3fb5d80$0200a8c0-60x1kTqCWHVgJAXftmDEsQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,30 +17,119 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-RnJvbTogIktpcmlsbCBBLiBTaHV0ZW1vdiIgPGtpcmlsbEBzaHV0ZW1vdi5uYW1lPgoKbW0vbWVt
-Y29udHJvbC5jOiBJbiBmdW5jdGlvbiDigJhtY19oYW5kbGVfZmlsZV9wdGXigJk6Cm1tL21lbWNv
-bnRyb2wuYzo1MjA2OjE2OiB3YXJuaW5nOiB2YXJpYWJsZSDigJhpbm9kZeKAmSBzZXQgYnV0IG5v
-dCB1c2VkIFstV3VudXNlZC1idXQtc2V0LXZhcmlhYmxlXQoKU2lnbmVkLW9mZi1ieTogS2lyaWxs
-IEEuIFNodXRlbW92IDxraXJpbGxAc2h1dGVtb3YubmFtZT4KQWNrZWQtYnk6IEtBTUVaQVdBIEhp
-cm95dWtpIDxrYW1lemF3YS5oaXJveXVAanAuZnVqaXRzdS5jb20+CkFja2VkLWJ5OiBNaWNoYWwg
-SG9ja28gPG1ob2Nrb0BzdXNlLmN6PgotLS0KIG1tL21lbWNvbnRyb2wuYyB8ICAgIDIgLS0KIDEg
-ZmlsZXMgY2hhbmdlZCwgMCBpbnNlcnRpb25zKCspLCAyIGRlbGV0aW9ucygtKQoKZGlmZiAtLWdp
-dCBhL21tL21lbWNvbnRyb2wuYyBiL21tL21lbWNvbnRyb2wuYwppbmRleCA3M2YwYzNlLi4zOWMz
-ZDYwIDEwMDY0NAotLS0gYS9tbS9tZW1jb250cm9sLmMKKysrIGIvbW0vbWVtY29udHJvbC5jCkBA
-IC01MTIxLDcgKzUxMjEsNiBAQCBzdGF0aWMgc3RydWN0IHBhZ2UgKm1jX2hhbmRsZV9maWxlX3B0
-ZShzdHJ1Y3Qgdm1fYXJlYV9zdHJ1Y3QgKnZtYSwKIAkJCXVuc2lnbmVkIGxvbmcgYWRkciwgcHRl
-X3QgcHRlbnQsIHN3cF9lbnRyeV90ICplbnRyeSkKIHsKIAlzdHJ1Y3QgcGFnZSAqcGFnZSA9IE5V
-TEw7Ci0Jc3RydWN0IGlub2RlICppbm9kZTsKIAlzdHJ1Y3QgYWRkcmVzc19zcGFjZSAqbWFwcGlu
-ZzsKIAlwZ29mZl90IHBnb2ZmOwogCkBAIC01MTMwLDcgKzUxMjksNiBAQCBzdGF0aWMgc3RydWN0
-IHBhZ2UgKm1jX2hhbmRsZV9maWxlX3B0ZShzdHJ1Y3Qgdm1fYXJlYV9zdHJ1Y3QgKnZtYSwKIAlp
-ZiAoIW1vdmVfZmlsZSgpKQogCQlyZXR1cm4gTlVMTDsKIAotCWlub2RlID0gdm1hLT52bV9maWxl
-LT5mX3BhdGguZGVudHJ5LT5kX2lub2RlOwogCW1hcHBpbmcgPSB2bWEtPnZtX2ZpbGUtPmZfbWFw
-cGluZzsKIAlpZiAocHRlX25vbmUocHRlbnQpKQogCQlwZ29mZiA9IGxpbmVhcl9wYWdlX2luZGV4
-KHZtYSwgYWRkcik7Ci0tIAoxLjcuOC4yCgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3Rz
-LmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9t
-YWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+--===============4299353670951663671==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="75748703-cc38-465c-84be-d0963311667f"
+Content-Language: nl-NL
+
+--75748703-cc38-465c-84be-d0963311667f
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
+
+Uw bericht kan niet worden bezorgd bij de volgende geadresseerden of groepe=
+n:
+
+joukedd-Y8gIj/Zv+KTz+pZb47iToQ@public.gmane.org<mailto:joukedd-Y8gIj/Zv+KTz+pZb47iToQ@public.gmane.org>
+Het door u ingevoerde e-mailadres is niet gevonden. Controleer het e-mailad=
+res van de geadresseerde en probeer het bericht opnieuw te verzenden. Als h=
+et probleem blijft bestaan, neemt u contact op met de helpdesk.
+
+
+
+
+
+
+
+Diagnostische gegevens voor beheerders:
+
+Bronserver: asciweb.local
+
+joukedd-Y8gIj/Zv+KTz+pZb47iToQ@public.gmane.org
+#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
+
+Oorspronkelijke berichtkoppen:
+
+Received: from edge.tacobli.nl (2002:59bc:1d69::59bc:1d69) by
+ mailweb.asciweb.local (2002:59bc:1d68::59bc:1d68) with Microsoft SMTP Serv=
+er
+ (TLS) id 14.2.247.3; Sat, 7 Jan 2012 02:49:52 +0100
+Received: from 10.0.1.220 (213.42.30.102) by edge.tacobli.nl (89.188.29.105=
+)
+ with Microsoft SMTP Server id 14.2.247.3; Sat, 7 Jan 2012 02:49:47 +0100
+Received: from [10.0.1.220] by 10.0.1.220 id QK1AFxfM15pps; Sat, 07 Jan 201=
+2
+ 04:53:30 +0400
+Message-ID: <009301ccccd6$c3fb5d80$0200a8c0-60x1kTqCWHVgJAXftmDEsQ@public.gmane.org>
+From: Ushi <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <joukedd-Y8gIj/Zv+KTz+pZb47iToQ@public.gmane.org>
+Subject: Zie hoe je schande afgelopen weekend
+Date: Sat, 7 Jan 2012 04:53:30 +0400
+MIME-Version: 1.0
+Content-Type: text/plain; charset=3D"windows-1252"
+Content-Transfer-Encoding: 8bit
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+
+
+--75748703-cc38-465c-84be-d0963311667f
+Content-Type: message/delivery-status; name="ATT00001"
+Content-Description: ATT00001
+Content-Disposition: attachment; filename="ATT00001"
+
+Reporting-MTA: dns;asciweb.local
+Received-From-MTA: dns;edge.tacobli.nl
+Arrival-Date: Sat, 7 Jan 2012 01:49:52 +0000
+
+Final-Recipient: rfc822;joukedd-Y8gIj/Zv+KTz+pZb47iToQ@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
+
+
+--75748703-cc38-465c-84be-d0963311667f
+Content-Type: message/rfc822; name="Zie hoe je schande afgelopen weekend"
+Content-Description: Zie hoe je schande afgelopen weekend
+Content-Disposition: attachment;
+	filename="Zie hoe je schande afgelopen weekend"
+
+Received: from edge.tacobli.nl (2002:59bc:1d69::59bc:1d69) by
+ mailweb.asciweb.local (2002:59bc:1d68::59bc:1d68) with Microsoft SMTP Server
+ (TLS) id 14.2.247.3; Sat, 7 Jan 2012 02:49:52 +0100
+Received: from 10.0.1.220 (213.42.30.102) by edge.tacobli.nl (89.188.29.105)
+ with Microsoft SMTP Server id 14.2.247.3; Sat, 7 Jan 2012 02:49:47 +0100
+Received: from [10.0.1.220] by 10.0.1.220 id QK1AFxfM15pps; Sat, 07 Jan 2012
+ 04:53:30 +0400
+Message-ID: <009301ccccd6$c3fb5d80$0200a8c0-60x1kTqCWHVgJAXftmDEsQ@public.gmane.org>
+From: Ushi <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <joukedd-Y8gIj/Zv+KTz+pZb47iToQ@public.gmane.org>
+Subject: Zie hoe je schande afgelopen weekend
+Date: Sat, 7 Jan 2012 04:53:30 +0400
+MIME-Version: 1.0
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+
+
+
+Zie hoe je schande
+
+
+http://www.trentinonoleggi.it/photo/
+
+
+
+--75748703-cc38-465c-84be-d0963311667f--
+
+--===============4299353670951663671==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============4299353670951663671==--
