@@ -1,13 +1,11 @@
-From: <postmaster-sTJmMBuhI0eNj9Bq2fkWzw@public.gmane.org>
-Subject: Onbestelbaar: Zie hoe je schande afgelopen weekend
-Date: Sat, 7 Jan 2012 02:49:52 +0100
-Message-ID: <9451016c-4e6f-458e-9958-1aa39e72cb19@asciweb.local>
-References: <009301ccccd6$c3fb5d80$0200a8c0@10.0.1.220>
+From: Mail Delivery System <Mailer-Daemon-hWLcgBpKmey+XT7JhA+gdA@public.gmane.org>
+Subject: Mail delivery failed: returning message to sender
+Date: Sun, 08 Jan 2012 08:25:45 +0100
+Message-ID: <E1Rjn8T-000H9p-W0@mr2.syncer.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============4299353670951663671=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: nl-NL
-In-Reply-To: <009301ccccd6$c3fb5d80$0200a8c0-60x1kTqCWHVgJAXftmDEsQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,116 +18,46 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============4299353670951663671==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="75748703-cc38-465c-84be-d0963311667f"
-Content-Language: nl-NL
+This message was created automatically by mail delivery software.
 
---75748703-cc38-465c-84be-d0963311667f
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+A message that you sent could not be delivered to one or more of its
+recipients. This is a permanent error. The following address(es) failed:
 
-Uw bericht kan niet worden bezorgd bij de volgende geadresseerden of groepe=
-n:
+  lowelljacobs-i4zrWwMckKbz+pZb47iToQ@public.gmane.org
+    SMTP error from remote mail server after RCPT TO:<lowelljacobs-i4zrWwMckKbz+pZb47iToQ@public.gmane.org>:
+    host public6-1.dyndns.org [77.249.60.31]: 550 5.1.1 User unknown
 
-joukedd-Y8gIj/Zv+KTz+pZb47iToQ@public.gmane.org<mailto:joukedd-Y8gIj/Zv+KTz+pZb47iToQ@public.gmane.org>
-Het door u ingevoerde e-mailadres is niet gevonden. Controleer het e-mailad=
-res van de geadresseerde en probeer het bericht opnieuw te verzenden. Als h=
-et probleem blijft bestaan, neemt u contact op met de helpdesk.
+------ This is a copy of the message, including all the headers. ------
 
-
-
-
-
-
-
-Diagnostische gegevens voor beheerders:
-
-Bronserver: asciweb.local
-
-joukedd-Y8gIj/Zv+KTz+pZb47iToQ@public.gmane.org
-#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
-
-Oorspronkelijke berichtkoppen:
-
-Received: from edge.tacobli.nl (2002:59bc:1d69::59bc:1d69) by
- mailweb.asciweb.local (2002:59bc:1d68::59bc:1d68) with Microsoft SMTP Serv=
-er
- (TLS) id 14.2.247.3; Sat, 7 Jan 2012 02:49:52 +0100
-Received: from 10.0.1.220 (213.42.30.102) by edge.tacobli.nl (89.188.29.105=
-)
- with Microsoft SMTP Server id 14.2.247.3; Sat, 7 Jan 2012 02:49:47 +0100
-Received: from [10.0.1.220] by 10.0.1.220 id QK1AFxfM15pps; Sat, 07 Jan 201=
-2
- 04:53:30 +0400
-Message-ID: <009301ccccd6$c3fb5d80$0200a8c0-60x1kTqCWHVgJAXftmDEsQ@public.gmane.org>
-From: Ushi <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <joukedd-Y8gIj/Zv+KTz+pZb47iToQ@public.gmane.org>
-Subject: Zie hoe je schande afgelopen weekend
-Date: Sat, 7 Jan 2012 04:53:30 +0400
+Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from demo.iconnect.ae ([213.42.30.102] helo=10.0.1.220)
+	by mr2.syncer.com with esmtp (Exim 4.71 (FreeBSD))
+	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+	id 1Rjn8A-000H8m-ER
+	for lowelljacobs-i4zrWwMckKbz+pZb47iToQ@public.gmane.org; Sun, 08 Jan 2012 08:25:27 +0100
+Received: from [10.0.1.220] by 10.0.1.220 id Kg7tA0bOHczC with SMTP; Sun, 08 Jan 2012 10:36:59 +0400
+Date: Sun, 08 Jan 2012 10:36:59 +0400
+From: "Mici" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.1.64.5) Business
+X-Priority: 3 (Normal)
+Message-ID: <695701136.04675595138720-60x1kTqCWHVgJAXftmDEsQ@public.gmane.org>
+To: <lowelljacobs-i4zrWwMckKbz+pZb47iToQ@public.gmane.org>
+Subject: Zie hoe je schande gisteren.
 MIME-Version: 1.0
-Content-Type: text/plain; charset=3D"windows-1252"
+Content-Type: text/plain;
+	charset="windows-1252"
 Content-Transfer-Encoding: 8bit
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-DCC-SYNCER-Metrics: mr2.syncer.com 1399; Body=32 Fuz1=1038
+ Score: 0
+X-Eximscan: wordlist score: 0, lng score: 4, mailshell score: 0, total: 4
+X-Eximscan-Wordlist-Score: Score: (), Total Score: 0
+X-Eximscan-Languages-Detected: Score: (English:62% x 20 = 12.40, Dutch:38% x -20 = -7.60), Total Score: 4
+X-Eximscan-Mailshell-Score: Score: 0
+X-Eximscan-Total-Score: Total Score: 4, Required: 75
+X-Spam-Scan-arrived: Sun Jan  8 08:25:26 2012
+X-Spam-Scan-started: Sun Jan  8 08:25:28 2012
+X-Spam-Scan-completed: Sun Jan  8 08:25:28 2012
 
 
---75748703-cc38-465c-84be-d0963311667f
-Content-Type: message/delivery-status; name="ATT00001"
-Content-Description: ATT00001
-Content-Disposition: attachment; filename="ATT00001"
-
-Reporting-MTA: dns;asciweb.local
-Received-From-MTA: dns;edge.tacobli.nl
-Arrival-Date: Sat, 7 Jan 2012 01:49:52 +0000
-
-Final-Recipient: rfc822;joukedd-Y8gIj/Zv+KTz+pZb47iToQ@public.gmane.org
-Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
-
-
---75748703-cc38-465c-84be-d0963311667f
-Content-Type: message/rfc822; name="Zie hoe je schande afgelopen weekend"
-Content-Description: Zie hoe je schande afgelopen weekend
-Content-Disposition: attachment;
-	filename="Zie hoe je schande afgelopen weekend"
-
-Received: from edge.tacobli.nl (2002:59bc:1d69::59bc:1d69) by
- mailweb.asciweb.local (2002:59bc:1d68::59bc:1d68) with Microsoft SMTP Server
- (TLS) id 14.2.247.3; Sat, 7 Jan 2012 02:49:52 +0100
-Received: from 10.0.1.220 (213.42.30.102) by edge.tacobli.nl (89.188.29.105)
- with Microsoft SMTP Server id 14.2.247.3; Sat, 7 Jan 2012 02:49:47 +0100
-Received: from [10.0.1.220] by 10.0.1.220 id QK1AFxfM15pps; Sat, 07 Jan 2012
- 04:53:30 +0400
-Message-ID: <009301ccccd6$c3fb5d80$0200a8c0-60x1kTqCWHVgJAXftmDEsQ@public.gmane.org>
-From: Ushi <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <joukedd-Y8gIj/Zv+KTz+pZb47iToQ@public.gmane.org>
-Subject: Zie hoe je schande afgelopen weekend
-Date: Sat, 7 Jan 2012 04:53:30 +0400
-MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-
-
-
-Zie hoe je schande
-
-
-http://www.trentinonoleggi.it/photo/
-
-
-
---75748703-cc38-465c-84be-d0963311667f--
-
---===============4299353670951663671==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============4299353670951663671==--
+Zie hoe je schande  gisteren.
+http://www.coricalcio.it/photo/
