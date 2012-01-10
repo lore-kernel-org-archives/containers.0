@@ -1,14 +1,15 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [GIT PULL] cgroup changes for v3.3-rc1
-Date: Mon, 9 Jan 2012 10:45:01 -0800
-Message-ID: <20120109184501.GC7421@google.com>
-References: <20120109183951.GB7421@google.com>
+From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+Subject: Re: [PATCH] Makefiles: Disable unused-variable warning
+Date: Tue, 10 Jan 2012 09:52:53 +0100
+Message-ID: <20120110085253.GC5050__27716.9198533104$1326185595$gmane$org@tiehlicka.suse.cz>
+References: <1324695619-5537-1-git-send-email-kirill@shutemov.name>
+	<20111227135752.GK5344@tiehlicka.suse.cz> <4F09AFBD.60503@suse.cz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20120109183951.GB7421-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4F09AFBD.60503-AlSwsSmVLrQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,65 +19,50 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Michal Marek <mmarek-AlSwsSmVLrQ@public.gmane.org>
+Cc: linux-kbuild-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, Jan 09, 2012 at 10:39:51AM -0800, Tejun Heo wrote:
-> Hello, Linus.
+On Sun 08-01-12 16:01:17, Michal Marek wrote:
+> Dne 27.12.2011 14:57, Michal Hocko napsal(a):
+> > Anyway, I am wondering why unused-but-set-variable is disabled while
+> > unused-variable is enabled.
 > 
-> Please pull from the following branch to receive cgroup changes.
+> unused-but-set-variable was disabled, because it was a new warning in
+> gcc 4.6 and produced too much noise relatively to its severity. A make
+> W=1 build of x86_64_defconfig gives:
+> $ grep -c 'Wunused-but-set-variable' log
+> 77
+> $ grep -c 'Wunused-variable' log
+> 0
 > 
->   git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git for-3.3
+> More exotic configuration will probably result in a couple of unused
+> variable warnings, but that IMO no reason to disable them globally.
 
-Oops, forgot writing about conflicts.  There will be the following
-conflict in kernel/cgroup.c.
+OK.
 
-	/*
-	 * step 2: make sure css_sets exist for all threads to be migrated.
-	 * we use find_css_set, which allocates a new one if necessary.
-	 */
-	INIT_LIST_HEAD(&newcg_list);
-	for (i = 0; i < group_size; i++) {
-<<<<<<< HEAD
-		tc = flex_array_get(group, i);
-		oldcg = tc->task->cgroups;
+> > Shouldn't we just disable it as well rather
+> > than workaround this in the code? The warning is just pure noise in this
+> > case.
+> 
+> If it's noise in a particular case, there is always the option to add
+> 
+> CFLAGS_memcontrol.o := $(call cc-disable-warning, unused-variable)
 
-		/* if we don't already have it in the list get a new one */
-		if (!css_set_check_fetched(cgrp, tc->task, oldcg,
-					   &newcg_list)) {
-=======
-		tsk = flex_array_get_ptr(group, i);
-		/* nothing to do if this task is already in the cgroup */
-		oldcgrp = task_cgroup_from_root(tsk, root);
-		if (cgrp == oldcgrp)
-			continue;
-		/* get old css_set pointer */
-		task_lock(tsk);
-		oldcg = tsk->cgroups;
-		get_css_set(oldcg);
-		task_unlock(tsk);
-		/* see if the new one for us is already in the list? */
-		if (css_set_check_fetched(cgrp, tsk, oldcg, &newcg_list)) {
-			/* was already there, nothing to do. */
-			put_css_set(oldcg);
-		} else {
-			/* we don't already have it. get new one. */
->>>>>>> a0e86bd4252519321b0d102dc4ed90557aa7bee9
-			retval = css_set_prefetch(cgrp, oldcg, &newcg_list);
-			if (retval)
-				goto out_list_teardown;
-		}
-	}
+I would like to prevent from local cflags hacks. Moreover the code will
+go away so I guess it doesn't make much sense to play tricks here.
 
-This is caused by e0197aae59 "cgroups: fix a css_set not found bug in
-cgroup_attach_proc" in mainline fixing a bug in code removed in
-for-3.3 branch and taking the part from for-3.3 is the correct
-resolution.  Just in case, the following is my test merge branch.
+> 
+> to the respective Makefile.
+> 
+> Michal
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git test-merge
-
-Thanks.
+Thanks
 
 -- 
-tejun
+Michal Hocko
+SUSE Labs
+SUSE LINUX s.r.o.
+Lihovarska 1060/12
+190 00 Praha 9    
+Czech Republic
