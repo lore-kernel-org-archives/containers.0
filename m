@@ -1,11 +1,13 @@
 From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: [PATCH 0/8] cgroups: Task counter subsystem v7
-Date: Fri, 13 Jan 2012 19:13:44 +0100
-Message-ID: <1326478441-3048-1-git-send-email-fweisbec@gmail.com>
+Date: Fri, 13 Jan 2012 19:13:45 +0100
+Message-ID: <1326478441-3048-2-git-send-email-fweisbec@gmail.com>
+References: <1326478441-3048-1-git-send-email-fweisbec@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1326478441-3048-1-git-send-email-fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -92,20 +94,7 @@ Both can be used at the same time. They don't conflict, they
 are just complementary.
 
 
-= Why not rather focus on a generic solution to protect against forkbomb ? =
 
-If you know a more generic solution to protect against forkbombs that not
-only works in containers but in more cases, I'll be happy to drop this patchset
-and focus on that instead.
-
-Note we need a solution that meets our requirements for untrustees running in
-containers, something that also prevents a forkbomb from doing any damage like
-even a temporary DDOS. We don't want sandboxes and containers to severely impact
-the rest of the system.
-
-Thanks.
-
----
 Frederic Weisbecker (7):
   cgroups: add res_counter_write_u64() API
   cgroups: new resource counter inheritance API
