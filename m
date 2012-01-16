@@ -1,23 +1,16 @@
-From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Q: cgroup: Questions about possible issues in cgroup locking
-Date: Sat, 14 Jan 2012 18:36:48 +0100
-Message-ID: <20120114173648.GA32543@redhat.com>
-References: <20111222153004.GA30522@redhat.com>
-	<20120104193614.GF9511@google.com>
-	<20120106152356.GA23995@redhat.com>
-	<20120106182535.GJ9511@google.com>
-	<20120111160730.GA24556@redhat.com>
-	<20120112003102.GB9511@google.com>
-	<20120112170728.GA25717@redhat.com>
-	<20120112175725.GD9511@google.com>
-	<20120113152010.GA19215@redhat.com>
-	<20120113182750.GD18166@google.com>
+From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+Subject: Re: [RESEND, PATCH 4/6] memcg: fix broken boolean expression
+Date: Mon, 16 Jan 2012 13:54:16 +0200
+Message-ID: <20120116115416.GA25687__7764.91884976185$1326714851$gmane$org@shutemov.name>
+References: <1325883472-5614-1-git-send-email-kirill@shutemov.name>
+	<1325883472-5614-4-git-send-email-kirill@shutemov.name>
+	<20120109140404.GG3588@cmpxchg.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20120113182750.GD18166-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20120109140404.GG3588-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,96 +20,70 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+To: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, stable-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 01/13, Mandeep Singh Baines wrote:
->
-> Oleg Nesterov (oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org) wrote:
->
-> > Yes, I thought about this too. Suppose we remove this assignment,
-> > then we can simply do
-> >
-> > 	#define while_each_thread(g, t) \
-> > 		while (t->group_leader == g->group_leader && (t = next_thread(t)) != g)
-> >
-> > with the same effect. (to remind, currently I ignore the barriers/etc).
-> >
->
-> Nice! I think this works.
->
-> > But this can _only_ help if we start at the group leader!
->
-> But I don't think this solution requires we start at the group leader.
->
-> My thinking:
->
-> Case 1: g is the exec thread
-> ...
-> Case 2: g is the group leader
-> ...
-> Case 3: g is some other thread
->
-> In this case, g MUST be current
+On Mon, Jan 09, 2012 at 03:04:04PM +0100, Johannes Weiner wrote:
+> On Fri, Jan 06, 2012 at 10:57:50PM +0200, Kirill A. Shutemov wrote:
+> > From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+> > 
+> > action != CPU_DEAD || action != CPU_DEAD_FROZEN is always true.
+> > 
+> > Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+> > Cc: <stable-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+> 
+> I think you don't need to actually CC stable via email.  If you
+> include that tag, they will pick it up once the patch hits mainline.
 
-Why? This is not true. But I guess this doesn't matter, I think I am
-starting to understand why our discussion was a bit confusing.
+I don't think it's a problem for stable@.
 
-The problem is _not_ exec/de_thread by itself. The problem is that
-while_each_thread(g, t) can race with removing 'g' from the list.
-IOW, list_for_each_rcu-like things assume that the head of the list
-is "stable" but this is not true.
+> 
+> The changelog is too terse, doubly so for a patch that should go into
+> stable.  How is the code supposed to work?  What are the consequences
+> of the bug?
 
-And note that de_thread() does not matter in this sense, only
-__unhash_process()->list_del_rcu(&p->thread_group) does matter.
+Is it enough?
 
-Now. If 'g' is the group leader, we should only worry about exec,
-otherwise it can't disappear before other threads.
+---
 
-But if it is not the group leader, it can simply exit and
-while_each_thread(g, t) can never stop by the same reason.
+From fe1c2f2dc1abf63cce12017e2d9031cf67f0a161 Mon Sep 17 00:00:00 2001
+From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+Date: Sat, 24 Dec 2011 04:12:53 +0200
+Subject: [PATCH 4/6] memcg: fix broken boolean expression
 
-And we can't detect this case. OK, OK, we can, let me remind
-about http://marc.info/?l=linux-kernel&m=127714242731448 and the
-whole discussion. But this makes while_each_thread() more complex
-and this doesn't fork for zap_threads-like users which must not
-miss the "interesing" threads.
+action != CPU_DEAD || action != CPU_DEAD_FROZEN is always true.
 
-Finally. If we restrict the lockless while_each_thread() so that
-is starts at the group leader, then we can rely on de_thread()
-which changes the leadership and try to detect this case.
+We should return at the point if CPU doesn't go away. Otherwise drain
+all counters and stocks from the CPU.
 
-See?
+Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+Cc: <stable-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Acked-by: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+---
+ mm/memcontrol.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
 
-> > May be we should enforce this rule (for the lockless case), I dunno...
-> > In that case I'd prefer to add the new while_each_thread_rcu() helper.
-> > But! in this case we do not need to change de_thread(), we can simply do
-> >
-> > 	#define while_each_thread_rcu(t) \
-> > 		while (({ t = next_thread(t); !thread_group_leader(t); }))
-> >
->
-> Won't this terminate just before visiting the exec thread?
+diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+index 4ed6737..513ae04 100644
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -2095,9 +2095,11 @@ static int __cpuinit memcg_cpu_hotplug_callback(struct notifier_block *nb,
+ 		return NOTIFY_OK;
+ 	}
+ 
+-	if ((action != CPU_DEAD) || action != CPU_DEAD_FROZEN)
++	if (action != CPU_DEAD && action != CPU_DEAD_FROZEN)
+ 		return NOTIFY_OK;
+ 
++	/* CPU goes away */
++
+ 	for_each_mem_cgroup(iter)
+ 		mem_cgroup_drain_pcp_counter(iter, cpu);
+ 
+-- 
+1.7.8.3
 
-Sure. But this is fine for zap_threads() or current_is_single_threaded(),
-the execing thread already has another ->mm. Just we shouldn't hang
-forever if we race with exec (we start at the group leader).
-
-And I hope this is fine in general (to remind, in the lockless case).
-If we race with exec we see either the old or the new leader with the
-same pid/signal/etc (at least).
-
-Hmm. On a second thought, perhaps I thought to much about zap_threads(),
-perhaps it would be better to find all threads we can...
-
-I dunno. But I am starting to like the ->group_leader more. Hmm, and
-with thread_group_leader() check we should ensure we do not visit the
-old leader twice.
-
-Thanks Mandeep.
-
-I'll try to recheck my thinking once again, what do you think? Anything
-else we could miss?
-
-Oleg.
+-- 
+ Kirill A. Shutemov
