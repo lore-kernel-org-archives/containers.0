@@ -1,15 +1,10 @@
-From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Subject: Re: [PATCH 8/8] cgroups: Add a task counter subsystem
-Date: Mon, 16 Jan 2012 14:38:21 +0200
-Message-ID: <20120116123821.GA25918@shutemov.name>
-References: <1326478441-3048-1-git-send-email-fweisbec@gmail.com>
-	<1326478441-3048-17-git-send-email-fweisbec@gmail.com>
+From: MAILER-DAEMON-t0SSoGp5Cs8O1qhlmH5L8V07/qn/mHzC@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Wed, 18 Jan 2012 08:37:38 +0000 (GMT)
+Message-ID: <20120118083738.0620848953F_F1684D2B@sophosef2.ucps.k12.nc.us>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============4194439536690606533=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1326478441-3048-17-git-send-email-fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,57 +14,124 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Max Kellermann <mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org>, Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>, Glauber Costa <glommer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Daniel J Walsh <dwalsh-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Jan 13, 2012 at 07:14:00PM +0100, Frederic Weisbecker wrote:
-> Add a new subsystem to limit the number of running tasks,
-> similar to the NR_PROC rlimit but in the scope of a cgroup.
-> 
-> The user can set an upper bound limit that is checked every
-> time a task forks in a cgroup or is moved into a cgroup
-> with that subsystem binded.
-> 
-> The primary goal is to protect against forkbombs that explode
-> inside a container. The traditional NR_PROC rlimit is not
-> efficient in that case because if we run containers in parallel
-> under the same user, one of these could starve all the others
-> by spawning a high number of tasks close to the user wide limit.
-> 
-> This is a prevention against forkbombs, so it's not deemed to
-> cure the effects of a forkbomb when the system is in a state
-> where it's not responsive. It's aimed at preventing from ever
-> reaching that state and stop the spreading of tasks early.
-> While defining the limit on the allowed number of tasks, it's
-> up to the user to find the right balance between the resource
-> its containers may need and what it can afford to provide.
-> 
-> As it's totally dissociated from the rlimit NR_PROC, both
-> can be complementary: the cgroup task counter can set an upper
-> bound per container and the rlmit can be an upper bound on the
-> overall set of containers.
-> 
-> Also this subsystem can be used to kill all the tasks in a cgroup
-> without races against concurrent forks, by setting the limit of
-> tasks to 0, any further forks can be rejected. This is a good
-> way to kill a forkbomb in a container, or simply kill any container
-> without the need to retry an unbound number of times.
-> 
-> Signed-off-by: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> Cc: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
-> Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> Cc: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
-> Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-> Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-> Cc: Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>
-> Cc: Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>
-> Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> Cc: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-> Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+This is a MIME-encapsulated message.
 
-Acked-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+--===============4194439536690606533==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="C199A489488_F1684CCB.1326875858/sophosef2.ucps.k12.nc.us"
+Content-Transfer-Encoding: 7bit
 
--- 
- Kirill A. Shutemov
+This is a MIME-encapsulated message.
+
+--C199A489488_F1684CCB.1326875858/sophosef2.ucps.k12.nc.us
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
+
+This is the mail system at host sophosef2.ucps.k12.nc.us.
+
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
+
+For further assistance, please send mail to <postmaster>
+
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
+
+                   The mail system
+
+<brian.pitoniak-itAOxzImoNeuATIWmRftxg@public.gmane.org>: host smtp.ucps.k12.nc.us[10.128.0.130] said:
+    550 5.7.1 Message rejected due to content restrictions (in reply to end of
+    DATA command)
+
+--C199A489488_F1684CCB.1326875858/sophosef2.ucps.k12.nc.us
+Content-Description: Delivery report
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns; sophosef2.ucps.k12.nc.us
+X-Email-Security-Appliance-Queue-ID: C199A489488_F1684CCB
+X-Email-Security-Appliance-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Wed, 18 Jan 2012 08:37:32 +0000 (GMT)
+
+Final-Recipient: rfc822; brian.pitoniak-itAOxzImoNeuATIWmRftxg@public.gmane.org
+Original-Recipient: rfc822;brian.pitoniak-itAOxzImoNeuATIWmRftxg@public.gmane.org
+Action: failed
+Status: 5.7.1
+Remote-MTA: dns; smtp.ucps.k12.nc.us
+Diagnostic-Code: smtp; 550 5.7.1 Message rejected due to content restrictions
+
+--C199A489488_F1684CCB.1326875858/sophosef2.ucps.k12.nc.us
+Content-Description: Undelivered Message
+Content-Type: message/rfc822
+Content-Transfer-Encoding: 7bit
+
+Received: from sophosef2.ucps.k12.nc.us (localhost.localdomain [127.0.0.1])
+	by localhost (Email Security Appliance) with SMTP id C199A489488_F1684CCB
+	for <brian.pitoniak-itAOxzImoNeuATIWmRftxg@public.gmane.org>; Wed, 18 Jan 2012 08:37:32 +0000 (GMT)
+Received: from hosting.unnes.ac.id.unnes.ac.id (unknown [118.97.9.59])
+	by sophosef2.ucps.k12.nc.us (Sophos Email Appliance) with ESMTP id 88D4A489309_F1684CBF
+	for <brian.pitoniak-itAOxzImoNeuATIWmRftxg@public.gmane.org>; Wed, 18 Jan 2012 08:37:30 +0000 (GMT)
+Received: from [118.97.9.59] by hosting.unnes.ac.id.unnes.ac.id id Ny2WD9KF2Lgh with SMTP; Wed, 18 Jan 2012 15:32:04 +0700
+Date: Wed, 18 Jan 2012 15:32:04 +0700
+From: "Cargo FX" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.1.14.4) Home
+X-Priority: 3 (Normal)
+Message-ID: <73336428.04044096239266-7c6Ix4kHDaQZExBMZvFq70SMPvt2b7LnFH/NWWTyIFg@public.gmane.org>
+To: <brian.pitoniak-itAOxzImoNeuATIWmRftxg@public.gmane.org>
+Subject: high salary.
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="utf-8"
+X-Sophos-ESA: [sophosef2.ucps.k12.nc.us] 3.6.13.2, Antispam-Engine: 2.7.2.1390750, Antispam-Data: 2012.1.18.82714
+Content-Transfer-Encoding: quoted-printable
+
+
+This offer from Intelligent Advertising Group.
+
+
+Req'd Education: High School
+Citizenship or Work-Visa: YES
+Base Pay: $72,000 per year
+Employee Type: Part-Time/Home-Based
+Bonus: Yes
+
+
+
+Description:
+
+If you want to work on a strong developing team  that feels like a family=
+, this position is for you!
+ Our company is looking
+for  local  customer  service  managers.  You  will  have  good career
+opportunities and will enjoy  friendly working atmosphere on our team.
+
+
+Requirements:
+High School required. PC and Internet, MS Office or compatible. Must have=
+ strong writing and communication=20
+skills.
+
+
+To Apply:
+Forward your contact details back to our e-mail and wait for  response in=
+ the next 24h - 48h.
+ Please send your resume.
+managerjanpolak-/E1597aS9LQAvxtiuMwx3w@public.gmane.org
+
+
+
+--C199A489488_F1684CCB.1326875858/sophosef2.ucps.k12.nc.us--
+
+--===============4194439536690606533==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============4194439536690606533==--
