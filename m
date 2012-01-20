@@ -1,13 +1,23 @@
-From: <postmaster-Qh/ACxk5RLZTpBK7XY6O9JZ3qXmFLfmx@public.gmane.org>
-Subject: Undeliverable: Re: Note.
-Date: Fri, 20 Jan 2012 14:04:28 +0000
-Message-ID: <3125423d-84ea-493b-a7aa-eff979c9a2c9@jascal.onmicrosoft.com>
-References: <001101ccd77c$11b6a200$0289a8c0@ns354634.ovh.net>
+From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Q: cgroup: Questions about possible issues in cgroup locking
+Date: Fri, 20 Jan 2012 16:06:20 +0100
+Message-ID: <20120120150620.GB9081@redhat.com>
+References: <20120111160730.GA24556@redhat.com>
+	<20120112003102.GB9511@google.com>
+	<20120112170728.GA25717@redhat.com>
+	<20120112175725.GD9511@google.com>
+	<20120113152010.GA19215@redhat.com>
+	<20120113182750.GD18166@google.com>
+	<20120114173648.GA32543@redhat.com>
+	<20120118231742.GS18166@google.com>
+	<20120119154522.GA14058@redhat.com>
+	<20120119181803.GU18166@google.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============0074323726961593000=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: en-US
-In-Reply-To: <001101ccd77c$11b6a200$0289a8c0-EKo9fkeo6mlnXn40ka+A6Q@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20120119181803.GU18166-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,175 +27,23 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
---===============0074323726961593000==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="6d0356c0-04f8-41ab-a0b8-c65cd51394a3"
-Content-Language: en-US
+On 01/19, Mandeep Singh Baines wrote:
+>
+> Oleg Nesterov (oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org) wrote:
+> > But we did
+> > have a reason (reasons?). Hopefully, the only really important reason
+> > was already removed by 087806b1.
+>
+> Ah. So the leader->group_leader may have been necessary earlier in order
+> to prevent two tasks, old leader and new leader from both returning true
+> for thread_group_leader(tsk).
 
---6d0356c0-04f8-41ab-a0b8-c65cd51394a3
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+Not really. de_thread() does release_task(old_leader). Please look, for
+example, at __exit_signal(). thread_group_leader() must not be true in
+this case.
 
-Delivery has failed to these recipients or groups:
-
-john-KCyDwzjnLsVmR6Xm/wNWPw@public.gmane.org<mailto:john-KCyDwzjnLsVmR6Xm/wNWPw@public.gmane.org>
-The e-mail address you entered couldn't be found. Please check the recipien=
-t's e-mail address and try to resend the message. If the problem continues,=
- please contact your helpdesk.
-
-jacquesh-KCyDwzjnLsVmR6Xm/wNWPw@public.gmane.org<mailto:jacquesh-KCyDwzjnLsVmR6Xm/wNWPw@public.gmane.org>
-The e-mail address you entered couldn't be found. Please check the recipien=
-t's e-mail address and try to resend the message. If the problem continues,=
- please contact your helpdesk.
-
-jacques-KCyDwzjnLsVmR6Xm/wNWPw@public.gmane.org<mailto:jacques-KCyDwzjnLsVmR6Xm/wNWPw@public.gmane.org>
-The e-mail address you entered couldn't be found. Please check the recipien=
-t's e-mail address and try to resend the message. If the problem continues,=
- please contact your helpdesk.
-
-
-
-
-
-
-
-Diagnostic information for administrators:
-
-Generating server: jascal.onmicrosoft.com
-
-john-KCyDwzjnLsVmR6Xm/wNWPw@public.gmane.org
-#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##rfc822;john-KCyDwzjnLsVmR6Xm/wNWPw@public.gmane.org
-
-jacquesh-KCyDwzjnLsVmR6Xm/wNWPw@public.gmane.org
-#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##rfc822;jacquesh@jascal.n=
-l
-
-jacques-KCyDwzjnLsVmR6Xm/wNWPw@public.gmane.org
-#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##rfc822;jacques-KCyDwzjnLsVmR6Xm/wNWPw@public.gmane.org
-
-Original message headers:
-
-Received: from mail40-tx2-R.bigfish.com (65.55.88.111) by
- DB3PRD0702HT010.eurprd07.prod.outlook.com (10.3.4.178) with Microsoft SMTP
- Server (TLS) id 14.15.29.1; Fri, 20 Jan 2012 14:04:21 +0000
-Received: from mail40-tx2 (localhost [127.0.0.1])       by mail40-tx2-R.big=
-fish.com
- (Postfix) with ESMTP id CD6B28011E;    Fri, 20 Jan 2012 14:04:17 +0000 (UT=
-C)
-X-SpamScore: 17
-X-BigFish: ps17(zzc85fhzz272M1202h10d2nzzd0f34hz30ihc1bhc31hc1ahc1bhc31hc1a=
-h668h839h34h)
-X-Forefront-Antispam-Report: CIP:91.121.110.227;KIP:(null);UIP:(null);IPV:N=
-LI;H:ns354634.ovh.net;RD:ns354634.ovh.net;EFVD:NLI
-Received-SPF: fail (mail40-tx2: domain of lists.linux-foundation.org does n=
-ot designate 91.121.110.227 as permitted sender) client-ip=3D91.121.110.227=
-; envelope-from=3Dcontainers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org; helo=3Dns354634.ov=
-h.net ;4634.ovh.net ;
-Received: from mail40-tx2 (localhost.localdomain [127.0.0.1]) by mail40-tx2
- (MessageSwitch) id 1327068257553082_29852; Fri, 20 Jan 2012 14:04:17 +0000
- (UTC)
-Received: from TX2EHSMHS014.bigfish.com (unknown [10.9.14.254]) by
- mail40-tx2.bigfish.com (Postfix) with ESMTP id 791FB5E00C8;    Fri, 20 Jan=
- 2012
- 14:04:17 +0000 (UTC)
-Received: from ns354634.ovh.net (91.121.110.227) by TX2EHSMHS014.bigfish.co=
-m
- (10.9.99.114) with Microsoft SMTP Server id 14.1.225.23; Fri, 20 Jan 2012
- 14:04:14 +0000
-Received: from [91.121.110.227] by ns354634.ovh.net id mw8iXkFf4S9T; Fri, 2=
-0
- Jan 2012 15:01:58 +0100
-Message-ID: <001101ccd77c$11b6a200$0289a8c0-EKo9fkeo6mlnXn40ka+A6Q@public.gmane.org>
-From: service <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <frans-KCyDwzjnLsVmR6Xm/wNWPw@public.gmane.org>
-Subject: Re: Note.
-Date: Fri, 20 Jan 2012 15:01:58 +0100
-MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary=3D"----------E0C21711E9918B6"
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-
-
---6d0356c0-04f8-41ab-a0b8-c65cd51394a3
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns;jascal.onmicrosoft.com
-Received-From-MTA: dns;mail40-tx2-R.bigfish.com
-Arrival-Date: Fri, 20 Jan 2012 14:04:21 +0000
-
-Original-Recipient: rfc822;john-KCyDwzjnLsVmR6Xm/wNWPw@public.gmane.org
-Final-Recipient: rfc822;john-KCyDwzjnLsVmR6Xm/wNWPw@public.gmane.org
-Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
-
-Original-Recipient: rfc822;jacquesh-KCyDwzjnLsVmR6Xm/wNWPw@public.gmane.org
-Final-Recipient: rfc822;jacquesh-KCyDwzjnLsVmR6Xm/wNWPw@public.gmane.org
-Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
-
-Original-Recipient: rfc822;jacques-KCyDwzjnLsVmR6Xm/wNWPw@public.gmane.org
-Final-Recipient: rfc822;jacques-KCyDwzjnLsVmR6Xm/wNWPw@public.gmane.org
-Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
-
-
---6d0356c0-04f8-41ab-a0b8-c65cd51394a3
-Content-Type: message/rfc822
-
-Received: from mail40-tx2-R.bigfish.com (65.55.88.111) by
- DB3PRD0702HT010.eurprd07.prod.outlook.com (10.3.4.178) with Microsoft SMTP
- Server (TLS) id 14.15.29.1; Fri, 20 Jan 2012 14:04:21 +0000
-Received: from mail40-tx2 (localhost [127.0.0.1])	by mail40-tx2-R.bigfish.com
- (Postfix) with ESMTP id CD6B28011E;	Fri, 20 Jan 2012 14:04:17 +0000 (UTC)
-X-SpamScore: 17
-X-BigFish: ps17(zzc85fhzz272M1202h10d2nzzd0f34hz30ihc1bhc31hc1ahc1bhc31hc1ah668h839h34h)
-X-Forefront-Antispam-Report: CIP:91.121.110.227;KIP:(null);UIP:(null);IPV:NLI;H:ns354634.ovh.net;RD:ns354634.ovh.net;EFVD:NLI
-Received-SPF: fail (mail40-tx2: domain of lists.linux-foundation.org does not designate 91.121.110.227 as permitted sender) client-ip=91.121.110.227; envelope-from=containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org; helo=ns354634.ovh.net ;4634.ovh.net ;
-Received: from mail40-tx2 (localhost.localdomain [127.0.0.1]) by mail40-tx2
- (MessageSwitch) id 1327068257553082_29852; Fri, 20 Jan 2012 14:04:17 +0000
- (UTC)
-Received: from TX2EHSMHS014.bigfish.com (unknown [10.9.14.254])	by
- mail40-tx2.bigfish.com (Postfix) with ESMTP id 791FB5E00C8;	Fri, 20 Jan 2012
- 14:04:17 +0000 (UTC)
-Received: from ns354634.ovh.net (91.121.110.227) by TX2EHSMHS014.bigfish.com
- (10.9.99.114) with Microsoft SMTP Server id 14.1.225.23; Fri, 20 Jan 2012
- 14:04:14 +0000
-Received: from [91.121.110.227] by ns354634.ovh.net id mw8iXkFf4S9T; Fri, 20
- Jan 2012 15:01:58 +0100
-Message-ID: <001101ccd77c$11b6a200$0289a8c0-EKo9fkeo6mlnXn40ka+A6Q@public.gmane.org>
-From: service <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <frans-KCyDwzjnLsVmR6Xm/wNWPw@public.gmane.org>
-Subject: Re: Note.
-Date: Fri, 20 Jan 2012 15:01:58 +0100
-MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="----------E0C21711E9918B6"
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-
-------------E0C21711E9918B6
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-
-
-Hallo
-U moet de rekening betalen voor het einde van de week.
-Details in de bijgevoegde documenten...
-------------E0C21711E9918B6--
-
---6d0356c0-04f8-41ab-a0b8-c65cd51394a3--
-
---===============0074323726961593000==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============0074323726961593000==--
+Oleg.
