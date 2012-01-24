@@ -1,7 +1,7 @@
-From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+From: Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 Subject: Re: [RFC] fix devpts mount behavior
-Date: Mon, 23 Jan 2012 18:25:55 -0600
-Message-ID: <20120124002555.GA29534@sergelap>
+Date: Tue, 24 Jan 2012 00:26:20 +0000
+Message-ID: <20120124002620.GI23916@ZenIV.linux.org.uk>
 References: <20120124000517.GA28878@sergelap>
 	<CA+55aFz9ofF+Ey8VCDS8UEf2XSw36kj2RhkHfFScuzLXMeNrkA@mail.gmail.com>
 Mime-Version: 1.0
@@ -20,10 +20,10 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Andy Whitcroft <apw-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andy Whitcroft <apw-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Linus Torvalds (torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org):
+On Mon, Jan 23, 2012 at 04:13:49PM -0800, Linus Torvalds wrote:
 > On Mon, Jan 23, 2012 at 4:05 PM, Serge Hallyn
 > <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org> wrote:
 > >
@@ -41,20 +41,11 @@ Quoting Linus Torvalds (torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.o
 > There may be some subtle reason why the above is totally broken and
 > just fundamnetally wouldn't work, and breaks all existing setups, but
 > maybe it's worth at least discussing as an option?
-> 
-> Or did I entirely misunderstand the problem?
-> 
->                       Linus
 
-I like it.
+Hell knows...  That's certainly what I would have prefered, but I wonder
+about existing practices along the lines of "mount it in chroot jail
+from inside that jail" (as opposed to mount --bind /dev/pts /jail/dev/pts
+while preparing it).
 
-The only place that *might* be a problem is if initramsfs does a devpts
-mount, and later init blindly mounts tmpfs on /dev and mounts a new
-devpts.  But it seems unlikely there would be any open pty's so it
-shouldn't really matter.
-
-I could go ahead and test that, say, ubuntu and fedora systems boot fine
-with this change.  But of course I can't be sure there is no userspace
-out there that won't cope...
-
--serge
+Posted patch is too ugly to live and as for the new kind of namespace...
+yuck.  We already have far too many :-/
