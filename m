@@ -1,17 +1,18 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+From: Nick Bowler <nbowler-7BP4RkwGw0uXmMXjJBpWqg@public.gmane.org>
 Subject: Re: [RFC] fix devpts mount behavior
-Date: Tue, 24 Jan 2012 12:55:02 -0800
-Message-ID: <20120124205502.GC20039@us.ibm.com>
+Date: Tue, 24 Jan 2012 16:19:35 -0500
+Message-ID: <20120124211935.GA21252@elliptictech.com>
 References: <20120124000517.GA28878@sergelap>
 	<CA+55aFz9ofF+Ey8VCDS8UEf2XSw36kj2RhkHfFScuzLXMeNrkA@mail.gmail.com>
 	<20120124002555.GA29534@sergelap>
 	<CA+55aFzwOU137V6wtyBjessx05NJo2G4KV0rvTKWvC79A+o9iQ@mail.gmail.com>
+	<20120124205502.GC20039@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <CA+55aFzwOU137V6wtyBjessx05NJo2G4KV0rvTKWvC79A+o9iQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20120124205502.GC20039-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,44 +22,23 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Andy Whitcroft <apw-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andy Whitcroft <apw-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Linus Torvalds [torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org] wrote:
-| On Mon, Jan 23, 2012 at 4:25 PM, Serge Hallyn
-| <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org> wrote:
-| >
-| > The only place that *might* be a problem is if initramsfs does a devpts
-| > mount, and later init blindly mounts tmpfs on /dev and mounts a new
-| > devpts. =A0But it seems unlikely there would be any open pty's so it
-| > shouldn't really matter.
-| =
+On 2012-01-24 12:55 -0800, Sukadev Bhattiprolu wrote:
+> Linus Torvalds [torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org] wrote:
+[...]
+> | If you can test a few distros and at least validate that the approach
+> | isn't *totally* broken, I'll apply it. It's early days in the -rc
+> | series yet, and this does seem to be one of those things that we'd be
+> | better off trying to do early rather than delay.
+> 
+> Yes, hopefully the new distros can cope with 'newinstance' as the default
+> and ones that can't can live with CONFIG_DEVPTS_MULTIPLE_INSTANCES=n.
 
-| Right. I think the opportunity for problems should be pretty small.
-| =
+What about people who chroot into an "old" distro from a "new" livecd?
 
-| And it's not like the pty itself wouldn't continue to work - it's just
-| that programs like /usr/bin/tty wouldn't be able to *find* it.
-| =
-
-| Although who knows - maybe there is some other subtle interaction.
-| =
-
-| > I could go ahead and test that, say, ubuntu and fedora systems boot fine
-| > with this change. =A0But of course I can't be sure there is no userspace
-| > out there that won't cope...
-| =
-
-| I think the only way is to try it out.
-| =
-
-| If you can test a few distros and at least validate that the approach
-| isn't *totally* broken, I'll apply it. It's early days in the -rc
-| series yet, and this does seem to be one of those things that we'd be
-| better off trying to do early rather than delay.
-
-Yes, hopefully the new distros can cope with 'newinstance' as the default
-and ones that can't can live with CONFIG_DEVPTS_MULTIPLE_INSTANCES=3Dn.
-
-Sukadev
+Cheers,
+-- 
+Nick Bowler, Elliptic Technologies (http://www.elliptictech.com/)
