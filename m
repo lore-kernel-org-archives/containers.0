@@ -1,7 +1,7 @@
-From: Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [RFC] fix devpts mount behavior
-Date: Wed, 25 Jan 2012 00:27:24 +0100
-Message-ID: <CAPXgP12REAwmDORzdGJhsxZKU8nhiauCxoVdKa8Eifw4MWWtgA@mail.gmail.com>
+Date: Tue, 24 Jan 2012 23:29:54 +0000
+Message-ID: <20120124232954.GA26607@hallyn.com>
 References: <20120124000517.GA28878@sergelap>
 	<CA+55aFz9ofF+Ey8VCDS8UEf2XSw36kj2RhkHfFScuzLXMeNrkA@mail.gmail.com>
 	<20120124002555.GA29534@sergelap>
@@ -11,11 +11,13 @@ References: <20120124000517.GA28878@sergelap>
 	<20120124220247.GA26353@hallyn.com>
 	<CAPXgP13_gczQmG_USAp0p2AuTfxkzAvzHvjbZY_rbbLH-4rDyg@mail.gmail.com>
 	<20120124231601.GA4470@sergelap>
+	<20120124232502.GA22218@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20120124231601.GA4470@sergelap>
+Content-Disposition: inline
+In-Reply-To: <20120124232502.GA22218-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -25,61 +27,24 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andy Whitcroft <apw-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andy Whitcroft <apw-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gV2VkLCBKYW4gMjUsIDIwMTIgYXQgMDA6MTYsIFNlcmdlIEhhbGx5biA8c2VyZ2UuaGFsbHlu
-QGNhbm9uaWNhbC5jb20+IHdyb3RlOgo+IFF1b3RpbmcgS2F5IFNpZXZlcnMgKGtheS5zaWV2ZXJz
-QHZyZnkub3JnKToKPj4gT24gVHVlLCBKYW4gMjQsIDIwMTIgYXQgMjM6MDIsIFNlcmdlIEUuIEhh
-bGx5biA8c2VyZ2VAaGFsbHluLmNvbT4gd3JvdGU6Cj4+ID4gUXVvdGluZyBFcmljIFcuIEJpZWRl
-cm1hbiAoZWJpZWRlcm1AeG1pc3Npb24uY29tKToKPj4KPj4gPj4gSXQgbG9va3MgbGlrZSByZWxh
-dGl2ZWx5IHJlY2VudCB1ZGV2IHN0aWxsIGNyZWF0ZXMgL2Rldi9wdG14IGFuZCBkb2VzCj4+ID4K
-Pj4gPiBCb3ksIGl0IGRvZXMsIGFuZCBpdCdzIHN0dWJib3JuIGFib3V0IGl0LiDCoFJlbW92aW5n
-IHRoZSAvbGliL3VkZXYvcnVsZXMuZAo+PiA+IGVudHJ5IGRvZXNuJ3Qgc3RvcCBpdC4gwqAodGhp
-cyBpcyBhZnRlciBJJ3ZlIGhhZCBhbiBpbml0IGpvYiByZXBsYWNlIHRoZQo+PiA+IGRldnRtcGZz
-LWNyZWF0ZWQgcHRteCBlbnRyeSB3aXRoIGEgc3ltbGluaykKPj4KPj4gVWRldiBoYXMgbm90aGlu
-ZyB0byBkbyB3aXRoIHRoYXQuIFRoZSBrZXJuZWwgY3JlYXRlcyB0aGF0IGRldmljZSBub2RlLgo+
-PiBVZGV2IGRvZXMgbm90IGNhcnJ5IGFueSBydWxlcyB5b3UgY291bGQgcmVtb3ZlLCB0byBuYW1l
-IGRldmljZSBub2RlcywKPj4gaXQgb25seSBzZXQgcGVybWlzc2lvbnMgYW5kIGNyZWF0ZXMgc3lt
-bGlua3MgdG8gZGV2aWNlIG5vZGVzLgo+Cj4gVGhhdCdzIG9kZCwgYmVjYXVzZSBJIHdhcyBzdXJl
-IEkgZGVsZXRlZCB0aGUgbm9kZSBhZnRlciB0aGUga2VybmVsIGNyZWF0ZWQKPiBpdC4KPgo+IEJ1
-dCBpdCBzb3VuZHMgbGlrZSBJIG11c3QgaGF2ZSBkb25lIGl0IHdyb25nLgoKT2gsIG9sZGVyIHVk
-ZXZzIHJlLWNyZWF0ZSBpdCB3aGVuIHlvdSBydW4gJ3VkZXZhZG0gdHJpZ2dlcicsIGJ1dCBvbmx5
-CnRoZW4sIG5ldmVyIG9uIGl0cyBvd24sIHRoZXJlIHdpbGwgYmUgbm8gc3VjaCBldmVudC4gQ3Vy
-cmVudCB1ZGV2cwp3aWxsIG5vdCBkbyBta25vZCgpIGFueW1vcmUsIG5ldmVyLgoKPj4gSXQgd2ls
-bCBuZXZlciByZXBsYWNlIGEga2VybmVsLWNyZWF0ZWQgZGV2aWNlIG5vZGUgd2l0aCBhIHN5bWxp
-bmssCj4+IHRoZXJlIGlzIG5vIHdheSB0byBleHByZXNzIHRoYXQuIElmIHlvdSBkb24ndCB3YW50
-IGEgZGV2aWNlIG5vZGUKPj4gdGhlcmUsIHlvdSBuZWVkIHRvIGNoYW5nZSB0aGUga2VybmVsLCB0
-byBub3QgZXhwb3J0Cj4+IC9zeXMvY2xhc3MvdHR5L3B0bXgvIHRoZSB3YXkgaXQgaXMgdG9kYXku
-Cj4+Cj4+ID4gU28gY3VycmVudCBkaXN0cm9zICh3ZWxsLCBVYnVudHUgYW5kIEZlZG9yYSBhdCBs
-ZWFzdCkgd291bGQgbmVlZCB0byBhdCBsZWFzdAo+PiA+IChhKSBmaXggdWRldiwKPj4KPj4gVG8g
-ZG8gd2hhdD8KPgo+IE5vdGhpbmcsIGFzIEknbSBzdXJlIHlvdSdyZSByaWdodCBhYm92ZSDCoDop
-Cgo6KQoKPj4gPiAoYikgY2hhbmdlIHRoZSBkZWZhdWx0IGRldnB0cyBtb3VudCAoZG9uZSBmcm9t
-IGluaXRyYW1mcykgdG8KPj4gPiBhZGQgcHRteG1vZGU9NjY2LAo+Pgo+PiA+IChjKSAoaWYgbm90
-IGRvbmUgaW4gdWRldikgY3JlYXRlIHRoZSAvZGV2L3B0bXggc3ltbGluay4KPj4KPj4gVWRldiBj
-YW4gb25seSBjcmVhdGUgc3ltbGlua3MgdG8gZGV2aWNlcyB0aGUgZHJpdmVyLWNvcmUgY3JlYXRl
-cywgbm90Cj4+IHRvIGRldmljZXMgaW5zaWRlIGEgY3VzdG9tIGZpbGVzeXN0ZW0uCj4KPiBJIHNl
-ZS4KPgo+PiA+IEZvciBzYWZldHkgSSdkIHJlY29tbWVuZCBjcmVhdGluZyAvZGV2L3B0cy9wdG14
-IHdpdGgKPj4gPiBERVZQVFNfTVVMVElQTEVfSU5TVEFOQ0VTPW4gKG9yIGRyb3BwaW5nIHRoYXQg
-c3VwcG9ydCksIGFuZCBieSBkZWZhdWx0Cj4+ID4gc2V0dGluZyBwdG14bW9kZSB0byA2NjYgYXMg
-dGhhdCdzIHdoYXQgdWRldiBkb2VzLgo+Pgo+PiBUaGUgbW9kZSBmb3IgcHRteCBpcyBzZXQgYnkg
-dGhlIGtlcm5lbCBpdHNlbGYsIGFuZCBkb2VzIG5vdCBldmVuIG5lZWQKPj4gdWRldiB0byBkbyB0
-aGF0Ogo+PiDCoCAkIGNhdCAvc3lzL2NsYXNzL3R0eS9wdG14L3VldmVudAo+PiDCoCBNQUpPUj01
-Cj4+IMKgIE1JTk9SPTIKPj4gwqAgREVWTkFNRT1wdG14Cj4+IMKgIERFVk1PREU9MDY2Ngo+Cj4g
-VGhhdCBoYXMgbm90aGluZyB0byBkbyB3aXRoIC9kZXYvcHRzL3B0bXgsIHdob3NlIHBlcm1zIGFy
-ZSBzZXQgYmFzZWQgb24KPiB0aGUgJy1vIHB0bXhtb2RlPSIgYXJndW1lbnQsIGFuZCBkZWZhdWx0
-IHRvIDAwMCBpZiBub3Qgc3BlY2lmaWVkLgoKWWVhaCwgcmlnaHQuIEp1c3Qgc2F5aW5nIHRoYXQg
-c29tZSBwZXJtaXNzaW9ucyBhcmUgc2V0IGJ5IHRoZSBrZXJuZWwKaXRzZWxmIHRoZXNlIGRheXMu
-IEkgd291bGRuJ3QgYmUgYmFkIGlmIHRoZSBrZXJuZWwgaGFkIHRoZSBkZWZhdWx0IG9mCjA2NjYg
-Zm9yIHRoZSBkZXZwdHMgZnMsIHdvdWxkIGl0PwoKPiBJZiAvZGV2L3B0bXggaXMgZ29pbmcgdG8g
-YmUgYSBzeW1saW5rIHRvIC9kZXYvcHRzL3B0bXgsIHRoZW4gd2UgaGF2ZSB0byBzZXQKPiB0aGUg
-L2Rldi9wdHMvcHRteCBwZXJtcyB0byBub3QgYmUgMDAwLCBvciB1c2VycyB3b24ndCBiZSBhYmxl
-IHRvIGNyZWF0ZQo+IHB0eXMuCgpSaWdodC4gQ2hhbmdlIHRoZSBkZXZwdHMgaW4ta2VybmVsIGRl
-ZmF1bHQ/CgpXZSBtaWdodCBhbHNvIHRoaW5nIGFib3V0IGNoYW5naW5nIC9zeXMvY2xhc3MvdHR5
-L3B0bXgvLCBhbmQgaGF2ZSB0aGUKa2VybmVsIGNyZWF0ZSB0aGUgc3ltbGluaz8gVGhlIGxvb3Bz
-IHRocm91Z2ggdXNlcnNwYWNlIHRvIHNldHVwCmRlZmF1bHQga2VybmVsIHN0dWZmIGFyZSBraW5k
-IG9mIGNyYXp5IC4uLgoKS2F5Cl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgt
-Zm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4v
-bGlzdGluZm8vY29udGFpbmVycw==
+Quoting Sukadev Bhattiprolu (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+> Serge Hallyn [serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org] wrote:
+> | 
+> | That has nothing to do with /dev/pts/ptmx, whose perms are set based on
+> | the '-o ptmxmode=" argument, and default to 000 if not specified.  If
+> | /dev/ptmx is going to be a symlink to /dev/pts/ptmx, then we have to set
+> | the /dev/pts/ptmx perms to not be 000, or users won't be able to create
+> | ptys.
+> 
+> If we are going to make 'newinstance' the default, maybe the default
+> ptmx mode could be changed to 0666 in the kernel too ?
+> 
+
+Right that was what i meant :)
+
+thanks,
+-serge
