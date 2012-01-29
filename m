@@ -1,10 +1,14 @@
-From: MAILER-DAEMON-+NbaIjSFD8nd8Zgiw/MPxQ@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Sun, 29 Jan 2012 04:35:45 -0800 (PST)
-Message-ID: <20120129123545.19E21A3D5AB3F@c2mailgw12.amadis.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH] cgroup: remove extra calls to find_existing_css_set
+Date: Sun, 29 Jan 2012 12:37:49 -0800
+Message-ID: <20120129203749.GE17211__30695.9669724622$1327869491$gmane$org@htj.dyndns.org>
+References: <1327429591-8507-1-git-send-email-msb@chromium.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1158864408348129243=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1327429591-8507-1-git-send-email-msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -14,103 +18,36 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
+Hello, Manddep.
 
---===============1158864408348129243==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="90000A3D5A8D7.1327840545/c2mailgw12.amadis.com"
+On Tue, Jan 24, 2012 at 10:26:31AM -0800, Mandeep Singh Baines wrote:
+> In cgroup_attach_proc, we indirectly call find_existing_css_set 3
+> times. It is an expensive call so we want to call it a minimum
+> of times. This patch only calls it once and stores the result so
+> that it can be used later on when we call cgroup_task_migrate.
+> 
+> This required modifying cgroup_task_migrate to take the new css_set
+> (which we obtained from find_css_set) as a parameter. The nice side
+> effect of this is that cgroup_task_migrate is now identical for
+> cgroup_attach_task and cgroup_attach_proc. It also now returns a
+> void since it can never fail.
+> 
+> Changes in V5:
+> * https://lkml.org/lkml/2012/1/20/344 (Tejun Heo)
+>   * Remove css_set_refs
+             ^^^^^^^^^^^^
+>  static int cgroup_attach_proc(struct cgroup *cgrp, struct task_struct *leader)
+>  {
+> -	int retval, i, group_size;
+> +	int retval, i, group_size, css_set_refs = 0;
+				   ^^^^^^^^^^^^
+Wrong patch?
 
-This is a MIME-encapsulated message.
+Thanks.
 
---90000A3D5A8D7.1327840545/c2mailgw12.amadis.com
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
-
-This is the mail system at host c2mailgw12.amadis.com.
-
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
-
-For further assistance, please send mail to postmaster.
-
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
-
-                   The mail system
-
-<dariobattista-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org>: host m2w-in1.ctmail.com[74.202.142.24] said: 551
-    <dariobattista-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org> is a deactivated mailbox (in reply to RCPT TO
-    command)
-
---90000A3D5A8D7.1327840545/c2mailgw12.amadis.com
-Content-Description: Delivery report
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; c2mailgw12.amadis.com
-X-Postfix-Queue-ID: 90000A3D5A8D7
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Sun, 29 Jan 2012 04:35:38 -0800 (PST)
-
-Final-Recipient: rfc822; dariobattista-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org
-Original-Recipient: rfc822;dariobattista-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org
-Action: failed
-Status: 5.0.0
-Remote-MTA: dns; m2w-in1.ctmail.com
-Diagnostic-Code: smtp; 551 <dariobattista-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org> is a deactivated mailbox
-
---90000A3D5A8D7.1327840545/c2mailgw12.amadis.com
-Content-Description: Undelivered Message
-Content-Type: message/rfc822
-
-Received: from mail1.unnes.ac.id (unknown [118.97.9.60])
-	by c2mailgw12.amadis.com (Postfix) with ESMTP id 8F52FA3D59BAC
-	for <dariobattista-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org>; Sun, 29 Jan 2012 04:35:38 -0800 (PST)
-Received: from [118.97.9.60] by mail1.unnes.ac.id id WXgtUID0pXzm with SMTP; Sun, 29 Jan 2012 19:35:38 +0700
-Date: Sun, 29 Jan 2012 19:35:38 +0700
-From: "Info" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.8.19.1) Educational
-X-Priority: 3 (Normal)
-Message-ID: <675282278.83849782091588-/dYPggjBmVk7HLB1kJ91c2CgeU+1il2p@public.gmane.org>
-To: <dariobattista-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org>
-Subject: Ordine 702869
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
-X-CTASD-RefID: str=0001.0A020207.4F253D1F.00AD,ss=1,re=0.000,fgs=0
-X-CTASD-IP: 118.97.9.60
-X-CTASD-Sender: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-x-ctasd: uncategorized
-x-ctasd-vod: uncategorized
-x-ctasd-station: 
-Content-Transfer-Encoding: quoted-printable
-
-Gentile Cliente
-                             =20
-La risposta alla vostra domanda di un profilo=20
-sul nostro sito web 18.01.2012.
-ordina le statistiche puo essere vista qui
-http://www.acquapulita.org/debitodownload/informazioni.zip?idown4341270Us=
-era=3Ddariobattista
-
-
-Sara un piacere di collaborare in futuro
-Tel. / Fax.:  (454) 842 01 126.
-
-
-
---90000A3D5A8D7.1327840545/c2mailgw12.amadis.com--
-
---===============1158864408348129243==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============1158864408348129243==--
+-- 
+tejun
