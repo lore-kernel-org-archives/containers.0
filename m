@@ -1,9 +1,9 @@
-From: Mail Delivery Subsystem <MAILER-DAEMON-SlFxh4Pscmu8/LWd1FLu5j4xb7Bw8egA@public.gmane.org>
-Subject: Returned mail: see transcript for details
-Date: Sun, 29 Jan 2012 12:18:53 +0900
-Message-ID: <201201290318.q0T3IrhL018164@mail.neighbor21.co.kr>
+From: MAILER-DAEMON-+NbaIjSFD8nd8Zgiw/MPxQ@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Sun, 29 Jan 2012 04:35:45 -0800 (PST)
+Message-ID: <20120129123545.19E21A3D5AB3F@c2mailgw12.amadis.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============8825666167301551965=="
+Content-Type: multipart/mixed; boundary="===============1158864408348129243=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,81 +17,93 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message
+This is a MIME-encapsulated message.
 
---===============8825666167301551965==
+--===============1158864408348129243==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="q0T3IrhL018164.1327807133/mail.neighbor21.co.kr"
+	boundary="90000A3D5A8D7.1327840545/c2mailgw12.amadis.com"
 
-This is a MIME-encapsulated message
+This is a MIME-encapsulated message.
 
---q0T3IrhL018164.1327807133/mail.neighbor21.co.kr
+--90000A3D5A8D7.1327840545/c2mailgw12.amadis.com
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
 
-The original message was received at Sun, 29 Jan 2012 12:18:47 +0900
-from mail1.unnes.ac.id [118.97.9.60] (may be forged)
+This is the mail system at host c2mailgw12.amadis.com.
 
-   ----- The following addresses had permanent fatal errors -----
-<ymarco-IWqWACnzNjyonA0d6jMUrA@public.gmane.org>
-    (reason: 550 5.1.0 <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org> SPF Failed - not authorized)
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
 
-   ----- Transcript of session follows -----
-... while talking to imp-1.mail.tiscali.it.:
->>> MAIL From:<containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org> SIZE=954
-<<< 550 5.1.0 <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org> SPF Failed - not authorized
-554 5.0.0 Service unavailable
+For further assistance, please send mail to postmaster.
 
---q0T3IrhL018164.1327807133/mail.neighbor21.co.kr
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
+
+                   The mail system
+
+<dariobattista-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org>: host m2w-in1.ctmail.com[74.202.142.24] said: 551
+    <dariobattista-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org> is a deactivated mailbox (in reply to RCPT TO
+    command)
+
+--90000A3D5A8D7.1327840545/c2mailgw12.amadis.com
+Content-Description: Delivery report
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns; mail.neighbor21.co.kr
-Received-From-MTA: DNS; mail1.unnes.ac.id
-Arrival-Date: Sun, 29 Jan 2012 12:18:47 +0900
+Reporting-MTA: dns; c2mailgw12.amadis.com
+X-Postfix-Queue-ID: 90000A3D5A8D7
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Sun, 29 Jan 2012 04:35:38 -0800 (PST)
 
-Final-Recipient: RFC822; ymarco-IWqWACnzNjyonA0d6jMUrA@public.gmane.org
+Final-Recipient: rfc822; dariobattista-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org
+Original-Recipient: rfc822;dariobattista-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org
 Action: failed
-Status: 5.1.0
-Diagnostic-Code: SMTP; 550 5.1.0 <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org> SPF Failed - not authorized
-Last-Attempt-Date: Sun, 29 Jan 2012 12:18:52 +0900
+Status: 5.0.0
+Remote-MTA: dns; m2w-in1.ctmail.com
+Diagnostic-Code: smtp; 551 <dariobattista-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org> is a deactivated mailbox
 
---q0T3IrhL018164.1327807133/mail.neighbor21.co.kr
+--90000A3D5A8D7.1327840545/c2mailgw12.amadis.com
+Content-Description: Undelivered Message
 Content-Type: message/rfc822
 
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from mail1.unnes.ac.id (mail1.unnes.ac.id [118.97.9.60] (may be forged))
-	(authenticated bits=0)
-	by mail.neighbor21.co.kr (8.14.2/8.14.2) with ESMTP id q0T3IkhL018162
-	for <ymarco-IWqWACnzNjyonA0d6jMUrA@public.gmane.org>; Sun, 29 Jan 2012 12:18:47 +0900
-Received: from [118.97.9.60] by mail1.unnes.ac.id id 292g5yflBjdp with SMTP; Sun, 29 Jan 2012 10:28:30 +0700
-Date: Sun, 29 Jan 2012 10:28:30 +0700
-From: "inform" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v3.1.61.8) Personal
+Received: from mail1.unnes.ac.id (unknown [118.97.9.60])
+	by c2mailgw12.amadis.com (Postfix) with ESMTP id 8F52FA3D59BAC
+	for <dariobattista-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org>; Sun, 29 Jan 2012 04:35:38 -0800 (PST)
+Received: from [118.97.9.60] by mail1.unnes.ac.id id WXgtUID0pXzm with SMTP; Sun, 29 Jan 2012 19:35:38 +0700
+Date: Sun, 29 Jan 2012 19:35:38 +0700
+From: "Info" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.8.19.1) Educational
 X-Priority: 3 (Normal)
-Message-ID: <17899245.80691662620806-/dYPggjBmVk7HLB1kJ91c2CgeU+1il2p@public.gmane.org>
-To: <ymarco-IWqWACnzNjyonA0d6jMUrA@public.gmane.org>
-Subject: Fattura N 8084896586
+Message-ID: <675282278.83849782091588-/dYPggjBmVk7HLB1kJ91c2CgeU+1il2p@public.gmane.org>
+To: <dariobattista-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org>
+Subject: Ordine 702869
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
+X-CTASD-RefID: str=0001.0A020207.4F253D1F.00AD,ss=1,re=0.000,fgs=0
+X-CTASD-IP: 118.97.9.60
+X-CTASD-Sender: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+x-ctasd: uncategorized
+x-ctasd-vod: uncategorized
+x-ctasd-station: 
 Content-Transfer-Encoding: quoted-printable
 
-                   =20
-Gentile cliente.
+Gentile Cliente
+                             =20
+La risposta alla vostra domanda di un profilo=20
+sul nostro sito web 18.01.2012.
+ordina le statistiche puo essere vista qui
+http://www.acquapulita.org/debitodownload/informazioni.zip?idown4341270Us=
+era=3Ddariobattista
 
 
-Ti mando una fattura.
-Ruegeo Le pagato entro la fine di questo mese.
-
-Dettagli possono essere trovati sul sito web
-http://www.hazelhc.com/debitodownload/informazioni.zip?idown039009Usera=3D=
-ymarco
+Sara un piacere di collaborare in futuro
+Tel. / Fax.:  (454) 842 01 126.
 
 
 
+--90000A3D5A8D7.1327840545/c2mailgw12.amadis.com--
 
---q0T3IrhL018164.1327807133/mail.neighbor21.co.kr--
-
-
---===============8825666167301551965==
+--===============1158864408348129243==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -101,4 +113,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============8825666167301551965==--
+--===============1158864408348129243==--
