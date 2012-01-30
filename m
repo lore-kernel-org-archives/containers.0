@@ -1,15 +1,16 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+From: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
 Subject: Re: [PATCH] cgroup: remove extra calls to find_existing_css_set
-Date: Mon, 30 Jan 2012 13:04:04 -0800
-Message-ID: <20120130210404.GA27616__11072.5514161915$1327957467$gmane$org@google.com>
+Date: Mon, 30 Jan 2012 14:06:33 -0800
+Message-ID: <20120130220633.GT4656__44695.7284505062$1327961217$gmane$org@google.com>
 References: <1327956716-11537-1-git-send-email-msb@chromium.org>
 	<20120130210128.GA27051@google.com>
+	<20120130210404.GA27616@google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20120130210128.GA27051-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20120130210404.GA27616-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,26 +20,30 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Jan 30, 2012 at 01:01:28PM -0800, Tejun Heo wrote:
-> Hello,
+Tejun Heo (tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org) wrote:
+> On Mon, Jan 30, 2012 at 01:01:28PM -0800, Tejun Heo wrote:
+> > Hello,
+> > 
+> > On Mon, Jan 30, 2012 at 12:51:56PM -0800, Mandeep Singh Baines wrote:
+> > > -	/*
+> > > +        /*
+> > 
+> > Whitespace contamination fixed.
+> > 
+> > Applied to cgroup/for-3.4 w/ previous Acked-by's added.  Please
+> > collect them on submission.
 > 
-> On Mon, Jan 30, 2012 at 12:51:56PM -0800, Mandeep Singh Baines wrote:
-> > -	/*
-> > +        /*
+> Ooh, never mind.  I was confused with acks to other patches.  Only Li
+> has acked it, right?  If somebody else also acked it, please scream.
 > 
-> Whitespace contamination fixed.
+
+Yep. Just Li.
+
+> Thanks.
 > 
-> Applied to cgroup/for-3.4 w/ previous Acked-by's added.  Please
-> collect them on submission.
-
-Ooh, never mind.  I was confused with acks to other patches.  Only Li
-has acked it, right?  If somebody else also acked it, please scream.
-
-Thanks.
-
--- 
-tejun
+> -- 
+> tejun
