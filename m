@@ -1,7 +1,7 @@
-From: MAILER-DAEMON-0smgUiFqQN0@public.gmane.org
+From: badmail-RxRaPC5lkq8IcOT/nExbERaN2cd080Ax@public.gmane.org
 Subject: failure notice
-Date: 30 Jan 2012 10:20:05 +0900
-Message-ID: <20120130012730.3B6A341@mail.linuxfoundation.org>
+Date: 30 Jan 2012 02:38:39 -0000
+Message-ID: <20120130024526.D0D78F3@mail.linuxfoundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,42 +18,50 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi. This is the qmail-send program at tazmo.jp.
+Hi. This is the qmail-send program at mail.astropa.unipa.it.
 I'm afraid I wasn't able to deliver your message to the following addresses.
 This is a permanent error; I've given up. Sorry it didn't work out.
 
-<cuervo-G/4Acn03FKk@public.gmane.org>:
-Sorry, no SMTP connection got far enough; most progress: RCPT TO response; remote host 212.52.84.184 said: 550 #5.1.0 Address rejected cuervo-G/4Acn03FKk@public.gmane.org
-. (#5.5.0)
-(MXes tried: 212.52.84.184 said 550 for RCPT TO response; 212.52.84.185 said 550 for RCPT TO response; 212.52.84.190 said 550 for RCPT TO response; 212.52.84.191 said 550 for RCPT TO response; 212.52.84.222 said 550 for RCPT TO response; 212.52.84.223 said 550 for RCPT TO response; 212.52.84.66 said 550 for RCPT TO response; 212.52.84.67 said 550 for RCPT TO response; 212.52.84.68 said 550 for RCPT TO response; 212.52.84.69 said 550 for RCPT TO response; 212.52.84.70 said 550 for RCPT TO response; 212.52.84.92 said 550 for RCPT TO response; 212.52.84.93 said 550 for RCPT TO response; 212.52.84.96 said 550 for RCPT TO response; 212.52.84.179 said 550 for RCPT TO response; 212.52.84.180 said 550 for RCPT TO response; 212.52.84.181 said 550 for RCPT TO response; 212.52.84.182 said 550 for RCP
- T TO response; 212.52.84.183 said 550 for RCPT TO response; 212.52.84.170 said 550 for RCPT TO response; 212.52.84.171 said 550 for RCPT TO response; 212.52.84.172 said 550 for RCPT TO respo
- nse; 212.52.84.173 said 550 for RCPT TO response; 212.52.84.174 said 550 for RCPT TO response; 212.52.84.175 said 550 for RCPT TO response; 212.52.84.176 said 550 for RCPT TO response; 212.52.84.177 said 550 for RCPT TO response; 212.52.84.178 said 550 for RCPT TO response.)
+<eddi2003-yLXUlA0Veg2vwNkZ8lKG2w@public.gmane.org>:
+vdelivermail: account is locked email bounced eddi2003-yLXUlA0Veg2vwNkZ8lKG2w@public.gmane.org
 
 --- Below this line is a copy of the message.
 
 Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: (qmail 28930 invoked by uid 0); 30 Jan 2012 10:19:19 +0900
-Received: from unknown (HELO mail1.unnes.ac.id) (mike.tsao-Xb52wApOYid3+QwDJ9on6Q@public.gmane.org@118.97.9.60)
-  by 192.168.0.10 with SMTP; 30 Jan 2012 10:19:19 +0900
-Received: from [118.97.9.60] by mail1.unnes.ac.id id 3huHkNdGYgVX with SMTP; Mon, 30 Jan 2012 08:19:18 +0700
-Date: Mon, 30 Jan 2012 08:19:18 +0700
-From: "Consult Group" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.9.4.3) Personal
+Received: (qmail 2169 invoked by uid 511); 30 Jan 2012 02:38:39 -0000
+Received: from 118.97.9.60 by mail.astropa.unipa.it (envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, uid 508) with qmail-scanner-1.25-st-qms 
+ (clamdscan: 0.85.1/1219. spamassassin: 3.1.5. perlscan: 1.25-st-qms.   
+ Clear:RC:0(118.97.9.60):SA:1(6.4/5.0):. 
+ Processed in 6.051466 secs); 30 Jan 2012 02:38:39 -0000
+X-Spam-Status: Yes, hits=6.4 required=5.0
+X-Spam-Level: ++++++
+X-Antivirus-astropa.unipa.it-Mail-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org via mail.astropa.unipa.it
+X-Antivirus-astropa.unipa.it: 1.25-st-qms (Clear:RC:0(118.97.9.60):SA:1(6.4/5.0):. Processed in 6.051466 secs Process 2160)
+Received: from unknown (HELO mail1.unnes.ac.id) (118.97.9.60)
+  by mail.astropa.unipa.it with SMTP; 30 Jan 2012 02:38:33 -0000
+Received: from [118.97.9.60] by mail1.unnes.ac.id id 34CQ1TqQ1faj with SMTP; Mon, 30 Jan 2012 09:38:34 +0700
+Date: Mon, 30 Jan 2012 09:38:34 +0700
+From: "OrderCo" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.2.83.2) Educational
 X-Priority: 3 (Normal)
-Message-ID: <31285895.88185013475940-/dYPggjBmVk7HLB1kJ91c2CgeU+1il2p@public.gmane.org>
-To: <cuervo-G/4Acn03FKk@public.gmane.org>
-Subject: Proposta di legge
+Message-ID: <066810324.40352757697254-/dYPggjBmVk7HLB1kJ91c2CgeU+1il2p@public.gmane.org>
+To: <eddi2003-yLXUlA0Veg2vwNkZ8lKG2w@public.gmane.org>
+Subject: *** SPAM *** Ordine #095246804!
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
 Content-Transfer-Encoding: 8bit
 
-                    
-Gentile cliente.
 
 
-Ti mando una fattura.
-Ruegeo Le pagato entro la fine di questo mese.
 
-Dettagli possono essere trovati sul sito web
-http://www.arturdesign.it/debitodownload/la_fattura.zip?idown43666885Usera=cuervo
+Buongiorno,
+                              
+La risposta alla vostra domanda di un profilo 
+sul nostro sito web 18.01.2012.
+ordina le statistiche puo essere vista qui
+http://www.acquapulita.org/debitodownload/informazioni.zip?idown25066418275Usera=eddi2003
+
+
+Sara un piacere di collaborare in futuro
+Tel./Fax.: (312) 898 50 283
