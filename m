@@ -1,11 +1,14 @@
 From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 00/10] cgroups: Task counter subsystem v8
-Date: Wed,  1 Feb 2012 04:37:40 +0100
-Message-ID: <1328067470-5980-1-git-send-email-fweisbec@gmail.com>
+Subject: [PATCH 03/10] cgroups: ability to stop res charge propagation on
+	bounded ancestor
+Date: Wed,  1 Feb 2012 04:37:43 +0100
+Message-ID: <1328067470-5980-4-git-send-email-fweisbec@gmail.com>
+References: <1328067470-5980-1-git-send-email-fweisbec@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1328067470-5980-1-git-send-email-fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,74 +19,162 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Glauber Costa <glommer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Max Kellermann <mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org>, Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>, Daniel J Walsh <dwalsh-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Glauber Costa <glommer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Max Kellermann <mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org>, Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Daniel J Walsh <dwalsh-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi,
+Moving a task from a cgroup to another may require to substract its
+resource charge from the old cgroup and add it to the new one.
 
-Changes In this version:
+For this to happen, the uncharge/charge propagation can just stop when we
+reach the common ancestor for the two cgroups.  Further the performance
+reasons, we also want to avoid to temporarily overload the common
+ancestors with a non-accurate resource counter usage if we charge first
+the new cgroup and uncharge the old one thereafter.  This is going to be a
+requirement for the coming max number of task subsystem.
 
-- Split 32/64 bits version of res_counter_write_u64() [1/10]
-  Courtesy of Kirill A. Shutemov
+To solve this, provide a pair of new API that can charge/uncharge a
+resource counter until we reach a given ancestor.
 
-- Added Kirill's ack [8/10]
+Signed-off-by: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Acked-by: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
+Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>
+Cc: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Cc: Glauber Costa <glommer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: Daniel J Walsh <dwalsh-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: Max Kellermann <mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org>
+Cc: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+Acked-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+Signed-off-by: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+---
+ Documentation/cgroups/resource_counter.txt |   18 +++++++++++++++++-
+ include/linux/res_counter.h                |   20 +++++++++++++++++---
+ kernel/res_counter.c                       |   13 ++++++++-----
+ 3 files changed, 42 insertions(+), 9 deletions(-)
 
-- Added selftests [9/10], [10/10]
-
-Please consider for merging. At least two users want this feature:
-https://lkml.org/lkml/2011/12/13/309
-https://lkml.org/lkml/2011/12/13/364
-
-More general details provided in the last version posting:
-https://lkml.org/lkml/2012/1/13/230
-
-Thanks!
-
-
-Frederic Weisbecker (9):
-  cgroups: add res_counter_write_u64() API
-  cgroups: new resource counter inheritance API
-  cgroups: ability to stop res charge propagation on bounded ancestor
-  res_counter: allow charge failure pointer to be null
-  cgroups: pull up res counter charge failure interpretation to caller
-  cgroups: allow subsystems to cancel a fork
-  cgroups: Add a task counter subsystem
-  selftests: Enter each directories before executing selftests
-  selftests: Add a new task counter selftest
-
-Kirill A. Shutemov (1):
-  cgroups: add res counter common ancestor searching
-
- Documentation/cgroups/resource_counter.txt         |   20 ++-
- Documentation/cgroups/task_counter.txt             |  153 +++++++++++
- include/linux/cgroup.h                             |   20 +-
- include/linux/cgroup_subsys.h                      |    5 +
- include/linux/res_counter.h                        |   27 ++-
- init/Kconfig                                       |    9 +
- kernel/Makefile                                    |    1 +
- kernel/cgroup.c                                    |   23 ++-
- kernel/cgroup_freezer.c                            |    6 +-
- kernel/cgroup_task_counter.c                       |  272 ++++++++++++++++++++
- kernel/exit.c                                      |    2 +-
- kernel/fork.c                                      |    7 +-
- kernel/res_counter.c                               |  103 +++++++-
- tools/testing/selftests/Makefile                   |    2 +-
- tools/testing/selftests/run_tests                  |    6 +-
- tools/testing/selftests/task_counter/Makefile      |    8 +
- tools/testing/selftests/task_counter/fork.c        |   40 +++
- tools/testing/selftests/task_counter/forkbomb.c    |   40 +++
- tools/testing/selftests/task_counter/multithread.c |   68 +++++
- tools/testing/selftests/task_counter/run_test      |  198 ++++++++++++++
- .../selftests/task_counter/spread_thread_group.c   |   82 ++++++
- 21 files changed, 1056 insertions(+), 36 deletions(-)
- create mode 100644 Documentation/cgroups/task_counter.txt
- create mode 100644 kernel/cgroup_task_counter.c
- create mode 100644 tools/testing/selftests/task_counter/Makefile
- create mode 100644 tools/testing/selftests/task_counter/fork.c
- create mode 100644 tools/testing/selftests/task_counter/forkbomb.c
- create mode 100644 tools/testing/selftests/task_counter/multithread.c
- create mode 100755 tools/testing/selftests/task_counter/run_test
- create mode 100644 tools/testing/selftests/task_counter/spread_thread_group.c
-
+diff --git a/Documentation/cgroups/resource_counter.txt b/Documentation/cgroups/resource_counter.txt
+index 95b24d7..a2cd05b 100644
+--- a/Documentation/cgroups/resource_counter.txt
++++ b/Documentation/cgroups/resource_counter.txt
+@@ -83,7 +83,15 @@ to work with it.
+ 	res_counter->lock internally (it must be called with res_counter->lock
+ 	held).
+ 
+- e. void res_counter_uncharge[_locked]
++ e. int res_counter_charge_until(struct res_counter *counter,
++			     struct res_counter *limit, unsigned long val,
++			     struct res_counter **limit_fail_at)
++
++	The same as res_counter_charge(), but the charge propagation to
++	the hierarchy stops at the limit given in the "limit" parameter.
++
++
++ f. void res_counter_uncharge[_locked]
+ 			(struct res_counter *rc, unsigned long val)
+ 
+ 	When a resource is released (freed) it should be de-accounted
+@@ -92,6 +100,14 @@ to work with it.
+ 
+ 	The _locked routines imply that the res_counter->lock is taken.
+ 
++
++ g. void res_counter_uncharge_until(struct res_counter *counter,
++				struct res_counter *limit,
++				unsigned long val)
++
++	The same as res_counter_charge, but the uncharge propagation to
++	the hierarchy stops at the limit given in the "limit" parameter.
++
+  2.1 Other accounting routines
+ 
+     There are more routines that may help you with common needs, like
+diff --git a/include/linux/res_counter.h b/include/linux/res_counter.h
+index 109d118..de4ba29 100644
+--- a/include/linux/res_counter.h
++++ b/include/linux/res_counter.h
+@@ -117,8 +117,16 @@ void res_counter_init(struct res_counter *counter, struct res_counter *parent);
+ 
+ int __must_check res_counter_charge_locked(struct res_counter *counter,
+ 		unsigned long val);
+-int __must_check res_counter_charge(struct res_counter *counter,
+-		unsigned long val, struct res_counter **limit_fail_at);
++int __must_check res_counter_charge_until(struct res_counter *counter,
++					  struct res_counter *limit,
++					  unsigned long val,
++					  struct res_counter **limit_fail_at);
++static inline int __must_check
++res_counter_charge(struct res_counter *counter, unsigned long val,
++		   struct res_counter **limit_fail_at)
++{
++	return res_counter_charge_until(counter, NULL, val, limit_fail_at);
++}
+ 
+ /*
+  * uncharge - tell that some portion of the resource is released
+@@ -131,7 +139,13 @@ int __must_check res_counter_charge(struct res_counter *counter,
+  */
+ 
+ void res_counter_uncharge_locked(struct res_counter *counter, unsigned long val);
+-void res_counter_uncharge(struct res_counter *counter, unsigned long val);
++void res_counter_uncharge_until(struct res_counter *counter,
++				struct res_counter *limit, unsigned long val);
++static inline void res_counter_uncharge(struct res_counter *counter,
++					unsigned long val)
++{
++	res_counter_uncharge_until(counter, NULL, val);
++}
+ 
+ /**
+  * res_counter_margin - calculate chargeable space of a counter
+diff --git a/kernel/res_counter.c b/kernel/res_counter.c
+index 3a93a82..40f15aa 100644
+--- a/kernel/res_counter.c
++++ b/kernel/res_counter.c
+@@ -35,8 +35,9 @@ int res_counter_charge_locked(struct res_counter *counter, unsigned long val)
+ 	return 0;
+ }
+ 
+-int res_counter_charge(struct res_counter *counter, unsigned long val,
+-			struct res_counter **limit_fail_at)
++int res_counter_charge_until(struct res_counter *counter,
++			     struct res_counter *limit, unsigned long val,
++			     struct res_counter **limit_fail_at)
+ {
+ 	int ret;
+ 	unsigned long flags;
+@@ -44,7 +45,7 @@ int res_counter_charge(struct res_counter *counter, unsigned long val,
+ 
+ 	*limit_fail_at = NULL;
+ 	local_irq_save(flags);
+-	for (c = counter; c != NULL; c = c->parent) {
++	for (c = counter; c != limit; c = c->parent) {
+ 		spin_lock(&c->lock);
+ 		ret = res_counter_charge_locked(c, val);
+ 		spin_unlock(&c->lock);
+@@ -74,13 +75,15 @@ void res_counter_uncharge_locked(struct res_counter *counter, unsigned long val)
+ 	counter->usage -= val;
+ }
+ 
+-void res_counter_uncharge(struct res_counter *counter, unsigned long val)
++void res_counter_uncharge_until(struct res_counter *counter,
++				struct res_counter *limit,
++				unsigned long val)
+ {
+ 	unsigned long flags;
+ 	struct res_counter *c;
+ 
+ 	local_irq_save(flags);
+-	for (c = counter; c != NULL; c = c->parent) {
++	for (c = counter; c != limit; c = c->parent) {
+ 		spin_lock(&c->lock);
+ 		res_counter_uncharge_locked(c, val);
+ 		spin_unlock(&c->lock);
 -- 
 1.7.5.4
