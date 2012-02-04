@@ -1,17 +1,15 @@
-From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Subject: Re: [PATCH 1/1][V5] Add reboot_pid_ns to handle the reboot syscall
-Date: Fri, 3 Feb 2012 09:47:17 -0600
-Message-ID: <20120203154717.GA4389@sergelap>
-References: <1325754410-32600-1-git-send-email-daniel.lezcano@free.fr>
-	<1325754410-32600-2-git-send-email-daniel.lezcano@free.fr>
-	<20120202161018.e3c62965.akpm@linux-foundation.org>
-	<4F2BA1EA.7060901@free.fr>
+From: Louis <myaskaskkvasv92asin-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>
+Subject: =?GB2312?B?QW5pbWF0ZWQgTW92aWUvVFYgU2VyaWVzIA==?=
+	=?GB2312?B?LSBDYXJ0b29uIE1vdmllL1RWIFNlcmllcw==?=
+	=?GB2312?B?IC0gM0QvMkQgQW5pbWF0aW9uIFNlcnZpYw==?= =?GB2312?B?ZXM=?=
+Date: Sat, 4 Feb 2012 21:00:38 +0800
+Message-ID: <dec80608-0628-459e-879f-30343bf6fc81@WP-EXCH-2010.woodphillips.com>
+Reply-To: ibstudio-9Onoh4P/yGk@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4F2BA1EA.7060901-GANU6spQydw@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,72 +19,53 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, gkurz-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: containers <containers-8MiXsm1LNw7vu62uXDUzXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Daniel Lezcano (daniel.lezcano-GANU6spQydw@public.gmane.org):
-> On 02/03/2012 01:10 AM, Andrew Morton wrote:
-> >On Thu,  5 Jan 2012 10:06:50 +0100
-> >Daniel Lezcano<daniel.lezcano-GANU6spQydw@public.gmane.org>  wrote:
-> >
-> >>In the case of a child pid namespace, rebooting the system does not
-> >>really makes sense. When the pid namespace is used in conjunction
-> >>with the other namespaces in order to create a linux container, the
-> >>reboot syscall leads to some problems.
-> >>
-> >>A container can reboot the host. That can be fixed by dropping
-> >>the sys_reboot capability but we are unable to correctly to poweroff/
-> >>halt/reboot a container and the container stays stuck at the shutdown
-> >>time with the container's init process waiting indefinitively.
-> >>
-> >>After several attempts, no solution from userspace was found to reliabily
-> >>handle the shutdown from a container.
-> >>
-> >>This patch propose to make the init process of the child pid namespace to
-> >>exit with a signal status set to : SIGINT if the child pid namespace called
-> >>"halt/poweroff" and SIGHUP if the child pid namespace called "reboot".
-> >>When the reboot syscall is called and we are not in the initial
-> >>pid namespace, we kill the pid namespace for "HALT", "POWEROFF", "RESTART",
-> >>and "RESTART2". Otherwise we return EINVAL.
-> >>
-> >>Returning EINVAL is also an easy way to check if this feature is supported
-> >>by the kernel when invoking another 'reboot' option like CAD.
-> >>
-> >>By this way the parent process of the child pid namespace knows if
-> >>it rebooted or not and can take the right decision.
-> >Looks OK, although the comments need help.  Is the below still true?
-> 
-> Yes, thanks for fixing this.
-> 
-> >
-> >Do you think it would be feasible to put your testcase into
-> >tools/testing/selftests?  I'm thinking "no", because running the test
-> >needs elevated permissions and might reboot the user's machine(!).
-> 
-> Yes, right. I don't think the user will be happy with that.
-> Unfortunately, I don't see how to test this feature without falling
-> into a reboot on failure. On the other side, this very specific
-> feature is used in the container environment and if it fails that
-> will be spotted immediately and fixed. So I don't think that does
-> make sense to add this test in tools/testing/selftests.
+You are receiving this email because we wish you to use our 3D/2D Animated Movie/TV Series Services.
+ 
+We are a China based Animated Movie/TV Series Studio. with the technical, our studio is a animation studio with the technical, creative and production capabilities to create a new generation of animated feature films, merchandise and other related products. Our objective is to combine proprietary technology and world-class creative talent to develop computer-animated feature films with memorable characters and heartwarming stories that appeal to audiences of all ages. We utilize the finest equipment available in the industry, offer efficient data delivery and unrivaled quality and work until the client is fully satisfied with the end product. 
+ 
+Core Offerings
+2D Animation
+3D Animation
+4D Animation
+Cell Animation
+Cartoon Animation
+Animated Movies 
+Animated TV Series
+Architecture Visualization 
+Character Animation 
+Animated Commercial 
+Animated Presentation 
+Walkthrough Animation 
+Flash Presentation 
+Logo Animation 
+Animated Wallpapers 
+Animated Graphics 
+ 
+We are also looking for agents who can represent us in USA and Europe in order to gain more Animated Movie orders.
+ 
+Best regards,
+Louis
+Fangaganzan Animation Services
+Contact: ibanicontact-Mj/0Miq2reM@public.gmane.org
 
-In fact I can add Daniel's testcase to my lxc testsuite to run
-separately, apart from lxc.  I haven't yet hooked it up into our
-jenkins qa rig, but that's planned.
 
-> [ ... ]
-> 
-> >  	gid_t pid_gid;
-> >  	int hide_pid;
-> >+	int reboot;
-> >  };
-> >This was particuarly distressing.  The field was poorly named and other
-> >people forgotting to document their data structures doesn't mean that
-> >we should continue to do this!
-> 
-> Thanks again for adding the description. I will take care next time
-> to add a simple description when the field name is not self-explicit
-> or ambiguous.
-> 
->   -- Daniel
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Pls send address to anremove-Mj/0Miq2reM@public.gmane.org  for remove
