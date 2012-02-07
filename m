@@ -1,13 +1,12 @@
-From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+From: Zhu Yanhai <zhu.yanhai-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: cpu shielding.
-Date: Mon, 6 Feb 2012 20:15:27 -0600
-Message-ID: <20120207021527.GA17937@sergelap>
+Date: Tue, 7 Feb 2012 11:25:14 +0800
+Message-ID: <CAC8teKX17bWQbhPiPEXJH_G7yz=_A0+SBauX2r2psk2bkuUAaA@mail.gmail.com>
 References: <1328536234.32188.49.camel@foo>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 In-Reply-To: <1328536234.32188.49.camel@foo>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -22,58 +21,62 @@ To: atp <Andrew.Phillips-xheW4WVAX9Y@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting atp (Andrew.Phillips-xheW4WVAX9Y@public.gmane.org):
-> Hello,
-> 
->   Apologies if I'm about to ask a frequently asked question - I did
-> check back over the last couple of months. 
-> 
->   Is anyone working on cpu shielding for processes inside a cpu cgroup? 
-> 
->   We would like to run Java in containers, and unfortunately it likes to
-> know how many processors there are in the system - to initialise thread
-> pools and such like. 
-> 
->   I was thinking along these lines;
-> 
-> --- fs/proc/stat.c.orig	2010-05-21 11:32:32.941258466 +0000
-> +++ fs/proc/stat.c	2010-05-21 11:40:47.681259133 +0000
-> @@ -39,7 +39,9 @@
->  	getboottime(&boottime);
->  	jif = boottime.tv_sec;
->  
-> -	for_each_possible_cpu(i) {
-> +//	for_each_possible_cpu(i) {
-> +//	// refer to the visible cpus.
-> +	for_each_cpu_and(i,cpu_possible_mask,(&current->cpus_allowed)) {
->  		user = cputime64_add(user, kstat_cpu(i).cpustat.user);
->  		nice = cputime64_add(nice, kstat_cpu(i).cpustat.nice);
->  		system = cputime64_add(system, kstat_cpu(i).cpustat.system);
-> @@ -78,7 +80,10 @@
->  		(unsigned long long)cputime64_to_clock_t(steal),
->  		(unsigned long long)cputime64_to_clock_t(guest),
->  		(unsigned long long)cputime64_to_clock_t(guest_nice));
-> -	for_each_online_cpu(i) {
-> +     
-> +//	for_each_online_cpu(i) {
-> +//	// cgroup. 
-> +	for_each_cpu_and(i,cpu_online_mask,(&current->cpus_allowed)) {
->  
->  		/* Copy values here to work around gcc-2.95.3, gcc-2.96 */
->  		user = kstat_cpu(i).cpustat.user;
-> 
->   I'm sure that there are nicer ways of doing this, but Serge Hallyn
-> suggested a while ago that I post here. Even though it says 2010, the
-> patch above looks like it will go against 3.2.4 ok. 
->   
->   Thanks,
->      Andy
-
-I'm afraid I haven't been following recent upstream discussions on
-this, but there are other people who want proc to show cgroup-limited
-information.  See for instance http://lwn.net/Articles/460310/ .  Glauber
-has also brought this up since then.  I'd recommend pinging him.
-
-I'm all for /proc showing cgroup-filtered information, unconditionally.
-
--serge
+MjAxMi8yLzYgYXRwIDxBbmRyZXcuUGhpbGxpcHNAbG1heC5jb20+Ogo+IEhlbGxvLAo+Cj4gwqBB
+cG9sb2dpZXMgaWYgSSdtIGFib3V0IHRvIGFzayBhIGZyZXF1ZW50bHkgYXNrZWQgcXVlc3Rpb24g
+LSBJIGRpZAo+IGNoZWNrIGJhY2sgb3ZlciB0aGUgbGFzdCBjb3VwbGUgb2YgbW9udGhzLgo+Cj4g
+wqBJcyBhbnlvbmUgd29ya2luZyBvbiBjcHUgc2hpZWxkaW5nIGZvciBwcm9jZXNzZXMgaW5zaWRl
+IGEgY3B1IGNncm91cD8KPgo+IMKgV2Ugd291bGQgbGlrZSB0byBydW4gSmF2YSBpbiBjb250YWlu
+ZXJzLCBhbmQgdW5mb3J0dW5hdGVseSBpdCBsaWtlcyB0bwo+IGtub3cgaG93IG1hbnkgcHJvY2Vz
+c29ycyB0aGVyZSBhcmUgaW4gdGhlIHN5c3RlbSAtIHRvIGluaXRpYWxpc2UgdGhyZWFkCj4gcG9v
+bHMgYW5kIHN1Y2ggbGlrZS4KPgo+IMKgSSB3YXMgdGhpbmtpbmcgYWxvbmcgdGhlc2UgbGluZXM7
+Cj4KPiAtLS0gZnMvcHJvYy9zdGF0LmMub3JpZyAyMDEwLTA1LTIxIDExOjMyOjMyLjk0MTI1ODQ2
+NiArMDAwMAo+ICsrKyBmcy9wcm9jL3N0YXQuYyDCoCDCoCDCoDIwMTAtMDUtMjEgMTE6NDA6NDcu
+NjgxMjU5MTMzICswMDAwCj4gQEAgLTM5LDcgKzM5LDkgQEAKPiDCoCDCoCDCoCDCoGdldGJvb3R0
+aW1lKCZib290dGltZSk7Cj4gwqAgwqAgwqAgwqBqaWYgPSBib290dGltZS50dl9zZWM7Cj4KPiAt
+IMKgIMKgIMKgIGZvcl9lYWNoX3Bvc3NpYmxlX2NwdShpKSB7Cj4gKy8vIMKgIMKgIGZvcl9lYWNo
+X3Bvc3NpYmxlX2NwdShpKSB7Cj4gKy8vIMKgIMKgIC8vIHJlZmVyIHRvIHRoZSB2aXNpYmxlIGNw
+dXMuCj4gKyDCoCDCoCDCoCBmb3JfZWFjaF9jcHVfYW5kKGksY3B1X3Bvc3NpYmxlX21hc2ssKCZj
+dXJyZW50LT5jcHVzX2FsbG93ZWQpKSB7Cj4gwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqB1c2VyID0g
+Y3B1dGltZTY0X2FkZCh1c2VyLCBrc3RhdF9jcHUoaSkuY3B1c3RhdC51c2VyKTsKPiDCoCDCoCDC
+oCDCoCDCoCDCoCDCoCDCoG5pY2UgPSBjcHV0aW1lNjRfYWRkKG5pY2UsIGtzdGF0X2NwdShpKS5j
+cHVzdGF0Lm5pY2UpOwo+IMKgIMKgIMKgIMKgIMKgIMKgIMKgIMKgc3lzdGVtID0gY3B1dGltZTY0
+X2FkZChzeXN0ZW0sIGtzdGF0X2NwdShpKS5jcHVzdGF0LnN5c3RlbSk7Cj4gQEAgLTc4LDcgKzgw
+LDEwIEBACj4gwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAodW5zaWduZWQgbG9uZyBsb25nKWNwdXRp
+bWU2NF90b19jbG9ja190KHN0ZWFsKSwKPiDCoCDCoCDCoCDCoCDCoCDCoCDCoCDCoCh1bnNpZ25l
+ZCBsb25nIGxvbmcpY3B1dGltZTY0X3RvX2Nsb2NrX3QoZ3Vlc3QpLAo+IMKgIMKgIMKgIMKgIMKg
+IMKgIMKgIMKgKHVuc2lnbmVkIGxvbmcgbG9uZyljcHV0aW1lNjRfdG9fY2xvY2tfdChndWVzdF9u
+aWNlKSk7Cj4gLSDCoCDCoCDCoCBmb3JfZWFjaF9vbmxpbmVfY3B1KGkpIHsKPiArCj4gKy8vIMKg
+IMKgIGZvcl9lYWNoX29ubGluZV9jcHUoaSkgewo+ICsvLyDCoCDCoCAvLyBjZ3JvdXAuCj4gKyDC
+oCDCoCDCoCBmb3JfZWFjaF9jcHVfYW5kKGksY3B1X29ubGluZV9tYXNrLCgmY3VycmVudC0+Y3B1
+c19hbGxvd2VkKSkgewo+Cj4gwqAgwqAgwqAgwqAgwqAgwqAgwqAgwqAvKiBDb3B5IHZhbHVlcyBo
+ZXJlIHRvIHdvcmsgYXJvdW5kIGdjYy0yLjk1LjMsIGdjYy0yLjk2ICovCj4gwqAgwqAgwqAgwqAg
+wqAgwqAgwqAgwqB1c2VyID0ga3N0YXRfY3B1KGkpLmNwdXN0YXQudXNlcjsKPgo+IMKgSSdtIHN1
+cmUgdGhhdCB0aGVyZSBhcmUgbmljZXIgd2F5cyBvZiBkb2luZyB0aGlzLCBidXQgU2VyZ2UgSGFs
+bHluCj4gc3VnZ2VzdGVkIGEgd2hpbGUgYWdvIHRoYXQgSSBwb3N0IGhlcmUuIEV2ZW4gdGhvdWdo
+IGl0IHNheXMgMjAxMCwgdGhlCj4gcGF0Y2ggYWJvdmUgbG9va3MgbGlrZSBpdCB3aWxsIGdvIGFn
+YWluc3QgMy4yLjQgb2suCj4KPiDCoFRoYW5rcywKPiDCoCDCoCBBbmR5Cj4KPiAtLQo+IEFuZHJl
+dyBQaGlsbGlwcwo+IEhlYWQgb2YgU3lzdGVtcwo+Cj4gRGlyZWN0OiArNDQgKDApMjAzIDE5MiAy
+NTA5Cj4gTW9iaWxlOiArNDQgKDApNzU5NSAyNDIgOTAwCj4KPiBMTUFYLCBZZWxsb3cgQnVpbGRp
+bmcsIDFBIE5pY2hvbGFzIFJvYWQsIMKgTG9uZG9uLCBXMTEgNEFOCj4KPgo+Cj4gVGhlIGluZm9y
+bWF0aW9uIGluIHRoaXMgZS1tYWlsIGFuZCBhbnkgYXR0YWNobWVudCBpcyBjb25maWRlbnRpYWwg
+YW5kIGlzIGludGVuZGVkIG9ubHkgZm9yIHRoZSBuYW1lZCByZWNpcGllbnQocykuIFRoZSBlLW1h
+aWwgbWF5IG5vdCBiZSBkaXNjbG9zZWQgb3IgdXNlZCBieSBhbnkgcGVyc29uIG90aGVyIHRoYW4g
+dGhlIGFkZHJlc3NlZSwgbm9yIG1heSBpdCBiZSBjb3BpZWQgaW4gYW55IHdheS4gSWYgeW91IGFy
+ZSBub3QgYSBuYW1lZCByZWNpcGllbnQgcGxlYXNlIG5vdGlmeSB0aGUgc2VuZGVyIGltbWVkaWF0
+ZWx5IGFuZCBkZWxldGUgYW55IGNvcGllcyBvZiB0aGlzIG1lc3NhZ2UuIEFueSB1bmF1dGhvcml6
+ZWQgY29weWluZywgZGlzY2xvc3VyZSBvciBkaXN0cmlidXRpb24gb2YgdGhlIG1hdGVyaWFsIGlu
+IHRoaXMgZS1tYWlsIGlzIHN0cmljdGx5IGZvcmJpZGRlbi4gQW55IHZpZXcgb3Igb3BpbmlvbnMg
+cHJlc2VudGVkIGFyZSBzb2xlbHkgdGhvc2Ugb2YgdGhlIGF1dGhvciBhbmQgZG8gbm90IG5lY2Vz
+c2FyaWx5IHJlcHJlc2VudCB0aG9zZSBvZiB0aGUgY29tcGFueS4KPiBfX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwo+IENvbnRhaW5lcnMgbWFpbGluZyBsaXN0
+Cj4gQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwo+IGh0dHBzOi8vbGlzdHMu
+bGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnMKCkhpLApXZSBh
+cmUgYWxzbyBmYWNpbmcgdGhlIHNhbWUgcHJvYmxlbSwgdGhlIGN1cnJlbnQgSlZNIEVyZ29ub21p
+Y3MgYWx3YXlzCmFzc3VtZSB0aGF0IGl0IHNlbGYgaXMgdGhlIG9ubHkgSlZNIHJ1bm5pbmcgb24g
+dGhlIG1hY2hpbmUsIHdoaWNoIGlzCm9idmlvdXNseSB3cm9uZyBpbiBhIG11bHRpcGxlIExYQyBj
+b250YWluZXJzL2hvc3RpbmcgYm94LiBXZSBhcmUgdXNpbmcKdGhlIG9wdGlvbnMgbGlrZSAtWFg6
+VXNlUGFyYWxsZWxHQyAtWFg6UGFyYWxsZWxHQ1RocmVhZHM9bm5uIGV0YyB0byBieQpwYXNzIGl0
+cyBhZGFwdGl2ZSBhbGdvcml0aG0uCgotLQpUaGFua3MsClpodSBZYW5oYWkKX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxp
+c3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxp
+bnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
