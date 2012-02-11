@@ -1,55 +1,125 @@
-From: "=?UTF-8?B?IE1lcmNpIGRlIGxpcmUgRXQgbWUgcsOpcG9uZHJlIA==?=(via Multiply)
-	" <multiply-zRuJEhpltLZWk0Htik3J/w@public.gmane.org>
-Subject: Join Multiply
-Date: Tue, 07 Feb 2012 13:57:56 -0500
-Message-ID: <201202071858.q17IwtcI010779@px544-fe.Multiply.com>
-Reply-To: =?UTF-8?B?TWVyY2kgZGUgbGlyZSBFdCBtZSByw6lwb25kcmUg?=
-	<dbfsouug-Qt13gs6zZMY@public.gmane.org>
+From: Serge Hallyn <serge.hallyn@canonical.com>
+Subject: prevent containers from turning host filesystem readonly
+Date: Fri, 10 Feb 2012 21:19:39 -0600
+Message-ID: <20120211031939.GA4772@sergelap>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-security-module-owner@vger.kernel.org>
+Content-Disposition: inline
+Sender: linux-security-module-owner@vger.kernel.org
+To: lkml <linux-kernel@vger.kernel.org>, Andy Whitcroft <apw@canonical.com>, Andrew Morton <akpm@linux-foundation.org>, "Eric W. Biederman" <ebiederm@xmission.com>, Dave Hansen <haveblue@us.ibm.com>, linux-security-module@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, =?iso-8859-1?Q?St=E9phane?= Graber <stgraber@ubuntu.com>, Daniel Lezcano <daniel.lezcano@free.fr>
 List-Id: containers.vger.kernel.org
 
-CkNoZWNrIG91dCBteSBNdWx0aXBseSBzaXRlCgpJIHNldCB1cCBhIE11bHRpcGx5IHNpdGUgd2l0
-aCBteSBwaWN0dXJlcywgdmlkZW9zIGFuZCBibG9nIGFuZCBJIHdhbnQgCnRvIGFkZCB5b3UgYXMg
-bXkgZnJpZW5kIHNvIHlvdSBjYW4gc2VlIGl0LiBGaXJzdCwgeW91IG5lZWQgdG8gam9pbiAKTXVs
-dGlwbHkhIE9uY2UgeW91IGpvaW4sIHlvdSBjYW4gYWxzbyBjcmVhdGUgeW91ciBvd24gc2l0ZSBh
-bmQgc2hhcmUgCmFueXRoaW5nIHlvdSB3YW50LCB3aXRoIGFueW9uZSB5b3Ugd2FudC4KCkhlcmUn
-cyB0aGUgbGluazoKaHR0cDovL211bHRpcGx5LmNvbS9zaS9YVW1oandpd0FFM01qS0dyZG9pYjR3
-CgpCaWVuIGFpbcOpLApKZSBt4oCZYXBwZWxsZSBERUxGSU5FIEJBQ0hFICwgSmUgc3VpcyBtYXJp
-w6llICwgYXUgRmV1LCBj4oCZZXN0LcOgLWRpcmUgYXUKZMOpZnVudCwgbW9uIMOpcG91eCBEVVJB
-TkQgbWljaGVsbGUgZGUgbmF0aW9uYWxpdMOpIGZyYW7Dp2Fpc2UscXVpIMOpdGFpdAp1biBpbmfD
-qW5pZXVyIGNvbnN1bHRhbnQgZW4gcsOpcHVibGlxdWUgZHUgQsOpbmluIHBlbmRhbnQgbmV1ZiBh
-bnMuCklMIG1vdXJ1dCBhcHLDqHMgdW5lIGJyw6h2ZSBldCBzaW1wbGUgbWFsYWRpZSBkZSA0IGpv
-dXJzLkRlcHVpcyBzYSBtb3J0LAoKamUgbWUgZMOpYmF0dGFpdCBhdXNzaSBkYW5zIGRlcyBtYWxh
-ZGllcyBjb21tZSBsZSBjYW5jZXIgZHUgY2VydmVhdSBldApsZSBkaWFiw6h0ZSBjZSBxdWkgbeKA
-mWFzIHBvdXNzZXIgw6AgdmVuaXIgbWUgc29pZ25lciBpY2kgYSAoTE9ORFJFKS4KSmUgdm91cyBh
-aSBjaG9pc2kgcGFybWkgY2V1eCBxdWUgRGlldSDDoCB2b3VsdSBiw6luaXIgZXQgY+KAmWVzdCBw
-b3VycXVvaQpq4oCZYWkgZMOpY2lkw6kgZGUgdm91cyBsw6lndcOpcyBtYSBmb3J0dW5lIGRlIERP
-TExBUlMgVVMgKDEuMDI1LjAwMApVc0RvbGxhcnMpIHF1ZSBtb24gbWFyaWUgYSBsYWlzc2UgYSBs
-YSBiYW5xdWUgb2YgYWZyaWNhIGR1IGJlbmluIGF2ZWMKdG91dGUgbGEgbW9kZXN0aWUgZXQgbGEg
-c2luY8Opcml0w6kgZOKAmXVuZSBkb25hdHJpY2UgLgp2b3VzIGdhcmRlIGNldHRlIGluZm9ybWF0
-aW9uIGRpc2NyZXRlbWVudCBqdXNxdSdhIGxhIHJlY2VwdGlvbiBkZQpjZXR0ZSBtYWxsZXR0ZSBk
-YW5zIHZvdHJlIG1haXNvbiBzaSB2b3VzIGV0cmUgaW50ZXJyZXNzZXogcmVwb25kZXIgbW9pCgpz
-dXIgbW9uIG1haWw6IGJhY2hlLmRlbGZpbmVAeWFob28uY29tClF1ZSBEaWV1IHZvdXMgYmVuaXNz
-ZQptYWlsOmJhY2hlLmRlbGZpbmVAeWFob28uY29tCk1tZSBERUxGSU5FIEJBQ0hFIAoKClRoYW5r
-cywKTWVyY2kgZGUgbGlyZQoKCgoKCgoKU3RvcCBlLW1haWxzLCB2aWV3IG91ciBwcml2YWN5IHBv
-bGljeSwgb3IgcmVwb3J0IGFidXNlOiAKaHR0cDovL211bHRpcGx5LmNvbS9ibC9YVW1oandpd0FF
-M01qS0dyZG9pYjR3CldlIGhhdmVuJ3QgYWRkZWQgeW91ciBlbWFpbCBhZGRyZXNzIHRvIGFueSBs
-aXN0cywgbm9yIHdpbGwgd2Ugc2hhcmUgaXQKd2l0aCBhbnlvbmUgYXQgYW55IHRpbWUuCkNvcHly
-aWdodCAyMDEyIE11bHRpcGx5CjYwMDEgUGFyayBvZiBDb21tZXJjZSBCbHZkLCBCb2NhIFJhdG9u
-LCBGTAoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29u
-dGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9y
-ZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250
-YWluZXJz
+When a container shuts down, it likes to do 'mount -o remount,ro /'.
+That sets the superblock's readonly flag, not the mount's.  So unless
+the mount action fails for some reason (i.e. a file is held open on
+the fs), if the container's rootfs is just a directory on the host's
+fs, the host fs will be marked readonly.
+
+Thanks to Dave Hansen for pointing out how simple the fix can be.  If
+the devices cgroup denies the mounting task write access to the
+underlying superblock (as it usually does when the container's root fs
+is on a block device shared with the host), then it do_remount_sb should
+deny the right to change mount flags as well.
+
+This patch adds that check.
+
+Note that another possibility would be to have the LSM step in.  We
+can't catch this (as is) at the LSM level because security_remount_sb
+doesn't get the mount flags, so we can't distinguish
+	mount -o remount,ro
+from
+	mount --bind -o remount,ro.
+Sending the flags to that hook would probably be a good idea in addition
+to this patch, but I haven't done it here.
+
+Signed-off-by: Serge Hallyn <serge.hallyn@canonical.com>
+---
+ fs/super.c                    |    5 +++++
+ include/linux/device_cgroup.h |    3 +++
+ security/device_cgroup.c      |   32 ++++++++++++++++++++++++++++++++
+ 3 files changed, 40 insertions(+), 0 deletions(-)
+
+diff --git a/fs/super.c b/fs/super.c
+index afd0f1a..e29cdd1 100644
+--- a/fs/super.c
++++ b/fs/super.c
+@@ -32,6 +32,7 @@
+ #include <linux/backing-dev.h>
+ #include <linux/rculist_bl.h>
+ #include <linux/cleancache.h>
++#include <linux/device_cgroup.h>
+ #include "internal.h"
+ 
+ 
+@@ -709,6 +710,10 @@ int do_remount_sb(struct super_block *sb, int flags, void *data, int force)
+ 		return -EACCES;
+ #endif
+ 
++	retval = devcgroup_remount(sb);
++	if (retval)
++		return retval;
++
+ 	if (flags & MS_RDONLY)
+ 		acct_auto_close(sb);
+ 	shrink_dcache_sb(sb);
+diff --git a/include/linux/device_cgroup.h b/include/linux/device_cgroup.h
+index 8b64221..8c77b40 100644
+--- a/include/linux/device_cgroup.h
++++ b/include/linux/device_cgroup.h
+@@ -11,9 +11,12 @@ static inline int devcgroup_inode_permission(struct inode *inode, int mask)
+ 		return 0;
+ 	return __devcgroup_inode_permission(inode, mask);
+ }
++extern int devcgroup_remount(struct super_block *sb);
+ #else
+ static inline int devcgroup_inode_permission(struct inode *inode, int mask)
+ { return 0; }
+ static inline int devcgroup_inode_mknod(int mode, dev_t dev)
+ { return 0; }
++static inline int devcgroup_remount(struct super_block *sb)
++{ return 0; }
+ #endif
+diff --git a/security/device_cgroup.c b/security/device_cgroup.c
+index 662ae5f..8b76d73 100644
+--- a/security/device_cgroup.c
++++ b/security/device_cgroup.c
+@@ -538,3 +538,35 @@ found:
+ 
+ 	return -EPERM;
+ }
++
++int devcgroup_remount(struct super_block *sb)
++{
++	struct dev_cgroup *dev_cgroup;
++	struct dev_whitelist_item *wh;
++	u32 major = MAJOR(sb->s_dev), minor = MINOR(sb->s_dev);
++
++	rcu_read_lock();
++
++	dev_cgroup = task_devcgroup(current);
++
++	list_for_each_entry_rcu(wh, &dev_cgroup->whitelist, list) {
++		if (wh->type & DEV_ALL)
++			goto found;
++		if (!(wh->type & DEV_BLOCK))
++			continue;
++		if (wh->major != ~0 && wh->major != major)
++			continue;
++		if (wh->minor != ~0 && wh->minor != minor)
++			continue;
++		if (!(wh->access & ACC_WRITE))
++			continue;
++found:
++		rcu_read_unlock();
++		return 0;
++	}
++
++	rcu_read_unlock();
++
++	return -EPERM;
++}
++EXPORT_SYMBOL(devcgroup_remount);
+-- 
+1.7.9
+
