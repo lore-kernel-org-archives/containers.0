@@ -1,52 +1,53 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: prevent containers from turning host filesystem readonly
-Date: Sat, 11 Feb 2012 20:27:54 -0800
-Message-ID: <m1sjig1xrp.fsf@fess.ebiederm.org>
-References: <20120211031939.GA4772@sergelap>
-	<20120211033732.GK23916@ZenIV.linux.org.uk>
-	<20120211040722.GA5891@sergelap> <m1zkcp2np9.fsf@fess.ebiederm.org>
-	<20120211202803.GA19961@hallyn.com>
+From: "=?UTF-8?B?IE1lcmNpIGRlIGxpcmUgRXQgbWUgcsOpcG9uZHJlIA==?=(via Multiply)
+	" <multiply-zRuJEhpltLZWk0Htik3J/w@public.gmane.org>
+Subject: (unknown)
+Date: Sun, 12 Feb 2012 19:19:04 -0500
+Message-ID: <201202130019.q1D0J3AC028958@px524-fe.Multiply.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-security-module-owner@vger.kernel.org>
-In-Reply-To: <20120211202803.GA19961@hallyn.com> (Serge E. Hallyn's message of
-	"Sat, 11 Feb 2012 20:28:03 +0000")
-Sender: linux-security-module-owner@vger.kernel.org
-To: "Serge E. Hallyn" <serge@hallyn.com>
-Cc: Serge Hallyn <serge.hallyn@canonical.com>, Al Viro <viro@ZenIV.linux.org.uk>, lkml <linux-kernel@vger.kernel.org>, Andy Whitcroft <apw@canonical.com>, Andrew Morton <akpm@linux-foundation.org>, Dave Hansen <haveblue@us.ibm.com>, linux-security-module@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, St?phane Graber <stgraber@ubuntu.com>, Daniel Lezcano <daniel.lezcano@free.fr>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-"Serge E. Hallyn" <serge@hallyn.com> writes:
-
->> Serge let me respectfully suggest that getting the user namespace done
->> will deal with this issue nicely.
->> 
->> In the simple case you simply won't be root so remount will just be
->> denied.
->> 
->> When/if we allow a limited form of unprivileged mounts in a user
->> namespace your user won't have mounted the filesystem so you should not
->> have the privilege to call remount on the filesystem.
->
-> Hm, that's a good point.  Though note it'll require the userns code to
-> distinguish between the a bind remount and superblock remount.  The
-> last time we seriously discussed this, that wasn't even on the roadmap.
-> It was only going to support fully assigning the whole filesystem to
-> a user namespace.  In that case, the remount issue doesn't apply anyway
-> as the fs isn't shared with another container.
-
-Come to think of it unmounting and remounting is a bit tricky, and
-it is a bit parallel to having a disk base filesystem being in one
-user namespace.  Currently my patches have the rule that everything
-maps to the initial user namespace, so using a filesystem from multiple
-user namespaces is not a problem.
-
-Unmounting is pretty safe if the rule is that you control the entire
-mount namespace.
-
-Remounting though that does become tricky in the unprivileged situation.
-I honestly haven't thought through what that permission check should
-look like yet.
-
-Eric
-
+WW91ciBGcmllbmQgTWVyY2kgZGUgbGlyZSB3YW50cyB5b3UgdG8gYmUgaGVyIGNvbnRhY3Qgb24g
+TXVsdGlwbHkuIENoZWNrIGl0IG91dDoKaHR0cDovL211bHRpcGx5LmNvbS9zaS9YVW1oandpd0FF
+M01qS0dyZG9pYjR3CgpQZXJzb25hbCBtZXNzYWdlIGZyb20gTWVyY2kgZGUgbGlyZToKCkJpZW4g
+YWltw6ksDQpKZSBt4oCZYXBwZWxsZSBERUxGSU5FIEJBQ0hFICwgSmUgc3VpcyBtYXJpw6llICwg
+YXUgRmV1LCBj4oCZZXN0LcOgLWRpcmUgYXUNCmTDqWZ1bnQsIG1vbiDDqXBvdXggRFVSQU5EIG1p
+Y2hlbGxlIGRlIG5hdGlvbmFsaXTDqSBmcmFuw6dhaXNlLHF1aSDDqXRhaXQNCnVuIGluZ8Opbmll
+dXIgY29uc3VsdGFudCBlbiByw6lwdWJsaXF1ZSBkdSBCw6luaW4gcGVuZGFudCBuZXVmIGFucy4N
+CklMIG1vdXJ1dCBhcHLDqHMgdW5lIGJyw6h2ZSBldCBzaW1wbGUgbWFsYWRpZSBkZSA0IGpvdXJz
+LkRlcHVpcyBzYSBtb3J0LA0KamUgbWUgZMOpYmF0dGFpdCBhdXNzaSBkYW5zIGRlcyBtYWxhZGll
+cyBjb21tZSBsZSBjYW5jZXIgZHUgY2VydmVhdSBldA0KbGUgZGlhYsOodGUgY2UgcXVpIG3igJlh
+cyBwb3Vzc2VyIMOgIHZlbmlyIG1lIHNvaWduZXIgaWNpIGEgKExPTkRSRSkuDQpKZSB2b3VzIGFp
+IGNob2lzaSBwYXJtaSBjZXV4IHF1ZSBEaWV1IMOgIHZvdWx1IGLDqW5pciBldCBj4oCZZXN0IHBv
+dXJxdW9pDQpq4oCZYWkgZMOpY2lkw6kgZGUgdm91cyBsw6lndcOpcyBtYSBmb3J0dW5lIGRlIERP
+TExBUlMgVVMgKDEuMDI1LjAwMA0KVXNEb2xsYXJzKSBxdWUgbW9uIG1hcmllIGEgbGFpc3NlIGEg
+bGEgYmFucXVlIG9mIGFmcmljYSBkdSBiZW5pbiBhdmVjDQp0b3V0ZSBsYSBtb2Rlc3RpZSBldCBs
+YSBzaW5jw6lyaXTDqSBk4oCZdW5lIGRvbmF0cmljZSAuDQp2b3VzIGdhcmRlIGNldHRlIGluZm9y
+bWF0aW9uIGRpc2NyZXRlbWVudCBqdXNxdSdhIGxhIHJlY2VwdGlvbiBkZQ0KY2V0dGUgbWFsbGV0
+dGUgZGFucyB2b3RyZSBtYWlzb24gc2kgdm91cyBldHJlIGludGVycmVzc2V6IHJlcG9uZGVyIG1v
+aQ0Kc3VyIG1vbiBtYWlsOiBiYWNoZS5kZWxmaW5lQHlhaG9vLmNvbQ0KICBRdWUgRGlldSB2b3Vz
+IGJlbmlzc2UNCm1haWw6YmFjaGUuZGVsZmluZUB5YWhvby5jb20NCk1tZSBERUxGSU5FIEJBQ0hF
+IA0KCgoKCgpJZiB5b3UgbmV2ZXIgd2FudCB0byBiZSBjb250YWN0ZWQgYnkgTXVsdGlwbHkgYWdh
+aW4sIGdvIHRvIGh0dHA6Ly9tdWx0aXBseS5jb20vYmwvWFVtaGp3aXdBRTNNaktHcmRvaWI0dwoK
+UmVwb3J0IGFidXNlOiBodHRwOi8vbXVsdGlwbHkuY29tL2luZm8vaW5xdWlyeQpQcml2YWN5IHBv
+bGljeTogaHR0cDovL211bHRpcGx5LmNvbS9pbmZvL3ByaXZhY3kKCldlIGhhdmVuJ3QgYWRkZWQg
+eW91ciBlbWFpbCBhZGRyZXNzIHRvIGFueSBsaXN0cywgbm9yIHdpbGwgd2Ugc2hhcmUgaXQgd2l0
+aCBhbnlvbmUgYXQgYW55IHRpbWUuCk11bHRpcGx5LCA2MDAxIFBhcmsgb2YgQ29tbWVyY2UgQmx2
+ZCwKQm9jYSBSYXRvbiwgRkwKCkNvcHlyaWdodCAyMDA0LTIwMTIgTXVsdGlwbHksIEluYy4sIEFs
+bCBSaWdodHMgUmVzZXJ2ZWQuCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgt
+Zm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4v
+bGlzdGluZm8vY29udGFpbmVycw==
