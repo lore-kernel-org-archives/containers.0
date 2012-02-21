@@ -1,9 +1,9 @@
-From: MAILER-DAEMON-5ySZdtzZGsGU23MRTs0ldQC/G2K4zDHf@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Tue, 21 Feb 2012 02:48:54 +0100 (CET)
-Message-ID: <20120221014854.020432DC573F@srv1.sisdatos.com>
+From: Mail Delivery Subsystem <MAILER-DAEMON-E+DHibYvF89jJRfqduNJEvKMGtxYi80sZeezCHUQhQ4@public.gmane.org>
+Subject: Returned mail: see transcript for details
+Date: Tue, 21 Feb 2012 01:04:42 GMT
+Message-ID: <201202210104.q1L14gXD016592@mail960c35.nsolutionszone.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============0633217086773753881=="
+Content-Type: multipart/mixed; boundary="===============1597609323267789802=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,89 +17,75 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
+This is a MIME-encapsulated message
 
---===============0633217086773753881==
+--===============1597609323267789802==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="4C49C2DC573B.1329788934/srv1.sisdatos.com"
-Content-Transfer-Encoding: 7bit
+	boundary="q1L14gXD016592.1329786282/mail960c35.nsolutionszone.com"
 
-This is a MIME-encapsulated message.
+This is a MIME-encapsulated message
 
---4C49C2DC573B.1329788934/srv1.sisdatos.com
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
+--q1L14gXD016592.1329786282/mail960c35.nsolutionszone.com
 
-This is the mail system at host srv1.sisdatos.com.
+The original message was received at Tue, 21 Feb 2012 01:04:39 GMT
+from cpanel50.swiftco.net [216.18.227.242]
 
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
+   ----- The following addresses had permanent fatal errors -----
+<flavianoluca-SLwMDus+zkrbB1rQppCliQ@public.gmane.org>
+    (reason: 511 sorry, no mailbox here by that name (#5.1.1 - chkuser))
 
-For further assistance, please send mail to postmaster.
+   ----- Transcript of session follows -----
+... while talking to mx.studiovitalif.it.:
+>>> RCPT To:<flavianoluca-SLwMDus+zkrbB1rQppCliQ@public.gmane.org>
+<<< 511 sorry, no mailbox here by that name (#5.1.1 - chkuser)
+554 5.0.0 Service unavailable
 
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
-
-                   The mail system
-
-<lullabiyue-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org>: host liberomx4.libero.it[212.52.84.223] said: 550
-    #5.1.0 Address rejected lullabiyue-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org (in reply to RCPT TO command)
-
---4C49C2DC573B.1329788934/srv1.sisdatos.com
-Content-Description: Delivery report
+--q1L14gXD016592.1329786282/mail960c35.nsolutionszone.com
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns; srv1.sisdatos.com
-X-Postfix-Queue-ID: 4C49C2DC573B
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Tue, 21 Feb 2012 02:48:52 +0100 (CET)
+Reporting-MTA: dns; mail960c35.nsolutionszone.com
+Received-From-MTA: DNS; cpanel50.swiftco.net
+Arrival-Date: Tue, 21 Feb 2012 01:04:39 GMT
 
-Final-Recipient: rfc822; lullabiyue-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org
-Original-Recipient: rfc822;lullabiyue-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org
+Final-Recipient: RFC822; flavianoluca-SLwMDus+zkrbB1rQppCliQ@public.gmane.org
 Action: failed
 Status: 5.0.0
-Remote-MTA: dns; liberomx4.libero.it
-Diagnostic-Code: smtp; 550 #5.1.0 Address rejected lullabiyue-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org
+Remote-MTA: DNS; mx.studiovitalif.it
+Diagnostic-Code: SMTP; 511 sorry, no mailbox here by that name (#5.1.1 - chkuser)
+Last-Attempt-Date: Tue, 21 Feb 2012 01:04:42 GMT
 
---4C49C2DC573B.1329788934/srv1.sisdatos.com
-Content-Description: Undelivered Message
-Content-Type: message/rfc822
-Content-Transfer-Encoding: 7bit
+--q1L14gXD016592.1329786282/mail960c35.nsolutionszone.com
+Content-Type: text/rfc822-headers
 
+X-Authenticated-User: ctn02677.centurytel.net
+X-Envelope-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from srv1.sisdatos.com (localhost.localdomain [127.0.0.1])
-	by srv1.sisdatos.com (Postfix) with ESMTP id 4C49C2DC573B;
-	Tue, 21 Feb 2012 02:48:52 +0100 (CET)
-Received: from vps.datacenterbolivia.com (unknown [208.89.210.204])
-	by srv1.sisdatos.com (Postfix) with ESMTPA;
-	Tue, 21 Feb 2012 02:48:52 +0100 (CET)
-Received: from [208.89.210.204] by vps.datacenterbolivia.com id vd8hVYIG7Vkp with SMTP; Mon, 20 Feb 2012 18:49:03 -0700
-Date: Mon, 20 Feb 2012 18:49:03 -0700
-From: "Inform" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.1.10.4) Educational
-X-Priority: 3 (Normal)
-Message-ID: <633127002.19770426757225-J7+7M2dRO4ACJ8ddfNFNZ6CD0JFbOjFwAL8bYrjMMd8@public.gmane.org>
-To: <lullabies-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org>
-Subject: Re: Monte Biz
+Received: from cpanel50.swiftco.net (cpanel50.swiftco.net [216.18.227.242])
+	(authenticated bits=0)
+	by mail960c35.nsolutionszone.com (8.13.6/8.13.1) with ESMTP id q1L14ZXD016354
+	for <flavianoluca-SLwMDus+zkrbB1rQppCliQ@public.gmane.org>; Tue, 21 Feb 2012 01:04:39 GMT
+Received: from [216.18.227.242] by cpanel50.swiftco.net id NHl7U08ojQ4ZYD; Mon, 20 Feb 2012 17:04:34 -0800
+Message-ID: <006901ccf034$c4f11000$0500a8c0-UqesdKZYNawCNHY3F7U79eTW4wlIGRCZ@public.gmane.org>
+From: "PAY" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <flavianoluca-SLwMDus+zkrbB1rQppCliQ@public.gmane.org>
+Subject: Il tuo ordine e stato accettato.
+Date: Mon, 20 Feb 2012 17:04:34 -0800
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
+X-CSC: 0
+X-CHA: v=1.1 cv=3utHiJjAFaz/ScyNxlYuC0RG+R3ftU5CtNx87T6crQQ= c=1 sm=1
+		a=6H-m-taWSXIA:10 a=N659UExz7-8A:10 a=lxFXOzpZl2TSgZnQzb7iFA==:17
+		a=o863c4hPAAAA:8 a=06xNlmNF0fcedpdJKlkA:9 a=pILNOxqGKmIA:10
+		a=lxFXOzpZl2TSgZnQzb7iFA==:117
+X-CTCH-Spam: Unknown
+X-CTCH-RefID: str=0001.0A020201.4F42EDA7.0069,ss=1,re=0.000,fgs=0
+
+--q1L14gXD016592.1329786282/mail960c35.nsolutionszone.com--
 
 
-     =20
-Buongiorno,=20
-La tua richiesta e stata completata.
-Scusa per il report in ritardo.
-  =20
-Dettagli possono essere trovati in un documento qui:
-http://www.affile.org/info/Dettagli.zip
-
-
-
---4C49C2DC573B.1329788934/srv1.sisdatos.com--
-
---===============0633217086773753881==
+--===============1597609323267789802==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -109,4 +95,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============0633217086773753881==--
+--===============1597609323267789802==--
