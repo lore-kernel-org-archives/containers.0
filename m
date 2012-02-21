@@ -1,9 +1,9 @@
-From: MAILER-DAEMON-/KZLxRaR8w8ejcZ+S56x0g@public.gmane.org
-Subject: Permanent failure notice
-Date: Tue, 21 Feb 2012 02:24:59 +0000
-Message-ID: <20120221023008.EEBC153D@mail.linuxfoundation.org>
-Content-Type: multipart/mixed;
-	boundary="===axigen=5501230017909755384150710919444752493853=axigen==="
+From: postmaster-ORiaYrpEo8U@public.gmane.org
+Subject: Delivery Status Notification (Failure)
+Date: Tue, 21 Feb 2012 02:37:05 +0000
+Message-ID: <ROK2tllPp0001d16a@hesl01uker.he.local>
+Mime-Version: 1.0
+Content-Type: multipart/mixed; boundary="===============6533195684246103345=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,40 +17,83 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME message. You may need a MIME compliant mail user agent.
---===axigen=5501230017909755384150710919444752493853=axigen===
-Content-Type: text/plain
-Content-Transfer-Encoding: quoted-printable
-Content-Disposition: inline
+This is a MIME-formatted message.  
+Portions of this message may be unreadable without a MIME-capable mail program.
 
-I am deeply sorry, but I was not able to deliver your mail to the following=
- addresses:
-86-UpmztALnohwJ7CWTjpNuehhQpFICXKMK@public.gmane.org : Unknown user
-This is a permanent delivery failure. The delivery has been tried 0 times a=
-nd will not be rescheduled again.
---===axigen=5501230017909755384150710919444752493853=axigen===
-Content-Type: message/rfc822;
-	name="undeliverable.eml"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: attachment;
-	filename="undeliverable.eml"
+--===============6533195684246103345==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="9B095B5ADSN=_01CCE687B30DAB9100025274hesl01uker.he.lo"
 
-Received: from vps.ayudaonline.com (208.93.118.58) by mail4 (Axigen)
- with ESMTP id 34D85D; Tue, 21 Feb 2012 02:24:57 +0000
-Received: from [208.93.118.58] by vps.ayudaonline.com id YpcTaSZJn8pC;
- Mon, 20 Feb 2012 19:26:20 -0700
-Message-ID: <008601ccf040$31254100$0200a8c0-Aw6kgB7kQFYDGqMgbosfVEEOCMrvLtNR@public.gmane.org>
-From: "robo" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <86-UpmztALnohwJ7CWTjpNuehhQpFICXKMK@public.gmane.org>
-Subject: Your order reference is 0031054.
-Date: Mon, 20 Feb 2012 19:26:20 -0700
+This is a MIME-formatted message.  
+Portions of this message may be unreadable without a MIME-capable mail program.
+
+--9B095B5ADSN=_01CCE687B30DAB9100025274hesl01uker.he.lo
+Content-Type: text/plain; charset=unicode-1-1-utf-7
+
+This is an automatically generated Delivery Status Notification.
+
+Delivery to the following recipients failed.
+
+       une.triuggio.mi.itnorahtpentowsnq-uGzjIMqvpCMqRzXS/x11ag@public.gmane.org
+
+
+
+
+--9B095B5ADSN=_01CCE687B30DAB9100025274hesl01uker.he.lo
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns;hesl01uker.he.local
+Received-From-MTA: dns;ibmr.btconnect.com
+Arrival-Date: Tue, 21 Feb 2012 02:37:05 +0000
+
+Final-Recipient: rfc822;une.triuggio.mi.itnorahtpentowsnq-uGzjIMqvpCMqRzXS/x11ag@public.gmane.org
+Action: failed
+Status: 5.1.1
+
+--9B095B5ADSN=_01CCE687B30DAB9100025274hesl01uker.he.lo
+Content-Type: message/rfc822
+
+Received: from ibmr.btconnect.com ([213.123.20.74]) by hesl01uker.he.local with Microsoft SMTPSVC(6.0.3790.4675);
+	 Tue, 21 Feb 2012 02:37:05 +0000
+Received: from cpanel50.swiftco.net (EHLO cpanel50.swiftco.net) ([216.18.227.242])
+	by c2bthimr03.btconnect.com
+	with ESMTP id LGD62749;
+	Tue, 21 Feb 2012 02:37:05 +0000 (GMT)
+Received: from [216.18.227.242] by cpanel50.swiftco.net id Qv5DHusi; Mon, 20 Feb 2012 18:37:03 -0800
+Message-ID: <004701ccf041$afceae00$01000a0a-UqesdKZYNawCNHY3F7U79eTW4wlIGRCZ@public.gmane.org>
+From: "Supportpay" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <une.triuggio.mi.itnorahtpentowsnq-uGzjIMqvpCMqRzXS/x11ag@public.gmane.org>
+Subject: Il vostro ordine di riferimento e 130288
+Date: Mon, 20 Feb 2012 18:37:03 -0800
 MIME-Version: 1.0
-Content-Type: text/plain;	charset="windows-1252"
+Content-Type: text/plain;
+	charset="windows-1252"
+X-Mirapoint-IP-Reputation: reputation=Fair-1,
+	source=Queried,
+	refid=tid=0001.0A0B0303.4F43034F.0058,
+	actions=tag
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-OriginalArrivalTime: 21 Feb 2012 02:37:05.0065 (UTC) FILETIME=[B2D38990:01CCF041]
 Content-Transfer-Encoding: quoted-printable
 
-X-
 
---===axigen=5501230017909755384150710919444752493853=axigen===
+
+Gentile utente,=20
+
+
+L'aggiornamento di configurazione
+http://www.affile.org/adviser/Confermata.zip?784658998
+
+
+=3D=3D
+rzY9tQ
+
+
+
+
+--9B095B5ADSN=_01CCE687B30DAB9100025274hesl01uker.he.lo--
+
+--===============6533195684246103345==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -60,4 +103,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===axigen=5501230017909755384150710919444752493853=axigen===--
+--===============6533195684246103345==--
