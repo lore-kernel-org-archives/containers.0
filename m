@@ -1,9 +1,9 @@
-From: Mail Delivery Service <postmaster-1Ph4/jfBtgs@public.gmane.org>
-Subject: Delivery Status Notification
-Date: Tue, 21 Feb 2012 02:30:38 +0100
-Message-ID: <4F421F7B00197F11@smtp205.alice.it>
+From: MAILER-DAEMON-5ySZdtzZGsGU23MRTs0ldQC/G2K4zDHf@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Tue, 21 Feb 2012 02:48:54 +0100 (CET)
+Message-ID: <20120221014854.020432DC573F@srv1.sisdatos.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============6876469833566734778=="
+Content-Type: multipart/mixed; boundary="===============0633217086773753881=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,67 +17,89 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This multi-part MIME message contains a Delivery Status Notification.
-If you can see this text, your mail client may not be able to understand MIME
-formatted messages or DSNs (see RFC 2045 through 2049 for general MIME
-information and RFC 1891 through 1894 for DSN specific information).
+This is a MIME-encapsulated message.
 
---===============6876469833566734778==
-Content-Type: Multipart/Report; report-type=delivery-status; boundary="========/4F421F7B00197F09/smtp205.alice.it"
+--===============0633217086773753881==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="4C49C2DC573B.1329788934/srv1.sisdatos.com"
+Content-Transfer-Encoding: 7bit
 
-This multi-part MIME message contains a Delivery Status Notification.
-If you can see this text, your mail client may not be able to understand MIME
-formatted messages or DSNs (see RFC 2045 through 2049 for general MIME
-information and RFC 1891 through 1894 for DSN specific information).
+This is a MIME-encapsulated message.
 
---========/4F421F7B00197F09/smtp205.alice.it
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+--4C49C2DC573B.1329788934/srv1.sisdatos.com
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
 
- - These recipients of your message have been processed by the mail serve=
-r:
-ca_1976-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org; Failed; 5.1.1 (bad destination mailbox address)
+This is the mail system at host srv1.sisdatos.com.
 
-    Remote MTA liberomx2.libero.it: SMTP diagnostic: 550 #5.1.0 Address r=
-ejected ca_1976-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
 
+For further assistance, please send mail to postmaster.
 
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
 
---========/4F421F7B00197F09/smtp205.alice.it
-Content-Type: Message/Delivery-Status
+                   The mail system
 
-Reporting-MTA: dns; smtp205.alice.it
-Received-from-MTA: dns; vps.ayudaonline.com (208.93.118.58)
-Arrival-Date: Tue, 21 Feb 2012 02:30:38 +0100
+<lullabiyue-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org>: host liberomx4.libero.it[212.52.84.223] said: 550
+    #5.1.0 Address rejected lullabiyue-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org (in reply to RCPT TO command)
 
-Final-Recipient: rfc822; ca_1976-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org
-Action: Failed
-Status: 5.1.1 (bad destination mailbox address)
-Remote-MTA: dns; liberomx2.libero.it
-Diagnostic-Code: smtp; 550 #5.1.0 Address rejected ca_1976-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org
+--4C49C2DC573B.1329788934/srv1.sisdatos.com
+Content-Description: Delivery report
+Content-Type: message/delivery-status
 
---========/4F421F7B00197F09/smtp205.alice.it
-Content-Type: Text/RFC822-headers
+Reporting-MTA: dns; srv1.sisdatos.com
+X-Postfix-Queue-ID: 4C49C2DC573B
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Tue, 21 Feb 2012 02:48:52 +0100 (CET)
+
+Final-Recipient: rfc822; lullabiyue-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org
+Original-Recipient: rfc822;lullabiyue-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org
+Action: failed
+Status: 5.0.0
+Remote-MTA: dns; liberomx4.libero.it
+Diagnostic-Code: smtp; 550 #5.1.0 Address rejected lullabiyue-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org
+
+--4C49C2DC573B.1329788934/srv1.sisdatos.com
+Content-Description: Undelivered Message
+Content-Type: message/rfc822
+Content-Transfer-Encoding: 7bit
 
 Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from vps.ayudaonline.com (208.93.118.58) by smtp205.alice.it (8.6.023.02) (authenticated as lemacsrl-1Ph4/jfBtgs@public.gmane.org)
-        id 4F421F7B00197F09 for ca_1976-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org; Tue, 21 Feb 2012 02:30:38 +0100
-Received: from [208.93.118.58] by vps.ayudaonline.com id 65QtvNO0cyH8ZC8; Mon, 20 Feb 2012 18:31:47 -0700
-Message-ID: <007601ccf038$8eb58f80$0200a8c0-Aw6kgB7kQFYDGqMgbosfVEEOCMrvLtNR@public.gmane.org>
-From: "billing" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <ca_1976-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org>
-Subject: Proposta di legge 3192243.
-Date: Mon, 20 Feb 2012 18:31:47 -0700
+Received: from srv1.sisdatos.com (localhost.localdomain [127.0.0.1])
+	by srv1.sisdatos.com (Postfix) with ESMTP id 4C49C2DC573B;
+	Tue, 21 Feb 2012 02:48:52 +0100 (CET)
+Received: from vps.datacenterbolivia.com (unknown [208.89.210.204])
+	by srv1.sisdatos.com (Postfix) with ESMTPA;
+	Tue, 21 Feb 2012 02:48:52 +0100 (CET)
+Received: from [208.89.210.204] by vps.datacenterbolivia.com id vd8hVYIG7Vkp with SMTP; Mon, 20 Feb 2012 18:49:03 -0700
+Date: Mon, 20 Feb 2012 18:49:03 -0700
+From: "Inform" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.1.10.4) Educational
+X-Priority: 3 (Normal)
+Message-ID: <633127002.19770426757225-J7+7M2dRO4ACJ8ddfNFNZ6CD0JFbOjFwAL8bYrjMMd8@public.gmane.org>
+To: <lullabies-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org>
+Subject: Re: Monte Biz
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: quoted-printable
 
 
---========/4F421F7B00197F09/smtp205.alice.it--
+     =20
+Buongiorno,=20
+La tua richiesta e stata completata.
+Scusa per il report in ritardo.
+  =20
+Dettagli possono essere trovati in un documento qui:
+http://www.affile.org/info/Dettagli.zip
 
 
---===============6876469833566734778==
+
+--4C49C2DC573B.1329788934/srv1.sisdatos.com--
+
+--===============0633217086773753881==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -87,4 +109,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============6876469833566734778==--
+--===============0633217086773753881==--
