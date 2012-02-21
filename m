@@ -1,17 +1,10 @@
-From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 00/10] cgroups: Task counter subsystem v8
-Date: Thu, 16 Feb 2012 16:31:58 +0100
-Message-ID: <CAFTL4hxYeKnhjGdHkt2WggnzES3-egL0BKDMk57AZt48dp9iqg@mail.gmail.com>
-References: <1328067470-5980-1-git-send-email-fweisbec@gmail.com>
-	<20120201163126.GA19837@google.com>
-	<20120201184959.GH6731@somewhere.redhat.com>
-	<20120201115107.93e11471.akpm@linux-foundation.org>
-	<20120202145000.GC9071@somewhere.redhat.com>
+From: Mail Delivery Service <postmaster-1Ph4/jfBtgs@public.gmane.org>
+Subject: Delivery Status Notification
+Date: Tue, 21 Feb 2012 02:30:38 +0100
+Message-ID: <4F421F7B00197F11@smtp205.alice.it>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: multipart/mixed; boundary="===============6876469833566734778=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20120202145000.GC9071-oHC15RC7JGTpAmv0O++HtFaTQe2KTcn/@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,66 +14,77 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Max Kellermann <mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org>, Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>, Glauber Costa <glommer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>, Daniel J Walsh <dwalsh-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-2012/2/2 Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>:
-> On Wed, Feb 01, 2012 at 11:51:07AM -0800, Andrew Morton wrote:
->> On Wed, 1 Feb 2012 19:50:01 +0100
->> Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
->>
->> > On Wed, Feb 01, 2012 at 08:31:26AM -0800, Tejun Heo wrote:
->> > > On Wed, Feb 01, 2012 at 04:37:40AM +0100, Frederic Weisbecker wrote:
->> > > > Changes In this version:
->> > > >
->> > > > - Split 32/64 bits version of res_counter_write_u64() [1/10]
->> > > > =A0 Courtesy of Kirill A. Shutemov
->> > > >
->> > > > - Added Kirill's ack [8/10]
->> > > >
->> > > > - Added selftests [9/10], [10/10]
->> > > >
->> > > > Please consider for merging. At least two users want this feature:
->> > >
->> > > Has there been further discussion about this approach? =A0IIRC, we
->> > > weren't sure whether this should be merged.
->> >
->> > The doubts I have noticed were:
->> >
->> > Q: Can't we rather focus on a global solution to fight forkbombs?
->> >
->> > If we can find a reliable solution that works in any case and that
->> > prevent from any forkbomb to impact the rest of the system then it
->> > may be an acceptable solution. But I'm not aware of such feature.
->> >
->> > Besides, another point in having this task counter is that we
->> > have a per container limit. Assuming all containers are running under
->> > the same user, we can protect against a container starving all others
->> > with a massive amount of processes close to the NR_PROC rlimit.
->> >
->> > Q: Can/should we implement a limitation on the number of "fork" as wel=
-l?
->> > =A0 =A0(as in https://lkml.org/lkml/2011/11/3/233 )
->> >
->> > I'm still not sure about why such a thing is needed. Is it really some=
-thing we
->> > want? Why can't the task counter be used instead?
->> >
->> > I need more details from the author of this patch. But I doubt we can =
-merge
->> > both subsystems, they have pretty different semantics.
->>
->> What I struggle with is "is this feature useful enough to warrant
->> merging it"?
->
-> The reason why I've been working on it is because we need this feature
-> (at least) for LXC.
->
-> Two people from our teams have jumped onto the discussion to express
-> that they want this feature and why:
->
-> https://lkml.org/lkml/2011/12/13/309
-> https://lkml.org/lkml/2011/12/13/364
+This multi-part MIME message contains a Delivery Status Notification.
+If you can see this text, your mail client may not be able to understand MIME
+formatted messages or DSNs (see RFC 2045 through 2049 for general MIME
+information and RFC 1891 through 1894 for DSN specific information).
 
-Ping?
+--===============6876469833566734778==
+Content-Type: Multipart/Report; report-type=delivery-status; boundary="========/4F421F7B00197F09/smtp205.alice.it"
+
+This multi-part MIME message contains a Delivery Status Notification.
+If you can see this text, your mail client may not be able to understand MIME
+formatted messages or DSNs (see RFC 2045 through 2049 for general MIME
+information and RFC 1891 through 1894 for DSN specific information).
+
+--========/4F421F7B00197F09/smtp205.alice.it
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
+
+ - These recipients of your message have been processed by the mail serve=
+r:
+ca_1976-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org; Failed; 5.1.1 (bad destination mailbox address)
+
+    Remote MTA liberomx2.libero.it: SMTP diagnostic: 550 #5.1.0 Address r=
+ejected ca_1976-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org
+
+
+
+--========/4F421F7B00197F09/smtp205.alice.it
+Content-Type: Message/Delivery-Status
+
+Reporting-MTA: dns; smtp205.alice.it
+Received-from-MTA: dns; vps.ayudaonline.com (208.93.118.58)
+Arrival-Date: Tue, 21 Feb 2012 02:30:38 +0100
+
+Final-Recipient: rfc822; ca_1976-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org
+Action: Failed
+Status: 5.1.1 (bad destination mailbox address)
+Remote-MTA: dns; liberomx2.libero.it
+Diagnostic-Code: smtp; 550 #5.1.0 Address rejected ca_1976-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org
+
+--========/4F421F7B00197F09/smtp205.alice.it
+Content-Type: Text/RFC822-headers
+
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from vps.ayudaonline.com (208.93.118.58) by smtp205.alice.it (8.6.023.02) (authenticated as lemacsrl-1Ph4/jfBtgs@public.gmane.org)
+        id 4F421F7B00197F09 for ca_1976-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org; Tue, 21 Feb 2012 02:30:38 +0100
+Received: from [208.93.118.58] by vps.ayudaonline.com id 65QtvNO0cyH8ZC8; Mon, 20 Feb 2012 18:31:47 -0700
+Message-ID: <007601ccf038$8eb58f80$0200a8c0-Aw6kgB7kQFYDGqMgbosfVEEOCMrvLtNR@public.gmane.org>
+From: "billing" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <ca_1976-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org>
+Subject: Proposta di legge 3192243.
+Date: Mon, 20 Feb 2012 18:31:47 -0700
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="windows-1252"
+Content-Transfer-Encoding: 8bit
+
+
+--========/4F421F7B00197F09/smtp205.alice.it--
+
+
+--===============6876469833566734778==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============6876469833566734778==--
