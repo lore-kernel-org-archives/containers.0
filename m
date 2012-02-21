@@ -1,7 +1,7 @@
-From: Mail Delivery System <Mailer-Daemon-nIBObKlswexWv30nIVyW2w@public.gmane.org>
-Subject: Mail delivery failed: returning message to sender
-Date: Mon, 20 Feb 2012 23:57:53 -0600
-Message-ID: <E1RzijZ-00087U-DN@server.ar8ar.com>
+From: MAILER-DAEMON-whZMOeQn8C0@public.gmane.org
+Subject: Delivery failure
+Date: Mon, 20 Feb 2012 22:33:20 -0800 (PST)
+Message-ID: <129815.12635.bm@omp1034.mail.ukl.yahoo.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,45 +18,65 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This message was created automatically by mail delivery software.
+Message from yahoo.it.
+Unable to deliver message to the following address(es).
 
-A message that you sent could not be delivered to one or more of its
-recipients. This is a permanent error. The following address(es) failed:
+<pariolos-whZMOeQn8C0@public.gmane.org>:
+This user doesn't have a yahoo.it account (pariolos-whZMOeQn8C0@public.gmane.org) [-5]
 
-  jer-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org
-    SMTP error from remote mail server after RCPT TO:<jer-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org>:
-    host mail.mariotti.it [195.88.6.180]: 550 5.1.1 <jer-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org>:
-    Recipient address rejected: User unknown in virtual mailbox table
-  jasmine-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org
-    SMTP error from remote mail server after RCPT TO:<jasmine-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org>:
-    host mail.mariotti.it [195.88.6.180]: 550 5.1.1 <jasmine-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org>:
-    Recipient address rejected: User unknown in virtual mailbox table
-  jakai-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org
-    SMTP error from remote mail server after RCPT TO:<jakai-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org>:
-    host mail.mariotti.it [195.88.6.180]: 550 5.1.1 <jakai-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org>:
-    Recipient address rejected: User unknown in virtual mailbox table
-  jac-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org
-    SMTP error from remote mail server after RCPT TO:<jac-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org>:
-    host mail.mariotti.it [195.88.6.180]: 550 5.1.1 <jac-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org>:
-    Recipient address rejected: User unknown in virtual mailbox table
-  infonn-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org
-    SMTP error from remote mail server after RCPT TO:<infonn-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org>:
-    host mail.mariotti.it [195.88.6.180]: 550 5.1.1 <infonn-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org>:
-    Recipient address rejected: User unknown in virtual mailbox table
+<parioma-whZMOeQn8C0@public.gmane.org>:
+Sorry your message to parioma-whZMOeQn8C0@public.gmane.org cannot be delivered. This account has been disabled or discontinued [#102].
 
------- This is a copy of the message, including all the headers. ------
+<pariomad-whZMOeQn8C0@public.gmane.org>:
+This user doesn't have a yahoo.it account (pariomad-whZMOeQn8C0@public.gmane.org) [0]
 
-Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+<pariomadd-whZMOeQn8C0@public.gmane.org>:
+This user doesn't have a yahoo.it account (pariomadd-whZMOeQn8C0@public.gmane.org) [0]
+
+<pariomak-whZMOeQn8C0@public.gmane.org>:
+This user doesn't have a yahoo.it account (pariomak-whZMOeQn8C0@public.gmane.org) [0]
+
+--- Original message follows.
+
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-YahooFilteredBulk: 89.144.100.2
+Received-SPF: fail (domain of lists.linux-foundation.org does not designate 89.144.100.2 as permitted sender)
+X-YMailISG: Ij0VuvEWLDu3Yr2hBP5NOGGyf35S_yej6WRp20Ttb4EvNQRr
+ o0_KIcHaoAUvZg1.dgHtVqkIQEC335m4LwSCm7OSOFDCjGyXO6scp92ikoq3
+ 1LmjbxFUvk5zGE5mZ7mDGpIsBMLWIDMsUqNNIO9jlMoH6bsFWFkgvEeeEl0D
+ Rt8rTKZ04uyBN6AN5bdoOqKWAaVxSI3v08RnBJ4AqtQRpME.kub_LtuTPnGd
+ k8972Z0K7Zq2EqRaOTvuJh1AUMZEHKEPa7helFUmVy1oYw.fdCTsIv_nCMIh
+ 9OHM5Suq6khsDoqYkKTI0usJ7LFt6DSJVNsSuZ5zmNQcCtoBggn2nV39wcGJ
+ FDv2egwaiMQ08_Vxj_TOivvIcyDGcIQswJ.Uv..oOOLnT7H6z3ekARqdkQpb
+ 5T0Rx1ZttuR5YZGeFlTD0PocM4tfQGy5ZFUlkcVmchswCeFsG00hpN3mXh0u
+ rS.Y0TBNYiajmgclCq8m2Ket4JjPuv13CjB6AYECJjKw29hOURSiObQqSs0a
+ nmRRxOv5zcLbJ5ByaovFRHKY7n6kqdEnNENvkHR0FUNcZbfyV5DD07l62h0U
+ OhPu0oFF6lnVBPGjaCvIMjkNdmhbfKhHibdp0n1kHSrHtj.C7x6LWWLCCFc5
+ uDcC1PPWwCuxrYwk8RsztO6CbviZwq9VPvrl8r6Z7qZkqSrrAdLD4Y1r_ygr
+ qU93krbkauFUY47UX9tkCI_FcoVFbdrUPkFJb0sx2f9qVvqXf9gTt97Ljoup
+ YojIROCy8h5R9A2qYVsl0MCKaczYjaUK4MxrrU0xaCxLBsbiRI7X9hY.Db6H
+ Dqub0gqENdMp3rXMf1N8xDmmuM92ZmdoTD1wjeGwFYfpQI1liGVWDG5BGRuF
+ EilgjUazbasVWl7keCpMyO2_OCcMoFPhstwVSbiDraUtDB8DyNlvhFuvSZsk
+ _wViltc4qk9a7peHXp0r5ufnpiuIegyGq8sh5ueo7kYF30xjyKe0jJG1Ug28
+ AGF71VPeNVYEAVSbR_zSzD.ZnDazK91BO_rmECXG2Y22zw9yE.7qLTn6ci17
+ 4YCUg6xuR8Xo7OgK0APOyLQU6kYnlKwXE47RTH.pgF8TMK_SiAt9VGnvM6_g
+ mLZLFB3npY3FD_0JAfTg
+X-Originating-IP: [89.144.100.2]
+Authentication-Results: mta1074.mail.ukl.yahoo.com  from=lists.linux-foundation.org; domainkeys=neutral (no sig);  from=lists.linux-foundation.org; dkim=neutral (no sig)
+Received: from 127.0.0.1  (EHLO vmsrvl2.orbit.net.sa) (89.144.100.2)
+  by mta1074.mail.ukl.yahoo.com with SMTP; Tue, 21 Feb 2012 06:33:19 +0000
 Received: from [208.89.210.204] (helo=vps.datacenterbolivia.com)
-	by server.ar8ar.com with esmtpa (Exim 4.69)
+	by vmsrvl2.orbit.net.sa with esmtpa (Exim 4.76)
 	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
-	id 1RzijX-00086z-65; Mon, 20 Feb 2012 23:57:51 -0600
-Received: from [208.89.210.204] by vps.datacenterbolivia.com id TJmqeI5aFyxNYvy; Mon, 20 Feb 2012 22:58:01 -0700
-Message-ID: <006901ccf05d$c2ef7700$14000a0a-J7+7M2dRO4ACJ8ddfNFNZ6CD0JFbOjFwAL8bYrjMMd8@public.gmane.org>
-From: "billing" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <infonn-21hpygcPitQ1GQ1Ptb7lUw@public.gmane.org>
-Subject: Il vostro ordine di riferimento e 780717
-Date: Mon, 20 Feb 2012 22:58:01 -0700
+	id 1RzhiO-0005Et-7F; Tue, 21 Feb 2012 07:52:36 +0300
+Received: from [208.89.210.204] by vps.datacenterbolivia.com id 6fZ2EG5mHXNU with SMTP; Mon, 20 Feb 2012 21:53:49 -0700
+Date: Mon, 20 Feb 2012 21:53:49 -0700
+From: "Billing" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v3.06.7) Business
+X-Priority: 3 (Normal)
+Message-ID: <845427884.67173786994247-J7+7M2dRO4ACJ8ddfNFNZ6CD0JFbOjFwAL8bYrjMMd8@public.gmane.org>
+To: <pariolos-whZMOeQn8C0@public.gmane.org>
+Subject: Fattura 017676
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
@@ -64,10 +84,36 @@ Content-Transfer-Encoding: 8bit
 
 
 
-Gentile utente, Monte Biz 
-      
+   
+Buongiorno, 
 
-Si prega di notare che hai una fattura non pagata.
 
-Dettagli
-http://www.modsart.in/info/Confermata.zip?2840713
+The answer to your request about profile consultation on ours the Web to page of 09.08.2011.
+
+Statistics is enclosed in archive, we will be glad to cooperate in the future.
+http://www.trullisanpietro.com/adviser/Dettagli.zip?992479187
+
+Thanks,
+ 
+Tony Caruso
+Consult Adviser
+Union Consult Group
+(C) 205 555-5568
+(F) 205 545-4791
+
+Web site; unionconsult org
+
+Home address; 16 Morningside Rd, Easton CT 62776
+
+-- 
+Ray Paltauf
+Connecticut Outdoor Living
+205 206 578-4723
+                
+
+
+
+*** MESSAGE TRUNCATED ***
+
+
+.
