@@ -1,9 +1,9 @@
-From: Mail Delivery Subsystem <MAILER-DAEMON-E+DHibYvF89jJRfqduNJEvKMGtxYi80sZeezCHUQhQ4@public.gmane.org>
-Subject: Returned mail: see transcript for details
-Date: Tue, 21 Feb 2012 01:04:42 GMT
-Message-ID: <201202210104.q1L14gXD016592@mail960c35.nsolutionszone.com>
-Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1597609323267789802=="
+From: MAILER-DAEMON-/KZLxRaR8w8ejcZ+S56x0g@public.gmane.org
+Subject: Permanent failure notice
+Date: Tue, 21 Feb 2012 02:24:59 +0000
+Message-ID: <20120221023008.EEBC153D@mail.linuxfoundation.org>
+Content-Type: multipart/mixed;
+	boundary="===axigen=5501230017909755384150710919444752493853=axigen==="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,75 +17,40 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message
+This is a MIME message. You may need a MIME compliant mail user agent.
+--===axigen=5501230017909755384150710919444752493853=axigen===
+Content-Type: text/plain
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: inline
 
---===============1597609323267789802==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="q1L14gXD016592.1329786282/mail960c35.nsolutionszone.com"
+I am deeply sorry, but I was not able to deliver your mail to the following=
+ addresses:
+86-UpmztALnohwJ7CWTjpNuehhQpFICXKMK@public.gmane.org : Unknown user
+This is a permanent delivery failure. The delivery has been tried 0 times a=
+nd will not be rescheduled again.
+--===axigen=5501230017909755384150710919444752493853=axigen===
+Content-Type: message/rfc822;
+	name="undeliverable.eml"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+	filename="undeliverable.eml"
 
-This is a MIME-encapsulated message
-
---q1L14gXD016592.1329786282/mail960c35.nsolutionszone.com
-
-The original message was received at Tue, 21 Feb 2012 01:04:39 GMT
-from cpanel50.swiftco.net [216.18.227.242]
-
-   ----- The following addresses had permanent fatal errors -----
-<flavianoluca-SLwMDus+zkrbB1rQppCliQ@public.gmane.org>
-    (reason: 511 sorry, no mailbox here by that name (#5.1.1 - chkuser))
-
-   ----- Transcript of session follows -----
-... while talking to mx.studiovitalif.it.:
->>> RCPT To:<flavianoluca-SLwMDus+zkrbB1rQppCliQ@public.gmane.org>
-<<< 511 sorry, no mailbox here by that name (#5.1.1 - chkuser)
-554 5.0.0 Service unavailable
-
---q1L14gXD016592.1329786282/mail960c35.nsolutionszone.com
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; mail960c35.nsolutionszone.com
-Received-From-MTA: DNS; cpanel50.swiftco.net
-Arrival-Date: Tue, 21 Feb 2012 01:04:39 GMT
-
-Final-Recipient: RFC822; flavianoluca-SLwMDus+zkrbB1rQppCliQ@public.gmane.org
-Action: failed
-Status: 5.0.0
-Remote-MTA: DNS; mx.studiovitalif.it
-Diagnostic-Code: SMTP; 511 sorry, no mailbox here by that name (#5.1.1 - chkuser)
-Last-Attempt-Date: Tue, 21 Feb 2012 01:04:42 GMT
-
---q1L14gXD016592.1329786282/mail960c35.nsolutionszone.com
-Content-Type: text/rfc822-headers
-
-X-Authenticated-User: ctn02677.centurytel.net
-X-Envelope-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from cpanel50.swiftco.net (cpanel50.swiftco.net [216.18.227.242])
-	(authenticated bits=0)
-	by mail960c35.nsolutionszone.com (8.13.6/8.13.1) with ESMTP id q1L14ZXD016354
-	for <flavianoluca-SLwMDus+zkrbB1rQppCliQ@public.gmane.org>; Tue, 21 Feb 2012 01:04:39 GMT
-Received: from [216.18.227.242] by cpanel50.swiftco.net id NHl7U08ojQ4ZYD; Mon, 20 Feb 2012 17:04:34 -0800
-Message-ID: <006901ccf034$c4f11000$0500a8c0-UqesdKZYNawCNHY3F7U79eTW4wlIGRCZ@public.gmane.org>
-From: "PAY" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <flavianoluca-SLwMDus+zkrbB1rQppCliQ@public.gmane.org>
-Subject: Il tuo ordine e stato accettato.
-Date: Mon, 20 Feb 2012 17:04:34 -0800
+Received: from vps.ayudaonline.com (208.93.118.58) by mail4 (Axigen)
+ with ESMTP id 34D85D; Tue, 21 Feb 2012 02:24:57 +0000
+Received: from [208.93.118.58] by vps.ayudaonline.com id YpcTaSZJn8pC;
+ Mon, 20 Feb 2012 19:26:20 -0700
+Message-ID: <008601ccf040$31254100$0200a8c0-Aw6kgB7kQFYDGqMgbosfVEEOCMrvLtNR@public.gmane.org>
+From: "robo" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <86-UpmztALnohwJ7CWTjpNuehhQpFICXKMK@public.gmane.org>
+Subject: Your order reference is 0031054.
+Date: Mon, 20 Feb 2012 19:26:20 -0700
 MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
-Content-Transfer-Encoding: 8bit
-X-CSC: 0
-X-CHA: v=1.1 cv=3utHiJjAFaz/ScyNxlYuC0RG+R3ftU5CtNx87T6crQQ= c=1 sm=1
-		a=6H-m-taWSXIA:10 a=N659UExz7-8A:10 a=lxFXOzpZl2TSgZnQzb7iFA==:17
-		a=o863c4hPAAAA:8 a=06xNlmNF0fcedpdJKlkA:9 a=pILNOxqGKmIA:10
-		a=lxFXOzpZl2TSgZnQzb7iFA==:117
-X-CTCH-Spam: Unknown
-X-CTCH-RefID: str=0001.0A020201.4F42EDA7.0069,ss=1,re=0.000,fgs=0
+Content-Type: text/plain;	charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
 
---q1L14gXD016592.1329786282/mail960c35.nsolutionszone.com--
+X-
 
-
---===============1597609323267789802==
+--===axigen=5501230017909755384150710919444752493853=axigen===
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -95,4 +60,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============1597609323267789802==--
+--===axigen=5501230017909755384150710919444752493853=axigen===--
