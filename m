@@ -1,16 +1,10 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [RFD] cgroup: about multiple hierarchies
-Date: Wed, 22 Feb 2012 10:43:18 -0800
-Message-ID: <20120222184318.GE32694__3523.46150107241$1329936210$gmane$org@google.com>
-References: <20120221211938.GE12236@google.com>
-	<20120222163858.GB4128@redhat.com>
-	<20120222165714.GC4128@redhat.com>
+From: MAILER-DAEMON-mu2ZQ2D7nFge2smX6Ap6ZTiMktMINJGd@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Thu, 23 Feb 2012 00:09:31 +0100 (CET)
+Message-ID: <20120222230931.58816F08473A@bluecell.nsprimario.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============2898114567158085852=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20120222165714.GC4128-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,42 +14,106 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello,
+This is a MIME-encapsulated message.
 
-On Wed, Feb 22, 2012 at 11:57:14AM -0500, Vivek Goyal wrote:
-> IIRC, another reason to implement flat hierachy was that some people
-> believed that's more natural way of doing things. For example, when
-> you talk about cgroup, people ask, ok, give me a cgroup with 25% IO
-> bandwidth. Now this does not come naturally with completely nested
-> hierarchies where task and groups are treated at the same level. As
-> group's peer tasks share the bandwidth, and task come and go a group's
-> % share varies dynamically.
+--===============2898114567158085852==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="76564F084726.1329952171/bluecell.nsprimario.com"
+Content-Transfer-Encoding: 7bit
 
-I don't see how that is more "natural".  While I don't think
-supporting full nesting is necessary for all controllers, the
-semantics is very clear - build grouped trees according to active
-configurations and distritbute resources top to bottom (network qdiscs
-do exactly this).  Flat case is proper degenerate case of nesting.
-There's nothing more or less natural.  It's just matter of trade off
-between complexity and requirements.
+This is a MIME-encapsulated message.
 
-> Again, it does not mean I am advocating flat hiearchy. I am just wondering
-> in case of fully nested hierarchies (task at same level as groups), how
-> does one explain it to a layman user who understands things in terms of
-> % of resources.
+--76564F084726.1329952171/bluecell.nsprimario.com
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
 
-I don't know whether we want nesting for block cgroup or not but at
-the same time that doesn't really matter.  Sharing hierarchy doesn't
-require every controller supporting full hierarchy.  I'm not sure how
-the interface should be tho - maybe we can fail specifying config if
-there already is an effective config encompassing that node or maybe
-we can just break the existing config, I don't know.
+This is the mail system at host bluecell.nsprimario.com.
 
-Thank you.
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
 
--- 
-tejun
+For further assistance, please send mail to <postmaster>
+
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
+
+                   The mail system
+
+<ultpqlrycrza-eM0ohwaF2/fXSawbx0kwvQ@public.gmane.org>: host mail8.ucc.ie[143.239.1.38] said: 550 5.2.1
+    <ultpqlrycrza-eM0ohwaF2/fXSawbx0kwvQ@public.gmane.org>... Mailbox disabled for this recipient (in
+    reply to RCPT TO command)
+
+--76564F084726.1329952171/bluecell.nsprimario.com
+Content-Description: Delivery report
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns; bluecell.nsprimario.com
+X-Postfix-Queue-ID: 76564F084726
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Thu, 23 Feb 2012 00:09:17 +0100 (CET)
+
+Final-Recipient: rfc822; ultpqlrycrza-eM0ohwaF2/fXSawbx0kwvQ@public.gmane.org
+Original-Recipient: rfc822;ultpqlrycrza-eM0ohwaF2/fXSawbx0kwvQ@public.gmane.org
+Action: failed
+Status: 5.2.1
+Remote-MTA: dns; mail8.ucc.ie
+Diagnostic-Code: smtp; 550 5.2.1 <ultpqlrycrza-eM0ohwaF2/fXSawbx0kwvQ@public.gmane.org>... Mailbox
+    disabled for this recipient
+
+--76564F084726.1329952171/bluecell.nsprimario.com
+Content-Description: Undelivered Message
+Content-Type: message/rfc822
+Content-Transfer-Encoding: 7bit
+
+Received: from bluecell.nsprimario.com (unknown [127.0.0.1])
+	by bluecell.nsprimario.com (Postfix) with ESMTP id 76564F084726
+	for <ultpqlrycrza-eM0ohwaF2/fXSawbx0kwvQ@public.gmane.org>; Wed, 22 Feb 2012 23:09:17 +0000 (UTC)
+Received: from blog.nomalistdesign.com (unknown [174.143.182.212])
+	by bluecell.nsprimario.com (Postfix) with ESMTP
+	for <ultpqlrycrza-eM0ohwaF2/fXSawbx0kwvQ@public.gmane.org>; Wed, 22 Feb 2012 23:09:17 +0000 (UTC)
+Received: from [174.143.182.212] by blog.nomalistdesign.com id 8ovlD3Vbk63f with SMTP; Wed, 22 Feb 2012 23:07:43 +0000
+Date: Wed, 22 Feb 2012 23:07:43 +0000
+From: "Pay" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.04.1) Personal
+X-Priority: 3 (Normal)
+Message-ID: <760964016.54062044090801-oYFICFIz4VW5PHSWFFpsopOMunqAqVKM@public.gmane.org>
+To: <ultpqlrycrza-eM0ohwaF2/fXSawbx0kwvQ@public.gmane.org>
+Subject: Your order reference is 32837.
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+
+
+
+
+Welcome!
+
+Your order has been accepted. Your order reference is 855257.=20
+
+Terms of delivery and the date can be found with=20
+the auto-generated msword file located at:
+http://www.organoeorchestra.it/ie/invoice.zip?iduser=3Dultpqlrycrza@bisma=
+il.ucc.ie?23395330
+
+=3D=3D
+Best regards, Tel. / Fax.:  (033) 875 58 176.
+
+
+
+--76564F084726.1329952171/bluecell.nsprimario.com--
+
+--===============2898114567158085852==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============2898114567158085852==--
