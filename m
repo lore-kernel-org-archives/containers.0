@@ -1,18 +1,16 @@
-From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [RFD] cgroup: about multiple hierarchies
-Date: Thu, 23 Feb 2012 12:47:01 -0600
-Message-ID: <20120223184701.GA4394@vostro.hallyn.com>
+Date: Thu, 23 Feb 2012 14:41:10 -0500
+Message-ID: <20120223194109.GI19691@redhat.com>
 References: <20120221211938.GE12236@google.com>
-	<20120221212106.GF12236@google.com>
-	<4F44EEE4.2000809@parallels.com>
-	<20120223074526.GA15835@mail.hallyn.com>
-	<20120223172915.GC22536@google.com>
+	<20120222163858.GB4128@redhat.com>
+	<20120222183351.GD32694@google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20120223172915.GC22536-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20120222183351.GD32694-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,80 +24,71 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Tejun Heo (tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org):
-> Hey, Serge.
+On Wed, Feb 22, 2012 at 10:33:51AM -0800, Tejun Heo wrote:
+
+[..]
 > 
-> On Thu, Feb 23, 2012 at 07:45:26AM +0000, Serge E. Hallyn wrote:
-> > > >>Documentation/cgroups.txt seems to be written with this consideration
-> > > >>on mind.  It's giving an example of applying limits accoring to two
-> > > >>orthogonal categorizations - user groups (profressors, students...)
-> > > >>and applications (WWW, NFS...).  While it may sound like a valid use
-> > > >>case, I'm very skeptical how useful or common mixing such orthogonal
-> > > >>categorizations in a single setup would be.
-> > 
-> > My first inclination is to agree, but counterexamples do come to mind.
-> > 
-> > I could imagine a site saying "users can run (X) (say, ftpds), but the
-> > memory consumed by all those ftpds must not be > 10% total RAM".  At
-> > the same time, they may run several apaches but want them all locked to
-> > two of the cpus.
+> > So for blkio controller we can convert it into fully nested hierarchy
+> > at the expense of more complex code in CFQ. I think memory cgroup
+> > controller provides both flat and hierarchical mode. Keeping it fully
+> > hierarchical also increases the cost as we need to traverse lot more
+> > pointers for simple things like nested stats. On a system having
+> > both systemd and libvirt, every virtual machine is already 3-4 level
+> > deep in cgroup hierarchy.
 > 
-> Orthogonal hierarchies is a feature and it does allow use cases which
+> I don't think every controller should implement full nesting and
+> sharing the same hierarchy doesn't require it.  ie. if a controller
+> only wants to support flat hierarchy, just allow a single subgroup to
+> be active on any path between root and leaf.  We can add a flag or
+> helpers to support such mode of operation and controllers themselves
+> can treat all cgroups equally.
 
-Of course.  Note that while I used myself in the examples, I'm not
-opposed to any of what you've suggested.  Just trying to raise
-discussion.
+I am not sure I understand "allow a single subgroup to be active on any
+path"
 
-> aren't possible to support otherwise.  It's not too difficult to come
-> up with a use case crafted to exploit the feature.  The main thing is
-> whether the added functionality justifies the complexity and other
+So if a hierarchy looks as follows.
 
-And (somehow) I think we need to get input from the users - the ones not
-on lkml.  There is an end-user summit coming up, right?  Perhaps this
-question should be floated there?
+				root
+			        / | \
+			      g1  g2 g3
+			          |   |	
+				  g4  g5
 
-> disadvantages described earlier in the thread.  To me, the scenarios
-> seem not realistic, common place or essential enough.
-> 
-> Also, it's not like there's only one problem to solve these issues.
-> It may not be exactly the same thing but that's just part of the
-> trade-off game we all play.
-> 
-> > It might be worth a formal description of the new limits on use cases
-> > such changes (both dropping support for orthogonal cgroups, and limiting
-> > cgroups hierarchies to a mirror pstrees, separately) would bring.
-> 
-> The word "formal" scares me. :)
+So you are saying that just either g2 or g4 to be active in path 2 and 
+similiarly allow g3 or g5 to be active. IOW, if a task is in g5 and g3
+is active group, and effectively task will be considered in g3? So in
+above diagram if g1 and g4 and g3 are active groups, controller will
+see them as.
 
-The upside would be a clear explanation of what userspace can do to
-work around the more limited kernel functionality.
+				root
+				/ | \
+			       g1 g4 g3
 
-> > To me personally the hierarchy limitation is more worrying.  There have
-> > been times when I've simply created cgroups for 'compile' and 'image
-> > build', with particular cpu and memory limits.  If I started a second
-> > simultaneous compile, I'd want both compiles confined together.  (That's
-> > not to say the simplification might not be worth it, just bringing up
-> > the other side)
-> 
-> Yeah, that's an interesting point, but wouldn't something like the
-> following work too?
-> 
-> 1. create_cgroup --cpu 40% --mem 20% screen
-> 2. tell screen to create as many build screens you want
-> 3. issue builds from those screens
+Did I understand it right or you meant something else. But this is still
+not flat and has 2 level of hierarchy. Tasks in root group and tasks in 
+children group (g1, g2 and g3) are different levels hence controller needs
+to implement hierarchy. For it to be truly flat, it needs to look like
+this.
+			     pivot_point
+				/ | \  \
+			       g1 g4 g3 root
 
-That works for a single user.  Gets more complicated if you have multiple
-users but still want to confine compiles differently from other workloads.
+Now the notion that only one group is active in each path from root to
+leaf does not mean much.
 
-Still, we now have 'namespace attach', so even if we generally shadow
-pstree with the cgroups, perhaps we could implement a cgroup transfer
-much more cleanly than the current cgroup attach stuff.
+Considering everything internally as flat, isn't it simpler. So cgroup 
+tree still might look hierarchical but actually controller treats it
+as.
+				root
+		              / / | \ \
+			    g1 g2 g3 g4 g5
 
-Or, maybe it's just not something users would deem worthwhile.  *I*
-will be fine either way.
+Well, above is not exactly flat as has 2 level of hierarchy. That's blkio
+controller views cgroup hierarhcy as follows, currently.
 
-> To me, something like the above seems far more consistent with
-> everything else we have on the system than moving tasks around by
-> echoing pids to some sysfs file.
+				pivot_point
+		              / / | \   \  \ 
+			    g1 g2 g3 g4 g5 root
 
--serge
+Thanks
+Vivek
