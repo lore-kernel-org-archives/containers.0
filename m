@@ -1,9 +1,10 @@
-From: postmaster-Oy8cep8j1bSEVqv0pETR8A@public.gmane.org
-Subject: Delivery Status Notification (Failure)
-Date: Tue, 28 Feb 2012 10:22:58 +0100
-Message-ID: <QI5TC7t1k0008bafa@nlhub002.rbw-nl.boskalis.net>
+From: Mail Delivery System <Mailer-Daemon-qiX4PIHgNWsT2OAhzV4aKGQe5P+uuAI2Zkel5v8DVj8@public.gmane.org>
+Subject: Mail delivery failed: returning message to sender
+Date: Tue, 28 Feb 2012 12:42:29 +0100
+Message-ID: <E1S2LRt-0002tg-69@mediamakers.profserver.nl>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============5499632243959220756=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,97 +18,41 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-formatted message.  
-Portions of this message may be unreadable without a MIME-capable mail program.
+This message was created automatically by mail delivery software.
 
---===============5499632243959220756==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="9B095B5ADSN=_01CCE1C7B06F2ADE0008E232nlhub002.rbw?nl."
+A message that you sent could not be delivered to one or more of its
+recipients. This is a permanent error. The following address(es) failed:
 
-This is a MIME-formatted message.  
-Portions of this message may be unreadable without a MIME-capable mail program.
+  postmaster-+SiBs+4sxJ1mR6Xm/wNWPw@public.gmane.org
+    
 
---9B095B5ADSN=_01CCE1C7B06F2ADE0008E232nlhub002.rbw?nl.
-Content-Type: text/plain; charset=unicode-1-1-utf-7
+------ This is a copy of the message, including all the headers. ------
 
-This is an automatically generated Delivery Status Notification.
-
-Delivery to the following recipients failed.
-
-       hazenoot-Oy8cep8j1bSEVqv0pETR8A@public.gmane.org
-       h.r.maliepaardh-Oy8cep8j1bSEVqv0pETR8A@public.gmane.org
-
-
-
-
---9B095B5ADSN=_01CCE1C7B06F2ADE0008E232nlhub002.rbw?nl.
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns;nlhub002.rbw-nl.boskalis.net
-Received-From-MTA: dns;nlgtw001.boskalis.nl
-Arrival-Date: Tue, 28 Feb 2012 10:22:58 +0100
-
-Final-Recipient: rfc822;hazenoot-Oy8cep8j1bSEVqv0pETR8A@public.gmane.org
-Action: failed
-Status: 5.1.1
-
-Final-Recipient: rfc822;h.r.maliepaardh-Oy8cep8j1bSEVqv0pETR8A@public.gmane.org
-Action: failed
-Status: 5.1.1
-
---9B095B5ADSN=_01CCE1C7B06F2ADE0008E232nlhub002.rbw?nl.
-Content-Type: message/rfc822
-
-Received: from nlgtw001.boskalis.nl ([192.168.7.70]) by nlhub002.rbw-nl.boskalis.net with Microsoft SMTPSVC(6.0.3790.4675);
-	 Tue, 28 Feb 2012 10:22:58 +0100
-Received: from mail.boskalis.nl ([192.168.17.10]) by nlgtw001.boskalis.nl with Microsoft SMTPSVC(6.0.3790.4675);
-	 Tue, 28 Feb 2012 10:22:53 +0100
-Received: from cubemaxltd.cubemaxltd.com (cubemaxltd.cubemaxltd.com [174.142.214.20])
-	by mail.boskalis.nl  with ESMTP id q1S9MpDB006927-q1S9MpDC006927;
-	Tue, 28 Feb 2012 10:22:51 +0100
-Received: from [174.142.214.20] by cubemaxltd.cubemaxltd.com id M4cOoDsnZHdq with SMTP; Tue, 28 Feb 2012 04:22:50 -0500
-Date: Tue, 28 Feb 2012 04:22:50 -0500
-From: "OrdersCo" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v3.9.76.8) Personal
+Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from srv1157.sd-france.net ([81.93.250.157])
+	by mediamakers.profserver.nl with esmtp (Exim 4.77)
+	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+	id 1S2LRt-0002td-2W
+	for postmaster-+SiBs+4sxJ1mR6Xm/wNWPw@public.gmane.org; Tue, 28 Feb 2012 12:42:29 +0100
+Received: from [81.93.250.157] by srv1157.sd-france.net id gkuF529Vgmek with SMTP; Tue, 28 Feb 2012 12:44:22 +0100
+Date: Tue, 28 Feb 2012 12:44:22 +0100
+From: "inform" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.2.48.7) Personal
 X-Priority: 3 (Normal)
-Message-ID: <6367969960.14778596359944-PBrG2Ygu4YotuMo1XmBnHVHeKjDIEhJXAL8bYrjMMd8@public.gmane.org>
-To: <h.r.maliepaardh-Oy8cep8j1bSEVqv0pETR8A@public.gmane.org>
-Subject: [****SPAM****]A [****SPAM****] Gereed.
+Message-ID: <1857716044.81574685153821-//J07LhNTfpNmCTVG0Af2SpxlwaOVQ5f@public.gmane.org>
+To: <cvz-+SiBs+4sxJ1mR6Xm/wNWPw@public.gmane.org>
+Subject: Re: document 3581
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
-X-FEAS-SBL: 174.142.214.20 score 1
-X-FEAS-SURL: http://www.statistiche.cc/downloadpdf/nl/Details.zip
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-OriginalArrivalTime: 28 Feb 2012 09:22:53.0192 (UTC) FILETIME=[8C552080:01CCF5FA]
-X-MS-Antispam-Report: v=1.1 cv=zJEDJ6ezV3X2p5SFPGuge6pBHQ//ssba5Zg7+adAIO4= c=0 sm=1 p=_TG0mTAFAAAA:8 a=N659UExz7-8A:10 a=0f8arQdyqn8ZlQzRlb6MHw==:17 a=0f8arQdyqn8ZlQzRlb6MHw==:117
-X-Junk-Mail: 
-X-ANTIGEN-SPAMDETECTED: 
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 
 
 
-        =20
-goede morgen,
+        
+Beste,
 
 Uw bestelling wordt verwerkt
-http://www.statistiche.cc/downloadpdf/nl/Details.zip
+http://www.totalwebservices.nl/downloadpdf/nl/Info.zip
 
-id1607393      =20
-
-
-
-
---9B095B5ADSN=_01CCE1C7B06F2ADE0008E232nlhub002.rbw?nl.--
-
---===============5499632243959220756==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============5499632243959220756==--
+id38043         
