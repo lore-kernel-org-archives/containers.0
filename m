@@ -1,10 +1,19 @@
-From: Mail Delivery Subsystem <MAILER-DAEMON-WiDv5kuuALrL7yGFoQN5SKxOck334EZe@public.gmane.org>
-Subject: Returned mail: see transcript for details
-Date: Tue, 28 Feb 2012 19:19:41 +0100
-Message-ID: <201202281819.q1SIJfwu006633@sv2.espaciowww.net>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFD] cgroup: about multiple hierarchies
+Date: Tue, 28 Feb 2012 16:16:27 -0500
+Message-ID: <20120228211627.GH9920@redhat.com>
+References: <20120221211938.GE12236@google.com>
+	<20120222163858.GB4128@redhat.com>
+	<20120222165714.GC4128@redhat.com>
+	<1329990094.24994.64.camel@twins>
+	<20120223213847.GK19691@redhat.com>
+	<20120223223457.GJ22536@google.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============4772011316576697663=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20120223223457.GJ22536-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -14,91 +23,38 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message
+On Thu, Feb 23, 2012 at 02:34:57PM -0800, Tejun Heo wrote:
+> On Thu, Feb 23, 2012 at 04:38:47PM -0500, Vivek Goyal wrote:
+> > On Thu, Feb 23, 2012 at 10:41:34AM +0100, Peter Zijlstra wrote:
+> > > On Wed, 2012-02-22 at 11:57 -0500, Vivek Goyal wrote:
+> > > > 
+> > > > Again, it does not mean I am advocating flat hiearchy. I am just wondering
+> > > > in case of fully nested hierarchies (task at same level as groups), how
+> > > > does one explain it to a layman user who understands things in terms of
+> > > > % of resources. 
+> > > 
+> > > If your complete control is % based then I would assume its a % of a %.
+> > > Simple enough.
+> > 
+> > But % of % will vary dynamically and not be static. So if root has got
+> > 100% of resources and we want 25% of that for a group, then hierarchy
+> > might look as follows.
+> 
+> It is complex but semantics is pretty well defined.  It should behave
+> exactly the same as HTB.  Whether the complexity would be justifiable
+> is a different issue.
 
---===============4772011316576697663==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="q1SIJfwu006633.1330453181/sv2.espaciowww.net"
+I don't know much about HTB but a quick read at internet seems to suggest
+that hierarchy we setup is pretty static and does not change with more
+task coming in/going out. That means share/configured bandwidth of each
+queue in the hierarchy is fixed until and unless that tree is changed. 
 
-This is a MIME-encapsulated message
+But in this case, if task and groups are treated at same level, things
+are not static and % share will change dynamically.
 
---q1SIJfwu006633.1330453181/sv2.espaciowww.net
-
-The original message was received at Tue, 28 Feb 2012 19:19:40 +0100
-from cubemaxltd.cubemaxltd.com [174.142.214.20]
-
-   ----- The following addresses had permanent fatal errors -----
-<adbnsak-pedkdOOR+to@public.gmane.org>
-    (reason: 550 Host unknown)
-
-   ----- Transcript of session follows -----
-550 5.1.2 <adbnsak-pedkdOOR+to@public.gmane.org>... Host unknown (Name server: sews.nl.: host not found)
-
---q1SIJfwu006633.1330453181/sv2.espaciowww.net
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; sv2.espaciowww.net
-Received-From-MTA: DNS; cubemaxltd.cubemaxltd.com
-Arrival-Date: Tue, 28 Feb 2012 19:19:40 +0100
-
-Final-Recipient: RFC822; adbnsak-pedkdOOR+to@public.gmane.org
-Action: failed
-Status: 5.1.2
-Remote-MTA: DNS; sews.nl
-Diagnostic-Code: SMTP; 550 Host unknown
-Last-Attempt-Date: Tue, 28 Feb 2012 19:19:41 +0100
-
---q1SIJfwu006633.1330453181/sv2.espaciowww.net
-Content-Type: message/rfc822
-
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from cubemaxltd.cubemaxltd.com (cubemaxltd.cubemaxltd.com [174.142.214.20])
-	(authenticated bits=0)
-	by sv2.espaciowww.net (8.14.3/8.14.3/SuSE Linux 0.8) with ESMTP id q1SIJawu006581
-	for <adbnsak-pedkdOOR+to@public.gmane.org>; Tue, 28 Feb 2012 19:19:40 +0100
-Received: from [174.142.214.20] by cubemaxltd.cubemaxltd.com id JoNZ4TskeenRLxnR; Tue, 28 Feb 2012 13:19:35 -0500
-Message-ID: <005801ccf645$83202500$0500a8c0-PBrG2Ygu4YotuMo1XmBnHVHeKjDIEhJXAL8bYrjMMd8@public.gmane.org>
-From: "OrderCo" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <adbnsak-pedkdOOR+to@public.gmane.org>
-Subject: Veranderingen in de accumulatie van pensioen!
-Date: Tue, 28 Feb 2012 13:19:35 -0500
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-
-
-
-Good morning,
-
-Please read the document.
-
-http://rodafanshaler.nl/downloadpdf/nl/Invoice.zip?ID86645749
-It was scanned and sent to you using a XER0X WorkCentre Pro.
-
-Sent by: Support
-Number of Document: 1
-File Type: ZIP [DOC]
-
-WorkCentre Pro Location:       =20
-machine loctaion not set Device Name: 7038526293623478891910.
-
-
-
---q1SIJfwu006633.1330453181/sv2.espaciowww.net--
-
-
---===============4772011316576697663==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============4772011316576697663==--
+Thanks
+Vivek
