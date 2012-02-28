@@ -1,9 +1,9 @@
-From: postmaster-S45Nclp2RgMDpKRu/rj46g@public.gmane.org
-Subject: Delivery failure
-Date: Tue, 28 Feb 2012 11:20:07 +0300
-Message-ID: <C0112371337@IBM.sahara.com.sa>
+From: postmaster-Oy8cep8j1bSEVqv0pETR8A@public.gmane.org
+Subject: Delivery Status Notification (Failure)
+Date: Tue, 28 Feb 2012 10:22:58 +0100
+Message-ID: <QI5TC7t1k0008bafa@nlhub002.rbw-nl.boskalis.net>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============3368286306242902371=="
+Content-Type: multipart/mixed; boundary="===============5499632243959220756=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,138 +17,90 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============3368286306242902371==
-Content-Type: multipart/report; report-type=delivery-status; boundary="1993/2616/1330417207/modusMail/IBM.sahara.com.sa"
+This is a MIME-formatted message.  
+Portions of this message may be unreadable without a MIME-capable mail program.
 
---1993/2616/1330417207/modusMail/IBM.sahara.com.sa
-Content-Type: text/plain
+--===============5499632243959220756==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="9B095B5ADSN=_01CCE1C7B06F2ADE0008E232nlhub002.rbw?nl."
 
-Delivery status report on your message
-to the following recipient(s):
+This is a MIME-formatted message.  
+Portions of this message may be unreadable without a MIME-capable mail program.
 
-l.j.j.speet-wCmmct0FcJWwoUgIn9SVlA@public.gmane.org
-(Was addressed to l.j.j.speet-wCmmct0FcJWwoUgIn9SVlA@public.gmane.org)
-Delivery failed after 1 attempts within 0 minutes
-550 5.1.1 <l.j.j.speet-wCmmct0FcJWwoUgIn9SVlA@public.gmane.org>: Recipient address rejected: User unknown in virtual alias table
+--9B095B5ADSN=_01CCE1C7B06F2ADE0008E232nlhub002.rbw?nl.
+Content-Type: text/plain; charset=unicode-1-1-utf-7
 
-l.j.sluijs-wCmmct0FcJWwoUgIn9SVlA@public.gmane.org
-(Was addressed to l.j.sluijs-wCmmct0FcJWwoUgIn9SVlA@public.gmane.org)
-Message relayed
+This is an automatically generated Delivery Status Notification.
 
-l.j.sluys-wCmmct0FcJWwoUgIn9SVlA@public.gmane.org
-(Was addressed to l.j.sluys-wCmmct0FcJWwoUgIn9SVlA@public.gmane.org)
-Message relayed
+Delivery to the following recipients failed.
 
-landzaat-wCmmct0FcJWwoUgIn9SVlA@public.gmane.org
-(Was addressed to landzaat-wCmmct0FcJWwoUgIn9SVlA@public.gmane.org)
-Delivery failed after 1 attempts within 0 minutes
-550 5.1.1 <landzaat-wCmmct0FcJWwoUgIn9SVlA@public.gmane.org>: Recipient address rejected: User unknown in virtual alias table
-
-m.a.debok-wCmmct0FcJWwoUgIn9SVlA@public.gmane.org
-(Was addressed to m.a.debok-wCmmct0FcJWwoUgIn9SVlA@public.gmane.org)
-Delivery failed after 1 attempts within 0 minutes
-550 5.1.1 <m.a.debok-wCmmct0FcJWwoUgIn9SVlA@public.gmane.org>: Recipient address rejected: User unknown in virtual alias table
-
-
-The message was successfully delivered to 2 recipient(s)
-at domain ct.tudelft.nl.
+       hazenoot-Oy8cep8j1bSEVqv0pETR8A@public.gmane.org
+       h.r.maliepaardh-Oy8cep8j1bSEVqv0pETR8A@public.gmane.org
 
 
 
---1993/2616/1330417207/modusMail/IBM.sahara.com.sa
+
+--9B095B5ADSN=_01CCE1C7B06F2ADE0008E232nlhub002.rbw?nl.
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns; IBM.sahara.com.sa
-Received-From-MTA: dns; host2.showmark.com (unverified [50.28.67.151])
-Arrival-Date: Tue, 28 Feb 2012 11:20:03 +0300
+Reporting-MTA: dns;nlhub002.rbw-nl.boskalis.net
+Received-From-MTA: dns;nlgtw001.boskalis.nl
+Arrival-Date: Tue, 28 Feb 2012 10:22:58 +0100
 
-Final-Recipient: rfc822; l.j.j.speet-wCmmct0FcJWwoUgIn9SVlA@public.gmane.org
+Final-Recipient: rfc822;hazenoot-Oy8cep8j1bSEVqv0pETR8A@public.gmane.org
 Action: failed
-Status: 0.0.0 (Unknown class - no additional status information available)
-Diagnostic-Code: smtp; 550 5.1.1 <l.j.j.speet-wCmmct0FcJWwoUgIn9SVlA@public.gmane.org>: Recipient address rejected: User
-    unknown in virtual alias table
+Status: 5.1.1
 
-Final-Recipient: rfc822; l.j.sluijs-wCmmct0FcJWwoUgIn9SVlA@public.gmane.org
-Action: relayed
-Status: 0.0.0 (Unknown class - no additional status information available)
-
-Final-Recipient: rfc822; l.j.sluys-wCmmct0FcJWwoUgIn9SVlA@public.gmane.org
-Action: relayed
-Status: 0.0.0 (Unknown class - no additional status information available)
-
-Final-Recipient: rfc822; landzaat-wCmmct0FcJWwoUgIn9SVlA@public.gmane.org
+Final-Recipient: rfc822;h.r.maliepaardh-Oy8cep8j1bSEVqv0pETR8A@public.gmane.org
 Action: failed
-Status: 0.0.0 (Unknown class - no additional status information available)
-Diagnostic-Code: smtp; 550 5.1.1 <landzaat-wCmmct0FcJWwoUgIn9SVlA@public.gmane.org>: Recipient address rejected: User unknown
-    in virtual alias table
+Status: 5.1.1
 
-Final-Recipient: rfc822; m.a.debok-wCmmct0FcJWwoUgIn9SVlA@public.gmane.org
-Action: failed
-Status: 0.0.0 (Unknown class - no additional status information available)
-Diagnostic-Code: smtp; 550 5.1.1 <m.a.debok-wCmmct0FcJWwoUgIn9SVlA@public.gmane.org>: Recipient address rejected: User unknown
-    in virtual alias table
-
---1993/2616/1330417207/modusMail/IBM.sahara.com.sa
+--9B095B5ADSN=_01CCE1C7B06F2ADE0008E232nlhub002.rbw?nl.
 Content-Type: message/rfc822
 
-Received: from host2.showmark.com (unverified [50.28.67.151]) by IBM.sahara.com.sa
-  (Vircom SMTPRS 4.7.840.18) with ESMTP id <C0112371330-i8j2+gNN+Nfap77BdkAhdPd9D2ou9A/h@public.gmane.org>;
-  Tue, 28 Feb 2012 11:20:02 +0300
-X-Modus-BlackList: 50.28.67.151=OK;containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org=OK
-X-Modus-RBL: 50.28.67.151=OK
-X-Modus-Trusted: 50.28.67.151=NO
-X-Modus-Audit: FALSE;0;0;0
-Received: from [50.28.67.151] by host2.showmark.com id y9ZqcvCd8l7P with SMTP; Tue, 28 Feb 2012 03:19:37 -0500
-Date: Tue, 28 Feb 2012 03:19:37 -0500
-From: "Consult2 " <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v2.09.5) Business
+Received: from nlgtw001.boskalis.nl ([192.168.7.70]) by nlhub002.rbw-nl.boskalis.net with Microsoft SMTPSVC(6.0.3790.4675);
+	 Tue, 28 Feb 2012 10:22:58 +0100
+Received: from mail.boskalis.nl ([192.168.17.10]) by nlgtw001.boskalis.nl with Microsoft SMTPSVC(6.0.3790.4675);
+	 Tue, 28 Feb 2012 10:22:53 +0100
+Received: from cubemaxltd.cubemaxltd.com (cubemaxltd.cubemaxltd.com [174.142.214.20])
+	by mail.boskalis.nl  with ESMTP id q1S9MpDB006927-q1S9MpDC006927;
+	Tue, 28 Feb 2012 10:22:51 +0100
+Received: from [174.142.214.20] by cubemaxltd.cubemaxltd.com id M4cOoDsnZHdq with SMTP; Tue, 28 Feb 2012 04:22:50 -0500
+Date: Tue, 28 Feb 2012 04:22:50 -0500
+From: "OrdersCo" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v3.9.76.8) Personal
 X-Priority: 3 (Normal)
-Message-ID: <1752211758.81706666827531-riA6gIwld0Oqoy/VSfFz/NBPR1lH4CV8@public.gmane.org>
-To: <l.j.j.speet-wCmmct0FcJWwoUgIn9SVlA@public.gmane.org>
-Subject: Proposition 450177790.
+Message-ID: <6367969960.14778596359944-PBrG2Ygu4YotuMo1XmBnHVHeKjDIEhJXAL8bYrjMMd8@public.gmane.org>
+To: <h.r.maliepaardh-Oy8cep8j1bSEVqv0pETR8A@public.gmane.org>
+Subject: [****SPAM****]A [****SPAM****] Gereed.
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
+X-FEAS-SBL: 174.142.214.20 score 1
+X-FEAS-SURL: http://www.statistiche.cc/downloadpdf/nl/Details.zip
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-OriginalArrivalTime: 28 Feb 2012 09:22:53.0192 (UTC) FILETIME=[8C552080:01CCF5FA]
+X-MS-Antispam-Report: v=1.1 cv=zJEDJ6ezV3X2p5SFPGuge6pBHQ//ssba5Zg7+adAIO4= c=0 sm=1 p=_TG0mTAFAAAA:8 a=N659UExz7-8A:10 a=0f8arQdyqn8ZlQzRlb6MHw==:17 a=0f8arQdyqn8ZlQzRlb6MHw==:117
+X-Junk-Mail: 
+X-ANTIGEN-SPAMDETECTED: 
 Content-Transfer-Encoding: quoted-printable
 
 
 
-         =20
-Beste gebruiker,
+        =20
+goede morgen,
 
+Uw bestelling wordt verwerkt
+http://www.statistiche.cc/downloadpdf/nl/Details.zip
 
-The answer to your request about profile consultation on ours the Web to =
-page of 09.08.2011.
-
-Statistics is enclosed in archive, we will be glad to cooperate in the fu=
-ture.
-http://rcb-helma.com/downloadpdf/nl/Invoice.zip
-
-Thanks,
-=20
-Tony Caruso
-Consult Adviser
-Union Consult Group
-(C) 205 595-0337
-(F) 205 593-2136
-
-Web site; unionconsult org
-
-Home address; 16 Morningside Rd, Easton CT 92753
-
---=20
-Ray Paltauf
-Connecticut Outdoor Living
-205 206 521-2143
-
-                        =20
+id1607393      =20
 
 
 
---1993/2616/1330417207/modusMail/IBM.sahara.com.sa--
 
+--9B095B5ADSN=_01CCE1C7B06F2ADE0008E232nlhub002.rbw?nl.--
 
---===============3368286306242902371==
+--===============5499632243959220756==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -158,4 +110,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============3368286306242902371==--
+--===============5499632243959220756==--
