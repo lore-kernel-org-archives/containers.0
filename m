@@ -1,10 +1,10 @@
 From: =?GB2312?B?wO7D9w==?= <2413118457-9uewiaClKEY@public.gmane.org>
 Subject: =?GB2312?B?wO7D99PrxPq5ss/twcvV1cas?=
-Date: Tue, 28 Feb 2012 12:09:03 +0000
-Message-ID: <047d7b15a485c7bfe104ba051783@google.com>
+Date: Tue, 28 Feb 2012 13:23:46 +0000
+Message-ID: <047d7b15abbd041f6404ba06233d@google.com>
 Reply-To: =?GB2312?B?wO7D9w==?= <2413118457-9uewiaClKEY@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary=047d7b15a485c7e77a04ba05178e
+Content-Type: multipart/mixed; boundary=047d7b15abbd043ef304ba062368
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,18 +18,30 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---047d7b15a485c7e77a04ba05178e
+--047d7b15abbd043ef304ba062368
 Content-Type: text/plain; charset=GB2312; format=flowed; delsp=yes
 Content-Transfer-Encoding: base64
 
-xPq6w6O6DQrN4sOzv827p7+qt6LVubvhvNu48bjfo6y/zbunwLTUtLWl0rujrEIyQr651fm8pMHS
-o6zRr8XMy+TIu7rctuC1q7PJvbvItLrcIA0KydmjrLrDsrvI3dLXs8m9u8HLDQoNCtK7uPa1paOs
-vNu48dG5tcPDu9PQwPvI86Osz+vTw7nYvPy0ysXFw/vItLTzsNG1xMeuzba9+Milw7vT0NCnufuj
-rL+/19TJ7c341b4gDQrIpc3GueOxqbniwsrT1syrDQoNCtCho6zE0bXAv6q3orqjzeK/zbunvs3O
-3sK3v8nX38HLwvCjvw0KssbK1sjtvP6/ydLUsO/E+tXStb2z9sK3oaMNCg0KwarPtcjLo7rL1dCh
-veMNClFRo7oxNTUzOTc3NjUyo6jM4bmpw+K30dHdyr6jqQ0Kyta7+qO6MTU4NjU1NTgxMTgNCs34
-1b6jumh0dHA6Ly93d3cuY3VzdHNvdXJjZS5jb20NCg==
---047d7b15a485c7e77a04ba05178e
+xPq6w6O6DQogICAgIM3iw7PJzLOhvrrV+bykwdKjrM2218piMmLGvcyoo6zRsMfzuPfW1tXSv827
+p7XEt73KvaGjcmljaGhhbmSw78T61/a1vbz1IA0Kydm+utX5o6y89cnZzbbXyrPJsb6ho7DvxPrU
+9rzTuPy24LXEycy7+qOsxKPE4srWtq/XqNK1sO/E+r+qt6LIq8fyytCzoaOsyKvH8iANCsrQs6HD
+u9PQz97WxqGj1q6688rH0ru21NK7sO/E+siluPq1paGjDQrQp8LKzOG437XEzazKsb/Nu6fWysG/
+uPzKx7K7tO21xMW2fg0KDQrBqs+1yMujusvV0KG94w0KUVGjujE1NTM5Nzc2NTKjqMzhuanD4rfR
+0d3KvqOpDQrK1rv6o7oxNTg2NTU1ODExOA0KzfjVvqO6aHR0cDovL3d3dy5jdXN0c291cmNlLmNv
+bQ0KDQrE+rrDo7oNCiAgICAgzeLDs8nMs6G+utX5vKTB0qOszbbXymIyYsa9zKijrNGwx/O499bW
+1dK/zbuntcS3vcq9oaNyaWNoaGFuZLDvxPrX9rW9vPUgDQrJ2b661fmjrLz1ydnNttfKs8mxvqGj
+sO/E+tT2vNO4/LbgtcTJzLv6o6zEo8Tiyta2r9eo0rWw78T6v6q3osirx/LK0LOho6zIq8fyIA0K
+ytCzocO709DP3tbGoaPWrrrzysfSu7bU0ruw78T6yKW4+rWloaMNCtCnwsrM4bjftcTNrMqxv827
+p9bKwb+4/MrHsru07bXExbZ+DQoNCsGqz7XIy6O6y9XQob3jDQpRUaO6MTU1Mzk3NzY1MqOozOG5
+qcPit9HR3cq+o6kNCsrWu/qjujE1ODY1NTU4MTE4DQrN+NW+o7podHRwOi8vd3d3LmN1c3Rzb3Vy
+Y2UuY29tDQoNCsT6usOjug0KICAgICDN4sOzycyzob661fm8pMHSo6zNttfKYjJixr3MqKOs0bDH
+87j31tbV0r/Nu6e1xLe9yr2ho3JpY2hoYW5ksO/E+tf2tb289SANCsnZvrrV+aOsvPXJ2c2218qz
+ybG+oaOw78T61Pa807j8tuC1xMnMu/qjrMSjxOLK1rav16jStbDvxPq/qreiyKvH8srQs6GjrMir
+x/IgDQrK0LOhw7vT0M/e1saho9auuvPKx9K7ttTSu7DvxPrIpbj6taWhow0K0KfCyszhuN+1xM2s
+yrG/zbun1srBv7j8yseyu7TttcTFtn4NCg0KwarPtcjLo7rL1dChveMNClFRo7oxNTUzOTc3NjUy
+o6jM4bmpw+K30dHdyr6jqQ0Kyta7+qO6MTU4NjU1NTgxMTgNCs341b6jumh0dHA6Ly93d3cuY3Vz
+dHNvdXJjZS5jb20NCg==
+--047d7b15abbd043ef304ba062368
 Content-Type: image/jpeg; name="=?GB2312?B?0MK958PmLmpwZw==?="
 Content-Disposition: attachment; filename="=?GB2312?B?0MK958PmLmpwZw==?="
 Content-Transfer-Encoding: base64
@@ -916,7 +928,7 @@ Zkdx8DgeUhISUcP13ZJyknIGSMirwVGjqRwKYaUnrgoBFCo0dTaW1MtKQnokoBA/FRFV+oO0i9Wm
 TdWO42x7uqlttrS6sEK40JTxNqAUR6Ss8O3o56b0u0H2hSr/AGqXMlpszXLuTMNoMSVqUQ4+GsLR
 wlSFjfA6Eg5IAJqw1MsqVxKaQpXmUgmhuOy2SptltBJySlAGT/6NEXQUUUURFFFFESed9jT/AEqb
 NT/9BPewftJpznfY0/0qbNT/APQT3sH7Sa0ci//Z
---047d7b15a485c7e77a04ba05178e
+--047d7b15abbd043ef304ba062368
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -926,4 +938,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---047d7b15a485c7e77a04ba05178e--
+--047d7b15abbd043ef304ba062368--
