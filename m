@@ -1,10 +1,10 @@
-From: postmaster-xdas5ufEMds@public.gmane.org
-Subject: Onbestelbaar
-Date: Wed, 29 Feb 2012 02:33:25 +0100
-Message-ID: <13127.9401517988$1330479829@news.gmane.org>
+From: foodpoint-RSh1/+X/PmFmR6Xm/wNWPw@public.gmane.org (via the qmail-reply program)
+Subject: [Auto-Reply]  Order 43228
+Date: 29 Feb 2012 10:27:38 +0100
+Message-ID: <20120229092738.29501.qmail@qmail19.zonnet.nl>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
- boundary="_-==63535FEF1U4113375==-_"
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,27 +18,5 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-
---_-==63535FEF1U4113375==-_
-Content-Type: text/plain;
- charset=iso-8859-1
-Content-Disposition: inline
-
-Het e-mailadres(@pggm) van de geadresseerde is niet gevonden in het
-e-mailsysteem van de geadresseerde. De mailserver probeert dit bericht
-niet opnieuw te verzenden. Controleer het e-mailadres van de
-geadresseerde en probeer dit bericht nog eens te versturen of geef de
-volgende diagnosetekst door aan uw systeembeheerder.
-
-
---_-==63535FEF1U4113375==-_
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---_-==63535FEF1U4113375==-_--
+Dit mailadres wordt binnenkort opgeheven, gelieve hier niets meer naar toe te sturen. Het wordt met ingang 
+van 1 juni 2006 niet meer gelezen.
