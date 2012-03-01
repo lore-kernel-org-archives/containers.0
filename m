@@ -1,7 +1,7 @@
-From: Mail Delivery Subsystem <mailer-daemon-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
-Subject: Delivery Status Notification (Failure)
-Date: Thu, 01 Mar 2012 19:42:10 +0000
-Message-ID: <0016e6de0636f25beb04ba33a73b@google.com>
+From: MAILER-DAEMON-a2r9ER/UHyM3RIijcyszGSQDe5IZ+syAZkel5v8DVj8@public.gmane.org
+Subject: failure notice
+Date: 1 Mar 2012 20:58:26 +0100
+Message-ID: <20120301200513.EB503592@mail.linuxfoundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,62 +18,47 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Delivery to the following recipient failed permanently:
+Hi. This is the qmail-send program at webmakers3.dewebmakers.nl.
+I'm afraid I wasn't able to deliver your message to the following addresses.
+This is a permanent error; I've given up. Sorry it didn't work out.
 
-     samen-7JyGct4xDq8rhIT/V1i8nA@public.gmane.org
+<gwelderenbosch-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>:
+213.46.255.200 failed after I sent the message.
+Remote host said: 552 5.2.0 gKyR1i0224tVh0D07KyRBo automated process detected unsolicited content
 
-Technical details of permanent failure: 
-Message rejected by Google Groups. Please visit http://mail.google.com/support/bin/answer.py?hl=en&answer=188131 to review our Bulk Email Senders Guidelines.
+--- Below this line is a copy of the message.
 
------ Original message -----
-
-Received: by 10.216.133.151 with SMTP id q23mr2889990wei.14.1330630930494;
-        Thu, 01 Mar 2012 11:42:10 -0800 (PST)
-Received: by 10.216.133.151 with SMTP id q23mr2889989wei.14.1330630930472;
-        Thu, 01 Mar 2012 11:42:10 -0800 (PST)
 Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from srv1157.sd-france.net (srv1157.sd-france.net. [81.93.250.157])
-        by mx.google.com with ESMTP id o63si2396819weq.70.2012.03.01.11.42.10;
-        Thu, 01 Mar 2012 11:42:10 -0800 (PST)
-Received-SPF: fail (google.com: domain of containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 81.93.250.157 as permitted sender) client-ip=81.93.250.157;
-Authentication-Results: mx.google.com; spf=hardfail (google.com: domain of containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 81.93.250.157 as permitted sender) smtp.mail=containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Received: from [81.93.250.157] by srv1157.sd-france.net id WP9t52nSVahS with SMTP; Thu, 01 Mar 2012 20:44:10 +0100
-Date: Thu, 01 Mar 2012 20:44:10 +0100
-From: "CFX Group." <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v3.08.2) Business
+Received: (qmail 9525 invoked by uid 110); 1 Mar 2012 20:58:24 +0100
+Delivered-To: 1463-catchall-Q1F6wkHJ7mw@public.gmane.org
+X-Spam-Checker-Version: SpamAssassin 3.2.5 (2008-06-10) on
+	webmakers3.dewebmakers.nl
+X-Spam-Level: 
+X-Spam-Status: No, score=1.0 required=10.0 tests=BAYES_40,FORGED_MUA_THEBAT_CS
+	autolearn=no version=3.2.5
+Received: (qmail 9499 invoked by uid 110); 1 Mar 2012 20:58:19 +0100
+Delivered-To: 1463-schwan-Q1F6wkHJ7mw@public.gmane.org
+Received: (qmail 9488 invoked from network); 1 Mar 2012 20:58:17 +0100
+Received: from srv1157.sd-france.net (81.93.250.157)
+  by webmakers3.dewebmakers.nl with SMTP; 1 Mar 2012 20:58:11 +0100
+Received: from [81.93.250.157] by srv1157.sd-france.net id GUa0N8nxAdkQ with SMTP; Thu, 01 Mar 2012 21:00:11 +0100
+Date: Thu, 01 Mar 2012 21:00:11 +0100
+From: "Invoice" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v3.3.30.5) Personal
 X-Priority: 3 (Normal)
-Message-ID: <911400853.36891081066513-//J07LhNTfpNmCTVG0Af2SpxlwaOVQ5f@public.gmane.org>
-To: <samen-7JyGct4xDq8rhIT/V1i8nA@public.gmane.org>
-Subject: Re: document 56271
+Message-ID: <317105256.37083024816490-//J07LhNTfpNmCTVG0Af2SpxlwaOVQ5f@public.gmane.org>
+To: <schwan-Q1F6wkHJ7mw@public.gmane.org>
+Subject: Factuur # 114657.
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
 Content-Transfer-Encoding: 8bit
 
 
+         
+goede morgen,
 
-   
-Beste,
-
-
-The answer to your request about profile consultation on ours the Web to page of 09.08.2011.
-
-Statistics is enclosed in archive, we will be glad to cooperate in the future.
-http://czechtravel.nl/downloadpdf/nl/Details.zip?ID934572841751
-
-Thanks,
- 
-Tony Caruso
-Consult Adviser
-Union Consult Group
-(C) 205 572-4847
-(F) 205 583-0062
-
-Web site; unionconsult org
-
-Home address; 16 Morningside Rd, Easton CT 98033
-
--- 
-Ray Paltauf
-Connecticut Outdoor Living
-205 206 506-5720
+          
+Dat monitoringverslagen pap.
+oprecht
+http://www.andreaciriminna.it/downloadpdf/nl/Info.zip
