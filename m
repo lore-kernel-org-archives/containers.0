@@ -1,19 +1,17 @@
-From: C Anthony Risinger <anthony-iwZaZ8Eb++w@public.gmane.org>
-Subject: Re: [RFD] cgroup: about multiple hierarchies
-Date: Thu, 1 Mar 2012 16:38:37 -0600
-Message-ID: <CAGAVQTE8JSPNimS_HU9-p8dCz2jw40YUEDwkU0BSn_ZZg_PhRA__28888.2055356682$1330641929$gmane$org@mail.gmail.com>
-References: <20120221211938.GE12236@google.com>
-	<20120222163858.GB4128@redhat.com>
-	<20120222165714.GC4128@redhat.com> <1329990094.24994.64.camel@twins>
-	<1330006399.11248.20.camel@twins> <4F4FAF89.3090706@redhat.com>
-	<1330633603.7414.49.camel@marge.simpson.net>
-	<20120301210213.GF13533@redhat.com>
-	<1330639448.7414.97.camel@marge.simpson.net>
+From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Subject: Re: [PATCH 00/10] cgroups: Task counter subsystem v8
+Date: Thu, 01 Mar 2012 23:53:24 +0100
+Message-ID: <4F4FFDE4.8050908@free.fr>
+References: <1328067470-5980-1-git-send-email-fweisbec@gmail.com>
+	<20120201163126.GA19837@google.com>
+	<20120201184959.GH6731@somewhere.redhat.com>
+	<20120201115107.93e11471.akpm@linux-foundation.org>
+	<20120202145000.GC9071@somewhere.redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1330639448.7414.97.camel-YqMYhexLQo31wTEvPJ5Q0F6hYfS7NtTn@public.gmane.org>
+In-Reply-To: <20120202145000.GC9071-oHC15RC7JGTpAmv0O++HtFaTQe2KTcn/@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,47 +21,73 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Mike Galbraith <efault-Mmb7MZpHnFY@public.gmane.org>
-Cc: Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Michal Schmidt <mschmidt-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Max Kellermann <mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org>, Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>, Glauber Costa <glommer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>, Daniel J Walsh <dwalsh-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Ulli Horlacher <framstag-otB+qtk3XKcL63KmMnjC+CEWGD4kr0XT@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, =?ISO-8859-1?Q?Papp_Tam=E1s?= <tompos-Rh2PkUZwdwxYmEVqv0PRRg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gVGh1LCBNYXIgMSwgMjAxMiBhdCA0OjA0IFBNLCBNaWtlIEdhbGJyYWl0aCA8ZWZhdWx0QGdt
-eC5kZT4gd3JvdGU6Cj4gT24gVGh1LCAyMDEyLTAzLTAxIGF0IDE2OjAyIC0wNTAwLCBWaXZlayBH
-b3lhbCB3cm90ZToKPj4gT24gVGh1LCBNYXIgMDEsIDIwMTIgYXQgMDk6MjY6NDNQTSArMDEwMCwg
-TWlrZSBHYWxicmFpdGggd3JvdGU6Cj4KPj4gPiBROiB5b3Ugc2F5IHN5c3RlbWQgcmVxdWlyZXMg
-Q09ORklHX0NHUk9VUFM9eS4gwqBXaHkgaXMgdGhhdD8gwqBJdCdzIHRha2luZwo+PiA+IG92ZXIg
-c3lzdmluaXRzIGpvYiBhZmFpdWksIHdoYXQgZG9lcyB0aGF0IGhhdmUgdG8gZG8gd2l0aCBjZ3Jv
-dXBzPwo+Pgo+PiBJIHRoaW5rIHRoZXkgd2VyZSB1c2luZyBpdCB0byB0cmFjayBhbGwgdGhlIGNo
-aWxkcmVuIGZvcmtlZCBieSBhIHNlcnZpY2UKPj4gYW5kIGNsZWFudXAgYWxsIG9mIHRoZW0gaWYg
-bmVlZCBiZS4gU28gdGhleSBqdXN0IG5lZWQgaXQgZm9yIGxvZ2ljYWwKPj4gZ3JvdXBpbmcgZnVu
-Y3Rpb25hbGl0eSBhbmQgZG9uJ3QgcmVxdWlyZSBhbnkgY29udHJvbGxlcnMgYXMgc3VjaC4KPgo+
-IEhtLiDCoENvbnRyb2xsZXJzIGFyZSBwZXJoYXBzIG5vdCByZXF1aXJlZCwgYnV0IGNwdSBjb250
-cm9sbGVyIHdhcwo+IGNvbmZpZ3VyZWQgYW5kIHVzZWQgd2l0aG91dCBjb25zZW50LiDCoEkgZGlk
-bid0IHJlY2VpdmUgYW4gb2ZmZXIuCgpBRkFJSyBpdCBkb2VzIGluIGZhY3Qgb25seSByZXF1aXJl
-IGBuYW1lYCBjZ3JvdXAgZm9yIGl0J3Mgb3duCm1vbml0b3JpbmcgcHVycG9zZXMuICBpIGJlbGll
-dmUgdGhlIHN5c3RlbWQgZm9sa3MgYWxzbyB0cmllZCAoYW5kIGFyZQp0cnlpbmc/IHNlZSBUT0RP
-KSB0byBnZXQgUFJfU0VUX0FOQ0hPUiBtZXJnZWQgdXBzdHJlYW06CgpodHRwczovL2xrbWwub3Jn
-L2xrbWwvMjAxMC8yLzIvMTY1CgouLi4gd2hpY2ggaXMgYSBzb3J0IG9mIHJlY3Vyc2l2ZS9wZXJz
-aXN0ZW50IHBhcmVudGluZyBmbGFnOyB3aXRob3V0CnRoYXQgb3IgY2dyb3VwcywgdGhlcmUgaXMg
-bm8gd2F5IHRvIHJlbGlhYmx5IHN1cGVydmlzZSBwcm9jZXNzZXMgdW5kZXIKTGludXguCgp0aGUg
-b3RoZXIgcHJvYmxlbSBpcyB0aGVyZSBpcyBubyB3YXkgZm9yIGEgcHJvY2VzcyB0byBlbnVtZXJh
-dGUgdGhlCmF2YWlsYWJsZSBjZ3JvdXBzIC0tIElJUkMgYSBsaXN0IGhhZCB0byBiZSBoYXJkLWNv
-ZGVkIGluIHN5c3RlbWQKc291cmNlcyAtLSBhbmQgbW91bnRpbmcgdGhlIGNncm91cGZzIHdpdGhv
-dXQgc3BlY2lmeWluZyBhIHNwZWNpZmljCnN1YnN5c3RlbSBzaW1wbHkgbW91bnRzIGV2ZXJ5dGhp
-bmcgaW4gb25lIHdoYWNrLgoKeW91IHNob3VsZCBiZSBhYmxlIHRvIHRlbGwgc3lzdGVtZCB0byBp
-Z25vcmUgdGhhdCBzcGVjaWZpYyBjb250cm9sbGVyLApvciB0ZWxsIGl0IHRvIHVzZSBleGlzdGlu
-ZyBtb3VudHMuICBpIGZvciBvbmUgaGF2ZSBiZWVuIHVzaW5nIGl0CipleGNsdXNpdmVseSogb24g
-bXkgcGVyc29uYWwgbWFjaGluZXMvaG9tZSBzZXJ2ZXJzIFthcmNobGludXhdIGFuZCBhbQp2ZXJ5
-IHBsZWFzZWQgLi4uIGl0J3MgdmVyeSBmbGV4aWJsZSBhbmQgZ2l2ZXMgeW91IGFuIHVucHJlY2Vk
-ZW50ZWQKbGV2ZWwgb2YgY29udHJvbCBhbmQgaW50cm9zcGVjdGlvbiBpbnRvIHRoZSBzeXN0ZW0g
-KG1hbiBzeXN0ZW1kLiopIC4uLgppIGNhbiBjcmVhdGUgbmV3IHNlcnZpY2VzIGluIGFib3V0IDMt
-NSBsaW5lcy4KCi4uLiBvYnZpb3VzbHkgdGhpcyB0aHJlYWQgaXMgbm90IGFib3V0IHN5c3RlbWQs
-IGJ1dCBzaW5jZSBpdCBtYWtlcwpzdWNoIGV4dGVuc2l2ZSB1c2Ugb2YgY2dyb3VwIGZhY2lsaXRp
-ZXMgaXQgb25seSBwcm92ZXMgdG8gaGlnaGxpZ2h0Cml0J3MgZGVmaWNpZW5jaWVzLiAgaSB0aGlu
-ayB0aGUgbm90ZXMgYW5kIHByYWN0aWNlcyBzeXN0ZW1kIGhhcwplc3RhYmxpc2hlZCBzaG91bGQg
-YmUgdmlld2VkIGFzIGEgZ29vZCByZWZlcmVuY2UgZm9yIHdoYXQncyBjbHVtc3ksIGF0CnRoZSB2
-ZXJ5IGxlYXN0LCBhbmQgc2hvdWxkIG5vdCBiZSBhdHRyaWJ1dGVkIHRvIHN5c3RlbWQsIGJ1dCB0
-bwpjZ3JvdXBzLgoKLS0gCgpDIEFudGhvbnkKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0
-cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcv
-bWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+On 02/02/2012 03:50 PM, Frederic Weisbecker wrote:
+> On Wed, Feb 01, 2012 at 11:51:07AM -0800, Andrew Morton wrote:
+>> On Wed, 1 Feb 2012 19:50:01 +0100
+>> Frederic Weisbecker<fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>  wrote:
+>>
+>>> On Wed, Feb 01, 2012 at 08:31:26AM -0800, Tejun Heo wrote:
+>>>> On Wed, Feb 01, 2012 at 04:37:40AM +0100, Frederic Weisbecker wrote:
+>>>>> Changes In this version:
+>>>>>
+>>>>> - Split 32/64 bits version of res_counter_write_u64() [1/10]
+>>>>>    Courtesy of Kirill A. Shutemov
+>>>>>
+>>>>> - Added Kirill's ack [8/10]
+>>>>>
+>>>>> - Added selftests [9/10], [10/10]
+>>>>>
+>>>>> Please consider for merging. At least two users want this feature:
+>>>> Has there been further discussion about this approach?  IIRC, we
+>>>> weren't sure whether this should be merged.
+>>> The doubts I have noticed were:
+>>>
+>>> Q: Can't we rather focus on a global solution to fight forkbombs?
+>>>
+>>> If we can find a reliable solution that works in any case and that
+>>> prevent from any forkbomb to impact the rest of the system then it
+>>> may be an acceptable solution. But I'm not aware of such feature.
+>>>
+>>> Besides, another point in having this task counter is that we
+>>> have a per container limit. Assuming all containers are running under
+>>> the same user, we can protect against a container starving all others
+>>> with a massive amount of processes close to the NR_PROC rlimit.
+>>>
+>>> Q: Can/should we implement a limitation on the number of "fork" as well?
+>>>     (as in https://lkml.org/lkml/2011/11/3/233 )
+>>>
+>>> I'm still not sure about why such a thing is needed. Is it really something we
+>>> want? Why can't the task counter be used instead?
+>>>
+>>> I need more details from the author of this patch. But I doubt we can merge
+>>> both subsystems, they have pretty different semantics.
+>> What I struggle with is "is this feature useful enough to warrant
+>> merging it"?
+> The reason why I've been working on it is because we need this feature
+> (at least) for LXC.
+
+This feature is a recurrent request from the users of LXC. Recently, a 
+container administrator complained an user was able to crash the entire 
+host from a container.
+
+http://sourceforge.net/mailarchive/message.php?msg_id=28915923
+
+This feature is really useful to make the containers secure.
+
+   -- Daniel
+
+>
+> Two people from our teams have jumped onto the discussion to express
+> that they want this feature and why:
+>
+> https://lkml.org/lkml/2011/12/13/309
+> https://lkml.org/lkml/2011/12/13/364
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linuxfoundation.org/mailman/listinfo/containers
+>
