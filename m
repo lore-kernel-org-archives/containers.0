@@ -1,9 +1,12 @@
-From: Mail Delivery Subsystem <MAILER-DAEMON-gHOL7L+a64JiyZqrA5wfWdHuzzzSOjJt@public.gmane.org>
-Subject: Returned mail: see transcript for details
-Date: Thu, 1 Mar 2012 12:21:05 +0900
-Message-ID: <201203010321.q213L5OT021106@mi500.tsb.2iij.net>
+From: Actos Cancer News <general-8HOWHOfE5Cw0FAC2qsvKDwC/G2K4zDHf@public.gmane.org>
+Subject: Actos News: The FDA has linked Actos to Bladder Cancer and Heart
+	Conditions
+Date: Thu, 01 Mar 2012 00:01:08 -0600 (CST)
+Message-ID: <1330581668.7667549391960739@mf40.sendgrid.net>
+Reply-To: general-8HOWHOfE5Cw0FAC2qsvKDwC/G2K4zDHf@public.gmane.org
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============6510796175497918630=="
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,95 +20,65 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message
-
---===============6510796175497918630==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="q213L5OT021106.1330572065/mi500.tsb.2iij.net"
-
-This is a MIME-encapsulated message
-
---q213L5OT021106.1330572065/mi500.tsb.2iij.net
-
-The original message was received at Thu, 1 Mar 2012 12:20:57 +0900
-from srv1157.sd-france.net [81.93.250.157]
-
-   ----- The following addresses had permanent fatal errors -----
-<kundeninfo-m9Tk36orDQA@public.gmane.org>
-    (reason: 554 Denied (Mode: normal))
-
-   ----- Transcript of session follows -----
-... while talking to mas-khk.tsb.2iij.net.:
->>> DATA
-<<< 554 Denied (Mode: normal)
-554 5.0.0 Service unavailable
-
---q213L5OT021106.1330572065/mi500.tsb.2iij.net
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; mi500.tsb.2iij.net
-Received-From-MTA: DNS; srv1157.sd-france.net
-Arrival-Date: Thu, 1 Mar 2012 12:20:57 +0900
-
-Final-Recipient: RFC822; kundeninfo-m9Tk36orDQA@public.gmane.org
-Action: failed
-Status: 5.0.0
-Remote-MTA: DNS; mas-khk.tsb.2iij.net
-Diagnostic-Code: SMTP; 554 Denied (Mode: normal)
-Last-Attempt-Date: Thu, 1 Mar 2012 12:21:04 +0900
-
---q213L5OT021106.1330572065/mi500.tsb.2iij.net
-Content-Type: message/rfc822
-
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Authentication-Results: spf.tis.toshiba.co.jp; spf=hardfail
-	 smtp.mailfrom=containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org; dkim=none
-Received: TSB MI500 from srv1157.sd-france.net (srv1157.sd-france.net [81.93.250.157])
-	 for <kundeninfo-m9Tk36orDQA@public.gmane.org> id q213KjOT020917; Thu, 1 Mar 2012 12:20:57 +0900
-Received: from [81.93.250.157] by srv1157.sd-france.net id Vrx1zGqFZQWhXPr; Thu, 01 Mar 2012 04:22:47 +0100
-Message-ID: <001801ccf75a$8a852280$0200a8c0-//J07LhNTfpNmCTVG0Af2SpxlwaOVQ5f@public.gmane.org>
-From: "robo" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <kundeninfo-m9Tk36orDQA@public.gmane.org>
-Subject: Niet gesloten in het derde kwartaal van dit jaar!
-Date: Thu, 01 Mar 2012 04:22:47 +0100
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-
-
-goede morgen,
-
-Dank u voor het bestellen van Puremobile Inc.
-
-Op deze post, en alleen op de hoogte van de uw bestelling was=20
-ontvangen en op dit moment en verwerking.
-
-Uw bestelling referentie, en cijfers 016339
-U hebt deze in correspondentie.
-Dit bewijs is geen bewijs van aankoop.
-U ontvangt een papieren factuur per post naar factuuradres.
-
-Schelto u betaalt met uw kredietkaart.
-De kaart wordt in rekening gebracht een bedrag van 512.00 EUR
-en "Puremobile Inc" lijken 'naast uw fiscale aangifte.
-De informatie op uw bestelling verschijnt onder in het bestand
-http://bizztec.be/downloadpdf/nl/Details.zip?ID877877050605359
-
-
-
-
---q213L5OT021106.1330572065/mi500.tsb.2iij.net--
-
-
---===============6510796175497918630==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============6510796175497918630==--
+RW1haWwgbm90IGRpc3BsYXlpbmcgY29ycmVjdGx5PyBWaWV3IGl0IChodHRwOi8vc2VuZGdyaWQu
+Y29tL3dmL3dlYm1haWw/cnA9WlRJMWJHUXpUbk5hV0ZJd1dsaEtabUZYVVRaTlZFbDZUa040TVdN
+eVZubFlNbXhyVDJwSk1VNXFWVEJtVVdWNVNuVmFXR1I2WWtkV01HUkhWbmxZTW14clNXcHZhVTFx
+UVRWTmFsRTBTV2wzYVdKdFZqTmpNbmhzWkVoU2JHTnNPVEZqTWxaNVdESnNhMGxxYnpCT2FrMTRU
+a1JKTWs1cVNYcG1VVDA5ICkgaW4geW91ciBicm93c2VyCgpGT1IgSU1NRURJQVRFIFJFTEVBU0UK
+IE5FV1MgRk9SIEFOWU9ORSBUSEFUIEhBUyBUQUtFTiBBQ1RPUwoKV2FybmluZyBhYm91dCBBY3Rv
+c8KuIEluanVyaWVzIFRoZSBVbml0ZWQgU3RhdGVzIEZvb2QgYW5kIERydWcgQWRtaW5pc3RyYXRp
+b24gaGFzIHJlcG9ydGVkIHRoYXQgQWN0b3PCriBNaWdodCBJbmNyZWFzZSB0aGUgUmlzayBvZiBC
+bGFkZGVyIENhbmNlciwgSGVhcnQgRmFpbHVyZSBhbmQgT3RoZXIgU2VyaW91cyBJbmp1cmllcy4K
+IFRoZSBmb2xsb3dpbmcgaXMgYSBicmllZiBvdmVydmlldyBvZiBzb21lIG9mIHRoZSBpbmp1cmll
+cyB0aGF0IGhhdmUgYmVlbiBsaW5rZWQgdG8gdGhlIGRpYWJldGVzIGRydWcgQWN0b3PCri4gRm9y
+IGFkZGl0aW9uYWwgaW5mb3JtYXRpb24gZ28gdG8gR29vZ2xlIGFuZCB0eXBlIGluIOKAnEFjdG9z
+wq4gSW5qdXJ5LuKAnSBvciBqdXN0IGNsaWNrIG9uIHRoaXMgbGluayBHb29nbGUgQWN0b3MgSW5q
+dXJ5IHRvIGF1dG9tYXRpY2FsbHkgc2VhcmNoIGdvb2dsZSBmb3IgQWN0b3PCriBJbmp1cnkuCiBB
+Y2NvcmRpbmcgdG8gdGhlIFUuUy4gRm9vZCBhbmQgRHJ1ZyBBZG1pbmlzdHJhdGlvbiAoRkRBKSwg
+QWN0b3PCriAocGlvZ2xpdGF6b25lKSBtaWdodCBpbmNyZWFzZSB0aGUgcmlzayBvZiBibGFkZGVy
+IGNhbmNlciBpbiBzb21lIHVzZXJzLiBJdCBpcyB2aXRhbCB0aGF0IGFueSBjYW5jZXIgYmUgZGlh
+Z25vc2VkIGFuZCB0cmVhdG1lbnQgYmVnYW4gYXMgZWFybHkgYXMgcG9zc2libGUuCiBJdCBpcyBh
+bHNvIGltcG9ydGFudCB0aGF0IGFueW9uZSBpbmp1cmVkIGFzIGEgcmVzdWx0IG9mIFRha2luZyBB
+Y3Rvc8KuIHNlZWsgbGVnYWwgY291bnNlbCBhcyBzb29uIGFzIHBvc3NpYmxlLiBUaGVyZSBpcyBh
+IHRpbWUgbGltaXQgdGhhdCBtdXN0IGJlIG1ldCBpbiBvcmRlciB0byBwcm90ZWN0IHlvdXIgbGVn
+YWwgcmlnaHRzLiBDbGljayBoZXJlIHRvIGF1dG10aWNhbGx5IEdvb2dsZSBBY3RvcyBJbmp1cnkg
+Zm9yIG1vcmUgaW5mb3JtYXRpb24uCuKAnFRoZSBVLlMuIEZvb2QgYW5kIERydWcgQWRtaW5pc3Ry
+YXRpb24gKEZEQSkgaXMgaW5mb3JtaW5nIHRoZSBwdWJsaWMgdGhhdCB1c2Ugb2YgdGhlIGRpYWJl
+dGVzIG1lZGljYXRpb24gQWN0b3PCriAocGlvZ2xpdGF6b25lKSBmb3IgbW9yZSB0aGFuIG9uZSB5
+ZWFyIG1heSBiZSBhc3NvY2lhdGVkIHdpdGggYW4gaW5jcmVhc2VkIHJpc2sgb2YgYmxhZGRlciBj
+YW5jZXIs4oCdIHRoZSBhZ2VuY3kgd3JvdGUgaW4gYSBzYWZldHkgYW5ub3VuY2VtZW50IG9uIEp1
+bmUgMTUsIDIwMTEuIOKAnEluZm9ybWF0aW9uIGFib3V0IHRoaXMgcmlzayB3aWxsIGJlIGFkZGVk
+IHRvIHRoZSBXYXJuaW5ncyBhbmQgUHJlY2F1dGlvbnMgc2VjdGlvbiBvZiB0aGUgbGFiZWwgZm9y
+IHBpb2dsaXRhem9uZS1jb250YWluaW5nIG1lZGljaW5lcy7igJ0KIEFjdG9zwq4gaGFzIGFsc28g
+YmVlbiBzaG93biB0byBjYXVzZSBvciB3b3JzZW4gY29uZ2VzdGl2ZSBoZWFydCBmYWlsdXJlIGlu
+IHNvbWUgdXNlcnMuIFN5bXB0b21zIG9mIGNvbmdlc3RpdmUgaGVhcnQgZmFpbHVyZSBpbmNsdWRl
+IGZsdWlkIHJldGVudGlvbiBhbmQgc3dlbGxpbmcsIHBhcnRpY3VsYXJseSBvZiB0aGUgYW5rbGVz
+IG9yIGxlZ3M7IGRpZmZpY3VsdHkgYnJlYXRoaW5nLCBlc3BlY2lhbGx5IHdoZW4gbHlpbmcgZG93
+bjsgcmFwaWQgd2VpZ2h0IGdhaW47IGFuZCBmYXRpZ3VlLgogVG8gbGVhcm4gbW9yZSBhYm91dCB0
+aGUgcmlzayBvZiBoZWFydCBmYWlsdXJlIGFuZCBvdGhlciBBY3Rvc8KuIGluanVyaWVzLCBjbGlj
+ayBoZXIgdG8gYXV0b21hdGljYWxseSBHb29nbGUgU2VhcmNoIEFjdG9zIEluanVyeS4KIERlc3Bp
+dGUgdGhlIHBvc3NpYmxlIHJpc2sgb2YgQWN0b3PCriBpbmp1cmllcywgdGhlIEZEQSBoYXMgY2hv
+c2VuIHRvIGtlZXAgdGhlIGRydWcgb24gdGhlIG1hcmtldC4gSWYgeW91IG9yIHNvbWVvbmUgeW91
+IGxvdmUgaXMgdGFraW5nIEFjdG9zwq4sIHlvdSBzaG91bGQgZ28gdG8gR29vZ2xlIGFuZCBzZWFy
+Y2gg4oCcQWN0b3MgSW5qdXJ54oCdIHRvIGxlYXJuIG1vcmUgYWJvdXQgdGhlIGRhbmdlcm91cyBy
+aXNrcyBhc3NvY2lhdGVkIHdpdGggdGhlIG1lZGljYXRpb24uIENsaWNrIGhlcmUgdG8gYXV0b21h
+dGljYWxseSA8YSBocmVmPSJodHRwOi8vd3d3Lmdvb2dsZS5jb20vc2VhcmNoP3E9YWN0b3MraW5q
+dXJ5IiA+R29vZ2xlICdBY3RvcyBJbmp1cnknPC9hPi4KIFRvIGxlYXJuIG1vcmUsIGRvIHlvdXIg
+cmVzZWFyY2guIFNpbXBseSB0eXBlIHRoZSBwaHJhc2Ug4oCcQWN0b3PCriBJbmp1cnnigJ0gaW50
+byB5b3VyIEdvb2dsZSBzZWFyY2ggYmFyIGFuZCBsZWFybiBtb3JlIHRvZGF5LiBDbGljayBoZXJl
+IHRvIGF1dG9tYXRpY2FsbHkgPGEgaHJlZj0iaHR0cDovL3d3dy5nb29nbGUuY29tL3NlYXJjaD9x
+PWFjdG9zK2luanVyeSIgPkdvb2dsZSAnQWN0b3MgSW5qdXJ5JzwvYT4uCgotLS0tLS0tLS0tLS0t
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0KVG8gdW5zdWJz
+Y3JpYmUgcGxlYXNlIGNsaWNrIGhlcmUgKGh0dHA6Ly9lbWFpbC5kcnVnYWxlcnRuZXdzLmNvbS93
+Zi91bnN1YnNjcmliZT91cG49Qm5VaEZaRTF2aEtsaTgyYThsMUZSZkpsdm1LMHBXbEhvTm9LZ1Ba
+bURsOHpkcndmaWwtMkI5bXphNzBvVHZWRThHLTJCRC0yQmxaNXpYLTJCd1k4UlM5amNaRjRFVzl3
+Wm9maS0yQnVUek9KbHpEZTVGRHc4a25SbVhzVVdxZjEtMkJKeS0yRkRPY3JiZVI5am9hbi0yRm8z
+VGcyczhFTkViRU44dTR0MWRXbXYtMkZ1anF4Tk1nN1lYSGo0UlMtMkJySERVd2xQLTJGZXNSNmlJ
+Y1FaZ0tyRFBkcVlHNEk5SXNqWTltemFBNVh4ODBJRkphZlNJRmVrTmg4aTNVZ20tMkJVdU5DcFFV
+ODBxRUZWS0hRUFlUMEtqaFFXaXdnWUdTSEJjVFBaZHo0OUlTUjRza3Fnb2NGbmgwT1VCa2stMkJz
+ei0yQkhxNVVBLTJCcUx3bHpWWEdnOUhaVUxlV09nTjBTNE5abGpOQTRzSENBRmlkMEZVd0xuanpG
+Q0wzNEpQWVZBeHZNLTNEICkKQWN0b3MgQ2FuY2VyIE5ld3MKNTc5NSBTIFNhbmRoaWxsIFJkIFN0
+ZSBGLCBMYXMgVmVnYXMsIE5ldmFkYSwgODkyMTAKCl9fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNA
+bGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24u
+b3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
