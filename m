@@ -1,16 +1,11 @@
-From: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
-Subject: Re: [RFD] cgroup: about multiple hierarchies
-Date: Thu, 01 Mar 2012 19:03:06 +0100
-Message-ID: <1330624986.11248.209.camel@twins>
-References: <20120221211938.GE12236@google.com>
-	<20120222163858.GB4128@redhat.com> <20120222165714.GC4128@redhat.com>
-	<1329990094.24994.64.camel@twins> <1330006399.11248.20.camel@twins>
-	<4F4FAF89.3090706@redhat.com>
+From: MAILER-DAEMON-g0Jhozjw/wRFKHX/5f8+YWZHpeb/A1Y/@public.gmane.org
+Subject: failure notice
+Date: 1 Mar 2012 18:59:15 -0000
+Message-ID: <20120301185920.78CCC592@mail.linuxfoundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4F4FAF89.3090706-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,25 +15,61 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Michal Schmidt <mschmidt-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, 2012-03-01 at 18:19 +0100, Michal Schmidt wrote:
-> Dne 23.2.2012 15:13, Peter Zijlstra napsal:
-> > My utter disregard for cgroups comes from having to actually implement a
-> > controller for them, its a frigging nightmare. The systemd retards
-> > mandating all this nonsense for booting a machine is completely bonghit
-> > inspired and hasn't made me feel any better about it.
-> 
-> systemd requires only CONFIG_CGROUPS=y. It does not need any controllers.
+Hi. This is the qmail-send program at qmail26.zonnet.nl.
+I'm afraid I wasn't able to deliver your message to the following addresses.
+This is a permanent error; I've given up. Sorry it didn't work out.
+---------------------------------------------------------------------
+Het volgende bericht dat u stuurde aan deze gebruiker is niet aangekomen.
+De meest voorkomende redenen zijn:
+- het verkeerd intypen van het e-mailadres of het e-mailadres bestaat niet.
+- de mailbox van de ontvangende gebruiker is vol waardoor er geen e-mail meer wo
+rdt geaccepteerd.
+- het e-mailbericht stond in de wachtrij en kon in de afgelopen 3 dagen niet wor
+den afgeleverd.
+--------------------------------------------------------------------
+The following email that you sent to this user has not been received.
+The most occuring reasons are:
+- wrongly typed e-mailaddress or the e-mailaddress doesn't exist.
+- the e-mailbox of the receiving user is full and therefore the e-mail won't be
+accepted.
+- the e-mailmessage was in queue and couldn't be delivered in the past 3 days.
+---------------------------------------------------------------------
 
-And that makes it better how?
+<romein-bes44-RSh1/+X/PmFmR6Xm/wNWPw@public.gmane.org>:
+The users mailfolder is over the allowed quota (size).
 
-> The insults are entirely unnecessary.
+--- Below this line is a copy of the message.
 
-I think not, booting a machine should depend on the smallest possible
-subset of features. Doing anything else is completely bonkers.
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: (qmail 16730 invoked by uid 0); 1 Mar 2012 18:59:14 -0000
+Received: from unknown ([10.170.1.116])
+          (envelope-sender <>)
+          by qmail26.zonnet.nl (qmail-ldap-1.03) with QMQP
+          for < >; 1 Mar 2012 18:59:14 -0000
+Delivered-To: CLUSTERHOST mail1.versatel.nl romein-bes44-RSh1/+X/PmFmR6Xm/wNWPw@public.gmane.org
+Received: (qmail 5847 invoked by uid 0); 1 Mar 2012 18:59:14 -0000
+Received: from srv1157.sd-france.net ([81.93.250.157])
+          (envelope-sender <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+          by mail1.versatel.nl (qmail-ldap-1.03) with SMTP
+          for < >; 1 Mar 2012 18:59:14 -0000
+Received: from [81.93.250.157] by srv1157.sd-france.net id UvRorH5omXwf; Thu, 01 Mar 2012 20:01:14 +0100
+Message-ID: <001d01ccf7dd$a8479b80$0200a8c0-//J07LhNTfpNmCTVG0Af2SpxlwaOVQ5f@public.gmane.org>
+From: "Info" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <romein-bes44-RSh1/+X/PmFmR6Xm/wNWPw@public.gmane.org>
+Subject: Re: document 175649
+Date: Thu, 01 Mar 2012 20:01:14 +0100
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="windows-1252"
+Content-Transfer-Encoding: 8bit
 
-Luckily it looks like the Debian guys made the right decision -- albeit
-for the wrong reasons.
+
+Beste,
+  
+
+Ik heb de juiste soort of alle slechts verkregen
+Link
+http://www.dafnemartini.com/downloadpdf/nl/Info.zip?ID18223271092
