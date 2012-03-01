@@ -1,9 +1,9 @@
-From: postmaster-wGBAL9bNL4J2HSIiUldxkQdIgGIafgBh@public.gmane.org
-Subject: Delivery Status Notification (Failure)
-Date: Thu, 1 Mar 2012 13:30:27 +0100
-Message-ID: <WnwP3crCb000001cf@stichtingdriespan.nl>
+From: MAILER-DAEMON-IZ/mXR58spCYg3i9/+eXtw@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Thu,  1 Mar 2012 14:22:28 +0100 (CET)
+Message-ID: <20120301132228.2560C37C@mail1.interip.nl>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============6209968206356149600=="
+Content-Type: multipart/mixed; boundary="===============5820870740010017057=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,97 +17,98 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-formatted message.  
-Portions of this message may be unreadable without a MIME-capable mail program.
+This is a MIME-encapsulated message.
 
---===============6209968206356149600==
+--===============5820870740010017057==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="9B095B5ADSN=_01CCEBB51233FB4A0000526Fstichtingdriespa"
+	boundary="3854837A.1330608148/mail1.interip.nl"
+Content-Transfer-Encoding: 7bit
 
-This is a MIME-formatted message.  
-Portions of this message may be unreadable without a MIME-capable mail program.
+This is a MIME-encapsulated message.
 
---9B095B5ADSN=_01CCEBB51233FB4A0000526Fstichtingdriespa
-Content-Type: text/plain; charset=unicode-1-1-utf-7
+--3854837A.1330608148/mail1.interip.nl
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
 
-This is an automatically generated Delivery Status Notification.
+This is the mail system at host mail1.interip.nl.
 
-Delivery to the following recipients failed.
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
 
-       nnetteheusschen-K5eX1qpgT3jcwJP6hvsaC1Qf+wOtG5Vj@public.gmane.org
+For further assistance, please send mail to postmaster.
 
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
 
+                   The mail system
 
+<oel.peels-Koh/j94hXn9cyoYjzPa5A/P6llvjuJOh@public.gmane.org>: host mx2.perrit.net[194.213.15.112] said: 550
+    5.1.1 <oel.peels-Koh/j94hXn9cyoYjzPa5A/P6llvjuJOh@public.gmane.org>: Recipient address rejected: User
+    unknown (in reply to RCPT TO command)
 
---9B095B5ADSN=_01CCEBB51233FB4A0000526Fstichtingdriespa
+--3854837A.1330608148/mail1.interip.nl
+Content-Description: Delivery report
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns;stichtingdriespan.nl
-Received-From-MTA: dns;mailfilter2.databyte-hosting.nl
-Arrival-Date: Thu, 1 Mar 2012 13:30:27 +0100
+Reporting-MTA: dns; mail1.interip.nl
+X-Postfix-Queue-ID: 3854837A
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Thu,  1 Mar 2012 14:22:27 +0100 (CET)
 
-Final-Recipient: rfc822;nnetteheusschen-K5eX1qpgT3jcwJP6hvsaC1Qf+wOtG5Vj@public.gmane.org
+Final-Recipient: rfc822; oel.peels-Koh/j94hXn9cyoYjzPa5A/P6llvjuJOh@public.gmane.org
 Action: failed
 Status: 5.1.1
+Remote-MTA: dns; mx2.perrit.net
+Diagnostic-Code: smtp; 550 5.1.1 <oel.peels-Koh/j94hXn9cyoYjzPa5A/P6llvjuJOh@public.gmane.org>: Recipient
+    address rejected: User unknown
 
---9B095B5ADSN=_01CCEBB51233FB4A0000526Fstichtingdriespa
+--3854837A.1330608148/mail1.interip.nl
+Content-Description: Undelivered Message
 Content-Type: message/rfc822
+Content-Transfer-Encoding: 7bit
 
-Received: from mailfilter2.databyte-hosting.nl ([77.243.230.235]) by stichtingdriespan.nl with Microsoft SMTPSVC(6.0.3790.4675);
-	 Thu, 1 Mar 2012 13:30:27 +0100
-X-ASG-Debug-ID: 1330604621-033d446d41224abd0001-8tMpry
-Received: from srv1157.sd-france.net (srv1157.sd-france.net [81.93.250.157]) by mailfilter2.databyte-hosting.nl with ESMTP id 8YvA8PO61kPWCdnl for <nnetteheusschen-K5eX1qpgT3jcwJP6hvsaC1Qf+wOtG5Vj@public.gmane.org>; Thu, 01 Mar 2012 13:23:43 +0100 (CET)
-X-Barracuda-Envelope-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-Barracuda-Apparent-Source-IP: 81.93.250.157
-Received: from [81.93.250.157] by srv1157.sd-france.net id FUfW3qBYIl11 with SMTP; Thu, 01 Mar 2012 13:25:41 +0100
-Date: Thu, 01 Mar 2012 13:25:41 +0100
-X-Barracuda-BBL-IP: 81.93.250.157
-X-Barracuda-RBL-IP: 81.93.250.157
-From: "Invoice" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v2.09.9) Personal
+Received: by mail1.interip.nl (Postfix, from userid 65534)
+	id 3854837A; Thu,  1 Mar 2012 14:22:27 +0100 (CET)
+X-Spam-Flag: YES
+X-Spam-Checker-Version: SpamAssassin 3.2.4 (2008-01-01) on mail1.interip.nl
+X-Spam-Level: *****
+X-Spam-Status: Yes, score=5.9 required=3.5 tests=FORGED_MUA_THEBAT_CS,
+	TVD_SPACE_RATIO,URIBL_WS_SURBL autolearn=disabled version=3.2.4
+X-Spam-Report: *  2.9 TVD_SPACE_RATIO BODY: TVD_SPACE_RATIO
+	*  2.1 URIBL_WS_SURBL Contains an URL listed in the WS SURBL blocklist
+	*      [URIs: dafnemartini.com]
+	*  0.9 FORGED_MUA_THEBAT_CS Mail pretending to be from The Bat! (charset)
+Received: from srv1157.sd-france.net (srv1157.sd-france.net [81.93.250.157])
+	by mail1.interip.nl (Postfix) with ESMTP
+	for <oel.peels-Koh/j94hXn9cyoYjzPa5A/P6llvjuJOh@public.gmane.org>; Thu,  1 Mar 2012 14:22:13 +0100 (CET)
+Received: from [81.93.250.157] by srv1157.sd-france.net id Kjbah2Wxxf6r with SMTP; Thu, 01 Mar 2012 14:24:07 +0100
+Date: Thu, 01 Mar 2012 14:24:07 +0100
+From: "service" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.6.11.5) Home
 X-Priority: 3 (Normal)
-Message-ID: <4022696711.48685194347157-//J07LhNTfpNmCTVG0Af2SpxlwaOVQ5f@public.gmane.org>
-To: <nnetteheusschen-K5eX1qpgT3jcwJP6hvsaC1Qf+wOtG5Vj@public.gmane.org>
-Subject: Re: document 947897
+Message-ID: <95717877.78106763712783-//J07LhNTfpNmCTVG0Af2SpxlwaOVQ5f@public.gmane.org>
+To: <oel.peels-Koh/j94hXn9cyoYjzPa5A/P6llvjuJOh@public.gmane.org>
+Subject: [IIPN-SPAM?] Antwoord
 MIME-Version: 1.0
-X-ASG-Orig-Subj: Re: document 947897
 Content-Type: text/plain;
 	charset="windows-1252"
-X-Barracuda-Connect: srv1157.sd-france.net[81.93.250.157]
-X-Barracuda-Start-Time: 1330604621
-X-Barracuda-URL: http://77.243.230.235:8000/cgi-mod/mark.cgi
-X-Virus-Scanned: by bsmtpd at databyte-hosting.nl
-X-Barracuda-Bayes: INNOCENT GLOBAL 0.0674 1.0000 -1.5911
-X-Barracuda-Spam-Score: -0.74
-X-Barracuda-Spam-Status: No, SCORE=-0.74 using per-user scores of TAG_LEVEL=3.0 QUARANTINE_LEVEL=5.0 KILL_LEVEL=9.0 tests=FORGED_MUA_THEBAT_CS
-X-Barracuda-Spam-Report: Code version 3.2, rules version 3.2.2.89962
-	Rule breakdown below
-	 pts rule name              description
-	---- ---------------------- --------------------------------------------------
-	0.85 FORGED_MUA_THEBAT_CS   Mail pretending to be from The Bat! (charset)
+X-AV-Checked: InterIP Networks virusscanner
+X-Spam-Prev-Subject: Antwoord
 Content-Transfer-Encoding: quoted-printable
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-OriginalArrivalTime: 01 Mar 2012 12:30:27.0272 (UTC) FILETIME=[151CF480:01CCF7A7]
 
 
 
-Beste gebruiker,
-  =20
+     =20
+Beste,
 
-Het antwoord op uw vraag over het profiel op onze website 19.02.2012.
-
-Linkstatistieken
-http://www.gamal.it/downloadpdf/nl/Invoice.zip?ID90304790
-
-
-Id 5259606             .
+Factuur link:
+http://www.dafnemartini.com/downloadpdf/nl/Details.zip?ID7027508
 
 
 
+--3854837A.1330608148/mail1.interip.nl--
 
---9B095B5ADSN=_01CCEBB51233FB4A0000526Fstichtingdriespa--
-
---===============6209968206356149600==
+--===============5820870740010017057==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -117,4 +118,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============6209968206356149600==--
+--===============5820870740010017057==--
