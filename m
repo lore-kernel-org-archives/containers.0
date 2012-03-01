@@ -1,18 +1,19 @@
-From: Mike Galbraith <efault-Mmb7MZpHnFY@public.gmane.org>
+From: C Anthony Risinger <anthony-iwZaZ8Eb++w@public.gmane.org>
 Subject: Re: [RFD] cgroup: about multiple hierarchies
-Date: Thu, 01 Mar 2012 23:04:08 +0100
-Message-ID: <1330639448.7414.97.camel__39166.4246017628$1330639465$gmane$org@marge.simpson.net>
+Date: Thu, 1 Mar 2012 16:38:37 -0600
+Message-ID: <CAGAVQTE8JSPNimS_HU9-p8dCz2jw40YUEDwkU0BSn_ZZg_PhRA__28888.2055356682$1330641929$gmane$org@mail.gmail.com>
 References: <20120221211938.GE12236@google.com>
-	<20120222163858.GB4128@redhat.com> <20120222165714.GC4128@redhat.com>
-	<1329990094.24994.64.camel@twins> <1330006399.11248.20.camel@twins>
-	<4F4FAF89.3090706@redhat.com>
+	<20120222163858.GB4128@redhat.com>
+	<20120222165714.GC4128@redhat.com> <1329990094.24994.64.camel@twins>
+	<1330006399.11248.20.camel@twins> <4F4FAF89.3090706@redhat.com>
 	<1330633603.7414.49.camel@marge.simpson.net>
 	<20120301210213.GF13533@redhat.com>
+	<1330639448.7414.97.camel@marge.simpson.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20120301210213.GF13533-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1330639448.7414.97.camel-YqMYhexLQo31wTEvPJ5Q0F6hYfS7NtTn@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,21 +23,47 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Michal Schmidt <mschmidt-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Mike Galbraith <efault-Mmb7MZpHnFY@public.gmane.org>
+Cc: Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Michal Schmidt <mschmidt-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, 2012-03-01 at 16:02 -0500, Vivek Goyal wrote: 
-> On Thu, Mar 01, 2012 at 09:26:43PM +0100, Mike Galbraith wrote:
-
-> > Q: you say systemd requires CONFIG_CGROUPS=y.  Why is that?  It's taking
-> > over sysvinits job afaiui, what does that have to do with cgroups?
-> 
-> I think they were using it to track all the children forked by a service
-> and cleanup all of them if need be. So they just need it for logical
-> grouping functionality and don't require any controllers as such.
-
-Hm.  Controllers are perhaps not required, but cpu controller was
-configured and used without consent.  I didn't receive an offer.
-
--Mike
+T24gVGh1LCBNYXIgMSwgMjAxMiBhdCA0OjA0IFBNLCBNaWtlIEdhbGJyYWl0aCA8ZWZhdWx0QGdt
+eC5kZT4gd3JvdGU6Cj4gT24gVGh1LCAyMDEyLTAzLTAxIGF0IDE2OjAyIC0wNTAwLCBWaXZlayBH
+b3lhbCB3cm90ZToKPj4gT24gVGh1LCBNYXIgMDEsIDIwMTIgYXQgMDk6MjY6NDNQTSArMDEwMCwg
+TWlrZSBHYWxicmFpdGggd3JvdGU6Cj4KPj4gPiBROiB5b3Ugc2F5IHN5c3RlbWQgcmVxdWlyZXMg
+Q09ORklHX0NHUk9VUFM9eS4gwqBXaHkgaXMgdGhhdD8gwqBJdCdzIHRha2luZwo+PiA+IG92ZXIg
+c3lzdmluaXRzIGpvYiBhZmFpdWksIHdoYXQgZG9lcyB0aGF0IGhhdmUgdG8gZG8gd2l0aCBjZ3Jv
+dXBzPwo+Pgo+PiBJIHRoaW5rIHRoZXkgd2VyZSB1c2luZyBpdCB0byB0cmFjayBhbGwgdGhlIGNo
+aWxkcmVuIGZvcmtlZCBieSBhIHNlcnZpY2UKPj4gYW5kIGNsZWFudXAgYWxsIG9mIHRoZW0gaWYg
+bmVlZCBiZS4gU28gdGhleSBqdXN0IG5lZWQgaXQgZm9yIGxvZ2ljYWwKPj4gZ3JvdXBpbmcgZnVu
+Y3Rpb25hbGl0eSBhbmQgZG9uJ3QgcmVxdWlyZSBhbnkgY29udHJvbGxlcnMgYXMgc3VjaC4KPgo+
+IEhtLiDCoENvbnRyb2xsZXJzIGFyZSBwZXJoYXBzIG5vdCByZXF1aXJlZCwgYnV0IGNwdSBjb250
+cm9sbGVyIHdhcwo+IGNvbmZpZ3VyZWQgYW5kIHVzZWQgd2l0aG91dCBjb25zZW50LiDCoEkgZGlk
+bid0IHJlY2VpdmUgYW4gb2ZmZXIuCgpBRkFJSyBpdCBkb2VzIGluIGZhY3Qgb25seSByZXF1aXJl
+IGBuYW1lYCBjZ3JvdXAgZm9yIGl0J3Mgb3duCm1vbml0b3JpbmcgcHVycG9zZXMuICBpIGJlbGll
+dmUgdGhlIHN5c3RlbWQgZm9sa3MgYWxzbyB0cmllZCAoYW5kIGFyZQp0cnlpbmc/IHNlZSBUT0RP
+KSB0byBnZXQgUFJfU0VUX0FOQ0hPUiBtZXJnZWQgdXBzdHJlYW06CgpodHRwczovL2xrbWwub3Jn
+L2xrbWwvMjAxMC8yLzIvMTY1CgouLi4gd2hpY2ggaXMgYSBzb3J0IG9mIHJlY3Vyc2l2ZS9wZXJz
+aXN0ZW50IHBhcmVudGluZyBmbGFnOyB3aXRob3V0CnRoYXQgb3IgY2dyb3VwcywgdGhlcmUgaXMg
+bm8gd2F5IHRvIHJlbGlhYmx5IHN1cGVydmlzZSBwcm9jZXNzZXMgdW5kZXIKTGludXguCgp0aGUg
+b3RoZXIgcHJvYmxlbSBpcyB0aGVyZSBpcyBubyB3YXkgZm9yIGEgcHJvY2VzcyB0byBlbnVtZXJh
+dGUgdGhlCmF2YWlsYWJsZSBjZ3JvdXBzIC0tIElJUkMgYSBsaXN0IGhhZCB0byBiZSBoYXJkLWNv
+ZGVkIGluIHN5c3RlbWQKc291cmNlcyAtLSBhbmQgbW91bnRpbmcgdGhlIGNncm91cGZzIHdpdGhv
+dXQgc3BlY2lmeWluZyBhIHNwZWNpZmljCnN1YnN5c3RlbSBzaW1wbHkgbW91bnRzIGV2ZXJ5dGhp
+bmcgaW4gb25lIHdoYWNrLgoKeW91IHNob3VsZCBiZSBhYmxlIHRvIHRlbGwgc3lzdGVtZCB0byBp
+Z25vcmUgdGhhdCBzcGVjaWZpYyBjb250cm9sbGVyLApvciB0ZWxsIGl0IHRvIHVzZSBleGlzdGlu
+ZyBtb3VudHMuICBpIGZvciBvbmUgaGF2ZSBiZWVuIHVzaW5nIGl0CipleGNsdXNpdmVseSogb24g
+bXkgcGVyc29uYWwgbWFjaGluZXMvaG9tZSBzZXJ2ZXJzIFthcmNobGludXhdIGFuZCBhbQp2ZXJ5
+IHBsZWFzZWQgLi4uIGl0J3MgdmVyeSBmbGV4aWJsZSBhbmQgZ2l2ZXMgeW91IGFuIHVucHJlY2Vk
+ZW50ZWQKbGV2ZWwgb2YgY29udHJvbCBhbmQgaW50cm9zcGVjdGlvbiBpbnRvIHRoZSBzeXN0ZW0g
+KG1hbiBzeXN0ZW1kLiopIC4uLgppIGNhbiBjcmVhdGUgbmV3IHNlcnZpY2VzIGluIGFib3V0IDMt
+NSBsaW5lcy4KCi4uLiBvYnZpb3VzbHkgdGhpcyB0aHJlYWQgaXMgbm90IGFib3V0IHN5c3RlbWQs
+IGJ1dCBzaW5jZSBpdCBtYWtlcwpzdWNoIGV4dGVuc2l2ZSB1c2Ugb2YgY2dyb3VwIGZhY2lsaXRp
+ZXMgaXQgb25seSBwcm92ZXMgdG8gaGlnaGxpZ2h0Cml0J3MgZGVmaWNpZW5jaWVzLiAgaSB0aGlu
+ayB0aGUgbm90ZXMgYW5kIHByYWN0aWNlcyBzeXN0ZW1kIGhhcwplc3RhYmxpc2hlZCBzaG91bGQg
+YmUgdmlld2VkIGFzIGEgZ29vZCByZWZlcmVuY2UgZm9yIHdoYXQncyBjbHVtc3ksIGF0CnRoZSB2
+ZXJ5IGxlYXN0LCBhbmQgc2hvdWxkIG5vdCBiZSBhdHRyaWJ1dGVkIHRvIHN5c3RlbWQsIGJ1dCB0
+bwpjZ3JvdXBzLgoKLS0gCgpDIEFudGhvbnkKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0
+cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcv
+bWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
