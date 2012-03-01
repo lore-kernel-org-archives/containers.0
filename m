@@ -1,13 +1,10 @@
-From: <postmaster-yOpSzsDQ6UeACs486JOea/P6llvjuJOh@public.gmane.org>
-Subject: Onbestelbaar: Re: Mount Biz
-Date: Thu, 1 Mar 2012 03:46:12 +0100
-Message-ID: <4144c8df-1248-4e54-8a3c-5ab0311b3bff@kuipertransport.nl>
-References: <81053251.57046053353004@cubemaxltd.cubemaxltd.com>
+From: Mail Delivery Subsystem <MAILER-DAEMON-gHOL7L+a64JiyZqrA5wfWdHuzzzSOjJt@public.gmane.org>
+Subject: Returned mail: see transcript for details
+Date: Thu, 1 Mar 2012 12:21:05 +0900
+Message-ID: <201203010321.q213L5OT021106@mi500.tsb.2iij.net>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============7691889466324609180=="
+Content-Type: multipart/mixed; boundary="===============6510796175497918630=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: nl-NL
-In-Reply-To: <81053251.57046053353004-PBrG2Ygu4YotuMo1XmBnHVHeKjDIEhJXAL8bYrjMMd8@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,132 +17,88 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============7691889466324609180==
+This is a MIME-encapsulated message
+
+--===============6510796175497918630==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="467ed991-e6a0-4a2d-a9ca-aeb3f5a08a6d"
-Content-Language: nl-NL
+	boundary="q213L5OT021106.1330572065/mi500.tsb.2iij.net"
 
---467ed991-e6a0-4a2d-a9ca-aeb3f5a08a6d
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+This is a MIME-encapsulated message
 
-Uw bericht kan niet worden bezorgd bij de volgende geadresseerden of groepe=
-n:
+--q213L5OT021106.1330572065/mi500.tsb.2iij.net
 
-rhalemn-LLHOMnamz+eEVqv0pETR8A@public.gmane.org<mailto:rhalemn-LLHOMnamz+eEVqv0pETR8A@public.gmane.org>
-Het door u ingevoerde e-mailadres is niet gevonden. Controleer het e-mailad=
-res van de geadresseerde en probeer het bericht opnieuw te verzenden. Als h=
-et probleem blijft bestaan, neemt u contact op met de helpdesk.
+The original message was received at Thu, 1 Mar 2012 12:20:57 +0900
+from srv1157.sd-france.net [81.93.250.157]
 
-rhalem-LLHOMnamz+eEVqv0pETR8A@public.gmane.org<mailto:rhalem-LLHOMnamz+eEVqv0pETR8A@public.gmane.org>
-Het door u ingevoerde e-mailadres is niet gevonden. Controleer het e-mailad=
-res van de geadresseerde en probeer het bericht opnieuw te verzenden. Als h=
-et probleem blijft bestaan, neemt u contact op met de helpdesk.
+   ----- The following addresses had permanent fatal errors -----
+<kundeninfo-m9Tk36orDQA@public.gmane.org>
+    (reason: 554 Denied (Mode: normal))
 
-leo.verstraten-LLHOMnamz+eEVqv0pETR8A@public.gmane.org<mailto:leo.verstraten-LLHOMnamz+eEVqv0pETR8A@public.gmane.org>
-Het door u ingevoerde e-mailadres is niet gevonden. Controleer het e-mailad=
-res van de geadresseerde en probeer het bericht opnieuw te verzenden. Als h=
-et probleem blijft bestaan, neemt u contact op met de helpdesk.
+   ----- Transcript of session follows -----
+... while talking to mas-khk.tsb.2iij.net.:
+>>> DATA
+<<< 554 Denied (Mode: normal)
+554 5.0.0 Service unavailable
 
-
-
-
-
-
-
-Diagnostische gegevens voor beheerders:
-
-Bronserver: kuipertransport.nl
-
-rhalemn-LLHOMnamz+eEVqv0pETR8A@public.gmane.org
-#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
-
-rhalem-LLHOMnamz+eEVqv0pETR8A@public.gmane.org
-#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
-
-leo.verstraten-LLHOMnamz+eEVqv0pETR8A@public.gmane.org
-#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
-
-Oorspronkelijke berichtkoppen:
-
-Received: from cubemaxltd.cubemaxltd.com (174.142.214.20) by
- SBS01.KuiperTransport.local (192.168.16.11) with Microsoft SMTP Server id
- 14.1.218.12; Thu, 1 Mar 2012 03:46:11 +0100
-Received: from [174.142.214.20] by cubemaxltd.cubemaxltd.com id sr25iIxxgUA=
-I
- with SMTP; Wed, 29 Feb 2012 21:46:11 -0500
-Date: Wed, 29 Feb 2012 21:46:11 -0500
-From: billing <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.8.56.8) Business
-X-Priority: 3 (Normal)
-Message-ID: <81053251.57046053353004-PBrG2Ygu4YotuMo1XmBnHVHeKjDIEhJXAL8bYrjMMd8@public.gmane.org>
-To: <arie.femer-LLHOMnamz+eEVqv0pETR8A@public.gmane.org>
-Subject: Re: Mount Biz
-MIME-Version: 1.0
-Content-Type: text/plain; charset=3D"windows-1252"
-Content-Transfer-Encoding: 8bit
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-
-
---467ed991-e6a0-4a2d-a9ca-aeb3f5a08a6d
+--q213L5OT021106.1330572065/mi500.tsb.2iij.net
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns;kuipertransport.nl
-Received-From-MTA: dns;cubemaxltd.cubemaxltd.com
-Arrival-Date: Thu, 1 Mar 2012 02:46:11 +0000
+Reporting-MTA: dns; mi500.tsb.2iij.net
+Received-From-MTA: DNS; srv1157.sd-france.net
+Arrival-Date: Thu, 1 Mar 2012 12:20:57 +0900
 
-Final-Recipient: rfc822;rhalemn-LLHOMnamz+eEVqv0pETR8A@public.gmane.org
+Final-Recipient: RFC822; kundeninfo-m9Tk36orDQA@public.gmane.org
 Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
+Status: 5.0.0
+Remote-MTA: DNS; mas-khk.tsb.2iij.net
+Diagnostic-Code: SMTP; 554 Denied (Mode: normal)
+Last-Attempt-Date: Thu, 1 Mar 2012 12:21:04 +0900
 
-Final-Recipient: rfc822;rhalem-LLHOMnamz+eEVqv0pETR8A@public.gmane.org
-Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
-
-Final-Recipient: rfc822;leo.verstraten-LLHOMnamz+eEVqv0pETR8A@public.gmane.org
-Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
-
-
---467ed991-e6a0-4a2d-a9ca-aeb3f5a08a6d
+--q213L5OT021106.1330572065/mi500.tsb.2iij.net
 Content-Type: message/rfc822
 
-Received: from cubemaxltd.cubemaxltd.com (174.142.214.20) by
- SBS01.KuiperTransport.local (192.168.16.11) with Microsoft SMTP Server id
- 14.1.218.12; Thu, 1 Mar 2012 03:46:11 +0100
-Received: from [174.142.214.20] by cubemaxltd.cubemaxltd.com id sr25iIxxgUAI
- with SMTP; Wed, 29 Feb 2012 21:46:11 -0500
-Date: Wed, 29 Feb 2012 21:46:11 -0500
-From: billing <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.8.56.8) Business
-X-Priority: 3 (Normal)
-Message-ID: <81053251.57046053353004-PBrG2Ygu4YotuMo1XmBnHVHeKjDIEhJXAL8bYrjMMd8@public.gmane.org>
-To: <arie.femer-LLHOMnamz+eEVqv0pETR8A@public.gmane.org>
-Subject: Re: Mount Biz
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Authentication-Results: spf.tis.toshiba.co.jp; spf=hardfail
+	 smtp.mailfrom=containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org; dkim=none
+Received: TSB MI500 from srv1157.sd-france.net (srv1157.sd-france.net [81.93.250.157])
+	 for <kundeninfo-m9Tk36orDQA@public.gmane.org> id q213KjOT020917; Thu, 1 Mar 2012 12:20:57 +0900
+Received: from [81.93.250.157] by srv1157.sd-france.net id Vrx1zGqFZQWhXPr; Thu, 01 Mar 2012 04:22:47 +0100
+Message-ID: <001801ccf75a$8a852280$0200a8c0-//J07LhNTfpNmCTVG0Af2SpxlwaOVQ5f@public.gmane.org>
+From: "robo" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <kundeninfo-m9Tk36orDQA@public.gmane.org>
+Subject: Niet gesloten in het derde kwartaal van dit jaar!
+Date: Thu, 01 Mar 2012 04:22:47 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
+Content-Type: text/plain;
+	charset="windows-1252"
 Content-Transfer-Encoding: quoted-printable
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 
 
-      =20
 goede morgen,
 
-Ons bedrijf heeft toegewezen de begroting,
-en nu verscheen in onze prijslijst.
-         =20
+Dank u voor het bestellen van Puremobile Inc.
 
-U kunt het hier downloaden=20
-http://www.eurodatanet.biz/downloadpdf/nl/Info.zip?ID761976391
+Op deze post, en alleen op de hoogte van de uw bestelling was=20
+ontvangen en op dit moment en verwerking.
+
+Uw bestelling referentie, en cijfers 016339
+U hebt deze in correspondentie.
+Dit bewijs is geen bewijs van aankoop.
+U ontvangt een papieren factuur per post naar factuuradres.
+
+Schelto u betaalt met uw kredietkaart.
+De kaart wordt in rekening gebracht een bedrag van 512.00 EUR
+en "Puremobile Inc" lijken 'naast uw fiscale aangifte.
+De informatie op uw bestelling verschijnt onder in het bestand
+http://bizztec.be/downloadpdf/nl/Details.zip?ID877877050605359
 
 
 
---467ed991-e6a0-4a2d-a9ca-aeb3f5a08a6d--
 
---===============7691889466324609180==
+--q213L5OT021106.1330572065/mi500.tsb.2iij.net--
+
+
+--===============6510796175497918630==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -155,4 +108,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============7691889466324609180==--
+--===============6510796175497918630==--
