@@ -1,9 +1,9 @@
-From: "Mail Delivery System" <MAILER-DAEMON-Ewr+CLf7Nj7zMxGACOkGJsEFZcntJ4AX@public.gmane.org>
-Subject: Delivery Status Notification (Failure)
-Date: 08 Mar 2012 06:52:02 +0800
-Message-ID: <088a54$v6f1nk@stargate1.starhub.net.sg>
+From: MAILER-DAEMON-EOa22NZghFH4yN5EAEj4uDmVB9EoktyM28t4la5Gatg@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Wed,  7 Mar 2012 14:52:07 -0800 (PST)
+Message-ID: <20120307225207.B4EBD118064@homiemail-a44.g.dreamhost.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============4718291948776850306=="
+Content-Type: multipart/mixed; boundary="===============6178586331801629017=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,33 +17,72 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============4718291948776850306==
-Content-Type: multipart/report; report-type=delivery-status; boundary="+PuRo.4kgy1+TLt.mnOmt.69InD6W"
+This is a MIME-encapsulated message.
 
---+PuRo.4kgy1+TLt.mnOmt.69InD6W
-content-type: text/plain;
-    charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+--===============6178586331801629017==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="D98D9118058.1331160727/homiemail-a44.g.dreamhost.com"
 
-The following message to <maralyn-aQlLCgIHKDLhUPcrv1QwXQ@public.gmane.org> was undeliverable.
-The reason for the problem:
-5.1.1 - Bad destination email address 'reject'
+This is a MIME-encapsulated message.
 
---+PuRo.4kgy1+TLt.mnOmt.69InD6W
-content-type: message/delivery-status
+--D98D9118058.1331160727/homiemail-a44.g.dreamhost.com
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
 
-Reporting-MTA: dns; stargate1.starhub.net.sg
+This is the mail system at host homiemail-a44.g.dreamhost.com.
 
-Final-Recipient: rfc822;maralyn-aQlLCgIHKDLhUPcrv1QwXQ@public.gmane.org
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
+
+If you are a current customer of DreamHost, please contact our 
+technical support team here
+
+https://panel.dreamhost.com/support
+
+If you are not a customer please use our contact form at.
+
+http://dreamhost.com/contact
+
+If you do so, please include this email in your support ticket. You can
+delete your own text from the attached returned message.
+
+		Dreamhost Email Support
+
+<carlos_85-Y5DYjTl9poCI8vQty5uJhQ@public.gmane.org>: host mx1.emailsrvr.com[173.203.2.36] said: 550
+    5.7.1 <carlos_85-Y5DYjTl9poCI8vQty5uJhQ@public.gmane.org>: Relay access denied. (in reply to RCPT
+    TO command)
+
+<bella-s7p20SfEDVbhUPcrv1QwXQ@public.gmane.org>: host mx5.pacific.net.sg[192.169.41.25] said: 554 qq
+    Sorry, no valid recipients (#5.1.3) (in reply to end of DATA command)
+
+--D98D9118058.1331160727/homiemail-a44.g.dreamhost.com
+Content-Description: Delivery report
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns; homiemail-a44.g.dreamhost.com
+X-Postfix-Queue-ID: D98D9118058
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Wed,  7 Mar 2012 14:52:02 -0800 (PST)
+
+Final-Recipient: rfc822; carlos_85-Y5DYjTl9poCI8vQty5uJhQ@public.gmane.org
+Original-Recipient: rfc822;carlos_85-Y5DYjTl9poCI8vQty5uJhQ@public.gmane.org
 Action: failed
-Status: 5.0.0 (permanent failure)
-Diagnostic-Code: smtp; 5.1.1 - Bad destination email address 'reject' (delivery attempts: 0)
+Status: 5.7.1
+Remote-MTA: dns; mx1.emailsrvr.com
+Diagnostic-Code: smtp; 550 5.7.1 <carlos_85-Y5DYjTl9poCI8vQty5uJhQ@public.gmane.org>: Relay access
+    denied.
 
---+PuRo.4kgy1+TLt.mnOmt.69InD6W
-content-type: message/rfc822
+Final-Recipient: rfc822; bella-s7p20SfEDVbhUPcrv1QwXQ@public.gmane.org
+Original-Recipient: rfc822;bella-s7p20SfEDVbhUPcrv1QwXQ@public.gmane.org
+Action: failed
+Status: 5.0.0
+Remote-MTA: dns; mx5.pacific.net.sg
+Diagnostic-Code: smtp; 554 qq Sorry, no valid recipients (#5.1.3)
 
-Received: from caibbdcaaaaf.dreamhost.com (HELO homiemail-a44.g.dreamhost.com) ([208.113.200.5])
-  by stargate1.starhub.net.sg with ESMTP; 08 Mar 2012 06:52:01 +0800
+--D98D9118058.1331160727/homiemail-a44.g.dreamhost.com
+Content-Description: Undelivered Message
+Content-Type: message/rfc822
+
 Received: from homiemail-a44.g.dreamhost.com (localhost [127.0.0.1])
 	by homiemail-a44.g.dreamhost.com (Postfix) with ESMTP id D98D9118058;
 	Wed,  7 Mar 2012 14:52:02 -0800 (PST)
@@ -75,11 +114,9 @@ use sms only please
 
 
 
---+PuRo.4kgy1+TLt.mnOmt.69InD6W--
+--D98D9118058.1331160727/homiemail-a44.g.dreamhost.com--
 
-
-
---===============4718291948776850306==
+--===============6178586331801629017==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -89,4 +126,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============4718291948776850306==--
+--===============6178586331801629017==--
