@@ -1,7 +1,7 @@
-From: Mail Delivery System <Mailer-Daemon-DosMRbfdDAKoC4SrRKFRoNGSD5XIhpeW9T/cS7aRwQ8@public.gmane.org>
-Subject: Mail delivery failed: returning message to sender
-Date: Wed, 07 Mar 2012 03:31:02 +0100
-Message-ID: <E1S56ec-0002Ix-DK@server.iberhosting.ran.es>
+From: "System Administrator"@mail.linuxfoundation.org
+Subject: Delivery Failure
+Date: Wed, 7 Mar 2012 10:55:05 +0100
+Message-ID: <634667145051873750@MAIL.e-creative2.nl>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,42 +18,36 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This message was created automatically by mail delivery software.
 
-A message that you sent could not be delivered to one or more of its
-recipients. This is a permanent error. The following address(es) failed:
+Could not deliver message to the following recipient(s):
 
-  ygfag6a-mRCrAkd8dF0@public.gmane.org
-    SMTP error from remote mail server after end of data:
-    host mx2.mail.eu.yahoo.com [77.238.184.241]: 554 delivery error:
-    dd This user doesn't have a yahoo.es account (ygfag6a-mRCrAkd8dF0@public.gmane.org) [0] - mta1024.mail.ukl.yahoo.com
+Failed Recipient: pdbr-pCzzcW6XgXY@public.gmane.org
+Reason: Remote host said: 452 try later
+Failed Recipient: pdbqo73-pCzzcW6XgXY@public.gmane.org
+Reason: Remote host said: 452 try later
 
------- This is a copy of the message, including all the headers. ------
+   -- The header and top 20 lines of the message follows --
 
-Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from cubemaxltd.cubemaxltd.com ([174.142.214.20])
-	by server.iberhosting.ran.es with esmtpa (Exim 4.67)
-	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
-	id 1S56eb-0002Ir-DL
-	for ygfag6a-mRCrAkd8dF0@public.gmane.org; Wed, 07 Mar 2012 03:31:01 +0100
-Received: from [174.142.214.20] by cubemaxltd.cubemaxltd.com id plarPmiL77yz with SMTP; Tue, 06 Mar 2012 21:31:01 -0500
-Date: Tue, 06 Mar 2012 21:31:01 -0500
-From: "PAY" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.8.35.9) Educational
+Received: from cubemaxltd.cubemaxltd.com [174.142.214.20] by MAIL.e-creative2.nl with SMTP;
+   Wed, 7 Mar 2012 08:24:02 +0100
+Received: from [174.142.214.20] by cubemaxltd.cubemaxltd.com id 1V9Gye9n9GUZ with SMTP; Wed, 07 Mar 2012 02:24:08 -0500
+Date: Wed, 07 Mar 2012 02:24:08 -0500
+From: "Inform" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.5.36.2) Educational
 X-Priority: 3 (Normal)
-Message-ID: <040861547.06372210951041-PBrG2Ygu4YotuMo1XmBnHVHeKjDIEhJXAL8bYrjMMd8@public.gmane.org>
-To: <ygfag6a-mRCrAkd8dF0@public.gmane.org>
-Subject: detalles
+Message-ID: <495911382.67319605887033-PBrG2Ygu4YotuMo1XmBnHVHeKjDIEhJXAL8bYrjMMd8@public.gmane.org>
+To: <pdbqo73-pCzzcW6XgXY@public.gmane.org>
+Subject: comprobar
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
 Content-Transfer-Encoding: 8bit
 
 
-        
-
+       
 Buenos dias!
 
-En su solicitud en nuestro foro de 26/02/2012.
-Le enviamos la informacion son adecuados:
-http://www.lavanderiapadana.it/es/Requisito.zip
+La obligacion de informarle.
+Hubo un error financiero.
+Los detalles se pueden encontrar en:
+http://www.motoworldoutletroma.com/es/Informacion.zip?ID9394254477
