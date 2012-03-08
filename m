@@ -1,9 +1,10 @@
-From: "Mail Delivery System" <MAILER-DAEMON-Ewr+CLf7Nj7zMxGACOkGJsEFZcntJ4AX@public.gmane.org>
-Subject: Delivery Status Notification (Failure)
-Date: 08 Mar 2012 14:18:04 +0800
-Message-ID: <088a54$v6j7ld@stargate1.starhub.net.sg>
+From: MAILER-DAEMON-Xd3HFyzf7zyCjZnLuCwhk9fZ69ea8z+G@public.gmane.org
+Subject: failure notice
+Date: 8 Mar 2012 06:18:08 -0000
+Message-ID: <20120308062450.D9BCD34C@mail.linuxfoundation.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============3011334802643345883=="
+Content-Type: multipart/mixed;
+	boundary="1331187483oproxy5-pub.bluehost.com24721358"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,33 +18,26 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============3011334802643345883==
-Content-Type: multipart/report; report-type=delivery-status; boundary="+QPwc.4khKz8hza.1YuydO.4XnEKeK"
+--1331187483oproxy5-pub.bluehost.com24721358
 
---+QPwc.4khKz8hza.1YuydO.4XnEKeK
-content-type: text/plain;
-    charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+Hi. This is the qmail-send program at oproxy5-pub.bluehost.com.
+I'm afraid I wasn't able to deliver your message to the following addresses.
+This is a permanent error; I've given up. Sorry it didn't work out.
 
-The following message to <wim.vink-aQlLCgIHKDLhUPcrv1QwXQ@public.gmane.org> was undeliverable.
-The reason for the problem:
-5.1.1 - Bad destination email address 'reject'
+<corkish-s7p20SfEDVbhUPcrv1QwXQ@public.gmane.org>:
+192.169.41.27 failed after I sent the message.
+Remote host said: 554 qq Sorry, no valid recipients (#5.1.3)
 
---+QPwc.4khKz8hza.1YuydO.4XnEKeK
-content-type: message/delivery-status
+<swsagman-s7p20SfEDVbhUPcrv1QwXQ@public.gmane.org>:
+192.169.41.25 failed after I sent the message.
+Remote host said: 554 qq Sorry, no valid recipients (#5.1.3)
 
-Reporting-MTA: dns; stargate1.starhub.net.sg
+--- Enclosed are the original headers of the message.
 
-Final-Recipient: rfc822;wim.vink-aQlLCgIHKDLhUPcrv1QwXQ@public.gmane.org
-Action: failed
-Status: 5.0.0 (permanent failure)
-Diagnostic-Code: smtp; 5.1.1 - Bad destination email address 'reject' (delivery attempts: 0)
+--1331187483oproxy5-pub.bluehost.com24721358
+Content-Type: message/rfc822
 
---+QPwc.4khKz8hza.1YuydO.4XnEKeK
-content-type: message/rfc822
-
-Received: from oproxy5-pub.bluehost.com ([67.222.38.55])
-  by stargate1.starhub.net.sg with SMTP; 08 Mar 2012 14:18:03 +0800
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Received: (qmail 5443 invoked by uid 0); 8 Mar 2012 06:18:03 -0000
 Received: from unknown (HELO host392.hostmonster.com) (66.147.240.192)
   by cpoproxy2.bluehost.com with SMTP; 8 Mar 2012 06:18:03 -0000
@@ -63,20 +57,9 @@ Content-Type: text/plain;
 X-Identified-User: {1697:host392.hostmonster.com:muddslin:smracecars.com} {sentby:smtp auth 174.142.214.20 authed with scott-+AsTCSQ3CGNYzD5mSbZInQ@public.gmane.org}
 Content-Transfer-Encoding: quoted-printable
 
+(Body supressed)
 
-
-
-new arrival in KL and Spore sms to Phone: +79033891804
-http://www.asianescorts.com/agency/russiankl
-use sms only please
-
-
-
---+QPwc.4khKz8hza.1YuydO.4XnEKeK--
-
-
-
---===============3011334802643345883==
+--1331187483oproxy5-pub.bluehost.com24721358
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -86,4 +69,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============3011334802643345883==--
+--1331187483oproxy5-pub.bluehost.com24721358--
