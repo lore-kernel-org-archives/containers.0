@@ -1,9 +1,9 @@
-From: "Mail Delivery System" <MAILER-DAEMON-Ewr+CLf7Nj7zMxGACOkGJsEFZcntJ4AX@public.gmane.org>
-Subject: Delivery Status Notification (Failure)
-Date: 08 Mar 2012 22:41:50 +0800
-Message-ID: <088a54$v6p4jq@stargate1.starhub.net.sg>
+From: Mail Delivery Subsystem <MAILER-DAEMON-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>
+Subject: Returned mail: see transcript for details
+Date: Fri, 9 Mar 2012 10:51:28 +0800
+Message-ID: <201203090251.q292o5Av018310@helium.singnet.com.sg>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============7165354328717093749=="
+Content-Type: multipart/mixed; boundary="===============2556267743852620068=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,65 +17,95 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============7165354328717093749==
-Content-Type: multipart/report; report-type=delivery-status; boundary="+R99s.4khn6o22G.1Al5//.4K5cWb9"
+This is a MIME-encapsulated message
 
---+R99s.4khn6o22G.1Al5//.4K5cWb9
-content-type: text/plain;
-    charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+--===============2556267743852620068==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="q292o5Av018310.1331261488/helium.singnet.com.sg"
 
-The following message to <zenden2-aQlLCgIHKDLhUPcrv1QwXQ@public.gmane.org> was undeliverable.
-The reason for the problem:
-5.1.1 - Bad destination email address 'reject'
+This is a MIME-encapsulated message
 
---+R99s.4khn6o22G.1Al5//.4K5cWb9
-content-type: message/delivery-status
+--q292o5Av018310.1331261488/helium.singnet.com.sg
 
-Reporting-MTA: dns; stargate1.starhub.net.sg
+The original message was received at Fri, 9 Mar 2012 10:42:02 +0800
+from mx15.singnet.com.sg [165.21.74.115]
 
-Final-Recipient: rfc822;zenden2-aQlLCgIHKDLhUPcrv1QwXQ@public.gmane.org
+   ----- The following addresses had permanent fatal errors -----
+<british-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>
+    (reason: 550 5.1.1 User unknown)
+<jkiser-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>
+    (reason: 550 5.1.1 User unknown)
+<alicehu-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>
+    (reason: 550 5.1.1 User unknown)
+<pull-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>
+    (reason: 550 5.1.1 User unknown)
+
+   ----- Transcript of session follows -----
+550 5.1.1 <british-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>... User unknown
+550 5.1.1 <jkiser-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>... User unknown
+550 5.1.1 <alicehu-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>... User unknown
+550 5.1.1 <pull-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>... User unknown
+
+--q292o5Av018310.1331261488/helium.singnet.com.sg
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns; helium.singnet.com.sg
+Arrival-Date: Fri, 9 Mar 2012 10:42:02 +0800
+
+Final-Recipient: RFC822; british-rdc5FV7LBygPGFelY5Zqew@public.gmane.org
+X-Actual-Recipient: RFC822; british-BmzJuwVed9Nc9vzhF02D5Ynh5Q2U4q7d@public.gmane.org
 Action: failed
-Status: 5.0.0 (permanent failure)
-Diagnostic-Code: smtp; 5.1.1 - Bad destination email address 'reject' (delivery attempts: 0)
+Status: 5.1.1
+Diagnostic-Code: X-Unix; 550 5.1.1 User unknown
+Last-Attempt-Date: Fri, 9 Mar 2012 10:51:28 +0800
 
---+R99s.4khn6o22G.1Al5//.4K5cWb9
-content-type: message/rfc822
+Final-Recipient: RFC822; jkiser-rdc5FV7LBygPGFelY5Zqew@public.gmane.org
+X-Actual-Recipient: RFC822; jkiser-BmzJuwVed9Nc9vzhF02D5Ynh5Q2U4q7d@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: X-Unix; 550 5.1.1 User unknown
+Last-Attempt-Date: Fri, 9 Mar 2012 10:51:28 +0800
 
-Received: from smtp174.dfw.emailsrvr.com ([67.192.241.174])
-  by stargate1.starhub.net.sg with ESMTP; 08 Mar 2012 22:41:50 +0800
-Received: from localhost (localhost.localdomain [127.0.0.1])
-	by smtp7.relay.dfw1a.emailsrvr.com (SMTP Server) with ESMTP id D1AED25862E
-	for <zenden2-aQlLCgIHKDLhUPcrv1QwXQ@public.gmane.org>; Thu,  8 Mar 2012 09:41:50 -0500 (EST)
-X-Virus-Scanned: OK
-Received: by smtp7.relay.dfw1a.emailsrvr.com (Authenticated sender: caingalls-AT-proplate.com) with ESMTPA id E272F258665
-	for <zenden2-aQlLCgIHKDLhUPcrv1QwXQ@public.gmane.org>; Thu,  8 Mar 2012 09:41:41 -0500 (EST)
-Received: from [81.93.250.157] by srv1157.sd-france.net id GgeRg05fgknu; Thu, 08 Mar 2012 15:40:45 +0100
-Message-ID: <005c01ccfd39$71233e00$6400a8c0-//J07LhNTfpNmCTVG0Af2SpxlwaOVQ5f@public.gmane.org>
-From: "your answer" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <zenden2-aQlLCgIHKDLhUPcrv1QwXQ@public.gmane.org>
-Subject: news from  kl and spore
-Date: Thu, 08 Mar 2012 15:40:45 +0100
+Final-Recipient: RFC822; alicehu-rdc5FV7LBygPGFelY5Zqew@public.gmane.org
+X-Actual-Recipient: RFC822; alicehu-BmzJuwVed9Nc9vzhF02D5Ynh5Q2U4q7d@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: X-Unix; 550 5.1.1 User unknown
+Last-Attempt-Date: Fri, 9 Mar 2012 10:51:28 +0800
+
+Final-Recipient: RFC822; pull-rdc5FV7LBygPGFelY5Zqew@public.gmane.org
+X-Actual-Recipient: RFC822; pull-BmzJuwVed9Nc9vzhF02D5Ynh5Q2U4q7d@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: X-Unix; 550 5.1.1 User unknown
+Last-Attempt-Date: Fri, 9 Mar 2012 10:51:28 +0800
+
+--q292o5Av018310.1331261488/helium.singnet.com.sg
+Content-Type: message/rfc822
+
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from mx15.singnet.com.sg (mx15.singnet.com.sg [165.21.74.115])
+	by helium.singnet.com.sg (8.14.1/8.12.11) with ESMTP id q292g2Ic017842;
+	Fri, 9 Mar 2012 10:42:02 +0800
+Received: from srv1157.sd-france.net (srv1157.sd-france.net [81.93.250.157])
+	by mx15.singnet.com.sg (8.14.4/8.14.4) with ESMTP id q292mBtS009451;
+	Fri, 9 Mar 2012 10:48:12 +0800
+Received: from [81.93.250.157] by srv1157.sd-france.net id CJDhxeOayvzt; Fri, 09 Mar 2012 03:50:33 +0100
+Message-ID: <00ad01ccfd9f$64d1cc00$0200a8c0-//J07LhNTfpNmCTVG0Af2SpxlwaOVQ5f@public.gmane.org>
+From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <pull-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>
+Subject: new in KL
+Date: Fri, 09 Mar 2012 03:50:33 +0100
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
 Content-Transfer-Encoding: quoted-printable
 
 
-
-new arrival in KL and Spore sms to Phone: +79033891804
-
-http://www.asianescorts.com/agency/russiankl
-
-use sms only please
+--q292o5Av018310.1331261488/helium.singnet.com.sg--
 
 
-
---+R99s.4khn6o22G.1Al5//.4K5cWb9--
-
-
-
---===============7165354328717093749==
+--===============2556267743852620068==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -85,4 +115,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============7165354328717093749==--
+--===============2556267743852620068==--
