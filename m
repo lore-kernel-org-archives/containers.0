@@ -1,12 +1,10 @@
-From: "123Greetings.com" <services-2SgtGU03iw4@public.gmane.org>
-Subject: You Have Received a Greeting ecard from 123Greetings.com
-Date: Tue, 13 Mar 2012 01:46:09 +0000
-Message-ID: <HEREFORDGxgelXDeqoM00008c27@HEREFORD.riverside.local>
+From: Mail Delivery Subsystem <MAILER-DAEMON-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>
+Subject: Returned mail: Over quota
+Date: Tue, 13 Mar 2012 11:11:38 +0800 (SGT)
+Message-ID: <201203130311.COW09777@singnet.com.sg>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============1282597404941169983=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Description: Mail message body
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,38 +17,66 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-You Have Received a Greeting ecard from 123Greetings.com
+This is a MIME-encapsulated message
 
-You can download and view it by clicking here:
-http://www.123greetings.com/ send/view/063071117097147476
+--===============1282597404941169983==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="COW09777.1331608298/mailbox.singnet.com.sg"
 
-Using our new tracking feature, you can now view all the ecards received by you in the last 30 days.
-Your ecard is going to be with us for the next 30 days.
+This is a MIME-encapsulated message
 
-Based on user feedback, 123Greetings.com has launched 6 new pages with the best ecards in the Most Popular/ Most Viewed/ Highest Rated/ Latest Additions/ Popular Now and Always There Sections listed on the homepage. So hurry up and choose the best ones for sending them from the links below:
+--COW09777.1331608298/mailbox.singnet.com.sg
 
-http://www.123greetings.com/ top/most_popular.html
-http://www.123greetings.com/ top/most_viewed.html
-http://www.123greetings.com/ top/highest_rated.html
-http://www.123greetings.com/ top/latest.html
-http://www.123greetings.com/ top/popular_now.html
-http://www.123greetings.com/ top/always_there.html
+The original message was received at Tue, 13 Mar 2012 11:11:38 +0800 (SGT)
+from 10.1.1.207 [10.1.1.207]
 
-If you need any help in viewing your ecard or any other assistance,
-please visit our Help/ FAQ section at: http://help.123greetings.com/
+   ----- The following addresses had permanent delivery errors -----
+huang-rdc5FV7LBygPGFelY5Zqew@public.gmane.org
 
-We hope you enjoy your ecard,
 
-Your friends at 123Greetings.com
-http://www.123greetings.com
+--COW09777.1331608298/mailbox.singnet.com.sg
+Content-Type: message/delivery-status
 
-We respect your privacy. You will not be receiving any promotional emails from us
-because of this ecard. To view our privacy policy, click on the link below:
-http://info.123greetings.com/ company/privacy_policy.html
+Reporting-MTA: dns; mailbox.singnet.com.sg
+Arrival-Date: Tue, 13 Mar 2012 11:11:38 +0800 (SGT)
 
-Note: This is an auto generated mail. Please do not reply.
+Final-Recipient: RFC822; huang-cl+VPiYnx/2t1zkVXssHKA8YV6Vjlmp7@public.gmane.org
+Action: failed
+Status: 5.2.2
+Remote-MTA: X-Unix; mirapoint
+Diagnostic-Code: smtp; 552 5.2.2 Over quota
+Last-Attempt-Date: Tue, 13 Mar 2012 11:11:38 +0800 (SGT)
 
-If you have any other problem please contact us by clicking on the following link:
-http://help.123greetings.com/ contact_us.html
+--COW09777.1331608298/mailbox.singnet.com.sg
+Content-Type: message/rfc822
 
-This email was sent by 123Greetings.com, Inc., 1674 Broadway, New York, NY 10019.
+Received: from 10.1.1.207 (EHLO mx14.singnet.com.sg) ([10.1.1.207])
+	by mailbox.singnet.com.sg (MOS 3.10.6-GA FastPath queued)
+	with ESMTP id COW09770;
+	Tue, 13 Mar 2012 11:11:38 +0800 (SGT)
+Received: from cubemaxltd.cubemaxltd.com (cubemaxltd.cubemaxltd.com [174.142.214.20])
+	by mx14.singnet.com.sg (8.14.4/8.14.4) with ESMTP id q2D3BY3t002951;
+	Tue, 13 Mar 2012 11:11:35 +0800
+Received: from [174.142.214.20] by cubemaxltd.cubemaxltd.com id eaf3PHatDUHG; Mon, 12 Mar 2012 23:11:37 -0400
+Message-ID: <002501cd00c6$ffdfe400$0a000a0a-PBrG2Ygu4YotuMo1XmBnHVHeKjDIEhJXAL8bYrjMMd8@public.gmane.org>
+From: "girls" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <huang-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>
+Subject: news from  kl and spore
+Date: Mon, 12 Mar 2012 23:11:37 -0400
+
+
+
+--COW09777.1331608298/mailbox.singnet.com.sg--
+
+
+--===============1282597404941169983==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============1282597404941169983==--
