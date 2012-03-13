@@ -1,11 +1,18 @@
-From: "System Administrator"@mail.linuxfoundation.org
-Subject: Delivery Failure
-Date: Tue, 13 Mar 2012 07:47:06 -0800
-Message-ID: <634672216265443535@smg02.internetmailserver.net>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [RFD] cgroup: about multiple hierarchies
+Date: Tue, 13 Mar 2012 08:59:55 -0700
+Message-ID: <20120313155955.GB7349__15678.2852056951$1331654411$gmane$org@google.com>
+References: <20120221211938.GE12236@google.com>
+	<20120312221050.GG23255@google.com>
+	<1331590938.18960.57.camel@twins>
+	<20120312222817.GI23255@google.com>
+	<20120313140345.GC29169@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20120313140345.GC29169-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,40 +22,36 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Michal Schmidt <mschmidt-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Hey, Vivek.
 
-Could not deliver message to the following recipient(s):
+On Tue, Mar 13, 2012 at 10:03:45AM -0400, Vivek Goyal wrote:
+> > With root being treated specially, probably as just being a equal
+> > group as other groups, I'm not fully determined about that yet.
+> 
+> So what wrong with flattening the whole hierarchy and all groups being active
+> in the path? It is not worse then second option?
+> 
+>              root
+>        /   |  |  |  \
+>       G1  G2  G3 G31 G32
 
-Failed Recipient: hamdan-zcmmFpJzR/g@public.gmane.org
-Reason: Remote host said: 550 sorry, no mailbox here by that name. (#5.7.17)
+It is worse because while there isn't much need for orthogonal
+hierarchies, people often need to apply different limits at different
+levels of the hierarchy for different controllers.  ie. it often
+happens that the distinction between G31 and G32 matters for one
+controller but not for others.  The problem with flattening like you
+suggested above is that it isn't a hierarchy at all - membership isn't
+recursive.
 
-   -- The header and top 20 lines of the message follows --
+Imposing limits at single level is an additional restriction and may
+cause some config complexity but it'll be at least explicit and can
+co-exist with full hierarchy in meaningful way.
 
-Received: from sm11.internetmailserver.net (sm11.dotnetplayground.com [192.168.120.31]) by smg02.internetmailserver.net with SMTP;
-   Tue, 13 Mar 2012 07:45:50 -0700
-Received: from vps.datacenterbolivia.com (semi.mailcainco.net.210.89.208.in-addr.arpa [208.89.210.204]) by sm11.internetmailserver.net with SMTP;
-   Tue, 13 Mar 2012 07:45:38 -0700
-Received: from [208.89.210.204] by vps.datacenterbolivia.com id ukyaztcS; Tue, 13 Mar 2012 08:36:47 -0600
-Message-ID: <002901cd0126$b626e600$01000a0a-J7+7M2dRO4ACJ8ddfNFNZ6CD0JFbOjFwAL8bYrjMMd8@public.gmane.org>
-From: "Information" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <hamdan-zcmmFpJzR/g@public.gmane.org>
-Subject: Fwd: Ecco la nostra risposta!
-Date: Tue, 13 Mar 2012 08:36:47 -0600
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
-Content-Transfer-Encoding: 8bit
+Thanks.
 
-
-
-Buongiorno, 
-
-
-L'aggiornamento di configurazione
-http://www.casedagiardino.com/it/Approvato/DettagliAdvance.zip
-
-
-__
-GqkMpXn
+-- 
+tejun
