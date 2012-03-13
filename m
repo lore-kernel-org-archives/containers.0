@@ -1,10 +1,15 @@
-From: MAILER-DAEMON-gB6rxW0HgJqXJexIVSyEZFMRXme93P1PgfoxzgwHRXE@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Tue, 13 Mar 2012 12:03:47 +0100 (CET)
-Message-ID: <20120313110347.A747C2112835@SD1111100130.hostingacela.com>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFD] cgroup: about multiple hierarchies
+Date: Tue, 13 Mar 2012 09:49:22 -0400
+Message-ID: <20120313134922.GB29169@redhat.com>
+References: <20120221211938.GE12236@google.com>
+	<20120312221050.GG23255@google.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1060555748152969186=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20120312221050.GG23255-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -14,95 +19,28 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Michal Schmidt <mschmidt-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
+On Mon, Mar 12, 2012 at 03:10:50PM -0700, Tejun Heo wrote:
+> Hello, guys.
+> 
+> Thanks a lot for the discussion and here are my take aways:
+> 
+> * At least to me, nobody seems to have strong enough justification for
+>   orthogonal multiple hierarchies, so, yeah, unless something else
+>   happens, I'm scheduling multiple hierarchy support for the chopping
+>   block.  This is a long term thing (think years), so no need to panic
+>   right now and as is life plans may change and fail to materialize,
+>   but I intend to at least move away from it.
 
---===============1060555748152969186==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="CFDEE2112833.1331636627/SD1111100130.hostingacela.com"
-Content-Transfer-Encoding: 7bit
+So everything will be under single hierarchy? How will we control that
+what controllers are active on what cgroups? Or all controllers are going
+to be active on all cgroups on that hierarchy. 
 
-This is a MIME-encapsulated message.
+That would be bad for IO cgroups where a better way to use it to isolate
+the trouble making workload and run rest in root or a common cgroup.
 
---CFDEE2112833.1331636627/SD1111100130.hostingacela.com
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
-
-This is the mail system at host SD1111100130.hostingacela.com.
-
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
-
-For further assistance, please send mail to <postmaster>
-
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
-
-                   The mail system
-
-<wunibald-PkbjNfxxIAQPGFelY5Zqew@public.gmane.org>: host mx4.hotmail.com[65.55.37.72] said: 550
-    Requested action not taken: mailbox unavailable (in reply to RCPT TO
-    command)
-
---CFDEE2112833.1331636627/SD1111100130.hostingacela.com
-Content-Description: Delivery report
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; SD1111100130.hostingacela.com
-X-Postfix-Queue-ID: CFDEE2112833
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Tue, 13 Mar 2012 12:03:45 +0100 (CET)
-
-Final-Recipient: rfc822; wunibald-PkbjNfxxIAQPGFelY5Zqew@public.gmane.org
-Original-Recipient: rfc822;wunibald-PkbjNfxxIAQPGFelY5Zqew@public.gmane.org
-Action: failed
-Status: 5.0.0
-Remote-MTA: dns; mx4.hotmail.com
-Diagnostic-Code: smtp; 550 Requested action not taken: mailbox unavailable
-
---CFDEE2112833.1331636627/SD1111100130.hostingacela.com
-Content-Description: Undelivered Message
-Content-Type: message/rfc822
-Content-Transfer-Encoding: 7bit
-
-Received: from cubemaxltd.cubemaxltd.com (cubemaxltd.cubemaxltd.com [174.142.214.20])
-	(Authenticated sender: grupodelfin.es_rafael.suner)
-	by SD1111100130.hostingacela.com (Postfix) with ESMTP id CFDEE2112833
-	for <wunibald-PkbjNfxxIAQPGFelY5Zqew@public.gmane.org>; Tue, 13 Mar 2012 12:03:45 +0100 (CET)
-Received: from [174.142.214.20] by cubemaxltd.cubemaxltd.com id i2vn58fzcTWg with SMTP; Tue, 13 Mar 2012 07:03:35 -0400
-Date: Tue, 13 Mar 2012 07:03:35 -0400
-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v3.03.3) Home
-X-Priority: 3 (Normal)
-Message-ID: <52946026.30831541342048-PBrG2Ygu4YotuMo1XmBnHVHeKjDIEhJXAL8bYrjMMd8@public.gmane.org>
-To: <wunibald-PkbjNfxxIAQPGFelY5Zqew@public.gmane.org>
-Subject: news from  kl and spore
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-
-
-
-Hello, wunibald-PkbjNfxxIASh4g+VTn1q+Q@public.gmane.org
-new arrival in KL and Spore sms to Phone: +79033891804
-http://www.asianescorts.com/agency/russiankl
-use sms only please
-
-
-
---CFDEE2112833.1331636627/SD1111100130.hostingacela.com--
-
---===============1060555748152969186==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============1060555748152969186==--
+Thanks
+Vivek
