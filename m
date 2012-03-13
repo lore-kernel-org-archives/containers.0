@@ -1,17 +1,10 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [RFC] cgroup: removing css reference drain wait during cgroup
-	removal
-Date: Tue, 13 Mar 2012 15:16:47 -0700
-Message-ID: <20120313221647.GG7349@google.com>
-References: <20120312213155.GE23255@google.com>
-	<20120313214526.GG19584@count0.beaverton.ibm.com>
-	<20120313220551.GF7349@google.com>
+From: Mail Delivery Subsystem <MAILER-DAEMON-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>
+Subject: Returned mail: see transcript for details
+Date: Wed, 14 Mar 2012 07:30:03 +0800
+Message-ID: <201203132330.q2DNU3fX003095@oxygen.singnet.com.sg>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============4685473742116139421=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20120313220551.GF7349-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,62 +14,77 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-(fixed up mailing list addresses)
+This is a MIME-encapsulated message
 
-On Tue, Mar 13, 2012 at 03:05:51PM -0700, Tejun Heo wrote:
-> Hey, Matt.
-> 
-> On Tue, Mar 13, 2012 at 02:45:26PM -0700, Matt Helsley wrote:
-> > If you want to spend your time doing archaeology there are some old threads
-> > that touch on this idea (roughly around 2003-2005). One point against the
-> > idea that I distinctly recall:
-> > 
-> > Somewhat like configfs, object lifetimes in cgroups are determined
-> > primarily by the user whereas sysfs object lifetimes are primarily
-> > determined by the kernel. I think the closest we come to user-determined
-> > objects in sysfs occur through debugfs, and module loading/unloading.
-> > However those involve mount/umount and modprobe/rmmod rather than
-> > mkdir/rmdir to create and remove the objects.
-> 
-> The thing is that sysfs itself has been almost completely rewritten
-> since that time to 1. decouple internal representation from vfs
-> objects and 2. provide proper isolation between the userland and
-> kernel code exposing data through sysfs.
-> 
-> #1 began mostly due to the large size of dentries and inodes but, with
-> the benefit of hindsight, I think it just was a bad idea to piggyback
-> on vfs objects for object life-cycle management and locking for stuff
-> which is wholely described in memory with simplistic locking.
-> 
-> #2 was necessary to avoid hanging device detach due to open sysfs file
-> from userland.  sysfs now has notion of "active access" encompassing
-> only each show/store op invocation and it only guarantees that the
-> associated device doesn't go away while active accesses are in
-> progress.
-> 
-> The sysfs heritage is almost recognizable and unfortunately almost the
-> same set of problems (nobody wants show/store ops to be called on
-> unlinked css waiting for references to be drained).  As refactoring
-> and sharing sysfs won't be a trivial task, my plan is to first augment
-> cgroupfs as necessary with longer term goal of converging and later
-> sharing the same code with sysfs.
+--===============4685473742116139421==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="q2DNU3fX003095.1331681403/oxygen.singnet.com.sg"
 
-Sorry, forgot to reply to the userland-determined object
-creation/deletion part.
+This is a MIME-encapsulated message
 
-I don't think there are direct creation cases in sysfs but there are
-plenty of deletion going on, especially the kind where a file requests
-to delete its parent directly (*/device/delete).  While using
-mkdir/rmdir indeed is different for cgroupfs, I don't think that would
-make too much of difference.  Both calls are essentially unused by
-sysfs currently and there's nothing preventing addition of callbacks
-there.
+--q2DNU3fX003095.1331681403/oxygen.singnet.com.sg
 
-Thanks.
+The original message was received at Wed, 14 Mar 2012 07:20:15 +0800
+from mx14.singnet.com.sg [165.21.74.114]
 
--- 
-tejun
+   ----- The following addresses had permanent fatal errors -----
+<steve.michaelson-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>
+    (reason: 550 5.1.1 User unknown)
+
+   ----- Transcript of session follows -----
+550 5.1.1 <steve.michaelson-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>... User unknown
+
+--q2DNU3fX003095.1331681403/oxygen.singnet.com.sg
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns; oxygen.singnet.com.sg
+Arrival-Date: Wed, 14 Mar 2012 07:20:15 +0800
+
+Final-Recipient: RFC822; steve.michaelson-rdc5FV7LBygPGFelY5Zqew@public.gmane.org
+X-Actual-Recipient: RFC822; steve.michaelson-aJpZjQ21dYRc9vzhF02D5Ynh5Q2U4q7d@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: X-Unix; 550 5.1.1 User unknown
+Last-Attempt-Date: Wed, 14 Mar 2012 07:30:03 +0800
+
+--q2DNU3fX003095.1331681403/oxygen.singnet.com.sg
+Content-Type: message/rfc822
+
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from mx14.singnet.com.sg (mx14.singnet.com.sg [165.21.74.114])
+	by oxygen.singnet.com.sg (8.14.1/8.12.11) with ESMTP id q2DNKFSt006275
+	for <steve.michaelson-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>; Wed, 14 Mar 2012 07:20:15 +0800
+Received: from cubemaxltd.cubemaxltd.com (cubemaxltd.cubemaxltd.com [174.142.214.20])
+	by mx14.singnet.com.sg (8.14.4/8.14.4) with ESMTP id q2DNRgpA029920
+	for <steve.michaelson-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>; Wed, 14 Mar 2012 07:27:42 +0800
+Received: from [174.142.214.20] by cubemaxltd.cubemaxltd.com id ClMu26LW6A4U with SMTP; Tue, 13 Mar 2012 19:27:57 -0400
+Date: Tue, 13 Mar 2012 19:27:57 -0400
+From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v2.07.4) Personal
+X-Priority: 3 (Normal)
+Message-ID: <153516589.98840689692204-PBrG2Ygu4YotuMo1XmBnHVHeKjDIEhJXAL8bYrjMMd8@public.gmane.org>
+To: <steve.michaelson-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>
+Subject: best girl in malaysia
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+
+
+--q2DNU3fX003095.1331681403/oxygen.singnet.com.sg--
+
+
+--===============4685473742116139421==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============4685473742116139421==--
