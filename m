@@ -1,17 +1,18 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [RFC REPOST] cgroup: removing css reference drain wait during
-	cgroup removal
-Date: Tue, 13 Mar 2012 09:39:14 -0700
-Message-ID: <20120313163914.GD7349__15999.0103253678$1331656770$gmane$org@google.com>
-References: <20120312213155.GE23255@google.com>
-	<20120312213343.GF23255@google.com>
-	<20120313151148.f8004a00.kamezawa.hiroyu@jp.fujitsu.com>
+From: C Anthony Risinger <anthony-iwZaZ8Eb++w@public.gmane.org>
+Subject: Re: [RFD] cgroup: about multiple hierarchies
+Date: Tue, 13 Mar 2012 11:11:58 -0500
+Message-ID: <CAGAVQTGus7LUWV3AdhAFy--gr=uJRWtSGjuP69-EckBiXy0qVg__44300.9643503048$1331656771$gmane$org@mail.gmail.com>
+References: <20120221211938.GE12236@google.com>
+	<20120312221050.GG23255@google.com>
+	<1331590938.18960.57.camel@twins> <20120312222817.GI23255@google.com>
+	<1331591568.18960.61.camel@twins> <20120312223944.GJ23255@google.com>
+	<1331592241.18960.64.camel@twins> <20120312230416.GM23255@google.com>
+	<20120313141032.GD29169@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20120313151148.f8004a00.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20120313141032.GD29169-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,59 +22,110 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Michal Schmidt <mschmidt-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hello, KAMEZAWA.
-
-On Tue, Mar 13, 2012 at 03:11:48PM +0900, KAMEZAWA Hiroyuki wrote:
-> The trouble for pre_destroy() is _not_ refcount, Memory cgroup has its own refcnt
-> and use it internally. The problem is 'charges'. It's not related to refcnt.
-
-Hmmm.... yeah, I'm not familiar with memcg internals at all.  For
-blkcg, refcnt matters but if it doesn't for memcg, great.
-
-> Cgroup is designed to exists with 'tasks'. But memory may not be related to any
-> task...just related to a cgroup.
-> 
-> But ok, pre_destory() & rmdir() is complicated, I agree.
-> 
-> Now, we prevent rmdir() if we can't move charges to its parent. If pre_destory()
-> shouldn't fail, I can think of some alternatives.
-> 
->  * move all charges to the parent and if it fails...move all charges to
->    root cgroup.
->    (drop_from_memory may not work well in swapless system.)
-
-I think this one is better and this shouldn't fail if hierarchical
-mode is in use, right?
-
-> I think.. if pre_destory() never fails, we don't need pre_destroy().
-
-For memcg maybe, blkcg still needs it.
-
-> >   The last one seems more tricky.  On destruction of cgroup, the
-> >   charges are transferred to its parent and the parent may not have
-> >   enough room for that.  Greg told me that this should only be a
-> >   problem for !hierarchical case.  I think this can be dealt with by
-> >   dumping what's left over to root cgroup with a warning message.
-> 
-> I don't like warning ;) 
-
-I agree this isn't perfect but then again failing rmdir isn't perfect
-either and given that the condition can be wholly avoided in
-hierarchical mode, which should be the default anyway (is there any
-reason to keep flat mode except for backward compatibility?), I don't
-think the trade off is too bad.
-
-> I think we can do all in 'destroy()'.
-
-That would be even better.  I tried myself but that was a lot of code
-I didn't have much idea about.  If someone more familiar with memcg
-can write up such patch, I owe a beer. :)
-
-Thank you.
-
--- 
-tejun
+T24gVHVlLCBNYXIgMTMsIDIwMTIgYXQgOToxMCBBTSwgVml2ZWsgR295YWwgPHZnb3lhbEByZWRo
+YXQuY29tPiB3cm90ZToKPiBPbiBNb24sIE1hciAxMiwgMjAxMiBhdCAwNDowNDoxNlBNIC0wNzAw
+LCBUZWp1biBIZW8gd3JvdGU6Cj4+IE9uIE1vbiwgTWFyIDEyLCAyMDEyIGF0IDExOjQ0OjAxUE0g
+KzAxMDAsIFBldGVyIFppamxzdHJhIHdyb3RlOgo+PiA+IE9uIE1vbiwgMjAxMi0wMy0xMiBhdCAx
+NTozOSAtMDcwMCwgVGVqdW4gSGVvIHdyb3RlOgo+PiA+ID4gSWYgd2UgY2FuIGdldCB0byB0aGUg
+cG9pbnQgd2hlcmUgbmVzdGluZyBpcyBmdWxseQo+PiA+ID4gc3VwcG9ydGVkIGJ5IGV2ZXJ5IGNv
+bnRyb2xsZXIgZmlyc3QsIHRoYXQgd291bGQgYmUgYXdlc29tZSB0b28uCj4+ID4KPj4gPiBBcyBs
+b25nIGFzIHRoYXQgaXMgdGhlIGdvYWwuLiBvdGhlcndpc2UsIEknZCBiZSBvdmVyam95ZWQgaWYg
+SSBjYW4gcmlwCj4+ID4gbmVzdGluZyBzdXBwb3J0IG91dCBvZiB0aGUgY3B1LWNvbnRyb2xsZXIu
+LiB0aGF0IHN0dWZmIGlzIHN1Y2ggYSBwYWluLgo+PiA+IFRoZW4gYWdhaW4sIEkgZG9uJ3QgdGhp
+bmsgdGhlIGNvbnRhaW5lciBwZW9wbGUgbGlrZSB0aGlzIHByb3Bvc2FsIC0tCj4+ID4gdGhleSB3
+ZXJlIHRoZSBvbmVzIHB1c2hpbmcgZm9yIGZ1bGwgaGllcmFyY2h5IGJhY2sgd2hlbi4KPj4KPj4g
+WWVhaCwgdGhlIGdyZWF0IHBhaW4gb2YgZnVsbCBoaWVyYXJjaHkgc3VwcG9ydCBpcyBvbmUgb2Yg
+dGhlIHJlYXNvbnMKPj4gd2h5IEkga2VlcCB0aGlua2luZyBhYm91dCBzdXBwb3J0aW5nIG1hcHBp
+bmcgdG8gZmxhdCBoaWVyYXJjaHkuIMKgRnVsbAo+PiBoaWVyYXJjaHkgY291bGQgYmUgdG9vIHBh
+aW5mdWwgYW5kIG5vdCB1c2VmdWwgZW5vdWdoIGZvciBzb21lCj4+IGNvbnRyb2xsZXJzLiDCoFRo
+ZW4gYWdhaW4sIGNwdSBhbmQgbWVtY2cgYWxyZWFkeSBoYXZlIGl0IGFuZCBhY2NvcmRpbmcKPj4g
+dG8gVml2ZWsgYmxrY2cgYWxzbyBoYWQgYSBwcm9wb3NlZCBpbXBsZW1lbnRhdGlvbiwgc28gbWF5
+YmUgaXQncyBva2F5Lgo+PiBMZXQncyBzZWUuCj4KPiBJbXBsZW1lbnRpbmcgaGllcmFyY2h5IGlz
+IGEgcGFpbiBhbmQgaXMgZXhwZW5zaXZlIGF0IHJ1biB0aW1lLiBTdXBwb3J0aW5nCj4gZmxhdCBz
+dHJ1Y3R1cmUgd2lsbCBwcm92aWRlIHBhdGggZm9yIHNtb290aCB0cmFuc2l0aW9uLgo+Cj4gV2Ug
+aGFkIHNvbWUgUkZDIHBhdGNoZXMgZm9yIGJsa2NnIGhpZXJhcmNoeSBhbmQgdGhhdCBtYWRlIHRo
+aW5ncyBldmVuIG1vcmUKPiBjb21wbGljYXRlZCBhbmQgd2UgbWlnaHQgbm90IGdhaW4gbXVjaC4g
+U28gd2h5IHRvIGNvbXBsaWNhdGUgdGhlIGNvZGUKPiB1bnRpbCBhbmQgdW5sZXNzIHdlIGhhdmUg
+YSBnb29kIHVzZSBjYXNlLgoKaG93IGFib3V0IGRpdGNoaW5nIHRoZSBpZGVhIG9mIGFuIEZTIGFs
+dG9nZXRoZXI/Cgp0aGUgYG1rZGlyYCBjcmVhdGVzIGFuZCBuZXN0cyBoYXMgYWx3YXlzIGZlbHQg
+YXdrd2FyZCB0byBtZS4gIG1heWJlCmluc3RlYWQgd2UgZmxhdHRlbiBldmVyeXRoaW5nIG91dCwg
+YW5kIGJpbmQgdG8gdGhlIHByb2Nlc3MgdHJlZSwgYnV0CmVuYWJsZSBhIHRhZy1saWtlIHN5c3Rl
+bSB0byAibWFyayIgcHJvY2Vzc2VzLCBhbmQgYXR0YWNoIG1lYW5pbmcgdG8KdGhlbS4gIGFraW4g
+dG8gbWFya2luZytwcm9jZXNzaW5nIHBhY2tldHMgKG5ldGZpbHRlciksIG9yIG1heWJlIGxpa2UK
+c3lzZnMgdGFncyg/KS4KCm1heWJlIGEgdHJpdmlhbCBleGFtcGxlLCBidXQgYmVhciB3aXRoIG1l
+IGhlcmUgLi4uIG90aGVyIGNvbnRyb2xsZXJzCmFyZSBib3VuZCB0byBhIGBuYW1lYCBjb250cm9s
+bGVyIC4uLgoKIyBteSBwaWQ/CiQgZWNobyAkJAoxMjMKCiMgd2hhdCBjb250cm9sbGVycyBhcmUg
+YXZhaWxhYmxlIGZvciB0aGlzIHByb2Nlc3M/CiQgY2F0IC9wcm9jL3NlbGYvdGFncy9UWVBFCgoj
+IGNyZWF0ZSBhIG5ldyBgbmFtZWAgYmFzZSBjb250cm9sbGVyCiQgdG91Y2ggL3Byb2Mvc2VsZi90
+YWdzL2FkbWluCgojIGNyZWF0ZSBhIG5ldyBgbmFtZWAgYmFzZSBjb250cm9sbGVyCiQgdG91Y2gg
+L3Byb2Mvc2VsZi90YWdzL3VzZXJzCgojIGJlZ2luIHRyYWNraW5nIGNwdSBzaGFyZXMgYXQgc29t
+ZSBkZWZhdWx0IGxldmVsCiQgdG91Y2ggL3Byb2Mvc2VsZi90YWdzL2FkbWluLmNwdWFjY3QuY3B1
+LnNoYXJlcwoKIyBleHBsaWNpdCBhc3NpZ24gYGFkbWluYCAxNTAgc2hhcmVzCiQgZWNobyAxNTAg
+PiAvcHJvYy9zZWxmL3RhZ3MvYWRtaW4uY3B1YWNjdC5jcHUuc2hhcmVzCgojIGV4cGxpY2l0IGFz
+c2lnbiBgdXNlcnNgIDUwIHNoYXJlcwokIGVjaG8gNTAgPiAvcHJvYy9zZWxmL3RhZ3MvYWRtaW4u
+Y3B1YWNjdC5jcHUuc2hhcmVzCgojIHRhZyB3aWxsIHByb3BvZ2F0ZSB0byBjaGlsZHJlbgokIGVj
+aG8gMSA+IC9wcm9jL3NlbGYvdGFncy9hZG1pbi5jcHVhY2N0LmNwdS5QRVJTSVNURU5UCgojIGBu
+YW1lYCdzIHByaW9yaXR5IHJlbGF0aXZlIHRvIHNpYmxpbmcgYG5hbWVgIGdyb3VwcyAobGlrZSBz
+aGFyZXMpCiQgZWNobyAxMDAgPiAvcHJvYy9zZWxmL3RhZ3MvYWRtaW4uY3B1YWNjdC5jcHUuUFJJ
+T1JJVFkKCiMgYG5hbWVgJ3MgcHJpb3JpdHkgcmVsYXRpdmUgdG8gc2libGluZyBgbmFtZWAgZ3Jv
+dXBzIChsaWtlIHNoYXJlcykKJCBlY2hvIDEwMCA+IC9wcm9jL3NlbGYvdGFncy9hZG1pbi5jcHVh
+Y2N0LmNwdS5QUklPUklUWQoKWy4uLiBzeXN0ZW0gLi4uXQoKIyB3aGF0IGNvbnRyb2xsZXJzIGFy
+ZSBhdmFpbGFibGUgc3lzdGVtLXdpZGU/CiQgY2F0IC9zeXMvZnMvY2dyb3VwL1RZUEUKY3B1YWNj
+dCA9IG1vbml0b3IgcmVzb3VyY2VzCm1lbW9yeSA9IG1vbml0b3IgbWVtb3J5CmJsa2lvID0gaW8g
+c3R1ZmZzClsuLi5dCgojIHdoYXQga25vYnMgYXJlIGF2YWlsYWJsZT8KJCBjYXQgL3N5cy9mcy9j
+Z3JvdXAvY3B1YWNjdC5UWVBFCnNoYXJlcyA9IHJlbGF0aXZlIGFzc2lnbm1lbnQgb2YgcmVzb3Vy
+Y2VzCnN0YXQgPSBzb21lIHN0YXRzClsuLi5dCgojIGhvdyBtYW55IHRvdGFsIHNoYXJlcyByZXF1
+ZXN0ZWQgKHN5c3RlbSkKJCBjYXQgL3N5cy9mcy9jZ3JvdXAvY3B1YWNjdC5jcHUuc2hhcmVzCjIw
+MAoKIyBob3cgbWFueSB0b3RhbCBzaGFyZXMgcmVxdWVzdGVkIChhZG1pbikKJCBjYXQgL3N5cy9m
+cy9jZ3JvdXAvYWRtaW4uY3B1YWNjdC5jcHUuc2hhcmVzCjE1MAoKIyBob3cgbWFueSB0b3RhbCBz
+aGFyZXMgcmVxdWVzdGVkICh1c2VycykKJCBjYXQgL3N5cy9mcy9jZ3JvdXAvdXNlcnMuY3B1YWNj
+dC5jcHUuc2hhcmVzCjUwCgojICphbGwqIHByb2Nlc3NlcwokIGNhdCAvc3lzL2ZzL2Nncm91cC9U
+QVNLUwoxCjEyMwpbLi4uXQoKIyB3aGljaCBwcm9jZXNzZXMgaGF2ZSBgYWRtaW5gIHRhZz8KJCBj
+YXQgL3N5cy9mcy9jZ3JvdXAvY3B1YWNjdC9hZG1pbi5UQVNLUwoxMjMKCiMgd2hpY2ggcHJvY2Vz
+c2VzIGhhdmUgYHVzZXJzYCB0YWc/CiQgY2F0IC9zeXMvZnMvY2dyb3VwL2NwdWFjY3QvdXNlcnMu
+VEFTS1MKMTIzCgojIGxpbmsgdG8gcGlkCiQgcmVhZGxpbmsgLWYgL3N5cy9mcy9jZ3JvdXAvY3B1
+YWNjdC91c2Vycy5UQVNLUy4xMjMKL3Byb2MvMTIzCgojIHdoaWNoIHVzZXIgb3ducyBgdXNlcnNg
+IHRhZz8KJCBjYXQgL3N5cy9mcy9jZ3JvdXAvY3B1YWNjdC91c2Vycy5VSUQKMTAwMAoKIyBkZWZh
+dWx0IG1vZGUgZm9yIGB1c2VyYCBjb250cm9scz8KJCBjYXQgL3N5cy9mcy9jZ3JvdXAvdXNlcnMu
+TU9ERQowNjY0CgojIGRlZmF1bHQgbW9kZSBmb3IgYHVzZXJgIGNwdWFjY3QgY29udHJvbHM/CiQg
+Y2F0IC9zeXMvZnMvY2dyb3VwL3VzZXJzLmNwdWFjY3QuTU9ERQowNjAwCgojIG1hc2sgc29tZSBj
+b250cm9sbGVycyB0byBgdXNlcnNgIHRhZz8KJCBlY2hvIC1lICJjcHVhY2N0XG5tZW1vcnkiID4g
+L3N5cy9mcy9jZ3JvdXAvdXNlcnMuTUFTSwoKIyAuLi4gZGlkIHRoZSBhYm92ZSB3b3JrPyAobG9v
+ayBhdCBsYXN0IGNhbGwgdG8gVFlQRSBhYm92ZSkKJCBjYXQgL3N5cy9mcy9jZ3JvdXAvdXNlcnMu
+VFlQRQpibGtpbwpbLi4uXQoKIyBhc3NpZ24gYSB3aGl0ZWxpc3QgaW5zdGVhZAokIGVjaG8gLWUg
+ImNwdVxubWVtb3J5IiA+IC9zeXMvZnMvY2dyb3VwL3VzZXJzLlRZUEUKCiMgbWFzayBzb21lIGtu
+b2JzIHRvIGB1c2Vyc2AgdGFnCiQgZWNobyAtZSAic2hhcmVzIiA+IC9zeXMvZnMvY2dyb3VwL3Vz
+ZXJzLmNwdWFjY3QuTUFTSwoKIyAuLi4gZGlkIHRoZSBhYm92ZSB3b3JrPwokIGNhdCAvc3lzL2Zz
+L2Nncm91cC91c2Vycy5jcHVhY2N0LlRZUEUKc3RhdCA9IHNvbWUgc3RhdHMKWy4uLl0KCi4uLiBp
+biB0aGlzIHdheSB0aGVyZSBpcyBzdGlsbCBhIHNvcnQgb2YgaGVpcmFyY2h5LCBidXQgZWFjaApj
+b250cm9sbGVyIGlzIGZyZWUgdG8gY2hvb3NlOgoKKSBpZiB0aGVyZSBpcyBhbnkgbWVhbmluZyB0
+byBtdWx0aXBsZSBgbmFtZXNgIHBlciBwcm9jZXNzCikgLi4uIG9yIGlmIG9uZSBvbmUgc2hvdWxk
+IGJlIGFsbG93ZWQKKSBob3cgdG8gY29tYmluZSBsYXRlcmFsbHkKKSBob3cgdG8gY29tYmluZSBk
+ZXNjZW5kZW50cwopIC4uLiBtYXliZSBldmVuIGFzc2lnbmFibGUgc3RyYXRlZ2llcyEKKSBjb250
+cm9sbGVyIHNlbWFudGljcyBpbmRlcGVuZGVudCBvZiBvdGhlciBjb250cm9sbGVycwoKd2hlbiBh
+IG5ldyBwaWQgbmFtZXNwYWNlIGlzIGNyZWF0ZWQsIHRoZSBgdGFnc2AgZGlyIGlzICJjbGVhcmVk
+IG91dCIKYW5kIHRoYXQgcGVyc29uIGNhbiBhc3NpZ24gbmV3IHZhbHVlcyAob3IgbWF5YmUgYSBk
+aXJlY3RvcnkgaXMgY3JlYXRlZAppbiBgdGFnc2A/KS4gIHRoZSBlZmZlY3RpdmUgdmFsdWUgaXMg
+dGhlIHVuaW9uIG9mIGJvdGgsIGFuZCBpZGVudGljYWwKdG8gd2hhdGV2ZXIgdGhlIHByb2Nlc3Mg
+d291bGQgaGF2ZSBoYWQgKndpdGhvdXQqIGEgbmFtZXNwYWNlIChubwpkaWZmZXJlbmNlLCBvbiB2
+aXNpYmlsaXR5KS4KCnRodXMsIGNncm91cGZzIGJlY29tZXMgYSBzaW1wbGUgbW91bnQgdGhhdCBo
+YXMgYWdncmVnYXRlIHN0YXRzIGFuZApzeXN0ZW0td2lkZSBzZXR0aW5ncy4KCnJlY2FwOgoKKSBi
+b3VuZCB0byBwcm9jZXNzIGhlaXJhcmNoeQopIC4uLiBidXQgY29udHJvbCBzcGFjZSBpcyBmbGF0
+CikgZG9lcyBub3QgZm9yY2UgZXZlcnkgY29udHJvbGxlciB0byB1c2Ugc2FtZSBwYXJhZGlnbSAo
+ZWcsICJ5b3UgbXVzdApiZWhhdmUgbGlrZSBhIGRpcmVjdG9yeSB0cmVlIikKKSAuLi4gYnV0IG9y
+dGhvZ29uYWwgbXVsdGlwbGV4aW5nIG9mIGEgY29udHJvbGxlciBpcyBwb3NzaWJsZSBpZiB0aGUK
+Y29udHJvbGxlciBhbGxvd3MgaXQKKSBhbGxvd3Mgc2FtZSBwZXJtaXNzaW9uLWJhc2VkIEFDTAop
+IGVhc3kgdG8gc2VlIGFsbCBjb250cm9scyBhZmZlY3QgYSBwcm9jZXNzIG9yIGBuYW1lYCBncm91
+cCB3aXRoIGEKc2ltcGxlIGBscyAtbGAKKSBhZGRpdGlvbmFsIHBvc3NpYmlsaXRpZXMgdGhhdCBk
+aWRuJ3QgZXhpc3Qgd2l0aCBkaXJlY3RvcnkvYXJiaXRyYXJ5Cm1vdW50cyBwYXJhZGlnbQoKZG9l
+cyB0aGlzIG1ha2Ugc2Vuc2U/IG1ha2VzIG11Y2ggbW9yZSB0byBtZSBhdCBsZWFzdCwgYW5kIGkg
+dGhpbmsKYWxsb3cgZ3JlYXRlciBmbGV4aWJpbGl0eSB3aXRoIGxlc3MgY29tcGxleGl0eSAoaWYg
+bXkgZXhwZXJpZW5jZSB3aXRoCkZVU0UgaXMgYW55IGluZGljYXRpb24pIC4uLgoKLi4uIG9yIGlz
+IHRoaXMgdGhlIHNhbWUgd29sZiBpbiBzaGVlcCdzIHNraW4/CgotLSAKCkMgQW50aG9ueQpfX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1h
+aWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8v
+bGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
