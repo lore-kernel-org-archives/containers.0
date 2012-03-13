@@ -1,20 +1,12 @@
-From: Lennart Poettering <mzxreary-uLTowLwuiw4b1SvskN2V4Q@public.gmane.org>
-Subject: Re: [RFD] cgroup: about multiple hierarchies
-Date: Tue, 13 Mar 2012 00:43:19 +0100
-Message-ID: <20120312234319.GA23392@tango.0pointer.de>
-References: <20120221211938.GE12236@google.com>
-	<20120312221050.GG23255@google.com>
-	<1331590938.18960.57.camel@twins>
-	<20120312222817.GI23255@google.com>
-	<20120312223113.GB18359@tango.0pointer.de>
-	<20120312230020.GL23255@google.com>
-	<1331593367.18960.66.camel@twins>
+From: "123Greetings.com" <services-2SgtGU03iw4@public.gmane.org>
+Subject: You Have Received a Greeting ecard from 123Greetings.com
+Date: Tue, 13 Mar 2012 01:46:09 +0000
+Message-ID: <HEREFORDGxgelXDeqoM00008c27@HEREFORD.riverside.local>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1331593367.18960.66.camel@twins>
+Content-Description: Mail message body
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,42 +16,41 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
-Cc: Michal Schmidt <mschmidt-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, 13.03.12 00:02, Peter Zijlstra (peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org) wrote:
+You Have Received a Greeting ecard from 123Greetings.com
 
-> 
-> On Mon, 2012-03-12 at 16:00 -0700, Tejun Heo wrote:
-> > 
-> > Ooh, both will be available to choose from.  I was trying to explain
-> > that there can be configuration only at one layer for any task so that
-> > it can be mapped to flat hierarchy.  Where to apply the config will be
-> > selected by the user (or system tool). 
-> 
-> Thus in effect this is a false choice, since Lennart and assorted idiots
-> conspire against sanity by pushing systemd into our every orifice, and
-> since he just said systemd requires one of the two, the choice will be
-> made for us, lest we forfeit wanting to boot our system.
+You can download and view it by clicking here:
+http://www.123greetings.com/ send/view/063071117097147476
 
-I didn't say that that we require one of the two. I just pointed out
-that for us the first option makes more sense. Also, as I pointed out I
-am happy to adapt systemd to whatever Tejun decides.
+Using our new tracking feature, you can now view all the ecards received by you in the last 30 days.
+Your ecard is going to be with us for the next 30 days.
 
-BTW, I actually believe the hierachial design of cgroups is pretty neat,
-since it allows us to label things hierarchially, so that for example
-user services can have their own labels all beneath a per-user label. So
-for the purpose of grouping things and naming them I very much
-appreciate hierarchial cgroups. For the purpose of actually applying
-resource controls I care much less for it, but I still do see its
-use.
+Based on user feedback, 123Greetings.com has launched 6 new pages with the best ecards in the Most Popular/ Most Viewed/ Highest Rated/ Latest Additions/ Popular Now and Always There Sections listed on the homepage. So hurry up and choose the best ones for sending them from the links below:
 
-Lennart
+http://www.123greetings.com/ top/most_popular.html
+http://www.123greetings.com/ top/most_viewed.html
+http://www.123greetings.com/ top/highest_rated.html
+http://www.123greetings.com/ top/latest.html
+http://www.123greetings.com/ top/popular_now.html
+http://www.123greetings.com/ top/always_there.html
 
-PS: Awesome choice of words! I totally appreciate how you talk to and
-about me. This creates such a strong urge inside of me to care about the
-problems you have with systemd and fix them for you.
+If you need any help in viewing your ecard or any other assistance,
+please visit our Help/ FAQ section at: http://help.123greetings.com/
 
--- 
-Lennart Poettering - Red Hat, Inc.
+We hope you enjoy your ecard,
+
+Your friends at 123Greetings.com
+http://www.123greetings.com
+
+We respect your privacy. You will not be receiving any promotional emails from us
+because of this ecard. To view our privacy policy, click on the link below:
+http://info.123greetings.com/ company/privacy_policy.html
+
+Note: This is an auto generated mail. Please do not reply.
+
+If you have any other problem please contact us by clicking on the following link:
+http://help.123greetings.com/ contact_us.html
+
+This email was sent by 123Greetings.com, Inc., 1674 Broadway, New York, NY 10019.
