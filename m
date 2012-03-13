@@ -1,17 +1,21 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [RFD] cgroup: about multiple hierarchies
-Date: Tue, 13 Mar 2012 10:03:45 -0400
-Message-ID: <20120313140345.GC29169@redhat.com>
+Date: Tue, 13 Mar 2012 10:10:32 -0400
+Message-ID: <20120313141032.GD29169@redhat.com>
 References: <20120221211938.GE12236@google.com>
 	<20120312221050.GG23255@google.com>
 	<1331590938.18960.57.camel@twins>
 	<20120312222817.GI23255@google.com>
+	<1331591568.18960.61.camel@twins>
+	<20120312223944.GJ23255@google.com>
+	<1331592241.18960.64.camel@twins>
+	<20120312230416.GM23255@google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20120312222817.GI23255-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20120312230416.GM23255-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -25,62 +29,30 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Michal Schmidt <mschmidt-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Mar 12, 2012 at 03:28:17PM -0700, Tejun Heo wrote:
-> Hey,
-> 
-> On Mon, Mar 12, 2012 at 11:22:18PM +0100, Peter Zijlstra wrote:
-> > On Mon, 2012-03-12 at 15:10 -0700, Tejun Heo wrote:
-> > > 
-> > > * How to map controllers which aren't aware of full hierarchy is still
-> > >   an open question but I'm still standing by one active node on any
-> > >   root-to-leaf path w/ root group serving as the special rest group. 
+On Mon, Mar 12, 2012 at 04:04:16PM -0700, Tejun Heo wrote:
+> On Mon, Mar 12, 2012 at 11:44:01PM +0100, Peter Zijlstra wrote:
+> > On Mon, 2012-03-12 at 15:39 -0700, Tejun Heo wrote:
+> > > If we can get to the point where nesting is fully
+> > > supported by every controller first, that would be awesome too. 
 > > 
-> > What does this mean?
+> > As long as that is the goal.. otherwise, I'd be overjoyed if I can rip
+> > nesting support out of the cpu-controller.. that stuff is such a pain.
+> > Then again, I don't think the container people like this proposal --
+> > they were the ones pushing for full hierarchy back when.
 > 
-> Let's say we have a tree like the following.
-> 
->          root
->       /   |   \
->      G1  G2   G3
->              /  \
-> 	   G31  G32
-> 
-> So, for cgroups which don't support full hierarchy, it'll be viewed as
-> either,
-> 
->          root
->       /   |   \
->      G1  G2   G3
-> 
-> or
-> 
->           root
->       /   |   |  \
->      G1  G2  G31 G32
-> 
-> With root being treated specially, probably as just being a equal
-> group as other groups, I'm not fully determined about that yet.
+> Yeah, the great pain of full hierarchy support is one of the reasons
+> why I keep thinking about supporting mapping to flat hierarchy.  Full
+> hierarchy could be too painful and not useful enough for some
+> controllers.  Then again, cpu and memcg already have it and according
+> to Vivek blkcg also had a proposed implementation, so maybe it's okay.
+> Let's see.
 
-So what wrong with flattening the whole hierarchy and all groups being active
-in the path? It is not worse then second option?
+Implementing hierarchy is a pain and is expensive at run time. Supporting
+flat structure will provide path for smooth transition.
 
-             root
-       /   |  |  |  \
-      G1  G2  G3 G31 G32
-
-One problem with above is that a children can create its own child cgroups
-and compete at highest level for resources.
-
-But same is the problem with second choice you gave. May be you are
-thinking of introducing another knob to configure active point in the
-path? I guess that will make cgroup configuration even harder.
-
-May be we flatten the whole hierarchy. When we launch user sessions, we
-don't give then permissions to create child cgroups for IO. For services
-running with admin priviliges, we still don't have a good solution for
-flat controllers. If nobody has a use case, I guess we just live with
-that as that's the limitation of flat controller and one needs to make
-it hierarchical, if need be.
+We had some RFC patches for blkcg hierarchy and that made things even more
+complicated and we might not gain much. So why to complicate the code
+until and unless we have a good use case.
 
 Thanks
 Vivek
