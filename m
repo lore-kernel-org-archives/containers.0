@@ -1,10 +1,13 @@
-From: Mail Delivery Subsystem <MAILER-DAEMON-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>
-Subject: Returned mail: see transcript for details
-Date: Thu, 15 Mar 2012 05:42:54 +0800
-Message-ID: <201203142142.q2ELe72i005969@carbon.singnet.com.sg>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [PATCH] cgroup: deprecate remount option changes and "name=" mount
+	option
+Date: Wed, 14 Mar 2012 14:52:28 -0700
+Message-ID: <20120314215228.GI7349__24343.6741097414$1331761961$gmane$org@google.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1507390791171924476=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -14,75 +17,80 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Lennart Poettering <mzxreary-uLTowLwuiw4b1SvskN2V4Q@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message
+This patch removes the following features.
 
---===============1507390791171924476==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="q2ELe72i005969.1331761374/carbon.singnet.com.sg"
+* Rebinding subsys by remount: Never reached useful state - only works
+  on empty hierarchies.
 
-This is a MIME-encapsulated message
+* release_agent update by remount: release_agent itself will be
+  replaced with conventional fsnotify notification.
 
---q2ELe72i005969.1331761374/carbon.singnet.com.sg
+* "name=" mount option: This has been broken for years before Li fixed
+  it recently.  It has very marginal usefulness (plain bind mount can
+  mostly replace it) and is quite unusual.  Take the chance and mark
+  for deprecation.
 
-The original message was received at Thu, 15 Mar 2012 05:34:53 +0800
-from mx14.singnet.com.sg [165.21.74.114]
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Lennart Poettering <mzxreary-uLTowLwuiw4b1SvskN2V4Q@public.gmane.org>
+---
+If you want these to survive, now is the time to scream. :)
 
-   ----- The following addresses had permanent fatal errors -----
-<dapitts-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>
-    (reason: 550 5.1.1 User unknown)
+Thanks.
 
-   ----- Transcript of session follows -----
-550 5.1.1 <dapitts-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>... User unknown
+ Documentation/feature-removal-schedule.txt |   12 ++++++++++++
+ kernel/cgroup.c                            |   10 ++++++++++
+ 2 files changed, 22 insertions(+)
 
---q2ELe72i005969.1331761374/carbon.singnet.com.sg
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; carbon.singnet.com.sg
-Arrival-Date: Thu, 15 Mar 2012 05:34:53 +0800
-
-Final-Recipient: RFC822; dapitts-rdc5FV7LBygPGFelY5Zqew@public.gmane.org
-X-Actual-Recipient: RFC822; dapitts-BT83YEsRxPhc9vzhF02D5Ynh5Q2U4q7d@public.gmane.org
-Action: failed
-Status: 5.1.1
-Diagnostic-Code: X-Unix; 550 5.1.1 User unknown
-Last-Attempt-Date: Thu, 15 Mar 2012 05:42:54 +0800
-
---q2ELe72i005969.1331761374/carbon.singnet.com.sg
-Content-Type: message/rfc822
-
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from mx14.singnet.com.sg (mx14.singnet.com.sg [165.21.74.114])
-	by carbon.singnet.com.sg (8.14.1/8.12.11) with ESMTP id q2ELYrt4012253
-	for <dapitts-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>; Thu, 15 Mar 2012 05:34:53 +0800
-Received: from cubemaxltd.cubemaxltd.com (cubemaxltd.cubemaxltd.com [174.142.214.20])
-	by mx14.singnet.com.sg (8.14.4/8.14.4) with ESMTP id q2ELgfvx032626
-	for <dapitts-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>; Thu, 15 Mar 2012 05:42:42 +0800
-Received: from [174.142.214.20] by cubemaxltd.cubemaxltd.com id DpXVfEeYVZ5kJ; Wed, 14 Mar 2012 17:42:56 -0400
-Message-ID: <00bf01cd022b$6a119980$1400a8c0-PBrG2Ygu4YotuMo1XmBnHVHeKjDIEhJXAL8bYrjMMd8@public.gmane.org>
-From: "newinkl" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <dapitts-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>
-Subject: imia
-Date: Wed, 14 Mar 2012 17:42:56 -0400
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-
-
---q2ELe72i005969.1331761374/carbon.singnet.com.sg--
-
-
---===============1507390791171924476==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============1507390791171924476==--
+Index: work/Documentation/feature-removal-schedule.txt
+===================================================================
+--- work.orig/Documentation/feature-removal-schedule.txt
++++ work/Documentation/feature-removal-schedule.txt
+@@ -510,3 +510,15 @@ Why:	The pci_scan_bus_parented() interfa
+ 	convert to using pci_scan_root_bus() so they can supply a list of
+ 	bus resources when the bus is created.
+ Who:	Bjorn Helgaas <bhelgaas-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
++
++----------------------------
++
++What:	cgroup option updates via remount, and "name=" mount option
++When:	March 2013
++Why:	Remount currently allows changing bound subsystems and
++	release_agent.  Rebinding is hardly useful as it only works
++	when the hierarchy is empty and release_agent itself should be
++	replaced with conventional fsnotify.  "name=" option allows
++	mounting existing hierarchy by its name, which isn't useful
++	and has been broken for years without anyone noticing.
++Who:	Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Index: work/kernel/cgroup.c
+===================================================================
+--- work.orig/kernel/cgroup.c
++++ work/kernel/cgroup.c
+@@ -1146,6 +1146,11 @@ static int parse_cgroupfs_options(char *
+ 		}
+ 		if (!strncmp(token, "name=", 5)) {
+ 			const char *name = token + 5;
++
++			/* See feature-removal-schedule.txt */
++			pr_warning("cgroup: name= option is deprecated (pid=%d comm=%s name=%s)\n",
++				   task_tgid_nr(current), current->comm, name);
++
+ 			/* Can't specify an empty name */
+ 			if (!strlen(name))
+ 				return -EINVAL;
+@@ -1294,6 +1299,11 @@ static int cgroup_remount(struct super_b
+ 	if (ret)
+ 		goto out_unlock;
+ 
++	/* See feature-removal-schedule.txt */
++	if (opts.subsys_bits != root->actual_subsys_bits || opts.release_agent)
++		pr_warning("cgroup: option changes via remount are deprecated (pid=%d comm=%s)\n",
++			   task_tgid_nr(current), current->comm);
++
+ 	/* Don't allow flags or name to change at remount */
+ 	if (opts.flags != root->flags ||
+ 	    (opts.name && strcmp(opts.name, root->name))) {
