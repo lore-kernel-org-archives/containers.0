@@ -1,10 +1,9 @@
-From: "Joseph Moore - Wireless RF Systems" <joseph.moore-SUMRa3zBIYmbrloQpFoi1ZqQE7yCjDx5@public.gmane.org>
-Subject: Controllers and wireless
-Date: Wed, 14 Mar 2012 14:41:22 -0700 (PDT)
-Message-ID: <20120314214122.903197C0A01@t.buyled.com>
+From: Mail Delivery Subsystem <MAILER-DAEMON-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>
+Subject: Returned mail: see transcript for details
+Date: Thu, 15 Mar 2012 05:42:54 +0800
+Message-ID: <201203142142.q2ELe72i005969@carbon.singnet.com.sg>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============1507390791171924476=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,19 +17,72 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi,
+This is a MIME-encapsulated message
 
-Which microcontrollers and do you work with?
+--===============1507390791171924476==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="q2ELe72i005969.1331761374/carbon.singnet.com.sg"
 
-Thanks,
+This is a MIME-encapsulated message
 
-Joseph Moore
-Wireless RF Systems
-13715 Alton Pkwy.
-Irvine, CA 92618
-Web: http://www.rfdigital.com
-Email: joseph.moore-SUMRa3zBIYmbrloQpFoi1ZqQE7yCjDx5@public.gmane.org
+--q2ELe72i005969.1331761374/carbon.singnet.com.sg
 
--------------------------------------------------------------------------------
+The original message was received at Thu, 15 Mar 2012 05:34:53 +0800
+from mx14.singnet.com.sg [165.21.74.114]
 
-This email is intended only for the use of the individual or entity to which it is addressed and may contain information that is privileged and proprietary. If you are not the intended recipient, any dissemination, distribution or reproduction of this communication is prohibited. We request that you notify the recipient by email of any errors or alternatively opt-out at http://www.rfdigital.com/optout.htm to terminate further communication.  We have taken reasonable precautions to prevent against transmitting any improperly addressed messages.  All trademarks and trade names belong to their respective owners.  We thank you for your cooperation.
+   ----- The following addresses had permanent fatal errors -----
+<dapitts-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>
+    (reason: 550 5.1.1 User unknown)
+
+   ----- Transcript of session follows -----
+550 5.1.1 <dapitts-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>... User unknown
+
+--q2ELe72i005969.1331761374/carbon.singnet.com.sg
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns; carbon.singnet.com.sg
+Arrival-Date: Thu, 15 Mar 2012 05:34:53 +0800
+
+Final-Recipient: RFC822; dapitts-rdc5FV7LBygPGFelY5Zqew@public.gmane.org
+X-Actual-Recipient: RFC822; dapitts-BT83YEsRxPhc9vzhF02D5Ynh5Q2U4q7d@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: X-Unix; 550 5.1.1 User unknown
+Last-Attempt-Date: Thu, 15 Mar 2012 05:42:54 +0800
+
+--q2ELe72i005969.1331761374/carbon.singnet.com.sg
+Content-Type: message/rfc822
+
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from mx14.singnet.com.sg (mx14.singnet.com.sg [165.21.74.114])
+	by carbon.singnet.com.sg (8.14.1/8.12.11) with ESMTP id q2ELYrt4012253
+	for <dapitts-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>; Thu, 15 Mar 2012 05:34:53 +0800
+Received: from cubemaxltd.cubemaxltd.com (cubemaxltd.cubemaxltd.com [174.142.214.20])
+	by mx14.singnet.com.sg (8.14.4/8.14.4) with ESMTP id q2ELgfvx032626
+	for <dapitts-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>; Thu, 15 Mar 2012 05:42:42 +0800
+Received: from [174.142.214.20] by cubemaxltd.cubemaxltd.com id DpXVfEeYVZ5kJ; Wed, 14 Mar 2012 17:42:56 -0400
+Message-ID: <00bf01cd022b$6a119980$1400a8c0-PBrG2Ygu4YotuMo1XmBnHVHeKjDIEhJXAL8bYrjMMd8@public.gmane.org>
+From: "newinkl" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <dapitts-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>
+Subject: imia
+Date: Wed, 14 Mar 2012 17:42:56 -0400
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+
+
+--q2ELe72i005969.1331761374/carbon.singnet.com.sg--
+
+
+--===============1507390791171924476==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============1507390791171924476==--
