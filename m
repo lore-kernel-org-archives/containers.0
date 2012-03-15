@@ -1,11 +1,16 @@
-From: "System Administrator"@mail.linuxfoundation.org
-Subject: Delivery Failure
-Date: Thu, 15 Mar 2012 07:23:29 -0800
-Message-ID: <634673930096523229@smg02.internetmailserver.net>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH] cgroup: deprecate remount option changes and "name="
+	mount option
+Date: Thu, 15 Mar 2012 09:54:02 -0700
+Message-ID: <20120315165402.GC32137__41081.9266261116$1331830456$gmane$org@google.com>
+References: <20120314215228.GI7349@google.com>
+	<20120314232925.GA16973@tango.0pointer.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20120314232925.GA16973-kS5D54t9nk0aINubkmmoJbNAH6kLmebB@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,43 +20,36 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Lennart Poettering <mzxreary-uLTowLwuiw4b1SvskN2V4Q@public.gmane.org>
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Hello,
 
-Could not deliver message to the following recipient(s):
+On Thu, Mar 15, 2012 at 12:29:25AM +0100, Lennart Poettering wrote:
+> Hmm, this is not clear to me. Are you intending to remove the name=
+> mount option entirely, or just intend to remove that you can change it
+> in remounts?
+> 
+> systemd uses name=systemd to get its own private cgroup tree, that has
+> no controller bound, hence we kinda need this option. Or are you
+> suggesting there was an other way to get a private cgroup tree that
+> systemd can use for grouping and labelling things?
 
-Failed Recipient: hamdan-3l3AAPckzMJ+UNU8qPYXCw@public.gmane.org
-Reason: Remote host said: 450 4.1.1 <hamdan-3l3AAPckzMJ+UNU8qPYXCw@public.gmane.org>: Recipient address rejected: User unknown in relay recipient table
-Failed Recipient: hamdan-YsvTK5mC77BH8tZFUCpEU9WFk0/kOESp@public.gmane.org
-Reason: Remote host said: 601 Attempted to send the message to the following ip's: 
-	193.206.220.6
+Eh, you're right.  I want to remove support for duplicate mounting by
+name or subsys as it just isn't necessary, so what I want is,
 
-   -- The header and top 20 lines of the message follows --
+* "mount -t cgroupfs -o SUBSYS" will fail if SUBSYS is already mounted
+  somewhere else.
 
-Received: from sm11.internetmailserver.net (sm11.dotnetplayground.com [192.168.120.31]) by smg02.internetmailserver.net with SMTP;
-   Tue, 13 Mar 2012 07:45:50 -0700
-Received: from vps.datacenterbolivia.com (semi.mailcainco.net.210.89.208.in-addr.arpa [208.89.210.204]) by sm11.internetmailserver.net with SMTP;
-   Tue, 13 Mar 2012 07:45:38 -0700
-Received: from [208.89.210.204] by vps.datacenterbolivia.com id ukyaztcS; Tue, 13 Mar 2012 08:36:47 -0600
-Message-ID: <002901cd0126$b626e600$01000a0a-J7+7M2dRO4ACJ8ddfNFNZ6CD0JFbOjFwAL8bYrjMMd8@public.gmane.org>
-From: "Information" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <hamdan-zcmmFpJzR/g@public.gmane.org>
-Subject: Fwd: Ecco la nostra risposta!
-Date: Tue, 13 Mar 2012 08:36:47 -0600
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
-Content-Transfer-Encoding: 8bit
+* "mount -t cgroupfs -o none" will always create a new cgroup
+  hierarchy w/o any controller attached.
 
+I didn't realize that the mount code didn't allow none w/o name and
+now I don't see a non-intrusive way to remove the name option. :( Eh
+well, I'll drop that part.
 
+Thanks.
 
-Buongiorno, 
-
-
-L'aggiornamento di configurazione
-http://www.casedagiardino.com/it/Approvato/DettagliAdvance.zip
-
-
-__
-GqkMpXn
+-- 
+tejun
