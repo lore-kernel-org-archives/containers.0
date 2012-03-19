@@ -1,10 +1,15 @@
-From: Mail Delivery Subsystem <MAILER-DAEMON-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>
-Subject: Returned mail: see transcript for details
-Date: Mon, 19 Mar 2012 07:31:12 +0800
-Message-ID: <201203182331.q2INU4hl004322@carbon.singnet.com.sg>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 06/10] cgroup: convert memcg controller to the new cftype
+	interface
+Date: Mon, 19 Mar 2012 13:26:02 +0900
+Message-ID: <4F66B55A.8020307@jp.fujitsu.com>
+References: <1331940963-15756-1-git-send-email-tj@kernel.org>
+	<1331940963-15756-7-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============6089259423488139237=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1331940963-15756-7-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -14,75 +19,84 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message
+(2012/03/17 8:35), Tejun Heo wrote:
 
---===============6089259423488139237==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="q2INU4hl004322.1332113472/carbon.singnet.com.sg"
+> Convert memcg to use the new cftype based interface. memcg is rather
+> special in that
+> 
+> * memsw_cgroup_files creation is dependent on do_swap_account.
+> 
+> * ->populate() is abused for mem_cgroup_sockets_init().
+> 
+> memsw_cgroup_files is converted to use CGROUP_SUBSYS_CFTYPES_COND(),
+> where the condition is really_do_swap_account.
+> 
+> ->populate() is preserved for register_kmem_files() invocation but I
+> strongly urge moving the initialization to the tail of ->create().  If
+> there's something which can't be done from ->create(), which isn't
+> clear from the comment, please let me know.
+> 
 
-This is a MIME-encapsulated message
-
---q2INU4hl004322.1332113472/carbon.singnet.com.sg
-
-The original message was received at Mon, 19 Mar 2012 07:27:39 +0800
-from mx14.singnet.com.sg [165.21.74.114]
-
-   ----- The following addresses had permanent fatal errors -----
-<etill-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>
-    (reason: 550 5.1.1 User unknown)
-
-   ----- Transcript of session follows -----
-550 5.1.1 <etill-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>... User unknown
-
---q2INU4hl004322.1332113472/carbon.singnet.com.sg
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; carbon.singnet.com.sg
-Arrival-Date: Mon, 19 Mar 2012 07:27:39 +0800
-
-Final-Recipient: RFC822; etill-rdc5FV7LBygPGFelY5Zqew@public.gmane.org
-X-Actual-Recipient: RFC822; etill-BT83YEsRxPhc9vzhF02D5Ynh5Q2U4q7d@public.gmane.org
-Action: failed
-Status: 5.1.1
-Diagnostic-Code: X-Unix; 550 5.1.1 User unknown
-Last-Attempt-Date: Mon, 19 Mar 2012 07:31:12 +0800
-
---q2INU4hl004322.1332113472/carbon.singnet.com.sg
-Content-Type: message/rfc822
-
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from mx14.singnet.com.sg (mx14.singnet.com.sg [165.21.74.114])
-	by carbon.singnet.com.sg (8.14.1/8.12.11) with ESMTP id q2INRdSt030367
-	for <etill-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>; Mon, 19 Mar 2012 07:27:39 +0800
-Received: from cubemaxltd.cubemaxltd.com (cubemaxltd.cubemaxltd.com [174.142.214.20])
-	by mx14.singnet.com.sg (8.14.4/8.14.4) with ESMTP id q2INaVM7025718
-	for <etill-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>; Mon, 19 Mar 2012 07:36:32 +0800
-Received: from [174.142.214.20] by cubemaxltd.cubemaxltd.com id 6SRxUkfgCJ8b; Sun, 18 Mar 2012 19:36:46 -0400
-Message-ID: <004001cd055f$fb507b00$0100a8c0-PBrG2Ygu4YotuMo1XmBnHVHeKjDIEhJXAL8bYrjMMd8@public.gmane.org>
-From: "best " <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <etill-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>
-Subject: russian star
-Date: Sun, 18 Mar 2012 19:36:46 -0400
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+Okay, then, cgroup files are created in kernel/cgroup.c and memcg just
+registers entries.
 
 
---q2INU4hl004322.1332113472/carbon.singnet.com.sg--
+
+> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+> Cc: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
+> Cc: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+> Cc: Balbir Singh <bsingharora-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+> Cc: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+> Cc: Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+> Cc: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+> ---
+>  mm/memcontrol.c           |   31 ++++++-------------------------
+>  net/ipv4/tcp_memcontrol.c |    8 ++++----
+>  2 files changed, 10 insertions(+), 29 deletions(-)
+> 
+> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+> index ae2f0a8..f2221ce 100644
+> --- a/mm/memcontrol.c
+> +++ b/mm/memcontrol.c
+> @@ -4665,7 +4665,9 @@ static struct cftype mem_cgroup_files[] = {
+>  		.mode = S_IRUGO,
+>  	},
+>  #endif
+> +	{ },	/* terminate */
+>  };
+> +CGROUP_SUBSYS_CFTYPES(mem_cgroup_subsys, mem_cgroup_files);
+>  
+>  #ifdef CONFIG_CGROUP_MEM_RES_CTLR_SWAP
+>  static struct cftype memsw_cgroup_files[] = {
+> @@ -4694,20 +4696,10 @@ static struct cftype memsw_cgroup_files[] = {
+>  		.trigger = mem_cgroup_reset,
+>  		.read_u64 = mem_cgroup_read,
+>  	},
+> +	{ }	/* terminate */
+>  };
+> -
+> -static int register_memsw_files(struct cgroup *cont, struct cgroup_subsys *ss)
+> -{
+> -	if (!do_swap_account)
+> -		return 0;
+> -	return cgroup_add_files(cont, ss, memsw_cgroup_files,
+> -				ARRAY_SIZE(memsw_cgroup_files));
+> -};
+> -#else
+> -static int register_memsw_files(struct cgroup *cont, struct cgroup_subsys *ss)
+> -{
+> -	return 0;
+> -}
+> +CGROUP_SUBSYS_CFTYPES_COND(mem_cgroup_subsys, memsw_cgroup_files,
+> +			   really_do_swap_account);
 
 
---===============6089259423488139237==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+I'm sorry but why you use really_do_swap_account instead of do_swap_account ?
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============6089259423488139237==--
+Thanks,
+-Kame
