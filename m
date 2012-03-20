@@ -1,12 +1,10 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [GIT PULL] cgroup changes for v3.4
-Date: Mon, 19 Mar 2012 15:58:43 -0700
-Message-ID: <20120319225843.GA2873__41361.0217198313$1332197932$gmane$org@google.com>
+From: Mail Delivery Subsystem <MAILER-DAEMON-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>
+Subject: Returned mail: see transcript for details
+Date: Tue, 20 Mar 2012 08:17:29 +0800
+Message-ID: <201203200017.q2K0DFjC026688@helium.singnet.com.sg>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============5530373775368065098=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,53 +14,75 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello, Linus.
+This is a MIME-encapsulated message
 
-Please pull from the following branch to receive cgroup changes for
-v3.4.
+--===============5530373775368065098==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="q2K0DFjC026688.1332202649/helium.singnet.com.sg"
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git for-3.4
+This is a MIME-encapsulated message
 
-Out of the 8 commits, one fixes a long-standing locking issue around
-tasklist walking and others are cleanups.
+--q2K0DFjC026688.1332202649/helium.singnet.com.sg
 
-Thanks.
+The original message was received at Tue, 20 Mar 2012 08:12:19 +0800
+from mx14.singnet.com.sg [165.21.74.114]
 
-Frederic Weisbecker (2):
-      cgroup: Remove wrong comment on cgroup_enable_task_cg_list()
-      cgroup: Walk task list under tasklist_lock in cgroup_enable_task_cg_list
+   ----- The following addresses had permanent fatal errors -----
+<gcline-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>
+    (reason: 550 5.1.1 User unknown)
 
-Li Zefan (3):
-      cgroup: remove cgroup_attach_task_current_cg()
-      cgroup: move struct cgroup_pidlist out from the header file
-      cgroup: remove cgroup_subsys argument from callbacks
+   ----- Transcript of session follows -----
+550 5.1.1 <gcline-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>... User unknown
 
-Mandeep Singh Baines (3):
-      cgroup: simplify double-check locking in cgroup_attach_proc
-      cgroup: replace tasklist_lock with rcu_read_lock
-      cgroup: remove extra calls to find_existing_css_set
+--q2K0DFjC026688.1332202649/helium.singnet.com.sg
+Content-Type: message/delivery-status
 
- Documentation/cgroups/cgroups.txt |   26 ++--
- block/blk-cgroup.c                |   22 +--
- include/linux/cgroup.h            |   70 ++-------
- include/net/sock.h                |    7 +-
- include/net/tcp_memcontrol.h      |    2 +-
- kernel/cgroup.c                   |  327 +++++++++++++++---------------------
- kernel/cgroup_freezer.c           |   11 +-
- kernel/cpuset.c                   |   16 +--
- kernel/events/core.c              |   13 +-
- kernel/sched/core.c               |   20 +--
- mm/memcontrol.c                   |   48 ++----
- net/core/netprio_cgroup.c         |   10 +-
- net/core/sock.c                   |    6 +-
- net/ipv4/tcp_memcontrol.c         |    2 +-
- net/sched/cls_cgroup.c            |   10 +-
- security/device_cgroup.c          |   10 +-
- 16 files changed, 228 insertions(+), 372 deletions(-)
+Reporting-MTA: dns; helium.singnet.com.sg
+Arrival-Date: Tue, 20 Mar 2012 08:12:19 +0800
 
---
-tejun
+Final-Recipient: RFC822; gcline-rdc5FV7LBygPGFelY5Zqew@public.gmane.org
+X-Actual-Recipient: RFC822; gcline-BmzJuwVed9Nc9vzhF02D5Ynh5Q2U4q7d@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: X-Unix; 550 5.1.1 User unknown
+Last-Attempt-Date: Tue, 20 Mar 2012 08:17:29 +0800
+
+--q2K0DFjC026688.1332202649/helium.singnet.com.sg
+Content-Type: message/rfc822
+
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from mx14.singnet.com.sg (mx14.singnet.com.sg [165.21.74.114])
+	by helium.singnet.com.sg (8.14.1/8.12.11) with ESMTP id q2K0CJe9017943
+	for <gcline-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>; Tue, 20 Mar 2012 08:12:19 +0800
+Received: from cubemaxltd.cubemaxltd.com (cubemaxltd.cubemaxltd.com [174.142.214.20])
+	by mx14.singnet.com.sg (8.14.4/8.14.4) with ESMTP id q2K0L2Ta019858
+	for <gcline-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>; Tue, 20 Mar 2012 08:21:03 +0800
+Received: from [174.142.214.20] by cubemaxltd.cubemaxltd.com id 1v9fcA35L29f; Mon, 19 Mar 2012 20:21:19 -0400
+Message-ID: <009201cd062f$5c934f80$66000a0a-PBrG2Ygu4YotuMo1XmBnHVHeKjDIEhJXAL8bYrjMMd8@public.gmane.org>
+From: "kl" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <gcline-rdc5FV7LBygPGFelY5Zqew@public.gmane.org>
+Subject: new arrival in KL and Spore
+Date: Mon, 19 Mar 2012 20:21:19 -0400
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+
+
+--q2K0DFjC026688.1332202649/helium.singnet.com.sg--
+
+
+--===============5530373775368065098==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============5530373775368065098==--
