@@ -1,7 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 03/12] cgroup: implement cgroup_add_cftypes() and friends
-Date: Wed, 21 Mar 2012 15:17:36 -0700
-Message-ID: <1332368265-21586-4-git-send-email-tj@kernel.org>
+Subject: [PATCH 02/12] cgroup: build list of all cgroups under a given
+	cgroupfs_root
+Date: Wed, 21 Mar 2012 15:17:35 -0700
+Message-ID: <1332368265-21586-3-git-send-email-tj@kernel.org>
 References: <1332368265-21586-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,312 +22,75 @@ To: glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, lizf-BthXqXjhjHXQFUHtdCDX3A
 Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Currently, cgroup directories are populated by subsys->populate()
-callback explicitly creating files on each cgroup creation.  This
-level of flexibility isn't needed or desirable.  It provides largely
-unused flexibility which call for abuses while severely limiting what
-the core layer can do through the lack of structure and conventions.
-
-Per each cgroup file type, the only distinction that cgroup users is
-making is whether a cgroup is root or not, which can easily be
-expressed with flags.
-
-This patch introduces cgroup_add_cftypes().  These deal with cftypes
-instead of individual files - controllers indicate that certain types
-of files exist for certain subsystem.  Newly added CFTYPE_*_ON_ROOT
-flags indicate whether a cftype should be excluded or created only on
-the root cgroup.
-
-cgroup_add_cftypes() can be called any time whether the target
-subsystem is currently attached or not.  cgroup core will create files
-on the existing cgroups as necessary.
-
-Also, cgroup_subsys->base_cftypes is added to ease registration of the
-base files for the subsystem.  If non-NULL on subsys init, the cftypes
-pointed to by ->base_cftypes are automatically registered on subsys
-init / load.
-
-Further patches will convert the existing users and remove the file
-based interface.  Note that this interface allows dynamic addition of
-files to an active controller.  This will be used for sub-controller
-modularity and unified hierarchy in the longer term.
-
-This patch implements the new mechanism but doesn't apply it to any
-user.
-
-v2: replaced DECLARE_CGROUP_CFTYPES[_COND]() with
-    cgroup_subsys->base_cftypes, which works better for cgroup_subsys
-    which is loaded as module.
+Build a list of all cgroups anchored at cgroupfs_root->allcg_list and
+going through cgroup->allcg_node.  The list is protected by
+cgroup_mutex and will be used to improve cgroup file handling.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- include/linux/cgroup.h |   33 +++++++++++-
- kernel/cgroup.c        |  132 +++++++++++++++++++++++++++++++++++++++++++++++-
- 2 files changed, 162 insertions(+), 3 deletions(-)
+ include/linux/cgroup.h |    2 ++
+ kernel/cgroup.c        |   10 ++++++++++
+ 2 files changed, 12 insertions(+), 0 deletions(-)
 
 diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index 908f26f..ff5b764 100644
+index 501adb1..908f26f 100644
 --- a/include/linux/cgroup.h
 +++ b/include/linux/cgroup.h
-@@ -192,6 +192,7 @@ struct cgroup {
+@@ -191,6 +191,8 @@ struct cgroup {
+ 	 */
  	struct list_head css_sets;
  
- 	struct list_head allcg_node;	/* cgroupfs_root->allcg_list */
-+	struct list_head cft_q_node;	/* used during cftype add/rm */
- 
++	struct list_head allcg_node;	/* cgroupfs_root->allcg_list */
++
  	/*
  	 * Linked list running through all cgroups that can
-@@ -277,11 +278,17 @@ struct cgroup_map_cb {
-  *	- the 'cftype' of the file is file->f_dentry->d_fsdata
-  */
- 
--#define MAX_CFTYPE_NAME 64
-+/* cftype->flags */
-+#define CFTYPE_ONLY_ON_ROOT	(1U << 0)	/* only create on root cg */
-+#define CFTYPE_NOT_ON_ROOT	(1U << 1)	/* don't create onp root cg */
-+
-+#define MAX_CFTYPE_NAME		64
-+
- struct cftype {
- 	/*
- 	 * By convention, the name should begin with the name of the
--	 * subsystem, followed by a period
-+	 * subsystem, followed by a period.  Zero length string indicates
-+	 * end of cftype array.
- 	 */
- 	char name[MAX_CFTYPE_NAME];
- 	int private;
-@@ -297,6 +304,9 @@ struct cftype {
- 	 */
- 	size_t max_write_len;
- 
-+	/* CFTYPE_* flags */
-+	unsigned int flags;
-+
- 	int (*open)(struct inode *inode, struct file *file);
- 	ssize_t (*read)(struct cgroup *cgrp, struct cftype *cft,
- 			struct file *file,
-@@ -375,6 +385,16 @@ struct cftype {
- 			struct eventfd_ctx *eventfd);
- };
- 
-+/*
-+ * cftype_sets describe cftypes belonging to a subsystem and are chained at
-+ * cgroup_subsys->cftsets.  Each cftset points to an array of cftypes
-+ * terminated by zero length name.
-+ */
-+struct cftype_set {
-+	struct list_head		node;	/* chained at subsys->cftsets */
-+	const struct cftype		*cfts;
-+};
-+
- struct cgroup_scanner {
- 	struct cgroup *cg;
- 	int (*test_task)(struct task_struct *p, struct cgroup_scanner *scan);
-@@ -400,6 +420,8 @@ int cgroup_add_files(struct cgroup *cgrp,
- 			const struct cftype cft[],
- 			int count);
- 
-+int cgroup_add_cftypes(struct cgroup_subsys *ss, const struct cftype *cfts);
-+
- int cgroup_is_removed(const struct cgroup *cgrp);
- 
- int cgroup_path(const struct cgroup *cgrp, char *buf, int buflen);
-@@ -502,6 +524,13 @@ struct cgroup_subsys {
- 	struct idr idr;
- 	rwlock_t id_lock;
- 
-+	/* list of cftype_sets */
-+	struct list_head cftsets;
-+
-+	/* base cftypes, automatically [de]registered with subsys itself */
-+	struct cftype *base_cftypes;
-+	struct cftype_set base_cftset;
-+
- 	/* should be defined only by modular subsystems */
- 	struct module *module;
- };
+ 	 * potentially be reaped by the release agent. Protected by
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index fceee52..fe7a5c2 100644
+index 2e2f93b..fceee52 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -2627,8 +2627,14 @@ int cgroup_add_file(struct cgroup *cgrp,
- 	struct dentry *dentry;
- 	int error;
- 	umode_t mode;
--
- 	char name[MAX_CGROUP_TYPE_NAMELEN + MAX_CFTYPE_NAME + 2] = { 0 };
-+
-+	/* does @cft->flags tell us to skip creation on @cgrp? */
-+	if ((cft->flags & CFTYPE_NOT_ON_ROOT) && !cgrp->parent)
-+		return 0;
-+	if ((cft->flags & CFTYPE_ONLY_ON_ROOT) && cgrp->parent)
-+		return 0;
-+
- 	if (subsys && !test_bit(ROOT_NOPREFIX, &cgrp->root->flags)) {
- 		strcpy(name, subsys->name);
- 		strcat(name, ".");
-@@ -2664,6 +2670,95 @@ int cgroup_add_files(struct cgroup *cgrp,
- }
- EXPORT_SYMBOL_GPL(cgroup_add_files);
+@@ -127,6 +127,9 @@ struct cgroupfs_root {
+ 	/* A list running through the active hierarchies */
+ 	struct list_head root_list;
  
-+static DEFINE_MUTEX(cgroup_cft_mutex);
++	/* All cgroups on this root, cgroup_mutex protected */
++	struct list_head allcg_list;
 +
-+static void cgroup_cfts_prepare(void)
-+	__acquires(&cgroup_cft_mutex) __acquires(&cgroup_mutex)
-+{
-+	/*
-+	 * Thanks to the entanglement with vfs inode locking, we can't walk
-+	 * the existing cgroups under cgroup_mutex and create files.
-+	 * Instead, we increment reference on all cgroups and build list of
-+	 * them using @cgrp->cft_q_node.  Grab cgroup_cft_mutex to ensure
-+	 * exclusive access to the field.
-+	 */
-+	mutex_lock(&cgroup_cft_mutex);
-+	mutex_lock(&cgroup_mutex);
-+}
-+
-+static void cgroup_cfts_commit(struct cgroup_subsys *ss,
-+			       const struct cftype *cfts)
-+	__releases(&cgroup_mutex) __releases(&cgroup_cft_mutex)
-+{
-+	LIST_HEAD(pending);
-+	struct cgroup *cgrp, *n;
-+	int count = 0;
-+
-+	while (cfts[count].name[0] != '\0')
-+		count++;
-+
-+	/* %NULL @cfts indicates abort and don't bother if @ss isn't attached */
-+	if (cfts && ss->root != &rootnode) {
-+		list_for_each_entry(cgrp, &ss->root->allcg_list, allcg_node) {
-+			dget(cgrp->dentry);
-+			list_add_tail(&cgrp->cft_q_node, &pending);
-+		}
-+	}
-+
-+	mutex_unlock(&cgroup_mutex);
-+
-+	/*
-+	 * All new cgroups will see @cfts update on @ss->cftsets.  Add/rm
-+	 * files for all cgroups which were created before.
-+	 */
-+	list_for_each_entry_safe(cgrp, n, &pending, cft_q_node) {
-+		struct inode *inode = cgrp->dentry->d_inode;
-+
-+		mutex_lock(&inode->i_mutex);
-+		mutex_lock(&cgroup_mutex);
-+		if (!cgroup_is_removed(cgrp))
-+			cgroup_add_files(cgrp, ss, cfts, count);
-+		mutex_unlock(&cgroup_mutex);
-+		mutex_unlock(&inode->i_mutex);
-+
-+		list_del_init(&cgrp->cft_q_node);
-+		dput(cgrp->dentry);
-+	}
-+
-+	mutex_unlock(&cgroup_cft_mutex);
-+}
-+
-+/**
-+ * cgroup_add_cftypes - add an array of cftypes to a subsystem
-+ * @ss: target cgroup subsystem
-+ * @cfts: zero-length name terminated array of cftypes
-+ *
-+ * Register @cfts to @ss.  Files described by @cfts are created for all
-+ * existing cgroups to which @ss is attached and all future cgroups will
-+ * have them too.  This function can be called anytime whether @ss is
-+ * attached or not.
-+ *
-+ * Returns 0 on successful registration, -errno on failure.  Note that this
-+ * function currently returns 0 as long as @cfts registration is successful
-+ * even if some file creation attempts on existing cgroups fail.
-+ */
-+int cgroup_add_cftypes(struct cgroup_subsys *ss, const struct cftype *cfts)
-+{
-+	struct cftype_set *set;
-+
-+	set = kzalloc(sizeof(*set), GFP_KERNEL);
-+	if (!set)
-+		return -ENOMEM;
-+
-+	cgroup_cfts_prepare();
-+	set->cfts = cfts;
-+	list_add_tail(&set->node, &ss->cftsets);
-+	cgroup_cfts_commit(ss, cfts);
-+
-+	return 0;
-+}
-+EXPORT_SYMBOL_GPL(cgroup_add_cftypes);
-+
- /**
-  * cgroup_task_count - count the number of tasks in a cgroup.
-  * @cgrp: the cgroup in question
-@@ -3664,10 +3759,25 @@ static int cgroup_populate_dir(struct cgroup *cgrp)
- 			return err;
- 	}
+ 	/* Hierarchy-specific flags */
+ 	unsigned long flags;
  
-+	/* process cftsets of each subsystem */
- 	for_each_subsys(cgrp->root, ss) {
-+		struct cftype_set *set;
-+
- 		if (ss->populate && (err = ss->populate(ss, cgrp)) < 0)
- 			return err;
-+
-+		list_for_each_entry(set, &ss->cftsets, node) {
-+			const struct cftype *cft;
-+
-+			for (cft = set->cfts; cft->name[0] != '\0'; cft++) {
-+				err = cgroup_add_file(cgrp, ss, cft);
-+				if (err)
-+					pr_warning("cgroup_populate_dir: failed to create %s, err=%d\n",
-+						   cft->name, err);
-+			}
-+		}
- 	}
-+
- 	/* This cgroup is ready now */
- 	for_each_subsys(cgrp->root, ss) {
- 		struct cgroup_subsys_state *css = cgrp->subsys[ss->subsys_id];
-@@ -4038,12 +4148,29 @@ again:
- 	return 0;
- }
- 
-+static void __init_or_module cgroup_init_cftsets(struct cgroup_subsys *ss)
-+{
-+	INIT_LIST_HEAD(&ss->cftsets);
-+
-+	/*
-+	 * base_cftset is embedded in subsys itself, no need to worry about
-+	 * deregistration.
-+	 */
-+	if (ss->base_cftypes) {
-+		ss->base_cftset.cfts = ss->base_cftypes;
-+		list_add_tail(&ss->base_cftset.node, &ss->cftsets);
-+	}
-+}
-+
- static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
+@@ -1350,11 +1353,14 @@ static void init_cgroup_housekeeping(struct cgroup *cgrp)
+ static void init_cgroup_root(struct cgroupfs_root *root)
  {
- 	struct cgroup_subsys_state *css;
- 
- 	printk(KERN_INFO "Initializing cgroup subsys %s\n", ss->name);
- 
-+	/* init base cftset */
-+	cgroup_init_cftsets(ss);
+ 	struct cgroup *cgrp = &root->top_cgroup;
 +
- 	/* Create the top cgroup state for this subsystem */
- 	list_add(&ss->sibling, &rootnode.subsys_list);
- 	ss->root = &rootnode;
-@@ -4113,6 +4240,9 @@ int __init_or_module cgroup_load_subsys(struct cgroup_subsys *ss)
- 		return 0;
- 	}
+ 	INIT_LIST_HEAD(&root->subsys_list);
+ 	INIT_LIST_HEAD(&root->root_list);
++	INIT_LIST_HEAD(&root->allcg_list);
+ 	root->number_of_cgroups = 1;
+ 	cgrp->root = root;
+ 	cgrp->top_cgroup = cgrp;
++	list_add_tail(&cgrp->allcg_node, &root->allcg_list);
+ 	init_cgroup_housekeeping(cgrp);
+ }
  
-+	/* init base cftset */
-+	cgroup_init_cftsets(ss);
+@@ -3794,6 +3800,8 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
+ 	/* The cgroup directory was pre-locked for us */
+ 	BUG_ON(!mutex_is_locked(&cgrp->dentry->d_inode->i_mutex));
+ 
++	list_add_tail(&cgrp->allcg_node, &root->allcg_list);
 +
- 	/*
- 	 * need to register a subsys id before anything else - for example,
- 	 * init_cgroup_css needs it.
+ 	err = cgroup_populate_dir(cgrp);
+ 	/* If err < 0, we have a half-filled directory - oh well ;) */
+ 
+@@ -4002,6 +4010,8 @@ again:
+ 	list_del_init(&cgrp->sibling);
+ 	cgroup_unlock_hierarchy(cgrp->root);
+ 
++	list_del_init(&cgrp->allcg_node);
++
+ 	d = dget(cgrp->dentry);
+ 
+ 	cgroup_d_remove_dir(d);
 -- 
 1.7.7.3
