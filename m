@@ -1,23 +1,11 @@
-From: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-Subject: Re: Q: cgroup: Questions about possible issues in cgroup locking
-Date: Wed, 21 Mar 2012 11:59:55 -0700
-Message-ID: <20120321185955.GK27051@google.com>
-References: <20120111160730.GA24556@redhat.com>
-	<20120112003102.GB9511@google.com>
-	<20120112170728.GA25717@redhat.com>
-	<20120112175725.GD9511@google.com>
-	<20120113152010.GA19215@redhat.com>
-	<20120113182750.GD18166@google.com>
-	<20120114173648.GA32543@redhat.com>
-	<20120118231742.GS18166@google.com>
-	<20120119154522.GA14058@redhat.com>
-	<20120320193414.GA21277@redhat.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [PATCHSET] cgroup: cftype based file interface, take #2
+Date: Wed, 21 Mar 2012 15:17:33 -0700
+Message-ID: <1332368265-21586-1-git-send-email-tj__8634.69415712661$1332368282$gmane$org@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20120320193414.GA21277-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,100 +15,91 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Oleg Nesterov (oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org) wrote:
-> OK, finally we should do something with this problem ;)
-> 
-> On 01/19, Oleg Nesterov wrote:
-> >
-> > I'll try to investigate if we can remove
-> >
-> > 	leader->group_leader = tsk;
-> >
-> > from de_thread(). In fact I already thought about this change a long
-> > ago without any connection to while_each_thread(). This assignment
-> > looks "assymetrical" compared to other threads we kill. But we did
-> > have a reason (reasons?). Hopefully, the only really important reason
-> > was already removed by 087806b1.
-> 
-> On the second thought, I think we should not do this.
-> 
-> For example, do_prlimit() assumes that tsk->group_leader is correct
-> under tasklist_lock.
-> 
-> OK, lets return to the thread_group_leader() check. To ensure we do
-> not visit the same thread twice we can check 'g', not 't'.
-> 
-> This is what I am going to send, after I re-check once again...
-> 
-> I have the problem with the changelog ;) Somehow it should explain
-> that while_each_thread_rcu(g, t) can't race with do_group_exit().
-> I think it can't, list_del_rcu(leader->thread_group) happens when
-> this entry is already "empty", it should be the last thread in group.
-> If the non-leader thread goes away from the least, we still have
-> the "path" to reach the leader. But this is not easy to explain.
-> 
-> As for the barrier. If de_thread() changes the leader it drops
-> and re-acquires tasklist_lock (this implies mb) after it changes
-> old_leader->exit_signal (used in thread_group_leader) and before
-> __unhash_process() which does list_del_rcu().
-> 
-> This means that if while_each_thread() sees the result of
-> list_del_rcu(old_leader) it must also see that
-> thread_group_leader(old_leader) != T.
-> 
-> What do you think? Do you see any problems?
-> 
-> Oleg.
-> ---
-> 
-> diff --git a/include/linux/sched.h b/include/linux/sched.h
-> index 7d379a6..f169bfd 100644
-> --- a/include/linux/sched.h
-> +++ b/include/linux/sched.h
-> @@ -2323,9 +2323,24 @@ extern bool current_is_single_threaded(void);
->  #define do_each_thread(g, t) \
->  	for (g = t = &init_task ; (g = t = next_task(g)) != &init_task ; ) do
->  
-> +/*
-> + * needs tasklist_lock or ->siglock, or rcu if the caller ensures
-> + * that 'g' can't exit or exec.
-> + */
->  #define while_each_thread(g, t) \
->  	while ((t = next_thread(t)) != g)
->  
-> +/*
-> + * rcu-safe, but should start at ->group_leader.
-> + * thread_group_leader(g) protects against the race with exec which
-> + * removes the leader from list.
-> + * smp_rmb() pairs with implicit mb() implied by unlock + lock in
-> + * de_thread()->release_task() path.
-> + */
-> +#define while_each_thread_rcu(g, t)				\
-> +	while ((t = next_thread(t)) != g &&			\
-> +		({ smp_rmb(); thread_group_leader(g); }))
-> +
+Hello,
 
-Couldn't you miss the exec_thread if:
+This is the second take at improving cgroup file addition/removal
+interface.  Changes from the last take[L] are,
 
-t = exec_thread && !thread_group_leader(g)
+* CGROUP_SUBSYS_CFTYPES[_COND]() dropped and
+  cgroup_subsys->base_cftypes is added instead.  This works better for
+  subsystems implemented as module.  tcp_memcontrol now uses an
+  explicit __initcall() to register its cftypes.
 
-i.e. if you just passed (leader->group_leader = tsk;) in de_thread().
+* 0005-cgroup-relocate-cftype-and-cgroup_subsys-definitions.patch
+  added as cleanup.
 
-Could we change do_prlimit()? Especially since its slow path.
+* 0007-memcg-always-create-memsw-files-if-CONFIG_CGROUP_MEM.patch
+  added so that memsw files are always created if enabled in config as
+  suggested by KAMEZAWA.
 
-I really like you're earlier solution (ignoring barrier):
+This patch replaces cgroup file interface with cftype based one which
+allows dynamic additions and removals of cftype arrays whether the
+target subsystem is attached or not.  This can be used to make subsys
+rebinding via remount work properly but I intentionally avoided doing
+that at the moment.
 
-#define while_each_thread(g, t) \
-	while (t->group_leader == g->group_leader && (t = next_thread(t)) != g)
+This makes cgroup population simpler for controllers and will be used
+to allow controllers to be more dynamic.  e.g. blkio subsys has
+sub-policies which may come and go while blkio subsys is attached and
+it currently uses fixed set of files which stays blank if not in use.
+This will also be useful for implementing unified hierarchy.
 
-Regards,
-Mandeep
+This patchset contains the following patches.
 
->  static inline int get_nr_threads(struct task_struct *tsk)
->  {
->  	return tsk->signal->nr_threads;
-> 
+ 0001-cgroup-move-cgroup_clear_directory-call-out-of-cgrou.patch
+ 0002-cgroup-build-list-of-all-cgroups-under-a-given-cgrou.patch
+ 0003-cgroup-implement-cgroup_add_cftypes-and-friends.patch
+ 0004-cgroup-merge-cft_release_agent-cftype-array-into-the.patch
+ 0005-cgroup-relocate-cftype-and-cgroup_subsys-definitions.patch
+ 0006-cgroup-convert-all-non-memcg-controllers-to-the-new-.patch
+ 0007-memcg-always-create-memsw-files-if-CONFIG_CGROUP_MEM.patch
+ 0008-cgroup-convert-memcg-controller-to-the-new-cftype-in.patch
+ 0009-cgroup-remove-cgroup_add_file-s.patch
+ 0010-cgroup-relocate-__d_cgrp-and-__d_cft.patch
+ 0011-cgroup-introduce-struct-cfent.patch
+ 0012-cgroup-implement-cgroup_rm_cftypes.patch
+
+and is on top of
+
+  cgroup/for-3.4 3ce3230a0cff484e5130153f244d4fb8a56b3a8b
++ [1] cgroup: deprecate remount option changes mount option
+
+and is also available in the following git branch.
+
+ git://git.kernel.org/pub/scm/linux/kernel/git/tj/misc.git cgroup-cftype
+
+Glauber, I think the cftypes registration for tcp_memcontrol is fine
+as is in this patchset and we just need to move the init to the tail
+of ->create().  Let's worry about memcg for module-loadable protocols
+whey they are added.  Can you please send a patch to move init to
+->create()?
+
+If nobody objects && after Li comes back and acks the changes, I'll
+route these through cgroup/for-3.5.
+
+diffstat follows.
+
+ block/blk-cgroup.c        |   45 ++---
+ include/linux/cgroup.h    |   51 ++++--
+ kernel/cgroup.c           |  359 +++++++++++++++++++++++++++++++++++-----------
+ kernel/cgroup_freezer.c   |   11 -
+ kernel/cpuset.c           |   31 +--
+ kernel/sched/core.c       |   16 --
+ mm/memcontrol.c           |   77 ++++-----
+ net/core/netprio_cgroup.c |   30 +--
+ net/ipv4/tcp_memcontrol.c |   71 ++++-----
+ net/sched/cls_cgroup.c    |   31 +--
+ security/device_cgroup.c  |   10 -
+ 11 files changed, 437 insertions(+), 295 deletions(-)
+
+Thanks.
+
+--
+tejun
+
+[L] http://thread.gmane.org/gmane.linux.kernel.containers/22623
+[1] http://thread.gmane.org/gmane.linux.kernel.cgroups/1192/focus=22611
