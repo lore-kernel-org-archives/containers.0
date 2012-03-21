@@ -1,7 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 09/12] cgroup: remove cgroup_add_file[s]()
-Date: Wed, 21 Mar 2012 15:17:42 -0700
-Message-ID: <1332368265-21586-10-git-send-email-tj@kernel.org>
+Subject: [PATCH 07/12] memcg: always create memsw files if
+	CONFIG_CGROUP_MEM_RES_CTLR_SWAP
+Date: Wed, 21 Mar 2012 15:17:40 -0700
+Message-ID: <1332368265-21586-8-git-send-email-tj@kernel.org>
 References: <1332368265-21586-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -18,154 +19,194 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-No controller is using cgroup_add_files[s]().  Unexport them, and
-convert cgroup_add_files() to handle NULL entry terminated array
-instead of taking count explicitly and continue creation on failure
-for internal use.
+Instead of conditioning creation of memsw files on do_swap_account,
+always create the files if compiled-in and fail read/write attempts
+with -EOPNOTSUPP if !do_swap_account.
+
+This is suggested by KAMEZAWA to simplify memcg file creation so that
+it can use cgroup->subsys_cftypes.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 ---
- include/linux/cgroup.h |   16 ---------------
- kernel/cgroup.c        |   51 ++++++++++++++++++-----------------------------
- 2 files changed, 20 insertions(+), 47 deletions(-)
+ mm/memcontrol.c |   65 ++++++++++++++++++++++++++----------------------------
+ 1 files changed, 31 insertions(+), 34 deletions(-)
 
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index ff5b764..45869d7 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -404,22 +404,6 @@ struct cgroup_scanner {
- 	void *data;
- };
- 
--/*
-- * Add a new file to the given cgroup directory. Should only be
-- * called by subsystems from within a populate() method
-- */
--int cgroup_add_file(struct cgroup *cgrp, struct cgroup_subsys *subsys,
--		       const struct cftype *cft);
--
--/*
-- * Add a set of new files to the given cgroup directory. Should
-- * only be called by subsystems from within a populate() method
-- */
--int cgroup_add_files(struct cgroup *cgrp,
--			struct cgroup_subsys *subsys,
--			const struct cftype cft[],
--			int count);
--
- int cgroup_add_cftypes(struct cgroup_subsys *ss, const struct cftype *cfts);
- 
- int cgroup_is_removed(const struct cgroup *cgrp);
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index d6fe34a..02e131e 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -2619,9 +2619,8 @@ static umode_t cgroup_file_mode(const struct cftype *cft)
- 	return mode;
+diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+index ae2f0a8..1e2a9d1 100644
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -3818,14 +3818,21 @@ static inline u64 mem_cgroup_usage(struct mem_cgroup *memcg, bool swap)
+ 	return val << PAGE_SHIFT;
  }
  
--int cgroup_add_file(struct cgroup *cgrp,
--		       struct cgroup_subsys *subsys,
--		       const struct cftype *cft)
-+static int cgroup_add_file(struct cgroup *cgrp, struct cgroup_subsys *subsys,
-+			   const struct cftype *cft)
+-static u64 mem_cgroup_read(struct cgroup *cont, struct cftype *cft)
++static ssize_t mem_cgroup_read(struct cgroup *cont, struct cftype *cft,
++			       struct file *file, char __user *buf,
++			       size_t nbytes, loff_t *ppos)
  {
- 	struct dentry *dir = cgrp->dentry;
- 	struct dentry *dentry;
-@@ -2653,22 +2652,23 @@ int cgroup_add_file(struct cgroup *cgrp,
- 		error = PTR_ERR(dentry);
- 	return error;
- }
--EXPORT_SYMBOL_GPL(cgroup_add_file);
+ 	struct mem_cgroup *memcg = mem_cgroup_from_cont(cont);
++	char str[64];
+ 	u64 val;
+-	int type, name;
++	int type, name, len;
  
--int cgroup_add_files(struct cgroup *cgrp,
--			struct cgroup_subsys *subsys,
--			const struct cftype cft[],
--			int count)
-+static int cgroup_add_files(struct cgroup *cgrp, struct cgroup_subsys *subsys,
-+			    const struct cftype cfts[])
- {
--	int i, err;
--	for (i = 0; i < count; i++) {
--		err = cgroup_add_file(cgrp, subsys, &cft[i]);
--		if (err)
--			return err;
-+	const struct cftype *cft;
-+	int err, ret = 0;
+ 	type = MEMFILE_TYPE(cft->private);
+ 	name = MEMFILE_ATTR(cft->private);
 +
-+	for (cft = cfts; cft->name[0] != '\0'; cft++) {
-+		err = cgroup_add_file(cgrp, subsys, cft);
-+		if (err) {
-+			pr_warning("cgroup_add_files: failed to create %s, err=%d\n",
-+				   cft->name, err);
-+			ret = err;
-+		}
++	if (!do_swap_account && type == _MEMSWAP)
++		return -EOPNOTSUPP;
++
+ 	switch (type) {
+ 	case _MEM:
+ 		if (name == RES_USAGE)
+@@ -3843,7 +3850,9 @@ static u64 mem_cgroup_read(struct cgroup *cont, struct cftype *cft)
+ 		BUG();
+ 		break;
  	}
--	return 0;
-+	return ret;
+-	return val;
++
++	len = scnprintf(str, sizeof(str), "%llu\n", (unsigned long long)val);
++	return simple_read_from_buffer(buf, nbytes, ppos, str, len);
  }
--EXPORT_SYMBOL_GPL(cgroup_add_files);
+ /*
+  * The user of this function is...
+@@ -3859,6 +3868,10 @@ static int mem_cgroup_write(struct cgroup *cont, struct cftype *cft,
  
- static DEFINE_MUTEX(cgroup_cft_mutex);
+ 	type = MEMFILE_TYPE(cft->private);
+ 	name = MEMFILE_ATTR(cft->private);
++
++	if (!do_swap_account && type == _MEMSWAP)
++		return -EOPNOTSUPP;
++
+ 	switch (name) {
+ 	case RES_LIMIT:
+ 		if (mem_cgroup_is_root(memcg)) { /* Can't set limit on root */
+@@ -3925,12 +3938,15 @@ out:
  
-@@ -2692,10 +2692,6 @@ static void cgroup_cfts_commit(struct cgroup_subsys *ss,
+ static int mem_cgroup_reset(struct cgroup *cont, unsigned int event)
  {
- 	LIST_HEAD(pending);
- 	struct cgroup *cgrp, *n;
--	int count = 0;
--
--	while (cfts[count].name[0] != '\0')
--		count++;
+-	struct mem_cgroup *memcg;
++	struct mem_cgroup *memcg = mem_cgroup_from_cont(cont);
+ 	int type, name;
  
- 	/* %NULL @cfts indicates abort and don't bother if @ss isn't attached */
- 	if (cfts && ss->root != &rootnode) {
-@@ -2717,7 +2713,7 @@ static void cgroup_cfts_commit(struct cgroup_subsys *ss,
- 		mutex_lock(&inode->i_mutex);
- 		mutex_lock(&cgroup_mutex);
- 		if (!cgroup_is_removed(cgrp))
--			cgroup_add_files(cgrp, ss, cfts, count);
-+			cgroup_add_files(cgrp, ss, cfts);
- 		mutex_unlock(&cgroup_mutex);
- 		mutex_unlock(&inode->i_mutex);
- 
-@@ -3743,6 +3739,7 @@ static struct cftype files[] = {
- 		.write_string = cgroup_release_agent_write,
- 		.max_write_len = PATH_MAX,
+-	memcg = mem_cgroup_from_cont(cont);
+ 	type = MEMFILE_TYPE(event);
+ 	name = MEMFILE_ATTR(event);
++
++	if (!do_swap_account && type == _MEMSWAP)
++		return -EOPNOTSUPP;
++
+ 	switch (name) {
+ 	case RES_MAX_USAGE:
+ 		if (type == _MEM)
+@@ -4599,7 +4615,7 @@ static struct cftype mem_cgroup_files[] = {
+ 	{
+ 		.name = "usage_in_bytes",
+ 		.private = MEMFILE_PRIVATE(_MEM, RES_USAGE),
+-		.read_u64 = mem_cgroup_read,
++		.read = mem_cgroup_read,
+ 		.register_event = mem_cgroup_usage_register_event,
+ 		.unregister_event = mem_cgroup_usage_unregister_event,
  	},
-+	{ }	/* terminate */
- };
- 
- static int cgroup_populate_dir(struct cgroup *cgrp)
-@@ -3750,7 +3747,7 @@ static int cgroup_populate_dir(struct cgroup *cgrp)
- 	int err;
- 	struct cgroup_subsys *ss;
- 
--	err = cgroup_add_files(cgrp, NULL, files, ARRAY_SIZE(files));
-+	err = cgroup_add_files(cgrp, NULL, files);
- 	if (err < 0)
- 		return err;
- 
-@@ -3761,16 +3758,8 @@ static int cgroup_populate_dir(struct cgroup *cgrp)
- 		if (ss->populate && (err = ss->populate(ss, cgrp)) < 0)
- 			return err;
- 
--		list_for_each_entry(set, &ss->cftsets, node) {
--			const struct cftype *cft;
+@@ -4607,25 +4623,25 @@ static struct cftype mem_cgroup_files[] = {
+ 		.name = "max_usage_in_bytes",
+ 		.private = MEMFILE_PRIVATE(_MEM, RES_MAX_USAGE),
+ 		.trigger = mem_cgroup_reset,
+-		.read_u64 = mem_cgroup_read,
++		.read = mem_cgroup_read,
+ 	},
+ 	{
+ 		.name = "limit_in_bytes",
+ 		.private = MEMFILE_PRIVATE(_MEM, RES_LIMIT),
+ 		.write_string = mem_cgroup_write,
+-		.read_u64 = mem_cgroup_read,
++		.read = mem_cgroup_read,
+ 	},
+ 	{
+ 		.name = "soft_limit_in_bytes",
+ 		.private = MEMFILE_PRIVATE(_MEM, RES_SOFT_LIMIT),
+ 		.write_string = mem_cgroup_write,
+-		.read_u64 = mem_cgroup_read,
++		.read = mem_cgroup_read,
+ 	},
+ 	{
+ 		.name = "failcnt",
+ 		.private = MEMFILE_PRIVATE(_MEM, RES_FAILCNT),
+ 		.trigger = mem_cgroup_reset,
+-		.read_u64 = mem_cgroup_read,
++		.read = mem_cgroup_read,
+ 	},
+ 	{
+ 		.name = "stat",
+@@ -4665,14 +4681,11 @@ static struct cftype mem_cgroup_files[] = {
+ 		.mode = S_IRUGO,
+ 	},
+ #endif
+-};
 -
--			for (cft = set->cfts; cft->name[0] != '\0'; cft++) {
--				err = cgroup_add_file(cgrp, ss, cft);
--				if (err)
--					pr_warning("cgroup_populate_dir: failed to create %s, err=%d\n",
--						   cft->name, err);
--			}
--		}
-+		list_for_each_entry(set, &ss->cftsets, node)
-+			cgroup_add_files(cgrp, ss, set->cfts);
- 	}
+ #ifdef CONFIG_CGROUP_MEM_RES_CTLR_SWAP
+-static struct cftype memsw_cgroup_files[] = {
+ 	{
+ 		.name = "memsw.usage_in_bytes",
+ 		.private = MEMFILE_PRIVATE(_MEMSWAP, RES_USAGE),
+-		.read_u64 = mem_cgroup_read,
++		.read = mem_cgroup_read,
+ 		.register_event = mem_cgroup_usage_register_event,
+ 		.unregister_event = mem_cgroup_usage_unregister_event,
+ 	},
+@@ -4680,35 +4693,22 @@ static struct cftype memsw_cgroup_files[] = {
+ 		.name = "memsw.max_usage_in_bytes",
+ 		.private = MEMFILE_PRIVATE(_MEMSWAP, RES_MAX_USAGE),
+ 		.trigger = mem_cgroup_reset,
+-		.read_u64 = mem_cgroup_read,
++		.read = mem_cgroup_read,
+ 	},
+ 	{
+ 		.name = "memsw.limit_in_bytes",
+ 		.private = MEMFILE_PRIVATE(_MEMSWAP, RES_LIMIT),
+ 		.write_string = mem_cgroup_write,
+-		.read_u64 = mem_cgroup_read,
++		.read = mem_cgroup_read,
+ 	},
+ 	{
+ 		.name = "memsw.failcnt",
+ 		.private = MEMFILE_PRIVATE(_MEMSWAP, RES_FAILCNT),
+ 		.trigger = mem_cgroup_reset,
+-		.read_u64 = mem_cgroup_read,
++		.read = mem_cgroup_read,
+ 	},
+-};
+-
+-static int register_memsw_files(struct cgroup *cont, struct cgroup_subsys *ss)
+-{
+-	if (!do_swap_account)
+-		return 0;
+-	return cgroup_add_files(cont, ss, memsw_cgroup_files,
+-				ARRAY_SIZE(memsw_cgroup_files));
+-};
+-#else
+-static int register_memsw_files(struct cgroup *cont, struct cgroup_subsys *ss)
+-{
+-	return 0;
+-}
+ #endif
++};
  
- 	/* This cgroup is ready now */
+ static int alloc_mem_cgroup_per_zone_info(struct mem_cgroup *memcg, int node)
+ {
+@@ -4969,9 +4969,6 @@ static int mem_cgroup_populate(struct cgroup_subsys *ss,
+ 				ARRAY_SIZE(mem_cgroup_files));
+ 
+ 	if (!ret)
+-		ret = register_memsw_files(cont, ss);
+-
+-	if (!ret)
+ 		ret = register_kmem_files(cont, ss);
+ 
+ 	return ret;
 -- 
 1.7.7.3
