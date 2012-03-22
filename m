@@ -1,10 +1,9 @@
-From: MAILER-DAEMON-m06wyfOVpVgiYD3Z9jO1QKx1fchgwxRQ5NbjCUgZEJk@public.gmane.org
-Subject: failure notice
-Date: 22 Mar 2012 11:16:23 +0100
-Message-ID: <20120322101632.55367523@mail.linuxfoundation.org>
+From: postmaster-qMKci2gRNKhcMntx7duxhRL4W9x8LtSr@public.gmane.org
+Subject: Delivery Status Notification (Failure)
+Date: Thu, 22 Mar 2012 14:47:17 +0100
+Message-ID: <gcOrBLSAQ00004b54@EEM3FRO.empresa.euskaltel.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============4956610105030304852=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,61 +17,108 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi. This is the qmail-send program at envialiaworld-rhel.acens.net.
-I'm afraid I wasn't able to deliver your message to the following addresses.
-This is a permanent error; I've given up. Sorry it didn't work out.
+This is a MIME-formatted message.  
+Portions of this message may be unreadable without a MIME-capable mail program.
 
-<xue1944thavy-M8/+GwdlPWg@public.gmane.org>:
-80.168.44.20 does not like recipient.
-Remote host said: 550 "xue1944thavy-M8/+GwdlPWg@public.gmane.org" is not a known user
-Giving up on 80.168.44.20.
+--===============4956610105030304852==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="9B095B5ADSN=_01CCF7A93AD5EBB900008B1CEEM3FRO.empresa."
 
-<xue192subhdail-M8/+GwdlPWg@public.gmane.org>:
-80.168.44.20 does not like recipient.
-Remote host said: 550 "xue192subhdail-M8/+GwdlPWg@public.gmane.org" is not a known user
-Giving up on 80.168.44.20.
+This is a MIME-formatted message.  
+Portions of this message may be unreadable without a MIME-capable mail program.
 
-<xue194-M8/+GwdlPWg@public.gmane.org>:
-80.168.44.20 does not like recipient.
-Remote host said: 550 "xue194-M8/+GwdlPWg@public.gmane.org" is not a known user
-Giving up on 80.168.44.20.
+--9B095B5ADSN=_01CCF7A93AD5EBB900008B1CEEM3FRO.empresa.
+Content-Type: text/plain; charset=unicode-1-1-utf-7
 
-<xue195-M8/+GwdlPWg@public.gmane.org>:
-80.168.44.20 does not like recipient.
-Remote host said: 550 "xue195-M8/+GwdlPWg@public.gmane.org" is not a known user
-Giving up on 80.168.44.20.
+This is an automatically generated Delivery Status Notification.
 
-<xue1971sorel-M8/+GwdlPWg@public.gmane.org>:
-80.168.44.20 does not like recipient.
-Remote host said: 550 "xue1971sorel-M8/+GwdlPWg@public.gmane.org" is not a known user
-Giving up on 80.168.44.20.
+Delivery to the following recipients failed.
 
---- Below this line is a copy of the message.
+       ettmel-e7mAqy1nzl5eoWH0uzbU5w@public.gmane.org
 
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: (qmail 28695 invoked from network); 22 Mar 2012 11:16:23 +0100
-Received: from host106-70-static.52-88-b.business.telecomitalia.it (HELO 10.0.0.3) (88.52.70.106)
-  by mail.envialia-urgente.com with SMTP; 22 Mar 2012 11:16:22 +0100
-Received: from [10.0.0.3] by 10.0.0.3 id dntLKVraclDK with SMTP; Thu, 22 Mar 2012 11:16:22 +0100
-Date: Thu, 22 Mar 2012 11:16:22 +0100
-From: "OrderCo" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v3.2.1.5) Personal
+
+
+
+--9B095B5ADSN=_01CCF7A93AD5EBB900008B1CEEM3FRO.empresa.
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns;EEM3FRO.empresa.euskaltel.com
+Received-From-MTA: dns;eem2barout.euskalnet.net
+Arrival-Date: Thu, 22 Mar 2012 14:47:14 +0100
+
+Final-Recipient: rfc822;ettmel-e7mAqy1nzl5eoWH0uzbU5w@public.gmane.org
+Action: failed
+Status: 5.5.0
+Diagnostic-Code: smtp;550 #5.1.0 Address rejected ettmel-e7mAqy1nzl5eoWH0uzbU5w@public.gmane.org
+
+--9B095B5ADSN=_01CCF7A93AD5EBB900008B1CEEM3FRO.empresa.
+Content-Type: message/rfc822
+
+Received: from eem2barout.euskalnet.net ([212.142.144.20]) by EEM3FRO.empresa.euskaltel.com with Microsoft SMTPSVC(6.0.3790.1830);
+	 Thu, 22 Mar 2012 14:47:14 +0100
+X-ASG-Debug-ID: 1332424033-0484406ffc9f000002-gkgoHR
+Received: from vps.hostname1.com ([199.59.62.12]) by eem2barout.euskalnet.net with ESMTP id qEw3806ylSFxYY6Z; Thu, 22 Mar 2012 14:47:13 +0100 (CET)
+X-Barracuda-Envelope-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-Barracuda-AUTH-User: diruzaintza.mundaka@bizkaia
+X-Barracuda-Apparent-Source-IP: 199.59.62.12
+Received: from [199.59.62.12] by vps.hostname1.com id lQnScNnHe9vp with SMTP; Thu, 22 Mar 2012 16:47:13 +0300
+Date: Thu, 22 Mar 2012 16:47:13 +0300
+From: "CFX Group." <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v3.06.8) Home
 X-Priority: 3 (Normal)
-Message-ID: <26583584.41509442938500-pnqoK4XgnHU@public.gmane.org>
-To: <xue192subhdail-M8/+GwdlPWg@public.gmane.org>
-Subject: betalen met
+Message-ID: <111271320.90765511994503-d/A+yXWgOnhNZqUStOAizwC/G2K4zDHf@public.gmane.org>
+To: <ettipasquipasqui60-e7mAqy1nzl5eoWH0uzbU5w@public.gmane.org>
+Subject: Suspicious URL:Re[2]: Nuovi dati
 MIME-Version: 1.0
+X-ASG-Orig-Subj: Re[2]: Nuovi dati
 Content-Type: text/plain;
 	charset="windows-1252"
-Content-Transfer-Encoding: 8bit
+X-Barracuda-Connect: UNKNOWN[199.59.62.12]
+X-Barracuda-Start-Time: 1332424033
+X-Barracuda-URL: http://212.142.144.20:8000/cgi-mod/mark.cgi
+X-Virus-Scanned: by bsmtpd at euskalne.net
+X-Barracuda-Spam-Score: 0.85
+X-Barracuda-Spam-Status: No, SCORE=0.85 using global scores of TAG_LEVEL=1000.0 QUARANTINE_LEVEL=1000.0 KILL_LEVEL=7.0 tests=FORGED_MUA_THEBAT_CS
+X-Barracuda-Spam-Report: Code version 3.2, rules version 3.2.2.91923
+	Rule breakdown below
+	 pts rule name              description
+	---- ---------------------- --------------------------------------------------
+	0.85 FORGED_MUA_THEBAT_CS   Mail pretending to be from The Bat! (charset)
+Content-Transfer-Encoding: quoted-printable
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-OriginalArrivalTime: 22 Mar 2012 13:47:14.0769 (UTC) FILETIME=[4A11F410:01CD0832]
+X-TM-AS-Product-Ver: SMEX-10.0.0.1412-6.800.1017-18788.002
+X-TM-AS-Result: Yes-0.0-0.0-31
+X-TM-AS-User-Approved-Sender: No
+X-TM-AS-User-Blocked-Sender: No
 
 
-       
-Guten Tag, xue192subhdail
+   =20
+Gentile utente, Monte Biz =20
+         =20
 
 
-U gefactureerd #724951.
-Informatie:
-http://www.deatflorenzia.it/stat/Stat.zip?idinvoice40285701Accidxue192subhdail-M8/+GwdlPWg@public.gmane.org
+La risposta alla tua domanda riguardo al profilo sul nostro sito web 15.0=
+3.2012.
 
-Moeten worden betaald tot en met 26.03.2012.
+
+Link Statistiche:
+http://www.acunbusa.it/i/Pagamento/Fattura.zip
+
+
+
+
+
+--9B095B5ADSN=_01CCF7A93AD5EBB900008B1CEEM3FRO.empresa.--
+
+--===============4956610105030304852==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============4956610105030304852==--
