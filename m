@@ -1,9 +1,9 @@
 From: postmaster-qMKci2gRNKhcMntx7duxhRL4W9x8LtSr@public.gmane.org
 Subject: Delivery Status Notification (Failure)
-Date: Thu, 22 Mar 2012 14:47:17 +0100
-Message-ID: <fob7bOsPT00004b56@EEM3FRO.empresa.euskaltel.com>
+Date: Thu, 22 Mar 2012 14:47:18 +0100
+Message-ID: <QxHgnfOHr00004b57@EEM3FRO.empresa.euskaltel.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1048026284107859191=="
+Content-Type: multipart/mixed; boundary="===============4236850557388756519=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -20,43 +20,43 @@ List-Id: containers.vger.kernel.org
 This is a MIME-formatted message.  
 Portions of this message may be unreadable without a MIME-capable mail program.
 
---===============1048026284107859191==
+--===============4236850557388756519==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="9B095B5ADSN=_01CCF7A93AD5EBB900008B1EEEM3FRO.empresa."
+	boundary="9B095B5ADSN=_01CCF7A93AD5EBB900008B1FEEM3FRO.empresa."
 
 This is a MIME-formatted message.  
 Portions of this message may be unreadable without a MIME-capable mail program.
 
---9B095B5ADSN=_01CCF7A93AD5EBB900008B1EEEM3FRO.empresa.
+--9B095B5ADSN=_01CCF7A93AD5EBB900008B1FEEM3FRO.empresa.
 Content-Type: text/plain; charset=unicode-1-1-utf-7
 
 This is an automatically generated Delivery Status Notification.
 
 Delivery to the following recipients failed.
 
-       ettipasquipasqui60-e7mAqy1nzl5eoWH0uzbU5w@public.gmane.org
+       ettitogli.davidetutto-e7mAqy1nzl5eoWH0uzbU5w@public.gmane.org
 
 
 
 
---9B095B5ADSN=_01CCF7A93AD5EBB900008B1EEEM3FRO.empresa.
+--9B095B5ADSN=_01CCF7A93AD5EBB900008B1FEEM3FRO.empresa.
 Content-Type: message/delivery-status
 
 Reporting-MTA: dns;EEM3FRO.empresa.euskaltel.com
 Received-From-MTA: dns;eem2barout.euskalnet.net
 Arrival-Date: Thu, 22 Mar 2012 14:47:14 +0100
 
-Final-Recipient: rfc822;ettipasquipasqui60-e7mAqy1nzl5eoWH0uzbU5w@public.gmane.org
+Final-Recipient: rfc822;ettitogli.davidetutto-e7mAqy1nzl5eoWH0uzbU5w@public.gmane.org
 Action: failed
 Status: 5.5.0
-Diagnostic-Code: smtp;550 #5.1.0 Address rejected ettipasquipasqui60-e7mAqy1nzl5eoWH0uzbU5w@public.gmane.org
+Diagnostic-Code: smtp;550 #5.1.0 Address rejected ettitogli.davidetutto-e7mAqy1nzl5eoWH0uzbU5w@public.gmane.org
 
---9B095B5ADSN=_01CCF7A93AD5EBB900008B1EEEM3FRO.empresa.
+--9B095B5ADSN=_01CCF7A93AD5EBB900008B1FEEM3FRO.empresa.
 Content-Type: message/rfc822
 
 Received: from eem2barout.euskalnet.net ([212.142.144.20]) by EEM3FRO.empresa.euskaltel.com with Microsoft SMTPSVC(6.0.3790.1830);
 	 Thu, 22 Mar 2012 14:47:14 +0100
-X-ASG-Debug-ID: 1332424033-0484406ffc9f000002-O2f64z
+X-ASG-Debug-ID: 1332424033-0484406ffc9f000002-mLDGKl
 Received: from vps.hostname1.com ([199.59.62.12]) by eem2barout.euskalnet.net with ESMTP id qEw3806ylSFxYY6Z; Thu, 22 Mar 2012 14:47:13 +0100 (CET)
 X-Barracuda-Envelope-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 X-Barracuda-AUTH-User: diruzaintza.mundaka@bizkaia
@@ -109,9 +109,9 @@ http://www.acunbusa.it/i/Pagamento/Fattura.zip
 
 
 
---9B095B5ADSN=_01CCF7A93AD5EBB900008B1EEEM3FRO.empresa.--
+--9B095B5ADSN=_01CCF7A93AD5EBB900008B1FEEM3FRO.empresa.--
 
---===============1048026284107859191==
+--===============4236850557388756519==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -121,4 +121,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============1048026284107859191==--
+--===============4236850557388756519==--
