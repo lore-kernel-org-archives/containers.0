@@ -1,23 +1,14 @@
-From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Q: cgroup: Questions about possible issues in cgroup locking
-Date: Fri, 23 Mar 2012 18:51:57 +0100
-Message-ID: <20120323175157.GA20675__23488.686027895$1332525588$gmane$org@redhat.com>
-References: <20120112003102.GB9511@google.com>
-	<20120112170728.GA25717@redhat.com>
-	<20120112175725.GD9511@google.com>
-	<20120113152010.GA19215@redhat.com>
-	<20120113182750.GD18166@google.com>
-	<20120114173648.GA32543@redhat.com>
-	<20120118231742.GS18166@google.com>
-	<20120119154522.GA14058@redhat.com>
-	<20120320193414.GA21277@redhat.com>
-	<20120321185955.GK27051@google.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH v2] futex: mark get_robust_list as deprecated
+Date: Fri, 23 Mar 2012 15:06:02 -0700
+Message-ID: <m1fwczvuph.fsf@fess.ebiederm.org>
+References: <20120323190855.GA27213@www.outflux.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20120321185955.GK27051-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20120323190855.GA27213-0X9Bc/hWBUTk6RaD4rd5nQ@public.gmane.org> (Kees Cook's message of
+	"Fri, 23 Mar 2012 12:08:55 -0700")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,46 +18,74 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+To: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+Cc: spender-JNS0hek0TMl4qEwOxq4T+Q@public.gmane.org, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jiri Kosina <jkosina-AlSwsSmVLrQ@public.gmane.org>, Darren Hart <dvhart-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>, kernel-hardening-ZwoEplunGu1jrUoiu81ncdBPR1lH4CV8@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Randy Dunlap <rdunlap-/UHa2rfvQTnk1uMJSBkQmQ@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 03/21, Mandeep Singh Baines wrote:
+Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org> writes:
+
+> Notify get_robust_list users that the syscall is going away.
+
+Has anyone asked the question if the folks working on checkpoint/restart
+are going to need this.
+
+This seems like important information to know if you want to checkpoint
+a process.
+
+Eric
+
+> Suggested-by: Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
+> Signed-off-by: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+> ---
+> v2:
+>  - add note to feature-removal-schedule.txt.
+> ---
+>  Documentation/feature-removal-schedule.txt |   10 ++++++++++
+>  kernel/futex.c                             |    2 ++
+>  kernel/futex_compat.c                      |    2 ++
+>  3 files changed, 14 insertions(+), 0 deletions(-)
 >
-> Oleg Nesterov (oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org) wrote:
-> > +/*
-> > + * rcu-safe, but should start at ->group_leader.
-> > + * thread_group_leader(g) protects against the race with exec which
-> > + * removes the leader from list.
-> > + * smp_rmb() pairs with implicit mb() implied by unlock + lock in
-> > + * de_thread()->release_task() path.
-> > + */
-> > +#define while_each_thread_rcu(g, t)				\
-> > +	while ((t = next_thread(t)) != g &&			\
-> > +		({ smp_rmb(); thread_group_leader(g); }))
-> > +
->
-> Couldn't you miss the exec_thread if:
->
-> t = exec_thread && !thread_group_leader(g)
-
-Yes, we already discussed this, iirc.
-
-I was going to write that this is fine, but then I changed my mind.
-Indeed, it is not good while_each_thread_rcu() can miss the new leader.
-
-> Could we change do_prlimit()? Especially since its slow path.
-
-But do_prlimit() is correct. It sees the unhashed task under tasklist,
-task->group_leader should be correct.
-
-> I really like you're earlier solution (ignoring barrier):
->
-> #define while_each_thread(g, t) \
-> 	while (t->group_leader == g->group_leader && (t = next_thread(t)) != g)
-
-The problem is "ignoring barrier and races".
-
-OK, I'll try to think again.
-
-Oleg.
+> diff --git a/Documentation/feature-removal-schedule.txt b/Documentation/feature-removal-schedule.txt
+> index 4bfd982..e3bf119 100644
+> --- a/Documentation/feature-removal-schedule.txt
+> +++ b/Documentation/feature-removal-schedule.txt
+> @@ -543,3 +543,13 @@ When:	3.5
+>  Why:	The old kmap_atomic() with two arguments is deprecated, we only
+>  	keep it for backward compatibility for few cycles and then drop it.
+>  Who:	Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> +
+> +----------------------------
+> +
+> +What:	get_robust_list syscall
+> +When:	2013
+> +Why:	There appear to be no production users of the get_robust_list syscall,
+> +	and it runs the risk of leaking address locations, allowing the bypass
+> +	of ASLR. It was only ever intended for debugging, so it should be
+> +	removed.
+> +Who:	Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+> diff --git a/kernel/futex.c b/kernel/futex.c
+> index d701be5..e2b0fb9 100644
+> --- a/kernel/futex.c
+> +++ b/kernel/futex.c
+> @@ -2449,6 +2449,8 @@ SYSCALL_DEFINE3(get_robust_list, int, pid,
+>  	if (!futex_cmpxchg_enabled)
+>  		return -ENOSYS;
+>  
+> +	WARN_ONCE(1, "deprecated: get_robust_list will be deleted in 2013.\n");
+> +
+>  	rcu_read_lock();
+>  
+>  	ret = -ESRCH;
+> diff --git a/kernel/futex_compat.c b/kernel/futex_compat.c
+> index a9642d5..83e368b 100644
+> --- a/kernel/futex_compat.c
+> +++ b/kernel/futex_compat.c
+> @@ -142,6 +142,8 @@ compat_sys_get_robust_list(int pid, compat_uptr_t __user *head_ptr,
+>  	if (!futex_cmpxchg_enabled)
+>  		return -ENOSYS;
+>  
+> +	WARN_ONCE(1, "deprecated: get_robust_list will be deleted in 2013.\n");
+> +
+>  	rcu_read_lock();
+>  
+>  	ret = -ESRCH;
