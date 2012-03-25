@@ -1,7 +1,7 @@
 From: Mail Delivery System <Mailer-Daemon-jNkmx9sP6i1ZDsxTWlXK6EEOCMrvLtNR@public.gmane.org>
-Subject: Warning: message 1SAcO1-0007eI-E4 delayed 48 hours
-Date: Sat, 24 Mar 2012 11:28:17 +0100
-Message-ID: <E1SBOCn-0007l2-MX@tyto.antiserver.com>
+Subject: Warning: message 1SAcO1-0007eI-E4 delayed 72 hours
+Date: Sun, 25 Mar 2012 16:39:35 +0200
+Message-ID: <E1SBobX-0007cF-Kj@tyto.antiserver.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -20,7 +20,7 @@ List-Id: containers.vger.kernel.org
 
 This message was created automatically by mail delivery software.
 A message that you sent has not yet been delivered to one or more of its
-recipients after more than 48 hours on the queue on tyto.antiserver.com.
+recipients after more than 72 hours on the queue on tyto.antiserver.com.
 
 The message identifier is:     1SAcO1-0007eI-E4
 The subject of the message is: fattura
