@@ -1,10 +1,10 @@
-From: Mail Delivery Subsystem <MAILER-DAEMON-suQt9vcvTAnwgZjV3Hyh5IQuADTiUCJX@public.gmane.org>
-Subject: Returned Mail:
- Re: consumo
-Date: Tue, 27 Mar 2012 03:23:59 +0200 (MEST)
-Message-ID: <R025a4o2R0F5Ti@mo-p05-ob.rzone.de>
+From: MAILER-DAEMON-vhz+WQQ4H1mHXe+LvDLADg@public.gmane.org
+Subject: failure notice
+Date: 27 Mar 2012 14:51:36 -0000
+Message-ID: <20120327145820.4248F6B0@mail.linuxfoundation.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============4611349539011136470=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,185 +18,61 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message
+Hi. This is the qmail-send program at lampad.eu.
+I'm afraid I wasn't able to deliver your message to the following addresses.
+This is a permanent error; I've given up. Sorry it didn't work out.
 
---===============4611349539011136470==
-Content-Type: multipart/report; report-type=delivery-status;
- boundary="R025a4o2R0F5Ti/mo-p05-ob.rzone.de"
+<toguys4mor-VY//I3F6pbgAvxtiuMwx3w@public.gmane.org>:
+User and password not set, continuing without authentication.
+178.33.116.141 does not like recipient.
+Remote host said: 550 5.1.1 <toguys4mor-VY//I3F6pbgAvxtiuMwx3w@public.gmane.org>: Recipient address rejected: User unknown in virtual mailbox table
+Giving up on 178.33.116.141.
 
-This is a MIME-encapsulated message
+<toguys4mord-uZzt7N2QUAzk1uMJSBkQmQ@public.gmane.org>:
+User and password not set, continuing without authentication.
+217.76.128.139 does not like recipient.
+Remote host said: 550 5.1.1 <toguys4mord-uZzt7N2QUAzk1uMJSBkQmQ@public.gmane.org>: Recipient address rejected: User unknown in virtual alias table
+Giving up on 217.76.128.139.
 
---R025a4o2R0F5Ti/mo-p05-ob.rzone.de
-Content-Type: text/plain; charset=UTF-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+<togva-XnAhQTnVLytONR7KtQShzQ@public.gmane.org>:
+User and password not set, continuing without authentication.
+212.170.236.90 does not like recipient.
+Remote host said: 550 RCPT TO:<togva-XnAhQTnVLytONR7KtQShzQ@public.gmane.org> User unknown
+Giving up on 212.170.236.90.
 
-*** MAIL DELIVERY FAILURE REPORT ***
+<togv-XnAhQTnVLytONR7KtQShzQ@public.gmane.org>:
+User and password not set, continuing without authentication.
+212.170.236.90 does not like recipient.
+Remote host said: 550 RCPT TO:<togv-XnAhQTnVLytONR7KtQShzQ@public.gmane.org> User unknown
+Giving up on 212.170.236.90.
 
-The original message was received at Tue, 27 Mar 2012 03:22:05 +0200
-from host [81.93.250.157].
+--- Below this line is a copy of the message.
 
-Subject: Re: consumo
-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-
-Mail delivery to the following recipients has finally failed:
-
-amanda1979-PkbjNfxxIATe5aOfsHch1g@public.gmane.org
-   Last reason: 550 5.0.0 Mailbox unavailable/command rejected for policy=
- reasons/no=20
-                access
-   Explanation: host mx3.hotmail.com [65.55.92.152] said: Requested actio=
-n not taken:=20
-                mailbox unavailable
-   Final attempt was: Tue, 27 Mar 2012 03:22:39 +0200 (MEST)
-
-   Transcript of session:
-   ... while talking to mx3.hotmail.com [65.55.92.152]:
-   >>> RCPT TO:<amanda1979-PkbjNfxxIATe5aOfsHch1g@public.gmane.org>
-   <<< 550 Requested action not taken: mailbox unavailable
-
-amanda2-OTok2CMBo5F8nGU4THnXjzEAbCKwanjM@public.gmane.org
-   Last reason: 554 5.4.6 Routing loop detected
-   Explanation: Relaying denied - MX has unroutable IPv4 address [127/8]
-   Final attempt was: Tue, 27 Mar 2012 03:22:39 +0200 (MEST)
-
-   Transcript of session:
-   ... while talking to ciberaula.infase.es:
-   >>> CONNECT ciberaula.infase.es [127.0.0.1]
-   <<< 554 5.4.6 Relaying denied - MX has unroutable IPv4 address [127/8]
-
-amanda20-OTok2CMBo5F8nGU4THnXjzEAbCKwanjM@public.gmane.org
-   Last reason: 554 5.4.6 Routing loop detected
-   Explanation: Relaying denied - MX has unroutable IPv4 address [127/8]
-   Final attempt was: Tue, 27 Mar 2012 03:22:39 +0200 (MEST)
-
-   Transcript of session:
-   ... while talking to ciberaula.infase.es:
-   >>> CONNECT ciberaula.infase.es [127.0.0.1]
-   <<< 554 5.4.6 Relaying denied - MX has unroutable IPv4 address [127/8]
-
-amanda2000n-FMF+udGLv2jQT0dZR+AlfA@public.gmane.org
-   Last reason: 550 5.1.1 Bad destination mailbox address
-   Explanation: host smtp-01.servidoresdns.net [82.223.191.131] said:=20
-                <amanda2000n-FMF+udGLv2jQT0dZR+AlfA@public.gmane.org>: Recipient address rejected:=20
-                User unknown in virtual alias table
-   Final attempt was: Tue, 27 Mar 2012 03:22:39 +0200 (MEST)
-
-   Transcript of session:
-   ... while talking to smtp-01.servidoresdns.net [82.223.191.131]:
-   >>> RCPT TO:<amanda2000n-FMF+udGLv2jQT0dZR+AlfA@public.gmane.org>
-   <<< 550 5.1.1 <amanda2000n-FMF+udGLv2jQT0dZR+AlfA@public.gmane.org>: Recipient address rejected: Us=
-er=20
-       unknown in virtual alias table
-
-amanda2001-tORB3LC7rC4S+FvcfC7Uqw@public.gmane.org
-   Last reason: 550 5.0.0 Mailbox unavailable/command rejected for policy=
- reasons/no=20
-                access
-   Explanation: host mail.latinmail.com [50.23.249.131] said: Relay not p=
-ermitted / No=20
-                such user
-   Final attempt was: Tue, 27 Mar 2012 03:22:38 +0200 (MEST)
-
-   Transcript of session:
-   ... while talking to mail.latinmail.com [50.23.249.131]:
-   >>> RCPT TO:<amanda2001-tORB3LC7rC4S+FvcfC7Uqw@public.gmane.org>
-   <<< 550 Relay not permitted / No such user
-
---R025a4o2R0F5Ti/mo-p05-ob.rzone.de
-Content-Type: message/delivery-status
-Content-Disposition: attachment
-
-Reporting-MTA: DNS; mo-p05-ob.rzone.de
-Received-From-MTA: DNS; srv1157.sd-france.net (81.93.250.157)
-Arrival-Date: Tue, 27 Mar 2012 03:22:37 +0200 (MEST)
-
-Final-Recipient: RFC822; amanda1979-PkbjNfxxIATe5aOfsHch1g@public.gmane.org
-Action: failed
-Status: 5.0.0
-Remote-MTA: DNS; mx3.hotmail.com [65.55.92.152]
-Diagnostic-Code: SMTP; 550 Requested action not taken: mailbox unavailable
-Last-Attempt-Date: Tue, 27 Mar 2012 03:22:39 +0200 (MEST)
-Final-Log-ID: R025a4o2R0F5TR
-
-Final-Recipient: RFC822; amanda2-OTok2CMBo5F8nGU4THnXjzEAbCKwanjM@public.gmane.org
-Action: failed
-Status: 5.4.6
-Remote-MTA: DNS; ciberaula.infase.es
-Diagnostic-Code: SMTP; 554 5.4.6 Relaying denied - MX has unroutable IPv4 address [127/8]
-Last-Attempt-Date: Tue, 27 Mar 2012 03:22:39 +0200 (MEST)
-Final-Log-ID: R025a4o2R0F5TR
-
-Final-Recipient: RFC822; amanda20-OTok2CMBo5F8nGU4THnXjzEAbCKwanjM@public.gmane.org
-Action: failed
-Status: 5.4.6
-Remote-MTA: DNS; ciberaula.infase.es
-Diagnostic-Code: SMTP; 554 5.4.6 Relaying denied - MX has unroutable IPv4 address [127/8]
-Last-Attempt-Date: Tue, 27 Mar 2012 03:22:39 +0200 (MEST)
-Final-Log-ID: R025a4o2R0F5TR
-
-Final-Recipient: RFC822; amanda2000n-FMF+udGLv2jQT0dZR+AlfA@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: DNS; smtp-01.servidoresdns.net [82.223.191.131]
-Diagnostic-Code: SMTP; 550 5.1.1 <amanda2000n-FMF+udGLv2jQT0dZR+AlfA@public.gmane.org>: Recipient address rejected:
-                 User unknown in virtual alias table
-Last-Attempt-Date: Tue, 27 Mar 2012 03:22:39 +0200 (MEST)
-Final-Log-ID: R025a4o2R0F5TR
-
-Final-Recipient: RFC822; amanda2001-tORB3LC7rC4S+FvcfC7Uqw@public.gmane.org
-Action: failed
-Status: 5.0.0
-Remote-MTA: DNS; mail.latinmail.com [50.23.249.131]
-Diagnostic-Code: SMTP; 550 Relay not permitted / No such user
-Last-Attempt-Date: Tue, 27 Mar 2012 03:22:38 +0200 (MEST)
-Final-Log-ID: R025a4o2R0F5TR
-
---R025a4o2R0F5Ti/mo-p05-ob.rzone.de
-Content-Type: message/rfc822
-Content-Disposition: attachment
-
-X-RZG-AUTH: :KW4FbGCpePxhxcpyFqC9je292XRAnIEY9YXIipXAkf668PD3VCdlW7L+3m8YcjZcIzqIQA==
-X-RZG-CLASS-ID: mo05
-Received: from srv1157.sd-france.net ([81.93.250.157])
-	by smtp.strato.de (cohen mo22) (RZmta 28.2 AUTH)
-	with ESMTPA id R025a4o2R0F5TR ; Tue, 27 Mar 2012 03:22:37 +0200 (MEST)
-Received: from [81.93.250.157] by srv1157.sd-france.net id E7foqrUw5xUcoPz2; Tue, 27 Mar 2012 03:22:05 +0200
-Message-ID: <00a401cd0bb8$03d82f80$14000a0a-//J07LhNTfpNmCTVG0Af2SpxlwaOVQ5f@public.gmane.org>
-From: "devnull" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <amanda1979-PkbjNfxxIATe5aOfsHch1g@public.gmane.org>
-Subject: Re: consumo
-Date: Tue, 27 Mar 2012 03:22:05 +0200
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: (qmail 17661 invoked by uid 89); 27 Mar 2012 14:51:28 -0000
+Received: by simscan 1.3.1 ppid: 16232, pid: 17641, t: 0.3452s
+         scanners: attach: 1.3.1 clamav: 0.94.2
+/m:
+Received: from unknown (HELO srv1157.sd-france.net) (reservation-pUUzVBbUrCJWk0Htik3J/w@public.gmane.org@81.93.250.157)
+  by lampad.eu with ESMTPA; 27 Mar 2012 14:51:28 -0000
+Received: from [81.93.250.157] by srv1157.sd-france.net id 5vUt3JyGoCnxrIe9; Tue, 27 Mar 2012 16:50:52 +0200
+Message-ID: <005901cd0c28$ff982a80$01000a0a-//J07LhNTfpNmCTVG0Af2SpxlwaOVQ5f@public.gmane.org>
+From: "Consult2 " <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <toguys4mor-VY//I3F6pbgAvxtiuMwx3w@public.gmane.org>
+Subject: Re: compromiso
+Date: Tue, 27 Mar 2012 16:50:52 +0200
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 
 
-   =20
-Gentile utente,=20
+   
+Gentile utente, Monte Biz  
 
-En su solicitud en nuestro foro de  18.03.2012.
+En su solicitud en nuestro foro de  20.03.2012.
+
+
 
 Le enviamos la informacion son adecuados:
 http://www.judo-lorenzen.it/Estadistica.zip
-
-
-        =20
-
-
-
---R025a4o2R0F5Ti/mo-p05-ob.rzone.de--
-
-
---===============4611349539011136470==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============4611349539011136470==--
