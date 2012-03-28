@@ -1,10 +1,9 @@
-From: MAILER-DAEMON-vhz+WQQ4H1mHXe+LvDLADg@public.gmane.org
-Subject: failure notice
-Date: 27 Mar 2012 14:51:36 -0000
-Message-ID: <20120327145820.4248F6B0@mail.linuxfoundation.org>
+From: "Mail Delivery System" <MAILER-DAEMON-7fVwTNPp7YxeoWH0uzbU5w@public.gmane.org>
+Subject: Delivery Status Notification (Failure)
+Date: 28 Mar 2012 05:36:55 +0200
+Message-ID: <d48658$bdg9i@EDCMIR01.tesoro.it>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============7454877066089155106=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,61 +17,57 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi. This is the qmail-send program at lampad.eu.
-I'm afraid I wasn't able to deliver your message to the following addresses.
-This is a permanent error; I've given up. Sorry it didn't work out.
+--===============7454877066089155106==
+Content-Type: multipart/report; report-type=delivery-status; boundary="ji4n.4l4LHd+cG.rkBzd.BtpnSNi"
 
-<toguys4mor-VY//I3F6pbgAvxtiuMwx3w@public.gmane.org>:
-User and password not set, continuing without authentication.
-178.33.116.141 does not like recipient.
-Remote host said: 550 5.1.1 <toguys4mor-VY//I3F6pbgAvxtiuMwx3w@public.gmane.org>: Recipient address rejected: User unknown in virtual mailbox table
-Giving up on 178.33.116.141.
+--ji4n.4l4LHd+cG.rkBzd.BtpnSNi
+content-type: text/plain;
+    charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
 
-<toguys4mord-uZzt7N2QUAzk1uMJSBkQmQ@public.gmane.org>:
-User and password not set, continuing without authentication.
-217.76.128.139 does not like recipient.
-Remote host said: 550 5.1.1 <toguys4mord-uZzt7N2QUAzk1uMJSBkQmQ@public.gmane.org>: Recipient address rejected: User unknown in virtual alias table
-Giving up on 217.76.128.139.
+The following message to <stefania.franchella-7fVwTNPp7YxeoWH0uzbU5w@public.gmane.org> was undeliverable.
+The reason for the problem:
+5.1.1 - Bad destination email address 'reject'
 
-<togva-XnAhQTnVLytONR7KtQShzQ@public.gmane.org>:
-User and password not set, continuing without authentication.
-212.170.236.90 does not like recipient.
-Remote host said: 550 RCPT TO:<togva-XnAhQTnVLytONR7KtQShzQ@public.gmane.org> User unknown
-Giving up on 212.170.236.90.
+--ji4n.4l4LHd+cG.rkBzd.BtpnSNi
+content-type: message/delivery-status
 
-<togv-XnAhQTnVLytONR7KtQShzQ@public.gmane.org>:
-User and password not set, continuing without authentication.
-212.170.236.90 does not like recipient.
-Remote host said: 550 RCPT TO:<togv-XnAhQTnVLytONR7KtQShzQ@public.gmane.org> User unknown
-Giving up on 212.170.236.90.
+Reporting-MTA: dns; EDCMIR01.tesoro.it
 
---- Below this line is a copy of the message.
+Final-Recipient: rfc822;stefania.franchella-7fVwTNPp7YxeoWH0uzbU5w@public.gmane.org
+Action: failed
+Status: 5.0.0 (permanent failure)
+Diagnostic-Code: smtp; 5.1.1 - Bad destination email address 'reject' (delivery attempts: 0)
 
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: (qmail 17661 invoked by uid 89); 27 Mar 2012 14:51:28 -0000
-Received: by simscan 1.3.1 ppid: 16232, pid: 17641, t: 0.3452s
-         scanners: attach: 1.3.1 clamav: 0.94.2
-/m:
-Received: from unknown (HELO srv1157.sd-france.net) (reservation-pUUzVBbUrCJWk0Htik3J/w@public.gmane.org@81.93.250.157)
-  by lampad.eu with ESMTPA; 27 Mar 2012 14:51:28 -0000
-Received: from [81.93.250.157] by srv1157.sd-france.net id 5vUt3JyGoCnxrIe9; Tue, 27 Mar 2012 16:50:52 +0200
-Message-ID: <005901cd0c28$ff982a80$01000a0a-//J07LhNTfpNmCTVG0Af2SpxlwaOVQ5f@public.gmane.org>
-From: "Consult2 " <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <toguys4mor-VY//I3F6pbgAvxtiuMwx3w@public.gmane.org>
-Subject: Re: compromiso
-Date: Tue, 27 Mar 2012 16:50:52 +0200
+--ji4n.4l4LHd+cG.rkBzd.BtpnSNi
+content-type: message/rfc822
+
+Received: from unknown (HELO vps.hostname1.com) ([199.59.62.12])
+  by edcmir01.tesoro.it with ESMTP; 28 Mar 2012 05:36:53 +0200
+Received: from [199.59.62.12] by vps.hostname1.com id FsvLIOlxJM8oZj; Wed, 28 Mar 2012 07:36:53 +0400
+Message-ID: <006a01cd0c94$027c3500$0200a8c0-d/A+yXWgOnhNZqUStOAizwC/G2K4zDHf@public.gmane.org>
+From: "Elena" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <stefania.franchella-7fVwTNPp7YxeoWH0uzbU5w@public.gmane.org>
+Subject: Hello my sweetheart!
+Date: Wed, 28 Mar 2012 07:36:53 +0400
 MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
-Content-Transfer-Encoding: 8bit
-
-
-   
-Gentile utente, Monte Biz  
-
-En su solicitud en nuestro foro de  20.03.2012.
+Content-Type: multipart/mixed;
+ boundary="----------F11BE12B2746A94F"
 
 
 
-Le enviamos la informacion son adecuados:
-http://www.judo-lorenzen.it/Estadistica.zip
+--ji4n.4l4LHd+cG.rkBzd.BtpnSNi--
+
+
+
+--===============7454877066089155106==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============7454877066089155106==--
