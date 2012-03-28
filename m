@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 08/21] blkcg: blkg_conf_prep()
-Date: Wed, 28 Mar 2012 15:51:18 -0700
-Message-ID: <1332975091-10950-9-git-send-email-tj@kernel.org>
+Subject: [PATCH 06/21] blkcg: restructure configuration printing
+Date: Wed, 28 Mar 2012 15:51:16 -0700
+Message-ID: <1332975091-10950-7-git-send-email-tj@kernel.org>
 References: <1332975091-10950-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,103 +21,280 @@ To: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org
 Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-blkg_conf_prep() implements "MAJ:MIN VAL" parsing manually, which is
-unnecessary.  Just use sscanf("%u:%u %llu").  This might not reject
-some malformed input (extra input at the end) but we don't care.
+Similarly to the previous stat restructuring, this patch restructures
+conf printing code such that,
+
+* Conf printing uses the same helpers as stat.
+
+* Printing function doesn't require hardcoded switching on the config
+  being printed.  Note that this isn't complete yet for throttle
+  confs.  The next patch will convert setting for these confs and will
+  complete the transition.
+
+* Printing uses read_seq_string callback (other methods will be phased
+  out).
+
+Note that blkio_group_conf.iops[2] is changed to u64 so that they can
+be manipulated with the same functions.  This is transitional and will
+go away later.
+
+After this patch, per-device configurations - weight, bps and iops -
+use __blkg_prfill_u64() for printing which uses white space as
+delimiter instead of tab.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- block/blk-cgroup.c |   64 ++++++++-------------------------------------------
- 1 files changed, 10 insertions(+), 54 deletions(-)
+ block/blk-cgroup.c |  156 ++++++++++++++++++----------------------------------
+ block/blk-cgroup.h |    3 +-
+ 2 files changed, 55 insertions(+), 104 deletions(-)
 
 diff --git a/block/blk-cgroup.c b/block/blk-cgroup.c
-index 0d4f21e..3d933b0 100644
+index ae539d3..5e8a818 100644
 --- a/block/blk-cgroup.c
 +++ b/block/blk-cgroup.c
-@@ -987,57 +987,16 @@ static int blkg_conf_prep(struct blkio_cgroup *blkcg, const char *input,
+@@ -1115,95 +1115,28 @@ static int blkiocg_file_write(struct cgroup *cgrp, struct cftype *cft,
+ 	return ret;
+ }
+ 
+-static void blkio_print_group_conf(struct cftype *cft, struct blkio_group *blkg,
+-				   struct seq_file *m)
++/* for propio conf */
++static u64 blkg_prfill_weight_device(struct seq_file *sf,
++				     struct blkg_policy_data *pd, int off)
  {
- 	struct gendisk *disk;
- 	struct blkio_group *blkg;
--	char *buf, *s[4], *p, *major_s, *minor_s;
--	unsigned long major, minor;
--	int i = 0, ret = -EINVAL;
--	int part;
--	dev_t dev;
--	u64 temp;
-+	unsigned int major, minor;
-+	unsigned long long v;
-+	int part, ret;
- 
--	buf = kstrdup(input, GFP_KERNEL);
--	if (!buf)
--		return -ENOMEM;
+-	int plid = BLKIOFILE_POLICY(cft->private);
+-	int fileid = BLKIOFILE_ATTR(cft->private);
+-	struct blkg_policy_data *pd = blkg->pd[plid];
+-	const char *dname = blkg_dev_name(blkg);
+-	int rw = WRITE;
 -
--	memset(s, 0, sizeof(s));
+-	if (!dname)
+-		return;
 -
--	while ((p = strsep(&buf, " ")) != NULL) {
--		if (!*p)
--			continue;
--
--		s[i++] = p;
--
--		/* Prevent from inputing too many things */
--		if (i == 3)
+-	switch (plid) {
+-		case BLKIO_POLICY_PROP:
+-			if (pd->conf.weight)
+-				seq_printf(m, "%s\t%u\n",
+-					   dname, pd->conf.weight);
 -			break;
+-		case BLKIO_POLICY_THROTL:
+-			switch (fileid) {
+-			case BLKIO_THROTL_read_bps_device:
+-				rw = READ;
+-			case BLKIO_THROTL_write_bps_device:
+-				if (pd->conf.bps[rw])
+-					seq_printf(m, "%s\t%llu\n",
+-						   dname, pd->conf.bps[rw]);
+-				break;
+-			case BLKIO_THROTL_read_iops_device:
+-				rw = READ;
+-			case BLKIO_THROTL_write_iops_device:
+-				if (pd->conf.iops[rw])
+-					seq_printf(m, "%s\t%u\n",
+-						   dname, pd->conf.iops[rw]);
+-				break;
+-			}
+-			break;
+-		default:
+-			BUG();
 -	}
--
--	if (i != 2)
--		goto out;
--
--	p = strsep(&s[0], ":");
--	if (p != NULL)
--		major_s = p;
--	else
--		goto out;
--
--	minor_s = s[0];
--	if (!minor_s)
--		goto out;
--
--	if (strict_strtoul(major_s, 10, &major))
--		goto out;
--
--	if (strict_strtoul(minor_s, 10, &minor))
--		goto out;
--
--	dev = MKDEV(major, minor);
--
--	if (strict_strtoull(s[1], 10, &temp))
--		goto out;
-+	if (sscanf(input, "%u:%u %llu", &major, &minor, &v) != 3)
-+		return -EINVAL;
++	if (!pd->conf.weight)
++		return 0;
++	return __blkg_prfill_u64(sf, pd, pd->conf.weight);
+ }
  
--	disk = get_gendisk(dev, &part);
-+	disk = get_gendisk(MKDEV(major, minor), &part);
- 	if (!disk || part)
--		goto out;
-+		return -EINVAL;
- 
- 	rcu_read_lock();
- 
-@@ -1059,16 +1018,13 @@ static int blkg_conf_prep(struct blkio_cgroup *blkcg, const char *input,
- 			msleep(10);
- 			ret = restart_syscall();
- 		}
--		goto out;
-+		return ret;
- 	}
- 
- 	ctx->disk = disk;
- 	ctx->blkg = blkg;
--	ctx->v = temp;
--	ret = 0;
--out:
--	kfree(buf);
--	return ret;
-+	ctx->v = v;
+-/* cgroup files which read their data from policy nodes end up here */
+-static void blkio_read_conf(struct cftype *cft, struct blkio_cgroup *blkcg,
+-			    struct seq_file *m)
++static int blkcg_print_weight_device(struct cgroup *cgrp, struct cftype *cft,
++				     struct seq_file *sf)
+ {
+-	struct blkio_group *blkg;
+-	struct hlist_node *n;
+-
+-	spin_lock_irq(&blkcg->lock);
+-	hlist_for_each_entry(blkg, n, &blkcg->blkg_list, blkcg_node)
+-		blkio_print_group_conf(cft, blkg, m);
+-	spin_unlock_irq(&blkcg->lock);
++	blkcg_print_blkgs(sf, cgroup_to_blkio_cgroup(cgrp),
++			  blkg_prfill_weight_device, BLKIO_POLICY_PROP, 0,
++			  false);
 +	return 0;
  }
  
- /**
+-static int blkiocg_file_read(struct cgroup *cgrp, struct cftype *cft,
+-				struct seq_file *m)
++static int blkcg_print_weight(struct cgroup *cgrp, struct cftype *cft,
++			      struct seq_file *sf)
+ {
+-	struct blkio_cgroup *blkcg;
+-	enum blkio_policy_id plid = BLKIOFILE_POLICY(cft->private);
+-	int name = BLKIOFILE_ATTR(cft->private);
+-
+-	blkcg = cgroup_to_blkio_cgroup(cgrp);
+-
+-	switch(plid) {
+-	case BLKIO_POLICY_PROP:
+-		switch(name) {
+-		case BLKIO_PROP_weight_device:
+-			blkio_read_conf(cft, blkcg, m);
+-			return 0;
+-		default:
+-			BUG();
+-		}
+-		break;
+-	case BLKIO_POLICY_THROTL:
+-		switch(name){
+-		case BLKIO_THROTL_read_bps_device:
+-		case BLKIO_THROTL_write_bps_device:
+-		case BLKIO_THROTL_read_iops_device:
+-		case BLKIO_THROTL_write_iops_device:
+-			blkio_read_conf(cft, blkcg, m);
+-			return 0;
+-		default:
+-			BUG();
+-		}
+-		break;
+-	default:
+-		BUG();
+-	}
+-
++	seq_printf(sf, "%u\n", cgroup_to_blkio_cgroup(cgrp)->weight);
+ 	return 0;
+ }
+ 
+@@ -1233,40 +1166,59 @@ static int blkcg_set_weight(struct cgroup *cgrp, struct cftype *cft, u64 val)
+ 	return 0;
+ }
+ 
+-static u64 blkiocg_file_read_u64 (struct cgroup *cgrp, struct cftype *cft) {
+-	struct blkio_cgroup *blkcg;
+-	enum blkio_policy_id plid = BLKIOFILE_POLICY(cft->private);
+-	int name = BLKIOFILE_ATTR(cft->private);
++/* for blk-throttle conf */
++#ifdef CONFIG_BLK_DEV_THROTTLING
++static u64 blkg_prfill_conf_u64(struct seq_file *sf,
++				struct blkg_policy_data *pd, int off)
++{
++	u64 v = *(u64 *)((void *)&pd->conf + off);
+ 
+-	blkcg = cgroup_to_blkio_cgroup(cgrp);
++	if (!v)
++		return 0;
++	return __blkg_prfill_u64(sf, pd, v);
++}
+ 
+-	switch(plid) {
+-	case BLKIO_POLICY_PROP:
+-		switch(name) {
+-		case BLKIO_PROP_weight:
+-			return (u64)blkcg->weight;
+-		}
++static int blkcg_print_conf_u64(struct cgroup *cgrp, struct cftype *cft,
++				struct seq_file *sf)
++{
++	int off;
++
++	switch (BLKIOFILE_ATTR(cft->private)) {
++	case BLKIO_THROTL_read_bps_device:
++		off = offsetof(struct blkio_group_conf, bps[READ]);
++		break;
++	case BLKIO_THROTL_write_bps_device:
++		off = offsetof(struct blkio_group_conf, bps[WRITE]);
++		break;
++	case BLKIO_THROTL_read_iops_device:
++		off = offsetof(struct blkio_group_conf, iops[READ]);
++		break;
++	case BLKIO_THROTL_write_iops_device:
++		off = offsetof(struct blkio_group_conf, iops[WRITE]);
+ 		break;
+ 	default:
+-		BUG();
++		return -EINVAL;
+ 	}
++
++	blkcg_print_blkgs(sf, cgroup_to_blkio_cgroup(cgrp),
++			  blkg_prfill_conf_u64, BLKIO_POLICY_THROTL,
++			  off, false);
+ 	return 0;
+ }
++#endif
+ 
+ struct cftype blkio_files[] = {
+ 	{
+ 		.name = "weight_device",
+ 		.private = BLKIOFILE_PRIVATE(BLKIO_POLICY_PROP,
+ 				BLKIO_PROP_weight_device),
+-		.read_seq_string = blkiocg_file_read,
++		.read_seq_string = blkcg_print_weight_device,
+ 		.write_string = blkiocg_file_write,
+ 		.max_write_len = 256,
+ 	},
+ 	{
+ 		.name = "weight",
+-		.private = BLKIOFILE_PRIVATE(BLKIO_POLICY_PROP,
+-				BLKIO_PROP_weight),
+-		.read_u64 = blkiocg_file_read_u64,
++		.read_seq_string = blkcg_print_weight,
+ 		.write_u64 = blkcg_set_weight,
+ 	},
+ 	{
+@@ -1326,7 +1278,7 @@ struct cftype blkio_files[] = {
+ 		.name = "throttle.read_bps_device",
+ 		.private = BLKIOFILE_PRIVATE(BLKIO_POLICY_THROTL,
+ 				BLKIO_THROTL_read_bps_device),
+-		.read_seq_string = blkiocg_file_read,
++		.read_seq_string = blkcg_print_conf_u64,
+ 		.write_string = blkiocg_file_write,
+ 		.max_write_len = 256,
+ 	},
+@@ -1335,7 +1287,7 @@ struct cftype blkio_files[] = {
+ 		.name = "throttle.write_bps_device",
+ 		.private = BLKIOFILE_PRIVATE(BLKIO_POLICY_THROTL,
+ 				BLKIO_THROTL_write_bps_device),
+-		.read_seq_string = blkiocg_file_read,
++		.read_seq_string = blkcg_print_conf_u64,
+ 		.write_string = blkiocg_file_write,
+ 		.max_write_len = 256,
+ 	},
+@@ -1344,7 +1296,7 @@ struct cftype blkio_files[] = {
+ 		.name = "throttle.read_iops_device",
+ 		.private = BLKIOFILE_PRIVATE(BLKIO_POLICY_THROTL,
+ 				BLKIO_THROTL_read_iops_device),
+-		.read_seq_string = blkiocg_file_read,
++		.read_seq_string = blkcg_print_conf_u64,
+ 		.write_string = blkiocg_file_write,
+ 		.max_write_len = 256,
+ 	},
+@@ -1353,7 +1305,7 @@ struct cftype blkio_files[] = {
+ 		.name = "throttle.write_iops_device",
+ 		.private = BLKIOFILE_PRIVATE(BLKIO_POLICY_THROTL,
+ 				BLKIO_THROTL_write_iops_device),
+-		.read_seq_string = blkiocg_file_read,
++		.read_seq_string = blkcg_print_conf_u64,
+ 		.write_string = blkiocg_file_write,
+ 		.max_write_len = 256,
+ 	},
+diff --git a/block/blk-cgroup.h b/block/blk-cgroup.h
+index 7331d79..b67eefa 100644
+--- a/block/blk-cgroup.h
++++ b/block/blk-cgroup.h
+@@ -52,7 +52,6 @@ enum blkg_state_flags {
+ 
+ /* cgroup files owned by proportional weight policy */
+ enum blkcg_file_name_prop {
+-	BLKIO_PROP_weight = 1,
+ 	BLKIO_PROP_weight_device,
+ };
+ 
+@@ -130,7 +129,7 @@ struct blkio_group_stats_cpu {
+ 
+ struct blkio_group_conf {
+ 	unsigned int weight;
+-	unsigned int iops[2];
++	u64 iops[2];
+ 	u64 bps[2];
+ };
+ 
 -- 
 1.7.7.3
