@@ -1,8 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 19/21] blkcg: move blkio_group_conf->iops and ->bps to
-	blk-throttle
-Date: Wed, 28 Mar 2012 15:51:29 -0700
-Message-ID: <1332975091-10950-20-git-send-email-tj@kernel.org>
+Subject: [PATCH 21/21] blkcg: drop BLKCG_STAT_{PRIV|POL|OFF} macros
+Date: Wed, 28 Mar 2012 15:51:31 -0700
+Message-ID: <1332975091-10950-22-git-send-email-tj@kernel.org>
 References: <1332975091-10950-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,266 +21,302 @@ To: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org
 Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-blkio_cgroup_conf->iops and ->bps are owned by blk-throttle and has no
-reason to be defined in blkcg core.  Drop them and let conf setting
-functions directly manipulate throtl_grp->bps[] and ->iops[].
+Now that all stat handling code lives in policy implementations,
+there's no need to encode policy ID in cft->private.
 
-This makes blkio_group_conf empty.  Drop it.
+* Export blkcg_prfill_[rw]stat() from blkcg, remove
+  blkcg_print_[rw]stat(), and implement cfqg_print_[rw]stat() which
+  use hard-code BLKIO_POLICY_PROP.
+
+* Use cft->private for offset of the target field directly and drop
+  BLKCG_STAT_{PRIV|POL|OFF}().
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- block/blk-cgroup.h   |    8 ---
- block/blk-throttle.c |  153 +++++++++++++++++++-------------------------------
- 2 files changed, 58 insertions(+), 103 deletions(-)
+ block/blk-cgroup.c   |   48 ++++++++++++----------------
+ block/blk-cgroup.h   |   11 +-----
+ block/blk-throttle.c |   12 ++-----
+ block/cfq-iosched.c  |   85 +++++++++++++++++++++++++++-----------------------
+ 4 files changed, 72 insertions(+), 84 deletions(-)
 
-diff --git a/block/blk-cgroup.h b/block/blk-cgroup.h
-index 386db29..a77ab1a 100644
---- a/block/blk-cgroup.h
-+++ b/block/blk-cgroup.h
-@@ -71,19 +71,11 @@ struct blkg_rwstat {
- 	uint64_t			cnt[BLKG_RWSTAT_NR];
- };
- 
--struct blkio_group_conf {
--	u64 iops[2];
--	u64 bps[2];
--};
--
- /* per-blkg per-policy data */
- struct blkg_policy_data {
- 	/* the blkg this per-policy data belongs to */
- 	struct blkio_group *blkg;
- 
--	/* Configuration */
--	struct blkio_group_conf conf;
--
- 	/* pol->pdata_size bytes of private data used by policy impl */
- 	char pdata[] __aligned(__alignof__(unsigned long long));
- };
-diff --git a/block/blk-throttle.c b/block/blk-throttle.c
-index 27f7960..004964b 100644
---- a/block/blk-throttle.c
-+++ b/block/blk-throttle.c
-@@ -924,20 +924,6 @@ throtl_schedule_delayed_work(struct throtl_data *td, unsigned long delay)
- 	}
+diff --git a/block/blk-cgroup.c b/block/blk-cgroup.c
+index 8f678d7..f762333 100644
+--- a/block/blk-cgroup.c
++++ b/block/blk-cgroup.c
+@@ -430,43 +430,35 @@ u64 __blkg_prfill_rwstat(struct seq_file *sf, void *pdata,
+ 	return v;
  }
  
--/*
-- * Can not take queue lock in update functions as queue lock under
-- * blkcg_lock is not allowed. Under other paths we take blkcg_lock under
-- * queue_lock.
-- */
--static void throtl_update_blkio_group_common(struct throtl_data *td,
--				struct throtl_grp *tg)
--{
--	xchg(&tg->limits_changed, true);
--	xchg(&td->limits_changed, true);
--	/* Schedule a work now to process the limit change */
--	throtl_schedule_delayed_work(td, 0);
--}
--
- static u64 tg_prfill_cpu_rwstat(struct seq_file *sf,
- 				struct blkg_policy_data *pd, int off)
+-static u64 blkg_prfill_stat(struct seq_file *sf, void *pdata, int off)
++/**
++ * blkg_prfill_stat - prfill callback for blkg_stat
++ * @sf: seq_file to print to
++ * @pdata: policy private data of interest
++ * @off: offset to the blkg_stat in @pdata
++ *
++ * prfill callback for printing a blkg_stat.
++ */
++u64 blkg_prfill_stat(struct seq_file *sf, void *pdata, int off)
  {
-@@ -968,68 +954,48 @@ static int tg_print_cpu_rwstat(struct cgroup *cgrp, struct cftype *cft,
+ 	return __blkg_prfill_u64(sf, pdata, blkg_stat_read(pdata + off));
+ }
++EXPORT_SYMBOL_GPL(blkg_prfill_stat);
+ 
+-static u64 blkg_prfill_rwstat(struct seq_file *sf, void *pdata, int off)
++/**
++ * blkg_prfill_rwstat - prfill callback for blkg_rwstat
++ * @sf: seq_file to print to
++ * @pdata: policy private data of interest
++ * @off: offset to the blkg_rwstat in @pdata
++ *
++ * prfill callback for printing a blkg_rwstat.
++ */
++u64 blkg_prfill_rwstat(struct seq_file *sf, void *pdata, int off)
+ {
+ 	struct blkg_rwstat rwstat = blkg_rwstat_read(pdata + off);
+ 
+ 	return __blkg_prfill_rwstat(sf, pdata, &rwstat);
+ }
+-
+-/* print blkg_stat specified by BLKCG_STAT_PRIV() */
+-int blkcg_print_stat(struct cgroup *cgrp, struct cftype *cft,
+-		     struct seq_file *sf)
+-{
+-	struct blkio_cgroup *blkcg = cgroup_to_blkio_cgroup(cgrp);
+-
+-	blkcg_print_blkgs(sf, blkcg, blkg_prfill_stat,
+-			  BLKCG_STAT_POL(cft->private),
+-			  BLKCG_STAT_OFF(cft->private), false);
+-	return 0;
+-}
+-EXPORT_SYMBOL_GPL(blkcg_print_stat);
+-
+-/* print blkg_rwstat specified by BLKCG_STAT_PRIV() */
+-int blkcg_print_rwstat(struct cgroup *cgrp, struct cftype *cft,
+-		       struct seq_file *sf)
+-{
+-	struct blkio_cgroup *blkcg = cgroup_to_blkio_cgroup(cgrp);
+-
+-	blkcg_print_blkgs(sf, blkcg, blkg_prfill_rwstat,
+-			  BLKCG_STAT_POL(cft->private),
+-			  BLKCG_STAT_OFF(cft->private), true);
+-	return 0;
+-}
+-EXPORT_SYMBOL_GPL(blkcg_print_rwstat);
++EXPORT_SYMBOL_GPL(blkg_prfill_rwstat);
+ 
+ /**
+  * blkg_conf_prep - parse and prepare for per-blkg config update
+diff --git a/block/blk-cgroup.h b/block/blk-cgroup.h
+index c930895..ca0ff7c 100644
+--- a/block/blk-cgroup.h
++++ b/block/blk-cgroup.h
+@@ -34,11 +34,6 @@ enum blkio_policy_id {
+ #define CFQ_WEIGHT_MAX		1000
+ #define CFQ_WEIGHT_DEFAULT	500
+ 
+-/* cft->private [un]packing for stat printing */
+-#define BLKCG_STAT_PRIV(pol, off)	(((unsigned)(pol) << 16) | (off))
+-#define BLKCG_STAT_POL(prv)		((unsigned)(prv) >> 16)
+-#define BLKCG_STAT_OFF(prv)		((unsigned)(prv) & 0xffff)
+-
+ enum blkg_rwstat_type {
+ 	BLKG_RWSTAT_READ,
+ 	BLKG_RWSTAT_WRITE,
+@@ -131,10 +126,8 @@ void blkcg_print_blkgs(struct seq_file *sf, struct blkio_cgroup *blkcg,
+ u64 __blkg_prfill_u64(struct seq_file *sf, void *pdata, u64 v);
+ u64 __blkg_prfill_rwstat(struct seq_file *sf, void *pdata,
+ 			 const struct blkg_rwstat *rwstat);
+-int blkcg_print_stat(struct cgroup *cgrp, struct cftype *cft,
+-		     struct seq_file *sf);
+-int blkcg_print_rwstat(struct cgroup *cgrp, struct cftype *cft,
+-		       struct seq_file *sf);
++u64 blkg_prfill_stat(struct seq_file *sf, void *pdata, int off);
++u64 blkg_prfill_rwstat(struct seq_file *sf, void *pdata, int off);
+ 
+ struct blkg_conf_ctx {
+ 	struct gendisk		*disk;
+diff --git a/block/blk-throttle.c b/block/blk-throttle.c
+index bd6dbfe..6024014 100644
+--- a/block/blk-throttle.c
++++ b/block/blk-throttle.c
+@@ -941,15 +941,13 @@ static u64 tg_prfill_cpu_rwstat(struct seq_file *sf, void *pdata, int off)
+ 	return __blkg_prfill_rwstat(sf, pdata, &rwstat);
+ }
+ 
+-/* print per-cpu blkg_rwstat specified by BLKCG_STAT_PRIV() */
+ static int tg_print_cpu_rwstat(struct cgroup *cgrp, struct cftype *cft,
+ 			       struct seq_file *sf)
+ {
+ 	struct blkio_cgroup *blkcg = cgroup_to_blkio_cgroup(cgrp);
+ 
+-	blkcg_print_blkgs(sf, blkcg, tg_prfill_cpu_rwstat,
+-			  BLKCG_STAT_POL(cft->private),
+-			  BLKCG_STAT_OFF(cft->private), true);
++	blkcg_print_blkgs(sf, blkcg, tg_prfill_cpu_rwstat, BLKIO_POLICY_THROTL,
++			  cft->private, true);
  	return 0;
  }
  
--static u64 blkg_prfill_conf_u64(struct seq_file *sf,
--				struct blkg_policy_data *pd, int off)
-+static u64 tg_prfill_conf_u64(struct seq_file *sf, struct blkg_policy_data *pd,
-+			      int off)
- {
--	u64 v = *(u64 *)((void *)&pd->conf + off);
-+	u64 v = *(u64 *)((void *)pd->pdata + off);
- 
--	if (!v)
-+	if (v == -1)
- 		return 0;
- 	return __blkg_prfill_u64(sf, pd, v);
+@@ -1067,14 +1065,12 @@ static struct cftype throtl_files[] = {
+ 	},
+ 	{
+ 		.name = "throttle.io_service_bytes",
+-		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_THROTL,
+-				offsetof(struct tg_stats_cpu, service_bytes)),
++		.private = offsetof(struct tg_stats_cpu, service_bytes),
+ 		.read_seq_string = tg_print_cpu_rwstat,
+ 	},
+ 	{
+ 		.name = "throttle.io_serviced",
+-		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_THROTL,
+-				offsetof(struct tg_stats_cpu, serviced)),
++		.private = offsetof(struct tg_stats_cpu, serviced),
+ 		.read_seq_string = tg_print_cpu_rwstat,
+ 	},
+ 	{ }	/* terminate */
+diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
+index fd505f7..cff8b5b 100644
+--- a/block/cfq-iosched.c
++++ b/block/cfq-iosched.c
+@@ -1441,6 +1441,26 @@ static int cfq_set_weight(struct cgroup *cgrp, struct cftype *cft, u64 val)
+ 	return 0;
  }
  
--static int blkcg_print_conf_u64(struct cgroup *cgrp, struct cftype *cft,
--				struct seq_file *sf)
-+static u64 tg_prfill_conf_uint(struct seq_file *sf, struct blkg_policy_data *pd,
-+			       int off)
- {
--	blkcg_print_blkgs(sf, cgroup_to_blkio_cgroup(cgrp),
--			  blkg_prfill_conf_u64, BLKIO_POLICY_THROTL,
--			  cft->private, false);
--	return 0;
--}
-+	unsigned int v = *(unsigned int *)((void *)pd->pdata + off);
- 
--static void throtl_update_blkio_group_read_bps(struct blkio_group *blkg,
--					       u64 read_bps)
--{
--	struct throtl_grp *tg = blkg_to_tg(blkg);
--
--	tg->bps[READ] = read_bps;
--	throtl_update_blkio_group_common(blkg->q->td, tg);
--}
--
--static void throtl_update_blkio_group_write_bps(struct blkio_group *blkg,
--						u64 write_bps)
--{
--	struct throtl_grp *tg = blkg_to_tg(blkg);
--
--	tg->bps[WRITE] = write_bps;
--	throtl_update_blkio_group_common(blkg->q->td, tg);
-+	if (v == -1)
-+		return 0;
-+	return __blkg_prfill_u64(sf, pd, v);
- }
- 
--static void throtl_update_blkio_group_read_iops(struct blkio_group *blkg,
--						u64 read_iops)
-+static int tg_print_conf_u64(struct cgroup *cgrp, struct cftype *cft,
++static int cfqg_print_stat(struct cgroup *cgrp, struct cftype *cft,
++			   struct seq_file *sf)
++{
++	struct blkio_cgroup *blkcg = cgroup_to_blkio_cgroup(cgrp);
++
++	blkcg_print_blkgs(sf, blkcg, blkg_prfill_stat, BLKIO_POLICY_PROP,
++			  cft->private, false);
++	return 0;
++}
++
++static int cfqg_print_rwstat(struct cgroup *cgrp, struct cftype *cft,
 +			     struct seq_file *sf)
- {
--	struct throtl_grp *tg = blkg_to_tg(blkg);
--
--	tg->iops[READ] = read_iops;
--	throtl_update_blkio_group_common(blkg->q->td, tg);
-+	blkcg_print_blkgs(sf, cgroup_to_blkio_cgroup(cgrp), tg_prfill_conf_u64,
-+			  BLKIO_POLICY_THROTL, cft->private, false);
++{
++	struct blkio_cgroup *blkcg = cgroup_to_blkio_cgroup(cgrp);
++
++	blkcg_print_blkgs(sf, blkcg, blkg_prfill_rwstat, BLKIO_POLICY_PROP,
++			  cft->private, true);
 +	return 0;
- }
- 
--static void throtl_update_blkio_group_write_iops(struct blkio_group *blkg,
--						 u64 write_iops)
-+static int tg_print_conf_uint(struct cgroup *cgrp, struct cftype *cft,
-+			      struct seq_file *sf)
- {
--	struct throtl_grp *tg = blkg_to_tg(blkg);
--
--	tg->iops[WRITE] = write_iops;
--	throtl_update_blkio_group_common(blkg->q->td, tg);
-+	blkcg_print_blkgs(sf, cgroup_to_blkio_cgroup(cgrp), tg_prfill_conf_uint,
-+			  BLKIO_POLICY_THROTL, cft->private, false);
-+	return 0;
- }
- 
--static int blkcg_set_conf_u64(struct cgroup *cgrp, struct cftype *cft,
--			      const char *buf,
--			      void (*update)(struct blkio_group *, u64))
-+static int tg_set_conf(struct cgroup *cgrp, struct cftype *cft, const char *buf,
-+		       bool is_u64)
- {
- 	struct blkio_cgroup *blkcg = cgroup_to_blkio_cgroup(cgrp);
--	struct blkg_policy_data *pd;
- 	struct blkg_conf_ctx ctx;
-+	struct throtl_grp *tg;
- 	int ret;
- 
- 	ret = blkg_conf_prep(blkcg, buf, &ctx);
-@@ -1037,10 +1003,23 @@ static int blkcg_set_conf_u64(struct cgroup *cgrp, struct cftype *cft,
- 		return ret;
- 
- 	ret = -EINVAL;
--	pd = ctx.blkg->pd[BLKIO_POLICY_THROTL];
--	if (pd) {
--		*(u64 *)((void *)&pd->conf + cft->private) = ctx.v;
--		update(ctx.blkg, ctx.v ?: -1);
-+	tg = blkg_to_tg(ctx.blkg);
-+	if (tg) {
-+		struct throtl_data *td = ctx.blkg->q->td;
++}
 +
-+		if (!ctx.v)
-+			ctx.v = -1;
-+
-+		if (is_u64)
-+			*(u64 *)((void *)tg + cft->private) = ctx.v;
-+		else
-+			*(unsigned int *)((void *)tg + cft->private) = ctx.v;
-+
-+		/* XXX: we don't need the following deferred processing */
-+		xchg(&tg->limits_changed, true);
-+		xchg(&td->limits_changed, true);
-+		throtl_schedule_delayed_work(td, 0);
-+
- 		ret = 0;
- 	}
- 
-@@ -1048,61 +1027,45 @@ static int blkcg_set_conf_u64(struct cgroup *cgrp, struct cftype *cft,
- 	return ret;
- }
- 
--static int blkcg_set_conf_bps_r(struct cgroup *cgrp, struct cftype *cft,
--				const char *buf)
--{
--	return blkcg_set_conf_u64(cgrp, cft, buf,
--				  throtl_update_blkio_group_read_bps);
--}
--
--static int blkcg_set_conf_bps_w(struct cgroup *cgrp, struct cftype *cft,
--				const char *buf)
--{
--	return blkcg_set_conf_u64(cgrp, cft, buf,
--				  throtl_update_blkio_group_write_bps);
--}
--
--static int blkcg_set_conf_iops_r(struct cgroup *cgrp, struct cftype *cft,
--				 const char *buf)
-+static int tg_set_conf_u64(struct cgroup *cgrp, struct cftype *cft,
-+			   const char *buf)
+ #ifdef CONFIG_DEBUG_BLK_CGROUP
+ static u64 cfqg_prfill_avg_queue_size(struct seq_file *sf, void *pdata, int off)
  {
--	return blkcg_set_conf_u64(cgrp, cft, buf,
--				  throtl_update_blkio_group_read_iops);
-+	return tg_set_conf(cgrp, cft, buf, true);
- }
- 
--static int blkcg_set_conf_iops_w(struct cgroup *cgrp, struct cftype *cft,
--				 const char *buf)
-+static int tg_set_conf_uint(struct cgroup *cgrp, struct cftype *cft,
-+			    const char *buf)
- {
--	return blkcg_set_conf_u64(cgrp, cft, buf,
--				  throtl_update_blkio_group_write_iops);
-+	return tg_set_conf(cgrp, cft, buf, false);
- }
- 
- static struct cftype throtl_files[] = {
- 	{
- 		.name = "throttle.read_bps_device",
--		.private = offsetof(struct blkio_group_conf, bps[READ]),
--		.read_seq_string = blkcg_print_conf_u64,
--		.write_string = blkcg_set_conf_bps_r,
-+		.private = offsetof(struct throtl_grp, bps[READ]),
-+		.read_seq_string = tg_print_conf_u64,
-+		.write_string = tg_set_conf_u64,
- 		.max_write_len = 256,
+@@ -1482,51 +1502,43 @@ static struct cftype cfq_blkcg_files[] = {
  	},
  	{
- 		.name = "throttle.write_bps_device",
--		.private = offsetof(struct blkio_group_conf, bps[WRITE]),
--		.read_seq_string = blkcg_print_conf_u64,
--		.write_string = blkcg_set_conf_bps_w,
-+		.private = offsetof(struct throtl_grp, bps[WRITE]),
-+		.read_seq_string = tg_print_conf_u64,
-+		.write_string = tg_set_conf_u64,
- 		.max_write_len = 256,
+ 		.name = "time",
+-		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_PROP,
+-				offsetof(struct cfq_group, stats.time)),
+-		.read_seq_string = blkcg_print_stat,
++		.private = offsetof(struct cfq_group, stats.time),
++		.read_seq_string = cfqg_print_stat,
  	},
  	{
- 		.name = "throttle.read_iops_device",
--		.private = offsetof(struct blkio_group_conf, iops[READ]),
--		.read_seq_string = blkcg_print_conf_u64,
--		.write_string = blkcg_set_conf_iops_r,
-+		.private = offsetof(struct throtl_grp, iops[READ]),
-+		.read_seq_string = tg_print_conf_uint,
-+		.write_string = tg_set_conf_uint,
- 		.max_write_len = 256,
+ 		.name = "sectors",
+-		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_PROP,
+-				offsetof(struct cfq_group, stats.sectors)),
+-		.read_seq_string = blkcg_print_stat,
++		.private = offsetof(struct cfq_group, stats.sectors),
++		.read_seq_string = cfqg_print_stat,
  	},
  	{
- 		.name = "throttle.write_iops_device",
--		.private = offsetof(struct blkio_group_conf, iops[WRITE]),
--		.read_seq_string = blkcg_print_conf_u64,
--		.write_string = blkcg_set_conf_iops_w,
-+		.private = offsetof(struct throtl_grp, iops[WRITE]),
-+		.read_seq_string = tg_print_conf_uint,
-+		.write_string = tg_set_conf_uint,
- 		.max_write_len = 256,
+ 		.name = "io_service_bytes",
+-		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_PROP,
+-				offsetof(struct cfq_group, stats.service_bytes)),
+-		.read_seq_string = blkcg_print_rwstat,
++		.private = offsetof(struct cfq_group, stats.service_bytes),
++		.read_seq_string = cfqg_print_rwstat,
  	},
  	{
+ 		.name = "io_serviced",
+-		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_PROP,
+-				offsetof(struct cfq_group, stats.serviced)),
+-		.read_seq_string = blkcg_print_rwstat,
++		.private = offsetof(struct cfq_group, stats.serviced),
++		.read_seq_string = cfqg_print_rwstat,
+ 	},
+ 	{
+ 		.name = "io_service_time",
+-		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_PROP,
+-				offsetof(struct cfq_group, stats.service_time)),
+-		.read_seq_string = blkcg_print_rwstat,
++		.private = offsetof(struct cfq_group, stats.service_time),
++		.read_seq_string = cfqg_print_rwstat,
+ 	},
+ 	{
+ 		.name = "io_wait_time",
+-		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_PROP,
+-				offsetof(struct cfq_group, stats.wait_time)),
+-		.read_seq_string = blkcg_print_rwstat,
++		.private = offsetof(struct cfq_group, stats.wait_time),
++		.read_seq_string = cfqg_print_rwstat,
+ 	},
+ 	{
+ 		.name = "io_merged",
+-		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_PROP,
+-				offsetof(struct cfq_group, stats.merged)),
+-		.read_seq_string = blkcg_print_rwstat,
++		.private = offsetof(struct cfq_group, stats.merged),
++		.read_seq_string = cfqg_print_rwstat,
+ 	},
+ 	{
+ 		.name = "io_queued",
+-		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_PROP,
+-				offsetof(struct cfq_group, stats.queued)),
+-		.read_seq_string = blkcg_print_rwstat,
++		.private = offsetof(struct cfq_group, stats.queued),
++		.read_seq_string = cfqg_print_rwstat,
+ 	},
+ #ifdef CONFIG_DEBUG_BLK_CGROUP
+ 	{
+@@ -1535,33 +1547,28 @@ static struct cftype cfq_blkcg_files[] = {
+ 	},
+ 	{
+ 		.name = "group_wait_time",
+-		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_PROP,
+-				offsetof(struct cfq_group, stats.group_wait_time)),
+-		.read_seq_string = blkcg_print_stat,
++		.private = offsetof(struct cfq_group, stats.group_wait_time),
++		.read_seq_string = cfqg_print_stat,
+ 	},
+ 	{
+ 		.name = "idle_time",
+-		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_PROP,
+-				offsetof(struct cfq_group, stats.idle_time)),
+-		.read_seq_string = blkcg_print_stat,
++		.private = offsetof(struct cfq_group, stats.idle_time),
++		.read_seq_string = cfqg_print_stat,
+ 	},
+ 	{
+ 		.name = "empty_time",
+-		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_PROP,
+-				offsetof(struct cfq_group, stats.empty_time)),
+-		.read_seq_string = blkcg_print_stat,
++		.private = offsetof(struct cfq_group, stats.empty_time),
++		.read_seq_string = cfqg_print_stat,
+ 	},
+ 	{
+ 		.name = "dequeue",
+-		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_PROP,
+-				offsetof(struct cfq_group, stats.dequeue)),
+-		.read_seq_string = blkcg_print_stat,
++		.private = offsetof(struct cfq_group, stats.dequeue),
++		.read_seq_string = cfqg_print_stat,
+ 	},
+ 	{
+ 		.name = "unaccounted_time",
+-		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_PROP,
+-				offsetof(struct cfq_group, stats.unaccounted_time)),
+-		.read_seq_string = blkcg_print_stat,
++		.private = offsetof(struct cfq_group, stats.unaccounted_time),
++		.read_seq_string = cfqg_print_stat,
+ 	},
+ #endif	/* CONFIG_DEBUG_BLK_CGROUP */
+ 	{ }	/* terminate */
 -- 
 1.7.7.3
