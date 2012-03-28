@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 04/21] blkcg: restructure statistics printing
-Date: Wed, 28 Mar 2012 15:51:14 -0700
-Message-ID: <1332975091-10950-5-git-send-email-tj@kernel.org>
+Subject: [PATCH 03/21] blkcg: introduce blkg_stat and blkg_rwstat
+Date: Wed, 28 Mar 2012 15:51:13 -0700
+Message-ID: <1332975091-10950-4-git-send-email-tj@kernel.org>
 References: <1332975091-10950-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,784 +21,813 @@ To: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org
 Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-blkcg stats handling is a mess.  None of the stats has much to do with
-blkcg core but they are all implemented in blkcg core.  Code sharing
-is achieved by mixing common code with hard-coded cases for each stat
-counter.
+blkcg uses u64_stats_sync to avoid reading wrong u64 statistic values
+on 32bit archs and some stat counters have subtypes to distinguish
+read/writes and sync/async IOs.  The stat code paths are confusing and
+involve a lot of going back and forth between blkcg core and specific
+policy implementations, and synchronization and subtype handling are
+open coded in blkcg core.
 
-This patch restructures statistics printing such that
+This patch introduces struct blkg_stat and blkg_rwstat which, with
+accompanying operations, encapsulate stat updating and accessing with
+proper synchronization.
 
-* Common logic exists as helper functions and specific print functions
-  use the helpers to implement specific cases.
+blkg_stat is simple u64 counter with 64bit read-access protection.
+blkg_rwstat is the one with rw and [a]sync subcounters and takes @rw
+flags to distinguish IO subtypes (%REQ_WRITE and %REQ_SYNC) and
+replaces stat_sub_type indexed arrays.
 
-* Printing functions serving multiple counters don't require hardcoded
-  switching on specific counters.
+All counters in blkio_group_stats and blkio_group_stats_cpu are
+replaced with either blkg_stat or blkg_rwstat along with all users.
 
-* Printing uses read_seq_string callback (other methods will be phased
-  out).
+This does add one u64_stats_sync per counter and increase stats_sync
+operations but they're empty/noops on 64bit archs and blkcg doesn't
+have too many counters, especially with DEBUG_BLK_CGROUP off.
 
-This change enables further cleanups and relocating stats code to the
-policy implementation it belongs to.
+While the currently resulting code isn't necessarily simpler at the
+moment, this will enable further clean up of blkcg stats code.
+
+- BLKIO_STAT_{READ|WRITE|SYNC|ASYNC|TOTAL} renamed to
+  BLKG_RWSTAT_{READ|WRITE|SYNC|ASYNC|TOTAL}.
+
+- blkg_stat_add() replaces blkio_add_stat() and
+  blkio_check_and_dec_stat().  Note that BUG_ON() on underflow in the
+  latter function no longer exists.  It's *way* better to have
+  underflowed stat counters than oopsing.
+
+- blkio_group_stats->dequeue is now a proper u64 stat counter instead
+  of ulong.
+
+- reset_stats() updated to clear each stat counters individually and
+  BLKG_STATS_DEBUG_CLEAR_{START|SIZE} are removed.
+
+- Some functions reconstruct rw flags from direction and sync
+  booleans.  This will be removed by future patches.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- block/blk-cgroup.c |  557 ++++++++++++++++++++++------------------------------
- block/blk-cgroup.h |   60 +------
- 2 files changed, 243 insertions(+), 374 deletions(-)
+ block/blk-cgroup.c |  289 +++++++++++++++++++++++-----------------------------
+ block/blk-cgroup.h |  211 ++++++++++++++++++++++++++++++--------
+ 2 files changed, 293 insertions(+), 207 deletions(-)
 
 diff --git a/block/blk-cgroup.c b/block/blk-cgroup.c
-index 153a2db..f670217 100644
+index d4cf77d..153a2db 100644
 --- a/block/blk-cgroup.c
 +++ b/block/blk-cgroup.c
-@@ -753,186 +753,227 @@ blkiocg_reset_stats(struct cgroup *cgroup, struct cftype *cftype, u64 val)
+@@ -132,46 +132,6 @@ static inline void blkio_update_group_iops(struct blkio_group *blkg,
+ 	}
+ }
+ 
+-/*
+- * Add to the appropriate stat variable depending on the request type.
+- * This should be called with queue_lock held.
+- */
+-static void blkio_add_stat(uint64_t *stat, uint64_t add, bool direction,
+-				bool sync)
+-{
+-	if (direction)
+-		stat[BLKIO_STAT_WRITE] += add;
+-	else
+-		stat[BLKIO_STAT_READ] += add;
+-	if (sync)
+-		stat[BLKIO_STAT_SYNC] += add;
+-	else
+-		stat[BLKIO_STAT_ASYNC] += add;
+-}
+-
+-/*
+- * Decrements the appropriate stat variable if non-zero depending on the
+- * request type. Panics on value being zero.
+- * This should be called with the queue_lock held.
+- */
+-static void blkio_check_and_dec_stat(uint64_t *stat, bool direction, bool sync)
+-{
+-	if (direction) {
+-		BUG_ON(stat[BLKIO_STAT_WRITE] == 0);
+-		stat[BLKIO_STAT_WRITE]--;
+-	} else {
+-		BUG_ON(stat[BLKIO_STAT_READ] == 0);
+-		stat[BLKIO_STAT_READ]--;
+-	}
+-	if (sync) {
+-		BUG_ON(stat[BLKIO_STAT_SYNC] == 0);
+-		stat[BLKIO_STAT_SYNC]--;
+-	} else {
+-		BUG_ON(stat[BLKIO_STAT_ASYNC] == 0);
+-		stat[BLKIO_STAT_ASYNC]--;
+-	}
+-}
+-
+ #ifdef CONFIG_DEBUG_BLK_CGROUP
+ /* This should be called with the queue_lock held. */
+ static void blkio_set_start_group_wait_time(struct blkio_group *blkg,
+@@ -198,7 +158,8 @@ static void blkio_update_group_wait_time(struct blkio_group_stats *stats)
+ 
+ 	now = sched_clock();
+ 	if (time_after64(now, stats->start_group_wait_time))
+-		stats->group_wait_time += now - stats->start_group_wait_time;
++		blkg_stat_add(&stats->group_wait_time,
++			      now - stats->start_group_wait_time);
+ 	blkio_clear_blkg_waiting(stats);
+ }
+ 
+@@ -212,7 +173,8 @@ static void blkio_end_empty_time(struct blkio_group_stats *stats)
+ 
+ 	now = sched_clock();
+ 	if (time_after64(now, stats->start_empty_time))
+-		stats->empty_time += now - stats->start_empty_time;
++		blkg_stat_add(&stats->empty_time,
++			      now - stats->start_empty_time);
+ 	blkio_clear_blkg_empty(stats);
+ }
+ 
+@@ -239,11 +201,9 @@ void blkiocg_update_idle_time_stats(struct blkio_group *blkg,
+ 	if (blkio_blkg_idling(stats)) {
+ 		unsigned long long now = sched_clock();
+ 
+-		if (time_after64(now, stats->start_idle_time)) {
+-			u64_stats_update_begin(&stats->syncp);
+-			stats->idle_time += now - stats->start_idle_time;
+-			u64_stats_update_end(&stats->syncp);
+-		}
++		if (time_after64(now, stats->start_idle_time))
++			blkg_stat_add(&stats->idle_time,
++				      now - stats->start_idle_time);
+ 		blkio_clear_blkg_idling(stats);
+ 	}
+ }
+@@ -256,13 +216,10 @@ void blkiocg_update_avg_queue_size_stats(struct blkio_group *blkg,
+ 
+ 	lockdep_assert_held(blkg->q->queue_lock);
+ 
+-	u64_stats_update_begin(&stats->syncp);
+-	stats->avg_queue_size_sum +=
+-			stats->stat_arr[BLKIO_STAT_QUEUED][BLKIO_STAT_READ] +
+-			stats->stat_arr[BLKIO_STAT_QUEUED][BLKIO_STAT_WRITE];
+-	stats->avg_queue_size_samples++;
++	blkg_stat_add(&stats->avg_queue_size_sum,
++		      blkg_rwstat_sum(&stats->queued));
++	blkg_stat_add(&stats->avg_queue_size_samples, 1);
+ 	blkio_update_group_wait_time(stats);
+-	u64_stats_update_end(&stats->syncp);
+ }
+ EXPORT_SYMBOL_GPL(blkiocg_update_avg_queue_size_stats);
+ 
+@@ -273,8 +230,7 @@ void blkiocg_set_start_empty_time(struct blkio_group *blkg,
+ 
+ 	lockdep_assert_held(blkg->q->queue_lock);
+ 
+-	if (stats->stat_arr[BLKIO_STAT_QUEUED][BLKIO_STAT_READ] ||
+-			stats->stat_arr[BLKIO_STAT_QUEUED][BLKIO_STAT_WRITE])
++	if (blkg_rwstat_sum(&stats->queued))
+ 		return;
+ 
+ 	/*
+@@ -298,7 +254,7 @@ void blkiocg_update_dequeue_stats(struct blkio_group *blkg,
+ 
+ 	lockdep_assert_held(blkg->q->queue_lock);
+ 
+-	pd->stats.dequeue += dequeue;
++	blkg_stat_add(&pd->stats.dequeue, dequeue);
+ }
+ EXPORT_SYMBOL_GPL(blkiocg_update_dequeue_stats);
+ #else
+@@ -314,14 +270,12 @@ void blkiocg_update_io_add_stats(struct blkio_group *blkg,
+ 				 bool sync)
+ {
+ 	struct blkio_group_stats *stats = &blkg->pd[pol->plid]->stats;
++	int rw = (direction ? REQ_WRITE : 0) | (sync ? REQ_SYNC : 0);
+ 
+ 	lockdep_assert_held(blkg->q->queue_lock);
+ 
+-	u64_stats_update_begin(&stats->syncp);
+-	blkio_add_stat(stats->stat_arr[BLKIO_STAT_QUEUED], 1, direction, sync);
++	blkg_rwstat_add(&stats->queued, rw, 1);
+ 	blkio_end_empty_time(stats);
+-	u64_stats_update_end(&stats->syncp);
+-
+ 	blkio_set_start_group_wait_time(blkg, pol, curr_blkg);
+ }
+ EXPORT_SYMBOL_GPL(blkiocg_update_io_add_stats);
+@@ -331,13 +285,11 @@ void blkiocg_update_io_remove_stats(struct blkio_group *blkg,
+ 				    bool direction, bool sync)
+ {
+ 	struct blkio_group_stats *stats = &blkg->pd[pol->plid]->stats;
++	int rw = (direction ? REQ_WRITE : 0) | (sync ? REQ_SYNC : 0);
+ 
+ 	lockdep_assert_held(blkg->q->queue_lock);
+ 
+-	u64_stats_update_begin(&stats->syncp);
+-	blkio_check_and_dec_stat(stats->stat_arr[BLKIO_STAT_QUEUED], direction,
+-				 sync);
+-	u64_stats_update_end(&stats->syncp);
++	blkg_rwstat_add(&stats->queued, rw, -1);
+ }
+ EXPORT_SYMBOL_GPL(blkiocg_update_io_remove_stats);
+ 
+@@ -350,12 +302,10 @@ void blkiocg_update_timeslice_used(struct blkio_group *blkg,
+ 
+ 	lockdep_assert_held(blkg->q->queue_lock);
+ 
+-	u64_stats_update_begin(&stats->syncp);
+-	stats->time += time;
++	blkg_stat_add(&stats->time, time);
+ #ifdef CONFIG_DEBUG_BLK_CGROUP
+-	stats->unaccounted_time += unaccounted_time;
++	blkg_stat_add(&stats->unaccounted_time, unaccounted_time);
+ #endif
+-	u64_stats_update_end(&stats->syncp);
+ }
+ EXPORT_SYMBOL_GPL(blkiocg_update_timeslice_used);
+ 
+@@ -367,6 +317,7 @@ void blkiocg_update_dispatch_stats(struct blkio_group *blkg,
+ 				   struct blkio_policy_type *pol,
+ 				   uint64_t bytes, bool direction, bool sync)
+ {
++	int rw = (direction ? REQ_WRITE : 0) | (sync ? REQ_SYNC : 0);
+ 	struct blkg_policy_data *pd = blkg->pd[pol->plid];
+ 	struct blkio_group_stats_cpu *stats_cpu;
+ 	unsigned long flags;
+@@ -384,13 +335,10 @@ void blkiocg_update_dispatch_stats(struct blkio_group *blkg,
+ 
+ 	stats_cpu = this_cpu_ptr(pd->stats_cpu);
+ 
+-	u64_stats_update_begin(&stats_cpu->syncp);
+-	stats_cpu->sectors += bytes >> 9;
+-	blkio_add_stat(stats_cpu->stat_arr_cpu[BLKIO_STAT_CPU_SERVICED],
+-			1, direction, sync);
+-	blkio_add_stat(stats_cpu->stat_arr_cpu[BLKIO_STAT_CPU_SERVICE_BYTES],
+-			bytes, direction, sync);
+-	u64_stats_update_end(&stats_cpu->syncp);
++	blkg_stat_add(&stats_cpu->sectors, bytes >> 9);
++	blkg_rwstat_add(&stats_cpu->serviced, rw, 1);
++	blkg_rwstat_add(&stats_cpu->service_bytes, rw, bytes);
++
+ 	local_irq_restore(flags);
+ }
+ EXPORT_SYMBOL_GPL(blkiocg_update_dispatch_stats);
+@@ -403,17 +351,15 @@ void blkiocg_update_completion_stats(struct blkio_group *blkg,
+ {
+ 	struct blkio_group_stats *stats = &blkg->pd[pol->plid]->stats;
+ 	unsigned long long now = sched_clock();
++	int rw = (direction ? REQ_WRITE : 0) | (sync ? REQ_SYNC : 0);
+ 
+ 	lockdep_assert_held(blkg->q->queue_lock);
+ 
+-	u64_stats_update_begin(&stats->syncp);
+ 	if (time_after64(now, io_start_time))
+-		blkio_add_stat(stats->stat_arr[BLKIO_STAT_SERVICE_TIME],
+-				now - io_start_time, direction, sync);
++		blkg_rwstat_add(&stats->service_time, rw, now - io_start_time);
+ 	if (time_after64(io_start_time, start_time))
+-		blkio_add_stat(stats->stat_arr[BLKIO_STAT_WAIT_TIME],
+-				io_start_time - start_time, direction, sync);
+-	u64_stats_update_end(&stats->syncp);
++		blkg_rwstat_add(&stats->wait_time, rw,
++				io_start_time - start_time);
+ }
+ EXPORT_SYMBOL_GPL(blkiocg_update_completion_stats);
+ 
+@@ -423,12 +369,11 @@ void blkiocg_update_io_merged_stats(struct blkio_group *blkg,
+ 				    bool direction, bool sync)
+ {
+ 	struct blkio_group_stats *stats = &blkg->pd[pol->plid]->stats;
++	int rw = (direction ? REQ_WRITE : 0) | (sync ? REQ_SYNC : 0);
+ 
+ 	lockdep_assert_held(blkg->q->queue_lock);
+ 
+-	u64_stats_update_begin(&stats->syncp);
+-	blkio_add_stat(stats->stat_arr[BLKIO_STAT_MERGED], 1, direction, sync);
+-	u64_stats_update_end(&stats->syncp);
++	blkg_rwstat_add(&stats->merged, rw, 1);
+ }
+ EXPORT_SYMBOL_GPL(blkiocg_update_io_merged_stats);
+ 
+@@ -757,8 +702,9 @@ static void blkio_reset_stats_cpu(struct blkio_group *blkg, int plid)
+ 		struct blkio_group_stats_cpu *sc =
+ 			per_cpu_ptr(pd->stats_cpu, cpu);
+ 
+-		sc->sectors = 0;
+-		memset(sc->stat_arr_cpu, 0, sizeof(sc->stat_arr_cpu));
++		blkg_rwstat_reset(&sc->service_bytes);
++		blkg_rwstat_reset(&sc->serviced);
++		blkg_stat_reset(&sc->sectors);
+ 	}
+ }
+ 
+@@ -768,7 +714,6 @@ blkiocg_reset_stats(struct cgroup *cgroup, struct cftype *cftype, u64 val)
+ 	struct blkio_cgroup *blkcg = cgroup_to_blkio_cgroup(cgroup);
+ 	struct blkio_group *blkg;
+ 	struct hlist_node *n;
+-	int i;
+ 
+ 	spin_lock(&blkio_list_lock);
+ 	spin_lock_irq(&blkcg->lock);
+@@ -786,14 +731,18 @@ blkiocg_reset_stats(struct cgroup *cgroup, struct cftype *cftype, u64 val)
+ 			struct blkio_group_stats *stats = &pd->stats;
+ 
+ 			/* queued stats shouldn't be cleared */
+-			for (i = 0; i < ARRAY_SIZE(stats->stat_arr); i++)
+-				if (i != BLKIO_STAT_QUEUED)
+-					memset(stats->stat_arr[i], 0,
+-					       sizeof(stats->stat_arr[i]));
+-			stats->time = 0;
++			blkg_rwstat_reset(&stats->merged);
++			blkg_rwstat_reset(&stats->service_time);
++			blkg_rwstat_reset(&stats->wait_time);
++			blkg_stat_reset(&stats->time);
+ #ifdef CONFIG_DEBUG_BLK_CGROUP
+-			memset((void *)stats + BLKG_STATS_DEBUG_CLEAR_START, 0,
+-			       BLKG_STATS_DEBUG_CLEAR_SIZE);
++			blkg_stat_reset(&stats->unaccounted_time);
++			blkg_stat_reset(&stats->avg_queue_size_sum);
++			blkg_stat_reset(&stats->avg_queue_size_samples);
++			blkg_stat_reset(&stats->dequeue);
++			blkg_stat_reset(&stats->group_wait_time);
++			blkg_stat_reset(&stats->idle_time);
++			blkg_stat_reset(&stats->empty_time);
+ #endif
+ 			blkio_reset_stats_cpu(blkg, pol->plid);
+ 		}
+@@ -804,7 +753,7 @@ blkiocg_reset_stats(struct cgroup *cgroup, struct cftype *cftype, u64 val)
  	return 0;
  }
  
--static void blkio_get_key_name(enum blkg_rwstat_type type, const char *dname,
--			       char *str, int chars_left, bool diskname_only)
--{
--	snprintf(str, chars_left, "%s", dname);
--	chars_left -= strlen(str);
--	if (chars_left <= 0) {
--		printk(KERN_WARNING
--			"Possibly incorrect cgroup stat display format");
--		return;
--	}
--	if (diskname_only)
--		return;
--	switch (type) {
--	case BLKG_RWSTAT_READ:
--		strlcat(str, " Read", chars_left);
--		break;
--	case BLKG_RWSTAT_WRITE:
--		strlcat(str, " Write", chars_left);
--		break;
--	case BLKG_RWSTAT_SYNC:
--		strlcat(str, " Sync", chars_left);
--		break;
--	case BLKG_RWSTAT_ASYNC:
--		strlcat(str, " Async", chars_left);
--		break;
--	case BLKG_RWSTAT_TOTAL:
--		strlcat(str, " Total", chars_left);
--		break;
--	default:
--		strlcat(str, " Invalid", chars_left);
--	}
-+static const char *blkg_dev_name(struct blkio_group *blkg)
-+{
-+	/* some drivers (floppy) instantiate a queue w/o disk registered */
-+	if (blkg->q->backing_dev_info.dev)
-+		return dev_name(blkg->q->backing_dev_info.dev);
-+	return NULL;
+-static void blkio_get_key_name(enum stat_sub_type type, const char *dname,
++static void blkio_get_key_name(enum blkg_rwstat_type type, const char *dname,
+ 			       char *str, int chars_left, bool diskname_only)
+ {
+ 	snprintf(str, chars_left, "%s", dname);
+@@ -817,19 +766,19 @@ static void blkio_get_key_name(enum stat_sub_type type, const char *dname,
+ 	if (diskname_only)
+ 		return;
+ 	switch (type) {
+-	case BLKIO_STAT_READ:
++	case BLKG_RWSTAT_READ:
+ 		strlcat(str, " Read", chars_left);
+ 		break;
+-	case BLKIO_STAT_WRITE:
++	case BLKG_RWSTAT_WRITE:
+ 		strlcat(str, " Write", chars_left);
+ 		break;
+-	case BLKIO_STAT_SYNC:
++	case BLKG_RWSTAT_SYNC:
+ 		strlcat(str, " Sync", chars_left);
+ 		break;
+-	case BLKIO_STAT_ASYNC:
++	case BLKG_RWSTAT_ASYNC:
+ 		strlcat(str, " Async", chars_left);
+ 		break;
+-	case BLKIO_STAT_TOTAL:
++	case BLKG_RWSTAT_TOTAL:
+ 		strlcat(str, " Total", chars_left);
+ 		break;
+ 	default:
+@@ -838,29 +787,34 @@ static void blkio_get_key_name(enum stat_sub_type type, const char *dname,
  }
  
--static uint64_t blkio_read_stat_cpu(struct blkio_group *blkg, int plid,
--				    enum stat_type_cpu type,
--				    enum blkg_rwstat_type sub_type)
-+/**
-+ * blkcg_print_blkgs - helper for printing per-blkg data
-+ * @sf: seq_file to print to
-+ * @blkcg: blkcg of interest
-+ * @prfill: fill function to print out a blkg
-+ * @pol: policy in question
-+ * @data: data to be passed to @prfill
-+ * @show_total: to print out sum of prfill return values or not
-+ *
-+ * This function invokes @prfill on each blkg of @blkcg if pd for the
-+ * policy specified by @pol exists.  @prfill is invoked with @sf, the
-+ * policy data and @data.  If @show_total is %true, the sum of the return
-+ * values from @prfill is printed with "Total" label at the end.
-+ *
-+ * This is to be used to construct print functions for
-+ * cftype->read_seq_string method.
-+ */
-+static void blkcg_print_blkgs(struct seq_file *sf, struct blkio_cgroup *blkcg,
-+			      u64 (*prfill)(struct seq_file *,
-+					    struct blkg_policy_data *, int),
-+			      int pol, int data, bool show_total)
+ static uint64_t blkio_read_stat_cpu(struct blkio_group *blkg, int plid,
+-			enum stat_type_cpu type, enum stat_sub_type sub_type)
++				    enum stat_type_cpu type,
++				    enum blkg_rwstat_type sub_type)
  {
--	struct blkg_policy_data *pd = blkg->pd[plid];
--	u64 val = 0;
--	int cpu;
-+	struct blkio_group *blkg;
-+	struct hlist_node *n;
-+	u64 total = 0;
+ 	struct blkg_policy_data *pd = blkg->pd[plid];
++	u64 val = 0;
+ 	int cpu;
+-	struct blkio_group_stats_cpu *stats_cpu;
+-	u64 val = 0, tval;
  
--	if (pd->stats_cpu == NULL)
--		return val;
-+	spin_lock_irq(&blkcg->lock);
-+	hlist_for_each_entry(blkg, n, &blkcg->blkg_list, blkcg_node)
-+		if (blkg->pd[pol])
-+			total += prfill(sf, blkg->pd[pol], data);
-+	spin_unlock_irq(&blkcg->lock);
-+
-+	if (show_total)
-+		seq_printf(sf, "Total %llu\n", (unsigned long long)total);
-+}
-+
-+/**
-+ * __blkg_prfill_u64 - prfill helper for a single u64 value
-+ * @sf: seq_file to print to
-+ * @pd: policy data of interest
-+ * @v: value to print
-+ *
-+ * Print @v to @sf for the device assocaited with @pd.
-+ */
-+static u64 __blkg_prfill_u64(struct seq_file *sf, struct blkg_policy_data *pd,
-+			     u64 v)
-+{
-+	const char *dname = blkg_dev_name(pd->blkg);
-+
-+	if (!dname)
-+		return 0;
-+
-+	seq_printf(sf, "%s %llu\n", dname, (unsigned long long)v);
-+	return v;
-+}
-+
-+/**
-+ * __blkg_prfill_rwstat - prfill helper for a blkg_rwstat
-+ * @sf: seq_file to print to
-+ * @pd: policy data of interest
-+ * @rwstat: rwstat to print
-+ *
-+ * Print @rwstat to @sf for the device assocaited with @pd.
-+ */
-+static u64 __blkg_prfill_rwstat(struct seq_file *sf,
-+				struct blkg_policy_data *pd,
-+				const struct blkg_rwstat *rwstat)
-+{
-+	static const char *rwstr[] = {
-+		[BLKG_RWSTAT_READ]	= "Read",
-+		[BLKG_RWSTAT_WRITE]	= "Write",
-+		[BLKG_RWSTAT_SYNC]	= "Sync",
-+		[BLKG_RWSTAT_ASYNC]	= "Async",
-+	};
-+	const char *dname = blkg_dev_name(pd->blkg);
-+	u64 v;
-+	int i;
-+
-+	if (!dname)
-+		return 0;
-+
-+	for (i = 0; i < BLKG_RWSTAT_NR; i++)
-+		seq_printf(sf, "%s %s %llu\n", dname, rwstr[i],
-+			   (unsigned long long)rwstat->cnt[i]);
-+
-+	v = rwstat->cnt[BLKG_RWSTAT_READ] + rwstat->cnt[BLKG_RWSTAT_WRITE];
-+	seq_printf(sf, "%s Total %llu\n", dname, (unsigned long long)v);
-+	return v;
-+}
-+
-+static u64 blkg_prfill_stat(struct seq_file *sf, struct blkg_policy_data *pd,
-+			    int off)
-+{
-+	return __blkg_prfill_u64(sf, pd,
-+				 blkg_stat_read((void *)&pd->stats + off));
-+}
-+
-+static u64 blkg_prfill_rwstat(struct seq_file *sf, struct blkg_policy_data *pd,
-+			      int off)
-+{
-+	struct blkg_rwstat rwstat = blkg_rwstat_read((void *)&pd->stats + off);
-+
-+	return __blkg_prfill_rwstat(sf, pd, &rwstat);
-+}
-+
-+/* print blkg_stat specified by BLKCG_STAT_PRIV() */
-+static int blkcg_print_stat(struct cgroup *cgrp, struct cftype *cft,
-+			    struct seq_file *sf)
-+{
-+	struct blkio_cgroup *blkcg = cgroup_to_blkio_cgroup(cgrp);
-+
-+	blkcg_print_blkgs(sf, blkcg, blkg_prfill_stat,
-+			  BLKCG_STAT_POL(cft->private),
-+			  BLKCG_STAT_OFF(cft->private), false);
-+	return 0;
-+}
-+
-+/* print blkg_rwstat specified by BLKCG_STAT_PRIV() */
-+static int blkcg_print_rwstat(struct cgroup *cgrp, struct cftype *cft,
-+			      struct seq_file *sf)
-+{
-+	struct blkio_cgroup *blkcg = cgroup_to_blkio_cgroup(cgrp);
-+
-+	blkcg_print_blkgs(sf, blkcg, blkg_prfill_rwstat,
-+			  BLKCG_STAT_POL(cft->private),
-+			  BLKCG_STAT_OFF(cft->private), true);
-+	return 0;
-+}
-+
-+static u64 blkg_prfill_cpu_stat(struct seq_file *sf,
-+				struct blkg_policy_data *pd, int off)
-+{
-+	u64 v = 0;
-+	int cpu;
+ 	if (pd->stats_cpu == NULL)
+ 		return val;
  
  	for_each_possible_cpu(cpu) {
--		struct blkio_group_stats_cpu *stats_cpu =
-+		struct blkio_group_stats_cpu *sc =
- 			per_cpu_ptr(pd->stats_cpu, cpu);
--		struct blkg_rwstat rws;
- 
--		switch (type) {
--		case BLKIO_STAT_CPU_SECTORS:
--			val += blkg_stat_read(&stats_cpu->sectors);
--			break;
--		case BLKIO_STAT_CPU_SERVICE_BYTES:
--			rws = blkg_rwstat_read(&stats_cpu->service_bytes);
--			val += rws.cnt[sub_type];
--			break;
--		case BLKIO_STAT_CPU_SERVICED:
--			rws = blkg_rwstat_read(&stats_cpu->serviced);
--			val += rws.cnt[sub_type];
--			break;
--		}
-+		v += blkg_stat_read((void *)sc + off);
- 	}
- 
--	return val;
-+	return __blkg_prfill_u64(sf, pd, v);
- }
- 
--static uint64_t blkio_get_stat_cpu(struct blkio_group *blkg, int plid,
--				   struct cgroup_map_cb *cb, const char *dname,
--				   enum stat_type_cpu type)
-+static u64 blkg_prfill_cpu_rwstat(struct seq_file *sf,
-+				  struct blkg_policy_data *pd, int off)
- {
--	uint64_t disk_total, val;
--	char key_str[MAX_KEY_LEN];
--	enum blkg_rwstat_type sub_type;
-+	struct blkg_rwstat rwstat = { }, tmp;
-+	int i, cpu;
- 
--	if (type == BLKIO_STAT_CPU_SECTORS) {
--		val = blkio_read_stat_cpu(blkg, plid, type, 0);
--		blkio_get_key_name(0, dname, key_str, MAX_KEY_LEN, true);
--		cb->fill(cb, key_str, val);
--		return val;
--	}
-+	for_each_possible_cpu(cpu) {
-+		struct blkio_group_stats_cpu *sc =
+-		unsigned int start;
+-		stats_cpu = per_cpu_ptr(pd->stats_cpu, cpu);
+-
+-		do {
+-			start = u64_stats_fetch_begin(&stats_cpu->syncp);
+-			if (type == BLKIO_STAT_CPU_SECTORS)
+-				tval = stats_cpu->sectors;
+-			else
+-				tval = stats_cpu->stat_arr_cpu[type][sub_type];
+-		} while(u64_stats_fetch_retry(&stats_cpu->syncp, start));
+-
+-		val += tval;
++		struct blkio_group_stats_cpu *stats_cpu =
 +			per_cpu_ptr(pd->stats_cpu, cpu);
- 
--	for (sub_type = BLKG_RWSTAT_READ; sub_type < BLKG_RWSTAT_NR;
--			sub_type++) {
--		blkio_get_key_name(sub_type, dname, key_str, MAX_KEY_LEN,
--				   false);
--		val = blkio_read_stat_cpu(blkg, plid, type, sub_type);
--		cb->fill(cb, key_str, val);
-+		tmp = blkg_rwstat_read((void *)sc + off);
-+		for (i = 0; i < BLKG_RWSTAT_NR; i++)
-+			rwstat.cnt[i] += tmp.cnt[i];
- 	}
- 
--	disk_total = blkio_read_stat_cpu(blkg, plid, type, BLKG_RWSTAT_READ) +
--		blkio_read_stat_cpu(blkg, plid, type, BLKG_RWSTAT_WRITE);
--
--	blkio_get_key_name(BLKG_RWSTAT_TOTAL, dname, key_str, MAX_KEY_LEN,
--			   false);
--	cb->fill(cb, key_str, disk_total);
--	return disk_total;
-+	return __blkg_prfill_rwstat(sf, pd, &rwstat);
- }
- 
--static uint64_t blkio_get_stat(struct blkio_group *blkg, int plid,
--			       struct cgroup_map_cb *cb, const char *dname,
--			       enum stat_type type)
-+/* print per-cpu blkg_stat specified by BLKCG_STAT_PRIV() */
-+static int blkcg_print_cpu_stat(struct cgroup *cgrp, struct cftype *cft,
-+				struct seq_file *sf)
- {
--	struct blkio_group_stats *stats = &blkg->pd[plid]->stats;
--	uint64_t v = 0, disk_total = 0;
--	char key_str[MAX_KEY_LEN];
--	struct blkg_rwstat rws = { };
--	int st;
-+	struct blkio_cgroup *blkcg = cgroup_to_blkio_cgroup(cgrp);
- 
--	if (type >= BLKIO_STAT_ARR_NR) {
--		switch (type) {
--		case BLKIO_STAT_TIME:
--			v = blkg_stat_read(&stats->time);
--			break;
--#ifdef CONFIG_DEBUG_BLK_CGROUP
--		case BLKIO_STAT_UNACCOUNTED_TIME:
--			v = blkg_stat_read(&stats->unaccounted_time);
--			break;
--		case BLKIO_STAT_AVG_QUEUE_SIZE: {
--			uint64_t samples;
-+	blkcg_print_blkgs(sf, blkcg, blkg_prfill_cpu_stat,
-+			  BLKCG_STAT_POL(cft->private),
-+			  BLKCG_STAT_OFF(cft->private), false);
-+	return 0;
-+}
- 
--			samples = blkg_stat_read(&stats->avg_queue_size_samples);
--			if (samples) {
--				v = blkg_stat_read(&stats->avg_queue_size_sum);
--				do_div(v, samples);
--			}
--			break;
--		}
--		case BLKIO_STAT_IDLE_TIME:
--			v = blkg_stat_read(&stats->idle_time);
--			break;
--		case BLKIO_STAT_EMPTY_TIME:
--			v = blkg_stat_read(&stats->empty_time);
--			break;
--		case BLKIO_STAT_DEQUEUE:
--			v = blkg_stat_read(&stats->dequeue);
--			break;
--		case BLKIO_STAT_GROUP_WAIT_TIME:
--			v = blkg_stat_read(&stats->group_wait_time);
--			break;
--#endif
--		default:
--			WARN_ON_ONCE(1);
--		}
-+/* print per-cpu blkg_rwstat specified by BLKCG_STAT_PRIV() */
-+static int blkcg_print_cpu_rwstat(struct cgroup *cgrp, struct cftype *cft,
-+				  struct seq_file *sf)
-+{
-+	struct blkio_cgroup *blkcg = cgroup_to_blkio_cgroup(cgrp);
- 
--		blkio_get_key_name(0, dname, key_str, MAX_KEY_LEN, true);
--		cb->fill(cb, key_str, v);
--		return v;
--	}
-+	blkcg_print_blkgs(sf, blkcg, blkg_prfill_cpu_rwstat,
-+			  BLKCG_STAT_POL(cft->private),
-+			  BLKCG_STAT_OFF(cft->private), true);
-+	return 0;
-+}
- 
--	switch (type) {
--	case BLKIO_STAT_MERGED:
--		rws = blkg_rwstat_read(&stats->merged);
--		break;
--	case BLKIO_STAT_SERVICE_TIME:
--		rws = blkg_rwstat_read(&stats->service_time);
--		break;
--	case BLKIO_STAT_WAIT_TIME:
--		rws = blkg_rwstat_read(&stats->wait_time);
--		break;
--	case BLKIO_STAT_QUEUED:
--		rws = blkg_rwstat_read(&stats->queued);
--		break;
--	default:
--		WARN_ON_ONCE(true);
--		break;
--	}
-+#ifdef CONFIG_DEBUG_BLK_CGROUP
-+static u64 blkg_prfill_avg_queue_size(struct seq_file *sf,
-+				      struct blkg_policy_data *pd, int off)
-+{
-+	u64 samples = blkg_stat_read(&pd->stats.avg_queue_size_samples);
-+	u64 v = 0;
- 
--	for (st = BLKG_RWSTAT_READ; st < BLKG_RWSTAT_NR; st++) {
--		blkio_get_key_name(st, dname, key_str, MAX_KEY_LEN, false);
--		cb->fill(cb, key_str, rws.cnt[st]);
--		if (st == BLKG_RWSTAT_READ || st == BLKG_RWSTAT_WRITE)
--			disk_total += rws.cnt[st];
-+	if (samples) {
-+		v = blkg_stat_read(&pd->stats.avg_queue_size_sum);
-+		do_div(v, samples);
- 	}
-+	__blkg_prfill_u64(sf, pd, v);
-+	return 0;
-+}
++		struct blkg_rwstat rws;
 +
-+/* print avg_queue_size */
-+static int blkcg_print_avg_queue_size(struct cgroup *cgrp, struct cftype *cft,
-+				      struct seq_file *sf)
-+{
-+	struct blkio_cgroup *blkcg = cgroup_to_blkio_cgroup(cgrp);
++		switch (type) {
++		case BLKIO_STAT_CPU_SECTORS:
++			val += blkg_stat_read(&stats_cpu->sectors);
++			break;
++		case BLKIO_STAT_CPU_SERVICE_BYTES:
++			rws = blkg_rwstat_read(&stats_cpu->service_bytes);
++			val += rws.cnt[sub_type];
++			break;
++		case BLKIO_STAT_CPU_SERVICED:
++			rws = blkg_rwstat_read(&stats_cpu->serviced);
++			val += rws.cnt[sub_type];
++			break;
++		}
+ 	}
  
--	blkio_get_key_name(BLKG_RWSTAT_TOTAL, dname, key_str, MAX_KEY_LEN,
--			   false);
--	cb->fill(cb, key_str, disk_total);
--	return disk_total;
-+	blkcg_print_blkgs(sf, blkcg, blkg_prfill_avg_queue_size,
-+			  BLKIO_POLICY_PROP, 0, false);
-+	return 0;
- }
-+#endif	/* CONFIG_DEBUG_BLK_CGROUP */
- 
- static int blkio_policy_parse_and_set(char *buf, enum blkio_policy_id plid,
- 				      int fileid, struct blkio_cgroup *blkcg)
-@@ -1074,14 +1115,6 @@ static int blkiocg_file_write(struct cgroup *cgrp, struct cftype *cft,
- 	return ret;
- }
- 
--static const char *blkg_dev_name(struct blkio_group *blkg)
--{
--	/* some drivers (floppy) instantiate a queue w/o disk registered */
--	if (blkg->q->backing_dev_info.dev)
--		return dev_name(blkg->q->backing_dev_info.dev);
--	return NULL;
--}
--
- static void blkio_print_group_conf(struct cftype *cft, struct blkio_group *blkg,
- 				   struct seq_file *m)
+ 	return val;
+@@ -872,7 +826,7 @@ static uint64_t blkio_get_stat_cpu(struct blkio_group *blkg, int plid,
  {
-@@ -1174,116 +1207,6 @@ static int blkiocg_file_read(struct cgroup *cgrp, struct cftype *cft,
- 	return 0;
- }
+ 	uint64_t disk_total, val;
+ 	char key_str[MAX_KEY_LEN];
+-	enum stat_sub_type sub_type;
++	enum blkg_rwstat_type sub_type;
  
--static int blkio_read_blkg_stats(struct blkio_cgroup *blkcg,
--		struct cftype *cft, struct cgroup_map_cb *cb,
--		enum stat_type type, bool show_total, bool pcpu)
--{
--	struct blkio_group *blkg;
--	struct hlist_node *n;
--	uint64_t cgroup_total = 0;
--
--	spin_lock_irq(&blkcg->lock);
--
--	hlist_for_each_entry(blkg, n, &blkcg->blkg_list, blkcg_node) {
--		const char *dname = blkg_dev_name(blkg);
--		int plid = BLKIOFILE_POLICY(cft->private);
--
--		if (!dname)
--			continue;
--		if (pcpu)
--			cgroup_total += blkio_get_stat_cpu(blkg, plid,
--							   cb, dname, type);
--		else
--			cgroup_total += blkio_get_stat(blkg, plid,
--						       cb, dname, type);
--	}
--	if (show_total)
--		cb->fill(cb, "Total", cgroup_total);
--
--	spin_unlock_irq(&blkcg->lock);
--	return 0;
--}
--
--/* All map kind of cgroup file get serviced by this function */
--static int blkiocg_file_read_map(struct cgroup *cgrp, struct cftype *cft,
--				struct cgroup_map_cb *cb)
--{
--	struct blkio_cgroup *blkcg;
--	enum blkio_policy_id plid = BLKIOFILE_POLICY(cft->private);
--	int name = BLKIOFILE_ATTR(cft->private);
--
--	blkcg = cgroup_to_blkio_cgroup(cgrp);
--
--	switch(plid) {
--	case BLKIO_POLICY_PROP:
--		switch(name) {
--		case BLKIO_PROP_time:
--			return blkio_read_blkg_stats(blkcg, cft, cb,
--						BLKIO_STAT_TIME, 0, 0);
--		case BLKIO_PROP_sectors:
--			return blkio_read_blkg_stats(blkcg, cft, cb,
--						BLKIO_STAT_CPU_SECTORS, 0, 1);
--		case BLKIO_PROP_io_service_bytes:
--			return blkio_read_blkg_stats(blkcg, cft, cb,
--					BLKIO_STAT_CPU_SERVICE_BYTES, 1, 1);
--		case BLKIO_PROP_io_serviced:
--			return blkio_read_blkg_stats(blkcg, cft, cb,
--						BLKIO_STAT_CPU_SERVICED, 1, 1);
--		case BLKIO_PROP_io_service_time:
--			return blkio_read_blkg_stats(blkcg, cft, cb,
--						BLKIO_STAT_SERVICE_TIME, 1, 0);
--		case BLKIO_PROP_io_wait_time:
--			return blkio_read_blkg_stats(blkcg, cft, cb,
--						BLKIO_STAT_WAIT_TIME, 1, 0);
--		case BLKIO_PROP_io_merged:
--			return blkio_read_blkg_stats(blkcg, cft, cb,
--						BLKIO_STAT_MERGED, 1, 0);
--		case BLKIO_PROP_io_queued:
--			return blkio_read_blkg_stats(blkcg, cft, cb,
--						BLKIO_STAT_QUEUED, 1, 0);
--#ifdef CONFIG_DEBUG_BLK_CGROUP
--		case BLKIO_PROP_unaccounted_time:
--			return blkio_read_blkg_stats(blkcg, cft, cb,
--					BLKIO_STAT_UNACCOUNTED_TIME, 0, 0);
--		case BLKIO_PROP_dequeue:
--			return blkio_read_blkg_stats(blkcg, cft, cb,
--						BLKIO_STAT_DEQUEUE, 0, 0);
--		case BLKIO_PROP_avg_queue_size:
--			return blkio_read_blkg_stats(blkcg, cft, cb,
--					BLKIO_STAT_AVG_QUEUE_SIZE, 0, 0);
--		case BLKIO_PROP_group_wait_time:
--			return blkio_read_blkg_stats(blkcg, cft, cb,
--					BLKIO_STAT_GROUP_WAIT_TIME, 0, 0);
--		case BLKIO_PROP_idle_time:
--			return blkio_read_blkg_stats(blkcg, cft, cb,
--						BLKIO_STAT_IDLE_TIME, 0, 0);
--		case BLKIO_PROP_empty_time:
--			return blkio_read_blkg_stats(blkcg, cft, cb,
--						BLKIO_STAT_EMPTY_TIME, 0, 0);
--#endif
--		default:
--			BUG();
--		}
--		break;
--	case BLKIO_POLICY_THROTL:
--		switch(name){
--		case BLKIO_THROTL_io_service_bytes:
--			return blkio_read_blkg_stats(blkcg, cft, cb,
--						BLKIO_STAT_CPU_SERVICE_BYTES, 1, 1);
--		case BLKIO_THROTL_io_serviced:
--			return blkio_read_blkg_stats(blkcg, cft, cb,
--						BLKIO_STAT_CPU_SERVICED, 1, 1);
--		default:
--			BUG();
--		}
--		break;
--	default:
--		BUG();
--	}
--
--	return 0;
--}
--
- static int blkio_weight_write(struct blkio_cgroup *blkcg, int plid, u64 val)
- {
- 	struct blkio_group *blkg;
-@@ -1369,51 +1292,51 @@ struct cftype blkio_files[] = {
- 	},
- 	{
- 		.name = "time",
--		.private = BLKIOFILE_PRIVATE(BLKIO_POLICY_PROP,
--				BLKIO_PROP_time),
--		.read_map = blkiocg_file_read_map,
-+		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_PROP,
-+				offsetof(struct blkio_group_stats, time)),
-+		.read_seq_string = blkcg_print_stat,
- 	},
- 	{
- 		.name = "sectors",
--		.private = BLKIOFILE_PRIVATE(BLKIO_POLICY_PROP,
--				BLKIO_PROP_sectors),
--		.read_map = blkiocg_file_read_map,
-+		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_PROP,
-+				offsetof(struct blkio_group_stats_cpu, sectors)),
-+		.read_seq_string = blkcg_print_cpu_stat,
- 	},
- 	{
- 		.name = "io_service_bytes",
--		.private = BLKIOFILE_PRIVATE(BLKIO_POLICY_PROP,
--				BLKIO_PROP_io_service_bytes),
--		.read_map = blkiocg_file_read_map,
-+		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_PROP,
-+				offsetof(struct blkio_group_stats_cpu, service_bytes)),
-+		.read_seq_string = blkcg_print_cpu_rwstat,
- 	},
- 	{
- 		.name = "io_serviced",
--		.private = BLKIOFILE_PRIVATE(BLKIO_POLICY_PROP,
--				BLKIO_PROP_io_serviced),
--		.read_map = blkiocg_file_read_map,
-+		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_PROP,
-+				offsetof(struct blkio_group_stats_cpu, serviced)),
-+		.read_seq_string = blkcg_print_cpu_rwstat,
- 	},
- 	{
- 		.name = "io_service_time",
--		.private = BLKIOFILE_PRIVATE(BLKIO_POLICY_PROP,
--				BLKIO_PROP_io_service_time),
--		.read_map = blkiocg_file_read_map,
-+		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_PROP,
-+				offsetof(struct blkio_group_stats, service_time)),
-+		.read_seq_string = blkcg_print_rwstat,
- 	},
- 	{
- 		.name = "io_wait_time",
--		.private = BLKIOFILE_PRIVATE(BLKIO_POLICY_PROP,
--				BLKIO_PROP_io_wait_time),
--		.read_map = blkiocg_file_read_map,
-+		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_PROP,
-+				offsetof(struct blkio_group_stats, wait_time)),
-+		.read_seq_string = blkcg_print_rwstat,
- 	},
- 	{
- 		.name = "io_merged",
--		.private = BLKIOFILE_PRIVATE(BLKIO_POLICY_PROP,
--				BLKIO_PROP_io_merged),
--		.read_map = blkiocg_file_read_map,
-+		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_PROP,
-+				offsetof(struct blkio_group_stats, merged)),
-+		.read_seq_string = blkcg_print_rwstat,
- 	},
- 	{
- 		.name = "io_queued",
--		.private = BLKIOFILE_PRIVATE(BLKIO_POLICY_PROP,
--				BLKIO_PROP_io_queued),
--		.read_map = blkiocg_file_read_map,
-+		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_PROP,
-+				offsetof(struct blkio_group_stats, queued)),
-+		.read_seq_string = blkcg_print_rwstat,
- 	},
- 	{
- 		.name = "reset_stats",
-@@ -1457,54 +1380,52 @@ struct cftype blkio_files[] = {
- 	},
- 	{
- 		.name = "throttle.io_service_bytes",
--		.private = BLKIOFILE_PRIVATE(BLKIO_POLICY_THROTL,
--				BLKIO_THROTL_io_service_bytes),
--		.read_map = blkiocg_file_read_map,
-+		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_THROTL,
-+				offsetof(struct blkio_group_stats_cpu, service_bytes)),
-+		.read_seq_string = blkcg_print_cpu_rwstat,
- 	},
- 	{
- 		.name = "throttle.io_serviced",
--		.private = BLKIOFILE_PRIVATE(BLKIO_POLICY_THROTL,
--				BLKIO_THROTL_io_serviced),
--		.read_map = blkiocg_file_read_map,
-+		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_THROTL,
-+				offsetof(struct blkio_group_stats_cpu, serviced)),
-+		.read_seq_string = blkcg_print_cpu_rwstat,
- 	},
- #endif /* CONFIG_BLK_DEV_THROTTLING */
+ 	if (type == BLKIO_STAT_CPU_SECTORS) {
+ 		val = blkio_read_stat_cpu(blkg, plid, type, 0);
+@@ -881,7 +835,7 @@ static uint64_t blkio_get_stat_cpu(struct blkio_group *blkg, int plid,
+ 		return val;
+ 	}
  
+-	for (sub_type = BLKIO_STAT_READ; sub_type < BLKIO_STAT_TOTAL;
++	for (sub_type = BLKG_RWSTAT_READ; sub_type < BLKG_RWSTAT_NR;
+ 			sub_type++) {
+ 		blkio_get_key_name(sub_type, dname, key_str, MAX_KEY_LEN,
+ 				   false);
+@@ -889,10 +843,10 @@ static uint64_t blkio_get_stat_cpu(struct blkio_group *blkg, int plid,
+ 		cb->fill(cb, key_str, val);
+ 	}
+ 
+-	disk_total = blkio_read_stat_cpu(blkg, plid, type, BLKIO_STAT_READ) +
+-		blkio_read_stat_cpu(blkg, plid, type, BLKIO_STAT_WRITE);
++	disk_total = blkio_read_stat_cpu(blkg, plid, type, BLKG_RWSTAT_READ) +
++		blkio_read_stat_cpu(blkg, plid, type, BLKG_RWSTAT_WRITE);
+ 
+-	blkio_get_key_name(BLKIO_STAT_TOTAL, dname, key_str, MAX_KEY_LEN,
++	blkio_get_key_name(BLKG_RWSTAT_TOTAL, dname, key_str, MAX_KEY_LEN,
+ 			   false);
+ 	cb->fill(cb, key_str, disk_total);
+ 	return disk_total;
+@@ -905,65 +859,76 @@ static uint64_t blkio_get_stat(struct blkio_group *blkg, int plid,
+ 	struct blkio_group_stats *stats = &blkg->pd[plid]->stats;
+ 	uint64_t v = 0, disk_total = 0;
+ 	char key_str[MAX_KEY_LEN];
+-	unsigned int sync_start;
++	struct blkg_rwstat rws = { };
+ 	int st;
+ 
+ 	if (type >= BLKIO_STAT_ARR_NR) {
+-		do {
+-			sync_start = u64_stats_fetch_begin(&stats->syncp);
+-			switch (type) {
+-			case BLKIO_STAT_TIME:
+-				v = stats->time;
+-				break;
++		switch (type) {
++		case BLKIO_STAT_TIME:
++			v = blkg_stat_read(&stats->time);
++			break;
  #ifdef CONFIG_DEBUG_BLK_CGROUP
- 	{
- 		.name = "avg_queue_size",
--		.private = BLKIOFILE_PRIVATE(BLKIO_POLICY_PROP,
--				BLKIO_PROP_avg_queue_size),
--		.read_map = blkiocg_file_read_map,
-+		.read_seq_string = blkcg_print_avg_queue_size,
- 	},
- 	{
- 		.name = "group_wait_time",
--		.private = BLKIOFILE_PRIVATE(BLKIO_POLICY_PROP,
--				BLKIO_PROP_group_wait_time),
--		.read_map = blkiocg_file_read_map,
-+		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_PROP,
-+				offsetof(struct blkio_group_stats, group_wait_time)),
-+		.read_seq_string = blkcg_print_stat,
- 	},
- 	{
- 		.name = "idle_time",
--		.private = BLKIOFILE_PRIVATE(BLKIO_POLICY_PROP,
--				BLKIO_PROP_idle_time),
--		.read_map = blkiocg_file_read_map,
-+		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_PROP,
-+				offsetof(struct blkio_group_stats, idle_time)),
-+		.read_seq_string = blkcg_print_stat,
- 	},
- 	{
- 		.name = "empty_time",
--		.private = BLKIOFILE_PRIVATE(BLKIO_POLICY_PROP,
--				BLKIO_PROP_empty_time),
--		.read_map = blkiocg_file_read_map,
-+		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_PROP,
-+				offsetof(struct blkio_group_stats, empty_time)),
-+		.read_seq_string = blkcg_print_stat,
- 	},
- 	{
- 		.name = "dequeue",
--		.private = BLKIOFILE_PRIVATE(BLKIO_POLICY_PROP,
--				BLKIO_PROP_dequeue),
--		.read_map = blkiocg_file_read_map,
-+		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_PROP,
-+				offsetof(struct blkio_group_stats, dequeue)),
-+		.read_seq_string = blkcg_print_stat,
- 	},
- 	{
- 		.name = "unaccounted_time",
--		.private = BLKIOFILE_PRIVATE(BLKIO_POLICY_PROP,
--				BLKIO_PROP_unaccounted_time),
--		.read_map = blkiocg_file_read_map,
-+		.private = BLKCG_STAT_PRIV(BLKIO_POLICY_PROP,
-+				offsetof(struct blkio_group_stats, unaccounted_time)),
-+		.read_seq_string = blkcg_print_stat,
- 	},
+-			case BLKIO_STAT_UNACCOUNTED_TIME:
+-				v = stats->unaccounted_time;
+-				break;
+-			case BLKIO_STAT_AVG_QUEUE_SIZE: {
+-				uint64_t samples = stats->avg_queue_size_samples;
++		case BLKIO_STAT_UNACCOUNTED_TIME:
++			v = blkg_stat_read(&stats->unaccounted_time);
++			break;
++		case BLKIO_STAT_AVG_QUEUE_SIZE: {
++			uint64_t samples;
+ 
+-				if (samples) {
+-					v = stats->avg_queue_size_sum;
+-					do_div(v, samples);
+-				}
+-				break;
++			samples = blkg_stat_read(&stats->avg_queue_size_samples);
++			if (samples) {
++				v = blkg_stat_read(&stats->avg_queue_size_sum);
++				do_div(v, samples);
+ 			}
+-			case BLKIO_STAT_IDLE_TIME:
+-				v = stats->idle_time;
+-				break;
+-			case BLKIO_STAT_EMPTY_TIME:
+-				v = stats->empty_time;
+-				break;
+-			case BLKIO_STAT_DEQUEUE:
+-				v = stats->dequeue;
+-				break;
+-			case BLKIO_STAT_GROUP_WAIT_TIME:
+-				v = stats->group_wait_time;
+-				break;
++			break;
++		}
++		case BLKIO_STAT_IDLE_TIME:
++			v = blkg_stat_read(&stats->idle_time);
++			break;
++		case BLKIO_STAT_EMPTY_TIME:
++			v = blkg_stat_read(&stats->empty_time);
++			break;
++		case BLKIO_STAT_DEQUEUE:
++			v = blkg_stat_read(&stats->dequeue);
++			break;
++		case BLKIO_STAT_GROUP_WAIT_TIME:
++			v = blkg_stat_read(&stats->group_wait_time);
++			break;
  #endif
- 	{ }	/* terminate */
+-			default:
+-				WARN_ON_ONCE(1);
+-			}
+-		} while (u64_stats_fetch_retry(&stats->syncp, sync_start));
++		default:
++			WARN_ON_ONCE(1);
++		}
+ 
+ 		blkio_get_key_name(0, dname, key_str, MAX_KEY_LEN, true);
+ 		cb->fill(cb, key_str, v);
+ 		return v;
+ 	}
+ 
+-	for (st = BLKIO_STAT_READ; st < BLKIO_STAT_TOTAL; st++) {
+-		do {
+-			sync_start = u64_stats_fetch_begin(&stats->syncp);
+-			v = stats->stat_arr[type][st];
+-		} while (u64_stats_fetch_retry(&stats->syncp, sync_start));
++	switch (type) {
++	case BLKIO_STAT_MERGED:
++		rws = blkg_rwstat_read(&stats->merged);
++		break;
++	case BLKIO_STAT_SERVICE_TIME:
++		rws = blkg_rwstat_read(&stats->service_time);
++		break;
++	case BLKIO_STAT_WAIT_TIME:
++		rws = blkg_rwstat_read(&stats->wait_time);
++		break;
++	case BLKIO_STAT_QUEUED:
++		rws = blkg_rwstat_read(&stats->queued);
++		break;
++	default:
++		WARN_ON_ONCE(true);
++		break;
++	}
+ 
++	for (st = BLKG_RWSTAT_READ; st < BLKG_RWSTAT_NR; st++) {
+ 		blkio_get_key_name(st, dname, key_str, MAX_KEY_LEN, false);
+-		cb->fill(cb, key_str, v);
+-		if (st == BLKIO_STAT_READ || st == BLKIO_STAT_WRITE)
+-			disk_total += v;
++		cb->fill(cb, key_str, rws.cnt[st]);
++		if (st == BLKG_RWSTAT_READ || st == BLKG_RWSTAT_WRITE)
++			disk_total += rws.cnt[st];
+ 	}
+ 
+-	blkio_get_key_name(BLKIO_STAT_TOTAL, dname, key_str, MAX_KEY_LEN,
++	blkio_get_key_name(BLKG_RWSTAT_TOTAL, dname, key_str, MAX_KEY_LEN,
+ 			   false);
+ 	cb->fill(cb, key_str, disk_total);
+ 	return disk_total;
 diff --git a/block/blk-cgroup.h b/block/blk-cgroup.h
-index 7578df3..7331d79 100644
+index 2060d81..7578df3 100644
 --- a/block/blk-cgroup.h
 +++ b/block/blk-cgroup.h
-@@ -28,46 +28,10 @@ enum blkio_policy_id {
+@@ -69,12 +69,14 @@ enum stat_type_cpu {
  
- #ifdef CONFIG_BLK_CGROUP
+ #define BLKIO_STAT_CPU_ARR_NR	(BLKIO_STAT_CPU_SERVICED + 1)
  
--enum stat_type {
--	/* Number of IOs merged */
--	BLKIO_STAT_MERGED,
--	/* Total time spent (in ns) between request dispatch to the driver and
--	 * request completion for IOs doen by this cgroup. This may not be
--	 * accurate when NCQ is turned on. */
--	BLKIO_STAT_SERVICE_TIME,
--	/* Total time spent waiting in scheduler queue in ns */
--	BLKIO_STAT_WAIT_TIME,
--	/* Number of IOs queued up */
--	BLKIO_STAT_QUEUED,
--
--	/* All the single valued stats go below this */
--	BLKIO_STAT_TIME,
--#ifdef CONFIG_DEBUG_BLK_CGROUP
+-enum stat_sub_type {
+-	BLKIO_STAT_READ = 0,
+-	BLKIO_STAT_WRITE,
+-	BLKIO_STAT_SYNC,
+-	BLKIO_STAT_ASYNC,
+-	BLKIO_STAT_TOTAL
++enum blkg_rwstat_type {
++	BLKG_RWSTAT_READ,
++	BLKG_RWSTAT_WRITE,
++	BLKG_RWSTAT_SYNC,
++	BLKG_RWSTAT_ASYNC,
++
++	BLKG_RWSTAT_NR,
++	BLKG_RWSTAT_TOTAL = BLKG_RWSTAT_NR,
+ };
+ 
+ /* blkg state flags */
+@@ -124,54 +126,58 @@ struct blkio_cgroup {
+ 	uint64_t id;
+ };
+ 
++struct blkg_stat {
++	struct u64_stats_sync		syncp;
++	uint64_t			cnt;
++};
++
++struct blkg_rwstat {
++	struct u64_stats_sync		syncp;
++	uint64_t			cnt[BLKG_RWSTAT_NR];
++};
++
+ struct blkio_group_stats {
+-	struct u64_stats_sync syncp;
++	/* number of ios merged */
++	struct blkg_rwstat		merged;
++	/* total time spent on device in ns, may not be accurate w/ queueing */
++	struct blkg_rwstat		service_time;
++	/* total time spent waiting in scheduler queue in ns */
++	struct blkg_rwstat		wait_time;
++	/* number of IOs queued up */
++	struct blkg_rwstat		queued;
+ 	/* total disk time and nr sectors dispatched by this group */
+-	uint64_t time;
+-	uint64_t stat_arr[BLKIO_STAT_ARR_NR][BLKIO_STAT_TOTAL];
++	struct blkg_stat		time;
+ #ifdef CONFIG_DEBUG_BLK_CGROUP
 -	/* Time not charged to this cgroup */
--	BLKIO_STAT_UNACCOUNTED_TIME,
--	BLKIO_STAT_AVG_QUEUE_SIZE,
--	BLKIO_STAT_IDLE_TIME,
--	BLKIO_STAT_EMPTY_TIME,
--	BLKIO_STAT_GROUP_WAIT_TIME,
--	BLKIO_STAT_DEQUEUE
+-	uint64_t unaccounted_time;
+-
+-	/* Sum of number of IOs queued across all samples */
+-	uint64_t avg_queue_size_sum;
+-	/* Count of samples taken for average */
+-	uint64_t avg_queue_size_samples;
+-	/* How many times this group has been removed from service tree */
+-	unsigned long dequeue;
+-
+-	/* Total time spent waiting for it to be assigned a timeslice. */
+-	uint64_t group_wait_time;
+-
+-	/* Time spent idling for this blkio_group */
+-	uint64_t idle_time;
+-	/*
+-	 * Total time when we have requests queued and do not contain the
+-	 * current active queue.
+-	 */
+-	uint64_t empty_time;
+-
++	/* time not charged to this cgroup */
++	struct blkg_stat		unaccounted_time;
++	/* sum of number of ios queued across all samples */
++	struct blkg_stat		avg_queue_size_sum;
++	/* count of samples taken for average */
++	struct blkg_stat		avg_queue_size_samples;
++	/* how many times this group has been removed from service tree */
++	struct blkg_stat		dequeue;
++	/* total time spent waiting for it to be assigned a timeslice. */
++	struct blkg_stat		group_wait_time;
++	/* time spent idling for this blkio_group */
++	struct blkg_stat		idle_time;
++	/* total time with empty current active q with other requests queued */
++	struct blkg_stat		empty_time;
+ 	/* fields after this shouldn't be cleared on stat reset */
+-	uint64_t start_group_wait_time;
+-	uint64_t start_idle_time;
+-	uint64_t start_empty_time;
+-	uint16_t flags;
++	uint64_t			start_group_wait_time;
++	uint64_t			start_idle_time;
++	uint64_t			start_empty_time;
++	uint16_t			flags;
+ #endif
+ };
+ 
+-#ifdef CONFIG_DEBUG_BLK_CGROUP
+-#define BLKG_STATS_DEBUG_CLEAR_START	\
+-	offsetof(struct blkio_group_stats, unaccounted_time)
+-#define BLKG_STATS_DEBUG_CLEAR_SIZE	\
+-	(offsetof(struct blkio_group_stats, start_group_wait_time) - \
+-	 BLKG_STATS_DEBUG_CLEAR_START)
 -#endif
--};
 -
--/* Types lower than this live in stat_arr and have subtypes */
--#define BLKIO_STAT_ARR_NR	(BLKIO_STAT_QUEUED + 1)
--
--/* Per cpu stats */
--enum stat_type_cpu {
--	/* Total bytes transferred */
--	BLKIO_STAT_CPU_SERVICE_BYTES,
--	/* Total IOs serviced, post merge */
--	BLKIO_STAT_CPU_SERVICED,
--
--	/* All the single valued stats go below this */
--	BLKIO_STAT_CPU_SECTORS,
--};
--
--#define BLKIO_STAT_CPU_ARR_NR	(BLKIO_STAT_CPU_SERVICED + 1)
-+/* cft->private [un]packing for stat printing */
-+#define BLKCG_STAT_PRIV(pol, off)	(((unsigned)(pol) << 16) | (off))
-+#define BLKCG_STAT_POL(prv)		((unsigned)(prv) >> 16)
-+#define BLKCG_STAT_OFF(prv)		((unsigned)(prv) & 0xffff)
- 
- enum blkg_rwstat_type {
- 	BLKG_RWSTAT_READ,
-@@ -90,20 +54,6 @@ enum blkg_state_flags {
- enum blkcg_file_name_prop {
- 	BLKIO_PROP_weight = 1,
- 	BLKIO_PROP_weight_device,
--	BLKIO_PROP_io_service_bytes,
--	BLKIO_PROP_io_serviced,
--	BLKIO_PROP_time,
--	BLKIO_PROP_sectors,
--	BLKIO_PROP_unaccounted_time,
--	BLKIO_PROP_io_service_time,
--	BLKIO_PROP_io_wait_time,
--	BLKIO_PROP_io_merged,
--	BLKIO_PROP_io_queued,
--	BLKIO_PROP_avg_queue_size,
--	BLKIO_PROP_group_wait_time,
--	BLKIO_PROP_idle_time,
--	BLKIO_PROP_empty_time,
--	BLKIO_PROP_dequeue,
+ /* Per cpu blkio group stats */
+ struct blkio_group_stats_cpu {
+-	uint64_t sectors;
+-	uint64_t stat_arr_cpu[BLKIO_STAT_CPU_ARR_NR][BLKIO_STAT_TOTAL];
+-	struct u64_stats_sync syncp;
++	/* total bytes transferred */
++	struct blkg_rwstat		service_bytes;
++	/* total IOs serviced, post merge */
++	struct blkg_rwstat		serviced;
++	/* total sectors transferred */
++	struct blkg_stat		sectors;
  };
  
- /* cgroup files owned by throttle policy */
-@@ -112,8 +62,6 @@ enum blkcg_file_name_throtl {
- 	BLKIO_THROTL_write_bps_device,
- 	BLKIO_THROTL_read_iops_device,
- 	BLKIO_THROTL_write_iops_device,
--	BLKIO_THROTL_io_service_bytes,
--	BLKIO_THROTL_io_serviced,
- };
+ struct blkio_group_conf {
+@@ -316,6 +322,121 @@ static inline void blkg_put(struct blkio_group *blkg)
+ 		__blkg_release(blkg);
+ }
  
- struct blkio_cgroup {
++/**
++ * blkg_stat_add - add a value to a blkg_stat
++ * @stat: target blkg_stat
++ * @val: value to add
++ *
++ * Add @val to @stat.  The caller is responsible for synchronizing calls to
++ * this function.
++ */
++static inline void blkg_stat_add(struct blkg_stat *stat, uint64_t val)
++{
++	u64_stats_update_begin(&stat->syncp);
++	stat->cnt += val;
++	u64_stats_update_end(&stat->syncp);
++}
++
++/**
++ * blkg_stat_read - read the current value of a blkg_stat
++ * @stat: blkg_stat to read
++ *
++ * Read the current value of @stat.  This function can be called without
++ * synchroniztion and takes care of u64 atomicity.
++ */
++static inline uint64_t blkg_stat_read(struct blkg_stat *stat)
++{
++	unsigned int start;
++	uint64_t v;
++
++	do {
++		start = u64_stats_fetch_begin(&stat->syncp);
++		v = stat->cnt;
++	} while (u64_stats_fetch_retry(&stat->syncp, start));
++
++	return v;
++}
++
++/**
++ * blkg_stat_reset - reset a blkg_stat
++ * @stat: blkg_stat to reset
++ */
++static inline void blkg_stat_reset(struct blkg_stat *stat)
++{
++	stat->cnt = 0;
++}
++
++/**
++ * blkg_rwstat_add - add a value to a blkg_rwstat
++ * @rwstat: target blkg_rwstat
++ * @rw: mask of REQ_{WRITE|SYNC}
++ * @val: value to add
++ *
++ * Add @val to @rwstat.  The counters are chosen according to @rw.  The
++ * caller is responsible for synchronizing calls to this function.
++ */
++static inline void blkg_rwstat_add(struct blkg_rwstat *rwstat,
++				   int rw, uint64_t val)
++{
++	u64_stats_update_begin(&rwstat->syncp);
++
++	if (rw & REQ_WRITE)
++		rwstat->cnt[BLKG_RWSTAT_WRITE] += val;
++	else
++		rwstat->cnt[BLKG_RWSTAT_READ] += val;
++	if (rw & REQ_SYNC)
++		rwstat->cnt[BLKG_RWSTAT_SYNC] += val;
++	else
++		rwstat->cnt[BLKG_RWSTAT_ASYNC] += val;
++
++	u64_stats_update_end(&rwstat->syncp);
++}
++
++/**
++ * blkg_rwstat_read - read the current values of a blkg_rwstat
++ * @rwstat: blkg_rwstat to read
++ *
++ * Read the current snapshot of @rwstat and return it as the return value.
++ * This function can be called without synchronization and takes care of
++ * u64 atomicity.
++ */
++static struct blkg_rwstat blkg_rwstat_read(struct blkg_rwstat *rwstat)
++{
++	unsigned int start;
++	struct blkg_rwstat tmp;
++
++	do {
++		start = u64_stats_fetch_begin(&rwstat->syncp);
++		tmp = *rwstat;
++	} while (u64_stats_fetch_retry(&rwstat->syncp, start));
++
++	return tmp;
++}
++
++/**
++ * blkg_rwstat_sum - read the total count of a blkg_rwstat
++ * @rwstat: blkg_rwstat to read
++ *
++ * Return the total count of @rwstat regardless of the IO direction.  This
++ * function can be called without synchronization and takes care of u64
++ * atomicity.
++ */
++static inline uint64_t blkg_rwstat_sum(struct blkg_rwstat *rwstat)
++{
++	struct blkg_rwstat tmp = blkg_rwstat_read(rwstat);
++
++	return tmp.cnt[BLKG_RWSTAT_READ] + tmp.cnt[BLKG_RWSTAT_WRITE];
++}
++
++/**
++ * blkg_rwstat_reset - reset a blkg_rwstat
++ * @rwstat: blkg_rwstat to reset
++ */
++static inline void blkg_rwstat_reset(struct blkg_rwstat *rwstat)
++{
++	memset(rwstat->cnt, 0, sizeof(rwstat->cnt));
++}
++
+ #else
+ 
+ struct blkio_group {
 -- 
 1.7.7.3
