@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 05/21] blkcg: drop blkiocg_file_write_u64()
-Date: Wed, 28 Mar 2012 15:51:15 -0700
-Message-ID: <1332975091-10950-6-git-send-email-tj@kernel.org>
+Subject: [PATCH 08/21] blkcg: blkg_conf_prep()
+Date: Wed, 28 Mar 2012 15:51:18 -0700
+Message-ID: <1332975091-10950-9-git-send-email-tj@kernel.org>
 References: <1332975091-10950-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,83 +21,103 @@ To: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org
 Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-blkiocg_file_write_u64() has single switch case.  Drop
-blkiocg_file_write_u64(), rename blkio_weight_write() to
-blkcg_set_weight() and use it directly for .write_u64 callback.
+blkg_conf_prep() implements "MAJ:MIN VAL" parsing manually, which is
+unnecessary.  Just use sscanf("%u:%u %llu").  This might not reject
+some malformed input (extra input at the end) but we don't care.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- block/blk-cgroup.c |   35 +++++++----------------------------
- 1 files changed, 7 insertions(+), 28 deletions(-)
+ block/blk-cgroup.c |   64 ++++++++-------------------------------------------
+ 1 files changed, 10 insertions(+), 54 deletions(-)
 
 diff --git a/block/blk-cgroup.c b/block/blk-cgroup.c
-index f670217..ae539d3 100644
+index 0d4f21e..3d933b0 100644
 --- a/block/blk-cgroup.c
 +++ b/block/blk-cgroup.c
-@@ -1207,8 +1207,9 @@ static int blkiocg_file_read(struct cgroup *cgrp, struct cftype *cft,
- 	return 0;
- }
- 
--static int blkio_weight_write(struct blkio_cgroup *blkcg, int plid, u64 val)
-+static int blkcg_set_weight(struct cgroup *cgrp, struct cftype *cft, u64 val)
+@@ -987,57 +987,16 @@ static int blkg_conf_prep(struct blkio_cgroup *blkcg, const char *input,
  {
-+	struct blkio_cgroup *blkcg = cgroup_to_blkio_cgroup(cgrp);
+ 	struct gendisk *disk;
  	struct blkio_group *blkg;
- 	struct hlist_node *n;
+-	char *buf, *s[4], *p, *major_s, *minor_s;
+-	unsigned long major, minor;
+-	int i = 0, ret = -EINVAL;
+-	int part;
+-	dev_t dev;
+-	u64 temp;
++	unsigned int major, minor;
++	unsigned long long v;
++	int part, ret;
  
-@@ -1220,10 +1221,11 @@ static int blkio_weight_write(struct blkio_cgroup *blkcg, int plid, u64 val)
- 	blkcg->weight = (unsigned int)val;
- 
- 	hlist_for_each_entry(blkg, n, &blkcg->blkg_list, blkcg_node) {
--		struct blkg_policy_data *pd = blkg->pd[plid];
-+		struct blkg_policy_data *pd = blkg->pd[BLKIO_POLICY_PROP];
- 
--		if (!pd->conf.weight)
--			blkio_update_group_weight(blkg, plid, blkcg->weight);
-+		if (pd && !pd->conf.weight)
-+			blkio_update_group_weight(blkg, BLKIO_POLICY_PROP,
-+						  blkcg->weight);
- 	}
- 
- 	spin_unlock_irq(&blkcg->lock);
-@@ -1251,29 +1253,6 @@ static u64 blkiocg_file_read_u64 (struct cgroup *cgrp, struct cftype *cft) {
- 	return 0;
- }
- 
--static int
--blkiocg_file_write_u64(struct cgroup *cgrp, struct cftype *cft, u64 val)
--{
--	struct blkio_cgroup *blkcg;
--	enum blkio_policy_id plid = BLKIOFILE_POLICY(cft->private);
--	int name = BLKIOFILE_ATTR(cft->private);
+-	buf = kstrdup(input, GFP_KERNEL);
+-	if (!buf)
+-		return -ENOMEM;
 -
--	blkcg = cgroup_to_blkio_cgroup(cgrp);
+-	memset(s, 0, sizeof(s));
 -
--	switch(plid) {
--	case BLKIO_POLICY_PROP:
--		switch(name) {
--		case BLKIO_PROP_weight:
--			return blkio_weight_write(blkcg, plid, val);
--		}
--		break;
--	default:
--		BUG();
+-	while ((p = strsep(&buf, " ")) != NULL) {
+-		if (!*p)
+-			continue;
+-
+-		s[i++] = p;
+-
+-		/* Prevent from inputing too many things */
+-		if (i == 3)
+-			break;
 -	}
 -
--	return 0;
--}
+-	if (i != 2)
+-		goto out;
 -
- struct cftype blkio_files[] = {
- 	{
- 		.name = "weight_device",
-@@ -1288,7 +1267,7 @@ struct cftype blkio_files[] = {
- 		.private = BLKIOFILE_PRIVATE(BLKIO_POLICY_PROP,
- 				BLKIO_PROP_weight),
- 		.read_u64 = blkiocg_file_read_u64,
--		.write_u64 = blkiocg_file_write_u64,
-+		.write_u64 = blkcg_set_weight,
- 	},
- 	{
- 		.name = "time",
+-	p = strsep(&s[0], ":");
+-	if (p != NULL)
+-		major_s = p;
+-	else
+-		goto out;
+-
+-	minor_s = s[0];
+-	if (!minor_s)
+-		goto out;
+-
+-	if (strict_strtoul(major_s, 10, &major))
+-		goto out;
+-
+-	if (strict_strtoul(minor_s, 10, &minor))
+-		goto out;
+-
+-	dev = MKDEV(major, minor);
+-
+-	if (strict_strtoull(s[1], 10, &temp))
+-		goto out;
++	if (sscanf(input, "%u:%u %llu", &major, &minor, &v) != 3)
++		return -EINVAL;
+ 
+-	disk = get_gendisk(dev, &part);
++	disk = get_gendisk(MKDEV(major, minor), &part);
+ 	if (!disk || part)
+-		goto out;
++		return -EINVAL;
+ 
+ 	rcu_read_lock();
+ 
+@@ -1059,16 +1018,13 @@ static int blkg_conf_prep(struct blkio_cgroup *blkcg, const char *input,
+ 			msleep(10);
+ 			ret = restart_syscall();
+ 		}
+-		goto out;
++		return ret;
+ 	}
+ 
+ 	ctx->disk = disk;
+ 	ctx->blkg = blkg;
+-	ctx->v = temp;
+-	ret = 0;
+-out:
+-	kfree(buf);
+-	return ret;
++	ctx->v = v;
++	return 0;
+ }
+ 
+ /**
 -- 
 1.7.7.3
