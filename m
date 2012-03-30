@@ -1,10 +1,15 @@
-From: MAILER-DAEMON-V+ccY/IsJJ9KvT2pLmgx3Gpvyscy8KKr@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Fri, 30 Mar 2012 05:45:38 +0200 (CEST)
-Message-ID: <20120330034538.7A63E25F701@mail.molinoalimonti.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH v2] futex: mark get_robust_list as deprecated
+Date: Thu, 29 Mar 2012 22:05:44 -0700
+Message-ID: <20120330050544.GA32299@count0.beaverton.ibm.com>
+References: <20120323190855.GA27213@www.outflux.net>
+	<m1fwczvuph.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============4336550896905313004=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <m1fwczvuph.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -14,114 +19,63 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, spender-JNS0hek0TMl4qEwOxq4T+Q@public.gmane.org, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jiri Kosina <jkosina-AlSwsSmVLrQ@public.gmane.org>, Darren Hart <dvhart-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>, kernel-hardening-ZwoEplunGu1jrUoiu81ncdBPR1lH4CV8@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Gene Cooperman <gene-1vnkWVZi4QaVc3sceRu5cw@public.gmane.org>, Randy Dunlap <rdunlap-/UHa2rfvQTnk1uMJSBkQmQ@public.gmane.org>, Cyrill Gorcunov <gorcunov-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
+On Fri, Mar 23, 2012 at 03:06:02PM -0700, Eric W. Biederman wrote:
+> Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org> writes:
+> 
+> > Notify get_robust_list users that the syscall is going away.
+> 
+> Has anyone asked the question if the folks working on checkpoint/restart
+> are going to need this.
+> 
+> This seems like important information to know if you want to checkpoint
+> a process.
 
---===============4336550896905313004==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="96A0825F704.1333079138/mail.molinoalimonti.com"
-Content-Transfer-Encoding: 7bit
+I have no idea if the CRIU and DMTCP folks care about this. I've added
+some folks related to those projects to the Cc list.
 
-This is a MIME-encapsulated message.
+> 
+> Eric
+> 
+> > Suggested-by: Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
+> > Signed-off-by: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+> > ---
+> > v2:
+> >  - add note to feature-removal-schedule.txt.
+> > ---
+> >  Documentation/feature-removal-schedule.txt |   10 ++++++++++
+> >  kernel/futex.c                             |    2 ++
+> >  kernel/futex_compat.c                      |    2 ++
+> >  3 files changed, 14 insertions(+), 0 deletions(-)
+> >
+> > diff --git a/Documentation/feature-removal-schedule.txt b/Documentation/feature-removal-schedule.txt
+> > index 4bfd982..e3bf119 100644
+> > --- a/Documentation/feature-removal-schedule.txt
+> > +++ b/Documentation/feature-removal-schedule.txt
+> > @@ -543,3 +543,13 @@ When:	3.5
+> >  Why:	The old kmap_atomic() with two arguments is deprecated, we only
+> >  	keep it for backward compatibility for few cycles and then drop it.
+> >  Who:	Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> > +
+> > +----------------------------
+> > +
+> > +What:	get_robust_list syscall
+> > +When:	2013
+> > +Why:	There appear to be no production users of the get_robust_list syscall,
+> > +	and it runs the risk of leaking address locations, allowing the bypass
+> > +	of ASLR. It was only ever intended for debugging, so it should be
+> > +	removed.
 
---96A0825F704.1333079138/mail.molinoalimonti.com
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
+So I've looked in glibc, gdb, and DMTCP. The description of the intended
+use of get_robust_list() is accurate. However the benefit of ASLR is
+less clear when it comes to the robust list. In glibc the robust list is
+only used from NPTL. The robust list head is in struct pthread which can be
+obtained from pthread_self() anyway. Thus I think ASLR doesn't really help
+obfuscate the robust futex list unless the program is using robust futexes
+without the aid of glibc.
 
-This is the mail system at host mail.molinoalimonti.com.
-
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
-
-For further assistance, please send mail to postmaster.
-
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
-
-                   The mail system
-
-<ini_005-dbx96nzIXN7OeuqD6ShaSA@public.gmane.org>: host mx4.fastwebnet.it[85.18.95.22] said: 550 RCPT
-    TO:<ini_005-dbx96nzIXN7OeuqD6ShaSA@public.gmane.org> User unknown (in reply to RCPT TO command)
-
-<ruzzi-dXt2WRHC7kEPOrvKVPHJBw@public.gmane.org>: host adsl.snaservice.it[93.62.4.18] said: 550 5.1.1 User
-    unknown (in reply to RCPT TO command)
-
---96A0825F704.1333079138/mail.molinoalimonti.com
-Content-Description: Delivery report
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; mail.molinoalimonti.com
-X-Postfix-Queue-ID: 96A0825F704
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Fri, 30 Mar 2012 05:45:22 +0200 (CEST)
-
-Final-Recipient: rfc822; ini_005-dbx96nzIXN7OeuqD6ShaSA@public.gmane.org
-Original-Recipient: rfc822;ini_005-dbx96nzIXN7OeuqD6ShaSA@public.gmane.org
-Action: failed
-Status: 5.0.0
-Remote-MTA: dns; mx4.fastwebnet.it
-Diagnostic-Code: smtp; 550 RCPT TO:<ini_005-dbx96nzIXN7OeuqD6ShaSA@public.gmane.org> User unknown
-
-Final-Recipient: rfc822; ruzzi-dXt2WRHC7kEPOrvKVPHJBw@public.gmane.org
-Original-Recipient: rfc822;ruzzi-dXt2WRHC7kEPOrvKVPHJBw@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: dns; adsl.snaservice.it
-Diagnostic-Code: smtp; 550 5.1.1 User unknown
-
---96A0825F704.1333079138/mail.molinoalimonti.com
-Content-Description: Undelivered Message
-Content-Type: message/rfc822
-Content-Transfer-Encoding: 7bit
-
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from localhost (localhost.localdomain [127.0.0.1])
-	by mail.molinoalimonti.com (Postfix) with ESMTP id 96A0825F704;
-	Fri, 30 Mar 2012 05:45:22 +0200 (CEST)
-X-Virus-Scanned: amavisd-new at molinoalimonti.com
-Received: from mail.molinoalimonti.com ([127.0.0.1])
-	by localhost (mail.molinoalimonti.com [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id Iq4gEc9a2VWZ; Fri, 30 Mar 2012 05:45:17 +0200 (CEST)
-Received: from Debian-50-lenny-32-minimal (static.3.89.40.188.clients.your-server.de [188.40.89.3])
-	by mail.molinoalimonti.com (Postfix) with ESMTPA id 804DF25F6FD;
-	Fri, 30 Mar 2012 05:45:16 +0200 (CEST)
-Received: from [188.40.89.3] by Debian-50-lenny-32-minimal id gsAtfb6nPzcT with SMTP; Thu, 29 Mar 2012 23:45:30 -0400
-Date: Thu, 29 Mar 2012 23:45:30 -0400
-From: "billing" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.1.26.3) Personal
-X-Priority: 3 (Normal)
-Message-ID: <301779447.80071937011086@Debian-50-lenny-32-minimal>
-To: <ini_005-dbx96nzIXN7OeuqD6ShaSA@public.gmane.org>
-Subject: Re: document 3626
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-
-
-
-   =20
-Gentile utente, Monte Biz =20
-
-
-Il tuo ordine viene elaborato
-http://209.227.250.127/la_fattura/Dettagli.zip?usera=3Dini_005@fastwebnet=
-.it
-
-
-
---96A0825F704.1333079138/mail.molinoalimonti.com--
-
---===============4336550896905313004==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============4336550896905313004==--
+Cheers,
+	-Matt Helsley
