@@ -1,16 +1,15 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Subject: Re: [PATCHSET] cgroup: cftype based file interface, take #2
-Date: Sat, 31 Mar 2012 09:30:56 -0700
-Message-ID: <20120331163056.GA2557__37314.1729193323$1333211471$gmane$org@dhcp-172-17-108-109.mtv.corp.google.com>
+Date: Sat, 31 Mar 2012 09:31:58 -0700
+Message-ID: <20120331163158.GB2557__47012.3731917285$1333211536$gmane$org@dhcp-172-17-108-109.mtv.corp.google.com>
 References: <1332368265-21586-1-git-send-email-tj@kernel.org>
-	<4F75AA1F.9020007@huawei.com> <20120330154246.GE28934@google.com>
-	<4F76FF04.40007@huawei.com>
+	<20120330222936.GI28934@google.com> <4F76FC27.3050709@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4F76FF04.40007-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4F76FC27.3050709-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,18 +25,12 @@ List-Id: containers.vger.kernel.org
 
 Hello,
 
-On Sat, Mar 31, 2012 at 08:56:36PM +0800, Li Zefan wrote:
-> > Subsys can't be changed if any non-root cgroup exists.
-> 
-> Ah, this is a long-standing defect, which is documented in Doc/../cgroups.txt.
-> It's not trivial to fix it, and I never heard someone request it to be fixed.
+On Sat, Mar 31, 2012 at 08:44:23PM +0800, Li Zefan wrote:
+> I've gone through the whole patchset, feel free to add my acks.
 
-Yeah, it was a bit of head scratcher.  If it can be done only when
-there's no cgroup configured, one might as well unmount and mount w/
-new subsys instead of remounting.  There's the minute difference that
-existing root cgroup state is preserved but that hardly justifies the
-crippled feature.  IMHO, lack of fix request indicates the feature not
-being used rather than anything else, so the deprecation proposal.
+I'll add acked-by's to all patches including the remount deprecation
+patch and start cgroup/for-3.5 branch.  If there's any disagreement,
+please scream.
 
 Thanks.
 
