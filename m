@@ -1,16 +1,10 @@
-From: Gene Cooperman <gene-1vnkWVZi4QaVc3sceRu5cw@public.gmane.org>
-Subject: Re: [PATCH v2] futex: mark get_robust_list as deprecated
-Date: Fri, 30 Mar 2012 18:51:48 -0400
-Message-ID: <20120330225148.GC26814__33432.1239883595$1333150774$gmane$org@mspacman.ccs.neu.edu>
-References: <20120323190855.GA27213@www.outflux.net>
-	<m1fwczvuph.fsf@fess.ebiederm.org>
-	<20120330050544.GA32299@count0.beaverton.ibm.com>
+From: MAILER-DAEMON-wUxENwln5r+LafUI+cEhsUpT1MKLh0Pf@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Sat, 31 Mar 2012 02:48:34 +0200 (CEST)
+Message-ID: <20120331004834.B1CED1C8390@correo.anandagestion.es>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============0582738050372775328=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20120330050544.GA32299-52DBMbEzqgQ/wnmkkaCWp/UQ3DHhIser@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,76 +14,150 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, spender-JNS0hek0TMl4qEwOxq4T+Q@public.gmane.org, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jiri Kosina <jkosina-AlSwsSmVLrQ@public.gmane.org>, Darren Hart <dvhart-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>, kernel-hardening-ZwoEplunGu1jrUoiu81ncdBPR1lH4CV8@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Gene Cooperman <gene-1vnkWVZi4QaVc3sceRu5cw@public.gmane.org>, Randy Dunlap <rdunlap-/UHa2rfvQTnk1uMJSBkQmQ@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Cyrill Gorcunov <gorcunov-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Thanks for including us in the cc, Matt.  
-We don't need the system call for DMTCP either.
+This is a MIME-encapsulated message.
 
-Also, in our DMTCP user base, we haven't had any requests to support
-checkpointing of user code with get_robust_list().  If a user had needed
-this or a similar system call, I suspect our new plugin architecture
-would make it easy to eupport.  But it's a non-issue now.
+--===============0582738050372775328==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="005441C836B.1333154914/correo.anandagestion.es"
+Content-Transfer-Encoding: 7bit
 
-Thanks,
-- Gene
+This is a MIME-encapsulated message.
 
-On Thu, Mar 29, 2012 at 10:05:44PM -0700, Matt Helsley wrote:
-> On Fri, Mar 23, 2012 at 03:06:02PM -0700, Eric W. Biederman wrote:
-> > Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org> writes:
-> > 
-> > > Notify get_robust_list users that the syscall is going away.
-> > 
-> > Has anyone asked the question if the folks working on checkpoint/restart
-> > are going to need this.
-> > 
-> > This seems like important information to know if you want to checkpoint
-> > a process.
-> 
-> I have no idea if the CRIU and DMTCP folks care about this. I've added
-> some folks related to those projects to the Cc list.
-> 
-> > 
-> > Eric
-> > 
-> > > Suggested-by: Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
-> > > Signed-off-by: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-> > > ---
-> > > v2:
-> > >  - add note to feature-removal-schedule.txt.
-> > > ---
-> > >  Documentation/feature-removal-schedule.txt |   10 ++++++++++
-> > >  kernel/futex.c                             |    2 ++
-> > >  kernel/futex_compat.c                      |    2 ++
-> > >  3 files changed, 14 insertions(+), 0 deletions(-)
-> > >
-> > > diff --git a/Documentation/feature-removal-schedule.txt b/Documentation/feature-removal-schedule.txt
-> > > index 4bfd982..e3bf119 100644
-> > > --- a/Documentation/feature-removal-schedule.txt
-> > > +++ b/Documentation/feature-removal-schedule.txt
-> > > @@ -543,3 +543,13 @@ When:	3.5
-> > >  Why:	The old kmap_atomic() with two arguments is deprecated, we only
-> > >  	keep it for backward compatibility for few cycles and then drop it.
-> > >  Who:	Cong Wang <amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> > > +
-> > > +----------------------------
-> > > +
-> > > +What:	get_robust_list syscall
-> > > +When:	2013
-> > > +Why:	There appear to be no production users of the get_robust_list syscall,
-> > > +	and it runs the risk of leaking address locations, allowing the bypass
-> > > +	of ASLR. It was only ever intended for debugging, so it should be
-> > > +	removed.
-> 
-> So I've looked in glibc, gdb, and DMTCP. The description of the intended
-> use of get_robust_list() is accurate. However the benefit of ASLR is
-> less clear when it comes to the robust list. In glibc the robust list is
-> only used from NPTL. The robust list head is in struct pthread which can be
-> obtained from pthread_self() anyway. Thus I think ASLR doesn't really help
-> obfuscate the robust futex list unless the program is using robust futexes
-> without the aid of glibc.
-> 
-> Cheers,
-> 	-Matt Helsley
-> 
+--005441C836B.1333154914/correo.anandagestion.es
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
+
+This is the mail system at host correo.anandagestion.es.
+
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
+
+For further assistance, please send mail to postmaster.
+
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
+
+                   The mail system
+
+<mvoest-5JapdU7xTciEVqv0pETR8A@public.gmane.org>: host mx.ziggo.nl[212.54.34.8] said: 550
+    mvoest-5JapdU7xTciEVqv0pETR8A@public.gmane.org bestaat niet / does not exist (in reply to RCPT TO
+    command)
+
+<mvogel-5JapdU7xTciEVqv0pETR8A@public.gmane.org>: host mx.ziggo.nl[212.54.34.8] said: 550
+    mvogel-5JapdU7xTciEVqv0pETR8A@public.gmane.org bestaat niet / does not exist (in reply to RCPT TO
+    command)
+
+<mvoulon-5JapdU7xTciEVqv0pETR8A@public.gmane.org>: host mx.ziggo.nl[212.54.34.8] said: 550
+    mvoulon-5JapdU7xTciEVqv0pETR8A@public.gmane.org bestaat niet / does not exist (in reply to RCPT TO
+    command)
+
+<mvouywxtodq-5JapdU7xTciEVqv0pETR8A@public.gmane.org>: host mx.ziggo.nl[212.54.34.8] said: 550
+    mvouywxtodq-5JapdU7xTciEVqv0pETR8A@public.gmane.org bestaat niet / does not exist (in reply to RCPT TO
+    command)
+
+<mvp.honnebier-5JapdU7xTciEVqv0pETR8A@public.gmane.org>: host mx.ziggo.nl[212.54.34.8] said: 550 Message
+    refused by spam filter. (in reply to end of DATA command)
+
+--005441C836B.1333154914/correo.anandagestion.es
+Content-Description: Delivery report
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns; correo.anandagestion.es
+X-Postfix-Queue-ID: 005441C836B
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Sat, 31 Mar 2012 02:48:13 +0200 (CEST)
+
+Final-Recipient: rfc822; mvoest-5JapdU7xTciEVqv0pETR8A@public.gmane.org
+Original-Recipient: rfc822;mvoest-5JapdU7xTciEVqv0pETR8A@public.gmane.org
+Action: failed
+Status: 5.0.0
+Remote-MTA: dns; mx.ziggo.nl
+Diagnostic-Code: smtp; 550 mvoest-5JapdU7xTciEVqv0pETR8A@public.gmane.org bestaat niet / does not exist
+
+Final-Recipient: rfc822; mvogel-5JapdU7xTciEVqv0pETR8A@public.gmane.org
+Original-Recipient: rfc822;mvogel-5JapdU7xTciEVqv0pETR8A@public.gmane.org
+Action: failed
+Status: 5.0.0
+Remote-MTA: dns; mx.ziggo.nl
+Diagnostic-Code: smtp; 550 mvogel-5JapdU7xTciEVqv0pETR8A@public.gmane.org bestaat niet / does not exist
+
+Final-Recipient: rfc822; mvoulon-5JapdU7xTciEVqv0pETR8A@public.gmane.org
+Original-Recipient: rfc822;mvoulon-5JapdU7xTciEVqv0pETR8A@public.gmane.org
+Action: failed
+Status: 5.0.0
+Remote-MTA: dns; mx.ziggo.nl
+Diagnostic-Code: smtp; 550 mvoulon-5JapdU7xTciEVqv0pETR8A@public.gmane.org bestaat niet / does not exist
+
+Final-Recipient: rfc822; mvouywxtodq-5JapdU7xTciEVqv0pETR8A@public.gmane.org
+Original-Recipient: rfc822;mvouywxtodq-5JapdU7xTciEVqv0pETR8A@public.gmane.org
+Action: failed
+Status: 5.0.0
+Remote-MTA: dns; mx.ziggo.nl
+Diagnostic-Code: smtp; 550 mvouywxtodq-5JapdU7xTciEVqv0pETR8A@public.gmane.org bestaat niet / does not
+    exist
+
+Final-Recipient: rfc822; mvp.honnebier-5JapdU7xTciEVqv0pETR8A@public.gmane.org
+Original-Recipient: rfc822;mvp.honnebier-5JapdU7xTciEVqv0pETR8A@public.gmane.org
+Action: failed
+Status: 5.0.0
+Remote-MTA: dns; mx.ziggo.nl
+Diagnostic-Code: smtp; 550 Message refused by spam filter.
+
+--005441C836B.1333154914/correo.anandagestion.es
+Content-Description: Undelivered Message
+Content-Type: message/rfc822
+Content-Transfer-Encoding: 7bit
+
+Received: from localhost (localhost.localdomain [127.0.0.1])
+	by localhost (Postfix) with ESMTP id 005441C836B;
+	Sat, 31 Mar 2012 02:48:13 +0200 (CEST)
+Received: from correo.anandagestion.es ([127.0.0.1])
+	by localhost (correo.anandagestion.es [127.0.0.1]) (amavisd-new, port 10026)
+	with ESMTP id 4wg44ohecYD1; Sat, 31 Mar 2012 02:48:12 +0200 (CEST)
+Received: from localhost.localdomain (127.0.0.1)
+ by correo.anandagestion.es (F-Secure/fsigk_smtp/403/correo.anandagestion.es);
+ Sat, 31 Mar 2012 02:48:12 +0200 (CEST)
+X-Virus-Status: clean(F-Secure/fsigk_smtp/403/correo.anandagestion.es)
+Received: from srv1157.sd-france.net (srv1157.sd-france.net [81.93.250.157])
+	by correo.anandagestion.es (Postfix) with ESMTP id 7D8BC1C8369;
+	Sat, 31 Mar 2012 02:48:12 +0200 (CEST)
+Received: from [81.93.250.157] by srv1157.sd-france.net id t7YBSqRCAvUJ with SMTP; Sat, 31 Mar 2012 02:48:04 +0200
+Date: Sat, 31 Mar 2012 02:48:04 +0200
+From: "Info" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v3.2.53.8) Home
+X-Priority: 3 (Normal)
+Message-ID: <98582660.43434959891986-//J07LhNTfpNmCTVG0Af2SpxlwaOVQ5f@public.gmane.org>
+To: <mvoest-5JapdU7xTciEVqv0pETR8A@public.gmane.org>
+Subject: Factuur 866-492
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+
+
+
+    =20
+Guten Morgen, mvoest-5JapdU7xTcifzGJEvV/xfw@public.gmane.org
+
+De als bovenstaande verklaring
+download het materiaal kan op het volgende adres
+http://www.vip-finance.eu/Bijwerken.zip?175029453402203
+
+
+
+--005441C836B.1333154914/correo.anandagestion.es--
+
+--===============0582738050372775328==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============0582738050372775328==--
