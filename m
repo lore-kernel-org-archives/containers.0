@@ -1,11 +1,16 @@
-From: Mail Delivery System <Mailer-Daemon-Y2SM2D190NM9qqQJ5xWt4kEOCMrvLtNR@public.gmane.org>
-Subject: Warning: message 1SDXbn-00080d-62 delayed 48 hours
-Date: Sun, 01 Apr 2012 15:48:52 +0200
-Message-ID: <E1SEL9I-0006Wo-UY@server.eshardns.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH 2/2] cgroup: make css->refcnt clearing on cgroup
+	removal optional
+Date: Sun, 1 Apr 2012 11:54:30 -0700
+Message-ID: <20120401185430.GA9230__15696.4506175884$1333306487$gmane$org@dhcp-172-17-108-109.mtv.corp.google.com>
+References: <20120330223423.GJ28934@google.com>
+	<20120330223606.GK28934@google.com> <4F77B6BA.4070207@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4F77B6BA.4070207-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,23 +20,24 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This message was created automatically by mail delivery software.
-A message that you sent has not yet been delivered to one or more of its
-recipients after more than 48 hours on the queue on server.eshardns.com.
+Hello, Li.
 
-The message identifier is:     1SDXbn-00080d-62
-The date of the message is:    Fri, 30 Mar 2012 10:54:37 +0200
-The subject of the message is: Factuur N604-780
+On Sun, Apr 01, 2012 at 10:00:26AM +0800, Li Zefan wrote:
+> > Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+> 
+> Both patches look good.
+> 
+> Acked-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 
-The address to which the message has not yet been delivered is:
+Alright, adding the patches to cgroup/for-3.5.
 
-  info-bS+GLTBhvWFYYGrSz+7uK4RWq/SkRNHw@public.gmane.org
-    Delay reason: mailbox is full
+> and I'd like to see code shrink with memcg updates ASAP.
 
-No action is required on your part. Delivery attempts will continue for
-some time, and this warning may be repeated at intervals if the message
-remains undelivered. Eventually the mail delivery software will give up,
-and when that happens, the message will be returned to you.
+Amen. :)
+
+-- 
+tejun
