@@ -1,20 +1,17 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 18/21] blkcg: move blkio_group_conf->weight to cfq
-Date: Mon, 2 Apr 2012 15:28:33 -0700
-Message-ID: <20120402222833.GB21017__16036.7748969749$1333405726$gmane$org@dhcp-172-17-108-109.mtv.corp.google.com>
+Subject: Re: [PATCHSET] block: modularize blkcg config and stat file handling
+Date: Mon, 2 Apr 2012 15:33:04 -0700
+Message-ID: <20120402223304.GC21017__24145.4288516708$1333405998$gmane$org@dhcp-172-17-108-109.mtv.corp.google.com>
 References: <1332975091-10950-1-git-send-email-tj@kernel.org>
-	<1332975091-10950-19-git-send-email-tj@kernel.org>
-	<4F7A1C8B.3010402@tao.ma>
-	<20120402214938.GA19634@dhcp-172-17-108-109.mtv.corp.google.com>
-	<4F7A2217.2030201@tao.ma>
-	<20120402221702.GA21017@dhcp-172-17-108-109.mtv.corp.google.com>
-	<4F7A261A.9000200@tao.ma> <20120402222504.GA2672@redhat.com>
+	<4F741AED.6090901@kernel.dk>
+	<20120402200233.GB17175@dhcp-172-17-108-109.mtv.corp.google.com>
+	<4F7A1F52.50706@kernel.dk>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20120402222504.GA2672-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4F7A1F52.50706-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,32 +21,23 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tao Ma <tm-d1IQDZat3X0@public.gmane.org>
+To: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
+Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, Apr 02, 2012 at 06:25:04PM -0400, Vivek Goyal wrote:
-> On Tue, Apr 03, 2012 at 06:20:10AM +0800, Tao Ma wrote:
+On Mon, Apr 02, 2012 at 02:51:14PM -0700, Jens Axboe wrote:
+> > Other than $SUBJ update on the eigth patch from "blkcg:
+> > blkg_conf_prep()" to "blkcg: simplify blkg_conf_prep()", the patchset
+> > can be applied as-is on top of the current block/for-3.5/core.
 > 
-> [..]
-> > > Yeah, just add config and stat files prefixed with the name of the new
-> > > blkcg policy.
-> > OK, I will add a new config file for it.
-> 
-> Only if CFQ could be modified to add one iops mode, flippable through a
-> sysfs tunable, things will be much simpler. You will not have to add a
-> new IO scheduler, no new configuration/stat files in blkcg (which is
-> already crowded now).
-> 
-> I don't think anybody has shown the code that why CFQ can't be modified
-> to support iops mode.
+> Alright, pulled in as well. I'm glad we pushed this to 3.5 :-)
 
-I haven't looked at the code so it's just an imporession but if we're
-talking about completely different scheduling policy - cfq is about
-slicing disk service time and IIUC the new thing being talked about is
-using iops as scheduling unit probably for devices where seeking isn't
-extremely expensive, and it might not make much sense to mix them
-together.
+Yeah, I'm fairly sure if we had shoved this through 3.4, we would be
+having another round of f**k you's from Linus.
+
+I'll probably send one or two more rounds of patches to clean up
+in-place blkg updates and make active policy selection per
+request_queue, but I'm glad to finally have the end in sight.
 
 Thanks.
 
