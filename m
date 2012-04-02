@@ -1,7 +1,7 @@
-From: MAILER-DAEMON-w0V5F8HdvcBwCRcL5F1ibV6hYfS7NtTn@public.gmane.org
+From: MAILER-DAEMON-mVrslVNv4LdwCRcL5F1ibV6hYfS7NtTn@public.gmane.org
 Subject: failure notice
-Date: 2 Apr 2012 20:54:18 -0000
-Message-ID: <20120402205425.76D1B360@mail.linuxfoundation.org>
+Date: 2 Apr 2012 20:54:20 -0000
+Message-ID: <20120402205426.A633682F@mail.linuxfoundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,21 +18,21 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi. This is the qmail-send program at smtplq02.aruba.it.
+Hi. This is the qmail-send program at smtplq03.aruba.it.
 I'm afraid I wasn't able to deliver your message to the following addresses.
 This is a permanent error; I've given up. Sorry it didn't work out.
 
-<miltila-EGIIDBWFGtqGzLJY+7CQzQ@public.gmane.org>:
-193.43.187.231 does not like recipient.
-Remote host said: 550 5.1.1 Recipient address rejected: User unknown
-Giving up on 193.43.187.231.
+<miltkroes-85SetLuQ2XY1GQ1Ptb7lUw@public.gmane.org>:
+62.149.128.72 does not like recipient.
+Remote host said: 511 sorry, no mailbox here by that name (#5.1.1 - chkuser)
+Giving up on 62.149.128.72.
 
 --- Below this line is a copy of the message.
 
 Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: (qmail 31415 invoked by uid 89); 2 Apr 2012 20:54:18 -0000
+Received: (qmail 28366 invoked by uid 89); 2 Apr 2012 20:54:18 -0000
 Received: from unknown (HELO smtp4.aruba.it) (62.149.158.224)
-  by smtplq02.aruba.it with SMTP; 2 Apr 2012 20:54:18 -0000
+  by smtplq03.aruba.it with SMTP; 2 Apr 2012 20:54:18 -0000
 Received: (qmail 19733 invoked by uid 89); 2 Apr 2012 20:54:18 -0000
 Received: from unknown (HELO LOCAL.HOST) (info-Z6L1zN9jhgYpfdY6DShfjuSp9Cl8rx75@public.gmane.org@85.10.211.116)
   by smtp4.ad.aruba.it with SMTP; 2 Apr 2012 20:54:18 -0000
@@ -46,7 +46,7 @@ MIME-Version: 1.0
 Content-type: text/plain; charset=us-ascii 
 Content-Transfer-Encoding: 8bit
 X-Spam-Rating: smtp4.ad.aruba.it 1.6.2 0/1000/N
-X-Spam-Rating: smtplq02.aruba.it 1.6.2 0/1000/N
+X-Spam-Rating: smtplq03.aruba.it 1.6.2 0/1000/N
 
 
 
