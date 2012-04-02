@@ -1,10 +1,18 @@
-From: postmaster-noreply-FMRk+c35SBqonA0d6jMUrA@public.gmane.org
-Subject: Undelivered Mail Returned to Sender
-Date: Mon,  2 Apr 2012 23:57:38 +0200 (CEST)
-Message-ID: <20120402215738.EDEE02C379@smtpsrv.playnet.it>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH 18/21] blkcg: move blkio_group_conf->weight to cfq
+Date: Mon, 2 Apr 2012 15:17:02 -0700
+Message-ID: <20120402221702.GA21017@dhcp-172-17-108-109.mtv.corp.google.com>
+References: <1332975091-10950-1-git-send-email-tj@kernel.org>
+	<1332975091-10950-19-git-send-email-tj@kernel.org>
+	<4F7A1C8B.3010402@tao.ma>
+	<20120402214938.GA19634@dhcp-172-17-108-109.mtv.corp.google.com>
+	<4F7A2217.2030201@tao.ma>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============2953074446369293717=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4F7A2217.2030201-d1IQDZat3X0@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -14,120 +22,45 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Tao Ma <tm-d1IQDZat3X0@public.gmane.org>
+Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
+On Tue, Apr 03, 2012 at 06:03:03AM +0800, Tao Ma wrote:
+> Currently weight is just used to calculate the time slice of different
+> cfq group, right? So why can't it be used to indicate other weight? So
+> say, if we are just want to use iops to indicate the difference between
+> different cgroups(100 weight vs 200 weight), so one process will send
+> 100 ios while the other will send 200 ios just for example.
 
---===============2953074446369293717==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="0971F2CA2C.1333403858/smtpsrv.playnet.it"
-Content-Transfer-Encoding: 7bit
+Because it's configuring stuff which is completely unrelated.  Let's
+say you added a new elevator w/ iops based proportional IO which
+shares blkio.weight configuration with cfq but nothing else and in
+turn your new thing would probably need some other config parameters
+which don't make much sense for cfq, right?
 
-This is a MIME-encapsulated message.
+Now, let's say there's a system which has two hard drives and sda is
+using cfq and sdb is using your new elevator and you're trying to
+configure cgroup blkio limits.  Now, you have blkio.weight which
+applies to both elevators and other configurations which aren't and
+from the looks of it there's no way to tell which configuration
+controls what.
 
---0971F2CA2C.1333403858/smtpsrv.playnet.it
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
+It also makes the configuration implementation hairier.  We'll need
+callbacks from blkcg core layer to all policies to notify changes to
+per-cgroup configuration and from there policies would have to decide
+whether it has overriding per-cgroup-device configuration.  It's not
+even clear we even want per-cgroup configuration.  blk-throttle only
+has per-cgroup-device configuration after all.
 
-This is the mail system at host smtpsrv.playnet.it.
+So, again, no.  blkcg.weight isn't and won't be generic.
 
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
+> We will need a new iops_weight in your option to be exported?
 
-For further assistance, please contact Playnet Helpdesk Support.
+Yeah, just add config and stat files prefixed with the name of the new
+blkcg policy.
 
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
+Thanks.
 
-                   The mail system
-
-<mauro882-IWqWACnzNjyonA0d6jMUrA@public.gmane.org>: host imp-2.mail.tiscali.it[213.205.33.249] said: 550
-    5.1.0 <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org> SPF Failed - not authorized
-    (in reply to MAIL FROM command)
-
-<2037342paolopop-8cRKiK8W3qA@public.gmane.org>: host mx.mail.inet.it[213.92.5.130] said: 550 #5.1.0
-    Address rejected 2037342paolopop-8cRKiK8W3qA@public.gmane.org (in reply to RCPT TO command)
-
-<ice.clara-gH+WsCr1+wQ1GQ1Ptb7lUw@public.gmane.org>: host mxmi.virgilio.it[212.48.20.23] said: 550 RCPT
-    TO:<ice.clara-gH+WsCr1+wQ1GQ1Ptb7lUw@public.gmane.org> User unknown (in reply to RCPT TO command)
-
---0971F2CA2C.1333403858/smtpsrv.playnet.it
-Content-Description: Delivery report
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; smtpsrv.playnet.it
-X-Postfix-Queue-ID: 0971F2CA2C
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Mon,  2 Apr 2012 23:57:12 +0200 (CEST)
-
-Final-Recipient: rfc822; mauro882-IWqWACnzNjyonA0d6jMUrA@public.gmane.org
-Original-Recipient: rfc822;mauro882-IWqWACnzNjyonA0d6jMUrA@public.gmane.org
-Action: failed
-Status: 5.1.0
-Remote-MTA: dns; imp-2.mail.tiscali.it
-Diagnostic-Code: smtp; 550 5.1.0 <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org> SPF
-    Failed - not authorized
-
-Final-Recipient: rfc822; 2037342paolopop-8cRKiK8W3qA@public.gmane.org
-Original-Recipient: rfc822;2037342paolopop-8cRKiK8W3qA@public.gmane.org
-Action: failed
-Status: 5.0.0
-Remote-MTA: dns; mx.mail.inet.it
-Diagnostic-Code: smtp; 550 #5.1.0 Address rejected 2037342paolopop-8cRKiK8W3qA@public.gmane.org
-
-Final-Recipient: rfc822; ice.clara-gH+WsCr1+wQ1GQ1Ptb7lUw@public.gmane.org
-Original-Recipient: rfc822;ice.clara-gH+WsCr1+wQ1GQ1Ptb7lUw@public.gmane.org
-Action: failed
-Status: 5.0.0
-Remote-MTA: dns; mxmi.virgilio.it
-Diagnostic-Code: smtp; 550 RCPT TO:<ice.clara-gH+WsCr1+wQ1GQ1Ptb7lUw@public.gmane.org> User unknown
-
---0971F2CA2C.1333403858/smtpsrv.playnet.it
-Content-Description: Undelivered Message
-Content-Type: message/rfc822
-Content-Transfer-Encoding: 7bit
-
-Received: from LOCAL.HOST (static.85-10-211-116.clients.your-server.de [85.10.211.116])
-	by smtpsrv.playnet.it (Postfix) with ESMTPA id 0971F2CA2C;
-	Mon,  2 Apr 2012 23:57:12 +0200 (CEST)
-Received: from [192.168.137.100] by LOCAL.HOST id trbfSOq8EE3f; Mon, 02 Apr 2012 23:57:11 +0200
-Message-ID: <003001cd111b$8cf0e880$6489a8c0-7PjSQ+wCsSudNYLACK+ndg@public.gmane.org>
-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <prenjmegen-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org>
-Subject: Re: prezzo corrente
-Date: Mon, 02 Apr 2012 23:57:11 +0200
-MIME-Version: 1.0
-Content-type: text/plain; charset=us-ascii 
-Content-Transfer-Encoding: quoted-printable
-
-
-
-Gentile, prenjmegen-VGgt2q2+T+FECS10DBIrLA@public.gmane.org
-
->> Invia-to-date listino prezzi per favore
-
-Ciao.
-Potete scaricare alla
-http://alaein.com/materiale/Pagamento.zip
-
-
-=3D=3D
-Support,
-Tel./Fax.: (051) 635 15 02=20
-
-
-
---0971F2CA2C.1333403858/smtpsrv.playnet.it--
-
---===============2953074446369293717==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============2953074446369293717==--
+-- 
+tejun
