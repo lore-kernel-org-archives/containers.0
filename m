@@ -1,7 +1,7 @@
-From: MAILER-DAEMON-w0V5F8HdvcBwCRcL5F1ibV6hYfS7NtTn@public.gmane.org
+From: MAILER-DAEMON-mVrslVNv4LdwCRcL5F1ibV6hYfS7NtTn@public.gmane.org
 Subject: failure notice
-Date: 2 Apr 2012 22:04:36 -0000
-Message-ID: <20120402220441.C5813822@mail.linuxfoundation.org>
+Date: 2 Apr 2012 22:04:56 -0000
+Message-ID: <20120402220508.02176861@mail.linuxfoundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,21 +18,21 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi. This is the qmail-send program at smtplq02.aruba.it.
+Hi. This is the qmail-send program at smtplq03.aruba.it.
 I'm afraid I wasn't able to deliver your message to the following addresses.
 This is a permanent error; I've given up. Sorry it didn't work out.
 
-<giorgio.bortoletto-7XfLUQJRLbk1GQ1Ptb7lUw@public.gmane.org>:
-93.62.147.133 does not like recipient.
-Remote host said: 550 5.1.1 <giorgio.bortoletto-7XfLUQJRLbk1GQ1Ptb7lUw@public.gmane.org>: Recipient address rejected: User unknown in relay recipient table
-Giving up on 93.62.147.133.
+<htcarlton-zPyCOAb3p1Nc60lfx3bYgQ@public.gmane.org>:
+194.91.88.8 does not like recipient.
+Remote host said: 550 5.1.1 <htcarlton-zPyCOAb3p1Nc60lfx3bYgQ@public.gmane.org>: Recipient address rejected: User unknown in virtual mailbox table
+Giving up on 194.91.88.8.
 
 --- Below this line is a copy of the message.
 
 Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: (qmail 3973 invoked by uid 89); 2 Apr 2012 22:04:34 -0000
+Received: (qmail 817 invoked by uid 89); 2 Apr 2012 22:04:34 -0000
 Received: from unknown (HELO smtp5.aruba.it) (62.149.158.225)
-  by smtplq02.aruba.it with SMTP; 2 Apr 2012 22:04:34 -0000
+  by smtplq03.aruba.it with SMTP; 2 Apr 2012 22:04:34 -0000
 Received: (qmail 25177 invoked by uid 89); 2 Apr 2012 22:04:34 -0000
 Received: from unknown (HELO LOCAL.HOST) (nicoletta.andrighetti-dEuHCa9tkVqakFbOCMqv9be5+XYbh3On@public.gmane.org@85.10.211.116)
   by smtp5.ad.aruba.it with SMTP; 2 Apr 2012 22:04:34 -0000
@@ -46,7 +46,7 @@ MIME-Version: 1.0
 Content-type: text/plain; charset=windows-1252
 Content-Transfer-Encoding: 8bit
 X-Spam-Rating: smtp5.ad.aruba.it 1.6.2 0/1000/N
-X-Spam-Rating: smtplq02.aruba.it 1.6.2 0/1000/N
+X-Spam-Rating: smtplq03.aruba.it 1.6.2 0/1000/N
 
 
 
