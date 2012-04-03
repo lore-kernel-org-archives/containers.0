@@ -1,12 +1,16 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [RFC] writeback and cgroup
-Date: Tue, 3 Apr 2012 11:36:55 -0700
-Message-ID: <20120403183655.GA23106__6194.71304021335$1333478229$gmane$org@dhcp-172-17-108-109.mtv.corp.google.com>
+Subject: Re: [PATCHSET] cgroup: cftype based file interface, take #2
+Date: Tue, 3 Apr 2012 11:47:19 -0700
+Message-ID: <20120403184719.GB27794@dhcp-172-17-108-109.mtv.corp.google.com>
+References: <1332368265-21586-1-git-send-email-tj@kernel.org>
+	<20120330222936.GI28934@google.com>
+	<4F7A6D13.4060704@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <4F7A6D13.4060704-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,145 +20,20 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
-Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, andrea-oIIqvOZpAevzfdHfmsDf5w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sjayaraman-IBi9RG/b67k@public.gmane.org, lsf-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello, guys.
+Hello, Glauber.
 
-So, during LSF, I, Fengguang and Jan had a chance to sit down and talk
-about how to cgroup support to writeback.  Here's what I got from it.
+On Tue, Apr 03, 2012 at 07:22:59AM +0400, Glauber Costa wrote:
+> Do I need to send you a patch to remove memcg's populate on top of this ?
 
-Fengguang's opinion is that the throttling algorithm implemented in
-writeback is good enough and blkcg parameters can be exposed to
-writeback such that those limits can be applied from writeback.  As
-for reads and direct IOs, Fengguang opined that the algorithm can
-easily be extended to cover those cases and IIUC all IOs, whether
-buffered writes, reads or direct IOs can eventually all go through
-writeback layer which will be the one layer controlling all IOs.
+populate is already gone.  My memory is a bit fuzzy now.  Can you spot
+something broken / to be improved re. memcg cftypes in the current
+cgroup/for-3.5 branch?
 
-Unfortunately, I don't agree with that at all.  I think it's a gross
-layering violation and lacks any longterm design.  We have a well
-working model of applying and propagating resource pressure - we apply
-the pressure where the resource exists and propagates the back
-pressure through buffers to upper layers upto the originator.  Think
-about network, the pressure exists or is applied at the in/egress
-points which gets propagated through socket buffers and eventually
-throttles the originator.
+Thanks.
 
-Writeback, without cgroup, isn't different.  It consists a part of the
-pressure propagation chain anchored at the IO device.  IO devices
-these days generate very high pressure, which gets propgated through
-the IO sched and buffered requests, which in turn creates pressure at
-writeback.  Here, the buffering happens in page cache and pressure at
-writeback increases the amount of dirty page cache.  Propagating this
-IO pressure to the dirtying task is one of the biggest
-responsibililties of the writeback code, and this is the underlying
-design of the whole thing.
-
-IIUC, without cgroup, the current writeback code works more or less
-like this.  Throwing in cgroup doesn't really change the fundamental
-design.  Instead of a single pipe going down, we just have multiple
-pipes to the same device, each of which should be treated separately.
-Of course, a spinning disk can't be divided that easily and their
-performance characteristics will be inter-dependent, but the place to
-solve that problem is where the problem is, the block layer.
-
-We may have to look for optimizations and expose some details to
-improve the overall behavior and such optimizations may require some
-deviation from the fundamental design, but such optimizations should
-be justified and such deviations kept at minimum, so, no, I don't
-think we're gonna be expose blkcg / block / elevator parameters
-directly to writeback.  Unless someone can *really* convince me
-otherwise, I'll be vetoing any change toward that direction.
-
-Let's please keep the layering clear.  IO limitations will be applied
-at the block layer and pressure will be formed there and then
-propagated upwards eventually to the originator.  Sure, exposing the
-whole information might result in better behavior for certain
-workloads, but down the road, say, in three or five years, devices
-which can be shared without worrying too much about seeks might be
-commonplace and we could be swearing at a disgusting structural mess,
-and sadly various cgroup support seems to be a prominent source of
-such design failures.
-
-IMHO, treating cgroup - device/bdi pair as a separate device should
-suffice as the underlying design.  After all, blkio cgroup support's
-ultimate goal is dividing the IO resource into separate bins.
-Implementation details might change as underlying technology changes
-and we learn more about how to do it better but that is the goal which
-we'll always try to keep close to.  Writeback should (be able to)
-treat them as separate devices.  We surely will need adjustments and
-optimizations to make things work at least somewhat reasonably but
-that is the baseline.
-
-In the discussion, for such implementation, the following obstacles
-were identified.
-
-* There are a lot of cases where IOs are issued by a task which isn't
-  the originiator.  ie. Writeback issues IOs for pages which are
-  dirtied by some other tasks.  So, by the time an IO reaches the
-  block layer, we don't know which cgroup the IO belongs to.
-
-  Recently, block layer has grown support to attach a task to a bio
-  which causes the bio to be handled as if it were issued by the
-  associated task regardless of the actual issuing task.  It currently
-  only allows attaching %current to a bio - bio_associate_current() -
-  but changing it to support other tasks is trivial.
-
-  We'll need to update the async issuers to tag the IOs they issue but
-  the mechanism is already there.
-
-* There's a single request pool shared by all issuers per a request
-  queue.  This can lead to priority inversion among cgroups.  Note
-  that problem also exists without cgroups.  Lower ioprio issuer may
-  be holding a request holding back highprio issuer.
-
-  We'll need to make request allocation cgroup (and hopefully ioprio)
-  aware.  Probably in the form of separate request pools.  This will
-  take some work but I don't think this will be too challenging.  I'll
-  work on it.
-
-* cfq cgroup policy throws all async IOs, which all buffered writes
-  are, into the shared cgroup regardless of the actual cgroup.  This
-  behavior is, I believe, mostly historical and changing it isn't
-  difficult.  Prolly only few tens of lines of changes.  This may
-  cause significant changes to actual IO behavior with cgroups tho.  I
-  personally think the previous behavior was too wrong to keep (the
-  weight was completely ignored for buffered writes) but we may want
-  to introduce a switch to toggle between the two behaviors.
-
-  Note that blk-throttle doesn't have this problem.
-
-* Unlike dirty data pages, metadata tends to have strict ordering
-  requirements and thus is susceptible to priority inversion.  Two
-  solutions were suggested - 1. allow overdrawl for metadata writes so
-  that low prio metadata writes don't block the whole FS, 2. provide
-  an interface to query and wait for bdi-cgroup congestion which can
-  be called from FS metadata paths to throttle metadata operations
-  before they enter the stream of ordered operations.
-
-  I think combination of the above two should be enough for solving
-  the problem.  I *think* the second can be implemented as part of
-  cgroup aware request allocation update.  The first one needs a bit
-  more thinking but there can be easier interim solutions (e.g. throw
-  META writes to the head of the cgroup queue or just plain ignore
-  cgroup limits for META writes) for now.
-
-* I'm sure there are a lot of design choices to be made in the
-  writeback implementation but IIUC Jan seems to agree that the
-  simplest would be simply deal different cgroup-bdi pairs as
-  completely separate which shouldn't add too much complexity to the
-  already intricate writeback code.
-
-So, I think we have something which sounds like a plan, which at least
-I can agree with and seems doable without adding a lot of complexity.
-
-Jan, Fengguang, I'm pretty sure I missed some stuff from writeback's
-side and IIUC Fengguang doesn't agree with this approach too much, so
-please voice your opinions & comments.
-
-Thank you.
-
---
+-- 
 tejun
