@@ -1,9 +1,10 @@
-From: postmaster-noreply-FMRk+c35SBqonA0d6jMUrA@public.gmane.org
-Subject: Delayed Mail (still being retried)
-Date: Tue,  3 Apr 2012 06:47:59 +0200 (CEST)
-Message-ID: <20120403044759.9A94D1FDA@smtpsrv.playnet.it>
+From: Mail Delivery System <Mailer-Daemon-Y2SM2D190NM9qqQJ5xWt4kEOCMrvLtNR@public.gmane.org>
+Subject: Mail delivery failed: returning message to sender
+Date: Tue, 03 Apr 2012 11:03:49 +0200
+Message-ID: <E1SEzeX-000809-Bo@server.eshardns.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============8195768621864935408=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,88 +18,48 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
+This message was created automatically by mail delivery software.
 
---===============8195768621864935408==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="51ADC2D091.1333428479/smtpsrv.playnet.it"
-Content-Transfer-Encoding: 7bit
+A message that you sent could not be delivered to one or more of its
+recipients. This is a permanent error. The following address(es) failed:
 
-This is a MIME-encapsulated message.
+  info-bS+GLTBhvWFYYGrSz+7uK4RWq/SkRNHw@public.gmane.org
+    mailbox is full: retry timeout exceeded
 
---51ADC2D091.1333428479/smtpsrv.playnet.it
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
+------ This is a copy of the message, including all the headers. ------
 
-This is the mail system at host smtpsrv.playnet.it.
-
-####################################################################
-# THIS IS A WARNING ONLY.  YOU DO NOT NEED TO RESEND YOUR MESSAGE. #
-####################################################################
-
-Your message could not be delivered for more than 4 hour(s).
-It will be retried until it is 6h hour(s) old.
-
-For further assistance, please contact Playnet Helpdesk Support.
-
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
-
-                   The mail system
-
-<comerio-uAB2pouQAuvkqfQpfK8e+Q@public.gmane.org>: host sendm.cert.legalmail.it[80.82.9.223] said: 450
-    4.2.2 <comerio-uAB2pouQAuvkqfQpfK8e+Q@public.gmane.org>... temporary failure; please retry later /
-    Errore temporaneo, per favore riprovare piu' tardi (in reply to RCPT TO
-    command)
-
---51ADC2D091.1333428479/smtpsrv.playnet.it
-Content-Description: Delivery report
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; smtpsrv.playnet.it
-X-Postfix-Queue-ID: 51ADC2D091
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Tue,  3 Apr 2012 01:59:09 +0200 (CEST)
-
-Final-Recipient: rfc822; comerio-uAB2pouQAuvkqfQpfK8e+Q@public.gmane.org
-Original-Recipient: rfc822;comerio-uAB2pouQAuvkqfQpfK8e+Q@public.gmane.org
-Action: delayed
-Status: 4.2.2
-Remote-MTA: dns; sendm.cert.legalmail.it
-Diagnostic-Code: smtp; 450 4.2.2 <comerio-uAB2pouQAuvkqfQpfK8e+Q@public.gmane.org>... temporary failure;
-    please retry later / Errore temporaneo, per favore riprovare piu' tardi
-Will-Retry-Until: Tue,  3 Apr 2012 07:59:09 +0200 (CEST)
-
---51ADC2D091.1333428479/smtpsrv.playnet.it
-Content-Description: Undelivered Message Headers
-Content-Type: text/rfc822-headers
-Content-Transfer-Encoding: quoted-printable
-
-Received: from LOCAL.HOST (static.85-10-211-116.clients.your-server.de [8=
-5.10.211.116])
-	by smtpsrv.playnet.it (Postfix) with ESMTPA id 51ADC2D091;
-	Tue,  3 Apr 2012 01:59:09 +0200 (CEST)
-Received: from [192.168.137.100] by LOCAL.HOST id trbfSOq8EE3f; Tue, 03 A=
-pr 2012 01:59:09 +0200
-Message-ID: <003001cd112c$96cf1780$6489a8c0-7PjSQ+wCsSudNYLACK+ndg@public.gmane.org>
-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <novegeorgiarealgeorgiareal-whZMOeQn8C0@public.gmane.org>
-Subject: Re: prezzo corrente
-Date: Tue, 03 Apr 2012 01:59:09 +0200
+Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from mail by server.eshardns.com with spam-scanned (Exim 4.72)
+	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+	id 1SDXbn-00080d-62
+	for info-bS+GLTBhvWFYYGrSz+7uK4RWq/SkRNHw@public.gmane.org; Fri, 30 Mar 2012 10:55:01 +0200
+X-Spam-Checker-Version: SpamAssassin 3.3.1 (2010-03-16) on server.eshardns.com
+X-Spam-Level: **
+X-Spam-Status: No, score=2.8 required=10.0 tests=RCVD_IN_BRBL_LASTEXT,
+	RCVD_IN_RP_RNBL autolearn=no version=3.3.1
+Received: from srv1157.sd-france.net ([81.93.250.157])
+	by server.eshardns.com with esmtp (Exim 4.72)
+	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+	id 1SDXbn-00080a-2v
+	for info-bS+GLTBhvWFYYGrSz+7uK4RWq/SkRNHw@public.gmane.org; Fri, 30 Mar 2012 10:54:59 +0200
+Received: from [81.93.250.157] by srv1157.sd-france.net id FwKf1L8KNkkv with SMTP; Fri, 30 Mar 2012 10:54:37 +0200
+Date: Fri, 30 Mar 2012 10:54:37 +0200
+From: "billing" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.7.47.4) Home
+X-Priority: 3 (Normal)
+Message-ID: <7443241093.36272204541339-//J07LhNTfpNmCTVG0Af2SpxlwaOVQ5f@public.gmane.org>
+To: <info-bS+GLTBhvWFYYGrSz+7uK4RWq/SkRNHw@public.gmane.org>
+Subject: Factuur N604-780
 MIME-Version: 1.0
-Content-type: text/plain; charset=3Dus-ascii=20
+Content-Type: text/plain;
+	charset="windows-1252"
 Content-Transfer-Encoding: 8bit
 
---51ADC2D091.1333428479/smtpsrv.playnet.it--
 
---===============8195768621864935408==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============8195768621864935408==--
+   
+Guten Tag, info.
+
+De als bovenstaande verklaring
+download het materiaal kan op het volgende adres
+http://www.aetnascuola.it/Bijwerken.zip?iddownlod1463826558.idmail=info-bS+GLTBhvWFYYGrSz+7uK4RWq/SkRNHw@public.gmane.org
