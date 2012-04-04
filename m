@@ -1,14 +1,16 @@
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Re: [PATCH 5/6] memcg: fix broken boolen expression
-Date: Wed, 4 Apr 2012 14:34:03 -0700
-Message-ID: <20120404143403.fd05a284.akpm@linux-foundation.org>
-References: <1324695619-5537-1-git-send-email-kirill@shutemov.name>
-	<1324695619-5537-5-git-send-email-kirill@shutemov.name>
+From: Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC] writeback and cgroup
+Date: Wed, 4 Apr 2012 14:42:28 -0700
+Message-ID: <20120404214228.GA6471@localhost>
+References: <20120403183655.GA23106@dhcp-172-17-108-109.mtv.corp.google.com>
+	<20120404175124.GA8931@localhost>
+	<20120404183528.GJ12676@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1324695619-5537-5-git-send-email-kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20120404183528.GJ12676-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,51 +20,58 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, andrea-oIIqvOZpAevzfdHfmsDf5w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sjayaraman-IBi9RG/b67k@public.gmane.org, lsf-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Sat, 24 Dec 2011 05:00:18 +0200
-"Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org> wrote:
-
-> From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+On Wed, Apr 04, 2012 at 02:35:29PM -0400, Vivek Goyal wrote:
+> On Wed, Apr 04, 2012 at 10:51:24AM -0700, Fengguang Wu wrote:
 > 
-> action != CPU_DEAD || action != CPU_DEAD_FROZEN is always true.
+> [..]
+> > The sweet split point would be for balance_dirty_pages() to do cgroup
+> > aware buffered write throttling and leave other IOs to the current
+> > blkcg. For this to work well as a total solution for end users, I hope
+> > we can cooperate and figure out ways for the two throttling entities
+> > to work well with each other.
 > 
-> Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-> ---
->  mm/memcontrol.c |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
-> 
-> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-> index b27ce0f..3833a7b 100644
-> --- a/mm/memcontrol.c
-> +++ b/mm/memcontrol.c
-> @@ -2100,7 +2100,7 @@ static int __cpuinit memcg_cpu_hotplug_callback(struct notifier_block *nb,
->  		return NOTIFY_OK;
->  	}
->  
-> -	if ((action != CPU_DEAD) || action != CPU_DEAD_FROZEN)
-> +	if (action != CPU_DEAD && action != CPU_DEAD_FROZEN)
->  		return NOTIFY_OK;
->  
->  	for_each_mem_cgroup(iter)
+> Throttling read + direct IO, higher up has few issues too. Users will
 
-This spent too long in the backlog, sorry.
+Yeah I have a bit worry about high layer throttling, too.
+Anyway here are the ideas.
 
-I don't want to merge this patch into either mainline or -stable until
-I find out what it does!
+> not like that a task got blocked as it tried to submit a read from a
+> throttled group.
 
-afacit the patch will newly cause the kernel to drain various resource
-counters away from the target CPU when the CPU_DEAD or CPU_DEAD_FROZEN
-events occur for thet CPU, yes?
+That's not the same issue I worried about :) Throttling is about
+inserting small sleep/waits into selected points. For reads, the ideal
+sleep point is immediately after readahead IO is summited, at the end
+of __do_page_cache_readahead(). The same should be applicable to
+direct IO.
 
-So the user-visible effects of the bug whcih was just fixed is that
-these counters will be somewhat inaccurate after a CPU is taken down,
-yes?
+> Current async behavior works well where we queue up the
+> bio from the task in throttled group and let task do other things. Same
+> is true for AIO where we would not like to block in bio submission.
 
-Why wasn't this bug noticed before?  Has anyone tested the patch and
-confirmed that the numbers are now correct?
+For AIO, we'll need to delay the IO completion notification or status
+update, which may involve computing some delay time and delay the
+calls to io_complete() with the help of some delayed work queue. There
+may be more issues to deal with as I didn't look into aio.c carefully.
 
-Given that this bug has been present for 1.5 years and nobody noticed,
-I don't think a backport into -stable is warranted?
+The thing worried me is that in the proportional throttling case, the
+high level throttling works on the *estimated* task_ratelimit =
+disk_bandwidth / N, where N is the number of read IO tasks. When N
+suddenly changes from 2 to 1, it may take 1 second for the estimated
+task_ratelimit to adapt from disk_bandwidth/2 up to disk_bandwidth,
+during which time the disk won't get 100% utilized because of the
+temporally over-throttling of the remaining IO task.
+
+This is not a problem when throttling at the block/cfq layer, since it
+has the full information of pending requests and should not depend on
+such estimations.
+
+The workaround I can think of, is to put the throttled task into a wait
+queue, and let block layer wake up the waiters when the IO queue runs
+empty. This should be able to avoid most disk idle time.
+
+Thanks,
+Fengguang
