@@ -1,20 +1,14 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: IOPS based scheduler (Was: Re: [PATCH 18/21] blkcg: move
-	blkio_group_conf->weight to cfq)
-Date: Wed, 4 Apr 2012 13:27:35 -0400
-Message-ID: <20120404172735.GH12676@redhat.com>
-References: <4F7A2B21.5000907@tao.ma> <20120403153736.GI5913@redhat.com>
-	<4F7B2708.6080504@tao.ma> <20120403164959.GJ5913@redhat.com>
-	<4F7B32AE.7050900@tao.ma>
-	<CANejiEU1qAsvogozY3MjZnpcrbYZO4CkRE8s73WGPc_R5LKV9g@mail.gmail.com>
-	<20120404133705.GB12676@redhat.com> <4F7C7A91.8040707@tao.ma>
-	<20120404165048.GF12676@redhat.com> <4F7C824D.2050308@tao.ma>
+From: Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC] writeback and cgroup
+Date: Wed, 4 Apr 2012 10:51:24 -0700
+Message-ID: <20120404175124.GA8931@localhost>
+References: <20120403183655.GA23106@dhcp-172-17-108-109.mtv.corp.google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4F7C824D.2050308-d1IQDZat3X0@public.gmane.org>
+In-Reply-To: <20120403183655.GA23106-RcKxWJ4Cfj1J2suj2OqeGauc2jM2gXBXkQQo+JxHRPFibQn6LdNjmg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,41 +18,213 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tao Ma <tm-d1IQDZat3X0@public.gmane.org>
-Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Shaohua Li <shli-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, andrea-oIIqvOZpAevzfdHfmsDf5w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sjayaraman-IBi9RG/b67k@public.gmane.org, lsf-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Apr 05, 2012 at 01:18:05AM +0800, Tao Ma wrote:
+Hi Tejun,
 
-[..]
-> > You can just put a few lines of code to expire queue after 1-2 requests
-> > dispatched from the queue. Than run your workload with slice_idle=0
-> > and group_idle=0 and see what happens.
-> oh, yes I can do this to see whether the latency helps, but it is
-> hacking and doesn't work with the cgroup proportion...
+On Tue, Apr 03, 2012 at 11:36:55AM -0700, Tejun Heo wrote:
+> Hello, guys.
+> 
+> So, during LSF, I, Fengguang and Jan had a chance to sit down and talk
+> about how to cgroup support to writeback.  Here's what I got from it.
+> 
+> Fengguang's opinion is that the throttling algorithm implemented in
+> writeback is good enough and blkcg parameters can be exposed to
+> writeback such that those limits can be applied from writeback.  As
+> for reads and direct IOs, Fengguang opined that the algorithm can
+> easily be extended to cover those cases and IIUC all IOs, whether
+> buffered writes, reads or direct IOs can eventually all go through
+> writeback layer which will be the one layer controlling all IOs.
+ 
+Yeah it should be trivial to apply the balance_dirty_pages()
+throttling algorithm to the read/direct IOs. However up to now I don't
+see much added value to *duplicate* the current block IO controller
+functionalities, assuming the current users and developers are happy
+with it.
 
-"Hacking"?. I think effectively that's what effectively iops scheduler
-should be doing to achieve faster switching.
+I did the buffered write IO controller mainly to fill the gap.  If I
+happen to stand in your way, sorry that's not my initial intention.
+It's a pity and surprise that Google as a big user does not buy in
+this simple solution. You may prefer more comprehensive controls which
+may not be easily achievable with the simple scheme. However the
+complexities and overheads involved in throttling the flusher IOs
+really upsets me. 
 
-Also, if your workload is keeping groups continuously busy, you should
-get proportional behavior at group level. 
+The sweet split point would be for balance_dirty_pages() to do cgroup
+aware buffered write throttling and leave other IOs to the current
+blkcg. For this to work well as a total solution for end users, I hope
+we can cooperate and figure out ways for the two throttling entities
+to work well with each other.
 
-Do try the patch I sent you in a separate mail with your workload.
+What I'm interested is, what's Google and other users' use schemes in
+practice. What's their desired interfaces. Whether and how the
+combined bdp+blkcg throttling can fulfill the goals.
 
-[..]
-> > I think a large chunk of that iops scheduler code will be borrowed from
-> > CFQ code. All the cgroup logic, queue creation logic, group scheduling
-> > logic etc. And that's the reason I was still exploring the possibility 
-> > of having common code base.
-> Yeah, actually I was thinking of abstracting a generic logic, but it
-> seems a lot bit hard. Maybe we can try to unify the code later?
+> Unfortunately, I don't agree with that at all.  I think it's a gross
+> layering violation and lacks any longterm design.  We have a well
+> working model of applying and propagating resource pressure - we apply
+> the pressure where the resource exists and propagates the back
+> pressure through buffers to upper layers upto the originator.  Think
+> about network, the pressure exists or is applied at the in/egress
+> points which gets propagated through socket buffers and eventually
+> throttles the originator.
+> 
+> Writeback, without cgroup, isn't different.  It consists a part of the
+> pressure propagation chain anchored at the IO device.  IO devices
+> these days generate very high pressure, which gets propgated through
+> the IO sched and buffered requests, which in turn creates pressure at
+> writeback.  Here, the buffering happens in page cache and pressure at
+> writeback increases the amount of dirty page cache.  Propagating this
+> IO pressure to the dirtying task is one of the biggest
+> responsibililties of the writeback code, and this is the underlying
+> design of the whole thing.
+> 
+> IIUC, without cgroup, the current writeback code works more or less
+> like this.  Throwing in cgroup doesn't really change the fundamental
+> design.  Instead of a single pipe going down, we just have multiple
+> pipes to the same device, each of which should be treated separately.
+> Of course, a spinning disk can't be divided that easily and their
+> performance characteristics will be inter-dependent, but the place to
+> solve that problem is where the problem is, the block layer.
+> 
+> We may have to look for optimizations and expose some details to
+> improve the overall behavior and such optimizations may require some
+> deviation from the fundamental design, but such optimizations should
+> be justified and such deviations kept at minimum, so, no, I don't
+> think we're gonna be expose blkcg / block / elevator parameters
+> directly to writeback.  Unless someone can *really* convince me
+> otherwise, I'll be vetoing any change toward that direction.
+> 
+> Let's please keep the layering clear.  IO limitations will be applied
+> at the block layer and pressure will be formed there and then
+> propagated upwards eventually to the originator.  Sure, exposing the
+> whole information might result in better behavior for certain
+> workloads, but down the road, say, in three or five years, devices
+> which can be shared without worrying too much about seeks might be
+> commonplace and we could be swearing at a disgusting structural mess,
+> and sadly various cgroup support seems to be a prominent source of
+> such design failures.
 
-Once you write and merge a new scheduler, that code merge is never going
-to happen. They will happily part ways with lot of code/logic shared.
+Super fast storages are coming which will make us regret to make the
+IO path over complex.  Spinning disks are not going away anytime soon.
+I doubt Google is willing to afford the disk seek costs on its
+millions of disks and has the patience to wait until switching all of
+the spin disks to SSD years later (if it will ever happen).
 
-Once the hierarchical support comes to CFQ, same hierarchical cgroup 
-support needs to be written to this new scheduler also.
+Sorry, I won't buy in the layering arguments and analog to networking.
+Yeah network is a good way to show your "push back" idea, however
+writeback has its own metadata, seeking, etc. problems.
 
+I'd prefer we base our discussions on real things like complexities,
+overheads, performance as well as user demands.
 
-Thanks
-Vivek
+It's obvious that your below proposal involves a lot of complexities,
+overheads, and will hurt performance. It basically involves
+
+- running concurrent flusher threads for cgroups, which adds back the
+  disk seeks and lock contentions. And still has problems with sync
+  and shared inodes.
+
+- splitting device queue for cgroups, possibly scaling up the pool of
+  writeback pages (and locked pages in the case of stable pages) which
+  could stall random processes in the system
+
+- the mess of metadata handling
+
+- unnecessarily coupled with memcg, in order to take advantage of the
+  per-memcg dirty limits for balance_dirty_pages() to actually convert
+  the "pushed back" dirty pages pressure into lowered dirty rate. Why
+  the hell the users *have to* setup memcg (suffering from all the
+  inconvenience and overheads) in order to do IO throttling?  Please,
+  this is really ugly! And the "back pressure" may constantly push the
+  memcg dirty pages to the limits. I'm not going to support *miss use*
+  of per-memcg dirty limits like this!
+
+I cannot believe you would keep overlooking all the problems without
+good reasons. Please do tell us the reasons that matter.
+
+Thanks,
+Fengguang
+
+> IMHO, treating cgroup - device/bdi pair as a separate device should
+> suffice as the underlying design.  After all, blkio cgroup support's
+> ultimate goal is dividing the IO resource into separate bins.
+> Implementation details might change as underlying technology changes
+> and we learn more about how to do it better but that is the goal which
+> we'll always try to keep close to.  Writeback should (be able to)
+> treat them as separate devices.  We surely will need adjustments and
+> optimizations to make things work at least somewhat reasonably but
+> that is the baseline.
+> 
+> In the discussion, for such implementation, the following obstacles
+> were identified.
+> 
+> * There are a lot of cases where IOs are issued by a task which isn't
+>   the originiator.  ie. Writeback issues IOs for pages which are
+>   dirtied by some other tasks.  So, by the time an IO reaches the
+>   block layer, we don't know which cgroup the IO belongs to.
+> 
+>   Recently, block layer has grown support to attach a task to a bio
+>   which causes the bio to be handled as if it were issued by the
+>   associated task regardless of the actual issuing task.  It currently
+>   only allows attaching %current to a bio - bio_associate_current() -
+>   but changing it to support other tasks is trivial.
+> 
+>   We'll need to update the async issuers to tag the IOs they issue but
+>   the mechanism is already there.
+> 
+> * There's a single request pool shared by all issuers per a request
+>   queue.  This can lead to priority inversion among cgroups.  Note
+>   that problem also exists without cgroups.  Lower ioprio issuer may
+>   be holding a request holding back highprio issuer.
+> 
+>   We'll need to make request allocation cgroup (and hopefully ioprio)
+>   aware.  Probably in the form of separate request pools.  This will
+>   take some work but I don't think this will be too challenging.  I'll
+>   work on it.
+> 
+> * cfq cgroup policy throws all async IOs, which all buffered writes
+>   are, into the shared cgroup regardless of the actual cgroup.  This
+>   behavior is, I believe, mostly historical and changing it isn't
+>   difficult.  Prolly only few tens of lines of changes.  This may
+>   cause significant changes to actual IO behavior with cgroups tho.  I
+>   personally think the previous behavior was too wrong to keep (the
+>   weight was completely ignored for buffered writes) but we may want
+>   to introduce a switch to toggle between the two behaviors.
+> 
+>   Note that blk-throttle doesn't have this problem.
+> 
+> * Unlike dirty data pages, metadata tends to have strict ordering
+>   requirements and thus is susceptible to priority inversion.  Two
+>   solutions were suggested - 1. allow overdrawl for metadata writes so
+>   that low prio metadata writes don't block the whole FS, 2. provide
+>   an interface to query and wait for bdi-cgroup congestion which can
+>   be called from FS metadata paths to throttle metadata operations
+>   before they enter the stream of ordered operations.
+> 
+>   I think combination of the above two should be enough for solving
+>   the problem.  I *think* the second can be implemented as part of
+>   cgroup aware request allocation update.  The first one needs a bit
+>   more thinking but there can be easier interim solutions (e.g. throw
+>   META writes to the head of the cgroup queue or just plain ignore
+>   cgroup limits for META writes) for now.
+> 
+> * I'm sure there are a lot of design choices to be made in the
+>   writeback implementation but IIUC Jan seems to agree that the
+>   simplest would be simply deal different cgroup-bdi pairs as
+>   completely separate which shouldn't add too much complexity to the
+>   already intricate writeback code.
+> 
+> So, I think we have something which sounds like a plan, which at least
+> I can agree with and seems doable without adding a lot of complexity.
+> 
+> Jan, Fengguang, I'm pretty sure I missed some stuff from writeback's
+> side and IIUC Fengguang doesn't agree with this approach too much, so
+> please voice your opinions & comments.
+> 
+> Thank you.
+> 
+> --
+> tejun
