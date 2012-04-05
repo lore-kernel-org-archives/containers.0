@@ -1,10 +1,17 @@
-From: IBS11 <ibs11-3cf1kbips/l5fKxnrjckug@public.gmane.org>
-Subject: Delivery Status Notification (Failure)
-Date: 05 Apr 2012 16:16:20 +0200
-Message-ID: <98a1dd$2m68gb@ibs11.interbusiness.it>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC] writeback and cgroup
+Date: Thu, 5 Apr 2012 11:10:26 -0400
+Message-ID: <20120405151026.GB23999__48487.7487215728$1333638656$gmane$org@redhat.com>
+References: <20120403183655.GA23106@dhcp-172-17-108-109.mtv.corp.google.com>
+	<20120404175124.GA8931@localhost>
+	<20120404183528.GJ12676@redhat.com>
+	<20120404214228.GA6471@localhost>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============2257534563840404756=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20120404214228.GA6471@localhost>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -14,83 +21,92 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, andrea-oIIqvOZpAevzfdHfmsDf5w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sjayaraman-IBi9RG/b67k@public.gmane.org, lsf-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============2257534563840404756==
-Content-Type: multipart/report; report-type=delivery-status; boundary="5MIxA.4lEyl8blN.1SvVuv.9bNdRG1"
+On Wed, Apr 04, 2012 at 02:42:28PM -0700, Fengguang Wu wrote:
+> On Wed, Apr 04, 2012 at 02:35:29PM -0400, Vivek Goyal wrote:
+> > On Wed, Apr 04, 2012 at 10:51:24AM -0700, Fengguang Wu wrote:
+> > 
+> > [..]
+> > > The sweet split point would be for balance_dirty_pages() to do cgroup
+> > > aware buffered write throttling and leave other IOs to the current
+> > > blkcg. For this to work well as a total solution for end users, I hope
+> > > we can cooperate and figure out ways for the two throttling entities
+> > > to work well with each other.
+> > 
+> > Throttling read + direct IO, higher up has few issues too. Users will
+> 
+> Yeah I have a bit worry about high layer throttling, too.
+> Anyway here are the ideas.
+> 
+> > not like that a task got blocked as it tried to submit a read from a
+> > throttled group.
+> 
+> That's not the same issue I worried about :) Throttling is about
+> inserting small sleep/waits into selected points. For reads, the ideal
+> sleep point is immediately after readahead IO is summited, at the end
+> of __do_page_cache_readahead(). The same should be applicable to
+> direct IO.
 
---5MIxA.4lEyl8blN.1SvVuv.9bNdRG1
-content-type: text/plain;
-    charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+But after a read the process might want to process the read data and
+do something else altogether. So throttling the process after completing
+the read is not the best thing.
 
-The following message to <samuele.francinella-fiKinI3PMRY1GQ1Ptb7lUw@public.gmane.org> was undeliverabl=
-e.
-The reason for the problem:
-5.4.7 - Delivery expired (message too old) 'timeout'
+> 
+> > Current async behavior works well where we queue up the
+> > bio from the task in throttled group and let task do other things. Same
+> > is true for AIO where we would not like to block in bio submission.
+> 
+> For AIO, we'll need to delay the IO completion notification or status
+> update, which may involve computing some delay time and delay the
+> calls to io_complete() with the help of some delayed work queue. There
+> may be more issues to deal with as I didn't look into aio.c carefully.
 
---5MIxA.4lEyl8blN.1SvVuv.9bNdRG1
-content-type: message/delivery-status
+I don't know but delaying compltion notifications sounds odd to me. So
+you don't throttle while submitting requests. That does not help with
+pressure on request queue as process can dump whole bunch of IO without
+waiting for completion?
 
-Reporting-MTA: dns; ibs11.interbusiness.it
+What I like better that AIO is allowed to submit bunch of IO till it
+hits the nr_requests limit on request queue and then it is blocked as
+request queue is too busy and not enough request descriptors are free.
 
-Final-Recipient: rfc822;samuele.francinella-fiKinI3PMRY1GQ1Ptb7lUw@public.gmane.org
-Action: failed
-Status: 5.0.0 (permanent failure)
-Diagnostic-Code: smtp; 5.4.7 - Delivery expired (message too old) 'timeout' (delivery attempts: 0)
+> 
+> The thing worried me is that in the proportional throttling case, the
+> high level throttling works on the *estimated* task_ratelimit =
+> disk_bandwidth / N, where N is the number of read IO tasks. When N
+> suddenly changes from 2 to 1, it may take 1 second for the estimated
+> task_ratelimit to adapt from disk_bandwidth/2 up to disk_bandwidth,
+> during which time the disk won't get 100% utilized because of the
+> temporally over-throttling of the remaining IO task.
 
---5MIxA.4lEyl8blN.1SvVuv.9bNdRG1
-content-type: message/rfc822
+I thought we were only considering the case of absolute throttling in
+higher layers. Proportional IO will continue to be in CFQ. I don't think
+we need to push proportional IO in higher layers.
 
-X-IronPort-Anti-Spam-Filtered: true
-X-IronPort-Anti-Spam-Result: AphFAPT3ek9T3X+F/2dsb2JhbABFgzuGRheWGYYrkC1eCoEHggsBBQEBDyABB1o2Uhs1h2sHmnWCAJ5CjUKDJASVY4ERhF+KQIJp
-Received: from smtpout08.impresasemplice.it ([83.221.127.133])
-  by ibs11.interbusiness.it with ESMTP; 03 Apr 2012 15:20:37 +0200
-Received: from COPMCL01B09.COP.LOCAL (10.32.95.132) by COPMOU08.COPDMZ.LOCAL
- (10.32.120.249) with Microsoft SMTP Server id 8.3.137.0; Mon, 2 Apr 2012
- 23:55:44 +0200
-Received: from LOCAL.HOST (85.10.211.116) by outmail.impresasemplice.it
- (10.32.95.132) with Microsoft SMTP Server id 8.3.137.0; Tue, 3 Apr 2012
- 00:01:34 +0200
-Received: from [192.168.137.100] by LOCAL.HOST id 2c3M8LcyHdCE; Mon, 02 Apr
- 2012 23:55:43 +0200
-Message-ID: <005a01cd111b$587d2c80$6489a8c0-7PjSQ+wCsSudNYLACK+ndg@public.gmane.org>
-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <ssarcone-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org>
-Subject: Re: Richiesta
-Date: Mon, 2 Apr 2012 23:55:43 +0200
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-TI-ClientIp: 85.10.211.116
-Content-Transfer-Encoding: quoted-printable
+> 
+> This is not a problem when throttling at the block/cfq layer, since it
+> has the full information of pending requests and should not depend on
+> such estimations.
 
+CFQ does not even look at pending requests. It just maintains bunch
+of IO queues and selects one queue to dispatch IO from based on its
+weight. So proportional IO comes very naturally to CFQ.
 
+> 
+> The workaround I can think of, is to put the throttled task into a wait
+> queue, and let block layer wake up the waiters when the IO queue runs
+> empty. This should be able to avoid most disk idle time.
 
-Tu sei la nostra azienda sul forum e stato chiesto di invio di materiale =
-sui componenti
-per la riparazione.
-Mi dispiace cosi tanto tempo ha incontrato il regista era in vacanza.
-Scarica il materiale che sono interessate alla moda, all'indirizzo sotto =
-indicato
-http://alasinmedia.pp.fi/hardware/Forma.zip?KrUm2WfH553Ht5twS2I40aiC
+Again, I am not convinced that proportional IO should go in higher layers.
 
+For fast devices we are already suffering from queue locking overhead and
+Jens seems to have patches for multi queue. Now by trying to implement
+something at higher layer, that locking overhead will show up there too
+and we will end up doing something similar to multi queue there and it
+is not desirable.
 
-
-
---5MIxA.4lEyl8blN.1SvVuv.9bNdRG1--
-
-
-
---===============2257534563840404756==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============2257534563840404756==--
+Thanks
+Vivek
