@@ -1,17 +1,16 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Subject: Re: [RFC] writeback and cgroup
-Date: Thu, 5 Apr 2012 09:31:13 -0700
-Message-ID: <20120405163113.GD12854__1202.47658710486$1333643490$gmane$org@google.com>
+Date: Thu, 5 Apr 2012 09:38:54 -0700
+Message-ID: <20120405163854.GE12854__49209.9488074475$1333643953$gmane$org@google.com>
 References: <20120403183655.GA23106@dhcp-172-17-108-109.mtv.corp.google.com>
-	<20120404175124.GA8931@localhost>
-	<20120404193355.GD29686@dhcp-172-17-108-109.mtv.corp.google.com>
-	<20120404201816.GL12676@redhat.com>
+	<20120404145134.GC12676@redhat.com>
+	<20120404184909.GB29686@dhcp-172-17-108-109.mtv.corp.google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20120404201816.GL12676-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20120404184909.GB29686-RcKxWJ4Cfj1J2suj2OqeGauc2jM2gXBXkQQo+JxHRPFibQn6LdNjmg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,38 +26,20 @@ List-Id: containers.vger.kernel.org
 
 Hey, Vivek.
 
-On Wed, Apr 04, 2012 at 04:18:16PM -0400, Vivek Goyal wrote:
-> Hey how about reconsidering my other proposal for which I had posted
-> the patches. And that is keep throttling still at device level. Reads
-> and direct IO get throttled asynchronously but buffered writes get
-> throttled synchronously.
+On Wed, Apr 04, 2012 at 11:49:09AM -0700, Tejun Heo wrote:
+> > I am not sure what are you trying to say here. But primarily blk-throttle
+> > will throttle read and direct IO. Buffered writes will go to root cgroup
+> > which is typically unthrottled.
 > 
-> Advantages of this scheme.
-> 
-> - There are no separate knobs.
-> 
-> - All the IO (read, direct IO and buffered write) is controlled using
->   same set of knobs and goes in queue of same cgroup.
-> 
-> - Writeback logic has no knowledge of throttling. It just invokes a 
->   hook into throttling logic of device queue.
-> 
-> I guess this is a hybrid of active writeback throttling and back pressure
-> mechanism.
-> 
-> But it still does not solve the NFS issue as well as for direct IO,
-> filesystems still can get serialized, so metadata issue still needs to 
-> be resolved. So one can argue that why not go for full "back pressure"
-> method, despite it being more complex.
-> 
-> Here is the link, just to refresh the memory. Something to keep in mind
-> while assessing alternatives.
-> 
-> https://lkml.org/lkml/2011/6/28/243
+> Ooh, my bad then.  Anyways, then the same applies to blk-throttle.
+> Our current implementation essentially collapses at the face of
+> write-heavy workload.
 
-Hmmm... so, this only works for blk-throttle and not with the weight.
-How do you manage interaction between buffered writes and direct
-writes for the same cgroup?
+I went through the code and couldn't find where blk-throttle is
+discriminating async IOs.  Were you saying that blk-throttle currently
+doesn't throttle because those IOs aren't associated with the dirtying
+task?  If so, note that it's different from cfq which explicitly
+assigns all async IOs when choosing cfqq even if we fix tagging.
 
 Thanks.
 
