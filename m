@@ -1,17 +1,17 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Subject: Re: [RFC] writeback and cgroup
-Date: Thu, 5 Apr 2012 11:10:26 -0400
-Message-ID: <20120405151026.GB23999__48487.7487215728$1333638656$gmane$org@redhat.com>
+Date: Thu, 5 Apr 2012 09:31:13 -0700
+Message-ID: <20120405163113.GD12854__1202.47658710486$1333643490$gmane$org@google.com>
 References: <20120403183655.GA23106@dhcp-172-17-108-109.mtv.corp.google.com>
 	<20120404175124.GA8931@localhost>
-	<20120404183528.GJ12676@redhat.com>
-	<20120404214228.GA6471@localhost>
+	<20120404193355.GD29686@dhcp-172-17-108-109.mtv.corp.google.com>
+	<20120404201816.GL12676@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20120404214228.GA6471@localhost>
+In-Reply-To: <20120404201816.GL12676-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,92 +21,46 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, andrea-oIIqvOZpAevzfdHfmsDf5w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sjayaraman-IBi9RG/b67k@public.gmane.org, lsf-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, andrea-oIIqvOZpAevzfdHfmsDf5w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sjayaraman-IBi9RG/b67k@public.gmane.org, lsf-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Apr 04, 2012 at 02:42:28PM -0700, Fengguang Wu wrote:
-> On Wed, Apr 04, 2012 at 02:35:29PM -0400, Vivek Goyal wrote:
-> > On Wed, Apr 04, 2012 at 10:51:24AM -0700, Fengguang Wu wrote:
-> > 
-> > [..]
-> > > The sweet split point would be for balance_dirty_pages() to do cgroup
-> > > aware buffered write throttling and leave other IOs to the current
-> > > blkcg. For this to work well as a total solution for end users, I hope
-> > > we can cooperate and figure out ways for the two throttling entities
-> > > to work well with each other.
-> > 
-> > Throttling read + direct IO, higher up has few issues too. Users will
+Hey, Vivek.
+
+On Wed, Apr 04, 2012 at 04:18:16PM -0400, Vivek Goyal wrote:
+> Hey how about reconsidering my other proposal for which I had posted
+> the patches. And that is keep throttling still at device level. Reads
+> and direct IO get throttled asynchronously but buffered writes get
+> throttled synchronously.
 > 
-> Yeah I have a bit worry about high layer throttling, too.
-> Anyway here are the ideas.
+> Advantages of this scheme.
 > 
-> > not like that a task got blocked as it tried to submit a read from a
-> > throttled group.
+> - There are no separate knobs.
 > 
-> That's not the same issue I worried about :) Throttling is about
-> inserting small sleep/waits into selected points. For reads, the ideal
-> sleep point is immediately after readahead IO is summited, at the end
-> of __do_page_cache_readahead(). The same should be applicable to
-> direct IO.
-
-But after a read the process might want to process the read data and
-do something else altogether. So throttling the process after completing
-the read is not the best thing.
-
+> - All the IO (read, direct IO and buffered write) is controlled using
+>   same set of knobs and goes in queue of same cgroup.
 > 
-> > Current async behavior works well where we queue up the
-> > bio from the task in throttled group and let task do other things. Same
-> > is true for AIO where we would not like to block in bio submission.
+> - Writeback logic has no knowledge of throttling. It just invokes a 
+>   hook into throttling logic of device queue.
 > 
-> For AIO, we'll need to delay the IO completion notification or status
-> update, which may involve computing some delay time and delay the
-> calls to io_complete() with the help of some delayed work queue. There
-> may be more issues to deal with as I didn't look into aio.c carefully.
-
-I don't know but delaying compltion notifications sounds odd to me. So
-you don't throttle while submitting requests. That does not help with
-pressure on request queue as process can dump whole bunch of IO without
-waiting for completion?
-
-What I like better that AIO is allowed to submit bunch of IO till it
-hits the nr_requests limit on request queue and then it is blocked as
-request queue is too busy and not enough request descriptors are free.
-
+> I guess this is a hybrid of active writeback throttling and back pressure
+> mechanism.
 > 
-> The thing worried me is that in the proportional throttling case, the
-> high level throttling works on the *estimated* task_ratelimit =
-> disk_bandwidth / N, where N is the number of read IO tasks. When N
-> suddenly changes from 2 to 1, it may take 1 second for the estimated
-> task_ratelimit to adapt from disk_bandwidth/2 up to disk_bandwidth,
-> during which time the disk won't get 100% utilized because of the
-> temporally over-throttling of the remaining IO task.
-
-I thought we were only considering the case of absolute throttling in
-higher layers. Proportional IO will continue to be in CFQ. I don't think
-we need to push proportional IO in higher layers.
-
+> But it still does not solve the NFS issue as well as for direct IO,
+> filesystems still can get serialized, so metadata issue still needs to 
+> be resolved. So one can argue that why not go for full "back pressure"
+> method, despite it being more complex.
 > 
-> This is not a problem when throttling at the block/cfq layer, since it
-> has the full information of pending requests and should not depend on
-> such estimations.
-
-CFQ does not even look at pending requests. It just maintains bunch
-of IO queues and selects one queue to dispatch IO from based on its
-weight. So proportional IO comes very naturally to CFQ.
-
+> Here is the link, just to refresh the memory. Something to keep in mind
+> while assessing alternatives.
 > 
-> The workaround I can think of, is to put the throttled task into a wait
-> queue, and let block layer wake up the waiters when the IO queue runs
-> empty. This should be able to avoid most disk idle time.
+> https://lkml.org/lkml/2011/6/28/243
 
-Again, I am not convinced that proportional IO should go in higher layers.
+Hmmm... so, this only works for blk-throttle and not with the weight.
+How do you manage interaction between buffered writes and direct
+writes for the same cgroup?
 
-For fast devices we are already suffering from queue locking overhead and
-Jens seems to have patches for multi queue. Now by trying to implement
-something at higher layer, that locking overhead will show up there too
-and we will end up doing something similar to multi queue there and it
-is not desirable.
+Thanks.
 
-Thanks
-Vivek
+-- 
+tejun
