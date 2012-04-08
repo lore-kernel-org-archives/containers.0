@@ -1,8 +1,8 @@
 From: "\"Eric W. Beiderman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 25/43] userns: Store uid and gid types in vfs structures with
-	kuid_t and kgid_t types
-Date: Sat,  7 Apr 2012 22:15:21 -0700
-Message-ID: <1333862139-31737-25-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH 29/43] userns: Convert stat to return values mapped from kuids
+	and kgids
+Date: Sat,  7 Apr 2012 22:15:25 -0700
+Message-ID: <1333862139-31737-29-git-send-email-ebiederm@xmission.com>
 References: <m11unyn70b.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,120 +24,159 @@ List-Id: containers.vger.kernel.org
 
 From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-The conversion of all of the users is not done yet there are too many to change
-in one go and leave the code reviewable. For now I change just the header and
-a few trivial users and rely on CONFIG_UIDGID_STRICT_TYPE_CHECKS not being set
-to ensure that the code will still compile during the transition.
-
-Helper functions i_uid_read, i_uid_write, i_gid_read, i_gid_write are added
-so that in most cases filesystems can avoid the complexities of multiple user
-namespaces and can concentrate on moving their raw numeric values into and
-out of the vfs data structures.
+- Store uids and gids with kuid_t and kgid_t in struct kstat
+- Convert uid and gids to userspace usable values with
+  from_kuid and from_kgid
 
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/inode.c         |    6 +++---
- include/linux/fs.h |   36 +++++++++++++++++++++++++++++++-----
- 2 files changed, 34 insertions(+), 8 deletions(-)
+ arch/arm/kernel/sys_oabi-compat.c |    4 ++--
+ arch/parisc/hpux/fs.c             |    4 ++--
+ arch/s390/kernel/compat_linux.c   |    4 ++--
+ arch/sparc/kernel/sys_sparc32.c   |    4 ++--
+ arch/x86/ia32/sys_ia32.c          |    4 ++--
+ fs/compat.c                       |    4 ++--
+ fs/stat.c                         |    8 ++++----
+ include/linux/stat.h              |    5 +++--
+ 8 files changed, 19 insertions(+), 18 deletions(-)
 
-diff --git a/fs/inode.c b/fs/inode.c
-index f0c4ace..deb72f6 100644
---- a/fs/inode.c
-+++ b/fs/inode.c
-@@ -135,8 +135,8 @@ int inode_init_always(struct super_block *sb, struct inode *inode)
- 	inode->i_fop = &empty_fops;
- 	inode->__i_nlink = 1;
- 	inode->i_opflags = 0;
--	inode->i_uid = 0;
--	inode->i_gid = 0;
-+	i_uid_write(inode, 0);
-+	i_gid_write(inode, 0);
- 	atomic_set(&inode->i_writecount, 0);
- 	inode->i_size = 0;
- 	inode->i_blocks = 0;
-@@ -1732,7 +1732,7 @@ EXPORT_SYMBOL(inode_init_owner);
-  */
- bool inode_owner_or_capable(const struct inode *inode)
+diff --git a/arch/arm/kernel/sys_oabi-compat.c b/arch/arm/kernel/sys_oabi-compat.c
+index af0aaeb..3e94811 100644
+--- a/arch/arm/kernel/sys_oabi-compat.c
++++ b/arch/arm/kernel/sys_oabi-compat.c
+@@ -124,8 +124,8 @@ static long cp_oldabi_stat64(struct kstat *stat,
+ 	tmp.__st_ino = stat->ino;
+ 	tmp.st_mode = stat->mode;
+ 	tmp.st_nlink = stat->nlink;
+-	tmp.st_uid = stat->uid;
+-	tmp.st_gid = stat->gid;
++	tmp.st_uid = from_kuid_munged(current_user_ns(), stat->uid);
++	tmp.st_gid = from_kgid_munged(current_user_ns(), stat->gid);
+ 	tmp.st_rdev = huge_encode_dev(stat->rdev);
+ 	tmp.st_size = stat->size;
+ 	tmp.st_blocks = stat->blocks;
+diff --git a/arch/parisc/hpux/fs.c b/arch/parisc/hpux/fs.c
+index 0dc8543..c71eb6c 100644
+--- a/arch/parisc/hpux/fs.c
++++ b/arch/parisc/hpux/fs.c
+@@ -159,8 +159,8 @@ static int cp_hpux_stat(struct kstat *stat, struct hpux_stat64 __user *statbuf)
+ 	tmp.st_ino = stat->ino;
+ 	tmp.st_mode = stat->mode;
+ 	tmp.st_nlink = stat->nlink;
+-	tmp.st_uid = stat->uid;
+-	tmp.st_gid = stat->gid;
++	tmp.st_uid = from_kuid_munged(current_user_ns(), stat->uid);
++	tmp.st_gid = from_kgid_munged(current_user_ns(), stat->gid);
+ 	tmp.st_rdev = new_encode_dev(stat->rdev);
+ 	tmp.st_size = stat->size;
+ 	tmp.st_atime = stat->atime.tv_sec;
+diff --git a/arch/s390/kernel/compat_linux.c b/arch/s390/kernel/compat_linux.c
+index 5baac18..80ab23a 100644
+--- a/arch/s390/kernel/compat_linux.c
++++ b/arch/s390/kernel/compat_linux.c
+@@ -546,8 +546,8 @@ static int cp_stat64(struct stat64_emu31 __user *ubuf, struct kstat *stat)
+ 	tmp.__st_ino = (u32)stat->ino;
+ 	tmp.st_mode = stat->mode;
+ 	tmp.st_nlink = (unsigned int)stat->nlink;
+-	tmp.st_uid = stat->uid;
+-	tmp.st_gid = stat->gid;
++	tmp.st_uid = from_kuid_munged(current_user_ns(), stat->uid);
++	tmp.st_gid = from_kgid_munged(current_user_ns(), stat->gid);
+ 	tmp.st_rdev = huge_encode_dev(stat->rdev);
+ 	tmp.st_size = stat->size;
+ 	tmp.st_blksize = (u32)stat->blksize;
+diff --git a/arch/sparc/kernel/sys_sparc32.c b/arch/sparc/kernel/sys_sparc32.c
+index 29c478f..f739233 100644
+--- a/arch/sparc/kernel/sys_sparc32.c
++++ b/arch/sparc/kernel/sys_sparc32.c
+@@ -139,8 +139,8 @@ static int cp_compat_stat64(struct kstat *stat,
+ 	err |= put_user(stat->ino, &statbuf->st_ino);
+ 	err |= put_user(stat->mode, &statbuf->st_mode);
+ 	err |= put_user(stat->nlink, &statbuf->st_nlink);
+-	err |= put_user(stat->uid, &statbuf->st_uid);
+-	err |= put_user(stat->gid, &statbuf->st_gid);
++	err |= put_user(from_kuid_munged(current_user_ns(), stat->uid), &statbuf->st_uid);
++	err |= put_user(from_kgid_munged(current_user_ns(), stat->gid), &statbuf->st_gid);
+ 	err |= put_user(huge_encode_dev(stat->rdev), &statbuf->st_rdev);
+ 	err |= put_user(0, (unsigned long __user *) &statbuf->__pad3[0]);
+ 	err |= put_user(stat->size, &statbuf->st_size);
+diff --git a/arch/x86/ia32/sys_ia32.c b/arch/x86/ia32/sys_ia32.c
+index aec2202..d5c820a 100644
+--- a/arch/x86/ia32/sys_ia32.c
++++ b/arch/x86/ia32/sys_ia32.c
+@@ -71,8 +71,8 @@ static int cp_stat64(struct stat64 __user *ubuf, struct kstat *stat)
  {
--	if (current_fsuid() == inode->i_uid)
-+	if (uid_eq(current_fsuid(), inode->i_uid))
- 		return true;
- 	if (inode_capable(inode, CAP_FOWNER))
- 		return true;
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index a6c5efb..797eb26 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -402,6 +402,7 @@ struct inodes_stat_t {
- #include <linux/atomic.h>
- #include <linux/shrinker.h>
- #include <linux/migrate_mode.h>
+ 	typeof(ubuf->st_uid) uid = 0;
+ 	typeof(ubuf->st_gid) gid = 0;
+-	SET_UID(uid, stat->uid);
+-	SET_GID(gid, stat->gid);
++	SET_UID(uid, from_kuid_munged(current_user_ns(), stat->uid));
++	SET_GID(gid, from_kgid_munged(current_user_ns(), stat->gid));
+ 	if (!access_ok(VERIFY_WRITE, ubuf, sizeof(struct stat64)) ||
+ 	    __put_user(huge_encode_dev(stat->dev), &ubuf->st_dev) ||
+ 	    __put_user(stat->ino, &ubuf->__st_ino) ||
+diff --git a/fs/compat.c b/fs/compat.c
+index f2944ac..0781e61 100644
+--- a/fs/compat.c
++++ b/fs/compat.c
+@@ -144,8 +144,8 @@ static int cp_compat_stat(struct kstat *stat, struct compat_stat __user *ubuf)
+ 	tmp.st_nlink = stat->nlink;
+ 	if (tmp.st_nlink != stat->nlink)
+ 		return -EOVERFLOW;
+-	SET_UID(tmp.st_uid, stat->uid);
+-	SET_GID(tmp.st_gid, stat->gid);
++	SET_UID(tmp.st_uid, from_kuid_munged(current_user_ns(), stat->uid));
++	SET_GID(tmp.st_gid, from_kgid_munged(current_user_ns(), stat->gid));
+ 	tmp.st_rdev = old_encode_dev(stat->rdev);
+ 	if ((u64) stat->size > MAX_NON_LFS)
+ 		return -EOVERFLOW;
+diff --git a/fs/stat.c b/fs/stat.c
+index c733dc5..fca17f9 100644
+--- a/fs/stat.c
++++ b/fs/stat.c
+@@ -137,8 +137,8 @@ static int cp_old_stat(struct kstat *stat, struct __old_kernel_stat __user * sta
+ 	tmp.st_nlink = stat->nlink;
+ 	if (tmp.st_nlink != stat->nlink)
+ 		return -EOVERFLOW;
+-	SET_UID(tmp.st_uid, stat->uid);
+-	SET_GID(tmp.st_gid, stat->gid);
++	SET_UID(tmp.st_uid, from_kuid_munged(current_user_ns(), stat->uid));
++	SET_GID(tmp.st_gid, from_kgid_munged(current_user_ns(), stat->gid));
+ 	tmp.st_rdev = old_encode_dev(stat->rdev);
+ #if BITS_PER_LONG == 32
+ 	if (stat->size > MAX_NON_LFS)
+@@ -215,8 +215,8 @@ static int cp_new_stat(struct kstat *stat, struct stat __user *statbuf)
+ 	tmp.st_nlink = stat->nlink;
+ 	if (tmp.st_nlink != stat->nlink)
+ 		return -EOVERFLOW;
+-	SET_UID(tmp.st_uid, stat->uid);
+-	SET_GID(tmp.st_gid, stat->gid);
++	SET_UID(tmp.st_uid, from_kuid_munged(current_user_ns(), stat->uid));
++	SET_GID(tmp.st_gid, from_kgid_munged(current_user_ns(), stat->gid));
+ #if BITS_PER_LONG == 32
+ 	tmp.st_rdev = old_encode_dev(stat->rdev);
+ #else
+diff --git a/include/linux/stat.h b/include/linux/stat.h
+index 611c398..4613240 100644
+--- a/include/linux/stat.h
++++ b/include/linux/stat.h
+@@ -58,14 +58,15 @@
+ 
+ #include <linux/types.h>
+ #include <linux/time.h>
 +#include <linux/uidgid.h>
  
- #include <asm/byteorder.h>
- 
-@@ -469,8 +470,8 @@ typedef void (dio_iodone_t)(struct kiocb *iocb, loff_t offset,
- struct iattr {
- 	unsigned int	ia_valid;
- 	umode_t		ia_mode;
--	uid_t		ia_uid;
--	gid_t		ia_gid;
-+	kuid_t		ia_uid;
-+	kgid_t		ia_gid;
- 	loff_t		ia_size;
- 	struct timespec	ia_atime;
- 	struct timespec	ia_mtime;
-@@ -761,8 +762,8 @@ struct posix_acl;
- struct inode {
- 	umode_t			i_mode;
- 	unsigned short		i_opflags;
--	uid_t			i_uid;
--	gid_t			i_gid;
-+	kuid_t			i_uid;
-+	kgid_t			i_gid;
- 	unsigned int		i_flags;
- 
- #ifdef CONFIG_FS_POSIX_ACL
-@@ -927,6 +928,31 @@ static inline void i_size_write(struct inode *inode, loff_t i_size)
- #endif
- }
- 
-+/* Helper functions so that in most cases filesystems will
-+ * not need to deal directly with kuid_t and kgid_t and can
-+ * instead deal with the raw numeric values that are stored
-+ * in the filesystem.
-+ */
-+static inline uid_t i_uid_read(const struct inode *inode)
-+{
-+	return from_kuid(&init_user_ns, inode->i_uid);
-+}
-+
-+static inline gid_t i_gid_read(const struct inode *inode)
-+{
-+	return from_kgid(&init_user_ns, inode->i_gid);
-+}
-+
-+static inline void i_uid_write(struct inode *inode, uid_t uid)
-+{
-+	inode->i_uid = make_kuid(&init_user_ns, uid);
-+}
-+
-+static inline void i_gid_write(struct inode *inode, gid_t gid)
-+{
-+	inode->i_gid = make_kgid(&init_user_ns, gid);
-+}
-+
- static inline unsigned iminor(const struct inode *inode)
- {
- 	return MINOR(inode->i_rdev);
-@@ -943,7 +969,7 @@ struct fown_struct {
- 	rwlock_t lock;          /* protects pid, uid, euid fields */
- 	struct pid *pid;	/* pid or -pgrp where SIGIO should be sent */
- 	enum pid_type pid_type;	/* Kind of process group SIGIO should be sent to */
--	uid_t uid, euid;	/* uid/euid of process setting the owner */
-+	kuid_t uid, euid;	/* uid/euid of process setting the owner */
- 	int signum;		/* posix.1b rt signal to be delivered on IO */
- };
- 
+ struct kstat {
+ 	u64		ino;
+ 	dev_t		dev;
+ 	umode_t		mode;
+ 	unsigned int	nlink;
+-	uid_t		uid;
+-	gid_t		gid;
++	kuid_t		uid;
++	kgid_t		gid;
+ 	dev_t		rdev;
+ 	loff_t		size;
+ 	struct timespec  atime;
 -- 
 1.7.2.5
