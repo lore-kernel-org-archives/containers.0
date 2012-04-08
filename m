@@ -1,8 +1,8 @@
 From: "\"Eric W. Beiderman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 04/43] userns: Remove unnecessary cast to struct user_struct
-	when copying cred->user.
-Date: Sat,  7 Apr 2012 22:15:00 -0700
-Message-ID: <1333862139-31737-4-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH 09/43] mqueue: Explicitly capture the user namespace to send
+	the notification to.
+Date: Sat,  7 Apr 2012 22:15:05 -0700
+Message-ID: <1333862139-31737-9-git-send-email-ebiederm@xmission.com>
 References: <m11unyn70b.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,37 +24,71 @@ List-Id: containers.vger.kernel.org
 
 From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-In struct cred the user member is and has always been declared struct user_struct *user.
-At most a constant struct cred will have a constant pointer to non-constant user_struct
-so remove this unnecessary cast.
+Stop relying on user->user_ns which is going away and instead capture
+the user_namespace of the process we are supposed to notify.
 
 Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- kernel/sys.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+ ipc/mqueue.c |    9 ++++++++-
+ 1 files changed, 8 insertions(+), 1 deletions(-)
 
-diff --git a/kernel/sys.c b/kernel/sys.c
-index e7006eb..f7a4351 100644
---- a/kernel/sys.c
-+++ b/kernel/sys.c
-@@ -209,7 +209,7 @@ SYSCALL_DEFINE3(setpriority, int, which, int, who, int, niceval)
- 			} while_each_pid_thread(pgrp, PIDTYPE_PGID, p);
- 			break;
- 		case PRIO_USER:
--			user = (struct user_struct *) cred->user;
-+			user = cred->user;
- 			if (!who)
- 				who = cred->uid;
- 			else if ((who != cred->uid) &&
-@@ -274,7 +274,7 @@ SYSCALL_DEFINE2(getpriority, int, which, int, who)
- 			} while_each_pid_thread(pgrp, PIDTYPE_PGID, p);
- 			break;
- 		case PRIO_USER:
--			user = (struct user_struct *) cred->user;
-+			user = cred->user;
- 			if (!who)
- 				who = cred->uid;
- 			else if ((who != cred->uid) &&
+diff --git a/ipc/mqueue.c b/ipc/mqueue.c
+index 28bd64d..b53cf34 100644
+--- a/ipc/mqueue.c
++++ b/ipc/mqueue.c
+@@ -66,6 +66,7 @@ struct mqueue_inode_info {
+ 
+ 	struct sigevent notify;
+ 	struct pid* notify_owner;
++	struct user_namespace *notify_user_ns;
+ 	struct user_struct *user;	/* user who created, for accounting */
+ 	struct sock *notify_sock;
+ 	struct sk_buff *notify_cookie;
+@@ -139,6 +140,7 @@ static struct inode *mqueue_get_inode(struct super_block *sb,
+ 		INIT_LIST_HEAD(&info->e_wait_q[0].list);
+ 		INIT_LIST_HEAD(&info->e_wait_q[1].list);
+ 		info->notify_owner = NULL;
++		info->notify_user_ns = NULL;
+ 		info->qsize = 0;
+ 		info->user = NULL;	/* set when all is ok */
+ 		memset(&info->attr, 0, sizeof(info->attr));
+@@ -536,7 +538,7 @@ static void __do_notify(struct mqueue_inode_info *info)
+ 			rcu_read_lock();
+ 			sig_i.si_pid = task_tgid_nr_ns(current,
+ 						ns_of_pid(info->notify_owner));
+-			sig_i.si_uid = user_ns_map_uid(info->user->user_ns,
++			sig_i.si_uid = user_ns_map_uid(info->notify_user_ns,
+ 						current_cred(), current_uid());
+ 			rcu_read_unlock();
+ 
+@@ -550,7 +552,9 @@ static void __do_notify(struct mqueue_inode_info *info)
+ 		}
+ 		/* after notification unregisters process */
+ 		put_pid(info->notify_owner);
++		put_user_ns(info->notify_user_ns);
+ 		info->notify_owner = NULL;
++		info->notify_user_ns = NULL;
+ 	}
+ 	wake_up(&info->wait_q);
+ }
+@@ -575,7 +579,9 @@ static void remove_notification(struct mqueue_inode_info *info)
+ 		netlink_sendskb(info->notify_sock, info->notify_cookie);
+ 	}
+ 	put_pid(info->notify_owner);
++	put_user_ns(info->notify_user_ns);
+ 	info->notify_owner = NULL;
++	info->notify_user_ns = NULL;
+ }
+ 
+ static int mq_attr_ok(struct ipc_namespace *ipc_ns, struct mq_attr *attr)
+@@ -1140,6 +1146,7 @@ retry:
+ 		}
+ 
+ 		info->notify_owner = get_pid(task_tgid(current));
++		info->notify_user_ns = get_user_ns(current_user_ns());
+ 		inode->i_atime = inode->i_ctime = CURRENT_TIME;
+ 	}
+ 	spin_unlock(&info->lock);
 -- 
 1.7.2.5
