@@ -1,8 +1,8 @@
 From: "\"Eric W. Beiderman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 27/43] userns: Use uid_eq gid_eq helpers when comparing kuids
-	and kgids in the vfs
-Date: Sat,  7 Apr 2012 22:15:23 -0700
-Message-ID: <1333862139-31737-27-git-send-email-ebiederm__45858.4619722844$1333862107$gmane$org@xmission.com>
+Subject: [PATCH 34/43] userns: Convert devpts to use kuid/kgid where
+	appropriate
+Date: Sat,  7 Apr 2012 22:15:30 -0700
+Message-ID: <1333862139-31737-34-git-send-email-ebiederm@xmission.com>
 References: <m11unyn70b.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -26,169 +26,73 @@ From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/attr.c                |    8 ++++----
- fs/exec.c                |   10 +++++-----
- fs/fcntl.c               |    6 +++---
- fs/ioprio.c              |    4 ++--
- fs/locks.c               |    2 +-
- fs/namei.c               |    8 ++++----
- include/linux/quotaops.h |    4 ++--
- 7 files changed, 21 insertions(+), 21 deletions(-)
+ fs/devpts/inode.c |   24 ++++++++++++++++--------
+ 1 files changed, 16 insertions(+), 8 deletions(-)
 
-diff --git a/fs/attr.c b/fs/attr.c
-index 73f69a6..2f094c6 100644
---- a/fs/attr.c
-+++ b/fs/attr.c
-@@ -47,14 +47,14 @@ int inode_change_ok(const struct inode *inode, struct iattr *attr)
- 
- 	/* Make sure a caller can chown. */
- 	if ((ia_valid & ATTR_UID) &&
--	    (current_fsuid() != inode->i_uid ||
--	     attr->ia_uid != inode->i_uid) && !capable(CAP_CHOWN))
-+	    (!uid_eq(current_fsuid(), inode->i_uid) ||
-+	     !uid_eq(attr->ia_uid, inode->i_uid)) && !capable(CAP_CHOWN))
- 		return -EPERM;
- 
- 	/* Make sure caller can chgrp. */
- 	if ((ia_valid & ATTR_GID) &&
--	    (current_fsuid() != inode->i_uid ||
--	    (!in_group_p(attr->ia_gid) && attr->ia_gid != inode->i_gid)) &&
-+	    (!uid_eq(current_fsuid(), inode->i_uid) ||
-+	    (!in_group_p(attr->ia_gid) && gid_eq(attr->ia_gid, inode->i_gid))) &&
- 	    !capable(CAP_CHOWN))
- 		return -EPERM;
- 
-diff --git a/fs/exec.c b/fs/exec.c
-index 9a1d9f0..00ae2ef 100644
---- a/fs/exec.c
-+++ b/fs/exec.c
-@@ -1139,7 +1139,7 @@ void setup_new_exec(struct linux_binprm * bprm)
- 	/* This is the point of no return */
- 	current->sas_ss_sp = current->sas_ss_size = 0;
- 
--	if (current_euid() == current_uid() && current_egid() == current_gid())
-+	if (uid_eq(current_euid(), current_uid()) && gid_eq(current_egid(), current_gid()))
- 		set_dumpable(current->mm, 1);
- 	else
- 		set_dumpable(current->mm, suid_dumpable);
-@@ -1153,8 +1153,8 @@ void setup_new_exec(struct linux_binprm * bprm)
- 	current->mm->task_size = TASK_SIZE;
- 
- 	/* install the new credentials */
--	if (bprm->cred->uid != current_euid() ||
--	    bprm->cred->gid != current_egid()) {
-+	if (!uid_eq(bprm->cred->uid, current_euid()) ||
-+	    !gid_eq(bprm->cred->gid, current_egid())) {
- 		current->pdeath_signal = 0;
- 	} else {
- 		would_dump(bprm, bprm->file);
-@@ -2120,7 +2120,7 @@ void do_coredump(long signr, int exit_code, struct pt_regs *regs)
- 	if (__get_dumpable(cprm.mm_flags) == 2) {
- 		/* Setuid core dump mode */
- 		flag = O_EXCL;		/* Stop rewrite attacks */
--		cred->fsuid = 0;	/* Dump root private */
-+		cred->fsuid = GLOBAL_ROOT_UID;	/* Dump root private */
- 	}
- 
- 	retval = coredump_wait(exit_code, &core_state);
-@@ -2221,7 +2221,7 @@ void do_coredump(long signr, int exit_code, struct pt_regs *regs)
- 		 * Dont allow local users get cute and trick others to coredump
- 		 * into their pre-created files.
- 		 */
--		if (inode->i_uid != current_fsuid())
-+		if (!uid_eq(inode->i_uid, current_fsuid()))
- 			goto close_fail;
- 		if (!cprm.file->f_op || !cprm.file->f_op->write)
- 			goto close_fail;
-diff --git a/fs/fcntl.c b/fs/fcntl.c
-index 75e7c1f..d078b75 100644
---- a/fs/fcntl.c
-+++ b/fs/fcntl.c
-@@ -532,9 +532,9 @@ static inline int sigio_perm(struct task_struct *p,
- 
- 	rcu_read_lock();
- 	cred = __task_cred(p);
--	ret = ((fown->euid == 0 ||
--		fown->euid == cred->suid || fown->euid == cred->uid ||
--		fown->uid  == cred->suid || fown->uid  == cred->uid) &&
-+	ret = ((uid_eq(fown->euid, GLOBAL_ROOT_UID) ||
-+		uid_eq(fown->euid, cred->suid) || uid_eq(fown->euid, cred->uid) ||
-+		uid_eq(fown->uid,  cred->suid) || uid_eq(fown->uid,  cred->uid)) &&
- 	       !security_file_send_sigiotask(p, fown, sig));
- 	rcu_read_unlock();
- 	return ret;
-diff --git a/fs/ioprio.c b/fs/ioprio.c
-index 2072e41..5e6dbe89 100644
---- a/fs/ioprio.c
-+++ b/fs/ioprio.c
-@@ -37,8 +37,8 @@ int set_task_ioprio(struct task_struct *task, int ioprio)
- 
- 	rcu_read_lock();
- 	tcred = __task_cred(task);
--	if (tcred->uid != cred->euid &&
--	    tcred->uid != cred->uid && !capable(CAP_SYS_NICE)) {
-+	if (!uid_eq(tcred->uid, cred->euid) &&
-+	    !uid_eq(tcred->uid, cred->uid) && !capable(CAP_SYS_NICE)) {
- 		rcu_read_unlock();
- 		return -EPERM;
- 	}
-diff --git a/fs/locks.c b/fs/locks.c
-index 637694b..3e946cd 100644
---- a/fs/locks.c
-+++ b/fs/locks.c
-@@ -1445,7 +1445,7 @@ int generic_setlease(struct file *filp, long arg, struct file_lock **flp)
- 	struct inode *inode = dentry->d_inode;
- 	int error;
- 
--	if ((current_fsuid() != inode->i_uid) && !capable(CAP_LEASE))
-+	if ((!uid_eq(current_fsuid(), inode->i_uid)) && !capable(CAP_LEASE))
- 		return -EACCES;
- 	if (!S_ISREG(inode->i_mode))
- 		return -EINVAL;
-diff --git a/fs/namei.c b/fs/namei.c
-index 941c436..86512b4 100644
---- a/fs/namei.c
-+++ b/fs/namei.c
-@@ -228,7 +228,7 @@ static int acl_permission_check(struct inode *inode, int mask)
+diff --git a/fs/devpts/inode.c b/fs/devpts/inode.c
+index 10f5e0b..979c1e3 100644
+--- a/fs/devpts/inode.c
++++ b/fs/devpts/inode.c
+@@ -98,8 +98,8 @@ static struct vfsmount *devpts_mnt;
+ struct pts_mount_opts {
+ 	int setuid;
+ 	int setgid;
+-	uid_t   uid;
+-	gid_t   gid;
++	kuid_t   uid;
++	kgid_t   gid;
+ 	umode_t mode;
+ 	umode_t ptmxmode;
+ 	int newinstance;
+@@ -158,11 +158,13 @@ static inline struct super_block *pts_sb_from_inode(struct inode *inode)
+ static int parse_mount_options(char *data, int op, struct pts_mount_opts *opts)
  {
- 	unsigned int mode = inode->i_mode;
+ 	char *p;
++	kuid_t uid;
++	kgid_t gid;
  
--	if (likely(current_fsuid() == inode->i_uid))
-+	if (likely(uid_eq(current_fsuid(), inode->i_uid)))
- 		mode >>= 6;
- 	else {
- 		if (IS_POSIXACL(inode) && (mode & S_IRWXG)) {
-@@ -1956,13 +1956,13 @@ static int user_path_parent(int dfd, const char __user *path,
-  */
- static inline int check_sticky(struct inode *dir, struct inode *inode)
- {
--	uid_t fsuid = current_fsuid();
-+	kuid_t fsuid = current_fsuid();
+ 	opts->setuid  = 0;
+ 	opts->setgid  = 0;
+-	opts->uid     = 0;
+-	opts->gid     = 0;
++	opts->uid     = GLOBAL_ROOT_UID;
++	opts->gid     = GLOBAL_ROOT_GID;
+ 	opts->mode    = DEVPTS_DEFAULT_MODE;
+ 	opts->ptmxmode = DEVPTS_DEFAULT_PTMX_MODE;
+ 	opts->max     = NR_UNIX98_PTY_MAX;
+@@ -184,13 +186,19 @@ static int parse_mount_options(char *data, int op, struct pts_mount_opts *opts)
+ 		case Opt_uid:
+ 			if (match_int(&args[0], &option))
+ 				return -EINVAL;
+-			opts->uid = option;
++			uid = make_kuid(current_user_ns(), option);
++			if (!uid_valid(uid))
++				return -EINVAL;
++			opts->uid = uid;
+ 			opts->setuid = 1;
+ 			break;
+ 		case Opt_gid:
+ 			if (match_int(&args[0], &option))
+ 				return -EINVAL;
+-			opts->gid = option;
++			gid = make_kgid(current_user_ns(), option);
++			if (!gid_valid(gid))
++				return -EINVAL;
++			opts->gid = gid;
+ 			opts->setgid = 1;
+ 			break;
+ 		case Opt_mode:
+@@ -315,9 +323,9 @@ static int devpts_show_options(struct seq_file *seq, struct dentry *root)
+ 	struct pts_mount_opts *opts = &fsi->mount_opts;
  
- 	if (!(dir->i_mode & S_ISVTX))
- 		return 0;
--	if (inode->i_uid == fsuid)
-+	if (uid_eq(inode->i_uid, fsuid))
- 		return 0;
--	if (dir->i_uid == fsuid)
-+	if (uid_eq(dir->i_uid, fsuid))
- 		return 0;
- 	return !inode_capable(inode, CAP_FOWNER);
- }
-diff --git a/include/linux/quotaops.h b/include/linux/quotaops.h
-index d93f95e..17b9773 100644
---- a/include/linux/quotaops.h
-+++ b/include/linux/quotaops.h
-@@ -22,8 +22,8 @@ static inline struct quota_info *sb_dqopt(struct super_block *sb)
- static inline bool is_quota_modification(struct inode *inode, struct iattr *ia)
- {
- 	return (ia->ia_valid & ATTR_SIZE && ia->ia_size != inode->i_size) ||
--		(ia->ia_valid & ATTR_UID && ia->ia_uid != inode->i_uid) ||
--		(ia->ia_valid & ATTR_GID && ia->ia_gid != inode->i_gid);
-+		(ia->ia_valid & ATTR_UID && !uid_eq(ia->ia_uid, inode->i_uid)) ||
-+		(ia->ia_valid & ATTR_GID && !gid_eq(ia->ia_gid, inode->i_gid));
- }
- 
- #if defined(CONFIG_QUOTA)
+ 	if (opts->setuid)
+-		seq_printf(seq, ",uid=%u", opts->uid);
++		seq_printf(seq, ",uid=%u", from_kuid_munged(&init_user_ns, opts->uid));
+ 	if (opts->setgid)
+-		seq_printf(seq, ",gid=%u", opts->gid);
++		seq_printf(seq, ",gid=%u", from_kgid_munged(&init_user_ns, opts->gid));
+ 	seq_printf(seq, ",mode=%03o", opts->mode);
+ #ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES
+ 	seq_printf(seq, ",ptmxmode=%03o", opts->ptmxmode);
 -- 
 1.7.2.5
