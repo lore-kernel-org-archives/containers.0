@@ -1,8 +1,7 @@
 From: "\"Eric W. Beiderman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 31/43] userns: Teach inode_capable to understand inodes whose
-	uids map to other namespaces.
-Date: Sat,  7 Apr 2012 22:15:27 -0700
-Message-ID: <1333862139-31737-31-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH 26/43] userns: Convert in_group_p and in_egroup_p to use kgid_t
+Date: Sat,  7 Apr 2012 22:15:22 -0700
+Message-ID: <1333862139-31737-26-git-send-email-ebiederm@xmission.com>
 References: <m11unyn70b.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -26,29 +25,62 @@ From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- kernel/capability.c |    6 ++++--
- 1 files changed, 4 insertions(+), 2 deletions(-)
+ include/linux/cred.h |    4 ++--
+ kernel/groups.c      |   14 ++++++--------
+ 2 files changed, 8 insertions(+), 10 deletions(-)
 
-diff --git a/kernel/capability.c b/kernel/capability.c
-index cc5f071..493d972 100644
---- a/kernel/capability.c
-+++ b/kernel/capability.c
-@@ -429,12 +429,14 @@ bool nsown_capable(int cap)
-  * targeted at it's own user namespace and that the given inode is owned
-  * by the current user namespace or a child namespace.
-  *
-- * Currently inodes can only be owned by the initial user namespace.
-+ * Currently we check to see if an inode is owned by the current
-+ * user namespace by seeing if the inode's owner maps into the
-+ * current user namespace.
-  *
-  */
- bool inode_capable(const struct inode *inode, int cap)
- {
- 	struct user_namespace *ns = current_user_ns();
+diff --git a/include/linux/cred.h b/include/linux/cred.h
+index fac0579..917dc5a 100644
+--- a/include/linux/cred.h
++++ b/include/linux/cred.h
+@@ -73,8 +73,8 @@ extern int groups_search(const struct group_info *, kgid_t);
+ #define GROUP_AT(gi, i) \
+ 	((gi)->blocks[(i) / NGROUPS_PER_BLOCK][(i) % NGROUPS_PER_BLOCK])
  
--	return ns_capable(ns, cap) && (ns == &init_user_ns);
-+	return ns_capable(ns, cap) && kuid_has_mapping(ns, inode->i_uid);
+-extern int in_group_p(gid_t);
+-extern int in_egroup_p(gid_t);
++extern int in_group_p(kgid_t);
++extern int in_egroup_p(kgid_t);
+ 
+ /*
+  * The common credentials for a thread group
+diff --git a/kernel/groups.c b/kernel/groups.c
+index 84156f2..6b2588d 100644
+--- a/kernel/groups.c
++++ b/kernel/groups.c
+@@ -256,27 +256,25 @@ SYSCALL_DEFINE2(setgroups, int, gidsetsize, gid_t __user *, grouplist)
+ /*
+  * Check whether we're fsgid/egid or in the supplemental group..
+  */
+-int in_group_p(gid_t grp)
++int in_group_p(kgid_t grp)
+ {
+ 	const struct cred *cred = current_cred();
+ 	int retval = 1;
+ 
+-	if (grp != cred->fsgid)
+-		retval = groups_search(cred->group_info,
+-				       make_kgid(cred->user_ns, grp));
++	if (!gid_eq(grp, cred->fsgid))
++		retval = groups_search(cred->group_info, grp);
+ 	return retval;
  }
+ 
+ EXPORT_SYMBOL(in_group_p);
+ 
+-int in_egroup_p(gid_t grp)
++int in_egroup_p(kgid_t grp)
+ {
+ 	const struct cred *cred = current_cred();
+ 	int retval = 1;
+ 
+-	if (grp != cred->egid)
+-		retval = groups_search(cred->group_info,
+-				       make_kgid(cred->user_ns, grp));
++	if (!gid_eq(grp, cred->egid))
++		retval = groups_search(cred->group_info, grp);
+ 	return retval;
+ }
+ 
 -- 
 1.7.2.5
