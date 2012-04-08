@@ -1,8 +1,7 @@
 From: "\"Eric W. Beiderman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 19/43] userns: Store uid and gid values in struct cred with
-	kuid_t and kgid_t types
-Date: Sat,  7 Apr 2012 22:15:15 -0700
-Message-ID: <1333862139-31737-19-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH 18/43] userns: Convert group_info values from gid_t to kgid_t.
+Date: Sat,  7 Apr 2012 22:15:14 -0700
+Message-ID: <1333862139-31737-18-git-send-email-ebiederm@xmission.com>
 References: <m11unyn70b.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,369 +23,508 @@ List-Id: containers.vger.kernel.org
 
 From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-cred.h and a few trivial users of struct cred are changed.  The rest of the users
-of struct cred are left for other patches as there are too many changes to make
-in one go and leave the change reviewable.  If the user namespace is disabled and
-CONFIG_UIDGID_STRICT_TYPE_CHECKS are disabled the code will contiue to compile
-and behave correctly.
+As a first step to converting struct cred to be all kuid_t and kgid_t
+values convert the group values stored in group_info to always be
+kgid_t values.   Unless user namespaces are used this change should
+have no effect.
 
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- arch/x86/mm/fault.c            |    2 +-
- fs/ioprio.c                    |    8 ++------
- include/linux/cred.h           |   16 ++++++++--------
- include/linux/user_namespace.h |    8 ++++----
- kernel/cred.c                  |   36 ++++++++++++++++++++++--------------
- kernel/signal.c                |   14 ++++++++------
- kernel/sys.c                   |   26 +++++++++-----------------
- kernel/user_namespace.c        |    4 ++--
- mm/oom_kill.c                  |    4 ++--
- security/commoncap.c           |    3 +--
- 10 files changed, 59 insertions(+), 62 deletions(-)
+ arch/s390/kernel/compat_linux.c   |   13 ++++++++-
+ fs/nfsd/auth.c                    |    5 ++-
+ fs/proc/array.c                   |    5 +++-
+ include/linux/cred.h              |    9 ++++---
+ kernel/groups.c                   |   48 +++++++++++++++++++-----------------
+ kernel/uid16.c                    |   14 +++++++++-
+ net/ipv4/ping.c                   |   11 ++++++--
+ net/sunrpc/auth_generic.c         |    4 +-
+ net/sunrpc/auth_gss/svcauth_gss.c |    7 ++++-
+ net/sunrpc/auth_unix.c            |   15 ++++++++---
+ net/sunrpc/svcauth_unix.c         |   18 ++++++++++---
+ security/keys/permission.c        |    3 +-
+ 12 files changed, 103 insertions(+), 49 deletions(-)
 
-diff --git a/arch/x86/mm/fault.c b/arch/x86/mm/fault.c
-index 3ecfd1a..76dcd9d 100644
---- a/arch/x86/mm/fault.c
-+++ b/arch/x86/mm/fault.c
-@@ -582,7 +582,7 @@ show_fault_oops(struct pt_regs *regs, unsigned long error_code,
- 		pte_t *pte = lookup_address(address, &level);
+diff --git a/arch/s390/kernel/compat_linux.c b/arch/s390/kernel/compat_linux.c
+index ab64bdb..5baac18 100644
+--- a/arch/s390/kernel/compat_linux.c
++++ b/arch/s390/kernel/compat_linux.c
+@@ -173,11 +173,14 @@ asmlinkage long sys32_setfsgid16(u16 gid)
  
- 		if (pte && pte_present(*pte) && !pte_exec(*pte))
--			printk(nx_warning, current_uid());
-+			printk(nx_warning, from_kuid(&init_user_ns, current_uid()));
+ static int groups16_to_user(u16 __user *grouplist, struct group_info *group_info)
+ {
++	struct user_namespace *user_ns = current_user_ns();
+ 	int i;
+ 	u16 group;
++	kgid_t kgid;
+ 
+ 	for (i = 0; i < group_info->ngroups; i++) {
+-		group = (u16)GROUP_AT(group_info, i);
++		kgid = GROUP_AT(group_info, i);
++		group = (u16)from_kgid_munged(user_ns, kgid);
+ 		if (put_user(group, grouplist+i))
+ 			return -EFAULT;
+ 	}
+@@ -187,13 +190,19 @@ static int groups16_to_user(u16 __user *grouplist, struct group_info *group_info
+ 
+ static int groups16_from_user(struct group_info *group_info, u16 __user *grouplist)
+ {
++	struct user_namespace *user_ns = current_user_ns();
+ 	int i;
+ 	u16 group;
+ 
+ 	for (i = 0; i < group_info->ngroups; i++) {
+ 		if (get_user(group, grouplist+i))
+ 			return  -EFAULT;
+-		GROUP_AT(group_info, i) = (gid_t)group;
++
++		kgid = make_kgid(user_ns, (gid_t)group);
++		if (!gid_valid(kgid))
++			return -EINVAL;
++
++		GROUP_AT(group_info, i) = kgid;
  	}
  
- 	printk(KERN_ALERT "BUG: unable to handle kernel ");
-diff --git a/fs/ioprio.c b/fs/ioprio.c
-index 8e35e96..2072e41 100644
---- a/fs/ioprio.c
-+++ b/fs/ioprio.c
-@@ -123,9 +123,7 @@ SYSCALL_DEFINE3(ioprio_set, int, which, int, who, int, ioprio)
- 				break;
+ 	return 0;
+diff --git a/fs/nfsd/auth.c b/fs/nfsd/auth.c
+index 79717a4..204438c 100644
+--- a/fs/nfsd/auth.c
++++ b/fs/nfsd/auth.c
+@@ -1,6 +1,7 @@
+ /* Copyright (C) 1995, 1996 Olaf Kirch <okir-pn4DOG8n3UYbFoVRYvo4fw@public.gmane.org> */
  
- 			do_each_thread(g, p) {
--				const struct cred *tcred = __task_cred(p);
--				kuid_t tcred_uid = make_kuid(tcred->user_ns, tcred->uid);
--				if (!uid_eq(tcred_uid, uid))
-+				if (!uid_eq(task_uid(p), uid))
- 					continue;
- 				ret = set_task_ioprio(p, ioprio);
- 				if (ret)
-@@ -220,9 +218,7 @@ SYSCALL_DEFINE2(ioprio_get, int, which, int, who)
- 				break;
+ #include <linux/sched.h>
++#include <linux/user_namespace.h>
+ #include "nfsd.h"
+ #include "auth.h"
  
- 			do_each_thread(g, p) {
--				const struct cred *tcred = __task_cred(p);
--				kuid_t tcred_uid = make_kuid(tcred->user_ns, tcred->uid);
--				if (!uid_eq(tcred_uid, user->uid))
-+				if (!uid_eq(task_uid(p), user->uid))
- 					continue;
- 				tmpio = get_task_ioprio(p);
- 				if (tmpio < 0)
+@@ -56,8 +57,8 @@ int nfsd_setuser(struct svc_rqst *rqstp, struct svc_export *exp)
+ 			goto oom;
+ 
+ 		for (i = 0; i < rqgi->ngroups; i++) {
+-			if (!GROUP_AT(rqgi, i))
+-				GROUP_AT(gi, i) = exp->ex_anon_gid;
++			if (gid_eq(GLOBAL_ROOT_GID, GROUP_AT(rqgi, i)))
++				GROUP_AT(gi, i) = make_kgid(&init_user_ns, exp->ex_anon_gid);
+ 			else
+ 				GROUP_AT(gi, i) = GROUP_AT(rqgi, i);
+ 		}
+diff --git a/fs/proc/array.c b/fs/proc/array.c
+index f9bd395..36a0a91 100644
+--- a/fs/proc/array.c
++++ b/fs/proc/array.c
+@@ -81,6 +81,7 @@
+ #include <linux/pid_namespace.h>
+ #include <linux/ptrace.h>
+ #include <linux/tracehook.h>
++#include <linux/user_namespace.h>
+ 
+ #include <asm/pgtable.h>
+ #include <asm/processor.h>
+@@ -161,6 +162,7 @@ static inline const char *get_task_state(struct task_struct *tsk)
+ static inline void task_state(struct seq_file *m, struct pid_namespace *ns,
+ 				struct pid *pid, struct task_struct *p)
+ {
++	struct user_namespace *user_ns = current_user_ns();
+ 	struct group_info *group_info;
+ 	int g;
+ 	struct fdtable *fdt = NULL;
+@@ -205,7 +207,8 @@ static inline void task_state(struct seq_file *m, struct pid_namespace *ns,
+ 	task_unlock(p);
+ 
+ 	for (g = 0; g < min(group_info->ngroups, NGROUPS_SMALL); g++)
+-		seq_printf(m, "%d ", GROUP_AT(group_info, g));
++		seq_printf(m, "%d ",
++			   from_kgid_munged(user_ns, GROUP_AT(group_info, g)));
+ 	put_cred(cred);
+ 
+ 	seq_putc(m, '\n');
 diff --git a/include/linux/cred.h b/include/linux/cred.h
-index 0ab3cda..fac0579 100644
+index 2c60ec8..0ab3cda 100644
 --- a/include/linux/cred.h
 +++ b/include/linux/cred.h
-@@ -123,14 +123,14 @@ struct cred {
- #define CRED_MAGIC	0x43736564
- #define CRED_MAGIC_DEAD	0x44656144
- #endif
--	uid_t		uid;		/* real UID of the task */
--	gid_t		gid;		/* real GID of the task */
--	uid_t		suid;		/* saved UID of the task */
--	gid_t		sgid;		/* saved GID of the task */
--	uid_t		euid;		/* effective UID of the task */
--	gid_t		egid;		/* effective GID of the task */
--	uid_t		fsuid;		/* UID for VFS ops */
--	gid_t		fsgid;		/* GID for VFS ops */
-+	kuid_t		uid;		/* real UID of the task */
-+	kgid_t		gid;		/* real GID of the task */
-+	kuid_t		suid;		/* saved UID of the task */
-+	kgid_t		sgid;		/* saved GID of the task */
-+	kuid_t		euid;		/* effective UID of the task */
-+	kgid_t		egid;		/* effective GID of the task */
-+	kuid_t		fsuid;		/* UID for VFS ops */
-+	kgid_t		fsgid;		/* GID for VFS ops */
- 	unsigned	securebits;	/* SUID-less security management */
- 	kernel_cap_t	cap_inheritable; /* caps our children can inherit */
- 	kernel_cap_t	cap_permitted;	/* caps we're permitted */
-diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-index 4c9846d..a2c6145 100644
---- a/include/linux/user_namespace.h
-+++ b/include/linux/user_namespace.h
-@@ -70,15 +70,15 @@ static inline void put_user_ns(struct user_namespace *ns)
- #endif
+@@ -17,6 +17,7 @@
+ #include <linux/key.h>
+ #include <linux/selinux.h>
+ #include <linux/atomic.h>
++#include <linux/uidgid.h>
  
- static inline uid_t user_ns_map_uid(struct user_namespace *to,
--	const struct cred *cred, uid_t uid)
-+	const struct cred *cred, kuid_t uid)
+ struct user_struct;
+ struct cred;
+@@ -26,14 +27,14 @@ struct inode;
+  * COW Supplementary groups list
+  */
+ #define NGROUPS_SMALL		32
+-#define NGROUPS_PER_BLOCK	((unsigned int)(PAGE_SIZE / sizeof(gid_t)))
++#define NGROUPS_PER_BLOCK	((unsigned int)(PAGE_SIZE / sizeof(kgid_t)))
+ 
+ struct group_info {
+ 	atomic_t	usage;
+ 	int		ngroups;
+ 	int		nblocks;
+-	gid_t		small_block[NGROUPS_SMALL];
+-	gid_t		*blocks[0];
++	kgid_t		small_block[NGROUPS_SMALL];
++	kgid_t		*blocks[0];
+ };
+ 
+ /**
+@@ -66,7 +67,7 @@ extern struct group_info init_groups;
+ extern void groups_free(struct group_info *);
+ extern int set_current_groups(struct group_info *);
+ extern int set_groups(struct cred *, struct group_info *);
+-extern int groups_search(const struct group_info *, gid_t);
++extern int groups_search(const struct group_info *, kgid_t);
+ 
+ /* access the groups "array" with this macro */
+ #define GROUP_AT(gi, i) \
+diff --git a/kernel/groups.c b/kernel/groups.c
+index 99b53d1..84156f2 100644
+--- a/kernel/groups.c
++++ b/kernel/groups.c
+@@ -31,7 +31,7 @@ struct group_info *groups_alloc(int gidsetsize)
+ 		group_info->blocks[0] = group_info->small_block;
+ 	else {
+ 		for (i = 0; i < nblocks; i++) {
+-			gid_t *b;
++			kgid_t *b;
+ 			b = (void *)__get_free_page(GFP_USER);
+ 			if (!b)
+ 				goto out_undo_partial_alloc;
+@@ -66,18 +66,15 @@ EXPORT_SYMBOL(groups_free);
+ static int groups_to_user(gid_t __user *grouplist,
+ 			  const struct group_info *group_info)
  {
--	return from_kuid_munged(to, make_kuid(cred->user_ns, uid));
-+	return from_kuid_munged(to, uid);
++	struct user_namespace *user_ns = current_user_ns();
+ 	int i;
+ 	unsigned int count = group_info->ngroups;
+ 
+-	for (i = 0; i < group_info->nblocks; i++) {
+-		unsigned int cp_count = min(NGROUPS_PER_BLOCK, count);
+-		unsigned int len = cp_count * sizeof(*grouplist);
+-
+-		if (copy_to_user(grouplist, group_info->blocks[i], len))
++	for (i = 0; i < count; i++) {
++		gid_t gid;
++		gid = from_kgid_munged(user_ns, GROUP_AT(group_info, i));
++		if (put_user(gid, grouplist+i))
+ 			return -EFAULT;
+-
+-		grouplist += NGROUPS_PER_BLOCK;
+-		count -= cp_count;
+ 	}
+ 	return 0;
+ }
+@@ -86,18 +83,21 @@ static int groups_to_user(gid_t __user *grouplist,
+ static int groups_from_user(struct group_info *group_info,
+     gid_t __user *grouplist)
+ {
++	struct user_namespace *user_ns = current_user_ns();
+ 	int i;
+ 	unsigned int count = group_info->ngroups;
+ 
+-	for (i = 0; i < group_info->nblocks; i++) {
+-		unsigned int cp_count = min(NGROUPS_PER_BLOCK, count);
+-		unsigned int len = cp_count * sizeof(*grouplist);
+-
+-		if (copy_from_user(group_info->blocks[i], grouplist, len))
++	for (i = 0; i < count; i++) {
++		gid_t gid;
++		kgid_t kgid;
++		if (get_user(gid, grouplist+i))
+ 			return -EFAULT;
+ 
+-		grouplist += NGROUPS_PER_BLOCK;
+-		count -= cp_count;
++		kgid = make_kgid(user_ns, gid);
++		if (!gid_valid(kgid))
++			return -EINVAL;
++
++		GROUP_AT(group_info, i) = kgid;
+ 	}
+ 	return 0;
+ }
+@@ -117,9 +117,9 @@ static void groups_sort(struct group_info *group_info)
+ 		for (base = 0; base < max; base++) {
+ 			int left = base;
+ 			int right = left + stride;
+-			gid_t tmp = GROUP_AT(group_info, right);
++			kgid_t tmp = GROUP_AT(group_info, right);
+ 
+-			while (left >= 0 && GROUP_AT(group_info, left) > tmp) {
++			while (left >= 0 && gid_gt(GROUP_AT(group_info, left), tmp)) {
+ 				GROUP_AT(group_info, right) =
+ 				    GROUP_AT(group_info, left);
+ 				right = left;
+@@ -132,7 +132,7 @@ static void groups_sort(struct group_info *group_info)
  }
  
- static inline gid_t user_ns_map_gid(struct user_namespace *to,
--	const struct cred *cred, gid_t gid)
-+	const struct cred *cred, kgid_t gid)
+ /* a simple bsearch */
+-int groups_search(const struct group_info *group_info, gid_t grp)
++int groups_search(const struct group_info *group_info, kgid_t grp)
  {
--	return from_kgid_munged(to, make_kgid(cred->user_ns, gid));
-+	return from_kgid_munged(to, gid);
+ 	unsigned int left, right;
+ 
+@@ -143,9 +143,9 @@ int groups_search(const struct group_info *group_info, gid_t grp)
+ 	right = group_info->ngroups;
+ 	while (left < right) {
+ 		unsigned int mid = (left+right)/2;
+-		if (grp > GROUP_AT(group_info, mid))
++		if (gid_gt(grp, GROUP_AT(group_info, mid)))
+ 			left = mid + 1;
+-		else if (grp < GROUP_AT(group_info, mid))
++		else if (gid_lt(grp, GROUP_AT(group_info, mid)))
+ 			right = mid;
+ 		else
+ 			return 1;
+@@ -262,7 +262,8 @@ int in_group_p(gid_t grp)
+ 	int retval = 1;
+ 
+ 	if (grp != cred->fsgid)
+-		retval = groups_search(cred->group_info, grp);
++		retval = groups_search(cred->group_info,
++				       make_kgid(cred->user_ns, grp));
+ 	return retval;
  }
  
- #endif /* _LINUX_USER_H */
-diff --git a/kernel/cred.c b/kernel/cred.c
-index 7a0d806..eddc5e2 100644
---- a/kernel/cred.c
-+++ b/kernel/cred.c
-@@ -49,6 +49,14 @@ struct cred init_cred = {
- 	.subscribers		= ATOMIC_INIT(2),
- 	.magic			= CRED_MAGIC,
- #endif
-+	.uid			= GLOBAL_ROOT_UID,
-+	.gid			= GLOBAL_ROOT_GID,
-+	.suid			= GLOBAL_ROOT_UID,
-+	.sgid			= GLOBAL_ROOT_GID,
-+	.euid			= GLOBAL_ROOT_UID,
-+	.egid			= GLOBAL_ROOT_GID,
-+	.fsuid			= GLOBAL_ROOT_UID,
-+	.fsgid			= GLOBAL_ROOT_GID,
- 	.securebits		= SECUREBITS_DEFAULT,
- 	.cap_inheritable	= CAP_EMPTY_SET,
- 	.cap_permitted		= CAP_FULL_SET,
-@@ -488,10 +496,10 @@ int commit_creds(struct cred *new)
- 	get_cred(new); /* we will require a ref for the subj creds too */
+@@ -274,7 +275,8 @@ int in_egroup_p(gid_t grp)
+ 	int retval = 1;
  
- 	/* dumpability changes */
--	if (old->euid != new->euid ||
--	    old->egid != new->egid ||
--	    old->fsuid != new->fsuid ||
--	    old->fsgid != new->fsgid ||
-+	if (!uid_eq(old->euid, new->euid) ||
-+	    !gid_eq(old->egid, new->egid) ||
-+	    !uid_eq(old->fsuid, new->fsuid) ||
-+	    !gid_eq(old->fsgid, new->fsgid) ||
- 	    !cap_issubset(new->cap_permitted, old->cap_permitted)) {
- 		if (task->mm)
- 			set_dumpable(task->mm, suid_dumpable);
-@@ -500,9 +508,9 @@ int commit_creds(struct cred *new)
+ 	if (grp != cred->egid)
+-		retval = groups_search(cred->group_info, grp);
++		retval = groups_search(cred->group_info,
++				       make_kgid(cred->user_ns, grp));
+ 	return retval;
+ }
+ 
+diff --git a/kernel/uid16.c b/kernel/uid16.c
+index 51c6e89..e530bc3 100644
+--- a/kernel/uid16.c
++++ b/kernel/uid16.c
+@@ -134,11 +134,14 @@ SYSCALL_DEFINE1(setfsgid16, old_gid_t, gid)
+ static int groups16_to_user(old_gid_t __user *grouplist,
+     struct group_info *group_info)
+ {
++	struct user_namespace *user_ns = current_user_ns();
+ 	int i;
+ 	old_gid_t group;
++	kgid_t kgid;
+ 
+ 	for (i = 0; i < group_info->ngroups; i++) {
+-		group = high2lowgid(GROUP_AT(group_info, i));
++		kgid = GROUP_AT(group_info, i);
++		group = high2lowgid(from_kgid_munged(user_ns, kgid));
+ 		if (put_user(group, grouplist+i))
+ 			return -EFAULT;
+ 	}
+@@ -149,13 +152,20 @@ static int groups16_to_user(old_gid_t __user *grouplist,
+ static int groups16_from_user(struct group_info *group_info,
+     old_gid_t __user *grouplist)
+ {
++	struct user_namespace *user_ns = current_user_ns();
+ 	int i;
+ 	old_gid_t group;
++	kgid_t kgid;
+ 
+ 	for (i = 0; i < group_info->ngroups; i++) {
+ 		if (get_user(group, grouplist+i))
+ 			return  -EFAULT;
+-		GROUP_AT(group_info, i) = low2highgid(group);
++
++		kgid = make_kgid(user_ns, low2highgid(group));
++		if (!gid_valid(kgid))
++			return -EINVAL;
++
++		GROUP_AT(group_info, i) = kgid;
  	}
  
- 	/* alter the thread keyring */
--	if (new->fsuid != old->fsuid)
-+	if (!uid_eq(new->fsuid, old->fsuid))
- 		key_fsuid_changed(task);
--	if (new->fsgid != old->fsgid)
-+	if (!gid_eq(new->fsgid, old->fsgid))
- 		key_fsgid_changed(task);
+ 	return 0;
+diff --git a/net/ipv4/ping.c b/net/ipv4/ping.c
+index 50009c7..9d3044f 100644
+--- a/net/ipv4/ping.c
++++ b/net/ipv4/ping.c
+@@ -205,17 +205,22 @@ static int ping_init_sock(struct sock *sk)
+ 	gid_t range[2];
+ 	struct group_info *group_info = get_current_groups();
+ 	int i, j, count = group_info->ngroups;
++	kgid_t low, high;
  
- 	/* do it
-@@ -519,16 +527,16 @@ int commit_creds(struct cred *new)
- 	alter_cred_subscribers(old, -2);
+ 	inet_get_ping_group_range_net(net, range, range+1);
++	low = make_kgid(&init_user_ns, range[0]);
++	high = make_kgid(&init_user_ns, range[1]);
++	if (!gid_valid(low) || !gid_valid(high) || gid_lt(high, low))
++		return -EACCES;
++
+ 	if (range[0] <= group && group <= range[1])
+ 		return 0;
  
- 	/* send notifications */
--	if (new->uid   != old->uid  ||
--	    new->euid  != old->euid ||
--	    new->suid  != old->suid ||
--	    new->fsuid != old->fsuid)
-+	if (!uid_eq(new->uid,   old->uid)  ||
-+	    !uid_eq(new->euid,  old->euid) ||
-+	    !uid_eq(new->suid,  old->suid) ||
-+	    !uid_eq(new->fsuid, old->fsuid))
- 		proc_id_connector(task, PROC_EVENT_UID);
- 
--	if (new->gid   != old->gid  ||
--	    new->egid  != old->egid ||
--	    new->sgid  != old->sgid ||
--	    new->fsgid != old->fsgid)
-+	if (!gid_eq(new->gid,   old->gid)  ||
-+	    !gid_eq(new->egid,  old->egid) ||
-+	    !gid_eq(new->sgid,  old->sgid) ||
-+	    !gid_eq(new->fsgid, old->fsgid))
- 		proc_id_connector(task, PROC_EVENT_GID);
- 
- 	/* release the old obj and subj refs both */
-diff --git a/kernel/signal.c b/kernel/signal.c
-index e2c5d84..2734dc9 100644
---- a/kernel/signal.c
-+++ b/kernel/signal.c
-@@ -1038,8 +1038,10 @@ static inline void userns_fixup_signal_uid(struct siginfo *info, struct task_str
- 	if (SI_FROMKERNEL(info))
- 		return;
- 
--	info->si_uid = user_ns_map_uid(task_cred_xxx(t, user_ns),
--					current_cred(), info->si_uid);
-+	rcu_read_lock();
-+	info->si_uid = from_kuid_munged(task_cred_xxx(t, user_ns),
-+					make_kuid(current_user_ns(), info->si_uid));
-+	rcu_read_unlock();
- }
- #else
- static inline void userns_fixup_signal_uid(struct siginfo *info, struct task_struct *t)
-@@ -1106,7 +1108,7 @@ static int __send_signal(int sig, struct siginfo *info, struct task_struct *t,
- 			q->info.si_code = SI_USER;
- 			q->info.si_pid = task_tgid_nr_ns(current,
- 							task_active_pid_ns(t));
--			q->info.si_uid = current_uid();
-+			q->info.si_uid = from_kuid_munged(current_user_ns(), current_uid());
- 			break;
- 		case (unsigned long) SEND_SIG_PRIV:
- 			q->info.si_signo = sig;
-@@ -1973,7 +1975,7 @@ static void ptrace_do_notify(int signr, int exit_code, int why)
- 	info.si_signo = signr;
- 	info.si_code = exit_code;
- 	info.si_pid = task_pid_vnr(current);
--	info.si_uid = current_uid();
-+	info.si_uid = from_kuid_munged(current_user_ns(), current_uid());
- 
- 	/* Let the debugger run.  */
- 	ptrace_stop(exit_code, why, 1, &info);
-@@ -2828,7 +2830,7 @@ SYSCALL_DEFINE2(kill, pid_t, pid, int, sig)
- 	info.si_errno = 0;
- 	info.si_code = SI_USER;
- 	info.si_pid = task_tgid_vnr(current);
--	info.si_uid = current_uid();
-+	info.si_uid = from_kuid_munged(current_user_ns(), current_uid());
- 
- 	return kill_something_info(sig, &info, pid);
- }
-@@ -2871,7 +2873,7 @@ static int do_tkill(pid_t tgid, pid_t pid, int sig)
- 	info.si_errno = 0;
- 	info.si_code = SI_TKILL;
- 	info.si_pid = task_tgid_vnr(current);
--	info.si_uid = current_uid();
-+	info.si_uid = from_kuid_munged(current_user_ns(), current_uid());
- 
- 	return do_send_specific(tgid, pid, sig, &info);
- }
-diff --git a/kernel/sys.c b/kernel/sys.c
-index f0c43b4..3996281 100644
---- a/kernel/sys.c
-+++ b/kernel/sys.c
-@@ -175,7 +175,6 @@ SYSCALL_DEFINE3(setpriority, int, which, int, who, int, niceval)
- 	const struct cred *cred = current_cred();
- 	int error = -EINVAL;
- 	struct pid *pgrp;
--	kuid_t cred_uid;
- 	kuid_t uid;
- 
- 	if (which > PRIO_USER || which < PRIO_PROCESS)
-@@ -209,22 +208,19 @@ SYSCALL_DEFINE3(setpriority, int, which, int, who, int, niceval)
- 			} while_each_pid_thread(pgrp, PIDTYPE_PGID, p);
- 			break;
- 		case PRIO_USER:
--			cred_uid = make_kuid(cred->user_ns, cred->uid);
- 			uid = make_kuid(cred->user_ns, who);
- 			user = cred->user;
- 			if (!who)
--				uid = cred_uid;
--			else if (!uid_eq(uid, cred_uid) &&
-+				uid = cred->uid;
-+			else if (!uid_eq(uid, cred->uid) &&
- 				 !(user = find_user(uid)))
- 				goto out_unlock;	/* No processes for this user */
- 
- 			do_each_thread(g, p) {
--				const struct cred *tcred = __task_cred(p);
--				kuid_t tcred_uid = make_kuid(tcred->user_ns, tcred->uid);
--				if (uid_eq(tcred_uid, uid))
-+				if (uid_eq(task_uid(p), uid))
- 					error = set_one_prio(p, niceval, error);
- 			} while_each_thread(g, p);
--			if (!uid_eq(uid, cred_uid))
-+			if (!uid_eq(uid, cred->uid))
- 				free_uid(user);		/* For find_user() */
- 			break;
- 	}
-@@ -248,7 +244,6 @@ SYSCALL_DEFINE2(getpriority, int, which, int, who)
- 	const struct cred *cred = current_cred();
- 	long niceval, retval = -ESRCH;
- 	struct pid *pgrp;
--	kuid_t cred_uid;
- 	kuid_t uid;
- 
- 	if (which > PRIO_USER || which < PRIO_PROCESS)
-@@ -280,25 +275,22 @@ SYSCALL_DEFINE2(getpriority, int, which, int, who)
- 			} while_each_pid_thread(pgrp, PIDTYPE_PGID, p);
- 			break;
- 		case PRIO_USER:
--			cred_uid = make_kuid(cred->user_ns, cred->uid);
- 			uid = make_kuid(cred->user_ns, who);
- 			user = cred->user;
- 			if (!who)
--				uid = cred_uid;
--			else if (!uid_eq(uid, cred_uid) &&
-+				uid = cred->uid;
-+			else if (!uid_eq(uid, cred->uid) &&
- 				 !(user = find_user(uid)))
- 				goto out_unlock;	/* No processes for this user */
- 
- 			do_each_thread(g, p) {
--				const struct cred *tcred = __task_cred(p);
--				kuid_t tcred_uid = make_kuid(tcred->user_ns, tcred->uid);
--				if (uid_eq(tcred_uid, uid)) {
-+				if (uid_eq(task_uid(p), uid)) {
- 					niceval = 20 - task_nice(p);
- 					if (niceval > retval)
- 						retval = niceval;
- 				}
- 			} while_each_thread(g, p);
--			if (!uid_eq(uid, cred_uid))
-+			if (!uid_eq(uid, cred->uid))
- 				free_uid(user);		/* for find_user() */
- 			break;
- 	}
-@@ -641,7 +633,7 @@ static int set_user(struct cred *new)
- {
- 	struct user_struct *new_user;
- 
--	new_user = alloc_uid(make_kuid(new->user_ns, new->uid));
-+	new_user = alloc_uid(new->uid);
- 	if (!new_user)
- 		return -EAGAIN;
- 
-diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index 9991bac..0683dbf 100644
---- a/kernel/user_namespace.c
-+++ b/kernel/user_namespace.c
-@@ -36,8 +36,8 @@ static bool new_idmap_permitted(struct user_namespace *ns, int cap_setid,
- int create_user_ns(struct cred *new)
- {
- 	struct user_namespace *ns, *parent_ns = new->user_ns;
--	kuid_t owner = make_kuid(new->user_ns, new->euid);
--	kgid_t group = make_kgid(new->user_ns, new->egid);
-+	kuid_t owner = new->euid;
-+	kgid_t group = new->egid;
- 
- 	/* The creator needs a mapping in the parent user namespace
- 	 * or else we won't be able to reasonably tell userspace who
-diff --git a/mm/oom_kill.c b/mm/oom_kill.c
-index 46bf2ed5..9f09a1f 100644
---- a/mm/oom_kill.c
-+++ b/mm/oom_kill.c
-@@ -410,8 +410,8 @@ static void dump_tasks(const struct mem_cgroup *memcg, const nodemask_t *nodemas
+ 	for (i = 0; i < group_info->nblocks; i++) {
+ 		int cp_count = min_t(int, NGROUPS_PER_BLOCK, count);
+-
+ 		for (j = 0; j < cp_count; j++) {
+-			group = group_info->blocks[i][j];
+-			if (range[0] <= group && group <= range[1])
++			kgid_t gid = group_info->blocks[i][j];
++			if (gid_lte(low, gid) && gid_lte(gid, high))
+ 				return 0;
  		}
  
- 		pr_info("[%5d] %5d %5d %8lu %8lu %3u     %3d         %5d %s\n",
--			task->pid, task_uid(task), task->tgid,
--			task->mm->total_vm, get_mm_rss(task->mm),
-+			task->pid, from_kuid(&init_user_ns, task_uid(task)),
-+			task->tgid, task->mm->total_vm, get_mm_rss(task->mm),
- 			task_cpu(task), task->signal->oom_adj,
- 			task->signal->oom_score_adj, task->comm);
- 		task_unlock(task);
-diff --git a/security/commoncap.c b/security/commoncap.c
-index f2399d8..dbd465a 100644
---- a/security/commoncap.c
-+++ b/security/commoncap.c
-@@ -77,8 +77,7 @@ int cap_capable(const struct cred *cred, struct user_namespace *targ_ns,
- {
- 	for (;;) {
- 		/* The owner of the user namespace has all caps. */
--		if (targ_ns != &init_user_ns && uid_eq(targ_ns->owner,
--						       make_kuid(cred->user_ns, cred->euid)))
-+		if (targ_ns != &init_user_ns && uid_eq(targ_ns->owner, cred->euid))
- 			return 0;
+diff --git a/net/sunrpc/auth_generic.c b/net/sunrpc/auth_generic.c
+index 75762f3..6ed6f20 100644
+--- a/net/sunrpc/auth_generic.c
++++ b/net/sunrpc/auth_generic.c
+@@ -160,8 +160,8 @@ generic_match(struct auth_cred *acred, struct rpc_cred *cred, int flags)
+ 	if (gcred->acred.group_info->ngroups != acred->group_info->ngroups)
+ 		goto out_nomatch;
+ 	for (i = 0; i < gcred->acred.group_info->ngroups; i++) {
+-		if (GROUP_AT(gcred->acred.group_info, i) !=
+-				GROUP_AT(acred->group_info, i))
++		if (!gid_eq(GROUP_AT(gcred->acred.group_info, i),
++				GROUP_AT(acred->group_info, i)))
+ 			goto out_nomatch;
+ 	}
+ out_match:
+diff --git a/net/sunrpc/auth_gss/svcauth_gss.c b/net/sunrpc/auth_gss/svcauth_gss.c
+index 1600cfb..28b62db 100644
+--- a/net/sunrpc/auth_gss/svcauth_gss.c
++++ b/net/sunrpc/auth_gss/svcauth_gss.c
+@@ -41,6 +41,7 @@
+ #include <linux/types.h>
+ #include <linux/module.h>
+ #include <linux/pagemap.h>
++#include <linux/user_namespace.h>
  
- 		/* Do we have the necessary capabilities? */
+ #include <linux/sunrpc/auth_gss.h>
+ #include <linux/sunrpc/gss_err.h>
+@@ -470,9 +471,13 @@ static int rsc_parse(struct cache_detail *cd,
+ 		status = -EINVAL;
+ 		for (i=0; i<N; i++) {
+ 			gid_t gid;
++			kgid_t kgid;
+ 			if (get_int(&mesg, &gid))
+ 				goto out;
+-			GROUP_AT(rsci.cred.cr_group_info, i) = gid;
++			kgid = make_kgid(&init_user_ns, gid);
++			if (!gid_valid(kgid))
++				goto out;
++			GROUP_AT(rsci.cred.cr_group_info, i) = kgid;
+ 		}
+ 
+ 		/* mech name */
+diff --git a/net/sunrpc/auth_unix.c b/net/sunrpc/auth_unix.c
+index e50502d..52c5abd 100644
+--- a/net/sunrpc/auth_unix.c
++++ b/net/sunrpc/auth_unix.c
+@@ -12,6 +12,7 @@
+ #include <linux/module.h>
+ #include <linux/sunrpc/clnt.h>
+ #include <linux/sunrpc/auth.h>
++#include <linux/user_namespace.h>
+ 
+ #define NFS_NGROUPS	16
+ 
+@@ -78,8 +79,11 @@ unx_create_cred(struct rpc_auth *auth, struct auth_cred *acred, int flags)
+ 		groups = NFS_NGROUPS;
+ 
+ 	cred->uc_gid = acred->gid;
+-	for (i = 0; i < groups; i++)
+-		cred->uc_gids[i] = GROUP_AT(acred->group_info, i);
++	for (i = 0; i < groups; i++) {
++		gid_t gid;
++		gid = from_kgid(&init_user_ns, GROUP_AT(acred->group_info, i));
++		cred->uc_gids[i] = gid;
++	}
+ 	if (i < NFS_NGROUPS)
+ 		cred->uc_gids[i] = NOGROUP;
+ 
+@@ -126,9 +130,12 @@ unx_match(struct auth_cred *acred, struct rpc_cred *rcred, int flags)
+ 		groups = acred->group_info->ngroups;
+ 	if (groups > NFS_NGROUPS)
+ 		groups = NFS_NGROUPS;
+-	for (i = 0; i < groups ; i++)
+-		if (cred->uc_gids[i] != GROUP_AT(acred->group_info, i))
++	for (i = 0; i < groups ; i++) {
++		gid_t gid;
++		gid = from_kgid(&init_user_ns, GROUP_AT(acred->group_info, i));
++		if (cred->uc_gids[i] != gid)
+ 			return 0;
++	}
+ 	if (groups < NFS_NGROUPS &&
+ 	    cred->uc_gids[groups] != NOGROUP)
+ 		return 0;
+diff --git a/net/sunrpc/svcauth_unix.c b/net/sunrpc/svcauth_unix.c
+index 521d8f7..71ec853 100644
+--- a/net/sunrpc/svcauth_unix.c
++++ b/net/sunrpc/svcauth_unix.c
+@@ -14,6 +14,7 @@
+ #include <net/sock.h>
+ #include <net/ipv6.h>
+ #include <linux/kernel.h>
++#include <linux/user_namespace.h>
+ #define RPCDBG_FACILITY	RPCDBG_AUTH
+ 
+ #include <linux/sunrpc/clnt.h>
+@@ -530,11 +531,15 @@ static int unix_gid_parse(struct cache_detail *cd,
+ 
+ 	for (i = 0 ; i < gids ; i++) {
+ 		int gid;
++		kgid_t kgid;
+ 		rv = get_int(&mesg, &gid);
+ 		err = -EINVAL;
+ 		if (rv)
+ 			goto out;
+-		GROUP_AT(ug.gi, i) = gid;
++		kgid = make_kgid(&init_user_ns, gid);
++		if (!gid_valid(kgid))
++			goto out;
++		GROUP_AT(ug.gi, i) = kgid;
+ 	}
+ 
+ 	ugp = unix_gid_lookup(cd, uid);
+@@ -563,6 +568,7 @@ static int unix_gid_show(struct seq_file *m,
+ 			 struct cache_detail *cd,
+ 			 struct cache_head *h)
+ {
++	struct user_namespace *user_ns = current_user_ns();
+ 	struct unix_gid *ug;
+ 	int i;
+ 	int glen;
+@@ -580,7 +586,7 @@ static int unix_gid_show(struct seq_file *m,
+ 
+ 	seq_printf(m, "%u %d:", ug->uid, glen);
+ 	for (i = 0; i < glen; i++)
+-		seq_printf(m, " %d", GROUP_AT(ug->gi, i));
++		seq_printf(m, " %d", from_kgid_munged(user_ns, GROUP_AT(ug->gi, i)));
+ 	seq_printf(m, "\n");
+ 	return 0;
+ }
+@@ -831,8 +837,12 @@ svcauth_unix_accept(struct svc_rqst *rqstp, __be32 *authp)
+ 	cred->cr_group_info = groups_alloc(slen);
+ 	if (cred->cr_group_info == NULL)
+ 		return SVC_CLOSE;
+-	for (i = 0; i < slen; i++)
+-		GROUP_AT(cred->cr_group_info, i) = svc_getnl(argv);
++	for (i = 0; i < slen; i++) {
++		kgid_t kgid = make_kgid(&init_user_ns, svc_getnl(argv));
++		if (!gid_valid(kgid))
++			goto badcred;
++		GROUP_AT(cred->cr_group_info, i) = kgid;
++	}
+ 	if (svc_getu32(argv) != htonl(RPC_AUTH_NULL) || svc_getu32(argv) != 0) {
+ 		*authp = rpc_autherr_badverf;
+ 		return SVC_DENIED;
+diff --git a/security/keys/permission.c b/security/keys/permission.c
+index e146cbd..5442900 100644
+--- a/security/keys/permission.c
++++ b/security/keys/permission.c
+@@ -53,7 +53,8 @@ int key_task_permission(const key_ref_t key_ref, const struct cred *cred,
+ 			goto use_these_perms;
+ 		}
+ 
+-		ret = groups_search(cred->group_info, key->gid);
++		ret = groups_search(cred->group_info,
++				    make_kgid(current_user_ns(), key->gid));
+ 		if (ret) {
+ 			kperm = key->perm >> 8;
+ 			goto use_these_perms;
 -- 
 1.7.2.5
