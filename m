@@ -1,7 +1,7 @@
 From: "\"Eric W. Beiderman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 40/43] userns: Convert sysfs to use kgid/kuid where appropriate
-Date: Sat,  7 Apr 2012 22:15:36 -0700
-Message-ID: <1333862139-31737-40-git-send-email-ebiederm__13140.8599125736$1333862137$gmane$org@xmission.com>
+Subject: [PATCH 42/43] userns: Convert cgroup permission checks to use uid_eq
+Date: Sat,  7 Apr 2012 22:15:38 -0700
+Message-ID: <1333862139-31737-42-git-send-email-ebiederm__4300.34167734465$1333862147$gmane$org@xmission.com>
 References: <m11unyn70b.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -25,23 +25,25 @@ From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/sysfs/inode.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+ kernel/cgroup.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/fs/sysfs/inode.c b/fs/sysfs/inode.c
-index feb2d69..907c2b3 100644
---- a/fs/sysfs/inode.c
-+++ b/fs/sysfs/inode.c
-@@ -62,8 +62,8 @@ static struct sysfs_inode_attrs *sysfs_init_inode_attrs(struct sysfs_dirent *sd)
- 
- 	/* assign default attributes */
- 	iattrs->ia_mode = sd->s_mode;
--	iattrs->ia_uid = 0;
--	iattrs->ia_gid = 0;
-+	iattrs->ia_uid = GLOBAL_ROOT_UID;
-+	iattrs->ia_gid = GLOBAL_ROOT_GID;
- 	iattrs->ia_atime = iattrs->ia_mtime = iattrs->ia_ctime = CURRENT_TIME;
- 
- 	return attrs;
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index ed64cca..c8329b0 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -2160,9 +2160,9 @@ retry_find_task:
+ 		 * only need to check permissions on one of them.
+ 		 */
+ 		tcred = __task_cred(tsk);
+-		if (cred->euid &&
+-		    cred->euid != tcred->uid &&
+-		    cred->euid != tcred->suid) {
++		if (!uid_eq(cred->euid, GLOBAL_ROOT_UID) &&
++		    !uid_eq(cred->euid, tcred->uid) &&
++		    !uid_eq(cred->euid, tcred->suid)) {
+ 			rcu_read_unlock();
+ 			ret = -EACCES;
+ 			goto out_unlock_cgroup;
 -- 
 1.7.2.5
