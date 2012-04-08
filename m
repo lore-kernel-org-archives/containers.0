@@ -1,8 +1,7 @@
 From: "\"Eric W. Beiderman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 29/43] userns: Convert stat to return values mapped from kuids
-	and kgids
-Date: Sat,  7 Apr 2012 22:15:25 -0700
-Message-ID: <1333862139-31737-29-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH 22/43] userns: Convert capabilities related permsion checks
+Date: Sat,  7 Apr 2012 22:15:18 -0700
+Message-ID: <1333862139-31737-22-git-send-email-ebiederm@xmission.com>
 References: <m11unyn70b.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,159 +23,157 @@ List-Id: containers.vger.kernel.org
 
 From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-- Store uids and gids with kuid_t and kgid_t in struct kstat
-- Convert uid and gids to userspace usable values with
-  from_kuid and from_kgid
+- Use uid_eq when comparing kuids
+  Use gid_eq when comparing kgids
+- Use __make_kuid(user_ns, 0) to talk about the user_namespace root uid
+  Use __make_kgid(user_ns, 0) to talk about the user_namespace root gid
 
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- arch/arm/kernel/sys_oabi-compat.c |    4 ++--
- arch/parisc/hpux/fs.c             |    4 ++--
- arch/s390/kernel/compat_linux.c   |    4 ++--
- arch/sparc/kernel/sys_sparc32.c   |    4 ++--
- arch/x86/ia32/sys_ia32.c          |    4 ++--
- fs/compat.c                       |    4 ++--
- fs/stat.c                         |    8 ++++----
- include/linux/stat.h              |    5 +++--
- 8 files changed, 19 insertions(+), 18 deletions(-)
+ fs/open.c            |    3 ++-
+ security/commoncap.c |   43 ++++++++++++++++++++++++++++---------------
+ 2 files changed, 30 insertions(+), 16 deletions(-)
 
-diff --git a/arch/arm/kernel/sys_oabi-compat.c b/arch/arm/kernel/sys_oabi-compat.c
-index af0aaeb..3e94811 100644
---- a/arch/arm/kernel/sys_oabi-compat.c
-+++ b/arch/arm/kernel/sys_oabi-compat.c
-@@ -124,8 +124,8 @@ static long cp_oldabi_stat64(struct kstat *stat,
- 	tmp.__st_ino = stat->ino;
- 	tmp.st_mode = stat->mode;
- 	tmp.st_nlink = stat->nlink;
--	tmp.st_uid = stat->uid;
--	tmp.st_gid = stat->gid;
-+	tmp.st_uid = from_kuid_munged(current_user_ns(), stat->uid);
-+	tmp.st_gid = from_kgid_munged(current_user_ns(), stat->gid);
- 	tmp.st_rdev = huge_encode_dev(stat->rdev);
- 	tmp.st_size = stat->size;
- 	tmp.st_blocks = stat->blocks;
-diff --git a/arch/parisc/hpux/fs.c b/arch/parisc/hpux/fs.c
-index 0dc8543..c71eb6c 100644
---- a/arch/parisc/hpux/fs.c
-+++ b/arch/parisc/hpux/fs.c
-@@ -159,8 +159,8 @@ static int cp_hpux_stat(struct kstat *stat, struct hpux_stat64 __user *statbuf)
- 	tmp.st_ino = stat->ino;
- 	tmp.st_mode = stat->mode;
- 	tmp.st_nlink = stat->nlink;
--	tmp.st_uid = stat->uid;
--	tmp.st_gid = stat->gid;
-+	tmp.st_uid = from_kuid_munged(current_user_ns(), stat->uid);
-+	tmp.st_gid = from_kgid_munged(current_user_ns(), stat->gid);
- 	tmp.st_rdev = new_encode_dev(stat->rdev);
- 	tmp.st_size = stat->size;
- 	tmp.st_atime = stat->atime.tv_sec;
-diff --git a/arch/s390/kernel/compat_linux.c b/arch/s390/kernel/compat_linux.c
-index 5baac18..80ab23a 100644
---- a/arch/s390/kernel/compat_linux.c
-+++ b/arch/s390/kernel/compat_linux.c
-@@ -546,8 +546,8 @@ static int cp_stat64(struct stat64_emu31 __user *ubuf, struct kstat *stat)
- 	tmp.__st_ino = (u32)stat->ino;
- 	tmp.st_mode = stat->mode;
- 	tmp.st_nlink = (unsigned int)stat->nlink;
--	tmp.st_uid = stat->uid;
--	tmp.st_gid = stat->gid;
-+	tmp.st_uid = from_kuid_munged(current_user_ns(), stat->uid);
-+	tmp.st_gid = from_kgid_munged(current_user_ns(), stat->gid);
- 	tmp.st_rdev = huge_encode_dev(stat->rdev);
- 	tmp.st_size = stat->size;
- 	tmp.st_blksize = (u32)stat->blksize;
-diff --git a/arch/sparc/kernel/sys_sparc32.c b/arch/sparc/kernel/sys_sparc32.c
-index 29c478f..f739233 100644
---- a/arch/sparc/kernel/sys_sparc32.c
-+++ b/arch/sparc/kernel/sys_sparc32.c
-@@ -139,8 +139,8 @@ static int cp_compat_stat64(struct kstat *stat,
- 	err |= put_user(stat->ino, &statbuf->st_ino);
- 	err |= put_user(stat->mode, &statbuf->st_mode);
- 	err |= put_user(stat->nlink, &statbuf->st_nlink);
--	err |= put_user(stat->uid, &statbuf->st_uid);
--	err |= put_user(stat->gid, &statbuf->st_gid);
-+	err |= put_user(from_kuid_munged(current_user_ns(), stat->uid), &statbuf->st_uid);
-+	err |= put_user(from_kgid_munged(current_user_ns(), stat->gid), &statbuf->st_gid);
- 	err |= put_user(huge_encode_dev(stat->rdev), &statbuf->st_rdev);
- 	err |= put_user(0, (unsigned long __user *) &statbuf->__pad3[0]);
- 	err |= put_user(stat->size, &statbuf->st_size);
-diff --git a/arch/x86/ia32/sys_ia32.c b/arch/x86/ia32/sys_ia32.c
-index aec2202..d5c820a 100644
---- a/arch/x86/ia32/sys_ia32.c
-+++ b/arch/x86/ia32/sys_ia32.c
-@@ -71,8 +71,8 @@ static int cp_stat64(struct stat64 __user *ubuf, struct kstat *stat)
+diff --git a/fs/open.c b/fs/open.c
+index 5720854..92335f6 100644
+--- a/fs/open.c
++++ b/fs/open.c
+@@ -316,7 +316,8 @@ SYSCALL_DEFINE3(faccessat, int, dfd, const char __user *, filename, int, mode)
+ 
+ 	if (!issecure(SECURE_NO_SETUID_FIXUP)) {
+ 		/* Clear the capabilities if we switch to a non-root user */
+-		if (override_cred->uid)
++		kuid_t root_uid = make_kuid(override_cred->user_ns, 0);
++		if (!uid_eq(override_cred->uid, root_uid))
+ 			cap_clear(override_cred->cap_effective);
+ 		else
+ 			override_cred->cap_effective =
+diff --git a/security/commoncap.c b/security/commoncap.c
+index dbd465a..9bf8df8 100644
+--- a/security/commoncap.c
++++ b/security/commoncap.c
+@@ -472,19 +472,24 @@ int cap_bprm_set_creds(struct linux_binprm *bprm)
+ 	struct cred *new = bprm->cred;
+ 	bool effective, has_cap = false;
+ 	int ret;
++	kuid_t root_uid;
++	kgid_t root_gid;
+ 
+ 	effective = false;
+ 	ret = get_file_caps(bprm, &effective, &has_cap);
+ 	if (ret < 0)
+ 		return ret;
+ 
++	root_uid = make_kuid(new->user_ns, 0);
++	root_gid = make_kgid(new->user_ns, 0);
++
+ 	if (!issecure(SECURE_NOROOT)) {
+ 		/*
+ 		 * If the legacy file capability is set, then don't set privs
+ 		 * for a setuid root binary run by a non-root user.  Do set it
+ 		 * for a root user just to cause least surprise to an admin.
+ 		 */
+-		if (has_cap && new->uid != 0 && new->euid == 0) {
++		if (has_cap && !uid_eq(new->uid, root_uid) && uid_eq(new->euid, root_uid)) {
+ 			warn_setuid_and_fcaps_mixed(bprm->filename);
+ 			goto skip;
+ 		}
+@@ -495,12 +500,12 @@ int cap_bprm_set_creds(struct linux_binprm *bprm)
+ 		 *
+ 		 * If only the real uid is 0, we do not set the effective bit.
+ 		 */
+-		if (new->euid == 0 || new->uid == 0) {
++		if (uid_eq(new->euid, root_uid) || uid_eq(new->uid, root_uid)) {
+ 			/* pP' = (cap_bset & ~0) | (pI & ~0) */
+ 			new->cap_permitted = cap_combine(old->cap_bset,
+ 							 old->cap_inheritable);
+ 		}
+-		if (new->euid == 0)
++		if (uid_eq(new->euid, root_uid))
+ 			effective = true;
+ 	}
+ skip:
+@@ -508,8 +513,8 @@ skip:
+ 	/* Don't let someone trace a set[ug]id/setpcap binary with the revised
+ 	 * credentials unless they have the appropriate permit
+ 	 */
+-	if ((new->euid != old->uid ||
+-	     new->egid != old->gid ||
++	if ((!uid_eq(new->euid, old->uid) ||
++	     !gid_eq(new->egid, old->gid) ||
+ 	     !cap_issubset(new->cap_permitted, old->cap_permitted)) &&
+ 	    bprm->unsafe & ~LSM_UNSAFE_PTRACE_CAP) {
+ 		/* downgrade; they get no more than they had, and maybe less */
+@@ -544,7 +549,7 @@ skip:
+ 	 */
+ 	if (!cap_isclear(new->cap_effective)) {
+ 		if (!cap_issubset(CAP_FULL_SET, new->cap_effective) ||
+-		    new->euid != 0 || new->uid != 0 ||
++		    !uid_eq(new->euid, root_uid) || !uid_eq(new->uid, root_uid) ||
+ 		    issecure(SECURE_NOROOT)) {
+ 			ret = audit_log_bprm_fcaps(bprm, new, old);
+ 			if (ret < 0)
+@@ -569,16 +574,17 @@ skip:
+ int cap_bprm_secureexec(struct linux_binprm *bprm)
  {
- 	typeof(ubuf->st_uid) uid = 0;
- 	typeof(ubuf->st_gid) gid = 0;
--	SET_UID(uid, stat->uid);
--	SET_GID(gid, stat->gid);
-+	SET_UID(uid, from_kuid_munged(current_user_ns(), stat->uid));
-+	SET_GID(gid, from_kgid_munged(current_user_ns(), stat->gid));
- 	if (!access_ok(VERIFY_WRITE, ubuf, sizeof(struct stat64)) ||
- 	    __put_user(huge_encode_dev(stat->dev), &ubuf->st_dev) ||
- 	    __put_user(stat->ino, &ubuf->__st_ino) ||
-diff --git a/fs/compat.c b/fs/compat.c
-index f2944ac..0781e61 100644
---- a/fs/compat.c
-+++ b/fs/compat.c
-@@ -144,8 +144,8 @@ static int cp_compat_stat(struct kstat *stat, struct compat_stat __user *ubuf)
- 	tmp.st_nlink = stat->nlink;
- 	if (tmp.st_nlink != stat->nlink)
- 		return -EOVERFLOW;
--	SET_UID(tmp.st_uid, stat->uid);
--	SET_GID(tmp.st_gid, stat->gid);
-+	SET_UID(tmp.st_uid, from_kuid_munged(current_user_ns(), stat->uid));
-+	SET_GID(tmp.st_gid, from_kgid_munged(current_user_ns(), stat->gid));
- 	tmp.st_rdev = old_encode_dev(stat->rdev);
- 	if ((u64) stat->size > MAX_NON_LFS)
- 		return -EOVERFLOW;
-diff --git a/fs/stat.c b/fs/stat.c
-index c733dc5..fca17f9 100644
---- a/fs/stat.c
-+++ b/fs/stat.c
-@@ -137,8 +137,8 @@ static int cp_old_stat(struct kstat *stat, struct __old_kernel_stat __user * sta
- 	tmp.st_nlink = stat->nlink;
- 	if (tmp.st_nlink != stat->nlink)
- 		return -EOVERFLOW;
--	SET_UID(tmp.st_uid, stat->uid);
--	SET_GID(tmp.st_gid, stat->gid);
-+	SET_UID(tmp.st_uid, from_kuid_munged(current_user_ns(), stat->uid));
-+	SET_GID(tmp.st_gid, from_kgid_munged(current_user_ns(), stat->gid));
- 	tmp.st_rdev = old_encode_dev(stat->rdev);
- #if BITS_PER_LONG == 32
- 	if (stat->size > MAX_NON_LFS)
-@@ -215,8 +215,8 @@ static int cp_new_stat(struct kstat *stat, struct stat __user *statbuf)
- 	tmp.st_nlink = stat->nlink;
- 	if (tmp.st_nlink != stat->nlink)
- 		return -EOVERFLOW;
--	SET_UID(tmp.st_uid, stat->uid);
--	SET_GID(tmp.st_gid, stat->gid);
-+	SET_UID(tmp.st_uid, from_kuid_munged(current_user_ns(), stat->uid));
-+	SET_GID(tmp.st_gid, from_kgid_munged(current_user_ns(), stat->gid));
- #if BITS_PER_LONG == 32
- 	tmp.st_rdev = old_encode_dev(stat->rdev);
- #else
-diff --git a/include/linux/stat.h b/include/linux/stat.h
-index 611c398..4613240 100644
---- a/include/linux/stat.h
-+++ b/include/linux/stat.h
-@@ -58,14 +58,15 @@
+ 	const struct cred *cred = current_cred();
++	kuid_t root_uid = make_kuid(cred->user_ns, 0);
  
- #include <linux/types.h>
- #include <linux/time.h>
-+#include <linux/uidgid.h>
+-	if (cred->uid != 0) {
++	if (!uid_eq(cred->uid, root_uid)) {
+ 		if (bprm->cap_effective)
+ 			return 1;
+ 		if (!cap_isclear(cred->cap_permitted))
+ 			return 1;
+ 	}
  
- struct kstat {
- 	u64		ino;
- 	dev_t		dev;
- 	umode_t		mode;
- 	unsigned int	nlink;
--	uid_t		uid;
--	gid_t		gid;
-+	kuid_t		uid;
-+	kgid_t		gid;
- 	dev_t		rdev;
- 	loff_t		size;
- 	struct timespec  atime;
+-	return (cred->euid != cred->uid ||
+-		cred->egid != cred->gid);
++	return (!uid_eq(cred->euid, cred->uid) ||
++		!gid_eq(cred->egid, cred->gid));
+ }
+ 
+ /**
+@@ -668,15 +674,21 @@ int cap_inode_removexattr(struct dentry *dentry, const char *name)
+  */
+ static inline void cap_emulate_setxuid(struct cred *new, const struct cred *old)
+ {
+-	if ((old->uid == 0 || old->euid == 0 || old->suid == 0) &&
+-	    (new->uid != 0 && new->euid != 0 && new->suid != 0) &&
++	kuid_t root_uid = make_kuid(old->user_ns, 0);
++
++	if ((uid_eq(old->uid, root_uid) ||
++	     uid_eq(old->euid, root_uid) ||
++	     uid_eq(old->suid, root_uid)) &&
++	    (!uid_eq(new->uid, root_uid) &&
++	     !uid_eq(new->euid, root_uid) &&
++	     !uid_eq(new->suid, root_uid)) &&
+ 	    !issecure(SECURE_KEEP_CAPS)) {
+ 		cap_clear(new->cap_permitted);
+ 		cap_clear(new->cap_effective);
+ 	}
+-	if (old->euid == 0 && new->euid != 0)
++	if (uid_eq(old->euid, root_uid) && !uid_eq(new->euid, root_uid))
+ 		cap_clear(new->cap_effective);
+-	if (old->euid != 0 && new->euid == 0)
++	if (!uid_eq(old->euid, root_uid) && uid_eq(new->euid, root_uid))
+ 		new->cap_effective = new->cap_permitted;
+ }
+ 
+@@ -709,11 +721,12 @@ int cap_task_fix_setuid(struct cred *new, const struct cred *old, int flags)
+ 		 *          if not, we might be a bit too harsh here.
+ 		 */
+ 		if (!issecure(SECURE_NO_SETUID_FIXUP)) {
+-			if (old->fsuid == 0 && new->fsuid != 0)
++			kuid_t root_uid = make_kuid(old->user_ns, 0);
++			if (uid_eq(old->fsuid, root_uid) && !uid_eq(new->fsuid, root_uid))
+ 				new->cap_effective =
+ 					cap_drop_fs_set(new->cap_effective);
+ 
+-			if (old->fsuid != 0 && new->fsuid == 0)
++			if (!uid_eq(old->fsuid, root_uid) && uid_eq(new->fsuid, root_uid))
+ 				new->cap_effective =
+ 					cap_raise_fs_set(new->cap_effective,
+ 							 new->cap_permitted);
 -- 
 1.7.2.5
