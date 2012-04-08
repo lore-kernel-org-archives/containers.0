@@ -1,8 +1,8 @@
 From: "\"Eric W. Beiderman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 08/43] userns: Add an explicit reference to the parent user
-	namespace
-Date: Sat,  7 Apr 2012 22:15:04 -0700
-Message-ID: <1333862139-31737-8-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH 12/43] userns: Replace the hard to write inode_userns with
+	inode_capable.
+Date: Sat,  7 Apr 2012 22:15:08 -0700
+Message-ID: <1333862139-31737-12-git-send-email-ebiederm@xmission.com>
 References: <m11unyn70b.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,99 +24,183 @@ List-Id: containers.vger.kernel.org
 
 From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-I am about to remove the struct user_namespace reference from struct user_struct.
-So keep an explicit track of the parent user namespace.
+This represents a change in strategy of how to handle user namespaces.
+Instead of tagging everything explicitly with a user namespace and bulking
+up all of the comparisons of uids and gids in the kernel,  all uids and gids
+in use will have a mapping to a flat kuid and kgid spaces respectively.  This
+allows much more of the existing logic to be preserved and in general
+allows for faster code.
 
-Take advantage of this new reference and replace instances of user_ns->creator->user_ns
-with user_ns->parent.
+In this new and improved world we allow someone to utiliize capabilities
+over an inode if the inodes owner mapps into the capabilities holders user
+namespace and the user has capabilities in their user namespace.  Which
+is simple and efficient.
+
+Moving the fs uid comparisons to be comparisons in a flat kuid space
+follows in later patches, something that is only significant if you
+are using user namespaces.
 
 Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- include/linux/user_namespace.h |    1 +
- kernel/user_namespace.c        |   13 ++++++-------
- security/commoncap.c           |    2 +-
- 3 files changed, 8 insertions(+), 8 deletions(-)
+ fs/inode.c                 |    6 ++----
+ fs/namei.c                 |   18 +++++-------------
+ include/linux/capability.h |    2 ++
+ include/linux/fs.h         |    6 ------
+ kernel/capability.c        |   19 +++++++++++++++++++
+ 5 files changed, 28 insertions(+), 23 deletions(-)
 
-diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-index faf4679..dc2d85a 100644
---- a/include/linux/user_namespace.h
-+++ b/include/linux/user_namespace.h
-@@ -12,6 +12,7 @@
- struct user_namespace {
- 	struct kref		kref;
- 	struct hlist_head	uidhash_table[UIDHASH_SZ];
-+	struct user_namespace	*parent;
- 	struct user_struct	*creator;
- 	struct work_struct	destroyer;
- };
-diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index 58bb878..c15e533 100644
---- a/kernel/user_namespace.c
-+++ b/kernel/user_namespace.c
-@@ -45,6 +45,7 @@ int create_user_ns(struct cred *new)
- 	}
- 
- 	/* set the new root user in the credentials under preparation */
-+	ns->parent = parent_ns;
- 	ns->creator = new->user;
- 	new->user = root_user;
- 	new->uid = new->euid = new->suid = new->fsuid = 0;
-@@ -60,8 +61,6 @@ int create_user_ns(struct cred *new)
- 	/* Leave the reference to our user_ns with the new cred */
- 	new->user_ns = ns;
- 
--	put_user_ns(parent_ns);
--
- 	return 0;
- }
- 
-@@ -72,10 +71,12 @@ int create_user_ns(struct cred *new)
+diff --git a/fs/inode.c b/fs/inode.c
+index 9f4f5fe..f0c4ace 100644
+--- a/fs/inode.c
++++ b/fs/inode.c
+@@ -1732,11 +1732,9 @@ EXPORT_SYMBOL(inode_init_owner);
   */
- static void free_user_ns_work(struct work_struct *work)
+ bool inode_owner_or_capable(const struct inode *inode)
  {
--	struct user_namespace *ns =
-+	struct user_namespace *parent, *ns =
- 		container_of(work, struct user_namespace, destroyer);
-+	parent = ns->parent;
- 	free_uid(ns->creator);
- 	kmem_cache_free(user_ns_cachep, ns);
-+	put_user_ns(parent);
+-	struct user_namespace *ns = inode_userns(inode);
+-
+-	if (current_user_ns() == ns && current_fsuid() == inode->i_uid)
++	if (current_fsuid() == inode->i_uid)
+ 		return true;
+-	if (ns_capable(ns, CAP_FOWNER))
++	if (inode_capable(inode, CAP_FOWNER))
+ 		return true;
+ 	return false;
  }
+diff --git a/fs/namei.c b/fs/namei.c
+index 701954d..941c436 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -228,9 +228,6 @@ static int acl_permission_check(struct inode *inode, int mask)
+ {
+ 	unsigned int mode = inode->i_mode;
  
- void free_user_ns(struct kref *kref)
-@@ -99,8 +100,7 @@ uid_t user_ns_map_uid(struct user_namespace *to, const struct cred *cred, uid_t
- 	/* Is cred->user the creator of the target user_ns
- 	 * or the creator of one of it's parents?
- 	 */
--	for ( tmp = to; tmp != &init_user_ns;
--	      tmp = tmp->creator->user_ns ) {
-+	for ( tmp = to; tmp != &init_user_ns; tmp = tmp->parent ) {
- 		if (cred->user == tmp->creator) {
- 			return (uid_t)0;
- 		}
-@@ -120,8 +120,7 @@ gid_t user_ns_map_gid(struct user_namespace *to, const struct cred *cred, gid_t
- 	/* Is cred->user the creator of the target user_ns
- 	 * or the creator of one of it's parents?
- 	 */
--	for ( tmp = to; tmp != &init_user_ns;
--	      tmp = tmp->creator->user_ns ) {
-+	for ( tmp = to; tmp != &init_user_ns; tmp = tmp->parent ) {
- 		if (cred->user == tmp->creator) {
- 			return (gid_t)0;
- 		}
-diff --git a/security/commoncap.c b/security/commoncap.c
-index 8b3e10e..435d074 100644
---- a/security/commoncap.c
-+++ b/security/commoncap.c
-@@ -92,7 +92,7 @@ int cap_capable(const struct cred *cred, struct user_namespace *targ_ns,
- 		 *If you have a capability in a parent user ns, then you have
- 		 * it over all children user namespaces as well.
- 		 */
--		targ_ns = targ_ns->creator->user_ns;
-+		targ_ns = targ_ns->parent;
+-	if (current_user_ns() != inode_userns(inode))
+-		goto other_perms;
+-
+ 	if (likely(current_fsuid() == inode->i_uid))
+ 		mode >>= 6;
+ 	else {
+@@ -244,7 +241,6 @@ static int acl_permission_check(struct inode *inode, int mask)
+ 			mode >>= 3;
  	}
  
- 	/* We never get here */
+-other_perms:
+ 	/*
+ 	 * If the DACs are ok we don't need any capability check.
+ 	 */
+@@ -280,10 +276,10 @@ int generic_permission(struct inode *inode, int mask)
+ 
+ 	if (S_ISDIR(inode->i_mode)) {
+ 		/* DACs are overridable for directories */
+-		if (ns_capable(inode_userns(inode), CAP_DAC_OVERRIDE))
++		if (inode_capable(inode, CAP_DAC_OVERRIDE))
+ 			return 0;
+ 		if (!(mask & MAY_WRITE))
+-			if (ns_capable(inode_userns(inode), CAP_DAC_READ_SEARCH))
++			if (inode_capable(inode, CAP_DAC_READ_SEARCH))
+ 				return 0;
+ 		return -EACCES;
+ 	}
+@@ -293,7 +289,7 @@ int generic_permission(struct inode *inode, int mask)
+ 	 * at least one exec bit set.
+ 	 */
+ 	if (!(mask & MAY_EXEC) || (inode->i_mode & S_IXUGO))
+-		if (ns_capable(inode_userns(inode), CAP_DAC_OVERRIDE))
++		if (inode_capable(inode, CAP_DAC_OVERRIDE))
+ 			return 0;
+ 
+ 	/*
+@@ -301,7 +297,7 @@ int generic_permission(struct inode *inode, int mask)
+ 	 */
+ 	mask &= MAY_READ | MAY_WRITE | MAY_EXEC;
+ 	if (mask == MAY_READ)
+-		if (ns_capable(inode_userns(inode), CAP_DAC_READ_SEARCH))
++		if (inode_capable(inode, CAP_DAC_READ_SEARCH))
+ 			return 0;
+ 
+ 	return -EACCES;
+@@ -1964,15 +1960,11 @@ static inline int check_sticky(struct inode *dir, struct inode *inode)
+ 
+ 	if (!(dir->i_mode & S_ISVTX))
+ 		return 0;
+-	if (current_user_ns() != inode_userns(inode))
+-		goto other_userns;
+ 	if (inode->i_uid == fsuid)
+ 		return 0;
+ 	if (dir->i_uid == fsuid)
+ 		return 0;
+-
+-other_userns:
+-	return !ns_capable(inode_userns(inode), CAP_FOWNER);
++	return !inode_capable(inode, CAP_FOWNER);
+ }
+ 
+ /*
+diff --git a/include/linux/capability.h b/include/linux/capability.h
+index 12d52de..a76eca9 100644
+--- a/include/linux/capability.h
++++ b/include/linux/capability.h
+@@ -374,6 +374,7 @@ struct cpu_vfs_cap_data {
+ 
+ #ifdef __KERNEL__
+ 
++struct inode;
+ struct dentry;
+ struct user_namespace;
+ 
+@@ -548,6 +549,7 @@ extern bool has_ns_capability_noaudit(struct task_struct *t,
+ extern bool capable(int cap);
+ extern bool ns_capable(struct user_namespace *ns, int cap);
+ extern bool nsown_capable(int cap);
++extern bool inode_capable(const struct inode *inode, int cap);
+ 
+ /* audit system wants to get cap info from files as well */
+ extern int get_vfs_caps_from_disk(const struct dentry *dentry, struct cpu_vfs_cap_data *cpu_caps);
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 135693e..a6c5efb 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1522,12 +1522,6 @@ enum {
+ #define vfs_check_frozen(sb, level) \
+ 	wait_event((sb)->s_wait_unfrozen, ((sb)->s_frozen < (level)))
+ 
+-/*
+- * until VFS tracks user namespaces for inodes, just make all files
+- * belong to init_user_ns
+- */
+-extern struct user_namespace init_user_ns;
+-#define inode_userns(inode) (&init_user_ns)
+ extern bool inode_owner_or_capable(const struct inode *inode);
+ 
+ /* not quite ready to be deprecated, but... */
+diff --git a/kernel/capability.c b/kernel/capability.c
+index 3f1adb6..cc5f071 100644
+--- a/kernel/capability.c
++++ b/kernel/capability.c
+@@ -419,3 +419,22 @@ bool nsown_capable(int cap)
+ {
+ 	return ns_capable(current_user_ns(), cap);
+ }
++
++/**
++ * inode_capable - Check superior capability over inode
++ * @inode: The inode in question
++ * @cap: The capability in question
++ *
++ * Return true if the current task has the given superior capability
++ * targeted at it's own user namespace and that the given inode is owned
++ * by the current user namespace or a child namespace.
++ *
++ * Currently inodes can only be owned by the initial user namespace.
++ *
++ */
++bool inode_capable(const struct inode *inode, int cap)
++{
++	struct user_namespace *ns = current_user_ns();
++
++	return ns_capable(ns, cap) && (ns == &init_user_ns);
++}
 -- 
 1.7.2.5
