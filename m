@@ -1,7 +1,7 @@
 From: "\"Eric W. Beiderman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 18/43] userns: Convert group_info values from gid_t to kgid_t.
-Date: Sat,  7 Apr 2012 22:15:14 -0700
-Message-ID: <1333862139-31737-18-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH 35/43] userns: Convert ext2 to use kuid/kgid where appropriate.
+Date: Sat,  7 Apr 2012 22:15:31 -0700
+Message-ID: <1333862139-31737-35-git-send-email-ebiederm@xmission.com>
 References: <m11unyn70b.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,508 +23,179 @@ List-Id: containers.vger.kernel.org
 
 From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-As a first step to converting struct cred to be all kuid_t and kgid_t
-values convert the group values stored in group_info to always be
-kgid_t values.   Unless user namespaces are used this change should
-have no effect.
-
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- arch/s390/kernel/compat_linux.c   |   13 ++++++++-
- fs/nfsd/auth.c                    |    5 ++-
- fs/proc/array.c                   |    5 +++-
- include/linux/cred.h              |    9 ++++---
- kernel/groups.c                   |   48 +++++++++++++++++++-----------------
- kernel/uid16.c                    |   14 +++++++++-
- net/ipv4/ping.c                   |   11 ++++++--
- net/sunrpc/auth_generic.c         |    4 +-
- net/sunrpc/auth_gss/svcauth_gss.c |    7 ++++-
- net/sunrpc/auth_unix.c            |   15 ++++++++---
- net/sunrpc/svcauth_unix.c         |   18 ++++++++++---
- security/keys/permission.c        |    3 +-
- 12 files changed, 103 insertions(+), 49 deletions(-)
+ fs/ext2/balloc.c |    5 +++--
+ fs/ext2/ext2.h   |    8 ++++----
+ fs/ext2/inode.c  |   20 ++++++++++++--------
+ fs/ext2/super.c  |   31 +++++++++++++++++++++++--------
+ 4 files changed, 42 insertions(+), 22 deletions(-)
 
-diff --git a/arch/s390/kernel/compat_linux.c b/arch/s390/kernel/compat_linux.c
-index ab64bdb..5baac18 100644
---- a/arch/s390/kernel/compat_linux.c
-+++ b/arch/s390/kernel/compat_linux.c
-@@ -173,11 +173,14 @@ asmlinkage long sys32_setfsgid16(u16 gid)
- 
- static int groups16_to_user(u16 __user *grouplist, struct group_info *group_info)
- {
-+	struct user_namespace *user_ns = current_user_ns();
- 	int i;
- 	u16 group;
-+	kgid_t kgid;
- 
- 	for (i = 0; i < group_info->ngroups; i++) {
--		group = (u16)GROUP_AT(group_info, i);
-+		kgid = GROUP_AT(group_info, i);
-+		group = (u16)from_kgid_munged(user_ns, kgid);
- 		if (put_user(group, grouplist+i))
- 			return -EFAULT;
+diff --git a/fs/ext2/balloc.c b/fs/ext2/balloc.c
+index a8cbe1b..030c6d2 100644
+--- a/fs/ext2/balloc.c
++++ b/fs/ext2/balloc.c
+@@ -1193,8 +1193,9 @@ static int ext2_has_free_blocks(struct ext2_sb_info *sbi)
+ 	free_blocks = percpu_counter_read_positive(&sbi->s_freeblocks_counter);
+ 	root_blocks = le32_to_cpu(sbi->s_es->s_r_blocks_count);
+ 	if (free_blocks < root_blocks + 1 && !capable(CAP_SYS_RESOURCE) &&
+-		sbi->s_resuid != current_fsuid() &&
+-		(sbi->s_resgid == 0 || !in_group_p (sbi->s_resgid))) {
++		!uid_eq(sbi->s_resuid, current_fsuid()) &&
++		(gid_eq(sbi->s_resgid, GLOBAL_ROOT_GID) ||
++		 !in_group_p (sbi->s_resgid))) {
+ 		return 0;
  	}
-@@ -187,13 +190,19 @@ static int groups16_to_user(u16 __user *grouplist, struct group_info *group_info
- 
- static int groups16_from_user(struct group_info *group_info, u16 __user *grouplist)
- {
-+	struct user_namespace *user_ns = current_user_ns();
- 	int i;
- 	u16 group;
- 
- 	for (i = 0; i < group_info->ngroups; i++) {
- 		if (get_user(group, grouplist+i))
- 			return  -EFAULT;
--		GROUP_AT(group_info, i) = (gid_t)group;
-+
-+		kgid = make_kgid(user_ns, (gid_t)group);
-+		if (!gid_valid(kgid))
-+			return -EINVAL;
-+
-+		GROUP_AT(group_info, i) = kgid;
- 	}
- 
- 	return 0;
-diff --git a/fs/nfsd/auth.c b/fs/nfsd/auth.c
-index 79717a4..204438c 100644
---- a/fs/nfsd/auth.c
-+++ b/fs/nfsd/auth.c
-@@ -1,6 +1,7 @@
- /* Copyright (C) 1995, 1996 Olaf Kirch <okir-pn4DOG8n3UYbFoVRYvo4fw@public.gmane.org> */
- 
- #include <linux/sched.h>
-+#include <linux/user_namespace.h>
- #include "nfsd.h"
- #include "auth.h"
- 
-@@ -56,8 +57,8 @@ int nfsd_setuser(struct svc_rqst *rqstp, struct svc_export *exp)
- 			goto oom;
- 
- 		for (i = 0; i < rqgi->ngroups; i++) {
--			if (!GROUP_AT(rqgi, i))
--				GROUP_AT(gi, i) = exp->ex_anon_gid;
-+			if (gid_eq(GLOBAL_ROOT_GID, GROUP_AT(rqgi, i)))
-+				GROUP_AT(gi, i) = make_kgid(&init_user_ns, exp->ex_anon_gid);
- 			else
- 				GROUP_AT(gi, i) = GROUP_AT(rqgi, i);
- 		}
-diff --git a/fs/proc/array.c b/fs/proc/array.c
-index f9bd395..36a0a91 100644
---- a/fs/proc/array.c
-+++ b/fs/proc/array.c
-@@ -81,6 +81,7 @@
- #include <linux/pid_namespace.h>
- #include <linux/ptrace.h>
- #include <linux/tracehook.h>
-+#include <linux/user_namespace.h>
- 
- #include <asm/pgtable.h>
- #include <asm/processor.h>
-@@ -161,6 +162,7 @@ static inline const char *get_task_state(struct task_struct *tsk)
- static inline void task_state(struct seq_file *m, struct pid_namespace *ns,
- 				struct pid *pid, struct task_struct *p)
- {
-+	struct user_namespace *user_ns = current_user_ns();
- 	struct group_info *group_info;
- 	int g;
- 	struct fdtable *fdt = NULL;
-@@ -205,7 +207,8 @@ static inline void task_state(struct seq_file *m, struct pid_namespace *ns,
- 	task_unlock(p);
- 
- 	for (g = 0; g < min(group_info->ngroups, NGROUPS_SMALL); g++)
--		seq_printf(m, "%d ", GROUP_AT(group_info, g));
-+		seq_printf(m, "%d ",
-+			   from_kgid_munged(user_ns, GROUP_AT(group_info, g)));
- 	put_cred(cred);
- 
- 	seq_putc(m, '\n');
-diff --git a/include/linux/cred.h b/include/linux/cred.h
-index 2c60ec8..0ab3cda 100644
---- a/include/linux/cred.h
-+++ b/include/linux/cred.h
-@@ -17,6 +17,7 @@
- #include <linux/key.h>
- #include <linux/selinux.h>
- #include <linux/atomic.h>
-+#include <linux/uidgid.h>
- 
- struct user_struct;
- struct cred;
-@@ -26,14 +27,14 @@ struct inode;
-  * COW Supplementary groups list
+ 	return 1;
+diff --git a/fs/ext2/ext2.h b/fs/ext2/ext2.h
+index 0b2b4db..d9a17d0 100644
+--- a/fs/ext2/ext2.h
++++ b/fs/ext2/ext2.h
+@@ -82,8 +82,8 @@ struct ext2_sb_info {
+ 	struct buffer_head ** s_group_desc;
+ 	unsigned long  s_mount_opt;
+ 	unsigned long s_sb_block;
+-	uid_t s_resuid;
+-	gid_t s_resgid;
++	kuid_t s_resuid;
++	kgid_t s_resgid;
+ 	unsigned short s_mount_state;
+ 	unsigned short s_pad;
+ 	int s_addr_per_block_bits;
+@@ -637,8 +637,8 @@ static inline void verify_offsets(void)
   */
- #define NGROUPS_SMALL		32
--#define NGROUPS_PER_BLOCK	((unsigned int)(PAGE_SIZE / sizeof(gid_t)))
-+#define NGROUPS_PER_BLOCK	((unsigned int)(PAGE_SIZE / sizeof(kgid_t)))
- 
- struct group_info {
- 	atomic_t	usage;
- 	int		ngroups;
- 	int		nblocks;
--	gid_t		small_block[NGROUPS_SMALL];
--	gid_t		*blocks[0];
-+	kgid_t		small_block[NGROUPS_SMALL];
-+	kgid_t		*blocks[0];
+ struct ext2_mount_options {
+ 	unsigned long s_mount_opt;
+-	uid_t s_resuid;
+-	gid_t s_resgid;
++	kuid_t s_resuid;
++	kgid_t s_resgid;
  };
  
- /**
-@@ -66,7 +67,7 @@ extern struct group_info init_groups;
- extern void groups_free(struct group_info *);
- extern int set_current_groups(struct group_info *);
- extern int set_groups(struct cred *, struct group_info *);
--extern int groups_search(const struct group_info *, gid_t);
-+extern int groups_search(const struct group_info *, kgid_t);
+ /*
+diff --git a/fs/ext2/inode.c b/fs/ext2/inode.c
+index 740cad8..f9fa95f 100644
+--- a/fs/ext2/inode.c
++++ b/fs/ext2/inode.c
+@@ -1293,6 +1293,8 @@ struct inode *ext2_iget (struct super_block *sb, unsigned long ino)
+ 	struct inode *inode;
+ 	long ret = -EIO;
+ 	int n;
++	uid_t i_uid;
++	gid_t i_gid;
  
- /* access the groups "array" with this macro */
- #define GROUP_AT(gi, i) \
-diff --git a/kernel/groups.c b/kernel/groups.c
-index 99b53d1..84156f2 100644
---- a/kernel/groups.c
-+++ b/kernel/groups.c
-@@ -31,7 +31,7 @@ struct group_info *groups_alloc(int gidsetsize)
- 		group_info->blocks[0] = group_info->small_block;
- 	else {
- 		for (i = 0; i < nblocks; i++) {
--			gid_t *b;
-+			kgid_t *b;
- 			b = (void *)__get_free_page(GFP_USER);
- 			if (!b)
- 				goto out_undo_partial_alloc;
-@@ -66,18 +66,15 @@ EXPORT_SYMBOL(groups_free);
- static int groups_to_user(gid_t __user *grouplist,
- 			  const struct group_info *group_info)
- {
-+	struct user_namespace *user_ns = current_user_ns();
- 	int i;
- 	unsigned int count = group_info->ngroups;
- 
--	for (i = 0; i < group_info->nblocks; i++) {
--		unsigned int cp_count = min(NGROUPS_PER_BLOCK, count);
--		unsigned int len = cp_count * sizeof(*grouplist);
--
--		if (copy_to_user(grouplist, group_info->blocks[i], len))
-+	for (i = 0; i < count; i++) {
-+		gid_t gid;
-+		gid = from_kgid_munged(user_ns, GROUP_AT(group_info, i));
-+		if (put_user(gid, grouplist+i))
- 			return -EFAULT;
--
--		grouplist += NGROUPS_PER_BLOCK;
--		count -= cp_count;
- 	}
- 	return 0;
- }
-@@ -86,18 +83,21 @@ static int groups_to_user(gid_t __user *grouplist,
- static int groups_from_user(struct group_info *group_info,
-     gid_t __user *grouplist)
- {
-+	struct user_namespace *user_ns = current_user_ns();
- 	int i;
- 	unsigned int count = group_info->ngroups;
- 
--	for (i = 0; i < group_info->nblocks; i++) {
--		unsigned int cp_count = min(NGROUPS_PER_BLOCK, count);
--		unsigned int len = cp_count * sizeof(*grouplist);
--
--		if (copy_from_user(group_info->blocks[i], grouplist, len))
-+	for (i = 0; i < count; i++) {
-+		gid_t gid;
-+		kgid_t kgid;
-+		if (get_user(gid, grouplist+i))
- 			return -EFAULT;
- 
--		grouplist += NGROUPS_PER_BLOCK;
--		count -= cp_count;
-+		kgid = make_kgid(user_ns, gid);
-+		if (!gid_valid(kgid))
-+			return -EINVAL;
-+
-+		GROUP_AT(group_info, i) = kgid;
- 	}
- 	return 0;
- }
-@@ -117,9 +117,9 @@ static void groups_sort(struct group_info *group_info)
- 		for (base = 0; base < max; base++) {
- 			int left = base;
- 			int right = left + stride;
--			gid_t tmp = GROUP_AT(group_info, right);
-+			kgid_t tmp = GROUP_AT(group_info, right);
- 
--			while (left >= 0 && GROUP_AT(group_info, left) > tmp) {
-+			while (left >= 0 && gid_gt(GROUP_AT(group_info, left), tmp)) {
- 				GROUP_AT(group_info, right) =
- 				    GROUP_AT(group_info, left);
- 				right = left;
-@@ -132,7 +132,7 @@ static void groups_sort(struct group_info *group_info)
- }
- 
- /* a simple bsearch */
--int groups_search(const struct group_info *group_info, gid_t grp)
-+int groups_search(const struct group_info *group_info, kgid_t grp)
- {
- 	unsigned int left, right;
- 
-@@ -143,9 +143,9 @@ int groups_search(const struct group_info *group_info, gid_t grp)
- 	right = group_info->ngroups;
- 	while (left < right) {
- 		unsigned int mid = (left+right)/2;
--		if (grp > GROUP_AT(group_info, mid))
-+		if (gid_gt(grp, GROUP_AT(group_info, mid)))
- 			left = mid + 1;
--		else if (grp < GROUP_AT(group_info, mid))
-+		else if (gid_lt(grp, GROUP_AT(group_info, mid)))
- 			right = mid;
- 		else
- 			return 1;
-@@ -262,7 +262,8 @@ int in_group_p(gid_t grp)
- 	int retval = 1;
- 
- 	if (grp != cred->fsgid)
--		retval = groups_search(cred->group_info, grp);
-+		retval = groups_search(cred->group_info,
-+				       make_kgid(cred->user_ns, grp));
- 	return retval;
- }
- 
-@@ -274,7 +275,8 @@ int in_egroup_p(gid_t grp)
- 	int retval = 1;
- 
- 	if (grp != cred->egid)
--		retval = groups_search(cred->group_info, grp);
-+		retval = groups_search(cred->group_info,
-+				       make_kgid(cred->user_ns, grp));
- 	return retval;
- }
- 
-diff --git a/kernel/uid16.c b/kernel/uid16.c
-index 51c6e89..e530bc3 100644
---- a/kernel/uid16.c
-+++ b/kernel/uid16.c
-@@ -134,11 +134,14 @@ SYSCALL_DEFINE1(setfsgid16, old_gid_t, gid)
- static int groups16_to_user(old_gid_t __user *grouplist,
-     struct group_info *group_info)
- {
-+	struct user_namespace *user_ns = current_user_ns();
- 	int i;
- 	old_gid_t group;
-+	kgid_t kgid;
- 
- 	for (i = 0; i < group_info->ngroups; i++) {
--		group = high2lowgid(GROUP_AT(group_info, i));
-+		kgid = GROUP_AT(group_info, i);
-+		group = high2lowgid(from_kgid_munged(user_ns, kgid));
- 		if (put_user(group, grouplist+i))
- 			return -EFAULT;
- 	}
-@@ -149,13 +152,20 @@ static int groups16_to_user(old_gid_t __user *grouplist,
- static int groups16_from_user(struct group_info *group_info,
-     old_gid_t __user *grouplist)
- {
-+	struct user_namespace *user_ns = current_user_ns();
- 	int i;
- 	old_gid_t group;
-+	kgid_t kgid;
- 
- 	for (i = 0; i < group_info->ngroups; i++) {
- 		if (get_user(group, grouplist+i))
- 			return  -EFAULT;
--		GROUP_AT(group_info, i) = low2highgid(group);
-+
-+		kgid = make_kgid(user_ns, low2highgid(group));
-+		if (!gid_valid(kgid))
-+			return -EINVAL;
-+
-+		GROUP_AT(group_info, i) = kgid;
+ 	inode = iget_locked(sb, ino);
+ 	if (!inode)
+@@ -1310,12 +1312,14 @@ struct inode *ext2_iget (struct super_block *sb, unsigned long ino)
  	}
  
- 	return 0;
-diff --git a/net/ipv4/ping.c b/net/ipv4/ping.c
-index 50009c7..9d3044f 100644
---- a/net/ipv4/ping.c
-+++ b/net/ipv4/ping.c
-@@ -205,17 +205,22 @@ static int ping_init_sock(struct sock *sk)
- 	gid_t range[2];
- 	struct group_info *group_info = get_current_groups();
- 	int i, j, count = group_info->ngroups;
-+	kgid_t low, high;
+ 	inode->i_mode = le16_to_cpu(raw_inode->i_mode);
+-	inode->i_uid = (uid_t)le16_to_cpu(raw_inode->i_uid_low);
+-	inode->i_gid = (gid_t)le16_to_cpu(raw_inode->i_gid_low);
++	i_uid = (uid_t)le16_to_cpu(raw_inode->i_uid_low);
++	i_gid = (gid_t)le16_to_cpu(raw_inode->i_gid_low);
+ 	if (!(test_opt (inode->i_sb, NO_UID32))) {
+-		inode->i_uid |= le16_to_cpu(raw_inode->i_uid_high) << 16;
+-		inode->i_gid |= le16_to_cpu(raw_inode->i_gid_high) << 16;
++		i_uid |= le16_to_cpu(raw_inode->i_uid_high) << 16;
++		i_gid |= le16_to_cpu(raw_inode->i_gid_high) << 16;
+ 	}
++	i_uid_write(inode, i_uid);
++	i_gid_write(inode, i_gid);
+ 	set_nlink(inode, le16_to_cpu(raw_inode->i_links_count));
+ 	inode->i_size = le32_to_cpu(raw_inode->i_size);
+ 	inode->i_atime.tv_sec = (signed)le32_to_cpu(raw_inode->i_atime);
+@@ -1413,8 +1417,8 @@ static int __ext2_write_inode(struct inode *inode, int do_sync)
+ 	struct ext2_inode_info *ei = EXT2_I(inode);
+ 	struct super_block *sb = inode->i_sb;
+ 	ino_t ino = inode->i_ino;
+-	uid_t uid = inode->i_uid;
+-	gid_t gid = inode->i_gid;
++	uid_t uid = i_uid_read(inode);
++	gid_t gid = i_gid_read(inode);
+ 	struct buffer_head * bh;
+ 	struct ext2_inode * raw_inode = ext2_get_inode(sb, ino, &bh);
+ 	int n;
+@@ -1529,8 +1533,8 @@ int ext2_setattr(struct dentry *dentry, struct iattr *iattr)
  
- 	inet_get_ping_group_range_net(net, range, range+1);
-+	low = make_kgid(&init_user_ns, range[0]);
-+	high = make_kgid(&init_user_ns, range[1]);
-+	if (!gid_valid(low) || !gid_valid(high) || gid_lt(high, low))
-+		return -EACCES;
-+
- 	if (range[0] <= group && group <= range[1])
- 		return 0;
+ 	if (is_quota_modification(inode, iattr))
+ 		dquot_initialize(inode);
+-	if ((iattr->ia_valid & ATTR_UID && iattr->ia_uid != inode->i_uid) ||
+-	    (iattr->ia_valid & ATTR_GID && iattr->ia_gid != inode->i_gid)) {
++	if ((iattr->ia_valid & ATTR_UID && !uid_eq(iattr->ia_uid, inode->i_uid)) ||
++	    (iattr->ia_valid & ATTR_GID && !gid_eq(iattr->ia_gid, inode->i_gid))) {
+ 		error = dquot_transfer(inode, iattr);
+ 		if (error)
+ 			return error;
+diff --git a/fs/ext2/super.c b/fs/ext2/super.c
+index e1025c7..38f8160 100644
+--- a/fs/ext2/super.c
++++ b/fs/ext2/super.c
+@@ -228,13 +228,15 @@ static int ext2_show_options(struct seq_file *seq, struct dentry *root)
+ 		seq_puts(seq, ",grpid");
+ 	if (!test_opt(sb, GRPID) && (def_mount_opts & EXT2_DEFM_BSDGROUPS))
+ 		seq_puts(seq, ",nogrpid");
+-	if (sbi->s_resuid != EXT2_DEF_RESUID ||
++	if (!uid_eq(sbi->s_resuid, make_kuid(&init_user_ns, EXT2_DEF_RESUID)) ||
+ 	    le16_to_cpu(es->s_def_resuid) != EXT2_DEF_RESUID) {
+-		seq_printf(seq, ",resuid=%u", sbi->s_resuid);
++		seq_printf(seq, ",resuid=%u",
++				from_kuid_munged(&init_user_ns, sbi->s_resuid));
+ 	}
+-	if (sbi->s_resgid != EXT2_DEF_RESGID ||
++	if (!gid_eq(sbi->s_resgid, make_kgid(&init_user_ns, EXT2_DEF_RESGID)) ||
+ 	    le16_to_cpu(es->s_def_resgid) != EXT2_DEF_RESGID) {
+-		seq_printf(seq, ",resgid=%u", sbi->s_resgid);
++		seq_printf(seq, ",resgid=%u",
++				from_kgid_munged(&init_user_ns, sbi->s_resgid));
+ 	}
+ 	if (test_opt(sb, ERRORS_RO)) {
+ 		int def_errors = le16_to_cpu(es->s_errors);
+@@ -436,6 +438,8 @@ static int parse_options(char *options, struct super_block *sb)
+ 	struct ext2_sb_info *sbi = EXT2_SB(sb);
+ 	substring_t args[MAX_OPT_ARGS];
+ 	int option;
++	kuid_t uid;
++	kgid_t gid;
  
- 	for (i = 0; i < group_info->nblocks; i++) {
- 		int cp_count = min_t(int, NGROUPS_PER_BLOCK, count);
--
- 		for (j = 0; j < cp_count; j++) {
--			group = group_info->blocks[i][j];
--			if (range[0] <= group && group <= range[1])
-+			kgid_t gid = group_info->blocks[i][j];
-+			if (gid_lte(low, gid) && gid_lte(gid, high))
+ 	if (!options)
+ 		return 1;
+@@ -462,12 +466,23 @@ static int parse_options(char *options, struct super_block *sb)
+ 		case Opt_resuid:
+ 			if (match_int(&args[0], &option))
  				return 0;
- 		}
+-			sbi->s_resuid = option;
++			uid = make_kuid(current_user_ns(), option);
++			if (!uid_valid(uid)) {
++				ext2_msg(sb, KERN_ERR, "Invalid uid value %d", option);
++				return -1;
++
++			}
++			sbi->s_resuid = uid;
+ 			break;
+ 		case Opt_resgid:
+ 			if (match_int(&args[0], &option))
+ 				return 0;
+-			sbi->s_resgid = option;
++			gid = make_kgid(current_user_ns(), option);
++			if (!gid_valid(gid)) {
++				ext2_msg(sb, KERN_ERR, "Invalid gid value %d", option);
++				return -1;
++			}
++			sbi->s_resgid = gid;
+ 			break;
+ 		case Opt_sb:
+ 			/* handled by get_sb_block() instead of here */
+@@ -841,8 +856,8 @@ static int ext2_fill_super(struct super_block *sb, void *data, int silent)
+ 	else
+ 		set_opt(sbi->s_mount_opt, ERRORS_RO);
  
-diff --git a/net/sunrpc/auth_generic.c b/net/sunrpc/auth_generic.c
-index 75762f3..6ed6f20 100644
---- a/net/sunrpc/auth_generic.c
-+++ b/net/sunrpc/auth_generic.c
-@@ -160,8 +160,8 @@ generic_match(struct auth_cred *acred, struct rpc_cred *cred, int flags)
- 	if (gcred->acred.group_info->ngroups != acred->group_info->ngroups)
- 		goto out_nomatch;
- 	for (i = 0; i < gcred->acred.group_info->ngroups; i++) {
--		if (GROUP_AT(gcred->acred.group_info, i) !=
--				GROUP_AT(acred->group_info, i))
-+		if (!gid_eq(GROUP_AT(gcred->acred.group_info, i),
-+				GROUP_AT(acred->group_info, i)))
- 			goto out_nomatch;
- 	}
- out_match:
-diff --git a/net/sunrpc/auth_gss/svcauth_gss.c b/net/sunrpc/auth_gss/svcauth_gss.c
-index 1600cfb..28b62db 100644
---- a/net/sunrpc/auth_gss/svcauth_gss.c
-+++ b/net/sunrpc/auth_gss/svcauth_gss.c
-@@ -41,6 +41,7 @@
- #include <linux/types.h>
- #include <linux/module.h>
- #include <linux/pagemap.h>
-+#include <linux/user_namespace.h>
+-	sbi->s_resuid = le16_to_cpu(es->s_def_resuid);
+-	sbi->s_resgid = le16_to_cpu(es->s_def_resgid);
++	sbi->s_resuid = make_kuid(&init_user_ns, le16_to_cpu(es->s_def_resuid));
++	sbi->s_resgid = make_kgid(&init_user_ns, le16_to_cpu(es->s_def_resgid));
+ 	
+ 	set_opt(sbi->s_mount_opt, RESERVATION);
  
- #include <linux/sunrpc/auth_gss.h>
- #include <linux/sunrpc/gss_err.h>
-@@ -470,9 +471,13 @@ static int rsc_parse(struct cache_detail *cd,
- 		status = -EINVAL;
- 		for (i=0; i<N; i++) {
- 			gid_t gid;
-+			kgid_t kgid;
- 			if (get_int(&mesg, &gid))
- 				goto out;
--			GROUP_AT(rsci.cred.cr_group_info, i) = gid;
-+			kgid = make_kgid(&init_user_ns, gid);
-+			if (!gid_valid(kgid))
-+				goto out;
-+			GROUP_AT(rsci.cred.cr_group_info, i) = kgid;
- 		}
- 
- 		/* mech name */
-diff --git a/net/sunrpc/auth_unix.c b/net/sunrpc/auth_unix.c
-index e50502d..52c5abd 100644
---- a/net/sunrpc/auth_unix.c
-+++ b/net/sunrpc/auth_unix.c
-@@ -12,6 +12,7 @@
- #include <linux/module.h>
- #include <linux/sunrpc/clnt.h>
- #include <linux/sunrpc/auth.h>
-+#include <linux/user_namespace.h>
- 
- #define NFS_NGROUPS	16
- 
-@@ -78,8 +79,11 @@ unx_create_cred(struct rpc_auth *auth, struct auth_cred *acred, int flags)
- 		groups = NFS_NGROUPS;
- 
- 	cred->uc_gid = acred->gid;
--	for (i = 0; i < groups; i++)
--		cred->uc_gids[i] = GROUP_AT(acred->group_info, i);
-+	for (i = 0; i < groups; i++) {
-+		gid_t gid;
-+		gid = from_kgid(&init_user_ns, GROUP_AT(acred->group_info, i));
-+		cred->uc_gids[i] = gid;
-+	}
- 	if (i < NFS_NGROUPS)
- 		cred->uc_gids[i] = NOGROUP;
- 
-@@ -126,9 +130,12 @@ unx_match(struct auth_cred *acred, struct rpc_cred *rcred, int flags)
- 		groups = acred->group_info->ngroups;
- 	if (groups > NFS_NGROUPS)
- 		groups = NFS_NGROUPS;
--	for (i = 0; i < groups ; i++)
--		if (cred->uc_gids[i] != GROUP_AT(acred->group_info, i))
-+	for (i = 0; i < groups ; i++) {
-+		gid_t gid;
-+		gid = from_kgid(&init_user_ns, GROUP_AT(acred->group_info, i));
-+		if (cred->uc_gids[i] != gid)
- 			return 0;
-+	}
- 	if (groups < NFS_NGROUPS &&
- 	    cred->uc_gids[groups] != NOGROUP)
- 		return 0;
-diff --git a/net/sunrpc/svcauth_unix.c b/net/sunrpc/svcauth_unix.c
-index 521d8f7..71ec853 100644
---- a/net/sunrpc/svcauth_unix.c
-+++ b/net/sunrpc/svcauth_unix.c
-@@ -14,6 +14,7 @@
- #include <net/sock.h>
- #include <net/ipv6.h>
- #include <linux/kernel.h>
-+#include <linux/user_namespace.h>
- #define RPCDBG_FACILITY	RPCDBG_AUTH
- 
- #include <linux/sunrpc/clnt.h>
-@@ -530,11 +531,15 @@ static int unix_gid_parse(struct cache_detail *cd,
- 
- 	for (i = 0 ; i < gids ; i++) {
- 		int gid;
-+		kgid_t kgid;
- 		rv = get_int(&mesg, &gid);
- 		err = -EINVAL;
- 		if (rv)
- 			goto out;
--		GROUP_AT(ug.gi, i) = gid;
-+		kgid = make_kgid(&init_user_ns, gid);
-+		if (!gid_valid(kgid))
-+			goto out;
-+		GROUP_AT(ug.gi, i) = kgid;
- 	}
- 
- 	ugp = unix_gid_lookup(cd, uid);
-@@ -563,6 +568,7 @@ static int unix_gid_show(struct seq_file *m,
- 			 struct cache_detail *cd,
- 			 struct cache_head *h)
- {
-+	struct user_namespace *user_ns = current_user_ns();
- 	struct unix_gid *ug;
- 	int i;
- 	int glen;
-@@ -580,7 +586,7 @@ static int unix_gid_show(struct seq_file *m,
- 
- 	seq_printf(m, "%u %d:", ug->uid, glen);
- 	for (i = 0; i < glen; i++)
--		seq_printf(m, " %d", GROUP_AT(ug->gi, i));
-+		seq_printf(m, " %d", from_kgid_munged(user_ns, GROUP_AT(ug->gi, i)));
- 	seq_printf(m, "\n");
- 	return 0;
- }
-@@ -831,8 +837,12 @@ svcauth_unix_accept(struct svc_rqst *rqstp, __be32 *authp)
- 	cred->cr_group_info = groups_alloc(slen);
- 	if (cred->cr_group_info == NULL)
- 		return SVC_CLOSE;
--	for (i = 0; i < slen; i++)
--		GROUP_AT(cred->cr_group_info, i) = svc_getnl(argv);
-+	for (i = 0; i < slen; i++) {
-+		kgid_t kgid = make_kgid(&init_user_ns, svc_getnl(argv));
-+		if (!gid_valid(kgid))
-+			goto badcred;
-+		GROUP_AT(cred->cr_group_info, i) = kgid;
-+	}
- 	if (svc_getu32(argv) != htonl(RPC_AUTH_NULL) || svc_getu32(argv) != 0) {
- 		*authp = rpc_autherr_badverf;
- 		return SVC_DENIED;
-diff --git a/security/keys/permission.c b/security/keys/permission.c
-index e146cbd..5442900 100644
---- a/security/keys/permission.c
-+++ b/security/keys/permission.c
-@@ -53,7 +53,8 @@ int key_task_permission(const key_ref_t key_ref, const struct cred *cred,
- 			goto use_these_perms;
- 		}
- 
--		ret = groups_search(cred->group_info, key->gid);
-+		ret = groups_search(cred->group_info,
-+				    make_kgid(current_user_ns(), key->gid));
- 		if (ret) {
- 			kperm = key->perm >> 8;
- 			goto use_these_perms;
 -- 
 1.7.2.5
