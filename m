@@ -1,8 +1,8 @@
 From: "\"Eric W. Beiderman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 05/43] cred: Add forward declaration of init_user_ns in all
-	cases.
-Date: Sat,  7 Apr 2012 22:15:01 -0700
-Message-ID: <1333862139-31737-5-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH 04/43] userns: Remove unnecessary cast to struct user_struct
+	when copying cred->user.
+Date: Sat,  7 Apr 2012 22:15:00 -0700
+Message-ID: <1333862139-31737-4-git-send-email-ebiederm@xmission.com>
 References: <m11unyn70b.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,28 +24,37 @@ List-Id: containers.vger.kernel.org
 
 From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
+In struct cred the user member is and has always been declared struct user_struct *user.
+At most a constant struct cred will have a constant pointer to non-constant user_struct
+so remove this unnecessary cast.
+
 Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- include/linux/cred.h |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ kernel/sys.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/include/linux/cred.h b/include/linux/cred.h
-index adadf71..d12c4e4 100644
---- a/include/linux/cred.h
-+++ b/include/linux/cred.h
-@@ -357,11 +357,11 @@ static inline void put_cred(const struct cred *_cred)
- #define current_user()		(current_cred_xxx(user))
- #define current_security()	(current_cred_xxx(security))
- 
-+extern struct user_namespace init_user_ns;
- #ifdef CONFIG_USER_NS
- #define current_user_ns()	(current_cred_xxx(user_ns))
- #define task_user_ns(task)	(task_cred_xxx((task), user_ns))
- #else
--extern struct user_namespace init_user_ns;
- #define current_user_ns()	(&init_user_ns)
- #define task_user_ns(task)	(&init_user_ns)
- #endif
+diff --git a/kernel/sys.c b/kernel/sys.c
+index e7006eb..f7a4351 100644
+--- a/kernel/sys.c
++++ b/kernel/sys.c
+@@ -209,7 +209,7 @@ SYSCALL_DEFINE3(setpriority, int, which, int, who, int, niceval)
+ 			} while_each_pid_thread(pgrp, PIDTYPE_PGID, p);
+ 			break;
+ 		case PRIO_USER:
+-			user = (struct user_struct *) cred->user;
++			user = cred->user;
+ 			if (!who)
+ 				who = cred->uid;
+ 			else if ((who != cred->uid) &&
+@@ -274,7 +274,7 @@ SYSCALL_DEFINE2(getpriority, int, which, int, who)
+ 			} while_each_pid_thread(pgrp, PIDTYPE_PGID, p);
+ 			break;
+ 		case PRIO_USER:
+-			user = (struct user_struct *) cred->user;
++			user = cred->user;
+ 			if (!who)
+ 				who = cred->uid;
+ 			else if ((who != cred->uid) &&
 -- 
 1.7.2.5
