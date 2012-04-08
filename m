@@ -1,7 +1,8 @@
 From: "\"Eric W. Beiderman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 42/43] userns: Convert cgroup permission checks to use uid_eq
-Date: Sat,  7 Apr 2012 22:15:38 -0700
-Message-ID: <1333862139-31737-42-git-send-email-ebiederm__4300.34167734465$1333862147$gmane$org@xmission.com>
+Subject: [PATCH 43/43] userns: Convert the move_pages,
+	and migrate_pages permission checks to use uid_eq
+Date: Sat,  7 Apr 2012 22:15:39 -0700
+Message-ID: <1333862139-31737-43-git-send-email-ebiederm__4480.4897429005$1333862147$gmane$org@xmission.com>
 References: <m11unyn70b.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -25,25 +26,39 @@ From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- kernel/cgroup.c |    6 +++---
- 1 files changed, 3 insertions(+), 3 deletions(-)
+ mm/mempolicy.c |    4 ++--
+ mm/migrate.c   |    4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index ed64cca..c8329b0 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -2160,9 +2160,9 @@ retry_find_task:
- 		 * only need to check permissions on one of them.
- 		 */
- 		tcred = __task_cred(tsk);
--		if (cred->euid &&
--		    cred->euid != tcred->uid &&
--		    cred->euid != tcred->suid) {
-+		if (!uid_eq(cred->euid, GLOBAL_ROOT_UID) &&
-+		    !uid_eq(cred->euid, tcred->uid) &&
-+		    !uid_eq(cred->euid, tcred->suid)) {
- 			rcu_read_unlock();
- 			ret = -EACCES;
- 			goto out_unlock_cgroup;
+diff --git a/mm/mempolicy.c b/mm/mempolicy.c
+index cfb6c86..7b44fc8 100644
+--- a/mm/mempolicy.c
++++ b/mm/mempolicy.c
+@@ -1334,8 +1334,8 @@ SYSCALL_DEFINE4(migrate_pages, pid_t, pid, unsigned long, maxnode,
+ 	 * userid as the target process.
+ 	 */
+ 	tcred = __task_cred(task);
+-	if (cred->euid != tcred->suid && cred->euid != tcred->uid &&
+-	    cred->uid  != tcred->suid && cred->uid  != tcred->uid &&
++	if (!uid_eq(cred->euid, tcred->suid) && !uid_eq(cred->euid, tcred->uid) &&
++	    !uid_eq(cred->uid,  tcred->suid) && !uid_eq(cred->uid,  tcred->uid) &&
+ 	    !capable(CAP_SYS_NICE)) {
+ 		rcu_read_unlock();
+ 		err = -EPERM;
+diff --git a/mm/migrate.c b/mm/migrate.c
+index 51c08a0..1cf5252 100644
+--- a/mm/migrate.c
++++ b/mm/migrate.c
+@@ -1371,8 +1371,8 @@ SYSCALL_DEFINE6(move_pages, pid_t, pid, unsigned long, nr_pages,
+ 	 * userid as the target process.
+ 	 */
+ 	tcred = __task_cred(task);
+-	if (cred->euid != tcred->suid && cred->euid != tcred->uid &&
+-	    cred->uid  != tcred->suid && cred->uid  != tcred->uid &&
++	if (!uid_eq(cred->euid, tcred->suid) && !uid_eq(cred->euid, tcred->uid) &&
++	    !uid_eq(cred->uid,  tcred->suid) && !uid_eq(cred->uid,  tcred->uid) &&
+ 	    !capable(CAP_SYS_NICE)) {
+ 		rcu_read_unlock();
+ 		err = -EPERM;
 -- 
 1.7.2.5
