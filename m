@@ -1,8 +1,7 @@
 From: "\"Eric W. Beiderman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 01/43] vfs: Don't allow a user namespace root to make device
-	nodes
-Date: Sat,  7 Apr 2012 22:14:57 -0700
-Message-ID: <1333862139-31737-1-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH 02/43] userns: Kill bogus declaration of function release_uids
+Date: Sat,  7 Apr 2012 22:14:58 -0700
+Message-ID: <1333862139-31737-2-git-send-email-ebiederm@xmission.com>
 References: <m11unyn70b.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,29 +23,25 @@ List-Id: containers.vger.kernel.org
 
 From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-Safely making device nodes in a container is solvable but simply
-having the capability in a user namespace is not sufficient to make
-this work.
+There is no release_uids function remove the declaration from sched.h
 
 Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/namei.c |    3 +--
- 1 files changed, 1 insertions(+), 2 deletions(-)
+ include/linux/sched.h |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
 
-diff --git a/fs/namei.c b/fs/namei.c
-index 1898198..701954d 100644
---- a/fs/namei.c
-+++ b/fs/namei.c
-@@ -2560,8 +2560,7 @@ int vfs_mknod(struct inode *dir, struct dentry *dentry, umode_t mode, dev_t dev)
- 	if (error)
- 		return error;
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index 81a173c..720ce8d 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -2184,7 +2184,6 @@ static inline struct user_struct *get_uid(struct user_struct *u)
+ 	return u;
+ }
+ extern void free_uid(struct user_struct *);
+-extern void release_uids(struct user_namespace *ns);
  
--	if ((S_ISCHR(mode) || S_ISBLK(mode)) &&
--	    !ns_capable(inode_userns(dir), CAP_MKNOD))
-+	if ((S_ISCHR(mode) || S_ISBLK(mode)) && !capable(CAP_MKNOD))
- 		return -EPERM;
+ #include <asm/current.h>
  
- 	if (!dir->i_op->mknod)
 -- 
 1.7.2.5
