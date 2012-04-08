@@ -1,7 +1,8 @@
 From: "\"Eric W. Beiderman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 03/43] userns: Replace netlink uses of cap_raised with capable.
-Date: Sat,  7 Apr 2012 22:14:59 -0700
-Message-ID: <1333862139-31737-3-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH 14/43] userns: Add a Kconfig option to enforce strict kuid and
+	kgid type checks
+Date: Sat,  7 Apr 2012 22:15:10 -0700
+Message-ID: <1333862139-31737-14-git-send-email-ebiederm@xmission.com>
 References: <m11unyn70b.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -18,97 +19,71 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Philipp Reisner <philipp.reisner-63ez5xqkn6DQT0dZR+AlfA@public.gmane.org>, Vasiliy Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Cyrill Gorcunov <gorcunov-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Cyrill Gorcunov <gorcunov-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-In 2009 Philip Reiser notied that a few users of netlink connector
-interface needed a capability check and added the idiom
-cap_raised(nsp->eff_cap, CAP_SYS_ADMIN) to a few of them, on the premise
-that netlink was asynchronous.
+Make it possible to easily switch between strong mandatory
+type checks and relaxed type checks so that the code can
+easily be tested with the type checks and then built
+with the strong type checks disabled so the resulting
+code can be used.
 
-In 2011 Patrick McHardy noticed we were being silly because netlink is
-synchronous and removed eff_cap from the netlink_skb_params and changed
-the idiom to cap_raised(current_cap(), CAP_SYS_ADMIN).
+Require strong mandatory type checks when enabling the user namespace.
+It is very simple to make a typo and use the wrong type allowing
+conversions to/from userspace values to be bypassed by accident,
+the strong type checks prevent this.
 
-Looking at those spots with a fresh eye we should be calling
-capable(CAP_SYS_ADMIN).  The only reason I can see for not calling
-capable is that it once appeared we were not in the same task as the
-caller which would have made calling capable() impossible.
-
-In the initial user_namespace the only difference between  between
-cap_raised(current_cap(), CAP_SYS_ADMIN) and capable(CAP_SYS_ADMIN)
-are a few sanity checks and the fact that capable(CAP_SYS_ADMIN)
-sets PF_SUPERPRIV if we use the capability.
-
-Since we are going to be using root privilege setting PF_SUPERPRIV
-seems the right thing to do.
-
-The motivation for this that patch is that in a child user namespace
-cap_raised(current_cap(),...) tests your capabilities with respect to
-that child user namespace not capabilities in the initial user namespace
-and thus will allow processes that should be unprivielged to use the
-kernel services that are only protected with
-cap_raised(current_cap(),..).
-
-To fix possible user_namespace issues and to just clean up the code
-replace cap_raised(current_cap(), CAP_SYS_ADMIN) with
-capable(CAP_SYS_ADMIN).
-
-Acked-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Reviewed-by: James Morris <james.l.morris-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Acked-by: Andrew G. Morgan <morgan-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Patrick McHardy <kaber-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org>
-Cc: Philipp Reisner <philipp.reisner-63ez5xqkn6DQT0dZR+AlfA@public.gmane.org>
-Cc: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Cc: Vasiliy Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>
-Cc: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- drivers/block/drbd/drbd_nl.c           |    2 +-
- drivers/md/dm-log-userspace-transfer.c |    2 +-
- drivers/video/uvesafb.c                |    2 +-
- 3 files changed, 3 insertions(+), 3 deletions(-)
+ include/linux/uidgid.h |    2 +-
+ init/Kconfig           |   12 +++++++++++-
+ 2 files changed, 12 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/block/drbd/drbd_nl.c b/drivers/block/drbd/drbd_nl.c
-index abfaaca..946166e 100644
---- a/drivers/block/drbd/drbd_nl.c
-+++ b/drivers/block/drbd/drbd_nl.c
-@@ -2297,7 +2297,7 @@ static void drbd_connector_callback(struct cn_msg *req, struct netlink_skb_parms
- 		return;
- 	}
+diff --git a/include/linux/uidgid.h b/include/linux/uidgid.h
+index a0addb8..5398568 100644
+--- a/include/linux/uidgid.h
++++ b/include/linux/uidgid.h
+@@ -17,7 +17,7 @@
+ struct user_namespace;
+ extern struct user_namespace init_user_ns;
  
--	if (!cap_raised(current_cap(), CAP_SYS_ADMIN)) {
-+	if (!capable(CAP_SYS_ADMIN)) {
- 		retcode = ERR_PERM;
- 		goto fail;
- 	}
-diff --git a/drivers/md/dm-log-userspace-transfer.c b/drivers/md/dm-log-userspace-transfer.c
-index 1f23e04..08d9a20 100644
---- a/drivers/md/dm-log-userspace-transfer.c
-+++ b/drivers/md/dm-log-userspace-transfer.c
-@@ -134,7 +134,7 @@ static void cn_ulog_callback(struct cn_msg *msg, struct netlink_skb_parms *nsp)
- {
- 	struct dm_ulog_request *tfr = (struct dm_ulog_request *)(msg + 1);
+-#if defined(NOTYET)
++#ifdef CONFIG_UIDGID_STRICT_TYPE_CHECKS
  
--	if (!cap_raised(current_cap(), CAP_SYS_ADMIN))
-+	if (!capable(CAP_SYS_ADMIN))
- 		return;
+ typedef struct {
+ 	uid_t val;
+diff --git a/init/Kconfig b/init/Kconfig
+index 72f33fa..86cf760 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -828,7 +828,8 @@ config IPC_NS
+ config USER_NS
+ 	bool "User namespace (EXPERIMENTAL)"
+ 	depends on EXPERIMENTAL
+-	default y
++	select UIDGID_STRICT_TYPE_CHECKS
++	default n
+ 	help
+ 	  This allows containers, i.e. vservers, to use user namespaces
+ 	  to provide different user info for different servers.
+@@ -852,6 +853,15 @@ config NET_NS
  
- 	spin_lock(&receiving_list_lock);
-diff --git a/drivers/video/uvesafb.c b/drivers/video/uvesafb.c
-index 260cca7..9f7d27a 100644
---- a/drivers/video/uvesafb.c
-+++ b/drivers/video/uvesafb.c
-@@ -73,7 +73,7 @@ static void uvesafb_cn_callback(struct cn_msg *msg, struct netlink_skb_parms *ns
- 	struct uvesafb_task *utask;
- 	struct uvesafb_ktask *task;
+ endif # NAMESPACES
  
--	if (!cap_raised(current_cap(), CAP_SYS_ADMIN))
-+	if (!capable(CAP_SYS_ADMIN))
- 		return;
- 
- 	if (msg->seq >= UVESAFB_TASKS_MAX)
++config UIDGID_STRICT_TYPE_CHECKS
++	bool "Require conversions between uid/gids and their internal representation"
++	default n
++	help
++	 While the nececessary conversions are being added to all subsystems this option allows
++	 the code to continue to build for unconverted subsystems.
++
++	 Say Y here if you want the strict type checking enabled
++
+ config SCHED_AUTOGROUP
+ 	bool "Automatic process group scheduling"
+ 	select EVENTFD
 -- 
 1.7.2.5
