@@ -1,8 +1,8 @@
 From: "\"Eric W. Beiderman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 30/43] userns: Fail exec for suid and sgid binaries with ids
-	outside our user namespace.
-Date: Sat,  7 Apr 2012 22:15:26 -0700
-Message-ID: <1333862139-31737-30-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH 31/43] userns: Teach inode_capable to understand inodes whose
+	uids map to other namespaces.
+Date: Sat,  7 Apr 2012 22:15:27 -0700
+Message-ID: <1333862139-31737-31-git-send-email-ebiederm@xmission.com>
 References: <m11unyn70b.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -26,33 +26,29 @@ From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/exec.c |    5 +++++
- 1 files changed, 5 insertions(+), 0 deletions(-)
+ kernel/capability.c |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/fs/exec.c b/fs/exec.c
-index 00ae2ef..e001bdf 100644
---- a/fs/exec.c
-+++ b/fs/exec.c
-@@ -1291,8 +1291,11 @@ int prepare_binprm(struct linux_binprm *bprm)
- 	if (!(bprm->file->f_path.mnt->mnt_flags & MNT_NOSUID)) {
- 		/* Set-uid? */
- 		if (mode & S_ISUID) {
-+			if (!kuid_has_mapping(bprm->cred->user_ns, inode->i_uid))
-+				return -EPERM;
- 			bprm->per_clear |= PER_CLEAR_ON_SETID;
- 			bprm->cred->euid = inode->i_uid;
-+
- 		}
+diff --git a/kernel/capability.c b/kernel/capability.c
+index cc5f071..493d972 100644
+--- a/kernel/capability.c
++++ b/kernel/capability.c
+@@ -429,12 +429,14 @@ bool nsown_capable(int cap)
+  * targeted at it's own user namespace and that the given inode is owned
+  * by the current user namespace or a child namespace.
+  *
+- * Currently inodes can only be owned by the initial user namespace.
++ * Currently we check to see if an inode is owned by the current
++ * user namespace by seeing if the inode's owner maps into the
++ * current user namespace.
+  *
+  */
+ bool inode_capable(const struct inode *inode, int cap)
+ {
+ 	struct user_namespace *ns = current_user_ns();
  
- 		/* Set-gid? */
-@@ -1302,6 +1305,8 @@ int prepare_binprm(struct linux_binprm *bprm)
- 		 * executable.
- 		 */
- 		if ((mode & (S_ISGID | S_IXGRP)) == (S_ISGID | S_IXGRP)) {
-+			if (!kgid_has_mapping(bprm->cred->user_ns, inode->i_gid))
-+				return -EPERM;
- 			bprm->per_clear |= PER_CLEAR_ON_SETID;
- 			bprm->cred->egid = inode->i_gid;
- 		}
+-	return ns_capable(ns, cap) && (ns == &init_user_ns);
++	return ns_capable(ns, cap) && kuid_has_mapping(ns, inode->i_uid);
+ }
 -- 
 1.7.2.5
