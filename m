@@ -1,8 +1,7 @@
 From: "\"Eric W. Beiderman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 14/43] userns: Add a Kconfig option to enforce strict kuid and
-	kgid type checks
-Date: Sat,  7 Apr 2012 22:15:10 -0700
-Message-ID: <1333862139-31737-14-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH 11/43] userns: Start out with a full set of capabilities.
+Date: Sat,  7 Apr 2012 22:15:07 -0700
+Message-ID: <1333862139-31737-11-git-send-email-ebiederm@xmission.com>
 References: <m11unyn70b.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,66 +23,38 @@ List-Id: containers.vger.kernel.org
 
 From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-Make it possible to easily switch between strong mandatory
-type checks and relaxed type checks so that the code can
-easily be tested with the type checks and then built
-with the strong type checks disabled so the resulting
-code can be used.
-
-Require strong mandatory type checks when enabling the user namespace.
-It is very simple to make a typo and use the wrong type allowing
-conversions to/from userspace values to be bypassed by accident,
-the strong type checks prevent this.
-
 Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- include/linux/uidgid.h |    2 +-
- init/Kconfig           |   12 +++++++++++-
- 2 files changed, 12 insertions(+), 2 deletions(-)
+ kernel/user_namespace.c |    9 +++++++++
+ 1 files changed, 9 insertions(+), 0 deletions(-)
 
-diff --git a/include/linux/uidgid.h b/include/linux/uidgid.h
-index a0addb8..5398568 100644
---- a/include/linux/uidgid.h
-+++ b/include/linux/uidgid.h
-@@ -17,7 +17,7 @@
- struct user_namespace;
- extern struct user_namespace init_user_ns;
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index c15e533..e216e1e 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -11,6 +11,7 @@
+ #include <linux/user_namespace.h>
+ #include <linux/highuid.h>
+ #include <linux/cred.h>
++#include <linux/securebits.h>
  
--#if defined(NOTYET)
-+#ifdef CONFIG_UIDGID_STRICT_TYPE_CHECKS
+ static struct kmem_cache *user_ns_cachep __read_mostly;
  
- typedef struct {
- 	uid_t val;
-diff --git a/init/Kconfig b/init/Kconfig
-index 72f33fa..86cf760 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -828,7 +828,8 @@ config IPC_NS
- config USER_NS
- 	bool "User namespace (EXPERIMENTAL)"
- 	depends on EXPERIMENTAL
--	default y
-+	select UIDGID_STRICT_TYPE_CHECKS
-+	default n
- 	help
- 	  This allows containers, i.e. vservers, to use user namespaces
- 	  to provide different user info for different servers.
-@@ -852,6 +853,15 @@ config NET_NS
- 
- endif # NAMESPACES
- 
-+config UIDGID_STRICT_TYPE_CHECKS
-+	bool "Require conversions between uid/gids and their internal representation"
-+	default n
-+	help
-+	 While the nececessary conversions are being added to all subsystems this option allows
-+	 the code to continue to build for unconverted subsystems.
-+
-+	 Say Y here if you want the strict type checking enabled
-+
- config SCHED_AUTOGROUP
- 	bool "Automatic process group scheduling"
- 	select EVENTFD
+@@ -52,6 +53,14 @@ int create_user_ns(struct cred *new)
+ 	new->gid = new->egid = new->sgid = new->fsgid = 0;
+ 	put_group_info(new->group_info);
+ 	new->group_info = get_group_info(&init_groups);
++	/* Start with the same capabilities as init but useless for doing
++	 * anything as the capabilities are bound to the new user namespace.
++	 */
++	new->securebits = SECUREBITS_DEFAULT;
++	new->cap_inheritable = CAP_EMPTY_SET;
++	new->cap_permitted = CAP_FULL_SET;
++	new->cap_effective = CAP_FULL_SET;
++	new->cap_bset = CAP_FULL_SET;
+ #ifdef CONFIG_KEYS
+ 	key_put(new->request_key_auth);
+ 	new->request_key_auth = NULL;
 -- 
 1.7.2.5
