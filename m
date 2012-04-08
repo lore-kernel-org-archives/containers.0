@@ -1,7 +1,8 @@
 From: "\"Eric W. Beiderman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 07/43] cred: Refcount the user_ns pointed to by the cred.
-Date: Sat,  7 Apr 2012 22:15:03 -0700
-Message-ID: <1333862139-31737-7-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH 08/43] userns: Add an explicit reference to the parent user
+	namespace
+Date: Sat,  7 Apr 2012 22:15:04 -0700
+Message-ID: <1333862139-31737-8-git-send-email-ebiederm@xmission.com>
 References: <m11unyn70b.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,110 +24,99 @@ List-Id: containers.vger.kernel.org
 
 From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-struct user_struct will shortly loose it's user_ns reference
-so make the cred user_ns reference a proper reference complete
-with reference counting.
+I am about to remove the struct user_namespace reference from struct user_struct.
+So keep an explicit track of the parent user namespace.
+
+Take advantage of this new reference and replace instances of user_ns->creator->user_ns
+with user_ns->parent.
 
 Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- include/linux/cred.h         |    2 +-
- kernel/cred.c                |    8 +++-----
- kernel/user_namespace.c      |    8 +++++---
- security/keys/process_keys.c |    2 +-
- 4 files changed, 10 insertions(+), 10 deletions(-)
+ include/linux/user_namespace.h |    1 +
+ kernel/user_namespace.c        |   13 ++++++-------
+ security/commoncap.c           |    2 +-
+ 3 files changed, 8 insertions(+), 8 deletions(-)
 
-diff --git a/include/linux/cred.h b/include/linux/cred.h
-index d12c4e4..2c60ec8 100644
---- a/include/linux/cred.h
-+++ b/include/linux/cred.h
-@@ -146,7 +146,7 @@ struct cred {
- 	void		*security;	/* subjective LSM security */
- #endif
- 	struct user_struct *user;	/* real user ID subscription */
--	struct user_namespace *user_ns; /* cached user->user_ns */
-+	struct user_namespace *user_ns; /* user_ns the caps and keyrings are relative to. */
- 	struct group_info *group_info;	/* supplementary groups for euid/fsgid */
- 	struct rcu_head	rcu;		/* RCU deletion hook */
+diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+index faf4679..dc2d85a 100644
+--- a/include/linux/user_namespace.h
++++ b/include/linux/user_namespace.h
+@@ -12,6 +12,7 @@
+ struct user_namespace {
+ 	struct kref		kref;
+ 	struct hlist_head	uidhash_table[UIDHASH_SZ];
++	struct user_namespace	*parent;
+ 	struct user_struct	*creator;
+ 	struct work_struct	destroyer;
  };
-diff --git a/kernel/cred.c b/kernel/cred.c
-index 97b36ee..7a0d806 100644
---- a/kernel/cred.c
-+++ b/kernel/cred.c
-@@ -148,6 +148,7 @@ static void put_cred_rcu(struct rcu_head *rcu)
- 	if (cred->group_info)
- 		put_group_info(cred->group_info);
- 	free_uid(cred->user);
-+	put_user_ns(cred->user_ns);
- 	kmem_cache_free(cred_jar, cred);
- }
- 
-@@ -303,6 +304,7 @@ struct cred *prepare_creds(void)
- 	set_cred_subscribers(new, 0);
- 	get_group_info(new->group_info);
- 	get_uid(new->user);
-+	get_user_ns(new->user_ns);
- 
- #ifdef CONFIG_KEYS
- 	key_get(new->thread_keyring);
-@@ -412,11 +414,6 @@ int copy_creds(struct task_struct *p, unsigned long clone_flags)
- 			goto error_put;
- 	}
- 
--	/* cache user_ns in cred.  Doesn't need a refcount because it will
--	 * stay pinned by cred->user
--	 */
--	new->user_ns = new->user->user_ns;
--
- #ifdef CONFIG_KEYS
- 	/* new threads get their own thread keyrings if their parent already
- 	 * had one */
-@@ -676,6 +673,7 @@ struct cred *prepare_kernel_cred(struct task_struct *daemon)
- 	atomic_set(&new->usage, 1);
- 	set_cred_subscribers(new, 0);
- 	get_uid(new->user);
-+	get_user_ns(new->user_ns);
- 	get_group_info(new->group_info);
- 
- #ifdef CONFIG_KEYS
 diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index f084083..58bb878 100644
+index 58bb878..c15e533 100644
 --- a/kernel/user_namespace.c
 +++ b/kernel/user_namespace.c
-@@ -24,7 +24,7 @@ static struct kmem_cache *user_ns_cachep __read_mostly;
-  */
- int create_user_ns(struct cred *new)
- {
--	struct user_namespace *ns;
-+	struct user_namespace *ns, *parent_ns = new->user_ns;
- 	struct user_struct *root_user;
- 	int n;
+@@ -45,6 +45,7 @@ int create_user_ns(struct cred *new)
+ 	}
  
-@@ -57,8 +57,10 @@ int create_user_ns(struct cred *new)
- #endif
- 	/* tgcred will be cleared in our caller bc CLONE_THREAD won't be set */
+ 	/* set the new root user in the credentials under preparation */
++	ns->parent = parent_ns;
+ 	ns->creator = new->user;
+ 	new->user = root_user;
+ 	new->uid = new->euid = new->suid = new->fsuid = 0;
+@@ -60,8 +61,6 @@ int create_user_ns(struct cred *new)
+ 	/* Leave the reference to our user_ns with the new cred */
+ 	new->user_ns = ns;
  
--	/* root_user holds a reference to ns, our reference can be dropped */
--	put_user_ns(ns);
-+	/* Leave the reference to our user_ns with the new cred */
-+	new->user_ns = ns;
-+
-+	put_user_ns(parent_ns);
- 
+-	put_user_ns(parent_ns);
+-
  	return 0;
  }
-diff --git a/security/keys/process_keys.c b/security/keys/process_keys.c
-index 70febff..447fb76 100644
---- a/security/keys/process_keys.c
-+++ b/security/keys/process_keys.c
-@@ -858,7 +858,7 @@ void key_replace_session_keyring(void)
- 	new-> sgid	= old-> sgid;
- 	new->fsgid	= old->fsgid;
- 	new->user	= get_uid(old->user);
--	new->user_ns	= new->user_ns;
-+	new->user_ns	= get_user_ns(new->user_ns);
- 	new->group_info	= get_group_info(old->group_info);
  
- 	new->securebits	= old->securebits;
+@@ -72,10 +71,12 @@ int create_user_ns(struct cred *new)
+  */
+ static void free_user_ns_work(struct work_struct *work)
+ {
+-	struct user_namespace *ns =
++	struct user_namespace *parent, *ns =
+ 		container_of(work, struct user_namespace, destroyer);
++	parent = ns->parent;
+ 	free_uid(ns->creator);
+ 	kmem_cache_free(user_ns_cachep, ns);
++	put_user_ns(parent);
+ }
+ 
+ void free_user_ns(struct kref *kref)
+@@ -99,8 +100,7 @@ uid_t user_ns_map_uid(struct user_namespace *to, const struct cred *cred, uid_t
+ 	/* Is cred->user the creator of the target user_ns
+ 	 * or the creator of one of it's parents?
+ 	 */
+-	for ( tmp = to; tmp != &init_user_ns;
+-	      tmp = tmp->creator->user_ns ) {
++	for ( tmp = to; tmp != &init_user_ns; tmp = tmp->parent ) {
+ 		if (cred->user == tmp->creator) {
+ 			return (uid_t)0;
+ 		}
+@@ -120,8 +120,7 @@ gid_t user_ns_map_gid(struct user_namespace *to, const struct cred *cred, gid_t
+ 	/* Is cred->user the creator of the target user_ns
+ 	 * or the creator of one of it's parents?
+ 	 */
+-	for ( tmp = to; tmp != &init_user_ns;
+-	      tmp = tmp->creator->user_ns ) {
++	for ( tmp = to; tmp != &init_user_ns; tmp = tmp->parent ) {
+ 		if (cred->user == tmp->creator) {
+ 			return (gid_t)0;
+ 		}
+diff --git a/security/commoncap.c b/security/commoncap.c
+index 8b3e10e..435d074 100644
+--- a/security/commoncap.c
++++ b/security/commoncap.c
+@@ -92,7 +92,7 @@ int cap_capable(const struct cred *cred, struct user_namespace *targ_ns,
+ 		 *If you have a capability in a parent user ns, then you have
+ 		 * it over all children user namespaces as well.
+ 		 */
+-		targ_ns = targ_ns->creator->user_ns;
++		targ_ns = targ_ns->parent;
+ 	}
+ 
+ 	/* We never get here */
 -- 
 1.7.2.5
