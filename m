@@ -1,7 +1,8 @@
 From: "\"Eric W. Beiderman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 02/43] userns: Kill bogus declaration of function release_uids
-Date: Sat,  7 Apr 2012 22:14:58 -0700
-Message-ID: <1333862139-31737-2-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH 05/43] cred: Add forward declaration of init_user_ns in all
+	cases.
+Date: Sat,  7 Apr 2012 22:15:01 -0700
+Message-ID: <1333862139-31737-5-git-send-email-ebiederm@xmission.com>
 References: <m11unyn70b.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,25 +24,28 @@ List-Id: containers.vger.kernel.org
 
 From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-There is no release_uids function remove the declaration from sched.h
-
 Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- include/linux/sched.h |    1 -
- 1 files changed, 0 insertions(+), 1 deletions(-)
+ include/linux/cred.h |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 81a173c..720ce8d 100644
---- a/include/linux/sched.h
-+++ b/include/linux/sched.h
-@@ -2184,7 +2184,6 @@ static inline struct user_struct *get_uid(struct user_struct *u)
- 	return u;
- }
- extern void free_uid(struct user_struct *);
--extern void release_uids(struct user_namespace *ns);
+diff --git a/include/linux/cred.h b/include/linux/cred.h
+index adadf71..d12c4e4 100644
+--- a/include/linux/cred.h
++++ b/include/linux/cred.h
+@@ -357,11 +357,11 @@ static inline void put_cred(const struct cred *_cred)
+ #define current_user()		(current_cred_xxx(user))
+ #define current_security()	(current_cred_xxx(security))
  
- #include <asm/current.h>
- 
++extern struct user_namespace init_user_ns;
+ #ifdef CONFIG_USER_NS
+ #define current_user_ns()	(current_cred_xxx(user_ns))
+ #define task_user_ns(task)	(task_cred_xxx((task), user_ns))
+ #else
+-extern struct user_namespace init_user_ns;
+ #define current_user_ns()	(&init_user_ns)
+ #define task_user_ns(task)	(&init_user_ns)
+ #endif
 -- 
 1.7.2.5
