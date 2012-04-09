@@ -1,9 +1,9 @@
 From: "Mail Delivery System" <MAILER-DAEMON-BTwWsrLItMCsTnJN9+BGXg@public.gmane.org>
 Subject: Delivery Status Notification (Failure)
 Date: 09 Apr 2012 09:38:28 +0200
-Message-ID: <f8856a$l80j4@iron6.routit.net>
+Message-ID: <f8856a$l80j5@iron6.routit.net>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============7832384576366758328=="
+Content-Type: multipart/mixed; boundary="===============6435070139725314561=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,31 +17,31 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============7832384576366758328==
-Content-Type: multipart/report; report-type=delivery-status; boundary="1L09A.4lJeNc/8i.he+HZ.63tH9+z"
+--===============6435070139725314561==
+Content-Type: multipart/report; report-type=delivery-status; boundary="1L09A.4lJeNc/aU./JpqK.7GRCSy2"
 
---1L09A.4lJeNc/8i.he+HZ.63tH9+z
+--1L09A.4lJeNc/aU./JpqK.7GRCSy2
 content-type: text/plain;
     charset="windows-1252"
 Content-Transfer-Encoding: quoted-printable
 
-The following message to <a952766-Hk3lrmVzaNdT6jH3jjkjyA@public.gmane.org> was undeliverable.
+The following message to <a95560-Hk3lrmVzaNdT6jH3jjkjyA@public.gmane.org> was undeliverable.
 The reason for the problem:
-5.1.0 - Unknown address error 550-'Invalid Recipient: <a952766@absolutely.n=
-l>'
+5.1.0 - Unknown address error 550-'Invalid Recipient: <a95560-Hk3lrmVzaNdT6jH3jjkjyA@public.gmane.org=
+>'
 
---1L09A.4lJeNc/8i.he+HZ.63tH9+z
+--1L09A.4lJeNc/aU./JpqK.7GRCSy2
 content-type: message/delivery-status
 
 Reporting-MTA: dns; iron6.routit.net
 
-Final-Recipient: rfc822;a952766-Hk3lrmVzaNdT6jH3jjkjyA@public.gmane.org
+Final-Recipient: rfc822;a95560-Hk3lrmVzaNdT6jH3jjkjyA@public.gmane.org
 Action: failed
 Status: 5.0.0 (permanent failure)
 Remote-MTA: dns; [89.146.61.14]
-Diagnostic-Code: smtp; 5.1.0 - Unknown address error 550-'Invalid Recipient: <a952766-Hk3lrmVzaNdT6jH3jjkjyA@public.gmane.org>' (delivery attempts: 0)
+Diagnostic-Code: smtp; 5.1.0 - Unknown address error 550-'Invalid Recipient: <a95560-Hk3lrmVzaNdT6jH3jjkjyA@public.gmane.org>' (delivery attempts: 0)
 
---1L09A.4lJeNc/8i.he+HZ.63tH9+z
+--1L09A.4lJeNc/aU./JpqK.7GRCSy2
 content-type: message/rfc822
 
 X-SenderBaseSpam: 2.4
@@ -67,11 +67,11 @@ Tel./Fax.: +31 (30) 370-06-89.
 
 
 
---1L09A.4lJeNc/8i.he+HZ.63tH9+z--
+--1L09A.4lJeNc/aU./JpqK.7GRCSy2--
 
 
 
---===============7832384576366758328==
+--===============6435070139725314561==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -81,4 +81,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============7832384576366758328==--
+--===============6435070139725314561==--
