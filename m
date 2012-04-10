@@ -1,10 +1,16 @@
-From: postmaster-noreply-FMRk+c35SBqonA0d6jMUrA@public.gmane.org
-Subject: Undelivered Mail Returned to Sender
-Date: Tue, 10 Apr 2012 19:26:38 +0200 (CEST)
-Message-ID: <20120410172638.CDA242C9BB@smtpsrv.playnet.it>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC] writeback and cgroup
+Date: Tue, 10 Apr 2012 14:06:53 -0400
+Message-ID: <20120410180653.GJ21801__20035.3403612555$1334081239$gmane$org@redhat.com>
+References: <20120403183655.GA23106@dhcp-172-17-108-109.mtv.corp.google.com>
+	<20120404145134.GC12676@redhat.com>
+	<20120407080027.GA2584@quack.suse.cz>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============3118252279537567295=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20120407080027.GA2584-+0h/O2h83AeN3ZZ/Hiejyg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -14,92 +20,69 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, andrea-oIIqvOZpAevzfdHfmsDf5w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sjayaraman-IBi9RG/b67k@public.gmane.org, lsf-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
+On Sat, Apr 07, 2012 at 10:00:27AM +0200, Jan Kara wrote:
+Hi Jan,
 
---===============3118252279537567295==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="E958F2C9B9.1334078798/smtpsrv.playnet.it"
-Content-Transfer-Encoding: 7bit
+[..]
+> > In general, the core of the issue is that filesystems are not cgroup aware
+> > and if you do throttling below filesystems, then invariably one or other
+> > serialization issue will come up and I am concerned that we will be constantly
+> > fixing those serialization issues. Or the desgin point could be so central
+> > to filesystem design that it can't be changed.
+>   We talked about this at LSF and Dave Chinner had the idea that we could
+> make processes wait at the time when a transaction is started. At that time
+> we don't hold any global locks so process can be throttled without
+> serializing other processes. This effectively builds some cgroup awareness
+> into filesystems but pretty simple one so it should be doable.
 
-This is a MIME-encapsulated message.
+Ok. So what is the meaning of "make process wait" here? What it will be
+dependent on? I am thinking of a case where a process has 100MB of dirty
+data, has 10MB/s write limit and it issues fsync. So before that process
+is able to open a transaction, one needs to wait atleast 10seconds
+(assuming other processes are not doing IO in same cgroup). 
 
---E958F2C9B9.1334078798/smtpsrv.playnet.it
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
+If this wait is based on making sure all dirty data has been written back
+before opening transaction, then it will work without any interaction with
+block layer and sounds more feasible.
 
-This is the mail system at host smtpsrv.playnet.it.
+> 
+> > In general, if you do throttling deeper in the stakc and build back
+> > pressure, then all the layers sitting above should be cgroup aware
+> > to avoid problems. Two layers identified so far are writeback and
+> > filesystems. Is it really worth the complexity. How about doing 
+> > throttling in higher layers when IO is entering the kernel and
+> > keep proportional IO logic at the lowest level and current mechanism
+> > of building pressure continues to work?
+>   I would like to keep single throttling mechanism for different limitting
+> methods - i.e. handle proportional IO the same way as IO hard limits. So we
+> cannot really rely on the fact that throttling is work preserving.
+> 
+> The advantage of throttling at IO layer is that we can keep all the details
+> inside it and only export pretty minimal information (like is bdi congested
+> for given cgroup) to upper layers. If we wanted to do throttling at upper
+> layers (such as Fengguang's buffered write throttling), we need to export
+> the internal details to allow effective throttling...
 
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
+For absolute throttling we really don't have to expose any details. In
+fact in my implementation of throttling buffered writes, I just had exported
+a single function to be called in bdi dirty rate limit. The caller will
+simply sleep long enough depending on the size of IO it is doing and
+how many other processes are doing IO in same cgroup.
 
-For further assistance, please contact Playnet Helpdesk Support.
+So implementation was still in block layer and only a single function
+was exposed to higher layers.
 
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
+One more factor makes absolute throttling interesting and that is global
+throttling and not per device throttling. For example in case of btrfs,
+there is no single stacked device on which to put total throttling
+limits.
 
-                   The mail system
+So if filesystems can handle serialization issue, then back pressure
+method looks more clean (thought complex).
 
-<spbieffe-nc/lrvXPQ4s@public.gmane.org>: host smtp.tin.it[62.211.72.32] said: 550 RCPT
-    TO:<spbieffe-nc/lrvXPQ4s@public.gmane.org> User unknown (in reply to RCPT TO command)
-
---E958F2C9B9.1334078798/smtpsrv.playnet.it
-Content-Description: Delivery report
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; smtpsrv.playnet.it
-X-Postfix-Queue-ID: E958F2C9B9
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Tue, 10 Apr 2012 19:26:16 +0200 (CEST)
-
-Final-Recipient: rfc822; spbieffe-nc/lrvXPQ4s@public.gmane.org
-Original-Recipient: rfc822;spbieffe-nc/lrvXPQ4s@public.gmane.org
-Action: failed
-Status: 5.0.0
-Remote-MTA: dns; smtp.tin.it
-Diagnostic-Code: smtp; 550 RCPT TO:<spbieffe-nc/lrvXPQ4s@public.gmane.org> User unknown
-
---E958F2C9B9.1334078798/smtpsrv.playnet.it
-Content-Description: Undelivered Message
-Content-Type: message/rfc822
-Content-Transfer-Encoding: 7bit
-
-Received: from 178.33.178.33 (unknown [178.33.178.33])
-	by smtpsrv.playnet.it (Postfix) with ESMTPA id E958F2C9B9
-	for <spbieffe-nc/lrvXPQ4s@public.gmane.org>; Tue, 10 Apr 2012 19:26:16 +0200 (CEST)
-Received: from 178.33.178.33 (uyO-32-68 [178.33.178.33]) by 178.33.178.33 (mailer) with SMTP id tGOMdLtEilwS for <spbieffe-nc/lrvXPQ4s@public.gmane.org>; Tue, 10 Apr 2012 19:26:16 +0200
-Date: Tue, 10 Apr 2012 19:26:16 +0200
-From: "Info" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Message-ID: <70204493.87973882016755-2eoI++8IZHskH0EdWafHuA@public.gmane.org>
-To: <spbieffe-nc/lrvXPQ4s@public.gmane.org>
-Subject: Ordine No38781.
-MIME-Version: 1.0
-Content-Type: text/plain;charset=utf-8
-Content-Transfer-Encoding: quoted-printable
-
-
-
-Gentile, spbieffe-mk08r9EwkGY@public.gmane.org
-
-Lei ha chiesto sia per i dati aziendali.
-Essi possono essere trovati all'indirizzo:
-http://kartingistanbul.com/richiesta/InformazioniOrder.zip?spbieffe@tin.i=
-t
-
-
-
---E958F2C9B9.1334078798/smtpsrv.playnet.it--
-
---===============3118252279537567295==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============3118252279537567295==--
+Thanks
+Vivek
