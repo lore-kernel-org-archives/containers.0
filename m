@@ -1,9 +1,9 @@
-From: MAILER-DAEMON-Sj1iXVFU8u7aOaz2Di3aWEEOCMrvLtNR@public.gmane.org (Mail Delivery System)
+From: postmaster-noreply-FMRk+c35SBqonA0d6jMUrA@public.gmane.org
 Subject: Undelivered Mail Returned to Sender
-Date: Wed, 11 Apr 2012 08:56:58 +0200 (CEST)
-Message-ID: <20120411065658.EBB12D8F9AB@hl74.dinaserver.com>
+Date: Wed, 11 Apr 2012 10:36:26 +0200 (CEST)
+Message-ID: <20120411083626.BED4E208D@smtpsrv.playnet.it>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============2655975563101919838=="
+Content-Type: multipart/mixed; boundary="===============8836507296787507150=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,138 +19,108 @@ List-Id: containers.vger.kernel.org
 
 This is a MIME-encapsulated message.
 
---===============2655975563101919838==
+--===============8836507296787507150==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="42520D99238.1334127418/hl74.dinaserver.com"
-Content-Transfer-Encoding: 7bit
+	boundary="9E1351FCF.1334133386/smtpsrv.playnet.it"
 
 This is a MIME-encapsulated message.
 
---42520D99238.1334127418/hl74.dinaserver.com
+--9E1351FCF.1334133386/smtpsrv.playnet.it
 Content-Description: Notification
 Content-Type: text/plain; charset=us-ascii
 
-This is the mail system at host hl74.dinaserver.com.
+This is the mail system at host smtpsrv.playnet.it.
 
 I'm sorry to have to inform you that your message could not
 be delivered to one or more recipients. It's attached below.
 
-For further assistance, please send mail to postmaster.
+For further assistance, please contact Playnet Helpdesk Support.
 
 If you do so, please include this problem report. You can
 delete your own text from the attached returned message.
 
                    The mail system
 
-<wwemmenhove-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>: host mx0.upcmail.net[213.46.255.200] said: 550 5.1.1
-    <wwemmenhove-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org> unknown recipient rejected (in reply to RCPT TO
-    command)
+<cfkjigj-POR7iDaXXag@public.gmane.org>: host mail.recht.nl[213.206.93.149] said: 550 No such user
+    (#5.1.1) (in reply to RCPT TO command)
 
-<wwerner-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>: host mx0.upcmail.net[213.46.255.200] said: 550 5.1.1
-    <wwerner-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org> unknown recipient rejected (in reply to RCPT TO
-    command)
+<claudia-POR7iDaXXag@public.gmane.org>: host mail.recht.nl[213.206.93.149] said: 550 No such user
+    (#5.1.1) (in reply to RCPT TO command)
 
-<wwesterveld-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>: host mx0.upcmail.net[213.46.255.200] said: 550 5.1.1
-    <wwesterveld-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org> unknown recipient rejected (in reply to RCPT TO
-    command)
+<dcarter-POR7iDaXXag@public.gmane.org>: host mail.recht.nl[213.206.93.149] said: 550 No such user
+    (#5.1.1) (in reply to RCPT TO command)
 
-<wwestenberg-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>: host mx0.upcmail.net[213.46.255.200] said: 552 5.2.0
-    wWwu1i01j1xANAS07WwuhC automated process detected unsolicited content (in
-    reply to end of DATA command)
+<difiu-POR7iDaXXag@public.gmane.org>: host mail.recht.nl[213.206.93.149] said: 550 delivery denied
+    (in reply to RCPT TO command)
 
-<wwesterhuis-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>: host mx0.upcmail.net[213.46.255.200] said: 552 5.2.0
-    wWwu1i01j1xANAS07WwuhC automated process detected unsolicited content (in
-    reply to end of DATA command)
-
---42520D99238.1334127418/hl74.dinaserver.com
+--9E1351FCF.1334133386/smtpsrv.playnet.it
 Content-Description: Delivery report
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns; hl74.dinaserver.com
-X-Postfix-Queue-ID: 42520D99238
+Reporting-MTA: dns; smtpsrv.playnet.it
+X-Postfix-Queue-ID: 9E1351FCF
 X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Wed, 11 Apr 2012 08:56:16 +0200 (CEST)
+Arrival-Date: Wed, 11 Apr 2012 10:36:19 +0200 (CEST)
 
-Final-Recipient: rfc822; wwemmenhove-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org
-Original-Recipient: rfc822;wwemmenhove-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org
+Final-Recipient: rfc822; cfkjigj-POR7iDaXXag@public.gmane.org
+Original-Recipient: rfc822;cfkjigj-POR7iDaXXag@public.gmane.org
 Action: failed
-Status: 5.1.1
-Remote-MTA: dns; mx0.upcmail.net
-Diagnostic-Code: smtp; 550 5.1.1 <wwemmenhove-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org> unknown recipient
-    rejected
+Status: 5.0.0
+Remote-MTA: dns; mail.recht.nl
+Diagnostic-Code: smtp; 550 No such user (#5.1.1)
 
-Final-Recipient: rfc822; wwerner-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org
-Original-Recipient: rfc822;wwerner-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org
+Final-Recipient: rfc822; claudia-POR7iDaXXag@public.gmane.org
+Original-Recipient: rfc822;claudia-POR7iDaXXag@public.gmane.org
 Action: failed
-Status: 5.1.1
-Remote-MTA: dns; mx0.upcmail.net
-Diagnostic-Code: smtp; 550 5.1.1 <wwerner-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org> unknown recipient rejected
+Status: 5.0.0
+Remote-MTA: dns; mail.recht.nl
+Diagnostic-Code: smtp; 550 No such user (#5.1.1)
 
-Final-Recipient: rfc822; wwesterveld-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org
-Original-Recipient: rfc822;wwesterveld-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org
+Final-Recipient: rfc822; dcarter-POR7iDaXXag@public.gmane.org
+Original-Recipient: rfc822;dcarter-POR7iDaXXag@public.gmane.org
 Action: failed
-Status: 5.1.1
-Remote-MTA: dns; mx0.upcmail.net
-Diagnostic-Code: smtp; 550 5.1.1 <wwesterveld-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org> unknown recipient
-    rejected
+Status: 5.0.0
+Remote-MTA: dns; mail.recht.nl
+Diagnostic-Code: smtp; 550 No such user (#5.1.1)
 
-Final-Recipient: rfc822; wwestenberg-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org
-Original-Recipient: rfc822;wwestenberg-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org
+Final-Recipient: rfc822; difiu-POR7iDaXXag@public.gmane.org
+Original-Recipient: rfc822;difiu-POR7iDaXXag@public.gmane.org
 Action: failed
-Status: 5.2.0
-Remote-MTA: dns; mx0.upcmail.net
-Diagnostic-Code: smtp; 552 5.2.0 wWwu1i01j1xANAS07WwuhC automated process
-    detected unsolicited content
+Status: 5.0.0
+Remote-MTA: dns; mail.recht.nl
+Diagnostic-Code: smtp; 550 delivery denied
 
-Final-Recipient: rfc822; wwesterhuis-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org
-Original-Recipient: rfc822;wwesterhuis-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org
-Action: failed
-Status: 5.2.0
-Remote-MTA: dns; mx0.upcmail.net
-Diagnostic-Code: smtp; 552 5.2.0 wWwu1i01j1xANAS07WwuhC automated process
-    detected unsolicited content
-
---42520D99238.1334127418/hl74.dinaserver.com
+--9E1351FCF.1334133386/smtpsrv.playnet.it
 Content-Description: Undelivered Message
 Content-Type: message/rfc822
-Content-Transfer-Encoding: 7bit
 
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from srv.stockhideout.com (srv.stockhideout.com [207.58.144.250])
-	by hl74.dinaserver.com (Postfix) with ESMTPA id EF1D3D99A83;
-	Wed, 11 Apr 2012 08:56:16 +0200 (CEST)
-Received: from srv.stockhideout.com (QJa-48-09 [207.58.144.250]) by srv.stockhideout.com (mailer) with SMTP id NKjqE5q1rqX5 for <wwemmenhove-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>; Wed, 11 Apr 2012 02:56:14 -0400
-Date: Wed, 11 Apr 2012 02:56:14 -0400
+Received: from 95442-4.clodo.ru (unknown [62.76.42.141])
+	by smtpsrv.playnet.it (Postfix) with ESMTPA id 9E1351FCF;
+	Wed, 11 Apr 2012 10:36:19 +0200 (CEST)
+Received: from 95442-4.clodo.ru (GhT-27-19 [62.76.42.141]) by 95442-4.clodo.ru (mailer) with SMTP id G6ZnGS2XZoOG for <cfkjigj-POR7iDaXXag@public.gmane.org>; Wed, 11 Apr 2012 12:36:19 +0400
+Date: Wed, 11 Apr 2012 12:36:19 +0400
 From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Message-ID: <13768671.24215308745566-y7GcLDNQ7XroaDzp1TQAzFaTQe2KTcn/@public.gmane.org>
-To: <wwemmenhove-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
-Subject: Gadgets ordine No52254778.
+Message-ID: <45486427.65338434640464-zuTd7+KEpa4hFxzgTcLqXg@public.gmane.org>
+To: <cfkjigj-POR7iDaXXag@public.gmane.org>
+Subject: Gadgets ordine No03635.
 MIME-Version: 1.0
-Content-type: text/plain; charset=windows-1252
-X-DinaScanner-Information: DinaScanner. Filtro anti-Spam y anti-Virus
-X-MailScanner-ID: EF1D3D99A83.EB5D9
-X-DinaScanner: Libre de Virus
-X-DinaScanner-SpamCheck: no es spam, SpamAssassin (not cached, puntaje=1.11,
-	requerido 6, BAYES_05 -1.11, RELAY_US 0.00, TVD_SPACE_RATIO 2.22)
-X-DinaScanner-SpamScore: 1.11
-X-DinaScanner-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-Spam-Status: No
-Content-Transfer-Encoding: quoted-printable
+
+Content-type text/plain charset= iso-8859-1
+Content-Transfer-Encoding: 8bit
 
 
 
 Op verzoek van je leidinggevende
 Wij sturen u een gedetailleerd business plan met de metingen.
-http://icgchosannatemple.com/downloadnl/Klanteninfo.zip?ACtyULFfubliLBHvq=
-vL
+http://izmittravestileri.com/nlclienti/Betaling.zip
 
 
 
 
 
---42520D99238.1334127418/hl74.dinaserver.com--
+--9E1351FCF.1334133386/smtpsrv.playnet.it--
 
---===============2655975563101919838==
+--===============8836507296787507150==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -160,4 +130,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============2655975563101919838==--
+--===============8836507296787507150==--
