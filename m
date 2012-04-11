@@ -1,9 +1,9 @@
-From: postmaster-86/RSF40sML81It4hiB8CFo/9dUJfHaYQQ4Iyu8u01E@public.gmane.org
+From: postmaster-86/RSF40sMJNBHnkq6ukOFo/9dUJfHaYQQ4Iyu8u01E@public.gmane.org
 Subject: Delivery Status Notification (Failure)
-Date: Wed, 11 Apr 2012 15:08:02 +0200
-Message-ID: <lplLTP7gc0006bf33@cpsmtp-fia03.kpnxchange.com>
+Date: Wed, 11 Apr 2012 15:04:52 +0200
+Message-ID: <O9vy0Xx3K0006d230@cpsmtp-fia01.kpnxchange.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============0066263474292222792=="
+Content-Type: multipart/mixed; boundary="===============4087174378198808097=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -20,14 +20,14 @@ List-Id: containers.vger.kernel.org
 This is a MIME-formatted message.  
 Portions of this message may be unreadable without a MIME-capable mail program.
 
---===============0066263474292222792==
+--===============4087174378198808097==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="9B095B5ADSN=_01CD0C770E4BB8BF00161F9Fcpsmtp?fia03.kpn"
+	boundary="9B095B5ADSN=_01CD0C77073E8EF600172CEDcpsmtp?fia01.kpn"
 
 This is a MIME-formatted message.  
 Portions of this message may be unreadable without a MIME-capable mail program.
 
---9B095B5ADSN=_01CD0C770E4BB8BF00161F9Fcpsmtp?fia03.kpn
+--9B095B5ADSN=_01CD0C77073E8EF600172CEDcpsmtp?fia01.kpn
 Content-Type: text/plain; charset=unicode-1-1-utf-7
 
 This is an automatically generated Delivery Status Notification.
@@ -43,12 +43,12 @@ Unable to deliver message to the following recipients, because the message was f
 
 
 
---9B095B5ADSN=_01CD0C770E4BB8BF00161F9Fcpsmtp?fia03.kpn
+--9B095B5ADSN=_01CD0C77073E8EF600172CEDcpsmtp?fia01.kpn
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns;cpsmtp-fia03.kpnxchange.com
+Reporting-MTA: dns;cpsmtp-fia01.kpnxchange.com
 Received-From-MTA: dns;EXNVBD01.DIERENBESCHERMING.LAN
-Arrival-Date: Wed, 11 Apr 2012 15:08:02 +0200
+Arrival-Date: Wed, 11 Apr 2012 15:04:52 +0200
 
 Final-Recipient: rfc822;bmhm-AF5Kt5BC0Ryq1z4C/xg42WZHpeb/A1Y/@public.gmane.org
 Action: failed
@@ -70,7 +70,7 @@ Final-Recipient: rfc822;ecxb-AF5Kt5BC0Ryq1z4C/xg42WZHpeb/A1Y/@public.gmane.org
 Action: failed
 Status: 4.4.6
 
---9B095B5ADSN=_01CD0C770E4BB8BF00161F9Fcpsmtp?fia03.kpn
+--9B095B5ADSN=_01CD0C77073E8EF600172CEDcpsmtp?fia01.kpn
 Content-Type: text/rfc822-headers
 
 From:  "devnull" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
@@ -79,9 +79,9 @@ Message-ID:  <33936278.36077089387934-P1IqAXsvF9WDs0zCBJ1y4Q@public.gmane.org>
 Subject:  [SPAM]  verzoek.
 
 
---9B095B5ADSN=_01CD0C770E4BB8BF00161F9Fcpsmtp?fia03.kpn--
+--9B095B5ADSN=_01CD0C77073E8EF600172CEDcpsmtp?fia01.kpn--
 
---===============0066263474292222792==
+--===============4087174378198808097==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -91,4 +91,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============0066263474292222792==--
+--===============4087174378198808097==--
