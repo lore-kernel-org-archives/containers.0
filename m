@@ -1,9 +1,9 @@
-From: MAILER-DAEMON-XeZUkwqpAvc@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Wed, 11 Apr 2012 14:35:22 +0200 (CEST)
-Message-ID: <20120411123522.B1BC7199B38@mailserver6.lsnet.it>
+From: postmaster-86/RSF40sML81It4hiB8CFo/9dUJfHaYQQ4Iyu8u01E@public.gmane.org
+Subject: Delivery Status Notification (Failure)
+Date: Wed, 11 Apr 2012 15:08:02 +0200
+Message-ID: <lplLTP7gc0006bf33@cpsmtp-fia03.kpnxchange.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============4987564738812426992=="
+Content-Type: multipart/mixed; boundary="===============0066263474292222792=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,122 +17,71 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
+This is a MIME-formatted message.  
+Portions of this message may be unreadable without a MIME-capable mail program.
 
---===============4987564738812426992==
+--===============0066263474292222792==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="9F7831985C4.1334147722/mailserver6.lsnet.it"
-Content-Transfer-Encoding: 7bit
+	boundary="9B095B5ADSN=_01CD0C770E4BB8BF00161F9Fcpsmtp?fia03.kpn"
 
-This is a MIME-encapsulated message.
+This is a MIME-formatted message.  
+Portions of this message may be unreadable without a MIME-capable mail program.
 
---9F7831985C4.1334147722/mailserver6.lsnet.it
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
+--9B095B5ADSN=_01CD0C770E4BB8BF00161F9Fcpsmtp?fia03.kpn
+Content-Type: text/plain; charset=unicode-1-1-utf-7
 
-This is the mail system at host mailserver6.lsnet.it.
+This is an automatically generated Delivery Status Notification.
 
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
+Unable to deliver message to the following recipients, because the message was forwarded more than the maximum allowed times. This could indicate a mail loop.
 
-For further assistance, please send mail to postmaster.
+       bmhm-AF5Kt5BC0Ryq1z4C/xg42WZHpeb/A1Y/@public.gmane.org
+       bzj-AF5Kt5BC0Ryq1z4C/xg42WZHpeb/A1Y/@public.gmane.org
+       ctzr-AF5Kt5BC0Ryq1z4C/xg42WZHpeb/A1Y/@public.gmane.org
+       dimx-AF5Kt5BC0Ryq1z4C/xg42WZHpeb/A1Y/@public.gmane.org
+       ecxb-AF5Kt5BC0Ryq1z4C/xg42WZHpeb/A1Y/@public.gmane.org
 
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
 
-                   The mail system
 
-<edi-jacobs-CmkmPbn3yAE@public.gmane.org>: host mx.tb.mail.iss.as9143.net[212.54.42.8] said: 550
-    edi-jacobs-CmkmPbn3yAE@public.gmane.org bestaat niet / does not exist (in reply to RCPT TO
-    command)
 
-<edijk-CmkmPbn3yAE@public.gmane.org>: host mx.tb.mail.iss.as9143.net[212.54.42.8] said: 550 Message
-    refused by spam filter. (in reply to end of DATA command)
-
-<edijksma-CmkmPbn3yAE@public.gmane.org>: host mx.tb.mail.iss.as9143.net[212.54.42.8] said: 550
-    Message refused by spam filter. (in reply to end of DATA command)
-
-<edijkstra-CmkmPbn3yAE@public.gmane.org>: host mx.tb.mail.iss.as9143.net[212.54.42.8] said: 550
-    Message refused by spam filter. (in reply to end of DATA command)
-
-<edik-CmkmPbn3yAE@public.gmane.org>: host mx.tb.mail.iss.as9143.net[212.54.42.8] said: 550 Message
-    refused by spam filter. (in reply to end of DATA command)
-
---9F7831985C4.1334147722/mailserver6.lsnet.it
-Content-Description: Delivery report
+--9B095B5ADSN=_01CD0C770E4BB8BF00161F9Fcpsmtp?fia03.kpn
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns; mailserver6.lsnet.it
-X-Postfix-Queue-ID: 9F7831985C4
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Wed, 11 Apr 2012 14:35:11 +0200 (CEST)
+Reporting-MTA: dns;cpsmtp-fia03.kpnxchange.com
+Received-From-MTA: dns;EXNVBD01.DIERENBESCHERMING.LAN
+Arrival-Date: Wed, 11 Apr 2012 15:08:02 +0200
 
-Final-Recipient: rfc822; edi-jacobs-CmkmPbn3yAE@public.gmane.org
-Original-Recipient: rfc822;edi-jacobs-CmkmPbn3yAE@public.gmane.org
+Final-Recipient: rfc822;bmhm-AF5Kt5BC0Ryq1z4C/xg42WZHpeb/A1Y/@public.gmane.org
 Action: failed
-Status: 5.0.0
-Remote-MTA: dns; mx.tb.mail.iss.as9143.net
-Diagnostic-Code: smtp; 550 edi-jacobs-CmkmPbn3yAE@public.gmane.org bestaat niet / does not exist
+Status: 4.4.6
 
-Final-Recipient: rfc822; edijk-CmkmPbn3yAE@public.gmane.org
-Original-Recipient: rfc822;edijk-CmkmPbn3yAE@public.gmane.org
+Final-Recipient: rfc822;bzj-AF5Kt5BC0Ryq1z4C/xg42WZHpeb/A1Y/@public.gmane.org
 Action: failed
-Status: 5.0.0
-Remote-MTA: dns; mx.tb.mail.iss.as9143.net
-Diagnostic-Code: smtp; 550 Message refused by spam filter.
+Status: 4.4.6
 
-Final-Recipient: rfc822; edijksma-CmkmPbn3yAE@public.gmane.org
-Original-Recipient: rfc822;edijksma-CmkmPbn3yAE@public.gmane.org
+Final-Recipient: rfc822;ctzr-AF5Kt5BC0Ryq1z4C/xg42WZHpeb/A1Y/@public.gmane.org
 Action: failed
-Status: 5.0.0
-Remote-MTA: dns; mx.tb.mail.iss.as9143.net
-Diagnostic-Code: smtp; 550 Message refused by spam filter.
+Status: 4.4.6
 
-Final-Recipient: rfc822; edijkstra-CmkmPbn3yAE@public.gmane.org
-Original-Recipient: rfc822;edijkstra-CmkmPbn3yAE@public.gmane.org
+Final-Recipient: rfc822;dimx-AF5Kt5BC0Ryq1z4C/xg42WZHpeb/A1Y/@public.gmane.org
 Action: failed
-Status: 5.0.0
-Remote-MTA: dns; mx.tb.mail.iss.as9143.net
-Diagnostic-Code: smtp; 550 Message refused by spam filter.
+Status: 4.4.6
 
-Final-Recipient: rfc822; edik-CmkmPbn3yAE@public.gmane.org
-Original-Recipient: rfc822;edik-CmkmPbn3yAE@public.gmane.org
+Final-Recipient: rfc822;ecxb-AF5Kt5BC0Ryq1z4C/xg42WZHpeb/A1Y/@public.gmane.org
 Action: failed
-Status: 5.0.0
-Remote-MTA: dns; mx.tb.mail.iss.as9143.net
-Diagnostic-Code: smtp; 550 Message refused by spam filter.
+Status: 4.4.6
 
---9F7831985C4.1334147722/mailserver6.lsnet.it
-Content-Description: Undelivered Message
-Content-Type: message/rfc822
-Content-Transfer-Encoding: 7bit
+--9B095B5ADSN=_01CD0C770E4BB8BF00161F9Fcpsmtp?fia03.kpn
+Content-Type: text/rfc822-headers
 
-Received: from 95442-4.clodo.ru (unknown [62.76.42.141])
-	by mailserver6.lsnet.it (Postfix) with ESMTPA id 9F7831985C4;
-	Wed, 11 Apr 2012 14:35:11 +0200 (CEST)
-Received: from [192.168.137.100] by 95442-4.clodo.ru id pvjsJID0LVCy; Wed, 11 Apr 2012 16:27:39 +0400
-Message-ID: <004401cd17de$7a8f4280$6489a8c0-zuTd7+KEpa4hFxzgTcLqXg@public.gmane.org>
-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <edi-jacobs-CmkmPbn3yAE@public.gmane.org>
-Subject: prijslijst
-Date: Wed, 11 Apr 2012 16:27:39 +0400
-MIME-Version: 1.0
-Content-type: text/plain; charset=us-ascii 
-Content-Transfer-Encoding: quoted-printable
+From:  "devnull" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To:  <bmhm-AF5Kt5BC0Ryq1z4C/xg42WZHpeb/A1Y/@public.gmane.org>
+Message-ID:  <33936278.36077089387934-P1IqAXsvF9WDs0zCBJ1y4Q@public.gmane.org>
+Subject:  [SPAM]  verzoek.
 
 
+--9B095B5ADSN=_01CD0C770E4BB8BF00161F9Fcpsmtp?fia03.kpn--
 
->> Stuur-to-date prijslijst kunt u
-
-Hello.
-U kunt de
-http://investasilogis.com/nlclienti/Klanteninfo.zip?9Qyr4kRBirDKS3GCvZU
-
-
-
---9F7831985C4.1334147722/mailserver6.lsnet.it--
-
---===============4987564738812426992==
+--===============0066263474292222792==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -142,4 +91,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============4987564738812426992==--
+--===============0066263474292222792==--
