@@ -1,8 +1,7 @@
 From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Cgroup in a single hierarchy (Was: Re: [RFD] Merge task counter into
-	memcg)
-Date: Thu, 12 Apr 2012 14:04:24 -0300
-Message-ID: <4F870B18.5060703@parallels.com>
+Subject: Re: [RFD] Merge task counter into memcg
+Date: Thu, 12 Apr 2012 14:13:49 -0300
+Message-ID: <4F870D4D.6020405@parallels.com>
 References: <20120411185715.GA4317@somewhere.redhat.com>
 	<4F862851.3040208@jp.fujitsu.com>
 	<20120412113217.GB11455@somewhere.redhat.com>
@@ -29,46 +28,84 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Daniel Walsh <dwalsh-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 04/12/2012 01:38 PM, Tejun Heo wrote:
-> Hello, Johannes.
 >
-> On Thu, Apr 12, 2012 at 05:30:55PM +0200, Johannes Weiner wrote:
->>> But also, I believe this has been widely discussed in person by
->>> people, in separate groups. Maybe Tejun can do a small writeup of
->>> where we stand?
+> The reason why I asked Frederic whether it would make more sense as
+> part of memcg wasn't about flexibility but mostly about the type of
+> the resource.  I'll continue below.
 >
-> I'm still mulling over it.  What I want is single hierarchy with more
-> unified rules regarding how different controllers handle the hierarchy
-> in such way that different controllers may interact - ie. memcg and
-> blkio can share the same page tags, or cgroup-freezer can provide
-> freezing service to other controllers.  I want if a task belongs to
-> cgroup, it belongs to _the_ cgroup and you can figure out all cgroup
-> related stuff from there.
+>>> Agree. Even people aiming for unified hierarchies are okay with an
+>>> opt-in/out system, I believe. So the controllers need not to be
+>>> active at all times. One way of doing this is what I suggested to
+>>> Frederic: If you don't limit, don't account.
+>>
+>> I don't agree, it's a valid usecase to monitor a workload without
+>> limiting it in any way.  I do it all the time.
+>
+> AFAICS, this seems to be the most valid use case for different
+> controllers seeing different part of the hierarchy, even if the
+> hierarchies aren't completely separate.  Accounting and control being
+> in separate controllers is pretty sucky too as it ends up accounting
+> things multiple times.  Maybe all controllers should learn how to do
+> accounting w/o applying limits?  Not sure yet.
 
-Agreed.
-If you would allow me to side track (I'll answer the rest of the e-mail 
-separately to avoid confusion)
+Well...
 
-One of the things I attempted in cpu/cpuacct, is to patch in code with 
-static_branches when they are comounted. I so far temporarily failed 
-because some locking order rules, and could not yet go back to that.
+* I don't know how blkcgrp applies limits
+* the cpu cgroup, is limiting by nature, in the sense that it divides 
+shares in proportion to the number of cgroups in a hierarchy
+* memcg has a RESOURCE_MAX default limit that is bigger than anything 
+you can possibly count.
 
-But we could do something more general, that could work at least until
-we actually finally finish whatever rework we're doing.
+So one of the problems, is that "limiting" may mean different thing to 
+each controller.
 
-1) Right now, the controllers work independently, and that code will 
-have to live for at least some years anyway. So leave it there.
+I am mostly talking about memory cgroup here. And there. "Accounting 
+without limiting" can trivially be done by setting limit to 
+RESOURCE_MAX-delta. This won't work when we start having machines with 
+2^64 physical memory, but I guess we have some time until it happens.
 
-2) But also, insert optimization code that can be enabled/disabled when 
-companion cgroups are in the same hierarchy.
+The way I see, it's just a technicality over a way to runtime disable 
+the accounting of a resource without filling the hierarchy with flags.
 
-3) After we mount the cgroup, apply those optimization to all of them 
-from the cgroup core (the current bind stuff is just way to weird for 
-that, IMHO)
 
-4) Then we start telling userspace people to favor co-mounts as much as 
-they can
+>> To reraise a point from my other email that was ignored: do users
+>> actually really care about the number of tasks when they want to
+>> prevent forkbombs?  If a task would use neither CPU nor memory, you
+>> would not be interested in limiting the number of tasks.
+>>
+>> Because the number of tasks is not a resource.  CPU and memory are.
+>>
+>> So again, if we would include the memory impact of tasks properly
+>> (structures, kernel stack pages) in the kernel memory counters which
+>> we allow to limit, shouldn't this solve our problem?
+>
+> The task counter is trying to control the *number* of tasks, which is
+> purely memory overhead.
 
-5) Pray.
+No, it is not. As we talk, it is becoming increasingly clear that given 
+the use case, the correct term is "translating task *back* into the 
+actual amount of memory".
 
-Of course this is a sketch, but what do you think?
+> Translating #tasks into the actual amount of
+> memory isn't too trivial tho - the task stack isn't the only
+> allocation and the numbers should somehow make sense to the userland
+> in consistent way.  Also, I'm not sure whether this particular limit
+> should live in its silo or should be summed up together as part of
+> kmem (kmem itself is in its own silo after all apart from user memory,
+> right?).
+
+
+It is accounted together, but limited separately. Setting 
+memory.kmem.limit > memory.limit is a trivial way to say "Don't limit 
+kmem". (and yet account it)
+
+Same thing would go for a stack limit (Well, assuming it won't be merged 
+into kmem itself as well)
+
+> So, if those can be settled, I think protecting against fork
+> bombs could fit memcg better in the sense that the whole thing makes
+> more sense.
+
+I myself will advise against merging anything not byte-based to memcg.
+"task counter" is not byte-based.
+"fork bomb preventer" might be.
