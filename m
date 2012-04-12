@@ -1,7 +1,7 @@
 From: Alexander Nikiforov <a.nikiforov-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
 Subject: Re: [RFD] Merge task counter into memcg
-Date: Thu, 12 Apr 2012 07:56:44 +0400
-Message-ID: <4F86527C.2080507@samsung.com>
+Date: Thu, 12 Apr 2012 08:00:19 +0400
+Message-ID: <4F865353.8080106@samsung.com>
 References: <20120411185715.GA4317@somewhere.redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"; Format="flowed"
@@ -82,11 +82,3 @@ http://comments.gmane.org/gmane.linux.kernel.cgroups/1448
 
 it'll very useful to have event in the userspace about fork/exit about 
 group of the processes.
-
-
-
--- 
-Best regards,
-      Alex Nikiforov,
-      Mobile SW, Advanced Software Group,
-      Moscow R&D center, Samsung Electronics
