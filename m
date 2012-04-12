@@ -1,10 +1,13 @@
-From: MAILER-DAEMON-i9wRM+HIrmnmtl4Z8vJ8Kg761KYD1DLY@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Thu, 12 Apr 2012 20:29:07 +0200 (CEST)
-Message-ID: <20120412182907.E598230105E@epfmmx01-a>
+From: <postmaster-OmSwHwq0Cyh9ZanHhTBlb16hYfS7NtTn@public.gmane.org>
+Subject: Impossibile recapitare: Re: document 333210
+Date: Thu, 12 Apr 2012 21:18:39 +0200
+Message-ID: <bba98c76-5897-4508-9811-ca2dae96a497@micromeccanica.it>
+References: <8735550842.63867512515434@Jemil.jemil.net>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1286717805728146176=="
+Content-Type: multipart/mixed; boundary="===============5330263730895960568=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Language: it-IT
+In-Reply-To: <8735550842.63867512515434-in2PATQWrNIbmVudvTxUKg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,99 +20,116 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
-
---===============1286717805728146176==
+--===============5330263730895960568==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="D853B30105B.1334255347/epfmmx01-a"
-Content-Transfer-Encoding: 7bit
+	boundary="2a8ce367-3c15-4f69-90d0-a1e17e9f4751"
+Content-Language: it-IT
 
-This is a MIME-encapsulated message.
+--2a8ce367-3c15-4f69-90d0-a1e17e9f4751
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 
---D853B30105B.1334255347/epfmmx01-a
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
+Il recapito non =E8 riuscito per i seguenti destinatari o gruppi:
 
-This is the mail system at host epfmmx01-a.
+barraa.barra-OmSwHwq0Cyh9ZanHhTBlb16hYfS7NtTn@public.gmane.org<mailto:barraa.barra-OmSwHwq0Cyh9ZanHhTBlb16hYfS7NtTn@public.gmane.org>
+Impossibile trovare l'indirizzo di posta elettronica immesso. Verificare l'=
+indirizzo di posta elettronica del destinatario e provare a inviare di nuov=
+o il messaggio. Se il problema persiste, contattare il supporto tecnico.
 
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
 
-For further assistance, please send mail to <postmaster>
 
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
 
-                   The mail system
 
-<nicolan.dachille-GZ182KBqL3dgD11gl3cPYl6hYfS7NtTn@public.gmane.org>: unknown user:
-    "nicolan.dachille-GZ182KBqL3dgD11gl3cPYl6hYfS7NtTn@public.gmane.org"
 
---D853B30105B.1334255347/epfmmx01-a
-Content-Description: Delivery report
+
+Informazioni di diagnostica per gli amministratori:
+
+Server di generazione: micromeccanica.it
+
+barraa.barra-OmSwHwq0Cyh9ZanHhTBlb16hYfS7NtTn@public.gmane.org
+#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
+
+Intestazioni originali del messaggio:
+
+Received: from Jemil.jemil.net (178.33.217.10) by
+ Server-POSTA.Micromeccanica.local (10.0.0.206) with Microsoft SMTP Server =
+id
+ 14.1.355.2; Thu, 12 Apr 2012 21:18:38 +0200
+Received: from [178.33.217.10] by Jemil.jemil.net id NzQbZR5vIoBv with SMTP=
+;
+ Thu, 12 Apr 2012 23:20:00 +0400
+Date: Thu, 12 Apr 2012 23:20:00 +0400
+From: "Consult2 " <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.08.7) Personal
+X-Priority: 3 (Normal)
+Message-ID: <8735550842.63867512515434-in2PATQWrNIbmVudvTxUKg@public.gmane.org>
+To: <barraa.barra-OmSwHwq0Cyh9ZanHhTBlb16hYfS7NtTn@public.gmane.org>
+Subject: Re: document 333210
+MIME-Version: 1.0
+Content-Type: text/plain; charset=3D"windows-1252"
+Content-Transfer-Encoding: 8bit
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Received-SPF: Fail (Server-POSTA.Micromeccanica.local: domain of
+ containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 178.33.217.10 as
+ permitted sender) receiver=3DServer-POSTA.Micromeccanica.local;
+ client-ip=3D178.33.217.10; helo=3DJemil.jemil.net;
+
+
+--2a8ce367-3c15-4f69-90d0-a1e17e9f4751
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns; epfmmx01-a
-X-Mailbox-Server-Queue-ID: D853B30105B
-X-Mailbox-Server-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Thu, 12 Apr 2012 20:29:07 +0200 (CEST)
+Reporting-MTA: dns;micromeccanica.it
+Received-From-MTA: dns;Jemil.jemil.net
+Arrival-Date: Thu, 12 Apr 2012 19:18:38 +0000
 
-Final-Recipient: rfc822; nicolan.dachille-GZ182KBqL3dgD11gl3cPYl6hYfS7NtTn@public.gmane.org
-Original-Recipient: rfc822;nicolan.dachille-GZ182KBqL3dgD11gl3cPYl6hYfS7NtTn@public.gmane.org
+Final-Recipient: rfc822;barraa.barra-OmSwHwq0Cyh9ZanHhTBlb16hYfS7NtTn@public.gmane.org
 Action: failed
 Status: 5.1.1
-Diagnostic-Code: X-Mailbox-Server; unknown user:
-    "nicolan.dachille-GZ182KBqL3dgD11gl3cPYl6hYfS7NtTn@public.gmane.org"
+Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
 
---D853B30105B.1334255347/epfmmx01-a
-Content-Description: Undelivered Message
+
+--2a8ce367-3c15-4f69-90d0-a1e17e9f4751
 Content-Type: message/rfc822
-Content-Transfer-Encoding: 7bit
 
-Received: from localhost (smtp1-vip [93.63.84.113])
-	by epfmmx01-a (Mailbox Server) with ESMTP id D853B30105B
-	for <nicolan.dachille-GZ182KBqL3dgD11gl3cPYl6hYfS7NtTn@public.gmane.org>; Thu, 12 Apr 2012 20:29:07 +0200 (CEST)
-X-Virus-Scanned: Content Filter at rupar1.fweds-spc.it
-X-Spam-Flag: NO
-X-Spam-Score: 5.625
-X-Spam-Level: *****
-X-Spam-Status: No, score=5.625 tagged_above=2 required=6.2
-	tests=[BAYES_50=0.001, RATWARE_MS_HASH=1.398,
-	RATWARE_OUTLOOK_NONAME=2.171, RDNS_NONE=0.1, URIBL_BLACK=1.955]
-	autolearn=no
-Received: from Jemil.jemil.net (unknown [178.33.217.10])
-	by epfmmx01-a (Mailbox Server) with ESMTP id 44D7430105A
-	for <nicolan.dachille-GZ182KBqL3dgD11gl3cPYl6hYfS7NtTn@public.gmane.org>; Thu, 12 Apr 2012 20:29:05 +0200 (CEST)
-Received: from [178.33.217.10] by Jemil.jemil.net id KedQYVtglQTZK3Oz; Thu, 12 Apr 2012 22:29:05 +0400
-Message-ID: <006001cd18da$223d6b00$0200a8c0-in2PATQWrNIbmVudvTxUKg@public.gmane.org>
-From: "Info" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <nicolan.dachille-GZ182KBqL3dgD11gl3cPYl6hYfS7NtTn@public.gmane.org>
-Subject: Ordine N0845594.
-Date: Thu, 12 Apr 2012 22:29:05 +0400
+Received: from Jemil.jemil.net (178.33.217.10) by
+ Server-POSTA.Micromeccanica.local (10.0.0.206) with Microsoft SMTP Server id
+ 14.1.355.2; Thu, 12 Apr 2012 21:18:38 +0200
+Received: from [178.33.217.10] by Jemil.jemil.net id NzQbZR5vIoBv with SMTP;
+ Thu, 12 Apr 2012 23:20:00 +0400
+Date: Thu, 12 Apr 2012 23:20:00 +0400
+From: "Consult2 " <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.08.7) Personal
+X-Priority: 3 (Normal)
+Message-ID: <8735550842.63867512515434-in2PATQWrNIbmVudvTxUKg@public.gmane.org>
+To: <barraa.barra-OmSwHwq0Cyh9ZanHhTBlb16hYfS7NtTn@public.gmane.org>
+Subject: Re: document 333210
 MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
+Content-Type: text/plain; charset="windows-1252"
 Content-Transfer-Encoding: quoted-printable
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Received-SPF: Fail (Server-POSTA.Micromeccanica.local: domain of
+ containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 178.33.217.10 as
+ permitted sender) receiver=Server-POSTA.Micromeccanica.local;
+ client-ip=178.33.217.10; helo=Jemil.jemil.net;
 
 
 
 Gentile utente, Monte Biz =20
-    =20
+      =20
+
+La risposta alla tua domanda riguardo al profilo sul nostro sito web 1.04.2=
+012.
+link Statistiche
+http://kastturi23.com/richiesta/Info08042012.zip
 
 
-La tua richiesta di riesame e la possibile estensione della vostra aziend=
-a.
-
-Stato studiato.
-Sulla base della richiesta, si fa riferimento alle proposte e raccomandaz=
-ioni.
-http://harmadikszem.hu/richiesta/InformazioniOrder.zip?00365223778082038
+Id 6469                .
 
 
 
---D853B30105B.1334255347/epfmmx01-a--
+--2a8ce367-3c15-4f69-90d0-a1e17e9f4751--
 
---===============1286717805728146176==
+--===============5330263730895960568==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -119,4 +139,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============1286717805728146176==--
+--===============5330263730895960568==--
