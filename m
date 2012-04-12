@@ -1,8 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 5/8] blkcg: make sure blkg_lookup() returns %NULL if @q is
-	bypassing
-Date: Thu, 12 Apr 2012 16:29:37 -0700
-Message-ID: <1334273380-30233-6-git-send-email-tj@kernel.org>
+Subject: [PATCH 6/8] blkcg: add request_queue->root_blkg
+Date: Thu, 12 Apr 2012 16:29:38 -0700
+Message-ID: <1334273380-30233-7-git-send-email-tj__2031.53093248165$1334273432$gmane$org@kernel.org>
 References: <1334273380-30233-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,123 +21,123 @@ To: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org
 Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Currently, blkg_lookup() doesn't check @q bypass state.  This patch
-updates blk_queue_bypass_start() to do synchronize_rcu() before
-returning and updates blkg_lookup() to check blk_queue_bypass() and
-return %NULL if bypassing.  This ensures blkg_lookup() returns %NULL
-if @q is bypassing.
+With per-queue policy activation, root blkg creation will be moved to
+blkcg core.  Add q->root_blkg in preparation.  For blk-throtl, this
+replaces throtl_data->root_tg; however, cfq needs to keep
+cfqd->root_group for !CONFIG_CFQ_GROUP_IOSCHED.
 
-This is to guarantee that nobody is accessing policy data while @q is
-bypassing, which is necessary to allow replacing blkio_cgroup->pd[] in
-place on policy [de]activation.
+This is to prepare for per-queue policy activation and doesn't cause
+any functional difference.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/blk-cgroup.c |   50 +++++++++++++++++++++++++++++++++-----------------
- block/blk-core.c   |    4 +++-
- 2 files changed, 36 insertions(+), 18 deletions(-)
+ block/blk-throttle.c   |   16 ++++++++++------
+ block/cfq-iosched.c    |    4 +++-
+ include/linux/blkdev.h |    2 ++
+ 3 files changed, 15 insertions(+), 7 deletions(-)
 
-diff --git a/block/blk-cgroup.c b/block/blk-cgroup.c
-index f6581a0..fa19412 100644
---- a/block/blk-cgroup.c
-+++ b/block/blk-cgroup.c
-@@ -137,6 +137,38 @@ static struct blkio_group *blkg_alloc(struct blkio_cgroup *blkcg,
- 	return blkg;
+diff --git a/block/blk-throttle.c b/block/blk-throttle.c
+index 6f1bfdf..8c520fa 100644
+--- a/block/blk-throttle.c
++++ b/block/blk-throttle.c
+@@ -97,7 +97,6 @@ struct throtl_data
+ 	/* service tree for active throtl groups */
+ 	struct throtl_rb_root tg_service_tree;
+ 
+-	struct throtl_grp *root_tg;
+ 	struct request_queue *queue;
+ 
+ 	/* Total Number of queued bios on READ and WRITE lists */
+@@ -131,6 +130,11 @@ static inline struct blkio_group *tg_to_blkg(struct throtl_grp *tg)
+ 	return pdata_to_blkg(tg);
  }
  
-+static struct blkio_group *__blkg_lookup(struct blkio_cgroup *blkcg,
-+					 struct request_queue *q)
++static inline struct throtl_grp *td_root_tg(struct throtl_data *td)
 +{
-+	struct blkio_group *blkg;
-+	struct hlist_node *n;
-+
-+	hlist_for_each_entry_rcu(blkg, n, &blkcg->blkg_list, blkcg_node)
-+		if (blkg->q == q)
-+			return blkg;
-+	return NULL;
++	return blkg_to_tg(td->queue->root_blkg);
 +}
 +
-+/**
-+ * blkg_lookup - lookup blkg for the specified blkcg - q pair
-+ * @blkcg: blkcg of interest
-+ * @q: request_queue of interest
-+ *
-+ * Lookup blkg for the @blkcg - @q pair.  This function should be called
-+ * under RCU read lock and is guaranteed to return %NULL if @q is
-+ * bypassing.
-+ */
-+struct blkio_group *blkg_lookup(struct blkio_cgroup *blkcg,
-+				struct request_queue *q)
-+{
-+	WARN_ON_ONCE(!rcu_read_lock_held());
-+
-+	if (unlikely(blk_queue_bypass(q)))
-+		return NULL;
-+	return __blkg_lookup(blkcg, q);
-+}
-+EXPORT_SYMBOL_GPL(blkg_lookup);
-+
- struct blkio_group *blkg_lookup_create(struct blkio_cgroup *blkcg,
- 				       struct request_queue *q,
- 				       bool for_root)
-@@ -150,13 +182,11 @@ struct blkio_group *blkg_lookup_create(struct blkio_cgroup *blkcg,
- 	/*
- 	 * This could be the first entry point of blkcg implementation and
- 	 * we shouldn't allow anything to go through for a bypassing queue.
--	 * The following can be removed if blkg lookup is guaranteed to
--	 * fail on a bypassing queue.
+ enum tg_state_flags {
+ 	THROTL_TG_FLAG_on_rr = 0,	/* on round-robin busy list */
+ };
+@@ -261,7 +265,7 @@ throtl_grp *throtl_lookup_tg(struct throtl_data *td, struct blkio_cgroup *blkcg)
+ 	 * Avoid lookup in this case
  	 */
- 	if (unlikely(blk_queue_bypass(q)) && !for_root)
- 		return ERR_PTR(blk_queue_dead(q) ? -EINVAL : -EBUSY);
+ 	if (blkcg == &blkio_root_cgroup)
+-		return td->root_tg;
++		return td_root_tg(td);
  
--	blkg = blkg_lookup(blkcg, q);
-+	blkg = __blkg_lookup(blkcg, q);
- 	if (blkg)
- 		return blkg;
- 
-@@ -185,20 +215,6 @@ out:
+ 	return blkg_to_tg(blkg_lookup(blkcg, td->queue));
  }
- EXPORT_SYMBOL_GPL(blkg_lookup_create);
+@@ -277,7 +281,7 @@ static struct throtl_grp *throtl_lookup_create_tg(struct throtl_data *td,
+ 	 * Avoid lookup in this case
+ 	 */
+ 	if (blkcg == &blkio_root_cgroup) {
+-		tg = td->root_tg;
++		tg = td_root_tg(td);
+ 	} else {
+ 		struct blkio_group *blkg;
  
--/* called under rcu_read_lock(). */
--struct blkio_group *blkg_lookup(struct blkio_cgroup *blkcg,
--				struct request_queue *q)
--{
--	struct blkio_group *blkg;
--	struct hlist_node *n;
--
--	hlist_for_each_entry_rcu(blkg, n, &blkcg->blkg_list, blkcg_node)
--		if (blkg->q == q)
--			return blkg;
--	return NULL;
--}
--EXPORT_SYMBOL_GPL(blkg_lookup);
--
- static void blkg_destroy(struct blkio_group *blkg)
- {
- 	struct request_queue *q = blkg->q;
-diff --git a/block/blk-core.c b/block/blk-core.c
-index 991c1d6..8b3d073 100644
---- a/block/blk-core.c
-+++ b/block/blk-core.c
-@@ -416,7 +416,8 @@ void blk_drain_queue(struct request_queue *q, bool drain_all)
-  * In bypass mode, only the dispatch FIFO queue of @q is used.  This
-  * function makes @q enter bypass mode and drains all requests which were
-  * throttled or issued before.  On return, it's guaranteed that no request
-- * is being throttled or has ELVPRIV set.
-+ * is being throttled or has ELVPRIV set and blk_queue_bypass() is %true
-+ * inside queue or RCU read lock.
-  */
- void blk_queue_bypass_start(struct request_queue *q)
- {
-@@ -426,6 +427,7 @@ void blk_queue_bypass_start(struct request_queue *q)
+@@ -287,7 +291,7 @@ static struct throtl_grp *throtl_lookup_create_tg(struct throtl_data *td,
+ 		if (!IS_ERR(blkg))
+ 			tg = blkg_to_tg(blkg);
+ 		else if (!blk_queue_dead(q))
+-			tg = td->root_tg;
++			tg = td_root_tg(td);
+ 	}
+ 
+ 	return tg;
+@@ -1245,12 +1249,12 @@ int blk_throtl_init(struct request_queue *q)
+ 
+ 	blkg = blkg_lookup_create(&blkio_root_cgroup, q, true);
+ 	if (!IS_ERR(blkg))
+-		td->root_tg = blkg_to_tg(blkg);
++		q->root_blkg = blkg;
+ 
  	spin_unlock_irq(q->queue_lock);
+ 	rcu_read_unlock();
  
- 	blk_drain_queue(q, false);
-+	synchronize_rcu();
- }
- EXPORT_SYMBOL_GPL(blk_queue_bypass_start);
+-	if (!td->root_tg) {
++	if (!q->root_blkg) {
+ 		kfree(td);
+ 		return -ENOMEM;
+ 	}
+diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
+index 761a376..b70425f 100644
+--- a/block/cfq-iosched.c
++++ b/block/cfq-iosched.c
+@@ -3965,8 +3965,10 @@ static int cfq_init_queue(struct request_queue *q)
+ 	spin_lock_irq(q->queue_lock);
+ 
+ 	blkg = blkg_lookup_create(&blkio_root_cgroup, q, true);
+-	if (!IS_ERR(blkg))
++	if (!IS_ERR(blkg)) {
++		q->root_blkg = blkg;
+ 		cfqd->root_group = blkg_to_cfqg(blkg);
++	}
+ 
+ 	spin_unlock_irq(q->queue_lock);
+ 	rcu_read_unlock();
+diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
+index d2c69f8..b01c377 100644
+--- a/include/linux/blkdev.h
++++ b/include/linux/blkdev.h
+@@ -31,6 +31,7 @@ struct blk_trace;
+ struct request;
+ struct sg_io_hdr;
+ struct bsg_job;
++struct blkio_group;
+ 
+ #define BLKDEV_MIN_RQ	4
+ #define BLKDEV_MAX_RQ	128	/* Default maximum */
+@@ -369,6 +370,7 @@ struct request_queue {
+ 
+ 	struct list_head	icq_list;
+ #ifdef CONFIG_BLK_CGROUP
++	struct blkio_group	*root_blkg;
+ 	struct list_head	blkg_list;
+ #endif
  
 -- 
 1.7.7.3
