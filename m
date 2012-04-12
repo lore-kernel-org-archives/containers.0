@@ -1,13 +1,10 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [RFD] Merge task counter into memcg
-Date: Thu, 12 Apr 2012 09:56:49 +0900
-Message-ID: <4F862851.3040208__11886.2797193744$1334192330$gmane$org@jp.fujitsu.com>
-References: <20120411185715.GA4317@somewhere.redhat.com>
+From: <Mailer-Daemon-l6ekxAcGVCvEu+1wjAZhaTUZDU+1vuVT@public.gmane.org> (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Thu, 12 Apr 2012 02:52:23 +0200
+Message-ID: <20120412010729.078BA275@mail.linuxfoundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============6332219543078169379=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20120411185715.GA4317-oHC15RC7JGTpAmv0O++HtFaTQe2KTcn/@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,62 +14,105 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Daniel Walsh <dwalsh-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-(2012/04/12 3:57), Frederic Weisbecker wrote:
+This is a MIME-encapsulated message.
 
-> Hi,
-> 
-> While talking with Tejun about targetting the cgroup task counter subsystem
-> for the next merge window, he suggested to check if this could be merged into
-> the memcg subsystem rather than creating a new one cgroup subsystem just
-> for task count limit purpose.
-> 
-> So I'm pinging you guys to seek your insight.
-> 
-> I assume not everybody in the Cc list knows what the task counter subsystem
-> is all about. So here is a summary: this is a cgroup subsystem (latest version
-> in https://lwn.net/Articles/478631/) that keeps track of the number of tasks
-> present in a cgroup. Hooks are set in task fork/exit and cgroup migration to
-> maintain this accounting visible to a special tasks.usage file. The user can
-> set a limit on the number of tasks by writing on the tasks.limit file.
-> Further forks or cgroup migration are then rejected if the limit is exceeded.
-> 
-> This feature is especially useful to protect against forkbombs in containers.
-> Or more generally to limit the resources on the number of tasks on a cgroup
-> as it involves some kernel memory allocation.
-> 
-> Now the dilemna is how to implement it?
-> 
-> 1) As a standalone subsystem, as it stands currently (https://lwn.net/Articles/478631/)
-> 
-> 2) As a feature in memcg, part of the memory.kmem.* files. This makes sense
-> because this is about kernel memory allocation limitation. We could have a
-> memory.kmem.tasks.count
-> 
-> My personal opinion is that the task counter brings some overhead: a charge
-> across the whole hierarchy at every fork, and the mirrored uncharge on task exit.
-> And this overhead happens even in the off-case (when the task counter susbsystem
-> is mounted but the limit is the default: ULLONG_MAX).
-> 
-> So if we choose the second solution, this overhead will be added unconditionally
-> to memcg.
-> But I don't expect every users of memcg will need the task counter. So perhaps
-> the overhead should be kept in its own separate subsystem.
-> 
-> OTOH memory.kmem.* interface would have be a good fit.
-> 
-> What do you think?
+--===============6332219543078169379==
+Content-Type: multipart/report; report-type=delivery-status;
+ boundary="qzyupS2JLDTE8dviZi/I1WpSTLcDqBL7WdjHPw=="
+
+This is a MIME-encapsulated message.
+
+--qzyupS2JLDTE8dviZi/I1WpSTLcDqBL7WdjHPw==
+Content-Description: Notification
+Content-Type: text/plain
+
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
+
+For further assistance, please send mail to <spamvirus-xLvtcIwGYWk1GQ1Ptb7lUw@public.gmane.org>
+
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
+
+<3dpaolo.puzzi-Ip3ysCgUgyM8bFbIXJACd6Mc+rlwUGhr@public.gmane.org>: 550 5.1.1 <3dpaolo.puzzi-Ip3ysCgUgyM8bFbIXJACd6Mc+rlwUGhr@public.gmane.org>: Recipient address rejected: User unknown in virtual mailbox table
 
 
-Sounds interesting to me. Hm, does your 'overhead' of task accounting is
-enough large to be visible to users ? How performance regression is big ?
+--qzyupS2JLDTE8dviZi/I1WpSTLcDqBL7WdjHPw==
+Content-Description: Delivery report
+Content-Type: message/delivery-status
 
-BTW, now, all memcg's limit interfaces use 'bytes' as an unit of accounting.
-It's a small concern to me to have mixture of bytes and numbers of objects
-for accounting. But I think increasing number of subsystem is not very good....
- 
-Regards,
--Kame
+X-Symantec-Messaging-Gateway-Queue-ID: C6/6B-03402-547268F4
+X-Symantec-Messaging-Gateway-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Reporting-MTA: dns; scanner.fineware.it
+Arrival-Date: Thu, 12 Apr 2012 02:52:23 +0200
+
+Final-Recipient: rfc822; 3dpaolo.puzzi-Ip3ysCgUgyM8bFbIXJACd6Mc+rlwUGhr@public.gmane.org
+Status: 5.1.1
+Action: failed
+Last-Attempt-Date: Thu, 12 Apr 2012 02:52:23 +0200
+Diagnostic-Code: smtp; 550 5.1.1 <3dpaolo.puzzi-Ip3ysCgUgyM8bFbIXJACd6Mc+rlwUGhr@public.gmane.org>: Recipient address rejected: User unknown in virtual mailbox table
+
+--qzyupS2JLDTE8dviZi/I1WpSTLcDqBL7WdjHPw==
+Content-Description: Undelivered Message
+Content-Type: message/rfc822
+
+X-AuditID: 5421c123-b7fd36d000000d4a-db-4f862743d58a
+Received: from server1.gaychatnow.info (gaychatnow.info [199.188.205.109])
+	by scanner.fineware.it (Symantec Messaging Gateway) with SMTP id B6.6B.03402.447268F4; Thu, 12 Apr 2012 02:52:21 +0200 (CEST)
+Received: from [199.188.205.109] ([[199.188.205.109:16015]) by server1.gaychatnow.info (envelope-from <update+2NzAFUkhZRkh-HQcOjwhNS1eYaxcp7p9I6/OYw5y764kS@public.gmane.org>) (ecelerity 2.2.2.45 r(34222M)) with ECSTREAM id Ik/87-62364-39981485; Thu, 12 Apr 2012 02:52:20 +0200
+Reply-to: 2ltnTSEDAz <update+syBcjsp3ZI6-HQcOjwhNS1eYaxcp7p9I6/OYw5y764kS@public.gmane.org>
+Date: Thu, 12 Apr 2012 02:52:20 +0200
+To: <3dpaolo.puzzi-Ip3ysCgUgyM8bFbIXJACd6Mc+rlwUGhr@public.gmane.org>
+From: "I" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Subject: Errore
+Message-ID: <MRbsqeejR8BfLMfjEdvrNogRNyXHCZ0Z1-HQcOjwhNS1eYaxcp7p9I6/OYw5y764kS@public.gmane.org>
+MIME-Version: 1.0
+Content-type: text/plain; charset=windows-1252
+X-Brightmail-Tracker: H4sIAAAAAAAAA+NgFrrOIsWRWlGSWpSXmKPExsVyfM/ZXF1X9TZ/g811Fv3/G9gcGD0WTNQJ
+	YIzisklJzcksSy3St0vgyuiZ8YixoI25YsWpTWwNjIeZuhg5OSQETCS+/brNDmGLSVy4t56t
+	i5GLQ0jgFKPElJU3mSGcX4wSD7sOsYFUCQk4SlzatJIFxGYRUJVoWQlhiwhoSrz8spEZxGYT
+	MJRY++8JI4gtLMAv8aXnEFgNr4C7xM/uhcwQtqDEyZlPgOIcHMwCehL3L2qBhJkF5CWat85m
+	nsDIOwtJ1SyEqllIqhYwMq9iFC5OTszLSy3SS8vMSy1PLErVyyzZxAgMmBDFg8o7GG+eNjzE
+	KMDBqMTDWzin1V+INbGsuDL3EKMkB5OSKO9UlTZ/Ib6k/JTKjMTijPii0pzU4kOMEhzMSiK8
+	LrNb/IV4UxIrq1KL8mFSTBzshxg1ODgEnjXvvswoxZKXn5eqJME7SQ1ojmBRanpqRVpmDjBy
+	EOo5QebxAM1bClLDW1yQmFucmQ6RP8WoKCXOux0kIQCSyCjNg+sFxW39////LzHKSgnzMjIw
+	MAjxFKQW5WaWIORBcf+IUZDjHbsQGxdTZomAKsRFrxjFgT4W5l0DMpknM68EbuMroGOYgI7h
+	UwA7piQRISXVwOi60r9iraS6X0T0n9pNury5G25JS+mFz+fXOjLxpgmrxAkvAdtKxmbzA1fl
+	7mVPO+vj6f+RbdvXRkFP3scC66f67+TqsZupfjnj69VroRd7D/3jMLHy4va3jYo9ryHDn2U7
+	03pxt1dMlGu9Q1VuyA57ozX/G5UDIg5dF2yvPfih6+CG5n+TlViKMxINtZiLihMBHUFWVeoC
+	AAA=
+Content-Transfer-Encoding: quoted-printable
+
+
+
+Buongiorno, 3dpaolo.puzzi-Ip3ysCgUgyM8bFbIXJACd6Mc+rlwUGhr@public.gmane.org
+
+
+Ci scusiamo per il disagio.
+Abbiamo scoperto che nel processo di ordinazione, abbiamo commesso un err=
+ore.
+Siamo pronti a restituire i fondi.
+I dettagli possono essere trovati all'indirizzo:
+http://illbeweb.com/scaricare/ContoInfo.zip
+
+
+Dopo aver letto chiediamo di inviarci i dettagli del conto.
+Tel./Fax.: (070) 672 35 03=20
+
+
+--qzyupS2JLDTE8dviZi/I1WpSTLcDqBL7WdjHPw==--
+
+--===============6332219543078169379==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============6332219543078169379==--
