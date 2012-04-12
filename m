@@ -1,11 +1,13 @@
-From: Mail Administrator <Postmaster-vCx8TJeYtp4@public.gmane.org>
-Subject: Mail System Error - Returned Mail
-Date: Wed, 11 Apr 2012 23:50:38 +0200
-Message-ID: <20120411215038.VGRA26860.fepna08-svc.tim.it@fepna08-svc>
-Reply-To: Postmaster-vCx8TJeYtp4@public.gmane.org
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [RFD] Merge task counter into memcg
+Date: Thu, 12 Apr 2012 09:56:49 +0900
+Message-ID: <4F862851.3040208__11886.2797193744$1334192330$gmane$org@jp.fujitsu.com>
+References: <20120411185715.GA4317@somewhere.redhat.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============3854924551849091214=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20120411185715.GA4317-oHC15RC7JGTpAmv0O++HtFaTQe2KTcn/@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,84 +17,62 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Daniel Walsh <dwalsh-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+(2012/04/12 3:57), Frederic Weisbecker wrote:
 
---===============3854924551849091214==
-Content-Type: multipart/report;
-		report-type=delivery-status;
-		Boundary="===========================_ _= 4777832(26860)1334181038"
-
-
---===========================_ _= 4777832(26860)1334181038
-Content-Type: text/plain
-
-This Message was undeliverable due to the following reason:
-
-The following destination addresses were unknown (please check the
-addresses and re-mail the message):
-
-<carla.campisi-vCx8TJeYtp4@public.gmane.org>
-
-Please reply to <Postmaster-vCx8TJeYtp4@public.gmane.org>
-if you feel this message to be in error.
-
---===========================_ _= 4777832(26860)1334181038
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; fepna08.tim.it
-Arrival-Date: Wed, 11 Apr 2012 23:50:38 +0200
-Received-From-MTA: dns; [178.33.178.33]
-
-Final-Recipient: RFC822; <carla.campisi-vCx8TJeYtp4@public.gmane.org>
-Action: failed
-Status: 5.1.1
-
---===========================_ _= 4777832(26860)1334181038
-Content-Type: message/rfc822
-
-Received: from [178.33.178.33] by fepna08-svc.tim.it
-          (InterMail vM.6.01.06.03 201-2131-130-104-20060516) with ESMTP
-          id <20120411215038.VGQZ26860.fepna08-svc.tim.it@[178.33.178.33]>
-          for <carla.campisi-vCx8TJeYtp4@public.gmane.org>; Wed, 11 Apr 2012 23:50:38 +0200
-Received: from [178.33.178.33] ([[178.33.178.33:48720]) by 178.33.178.33 (envelope-from <update+OcImotkrdvZ-2eoI++8IZHskH0EdWafHuA@public.gmane.org>) (ecelerity 2.2.2.45 r(34222M)) with ECSTREAM id pH/35-36219-73736650; Wed, 11 Apr 2012 23:50:38 +0200
-Reply-to: sp6lZxOVWj <update+fIgGr2u4Et9-2eoI++8IZHskH0EdWafHuA@public.gmane.org>
-Date: Wed, 11 Apr 2012 23:50:38 +0200
-To: <carla.campisi-vCx8TJeYtp4@public.gmane.org>
-From: "Support" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Subject: Gadgets ordine No85898
-Message-ID: <jzVJxupTe89xpQpsKt6D26RyPJZHDT2xS-2eoI++8IZHskH0EdWafHuA@public.gmane.org>
-MIME-Version: 1.0
-Content-type: text/plain; charset=windows-1252
-Content-Transfer-Encoding: quoted-printable
+> Hi,
+> 
+> While talking with Tejun about targetting the cgroup task counter subsystem
+> for the next merge window, he suggested to check if this could be merged into
+> the memcg subsystem rather than creating a new one cgroup subsystem just
+> for task count limit purpose.
+> 
+> So I'm pinging you guys to seek your insight.
+> 
+> I assume not everybody in the Cc list knows what the task counter subsystem
+> is all about. So here is a summary: this is a cgroup subsystem (latest version
+> in https://lwn.net/Articles/478631/) that keeps track of the number of tasks
+> present in a cgroup. Hooks are set in task fork/exit and cgroup migration to
+> maintain this accounting visible to a special tasks.usage file. The user can
+> set a limit on the number of tasks by writing on the tasks.limit file.
+> Further forks or cgroup migration are then rejected if the limit is exceeded.
+> 
+> This feature is especially useful to protect against forkbombs in containers.
+> Or more generally to limit the resources on the number of tasks on a cgroup
+> as it involves some kernel memory allocation.
+> 
+> Now the dilemna is how to implement it?
+> 
+> 1) As a standalone subsystem, as it stands currently (https://lwn.net/Articles/478631/)
+> 
+> 2) As a feature in memcg, part of the memory.kmem.* files. This makes sense
+> because this is about kernel memory allocation limitation. We could have a
+> memory.kmem.tasks.count
+> 
+> My personal opinion is that the task counter brings some overhead: a charge
+> across the whole hierarchy at every fork, and the mirrored uncharge on task exit.
+> And this overhead happens even in the off-case (when the task counter susbsystem
+> is mounted but the limit is the default: ULLONG_MAX).
+> 
+> So if we choose the second solution, this overhead will be added unconditionally
+> to memcg.
+> But I don't expect every users of memcg will need the task counter. So perhaps
+> the overhead should be kept in its own separate subsystem.
+> 
+> OTOH memory.kmem.* interface would have be a good fit.
+> 
+> What do you think?
 
 
+Sounds interesting to me. Hm, does your 'overhead' of task accounting is
+enough large to be visible to users ? How performance regression is big ?
 
-
-Avete una fattura.
-Si prega di pagare una questione di urgenza.
-Dettagli per il pagamento sono disponibili all'indirizzo:
-http://www.irasu-studija.lt/clienti/ContoInfo.zip?carla.campisi-vCx8TJeYtp4@public.gmane.org
-
-
-=3D=3D
-Support billpay
-Tel./Fax.: (095) 081 00 49=20
-
-
-
---===========================_ _= 4777832(26860)1334181038--
-
-
---===============3854924551849091214==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============3854924551849091214==--
+BTW, now, all memcg's limit interfaces use 'bytes' as an unit of accounting.
+It's a small concern to me to have mixture of bytes and numbers of objects
+for accounting. But I think increasing number of subsystem is not very good....
+ 
+Regards,
+-Kame
