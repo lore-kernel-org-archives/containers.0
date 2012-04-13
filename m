@@ -1,8 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 02/11] blkcg: kill blkio_list and replace blkio_list_lock with
-	a mutex
-Date: Fri, 13 Apr 2012 13:11:26 -0700
-Message-ID: <1334347895-6268-3-git-send-email-tj@kernel.org>
+Subject: [PATCH 01/11] cfq: fix build breakage & warnings
+Date: Fri, 13 Apr 2012 13:11:25 -0700
+Message-ID: <1334347895-6268-2-git-send-email-tj@kernel.org>
 References: <1334347895-6268-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,129 +21,75 @@ To: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org
 Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-With blkio_policy[], blkio_list is redundant and hinders with
-per-queue policy activation.  Remove it.  Also, replace
-blkio_list_lock with a mutex blkcg_pol_mutex and let it protect the
-whole [un]registration.
+* CFQ_WEIGHT_* defined inside CONFIG_BLK_CGROUP causes cfq-iosched.c
+  compile failure when the config is disabled.  Move it outside the
+  ifdef block.
 
-This is to prepare for per-queue policy activation and doesn't cause
-any functional difference.
+* Dummy cfqg_stats_*() definitions were lacking inline modifiers
+  causing unused functions warning if !CONFIG_CFQ_GROUP_IOSCHED.  Add
+  them.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/blk-cgroup.c |   32 +++++++++++++++++---------------
- block/blk-cgroup.h |    1 -
- 2 files changed, 17 insertions(+), 16 deletions(-)
+ block/blk-cgroup.h  |    4 ++--
+ block/cfq-iosched.c |   17 ++++++++---------
+ 2 files changed, 10 insertions(+), 11 deletions(-)
 
-diff --git a/block/blk-cgroup.c b/block/blk-cgroup.c
-index 9449c38..af665fe 100644
---- a/block/blk-cgroup.c
-+++ b/block/blk-cgroup.c
-@@ -24,9 +24,7 @@
- 
- #define MAX_KEY_LEN 100
- 
--static DEFINE_SPINLOCK(blkio_list_lock);
--static LIST_HEAD(blkio_list);
--
-+static DEFINE_MUTEX(blkcg_pol_mutex);
- static DEFINE_MUTEX(all_q_mutex);
- static LIST_HEAD(all_q_list);
- 
-@@ -311,8 +309,9 @@ blkiocg_reset_stats(struct cgroup *cgroup, struct cftype *cftype, u64 val)
- 	struct blkio_cgroup *blkcg = cgroup_to_blkio_cgroup(cgroup);
- 	struct blkio_group *blkg;
- 	struct hlist_node *n;
-+	int i;
- 
--	spin_lock(&blkio_list_lock);
-+	mutex_lock(&blkcg_pol_mutex);
- 	spin_lock_irq(&blkcg->lock);
- 
- 	/*
-@@ -321,15 +320,16 @@ blkiocg_reset_stats(struct cgroup *cgroup, struct cftype *cftype, u64 val)
- 	 * anyway.  If you get hit by a race, retry.
- 	 */
- 	hlist_for_each_entry(blkg, n, &blkcg->blkg_list, blkcg_node) {
--		struct blkio_policy_type *pol;
-+		for (i = 0; i < BLKIO_NR_POLICIES; i++) {
-+			struct blkio_policy_type *pol = blkio_policy[i];
- 
--		list_for_each_entry(pol, &blkio_list, list)
--			if (pol->ops.blkio_reset_group_stats_fn)
-+			if (pol && pol->ops.blkio_reset_group_stats_fn)
- 				pol->ops.blkio_reset_group_stats_fn(blkg);
-+		}
- 	}
- 
- 	spin_unlock_irq(&blkcg->lock);
--	spin_unlock(&blkio_list_lock);
-+	mutex_unlock(&blkcg_pol_mutex);
- 	return 0;
- }
- 
-@@ -732,20 +732,21 @@ void blkio_policy_register(struct blkio_policy_type *blkiop)
- {
- 	struct request_queue *q;
- 
-+	mutex_lock(&blkcg_pol_mutex);
-+
- 	blkcg_bypass_start();
--	spin_lock(&blkio_list_lock);
- 
- 	BUG_ON(blkio_policy[blkiop->plid]);
- 	blkio_policy[blkiop->plid] = blkiop;
--	list_add_tail(&blkiop->list, &blkio_list);
--
--	spin_unlock(&blkio_list_lock);
- 	list_for_each_entry(q, &all_q_list, all_q_node)
- 		update_root_blkg_pd(q, blkiop->plid);
-+
- 	blkcg_bypass_end();
- 
- 	if (blkiop->cftypes)
- 		WARN_ON(cgroup_add_cftypes(&blkio_subsys, blkiop->cftypes));
-+
-+	mutex_unlock(&blkcg_pol_mutex);
- }
- EXPORT_SYMBOL_GPL(blkio_policy_register);
- 
-@@ -753,19 +754,20 @@ void blkio_policy_unregister(struct blkio_policy_type *blkiop)
- {
- 	struct request_queue *q;
- 
-+	mutex_lock(&blkcg_pol_mutex);
-+
- 	if (blkiop->cftypes)
- 		cgroup_rm_cftypes(&blkio_subsys, blkiop->cftypes);
- 
- 	blkcg_bypass_start();
--	spin_lock(&blkio_list_lock);
- 
- 	BUG_ON(blkio_policy[blkiop->plid] != blkiop);
- 	blkio_policy[blkiop->plid] = NULL;
--	list_del_init(&blkiop->list);
- 
--	spin_unlock(&blkio_list_lock);
- 	list_for_each_entry(q, &all_q_list, all_q_node)
- 		update_root_blkg_pd(q, blkiop->plid);
- 	blkcg_bypass_end();
-+
-+	mutex_unlock(&blkcg_pol_mutex);
- }
- EXPORT_SYMBOL_GPL(blkio_policy_unregister);
 diff --git a/block/blk-cgroup.h b/block/blk-cgroup.h
-index 64392ac..c772581 100644
+index ca0ff7c..64392ac 100644
 --- a/block/blk-cgroup.h
 +++ b/block/blk-cgroup.h
-@@ -102,7 +102,6 @@ struct blkio_policy_ops {
- };
+@@ -27,13 +27,13 @@ enum blkio_policy_id {
+ /* Max limits for throttle policy */
+ #define THROTL_IOPS_MAX		UINT_MAX
  
- struct blkio_policy_type {
--	struct list_head list;
- 	struct blkio_policy_ops ops;
- 	enum blkio_policy_id plid;
- 	size_t pdata_size;		/* policy specific private data size */
+-#ifdef CONFIG_BLK_CGROUP
+-
+ /* CFQ specific, out here for blkcg->cfq_weight */
+ #define CFQ_WEIGHT_MIN		10
+ #define CFQ_WEIGHT_MAX		1000
+ #define CFQ_WEIGHT_DEFAULT	500
+ 
++#ifdef CONFIG_BLK_CGROUP
++
+ enum blkg_rwstat_type {
+ 	BLKG_RWSTAT_READ,
+ 	BLKG_RWSTAT_WRITE,
+diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
+index cff8b5b..7a8c3e0 100644
+--- a/block/cfq-iosched.c
++++ b/block/cfq-iosched.c
+@@ -17,7 +17,7 @@
+ #include "blk.h"
+ #include "blk-cgroup.h"
+ 
+-static struct blkio_policy_type blkio_policy_cfq;
++static struct blkio_policy_type blkio_policy_cfq __maybe_unused;
+ 
+ /*
+  * tunables
+@@ -541,14 +541,13 @@ static void cfqg_stats_update_avg_queue_size(struct cfq_group *cfqg)
+ 
+ #else	/* CONFIG_CFQ_GROUP_IOSCHED && CONFIG_DEBUG_BLK_CGROUP */
+ 
+-static void cfqg_stats_set_start_group_wait_time(struct cfq_group *cfqg,
+-						 struct cfq_group *curr_cfqg) { }
+-static void cfqg_stats_end_empty_time(struct cfqg_stats *stats) { }
+-static void cfqg_stats_update_dequeue(struct cfq_group *cfqg) { }
+-static void cfqg_stats_set_start_empty_time(struct cfq_group *cfqg) { }
+-static void cfqg_stats_update_idle_time(struct cfq_group *cfqg) { }
+-static void cfqg_stats_set_start_idle_time(struct cfq_group *cfqg) { }
+-static void cfqg_stats_update_avg_queue_size(struct cfq_group *cfqg) { }
++static inline void cfqg_stats_set_start_group_wait_time(struct cfq_group *cfqg, struct cfq_group *curr_cfqg) { }
++static inline void cfqg_stats_end_empty_time(struct cfqg_stats *stats) { }
++static inline void cfqg_stats_update_dequeue(struct cfq_group *cfqg) { }
++static inline void cfqg_stats_set_start_empty_time(struct cfq_group *cfqg) { }
++static inline void cfqg_stats_update_idle_time(struct cfq_group *cfqg) { }
++static inline void cfqg_stats_set_start_idle_time(struct cfq_group *cfqg) { }
++static inline void cfqg_stats_update_avg_queue_size(struct cfq_group *cfqg) { }
+ 
+ #endif	/* CONFIG_CFQ_GROUP_IOSCHED && CONFIG_DEBUG_BLK_CGROUP */
+ 
 -- 
 1.7.7.3
