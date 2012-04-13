@@ -1,7 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 01/11] cfq: fix build breakage & warnings
-Date: Fri, 13 Apr 2012 13:11:25 -0700
-Message-ID: <1334347895-6268-2-git-send-email-tj@kernel.org>
+Subject: [PATCH 03/11] blkcg: use @pol instead of @plid in
+	update_root_blkg_pd() and blkcg_print_blkgs()
+Date: Fri, 13 Apr 2012 13:11:27 -0700
+Message-ID: <1334347895-6268-4-git-send-email-tj@kernel.org>
 References: <1334347895-6268-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,75 +22,202 @@ To: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org
 Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-* CFQ_WEIGHT_* defined inside CONFIG_BLK_CGROUP causes cfq-iosched.c
-  compile failure when the config is disabled.  Move it outside the
-  ifdef block.
+The two functions were taking "enum blkio_policy_id plid".  Make them
+take "const struct blkio_policy_type *pol" instead.
 
-* Dummy cfqg_stats_*() definitions were lacking inline modifiers
-  causing unused functions warning if !CONFIG_CFQ_GROUP_IOSCHED.  Add
-  them.
+This is to prepare for per-queue policy activation and doesn't cause
+any functional difference.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/blk-cgroup.h  |    4 ++--
- block/cfq-iosched.c |   17 ++++++++---------
- 2 files changed, 10 insertions(+), 11 deletions(-)
+ block/blk-cgroup.c   |   21 +++++++++++----------
+ block/blk-cgroup.h   |    7 ++++---
+ block/blk-throttle.c |    6 +++---
+ block/cfq-iosched.c  |   10 +++++-----
+ 4 files changed, 23 insertions(+), 21 deletions(-)
 
+diff --git a/block/blk-cgroup.c b/block/blk-cgroup.c
+index af665fe..b123152 100644
+--- a/block/blk-cgroup.c
++++ b/block/blk-cgroup.c
+@@ -226,17 +226,17 @@ static void blkg_destroy(struct blkio_group *blkg)
+  * aren't shot down.  This broken and racy implementation is temporary.
+  * Eventually, blkg shoot down will be replaced by proper in-place update.
+  */
+-void update_root_blkg_pd(struct request_queue *q, enum blkio_policy_id plid)
++void update_root_blkg_pd(struct request_queue *q,
++			 const struct blkio_policy_type *pol)
+ {
+-	struct blkio_policy_type *pol = blkio_policy[plid];
+ 	struct blkio_group *blkg = blkg_lookup(&blkio_root_cgroup, q);
+ 	struct blkg_policy_data *pd;
+ 
+ 	if (!blkg)
+ 		return;
+ 
+-	kfree(blkg->pd[plid]);
+-	blkg->pd[plid] = NULL;
++	kfree(blkg->pd[pol->plid]);
++	blkg->pd[pol->plid] = NULL;
+ 
+ 	if (!pol)
+ 		return;
+@@ -244,7 +244,7 @@ void update_root_blkg_pd(struct request_queue *q, enum blkio_policy_id plid)
+ 	pd = kzalloc(sizeof(*pd) + pol->pdata_size, GFP_KERNEL);
+ 	WARN_ON_ONCE(!pd);
+ 
+-	blkg->pd[plid] = pd;
++	blkg->pd[pol->plid] = pd;
+ 	pd->blkg = blkg;
+ 	pol->ops.blkio_init_group_fn(blkg);
+ }
+@@ -360,7 +360,8 @@ static const char *blkg_dev_name(struct blkio_group *blkg)
+  */
+ void blkcg_print_blkgs(struct seq_file *sf, struct blkio_cgroup *blkcg,
+ 		       u64 (*prfill)(struct seq_file *, void *, int),
+-		       int pol, int data, bool show_total)
++		       const struct blkio_policy_type *pol, int data,
++		       bool show_total)
+ {
+ 	struct blkio_group *blkg;
+ 	struct hlist_node *n;
+@@ -368,8 +369,8 @@ void blkcg_print_blkgs(struct seq_file *sf, struct blkio_cgroup *blkcg,
+ 
+ 	spin_lock_irq(&blkcg->lock);
+ 	hlist_for_each_entry(blkg, n, &blkcg->blkg_list, blkcg_node)
+-		if (blkg->pd[pol])
+-			total += prfill(sf, blkg->pd[pol]->pdata, data);
++		if (blkg->pd[pol->plid])
++			total += prfill(sf, blkg->pd[pol->plid]->pdata, data);
+ 	spin_unlock_irq(&blkcg->lock);
+ 
+ 	if (show_total)
+@@ -739,7 +740,7 @@ void blkio_policy_register(struct blkio_policy_type *blkiop)
+ 	BUG_ON(blkio_policy[blkiop->plid]);
+ 	blkio_policy[blkiop->plid] = blkiop;
+ 	list_for_each_entry(q, &all_q_list, all_q_node)
+-		update_root_blkg_pd(q, blkiop->plid);
++		update_root_blkg_pd(q, blkiop);
+ 
+ 	blkcg_bypass_end();
+ 
+@@ -765,7 +766,7 @@ void blkio_policy_unregister(struct blkio_policy_type *blkiop)
+ 	blkio_policy[blkiop->plid] = NULL;
+ 
+ 	list_for_each_entry(q, &all_q_list, all_q_node)
+-		update_root_blkg_pd(q, blkiop->plid);
++		update_root_blkg_pd(q, blkiop);
+ 	blkcg_bypass_end();
+ 
+ 	mutex_unlock(&blkcg_pol_mutex);
 diff --git a/block/blk-cgroup.h b/block/blk-cgroup.h
-index ca0ff7c..64392ac 100644
+index c772581..2694973 100644
 --- a/block/blk-cgroup.h
 +++ b/block/blk-cgroup.h
-@@ -27,13 +27,13 @@ enum blkio_policy_id {
- /* Max limits for throttle policy */
- #define THROTL_IOPS_MAX		UINT_MAX
+@@ -117,11 +117,12 @@ extern void blkio_policy_register(struct blkio_policy_type *);
+ extern void blkio_policy_unregister(struct blkio_policy_type *);
+ extern void blkg_destroy_all(struct request_queue *q, bool destroy_root);
+ extern void update_root_blkg_pd(struct request_queue *q,
+-				enum blkio_policy_id plid);
++				const struct blkio_policy_type *pol);
  
--#ifdef CONFIG_BLK_CGROUP
--
- /* CFQ specific, out here for blkcg->cfq_weight */
- #define CFQ_WEIGHT_MIN		10
- #define CFQ_WEIGHT_MAX		1000
- #define CFQ_WEIGHT_DEFAULT	500
+ void blkcg_print_blkgs(struct seq_file *sf, struct blkio_cgroup *blkcg,
+ 		       u64 (*prfill)(struct seq_file *, void *, int),
+-		       int pol, int data, bool show_total);
++		       const struct blkio_policy_type *pol, int data,
++		       bool show_total);
+ u64 __blkg_prfill_u64(struct seq_file *sf, void *pdata, u64 v);
+ u64 __blkg_prfill_rwstat(struct seq_file *sf, void *pdata,
+ 			 const struct blkg_rwstat *rwstat);
+@@ -333,7 +334,7 @@ static inline void blkio_policy_unregister(struct blkio_policy_type *blkiop) { }
+ static inline void blkg_destroy_all(struct request_queue *q,
+ 				    bool destory_root) { }
+ static inline void update_root_blkg_pd(struct request_queue *q,
+-				       enum blkio_policy_id plid) { }
++				       const struct blkio_policy_type *pol) { }
  
-+#ifdef CONFIG_BLK_CGROUP
-+
- enum blkg_rwstat_type {
- 	BLKG_RWSTAT_READ,
- 	BLKG_RWSTAT_WRITE,
+ static inline void *blkg_to_pdata(struct blkio_group *blkg,
+ 				struct blkio_policy_type *pol) { return NULL; }
+diff --git a/block/blk-throttle.c b/block/blk-throttle.c
+index 6024014..07c17c2 100644
+--- a/block/blk-throttle.c
++++ b/block/blk-throttle.c
+@@ -946,7 +946,7 @@ static int tg_print_cpu_rwstat(struct cgroup *cgrp, struct cftype *cft,
+ {
+ 	struct blkio_cgroup *blkcg = cgroup_to_blkio_cgroup(cgrp);
+ 
+-	blkcg_print_blkgs(sf, blkcg, tg_prfill_cpu_rwstat, BLKIO_POLICY_THROTL,
++	blkcg_print_blkgs(sf, blkcg, tg_prfill_cpu_rwstat, &blkio_policy_throtl,
+ 			  cft->private, true);
+ 	return 0;
+ }
+@@ -973,7 +973,7 @@ static int tg_print_conf_u64(struct cgroup *cgrp, struct cftype *cft,
+ 			     struct seq_file *sf)
+ {
+ 	blkcg_print_blkgs(sf, cgroup_to_blkio_cgroup(cgrp), tg_prfill_conf_u64,
+-			  BLKIO_POLICY_THROTL, cft->private, false);
++			  &blkio_policy_throtl, cft->private, false);
+ 	return 0;
+ }
+ 
+@@ -981,7 +981,7 @@ static int tg_print_conf_uint(struct cgroup *cgrp, struct cftype *cft,
+ 			      struct seq_file *sf)
+ {
+ 	blkcg_print_blkgs(sf, cgroup_to_blkio_cgroup(cgrp), tg_prfill_conf_uint,
+-			  BLKIO_POLICY_THROTL, cft->private, false);
++			  &blkio_policy_throtl, cft->private, false);
+ 	return 0;
+ }
+ 
 diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
-index cff8b5b..7a8c3e0 100644
+index 7a8c3e0..d02f0ae 100644
 --- a/block/cfq-iosched.c
 +++ b/block/cfq-iosched.c
-@@ -17,7 +17,7 @@
- #include "blk.h"
- #include "blk-cgroup.h"
+@@ -1380,7 +1380,7 @@ static int cfqg_print_weight_device(struct cgroup *cgrp, struct cftype *cft,
+ 				    struct seq_file *sf)
+ {
+ 	blkcg_print_blkgs(sf, cgroup_to_blkio_cgroup(cgrp),
+-			  cfqg_prfill_weight_device, BLKIO_POLICY_PROP, 0,
++			  cfqg_prfill_weight_device, &blkio_policy_cfq, 0,
+ 			  false);
+ 	return 0;
+ }
+@@ -1445,7 +1445,7 @@ static int cfqg_print_stat(struct cgroup *cgrp, struct cftype *cft,
+ {
+ 	struct blkio_cgroup *blkcg = cgroup_to_blkio_cgroup(cgrp);
  
--static struct blkio_policy_type blkio_policy_cfq;
-+static struct blkio_policy_type blkio_policy_cfq __maybe_unused;
+-	blkcg_print_blkgs(sf, blkcg, blkg_prfill_stat, BLKIO_POLICY_PROP,
++	blkcg_print_blkgs(sf, blkcg, blkg_prfill_stat, &blkio_policy_cfq,
+ 			  cft->private, false);
+ 	return 0;
+ }
+@@ -1455,7 +1455,7 @@ static int cfqg_print_rwstat(struct cgroup *cgrp, struct cftype *cft,
+ {
+ 	struct blkio_cgroup *blkcg = cgroup_to_blkio_cgroup(cgrp);
  
- /*
-  * tunables
-@@ -541,14 +541,13 @@ static void cfqg_stats_update_avg_queue_size(struct cfq_group *cfqg)
+-	blkcg_print_blkgs(sf, blkcg, blkg_prfill_rwstat, BLKIO_POLICY_PROP,
++	blkcg_print_blkgs(sf, blkcg, blkg_prfill_rwstat, &blkio_policy_cfq,
+ 			  cft->private, true);
+ 	return 0;
+ }
+@@ -1482,7 +1482,7 @@ static int cfqg_print_avg_queue_size(struct cgroup *cgrp, struct cftype *cft,
+ 	struct blkio_cgroup *blkcg = cgroup_to_blkio_cgroup(cgrp);
  
- #else	/* CONFIG_CFQ_GROUP_IOSCHED && CONFIG_DEBUG_BLK_CGROUP */
- 
--static void cfqg_stats_set_start_group_wait_time(struct cfq_group *cfqg,
--						 struct cfq_group *curr_cfqg) { }
--static void cfqg_stats_end_empty_time(struct cfqg_stats *stats) { }
--static void cfqg_stats_update_dequeue(struct cfq_group *cfqg) { }
--static void cfqg_stats_set_start_empty_time(struct cfq_group *cfqg) { }
--static void cfqg_stats_update_idle_time(struct cfq_group *cfqg) { }
--static void cfqg_stats_set_start_idle_time(struct cfq_group *cfqg) { }
--static void cfqg_stats_update_avg_queue_size(struct cfq_group *cfqg) { }
-+static inline void cfqg_stats_set_start_group_wait_time(struct cfq_group *cfqg, struct cfq_group *curr_cfqg) { }
-+static inline void cfqg_stats_end_empty_time(struct cfqg_stats *stats) { }
-+static inline void cfqg_stats_update_dequeue(struct cfq_group *cfqg) { }
-+static inline void cfqg_stats_set_start_empty_time(struct cfq_group *cfqg) { }
-+static inline void cfqg_stats_update_idle_time(struct cfq_group *cfqg) { }
-+static inline void cfqg_stats_set_start_idle_time(struct cfq_group *cfqg) { }
-+static inline void cfqg_stats_update_avg_queue_size(struct cfq_group *cfqg) { }
- 
- #endif	/* CONFIG_CFQ_GROUP_IOSCHED && CONFIG_DEBUG_BLK_CGROUP */
+ 	blkcg_print_blkgs(sf, blkcg, cfqg_prfill_avg_queue_size,
+-			  BLKIO_POLICY_PROP, 0, false);
++			  &blkio_policy_cfq, 0, false);
+ 	return 0;
+ }
+ #endif	/* CONFIG_DEBUG_BLK_CGROUP */
+@@ -3938,7 +3938,7 @@ static void cfq_exit_queue(struct elevator_queue *e)
+ #ifndef CONFIG_CFQ_GROUP_IOSCHED
+ 	kfree(cfqd->root_group);
+ #endif
+-	update_root_blkg_pd(q, BLKIO_POLICY_PROP);
++	update_root_blkg_pd(q, &blkio_policy_cfq);
+ 	kfree(cfqd);
+ }
  
 -- 
 1.7.7.3
