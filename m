@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 07/11] blkcg: make request_queue bypassing on allocation
-Date: Fri, 13 Apr 2012 13:11:31 -0700
-Message-ID: <1334347895-6268-8-git-send-email-tj@kernel.org>
+Subject: [PATCH 08/11] blkcg: add request_queue->root_blkg
+Date: Fri, 13 Apr 2012 13:11:32 -0700
+Message-ID: <1334347895-6268-9-git-send-email-tj__1145.79205769605$1334347970$gmane$org@kernel.org>
 References: <1334347895-6268-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,95 +21,123 @@ To: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org
 Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-With the previous change to guarantee bypass visiblity for RCU read
-lock regions, entering bypass mode involves non-trivial overhead and
-future changes are scheduled to make use of bypass mode during init
-path.  Combined it may end up adding noticeable delay during boot.
+With per-queue policy activation, root blkg creation will be moved to
+blkcg core.  Add q->root_blkg in preparation.  For blk-throtl, this
+replaces throtl_data->root_tg; however, cfq needs to keep
+cfqd->root_group for !CONFIG_CFQ_GROUP_IOSCHED.
 
-This patch makes request_queue start its life in bypass mode, which is
-ended on queue init completion at the end of
-blk_init_allocated_queue(), and updates blk_queue_bypass_start() such
-that draining and RCU synchronization are performed only when the
-queue actually enters bypass mode.
-
-This avoids unnecessarily switching in and out of bypass mode during
-init avoiding the overhead and any nasty surprises which may step from
-leaving bypass mode on half-initialized queues.
-
-The boot time overhead was pointed out by Vivek.
+This is to prepare for per-queue policy activation and doesn't cause
+any functional difference.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/blk-core.c |   37 +++++++++++++++++++++++++------------
- 1 files changed, 25 insertions(+), 12 deletions(-)
+ block/blk-throttle.c   |   16 ++++++++++------
+ block/cfq-iosched.c    |    4 +++-
+ include/linux/blkdev.h |    2 ++
+ 3 files changed, 15 insertions(+), 7 deletions(-)
 
-diff --git a/block/blk-core.c b/block/blk-core.c
-index a4b3eaf..86027cd 100644
---- a/block/blk-core.c
-+++ b/block/blk-core.c
-@@ -421,14 +421,18 @@ void blk_drain_queue(struct request_queue *q, bool drain_all)
-  */
- void blk_queue_bypass_start(struct request_queue *q)
- {
-+	bool drain;
-+
- 	spin_lock_irq(q->queue_lock);
--	q->bypass_depth++;
-+	drain = !q->bypass_depth++;
- 	queue_flag_set(QUEUE_FLAG_BYPASS, q);
- 	spin_unlock_irq(q->queue_lock);
+diff --git a/block/blk-throttle.c b/block/blk-throttle.c
+index 6f1bfdf..8c520fa 100644
+--- a/block/blk-throttle.c
++++ b/block/blk-throttle.c
+@@ -97,7 +97,6 @@ struct throtl_data
+ 	/* service tree for active throtl groups */
+ 	struct throtl_rb_root tg_service_tree;
  
--	blk_drain_queue(q, false);
--	/* ensure blk_queue_bypass() is %true inside RCU read lock */
--	synchronize_rcu();
-+	if (drain) {
-+		blk_drain_queue(q, false);
-+		/* ensure blk_queue_bypass() is %true inside RCU read lock */
-+		synchronize_rcu();
-+	}
+-	struct throtl_grp *root_tg;
+ 	struct request_queue *queue;
+ 
+ 	/* Total Number of queued bios on READ and WRITE lists */
+@@ -131,6 +130,11 @@ static inline struct blkio_group *tg_to_blkg(struct throtl_grp *tg)
+ 	return pdata_to_blkg(tg);
  }
- EXPORT_SYMBOL_GPL(blk_queue_bypass_start);
  
-@@ -569,6 +573,15 @@ struct request_queue *blk_alloc_queue_node(gfp_t gfp_mask, int node_id)
++static inline struct throtl_grp *td_root_tg(struct throtl_data *td)
++{
++	return blkg_to_tg(td->queue->root_blkg);
++}
++
+ enum tg_state_flags {
+ 	THROTL_TG_FLAG_on_rr = 0,	/* on round-robin busy list */
+ };
+@@ -261,7 +265,7 @@ throtl_grp *throtl_lookup_tg(struct throtl_data *td, struct blkio_cgroup *blkcg)
+ 	 * Avoid lookup in this case
  	 */
- 	q->queue_lock = &q->__queue_lock;
+ 	if (blkcg == &blkio_root_cgroup)
+-		return td->root_tg;
++		return td_root_tg(td);
  
-+	/*
-+	 * A queue starts its life with bypass turned on to avoid
-+	 * unnecessary bypass on/off overhead and nasty surprises during
-+	 * init.  The initial bypass will be finished at the end of
-+	 * blk_init_allocated_queue().
-+	 */
-+	q->bypass_depth = 1;
-+	__set_bit(QUEUE_FLAG_BYPASS, &q->queue_flags);
-+
- 	if (blkcg_init_queue(q))
- 		goto fail_id;
- 
-@@ -664,15 +677,15 @@ blk_init_allocated_queue(struct request_queue *q, request_fn_proc *rfn,
- 
- 	q->sg_reserved_size = INT_MAX;
- 
--	/*
--	 * all done
--	 */
--	if (!elevator_init(q, NULL)) {
--		blk_queue_congestion_threshold(q);
--		return q;
--	}
-+	/* init elevator */
-+	if (elevator_init(q, NULL))
-+		return NULL;
- 
--	return NULL;
-+	blk_queue_congestion_threshold(q);
-+
-+	/* all done, end the initial bypass */
-+	blk_queue_bypass_end(q);
-+	return q;
+ 	return blkg_to_tg(blkg_lookup(blkcg, td->queue));
  }
- EXPORT_SYMBOL(blk_init_allocated_queue);
+@@ -277,7 +281,7 @@ static struct throtl_grp *throtl_lookup_create_tg(struct throtl_data *td,
+ 	 * Avoid lookup in this case
+ 	 */
+ 	if (blkcg == &blkio_root_cgroup) {
+-		tg = td->root_tg;
++		tg = td_root_tg(td);
+ 	} else {
+ 		struct blkio_group *blkg;
+ 
+@@ -287,7 +291,7 @@ static struct throtl_grp *throtl_lookup_create_tg(struct throtl_data *td,
+ 		if (!IS_ERR(blkg))
+ 			tg = blkg_to_tg(blkg);
+ 		else if (!blk_queue_dead(q))
+-			tg = td->root_tg;
++			tg = td_root_tg(td);
+ 	}
+ 
+ 	return tg;
+@@ -1245,12 +1249,12 @@ int blk_throtl_init(struct request_queue *q)
+ 
+ 	blkg = blkg_lookup_create(&blkio_root_cgroup, q, true);
+ 	if (!IS_ERR(blkg))
+-		td->root_tg = blkg_to_tg(blkg);
++		q->root_blkg = blkg;
+ 
+ 	spin_unlock_irq(q->queue_lock);
+ 	rcu_read_unlock();
+ 
+-	if (!td->root_tg) {
++	if (!q->root_blkg) {
+ 		kfree(td);
+ 		return -ENOMEM;
+ 	}
+diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
+index de95f9a..86440e0 100644
+--- a/block/cfq-iosched.c
++++ b/block/cfq-iosched.c
+@@ -3964,8 +3964,10 @@ static int cfq_init_queue(struct request_queue *q)
+ 	spin_lock_irq(q->queue_lock);
+ 
+ 	blkg = blkg_lookup_create(&blkio_root_cgroup, q, true);
+-	if (!IS_ERR(blkg))
++	if (!IS_ERR(blkg)) {
++		q->root_blkg = blkg;
+ 		cfqd->root_group = blkg_to_cfqg(blkg);
++	}
+ 
+ 	spin_unlock_irq(q->queue_lock);
+ 	rcu_read_unlock();
+diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
+index d2c69f8..b01c377 100644
+--- a/include/linux/blkdev.h
++++ b/include/linux/blkdev.h
+@@ -31,6 +31,7 @@ struct blk_trace;
+ struct request;
+ struct sg_io_hdr;
+ struct bsg_job;
++struct blkio_group;
+ 
+ #define BLKDEV_MIN_RQ	4
+ #define BLKDEV_MAX_RQ	128	/* Default maximum */
+@@ -369,6 +370,7 @@ struct request_queue {
+ 
+ 	struct list_head	icq_list;
+ #ifdef CONFIG_BLK_CGROUP
++	struct blkio_group	*root_blkg;
+ 	struct list_head	blkg_list;
+ #endif
  
 -- 
 1.7.7.3
