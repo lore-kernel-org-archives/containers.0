@@ -1,10 +1,23 @@
-From: MAILER-DAEMON-yViCv/G/lLC34Msakav8EA@public.gmane.org (Mail Delivery System)
-Subject: Messaggio Non Consegnato e Rispedito al Mittente
-Date: Fri, 13 Apr 2012 04:00:02 +0200 (CEST)
-Message-ID: <20120413020002.7418E3EA1A4@mbox5-vip.sidi.mpi.it>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [RFD] Merge task counter into memcg
+Date: Fri, 13 Apr 2012 11:48:28 +0900
+Message-ID: <4F8793FC.5030209__44138.1408869804$1334285438$gmane$org@jp.fujitsu.com>
+References: <20120411185715.GA4317@somewhere.redhat.com>
+	<4F862851.3040208@jp.fujitsu.com>
+	<20120412113217.GB11455@somewhere.redhat.com>
+	<4F86BFC6.2050400@parallels.com>
+	<20120412123256.GI1787@cmpxchg.org>
+	<4F86D4BD.1040305@parallels.com>
+	<20120412153055.GL1787@cmpxchg.org>
+	<20120412163825.GB13069@google.com>
+	<20120412172309.GM1787@cmpxchg.org>
+	<20120412174155.GC13069@google.com> <4F878480.60505@jp.fujitsu.com>
+	<4F87865F.5060701@parallels.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1895089898543643244=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <4F87865F.5060701-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -14,92 +27,61 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Daniel Walsh <dwalsh-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
+(2012/04/13 10:50), Glauber Costa wrote:
 
---===============1895089898543643244==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="37AB83EA0FA.1334282402/mbox5-vip.sidi.mpi.it"
-Content-Transfer-Encoding: 7bit
+> On 04/12/2012 10:42 PM, KAMEZAWA Hiroyuki wrote:
+>> To be honest, I doubt that task counter is unnecessary...memcg can catch
+>> oom situation well. I often test 'make -j' under memcg.
+>>
+>> To the questions
+>> *   It sounds like a 'ulimit' cgroup. How about overwriting
+>>      ulimit values via cgroup ? (sounds joke?) Then, overhead will be small but
+>>      I'm not sure it can be hierarchical and doesn't break userland.
+>>
+>>      If people wants to limit the number of tasks, I think interface should provide it
+>>      in the unit of objects. Then, I'm ok to have other subsystem for counting something.
+>>      fork-bomb's memory overhead can be prevent by memcg. What memcg cannot handle
+>>      is ulimit. If forkbomb exhausts all ulimit/tasks, the user cannot login.
+>>      So, having task-limit cgroup subsys for a sandbox will make sense in some situation.
+>>
+>> In short, I don't think it's better to have task-counting and fd-counting in memcg.
+>> It's kmem, but it's more than that, I think.
+>> Please provide subsys like ulimit.
+>>
+> Kame,
+> 
+> You're talking about the memcg that is in the kernel today.
+> I think the discussion is orbiting around how it is going to be once we
+> start tracking kernel memory like the slab (for task_struct), or kernel 
+> stack pages.
+> 
+> In those scenarios, a fork bomb will be stopped anyway, because it will 
+> need kernel memory it can't grab.
+> 
 
-This is a MIME-encapsulated message.
-
---37AB83EA0FA.1334282402/mbox5-vip.sidi.mpi.it
-Content-Description: Notification
-Content-Type: text/plain; charset=UTF-8
-
-Risponde il Sistema di Posta Elettronica del Ministero dell'Istruzione, Università e Ricerca.
-Server : mbox5-vip.sidi.mpi.it
-
-Spiacenti di comunicarLe che non è stato possibile consegnare
-il Suo messaggio ad uno o più destinatari. 
-Il messaggio viene riportato in calce.
-
-Segue una descrizione del problema riscontrato all'atto della consegna del messaggio. 
-Per ragioni tecniche, tale descrizione può essere in lingua Inglese.
-
-                   Il Sistema di Posta Elettronica @istruzione.it 
 
 
-<gemma.troisi-yViCv/G/lLC34Msakav8EA@public.gmane.org>: permission denied. Command output: maildrop: **
-    CASELLA PIENA **
+fork-bomb can be caught by some method.
 
---37AB83EA0FA.1334282402/mbox5-vip.sidi.mpi.it
-Content-Description: Delivery report
-Content-Type: message/delivery-status
 
-Reporting-MTA: dns; mbox5-vip.sidi.mpi.it
-X-Mailbox-Server-Queue-ID: 37AB83EA0FA
-X-Mailbox-Server-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Fri, 13 Apr 2012 04:00:02 +0200 (CEST)
+I just consider about 'task' cgroup. You can know the number of tasks by reading
+tasks file even if we don't have task cgroup. Because of this, using
+task cgroup for accounting the number of tasks doesn't make sense to me.
+But, here, Tejun? mentioned accounting the number of 'fd'. 
 
-Final-Recipient: rfc822; gemma.troisi-yViCv/G/lLC34Msakav8EA@public.gmane.org
-Original-Recipient: rfc822;gemma.troisi-yViCv/G/lLC34Msakav8EA@public.gmane.org
-Action: failed
-Status: 5.7.0
-Diagnostic-Code: x-unix; maildrop: ** CASELLA PIENA **
+Hearing that, I think of ulimit.
 
---37AB83EA0FA.1334282402/mbox5-vip.sidi.mpi.it
-Content-Description: Undelivered Message Headers
-Content-Type: text/rfc822-headers
-Content-Transfer-Encoding: quoted-printable
+We do resource accounting based on cgroup. But there are another limiting
+feature as ulimit, sysctl, etc...This makes total view of resource accounting in Linux
+complicated. So, I wonder whether cgroup can be a unified control feature and have
+subsys for ulimit or ipc, by overriding other control stuffs.
 
-Received: from mx.sidi.istruzione.it (mx2.sidi.mpi.it [172.16.190.212])
-	by mbox5-vip.sidi.mpi.it (Mailbox Server) with ESMTP id 37AB83EA0FA
-	for <gemma.troisi-yViCv/G/lLC34Msakav8EA@public.gmane.org>; Fri, 13 Apr 2012 04:00:02 +0200 (CEST)
-Received: from localhost (unknown [127.0.0.1])
-	by mx2.sidi.istruzione.it (Mail Service) with ESMTP id 2266D500B3
-	for <gemma.troisi-yViCv/G/lLC34Msakav8EA@public.gmane.org>; Fri, 13 Apr 2012 04:00:02 +0200 (CEST)
-X-Virus-Scanned: Content Filter at istruzione.it
-Received: from Jemil.jemil.net (unknown [178.33.217.10])
-	by mx2.sidi.istruzione.it (Mail Service) with ESMTP id 9A687500AD
-	for <gemma.troisi-yViCv/G/lLC34Msakav8EA@public.gmane.org>; Fri, 13 Apr 2012 04:00:01 +0200 (CEST)
-Received: from [178.33.217.10] by Jemil.jemil.net id pWML01mz4jSd with SM=
-TP; Fri, 13 Apr 2012 06:00:01 +0400
-Date: Fri, 13 Apr 2012 06:00:01 +0400
-From: "Pay" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.5.85.1) Business
-X-Priority: 3 (Normal)
-Message-ID: <96269338.35610940020004-in2PATQWrNIbmVudvTxUKg@public.gmane.org>
-To: <gemma.troisi-yViCv/G/lLC34Msakav8EA@public.gmane.org>
-Subject: Il tuo ordine e stato accettato.
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset=3D"windows-1252"
-Content-Transfer-Encoding: 8bit
+But  resources which doesn't belong to 'thread' ...as memory may add something
+messy to cgroup, it's accounting resources based on threads.
 
---37AB83EA0FA.1334282402/mbox5-vip.sidi.mpi.it--
-
---===============1895089898543643244==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============1895089898543643244==--
+Thanks,
+-Kame
