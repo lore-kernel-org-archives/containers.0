@@ -1,7 +1,7 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 07/11] blkcg: make request_queue bypassing on allocation
-Date: Fri, 13 Apr 2012 13:37:26 -0700
-Message-ID: <20120413203726.GE12233@google.com>
+Date: Fri, 13 Apr 2012 16:37:58 -0400
+Message-ID: <20120413203758.GJ26383@redhat.com>
 References: <1334347895-6268-1-git-send-email-tj@kernel.org>
 	<1334347895-6268-8-git-send-email-tj@kernel.org>
 	<20120413203205.GI26383@redhat.com>
@@ -20,7 +20,7 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
@@ -50,10 +50,21 @@ On Fri, Apr 13, 2012 at 04:32:05PM -0400, Vivek Goyal wrote:
 > noticed the overhead. Looks like driver was creating fully initialized
 > queues and tearing these apart soon.
 
-blk_cleanup_queue() doesn't use blk_queue_bypass_start() to enter
-bypass mode.
+Here is the old commit. Driver in question was megaraid.
 
-Thanks.
+commit bb729bc98c0f3e6a898d8730df3e2830bf68751a
+Author: Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+Date:   Sun Dec 6 09:54:19 2009 +0100
 
--- 
-tejun
+    cfq-iosched: use call_rcu() instead of doing grace period stall on queue exit
+
+    After the merge of the IO controller patches, booting on my megaraid box
+    ran much slower. Vivek Goyal traced it down to megaraid discovery creating
+    tons of devices, each suffering a grace period when they later kill that
+    queue (if no device is found).
+    
+    So lets use call_rcu() to batch these deferred frees, instead of taking
+    the grace period hit for each one.
+
+Thanks
+Vivek
