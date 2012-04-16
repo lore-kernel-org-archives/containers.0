@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 2/6] blkcg: remove blkio_group->path[]
-Date: Mon, 16 Apr 2012 13:57:23 -0700
-Message-ID: <1334609847-12747-3-git-send-email-tj__16330.0378052101$1334609877$gmane$org@kernel.org>
+Subject: [PATCH 3/6] blkcg: style cleanups for blk-cgroup.h
+Date: Mon, 16 Apr 2012 13:57:24 -0700
+Message-ID: <1334609847-12747-4-git-send-email-tj__15802.5111807094$1334609882$gmane$org@kernel.org>
 References: <1334609847-12747-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,123 +21,199 @@ To: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org
 Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-blkio_group->path[] stores the path of the associated cgroup and is
-used only for debug messages.  Just format the path from blkg->cgroup
-when printing debug messages.
+* Update indentation on struct field declarations.
+
+* Uniformly don't use "extern" on function declarations.
+
+* Merge the two #ifdef CONFIG_BLK_CGROUP blocks.
+
+All changes in this patch are cosmetic.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/blk-cgroup.c   |    1 -
- block/blk-cgroup.h   |   21 +++++++++++++++++----
- block/blk-throttle.c |    9 ++++++---
- block/cfq-iosched.c  |   21 ++++++++++++++-------
- 4 files changed, 37 insertions(+), 15 deletions(-)
+ block/blk-cgroup.h |  108 +++++++++++++++++++++++++---------------------------
+ 1 files changed, 52 insertions(+), 56 deletions(-)
 
-diff --git a/block/blk-cgroup.c b/block/blk-cgroup.c
-index b1807d4..6333702 100644
---- a/block/blk-cgroup.c
-+++ b/block/blk-cgroup.c
-@@ -114,7 +114,6 @@ static struct blkio_group *blkg_alloc(struct blkio_cgroup *blkcg,
- 	INIT_LIST_HEAD(&blkg->q_node);
- 	blkg->blkcg = blkcg;
- 	blkg->refcnt = 1;
--	cgroup_path(blkcg->css.cgroup, blkg->path, sizeof(blkg->path));
- 
- 	for (i = 0; i < BLKCG_MAX_POLS; i++) {
- 		struct blkio_policy_type *pol = blkio_policy[i];
 diff --git a/block/blk-cgroup.h b/block/blk-cgroup.h
-index ef6550a..c524267 100644
+index c524267..b347aa0 100644
 --- a/block/blk-cgroup.h
 +++ b/block/blk-cgroup.h
-@@ -77,8 +77,6 @@ struct blkio_group {
- 	struct list_head q_node;
- 	struct hlist_node blkcg_node;
- 	struct blkio_cgroup *blkcg;
--	/* Store cgroup path */
--	char path[128];
+@@ -38,15 +38,15 @@ enum blkg_rwstat_type {
+ };
+ 
+ struct blkio_cgroup {
+-	struct cgroup_subsys_state css;
+-	spinlock_t lock;
+-	struct hlist_head blkg_list;
++	struct cgroup_subsys_state	css;
++	spinlock_t			lock;
++	struct hlist_head		blkg_list;
+ 
+ 	/* for policies to test whether associated blkcg has changed */
+-	uint64_t id;
++	uint64_t			id;
+ 
+ 	/* TODO: per-policy storage in blkio_cgroup */
+-	unsigned int cfq_weight;	/* belongs to cfq */
++	unsigned int			cfq_weight;	/* belongs to cfq */
+ };
+ 
+ struct blkg_stat {
+@@ -62,27 +62,27 @@ struct blkg_rwstat {
+ /* per-blkg per-policy data */
+ struct blkg_policy_data {
+ 	/* the blkg this per-policy data belongs to */
+-	struct blkio_group *blkg;
++	struct blkio_group		*blkg;
+ 
+ 	/* used during policy activation */
+-	struct list_head alloc_node;
++	struct list_head		alloc_node;
+ 
+ 	/* pol->pdata_size bytes of private data used by policy impl */
+-	char pdata[] __aligned(__alignof__(unsigned long long));
++	char				pdata[] __aligned(__alignof__(unsigned long long));
+ };
+ 
+ struct blkio_group {
+ 	/* Pointer to the associated request_queue */
+-	struct request_queue *q;
+-	struct list_head q_node;
+-	struct hlist_node blkcg_node;
+-	struct blkio_cgroup *blkcg;
++	struct request_queue		*q;
++	struct list_head		q_node;
++	struct hlist_node		blkcg_node;
++	struct blkio_cgroup		*blkcg;
  	/* reference count */
- 	int refcnt;
+-	int refcnt;
++	int				refcnt;
  
-@@ -167,9 +165,24 @@ static inline struct blkio_group *pdata_to_blkg(void *pdata)
- 	return NULL;
- }
+-	struct blkg_policy_data *pd[BLKCG_MAX_POLS];
++	struct blkg_policy_data		*pd[BLKCG_MAX_POLS];
  
--static inline char *blkg_path(struct blkio_group *blkg)
-+/**
-+ * blkg_path - format cgroup path of blkg
-+ * @blkg: blkg of interest
-+ * @buf: target buffer
-+ * @buflen: target buffer length
-+ *
-+ * Format the path of the cgroup of @blkg into @buf.
-+ */
-+static inline int blkg_path(struct blkio_group *blkg, char *buf, int buflen)
- {
--	return blkg->path;
-+	int ret;
+-	struct rcu_head rcu_head;
++	struct rcu_head			rcu_head;
+ };
+ 
+ typedef void (blkio_init_group_fn)(struct blkio_group *blkg);
+@@ -90,29 +90,39 @@ typedef void (blkio_exit_group_fn)(struct blkio_group *blkg);
+ typedef void (blkio_reset_group_stats_fn)(struct blkio_group *blkg);
+ 
+ struct blkio_policy_ops {
+-	blkio_init_group_fn *blkio_init_group_fn;
+-	blkio_exit_group_fn *blkio_exit_group_fn;
+-	blkio_reset_group_stats_fn *blkio_reset_group_stats_fn;
++	blkio_init_group_fn		*blkio_init_group_fn;
++	blkio_exit_group_fn		*blkio_exit_group_fn;
++	blkio_reset_group_stats_fn	*blkio_reset_group_stats_fn;
+ };
+ 
+ struct blkio_policy_type {
+-	struct blkio_policy_ops ops;
+-	int plid;
+-	size_t pdata_size;		/* policy specific private data size */
+-	struct cftype *cftypes;		/* cgroup files for the policy */
++	struct blkio_policy_ops		ops;
++	int				plid;
++	/* policy specific private data size */
++	size_t				pdata_size;
++	/* cgroup files for the policy */
++	struct cftype			*cftypes;
+ };
+ 
+-extern int blkcg_init_queue(struct request_queue *q);
+-extern void blkcg_drain_queue(struct request_queue *q);
+-extern void blkcg_exit_queue(struct request_queue *q);
++extern struct blkio_cgroup blkio_root_cgroup;
 +
-+	rcu_read_lock();
-+	ret = cgroup_path(blkg->blkcg->css.cgroup, buf, buflen);
-+	rcu_read_unlock();
-+	if (ret)
-+		strncpy(buf, "<unavailable>", buflen);
-+	return ret;
++struct blkio_cgroup *cgroup_to_blkio_cgroup(struct cgroup *cgroup);
++struct blkio_cgroup *bio_blkio_cgroup(struct bio *bio);
++struct blkio_group *blkg_lookup(struct blkio_cgroup *blkcg,
++				struct request_queue *q);
++struct blkio_group *blkg_lookup_create(struct blkio_cgroup *blkcg,
++				       struct request_queue *q);
++int blkcg_init_queue(struct request_queue *q);
++void blkcg_drain_queue(struct request_queue *q);
++void blkcg_exit_queue(struct request_queue *q);
+ 
+ /* Blkio controller policy registration */
+-extern int blkio_policy_register(struct blkio_policy_type *);
+-extern void blkio_policy_unregister(struct blkio_policy_type *);
+-extern int blkcg_activate_policy(struct request_queue *q,
+-				 const struct blkio_policy_type *pol);
+-extern void blkcg_deactivate_policy(struct request_queue *q,
+-				    const struct blkio_policy_type *pol);
++int blkio_policy_register(struct blkio_policy_type *);
++void blkio_policy_unregister(struct blkio_policy_type *);
++int blkcg_activate_policy(struct request_queue *q,
++			  const struct blkio_policy_type *pol);
++void blkcg_deactivate_policy(struct request_queue *q,
++			     const struct blkio_policy_type *pol);
+ 
+ void blkcg_print_blkgs(struct seq_file *sf, struct blkio_cgroup *blkcg,
+ 		       u64 (*prfill)(struct seq_file *, void *, int),
+@@ -125,9 +135,9 @@ u64 blkg_prfill_stat(struct seq_file *sf, void *pdata, int off);
+ u64 blkg_prfill_rwstat(struct seq_file *sf, void *pdata, int off);
+ 
+ struct blkg_conf_ctx {
+-	struct gendisk		*disk;
+-	struct blkio_group	*blkg;
+-	u64			v;
++	struct gendisk			*disk;
++	struct blkio_group		*blkg;
++	u64				v;
+ };
+ 
+ int blkg_conf_prep(struct blkio_cgroup *blkcg,
+@@ -329,7 +339,9 @@ static inline void blkg_rwstat_reset(struct blkg_rwstat *rwstat)
+ 	memset(rwstat->cnt, 0, sizeof(rwstat->cnt));
  }
  
- /**
-diff --git a/block/blk-throttle.c b/block/blk-throttle.c
-index e2aaf27..e9b7a47 100644
---- a/block/blk-throttle.c
-+++ b/block/blk-throttle.c
-@@ -155,9 +155,12 @@ static inline int throtl_tg_##name(const struct throtl_grp *tg)		\
+-#else
++#else	/* CONFIG_BLK_CGROUP */
++
++struct cgroup;
  
- THROTL_TG_FNS(on_rr);
+ struct blkio_group {
+ };
+@@ -337,6 +349,9 @@ struct blkio_group {
+ struct blkio_policy_type {
+ };
  
--#define throtl_log_tg(td, tg, fmt, args...)				\
--	blk_add_trace_msg((td)->queue, "throtl %s " fmt,		\
--			  blkg_path(tg_to_blkg(tg)), ##args);		\
-+#define throtl_log_tg(td, tg, fmt, args...)	do {			\
-+	char __pbuf[128];						\
-+									\
-+	blkg_path(tg_to_blkg(tg), __pbuf, sizeof(__pbuf));		\
-+	blk_add_trace_msg((td)->queue, "throtl %s " fmt, __pbuf, ##args); \
-+} while (0)
++static inline struct blkio_cgroup *cgroup_to_blkio_cgroup(struct cgroup *cgroup) { return NULL; }
++static inline struct blkio_cgroup *bio_blkio_cgroup(struct bio *bio) { return NULL; }
++static inline struct blkio_group *blkg_lookup(struct blkio_cgroup *blkcg, void *key) { return NULL; }
+ static inline int blkcg_init_queue(struct request_queue *q) { return 0; }
+ static inline void blkcg_drain_queue(struct request_queue *q) { }
+ static inline void blkcg_exit_queue(struct request_queue *q) { }
+@@ -355,24 +370,5 @@ static inline char *blkg_path(struct blkio_group *blkg) { return NULL; }
+ static inline void blkg_get(struct blkio_group *blkg) { }
+ static inline void blkg_put(struct blkio_group *blkg) { }
  
- #define throtl_log(td, fmt, args...)	\
- 	blk_add_trace_msg((td)->queue, "throtl " fmt, ##args)
-diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
-index eb07eb6..901286b 100644
---- a/block/cfq-iosched.c
-+++ b/block/cfq-iosched.c
-@@ -573,14 +573,21 @@ static inline void cfqg_put(struct cfq_group *cfqg)
- 	return blkg_put(cfqg_to_blkg(cfqg));
- }
- 
--#define cfq_log_cfqq(cfqd, cfqq, fmt, args...)	\
-+#define cfq_log_cfqq(cfqd, cfqq, fmt, args...)	do {			\
-+	char __pbuf[128];						\
-+									\
-+	blkg_path(cfqg_to_blkg((cfqq)->cfqg), __pbuf, sizeof(__pbuf));	\
- 	blk_add_trace_msg((cfqd)->queue, "cfq%d%c %s " fmt, (cfqq)->pid, \
--			cfq_cfqq_sync((cfqq)) ? 'S' : 'A', \
--			blkg_path(cfqg_to_blkg((cfqq)->cfqg)), ##args)
+-#endif
 -
--#define cfq_log_cfqg(cfqd, cfqg, fmt, args...)				\
--	blk_add_trace_msg((cfqd)->queue, "%s " fmt,			\
--			blkg_path(cfqg_to_blkg((cfqg))), ##args)	\
-+			  cfq_cfqq_sync((cfqq)) ? 'S' : 'A',		\
-+			  __pbuf, ##args);				\
-+} while (0)
-+
-+#define cfq_log_cfqg(cfqd, cfqg, fmt, args...)	do {			\
-+	char __pbuf[128];						\
-+									\
-+	blkg_path(cfqg_to_blkg(cfqg), __pbuf, sizeof(__pbuf));		\
-+	blk_add_trace_msg((cfqd)->queue, "%s " fmt, __pbuf, ##args);	\
-+} while (0)
- 
- static inline void cfqg_stats_update_io_add(struct cfq_group *cfqg,
- 					    struct cfq_group *curr_cfqg, int rw)
+-#ifdef CONFIG_BLK_CGROUP
+-extern struct blkio_cgroup blkio_root_cgroup;
+-extern struct blkio_cgroup *cgroup_to_blkio_cgroup(struct cgroup *cgroup);
+-extern struct blkio_cgroup *bio_blkio_cgroup(struct bio *bio);
+-extern struct blkio_group *blkg_lookup(struct blkio_cgroup *blkcg,
+-				       struct request_queue *q);
+-struct blkio_group *blkg_lookup_create(struct blkio_cgroup *blkcg,
+-				       struct request_queue *q);
+-#else
+-struct cgroup;
+-static inline struct blkio_cgroup *
+-cgroup_to_blkio_cgroup(struct cgroup *cgroup) { return NULL; }
+-static inline struct blkio_cgroup *
+-bio_blkio_cgroup(struct bio *bio) { return NULL; }
+-
+-static inline struct blkio_group *blkg_lookup(struct blkio_cgroup *blkcg,
+-					      void *key) { return NULL; }
+-#endif
+-#endif /* _BLK_CGROUP_H */
++#endif	/* CONFIG_BLK_CGROUP */
++#endif	/* _BLK_CGROUP_H */
 -- 
 1.7.7.3
