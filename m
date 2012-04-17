@@ -1,15 +1,18 @@
-From: Alexander Nikiforov <a.nikiforov-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [RFD] Merge task counter into memcg
-Date: Tue, 17 Apr 2012 10:45:05 +0400
-Message-ID: <4F8D1171.1090504__49726.0713986636$1334645126$gmane$org@samsung.com>
-References: <20120411185715.GA4317@somewhere.redhat.com>
-	<4F86527C.2080507@samsung.com>
-	<20120417010902.GA14646@somewhere.redhat.com>
+From: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
+Subject: Re: [PATCH 07/11] blkcg: make request_queue bypassing on allocation
+Date: Tue, 17 Apr 2012 16:04:58 +0400
+Message-ID: <1334664298.3766.62.camel__40427.731027785$1334664316$gmane$org@dabdike>
+References: <1334347895-6268-1-git-send-email-tj@kernel.org>
+	<1334347895-6268-8-git-send-email-tj@kernel.org>
+	<20120413203205.GI26383@redhat.com> <20120413203726.GE12233@google.com>
+	<20120413204446.GK26383@redhat.com> <20120413204710.GF12233@google.com>
+	<20120413205501.GL26383@redhat.com> <20120413210548.GG12233@google.com>
+	<20120413211640.GH12233@google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-reply-to: <20120417010902.GA14646-oHC15RC7JGTpAmv0O++HtFaTQe2KTcn/@public.gmane.org>
+In-Reply-To: <20120413211640.GH12233-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,95 +22,43 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Daniel Walsh <dwalsh-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 04/17/2012 05:09 AM, Frederic Weisbecker wrote:
-> On Thu, Apr 12, 2012 at 07:56:44AM +0400, Alexander Nikiforov wrote:
->> On 04/11/2012 10:57 PM, Frederic Weisbecker wrote:
->>> Hi,
->>>
->>> While talking with Tejun about targetting the cgroup task counter subsystem
->>> for the next merge window, he suggested to check if this could be merged into
->>> the memcg subsystem rather than creating a new one cgroup subsystem just
->>> for task count limit purpose.
->>>
->>> So I'm pinging you guys to seek your insight.
->>>
->>> I assume not everybody in the Cc list knows what the task counter subsystem
->>> is all about. So here is a summary: this is a cgroup subsystem (latest version
->>> in https://lwn.net/Articles/478631/) that keeps track of the number of tasks
->>> present in a cgroup. Hooks are set in task fork/exit and cgroup migration to
->>> maintain this accounting visible to a special tasks.usage file. The user can
->>> set a limit on the number of tasks by writing on the tasks.limit file.
->>> Further forks or cgroup migration are then rejected if the limit is exceeded.
->>>
->>> This feature is especially useful to protect against forkbombs in containers.
->>> Or more generally to limit the resources on the number of tasks on a cgroup
->>> as it involves some kernel memory allocation.
->>>
->>> Now the dilemna is how to implement it?
->>>
->>> 1) As a standalone subsystem, as it stands currently (https://lwn.net/Articles/478631/)
->>>
->>> 2) As a feature in memcg, part of the memory.kmem.* files. This makes sense
->>> because this is about kernel memory allocation limitation. We could have a
->>> memory.kmem.tasks.count
->>>
->>> My personal opinion is that the task counter brings some overhead: a charge
->>> across the whole hierarchy at every fork, and the mirrored uncharge on task exit.
->>> And this overhead happens even in the off-case (when the task counter susbsystem
->>> is mounted but the limit is the default: ULLONG_MAX).
->>>
->>> So if we choose the second solution, this overhead will be added unconditionally
->>> to memcg.
->>> But I don't expect every users of memcg will need the task counter. So perhaps
->>> the overhead should be kept in its own separate subsystem.
->>>
->>> OTOH memory.kmem.* interface would have be a good fit.
->>>
->>> What do you think?
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe cgroups" in
->>> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->> Hi,
->>
->> I'm agree that this is memory related thing, but I prefer this as a
->> separate subsystem.
->> Yes it has some impact on a system, but on the other hand we will
->> have some very useful tool to track tasks state.
->> As I wrote before
->>
->> http://comments.gmane.org/gmane.linux.kernel.cgroups/1448
->>
->> it'll very useful to have event in the userspace about fork/exit
->> about group of the processes.
-> I need more clarifications about your needs. The task counter susbsytem
-> doesn't inform you about forks or exits unless you reach the limit on
-> the number of tasks.
->
-Hi Frederic,
+On Fri, 2012-04-13 at 14:16 -0700, Tejun Heo wrote:
+> On Fri, Apr 13, 2012 at 02:05:48PM -0700, Tejun Heo wrote:
+> > On Fri, Apr 13, 2012 at 04:55:01PM -0400, Vivek Goyal wrote:
+> > > But neither seems to be the case here. So to make sure that blkg_lookup()
+> > > under rcu will see the updated value of queue flag (bypass), are we
+> > > relying on the fact that caller should see the DEAD flag and not go
+> > > ahead with blkg_lookup()?  If yes, atleast it is not obivious.
+> > 
+> > We're relying on the fact that it doesn't matter anymore because all
+> > blkgs will be shoot down in queue cleanup path which goes through rcu
+> > free, which is different from deactivating individual policies.  It
+> > indeed is subtle.  Umm... this is starting to get ridiculous.  Why the
+> > hell was megaraid messing with so many queues anyways?
+> 
+> I suppose megaraid depends on sequential LUN scan which SCSI
+> implements by creating sdev for each LUN, trying to see whether it
+> actually exists and then destroys the sdev if not.  Urgh.... so, we
+> seem to be stuck with it.
 
-yup now it doesn't have this functionality, but we can add it. Please 
-look on my prevous post about this feature
+Right, sorry ... it's not just megaraid, it's any SCSI-2 device.  The
+standard says we have to probe the LUNs one at a time to see if they're
+there.  SCSI-3 on supports the REPORT LUNS command which just returns a
+list which obviates the need to probe on every one but not all older
+(and USB to be frank) devices support this.
 
-http://comments.gmane.org/gmane.linux.kernel.cgroups/1448
+> So, the current code is technically correct although subtle like hell.
+> We can RCU defer blk_put_queue() from blk_cleanup_queue() using
+> call_rcu() to make clear that RCU grace period is necessary there.
+> Any better ideas?
 
-Now userspace tools, for example libcgroup, can't catch event when 
-process died/forked (or maybe moved to another group). Shortly when 
-tasks file change.
-According to this userspace tool go to inconsistency state when user 
-manually kill process. Another example we want to balance number of 
-process with several groups and make round-robin
-between them. Now we have only 1 way to get notification about tasks 
-file - inotify(), but this approach works only if you work from 
-userspace with file (e.g. create struct file, for example with echo $$ 
-/sys/abc/tasks), but when something happens from kernel side 
-(do_fork()/do_exit) we cannot get any event about group of the process 
-(we can scan tasks file and count number of PID, or work with
-waitpid(), but IMHO this is ugly solutions)
+Not really ... except that perhaps we might redo LUN scanning to use
+just a single queue, so repurpose the LUN underneath, but not destroy
+the old queue and setup the new one?  It's a bit counter intuitive, but
+it shouldn't be impossible.
 
-Thx for your reply
+James
