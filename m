@@ -1,16 +1,16 @@
 From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 20/43] userns: Replace user_ns_map_uid and
-	user_ns_map_gid with from_kuid and from_kgid
-Date: Wed, 18 Apr 2012 18:49:55 +0000
-Message-ID: <20120418184955.GE4984__37980.9647718959$1334775025$gmane$org@mail.hallyn.com>
+Subject: Re: [PATCH 21/43] userns: Convert sched_set_affinity and
+	sched_set_scheduler's permission checks
+Date: Wed, 18 Apr 2012 18:50:07 +0000
+Message-ID: <20120418185006.GF4984__18816.4748986766$1334775042$gmane$org@mail.hallyn.com>
 References: <m11unyn70b.fsf@fess.ebiederm.org>
-	<1333862139-31737-20-git-send-email-ebiederm@xmission.com>
+	<1333862139-31737-21-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1333862139-31737-20-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <1333862139-31737-21-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,92 +21,47 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Eric W. Beiderman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Cyrill Gorcunov <gorcunov-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Cyrill Gorcunov <gorcunov-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 Quoting Eric W. Beiderman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
 > From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 > 
-> These function are no longer needed replace them with their more useful equivalents.
+> - Compare kuids with uid_eq
+> - kuid are uniuqe across all user namespaces so there is no longer the
+>   need for a user_namespace comparison.
 > 
 > Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
 Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 
 > ---
->  include/linux/user_namespace.h |   12 ------------
->  ipc/mqueue.c                   |    3 +--
->  kernel/signal.c                |    2 +-
->  net/core/sock.c                |    4 ++--
->  4 files changed, 4 insertions(+), 17 deletions(-)
+>  kernel/sched/core.c |    7 ++-----
+>  1 files changed, 2 insertions(+), 5 deletions(-)
 > 
-> diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-> index a2c6145..4e72922 100644
-> --- a/include/linux/user_namespace.h
-> +++ b/include/linux/user_namespace.h
-> @@ -69,16 +69,4 @@ static inline void put_user_ns(struct user_namespace *ns)
+> diff --git a/kernel/sched/core.c b/kernel/sched/core.c
+> index 96bff85..b189fec 100644
+> --- a/kernel/sched/core.c
+> +++ b/kernel/sched/core.c
+> @@ -4042,11 +4042,8 @@ static bool check_same_owner(struct task_struct *p)
 >  
->  #endif
->  
-> -static inline uid_t user_ns_map_uid(struct user_namespace *to,
-> -	const struct cred *cred, kuid_t uid)
-> -{
-> -	return from_kuid_munged(to, uid);
-> -}
-> -
-> -static inline gid_t user_ns_map_gid(struct user_namespace *to,
-> -	const struct cred *cred, kgid_t gid)
-> -{
-> -	return from_kgid_munged(to, gid);
-> -}
-> -
->  #endif /* _LINUX_USER_H */
-> diff --git a/ipc/mqueue.c b/ipc/mqueue.c
-> index b53cf34..b6a0d46 100644
-> --- a/ipc/mqueue.c
-> +++ b/ipc/mqueue.c
-> @@ -538,8 +538,7 @@ static void __do_notify(struct mqueue_inode_info *info)
->  			rcu_read_lock();
->  			sig_i.si_pid = task_tgid_nr_ns(current,
->  						ns_of_pid(info->notify_owner));
-> -			sig_i.si_uid = user_ns_map_uid(info->notify_user_ns,
-> -						current_cred(), current_uid());
-> +			sig_i.si_uid = from_kuid_munged(info->notify_user_ns, current_uid());
->  			rcu_read_unlock();
->  
->  			kill_pid_info(info->notify.sigev_signo,
-> diff --git a/kernel/signal.c b/kernel/signal.c
-> index 2734dc9..d630327 100644
-> --- a/kernel/signal.c
-> +++ b/kernel/signal.c
-> @@ -1026,7 +1026,7 @@ static inline int legacy_queue(struct sigpending *signals, int sig)
->  static inline uid_t map_cred_ns(const struct cred *cred,
->  				struct user_namespace *ns)
->  {
-> -	return user_ns_map_uid(ns, cred, cred->uid);
-> +	return from_kuid_munged(ns, cred->uid);
+>  	rcu_read_lock();
+>  	pcred = __task_cred(p);
+> -	if (cred->user_ns == pcred->user_ns)
+> -		match = (cred->euid == pcred->euid ||
+> -			 cred->euid == pcred->uid);
+> -	else
+> -		match = false;
+> +	match = (uid_eq(cred->euid, pcred->euid) ||
+> +		 uid_eq(cred->euid, pcred->uid));
+>  	rcu_read_unlock();
+>  	return match;
 >  }
->  
->  #ifdef CONFIG_USER_NS
-> diff --git a/net/core/sock.c b/net/core/sock.c
-> index b2e14c0..e1ec8ba 100644
-> --- a/net/core/sock.c
-> +++ b/net/core/sock.c
-> @@ -821,8 +821,8 @@ void cred_to_ucred(struct pid *pid, const struct cred *cred,
->  	if (cred) {
->  		struct user_namespace *current_ns = current_user_ns();
->  
-> -		ucred->uid = user_ns_map_uid(current_ns, cred, cred->euid);
-> -		ucred->gid = user_ns_map_gid(current_ns, cred, cred->egid);
-> +		ucred->uid = from_kuid(current_ns, cred->euid);
-> +		ucred->gid = from_kgid(current_ns, cred->egid);
->  	}
->  }
->  EXPORT_SYMBOL_GPL(cred_to_ucred);
 > -- 
 > 1.7.2.5
 > 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Please read the FAQ at  http://www.tux.org/lkml/
