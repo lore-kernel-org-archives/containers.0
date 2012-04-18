@@ -1,18 +1,19 @@
-From: Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC] writeback and cgroup
-Date: Wed, 18 Apr 2012 15:58:14 +0800
-Message-ID: <20120418075814.GA3809__25707.6787682765$1334735916$gmane$org@localhost>
-References: <20120403183655.GA23106@dhcp-172-17-108-109.mtv.corp.google.com>
-	<20120404175124.GA8931@localhost>
-	<20120404193355.GD29686@dhcp-172-17-108-109.mtv.corp.google.com>
-	<20120406095934.GA10465@localhost>
-	<20120418065720.GA21485@quack.suse.cz>
+From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFD] Merge task counter into memcg
+Date: Wed, 18 Apr 2012 10:10:54 +0200
+Message-ID: <CAFTL4hxXT+hXWEnKop84JQ8ieHX4e=otpHnXYxdxaPgsiZYCiw__29714.8167308935$1334736667$gmane$org@mail.gmail.com>
+References: <20120411185715.GA4317@somewhere.redhat.com>
+	<20120412010745.GE1787@cmpxchg.org>
+	<20120412145507.GC11455@somewhere.redhat.com>
+	<4F87042A.2000902@parallels.com>
+	<20120412165922.GA12484@somewhere.redhat.com>
+	<20120417151753.GB32402@google.com>
+	<20120418065430.GB25568@somewhere>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20120418065720.GA21485-+0h/O2h83AeN3ZZ/Hiejyg@public.gmane.org>
+In-Reply-To: <20120418065430.GB25568@somewhere>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,100 +23,50 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>
-Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, andrea-oIIqvOZpAevzfdHfmsDf5w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sjayaraman-IBi9RG/b67k@public.gmane.org, lsf-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Daniel Walsh <dwalsh-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Apr 18, 2012 at 08:57:20AM +0200, Jan Kara wrote:
-> On Fri 06-04-12 02:59:34, Wu Fengguang wrote:
-> ...
-> > > > > Let's please keep the layering clear.  IO limitations will be applied
-> > > > > at the block layer and pressure will be formed there and then
-> > > > > propagated upwards eventually to the originator.  Sure, exposing the
-> > > > > whole information might result in better behavior for certain
-> > > > > workloads, but down the road, say, in three or five years, devices
-> > > > > which can be shared without worrying too much about seeks might be
-> > > > > commonplace and we could be swearing at a disgusting structural mess,
-> > > > > and sadly various cgroup support seems to be a prominent source of
-> > > > > such design failures.
-> > > > 
-> > > > Super fast storages are coming which will make us regret to make the
-> > > > IO path over complex.  Spinning disks are not going away anytime soon.
-> > > > I doubt Google is willing to afford the disk seek costs on its
-> > > > millions of disks and has the patience to wait until switching all of
-> > > > the spin disks to SSD years later (if it will ever happen).
-> > > 
-> > > This is new.  Let's keep the damn employer out of the discussion.
-> > > While the area I work on is affected by my employment (writeback isn't
-> > > even my area BTW), I'm not gonna do something adverse to upstream even
-> > > if it's beneficial to google and I'm much more likely to do something
-> > > which may hurt google a bit if it's gonna benefit upstream.
-> > > 
-> > > As for the faster / newer storage argument, that is *exactly* why we
-> > > want to keep the layering proper.  Writeback works from the pressure
-> > > from the IO stack.  If IO technology changes, we update the IO stack
-> > > and writeback still works from the pressure.  It may need to be
-> > > adjusted but the principles don't change.
-> > 
-> > To me, balance_dirty_pages() is *the* proper layer for buffered writes.
-> > It's always there doing 1:1 proportional throttling. Then you try to
-> > kick in to add *double* throttling in block/cfq layer. Now the low
-> > layer may enforce 10:1 throttling and push balance_dirty_pages() away
-> > from its balanced state, leading to large fluctuations and program
-> > stalls.  This can be avoided by telling balance_dirty_pages(): "your
-> > balance goal is no longer 1:1, but 10:1". With this information
-> > balance_dirty_pages() will behave right. Then there is the question:
-> > if balance_dirty_pages() will work just well provided the information,
-> > why bother doing the throttling at low layer and "push back" the
-> > pressure all the way up?
->   Fengguang, maybe we should first agree on some basics:
->   The two main goals of balance_dirty_pages() are (and always have been
-> AFAIK) to limit amount of dirty pages in memory and keep enough dirty pages
-> in memory to allow for efficient writeback. Secondary goals are to also
-> keep amount of dirty pages somewhat fair among bdis and processes. Agreed?
+2012/4/18 Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>:
+> On Tue, Apr 17, 2012 at 08:17:53AM -0700, Tejun Heo wrote:
+>> Hello, Frederic.
+>>
+>> On Thu, Apr 12, 2012 at 06:59:27PM +0200, Frederic Weisbecker wrote:
+>> > I want:
+>> >
+>> > a) to prevent the forkbomb from going far enough to DDOS the machine
+>> > b) to be able to kill that forkbomb once detected, in one go without r=
+ace
+>> > against concurrent forks.
+>> >
+>> > I think a) can work just fine with kernel stack limiting. I also need
+>> > to be notified about the fact we reached the limit. And b) should
+>> > be feasible with the help of the cgroup freezer.
+>>
+>> kmem allocation fail after reaching the limit which in turn should
+>> fail task creation. =A0Isn't that the same effect as the task_counter as
+>> implemented?
+>
+> That's it.
+>
+>>
+>> > > Is there anything for which you need to know exactly the number of
+>> > > processes?
+>> >
+>> > No that's really about prevent/kill forkbomb as far as I'm concerned.
+>>
+>> Hmm... so, accounting overhead aside, if the only purpose is
+>> preventing the whole machine being brought down by a fork bomb, kmem
+>> limiting is enough, right?
+>
+> I think so yeah.
 
-Agreed. In fact, before the IO-less change, balance_dirty_pages() had
-no much explicit control over the dirty rate and fairness.
+But this needs to be a well defined kind of kmem I think. Relying on
+kernel memory
+alone is too general to just protect against forkbombs. Kernel stack,
+OTOH, should be
+a good criteria.
 
-> Thus shift to trying to control *IO throughput* (or even just buffered
-> write throughput) from balance_dirty_pages() is a fundamental shift in the
-> goals of balance_dirty_pages(), not just some tweak (although technically,
-> it might be relatively easy to do for buffered writes given the current
-> implementation).
-
-Yes, it has been a bit shift to the rate based dirty control.
-
-> ...
-> > > Well, I tried and I hope some of it got through.  I also wrote a lot
-> > > of questions, mainly regarding how what you have in mind is supposed
-> > > to work through what path.  Maybe I'm just not seeing what you're
-> > > seeing but I just can't see where all the IOs would go through and
-> > > come together.  Can you please elaborate more on that?
-> > 
-> > What I can see is, it looks pretty simple and nature to let
-> > balance_dirty_pages() fill the gap towards a total solution :-)
-> > 
-> > - add direct IO accounting in some convenient point of the IO path
-> >   IO submission or completion point, either is fine.
-> > 
-> > - change several lines of the buffered write IO controller to
-> >   integrate the direct IO rate into the formula to fit the "total
-> >   IO" limit
-> > 
-> > - in future, add more accounting as well as feedback control to make
-> >   balance_dirty_pages() work with IOPS and disk time
->   Sorry Fengguang but I also think this is a wrong way to go.
-> balance_dirty_pages() must primarily control the amount of dirty pages.
-> Trying to bend it to control IO throughput by including direct IO and
-> reads in the accounting will just make the logic even more complex than it
-> already is.
-
-Right, I have been adding too much complexity to balance_dirty_pages().
-The control algorithms are pretty hard to understand and get right for
-all cases.
-
-OK, I'll post results of my experiments up to now, answer some
-questions and take a comfortable break. Phooo..
-
-Thanks,
-Fengguang
+But now I'm worrying, do you think this kmem.kernel_stack limitation
+is going to be useful
+for other kind of usecase?
