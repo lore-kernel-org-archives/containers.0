@@ -1,23 +1,23 @@
-From: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>
-Subject: Re: [RFC] writeback and cgroup
-Date: Wed, 18 Apr 2012 08:30:00 +0200
-Message-ID: <20120418063000.GA21054__15744.5199242376$1334730622$gmane$org@quack.suse.cz>
-References: <20120403183655.GA23106@dhcp-172-17-108-109.mtv.corp.google.com>
-	<20120404145134.GC12676@redhat.com>
-	<20120407080027.GA2584@quack.suse.cz>
-	<20120410180653.GJ21801@redhat.com>
-	<20120410210505.GE4936@quack.suse.cz>
-	<20120410212041.GP21801@redhat.com>
-	<20120410222425.GF4936@quack.suse.cz>
-	<20120411154005.GD16692@redhat.com>
-	<20120411192231.GF16008@quack.suse.cz>
-	<20120417220106.GF19975@google.com>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [RFD] Merge task counter into memcg
+Date: Wed, 18 Apr 2012 15:51:23 +0900
+Message-ID: <4F8E646B.1020807__28884.7002819695$1334732022$gmane$org@jp.fujitsu.com>
+References: <4F862851.3040208@jp.fujitsu.com>
+	<20120412113217.GB11455@somewhere.redhat.com>
+	<4F86BFC6.2050400@parallels.com>
+	<20120412123256.GI1787@cmpxchg.org>
+	<4F86D4BD.1040305@parallels.com>
+	<20120412153055.GL1787@cmpxchg.org>
+	<20120412163825.GB13069@google.com>
+	<20120412172309.GM1787@cmpxchg.org>
+	<20120412174155.GC13069@google.com> <4F878480.60505@jp.fujitsu.com>
+	<20120417154117.GE32402@google.com>
+	<4F8D9FC4.3080800@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20120417220106.GF19975-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4F8D9FC4.3080800-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,55 +27,36 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, andrea-oIIqvOZpAevzfdHfmsDf5w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sjayaraman-IBi9RG/b67k@public.gmane.org, lsf-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Daniel Walsh <dwalsh-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-  Hello,
+(2012/04/18 1:52), Glauber Costa wrote:
 
-On Tue 17-04-12 15:01:06, Tejun Heo wrote:
-> On Wed, Apr 11, 2012 at 09:22:31PM +0200, Jan Kara wrote:
-> > > So all the metadata IO will happen thorough journaling thread and that
-> > > will be in root group which should remain unthrottled. So any journal
-> > > IO going to disk should remain unthrottled.
-> >
-> >   Yes, that is true at least for ext3/ext4 or btrfs. In principle we don't
-> > have to have the journal thread (as is the case of reiserfs where random
-> > writer may end up doing commit) but let's not complicate things
-> > unnecessarily.
 > 
-> Why can't journal entries keep track of the originator so that bios
-> can be attributed to the originator while committing?  That shouldn't
-> be too difficult to implement, no?
-  I think I was just describing the current state but yes, in future we
-can track which cgroup first attached a buffer to a transaction.
-
-> > > Now, IIRC, fsync problem with throttling was that we had opened a
-> > > transaction but could not write it back to disk because we had to
-> > > wait for all the cached data to go to disk (which is throttled). So
-> > > my question is, can't we first wait for all the data to be flushed
-> > > to disk and then open a transaction for metadata. metadata will be
-> > > unthrottled so filesystem will not have to do any tricks like bdi is
-> > > congested or not.
-> >
-> >   Actually that's what's happening. We first do filemap_write_and_wait()
-> > which syncs all the data and then we go and force transaction commit to
-> > make sure all metadata got to stable storage. The problem is that writeout
-> > of data may need to allocate new blocks and that starts a transaction and
-> > while the transaction is started we may need to do some reads (e.g. of
-> > bitmaps etc.) which may be throttled and at that moment the whole
-> > filesystem is blocked. I don't remember the stack traces you showed me so
-> > I'm not sure it this is what your observed but it's certainly one possible
-> > scenario. The reason why fsync triggers problems is simply that it's the
-> > only place where process normally does significant amount of writing. In
-> > most cases flusher thread / journal thread do it so this effect is not
-> > visible. And to precede your question, it would be rather hard to avoid IO
-> > while the transaction is started due to locking.
+>>> In short, I don't think it's better to have task-counting and fd-counting in memcg.
+>>> It's kmem, but it's more than that, I think.
+>>> Please provide subsys like ulimit.
+>>
+>> So, you think that while kmem would be enough to prevent fork-bombs,
+>> it would still make sense to limit in more traditional ways
+>> (ie. ulimit style object limits).  Hmmm....
+>>
 > 
-> Probably we should mark all IOs issued inside transaction as META (or
-> whatever which tells blkcg to avoid throttling it).  We're gonna need
-> overcharging for metadata writes anyway, so I don't think this will
-> make too much of a difference.
-  Agreed.
+> I personally think this is namespaces business, not cgroups.
+> If you have a process namespace, an interface that works to limit the 
+> number of processes should keep working given the constraints you are 
+> given.
+> 
+> What doesn't make sense, is to create a *new* interface to limit 
+> something that doesn't really need to be limited, just because you
+> limited a similar resource before.
+> 
 
-								Honza
+
+Ok, limitiing forkbomb is unnecessary. ulimit+namespace should work.
+What we need is user-id namespace, isn't it ? If we have that, ulimit
+works enough fine, no overheads.
+
+Thanks,
+-Kame
