@@ -1,16 +1,16 @@
 From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 24/43] userns: Convert ptrace, kill, set_priority
-	permission checks to work with kuids and kgids
-Date: Wed, 18 Apr 2012 18:56:10 +0000
-Message-ID: <20120418185610.GA5186__6540.12456438995$1334775328$gmane$org@mail.hallyn.com>
+Subject: Re: [PATCH 25/43] userns: Store uid and gid types in vfs
+	structures with kuid_t and kgid_t types
+Date: Wed, 18 Apr 2012 18:57:17 +0000
+Message-ID: <20120418185717.GB5186__23743.0977439091$1334775400$gmane$org@mail.hallyn.com>
 References: <m11unyn70b.fsf@fess.ebiederm.org>
-	<1333862139-31737-24-git-send-email-ebiederm@xmission.com>
+	<1333862139-31737-25-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1333862139-31737-24-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <1333862139-31737-25-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,111 +27,124 @@ List-Id: containers.vger.kernel.org
 Quoting Eric W. Beiderman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
 > From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 > 
-> Update the permission checks to use the new uid_eq and gid_eq helpers
-> and remove the now unnecessary user_ns equality comparison.
+> The conversion of all of the users is not done yet there are too many to change
+> in one go and leave the code reviewable. For now I change just the header and
+> a few trivial users and rely on CONFIG_UIDGID_STRICT_TYPE_CHECKS not being set
+> to ensure that the code will still compile during the transition.
+> 
+> Helper functions i_uid_read, i_uid_write, i_gid_read, i_gid_write are added
+> so that in most cases filesystems can avoid the complexities of multiple user
+> namespaces and can concentrate on moving their raw numeric values into and
+> out of the vfs data structures.
 > 
 > Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> ---
->  kernel/ptrace.c |   13 ++++++-------
->  kernel/signal.c |   15 ++++++---------
->  kernel/sys.c    |   18 ++++++++----------
->  3 files changed, 20 insertions(+), 26 deletions(-)
-> 
-> diff --git a/kernel/ptrace.c b/kernel/ptrace.c
-> index 24e0a5a..a232bb5 100644
-> --- a/kernel/ptrace.c
-> +++ b/kernel/ptrace.c
-> @@ -198,13 +198,12 @@ int __ptrace_may_access(struct task_struct *task, unsigned int mode)
->  		return 0;
->  	rcu_read_lock();
->  	tcred = __task_cred(task);
-> -	if (cred->user_ns == tcred->user_ns &&
-> -	    (cred->uid == tcred->euid &&
-> -	     cred->uid == tcred->suid &&
-> -	     cred->uid == tcred->uid  &&
-> -	     cred->gid == tcred->egid &&
-> -	     cred->gid == tcred->sgid &&
-> -	     cred->gid == tcred->gid))
-> +	if (uid_eq(cred->uid, tcred->euid) &&
-> +	    uid_eq(cred->uid, tcred->suid) &&
-> +	    uid_eq(cred->uid, tcred->uid)  &&
-> +	    gid_eq(cred->gid, tcred->egid) &&
-> +	    gid_eq(cred->gid, tcred->sgid) &&
-> +	    gid_eq(cred->gid, tcred->gid))
->  		goto ok;
->  	if (ptrace_has_cap(tcred->user_ns, mode))
->  		goto ok;
-> diff --git a/kernel/signal.c b/kernel/signal.c
-> index d630327..9797939 100644
-> --- a/kernel/signal.c
-> +++ b/kernel/signal.c
-> @@ -767,11 +767,10 @@ static int kill_ok_by_cred(struct task_struct *t)
->  	const struct cred *cred = current_cred();
->  	const struct cred *tcred = __task_cred(t);
->  
-> -	if (cred->user_ns == tcred->user_ns &&
-> -	    (cred->euid == tcred->suid ||
-> -	     cred->euid == tcred->uid ||
-> -	     cred->uid  == tcred->suid ||
-> -	     cred->uid  == tcred->uid))
-> +	if (uid_eq(cred->euid, tcred->suid) ||
-> +	    uid_eq(cred->euid, tcred->uid)  ||
-> +	    uid_eq(cred->uid,  tcred->suid) ||
-> +	    uid_eq(cred->uid,  tcred->uid))
->  		return 1;
->  
->  	if (ns_capable(tcred->user_ns, CAP_KILL))
-> @@ -1389,10 +1388,8 @@ static int kill_as_cred_perm(const struct cred *cred,
->  			     struct task_struct *target)
->  {
->  	const struct cred *pcred = __task_cred(target);
-> -	if (cred->user_ns != pcred->user_ns)
-> -		return 0;
-> -	if (cred->euid != pcred->suid && cred->euid != pcred->uid &&
-> -	    cred->uid  != pcred->suid && cred->uid  != pcred->uid)
-> +	if (uid_eq(cred->euid, pcred->suid) && uid_eq(cred->euid, pcred->uid) &&
 
-These should be !uid_eq() right?
-> +	    uid_eq(cred->uid,  pcred->suid) && uid_eq(cred->uid,  pcred->uid))
->  		return 0;
->  	return 1;
->  }
-> diff --git a/kernel/sys.c b/kernel/sys.c
-> index aff09f2..f484077 100644
-> --- a/kernel/sys.c
-> +++ b/kernel/sys.c
-> @@ -131,9 +131,8 @@ static bool set_one_prio_perm(struct task_struct *p)
+Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+
+> ---
+>  fs/inode.c         |    6 +++---
+>  include/linux/fs.h |   36 +++++++++++++++++++++++++++++++-----
+>  2 files changed, 34 insertions(+), 8 deletions(-)
+> 
+> diff --git a/fs/inode.c b/fs/inode.c
+> index f0c4ace..deb72f6 100644
+> --- a/fs/inode.c
+> +++ b/fs/inode.c
+> @@ -135,8 +135,8 @@ int inode_init_always(struct super_block *sb, struct inode *inode)
+>  	inode->i_fop = &empty_fops;
+>  	inode->__i_nlink = 1;
+>  	inode->i_opflags = 0;
+> -	inode->i_uid = 0;
+> -	inode->i_gid = 0;
+> +	i_uid_write(inode, 0);
+> +	i_gid_write(inode, 0);
+>  	atomic_set(&inode->i_writecount, 0);
+>  	inode->i_size = 0;
+>  	inode->i_blocks = 0;
+> @@ -1732,7 +1732,7 @@ EXPORT_SYMBOL(inode_init_owner);
+>   */
+>  bool inode_owner_or_capable(const struct inode *inode)
 >  {
->  	const struct cred *cred = current_cred(), *pcred = __task_cred(p);
->  
-> -	if (pcred->user_ns == cred->user_ns &&
-> -	    (pcred->uid  == cred->euid ||
-> -	     pcred->euid == cred->euid))
-> +	if (uid_eq(pcred->uid,  cred->euid) ||
-> +	    uid_eq(pcred->euid, cred->euid))
+> -	if (current_fsuid() == inode->i_uid)
+> +	if (uid_eq(current_fsuid(), inode->i_uid))
 >  		return true;
->  	if (ns_capable(pcred->user_ns, CAP_SYS_NICE))
+>  	if (inode_capable(inode, CAP_FOWNER))
 >  		return true;
-> @@ -1582,13 +1581,12 @@ static int check_prlimit_permission(struct task_struct *task)
->  		return 0;
+> diff --git a/include/linux/fs.h b/include/linux/fs.h
+> index a6c5efb..797eb26 100644
+> --- a/include/linux/fs.h
+> +++ b/include/linux/fs.h
+> @@ -402,6 +402,7 @@ struct inodes_stat_t {
+>  #include <linux/atomic.h>
+>  #include <linux/shrinker.h>
+>  #include <linux/migrate_mode.h>
+> +#include <linux/uidgid.h>
 >  
->  	tcred = __task_cred(task);
-> -	if (cred->user_ns == tcred->user_ns &&
-> -	    (cred->uid == tcred->euid &&
-> -	     cred->uid == tcred->suid &&
-> -	     cred->uid == tcred->uid &&
-> -	     cred->gid == tcred->egid &&
-> -	     cred->gid == tcred->sgid &&
-> -		    cred->gid == tcred->gid))
-> +	if (uid_eq(cred->uid, tcred->euid) &&
-> +	    uid_eq(cred->uid, tcred->suid) &&
-> +	    uid_eq(cred->uid, tcred->uid)  &&
-> +	    gid_eq(cred->gid, tcred->egid) &&
-> +	    gid_eq(cred->gid, tcred->sgid) &&
-> +	    gid_eq(cred->gid, tcred->gid))
->  		return 0;
->  	if (ns_capable(tcred->user_ns, CAP_SYS_RESOURCE))
->  		return 0;
+>  #include <asm/byteorder.h>
+>  
+> @@ -469,8 +470,8 @@ typedef void (dio_iodone_t)(struct kiocb *iocb, loff_t offset,
+>  struct iattr {
+>  	unsigned int	ia_valid;
+>  	umode_t		ia_mode;
+> -	uid_t		ia_uid;
+> -	gid_t		ia_gid;
+> +	kuid_t		ia_uid;
+> +	kgid_t		ia_gid;
+>  	loff_t		ia_size;
+>  	struct timespec	ia_atime;
+>  	struct timespec	ia_mtime;
+> @@ -761,8 +762,8 @@ struct posix_acl;
+>  struct inode {
+>  	umode_t			i_mode;
+>  	unsigned short		i_opflags;
+> -	uid_t			i_uid;
+> -	gid_t			i_gid;
+> +	kuid_t			i_uid;
+> +	kgid_t			i_gid;
+>  	unsigned int		i_flags;
+>  
+>  #ifdef CONFIG_FS_POSIX_ACL
+> @@ -927,6 +928,31 @@ static inline void i_size_write(struct inode *inode, loff_t i_size)
+>  #endif
+>  }
+>  
+> +/* Helper functions so that in most cases filesystems will
+> + * not need to deal directly with kuid_t and kgid_t and can
+> + * instead deal with the raw numeric values that are stored
+> + * in the filesystem.
+> + */
+> +static inline uid_t i_uid_read(const struct inode *inode)
+> +{
+> +	return from_kuid(&init_user_ns, inode->i_uid);
+> +}
+> +
+> +static inline gid_t i_gid_read(const struct inode *inode)
+> +{
+> +	return from_kgid(&init_user_ns, inode->i_gid);
+> +}
+> +
+> +static inline void i_uid_write(struct inode *inode, uid_t uid)
+> +{
+> +	inode->i_uid = make_kuid(&init_user_ns, uid);
+> +}
+> +
+> +static inline void i_gid_write(struct inode *inode, gid_t gid)
+> +{
+> +	inode->i_gid = make_kgid(&init_user_ns, gid);
+> +}
+> +
+>  static inline unsigned iminor(const struct inode *inode)
+>  {
+>  	return MINOR(inode->i_rdev);
+> @@ -943,7 +969,7 @@ struct fown_struct {
+>  	rwlock_t lock;          /* protects pid, uid, euid fields */
+>  	struct pid *pid;	/* pid or -pgrp where SIGIO should be sent */
+>  	enum pid_type pid_type;	/* Kind of process group SIGIO should be sent to */
+> -	uid_t uid, euid;	/* uid/euid of process setting the owner */
+> +	kuid_t uid, euid;	/* uid/euid of process setting the owner */
+>  	int signum;		/* posix.1b rt signal to be delivered on IO */
+>  };
+>  
 > -- 
 > 1.7.2.5
 > 
