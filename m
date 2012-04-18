@@ -1,8 +1,8 @@
 From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 27/43] userns: Use uid_eq gid_eq helpers when comparing
 	kuids and kgids in the vfs
-Date: Wed, 18 Apr 2012 19:02:13 +0000
-Message-ID: <20120418190213.GD5186@mail.hallyn.com>
+Date: Wed, 18 Apr 2012 19:03:37 +0000
+Message-ID: <20120418190337.GE5186@mail.hallyn.com>
 References: <m11unyn70b.fsf@fess.ebiederm.org>
 	<1333862139-31737-27-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -58,9 +58,6 @@ Quoting Eric W. Beiderman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
 > -	    (!in_group_p(attr->ia_gid) && attr->ia_gid != inode->i_gid)) &&
 > +	    (!uid_eq(current_fsuid(), inode->i_uid) ||
 > +	    (!in_group_p(attr->ia_gid) && gid_eq(attr->ia_gid, inode->i_gid))) &&
-
-This should be !gid_eq() ?
-
 >  	    !capable(CAP_CHOWN))
 >  		return -EPERM;
 >  
@@ -94,6 +91,10 @@ This should be !gid_eq() ?
 >  		flag = O_EXCL;		/* Stop rewrite attacks */
 > -		cred->fsuid = 0;	/* Dump root private */
 > +		cred->fsuid = GLOBAL_ROOT_UID;	/* Dump root private */
+
+Sorry, one more - can this be the per-ns root uid?  The coredumps should
+be ok to belong to privileged users in the namespace right?
+
 >  	}
 >  
 >  	retval = coredump_wait(exit_code, &core_state);
