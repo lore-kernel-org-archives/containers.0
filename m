@@ -1,23 +1,16 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC] writeback and cgroup
-Date: Wed, 18 Apr 2012 14:18:36 -0400
-Message-ID: <20120418181836.GD2224__37573.1335174807$1334773169$gmane$org@redhat.com>
-References: <20120404145134.GC12676@redhat.com>
-	<20120407080027.GA2584@quack.suse.cz>
-	<20120410180653.GJ21801@redhat.com>
-	<20120410210505.GE4936@quack.suse.cz>
-	<20120410212041.GP21801@redhat.com>
-	<20120410222425.GF4936@quack.suse.cz>
-	<20120411154005.GD16692@redhat.com>
-	<20120411154531.GE16692@redhat.com>
-	<20120411170542.GB16008@quack.suse.cz>
-	<20120417214831.GE19975@google.com>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 16/43] userns: Simplify the user_namespace by making
+	userns->creator a kuid.
+Date: Wed, 18 Apr 2012 18:48:47 +0000
+Message-ID: <20120418184847.GA4984__33484.8598148257$1334774889$gmane$org@mail.hallyn.com>
+References: <m11unyn70b.fsf@fess.ebiederm.org>
+	<1333862139-31737-16-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20120417214831.GE19975-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1333862139-31737-16-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,27 +20,190 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, andrea-oIIqvOZpAevzfdHfmsDf5w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sjayaraman-IBi9RG/b67k@public.gmane.org, lsf-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+To: "Eric W. Beiderman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Cyrill Gorcunov <gorcunov-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Apr 17, 2012 at 02:48:31PM -0700, Tejun Heo wrote:
-[..]
+Quoting Eric W. Beiderman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> 
+> - Transform userns->creator from a user_struct reference to a simple
+>   kuid_t, kgid_t pair.
+> 
+>   In cap_capable this allows the check to see if we are the creator of
+>   a namespace to become the classic suser style euid permission check.
+> 
+>   This allows us to remove the need for a struct cred in the mapping
+>   functions and still be able to dispaly the user namespace creators
+>   uid and gid as 0.
+> 
+> - Remove the now unnecessary delayed_work in free_user_ns.
+> 
+>   All that is left for free_user_ns to do is to call kmem_cache_free
+>   and put_user_ns.  Those functions can be called in any context
+>   so call them directly from free_user_ns removing the need for delayed work.
+> 
+> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> ---
+>  include/linux/user_namespace.h |    4 ++--
+>  kernel/user.c                  |    7 ++++---
+>  kernel/user_namespace.c        |   39 ++++++++++++++++++---------------------
+>  security/commoncap.c           |    5 +++--
+>  4 files changed, 27 insertions(+), 28 deletions(-)
+> 
+> diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+> index d767508..8a391bd 100644
+> --- a/include/linux/user_namespace.h
+> +++ b/include/linux/user_namespace.h
+> @@ -9,8 +9,8 @@
+>  struct user_namespace {
+>  	struct kref		kref;
+>  	struct user_namespace	*parent;
+> -	struct user_struct	*creator;
+> -	struct work_struct	destroyer;
+> +	kuid_t			owner;
+> +	kgid_t			group;
+>  };
+>  
+>  extern struct user_namespace init_user_ns;
+> diff --git a/kernel/user.c b/kernel/user.c
+> index 025077e..cff3856 100644
+> --- a/kernel/user.c
+> +++ b/kernel/user.c
+> @@ -25,7 +25,8 @@ struct user_namespace init_user_ns = {
+>  	.kref = {
+>  		.refcount	= ATOMIC_INIT(3),
+>  	},
+> -	.creator = &root_user,
+> +	.owner = GLOBAL_ROOT_UID,
+> +	.group = GLOBAL_ROOT_GID,
+>  };
+>  EXPORT_SYMBOL_GPL(init_user_ns);
+>  
+> @@ -54,9 +55,9 @@ struct hlist_head uidhash_table[UIDHASH_SZ];
+>   */
+>  static DEFINE_SPINLOCK(uidhash_lock);
+>  
+> -/* root_user.__count is 2, 1 for init task cred, 1 for init_user_ns->user_ns */
+> +/* root_user.__count is 1, for init task cred */
+>  struct user_struct root_user = {
+> -	.__count	= ATOMIC_INIT(2),
+> +	.__count	= ATOMIC_INIT(1),
+>  	.processes	= ATOMIC_INIT(1),
+>  	.files		= ATOMIC_INIT(0),
+>  	.sigpending	= ATOMIC_INIT(0),
+> diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+> index 898e973..f69741a 100644
+> --- a/kernel/user_namespace.c
+> +++ b/kernel/user_namespace.c
+> @@ -27,6 +27,16 @@ int create_user_ns(struct cred *new)
+>  {
+>  	struct user_namespace *ns, *parent_ns = new->user_ns;
+>  	struct user_struct *root_user;
+> +	kuid_t owner = make_kuid(new->user_ns, new->euid);
+> +	kgid_t group = make_kgid(new->user_ns, new->egid);
+> +
+> +	/* The creator needs a mapping in the parent user namespace
+> +	 * or else we won't be able to reasonably tell userspace who
+> +	 * created a user_namespace.
+> +	 */
+> +	if (!kuid_has_mapping(parent_ns, owner) ||
+> +	    !kgid_has_mapping(parent_ns, group))
+> +		return -EPERM;
+>  
+>  	ns = kmem_cache_alloc(user_ns_cachep, GFP_KERNEL);
+>  	if (!ns)
+> @@ -43,7 +53,9 @@ int create_user_ns(struct cred *new)
+>  
+>  	/* set the new root user in the credentials under preparation */
+>  	ns->parent = parent_ns;
 
-> As for priority inversion through shared request pool, it is a problem
-> which needs to be solved regardless of how async IOs are throttled.
-> I'm not determined to which extent yet tho.  Different cgroups
-> definitely need to be on separate pools but do we also want
-> distinguish sync and async and what about ioprio?  Maybe we need a
-> bybrid approach with larger common pool and reserved ones for each
-> class?
+I think in the past the creator cred pinned the ns->parent.  Do you now
+need to explicitly pin ns->parent (and release it in free_user_ns())?
 
-currently we have global pool with separate limits for sync and async
-and there is no consideration of ioprio. I think to keep it simple we
-can just extend the same notion to keep per cgroup pool with internal
-limits on sync/async requests to make sure sync IO does not get
-serialized behind async IO. Personally I am not too worried about
-async IO prio. It has never worked.
-
-Thanks
-Vivek
+> -	ns->creator = new->user;
+> +	ns->owner = owner;
+> +	ns->group = group;
+> +	free_uid(new->user);
+>  	new->user = root_user;
+>  	new->uid = new->euid = new->suid = new->fsuid = 0;
+>  	new->gid = new->egid = new->sgid = new->fsgid = 0;
+> @@ -69,29 +81,15 @@ int create_user_ns(struct cred *new)
+>  	return 0;
+>  }
+>  
+> -/*
+> - * Deferred destructor for a user namespace.  This is required because
+> - * free_user_ns() may be called with uidhash_lock held, but we need to call
+> - * back to free_uid() which will want to take the lock again.
+> - */
+> -static void free_user_ns_work(struct work_struct *work)
+> +void free_user_ns(struct kref *kref)
+>  {
+>  	struct user_namespace *parent, *ns =
+> -		container_of(work, struct user_namespace, destroyer);
+> +		container_of(kref, struct user_namespace, kref);
+> +
+>  	parent = ns->parent;
+> -	free_uid(ns->creator);
+>  	kmem_cache_free(user_ns_cachep, ns);
+>  	put_user_ns(parent);
+>  }
+> -
+> -void free_user_ns(struct kref *kref)
+> -{
+> -	struct user_namespace *ns =
+> -		container_of(kref, struct user_namespace, kref);
+> -
+> -	INIT_WORK(&ns->destroyer, free_user_ns_work);
+> -	schedule_work(&ns->destroyer);
+> -}
+>  EXPORT_SYMBOL(free_user_ns);
+>  
+>  uid_t user_ns_map_uid(struct user_namespace *to, const struct cred *cred, uid_t uid)
+> @@ -101,12 +99,11 @@ uid_t user_ns_map_uid(struct user_namespace *to, const struct cred *cred, uid_t
+>  	if (likely(to == cred->user_ns))
+>  		return uid;
+>  
+> -
+>  	/* Is cred->user the creator of the target user_ns
+>  	 * or the creator of one of it's parents?
+>  	 */
+>  	for ( tmp = to; tmp != &init_user_ns; tmp = tmp->parent ) {
+> -		if (cred->user == tmp->creator) {
+> +		if (uid_eq(cred->user->uid, tmp->owner)) {
+>  			return (uid_t)0;
+>  		}
+>  	}
+> @@ -126,7 +123,7 @@ gid_t user_ns_map_gid(struct user_namespace *to, const struct cred *cred, gid_t
+>  	 * or the creator of one of it's parents?
+>  	 */
+>  	for ( tmp = to; tmp != &init_user_ns; tmp = tmp->parent ) {
+> -		if (cred->user == tmp->creator) {
+> +		if (uid_eq(cred->user->uid, tmp->owner)) {
+>  			return (gid_t)0;
+>  		}
+>  	}
+> diff --git a/security/commoncap.c b/security/commoncap.c
+> index 435d074..f2399d8 100644
+> --- a/security/commoncap.c
+> +++ b/security/commoncap.c
+> @@ -76,8 +76,9 @@ int cap_capable(const struct cred *cred, struct user_namespace *targ_ns,
+>  		int cap, int audit)
+>  {
+>  	for (;;) {
+> -		/* The creator of the user namespace has all caps. */
+> -		if (targ_ns != &init_user_ns && targ_ns->creator == cred->user)
+> +		/* The owner of the user namespace has all caps. */
+> +		if (targ_ns != &init_user_ns && uid_eq(targ_ns->owner,
+> +						       make_kuid(cred->user_ns, cred->euid)))
+>  			return 0;
+>  
+>  		/* Do we have the necessary capabilities? */
+> -- 
+> 1.7.2.5
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linuxfoundation.org/mailman/listinfo/containers
