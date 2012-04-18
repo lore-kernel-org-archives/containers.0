@@ -1,16 +1,15 @@
 From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 31/43] userns: Teach inode_capable to understand inodes
-	whose uids map to other namespaces.
-Date: Wed, 18 Apr 2012 19:06:40 +0000
-Message-ID: <20120418190640.GI5186@mail.hallyn.com>
+Subject: Re: [PATCH 32/43] userns: signal remove unnecessary map_cred_ns
+Date: Wed, 18 Apr 2012 19:07:11 +0000
+Message-ID: <20120418190711.GJ5186__25663.3554156453$1334775988$gmane$org@mail.hallyn.com>
 References: <m11unyn70b.fsf@fess.ebiederm.org>
-	<1333862139-31737-31-git-send-email-ebiederm@xmission.com>
+	<1333862139-31737-32-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1333862139-31737-31-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <1333862139-31737-32-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,35 +26,69 @@ List-Id: containers.vger.kernel.org
 Quoting Eric W. Beiderman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
 > From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 > 
+> map_cred_ns is a light wrapper around from_kuid with the order of the arguments
+> reversed.  Replace map_cred_ns with from_kuid and remove map_cred_ns.
+> 
 > Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
 Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 
 > ---
->  kernel/capability.c |    6 ++++--
->  1 files changed, 4 insertions(+), 2 deletions(-)
+>  kernel/signal.c |   20 +++++---------------
+>  1 files changed, 5 insertions(+), 15 deletions(-)
 > 
-> diff --git a/kernel/capability.c b/kernel/capability.c
-> index cc5f071..493d972 100644
-> --- a/kernel/capability.c
-> +++ b/kernel/capability.c
-> @@ -429,12 +429,14 @@ bool nsown_capable(int cap)
->   * targeted at it's own user namespace and that the given inode is owned
->   * by the current user namespace or a child namespace.
->   *
-> - * Currently inodes can only be owned by the initial user namespace.
-> + * Currently we check to see if an inode is owned by the current
-> + * user namespace by seeing if the inode's owner maps into the
-> + * current user namespace.
->   *
->   */
->  bool inode_capable(const struct inode *inode, int cap)
->  {
->  	struct user_namespace *ns = current_user_ns();
->  
-> -	return ns_capable(ns, cap) && (ns == &init_user_ns);
-> +	return ns_capable(ns, cap) && kuid_has_mapping(ns, inode->i_uid);
+> diff --git a/kernel/signal.c b/kernel/signal.c
+> index 9797939..6aca310 100644
+> --- a/kernel/signal.c
+> +++ b/kernel/signal.c
+> @@ -1019,15 +1019,6 @@ static inline int legacy_queue(struct sigpending *signals, int sig)
+>  	return (sig < SIGRTMIN) && sigismember(&signals->signal, sig);
 >  }
+>  
+> -/*
+> - * map the uid in struct cred into user namespace *ns
+> - */
+> -static inline uid_t map_cred_ns(const struct cred *cred,
+> -				struct user_namespace *ns)
+> -{
+> -	return from_kuid_munged(ns, cred->uid);
+> -}
+> -
+>  #ifdef CONFIG_USER_NS
+>  static inline void userns_fixup_signal_uid(struct siginfo *info, struct task_struct *t)
+>  {
+> @@ -1677,8 +1668,8 @@ bool do_notify_parent(struct task_struct *tsk, int sig)
+>  	 */
+>  	rcu_read_lock();
+>  	info.si_pid = task_pid_nr_ns(tsk, tsk->parent->nsproxy->pid_ns);
+> -	info.si_uid = map_cred_ns(__task_cred(tsk),
+> -			task_cred_xxx(tsk->parent, user_ns));
+> +	info.si_uid = from_kuid_munged(task_cred_xxx(tsk->parent, user_ns),
+> +				       task_uid(tsk));
+>  	rcu_read_unlock();
+>  
+>  	info.si_utime = cputime_to_clock_t(tsk->utime + tsk->signal->utime);
+> @@ -1761,8 +1752,7 @@ static void do_notify_parent_cldstop(struct task_struct *tsk,
+>  	 */
+>  	rcu_read_lock();
+>  	info.si_pid = task_pid_nr_ns(tsk, parent->nsproxy->pid_ns);
+> -	info.si_uid = map_cred_ns(__task_cred(tsk),
+> -			task_cred_xxx(parent, user_ns));
+> +	info.si_uid = from_kuid_munged(task_cred_xxx(parent, user_ns), task_uid(tsk));
+>  	rcu_read_unlock();
+>  
+>  	info.si_utime = cputime_to_clock_t(tsk->utime);
+> @@ -2180,8 +2170,8 @@ static int ptrace_signal(int signr, siginfo_t *info,
+>  		info->si_code = SI_USER;
+>  		rcu_read_lock();
+>  		info->si_pid = task_pid_vnr(current->parent);
+> -		info->si_uid = map_cred_ns(__task_cred(current->parent),
+> -				current_user_ns());
+> +		info->si_uid = from_kuid_munged(current_user_ns(),
+> +						task_uid(current->parent));
+>  		rcu_read_unlock();
+>  	}
+>  
 > -- 
 > 1.7.2.5
 > 
