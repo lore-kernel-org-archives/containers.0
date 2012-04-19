@@ -1,11 +1,13 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCHSET] block: fixes for long standing issues
-Date: Thu, 19 Apr 2012 16:29:20 -0700
-Message-ID: <1334878164-24788-1-git-send-email-tj__26314.8687351078$1334878184$gmane$org@kernel.org>
+Subject: [PATCH 1/4] block: collapse blk_alloc_request() into get_request()
+Date: Thu, 19 Apr 2012 16:29:21 -0700
+Message-ID: <1334878164-24788-2-git-send-email-tj__26326.2748173021$1334878190$gmane$org@kernel.org>
+References: <1334878164-24788-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1334878164-24788-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,55 +18,84 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org
-Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello,
+Allocation failure handling in get_request() is about to be updated.
+To ease the update, collapse blk_alloc_request() into get_request().
 
-This patchset fixes two long standing issues and one relatively new
-css ref leak.
+This patch doesn't introduce any functional change.
 
-a. elvpriv alloc failure, including ioc and icq failures, fails
-   request allocation.  As those aren't mempool backed and may fail
-   indefinitely, this can lead to deadlock under memory pressure.
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+---
+ block/blk-core.c |   46 +++++++++++++++++-----------------------------
+ 1 files changed, 17 insertions(+), 29 deletions(-)
 
-b. blkgs don't have proper indexing.  With enough number of
-   request_queues and blk-throttle enabled, block layer can spend
-   considerable amount of cpu cycles walking the same list over and
-   over again.
-
-c. __blkg_lookup_create() was leaking a css ref on failure path.
-
-This patchset contains the following four patches.
-
- 0001-block-collapse-blk_alloc_request-into-get_request.patch
- 0002-block-fix-elvpriv-allocation-failure-handling.patch
- 0003-blkcg-fix-blkcg-css-ref-leak-in-__blkg_lookup_create.patch
- 0004-blkcg-use-radix-tree-to-index-blkgs-from-blkcg.patch
-
-0001-0002 fix #a.  0003 fixes #c.  0004 fixes #b.
-
-This patchset is on top of
-
-  block/for-3.5/core 5bc4afb1ec "blkcg: drop BLKCG_STAT_{PRIV|POL|OFF} macros"
-+ [1] [PATCHSET] block: per-queue policy activation, take#2
-+ [2] [PATCHSET] block: cosmetic updates to blkcg API
-
-and available in the following git branch.
-
- git://git.kernel.org/pub/scm/linux/kernel/git/tj/misc.git blk-misc-fixes
-
-diffstat follows.
-
- block/blk-cgroup.c |   71 ++++++++++++++++++++++++++++++++-----------
- block/blk-cgroup.h |    6 +++
- block/blk-core.c   |   87 ++++++++++++++++++++++++++++-------------------------
- 3 files changed, 106 insertions(+), 58 deletions(-)
-
-Thanks.
-
---
-tejun
-
-[1] https://lkml.org/lkml/2012/4/13/380
-[2] http://www.spinics.net/lists/cgroups/msg01748.html
+diff --git a/block/blk-core.c b/block/blk-core.c
+index 3b02ba3..f6f68b0 100644
+--- a/block/blk-core.c
++++ b/block/blk-core.c
+@@ -719,33 +719,6 @@ static inline void blk_free_request(struct request_queue *q, struct request *rq)
+ 	mempool_free(rq, q->rq.rq_pool);
+ }
+ 
+-static struct request *
+-blk_alloc_request(struct request_queue *q, struct bio *bio, struct io_cq *icq,
+-		  unsigned int flags, gfp_t gfp_mask)
+-{
+-	struct request *rq = mempool_alloc(q->rq.rq_pool, gfp_mask);
+-
+-	if (!rq)
+-		return NULL;
+-
+-	blk_rq_init(q, rq);
+-
+-	rq->cmd_flags = flags | REQ_ALLOCED;
+-
+-	if (flags & REQ_ELVPRIV) {
+-		rq->elv.icq = icq;
+-		if (unlikely(elv_set_request(q, rq, bio, gfp_mask))) {
+-			mempool_free(rq, q->rq.rq_pool);
+-			return NULL;
+-		}
+-		/* @rq->elv.icq holds on to io_context until @rq is freed */
+-		if (icq)
+-			get_io_context(icq->ioc);
+-	}
+-
+-	return rq;
+-}
+-
+ /*
+  * ioc_batching returns true if the ioc is a valid batching request and
+  * should be given priority access to a request.
+@@ -968,10 +941,25 @@ retry:
+ 			goto fail_alloc;
+ 	}
+ 
+-	rq = blk_alloc_request(q, bio, icq, rw_flags, gfp_mask);
+-	if (unlikely(!rq))
++	/* allocate and init request */
++	rq = mempool_alloc(q->rq.rq_pool, gfp_mask);
++	if (!rq)
+ 		goto fail_alloc;
+ 
++	blk_rq_init(q, rq);
++	rq->cmd_flags = rw_flags | REQ_ALLOCED;
++
++	if (rw_flags & REQ_ELVPRIV) {
++		rq->elv.icq = icq;
++		if (unlikely(elv_set_request(q, rq, bio, gfp_mask))) {
++			mempool_free(rq, q->rq.rq_pool);
++			goto fail_alloc;
++		}
++		/* @rq->elv.icq holds on to io_context until @rq is freed */
++		if (icq)
++			get_io_context(icq->ioc);
++	}
++
+ 	/*
+ 	 * ioc may be NULL here, and ioc_batching will be false. That's
+ 	 * OK, if the queue is under the request limit then requests need
+-- 
+1.7.7.3
