@@ -1,15 +1,21 @@
-From: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
-Subject: Re: [PATCHSET] block: per-queue policy activation, take#2
-Date: Fri, 20 Apr 2012 21:08:35 +0200
-Message-ID: <4F91B433.2070209__12706.0757870369$1334948933$gmane$org@kernel.dk>
-References: <1334347895-6268-1-git-send-email-tj@kernel.org>
-	<20120420080943.GG7505@kernel.dk> <4F91503D.2060402@kernel.dk>
-	<20120420171742.GC32324@google.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [RFC] writeback and cgroup
+Date: Fri, 20 Apr 2012 12:08:44 -0700
+Message-ID: <20120420190844.GH32324__26439.9827611216$1334948945$gmane$org@google.com>
+References: <20120403183655.GA23106@dhcp-172-17-108-109.mtv.corp.google.com>
+	<20120404175124.GA8931@localhost>
+	<20120404193355.GD29686@dhcp-172-17-108-109.mtv.corp.google.com>
+	<20120406095934.GA10465@localhost>
+	<20120417223854.GG19975@google.com>
+	<20120419142343.GA12684@localhost>
+	<20120419202635.GA4795@quack.suse.cz>
+	<20120420133441.GA7035@localhost>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20120420171742.GC32324-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20120420133441.GA7035@localhost>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,29 +25,59 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, andrea-oIIqvOZpAevzfdHfmsDf5w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sjayaraman-IBi9RG/b67k@public.gmane.org, lsf-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Mel Gorman <mgorman-l3A5Bk7waGM@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 2012-04-20 19:17, Tejun Heo wrote:
-> Hello, Jens.
-> 
-> On Fri, Apr 20, 2012 at 02:02:05PM +0200, Jens Axboe wrote:
->> Tejun, everything merged in cleanly. A boot test didn't not go so well,
->> I'm afraid. It complains about stuck RCU. Even with extra RCU
->> debugging/info turned on, it doesn't give my any extra info.
->>
->> Config is attached. I can try and debug this on Monday, for now I've
->> pulled it out of for-next again.
-> 
-> Hmmm... it works fine with the same config here (qemu w/ 4 cpus
-> configured).  Doesn't stuck RCU usually come from unbalanced RCU
-> lock/unlocking?  That should trigger context or RCU warnings before
-> anything else, weird.  Anyways, it would be great if you can provide
-> more info on how to reproduce the problem.
+Hello, Fengguang.
 
-The machine just sat there. I'll get some more info out of it and run a
-bisect too.
+On Fri, Apr 20, 2012 at 09:34:41PM +0800, Fengguang Wu wrote:
+> >   Yup. This just shows that you have to have per-cgroup dirty limits. Once
+> > you have those, things start working again.
+> 
+> Right. I think Tejun was more of less aware of this.
+
+I'm fairly sure I'm on the "less" side of it.
+
+> I was rather upset by this per-memcg dirty_limit idea indeed. I never
+> expect it to work well when used extensively. My plan was to set the
+> default memcg dirty_limit high enough, so that it's not hit in normal.
+> Then Tejun came and proposed to (mis-)use dirty_limit as the way to
+> convert the dirty pages' backpressure into real dirty throttling rate.
+> No, that's just crazy idea!
+
+I'll tell you what's crazy.
+
+We're not gonna cut three more kernel releases and then change jobs.
+Some of the stuff we put in the kernel ends up staying there for over
+a decade.  While ignoring fundamental designs and violating layers may
+look like rendering a quick solution.  They tend to come back and bite
+our collective asses.  Ask Vivek.  The iosched / blkcg API was messed
+up to the extent that bugs were so difficult to track down and it was
+nearly impossible to add new features, let alone new blkcg policy or
+elevator and people did suffer for that for long time.  I ended up
+cleaning up the mess.  It took me longer than three months and even
+then we have to carry on with a lot of ugly stuff for compatibility.
+
+Unfortunately, your proposed solution is far worse than blkcg was or
+ever could be.  It's not even contained in a single subsystem and it's
+not even clear what it achieves.  Neither weight or hard limit can be
+properly enforced without another layer of controlling at the block
+layer (some use cases do expect strict enforcement) and we're baking
+assumptions about use cases, interfaces and underlying hardware across
+multiple subsystems (some ssds work fine with per-iops switching).
+For your suggested solution, the moment it's best fit is now and it'll
+be a long painful way down until someone snaps and reimplements the
+whole thing.
+
+The kernel is larger than balance_dirty_pages() or writeback.  Each
+subsystem should do what it's supposed to do.  Let's solve problems
+where they belong and pay overheads where they're due.  Let's not
+contort the whole stack for the short term goal of shoving writeback
+support into the existing, still-developing, blkcg cfq proportional IO
+implementation.  Because that's pure insanity.
+
+Thanks.
 
 -- 
-Jens Axboe
+tejun
