@@ -1,21 +1,21 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [RFC] writeback and cgroup
-Date: Fri, 20 Apr 2012 12:08:44 -0700
-Message-ID: <20120420190844.GH32324__26439.9827611216$1334948945$gmane$org@google.com>
+Date: Fri, 20 Apr 2012 15:29:30 -0400
+Message-ID: <20120420192930.GR22419__30942.6881642596$1334950197$gmane$org@redhat.com>
 References: <20120403183655.GA23106@dhcp-172-17-108-109.mtv.corp.google.com>
 	<20120404175124.GA8931@localhost>
 	<20120404193355.GD29686@dhcp-172-17-108-109.mtv.corp.google.com>
 	<20120406095934.GA10465@localhost>
 	<20120417223854.GG19975@google.com>
 	<20120419142343.GA12684@localhost>
-	<20120419202635.GA4795@quack.suse.cz>
-	<20120420133441.GA7035@localhost>
+	<20120419183118.GM10216@redhat.com>
+	<20120420124518.GA7133@localhost>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20120420133441.GA7035@localhost>
+In-Reply-To: <20120420124518.GA7133@localhost>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,58 +26,35 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, andrea-oIIqvOZpAevzfdHfmsDf5w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sjayaraman-IBi9RG/b67k@public.gmane.org, lsf-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Mel Gorman <mgorman-l3A5Bk7waGM@public.gmane.org>
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, andrea-oIIqvOZpAevzfdHfmsDf5w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sjayaraman-IBi9RG/b67k@public.gmane.org, lsf-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello, Fengguang.
+On Fri, Apr 20, 2012 at 08:45:18PM +0800, Fengguang Wu wrote:
 
-On Fri, Apr 20, 2012 at 09:34:41PM +0800, Fengguang Wu wrote:
-> >   Yup. This just shows that you have to have per-cgroup dirty limits. Once
-> > you have those, things start working again.
-> 
-> Right. I think Tejun was more of less aware of this.
+[..]
+> If still keep the global async queue, it can run small 40ms slices
+> without defeating the flusher's 500ms granularity. After each slice
+> it can freely switch to other cgroups with sync IOs, so is free from
+> latency issues. After return, it will continue to serve the same
+> inode. It will basically be working on behalf of one cgroup for 500ms
+> data, working for another cgroup for 500ms data and so on. That
+> behavior does not impact fairness, because it's still using small
+> slices and its weight is computed system wide thus exhibits some kind
+> of smooth/amortize effects over long period of time. It can naturally 
+> serve the same inode after return.
 
-I'm fairly sure I'm on the "less" side of it.
+Ok, So tejun did say that we will have a switch where we will allow
+retaining the old behavior of keeping all async writes in root group
+and not in individual group. So throughput sensitive users can make
+use of that and there is no need to push proportional IO logic to
+writeback layer for buffered writes?
 
-> I was rather upset by this per-memcg dirty_limit idea indeed. I never
-> expect it to work well when used extensively. My plan was to set the
-> default memcg dirty_limit high enough, so that it's not hit in normal.
-> Then Tejun came and proposed to (mis-)use dirty_limit as the way to
-> convert the dirty pages' backpressure into real dirty throttling rate.
-> No, that's just crazy idea!
+I am personally is not too excited about the case of putting async IO
+in separate groups due to the reason that async IO of one group will
+start impacting latencies of sync IO of another group and in practice
+it might not be desirable. But there are others who have use cases for
+separate async IO queue. So as long as switch is there to change the
+behavior, I am not too worried.
 
-I'll tell you what's crazy.
-
-We're not gonna cut three more kernel releases and then change jobs.
-Some of the stuff we put in the kernel ends up staying there for over
-a decade.  While ignoring fundamental designs and violating layers may
-look like rendering a quick solution.  They tend to come back and bite
-our collective asses.  Ask Vivek.  The iosched / blkcg API was messed
-up to the extent that bugs were so difficult to track down and it was
-nearly impossible to add new features, let alone new blkcg policy or
-elevator and people did suffer for that for long time.  I ended up
-cleaning up the mess.  It took me longer than three months and even
-then we have to carry on with a lot of ugly stuff for compatibility.
-
-Unfortunately, your proposed solution is far worse than blkcg was or
-ever could be.  It's not even contained in a single subsystem and it's
-not even clear what it achieves.  Neither weight or hard limit can be
-properly enforced without another layer of controlling at the block
-layer (some use cases do expect strict enforcement) and we're baking
-assumptions about use cases, interfaces and underlying hardware across
-multiple subsystems (some ssds work fine with per-iops switching).
-For your suggested solution, the moment it's best fit is now and it'll
-be a long painful way down until someone snaps and reimplements the
-whole thing.
-
-The kernel is larger than balance_dirty_pages() or writeback.  Each
-subsystem should do what it's supposed to do.  Let's solve problems
-where they belong and pay overheads where they're due.  Let's not
-contort the whole stack for the short term goal of shoving writeback
-support into the existing, still-developing, blkcg cfq proportional IO
-implementation.  Because that's pure insanity.
-
-Thanks.
-
--- 
-tejun
+Thanks
+Vivek
