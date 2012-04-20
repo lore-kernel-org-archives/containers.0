@@ -1,20 +1,20 @@
 From: Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
 Subject: Re: [RFC] writeback and cgroup
-Date: Fri, 20 Apr 2012 20:45:18 +0800
-Message-ID: <20120420124518.GA7133__14393.6616056182$1334926259$gmane$org@localhost>
+Date: Fri, 20 Apr 2012 21:34:41 +0800
+Message-ID: <20120420133441.GA7035__5105.39485044337$1334929216$gmane$org@localhost>
 References: <20120403183655.GA23106@dhcp-172-17-108-109.mtv.corp.google.com>
 	<20120404175124.GA8931@localhost>
 	<20120404193355.GD29686@dhcp-172-17-108-109.mtv.corp.google.com>
 	<20120406095934.GA10465@localhost>
 	<20120417223854.GG19975@google.com>
 	<20120419142343.GA12684@localhost>
-	<20120419183118.GM10216@redhat.com>
+	<20120419202635.GA4795@quack.suse.cz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20120419183118.GM10216-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20120419202635.GA4795-+0h/O2h83AeN3ZZ/Hiejyg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,179 +24,130 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, andrea-oIIqvOZpAevzfdHfmsDf5w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sjayaraman-IBi9RG/b67k@public.gmane.org, lsf-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, andrea-oIIqvOZpAevzfdHfmsDf5w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sjayaraman-IBi9RG/b67k@public.gmane.org, lsf-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Mel Gorman <mgorman-l3A5Bk7waGM@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi Vivek,
-
-On Thu, Apr 19, 2012 at 02:31:18PM -0400, Vivek Goyal wrote:
-> On Thu, Apr 19, 2012 at 10:23:43PM +0800, Fengguang Wu wrote:
-> 
-> Hi Fengguang,
-> 
-> [..]
-> > > I don't know.  What problems?  AFAICS, the biggest issue is writeback
-> > > of different inodes getting mixed resulting in poor performance, but
-> > > if you think about it, that's about the frequency of switching cgroups
-> > > and a problem which can and should be dealt with from block layer
-> > > (e.g. use larger time slice if all the pending IOs are async).
-> > 
-> > Yeah increasing time slice would help that case. In general it's not
-> > merely the frequency of switching cgroup if take hard disk' writeback
-> > cache into account.  Think about some inodes with async IO: A1, A2,
-> > A3, .., and inodes with sync IO: D1, D2, D3, ..., all from different
-> > cgroups. So when the root cgroup holds all async inodes, the cfq may
-> > schedule IO interleavely like this
-> > 
-> >         A1,    A1,    A1,    A2,    A1,    A2,    ...
-> >            D1,    D2,    D3,    D4,    D5,    D6, ...
-> > 
-> > Now it becomes
-> > 
-> >         A1,    A2,    A3,    A4,    A5,    A6,    ...
-> >            D1,    D2,    D3,    D4,    D5,    D6, ...
-> > 
-> > The difference is that it's now switching the async inodes each time.
-> > At cfq level, the seek costs look the same, however the disk's
-> > writeback cache may help merge the data chunks from the same inode A1.
-> > Well, it may cost some latency for spin disks. But how about SSD? It
-> > can run deeper queue and benefit from large writes.
-> 
-> Not sure what's the point here. Many things seem to be mixed up.
-> 
-> If we start putting async queues in separate groups (in an attempt to
-> provide fairness/service differentiation), then how much IO we dispatch
-> from one async inode will directly depend on slice time of that
-> cgroup/queue. So if you want longer dispatch from same async inode
-> increasing slice time will help.
-
-Right. The problem is async slice time can hardly be increased when
-there are sync IO, as you said below.
-
-> Also elevator merge logic anyway increses the size of async IO requests
-> and big requests are submitted to device.
-> 
-> If you are looking that in every dispatch cycle we continue to dispatch
-> request from same inode, yes that's not possible. Too huge a slice length
-> in presence of sync IO is also not good. So if you are looking for
-> high throughput and sacrificing fairness then you can switch to mode
-> where all async queues are put in single root group. (Note: you will have
-> to do reasonably fast switch between cgroups so that all the cgroups are
-> able to do some writeout in a time window).
-
-Agreed.
-
-> Writeback logic also submits a certain amount of writes from one inode
-> and then switches to next inode in an attempt to provide fairness. Same
-> thing should be directly controllable by CFQ's notion of time slice. That
-> is continue to dispatch async IO from a cgroup/inode for extended durtaion
-> before switching. So what's the difference. One can achieve equivalent
-> behavior at any layer (writeback/CFQ).
-
-The difference is, the flusher's slice time is 500ms, while the cfq's
-async slice time is 40ms. In the one async queue case, cfq will switch
-back to serve the remaining data from the same inode; while in split
-async queues case, cfq will switch to the other inodes. This makes the
-flusher's larger slice time somehow "useless".
-
-> > > Writeback's duty is generating stream of async writes which can be
-> > > served efficiently for the *cgroup* and keeping the buffer filled as
-> > > necessary and chaining the backpressure from there to the actual
-> > > dirtier.  That's what writeback does without cgroup.  Nothing
-> > > fundamental changes with cgroup.  It's just finer grained.
-> > 
-> > Believe me, physically partitioning the dirty pages and async IO
-> > streams comes at big costs. It won't scale well in many ways.
-> > 
+On Thu, Apr 19, 2012 at 10:26:35PM +0200, Jan Kara wrote:
+> On Thu 19-04-12 22:23:43, Wu Fengguang wrote:
 > > For one instance, splitting the request queues will give rise to
 > > PG_writeback pages.  Those pages have been the biggest source of
 > > latency issues in the various parts of the system.
-> 
-> So PG_writeback pages are one which have been submitted for IO? So even
+>   Well, if we allow more requests to be in flight in total then yes, number
+> of PG_Writeback pages can be higher as well.
 
-Yes.
+Exactly.  
 
-> now we generate PG_writeback pages across multiple inodes as we submit
-> those pages for IO. By keeping the number of request descriptor per
-> group low, we can build back pressure early and hence per inode/group
-> we will not have too many PG_Writeback pages. IOW, number of PG_Writeback
-> pages will be controllable by number of request descriptros.
+> > It's not uncommon for me to see filesystems sleep on PG_writeback
+> > pages during heavy writeback, within some lock or transaction, which in
+> > turn stall many tasks that try to do IO or merely dirty some page in
+> > memory. Random writes are especially susceptible to such stalls. The
+> > stable page feature also vastly increase the chances of stalls by
+> > locking the writeback pages. 
+> > 
+> > Page reclaim may also block on PG_writeback and/or PG_dirty pages. In
+> > the case of direct reclaim, it means blocking random tasks that are
+> > allocating memory in the system.
+> > 
+> > PG_writeback pages are much worse than PG_dirty pages in that they are
+> > not movable. This makes a big difference for high-order page allocations.
+> > To make room for a 2MB huge page, vmscan has the option to migrate
+> > PG_dirty pages, but for PG_writeback it has no better choices than to
+> > wait for IO completion.
+> > 
+> > The difficulty of THP allocation goes up *exponentially* with the
+> > number of PG_writeback pages. Assume PG_writeback pages are randomly
+> > distributed in the physical memory space. Then we have formula
+> > 
+> >         P(reclaimable for THP) = 1 - P(hit PG_writeback)^256
+>   Well, this implicitely assumes that PG_Writeback pages are scattered
+> across memory uniformly at random. I'm not sure to which extent this is
+> true...
 
-> So how does situation becomes worse in case of CFQ putting them in
-> separate cgroups?
+Yeah, when describing the problem I was also thinking about the
+possibilities of optimization (it would be a very good general
+improvements). Or maybe Mel already has some solutions :)
 
-Good question.
+> Also as a nitpick, this isn't really an exponential growth since
+> the exponent is fixed (256 - actually it should be 512, right?). It's just
 
-Imagine there are 10 dds (each in one cgroup) dirtying pages and the
-flusher thread is issuing IO for them in round robin fashion, issuing
-500ms worth of data for each inode and then go on to next.
+Right, 512 4k pages to form one x86_64 2MB huge pages.
 
-And imagine we keep a minimal global async queue size, which is just
-enough for holding the 500ms data from one inode. If it can be reduced
-to 40ms without leading to underrun or hurt in other ways, then great.
-Even if the queue size is much smaller than the flusher's write chunk
-size, the disk will still be serving inodes on 500ms granularity,
-because the flusher won't feed cfq with other data during the time.
+> a polynomial with a big exponent. But sure, growth in number of PG_Writeback
+> pages will cause relatively steep drop in the number of available huge
+> pages.
 
-Now consider moving to 10 async queues, each in one cfq group. Now
-each inode will need to have at least 40ms data queued, so that when a
-new cfq async slice comes, it can get enough data to work with.
+It's exponential indeed, because "1 - p(x)" here means "p(!x)".
+It's exponential for a 10x increase in x resulting in 100x drop of y.
 
-Adding it up, (40ms per queue * 10 queues) = 400ms. It means, 400ms is
-what's more than enough in the global async queue scheme is now only
-barely enough to avoid queue underrun. This makes one fundamental need
-to increase the total queued requests and hence PG_writeback pages.
-
-To avoid seeks we might do tricks to let cfq return to the same group
-serving the same async queue and repeat it for 500ms/40ms times.
-However the cfq vdisktime/weight system in general don't work that way.
-Once cgroup A get served its vdisktime will be increased and naturally
-some other cgroup's async queue get selected. And it's hardly feasible
-to increase async slice time to 500ms.
-
-Overall the split async queues in cfq will be defeating the flusher's
-attempt to amortize IO, because the cfq groups are now walking through
-the inodes in much more "fine grained" granularity: 40ms vs 500ms.
-
+> ...
 > > It's worth to note that running multiple flusher threads per bdi means
 > > not only disk seeks for spin disks, smaller IO size for SSD, but also
 > > lock contentions and cache bouncing for metadata heavy workloads and
 > > fast storage.
-> 
-> But we could still have single flusher per bdi and just check the
-> write congestion state of each group and back off if it is congested.
-> 
-> So single thread will still be doing IO submission. Just that it will
-> submit IO from multiple inodes/cgroup which can cause additional seeks.
+>   Well, this heavily depends on particular implementation (and chosen
+> data structures). But yes, we should have that in mind.
 
-Yes we still have the good option to run one single flusher. Except
-that its writeback chunk size should be reduced to match the 40ms
-async slice time and queue size mentioned above.
+The lock contentions and cache bouncing actually mainly happen in fs
+code due to concurrent IO submissions. Also when replying Vivek's
+email I realized that the disk seeks and/or smaller IO size are more
+fundamentally tied to the split async queues in cfq which makes it
+switch inodes on every async slice time (typically 40ms).
 
-So yes, running one single flusher will help reduce contentions,
-however cannot help avoid smaller IO size.
+> ...
+> > > > To me, balance_dirty_pages() is *the* proper layer for buffered writes.
+> > > > It's always there doing 1:1 proportional throttling. Then you try to
+> > > > kick in to add *double* throttling in block/cfq layer. Now the low
+> > > > layer may enforce 10:1 throttling and push balance_dirty_pages() away
+> > > > from its balanced state, leading to large fluctuations and program
+> > > > stalls.
+> > > 
+> > > Just do the same 1:1 inside each cgroup.
+> > 
+> > Sure. But the ratio mismatch I'm talking about is inter-cgroup.
+> > For example there are only 2 dd tasks doing buffered writes in the
+> > system. Now consider the mismatch that cfq is dispatching their IO
+> > requests at 10:1 weights, while balance_dirty_pages() is throttling
+> > the dd tasks at 1:1 equal split because it's not aware of the cgroup
+> > weights.
+> > 
+> > What will happen in the end? The 1:1 ratio imposed by
+> > balance_dirty_pages() will take effect and the dd tasks will progress
+> > at the same pace. The cfq weights will be defeated because the async
+> > queue for the second dd (and cgroup) constantly runs empty.
+>   Yup. This just shows that you have to have per-cgroup dirty limits. Once
+> you have those, things start working again.
 
-> And that's the tradeoff of fairness. What I am not able to understand
-> is that how are you avoiding this tradeoff by implementing things in
-> writeback layer. To achieve more fairness among groups, even a flusher
-> thread will have to switch faster among cgroups/inodes.
- 
-Fairness is only a problem for the cfq groups. cfq by nature works on
-sub-100ms granularities and switches between groups at that frequency.
-If it gives each cgroup 500ms and there are 10 cgroups, latency will
-become uncontrollable.
+Right. I think Tejun was more of less aware of this.
 
-If still keep the global async queue, it can run small 40ms slices
-without defeating the flusher's 500ms granularity. After each slice
-it can freely switch to other cgroups with sync IOs, so is free from
-latency issues. After return, it will continue to serve the same
-inode. It will basically be working on behalf of one cgroup for 500ms
-data, working for another cgroup for 500ms data and so on. That
-behavior does not impact fairness, because it's still using small
-slices and its weight is computed system wide thus exhibits some kind
-of smooth/amortize effects over long period of time. It can naturally 
-serve the same inode after return.
+I was rather upset by this per-memcg dirty_limit idea indeed. I never
+expect it to work well when used extensively. My plan was to set the
+default memcg dirty_limit high enough, so that it's not hit in normal.
+Then Tejun came and proposed to (mis-)use dirty_limit as the way to
+convert the dirty pages' backpressure into real dirty throttling rate.
+No, that's just crazy idea!
+
+Come on, let's not over-use memcg's dirty_limit. It's there as the
+*last resort* to keep dirty pages under control so as to maintain
+interactive performance inside the cgroup. However if used extensively
+in the system (like dozens of memcgs all hit their dirty limits), the
+limit itself may stall random dirtiers and create interactive
+performance issues!
+
+In the recent days I've come up with the idea of memcg.dirty_setpoint
+for the blkcg backpressure stuff. We can use that instead.
+
+memcg.dirty_setpoint will scale proportionally with blkcg.writeout_rate.
+Imagine bdi_setpoint. It's all the same concepts. Why we need this?
+Because if blkcg A and B does 10:1 weights and are both doing buffered
+writes, their dirty pages should better be maintained around 10:1
+ratio to avoid underrun and hopefully achieve better IO size.
+memcg.dirty_limit cannot guarantee that goal.
+
+But be warned! Partitioning the dirty pages always means more
+fluctuations of dirty rates (and even stalls) that's perceivable by
+the user. Which means another limiting factor for the backpressure
+based IO controller to scale well.
 
 Thanks,
 Fengguang
