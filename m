@@ -1,17 +1,16 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 18/43] userns: Convert group_info values from gid_t to
-	kgid_t.
-Date: Fri, 20 Apr 2012 16:05:34 -0700
-Message-ID: <m1vcku57i9.fsf@fess.ebiederm.org>
+Subject: Re: [PATCH 22/43] userns: Convert capabilities related permsion checks
+Date: Fri, 20 Apr 2012 16:18:50 -0700
+Message-ID: <m1obqm56w5.fsf@fess.ebiederm.org>
 References: <m11unyn70b.fsf@fess.ebiederm.org>
-	<1333862139-31737-18-git-send-email-ebiederm@xmission.com>
-	<20120418184936.GC4984@mail.hallyn.com>
+	<1333862139-31737-22-git-send-email-ebiederm@xmission.com>
+	<20120418185106.GG4984@mail.hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20120418184936.GC4984-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org> (Serge E. Hallyn's
-	message of "Wed, 18 Apr 2012 18:49:36 +0000")
+In-Reply-To: <20120418185106.GG4984-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org> (Serge E. Hallyn's
+	message of "Wed, 18 Apr 2012 18:51:06 +0000")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -30,78 +29,46 @@ List-Id: containers.vger.kernel.org
 > Quoting Eric W. Beiderman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
 >> From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 >> 
->> As a first step to converting struct cred to be all kuid_t and kgid_t
->> values convert the group values stored in group_info to always be
->> kgid_t values.   Unless user namespaces are used this change should
->> have no effect.
+>> - Use uid_eq when comparing kuids
+>>   Use gid_eq when comparing kgids
+>> - Use __make_kuid(user_ns, 0) to talk about the user_namespace root uid
+>>   Use __make_kgid(user_ns, 0) to talk about the user_namespace root gid
 >> 
 >> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+>
+> Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+>
+> though, nit,
+>
 >> ---
->>  arch/s390/kernel/compat_linux.c   |   13 ++++++++-
->>  fs/nfsd/auth.c                    |    5 ++-
->>  fs/proc/array.c                   |    5 +++-
->>  include/linux/cred.h              |    9 ++++---
->>  kernel/groups.c                   |   48 +++++++++++++++++++-----------------
->>  kernel/uid16.c                    |   14 +++++++++-
->>  net/ipv4/ping.c                   |   11 ++++++--
->>  net/sunrpc/auth_generic.c         |    4 +-
->>  net/sunrpc/auth_gss/svcauth_gss.c |    7 ++++-
->>  net/sunrpc/auth_unix.c            |   15 ++++++++---
->>  net/sunrpc/svcauth_unix.c         |   18 ++++++++++---
->>  security/keys/permission.c        |    3 +-
->>  12 files changed, 103 insertions(+), 49 deletions(-)
+>>  fs/open.c            |    3 ++-
+>>  security/commoncap.c |   43 ++++++++++++++++++++++++++++---------------
+>>  2 files changed, 30 insertions(+), 16 deletions(-)
 >> 
->> diff --git a/arch/s390/kernel/compat_linux.c b/arch/s390/kernel/compat_linux.c
->> index ab64bdb..5baac18 100644
->> --- a/arch/s390/kernel/compat_linux.c
->> +++ b/arch/s390/kernel/compat_linux.c
->> @@ -173,11 +173,14 @@ asmlinkage long sys32_setfsgid16(u16 gid)
->>  
->>  static int groups16_to_user(u16 __user *grouplist, struct group_info *group_info)
->>  {
->> +	struct user_namespace *user_ns = current_user_ns();
->>  	int i;
->>  	u16 group;
->> +	kgid_t kgid;
->>  
->>  	for (i = 0; i < group_info->ngroups; i++) {
->> -		group = (u16)GROUP_AT(group_info, i);
->> +		kgid = GROUP_AT(group_info, i);
->> +		group = (u16)from_kgid_munged(user_ns, kgid);
->>  		if (put_user(group, grouplist+i))
->>  			return -EFAULT;
->>  	}
->> @@ -187,13 +190,19 @@ static int groups16_to_user(u16 __user *grouplist, struct group_info *group_info
->>  
->>  static int groups16_from_user(struct group_info *group_info, u16 __user *grouplist)
->>  {
->> +	struct user_namespace *user_ns = current_user_ns();
->>  	int i;
->>  	u16 group;
->
-> need
->
-> 	kgid_t kgid;
->
-> here
 
-Doh!  Thank you.
+>> diff --git a/security/commoncap.c b/security/commoncap.c
+>> index dbd465a..9bf8df8 100644
+>> --- a/security/commoncap.c
+>> +++ b/security/commoncap.c
+>> @@ -472,19 +472,24 @@ int cap_bprm_set_creds(struct linux_binprm *bprm)
+>>  	struct cred *new = bprm->cred;
+>>  	bool effective, has_cap = false;
+>>  	int ret;
+>> +	kuid_t root_uid;
+>> +	kgid_t root_gid;
+>
+> the root_gid is assigned but never used.
 
-Now I am wondering why s390 has it's own copy of this function instead
-of using the version in uid16.c.
+Thanks snipped.  It doesn't look like there will ever be a use for it.
 
->>  	for (i = 0; i < group_info->ngroups; i++) {
->>  		if (get_user(group, grouplist+i))
->>  			return  -EFAULT;
->> -		GROUP_AT(group_info, i) = (gid_t)group;
+>>  
+>>  	effective = false;
+>>  	ret = get_file_caps(bprm, &effective, &has_cap);
+>>  	if (ret < 0)
+>>  		return ret;
+>>  
+>> +	root_uid = make_kuid(new->user_ns, 0);
+>> +	root_gid = make_kgid(new->user_ns, 0);
 >> +
->> +		kgid = make_kgid(user_ns, (gid_t)group);
->> +		if (!gid_valid(kgid))
->> +			return -EINVAL;
->> +
->> +		GROUP_AT(group_info, i) = kgid;
->>  	}
->>  
->>  	return 0;
 
 Eric
