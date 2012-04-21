@@ -1,17 +1,17 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 24/43] userns: Convert ptrace, kill,
-	set_priority permission checks to work with kuids and kgids
-Date: Fri, 20 Apr 2012 16:51:00 -0700
-Message-ID: <m1397y55ej.fsf@fess.ebiederm.org>
+Subject: Re: [PATCH 27/43] userns: Use uid_eq gid_eq helpers when comparing
+	kuids and kgids in the vfs
+Date: Fri, 20 Apr 2012 17:05:56 -0700
+Message-ID: <m1y5pq3q57.fsf__12383.9228101589$1334966524$gmane$org@fess.ebiederm.org>
 References: <m11unyn70b.fsf@fess.ebiederm.org>
-	<1333862139-31737-24-git-send-email-ebiederm@xmission.com>
-	<20120418185610.GA5186@mail.hallyn.com>
+	<1333862139-31737-27-git-send-email-ebiederm@xmission.com>
+	<20120418190213.GD5186@mail.hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20120418185610.GA5186-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org> (Serge E. Hallyn's
-	message of "Wed, 18 Apr 2012 18:56:10 +0000")
+In-Reply-To: <20120418190213.GD5186-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org> (Serge E. Hallyn's
+	message of "Wed, 18 Apr 2012 19:02:13 +0000")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -30,29 +30,40 @@ List-Id: containers.vger.kernel.org
 > Quoting Eric W. Beiderman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
 >> From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 >> 
->> Update the permission checks to use the new uid_eq and gid_eq helpers
->> and remove the now unnecessary user_ns equality comparison.
->> 
 >> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 >> ---
-
->> @@ -1389,10 +1388,8 @@ static int kill_as_cred_perm(const struct cred *cred,
->>  			     struct task_struct *target)
->>  {
->>  	const struct cred *pcred = __task_cred(target);
->> -	if (cred->user_ns != pcred->user_ns)
->> -		return 0;
->> -	if (cred->euid != pcred->suid && cred->euid != pcred->uid &&
->> -	    cred->uid  != pcred->suid && cred->uid  != pcred->uid)
->> +	if (uid_eq(cred->euid, pcred->suid) && uid_eq(cred->euid, pcred->uid) &&
+>>  fs/attr.c                |    8 ++++----
+>>  fs/exec.c                |   10 +++++-----
+>>  fs/fcntl.c               |    6 +++---
+>>  fs/ioprio.c              |    4 ++--
+>>  fs/locks.c               |    2 +-
+>>  fs/namei.c               |    8 ++++----
+>>  include/linux/quotaops.h |    4 ++--
+>>  7 files changed, 21 insertions(+), 21 deletions(-)
+>> 
+>> diff --git a/fs/attr.c b/fs/attr.c
+>> index 73f69a6..2f094c6 100644
+>> --- a/fs/attr.c
+>> +++ b/fs/attr.c
+>> @@ -47,14 +47,14 @@ int inode_change_ok(const struct inode *inode, struct iattr *attr)
+>>  
+>>  	/* Make sure a caller can chown. */
+>>  	if ((ia_valid & ATTR_UID) &&
+>> -	    (current_fsuid() != inode->i_uid ||
+>> -	     attr->ia_uid != inode->i_uid) && !capable(CAP_CHOWN))
+>> +	    (!uid_eq(current_fsuid(), inode->i_uid) ||
+>> +	     !uid_eq(attr->ia_uid, inode->i_uid)) && !capable(CAP_CHOWN))
+>>  		return -EPERM;
+>>  
+>>  	/* Make sure caller can chgrp. */
+>>  	if ((ia_valid & ATTR_GID) &&
+>> -	    (current_fsuid() != inode->i_uid ||
+>> -	    (!in_group_p(attr->ia_gid) && attr->ia_gid != inode->i_gid)) &&
+>> +	    (!uid_eq(current_fsuid(), inode->i_uid) ||
+>> +	    (!in_group_p(attr->ia_gid) && gid_eq(attr->ia_gid, inode->i_gid))) &&
 >
-> These should be !uid_eq() right?
->> +	    uid_eq(cred->uid,  pcred->suid) && uid_eq(cred->uid,
->pcred->uid))
+> This should be !gid_eq() ?
 
-Yes.
-
-Thank you for catching this.  This kind of mistake is unfortunately much
-to easy to make.
+Yes.  Thank you, it is now fixed in my tree.
 
 Eric
