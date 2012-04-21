@@ -1,17 +1,17 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
 Subject: Re: [PATCH 27/43] userns: Use uid_eq gid_eq helpers when comparing
 	kuids and kgids in the vfs
-Date: Fri, 20 Apr 2012 17:05:56 -0700
-Message-ID: <m1y5pq3q57.fsf__12383.9228101589$1334966524$gmane$org@fess.ebiederm.org>
+Date: Fri, 20 Apr 2012 17:58:35 -0700
+Message-ID: <m1sjfx2950.fsf@fess.ebiederm.org>
 References: <m11unyn70b.fsf@fess.ebiederm.org>
 	<1333862139-31737-27-git-send-email-ebiederm@xmission.com>
-	<20120418190213.GD5186@mail.hallyn.com>
+	<20120418190337.GE5186@mail.hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20120418190213.GD5186-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org> (Serge E. Hallyn's
-	message of "Wed, 18 Apr 2012 19:02:13 +0000")
+In-Reply-To: <20120418190337.GE5186-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org> (Serge E. Hallyn's
+	message of "Wed, 18 Apr 2012 19:03:37 +0000")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -41,29 +41,50 @@ List-Id: containers.vger.kernel.org
 >>  include/linux/quotaops.h |    4 ++--
 >>  7 files changed, 21 insertions(+), 21 deletions(-)
 >> 
->> diff --git a/fs/attr.c b/fs/attr.c
->> index 73f69a6..2f094c6 100644
->> --- a/fs/attr.c
->> +++ b/fs/attr.c
->> @@ -47,14 +47,14 @@ int inode_change_ok(const struct inode *inode, struct iattr *attr)
->>  
->>  	/* Make sure a caller can chown. */
->>  	if ((ia_valid & ATTR_UID) &&
->> -	    (current_fsuid() != inode->i_uid ||
->> -	     attr->ia_uid != inode->i_uid) && !capable(CAP_CHOWN))
->> +	    (!uid_eq(current_fsuid(), inode->i_uid) ||
->> +	     !uid_eq(attr->ia_uid, inode->i_uid)) && !capable(CAP_CHOWN))
->>  		return -EPERM;
->>  
->>  	/* Make sure caller can chgrp. */
->>  	if ((ia_valid & ATTR_GID) &&
->> -	    (current_fsuid() != inode->i_uid ||
->> -	    (!in_group_p(attr->ia_gid) && attr->ia_gid != inode->i_gid)) &&
->> +	    (!uid_eq(current_fsuid(), inode->i_uid) ||
->> +	    (!in_group_p(attr->ia_gid) && gid_eq(attr->ia_gid, inode->i_gid))) &&
->
-> This should be !gid_eq() ?
 
-Yes.  Thank you, it is now fixed in my tree.
+>> @@ -2120,7 +2120,7 @@ void do_coredump(long signr, int exit_code, struct pt_regs *regs)
+>>  	if (__get_dumpable(cprm.mm_flags) == 2) {
+>>  		/* Setuid core dump mode */
+>>  		flag = O_EXCL;		/* Stop rewrite attacks */
+>> -		cred->fsuid = 0;	/* Dump root private */
+>> +		cred->fsuid = GLOBAL_ROOT_UID;	/* Dump root private */
+>
+> Sorry, one more - can this be the per-ns root uid?  The coredumps should
+> be ok to belong to privileged users in the namespace right?
+
+I'm not certain it was clear when you were looking at this that
+this is about dumping core from suid applications, not normal
+applications. 
+
+ Looking at the code in commoncap and commit_creds it looks like it is a
+bug that we don't call set_dumpable(new, suid_dumpable) in common cap
+when we use file capabilities.  I might be wrong but I think we escape
+the test in commit_creds in that case.
+
+
+Having thought about it we can make this per namespace but not in
+this patch.
+
+Things that I see as missing.
+- We likely need to make the suid_dumpable sysctl per namespace.
+  There is a prctl so it is already per process.
+- We would need to capture the user_namespace at mm creation time,
+  during exec, so we know which root user we could use.
+
+  By it's nature we know an mm can't escape a user namespace so the
+  user namespace an mm is created in will have a root user we can
+  dump core as.
+
+I was wondering if we could relax this to a uid captured at mm creation
+time (and certainly we can capture the root user), but there are enough
+weird cases I don't think it is possible to safely allow anything more
+relaxed that the root of the user_namespace that created the mm.
+
+I don't believe we can't use the user_namespace of current because the
+application may have been suid and then cloned a new user namespace
+keeping the mm or perhaps just the uid/euid split.
+
+So in short it is doable but a little tricky so it doesn't belong in
+a patch with a bunch of boring and safe conversions.
 
 Eric
