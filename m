@@ -1,17 +1,23 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 27/43] userns: Use uid_eq gid_eq helpers when comparing
-	kuids and kgids in the vfs
-Date: Fri, 20 Apr 2012 17:58:35 -0700
-Message-ID: <m1sjfx2950.fsf@fess.ebiederm.org>
-References: <m11unyn70b.fsf@fess.ebiederm.org>
-	<1333862139-31737-27-git-send-email-ebiederm@xmission.com>
-	<20120418190337.GE5186@mail.hallyn.com>
+From: Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC] writeback and cgroup
+Date: Sun, 22 Apr 2012 22:26:48 +0800
+Message-ID: <20120422142648.GA9530__49304.2032038376$1335105150$gmane$org@localhost>
+References: <20120403183655.GA23106@dhcp-172-17-108-109.mtv.corp.google.com>
+	<20120404175124.GA8931@localhost>
+	<20120404193355.GD29686@dhcp-172-17-108-109.mtv.corp.google.com>
+	<20120406095934.GA10465@localhost>
+	<20120417223854.GG19975@google.com>
+	<20120419142343.GA12684@localhost>
+	<20120419183118.GM10216@redhat.com>
+	<20120420124518.GA7133@localhost>
+	<20120420192930.GR22419@redhat.com>
+	<20120420213301.GA29134@google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20120418190337.GE5186-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org> (Serge E. Hallyn's
-	message of "Wed, 18 Apr 2012 19:03:37 +0000")
+Content-Disposition: inline
+In-Reply-To: <20120420213301.GA29134-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,70 +27,21 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Cyrill Gorcunov <gorcunov-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, andrea-oIIqvOZpAevzfdHfmsDf5w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sjayaraman-IBi9RG/b67k@public.gmane.org, lsf-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-"Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
+On Fri, Apr 20, 2012 at 02:33:01PM -0700, Tejun Heo wrote:
+> On Fri, Apr 20, 2012 at 03:29:30PM -0400, Vivek Goyal wrote:
+> > I am personally is not too excited about the case of putting async IO
+> > in separate groups due to the reason that async IO of one group will
+> > start impacting latencies of sync IO of another group and in practice
+> > it might not be desirable. But there are others who have use cases for
+> > separate async IO queue. So as long as switch is there to change the
+> > behavior, I am not too worried.
+> 
+> Why not just fix cfq so that it prefers groups w/ sync IOs?
 
-> Quoting Eric W. Beiderman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
->> From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
->> 
->> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
->> ---
->>  fs/attr.c                |    8 ++++----
->>  fs/exec.c                |   10 +++++-----
->>  fs/fcntl.c               |    6 +++---
->>  fs/ioprio.c              |    4 ++--
->>  fs/locks.c               |    2 +-
->>  fs/namei.c               |    8 ++++----
->>  include/linux/quotaops.h |    4 ++--
->>  7 files changed, 21 insertions(+), 21 deletions(-)
->> 
-
->> @@ -2120,7 +2120,7 @@ void do_coredump(long signr, int exit_code, struct pt_regs *regs)
->>  	if (__get_dumpable(cprm.mm_flags) == 2) {
->>  		/* Setuid core dump mode */
->>  		flag = O_EXCL;		/* Stop rewrite attacks */
->> -		cred->fsuid = 0;	/* Dump root private */
->> +		cred->fsuid = GLOBAL_ROOT_UID;	/* Dump root private */
->
-> Sorry, one more - can this be the per-ns root uid?  The coredumps should
-> be ok to belong to privileged users in the namespace right?
-
-I'm not certain it was clear when you were looking at this that
-this is about dumping core from suid applications, not normal
-applications. 
-
- Looking at the code in commoncap and commit_creds it looks like it is a
-bug that we don't call set_dumpable(new, suid_dumpable) in common cap
-when we use file capabilities.  I might be wrong but I think we escape
-the test in commit_creds in that case.
-
-
-Having thought about it we can make this per namespace but not in
-this patch.
-
-Things that I see as missing.
-- We likely need to make the suid_dumpable sysctl per namespace.
-  There is a prctl so it is already per process.
-- We would need to capture the user_namespace at mm creation time,
-  during exec, so we know which root user we could use.
-
-  By it's nature we know an mm can't escape a user namespace so the
-  user namespace an mm is created in will have a root user we can
-  dump core as.
-
-I was wondering if we could relax this to a uid captured at mm creation
-time (and certainly we can capture the root user), but there are enough
-weird cases I don't think it is possible to safely allow anything more
-relaxed that the root of the user_namespace that created the mm.
-
-I don't believe we can't use the user_namespace of current because the
-application may have been suid and then cloned a new user namespace
-keeping the mm or perhaps just the uid/euid split.
-
-So in short it is doable but a little tricky so it doesn't belong in
-a patch with a bunch of boring and safe conversions.
-
-Eric
+There may be a sync+async group in front, but when switch into it, it
+decides to give its async queue a run. That's not necessarily a bad
+decision, but we do lose some control here.
