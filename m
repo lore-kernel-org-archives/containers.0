@@ -1,15 +1,21 @@
-From: Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-Subject: Re: Integrated IO controller for buffered+direct writes
-Date: Mon, 23 Apr 2012 16:28:12 +0800
-Message-ID: <20120423082812.GA10857__36044.5780483589$1335170020$gmane$org@localhost>
-References: <20120419052811.GA11543@localhost>
-	<20120419191206.GN10216@redhat.com>
+From: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>
+Subject: Re: [RFC] writeback and cgroup
+Date: Mon, 23 Apr 2012 11:14:32 +0200
+Message-ID: <20120423091432.GC6512@quack.suse.cz>
+References: <20120403183655.GA23106@dhcp-172-17-108-109.mtv.corp.google.com>
+	<20120404175124.GA8931@localhost>
+	<20120404193355.GD29686@dhcp-172-17-108-109.mtv.corp.google.com>
+	<20120406095934.GA10465@localhost>
+	<20120417223854.GG19975@google.com>
+	<20120419142343.GA12684@localhost>
+	<20120419202635.GA4795@quack.suse.cz>
+	<20120420133441.GA7035@localhost>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20120419191206.GN10216-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20120420133441.GA7035@localhost>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,184 +25,127 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, andrea-oIIqvOZpAevzfdHfmsDf5w@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sjayaraman-IBi9RG/b67k@public.gmane.org, lsf-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, andrea-oIIqvOZpAevzfdHfmsDf5w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sjayaraman-IBi9RG/b67k@public.gmane.org, lsf-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Mel Gorman <mgorman-l3A5Bk7waGM@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Apr 19, 2012 at 03:12:06PM -0400, Vivek Goyal wrote:
-> On Thu, Apr 19, 2012 at 01:28:11PM +0800, Fengguang Wu wrote:
-> [..]
-> > The key ideas and comments can be found in two functions in the patch:
-> > - cfq_scale_slice()
-> > - blkcg_update_dirty_ratelimit()
-> > The other changes are mainly supporting bits.
-> > 
-> > It adapts the existing interfaces
-> > - blkio.throttle.write_bps_device 
-> > - blkio.weight
-> > from the semantics "for direct IO" to "for direct+buffered IO" (it
-> > now handles write IO only, but should be trivial to cover reads). It
-> > tries to do 1:1 split of direct:buffered writes inside the cgroup
-> > which essentially implements intra-cgroup proportional weights.
+On Fri 20-04-12 21:34:41, Wu Fengguang wrote:
+> On Thu, Apr 19, 2012 at 10:26:35PM +0200, Jan Kara wrote:
+> > > It's not uncommon for me to see filesystems sleep on PG_writeback
+> > > pages during heavy writeback, within some lock or transaction, which in
+> > > turn stall many tasks that try to do IO or merely dirty some page in
+> > > memory. Random writes are especially susceptible to such stalls. The
+> > > stable page feature also vastly increase the chances of stalls by
+> > > locking the writeback pages. 
+> > > 
+> > > Page reclaim may also block on PG_writeback and/or PG_dirty pages. In
+> > > the case of direct reclaim, it means blocking random tasks that are
+> > > allocating memory in the system.
+> > > 
+> > > PG_writeback pages are much worse than PG_dirty pages in that they are
+> > > not movable. This makes a big difference for high-order page allocations.
+> > > To make room for a 2MB huge page, vmscan has the option to migrate
+> > > PG_dirty pages, but for PG_writeback it has no better choices than to
+> > > wait for IO completion.
+> > > 
+> > > The difficulty of THP allocation goes up *exponentially* with the
+> > > number of PG_writeback pages. Assume PG_writeback pages are randomly
+> > > distributed in the physical memory space. Then we have formula
+> > > 
+> > >         P(reclaimable for THP) = 1 - P(hit PG_writeback)^256
+> >   Well, this implicitely assumes that PG_Writeback pages are scattered
+> > across memory uniformly at random. I'm not sure to which extent this is
+> > true...
 > 
-> Hey, if you can explain in few lines the design and what's the objective
-> its much easier to understand then going through the patch and first
-> trying to understand the internals of writeback.
- 
-The main objective is to keep the current buffered IO path untouched
-and keep a single pool of dirty/writeback pages and single async IO
-queue.
-
-The basic balance_dirty_pages() work model is to split the total
-writeout bandwidth equally to N dirtier tasks, where N is re-estimated
-on every 200ms.
-
-        bdi->dirty_ratelimit = bdi->write_bandwidth / N
-        task_ratelimit = bdi->dirty_ratelimit   # ignoring dirty position control for simplicity
-
-To support blkcg, the new formula is 
-
-        bdi->dirty_ratelimit = bdi->write_bandwidth / N
-        blkcg->dirty_ratelimit = bdi->dirty_ratelimit
-        task_ratelimit = blkcg->dirty_ratelimit / M
-
-where N is the number of cgroups, M is the number of dirtier tasks
-inside each cgroup.
-
-To support proportional async and dio weights, the formula is
-expanded to
-
-        bdi->dirty_ratelimit = (bdi->write_bandwidth +
-                                bdi->direct_write_bandwidth) / N
-        blkcg->dirty_ratelimit = bdi->dirty_ratelimit / P
-        task_ratelimit = blkcg->dirty_ratelimit / M
-
-where P=2 when there are both aggressive async/dio IOs inside that
-cgroup, P=1 when there are only aggressive async IOs.
-
-balance_dirty_pages() will do dirty throttling when dirty pages
-enter the page cache. It also splits up blkcg->weight into dio_weight
-and async_weight for use by cfq.
-
-cfq will continue to do proportional weight throttling:
-- dio goes to each cgroup
-- all async writeout carried out in the root cgroup
-
-dirty time
-
-  cgroup1                 cgroup2                 cgroup3
-  +---------+---------+   +-------------------+   +-------------------+
-  |  async  |   dio   |   |       async       |   |        dio        |
-  +---------+---------+   +-------------------+   +-------------------+
-     250        250               500                      500
-
-writeout time
-
-  root cgroup                       cgroup1       cgroup3
-  +---------+-------------------+   +---------+   +-------------------+
-  |  async          async       |   |   dio   |   |        dio        |
-  +---------+-------------------+   +---------+   +-------------------+
-             750                        250                500
-
-In the above example, the async weights for cgroup1 and cgroup2 will
-be added up and allocated to the root cgroup, so the flusher will get
-half total disk time. Assume a 150MB/s disk and equal cost for
-async/dio IOs, the above cfq weights will yield
-
-        bdi->write_bandwidth = 75
-        blkcg1->dio_rate = 25
-        blkcg2->dio_rate = 50
-        bdi->direct_write_bandwidth = sum(dio_rate) = 75
-
-balance_dirty_pages() will detect out N=3 cgroups doing active IO, and
-yield
-        bdi->dirty_ratelimit = (bdi->write_bandwidth +
-                                bdi->direct_write_bandwidth) / N
-                             = 50
-For cgroup1, it detects both aggressive async/dio IOs, so assigns half
-bandwidth to the dirtier tasks inside cgroup1:
-
-        blkcg1->dirty_ratelimit = bdi->dirty_ratelimit / 2
-                                = 25
-
-For cgroup2, it detects only aggressive async IOs, so assign full
-bandwidth to the dirtier tasks inside cgroup2:
-
-        blkcg2->dirty_ratelimit = bdi->dirty_ratelimit
-                                = 50
-
-In the end, balance_dirty_pages() will throttle dirty rates to 25+50 MB/s
-for cgroup1+cgroup2, and cfq will give 250+500 weights to the flusher,
-yielding 25+75 MB/s writeout bandwidth. So the two ends meet nicely.
-
-> Regarding upper limit (blkio.throttle_write_bps_device) thre are only
-> two problems with doing it a device layer.
+> Yeah, when describing the problem I was also thinking about the
+> possibilities of optimization (it would be a very good general
+> improvements). Or maybe Mel already has some solutions :)
 > 
-> - We lose context information for buffered writes.
-> 	- This can be solved by per inode cgroup association.
+> > Also as a nitpick, this isn't really an exponential growth since
+> > the exponent is fixed (256 - actually it should be 512, right?). It's just
 > 
-> 	- Or solve it by throttling writer synchronously in
-> 	  balance_dirty_pages(). I had done that by exporting a hook from
-> 	  blk-throttle so that writeback layer does not have to worry
-> 	  about all the details.
-
-Agreed.
-
-> - Filesystems can get seriliazed.
-> 	- This needs to be solved by filesystems.
+> Right, 512 4k pages to form one x86_64 2MB huge pages.
 > 
-> 	- Or again, invoke blk-throttle hook from balance_dirty_pages. It
-> 	  will solve the problem for buffered writes but direct writes
-> 	  will still have filesystem serialization issue. So it needs to
-> 	  be solved by filesystems anyway.  
+> > a polynomial with a big exponent. But sure, growth in number of PG_Writeback
+> > pages will cause relatively steep drop in the number of available huge
+> > pages.
+> 
+> It's exponential indeed, because "1 - p(x)" here means "p(!x)".
+> It's exponential for a 10x increase in x resulting in 100x drop of y.
+  If 'x' is the probability page has PG_Writeback set, then the probability
+a huge page has a single PG_Writeback page is (as you almost correctly wrote):
+(1-x)^512. This is a polynominal by the definition: It can be
+expressed as $\sum_{i=0}^n a_i*x^i$ for $a_i\in R$ and $n$ finite.
 
-Agreed.
+The expression decreases fast as x approaches to 1, that's for sure, but
+that does not make it exponential. Sorry, my mathematical part could not
+resist this terminology correction.
 
-> - Throttling for network file systems.
-> 	- This would be the only advantage or implementing things at
-> 	  higher layer so that we don't have to build special knowledge
-> 	  of throttling in lower layers.
+> > ...
+> > > > > To me, balance_dirty_pages() is *the* proper layer for buffered writes.
+> > > > > It's always there doing 1:1 proportional throttling. Then you try to
+> > > > > kick in to add *double* throttling in block/cfq layer. Now the low
+> > > > > layer may enforce 10:1 throttling and push balance_dirty_pages() away
+> > > > > from its balanced state, leading to large fluctuations and program
+> > > > > stalls.
+> > > > 
+> > > > Just do the same 1:1 inside each cgroup.
+> > > 
+> > > Sure. But the ratio mismatch I'm talking about is inter-cgroup.
+> > > For example there are only 2 dd tasks doing buffered writes in the
+> > > system. Now consider the mismatch that cfq is dispatching their IO
+> > > requests at 10:1 weights, while balance_dirty_pages() is throttling
+> > > the dd tasks at 1:1 equal split because it's not aware of the cgroup
+> > > weights.
+> > > 
+> > > What will happen in the end? The 1:1 ratio imposed by
+> > > balance_dirty_pages() will take effect and the dd tasks will progress
+> > > at the same pace. The cfq weights will be defeated because the async
+> > > queue for the second dd (and cgroup) constantly runs empty.
+> >   Yup. This just shows that you have to have per-cgroup dirty limits. Once
+> > you have those, things start working again.
+> 
+> Right. I think Tejun was more of less aware of this.
+> 
+> I was rather upset by this per-memcg dirty_limit idea indeed. I never
+> expect it to work well when used extensively. My plan was to set the
+> default memcg dirty_limit high enough, so that it's not hit in normal.
+> Then Tejun came and proposed to (mis-)use dirty_limit as the way to
+> convert the dirty pages' backpressure into real dirty throttling rate.
+> No, that's just crazy idea!
+> 
+> Come on, let's not over-use memcg's dirty_limit. It's there as the
+> *last resort* to keep dirty pages under control so as to maintain
+> interactive performance inside the cgroup. However if used extensively
+> in the system (like dozens of memcgs all hit their dirty limits), the
+> limit itself may stall random dirtiers and create interactive
+> performance issues!
+> 
+> In the recent days I've come up with the idea of memcg.dirty_setpoint
+> for the blkcg backpressure stuff. We can use that instead.
+> 
+> memcg.dirty_setpoint will scale proportionally with blkcg.writeout_rate.
+> Imagine bdi_setpoint. It's all the same concepts. Why we need this?
+> Because if blkcg A and B does 10:1 weights and are both doing buffered
+> writes, their dirty pages should better be maintained around 10:1
+> ratio to avoid underrun and hopefully achieve better IO size.
+> memcg.dirty_limit cannot guarantee that goal.
+  I agree that to avoid stalls of throttled processes we shouldn't be
+hitting memcg.dirty_limit on a regular basis. When I wrote we need "per
+cgroup dirty limits" I actually imagined something like you write above -
+do complete throttling computations within each memcg - estimate throughput
+available for it, compute appropriate dirty rates for it's processes and
+from its dirty limit estimate appropriate setpoint to balance around.
 
-Yeah here is the gap.
+> But be warned! Partitioning the dirty pages always means more
+> fluctuations of dirty rates (and even stalls) that's perceivable by
+> the user. Which means another limiting factor for the backpressure
+> based IO controller to scale well.
+  Sure, the smaller the memcg gets, the more noticeable these fluctuations
+would be. I would not expect memcg with 200 MB of memory to behave better
+(and also not much worse) than if I have a machine with that much memory...
 
-> So which of the above problem you are exactly solving by throttling
-> by writes in writeback layer and why exporting a throttling hook from
-> blk-throttle to balance_drity_pages()is not a good idea?
-
-I'm fine with adding a blk-throttle hook in balance_drity_pages().
-The current dirty throttling algorithms can work just fine with it.
-And this feature should serve the majority users well.
-
-I'll remove the blkio.throttle.write_bps_device support from this
-patchset. It's not complete in the current form, after all.
-
-However as a user, I do feel it much easier to specify one single
-per-cgroup limit rather than breaking it down to per-device limits.
-There is also the obvious need to do per-bdi limits on software RAID,
-btrfs, NFS, CIFS, fuse, etc.
-
-So if there come such user requests where your blk-throttle runs
-short, I'd be glad to do an up limit IO controller in high layer :-)
-
-The sweet thing is, the two up limit IO controllers will be able to
-live with each other peacefully and freely selectable by the user:
-
-- "0:0             bw" enables high layer per-cgroup throttling
-- "bdi_maj:bdi_min bw" enables high layer per-cgroup-per-bdi throttling
-- "dev_maj:dev_min bw" enables block layer throttling
-
-The implementation will be very similar to this prototype:
-
-        buffered write IO controller in balance_dirty_pages()
-        https://lkml.org/lkml/2012/3/28/275
-
-It's pretty simple (in code size), yet powerful enough to distribute
-total bandwidth limit equally to all IO tasks, whether they are doing
-buffered or direct IO.
-
-It will need to insert calls to a stripped down balance_dirty_pages()
-in the readahead and direct IO paths. The async IO will need some more
-code to delay the IO completion notifications.
-
-Thanks,
-Fengguang
+								Honza
+-- 
+Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>
+SUSE Labs, CR
