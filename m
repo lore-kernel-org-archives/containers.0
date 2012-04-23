@@ -1,9 +1,8 @@
-From: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>
+From: Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
 Subject: Re: [RFC] writeback and cgroup
-Date: Mon, 23 Apr 2012 14:42:40 +0200
-Message-ID: <20120423124240.GE6512__31151.4426874512$1335184979$gmane$org@quack.suse.cz>
-References: <20120403183655.GA23106@dhcp-172-17-108-109.mtv.corp.google.com>
-	<20120404175124.GA8931@localhost>
+Date: Mon, 23 Apr 2012 22:31:03 +0800
+Message-ID: <20120423143103.GA14642__6540.90120592645$1335191797$gmane$org@localhost>
+References: <20120404175124.GA8931@localhost>
 	<20120404193355.GD29686@dhcp-172-17-108-109.mtv.corp.google.com>
 	<20120406095934.GA10465@localhost>
 	<20120417223854.GG19975@google.com>
@@ -12,12 +11,13 @@ References: <20120403183655.GA23106@dhcp-172-17-108-109.mtv.corp.google.com>
 	<20120420133441.GA7035@localhost>
 	<20120423091432.GC6512@quack.suse.cz>
 	<20120423102420.GA13262@localhost>
+	<20120423124240.GE6512@quack.suse.cz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20120423102420.GA13262@localhost>
+In-Reply-To: <20120423124240.GE6512-+0h/O2h83AeN3ZZ/Hiejyg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,112 +27,78 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, andrea-oIIqvOZpAevzfdHfmsDf5w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sjayaraman-IBi9RG/b67k@public.gmane.org, lsf-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Mel Gorman <mgorman-l3A5Bk7waGM@public.gmane.org>
+To: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, andrea-oIIqvOZpAevzfdHfmsDf5w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sjayaraman-IBi9RG/b67k@public.gmane.org, lsf-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Mel Gorman <mgorman-l3A5Bk7waGM@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon 23-04-12 18:24:20, Wu Fengguang wrote:
-> On Mon, Apr 23, 2012 at 11:14:32AM +0200, Jan Kara wrote:
-> > On Fri 20-04-12 21:34:41, Wu Fengguang wrote:
-> > > > ...
-> > > > > > > To me, balance_dirty_pages() is *the* proper layer for buffered writes.
-> > > > > > > It's always there doing 1:1 proportional throttling. Then you try to
-> > > > > > > kick in to add *double* throttling in block/cfq layer. Now the low
-> > > > > > > layer may enforce 10:1 throttling and push balance_dirty_pages() away
-> > > > > > > from its balanced state, leading to large fluctuations and program
-> > > > > > > stalls.
-> > > > > > 
-> > > > > > Just do the same 1:1 inside each cgroup.
-> > > > > 
-> > > > > Sure. But the ratio mismatch I'm talking about is inter-cgroup.
-> > > > > For example there are only 2 dd tasks doing buffered writes in the
-> > > > > system. Now consider the mismatch that cfq is dispatching their IO
-> > > > > requests at 10:1 weights, while balance_dirty_pages() is throttling
-> > > > > the dd tasks at 1:1 equal split because it's not aware of the cgroup
-> > > > > weights.
-> > > > > 
-> > > > > What will happen in the end? The 1:1 ratio imposed by
-> > > > > balance_dirty_pages() will take effect and the dd tasks will progress
-> > > > > at the same pace. The cfq weights will be defeated because the async
-> > > > > queue for the second dd (and cgroup) constantly runs empty.
-> > > >   Yup. This just shows that you have to have per-cgroup dirty limits. Once
-> > > > you have those, things start working again.
-> > > 
-> > > Right. I think Tejun was more of less aware of this.
-> > > 
-> > > I was rather upset by this per-memcg dirty_limit idea indeed. I never
-> > > expect it to work well when used extensively. My plan was to set the
-> > > default memcg dirty_limit high enough, so that it's not hit in normal.
-> > > Then Tejun came and proposed to (mis-)use dirty_limit as the way to
-> > > convert the dirty pages' backpressure into real dirty throttling rate.
-> > > No, that's just crazy idea!
-> > > 
-> > > Come on, let's not over-use memcg's dirty_limit. It's there as the
-> > > *last resort* to keep dirty pages under control so as to maintain
-> > > interactive performance inside the cgroup. However if used extensively
-> > > in the system (like dozens of memcgs all hit their dirty limits), the
-> > > limit itself may stall random dirtiers and create interactive
-> > > performance issues!
-> > > 
-> > > In the recent days I've come up with the idea of memcg.dirty_setpoint
-> > > for the blkcg backpressure stuff. We can use that instead.
-> > > 
-> > > memcg.dirty_setpoint will scale proportionally with blkcg.writeout_rate.
-> > > Imagine bdi_setpoint. It's all the same concepts. Why we need this?
-> > > Because if blkcg A and B does 10:1 weights and are both doing buffered
-> > > writes, their dirty pages should better be maintained around 10:1
-> > > ratio to avoid underrun and hopefully achieve better IO size.
-> > > memcg.dirty_limit cannot guarantee that goal.
-> >   I agree that to avoid stalls of throttled processes we shouldn't be
-> > hitting memcg.dirty_limit on a regular basis. When I wrote we need "per
-> > cgroup dirty limits" I actually imagined something like you write above -
-> > do complete throttling computations within each memcg - estimate throughput
-> > available for it, compute appropriate dirty rates for it's processes and
-> > from its dirty limit estimate appropriate setpoint to balance around.
+On Mon, Apr 23, 2012 at 02:42:40PM +0200, Jan Kara wrote:
+> On Mon 23-04-12 18:24:20, Wu Fengguang wrote:
+> > On Mon, Apr 23, 2012 at 11:14:32AM +0200, Jan Kara wrote:
+> > > On Fri 20-04-12 21:34:41, Wu Fengguang wrote:
+
+> > > > But be warned! Partitioning the dirty pages always means more
+> > > > fluctuations of dirty rates (and even stalls) that's perceivable by
+> > > > the user. Which means another limiting factor for the backpressure
+> > > > based IO controller to scale well.
+> > >   Sure, the smaller the memcg gets, the more noticeable these fluctuations
+> > > would be. I would not expect memcg with 200 MB of memory to behave better
+> > > (and also not much worse) than if I have a machine with that much memory...
 > > 
-> 
-> Yes. balance_dirty_pages() will need both dirty pages and dirty page
-> writeout rate for the cgroup to do proper dirty throttling for it.
-> 
-> > > But be warned! Partitioning the dirty pages always means more
-> > > fluctuations of dirty rates (and even stalls) that's perceivable by
-> > > the user. Which means another limiting factor for the backpressure
-> > > based IO controller to scale well.
-> >   Sure, the smaller the memcg gets, the more noticeable these fluctuations
-> > would be. I would not expect memcg with 200 MB of memory to behave better
-> > (and also not much worse) than if I have a machine with that much memory...
-> 
-> It would be much worse if it's one single flusher thread round robin
-> over the cgroups...
-> 
-> For a small machine with 200MB memory, its IO completion events can
-> arrive continuously over time. However if its a 2000MB box divided
-> into 10 cgroups and the flusher is writing out dirty pages, spending
-> 0.5s on each cgroup and then go on to the next, then for any single
-> cgroup, its IO completion events go quiet for every 9.5s and goes up
-> on the other 0.5s. It becomes really hard to control the number of
-> dirty pages.
-  Umm, but flusher does not spend 0.5s on each cgroup. It submits 0.5s
-worth of IO for each cgroup. Since the throughput computed for each cgroup
-will be scaled down accordingly (and thus write_chunk will be scaled down
-as well), it should end up submitting 0.5s worth of IO for the whole system
-after it traverses all the cgroups, shouldn't it? Effectively we will work
-with smaller write_chunk which will lead to lower total throughput - that's
-the price of partitioning and higher fairness requirements (previously the
-requirement was to switch to a new inode every 0.5s, now the requirement is
-to switch to a new inode in each cgroup every 0.5s). In the end, we may end
-up increasing the write_chunk by some factor like \sqrt(number of memcgs)
-to get some middle ground between the guaranteed small latency and
-reasonable total throughput but before I'd go for such hacks, I'd wait to
-see real numbers - e.g. paying 10% of total throughput for partitioning the
-machine into 10 IO intensive cgroups (as in your tests with dd's) would be
-a reasonable cost in my opinion.
+> > It would be much worse if it's one single flusher thread round robin
+> > over the cgroups...
+> > 
+> > For a small machine with 200MB memory, its IO completion events can
+> > arrive continuously over time. However if its a 2000MB box divided
+> > into 10 cgroups and the flusher is writing out dirty pages, spending
+> > 0.5s on each cgroup and then go on to the next, then for any single
+> > cgroup, its IO completion events go quiet for every 9.5s and goes up
+> > on the other 0.5s. It becomes really hard to control the number of
+> > dirty pages.
+>   Umm, but flusher does not spend 0.5s on each cgroup. It submits 0.5s
+> worth of IO for each cgroup.
 
-Also the granularity of IO completions should depend more on the
-granularity of IO scheduler (CFQ) rather than the granularity of flusher
-thread as such so I wouldn't think that would be a problem.
+Right.
 
-								Honza
--- 
-Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>
-SUSE Labs, CR
+> Since the throughput computed for each cgroup
+> will be scaled down accordingly (and thus write_chunk will be scaled down
+> as well), it should end up submitting 0.5s worth of IO for the whole system
+> after it traverses all the cgroups, shouldn't it? Effectively we will work
+> with smaller write_chunk which will lead to lower total throughput - that's
+> the price of partitioning and higher fairness requirements (previously the
+
+Sure you can do that. However I think we were talking about memcg
+dirty limits, in which case we still have good chances to keep the
+0.5s per inode granularity by making the dirty limits high so that it
+won't be hit normally. Only when there comes lots of memory cgroups
+that the flusher cannot easily safeguard fairness among them, we may
+consider decreasing the writeback chunk size.
+
+> requirement was to switch to a new inode every 0.5s, now the requirement is
+> to switch to a new inode in each cgroup every 0.5s). In the end, we may end
+> up increasing the write_chunk by some factor like \sqrt(number of memcgs)
+> to get some middle ground between the guaranteed small latency and
+> reasonable total throughput but before I'd go for such hacks, I'd wait to
+> see real numbers - e.g. paying 10% of total throughput for partitioning the
+> machine into 10 IO intensive cgroups (as in your tests with dd's) would be
+> a reasonable cost in my opinion.
+
+For IO cgroups, I'd always prefer to avoid partitioning the dirty pages
+and async IO queue so as to avoid such embarrassing tradeoffs in the
+first place :-)
+
+> Also the granularity of IO completions should depend more on the
+> granularity of IO scheduler (CFQ) rather than the granularity of flusher
+> thread as such so I wouldn't think that would be a problem.
+
+By avoiding the partitions, we'll cancel the fairness problem. So
+the coarse granularity of flusher won't be a problem for IO cgroups at
+all.  balance_dirty_pages() will do proper throttling when dirty pages
+are created, based directly on the blkcg weights and ongoing IO.
+After that all async IOs go as a single stream from the flusher to the
+storage. There are no need for page tracking. No split inode lists and
+hence granularity or shared inodes issues for the flusher. Above all
+there will be no degradation of performance at all, whether it be
+throughput, latency or responsiveness. 
+
+Thanks,
+Fengguang
