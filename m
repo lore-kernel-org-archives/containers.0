@@ -1,12 +1,15 @@
-From: "hnfostp" <22-i9wRM+HIrmnmtl4Z8vJ8Kg761KYD1DLY@public.gmane.org>
-Subject: =?utf-8?B?Jl4l55m8I0Dnpah0ZWwvMTM2LTUxNDI0?=
-	=?utf-8?B?LTAwOeWImC/nlJ8=?=
-Date: Fri, 22 Apr 2011 00:07:36 +0800
-Message-ID: <826146DF3E7327E9D5F962D481CF2CA9@kjnvmtba>
+From: Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+Subject: Re: Integrated IO controller for buffered+direct writes
+Date: Mon, 23 Apr 2012 16:28:12 +0800
+Message-ID: <20120423082812.GA10857__36044.5780483589$1335170020$gmane$org@localhost>
+References: <20120419052811.GA11543@localhost>
+	<20120419191206.GN10216@redhat.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
-	boundary="----=_NextPart_000_00DE_018155D2.1EBD0630"
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20120419191206.GN10216-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,182 +19,184 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, andrea-oIIqvOZpAevzfdHfmsDf5w@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sjayaraman-IBi9RG/b67k@public.gmane.org, lsf-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-------=_NextPart_000_00DE_018155D2.1EBD0630
-Content-Type: text/plain;
-	charset="utf-8"
-Content-Transfer-Encoding: base64
+On Thu, Apr 19, 2012 at 03:12:06PM -0400, Vivek Goyal wrote:
+> On Thu, Apr 19, 2012 at 01:28:11PM +0800, Fengguang Wu wrote:
+> [..]
+> > The key ideas and comments can be found in two functions in the patch:
+> > - cfq_scale_slice()
+> > - blkcg_update_dirty_ratelimit()
+> > The other changes are mainly supporting bits.
+> > 
+> > It adapts the existing interfaces
+> > - blkio.throttle.write_bps_device 
+> > - blkio.weight
+> > from the semantics "for direct IO" to "for direct+buffered IO" (it
+> > now handles write IO only, but should be trivial to cover reads). It
+> > tries to do 1:1 split of direct:buffered writes inside the cgroup
+> > which essentially implements intra-cgroup proportional weights.
+> 
+> Hey, if you can explain in few lines the design and what's the objective
+> its much easier to understand then going through the patch and first
+> trying to understand the internals of writeback.
+ 
+The main objective is to keep the current buffered IO path untouched
+and keep a single pool of dirty/writeback pages and single async IO
+queue.
 
-Jl4l55m8I0Dnpah0ZWwvMTM2LTUxNDI0LTAwOeWImC/nlJ8NCg0KICAgaG5mb3N0cA0KICAgMjAx
-Mi00LTIyDQo=
+The basic balance_dirty_pages() work model is to split the total
+writeout bandwidth equally to N dirtier tasks, where N is re-estimated
+on every 200ms.
 
-------=_NextPart_000_00DE_018155D2.1EBD0630
-Content-Type: image/gif;
-	name=qoypdiu.gif
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment;
-	filename=qoypdiu.gif
+        bdi->dirty_ratelimit = bdi->write_bandwidth / N
+        task_ratelimit = bdi->dirty_ratelimit   # ignoring dirty position control for simplicity
 
-R0lGODdhNwEDAXcAACwAAAAANwEDAYeaPtaaPd2aPeSwPdawPd2wPeSafN2afOSafOuwfNawfN2w
-fOSwfOvDPdbDPd3DPeTDfNbUfNbUfN3DfOvUfOSaoOSaoOuaoPKwoN2woOSwoPKwvuuwvvKwvvnD
-oNbDoN3UoNbUoN3Uvt3DoOTDoPLDvuvDvvnUoOTUoOvUvuTUvuvUvvLjoNbjoN3jvt3xvt3joOTj
-vuvxvuTxvuvD1vLD1vnD1v/U1uvU1v/U6/LU6/nU6//j1uTj1uvj1vLj1v/x1uTx1uv/1uT/1uvx
-1vL/1vLj6+vj6//j//Lj//nj///x6+v/6+vx6/nx6///6/L/6/nx//Lx//nx//////L///n///8A
-AIDI+YT7SG7/AlAAAAMAAN8AAAAABKAAAAABFLH/Bjz/BID/BpT/B0TI+Pz/BID/AlAAAAT/BHwA
-AEAAAAAAACDvoJbvoFkBFLEFDcsAAAAAAQMvAADF/7AAAAADsvgAAADF/9jvf2zvhFAFCjIAAFTI
-+cDI+MzvhIEFCjIAAFTI+cDI+gDI+ZhGpGwFCjIAAFTI+cBAY7ZGoVnI+ahGpG3I+ZgFDcsAAAAb
-G5AAABoAAADI+SD7QnoAAAAAATcAAQMABNwgAAHvb1/zQGAFDcsAAAABAADvbh1AXQVAV5yRMzBA
-RTZAVtmS5QFAXJ1GnMPI+hSRMzBAVx9GnGEFCjJGuZJGubV2IShGub0FDcsAAAAbG5CRLzAbG5DI
-+hxGqToAAAAAAADI+cDI+ihGqUTI+hzI+luRM2AAAAEAAAAAATcAAQMAA6gYAAEvAAAAACgAATcA
-AQMYAAEAAAADsvgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCjLI+qBGxI7I+kMAAAFG
-qalGxMoAAAKwWggAAAH+UCAAAAAAAAEAAAEAAAQAIAAAAAAAAAAAAAEAAAEAGAAAAAAAAAAAAAAA
-AAAAAAAAAABAXMDI+qxAXM/I+qQAAAKwWggAAAGwWgjI+sRhKV7I+tBAXHHI+sSwWggI/wABCBxI
-sKDBgwgTKlzIsKHDhxAjSpxIsaLFixgzatzIsaPHjyBDihxJsqTJkyhTqlzJsqXLlzBjypxJs6bN
-mzhz6tzJs6fPn0CDCh1KtKjRo0iTKl3KtKnTp1CjSvWJYAoLiB2sCJnKtSvJADusXH2YdavXs2g1
-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
-513ve+d73/3+d8AHXvCDJzyCAwIAOw==
+To support blkcg, the new formula is 
 
+        bdi->dirty_ratelimit = bdi->write_bandwidth / N
+        blkcg->dirty_ratelimit = bdi->dirty_ratelimit
+        task_ratelimit = blkcg->dirty_ratelimit / M
 
-------=_NextPart_000_00DE_018155D2.1EBD0630
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+where N is the number of cgroups, M is the number of dirtier tasks
+inside each cgroup.
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
-------=_NextPart_000_00DE_018155D2.1EBD0630--
+To support proportional async and dio weights, the formula is
+expanded to
+
+        bdi->dirty_ratelimit = (bdi->write_bandwidth +
+                                bdi->direct_write_bandwidth) / N
+        blkcg->dirty_ratelimit = bdi->dirty_ratelimit / P
+        task_ratelimit = blkcg->dirty_ratelimit / M
+
+where P=2 when there are both aggressive async/dio IOs inside that
+cgroup, P=1 when there are only aggressive async IOs.
+
+balance_dirty_pages() will do dirty throttling when dirty pages
+enter the page cache. It also splits up blkcg->weight into dio_weight
+and async_weight for use by cfq.
+
+cfq will continue to do proportional weight throttling:
+- dio goes to each cgroup
+- all async writeout carried out in the root cgroup
+
+dirty time
+
+  cgroup1                 cgroup2                 cgroup3
+  +---------+---------+   +-------------------+   +-------------------+
+  |  async  |   dio   |   |       async       |   |        dio        |
+  +---------+---------+   +-------------------+   +-------------------+
+     250        250               500                      500
+
+writeout time
+
+  root cgroup                       cgroup1       cgroup3
+  +---------+-------------------+   +---------+   +-------------------+
+  |  async          async       |   |   dio   |   |        dio        |
+  +---------+-------------------+   +---------+   +-------------------+
+             750                        250                500
+
+In the above example, the async weights for cgroup1 and cgroup2 will
+be added up and allocated to the root cgroup, so the flusher will get
+half total disk time. Assume a 150MB/s disk and equal cost for
+async/dio IOs, the above cfq weights will yield
+
+        bdi->write_bandwidth = 75
+        blkcg1->dio_rate = 25
+        blkcg2->dio_rate = 50
+        bdi->direct_write_bandwidth = sum(dio_rate) = 75
+
+balance_dirty_pages() will detect out N=3 cgroups doing active IO, and
+yield
+        bdi->dirty_ratelimit = (bdi->write_bandwidth +
+                                bdi->direct_write_bandwidth) / N
+                             = 50
+For cgroup1, it detects both aggressive async/dio IOs, so assigns half
+bandwidth to the dirtier tasks inside cgroup1:
+
+        blkcg1->dirty_ratelimit = bdi->dirty_ratelimit / 2
+                                = 25
+
+For cgroup2, it detects only aggressive async IOs, so assign full
+bandwidth to the dirtier tasks inside cgroup2:
+
+        blkcg2->dirty_ratelimit = bdi->dirty_ratelimit
+                                = 50
+
+In the end, balance_dirty_pages() will throttle dirty rates to 25+50 MB/s
+for cgroup1+cgroup2, and cfq will give 250+500 weights to the flusher,
+yielding 25+75 MB/s writeout bandwidth. So the two ends meet nicely.
+
+> Regarding upper limit (blkio.throttle_write_bps_device) thre are only
+> two problems with doing it a device layer.
+> 
+> - We lose context information for buffered writes.
+> 	- This can be solved by per inode cgroup association.
+> 
+> 	- Or solve it by throttling writer synchronously in
+> 	  balance_dirty_pages(). I had done that by exporting a hook from
+> 	  blk-throttle so that writeback layer does not have to worry
+> 	  about all the details.
+
+Agreed.
+
+> - Filesystems can get seriliazed.
+> 	- This needs to be solved by filesystems.
+> 
+> 	- Or again, invoke blk-throttle hook from balance_dirty_pages. It
+> 	  will solve the problem for buffered writes but direct writes
+> 	  will still have filesystem serialization issue. So it needs to
+> 	  be solved by filesystems anyway.  
+
+Agreed.
+
+> - Throttling for network file systems.
+> 	- This would be the only advantage or implementing things at
+> 	  higher layer so that we don't have to build special knowledge
+> 	  of throttling in lower layers.
+
+Yeah here is the gap.
+
+> So which of the above problem you are exactly solving by throttling
+> by writes in writeback layer and why exporting a throttling hook from
+> blk-throttle to balance_drity_pages()is not a good idea?
+
+I'm fine with adding a blk-throttle hook in balance_drity_pages().
+The current dirty throttling algorithms can work just fine with it.
+And this feature should serve the majority users well.
+
+I'll remove the blkio.throttle.write_bps_device support from this
+patchset. It's not complete in the current form, after all.
+
+However as a user, I do feel it much easier to specify one single
+per-cgroup limit rather than breaking it down to per-device limits.
+There is also the obvious need to do per-bdi limits on software RAID,
+btrfs, NFS, CIFS, fuse, etc.
+
+So if there come such user requests where your blk-throttle runs
+short, I'd be glad to do an up limit IO controller in high layer :-)
+
+The sweet thing is, the two up limit IO controllers will be able to
+live with each other peacefully and freely selectable by the user:
+
+- "0:0             bw" enables high layer per-cgroup throttling
+- "bdi_maj:bdi_min bw" enables high layer per-cgroup-per-bdi throttling
+- "dev_maj:dev_min bw" enables block layer throttling
+
+The implementation will be very similar to this prototype:
+
+        buffered write IO controller in balance_dirty_pages()
+        https://lkml.org/lkml/2012/3/28/275
+
+It's pretty simple (in code size), yet powerful enough to distribute
+total bandwidth limit equally to all IO tasks, whether they are doing
+buffered or direct IO.
+
+It will need to insert calls to a stripped down balance_dirty_pages()
+in the readahead and direct IO paths. The async IO will need some more
+code to delay the IO completion notifications.
+
+Thanks,
+Fengguang
