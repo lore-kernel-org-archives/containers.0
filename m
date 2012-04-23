@@ -1,22 +1,23 @@
-From: Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [RFC] writeback and cgroup
-Date: Mon, 23 Apr 2012 18:24:20 +0800
-Message-ID: <20120423102420.GA13262__29670.3951586553$1335176987$gmane$org@localhost>
+Date: Mon, 23 Apr 2012 08:30:11 -0400
+Message-ID: <20120423123011.GA8103__36451.8618480817$1335184239$gmane$org@redhat.com>
 References: <20120403183655.GA23106@dhcp-172-17-108-109.mtv.corp.google.com>
 	<20120404175124.GA8931@localhost>
 	<20120404193355.GD29686@dhcp-172-17-108-109.mtv.corp.google.com>
 	<20120406095934.GA10465@localhost>
 	<20120417223854.GG19975@google.com>
 	<20120419142343.GA12684@localhost>
-	<20120419202635.GA4795@quack.suse.cz>
-	<20120420133441.GA7035@localhost>
-	<20120423091432.GC6512@quack.suse.cz>
+	<20120419183118.GM10216@redhat.com>
+	<20120420124518.GA7133@localhost>
+	<20120420192930.GR22419@redhat.com>
+	<20120420213301.GA29134@google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20120423091432.GC6512-+0h/O2h83AeN3ZZ/Hiejyg@public.gmane.org>
+In-Reply-To: <20120420213301.GA29134-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,150 +27,24 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>
-Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, andrea-oIIqvOZpAevzfdHfmsDf5w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sjayaraman-IBi9RG/b67k@public.gmane.org, lsf-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Mel Gorman <mgorman-l3A5Bk7waGM@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, andrea-oIIqvOZpAevzfdHfmsDf5w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sjayaraman-IBi9RG/b67k@public.gmane.org, lsf-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Apr 23, 2012 at 11:14:32AM +0200, Jan Kara wrote:
-> On Fri 20-04-12 21:34:41, Wu Fengguang wrote:
-> > On Thu, Apr 19, 2012 at 10:26:35PM +0200, Jan Kara wrote:
-> > > > It's not uncommon for me to see filesystems sleep on PG_writeback
-> > > > pages during heavy writeback, within some lock or transaction, which in
-> > > > turn stall many tasks that try to do IO or merely dirty some page in
-> > > > memory. Random writes are especially susceptible to such stalls. The
-> > > > stable page feature also vastly increase the chances of stalls by
-> > > > locking the writeback pages. 
-> > > > 
-> > > > Page reclaim may also block on PG_writeback and/or PG_dirty pages. In
-> > > > the case of direct reclaim, it means blocking random tasks that are
-> > > > allocating memory in the system.
-> > > > 
-> > > > PG_writeback pages are much worse than PG_dirty pages in that they are
-> > > > not movable. This makes a big difference for high-order page allocations.
-> > > > To make room for a 2MB huge page, vmscan has the option to migrate
-> > > > PG_dirty pages, but for PG_writeback it has no better choices than to
-> > > > wait for IO completion.
-> > > > 
-> > > > The difficulty of THP allocation goes up *exponentially* with the
-> > > > number of PG_writeback pages. Assume PG_writeback pages are randomly
-> > > > distributed in the physical memory space. Then we have formula
-> > > > 
-> > > >         P(reclaimable for THP) = 1 - P(hit PG_writeback)^256
-> > >   Well, this implicitely assumes that PG_Writeback pages are scattered
-> > > across memory uniformly at random. I'm not sure to which extent this is
-> > > true...
-> > 
-> > Yeah, when describing the problem I was also thinking about the
-> > possibilities of optimization (it would be a very good general
-> > improvements). Or maybe Mel already has some solutions :)
-> > 
-> > > Also as a nitpick, this isn't really an exponential growth since
-> > > the exponent is fixed (256 - actually it should be 512, right?). It's just
-> > 
-> > Right, 512 4k pages to form one x86_64 2MB huge pages.
-> > 
-> > > a polynomial with a big exponent. But sure, growth in number of PG_Writeback
-> > > pages will cause relatively steep drop in the number of available huge
-> > > pages.
-> > 
-> > It's exponential indeed, because "1 - p(x)" here means "p(!x)".
-> > It's exponential for a 10x increase in x resulting in 100x drop of y.
->   If 'x' is the probability page has PG_Writeback set, then the probability
-> a huge page has a single PG_Writeback page is (as you almost correctly wrote):
-> (1-x)^512. This is a polynominal by the definition: It can be
-> expressed as $\sum_{i=0}^n a_i*x^i$ for $a_i\in R$ and $n$ finite.
+On Fri, Apr 20, 2012 at 02:33:01PM -0700, Tejun Heo wrote:
+> On Fri, Apr 20, 2012 at 03:29:30PM -0400, Vivek Goyal wrote:
+> > I am personally is not too excited about the case of putting async IO
+> > in separate groups due to the reason that async IO of one group will
+> > start impacting latencies of sync IO of another group and in practice
+> > it might not be desirable. But there are others who have use cases for
+> > separate async IO queue. So as long as switch is there to change the
+> > behavior, I am not too worried.
 > 
-> The expression decreases fast as x approaches to 1, that's for sure, but
-> that does not make it exponential. Sorry, my mathematical part could not
-> resist this terminology correction.
+> Why not just fix cfq so that it prefers groups w/ sync IOs?
 
-ok, ok :-)
+Yes that could possibly be done but now that's change of requirements. Now
+we are saying that I want one buffered write to go faster than other
+buffered write only if there is no sync IO present in any of the groups.
 
-I actually got the equation wrong above, the one used in the script is
-correct. The correct one is "it takes all 512 component pages to be
-free of PG_writeback for the huge page to be free of PG_writeback and
-immediately reclaimable for THP".
-
-P(reclaimable for THP) = P(non-PG_writeback)^512
-
-> > > ...
-> > > > > > To me, balance_dirty_pages() is *the* proper layer for buffered writes.
-> > > > > > It's always there doing 1:1 proportional throttling. Then you try to
-> > > > > > kick in to add *double* throttling in block/cfq layer. Now the low
-> > > > > > layer may enforce 10:1 throttling and push balance_dirty_pages() away
-> > > > > > from its balanced state, leading to large fluctuations and program
-> > > > > > stalls.
-> > > > > 
-> > > > > Just do the same 1:1 inside each cgroup.
-> > > > 
-> > > > Sure. But the ratio mismatch I'm talking about is inter-cgroup.
-> > > > For example there are only 2 dd tasks doing buffered writes in the
-> > > > system. Now consider the mismatch that cfq is dispatching their IO
-> > > > requests at 10:1 weights, while balance_dirty_pages() is throttling
-> > > > the dd tasks at 1:1 equal split because it's not aware of the cgroup
-> > > > weights.
-> > > > 
-> > > > What will happen in the end? The 1:1 ratio imposed by
-> > > > balance_dirty_pages() will take effect and the dd tasks will progress
-> > > > at the same pace. The cfq weights will be defeated because the async
-> > > > queue for the second dd (and cgroup) constantly runs empty.
-> > >   Yup. This just shows that you have to have per-cgroup dirty limits. Once
-> > > you have those, things start working again.
-> > 
-> > Right. I think Tejun was more of less aware of this.
-> > 
-> > I was rather upset by this per-memcg dirty_limit idea indeed. I never
-> > expect it to work well when used extensively. My plan was to set the
-> > default memcg dirty_limit high enough, so that it's not hit in normal.
-> > Then Tejun came and proposed to (mis-)use dirty_limit as the way to
-> > convert the dirty pages' backpressure into real dirty throttling rate.
-> > No, that's just crazy idea!
-> > 
-> > Come on, let's not over-use memcg's dirty_limit. It's there as the
-> > *last resort* to keep dirty pages under control so as to maintain
-> > interactive performance inside the cgroup. However if used extensively
-> > in the system (like dozens of memcgs all hit their dirty limits), the
-> > limit itself may stall random dirtiers and create interactive
-> > performance issues!
-> > 
-> > In the recent days I've come up with the idea of memcg.dirty_setpoint
-> > for the blkcg backpressure stuff. We can use that instead.
-> > 
-> > memcg.dirty_setpoint will scale proportionally with blkcg.writeout_rate.
-> > Imagine bdi_setpoint. It's all the same concepts. Why we need this?
-> > Because if blkcg A and B does 10:1 weights and are both doing buffered
-> > writes, their dirty pages should better be maintained around 10:1
-> > ratio to avoid underrun and hopefully achieve better IO size.
-> > memcg.dirty_limit cannot guarantee that goal.
->   I agree that to avoid stalls of throttled processes we shouldn't be
-> hitting memcg.dirty_limit on a regular basis. When I wrote we need "per
-> cgroup dirty limits" I actually imagined something like you write above -
-> do complete throttling computations within each memcg - estimate throughput
-> available for it, compute appropriate dirty rates for it's processes and
-> from its dirty limit estimate appropriate setpoint to balance around.
-> 
-
-Yes. balance_dirty_pages() will need both dirty pages and dirty page
-writeout rate for the cgroup to do proper dirty throttling for it.
-
-> > But be warned! Partitioning the dirty pages always means more
-> > fluctuations of dirty rates (and even stalls) that's perceivable by
-> > the user. Which means another limiting factor for the backpressure
-> > based IO controller to scale well.
->   Sure, the smaller the memcg gets, the more noticeable these fluctuations
-> would be. I would not expect memcg with 200 MB of memory to behave better
-> (and also not much worse) than if I have a machine with that much memory...
-
-It would be much worse if it's one single flusher thread round robin
-over the cgroups...
-
-For a small machine with 200MB memory, its IO completion events can
-arrive continuously over time. However if its a 2000MB box divided
-into 10 cgroups and the flusher is writing out dirty pages, spending
-0.5s on each cgroup and then go on to the next, then for any single
-cgroup, its IO completion events go quiet for every 9.5s and goes up
-on the other 0.5s. It becomes really hard to control the number of
-dirty pages.
-
-Thanks,
-Fengguang
+Thanks
+Vivek
