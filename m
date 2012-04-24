@@ -1,17 +1,17 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 30/43] userns: Fail exec for suid and sgid binaries with
-	ids outside our user namespace.
-Date: Mon, 23 Apr 2012 19:28:36 -0700
-Message-ID: <m1ehrdrhgr.fsf@fess.ebiederm.org>
+Subject: Re: [PATCH 33/43] userns: Convert binary formats to use kuid/kgid
+	where appropriate
+Date: Mon, 23 Apr 2012 19:44:36 -0700
+Message-ID: <m1wr55q25n.fsf__20095.7186440521$1335235240$gmane$org@fess.ebiederm.org>
 References: <m11unyn70b.fsf@fess.ebiederm.org>
-	<1333862139-31737-30-git-send-email-ebiederm@xmission.com>
-	<20120418190927.GK5186@mail.hallyn.com>
+	<1333862139-31737-33-git-send-email-ebiederm@xmission.com>
+	<20120418191033.GL5186@mail.hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20120418190927.GK5186-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org> (Serge E. Hallyn's
-	message of "Wed, 18 Apr 2012 19:09:27 +0000")
+In-Reply-To: <20120418191033.GL5186-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org> (Serge E. Hallyn's
+	message of "Wed, 18 Apr 2012 19:10:33 +0000")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -30,36 +30,24 @@ List-Id: containers.vger.kernel.org
 > Quoting Eric W. Beiderman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
 >> From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 >> 
+>> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 >
-> Oh, perhaps this is the right place in the thread to discuss the issue of
-> what to do with file capabilities?  I'm ok waiting until the next iteration
-> to even discuss it, so long as we start by refusing setting of fcaps by
-> any task not in init_user_ns.
+> Ok I'll spare the list the traffic - for patches 33-43,
+>
+> Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 
-For now we do refuse all callers in the init_user_ns because that path
-is protected by a capable and not an ns_capable call.
+I noticed one other significant gotcha with my changes.
 
-And as a general policy I have pushed all of the changes from capable to
-ns_capable out till after we get these other user namespace bits so we
-can get the patches reviewed so hopefully don't enable something that is
-not safe.
+Code that has not been converted and needs to be converted fails to
+build with type errors.  -- Good.
 
-Let's just note here that when we ever get a filesystem mounted in
-something other than the init_user_ns or otherwise allow file
-capabilities that do not belong to the init_user_ns we need to an
-additional exec check to avoid a security issue for processes in the
-init_user_ns using those credentials.
+Code that has not been converted and needs to be converted is still
+selectable in make config.  -- Bad
 
-The other direction the init_user_ns setting file caps on a file and use
-using them in a child namespace seems safe, and practical because of the
-way we handle capabilities.  Aka if you have a capability in an outer
-user namespace you also have it in a child user namespace.  Which means
-a file cap exec today will give you just the capabilities in the child
-user namespace.
+make oldmodconfig -- fails with type errors unless everything is
+converted Bad.
 
-Something else to think about when we reach filesystems mounted in
-different user namespaces (aka unprivileged mounts) are security
-labels on files in different user namespaces.  Not any kind of immediate
-concern but something we may have to handle eventually.
+So I am adding/debugging an additional patch that will catch these
+failure in Kconfig so people don't get nasty surprises.
 
 Eric
