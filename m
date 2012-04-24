@@ -1,18 +1,18 @@
 From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 16/43] userns: Simplify the user_namespace by making
-	userns->creator a kuid.
-Date: Tue, 24 Apr 2012 17:33:47 +0000
-Message-ID: <20120424173347.GA14017@mail.hallyn.com>
+Subject: Re: [PATCH 27/43] userns: Use uid_eq gid_eq helpers when comparing
+	kuids and kgids in the vfs
+Date: Tue, 24 Apr 2012 17:41:54 +0000
+Message-ID: <20120424174154.GB14017__32724.845610983$1335289247$gmane$org@mail.hallyn.com>
 References: <m11unyn70b.fsf@fess.ebiederm.org>
-	<1333862139-31737-16-git-send-email-ebiederm@xmission.com>
-	<20120418184847.GA4984@mail.hallyn.com>
-	<m1aa266meh.fsf@fess.ebiederm.org>
+	<1333862139-31737-27-git-send-email-ebiederm@xmission.com>
+	<20120418190337.GE5186@mail.hallyn.com>
+	<m1sjfx2950.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <m1aa266meh.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
+In-Reply-To: <m1sjfx2950.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -32,107 +32,73 @@ Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
 > > Quoting Eric W. Beiderman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
 > >> From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 > >> 
-> >> - Transform userns->creator from a user_struct reference to a simple
-> >>   kuid_t, kgid_t pair.
-> >> 
-> >>   In cap_capable this allows the check to see if we are the creator of
-> >>   a namespace to become the classic suser style euid permission check.
-> >> 
-> >>   This allows us to remove the need for a struct cred in the mapping
-> >>   functions and still be able to dispaly the user namespace creators
-> >>   uid and gid as 0.
-> >> 
-> >> - Remove the now unnecessary delayed_work in free_user_ns.
-> >> 
-> >>   All that is left for free_user_ns to do is to call kmem_cache_free
-> >>   and put_user_ns.  Those functions can be called in any context
-> >>   so call them directly from free_user_ns removing the need for delayed work.
-> >> 
 > >> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 > >> ---
-> >>  include/linux/user_namespace.h |    4 ++--
-> >>  kernel/user.c                  |    7 ++++---
-> >>  kernel/user_namespace.c        |   39 ++++++++++++++++++---------------------
-> >>  security/commoncap.c           |    5 +++--
-> >>  4 files changed, 27 insertions(+), 28 deletions(-)
+> >>  fs/attr.c                |    8 ++++----
+> >>  fs/exec.c                |   10 +++++-----
+> >>  fs/fcntl.c               |    6 +++---
+> >>  fs/ioprio.c              |    4 ++--
+> >>  fs/locks.c               |    2 +-
+> >>  fs/namei.c               |    8 ++++----
+> >>  include/linux/quotaops.h |    4 ++--
+> >>  7 files changed, 21 insertions(+), 21 deletions(-)
 > >> 
-> >> diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-> >> index d767508..8a391bd 100644
-> >> --- a/include/linux/user_namespace.h
-> >> +++ b/include/linux/user_namespace.h
-> >> @@ -9,8 +9,8 @@
-> >>  struct user_namespace {
-> >>  	struct kref		kref;
-> >>  	struct user_namespace	*parent;
-> >> -	struct user_struct	*creator;
-> >> -	struct work_struct	destroyer;
-> >> +	kuid_t			owner;
-> >> +	kgid_t			group;
-> >>  };
-> >>  
-> >>  extern struct user_namespace init_user_ns;
-> >> diff --git a/kernel/user.c b/kernel/user.c
-> >> index 025077e..cff3856 100644
-> >> --- a/kernel/user.c
-> >> +++ b/kernel/user.c
-> >> @@ -25,7 +25,8 @@ struct user_namespace init_user_ns = {
-> >>  	.kref = {
-> >>  		.refcount	= ATOMIC_INIT(3),
-> >>  	},
-> >> -	.creator = &root_user,
-> >> +	.owner = GLOBAL_ROOT_UID,
-> >> +	.group = GLOBAL_ROOT_GID,
-> >>  };
-> >>  EXPORT_SYMBOL_GPL(init_user_ns);
-> >>  
-> >> @@ -54,9 +55,9 @@ struct hlist_head uidhash_table[UIDHASH_SZ];
-> >>   */
-> >>  static DEFINE_SPINLOCK(uidhash_lock);
-> >>  
-> >> -/* root_user.__count is 2, 1 for init task cred, 1 for init_user_ns->user_ns */
-> >> +/* root_user.__count is 1, for init task cred */
-> >>  struct user_struct root_user = {
-> >> -	.__count	= ATOMIC_INIT(2),
-> >> +	.__count	= ATOMIC_INIT(1),
-> >>  	.processes	= ATOMIC_INIT(1),
-> >>  	.files		= ATOMIC_INIT(0),
-> >>  	.sigpending	= ATOMIC_INIT(0),
-> >> diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-> >> index 898e973..f69741a 100644
-> >> --- a/kernel/user_namespace.c
-> >> +++ b/kernel/user_namespace.c
-> >> @@ -27,6 +27,16 @@ int create_user_ns(struct cred *new)
-> >>  {
-> >>  	struct user_namespace *ns, *parent_ns = new->user_ns;
-> >>  	struct user_struct *root_user;
-> >> +	kuid_t owner = make_kuid(new->user_ns, new->euid);
-> >> +	kgid_t group = make_kgid(new->user_ns, new->egid);
-> >> +
-> >> +	/* The creator needs a mapping in the parent user namespace
-> >> +	 * or else we won't be able to reasonably tell userspace who
-> >> +	 * created a user_namespace.
-> >> +	 */
-> >> +	if (!kuid_has_mapping(parent_ns, owner) ||
-> >> +	    !kgid_has_mapping(parent_ns, group))
-> >> +		return -EPERM;
-> >>  
-> >>  	ns = kmem_cache_alloc(user_ns_cachep, GFP_KERNEL);
-> >>  	if (!ns)
-> >> @@ -43,7 +53,9 @@ int create_user_ns(struct cred *new)
-> >>  
-> >>  	/* set the new root user in the credentials under preparation */
-> >>  	ns->parent = parent_ns;
-> >
-> > I think in the past the creator cred pinned the ns->parent.  Do you now
-> > need to explicitly pin ns->parent (and release it in free_user_ns())?
 > 
-> Yes we do have to explicitly reference count the parent namespace.
-> But that happened in the patch 7:
-> "userns: Add an explicit reference to the parent user namespace"
+> >> @@ -2120,7 +2120,7 @@ void do_coredump(long signr, int exit_code, struct pt_regs *regs)
+> >>  	if (__get_dumpable(cprm.mm_flags) == 2) {
+> >>  		/* Setuid core dump mode */
+> >>  		flag = O_EXCL;		/* Stop rewrite attacks */
+> >> -		cred->fsuid = 0;	/* Dump root private */
+> >> +		cred->fsuid = GLOBAL_ROOT_UID;	/* Dump root private */
+> >
+> > Sorry, one more - can this be the per-ns root uid?  The coredumps should
+> > be ok to belong to privileged users in the namespace right?
+> 
+> I'm not certain it was clear when you were looking at this that
+> this is about dumping core from suid applications, not normal
+> applications. 
 
-Perhaps that suffices, but I'm not convinced.  The struct cred is
-pinning it's own ns, but if t1 does clone(CLONE_NEWUSER) to produce
-t2, which does the same to procduce t3, and then t2 exits, I'm not
-seeing what will pin t2's userns.
+Right, that makes sense,  but I was thinking we could just find the
+root uid for the namespace in which current_euid() is valid.
+
+Waiting is fine :)
+
+>  Looking at the code in commoncap and commit_creds it looks like it is a
+> bug that we don't call set_dumpable(new, suid_dumpable) in common cap
+
+That sounds like a bug, yes.
+
+> when we use file capabilities.  I might be wrong but I think we escape
+> the test in commit_creds in that case.
+> 
+> 
+> Having thought about it we can make this per namespace but not in
+> this patch.
+> 
+> Things that I see as missing.
+> - We likely need to make the suid_dumpable sysctl per namespace.
+>   There is a prctl so it is already per process.
+> - We would need to capture the user_namespace at mm creation time,
+>   during exec, so we know which root user we could use.
+>
+>   By it's nature we know an mm can't escape a user namespace so the
+>   user namespace an mm is created in will have a root user we can
+>   dump core as.
+> 
+> I was wondering if we could relax this to a uid captured at mm creation
+> time (and certainly we can capture the root user), but there are enough
+> weird cases I don't think it is possible to safely allow anything more
+> relaxed that the root of the user_namespace that created the mm.
+> 
+> I don't believe we can't use the user_namespace of current because the
+> application may have been suid and then cloned a new user namespace
+> keeping the mm or perhaps just the uid/euid split.
+> 
+> So in short it is doable but a little tricky so it doesn't belong in
+> a patch with a bunch of boring and safe conversions.
+> 
+> Eric
+
+Thanks for elaborating on that.  Makes sense to wait.
 
 -serge
