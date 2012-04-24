@@ -1,17 +1,23 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 33/43] userns: Convert binary formats to use kuid/kgid
-	where appropriate
-Date: Mon, 23 Apr 2012 19:44:36 -0700
-Message-ID: <m1wr55q25n.fsf__20095.7186440521$1335235240$gmane$org@fess.ebiederm.org>
-References: <m11unyn70b.fsf@fess.ebiederm.org>
-	<1333862139-31737-33-git-send-email-ebiederm@xmission.com>
-	<20120418191033.GL5186@mail.hallyn.com>
+From: Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC] writeback and cgroup
+Date: Tue, 24 Apr 2012 15:58:53 +0800
+Message-ID: <20120424075853.GA8391__37193.9992219724$1335254665$gmane$org@localhost>
+References: <20120404175124.GA8931@localhost>
+	<20120404193355.GD29686@dhcp-172-17-108-109.mtv.corp.google.com>
+	<20120406095934.GA10465@localhost>
+	<20120417223854.GG19975@google.com>
+	<20120419142343.GA12684@localhost>
+	<20120419202635.GA4795@quack.suse.cz>
+	<20120420133441.GA7035@localhost>
+	<20120420190844.GH32324@google.com>
+	<20120422144649.GA7066@localhost>
+	<20120423165626.GB5406@google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20120418191033.GL5186-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org> (Serge E. Hallyn's
-	message of "Wed, 18 Apr 2012 19:10:33 +0000")
+Content-Disposition: inline
+In-Reply-To: <20120423165626.GB5406-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,33 +27,329 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Cyrill Gorcunov <gorcunov-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, andrea-oIIqvOZpAevzfdHfmsDf5w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sjayaraman-IBi9RG/b67k@public.gmane.org, lsf-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Mel Gorman <mgorman-l3A5Bk7waGM@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-"Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
+Hi Tejun,
 
-> Quoting Eric W. Beiderman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
->> From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
->> 
->> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+On Mon, Apr 23, 2012 at 09:56:26AM -0700, Tejun Heo wrote:
+> Hello, Fengguang.
 >
-> Ok I'll spare the list the traffic - for patches 33-43,
+> On Sun, Apr 22, 2012 at 10:46:49PM +0800, Fengguang Wu wrote:
+> > OK. Sorry I should have explained why memcg dirty limit is not the
+> > right tool for back pressure based throttling.
 >
-> Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+> I have two questions.  Why do we need memcg for this?  Writeback
+> currently works without memcg, right?  Why does that change with blkcg
+> aware bdi?
 
-I noticed one other significant gotcha with my changes.
+Yeah currently writeback does not depend on memcg. As for blkcg, it's
+necessary to keep a number of dirty pages for each blkcg, so that the
+cfq groups' async IO queue does not go empty and lose its turn to do
+IO. memcg provides the proper infrastructure to account dirty pages.
 
-Code that has not been converted and needs to be converted fails to
-build with type errors.  -- Good.
+In a previous email, we have an example of two 10:1 weight cgroups,
+each running one dd. They will make two IO pipes, each holding a number
+of dirty pages. Since cfq honors dd-1 much more IO bandwidth, dd-1's
+dirty pages are consumed quickly. However balance_dirty_pages(),
+without knowing about cfq's bandwidth divisions, is throttling the
+two dd tasks equally. So dd-1 will be producing dirty pages much
+slower than cfq is consuming them. The flusher thus won't send enough
+dirty pages down to fill the corresponding async IO queue for dd-1.
+cfq cannot really give dd-1 more bandwidth share due to lack of data
+feed. The end result will be: the two cgroups get 1:1 bandwidth share
+honored by balance_dirty_pages() even though cfq honors 10:1 weights
+to them.
 
-Code that has not been converted and needs to be converted is still
-selectable in make config.  -- Bad
+1:1 balance_dirty_pages() bandwidth split
 
-make oldmodconfig -- fails with type errors unless everything is
-converted Bad.
+  [          dd-1              |           dd-2             ]
+  |                             \                           |
+  |                              \**************************|
+  |                               \*************************|
+  |                                \************************|
+  |                                 \***********************|
+  |                                  \**********************|
+  |                                   \*********************|
+  |                                    \********************|
+  |                                     \*******************|
+  |                                      \******************|
+  |                                       \*****************|
+  |                                        \****************|
+  |                                         \***************|
+  |                                          \**************|
+  |                                           \*************|
+  |                                            \************|
+  |                                             \***********|
+  |                                              \**********|
+  |                                               \*********|
+  |                                                \********|
+  |                                                 \*******|
+  |                                                  \******|
+  |************************   (constantly underrun)   \*****|
 
-So I am adding/debugging an additional patch that will catch these
-failure in Kconfig so people don't get nasty surprises.
+10:1 cfq bandwidth split                      [*] dirty pages
 
-Eric
+Ideally is,
+
+  [                      dd-1                         | dd-2]
+  |                                                   |     |
+  |                                                   |     |
+  |                                                   |     |
+  |                                                   |     |
+  |                                                   |     |
+  |                                                   |     |
+  |                                                   |     |
+  |                                                   |     |
+  |                                                   |     |
+  |                                                   |     |
+  |                                                   |     |
+  |                                                   |     |
+  |                                                   |     |
+  |                                                   |     |
+  |***************************************************|*****|
+  |***************************************************|*****|
+  |***************************************************|*****|
+  |***************************************************|*****|
+  |***************************************************|*****|
+  |***************************************************|*****|
+  |***************************************************|*****|
+  |***************************************************|*****|
+  |***************************************************|*****|
+  |***************************************************|*****|
+
+Or better, one single pipe :)
+
+  [                      dd-1                         | dd-2]
+  |                                                         |
+  |                                                         |
+  |                                                         |
+  |                                                         |
+  |                                                         |
+  |                                                         |
+  |                                                         |
+  |                                                         |
+  |                                                         |
+  |                                                         |
+  |                                                         |
+  |                                                         |
+  |                                                         |
+  |                                                         |
+  |*********************************************************|
+  |*********************************************************|
+  |*********************************************************|
+  |*********************************************************|
+  |*********************************************************|
+  |*********************************************************|
+  |*********************************************************|
+  |*********************************************************|
+  |*********************************************************|
+  |*********************************************************|
+
+> > Basically the more memcgs with dirty limits, the more hard time for
+> > the flusher to serve them fairly and knock down their dirty pages in
+> > time. Because the flusher works inode by inode, each one may take up
+> > to 0.5 second, and there may be many memcgs asking for the flusher's
+> > attention. Also the more memcgs, the global dirty pages pool are
+> > partitioned into smaller pieces, which means smaller safety margin for
+> > each memcg. Adding these two effects up, there may be constantly some
+> > memcgs hitting their dirty limits when there are dozens of memcgs.
+>
+> And how is this different from a machine with smaller memory?  If so,
+> why?
+
+In a small memory box, dd and flusher produce/consume dirty pages
+continuously, so that over time the number of dirty pages can remain
+roughly stable.
+
+  ^ dirty pages
+  |
+  +dirty limit
+  |                    | dd continously dirtying pages
+  |dirty setpoint      v
+  +*******************************************************************
+  |                    |
+  |                    v flusher continously clean pages
+  |
+  +-------------------------------------------------------------------->
+                                                                    time
+
+However if it's a large memory machine whose dirty pages get
+partitioned to 100 cgroups, the flusher will be serving them
+in round robin fashion. For a particular cgroup, the flusher
+only comes and consumes its dirty pages once on every (100*flusher_slice)
+seconds. The interval would be 50s for the current 0.5s flusher slice,
+or 5s if lowering flusher slice to 50ms.
+
+I'm not sure whether it's practical to decrease the flusher slice for
+ext4, which for the sake of write performance and avoid fragmentation,
+increases the write chunk size to 128MB internally.
+
+For a number of reasons, the flusher's behavior cannot be exactly
+controlled. The intervals the flusher come to each cgroup go up and
+down, fairness can only be coarsely assured.
+
+The dirty pages for each cgroup will be going up and down irregularly
+across very large dynamic ranges. Now you should be able to imagine
+the challenges to avoid hitting the dirty limit, to balance the dirty
+pages around the per-cgroup-per-bdi dirty setpoints and to avoid
+underruns. When there are 10 cgroups and 12 bdi's, the dirty setpoints
+could explode up to 10*12.
+
+  ^ dirty pages
+  |
+  |                                       dd continously dirtying pages
+  + dirty limit        dd stalled
+  |                      ******             |
+  |                    *      *             |           *
+  |                  *        *             |         *  *
+  |                *          *             |       *    *
+  | dirty        *            *             |     *      *
+  + setpoint   *              *             |   *        *
+  |          *                *             v *          *
+  |        *                   *            *            *
+  |      *                     *          *              *
+  |    *                       *        *                *      *
+  |  *                         *      *                   *   *
+  |*                           *    *                     * *
+  |                            *  *                       *
+  |                             *
+  |                           ^^ the flusher comes around to this cgroup
+  |
+  +-------------------------------------------------------------------->
+                                                                    time
+
+> > Such cross subsystem coordinations still look natural to me because
+> > "weight" is a fundamental and general parameter. It's really a blkcg
+> > thing (determined by the blkio.weight user interface) rather than
+> > specifically tied to cfq. When another kernel entity (eg. NFS or noop)
+> > decides to add support for proportional weight IO control in future,
+> > it can make use of the weights calculated by balance_dirty_pages(), too.
+>
+> It is not fundamental and natural at all and is already made cfq
+> specific in the devel branch.  You seem to think "weight" is somehow a
+> global concept which everyone can agree on but it is not.  Weight of
+> what?  Is it disktime, bandwidth, iops or something else?  cfq deals
+> primarily with disktime because that makes sense for spinning drives
+> with single head.  For SSDs with smart enough FTLs, the unit should
+> probably be iops.  For storage technology bottlenecked on bus speed,
+> bw would make sense.
+
+"Weight" is sure a global concept that reflects the "importance"
+deemed by the user for that cgroup. cfq (or NFS, whatever on the horizon)
+then interprets the importance number as disk time, IOPS, bandwidth,
+whatever semantic that best fits the backing storage and workload.
+
+blkio.weight will be the "number" shared and interpreted by all IO
+controller entities, whether it be cfq, NFS or balance_dirty_pages().
+And I can assure you that balance_dirty_pages() will be interpreting
+it the _same_ way the underlying cfq/NFS interprets it, via the feedback
+scheme described below.
+
+> IIUC, writeback is primarily dealing with abstracted bandwidth which
+> is applied per-inode, which is fine at that layer as details like
+> block allocations isn't and shouldn't be visible there and files (or
+> inodes) are the level of abstraction.
+>
+> However, this doesn't necessarily translate easily into the actual
+> underlying IO resource.  For devices with spindle, seek time dominates
+> and the same amount of IO may consume vastly different amount of IO
+> and the disk time becomes the primary resource, not the iops or
+> bandwidth.  Naturally, people want to allocate and limit the primary
+> resource, so cfq distributes disk time across different cgroups as
+> configured.
+
+Right. balance_dirty_pages() is always doing dirty throttling wrt.
+bandwidth, even in your back pressure scheme, isn't it? In this regard,
+there are nothing fundamentally different between our proposals. They
+will both employ some way to convert the cfq's disk time or IOPS
+notion to balance_dirty_pages()'s bandwidth notion. See below for my
+way of conversion.
+
+> Your suggested solution is applying the same a number - the weight -
+> to one portion of a mostly arbitrarily split resource using a
+> different unit.  I don't even understand what that achieves.
+
+You seem to miss my stated plan: next step, balance_dirty_pages() will
+get some feedback information from cfq to adjust its bandwidth targets
+accordingly. That information will be
+
+        io_cost = charge/sectors
+
+The charge value is exactly the value computed in cfq_group_served(),
+which is the slice time or IOs dispatched depending the mode cfq is
+operating in. By dividing ratelimit by the normalized io_cost,
+balance_dirty_pages() will automatically get the same weight
+interpretation as cfq. For example, on spin disks, it will be able to
+allocate lower bandwidth to seeky cgroups due to the larger io_cost
+reported by cfq.
+
+> The requirement is to be able to split IO resource according to
+> cgroups in configurable way and enforce the limits established by the
+> configuration, which we're currently failing to do for async IOs.
+> Your proposed solution applies some arbitrary ratio according to some
+> arbitrary interpretation of cfq IO time weight way up in the stack
+> which, when propagated to the lower layer, would cause significant
+> amount of delay and fluctuation which behaves completely independent
+> from how (using what unit, in what granularity and in what time scale)
+> actual IO resource is handled, split and accounted, which would result
+> in something which probably has some semblance of interpreting
+> blkcg.weight as vague best-effort priority at its luckiest moments.
+
+Interestingly, our proposals are once again on the same plane
+regarding the delays and fluctuations. Due to the long delays between
+dirty and writeout time, the access pattern for the newly generated
+dirty pages and the access pattern for the under-writeback pages may
+have changed. So even if cfq is throttling the stream proportional to
+its IO cost, the user on the other side of the pipe (with long delay)
+may still see the strange behavior of lower throughput for sequential
+writes and higher throughput for random writes. Let's accept the fact:
+it's a natural problem/property of the buffered writes. What we can do
+is to aim for _long term_ rate matching.
+
+> So, I don't think your suggested solution is a solution at all.  I'm
+> in fact not even sure what it achieves at the cost of the gross
+> layering violation and fundamental design braindamage.
+
+It doesn't make anything perform better (nor worse). In face of the
+challenging problem, both proposals suck. My solution just sucks less
+as in the below listing.
+
+> >         - No more latency
+> >         - No performance drop
+> >         - No bumpy progress and stalls
+> >         - No need to attach memcg to blkcg
+> >         - Feel free to create 1000+ IO controllers, to heart's content
+> >           w/o worrying about costs (if any, it would be some existing
+> >           scalability issues)
+>
+> I'm not sure why memcg suddenly becomes necessary with blkcg and I
+> don't think having per-blkcg writeback and reasonable async
+> optimization from iosched would be considerably worse.  It sure will
+> add some overhead (e.g. from split buffering) but there will be proper
+> working isolation which is what this fuss is all about.  Also, I just
+> don't see how creating 1000+ (relatively active, I presume) blkcgs on
+> a single spindle would be sane and how is the end result gonna be
+> significantly better for your suggested solution, so let's please put
+> aside the silly non-use case.
+
+There are big disk arrays with lots of spindles inside, or arrays of
+fast SSDs. People may want to create lots of cgroups on them.  IO
+controllers should be made cheap and scalable to meet the demands from
+our variety user base, now and future.
+
+> In terms of overhead, I suspect the biggest would be the increased
+> buffering coming from split channels but that seems like the cost of
+> business to me.
+
+I know that the back pressure idea actually come a long way (several
+years?) and it's kind of become a common agreement that there will be
+inevitable costs incur to the isolation. So I can understand why you
+keep ignoring all the overheads, costs and scalability issues because
+there seems no other way out. However here comes the solution that can
+magically avoid the partition and all the resulted problems, and still
+be able to provide the isolation.
+
+Thanks,
+Fengguang
