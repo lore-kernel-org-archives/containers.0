@@ -1,23 +1,23 @@
 From: Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
 Subject: Re: [RFC] writeback and cgroup
-Date: Tue, 24 Apr 2012 15:58:53 +0800
-Message-ID: <20120424075853.GA8391__37193.9992219724$1335254665$gmane$org@localhost>
-References: <20120404175124.GA8931@localhost>
-	<20120404193355.GD29686@dhcp-172-17-108-109.mtv.corp.google.com>
-	<20120406095934.GA10465@localhost>
-	<20120417223854.GG19975@google.com>
-	<20120419142343.GA12684@localhost>
-	<20120419202635.GA4795@quack.suse.cz>
-	<20120420133441.GA7035@localhost>
-	<20120420190844.GH32324@google.com>
-	<20120422144649.GA7066@localhost>
-	<20120423165626.GB5406@google.com>
+Date: Tue, 24 Apr 2012 19:33:40 +0800
+Message-ID: <20120424113340.GA12509__20084.935546811$1335267553$gmane$org@localhost>
+References: <20120410180653.GJ21801@redhat.com>
+	<20120410210505.GE4936@quack.suse.cz>
+	<20120410212041.GP21801@redhat.com>
+	<20120410222425.GF4936@quack.suse.cz>
+	<20120411154005.GD16692@redhat.com>
+	<20120411192231.GF16008@quack.suse.cz>
+	<20120412203719.GL2207@redhat.com>
+	<20120412205148.GA24056@google.com>
+	<20120414143639.GA31241@localhost>
+	<20120416145744.GA15437@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20120423165626.GB5406-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20120416145744.GA15437-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,329 +27,200 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, andrea-oIIqvOZpAevzfdHfmsDf5w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sjayaraman-IBi9RG/b67k@public.gmane.org, lsf-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Mel Gorman <mgorman-l3A5Bk7waGM@public.gmane.org>
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, andrea-oIIqvOZpAevzfdHfmsDf5w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sjayaraman-IBi9RG/b67k@public.gmane.org, lsf-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Tejun,
+Hi Vivek,
 
-On Mon, Apr 23, 2012 at 09:56:26AM -0700, Tejun Heo wrote:
-> Hello, Fengguang.
->
-> On Sun, Apr 22, 2012 at 10:46:49PM +0800, Fengguang Wu wrote:
-> > OK. Sorry I should have explained why memcg dirty limit is not the
-> > right tool for back pressure based throttling.
->
-> I have two questions.  Why do we need memcg for this?  Writeback
-> currently works without memcg, right?  Why does that change with blkcg
-> aware bdi?
+On Mon, Apr 16, 2012 at 10:57:45AM -0400, Vivek Goyal wrote:
+> On Sat, Apr 14, 2012 at 10:36:39PM +0800, Fengguang Wu wrote:
+> 
+> [..]
+> > Yeah the backpressure idea would work nicely with all possible
+> > intermediate stacking between the bdi and leaf devices. In my attempt
+> > to do combined IO bandwidth control for
+> > 
+> > - buffered writes, in balance_dirty_pages()
+> > - direct IO, in the cfq IO scheduler
+> > 
+> > I have to look into the cfq code in the past days to get an idea how
+> > the two throttling layers can cooperate (and suffer from the pains
+> > arise from the violations of layers). It's also rather tricky to get
+> > two previously independent throttling mechanisms to work seamlessly
+> > with each other for providing the desired _unified_ user interface. It
+> > took a lot of reasoning and experiments to work the basic scheme out...
+> > 
+> > But here is the first result. The attached graph shows progress of 4
+> > tasks:
+> > - cgroup A: 1 direct dd + 1 buffered dd
+> > - cgroup B: 1 direct dd + 1 buffered dd
+> > 
+> > The 4 tasks are mostly progressing at the same pace. The top 2
+> > smoother lines are for the buffered dirtiers. The bottom 2 lines are
+> > for the direct writers. As you may notice, the two direct writers are
+> > somehow stalled for 1-2 times, which increases the gaps between the
+> > lines. Otherwise, the algorithm is working as expected to distribute
+> > the bandwidth to each task.
+> > 
+> > The current code's target is to satisfy the more realistic user demand
+> > of distributing bandwidth equally to each cgroup, and inside each
+> > cgroup, distribute bandwidth equally to buffered/direct writes. On top
+> > of which, weights can be specified to change the default distribution.
+> > 
+> > The implementation involves adding "weight for direct IO" to the cfq
+> > groups and "weight for buffered writes" to the root cgroup. Note that
+> > current cfq proportional IO conroller does not offer explicit control
+> > over the direct:buffered ratio.
+> > 
+> > When there are both direct/buffered writers in the cgroup,
+> > balance_dirty_pages() will kick in and adjust the weights for cfq to
+> > execute. Note that cfq will continue to send all flusher IOs to the
+> > root cgroup.  balance_dirty_pages() will compute the overall async
+> > weight for it so that in the above test case, the computed weights
+> > will be
+> 
+> I think having separate weigths for sync IO groups and async IO is not
+> very appealing. There should be one notion of group weight and bandwidth
+> distrubuted among groups according to their weight.
 
-Yeah currently writeback does not depend on memcg. As for blkcg, it's
-necessary to keep a number of dirty pages for each blkcg, so that the
-cfq groups' async IO queue does not go empty and lose its turn to do
-IO. memcg provides the proper infrastructure to account dirty pages.
+There have to be some scheme, either explicitly or implicitly. Maybe
+you are baring in mind some "equal split among queues" policy? For
+example, if the cgroup has 9 active sync queues and 1 async queue,
+split the weight equally to the 10 queues?  So the sync IOs get 90%
+share, and the async writes get 10% share.
 
-In a previous email, we have an example of two 10:1 weight cgroups,
-each running one dd. They will make two IO pipes, each holding a number
-of dirty pages. Since cfq honors dd-1 much more IO bandwidth, dd-1's
-dirty pages are consumed quickly. However balance_dirty_pages(),
-without knowing about cfq's bandwidth divisions, is throttling the
-two dd tasks equally. So dd-1 will be producing dirty pages much
-slower than cfq is consuming them. The flusher thus won't send enough
-dirty pages down to fill the corresponding async IO queue for dd-1.
-cfq cannot really give dd-1 more bandwidth share due to lack of data
-feed. The end result will be: the two cgroups get 1:1 bandwidth share
-honored by balance_dirty_pages() even though cfq honors 10:1 weights
-to them.
+For dirty throttling w/o cgroup awareness, balance_dirty_pages()
+splits the writeout bandwidth equally among all dirtier tasks. Since
+cfq works with queues, it seems most natural for it to do equal split
+among all queues (inside the cgroup).
 
-1:1 balance_dirty_pages() bandwidth split
+I'm not sure when there are N dd tasks doing direct IO, cfq will
+continuously run N sync queues for them (without many dynamic queue
+deletion and recreations). If that is the case, it should be trivial
+to support the queue based fair split in the global async queue
+scheme. Otherwise I'll have some trouble detecting the N value when
+trying to do the N:1 sync:async weight split.
 
-  [          dd-1              |           dd-2             ]
-  |                             \                           |
-  |                              \**************************|
-  |                               \*************************|
-  |                                \************************|
-  |                                 \***********************|
-  |                                  \**********************|
-  |                                   \*********************|
-  |                                    \********************|
-  |                                     \*******************|
-  |                                      \******************|
-  |                                       \*****************|
-  |                                        \****************|
-  |                                         \***************|
-  |                                          \**************|
-  |                                           \*************|
-  |                                            \************|
-  |                                             \***********|
-  |                                              \**********|
-  |                                               \*********|
-  |                                                \********|
-  |                                                 \*******|
-  |                                                  \******|
-  |************************   (constantly underrun)   \*****|
+> Now one can argue that with-in a group, there might be one knob in CFQ
+> which allows to change the share or sync/async IO.
 
-10:1 cfq bandwidth split                      [*] dirty pages
+Yeah. I suspect typical users don't care about the split policy or
+fairness inside the cgroup, otherwise there may be complains on any
+existing policies: "I want split this way" "I want that way"... ;-)
 
-Ideally is,
+Anyway I'm not sure about the possible use cases..
 
-  [                      dd-1                         | dd-2]
-  |                                                   |     |
-  |                                                   |     |
-  |                                                   |     |
-  |                                                   |     |
-  |                                                   |     |
-  |                                                   |     |
-  |                                                   |     |
-  |                                                   |     |
-  |                                                   |     |
-  |                                                   |     |
-  |                                                   |     |
-  |                                                   |     |
-  |                                                   |     |
-  |                                                   |     |
-  |***************************************************|*****|
-  |***************************************************|*****|
-  |***************************************************|*****|
-  |***************************************************|*****|
-  |***************************************************|*****|
-  |***************************************************|*****|
-  |***************************************************|*****|
-  |***************************************************|*****|
-  |***************************************************|*****|
-  |***************************************************|*****|
+> Also Tejun and Jan have expressed the desire that once we have figured
+> out a way to communicate the submitter's context for async IO, we would
+> like to account that IO in associated cgroup instead of root cgroup (as
+> we do today).
 
-Or better, one single pipe :)
+Understand. Accounting should always be attributed to the corresponding
+cgroup. I'll also need this to send feedback information to the async
+IO submitter's cgroups.
 
-  [                      dd-1                         | dd-2]
-  |                                                         |
-  |                                                         |
-  |                                                         |
-  |                                                         |
-  |                                                         |
-  |                                                         |
-  |                                                         |
-  |                                                         |
-  |                                                         |
-  |                                                         |
-  |                                                         |
-  |                                                         |
-  |                                                         |
-  |                                                         |
-  |*********************************************************|
-  |*********************************************************|
-  |*********************************************************|
-  |*********************************************************|
-  |*********************************************************|
-  |*********************************************************|
-  |*********************************************************|
-  |*********************************************************|
-  |*********************************************************|
-  |*********************************************************|
+> > - 1000 async weight for the root cgroup (2 buffered dds)
+> > - 500 dio weight for cgroup A (1 direct dd)
+> > - 500 dio weight for cgroup B (1 direct dd)
+> > 
+> > The second graph shows result for another test case:
+> > - cgroup A, weight 300: 1 buffered cp
+> > - cgroup B, weight 600: 1 buffered dd + 1 direct dd
+> > - cgroup C, weight 300: 1 direct dd
+> > which is also working as expected.
+> > 
+> > Once the cfq properly grants total async IO share to the flusher,
+> > balance_dirty_pages() will then do its original job of distributing
+> > the buffered write bandwidth among the buffered dd tasks.
+> > 
+> > It will have to assume that the devices under the same bdi are
+> > "symmetry". It also needs further stats feedback on IOPS or disk time
+> > in order to do IOPS/time based IO distribution. Anyway it would be
+> > interesting to see how far this scheme can go. I'll cleanup the code
+> > and post it soon.
+> 
+> Your proposal relies on few things.
+> 
+> - Bandwidth needs to be divided eually among sync and async IO.
 
-> > Basically the more memcgs with dirty limits, the more hard time for
-> > the flusher to serve them fairly and knock down their dirty pages in
-> > time. Because the flusher works inode by inode, each one may take up
-> > to 0.5 second, and there may be many memcgs asking for the flusher's
-> > attention. Also the more memcgs, the global dirty pages pool are
-> > partitioned into smaller pieces, which means smaller safety margin for
-> > each memcg. Adding these two effects up, there may be constantly some
-> > memcgs hitting their dirty limits when there are dozens of memcgs.
->
-> And how is this different from a machine with smaller memory?  If so,
-> why?
+Yeah balance_dirty_pages() always works on the basis of bandwidth. The
+plan is that once we get the feedback information on each stream's
+bandwidth:disk_time (or IOPS) ratio, the bandwidth target can be
+adjusted to achieve disk time or IOPS based fair share among the
+buffered dirtiers.
 
-In a small memory box, dd and flusher produce/consume dirty pages
-continuously, so that over time the number of dirty pages can remain
-roughly stable.
+For the sync:async split, it's operating on the cfqg->weight. So it's
+automatically disk time based.
 
-  ^ dirty pages
-  |
-  +dirty limit
-  |                    | dd continously dirtying pages
-  |dirty setpoint      v
-  +*******************************************************************
-  |                    |
-  |                    v flusher continously clean pages
-  |
-  +-------------------------------------------------------------------->
-                                                                    time
+Look at this graph, the 4 dd tasks are granted the same weight (2 of
+them are buffered writes). I guess the 2 buffered dd tasks managed to
+progress much faster than the 2 direct dd tasks just because the async
+IOs are much more efficient than the bs=64k direct IOs.
 
-However if it's a large memory machine whose dirty pages get
-partitioned to 100 cgroups, the flusher will be serving them
-in round robin fashion. For a particular cgroup, the flusher
-only comes and consumes its dirty pages once on every (100*flusher_slice)
-seconds. The interval would be 50s for the current 0.5s flusher slice,
-or 5s if lowering flusher slice to 50ms.
+https://github.com/fengguang/io-controller-tests/raw/master/log/bay/xfs/mixed-write-2.2012-04-19-10-42/balance_dirty_pages-task-bw.png
 
-I'm not sure whether it's practical to decrease the flusher slice for
-ext4, which for the sake of write performance and avoid fragmentation,
-increases the write chunk size to 128MB internally.
+> - Flusher thread async IO will always to go to root cgroup.
 
-For a number of reasons, the flusher's behavior cannot be exactly
-controlled. The intervals the flusher come to each cgroup go up and
-down, fairness can only be coarsely assured.
+Right. This is actually my main target: to avoid splitting up the
+async streams throughout the IO path, for the good of performance.
 
-The dirty pages for each cgroup will be going up and down irregularly
-across very large dynamic ranges. Now you should be able to imagine
-the challenges to avoid hitting the dirty limit, to balance the dirty
-pages around the per-cgroup-per-bdi dirty setpoints and to avoid
-underruns. When there are 10 cgroups and 12 bdi's, the dirty setpoints
-could explode up to 10*12.
+> - I am not sure how this scheme is going to work when we introduce
+>   hierarchical blkio cgroups.
 
-  ^ dirty pages
-  |
-  |                                       dd continously dirtying pages
-  + dirty limit        dd stalled
-  |                      ******             |
-  |                    *      *             |           *
-  |                  *        *             |         *  *
-  |                *          *             |       *    *
-  | dirty        *            *             |     *      *
-  + setpoint   *              *             |   *        *
-  |          *                *             v *          *
-  |        *                   *            *            *
-  |      *                     *          *              *
-  |    *                       *        *                *      *
-  |  *                         *      *                   *   *
-  |*                           *    *                     * *
-  |                            *  *                       *
-  |                             *
-  |                           ^^ the flusher comes around to this cgroup
-  |
-  +-------------------------------------------------------------------->
-                                                                    time
+I think it's still viable. balance_dirty_pages() works by estimating
+the N (number of dd tasks) value and splitting the writeout bandwidth
+equally among the tasks:
 
-> > Such cross subsystem coordinations still look natural to me because
-> > "weight" is a fundamental and general parameter. It's really a blkcg
-> > thing (determined by the blkio.weight user interface) rather than
-> > specifically tied to cfq. When another kernel entity (eg. NFS or noop)
-> > decides to add support for proportional weight IO control in future,
-> > it can make use of the weights calculated by balance_dirty_pages(), too.
->
-> It is not fundamental and natural at all and is already made cfq
-> specific in the devel branch.  You seem to think "weight" is somehow a
-> global concept which everyone can agree on but it is not.  Weight of
-> what?  Is it disktime, bandwidth, iops or something else?  cfq deals
-> primarily with disktime because that makes sense for spinning drives
-> with single head.  For SSDs with smart enough FTLs, the unit should
-> probably be iops.  For storage technology bottlenecked on bus speed,
-> bw would make sense.
+        task_ratelimit = write_bandwidth / N
 
-"Weight" is sure a global concept that reflects the "importance"
-deemed by the user for that cgroup. cfq (or NFS, whatever on the horizon)
-then interprets the importance number as disk time, IOPS, bandwidth,
-whatever semantic that best fits the backing storage and workload.
+It becomes a proportional weight IO controller if change the formula
+to
+        task_ratelimit = weight * write_bandwidth / N_w
 
-blkio.weight will be the "number" shared and interpreted by all IO
-controller entities, whether it be cfq, NFS or balance_dirty_pages().
-And I can assure you that balance_dirty_pages() will be interpreting
-it the _same_ way the underlying cfq/NFS interprets it, via the feedback
-scheme described below.
+Here lies the beauty of the bdi_update_dirty_ratelimit() algorithm:
+it can automatically adapt N to the proper "weighted" N_w to keep
+things in balance, given whatever weights applied to each task.
 
-> IIUC, writeback is primarily dealing with abstracted bandwidth which
-> is applied per-inode, which is fine at that layer as details like
-> block allocations isn't and shouldn't be visible there and files (or
-> inodes) are the level of abstraction.
->
-> However, this doesn't necessarily translate easily into the actual
-> underlying IO resource.  For devices with spindle, seek time dominates
-> and the same amount of IO may consume vastly different amount of IO
-> and the disk time becomes the primary resource, not the iops or
-> bandwidth.  Naturally, people want to allocate and limit the primary
-> resource, so cfq distributes disk time across different cgroups as
-> configured.
+If further use 
 
-Right. balance_dirty_pages() is always doing dirty throttling wrt.
-bandwidth, even in your back pressure scheme, isn't it? In this regard,
-there are nothing fundamentally different between our proposals. They
-will both employ some way to convert the cfq's disk time or IOPS
-notion to balance_dirty_pages()'s bandwidth notion. See below for my
-way of conversion.
+        blkcg_ratelimit = weight * write_bandwidth / N_w
+        task_ratelimit  = weight * blkcg_ratelimit / M_w
 
-> Your suggested solution is applying the same a number - the weight -
-> to one portion of a mostly arbitrarily split resource using a
-> different unit.  I don't even understand what that achieves.
+It's turned into a cgroup IO controller.
 
-You seem to miss my stated plan: next step, balance_dirty_pages() will
-get some feedback information from cfq to adjust its bandwidth targets
-accordingly. That information will be
+This change further makes it a hierarchical IO controller:
 
-        io_cost = charge/sectors
+        blkcg_ratelimit = weight * parent_blkcg_ratelimit / M_w
 
-The charge value is exactly the value computed in cfq_group_served(),
-which is the slice time or IOs dispatched depending the mode cfq is
-operating in. By dividing ratelimit by the normalized io_cost,
-balance_dirty_pages() will automatically get the same weight
-interpretation as cfq. For example, on spin disks, it will be able to
-allocate lower bandwidth to seeky cgroups due to the larger io_cost
-reported by cfq.
+We'll also need to hierarchically de-compose the async weights from
+inner cgroup levels to outer levels, and finally add them to the root
+cgroup that holds the async queue. This looks feasible, too.
 
-> The requirement is to be able to split IO resource according to
-> cgroups in configurable way and enforce the limits established by the
-> configuration, which we're currently failing to do for async IOs.
-> Your proposed solution applies some arbitrary ratio according to some
-> arbitrary interpretation of cfq IO time weight way up in the stack
-> which, when propagated to the lower layer, would cause significant
-> amount of delay and fluctuation which behaves completely independent
-> from how (using what unit, in what granularity and in what time scale)
-> actual IO resource is handled, split and accounted, which would result
-> in something which probably has some semblance of interpreting
-> blkcg.weight as vague best-effort priority at its luckiest moments.
+> - cgroup weights for sync IO seems to be being controlled by user and
+>   somehow root cgroup weight seems to be controlled by this async IO
+>   logic silently.
 
-Interestingly, our proposals are once again on the same plane
-regarding the delays and fluctuations. Due to the long delays between
-dirty and writeout time, the access pattern for the newly generated
-dirty pages and the access pattern for the under-writeback pages may
-have changed. So even if cfq is throttling the stream proportional to
-its IO cost, the user on the other side of the pipe (with long delay)
-may still see the strange behavior of lower throughput for sequential
-writes and higher throughput for random writes. Let's accept the fact:
-it's a natural problem/property of the buffered writes. What we can do
-is to aim for _long term_ rate matching.
+In the current state I do assume no IO tasks in the root cgroup except
+for the flusher. However in general the root cgroup can be treated the
+same as other cgroups: its weight can also be split up into dio_weight
+and async weight.
 
-> So, I don't think your suggested solution is a solution at all.  I'm
-> in fact not even sure what it achieves at the cost of the gross
-> layering violation and fundamental design braindamage.
+The general idea is
+- cfqg->weight is given by user
+- cfqg->dio_weight is used for sync slices on vdisktime calculation.
+- total_async_weight collects all async IO weights from each cgroup,
+  including the root cgroup. They are the "credits" for the flusher
+  for doing the async IOs in delegate of all the cgroups.
 
-It doesn't make anything perform better (nor worse). In face of the
-challenging problem, both proposals suck. My solution just sucks less
-as in the below listing.
+> Overall sounds very odd design to me. I am not sure what are we achieving
+> by this. In current scheme one should be able to just adjust the weight
+> of root cgroup using cgroup interface and achieve same results which you
+> are showing. So where is the need of dynamically changing it inside
+> kernel.
 
-> >         - No more latency
-> >         - No performance drop
-> >         - No bumpy progress and stalls
-> >         - No need to attach memcg to blkcg
-> >         - Feel free to create 1000+ IO controllers, to heart's content
-> >           w/o worrying about costs (if any, it would be some existing
-> >           scalability issues)
->
-> I'm not sure why memcg suddenly becomes necessary with blkcg and I
-> don't think having per-blkcg writeback and reasonable async
-> optimization from iosched would be considerably worse.  It sure will
-> add some overhead (e.g. from split buffering) but there will be proper
-> working isolation which is what this fuss is all about.  Also, I just
-> don't see how creating 1000+ (relatively active, I presume) blkcgs on
-> a single spindle would be sane and how is the end result gonna be
-> significantly better for your suggested solution, so let's please put
-> aside the silly non-use case.
-
-There are big disk arrays with lots of spindles inside, or arrays of
-fast SSDs. People may want to create lots of cgroups on them.  IO
-controllers should be made cheap and scalable to meet the demands from
-our variety user base, now and future.
-
-> In terms of overhead, I suspect the biggest would be the increased
-> buffering coming from split channels but that seems like the cost of
-> business to me.
-
-I know that the back pressure idea actually come a long way (several
-years?) and it's kind of become a common agreement that there will be
-inevitable costs incur to the isolation. So I can understand why you
-keep ignoring all the overheads, costs and scalability issues because
-there seems no other way out. However here comes the solution that can
-magically avoid the partition and all the resulted problems, and still
-be able to provide the isolation.
+The "dynamically changing weights" are for the in-cgroup equal split
+between sync/async IOs. It does feel like an arbitrary added policy..
 
 Thanks,
 Fengguang
