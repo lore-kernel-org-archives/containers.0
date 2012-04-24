@@ -1,23 +1,17 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [RFC] writeback and cgroup
-Date: Mon, 23 Apr 2012 09:56:26 -0700
-Message-ID: <20120423165626.GB5406@google.com>
-References: <20120403183655.GA23106@dhcp-172-17-108-109.mtv.corp.google.com>
-	<20120404175124.GA8931@localhost>
-	<20120404193355.GD29686@dhcp-172-17-108-109.mtv.corp.google.com>
-	<20120406095934.GA10465@localhost>
-	<20120417223854.GG19975@google.com>
-	<20120419142343.GA12684@localhost>
-	<20120419202635.GA4795@quack.suse.cz>
-	<20120420133441.GA7035@localhost>
-	<20120420190844.GH32324@google.com>
-	<20120422144649.GA7066@localhost>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH 30/43] userns: Fail exec for suid and sgid binaries with
+	ids outside our user namespace.
+Date: Mon, 23 Apr 2012 19:28:36 -0700
+Message-ID: <m1ehrdrhgr.fsf@fess.ebiederm.org>
+References: <m11unyn70b.fsf@fess.ebiederm.org>
+	<1333862139-31737-30-git-send-email-ebiederm@xmission.com>
+	<20120418190927.GK5186@mail.hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20120422144649.GA7066@localhost>
+In-Reply-To: <20120418190927.GK5186-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org> (Serge E. Hallyn's
+	message of "Wed, 18 Apr 2012 19:09:27 +0000")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,104 +21,45 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, andrea-oIIqvOZpAevzfdHfmsDf5w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sjayaraman-IBi9RG/b67k@public.gmane.org, lsf-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Mel Gorman <mgorman-l3A5Bk7waGM@public.gmane.org>
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Cyrill Gorcunov <gorcunov-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hello, Fengguang.
+"Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
 
-On Sun, Apr 22, 2012 at 10:46:49PM +0800, Fengguang Wu wrote:
-> OK. Sorry I should have explained why memcg dirty limit is not the
-> right tool for back pressure based throttling.
+> Quoting Eric W. Beiderman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+>> From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+>> 
+>
+> Oh, perhaps this is the right place in the thread to discuss the issue of
+> what to do with file capabilities?  I'm ok waiting until the next iteration
+> to even discuss it, so long as we start by refusing setting of fcaps by
+> any task not in init_user_ns.
 
-I have two questions.  Why do we need memcg for this?  Writeback
-currently works without memcg, right?  Why does that change with blkcg
-aware bdi?
+For now we do refuse all callers in the init_user_ns because that path
+is protected by a capable and not an ns_capable call.
 
-> Basically the more memcgs with dirty limits, the more hard time for
-> the flusher to serve them fairly and knock down their dirty pages in
-> time. Because the flusher works inode by inode, each one may take up
-> to 0.5 second, and there may be many memcgs asking for the flusher's
-> attention. Also the more memcgs, the global dirty pages pool are
-> partitioned into smaller pieces, which means smaller safety margin for
-> each memcg. Adding these two effects up, there may be constantly some
-> memcgs hitting their dirty limits when there are dozens of memcgs.
+And as a general policy I have pushed all of the changes from capable to
+ns_capable out till after we get these other user namespace bits so we
+can get the patches reviewed so hopefully don't enable something that is
+not safe.
 
-And how is this different from a machine with smaller memory?  If so,
-why?
+Let's just note here that when we ever get a filesystem mounted in
+something other than the init_user_ns or otherwise allow file
+capabilities that do not belong to the init_user_ns we need to an
+additional exec check to avoid a security issue for processes in the
+init_user_ns using those credentials.
 
-> Such cross subsystem coordinations still look natural to me because
-> "weight" is a fundamental and general parameter. It's really a blkcg
-> thing (determined by the blkio.weight user interface) rather than
-> specifically tied to cfq. When another kernel entity (eg. NFS or noop)
-> decides to add support for proportional weight IO control in future,
-> it can make use of the weights calculated by balance_dirty_pages(), too.
+The other direction the init_user_ns setting file caps on a file and use
+using them in a child namespace seems safe, and practical because of the
+way we handle capabilities.  Aka if you have a capability in an outer
+user namespace you also have it in a child user namespace.  Which means
+a file cap exec today will give you just the capabilities in the child
+user namespace.
 
-It is not fundamental and natural at all and is already made cfq
-specific in the devel branch.  You seem to think "weight" is somehow a
-global concept which everyone can agree on but it is not.  Weight of
-what?  Is it disktime, bandwidth, iops or something else?  cfq deals
-primarily with disktime because that makes sense for spinning drives
-with single head.  For SSDs with smart enough FTLs, the unit should
-probably be iops.  For storage technology bottlenecked on bus speed,
-bw would make sense.
+Something else to think about when we reach filesystems mounted in
+different user namespaces (aka unprivileged mounts) are security
+labels on files in different user namespaces.  Not any kind of immediate
+concern but something we may have to handle eventually.
 
-IIUC, writeback is primarily dealing with abstracted bandwidth which
-is applied per-inode, which is fine at that layer as details like
-block allocations isn't and shouldn't be visible there and files (or
-inodes) are the level of abstraction.
-
-However, this doesn't necessarily translate easily into the actual
-underlying IO resource.  For devices with spindle, seek time dominates
-and the same amount of IO may consume vastly different amount of IO
-and the disk time becomes the primary resource, not the iops or
-bandwidth.  Naturally, people want to allocate and limit the primary
-resource, so cfq distributes disk time across different cgroups as
-configured.
-
-Your suggested solution is applying the same a number - the weight -
-to one portion of a mostly arbitrarily split resource using a
-different unit.  I don't even understand what that achieves.
-
-The requirement is to be able to split IO resource according to
-cgroups in configurable way and enforce the limits established by the
-configuration, which we're currently failing to do for async IOs.
-Your proposed solution applies some arbitrary ratio according to some
-arbitrary interpretation of cfq IO time weight way up in the stack
-which, when propagated to the lower layer, would cause significant
-amount of delay and fluctuation which behaves completely independent
-from how (using what unit, in what granularity and in what time scale)
-actual IO resource is handled, split and accounted, which would result
-in something which probably has some semblance of interpreting
-blkcg.weight as vague best-effort priority at its luckiest moments.
-
-So, I don't think your suggested solution is a solution at all.  I'm
-in fact not even sure what it achieves at the cost of the gross
-layering violation and fundamental design braindamage.
-
->         - No more latency
->         - No performance drop
->         - No bumpy progress and stalls
->         - No need to attach memcg to blkcg
->         - Feel free to create 1000+ IO controllers, to heart's content
->           w/o worrying about costs (if any, it would be some existing
->           scalability issues)
-
-I'm not sure why memcg suddenly becomes necessary with blkcg and I
-don't think having per-blkcg writeback and reasonable async
-optimization from iosched would be considerably worse.  It sure will
-add some overhead (e.g. from split buffering) but there will be proper
-working isolation which is what this fuss is all about.  Also, I just
-don't see how creating 1000+ (relatively active, I presume) blkcgs on
-a single spindle would be sane and how is the end result gonna be
-significantly better for your suggested solution, so let's please put
-aside the silly non-use case.
-
-In terms of overhead, I suspect the biggest would be the increased
-buffering coming from split channels but that seems like the cost of
-business to me.
-
-Thanks.
-
--- 
-tejun
+Eric
