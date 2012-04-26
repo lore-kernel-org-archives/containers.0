@@ -1,7 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 01/11] blkcg: fix blkg_alloc() failure path
-Date: Thu, 26 Apr 2012 14:59:11 -0700
-Message-ID: <1335477561-11131-2-git-send-email-tj@kernel.org>
+Subject: [PATCH 02/11] blkcg: __blkg_lookup_create() doesn't have to fail on
+	radix tree preload failure
+Date: Thu, 26 Apr 2012 14:59:12 -0700
+Message-ID: <1335477561-11131-3-git-send-email-tj@kernel.org>
 References: <1335477561-11131-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,35 +22,60 @@ To: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org
 Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-When policy data allocation fails in the middle, blkg_alloc() invokes
-blkg_free() to destroy the half constructed blkg.  This ends up
-calling pd_exit_fn() on policy datas which didn't go through
-pd_init_fn().  Fix it by making blkg_alloc() call pd_init_fn()
-immediately after each policy data allocation.
+__blkg_lookup_create() currently fails if radix_tree_preload() fails;
+however, preload failrue doesn't imply insertion failure.  Don't fail
+__blkg_lookup_create() on preload failure.
+
+While at it, drop sparse locking annotation which no longer applies.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/blk-cgroup.c |    6 +-----
- 1 files changed, 1 insertions(+), 5 deletions(-)
+ block/blk-cgroup.c |   13 +++++--------
+ 1 files changed, 5 insertions(+), 8 deletions(-)
 
 diff --git a/block/blk-cgroup.c b/block/blk-cgroup.c
-index 02cf633..4ab7420 100644
+index 4ab7420..197fb50 100644
 --- a/block/blk-cgroup.c
 +++ b/block/blk-cgroup.c
-@@ -125,12 +125,8 @@ static struct blkcg_gq *blkg_alloc(struct blkcg *blkcg, struct request_queue *q)
+@@ -177,9 +177,9 @@ EXPORT_SYMBOL_GPL(blkg_lookup);
  
- 		blkg->pd[i] = pd;
- 		pd->blkg = blkg;
--	}
--
--	/* invoke per-policy init */
--	for (i = 0; i < BLKCG_MAX_POLS; i++) {
--		struct blkcg_policy *pol = blkcg_policy[i];
+ static struct blkcg_gq *__blkg_lookup_create(struct blkcg *blkcg,
+ 					     struct request_queue *q)
+-	__releases(q->queue_lock) __acquires(q->queue_lock)
+ {
+ 	struct blkcg_gq *blkg;
++	bool preloaded;
+ 	int ret;
  
-+		/* invoke per-policy init */
- 		if (blkcg_policy_enabled(blkg->q, pol))
- 			pol->pd_init_fn(blkg);
+ 	WARN_ON_ONCE(!rcu_read_lock_held());
+@@ -203,9 +203,7 @@ static struct blkcg_gq *__blkg_lookup_create(struct blkcg *blkcg,
+ 		goto err_put;
+ 
+ 	/* insert */
+-	ret = radix_tree_preload(GFP_ATOMIC);
+-	if (ret)
+-		goto err_free;
++	preloaded = !radix_tree_preload(GFP_ATOMIC);
+ 
+ 	spin_lock(&blkcg->lock);
+ 	ret = radix_tree_insert(&blkcg->blkg_tree, q->id, blkg);
+@@ -215,14 +213,13 @@ static struct blkcg_gq *__blkg_lookup_create(struct blkcg *blkcg,
  	}
+ 	spin_unlock(&blkcg->lock);
+ 
+-	radix_tree_preload_end();
+-
++	if (preloaded)
++		radix_tree_preload_end();
+ 	if (!ret)
+ 		return blkg;
+-err_free:
+-	blkg_free(blkg);
+ err_put:
+ 	css_put(&blkcg->css);
++	blkg_free(blkg);
+ 	return ERR_PTR(ret);
+ }
+ 
 -- 
 1.7.7.3
