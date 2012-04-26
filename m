@@ -1,16 +1,18 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCHSET] block: per-queue policy activation, take#2
-Date: Wed, 25 Apr 2012 11:19:05 -0700
-Message-ID: <20120425181905.GA8989@google.com>
-References: <1334347895-6268-1-git-send-email-tj@kernel.org>
-	<20120420080943.GG7505@kernel.dk> <4F91503D.2060402@kernel.dk>
-	<20120420171742.GC32324@google.com> <4F91B433.2070209@kernel.dk>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 27/43] userns: Use uid_eq gid_eq helpers when comparing
+	kuids and kgids in the vfs
+Date: Thu, 26 Apr 2012 00:11:01 +0000
+Message-ID: <20120426001101.GA10308@mail.hallyn.com>
+References: <m11unyn70b.fsf@fess.ebiederm.org>
+	<1333862139-31737-27-git-send-email-ebiederm@xmission.com>
+	<20120418190337.GE5186@mail.hallyn.com>
+	<m1sjfx2950.fsf@fess.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4F91B433.2070209-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
+In-Reply-To: <m1sjfx2950.fsf-+imSwln9KH6u2/kzUuoCbdi2O/JbrIOy@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,34 +22,51 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
-Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Cyrill Gorcunov <gorcunov-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, Apr 20, 2012 at 09:08:35PM +0200, Jens Axboe wrote:
-> On 2012-04-20 19:17, Tejun Heo wrote:
-> > Hello, Jens.
-> > 
-> > On Fri, Apr 20, 2012 at 02:02:05PM +0200, Jens Axboe wrote:
-> >> Tejun, everything merged in cleanly. A boot test didn't not go so well,
-> >> I'm afraid. It complains about stuck RCU. Even with extra RCU
-> >> debugging/info turned on, it doesn't give my any extra info.
-> >>
-> >> Config is attached. I can try and debug this on Monday, for now I've
-> >> pulled it out of for-next again.
-> > 
-> > Hmmm... it works fine with the same config here (qemu w/ 4 cpus
-> > configured).  Doesn't stuck RCU usually come from unbalanced RCU
-> > lock/unlocking?  That should trigger context or RCU warnings before
-> > anything else, weird.  Anyways, it would be great if you can provide
-> > more info on how to reproduce the problem.
+Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
 > 
-> The machine just sat there. I'll get some more info out of it and run a
-> bisect too.
+> > Quoting Eric W. Beiderman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> >> From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> >> 
+> >> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> >> ---
+> >>  fs/attr.c                |    8 ++++----
+> >>  fs/exec.c                |   10 +++++-----
+> >>  fs/fcntl.c               |    6 +++---
+> >>  fs/ioprio.c              |    4 ++--
+> >>  fs/locks.c               |    2 +-
+> >>  fs/namei.c               |    8 ++++----
+> >>  include/linux/quotaops.h |    4 ++--
+> >>  7 files changed, 21 insertions(+), 21 deletions(-)
+> >> 
+> 
+> >> @@ -2120,7 +2120,7 @@ void do_coredump(long signr, int exit_code, struct pt_regs *regs)
+> >>  	if (__get_dumpable(cprm.mm_flags) == 2) {
+> >>  		/* Setuid core dump mode */
+> >>  		flag = O_EXCL;		/* Stop rewrite attacks */
+> >> -		cred->fsuid = 0;	/* Dump root private */
+> >> +		cred->fsuid = GLOBAL_ROOT_UID;	/* Dump root private */
+> >
+> > Sorry, one more - can this be the per-ns root uid?  The coredumps should
+> > be ok to belong to privileged users in the namespace right?
+> 
+> I'm not certain it was clear when you were looking at this that
+> this is about dumping core from suid applications, not normal
+> applications. 
+> 
+>  Looking at the code in commoncap and commit_creds it looks like it is a
+> bug that we don't call set_dumpable(new, suid_dumpable) in common cap
+> when we use file capabilities.  I might be wrong but I think we escape
 
-Any progress on this?
+We do, check kernel/cred.c:commit_creds().  So long as the new permitted
+set is not a subset of the old one.
 
-Thanks.
+Tested it to make absolutely sure.  When I add file capabilities to a
+program that otherwise dumps core (int *x = 0; *x = 0;), core dumps are
+no longer generated.
 
--- 
-tejun
+-serge
