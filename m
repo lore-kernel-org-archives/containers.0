@@ -1,13 +1,11 @@
-From: "Rick" <pzepzgu-O5WfVfzUwx8@public.gmane.org>
-Subject: =?GB2312?B?RGlnaXRhbCBQaG90byBFZGl0aW5nIFNlcnZpY2VzIC0gUGhvdG8gQ3V0b3V0?=
-Date: Sun, 29 Apr 2012 23:55:44 +0800
-Message-ID: <20120429154553.1F5E8280@mail.linuxfoundation.org>
-Reply-To: ibimaging-9Onoh4P/yGk@public.gmane.org
+From: Kim Braden <kim.braden-NBK5sZRDDX9l57MIdRCFDg@public.gmane.org>
+Subject: The New Loclville - A hyper-local shout out!
+Date: Mon, 30 Apr 2012 10:08:08 -0500
+Message-ID: <e32d1fbe7891baa3a7e83a2185606295@newsletter.loclville.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,56 +15,36 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers <containers-CY3SLAzk4GaakBO8gow8eQ@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-You are receiving this email because we wish you to use our digital photo editing services.
-
-We are a China based Imaging Professionals. We offer basic and advanced digital photo Editing services and solutions like photo Cutout, morphological photo Editing, photoshop photo Editing, satellite photo Editing, color photo Editing and vector photo Editing using latest techniques.
-
-Our mainly services are:
-
-1. Photo Cutout
-2. Photo Enhancement
-3. Photo Retouching
-4. Vector Conversion
-5. Pop Art
-6. Images Masking
-7. Clipping Path
-8. Photo Restoration
-9. Web Design
-
-Looking forward to work for you!
-
-Best regards,
-Rick
-Wansaksomi Imaging Professionals
-Contact: ibwallace-Mj/0Miq2reM@public.gmane.org
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Send address to imremove-Mj/0Miq2reM@public.gmane.org for remove
+SGF2aW5nIFRyb3VibGUgVmlld2luZyBUaGlzIEVtYWlsPyBDbGljayBIZXJlLgo8aHR0cDovL2xv
+Y2x2aWxsZS5jb20vbmV3c2xldHRlci9uZXdzbGV0dGVyMDAwMDA3Lmh0bWw+CgogTG9jbHZpbGxl
+IFlvdXIgcGxhY2UgZm9yIGEgaHlwZXItbG9jYWwgc2hvdXQgb3V0IQogVHdpdHRlciA8aHR0cDov
+L3R3aXR0ZXIuY29tL2xvY2x2aWxsZT4KfEZhY2Vib29rIDxodHRwOi8vd3d3LmZhY2Vib29rLmNv
+bS9sb2NsdmlsbGU+CgogVGhlIE5ldyBMb2NsdmlsbGUhIDxodHRwOi8vd3d3LmxvY2x2aWxsZS5j
+b20vPgoKIEEgdmlydHVhbCB1c2VyLWZyaWVuZGx5IGNvbW11bml0eSBib2FyZCBmb3IgeW91IGFu
+ZCB5b3VyIG5laWdoYm9ycyB0bwpicm93c2UgYXJvdW5k4oCmIHlvdXIgb3duIG5laWdoYm9yaG9v
+ZCEgRnJvbSB5YXJkIHNhbGVzIHRvIGNhcnBlbnRyeQpjbGFzc2VzLCByb2FkIGNsb3N1cmVzIHRv
+IHdlYXRoZXIgYWxlcnRzLCB0aGlzIGlzIHlvdXIgcGxhY2UgZm9yIGEKaHlwZXItbG9jYWwgc2hv
+dXQgb3V0ISA8aHR0cDovL3d3dy5sb2NsdmlsbGUuY29tLz4KCiBBYm91dCBMb2NsdmlsbGUKCiBX
+ZWxjb21lIHRvIGEgbmV3IG9sZCBmYXNoaW9uZWQgd2F5IHRvIGludGVyYWN0LgoKIFdoYXQgeW91
+IHNlZSBpcyBhIGNvbW11bml0eSBib2FyZCB0aGF0IGJlbG9uZ3MgdG8geW91IGFuZCB5b3VyCm5l
+aWdoYm9ycyBPTkxZLgoKIEEgbWF4aW11bSByYWRpdXMgb2YgdGhpcnR5IG1pbGVzLCBhIG1pbmlt
+dW0gb2Ygb25lIGJsb2NrLiBUaGUgY2hvaWNlCmlzIHlvdXJzLgoKIFdlIE5ldmVyIFNBVkUgeW91
+ciBwYXNzd29yZHMhIQoKIFdlIHN1cHBseSB0aGUgQm9hcmQgYW5kIHRoZSB0b29scyB0byB1c2Ug
+aXQgYW5kIHRoYXQncyBBTEwhIQoKIEFwYXJ0IGZyb20gdGhlIG9idmlvdXMsV2UgbWFrZSBubyBq
+dWRnZW1lbnQgdG8gdGhlIGNvbnRlbnQgcG9zdGVkLgpUaGF0IGlzIHVwIHRvIHlvdSBhbmQgeW91
+ciBuZWlnaGJvcnMuIFRocmVlIGxvY2FsIGRpc2xpa2VzIGFuZCBpdCdzCmdvbmUuCgogbG9jbHZp
+bGxlLmNvbSBzYXZlcyB5b3UgdGltZSBhbmQgc2hvd3MgeW91IHdoYXQncyBnb2luZyBvbiByaWdo
+dAp3aGVyZSB5b3UgbGl2ZS4gTGV0IHlvdXIgdm9pY2UgYmUgaGVhcmQsIG1ha2Ugc29tZXRoaW5n
+IGhhcHBlbiwgZmluZApsaWtlIG1pbmRlZCwgc2VlayBoZWxwIGFtb25nIHlvdXIgY2xvc2UgbmVp
+Z2hib3JzLCBmaW5kIHRob3NlIHdobyBuZWVkCmhlbHAuIEtlZXAgc21hbGwgYnVzaW5lc3NlcyBn
+b2luZy4gU2F2ZSBvbiBnYXMhISBXaGF0IGFwcGVhcnMgb24geW91cgpCb2FyZCBpcyBhIHJlZmxl
+Y3Rpb24gb2YgWU9VUiBDT01NVU5JVFkuIEZyZWUgZm9yIGV2ZXJ5b25lIHRvIHBvc3QsCmJyb3dz
+ZSBhbmQgY29ubmVjdC4KCgoKLS0KVG8gdW5zdWJzY3JpYmUgZnJvbSB0aGlzIGxpc3QgdmlzaXQK
+aHR0cDovL25ld3NsZXR0ZXIubG9jbHZpbGxlLmNvbS8/cD11bnN1YnNjcmliZSZ1aWQ9YWYyZGU1
+OGE2MTU5MTE5OWU5ZTVkNjVlMmNlMzY1OGUKCgoKCl9fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNA
+bGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24u
+b3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
