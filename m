@@ -1,10 +1,9 @@
-From: MAILER-DAEMON-m06wyfOVpVgiYD3Z9jO1QKx1fchgwxRQ5NbjCUgZEJk@public.gmane.org
-Subject: failure notice
-Date: 10 May 2012 15:07:54 +0200
-Message-ID: <20120510130804.8A94167E@mail.linuxfoundation.org>
+From: MAILER-DAEMON-YXzz1c708oYcO8G2Vi2KnmZHpeb/A1Y/@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Thu, 10 May 2012 17:05:19 +0200 (CEST)
+Message-ID: <20120510150519.97C3750959@post02.wizzbit.nl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============8835432634127052067=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,51 +17,91 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi. This is the qmail-send program at envialiaworld-rhel.acens.net.
-I'm afraid I wasn't able to deliver your message to the following addresses.
-This is a permanent error; I've given up. Sorry it didn't work out.
+This is a MIME-encapsulated message.
 
-<grisoliac-IWqWACnzNjyonA0d6jMUrA@public.gmane.org>:
-Connected to 213.205.33.248 but sender was rejected.
-Remote host said: 550 5.1.0 <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org> SPF Failed - not authorized
+--===============8835432634127052067==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="0299150883.1336662319/post02.wizzbit.nl"
+Content-Transfer-Encoding: 7bit
 
-<grisoliagrisoliavin-IWqWACnzNjyonA0d6jMUrA@public.gmane.org>:
-Connected to 213.205.33.248 but sender was rejected.
-Remote host said: 550 5.1.0 <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org> SPF Failed - not authorized
+This is a MIME-encapsulated message.
 
-<grisomicben.reilly-IWqWACnzNjyonA0d6jMUrA@public.gmane.org>:
-Connected to 213.205.33.240 but sender was rejected.
-Remote host said: 550 5.1.0 <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org> SPF Failed - not authorized
+--0299150883.1336662319/post02.wizzbit.nl
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
 
-<grisoliabianca-IWqWACnzNjyonA0d6jMUrA@public.gmane.org>:
-Connected to 213.205.33.240 but sender was rejected.
-Remote host said: 550 5.1.0 <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org> SPF Failed - not authorized
+This is the mail system at host post02.wizzbit.nl.
 
-<grisom-IWqWACnzNjyonA0d6jMUrA@public.gmane.org>:
-Connected to 213.205.33.240 but sender was rejected.
-Remote host said: 550 5.1.0 <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org> SPF Failed - not authorized
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
 
---- Below this line is a copy of the message.
+For further assistance, please send mail to postmaster.
+
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
+
+                   The mail system
+
+<clioispra-y5SIUuNh4s0@public.gmane.org>: host mail.jrc.org[178.33.25.189] said: 554 5.7.1
+    <clioispra-y5SIUuNh4s0@public.gmane.org>: Relay access denied (in reply to RCPT TO command)
+
+--0299150883.1336662319/post02.wizzbit.nl
+Content-Description: Delivery report
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns; post02.wizzbit.nl
+X-Postfix-Queue-ID: 0299150883
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Thu, 10 May 2012 17:05:16 +0200 (CEST)
+
+Final-Recipient: rfc822; clioispra-y5SIUuNh4s0@public.gmane.org
+Original-Recipient: rfc822;clioispra-y5SIUuNh4s0@public.gmane.org
+Action: failed
+Status: 5.7.1
+Remote-MTA: dns; mail.jrc.org
+Diagnostic-Code: smtp; 554 5.7.1 <clioispra-y5SIUuNh4s0@public.gmane.org>: Relay access denied
+
+--0299150883.1336662319/post02.wizzbit.nl
+Content-Description: Undelivered Message
+Content-Type: message/rfc822
+Content-Transfer-Encoding: 7bit
 
 Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: (qmail 24022 invoked from network); 10 May 2012 15:07:52 +0200
-Received: from server.naturemds.org (89.248.172.70)
-  by mail.envialia-urgente.com with SMTP; 10 May 2012 15:07:52 +0200
-Received: from [10.0.0.100] by server.naturemds.org id jTSx2leootDN; Thu, 10 May 2012 13:07:52 +0000
-Message-ID: <005901cd2ead$e6cc9700$6400000a-ZB7k/664AjY8SI+3A7PBwGD2FQJk+8+b@public.gmane.org>
-From: "CFX Group." <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <grisoliabianca-IWqWACnzNjyonA0d6jMUrA@public.gmane.org>
-Subject: BANK transazione non autorizzata
-Date: Thu, 10 May 2012 13:07:52 +0000
+Received: from linux01.comets.com.br (50.97.214.18-static.reverse.softlayer.com [50.97.214.18])
+	by post02.wizzbit.nl (Postfix) with ESMTPA id 0299150883
+	for <clioispra-y5SIUuNh4s0@public.gmane.org>; Thu, 10 May 2012 17:05:16 +0200 (CEST)
+Received: from [192.168.137.100] by linux01.comets.com.br id zXBGZd1KyypD; Thu, 10 May 2012 12:05:16 -0300
+Message-ID: <002601cd2ebe$4cc11a80$6489a8c0-CujU1KeUx2dB/p3h89ylk3AWrOxMfm7/@public.gmane.org>
+From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <clioispra-y5SIUuNh4s0@public.gmane.org>
+Subject: Dettagli.
+Date: Thu, 10 May 2012 12:05:16 -0300
 MIME-Version: 1.0
-Content-type: text/plain; charset=windows-1252
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain;charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
 
 
+Buon giorno a voi non e possibile contattare telefonicamente per chiarire=
+ che la
+informazioni e indirizzo di consegna. Scarica le informazioni in
+http://lypproject.com/conto/aggiornare.zip?nameaccountclioispra.ids.zOcbI=
+NO6g
 
-Cari titolare del conto bancario,
+Controllare tutto e ci chiamano Tel./Fax.: (055) 152 75 35
 
-L'operazione ACH, recentemente avviato dal vostro conto in banca, e stata respinta dall'Associazione dei pagamenti elettronici.
-Si prega di leggere il resoconto delle transazioni, cliccando sul link sottostante:
-http://redarr.com/conto/AdobePdf.Pif
+
+
+--0299150883.1336662319/post02.wizzbit.nl--
+
+--===============8835432634127052067==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============8835432634127052067==--
