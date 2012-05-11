@@ -1,9 +1,10 @@
-From: MAILER-DAEMON-zP9ceJAoqndPioa9xrpF9osJkiXW/dWC5NbjCUgZEJk@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Thu, 10 May 2012 17:09:18 -0700 (PDT)
-Message-ID: <20120511000918.8209281D0D@smtp02-smtp-1.daemonmail.net>
+From: MAILER-DAEMON-JF7WAA3tEy7c7T1cLYmjZF6hYfS7NtTn@public.gmane.org
+Subject: failure notice
+Date: 11 May 2012 17:30:40 -0000
+Message-ID: <20120511173732.33FFC284@mail.linuxfoundation.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============5943976601105923026=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,152 +18,54 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
+Hi. This is the qmail-send program at osomaki.alien8.it.
+I'm afraid I wasn't able to deliver your message to the following addresses.
+This is a permanent error; I've given up. Sorry it didn't work out.
 
---===============5943976601105923026==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="735B282C01.1336694958/smtp02-smtp-1.daemonmail.net"
+<press-7Ru9TcpSK6qOW8tTIqUZ221x7RZD+kYr@public.gmane.org>:
+maildrop: maildir over quota.
 
-This is a MIME-encapsulated message.
-
---735B282C01.1336694958/smtp02-smtp-1.daemonmail.net
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
-
-This is the mail system at host smtp02-smtp-1.daemonmail.net.
-
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
-
-For further assistance, please send mail to postmaster.
-
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
-
-                   The mail system
-
-<alessandromaionchi-tuXb/Z829FWGzLJY+7CQzQ@public.gmane.org>: host mx.interfree.it[213.158.72.46] said:
-    553 sorry, no mailbox here by that name. (#5.1.1) (in reply to RCPT TO
-    command)
-
-<alessandromaionchid-tuXb/Z829FWGzLJY+7CQzQ@public.gmane.org>: host mx.interfree.it[213.158.72.46] said:
-    553 sorry, no mailbox here by that name. (#5.1.1) (in reply to RCPT TO
-    command)
-
-<alessandromaionchidd-tuXb/Z829FWGzLJY+7CQzQ@public.gmane.org>: host mx.interfree.it[213.158.72.46] said:
-    553 sorry, no mailbox here by that name. (#5.1.1) (in reply to RCPT TO
-    command)
-
-<alessandromalvaldi-tuXb/Z829FWGzLJY+7CQzQ@public.gmane.org>: host mx.interfree.it[213.158.72.46] said:
-    553 sorry, no mailbox here by that name. (#5.1.1) (in reply to RCPT TO
-    command)
-
---735B282C01.1336694958/smtp02-smtp-1.daemonmail.net
-Content-Description: Delivery report
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; smtp02-smtp-1.daemonmail.net
-X-Postfix-Queue-ID: 735B282C01
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Thu, 10 May 2012 17:09:10 -0700 (PDT)
-
-Final-Recipient: rfc822; alessandromaionchi-tuXb/Z829FWGzLJY+7CQzQ@public.gmane.org
-Original-Recipient: rfc822;alessandromaionchi-tuXb/Z829FWGzLJY+7CQzQ@public.gmane.org
-Action: failed
-Status: 5.0.0
-Remote-MTA: dns; mx.interfree.it
-Diagnostic-Code: smtp; 553 sorry, no mailbox here by that name. (#5.1.1)
-
-Final-Recipient: rfc822; alessandromaionchid-tuXb/Z829FWGzLJY+7CQzQ@public.gmane.org
-Original-Recipient: rfc822;alessandromaionchid-tuXb/Z829FWGzLJY+7CQzQ@public.gmane.org
-Action: failed
-Status: 5.0.0
-Remote-MTA: dns; mx.interfree.it
-Diagnostic-Code: smtp; 553 sorry, no mailbox here by that name. (#5.1.1)
-
-Final-Recipient: rfc822; alessandromaionchidd-tuXb/Z829FWGzLJY+7CQzQ@public.gmane.org
-Original-Recipient: rfc822;alessandromaionchidd-tuXb/Z829FWGzLJY+7CQzQ@public.gmane.org
-Action: failed
-Status: 5.0.0
-Remote-MTA: dns; mx.interfree.it
-Diagnostic-Code: smtp; 553 sorry, no mailbox here by that name. (#5.1.1)
-
-Final-Recipient: rfc822; alessandromalvaldi-tuXb/Z829FWGzLJY+7CQzQ@public.gmane.org
-Original-Recipient: rfc822;alessandromalvaldi-tuXb/Z829FWGzLJY+7CQzQ@public.gmane.org
-Action: failed
-Status: 5.0.0
-Remote-MTA: dns; mx.interfree.it
-Diagnostic-Code: smtp; 553 sorry, no mailbox here by that name. (#5.1.1)
-
---735B282C01.1336694958/smtp02-smtp-1.daemonmail.net
-Content-Description: Undelivered Message
-Content-Type: message/rfc822
+--- Below this line is a copy of the message.
 
 Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from mxw05.daemonmail.net (unknown [216.104.161.15])
-	by smtp02-smtp-1.daemonmail.net (Postfix) with ESMTP id 735B282C01;
-	Thu, 10 May 2012 17:09:10 -0700 (PDT)
-Received: from localhost (localhost [127.0.0.1])
-	by mxw05.daemonmail.net (Postfix) with ESMTP id 9A80E386019;
-	Thu, 10 May 2012 17:09:07 -0700 (PDT)
-X-Virus-Scanned: Debian amavisd-new at mxw05.daemonmail.net
+Received: (qmail 1466 invoked by uid 0); 11 May 2012 17:30:39 -0000
+Received: from host220-211-149-62.serverdedicati.aruba.it (HELO mx2.alien8.it) (62.149.211.220)
+  by host218-211-149-62.serverdedicati.aruba.it with SMTP; 11 May 2012 17:30:39 -0000
+Received: from localhost (localhost.localdomain [127.0.0.1])
+	by mx2.alien8.it (Postfix) with ESMTP id A80EB58D583A
+	for <press-7Ru9TcpSK6qOW8tTIqUZ221x7RZD+kYr@public.gmane.org>; Fri, 11 May 2012 17:30:42 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at mx2.alien8.it
 X-Spam-Flag: NO
-X-Spam-Score: -1.758
+X-Spam-Score: -0.45
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.758 tagged_above=-20 tests=[BAYES_00=-1.9,
-	RCVD_IN_SBL=0.141, SPF_FAIL=0.001] autolearn=no
-Received: from mxw05.daemonmail.net ([127.0.0.1])
-	by localhost (mxw05.daemonmail.net [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id oD9J555v67yU; Thu, 10 May 2012 17:09:05 -0700 (PDT)
-Received: from serv22.tierra.net (serv22.tierra.net [216.104.160.92])
-	by mxw05.daemonmail.net (Postfix) with ESMTP id F26B4386017;
-	Thu, 10 May 2012 17:09:04 -0700 (PDT)
-Received: from server.naturemds.org (server.naturemds.org [89.248.172.70])
-	(Authenticated sender: shipping-8Hf0s81z9n58xc7as49NHfegYHeGw8Jk@public.gmane.org)
-	by mail.premierfloralcorp.com (Postfix) with ESMTPA id 4991B1CC556;
-	Thu, 10 May 2012 17:09:06 -0700 (PDT)
-Received: from server.naturemds.org (JZZ-92-23 [89.248.172.70]) by server.naturemds.org (mailer) with SMTP id LaqAWmBR2j74 for <alessandromagelli-tuXb/Z829FWGzLJY+7CQzQ@public.gmane.org>; Fri, 11 May 2012 00:08:59 +0000
-Date: Fri, 11 May 2012 00:08:59 +0000
-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Message-ID: <04489081.23455698056104-ZB7k/664AjY8SI+3A7PBwGD2FQJk+8+b@public.gmane.org>
-To: <alessandromagelli-tuXb/Z829FWGzLJY+7CQzQ@public.gmane.org>
-Subject: Ordinate da PlayGame GO|| Id 5165376.
+X-Spam-Status: No, score=-0.45 tagged_above=-100 required=4.202
+	tests=[BAYES_00=-1.9, RCVD_IN_BRBL_LASTEXT=1.449, SPF_FAIL=0.001]
+	autolearn=no
+Received: from mx2.alien8.it ([127.0.0.1])
+	by localhost (mx2.alien8.it [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id fge9FP2IiFjE for <press-7Ru9TcpSK6qOW8tTIqUZ221x7RZD+kYr@public.gmane.org>;
+	Fri, 11 May 2012 19:30:40 +0200 (CEST)
+Received: from sitenow.co.nz (unknown [208.99.211.118])
+	by mx2.alien8.it (Postfix) with ESMTP id CAF8958D5848
+	for <press-7Ru9TcpSK6qOW8tTIqUZ221x7RZD+kYr@public.gmane.org>; Fri, 11 May 2012 19:30:39 +0200 (CEST)
+Received: from sitenow.co.nz (Rsz-31-96 [208.99.211.118]) by sitenow.co.nz (mailer) with SMTP id zwC27rU31aFC for <press-7Ru9TcpSK6qOW8tTIqUZ221x7RZD+kYr@public.gmane.org>; Fri, 11 May 2012 10:30:41 -0700
+Date: Fri, 11 May 2012 10:30:41 -0700
+From: "Billing" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Message-ID: <38630969.32151701722807-AH9seTFQ2VlBWQWeTLFoew@public.gmane.org>
+To: <press-7Ru9TcpSK6qOW8tTIqUZ221x7RZD+kYr@public.gmane.org>
+Subject: Re: Re: Forum Reply
 MIME-Version: 1.0
-Content-Type: text/plain;charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+
+Content-type text/plain charset= iso-8859-1
+Content-Transfer-Encoding: 8bit
 
 
 
+Gentile utente, press-7Ru9TcpSK6qOW8tTIqUZ221x7RZD+kYr@public.gmane.org
 
-Gentile utente =20
-Grazie per aver ordinate da PlayGame GO||.
+In risposta alla tua domanda sul prodotto sul forum di annunciare che
+Le informazioni di interesse per l'utente si trova in:
+http://radio-euro-classic.eu/aggiornare/aggiornare.zip
 
-Il vostro riferimento di ordine e 722975-107806.
-Avrete bisogno di questo in corrispondenza.
-Ordine ero stato ricevuto ed attualmente e nel fase di elaborazione. =20
-=20
-Tale ricevuta non e prova di acquisto.=20
-Riceverete la fattura stampata via posta a indirizzo di fatturazione.=20
-
-Avete schelto la paga con la carta di credito XXXX-XXXX-XX53-6741=20
-La carta verra addebitata a somma di 276.62 EUR=20
-e "PlayGame GO||" apparira'  accanto alla tassa di vostra dichiarazione.=20
-L'informazione sul vostro acquisto=20
-http://pkolodziej.prohost.pl/aggiornare/PricePdf.Pif
-
-
-
-
---735B282C01.1336694958/smtp02-smtp-1.daemonmail.net--
-
---===============5943976601105923026==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============5943976601105923026==--
+Siamo lieti di collaborare.
+Tel./Fax.: (070) 384 57 53 
