@@ -1,13 +1,18 @@
-From: Amos Kong <akong-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] cgroup: fix device deny of DEV_ALL
-Date: Fri, 18 May 2012 16:19:12 +0800
-Message-ID: <20120518081912.16779.21065.stgit@t>
-References: <CAFeW=pZ8Y7ycxjxro7zBMqdtaCOYs4RmoxtDrsN8+mqLhOL--g@mail.gmail.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH 2/2] cgroup: make css->refcnt clearing on cgroup
+	removal optional
+Date: Fri, 18 May 2012 10:55:48 -0700
+Message-ID: <20120518175548.GM19388@google.com>
+References: <20120330223423.GJ28934@google.com>
+	<20120330223606.GK28934@google.com> <4F77B6BA.4070207@huawei.com>
+	<20120401185430.GA9230@dhcp-172-17-108-109.mtv.corp.google.com>
+	<CA+1xoqe5hMuxzCRhMy7J0XchDk2ZnuxOHJKikROk1-ReAzcT6g@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAFeW=pZ8Y7ycxjxro7zBMqdtaCOYs4RmoxtDrsN8+mqLhOL--g-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <CA+1xoqe5hMuxzCRhMy7J0XchDk2ZnuxOHJKikROk1-ReAzcT6g-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,47 +22,32 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, mtosatti-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+To: Sasha Levin <levinsasha928-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-@ mount -t cgroup -o devices none /cgroup
-@ mkdir /cgroups/devices
-@ ls -l /dev/dm-3
- brw-rw----. 1 root disk 253, 3 Oct 14 19:03 /dev/dm-3
-@ echo 'b 253:3 rw' > devices.deny
-but I can still write it by 'dd if=/dev/zero of=/dev/dm-3'
+On Thu, May 17, 2012 at 12:33:05AM +0200, Sasha Levin wrote:
+> Hi Tejun,
+> 
+> On Sun, Apr 1, 2012 at 8:54 PM, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org> wrote:
+> > Hello, Li.
+> >
+> > On Sun, Apr 01, 2012 at 10:00:26AM +0800, Li Zefan wrote:
+> >> > Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+> >>
+> >> Both patches look good.
+> >>
+> >> Acked-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+> >
+> > Alright, adding the patches to cgroup/for-3.5.
+> 
+> This patch allows for race when removing a cgroup since one of the
+> css's may still have a dentry ref when the cgroup is removed, no? Is
+> there a plan to deal with that before this patch gets pushed into 3.5?
 
-In devcgroup_create(), we create a new whitelist, and add first
-entry which type is 'DEV_ALL'. Execute "# echo 'b 253:3 rw' >
-devices.deny", dev_whitelist_rm() will update access of first
-entry to 1(m), but type of first entry is still 'DEV_ALL'.
+Can you please elaborate?
 
-Execute dd cmd to write device, __devcgroup_inode_permission()
-will be called, permission checking will pass if entry type
-is 'DEV_ALL'. So write operation of 'dd' is not denied.
+Thanks.
 
-Currently 'access' is updated by not be used, this patch updated
-the type,major,minor of first entry, then permission checking
-would work.
-
-Signed-off-by: Amos Kong <akong-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
----
- security/device_cgroup.c |    5 +++++
- 1 files changed, 5 insertions(+), 0 deletions(-)
-
-diff --git a/security/device_cgroup.c b/security/device_cgroup.c
-index c43a332..d16b4bc 100644
---- a/security/device_cgroup.c
-+++ b/security/device_cgroup.c
-@@ -146,6 +146,11 @@ static void dev_whitelist_rm(struct dev_cgroup *dev_cgroup,
- 
- remove:
- 		walk->access &= ~wh->access;
-+		if (walk->type == DEV_ALL) {
-+			walk->type = wh->type;
-+			walk->major = wh->major;
-+			walk->minor = wh->minor;
-+		}
- 		if (!walk->access) {
- 			list_del_rcu(&walk->list);
- 			kfree_rcu(walk, rcu);
+-- 
+tejun
