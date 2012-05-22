@@ -1,12 +1,11 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [GIT PULL] cgroup changes for 3.5-rc1
-Date: Tue, 22 May 2012 10:34:50 -0700
-Message-ID: <20120522173450.GG14339@google.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: [GIT PULL] user namespace enhancements for Linux 3.5-rc1
+Date: Tue, 22 May 2012 12:48:47 -0600
+Message-ID: <87hav8vypc.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,83 +16,205 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello, Linus.
 
-Please pull from the following branch to receive cgroup changes for
-3.5-rc1.
+Linus,
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git for-3.5
+please pull user namespace enhancements for v3.5-rc1 from:
 
-cgroup file type addition / removal is updated so that file types are
-added and removed instead of individual files so that dynamic file
-type addition / removal can be implemented by cgroup and used by
-controllers.  blkio controller changes which will come through block
-tree are dependent on this.  Other changes include res_counter cleanup
-and disallowing kthread / PF_THREAD_BOUND threads to be attached to
-non-root cgroups.
+git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-linus
 
-There's a reported bug with the file type addition / removal handling
-which can lead to oops on cgroup umount.  The issue is being looked
-into.  It shouldn't cause problems for most setups and isn't a
-security concern.
+The tree is against v3.4-rc1 aka dd775ae2549217d3ae09363e3edb305d0fa19928
+The topmost commit is 4b06a81f1daee668fbd6de85557bfb36dd36078f
 
-Merging with mainline causes a conflict in
-feature-removal-schedule.txt.  Simple append collision which can be
-trivially resolved.
+This is a course correction for the user namespace, so that we can reach
+an inexpensive, maintainable, and reasonably complete implementation.
 
-Thanks.
+Highlights.
+- Config guards make it impossible to enable the user namespace and
+  code that has not been converted to be user namespace safe.
 
-Frederic Weisbecker (2):
-      res_counter: Merge res_counter_charge and res_counter_charge_nofail
-      res_counter: Account max_usage when calling res_counter_charge_nofail()
+- Use of the new kuid_t type ensures the if you somehow get past the
+  config guards the kernel will encounter type errors if you enable user
+  namespaces and attempt to compile in code whose permission checks have
+  not been updated to be user namespace safe.
 
-Glauber Costa (2):
-      cgroup: pass struct mem_cgroup instead of struct cgroup to socket memcg
-      cgroup: get rid of populate for memcg
+- All uids from child user namespaces are mapped into the initial user
+  namespace before they are processed.  Removing the need to add an
+  additional check to see if the user namespace of the compared uids
+  remains the same.
 
-Mike Galbraith (1):
-      cgroups: disallow attaching kthreadd or PF_THREAD_BOUND threads
+- With the user namespaces compiled out the performance is as good or
+  better than it is today.
 
-Tejun Heo (16):
-      cgroup: deprecate remount option changes
-      cgroup: move cgroup_clear_directory() call out of cgroup_populate_dir()
-      cgroup: build list of all cgroups under a given cgroupfs_root
-      cgroup: implement cgroup_add_cftypes() and friends
-      cgroup: merge cft_release_agent cftype array into the base files array
-      cgroup: relocate cftype and cgroup_subsys definitions in controllers
-      cgroup: convert all non-memcg controllers to the new cftype interface
-      memcg: always create memsw files if CONFIG_CGROUP_MEM_RES_CTLR_SWAP
-      cgroup: convert memcg controller to the new cftype interface
-      cgroup: remove cgroup_add_file[s]()
-      cgroup: relocate __d_cgrp() and __d_cft()
-      cgroup: introduce struct cfent
-      cgroup: implement cgroup_rm_cftypes()
-      cgroup: use negative bias on css->refcnt to block css_tryget()
-      cgroup: make css->refcnt clearing on cgroup removal optional
-      cgroup: remove cgroup_subsys->populate()
+- For most operations absolutely nothing changes performance or
+  operationally with the user namespace enabled.
 
- Documentation/cgroups/resource_counter.txt |    4 +-
- Documentation/feature-removal-schedule.txt |    9 +
- block/blk-cgroup.c                         |   45 +--
- include/linux/cgroup.h                     |   81 +++--
- include/linux/res_counter.h                |    2 +-
- include/net/sock.h                         |   12 +-
- include/net/tcp_memcontrol.h               |    4 +-
- kernel/cgroup.c                            |  564 +++++++++++++++++++++-------
- kernel/cgroup_freezer.c                    |   11 +-
- kernel/cpuset.c                            |   31 +-
- kernel/res_counter.c                       |   71 ++--
- kernel/sched/core.c                        |   16 +-
- mm/memcontrol.c                            |  115 +++---
- net/core/netprio_cgroup.c                  |   30 +-
- net/core/sock.c                            |   10 +-
- net/ipv4/tcp_memcontrol.c                  |   77 ++--
- net/sched/cls_cgroup.c                     |   31 +-
- security/device_cgroup.c                   |   10 +-
- 18 files changed, 685 insertions(+), 438 deletions(-)
+- The worse case performance I could come up with was timing 1 billion
+  cache cold stat operations with the user namespace code enabled.  This
+  went from 156s to 164s on my laptop (or 156ns to 164ns per stat
+  operation).
 
---
-tejun
+- (uid_t)-1 and (gid_t)-1 are reserved as an internal error value.  Most
+  uid/gid setting system calls treat these value specially anyway so
+  attempting to use -1 as a uid would likely cause entertaining failures
+  in userspace.
+
+- If setuid is called with a uid that can not be mapped setuid fails.  I
+  have looked at sendmail, login, ssh and every other program I could
+  think of that would call setuid and they all check for and handle the
+  case where setuid fails.
+
+- If stat or a similar system call is called from a context in which we
+  can not map a uid we lie and return overflowuid.  The LFS experience
+  suggests not lying and returning an error code might be better, but
+  the historical precedent with uids is different and I can not think
+  of anything that would break by lying about a uid we can't map.
+
+- Capabilities are localized to the current user namespace making it
+  safe to give the initial user in a user namespace all capabilities.
+
+My git tree covers all of the modifications needed to convert the core
+kernel and enough changes to make a system bootable to runlevel 1.
+
+Eric W. Biederman (45):
+      vfs: Don't allow a user namespace root to make device nodes
+      userns: Kill bogus declaration of function release_uids
+      userns: Replace netlink uses of cap_raised with capable.
+      userns: Remove unnecessary cast to struct user_struct when copying cred->user.
+      cred: Add forward declaration of init_user_ns in all cases.
+      userns: Use cred->user_ns instead of cred->user->user_ns
+      cred: Refcount the user_ns pointed to by the cred.
+      userns: Add an explicit reference to the parent user namespace
+      mqueue: Explicitly capture the user namespace to send the notification to.
+      userns: Deprecate and rename the user_namespace reference in the user_struct
+      userns: Start out with a full set of capabilities.
+      userns: Replace the hard to write inode_userns with inode_capable.
+      userns: Add kuid_t and kgid_t and associated infrastructure in uidgid.h
+      userns: Add a Kconfig option to enforce strict kuid and kgid type checks
+      userns: Disassociate user_struct from the user_namespace.
+      userns: Simplify the user_namespace by making userns->creator a kuid.
+      userns: Rework the user_namespace adding uid/gid mapping support
+      userns: Convert group_info values from gid_t to kgid_t.
+      userns: Store uid and gid values in struct cred with kuid_t and kgid_t types
+      userns: Replace user_ns_map_uid and user_ns_map_gid with from_kuid and from_kgid
+      userns: Convert sched_set_affinity and sched_set_scheduler's permission checks
+      userns: Convert capabilities related permsion checks
+      userns: Convert setting and getting uid and gid system calls to use kuid and kgid
+      userns: Convert ptrace, kill, set_priority permission checks to work with kuids and kgids
+      userns: Store uid and gid types in vfs structures with kuid_t and kgid_t types
+      userns: Convert in_group_p and in_egroup_p to use kgid_t
+      userns: Use uid_eq gid_eq helpers when comparing kuids and kgids in the vfs
+      userns: Convert user specfied uids and gids in chown into kuids and kgid
+      userns: Convert stat to return values mapped from kuids and kgids
+      userns: Fail exec for suid and sgid binaries with ids outside our user namespace.
+      userns: Teach inode_capable to understand inodes whose uids map to other namespaces.
+      userns: signal remove unnecessary map_cred_ns
+      userns: Add negative depends on entries to avoid building code that is userns unsafe
+      userns: Convert binary formats to use kuid/kgid where appropriate
+      userns: Convert devpts to use kuid/kgid where appropriate
+      userns: Convert ext2 to use kuid/kgid where appropriate.
+      userns: Convert ext3 to use kuid/kgid where appropriate
+      userns: Convert ext4 to user kuid/kgid where appropriate
+      userns: Convert proc to use kuid/kgid where appropriate
+      userns: Convert sysctl permission checks to use kuid and kgids.
+      userns: Convert sysfs to use kgid/kuid where appropriate
+      userns: Convert tmpfs to use kuid and kgid where appropriate
+      userns: Convert cgroup permission checks to use uid_eq
+      userns: Convert the move_pages, and migrate_pages permission checks to use uid_eq
+      userns:  Silence silly gcc warning.
+
+Sasha Levin (1):
+      cred: use correct cred accessor with regards to rcu read lock
+
+ arch/arm/kernel/sys_oabi-compat.c      |    4 +-
+ arch/parisc/hpux/fs.c                  |    4 +-
+ arch/s390/kernel/compat_linux.c        |   18 +-
+ arch/sparc/kernel/sys_sparc32.c        |    4 +-
+ arch/x86/ia32/sys_ia32.c               |    4 +-
+ arch/x86/mm/fault.c                    |    2 +-
+ drivers/block/drbd/drbd_nl.c           |    2 +-
+ drivers/md/dm-log-userspace-transfer.c |    2 +-
+ drivers/video/uvesafb.c                |    2 +-
+ fs/attr.c                              |    8 +-
+ fs/binfmt_elf.c                        |   12 +-
+ fs/binfmt_elf_fdpic.c                  |   12 +-
+ fs/compat.c                            |    4 +-
+ fs/devpts/inode.c                      |   24 +-
+ fs/ecryptfs/messaging.c                |    2 +-
+ fs/exec.c                              |   15 +-
+ fs/ext2/balloc.c                       |    5 +-
+ fs/ext2/ext2.h                         |    8 +-
+ fs/ext2/inode.c                        |   20 +-
+ fs/ext2/super.c                        |   31 ++-
+ fs/ext3/balloc.c                       |    5 +-
+ fs/ext3/ext3.h                         |    8 +-
+ fs/ext3/inode.c                        |   32 +-
+ fs/ext3/super.c                        |   35 ++-
+ fs/ext4/balloc.c                       |    4 +-
+ fs/ext4/ext4.h                         |    4 +-
+ fs/ext4/ialloc.c                       |    4 +-
+ fs/ext4/inode.c                        |   34 +-
+ fs/ext4/migrate.c                      |    4 +-
+ fs/ext4/super.c                        |   38 ++-
+ fs/fcntl.c                             |    6 +-
+ fs/inode.c                             |   10 +-
+ fs/ioprio.c                            |   18 +-
+ fs/locks.c                             |    2 +-
+ fs/namei.c                             |   29 +-
+ fs/nfsd/auth.c                         |    5 +-
+ fs/open.c                              |   16 +-
+ fs/proc/array.c                        |   15 +-
+ fs/proc/base.c                         |   93 +++++-
+ fs/proc/inode.c                        |    4 +-
+ fs/proc/proc_sysctl.c                  |    4 +-
+ fs/proc/root.c                         |    2 +-
+ fs/stat.c                              |   12 +-
+ fs/sysfs/inode.c                       |    4 +-
+ include/linux/capability.h             |    2 +
+ include/linux/cred.h                   |   33 +-
+ include/linux/fs.h                     |   42 ++-
+ include/linux/pid_namespace.h          |    2 +-
+ include/linux/proc_fs.h                |    4 +-
+ include/linux/quotaops.h               |    4 +-
+ include/linux/sched.h                  |    9 +-
+ include/linux/shmem_fs.h               |    4 +-
+ include/linux/stat.h                   |    5 +-
+ include/linux/uidgid.h                 |  200 +++++++++++
+ include/linux/user_namespace.h         |   39 +-
+ include/trace/events/ext3.h            |    4 +-
+ include/trace/events/ext4.h            |    4 +-
+ init/Kconfig                           |  130 +++++++-
+ ipc/mqueue.c                           |   10 +-
+ ipc/namespace.c                        |    2 +-
+ kernel/capability.c                    |   21 ++
+ kernel/cgroup.c                        |    6 +-
+ kernel/cred.c                          |   44 ++-
+ kernel/exit.c                          |    6 +-
+ kernel/groups.c                        |   50 ++--
+ kernel/ptrace.c                        |   15 +-
+ kernel/sched/core.c                    |    7 +-
+ kernel/signal.c                        |   51 +--
+ kernel/sys.c                           |  266 ++++++++++-----
+ kernel/timer.c                         |    8 +-
+ kernel/uid16.c                         |   48 ++-
+ kernel/user.c                          |   51 ++-
+ kernel/user_namespace.c                |  595 ++++++++++++++++++++++++++++----
+ kernel/utsname.c                       |    2 +-
+ mm/mempolicy.c                         |    4 +-
+ mm/migrate.c                           |    4 +-
+ mm/oom_kill.c                          |    4 +-
+ mm/shmem.c                             |   22 +-
+ net/core/sock.c                        |    4 +-
+ net/ipv4/ping.c                        |   11 +-
+ net/sunrpc/auth_generic.c              |    4 +-
+ net/sunrpc/auth_gss/svcauth_gss.c      |    7 +-
+ net/sunrpc/auth_unix.c                 |   15 +-
+ net/sunrpc/svcauth_unix.c              |   18 +-
+ security/commoncap.c                   |   61 ++--
+ security/keys/key.c                    |    2 +-
+ security/keys/permission.c             |    5 +-
+ security/keys/process_keys.c           |    2 +-
+ 88 files changed, 1790 insertions(+), 608 deletions(-)
