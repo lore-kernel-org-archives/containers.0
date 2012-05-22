@@ -1,18 +1,12 @@
-From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Subject: Re: [PATCH] cgroup: fix device deny of DEV_ALL
-Date: Tue, 22 May 2012 07:48:31 -0500
-Message-ID: <20120522124831.GA4760@sergelap>
-References: <CAFeW=pZ8Y7ycxjxro7zBMqdtaCOYs4RmoxtDrsN8+mqLhOL--g@mail.gmail.com>
-	<20120518081912.16779.21065.stgit@t>
-	<20120521140324.GA5091@sergelap> <4FBADF1A.6040303@huawei.com>
-	<20120522015426.GA10344@mail.hallyn.com>
-	<4FBAF680.90007@redhat.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [GIT PULL] cgroup changes for 3.5-rc1
+Date: Tue, 22 May 2012 10:34:50 -0700
+Message-ID: <20120522173450.GG14339@google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4FBAF680.90007-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,111 +16,84 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Amos Kong <akong-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, mtosatti-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Amos Kong (akong-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
-> On 22/05/12 09:54, Serge E. Hallyn wrote:
-> >Quoting Li Zefan (lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org):
-> >>Serge Hallyn wrote:
-> >>
-> >>>Quoting Amos Kong (akong-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
-> >>>>@ mount -t cgroup -o devices none /cgroup
-> >>>>@ mkdir /cgroups/devices
-> >>>>@ ls -l /dev/dm-3
-> >>>>  brw-rw----. 1 root disk 253, 3 Oct 14 19:03 /dev/dm-3
-> >>>>@ echo 'b 253:3 rw'>  devices.deny
-> >>>>but I can still write it by 'dd if=/dev/zero of=/dev/dm-3'
-> >>>>
-> >>>>In devcgroup_create(), we create a new whitelist, and add first
-> >>>>entry which type is 'DEV_ALL'. Execute "# echo 'b 253:3 rw'>
-> >>>>devices.deny", dev_whitelist_rm() will update access of first
-> >>>>entry to 1(m), but type of first entry is still 'DEV_ALL'.
-> >>>
-> >>>Hi,
-> >>>
-> >>>thanks.  You raise a good point, but I think it needs some discussion.
-> >>>
-> >>>What happens right now is that if you have the 'a *:* rwm' entry and do
-> >>>echo 'b 253:3 rw'>  devices.deny, then when you next cat devices.list you
-> >>>will still see the 'a *:* rwm' entry.  So there should be no confusion
-> >>>over why the dd succeeds.
-> 
-> >>>  You didn't remove the entry, because there
-> >>>was no match echoed into devices.deny.
-> 
-> Hi serge,
-> 
-> My patch updated type,major,minor, it _equals to_ remove 'a *:* rwm'
-> and add 'b *:* m'
-> It's a clear logic, why need to manually remove 'a *:* rwm'?
+Hello, Linus.
 
-Because until now, (apart from the special case 'a',) the devices.deny
-rules have been very simple - you have to match an exact existing entry
-as seen in devices.list.
+Please pull from the following branch to receive cgroup changes for
+3.5-rc1.
 
-I guess that was never explicitly written anywhere.  So the only reason
-not to change it (apart from simplicity) is that, if I happen to have
+  git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git for-3.5
 
-	a *:* rwm
+cgroup file type addition / removal is updated so that file types are
+added and removed instead of individual files so that dynamic file
+type addition / removal can be implemented by cgroup and used by
+controllers.  blkio controller changes which will come through block
+tree are dependent on this.  Other changes include res_counter cleanup
+and disallowing kthread / PF_THREAD_BOUND threads to be attached to
+non-root cgroups.
 
-and accidentally give myself
+There's a reported bug with the file type addition / removal handling
+which can lead to oops on cgroup umount.  The issue is being looked
+into.  It shouldn't cause problems for most setups and isn't a
+security concern.
 
-	for seq in `1 254`; do
-		echo "b *:$i rwm" > devices.allow
-	done
+Merging with mainline causes a conflict in
+feature-removal-schedule.txt.  Simple append collision which can be
+trivially resolved.
 
-and want to undo it, now i can't remove those without also removing
-a *:* rwm.  (which I might not be able to get back)
+Thanks.
 
-> >>No, you'll see the entry has been changed to 'a *:* m', so I think we
-> >>should at least fix this.
-> >
-> >Yikes.  Agreed.  That's a bug.
-> 
-> which bug? should not update walk->access if wh->access is not 'rwm'?
+Frederic Weisbecker (2):
+      res_counter: Merge res_counter_charge and res_counter_charge_nofail
+      res_counter: Account max_usage when calling res_counter_charge_nofail()
 
-Well, in light of morning, I'm not so sure this is bad.  It doesn't fit
-with what I am saying above that I wanted :)  But if I had 'a *:* rwm'
-and I say I don't want to be able to rw to b 254:3, then leaving me
-with only 'a *:* m' does achieve that.
+Glauber Costa (2):
+      cgroup: pass struct mem_cgroup instead of struct cgroup to socket memcg
+      cgroup: get rid of populate for memcg
 
-Still I would prefer to have to match the entries in devices.list.
+Mike Galbraith (1):
+      cgroups: disallow attaching kthreadd or PF_THREAD_BOUND threads
 
-> diff --git a/security/device_cgroup.c b/security/device_cgroup.c
-> index c43a332..e619a34 100644
-> --- a/security/device_cgroup.c
-> +++ b/security/device_cgroup.c
-> @@ -145,7 +145,8 @@ static void dev_whitelist_rm(struct dev_cgroup
-> *dev_cgroup,
->                         continue;
-> 
->  remove:
-> -               walk->access &= ~wh->access;
-> +               if (walk->type != DEV_ALL || wh->access == ACC_MASK)
-> +                       walk->access &= ~wh->access;
+Tejun Heo (16):
+      cgroup: deprecate remount option changes
+      cgroup: move cgroup_clear_directory() call out of cgroup_populate_dir()
+      cgroup: build list of all cgroups under a given cgroupfs_root
+      cgroup: implement cgroup_add_cftypes() and friends
+      cgroup: merge cft_release_agent cftype array into the base files array
+      cgroup: relocate cftype and cgroup_subsys definitions in controllers
+      cgroup: convert all non-memcg controllers to the new cftype interface
+      memcg: always create memsw files if CONFIG_CGROUP_MEM_RES_CTLR_SWAP
+      cgroup: convert memcg controller to the new cftype interface
+      cgroup: remove cgroup_add_file[s]()
+      cgroup: relocate __d_cgrp() and __d_cft()
+      cgroup: introduce struct cfent
+      cgroup: implement cgroup_rm_cftypes()
+      cgroup: use negative bias on css->refcnt to block css_tryget()
+      cgroup: make css->refcnt clearing on cgroup removal optional
+      cgroup: remove cgroup_subsys->populate()
 
-I'm not following what this is actually meant to do.  It'll do the
-same thing as the original code, unless walk->type == DEV_ALL and
-wh->access != ACC_MASK, but that is never the case per
-devcgroup_update_access().
+ Documentation/cgroups/resource_counter.txt |    4 +-
+ Documentation/feature-removal-schedule.txt |    9 +
+ block/blk-cgroup.c                         |   45 +--
+ include/linux/cgroup.h                     |   81 +++--
+ include/linux/res_counter.h                |    2 +-
+ include/net/sock.h                         |   12 +-
+ include/net/tcp_memcontrol.h               |    4 +-
+ kernel/cgroup.c                            |  564 +++++++++++++++++++++-------
+ kernel/cgroup_freezer.c                    |   11 +-
+ kernel/cpuset.c                            |   31 +-
+ kernel/res_counter.c                       |   71 ++--
+ kernel/sched/core.c                        |   16 +-
+ mm/memcontrol.c                            |  115 +++---
+ net/core/netprio_cgroup.c                  |   30 +-
+ net/core/sock.c                            |   10 +-
+ net/ipv4/tcp_memcontrol.c                  |   77 ++--
+ net/sched/cls_cgroup.c                     |   31 +-
+ security/device_cgroup.c                   |   10 +-
+ 18 files changed, 685 insertions(+), 438 deletions(-)
 
->                 if (!walk->access) {
->                         list_del_rcu(&walk->list);
->                         kfree_rcu(walk, rcu);
-> 
-> 
-> -- 
-> 			Amos.
-
-Lastly, perhaps what we actually want to do is implement blacklists
-instead of a pure whitelist?  So we could then really say "allow
-everything except b 254:3 rw" with two entries.
-
-But, while it may be nice to talk about that, I have not seen any
-cases where someone actually wanted that.  For containers, at least,
-a pure whitelist has always been right.
-
-thanks,
--serge
+--
+tejun
