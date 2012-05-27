@@ -1,16 +1,13 @@
-From: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+From: richard -rw- weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: [GIT PULL] user namespace enhancements for Linux 3.5-rc1
-Date: Sat, 26 May 2012 18:58:48 -0500
-Message-ID: <1338076728.1716.2.camel__34265.0118553594$1338077236$gmane$org@Nokia-N900-51-1>
-References: <87hav8vypc.fsf@xmission.com> <1337894526.9093.7.camel@lenny>
-	<87k3zzt0ww.fsf@xmission.com>
-Reply-To: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Date: Sun, 27 May 2012 21:07:07 +0200
+Message-ID: <CAFLxGvzZeNxQSHQRCzYiT+OkFO1fooGfANPMYs-sSB-eQtCcpA@mail.gmail.com>
+References: <87hav8vypc.fsf@xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87k3zzt0ww.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Content-ID: <1338076727.1716.1.camel@Nokia-N900-51-1>
+In-Reply-To: <87hav8vypc.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,52 +17,20 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Colin Walters <walters-gPq2gbYjIk8dnm+yROfE0A@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Ci0tLS0tIE9yaWdpbmFsIG1lc3NhZ2UgLS0tLS0KPiBDb2xpbiBXYWx0ZXJzIDx3YWx0ZXJzQHZl
-cmJ1bS5vcmc+IHdyaXRlczoKPiAKPiA+IE9uIFR1ZSwgMjAxMi0wNS0yMiBhdCAxMjo0OCAtMDYw
-MCwgRXJpYyBXLiBCaWVkZXJtYW4gd3JvdGU6Cj4gPiAKPiA+ID4gTXkgZ2l0IHRyZWUgY292ZXJz
-IGFsbCBvZiB0aGUgbW9kaWZpY2F0aW9ucyBuZWVkZWQgdG8gY29udmVydCB0aGUKPiA+ID4gY29y
-ZSBrZXJuZWwgYW5kIGVub3VnaCBjaGFuZ2VzIHRvIG1ha2UgYSBzeXN0ZW0gYm9vdGFibGUgdG8g
-cnVubGV2ZWwKPiA+ID4gMS4KPiA+IAo+ID4gV2hhdCBzeXN0ZW0/wqAgIEknbSBjdXJpb3VzIGFi
-b3V0IHRoZSBzdGF0ZSBvZiB5b3VyIHVzZXJzcGFjZQo+ID4gbW9kaWZpY2F0aW9ucy4KPiAKPiBE
-ZWJpYW4uCj4gCj4gVXNlcnNwYWNlIHdvbid0IG5lZWQgYW55IG1vZGlmaWNhdGlvbnMgdG8gd29y
-aywgYnV0IEkgYW0gc2xvd2x5IHdvcmtpbmcKPiB0aHJvdWdoIHRoZSBwYXRjaGVzIG5lZWRlZCB0
-byBnZXQgZXZlcnl0aGluZyBpbiB0aGUga2VybmVsIGNvbnZlcnRlZC4KPiBBbmQgbXkgcGF0Y2hl
-cyBmb3IgdGhlIG5ldHdvcmtpbmcgc3RhY2sgd2VyZW4ndCBxdWl0ZSByZWFkeSBmb3IgdGhlCj4g
-bWVyZ2Ugd2luZG93Lgo+IAo+IFVsdGltYXRlbHkgdG8gYmUgaW5jbHVkZWQgaW4gZGlzdHJvIGtl
-cm5lbHMgYW5kIHJlYWxseSBiZSB1c2VmdWwgSSBuZWVkCj4gdG8gbWFrZSBldmVyeXRoaW5nIGlu
-IHRoZSBrZXJuZWwgdGhhdCBwbGF5cyB3aXRoIHVpZHMgYW5kIGdpZHMgdXNlcgo+IG5hbWVzcGFj
-ZSBhd2FyZSBzbyB0aGF0IGlzIG15IGdvYWwgZm9yIHRoZSBuZXh0IG1lcmdlIHdpbmRvdy7CoCAg
-V2Ugd2lsbAo+IHNlZSBob3cgdGhhdCBnb2VzLgo+IAo+IEFzIGZvciBwYXRjaGVzIHRvIHVzZXJz
-cGFjZSwgYWxsIEkgdGhpbmsgSSB3aWxsIG5lZWQgaXMgYSBzbWFsbCBjaGFuZ2UKPiB0byB1c2Vy
-YWRkLCBhbmQgcGVyaGFwcyBhIGhlbHBlciBmdW5jdGlvbiB0byB2YWxpZGF0ZSB0aGUgbWFwcGlu
-ZyBpbnRvCj4gdGhlIGluaXRpYWwgdXNlciBuYW1lc3BhY2UncyB1aWRzLiBBa2EgaXMgdXNlciBB
-IGFsbG93ZWQgdG8gdXNlIHVpZHMKPiAxMDAsMDAwLTExMCwwMDA/CgpUbyBlbGFib3JhdGUsIHJl
-bWVtYmVyIHVpZHMgaW4gYSB1c2VyIG5zIGVhY2ggbWFwIHRvIGEgdWlkIG9uIHRoZSBob3N0ICh0
-byBiZSBwcmVjaXNlLCBpbiB0aGUgaW5pdGlhbCB1c2VybnMpLiAgTWFwcGluZyB0byBhIHVpZCBv
-biB0aGUgaG9zdCB0YWtlcyBwcml2aWxlZ2UuICBTbyBhIHNldHVpZCB0b29sIChpIGhhdmUgYSBw
-b2MgY29kZWQpIGNoZWNrcyBhIC9ldGMgZmlsZSB0byBzZWUgd2hldGhlciB0aGUgaG9zdCB1aWRz
-IHJlcXVlc3RlZCBieSBhbiB1bnByaXZpbGVnZWQgdXNlciBhcmUgYWxsb3dlZCB0byBoaW0uICBU
-aGUgdXNlcmFkZCBwYXRjaCB3b3VsZCBiZSB0byBmYXNjaWxpdGF0ZSBmaWxsaW5nIGluIHJhbmdl
-cyBpbiB0aGF0IC9ldGMgZmlsZSB3aGVuIHRoZSB1c2VyIGlzIGNyZWF0ZWQuICBTbyBzZXJnZSBt
-YXkgZ2V0IDEwMDAwMC0xMDk5OTksIGpvZSAxMTAwMDAtMTE5OTk5LCBldGMuCgpOb3RoaW5nIGlz
-IG5lZWRlZCBpbiB1c2Vyc3BhY2UganVzdCB0byBib290IGEgc3lzdGVtIHdpdGggYSB1c2VyLW5z
-LWVuYWJsZWQga2VybmVsLCBvciB0byBoYXZlIHJvb3QgdXNlIHVzZXIgbmFtZXNwYWNlcyAob3Ro
-ZXIgdGhhbiBzb21ldGhpbmcgdG8gY2FsbCBjbG9uZSB3aXRoIENMT05FX05FV1VTRVIpLgoKPiBJ
-IGhhdmUgYSBicmFuY2ggaW4gbXkgdXNlci1uYW1lc3BhY2UuZ2l0IHdpdGggYWxsIG9mIHRoZSBy
-ZXN0IG9mIG15Cj4ga2VybmVsIGNoYW5nZXMgaWYgeW91IHdhbnQgdG8gcGxheS7CoCAgQmV5b25k
-IHRoYXQgSSBleHBlY3QgbW9zdCBvZiB0aGUKPiB1c2VyIHNwYWNlIGNoYW5nZXMgKHVzZXJhZGQg
-ZXRjKSB0byBsYW5kIGluIHVidW50dSBmYWlybHkgc2hvcnRseQo+IGFmdGVyIHRoZXkgYXJlIHZp
-YWJsZSBhcyBJIGFtIHdvcmtpbmcgY2xvc2VseSB3aXRoIGEgY291cGxlIGZvbGtzCj4gYXQgdWJ1
-bnV0Lgo+IAo+IEVyaWMKPiAKPiAKPiAKPiAKPiAKPiAtLQo+IFRvIHVuc3Vic2NyaWJlIGZyb20g
-dGhpcyBsaXN0OiBzZW5kIHRoZSBsaW5lICJ1bnN1YnNjcmliZSBsaW51eC1rZXJuZWwiCj4gaW4g
-dGhlIGJvZHkgb2YgYSBtZXNzYWdlIHRvIG1ham9yZG9tb0B2Z2VyLmtlcm5lbC5vcmcKPiBNb3Jl
-IG1ham9yZG9tbyBpbmZvIGF0wqAgIGh0dHA6Ly92Z2VyLmtlcm5lbC5vcmcvbWFqb3Jkb21vLWlu
-Zm8uaHRtbAo+IFBsZWFzZSByZWFkIHRoZSBGQVEgYXTCoCAgaHR0cDovL3d3dy50dXgub3JnL2xr
-bWwvCgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250
-YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3Jn
-Cmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRh
-aW5lcnM=
+On Tue, May 22, 2012 at 8:48 PM, Eric W. Biederman
+<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+> - Capabilities are localized to the current user namespace making it
+> =A0safe to give the initial user in a user namespace all capabilities.
+
+Today I've tried your patch set, but it looks like a root-user in a
+Linux container is still able to use /proc/sysrq-trigger.
+Am I misunderstanding user namespaces or is there still something missing?
+
+-- =
+
+Thanks,
+//richard
