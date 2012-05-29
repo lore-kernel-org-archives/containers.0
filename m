@@ -1,21 +1,11 @@
-From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] cgroup: superblock can't be released with active dentries
-Date: Mon, 28 May 2012 08:18:08 +0800
-Message-ID: <4FC2C440.8090104@huawei.com>
-References: <20120330223423.GJ28934@google.com>
-	<20120330223606.GK28934@google.com> <4F77B6BA.4070207@huawei.com>
-	<20120401185430.GA9230@dhcp-172-17-108-109.mtv.corp.google.com>
-	<CA+1xoqe5hMuxzCRhMy7J0XchDk2ZnuxOHJKikROk1-ReAzcT6g@mail.gmail.com>
-	<20120518175548.GM19388@google.com>
-	<CA+1xoqfr5aaGbxoX3YKrJHXTjU9fWSbX_xbuEOU=4K7kMay6XQ@mail.gmail.com>
-	<20120523222242.GD3933@htj.dyndns.org>
-	<CA+1xoqdbtkC5Ue3s1qZHHJBLcj9a=djFDGny6AJJSV-pdn7mcA@mail.gmail.com>
-	<20120524154139.GA27983@google.com>
+From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: [PATCH] meminfo: show /proc/meminfo base on container's memcg
+Date: Tue, 29 May 2012 10:56:54 +0800
+Message-ID: <1338260214-21919-1-git-send-email-gaofeng__1413.5513491512$1338260201$gmane$org@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-reply-to: <20120524154139.GA27983-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -25,41 +15,193 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Sasha Levin <levinsasha928-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, bsingharora-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-2012/5/24 23:41, Tejun Heo wrote:
+cgroup and namespaces are used for creating containers but some of
+information is not isolated/virtualized. This patch is for isolating /proc/meminfo
+information per container, which uses memory cgroup. By this, top,free
+and other tools under container can work as expected(show container's
+usage) without changes.
 
->>From 88787c483106c5830a46d18deaffdc1e70929af7 Mon Sep 17 00:00:00 2001
-> From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> Date: Thu, 24 May 2012 08:24:39 -0700
-> 
-> 48ddbe1946 "cgroup: make css->refcnt clearing on cgroup removal
-> optional" allowed a css to linger after the associated cgroup is
-> removed.  As a css holds a reference on the cgroup's dentry, it means
-> that cgroup dentries may linger for a while.
-> 
-> cgroup_create() does grab an active reference on the superblock to
-> prevent it from going away while there are !root cgroups; however, the
-> reference is put from cgroup_diput() which is invoked on cgroup
-> removal, so cgroup dentries which are removed but persisting due to
-> lingering csses already have released their superblock active refs
-> allowing superblock to be killed while those dentries are around.
-> 
-> Given the right condition, this makes cgroup_kill_sb() call
-> kill_litter_super() with dentries with non-zero d_count leading to
-> BUG() in shrink_dcache_for_umount_subtree().
-> 
-> Fix it by adding cgroup_dops->d_release() operation and moving
-> deactivate_super() to it.  cgroup_diput() now marks dentry->d_fsdata
-> with itself if superblock should be deactivated and cgroup_d_release()
-> deactivates the superblock on dentry release.
-> 
-> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> Reported-by: Sasha Levin <levinsasha928-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> Tested-by: Sasha Levin <levinsasha928-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> LKML-Reference: <CA+1xoqe5hMuxzCRhMy7J0XchDk2ZnuxOHJKikROk1-ReAzcT6g-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+This patch is a trial to show memcg's info in /proc/meminfo if 'current'
+is under a memcg other than root.
 
+we show /proc/meminfo base on container's memory cgroup.
+because there are lots of info can't be provide by memcg, and
+the cmds such as top, free just use some entries of /proc/meminfo,
+we replace those entries by memory cgroup.
 
-Acked-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+if container has no memcg, we will show host's /proc/meminfo
+as before.
+
+there is no idea how to deal with Buffers,I just set it zero,
+It's strange if Buffers bigger than MemTotal.
+
+Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+---
+ fs/proc/meminfo.c          |   11 +++++---
+ include/linux/memcontrol.h |   15 +++++++++++
+ mm/memcontrol.c            |   56 ++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 78 insertions(+), 4 deletions(-)
+
+diff --git a/fs/proc/meminfo.c b/fs/proc/meminfo.c
+index 80e4645..29a1fcd 100644
+--- a/fs/proc/meminfo.c
++++ b/fs/proc/meminfo.c
+@@ -13,6 +13,7 @@
+ #include <linux/atomic.h>
+ #include <asm/page.h>
+ #include <asm/pgtable.h>
++#include <linux/memcontrol.h>
+ #include "internal.h"
+ 
+ void __attribute__((weak)) arch_report_meminfo(struct seq_file *m)
+@@ -27,7 +28,6 @@ static int meminfo_proc_show(struct seq_file *m, void *v)
+ 	struct vmalloc_info vmi;
+ 	long cached;
+ 	unsigned long pages[NR_LRU_LISTS];
+-	int lru;
+ 
+ /*
+  * display in kilobytes.
+@@ -39,16 +39,19 @@ static int meminfo_proc_show(struct seq_file *m, void *v)
+ 	allowed = ((totalram_pages - hugetlb_total_pages())
+ 		* sysctl_overcommit_ratio / 100) + total_swap_pages;
+ 
++	memcg_meminfo(&i);
+ 	cached = global_page_state(NR_FILE_PAGES) -
+ 			total_swapcache_pages - i.bufferram;
++	/*
++	 * If 'current' is in root memory cgroup, returns global status.
++	 * If not, returns the status of memcg under which current runs.
++	 */
++	sys_page_state(pages, &cached);
+ 	if (cached < 0)
+ 		cached = 0;
+ 
+ 	get_vmalloc_info(&vmi);
+ 
+-	for (lru = LRU_BASE; lru < NR_LRU_LISTS; lru++)
+-		pages[lru] = global_page_state(NR_LRU_BASE + lru);
+-
+ 	/*
+ 	 * Tagged format, for easy grepping and expansion.
+ 	 */
+diff --git a/include/linux/memcontrol.h b/include/linux/memcontrol.h
+index 0316197..6220764 100644
+--- a/include/linux/memcontrol.h
++++ b/include/linux/memcontrol.h
+@@ -21,6 +21,7 @@
+ #define _LINUX_MEMCONTROL_H
+ #include <linux/cgroup.h>
+ #include <linux/vm_event_item.h>
++#include <linux/mm.h>
+ 
+ struct mem_cgroup;
+ struct page_cgroup;
+@@ -116,6 +117,9 @@ struct mem_cgroup *mem_cgroup_iter(struct mem_cgroup *,
+ 				   struct mem_cgroup_reclaim_cookie *);
+ void mem_cgroup_iter_break(struct mem_cgroup *, struct mem_cgroup *);
+ 
++extern void memcg_meminfo(struct sysinfo *si);
++extern void sys_page_state(unsigned long *page, long *cached);
++
+ /*
+  * For memory reclaim.
+  */
+@@ -323,6 +327,17 @@ static inline void mem_cgroup_iter_break(struct mem_cgroup *root,
+ {
+ }
+ 
++static inline void memcg_meminfo(struct sysinfo *si)
++{
++}
++
++static inline void sys_page_state(unsigned long *pages, long *cached)
++{
++	int lru;
++	for (lru = LRU_BASE; lru < NR_LRU_LISTS; lru++)
++		pages[lru] = global_page_state(NR_LRU_BASE + lru);
++}
++
+ static inline bool mem_cgroup_disabled(void)
+ {
+ 	return true;
+diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+index f142ea9..c25e160 100644
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -52,6 +52,7 @@
+ #include "internal.h"
+ #include <net/sock.h>
+ #include <net/tcp_memcontrol.h>
++#include <linux/pid_namespace.h>
+ 
+ #include <asm/uaccess.h>
+ 
+@@ -4345,6 +4346,61 @@ mem_cgroup_get_total_stat(struct mem_cgroup *memcg, struct mcs_total_stat *s)
+ 		mem_cgroup_get_local_stat(iter, s);
+ }
+ 
++void memcg_meminfo(struct sysinfo *val)
++{
++	struct mem_cgroup *memcg = mem_cgroup_from_task(current);
++	__kernel_ulong_t totalram, totalswap;
++	if (current->nsproxy->pid_ns == &init_pid_ns ||
++	    memcg == NULL || mem_cgroup_is_root(memcg))
++		return;
++
++	totalram = res_counter_read_u64(&memcg->res,
++					RES_LIMIT) >> PAGE_SHIFT;
++	if (totalram < val->totalram) {
++		__kernel_ulong_t usageram;
++		usageram = res_counter_read_u64(&memcg->res,
++						RES_USAGE) >> PAGE_SHIFT;
++		val->totalram = totalram;
++		val->freeram = totalram - usageram;
++		val->bufferram = 0;
++		val->totalhigh = 0;
++		val->freehigh = 0;
++	} else
++		return;
++
++	totalswap = res_counter_read_u64(&memcg->memsw,
++					 RES_LIMIT) >> PAGE_SHIFT;
++	if (totalswap < val->totalswap) {
++		__kernel_ulong_t usageswap;
++		usageswap = res_counter_read_u64(&memcg->memsw,
++						 RES_USAGE) >> PAGE_SHIFT;
++		val->totalswap = totalswap - val->totalram;
++		val->freeswap = totalswap - usageswap - val->freeram;
++	}
++}
++
++void sys_page_state(unsigned long *pages, long *cached)
++{
++	struct mem_cgroup *memcg = mem_cgroup_from_task(current);
++
++	if (current->nsproxy->pid_ns == &init_pid_ns ||
++	    memcg == NULL || mem_cgroup_is_root(memcg)) {
++		int lru;
++		for (lru = LRU_BASE; lru < NR_LRU_LISTS; lru++)
++			pages[lru] = global_page_state(NR_LRU_BASE + lru);
++	} else {
++		struct mcs_total_stat s;
++		memset(&s, 0, sizeof(s));
++		mem_cgroup_get_total_stat(memcg, &s);
++		*cached = s.stat[MCS_CACHE] >> PAGE_SHIFT;
++		pages[LRU_ACTIVE_ANON] = s.stat[MCS_ACTIVE_ANON] >> PAGE_SHIFT;
++		pages[LRU_ACTIVE_FILE] = s.stat[MCS_ACTIVE_FILE] >> PAGE_SHIFT;
++		pages[LRU_INACTIVE_ANON] = s.stat[MCS_INACTIVE_ANON] >> PAGE_SHIFT;
++		pages[LRU_INACTIVE_FILE] = s.stat[MCS_INACTIVE_FILE] >> PAGE_SHIFT;
++		pages[LRU_UNEVICTABLE] = s.stat[MCS_UNEVICTABLE] >> PAGE_SHIFT;
++	}
++}
++
+ #ifdef CONFIG_NUMA
+ static int mem_control_numa_stat_show(struct seq_file *m, void *arg)
+ {
+-- 
+1.7.7.6
