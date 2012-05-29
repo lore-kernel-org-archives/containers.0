@@ -1,11 +1,13 @@
-From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH] meminfo: show /proc/meminfo base on container's memcg
-Date: Tue, 29 May 2012 10:56:54 +0800
-Message-ID: <1338260214-21919-1-git-send-email-gaofeng__1413.5513491512$1338260201$gmane$org@cn.fujitsu.com>
+From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: Re: [PATCH] meminfo: show /proc/meminfo base on container's memcg
+Date: Tue, 29 May 2012 12:24:23 +0400
+Message-ID: <4FC487B7.6090505__23488.9537365691$1338280012$gmane$org@parallels.com>
+References: <1338260214-21919-1-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1338260214-21919-1-git-send-email-gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,193 +17,56 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, bsingharora-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org
+To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-cgroup and namespaces are used for creating containers but some of
-information is not isolated/virtualized. This patch is for isolating /proc/meminfo
-information per container, which uses memory cgroup. By this, top,free
-and other tools under container can work as expected(show container's
-usage) without changes.
+On 05/29/2012 06:56 AM, Gao feng wrote:
+> cgroup and namespaces are used for creating containers but some of
+> information is not isolated/virtualized. This patch is for isolating /proc/meminfo
+> information per container, which uses memory cgroup. By this, top,free
+> and other tools under container can work as expected(show container's
+> usage) without changes.
+>
+> This patch is a trial to show memcg's info in /proc/meminfo if 'current'
+> is under a memcg other than root.
+>
+> we show /proc/meminfo base on container's memory cgroup.
+> because there are lots of info can't be provide by memcg, and
+> the cmds such as top, free just use some entries of /proc/meminfo,
+> we replace those entries by memory cgroup.
+>
+> if container has no memcg, we will show host's /proc/meminfo
+> as before.
+>
+> there is no idea how to deal with Buffers,I just set it zero,
+> It's strange if Buffers bigger than MemTotal.
+>
+> Signed-off-by: Gao feng<gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 
-This patch is a trial to show memcg's info in /proc/meminfo if 'current'
-is under a memcg other than root.
+This is the very same problem that exists with CPU cgroup.
+So I'll tell you what kind of resistance we faced, and why I sort of 
+agree with it.
 
-we show /proc/meminfo base on container's memory cgroup.
-because there are lots of info can't be provide by memcg, and
-the cmds such as top, free just use some entries of /proc/meminfo,
-we replace those entries by memory cgroup.
+In summary, there is no guarantee that current wants to see this. This 
+is true for containers environments, but doing this unconditionally can
+break applications out there.
 
-if container has no memcg, we will show host's /proc/meminfo
-as before.
+With cpu is easier to demonstrate, because you would still see all other 
+tasks in the system (no pid namespaces used), but the tick figures won't 
+match. But not only memory falls prey to the same issue,
+but we really need a common solution to that.
 
-there is no idea how to deal with Buffers,I just set it zero,
-It's strange if Buffers bigger than MemTotal.
+A flag is too ugly, or mount options are too ugly, and when parenting is 
+in place, hard to get right.
 
-Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
----
- fs/proc/meminfo.c          |   11 +++++---
- include/linux/memcontrol.h |   15 +++++++++++
- mm/memcontrol.c            |   56 ++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 78 insertions(+), 4 deletions(-)
+So I've seen a lot of people advocating we should just use a userspace 
+filesystem that would bind mount that ontop of normal proc.
 
-diff --git a/fs/proc/meminfo.c b/fs/proc/meminfo.c
-index 80e4645..29a1fcd 100644
---- a/fs/proc/meminfo.c
-+++ b/fs/proc/meminfo.c
-@@ -13,6 +13,7 @@
- #include <linux/atomic.h>
- #include <asm/page.h>
- #include <asm/pgtable.h>
-+#include <linux/memcontrol.h>
- #include "internal.h"
- 
- void __attribute__((weak)) arch_report_meminfo(struct seq_file *m)
-@@ -27,7 +28,6 @@ static int meminfo_proc_show(struct seq_file *m, void *v)
- 	struct vmalloc_info vmi;
- 	long cached;
- 	unsigned long pages[NR_LRU_LISTS];
--	int lru;
- 
- /*
-  * display in kilobytes.
-@@ -39,16 +39,19 @@ static int meminfo_proc_show(struct seq_file *m, void *v)
- 	allowed = ((totalram_pages - hugetlb_total_pages())
- 		* sysctl_overcommit_ratio / 100) + total_swap_pages;
- 
-+	memcg_meminfo(&i);
- 	cached = global_page_state(NR_FILE_PAGES) -
- 			total_swapcache_pages - i.bufferram;
-+	/*
-+	 * If 'current' is in root memory cgroup, returns global status.
-+	 * If not, returns the status of memcg under which current runs.
-+	 */
-+	sys_page_state(pages, &cached);
- 	if (cached < 0)
- 		cached = 0;
- 
- 	get_vmalloc_info(&vmi);
- 
--	for (lru = LRU_BASE; lru < NR_LRU_LISTS; lru++)
--		pages[lru] = global_page_state(NR_LRU_BASE + lru);
--
- 	/*
- 	 * Tagged format, for easy grepping and expansion.
- 	 */
-diff --git a/include/linux/memcontrol.h b/include/linux/memcontrol.h
-index 0316197..6220764 100644
---- a/include/linux/memcontrol.h
-+++ b/include/linux/memcontrol.h
-@@ -21,6 +21,7 @@
- #define _LINUX_MEMCONTROL_H
- #include <linux/cgroup.h>
- #include <linux/vm_event_item.h>
-+#include <linux/mm.h>
- 
- struct mem_cgroup;
- struct page_cgroup;
-@@ -116,6 +117,9 @@ struct mem_cgroup *mem_cgroup_iter(struct mem_cgroup *,
- 				   struct mem_cgroup_reclaim_cookie *);
- void mem_cgroup_iter_break(struct mem_cgroup *, struct mem_cgroup *);
- 
-+extern void memcg_meminfo(struct sysinfo *si);
-+extern void sys_page_state(unsigned long *page, long *cached);
-+
- /*
-  * For memory reclaim.
-  */
-@@ -323,6 +327,17 @@ static inline void mem_cgroup_iter_break(struct mem_cgroup *root,
- {
- }
- 
-+static inline void memcg_meminfo(struct sysinfo *si)
-+{
-+}
-+
-+static inline void sys_page_state(unsigned long *pages, long *cached)
-+{
-+	int lru;
-+	for (lru = LRU_BASE; lru < NR_LRU_LISTS; lru++)
-+		pages[lru] = global_page_state(NR_LRU_BASE + lru);
-+}
-+
- static inline bool mem_cgroup_disabled(void)
- {
- 	return true;
-diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index f142ea9..c25e160 100644
---- a/mm/memcontrol.c
-+++ b/mm/memcontrol.c
-@@ -52,6 +52,7 @@
- #include "internal.h"
- #include <net/sock.h>
- #include <net/tcp_memcontrol.h>
-+#include <linux/pid_namespace.h>
- 
- #include <asm/uaccess.h>
- 
-@@ -4345,6 +4346,61 @@ mem_cgroup_get_total_stat(struct mem_cgroup *memcg, struct mcs_total_stat *s)
- 		mem_cgroup_get_local_stat(iter, s);
- }
- 
-+void memcg_meminfo(struct sysinfo *val)
-+{
-+	struct mem_cgroup *memcg = mem_cgroup_from_task(current);
-+	__kernel_ulong_t totalram, totalswap;
-+	if (current->nsproxy->pid_ns == &init_pid_ns ||
-+	    memcg == NULL || mem_cgroup_is_root(memcg))
-+		return;
-+
-+	totalram = res_counter_read_u64(&memcg->res,
-+					RES_LIMIT) >> PAGE_SHIFT;
-+	if (totalram < val->totalram) {
-+		__kernel_ulong_t usageram;
-+		usageram = res_counter_read_u64(&memcg->res,
-+						RES_USAGE) >> PAGE_SHIFT;
-+		val->totalram = totalram;
-+		val->freeram = totalram - usageram;
-+		val->bufferram = 0;
-+		val->totalhigh = 0;
-+		val->freehigh = 0;
-+	} else
-+		return;
-+
-+	totalswap = res_counter_read_u64(&memcg->memsw,
-+					 RES_LIMIT) >> PAGE_SHIFT;
-+	if (totalswap < val->totalswap) {
-+		__kernel_ulong_t usageswap;
-+		usageswap = res_counter_read_u64(&memcg->memsw,
-+						 RES_USAGE) >> PAGE_SHIFT;
-+		val->totalswap = totalswap - val->totalram;
-+		val->freeswap = totalswap - usageswap - val->freeram;
-+	}
-+}
-+
-+void sys_page_state(unsigned long *pages, long *cached)
-+{
-+	struct mem_cgroup *memcg = mem_cgroup_from_task(current);
-+
-+	if (current->nsproxy->pid_ns == &init_pid_ns ||
-+	    memcg == NULL || mem_cgroup_is_root(memcg)) {
-+		int lru;
-+		for (lru = LRU_BASE; lru < NR_LRU_LISTS; lru++)
-+			pages[lru] = global_page_state(NR_LRU_BASE + lru);
-+	} else {
-+		struct mcs_total_stat s;
-+		memset(&s, 0, sizeof(s));
-+		mem_cgroup_get_total_stat(memcg, &s);
-+		*cached = s.stat[MCS_CACHE] >> PAGE_SHIFT;
-+		pages[LRU_ACTIVE_ANON] = s.stat[MCS_ACTIVE_ANON] >> PAGE_SHIFT;
-+		pages[LRU_ACTIVE_FILE] = s.stat[MCS_ACTIVE_FILE] >> PAGE_SHIFT;
-+		pages[LRU_INACTIVE_ANON] = s.stat[MCS_INACTIVE_ANON] >> PAGE_SHIFT;
-+		pages[LRU_INACTIVE_FILE] = s.stat[MCS_INACTIVE_FILE] >> PAGE_SHIFT;
-+		pages[LRU_UNEVICTABLE] = s.stat[MCS_UNEVICTABLE] >> PAGE_SHIFT;
-+	}
-+}
-+
- #ifdef CONFIG_NUMA
- static int mem_control_numa_stat_show(struct seq_file *m, void *arg)
- {
--- 
-1.7.7.6
+For instance: bind mount your special meminfo into /proc/meminfo inside 
+a container. Reads of the later would redirect to the former, that would 
+then assemble the proper results from the cgroup filesystem, and display it.
+
+I do believe this is a more neutral way to go, and we have all the 
+tools. It also does not risk breaking anything, since only people that 
+want it would use it.
