@@ -1,8 +1,8 @@
 From: jeff.liu-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 09/12] container quota: add container disk quota entry to
-	Makefile.
-Date: Wed, 30 May 2012 22:59:03 +0800
-Message-ID: <1338389946-13711-10-git-send-email-jeff.liu@oracle.com>
+Subject: [PATCH 10/12] container quota: bill container inodes alloc/free on
+	ext4.
+Date: Wed, 30 May 2012 22:59:04 +0800
+Message-ID: <1338389946-13711-11-git-send-email-jeff.liu@oracle.com>
 References: <1338389946-13711-1-git-send-email-jeff.liu@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,24 +22,52 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: tytso-3s7WtUTddSA@public.gmane.org, jack-AlSwsSmVLrQ@public.gmane.org, david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, bpm-sJ/iWh9BUns@public.gmane.org, christopher.jones-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, tm-d1IQDZat3X0@public.gmane.org, linux-ext4-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, chris.mason-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, tinguely-sJ/iWh9BUns@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Make container disk quota source code could be compiled.
+Bill up container inodes allocation and free on ext4.
 
 Signed-off-by: Jie Liu <jeff.liu-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
 ---
- fs/Makefile |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+ fs/ext4/ialloc.c |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
 
-diff --git a/fs/Makefile b/fs/Makefile
-index 2fb9779..bf835c5 100644
---- a/fs/Makefile
-+++ b/fs/Makefile
-@@ -52,6 +52,7 @@ obj-$(CONFIG_GENERIC_ACL)	+= generic_acl.o
- obj-$(CONFIG_FHANDLE)		+= fhandle.o
+diff --git a/fs/ext4/ialloc.c b/fs/ext4/ialloc.c
+index 9f9acac..510fa41 100644
+--- a/fs/ext4/ialloc.c
++++ b/fs/ext4/ialloc.c
+@@ -31,6 +31,8 @@
  
- obj-y				+= quota/
-+obj-$(CONFIG_NS_QUOTA)		+= ns_dquot.o ns_quota.o
+ #include <trace/events/ext4.h>
  
- obj-$(CONFIG_PROC_FS)		+= proc/
- obj-$(CONFIG_SYSFS)		+= sysfs/
++#include "../ns_quotaops.h"
++
+ /*
+  * ialloc.c contains the inodes allocation and deallocation routines
+  */
+@@ -233,6 +235,7 @@ void ext4_free_inode(handle_t *handle, struct inode *inode)
+ 	dquot_initialize(inode);
+ 	ext4_xattr_delete_inode(handle, inode);
+ 	dquot_free_inode(inode);
++	ns_dquot_free_inode(inode);
+ 	dquot_drop(inode);
+ 
+ 	is_directory = S_ISDIR(inode->i_mode);
+@@ -861,6 +864,10 @@ got:
+ 	if (err)
+ 		goto fail_drop;
+ 
++	err = ns_dquot_alloc_inode(inode);
++	if (err)
++		goto fail_drop;
++
+ 	err = ext4_init_acl(handle, inode, dir);
+ 	if (err)
+ 		goto fail_free_drop;
+@@ -902,6 +909,7 @@ really_out:
+ 
+ fail_free_drop:
+ 	dquot_free_inode(inode);
++	ns_dquot_free_inode(inode);
+ 
+ fail_drop:
+ 	dquot_drop(inode);
 -- 
 1.7.9
