@@ -1,19 +1,12 @@
-From: Jeff Liu <jeff.liu-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 10/12] container quota: bill container inodes alloc/free
-	on ext4.
-Date: Thu, 31 May 2012 11:24:25 +0800
-Message-ID: <4FC6E469.2040405@oracle.com>
-References: <1338389946-13711-1-git-send-email-jeff.liu@oracle.com>
-	<1338389946-13711-11-git-send-email-jeff.liu@oracle.com>
-	<20120530155543.GB13236@thunk.org>
-	<4FC6CCB6.4090908@oracle.com> <20120531015453.GA6759@thunk.org>
-	<4FC6D94D.6040106@oracle.com>
-Reply-To: jeff.liu-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org
+From: "Yuniya" <diuity-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re:
+Date: Thu, 31 May 2012 03:55:40 +0400
+Message-ID: <63E303BC8B8649D49FC861E5759318E0@gmail.com>
+Reply-To: Yuniya <wolqvlpv-OVO8NMVJYRk@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="windows-1251"; Format="flowed"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4FC6D94D.6040106-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,57 +16,10 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ted Ts'o <tytso-3s7WtUTddSA@public.gmane.org>
-Cc: jack-AlSwsSmVLrQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, bpm-sJ/iWh9BUns@public.gmane.org, christopher.jones-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, tm-d1IQDZat3X0@public.gmane.org, linux-ext4-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, chris.mason-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, tinguely-sJ/iWh9BUns@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, elenabb-k+OT61UuxXo@public.gmane.org, job-V2yTFB0W/3mtWN4W2nTtWg@public.gmane.org, elena-812005-o+MxOtu4lMCHXe+LvDLADg@public.gmane.org, dengler-9DQVCeAflyKHXe+LvDLADg@public.gmane.org, gring-tour-wlJVHIE9RCYvJsYlp49lxw@public.gmane.org, tkv-JxL4jwaQtks@public.gmane.org, slbes-pvs+CRRe+RBQFI55V6+gNQ@public.gmane.org, kozlo-uiYMGHyRbTyHXe+LvDLADg@public.gmane.org, olgan-k6CEpOK/D2hnA2hzVk6SfA@public.gmane.org, pajuul-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org, tamara-oqzwS2uSzc7j49nqgPla5Q@public.gmane.org, lad-sveta-o+MxOtu4lMCHXe+LvDLADg@public.gmane.org, nguena-YpEf5thNGg0h0qL9L3qPag@public.gmane.org, oxsana25-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 05/31/2012 10:37 AM, Jeff Liu wrote:
-
-> On 05/31/2012 09:54 AM, Ted Ts'o wrote:
-> 
->> On Thu, May 31, 2012 at 09:43:18AM +0800, Jeff Liu wrote:
->>> I also think that is stupid to change all of the file systems with those
->>> hook routines.
->>> At first I have tried to change the quota layer by adding
->>> ns_dquot_<foo>() to the corresponding dquot_<foo>(), it could works on
->>> ext4, and it should works on other file systems which are tightly bound
->>> to VFS quota IMHO.
->>>
->>> However, XFS has its own quota management subsystem, with looser binding
->>> to VFS quota.  That's why am trying to export those routines over all
->>> the file systems and CC to the maintainers, sorry for the noise.
->>
->> No worries about the noise.  I was just trying to suggest something
->> that might be easier for you.
->>
->> As near as I can tell XFS doesn't use the fs/quota functions at all,
->> yes?  But if you add it into the fs/quota functions, it should get you
->> integration with ext2, ext3, ext4, jfs, ocfs2, and reiserfs.  Yes?
-> 
-> Yes, I just took a quick look through over ocfs2, reiserfs and jfs, they
-> are all ok.
-
-Such being the case, maybe I should tight ns_dquot_<foo>() to VFS quota
-to reduce duplication firstly, at lease, it could works with most file
-systems.  Then consider another way to let it works with other file
-systems doesn't use fs/quota.
-
-Thanks,
--Jeff
-
-> 
-> Thanks,
-> -Jeff
-> 
->>
->> 	    	       	     	   	       - Ted
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-fsdevel" in
->> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-fsdevel" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+CgoK8eXq8SDo7fLo7CDn7eDq7uzx8uLgCgpodHRwOi8vdG9hdHkuY28udWsvZXIKCgoKX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWls
+aW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xp
+c3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
