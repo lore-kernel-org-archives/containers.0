@@ -1,8 +1,8 @@
 From: jeff.liu-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 01/12] container quota: add kernel configuration for container
-	quota.
-Date: Wed, 30 May 2012 22:58:55 +0800
-Message-ID: <1338389946-13711-2-git-send-email-jeff.liu@oracle.com>
+Subject: [PATCH 02/12] container quota: lock/unlock mount namespace when
+	performing quotactl.
+Date: Wed, 30 May 2012 22:58:56 +0800
+Message-ID: <1338389946-13711-3-git-send-email-jeff.liu@oracle.com>
 References: <1338389946-13711-1-git-send-email-jeff.liu@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,32 +22,63 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: tytso-3s7WtUTddSA@public.gmane.org, jack-AlSwsSmVLrQ@public.gmane.org, david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, bpm-sJ/iWh9BUns@public.gmane.org, christopher.jones-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, tm-d1IQDZat3X0@public.gmane.org, linux-ext4-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, chris.mason-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, tinguely-sJ/iWh9BUns@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add kernel configuration for container quota.
+Introduce two functions to lock/unlock a particular mount namespace
+when container quota operations is performed.
 
 Signed-off-by: Jie Liu <jeff.liu-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
 ---
- fs/quota/Kconfig |    9 +++++++++
- 1 files changed, 9 insertions(+), 0 deletions(-)
+ fs/namespace.c                |   17 +++++++++++++++++
+ include/linux/mnt_namespace.h |   13 +++++++++++++
+ 2 files changed, 30 insertions(+), 0 deletions(-)
 
-diff --git a/fs/quota/Kconfig b/fs/quota/Kconfig
-index 880fd98..2dd3e83 100644
---- a/fs/quota/Kconfig
-+++ b/fs/quota/Kconfig
-@@ -16,6 +16,15 @@ config QUOTA
- 	  with the quota tools. Probably the quota support is only useful for
- 	  multi user systems. If unsure, say N.
- 
-+config NS_QUOTA
-+	bool "Mount namespace quota support"
-+	depends on QUOTA
-+	default n
-+	help
-+	  If you say Y here, you will be able to set per container user limits
-+	  for disk usage (also called disk quotas). Currently, it works for the
-+	  ext4 file system only for demonstration purpose.
+diff --git a/fs/namespace.c b/fs/namespace.c
+index e608199..8823ba8 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -2633,3 +2633,20 @@ bool our_mnt(struct vfsmount *mnt)
+ {
+ 	return check_mnt(real_mount(mnt));
+ }
 +
- config QUOTA_NETLINK_INTERFACE
- 	bool "Report quota messages through netlink interface"
- 	depends on QUOTACTL && NET
++/*
++ * Lock the mount namespace when performing a particular container
++ * disk quotactl operation, especially to protect removing it.
++ */
++void lock_mnt_ns(struct mnt_namespace *ns)
++{
++	down_write(&namespace_sem);
++}
++
++/*
++ * Unlock the mount namespace after quotactl on that was done.
++ */
++void unlock_mnt_ns(struct mnt_namespace *ns)
++{
++	up_write(&namespace_sem);
++}
+diff --git a/include/linux/mnt_namespace.h b/include/linux/mnt_namespace.h
+index 5a8e390..ff72ed5 100644
+--- a/include/linux/mnt_namespace.h
++++ b/include/linux/mnt_namespace.h
+@@ -9,6 +9,19 @@ extern struct mnt_namespace *copy_mnt_ns(unsigned long, struct mnt_namespace *,
+ 		struct fs_struct *);
+ extern void put_mnt_ns(struct mnt_namespace *ns);
+ 
++#ifdef CONFIG_NS_QUOTA
++extern void lock_mnt_ns(struct mnt_namespace *);
++extern void unlock_mnt_ns(struct mnt_namespace *);
++#else
++void lock_mnt_ns(struct mnt_namespace *)
++{
++}
++
++void unlock_mnt_ns(struct mnt_namespace *)
++{
++}
++#endif
++
+ extern const struct file_operations proc_mounts_operations;
+ extern const struct file_operations proc_mountinfo_operations;
+ extern const struct file_operations proc_mountstats_operations;
 -- 
 1.7.9
