@@ -1,15 +1,15 @@
 From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [PATCH 02/12] container quota: lock/unlock mount namespace when
-	performing quotactl.
-Date: Thu, 31 May 2012 13:04:24 +0400
-Message-ID: <4FC73418.1040402@parallels.com>
+Subject: Re: [PATCH 04/12] container quota: introduce container disk quota
+	data header file.
+Date: Thu, 31 May 2012 13:10:58 +0400
+Message-ID: <4FC735A2.4040400__47700.713229324$1338455609$gmane$org@parallels.com>
 References: <1338389946-13711-1-git-send-email-jeff.liu@oracle.com>
-	<1338389946-13711-3-git-send-email-jeff.liu@oracle.com>
+	<1338389946-13711-5-git-send-email-jeff.liu@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"; Format="flowed"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1338389946-13711-3-git-send-email-jeff.liu-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1338389946-13711-5-git-send-email-jeff.liu-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,67 +23,30 @@ To: jeff.liu-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org
 Cc: jack-AlSwsSmVLrQ@public.gmane.org, tytso-3s7WtUTddSA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, bpm-sJ/iWh9BUns@public.gmane.org, christopher.jones-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, tm-d1IQDZat3X0@public.gmane.org, linux-ext4-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, chris.mason-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, tinguely-sJ/iWh9BUns@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 05/30/2012 06:58 PM, jeff.liu-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org wrote:
-> Introduce two functions to lock/unlock a particular mount namespace
-> when container quota operations is performed.
->
-> Signed-off-by: Jie Liu<jeff.liu-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-> ---
->   fs/namespace.c                |   17 +++++++++++++++++
->   include/linux/mnt_namespace.h |   13 +++++++++++++
->   2 files changed, 30 insertions(+), 0 deletions(-)
->
-> diff --git a/fs/namespace.c b/fs/namespace.c
-> index e608199..8823ba8 100644
-> --- a/fs/namespace.c
-> +++ b/fs/namespace.c
-> @@ -2633,3 +2633,20 @@ bool our_mnt(struct vfsmount *mnt)
->   {
->   	return check_mnt(real_mount(mnt));
->   }
 > +
-> +/*
-> + * Lock the mount namespace when performing a particular container
-> + * disk quotactl operation, especially to protect removing it.
-> + */
-> +void lock_mnt_ns(struct mnt_namespace *ns)
-> +{
-> +	down_write(&namespace_sem);
-> +}
-> +
-> +/*
-> + * Unlock the mount namespace after quotactl on that was done.
-> + */
-> +void unlock_mnt_ns(struct mnt_namespace *ns)
-> +{
-> +	up_write(&namespace_sem);
-> +}
-> diff --git a/include/linux/mnt_namespace.h b/include/linux/mnt_namespace.h
-> index 5a8e390..ff72ed5 100644
-> --- a/include/linux/mnt_namespace.h
-> +++ b/include/linux/mnt_namespace.h
-> @@ -9,6 +9,19 @@ extern struct mnt_namespace *copy_mnt_ns(unsigned long, struct mnt_namespace *,
->   		struct fs_struct *);
->   extern void put_mnt_ns(struct mnt_namespace *ns);
->
-> +#ifdef CONFIG_NS_QUOTA
-> +extern void lock_mnt_ns(struct mnt_namespace *);
-> +extern void unlock_mnt_ns(struct mnt_namespace *);
-> +#else
-> +void lock_mnt_ns(struct mnt_namespace *)
-> +{
-> +}
-> +
-> +void unlock_mnt_ns(struct mnt_namespace *)
-> +{
-> +}
-> +#endif
+> +/* Operations for quota control */
+> +struct ns_quotactl_ops {
+> +	int (*quota_on)(struct mnt_namespace *, int);
+> +	int (*quota_off)(struct mnt_namespace *, int);
+> +	int (*get_info)(struct mnt_namespace *, int, struct if_dqinfo *);
+> +	int (*set_info)(struct mnt_namespace *, int, struct if_dqinfo *);
+> +	int (*get_dqblk)(struct mnt_namespace *, int, qid_t,
+> +			 struct fs_disk_quota *);
+> +	int (*set_dqblk)(struct mnt_namespace *, int, qid_t,
+> +			 struct fs_disk_quota *);
+> +};
 > +
 
-Seems weird. There is nothing ns-quota specific in locking a namespace.
-Also, just grabbing a lock from an outer subsystem is quite ugly. If you 
-are grabbing a namespace lock, this suggests you are tweaking namespace 
-data. So you should have that file provide you with a function that does 
-the full operation.
+That is quite bad. Just have the same signature. Which namespace you 
+belong to can *always* be derived from the calling process, you should 
+never need to specify that in any interface. It is of course fine to do 
+that in functions internal to the kernel, but not this.
 
-Of course there are exceptions to that, but it rings a bell.
+You should rethink the whole ns_quota thing. Some of it I believe will 
+have to stay, I doubt we'll be able to be completely transparent. But 
+the core of your changes have to be making sure a hierarchical walk over 
+the valid quotas work well, finding out what are those valid quotas, etc.
+
+The interface should be kept as unchanged as possible, and this can be 
+achieved by things like automatic discover of the current namespace, and 
+pre-operational container setup for the relevant files.
