@@ -1,31 +1,13 @@
-From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH] meminfo: show /proc/meminfo base on container's memcg
-Date: Thu, 31 May 2012 16:55:31 +0800
-Message-ID: <4FC73203.2070009__2282.06548276848$1338454506$gmane$org@cn.fujitsu.com>
-References: <1338260214-21919-1-git-send-email-gaofeng@cn.fujitsu.com>
-	<4FC6B68C.2070703@jp.fujitsu.com>
-	<CAHGf_=pFbsy4FO_UNu6O1-KyTd6O=pkmR8=3EGuZB5Reu3Vb9w@mail.gmail.com>
-	<4FC6BC3E.5010807@jp.fujitsu.com>
-	<alpine.DEB.2.00.1205301737530.25774@chino.kir.corp.google.com>
-	<4FC6C111.2060108@jp.fujitsu.com>
-	<alpine.DEB.2.00.1205301831270.25774@chino.kir.corp.google.com>
-	<4FC6D881.4090706@jp.fujitsu.com>
-	<alpine.DEB.2.00.1205302156090.25774@chino.kir.corp.google.com>
-	<4FC70355.70805@jp.fujitsu.com>
-	<alpine.DEB.2.00.1205302314190.25774@chino.kir.corp.google.com>
-	<4FC70E5E.1010003@gmail.com>
-	<alpine.DEB.2.00.1205302325500.25774@chino.kir.corp.google.com>
-	<4FC711A5.4090003@gmail.com>
-	<alpine.DEB.2.00.1205302351510.25774@chino.kir.corp.google.com>
-	<CAHGf_=qVDVT6VW2j9gE3bQKwizW24iivrDryiCKoxVu4m_fWKw@mail.gmail.com>
-	<alpine.DEB.2.00.1205310028420.8864@chino.kir.corp.google.com>
-	<4FC720EE.3010307@gmail.com> <4FC724B1.70508@cn.fujitsu.com>
-	<4FC72CA4.6080708@parallels.com>
+From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: Re: container disk quota
+Date: Thu, 31 May 2012 12:54:25 +0400
+Message-ID: <4FC731C1.5000903__22944.9163693518$1338454620$gmane$org@parallels.com>
+References: <1338389946-13711-1-git-send-email-jeff.liu@oracle.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4FC72CA4.6080708-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+In-Reply-To: <1338389946-13711-1-git-send-email-jeff.liu-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -35,31 +17,101 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, KOSAKI Motohiro <kosaki.motohiro-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: jeff.liu-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org
+Cc: jack-AlSwsSmVLrQ@public.gmane.org, tytso-3s7WtUTddSA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, bpm-sJ/iWh9BUns@public.gmane.org, christopher.jones-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, tm-d1IQDZat3X0@public.gmane.org, linux-ext4-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, chris.mason-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, tinguely-sJ/iWh9BUns@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-5LqOIDIwMTLlubQwNeaciDMx5pelIDE2OjMyLCBHbGF1YmVyIENvc3RhIOWGmemBkzoKPiBPbiAw
-NS8zMS8yMDEyIDExOjU4IEFNLCBHYW8gZmVuZyB3cm90ZToKPj4+ID4gIEl0J3Mgb25lIG9mIGEg
-b3B0aW9uLiBCdXQsIEkgc2VyaW91c2x5IGRvdWJ0IGZ1c2UgY2FuIG1ha2Ugc2ltcGxlciB0aGFu
-IGthbWV6YXdhLXNhbidzCj4+PiA+ICBpZGVhLiBCdXQgeWVhaCwgSSBtaWdodCBOQUNLIGthbWV6
-YXdhLXNhbidzIG9uZSBpZiBoZSB3aWxsIHBvc3QgdWdseSBwYXRjaC4KPj4+ID4KPj4gSXQgc2Vh
-bXMgSSBzaG91bGQgZG8gc29tZSBob21ld29yayB0byBtYWtlIHRoZSBpbXBsZW1lbnQgYmVhdXRp
-ZnVsbHkuCj4+Cj4+IEkgdGhpbmsga2FtZXphd2Etc2FuJ3MgaWRlYSBpcyBtb3JlIHNpbXBsZXIu
-Cj4+IHRoYW5rcyBmb3IgeW91ciBhZHZpY2UuCj4+Cj4gCj4gT25lIHRoaW5rIHRvIGtlZXAgaW4g
-bWluZDogQSBmaWxlIGluIG1lbWNnIGRvZXMgbm90IG5lZWQgdG8gZm9sbG93IHRoZSBzYW1lIGZv
-cm1hdCBvZiAvcHJvYy9tZW1pbmZvIHNvIHdlIGNhbiBiaW5kIG1vdW50LiBXZSBzaG91bGQgYmUg
-YWJsZSB0byByZWNvbnN0cnVjdCB0aGF0IGluIHVzZXJzcGFjZSBiYXNlZCBvbiBpbmZvcm1hdGlv
-bgo+IGF2YWlsYWJsZSBmcm9tIHRoZSBrZXJuZWwuIFlvdSBjYW4gZXZlbiBjb2xsZWN0IHRoYXQg
-ZnJvbSBtdWx0aXBsZSBsb2NhdGlvbnMsIGFuZCAqdGhlbiogeW91IGJpbmQgbW91bnQuCj4gCj4g
-SXQgaGVscHMgdG8ga2VlcCB0aGUgY2h1cm4gb3V0IG9mIHRoZSBrZXJuZWwsIGFuZCBpbiBjYXNl
-IG9mIG1lbWluZm8sIHlvdSBtaWdodCBuZWVkIG5vIGV4dHJhIGtlcm5lbCBwYXRjaGVzIGF0IGFs
-bC4gQW5kIGluIHRoZSBjYXNlIG9mIG90aGVyIGZpbGVzIGxpa2UgL3Byb2Mvc3RhdCwgdGhlIHJl
-bGV2YW50IGluZm9ybWF0aW9uIGNvbWVzIGZyb20KPiBtb3JlIHRoYW4gb25lIGNncm91cCBhbnl3
-YXksIHNvIHRoZXJlIGlzIG5vdCB0b28gbXVjaCB3YXkgYXJvdW5kIGl0LgoKSSBnb3QgaXQsdGhh
-bmsgeW91IHZlcnkgbXVjaCxpbmRlZWQgd2UgbmVlZCBubyBleHRyYSBrZXJuZWwgcGF0Y2ggYXQg
-YWxsLgpNYXliZSB3ZSBzaG91bGQgZG8gdGhpcyB3b3JrIGluIGx4YyBvciBsaWJ2aXJ0LgoKdGhh
-bmtzIEdsYXViZXIhCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRh
-dGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGlu
-Zm8vY29udGFpbmVycw==
+On 05/30/2012 06:58 PM, jeff.liu-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org wrote:
+> Hello All,
+>
+> According to glauber's comments regarding container disk quota, it should be binded to mount
+> namespace rather than cgroup.
+>
+> Per my try out, it works just fine by combining with userland quota utilitly in this way.
+that's great.
+
+I'll take a look at the patches.
+
+
+>
+> * Modify quotactl(2) to examine if the caller is invoked inside container.
+>    implemented by checking the quota device name("rootfs" for lxc guest) or current pid namespace
+>    is not the initial one, then do mount namespace quotactl if required, or goto
+>    the normal quotactl procedure.
+
+I dislike the use of "lxc" name. There is nothing lxc-specific in this, 
+this is namespace-specific. lxc is just one of the container solutions 
+out there, so let's keep it generic.
+
+>
+> * Also, I have not handle a couple of things for now.
+>    . I think the container quota should be isolated to Jan's fs/quota/ directory.
+>    . There are a dozens of helper routines at general quota, e.g,
+>      struct if_dqblk<->  struct fs_disk_quota converts.
+>      dquot space and inodes bill up.
+>      They can be refactored as shared routines to some extents.
+>    . quotastats(8) is not teached to aware container for now.
+>
+> Changes in quota userland utility:
+> * Introduce a new quota format string "lxc" to all quota control utility, to
+>    let each utility know that the user want to run container quota control. e.g:
+>    quotacheck -cvugm -F "lxc" /
+>    quotaon -u -F "lxc" /
+>    ....
+>
+> * Currently, I manually created the underlying device(by editing cgroup
+>    device access list and running mknod /dev/sdaX x x) for the rootfs
+>    inside containers to let the cache mount points routine pass for
+>    executing quotacheck against the "/" directory.  Actually, it can be
+>    omitted here.
+>
+> * Add a new quotaio_lxc.c[.h] for container quota IO, it basically same to
+>    VFS quotaio logic, I just hope to isolate container stuff here.
+>
+> Issues:
+> * How to detect quotactl(2) is launched from container in a reasonable way.
+
+It's a system call. It is always called by a process. The process 
+belongs to a namespace. What else is needed?
+
+> * Do we need to let container quota works for cgroup combine with unshare(1)?
+>    Now the patchset is mainly works for lxc guest.  IMHO, it can be used outside
+>    guest if the user desired.  In this case, the quota limits can take effort
+>    among different underlying file systems if they have exported quota billing
+>    routines.
+
+I still don't understand what is the business of cgroups here. If you 
+are attaching it to mount namespace, you can always infer the context 
+from the calling process. I still need to look at your patches, but I 
+believe that dropping the "feature" of manipulating this from outside of 
+the container will save you a lot of trouble.
+
+Please note that a process can temporarily join a namespace with 
+setns(). So you can have a *utility* that does it from the outer world, 
+but the kernel has no business with that. As far as we're concerned, I 
+believe that you should always get your context from the current 
+namespace, and forbid any usage from outside.
+
+> * The hash table list defines(hash table size)for dquot caching for each type is
+>    referred to kernel/user.c, maybe its better to define an array separatly for
+>    performance optimizations.  Of course, that's all depending on my current
+>    implementation is on the right road. :)
+>
+> * Container quota statistics, should them be calculated and exposed to /proc/fs/quota?  If the underlying file system also enabled with quotas, they will be
+>    mixed up, so how about add a new proc file like "ns_quota" there?
+No, this should be transferred to the process-specific proc and them 
+symlinked. Take a look at "/proc/self".
+
+>
+> * Memory shrinks acquired from kswap.
+>    As all dquot are cached in memory, and if the user executing quotaoff, maybe
+>    I need to handle quota disable but still be kept at memory.
+>    Also, add another routine to disable and remove all quotas from memory to
+>    save memory directly.
+
+I didn't read your patches yet, so take it with a grain of salt here. 
+But I don't understand why you make this distinction of keeping it in 
+memory only.
+
+You could keep quota files outside of the container, and then bind mount 
+them to the current location in the setup-phase.
