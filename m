@@ -1,13 +1,30 @@
 From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: container disk quota
-Date: Thu, 31 May 2012 12:54:25 +0400
-Message-ID: <4FC731C1.5000903__22944.9163693518$1338454620$gmane$org@parallels.com>
-References: <1338389946-13711-1-git-send-email-jeff.liu@oracle.com>
+Subject: Re: [PATCH] meminfo: show /proc/meminfo base on container's memcg
+Date: Thu, 31 May 2012 12:56:50 +0400
+Message-ID: <4FC73252.1000106__33400.8718295538$1338454753$gmane$org@parallels.com>
+References: <1338260214-21919-1-git-send-email-gaofeng@cn.fujitsu.com>
+	<CAHGf_=pFbsy4FO_UNu6O1-KyTd6O=pkmR8=3EGuZB5Reu3Vb9w@mail.gmail.com>
+	<4FC6BC3E.5010807@jp.fujitsu.com>
+	<alpine.DEB.2.00.1205301737530.25774@chino.kir.corp.google.com>
+	<4FC6C111.2060108@jp.fujitsu.com>
+	<alpine.DEB.2.00.1205301831270.25774@chino.kir.corp.google.com>
+	<4FC6D881.4090706@jp.fujitsu.com>
+	<alpine.DEB.2.00.1205302156090.25774@chino.kir.corp.google.com>
+	<4FC70355.70805@jp.fujitsu.com>
+	<alpine.DEB.2.00.1205302314190.25774@chino.kir.corp.google.com>
+	<4FC70E5E.1010003@gmail.com>
+	<alpine.DEB.2.00.1205302325500.25774@chino.kir.corp.google.com>
+	<4FC711A5.4090003@gmail.com>
+	<alpine.DEB.2.00.1205302351510.25774@chino.kir.corp.google.com>
+	<CAHGf_=qVDVT6VW2j9gE3bQKwizW24iivrDryiCKoxVu4m_fWKw@mail.gmail.com>
+	<alpine.DEB.2.00.1205310028420.8864@chino.kir.corp.google.com>
+	<4FC720EE.3010307@gmail.com> <4FC724B1.70508@cn.fujitsu.com>
+	<4FC72CA4.6080708@parallels.com> <4FC73203.2070009@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"; Format="flowed"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1338389946-13711-1-git-send-email-jeff.liu-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <4FC73203.2070009-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,101 +34,30 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: jeff.liu-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org
-Cc: jack-AlSwsSmVLrQ@public.gmane.org, tytso-3s7WtUTddSA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, bpm-sJ/iWh9BUns@public.gmane.org, christopher.jones-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, tm-d1IQDZat3X0@public.gmane.org, linux-ext4-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, chris.mason-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, tinguely-sJ/iWh9BUns@public.gmane.org
+To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, KOSAKI Motohiro <kosaki.motohiro-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 05/30/2012 06:58 PM, jeff.liu-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org wrote:
-> Hello All,
+
+>>>
+>>
+>> One think to keep in mind: A file in memcg does not need to follow the same format of /proc/meminfo so we can bind mount. We should be able to reconstruct that in userspace based on information
+>> available from the kernel. You can even collect that from multiple locations, and *then* you bind mount.
+>>
+>> It helps to keep the churn out of the kernel, and in case of meminfo, you might need no extra kernel patches at all. And in the case of other files like /proc/stat, the relevant information comes from
+>> more than one cgroup anyway, so there is not too much way around it.
 >
-> According to glauber's comments regarding container disk quota, it should be binded to mount
-> namespace rather than cgroup.
+> I got it,thank you very much,indeed we need no extra kernel patch at all.
+> Maybe we should do this work in lxc or libvirt.
 >
-> Per my try out, it works just fine by combining with userland quota utilitly in this way.
-that's great.
-
-I'll take a look at the patches.
-
-
+> thanks Glauber!
 >
-> * Modify quotactl(2) to examine if the caller is invoked inside container.
->    implemented by checking the quota device name("rootfs" for lxc guest) or current pid namespace
->    is not the initial one, then do mount namespace quotactl if required, or goto
->    the normal quotactl procedure.
 
-I dislike the use of "lxc" name. There is nothing lxc-specific in this, 
-this is namespace-specific. lxc is just one of the container solutions 
-out there, so let's keep it generic.
+lxc has a fuse overlay for /proc already. I can't tell you about the 
+state of that, because I haven't looked at it in details yet. I need to 
+do something a lot similar for /proc/stat, but that is currently down in 
+my prio queue.
 
->
-> * Also, I have not handle a couple of things for now.
->    . I think the container quota should be isolated to Jan's fs/quota/ directory.
->    . There are a dozens of helper routines at general quota, e.g,
->      struct if_dqblk<->  struct fs_disk_quota converts.
->      dquot space and inodes bill up.
->      They can be refactored as shared routines to some extents.
->    . quotastats(8) is not teached to aware container for now.
->
-> Changes in quota userland utility:
-> * Introduce a new quota format string "lxc" to all quota control utility, to
->    let each utility know that the user want to run container quota control. e.g:
->    quotacheck -cvugm -F "lxc" /
->    quotaon -u -F "lxc" /
->    ....
->
-> * Currently, I manually created the underlying device(by editing cgroup
->    device access list and running mknod /dev/sdaX x x) for the rootfs
->    inside containers to let the cache mount points routine pass for
->    executing quotacheck against the "/" directory.  Actually, it can be
->    omitted here.
->
-> * Add a new quotaio_lxc.c[.h] for container quota IO, it basically same to
->    VFS quotaio logic, I just hope to isolate container stuff here.
->
-> Issues:
-> * How to detect quotactl(2) is launched from container in a reasonable way.
-
-It's a system call. It is always called by a process. The process 
-belongs to a namespace. What else is needed?
-
-> * Do we need to let container quota works for cgroup combine with unshare(1)?
->    Now the patchset is mainly works for lxc guest.  IMHO, it can be used outside
->    guest if the user desired.  In this case, the quota limits can take effort
->    among different underlying file systems if they have exported quota billing
->    routines.
-
-I still don't understand what is the business of cgroups here. If you 
-are attaching it to mount namespace, you can always infer the context 
-from the calling process. I still need to look at your patches, but I 
-believe that dropping the "feature" of manipulating this from outside of 
-the container will save you a lot of trouble.
-
-Please note that a process can temporarily join a namespace with 
-setns(). So you can have a *utility* that does it from the outer world, 
-but the kernel has no business with that. As far as we're concerned, I 
-believe that you should always get your context from the current 
-namespace, and forbid any usage from outside.
-
-> * The hash table list defines(hash table size)for dquot caching for each type is
->    referred to kernel/user.c, maybe its better to define an array separatly for
->    performance optimizations.  Of course, that's all depending on my current
->    implementation is on the right road. :)
->
-> * Container quota statistics, should them be calculated and exposed to /proc/fs/quota?  If the underlying file system also enabled with quotas, they will be
->    mixed up, so how about add a new proc file like "ns_quota" there?
-No, this should be transferred to the process-specific proc and them 
-symlinked. Take a look at "/proc/self".
-
->
-> * Memory shrinks acquired from kswap.
->    As all dquot are cached in memory, and if the user executing quotaoff, maybe
->    I need to handle quota disable but still be kept at memory.
->    Also, add another routine to disable and remove all quotas from memory to
->    save memory directly.
-
-I didn't read your patches yet, so take it with a grain of salt here. 
-But I don't understand why you make this distinction of keeping it in 
-memory only.
-
-You could keep quota files outside of the container, and then bind mount 
-them to the current location in the setup-phase.
+But it seems to be the way to go. My only concern is whether or not it 
+is usable outside of lxc. Other Container solutions like OpenVZ would
+benefit from this a lot.
