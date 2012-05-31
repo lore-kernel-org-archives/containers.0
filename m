@@ -1,8 +1,17 @@
-From: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
+From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Subject: Re: [PATCH] meminfo: show /proc/meminfo base on container's memcg
-Date: Thu, 31 May 2012 09:57:18 +0200
-Message-ID: <20120531075718.GB1371__17299.0401079462$1338451079$gmane$org@cmpxchg.org>
-References: <alpine.DEB.2.00.1205302156090.25774@chino.kir.corp.google.com>
+Date: Thu, 31 May 2012 15:58:41 +0800
+Message-ID: <4FC724B1.70508__23063.0078156993$1338451099$gmane$org@cn.fujitsu.com>
+References: <1338260214-21919-1-git-send-email-gaofeng@cn.fujitsu.com>
+	<alpine.DEB.2.00.1205301433490.9716@chino.kir.corp.google.com>
+	<4FC6B68C.2070703@jp.fujitsu.com>
+	<CAHGf_=pFbsy4FO_UNu6O1-KyTd6O=pkmR8=3EGuZB5Reu3Vb9w@mail.gmail.com>
+	<4FC6BC3E.5010807@jp.fujitsu.com>
+	<alpine.DEB.2.00.1205301737530.25774@chino.kir.corp.google.com>
+	<4FC6C111.2060108@jp.fujitsu.com>
+	<alpine.DEB.2.00.1205301831270.25774@chino.kir.corp.google.com>
+	<4FC6D881.4090706@jp.fujitsu.com>
+	<alpine.DEB.2.00.1205302156090.25774@chino.kir.corp.google.com>
 	<4FC70355.70805@jp.fujitsu.com>
 	<alpine.DEB.2.00.1205302314190.25774@chino.kir.corp.google.com>
 	<4FC70E5E.1010003@gmail.com>
@@ -13,10 +22,9 @@ References: <alpine.DEB.2.00.1205302156090.25774@chino.kir.corp.google.com>
 	<alpine.DEB.2.00.1205310028420.8864@chino.kir.corp.google.com>
 	<4FC720EE.3010307@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 In-Reply-To: <4FC720EE.3010307-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -28,40 +36,50 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: KOSAKI Motohiro <kosaki.motohiro-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, May 31, 2012 at 03:42:38AM -0400, KOSAKI Motohiro wrote:
-> (5/31/12 3:35 AM), David Rientjes wrote:
-> >On Thu, 31 May 2012, KOSAKI Motohiro wrote:
-> >
-> >>>As I said, LXC and namespace isolation is a tangent to the discussion of
-> >>>faking the /proc/meminfo for the memcg context of a thread.
-> >>
-> >>Because of, /proc/meminfo affect a lot of libraries behavior. So, it's not only
-> >>application issue. If you can't rewrite _all_ of userland assets, fake meminfo
-> >>can't be escaped. Again see alternative container implementation.
-> >>
-> >
-> >It's a tangent because it isn't a complete psuedo /proc/meminfo for all
-> >threads attached to a memcg regardless of any namespace isolation; the LXC
-> >solution has existed for a couple of years by its procfs patchset that
-> >overlaps procfs with fuse and can suppress or modify any output in the
-> >context of a memory controller using things like
-> >memory.{limit,usage}_in_bytes.  I'm sure all other fields could be
-> >modified if outputted in some structured way via memcg; it looks like
-> >memory.stat would need to be extended to provide that.  If that's mounted
-> >prior to executing the application, then your isolation is achieved and
-> >all libraries should see the new output that you've defined in LXC.
-> >
-> >However, this seems like a seperate topic than the patch at hand which
-> >does this directly to /proc/meminfo based on a thread's memcg context,
-> >that's the part that I'm nacking.
-> 
-> Then, I NAKed current patch too. Yeah, current one is ugly. It assume _all_
-> user need namespace isolation and it clearly is not.
-
-Actually, it only chooses the memcg version for tasks that are not in
-the init pid namespace.  Tying this to the pid namespace is a bit
-ugly, but would probably end up doing the right thing most of the
-time.  A separate namespace would be better.
+5LqOIDIwMTLlubQwNeaciDMx5pelIDE1OjQyLCBLT1NBS0kgTW90b2hpcm8g5YaZ6YGTOgo+ICg1
+LzMxLzEyIDM6MzUgQU0pLCBEYXZpZCBSaWVudGplcyB3cm90ZToKPj4gT24gVGh1LCAzMSBNYXkg
+MjAxMiwgS09TQUtJIE1vdG9oaXJvIHdyb3RlOgo+Pgo+Pj4+IEFzIEkgc2FpZCwgTFhDIGFuZCBu
+YW1lc3BhY2UgaXNvbGF0aW9uIGlzIGEgdGFuZ2VudCB0byB0aGUgZGlzY3Vzc2lvbiBvZgo+Pj4+
+IGZha2luZyB0aGUgL3Byb2MvbWVtaW5mbyBmb3IgdGhlIG1lbWNnIGNvbnRleHQgb2YgYSB0aHJl
+YWQuCj4+Pgo+Pj4gQmVjYXVzZSBvZiwgL3Byb2MvbWVtaW5mbyBhZmZlY3QgYSBsb3Qgb2YgbGli
+cmFyaWVzIGJlaGF2aW9yLiBTbywgaXQncyBub3Qgb25seQo+Pj4gYXBwbGljYXRpb24gaXNzdWUu
+IElmIHlvdSBjYW4ndCByZXdyaXRlIF9hbGxfIG9mIHVzZXJsYW5kIGFzc2V0cywgZmFrZSBtZW1p
+bmZvCj4+PiBjYW4ndCBiZSBlc2NhcGVkLiBBZ2FpbiBzZWUgYWx0ZXJuYXRpdmUgY29udGFpbmVy
+IGltcGxlbWVudGF0aW9uLgo+Pj4KPj4KPj4gSXQncyBhIHRhbmdlbnQgYmVjYXVzZSBpdCBpc24n
+dCBhIGNvbXBsZXRlIHBzdWVkbyAvcHJvYy9tZW1pbmZvIGZvciBhbGwKPj4gdGhyZWFkcyBhdHRh
+Y2hlZCB0byBhIG1lbWNnIHJlZ2FyZGxlc3Mgb2YgYW55IG5hbWVzcGFjZSBpc29sYXRpb247IHRo
+ZSBMWEMKPj4gc29sdXRpb24gaGFzIGV4aXN0ZWQgZm9yIGEgY291cGxlIG9mIHllYXJzIGJ5IGl0
+cyBwcm9jZnMgcGF0Y2hzZXQgdGhhdAo+PiBvdmVybGFwcyBwcm9jZnMgd2l0aCBmdXNlIGFuZCBj
+YW4gc3VwcHJlc3Mgb3IgbW9kaWZ5IGFueSBvdXRwdXQgaW4gdGhlCj4+IGNvbnRleHQgb2YgYSBt
+ZW1vcnkgY29udHJvbGxlciB1c2luZyB0aGluZ3MgbGlrZQo+PiBtZW1vcnkue2xpbWl0LHVzYWdl
+fV9pbl9ieXRlcy4gIEknbSBzdXJlIGFsbCBvdGhlciBmaWVsZHMgY291bGQgYmUKPj4gbW9kaWZp
+ZWQgaWYgb3V0cHV0dGVkIGluIHNvbWUgc3RydWN0dXJlZCB3YXkgdmlhIG1lbWNnOyBpdCBsb29r
+cyBsaWtlCj4+IG1lbW9yeS5zdGF0IHdvdWxkIG5lZWQgdG8gYmUgZXh0ZW5kZWQgdG8gcHJvdmlk
+ZSB0aGF0LiAgSWYgdGhhdCdzIG1vdW50ZWQKPj4gcHJpb3IgdG8gZXhlY3V0aW5nIHRoZSBhcHBs
+aWNhdGlvbiwgdGhlbiB5b3VyIGlzb2xhdGlvbiBpcyBhY2hpZXZlZCBhbmQKPj4gYWxsIGxpYnJh
+cmllcyBzaG91bGQgc2VlIHRoZSBuZXcgb3V0cHV0IHRoYXQgeW91J3ZlIGRlZmluZWQgaW4gTFhD
+Lgo+Pgo+PiBIb3dldmVyLCB0aGlzIHNlZW1zIGxpa2UgYSBzZXBlcmF0ZSB0b3BpYyB0aGFuIHRo
+ZSBwYXRjaCBhdCBoYW5kIHdoaWNoCj4+IGRvZXMgdGhpcyBkaXJlY3RseSB0byAvcHJvYy9tZW1p
+bmZvIGJhc2VkIG9uIGEgdGhyZWFkJ3MgbWVtY2cgY29udGV4dCwKPj4gdGhhdCdzIHRoZSBwYXJ0
+IHRoYXQgSSdtIG5hY2tpbmcuCj4gCj4gVGhlbiwgSSBOQUtlZCBjdXJyZW50IHBhdGNoIHRvby4g
+WWVhaCwgY3VycmVudCBvbmUgaXMgdWdseS4gSXQgYXNzdW1lIF9hbGxfCj4gdXNlciBuZWVkIG5h
+bWVzcGFjZSBpc29sYXRpb24gYW5kIGl0IGNsZWFybHkgaXMgbm90Lgo+IAo+IAo+PiBJJ2QgcmVj
+b21tZW5kIHRvIEdhbyB0byBleHBvc2UgdGhpcwo+PiBpbmZvcm1hdGlvbiB2aWEgbWVtb3J5LnN0
+YXQgYW5kIHRoZW4gdXNlIGZ1c2UgYW5kIHRoZSBwcm9jZnMgbHhjIHN1cHBvcnQKPj4gYXMgeW91
+ciB3YXkgb2YgY29udGV4dHVhbGl6aW5nIHRoZSByZXNvdXJjZXMuCj4gCj4gSXQncyBvbmUgb2Yg
+YSBvcHRpb24uIEJ1dCwgSSBzZXJpb3VzbHkgZG91YnQgZnVzZSBjYW4gbWFrZSBzaW1wbGVyIHRo
+YW4ga2FtZXphd2Etc2FuJ3MKPiBpZGVhLiBCdXQgeWVhaCwgSSBtaWdodCBOQUNLIGthbWV6YXdh
+LXNhbidzIG9uZSBpZiBoZSB3aWxsIHBvc3QgdWdseSBwYXRjaC4KPiAKCkl0IHNlYW1zIEkgc2hv
+dWxkIGRvIHNvbWUgaG9tZXdvcmsgdG8gbWFrZSB0aGUgaW1wbGVtZW50IGJlYXV0aWZ1bGx5LgoK
+SSB0aGluayBrYW1lemF3YS1zYW4ncyBpZGVhIGlzIG1vcmUgc2ltcGxlci4KdGhhbmtzIGZvciB5
+b3VyIGFkdmljZS4KCj4gCj4gLS0gCj4gVG8gdW5zdWJzY3JpYmUgZnJvbSB0aGlzIGxpc3Q6IHNl
+bmQgdGhlIGxpbmUgInVuc3Vic2NyaWJlIGxpbnV4LWtlcm5lbCIgaW4KPiB0aGUgYm9keSBvZiBh
+IG1lc3NhZ2UgdG8gbWFqb3Jkb21vQHZnZXIua2VybmVsLm9yZwo+IE1vcmUgbWFqb3Jkb21vIGlu
+Zm8gYXQgIGh0dHA6Ly92Z2VyLmtlcm5lbC5vcmcvbWFqb3Jkb21vLWluZm8uaHRtbAo+IFBsZWFz
+ZSByZWFkIHRoZSBGQVEgYXQgIGh0dHA6Ly93d3cudHV4Lm9yZy9sa21sLwo+IAoKX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5n
+IGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3Rz
+LmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
