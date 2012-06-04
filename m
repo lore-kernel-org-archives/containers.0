@@ -1,20 +1,16 @@
-From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Subject: Re: container disk quota
-Date: Sun, 3 Jun 2012 13:48:18 +0400
-Message-ID: <4FCB32E2.6050404__30286.0209871598$1338717069$gmane$org@parallels.com>
+Date: Sun, 3 Jun 2012 21:57:16 -0500
+Message-ID: <20120604025716.GA3480__12631.2590939508$1338778668$gmane$org@sergelap>
 References: <1338389946-13711-1-git-send-email-jeff.liu@oracle.com>
-	<20120601155457.GA30909@quack.suse.cz>	<20120601160421.GA17402@amd1>
-	<4FC9ABBB.3050303@oracle.com>
-	<01FED15D-15A3-4542-B95B-1166F0A309E6@parallels.com>
-	<4FC9B183.10605@oracle.com>
-	<8660DDAA-D7A7-4C03-8CBB-9DB7E94C80CB@parallels.com>
-	<4FCAE6CB.8060208@oracle.com>
-	<81DE9C10-649B-4D13-86B0-200944AE8767@parallels.com>
+	<20120601155457.GA30909@quack.suse.cz>
+	<20120601160421.GA17402@amd1> <4FC9ABBB.3050303@oracle.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <81DE9C10-649B-4D13-86B0-200944AE8767-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4FC9ABBB.3050303-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,38 +20,92 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Kirill Korotaev <dev-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, "tinguely-sJ/iWh9BUns@public.gmane.org" <tinguely-sJ/iWh9BUns@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org" <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, "cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org" <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, "bpm-sJ/iWh9BUns@public.gmane.org" <bpm-sJ/iWh9BUns@public.gmane.org>, "christopher.jones-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org" <christopher.jones-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, "linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "tytso-3s7WtUTddSA@public.gmane.org" <tytso-3s7WtUTddSA@public.gmane.org>, "tm-d1IQDZat3X0@public.gmane.org" <tm-d1IQDZat3X0@public.gmane.org>, "linux-ext4-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-ext4-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "chris.mason-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org" <chris.mason-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+To: Jeff Liu <jeff.liu-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+Cc: tytso-3s7WtUTddSA@public.gmane.org, tinguely-sJ/iWh9BUns@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, bpm-sJ/iWh9BUns@public.gmane.org, christopher.jones-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, tm-d1IQDZat3X0@public.gmane.org, linux-ext4-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, chris.mason-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 06/03/2012 09:47 AM, Kirill Korotaev wrote:
->
-> On Jun 3, 2012, at 08:23 , Jeff Liu wrote:
->
->> Hi Kirill,
->>
->> On 06/02/2012 11:21 PM, Kirill Korotaev wrote:
->>
->>>>>>>
->>>>>>> Not having looked closely at the original patchset, let me ask - is this
->>>>>>> feature going to be a freebie with Eric's usernamespace patches?
->>>>>>
->>>>>> It we can reach a consensus to bind quota on mount namespace for
->>>>>> container or other things maybe.
->>>>>
->>>>> 1. OpenVZ doesn't use mount namespaces and still has quotas per container.
->>>>
->>>> AFAICS, OpenVZ has self-released quota tools to supply this feature.
->>>
->>> but standard quota tools work inside container w/o any modifications.
->>> This is very important for us, cause we run unmodified distros inside.
->>
->> Yes, am agree.
->> I can work out a new patches regarding quota tools based on mount namespace w/o any modification.
->
-> Jeff, why do you need fs namespace for quotas? OpenVZ works w/o it.
-> It sounds as too strict use case limitation. Or do I understand your patchset description wrong?
->
+Quoting Jeff Liu (jeff.liu-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org):
+> Hi Serge,
+> 
+> On 06/02/2012 12:04 AM, Serge Hallyn wrote:
+> 
+> > Quoting Jan Kara (jack-AlSwsSmVLrQ@public.gmane.org):
+> >>   Hello,
+> >>
+> >> On Wed 30-05-12 22:58:54, jeff.liu-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org wrote:
+> >>> According to glauber's comments regarding container disk quota, it should be binded to mount
+> >>> namespace rather than cgroup.
+> >>>
+> >>> Per my try out, it works just fine by combining with userland quota utilitly in this way.
+> >>> However, they are something has to be done at user tools too IMHO.
+> >>>
+> >>> Currently, the patchset is in very initial phase, I'd like to post it early to seek more
+> >>> feedbacks from you guys.
+> >>>
+> >>> Hopefully I can clarify my ideas clearly.
+> >>   So what I miss in this introductory email is some highlevel description
+> >> like what is the desired functionality you try to implement and what is it
+> >> good for. Looking at the examples below, it seems you want to be able to
+> >> set quota limits for namespace-uid (and also namespace-gid???) pairs, am I
+> >> right?
+> >>
+> >>   If yes, then I would like to understand one thing: When writing to a
+> >> file, used space is accounted to the owner of the file. Now how do we
+> >> determine owning namespace? Do you implicitely assume that only processes
+> >> from one namespace will be able to access the file?
+> >>
+> >> 								Honza
+> > 
+> > Not having looked closely at the original patchset, let me ask - is this
+> > feature going to be a freebie with Eric's usernamespace patches?
+> 
+> It we can reach a consensus to bind quota on mount namespace for
+> container or other things maybe.
+> I think it definitely should depends on user namespace.
+> 
+> > 
+> > There, a container can be started in its own user namespace.  It's uid
+> > 1000 will be mapped to something like 1101000 on the host.  So the actual
+> > uid against who the quota is counted is 1101000.  In another container,
+> > uid 1000 will be mapped to 1201000, and again quota will be counted against
+> > 1201000.
+> 
+> Is it also an implications that we can examine do container quota or not
+> based on the uid/gid number?
 
-OpenVZ has its own kernel, with its very own isolation capabilities.
-So in upstream, something has to be used instead.
+I'm sorry I don't understand the question.
+
+As an attempt at an answer:  the quota code wouldn't change at all.  We would
+simply exploit the fact that uid 1000 in container1 has a real uid of 101100,
+which is different from the real uid 102100 assigned to uid 1000 in container2
+and from real uid 1000 (uid 1000 on the host).
+
+> > Note that this won't work with bind mounts, as a file can only be owned
+> > by one uid, be it 1000, 1101000, or 1201000.  So for the quota to work
+> > each container would need its own files.  (Of course the underlying
+> > metadata can be shared through whatever ways - btrfs, lvm snapshotting,
+> > etc)
+> 
+> Do you means that we can not bind mount outside files to container for
+> as general adquot.user/adquot.group purpose?
+
+Right, not without some sort of stackable filesystem which masks the uid.
+
+Actually there may be a way around it (simply provide a mount option,
+requiring privilege in the original user namespace, saying mask uid x to
+look like uid y for this bind mount), but it's too early to say how
+cleanly that could be done.
+
+> If so, per glauber's comments, bind quota to mount namespace should be a
+> generic feature, and container just one of users could make use of it.
+> 
+> Again, if bind quota to mount namespace is on right direction, and it
+> only does make sense to container for now, maybe we don't need such
+> files. IMHO, container is a lightweight virtualization solution, maybe
+> its fine to make it as simple as possible.  If the server admin need to
+> configure hundreds of user/group dquot per container, perhaps he should
+> consider KVM/XEN.
+
+Server admin doesn't need to do that.
+
+-serge
