@@ -1,8 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 04/10] block: drop custom queue draining used by
-	scsi_transport_{iscsi|fc}
-Date: Mon,  4 Jun 2012 00:08:11 -0700
-Message-ID: <1338793697-10735-5-git-send-email-tj@kernel.org>
+Subject: [PATCH 05/10] block: refactor get_request[_wait]()
+Date: Mon,  4 Jun 2012 00:08:12 -0700
+Message-ID: <1338793697-10735-6-git-send-email-tj@kernel.org>
 References: <1338793697-10735-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -19,167 +18,166 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org
-Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, James Smart <james.smart-laKkSmNT4hbQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-iscsi_remove_host() uses bsg_remove_queue() which implements custom
-queue draining.  fc_bsg_remove() open-codes mostly identical logic.
+Currently, there are two request allocation functions - get_request()
+and get_request_wait().  The former tries to allocate a request once
+and the latter keeps retrying until it succeeds.  The latter wraps the
+former and keeps retrying until allocation succeeds.
 
-The draining logic isn't correct in that blk_stop_queue() doesn't
-prevent new requests from being queued - it just stops processing, so
-nothing prevents new requests to be queued after the logic determines
-that the queue is drained.
+The combination of two functions deliver fallible non-wait allocation,
+fallible wait allocation and unfailing wait allocation.  However,
+given that forward progress is guaranteed, fallible wait allocation
+isn't all that useful and in fact nobody uses it.
 
-blk_cleanup_queue() now implements proper queue draining and these
-custom draining logics aren't necessary.  Drop them and use
-bsg_unregister_queue() + blk_cleanup_queue() instead.
+This patch simplifies the interface as follows.
+
+* get_request() is renamed to __get_request() and is only used by the
+  wrapper function.
+
+* get_request_wait() is renamed to get_request().  It now takes
+  @gfp_mask and retries iff it contains %__GFP_WAIT.
+
+This patch doesn't introduce any functional change and is to prepare
+for further updates to request allocation path.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Reviewed-by: Mike Christie <michaelc-hcNo3dDEHLuVc3sceRu5cw@public.gmane.org>
-Cc: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
-Cc: James Smart <james.smart-laKkSmNT4hbQT0dZR+AlfA@public.gmane.org>
 ---
- block/bsg-lib.c                     |   53 -----------------------------------
- drivers/scsi/scsi_transport_fc.c    |   38 -------------------------
- drivers/scsi/scsi_transport_iscsi.c |    2 +-
- include/linux/bsg-lib.h             |    1 -
- 4 files changed, 1 insertions(+), 93 deletions(-)
+ block/blk-core.c |   74 +++++++++++++++++++++++++----------------------------
+ 1 files changed, 35 insertions(+), 39 deletions(-)
 
-diff --git a/block/bsg-lib.c b/block/bsg-lib.c
-index 7ad49c8..deee61f 100644
---- a/block/bsg-lib.c
-+++ b/block/bsg-lib.c
-@@ -243,56 +243,3 @@ int bsg_setup_queue(struct device *dev, struct request_queue *q,
- 	return 0;
+diff --git a/block/blk-core.c b/block/blk-core.c
+index 7465d89..9b25d73 100644
+--- a/block/blk-core.c
++++ b/block/blk-core.c
+@@ -824,7 +824,7 @@ static struct io_context *rq_ioc(struct bio *bio)
  }
- EXPORT_SYMBOL_GPL(bsg_setup_queue);
--
--/**
-- * bsg_remove_queue - Deletes the bsg dev from the q
-- * @q:	the request_queue that is to be torn down.
-- *
-- * Notes:
-- *   Before unregistering the queue empty any requests that are blocked
-- */
--void bsg_remove_queue(struct request_queue *q)
--{
--	struct request *req; /* block request */
--	int counts; /* totals for request_list count and starved */
--
--	if (!q)
--		return;
--
--	/* Stop taking in new requests */
--	spin_lock_irq(q->queue_lock);
--	blk_stop_queue(q);
--
--	/* drain all requests in the queue */
--	while (1) {
--		/* need the lock to fetch a request
--		 * this may fetch the same reqeust as the previous pass
--		 */
--		req = blk_fetch_request(q);
--		/* save requests in use and starved */
--		counts = q->rq.count[0] + q->rq.count[1] +
--			 q->rq.starved[0] + q->rq.starved[1];
--		spin_unlock_irq(q->queue_lock);
--		/* any requests still outstanding? */
--		if (counts == 0)
--			break;
--
--		/* This may be the same req as the previous iteration,
--		 * always send the blk_end_request_all after a prefetch.
--		 * It is not okay to not end the request because the
--		 * prefetch started the request.
--		 */
--		if (req) {
--			/* return -ENXIO to indicate that this queue is
--			 * going away
--			 */
--			req->errors = -ENXIO;
--			blk_end_request_all(req, -ENXIO);
--		}
--
--		msleep(200); /* allow bsg to possibly finish */
--		spin_lock_irq(q->queue_lock);
--	}
--	bsg_unregister_queue(q);
--}
--EXPORT_SYMBOL_GPL(bsg_remove_queue);
-diff --git a/drivers/scsi/scsi_transport_fc.c b/drivers/scsi/scsi_transport_fc.c
-index 5797604..a9617ad 100644
---- a/drivers/scsi/scsi_transport_fc.c
-+++ b/drivers/scsi/scsi_transport_fc.c
-@@ -4130,45 +4130,7 @@ fc_bsg_rportadd(struct Scsi_Host *shost, struct fc_rport *rport)
- static void
- fc_bsg_remove(struct request_queue *q)
+ 
+ /**
+- * get_request - get a free request
++ * __get_request - get a free request
+  * @q: request_queue to allocate request from
+  * @rw_flags: RW and SYNC flags
+  * @bio: bio to allocate request for (can be %NULL)
+@@ -837,8 +837,8 @@ static struct io_context *rq_ioc(struct bio *bio)
+  * Returns %NULL on failure, with @q->queue_lock held.
+  * Returns !%NULL on success, with @q->queue_lock *not held*.
+  */
+-static struct request *get_request(struct request_queue *q, int rw_flags,
+-				   struct bio *bio, gfp_t gfp_mask)
++static struct request *__get_request(struct request_queue *q, int rw_flags,
++				     struct bio *bio, gfp_t gfp_mask)
  {
--	struct request *req; /* block request */
--	int counts; /* totals for request_list count and starved */
+ 	struct request *rq;
+ 	struct request_list *rl = &q->rq;
+@@ -1016,56 +1016,55 @@ rq_starved:
+ }
+ 
+ /**
+- * get_request_wait - get a free request with retry
++ * get_request - get a free request
+  * @q: request_queue to allocate request from
+  * @rw_flags: RW and SYNC flags
+  * @bio: bio to allocate request for (can be %NULL)
++ * @gfp_mask: allocation mask
+  *
+- * Get a free request from @q.  This function keeps retrying under memory
+- * pressure and fails iff @q is dead.
++ * Get a free request from @q.  If %__GFP_WAIT is set in @gfp_mask, this
++ * function keeps retrying under memory pressure and fails iff @q is dead.
+  *
+  * Must be callled with @q->queue_lock held and,
+  * Returns %NULL on failure, with @q->queue_lock held.
+  * Returns !%NULL on success, with @q->queue_lock *not held*.
+  */
+-static struct request *get_request_wait(struct request_queue *q, int rw_flags,
+-					struct bio *bio)
++static struct request *get_request(struct request_queue *q, int rw_flags,
++				   struct bio *bio, gfp_t gfp_mask)
+ {
+ 	const bool is_sync = rw_is_sync(rw_flags) != 0;
++	DEFINE_WAIT(wait);
++	struct request_list *rl = &q->rq;
+ 	struct request *rq;
++retry:
++	rq = __get_request(q, rw_flags, bio, gfp_mask);
++	if (rq)
++		return rq;
+ 
+-	rq = get_request(q, rw_flags, bio, GFP_NOIO);
+-	while (!rq) {
+-		DEFINE_WAIT(wait);
+-		struct request_list *rl = &q->rq;
 -
- 	if (q) {
--		/* Stop taking in new requests */
+-		if (unlikely(blk_queue_dead(q)))
+-			return NULL;
+-
+-		prepare_to_wait_exclusive(&rl->wait[is_sync], &wait,
+-				TASK_UNINTERRUPTIBLE);
++	if (!(gfp_mask & __GFP_WAIT) || unlikely(blk_queue_dead(q)))
++		return NULL;
+ 
+-		trace_block_sleeprq(q, bio, rw_flags & 1);
++	/* wait on @rl and retry */
++	prepare_to_wait_exclusive(&rl->wait[is_sync], &wait,
++				  TASK_UNINTERRUPTIBLE);
+ 
+-		spin_unlock_irq(q->queue_lock);
+-		io_schedule();
++	trace_block_sleeprq(q, bio, rw_flags & 1);
+ 
+-		/*
+-		 * After sleeping, we become a "batching" process and
+-		 * will be able to allocate at least one request, and
+-		 * up to a big batch of them for a small period time.
+-		 * See ioc_batching, ioc_set_batching
+-		 */
+-		create_io_context(GFP_NOIO, q->node);
+-		ioc_set_batching(q, current->io_context);
++	spin_unlock_irq(q->queue_lock);
++	io_schedule();
+ 
 -		spin_lock_irq(q->queue_lock);
--		blk_stop_queue(q);
--
--		/* drain all requests in the queue */
--		while (1) {
--			/* need the lock to fetch a request
--			 * this may fetch the same reqeust as the previous pass
--			 */
--			req = blk_fetch_request(q);
--			/* save requests in use and starved */
--			counts = q->rq.count[0] + q->rq.count[1] +
--				q->rq.starved[0] + q->rq.starved[1];
--			spin_unlock_irq(q->queue_lock);
--			/* any requests still outstanding? */
--			if (counts == 0)
--				break;
--
--			/* This may be the same req as the previous iteration,
--			 * always send the blk_end_request_all after a prefetch.
--			 * It is not okay to not end the request because the
--			 * prefetch started the request.
--			 */
--			if (req) {
--				/* return -ENXIO to indicate that this queue is
--				 * going away
--				 */
--				req->errors = -ENXIO;
--				blk_end_request_all(req, -ENXIO);
--			}
--
--			msleep(200); /* allow bsg to possibly finish */
--			spin_lock_irq(q->queue_lock);
--		}
--
- 		bsg_unregister_queue(q);
- 		blk_cleanup_queue(q);
- 	}
-diff --git a/drivers/scsi/scsi_transport_iscsi.c b/drivers/scsi/scsi_transport_iscsi.c
-index 1cf640e..c737a16 100644
---- a/drivers/scsi/scsi_transport_iscsi.c
-+++ b/drivers/scsi/scsi_transport_iscsi.c
-@@ -575,7 +575,7 @@ static int iscsi_remove_host(struct transport_container *tc,
- 	struct iscsi_cls_host *ihost = shost->shost_data;
+-		finish_wait(&rl->wait[is_sync], &wait);
++	/*
++	 * After sleeping, we become a "batching" process and will be able
++	 * to allocate at least one request, and up to a big batch of them
++	 * for a small period time.  See ioc_batching, ioc_set_batching
++	 */
++	create_io_context(GFP_NOIO, q->node);
++	ioc_set_batching(q, current->io_context);
  
- 	if (ihost->bsg_q) {
--		bsg_remove_queue(ihost->bsg_q);
-+		bsg_unregister_queue(ihost->bsg_q);
- 		blk_cleanup_queue(ihost->bsg_q);
- 	}
- 	return 0;
-diff --git a/include/linux/bsg-lib.h b/include/linux/bsg-lib.h
-index f55ab8c..4d0fb3d 100644
---- a/include/linux/bsg-lib.h
-+++ b/include/linux/bsg-lib.h
-@@ -67,7 +67,6 @@ void bsg_job_done(struct bsg_job *job, int result,
- int bsg_setup_queue(struct device *dev, struct request_queue *q, char *name,
- 		    bsg_job_fn *job_fn, int dd_job_size);
- void bsg_request_fn(struct request_queue *q);
--void bsg_remove_queue(struct request_queue *q);
- void bsg_goose_queue(struct request_queue *q);
+-		rq = get_request(q, rw_flags, bio, GFP_NOIO);
+-	};
++	spin_lock_irq(q->queue_lock);
++	finish_wait(&rl->wait[is_sync], &wait);
  
- #endif
+-	return rq;
++	goto retry;
+ }
+ 
+ struct request *blk_get_request(struct request_queue *q, int rw, gfp_t gfp_mask)
+@@ -1075,10 +1074,7 @@ struct request *blk_get_request(struct request_queue *q, int rw, gfp_t gfp_mask)
+ 	BUG_ON(rw != READ && rw != WRITE);
+ 
+ 	spin_lock_irq(q->queue_lock);
+-	if (gfp_mask & __GFP_WAIT)
+-		rq = get_request_wait(q, rw, NULL);
+-	else
+-		rq = get_request(q, rw, NULL, gfp_mask);
++	rq = get_request(q, rw, NULL, gfp_mask);
+ 	if (!rq)
+ 		spin_unlock_irq(q->queue_lock);
+ 	/* q->queue_lock is unlocked at this point */
+@@ -1468,7 +1464,7 @@ get_rq:
+ 	 * Grab a free request. This is might sleep but can not fail.
+ 	 * Returns with the queue unlocked.
+ 	 */
+-	req = get_request_wait(q, rw_flags, bio);
++	req = get_request(q, rw_flags, bio, GFP_NOIO);
+ 	if (unlikely(!req)) {
+ 		bio_endio(bio, -ENODEV);	/* @q is dead */
+ 		goto out_unlock;
 -- 
 1.7.7.3
