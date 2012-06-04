@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 06/10] block: allocate io_context upfront
-Date: Mon,  4 Jun 2012 00:08:13 -0700
-Message-ID: <1338793697-10735-7-git-send-email-tj@kernel.org>
+Subject: [PATCH 07/10] blkcg: inline bio_blkcg() and friends
+Date: Mon,  4 Jun 2012 00:08:14 -0700
+Message-ID: <1338793697-10735-8-git-send-email-tj@kernel.org>
 References: <1338793697-10735-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,128 +21,115 @@ To: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org
 Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Block layer very lazy allocation of ioc.  It waits until the moment
-ioc is absolutely necessary; unfortunately, that time could be inside
-queue lock and __get_request() performs unlock - try alloc - retry
-dancing.
-
-Just allocate it up-front on entry to block layer.  We're not saving
-the rain forest by deferring it to the last possible moment and
-complicating things unnecessarily.
+Make bio_blkcg() and friends inline.  They all are very simple and
+used only in few places.
 
 This patch is to prepare for further updates to request allocation
 path.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/blk-core.c     |   42 +++++++++++++++---------------------------
- block/blk-throttle.c |    3 ---
- 2 files changed, 15 insertions(+), 30 deletions(-)
+ block/blk-cgroup.c |   21 ---------------------
+ block/blk-cgroup.h |   26 ++++++++++++++++++++++----
+ 2 files changed, 22 insertions(+), 25 deletions(-)
 
-diff --git a/block/blk-core.c b/block/blk-core.c
-index 9b25d73..ada4bc0 100644
---- a/block/blk-core.c
-+++ b/block/blk-core.c
-@@ -842,15 +842,11 @@ static struct request *__get_request(struct request_queue *q, int rw_flags,
+diff --git a/block/blk-cgroup.c b/block/blk-cgroup.c
+index cbeeb54..a48f35b 100644
+--- a/block/blk-cgroup.c
++++ b/block/blk-cgroup.c
+@@ -31,27 +31,6 @@ EXPORT_SYMBOL_GPL(blkcg_root);
+ 
+ static struct blkcg_policy *blkcg_policy[BLKCG_MAX_POLS];
+ 
+-struct blkcg *cgroup_to_blkcg(struct cgroup *cgroup)
+-{
+-	return container_of(cgroup_subsys_state(cgroup, blkio_subsys_id),
+-			    struct blkcg, css);
+-}
+-EXPORT_SYMBOL_GPL(cgroup_to_blkcg);
+-
+-static struct blkcg *task_blkcg(struct task_struct *tsk)
+-{
+-	return container_of(task_subsys_state(tsk, blkio_subsys_id),
+-			    struct blkcg, css);
+-}
+-
+-struct blkcg *bio_blkcg(struct bio *bio)
+-{
+-	if (bio && bio->bi_css)
+-		return container_of(bio->bi_css, struct blkcg, css);
+-	return task_blkcg(current);
+-}
+-EXPORT_SYMBOL_GPL(bio_blkcg);
+-
+ static bool blkcg_policy_enabled(struct request_queue *q,
+ 				 const struct blkcg_policy *pol)
  {
- 	struct request *rq;
- 	struct request_list *rl = &q->rq;
--	struct elevator_type *et;
--	struct io_context *ioc;
-+	struct elevator_type *et = q->elevator->type;
-+	struct io_context *ioc = rq_ioc(bio);
- 	struct io_cq *icq = NULL;
- 	const bool is_sync = rw_is_sync(rw_flags) != 0;
--	bool retried = false;
- 	int may_queue;
--retry:
--	et = q->elevator->type;
--	ioc = rq_ioc(bio);
+diff --git a/block/blk-cgroup.h b/block/blk-cgroup.h
+index 8ac457c..e74cce1 100644
+--- a/block/blk-cgroup.h
++++ b/block/blk-cgroup.h
+@@ -120,8 +120,6 @@ struct blkcg_policy {
  
- 	if (unlikely(blk_queue_dead(q)))
- 		return NULL;
-@@ -862,20 +858,6 @@ retry:
- 	if (rl->count[is_sync]+1 >= queue_congestion_on_threshold(q)) {
- 		if (rl->count[is_sync]+1 >= q->nr_requests) {
- 			/*
--			 * We want ioc to record batching state.  If it's
--			 * not already there, creating a new one requires
--			 * dropping queue_lock, which in turn requires
--			 * retesting conditions to avoid queue hang.
--			 */
--			if (!ioc && !retried) {
--				spin_unlock_irq(q->queue_lock);
--				create_io_context(gfp_mask, q->node);
--				spin_lock_irq(q->queue_lock);
--				retried = true;
--				goto retry;
--			}
--
--			/*
- 			 * The queue will fill after this allocation, so set
- 			 * it as full, and mark this process as "batching".
- 			 * This process will be allowed to complete a batch of
-@@ -942,12 +924,8 @@ retry:
- 	/* init elvpriv */
- 	if (rw_flags & REQ_ELVPRIV) {
- 		if (unlikely(et->icq_cache && !icq)) {
--			create_io_context(gfp_mask, q->node);
--			ioc = rq_ioc(bio);
--			if (!ioc)
--				goto fail_elvpriv;
--
--			icq = ioc_create_icq(ioc, q, gfp_mask);
-+			if (ioc)
-+				icq = ioc_create_icq(ioc, q, gfp_mask);
- 			if (!icq)
- 				goto fail_elvpriv;
- 		}
-@@ -1058,7 +1036,6 @@ retry:
- 	 * to allocate at least one request, and up to a big batch of them
- 	 * for a small period time.  See ioc_batching, ioc_set_batching
- 	 */
--	create_io_context(GFP_NOIO, q->node);
- 	ioc_set_batching(q, current->io_context);
+ extern struct blkcg blkcg_root;
  
- 	spin_lock_irq(q->queue_lock);
-@@ -1073,6 +1050,9 @@ struct request *blk_get_request(struct request_queue *q, int rw, gfp_t gfp_mask)
+-struct blkcg *cgroup_to_blkcg(struct cgroup *cgroup);
+-struct blkcg *bio_blkcg(struct bio *bio);
+ struct blkcg_gq *blkg_lookup(struct blkcg *blkcg, struct request_queue *q);
+ struct blkcg_gq *blkg_lookup_create(struct blkcg *blkcg,
+ 				    struct request_queue *q);
+@@ -160,6 +158,25 @@ int blkg_conf_prep(struct blkcg *blkcg, const struct blkcg_policy *pol,
+ void blkg_conf_finish(struct blkg_conf_ctx *ctx);
  
- 	BUG_ON(rw != READ && rw != WRITE);
  
-+	/* create ioc upfront */
-+	create_io_context(gfp_mask, q->node);
++static inline struct blkcg *cgroup_to_blkcg(struct cgroup *cgroup)
++{
++	return container_of(cgroup_subsys_state(cgroup, blkio_subsys_id),
++			    struct blkcg, css);
++}
 +
- 	spin_lock_irq(q->queue_lock);
- 	rq = get_request(q, rw, NULL, gfp_mask);
- 	if (!rq)
-@@ -1685,6 +1665,14 @@ generic_make_request_checks(struct bio *bio)
- 		goto end_io;
- 	}
- 
-+	/*
-+	 * Various block parts want %current->io_context and lazy ioc
-+	 * allocation ends up trading a lot of pain for a small amount of
-+	 * memory.  Just allocate it upfront.  This may fail and block
-+	 * layer knows how to live with it.
-+	 */
-+	create_io_context(GFP_ATOMIC, q->node);
++static inline struct blkcg *task_blkcg(struct task_struct *tsk)
++{
++	return container_of(task_subsys_state(tsk, blkio_subsys_id),
++			    struct blkcg, css);
++}
 +
- 	if (blk_throtl_bio(q, bio))
- 		return false;	/* throttled, will be resubmitted later */
++static inline struct blkcg *bio_blkcg(struct bio *bio)
++{
++	if (bio && bio->bi_css)
++		return container_of(bio->bi_css, struct blkcg, css);
++	return task_blkcg(current);
++}
++
+ /**
+  * blkg_to_pdata - get policy private data
+  * @blkg: blkg of interest
+@@ -351,6 +368,7 @@ static inline void blkg_rwstat_reset(struct blkg_rwstat *rwstat)
+ #else	/* CONFIG_BLK_CGROUP */
  
-diff --git a/block/blk-throttle.c b/block/blk-throttle.c
-index 5b06595..e287c19 100644
---- a/block/blk-throttle.c
-+++ b/block/blk-throttle.c
-@@ -1123,9 +1123,6 @@ bool blk_throtl_bio(struct request_queue *q, struct bio *bio)
- 		goto out;
- 	}
+ struct cgroup;
++struct blkcg;
  
--	/* bio_associate_current() needs ioc, try creating */
--	create_io_context(GFP_ATOMIC, q->node);
--
- 	/*
- 	 * A throtl_grp pointer retrieved under rcu can be used to access
- 	 * basic fields like stats and io rates. If a group has no rules,
+ struct blkg_policy_data {
+ };
+@@ -361,8 +379,6 @@ struct blkcg_gq {
+ struct blkcg_policy {
+ };
+ 
+-static inline struct blkcg *cgroup_to_blkcg(struct cgroup *cgroup) { return NULL; }
+-static inline struct blkcg *bio_blkcg(struct bio *bio) { return NULL; }
+ static inline struct blkcg_gq *blkg_lookup(struct blkcg *blkcg, void *key) { return NULL; }
+ static inline int blkcg_init_queue(struct request_queue *q) { return 0; }
+ static inline void blkcg_drain_queue(struct request_queue *q) { }
+@@ -374,6 +390,8 @@ static inline int blkcg_activate_policy(struct request_queue *q,
+ static inline void blkcg_deactivate_policy(struct request_queue *q,
+ 					   const struct blkcg_policy *pol) { }
+ 
++static inline struct blkcg *cgroup_to_blkcg(struct cgroup *cgroup) { return NULL; }
++static inline struct blkcg *bio_blkcg(struct bio *bio) { return NULL; }
+ static inline struct blkg_policy_data *blkg_to_pd(struct blkcg_gq *blkg,
+ 						  struct blkcg_policy *pol) { return NULL; }
+ static inline struct blkcg_gq *pd_to_blkg(struct blkg_policy_data *pd) { return NULL; }
 -- 
 1.7.7.3
