@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 05/10] block: refactor get_request[_wait]()
-Date: Mon,  4 Jun 2012 00:08:12 -0700
-Message-ID: <1338793697-10735-6-git-send-email-tj@kernel.org>
+Subject: [PATCH 06/10] block: allocate io_context upfront
+Date: Mon,  4 Jun 2012 00:08:13 -0700
+Message-ID: <1338793697-10735-7-git-send-email-tj@kernel.org>
 References: <1338793697-10735-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,163 +21,128 @@ To: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org
 Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Currently, there are two request allocation functions - get_request()
-and get_request_wait().  The former tries to allocate a request once
-and the latter keeps retrying until it succeeds.  The latter wraps the
-former and keeps retrying until allocation succeeds.
+Block layer very lazy allocation of ioc.  It waits until the moment
+ioc is absolutely necessary; unfortunately, that time could be inside
+queue lock and __get_request() performs unlock - try alloc - retry
+dancing.
 
-The combination of two functions deliver fallible non-wait allocation,
-fallible wait allocation and unfailing wait allocation.  However,
-given that forward progress is guaranteed, fallible wait allocation
-isn't all that useful and in fact nobody uses it.
+Just allocate it up-front on entry to block layer.  We're not saving
+the rain forest by deferring it to the last possible moment and
+complicating things unnecessarily.
 
-This patch simplifies the interface as follows.
-
-* get_request() is renamed to __get_request() and is only used by the
-  wrapper function.
-
-* get_request_wait() is renamed to get_request().  It now takes
-  @gfp_mask and retries iff it contains %__GFP_WAIT.
-
-This patch doesn't introduce any functional change and is to prepare
-for further updates to request allocation path.
+This patch is to prepare for further updates to request allocation
+path.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- block/blk-core.c |   74 +++++++++++++++++++++++++----------------------------
- 1 files changed, 35 insertions(+), 39 deletions(-)
+ block/blk-core.c     |   42 +++++++++++++++---------------------------
+ block/blk-throttle.c |    3 ---
+ 2 files changed, 15 insertions(+), 30 deletions(-)
 
 diff --git a/block/blk-core.c b/block/blk-core.c
-index 7465d89..9b25d73 100644
+index 9b25d73..ada4bc0 100644
 --- a/block/blk-core.c
 +++ b/block/blk-core.c
-@@ -824,7 +824,7 @@ static struct io_context *rq_ioc(struct bio *bio)
- }
- 
- /**
-- * get_request - get a free request
-+ * __get_request - get a free request
-  * @q: request_queue to allocate request from
-  * @rw_flags: RW and SYNC flags
-  * @bio: bio to allocate request for (can be %NULL)
-@@ -837,8 +837,8 @@ static struct io_context *rq_ioc(struct bio *bio)
-  * Returns %NULL on failure, with @q->queue_lock held.
-  * Returns !%NULL on success, with @q->queue_lock *not held*.
-  */
--static struct request *get_request(struct request_queue *q, int rw_flags,
--				   struct bio *bio, gfp_t gfp_mask)
-+static struct request *__get_request(struct request_queue *q, int rw_flags,
-+				     struct bio *bio, gfp_t gfp_mask)
+@@ -842,15 +842,11 @@ static struct request *__get_request(struct request_queue *q, int rw_flags,
  {
  	struct request *rq;
  	struct request_list *rl = &q->rq;
-@@ -1016,56 +1016,55 @@ rq_starved:
- }
- 
- /**
-- * get_request_wait - get a free request with retry
-+ * get_request - get a free request
-  * @q: request_queue to allocate request from
-  * @rw_flags: RW and SYNC flags
-  * @bio: bio to allocate request for (can be %NULL)
-+ * @gfp_mask: allocation mask
-  *
-- * Get a free request from @q.  This function keeps retrying under memory
-- * pressure and fails iff @q is dead.
-+ * Get a free request from @q.  If %__GFP_WAIT is set in @gfp_mask, this
-+ * function keeps retrying under memory pressure and fails iff @q is dead.
-  *
-  * Must be callled with @q->queue_lock held and,
-  * Returns %NULL on failure, with @q->queue_lock held.
-  * Returns !%NULL on success, with @q->queue_lock *not held*.
-  */
--static struct request *get_request_wait(struct request_queue *q, int rw_flags,
--					struct bio *bio)
-+static struct request *get_request(struct request_queue *q, int rw_flags,
-+				   struct bio *bio, gfp_t gfp_mask)
- {
+-	struct elevator_type *et;
+-	struct io_context *ioc;
++	struct elevator_type *et = q->elevator->type;
++	struct io_context *ioc = rq_ioc(bio);
+ 	struct io_cq *icq = NULL;
  	const bool is_sync = rw_is_sync(rw_flags) != 0;
-+	DEFINE_WAIT(wait);
-+	struct request_list *rl = &q->rq;
- 	struct request *rq;
-+retry:
-+	rq = __get_request(q, rw_flags, bio, gfp_mask);
-+	if (rq)
-+		return rq;
+-	bool retried = false;
+ 	int may_queue;
+-retry:
+-	et = q->elevator->type;
+-	ioc = rq_ioc(bio);
  
--	rq = get_request(q, rw_flags, bio, GFP_NOIO);
--	while (!rq) {
--		DEFINE_WAIT(wait);
--		struct request_list *rl = &q->rq;
+ 	if (unlikely(blk_queue_dead(q)))
+ 		return NULL;
+@@ -862,20 +858,6 @@ retry:
+ 	if (rl->count[is_sync]+1 >= queue_congestion_on_threshold(q)) {
+ 		if (rl->count[is_sync]+1 >= q->nr_requests) {
+ 			/*
+-			 * We want ioc to record batching state.  If it's
+-			 * not already there, creating a new one requires
+-			 * dropping queue_lock, which in turn requires
+-			 * retesting conditions to avoid queue hang.
+-			 */
+-			if (!ioc && !retried) {
+-				spin_unlock_irq(q->queue_lock);
+-				create_io_context(gfp_mask, q->node);
+-				spin_lock_irq(q->queue_lock);
+-				retried = true;
+-				goto retry;
+-			}
 -
--		if (unlikely(blk_queue_dead(q)))
--			return NULL;
+-			/*
+ 			 * The queue will fill after this allocation, so set
+ 			 * it as full, and mark this process as "batching".
+ 			 * This process will be allowed to complete a batch of
+@@ -942,12 +924,8 @@ retry:
+ 	/* init elvpriv */
+ 	if (rw_flags & REQ_ELVPRIV) {
+ 		if (unlikely(et->icq_cache && !icq)) {
+-			create_io_context(gfp_mask, q->node);
+-			ioc = rq_ioc(bio);
+-			if (!ioc)
+-				goto fail_elvpriv;
 -
--		prepare_to_wait_exclusive(&rl->wait[is_sync], &wait,
--				TASK_UNINTERRUPTIBLE);
-+	if (!(gfp_mask & __GFP_WAIT) || unlikely(blk_queue_dead(q)))
-+		return NULL;
- 
--		trace_block_sleeprq(q, bio, rw_flags & 1);
-+	/* wait on @rl and retry */
-+	prepare_to_wait_exclusive(&rl->wait[is_sync], &wait,
-+				  TASK_UNINTERRUPTIBLE);
- 
--		spin_unlock_irq(q->queue_lock);
--		io_schedule();
-+	trace_block_sleeprq(q, bio, rw_flags & 1);
- 
--		/*
--		 * After sleeping, we become a "batching" process and
--		 * will be able to allocate at least one request, and
--		 * up to a big batch of them for a small period time.
--		 * See ioc_batching, ioc_set_batching
--		 */
--		create_io_context(GFP_NOIO, q->node);
--		ioc_set_batching(q, current->io_context);
-+	spin_unlock_irq(q->queue_lock);
-+	io_schedule();
- 
--		spin_lock_irq(q->queue_lock);
--		finish_wait(&rl->wait[is_sync], &wait);
-+	/*
-+	 * After sleeping, we become a "batching" process and will be able
-+	 * to allocate at least one request, and up to a big batch of them
-+	 * for a small period time.  See ioc_batching, ioc_set_batching
-+	 */
-+	create_io_context(GFP_NOIO, q->node);
-+	ioc_set_batching(q, current->io_context);
- 
--		rq = get_request(q, rw_flags, bio, GFP_NOIO);
--	};
-+	spin_lock_irq(q->queue_lock);
-+	finish_wait(&rl->wait[is_sync], &wait);
- 
--	return rq;
-+	goto retry;
- }
- 
- struct request *blk_get_request(struct request_queue *q, int rw, gfp_t gfp_mask)
-@@ -1075,10 +1074,7 @@ struct request *blk_get_request(struct request_queue *q, int rw, gfp_t gfp_mask)
- 	BUG_ON(rw != READ && rw != WRITE);
+-			icq = ioc_create_icq(ioc, q, gfp_mask);
++			if (ioc)
++				icq = ioc_create_icq(ioc, q, gfp_mask);
+ 			if (!icq)
+ 				goto fail_elvpriv;
+ 		}
+@@ -1058,7 +1036,6 @@ retry:
+ 	 * to allocate at least one request, and up to a big batch of them
+ 	 * for a small period time.  See ioc_batching, ioc_set_batching
+ 	 */
+-	create_io_context(GFP_NOIO, q->node);
+ 	ioc_set_batching(q, current->io_context);
  
  	spin_lock_irq(q->queue_lock);
--	if (gfp_mask & __GFP_WAIT)
--		rq = get_request_wait(q, rw, NULL);
--	else
--		rq = get_request(q, rw, NULL, gfp_mask);
-+	rq = get_request(q, rw, NULL, gfp_mask);
+@@ -1073,6 +1050,9 @@ struct request *blk_get_request(struct request_queue *q, int rw, gfp_t gfp_mask)
+ 
+ 	BUG_ON(rw != READ && rw != WRITE);
+ 
++	/* create ioc upfront */
++	create_io_context(gfp_mask, q->node);
++
+ 	spin_lock_irq(q->queue_lock);
+ 	rq = get_request(q, rw, NULL, gfp_mask);
  	if (!rq)
- 		spin_unlock_irq(q->queue_lock);
- 	/* q->queue_lock is unlocked at this point */
-@@ -1468,7 +1464,7 @@ get_rq:
- 	 * Grab a free request. This is might sleep but can not fail.
- 	 * Returns with the queue unlocked.
- 	 */
--	req = get_request_wait(q, rw_flags, bio);
-+	req = get_request(q, rw_flags, bio, GFP_NOIO);
- 	if (unlikely(!req)) {
- 		bio_endio(bio, -ENODEV);	/* @q is dead */
- 		goto out_unlock;
+@@ -1685,6 +1665,14 @@ generic_make_request_checks(struct bio *bio)
+ 		goto end_io;
+ 	}
+ 
++	/*
++	 * Various block parts want %current->io_context and lazy ioc
++	 * allocation ends up trading a lot of pain for a small amount of
++	 * memory.  Just allocate it upfront.  This may fail and block
++	 * layer knows how to live with it.
++	 */
++	create_io_context(GFP_ATOMIC, q->node);
++
+ 	if (blk_throtl_bio(q, bio))
+ 		return false;	/* throttled, will be resubmitted later */
+ 
+diff --git a/block/blk-throttle.c b/block/blk-throttle.c
+index 5b06595..e287c19 100644
+--- a/block/blk-throttle.c
++++ b/block/blk-throttle.c
+@@ -1123,9 +1123,6 @@ bool blk_throtl_bio(struct request_queue *q, struct bio *bio)
+ 		goto out;
+ 	}
+ 
+-	/* bio_associate_current() needs ioc, try creating */
+-	create_io_context(GFP_ATOMIC, q->node);
+-
+ 	/*
+ 	 * A throtl_grp pointer retrieved under rcu can be used to access
+ 	 * basic fields like stats and io rates. If a group has no rules,
 -- 
 1.7.7.3
