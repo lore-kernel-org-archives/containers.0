@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 05/10] block: refactor get_request[_wait]()
-Date: Mon,  4 Jun 2012 20:40:55 -0700
-Message-ID: <1338867660-4689-6-git-send-email-tj@kernel.org>
+Subject: [PATCH 07/10] blkcg: inline bio_blkcg() and friends
+Date: Mon,  4 Jun 2012 20:40:57 -0700
+Message-ID: <1338867660-4689-8-git-send-email-tj@kernel.org>
 References: <1338867660-4689-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,164 +21,115 @@ To: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, linux-kernel-u79uwXL29TY76Z2r
 Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Currently, there are two request allocation functions - get_request()
-and get_request_wait().  The former tries to allocate a request once
-and the latter keeps retrying until it succeeds.  The latter wraps the
-former and keeps retrying until allocation succeeds.
+Make bio_blkcg() and friends inline.  They all are very simple and
+used only in few places.
 
-The combination of two functions deliver fallible non-wait allocation,
-fallible wait allocation and unfailing wait allocation.  However,
-given that forward progress is guaranteed, fallible wait allocation
-isn't all that useful and in fact nobody uses it.
-
-This patch simplifies the interface as follows.
-
-* get_request() is renamed to __get_request() and is only used by the
-  wrapper function.
-
-* get_request_wait() is renamed to get_request().  It now takes
-  @gfp_mask and retries iff it contains %__GFP_WAIT.
-
-This patch doesn't introduce any functional change and is to prepare
-for further updates to request allocation path.
+This patch is to prepare for further updates to request allocation
+path.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Acked-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/blk-core.c |   74 +++++++++++++++++++++++++----------------------------
- 1 files changed, 35 insertions(+), 39 deletions(-)
+ block/blk-cgroup.c |   21 ---------------------
+ block/blk-cgroup.h |   26 ++++++++++++++++++++++----
+ 2 files changed, 22 insertions(+), 25 deletions(-)
 
-diff --git a/block/blk-core.c b/block/blk-core.c
-index 7465d89..9b25d73 100644
---- a/block/blk-core.c
-+++ b/block/blk-core.c
-@@ -824,7 +824,7 @@ static struct io_context *rq_ioc(struct bio *bio)
- }
+diff --git a/block/blk-cgroup.c b/block/blk-cgroup.c
+index cbeeb54..a48f35b 100644
+--- a/block/blk-cgroup.c
++++ b/block/blk-cgroup.c
+@@ -31,27 +31,6 @@ EXPORT_SYMBOL_GPL(blkcg_root);
  
- /**
-- * get_request - get a free request
-+ * __get_request - get a free request
-  * @q: request_queue to allocate request from
-  * @rw_flags: RW and SYNC flags
-  * @bio: bio to allocate request for (can be %NULL)
-@@ -837,8 +837,8 @@ static struct io_context *rq_ioc(struct bio *bio)
-  * Returns %NULL on failure, with @q->queue_lock held.
-  * Returns !%NULL on success, with @q->queue_lock *not held*.
-  */
--static struct request *get_request(struct request_queue *q, int rw_flags,
--				   struct bio *bio, gfp_t gfp_mask)
-+static struct request *__get_request(struct request_queue *q, int rw_flags,
-+				     struct bio *bio, gfp_t gfp_mask)
- {
- 	struct request *rq;
- 	struct request_list *rl = &q->rq;
-@@ -1016,56 +1016,55 @@ rq_starved:
- }
+ static struct blkcg_policy *blkcg_policy[BLKCG_MAX_POLS];
  
- /**
-- * get_request_wait - get a free request with retry
-+ * get_request - get a free request
-  * @q: request_queue to allocate request from
-  * @rw_flags: RW and SYNC flags
-  * @bio: bio to allocate request for (can be %NULL)
-+ * @gfp_mask: allocation mask
-  *
-- * Get a free request from @q.  This function keeps retrying under memory
-- * pressure and fails iff @q is dead.
-+ * Get a free request from @q.  If %__GFP_WAIT is set in @gfp_mask, this
-+ * function keeps retrying under memory pressure and fails iff @q is dead.
-  *
-  * Must be callled with @q->queue_lock held and,
-  * Returns %NULL on failure, with @q->queue_lock held.
-  * Returns !%NULL on success, with @q->queue_lock *not held*.
-  */
--static struct request *get_request_wait(struct request_queue *q, int rw_flags,
--					struct bio *bio)
-+static struct request *get_request(struct request_queue *q, int rw_flags,
-+				   struct bio *bio, gfp_t gfp_mask)
- {
- 	const bool is_sync = rw_is_sync(rw_flags) != 0;
-+	DEFINE_WAIT(wait);
-+	struct request_list *rl = &q->rq;
- 	struct request *rq;
-+retry:
-+	rq = __get_request(q, rw_flags, bio, gfp_mask);
-+	if (rq)
-+		return rq;
- 
--	rq = get_request(q, rw_flags, bio, GFP_NOIO);
--	while (!rq) {
--		DEFINE_WAIT(wait);
--		struct request_list *rl = &q->rq;
+-struct blkcg *cgroup_to_blkcg(struct cgroup *cgroup)
+-{
+-	return container_of(cgroup_subsys_state(cgroup, blkio_subsys_id),
+-			    struct blkcg, css);
+-}
+-EXPORT_SYMBOL_GPL(cgroup_to_blkcg);
 -
--		if (unlikely(blk_queue_dead(q)))
--			return NULL;
+-static struct blkcg *task_blkcg(struct task_struct *tsk)
+-{
+-	return container_of(task_subsys_state(tsk, blkio_subsys_id),
+-			    struct blkcg, css);
+-}
 -
--		prepare_to_wait_exclusive(&rl->wait[is_sync], &wait,
--				TASK_UNINTERRUPTIBLE);
-+	if (!(gfp_mask & __GFP_WAIT) || unlikely(blk_queue_dead(q)))
-+		return NULL;
+-struct blkcg *bio_blkcg(struct bio *bio)
+-{
+-	if (bio && bio->bi_css)
+-		return container_of(bio->bi_css, struct blkcg, css);
+-	return task_blkcg(current);
+-}
+-EXPORT_SYMBOL_GPL(bio_blkcg);
+-
+ static bool blkcg_policy_enabled(struct request_queue *q,
+ 				 const struct blkcg_policy *pol)
+ {
+diff --git a/block/blk-cgroup.h b/block/blk-cgroup.h
+index 8ac457c..e74cce1 100644
+--- a/block/blk-cgroup.h
++++ b/block/blk-cgroup.h
+@@ -120,8 +120,6 @@ struct blkcg_policy {
  
--		trace_block_sleeprq(q, bio, rw_flags & 1);
-+	/* wait on @rl and retry */
-+	prepare_to_wait_exclusive(&rl->wait[is_sync], &wait,
-+				  TASK_UNINTERRUPTIBLE);
+ extern struct blkcg blkcg_root;
  
--		spin_unlock_irq(q->queue_lock);
--		io_schedule();
-+	trace_block_sleeprq(q, bio, rw_flags & 1);
+-struct blkcg *cgroup_to_blkcg(struct cgroup *cgroup);
+-struct blkcg *bio_blkcg(struct bio *bio);
+ struct blkcg_gq *blkg_lookup(struct blkcg *blkcg, struct request_queue *q);
+ struct blkcg_gq *blkg_lookup_create(struct blkcg *blkcg,
+ 				    struct request_queue *q);
+@@ -160,6 +158,25 @@ int blkg_conf_prep(struct blkcg *blkcg, const struct blkcg_policy *pol,
+ void blkg_conf_finish(struct blkg_conf_ctx *ctx);
  
--		/*
--		 * After sleeping, we become a "batching" process and
--		 * will be able to allocate at least one request, and
--		 * up to a big batch of them for a small period time.
--		 * See ioc_batching, ioc_set_batching
--		 */
--		create_io_context(GFP_NOIO, q->node);
--		ioc_set_batching(q, current->io_context);
-+	spin_unlock_irq(q->queue_lock);
-+	io_schedule();
  
--		spin_lock_irq(q->queue_lock);
--		finish_wait(&rl->wait[is_sync], &wait);
-+	/*
-+	 * After sleeping, we become a "batching" process and will be able
-+	 * to allocate at least one request, and up to a big batch of them
-+	 * for a small period time.  See ioc_batching, ioc_set_batching
-+	 */
-+	create_io_context(GFP_NOIO, q->node);
-+	ioc_set_batching(q, current->io_context);
++static inline struct blkcg *cgroup_to_blkcg(struct cgroup *cgroup)
++{
++	return container_of(cgroup_subsys_state(cgroup, blkio_subsys_id),
++			    struct blkcg, css);
++}
++
++static inline struct blkcg *task_blkcg(struct task_struct *tsk)
++{
++	return container_of(task_subsys_state(tsk, blkio_subsys_id),
++			    struct blkcg, css);
++}
++
++static inline struct blkcg *bio_blkcg(struct bio *bio)
++{
++	if (bio && bio->bi_css)
++		return container_of(bio->bi_css, struct blkcg, css);
++	return task_blkcg(current);
++}
++
+ /**
+  * blkg_to_pdata - get policy private data
+  * @blkg: blkg of interest
+@@ -351,6 +368,7 @@ static inline void blkg_rwstat_reset(struct blkg_rwstat *rwstat)
+ #else	/* CONFIG_BLK_CGROUP */
  
--		rq = get_request(q, rw_flags, bio, GFP_NOIO);
--	};
-+	spin_lock_irq(q->queue_lock);
-+	finish_wait(&rl->wait[is_sync], &wait);
+ struct cgroup;
++struct blkcg;
  
--	return rq;
-+	goto retry;
- }
+ struct blkg_policy_data {
+ };
+@@ -361,8 +379,6 @@ struct blkcg_gq {
+ struct blkcg_policy {
+ };
  
- struct request *blk_get_request(struct request_queue *q, int rw, gfp_t gfp_mask)
-@@ -1075,10 +1074,7 @@ struct request *blk_get_request(struct request_queue *q, int rw, gfp_t gfp_mask)
- 	BUG_ON(rw != READ && rw != WRITE);
+-static inline struct blkcg *cgroup_to_blkcg(struct cgroup *cgroup) { return NULL; }
+-static inline struct blkcg *bio_blkcg(struct bio *bio) { return NULL; }
+ static inline struct blkcg_gq *blkg_lookup(struct blkcg *blkcg, void *key) { return NULL; }
+ static inline int blkcg_init_queue(struct request_queue *q) { return 0; }
+ static inline void blkcg_drain_queue(struct request_queue *q) { }
+@@ -374,6 +390,8 @@ static inline int blkcg_activate_policy(struct request_queue *q,
+ static inline void blkcg_deactivate_policy(struct request_queue *q,
+ 					   const struct blkcg_policy *pol) { }
  
- 	spin_lock_irq(q->queue_lock);
--	if (gfp_mask & __GFP_WAIT)
--		rq = get_request_wait(q, rw, NULL);
--	else
--		rq = get_request(q, rw, NULL, gfp_mask);
-+	rq = get_request(q, rw, NULL, gfp_mask);
- 	if (!rq)
- 		spin_unlock_irq(q->queue_lock);
- 	/* q->queue_lock is unlocked at this point */
-@@ -1468,7 +1464,7 @@ get_rq:
- 	 * Grab a free request. This is might sleep but can not fail.
- 	 * Returns with the queue unlocked.
- 	 */
--	req = get_request_wait(q, rw_flags, bio);
-+	req = get_request(q, rw_flags, bio, GFP_NOIO);
- 	if (unlikely(!req)) {
- 		bio_endio(bio, -ENODEV);	/* @q is dead */
- 		goto out_unlock;
++static inline struct blkcg *cgroup_to_blkcg(struct cgroup *cgroup) { return NULL; }
++static inline struct blkcg *bio_blkcg(struct bio *bio) { return NULL; }
+ static inline struct blkg_policy_data *blkg_to_pd(struct blkcg_gq *blkg,
+ 						  struct blkcg_policy *pol) { return NULL; }
+ static inline struct blkcg_gq *pd_to_blkg(struct blkg_policy_data *pd) { return NULL; }
 -- 
 1.7.7.3
