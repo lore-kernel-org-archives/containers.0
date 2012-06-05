@@ -1,7 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 07/10] blkcg: inline bio_blkcg() and friends
-Date: Mon,  4 Jun 2012 20:40:57 -0700
-Message-ID: <1338867660-4689-8-git-send-email-tj@kernel.org>
+Subject: [PATCH 08/10] block: add q->nr_rqs[] and move q->rq.elvpriv to
+	q->nr_rqs_elvpriv
+Date: Mon,  4 Jun 2012 20:40:58 -0700
+Message-ID: <1338867660-4689-9-git-send-email-tj@kernel.org>
 References: <1338867660-4689-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,115 +22,118 @@ To: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, linux-kernel-u79uwXL29TY76Z2r
 Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Make bio_blkcg() and friends inline.  They all are very simple and
-used only in few places.
+Add q->nr_rqs[] which currently behaves the same as q->rq.count[] and
+move q->rq.elvpriv to q->nr_rqs_elvpriv.  blk_drain_queue() is updated
+to use q->nr_rqs[] instead of q->rq.count[].
 
-This patch is to prepare for further updates to request allocation
-path.
+These counters separates queue-wide request statistics from the
+request list and allow implementation of per-queue request allocation.
+
+While at it, properly indent fields of struct request_list.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Acked-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/blk-cgroup.c |   21 ---------------------
- block/blk-cgroup.h |   26 ++++++++++++++++++++++----
- 2 files changed, 22 insertions(+), 25 deletions(-)
+ block/blk-core.c       |   13 +++++++------
+ include/linux/blkdev.h |   11 ++++++-----
+ 2 files changed, 13 insertions(+), 11 deletions(-)
 
-diff --git a/block/blk-cgroup.c b/block/blk-cgroup.c
-index cbeeb54..a48f35b 100644
---- a/block/blk-cgroup.c
-+++ b/block/blk-cgroup.c
-@@ -31,27 +31,6 @@ EXPORT_SYMBOL_GPL(blkcg_root);
+diff --git a/block/blk-core.c b/block/blk-core.c
+index ada4bc0..8149c76 100644
+--- a/block/blk-core.c
++++ b/block/blk-core.c
+@@ -386,7 +386,7 @@ void blk_drain_queue(struct request_queue *q, bool drain_all)
+ 		if (!list_empty(&q->queue_head) && q->request_fn)
+ 			__blk_run_queue(q);
  
- static struct blkcg_policy *blkcg_policy[BLKCG_MAX_POLS];
+-		drain |= q->rq.elvpriv;
++		drain |= q->nr_rqs_elvpriv;
  
--struct blkcg *cgroup_to_blkcg(struct cgroup *cgroup)
--{
--	return container_of(cgroup_subsys_state(cgroup, blkio_subsys_id),
--			    struct blkcg, css);
--}
--EXPORT_SYMBOL_GPL(cgroup_to_blkcg);
--
--static struct blkcg *task_blkcg(struct task_struct *tsk)
--{
--	return container_of(task_subsys_state(tsk, blkio_subsys_id),
--			    struct blkcg, css);
--}
--
--struct blkcg *bio_blkcg(struct bio *bio)
--{
--	if (bio && bio->bi_css)
--		return container_of(bio->bi_css, struct blkcg, css);
--	return task_blkcg(current);
--}
--EXPORT_SYMBOL_GPL(bio_blkcg);
--
- static bool blkcg_policy_enabled(struct request_queue *q,
- 				 const struct blkcg_policy *pol)
- {
-diff --git a/block/blk-cgroup.h b/block/blk-cgroup.h
-index 8ac457c..e74cce1 100644
---- a/block/blk-cgroup.h
-+++ b/block/blk-cgroup.h
-@@ -120,8 +120,6 @@ struct blkcg_policy {
+ 		/*
+ 		 * Unfortunately, requests are queued at and tracked from
+@@ -396,7 +396,7 @@ void blk_drain_queue(struct request_queue *q, bool drain_all)
+ 		if (drain_all) {
+ 			drain |= !list_empty(&q->queue_head);
+ 			for (i = 0; i < 2; i++) {
+-				drain |= q->rq.count[i];
++				drain |= q->nr_rqs[i];
+ 				drain |= q->in_flight[i];
+ 				drain |= !list_empty(&q->flush_queue[i]);
+ 			}
+@@ -513,7 +513,6 @@ static int blk_init_free_list(struct request_queue *q)
  
- extern struct blkcg blkcg_root;
+ 	rl->count[BLK_RW_SYNC] = rl->count[BLK_RW_ASYNC] = 0;
+ 	rl->starved[BLK_RW_SYNC] = rl->starved[BLK_RW_ASYNC] = 0;
+-	rl->elvpriv = 0;
+ 	init_waitqueue_head(&rl->wait[BLK_RW_SYNC]);
+ 	init_waitqueue_head(&rl->wait[BLK_RW_ASYNC]);
  
--struct blkcg *cgroup_to_blkcg(struct cgroup *cgroup);
--struct blkcg *bio_blkcg(struct bio *bio);
- struct blkcg_gq *blkg_lookup(struct blkcg *blkcg, struct request_queue *q);
- struct blkcg_gq *blkg_lookup_create(struct blkcg *blkcg,
- 				    struct request_queue *q);
-@@ -160,6 +158,25 @@ int blkg_conf_prep(struct blkcg *blkcg, const struct blkcg_policy *pol,
- void blkg_conf_finish(struct blkg_conf_ctx *ctx);
+@@ -778,9 +777,10 @@ static void freed_request(struct request_queue *q, unsigned int flags)
+ 	struct request_list *rl = &q->rq;
+ 	int sync = rw_is_sync(flags);
  
++	q->nr_rqs[sync]--;
+ 	rl->count[sync]--;
+ 	if (flags & REQ_ELVPRIV)
+-		rl->elvpriv--;
++		q->nr_rqs_elvpriv--;
  
-+static inline struct blkcg *cgroup_to_blkcg(struct cgroup *cgroup)
-+{
-+	return container_of(cgroup_subsys_state(cgroup, blkio_subsys_id),
-+			    struct blkcg, css);
-+}
-+
-+static inline struct blkcg *task_blkcg(struct task_struct *tsk)
-+{
-+	return container_of(task_subsys_state(tsk, blkio_subsys_id),
-+			    struct blkcg, css);
-+}
-+
-+static inline struct blkcg *bio_blkcg(struct bio *bio)
-+{
-+	if (bio && bio->bi_css)
-+		return container_of(bio->bi_css, struct blkcg, css);
-+	return task_blkcg(current);
-+}
-+
- /**
-  * blkg_to_pdata - get policy private data
-  * @blkg: blkg of interest
-@@ -351,6 +368,7 @@ static inline void blkg_rwstat_reset(struct blkg_rwstat *rwstat)
- #else	/* CONFIG_BLK_CGROUP */
+ 	__freed_request(q, sync);
  
- struct cgroup;
-+struct blkcg;
+@@ -889,6 +889,7 @@ static struct request *__get_request(struct request_queue *q, int rw_flags,
+ 	if (rl->count[is_sync] >= (3 * q->nr_requests / 2))
+ 		return NULL;
  
- struct blkg_policy_data {
++	q->nr_rqs[is_sync]++;
+ 	rl->count[is_sync]++;
+ 	rl->starved[is_sync] = 0;
+ 
+@@ -904,7 +905,7 @@ static struct request *__get_request(struct request_queue *q, int rw_flags,
+ 	 */
+ 	if (blk_rq_should_init_elevator(bio) && !blk_queue_bypass(q)) {
+ 		rw_flags |= REQ_ELVPRIV;
+-		rl->elvpriv++;
++		q->nr_rqs_elvpriv++;
+ 		if (et->icq_cache && ioc)
+ 			icq = ioc_lookup_icq(ioc, q);
+ 	}
+@@ -965,7 +966,7 @@ fail_elvpriv:
+ 	rq->elv.icq = NULL;
+ 
+ 	spin_lock_irq(q->queue_lock);
+-	rl->elvpriv--;
++	q->nr_rqs_elvpriv--;
+ 	spin_unlock_irq(q->queue_lock);
+ 	goto out;
+ 
+diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
+index ba43f40..0c6f527 100644
+--- a/include/linux/blkdev.h
++++ b/include/linux/blkdev.h
+@@ -51,11 +51,10 @@ struct request_list {
+ 	 * count[], starved[], and wait[] are indexed by
+ 	 * BLK_RW_SYNC/BLK_RW_ASYNC
+ 	 */
+-	int count[2];
+-	int starved[2];
+-	int elvpriv;
+-	mempool_t *rq_pool;
+-	wait_queue_head_t wait[2];
++	int			count[2];
++	int			starved[2];
++	mempool_t		*rq_pool;
++	wait_queue_head_t	wait[2];
  };
-@@ -361,8 +379,6 @@ struct blkcg_gq {
- struct blkcg_policy {
- };
  
--static inline struct blkcg *cgroup_to_blkcg(struct cgroup *cgroup) { return NULL; }
--static inline struct blkcg *bio_blkcg(struct bio *bio) { return NULL; }
- static inline struct blkcg_gq *blkg_lookup(struct blkcg *blkcg, void *key) { return NULL; }
- static inline int blkcg_init_queue(struct request_queue *q) { return 0; }
- static inline void blkcg_drain_queue(struct request_queue *q) { }
-@@ -374,6 +390,8 @@ static inline int blkcg_activate_policy(struct request_queue *q,
- static inline void blkcg_deactivate_policy(struct request_queue *q,
- 					   const struct blkcg_policy *pol) { }
+ /*
+@@ -282,6 +281,8 @@ struct request_queue {
+ 	struct list_head	queue_head;
+ 	struct request		*last_merge;
+ 	struct elevator_queue	*elevator;
++	int			nr_rqs[2];	/* # allocated [a]sync rqs */
++	int			nr_rqs_elvpriv;	/* # allocated rqs w/ elvpriv */
  
-+static inline struct blkcg *cgroup_to_blkcg(struct cgroup *cgroup) { return NULL; }
-+static inline struct blkcg *bio_blkcg(struct bio *bio) { return NULL; }
- static inline struct blkg_policy_data *blkg_to_pd(struct blkcg_gq *blkg,
- 						  struct blkcg_policy *pol) { return NULL; }
- static inline struct blkcg_gq *pd_to_blkg(struct blkg_policy_data *pd) { return NULL; }
+ 	/*
+ 	 * the queue request freelist, one for reads and one for writes
 -- 
 1.7.7.3
