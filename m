@@ -1,15 +1,11 @@
-From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH net-next v2 1/2] inetpeer: add namespace support for
-	inetpeer
-Date: Tue, 05 Jun 2012 20:29:35 +0800
-Message-ID: <4FCDFBAF.1090404@cn.fujitsu.com>
-References: <1338882737-11914-1-git-send-email-gaofeng@cn.fujitsu.com>
-	<1338886626.2760.2109.camel@edumazet-glaptop>
+From: Stanislav Kinsbursky <skinsbursky-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: [RFC] connectat() and bindat() system calls
+Date: Wed, 6 Jun 2012 12:38:51 +0400
+Message-ID: <4FCF171B.8000207__4628.01480102843$1338972624$gmane$org@parallels.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1338886626.2760.2109.camel@edumazet-glaptop>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,41 +15,29 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: steffen.klassert-opNxpl+3fjRBDgjK7y7TUQ@public.gmane.org, herbert-lOAM2aK0SrRLBo1qDEOMRrpzq4S04n8Q@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
+To: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+Cc: "linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org" <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>, James Bottomley <jbottomley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, "bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org" <devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-5LqOIDIwMTLlubQwNuaciDA15pelIDE2OjU3LCBFcmljIER1bWF6ZXQg5YaZ6YGTOgo+IE9uIFR1
-ZSwgMjAxMi0wNi0wNSBhdCAxNTo1MiArMDgwMCwgR2FvIGZlbmcgd3JvdGU6Cj4gCj4+ICtzdGF0
-aWMgdm9pZCBfX25ldF9leGl0IGluZXRwZWVyX25ldF9leGl0KHN0cnVjdCBuZXQgKm5ldCkKPj4g
-K3sKPj4gKwlpbmV0cGVlcl9pbnZhbGlkYXRlX3RyZWUobmV0LCBBRl9JTkVUKTsKPj4gKwlrZnJl
-ZShuZXQtPmlwdjQucGVlcnMpOwo+PiArCj4+ICsJaW5ldHBlZXJfaW52YWxpZGF0ZV90cmVlKG5l
-dCwgQUZfSU5FVDYpOwo+PiArCWtmcmVlKG5ldC0+aXB2Ni5wZWVycyk7Cj4+ICt9Cj4+ICsKPiAK
-PiBBcmUgd2UgMTAwMCUgc3VyZSBubyBjb2RlIGV2ZXIgcnVuIGluIGluZXRwZWVyIGxhbmQgYWZ0
-ZXIgdGhpcyBjYWxsID8KCkkgYW0gbm90IHN1cmUsSSBuZWVkIG1vcmUgdGltZSB0byByZXNlYXJj
-aCBpdC4KSSBqdXN0IGRvIGtmcmVlIHBlZXJzIGhlcmUgd2l0aG91dCBzZXQgTlVMTCBwb2ludGVy
-IGlzCmJlYWN1c2UgdGhlcmUgaXMgdGhlIHNhbWUgY29kZSB3aXRoIGZpYjZfbWFpbl90YmwgaW4g
-ZmliNl9uZXRfZXhpdAphbmQgaXQgc2VlbXMgd29yayB3ZWxsLgoKQW55d2F5LCBJIHdpbGwgcmVz
-ZWFyY2ggaXQuCgo+IAo+IEkgd291bGQgYWRkCj4gCW5ldC0+aXB2NC5wZWVycyA9IE5VTEw7Cj4g
-CW5ldC0+aXB2Ni5wZWVycyA9IE5VTEw7Cj4gCj4gdG8gY2F0Y2ggTlVMTCBkZXJlZiBpbnN0ZWFk
-IG9mIHN0cmFuZ2UgZXJyb3JzLCBqdXN0IGluIGNhc2UuCj4gCj4gQnkgdGhlIHdheSwgSSB0aGlu
-ayB3ZSBoYXZlIGEgYnVnIGluIGluZXRwZWVyX2djX3dvcmtlcigpCj4gCj4gU3RlZmZlbiA/Cj4g
-Cj4gV2UgaGF2ZSBubyByY3UgZ3JhY2UgcGVyaW9kIHRvIG1ha2Ugc3VyZSB0aGUgZm9sbG93aW5n
-IGlzIHNhZmUgOgo+IAo+IGlmICghYXRvbWljX3JlYWQoJnAtPnJlZmNudCkpIHsKPiAJbGlzdF9k
-ZWwoJnAtPmdjX2xpc3QpOwo+IAlrbWVtX2NhY2hlX2ZyZWUocGVlcl9jYWNoZXAsIHApOwo+IH0K
-PiAKPiBJJ2xsIHBvc3QgYSBmaXggbGlrZSA6Cj4gCj4gZGlmZiAtLWdpdCBhL25ldC9pcHY0L2lu
-ZXRwZWVyLmMgYi9uZXQvaXB2NC9pbmV0cGVlci5jCj4gaW5kZXggZDRkNjFiNi4uMDc3MzFiNSAx
-MDA2NDQKPiAtLS0gYS9uZXQvaXB2NC9pbmV0cGVlci5jCj4gKysrIGIvbmV0L2lwdjQvaW5ldHBl
-ZXIuYwo+IEBAIC0xMzcsNyArMTM3LDcgQEAgc3RhdGljIHZvaWQgaW5ldHBlZXJfZ2Nfd29ya2Vy
-KHN0cnVjdCB3b3JrX3N0cnVjdCAqd29yaykKPiAgCj4gIAkJbiA9IGxpc3RfZW50cnkocC0+Z2Nf
-bGlzdC5uZXh0LCBzdHJ1Y3QgaW5ldF9wZWVyLCBnY19saXN0KTsKPiAgCj4gLQkJaWYgKCFhdG9t
-aWNfcmVhZCgmcC0+cmVmY250KSkgewo+ICsJCWlmIChhdG9taWNfY21weGNoZygmcC0+cmVmY250
-LCAwLCAtMSkgPT0gMCkgewo+ICAJCQlsaXN0X2RlbCgmcC0+Z2NfbGlzdCk7Cj4gIAkJCWttZW1f
-Y2FjaGVfZnJlZShwZWVyX2NhY2hlcCwgcCk7Cj4gIAkJfQo+IAo+IAo+IAo+IC0tCj4gVG8gdW5z
-dWJzY3JpYmUgZnJvbSB0aGlzIGxpc3Q6IHNlbmQgdGhlIGxpbmUgInVuc3Vic2NyaWJlIG5ldGRl
-diIgaW4KPiB0aGUgYm9keSBvZiBhIG1lc3NhZ2UgdG8gbWFqb3Jkb21vQHZnZXIua2VybmVsLm9y
-Zwo+IE1vcmUgbWFqb3Jkb21vIGluZm8gYXQgIGh0dHA6Ly92Z2VyLmtlcm5lbC5vcmcvbWFqb3Jk
-b21vLWluZm8uaHRtbAo+IAoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1m
-b3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9s
-aXN0aW5mby9jb250YWluZXJz
+Hello.
+I'd really appreciate for any comments on subj - implementation of new system 
+call: connectat and bindat.
+
+Reasons for new system calls:
+1) Path length for UNIX sockets is limited to 108 symbols.
+Syscalls are useful as is since removes limitation.
+
+2) Ability to perform connect/bind calls to UNIX sockets starting from specified 
+path in kernel.
+This is required for proper support of kernel connect operations in SUNRPC 
+layer. Which, in turn, required for proper support of NFS in containers.
+
+These system calls could be used only for non-abstract UNIX sockets, obviously.
+
+Possible implementation could be adding of struct path pointer to sockaddr_un.
+But this pointer have to valid only for connect and bind calls, and caller have 
+to hold and release path by himself.
+
+-- 
+Best regards,
+Stanislav Kinsbursky
