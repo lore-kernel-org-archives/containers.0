@@ -1,11 +1,14 @@
-From: xdzhnxtn-mRCrAkd8dF0@public.gmane.org  (servicio - Cortinas)
-Subject: .......Venta y reparacion de cortinas de enrollar en madera y
-	pvc..............................................................................6126247257
-Date: 13 Jun 2012 11:32:06 -0300
-Message-ID: <20120613113206.0A7396B0B18943B4@yahoo.es>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCHSET] block: implement per-blkg request allocation, take#2
+Date: Mon, 18 Jun 2012 15:34:32 -0700
+Message-ID: <20120618223432.GF32733@google.com>
+References: <1338867660-4689-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============8144853670630496406=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1338867660-4689-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,34 +18,11 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Jens, ping?
 
---===============8144853670630496406==
-Content-Type: text/plain
-Content-Transfer-Encoding: quoted-printable
-
-Venta y reparacion de cortinas=20
-de enrollar en madera y pvc.
-Motorizacion a control remoto.
-25 a=F1os en experiencia.
-Seriedad y responsabilidad,=20
-avalan nuestro trabajo.
-Tel: 4635 6064 / 3998-3321
-
-Sr. Roberto
-Consultas: roberto.lento(arroba)hotmail.com=20
-Remover: teloborramos-en24hs(arroba)yahoo.com
-
---===============8144853670630496406==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============8144853670630496406==--
+-- 
+tejun
