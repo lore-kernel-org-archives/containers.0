@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH UPDATED v4 10/10] blkcg: implement per-blkg request allocation
-Date: Tue, 26 Jun 2012 15:34:37 -0700
-Message-ID: <20120626223437.GD15811@google.com>
+Subject: [PATCH UPDATED v5 10/10] blkcg: implement per-blkg request allocation
+Date: Tue, 26 Jun 2012 15:48:50 -0700
+Message-ID: <20120626224850.GF15811@google.com>
 References: <1338867660-4689-1-git-send-email-tj@kernel.org>
 	<1338867660-4689-11-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
@@ -23,9 +23,9 @@ To: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, linux-kernel-u79uwXL29TY76Z2r
 Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From 866f8c15fafc3ae461463d5937f448eee2631ac5 Mon Sep 17 00:00:00 2001
+From f5a1424230fb2da7143852ce5bc4049ff9c5f618 Mon Sep 17 00:00:00 2001
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Date: Tue, 26 Jun 2012 15:05:44 -0700
+Date: Tue, 26 Jun 2012 15:46:31 -0700
 
 Currently, request_queue has one request_list to allocate requests
 from regardless of blkcg of the IO being issued.  When the unified
@@ -72,20 +72,18 @@ v3: blk_get_rl() wasn't checking error return from
 
 v4: Updated to accomodate 458f27a982 "block: Avoid missed wakeup in
     request waitqueue".  blk_drain_queue() now wakes up waiters on all
-    blkg->rl on the target queue.
+    blkg->rl on the target queue.  Breakge spotted by Wu Fengguang.
+
+v5: Comment updated as suggested by Andrew Morton.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Acked-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: Wu Fengguang <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 ---
-v4 to fix build failure on top of block/for-3.6/core.  git branch has
-been udpated too.
+Comments updated.  git branch updated accordingly.  Thanks.
 
  git://git.kernel.org/pub/scm/linux/kernel/git/tj/misc.git blkcg-rl
-
-Only the top commit has changed.
-
-Thanks.
 
  Documentation/block/queue-sysfs.txt |    7 +++
  block/blk-cgroup.c                  |   51 ++++++++++++++++--
@@ -211,7 +209,7 @@ index 63b31eb..f3b44a6 100644
  	list_for_each_entry(blkg, &q->blkg_list, q_node)
  		cnt++;
 diff --git a/block/blk-cgroup.h b/block/blk-cgroup.h
-index e74cce1..2459730 100644
+index e74cce1..d6000fc 100644
 --- a/block/blk-cgroup.h
 +++ b/block/blk-cgroup.h
 @@ -17,6 +17,7 @@
@@ -294,7 +292,7 @@ index e74cce1..2459730 100644
 + * @rq: request of interest
 + * @rl: target request_list
 + *
-+ * Associate @rq with @rl so that accounting and freeing can know the
++ * Associate @rq with @rl so that accounting and freeing can know where the
 + * request_list @rq came from.
 + */
 +static inline void blk_rq_set_rl(struct request *rq, struct request_list *rl)
@@ -351,7 +349,7 @@ index e74cce1..2459730 100644
  #endif	/* CONFIG_BLK_CGROUP */
  #endif	/* _BLK_CGROUP_H */
 diff --git a/block/blk-core.c b/block/blk-core.c
-index f392a2e..dd134d8 100644
+index f392a2e..05d3784 100644
 --- a/block/blk-core.c
 +++ b/block/blk-core.c
 @@ -416,9 +416,14 @@ void blk_drain_queue(struct request_queue *q, bool drain_all)
@@ -386,8 +384,8 @@ index f392a2e..dd134d8 100644
  
 -	if (rl->count[sync] < queue_congestion_off_threshold(q))
 +	/*
-+	 * bdi isn't aware of blkcg yet.  As all async IOs end up root
-+	 * blkcg anyway, just use root blkcg state.
++	 * bdi isn't aware of blkcg yet.  As all async IOs end up in the
++	 * root blkcg anyway, just use root blkcg state.
 +	 */
 +	if (rl == &q->root_rl &&
 +	    rl->count[sync] < queue_congestion_off_threshold(q))
