@@ -1,16 +1,15 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+From: Dilip Daya <dilip.daya-VXdhtT5mjnY@public.gmane.org>
 Subject: Re: Network namespace and bonding WARNING at fs/proc/generic.c
 	remove_proc_entry
-Date: Fri, 6 Jul 2012 17:05:38 +0000
-Message-ID: <20120706170538.GA31679@mail.hallyn.com>
+Date: Fri, 06 Jul 2012 14:01:20 -0400
+Message-ID: <1341597680.2829.22.camel@pro6455b.example.com>
 References: <1340900320.3441.88.camel@pro6455b.example.com>
-	<20120705220749.GA11255@mail.hallyn.com>
-	<87ehopu3e5.fsf@xmission.com>
+	<20120705220749.GA11255@mail.hallyn.com> <87ehopu3e5.fsf@xmission.com>
+Reply-To: dilip.daya-VXdhtT5mjnY@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 In-Reply-To: <87ehopu3e5.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -22,10 +21,12 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dilip Daya <dilip.daya-VXdhtT5mjnY@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+Hi Eric,
+
+On Thu, 2012-07-05 at 17:41 -0700, Eric W. Biederman wrote:
 > "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
 > 
 > > Quoting Dilip Daya (dilip.daya-VXdhtT5mjnY@public.gmane.org):
@@ -95,7 +96,23 @@ Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
 > network namespaces it is possible to catch the NETDEV_UNREGISTER and
 > NETDEV_REGISTER events to remove/add the per device proc files at the
 > appropriate time.
-> 
+
+
+We do need to move bonds between namespaces - because we require
+physical interfaces in each namespace -- we don't want the overheads of
+virtual interfaces, don't have the management infrastructure, and don't
+want to manufacture fake mac addresses that would be required for
+macvlan interfaces.   Since the bonds are implicitly created in the host
+namespace, the only way we know to get bonds directly into the
+namespaces is to move them.
+
+Would "NETDEV_UNREGISTER and NETDEV_REGISTER events to remove/add the
+per device proc files at the appropriate time." help in the case?
+
+
+-DilipD.
+
+
 > However since moving bonding devices appears to be an unneded operation
 > let's just do things simply and forbid moving bonding devices between
 > network namespaces.  Serge, Dilip can you two test the patch below
@@ -114,10 +131,6 @@ Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
 >  
 > +       /* Don't allow bond devices to change network namespaces. */
 > +       bond_dev->features |= NETIF_F_LOCAL;
-
-I believe this needs to be NETIF_F_NETNS_LOCAL.  Test build still going with
-that change.
-
 > +
 >         /* At first, we block adding VLANs. That's the only way to
 >          * prevent problems that occur when adding VLANs over an
