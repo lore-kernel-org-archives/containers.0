@@ -1,13 +1,16 @@
-From: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-Subject: Re: [PATCH] netns: correctly use per-netns ipv4 sysctl_tcp_mem
-Date: Mon, 09 Jul 2012 15:21:00 -0700 (PDT)
-Message-ID: <20120709.152100.571089964662155300.davem@davemloft.net>
-References: <4FFA7495.5070702@huawei.com>
+From: Jay Vosburgh <fubar-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 2/2] bonding: debugfs and network namespaces are
+	incompatible
+Date: Tue, 10 Jul 2012 10:36:12 -0700
+Message-ID: <15459.1341941772__42512.2825349264$1341941868$gmane$org@death.nxdomain>
+References: <20120706194741.GA22113@mail.hallyn.com>
+	<87y5ms3bfi.fsf_-_@xmission.com> <87sjd03bdw.fsf_-_@xmission.com>
+	<20120709.144932.243254122059983829.davem@davemloft.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-7"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4FFA7495.5070702-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+In-reply-to: <20120709.144932.243254122059983829.davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,56 +20,36 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: h.huangqiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dilip.daya-VXdhtT5mjnY@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-RnJvbTogSHVhbmcgUWlhbmcgPGguaHVhbmdxaWFuZ0BodWF3ZWkuY29tPg0KRGF0ZTogTW9uLCA5
-IEp1bCAyMDEyIDE0OjA1OjA5ICswODAwDQoNCj4gRnJvbTogWWFuZyBaaGVuemhhbmcgPHlhbmd6
-aGVuemhhbmdAaHVhd2VpLmNvbT4NCj4gDQo+IE5vdywga2VybmVsIGFsbG93cyBlYWNoIG5ldCBu
-YW1lc3BhY2UgdG8gaW5kZXBlbmRlbnRseSBzZXQgdXAgaXRzIGxldmVscw0KPiBmb3IgdGNwIG1l
-bW9yeSBwcmVzc3VyZSB0aHJlc2hvbGRzLg0KPiANCj4gQnV0IGl0IHNlZW1zIHRoZXJlIGlzIGEg
-YnVnLCBhcyB1c2luZyB0aGUgZm9sbG93aW5nIHN0ZXBzOg0KPiANCj4gW3Jvb3RAaG9zdCBzb2Nr
-ZXRdIyBseGMtc3RhcnQgLW4gdGVzdCAtZiBjb25maWcgL2Jpbi9iYXNoDQo+IFtyb290QG5ldC10
-ZXN0IHNvY2tldF0jIGlwIHJvdXRlIGFkZCBkZWZhdWx0IHZpYSAxOTIuMTY4LjU4LjINCj4gW3Jv
-b3RAbmV0LXRlc3Qgc29ja2V0XSMgZWNobyAwIDAgMCA+IC9wcm9jL3N5cy9uZXQvaXB2NC90Y3Bf
-bWVtDQo+IFtyb290QG5ldC10ZXN0IHNvY2tldF0jIHNjcCByb290QDE5Mi4xNjguNTguMTc0Oi9o
-b21lL3RjcF9tZW1fdGVzdCAuDQo+IA0KPiBhbmQgaXQgc3RpbGwgY2FuIHRyYW5zcG9ydCB0aGUg
-InRjcF9tZW1fdGVzdCIgZmlsZSB3aGljaCB3ZSBob3BlIGl0DQo+IHdvdWxkIG5vdC4NCj4gDQo+
-IEl0J3MgYmVjYXVzZSBpbmV0X2luaXQoKSAobmV0L2lwdjQvYWZfaW5ldC5jKWluaXRpYWxpemUg
-dGhlDQo+IHRjcF9wcm90LnN5c2N0bF9tZW06DQo+IHRjcF9wcm90LnN5c2N0bF9tZW0gPSBpbml0
-X25ldC5pcHY0LnN5c2N0bF90Y3BfbWVtOw0KPiANCj4gU28gd2hlbiB0aGUgcHJvdG9jYWwgaXMg
-VENQLCBzay0+c2tfcHJvdC0+c3lzY3RsX21lbShmb2xsb3dpbmcgY29kZSkNCj4gYWx3YXlzIHVz
-ZSB0aGUgaXB2NCBzeXNjdGxfdGNwX21lbSBvZiBpbml0X25ldCBuYW1lc3BhY2UgcmF0aGVyIHRo
-YW4NCj4gaXQncyBvd24gbmV0IG5hbWVzcGFjZS4NCj4gVGhpcyBwYXRjaCBzaW1wbHkgc2V0ICJw
-cm90IiBlcXVhbCB0byBuZXQtPmlwdjQuc3lzY3RsX3RjcF9tZW0gd2hlbg0KPiB0aGUgcHJvdG9j
-b2wgdHlwZSBpcyBUQ1AuDQo+IA0KPiBTaWduZWQtb2ZmLWJ5OiBZYW5nIFpoZW56aGFuZyA8eWFu
-Z3poZW56aGFuZ0BodWF3ZWkuY29tPg0KDQpBbm90aGVyIHJlZ3Jlc3Npb24gYWRkZWQgYnkgdGhl
-IHNvY2tldCBtZW1vcnkgY2dyb3VwIGNvZGUsIEJJRw0KU1VSUFJJU0UuDQoNCkJ1dCB0aGlzIHBh
-dGNoIGlzIGV2ZW4gd29yc2UgdGhhbiB0aGUgYnVnLg0KDQo+ICAJbG9uZyAqcHJvdCA9IHNrLT5z
-a19wcm90LT5zeXNjdGxfbWVtOw0KPiArCQ0KICAgXl5eXl5eXl4NCg0KVHJhaWxpbmcgd2hpdGVz
-cGFjZSBwbGVhc2UgcmVtb3ZlLg0KDQpBbHNvLCB0aGlzIHBhdGNoIGNhdXNlcyBidWlsZCBmYWls
-dXJlczoNCg0KSW4gZmlsZSBpbmNsdWRlZCBmcm9tIGluY2x1ZGUvbGludXgvdGNwLmg6MjI3OjAs
-DQogICAgICAgICAgICAgICAgIGZyb20gaW5jbHVkZS9saW51eC9pcHY2Lmg6MjIxLA0KICAgICAg
-ICAgICAgICAgICBmcm9tIGluY2x1ZGUvbmV0L2lwdjYuaDoxNiwNCiAgICAgICAgICAgICAgICAg
-ZnJvbSBpbmNsdWRlL2xpbnV4L3N1bnJwYy9jbG50Lmg6MjYsDQogICAgICAgICAgICAgICAgIGZy
-b20gaW5jbHVkZS9saW51eC9uZnNfZnMuaDo1NywNCiAgICAgICAgICAgICAgICAgZnJvbSBpbml0
-L2RvX21vdW50cy5jOjMwOg0KaW5jbHVkZS9uZXQvc29jay5oOiBJbiBmdW5jdGlvbiChc2tfcHJv
-dF9tZW1fbGltaXRzojoNCmluY2x1ZGUvbmV0L3NvY2suaDoxMDY2Ojk6IGVycm9yOiBpbXBsaWNp
-dCBkZWNsYXJhdGlvbiBvZiBmdW5jdGlvbiChc29ja19uZXSiIFstV2Vycm9yPWltcGxpY2l0LWZ1
-bmN0aW9uLWRlY2xhcmF0aW9uXQ0KaW5jbHVkZS9uZXQvc29jay5oOjEwNjY6MjA6IHdhcm5pbmc6
-IGluaXRpYWxpemF0aW9uIG1ha2VzIHBvaW50ZXIgZnJvbSBpbnRlZ2VyIHdpdGhvdXQgYSBjYXN0
-IFtlbmFibGVkIGJ5IGRlZmF1bHRdDQppbmNsdWRlL25ldC9zb2NrLmg6MTA2OTo4OiBlcnJvcjog
-oWNvbnN0IHN0cnVjdCBzb2NroiBoYXMgbm8gbWVtYmVyIG5hbWVkIKFwcm90b2NvbKINCmluY2x1
-ZGUvbmV0L3NvY2suaDogQXQgdG9wIGxldmVsOg0KaW5jbHVkZS9uZXQvc29jay5oOjIxMzY6MTM6
-IGVycm9yOiBjb25mbGljdGluZyB0eXBlcyBmb3IgoXNvY2tfbmV0og0KaW5jbHVkZS9uZXQvc29j
-ay5oOjEwNjY6MjA6IG5vdGU6IHByZXZpb3VzIGltcGxpY2l0IGRlY2xhcmF0aW9uIG9mIKFzb2Nr
-X25ldKIgd2FzIGhlcmUNCmNjMTogc29tZSB3YXJuaW5ncyBiZWluZyB0cmVhdGVkIGFzIGVycm9y
-cw0KDQpJdCBpcyBiYXNpY2FsbHkgaW1wb3NzaWJsZSB0aGF0IHlvdSBldmVuIGNvbXBpbGUgdGVz
-dGVkIHRoaXMgcGF0Y2gNCmJlY2F1c2UgeW91J3JlIHVzaW5nIGFuIGludGVyZmFjZSBmcm9tIHRo
-ZSBzYW1lIGhlYWRlciBmaWxlIGJlZm9yZQ0KaXQncyBldmVuIGRlZmluZWQuDQoNClRoaXMgaXMg
-YW4gaW5jcmVkaWJseSBwb29yIHBhdGNoIHN1Ym1pc3Npb24sIEkgaGF0ZSB0byB0ZWxsIHlvdS4N
-Cg0KX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFp
-bmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpo
-dHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWlu
-ZXJz
+David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org> wrote:
+
+>From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+>Date: Mon, 09 Jul 2012 13:52:43 -0700
+>
+>> 
+>> The bonding debugfs support has been broken in the presence of network
+>> namespaces since it has been added.  The debugfs support does not handle
+>> multiple bonding devices with the same name in different network
+>> namespaces.
+>> 
+>> I haven't had any bug reports, and I'm not interested in getting any.
+>> Disable the debugfs support when network namespaces are enabled.
+>> 
+>> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+>
+>Applied.
+
+	Since distro kernels appear to set CONFIG_NET_NS, doesn't this
+effectively disable debugfs for bonding on most distros?
+
+	Do the other network device drivers that support debugfs have a
+similar problem?  E.g., if each of two namespaces have an skge device
+with the same name, will there be a debugfs conflict there as well?
+
+	-J
+
+---
+	-Jay Vosburgh, IBM Linux Technology Center, fubar-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
