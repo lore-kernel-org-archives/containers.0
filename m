@@ -1,43 +1,44 @@
-From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: containers and cgroups mini-summit @ Linux Plumbers
-Date: Thu, 12 Jul 2012 15:26:39 +0200
-Message-ID: <20120712132636.GA2185@somewhere.redhat.com>
-References: <4FFDF321.4030103@openvz.org>
+From: =?UTF-8?B?SmFuIMW7YXJza2k=?= <jan.zarski-AO0Vv05Z6LmrDJvtcaxF/A@public.gmane.org>
+Subject: cointener not run property
+Date: Fri, 13 Jul 2012 09:24:57 +0200
+Message-ID: <4FFFCD49.7080602@symetria.pl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <cgroups-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4FFDF321.4030103-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Sender: cgroups-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-To: Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Daniel Lezcano <daniel.lezcano-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Rohit Seth <rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Eric Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Dhaval Giani <dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, Paul Turner <pjt-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Tim Hockin <thockin-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Suleiman Souhlal <ssouhlal-HZy0K5TPuP5AfugRpC6u6w@public.gmane.org>, Dave Kleikamp <dave.kleikamp-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, James Bottomley <jbottomley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Maxim Patlasov <MPatlasov-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Jul 12, 2012 at 01:41:53AM +0400, Kir Kolyshkin wrote:
-> Gentlemen,
-> 
-> We are organizing containers mini-summit during next Linux Plumbers
-> (San Diego, August 29-31).
-> The idea is to gather and discuss everything relevant to namespaces,
-> cgroups, resource management,
-> checkpoint-restore and so on.
-> 
-> We are trying to come up with a list of topics to discuss, so please
-> reply with topic suggestions, and
-> let me know if you are going to come.
+Hello all,
+i try run container cloudlinux6 on centos6. When i do:
+#/lxc/bin/lxc-start -n cloud6-01 -d --logfile=/home/toor/lxc-start.log 
+--logpriority=WARN
+in log file i see:
+       lxc-start 1342162846.243 WARN     lxc_cgroup - using deprecated 
+ns_cgroup
+       lxc-start 1342162846.290 WARN     lxc_conf - failed to mount 
+'/dev/pts/2'->'/lxc/lib/lxc/rootfs/dev/tty1'
+       lxc-start 1342162846.291 WARN     lxc_conf - failed to mount 
+'/dev/pts/3'->'/lxc/lib/lxc/rootfs/dev/tty2'
+       lxc-start 1342162846.312 WARN     lxc_console - console input 
+disabled
 
-I wish I could, but this year's LPC date conflict with my holidays.
+when i want run:
+#/lxc/bin/lxc-console -n cloud6-01
+i see:
+lxc-console: console denied by 'cloud6-01'
 
-Sorry.
+can You help me? it will be my first visualisation, and Im not 
+linux-expert, so please - be tolerant.
 
-Thanks.
-
-> 
-> I probably forgot a few more people (such as, I am not sure who else
-> from Google is working
-> on cgroups stuff), so fill free to forward this to anyone you
-> believe should go,
-> or just let me know whom I missed.
-> 
-> Regards,
->   Kir.
+--
+DekeR
