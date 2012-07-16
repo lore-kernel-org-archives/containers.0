@@ -1,82 +1,43 @@
-From: "Kirill A. Shutemov" <kirill.shutemov-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
-Subject: Re: [PATCH v2] ns: do not block exit_task_namespaces() for a long time
-Date: Tue, 17 Jul 2012 00:05:15 +0300
-Message-ID: <20120716210515.GA17813__44591.4012649611$1342472664$gmane$org@otc-wbsnb-06>
-References: <20120713140806.b3d0fda8.akpm@linux-foundation.org>
-	<1342451364-14787-1-git-send-email-kirill.shutemov@linux.intel.com>
+From: Dhaval Giani <dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: containers and cgroups mini-summit @ Linux Plumbers
+Date: Mon, 16 Jul 2012 17:08:08 -0400
+Message-ID: <CAPhKKr_Z+APbN3tNZX-dqW8ehsB+RC+_3_5hTHAYG401igys3Q@mail.gmail.com>
+References: <4FFDF321.4030103@openvz.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============2558334713651061897=="
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1342451364-14787-1-git-send-email-kirill.shutemov-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
-List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Dmitry V. Levin" <ldv-u2l5PoMzF/Vg9hUCZPvPmw@public.gmane.org>, Doug Ledford <dledford-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Return-path: <cgroups-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <4FFDF321.4030103-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Sender: cgroups-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Daniel Lezcano <daniel.lezcano-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Rohit Seth <rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Eric Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, Paul Turner <pjt-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Tim Hockin <thockin-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Suleiman Souhlal <ssouhlal-h+KGxgPPiopAfugRpC6u6w@public.gmane.org>, Dave Kleikamp <dave.kleikamp-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, James Bottomley <jbottomley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Maxim Patlasov <MPatlasov-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Hi,
 
---===============2558334713651061897==
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="7AUc2qLy4jB3hD7Z"
-Content-Disposition: inline
+On Wed, Jul 11, 2012 at 5:41 PM, Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
+> Gentlemen,
+>
+> We are organizing containers mini-summit during next Linux Plumbers (San
+> Diego, August 29-31).
+> The idea is to gather and discuss everything relevant to namespaces,
+> cgroups, resource management,
+> checkpoint-restore and so on.
+>
+> We are trying to come up with a list of topics to discuss, so please reply
+> with topic suggestions, and
+> let me know if you are going to come.
+>
 
+I will be at LPC, so I should be able to attend.
 
---7AUc2qLy4jB3hD7Z
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+> I probably forgot a few more people (such as, I am not sure who else from
+> Google is working
+> on cgroups stuff), so fill free to forward this to anyone you believe should
+> go,
+> or just let me know whom I missed.
 
-On Mon, Jul 16, 2012 at 06:09:24PM +0300, Kirill A. Shutemov wrote:
-> I also move synchronize_rcu() inside free_nsproxy(). It fixes racy
-> put_nsproxy() which calls free_nsproxy() without synchronize_rcu().
-> I guess it was missed during switch to RCU (see cf7b708).
+I would be interested mainly in discussing how cgroups core is
+changing, imposing a set of rules on how new subsystems are being
+designed (hierarchical vs non-hierarchical, and all that mess).
 
-I was wrong here. No races. RCU protects task->ns_proxy, not ns_proxy
-itself.
-Sorry for misleading.
-
---=20
- Kirill A. Shutemov
-
---7AUc2qLy4jB3hD7Z
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJQBIILAAoJEAd+omnVudOM0JAQAM5ZT5sbZGDBWZlH0re17ha6
-YrmbapIDQQVnucZfgibtWnQFPxE03AxoMX2JKYha+8CFSOVD52LEFlHW790nPEhb
-v1b0LbVINI/FH/Wl0F/ot4STQWZBueNGyHLRe1YHzktNf45ghRBxQfjzyMLa63rw
-PTdjWM2r/IGhk4Bpb20bHJqJUzUv1pcdhWAbleXPbOCyy8g8orprfbXTGqLUBZun
-XkwloEStjtpanv5Nkq7eR0pSKwmJsVXXKYGn9t850Wz3bMairwSI5GQdhjWM3Fhy
-0aLRZUgwA03PN2oi7Ycclg4y2gJo08KWUUDDZFW54EltFAbyUrVB9kV0N0rT1ohf
-4OMKbMEvRflAfmA8s6NYGjX49wFbX/fGOxi5lLvVsouwrVeV2iikfjs+Sq73CeYe
-9vBDyI+UBCgsREtokpIqzCZNtMwlrHxw2jq4sWCQ8aUWt7DmKXymJMxXoS/8eOoa
-I73+CwqLpY1Vc3iIqOnq5HQdrVqulFcqsE++hQ3f7vSoHi6g2DbiKOsXRvKlM/DI
-nEW94j5cRNeKwUrqDkfWAt0BrSczaXGk6emy+4R73f/qwvgpbz6omazXIwdgTe24
-ax0cAxd8qPcywRaQOKODP8bhlbIf9CspJcjHRvbVVhWQMr45vxyH+7rWF93kY2fU
-+7kvzCIfzOIAoMWZN3re
-=jMa7
------END PGP SIGNATURE-----
-
---7AUc2qLy4jB3hD7Z--
-
---===============2558334713651061897==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============2558334713651061897==--
+Dhaval
