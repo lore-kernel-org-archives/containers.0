@@ -1,65 +1,29 @@
-From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [PATCH] netns: correctly use per-netns ipv4 sysctl_tcp_mem
-Date: Fri, 20 Jul 2012 19:22:02 -0300
-Message-ID: <5009DA0A.4010401@parallels.com>
-References: <4FFA7495.5070702@huawei.com>
-	<20120709.152100.571089964662155300.davem@davemloft.net>
+From: Kamezawa Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: containers and cgroups mini-summit @ Linux Plumbers
+Date: Sat, 21 Jul 2012 10:59:22 +0900
+Message-ID: <500A0CFA.3080304@jp.fujitsu.com>
+References: <4FFDF321.4030103@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20120709.152100.571089964662155300.davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Return-path: <cgroups-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <4FFDF321.4030103-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Sender: cgroups-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Daniel Lezcano <daniel.lezcano-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Rohit Seth <rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Eric Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Dhaval Giani <dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Paul Turner <pjt-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Tim Hockin <thockin-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Suleiman Souhlal <ssouhlal-HZy0K5TPuP5AfugRpC6u6w@public.gmane.org>, Dave Kleikamp <dave.kleikamp-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, James Bottomley <jbottomley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Maxim Patlasov <MPatlasov-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 07/09/2012 07:21 PM, David Miller wrote:
-> From: Huang Qiang <h.huangqiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-> Date: Mon, 9 Jul 2012 14:05:09 +0800
-> 
->> From: Yang Zhenzhang <yangzhenzhang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
->>
->> Now, kernel allows each net namespace to independently set up its levels
->> for tcp memory pressure thresholds.
->>
->> But it seems there is a bug, as using the following steps:
->>
->> [root@host socket]# lxc-start -n test -f config /bin/bash
->> [root@net-test socket]# ip route add default via 192.168.58.2
->> [root@net-test socket]# echo 0 0 0 > /proc/sys/net/ipv4/tcp_mem
->> [root@net-test socket]# scp root-Q0ErXNX1RuabR28l3DCWlg@public.gmane.org:/home/tcp_mem_test .
->>
->> and it still can transport the "tcp_mem_test" file which we hope it
->> would not.
->>
->> It's because inet_init() (net/ipv4/af_inet.c)initialize the
->> tcp_prot.sysctl_mem:
->> tcp_prot.sysctl_mem = init_net.ipv4.sysctl_tcp_mem;
->>
->> So when the protocal is TCP, sk->sk_prot->sysctl_mem(following code)
->> always use the ipv4 sysctl_tcp_mem of init_net namespace rather than
->> it's own net namespace.
->> This patch simply set "prot" equal to net->ipv4.sysctl_tcp_mem when
->> the protocol type is TCP.
->>
->> Signed-off-by: Yang Zhenzhang <yangzhenzhang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-> 
-> Another regression added by the socket memory cgroup code, BIG
-> SURPRISE.
-> 
+(2012/07/12 6:41), Kir Kolyshkin wrote:
+> Gentlemen,
+>
+> We are organizing containers mini-summit during next Linux Plumbers (San Diego, August 29-31).
+> The idea is to gather and discuss everything relevant to namespaces, cgroups, resource management,
+> checkpoint-restore and so on.
+>
+> We are trying to come up with a list of topics to discuss, so please reply with topic suggestions, and
+> let me know if you are going to come.
+>
 
-Back from vacations: If I understand the submission correctly, this is
-not a regression, since it seems to be only happening when those values
-are set inside the network namespace - which was not possible before.
+I think I'll be there.
 
-In any case, I believe from what I can see that the fix is already in
-the way (haven't seen the whole backlog yet)
+-Kame
