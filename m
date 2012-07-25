@@ -1,12 +1,12 @@
-From: "Automatic Email Delivery Software"
-	<MAILER-DAEMON-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Subject: Returned mail: Data format error
-Date: Tue, 24 Jul 2012 23:53:00 +0800
-Message-ID: <20120724155247.E078259C@mail.linuxfoundation.org>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [GIT PULL] cgroup changes for v3.6-rc1
+Date: Tue, 24 Jul 2012 17:15:10 -0700
+Message-ID: <20120725001510.GB5304@google.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
-	boundary="----=_NextPart_000_0003_A4EA1BDD.B514087C"
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,47 +16,35 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format.
+Hello, Linus.
 
-------=_NextPart_000_0003_A4EA1BDD.B514087C
-Content-Type: text/plain;
-	charset=us-ascii
-Content-Transfer-Encoding: 7bit
+Please pull from the following branch to receive cgroup changes for
+v3.6-rc1.
 
-This Message was undeliverable due to the following reason:
+  git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git for-3.6
 
-Your message was not delivered because the destination computer was
-not reachable within the allowed queue period. The amount of time
-a message is queued before it is returned depends on local configura-
-tion parameters.
+Nothing too interesting.  A minor bug fix and some cleanups.
 
-Most likely there is a network problem that prevented delivery, but
-it is also possible that the computer is turned off, or does not
-have a mail system running right now.
+Thanks.
 
-Your message was not delivered within 3 days:
-Host 117.96.236.24 is not responding.
+Daniel Wagner (2):
+      cgroup: Remove populate() documentation
+      cgroup: Update remount documentation
 
-The following recipients did not receive this message:
-<containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Li Zefan (1):
+      cgroup: remove hierarchy_mutex
 
-Please reply to postmaster-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-if you feel this message to be in error.
+Tejun Heo (1):
+      cgroup: cgroup_rm_files() was calling simple_unlink() with the wrong inode
 
+ Documentation/cgroups/cgroups.txt |   27 +++++---------------
+ include/linux/cgroup.h            |   17 +-----------
+ kernel/cgroup.c                   |   47 +------------------------------------
+ 3 files changed, 10 insertions(+), 81 deletions(-)
 
-
-
-------=_NextPart_000_0003_A4EA1BDD.B514087C
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
-------=_NextPart_000_0003_A4EA1BDD.B514087C--
+--
+tejun
