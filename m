@@ -1,44 +1,103 @@
-From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: containers and cgroups mini-summit @ Linux Plumbers
-Date: Wed, 25 Jul 2012 12:48:09 +0400
-Message-ID: <500FB2C9.9070003@parallels.com>
-References: <4FFDF321.4030103@openvz.org> <50051390.7010109@linaro.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH] user_ns: Use nsown_capable instead of capable in
+	net_ctl_permissions
+Date: Wed, 25 Jul 2012 04:32:09 -0700
+Message-ID: <87eho084au.fsf@xmission.com>
+References: <500E815D.4070605@huawei.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <cgroups-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <50051390.7010109-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>
-Sender: cgroups-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-To: Daniel Lezcano <daniel.lezcano-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>
-Cc: Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Rohit Seth <rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Eric Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Dhaval Giani <dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, Paul Turner <pjt-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Tim Hockin <thockin-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Suleiman Souhlal <ssouhlal-HZy0K5TPuP5AfugRpC6u6w@public.gmane.org>, Dave Kleikamp <dave.kleikamp-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, James Bottomley <jbottomley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Maxim Patlasov <MPatlasov-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <500E815D.4070605-hv44wF8Li93QT0dZR+AlfA@public.gmane.org> (Huang Qiang's message of "Tue, 24
+	Jul 2012 19:05:01 +0800")
+List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Huang Qiang <h.huangqiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 07/17/2012 11:26 AM, Daniel Lezcano wrote:
-> On 07/11/2012 11:41 PM, Kir Kolyshkin wrote:
->> Gentlemen,
->>
->> We are organizing containers mini-summit during next Linux Plumbers (San
->> Diego, August 29-31).
->> The idea is to gather and discuss everything relevant to namespaces,
->> cgroups, resource management,
->> checkpoint-restore and so on.
->>
->> We are trying to come up with a list of topics to discuss, so please
->> reply with topic suggestions, and
->> let me know if you are going to come.
->>
->> I probably forgot a few more people (such as, I am not sure who else
->> from Google is working
->> on cgroups stuff), so fill free to forward this to anyone you believe
->> should go,
->> or just let me know whom I missed.
-> 
-> Hi Kir,
-> 
-> I have a presentation for LPC and I am awaiting the approval for the
-> funding. If it is accepted I will be there.
-> 
-> One point to address could be the time virtualization.
-> 
 
-What exactly do you have in mind for that ?
+To expand a bit on Serge's reply.
+
+Huang Qiang <h.huangqiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org> writes:
+
+> From: Zhao Hongjiang <zhaohongjiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+>
+> HI:
+> When I use an unprivileged user exec the following command:
+> # nsexec -cUn /bin/bash
+> to create a container with new user_ns and net_ns.
+>
+> Then I exec "echo 4096 4096 4096 > /proc/sys/net/ipv4/tcp_mem",
+> the result is Permission Denied which we hope it should be allowed.
+>
+> It is because of capable(CAP_NET_ADMIN).
+>
+> Even my unprivileged user have the CAP_NET_ADMIN in the new user_ns and the
+> tcp_mem is belong to the new net_ns, the capable(CAP_NET_ADMIN) checking is
+> that this must in the init_user_ns, so the result is the network administrator
+> can't have the same access as root.
+>
+> Use nsown_capable(...) the problem is solved.
+>
+> PS: I changed lxc almostly like what serge done, then use an unprivileged user
+> to start a container, several Permission Denied occur(such as mount), all this
+> is caused by capabale(...), when i use nsown_capable(...) the container is
+> running like everything is ok.
+
+> Is this capabale() methed is obsolete? If so, i'll send a new patch to solve
+> all this problems.
+
+No capable is not really obsolete.
+
+Your patch is a bit scary, and this is definitely an area we
+need to do some work in.
+
+There are a couple of pieces to this.  If you raise tcp_mem you can
+allow yourself to take up unlimited amounts of kernel memory.  We
+should not allow that for an unprivilged user, and unprivilged users
+are allowed to create a user namespaces and then network namespaces.
+
+The replacement should be ns_capable not nsown_capable.  We don't
+want to allow any process that happens to have CAP_NET_ADMIN in their
+user namespace to have root privileges over any syctl file they can
+get a file descriptor to.
+
+cap_capable exists so that we can take our time and audit these things.
+Potentially we could change all cap_capable to
+"ns_capable(&init_user_ns, ...)" but that doesn't buy us much in the short
+term.
+
+So while I think your patch is in the right ballpark, I think a correct
+version of allowing an unprivileged user to raise tcp_mem is something
+we need to do a bit more carefully.
+
+Eric
+
+
+> Signed-off-by: Zhao Hongjiang<zhaohongjiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+> Signed-off-by: Huang Qiang <h.huangqiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+> ---
+>  net/sysctl_net.c |    2 +-
+>  1 files changed, 1 insertions(+), 1 deletions(-)
+>
+> diff --git a/net/sysctl_net.c b/net/sysctl_net.c
+> index c3e65ae..ee31777 100644
+> --- a/net/sysctl_net.c
+> +++ b/net/sysctl_net.c
+> @@ -47,7 +47,7 @@ static int net_ctl_permissions(struct ctl_table_root *root,
+>  			       struct ctl_table *table)
+>  {
+>  	/* Allow network administrator to have same access as root. */
+> -	if (capable(CAP_NET_ADMIN)) {
+> +	if (nsown_capable(CAP_NET_ADMIN)) {
+>  		int mode = (table->mode >> 6) & 7;
+>  		return (mode << 6) | (mode << 3) | mode;
+>  	}
