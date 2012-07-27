@@ -1,15 +1,13 @@
-From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [PATCH net-next] netns: correctly use per-netns ipv4
-	sysctl_tcp_mem
-Date: Wed, 25 Jul 2012 16:45:37 +0400
-Message-ID: <500FEA71.9080005__3213.0766929642$1343220521$gmane$org@parallels.com>
-References: <50079D47.6040001@huawei.com>
-	<1342677832.2626.3839.camel@edumazet-glaptop>
+From: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: "hot plugging" filesystem mounts into running LXC containers
+Date: Fri, 27 Jul 2012 17:07:12 +0100
+Message-ID: <20120727160712.GZ2225@redhat.com>
+Reply-To: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1342677832.2626.3839.camel@edumazet-glaptop>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,68 +17,61 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi,
+One of the things I've been thinking about in the context of libvirt's
+LXC support, is how to support "hot plug" of new filesystem mounts
+into a running container.
 
+eg
 
-On 07/19/2012 10:03 AM, Eric Dumazet wrote:
-> On Thu, 2012-07-19 at 13:38 +0800, Huang Qiang wrote:
->> From: Yang Zhenzhang <yangzhenzhang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
->>
->> Now, kernel allows each net namespace to independently set up its levels
->> for tcp memory pressure thresholds.
+ * mount host directory /export/bigdata at /var/www in a container
+ * mount host device /dev/volgroup/bigdata at /var/www in a container
+ * mount host file /export/bigdata.img at /var/www in a container
 
-Not really.
+If the container & host OS share the same root filesystem this is
+easy-ish:
 
-So the real limitation here, is done by the memory controller in cgroup,
-not the proc files. AFAIK, lxc does not (yet) touches that file by
-default, but it does create a memcg placeholder for you container, where
-you can set that yourself.
+  1. nsfd = open("/proc/self/ns/mounts")
+  2. setns(nsfd, CLONE_NEWNS)
+  3. mount("/export/bigdata", "/var/www", NULL, MS_BIND, NULL);
 
-cgroups are outside the realm of the admin, however. So once the
-limitation is in place, you might want to restrain their further,
-and that's the role of the files in /proc.
+Also mounting devices it is easy, because assuming suitable cgroups
+device ACL settings, the device nodes are not hidden from the process
+doing the mount after setns().
 
-The goal is to have something that is as close as possible to a real
-system in a container, where an admin could freely set this. (but of
-course, never going over its allowance)
+The problem is what todo in the case that the container and host have
+completely separated root filesystems, and you want to setup a new bind
+mount. Step 3 would fail because /export/bigdata is not visible once
+inside the container's mount namespace.
 
-You can note this by what reads in sysctl_ipv4.c, when that file is
-written to:
+One random idea I had would be to enable mount based on a file
+descriptor as the source, via an invented syscall
 
-#ifdef CONFIG_MEMCG_KMEM
-        rcu_read_lock();
-        memcg = mem_cgroup_from_task(current);
+   mountat(fd, tgt, fstype, flags, data)
 
-        tcp_prot_mem(memcg, vec[0], 0);
-        tcp_prot_mem(memcg, vec[1], 1);
-        tcp_prot_mem(memcg, vec[2], 2);
-        rcu_read_unlock();
-#endif
+eg
 
-This function is defined in tcp_memcontrol.c
+  1. nsfd = open("/proc/self/ns/mounts")
+  2. srcfd = open("/export/bigdata")
+  2. setns(fd, CLONE_NEWNS)
+  3. mountat(srcfd, "/var/www", NULL, MS_BIND, NULL);
 
-void tcp_prot_mem(struct mem_cgroup *memcg, long val, int idx)
-{
-        struct tcp_memcontrol *tcp;
-        struct cg_proto *cg_proto;
+An alternative would be if the container's mount namespace was actually
+visible in the host. In theory /proc/$PID/root would be the thing to use,
+but that doesn't actually give you a proper view into the container's
+mount namespace. If /proc/$PID/root  did actually do the right thing,
+then we could just do
 
-        cg_proto = tcp_prot.proto_cgroup(memcg);
-        if (!cg_proto)
-                return;
+  1. mountat("/export/bigdata", "/proc/$PID/root/var/www", NULL, MS_BIND, NULL);
 
-        tcp = tcp_from_cgproto(cg_proto);
+Any other ideas / suggestions ?
 
-        tcp->tcp_prot_mem[idx] = val;
-}
-
-tcp_prot_mem[] ends up being the vector you access as:
-
-	prot = sk->sk_cgrp->sysctl_mem;
-
-in the function you patch.
-
-I hope it helps.
+Regards,
+Daniel
+-- 
+|: http://berrange.com      -o-    http://www.flickr.com/photos/dberrange/ :|
+|: http://libvirt.org              -o-             http://virt-manager.org :|
+|: http://autobuild.org       -o-         http://search.cpan.org/~danberr/ :|
+|: http://entangle-photo.org       -o-       http://live.gnome.org/gtk-vnc :|
