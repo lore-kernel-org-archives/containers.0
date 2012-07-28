@@ -1,13 +1,12 @@
-From: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Atomically changing NIC dev name + namespace ?
-Date: Fri, 27 Jul 2012 17:28:25 +0100
-Message-ID: <20120727162825.GB2225@redhat.com>
-Reply-To: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: "Business Culling" <consult-tVlvk/0xt3PKJT0i6XlHsUEOCMrvLtNR@public.gmane.org>
+Subject: Business Culling Requests Your Permission
+Date: Sat, 28 Jul 2012 00:05:07 -0400
+Message-ID: <99e336195d54b9864e08bf2e165ed3c4@BusinessCulling.com>
+Reply-To: consult-tVlvk/0xt3PKJT0i6XlHsUEOCMrvLtNR@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,50 +19,5 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Another feature I'd like to provide in libvirt LXC is "hotplug" of NIC
-devices to containers.
-
-eg, I have a NIC eth1 in the host and I want to make it appear as eth0
-in the container. There are two ways I can do this
-
-  # ip link set eth1 name eth0
-  # ip link set eth0 ns $PID
-
-Or
-
-  # ip link set eth1 ns $PID
-  # setns --net $PID  (assume it opens /proc/$PID/ns/net & does setns(fd))
-  # ip link set eth1 name eth0
-
-
-Both these approaches suffer from flaws though. The first approach fails
-on step one, if there is already another NIC in the host, that has the
-same name as the target we want to use in the container. The second
-approach fails on step 1 if there is already a NIC in the container
-which has the same name as the original device on the host.
-
-To get around this, we'd basically need to temporarily use a completely
-random NIC name eg
-
-  # ip link set eth1 name $RANDOMNAME
-  # ip link set $RANDOMNAME ns $PID
-  # setns --net $PID  (assume it opens /proc/$PID/ns/net & does setns(fd))
-  # ip link set $RANDOMNAME name eth0
-
-This is workable, but feels slightly unpleasant.  So IMHO if would be
-desirable if the kernel allowed us to atomically change the NIC device
-name and namespace at the same time. eg
-
-  # ip link set eth1 name eth0 ns $PID
-
-Although that 'ip' CLI syntax is allowed, it appears to implement it in
-two steps, doing the rename first and then setting the namespace, so you
-still hit the NIC name clash problem.
-
-Regards,
-Daniel
--- 
-|: http://berrange.com      -o-    http://www.flickr.com/photos/dberrange/ :|
-|: http://libvirt.org              -o-             http://virt-manager.org :|
-|: http://autobuild.org       -o-         http://search.cpan.org/~danberr/ :|
-|: http://entangle-photo.org       -o-       http://live.gnome.org/gtk-vnc :|
+  Dear Friend,  Business Culling would like to send you occasional email communications on product offerings such as our lead generation services. What we can do for you.  To respect your privacy, Business Culling sends emails only to individuals with sincere interest. We ask that you unsubscribe if you do not wish to receive future communications about such products, by simply visiting the "Unsubscribe" link listed below.  We hope you enjoy learning more about the innovative and scalable solutions that Business Culling offers to help you achieve your online success.  Best regards,  Business Culling Consult-tVlvk/0xt3PKJT0i6XlHsUEOCMrvLtNR@public.gmane.org www.BusinessCulling.comThe information contained in this message is confidential and intended only for the recipient. If you have received this message in error, ple
+ ase delete it or unsubscribe if you no longer wish to receive our emails. If needed, you can reach us at P.O. Box 8575, Calabasas, CA, 91372.
