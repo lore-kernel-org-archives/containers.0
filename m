@@ -1,14 +1,15 @@
 From: Christoph Lameter <cl-vYTEC60ixJUAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC PATCH 01/23 V2] node_states: introduce N_MEMORY
-Date: Thu, 2 Aug 2012 11:01:00 -0500 (CDT)
-Message-ID: <alpine.DEB.2.00.1208021100230.23049__24956.0997741812$1343923299$gmane$org@router.home>
+Subject: Re: [RFC PATCH 14/23 V2] slub, hotplug: ignore unrelated node's
+	hot-adding and hot-removing
+Date: Thu, 2 Aug 2012 11:04:46 -0500 (CDT)
+Message-ID: <alpine.DEB.2.00.1208021102560.23049@router.home>
 References: <1343875991-7533-1-git-send-email-laijs@cn.fujitsu.com>
-	<1343875991-7533-2-git-send-email-laijs@cn.fujitsu.com>
+	<1343875991-7533-15-git-send-email-laijs@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1343875991-7533-2-git-send-email-laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <1343875991-7533-15-git-send-email-laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,9 +25,11 @@ List-Id: containers.vger.kernel.org
 
 On Thu, 2 Aug 2012, Lai Jiangshan wrote:
 
-> In one word, we need a N_MEMORY. We just intrude it as an alias to
-> N_HIGH_MEMORY and fix all im-proper usages of N_HIGH_MEMORY in late patches.
+> SLUB only fucus on the nodes which has normal memory, so ignore the other
+> node's hot-adding and hot-removing.
 
-Good idea to clean this up.
-
-Acked-by: Christoph Lameter <cl-vYTEC60ixJUAvxtiuMwx3w@public.gmane.org>
+You would need to do the same for SLAB. SLAB has an easier time with
+falling back to other nodes (and therefore does not show up in your
+tests) but as a result SLAB will be quite ineffective
+because it created bogus structures that are never used yet constantly
+traversed.
