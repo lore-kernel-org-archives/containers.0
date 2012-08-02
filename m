@@ -1,15 +1,15 @@
 From: Christoph Lameter <cl-vYTEC60ixJUAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC PATCH 14/23 V2] slub, hotplug: ignore unrelated node's
-	hot-adding and hot-removing
-Date: Thu, 2 Aug 2012 11:04:46 -0500 (CDT)
-Message-ID: <alpine.DEB.2.00.1208021102560.23049@router.home>
+Subject: Re: [RFC PATCH 16/23 V2] numa: add CONFIG_MOVABLE_NODE for
+	movable-dedicated node
+Date: Thu, 2 Aug 2012 11:06:32 -0500 (CDT)
+Message-ID: <alpine.DEB.2.00.1208021105540.23049__46646.0947682664$1343923629$gmane$org@router.home>
 References: <1343875991-7533-1-git-send-email-laijs@cn.fujitsu.com>
-	<1343875991-7533-15-git-send-email-laijs@cn.fujitsu.com>
+	<1343875991-7533-17-git-send-email-laijs@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1343875991-7533-15-git-send-email-laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <1343875991-7533-17-git-send-email-laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -25,11 +25,13 @@ List-Id: containers.vger.kernel.org
 
 On Thu, 2 Aug 2012, Lai Jiangshan wrote:
 
-> SLUB only fucus on the nodes which has normal memory, so ignore the other
-> node's hot-adding and hot-removing.
+> +++ b/include/linux/nodemask.h
+> @@ -380,7 +380,11 @@ enum node_states {
+>  #else
+>  	N_HIGH_MEMORY = N_NORMAL_MEMORY,
+>  #endif
+> +#ifdef CONFIG_MOVABLE_NODE
+> +	N_MEMORY,		/* The node has memory(regular, high, movable) */
 
-You would need to do the same for SLAB. SLAB has an easier time with
-falling back to other nodes (and therefore does not show up in your
-tests) but as a result SLAB will be quite ineffective
-because it created bogus structures that are never used yet constantly
-traversed.
+I like these comments. Could you add some to each of the different node
+states and defined their purpose?
