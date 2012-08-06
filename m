@@ -1,14 +1,15 @@
-From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Subject: Re: Atomically changing NIC dev name + namespace ?
-Date: Mon, 6 Aug 2012 08:34:15 -0500
-Message-ID: <20120806133415.GB5874@sergelap>
-References: <20120727162825.GB2225@redhat.com>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] Forbid invocation of kexec_load() outside initial PID
+	namespace
+Date: Mon, 6 Aug 2012 19:00:14 +0000
+Message-ID: <20120806190014.GA15267@mail.hallyn.com>
+References: <1343991184-3619-1-git-send-email-berrange@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20120727162825.GB2225-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1343991184-3619-1-git-send-email-berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,67 +20,71 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 Quoting Daniel P. Berrange (berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
-> Another feature I'd like to provide in libvirt LXC is "hotplug" of NIC
-> devices to containers.
+> From: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 > 
-> eg, I have a NIC eth1 in the host and I want to make it appear as eth0
-> in the container. There are two ways I can do this
+> The following commit
 > 
->   # ip link set eth1 name eth0
->   # ip link set eth0 ns $PID
+>     commit cf3f89214ef6a33fad60856bc5ffd7bb2fc4709b
+>     Author: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+>     Date:   Wed Mar 28 14:42:51 2012 -0700
 > 
-> Or
+>     pidns: add reboot_pid_ns() to handle the reboot syscall
 > 
->   # ip link set eth1 ns $PID
->   # setns --net $PID  (assume it opens /proc/$PID/ns/net & does setns(fd))
->   # ip link set eth1 name eth0
+> introduced custom handling of the reboot() syscall when invoked
+> from a non-initial PID namespace. The intent was that a process
+> in a container can be allowed to keep CAP_SYS_BOOT and execute
+> reboot() to shutdown/reboot just their private container, rather
+> than the host.
 > 
+> Unfortunately the kexec_load() syscall also relies on the
+> CAP_SYS_BOOT capability. So by allowing a container to keep
+> this capability to safely invoke reboot(), they mistakenly
+> also gain the ability to use kexec_load(). The solution is
+> to make kexec_load() return -EPERM if invoked from a PID
+> namespace that is not the initial namespace
 > 
-> Both these approaches suffer from flaws though. The first approach fails
-> on step one, if there is already another NIC in the host, that has the
-> same name as the target we want to use in the container. The second
-> approach fails on step 1 if there is already a NIC in the container
-> which has the same name as the original device on the host.
-> 
-> To get around this, we'd basically need to temporarily use a completely
-> random NIC name eg
-> 
->   # ip link set eth1 name $RANDOMNAME
->   # ip link set $RANDOMNAME ns $PID
->   # setns --net $PID  (assume it opens /proc/$PID/ns/net & does setns(fd))
->   # ip link set $RANDOMNAME name eth0
-> 
-> This is workable, but feels slightly unpleasant.  So IMHO if would be
+> Signed-off-by: Daniel P. Berrange <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> Cc: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 
-Yes, it feels racy.  I assume 'ip' will give a helpful error if RANDOMNAME
-happens to be already taken though.
+Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 
-> desirable if the kernel allowed us to atomically change the NIC device
-> name and namespace at the same time. eg
+(Please see my previous email explaining why I believe the pidns
+is an appropriate check)
+
+> Cc: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+> Cc: Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+> Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> ---
+>  kernel/kexec.c | 5 +++++
+>  1 file changed, 5 insertions(+)
 > 
->   # ip link set eth1 name eth0 ns $PID
-
-An alternative would be to encode the above logic in the ip program
-itself, but not the kernel.  I think that's the way to go.  We don't
-want every user of this to have to do the ugly steps, but I don't
-know that this quite justifies kernel help.
-
-> Although that 'ip' CLI syntax is allowed, it appears to implement it in
-> two steps, doing the rename first and then setting the namespace, so you
-> still hit the NIC name clash problem.
-> 
-> Regards,
-> Daniel
+> diff --git a/kernel/kexec.c b/kernel/kexec.c
+> index 0668d58..b152bde 100644
+> --- a/kernel/kexec.c
+> +++ b/kernel/kexec.c
+> @@ -947,6 +947,11 @@ SYSCALL_DEFINE4(kexec_load, unsigned long, entry, unsigned long, nr_segments,
+>  	if (!capable(CAP_SYS_BOOT))
+>  		return -EPERM;
+>  
+> +	/* Processes in containers must not be allowed to load a new
+> +	 * kernel, even if they have CAP_SYS_BOOT */
+> +	if (task_active_pid_ns(current) != &init_pid_ns)
+> +		return -EPERM;
+> +
+>  	/*
+>  	 * Verify we have a legal set of flags
+>  	 * This leaves us room for future extensions.
 > -- 
-> |: http://berrange.com      -o-    http://www.flickr.com/photos/dberrange/ :|
-> |: http://libvirt.org              -o-             http://virt-manager.org :|
-> |: http://autobuild.org       -o-         http://search.cpan.org/~danberr/ :|
-> |: http://entangle-photo.org       -o-       http://live.gnome.org/gtk-vnc :|
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
+> 1.7.11.2
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Please read the FAQ at  http://www.tux.org/lkml/
