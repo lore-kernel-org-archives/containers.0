@@ -1,16 +1,19 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH] Forbid invocation of kexec_load() outside initial PID
 	namespace
-Date: Mon, 06 Aug 2012 12:16:29 -0700
-Message-ID: <87r4rjn84y.fsf@xmission.com>
+Date: Mon, 6 Aug 2012 19:20:40 +0000
+Message-ID: <20120806192040.GA27023@mail.hallyn.com>
 References: <1343991184-3619-1-git-send-email-berrange@redhat.com>
-	<20120806190014.GA15267@mail.hallyn.com>
+	<cfa2e2c9-db52-40cd-979b-7a6084427190@email.android.com>
+	<20120803125210.GD12870@redhat.com>
+	<bef31b2b-429b-4b2b-981b-b230f9c6bfad@email.android.com>
+	<1344122135.1422.2.camel@Nokia-N900-51-1>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20120806190014.GA15267-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org> (Serge E. Hallyn's
-	message of "Mon, 6 Aug 2012 19:00:14 +0000")
+Content-Disposition: inline
+In-Reply-To: <1344122135.1422.2.camel@Nokia-N900-51-1>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,65 +23,19 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+To: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-"Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
+Quoting Serge Hallyn (serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org):
+> Eric,
+> 
+> during the container reboot discussion, the agreement was reached that rebooting for real fron non-init pid ns is not safe.  Restarting userspace (in pidns caller owns) is.  I argue the same reasoning supports this.
+> 
+> I haven't had a chance to review the patch, but the idea gets my ack.  I'll look at the patch asap.
+> 
+> I'm also fine with splitting cap_sys_boot into a user and system caps.  The former would only be needed targeted to the userns of the init pid, while the latter would be required to init_user_ns.  Then containers could safely be given cap_sys_restart or whatever, but not cap_sys_boot which authorizes kexec and machine reset/poweroff.
 
-> Quoting Daniel P. Berrange (berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
->> From: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
->> 
->> The following commit
->> 
->>     commit cf3f89214ef6a33fad60856bc5ffd7bb2fc4709b
->>     Author: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
->>     Date:   Wed Mar 28 14:42:51 2012 -0700
->> 
->>     pidns: add reboot_pid_ns() to handle the reboot syscall
->> 
->> introduced custom handling of the reboot() syscall when invoked
->> from a non-initial PID namespace. The intent was that a process
->> in a container can be allowed to keep CAP_SYS_BOOT and execute
->> reboot() to shutdown/reboot just their private container, rather
->> than the host.
->> 
->> Unfortunately the kexec_load() syscall also relies on the
->> CAP_SYS_BOOT capability. So by allowing a container to keep
->> this capability to safely invoke reboot(), they mistakenly
->> also gain the ability to use kexec_load(). The solution is
->> to make kexec_load() return -EPERM if invoked from a PID
->> namespace that is not the initial namespace
->> 
->> Signed-off-by: Daniel P. Berrange <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
->> Cc: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
->
-> Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
->
-> (Please see my previous email explaining why I believe the pidns
-> is an appropriate check)
-
-Serge as to your objects.
-
-If we define kexec_load in terms of the pid namespace then something
-makes sense, but the error should be EINVAL, or something of that sort.
-
-That is what we did with reboot.  We defined reboot in terms of the pid
-namespace.
-
-Not defining kexec_load in terms of the pid namespace and then returning
-EPERM because having we happen to have CAP_SYS_BOOT for other reasons is
-semantically horrible.
-
-At the end of the day the effect is the same, but I think it matters a
-great deal in how we think about things.
-
-We have CAP_SYS_BOOT in the initial user namespace.  We do have
-permission to make the system call.
-
-So I continue to see this patch the way it is current constructed as
-broken.
-
-Nacked-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-
-Eric
+Splitting the cap up into CAP_RESTART (restart /sbin/init) and CAP_BOOT
+(reboot hardware or kexec kernel) has the advantage that the capabilities
+each remain simpler to parse, no 'in this context it means that'.
