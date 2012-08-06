@@ -1,19 +1,16 @@
-From: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Forbid invocation of kexec_load() outside initial PID
-	namespace
-Date: Sat, 04 Aug 2012 18:15:35 -0500
-Message-ID: <1344122135.1422.2.camel__1068.61207536912$1344122666$gmane$org@Nokia-N900-51-1>
-References: <1343991184-3619-1-git-send-email-berrange@redhat.com>
-	<cfa2e2c9-db52-40cd-979b-7a6084427190@email.android.com>
-	<20120803125210.GD12870@redhat.com>
-	<bef31b2b-429b-4b2b-981b-b230f9c6bfad@email.android.com>
-Reply-To: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+From: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [RFC PATCH 14/23 V2] slub,
+	hotplug: ignore unrelated node's hot-adding and hot-removing
+Date: Mon, 06 Aug 2012 13:39:36 +0800
+Message-ID: <501F5898.8070502@cn.fujitsu.com>
+References: <1343875991-7533-1-git-send-email-laijs@cn.fujitsu.com>
+	<1343875991-7533-15-git-send-email-laijs@cn.fujitsu.com>
+	<alpine.DEB.2.00.1208021102560.23049@router.home>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <bef31b2b-429b-4b2b-981b-b230f9c6bfad-2ueSQiBKiTY7tOexoI0I+QC/G2K4zDHf@public.gmane.org>
-Content-ID: <1344122134.1422.1.camel@Nokia-N900-51-1>
+In-Reply-To: <alpine.DEB.2.00.1208021102560.23049-sBS69tsa9Uj/9pzu0YdTqQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,45 +20,27 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+To: Christoph Lameter <cl-vYTEC60ixJUAvxtiuMwx3w@public.gmane.org>
+Cc: Jiri Kosina <jkosina-AlSwsSmVLrQ@public.gmane.org>, Dan Magenheimer <dan.magenheimer-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Paul Gortmaker <paul.gortmaker-CWA4WttNNZF54TAoqtyWWQ@public.gmane.org>, Konstantin Khlebnikov <khlebnikov-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Sam Ravnborg <sam-uyr5N9Q2VtJg9hUCZPvPmw@public.gmane.org>, Gavin Shan <shangw-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Mel Gorman <mgorman-l3A5Bk7waGM@public.gmane.org>, KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Petr Holasek <pholasek-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Wanlong Gao <gaowanlong-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, Djalal Harouni <tixxdz-Umm1ozX2/EEdnm+yROfE0A@public.gmane.org>, Rusty Russell <rusty-8n+1lVoiYb80n/F98K4Iww@public.gmane.org>, Wen Congyang <wency-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, Pawel Moll <pawel.moll-5wv7dgnIgG8@public.gmane.org>Me
 List-Id: containers.vger.kernel.org
 
-RXJpYywKCmR1cmluZyB0aGUgY29udGFpbmVyIHJlYm9vdCBkaXNjdXNzaW9uLCB0aGUgYWdyZWVt
-ZW50IHdhcyByZWFjaGVkIHRoYXQgcmVib290aW5nIGZvciByZWFsIGZyb24gbm9uLWluaXQgcGlk
-IG5zIGlzIG5vdCBzYWZlLiAgUmVzdGFydGluZyB1c2Vyc3BhY2UgKGluIHBpZG5zIGNhbGxlciBv
-d25zKSBpcy4gIEkgYXJndWUgdGhlIHNhbWUgcmVhc29uaW5nIHN1cHBvcnRzIHRoaXMuCgpJIGhh
-dmVuJ3QgaGFkIGEgY2hhbmNlIHRvIHJldmlldyB0aGUgcGF0Y2gsIGJ1dCB0aGUgaWRlYSBnZXRz
-IG15IGFjay4gIEknbGwgbG9vayBhdCB0aGUgcGF0Y2ggYXNhcC4KCkknbSBhbHNvIGZpbmUgd2l0
-aCBzcGxpdHRpbmcgY2FwX3N5c19ib290IGludG8gYSB1c2VyIGFuZCBzeXN0ZW0gY2Fwcy4gIFRo
-ZSBmb3JtZXIgd291bGQgb25seSBiZSBuZWVkZWQgdGFyZ2V0ZWQgdG8gdGhlIHVzZXJucyBvZiB0
-aGUgaW5pdCBwaWQsIHdoaWxlIHRoZSBsYXR0ZXIgd291bGQgYmUgcmVxdWlyZWQgdG8gaW5pdF91
-c2VyX25zLiAgVGhlbiBjb250YWluZXJzIGNvdWxkIHNhZmVseSBiZSBnaXZlbiBjYXBfc3lzX3Jl
-c3RhcnQgb3Igd2hhdGV2ZXIsIGJ1dCBub3QgY2FwX3N5c19ib290IHdoaWNoIGF1dGhvcml6ZXMg
-a2V4ZWMgYW5kIG1hY2hpbmUgcmVzZXQvcG93ZXJvZmYuCgotLS0tLSBPcmlnaW5hbCBtZXNzYWdl
-IC0tLS0tCj4gIkRhbmllbCBQLiBCZXJyYW5nZSIgPGJlcnJhbmdlQHJlZGhhdC5jb20+IHdyb3Rl
-Ogo+IAo+ID4gT24gRnJpLCBBdWcgMDMsIDIwMTIgYXQgMDU6NDU6NDBBTSAtMDcwMCwgRXJpYyBX
-LiBCaWVkZXJtYW4gd3JvdGU6Cj4gPiA+IFRoZSBzb2x1dGlvbiBpcyB0byB1c2UgdXNlciBuYW1l
-c3BhY2VzIGFuZCB0byBvbmx5IHRlc3QgbnNfY2FwYWJsZSBvbgo+ID4gdGhlIG1hZ2ljIHJlYm9v
-dCBwYXRoLgo+ID4gPiAKPiA+ID4gRm9yIHRoZSAzLjcgdGltZWZyYW1lIHRoYXQgc2hvdWxkIGJl
-IGEgcmVhbGlzdGljIHNvbHV0aW9uLgo+ID4gCj4gPiBIbW0sIHRoYXQgd291bGQgaW1wbHkgdGhh
-dCBpZiBMWEMgd2FudHMgdG8gYWxsb3cgcmVib290KCkvQ0FQX1NZU19CT09UCj4gPiB0aGV5IHdp
-bGwgYmUgZm9yY2VkIHRvIHVzZSBDTE9ORV9ORVdVU0VSLiBJIHdhcyByYXRoZXIgbG9va2luZyBm
-b3IgYQo+ID4gd2F5Cj4gPiB0byBhbGxvdyB0aGUgY29udGFpbmVyIHRvIGtlZXAgQ0FQX1NZU19C
-T09ULCB3aXRob3V0IGFsc28gbWFuZGF0aW5nIHVzZQo+ID4gb2YgdXNlciBuYW1lc3BhY2VzLgo+
-IAo+IElmIHdlIHJlbW92ZSB0aGUgdXNlIG9mIENBUF9TWVNfQk9PVCBvbiB0aGUgY29udGFpbmVy
-IHJlYm9vdCBwYXRoCj4gcGVyaGFwcy4KPiAKPiBCdXQgeW91IGhhdmUgaGl0IG9uZSBzbWFsbCBp
-c3N1ZSBpbiB0aGUgaHVnZSBwaWxlIG9mIGlzc3VlcyB3aHkgZ2l2aW5nCj4gY29udGFuZXJzIGNh
-cGFiaWxpdGllcyBpcyBnZW5lcmFsbHkgYSBiYWQgaWRlYS4KPiAKPiBUaGlzIGlzIHRoZSByZWFz
-b24gSSBoYXZlIGJlZW4gaW5zaXN0aW5nIG9uIGEgcmVhc29uYWJsZSB2ZXJzaW9uIG9mIHVzZXIK
-PiBuYW1lc3BhY2VzIGZvciBhIGxvbmcgdGltZS4KPiAKPiBXaGVuIHRoZSBzZWN1cml0eSBpc3N1
-ZXMgYmVjb21lIGltcG9ydGFudCBpdCBpcyB0aW1lIGZvciB1c2VyCj4gbmFtZXNwYWNlcy7CoCDC
-oCAgVGhhdCBpcyB0aGVpciBwdXJwb3NlLgo+IAo+IEVyaWMKPiAKPiAKPiAKPiAtLQo+IFRvIHVu
-c3Vic2NyaWJlIGZyb20gdGhpcyBsaXN0OiBzZW5kIHRoZSBsaW5lICJ1bnN1YnNjcmliZSBsaW51
-eC1rZXJuZWwiCj4gaW4gdGhlIGJvZHkgb2YgYSBtZXNzYWdlIHRvIG1ham9yZG9tb0B2Z2VyLmtl
-cm5lbC5vcmcKPiBNb3JlIG1ham9yZG9tbyBpbmZvIGF0wqAgIGh0dHA6Ly92Z2VyLmtlcm5lbC5v
-cmcvbWFqb3Jkb21vLWluZm8uaHRtbAo+IFBsZWFzZSByZWFkIHRoZSBGQVEgYXTCoCAgaHR0cDov
-L3d3dy50dXgub3JnL2xrbWwvCgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4
-LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFu
-L2xpc3RpbmZvL2NvbnRhaW5lcnM=
+On 08/03/2012 12:04 AM, Christoph Lameter wrote:
+> On Thu, 2 Aug 2012, Lai Jiangshan wrote:
+> 
+>> SLUB only fucus on the nodes which has normal memory, so ignore the other
+>> node's hot-adding and hot-removing.
+> 
+> You would need to do the same for SLAB. SLAB has an easier time with
+> falling back to other nodes (and therefore does not show up in your
+> tests) but as a result SLAB will be quite ineffective
+> because it created bogus structures that are never used yet constantly
+> traversed.
+> 
+> 
+
+Because SLAB creates bogus structures, so it can care less things when in hotplug.
+It is just ugly but it is not bug currently, so I want to delay to fix it.
+And SLAB is not so friendly with hot-remove as SLUB in my view, we can fix it altogether in future.
+
+Thanks,
+Lai
