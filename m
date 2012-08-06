@@ -1,14 +1,14 @@
 From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Subject: Re: "hot plugging" filesystem mounts into running LXC containers
-Date: Mon, 6 Aug 2012 08:27:57 -0500
-Message-ID: <20120806132757.GA5874@sergelap>
-References: <20120727160712.GZ2225@redhat.com>
+Subject: Re: Atomically changing NIC dev name + namespace ?
+Date: Mon, 6 Aug 2012 08:34:15 -0500
+Message-ID: <20120806133415.GB5874@sergelap>
+References: <20120727162825.GB2225@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20120727160712.GZ2225-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20120727162825.GB2225-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,57 +23,54 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 Quoting Daniel P. Berrange (berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
-> One of the things I've been thinking about in the context of libvirt's
-> LXC support, is how to support "hot plug" of new filesystem mounts
-> into a running container.
+> Another feature I'd like to provide in libvirt LXC is "hotplug" of NIC
+> devices to containers.
 > 
-> eg
+> eg, I have a NIC eth1 in the host and I want to make it appear as eth0
+> in the container. There are two ways I can do this
 > 
->  * mount host directory /export/bigdata at /var/www in a container
->  * mount host device /dev/volgroup/bigdata at /var/www in a container
->  * mount host file /export/bigdata.img at /var/www in a container
+>   # ip link set eth1 name eth0
+>   # ip link set eth0 ns $PID
 > 
-> If the container & host OS share the same root filesystem this is
-> easy-ish:
+> Or
 > 
->   1. nsfd = open("/proc/self/ns/mounts")
->   2. setns(nsfd, CLONE_NEWNS)
->   3. mount("/export/bigdata", "/var/www", NULL, MS_BIND, NULL);
+>   # ip link set eth1 ns $PID
+>   # setns --net $PID  (assume it opens /proc/$PID/ns/net & does setns(fd))
+>   # ip link set eth1 name eth0
 > 
-> Also mounting devices it is easy, because assuming suitable cgroups
-> device ACL settings, the device nodes are not hidden from the process
-> doing the mount after setns().
 > 
-> The problem is what todo in the case that the container and host have
-> completely separated root filesystems, and you want to setup a new bind
-> mount. Step 3 would fail because /export/bigdata is not visible once
-> inside the container's mount namespace.
+> Both these approaches suffer from flaws though. The first approach fails
+> on step one, if there is already another NIC in the host, that has the
+> same name as the target we want to use in the container. The second
+> approach fails on step 1 if there is already a NIC in the container
+> which has the same name as the original device on the host.
 > 
-> One random idea I had would be to enable mount based on a file
-> descriptor as the source, via an invented syscall
+> To get around this, we'd basically need to temporarily use a completely
+> random NIC name eg
 > 
->    mountat(fd, tgt, fstype, flags, data)
+>   # ip link set eth1 name $RANDOMNAME
+>   # ip link set $RANDOMNAME ns $PID
+>   # setns --net $PID  (assume it opens /proc/$PID/ns/net & does setns(fd))
+>   # ip link set $RANDOMNAME name eth0
 > 
-> eg
-> 
->   1. nsfd = open("/proc/self/ns/mounts")
->   2. srcfd = open("/export/bigdata")
->   2. setns(fd, CLONE_NEWNS)
->   3. mountat(srcfd, "/var/www", NULL, MS_BIND, NULL);
+> This is workable, but feels slightly unpleasant.  So IMHO if would be
 
-That's neat.  I like it.  You could bring this up at plumber's if you
-still want to look for other ideas (maybe there's a way of doing this
-with no new functionality), but a patch doing this would be cool.
+Yes, it feels racy.  I assume 'ip' will give a helpful error if RANDOMNAME
+happens to be already taken though.
 
-> An alternative would be if the container's mount namespace was actually
-> visible in the host. In theory /proc/$PID/root would be the thing to use,
-> but that doesn't actually give you a proper view into the container's
-> mount namespace. If /proc/$PID/root  did actually do the right thing,
-> then we could just do
+> desirable if the kernel allowed us to atomically change the NIC device
+> name and namespace at the same time. eg
 > 
->   1. mountat("/export/bigdata", "/proc/$PID/root/var/www", NULL, MS_BIND, NULL);
-> 
-> Any other ideas / suggestions ?
+>   # ip link set eth1 name eth0 ns $PID
+
+An alternative would be to encode the above logic in the ip program
+itself, but not the kernel.  I think that's the way to go.  We don't
+want every user of this to have to do the ugly steps, but I don't
+know that this quite justifies kernel help.
+
+> Although that 'ip' CLI syntax is allowed, it appears to implement it in
+> two steps, doing the rename first and then setting the namespace, so you
+> still hit the NIC name clash problem.
 > 
 > Regards,
 > Daniel
