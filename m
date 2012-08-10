@@ -1,15 +1,15 @@
-From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Subject: Re: setns vs unshare bug
-Date: Fri, 10 Aug 2012 10:24:16 -0500
-Message-ID: <20120810152416.GA26902@sergelap>
-References: <502520E8.5040401@parallels.com> <20120810150046.GA20449@sergelap>
-	<502523DF.4040103@parallels.com> <502525FC.3060608@parallels.com>
+From: "Rick" <zegnasaskaia35isgua-LWAfsSFWpa4@public.gmane.org>
+Subject: =?GB2312?B?RGlnaXRhbCBQaG90byBFZGl0aW5nIFNlcg==?=
+	=?GB2312?B?dmljZXMgLSBQaG90byBDdXRvdXQgLSBQaA==?=
+	=?GB2312?B?b3RvIFJldG91Y2hpbmc=?=
+Date: Fri, 10 Aug 2012 23:25:36 +0800
+Message-ID: <20120810192407.7E402683@mail.linuxfoundation.org>
+Reply-To: ibimaging-9Onoh4P/yGk@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <502525FC.3060608-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,34 +19,46 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: containers <containers-M5VDzleVLSUAvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Pavel Emelyanov (xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org):
-> On 08/10/2012 07:08 PM, Pavel Emelyanov wrote:
-> > On 08/10/2012 07:00 PM, Serge Hallyn wrote:
-> >> Hi Pavel,
-> >>
-> >> I don't believe this is a bug.  The fd is to a specific network
-> >> namespace.  If the target task later changes his namespace, that
-> >> doesn't change the fact that you asked for access to the old
-> >> namespace.
-> >>
-> >> You're worried about a race?
-> > 
-> > No, it's not a race. The proc ns file doesn't reflect the actual state
-> > of a task it belongs to, but instead has some internal state which is
-> > not observable/controllable from the outside. Look at my proggie -- the
-> > "else" branch does expects that setns will bring it into a new net, but
-> > it only does so if proc dcache is empty!
-> 
-> I mean -- I open a task's proc ns file _strictly_ _after_ that task called
-> unshare, but happen to obtain an _old_ net namespace, because this old netns
-> was cached on the task's proc file.
-> 
-> Hope this explains better what I'm concerned about.
+You are receiving this email because we wish you to use our digital photo editing services.
 
-Ooh!  Sorry, now I see.
+We are a China based Imaging Professionals. We offer basic and advanced digital photo Editing services and solutions like photo Cutout, morphological photo Editing, photoshop photo Editing, satellite photo Editing, color photo Editing and vector photo Editing using latest techniques. 
 
--serge
+Our strength in providing Editing solutions for digital images like photo masking, photo re-touching, back ground cleaning & cloning, sharpening & restoration of color, all this derive from our vast experience. Our dedicated team of highly skilled and experienced professionals serves the photo Editing requirements of our clients. An in house quality checking mechanism assures value addition and delivers perfect job. Our team can deliver your job overnight or in time bounded fashion irrespective of job size. 
+
+Our mainly services are: 
+
+1. Photo Cutout
+2. Photo Enhancement
+3. Photo Retouching
+4. Vector Conversion
+5. Pop Art
+6. Images Masking
+7. Clipping Path
+8. Photo Restoration 
+9. Web Design
+
+Photo Editing Services:
+
+Our Photo Editing services includes advanced photo cutouts/clippings, balancing brightness / contrast in an image, repair of minor scratches, creases, minor dust, and spot removal to removal of major scratches, cracks, creases, and stains in all areas. We also repair seriously faded/damaged photographs and make it print ready.
+
+Best regards,
+Rick
+Toeaavsam Imaging Professionals
+Contact: contactrick-KN7UnAbNpbg@public.gmane.org
+
+
+
+-------------------------------------------------
+
+This e-mail (and any attachments) is confidential and may contain
+personal views which are not the views of us. unless specifically stated. If you have received
+it in error, please delete it from your system, do not use, copy or
+disclose the information in any way nor act in reliance on it and
+notify the sender immediately.
+
+UNSUBSCRIBE INSTRUCTIONS
+If you do not wish to receive our newsletter, pls send address to imremove-Mj/0Miq2reM@public.gmane.org for remove.
+Before printing think about the Environment.
