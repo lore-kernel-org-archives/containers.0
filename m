@@ -1,17 +1,11 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Forbid invocation of kexec_load() outside initial PID
-	namespace
-Date: Mon, 6 Aug 2012 19:24:46 +0000
-Message-ID: <20120806192446.GA29269@mail.hallyn.com>
-References: <1343991184-3619-1-git-send-email-berrange@redhat.com>
-	<20120806190014.GA15267@mail.hallyn.com>
-	<87r4rjn84y.fsf@xmission.com>
+From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: setns vs unshare bug
+Date: Fri, 10 Aug 2012 18:55:36 +0400
+Message-ID: <502520E8.5040401@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <87r4rjn84y.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,72 +15,53 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
-> 
-> > Quoting Daniel P. Berrange (berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
-> >> From: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> >> 
-> >> The following commit
-> >> 
-> >>     commit cf3f89214ef6a33fad60856bc5ffd7bb2fc4709b
-> >>     Author: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-> >>     Date:   Wed Mar 28 14:42:51 2012 -0700
-> >> 
-> >>     pidns: add reboot_pid_ns() to handle the reboot syscall
-> >> 
-> >> introduced custom handling of the reboot() syscall when invoked
-> >> from a non-initial PID namespace. The intent was that a process
-> >> in a container can be allowed to keep CAP_SYS_BOOT and execute
-> >> reboot() to shutdown/reboot just their private container, rather
-> >> than the host.
-> >> 
-> >> Unfortunately the kexec_load() syscall also relies on the
-> >> CAP_SYS_BOOT capability. So by allowing a container to keep
-> >> this capability to safely invoke reboot(), they mistakenly
-> >> also gain the ability to use kexec_load(). The solution is
-> >> to make kexec_load() return -EPERM if invoked from a PID
-> >> namespace that is not the initial namespace
-> >> 
-> >> Signed-off-by: Daniel P. Berrange <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> >> Cc: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-> >
-> > Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-> >
-> > (Please see my previous email explaining why I believe the pidns
-> > is an appropriate check)
-> 
-> Serge as to your objects.
-> 
-> If we define kexec_load in terms of the pid namespace then something
-> makes sense, but the error should be EINVAL, or something of that sort.
+Hi, Eric!
 
-Makes sense.
+There's an issue with setns versus unshare syscall which I consider
+to be worth looking at. Look -- when you open some task's namespace file,
+e.g. /proc/<pid>/ns/net, the net namespace is cached on the proc inode.
 
-> That is what we did with reboot.  We defined reboot in terms of the pid
-> namespace.
-> 
-> Not defining kexec_load in terms of the pid namespace and then returning
-> EPERM because having we happen to have CAP_SYS_BOOT for other reasons is
-> semantically horrible.
-> 
-> At the end of the day the effect is the same, but I think it matters a
-> great deal in how we think about things.
-> 
-> We have CAP_SYS_BOOT in the initial user namespace.  We do have
-> permission to make the system call.
-> 
-> So I continue to see this patch the way it is current constructed as
-> broken.
-> 
-> Nacked-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+If later the task with the pid <pid> unshares the namespace in question
+(in this case -- net ns) the subsequent openings of this task's proc ns
+file will result in old namespace obtained and the setns call will not
+work as expected. Here's a simple proggie which demonstrates this:
 
-I do also prefer splitting the capability.  Michael Kerrisk, do you
-have any good suggestions for better names than CAP_RESTART (for
-killing or restarting /sbin/init) and CAP_BOOT (for kexec and/or
-hardware resets)?  Maybe CAP_RESTART_USER and CAP_RESTART_HW?
-(CAP_SYS_BOOT being an alias for both for backward compatibility)
+int main(void)
+{
+	int pid, fd;
+	char path[64];
+
+	pid = fork();
+	if (!pid) {
+		fd = open("/proc/self/ns/net", O_RDONLY);
+		close(fd);
+		unshare(CLONE_NEWNET);
+		printf("New net:\n");
+		system("ip l");
+		sleep(1);
+	} else {
+		sleep(1);
+		printf("Old net:\n");
+		system("ip l");
+		sprintf(path, "/proc/%d/ns/net", pid);
+		fd = open(path, O_RDONLY);
+		set_ns(fd, CLONE_NEWNET);
+		printf("New net 2:\n");
+		system("ip l");
+	}
+
+	return 0;
+}
+
+The "else" branch after set_ns expects the net it set to be the new one (and
+contain a lo device only), but it's not so -- after the setns syscall the net
+namespace isn't changed! If you comment out the "if" branch's open and close
+calls (thus avoiding the ns caching) the setns works as expected.
+
+I assume you're aware of this problem, so do you have plans to fix this?
+
+Thanks,
+Pavel
