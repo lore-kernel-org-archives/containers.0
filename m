@@ -1,13 +1,14 @@
 From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 Subject: Re: setns vs unshare bug
-Date: Fri, 10 Aug 2012 19:08:15 +0400
-Message-ID: <502523DF.4040103@parallels.com>
+Date: Fri, 10 Aug 2012 19:17:16 +0400
+Message-ID: <502525FC.3060608@parallels.com>
 References: <502520E8.5040401@parallels.com> <20120810150046.GA20449@sergelap>
+	<502523DF.4040103@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20120810150046.GA20449@sergelap>
+In-Reply-To: <502523DF.4040103-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,78 +22,28 @@ To: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 08/10/2012 07:00 PM, Serge Hallyn wrote:
-> Hi Pavel,
+On 08/10/2012 07:08 PM, Pavel Emelyanov wrote:
+> On 08/10/2012 07:00 PM, Serge Hallyn wrote:
+>> Hi Pavel,
+>>
+>> I don't believe this is a bug.  The fd is to a specific network
+>> namespace.  If the target task later changes his namespace, that
+>> doesn't change the fact that you asked for access to the old
+>> namespace.
+>>
+>> You're worried about a race?
 > 
-> I don't believe this is a bug.  The fd is to a specific network
-> namespace.  If the target task later changes his namespace, that
-> doesn't change the fact that you asked for access to the old
-> namespace.
-> 
-> You're worried about a race?
+> No, it's not a race. The proc ns file doesn't reflect the actual state
+> of a task it belongs to, but instead has some internal state which is
+> not observable/controllable from the outside. Look at my proggie -- the
+> "else" branch does expects that setns will bring it into a new net, but
+> it only does so if proc dcache is empty!
 
-No, it's not a race. The proc ns file doesn't reflect the actual state
-of a task it belongs to, but instead has some internal state which is
-not observable/controllable from the outside. Look at my proggie -- the
-"else" branch does expects that setns will bring it into a new net, but
-it only does so if proc dcache is empty!
+I mean -- I open a task's proc ns file _strictly_ _after_ that task called
+unshare, but happen to obtain an _old_ net namespace, because this old netns
+was cached on the task's proc file.
+
+Hope this explains better what I'm concerned about.
 
 Thanks,
 Pavel
-
-> -serge
-> 
-> Quoting Pavel Emelyanov (xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org):
->> Hi, Eric!
->>
->> There's an issue with setns versus unshare syscall which I consider
->> to be worth looking at. Look -- when you open some task's namespace file,
->> e.g. /proc/<pid>/ns/net, the net namespace is cached on the proc inode.
->>
->> If later the task with the pid <pid> unshares the namespace in question
->> (in this case -- net ns) the subsequent openings of this task's proc ns
->> file will result in old namespace obtained and the setns call will not
->> work as expected. Here's a simple proggie which demonstrates this:
->>
->> int main(void)
->> {
->> 	int pid, fd;
->> 	char path[64];
->>
->> 	pid = fork();
->> 	if (!pid) {
->> 		fd = open("/proc/self/ns/net", O_RDONLY);
->> 		close(fd);
->> 		unshare(CLONE_NEWNET);
->> 		printf("New net:\n");
->> 		system("ip l");
->> 		sleep(1);
->> 	} else {
->> 		sleep(1);
->> 		printf("Old net:\n");
->> 		system("ip l");
->> 		sprintf(path, "/proc/%d/ns/net", pid);
->> 		fd = open(path, O_RDONLY);
->> 		set_ns(fd, CLONE_NEWNET);
->> 		printf("New net 2:\n");
->> 		system("ip l");
->> 	}
->>
->> 	return 0;
->> }
->>
->> The "else" branch after set_ns expects the net it set to be the new one (and
->> contain a lo device only), but it's not so -- after the setns syscall the net
->> namespace isn't changed! If you comment out the "if" branch's open and close
->> calls (thus avoiding the ns caching) the setns works as expected.
->>
->> I assume you're aware of this problem, so do you have plans to fix this?
->>
->> Thanks,
->> Pavel
->> _______________________________________________
->> Containers mailing list
->> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
->> https://lists.linuxfoundation.org/mailman/listinfo/containers
-> .
-> 
