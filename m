@@ -1,7 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 10/21] userns: Convert net/ax25 to use kuid_t where appropriate
-Date: Mon, 13 Aug 2012 13:18:24 -0700
-Message-ID: <1344889115-21610-10-git-send-email-ebiederm__23579.4739718132$1344889281$gmane$org@xmission.com>
+Subject: [PATCH 14/21] userns: nfnetlink_log: Report socket uids in the log
+	sockets user namespace
+Date: Mon, 13 Aug 2012 13:18:28 -0700
+Message-ID: <1344889115-21610-14-git-send-email-ebiederm@xmission.com>
 References: <87ehnav9n5.fsf@xmission.com>
 	<1344889115-21610-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -19,128 +20,92 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ralf Baechle <ralf-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-Cc: Ralf Baechle <ralf-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org>
+At logging instance creation capture the peer netlink socket's user
+namespace. Use the captured peer user namespace when reporting socket
+uids to the peer.
+
+The peer socket's user namespace is guaranateed to be valid until the user
+closes the netlink socket.  nfnetlink_log removes instances during the final
+close of a socket.  __build_packet_message does not get called after an
+instance is destroyed.   Therefore it is safe to let the peer netlink socket
+take care of the user namespace reference counting for us.
+
 Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- include/net/ax25.h  |    4 ++--
- init/Kconfig        |    1 -
- net/ax25/ax25_uid.c |   21 ++++++++++++++-------
- 3 files changed, 16 insertions(+), 10 deletions(-)
+ init/Kconfig                  |    1 -
+ net/netfilter/nfnetlink_log.c |   14 ++++++++++----
+ 2 files changed, 10 insertions(+), 5 deletions(-)
 
-diff --git a/include/net/ax25.h b/include/net/ax25.h
-index 5d23521..53539ac 100644
---- a/include/net/ax25.h
-+++ b/include/net/ax25.h
-@@ -157,7 +157,7 @@ enum {
- typedef struct ax25_uid_assoc {
- 	struct hlist_node	uid_node;
- 	atomic_t		refcount;
--	uid_t			uid;
-+	kuid_t			uid;
- 	ax25_address		call;
- } ax25_uid_assoc;
- 
-@@ -434,7 +434,7 @@ extern unsigned long ax25_display_timer(struct timer_list *);
- 
- /* ax25_uid.c */
- extern int  ax25_uid_policy;
--extern ax25_uid_assoc *ax25_findbyuid(uid_t);
-+extern ax25_uid_assoc *ax25_findbyuid(kuid_t);
- extern int __must_check ax25_uid_ioctl(int, struct sockaddr_ax25 *);
- extern const struct file_operations ax25_uid_fops;
- extern void ax25_uid_free(void);
 diff --git a/init/Kconfig b/init/Kconfig
-index 64ff9ce..8447e0c 100644
+index 07435e0..2660b31 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -952,7 +952,6 @@ config UIDGID_CONVERTED
+@@ -947,7 +947,6 @@ config UIDGID_CONVERTED
+ 	depends on NETFILTER_XT_MATCH_OWNER = n
+ 	depends on NETFILTER_XT_MATCH_RECENT = n
+ 	depends on NETFILTER_XT_TARGET_LOG = n
+-	depends on NETFILTER_NETLINK_LOG = n
+ 	depends on AF_RXRPC = n
  	depends on NET_KEY = n
- 	depends on INET_DIAG = n
  	depends on DNS_RESOLVER = n
--	depends on AX25 = n
+diff --git a/net/netfilter/nfnetlink_log.c b/net/netfilter/nfnetlink_log.c
+index 169ab59..4142aac 100644
+--- a/net/netfilter/nfnetlink_log.c
++++ b/net/netfilter/nfnetlink_log.c
+@@ -55,6 +55,7 @@ struct nfulnl_instance {
+ 	unsigned int qlen;		/* number of nlmsgs in skb */
+ 	struct sk_buff *skb;		/* pre-allocatd skb */
+ 	struct timer_list timer;
++	struct user_namespace *peer_user_ns;	/* User namespace of the peer process */
+ 	int peer_pid;			/* PID of the peer process */
  
- 	# Filesystems
- 	depends on USB_GADGETFS = n
-diff --git a/net/ax25/ax25_uid.c b/net/ax25/ax25_uid.c
-index e3c579b..957999e 100644
---- a/net/ax25/ax25_uid.c
-+++ b/net/ax25/ax25_uid.c
-@@ -51,14 +51,14 @@ int ax25_uid_policy;
+ 	/* configurable parameters */
+@@ -132,7 +133,7 @@ instance_put(struct nfulnl_instance *inst)
+ static void nfulnl_timer(unsigned long data);
  
- EXPORT_SYMBOL(ax25_uid_policy);
- 
--ax25_uid_assoc *ax25_findbyuid(uid_t uid)
-+ax25_uid_assoc *ax25_findbyuid(kuid_t uid)
+ static struct nfulnl_instance *
+-instance_create(u_int16_t group_num, int pid)
++instance_create(u_int16_t group_num, int pid, struct user_namespace *user_ns)
  {
- 	ax25_uid_assoc *ax25_uid, *res = NULL;
- 	struct hlist_node *node;
+ 	struct nfulnl_instance *inst;
+ 	int err;
+@@ -162,6 +163,7 @@ instance_create(u_int16_t group_num, int pid)
  
- 	read_lock(&ax25_uid_lock);
- 	ax25_uid_for_each(ax25_uid, node, &ax25_uid_list) {
--		if (ax25_uid->uid == uid) {
-+		if (uid_eq(ax25_uid->uid, uid)) {
- 			ax25_uid_hold(ax25_uid);
- 			res = ax25_uid;
- 			break;
-@@ -84,7 +84,7 @@ int ax25_uid_ioctl(int cmd, struct sockaddr_ax25 *sax)
- 		read_lock(&ax25_uid_lock);
- 		ax25_uid_for_each(ax25_uid, node, &ax25_uid_list) {
- 			if (ax25cmp(&sax->sax25_call, &ax25_uid->call) == 0) {
--				res = ax25_uid->uid;
-+				res = from_kuid_munged(current_user_ns(), ax25_uid->uid);
- 				break;
+ 	setup_timer(&inst->timer, nfulnl_timer, (unsigned long)inst);
+ 
++	inst->peer_user_ns = user_ns;
+ 	inst->peer_pid = pid;
+ 	inst->group_num = group_num;
+ 
+@@ -503,8 +505,11 @@ __build_packet_message(struct nfulnl_instance *inst,
+ 		read_lock_bh(&skb->sk->sk_callback_lock);
+ 		if (skb->sk->sk_socket && skb->sk->sk_socket->file) {
+ 			struct file *file = skb->sk->sk_socket->file;
+-			__be32 uid = htonl(file->f_cred->fsuid);
+-			__be32 gid = htonl(file->f_cred->fsgid);
++			__be32 uid = htonl(from_kuid_munged(inst->peer_user_ns,
++							    file->f_cred->fsuid));
++			__be32 gid = htonl(from_kgid_munged(inst->peer_user_ns,
++							    file->f_cred->fsgid));
++			/* need to unlock here since NLA_PUT may goto */
+ 			read_unlock_bh(&skb->sk->sk_callback_lock);
+ 			if (nla_put_be32(inst->skb, NFULA_UID, uid) ||
+ 			    nla_put_be32(inst->skb, NFULA_GID, gid))
+@@ -783,7 +788,8 @@ nfulnl_recv_config(struct sock *ctnl, struct sk_buff *skb,
  			}
- 		}
-@@ -93,9 +93,14 @@ int ax25_uid_ioctl(int cmd, struct sockaddr_ax25 *sax)
- 		return res;
  
- 	case SIOCAX25ADDUID:
-+	{
-+		kuid_t sax25_kuid;
- 		if (!capable(CAP_NET_ADMIN))
- 			return -EPERM;
--		user = ax25_findbyuid(sax->sax25_uid);
-+		sax25_kuid = make_kuid(current_user_ns(), sax->sax25_uid);
-+		if (!uid_valid(sax25_kuid))
-+			return -EINVAL;
-+		user = ax25_findbyuid(sax25_kuid);
- 		if (user) {
- 			ax25_uid_put(user);
- 			return -EEXIST;
-@@ -106,7 +111,7 @@ int ax25_uid_ioctl(int cmd, struct sockaddr_ax25 *sax)
- 			return -ENOMEM;
- 
- 		atomic_set(&ax25_uid->refcount, 1);
--		ax25_uid->uid  = sax->sax25_uid;
-+		ax25_uid->uid  = sax25_kuid;
- 		ax25_uid->call = sax->sax25_call;
- 
- 		write_lock(&ax25_uid_lock);
-@@ -114,7 +119,7 @@ int ax25_uid_ioctl(int cmd, struct sockaddr_ax25 *sax)
- 		write_unlock(&ax25_uid_lock);
- 
- 		return 0;
--
-+	}
- 	case SIOCAX25DELUID:
- 		if (!capable(CAP_NET_ADMIN))
- 			return -EPERM;
-@@ -172,7 +177,9 @@ static int ax25_uid_seq_show(struct seq_file *seq, void *v)
- 		struct ax25_uid_assoc *pt;
- 
- 		pt = hlist_entry(v, struct ax25_uid_assoc, uid_node);
--		seq_printf(seq, "%6d %s\n", pt->uid, ax2asc(buf, &pt->call));
-+		seq_printf(seq, "%6d %s\n",
-+			from_kuid_munged(seq_user_ns(seq), pt->uid),
-+			ax2asc(buf, &pt->call));
- 	}
- 	return 0;
- }
+ 			inst = instance_create(group_num,
+-					       NETLINK_CB(skb).pid);
++					       NETLINK_CB(skb).pid,
++					       sk_user_ns(NETLINK_CB(skb).ssk));
+ 			if (IS_ERR(inst)) {
+ 				ret = PTR_ERR(inst);
+ 				goto out;
 -- 
 1.7.5.4
